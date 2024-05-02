@@ -17578,7 +17578,7 @@ Signed-off-by: Ashish Vara <ashishhvara@gmail.com>
 +#endif  /* _TAS5713_H */
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1220,7 +1220,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
+@@ -1223,7 +1223,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
  		return 0;
  
  	for_each_rtd_codec_dais(rtd, i, codec_dai) {
@@ -17615,12 +17615,12 @@ Signed-off-by: Ashish Vara <ashishhvara@gmail.com>
  	 * For devices with more than one control interface, we assume the
 --- a/sound/usb/quirks.c
 +++ b/sound/usb/quirks.c
-@@ -2175,6 +2175,8 @@ static const struct usb_audio_quirk_flag
+@@ -2087,6 +2087,8 @@ static const struct usb_audio_quirk_flag
  		   QUIRK_FLAG_FIXED_RATE),
  	DEVICE_FLG(0x0ecb, 0x2069, /* JBL Quantum810 Wireless */
  		   QUIRK_FLAG_FIXED_RATE),
 +	DEVICE_FLG(0x09da, 0x2695, /* A4Tech FHD 1080p webcam */
 +		   QUIRK_FLAG_DISABLE_AUTOSUSPEND | QUIRK_FLAG_GET_SAMPLE_RATE),
- 	DEVICE_FLG(0x1bcf, 0x2283, /* NexiGo N930AF FHD Webcam */
- 		   QUIRK_FLAG_GET_SAMPLE_RATE),
- 
+ 	DEVICE_FLG(0x0fd9, 0x0008, /* Hauppauge HVR-950Q */
+ 		   QUIRK_FLAG_SHARE_MEDIA_DEVICE | QUIRK_FLAG_ALIGN_TRANSFER),
+ 	DEVICE_FLG(0x1224, 0x2a25, /* Jieli Technology USB PHY 2.0 */

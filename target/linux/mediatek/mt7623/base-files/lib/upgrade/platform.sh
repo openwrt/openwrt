@@ -83,10 +83,10 @@ platform_do_upgrade() {
 	case "$board" in
 	bananapi,bpi-r2|\
 	unielec,u7623-02)
-		export_bootdevice
-		export_partdevice fitpart 3
-		[ "$fitpart" ] || return 1
-		EMMC_KERN_DEV="/dev/$fitpart"
+		[ -e /dev/fit0 ] && fitblk /dev/fit0
+		[ -e /dev/fitrw ] && fitblk /dev/fitrw
+		bootdev="$(fitblk_get_bootdev)"
+		EMMC_KERN_DEV="/dev/$bootdev"
 		emmc_do_upgrade "$1"
 		;;
 	unielec,u7623-02-emmc-512m)

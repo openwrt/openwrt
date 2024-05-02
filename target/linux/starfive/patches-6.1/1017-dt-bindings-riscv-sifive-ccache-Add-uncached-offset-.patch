@@ -1,0 +1,30 @@
+From 3b83b32e16fa431c76a5da1ac59c268ca2fecbb5 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Sat, 11 Feb 2023 05:18:11 +0200
+Subject: [PATCH 1017/1024] dt-bindings: riscv: sifive-ccache: Add
+ 'uncached-offset' property
+
+Add the 'uncached-offset' property to be used for specifying the
+uncached memory offset required for handling non-coherent DMA
+transactions.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Link: https://lore.kernel.org/r/20230211031821.976408-3-cristian.ciocaltea@collabora.com
+---
+ Documentation/devicetree/bindings/riscv/sifive,ccache0.yaml | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Documentation/devicetree/bindings/riscv/sifive,ccache0.yaml
++++ b/Documentation/devicetree/bindings/riscv/sifive,ccache0.yaml
+@@ -70,6 +70,11 @@ properties:
+ 
+   next-level-cache: true
+ 
++  uncached-offset:
++    $ref: /schemas/types.yaml#/definitions/uint64
++    description: |
++      Uncached memory offset for handling non-coherent DMA transactions.
++
+   memory-region:
+     maxItems: 1
+     description: |

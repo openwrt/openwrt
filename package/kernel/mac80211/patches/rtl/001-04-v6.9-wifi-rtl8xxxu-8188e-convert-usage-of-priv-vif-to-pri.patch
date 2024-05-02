@@ -1,0 +1,28 @@
+From a047e46a7b98de384a158b25a05dc09aa7d70c5f Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:25 +0100
+Subject: [PATCH 04/21] wifi: rtl8xxxu: 8188e: convert usage of priv->vif to
+ priv->vifs[0]
+
+The driver currently does not support AP or concurrent mode for 8188e,
+so just use priv->vifs[0] instead of priv->vif for now.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-5-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -1699,7 +1699,7 @@ void rtl8188e_handle_ra_tx_report2(struc
+ 	/* We only use macid 0, so only the first item is relevant.
+ 	 * AP mode will use more of them if it's ever implemented.
+ 	 */
+-	if (!priv->vif || priv->vif->type == NL80211_IFTYPE_STATION)
++	if (!priv->vifs[0] || priv->vifs[0]->type == NL80211_IFTYPE_STATION)
+ 		items = 1;
+ 
+ 	for (macid = 0; macid < items; macid++) {

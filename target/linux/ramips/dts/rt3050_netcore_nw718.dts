@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "netcore,nw718", "ralink,rt3050-soc";
@@ -18,19 +19,22 @@
 		compatible = "gpio-leds";
 
 		led_cpu: cpu {
-			label = "amber:cpu";
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "amber:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&otg_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		wps {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -78,7 +82,7 @@
 				read-only;
 			};
 
-			factory: partition@50000 {
+			partition@50000 {
 				label = "factory";
 				reg = <0x50000 0x10000>;
 				read-only;

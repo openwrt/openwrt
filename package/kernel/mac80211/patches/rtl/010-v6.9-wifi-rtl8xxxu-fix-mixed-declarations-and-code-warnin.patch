@@ -1,0 +1,34 @@
+From a7e178259c5bc900da762b33d3a20b7ee1206f07 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 23 Feb 2024 21:34:32 +0800
+Subject: [PATCH] wifi: rtl8xxxu: fix mixed declarations in rtl8xxxu_set_aifs()
+
+Moving struct ieee80211_sta *sta variable definition to the front
+of the code to fix the ISO C90 forbids mixed declarations and code
+warning.
+
+Fixes: 43532c050f8e ("wifi: rtl8xxxu: support multiple interfaces in set_aifs()")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/TYAP286MB03157A408E0D69F2F6FBD88ABC552@TYAP286MB0315.JPNP286.PROD.OUTLOOK.COM
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4919,11 +4919,11 @@ static void rtl8xxxu_set_aifs(struct rtl
+ 	int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(priv->vifs); i++) {
++		struct ieee80211_sta *sta;
++
+ 		if (!priv->vifs[i])
+ 			continue;
+ 
+-		struct ieee80211_sta *sta;
+-
+ 		rcu_read_lock();
+ 		sta = ieee80211_find_sta(priv->vifs[i], priv->vifs[i]->bss_conf.bssid);
+ 		if (sta)

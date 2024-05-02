@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -48,12 +49,14 @@
 		pinctrl-0 = <&enable_gpio_11>;
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -71,12 +74,14 @@
 		};
 
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wps_amber {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};

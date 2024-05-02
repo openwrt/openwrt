@@ -63,10 +63,11 @@
 				 * blocks (64KiB) in order to have spares
 				 * around for bad block management
 				 */
-					label = "u-boot-env";
-					reg = <0x00150000 0x00010000>;
-					read-only;
-				};
+				label = "u-boot-env";
+				compatible = "u-boot,env";
+				reg = <0x00150000 0x00010000>;
+				read-only;
+			};
 
 			partition@160000 {
 				/*

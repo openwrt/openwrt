@@ -1,0 +1,28 @@
+From 05b22e9b7d84253f765cde01cb09d144094b61c9 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:32 +0100
+Subject: [PATCH 11/21] wifi: rtl8xxxu: support multiple interfaces in
+ update_beacon_work_callback()
+
+As we only want to support AP mode/sending beacons on port 0, it is
+enough to replace priv->vif with priv->vifs[0].
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-12-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5712,7 +5712,7 @@ static void rtl8xxxu_update_beacon_work_
+ 	struct rtl8xxxu_priv *priv =
+ 		container_of(work, struct rtl8xxxu_priv, update_beacon_work);
+ 	struct ieee80211_hw *hw = priv->hw;
+-	struct ieee80211_vif *vif = priv->vif;
++	struct ieee80211_vif *vif = priv->vifs[0];
+ 
+ 	if (!vif) {
+ 		WARN_ONCE(true, "no vif to update beacon\n");

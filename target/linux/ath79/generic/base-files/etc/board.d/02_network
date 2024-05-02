@@ -34,7 +34,6 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
-	dlink,dap-1720-a1|\
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -144,9 +143,13 @@ ath79_setup_interfaces()
 	alfa-network,n5q|\
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
+	elecom,wab-i1750-ps|\
+	elecom,wab-s1167-ps|\
+	elecom,wab-s600-ps|\
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
 	engenius,ews660ap|\
+	huawei,ap5030dn|\
 	ocedo,ursus|\
 	ruckus,zf7363|\
 	ruckus,zf7372|\
@@ -289,6 +292,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
 		;;
+	dlink,covr-c1200-a1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:wan" "2:lan"
+		;;
 	dlink,covr-p2500-a1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:wan" "4:plc"
@@ -311,9 +318,6 @@ ath79_setup_interfaces()
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
-	dlink,dir-859-a1|\
-	dlink,dir-859-a3|\
-	dlink,dir-869-a1|\
 	engenius,epg5000|\
 	engenius,esr1200|\
 	engenius,esr1750|\
@@ -496,6 +500,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "3:lan:3" "4:lan:2" "5:lan:1" "6@eth0" "2:wan:4" "1:wan:5"
 		;;
+	tplink,deco-m4r-v1|\
+	tplink,deco-s4-v2)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2"
+		;;
 	tplink,eap225-wall-v2)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
@@ -572,11 +581,6 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
-	tplink,deco-m4r-v1|\
-	tplink,deco-s4-v2)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "3:lan:1" "5:lan:2"
-		;;
 	hiwifi,hc6361|\
 	xiaomi,mi-router-4q|\
 	zbtlink,zbt-wd323)
@@ -641,6 +645,11 @@ ath79_setup_macs()
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;
+	dlink,covr-c1200-a1)
+		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
+		wan_mac=$(mtd_get_mac_ascii art "protest_wan_mac")
+		label_mac=$lan_mac
+		;;
 	dlink,covr-p2500-a1)
 		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
 		wan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
@@ -687,30 +696,24 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		label_mac=$lan_mac
 		;;
-	dlink,dir-859-a1|\
-	dlink,dir-869-a1)
-		lan_mac=$(mtd_get_mac_text "devdata" 0xc9)
-		wan_mac=$(mtd_get_mac_text "devdata" 0x79)
-		;;
-	dlink,dir-859-a3)
-		lan_mac=$(get_mac_label)
-		wan_mac=$(macaddr_add "$lan_mac" 3)
-		;;
 	qihoo,c301|\
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
-	elecom,wrc-1750ghbk2-i|\
-	elecom,wrc-300ghbk2-i)
-		wan_mac=$(mtd_get_mac_ascii hwconfig "HW.WAN.MAC.Address")
-		label_mac=$wan_mac
-		;;
+	elecom,wab-i1750-ps|\
+	elecom,wab-s1167-ps|\
+	elecom,wab-s600-ps|\
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
+		;;
+	elecom,wrc-1750ghbk2-i|\
+	elecom,wrc-300ghbk2-i)
+		wan_mac=$(mtd_get_mac_ascii hwconfig "HW.WAN.MAC.Address")
+		label_mac=$wan_mac
 		;;
 	engenius,epg5000|\
 	engenius,esr1200|\
@@ -731,6 +734,9 @@ ath79_setup_macs()
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
+		;;
+	huawei,ap5030dn)
+		label_mac=$(mtd_get_mac_binary art 0x2005b)
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

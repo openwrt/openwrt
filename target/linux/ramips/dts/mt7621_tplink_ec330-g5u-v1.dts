@@ -211,7 +211,7 @@
 			reg = <0x7400000 0x400000>;
 		};
 
-		factory: partition@7800000 {
+		partition@7800000 {
 			label = "factory";
 			reg = <0x7800000 0x400000>;
 			read-only;
@@ -283,10 +283,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

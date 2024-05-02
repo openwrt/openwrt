@@ -1,0 +1,436 @@
+From ea9e5879793f9743fbfe613174900ab0c431ac0e Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sat, 1 Apr 2023 19:19:20 +0800
+Subject: [PATCH 008/122] reset: Create subdirectory for StarFive drivers
+
+This moves the StarFive JH7100 reset driver to a new subdirectory in
+preparation for adding more StarFive reset drivers.
+
+Reviewed-by: Philipp Zabel <p.zabel@pengutronix.de>
+Tested-by: Tommaso Merciai <tomm.merciai@gmail.com>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ drivers/reset/Kconfig                                | 8 +-------
+ drivers/reset/Makefile                               | 2 +-
+ drivers/reset/starfive/Kconfig                       | 8 ++++++++
+ drivers/reset/starfive/Makefile                      | 2 ++
+ drivers/reset/{ => starfive}/reset-starfive-jh7100.c | 0
+ 5 files changed, 12 insertions(+), 8 deletions(-)
+ create mode 100644 drivers/reset/starfive/Kconfig
+ create mode 100644 drivers/reset/starfive/Makefile
+ rename drivers/reset/{ => starfive}/reset-starfive-jh7100.c (100%)
+
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
+@@ -232,13 +232,6 @@ config RESET_SOCFPGA
+ 	  This enables the reset driver for the SoCFPGA ARMv7 platforms. This
+ 	  driver gets initialized early during platform init calls.
+ 
+-config RESET_STARFIVE_JH7100
+-	bool "StarFive JH7100 Reset Driver"
+-	depends on ARCH_STARFIVE || COMPILE_TEST
+-	default ARCH_STARFIVE
+-	help
+-	  This enables the reset controller driver for the StarFive JH7100 SoC.
+-
+ config RESET_SUNPLUS
+ 	bool "Sunplus SoCs Reset Driver" if COMPILE_TEST
+ 	default ARCH_SUNPLUS
+@@ -320,6 +313,7 @@ config RESET_ZYNQ
+ 	help
+ 	  This enables the reset controller driver for Xilinx Zynq SoCs.
+ 
++source "drivers/reset/starfive/Kconfig"
+ source "drivers/reset/sti/Kconfig"
+ source "drivers/reset/hisilicon/Kconfig"
+ source "drivers/reset/tegra/Kconfig"
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ obj-y += core.o
+ obj-y += hisilicon/
++obj-y += starfive/
+ obj-$(CONFIG_ARCH_STI) += sti/
+ obj-$(CONFIG_ARCH_TEGRA) += tegra/
+ obj-$(CONFIG_RESET_A10SR) += reset-a10sr.o
+@@ -30,7 +31,6 @@ obj-$(CONFIG_RESET_RZG2L_USBPHY_CTRL) +=
+ obj-$(CONFIG_RESET_SCMI) += reset-scmi.o
+ obj-$(CONFIG_RESET_SIMPLE) += reset-simple.o
+ obj-$(CONFIG_RESET_SOCFPGA) += reset-socfpga.o
+-obj-$(CONFIG_RESET_STARFIVE_JH7100) += reset-starfive-jh7100.o
+ obj-$(CONFIG_RESET_SUNPLUS) += reset-sunplus.o
+ obj-$(CONFIG_RESET_SUNXI) += reset-sunxi.o
+ obj-$(CONFIG_RESET_TI_SCI) += reset-ti-sci.o
+--- /dev/null
++++ b/drivers/reset/starfive/Kconfig
+@@ -0,0 +1,8 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
++config RESET_STARFIVE_JH7100
++	bool "StarFive JH7100 Reset Driver"
++	depends on ARCH_STARFIVE || COMPILE_TEST
++	default ARCH_STARFIVE
++	help
++	  This enables the reset controller driver for the StarFive JH7100 SoC.
+--- /dev/null
++++ b/drivers/reset/starfive/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++obj-$(CONFIG_RESET_STARFIVE_JH7100)		+= reset-starfive-jh7100.o
+--- a/drivers/reset/reset-starfive-jh7100.c
++++ /dev/null
+@@ -1,173 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-or-later
+-/*
+- * Reset driver for the StarFive JH7100 SoC
+- *
+- * Copyright (C) 2021 Emil Renner Berthing <kernel@esmil.dk>
+- */
+-
+-#include <linux/bitmap.h>
+-#include <linux/io.h>
+-#include <linux/io-64-nonatomic-lo-hi.h>
+-#include <linux/iopoll.h>
+-#include <linux/mod_devicetable.h>
+-#include <linux/platform_device.h>
+-#include <linux/reset-controller.h>
+-#include <linux/spinlock.h>
+-
+-#include <dt-bindings/reset/starfive-jh7100.h>
+-
+-/* register offsets */
+-#define JH7100_RESET_ASSERT0	0x00
+-#define JH7100_RESET_ASSERT1	0x04
+-#define JH7100_RESET_ASSERT2	0x08
+-#define JH7100_RESET_ASSERT3	0x0c
+-#define JH7100_RESET_STATUS0	0x10
+-#define JH7100_RESET_STATUS1	0x14
+-#define JH7100_RESET_STATUS2	0x18
+-#define JH7100_RESET_STATUS3	0x1c
+-
+-/*
+- * Writing a 1 to the n'th bit of the m'th ASSERT register asserts
+- * line 32m + n, and writing a 0 deasserts the same line.
+- * Most reset lines have their status inverted so a 0 bit in the STATUS
+- * register means the line is asserted and a 1 means it's deasserted. A few
+- * lines don't though, so store the expected value of the status registers when
+- * all lines are asserted.
+- */
+-static const u64 jh7100_reset_asserted[2] = {
+-	/* STATUS0 */
+-	BIT_ULL_MASK(JH7100_RST_U74) |
+-	BIT_ULL_MASK(JH7100_RST_VP6_DRESET) |
+-	BIT_ULL_MASK(JH7100_RST_VP6_BRESET) |
+-	/* STATUS1 */
+-	BIT_ULL_MASK(JH7100_RST_HIFI4_DRESET) |
+-	BIT_ULL_MASK(JH7100_RST_HIFI4_BRESET),
+-	/* STATUS2 */
+-	BIT_ULL_MASK(JH7100_RST_E24) |
+-	/* STATUS3 */
+-	0,
+-};
+-
+-struct jh7100_reset {
+-	struct reset_controller_dev rcdev;
+-	/* protect registers against concurrent read-modify-write */
+-	spinlock_t lock;
+-	void __iomem *base;
+-};
+-
+-static inline struct jh7100_reset *
+-jh7100_reset_from(struct reset_controller_dev *rcdev)
+-{
+-	return container_of(rcdev, struct jh7100_reset, rcdev);
+-}
+-
+-static int jh7100_reset_update(struct reset_controller_dev *rcdev,
+-			       unsigned long id, bool assert)
+-{
+-	struct jh7100_reset *data = jh7100_reset_from(rcdev);
+-	unsigned long offset = BIT_ULL_WORD(id);
+-	u64 mask = BIT_ULL_MASK(id);
+-	void __iomem *reg_assert = data->base + JH7100_RESET_ASSERT0 + offset * sizeof(u64);
+-	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u64);
+-	u64 done = jh7100_reset_asserted[offset] & mask;
+-	u64 value;
+-	unsigned long flags;
+-	int ret;
+-
+-	if (!assert)
+-		done ^= mask;
+-
+-	spin_lock_irqsave(&data->lock, flags);
+-
+-	value = readq(reg_assert);
+-	if (assert)
+-		value |= mask;
+-	else
+-		value &= ~mask;
+-	writeq(value, reg_assert);
+-
+-	/* if the associated clock is gated, deasserting might otherwise hang forever */
+-	ret = readq_poll_timeout_atomic(reg_status, value, (value & mask) == done, 0, 1000);
+-
+-	spin_unlock_irqrestore(&data->lock, flags);
+-	return ret;
+-}
+-
+-static int jh7100_reset_assert(struct reset_controller_dev *rcdev,
+-			       unsigned long id)
+-{
+-	return jh7100_reset_update(rcdev, id, true);
+-}
+-
+-static int jh7100_reset_deassert(struct reset_controller_dev *rcdev,
+-				 unsigned long id)
+-{
+-	return jh7100_reset_update(rcdev, id, false);
+-}
+-
+-static int jh7100_reset_reset(struct reset_controller_dev *rcdev,
+-			      unsigned long id)
+-{
+-	int ret;
+-
+-	ret = jh7100_reset_assert(rcdev, id);
+-	if (ret)
+-		return ret;
+-
+-	return jh7100_reset_deassert(rcdev, id);
+-}
+-
+-static int jh7100_reset_status(struct reset_controller_dev *rcdev,
+-			       unsigned long id)
+-{
+-	struct jh7100_reset *data = jh7100_reset_from(rcdev);
+-	unsigned long offset = BIT_ULL_WORD(id);
+-	u64 mask = BIT_ULL_MASK(id);
+-	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u64);
+-	u64 value = readq(reg_status);
+-
+-	return !((value ^ jh7100_reset_asserted[offset]) & mask);
+-}
+-
+-static const struct reset_control_ops jh7100_reset_ops = {
+-	.assert		= jh7100_reset_assert,
+-	.deassert	= jh7100_reset_deassert,
+-	.reset		= jh7100_reset_reset,
+-	.status		= jh7100_reset_status,
+-};
+-
+-static int __init jh7100_reset_probe(struct platform_device *pdev)
+-{
+-	struct jh7100_reset *data;
+-
+-	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
+-	if (!data)
+-		return -ENOMEM;
+-
+-	data->base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(data->base))
+-		return PTR_ERR(data->base);
+-
+-	data->rcdev.ops = &jh7100_reset_ops;
+-	data->rcdev.owner = THIS_MODULE;
+-	data->rcdev.nr_resets = JH7100_RSTN_END;
+-	data->rcdev.dev = &pdev->dev;
+-	data->rcdev.of_node = pdev->dev.of_node;
+-	spin_lock_init(&data->lock);
+-
+-	return devm_reset_controller_register(&pdev->dev, &data->rcdev);
+-}
+-
+-static const struct of_device_id jh7100_reset_dt_ids[] = {
+-	{ .compatible = "starfive,jh7100-reset" },
+-	{ /* sentinel */ }
+-};
+-
+-static struct platform_driver jh7100_reset_driver = {
+-	.driver = {
+-		.name = "jh7100-reset",
+-		.of_match_table = jh7100_reset_dt_ids,
+-		.suppress_bind_attrs = true,
+-	},
+-};
+-builtin_platform_driver_probe(jh7100_reset_driver, jh7100_reset_probe);
+--- /dev/null
++++ b/drivers/reset/starfive/reset-starfive-jh7100.c
+@@ -0,0 +1,173 @@
++// SPDX-License-Identifier: GPL-2.0-or-later
++/*
++ * Reset driver for the StarFive JH7100 SoC
++ *
++ * Copyright (C) 2021 Emil Renner Berthing <kernel@esmil.dk>
++ */
++
++#include <linux/bitmap.h>
++#include <linux/io.h>
++#include <linux/io-64-nonatomic-lo-hi.h>
++#include <linux/iopoll.h>
++#include <linux/mod_devicetable.h>
++#include <linux/platform_device.h>
++#include <linux/reset-controller.h>
++#include <linux/spinlock.h>
++
++#include <dt-bindings/reset/starfive-jh7100.h>
++
++/* register offsets */
++#define JH7100_RESET_ASSERT0	0x00
++#define JH7100_RESET_ASSERT1	0x04
++#define JH7100_RESET_ASSERT2	0x08
++#define JH7100_RESET_ASSERT3	0x0c
++#define JH7100_RESET_STATUS0	0x10
++#define JH7100_RESET_STATUS1	0x14
++#define JH7100_RESET_STATUS2	0x18
++#define JH7100_RESET_STATUS3	0x1c
++
++/*
++ * Writing a 1 to the n'th bit of the m'th ASSERT register asserts
++ * line 32m + n, and writing a 0 deasserts the same line.
++ * Most reset lines have their status inverted so a 0 bit in the STATUS
++ * register means the line is asserted and a 1 means it's deasserted. A few
++ * lines don't though, so store the expected value of the status registers when
++ * all lines are asserted.
++ */
++static const u64 jh7100_reset_asserted[2] = {
++	/* STATUS0 */
++	BIT_ULL_MASK(JH7100_RST_U74) |
++	BIT_ULL_MASK(JH7100_RST_VP6_DRESET) |
++	BIT_ULL_MASK(JH7100_RST_VP6_BRESET) |
++	/* STATUS1 */
++	BIT_ULL_MASK(JH7100_RST_HIFI4_DRESET) |
++	BIT_ULL_MASK(JH7100_RST_HIFI4_BRESET),
++	/* STATUS2 */
++	BIT_ULL_MASK(JH7100_RST_E24) |
++	/* STATUS3 */
++	0,
++};
++
++struct jh7100_reset {
++	struct reset_controller_dev rcdev;
++	/* protect registers against concurrent read-modify-write */
++	spinlock_t lock;
++	void __iomem *base;
++};
++
++static inline struct jh7100_reset *
++jh7100_reset_from(struct reset_controller_dev *rcdev)
++{
++	return container_of(rcdev, struct jh7100_reset, rcdev);
++}
++
++static int jh7100_reset_update(struct reset_controller_dev *rcdev,
++			       unsigned long id, bool assert)
++{
++	struct jh7100_reset *data = jh7100_reset_from(rcdev);
++	unsigned long offset = BIT_ULL_WORD(id);
++	u64 mask = BIT_ULL_MASK(id);
++	void __iomem *reg_assert = data->base + JH7100_RESET_ASSERT0 + offset * sizeof(u64);
++	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u64);
++	u64 done = jh7100_reset_asserted[offset] & mask;
++	u64 value;
++	unsigned long flags;
++	int ret;
++
++	if (!assert)
++		done ^= mask;
++
++	spin_lock_irqsave(&data->lock, flags);
++
++	value = readq(reg_assert);
++	if (assert)
++		value |= mask;
++	else
++		value &= ~mask;
++	writeq(value, reg_assert);
++
++	/* if the associated clock is gated, deasserting might otherwise hang forever */
++	ret = readq_poll_timeout_atomic(reg_status, value, (value & mask) == done, 0, 1000);
++
++	spin_unlock_irqrestore(&data->lock, flags);
++	return ret;
++}
++
++static int jh7100_reset_assert(struct reset_controller_dev *rcdev,
++			       unsigned long id)
++{
++	return jh7100_reset_update(rcdev, id, true);
++}
++
++static int jh7100_reset_deassert(struct reset_controller_dev *rcdev,
++				 unsigned long id)
++{
++	return jh7100_reset_update(rcdev, id, false);
++}
++
++static int jh7100_reset_reset(struct reset_controller_dev *rcdev,
++			      unsigned long id)
++{
++	int ret;
++
++	ret = jh7100_reset_assert(rcdev, id);
++	if (ret)
++		return ret;
++
++	return jh7100_reset_deassert(rcdev, id);
++}
++
++static int jh7100_reset_status(struct reset_controller_dev *rcdev,
++			       unsigned long id)
++{
++	struct jh7100_reset *data = jh7100_reset_from(rcdev);
++	unsigned long offset = BIT_ULL_WORD(id);
++	u64 mask = BIT_ULL_MASK(id);
++	void __iomem *reg_status = data->base + JH7100_RESET_STATUS0 + offset * sizeof(u64);
++	u64 value = readq(reg_status);
++
++	return !((value ^ jh7100_reset_asserted[offset]) & mask);
++}
++
++static const struct reset_control_ops jh7100_reset_ops = {
++	.assert		= jh7100_reset_assert,
++	.deassert	= jh7100_reset_deassert,
++	.reset		= jh7100_reset_reset,
++	.status		= jh7100_reset_status,
++};
++
++static int __init jh7100_reset_probe(struct platform_device *pdev)
++{
++	struct jh7100_reset *data;
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(data->base))
++		return PTR_ERR(data->base);
++
++	data->rcdev.ops = &jh7100_reset_ops;
++	data->rcdev.owner = THIS_MODULE;
++	data->rcdev.nr_resets = JH7100_RSTN_END;
++	data->rcdev.dev = &pdev->dev;
++	data->rcdev.of_node = pdev->dev.of_node;
++	spin_lock_init(&data->lock);
++
++	return devm_reset_controller_register(&pdev->dev, &data->rcdev);
++}
++
++static const struct of_device_id jh7100_reset_dt_ids[] = {
++	{ .compatible = "starfive,jh7100-reset" },
++	{ /* sentinel */ }
++};
++
++static struct platform_driver jh7100_reset_driver = {
++	.driver = {
++		.name = "jh7100-reset",
++		.of_match_table = jh7100_reset_dt_ids,
++		.suppress_bind_attrs = true,
++	},
++};
++builtin_platform_driver_probe(jh7100_reset_driver, jh7100_reset_probe);

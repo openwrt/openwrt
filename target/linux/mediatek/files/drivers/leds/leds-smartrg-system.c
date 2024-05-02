@@ -159,7 +159,12 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct device_node *np)
 }
 
 static int
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,6,0)
 srg_led_probe(struct i2c_client *client, const struct i2c_device_id *id)
+#else
+srg_led_probe(struct i2c_client *client)
+#endif
 {
 	struct device_node *np = client->dev.of_node, *child;
 	struct srg_led_ctrl *sysled_ctrl;

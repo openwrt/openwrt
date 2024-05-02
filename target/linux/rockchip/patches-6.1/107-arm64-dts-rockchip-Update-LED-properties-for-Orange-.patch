@@ -5,8 +5,6 @@ Subject: [PATCH] arm64: dts: rockchip: Update LED properties for Orange Pi R1
  Plus
 
 Add OpenWrt's LED aliases for showing system status.
-Also replace function/color with legacy label as OpenWrt relys on it
-to update LED settings.
 
 Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 ---
@@ -27,30 +25,16 @@ Signed-off-by: Tianling Shen <cnsztl@gmail.com>
  	};
  
  	chosen {
-@@ -36,22 +41,18 @@
- 		pinctrl-names = "default";
- 
- 		led-0 {
--			function = LED_FUNCTION_LAN;
--			color = <LED_COLOR_ID_GREEN>;
+@@ -41,11 +46,10 @@
  			gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
-+			label = "green:lan";
  		};
  
 -		led-1 {
--			function = LED_FUNCTION_STATUS;
--			color = <LED_COLOR_ID_RED>;
 +		status_led: led-1 {
+ 			function = LED_FUNCTION_STATUS;
+ 			color = <LED_COLOR_ID_RED>;
  			gpios = <&gpio3 RK_PC5 GPIO_ACTIVE_HIGH>;
 -			linux,default-trigger = "heartbeat";
-+			label = "red:status";
  		};
  
  		led-2 {
--			function = LED_FUNCTION_WAN;
--			color = <LED_COLOR_ID_GREEN>;
- 			gpios = <&gpio2 RK_PC2 GPIO_ACTIVE_HIGH>;
-+			label = "green:wan";
- 		};
- 	};
- 

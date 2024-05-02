@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "falcon.dtsi"
 #include "falcon_sflash-16m.dtsi"
 
@@ -48,7 +50,8 @@
 			default-state = "keep";
 		};
 		ETH {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

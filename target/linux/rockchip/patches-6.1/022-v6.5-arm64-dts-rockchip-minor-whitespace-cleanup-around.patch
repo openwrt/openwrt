@@ -1,0 +1,28 @@
+From f99a75f11f46a24dabb33e90893eebf61dca0566 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Sun, 2 Jul 2023 20:52:42 +0200
+Subject: [PATCH] arm64: dts: rockchip: minor whitespace cleanup around '='
+
+The DTS code coding style expects exactly one space before and after '='
+sign.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20230702185242.44421-1-krzysztof.kozlowski@linaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3566-radxa-cm3-io.dts    |  4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
+@@ -137,8 +137,8 @@
+ 
+ &mdio1 {
+ 	rgmii_phy1: ethernet-phy@0 {
+-		compatible="ethernet-phy-ieee802.3-c22";
+-		reg= <0x0>;
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <0x0>;
+ 	};
+ };
+ 

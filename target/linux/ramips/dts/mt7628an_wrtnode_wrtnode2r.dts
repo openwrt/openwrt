@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_wrtnode_wrtnode2.dtsi"
 
 / {
@@ -18,7 +20,8 @@
 		pinctrl-0 = <&led_pins>;
 
 		led_indicator: indicator {
-			label = "blue:indicator";
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};

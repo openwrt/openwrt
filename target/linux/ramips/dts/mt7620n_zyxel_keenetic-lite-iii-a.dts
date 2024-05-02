@@ -55,14 +55,12 @@
 		compatible = "gpio-leds";
 
 		led_wan: wan {
-			label = "green:wan";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>; // #GPIO38
 		};
 
 		wifi {
-			label = "green:wifi";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>; // #GPIO72
@@ -107,7 +105,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "RF-EEPROM";
 				reg = <0x40000 0x10000>;
 				read-only;

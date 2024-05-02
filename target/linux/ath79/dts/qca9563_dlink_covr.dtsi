@@ -1,0 +1,168 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x68737173>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			fwconcat0: partition@50000 {
+				label = "fwconcat0";
+				reg = <0x50000 0xe30000>;
+			};
+
+			partition@e80000 {
+				label = "loader";
+				reg = <0xe80000 0x10000>;
+				read-only;
+			};
+
+			fwconcat1: partition@e90000 {
+				label = "fwconcat1";
+				reg = <0xe90000 0x160000>;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					calibration_ath9k: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					precalibration_ath10k: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi0: wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		nvmem-cells = <&precalibration_ath10k>;
+		nvmem-cell-names = "pre-calibration";
+	};
+};
+
+&gpio {
+	phy-reset {
+		gpio-hog;
+		gpios = <11 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "phy-reset";
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
+
+		qca,ar8327-initvals = <
+			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+			0x10 0x81000080 /* POWER_ON_STRAP */
+			0x50 0xcc35cc35 /* LED_CTRL0 */
+			0x54 0xcb37cb37 /* LED_CTRL1 */
+			0x58 0x00000000 /* LED_CTRL2 */
+			0x5c 0x00f3cf00 /* LED_CTRL3 */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x03000101 0x00000101 0x00001919>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&calibration_ath9k>;
+	nvmem-cell-names = "calibration";
+};

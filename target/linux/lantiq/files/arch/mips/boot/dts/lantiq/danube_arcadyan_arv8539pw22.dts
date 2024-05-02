@@ -1,6 +1,7 @@
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "arcadyan,arv8539pw22", "lantiq,xway", "lantiq,danube";
@@ -47,12 +48,14 @@
 		compatible = "gpio-leds";
 
 		power_green: power-green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -67,7 +70,8 @@
 		};
 
 		wireless_green: wireless-green {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		/*

@@ -1,6 +1,6 @@
 --- a/include/grub/util/install.h
 +++ b/include/grub/util/install.h
-@@ -198,13 +198,13 @@ grub_install_get_image_target (const cha
+@@ -199,13 +199,13 @@ grub_install_get_image_target (const cha
  void
  grub_util_bios_setup (const char *dir,
  		      const char *boot_file, const char *core_file,
@@ -18,7 +18,7 @@
  
 --- a/util/grub-install.c
 +++ b/util/grub-install.c
-@@ -1721,7 +1721,7 @@ main (int argc, char *argv[])
+@@ -1770,7 +1770,7 @@ main (int argc, char *argv[])
  	if (install_bootsector)
  	  {
  	    grub_util_bios_setup (platdir, "boot.img", "core.img",
@@ -27,7 +27,7 @@
  				  fs_probe, allow_floppy, add_rs_codes,
  				  !grub_install_is_short_mbrgap_supported ());
  
-@@ -1752,7 +1752,7 @@ main (int argc, char *argv[])
+@@ -1801,7 +1801,7 @@ main (int argc, char *argv[])
  	if (install_bootsector)
  	  {
  	    grub_util_sparc_setup (platdir, "boot.img", "core.img",

@@ -7,8 +7,7 @@ include $(TOPDIR)/rules.mk
 BOARD:=layerscape
 BOARDNAME:=NXP Layerscape
 
-KERNEL_PATCHVER:=5.15
-KERNEL_TESTING_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.1
 
 FEATURES:=squashfs nand usb pcie gpio fpu ubifs ext4 rootfs-part boot-part
 SUBTARGETS:=armv8_64b armv7

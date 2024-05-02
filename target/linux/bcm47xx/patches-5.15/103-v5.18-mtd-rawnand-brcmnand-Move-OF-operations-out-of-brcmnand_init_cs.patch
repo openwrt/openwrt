@@ -43,7 +43,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	nand_set_controller_data(chip, host);
  	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "brcmnand.%d",
  				   host->cs);
-@@ -3236,7 +3229,16 @@ int brcmnand_probe(struct platform_devic
+@@ -3240,7 +3233,16 @@ int brcmnand_probe(struct platform_devic
  			host->pdev = pdev;
  			host->ctrl = ctrl;
  

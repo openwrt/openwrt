@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "comfast,cf-e313ac", "qca,qca9531";
@@ -22,18 +23,21 @@
 		pinctrl-names = "default";
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
@@ -103,8 +107,16 @@
 						reg = <0x0 0x6>;
 					};
 
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
 					macaddr_art_1002: macaddr@1002 {
 						reg = <0x1002 0x6>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
 					};
 				};
 			};
@@ -155,5 +167,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_art_6>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
 };

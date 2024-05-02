@@ -1,0 +1,48 @@
+From da39ee0e68b6d9293133a7c41c6cf73354dce337 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 21 Feb 2024 13:57:56 -0800
+Subject: [PATCH] libfdt: rework shared/static libraries
+
+Instead of creating 2 libraries manualy, just call both_libraries and
+link to the appropriate one as requested.
+
+Fixes compilation when passing -Ddefault_libraries=both as the
+static_library name is duplicated.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Signed-off-by: David Gibson <david@gibson.dropbear.id.au>
+---
+ libfdt/meson.build | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
+
+--- a/libfdt/meson.build
++++ b/libfdt/meson.build
+@@ -16,7 +16,7 @@ sources = files(
+   'fdt_wip.c',
+ )
+ 
+-libfdt = library(
++libfdt = both_libraries(
+   'fdt', sources,
+   version: '1.6.0',
+   link_args: ['-Wl,--no-undefined', version_script],
+@@ -24,17 +24,12 @@ libfdt = library(
+   install: true,
+ )
+ 
+-libfdt_a = static_library(
+-  'fdt', sources,
+-  install: true,
+-)
+-
+ libfdt_inc = include_directories('.')
+ 
+ if static_build
+-  link_with = libfdt_a
++  link_with = libfdt.get_static_lib()
+ else
+-  link_with = libfdt
++  link_with = libfdt.get_shared_lib()
+ endif
+ 
+ libfdt_dep = declare_dependency(

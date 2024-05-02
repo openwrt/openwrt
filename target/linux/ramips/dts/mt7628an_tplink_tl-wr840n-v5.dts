@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-wr840n-v5", "mediatek,mt7628an-soc";
@@ -33,12 +34,14 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		};
 
 		orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -69,7 +72,7 @@
 				reg = <0x20000 0x3d0000>;
 			};
 
-			factory: partition@3f0000 {
+			partition@3f0000 {
 				label = "factory";
 				reg = <0x3f0000 0x10000>;
 				read-only;

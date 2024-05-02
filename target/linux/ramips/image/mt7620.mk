@@ -149,6 +149,16 @@ define Device/bdcom_wap2100-sk
 endef
 TARGET_DEVICES += bdcom_wap2100-sk
 
+define Device/bolt_bl100
+  SOC := mt7620a
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Bolt
+  DEVICE_MODEL := BL100
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+  UIMAGE_MAGIC := 0x26112015
+endef
+TARGET_DEVICES += bolt_bl100
+
 define Device/buffalo_whr-1166d
   SOC := mt7620a
   IMAGE_SIZE := 16064k
@@ -1214,6 +1224,23 @@ define Device/tplink_archer-c2-v1
 endef
 TARGET_DEVICES += tplink_archer-c2-v1
 
+define Device/tplink_archer-c5-v4
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x04da857c
+  TPLINK_HWREV := 0x0c000600
+  TPLINK_HWREVADD := 0x04000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_MODEL := Archer C5
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-mt76x2 kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += tplink_archer-c5-v4
+
 define Device/tplink_archer-c50-v1
   $(Device/tplink-v2)
   SOC := mt7620a
@@ -1245,6 +1272,22 @@ define Device/tplink_archer-mr200
   SUPPORTED_DEVICES += mr200
 endef
 TARGET_DEVICES += tplink_archer-mr200
+
+define Device/tplink_ec220-g5-v2
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x02015a15
+  TPLINK_HWREV := 0x55000600
+  TPLINK_HWREVADD := 0x03000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_MODEL := EC220-G5
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += tplink_ec220-g5-v2
 
 define Device/tplink_re200-v1
   $(Device/tplink-v1)

@@ -1,0 +1,62 @@
+From c2f59eeeee68bb66a3db8555474fe94e73b65b02 Mon Sep 17 00:00:00 2001
+From: Walker Chen <walker.chen@starfivetech.com>
+Date: Wed, 22 Mar 2023 17:48:17 +0800
+Subject: [PATCH 111/122] dt-bindings: dma: snps,dw-axi-dmac: constrain the
+ items of resets for JH7110 dma
+
+The DMA controller needs two reset items to work properly on JH7110 SoC,
+so there is need to constrain the items' value to 2, other platforms
+have 1 reset item at most.
+
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Walker Chen <walker.chen@starfivetech.com>
+---
+ .../bindings/dma/snps,dw-axi-dmac.yaml        | 23 ++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/dma/snps,dw-axi-dmac.yaml
++++ b/Documentation/devicetree/bindings/dma/snps,dw-axi-dmac.yaml
+@@ -21,6 +21,7 @@ properties:
+     enum:
+       - snps,axi-dma-1.01a
+       - intel,kmb-axi-dma
++      - starfive,jh7110-axi-dma
+ 
+   reg:
+     minItems: 1
+@@ -59,7 +60,8 @@ properties:
+     maximum: 8
+ 
+   resets:
+-    maxItems: 1
++    minItems: 1
++    maxItems: 2
+ 
+   snps,dma-masters:
+     description: |
+@@ -110,6 +112,25 @@ required:
+   - snps,priority
+   - snps,block-size
+ 
++if:
++  properties:
++    compatible:
++      contains:
++        enum:
++          - starfive,jh7110-axi-dma
++then:
++  properties:
++    resets:
++      minItems: 2
++      items:
++        - description: AXI reset line
++        - description: AHB reset line
++        - description: module reset
++else:
++  properties:
++    resets:
++      maxItems: 1
++
+ additionalProperties: false
+ 
+ examples:

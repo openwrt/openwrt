@@ -37,7 +37,6 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
@@ -45,14 +44,12 @@
 
 		// RALINK_REG_PIO3924DATA 39-24
 		led_internet: internet {
-			label = "green:internet";
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 
 		// RALINK_REG_PIO7140DATA 44-40
 		led_wlan_2_4ghz: wlan_2_4ghz {
-			label = "green:wlan2g";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
@@ -61,7 +58,6 @@
 
 		// RALINK_REG_PIO7140DATA 43-40
 		led_wlan_5ghz: wlan_5ghz {
-			label = "green:wlan5g";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
@@ -70,7 +66,6 @@
 
 		// RALINK_REG_PIO7140DATA 42-40
 		led_firmware: firmware {
-			label = "green:firmware";
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 			// default-state = "keep";
@@ -78,7 +73,6 @@
 
 		// RALINK_REG_PIO7140DATA 41-40
 		led_vpn: vpn {
-			label = "green:vpn";
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
@@ -140,7 +134,7 @@
 			};
 
 			// Factory
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

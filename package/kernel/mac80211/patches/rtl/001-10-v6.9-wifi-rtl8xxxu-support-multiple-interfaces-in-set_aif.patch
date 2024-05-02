@@ -1,0 +1,44 @@
+From 43532c050f8eec4056a21978fdb5b958e1477553 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:31 +0100
+Subject: [PATCH 10/21] wifi: rtl8xxxu: support multiple interfaces in
+ set_aifs()
+
+In concurrent mode supported by this driver, both interfaces will use
+the same channel and same wireless mode.
+It is therefore possible to get the wireless mode by checking the first
+connected interface.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-11-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4913,14 +4913,20 @@ static void rtl8xxxu_set_aifs(struct rtl
+ 	u8 aifs, aifsn, sifs;
+ 	int i;
+ 
+-	if (priv->vif) {
++	for (i = 0; i < ARRAY_SIZE(priv->vifs); i++) {
++		if (!priv->vifs[i])
++			continue;
++
+ 		struct ieee80211_sta *sta;
+ 
+ 		rcu_read_lock();
+-		sta = ieee80211_find_sta(priv->vif, priv->vif->bss_conf.bssid);
++		sta = ieee80211_find_sta(priv->vifs[i], priv->vifs[i]->bss_conf.bssid);
+ 		if (sta)
+ 			wireless_mode = rtl8xxxu_wireless_mode(priv->hw, sta);
+ 		rcu_read_unlock();
++
++		if (wireless_mode)
++			break;
+ 	}
+ 
+ 	if (priv->hw->conf.chandef.chan->band == NL80211_BAND_5GHZ ||

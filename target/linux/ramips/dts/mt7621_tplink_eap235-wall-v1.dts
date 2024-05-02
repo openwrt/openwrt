@@ -22,7 +22,6 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "white:status";
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
@@ -81,7 +80,7 @@
 				read-only;
 			};
 
-			info: partition@90000 {
+			partition@90000 {
 				label = "product-info";
 				reg = <0x90000 0x10000>;
 				read-only;
@@ -125,7 +124,7 @@
 				read-only;
 			};
 
-			radio: partition@ff0000 {
+			partition@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -190,10 +189,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

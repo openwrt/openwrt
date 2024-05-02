@@ -6,7 +6,7 @@ BOARDNAME:=Airoha ARM
 CPU_TYPE:=cortex-a7
 FEATURES:=dt squashfs nand ramdisk gpio source-only
 
-KERNEL_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 

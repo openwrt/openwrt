@@ -44,7 +44,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			partition@0 {
 				label = "u-boot";
 				reg = <0x0 0x20000>;
 				read-only;
@@ -74,7 +74,7 @@
 				read-only;
 			};
 
-			radio: partition@7f0000 {
+			partition@7f0000 {
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
 				read-only;

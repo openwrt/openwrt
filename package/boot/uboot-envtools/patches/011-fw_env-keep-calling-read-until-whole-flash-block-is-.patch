@@ -1,0 +1,75 @@
+From 9e3003f79d168eac7ee65cd457e3904e2fb4eea8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 13 Dec 2023 13:13:54 +0100
+Subject: [PATCH] fw_env: keep calling read() until whole flash block is read
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It's totally valid for read() to provide less bytes than requested
+maximum. It may happen if there is no more data available yet or source
+pushes data in small chunks.
+
+This actually happens when trying to read env data from NVMEM device.
+Kernel may provide NVMEM content in page size parts (like 4096 B).
+
+This fixes warnings like:
+Warning on /sys/bus/nvmem/devices/u-boot-env0/nvmem: Attempted to read 16384 bytes but got 4096
+Warning on /sys/bus/nvmem/devices/u-boot-env0/nvmem: Attempted to read 12288 bytes but got 4096
+Warning on /sys/bus/nvmem/devices/u-boot-env0/nvmem: Attempted to read 8192 bytes but got 4096
+
+Since the main loop in flash_read_buf() is used to read blocks this
+patch adds a new nested one.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ tools/env/fw_env.c | 34 +++++++++++++++-------------------
+ 1 file changed, 15 insertions(+), 19 deletions(-)
+
+--- a/tools/env/fw_env.c
++++ b/tools/env/fw_env.c
+@@ -948,29 +948,25 @@ static int flash_read_buf(int dev, int f
+ 		 */
+ 		lseek(fd, blockstart + block_seek, SEEK_SET);
+ 
+-		rc = read(fd, buf + processed, readlen);
+-		if (rc == -1) {
+-			fprintf(stderr, "Read error on %s: %s\n",
+-				DEVNAME(dev), strerror(errno));
+-			return -1;
+-		}
++		while (readlen) {
++			rc = read(fd, buf + processed, readlen);
++			if (rc == -1) {
++				fprintf(stderr, "Read error on %s: %s\n",
++					DEVNAME(dev), strerror(errno));
++				return -1;
++			}
+ #ifdef DEBUG
+-		fprintf(stderr, "Read 0x%x bytes at 0x%llx on %s\n",
+-			rc, (unsigned long long)blockstart + block_seek,
+-			DEVNAME(dev));
++			fprintf(stderr, "Read 0x%x bytes at 0x%llx on %s\n",
++				rc, (unsigned long long)blockstart + block_seek,
++				DEVNAME(dev));
+ #endif
+-		processed += rc;
+-		if (rc != readlen) {
+-			fprintf(stderr,
+-				"Warning on %s: Attempted to read %zd bytes but got %d\n",
+-				DEVNAME(dev), readlen, rc);
++			processed += rc;
+ 			readlen -= rc;
+-			block_seek += rc;
+-		} else {
+-			blockstart += blocklen;
+-			readlen = min(blocklen, count - processed);
+-			block_seek = 0;
+ 		}
++
++		blockstart += blocklen;
++		readlen = min(blocklen, count - processed);
++		block_seek = 0;
+ 	}
+ 
+ 	return processed;

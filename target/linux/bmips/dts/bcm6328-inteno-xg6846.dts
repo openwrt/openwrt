@@ -1,0 +1,313 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+/*
+ * Devicetree for the Inteno XG6846 router, mostly used as a
+ * media converter from fiber to twisted pair ethernet
+ * "fiber modem" in many households in Sweden. The Marvell
+ * switch has one of its ports connected to an SFP (Small Form
+ * Factor pluggable) optical fiber receiver, which is bridged
+ * to the twisted pair connector LAN1.
+ *
+ * This device tree is inspired by research from the OpenWrt
+ * and Sweclockers forums, including contributions from
+ * NPeca75, mrhaav and csom.
+ *
+ * Some devices have a USB type A host receptacle mounted,
+ * some do not.
+ */
+#include "bcm6328.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Inteno XG6846";
+	compatible = "inteno,xg6846", "brcm,bcm6328";
+
+	/* OpenWrt-specific aliases */
+	aliases {
+		led-boot = &led_pwr_red;
+		led-failsafe = &led_pwr_red;
+		led-running = &led_pwr_green;
+		led-upgrade = &led_pwr_red;
+		led-usb = &led_usb_green;
+	};
+
+	chosen {
+		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+		stdout-path = "serial0:115200n8";
+	};
+
+	/*
+	 * This I2C port is connected to the SFP and reflects the EEPROM etc
+	 * inside the SFP module. If the module is not plugged in, consequently
+	 * nothing will be found on the bus.
+	 */
+	i2c0: i2c-sfp {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 19 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	/* This I2C bus is used for the external CATV connector (usually unused) */
+	i2c1: i2c-catv {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 23 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp0: sfp0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&hsspi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		/*
+		 * HW 1.0-1.1: Spansion S25FL128S1
+		 * HW 1.3: Winbond W25Q128
+		 *
+		 * Fast Read Data max speed is 50MHz, see the Winbond W25Q128
+		 * datasheet table 9.5 "AC Electrical Characteristics", we can
+		 * use this speed because the chip supports fast reads. Older
+		 * HW has different NOR chips, I assume they can all do fast
+		 * reads.
+		 */
+		spi-max-frequency = <104000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		m25p,fast-read;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cfe: partition@0 {
+				label = "cfe";
+				reg = <0x0000000 0x0010000>;
+				read-only;
+			};
+
+			partition@10000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				reg = <0x010000 0xfe0000>;
+				label = "firmware";
+				openwrt,offset = <0x30000>;
+			};
+
+			partition@ff0000 {
+				reg = <0xff0000 0x010000>;
+				label = "nvram";
+			};
+		};
+	};
+};
+
+&cfe {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cfe_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		switch0port4: port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&mdio_ext {
+	switch1: switch@0 {
+		/* The switch is not using any external IRQ, sadly */
+		compatible = "marvell,mv88e6085";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+				phy-handle = <&lan1phy>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-handle = <&lan2phy>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-handle = <&lan3phy>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+				phy-handle = <&lan4phy>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "ext1";
+				phy-handle = <&ext1phy>;
+			};
+
+			port@5 {
+				reg = <5>;
+				phy-mode = "rgmii-id";
+				label = "wan";
+				sfp = <&sfp0>;
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@6 {
+				reg = <6>;
+				phy-mode = "rgmii-id";
+				label = "cpu";
+				ethernet = <&switch0port4>;
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lan1phy: ethernet-phy@0 {
+				reg = <0>;
+				interrupt-parent = <&switch1>;
+				interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
+			};
+			lan2phy: ethernet-phy@1 {
+				reg = <1>;
+				interrupt-parent = <&switch1>;
+				interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
+			};
+			lan3phy: ethernet-phy@2 {
+				reg = <2>;
+				interrupt-parent = <&switch1>;
+				interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+			};
+			lan4phy: ethernet-phy@3 {
+				reg = <3>;
+				interrupt-parent = <&switch1>;
+				interrupts = <3 IRQ_TYPE_LEVEL_HIGH>;
+			};
+			ext1phy: ethernet-phy@4 {
+				reg = <4>;
+				interrupt-parent = <&switch1>;
+				interrupts = <4 IRQ_TYPE_LEVEL_HIGH>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl_xg6846_usb_spd_led: xg6846_usb_spd_led-pins {
+		function = "led";
+		pins = "gpio17";
+	};
+};
+
+&leds {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_xg6846_usb_spd_led>, /* GPIO16 LED USB */
+		    <&pinctrl_ephy1_spd_led>, /* GPIO18 LED PWR red */
+		    <&pinctrl_ephy3_spd_led>; /* GPIO20 LED PWR green */
+
+	/* On board variants without USB this LED is not mounted */
+	led_usb_green: led@16 {
+		reg = <16>;
+		active-low;
+		label = "green:usb";
+		default-state = "off";
+	};
+
+	/*
+	 * LED 18 and 20 drive the same physical LED, the PWR
+	 * LED that can be both red and green.
+	 */
+	led_pwr_red: led@18 {
+		reg = <18>;
+		active-low;
+		label = "red:pwr";
+		default-state = "off";
+	};
+
+	led_pwr_green: led@20 {
+		reg = <20>;
+		active-low;
+		label = "green:pwr";
+		default-state = "off";
+	};
+
+};

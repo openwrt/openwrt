@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "zyxel,wap6805", "mediatek,mt7621-soc";
@@ -21,7 +22,8 @@
 		compatible = "gpio-leds";
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -31,7 +33,8 @@
 		};
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -73,7 +76,7 @@
 			read-only;
 		};
 
-		factory: partition@200000 {
+		partition@200000 {
 			label = "Factory";
 			reg = <0x200000 0x100000>;
 			read-only;

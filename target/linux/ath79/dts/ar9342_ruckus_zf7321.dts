@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "ar934x_ruckus_zf73xx.dtsi"
 
 / {
@@ -18,7 +20,8 @@
 		};
 
 		power_red: power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

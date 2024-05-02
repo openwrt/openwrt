@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_tplink_8m.dtsi"
 
 / {
@@ -33,23 +35,27 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "white:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		};
 

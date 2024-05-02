@@ -1,0 +1,50 @@
+From ba1b6ccbf68183b0d9e633ef930c7974144c7b56 Mon Sep 17 00:00:00 2001
+From: Sia Jee Heng <jeeheng.sia@starfivetech.com>
+Date: Thu, 30 Mar 2023 14:43:18 +0800
+Subject: [PATCH 114/122] RISC-V: Change suspend_save_csrs and
+ suspend_restore_csrs to public function
+
+Currently suspend_save_csrs() and suspend_restore_csrs() functions are
+statically defined in the suspend.c. Change the function's attribute
+to public so that the functions can be used by hibernation as well.
+
+Signed-off-by: Sia Jee Heng <jeeheng.sia@starfivetech.com>
+Reviewed-by: Ley Foon Tan <leyfoon.tan@starfivetech.com>
+Reviewed-by: Mason Huo <mason.huo@starfivetech.com>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Andrew Jones <ajones@ventanamicro.com>
+---
+ arch/riscv/include/asm/suspend.h | 3 +++
+ arch/riscv/kernel/suspend.c      | 4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/include/asm/suspend.h
++++ b/arch/riscv/include/asm/suspend.h
+@@ -33,4 +33,7 @@ int cpu_suspend(unsigned long arg,
+ /* Low-level CPU resume entry function */
+ int __cpu_resume_enter(unsigned long hartid, unsigned long context);
+ 
++/* Used to save and restore the CSRs */
++void suspend_save_csrs(struct suspend_context *context);
++void suspend_restore_csrs(struct suspend_context *context);
+ #endif
+--- a/arch/riscv/kernel/suspend.c
++++ b/arch/riscv/kernel/suspend.c
+@@ -8,7 +8,7 @@
+ #include <asm/csr.h>
+ #include <asm/suspend.h>
+ 
+-static void suspend_save_csrs(struct suspend_context *context)
++void suspend_save_csrs(struct suspend_context *context)
+ {
+ 	context->scratch = csr_read(CSR_SCRATCH);
+ 	context->tvec = csr_read(CSR_TVEC);
+@@ -29,7 +29,7 @@ static void suspend_save_csrs(struct sus
+ #endif
+ }
+ 
+-static void suspend_restore_csrs(struct suspend_context *context)
++void suspend_restore_csrs(struct suspend_context *context)
+ {
+ 	csr_write(CSR_SCRATCH, context->scratch);
+ 	csr_write(CSR_TVEC, context->tvec);

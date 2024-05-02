@@ -18,7 +18,7 @@ PKG_HASH:=8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840
 PKG_MAINTAINER:=Shane Peelar <lookatyouhacker@gmail.com>
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=LICENCE
-PKG_CPE_ID:=cpe:/a:pcre:pcre
+PKG_CPE_ID:=cpe:/a:pcre:pcre2
 
 PKG_CONFIG_DEPENDS:=\
 	CONFIG_PACKAGE_libpcre2-16 \

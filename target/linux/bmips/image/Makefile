@@ -4,6 +4,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x80010000		# RAM start + 64K
+UBOOT_ENTRY := 0x81c00000
 LOADER_ENTRY := 0x81000000		# RAM start + 16M, for relocate
 LZMA_TEXT_START := 0x82000000		# RAM start + 32M
 
@@ -92,6 +93,21 @@ define Build/cfe-bin
 		--info2 "$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))" \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
+endef
+
+# Build a CFE image with just U-Boot
+define Build/cfe-bin-uboot
+	cp $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot.bin $@
+	$(call Build/lzma)
+	mv $@ $@.uboot.lzma
+	echo "dummy" > $@.dummyfs
+	$(STAGING_DIR_HOST)/bin/imagetag -i $@.uboot.lzma -f $@.dummyfs \
+		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CHIP_ID) \
+		--entry $(UBOOT_ENTRY) --load-addr $(UBOOT_ENTRY) \
+		--info1 "$(call ModelNameLimit16,$(DEVICE_NAME))" \
+		$(CFE_EXTRAS) $(1)
+	rm $@.uboot.lzma
+	rm $@.dummyfs
 endef
 
 define Build/cfe-jffs2
@@ -282,6 +298,21 @@ endef
 define Device/bcm63xx-cfe-legacy
   $(Device/bcm63xx-cfe)
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-cfe
+endef
+
+# CFE images with U-Boot in front of the kernel, these will execute
+# U-Boot instead of the kernel and U-Boot will then proceed to load
+# the kernel. The reason to do this is that CFE is sometimes unable to
+# load big kernels even with the lzma loader tricks.
+define Device/bcm63xx-cfe-uboot
+  $(Device/bcm63xx-cfe)
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE/cfe.bin := cfe-bin-uboot | pad-to $$$$$$$$(($$(BLOCKSIZE))) | \
+    append-kernel | pad-to $$$$$$$$(($$(BLOCKSIZE))) | \
+    append-rootfs $$$$(if $$$$(FLASH_MB),--pad $$$$(shell expr $$$$(FLASH_MB) / 2))
+  IMAGE/sysupgrade.bin := cfe-bin-uboot | pad-to $$$$$$$$(($$(BLOCKSIZE))) | \
+    append-kernel | pad-to $$$$$$$$(($$(BLOCKSIZE))) | \
+    append-rootfs | append-metadata
 endef
 
 # CFE expects a single JFFS2 partition with cferam and kernel. However,

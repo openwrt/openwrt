@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -55,20 +56,24 @@
 		compatible = "gpio-leds";
 
 		power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 		power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan_amber {
-			label = "amber:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 		lan_green {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 

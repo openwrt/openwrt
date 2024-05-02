@@ -33,14 +33,12 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "red:wps";
 			gpios = <&pio 47 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led_power_red: led-1 {
-			label = "red:power";
 			gpios = <&pio 48 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
@@ -48,7 +46,6 @@
 		};
 
 		led_power_green: led-2 {
-			label = "green:power";
 			gpios = <&pio 49 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
@@ -56,7 +53,6 @@
 		};
 
 		led-3 {
-			label = "blue:power";
 			gpios = <&pio 50 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
@@ -64,7 +60,6 @@
 		};
 
 		led-4 {
-			label = "white:wlan2g";
 			gpios = <&pio 85 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -73,7 +68,6 @@
 		};
 
 		led-5 {
-			label = "white:wlan5g";
 			gpios = <&pio 89 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -215,9 +209,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		switch@0 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
-			reg = <0>;
+			reg = <31>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&pio>;

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-wr841n-v14", "mediatek,mt7628an-soc";
@@ -33,23 +34,27 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan: wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wan_orange {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -80,7 +85,7 @@
 				reg = <0x10000 0x3e0000>;
 			};
 
-			factory: partition@3f0000 {
+			partition@3f0000 {
 				label = "factory";
 				reg = <0x3f0000 0x10000>;
 				read-only;

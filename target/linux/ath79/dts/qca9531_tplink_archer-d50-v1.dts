@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,archer-d50-v1", "qca,qca9531";
@@ -38,17 +39,20 @@
 		};
 
 		wan {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "white:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";
@@ -148,6 +152,16 @@
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};
@@ -181,6 +195,8 @@
 	wifi@0,0 {
 		compatible = "pci168c,003c";
 		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_romfile_f100 2>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 

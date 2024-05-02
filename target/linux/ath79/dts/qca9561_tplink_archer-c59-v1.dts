@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9561_tplink_archer-c5x.dtsi"
 
 / {
@@ -13,7 +15,8 @@
 
 &leds {
 	usb {
-		label = "green:usb";
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
 		linux,default-trigger = "usbport";
 		trigger-sources = <&hub_port0>;
@@ -26,6 +29,15 @@
 
 &usb_phy0 {
 	status = "okay";
+};
+
+&pcie {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_info_8 (-1)>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+	};
 };
 
 &spi {
@@ -81,6 +93,16 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};

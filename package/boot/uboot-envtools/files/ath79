@@ -31,10 +31,6 @@ asus,zenwifi-cd6n|\
 asus,zenwifi-cd6r|\
 buffalo,bhr-4grv2|\
 devolo,magic-2-wifi|\
-dlink,dap-1720-a1|\
-dlink,dir-859-a1|\
-dlink,dir-859-a3|\
-dlink,dir-869-a1|\
 engenius,eap1200h|\
 engenius,eap1750h|\
 engenius,eap300-v2|\
@@ -126,6 +122,9 @@ domywifi,dw33d)
 	;;
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
+	;;
+huawei,ap5030dn)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x20000" "0x20000"
 	;;
 netgear,wndr3700|\
 netgear,wndr3700-v2|\

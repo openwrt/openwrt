@@ -1,0 +1,198 @@
+From ec2215726cffb976019d08ebf569edd2229e9dba Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Thu, 1 Dec 2022 11:34:43 +0800
+Subject: Fix y2038 issues with time_t conversion
+
+These changes were identified by building with and without
+-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64
+on 32-bit arm, logging warnings to files.
+-Wconversion was added to CFLAGS in both builds.
+
+Then a "diff -I Wconversion log1 log2" shows new warnings that appear
+with the 64-bit time_t. There are a few false positives that have been
+fixed for quietness.
+
+struct logininfo and struct wtmp are still problematic, those will
+need to be handled by libc.
+---
+ common-session.c | 43 +++++++++++++++++++++++++++----------------
+ dbutil.c         |  2 +-
+ loginrec.c       |  2 ++
+ loginrec.h       |  4 ++--
+ runopts.h        |  4 ++--
+ svr-auth.c       |  2 +-
+ 6 files changed, 35 insertions(+), 22 deletions(-)
+
+--- a/common-session.c
++++ b/common-session.c
+@@ -519,15 +519,24 @@ static void send_msg_keepalive() {
+ 	ses.last_packet_time_idle = old_time_idle;
+ }
+ 
++/* Returns the difference in seconds, clamped to LONG_MAX */
++static long elapsed(time_t now, time_t prev) {
++	time_t del = now - prev;
++	if (del > LONG_MAX) {
++		return LONG_MAX;
++	}
++	return (long)del;
++}
++
+ /* Check all timeouts which are required. Currently these are the time for
+  * user authentication, and the automatic rekeying. */
+ static void checktimeouts() {
+ 
+ 	time_t now;
+ 	now = monotonic_now();
+-	
++
+ 	if (IS_DROPBEAR_SERVER && ses.connect_time != 0
+-		&& now - ses.connect_time >= AUTH_TIMEOUT) {
++		&& elapsed(now, ses.connect_time) >= AUTH_TIMEOUT) {
+ 			dropbear_close("Timeout before auth");
+ 	}
+ 
+@@ -537,45 +546,47 @@ static void checktimeouts() {
+ 	}
+ 
+ 	if (!ses.kexstate.sentkexinit
+-			&& (now - ses.kexstate.lastkextime >= KEX_REKEY_TIMEOUT
++			&& (elapsed(now, ses.kexstate.lastkextime) >= KEX_REKEY_TIMEOUT
+ 			|| ses.kexstate.datarecv+ses.kexstate.datatrans >= KEX_REKEY_DATA)) {
+ 		TRACE(("rekeying after timeout or max data reached"))
+ 		send_msg_kexinit();
+ 	}
+-	
++
+ 	if (opts.keepalive_secs > 0 && ses.authstate.authdone) {
+ 		/* Avoid sending keepalives prior to auth - those are
+ 		not valid pre-auth packet types */
+ 
+ 		/* Send keepalives if we've been idle */
+-		if (now - ses.last_packet_time_any_sent >= opts.keepalive_secs) {
++		if (elapsed(now, ses.last_packet_time_any_sent) >= opts.keepalive_secs) {
+ 			send_msg_keepalive();
+ 		}
+ 
+ 		/* Also send an explicit keepalive message to trigger a response
+ 		if the remote end hasn't sent us anything */
+-		if (now - ses.last_packet_time_keepalive_recv >= opts.keepalive_secs
+-			&& now - ses.last_packet_time_keepalive_sent >= opts.keepalive_secs) {
++		if (elapsed(now, ses.last_packet_time_keepalive_recv) >= opts.keepalive_secs
++			&& elapsed(now, ses.last_packet_time_keepalive_sent) >= opts.keepalive_secs) {
+ 			send_msg_keepalive();
+ 		}
+ 
+-		if (now - ses.last_packet_time_keepalive_recv 
++		if (elapsed(now, ses.last_packet_time_keepalive_recv)
+ 			>= opts.keepalive_secs * DEFAULT_KEEPALIVE_LIMIT) {
+ 			dropbear_exit("Keepalive timeout");
+ 		}
+ 	}
+ 
+-	if (opts.idle_timeout_secs > 0 
+-			&& now - ses.last_packet_time_idle >= opts.idle_timeout_secs) {
++	if (opts.idle_timeout_secs > 0
++			&& elapsed(now, ses.last_packet_time_idle) >= opts.idle_timeout_secs) {
+ 		dropbear_close("Idle timeout");
+ 	}
+ }
+ 
+-static void update_timeout(long limit, long now, long last_event, long * timeout) {
+-	TRACE2(("update_timeout limit %ld, now %ld, last %ld, timeout %ld",
+-		limit, now, last_event, *timeout))
++static void update_timeout(long limit, time_t now, time_t last_event, long * timeout) {
++	TRACE2(("update_timeout limit %ld, now %llu, last %llu, timeout %ld",
++		limit,
++		(unsigned long long)now,
++		(unsigned long long)last_event, *timeout))
+ 	if (last_event > 0 && limit > 0) {
+-		*timeout = MIN(*timeout, last_event+limit-now);
++		*timeout = MIN(*timeout, elapsed(now, last_event) + limit);
+ 		TRACE2(("new timeout %ld", *timeout))
+ 	}
+ }
+@@ -584,7 +595,7 @@ static long select_timeout() {
+ 	/* determine the minimum timeout that might be required, so
+ 	as to avoid waking when unneccessary */
+ 	long timeout = KEX_REKEY_TIMEOUT;
+-	long now = monotonic_now();
++	time_t now = monotonic_now();
+ 
+ 	if (!ses.kexstate.sentkexinit) {
+ 		update_timeout(KEX_REKEY_TIMEOUT, now, ses.kexstate.lastkextime, &timeout);
+@@ -596,7 +607,7 @@ static long select_timeout() {
+ 	}
+ 
+ 	if (ses.authstate.authdone) {
+-		update_timeout(opts.keepalive_secs, now, 
++		update_timeout(opts.keepalive_secs, now,
+ 			MAX(ses.last_packet_time_keepalive_recv, ses.last_packet_time_keepalive_sent),
+ 			&timeout);
+ 	}
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -724,7 +724,7 @@ void gettime_wrapper(struct timespec *no
+ 	/* Fallback for everything else - this will sometimes go backwards */
+ 	gettimeofday(&tv, NULL);
+ 	now->tv_sec = tv.tv_sec;
+-	now->tv_nsec = 1000*tv.tv_usec;
++	now->tv_nsec = 1000*(long)tv.tv_usec;
+ }
+ 
+ /* second-resolution monotonic timestamp */
+--- a/loginrec.c
++++ b/loginrec.c
+@@ -459,6 +459,7 @@ line_abbrevname(char *dst, const char *s
+ void
+ set_utmp_time(struct logininfo *li, struct utmp *ut)
+ {
++	/* struct utmp in glibc isn't y2038 safe yet */
+ # ifdef HAVE_STRUCT_UTMP_UT_TV
+ 	ut->ut_tv.tv_sec = li->tv_sec;
+ 	ut->ut_tv.tv_usec = li->tv_usec;
+@@ -1272,6 +1273,7 @@ lastlog_construct(struct logininfo *li,
+ 	(void)line_stripname(last->ll_line, li->line, sizeof(last->ll_line));
+ 	strlcpy(last->ll_host, li->hostname,
+ 		MIN_SIZEOF(last->ll_host, li->hostname));
++	/* struct lastlog in glibc isn't y2038 safe yet */
+ 	last->ll_time = li->tv_sec;
+ }
+ 
+--- a/loginrec.h
++++ b/loginrec.h
+@@ -139,8 +139,8 @@ struct logininfo {
+ 	/* struct timeval (sys/time.h) isn't always available, if it isn't we'll
+ 	 * use time_t's value as tv_sec and set tv_usec to 0
+ 	 */
+-	unsigned int tv_sec;
+-	unsigned int tv_usec;
++	time_t tv_sec;
++	suseconds_t tv_usec;
+ 	union login_netinfo hostaddr;       /* caller's host address(es) */
+ }; /* struct logininfo */
+ 
+--- a/runopts.h
++++ b/runopts.h
+@@ -39,8 +39,8 @@ typedef struct runopts {
+ 	int listen_fwd_all;
+ #endif
+ 	unsigned int recv_window;
+-	time_t keepalive_secs; /* Time between sending keepalives. 0 is off */
+-	time_t idle_timeout_secs; /* Exit if no traffic is sent/received in this time */
++	long keepalive_secs; /* Time between sending keepalives. 0 is off */
++	long idle_timeout_secs; /* Exit if no traffic is sent/received in this time */
+ 	int usingsyslog;
+ 
+ #ifndef DISABLE_ZLIB
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -389,7 +389,7 @@ void send_msg_userauth_failure(int parti
+ 		Beware of integer overflow if increasing these values */
+ 		const unsigned int mindelay = 250000000;
+ 		const unsigned int vardelay = 100000000;
+-		unsigned int rand_delay;
++		suseconds_t rand_delay;
+ 		struct timespec delay;
+ 
+ 		gettime_wrapper(&delay);

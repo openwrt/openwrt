@@ -1,0 +1,24 @@
+From 860721558837441ab45019858e710a2625ffa46e Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 7 Dec 2022 13:04:10 +0800
+Subject: Allow users's own gid in pty permission check
+
+This allows non-root Dropbear to work even without devpts gid=5 mount
+option on Linux.
+---
+ sshpty.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/sshpty.c
++++ b/sshpty.c
+@@ -380,7 +380,9 @@ pty_setowner(struct passwd *pw, const ch
+ 				tty_name, strerror(errno));
+ 	}
+ 
+-	if (st.st_uid != pw->pw_uid || st.st_gid != gid) {
++	/* Allow either "tty" gid or user's own gid. On Linux with openpty()
++	 * this varies depending on the devpts mount options */
++	if (st.st_uid != pw->pw_uid || !(st.st_gid == gid || st.st_gid == pw->pw_gid)) {
+ 		if (chown(tty_name, pw->pw_uid, gid) < 0) {
+ 			if (errno == EROFS &&
+ 			    (st.st_uid == pw->pw_uid || st.st_uid == 0)) {

@@ -161,24 +161,31 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
 
-	qca8075_1: ethernet-phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c22";
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
 		reg = <0>;
-	};
 
-	qca8075_2: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <1>;
-	};
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
 
-	qca8075_3: ethernet-phy@2 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <2>;
-	};
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
 
-	qca8075_4: ethernet-phy@3 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <3>;
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
 	};
 
 	aqr113c: ethernet-phy@5 {
@@ -236,31 +243,32 @@
 /* Dummy LAN port */
 &dp1 {
 	status = "disabled";
-	phy-handle = <&qca8075_1>;
+	phy-handle = <&qca8075_0>;
 	label = "lan4";
 };
 
 &dp2 {
 	status = "okay";
-	phy-handle = <&qca8075_2>;
+	phy-handle = <&qca8075_1>;
 	label = "lan3";
 };
 
 &dp3 {
 	status = "okay";
-	phy-handle = <&qca8075_3>;
+	phy-handle = <&qca8075_2>;
 	label = "lan2";
 };
 
 &dp4 {
 	status = "okay";
-	phy-handle = <&qca8075_4>;
+	phy-handle = <&qca8075_3>;
 	label = "lan1";
 };
 
 &dp6_syn {
 	status = "okay";
 	qcom,mactype = <1>;
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c>;
 	label = "wan";
 };

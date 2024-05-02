@@ -3,6 +3,7 @@
 #include "rtl838x.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -79,7 +80,8 @@
 		compatible = "gpio-leds";
 
 		led_power: led-0 {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 		};
 
@@ -89,7 +91,8 @@
 		};
 
 		led_fault: led-2 {
-			label = "amber:fault";
+			function = LED_FUNCTION_FAULT;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 

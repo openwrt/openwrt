@@ -1,0 +1,57 @@
+From 073401c3b6b9eaea027240baf07f2b84dd2d2d26 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:36 +0100
+Subject: [PATCH 15/21] wifi: rtl8xxxu: support multiple interfaces in
+ bss_info_changed()
+
+Call set_linktype and set_bssid now with correct port_num. Call
+stop_tx_beacon only for port 0, as we don't support beacons on port 1.
+Explicit changes to BEACON will only happen for AP type interfaces, so
+we don't need an additional check there.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-16-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4983,6 +4983,7 @@ static void
+ rtl8xxxu_bss_info_changed(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			  struct ieee80211_bss_conf *bss_conf, u64 changed)
+ {
++	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 	struct device *dev = &priv->udev->dev;
+ 	struct ieee80211_sta *sta;
+@@ -4995,7 +4996,7 @@ rtl8xxxu_bss_info_changed(struct ieee802
+ 	if (changed & BSS_CHANGED_ASSOC) {
+ 		dev_dbg(dev, "Changed ASSOC: %i!\n", vif->cfg.assoc);
+ 
+-		rtl8xxxu_set_linktype(priv, vif->type, 0);
++		rtl8xxxu_set_linktype(priv, vif->type, rtlvif->port_num);
+ 
+ 		if (vif->cfg.assoc) {
+ 			u32 ramask;
+@@ -5042,7 +5043,8 @@ rtl8xxxu_bss_info_changed(struct ieee802
+ 
+ 			rtl8xxxu_write8(priv, REG_BCN_MAX_ERR, 0xff);
+ 
+-			rtl8xxxu_stop_tx_beacon(priv);
++			if (rtlvif->port_num == 0)
++				rtl8xxxu_stop_tx_beacon(priv);
+ 
+ 			/* joinbss sequence */
+ 			rtl8xxxu_write16(priv, REG_BCN_PSR_RPT,
+@@ -5084,7 +5086,7 @@ rtl8xxxu_bss_info_changed(struct ieee802
+ 
+ 	if (changed & BSS_CHANGED_BSSID) {
+ 		dev_dbg(dev, "Changed BSSID!\n");
+-		rtl8xxxu_set_bssid(priv, bss_conf->bssid, 0);
++		rtl8xxxu_set_bssid(priv, bss_conf->bssid, rtlvif->port_num);
+ 	}
+ 
+ 	if (changed & BSS_CHANGED_BASIC_RATES) {

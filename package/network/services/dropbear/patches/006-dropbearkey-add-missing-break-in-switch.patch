@@ -1,0 +1,21 @@
+From 39d955c49f31fc155e885447ee2be61c869d8c2d Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 3 Jan 2023 22:05:14 +0800
+Subject: Add missing break in switch
+
+Has no effect on execution, the fallthrough does nothing
+Closes #208
+---
+ dropbearkey.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/dropbearkey.c
++++ b/dropbearkey.c
+@@ -139,6 +139,7 @@ static void check_signkey_bits(enum sign
+ 				dropbear_exit("DSS keys have a fixed size of 1024 bits\n");
+ 				exit(EXIT_FAILURE);
+ 			}
++			break;
+ #endif
+ 		default:
+ 			(void)0; /* quiet, compiler. ecdsa handles checks itself */

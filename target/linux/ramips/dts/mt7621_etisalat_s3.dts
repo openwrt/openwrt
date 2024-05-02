@@ -96,7 +96,7 @@
 			read-only;
 		};
 
-		factory: partition@200000 {
+		partition@200000 {
 			label = "Factory";
 			reg = <0x200000 0x100000>;
 			sercomm,scpart-id = <2>;
@@ -209,10 +209,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

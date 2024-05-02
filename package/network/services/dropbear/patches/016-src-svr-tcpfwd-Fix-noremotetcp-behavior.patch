@@ -1,0 +1,35 @@
+From 3cf8344769eda55e26eee53c1898b2c66544f188 Mon Sep 17 00:00:00 2001
+From: Justin Chen <justin.chen@broadcom.com>
+Date: Fri, 8 Sep 2023 11:35:18 -0700
+Subject: src: svr-tcpfwd: Fix noremotetcp behavior
+
+If noremotetcp is set, we should still reply with
+send_msg_request_failed. This matches the behavior
+of !DROPBEAR_SVR_REMOTETCPFWD.
+
+We were seeing keepalive packets being ignored when
+the "-k" option was used.
+---
+ svr-tcpfwd.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/svr-tcpfwd.c
++++ b/svr-tcpfwd.c
+@@ -79,14 +79,14 @@ void recv_msg_global_request_remotetcp()
+ 
+ 	TRACE(("enter recv_msg_global_request_remotetcp"))
+ 
++	reqname = buf_getstring(ses.payload, &namelen);
++	wantreply = buf_getbool(ses.payload);
++
+ 	if (svr_opts.noremotetcp || !svr_pubkey_allows_tcpfwd()) {
+ 		TRACE(("leave recv_msg_global_request_remotetcp: remote tcp forwarding disabled"))
+ 		goto out;
+ 	}
+ 
+-	reqname = buf_getstring(ses.payload, &namelen);
+-	wantreply = buf_getbool(ses.payload);
+-
+ 	if (namelen > MAX_NAME_LEN) {
+ 		TRACE(("name len is wrong: %d", namelen))
+ 		goto out;

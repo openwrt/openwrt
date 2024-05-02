@@ -12,7 +12,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/riscv/opensbi
 PKG_SOURCE_DATE:=2022-12-24
 PKG_SOURCE_VERSION:=6b5188ca14e59ce7bf71afe4e7d3d557c3d31bf8
-PKG_MIRROR_HASH:=edcdd99da6c62975171981c0aa2b73a27091067da11ccd49816b5ad27d000858
+PKG_MIRROR_HASH:=5939a3225cb37c1dde0b5b9f28f9980c0712533676774ae244d6d84bb09a1439
 
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -29,7 +29,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/opensbi
     SECTION:=boot
     CATEGORY:=Boot Loaders
-    DEPENDS:=@TARGET_sifiveu
+    DEPENDS:=@(TARGET_sifiveu||TARGET_d1)
     URL:=https://github.com/riscv/opensbi/blob/master/README.md
     VARIANT:=$(subst _,/,$(subst opensbi_,,$(1)))
     TITLE:=OpenSBI generic

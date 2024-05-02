@@ -2,6 +2,7 @@
 
 /dts-v1/;
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include "mt7629.dtsi"
 
 / {
@@ -25,7 +26,8 @@
 		compatible = "gpio-leds";
 
 		led_cpu: cpu {
-			label = "orange:cpu";
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&pio 57 GPIO_ACTIVE_LOW>;
 		};
 
@@ -42,7 +44,8 @@
 		};
 
 		wan {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -124,9 +127,9 @@
 			reg = <0>;
 		};
 
-		switch@2 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
-			reg = <2>;
+			reg = <31>;
 			reset-gpios = <&pio 28 0>;
 			interrupt-controller;
 			#interrupt-cells = <1>;

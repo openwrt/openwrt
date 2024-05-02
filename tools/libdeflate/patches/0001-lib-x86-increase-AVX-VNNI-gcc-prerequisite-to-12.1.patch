@@ -1,0 +1,32 @@
+From e522b1d09d3536ddc15459b4259150f4a53ee65a Mon Sep 17 00:00:00 2001
+From: Eric Biggers <ebiggers@google.com>
+Date: Thu, 4 Apr 2024 20:16:33 -0400
+Subject: [PATCH] lib/x86: increase AVX-VNNI gcc prerequisite to 12.1
+
+Although gcc 11.1 supports AVX-VNNI, a popular distro pairs it with a
+binutils version that does not.  Require gcc 12 instead.
+
+Resolves https://github.com/ebiggers/libdeflate/issues/365
+---
+ lib/x86/adler32_impl.h | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/lib/x86/adler32_impl.h
++++ b/lib/x86/adler32_impl.h
+@@ -52,8 +52,15 @@
+ /*
+  * AVX-VNNI implementation.  This is used on CPUs that have AVX2 and AVX-VNNI
+  * but don't have AVX-512, for example Intel Alder Lake.
++ *
++ * Unusually for a new CPU feature, gcc added support for the AVX-VNNI
++ * intrinsics (in gcc 11.1) slightly before binutils added support for
++ * assembling AVX-VNNI instructions (in binutils 2.36).  Distros can reasonably
++ * have gcc 11 with binutils 2.35.  Because of this issue, we check for gcc 12
++ * instead of gcc 11.  (libdeflate supports direct compilation without a
++ * configure step, so checking the binutils version is not always an option.)
+  */
+-#if GCC_PREREQ(11, 1) || CLANG_PREREQ(12, 0, 13000000) || MSVC_PREREQ(1930)
++#if GCC_PREREQ(12, 1) || CLANG_PREREQ(12, 0, 13000000) || MSVC_PREREQ(1930)
+ #  define adler32_x86_avx2_vnni	adler32_x86_avx2_vnni
+ #  define SUFFIX			   _avx2_vnni
+ #  define ATTRIBUTES		_target_attribute("avx2,avxvnni")

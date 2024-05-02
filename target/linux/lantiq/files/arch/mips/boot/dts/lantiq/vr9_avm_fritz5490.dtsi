@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "vr9_avm_fritzxx90.dtsi"
+
+/ {
+	compatible = "avm,fritz5490", "lantiq,xway", "lantiq,vr9";
+	model = "AVM FRITZ!Box 5490/5491";
+};
+
+&aliases {
+	led-dsl = &led_info_green;
+	led-internet = &led_internet;
+	led-wifi = &led_wifi;
+};
+
+&leds {
+	led_fiber: fiber {
+		label = "green:fiber";
+		gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
+	};
+
+	led_wifi: wifi {
+		function = LED_FUNCTION_WLAN;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+	};
+
+	led_internet: internet {
+		label = "green:internet";
+		gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&gswip_mdio {
+	phy5: ethernet-phy@5 {
+		reg = <0x05>;
+	};
+
+	phy6: ethernet-phy@6 {
+		reg = <0x06>;
+		reset-gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+	};
+
+	phy9: ethernet-phy@9 {
+		reg = <0x09>;
+	};
+};
+
+&gswip_ports {
+	port@0 {
+		reg = <0>;
+		label = "wan";
+		phy-mode = "rgmii";
+		phy-handle = <&phy6>;
+	};
+
+	port@2 {
+		reg = <2>;
+		label = "lan2";
+		phy-mode = "internal";
+		phy-handle = <&phy5>;
+	};
+
+	port@4 {
+		reg = <4>;
+		label = "lan1";
+		phy-mode = "internal";
+		phy-handle = <&phy9>;
+	};
+};

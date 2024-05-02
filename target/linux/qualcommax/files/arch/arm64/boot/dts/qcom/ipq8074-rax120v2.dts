@@ -19,7 +19,7 @@
 		led-running = &led_system_white;
 		led-upgrade = &led_system_white;
 		led-internet = &led_wan_white;
-		label-mac-device = &dp1;
+		label-mac-device = &dp5;
 	};
 
 	chosen {
@@ -72,63 +72,53 @@
 		compatible = "gpio-leds";
 
 		led_system_white: system-white {
-			label = "white:system";
 			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_24g_white {
-			label = "white:24g";
 			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy1radio";
 		};
 
 		led_5g_white {
-			label = "white:5g";
 			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy0radio";
 		};
 
 		led_usb1_white {
-			label = "white:usb1";
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_usb2_white {
-			label = "white:usb2";
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_wan_white: wan-white {
-			label = "white:wan";
 			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_aqr_green {
-			label = "green:aqr";
 			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_aqr_red {
-			label = "red:aqr";
 			gpios = <&led_gpio 10 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_aqr_white {
-			label = "white:aqr";
 			gpios = <&led_gpio 11 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_wps_white {
-			label = "white:wps";
 			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
@@ -160,29 +150,37 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	qca8075_0: ethernet-phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c22";
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0>;
-	};
 
-	qca8075_1: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <1>;
-	};
+		compatible = "qcom,qca8075-package";
 
-	qca8075_2: ethernet-phy@2 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <2>;
-	};
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
 
-	qca8075_3: ethernet-phy@3 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <3>;
-	};
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
 
-	qca8075_4: ethernet-phy@4 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <4>;
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8075_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
 	};
 
 	aqr111b0: ethernet-phy@7 {
@@ -238,7 +236,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_0>;
 	label = "lan4";
-	nvmem-cells = <&macaddr_dp1>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -246,7 +244,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "lan3";
-	nvmem-cells = <&macaddr_dp2>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -254,7 +252,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan2";
-	nvmem-cells = <&macaddr_dp3>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -262,7 +260,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan1";
-	nvmem-cells = <&macaddr_dp4>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -270,15 +268,16 @@
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "wan";
-	nvmem-cells = <&macaddr_dp5>;
+	nvmem-cells = <&macaddr_wan>;
 	nvmem-cell-names = "mac-address";
 };
 
 &dp6_syn {
 	status = "okay";
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr111b0>;
 	label = "lan5";
-	nvmem-cells = <&macaddr_dp6_syn>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -446,28 +445,16 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_dp1: macaddr@0 {
+					macaddr_lan: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
 
-					macaddr_dp2: macaddr@1 {
+					macaddr_wan: macaddr@1 {
 						reg = <0x6 0x6>;
 					};
 
-					macaddr_dp3: macaddr@2 {
+					macaddr_wlan5g: macaddr@2 {
 						reg = <0xc 0x6>;
-					};
-
-					macaddr_dp4: macaddr@3 {
-						reg = <0x12 0x6>;
-					};
-
-					macaddr_dp5: macaddr@4 {
-						reg = <0x18 0x6>;
-					};
-
-					macaddr_dp6_syn: macaddr@5 {
-						reg = <0x1e 0x6>;
 					};
 				};
 			};

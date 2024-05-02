@@ -1,0 +1,32 @@
+From e28ba1b9975eab48799aa3ed77d3cd91627d7b27 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sat, 9 Dec 2023 23:10:41 +0800
+Subject: Don't try to shutdown() a pty
+
+shutdown() of a pty doesn't work (ENOTSOCK), so we should close
+it instead.
+
+This will ensure that PTY controlling terminals are closed when a
+session exits, including when multiple sessions run over a single SSH
+connection.  In the normal case of a single session, the PTY controlling
+terminal would be closed when the Dropbear server process exits anyway.
+
+This possibly fixes #264 on github
+
+It is possible that there could be subtle changes to PTY flushing
+behaviour, though nothing caught by tests at present.
+---
+ svr-chansession.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/svr-chansession.c
++++ b/svr-chansession.c
+@@ -910,7 +910,7 @@ static int ptycommand(struct Channel *ch
+ 		channel->readfd = chansess->master;
+ 		/* don't need to set stderr here */
+ 		ses.maxfd = MAX(ses.maxfd, chansess->master);
+-		channel->bidir_fd = 1;
++		channel->bidir_fd = 0;
+ 
+ 		setnonblocking(chansess->master);
+ 

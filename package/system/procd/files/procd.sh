@@ -592,18 +592,21 @@ _procd_set_config_changed() {
 }
 
 procd_add_mdns_service() {
-	local service proto port
+	local service proto port txt_count=0
 	service=$1; shift
 	proto=$1; shift
 	port=$1; shift
 	json_add_object "${service}_$port"
 	json_add_string "service" "_$service._$proto.local"
 	json_add_int port "$port"
-	[ -n "$1" ] && {
-		json_add_array txt
-		for txt in "$@"; do json_add_string "" "$txt"; done
-		json_select ..
-	}
+	for txt in "$@"; do
+		[ -z "$txt" ] && continue
+		txt_count=$((txt_count+1))
+		[ $txt_count -eq 1 ] && json_add_array txt
+		json_add_string "" "$txt"
+	done
+	[ $txt_count -gt 0 ] && json_select ..
+
 	json_select ..
 }
 

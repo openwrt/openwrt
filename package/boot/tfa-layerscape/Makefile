@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/atf
 PKG_SOURCE_VERSION:=lf-6.1.1-1.0.0
-PKG_MIRROR_HASH:=c0e3c7d0cc9ee5f9ae68cd705ce7f07f714c4fe3fd4a5a79de5699e7865b759f
+PKG_MIRROR_HASH:=e109ca87a0f432529ab4d1fcd019adc0cd0d3684c96cdf770aac113f9bbe4bd6
 PKG_BUILD_DEPENDS:=tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk

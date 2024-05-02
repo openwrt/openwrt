@@ -1,0 +1,100 @@
+From 563d5025cf3b51c7bf20e6966af433ed5f838875 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Tue, 16 Jan 2024 10:50:01 +0100
+Subject: [PATCH] wifi: rtl8xxxu: add missing number of sec cam entries for all
+ variants
+
+Commit b837f78fbffa ("wifi: rtl8xxxu: add hw crypto support for AP
+mode") introduced max_sec_cam_num as a member of rtl8xxxu_fileops.
+It was missed to set this number for all variants except 8188f, which
+caused rtl8xxxu_get_free_sec_cam() to always return 0 and therefore breaking
+encrypted traffic.
+
+Fix it by adding the numbers for all variants. The values are taken from
+the vendor drivers and rtlwifi.
+
+Link: https://lore.kernel.org/linux-wireless/20240111163603.2325-1-zenmchen@gmail.com/
+Fixes: b837f78fbffa ("wifi: rtl8xxxu: add hw crypto support for AP mode")
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240116095001.399500-1-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192f.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8710b.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c | 1 +
+ 7 files changed, 7 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -1882,6 +1882,7 @@ struct rtl8xxxu_fileops rtl8188eu_fops =
+ 	.has_tx_report = 1,
+ 	.init_reg_pkt_life_time = 1,
+ 	.gen2_thermal_meter = 1,
++	.max_sec_cam_num = 32,
+ 	.adda_1t_init = 0x0b1b25a0,
+ 	.adda_1t_path_on = 0x0bdb25a0,
+ 	/*
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c
+@@ -613,6 +613,7 @@ struct rtl8xxxu_fileops rtl8192cu_fops =
+ 	.rx_agg_buf_size = 16000,
+ 	.tx_desc_size = sizeof(struct rtl8xxxu_txdesc32),
+ 	.rx_desc_size = sizeof(struct rtl8xxxu_rxdesc16),
++	.max_sec_cam_num = 32,
+ 	.adda_1t_init = 0x0b1b25a0,
+ 	.adda_1t_path_on = 0x0bdb25a0,
+ 	.adda_2t_path_on_a = 0x04db25a4,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
+@@ -1769,6 +1769,7 @@ struct rtl8xxxu_fileops rtl8192eu_fops =
+ 	.needs_full_init = 1,
+ 	.supports_ap = 1,
+ 	.max_macid_num = 128,
++	.max_sec_cam_num = 64,
+ 	.adda_1t_init = 0x0fc01616,
+ 	.adda_1t_path_on = 0x0fc01616,
+ 	.adda_2t_path_on_a = 0x0fc01616,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192f.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192f.c
+@@ -2095,6 +2095,7 @@ struct rtl8xxxu_fileops rtl8192fu_fops =
+ 	.max_aggr_num = 0x1f1f,
+ 	.supports_ap = 1,
+ 	.max_macid_num = 128,
++	.max_sec_cam_num = 64,
+ 	.trxff_boundary = 0x3f3f,
+ 	.pbp_rx = PBP_PAGE_SIZE_256,
+ 	.pbp_tx = PBP_PAGE_SIZE_256,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8710b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8710b.c
+@@ -1877,6 +1877,7 @@ struct rtl8xxxu_fileops rtl8710bu_fops =
+ 	.max_aggr_num = 0x0c14,
+ 	.supports_ap = 1,
+ 	.max_macid_num = 16,
++	.max_sec_cam_num = 32,
+ 	.adda_1t_init = 0x03c00016,
+ 	.adda_1t_path_on = 0x03c00016,
+ 	.trxff_boundary = 0x3f7f,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c
+@@ -510,6 +510,7 @@ struct rtl8xxxu_fileops rtl8723au_fops =
+ 	.rx_agg_buf_size = 16000,
+ 	.tx_desc_size = sizeof(struct rtl8xxxu_txdesc32),
+ 	.rx_desc_size = sizeof(struct rtl8xxxu_rxdesc16),
++	.max_sec_cam_num = 32,
+ 	.adda_1t_init = 0x0b1b25a0,
+ 	.adda_1t_path_on = 0x0bdb25a0,
+ 	.adda_2t_path_on_a = 0x04db25a4,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
+@@ -1744,6 +1744,7 @@ struct rtl8xxxu_fileops rtl8723bu_fops =
+ 	.max_aggr_num = 0x0c14,
+ 	.supports_ap = 1,
+ 	.max_macid_num = 128,
++	.max_sec_cam_num = 64,
+ 	.adda_1t_init = 0x01c00014,
+ 	.adda_1t_path_on = 0x01c00014,
+ 	.adda_2t_path_on_a = 0x01c00014,

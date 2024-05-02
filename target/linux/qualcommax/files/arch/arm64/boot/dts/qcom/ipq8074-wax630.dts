@@ -15,7 +15,7 @@
 
 	aliases {
 		serial0 = &blsp1_uart5;
-		
+
 		ethernet0 = &dp6_syn;
 		ethernet1 = &dp4;
 		label-mac-device = &dp6_syn;
@@ -153,7 +153,7 @@
 
 	switch_lan_bmp = <(ESS_PORT4 | ESS_PORT6)>;
 	switch_mac_mode = <MAC_MODE_PSGMII>;
-	switch_mac_mode2 = <MAC_MODE_USXGMII>;
+	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>;
 
 	qcom,port_phyinfo {
 		port@4 {
@@ -194,21 +194,29 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	qca8075: ethernet-phy@3 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <3>;
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
 	};
 
 	qca8081: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <28>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
 };
 
 &dp4 {
 	status = "okay";
-	phy-handle = <&qca8075>;
+	phy-handle = <&qca8075_3>;
 	label = "lan2";
 };
 

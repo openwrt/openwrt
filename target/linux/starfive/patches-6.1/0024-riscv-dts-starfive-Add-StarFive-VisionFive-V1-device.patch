@@ -1,0 +1,43 @@
+From cbb348ddbc68fe4fc8ac80bed11c298149e7893f Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Tue, 18 Oct 2022 00:05:42 +0300
+Subject: [PATCH 024/122] riscv: dts: starfive: Add StarFive VisionFive V1
+ device tree
+
+Add initial device tree for the StarFive VisionFive V1 SBC, which
+is similar with the already supported BeagleV Starlight Beta board,
+both being based on the StarFive JH7100 SoC.
+
+Link: https://github.com/starfive-tech/VisionFive
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Matthias Brugger <mbrugger@suse.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ .../jh7100-starfive-visionfive-v1.dts         | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7100-starfive-visionfive-v1.dts
+
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7100-starfive-visionfive-v1.dts
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2021 StarFive Technology Co., Ltd.
++ * Copyright (C) 2021 Emil Renner Berthing <kernel@esmil.dk>
++ */
++
++/dts-v1/;
++#include "jh7100-common.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "StarFive VisionFive V1";
++	compatible = "starfive,visionfive-v1", "starfive,jh7100";
++
++	gpio-restart {
++		compatible = "gpio-restart";
++		gpios = <&gpio 63 GPIO_ACTIVE_HIGH>;
++		priority = <224>;
++	};
++};

@@ -34,6 +34,16 @@
 				label = "urlader";
 				reg = <0x0 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_urlader_198a: calibration@198a {
+						reg = <0x198a 0x844>;
+					};
+				};
 			};
 
 			partition@20000 {

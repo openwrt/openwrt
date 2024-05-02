@@ -74,42 +74,36 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "green:speed";
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
 		};
 
 		led-1 {
-			label = "green:poe";
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
 		};
 
 		led_sys: led-2 {
-			label = "green:sys";
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
 
 		led-3 {
-			label = "green:fan";
 			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
 
 		led-4 {
-			label = "amber:fan";
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 			function = "fault-fan";
 		};
 
 		led-5 {
-			label = "green:poe-max";
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = "alarm-poe";

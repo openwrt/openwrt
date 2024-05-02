@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "glinet,gl-xe300", "qca,qca9531";
@@ -47,17 +48,20 @@
 
 		lan {
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		wan {
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		wlan {
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			linux,default-trigger = "phy0tpt";
 		};
 

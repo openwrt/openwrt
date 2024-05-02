@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "falcon.dtsi"
 #include "falcon_sflash-16m.dtsi"
 
@@ -46,7 +48,8 @@
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 		STATUS {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		};
 

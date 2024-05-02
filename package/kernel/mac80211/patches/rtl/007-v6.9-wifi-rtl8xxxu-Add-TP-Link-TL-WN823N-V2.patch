@@ -1,0 +1,36 @@
+From 1209f487d452ff7e822dec30661fd6b5163fb8cf Mon Sep 17 00:00:00 2001
+From: Chun Qiu <cqca@cock.lu>
+Date: Mon, 29 Jan 2024 13:30:30 +0800
+Subject: [PATCH] wifi: rtl8xxxu: Add TP-Link TL-WN823N V2
+
+TP-Link TL-WN823N V2 (2357:0135) is based on rtl8192fu and has been
+tested to work with the rtl8xxxu driver.
+
+Signed-off-by: Chun Qiu <cqca@cock.lu>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240129053030.16369-1-cqca@cock.lu
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -7733,7 +7733,7 @@ static int rtl8xxxu_probe(struct usb_int
+ 			untested = 0;
+ 		break;
+ 	case 0x2357:
+-		if (id->idProduct == 0x0109)
++		if (id->idProduct == 0x0109 || id->idProduct == 0x0135)
+ 			untested = 0;
+ 		break;
+ 	case 0x0b05:
+@@ -8025,6 +8025,9 @@ static const struct usb_device_id dev_ta
+ 	.driver_info = (unsigned long)&rtl8192fu_fops},
+ {USB_DEVICE_AND_INTERFACE_INFO(USB_VENDOR_ID_REALTEK, 0x318b, 0xff, 0xff, 0xff),
+ 	.driver_info = (unsigned long)&rtl8192fu_fops},
++/* TP-Link TL-WN823N V2 */
++{USB_DEVICE_AND_INTERFACE_INFO(0x2357, 0x0135, 0xff, 0xff, 0xff),
++	.driver_info = (unsigned long)&rtl8192fu_fops},
+ #ifdef CPTCFG_RTL8XXXU_UNTESTED
+ /* Still supported by rtlwifi */
+ {USB_DEVICE_AND_INTERFACE_INFO(USB_VENDOR_ID_REALTEK, 0x8176, 0xff, 0xff, 0xff),

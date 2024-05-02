@@ -1,0 +1,106 @@
+From 949807343300a75b6e7c3e47463f817a7b6bc790 Mon Sep 17 00:00:00 2001
+From: Jack Zhu <jack.zhu@starfivetech.com>
+Date: Fri, 12 May 2023 18:28:40 +0800
+Subject: [PATCH 082/122] media: admin-guide: Add starfive_camss.rst for
+ Starfive Camera Subsystem
+
+Add starfive_camss.rst file that documents the Starfive Camera
+Subsystem driver which is used for handing image sensor data.
+
+Signed-off-by: Jack Zhu <jack.zhu@starfivetech.com>
+---
+ .../admin-guide/media/starfive_camss.rst      | 57 +++++++++++++++++++
+ .../media/starfive_camss_graph.dot            | 16 ++++++
+ .../admin-guide/media/v4l-drivers.rst         |  1 +
+ 3 files changed, 74 insertions(+)
+ create mode 100644 Documentation/admin-guide/media/starfive_camss.rst
+ create mode 100644 Documentation/admin-guide/media/starfive_camss_graph.dot
+
+--- /dev/null
++++ b/Documentation/admin-guide/media/starfive_camss.rst
+@@ -0,0 +1,57 @@
++.. SPDX-License-Identifier: GPL-2.0
++
++.. include:: <isonum.txt>
++
++================================
++Starfive Camera Subsystem driver
++================================
++
++Introduction
++------------
++
++This file documents the driver for the Starfive Camera Subsystem found on
++Starfive JH7110 SoC. The driver is located under drivers/media/platform/
++starfive.
++
++The driver implements V4L2, Media controller and v4l2_subdev interfaces.
++Camera sensor using V4L2 subdev interface in the kernel is supported.
++
++The driver has been successfully used on the Gstreamer 1.18.5 with
++v4l2src plugin.
++
++
++Starfive Camera Subsystem hardware
++----------------------------------
++
++The Starfive Camera Subsystem hardware consists of:
++
++- MIPI DPHY Receiver: receives mipi data from a MIPI camera sensor.
++- MIPI CSIRx Controller: is responsible for handling and decoding CSI2 protocol
++  based camera sensor data stream.
++- ISP: handles the image data streams from the MIPI CSIRx Controller.
++- VIN(Video In): a top-level module, is responsible for controlling power
++  and clocks to other modules, dumps the input data to memory or transfers the
++  input data to ISP.
++
++
++Topology
++--------
++
++The media controller pipeline graph is as follows:
++
++.. _starfive_camss_graph:
++
++.. kernel-figure:: starfive_camss_graph.dot
++    :alt:   starfive_camss_graph.dot
++    :align: center
++
++The driver has 2 video devices:
++
++- stf_vin0_wr_video0: capture device for images directly from the VIN module.
++- stf_vin0_isp0_video1: capture device for images without scaling.
++
++The driver has 3 subdevices:
++
++- stf_isp0: is responsible for all the isp operations.
++- stf_vin0_wr: used to dump RAW images to memory.
++- stf_vin0_isp0: used to capture images for the stf_vin0_isp0_video1 device.
+--- /dev/null
++++ b/Documentation/admin-guide/media/starfive_camss_graph.dot
+@@ -0,0 +1,16 @@
++digraph board {
++	rankdir=TB
++	n00000001 [label="{{<port0> 0} | stf_isp0\n/dev/v4l-subdev0 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
++	n00000001:port1 -> n0000000d:port0
++	n00000004 [label="{{<port0> 0} | stf_vin0_wr\n/dev/v4l-subdev1 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
++	n00000004:port1 -> n00000007 [style=bold]
++	n00000007 [label="stf_vin0_wr_video0\n/dev/video0", shape=box, style=filled, fillcolor=yellow]
++	n0000000d [label="{{<port0> 0} | stf_vin0_isp0\n/dev/v4l-subdev2 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
++	n0000000d:port1 -> n00000010 [style=bold]
++	n00000010 [label="stf_vin0_isp0_video1\n/dev/video1", shape=box, style=filled, fillcolor=yellow]
++	n00000018 [label="{{<port0> 0} | cdns_csi2rx.19800000.csi-bridge\n | {<port1> 1 | <port2> 2 | <port3> 3 | <port4> 4}}", shape=Mrecord, style=filled, fillcolor=green]
++	n00000018:port1 -> n00000004:port0 [style=dashed]
++	n00000018:port1 -> n00000001:port0
++	n00000028 [label="{{} | imx219 6-0010\n | {<port0> 0}}", shape=Mrecord, style=filled, fillcolor=green]
++	n00000028:port0 -> n00000018:port0 [style=bold]
++}
+--- a/Documentation/admin-guide/media/v4l-drivers.rst
++++ b/Documentation/admin-guide/media/v4l-drivers.rst
+@@ -30,5 +30,6 @@ Video4Linux (V4L) driver-specific docume
+ 	si470x
+ 	si4713
+ 	si476x
++	starfive_camss
+ 	vimc
+ 	vivid

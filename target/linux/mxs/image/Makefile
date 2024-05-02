@@ -39,6 +39,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   IMAGES := sdcard.img.gz
+  DTS_DIR := $(DTS_DIR)/nxp/mxs
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
 

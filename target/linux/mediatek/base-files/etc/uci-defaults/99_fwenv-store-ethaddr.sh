@@ -9,7 +9,9 @@ unielec,u7623-02)
 	[ -z "$(fw_printenv -n ethaddr 2>/dev/null)" ] &&
 		fw_setenv ethaddr "$(cat /sys/class/net/eth0/address)"
 	;;
-bananapi,bpi-r3)
+bananapi,bpi-r3|\
+bananapi,bpi-r3-mini|\
+bananapi,bpi-4)
 	[ -z "$(fw_printenv -n ethaddr 2>/dev/null)" ] &&
 		fw_setenv ethaddr "$(cat /sys/class/net/eth0/address)"
 	[ -z "$(fw_printenv -n eth1addr 2>/dev/null)" ] &&

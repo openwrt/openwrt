@@ -8,7 +8,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
-PKG_MIRROR_HASH:=944faae3a80013f1a963b6692d7f50a38c97edcf91fd163de521df755e6922b5
+PKG_MIRROR_HASH:=3e48063f0ee621d938cbfea24f9e5632751b6eac9fe09b0d1289181eed1ee95e
 PKG_SOURCE_VERSION:=release-v$(PKG_VERSION)
 
 PKG_MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>

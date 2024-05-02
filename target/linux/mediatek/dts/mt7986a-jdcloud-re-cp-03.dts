@@ -23,7 +23,9 @@
 	};
 
 	chosen {
+		bootargs-override = "root=/dev/fit0 rootwait";
 		stdout-path = "serial0:115200n8";
+		rootdisk = <&emmc_rootdisk>;
 	};
 
 	memory@40000000 {
@@ -157,6 +159,20 @@
 	vmmc-supply = <&reg_3p3v>;
 	vqmmc-supply = <&reg_1p8v>;
 	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				emmc_rootdisk: block-partition-production {
+					partname = "production";
+				};
+			};
+		};
+	};
 };
 
 &pio {

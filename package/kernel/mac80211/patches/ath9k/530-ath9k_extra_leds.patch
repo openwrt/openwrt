@@ -192,7 +192,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -128,6 +128,61 @@ static const struct file_operations fops
+@@ -123,6 +123,61 @@ static const struct file_operations fops
  
  #define DMA_BUF_LEN 1024
  
@@ -254,7 +254,7 @@
  
  static ssize_t read_file_ani(struct file *file, char __user *user_buf,
  			     size_t count, loff_t *ppos)
-@@ -1432,6 +1487,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1392,6 +1447,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  	ath9k_tx99_init_debug(sc);
  	ath9k_cmn_spectral_init_debug(&sc->spec_priv, sc->debug.debugfs_phy);
  

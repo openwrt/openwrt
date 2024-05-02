@@ -21,7 +21,6 @@
 		compatible = "gpio-leds";
 
 		led_cpu: led-0 {
-			label = "amber:cpu";
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_CPU;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
@@ -92,7 +91,7 @@
 				read-only;
 			};
 
-			factory: partition@30000 {
+			partition@30000 {
 				label = "factory";
 				reg = <0x30000 0x10000>;
 				read-only;
@@ -131,10 +130,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

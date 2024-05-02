@@ -1,6 +1,14 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 26 May 2023 10:23:59 +0200
+Subject: [PATCH] Add ucode support, use ucode for the main ubus object #2
+
+This implements vastly improved dynamic configuration reload support.
+It can handle configuration changes on individual wifi interfaces, as well
+as adding/removing interfaces.
+
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4816,7 +4816,12 @@ struct hostapd_config * hostapd_config_r
+@@ -5065,7 +5065,12 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  

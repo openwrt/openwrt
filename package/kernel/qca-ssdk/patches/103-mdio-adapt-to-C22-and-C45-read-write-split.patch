@@ -1,0 +1,98 @@
+From bdae481e89cbe551068a99028bb57119b59f5ff4 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 26 Mar 2024 12:19:49 +0100
+Subject: [PATCH] mdio: adapt to C22 and C45 read/write split
+
+Kernel 6.3 has introduced separate C45 read/write operations, and thus
+split them out of the C22 operations completely so the old way of marking
+C45 reads and writes via the register value does not work anymore.
+
+This is causing SSDK to fail and find C45 only PHY-s such as Aquantia ones:
+[   22.187877] ssdk_phy_driver_init[371]:INFO:dev_id = 0, phy_adress = 8, phy_id = 0x0 phytype doesn't match
+[   22.209924] ssdk_phy_driver_init[371]:INFO:dev_id = 0, phy_adress = 0, phy_id = 0x0 phytype doesn't match
+
+This in turn causes USXGMII MAC autoneg bit to not get set and then UNIPHY
+autoneg will time out, causing the 10G ports not to work:
+[   37.292784] uniphy autoneg time out!
+
+So, lets detect C45 reads and writes by the magic BIT(30) in the register
+argument and if so call separate C45 mdiobus read/write functions.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ include/init/ssdk_plat.h |  7 +++++++
+ src/init/ssdk_plat.c     | 30 ++++++++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+)
+
+--- a/include/init/ssdk_plat.h
++++ b/include/init/ssdk_plat.h
+@@ -505,3 +505,10 @@ void ssdk_plat_exit(a_uint32_t dev_id);
+ 
+ #endif
+ /*qca808x_end*/
++
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
++#define MII_ADDR_C45		(1<<30)
++#define MII_DEVADDR_C45_SHIFT	16
++#define MII_DEVADDR_C45_MASK	GENMASK(20, 16)
++#define MII_REGADDR_C45_MASK	GENMASK(15, 0)
++#endif
+--- a/src/init/ssdk_plat.c
++++ b/src/init/ssdk_plat.c
+@@ -356,6 +356,18 @@ phy_addr_validation_check(a_uint32_t phy
+ 		return A_TRUE;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
++static inline u16 mdiobus_c45_regad(u32 regnum)
++{
++	return FIELD_GET(MII_REGADDR_C45_MASK, regnum);
++}
++
++static inline u16 mdiobus_c45_devad(u32 regnum)
++{
++	return FIELD_GET(MII_DEVADDR_C45_MASK, regnum);
++}
++#endif
++
+ sw_error_t
+ qca_ar8327_phy_read(a_uint32_t dev_id, a_uint32_t phy_addr,
+                            a_uint32_t reg, a_uint16_t* data)
+@@ -371,9 +383,18 @@ qca_ar8327_phy_read(a_uint32_t dev_id, a
+ 	if (!bus)
+ 		return SW_NOT_SUPPORTED;
+ 	phy_addr = TO_PHY_ADDR(phy_addr);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
++	mutex_lock(&bus->mdio_lock);
++	if (reg & MII_ADDR_C45)
++		*data = __mdiobus_c45_read(bus, phy_addr, mdiobus_c45_devad(reg), mdiobus_c45_regad(reg));
++	else
++		*data = __mdiobus_read(bus, phy_addr, reg);
++	mutex_unlock(&bus->mdio_lock);
++#else
+ 	mutex_lock(&bus->mdio_lock);
+ 	*data = __mdiobus_read(bus, phy_addr, reg);
+ 	mutex_unlock(&bus->mdio_lock);
++#endif
+ 
+ 	return 0;
+ }
+@@ -393,9 +414,18 @@ qca_ar8327_phy_write(a_uint32_t dev_id,
+ 	if (!bus)
+ 		return SW_NOT_SUPPORTED;
+ 	phy_addr = TO_PHY_ADDR(phy_addr);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0))
++	mutex_lock(&bus->mdio_lock);
++	if (reg & MII_ADDR_C45)
++		__mdiobus_c45_write(bus, phy_addr, mdiobus_c45_devad(reg), mdiobus_c45_regad(reg), data);
++	else
++		__mdiobus_write(bus, phy_addr, reg, data);
++	mutex_unlock(&bus->mdio_lock);
++#else
+ 	mutex_lock(&bus->mdio_lock);
+ 	__mdiobus_write(bus, phy_addr, reg, data);
+ 	mutex_unlock(&bus->mdio_lock);
++#endif
+ 
+ 	return 0;
+ }

@@ -86,7 +86,7 @@ SVN-Revision: 35130
  	} while (word != stop);
  
  	return csum_fold(csum);
-@@ -179,73 +183,6 @@ static inline __sum16 ip_compute_csum(co
+@@ -179,74 +183,6 @@ static inline __sum16 ip_compute_csum(co
  	return csum_fold(csum_partial(buff, len, 0));
  }
  
@@ -152,7 +152,8 @@ SVN-Revision: 35130
 -	"	.set	pop"
 -	: "=&r" (sum), "=&r" (tmp)
 -	: "r" (saddr), "r" (daddr),
--	  "0" (htonl(len)), "r" (htonl(proto)), "r" (sum));
+-	  "0" (htonl(len)), "r" (htonl(proto)), "r" (sum)
+-	: "memory");
 -
 -	return csum_fold(sum);
 -}
@@ -311,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -1003,7 +1003,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -1013,7 +1013,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -336,7 +337,7 @@ SVN-Revision: 35130
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1512,8 +1512,8 @@ struct sk_buff *inet_gro_receive(struct
+@@ -1515,8 +1515,8 @@ struct sk_buff *inet_gro_receive(struct
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out;
  
@@ -857,16 +858,25 @@ SVN-Revision: 35130
  
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -220,7 +220,7 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -62,7 +62,7 @@ static struct sk_buff *__tcpv4_gso_segme
+ 	th2 = tcp_hdr(seg->next);
+ 	iph2 = ip_hdr(seg->next);
+ 
+-	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
++	if (!(net_hdr_word(&th->source) ^ net_hdr_word(&th2->source)) &&
+ 	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
+ 		return segs;
+ 
+@@ -254,7 +254,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+ 			continue;
  
  		th2 = tcp_hdr(p);
- 
 -		if (*(u32 *)&th->source ^ *(u32 *)&th2->source) {
 +		if (net_hdr_word(&th->source) ^ net_hdr_word(&th2->source)) {
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -238,8 +238,8 @@ found:
+@@ -320,8 +320,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)

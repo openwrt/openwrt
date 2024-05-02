@@ -796,7 +796,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int sds_num, sds_mode;
+	int sds_num;
 	u32 reg;
 
 	pr_info("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
@@ -811,32 +811,10 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s SDS is %d\n", __func__, sds_num);
-	if (sds_num >= 0) {
-		switch (state->interface) {
-		case PHY_INTERFACE_MODE_HSGMII:
-			sds_mode = 0x12;
-			break;
-		case PHY_INTERFACE_MODE_1000BASEX:
-			sds_mode = 0x04;
-			break;
-		case PHY_INTERFACE_MODE_XGMII:
-			sds_mode = 0x10;
-			break;
-		case PHY_INTERFACE_MODE_10GBASER:
-		case PHY_INTERFACE_MODE_10GKR:
-			sds_mode = 0x1b; /* 10G 1000X Auto */
-			break;
-		case PHY_INTERFACE_MODE_USXGMII:
-			sds_mode = 0x0d;
-			break;
-		default:
-			pr_err("%s: unknown serdes mode: %s\n",
-			       __func__, phy_modes(state->interface));
-			return;
-		}
-		if (state->interface == PHY_INTERFACE_MODE_10GBASER)
-			rtl9300_serdes_setup(sds_num, state->interface);
-	}
+	if (sds_num >= 0 &&
+	    (state->interface == PHY_INTERFACE_MODE_1000BASEX ||
+	     state->interface == PHY_INTERFACE_MODE_10GBASER))
+		rtl9300_serdes_setup(port, sds_num, state->interface);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	reg &= ~(0xf << 3);

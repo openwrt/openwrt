@@ -14,6 +14,7 @@
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
 /* begin standard C headers. */
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -30,8 +31,8 @@
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
-/* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
- * if you want the limit (max/min) macros for int types. 
+/* C++ systems might need __STDC_LIMIT_MACROS defined before including
+ * <stdint.h>, if you want the limit (max/min) macros for int types.
  */
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS 1
@@ -2538,8 +2539,7 @@ YY_DECL
 
 	{
 
-	int str = 0;
-	int ts, i;
+	char open_quote = 0;
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -2772,7 +2772,7 @@ return T_PLUS_EQUAL;
 case 48:
 YY_RULE_SETUP
 {
-				str = yytext[0];
+				open_quote = yytext[0];
 				new_string();
 				BEGIN(STRING);
 			}
@@ -2837,7 +2837,7 @@ YY_RULE_SETUP
 case 58:
 YY_RULE_SETUP
 {
-		if (str == yytext[0]) {
+		if (open_quote == yytext[0]) {
 			BEGIN(INITIAL);
 			yylval.string = text;
 			return T_WORD_QUOTE;
@@ -2869,6 +2869,8 @@ case YY_STATE_EOF(STRING):
 case 60:
 YY_RULE_SETUP
 {
+		int ts, i;
+
 		ts = 0;
 		for (i = 0; i < yyleng; i++) {
 			if (yytext[i] == '\t')

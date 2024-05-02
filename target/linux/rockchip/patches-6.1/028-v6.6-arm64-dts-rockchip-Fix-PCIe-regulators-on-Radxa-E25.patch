@@ -1,0 +1,79 @@
+From a87852e37f782257ebc57cc44a0d3fbf806471f6 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Mon, 24 Jul 2023 14:52:16 +0000
+Subject: [PATCH] arm64: dts: rockchip: Fix PCIe regulators on Radxa E25
+
+Despite its name, the regulator vcc3v3_pcie30x1 has nothing to do with
+pcie30x1. Instead, it supply power to VBAT1-5 on the M.2 KEY B port as
+seen on page 8 of the schematic [1].
+
+pcie30x1 is used for the mini PCIe slot, and as seen on page 9 the
+vcc3v3_minipcie regulator is instead related to pcie30x1.
+
+The M.2 KEY B port can be used for WWAN USB2 modules or SATA drives.
+
+Use correct regulator vcc3v3_minipcie for pcie30x1.
+
+[1] https://dl.radxa.com/cm3p/e25/radxa-e25-v1.4-sch.pdf
+
+Fixes: 2bf2f4d9f673 ("arm64: dts: rockchip: Add Radxa CM3I E25")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20230724145213.3833099-1-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/boot/dts/rockchip/rk3568-radxa-e25.dts | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-radxa-e25.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-radxa-e25.dts
+@@ -47,6 +47,9 @@
+ 		vin-supply = <&vcc5v0_sys>;
+ 	};
+ 
++	/* actually fed by vcc5v0_sys, dependent
++	 * on pi6c clock generator
++	 */
+ 	vcc3v3_minipcie: vcc3v3-minipcie-regulator {
+ 		compatible = "regulator-fixed";
+ 		enable-active-high;
+@@ -54,9 +57,9 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&minipcie_enable_h>;
+ 		regulator-name = "vcc3v3_minipcie";
+-		regulator-min-microvolt = <5000000>;
+-		regulator-max-microvolt = <5000000>;
+-		vin-supply = <&vcc5v0_sys>;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc3v3_pi6c_05>;
+ 	};
+ 
+ 	vcc3v3_ngff: vcc3v3-ngff-regulator {
+@@ -71,9 +74,6 @@
+ 		vin-supply = <&vcc5v0_sys>;
+ 	};
+ 
+-	/* actually fed by vcc5v0_sys, dependent
+-	 * on pi6c clock generator
+-	 */
+ 	vcc3v3_pcie30x1: vcc3v3-pcie30x1-regulator {
+ 		compatible = "regulator-fixed";
+ 		enable-active-high;
+@@ -83,7 +83,7 @@
+ 		regulator-name = "vcc3v3_pcie30x1";
+ 		regulator-min-microvolt = <3300000>;
+ 		regulator-max-microvolt = <3300000>;
+-		vin-supply = <&vcc3v3_pi6c_05>;
++		vin-supply = <&vcc5v0_sys>;
+ 	};
+ 
+ 	vcc3v3_pi6c_05: vcc3v3-pi6c-05-regulator {
+@@ -117,7 +117,7 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie30x1m0_pins>;
+ 	reset-gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
+-	vpcie3v3-supply = <&vcc3v3_pcie30x1>;
++	vpcie3v3-supply = <&vcc3v3_minipcie>;
+ 	status = "okay";
+ };
+ 

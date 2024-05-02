@@ -29,14 +29,12 @@
 		compatible = "gpio-leds";
 
 		led_usb: usb {
-			label = "green:usb";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
-			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
@@ -44,7 +42,6 @@
 		};
 
 		led_system: system {
-			label = "green:system";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
@@ -140,7 +137,7 @@
 			read-only;
 		};
 
-		factory: partition@100000 {
+		partition@100000 {
 			label = "factory";
 			reg = <0x100000 0x40000>;
 			read-only;
@@ -158,11 +155,8 @@
 	};
 };
 
-
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &state_default {

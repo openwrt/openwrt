@@ -51,7 +51,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #define read_vpe_c0_status()		mftc0(12, 0)
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
-@@ -124,4 +124,13 @@ void cleanup_tc(struct tc *tc);
+@@ -123,4 +123,13 @@ void cleanup_tc(struct tc *tc);
  
  int __init vpe_module_init(void);
  void __exit vpe_module_exit(void);
@@ -67,15 +67,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
-@@ -29,6 +29,7 @@ int vpe_run(struct vpe *v)
- 	struct vpe_notifications *notifier;
- 	unsigned int vpeflags;
- 	struct tc *t;
-+	unsigned long physical_memsize = 0L;
- 
- 	/* check we are the Master VPE */
- 	local_irq_save(flags);
-@@ -416,6 +417,8 @@ int __init vpe_module_init(void)
+@@ -415,6 +415,8 @@ int __init vpe_module_init(void)
  			}
  
  			v->ntcs = hw_tcs - aprp_cpu_index();
@@ -84,7 +76,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -519,3 +522,47 @@ void __exit vpe_module_exit(void)
+@@ -518,3 +520,47 @@ void __exit vpe_module_exit(void)
  			release_vpe(v);
  	}
  }
@@ -178,7 +170,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  {
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
-@@ -34,10 +34,14 @@ unsigned long physical_memsize = 0L;
+@@ -28,10 +28,14 @@ EXPORT_SYMBOL_GPL(ebu_lock);
   */
  static struct ltq_soc_info soc_info;
  

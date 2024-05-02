@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -50,7 +51,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
@@ -67,12 +69,14 @@
 		};
 
 		wps_red {
-			label = "red:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps_blue {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -113,7 +117,7 @@
 				reg = <0x20000 0xde0000>;
 			};
 
-			config: partition@e00000 {
+			partition@e00000 {
 				label = "config";
 				reg = <0xe00000 0x50000>;
 				read-only;
@@ -135,7 +139,7 @@
 			 * firmware, so we do not use it either
 			 */
 
-			radio: partition@ff0000 {
+			partition@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x10000>;
 				read-only;

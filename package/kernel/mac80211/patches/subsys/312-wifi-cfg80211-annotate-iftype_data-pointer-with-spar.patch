@@ -57,7 +57,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
-@@ -1075,8 +1075,8 @@ static void iwl_init_he_hw_capab(struct
+@@ -1078,8 +1078,8 @@ static void iwl_init_he_hw_capab(struct
  
  	memcpy(iftype_data, iwl_he_eht_capa, sizeof(iwl_he_eht_capa));
  
@@ -70,7 +70,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		iwl_nvm_fixup_sband_iftd(trans, data, sband, &iftype_data[i],
 --- a/drivers/net/wireless/mediatek/mt76/mt7915/init.c
 +++ b/drivers/net/wireless/mediatek/mt76/mt7915/init.c
-@@ -1119,8 +1119,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1127,8 +1127,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_2GHZ, data);
  
  		band = &phy->mt76->sband_2g.sband;
@@ -80,7 +80,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	if (phy->mt76->cap.has_5ghz) {
-@@ -1128,8 +1127,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1136,8 +1135,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_5GHZ, data);
  
  		band = &phy->mt76->sband_5g.sband;
@@ -90,7 +90,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	if (phy->mt76->cap.has_6ghz) {
-@@ -1137,8 +1135,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1145,8 +1143,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_6GHZ, data);
  
  		band = &phy->mt76->sband_6g.sband;
@@ -133,7 +133,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
 --- a/drivers/net/wireless/mediatek/mt76/mt7996/init.c
 +++ b/drivers/net/wireless/mediatek/mt76/mt7996/init.c
-@@ -823,8 +823,7 @@ __mt7996_set_stream_he_eht_caps(struct m
+@@ -828,8 +828,7 @@ __mt7996_set_stream_he_eht_caps(struct m
  		n++;
  	}
  
@@ -177,7 +177,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		kfree(wiphy->bands[band]->channels);
 --- a/drivers/net/wireless/realtek/rtw89/core.c
 +++ b/drivers/net/wireless/realtek/rtw89/core.c
-@@ -3328,8 +3328,7 @@ static void rtw89_init_he_cap(struct rtw
+@@ -3359,8 +3359,7 @@ static void rtw89_init_he_cap(struct rtw
  		idx++;
  	}
  
@@ -187,7 +187,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  static int rtw89_core_set_supported_band(struct rtw89_dev *rtwdev)
-@@ -3374,11 +3373,11 @@ err:
+@@ -3405,11 +3404,11 @@ err:
  	hw->wiphy->bands[NL80211_BAND_5GHZ] = NULL;
  	hw->wiphy->bands[NL80211_BAND_6GHZ] = NULL;
  	if (sband_2ghz)
@@ -202,7 +202,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	kfree(sband_2ghz);
  	kfree(sband_5ghz);
  	kfree(sband_6ghz);
-@@ -3390,11 +3389,11 @@ static void rtw89_core_clr_supported_ban
+@@ -3421,11 +3420,11 @@ static void rtw89_core_clr_supported_ban
  	struct ieee80211_hw *hw = rtwdev->hw;
  
  	if (hw->wiphy->bands[NL80211_BAND_2GHZ])
@@ -219,7 +219,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	kfree(hw->wiphy->bands[NL80211_BAND_6GHZ]);
 --- a/drivers/net/wireless/realtek/rtw89/regd.c
 +++ b/drivers/net/wireless/realtek/rtw89/regd.c
-@@ -376,7 +376,7 @@ bottom:
+@@ -377,7 +377,7 @@ bottom:
  		return;
  
  	wiphy->bands[NL80211_BAND_6GHZ] = NULL;
@@ -230,7 +230,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/drivers/net/wireless/virtual/mac80211_hwsim.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim.c
-@@ -4900,25 +4900,19 @@ static const struct ieee80211_sband_ifty
+@@ -4899,25 +4899,19 @@ static const struct ieee80211_sband_ifty
  
  static void mac80211_hwsim_sband_capab(struct ieee80211_supported_band *sband)
  {
@@ -362,7 +362,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -1055,6 +1055,7 @@ int ieee80211_register_hw(struct ieee802
+@@ -1052,6 +1052,7 @@ int ieee80211_register_hw(struct ieee802
  	supp_he = false;
  	supp_eht = false;
  	for (band = 0; band < NUM_NL80211_BANDS; band++) {
@@ -370,7 +370,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		struct ieee80211_supported_band *sband;
  
  		sband = local->hw.wiphy->bands[band];
-@@ -1101,11 +1102,7 @@ int ieee80211_register_hw(struct ieee802
+@@ -1098,11 +1099,7 @@ int ieee80211_register_hw(struct ieee802
  		supp_ht = supp_ht || sband->ht_cap.ht_supported;
  		supp_vht = supp_vht || sband->vht_cap.vht_supported;
  
@@ -415,7 +415,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-@@ -817,6 +817,7 @@ int wiphy_register(struct wiphy *wiphy)
+@@ -819,6 +819,7 @@ int wiphy_register(struct wiphy *wiphy)
  
  	/* sanity check supported bands/channels */
  	for (band = 0; band < NUM_NL80211_BANDS; band++) {
@@ -423,7 +423,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		u16 types = 0;
  		bool have_he = false;
  
-@@ -873,14 +874,11 @@ int wiphy_register(struct wiphy *wiphy)
+@@ -875,14 +876,11 @@ int wiphy_register(struct wiphy *wiphy)
  				return -EINVAL;
  		}
  
@@ -441,7 +441,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			if (WARN_ON(types & iftd->types_mask))
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -1906,20 +1906,20 @@ static int nl80211_send_band_rateinfo(st
+@@ -1907,20 +1907,20 @@ static int nl80211_send_band_rateinfo(st
  		struct nlattr *nl_iftype_data =
  			nla_nest_start_noflag(msg,
  					      NL80211_BAND_ATTR_IFTYPE_DATA);

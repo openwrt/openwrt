@@ -43,7 +43,8 @@
 
 		led_power_amber: power_amber {
 			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		wlan2g_green {
@@ -53,12 +54,14 @@
 
 		led_power_blue: power_blue {
 			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		led_power_green: power_green {
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		wlan2g_blue {
@@ -68,12 +71,14 @@
 
 		lan_green {
 			gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		lan_amber {
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
-			label = "amber:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		wlan5g_blue {

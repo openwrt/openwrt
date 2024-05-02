@@ -107,6 +107,21 @@ define Device/arcadyan_vgv7519-nor
 endef
 TARGET_DEVICES += arcadyan_vgv7519-nor
 
+define Device/arcadyan_vrv9510kwac23
+  $(Device/dsa-migration)
+  $(Device/NAND)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := VRV9510KWAC23
+  DEVICE_ALT0_VENDOR := Livebox
+  DEVICE_ALT0_MODEL := Next
+  BOARD_NAME := VRV9510KWAC23
+  DEVICE_PACKAGES :=  kmod-b43 wpad-basic-mbedtls broadcom-43222-sprom \
+    broadcom-4360-sprom kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
+  KERNEL_SIZE := 4096k
+  SUPPORTED_DEVICES += arcadyan_vrv9510kwac23
+endef
+TARGET_DEVICES += arcadyan_vrv9510kwac23
+
 define Device/avm_fritz3370
   $(Device/dsa-migration)
   $(Device/AVM)
@@ -148,6 +163,66 @@ define Device/avm_fritz3390
 	kmod-usb-dwc2 fritz-tffs
 endef
 TARGET_DEVICES += avm_fritz3390
+
+define Device/avm_fritz3490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3490
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz3490
+
+define Device/avm_fritz3490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3490
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz3490-micron
+
+define Device/avm_fritz5490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 5490
+  DEVICE_ALT0_VENDOR := AVM
+  DEVICE_ALT0_MODEL := FRITZ!Box 5491
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs \
+	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
+	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
+	-ltq-vdsl-vr9-app -kmod-owl-loader \
+	-dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz5490
+
+define Device/avm_fritz5490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 5490
+  DEVICE_ALT0_VENDOR := AVM
+  DEVICE_ALT0_MODEL := FRITZ!Box 5491
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs \
+	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
+	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
+	-ltq-vdsl-vr9-app -kmod-owl-loader \
+	-dsl-vrx200-firmware-xdsl-a -dsl-vrx200-firmware-xdsl-b-patch
+endef
+TARGET_DEVICES += avm_fritz5490-micron
 
 define Device/avm_fritz7360sl
   $(Device/dsa-migration)
@@ -207,6 +282,30 @@ define Device/avm_fritz7430
 	kmod-usb-dwc2 fritz-tffs-nand fritz-caldata
 endef
 TARGET_DEVICES += avm_fritz7430
+
+define Device/avm_fritz7490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7490
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz7490
+
+define Device/avm_fritz7490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 7490
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz7490-micron
 
 define Device/bt_homehub-v5a
   $(Device/dsa-migration)

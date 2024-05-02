@@ -72,7 +72,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		return PTR_ERR(ctrl->nand_base);
  
  	/* Enable clock before using NAND registers */
-@@ -3214,7 +3214,6 @@ int brcmnand_probe(struct platform_devic
+@@ -3218,7 +3218,6 @@ int brcmnand_probe(struct platform_devic
  
  	for_each_available_child_of_node(dn, child) {
  		if (of_device_is_compatible(child, "brcm,nandcs")) {
@@ -80,7 +80,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  
  			host = devm_kzalloc(dev, sizeof(*host), GFP_KERNEL);
  			if (!host) {
-@@ -3234,7 +3233,7 @@ int brcmnand_probe(struct platform_devic
+@@ -3238,7 +3237,7 @@ int brcmnand_probe(struct platform_devic
  
  			nand_set_flash_node(&host->chip, child);
  
@@ -89,7 +89,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  			if (ret) {
  				devm_kfree(dev, host);
  				continue; /* Try all chip-selects */
-@@ -3244,6 +3243,32 @@ int brcmnand_probe(struct platform_devic
+@@ -3248,6 +3247,32 @@ int brcmnand_probe(struct platform_devic
  		}
  	}
  

@@ -18,21 +18,18 @@
 		compatible = "gpio-leds";
 
 		wps {
-			label = "red:wps";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led_power: power {
-			label = "white:power";
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_POWER;
 		};
 
 		wlan2g {
-			label = "white:wlan2g";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -41,7 +38,6 @@
 		};
 
 		wlan5g {
-			label = "white:wlan5g";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -99,7 +95,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
@@ -128,10 +124,8 @@
 	phy-handle = <&ethphy0>;
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

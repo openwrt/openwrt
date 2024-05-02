@@ -8,6 +8,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+	};
+
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
 	};
@@ -41,7 +46,7 @@
 				#qca,ddr-wb-channel-cells = <1>;
 			};
 
-			uart: uart@18020000 {
+			uart0: uart@18020000 {
 				compatible = "ns16550a";
 				reg = <0x18020000 0x20>;
 
@@ -177,6 +182,18 @@
 				reg = <0x180600c0 0x4>;
 
 				#reset-cells = <1>;
+			};
+
+			uart1: uart@18500000 {
+				compatible = "qca,ar9330-uart";
+				reg = <0x18500000 0x14>;
+
+				interrupts = <6>;
+
+				clocks = <&pll ATH79_CLK_REF>;
+				clock-names = "uart";
+
+				status = "disabled";
 			};
 		};
 

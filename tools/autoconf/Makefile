@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=autoconf
 PKG_VERSION:=2.71
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/autoconf
-PKG_HASH:=f14c83cfebcc9427f2c3cea7258bd90df972d92eb26752da4ddad81c87a0faa4
+PKG_HASH:=431075ad0bf529ef13cb41e9042c542381103e80015686222b8a9d4abef42a1c
 
 include $(INCLUDE_DIR)/host-build.mk
 

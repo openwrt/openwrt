@@ -1,0 +1,82 @@
+From 5ce0d7e8aee03e73b35f0fe1f1ebbdd4e45776f3 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:38 +0100
+Subject: [PATCH 17/21] wifi: rtl8xxxu: add macids for STA mode
+
+Until now, the driver only assigned a dedicated macid for connections
+made in AP mode, in STA mode the return value of rtl8xxxu_get_macid()
+was simply 0.
+To differentiate between port 0 and 1, when both are in STA mode,
+allocate a second macid (with value 1) and set sta_info->macid according
+to the used port_num in rtl8xxxu_sta_add().
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-18-martin.kaistra@linutronix.de
+---
+ .../net/wireless/realtek/rtl8xxxu/rtl8xxxu.h   |  1 +
+ .../wireless/realtek/rtl8xxxu/rtl8xxxu_core.c  | 18 +++++++++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1774,6 +1774,7 @@ struct rtl8xxxu_cfo_tracking {
+ #define RTL8XXXU_HW_LED_CONTROL	2
+ #define RTL8XXXU_MAX_MAC_ID_NUM	128
+ #define RTL8XXXU_BC_MC_MACID	0
++#define RTL8XXXU_BC_MC_MACID1	1
+ 
+ struct rtl8xxxu_priv {
+ 	struct ieee80211_hw *hw;
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4053,10 +4053,13 @@ static inline u8 rtl8xxxu_get_macid(stru
+ {
+ 	struct rtl8xxxu_sta_info *sta_info;
+ 
+-	if (!priv->vif || priv->vif->type == NL80211_IFTYPE_STATION || !sta)
++	if (!sta)
+ 		return 0;
+ 
+ 	sta_info = (struct rtl8xxxu_sta_info *)sta->drv_priv;
++	if (!sta_info)
++		return 0;
++
+ 	return sta_info->macid;
+ }
+ 
+@@ -4536,6 +4539,7 @@ static int rtl8xxxu_init_device(struct i
+ 		rtl8188e_ra_info_init_all(&priv->ra_info);
+ 
+ 	set_bit(RTL8XXXU_BC_MC_MACID, priv->mac_id_map);
++	set_bit(RTL8XXXU_BC_MC_MACID1, priv->mac_id_map);
+ 
+ exit:
+ 	return ret;
+@@ -7375,6 +7379,7 @@ static int rtl8xxxu_sta_add(struct ieee8
+ 			    struct ieee80211_sta *sta)
+ {
+ 	struct rtl8xxxu_sta_info *sta_info = (struct rtl8xxxu_sta_info *)sta->drv_priv;
++	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 
+ 	if (vif->type == NL80211_IFTYPE_AP) {
+@@ -7384,6 +7389,17 @@ static int rtl8xxxu_sta_add(struct ieee8
+ 
+ 		rtl8xxxu_refresh_rate_mask(priv, 0, sta, true);
+ 		priv->fops->report_connect(priv, sta_info->macid, H2C_MACID_ROLE_STA, true);
++	} else {
++		switch (rtlvif->port_num) {
++		case 0:
++			sta_info->macid = RTL8XXXU_BC_MC_MACID;
++			break;
++		case 1:
++			sta_info->macid = RTL8XXXU_BC_MC_MACID1;
++			break;
++		default:
++			break;
++		}
+ 	}
+ 
+ 	return 0;

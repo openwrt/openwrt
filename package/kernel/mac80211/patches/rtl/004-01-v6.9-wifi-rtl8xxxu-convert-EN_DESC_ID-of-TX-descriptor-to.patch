@@ -1,0 +1,31 @@
+From 426e7b4773921d07ab4ab8ba16fbad396d6c9971 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Tue, 16 Jan 2024 16:09:44 +0800
+Subject: [PATCH 1/2] wifi: rtl8xxxu: convert EN_DESC_ID of TX descriptor to
+ le32 type
+
+Fields of TX descriptor are little-endian order, so correct EN_DESC_ID
+field to le32 type.
+
+Fixes: b837f78fbffa ("wifi: rtl8xxxu: add hw crypto support for AP mode")
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202401161318.YtXoCkjU-lkp@intel.com/
+Cc: Martin Kaistra <martin.kaistra@linutronix.de>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240116080945.20172-1-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5619,7 +5619,7 @@ static void rtl8xxxu_tx(struct ieee80211
+ 			break;
+ 		}
+ 		if (bmc && rtlvif->hw_key_idx != 0xff) {
+-			tx_desc->txdw1 |= TXDESC_EN_DESC_ID;
++			tx_desc->txdw1 |= cpu_to_le32(TXDESC_EN_DESC_ID);
+ 			macid = rtlvif->hw_key_idx;
+ 		}
+ 	}

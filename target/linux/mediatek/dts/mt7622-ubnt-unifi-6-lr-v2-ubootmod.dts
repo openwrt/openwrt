@@ -5,6 +5,11 @@
 / {
 	model = "Ubiquiti UniFi 6 LR v2 (U-Boot mod)";
 	compatible = "ubnt,unifi-6-lr-v2-ubootmod", "mediatek,mt7622";
+
+	chosen {
+		rootdisk = <&rootdisk>;
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 console=ttyS0,115200n8 root=/dev/fit0 rootwait";
+	};
 };
 
 &nor_partitions {
@@ -54,7 +59,7 @@
 		reg = <0x120000 0xee0000>;
 	};
 
-	partition@1000000 {
+	rootdisk: partition@1000000 {
 		compatible = "denx,fit";
 		label = "firmware";
 		reg = <0x1000000 0x3000000>;

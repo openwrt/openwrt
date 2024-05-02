@@ -1,0 +1,123 @@
+From 01415ef8269e594a647f67ea0729ca8b590679de Mon Sep 17 00:00:00 2001
+From: Francois Perrad <francois.perrad@gadz.org>
+Date: Thu, 22 Dec 2022 10:19:54 +0100
+Subject: const parameter mp_int
+
+---
+ bignum.c   | 2 +-
+ bignum.h   | 2 +-
+ buffer.c   | 2 +-
+ buffer.h   | 2 +-
+ dbrandom.c | 2 +-
+ dbrandom.h | 2 +-
+ dbutil.c   | 2 +-
+ dbutil.h   | 2 +-
+ genrsa.c   | 4 ++--
+ 9 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/bignum.c
++++ b/bignum.c
+@@ -93,7 +93,7 @@ void bytes_to_mp(mp_int *mp, const unsig
+ 
+ /* hash the ssh representation of the mp_int mp */
+ void hash_process_mp(const struct ltc_hash_descriptor *hash_desc, 
+-				hash_state *hs, mp_int *mp) {
++				hash_state *hs, const mp_int *mp) {
+ 	buffer * buf;
+ 
+ 	buf = buf_new(512 + 20); /* max buffer is a 4096 bit key, 
+--- a/bignum.h
++++ b/bignum.h
+@@ -33,6 +33,6 @@ void m_mp_alloc_init_multi(mp_int **mp,
+ void m_mp_free_multi(mp_int **mp, ...)  ATTRIB_SENTINEL;
+ void bytes_to_mp(mp_int *mp, const unsigned char* bytes, unsigned int len);
+ void hash_process_mp(const struct ltc_hash_descriptor *hash_desc, 
+-				hash_state *hs, mp_int *mp);
++				hash_state *hs, const mp_int *mp);
+ 
+ #endif /* DROPBEAR_BIGNUM_H_ */
+--- a/buffer.c
++++ b/buffer.c
+@@ -299,7 +299,7 @@ void buf_putbytes(buffer *buf, const uns
+ 
+ /* for our purposes we only need positive (or 0) numbers, so will
+  * fail if we get negative numbers */
+-void buf_putmpint(buffer* buf, mp_int * mp) {
++void buf_putmpint(buffer* buf, const mp_int * mp) {
+ 	size_t written;
+ 	unsigned int len, pad = 0;
+ 	TRACE2(("enter buf_putmpint"))
+--- a/buffer.h
++++ b/buffer.h
+@@ -65,7 +65,7 @@ void buf_putint(buffer* buf, unsigned in
+ void buf_putstring(buffer* buf, const char* str, unsigned int len);
+ void buf_putbufstring(buffer *buf, const buffer* buf_str);
+ void buf_putbytes(buffer *buf, const unsigned char *bytes, unsigned int len);
+-void buf_putmpint(buffer* buf, mp_int * mp);
++void buf_putmpint(buffer* buf, const mp_int * mp);
+ int buf_getmpint(buffer* buf, mp_int* mp);
+ unsigned int buf_getint(buffer* buf);
+ 
+--- a/dbrandom.c
++++ b/dbrandom.c
+@@ -347,7 +347,7 @@ void genrandom(unsigned char* buf, unsig
+  * rand must be an initialised *mp_int for the result.
+  * the result rand satisfies:  0 < rand < max 
+  * */
+-void gen_random_mpint(mp_int *max, mp_int *rand) {
++void gen_random_mpint(const mp_int *max, mp_int *rand) {
+ 
+ 	unsigned char *randbuf = NULL;
+ 	unsigned int len = 0;
+--- a/dbrandom.h
++++ b/dbrandom.h
+@@ -30,6 +30,6 @@
+ void seedrandom(void);
+ void genrandom(unsigned char* buf, unsigned int len);
+ void addrandom(const unsigned char * buf, unsigned int len);
+-void gen_random_mpint(mp_int *max, mp_int *rand);
++void gen_random_mpint(const mp_int *max, mp_int *rand);
+ 
+ #endif /* DROPBEAR_RANDOM_H_ */
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -442,7 +442,7 @@ void printhex(const char * label, const
+ 	}
+ }
+ 
+-void printmpint(const char *label, mp_int *mp) {
++void printmpint(const char *label, const mp_int *mp) {
+ 	buffer *buf = buf_new(1000);
+ 	buf_putmpint(buf, mp);
+ 	fprintf(stderr, "%d bits ", mp_count_bits(mp));
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -53,7 +53,7 @@ void dropbear_trace3(const char* format,
+ void dropbear_trace4(const char* format, ...) ATTRIB_PRINTF(1,2);
+ void dropbear_trace5(const char* format, ...) ATTRIB_PRINTF(1,2);
+ void printhex(const char * label, const unsigned char * buf, int len);
+-void printmpint(const char *label, mp_int *mp);
++void printmpint(const char *label, const mp_int *mp);
+ void debug_start_net(void);
+ extern int debug_trace;
+ #endif
+--- a/genrsa.c
++++ b/genrsa.c
+@@ -34,7 +34,7 @@
+ #if DROPBEAR_RSA
+ 
+ static void getrsaprime(mp_int* prime, mp_int *primeminus, 
+-		mp_int* rsa_e, unsigned int size_bytes);
++		const mp_int* rsa_e, unsigned int size_bytes);
+ 
+ /* mostly taken from libtomcrypt's rsa key generation routine */
+ dropbear_rsa_key * gen_rsa_priv_key(unsigned int size) {
+@@ -89,7 +89,7 @@ dropbear_rsa_key * gen_rsa_priv_key(unsi
+ 
+ /* return a prime suitable for p or q */
+ static void getrsaprime(mp_int* prime, mp_int *primeminus, 
+-		mp_int* rsa_e, unsigned int size_bytes) {
++		const mp_int* rsa_e, unsigned int size_bytes) {
+ 
+ 	unsigned char *buf;
+ 	int trials;

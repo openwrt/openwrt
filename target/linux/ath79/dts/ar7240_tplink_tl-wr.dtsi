@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "ar7240_tplink.dtsi"
 
 &leds {
@@ -24,7 +26,8 @@
 	};
 
 	wan {
-		label = "green:wan";
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 	};
 };

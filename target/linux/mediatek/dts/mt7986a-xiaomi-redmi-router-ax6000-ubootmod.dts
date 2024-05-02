@@ -8,9 +8,21 @@
 	compatible = "xiaomi,redmi-router-ax6000-ubootmod", "mediatek,mt7986a";
 };
 
+&chosen {
+	rootdisk = <&ubi_rootdisk>;
+	bootargs-append = " root=/dev/fit0 rootwait";
+};
+
 &partitions {
 	partition@580000 {
-		label = "ubi";
+		compatible = "linux,ubi";
 		reg = <0x580000 0x7a80000>;
+		label = "ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
 	};
 };

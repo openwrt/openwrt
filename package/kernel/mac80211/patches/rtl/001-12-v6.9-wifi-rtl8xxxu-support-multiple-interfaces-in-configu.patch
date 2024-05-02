@@ -1,0 +1,33 @@
+From 6b76638287055791e74b32c401a39ea1b91e7158 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:33 +0100
+Subject: [PATCH 12/21] wifi: rtl8xxxu: support multiple interfaces in
+ configure_filter()
+
+As we only want to support AP mode/sending beacons on port 0, change
+from priv->vif to priv->vifs[0] in the check for AP mode.
+Additionally, if we are in AP mode, don't filter RX beacon and probe
+response frames to still allow working STATION mode on the other
+interface.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-13-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -6794,8 +6794,8 @@ static void rtl8xxxu_configure_filter(st
+ 	else
+ 		rcr |= RCR_CHECK_BSSID_BEACON | RCR_CHECK_BSSID_MATCH;
+ 
+-	if (priv->vif && priv->vif->type == NL80211_IFTYPE_AP)
+-		rcr &= ~RCR_CHECK_BSSID_MATCH;
++	if (priv->vifs[0] && priv->vifs[0]->type == NL80211_IFTYPE_AP)
++		rcr &= ~(RCR_CHECK_BSSID_MATCH | RCR_CHECK_BSSID_BEACON);
+ 
+ 	if (*total_flags & FIF_CONTROL)
+ 		rcr |= RCR_ACCEPT_CTRL_FRAME;

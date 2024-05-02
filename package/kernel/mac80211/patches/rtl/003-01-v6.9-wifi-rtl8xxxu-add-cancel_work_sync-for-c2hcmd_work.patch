@@ -1,0 +1,27 @@
+From 1213acb478a7181cd73eeaf00db430f1e45b1361 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Thu, 11 Jan 2024 17:36:27 +0100
+Subject: [PATCH 1/2] wifi: rtl8xxxu: add cancel_work_sync() for c2hcmd_work
+
+The workqueue might still be running, when the driver is stopped. To
+avoid a use-after-free, call cancel_work_sync() in rtl8xxxu_stop().
+
+Fixes: e542e66b7c2e ("rtl8xxxu: add bluetooth co-existence support for single antenna")
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240111163628.320697-2-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -7480,6 +7480,7 @@ static void rtl8xxxu_stop(struct ieee802
+ 	if (priv->usb_interrupts)
+ 		rtl8xxxu_write32(priv, REG_USB_HIMR, 0);
+ 
++	cancel_work_sync(&priv->c2hcmd_work);
+ 	cancel_delayed_work_sync(&priv->ra_watchdog);
+ 
+ 	rtl8xxxu_free_rx_resources(priv);

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "iptime,a3004ns-dual", "mediatek,mt7621-soc";
@@ -20,12 +21,14 @@
 		compatible = "gpio-leds";
 
 		led_cpu: cpu {
-			label = "blue:cpu";
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>;
 			linux,default-trigger = "usbport";
@@ -62,7 +65,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			partition@0 {
 				label = "u-boot";
 				reg = <0x0 0x20000>;
 				read-only;
@@ -88,7 +91,7 @@
 				read-only;
 			};
 
-			factory: partition@30000 {
+			partition@30000 {
 				label = "factory";
 				reg = <0x30000 0x10000>;
 				read-only;
@@ -131,10 +134,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

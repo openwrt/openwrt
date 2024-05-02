@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "rt3883_belkin_f9k110x.dtsi"
 
 / {
@@ -41,12 +43,14 @@
 		};
 
 		wps_amber {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wps_blue {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 	};

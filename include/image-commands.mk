@@ -46,7 +46,7 @@ endef
 
 ifdef IB
 define Build/append-image-stage
-	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1) >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1) >> $@
 endef
 else
 define Build/append-image-stage
@@ -54,7 +54,7 @@ define Build/append-image-stage
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
 	mkdir -p "$(STAGING_DIR_IMAGE)"
-	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1)"
 	dd if="$@.stripmeta" >> "$@"
 	rm "$@.stripmeta"
 endef
@@ -152,6 +152,20 @@ define Build/append-ubi
 		$(call Build/check-size,$(UBI_NAND_SIZE_LIMIT)))
 endef
 
+define Build/ubinize-image
+	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
+		$(foreach part,$(UBINIZE_PARTS),--part $(part)) \
+		--part $(word 1,$(1))="$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(word 2,$(1))" \
+		$@.tmp \
+		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
+		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
+		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
+		$(UBINIZE_OPTS)
+	cat $@.tmp >> $@
+	rm $@.tmp
+endef
+
 define Build/ubinize-kernel
 	cp $@ $@.tmp
 	sh $(TOPDIR)/scripts/ubinize-image.sh \
@@ -228,6 +242,43 @@ endef
 
 define Build/copy-file
 	cat "$(1)" > "$@"
+endef
+
+# Create a header for a D-Link AI series recovery image and add it at the beginning of the image
+# Currently supported: AQUILA M30, EAGLE M32 and R32
+# Arguments:
+# 1: Start string of the header
+# 2: Firmware version
+# 3: Block start address
+# 4: Block length
+# 5: Device FMID
+define Build/dlink-ai-recovery-header
+	$(eval header_start=$(word 1,$(1)))
+	$(eval firmware_version=$(word 2,$(1)))
+	$(eval block_start=$(word 3,$(1)))
+	$(eval block_length=$(word 4,$(1)))
+	$(eval device_fmid=$(word 5,$(1)))
+# create $@.header without the checksum
+	echo -en "$(header_start)\x00\x00" > "$@.header"
+# Calculate checksum over data area ($@) and append it to the header.
+# The checksum is the 2byte-sum over the whole data area.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@" | awk '{ s+=$$1; } END { s%=65535; printf "%c%c",s%256,s/256; }' >> "$@.header"
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00" >> "$@.header"
+	echo -en "$(firmware_version)" >> "$@.header"
+# Only one block supported: Erase start/length is identical to data start/length
+	echo -en "$(block_start)$(block_length)$(block_start)$(block_length)" >> "$@.header"
+# Only zeros
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >> "$@.header"
+# Last 16 bytes, but without checksum
+	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00" >> "$@.header"
+	echo -en "$(device_fmid)" >> "$@.header"
+# Calculate and append checksum: The checksum must be set so that the 2byte-sum of the whole header is 0.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@.header" | awk '{s+=65535-$$1;}END{s%=65535;printf "%c%c",s%256,s/256;}' >> "$@.header"
+	cat "$@.header" "$@" > "$@.new"
+	mv "$@.new" "$@"
+	rm "$@.header"
 endef
 
 define Build/dlink-sge-image

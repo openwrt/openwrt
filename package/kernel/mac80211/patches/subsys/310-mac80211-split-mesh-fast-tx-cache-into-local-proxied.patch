@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/mesh.h
 +++ b/net/mac80211/mesh.h
-@@ -134,9 +134,33 @@ struct mesh_path {
+@@ -134,9 +134,38 @@ struct mesh_path {
  #define MESH_FAST_TX_CACHE_TIMEOUT		8000 /* msecs */
  
  /**
@@ -47,12 +47,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 + * @MESH_FAST_TX_TYPE_LOCAL: tx from the local vif address as SA
 + * @MESH_FAST_TX_TYPE_PROXIED: local tx with a different SA (e.g. bridged)
 + * @MESH_FAST_TX_TYPE_FORWARDED: forwarded from a different mesh point
++ * @NUM_MESH_FAST_TX_TYPE: number of entry types
 + */
 +enum ieee80211_mesh_fast_tx_type {
 +	MESH_FAST_TX_TYPE_LOCAL,
 +	MESH_FAST_TX_TYPE_PROXIED,
 +	MESH_FAST_TX_TYPE_FORWARDED,
++
++	/* must be last */
++	NUM_MESH_FAST_TX_TYPE
 +};
++
 +
 +/**
 + * struct ieee80211_mesh_fast_tx_key - cached mesh fast tx entry key
@@ -62,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 + */
 +struct ieee80211_mesh_fast_tx_key {
 +	u8 addr[ETH_ALEN] __aligned(2);
-+	enum ieee80211_mesh_fast_tx_type type;
++	u16 type;
 +};
 +
 +/**
@@ -73,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @fast_tx: base fast_tx data
   * @hdr: cached mesh and rfc1042 headers
   * @hdrlen: length of mesh + rfc1042
-@@ -147,7 +171,7 @@ struct mesh_path {
+@@ -147,7 +176,7 @@ struct mesh_path {
   */
  struct ieee80211_mesh_fast_tx {
  	struct rhash_head rhash;
@@ -82,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	struct ieee80211_fast_tx fast_tx;
  	u8 hdr[sizeof(struct ieee80211s_hdr) + sizeof(rfc1042_header)];
-@@ -334,7 +358,8 @@ void mesh_path_tx_root_frame(struct ieee
+@@ -333,7 +362,8 @@ void mesh_path_tx_root_frame(struct ieee
  
  bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
  struct ieee80211_mesh_fast_tx *
@@ -175,12 +180,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	ether_addr_copy(key.addr, addr);
  	cache = &sdata->u.mesh.tx_cache;
  	spin_lock_bh(&cache->walk_lock);
--	entry = rhashtable_lookup(&cache->rht, addr, fast_tx_rht_params);
+-	entry = rhashtable_lookup_fast(&cache->rht, addr, fast_tx_rht_params);
 -	if (entry)
 -		mesh_fast_tx_entry_free(cache, entry);
-+	for (i = MESH_FAST_TX_TYPE_LOCAL; i < MESH_FAST_TX_TYPE_FORWARDED; i++) {
++	for (i = 0; i < NUM_MESH_FAST_TX_TYPE; i++) {
 +		key.type = i;
-+		entry = rhashtable_lookup(&cache->rht, &key, fast_tx_rht_params);
++		entry = rhashtable_lookup_fast(&cache->rht, &key, fast_tx_rht_params);
 +		if (entry)
 +			mesh_fast_tx_entry_free(cache, entry);
 +	}
@@ -189,7 +194,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2727,7 +2727,10 @@ ieee80211_rx_mesh_fast_forward(struct ie
+@@ -2726,7 +2726,10 @@ ieee80211_rx_mesh_fast_forward(struct ie
  			       struct sk_buff *skb, int hdrlen)
  {
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -201,7 +206,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211s_hdr *mesh_hdr;
  	struct tid_ampdu_tx *tid_tx;
  	struct sta_info *sta;
-@@ -2736,9 +2739,13 @@ ieee80211_rx_mesh_fast_forward(struct ie
+@@ -2735,9 +2738,13 @@ ieee80211_rx_mesh_fast_forward(struct ie
  
  	mesh_hdr = (struct ieee80211s_hdr *)(skb->data + sizeof(eth));
  	if ((mesh_hdr->flags & MESH_FLAGS_AE) == MESH_FLAGS_AE_A5_A6)

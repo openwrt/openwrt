@@ -1,0 +1,33 @@
+From 9ac650401ffc2fb05c9328d26e76a5e7ae39152a Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 11 Dec 2023 23:31:22 +0800
+Subject: Fix test for multiuser kernels
+
+getuid() succeeds even on non-multiuser kernels. Instead
+getgroups() is a valid test.
+
+Fixes #214 on github
+---
+ common-session.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+--- a/common-session.c
++++ b/common-session.c
+@@ -71,10 +71,13 @@ void common_session_init(int sock_in, in
+ #if !DROPBEAR_SVR_MULTIUSER
+ 	/* A sanity check to prevent an accidental configuration option
+ 	   leaving multiuser systems exposed */
+-	errno = 0;
+-	getuid();
+-	if (errno != ENOSYS) {
+-		dropbear_exit("Non-multiuser Dropbear requires a non-multiuser kernel");
++	{
++		int ret;
++		errno = 0;
++		ret = getgroups(0, NULL);
++		if (!(ret == -1 && errno == ENOSYS)) {
++			dropbear_exit("Non-multiuser Dropbear requires a non-multiuser kernel");
++		}
+ 	}
+ #endif
+ 

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -33,7 +34,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -79,7 +81,7 @@
 			read-only;
 		};
 
-		factory: partition@1e0000 {
+		partition@1e0000 {
 			label = "factory";
 			reg = <0x1e0000 0x100000>;
 			read-only;
@@ -103,7 +105,7 @@
 			};
 		};
 
-		factory2: partition@2e0000 {
+		partition@2e0000 {
 			label = "factory2";
 			reg = <0x2e0000 0x100000>;
 			read-only;
@@ -164,10 +166,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

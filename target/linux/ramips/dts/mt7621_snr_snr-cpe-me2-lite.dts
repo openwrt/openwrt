@@ -13,14 +13,12 @@
 		compatible = "gpio-leds";
 
 		led_sys: led-0 {
-			label = "green:sys";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_vpn: led-1 {
-			label = "green:vpn";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
@@ -73,7 +71,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
@@ -114,10 +112,8 @@
 	status = "okay";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &gmac0 {

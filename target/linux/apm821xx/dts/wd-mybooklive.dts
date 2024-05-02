@@ -21,30 +21,59 @@
 &POB0 {
 	ebc {
 		nor_flash@0,0 {
-			status = "okay";
-			compatible = "microchip,sst39vf040", "jedec-flash";
-			bank-width = <1>;
-			reg = <0x00000000 0x00000000 0x00080000>;
+		        status = "okay";
+		        compatible = "jedec-flash"; /* "microchip,sst39vf040 */
+		        bank-width = <1>;
+		        reg = <0x00000000 0x00000000 0x00080000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
-				/* Part of bootrom - Don't use it without a jump */
-				label = "free";
-				reg = <0x00000000 0x0001e000>;
-				read-only;
-			};
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			partition@1e000 {
-				label = "env";
-				reg = <0x0001e000 0x00002000>;
-				read-only;
-			};
+				partition@0 {
+					/* Part of bootrom - Don't use it without a jump */
+					label = "free";
+					reg = <0x00000000 0x0001e000>;
+					read-only;
+				};
 
-			partition@20000 {
-				label = "uboot";
-				reg = <0x00020000 0x00050000>;
-				read-only;
+				partition@1e000 {
+					compatible = "fixed-partitions";
+					reg = <0x0001e000 0x00002000>;
+					label = "u-boot-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						compatible = "u-boot,env-redundant-bool";
+						reg = <0x00000000 0x00001000>;
+						label = "u-boot-env-1";
+
+						ethaddr {
+						};
+					};
+
+/*
+ * Causes the following warning: * sysfs: cannot create duplicate filename '/bus/nvmem/devices/u-boot-env0'
+ *
+ *					partition@1000 {
+ *						compatible = "u-boot,env-redundant-bool";
+ *						reg = <0x00001000 0x00001000>;
+ *						label = "u-boot-env-2";
+ *
+ *					};
+ */
+				};
+
+
+				partition@20000 {
+					label = "uboot";
+					reg = <0x00020000 0x00050000>;
+					read-only;
+				};
 			};
 		};
 	};

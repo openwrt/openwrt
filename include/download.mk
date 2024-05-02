@@ -10,10 +10,10 @@ LEDE_GIT = $(PROJECT_GIT)
 
 ifdef PKG_SOURCE_VERSION
   ifndef PKG_VERSION
-    PKG_VERSION := $(if $(PKG_SOURCE_DATE),$(PKG_SOURCE_DATE)-)$(call version_abbrev,$(PKG_SOURCE_VERSION))
+    PKG_VERSION := $(if $(PKG_SOURCE_DATE),$(subst -,.,$(PKG_SOURCE_DATE)),0)~$(call version_abbrev,$(PKG_SOURCE_VERSION))
   endif
   PKG_SOURCE_SUBDIR ?= $(PKG_NAME)-$(PKG_VERSION)
-  PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.xz
+  PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.zst
 endif
 
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
@@ -168,7 +168,7 @@ define DownloadMethod/cvs
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		cvs -d $(URL) export $(VERSION) $(SUBDIR) && \
+		cvs -d $(URL) export $(SOURCE_VERSION) $(SUBDIR) && \
 		echo "Packing checkout..." && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
@@ -184,10 +184,10 @@ define DownloadMethod/svn
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
 		( svn help export | grep -q trust-server-cert && \
-		svn export --non-interactive --trust-server-cert -r$(VERSION) $(URL) $(SUBDIR) || \
-		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) ) && \
+		svn export --non-interactive --trust-server-cert -r$(SOURCE_VERSION) $(URL) $(SUBDIR) || \
+		svn export --non-interactive -r$(SOURCE_VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP="`svn info -r$(VERSION) --show-item last-changed-date $(URL)`" && \
+		export TAR_TIMESTAMP="`svn info -r$(SOURCE_VERSION) --show-item last-changed-date $(URL)`" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
@@ -205,7 +205,7 @@ define DownloadMethod/github_archive
 		$(SCRIPT_DIR)/dl_github_archive.py \
 			--dl-dir="$(DL_DIR)" \
 			--url="$(URL)" \
-			--version="$(VERSION)" \
+			--version="$(SOURCE_VERSION)" \
 			--subdir="$(SUBDIR)" \
 			--source="$(FILE)" \
 			--hash="$(MIRROR_HASH)" \
@@ -215,6 +215,11 @@ define DownloadMethod/github_archive
 endef
 
 # Only intends to be called as a submethod from other DownloadMethod
+#
+# We first clone, checkout and then we generate a tar using the
+# git archive command to apply any rules of .gitattributes
+# To keep consistency with github generated tar archive, we default
+# the short hash to 8 (default is 7). (for git log related usage)
 define DownloadMethod/rawgit
 	echo "Checking out files from the git repository..."; \
 	mkdir -p $(TMP_DIR)/dl && \
@@ -222,11 +227,17 @@ define DownloadMethod/rawgit
 	rm -rf $(SUBDIR) && \
 	[ \! -d $(SUBDIR) ] && \
 	git clone $(OPTS) $(URL) $(SUBDIR) && \
-	(cd $(SUBDIR) && git checkout $(VERSION) && \
-	$(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES))) && \
-	echo "Packing checkout..." && \
+	(cd $(SUBDIR) && git checkout $(SOURCE_VERSION)) && \
 	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
-	rm -rf $(SUBDIR)/.git && \
+	echo "Generating formal git archive (apply .gitattributes rules)" && \
+	(cd $(SUBDIR) && git config core.abbrev 8 && \
+	git archive --format=tar HEAD --output=../$(SUBDIR).tar.git) && \
+	$(if $(filter skip,$(SUBMODULES)),true,$(TAR) --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null) && \
+	rm -rf $(SUBDIR) && mkdir $(SUBDIR) && \
+	$(TAR) -C $(SUBDIR) -xf $(SUBDIR).tar.git && \
+	(cd $(SUBDIR) && $(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES) && \
+	rm -rf .git .gitmodules)) && \
+	echo "Packing checkout..." && \
 	$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 	mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 	rm -rf $(SUBDIR);
@@ -239,7 +250,7 @@ define DownloadMethod/bzr
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		bzr export --per-file-timestamps -r$(VERSION) $(SUBDIR) $(URL) && \
+		bzr export --per-file-timestamps -r$(SOURCE_VERSION) $(SUBDIR) $(URL) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
@@ -255,7 +266,7 @@ define DownloadMethod/hg
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		hg clone -r $(VERSION) $(URL) $(SUBDIR) && \
+		hg clone -r $(SOURCE_VERSION) $(URL) $(SUBDIR) && \
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && hg log --template '@{date}' -l 1` && \
 		find $(SUBDIR) -name .hg | xargs rm -rf && \
 		echo "Packing checkout..." && \
@@ -272,7 +283,7 @@ define DownloadMethod/darcs
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		darcs get -t $(VERSION) $(URL) $(SUBDIR) && \
+		darcs get -t $(SOURCE_VERSION) $(URL) $(SUBDIR) && \
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && LC_ALL=C darcs log --last 1 | sed -ne 's!^Date: \+!!p'` && \
 		find $(SUBDIR) -name _darcs | xargs rm -rf && \
 		echo "Packing checkout..." && \
@@ -282,12 +293,12 @@ define DownloadMethod/darcs
 	)
 endef
 
-Validate/cvs=VERSION SUBDIR
-Validate/svn=VERSION SUBDIR
-Validate/git=VERSION SUBDIR
-Validate/bzr=VERSION SUBDIR
-Validate/hg=VERSION SUBDIR
-Validate/darcs=VERSION SUBDIR
+Validate/cvs=SOURCE_VERSION SUBDIR
+Validate/svn=SOURCE_VERSION SUBDIR
+Validate/git=SOURCE_VERSION SUBDIR
+Validate/bzr=SOURCE_VERSION SUBDIR
+Validate/hg=SOURCE_VERSION SUBDIR
+Validate/darcs=SOURCE_VERSION SUBDIR
 
 define Download/Defaults
   URL:=
@@ -300,7 +311,7 @@ define Download/Defaults
   MIRROR:=1
   MIRROR_HASH=$$(MIRROR_MD5SUM)
   MIRROR_MD5SUM:=x
-  VERSION:=
+  SOURCE_VERSION:=
   OPTS:=
   SUBMODULES:=
 endef
@@ -315,7 +326,7 @@ define Download/default
   $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
   $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
   $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))
-  VERSION:=$(PKG_SOURCE_VERSION)
+  SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
   $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
   $(if $(PKG_HASH),HASH:=$(PKG_HASH))
 endef

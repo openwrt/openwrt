@@ -42,16 +42,19 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wlan {
-			label = "white:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 		wan {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
@@ -75,7 +78,8 @@
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -108,7 +112,7 @@
 				reg = <0x20000 0xfa0000>;
 			};
 
-			romfile: partition@fc0000 {
+			partition@fc0000 {
 				label = "romfile";
 				reg = <0xfc0000 0x10000>;
 				read-only;
@@ -132,7 +136,7 @@
 				read-only;
 			};
 
-			radio: partition@fe0000 {
+			partition@fe0000 {
 				label = "radio";
 				reg = <0xfe0000 0x10000>;
 				read-only;
@@ -194,12 +198,9 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&ethphy4 {
+	/delete-property/ interrupts;
 };
-
 
 &switch0 {
 	ports {

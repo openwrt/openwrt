@@ -1514,7 +1514,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		};
 --- a/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
 +++ b/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
-@@ -23,13 +23,13 @@
+@@ -23,12 +23,12 @@
  	leds {
  		compatible = "gpio-leds";
  
@@ -1522,7 +1522,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +		led-wlan {
  			label = "bcm53xx:blue:wlan";
  			gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
- 			linux,default-trigger = "default-off";
  		};
  
 -		system {
@@ -1532,7 +1531,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  			linux,default-trigger = "timer";
 --- a/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
 +++ b/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
-@@ -20,26 +20,26 @@
+@@ -20,25 +20,25 @@
  		reg = <0x00000000 0x08000000>;
  	};
  
@@ -1544,7 +1543,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +		led-5ghz {
  			label = "bcm53xx:blue:5ghz";
  			gpios = <&chipcommon 11 GPIO_ACTIVE_HIGH>;
- 			linux,default-trigger = "default-off";
  		};
  
 -		system {
@@ -1563,7 +1561,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +		led-2ghz {
  			label = "bcm53xx:blue:2ghz";
  			gpios = <&pcie0_chipcommon 3 GPIO_ACTIVE_HIGH>;
- 			linux,default-trigger = "default-off";
+ 		};
 --- a/arch/arm/boot/dts/bcm47189-tenda-ac9.dts
 +++ b/arch/arm/boot/dts/bcm47189-tenda-ac9.dts
 @@ -20,37 +20,37 @@

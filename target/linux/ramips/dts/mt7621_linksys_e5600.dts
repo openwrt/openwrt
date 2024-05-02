@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "linksys,e5600", "mediatek,mt7621-soc";
@@ -40,23 +41,27 @@
 		compatible = "gpio-leds";
 
 		wps {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_blue {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -82,7 +87,7 @@
 			read-only;
 		};
 
-		factory: partition@c0000 {
+		partition@c0000 {
 			label = "factory";
 			reg = <0xc0000 0x40000>;
 			read-only;
@@ -170,10 +175,8 @@
 	phy-handle = <&ethphy4>;
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

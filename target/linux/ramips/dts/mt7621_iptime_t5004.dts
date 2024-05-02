@@ -21,7 +21,6 @@
 		compatible = "gpio-leds";
 
 		led_cpu: led-0 {
-			label = "blue:cpu";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_CPU;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
@@ -54,9 +53,8 @@
 		};
 
 		partition@80000 {
-			label = "config";
+			label = "u-boot-env";
 			reg = <0x80000 0xc0000>;
-			read-only;
 		};
 
 		partition@140000 {
@@ -93,10 +91,8 @@
 	phy-handle = <&ethphy0>;
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

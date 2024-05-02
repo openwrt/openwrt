@@ -17,6 +17,7 @@ case "$board" in
 	adtran,bsap1840)
 		macaddr_add "$(mtd_get_mac_binary 'Board data' 2)" $(($PHYNBR * 8 + 1)) > /sys${DEVPATH}/macaddress
 		;;
+	dlink,covr-c1200-a1|\
 	dlink,covr-p2500-a1)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii art "protest_ath1_mac" > /sys${DEVPATH}/macaddress
@@ -41,13 +42,41 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
+	elecom,wab-i1750-ps|\
+	elecom,wab-s1167-ps|\
+	elecom,wab-s600-ps)
+		# set the 5G MAC address (= ethaddr + 1)
+		[ "$PHYNBR" -eq 0 ] && \
+			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
+		# set the 2.4G MAC address (= ethaddr)
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii u-boot-env "ethaddr" > /sys${DEVPATH}/macaddress
+		;;
+	engenius,ecb1200|\
+	engenius,ecb1750)
+		[ "$PHYNBR" -eq 0 ] && \
+		mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
+		;;
 	engenius,epg5000|\
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
 		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" "$PHYNBR" > /sys${DEVPATH}/macaddress
 		;;
-	iodata,wn-ac1600dgr)
+	engenius,ews511ap)
+		[ "$PHYNBR" -eq 0 ] && \
+		macaddr_add $(cat /sys/class/net/eth0/address) 1 > /sys${DEVPATH}/macaddress
+		;;
+	extreme-networks,ws-ap3805i)
+		[ "$PHYNBR" -eq 0 ] && \
+		mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+		;;
+	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr|\
+	iodata,wn-ac1600dgr2|\
+	sitecom,wlr-7100|\
+	sitecom,wlr-8100|\
+	zyxel,nbg6616)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
@@ -59,13 +88,27 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
 		;;
+	nec,wf1200cr|\
+	nec,wg1200cr|\
+	qihoo,c301)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		;;
 	phicomm,k2t)
+		[ "$PHYNBR" -eq 0 ] && \
+			k2t_get_mac "5g_mac" > /sys${DEVPATH}/macaddress
 		# The K2T factory firmware does use LAN mac address as the 2.4G wifi mac address
 		[ "$PHYNBR" -eq 1 ] && \
 			k2t_get_mac "lan_mac" > /sys${DEVPATH}/macaddress
 		;;
 	siemens,ws-ap3610)
 		mtd_get_mac_ascii cfg1 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
+		;;
+	tplink,deco-s4-v2)
+		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		[ "$PHYNBR" -eq 0 ] && \
+			macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
+
 		;;
 	trendnet,tew-823dru)
 		# set the 2.4G interface mac address to LAN MAC

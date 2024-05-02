@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "aruba,ap-175", "qca,ar7161";
@@ -37,7 +38,8 @@
         /* These external LEDs are visible from the bottom panel */
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio_ext 5 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "ar9344_mikrotik_routerboard.dtsi"
 #include "ar9344_mikrotik_routerboard-16m-nor.dtsi"
 
@@ -13,12 +15,14 @@
 	pinctrl-0 = <&enable_gpio_20>;
 
 	lan {
-		label = "green:lan";
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 	};
 
 	power {
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		default-state = "on";
 	};

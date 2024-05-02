@@ -30,3 +30,10 @@
 		};
 	};
 };
+
+&pcie {
+	wifi@0,0 {
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};

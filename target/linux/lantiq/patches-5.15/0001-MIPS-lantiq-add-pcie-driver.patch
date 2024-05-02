@@ -3913,6 +3913,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define IFX_RCU_AHB_BE_PCIE_M                    0x00000001  /* Configure AHB master port that connects to PCIe RC in big endian */
 +#define IFX_RCU_AHB_BE_PCIE_S                    0x00000010  /* Configure AHB slave port that connects to PCIe RC in little endian */
 +#define IFX_RCU_AHB_BE_XBAR_M                    0x00000002  /* Configure AHB master port that connects to XBAR in big endian */
++#define IFX_RCU_AHB_BE_XBAR_S                    0x00000008  /* Configure AHB slave port that connects to XBAR in big endian */
 +#define CONFIG_IFX_PCIE_PHY_36MHZ_MODE
 +
 +#define IFX_PMU1_MODULE_PCIE_PHY   (0)
@@ -4159,7 +4160,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +#endif /* IFXMIPS_PCIE_VR9_H */
-+
 --- a/arch/mips/pci/pci-legacy.c
 +++ b/arch/mips/pci/pci-legacy.c
 @@ -305,3 +305,30 @@ char *__init pcibios_setup(char *str)
@@ -5524,7 +5524,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1482,6 +1482,8 @@ void pci_walk_bus(struct pci_bus *top, i
+@@ -1483,6 +1483,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);

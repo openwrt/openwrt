@@ -95,7 +95,7 @@ VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%d,\L$(call sed_escape,$(subst $(space),_,$(VERSION_DIST))),g' \
 	-e 's,%R,$(call sed_escape,$(REVISION)),g' \
 	-e 's,%T,$(call sed_escape,$(BOARD)),g' \
-	-e 's,%S,$(call sed_escape,$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)),g' \
+	-e 's,%S,$(call sed_escape,$(BOARD)/$(SUBTARGET)),g' \
 	-e 's,%A,$(call sed_escape,$(ARCH_PACKAGES)),g' \
 	-e 's,%t,$(call sed_escape,$(VERSION_TAINTS)),g' \
 	-e 's,%M,$(call sed_escape,$(VERSION_MANUFACTURER)),g' \

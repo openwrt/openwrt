@@ -65,7 +65,8 @@
 		};
 
 		led_power_red: led@3 {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
@@ -120,7 +121,8 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "red:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};

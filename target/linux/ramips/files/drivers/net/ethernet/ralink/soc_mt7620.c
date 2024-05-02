@@ -107,7 +107,7 @@ static int mt7620_gsw_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac)
+static void mt7620_set_mac(struct fe_priv *priv, const unsigned char *mac)
 {
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	unsigned long flags;

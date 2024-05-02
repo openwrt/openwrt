@@ -22,12 +22,14 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_orange: wps {
-			label = "orange:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -81,6 +83,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
 };
 
 &spi {
@@ -120,6 +129,10 @@
 
 					macaddr_art_1002: macaddr@1002 {
 						reg = <0x1002 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};

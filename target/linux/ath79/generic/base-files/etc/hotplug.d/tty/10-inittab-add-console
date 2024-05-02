@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+inittab_add_console() {
+	local console
+
+	case $(board_name) in
+	elecom,wab-i1750-ps)
+		console="ttyATH1"
+		;;
+	*)
+		return
+		;;
+	esac
+
+	[ "$DEVNAME" != "$console" ] && \
+		return
+
+	# check existing (commented out) entry
+	grep -q "^#\{0,1\}${console}::askfirst" "/etc/inittab" && \
+		return
+
+	# append entry
+	echo -e "\n${console}::askfirst:/usr/libexec/login.sh" \
+		>> /etc/inittab
+}
+
+[ "${ACTION}" = "add" ] && inittab_add_console

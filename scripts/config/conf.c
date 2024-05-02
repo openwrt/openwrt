@@ -35,6 +35,7 @@ enum input_mode {
 	olddefconfig,
 	yes2modconfig,
 	mod2yesconfig,
+	mod2noconfig,
 	fatalrecursive,
 };
 static enum input_mode input_mode = oldaskconfig;
@@ -164,8 +165,6 @@ enum conf_def_mode {
 	def_default,
 	def_yes,
 	def_mod,
-	def_y2m,
-	def_m2y,
 	def_no,
 	def_random
 };
@@ -303,12 +302,10 @@ static bool conf_set_all_new_symbols(enum conf_def_mode mode)
 	return has_changed;
 }
 
-static void conf_rewrite_mod_or_yes(enum conf_def_mode mode)
+static void conf_rewrite_tristates(tristate old_val, tristate new_val)
 {
 	struct symbol *sym;
 	int i;
-	tristate old_val = (mode == def_y2m) ? yes : mod;
-	tristate new_val = (mode == def_y2m) ? mod : yes;
 
 	for_all_symbols(i, sym) {
 		if (sym_get_type(sym) == S_TRISTATE &&
@@ -555,7 +552,7 @@ static int conf_choice(struct menu *menu)
 			print_help(child);
 			continue;
 		}
-		sym_set_choice_value(sym, child->sym);
+		sym_set_tristate_value(child->sym, yes);
 		for (child = child->list; child; child = child->next) {
 			indent += 2;
 			conf(child);
@@ -647,19 +644,8 @@ static void check_conf(struct menu *menu)
 
 		switch (input_mode) {
 		case listnewconfig:
-			if (sym->name) {
-				const char *str;
-
-				if (sym->type == S_STRING) {
-					str = sym_get_string_value(sym);
-					str = sym_escape_string_value(str);
-					printf("%s%s=%s\n", CONFIG_, sym->name, str);
-					free((void *)str);
-				} else {
-					str = sym_get_string_value(sym);
-					printf("%s%s=%s\n", CONFIG_, sym->name, str);
-				}
-			}
+			if (sym->name)
+				print_symbol_for_listconfig(sym);
 			break;
 		case helpnewconfig:
 			printf("-----\n");
@@ -697,7 +683,8 @@ static const struct option long_opts[] = {
 	{"olddefconfig",  no_argument,       &input_mode_opt, olddefconfig},
 	{"yes2modconfig", no_argument,       &input_mode_opt, yes2modconfig},
 	{"mod2yesconfig", no_argument,       &input_mode_opt, mod2yesconfig},
-	{"fatalrecursive",no_argument,       NULL, fatalrecursive},
+	{"mod2noconfig",  no_argument,       &input_mode_opt, mod2noconfig},
+	{"fatalrecursive",no_argument,       &input_mode_opt, fatalrecursive},
 	{NULL, 0, NULL, 0}
 };
 
@@ -707,8 +694,10 @@ static void conf_usage(const char *progname)
 	printf("\n");
 	printf("Generic options:\n");
 	printf("  -h, --help              Print this message and exit.\n");
+	printf("  -r <file>               Read <file> as input.\n");
 	printf("  -s, --silent            Do not print log.\n");
-	printf("      --fatalrecursive    Treat recursive depenendencies as a fatal error\n");
+	printf("  -w <file>               Write config to <file>.\n");
+	printf("  --fatalrecursive        Treat recursive dependency as error.\n");
 	printf("\n");
 	printf("Mode options:\n");
 	printf("  --listnewconfig         List new options\n");
@@ -727,6 +716,7 @@ static void conf_usage(const char *progname)
 	printf("  --randconfig            New config with random answer to all options\n");
 	printf("  --yes2modconfig         Change answers from yes to mod if possible\n");
 	printf("  --mod2yesconfig         Change answers from mod to yes if possible\n");
+	printf("  --mod2noconfig          Change answers from mod to no if possible\n");
 	printf("  (If none of the above is given, --oldaskconfig is the default)\n");
 }
 
@@ -740,27 +730,23 @@ int main(int ac, char **av)
 
 	tty_stdio = isatty(0) && isatty(1);
 
-	while ((opt = getopt_long(ac, av, "hr:sw:", long_opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "hr:w:s", long_opts, NULL)) != -1) {
 		switch (opt) {
 		case 'h':
 			conf_usage(progname);
 			exit(1);
 			break;
-		case 's':
-			conf_set_message_callback(NULL);
-			break;
-		case fatalrecursive:
-			recursive_is_error = 1;
-			continue;
 		case 'r':
 			input_file = optarg;
+			break;
+		case 's':
+			conf_set_message_callback(NULL);
 			break;
 		case 'w':
 			output_file = optarg;
 			break;
 		case 0:
-			input_mode = input_mode_opt;
-			switch (input_mode) {
+			switch (input_mode_opt) {
 			case syncconfig:
 				/*
 				 * syncconfig is invoked during the build stage.
@@ -777,9 +763,13 @@ int main(int ac, char **av)
 			case randconfig:
 				set_randconfig_seed();
 				break;
+			case fatalrecursive:
+				recursive_is_error = 1;
+				continue;
 			default:
 				break;
 			}
+			input_mode = input_mode_opt;
 		default:
 			break;
 		}
@@ -812,6 +802,7 @@ int main(int ac, char **av)
 	case olddefconfig:
 	case yes2modconfig:
 	case mod2yesconfig:
+	case mod2noconfig:
 	case allnoconfig:
 	case allyesconfig:
 	case allmodconfig:
@@ -858,10 +849,13 @@ int main(int ac, char **av)
 	case savedefconfig:
 		break;
 	case yes2modconfig:
-		conf_rewrite_mod_or_yes(def_y2m);
+		conf_rewrite_tristates(yes, mod);
 		break;
 	case mod2yesconfig:
-		conf_rewrite_mod_or_yes(def_m2y);
+		conf_rewrite_tristates(mod, yes);
+		break;
+	case mod2noconfig:
+		conf_rewrite_tristates(mod, no);
 		break;
 	case oldaskconfig:
 		rootEntry = &rootmenu;

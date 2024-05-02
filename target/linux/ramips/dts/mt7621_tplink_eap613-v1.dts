@@ -26,7 +26,6 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "blue:status";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
@@ -109,7 +108,7 @@
 				read-only;
 			};
 
-			radio: partition@ff0000 {
+			partition@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x10000>;
 				read-only;

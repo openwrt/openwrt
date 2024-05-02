@@ -1,0 +1,70 @@
+From 80fd8687db41b1e04f78c37137d090f2165cca6e Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:28 +0100
+Subject: [PATCH 07/21] wifi: rtl8xxxu: extend check for matching bssid to both
+ interfaces
+
+The driver will support two interfaces soon, which both can be in
+station mode, so extend the check, whether cfo information should be
+parsed, to cover both interfaces.
+
+For better code readability put the lines with priv->vifs[port_num] in a
+separate function.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-8-martin.kaistra@linutronix.de
+---
+ .../wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 22 ++++++++++++-------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5706,6 +5706,16 @@ static void rtl8xxxu_update_beacon_work_
+ 	rtl8xxxu_send_beacon_frame(hw, vif);
+ }
+ 
++static inline bool rtl8xxxu_is_packet_match_bssid(struct rtl8xxxu_priv *priv,
++						  struct ieee80211_hdr *hdr,
++						  int port_num)
++{
++	return priv->vifs[port_num] &&
++	       priv->vifs[port_num]->type == NL80211_IFTYPE_STATION &&
++	       priv->vifs[port_num]->cfg.assoc &&
++	       ether_addr_equal(priv->vifs[port_num]->bss_conf.bssid, hdr->addr2);
++}
++
+ void rtl8723au_rx_parse_phystats(struct rtl8xxxu_priv *priv,
+ 				 struct ieee80211_rx_status *rx_status,
+ 				 struct rtl8723au_phy_stats *phy_stats,
+@@ -5722,12 +5732,10 @@ void rtl8723au_rx_parse_phystats(struct
+ 		rx_status->signal = priv->fops->cck_rssi(priv, phy_stats);
+ 	} else {
+ 		bool parse_cfo = priv->fops->set_crystal_cap &&
+-				 priv->vif &&
+-				 priv->vif->type == NL80211_IFTYPE_STATION &&
+-				 priv->vif->cfg.assoc &&
+ 				 !crc_icv_err &&
+ 				 !ieee80211_is_ctl(hdr->frame_control) &&
+-				 ether_addr_equal(priv->vif->bss_conf.bssid, hdr->addr2);
++				 (rtl8xxxu_is_packet_match_bssid(priv, hdr, 0) ||
++				  rtl8xxxu_is_packet_match_bssid(priv, hdr, 1));
+ 
+ 		if (parse_cfo) {
+ 			priv->cfo_tracking.cfo_tail[0] = phy_stats->path_cfotail[0];
+@@ -5762,12 +5770,10 @@ static void jaguar2_rx_parse_phystats_ty
+ 					    bool crc_icv_err)
+ {
+ 	bool parse_cfo = priv->fops->set_crystal_cap &&
+-			 priv->vif &&
+-			 priv->vif->type == NL80211_IFTYPE_STATION &&
+-			 priv->vif->cfg.assoc &&
+ 			 !crc_icv_err &&
+ 			 !ieee80211_is_ctl(hdr->frame_control) &&
+-			 ether_addr_equal(priv->vif->bss_conf.bssid, hdr->addr2);
++			 (rtl8xxxu_is_packet_match_bssid(priv, hdr, 0) ||
++			  rtl8xxxu_is_packet_match_bssid(priv, hdr, 1));
+ 	u8 pwdb_max = 0;
+ 	int rx_path;
+ 

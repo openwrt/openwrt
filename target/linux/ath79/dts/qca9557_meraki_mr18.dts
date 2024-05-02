@@ -22,12 +22,14 @@
 		compatible = "gpio-leds";
 
 		white: white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 
 		orange: orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
@@ -66,17 +68,14 @@
 
 #else
 		red {
-			label = "red:tricolor";
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		green: green {
-			label = "green:tricolor";
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		blue {
-			label = "blue:tricolor";
 			color = <LED_COLOR_ID_BLUE>;
 		};
 #endif
@@ -170,10 +169,6 @@
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
 	};
-};
-
-&uart {
-	status = "okay";
 };
 
 &mdio0 {

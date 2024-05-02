@@ -183,7 +183,27 @@
 			partition@0 {
 				label = "uboot";
 				reg = <0x00000000 0x00180000>;
+				compatible = "fixed-partitions";
 				read-only;
+
+				partition@40000 {
+					label = "u-boot-env-main";
+					compatible = "u-boot,env-redundant-count";
+					reg = <0x00040000 0x20000>; /* one block is 128k */
+					read-only;
+				};
+
+/*
+ * Causes u_boot_env: probe of 4e4000000.ndfc:nand:partitions:partition@0:partition@60000
+ * failed with error -17
+ *
+ *				partition@60000 {
+ *					label = "u-boot-env-redundant";
+ *					compatible = "u-boot,env-redundant-count";
+ *					reg = <0x00060000 0x20000>;
+ *					read-only;
+ *				};
+ */
 			};
 
 			partition@180000 {
@@ -196,7 +216,7 @@
 
 				partition@0 {
 					label = "kernel";
-					reg = <0x00000000 0x00380000>;
+					reg = <0x00000000 0x00480000>;
 
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
@@ -218,9 +238,9 @@
 				 */
 				};
 
-				partition@380000 {
+				partition@480000 {
 					label = "ubi";
-					reg = <0x00380000 0x014e0000>;
+					reg = <0x00480000 0x013e0000>;
 				};
 			};
 

@@ -3,6 +3,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include "qca953x.dtsi"
 
 / {
@@ -24,7 +25,8 @@
 		pinctrl-0 = <&pmx_leds_switch>, <&jtag_disable_pins>;
 
 		led_wan: wan {
-			label = "yellow:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 

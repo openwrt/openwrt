@@ -102,7 +102,7 @@
 			label = "Config";
 		};
 
-		factory: partition@200000 {
+		partition@200000 {
 			reg = <0x200000 0x1c0000>;
 			label = "Factory";
 			read-only;
@@ -193,10 +193,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &pcie {

@@ -1,0 +1,68 @@
+From 2ebd77fa8fb95f60b275cefb98ea7d6f4df06e55 Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Thu, 18 May 2023 19:27:44 +0800
+Subject: [PATCH 087/122] dt-bindings: phy: Add StarFive JH7110 USB PHY
+
+Add StarFive JH7110 SoC USB 2.0 PHY dt-binding.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Reviewed-by: Hal Feng <hal.feng@starfivetech.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+---
+ .../bindings/phy/starfive,jh7110-usb-phy.yaml | 50 +++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/starfive,jh7110-usb-phy.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/starfive,jh7110-usb-phy.yaml
+@@ -0,0 +1,50 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/starfive,jh7110-usb-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: StarFive JH7110 USB 2.0 PHY
++
++maintainers:
++  - Minda Chen <minda.chen@starfivetech.com>
++
++properties:
++  compatible:
++    const: starfive,jh7110-usb-phy
++
++  reg:
++    maxItems: 1
++
++  "#phy-cells":
++    const: 0
++
++  clocks:
++    items:
++      - description: PHY 125m
++      - description: app 125m
++
++  clock-names:
++    items:
++      - const: 125m
++      - const: app_125m
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - clock-names
++  - "#phy-cells"
++
++additionalProperties: false
++
++examples:
++  - |
++    phy@10200000 {
++        compatible = "starfive,jh7110-usb-phy";
++        reg = <0x10200000 0x10000>;
++        clocks = <&syscrg 95>,
++                 <&stgcrg 6>;
++        clock-names = "125m", "app_125m";
++        #phy-cells = <0>;
++    };

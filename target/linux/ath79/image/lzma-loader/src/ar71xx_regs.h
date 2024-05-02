@@ -671,6 +671,8 @@
 
 #define AR934X_GPIO_OUT_GPIO		0x00
 
+#define QCA955X_GPIO_OUTSEL_CLK_OBS5		0x54
+
 /*
  * MII_CTRL block
  */

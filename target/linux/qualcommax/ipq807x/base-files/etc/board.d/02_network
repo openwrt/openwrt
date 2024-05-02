@@ -14,13 +14,20 @@ ipq807x_setup_interfaces()
 	arcadyan,aw1000|\
 	buffalo,wxr-5950ax12|\
 	dynalink,dl-wrx36|\
-	xiaomi,ax9000)
+	linksys,mx5300|\
+	xiaomi,ax9000|\
+	zbtlink,zbt-z800ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	cmcc,rm2-6)
+		ucidef_set_interfaces_lan_wan "lan plc" "wan"
 		;;
 	compex,wpq873|\
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
+	prpl,haze|\
 	redmi,ax6|\
+	spectrum,sax1v1k|\
 	xiaomi,ax3600)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -42,9 +49,6 @@ ipq807x_setup_interfaces()
 	netgear,wax630)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
-	prpl,haze)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
-		;;
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
 		;;
@@ -65,7 +69,6 @@ ipq807x_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-		linksys,mx4200v1|\
 		linksys,mx4200v2)
 			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 			for i in $(seq 3 5); do

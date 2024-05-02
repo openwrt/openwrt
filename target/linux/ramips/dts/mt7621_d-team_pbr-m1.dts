@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "d-team,pbr-m1", "mediatek,mt7621-soc";
@@ -22,7 +23,8 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -128,7 +130,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

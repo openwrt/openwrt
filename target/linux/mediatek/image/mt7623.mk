@@ -1,3 +1,7 @@
+ifneq ($(KERNEL),6.1)
+DTS_DIR := $(DTS_DIR)/mediatek
+endif
+
 DEVICE_VARS += UBOOT_TARGET UBOOT_OFFSET UBOOT_IMAGE
 
 # The bootrom of MT7623 expects legacy MediaTek headers present in
@@ -116,6 +120,8 @@ endif
 			    gzip
   ARTIFACTS := u-boot.bin preloader.bin sdcard.img.gz
   SUPPORTED_DEVICES := bananapi,bpi-r2
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Bootloader update required for switch to fitblk
 endef
 TARGET_DEVICES += bananapi_bpi-r2
 

@@ -42,42 +42,36 @@
 		compatible = "gpio-leds";
 
 		lan1 {
-			label = "green:lan1";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan2 {
-			label = "green:lan2";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		lan3 {
-			label = "green:lan3";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_green {
-			label = "green:wan";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wan_red: wan_red {
-			label = "red:wan";
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
@@ -182,10 +176,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

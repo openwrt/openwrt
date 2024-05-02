@@ -17,28 +17,24 @@
 		compatible = "gpio-leds";
 
 		led_status_red: led-0 {
-			label = "red:status";
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_blue: led-1 {
-			label = "blue:status";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_yellow: led-2 {
-			label = "yellow:status";
 			color = <LED_COLOR_ID_YELLOW>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 
 		led-3 {
-			label = "amber:wan";
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
@@ -46,7 +42,6 @@
 		};
 
 		led-4 {
-			label = "amber:lan1";
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <1>;
@@ -55,7 +50,6 @@
 		};
 
 		led-5 {
-			label = "amber:lan2";
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <2>;
