@@ -211,8 +211,10 @@ config_list_foreach() {
 
 default_prerm() {
 	local root="${IPKG_INSTROOT}"
-	local pkgname="$(basename ${1%.*})"
+	[ -z "$pkgname" ] && local pkgname="$(basename ${1%.*})"
 	local ret=0
+	local filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
+	[ -f "$root/lib/apk/packages/${pkgname}.list" ] && filelist="$root/lib/apk/packages/${pkgname}.list"
 
 	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
 		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
@@ -220,7 +222,7 @@ default_prerm() {
 	fi
 
 	local shell="$(command -v bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+	for i in $(grep -s "^/etc/init.d/" "$filelist"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
 		else
@@ -235,8 +237,11 @@ default_prerm() {
 }
 
 add_group_and_user() {
-	local pkgname="$1"
+	[ -z "$pkgname" ] && local pkgname="$(basename ${1%.*})"
 	local rusers="$(sed -ne 's/^Require-User: *//p' $root/usr/lib/opkg/info/${pkgname}.control 2>/dev/null)"
+	if [ -f "$root/lib/apk/packages/${pkgname}.rusers" ]; then
+		local rusers="$(cat $root/lib/apk/packages/${pkgname}.rusers)"
+	fi
 
 	if [ -n "$rusers" ]; then
 		local tuple oIFS="$IFS"
@@ -337,11 +342,20 @@ update_alternatives() {
 
 default_postinst() {
 	local root="${IPKG_INSTROOT}"
-	local pkgname="$(basename ${1%.*})"
-	local filelist="/usr/lib/opkg/info/${pkgname}.list"
+	[ -z "$pkgname" ] && local pkgname="$(basename ${1%.*})"
+	local filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
+	[ -f "$root/lib/apk/packages/${pkgname}.list" ] && filelist="$root/lib/apk/packages/${pkgname}.list"
 	local ret=0
 
-	add_group_and_user "${pkgname}"
+	if [ -e "${root}/usr/lib/opkg/info/${pkgname}.list" ]; then
+		filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
+		add_group_and_user "${pkgname}"
+	fi
+
+	if [ -e "${root}/lib/apk/packages/${pkgname}.list" ]; then
+		filelist="${root}/lib/apk/packages/${pkgname}.list"
+		update_alternatives install "${pkgname}"
+	fi
 
 	if [ -d "$root/rootfs-overlay" ]; then
 		cp -R $root/rootfs-overlay/. $root/
@@ -374,7 +388,7 @@ default_postinst() {
 	fi
 
 	local shell="$(command -v bash)"
-	for i in $(grep -s "^/etc/init.d/" "$root$filelist"); do
+	for i in $(grep -s "^/etc/init.d/" "$filelist"); do
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
 		else
