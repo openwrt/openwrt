@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
+@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
      return 0;
  }
  EOF
@@ -9,7 +9,7 @@
      if [ "$?" -eq "0" ]; then
          echo "HAVE_PCAP:=y" >>$CONFIG
          [ -n "$LIBPCAP_CFLAGS" ] && echo 'CFLAGS += ' $LIBPCAP_CFLAGS >> $CONFIG
-@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
+@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
      return 0;
  }
  EOF
@@ -18,7 +18,7 @@
      if [ "$?" -eq "0" ]; then
          echo "HAVE_FEATURES+=${config_var}" >>"$CONFIG"
          echo "yes"
-@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
+@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
  }
  EOF
  
