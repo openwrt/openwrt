@@ -1,0 +1,27 @@
+From 17a3ada0af3be820240f50c3f62708a3aaa702c5 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 3 May 2024 19:39:38 +0200
+Subject: [PATCH] headers: xdp: drop stddef.h from parsing_helpers
+
+Drop stddef.h from parsing_helpers to make compilation happy with glibc.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ headers/xdp/parsing_helpers.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/headers/xdp/parsing_helpers.h b/headers/xdp/parsing_helpers.h
+index 2fc7b6a..2fb2fb4 100644
+--- a/headers/xdp/parsing_helpers.h
++++ b/headers/xdp/parsing_helpers.h
+@@ -15,7 +15,6 @@
+ #ifndef __PARSING_HELPERS_H
+ #define __PARSING_HELPERS_H
+ 
+-#include <stddef.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_packet.h>
+ #include <linux/ip.h>
+-- 
+2.43.0
+
