@@ -89,7 +89,7 @@ CONFIGURE_VARS += \
 	LLC="$(LLVM_LLC)" \
 	BPF_LDFLAGS="-march=$(BPF_TARGET) -mcpu=v3"
 
-ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
+ifneq ($(findstring s,$(OPENWRT_VERBOSE)),)
 	MAKE_FLAGS+=V=1
 endif
 
