@@ -455,8 +455,7 @@ define Device/engenius_eap1300
 	IMAGE_SIZE := 25344k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += engenius_eap1300
+TARGET_DEVICES += engenius_eap1300
 
 define Device/engenius_eap2200
 	$(call Device/FitImage)
