@@ -286,6 +286,55 @@ add_group_and_user() {
 	fi
 }
 
+update_alternatives() {
+	local root="${IPKG_INSTROOT}"
+	local action="$1"
+	local pkgname="$2"
+
+	if [ -f "$root/lib/apk/packages/${pkgname}.alternatives" ]; then
+		for pkg_alt in $(cat $root/lib/apk/packages/${pkgname}.alternatives); do
+			local best_prio=0;
+			local best_src="/bin/busybox";
+			pkg_prio=${pkg_alt%%:*};
+			pkg_target=${pkg_alt#*:};
+			pkg_target=${pkg_target%:*};
+			pkg_src=${pkg_alt##*:};
+
+			if [ -e "$root/$target" ]; then
+				for alts in $root/lib/apk/packages/*.alternatives; do
+					for alt in $(cat $alts); do
+						prio=${alt%%:*};
+						target=${alt#*:};
+						target=${target%:*};
+						src=${alt##*:};
+
+						if [ "$target" = "$pkg_target" ] &&
+						   [ "$src" != "$pkg_src" ] &&
+						   [ "$best_prio" -lt "$prio" ]; then
+							best_prio=$prio;
+							best_src=$src;
+						fi
+					done
+				done
+			fi
+			case "$action" in
+				install)
+					if [ "$best_prio" -lt "$pkg_prio" ]; then
+						ln -sf "$pkg_src" "$root/$pkg_target"
+						echo "add alternative: $pkg_target -> $pkg_src"
+					fi
+				;;
+				remove)
+					if [ "$best_prio" -lt "$pkg_prio" ]; then
+						ln -sf "$best_src" "$root/$pkg_target"
+						echo "add alternative: $pkg_target -> $best_src"
+					fi
+				;;
+			esac
+		done
+	fi
+}
+
 default_postinst() {
 	local root="${IPKG_INSTROOT}"
 	local pkgname="$(basename ${1%.*})"
