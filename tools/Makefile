@@ -86,6 +86,8 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_JSON_CHECKSEC_MITIGATIONS_REPORT),y) += checksec.sh
+
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile

@@ -218,6 +218,19 @@ $(_endef)
 	$(if $(PROVIDES),@for pkg in $(filter-out $(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
 
+# We need to run checksec.sh before stripping for working stack canary check.
+    ifneq ($$(CONFIG_JSON_CHECKSEC_MITIGATIONS_REPORT),)
+	( \
+		mkdir -p $(PKG_BUILD_DIR)/CHECKSEC/$(1)/ && \
+		checksec --output=json --dir=$$(IDIR_$(1)) > $(PKG_BUILD_DIR)/CHECKSEC/$(1)/checksec_report.json && \
+		$(PYTHON) $(SCRIPT_DIR)/checksec-format-output.py \
+			$(PKG_BUILD_DIR)/CHECKSEC/$(1)/checksec_report.json \
+			$$(IDIR_$(1)) \
+			$(PKG_NAME) \
+			$(if $(PKG_VERSION),$(PKG_VERSION),"N/A") \
+			$(PKG_BUILD_DIR)/CHECKSEC/$(1)/checksec_report_formatted.json \
+	)
+    endif
 	$(RSTRIP) $$(IDIR_$(1))
 
     ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
