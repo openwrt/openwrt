@@ -1678,9 +1678,9 @@ void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2));
 		break;
-	case LLTP:
+	case LLDP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
-			    RTL838X_RMA_LLTP_CTRL + ((port >> 4) << 2));
+			    RTL838X_RMA_LLDP_CTRL + ((port >> 4) << 2));
 		break;
 	default:
 		break;
