@@ -425,7 +425,7 @@ typedef enum {
 	PTP,
 	PTP_UDP,
 	PTP_ETH2,
-	LLTP,
+	LLDP,
 	EAPOL,
 	GRATARP,
 } rma_ctrl_t;
@@ -449,10 +449,10 @@ typedef enum {
 #define RTL930X_RMA_PTP_CTRL			(0x9E88)
 #define RTL931X_RMA_PTP_CTRL			(0x8834)
 
-#define RTL838X_RMA_LLTP_CTRL			(0x4340)
-#define RTL839X_RMA_LLTP_CTRL			(0x124C)
-#define RTL930X_RMA_LLTP_CTRL			(0x9EFC)
-#define RTL931X_RMA_LLTP_CTRL			(0x8918)
+#define RTL838X_RMA_LLDP_CTRL			(0x4340)
+#define RTL839X_RMA_LLDP_CTRL			(0x124C)
+#define RTL930X_RMA_LLDP_CTRL			(0x9EFC)
+#define RTL931X_RMA_LLDP_CTRL			(0x8918)
 
 #define RTL930X_RMA_EAPOL_CTRL			(0x9F08)
 #define RTL931X_RMA_EAPOL_CTRL			(0x8930)
