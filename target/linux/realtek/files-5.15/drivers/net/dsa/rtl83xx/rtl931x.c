@@ -516,8 +516,8 @@ void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	case PTP_ETH2:
 		sw_w32_mask(3, value, RTL931X_RMA_PTP_CTRL + (port << 2));
 	break;
-	case LLTP:
-		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_LLTP_CTRL + ((port / 10) << 2));
+	case LLDP:
+		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_LLDP_CTRL + ((port / 10) << 2));
 	break;
 	case EAPOL:
 		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_EAPOL_CTRL + ((port / 10) << 2));
