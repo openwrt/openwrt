@@ -44,6 +44,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		slot1: pcie@1,0 {
  			reg = <0x0800 0 0 0 0>;
+@@ -930,7 +936,7 @@
+ 	};
+ 
+ 	hifsys: clock-controller@1af00000 {
+-		compatible = "mediatek,mt7622-hifsys";
++		compatible = "mediatek,mt7622-hifsys", "syscon";
+ 		reg = <0 0x1af00000 0 0x70>;
+ 		#clock-cells = <1>;
+ 	};
 --- a/drivers/pci/controller/pcie-mediatek.c
 +++ b/drivers/pci/controller/pcie-mediatek.c
 @@ -20,6 +20,7 @@
