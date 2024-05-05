@@ -300,26 +300,6 @@
 			status = "okay";
 		};
 
-		usb3_ss_phy: ssphy@9a000 {
-			status = "okay";
-		};
-
-		usb3_hs_phy: hsphy@a6000 {
-			status = "okay";
-		};
-
-		usb3: usb3@8af8800 {
-			status = "okay";
-		};
-
-		usb2_hs_phy: hsphy@a8000 {
-			status = "okay";
-		};
-
-		usb2: usb2@60f8800 {
-			status = "okay";
-		};
-
 		cryptobam: dma@8e04000 {
 			status = "okay";
 		};
@@ -352,6 +332,26 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
 };
 
 &nand {

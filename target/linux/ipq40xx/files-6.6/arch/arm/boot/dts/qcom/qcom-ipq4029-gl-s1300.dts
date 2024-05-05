@@ -57,14 +57,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		usb2@60f8800 {
-			status = "okay";
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-		};
-
 		crypto@8e3a000 {
 			status = "okay";
 		};
@@ -340,11 +332,19 @@
 	status = "okay";
 };
 
+&usb2 {
+	status = "okay";
+};
+
 &usb3_hs_phy {
 	status = "okay";
 };
 
 &usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3 {
 	status = "okay";
 };
 

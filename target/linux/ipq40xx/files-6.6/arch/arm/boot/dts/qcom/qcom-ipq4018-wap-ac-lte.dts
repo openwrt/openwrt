@@ -15,15 +15,6 @@
 			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
 			status = "okay";
 		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				phys = <&usb3_hs_phy>;
-				phy-names = "usb2-phy";
-			};
-		};
 	};
 };
 
@@ -42,4 +33,9 @@
 
 &usb3 {
 	status = "okay";
+};
+
+&usb3_dwc {
+	phys = <&usb3_hs_phy>;
+	phy-names = "usb2-phy";
 };

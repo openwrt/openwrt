@@ -89,19 +89,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		usb2@60f8800 {
-			status = "okay";
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				phys = <&usb3_hs_phy>;
-				phy-names = "usb2-phy";
-			};
-		};
-
 		crypto@8e3a000 {
 			status = "okay";
 		};
@@ -325,10 +312,23 @@
 	qcom,ath10k-calibration-variant = "ALFA-Network-AP120C-AC";
 };
 
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
 &usb3_hs_phy {
 	status = "okay";
 };
 
-&usb2_hs_phy {
+&usb3 {
 	status = "okay";
+};
+
+&usb3_dwc {
+	phys = <&usb3_hs_phy>;
+	phy-names = "usb2-phy";
 };

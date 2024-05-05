@@ -72,10 +72,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		usb3@8af8800 {
-			status = "okay";
-		};
 	};
 
 	leds {
@@ -468,5 +464,9 @@
 };
 
 &usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
 	status = "okay";
 };
