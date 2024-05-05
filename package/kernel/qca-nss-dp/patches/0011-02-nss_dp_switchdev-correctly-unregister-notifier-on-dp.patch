@@ -16,7 +16,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/include/nss_dp_dev.h
 +++ b/include/nss_dp_dev.h
-@@ -312,6 +312,7 @@ void nss_dp_set_ethtool_ops(struct net_d
+@@ -349,6 +349,7 @@ void nss_dp_set_ethtool_ops(struct net_d
   */
  #ifdef CONFIG_NET_SWITCHDEV
  void nss_dp_switchdev_setup(struct net_device *dev);
@@ -26,7 +26,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/nss_dp_main.c
 +++ b/nss_dp_main.c
-@@ -913,6 +913,10 @@ static int nss_dp_remove(struct platform
+@@ -972,6 +972,10 @@ static int nss_dp_remove(struct platform
  		if (!dp_priv)
  			continue;
  
@@ -39,7 +39,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/nss_dp_switchdev.c
 +++ b/nss_dp_switchdev.c
-@@ -635,4 +635,17 @@ void nss_dp_switchdev_setup(struct net_d
+@@ -648,4 +648,17 @@ void nss_dp_switchdev_setup(struct net_d
  
  	switch_init_done = true;
  }
