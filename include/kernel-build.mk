@@ -30,6 +30,7 @@ endef
 
 define Kernel/CompileImage
 	$(call Kernel/CompileImage/Default)
+	$(call Kernel/InstallModules)
 	$(call Kernel/CompileImage/Initramfs)
 endef
 
@@ -144,7 +145,7 @@ define BuildKernel
 	$(Kernel/CompileImage)
 	$(Kernel/CollectDebug)
 	touch $$@
-	
+
   mostlyclean: FORCE
 	$(Kernel/Clean)
 

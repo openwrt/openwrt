@@ -1,0 +1,59 @@
+#!/bin/sh
+
+export INITRAMFS=1
+export PATH='/bin:/sbin:/usr/sbin:/usr/bin'
+
+mount_setup() {
+    mount -t proc proc /proc -o nosuid,noexec,nodev
+    mount -t sysfs sys /sys -o nosuid,noexec,nodev
+    mount -t devtmpfs dev /dev -o mode=0755,nosuid
+
+    # efivars is mounted it by procd
+}
+
+mount_setup
+
+# hotplug
+echo "/sbin/mdev" > /proc/sys/kernel/hotplug
+mdev -s
+find /sys/ -name modalias -print0 | xargs -0 sort -u -z | xargs -0 modprobe -abq
+echo "" > /proc/sys/kernel/hotplug
+
+# Skip /etc/modules-boot.d/* because they are symlinks to /etc/modules.d/*
+echo "kmod: loading kernel modules from /etc/modules.d/*"
+for f in /etc/modules.d/*; do
+    # load modules per line taking in account the module parameters
+    while IFS= read -r m; do
+        modprobe -bq "${m}"
+    done < "${f}"
+done
+
+NEW_ROOT=/new_root
+mkdir -p "${NEW_ROOT}"
+
+wait_for_rootfs() {
+    timeout=10
+    while [ "${timeout}" -gt 0 ]; do
+        ROOTFS=$(blkid --label rootfs)
+        [ "${ROOTFS}" ] && return
+        sleep 1
+        timeout=$((timeout - 1))
+        echo "Waiting for root block device [${timeout}] ..."
+    done
+}
+
+wait_for_rootfs
+if [ -z "${ROOTFS}" ]; then
+    echo "No rootfs found"
+    exit 1
+fi
+
+mount "${ROOTFS}" "${NEW_ROOT}"
+
+# umount /dev, /sys, and /proc because they are mounted by procd
+umount /dev
+umount /sys
+umount /proc
+
+echo "Changing to real rootfs..."
+exec switch_root "${NEW_ROOT}" /sbin/init "$@"
