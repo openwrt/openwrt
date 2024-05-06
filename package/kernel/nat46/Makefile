@@ -28,8 +28,8 @@ endef
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
 define Build/InstallDev
-	mkdir -p -m 0777 $(STAGING_DIR)/usr/include/nat46
-	$(CP) $(PKG_BUILD_DIR)/nat46/modules/*.h  $(STAGING_DIR)/usr/include/nat46/
+	$(INSTALL_DIR) $(STAGING_DIR)/usr/include/nat46
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/nat46/modules/*.h  $(STAGING_DIR)/usr/include/nat46/
 endef
 
 define Build/Compile
@@ -37,7 +37,7 @@ define Build/Compile
 		MODFLAGS="-DMODULE -mlong-calls" \
 		EXTRA_CFLAGS="-DNAT46_VERSION=\\\"$(PKG_SOURCE_VERSION)\\\"" \
 		modules
-	cp $(PKG_BUILD_DIR)/nat46/modules/Module.symvers $(PKG_BUILD_DIR)/Module.symvers
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/nat46/modules/Module.symvers $(PKG_BUILD_DIR)/Module.symvers
 endef
 
 $(eval $(call KernelPackage,nat46))
