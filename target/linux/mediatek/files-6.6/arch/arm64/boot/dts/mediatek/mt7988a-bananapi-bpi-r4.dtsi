@@ -17,11 +17,13 @@
 		     "mediatek,mt7988a";
 
 	aliases {
-		serial0 = &uart0;
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
 		led-boot = &led_green;
 		led-failsafe = &led_green;
 		led-running = &led_green;
 		led-upgrade = &led_green;
+		serial0 = &uart0;
 	};
 
 	chosen {
