@@ -447,6 +447,8 @@ define Device/engenius_eap1300
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EnGenius
 	DEVICE_MODEL := EAP1300
+	DEVICE_ALT0_VENDOR := EnGenius
+	DEVICE_ALT0_MODEL := EAP1300EXT
 	DEVICE_DTS_CONFIG := config@4
 	BOARD_NAME := eap1300
 	SOC := qcom-ipq4018
