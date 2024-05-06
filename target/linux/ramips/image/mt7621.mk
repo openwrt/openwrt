@@ -1534,6 +1534,15 @@ define Device/jcg_y2
 endef
 TARGET_DEVICES += jcg_y2
 
+define Device/jdcloud_re-cp-02
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := JD-Cloud
+  DEVICE_MODEL := RE-CP-02
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += jdcloud_re-cp-02
+
 define Device/keenetic_kn-3010
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
