@@ -54,10 +54,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -118,6 +114,10 @@
 };
 
 &prng {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

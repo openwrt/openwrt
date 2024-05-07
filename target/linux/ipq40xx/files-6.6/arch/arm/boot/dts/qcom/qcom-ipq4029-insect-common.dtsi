@@ -74,10 +74,6 @@
 				enable-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 			};
 		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -107,6 +103,10 @@
 };
 
 &prng {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

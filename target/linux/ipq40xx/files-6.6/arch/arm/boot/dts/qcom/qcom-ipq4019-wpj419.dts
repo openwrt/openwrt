@@ -304,10 +304,6 @@
 			status = "okay";
 		};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
 		qpic_bam: dma@7984000 {
 			status = "okay";
 		};
@@ -331,6 +327,10 @@
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

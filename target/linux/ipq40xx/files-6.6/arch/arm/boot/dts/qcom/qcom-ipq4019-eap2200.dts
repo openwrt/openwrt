@@ -73,10 +73,6 @@
 		mdio@90000 {
 			status = "okay";
 		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
 	};
 };
 
@@ -85,6 +81,10 @@
 };
 
 &prng {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

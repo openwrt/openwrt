@@ -41,10 +41,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
 		/*
 		 * Disable the broken restart as a workaround for the buggy
 		 * 3.0.0/3.0.1 U-boots that ship with the device.
@@ -101,6 +97,10 @@
 };
 
 &prng {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

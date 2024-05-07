@@ -72,10 +72,6 @@
 			status = "okay";
 		};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
 		leds {
 			compatible = "gpio-leds";
 
@@ -134,6 +130,10 @@
 };
 
 &blsp_dma {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 

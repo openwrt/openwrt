@@ -23,10 +23,6 @@
 			reset-delay-us = <2000>;
 		};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
 		gpio_export {
 			compatible = "gpio-export";
 			#size-cells = <0>;
@@ -85,6 +81,10 @@
 };
 
 &prng {
+	status = "okay";
+};
+
+&crypto {
 	status = "okay";
 };
 
