@@ -1,5 +1,6 @@
 set_preinit_iface() {
 	case $(board_name) in
+	cudy,tr3000-v1|\
 	glinet,gl-mt3000)
 		ip link set eth1 up
 		ifname=eth1
