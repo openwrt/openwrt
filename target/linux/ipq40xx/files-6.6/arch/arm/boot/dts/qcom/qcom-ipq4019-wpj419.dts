@@ -308,10 +308,6 @@
 			status = "okay";
 		};
 
-		watchdog@b017000 {
-			status = "okay";
-		};
-
 		qpic_bam: dma@7984000 {
 			status = "okay";
 		};
@@ -332,6 +328,10 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &usb3_ss_phy {

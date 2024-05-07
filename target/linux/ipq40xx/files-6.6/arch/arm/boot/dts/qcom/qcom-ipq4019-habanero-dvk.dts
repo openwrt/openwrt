@@ -65,10 +65,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -108,6 +104,10 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &vqmmc {

@@ -31,10 +31,6 @@
 			status = "okay";
 		};
 
-		watchdog@b017000 {
-			status = "okay";
-		};
-
 		gpio_export {
 			compatible = "gpio-export";
 			#size-cells = <0>;
@@ -86,6 +82,10 @@
 			default-state = "keep";
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &tlmm {

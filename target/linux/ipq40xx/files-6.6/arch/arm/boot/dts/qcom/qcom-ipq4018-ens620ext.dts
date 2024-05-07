@@ -49,10 +49,6 @@
 			status = "okay";
 		};
 
-		watchdog@b017000 {
-			status = "okay";
-		};
-
 		/*
 		 * Disable the broken restart as a workaround for the buggy
 		 * 3.0.0/3.0.1 U-boots that ship with the device.
@@ -102,6 +98,10 @@
 			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &cryptobam {

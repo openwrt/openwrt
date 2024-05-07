@@ -56,10 +56,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	leds {
@@ -97,6 +93,10 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &blsp_dma {

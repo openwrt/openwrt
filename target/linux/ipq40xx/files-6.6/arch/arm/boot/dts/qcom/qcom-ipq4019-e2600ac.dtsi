@@ -80,10 +80,6 @@
 			status = "okay";
 		};
 
-		watchdog@b017000 {
-			status = "okay";
-		};
-
 		leds {
 			compatible = "gpio-leds";
 
@@ -131,6 +127,10 @@
 			};
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &blsp_dma {

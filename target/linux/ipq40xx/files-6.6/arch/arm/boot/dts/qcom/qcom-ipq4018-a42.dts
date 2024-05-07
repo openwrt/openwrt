@@ -47,10 +47,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -101,6 +97,10 @@
 		hw_margin_ms = <60000>;
 		always-running;
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &tlmm {

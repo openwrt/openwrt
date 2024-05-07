@@ -75,10 +75,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -118,6 +114,10 @@
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &blsp_dma {

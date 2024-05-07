@@ -62,10 +62,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	regulator-usb-vbus {
@@ -79,6 +75,9 @@
 	};
 };
 
+&watchdog {
+	status = "okay";
+};
 
 &blsp_dma {
 	status = "okay";

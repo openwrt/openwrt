@@ -76,10 +76,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -116,6 +112,10 @@
 		compatible = "gpio-beeper";
 		gpios = <&tlmm 58 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &tlmm {

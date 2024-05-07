@@ -68,10 +68,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	leds {
@@ -162,6 +158,10 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &tlmm {

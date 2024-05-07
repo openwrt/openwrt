@@ -58,10 +58,6 @@
 		crypto@8e3a000 {
 			status = "okay";
 		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -147,6 +143,10 @@
 			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
 };
 
 &cryptobam {
