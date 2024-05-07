@@ -53,111 +53,6 @@
 	};
 
 	soc {
-		spi_0: spi@78b5000 {
-			pinctrl-0 = <&spi_0_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-			cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>, <&tlmm 41 GPIO_ACTIVE_HIGH>;
-			num-cs = <2>;
-
-			flash0@0 {
-				reg = <0>;
-				compatible = "jedec,spi-nor";
-				spi-max-frequency = <24000000>;
-				broken-flash-reset;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "0:SBL1";
-						reg = <0x000000 0x040000>;
-						read-only;
-					};
-
-					partition@40000 {
-						label = "0:MIBIB";
-						reg = <0x040000 0x020000>;
-						read-only;
-					};
-
-					partition@60000 {
-						label = "0:QSEE";
-						reg = <0x060000 0x060000>;
-						read-only;
-					};
-
-					partition@c0000 {
-						label = "0:CDT";
-						reg = <0x0c0000 0x010000>;
-						read-only;
-					};
-
-					partition@d0000 {
-						label = "0:DDRPARAMS";
-						reg = <0x0d0000 0x010000>;
-						read-only;
-					};
-
-					partition@e0000 {
-						label = "u-boot-env";
-						reg = <0x0e0000 0x010000>;
-					};
-
-					partition@f0000 {
-						label = "u-boot";
-						reg = <0x0f0000 0x080000>;
-						read-only;
-					};
-
-					partition@170000 {
-						label = "0:ART";
-						reg = <0x170000 0x010000>;
-						read-only;
-
-						nvmem-layout {
-							compatible = "fixed-layout";
-							#address-cells = <1>;
-							#size-cells = <1>;
-
-							precal_art_1000: precal@1000 {
-								reg = <0x1000 0x2f20>;
-							};
-
-							precal_art_5000: precal@5000 {
-								reg = <0x5000 0x2f20>;
-							};
-						};
-					};
-				};
-			};
-
-			nand@1 {
-				reg = <1>;
-				status = "okay";
-				compatible = "spi-nand";
-				spi-max-frequency = <24000000>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					/* The device has 128MB, but we can only address
-					 * 64MB because of the bootloader's default settings.
-					 * This is due to the old mt29f driver,
-					 * which detected the deivce with only 64MB
-					 */
-					partition@0 {
-						label = "ubi";
-						reg = <0x0000000 0x4000000>;
-					};
-				};
-			};
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -302,6 +197,111 @@
 	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>, <&tlmm 41 GPIO_ACTIVE_HIGH>;
+	num-cs = <2>;
+
+	flash0@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <24000000>;
+		broken-flash-reset;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x040000 0x020000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x060000 0x060000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0x0c0000 0x010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x0d0000 0x010000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x0e0000 0x010000>;
+			};
+
+			partition@f0000 {
+				label = "u-boot";
+				reg = <0x0f0000 0x080000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+		};
+	};
+
+	nand@1 {
+		reg = <1>;
+		status = "okay";
+		compatible = "spi-nand";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* The device has 128MB, but we can only address
+			 * 64MB because of the bootloader's default settings.
+			 * This is due to the old mt29f driver,
+			 * which detected the deivce with only 64MB
+			 */
+			partition@0 {
+				label = "ubi";
+				reg = <0x0000000 0x4000000>;
+			};
+		};
+	};
 };
 
 &watchdog {
