@@ -186,7 +186,7 @@
 +reset_factory=eraseenv && reset
 +_init_env=setenv _init_env ; saveenv ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu _update_bootdev _init_env boot_first
-+_update_bootdev=setenv _update_bootdev ; setenv bootargs "$console root=/dev/mmcblk0p65"
++_update_bootdev=setenv _update_bootdev ; setenv bootargs "$console root=/dev/fit0 rootwait"
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title                [33m$ver[0m"
 --- a/arch/arm/dts/mt7623a-unielec-u7623-02-emmc.dts
