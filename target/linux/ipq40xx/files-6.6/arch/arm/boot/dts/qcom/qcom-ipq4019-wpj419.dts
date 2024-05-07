@@ -53,92 +53,6 @@
 	};
 
 	soc {
-		pinctrl@1000000 {
-			mdio_pins: mdio_pinmux {
-				mux_1 {
-					pins = "gpio6";
-					function = "mdio";
-					bias-pull-up;
-				};
-
-				mux_2 {
-					pins = "gpio7";
-					function = "mdc";
-					bias-pull-up;
-				};
-			};
-
-			serial_0_pins: serial_pinmux {
-				mux {
-					pins = "gpio16", "gpio17";
-					function = "blsp_uart0";
-					bias-disable;
-				};
-			};
-
-			serial_1_pins: serial1_pinmux {
-				mux {
-					pins = "gpio8", "gpio9", "gpio10", "gpio11";
-					function = "blsp_uart1";
-					bias-disable;
-				};
-			};
-
-			spi_0_pins: spi_0_pinmux {
-				pinmux {
-					function = "blsp_spi0";
-					pins = "gpio13", "gpio14", "gpio15";
-					bias-disable;
-				};
-
-				pinmux_cs {
-					function = "gpio";
-					pins = "gpio12";
-					bias-disable;
-					output-high;
-				};
-			};
-
-			i2c_0_pins: i2c_0_pinmux {
-				mux {
-					pins = "gpio20", "gpio21";
-					function = "blsp_i2c0";
-					bias-disable;
-				};
-			};
-
-			nand_pins: nand_pins {
-				pullups {
-					pins = "gpio52", "gpio53", "gpio58", "gpio59";
-					function = "qpic";
-					bias-pull-up;
-				};
-
-				pulldowns {
-					pins = "gpio54", "gpio55", "gpio56",
-					"gpio57", "gpio60", "gpio61",
-					"gpio62", "gpio63", "gpio64",
-					"gpio65", "gpio66", "gpio67",
-					"gpio68", "gpio69";
-					function = "qpic";
-					bias-pull-down;
-				};
-			};
-
-			led_0_pins: led0_pinmux {
-				mux_1 {
-					pins = "gpio36";
-					function = "led0";
-					bias-pull-down;
-				};
-				mux_2 {
-					pins = "gpio40";
-					function = "led4";
-					bias-pull-down;
-				};
-			};
-		};
-
 		spi_0: spi@78b5000 {
 			pinctrl-0 = <&spi_0_pins>;
 			pinctrl-names = "default";
@@ -278,6 +192,92 @@
 			label = "reset";
 			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	serial_0_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			pins = "gpio8", "gpio9", "gpio10", "gpio11";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			bias-disable;
+		};
+
+		pinmux_cs {
+			function = "gpio";
+			pins = "gpio12";
+			bias-disable;
+			output-high;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		mux {
+			pins = "gpio20", "gpio21";
+			function = "blsp_i2c0";
+			bias-disable;
+		};
+	};
+
+	nand_pins: nand_pins {
+		pullups {
+			pins = "gpio52", "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+			"gpio57", "gpio60", "gpio61",
+			"gpio62", "gpio63", "gpio64",
+			"gpio65", "gpio66", "gpio67",
+			"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+
+	led_0_pins: led0_pinmux {
+		mux_1 {
+			pins = "gpio36";
+			function = "led0";
+			bias-pull-down;
+		};
+		mux_2 {
+			pins = "gpio40";
+			function = "led4";
+			bias-pull-down;
 		};
 	};
 };
