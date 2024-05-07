@@ -53,13 +53,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		i2c@78b7000 { /* BLSP1 QUP2 */
-			pinctrl-0 = <&i2c_0_pins>;
-			pinctrl-names = "default";
-
-			status = "okay";
-		};
-
 		leds {
 			compatible = "gpio-leds";
 
@@ -196,6 +189,12 @@
 
 &blsp1_uart2 {
 	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c3 { /* BLSP1 QUP2 */
+	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 };
