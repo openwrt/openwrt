@@ -284,18 +284,6 @@
 			status = "okay";
 		};
 
-		serial@78af000 {
-			pinctrl-0 = <&serial_0_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-		};
-
-		serial@78b0000 {
-			pinctrl-0 = <&serial_1_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-		};
-
 		pcie0: pci@40000000 {
 			status = "okay";
 			perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
@@ -315,6 +303,18 @@
 };
 
 &blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
