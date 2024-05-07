@@ -139,10 +139,6 @@
 			};
 		};
 
-		blsp_dma: dma@7884000 {
-			status = "okay";
-		};
-
 		spi_0: spi@78b5000 {
 			pinctrl-0 = <&spi_0_pins>;
 			pinctrl-names = "default";
@@ -300,14 +296,6 @@
 			status = "okay";
 		};
 
-		cryptobam: dma@8e04000 {
-			status = "okay";
-		};
-
-		qpic_bam: dma@7984000 {
-			status = "okay";
-		};
-
 		pcie0: pci@40000000 {
 			status = "okay";
 			perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
@@ -326,11 +314,19 @@
 	};
 };
 
+&blsp_dma {
+	status = "okay";
+};
+
 &watchdog {
 	status = "okay";
 };
 
 &crypto {
+	status = "okay";
+};
+
+&cryptobam {
 	status = "okay";
 };
 
@@ -351,6 +347,10 @@
 };
 
 &usb2 {
+	status = "okay";
+};
+
+&qpic_bam {
 	status = "okay";
 };
 
