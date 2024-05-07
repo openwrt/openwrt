@@ -24,10 +24,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		mdio@90000 {
 			status = "okay";
 		};
@@ -104,6 +100,10 @@
 			gpios = <&tlmm 66 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&prng {
+	status = "okay";
 };
 
 &vqmmc {

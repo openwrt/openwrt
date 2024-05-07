@@ -35,10 +35,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		mdio@90000 {
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
@@ -115,6 +111,10 @@
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&prng {
 	status = "okay";
 };
 

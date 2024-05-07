@@ -14,10 +14,6 @@
 	compatible = "plasmacloud,pa1200";
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -92,6 +88,10 @@
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&prng {
 	status = "okay";
 };
 

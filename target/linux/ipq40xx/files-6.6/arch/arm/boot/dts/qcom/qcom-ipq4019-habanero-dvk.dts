@@ -20,10 +20,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		mdio@90000 {
 			status = "okay";
 
@@ -107,6 +103,10 @@
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&prng {
 	status = "okay";
 };
 

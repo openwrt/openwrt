@@ -56,10 +56,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -96,6 +92,10 @@
 };
 
 &watchdog {
+	status = "okay";
+};
+
+&prng {
 	status = "okay";
 };
 
