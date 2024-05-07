@@ -11,7 +11,8 @@ unielec,u7623-02)
 	;;
 bananapi,bpi-r3|\
 bananapi,bpi-r3-mini|\
-bananapi,bpi-4)
+bananapi,bpi-r4|\
+bananapi,bpi-r4-poe)
 	[ -z "$(fw_printenv -n ethaddr 2>/dev/null)" ] &&
 		fw_setenv ethaddr "$(cat /sys/class/net/eth0/address)"
 	[ -z "$(fw_printenv -n eth1addr 2>/dev/null)" ] &&
