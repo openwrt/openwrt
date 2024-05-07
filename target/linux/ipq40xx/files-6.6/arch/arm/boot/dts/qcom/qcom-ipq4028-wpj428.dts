@@ -35,14 +35,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-			reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
-			reset-delay-us = <2000>;
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -257,6 +249,14 @@
 
 &cryptobam {
 	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
 };
 
 &gmac {

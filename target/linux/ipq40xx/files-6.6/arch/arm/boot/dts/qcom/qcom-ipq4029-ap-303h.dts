@@ -22,15 +22,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-
-			reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
-			reset-delay-us = <2000>;
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -440,6 +431,15 @@
 
 &usb3_hs_phy {
 	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
 };
 
 &gmac {

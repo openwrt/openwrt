@@ -138,10 +138,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -374,6 +370,10 @@
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "cellc,rtl30vw";
+};
+
+&mdio {
+	status = "okay";
 };
 
 &gmac {

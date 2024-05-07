@@ -12,16 +12,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-
-			ethphy: ethernet-phy@5 {
-				reg = <0x5>;
-			};
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -211,6 +201,16 @@
 				read-only;
 			};
 		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	ethphy: ethernet-phy@5 {
+		reg = <0x5>;
 	};
 };
 

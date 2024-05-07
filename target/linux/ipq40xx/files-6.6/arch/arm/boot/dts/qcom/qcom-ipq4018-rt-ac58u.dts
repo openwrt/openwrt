@@ -23,10 +23,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -289,6 +285,10 @@
 		reg = <2>;
 		#trigger-source-cells = <0>;
 	};
+};
+
+&mdio {
+	status = "okay";
 };
 
 &gmac {

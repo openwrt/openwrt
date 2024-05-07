@@ -244,14 +244,6 @@
 			};
 		};
 
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-			reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
-			reset-delay-us = <5000>;
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -358,6 +350,14 @@
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <5000>;
 };
 
 &wifi0 {

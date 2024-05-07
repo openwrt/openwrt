@@ -15,14 +15,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-			reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
-			reset-delay-us = <2000>;
-		};
-
 		gpio_export {
 			compatible = "gpio-export";
 			#size-cells = <0>;
@@ -232,6 +224,14 @@
 			};
 		};
 	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
 };
 
 &gmac {

@@ -19,10 +19,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -241,6 +237,10 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
 	status = "okay";
 };
 

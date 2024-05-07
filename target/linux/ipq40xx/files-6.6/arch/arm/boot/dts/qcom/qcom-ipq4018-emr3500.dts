@@ -11,10 +11,6 @@
 	compatible = "engenius,emr3500";
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -199,6 +195,10 @@
 };
 
 &usb2_hs_phy {
+	status = "okay";
+};
+
+&mdio {
 	status = "okay";
 };
 

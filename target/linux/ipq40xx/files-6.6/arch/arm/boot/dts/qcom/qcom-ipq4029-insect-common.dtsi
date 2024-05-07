@@ -33,12 +33,6 @@
 	};
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-		};
-
 		/* It is a 56-bit counter that supplies the count to the ARM arch
 		   timers and without upstream driver */
 		counter@4a1000 {
@@ -401,6 +395,12 @@
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
 	nvmem-cells = <&mac_address 3>;
 	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
 };
 
 &gmac {

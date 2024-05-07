@@ -68,12 +68,6 @@
 			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-	};
 };
 
 &watchdog {
@@ -273,6 +267,10 @@
 			output-high;
 		};
 	};
+};
+
+&mdio {
+	status = "okay";
 };
 
 &wifi0 {
