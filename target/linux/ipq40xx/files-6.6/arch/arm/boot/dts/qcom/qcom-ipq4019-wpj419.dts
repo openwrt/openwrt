@@ -269,12 +269,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		pcie0: pci@40000000 {
-			status = "okay";
-			perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
-			wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	keys {
@@ -350,6 +344,12 @@
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 };
 
 &mdio {
