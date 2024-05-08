@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2024-04-07
-PKG_SOURCE_VERSION:=5507654a498a339c44b642f62e203e1d5fb1f725
-PKG_MIRROR_HASH:=40d3df5308faaf3cddfca4ebbcd9ee7fff98cf7e7d406dc177972a7abf0ca16b
+PKG_SOURCE_DATE:=2024-05-09
+PKG_SOURCE_VERSION:=0d823e702bfe5f2bb5be694030a98afedf34aa6b
+PKG_MIRROR_HASH:=c52d499d2490e958e36ed80c32e8fd6d94cacf3b43b9d14c45c68a25bc44d536
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
@@ -154,6 +154,10 @@ $(eval $(call UcodeModule, \
 $(eval $(call UcodeModule, \
 	rtnl, RTNL_SUPPORT, +libnl-tiny +libubox, \
 	The rtnl plugin provides access to the Linux routing netlink API.))
+
+$(eval $(call UcodeModule, \
+	socket, SOCKET_SUPPORT, , \
+	The socket plugin provides access to IPv4, IPv6, Unix and packet socket APIs.))
 
 $(eval $(call UcodeModule, \
 	struct, STRUCT_SUPPORT, , \
