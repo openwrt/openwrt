@@ -824,6 +824,7 @@ define Device/mediatek_mt7988a-rfb
 	mt7988a-rfb-sd \
 	mt7988a-rfb-snfi-nand \
 	mt7988a-rfb-spim-nand \
+	mt7988a-rfb-spim-nand-factory \
 	mt7988a-rfb-spim-nor \
 	mt7988a-rfb-eth1-aqr \
 	mt7988a-rfb-eth1-i2p5g-phy \
@@ -855,7 +856,7 @@ define Device/mediatek_mt7988a-rfb
   ARTIFACT/emmc-bl31-uboot.fip	:= mt7988-bl31-uboot rfb-emmc
   ARTIFACT/nor-preloader.bin	:= mt7988-bl2 nor-comb
   ARTIFACT/nor-bl31-uboot.fip	:= mt7988-bl31-uboot rfb-nor
-  ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-comb
+  ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-ubi-comb
   ARTIFACT/snand-bl31-uboot.fip	:= mt7988-bl31-uboot rfb-snand
   ARTIFACT/sdcard.img.gz	:= mt798x-gpt sdmmc |\
 				   pad-to 17k | mt7988-bl2 sdmmc-comb |\

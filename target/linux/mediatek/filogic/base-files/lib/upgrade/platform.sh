@@ -84,6 +84,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
+	mediatek,mt7988a-rfb|\
 	jdcloud,re-cp-03|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
