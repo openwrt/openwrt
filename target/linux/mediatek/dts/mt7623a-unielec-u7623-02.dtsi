@@ -121,68 +121,65 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		mt7530: switch@1f {
-		};
-	};
-};
-
-&mt7530 {
-	compatible = "mediatek,mt7530";
-	reg = <31>;
-	#address-cells = <1>;
-	#size-cells = <0>;
-	pinctrl-names = "default";
-	mediatek,mcm;
-	resets = <&ethsys 2>;
-	reset-names = "mcm";
-	core-supply = <&mt6323_vpa_reg>;
-	io-supply = <&mt6323_vemc3v3_reg>;
-
-	dsa,mii-bus = <&mdio>;
-
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0>;
-
-		port@0 {
-			reg = <0>;
-			label = "lan0";
-			cpu = <&cpu_port0>;
-		};
-
-		port@1 {
-			reg = <1>;
-			label = "lan1";
-			cpu = <&cpu_port0>;
-		};
-
-		port@2 {
-			reg = <2>;
-			label = "lan2";
-			cpu = <&cpu_port0>;
-		};
-
-		port@3 {
-			reg = <3>;
-			label = "lan3";
-			cpu = <&cpu_port0>;
-		};
-
-		port@4 {
-			reg = <4>;
-			label = "wan";
-			cpu = <&cpu_port0>;
-		};
-
-		cpu_port0: port@6 {
-			reg = <6>;
-			ethernet = <&gmac0>;
-			phy-mode = "trgmii";
-
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
+		switch@1f {
+			compatible = "mediatek,mt7530";
+			reg = <31>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-names = "default";
+			mediatek,mcm;
+			resets = <&ethsys 2>;
+			reset-names = "mcm";
+			core-supply = <&mt6323_vpa_reg>;
+			io-supply = <&mt6323_vemc3v3_reg>;
+		
+			dsa,mii-bus = <&mdio>;
+		
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+		
+				port@0 {
+					reg = <0>;
+					label = "lan0";
+					cpu = <&cpu_port0>;
+				};
+		
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+					cpu = <&cpu_port0>;
+				};
+		
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+					cpu = <&cpu_port0>;
+				};
+		
+				port@3 {
+					reg = <3>;
+					label = "lan3";
+					cpu = <&cpu_port0>;
+				};
+		
+				port@4 {
+					reg = <4>;
+					label = "wan";
+					cpu = <&cpu_port0>;
+				};
+		
+				cpu_port0: port@6 {
+					reg = <6>;
+					ethernet = <&gmac0>;
+					phy-mode = "trgmii";
+		
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
 			};
 		};
 	};
