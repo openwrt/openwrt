@@ -7,7 +7,7 @@ board=$(board_name)
 
 case "$board" in
 mikrotik,routerboard-760igs)
-	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "497"
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "poe_passthrough"
 	;;
 telco-electronics,x1)
 	ucidef_add_gpio_switch "modem_reset" "Modem Reset" "496"
