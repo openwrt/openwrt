@@ -9,6 +9,7 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	8dev,carambola3|\
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;

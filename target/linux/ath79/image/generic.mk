@@ -204,6 +204,16 @@ define Device/8dev_carambola2
 endef
 TARGET_DEVICES += 8dev_carambola2
 
+define Device/8dev_carambola3
+  SOC := qca9531
+  DEVICE_VENDOR := 8devices
+  DEVICE_MODEL := Carambola3
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 32768k
+  SUPPORTED_DEVICES += carambola3
+endef
+TARGET_DEVICES += 8dev_carambola3
+
 define Device/8dev_lima
   SOC := qca9531
   DEVICE_VENDOR := 8devices

@@ -10,6 +10,10 @@ case "$board" in
 	ucidef_set_led_netdev "lan" "LAN" "orange:eth0" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "orange:eth1" "switch0" "0x04"
 	;;
+8dev,carambola3)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
+	;;
 alcatel,hh40v)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "green:lan" "eth1" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "orange:lan" "eth1" "link"
