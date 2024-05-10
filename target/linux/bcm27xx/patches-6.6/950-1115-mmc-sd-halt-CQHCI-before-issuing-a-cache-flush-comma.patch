@@ -1,0 +1,35 @@
+From 8e40644b272a4ddc9d3b58b4373dffcef02d1b63 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Tue, 4 Jun 2024 13:21:47 +0100
+Subject: [PATCH 1115/1135] mmc: sd: halt CQHCI before issuing a cache flush
+ command
+
+SD cards perform cache flushes by a CMD49 extension register write -
+which needs to be started from the SDHCI command/argument registers and
+not a CQHCI slot.
+
+Host access to SD/CQ registers should be exclusive to one or the other,
+so issue a halt before doing the command.
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ drivers/mmc/core/sd.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -1265,6 +1265,14 @@ static int sd_flush_cache(struct mmc_hos
+ 	reg_buf = card->ext_reg_buf;
+ 
+ 	/*
++	 * Flushing requires sending CMD49 (adtc), which can't be done as a DCMD
++	 * and conflicts with CQHCI - temporarily turn CQE off to use the SDHCI
++	 * command/argument registers.
++	 */
++	if (host->cqe_on)
++		host->cqe_ops->cqe_off(host);
++
++	/*
+ 	 * Set Flush Cache at bit 0 in the performance enhancement register at
+ 	 * 261 bytes offset.
+ 	 */

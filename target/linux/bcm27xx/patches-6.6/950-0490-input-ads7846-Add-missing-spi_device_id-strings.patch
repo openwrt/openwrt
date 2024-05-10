@@ -1,0 +1,49 @@
+From 3b391ceadf0d4ab5ce45f98d2f1d41f40e5aedd7 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Fri, 1 Sep 2023 12:23:30 +0100
+Subject: [PATCH 0490/1085] input: ads7846: Add missing spi_device_id strings
+
+The SPI core logs error messages if a compatible string device
+name is not also present as an spi_device_id.
+
+No spi_device_id values are specified by the driver, therefore
+we get 4 log lines every time it is loaded:
+SPI driver ads7846 has no spi_device_id for ti,tsc2046
+SPI driver ads7846 has no spi_device_id for ti,ads7843
+SPI driver ads7846 has no spi_device_id for ti,ads7845
+SPI driver ads7846 has no spi_device_id for ti,ads7873
+
+Add the spi_device_id values for these devices.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/input/touchscreen/ads7846.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/input/touchscreen/ads7846.c
++++ b/drivers/input/touchscreen/ads7846.c
+@@ -1114,6 +1114,16 @@ static const struct of_device_id ads7846
+ };
+ MODULE_DEVICE_TABLE(of, ads7846_dt_ids);
+ 
++static const struct spi_device_id ads7846_spi_ids[] = {
++	{ "tsc2046", 0 },
++	{ "ads7843", 0 },
++	{ "ads7845", 0 },
++	{ "ads7846", 0 },
++	{ "ads7873", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(spi, ads7846_spi_ids);
++
+ static const struct ads7846_platform_data *ads7846_get_props(struct device *dev)
+ {
+ 	struct ads7846_platform_data *pdata;
+@@ -1390,6 +1400,7 @@ static struct spi_driver ads7846_driver
+ 		.pm	= pm_sleep_ptr(&ads7846_pm),
+ 		.of_match_table = ads7846_dt_ids,
+ 	},
++	.id_table	= ads7846_spi_ids,
+ 	.probe		= ads7846_probe,
+ 	.remove		= ads7846_remove,
+ };
