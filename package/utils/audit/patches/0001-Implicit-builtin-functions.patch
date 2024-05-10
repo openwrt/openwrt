@@ -1,0 +1,615 @@
+From 429d031edd52566eeba03c3b3af32ad6e103fd94 Mon Sep 17 00:00:00 2001
+From: Steve Grubb <ausearch.1@gmail.com>
+Date: Fri, 3 May 2024 17:33:39 -0400
+Subject: [PATCH] Implicit builtin functions
+
+Correct a number of places where printf is being used without a prototype.
+All cases are in libraries which should not be using printf. Change them
+to return an error rather than communicate the problem.
+
+This is a backport of 8c7eaa7
+---
+ audisp/audispd-llist.c            | 10 +++++-----
+ audisp/audispd-llist.h            |  4 ++--
+ auparse/normalize-llist.c         | 12 ++++++------
+ auparse/normalize-llist.h         |  4 ++--
+ auparse/normalize.c               | 14 +++++++++-----
+ src/auditctl-llist.c              | 18 +++++++++---------
+ src/auditctl-llist.h              |  4 ++--
+ src/ausearch-avc.c                | 16 ++++++++--------
+ src/ausearch-avc.h                |  4 ++--
+ src/ausearch-int.c                | 12 ++++++------
+ src/ausearch-int.h                |  4 ++--
+ src/ausearch-llist.c              | 14 +++++++-------
+ src/ausearch-llist.h              |  2 +-
+ src/ausearch-nvpair.c             | 12 ++++++------
+ src/ausearch-nvpair.h             |  4 ++--
+ src/ausearch-string.c             | 10 +++++-----
+ src/ausearch-string.h             |  2 +-
+ tools/aulastlog/aulastlog-llist.c | 18 +++++++++---------
+ tools/aulastlog/aulastlog-llist.h |  4 ++--
+ 19 files changed, 86 insertions(+), 82 deletions(-)
+
+--- a/audisp/audispd-llist.c
++++ b/audisp/audispd-llist.c
+@@ -69,15 +69,13 @@ unsigned int plist_count_active(const co
+ 	return cnt;
+ }
+ 
+-void plist_append(conf_llist *l, plugin_conf_t *p)
++int plist_append(conf_llist *l, plugin_conf_t *p)
+ {
+ 	lnode* newnode;
+ 
+ 	newnode = malloc(sizeof(lnode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	if (p) {
+ 		void *pp = malloc(sizeof(struct plugin_conf));
+@@ -98,6 +96,8 @@ void plist_append(conf_llist *l, plugin_
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ void plist_clear(conf_llist* l)
+--- a/audisp/audispd-llist.h
++++ b/audisp/audispd-llist.h
+@@ -1,6 +1,6 @@
+ /*
+ * audispd-llist.h - Header file for ausearch-conf_llist.c
+-* Copyright (c) 2007,2013 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2007,2013 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -51,7 +51,7 @@ unsigned int plist_count_active(const co
+ void plist_last(conf_llist *l);
+ lnode *plist_next(conf_llist *l);
+ static inline lnode *plist_get_cur(conf_llist *l) { return l->cur; }
+-void plist_append(conf_llist *l, plugin_conf_t *p);
++int plist_append(conf_llist *l, plugin_conf_t *p);
+ void plist_clear(conf_llist* l);
+ void plist_mark_all_unchecked(conf_llist* l);
+ lnode *plist_find_unchecked(conf_llist* l);
+--- a/auparse/normalize-llist.c
++++ b/auparse/normalize-llist.c
+@@ -1,6 +1,6 @@
+ /*
+  * normalize-llist.c - Minimal linked list library
+- * Copyright (c) 2016-17 Red Hat Inc., Durham, North Carolina.
++ * Copyright (c) 2016-17 Red Hat Inc.
+  * All Rights Reserved. 
+  *
+  * This library is free software; you can redistribute it and/or
+@@ -61,15 +61,14 @@ data_node *cllist_next(cllist *l)
+ 	return l->cur;
+ }
+ 
+-void cllist_append(cllist *l, uint32_t num, void *data)
++// Returns 0 on success and 1 on error
++int cllist_append(cllist *l, uint32_t num, void *data)
+ {
+ 	data_node *newnode;
+ 
+ 	newnode = malloc(sizeof(data_node));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	newnode->num = num;
+ 	newnode->data = data;
+@@ -84,5 +83,6 @@ void cllist_append(cllist *l, uint32_t n
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++	return 0;
+ }
+ 
+--- a/auparse/normalize-llist.h
++++ b/auparse/normalize-llist.h
+@@ -1,6 +1,6 @@
+ /*
+  * normalize-llist.h - Header file for normalize-llist.c
+- * Copyright (c) 2016-17 Red Hat Inc., Durham, North Carolina.
++ * Copyright (c) 2016-17 Red Hat Inc.
+  * All Rights Reserved.
+  *
+  * This library is free software; you can redistribute it and/or
+@@ -53,7 +53,7 @@ AUDIT_HIDDEN_START
+ void cllist_create(cllist *l, void (*cleanup)(void *));
+ void cllist_clear(cllist* l);
+ data_node *cllist_next(cllist *l);
+-void cllist_append(cllist *l, uint32_t num, void *data);
++int cllist_append(cllist *l, uint32_t num, void *data);
+ 
+ AUDIT_HIDDEN_END
+ 
+--- a/auparse/normalize.c
++++ b/auparse/normalize.c
+@@ -179,7 +179,8 @@ static unsigned int add_subj_attr(aupars
+ 	if ((auparse_find_field(au, str))) {
+ 		attr = set_record(0, rnum);
+ 		attr = set_field(attr, auparse_get_field_num(au));
+-		cllist_append(&D.actor.attr, attr, NULL);
++		if (cllist_append(&D.actor.attr, attr, NULL))
++			return 1;
+ 		return 0;
+ 	} else
+ 		auparse_goto_record_num(au, rnum);
+@@ -224,7 +225,8 @@ static unsigned int add_obj_attr(auparse
+ 	if ((auparse_find_field(au, str))) {
+ 		attr = set_record(0, rnum);
+ 		attr = set_field(attr, auparse_get_field_num(au));
+-		cllist_append(&D.thing.attr, attr, NULL);
++		if (cllist_append(&D.thing.attr, attr, NULL))
++			return 1;
+ 		return 0;
+ 	} else
+ 		auparse_goto_record_num(au, rnum);
+@@ -360,21 +362,23 @@ static void collect_id_obj2(auparse_stat
+ 	}
+ }
+ 
+-static void collect_path_attrs(auparse_state_t *au)
++static int collect_path_attrs(auparse_state_t *au)
+ {
+ 	value_t attr;
+ 	unsigned int rnum = auparse_get_record_num(au);
+ 
+ 	auparse_first_field(au);
+ 	if (add_obj_attr(au, "mode", rnum))
+-		return;	// Failed opens don't have anything else
++		return 1;	// Failed opens don't have anything else
+ 
+ 	// All the rest of the fields matter
+ 	while ((auparse_next_field(au))) {
+ 		attr = set_record(0, rnum);
+ 		attr = set_field(attr, auparse_get_field_num(au));
+-		cllist_append(&D.thing.attr, attr, NULL);
++		if (cllist_append(&D.thing.attr, attr, NULL))
++			return 1;
+ 	}
++	return 0;
+ }
+ 
+ static void collect_cwd_attrs(auparse_state_t *au)
+--- a/src/auditctl-llist.c
++++ b/src/auditctl-llist.c
+@@ -1,7 +1,7 @@
+ /*
+ * ausearch-llist.c - Minimal linked list library
+-* Copyright (c) 2005 Red Hat Inc., Durham, North Carolina.
+-* All Rights Reserved. 
++* Copyright (c) 2005 Red Hat Inc.
++* All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+ * terms of the GNU General Public License as published by the Free
+@@ -15,7 +15,7 @@
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; see the file COPYING. If not, write to the
+-* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor 
++* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor
+ * Boston, MA 02110-1335, USA.
+ *
+ * Authors:
+@@ -59,19 +59,17 @@ lnode *list_next(llist *l)
+ 	return l->cur;
+ }
+ 
+-void list_append(llist *l, struct audit_rule_data *r, size_t sz)
++int list_append(llist *l, struct audit_rule_data *r, size_t sz)
+ {
+ 	lnode* newnode;
+ 
+ 	newnode = malloc(sizeof(lnode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	if (r) {
+ 		void *rr = malloc(sz);
+-		if (rr) 
++		if (rr)
+ 			memcpy(rr, r, sz);
+ 		newnode->r = rr;
+ 	} else
+@@ -89,6 +87,8 @@ void list_append(llist *l, struct audit_
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ void list_clear(llist* l)
+--- a/src/auditctl-llist.h
++++ b/src/auditctl-llist.h
+@@ -1,6 +1,6 @@
+ /*
+ * auditctl-llist.h - Header file for ausearch-llist.c
+-* Copyright (c) 2005 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2005 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -50,7 +50,7 @@ void list_first(llist *l);
+ void list_last(llist *l);
+ lnode *list_next(llist *l);
+ static inline lnode *list_get_cur(llist *l) { return l->cur; }
+-void list_append(llist *l, struct audit_rule_data *r, size_t sz);
++int list_append(llist *l, struct audit_rule_data *r, size_t sz);
+ void list_clear(llist* l);
+ 
+ #endif
+--- a/src/ausearch-avc.c
++++ b/src/ausearch-avc.c
+@@ -1,7 +1,7 @@
+ /*
+ * ausearch-avc.c - Minimal linked list library for avcs
+-* Copyright (c) 2006,2008,2014 Red Hat Inc., Durham, North Carolina.
+-* All Rights Reserved. 
++* Copyright (c) 2006,2008,2014 Red Hat Inc.
++* All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+ * terms of the GNU General Public License as published by the Free
+@@ -15,7 +15,7 @@
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; see the file COPYING. If not, write to the
+-* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor 
++* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor
+ * Boston, MA 02110-1335, USA.
+ *
+ * Authors:
+@@ -62,15 +62,13 @@ static void alist_last(alist *l)
+ 	l->cur = cur;
+ }
+ 
+-void alist_append(alist *l, anode *node)
++int alist_append(alist *l, anode *node)
+ {
+ 	anode* newnode;
+ 
+ 	newnode = malloc(sizeof(anode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	if (node->scontext)
+ 		newnode->scontext = node->scontext;
+@@ -108,6 +106,8 @@ void alist_append(alist *l, anode *node)
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ int alist_find_subj(alist *l)
+--- a/src/ausearch-avc.h
++++ b/src/ausearch-avc.h
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-avc.h - Header file for ausearch-string.c
+-* Copyright (c) 2006,2008 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2006,2008 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -54,7 +54,7 @@ void alist_create(alist *l);
+ static inline void alist_first(alist *l) { l->cur = l->head; }
+ anode *alist_next(alist *l);
+ static inline anode *alist_get_cur(alist *l) { return l->cur; }
+-void alist_append(alist *l, anode *node);
++int alist_append(alist *l, anode *node);
+ void anode_init(anode *an);
+ void anode_clear(anode *an);
+ void alist_clear(alist* l);
+--- a/src/ausearch-int.c
++++ b/src/ausearch-int.c
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-int.c - Minimal linked list library for integers
+-* Copyright (c) 2005,2008 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2005,2008 Red Hat Inc.
+ * All Rights Reserved. 
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -41,15 +41,13 @@ int_node *ilist_next(ilist *l)
+ 	return l->cur;
+ }
+ 
+-void ilist_append(ilist *l, int num, unsigned int hits, int aux)
++int ilist_append(ilist *l, int num, unsigned int hits, int aux)
+ {
+ 	int_node* newnode;
+ 
+ 	newnode = malloc(sizeof(int_node));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	newnode->num = num;
+ 	newnode->hits = hits;
+@@ -65,6 +63,8 @@ void ilist_append(ilist *l, int num, uns
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ void ilist_clear(ilist* l)
+--- a/src/ausearch-int.h
++++ b/src/ausearch-int.h
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-int.h - Header file for ausearch-int.c
+-* Copyright (c) 2005,2008 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2005,2008 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -48,7 +48,7 @@ void ilist_create(ilist *l);
+ static inline void ilist_first(ilist *l) { l->cur = l->head; }
+ int_node *ilist_next(ilist *l);
+ static inline int_node *ilist_get_cur(ilist *l) { return l->cur; }
+-void ilist_append(ilist *l, int num, unsigned int hits, int aux);
++int ilist_append(ilist *l, int num, unsigned int hits, int aux);
+ void ilist_clear(ilist* l);
+ 
+ /* append a number if its not already on the list */
+--- a/src/ausearch-llist.c
++++ b/src/ausearch-llist.c
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-llist.c - Minimal linked list library
+-* Copyright (c) 2005-2008,2011,2016 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2005-2008,2011,2016 Red Hat Inc.
+ * Copyright (c) 2011 IBM Corp.
+ * All Rights Reserved. 
+ *
+@@ -102,15 +102,13 @@ lnode *list_prev(llist *l)
+ 	return l->cur;
+ }
+ 
+-void list_append(llist *l, lnode *node)
++int list_append(llist *l, lnode *node)
+ {
+ 	lnode* newnode;
+ 
+ 	newnode = malloc(sizeof(lnode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	if (node->message)
+ 		newnode->message = node->message;
+@@ -123,7 +121,7 @@ void list_append(llist *l, lnode *node)
+ 	newnode->type = node->type;
+ 	newnode->a0 = node->a0;
+ 	newnode->a1 = node->a1;
+-	newnode->item = l->cnt; 
++	newnode->item = l->cnt;
+ 	newnode->next = NULL;
+ 
+ 	// if we are at top, fix this up
+@@ -135,6 +133,8 @@ void list_append(llist *l, lnode *node)
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ int list_find_item(llist *l, unsigned int i)
+--- a/src/ausearch-llist.h
++++ b/src/ausearch-llist.h
+@@ -107,7 +107,7 @@ void list_last(llist *l);
+ lnode *list_next(llist *l);
+ lnode *list_prev(llist *l);
+ static inline lnode *list_get_cur(llist *l) { return l->cur; }
+-void list_append(llist *l, lnode *node);
++int list_append(llist *l, lnode *node);
+ void list_clear(llist* l);
+ int list_get_event(llist* l, event *e);
+ 
+--- a/src/ausearch-nvpair.c
++++ b/src/ausearch-nvpair.c
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-nvpair.c - Minimal linked list library for name-value pairs
+-* Copyright (c) 2006-08 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2006-08 Red Hat Inc.
+ * All Rights Reserved. 
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -42,13 +42,11 @@ nvnode *search_list_next(nvlist *l)
+ 	return l->cur;
+ }
+ 
+-void search_list_append(nvlist *l, nvnode *node)
++int search_list_append(nvlist *l, nvnode *node)
+ {
+ 	nvnode* newnode = malloc(sizeof(nvnode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	newnode->name = node->name;
+ 	newnode->val = node->val;
+@@ -66,6 +64,8 @@ void search_list_append(nvlist *l, nvnod
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ int search_list_find_val(nvlist *l, long val)
+--- a/src/ausearch-nvpair.h
++++ b/src/ausearch-nvpair.h
+@@ -1,6 +1,6 @@
+ /*
+ * ausearch-nvpair.h - Header file for ausearch-nvpair.c
+-* Copyright (c) 2006-08 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2006-08 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -48,7 +48,7 @@ void search_list_create(nvlist *l);
+ static inline void search_list_first(nvlist *l) { l->cur = l->head; }
+ nvnode *search_list_next(nvlist *l);
+ static inline nvnode *search_list_get_cur(nvlist *l) { return l->cur; }
+-void search_list_append(nvlist *l, nvnode *node);
++int search_list_append(nvlist *l, nvnode *node);
+ void search_list_clear(nvlist* l);
+ 
+ /* Given a numeric index, find that record. */
+--- a/src/ausearch-string.c
++++ b/src/ausearch-string.c
+@@ -44,15 +44,13 @@ snode *slist_next(slist *l)
+ 	return l->cur;
+ }
+ 
+-void slist_append(slist *l, snode *node)
++int slist_append(slist *l, snode *node)
+ {
+ 	snode* newnode;
+ 
+ 	newnode = malloc(sizeof(snode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	if (node->str)
+ 		newnode->str = node->str;
+@@ -79,6 +77,8 @@ void slist_append(slist *l, snode *node)
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ void slist_clear(slist* l)
+--- a/src/ausearch-string.h
++++ b/src/ausearch-string.h
+@@ -49,7 +49,7 @@ void slist_create(slist *l);
+ static inline void slist_first(slist *l) { l->cur = l->head; }
+ snode *slist_next(slist *l);
+ static inline snode *slist_get_cur(slist *l) { return l->cur; }
+-void slist_append(slist *l, snode *node);
++int slist_append(slist *l, snode *node);
+ void slist_clear(slist* l);
+ 
+ /* append a string if its not already on the list */
+--- a/tools/aulastlog/aulastlog-llist.c
++++ b/tools/aulastlog/aulastlog-llist.c
+@@ -1,7 +1,7 @@
+ /*
+ * aulastlog-llist.c - Minimal linked list library
+-* Copyright (c) 2008 Red Hat Inc., Durham, North Carolina.
+-* All Rights Reserved. 
++* Copyright (c) 2008 Red Hat Inc..
++* All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+ * terms of the GNU General Public License as published by the Free
+@@ -15,7 +15,7 @@
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; see the file COPYING. If not, write to the
+-* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor 
++* Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor
+ * Boston, MA 02110-1335, USA.
+ *
+ * Authors:
+@@ -41,15 +41,13 @@ lnode *list_next(llist *l)
+ 	return l->cur;
+ }
+ 
+-void list_append(llist *l, lnode *node)
++int list_append(llist *l, lnode *node)
+ {
+ 	lnode* newnode;
+ 
+ 	newnode = malloc(sizeof(lnode));
+-	if (newnode == NULL) {
+-		printf("Out of memory. Check %s file, %d line", __FILE__, __LINE__);
+-		return;
+-	}
++	if (newnode == NULL)
++		return 1;
+ 
+ 	newnode->sec = node->sec;
+ 	newnode->uid = node->uid;
+@@ -62,7 +60,7 @@ void list_append(llist *l, lnode *node)
+ 		newnode->term = strdup(node->term);
+ 	else
+ 		newnode->term = NULL;
+-	newnode->item = l->cnt; 
++	newnode->item = l->cnt;
+ 	newnode->next = NULL;
+ 
+ 	// if we are at top, fix this up
+@@ -74,6 +72,8 @@ void list_append(llist *l, lnode *node)
+ 	// make newnode current
+ 	l->cur = newnode;
+ 	l->cnt++;
++
++	return 0;
+ }
+ 
+ void list_clear(llist* l)
+--- a/tools/aulastlog/aulastlog-llist.h
++++ b/tools/aulastlog/aulastlog-llist.h
+@@ -1,6 +1,6 @@
+ /*
+ * aulastlog-llist.h - Header file for aulastlog-llist.c
+-* Copyright (c) 2008 Red Hat Inc., Durham, North Carolina.
++* Copyright (c) 2008 Red Hat Inc.
+ * All Rights Reserved.
+ *
+ * This software may be freely redistributed and/or modified under the
+@@ -53,7 +53,7 @@ static inline void list_first(llist *l)
+ lnode *list_next(llist *l);
+ static inline lnode *list_get_cur(llist *l) { return l->cur; }
+ static inline unsigned int list_get_cnt(llist *l) { return l->cnt; }
+-void list_append(llist *l, lnode *node);
++int list_append(llist *l, lnode *node);
+ void list_clear(llist* l);
+ int list_update_login(llist* l, time_t t);
+ int list_update_host(llist* l, const char *h);
