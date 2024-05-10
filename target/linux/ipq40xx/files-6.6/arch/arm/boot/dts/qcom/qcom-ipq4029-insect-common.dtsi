@@ -401,6 +401,10 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
+
+	ar8035: ethernet-phy@1 {
+		reg = <1>;
+	};
 };
 
 &gmac {
@@ -419,11 +423,19 @@
 	status = "okay";
 
 	label = "lan";
-	phy-handle = <&ethphy1>;
+	phy-handle = <&ar8035>;
 	phy-mode = "rgmii-rxid";
 };
 
+&qca807x {
+	status = "disabled";
+};
+
 &ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
 	status = "disabled";
 };
 
