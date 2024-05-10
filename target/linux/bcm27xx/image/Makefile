@@ -72,10 +72,17 @@ endef
 
 define Device/rpi
   DEVICE_MODEL := B/B+/CM/Zero/ZeroW
+ifdef CONFIG_LINUX_6_6
+  DEVICE_DTS := \
+	broadcom/bcm2708-rpi-b broadcom/bcm2708-rpi-b-rev1 broadcom/bcm2708-rpi-b-plus \
+	broadcom/bcm2708-rpi-cm \
+	broadcom/bcm2708-rpi-zero broadcom/bcm2708-rpi-zero-w
+else
   DEVICE_DTS := \
 	bcm2708-rpi-b bcm2708-rpi-b-rev1 bcm2708-rpi-b-plus \
 	bcm2708-rpi-cm \
 	bcm2708-rpi-zero bcm2708-rpi-zero-w
+endif
   SUPPORTED_DEVICES := \
 	rpi-b rpi-b-plus rpi-cm rpi-zero rpi-zero-w \
 	raspberrypi,model-b raspberrypi,model-b-plus raspberrypi,model-b-rev2 \
@@ -99,12 +106,21 @@ define Device/rpi-2
   DEVICE_ALT1_VENDOR := Raspberry Pi
   DEVICE_ALT1_MODEL := 4B/400/CM4
   DEVICE_ALT1_VARIANT := (32bit)
+ifdef CONFIG_LINUX_6_6
+  DEVICE_DTS := \
+	broadcom/bcm2709-rpi-2-b broadcom/bcm2710-rpi-2-b \
+	broadcom/bcm2710-rpi-3-b broadcom/bcm2710-rpi-3-b-plus \
+	broadcom/bcm2711-rpi-4-b broadcom/bcm2711-rpi-400 \
+	broadcom/bcm2710-rpi-cm3 broadcom/bcm2711-rpi-cm4 \
+	broadcom/bcm2710-rpi-zero-2
+else
   DEVICE_DTS := \
 	bcm2709-rpi-2-b bcm2710-rpi-2-b \
 	bcm2710-rpi-3-b bcm2710-rpi-3-b-plus \
 	bcm2711-rpi-4-b bcm2711-rpi-400 \
 	bcm2710-rpi-cm3 bcm2711-rpi-cm4 \
 	bcm2710-rpi-zero-2
+endif
   SUPPORTED_DEVICES := \
 	rpi-2-b rpi-3-b rpi-3-b-plus rpi-cm rpi-zero-2 \
 	raspberrypi,2-model-b raspberrypi,2-model-b-rev2 \
