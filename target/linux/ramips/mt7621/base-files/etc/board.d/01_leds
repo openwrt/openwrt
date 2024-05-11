@@ -91,6 +91,14 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
 	;;
+dlink,dir-1935-a1|\
+dlink,dir-867-a1|\
+dlink,dir-878-a1|\
+dlink,dir-878-r1|\
+dlink,dir-882-a1|\
+dlink,dir-882-r1)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 dlink,dir-1960-a1|\
 dlink,dir-2055-a1|\
 dlink,dir-2150-a1|\
@@ -110,12 +118,7 @@ dlink,dir-853-a3)
 dlink,dir-853-r1)
 	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
 	;;
-dlink,dir-1935-a1|\
-dlink,dir-860l-b1|\
-dlink,dir-867-a1|\
-dlink,dir-878-a1|\
-dlink,dir-882-a1|\
-dlink,dir-882-r1)
+dlink,dir-860l-b1)
 	ucidef_set_led_netdev "wan" "wan" "green:net" "wan"
 	;;
 gnubee,gb-pc2)
