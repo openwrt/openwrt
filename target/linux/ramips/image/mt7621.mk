@@ -1747,6 +1747,14 @@ define Device/mikrotik_routerboard-m33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
 
+define Device/mikrotik_routerboard-m33g-64m
+  $(Device/MikroTik)
+  DEVICE_MODEL := RouterBOARD M33G (64 MB SPI flash)
+  DEVICE_PACKAGES := -wpad-basic-mbedtls
+  SUPPORTED_DEVICES += mikrotik,rbm33g-64m
+endef
+TARGET_DEVICES += mikrotik_routerboard-m33g-64m
+
 define Device/mqmaker_witi
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
