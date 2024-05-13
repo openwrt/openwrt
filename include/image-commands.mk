@@ -430,14 +430,6 @@ define Build/jffs2
 	@mv $@.new $@
 endef
 
-define Build/kernel2minor
-	$(eval temp_file := $(shell mktemp))
-	cp $@ $(temp_file)
-	kernel2minor -k $(temp_file) -r $(temp_file).new $(1)
-	mv $(temp_file).new $@
-	rm -f $(temp_file)
-endef
-
 define Build/yaffs-filesystem
 	let \
 		kernel_size="$$(stat -c%s $@)" \
