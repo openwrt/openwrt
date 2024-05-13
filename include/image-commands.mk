@@ -438,6 +438,20 @@ define Build/kernel2minor
 	rm -f $(temp_file)
 endef
 
+define Build/yaffs-filesystem
+	let \
+		kernel_size="$$(stat -c%s $@)" \
+		kernel_chunks="(kernel_size / 1024) + 1" \
+		filesystem_chunks="kernel_chunks + 3" \
+		filesystem_blocks="(filesystem_chunks / 63) + 1" \
+		filesystem_size="filesystem_blocks * 64 * 1024" \
+		filesystem_size_with_reserve="(filesystem_blocks + 2) * 64 * 1024"; \
+		head -c $$filesystem_size_with_reserve /dev/zero | tr "\000" "\377" > $@.img \
+		&& yafut -d $@.img -w -i $@ -o kernel -C 1040 -B 64k -E -P -S $(1) \
+		&& truncate -s $$filesystem_size $@.img \
+		&& mv $@.img $@
+endef
+
 define Build/kernel-bin
 	rm -f $@
 	cp $< $@

@@ -10,7 +10,7 @@ endef
 define Device/mikrotik_nor
   $(Device/mikrotik)
   DEVICE_PACKAGES := -yafut
-  IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
+  IMAGE/sysupgrade.bin := append-kernel | yaffs-filesystem -M | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
 endef
