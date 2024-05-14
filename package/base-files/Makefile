@@ -116,6 +116,13 @@ define Build/Compile/Default
 endef
 Build/Compile = $(Build/Compile/Default)
 
+ifneq ($(CONFIG_USE_APK),)
+  define Build/Configure
+	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
+		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
+		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
+  endef
+else
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
 	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
@@ -131,7 +138,11 @@ ifndef CONFIG_BUILDBOT
 	mkdir -p $(1)/etc/opkg/keys
 	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
 
+	mkdir -p $(1)/etc/apk/keys
+	$(CP) $(BUILD_KEY_APK_PUB) $(1)/etc/apk/keys/
+
   endef
+endif
 endif
 endif
 
@@ -234,15 +245,21 @@ endif
 		cat $(BIN_DIR)/feeds.buildinfo >>$(1)/etc/build.feeds; \
 		cat $(BIN_DIR)/version.buildinfo >>$(1)/etc/build.version)
 
+	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
+		rm -f $(1)/etc/banner.failsafe,)
+
+ifneq ($(CONFIG_USE_APK),)
+	mkdir -p $(1)/etc/apk/
+	$(call FeedSourcesAppendAPK,$(1)/etc/apk/repositories)
+	$(VERSION_SED_SCRIPT) $(1)/etc/apk/repositories
+else
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
-		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
+		$(call FeedSourcesAppendOPKG,$(1)/etc/opkg/distfeeds.conf); \
 		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
 		rm -f $(1)/sbin/pkg_check)
-
-	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
-		rm -f $(1)/etc/banner.failsafe,)
+endif
 endef
 
 ifneq ($(DUMP),1)
