@@ -3,6 +3,8 @@ From: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 Date: Fri, 14 Nov 2014 17:06:00 +0000
 Subject: [PATCH] owrt: lantiq: multiple flash
 
+Concatenate multiple flash chips for lantiq-flash.
+
 Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 ---
  drivers/mtd/maps/lantiq-flash.c | 168 +++++++++++++++++++++-----------
@@ -83,14 +85,40 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
  
  	ltq_mtd = devm_kzalloc(&pdev->dev, sizeof(struct ltq_mtd), GFP_KERNEL);
  	if (!ltq_mtd)
-@@ -118,75 +154,89 @@ ltq_mtd_probe(struct platform_device *pd
+@@ -118,70 +154,89 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  
--	ltq_mtd->res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!ltq_mtd->res) {
--		dev_err(&pdev->dev, "failed to get memory resource\n");
--		return -ENOENT;
+-	ltq_mtd->map->virt = devm_platform_get_and_ioremap_resource(pdev, 0, &ltq_mtd->res);
+-	if (IS_ERR(ltq_mtd->map->virt))
+-		return PTR_ERR(ltq_mtd->map->virt);
+-
+-	ltq_mtd->map = devm_kzalloc(&pdev->dev, sizeof(struct map_info),
+-				    GFP_KERNEL);
+-	if (!ltq_mtd->map)
+-		return -ENOMEM;
+-
+-	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
+-		ltq_mtd->map->phys = NO_XIP;
+-	else
+-		ltq_mtd->map->phys = ltq_mtd->res->start;
+-	ltq_mtd->res->start;
+-	ltq_mtd->map->size = resource_size(ltq_mtd->res);
+-
+-	ltq_mtd->map->name = ltq_map_name;
+-	ltq_mtd->map->bankwidth = 2;
+-	ltq_mtd->map->read = ltq_read16;
+-	ltq_mtd->map->write = ltq_write16;
+-	ltq_mtd->map->copy_from = ltq_copy_from;
+-	ltq_mtd->map->copy_to = ltq_copy_to;
+-
+-	ltq_mtd->map->map_priv_1 = LTQ_NOR_PROBING;
+-	ltq_mtd->mtd = do_map_probe("cfi_probe", ltq_mtd->map);
+-	ltq_mtd->map->map_priv_1 = LTQ_NOR_NORMAL;
+-
+-	if (!ltq_mtd->mtd) {
+-		dev_err(&pdev->dev, "probing failed\n");
+-		return -ENXIO;
 +	for (i = 0; i < pdev->num_resources; i++) {
 +		printk(KERN_NOTICE "lantiq nor flash device: %.8llx at %.8llx\n",
 +		       (unsigned long long)resource_size(&pdev->resource[i]),
@@ -147,35 +175,8 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 +		cfi->addr_unlock2 ^= 1;
  	}
  
--	ltq_mtd->map = devm_kzalloc(&pdev->dev, sizeof(struct map_info),
--				    GFP_KERNEL);
--	if (!ltq_mtd->map)
--		return -ENOMEM;
--
--	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
--		ltq_mtd->map->phys = NO_XIP;
--	else
--		ltq_mtd->map->phys = ltq_mtd->res->start;
--	ltq_mtd->res->start;
--	ltq_mtd->map->size = resource_size(ltq_mtd->res);
--	ltq_mtd->map->virt = devm_ioremap_resource(&pdev->dev, ltq_mtd->res);
--	if (IS_ERR(ltq_mtd->map->virt))
--		return PTR_ERR(ltq_mtd->map->virt);
--
--	ltq_mtd->map->name = ltq_map_name;
--	ltq_mtd->map->bankwidth = 2;
--	ltq_mtd->map->read = ltq_read16;
--	ltq_mtd->map->write = ltq_write16;
--	ltq_mtd->map->copy_from = ltq_copy_from;
--	ltq_mtd->map->copy_to = ltq_copy_to;
--
--	ltq_mtd->map->map_priv_1 = LTQ_NOR_PROBING;
--	ltq_mtd->mtd = do_map_probe("cfi_probe", ltq_mtd->map);
--	ltq_mtd->map->map_priv_1 = LTQ_NOR_NORMAL;
--
--	if (!ltq_mtd->mtd) {
--		dev_err(&pdev->dev, "probing failed\n");
--		return -ENXIO;
+-	ltq_mtd->mtd->dev.parent = &pdev->dev;
+-	mtd_set_of_node(ltq_mtd->mtd, pdev->dev.of_node);
 +	if (devices_found == 1) {
 +		ltq_mtd->cmtd = ltq_mtd->mtd[0];
 +	} else if (devices_found > 1) {
@@ -185,11 +186,8 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 +		ltq_mtd->cmtd = mtd_concat_create(ltq_mtd->mtd, devices_found, dev_name(&pdev->dev));
 +		if (ltq_mtd->cmtd == NULL)
 +			err = -ENXIO;
- 	}
++	}
  
--	ltq_mtd->mtd->dev.parent = &pdev->dev;
--	mtd_set_of_node(ltq_mtd->mtd, pdev->dev.of_node);
--
 -	cfi = ltq_mtd->map->fldrv_priv;
 -	cfi->addr_unlock1 ^= 1;
 -	cfi->addr_unlock2 ^= 1;

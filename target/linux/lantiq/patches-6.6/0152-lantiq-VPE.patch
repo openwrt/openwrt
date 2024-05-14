@@ -15,7 +15,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2306,6 +2306,12 @@ config MIPS_VPE_LOADER
+@@ -2259,6 +2259,12 @@ config MIPS_VPE_LOADER
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -25,7 +25,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
 +	help
 +	  IFX included extensions in APRP
 +
- config MIPS_VPE_LOADER_CMP
+ config MIPS_VPE_LOADER_MT
  	bool
  	default "y"
 --- a/arch/mips/include/asm/mipsmtregs.h
@@ -51,7 +51,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #define read_vpe_c0_status()		mftc0(12, 0)
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
-@@ -124,4 +124,13 @@ void cleanup_tc(struct tc *tc);
+@@ -119,4 +119,13 @@ void cleanup_tc(struct tc *tc);
  
  int __init vpe_module_init(void);
  void __exit vpe_module_exit(void);
@@ -67,7 +67,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
-@@ -416,6 +416,8 @@ int __init vpe_module_init(void)
+@@ -414,6 +414,8 @@ int __init vpe_module_init(void)
  			}
  
  			v->ntcs = hw_tcs - aprp_cpu_index();
@@ -76,7 +76,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -519,3 +521,47 @@ void __exit vpe_module_exit(void)
+@@ -517,3 +519,47 @@ void __exit vpe_module_exit(void)
  			release_vpe(v);
  	}
  }
@@ -170,7 +170,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  {
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
-@@ -42,10 +42,14 @@ extern const struct plat_smp_ops vsmp_sm
+@@ -36,10 +36,14 @@ extern const struct plat_smp_ops vsmp_sm
  static struct plat_smp_ops lantiq_smp_ops;
  #endif
  
