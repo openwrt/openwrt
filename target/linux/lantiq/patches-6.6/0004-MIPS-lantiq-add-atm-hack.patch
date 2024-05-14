@@ -424,7 +424,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
 @@ -13,6 +13,7 @@
- #include <linux/of_platform.h>
+ #include <linux/of.h>
  #include <linux/of_address.h>
  #include <linux/of_irq.h>
 +#include <linux/module.h>
@@ -441,7 +441,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -63,6 +63,10 @@ void (*_dma_cache_wback_inv)(unsigned lo
+@@ -80,6 +80,10 @@ void (*_dma_cache_wback_inv)(unsigned lo
  void (*_dma_cache_wback)(unsigned long start, unsigned long size);
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  

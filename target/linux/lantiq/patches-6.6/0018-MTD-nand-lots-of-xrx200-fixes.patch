@@ -10,7 +10,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mtd/nand/raw/xway_nand.c
 +++ b/drivers/mtd/nand/raw/xway_nand.c
-@@ -61,6 +61,24 @@
+@@ -62,6 +62,24 @@
  #define NAND_CON_CSMUX		(1 << 1)
  #define NAND_CON_NANDM		1
  
@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  struct xway_nand_data {
  	struct nand_controller	controller;
  	struct nand_chip	chip;
-@@ -92,10 +110,22 @@ static void xway_select_chip(struct nand
+@@ -93,10 +111,22 @@ static void xway_select_chip(struct nand
  	case -1:
  		ltq_ebu_w32_mask(NAND_CON_CE, 0, EBU_NAND_CON);
  		ltq_ebu_w32_mask(NAND_CON_NANDM, 0, EBU_NAND_CON);
@@ -58,7 +58,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		ltq_ebu_w32_mask(0, NAND_CON_NANDM, EBU_NAND_CON);
  		ltq_ebu_w32_mask(0, NAND_CON_CE, EBU_NAND_CON);
  		break;
-@@ -108,6 +138,11 @@ static void xway_cmd_ctrl(struct nand_ch
+@@ -109,6 +139,11 @@ static void xway_cmd_ctrl(struct nand_ch
  {
  	struct mtd_info *mtd = nand_to_mtd(chip);
  
@@ -70,7 +70,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (cmd == NAND_CMD_NONE)
  		return;
  
-@@ -118,6 +153,24 @@ static void xway_cmd_ctrl(struct nand_ch
+@@ -119,6 +154,24 @@ static void xway_cmd_ctrl(struct nand_ch
  
  	while ((ltq_ebu_r32(EBU_NAND_WAIT) & NAND_WAIT_WR_C) == 0)
  		;
@@ -95,7 +95,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
  
  static int xway_dev_ready(struct nand_chip *chip)
-@@ -169,6 +222,7 @@ static int xway_nand_probe(struct platfo
+@@ -170,6 +223,7 @@ static int xway_nand_probe(struct platfo
  	int err;
  	u32 cs;
  	u32 cs_flag = 0;
@@ -103,7 +103,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	/* Allocate memory for the device structure (and zero it) */
  	data = devm_kzalloc(&pdev->dev, sizeof(struct xway_nand_data),
-@@ -204,6 +258,15 @@ static int xway_nand_probe(struct platfo
+@@ -205,6 +259,15 @@ static int xway_nand_probe(struct platfo
  	if (!err && cs == 1)
  		cs_flag = NAND_CON_IN_CS1 | NAND_CON_OUT_CS1;
  
