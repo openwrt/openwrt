@@ -865,7 +865,7 @@ sub feed_config() {
 		printf "\t\tdepends on PER_FEED_REPO\n";
 		printf "\t\tdefault y\n" if $installed;
 		printf "\t\thelp\n";
-		printf "\t\t Enable the \\\"%s\\\" feed in opkg distfeeds.conf.\n", $feed->[1];
+		printf "\t\t Enable the \\\"%s\\\" feed in opkg distfeeds.conf and apk repositories.\n", $feed->[1];
 		printf "\t\t Say M to add the feed commented out.\n";
 		printf "\n";
 	}
@@ -884,7 +884,7 @@ Commands:
 	    -s :            List of feed names and their URL.
 	    -r <feedname>:  List packages of specified feed.
 	    -d <delimiter>: Use specified delimiter to distinguish rows (default: spaces)
-	    -f :            List feeds in feeds.conf compatible format (when using -s).
+	    -f :            List feeds in opkg feeds.conf compatible format (when using -s).
 
 	install [options] <package>: Install a package
 	Options:

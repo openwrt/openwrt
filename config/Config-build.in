@@ -68,6 +68,9 @@ menu "Global build settings"
 		bool "Enable TLS certificate verification during package download"
 		default y
 
+	config USE_APK
+		bool "Use APK instead of OPKG to build distribution (EXPERIMENTAL)"
+
 	comment "General build options"
 
 	config TESTING_KERNEL
