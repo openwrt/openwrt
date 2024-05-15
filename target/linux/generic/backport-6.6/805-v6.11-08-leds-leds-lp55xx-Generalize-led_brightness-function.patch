@@ -1,0 +1,181 @@
+From c63580b27a2c638cbae2fc26484b0bf29f303134 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:15 +0200
+Subject: [PATCH 08/18] leds: leds-lp55xx: Generalize led_brightness function
+
+Generalize led_brightness function as the implementation is the same for
+most of the lp55xx based LED driver.
+
+Introduce a new option in device_config, reg_led_pwm_base since the reg
+value is not the same for every LED chip.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-11-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 18 ++++--------------
+ drivers/leds/leds-lp5523.c        | 17 ++++-------------
+ drivers/leds/leds-lp55xx-common.c | 14 ++++++++++++++
+ drivers/leds/leds-lp55xx-common.h |  3 +++
+ drivers/leds/leds-lp8501.c        | 18 ++++--------------
+ 5 files changed, 29 insertions(+), 41 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -239,19 +239,6 @@ static int lp5521_multicolor_brightness(
+ 	return ret;
+ }
+ 
+-static int lp5521_led_brightness(struct lp55xx_led *led)
+-{
+-	struct lp55xx_chip *chip = led->chip;
+-	int ret;
+-
+-	mutex_lock(&chip->lock);
+-	ret = lp55xx_write(chip, LP5521_REG_LED_PWM_BASE + led->chan_nr,
+-		led->brightness);
+-	mutex_unlock(&chip->lock);
+-
+-	return ret;
+-}
+-
+ static ssize_t show_engine_mode(struct device *dev,
+ 				struct device_attribute *attr,
+ 				char *buf, int nr)
+@@ -386,9 +373,12 @@ static struct lp55xx_device_config lp552
+ 	.prog_mem_base = {
+ 		.addr = LP5521_REG_R_PROG_MEM,
+ 	},
++	.reg_led_pwm_base = {
++		.addr = LP5521_REG_LED_PWM_BASE,
++	},
+ 	.max_channel  = LP5521_MAX_LEDS,
+ 	.post_init_device   = lp5521_post_init_device,
+-	.brightness_fn      = lp5521_led_brightness,
++	.brightness_fn      = lp55xx_led_brightness,
+ 	.multicolor_brightness_fn = lp5521_multicolor_brightness,
+ 	.set_led_current    = lp5521_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -683,18 +683,6 @@ static int lp5523_multicolor_brightness(
+ 	return ret;
+ }
+ 
+-static int lp5523_led_brightness(struct lp55xx_led *led)
+-{
+-	struct lp55xx_chip *chip = led->chip;
+-	int ret;
+-
+-	mutex_lock(&chip->lock);
+-	ret = lp55xx_write(chip, LP5523_REG_LED_PWM_BASE + led->chan_nr,
+-		     led->brightness);
+-	mutex_unlock(&chip->lock);
+-	return ret;
+-}
+-
+ static LP55XX_DEV_ATTR_RW(engine1_mode, show_engine1_mode, store_engine1_mode);
+ static LP55XX_DEV_ATTR_RW(engine2_mode, show_engine2_mode, store_engine2_mode);
+ static LP55XX_DEV_ATTR_RW(engine3_mode, show_engine3_mode, store_engine3_mode);
+@@ -759,10 +747,13 @@ static struct lp55xx_device_config lp552
+ 	.prog_mem_base = {
+ 		.addr = LP5523_REG_PROG_MEM,
+ 	},
++	.reg_led_pwm_base = {
++		.addr = LP5523_REG_LED_PWM_BASE,
++	},
+ 	.pages_per_engine   = LP5523_PAGES_PER_ENGINE,
+ 	.max_channel  = LP5523_MAX_LEDS,
+ 	.post_init_device   = lp5523_post_init_device,
+-	.brightness_fn      = lp5523_led_brightness,
++	.brightness_fn      = lp55xx_led_brightness,
+ 	.multicolor_brightness_fn = lp5523_multicolor_brightness,
+ 	.set_led_current    = lp5523_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -242,6 +242,20 @@ void lp55xx_firmware_loaded_cb(struct lp
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_firmware_loaded_cb);
+ 
++int lp55xx_led_brightness(struct lp55xx_led *led)
++{
++	struct lp55xx_chip *chip = led->chip;
++	const struct lp55xx_device_config *cfg = chip->cfg;
++	int ret;
++
++	mutex_lock(&chip->lock);
++	ret = lp55xx_write(chip, cfg->reg_led_pwm_base.addr + led->chan_nr,
++			   led->brightness);
++	mutex_unlock(&chip->lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(lp55xx_led_brightness);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -100,6 +100,7 @@ struct lp55xx_reg {
+  * @reset              : Chip specific reset command
+  * @enable             : Chip specific enable command
+  * @prog_mem_base      : Chip specific base reg address for chip SMEM programming
++ * @reg_led_pwm_base   : Chip specific base reg address for LED PWM conf
+  * @pages_per_engine   : Assigned pages for each engine
+  *                       (if not set chip doesn't support pages)
+  * @max_channel        : Maximum number of channels
+@@ -118,6 +119,7 @@ struct lp55xx_device_config {
+ 	const struct lp55xx_reg reset;
+ 	const struct lp55xx_reg enable;
+ 	const struct lp55xx_reg prog_mem_base;
++	const struct lp55xx_reg reg_led_pwm_base;
+ 	const int pages_per_engine;
+ 	const int max_channel;
+ 
+@@ -213,6 +215,7 @@ extern int lp55xx_run_engine_common(stru
+ extern int lp55xx_update_program_memory(struct lp55xx_chip *chip,
+ 					const u8 *data, size_t size);
+ extern void lp55xx_firmware_loaded_cb(struct lp55xx_chip *chip);
++extern int lp55xx_led_brightness(struct lp55xx_led *led);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -137,19 +137,6 @@ static void lp8501_run_engine(struct lp5
+ 	lp55xx_run_engine_common(chip);
+ }
+ 
+-static int lp8501_led_brightness(struct lp55xx_led *led)
+-{
+-	struct lp55xx_chip *chip = led->chip;
+-	int ret;
+-
+-	mutex_lock(&chip->lock);
+-	ret = lp55xx_write(chip, LP8501_REG_LED_PWM_BASE + led->chan_nr,
+-		     led->brightness);
+-	mutex_unlock(&chip->lock);
+-
+-	return ret;
+-}
+-
+ /* Chip specific configurations */
+ static struct lp55xx_device_config lp8501_cfg = {
+ 	.reg_op_mode = {
+@@ -173,10 +160,13 @@ static struct lp55xx_device_config lp850
+ 	.prog_mem_base = {
+ 		.addr = LP8501_REG_PROG_MEM,
+ 	},
++	.reg_led_pwm_base = {
++		.addr = LP8501_REG_LED_PWM_BASE,
++	},
+ 	.pages_per_engine   = LP8501_PAGES_PER_ENGINE,
+ 	.max_channel  = LP8501_MAX_LEDS,
+ 	.post_init_device   = lp8501_post_init_device,
+-	.brightness_fn      = lp8501_led_brightness,
++	.brightness_fn      = lp55xx_led_brightness,
+ 	.set_led_current    = lp8501_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp8501_run_engine,

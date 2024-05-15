@@ -1,0 +1,291 @@
+From 4d310b96f2db602830c40f82a75ede799b243cce Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:10 +0200
+Subject: [PATCH 03/18] leds: leds-lp55xx: Generalize load_engine function
+
+LED driver based on lp55xx have all a very similar implementation for
+load_engine function. Move the function to lp55xx-common and rework the
+define to be more dynamic instead of having to declare a temp array for
+them.
+
+Engine mask are the same for every LED based on lp55xx.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-6-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 26 +++---------------------
+ drivers/leds/leds-lp5523.c        | 26 +++---------------------
+ drivers/leds/leds-lp5562.c        | 24 ++--------------------
+ drivers/leds/leds-lp55xx-common.c | 33 ++++++++++++++++++++++++++++++-
+ drivers/leds/leds-lp55xx-common.h |  1 +
+ drivers/leds/leds-lp8501.c        | 17 ++--------------
+ 6 files changed, 43 insertions(+), 84 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -115,26 +115,6 @@ static void lp5521_set_led_current(struc
+ 		led_current);
+ }
+ 
+-static void lp5521_load_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP5521_MODE_R_M,
+-		[LP55XX_ENGINE_2] = LP5521_MODE_G_M,
+-		[LP55XX_ENGINE_3] = LP5521_MODE_B_M,
+-	};
+-
+-	static const u8 val[] = {
+-		[LP55XX_ENGINE_1] = LP5521_LOAD_R,
+-		[LP55XX_ENGINE_2] = LP5521_LOAD_G,
+-		[LP55XX_ENGINE_3] = LP5521_LOAD_B,
+-	};
+-
+-	lp55xx_update_bits(chip, LP5521_REG_OP_MODE, mask[idx], val[idx]);
+-
+-	lp5521_wait_opmode_done();
+-}
+-
+ static void lp5521_stop_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -264,7 +244,7 @@ static void lp5521_firmware_loaded(struc
+ 	 *  2) write firmware data into program memory
+ 	 */
+ 
+-	lp5521_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 	lp5521_update_program_memory(chip, fw->data, fw->size);
+ }
+ 
+@@ -413,7 +393,7 @@ static ssize_t store_engine_mode(struct
+ 		engine->mode = LP55XX_ENGINE_RUN;
+ 	} else if (!strncmp(buf, "load", 4)) {
+ 		lp5521_stop_engine(chip);
+-		lp5521_load_engine(chip);
++		lp55xx_load_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_LOAD;
+ 	} else if (!strncmp(buf, "disabled", 8)) {
+ 		lp5521_stop_engine(chip);
+@@ -439,7 +419,7 @@ static ssize_t store_engine_load(struct
+ 	mutex_lock(&chip->lock);
+ 
+ 	chip->engine_idx = nr;
+-	lp5521_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 	ret = lp5521_update_program_memory(chip, buf, len);
+ 
+ 	mutex_unlock(&chip->lock);
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -159,26 +159,6 @@ static int lp5523_post_init_device(struc
+ 	return lp5523_init_program_engine(chip);
+ }
+ 
+-static void lp5523_load_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP5523_MODE_ENG1_M,
+-		[LP55XX_ENGINE_2] = LP5523_MODE_ENG2_M,
+-		[LP55XX_ENGINE_3] = LP5523_MODE_ENG3_M,
+-	};
+-
+-	static const u8 val[] = {
+-		[LP55XX_ENGINE_1] = LP5523_LOAD_ENG1,
+-		[LP55XX_ENGINE_2] = LP5523_LOAD_ENG2,
+-		[LP55XX_ENGINE_3] = LP5523_LOAD_ENG3,
+-	};
+-
+-	lp55xx_update_bits(chip, LP5523_REG_OP_MODE, mask[idx], val[idx]);
+-
+-	lp5523_wait_opmode_done();
+-}
+-
+ static void lp5523_load_engine_and_select_page(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -188,7 +168,7 @@ static void lp5523_load_engine_and_selec
+ 		[LP55XX_ENGINE_3] = LP5523_PAGE_ENG3,
+ 	};
+ 
+-	lp5523_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 
+ 	lp55xx_write(chip, LP5523_REG_PROG_PAGE_SEL, page_sel[idx]);
+ }
+@@ -425,7 +405,7 @@ static ssize_t store_engine_mode(struct
+ 		engine->mode = LP55XX_ENGINE_RUN;
+ 	} else if (!strncmp(buf, "load", 4)) {
+ 		lp5523_stop_engine(chip);
+-		lp5523_load_engine(chip);
++		lp55xx_load_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_LOAD;
+ 	} else if (!strncmp(buf, "disabled", 8)) {
+ 		lp5523_stop_engine(chip);
+@@ -502,7 +482,7 @@ static int lp5523_load_mux(struct lp55xx
+ 		[LP55XX_ENGINE_3] = LP5523_PAGE_MUX3,
+ 	};
+ 
+-	lp5523_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 
+ 	ret = lp55xx_write(chip, LP5523_REG_PROG_PAGE_SEL, mux_page[nr]);
+ 	if (ret)
+--- a/drivers/leds/leds-lp5562.c
++++ b/drivers/leds/leds-lp5562.c
+@@ -124,26 +124,6 @@ static void lp5562_set_led_current(struc
+ 	lp55xx_write(led->chip, addr[led->chan_nr], led_current);
+ }
+ 
+-static void lp5562_load_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP5562_MODE_ENG1_M,
+-		[LP55XX_ENGINE_2] = LP5562_MODE_ENG2_M,
+-		[LP55XX_ENGINE_3] = LP5562_MODE_ENG3_M,
+-	};
+-
+-	static const u8 val[] = {
+-		[LP55XX_ENGINE_1] = LP5562_LOAD_ENG1,
+-		[LP55XX_ENGINE_2] = LP5562_LOAD_ENG2,
+-		[LP55XX_ENGINE_3] = LP5562_LOAD_ENG3,
+-	};
+-
+-	lp55xx_update_bits(chip, LP5562_REG_OP_MODE, mask[idx], val[idx]);
+-
+-	lp5562_wait_opmode_done();
+-}
+-
+ static void lp5562_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	int ret;
+@@ -270,7 +250,7 @@ static void lp5562_firmware_loaded(struc
+ 	 *  2) write firmware data into program memory
+ 	 */
+ 
+-	lp5562_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 	lp5562_update_firmware(chip, fw->data, fw->size);
+ }
+ 
+@@ -371,7 +351,7 @@ static int lp5562_run_predef_led_pattern
+ 	/* Load engines */
+ 	for (i = LP55XX_ENGINE_1; i <= LP55XX_ENGINE_3; i++) {
+ 		chip->engine_idx = i;
+-		lp5562_load_engine(chip);
++		lp55xx_load_engine(chip);
+ 	}
+ 
+ 	/* Clear program registers */
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -9,6 +9,7 @@
+  * Derived from leds-lp5521.c, leds-lp5523.c
+  */
+ 
++#include <linux/bitfield.h>
+ #include <linux/clk.h>
+ #include <linux/delay.h>
+ #include <linux/firmware.h>
+@@ -26,8 +27,24 @@
+ /* OP MODE require at least 153 us to clear regs */
+ #define LP55XX_CMD_SLEEP		200
+ 
+-/* Program Commands */
++/*
++ * Program Memory Operations
++ * Same Mask for each engine for both mode and exec
++ * ENG1        GENMASK(3, 2)
++ * ENG2        GENMASK(5, 4)
++ * ENG3        GENMASK(7, 6)
++ */
+ #define LP55xx_MODE_DISABLE_ALL_ENG	0x0
++#define LP55xx_MODE_ENG_MASK           GENMASK(1, 0)
++#define   LP55xx_MODE_DISABLE_ENG      FIELD_PREP_CONST(LP55xx_MODE_ENG_MASK, 0x0)
++#define   LP55xx_MODE_LOAD_ENG         FIELD_PREP_CONST(LP55xx_MODE_ENG_MASK, 0x1)
++#define   LP55xx_MODE_RUN_ENG          FIELD_PREP_CONST(LP55xx_MODE_ENG_MASK, 0x2)
++#define   LP55xx_MODE_HALT_ENG         FIELD_PREP_CONST(LP55xx_MODE_ENG_MASK, 0x3)
++
++#define   LP55xx_MODE_ENGn_SHIFT(n, shift)	((shift) + (2 * (3 - (n))))
++#define   LP55xx_MODE_ENGn_MASK(n, shift)     (LP55xx_MODE_ENG_MASK << LP55xx_MODE_ENGn_SHIFT(n, shift))
++#define   LP55xx_MODE_ENGn_GET(n, mode, shift)        \
++	(((mode) >> LP55xx_MODE_ENGn_SHIFT(n, shift)) & LP55xx_MODE_ENG_MASK)
+ 
+ /* External clock rate */
+ #define LP55XX_CLK_32K			32768
+@@ -76,6 +93,20 @@ void lp55xx_stop_all_engine(struct lp55x
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_stop_all_engine);
+ 
++void lp55xx_load_engine(struct lp55xx_chip *chip)
++{
++	enum lp55xx_engine_index idx = chip->engine_idx;
++	const struct lp55xx_device_config *cfg = chip->cfg;
++	u8 mask, val;
++
++	mask = LP55xx_MODE_ENGn_MASK(idx, cfg->reg_op_mode.shift);
++	val = LP55xx_MODE_LOAD_ENG << LP55xx_MODE_ENGn_SHIFT(idx, cfg->reg_op_mode.shift);
++
++	lp55xx_update_bits(chip, cfg->reg_op_mode.addr, mask, val);
++	lp55xx_wait_opmode_done(chip);
++}
++EXPORT_SYMBOL_GPL(lp55xx_load_engine);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -202,6 +202,7 @@ extern bool lp55xx_is_extclk_used(struct
+ 
+ /* common chip functions */
+ extern void lp55xx_stop_all_engine(struct lp55xx_chip *chip);
++extern void lp55xx_load_engine(struct lp55xx_chip *chip);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -119,17 +119,6 @@ static int lp8501_post_init_device(struc
+ static void lp8501_load_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP8501_MODE_ENG1_M,
+-		[LP55XX_ENGINE_2] = LP8501_MODE_ENG2_M,
+-		[LP55XX_ENGINE_3] = LP8501_MODE_ENG3_M,
+-	};
+-
+-	static const u8 val[] = {
+-		[LP55XX_ENGINE_1] = LP8501_LOAD_ENG1,
+-		[LP55XX_ENGINE_2] = LP8501_LOAD_ENG2,
+-		[LP55XX_ENGINE_3] = LP8501_LOAD_ENG3,
+-	};
+ 
+ 	static const u8 page_sel[] = {
+ 		[LP55XX_ENGINE_1] = LP8501_PAGE_ENG1,
+@@ -137,9 +126,7 @@ static void lp8501_load_engine(struct lp
+ 		[LP55XX_ENGINE_3] = LP8501_PAGE_ENG3,
+ 	};
+ 
+-	lp55xx_update_bits(chip, LP8501_REG_OP_MODE, mask[idx], val[idx]);
+-
+-	lp8501_wait_opmode_done();
++	lp55xx_load_engine(chip);
+ 
+ 	lp55xx_write(chip, LP8501_REG_PROG_PAGE_SEL, page_sel[idx]);
+ }
+@@ -287,7 +274,7 @@ static struct lp55xx_device_config lp850
+ 	},
+ 	.engine_busy = {
+ 		.addr = LP8501_REG_STATUS,
+-		.maks = LP8501_ENGINE_BUSY,
++		.mask = LP8501_ENGINE_BUSY,
+ 	},
+ 	.reset = {
+ 		.addr = LP8501_REG_RESET,

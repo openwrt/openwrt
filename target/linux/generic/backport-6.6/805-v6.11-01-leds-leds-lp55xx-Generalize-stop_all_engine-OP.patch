@@ -1,0 +1,345 @@
+From a9b202b9cf0e817be756a720920ad4b522e6f6aa Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:08 +0200
+Subject: [PATCH 01/18] leds: leds-lp55xx: Generalize stop_all_engine OP
+
+In all the lp55xx based driver, we have a similar implementation of the
+stop_all_engine function with the only difference of the required sleep
+for the OP MODE change.
+
+The main difference is legacy LEDs require a min of 152 us while new one
+use a generic 1-2ms. The new one use a 1-2ms sleep as suggested in the
+datasheet IN ALTERNATIVE to a much more robust approach by using the
+newly introduced ENGINE_BUSY bit in the STATUS reg.
+
+To better handle sleep after OP MODE change, add support for polling the
+ENGINE_BUSY bit and use the legacy sleep for old LEDs.
+
+With this change, stop_all_engine can be generalized and moved to
+lp55xx-common.
+
+To make more clear the double usage of lp55xx_reg, define a union for
+additional scope of mask and shift.
+
+Update all lp55xx based driver to use the new generalized function and
+define the required bits in the device_config struct.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-4-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 11 ++++------
+ drivers/leds/leds-lp5523.c        | 20 ++++++++++-------
+ drivers/leds/leds-lp5562.c        | 15 ++++++-------
+ drivers/leds/leds-lp55xx-common.c | 36 +++++++++++++++++++++++++++++++
+ drivers/leds/leds-lp55xx-common.h | 16 ++++++++++++--
+ drivers/leds/leds-lp8501.c        | 20 ++++++++++-------
+ 6 files changed, 84 insertions(+), 34 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -135,12 +135,6 @@ static void lp5521_load_engine(struct lp
+ 	lp5521_wait_opmode_done();
+ }
+ 
+-static void lp5521_stop_all_engines(struct lp55xx_chip *chip)
+-{
+-	lp55xx_write(chip, LP5521_REG_OP_MODE, 0);
+-	lp5521_wait_opmode_done();
+-}
+-
+ static void lp5521_stop_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -497,6 +491,9 @@ static const struct attribute_group lp55
+ 
+ /* Chip specific configurations */
+ static struct lp55xx_device_config lp5521_cfg = {
++	.reg_op_mode = {
++		.addr = LP5521_REG_OP_MODE,
++	},
+ 	.reset = {
+ 		.addr = LP5521_REG_RESET,
+ 		.val  = LP5521_RESET,
+@@ -583,7 +580,7 @@ static void lp5521_remove(struct i2c_cli
+ 	struct lp55xx_led *led = i2c_get_clientdata(client);
+ 	struct lp55xx_chip *chip = led->chip;
+ 
+-	lp5521_stop_all_engines(chip);
++	lp55xx_stop_all_engine(chip);
+ 	lp55xx_unregister_sysfs(chip);
+ 	lp55xx_deinit_device(chip);
+ }
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -41,7 +41,10 @@
+ #define LP5523_REG_LED_PWM_BASE		0x16
+ #define LP5523_REG_LED_CURRENT_BASE	0x26
+ #define LP5523_REG_CONFIG		0x36
++
+ #define LP5523_REG_STATUS		0x3A
++#define LP5523_ENGINE_BUSY		BIT(4)
++
+ #define LP5523_REG_RESET		0x3D
+ #define LP5523_REG_LED_TEST_CTRL	0x41
+ #define LP5523_REG_LED_TEST_ADC		0x42
+@@ -190,12 +193,6 @@ static void lp5523_load_engine_and_selec
+ 	lp55xx_write(chip, LP5523_REG_PROG_PAGE_SEL, page_sel[idx]);
+ }
+ 
+-static void lp5523_stop_all_engines(struct lp55xx_chip *chip)
+-{
+-	lp55xx_write(chip, LP5523_REG_OP_MODE, 0);
+-	lp5523_wait_opmode_done();
+-}
+-
+ static void lp5523_stop_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -322,7 +319,7 @@ static int lp5523_init_program_engine(st
+ 	}
+ 
+ out:
+-	lp5523_stop_all_engines(chip);
++	lp55xx_stop_all_engine(chip);
+ 	return ret;
+ }
+ 
+@@ -873,6 +870,13 @@ static const struct attribute_group lp55
+ 
+ /* Chip specific configurations */
+ static struct lp55xx_device_config lp5523_cfg = {
++	.reg_op_mode = {
++		.addr = LP5523_REG_OP_MODE,
++	},
++	.engine_busy = {
++		.addr = LP5523_REG_STATUS,
++		.mask  = LP5523_ENGINE_BUSY,
++	},
+ 	.reset = {
+ 		.addr = LP5523_REG_RESET,
+ 		.val  = LP5523_RESET,
+@@ -959,7 +963,7 @@ static void lp5523_remove(struct i2c_cli
+ 	struct lp55xx_led *led = i2c_get_clientdata(client);
+ 	struct lp55xx_chip *chip = led->chip;
+ 
+-	lp5523_stop_all_engines(chip);
++	lp55xx_stop_all_engine(chip);
+ 	lp55xx_unregister_sysfs(chip);
+ 	lp55xx_deinit_device(chip);
+ }
+--- a/drivers/leds/leds-lp5562.c
++++ b/drivers/leds/leds-lp5562.c
+@@ -144,12 +144,6 @@ static void lp5562_load_engine(struct lp
+ 	lp5562_wait_opmode_done();
+ }
+ 
+-static void lp5562_stop_engine(struct lp55xx_chip *chip)
+-{
+-	lp55xx_write(chip, LP5562_REG_OP_MODE, LP5562_CMD_DISABLE);
+-	lp5562_wait_opmode_done();
+-}
+-
+ static void lp5562_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	int ret;
+@@ -160,7 +154,7 @@ static void lp5562_run_engine(struct lp5
+ 	if (!start) {
+ 		lp55xx_write(chip, LP5562_REG_ENABLE, LP5562_ENABLE_DEFAULT);
+ 		lp5562_wait_enable_done();
+-		lp5562_stop_engine(chip);
++		lp55xx_stop_all_engine(chip);
+ 		lp55xx_write(chip, LP5562_REG_ENG_SEL, LP5562_ENG_SEL_PWM);
+ 		lp55xx_write(chip, LP5562_REG_OP_MODE, LP5562_CMD_DIRECT);
+ 		lp5562_wait_opmode_done();
+@@ -369,7 +363,7 @@ static int lp5562_run_predef_led_pattern
+ 		return -EINVAL;
+ 	}
+ 
+-	lp5562_stop_engine(chip);
++	lp55xx_stop_all_engine(chip);
+ 
+ 	/* Set LED map as RGB */
+ 	lp55xx_write(chip, LP5562_REG_ENG_SEL, LP5562_ENG_SEL_RGB);
+@@ -495,6 +489,9 @@ static const struct attribute_group lp55
+ /* Chip specific configurations */
+ static struct lp55xx_device_config lp5562_cfg = {
+ 	.max_channel  = LP5562_MAX_LEDS,
++	.reg_op_mode = {
++		.addr = LP5562_REG_OP_MODE,
++	},
+ 	.reset = {
+ 		.addr = LP5562_REG_RESET,
+ 		.val  = LP5562_RESET,
+@@ -577,7 +574,7 @@ static void lp5562_remove(struct i2c_cli
+ 	struct lp55xx_led *led = i2c_get_clientdata(client);
+ 	struct lp55xx_chip *chip = led->chip;
+ 
+-	lp5562_stop_engine(chip);
++	lp55xx_stop_all_engine(chip);
+ 
+ 	lp55xx_unregister_sysfs(chip);
+ 	lp55xx_deinit_device(chip);
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -13,6 +13,7 @@
+ #include <linux/delay.h>
+ #include <linux/firmware.h>
+ #include <linux/i2c.h>
++#include <linux/iopoll.h>
+ #include <linux/leds.h>
+ #include <linux/module.h>
+ #include <linux/platform_data/leds-lp55xx.h>
+@@ -22,6 +23,12 @@
+ 
+ #include "leds-lp55xx-common.h"
+ 
++/* OP MODE require at least 153 us to clear regs */
++#define LP55XX_CMD_SLEEP		200
++
++/* Program Commands */
++#define LP55xx_MODE_DISABLE_ALL_ENG	0x0
++
+ /* External clock rate */
+ #define LP55XX_CLK_32K			32768
+ 
+@@ -40,6 +47,35 @@ static struct lp55xx_led *mcled_cdev_to_
+ 	return container_of(mc_cdev, struct lp55xx_led, mc_cdev);
+ }
+ 
++static void lp55xx_wait_opmode_done(struct lp55xx_chip *chip)
++{
++	struct lp55xx_device_config *cfg = chip->cfg;
++	int __always_unused ret;
++	u8 val;
++
++	/*
++	 * Recent chip supports BUSY bit for engine.
++	 * Check support by checking if val is not 0.
++	 * For legacy device, sleep at least 153 us.
++	 */
++	if (cfg->engine_busy.val) {
++		read_poll_timeout(lp55xx_read, ret, !(val & cfg->engine_busy.mask),
++				  LP55XX_CMD_SLEEP, LP55XX_CMD_SLEEP * 10, false,
++				  chip, cfg->engine_busy.addr, &val);
++	} else {
++		usleep_range(LP55XX_CMD_SLEEP, LP55XX_CMD_SLEEP * 2);
++	}
++}
++
++void lp55xx_stop_all_engine(struct lp55xx_chip *chip)
++{
++	struct lp55xx_device_config *cfg = chip->cfg;
++
++	lp55xx_write(chip, cfg->reg_op_mode.addr, LP55xx_MODE_DISABLE_ALL_ENG);
++	lp55xx_wait_opmode_done(chip);
++}
++EXPORT_SYMBOL_GPL(lp55xx_stop_all_engine);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -81,15 +81,22 @@ struct lp55xx_chip;
+ /*
+  * struct lp55xx_reg
+  * @addr : Register address
+- * @val  : Register value
++ * @val  : Register value (can also used as mask or shift)
+  */
+ struct lp55xx_reg {
+ 	u8 addr;
+-	u8 val;
++	union {
++		u8 val;
++		u8 mask;
++		u8 shift;
++	};
+ };
+ 
+ /*
+  * struct lp55xx_device_config
++ * @reg_op_mode        : Chip specific OP MODE reg addr
++ * @engine_busy        : Chip specific engine busy
++ *			 (if not supported 153 us sleep)
+  * @reset              : Chip specific reset command
+  * @enable             : Chip specific enable command
+  * @max_channel        : Maximum number of channels
+@@ -102,6 +109,8 @@ struct lp55xx_reg {
+  * @dev_attr_group     : Device specific attributes
+  */
+ struct lp55xx_device_config {
++	const struct lp55xx_reg reg_op_mode; /* addr, shift */
++	const struct lp55xx_reg engine_busy; /* addr, mask */
+ 	const struct lp55xx_reg reset;
+ 	const struct lp55xx_reg enable;
+ 	const int max_channel;
+@@ -191,6 +200,9 @@ extern int lp55xx_update_bits(struct lp5
+ /* external clock detection */
+ extern bool lp55xx_is_extclk_used(struct lp55xx_chip *chip);
+ 
++/* common chip functions */
++extern void lp55xx_stop_all_engine(struct lp55xx_chip *chip);
++
+ /* common device init/deinit functions */
+ extern int lp55xx_init_device(struct lp55xx_chip *chip);
+ extern void lp55xx_deinit_device(struct lp55xx_chip *chip);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -58,6 +58,9 @@
+ #define LP8501_INT_CLK			BIT(0)
+ #define LP8501_DEFAULT_CFG (LP8501_PWM_PSAVE | LP8501_AUTO_INC | LP8501_PWR_SAVE)
+ 
++#define LP8501_REG_STATUS		0x3A
++#define LP8501_ENGINE_BUSY		BIT(4)
++
+ #define LP8501_REG_RESET		0x3D
+ #define LP8501_RESET			0xFF
+ 
+@@ -141,12 +144,6 @@ static void lp8501_load_engine(struct lp
+ 	lp55xx_write(chip, LP8501_REG_PROG_PAGE_SEL, page_sel[idx]);
+ }
+ 
+-static void lp8501_stop_engine(struct lp55xx_chip *chip)
+-{
+-	lp55xx_write(chip, LP8501_REG_OP_MODE, 0);
+-	lp8501_wait_opmode_done();
+-}
+-
+ static void lp8501_turn_off_channels(struct lp55xx_chip *chip)
+ {
+ 	int i;
+@@ -163,7 +160,7 @@ static void lp8501_run_engine(struct lp5
+ 
+ 	/* stop engine */
+ 	if (!start) {
+-		lp8501_stop_engine(chip);
++		lp55xx_stop_all_engine(chip);
+ 		lp8501_turn_off_channels(chip);
+ 		return;
+ 	}
+@@ -285,6 +282,13 @@ static int lp8501_led_brightness(struct
+ 
+ /* Chip specific configurations */
+ static struct lp55xx_device_config lp8501_cfg = {
++	.reg_op_mode = {
++		.addr = LP8501_REG_OP_MODE,
++	},
++	.engine_busy = {
++		.addr = LP8501_REG_STATUS,
++		.maks = LP8501_ENGINE_BUSY,
++	},
+ 	.reset = {
+ 		.addr = LP8501_REG_RESET,
+ 		.val  = LP8501_RESET,
+@@ -369,7 +373,7 @@ static void lp8501_remove(struct i2c_cli
+ 	struct lp55xx_led *led = i2c_get_clientdata(client);
+ 	struct lp55xx_chip *chip = led->chip;
+ 
+-	lp8501_stop_engine(chip);
++	lp55xx_stop_all_engine(chip);
+ 	lp55xx_unregister_sysfs(chip);
+ 	lp55xx_deinit_device(chip);
+ }

@@ -1,0 +1,208 @@
+From c0e3d2beeb031589be43055ece7cd33ea4800b98 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Wed, 22 May 2024 18:53:59 +0200
+Subject: [PATCH] leds: Drop explicit initialization of struct
+ i2c_device_id::driver_data to 0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+These drivers don't use the driver_data member of struct i2c_device_id,
+so don't explicitly initialize this member.
+
+This prepares putting driver_data in an anonymous union which requires
+either no initialization or named designators. But it's also a nice
+cleanup on its own.
+
+While add it, also remove commas after the sentinel entries.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Link: https://lore.kernel.org/r/20240522165358.62238-2-u.kleine-koenig@pengutronix.de
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/flash/leds-as3645a.c | 4 ++--
+ drivers/leds/leds-an30259a.c      | 4 ++--
+ drivers/leds/leds-bd2802.c        | 2 +-
+ drivers/leds/leds-blinkm.c        | 2 +-
+ drivers/leds/leds-lm3530.c        | 2 +-
+ drivers/leds/leds-lm3532.c        | 2 +-
+ drivers/leds/leds-lm3642.c        | 2 +-
+ drivers/leds/leds-lm3697.c        | 2 +-
+ drivers/leds/leds-lp3944.c        | 2 +-
+ drivers/leds/leds-lp3952.c        | 2 +-
+ drivers/leds/leds-lp5521.c        | 2 +-
+ drivers/leds/leds-lp5562.c        | 2 +-
+ drivers/leds/leds-lp8501.c        | 2 +-
+ drivers/leds/leds-lp8860.c        | 2 +-
+ drivers/leds/leds-turris-omnia.c  | 2 +-
+ 15 files changed, 17 insertions(+), 17 deletions(-)
+
+--- a/drivers/leds/flash/leds-as3645a.c
++++ b/drivers/leds/flash/leds-as3645a.c
+@@ -743,8 +743,8 @@ static void as3645a_remove(struct i2c_cl
+ }
+ 
+ static const struct i2c_device_id as3645a_id_table[] = {
+-	{ AS_NAME, 0 },
+-	{ },
++	{ AS_NAME },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, as3645a_id_table);
+ 
+--- a/drivers/leds/leds-an30259a.c
++++ b/drivers/leds/leds-an30259a.c
+@@ -336,8 +336,8 @@ static const struct of_device_id an30259
+ MODULE_DEVICE_TABLE(of, an30259a_match_table);
+ 
+ static const struct i2c_device_id an30259a_id[] = {
+-	{ "an30259a", 0 },
+-	{ /* sentinel */ },
++	{ "an30259a" },
++	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(i2c, an30259a_id);
+ 
+--- a/drivers/leds/leds-bd2802.c
++++ b/drivers/leds/leds-bd2802.c
+@@ -776,7 +776,7 @@ static int bd2802_resume(struct device *
+ static SIMPLE_DEV_PM_OPS(bd2802_pm, bd2802_suspend, bd2802_resume);
+ 
+ static const struct i2c_device_id bd2802_id[] = {
+-	{ "BD2802", 0 },
++	{ "BD2802" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, bd2802_id);
+--- a/drivers/leds/leds-blinkm.c
++++ b/drivers/leds/leds-blinkm.c
+@@ -718,7 +718,7 @@ static void blinkm_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id blinkm_id[] = {
+-	{"blinkm", 0},
++	{ "blinkm" },
+ 	{}
+ };
+ 
+--- a/drivers/leds/leds-lm3530.c
++++ b/drivers/leds/leds-lm3530.c
+@@ -478,7 +478,7 @@ static void lm3530_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lm3530_id[] = {
+-	{LM3530_NAME, 0},
++	{ LM3530_NAME },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(i2c, lm3530_id);
+--- a/drivers/leds/leds-lm3532.c
++++ b/drivers/leds/leds-lm3532.c
+@@ -720,7 +720,7 @@ static const struct of_device_id of_lm35
+ MODULE_DEVICE_TABLE(of, of_lm3532_leds_match);
+ 
+ static const struct i2c_device_id lm3532_id[] = {
+-	{LM3532_NAME, 0},
++	{ LM3532_NAME },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(i2c, lm3532_id);
+--- a/drivers/leds/leds-lm3642.c
++++ b/drivers/leds/leds-lm3642.c
+@@ -390,7 +390,7 @@ static void lm3642_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lm3642_id[] = {
+-	{LM3642_NAME, 0},
++	{ LM3642_NAME },
+ 	{}
+ };
+ 
+--- a/drivers/leds/leds-lm3697.c
++++ b/drivers/leds/leds-lm3697.c
+@@ -360,7 +360,7 @@ static void lm3697_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lm3697_id[] = {
+-	{ "lm3697", 0 },
++	{ "lm3697" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lm3697_id);
+--- a/drivers/leds/leds-lp3944.c
++++ b/drivers/leds/leds-lp3944.c
+@@ -417,7 +417,7 @@ static void lp3944_remove(struct i2c_cli
+ 
+ /* lp3944 i2c driver struct */
+ static const struct i2c_device_id lp3944_id[] = {
+-	{"lp3944", 0},
++	{ "lp3944" },
+ 	{}
+ };
+ 
+--- a/drivers/leds/leds-lp3952.c
++++ b/drivers/leds/leds-lp3952.c
+@@ -264,7 +264,7 @@ static void lp3952_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lp3952_id[] = {
+-	{LP3952_NAME, 0},
++	{ LP3952_NAME },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(i2c, lp3952_id);
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -589,7 +589,7 @@ static void lp5521_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lp5521_id[] = {
+-	{ "lp5521", 0 }, /* Three channel chip */
++	{ "lp5521" }, /* Three channel chip */
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lp5521_id);
+--- a/drivers/leds/leds-lp5562.c
++++ b/drivers/leds/leds-lp5562.c
+@@ -584,7 +584,7 @@ static void lp5562_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lp5562_id[] = {
+-	{ "lp5562", 0 },
++	{ "lp5562" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lp5562_id);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -375,7 +375,7 @@ static void lp8501_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lp8501_id[] = {
+-	{ "lp8501",  0 },
++	{ "lp8501" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lp8501_id);
+--- a/drivers/leds/leds-lp8860.c
++++ b/drivers/leds/leds-lp8860.c
+@@ -459,7 +459,7 @@ static void lp8860_remove(struct i2c_cli
+ }
+ 
+ static const struct i2c_device_id lp8860_id[] = {
+-	{ "lp8860", 0 },
++	{ "lp8860" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, lp8860_id);
+--- a/drivers/leds/leds-turris-omnia.c
++++ b/drivers/leds/leds-turris-omnia.c
+@@ -286,7 +286,7 @@ static const struct of_device_id of_omni
+ };
+ 
+ static const struct i2c_device_id omnia_id[] = {
+-	{ "omnia", 0 },
++	{ "omnia" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, omnia_id);
