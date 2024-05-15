@@ -16,12 +16,13 @@ define Build/tegra-sdcard
 		-n '$(DEVICE_TITLE) OpenWrt bootscript' \
 		-d $(BOOT_SCRIPT) \
 		$@.boot/boot.scr
+	$(CP) $@ $@.rootfs
 
 	SIGNATURE="$(IMG_PART_SIGNATURE)" \
 	$(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $@.rootfs \
 		2048
 
 	$(if $(UBOOT),dd if=$(STAGING_DIR_IMAGE)/$(UBOOT).img of=$@ bs=512 skip=1 seek=1 conv=notrunc)
@@ -32,7 +33,7 @@ DEVICE_VARS += BOOT_SCRIPT UBOOT
 define Device/Default
   BOOT_SCRIPT := generic-bootscript
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := tegra-sdcard | gzip | append-metadata
+  IMAGE/sdcard.img.gz := append-rootfs | pad-extra 128k | tegra-sdcard | gzip | append-metadata
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
   PROFILES := Default
