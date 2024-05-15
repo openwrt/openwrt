@@ -67,6 +67,8 @@ HOST_MAKE_FLAGS += \
 	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
 	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
 
+HOST_CPPFLAGS += "'-I$$$$(top_srcdir)/lib'"
+
 ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += -I/opt/homebrew/include
 endif
@@ -99,7 +101,6 @@ HOST_CONFIGURE_VARS += \
 Hooks/HostConfigure/Pre := Host/Gnulib $(Hooks/HostConfigure/Pre)
 define Host/Gnulib
 	$(STAGING_DIR_HOST)/bin/gnulib-tool $(PKG_GNULIB_ARGS) $(PKG_GNULIB_MODS);
-	ln -sf ../lib/eu-config.h $(HOST_BUILD_DIR)/libgnu/;
 endef
 
 define Host/Compile
