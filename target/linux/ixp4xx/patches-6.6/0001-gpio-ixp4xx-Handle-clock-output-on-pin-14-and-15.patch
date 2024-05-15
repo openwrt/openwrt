@@ -40,7 +40,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  /**
   * struct ixp4xx_gpio - IXP4 GPIO state container
   * @dev: containing device for this instance
-@@ -203,6 +215,8 @@ static int ixp4xx_gpio_probe(struct plat
+@@ -202,6 +214,8 @@ static int ixp4xx_gpio_probe(struct plat
  	struct ixp4xx_gpio *g;
  	struct gpio_irq_chip *girq;
  	struct device_node *irq_parent;
@@ -49,7 +49,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	int ret;
  
  	g = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);
-@@ -233,7 +247,40 @@ static int ixp4xx_gpio_probe(struct plat
+@@ -231,7 +245,40 @@ static int ixp4xx_gpio_probe(struct plat
  	 */
  	if (of_machine_is_compatible("dlink,dsm-g600-a") ||
  	    of_machine_is_compatible("iom,nas-100d"))

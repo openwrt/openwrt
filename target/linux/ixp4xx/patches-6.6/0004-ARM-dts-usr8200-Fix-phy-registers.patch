@@ -1,6 +1,6 @@
-From a1ab45966e5a21841af58742adf27725e523d303 Mon Sep 17 00:00:00 2001
+From 98f3b5f44b9ae86c4a80185b57149867472a2570 Mon Sep 17 00:00:00 2001
 From: Linus Walleij <linus.walleij@linaro.org>
-Date: Sat, 14 Oct 2023 19:53:24 +0200
+Date: Fri, 20 Oct 2023 15:11:41 +0200
 Subject: [PATCH] ARM: dts: usr8200: Fix phy registers
 
 The MV88E6060 switch has internal PHY registers at MDIO
@@ -8,12 +8,14 @@ addresses 0x00..0x04. Tie each port to the corresponding
 PHY.
 
 Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20231020-ixp4xx-usr8200-dtsfix-v1-1-3a8591dea259@linaro.org
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- .../dts/intel-ixp42x-usrobotics-usr8200.dts   | 22 +++++++++++++++++++
+ .../ixp/intel-ixp42x-usrobotics-usr8200.dts   | 22 +++++++++++++++++++
  1 file changed, 22 insertions(+)
 
---- a/arch/arm/boot/dts/intel-ixp42x-usrobotics-usr8200.dts
-+++ b/arch/arm/boot/dts/intel-ixp42x-usrobotics-usr8200.dts
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-usrobotics-usr8200.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-usrobotics-usr8200.dts
 @@ -165,6 +165,24 @@
  				#address-cells = <1>;
  				#size-cells = <0>;

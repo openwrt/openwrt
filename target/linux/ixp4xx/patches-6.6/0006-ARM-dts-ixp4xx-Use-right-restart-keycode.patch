@@ -1,0 +1,62 @@
+From deb93908958e74dffbef1ce6a1cc2f82ac4f96ed Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 8 Sep 2023 12:49:49 +0200
+Subject: [PATCH] ARM: dts: ixp4xx: Use right restart keycode
+
+The "reset" key on a few IXP4xx routers were sending KEY_ESC
+but what we want to send is KEY_RESTART which will make
+OpenWrt and similar userspace do a controlled reboot.
+
+Link: https://lore.kernel.org/r/20230908-ixp4xx-dts-v1-2-98d36264ed6d@linaro.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/boot/dts/intel/ixp/intel-ixp42x-dlink-dsm-g600.dts | 2 +-
+ arch/arm/boot/dts/intel/ixp/intel-ixp42x-freecom-fsg-3.dts  | 2 +-
+ arch/arm/boot/dts/intel/ixp/intel-ixp42x-iomega-nas100d.dts | 2 +-
+ arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts  | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-dlink-dsm-g600.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-dlink-dsm-g600.dts
+@@ -57,7 +57,7 @@
+ 
+ 		button-reset {
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+ 		};
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-freecom-fsg-3.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-freecom-fsg-3.dts
+@@ -44,7 +44,7 @@
+ 		};
+ 		button-reset {
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+ 		};
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-iomega-nas100d.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-iomega-nas100d.dts
+@@ -63,7 +63,7 @@
+ 		};
+ 		button-reset {
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+ 		};
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts
+@@ -65,7 +65,7 @@
+ 		};
+ 		button-reset {
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+ 		};

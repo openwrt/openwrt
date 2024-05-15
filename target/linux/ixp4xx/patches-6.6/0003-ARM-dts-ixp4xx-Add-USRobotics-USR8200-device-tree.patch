@@ -1,33 +1,33 @@
-From 02693ffdb93bffcbe772bd91a399dabd123b8c19 Mon Sep 17 00:00:00 2001
+From a1490c1e8a12a8286c6a34c3d277a519066fc51e Mon Sep 17 00:00:00 2001
 From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 19 Sep 2023 16:02:15 +0200
-Subject: [PATCH 4/4] ARM: dts: ixp4xx: Add USRobotics USR8200 device tree
+Date: Sat, 7 Oct 2023 14:32:40 +0200
+Subject: [PATCH] ARM: dts: ixp4xx: Add USRobotics USR8200 device tree
 
 This is a USRobotics NAS/Firewall/router that has been supported
 by OpenWrt in the past. It had dedicated users so let's get it
 properly supported.
 
+Some debugging and fixing was provided by Howard Harte.
+
+Link: https://lore.kernel.org/r/20231007-ixp4xx-usr8200-v1-1-aded3d6ff6f1@linaro.org
 Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/boot/dts/Makefile                    |   3 +-
- .../dts/intel-ixp42x-usrobotics-usr8200.dts   | 229 ++++++++++++++++++
+ arch/arm/boot/dts/intel/ixp/Makefile          |   3 +-
+ .../ixp/intel-ixp42x-usrobotics-usr8200.dts   | 229 ++++++++++++++++++
  2 files changed, 231 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/intel-ixp42x-usrobotics-usr8200.dts
+ create mode 100644 arch/arm/boot/dts/intel/ixp/intel-ixp42x-usrobotics-usr8200.dts
 
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -292,7 +292,8 @@ dtb-$(CONFIG_ARCH_IXP4XX) += \
+--- a/arch/arm/boot/dts/intel/ixp/Makefile
++++ b/arch/arm/boot/dts/intel/ixp/Makefile
+@@ -16,4 +16,5 @@ dtb-$(CONFIG_ARCH_IXP4XX) += \
  	intel-ixp43x-gateworks-gw2358.dtb \
  	intel-ixp42x-netgear-wg302v1.dtb \
  	intel-ixp42x-arcom-vulcan.dtb \
 -	intel-ixp42x-gateway-7001.dtb
 +	intel-ixp42x-gateway-7001.dtb \
 +	intel-ixp42x-usrobotics-usr8200.dtb
- dtb-$(CONFIG_ARCH_KEYSTONE) += \
- 	keystone-k2hk-evm.dtb \
- 	keystone-k2l-evm.dtb \
 --- /dev/null
-+++ b/arch/arm/boot/dts/intel-ixp42x-usrobotics-usr8200.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-usrobotics-usr8200.dts
 @@ -0,0 +1,229 @@
 +// SPDX-License-Identifier: ISC
 +/*
