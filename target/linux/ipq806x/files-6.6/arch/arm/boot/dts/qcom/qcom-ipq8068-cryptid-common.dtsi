@@ -73,10 +73,6 @@
 &pcie0 {
 	status = "okay";
 
-	/delete-property/ pinctrl-0;
-	/delete-property/ pinctrl-names;
-	/delete-property/ perst-gpios;
-
 	bridge@0,0 {
 		reg = <0x0 0 0 0 0>;
 		#address-cells = <3>;
@@ -94,10 +90,6 @@
 &pcie1 {
 	status = "okay";
 
-	/delete-property/ pinctrl-0;
-	/delete-property/ pinctrl-names;
-	/delete-property/ perst-gpios;
-
 	bridge@0,0 {
 		reg = <0x0 0 0 0 0>;
 		#address-cells = <3>;
@@ -114,10 +106,6 @@
 
 &pcie2 {
 	status = "okay";
-
-	/delete-property/ pinctrl-0;
-	/delete-property/ pinctrl-names;
-	/delete-property/ perst-gpios;
 
 	bridge@0,0 {
 		reg = <0x0 0 0 0 0>;
