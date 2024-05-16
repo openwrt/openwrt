@@ -1,0 +1,27 @@
+From 725f531c14597f20645321d8a900796f5a68e135 Mon Sep 17 00:00:00 2001
+From: Muhammad Usama Anjum <usama.anjum@collabora.com>
+Date: Fri, 1 Mar 2024 19:44:06 +0500
+Subject: [PATCH] wifi: mt76: connac: check for null before dereferencing
+
+The wcid can be NULL. It should be checked for validity before
+dereferencing it to avoid crash.
+
+Fixes: 098428c400ff ("wifi: mt76: connac: set correct muar_idx for mt799x chipsets")
+Signed-off-by: Muhammad Usama Anjum <usama.anjum@collabora.com>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt76_connac_mcu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt76_connac_mcu.c
++++ b/mt76_connac_mcu.c
+@@ -283,7 +283,7 @@ __mt76_connac_mcu_alloc_sta_req(struct m
+ 	};
+ 	struct sk_buff *skb;
+ 
+-	if (is_mt799x(dev) && !wcid->sta)
++	if (is_mt799x(dev) && wcid && !wcid->sta)
+ 		hdr.muar_idx = 0xe;
+ 
+ 	mt76_connac_mcu_get_wlan_idx(dev, wcid, &hdr.wlan_idx_lo,

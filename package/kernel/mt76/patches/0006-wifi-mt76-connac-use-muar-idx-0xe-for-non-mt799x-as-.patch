@@ -1,0 +1,25 @@
+From 1e336a8582dce2ef32ddd440d423e9afef961e71 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 3 Apr 2024 13:01:01 +0200
+Subject: [PATCH] wifi: mt76: connac: use muar idx 0xe for non-mt799x as well
+
+This is expected by the firmware of older chipsets as well, though it may
+not have been as strongly required as on mt799x
+
+Fixes: 098428c400ff ("wifi: mt76: connac: set correct muar_idx for mt799x chipsets")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt76_connac_mcu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt76_connac_mcu.c
++++ b/mt76_connac_mcu.c
+@@ -283,7 +283,7 @@ __mt76_connac_mcu_alloc_sta_req(struct m
+ 	};
+ 	struct sk_buff *skb;
+ 
+-	if (is_mt799x(dev) && wcid && !wcid->sta)
++	if (wcid && !wcid->sta)
+ 		hdr.muar_idx = 0xe;
+ 
+ 	mt76_connac_mcu_get_wlan_idx(dev, wcid, &hdr.wlan_idx_lo,

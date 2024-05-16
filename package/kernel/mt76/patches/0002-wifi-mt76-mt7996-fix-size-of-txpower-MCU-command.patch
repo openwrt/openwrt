@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/mt7996/mcu.c
 +++ b/mt7996/mcu.c
-@@ -4456,7 +4456,7 @@ int mt7996_mcu_set_txpower_sku(struct mt
+@@ -4464,7 +4464,7 @@ int mt7996_mcu_set_txpower_sku(struct mt
  		u8 band_idx;
  	} __packed req = {
  		.tag = cpu_to_le16(UNI_TXPOWER_POWER_LIMIT_TABLE_CTRL),
@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.power_ctrl_id = UNI_TXPOWER_POWER_LIMIT_TABLE_CTRL,
  		.power_limit_type = TX_POWER_LIMIT_TABLE_RATE,
  		.band_idx = phy->mt76->band_idx,
-@@ -4471,7 +4471,7 @@ int mt7996_mcu_set_txpower_sku(struct mt
+@@ -4479,7 +4479,7 @@ int mt7996_mcu_set_txpower_sku(struct mt
  	mphy->txpower_cur = tx_power;
  
  	skb = mt76_mcu_msg_alloc(&dev->mt76, NULL,
@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!skb)
  		return -ENOMEM;
  
-@@ -4495,6 +4495,9 @@ int mt7996_mcu_set_txpower_sku(struct mt
+@@ -4503,6 +4503,9 @@ int mt7996_mcu_set_txpower_sku(struct mt
  	/* eht */
  	skb_put_data(skb, &la.eht[0], sizeof(la.eht));
  

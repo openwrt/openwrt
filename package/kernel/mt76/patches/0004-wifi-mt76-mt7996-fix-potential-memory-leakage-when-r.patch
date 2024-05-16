@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/mt7996/mcu.c
 +++ b/mt7996/mcu.c
-@@ -3721,6 +3721,7 @@ int mt7996_mcu_get_temperature(struct mt
+@@ -3729,6 +3729,7 @@ int mt7996_mcu_get_temperature(struct mt
  	} __packed * res;
  	struct sk_buff *skb;
  	int ret;
@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	ret = mt76_mcu_send_and_get_msg(&phy->dev->mt76, MCU_WM_UNI_CMD(THERMAL),
  					&req, sizeof(req), true, &skb);
-@@ -3728,8 +3729,10 @@ int mt7996_mcu_get_temperature(struct mt
+@@ -3736,8 +3737,10 @@ int mt7996_mcu_get_temperature(struct mt
  		return ret;
  
  	res = (void *)skb->data;

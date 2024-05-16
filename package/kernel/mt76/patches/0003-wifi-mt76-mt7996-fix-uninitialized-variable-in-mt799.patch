@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/mt7996/mmio.c
 +++ b/mt7996/mmio.c
-@@ -499,7 +499,7 @@ static void mt7996_irq_tasklet(struct ta
+@@ -519,7 +519,7 @@ static void mt7996_irq_tasklet(struct ta
  	struct mt7996_dev *dev = from_tasklet(dev, t, mt76.irq_tasklet);
  	struct mtk_wed_device *wed = &dev->mt76.mmio.wed;
  	struct mtk_wed_device *wed_hif2 = &dev->mt76.mmio.wed_hif2;
