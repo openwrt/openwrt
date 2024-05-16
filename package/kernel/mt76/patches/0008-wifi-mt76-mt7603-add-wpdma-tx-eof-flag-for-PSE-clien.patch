@@ -1,0 +1,24 @@
+From 446f652c967c11d50d9005e2acec97f8b577bb92 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 3 Apr 2024 11:11:54 +0200
+Subject: [PATCH] wifi: mt76: mt7603: add wpdma tx eof flag for PSE client
+ reset
+
+This flag is needed for the PSE client reset. Fixes watchdog reset issues.
+
+Fixes: c677dda16523 ("wifi: mt76: mt7603: improve watchdog reset reliablity")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7603/mac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt7603/mac.c
++++ b/mt7603/mac.c
+@@ -1393,6 +1393,7 @@ void mt7603_pse_client_reset(struct mt76
+ 		   MT_CLIENT_RESET_TX_R_E_2_S);
+ 
+ 	/* Start PSE client TX abort */
++	mt76_set(dev, MT_WPDMA_GLO_CFG, MT_WPDMA_GLO_CFG_FORCE_TX_EOF);
+ 	mt76_set(dev, addr, MT_CLIENT_RESET_TX_R_E_1);
+ 	mt76_poll_msec(dev, addr, MT_CLIENT_RESET_TX_R_E_1_S,
+ 		       MT_CLIENT_RESET_TX_R_E_1_S, 500);
