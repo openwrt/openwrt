@@ -9,7 +9,6 @@
 	compatible = "cudy,m3000-v1", "mediatek,mt7981-spim-snand-rfb";
 
 	aliases {
-		ethernet0 = &gmac0;
 		label-mac-device = &gmac0;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
@@ -87,7 +86,8 @@
 		phy-mode = "2500base-x";
 		phy-handle = <&rtl8221b_phy>;
 
-		/* the MAC address assignment using nvmem-cells doesn't work, so it's done through 02_network */
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_bdinfo_de00 1>;
 	};
 
 	gmac1: mac@1 {

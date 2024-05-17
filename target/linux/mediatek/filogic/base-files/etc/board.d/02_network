@@ -135,9 +135,6 @@ mediatek_setup_macs()
 		;;
 		esac
 		;;
-	cudy,m3000-v1)
-		wan_mac=$(macaddr_add $(cat /sys/class/net/eth1/address) 1)
-		;;
 	glinet,gl-mt6000)
 		label_mac=$(mmc_get_mac_binary factory 0x0a)
 		wan_mac=$label_mac
