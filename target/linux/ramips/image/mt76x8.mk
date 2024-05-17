@@ -489,6 +489,14 @@ define Device/rakwireless_rak633
 endef
 TARGET_DEVICES += rakwireless_rak633
 
+define Device/rakwireless_rak634
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Rakwireless
+  DEVICE_MODEL := RAK634
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += rakwireless_rak634
+
 define Device/ravpower_rp-wd009
   IMAGE_SIZE := 14272k
   DEVICE_VENDOR := RAVPower
