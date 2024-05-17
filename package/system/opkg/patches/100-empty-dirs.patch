@@ -1,0 +1,37 @@
+From 28efcf36b5c3e5a04473dce0834d7bada584bf49 Mon Sep 17 00:00:00 2001
+From: Michal Vasilek <michal.vasilek@nic.cz>
+Date: Fri, 6 May 2022 14:39:43 +0200
+Subject: [PATCH] Don't filter out directories when claiming ownership of a file.
+
+Directories are now owned by a particular package, which ensures their
+deletion in the event that a package leaves an empty directory during package
+removal.
+
+From Roman Khimov <khimov@altell.ru>.
+
+git-svn-id: http://opkg.googlecode.com/svn/trunk@624 e8e0d7a0-c8d9-11dd-a880-a1081c7ac358
+
+Backported from: https://git.yoctoproject.org/opkg/commit/?h=opkg-0.2.x&id=3d697f6303f381a507f37f8d63129151d745dc6c
+Fixes: https://github.com/openwrt/openwrt/issues/7519
+
+[add link to an openwrt issue and to the original commit from
+yoctoproject]
+Signed-off-by: Michal Vasilek <michal.vasilek@nic.cz>
+
+---
+ libopkg/pkg_hash.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/libopkg/pkg_hash.c
++++ b/libopkg/pkg_hash.c
+@@ -755,10 +755,6 @@ pkg_t *file_hash_get_file_owner(const ch
+ void file_hash_set_file_owner(const char *file_name, pkg_t * owning_pkg)
+ {
+ 	pkg_t *old_owning_pkg;
+-	int file_name_len = strlen(file_name);
+-
+-	if (file_name[file_name_len - 1] == '/')
+-		return;
+ 
+ 	file_name = strip_offline_root(file_name);
+ 
