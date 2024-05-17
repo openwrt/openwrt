@@ -80,6 +80,10 @@ service_triggers() {
 	procd_add_reload_trigger "sysctl"
 }
 
+stop_service() {
+	[ -f /tmp/sysctl-default.conf ] && sysctl -e -p /tmp/sysctl-default.conf 1>/dev/null 2>&1
+}
+
 start_service() {
 	apply_defaults
 	[ -f /tmp/sysctl-default.conf ] || sysctl -a 1>/tmp/sysctl-default.conf 2>/dev/null
