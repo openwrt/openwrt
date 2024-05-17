@@ -39,7 +39,7 @@ apply_defaults() {
 start() {
 	apply_defaults
 	[ -f /tmp/sysctl-default.conf ] || sysctl -a 1>/tmp/sysctl-default.conf 2>/dev/null
-	for CONF in /etc/sysctl.d/*.conf /etc/sysctl.conf; do
+	for CONF in /etc/sysctl.d/*.conf /etc/sysctl.conf /tmp/run/sysctl.d/*.conf; do
 		[ -f "$CONF" ] && sysctl -e -p "$CONF" >&-
 	done
 }
