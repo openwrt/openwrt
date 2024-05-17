@@ -109,6 +109,10 @@
 };
 
 &gmac1 {
+	phy-mode = "2500base-x";
+	phy = <&phy6>;
+	status = "okay";
+	
 	nvmem-cells = <&macaddr_factory_0024 0>;
 	nvmem-cell-names = "mac-address";
 };

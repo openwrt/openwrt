@@ -20,6 +20,7 @@
 };
 
 &nand_partitions {
+
 	partition@0 {
 		label = "bl2";
 		reg = <0x0 0x100000>;
@@ -98,4 +99,20 @@
 &wifi {
 	nvmem-cells = <&eeprom_factory>;
 	nvmem-cell-names = "eeprom";
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c_pins>;
+	status = "okay";
+};
+
+
+&pio {
+	i2c_pins: i2c-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c";
+		};
+	};
 };

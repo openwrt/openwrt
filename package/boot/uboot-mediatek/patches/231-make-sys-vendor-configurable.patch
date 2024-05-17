@@ -1,0 +1,59 @@
+From 2eae2d5cb19581b41ef81322a2e75e58cf3fa3ab Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Nicol=C3=B2=20Veronese?= <nicveronese@gmail.com>
+Date: Wed, 4 Oct 2023 10:29:03 +0200
+Subject: [PATCH] arm: mediatek: allow usage of SYS_VENDOR for custom boards
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is a temprary patch until proper support
+ for multiple target is available in u-boot for the mediatek
+ target. Right now the TARGET_XXX is used to configure
+ the SOC type and to build the correct drivers.
+
+TARGET_XXX should be used to identify the different boards
+ and each board should have its kconfig file with the
+ SYS_XXX definitions to identify the board.
+
+Right now all the devices implemented are based on the
+ ref boards provided by MTK. If a bord need a different
+ behaviour this allow a way to build the correct board
+ file.
+
+Signed-off-by: Nicolò Veronese <nicveronese@gmail.com>
+---
+ arch/arm/mach-mediatek/Kconfig | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
+index 8971e2d2b0..4afbb458f0 100644
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -3,9 +3,6 @@ if ARCH_MEDIATEK
+ config SYS_SOC
+ 	default "mediatek"
+ 
+-config SYS_VENDOR
+-	default "mediatek"
+-
+ config MT8512
+ 	bool "MediaTek MT8512 SoC"
+ 
+@@ -106,6 +103,14 @@ config TARGET_MT8518
+ 
+ endchoice
+ 
++config SYS_VENDOR
++        string "Board vendor"
++        default "mediatek"
++        help
++          This option contains information about board vendor.
++          Based on this option board/<CONFIG_SYS_VENDOR>/<CONFIG_SYS_BOARD> will
++          be used.
++
+ config SYS_BOARD
+ 	string "Board name"
+ 	default "mt7622" if TARGET_MT7622
+-- 
+2.30.2
+

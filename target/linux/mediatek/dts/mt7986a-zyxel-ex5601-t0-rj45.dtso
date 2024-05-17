@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Author: Nicolò Veronese >nicveronese@gmail.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+        compatible = "zyxel,ex5601-t0-ubootmod", "mediatek,mt7986a";
+
+        fragment@0 {
+                target-path = "/soc/ethernet@15100000/mac@1";
+
+                __overlay__ {
+                        phy-mode = "2500base-x";
+                        phy = <&phy6>;
+                        status = "okay";
+                };
+        };
+};
