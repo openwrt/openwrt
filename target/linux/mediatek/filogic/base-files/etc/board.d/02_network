@@ -137,9 +137,6 @@ mediatek_setup_macs()
 		;;
 		esac
 		;;
-	cudy,m3000-v1)
-		wan_mac=$(macaddr_add $(cat /sys/class/net/eth1/address) 1)
-		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
