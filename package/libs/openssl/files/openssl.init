@@ -32,8 +32,8 @@ enable_module() {
 		echo "If the engine was not built-in, remove 'config builtin' from /etc/config/openssl."
 	elif [ "$force" = 1 ]; then
 		printf "[Forced] "
-	elif ! grep -q "\\[ *$1_sect *]" /etc/ssl/modules.cnf.d/*; then
-		echo "$1: Could not find section [$1] in config files."
+	elif ! grep -q "\\[ *$1_sect *]" /etc/ssl/*.cnf.d/*; then
+		echo "$1: Could not find section [$1_sect] in config files."
 		return 1
 	elif [ "$builtin" = 1 ]; then
 		printf "[Builtin] "
