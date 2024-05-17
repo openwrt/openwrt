@@ -122,6 +122,13 @@ ifneq ($(CONFIG_USE_APK),)
 		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
 		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
   endef
+
+ifndef CONFIG_BUILDBOT
+  define Package/base-files/install-key
+	mkdir -p $(1)/etc/apk/keys
+	$(CP) $(BUILD_KEY_APK_PUB) $(1)/etc/apk/keys/
+  endef
+endif
 else
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
@@ -137,10 +144,6 @@ ifndef CONFIG_BUILDBOT
   define Package/base-files/install-key
 	mkdir -p $(1)/etc/opkg/keys
 	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
-
-	mkdir -p $(1)/etc/apk/keys
-	$(CP) $(BUILD_KEY_APK_PUB) $(1)/etc/apk/keys/
-
   endef
 endif
 endif
