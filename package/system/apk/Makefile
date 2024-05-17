@@ -30,6 +30,7 @@ define Package/apk/default
   TITLE:=apk package manager
   DEPENDS:=+zlib
   URL:=$(PKG_SOURCE_URL)
+  PROVIDES:=apk
 endef
 
 define Package/apk-mbedtls
