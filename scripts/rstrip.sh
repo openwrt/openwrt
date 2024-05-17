@@ -12,6 +12,8 @@ SELF=${0##*/}
   exit 1
 }
 
+: ${OBJCOPY:=${CROSS}objcopy}
+
 TARGETS=$*
 
 [ -z "$TARGETS" ] && {
@@ -41,7 +43,28 @@ find $TARGETS -not -path \*/lib/firmware/\* -a -type f -a -exec file {} \; | \
 			done
 			[ "$new_rpath" = "$old_rpath" ] || $PATCHELF --set-rpath "$new_rpath" $F
 		}
+
+		dbgfile=
+		[ -n "$DEBUGINFO_DIR" ] && {
+			objdump --syms "$F" | grep -q 'no symbols' && {
+				echo "$F contains no debug symbols - skipping" >&2
+			} || {
+				# don't replicate the tree in DEBUGINFO_DIR.
+				# hash the file to avoid collisions, append basename for humans.
+				# debuginfod does its own hashing.
+				dbgfile="$DEBUGINFO_DIR/$("$MKHASH" sha256 "$F")-$(basename "$F")"
+			}
+		}
+
+		[ -n "$dbgfile" ] && {
+			"$OBJCOPY" --only-keep-debug "$F" "$dbgfile"
+
+			"${CROSS}strip" --strip-debug "$F"
+			"$OBJCOPY" --add-gnu-debuglink="$dbgfile" "$F"
+		}
+
 		eval "$STRIP $F"
+
 		a=$(stat -c '%a' $F)
 		[ "$a" = "$b" ] || chmod $b $F
 	}

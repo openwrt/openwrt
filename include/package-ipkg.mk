@@ -102,6 +102,7 @@ ifeq ($(DUMP),)
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
     IPKG_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
+    DBGINFO_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).debuginfo
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
@@ -218,7 +219,14 @@ $(_endef)
 	$(if $(PROVIDES),@for pkg in $(filter-out $(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
 
+    ifneq ($$(CONFIG_EXTRACT_DEBUGINFO),)
+	[ ! -d $$(DBGINFO_$(1)) ] || rm -rf $$(DBGINFO_$(1))
+	mkdir -p $$(DBGINFO_$(1))
+	export DEBUGINFO_DIR=$$(DBGINFO_$(1)); \
+		$(RSTRIP) $$(IDIR_$(1))
+    else
 	$(RSTRIP) $$(IDIR_$(1))
+    endif
 
     ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
 	(cd $$(IDIR_$(1)); \

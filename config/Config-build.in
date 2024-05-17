@@ -219,6 +219,13 @@ menu "Global build settings"
 		help
 		  Specifies arguments passed to the strip command when stripping binaries.
 
+	config EXTRACT_DEBUGINFO
+		bool
+		prompt "Extract debug information"
+		depends on (USE_STRIP || NO_STRIP)
+		help
+		  Extract debug info to separate files and replace it with an appropriate GNU debuglink section.
+
 	config SSTRIP_DISCARD_TRAILING_ZEROES
 		bool "Strip trailing zero bytes"
 		depends on USE_SSTRIP && !USE_MOLD
