@@ -41,7 +41,8 @@ case "$FIRMWARE" in
 	;;
 "mediatek/mt7986_eeprom_mt7975_dual.bin")
 	case "$board" in
-	mercusys,mr90x-v1)
+	mercusys,mr90x-v1|\
+	tplink,re6000xd)
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
