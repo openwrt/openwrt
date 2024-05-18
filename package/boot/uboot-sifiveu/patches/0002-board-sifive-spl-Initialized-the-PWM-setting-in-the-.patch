@@ -14,8 +14,6 @@ LED's color will be set to yellow.
  3 files changed, 60 insertions(+)
  create mode 100644 board/sifive/unmatched/pwm.c
 
-diff --git a/board/sifive/unmatched/Makefile b/board/sifive/unmatched/Makefile
-index 1345330089..5df01982e9 100644
 --- a/board/sifive/unmatched/Makefile
 +++ b/board/sifive/unmatched/Makefile
 @@ -9,3 +9,4 @@ obj-y += spl.o
@@ -23,9 +21,6 @@ index 1345330089..5df01982e9 100644
  obj-y += unmatched.o
  endif
 +obj-y += pwm.o
-diff --git a/board/sifive/unmatched/pwm.c b/board/sifive/unmatched/pwm.c
-new file mode 100644
-index 0000000000..e1cc02310a
 --- /dev/null
 +++ b/board/sifive/unmatched/pwm.c
 @@ -0,0 +1,57 @@
@@ -86,8 +81,6 @@ index 0000000000..e1cc02310a
 +	writel(PWM_CMP_ENABLE_VAL, (void *)&pwm1->cmp3);
 +	writel(PWM_CFG_INIT, (void *)&pwm1->cfg);
 +}
-diff --git a/board/sifive/unmatched/spl.c b/board/sifive/unmatched/spl.c
-index 7c0beedc08..f3a661a81e 100644
 --- a/board/sifive/unmatched/spl.c
 +++ b/board/sifive/unmatched/spl.c
 @@ -90,6 +90,8 @@ int spl_board_init_f(void)
@@ -99,6 +92,3 @@ index 7c0beedc08..f3a661a81e 100644
  	ret = spl_gemgxl_init();
  	if (ret) {
  		debug("Gigabit ethernet PHY (VSC8541) init failed: %d\n", ret);
--- 
-2.27.0
-

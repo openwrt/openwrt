@@ -10,12 +10,12 @@ Signed-off-by: Paul Spooren <mail@aparcar.org>
 
 --- a/src/database.c
 +++ b/src/database.c
-@@ -1604,7 +1604,7 @@ const char *apk_db_layer_name(int layer)
+@@ -1643,7 +1643,7 @@ const char *apk_db_layer_name(int layer)
  {
  	switch (layer) {
  	case APK_DB_LAYER_ROOT: return "lib/apk/db";
 -	case APK_DB_LAYER_UVOL: return "lib/apk/db-uvol";
 +	case APK_DB_LAYER_UVOL: return "tmp/run/uvol/.meta/apk";
  	default:
- 		assert("invalid layer");
+ 		assert(!"invalid layer");
  		return 0;
