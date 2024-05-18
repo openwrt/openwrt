@@ -78,7 +78,7 @@ define prepare_rootfs
 	@mkdir -p $(1)/var/lock
 	@( \
 		cd $(1); \
-		if [ -n $(CONFIG_USE_APK) ]; then \
+		if [ -n "$(CONFIG_USE_APK)" ]; then \
 		$(STAGING_DIR_HOST)/bin/tar -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install" -O > script.sh; \
 		chmod +x script.sh; \
 		IPKG_INSTROOT=$(1) $$(command -v bash) script.sh; \
