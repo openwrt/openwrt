@@ -57,7 +57,10 @@ export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.lo
 
 HOST_MAKE_FLAGS += \
+	DEFAULT_INCLUDES='-I. -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
+	libelf_la_LIBADD='../lib/libeu.la -lz $$$$(zstd_LIBS) -lpthread' \
+	libdw_la_LIBADD='../libdwfl/libdwfl.la ../libdwelf/libdwelf.la ../libebl/libebl.la ../backends/libebl_backends.la ../libcpu/libcpu.la' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_tsearch))' \
 	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
@@ -85,6 +88,12 @@ HOST_CONFIGURE_ARGS += \
 ifeq ($(HOST_OS),Darwin)
   HOST_CONFIGURE_ARGS += --disable-symbol-versioning
 endif
+
+HOST_CONFIGURE_VARS += \
+	ac_cv_search_argp_parse=yes \
+	ac_cv_search_fts_close=yes \
+	ac_cv_search__obstack_free=yes \
+	ac_cv_buildid=yes
 
 Hooks/HostConfigure/Pre := Host/Gnulib $(Hooks/HostConfigure/Pre)
 define Host/Gnulib
