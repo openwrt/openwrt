@@ -139,6 +139,21 @@
 			bias-pull-up;
 		};
 	};
+
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		tx {
+			pins = "gpio53", "gpio64";
+			drive-strength = <2>;
+			bias-pull-down;
+			input-enable;
+		};
+	};
 };
 
 &gsbi2 {
@@ -316,16 +331,14 @@
 	qcom,id = <0>;
 	mdiobus = <&mdio0>;
 
-	phy-mode = "rgmii";
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+
+	phy-mode = "rgmii-id";
 	phy-handle = <&phy1>;
 
 	nvmem-cells = <&ethaddr 0>;
 	nvmem-cell-names = "mac-address";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &gmac2 {
