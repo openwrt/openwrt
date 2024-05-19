@@ -159,7 +159,11 @@ _call_manifest: FORCE
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload >/dev/null
 	$(MAKE) package_install >/dev/null
+ifeq ($(CONFIG_USE_APK),)
+	$(OPKG) list-installed $(if $(STRIP_ABI),--strip-abi)
+else
 	$(APK) list --quiet --manifest --no-network
+endif
 
 package_index: FORCE
 	@echo >&2
@@ -202,7 +206,11 @@ endif
 
 package_list: FORCE
 	@$(MAKE) -s package_reload
+ifeq ($(CONFIG_USE_APK),)
+	@$(OPKG) list --size 2>/dev/null
+else
 	@$(APK) list --size 2>/dev/null
+endif
 
 package_install: FORCE
 	@echo
@@ -277,8 +285,6 @@ endif
 
 _check_keys: FORCE
 ifeq ($(CONFIG_USE_APK),)
-	# TODO
-else
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
 	@if [ ! -s $(BUILD_KEY) -o ! -s $(BUILD_KEY).pub ]; then \
 		echo Generate local signing keys... >&2; \
@@ -294,6 +300,8 @@ ifneq ($(CONFIG_SIGNATURE_CHECK),)
 			-s $(BUILD_KEY); \
 	fi
 endif
+else
+	# TODO
 endif
 
 image:
