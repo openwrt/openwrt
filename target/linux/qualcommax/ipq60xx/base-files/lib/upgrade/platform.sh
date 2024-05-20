@@ -33,6 +33,10 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	cambiumnetworks,xe3-4)
+		fw_setenv bootcount 0
+		nand_do_upgrade "$1"
+		;;
 	netgear,wax214)
 		nand_do_upgrade "$1"
 		;;
