@@ -12,6 +12,16 @@ define Build/linksys-ixp425-image
 	mv $@.new $@
 endef
 
+define Build/freecom-image
+	mkdir -p $@.tmptar
+	# Add kernel
+	cp $@ $@.tmptar/zImage
+	cd $@.tmptar && tar -c -j -f $@.new --numeric-owner --owner=0 --group=0 *
+	rm -rf $@.tmptar
+	encode_crc $@.new $@
+	rm -f $@.new
+endef
+
 # Build sysupgrade image
 define BuildFirmware/Generic
 	dd if=$(KDIR)/zImage of=$(KDIR)/zImage.pad bs=64k conv=sync; \
@@ -35,6 +45,20 @@ define Device/Default
 	KERNEL := kernel-bin | append-dtb
 	BLOCKSIZE := 128k
 endef
+
+define Device/freecom_fsg_3
+	DEVICE_VENDOR := Freecom
+	DEVICE_MODEL := FSG-3
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-isl1208 kmod-ath5k wpad-basic-mbedtls
+	# Only 4 MB of Flash so not building by default
+	DEFAULT := n
+	DEVICE_DTS := intel-ixp42x-freecom-fsg-3
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := factory.bin
+	# This has to boot from harddisk so just append the kernel
+	IMAGE/factory.bin := append-kernel | freecom-image
+endef
+TARGET_DEVICES += freecom_fsg_3
 
 define Device/gateworks_avila
 	DEVICE_VENDOR := Gateworks
