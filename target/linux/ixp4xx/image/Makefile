@@ -60,6 +60,19 @@ define Device/gateworks_cambria
 endef
 TARGET_DEVICES += gateworks_cambria
 
+define Device/iomega_nas100d
+	DEVICE_VENDOR := Iomega
+	DEVICE_MODEL := NAS100d
+	# USB2 is compiled in and needs no package
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-pcf8563
+	DEVICE_DTS := intel-ixp42x-iomega-nas100d
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := factory.bin
+	# This has to boot from harddisk so just append the kernel
+	IMAGE/factory.bin := append-kernel | linksys-ixp425-image "nas100d"
+endef
+TARGET_DEVICES += iomega_nas100d
+
 define Device/linksys_nslu2
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := NSLU2
