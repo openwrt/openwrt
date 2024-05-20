@@ -7,6 +7,9 @@ board=$(board_name)
 board_config_update
 
 case $board in
+7links,wlr-1230)
+	ucidef_set_led_switch "lan" "lan" "orange:lan" "switch0" "0x10"
+	;;
 alfa-network,awusfree1)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
