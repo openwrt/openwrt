@@ -1,0 +1,34 @@
+From e5bc89e60590581b0d31e8c6c6361c6caf5583bb Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Tue, 21 Nov 2023 11:12:24 -0800
+Subject: [PATCH 407/413] 6.9: arm64: dts: imx8mm-venice-gw7901: add digital
+ I/O direction control GPIO's
+
+The GW7901 has GPIO's to configure the direction of its isolated
+digital I/O signals. Add the GPIO pinmux and line names.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
+@@ -319,7 +319,7 @@
+ 
+ &gpio4 {
+ 	gpio-line-names = "", "", "", "",
+-		"", "", "uart3_rs232#", "uart3_rs422#",
++		"dig1_ctl", "dig2_ctl", "uart3_rs232#", "uart3_rs422#",
+ 		"uart3_rs485#", "", "", "", "", "", "", "",
+ 		"", "", "", "", "", "", "", "",
+ 		"", "", "", "uart4_rs485#", "", "sim1det#", "sim2det#", "";
+@@ -842,6 +842,8 @@
+ 
+ 	pinctrl_hog: hoggrp {
+ 		fsl,pins = <
++			MX8MM_IOMUXC_SAI1_RXD2_GPIO4_IO4	0x40000041 /* DIG1_CTL */
++			MX8MM_IOMUXC_SAI1_RXD3_GPIO4_IO5	0x40000041 /* DIG2_CTL */
+ 			MX8MM_IOMUXC_SPDIF_TX_GPIO5_IO3		0x40000041 /* DIG2_OUT */
+ 			MX8MM_IOMUXC_SPDIF_RX_GPIO5_IO4		0x40000041 /* DIG2_IN */
+ 			MX8MM_IOMUXC_GPIO1_IO06_GPIO1_IO6	0x40000041 /* DIG1_IN */
