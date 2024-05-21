@@ -46,6 +46,18 @@ define Device/Default
 	BLOCKSIZE := 128k
 endef
 
+define Device/dlink_dsm_g600_a
+	DEVICE_VENDOR := D-Link
+	DEVICE_MODEL := DSM G600 A
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-pcf8563 kmod-via-velocity kmod-ata-artop kmod-ath5k wpad-basic-mbedtls
+	DEVICE_DTS := intel-ixp42x-dlink-dsm-g600
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += dlink_dsm_g600_a
+
 define Device/freecom_fsg_3
 	DEVICE_VENDOR := Freecom
 	DEVICE_MODEL := FSG-3
