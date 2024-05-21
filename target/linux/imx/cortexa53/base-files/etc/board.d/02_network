@@ -18,7 +18,7 @@ gw,imx8mm-gw7901)
 gateworks,imx8mp-gw74xx)
 	ucidef_set_network_device_path "eth0" "platform/soc@0/30800000.bus/30bf0000.ethernet"
 	ucidef_set_network_device_path "eth1" "platform/soc@0/30800000.bus/30be0000.ethernet"
-	ucidef_set_interfaces_lan_wan 'lan1 lan2 lan3 lan4' 'eth1'
+	ucidef_set_interfaces_lan_wan 'lan1 lan2 lan3 lan4' 'eth0'
 	;;
 esac
 
