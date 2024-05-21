@@ -149,7 +149,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #if defined(NSS_DP_PPE_SUPPORT)
  	uint32_t vsi_id;
  	fal_port_t port_id;
-@@ -940,22 +883,15 @@ static int32_t nss_dp_probe(struct platf
+@@ -940,22 +883,16 @@ static int32_t nss_dp_probe(struct platf
  
  	dp_priv->drv_flags |= NSS_DP_PRIV_FLAG(INIT_DONE);
  
@@ -177,6 +177,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			netdev_err(netdev, "failed to connect to phy device\n");
 + 			goto phy_setup_fail;
 + 		}
++ 		phy_attached_info(dp_priv->phydev);
  	}
  
  #if defined(NSS_DP_PPE_SUPPORT)
