@@ -654,7 +654,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +		}
 +	}
 +
-+	panic("PSGMII work is unstable !!! "
++	dev_err(priv->dev, "PSGMII work is unstable !!! "
 +		"Repeated recalibration attempts did not help(0x%x) !\n",
 +		test_result);
 +
