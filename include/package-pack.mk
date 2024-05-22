@@ -309,6 +309,20 @@ else
 	(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" > $$(IDIR_$(1))/lib/apk/packages/$(1).list)
 	if [ -f $$(ADIR_$(1))/conffiles ]; then mv $$(ADIR_$(1))/conffiles $$(IDIR_$(1))/lib/apk/packages/$(1).conffiles; fi;
 
+	# Some package (base-files) manually append stuff to conffiles
+	# Append stuff from it and delete the CONTROL directory since everything else should be migrated
+	if [ -f $$(IDIR_$(1))/CONTROL/conffiles ]; then \
+		cat $$(IDIR_$(1))/CONTROL/conffiles >> $$(IDIR_$(1))/lib/apk/packages/$(1).conffiles; \
+		rm -rf $$(IDIR_$(1))/CONTROL/conffiles; \
+	fi
+
+	if [ -z "$$$$(ls -A $$(IDIR_$(1))/CONTROL 2>/dev/null)" ]; then \
+		rm -rf $$(IDIR_$(1))/CONTROL; \
+	else \
+		echo "CONTROL directory $$(IDIR_$(1))/CONTROL is not empty! This is not right and should be checked!" >&2; \
+		exit 1; \
+	fi
+
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
