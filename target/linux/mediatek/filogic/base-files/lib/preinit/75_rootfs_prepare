@@ -21,6 +21,39 @@ rootfs_create() {
 
 rootfs_prepare() {
 	case $(board_name) in
+	keenetic,kn-3411)
+		local mtdnum ubidev ubivol
+
+		. /lib/upgrade/nand.sh
+
+		ubidev=$(nand_find_ubi ubi)
+		if [ ! "$ubidev" ]; then
+			mtdnum=$(find_mtd_index ubi)
+			if [ ! "$mtdnum" ]; then
+				echo "Can't find mtd partition ubi"
+				return 1
+			fi
+
+			ubiformat "/dev/mtd$mtdnum" -y
+			ubiattach -m "$mtdnum"
+
+			ubidev=$(nand_find_ubi ubi)
+			if [ ! "$ubidev" ]; then
+				echo "Can't attach mtd partition ubi"
+				return 1
+			fi
+		fi
+		if ! ubinfo "/dev/$ubidev" -N rootfs_data &>/dev/null; then
+			echo "Creating \"rootfs_data\" UBI volume"
+
+			ubimkvol "/dev/$ubidev" -N rootfs_data -m
+			ubivol=$(nand_find_volume "$ubidev" rootfs_data)
+			if [ ! "$ubivol" ]; then
+				echo "Can't find ubifs data volume"
+				return 1
+			fi
+		fi
+		;;
 	netgear,wax220)
 		if ! ubinfo /dev/ubi0 -N rootfs_data &>/dev/null; then
 			echo "Creating \"rootfs_data\" UBI volume"
