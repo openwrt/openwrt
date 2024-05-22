@@ -59,6 +59,12 @@ else
 	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.ipk),ln -s $(pdir)/*.ipk $(PACKAGE_DIR_ALL);))
 endif
 
+$(BUILD_KEY_APK_SEC):
+	$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC)
+
+$(BUILD_KEY_APK_PUB): $(BUILD_KEY_APK_SEC)
+	$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
+
 $(curdir)/merge-index: $(curdir)/merge
 ifneq ($(CONFIG_USE_APK),)
 	(cd $(PACKAGE_DIR_ALL) && $(STAGING_DIR_HOST)/bin/apk mkndx \
@@ -75,7 +81,7 @@ endif
 ifndef SDK
   $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
 ifneq ($(CONFIG_USE_APK),)
-  $(curdir)/compile: $(curdir)/system/apk/host/compile
+  $(curdir)/compile: $(curdir)/system/apk/host/compile $(BUILD_KEY_APK_SEC) $(BUILD_KEY_APK_PUB)
 else
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
 endif

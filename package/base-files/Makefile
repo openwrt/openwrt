@@ -117,12 +117,6 @@ endef
 Build/Compile = $(Build/Compile/Default)
 
 ifneq ($(CONFIG_USE_APK),)
-  define Build/Configure
-	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
-		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
-		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
-  endef
-
 ifndef CONFIG_BUILDBOT
   define Package/base-files/install-key
 	mkdir -p $(1)/etc/apk/keys
