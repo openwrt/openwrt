@@ -22,7 +22,7 @@
  
 --- a/Makefile
 +++ b/Makefile
-@@ -21,11 +21,38 @@
+@@ -21,11 +21,38 @@ RANLIB=ranlib
  LDFLAGS=
  
  BIGFILES=-D_FILE_OFFSET_BITS=64
@@ -64,7 +64,7 @@
  
  OBJS= blocksort.o  \
        huffman.o    \
-@@ -35,15 +62,38 @@
+@@ -35,15 +62,38 @@ OBJS= blocksort.o  \
        decompress.o \
        bzlib.o
  
@@ -109,7 +109,7 @@
  	rm -f libbz2.a
  	$(AR) cq libbz2.a $(OBJS)
  	@if ( test -f $(RANLIB) -o -f /usr/bin/ranlib -o \
-@@ -51,8 +101,18 @@
+@@ -51,8 +101,18 @@ libbz2.a: $(OBJS)
  		echo $(RANLIB) libbz2.a ; \
  		$(RANLIB) libbz2.a ; \
  	fi
@@ -129,7 +129,7 @@
  test: bzip2
  	@cat words1
  	./bzip2 -1  < sample1.ref > sample1.rb2
-@@ -69,69 +129,153 @@
+@@ -69,69 +129,153 @@ test: bzip2
  	cmp sample3.tst sample3.ref
  	@cat words3
  
@@ -318,7 +318,7 @@
  
  
  distclean: clean
-@@ -189,7 +333,6 @@
+@@ -189,7 +333,6 @@ dist: check manual
  	   $(DISTNAME)/bzmore.1 \
  	   $(DISTNAME)/bzgrep \
  	   $(DISTNAME)/bzgrep.1 \

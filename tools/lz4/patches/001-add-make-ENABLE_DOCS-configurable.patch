@@ -1,6 +1,6 @@
-+++ a/programs/Makefile	2022-08-15 15:45:31.000000000 -0700
---- b/programs/Makefile	2022-11-28 16:34:21.315593784 -0800
-@@ -66,6 +66,7 @@
+--- a/programs/Makefile
++++ b/programs/Makefile
+@@ -66,6 +66,7 @@ LZ4_VERSION=$(LIBVER)
  MD2ROFF   = ronn
  MD2ROFF_FLAGS = --roff --warnings --manual="User Commands" --organization="lz4 $(LZ4_VERSION)"
  
@@ -8,7 +8,7 @@
  
  default: lz4-release
  
-@@ -120,6 +121,7 @@
+@@ -120,6 +121,7 @@ lz4c32: CFLAGS += -m32
  lz4c32 : $(SRCFILES)
  	$(CC) $(FLAGS) $^ -o $@$(EXT)
  
@@ -16,7 +16,7 @@
  lz4.1: lz4.1.md $(LIBVER_SRC)
  	cat $< | $(MD2ROFF) $(MD2ROFF_FLAGS) | $(SED) -n '/^\.\\\".*/!p' > $@
  
-@@ -130,6 +132,7 @@
+@@ -130,6 +132,7 @@ clean-man:
  
  preview-man: clean-man man
  	man ./lz4.1
@@ -24,7 +24,7 @@
  
  clean:
  ifeq ($(WINBASED),yes)
-@@ -172,16 +175,19 @@
+@@ -172,16 +175,19 @@ man1dir     ?= $(MAN1DIR)
  
  install: lz4
  	@echo Installing binaries in $(DESTDIR)$(bindir)
@@ -45,7 +45,7 @@
  	@echo lz4 installation completed
  
  uninstall:
-@@ -189,10 +195,12 @@
+@@ -189,10 +195,12 @@ uninstall:
  	$(RM) $(DESTDIR)$(bindir)/unlz4$(EXT)
  	$(RM) $(DESTDIR)$(bindir)/lz4$(EXT)
  	$(RM) $(DESTDIR)$(bindir)/lz4c$(EXT)
