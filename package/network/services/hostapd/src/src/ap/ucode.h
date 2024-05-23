@@ -25,6 +25,8 @@ void hostapd_ucode_free(void);
 void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
+int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta);
+void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta);
 
 #ifdef CONFIG_APUP
 void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
@@ -43,6 +45,13 @@ static inline void hostapd_ucode_free_iface(struct hostapd_iface *iface)
 {
 }
 static inline void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
+{
+}
+static inline int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
+{
+	return 0;
+}
+static inline void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta)
 {
 }
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)

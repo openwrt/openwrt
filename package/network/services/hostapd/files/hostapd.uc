@@ -890,6 +890,9 @@ let main_obj = {
 			hostapd.printf(`Set new config for phy ${phy}: ${file}`);
 			iface_set_config(phy, config);
 
+			if (hostapd.data.auth_obj)
+				hostapd.data.auth_obj.notify("reload", { phy });
+
 			return {
 				pid: hostapd.getpid()
 			};
@@ -954,6 +957,10 @@ let main_obj = {
 
 hostapd.data.ubus = ubus;
 hostapd.data.obj = ubus.publish("hostapd", main_obj);
+
+
+let auth_obj = {};
+hostapd.data.auth_obj = ubus.publish("hostapd-auth", auth_obj);
 hostapd.udebug_set("hostapd", hostapd.data.ubus);
 
 function bss_event(type, name, data) {
@@ -980,5 +987,25 @@ return {
 	},
 	bss_remove: function(phy, name, obj) {
 		bss_event("remove", name);
-	}
+	},
+	sta_auth: function(iface, sta) {
+		let msg = { iface, sta };
+		let ret = {};
+		let data_cb = (type, data) => {
+			ret = { ...ret, ...data };
+		};
+		if (hostapd.data.auth_obj)
+			hostapd.data.auth_obj.notify("sta_auth", msg, data_cb, null, null, 1000);
+		return ret;
+	},
+	sta_connected: function(iface, sta, data) {
+		let msg = { iface, sta, ...data };
+		let ret = {};
+		let data_cb = (type, data) => {
+			ret = { ...ret, ...data };
+		};
+		if (hostapd.data.auth_obj)
+			hostapd.data.auth_obj.notify("sta_connected", msg, data_cb, null, null, 1000);
+		return ret;
+	},
 };
