@@ -1,0 +1,59 @@
+From f8e14746d2ca72804a4520c059d7bf65ca00c5ac Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Fri, 2 Sep 2022 16:32:27 -0500
+Subject: [PATCH] Fix --delete bug with short reads
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* gnulib.modules: Add idx.
+* src/common.h: Include idx.h.
+* src/delete.c (move_archive): Don’t botch short reads.
+---
+ gnulib.modules |  1 +
+ src/common.h   |  1 +
+ src/delete.c   | 10 ++++++++--
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+
+# diff --git a/gnulib.modules b/gnulib.modules
+# index 63e8354a..dac77d61 100644
+# --- a/gnulib.modules
+# +++ b/gnulib.modules
+# @@ -54,6 +54,7 @@ gettime
+#  gitlog-to-changelog
+#  hash
+#  human
+# +idx
+#  inttostr
+#  inttypes
+#  lchown
+--- a/src/common.h
++++ b/src/common.h
+@@ -58,6 +58,7 @@
+ #include <backupfile.h>
+ #include <exclude.h>
+ #include <full-write.h>
++#include <idx.h>
+ #include <modechange.h>
+ #include <quote.h>
+ #include <safe-read.h>
+--- a/src/delete.c
++++ b/src/delete.c
+@@ -55,9 +55,15 @@ move_archive (off_t count)
+   off_t position0 = rmtlseek (archive, 0, SEEK_CUR), position = 0;
+   if (0 <= position0)
+     {
+-      off_t increment;
++      /* Pretend the starting position is at the first record
++	 boundary after POSITION0.  This is useful at EOF after
++	 a short read.  */
++      idx_t short_size = position0 % record_size;
++      idx_t start_offset = short_size ? record_size - short_size : 0;
++      off_t increment, move_start;
+       if (INT_MULTIPLY_WRAPV (record_size, count, &increment)
+-	  || INT_ADD_WRAPV (position0, increment, &position)
++	  || INT_ADD_WRAPV (position0, start_offset, &move_start)
++	  || INT_ADD_WRAPV (move_start, increment, &position)
+ 	  || position < 0)
+ 	{
+ 	  ERROR ((0, EOVERFLOW, "lseek: %s", archive_name_array[0]));

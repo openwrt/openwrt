@@ -1,0 +1,491 @@
+From 66be5a789e70f911170017754fc51e499998f90e Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Sun, 14 Aug 2022 16:32:26 -0700
+Subject: [PATCH] Avoid excess lseek etc.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* src/buffer.c, src/delete.c: Do not include system-ioctl.h.
+* src/buffer.c (guess_seekable_archive): Remove.  This is now done
+by get_archive_status, in a different way.
+(get_archive_status): New function that gets archive_stat
+unless remote, and sets seekable_archive etc.
+(_open_archive): Prefer bool for boolean.
+(_open_archive, new_volume): Get archive status consistently
+by calling get_archive_status in both places.
+* src/buffer.c (backspace_output):
+* src/compare.c (verify_volume):
+* src/delete.c (move_archive):
+Let mtioseek worry about mtio.
+* src/common.h (archive_stat): New global, replacing ar_dev and
+ar_ino.  All uses changed.
+* src/delete.c (move_archive): Check for integer overflow.
+Also report overflow if the archive position would go negative.
+* src/system.c: Include system-ioctl.h, for MTIOCTOP etc.
+(mtioseek): New function, which also checks for integer overflow.
+(sys_save_archive_dev_ino): Remove.
+(archive_stat): Now
+(sys_get_archive_stat): Also initialize mtioseekable_archive.
+(sys_file_is_archive): Don’t return true if the archive is /dev/null
+since it’s not a problem in that case.
+(sys_detect_dev_null_output): Cache dev_null_stat.
+
+doc: omit MS-DOS mentions in doc
+It’s really FAT32 we’re worried about now, not MS-DOS.
+And doschk is no longer a GNU program.
+---
+ src/buffer.c  | 99 ++++++++++++++++++---------------------------------
+ src/common.h  | 10 +++---
+ src/compare.c | 31 ++++------------
+ src/delete.c  | 51 +++++++++-----------------
+ src/system.c  | 81 +++++++++++++++++++++++++++--------------
+ 5 files changed, 119 insertions(+), 153 deletions(-)
+
+--- a/src/buffer.c
++++ b/src/buffer.c
+@@ -20,7 +20,6 @@
+    Written by John Gilmore, on 1985-08-25.  */
+ 
+ #include <system.h>
+-#include <system-ioctl.h>
+ 
+ #include <signal.h>
+ 
+@@ -420,37 +419,6 @@ check_compressed_archive (bool *pshort)
+   return ct_none;
+ }
+ 
+-/* Guess if the archive is seekable. */
+-static void
+-guess_seekable_archive (void)
+-{
+-  struct stat st;
+-
+-  if (subcommand_option == DELETE_SUBCOMMAND)
+-    {
+-      /* The current code in delete.c is based on the assumption that
+-	 skip_member() reads all data from the archive. So, we should
+-	 make sure it won't use seeks. On the other hand, the same code
+-	 depends on the ability to backspace a record in the archive,
+-	 so setting seekable_archive to false is technically incorrect.
+-         However, it is tested only in skip_member(), so it's not a
+-	 problem. */
+-      seekable_archive = false;
+-    }
+-
+-  if (seek_option != -1)
+-    {
+-      seekable_archive = !!seek_option;
+-      return;
+-    }
+-
+-  if (!multi_volume_option && !use_compress_program_option
+-      && fstat (archive, &st) == 0)
+-    seekable_archive = S_ISREG (st.st_mode);
+-  else
+-    seekable_archive = false;
+-}
+-
+ /* Open an archive named archive_name_array[0]. Detect if it is
+    a compressed archive of known type and use corresponding decompression
+    program if so */
+@@ -702,12 +670,41 @@ check_tty (enum access_mode mode)
+     }
+ }
+ 
++/* Fetch the status of the archive, accessed via WANTED_STATUS.  */
++
++static void
++get_archive_status (enum access_mode wanted_access, bool backed_up_flag)
++{
++  if (!sys_get_archive_stat ())
++    {
++      int saved_errno = errno;
++
++      if (backed_up_flag)
++        undo_last_backup ();
++      errno = saved_errno;
++      open_fatal (archive_name_array[0]);
++    }
++
++  seekable_archive
++    = (! (multi_volume_option || use_compress_program_option)
++       && (seek_option < 0
++	   ? (_isrmt (archive)
++	      || S_ISREG (archive_stat.st_mode)
++	      || S_ISBLK (archive_stat.st_mode))
++	   : seek_option));
++
++  if (wanted_access != ACCESS_READ)
++    sys_detect_dev_null_output ();
++
++  SET_BINARY_MODE (archive);
++}
++
+ /* Open an archive file.  The argument specifies whether we are
+    reading or writing, or both.  */
+ static void
+ _open_archive (enum access_mode wanted_access)
+ {
+-  int backed_up_flag = 0;
++  bool backed_up_flag = false;
+ 
+   if (record_size == 0)
+     FATAL_ERROR ((0, 0, _("Invalid value for record_size")));
+@@ -796,15 +793,13 @@ _open_archive (enum access_mode wanted_a
+       {
+       case ACCESS_READ:
+         archive = open_compressed_archive ();
+-	if (archive >= 0)
+-	  guess_seekable_archive ();
+         break;
+ 
+       case ACCESS_WRITE:
+         if (backup_option)
+           {
+             maybe_backup_file (archive_name_array[0], 1);
+-            backed_up_flag = 1;
++            backed_up_flag = true;
+           }
+ 	if (verify_option)
+ 	  archive = rmtopen (archive_name_array[0], O_RDWR | O_CREAT | O_BINARY,
+@@ -832,20 +827,7 @@ _open_archive (enum access_mode wanted_a
+         break;
+       }
+ 
+-  if (archive < 0
+-      || (! _isrmt (archive) && !sys_get_archive_stat ()))
+-    {
+-      int saved_errno = errno;
+-
+-      if (backed_up_flag)
+-        undo_last_backup ();
+-      errno = saved_errno;
+-      open_fatal (archive_name_array[0]);
+-    }
+-
+-  sys_detect_dev_null_output ();
+-  sys_save_archive_dev_ino ();
+-  SET_BINARY_MODE (archive);
++  get_archive_status (wanted_access, backed_up_flag);
+ 
+   switch (wanted_access)
+     {
+@@ -1048,18 +1030,8 @@ flush_archive (void)
+ static void
+ backspace_output (void)
+ {
+-#ifdef MTIOCTOP
+-  {
+-    struct mtop operation;
+-
+-    operation.mt_op = MTBSR;
+-    operation.mt_count = 1;
+-    if (rmtioctl (archive, MTIOCTOP, (char *) &operation) >= 0)
+-      return;
+-    if (errno == EIO && rmtioctl (archive, MTIOCTOP, (char *) &operation) >= 0)
+-      return;
+-  }
+-#endif
++  if (mtioseek (false, -1))
++    return;
+ 
+   {
+     off_t position = rmtlseek (archive, (off_t) 0, SEEK_CUR);
+@@ -1372,7 +1344,6 @@ new_volume (enum access_mode mode)
+       case ACCESS_READ:
+         archive = rmtopen (*archive_name_cursor, O_RDONLY, MODE_RW,
+                            rsh_command_option);
+-	guess_seekable_archive ();
+         break;
+ 
+       case ACCESS_WRITE:
+@@ -1397,7 +1368,7 @@ new_volume (enum access_mode mode)
+       goto tryagain;
+     }
+ 
+-  SET_BINARY_MODE (archive);
++  get_archive_status (mode, false);
+ 
+   return true;
+ }
+--- a/src/common.h
++++ b/src/common.h
+@@ -397,9 +397,8 @@ struct name
+     char *caname;               /* canonical name */
+   };
+ 
+-/* Obnoxious test to see if dimwit is trying to dump the archive.  */
+-GLOBAL dev_t ar_dev;
+-GLOBAL ino_t ar_ino;
++/* Status of archive file, or all zeros if remote.  */
++GLOBAL struct stat archive_stat;
+ 
+ /* Flags for reading, searching, and fstatatting files.  */
+ GLOBAL int open_read_flags;
+@@ -407,6 +406,9 @@ GLOBAL int open_searchdir_flags;
+ GLOBAL int fstatat_flags;
+ 
+ GLOBAL int seek_option;
++
++/* true if archive if lseek should be used on the archive, 0 if it
++   should not be used.  */
+ GLOBAL bool seekable_archive;
+ 
+ GLOBAL dev_t root_device;
+@@ -894,7 +896,6 @@ void xheader_xattr_add (struct tar_stat_
+ /* Module system.c */
+ 
+ void sys_detect_dev_null_output (void);
+-void sys_save_archive_dev_ino (void);
+ void sys_wait_for_child (pid_t, bool);
+ void sys_spawn_shell (void);
+ bool sys_compare_uid (struct stat *a, struct stat *b);
+@@ -912,6 +913,7 @@ int sys_exec_info_script (const char **a
+ void sys_exec_checkpoint_script (const char *script_name,
+ 				 const char *archive_name,
+ 				 int checkpoint_number);
++bool mtioseek (bool count_files, off_t count);
+ 
+ /* Module compare.c */
+ void report_difference (struct tar_stat_info *st, const char *message, ...)
+--- a/src/compare.c
++++ b/src/compare.c
+@@ -566,31 +566,12 @@ verify_volume (void)
+   ioctl (archive, FDFLUSH);
+ #endif
+ 
+-#ifdef MTIOCTOP
+-  {
+-    struct mtop operation;
+-    int status;
+-
+-    operation.mt_op = MTBSF;
+-    operation.mt_count = 1;
+-    if (status = rmtioctl (archive, MTIOCTOP, (char *) &operation), status < 0)
+-      {
+-	if (errno != EIO
+-	    || (status = rmtioctl (archive, MTIOCTOP, (char *) &operation),
+-		status < 0))
+-	  {
+-#endif
+-	    if (rmtlseek (archive, (off_t) 0, SEEK_SET) != 0)
+-	      {
+-		/* Lseek failed.  Try a different method.  */
+-		seek_warn (archive_name_array[0]);
+-		return;
+-	      }
+-#ifdef MTIOCTOP
+-	  }
+-      }
+-  }
+-#endif
++  if (!mtioseek (true, -1) && rmtlseek (archive, 0, SEEK_SET) != 0)
++    {
++      /* Lseek failed.  Try a different method.  */
++      seek_warn (archive_name_array[0]);
++      return;
++    }
+ 
+   access_mode = ACCESS_READ;
+   now_verifying = 1;
+--- a/src/delete.c
++++ b/src/delete.c
+@@ -18,7 +18,6 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include <system.h>
+-#include <system-ioctl.h>
+ 
+ #include "common.h"
+ #include <rmt.h>
+@@ -50,41 +49,25 @@ move_archive (off_t count)
+   if (count == 0)
+     return;
+ 
+-#ifdef MTIOCTOP
+-  {
+-    struct mtop operation;
+-
+-    if (count < 0
+-	? (operation.mt_op = MTBSR,
+-	   operation.mt_count = -count,
+-	   operation.mt_count == -count)
+-	: (operation.mt_op = MTFSR,
+-	   operation.mt_count = count,
+-	   operation.mt_count == count))
+-      {
+-	if (0 <= rmtioctl (archive, MTIOCTOP, (char *) &operation))
+-	  return;
++  if (mtioseek (false, count))
++    return;
+ 
+-	if (errno == EIO
+-	    && 0 <= rmtioctl (archive, MTIOCTOP, (char *) &operation))
++  off_t position0 = rmtlseek (archive, 0, SEEK_CUR), position = 0;
++  if (0 <= position0)
++    {
++      off_t increment;
++      if (INT_MULTIPLY_WRAPV (record_size, count, &increment)
++	  || INT_ADD_WRAPV (position0, increment, &position)
++	  || position < 0)
++	{
++	  ERROR ((0, EOVERFLOW, "lseek: %s", archive_name_array[0]));
+ 	  return;
+-      }
+-  }
+-#endif /* MTIOCTOP */
+-
+-  {
+-    off_t position0 = rmtlseek (archive, (off_t) 0, SEEK_CUR);
+-    off_t increment = record_size * (off_t) count;
+-    off_t position = position0 + increment;
+-
+-    if (increment / count != record_size
+-	|| (position < position0) != (increment < 0)
+-	|| (position = position < 0 ? 0 : position,
+-	    rmtlseek (archive, position, SEEK_SET) != position))
+-      seek_error_details (archive_name_array[0], position);
+-
+-    return;
+-  }
++	}
++      else if (rmtlseek (archive, position, SEEK_SET) == position)
++	return;
++    }
++  if (!_isrmt (archive))
++    seek_error_details (archive_name_array[0], position);
+ }
+ 
+ /* Write out the record which has been filled.  If MOVE_BACK_FLAG,
+--- a/src/system.c
++++ b/src/system.c
+@@ -16,6 +16,7 @@
+    with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include <system.h>
++#include <system-ioctl.h>
+ 
+ #include "common.h"
+ #include <priv-set.h>
+@@ -37,6 +38,35 @@ xexec (const char *cmd)
+   exec_fatal (cmd);
+ }
+ 
++/* True if the archive is seekable via ioctl and MTIOCTOP,
++   or if it is not known whether it is seekable.
++   False if it is known to be not seekable.  */
++static bool mtioseekable_archive;
++
++bool
++mtioseek (bool count_files, off_t count)
++{
++  if (mtioseekable_archive)
++    {
++#ifdef MTIOCTOP
++      struct mtop operation;
++      operation.mt_op = (count_files
++			 ? (count < 0 ? MTBSF : MTFSF)
++			 : (count < 0 ? MTBSR : MTFSR));
++      if (! (count < 0
++	     ? INT_SUBTRACT_WRAPV (0, count, &operation.mt_count)
++	     : INT_ADD_WRAPV (count, 0, &operation.mt_count))
++	  && (0 <= rmtioctl (archive, MTIOCTOP, &operation)
++	      || (errno == EIO
++		  && 0 <= rmtioctl (archive, MTIOCTOP, &operation))))
++	return true;
++#endif
++
++      mtioseekable_archive = false;
++    }
++  return false;
++}
++
+ #if MSDOS
+ 
+ bool
+@@ -52,11 +82,6 @@ sys_file_is_archive (struct tar_stat_inf
+ }
+ 
+ void
+-sys_save_archive_dev_ino (void)
+-{
+-}
+-
+-void
+ sys_detect_dev_null_output (void)
+ {
+   static char const dev_null[] = "nul";
+@@ -128,31 +153,34 @@ sys_child_open_for_uncompress (void)
+ 
+ extern union block *record_start; /* FIXME */
+ 
+-static struct stat archive_stat; /* stat block for archive file */
+-
+ bool
+ sys_get_archive_stat (void)
+ {
+-  return fstat (archive, &archive_stat) == 0;
++  bool remote = _isrmt (archive);
++  mtioseekable_archive = true;
++  if (!remote && 0 <= archive && fstat (archive, &archive_stat) == 0)
++    {
++      if (!S_ISCHR (archive_stat.st_mode))
++	mtioseekable_archive = false;
++      return true;
++    }
++  else
++    {
++      /* FIXME: This memset should not be needed.  It is present only
++	 because other parts of tar may incorrectly access
++	 archive_stat even if it's not the archive status.  */
++      memset (&archive_stat, 0, sizeof archive_stat);
++
++      return remote;
++    }
+ }
+ 
+ bool
+ sys_file_is_archive (struct tar_stat_info *p)
+ {
+-  return (ar_dev && p->stat.st_dev == ar_dev && p->stat.st_ino == ar_ino);
+-}
+-
+-/* Save archive file inode and device numbers */
+-void
+-sys_save_archive_dev_ino (void)
+-{
+-  if (!_isrmt (archive) && S_ISREG (archive_stat.st_mode))
+-    {
+-      ar_dev = archive_stat.st_dev;
+-      ar_ino = archive_stat.st_ino;
+-    }
+-  else
+-    ar_dev = 0;
++  return (!dev_null_output && !_isrmt (archive)
++	  && p->stat.st_dev == archive_stat.st_dev
++	  && p->stat.st_ino == archive_stat.st_ino);
+ }
+ 
+ /* Detect if outputting to "/dev/null".  */
+@@ -160,14 +188,15 @@ void
+ sys_detect_dev_null_output (void)
+ {
+   static char const dev_null[] = "/dev/null";
+-  struct stat dev_null_stat;
++  static struct stat dev_null_stat;
+ 
+   dev_null_output = (strcmp (archive_name_array[0], dev_null) == 0
+ 		     || (! _isrmt (archive)
+ 			 && S_ISCHR (archive_stat.st_mode)
+-			 && stat (dev_null, &dev_null_stat) == 0
+-			 && archive_stat.st_dev == dev_null_stat.st_dev
+-			 && archive_stat.st_ino == dev_null_stat.st_ino));
++			 && (dev_null_stat.st_ino != 0
++			     || stat (dev_null, &dev_null_stat) == 0)
++			 && archive_stat.st_ino == dev_null_stat.st_ino
++			 && archive_stat.st_dev == dev_null_stat.st_dev));
+ }
+ 
+ void
