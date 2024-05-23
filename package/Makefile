@@ -81,7 +81,7 @@ endif
 ifndef SDK
   $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
 ifneq ($(CONFIG_USE_APK),)
-  $(curdir)/compile: $(curdir)/system/apk/host/compile $(BUILD_KEY_APK_SEC) $(BUILD_KEY_APK_PUB)
+  $(curdir)//compile += $(curdir)/system/apk/host/compile $(BUILD_KEY_APK_SEC) $(BUILD_KEY_APK_PUB)
 else
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
 endif
