@@ -29,6 +29,7 @@ endef
 
 define Device/Default
 	PROFILES := Default
+	DEVICE_DTS_DIR = $$(DTS_DIR)/intel/ixp
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb

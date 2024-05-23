@@ -56,10 +56,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		dma@7984000 {
-			status = "okay";
-		};
 	};
 
 	keys-repeat {
@@ -582,15 +578,15 @@
 
 	pinctrl-0 = <&usb3_pins>, <&lte_pins>;
 	pinctrl-names = "default";
+};
 
-	dwc3@8a00000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
+&usb3_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
 
-		device@1 {
-			compatible = "usb1bc7,1900";
-			reg = <1>;
-		};
+	device@1 {
+		compatible = "usb1bc7,1900";
+		reg = <1>;
 	};
 };
 

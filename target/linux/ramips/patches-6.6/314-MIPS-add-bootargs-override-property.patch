@@ -17,7 +17,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -563,8 +563,28 @@ static int __init bootcmdline_scan_chose
+@@ -564,8 +564,28 @@ static int __init bootcmdline_scan_chose
  
  #endif /* CONFIG_OF_EARLY_FLATTREE */
  
@@ -46,7 +46,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	bool dt_bootargs = false;
  
  	/*
-@@ -578,6 +598,14 @@ static void __init bootcmdline_init(void
+@@ -579,6 +599,14 @@ static void __init bootcmdline_init(void
  	}
  
  	/*

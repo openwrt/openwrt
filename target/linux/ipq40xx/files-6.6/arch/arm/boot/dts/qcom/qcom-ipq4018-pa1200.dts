@@ -14,10 +14,6 @@
 	compatible = "plasmacloud,pa1200";
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -42,14 +38,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
 		};
 	};
 
@@ -93,6 +81,18 @@
 		};
 	};
 
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
 };
 
 &tlmm {

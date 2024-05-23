@@ -14,10 +14,10 @@
 	};
 
 	aliases {
-		led-boot = &ledctrl3;
+		led-boot = &ledctrl1;
 		led-failsafe = &ledctrl1;
-		led-running = &ledctrl2;
-		led-upgrade = &ledctrl3;
+		led-running = &ledctrl3;
+		led-upgrade = &ledctrl1;
 	};
 
 	chosen {
@@ -55,6 +55,7 @@
 		ledctrl2: ledctrl2 {
 			label = "ledctrl2";
 			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
 		};
 
 		ledctrl3: ledctrl3 {

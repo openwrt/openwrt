@@ -167,7 +167,7 @@ bump_kernel()
 	git commit \
 		--signoff \
 		--message "kernel/${platform_name}: Restore kernel files for v${source_version}" \
-		--message "$(printf "This is an automatically generated commit which aids following Kernel patch history,\nas git will see the move and copy as a rename thus defeating the purpose.\n\nSee: https://lists.openwrt.org/pipermail/openwrt-devel/2023-October/041673.html\nfor the original discussion.")"
+		--message "$(printf "This is an automatically generated commit which aids following Kernel patch\nhistory, as git will see the move and copy as a rename thus defeating the\npurpose.\n\nFor the original discussion see:\nhttps://lists.openwrt.org/pipermail/openwrt-devel/2023-October/041673.html")"
 	git switch "${initial_branch:?Unable to switch back to original branch. Quitting.}"
 	GIT_EDITOR=true git merge --no-ff '__openwrt_kernel_files_mover'
 	git branch --delete '__openwrt_kernel_files_mover'

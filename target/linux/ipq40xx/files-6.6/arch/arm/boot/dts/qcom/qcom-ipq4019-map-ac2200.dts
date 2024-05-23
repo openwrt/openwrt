@@ -19,14 +19,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -43,18 +35,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		usb2@60f8800 {
-			status = "okay";
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
 		};
 	};
 
@@ -73,6 +53,18 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
 };
 
 &nand {
@@ -233,6 +225,10 @@
 	status = "okay";
 };
 
+&usb2 {
+	status = "okay";
+};
+
 &blsp1_i2c3 {
 	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
@@ -339,6 +335,10 @@
 &blsp1_uart1 {
 	pinctrl-0 = <&serial_pins>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
 	status = "okay";
 };
 

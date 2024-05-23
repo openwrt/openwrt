@@ -11,7 +11,7 @@ FEATURES:=dt squashfs gpio
 CPU_TYPE:=xscale
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.6
 
 define Target/Description
 	Build firmware images for the IXP4xx XScale CPU

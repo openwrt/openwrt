@@ -2,7 +2,7 @@
 +++ b/configure.ac
 @@ -20,6 +20,7 @@ dnl  You should have received a copy of
  dnl  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- AC_INIT([elfutils],[0.189],[https://sourceware.org/bugzilla],[elfutils],[http://elfutils.org/])
+ AC_INIT([elfutils],[0.191],[https://sourceware.org/bugzilla],[elfutils],[http://elfutils.org/])
  
 +AC_CONFIG_MACRO_DIRS([m4])
  dnl Workaround for older autoconf < 2.64
@@ -15,7 +15,7 @@
 -AC_CONFIG_FILES([config/Makefile])
 +AC_CONFIG_FILES([config/Makefile libgnu/Makefile])
  
- AC_COPYRIGHT([Copyright (C) 1996-2023 The elfutils developers.])
+ AC_COPYRIGHT([Copyright (C) 1996-2024 The elfutils developers.])
 -AC_PREREQ(2.63)			dnl Minimum Autoconf version required.
 +AC_PREREQ(2.64)			dnl Minimum Autoconf version required.
  
@@ -89,23 +89,6 @@
  dnl The directories with content.
  
  dnl Documentation.
---- a/Makefile.am
-+++ b/Makefile.am
-@@ -26,11 +26,11 @@ AM_MAKEFLAGS = --no-print-directory
- 
- pkginclude_HEADERS = version.h
- 
--SUBDIRS = config lib libelf libcpu backends libebl libdwelf libdwfl libdw \
--	  libasm debuginfod src po doc tests
-+SUBDIRS = libgnu config lib libelf libcpu backends libebl libdwelf libdwfl libdw
- 
- EXTRA_DIST = elfutils.spec GPG-KEY NOTES CONTRIBUTING \
--	     COPYING COPYING-GPLV2 COPYING-LGPLV3
-+	     COPYING COPYING-GPLV2 COPYING-LGPLV3 \
-+		 m4/gnulib-cache.m4
- 
- # Make sure the test install uses lib64 when $LIB will yield lib64.
- # Make sure the test build uses the same compiler, which on e.g. ppc64
 --- a/libelf/elf_update.c
 +++ b/libelf/elf_update.c
 @@ -37,6 +37,33 @@
@@ -144,8 +127,8 @@
  write_file (Elf *elf, int64_t size, int change_bo, size_t shnum)
 --- a/lib/eu-config.h
 +++ b/lib/eu-config.h
-@@ -52,14 +52,18 @@
- # define rwlock_unlock(lock) ((void) (lock))
+@@ -59,14 +59,18 @@
+ # define once(once_control, init_routine)	init_routine()
  #endif	/* USE_LOCKS */
  
 -#include <libintl.h>
@@ -164,7 +147,7 @@
  
  #ifdef __i386__
  # define internal_function __attribute__ ((regparm (3), stdcall))
-@@ -70,12 +74,7 @@
+@@ -77,12 +81,7 @@
  #define internal_strong_alias(name, aliasname) \
    extern __typeof (name) aliasname __attribute__ ((alias (#name))) internal_function;
  
@@ -177,7 +160,7 @@
  
  #ifdef HAVE_GCC_STRUCT
  #define attribute_packed \
-@@ -159,7 +158,7 @@ asm (".section predict_data, \"aw\"; .pr
+@@ -166,7 +165,7 @@ asm (".section predict_data, \"aw\"; .pr
  #endif
  
  /* Avoid PLT entries.  */
@@ -361,28 +344,13 @@
 +{
 +  return ppc_check_object_attribute(ebl, vendor, tag, value, tag_name, value_name);
 +}
---- a/lib/libeu.h
-+++ b/lib/libeu.h
-@@ -45,4 +45,11 @@ extern char *xasprintf(const char *fmt,
- extern uint32_t crc32 (uint32_t crc, unsigned char *buf, size_t len);
- extern int crc32_file (int fd, uint32_t *resp);
- 
-+#ifdef __APPLE__
-+static inline void tdestroy(void *root __attribute__ ((unused)),
-+			    void (*freekey)(void *) __attribute__ ((unused)))
-+{
-+}
-+#endif
-+
- #endif
 --- a/libdwfl/libdwflP.h
 +++ b/libdwfl/libdwflP.h
-@@ -31,6 +31,8 @@
+@@ -31,6 +31,7 @@
  
  #include <libdwfl.h>
  #include <libebl.h>
 +#include <libeu.h>
-+#include <libgen.h>
  #include <assert.h>
  #include <dirent.h>
  #include <errno.h>
@@ -397,17 +365,18 @@
 +#endif
 --- a/libdw/libdwP.h
 +++ b/libdw/libdwP.h
-@@ -32,8 +32,10 @@
+@@ -32,10 +32,10 @@
  #include <stdbool.h>
  #include <pthread.h>
  
 +#include <libeu.h>
  #include <libdw.h>
  #include <dwarf.h>
-+#include <libgen.h>
  
- 
+-
  /* Known location expressions already decoded.  */
+ struct loc_s
+ {
 --- a/libdw/Makefile.am
 +++ b/libdw/Makefile.am
 @@ -34,14 +34,12 @@ endif
@@ -597,7 +566,7 @@
  
  modules = i386 sh x86_64 ia64 alpha arm aarch64 sparc ppc ppc64 s390 \
  	  m68k bpf riscv csky loongarch arc
-@@ -100,17 +100,13 @@ loongarch_SRCS = loongarch_init.c loonga
+@@ -102,17 +102,13 @@ loongarch_SRCS = loongarch_init.c loonga
  
  arc_SRCS = arc_init.c arc_symbol.c
  
@@ -779,7 +748,7 @@
 +++ b/src/Makefile.am
 @@ -29,9 +29,9 @@ bin_PROGRAMS = readelf nm size strip elf
  	       elfcmp objdump ranlib strings ar unstrip stack elfcompress \
- 	       elfclassify
+ 	       elfclassify srcfiles
  
 -noinst_LIBRARIES = libar.a
 +noinst_LTLIBRARIES = libar.la
@@ -789,30 +758,41 @@
  
  EXTRA_DIST = arlib.h debugpred.h
  
-@@ -39,17 +39,11 @@ bin_SCRIPTS = make-debug-archive
+@@ -39,27 +39,16 @@ bin_SCRIPTS = make-debug-archive
  EXTRA_DIST += make-debug-archive.in
  CLEANFILES += make-debug-archive
  
 -if BUILD_STATIC
 -libasm = ../libasm/libasm.a
 -libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) -ldl -lpthread
--libelf = ../libelf/libelf.a -lz
+-libelf = ../libelf/libelf.a -lz $(zstd_LIBS)
++libasm = ../libasm/libasm.la
++libdw = ../libdw/libdw.la -lz $(zip_LIBS) $(libelf) -ldl -lpthread
++libelf = ../libelf/libelf.la -lz $(zstd_LIBS)
+ if LIBDEBUGINFOD
+-libdebuginfod = ../debuginfod/libdebuginfod.a -lpthread $(libcurl_LIBS)
++libdebuginfod = ../debuginfod/libdebuginfod.la -lpthread $(libcurl_LIBS)
+ else
+ libdebuginfod =
+ endif
 -else
 -libasm = ../libasm/libasm.so
 -libdw = ../libdw/libdw.so
 -libelf = ../libelf/libelf.so
+-if LIBDEBUGINFOD
+-libdebuginfod = ../debuginfod/libdebuginfod.so
+-else
+-libdebuginfod =
+-endif
 -endif
 -libebl = ../libebl/libebl.a ../backends/libebl_backends.a ../libcpu/libcpu.a
 -libeu = ../lib/libeu.a
-+libasm = ../libasm/libasm.la
-+libdw = ../libdw/libdw.la -lz $(zip_LIBS) $(libelf) -ldl -lpthread
-+libelf = ../libelf/libelf.la
 +libebl = ../libebl/libebl.la ../backends/libebl_backends.la ../libcpu/libcpu.la
 +libeu = ../lib/libeu.la
  
  if DEMANGLE
  demanglelib = -lstdc++
-@@ -77,9 +71,9 @@ findtextrel_LDADD = $(libdw) $(libelf) $
+@@ -87,9 +76,9 @@ findtextrel_LDADD = $(libdw) $(libelf) $
  addr2line_LDADD = $(libdw) $(libelf) $(libeu) $(argp_LDADD) $(demanglelib)
  elfcmp_LDADD = $(libebl) $(libdw) $(libelf) $(libeu) $(argp_LDADD)
  objdump_LDADD  = $(libasm) $(libebl) $(libdw) $(libelf) $(libeu) $(argp_LDADD)
@@ -826,13 +806,13 @@
  elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -662,17 +662,11 @@ installcheck-local:
+@@ -689,17 +689,11 @@ installcheck-local:
  		TESTS_ENVIRONMENT="$(installed_TESTS_ENVIRONMENT)" \
  		LOG_COMPILER="$(installed_LOG_COMPILER)" check-TESTS
  
 -if BUILD_STATIC
 -libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl) -ldl -lpthread
--libelf = ../libelf/libelf.a -lz
+-libelf = ../libelf/libelf.a -lz $(zstd_LIBS)
 -libasm = ../libasm/libasm.a
 -else
 -libdw = ../libdw/libdw.so
@@ -908,3 +888,13 @@
  Cflags: -I${includedir}
  
  Requires.private: zlib @LIBZSTD@
+--- a/lib/next_prime.c
++++ b/lib/next_prime.c
+@@ -27,6 +27,7 @@
+    the GNU Lesser General Public License along with this program.  If
+    not, see <http://www.gnu.org/licenses/>.  */
+ 
++#include <config.h>
+ #include <stddef.h>
+ 
+ 

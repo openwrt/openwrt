@@ -58,17 +58,6 @@
 	};
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -97,28 +86,19 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		usb2@60f8800 {
-			status = "okay";
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				phys = <&usb3_hs_phy>;
-				phy-names = "usb2-phy";
-			};
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
 };
 
 &blsp_dma {
@@ -323,8 +303,28 @@
 	status = "okay";
 };
 
+&usb2 {
+	status = "okay";
+};
+
 &usb3_hs_phy {
 	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_dwc {
+	phys = <&usb3_hs_phy>;
+	phy-names = "usb2-phy";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
 };
 
 &gmac {

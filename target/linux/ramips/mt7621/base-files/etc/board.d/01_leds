@@ -92,14 +92,15 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
 	;;
 dlink,dir-1960-a1|\
+dlink,dir-2150-a1|\
 dlink,dir-2640-a1|\
 dlink,dir-2660-a1)
-	ucidef_set_led_netdev "wan" "wan" "white:net" "wan"
+	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
 dlink,dir-3040-a1|\
 dlink,dir-3060-a1)
-	ucidef_set_led_netdev "net_white" "WAN Link" "white:net" "wan" "link"
-	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:net" "wan" "tx rx"
+	ucidef_set_led_netdev "net_white" "WAN Link" "white:wan" "wan" "link"
+	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:wan" "wan" "tx rx"
 	;;
 dlink,dir-853-a1|\
 dlink,dir-853-a3)

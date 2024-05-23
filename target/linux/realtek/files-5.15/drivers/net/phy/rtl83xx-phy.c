@@ -46,6 +46,8 @@ extern struct mutex smi_lock;
 /* external RTL821X PHY uses register 0x1e to select media page */
 #define RTL821XEXT_MEDIA_PAGE_SELECT	0x1e
 
+#define RTL821X_CHIP_ID			0x6276
+
 #define RTL821X_MEDIA_PAGE_AUTO		0
 #define RTL821X_MEDIA_PAGE_COPPER	1
 #define RTL821X_MEDIA_PAGE_FIBRE	3
@@ -834,7 +836,7 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	/* Read internal PHY ID */
 	phy_write_paged(phydev, 31, 27, 0x0002);
 	val = phy_read_paged(phydev, 31, 28);
-	if (val != 0x6276) {
+	if (val != RTL821X_CHIP_ID) {
 		phydev_err(phydev, "Expected external RTL8218B, found PHY-ID %x\n", val);
 		return -1;
 	}
@@ -1331,7 +1333,7 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 	phy_write_paged(phydev, 0x1f, 0x1b, 0x0002);
 	val = phy_read_paged(phydev, 0x1f, 0x1c);
-	if (val != 0x6276) {
+	if (val != RTL821X_CHIP_ID) {
 		phydev_err(phydev, "Expected external RTL8214FC, found PHY-ID %x\n", val);
 		return -1;
 	}

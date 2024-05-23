@@ -140,6 +140,12 @@ define U-Boot/Linksprite_pcDuino
   BUILD_DEVICES:=linksprite_a10-pcduino
 endef
 
+define U-Boot/LicheePi_Zero
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Lichee Pi Zero V3s
+  BUILD_DEVICES:=licheepi_licheepi-zero-dock
+endef
+
 define U-Boot/Linksprite_pcDuino3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Linksprite pcDuino3
@@ -389,6 +395,7 @@ UBOOT_TARGETS := \
 	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
+	LicheePi_Zero \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Linksprite_pcDuino3_Nano \

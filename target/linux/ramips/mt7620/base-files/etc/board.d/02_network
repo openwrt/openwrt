@@ -253,6 +253,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan:3" "1:lan:2" "2:lan:1" "4:lan:4" "3:wan" "7@eth0"
 		;;
+	wavlink,wl-wn531g3)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
+		;;
 	wavlink,wl-wn535k1)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "5:lan:1" "4:wan" "6@eth0"
@@ -426,12 +430,13 @@ ramips_setup_macs()
 	tplink,ec220-g5-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
 		;;
+	wavlink,wl-wn531g3|\
+	zbtlink,zbt-we1026-5g-16m)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	wavlink,wl-wn535k1)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(mtd_get_mac_binary factory 0x8004)
-		;;
-	zbtlink,zbt-we1026-5g-16m)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zyxel,keenetic-lite-iii-a)
 		lan_mac=$(mtd_get_mac_binary RF-EEPROM 0x4)

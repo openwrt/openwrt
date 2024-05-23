@@ -68,24 +68,18 @@
 			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
 
-	soc {
-		rng@22000 {
-			status = "okay";
-		};
+&watchdog {
+	status = "okay";
+};
 
-		mdio@90000 {
-			status = "okay";
-		};
+&prng {
+	status = "okay";
+};
 
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
-	};
+&crypto {
+	status = "okay";
 };
 
 &blsp_dma {
@@ -273,6 +267,10 @@
 			output-high;
 		};
 	};
+};
+
+&mdio {
+	status = "okay";
 };
 
 &wifi0 {

@@ -27,14 +27,6 @@
 
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -58,47 +50,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		usb2@60f8800 {
-			status = "okay";
-
-			dwc3@6000000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb2_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb3_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-
-				usb3_port2: port@2 {
-					reg = <2>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	regulator-usb-vbus {
@@ -112,6 +63,17 @@
 	};
 };
 
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
 
 &blsp_dma {
 	status = "okay";
@@ -289,11 +251,48 @@
 	status = "okay";
 };
 
+&usb2 {
+	status = "okay";
+
+	usb@6000000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb2_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+	};
+};
+
 &usb3_hs_phy {
 	status = "okay";
 };
 
 &usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	usb3_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+
+	usb3_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&mdio {
 	status = "okay";
 };
 

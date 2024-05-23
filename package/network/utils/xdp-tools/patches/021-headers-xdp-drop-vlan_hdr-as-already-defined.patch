@@ -1,0 +1,31 @@
+From bc2a11227b5bed29d33926d5ff7e707228db9e87 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 18 Jan 2023 20:07:58 +0100
+Subject: [PATCH] headers: xdp: drop vlan_hdr as already defined
+
+Drop vlan_hdr as already defined by bpf headers.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ headers/xdp/parsing_helpers.h | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+--- a/headers/xdp/parsing_helpers.h
++++ b/headers/xdp/parsing_helpers.h
+@@ -33,16 +33,6 @@ struct hdr_cursor {
+ };
+ 
+ /*
+- *	struct vlan_hdr - vlan header
+- *	@h_vlan_TCI: priority and VLAN ID
+- *	@h_vlan_encapsulated_proto: packet type ID or len
+- */
+-struct vlan_hdr {
+-	__be16	h_vlan_TCI;
+-	__be16	h_vlan_encapsulated_proto;
+-};
+-
+-/*
+  * Struct icmphdr_common represents the common part of the icmphdr and icmp6hdr
+  * structures.
+  */

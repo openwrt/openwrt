@@ -151,6 +151,13 @@ define U-Boot/rk3568/Default
   TPL:=rk3568_ddr_1560MHz_v1.21.bin
 endef
 
+define U-Boot/bpi-r2-pro-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=Bananapi-R2 Pro
+  BUILD_DEVICES:= \
+    sinovoip_bpi-r2-pro
+endef
+
 define U-Boot/nanopi-r5c-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=NanoPi R5C
@@ -186,6 +193,7 @@ UBOOT_TARGETS := \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
   radxa-cm3-io-rk3566 \
+  bpi-r2-pro-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568

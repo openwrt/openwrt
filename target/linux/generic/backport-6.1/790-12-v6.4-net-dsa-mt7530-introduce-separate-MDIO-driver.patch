@@ -420,7 +420,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static u32
  mt7530_mii_read(struct mt7530_priv *priv, u32 reg)
  {
-@@ -3008,72 +2959,6 @@ static const struct phylink_pcs_ops mt75
+@@ -3196,72 +3147,6 @@ static const struct phylink_pcs_ops mt75
  	.pcs_an_restart = mt7530_pcs_an_restart,
  };
  
@@ -493,7 +493,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int
  mt753x_setup(struct dsa_switch *ds)
  {
-@@ -3132,7 +3017,7 @@ static int mt753x_set_mac_eee(struct dsa
+@@ -3320,7 +3205,7 @@ static int mt753x_set_mac_eee(struct dsa
  	return 0;
  }
  
@@ -501,8 +501,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +const struct dsa_switch_ops mt7530_switch_ops = {
  	.get_tag_protocol	= mtk_get_tag_protocol,
  	.setup			= mt753x_setup,
- 	.get_strings		= mt7530_get_strings,
-@@ -3166,8 +3051,9 @@ static const struct dsa_switch_ops mt753
+ 	.preferred_default_local_cpu_port = mt753x_preferred_default_local_cpu_port,
+@@ -3355,8 +3240,9 @@ static const struct dsa_switch_ops mt753
  	.get_mac_eee		= mt753x_get_mac_eee,
  	.set_mac_eee		= mt753x_set_mac_eee,
  };
@@ -513,7 +513,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	[ID_MT7621] = {
  		.id = ID_MT7621,
  		.pcs_ops = &mt7530_pcs_ops,
-@@ -3200,16 +3086,9 @@ static const struct mt753x_info mt753x_t
+@@ -3389,16 +3275,9 @@ static const struct mt753x_info mt753x_t
  		.mac_port_config = mt7531_mac_config,
  	},
  };
@@ -532,7 +532,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_probe_common(struct mt7530_priv *priv)
  {
  	struct device *dev = priv->dev;
-@@ -3246,88 +3125,9 @@ mt7530_probe_common(struct mt7530_priv *
+@@ -3435,88 +3314,9 @@ mt7530_probe_common(struct mt7530_priv *
  
  	return 0;
  }
@@ -623,7 +623,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_remove_common(struct mt7530_priv *priv)
  {
  	if (priv->irq)
-@@ -3337,55 +3137,7 @@ mt7530_remove_common(struct mt7530_priv
+@@ -3526,55 +3326,7 @@ mt7530_remove_common(struct mt7530_priv
  
  	mutex_destroy(&priv->reg_mutex);
  }
@@ -682,7 +682,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  MODULE_DESCRIPTION("Driver for Mediatek MT7530 Switch");
 --- a/drivers/net/dsa/mt7530.h
 +++ b/drivers/net/dsa/mt7530.h
-@@ -834,4 +834,10 @@ static inline void INIT_MT7530_DUMMY_POL
+@@ -845,4 +845,10 @@ static inline void INIT_MT7530_DUMMY_POL
  	p->reg = reg;
  }
  

@@ -40,6 +40,7 @@ platform_do_upgrade() {
 	engenius,eap300-v2|\
 	engenius,eap600|\
 	engenius,ecb600|\
+	engenius,ens1750|\
 	engenius,ens202ext-v1|\
 	engenius,enstationac-v1|\
 	engenius,ews660ap|\

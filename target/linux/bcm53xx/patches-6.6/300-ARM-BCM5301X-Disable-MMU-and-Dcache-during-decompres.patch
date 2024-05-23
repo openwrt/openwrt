@@ -99,3 +99,13 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	subs	r9, r9, #1			@ decrement the index
  	bge	loop2
  	subs	r4, r4, #1			@ decrement the way
+--- a/arch/arm/boot/compressed/vmlinux.lds.S
++++ b/arch/arm/boot/compressed/vmlinux.lds.S
+@@ -41,6 +41,7 @@ SECTIONS
+     *(.start)
+     *(.text)
+     *(.text.*)
++    *(.init.text)
+     ARM_STUBS_TEXT
+   }
+   .table : ALIGN(4) {

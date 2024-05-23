@@ -411,7 +411,7 @@ define KernelPackage/crypto-hw-ixp4xx
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_IXP4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.ko
+  FILES:=$(LINUX_DIR)/drivers/crypto/intel/ixp4xx/ixp4xx_crypto.ko
   AUTOLOAD:=$(call AutoProbe,ixp4xx_crypto)
   $(call AddDepends/crypto)
 endef

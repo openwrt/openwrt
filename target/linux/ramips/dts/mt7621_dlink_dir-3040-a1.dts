@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "mt7621_dlink_dir-xx60-a1.dtsi"
+#include "mt7621_dlink_dir_nand_128m.dtsi"
 
 / {
 	compatible = "dlink,dir-3040-a1", "mediatek,mt7621-soc";
@@ -12,32 +12,32 @@
 };
 
 &leds {
-	usb2_white {
+	led-4 {
 		function = LED_FUNCTION_USB;
 		color = <LED_COLOR_ID_WHITE>;
-		function-enumerator = <0>;
+		function-enumerator = <2>;
 		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&ehci_port2>;
 		linux,default-trigger = "usbport";
 	};
 
-	usb3_white {
+	led-5 {
 		function = LED_FUNCTION_USB;
 		color = <LED_COLOR_ID_WHITE>;
-		function-enumerator = <1>;
+		function-enumerator = <3>;
 		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&xhci_ehci_port1>;
 		linux,default-trigger = "usbport";
 	};
 
-	wlan2g {
+	led-6 {
 		function = LED_FUNCTION_WLAN_2GHZ;
 		color = <LED_COLOR_ID_WHITE>;
 		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		linux,default-trigger = "phy0radio";
 	};
 
-	wlan5glb {
+	led-7 {
 		function = LED_FUNCTION_WLAN_5GHZ;
 		color = <LED_COLOR_ID_WHITE>;
 		function-enumerator = <0>;
@@ -45,7 +45,7 @@
 		linux,default-trigger = "phy1radio";
 	};
 
-	wlan5ghb {
+	led-8 {
 		function = LED_FUNCTION_WLAN_5GHZ;
 		color = <LED_COLOR_ID_WHITE>;
 		function-enumerator = <1>;

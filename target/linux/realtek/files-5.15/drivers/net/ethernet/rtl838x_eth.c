@@ -1658,7 +1658,7 @@ static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 	int err;
 	struct rtl838x_eth_priv *priv = bus->priv;
 
-	if (mii_id >= 48 && mii_id <= 49 && priv->id == 0x8393)
+	if (priv->phy_is_internal[mii_id])
 		return rtl839x_read_sds_phy(mii_id, regnum);
 
 	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
@@ -1797,7 +1797,7 @@ static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 	struct rtl838x_eth_priv *priv = bus->priv;
 	int err;
 
-	if (mii_id >= 48 && mii_id <= 49 && priv->id == 0x8393)
+	if (priv->phy_is_internal[mii_id])
 		return rtl839x_write_sds_phy(mii_id, regnum, value);
 
 	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {

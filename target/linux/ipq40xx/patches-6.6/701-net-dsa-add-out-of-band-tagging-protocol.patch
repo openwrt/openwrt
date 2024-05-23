@@ -93,7 +93,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4643,6 +4643,9 @@ enum skb_ext_id {
+@@ -4642,6 +4642,9 @@ enum skb_ext_id {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	SKB_EXT_MCTP,
  #endif
@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -4812,6 +4816,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -4823,6 +4827,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
  #endif

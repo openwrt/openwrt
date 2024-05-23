@@ -11,14 +11,6 @@
 	compatible = "engenius,eap1300";
 
 	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -35,14 +27,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
 		};
 	};
 
@@ -93,6 +77,18 @@
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
 };
 
 &tlmm {
@@ -200,8 +196,13 @@
 				reg = <0x190000 0x1dc0000>;
 			};
 			partition9@1f50000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x01f50000 0x00010000>;
+
+				macaddr_ubootenv_ethaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 			partition10@1f60000 {
 				label = "userconfig";
@@ -221,16 +222,39 @@
 	status = "okay";
 };
 
+&switch {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&swport5 {
+	status = "okay";
+	label = "lan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_ubootenv_ethaddr 1>;
 	qcom,ath10k-calibration-variant = "EnGenius-EAP1300";
 };
 
 &wifi1 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_ubootenv_ethaddr 2>;
 	qcom,ath10k-calibration-variant = "EnGenius-EAP1300";
 };

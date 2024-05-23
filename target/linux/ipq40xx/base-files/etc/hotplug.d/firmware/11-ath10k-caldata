@@ -40,6 +40,10 @@ case "$FIRMWARE" in
 		# OEM assigns 4 sequential MACs
 		ath10k_patch_mac $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
 		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x9000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
+		;;
 	netgear,rbr40|\
 	netgear,rbs40|\
 	netgear,rbr50|\
@@ -103,6 +107,10 @@ case "$FIRMWARE" in
 	linksys,mr8300)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	meraki,mr33 |\
 	meraki,mr74)
@@ -199,6 +207,10 @@ case "$FIRMWARE" in
 	linksys,mr8300)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
+		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
 	meraki,mr33 |\
 	meraki,mr74)

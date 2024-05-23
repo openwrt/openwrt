@@ -8,18 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2022.83
+PKG_VERSION:=2024.85
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=bc5a121ffbc94b5171ad5ebe01be42746d50aa797c9549a4639894a16749443b
+PKG_HASH:=86b036c433a69d89ce51ebae335d65c47738ccf90d13e5eb0fea832e556da502
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
-PKG_CPE_ID:=cpe:/a:matt_johnston:dropbear_ssh_server
+PKG_CPE_ID:=cpe:/a:dropbear_ssh_project:dropbear_ssh
 
 PKG_BUILD_PARALLEL:=1
 PKG_ASLR_PIE_REGULAR:=1
@@ -57,7 +57,7 @@ define Package/dropbear
   CATEGORY:=Base system
   TITLE:=Small SSH2 client/server
   DEPENDS:= +DROPBEAR_ZLIB:zlib
-  ALTERNATIVES:=
+  ALTERNATIVES:=100:/usr/bin/ssh-keygen:/usr/sbin/dropbear
   $(if $(CONFIG_DROPBEAR_SCP),ALTERNATIVES+= \
 	  100:/usr/bin/scp:/usr/sbin/dropbear,)
   $(if $(CONFIG_DROPBEAR_DBCLIENT),ALTERNATIVES+= \
@@ -103,7 +103,7 @@ CONFIGURE_ARGS += \
 ##############################################################################
 #
 #   option,value - add option to localoptions.h
-# !!option,value - replace option in sysoptions.h
+# !!option,value - replace option in src/sysoptions.h
 #
 ##############################################################################
 
@@ -132,7 +132,7 @@ DB_OPT_COMMON = \
 ##############################################################################
 #
 #   option,config,enabled,disabled = add option to localoptions.h
-# !!option,config,enabled,disabled = replace option in sysoptions.h
+# !!option,config,enabled,disabled = replace option in src/sysoptions.h
 #
 #   option := (config) ? enabled : disabled
 #
@@ -164,7 +164,7 @@ TARGET_CFLAGS += -DARGTYPE=3
 xsedx:=$(shell printf '\027')
 
 db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
-db_opt_replace =$(ESED) '/^\#define $(1) .*$$$$/{h;:a;$$$$!n;/^\#.+$$$$/bb;/^$$$$/bb;H;ba;:b;x;s$(xsedx)^.+$$$$$(xsedx)\#define $(1) $(2)$(xsedx)p;x};p' -n $(PKG_BUILD_DIR)/sysoptions.h
+db_opt_replace =$(ESED) '/^\#define $(1) .*$$$$/{h;:a;$$$$!n;/^\#.+$$$$/bb;/^$$$$/bb;H;ba;:b;x;s$(xsedx)^.+$$$$$(xsedx)\#define $(1) $(2)$(xsedx)p;x};p' -n $(PKG_BUILD_DIR)/src/sysoptions.h
 
 define Build/Configure/dropbear_headers
 	$(strip $(foreach s,$(DB_OPT_COMMON), \

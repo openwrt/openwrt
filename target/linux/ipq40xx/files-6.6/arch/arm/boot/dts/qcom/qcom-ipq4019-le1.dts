@@ -269,7 +269,7 @@
 &usb2 {
 	status = "okay";
 
-	dwc3@6000000 {
+	usb@6000000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -286,20 +286,20 @@
 
 &usb3 {
 	status = "okay";
+};
 
-	dwc3@8a00000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
+&usb3_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
 
-		usb3_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
+	usb3_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
 
-		usb3_port2: port@2 {
-			reg = <2>;
-			#trigger-source-cells = <0>;
-		};
+	usb3_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
 	};
 };
 

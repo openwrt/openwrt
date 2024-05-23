@@ -9,7 +9,7 @@
  #endif
  
  /* add MEI CPE debug/printout part */
-@@ -1718,8 +1718,8 @@ static void MEI_MeminfoProcPerDevGet(struct seq_file *s)
+@@ -1718,8 +1718,8 @@ static void MEI_MeminfoProcPerDevGet(str
                       ", CRC = 0x%08X"
  #endif
                       MEI_DRV_CRLF,
@@ -22,7 +22,7 @@
  #if (MEI_SUPPORT_OPTIMIZED_FW_DL == 1)
 --- a/src/drv_mei_cpe_download_vrx.c
 +++ b/src/drv_mei_cpe_download_vrx.c
-@@ -3139,9 +3139,9 @@ IFX_int32_t MEI_DEV_IoctlFirmwareDownload(
+@@ -3139,9 +3139,9 @@ IFX_int32_t MEI_DEV_IoctlFirmwareDownloa
  {
     IFX_int32_t ret = 0;
     MEI_DEV_T *pMeiDev = pMeiDynCntrl->pMeiDev;

@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2024-04-16
-PKG_SOURCE_VERSION:=1d51799e6768a304da7840b8346e7487efd77f49
-PKG_MIRROR_HASH:=9cf0917532283c1a1708643022a5ed1ec4af6bb9ebaff57fc2f0f2c229f2469e
+PKG_SOURCE_DATE:=2024-04-26
+PKG_SOURCE_VERSION:=644ba9ea2e6685e420561ef098cb6fbaaf136cbf
+PKG_MIRROR_HASH:=3b913fd6fb0fac404b16e67c66d36c10315dba5459a8d495d870afcb1e2c33cd
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -37,8 +37,10 @@ ALLWIFIBOARDS:= \
 	edimax_cax1800 \
 	linksys_mx4200 \
 	linksys_mx5300 \
+	linksys_mx8500 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
+	netgear_sxk80 \
 	netgear_wax214 \
 	netgear_wax218 \
 	netgear_wax620 \
@@ -46,6 +48,7 @@ ALLWIFIBOARDS:= \
 	prpl_haze \
 	qnap_301w \
 	redmi_ax6 \
+	spectrum_sax1v1k \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
@@ -156,8 +159,10 @@ $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
 $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
+$(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
+$(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
@@ -165,6 +170,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
+$(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))

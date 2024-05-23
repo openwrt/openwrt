@@ -17,6 +17,8 @@ include $(INCLUDE_DIR)/package.mk
 HOST_CPPFLAGS:=-I$(HOST_BUILD_DIR)/lib -I$(HOST_BUILD_DIR)/src $(HOST_CPPFLAGS)
 TARGET_CPPFLAGS:=-I$(PKG_BUILD_DIR)/lib -I$(PKG_BUILD_DIR)/src $(TARGET_CPPFLAGS)
 
+HOST_CXXFLAGS += -std=c++11
+
 define Package/gperf
   SECTION:=devel
   CATEGORY:=Development

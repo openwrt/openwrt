@@ -63,9 +63,11 @@ define Build/Trusted-Firmware-A/Target
     URL:=https://www.trustedfirmware.org/projects/tf-a/
   endef
 
-  define Package/trusted-firmware-a-$(1)/install
+  ifndef Package/trusted-firmware-a-$(1)/install
+    define Package/trusted-firmware-a-$(1)/install
 	$$(Package/trusted-firmware-a/install)
-  endef
+    endef
+  endif
 endef
 
 define Build/Configure/Trusted-Firmware-A
