@@ -11,6 +11,7 @@ hostapd.data.file_fields = {
 	vlan_file: true,
 	wpa_psk_file: true,
 	sae_password_file: true,
+	rxkh_file: true,
 	accept_mac_file: true,
 	deny_mac_file: true,
 	eap_user_file: true,
@@ -351,6 +352,64 @@ function bss_reload_psk(bss, config, old_config)
 	hostapd.printf(`Reload WPA PSK file for bss ${config.ifname}: ${ret}`);
 }
 
+function normalize_rxkhs(txt)
+{
+	const pat = {
+		sep: "\x20",
+		mac: "([[:xdigit:]]{2}:?){5}[[:xdigit:]]{2}",
+		r0kh_id: "[\x21-\x7e]{1,48}",
+		r1kh_id: "([[:xdigit:]]{2}:?){5}[[:xdigit:]]{2}",
+		key: "[[:xdigit:]]{32,}",
+		r0kh: function() {
+			return "r0kh=" + this.mac + this.sep + this.r0kh_id;
+		},
+		r1kh: function() {
+			return "r1kh=" + this.mac + this.sep + this.r1kh_id;
+		},
+		rxkh: function() {
+			return "(" + this.r0kh() + "|" + this.r1kh() + ")" + this.sep + this.key;
+		},
+	};
+
+	let rxkhs = filter(
+		split(txt, "\n"), (line) => match(line, regexp("^" + pat.rxkh() + "$"))
+	) ?? [];
+
+	rxkhs = map(rxkhs, function(k) {
+		k = split(k, " ", 3);
+		k[0] = lc(k[0]);
+		if(match(k[0], /^r1kh/)) {
+			k[1] = lc(k[1]);
+		}
+		if(!k[2] = hostapd.rkh_derive_key(k[2])) {
+			return;
+		}
+		return join(" ", k);
+	});
+
+	return join("\n", sort(filter(rxkhs, length)));
+}
+
+function bss_reload_rxkhs(bss, config, old_config)
+{
+	let bss_rxkhs = join("\n", sort(split(bss.ctrl("GET_RXKHS"), "\n")));
+	let bss_rxkhs_hash = hostapd.sha1(bss_rxkhs);
+
+	if (is_equal(config.hash.rxkh_file, bss_rxkhs_hash)) {
+		if (is_equal(old_config.hash.rxkh_file, config.hash.rxkh_file))
+			return;
+	}
+
+	old_config.hash.rxkh_file = config.hash.rxkh_file;
+	if (!is_equal(old_config, config))
+		return;
+
+	let ret = bss.ctrl("RELOAD_RXKHS");
+	ret ??= "failed";
+
+	hostapd.printf(`Reload RxKH file for bss ${config.ifname}: ${ret}`);
+}
+
 function remove_file_fields(config)
 {
 	return filter(config, (line) => !hostapd.data.file_fields[split(line, "=")[0]]);
@@ -652,6 +711,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		}
 
 		bss_reload_psk(bss, config.bss[i], bss_list_cfg[i]);
+		bss_reload_rxkhs(bss, config.bss[i], bss_list_cfg[i]);
 		if (is_equal(config.bss[i], bss_list_cfg[i]))
 			continue;
 
@@ -780,8 +840,13 @@ function iface_load_config(phy, radio, filename)
 			continue;
 		}
 
-		if (hostapd.data.file_fields[val[0]])
-			bss.hash[val[0]] = hostapd.sha1(readfile(val[1]));
+		if (hostapd.data.file_fields[val[0]]) {
+			if (val[0] == "rxkh_file") {
+				bss.hash[val[0]] = hostapd.sha1(normalize_rxkhs(readfile(val[1])));
+			} else {
+				bss.hash[val[0]] = hostapd.sha1(readfile(val[1]));
+			}
+		}
 
 		push(bss.data, line);
 	}
