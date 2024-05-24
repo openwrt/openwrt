@@ -11,25 +11,6 @@ curdir:=tools
 # subdirectories to descend into
 tools-y :=
 
-ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  BUILD_TOOLCHAIN := y
-  ifdef CONFIG_GCC_USE_GRAPHITE
-    BUILD_ISL = y
-  endif
-endif
-ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
-  BUILD_B43_TOOLS = y
-endif
-ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),)
-  BUILD_BZIP2_TOOLS = y
-endif
-ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),)
-  BUILD_LZ4_TOOLS = y
-endif
-ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),)
-  BUILD_LZO_TOOLS = y
-endif
-
 tools-y += autoconf
 tools-y += autoconf-archive
 tools-y += automake
@@ -70,22 +51,24 @@ tools-y += util-linux
 tools-y += xz
 tools-y += zip
 tools-y += zlib
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += liblzo
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_B43_TOOLS),y) += b43-tools
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_BZIP2_TOOLS),y) += bzip2
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_ISL),y) += isl
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZ4_TOOLS),y) += lz4
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZO_TOOLS),y) += lzop
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini),y) += genext2fs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old squashfs3-lzma
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_realtek),y) += 7z
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+tools-$(if $(CONFIG_TOOLS_BUILD_7z),y) += 7z
+tools-$(if $(CONFIG_TOOLS_BUILD_b43-tools),y) += b43-tools
+tools-$(if $(CONFIG_TOOLS_BUILD_bzip2),y) += bzip2
+tools-$(if $(CONFIG_TOOLS_BUILD_cbootimage),y) += cbootimage cbootimage-configs
+tools-$(if $(CONFIG_TOOLS_BUILD_elftosb-sdimage),y) += elftosb sdimage
+tools-$(if $(CONFIG_TOOLS_BUILD_genext2fs),y) += genext2fs
+tools-$(if $(CONFIG_TOOLS_BUILD_gmp),y) += gmp
+tools-$(if $(CONFIG_TOOLS_BUILD_isl),y) += isl
+tools-$(if $(CONFIG_TOOLS_BUILD_kernel2minor),y) += kernel2minor
+tools-$(if $(CONFIG_TOOLS_BUILD_liblzo),y) += liblzo
+tools-$(if $(CONFIG_TOOLS_BUILD_llvm-bpf),y) += llvm-bpf
+tools-$(if $(CONFIG_TOOLS_BUILD_lz4),y) += lz4
+tools-$(if $(CONFIG_TOOLS_BUILD_lzop),y) += lzop
+tools-$(if $(CONFIG_TOOLS_BUILD_mold),y) += mold
+tools-$(if $(CONFIG_TOOLS_BUILD_mpc),y) += mpc
+tools-$(if $(CONFIG_TOOLS_BUILD_mpfr),y) += mpfr
+tools-$(if $(CONFIG_TOOLS_BUILD_sparse),y) += sparse
+tools-$(if $(CONFIG_TOOLS_BUILD_squashfs3-lzma),y) += lzma-old squashfs3-lzma
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
@@ -140,7 +123,7 @@ ifeq ($(HOST_OS),Darwin)
   tools-y += bash
 else
   $(curdir)/dwarves/compile += $(curdir)/elfutils/compile
-  tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
+  tools-$(if $(CONFIG_TOOLS_BUILD_dwarves),y) += dwarves
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
