@@ -54,6 +54,9 @@ tplink,t1600g-28ts-v3)
 	label_mac=$(get_mac_label)
 	lan_mac="$label_mac"
 	;;
+xikestor,sks8300-8x)
+	lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
+	;;
 *)
 	lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
 	lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
