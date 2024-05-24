@@ -10,6 +10,75 @@ curdir:=tools
 
 # subdirectories to descend into
 tools-y :=
+# ...or not
+tools-n :=
+
+tools-default :=
+# every default tool; should include anything that is always needed
+tools-default += autoconf
+tools-default += autoconf-archive
+tools-default += automake
+tools-default += bc
+tools-default += bison
+tools-default += cmake
+tools-default += cpio
+tools-default += dosfstools
+tools-default += e2fsprogs
+tools-default += elfutils
+tools-default += expat
+tools-default += fakeroot
+tools-default += findutils
+tools-default += firmware-utils
+tools-default += flex
+tools-default += gengetopt
+tools-default += gnulib
+tools-default += libressl
+tools-default += libtool
+tools-default += lzma
+tools-default += m4
+tools-default += make-ext4fs
+tools-default += meson
+tools-default += missing-macros
+tools-default += mkimage
+tools-default += mklibs
+tools-default += mtd-utils
+tools-default += mtools
+tools-default += ninja
+tools-default += padjffs2
+tools-default += patchelf
+tools-default += patch-image
+tools-default += pkgconf
+tools-default += quilt
+tools-default += squashfs4
+tools-default += sstrip
+tools-default += util-linux
+tools-default += xz
+tools-default += zip
+tools-default += zlib
+
+tools-optional :=
+# every optional tool; should include every dir in tools/ not in tools-default
+tools-optional += 7z
+tools-optional += b43-tools
+tools-optional += bzip2
+tools-optional += cbootimage
+tools-optional += cbootimage-configs
+tools-optional += elftosb
+tools-optional += genext2fs
+tools-optional += gmp
+tools-optional += isl
+tools-optional += kernel2minor
+tools-optional += liblzo
+tools-optional += llvm-bpf
+tools-optional += lz4
+tools-optional += lzma-old
+tools-optional += lzop
+tools-optional += mold
+tools-optional += mpc
+tools-optional += mpfr
+tools-optional += sdimage
+tools-optional += sparse
+tools-optional += squashfs3-lzma
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   BUILD_TOOLCHAIN := y
@@ -30,150 +99,123 @@ ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),)
   BUILD_LZO_TOOLS = y
 endif
 
-tools-y += autoconf
-tools-y += autoconf-archive
-tools-y += automake
-tools-y += bc
-tools-y += bison
-tools-y += cmake
-tools-y += cpio
-tools-y += dosfstools
-tools-y += e2fsprogs
-tools-y += elfutils
-tools-y += expat
-tools-y += fakeroot
-tools-y += findutils
-tools-y += firmware-utils
-tools-y += flex
-tools-y += gengetopt
-tools-y += gnulib
-tools-y += libressl
-tools-y += libtool
-tools-y += lzma
-tools-y += m4
-tools-y += make-ext4fs
-tools-y += meson
-tools-y += missing-macros
-tools-y += mkimage
-tools-y += mklibs
-tools-y += mtd-utils
-tools-y += mtools
-tools-y += ninja
-tools-y += padjffs2
-tools-y += patch-image
-tools-y += patchelf
-tools-y += pkgconf
-tools-y += quilt
-tools-y += squashfs4
-tools-y += sstrip
-tools-y += util-linux
-tools-y += xz
-tools-y += zip
-tools-y += zlib
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += liblzo
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_B43_TOOLS),y) += b43-tools
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_BZIP2_TOOLS),y) += bzip2
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_ISL),y) += isl
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZ4_TOOLS),y) += lz4
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZO_TOOLS),y) += lzop
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini),y) += genext2fs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old squashfs3-lzma
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_realtek),y) += 7z
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+include $(INCLUDE_DIR)/list.mk
+
+$(call List/AddUniq, tools-y, $(tools-default))
+
+# config-dependencies:
+$(call List/AddUniqIf,$(CONFIG_BUILD_ALL_HOST_TOOLS), tools, $(tools-optional))
+$(call List/AddUniqIf,$(BUILD_B43_TOOLS)            , tools, b43-tools)
+$(call List/AddUniqIf,$(BUILD_BZIP2_TOOLS)          , tools, bzip2)
+$(call List/AddUniqIf,$(BUILD_ISL)                  , tools, isl)
+$(call List/AddUniqIf,$(BUILD_LZ4_TOOLS)            , tools, lz4)
+$(call List/AddUniqIf,$(BUILD_LZO_TOOLS)            , tools, lzop)
+$(call List/AddUniqIf,$(BUILD_TOOLCHAIN)            , tools, gmp mpc mpfr)
+$(call List/AddUniqIf,$(CONFIG_TARGET_apm821xx)     , tools, genext2fs)
+$(call List/AddUniqIf,$(CONFIG_TARGET_ath79)        , tools, lzma-old squashfs3-lzma)
+$(call List/AddUniqIf,$(CONFIG_TARGET_gemini)       , tools, genext2fs)
+$(call List/AddUniqIf,$(CONFIG_TARGET_mxs)          , tools, elftosb sdimage)
+$(call List/AddUniqIf,$(CONFIG_TARGET_realtek)      , tools, 7z)
+$(call List/AddUniqIf,$(CONFIG_TARGET_tegra)        , tools, cbootimage cbootimage-configs)
+$(call List/AddUniqIf,$(CONFIG_USE_LLVM_BUILD)      , tools, llvm-bpf)
+$(call List/AddUniqIf,$(CONFIG_USE_MOLD)            , tools, mold)
+$(call List/AddUniqIf,$(CONFIG_USE_SPARSE)          , tools, sparse)
+$(call List/AddUniqIf,$(CONFIG_USES_MINOR)          , tools, kernel2minor)
 
 # builddir dependencies
-$(curdir)/autoconf/compile := $(curdir)/m4/compile
-$(curdir)/automake/compile := $(curdir)/autoconf/compile $(curdir)/pkgconf/compile $(curdir)/xz/compile
-$(curdir)/b43-tools/compile := $(curdir)/bison/compile
-$(curdir)/bc/compile := $(curdir)/bison/compile $(curdir)/libtool/compile
-$(curdir)/bison/compile := $(curdir)/flex/compile
-$(curdir)/cbootimage/compile += $(curdir)/automake/compile
-$(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
-$(curdir)/dosfstools/compile := $(curdir)/automake/compile
-$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
-$(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile $(curdir)/gnulib/compile $(curdir)/libtool/compile
-$(curdir)/fakeroot/compile := $(curdir)/libtool/compile
-$(curdir)/findutils/compile := $(curdir)/bison/compile
-$(curdir)/firmware-utils/compile += $(curdir)/cmake/compile
-$(curdir)/flex/compile := $(curdir)/libtool/compile
-$(curdir)/genext2fs/compile := $(curdir)/libtool/compile
-$(curdir)/gengetopt/compile := $(curdir)/libtool/compile
-$(curdir)/gmp/compile := $(curdir)/libtool/compile
-$(curdir)/isl/compile := $(curdir)/gmp/compile
-$(curdir)/liblzo/compile := $(curdir)/cmake/compile
-$(curdir)/libressl/compile := $(curdir)/pkgconf/compile
-$(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/gnulib/compile $(curdir)/missing-macros/compile
-$(curdir)/lz4/compile := $(curdir)/meson/compile
-$(curdir)/lzma-old/compile := $(curdir)/zlib/compile
-$(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
-$(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
-$(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
-$(curdir)/meson/compile := $(curdir)/ninja/compile
-$(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
-$(curdir)/mkimage/compile += $(curdir)/bison/compile $(curdir)/libressl/compile
-$(curdir)/mklibs/compile := $(curdir)/libtool/compile
-$(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
-$(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
-$(curdir)/mpfr/compile := $(curdir)/gmp/compile
-$(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
-$(curdir)/padjffs2/compile := $(curdir)/findutils/compile
-$(curdir)/patchelf/compile := $(curdir)/libtool/compile
-$(curdir)/pkgconf/compile := $(curdir)/meson/compile
-$(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
-$(curdir)/sdcc/compile := $(curdir)/bison/compile
-$(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
-$(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/util-linux/compile := $(curdir)/bison/compile
+$(call List/DepAddUniq, compile, autoconf      , m4)
+$(call List/DepAddUniq, compile, automake      , autoconf pkgconf xz)
+$(call List/DepAddUniq, compile, b43-tools     , bison)
+$(call List/DepAddUniq, compile, bc            , bison libtool)
+$(call List/DepAddUniq, compile, bison         , flex)
+$(call List/DepAddUniq, compile, cbootimage    , automake)
+$(call List/DepAddUniq, compile, cmake         , libressl ninja expat xz zlib zstd)
+$(call List/DepAddUniq, compile, dosfstools    , automake)
+$(call List/DepAddUniq, compile, e2fsprogs     , libtool)
+$(call List/DepAddUniq, compile, elfutils      , m4 zlib gnulib libtool)
+$(call List/DepAddUniq, compile, fakeroot      , libtool)
+$(call List/DepAddUniq, compile, findutils     , bison)
+$(call List/DepAddUniq, compile, firmware-utils, cmake)
+$(call List/DepAddUniq, compile, flex          , libtool)
+$(call List/DepAddUniq, compile, genext2fs     , libtool)
+$(call List/DepAddUniq, compile, gengetopt     , libtool)
+$(call List/DepAddUniq, compile, gmp           , libtool)
+$(call List/DepAddUniq, compile, isl           , gmp)
+$(call List/DepAddUniq, compile, liblzo        , cmake)
+$(call List/DepAddUniq, compile, libressl      , pkgconf)
+$(call List/DepAddUniq, compile, libtool       , automake gnulib missing-macros)
+$(call List/DepAddUniq, compile, llvm-bpf      , cmake)
+$(call List/DepAddUniq, compile, lz4           , meson)
+$(call List/DepAddUniq, compile, lzma-old      , zlib)
+$(call List/DepAddUniq, compile, lzop          , cmake liblzo)
+$(call List/DepAddUniq, compile, make-ext4fs   , zlib)
+$(call List/DepAddUniq, compile, meson         , ninja)
+$(call List/DepAddUniq, compile, missing-macros, autoconf)
+$(call List/DepAddUniq, compile, mkimage       , bison libressl)
+$(call List/DepAddUniq, compile, mklibs        , libtool)
+$(call List/DepAddUniq, compile, mold          , cmake zlib zstd)
+$(call List/DepAddUniq, compile, mpc           , mpfr gmp)
+$(call List/DepAddUniq, compile, mpfr          , gmp)
+$(call List/DepAddUniq, compile, mtd-utils     , libtool e2fsprogs zlib)
+$(call List/DepAddUniq, compile, padjffs2      , findutils)
+$(call List/DepAddUniq, compile, patchelf      , libtool)
+$(call List/DepAddUniq, compile, pkgconf       , meson)
+$(call List/DepAddUniq, compile, quilt         , autoconf findutils)
+$(call List/DepAddUniq, compile, sdcc          , bison)
+$(call List/DepAddUniq, compile, squashfs3-lzma, lzma-old)
+$(call List/DepAddUniq, compile, squashfs4     , xz zlib)
+$(call List/DepAddUniq, compile, util-linux    , bison)
 
 ifneq ($(HOST_OS),Linux)
-  $(curdir)/coreutils/compile += $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
-  $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
-  tools-y += coreutils
+  $(call List/DepAddUniq, compile, coreutils, automake bison gnulib)
+  $(call List/DepAddUniq, compile, squashfs4, coreutils)
+  $(call List/AddUniq, tools-y, coreutils)
 endif
 ifeq ($(HOST_OS),Darwin)
-  tools-y += bash
+  $(call List/AddUniq, tools-y, bash)
 else
-  $(curdir)/dwarves/compile += $(curdir)/elfutils/compile
-  tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
+  $(call List/DepAddUniq, compile, dwarves , elfutils)
+  $(call List/AddUniqIf, $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES), tools, dwarves)
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
-tools-y += ccache
-$(curdir)/ccache/compile := $(curdir)/cmake/compile
+$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)),\
+  $(call List/DepAddUniq, compile, $(tool), ccache)\
+)
+$(call List/AddUniq, tools-y, ccache)
+$(call List/DepAddUniq, compile, ccache, cmake)
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
-$(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
+$(foreach tool, $(tools-y),\
+  $(if $(wildcard $(curdir)/$(tool)/patches),\
+    $(call List/DepAddUniq, compile, $(tool), patch)\
+  )\
+)
 
-$(foreach tool, $(filter-out zstd,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
+$(foreach tool, $(filter-out zstd,$(tools-y)),\
+  $(call List/DepAddUniq, compile, $(tool), zstd)\
+)
 
 # make any tool depend on the following to ensure that archives can be unpacked and patched properly
-tools-core += libdeflate
-tools-core += patch
-tools-core += tar
-tools-core += zstd
+$(call List/AddUniq, tools-core, libdeflate patch tar zstd)
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
-tools-y += $(tools-core)
+$(foreach tool, $(tools-y),\
+  $(call List/DepAddUniq, compile, $(tool), $(tools-core))\
+)
+$(call List/AddUniq, tools-y, $(tools-core))
 
 # make some core tools depend on sed and flock
-$(curdir)/patch/compile += $(curdir)/sed/compile
-$(curdir)/tar/compile += $(curdir)/sed/compile
-$(curdir)/zstd/compile += $(curdir)/libdeflate/compile
+$(call List/DepAddUniq, compile, patch, sed)
+$(call List/DepAddUniq, compile, tar, sed)
+$(call List/DepAddUniq, compile, zstd, libdeflate)
 
-$(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/zstd/compile
-tools-y += flock sed
+$(call List/DepAddUniq, compile, sed, flock zstd)
+$(call List/AddUniq, tools-y, flock sed)
 
 $(curdir)/autoremove := 1
-$(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
+$(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-n)
 $(curdir)/builddirs-default := $(tools-y)
 
 ifdef CHECK_ALL
@@ -222,7 +264,7 @@ $(curdir)/ := .config prereq
 
 $(curdir)/install: $(curdir)/compile
 
-tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
+tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-n)),$(if $(filter $(tool),$(tools-y)),y,n))
 $(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled)),$(STAGING_DIR_HOST)))
 $(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build,,$(STAGING_DIR_HOST)))
 $(eval $(call subdir,$(curdir)))
