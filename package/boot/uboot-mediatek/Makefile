@@ -716,7 +716,7 @@ UBOOT_TARGETS := \
 	mt7622_ubnt_unifi-6-lr-v1 \
 	mt7622_ubnt_unifi-6-lr-v2 \
 	mt7622_ubnt_unifi-6-lr-v3 \
-  mt7622_xiaomi_redmi-router-ax6s-ubi-loader \
+	mt7622_xiaomi_redmi-router-ax6s-ubi-loader \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
