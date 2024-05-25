@@ -1,0 +1,25 @@
+From e904f32e5fe694ed7b8d1cd914bcf2bfd67e896c Mon Sep 17 00:00:00 2001
+From: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+Date: Mon, 18 Dec 2023 12:05:40 +0100
+Subject: [PATCH 03/14] dt-bindings: opp: sun50i: Add binding for D1 CPUs
+
+Add binding for D1 CPU OPPs.
+
+Signed-off-by: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+---
+ .../bindings/opp/allwinner,sun50i-h6-operating-points.yaml    | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/opp/allwinner,sun50i-h6-operating-points.yaml
++++ b/Documentation/devicetree/bindings/opp/allwinner,sun50i-h6-operating-points.yaml
+@@ -23,7 +23,9 @@ allOf:
+ 
+ properties:
+   compatible:
+-    const: allwinner,sun50i-h6-operating-points
++    enum:
++      - allwinner,sun50i-h6-operating-points
++      - allwinner,sun20i-d1-operating-points
+ 
+   nvmem-cells:
+     description: |
