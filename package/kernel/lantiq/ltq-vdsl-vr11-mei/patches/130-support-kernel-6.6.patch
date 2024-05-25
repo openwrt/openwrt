@@ -1,14 +1,11 @@
 --- a/src/drv_mei_cpe_linux.c
 +++ b/src/drv_mei_cpe_linux.c
-@@ -2779,7 +2779,11 @@ static int MEI_InitModuleRegCharDev(cons
+@@ -2779,7 +2779,7 @@ static int MEI_InitModuleRegCharDev(cons
              ("Using major number %d" MEI_DRV_CRLF, MAJOR(mei_devt)));
        }
  
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
-       mei_class = class_create(THIS_MODULE, devName);
-+#else
+-      mei_class = class_create(THIS_MODULE, devName);
 +      mei_class = class_create(devName);
-+#endif
        if (IS_ERR(mei_class))
        {
           PRN_DBG_USR_NL( MEI_DRV,MEI_DRV_PRN_LEVEL_HIGH,
