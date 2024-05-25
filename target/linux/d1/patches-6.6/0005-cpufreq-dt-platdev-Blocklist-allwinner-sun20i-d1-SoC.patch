@@ -1,0 +1,23 @@
+From 9d78aafd278577ef2a9d92127c9d35b00989c057 Mon Sep 17 00:00:00 2001
+From: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+Date: Mon, 18 Dec 2023 12:05:42 +0100
+Subject: [PATCH 05/14] cpufreq: dt-platdev: Blocklist allwinner,sun20i-d1 SoC
+
+The Allwinner D1 uses H6 cpufreq driver. Add it to blocklist
+so the "cpufreq-dt" device is not created twice.
+
+Signed-off-by: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+---
+ drivers/cpufreq/cpufreq-dt-platdev.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/cpufreq/cpufreq-dt-platdev.c
++++ b/drivers/cpufreq/cpufreq-dt-platdev.c
+@@ -104,6 +104,7 @@ static const struct of_device_id allowli
+  */
+ static const struct of_device_id blocklist[] __initconst = {
+ 	{ .compatible = "allwinner,sun50i-h6", },
++	{ .compatible = "allwinner,sun20i-d1", },
+ 
+ 	{ .compatible = "apple,arm-platform", },
+ 
