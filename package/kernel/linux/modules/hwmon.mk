@@ -198,7 +198,7 @@ define KernelPackage/hwmon-g762
 endef
 
 define KernelPackage/hwmon-g762/description
- Kernel module for Global Mixed-mode Technology Inc G762 and G763 fan speed PWM controller chips.
+ Kernel module for Global Mixed-mode Technology Inc G761/G762/G763 fan speed PWM controller chips.
 endef
 
 $(eval $(call KernelPackage,hwmon-g762))
