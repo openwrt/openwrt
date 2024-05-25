@@ -20,7 +20,7 @@ Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
 
 --- a/drivers/phy/freescale/phy-fsl-imx8m-pcie.c
 +++ b/drivers/phy/freescale/phy-fsl-imx8m-pcie.c
-@@ -31,12 +31,10 @@
+@@ -32,12 +32,10 @@
  #define IMX8MM_PCIE_PHY_CMN_REG065	0x194
  #define  ANA_AUX_RX_TERM		(BIT(7) | BIT(4))
  #define  ANA_AUX_TX_LVL			GENMASK(3, 0)
@@ -35,8 +35,8 @@ Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
  
  #define IMX8MM_GPR_PCIE_REF_CLK_SEL	GENMASK(25, 24)
  #define IMX8MM_GPR_PCIE_REF_CLK_PLL	FIELD_PREP(IMX8MM_GPR_PCIE_REF_CLK_SEL, 0x3)
-@@ -131,9 +129,8 @@ static int imx8_pcie_phy_power_on(struct
- 	reset_control_deassert(imx8_phy->reset);
+@@ -152,9 +150,8 @@ static int imx8_pcie_phy_power_on(struct
+ 	}
  
  	/* Polling to check the phy is ready or not. */
 -	ret = readl_poll_timeout(imx8_phy->base + IMX8MM_PCIE_PHY_CMN_REG75,
