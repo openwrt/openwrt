@@ -675,6 +675,22 @@ define Device/tplink_archer-mr200-v5
 endef
 TARGET_DEVICES += tplink_archer-mr200-v5
 
+define Device/tplink_archer-mr200-v6
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 15936k
+  DEVICE_MODEL := Archer MR200
+  DEVICE_VARIANT := v6
+  TPLINK_FLASHLAYOUT := 16Mmtk
+  TPLINK_HWID := 0x20000006
+  TPLINK_HWREV := 0x6
+  TPLINK_HWREVADD := 0x6
+  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  KERNEL := kernel-bin | append-dtb | lzma -d22
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += tplink_archer-mr200-v6
+
 define Device/tplink_re200-v2
   $(Device/tplink-safeloader)
   IMAGE_SIZE := 7808k

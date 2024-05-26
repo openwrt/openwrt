@@ -89,7 +89,8 @@ tplink,archer-c50-v6)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "wlan5g" "green:wlan5g" "phy1tpt"
 	;;
-tplink,archer-mr200-v5)
+tplink,archer-mr200-v5|\
+tplink,archer-mr200-v6)
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wwan0"
 	;;
