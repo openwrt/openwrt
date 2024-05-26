@@ -249,6 +249,8 @@ ifneq ($(CONFIG_USE_APK),)
 	mkdir -p $(1)/etc/apk/
 	$(call FeedSourcesAppendAPK,$(1)/etc/apk/repositories)
 	$(VERSION_SED_SCRIPT) $(1)/etc/apk/repositories
+
+	rm -f $(1)/etc/uci-defaults/13_fix-group-user
 else
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
