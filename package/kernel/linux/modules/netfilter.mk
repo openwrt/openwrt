@@ -807,7 +807,7 @@ define KernelPackage/ipt-clusterip
   KCONFIG:=$(KCONFIG_IPT_CLUSTERIP)
   FILES:=$(foreach mod,$(IPT_CLUSTERIP-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CLUSTERIP-m)))
-  $(call AddDepends/ipt,+kmod-nf-conntrack)
+  $(call AddDepends/ipt,+kmod-nf-conntrack @LINUX_5_15||LINUX_6_1)
 endef
 
 define KernelPackage/ipt-clusterip/description
