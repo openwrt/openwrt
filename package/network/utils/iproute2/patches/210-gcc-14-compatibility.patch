@@ -1,0 +1,20 @@
+--- a/lib/bpf_legacy.c
++++ b/lib/bpf_legacy.c
+@@ -16,6 +16,7 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdarg.h>
++#include <libgen.h>
+ #include <limits.h>
+ #include <assert.h>
+ 
+--- a/include/json_print.h
++++ b/include/json_print.h
+@@ -8,6 +8,7 @@
+ #ifndef _JSON_PRINT_H_
+ #define _JSON_PRINT_H_
+ 
++#include <sys/time.h>
+ #include "json_writer.h"
+ #include "color.h"
+ 
