@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_SOURCE_DATE:=2018-06-27
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://git.netfilter.org/ebtables
 PKG_SOURCE_PROTO:=git
