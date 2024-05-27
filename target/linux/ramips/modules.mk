@@ -77,7 +77,6 @@ define KernelPackage/dma-ralink
   DEPENDS:=@TARGET_ramips @!TARGET_ramips_rt288x
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
-	CONFIG_DW_DMAC_PCI=n \
 	CONFIG_RALINK_GDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
@@ -97,7 +96,6 @@ define KernelPackage/hsdma-mtk
   DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
-	CONFIG_DW_DMAC_PCI=n \
 	CONFIG_MTK_HSDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
