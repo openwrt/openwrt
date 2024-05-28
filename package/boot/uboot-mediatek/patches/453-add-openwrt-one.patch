@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/dts/openwrt-one.dts
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,220 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 John Crispin <john@phrozen.org>
@@ -116,6 +116,23 @@
 +			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
 +		};
 +	};
++
++	pcie_pins: pcie-pins {
++		mux {
++			function = "pcie";
++			groups = "pcie_pereset";
++		};
++	};
++};
++
++&xhci {
++       phys = <&u2port0 PHY_TYPE_USB2>;
++};
++
++&pcie {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie_pins>;
++	status = "okay";
 +};
 +
 +&spi0 {
@@ -206,14 +223,14 @@
 +};
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-nor_defconfig
-@@ -0,0 +1,1811 @@
+@@ -0,0 +1,1845 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
 +# U-Boot 2024.01 Configuration
 +#
 +
 +#
-+# Compiler: aarch64-openwrt-linux-musl-gcc (OpenWrt GCC 13.2.0 r26144+12-219018185e) 13.2.0
++# Compiler: aarch64-openwrt-linux-musl-gcc (OpenWrt GCC 13.2.0 r0+26437-9ec3b11d37) 13.2.0
 +#
 +CONFIG_CREATE_ARCH_SYMLINK=y
 +CONFIG_SYS_CACHE_SHIFT_6=y
@@ -448,7 +465,8 @@
 +# ARM debug
 +#
 +CONFIG_BUILD_TARGET=""
-+# CONFIG_PCI is not set
++# CONFIG_SYS_PCI_64BIT is not set
++CONFIG_PCI=y
 +CONFIG_FWU_NUM_BANKS=2
 +CONFIG_FWU_NUM_IMAGES_PER_BANK=2
 +CONFIG_DEBUG_UART=y
@@ -659,6 +677,7 @@
 +# CONFIG_MISC_INIT_R is not set
 +# CONFIG_SYS_MALLOC_BOOTPARAMS is not set
 +# CONFIG_ID_EEPROM is not set
++CONFIG_PCI_INIT_R=y
 +# CONFIG_RESET_PHY_R is not set
 +
 +#
@@ -829,10 +848,12 @@
 +# CONFIG_CMD_CLONE is not set
 +CONFIG_CMD_MTD=y
 +CONFIG_CMD_NAND_EXT=y
++CONFIG_CMD_NVME=y
 +# CONFIG_CMD_ONENAND is not set
 +# CONFIG_CMD_OSD is not set
 +# CONFIG_CMD_PART is not set
 +CONFIG_CMD_PCI=y
++# CONFIG_CMD_PCI_MPS is not set
 +CONFIG_CMD_PINMUX=y
 +# CONFIG_CMD_POWEROFF is not set
 +# CONFIG_CMD_READ is not set
@@ -1475,6 +1496,7 @@
 +# CONFIG_CALXEDA_XGMAC is not set
 +# CONFIG_DRIVER_DM9000 is not set
 +# CONFIG_DWC_ETH_QOS is not set
++# CONFIG_E1000 is not set
 +# CONFIG_EEPRO100 is not set
 +# CONFIG_ETH_DESIGNWARE is not set
 +# CONFIG_ETH_DESIGNWARE_MESON8B is not set
@@ -1495,6 +1517,7 @@
 +# CONFIG_PCNET is not set
 +# CONFIG_QE_UEC is not set
 +# CONFIG_RTL8139 is not set
++# CONFIG_RTL8169 is not set
 +# CONFIG_SMC911X is not set
 +# CONFIG_SUN7I_GMAC is not set
 +# CONFIG_SUN4I_EMAC is not set
@@ -1513,8 +1536,32 @@
 +CONFIG_MEDIATEK_ETH=y
 +# CONFIG_HIFEMAC_ETH is not set
 +# CONFIG_HIGMACV300_ETH is not set
-+# CONFIG_NVME is not set
++CONFIG_NVME=y
 +# CONFIG_NVME_APPLE is not set
++CONFIG_NVME_PCI=y
++# CONFIG_DM_PCI_COMPAT is not set
++CONFIG_PCI_PNP=y
++# CONFIG_PCI_REGION_MULTI_ENTRY is not set
++# CONFIG_PCI_CONFIG_HOST_BRIDGE is not set
++# CONFIG_PCI_SRIOV is not set
++CONFIG_PCI_ENHANCED_ALLOCATION=y
++# CONFIG_PCI_ARID is not set
++# CONFIG_PCIE_ECAM_GENERIC is not set
++# CONFIG_PCIE_ECAM_SYNQUACER is not set
++# CONFIG_PCI_FTPCI100 is not set
++# CONFIG_PCI_PHYTIUM is not set
++# CONFIG_PCIE_FSL is not set
++# CONFIG_PCI_MPC85XX is not set
++# CONFIG_PCI_XILINX is not set
++# CONFIG_PCIE_LAYERSCAPE_RC is not set
++# CONFIG_PCIE_LAYERSCAPE_EP is not set
++# CONFIG_PCIE_LAYERSCAPE_GEN4 is not set
++# CONFIG_PCIE_INTEL_FPGA is not set
++# CONFIG_PCIE_IPROC is not set
++# CONFIG_PCI_KEYSTONE is not set
++# CONFIG_PCIE_MEDIATEK is not set
++CONFIG_PCIE_MEDIATEK_GEN3=y
++# CONFIG_PCIE_STARFIVE_JH7110 is not set
 +
 +#
 +# PCI Endpoint
@@ -1691,6 +1738,7 @@
 +# Sound support
 +#
 +# CONFIG_SOUND is not set
++# CONFIG_SOUND_MAX98357A is not set
 +
 +#
 +# SOC (System On Chip) specific Drivers
@@ -1782,6 +1830,7 @@
 +# CONFIG_USB_XHCI_DWC3 is not set
 +# CONFIG_USB_XHCI_DWC3_OF_SIMPLE is not set
 +CONFIG_USB_XHCI_MTK=y
++# CONFIG_USB_XHCI_PCI is not set
 +# CONFIG_USB_XHCI_FSL is not set
 +# CONFIG_USB_XHCI_BRCM is not set
 +# CONFIG_USB_EHCI_HCD is not set
@@ -1841,6 +1890,8 @@
 +# VirtIO Drivers
 +#
 +# CONFIG_VIRTIO_MMIO is not set
++# CONFIG_VIRTIO_PCI is not set
++# CONFIG_VIRTIO_PCI_LEGACY is not set
 +
 +#
 +# 1-Wire support
@@ -2020,14 +2071,14 @@
 +# CONFIG_TOOLS_MKFWUMDATA is not set
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-spi-nand_defconfig
-@@ -0,0 +1,1815 @@
+@@ -0,0 +1,1849 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
 +# U-Boot 2024.01 Configuration
 +#
 +
 +#
-+# Compiler: aarch64-openwrt-linux-musl-gcc (OpenWrt GCC 12.3.0 r25206+8-d5e2177a6b) 12.3.0
++# Compiler: aarch64-openwrt-linux-musl-gcc (OpenWrt GCC 13.2.0 r0+26437-9ec3b11d37) 13.2.0
 +#
 +CONFIG_CREATE_ARCH_SYMLINK=y
 +CONFIG_SYS_CACHE_SHIFT_6=y
@@ -2262,7 +2313,8 @@
 +# ARM debug
 +#
 +CONFIG_BUILD_TARGET=""
-+# CONFIG_PCI is not set
++# CONFIG_SYS_PCI_64BIT is not set
++CONFIG_PCI=y
 +CONFIG_FWU_NUM_BANKS=2
 +CONFIG_FWU_NUM_IMAGES_PER_BANK=2
 +CONFIG_DEBUG_UART=y
@@ -2280,7 +2332,7 @@
 +CONFIG_LOCALVERSION=""
 +CONFIG_LOCALVERSION_AUTO=y
 +CONFIG_CC_IS_GCC=y
-+CONFIG_GCC_VERSION=120300
++CONFIG_GCC_VERSION=130200
 +CONFIG_CLANG_VERSION=0
 +CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 +# CONFIG_CC_OPTIMIZE_FOR_SPEED is not set
@@ -2473,6 +2525,7 @@
 +# CONFIG_MISC_INIT_R is not set
 +# CONFIG_SYS_MALLOC_BOOTPARAMS is not set
 +# CONFIG_ID_EEPROM is not set
++CONFIG_PCI_INIT_R=y
 +# CONFIG_RESET_PHY_R is not set
 +
 +#
@@ -2643,10 +2696,12 @@
 +# CONFIG_CMD_CLONE is not set
 +CONFIG_CMD_MTD=y
 +CONFIG_CMD_NAND_EXT=y
++CONFIG_CMD_NVME=y
 +# CONFIG_CMD_ONENAND is not set
 +# CONFIG_CMD_OSD is not set
 +# CONFIG_CMD_PART is not set
 +CONFIG_CMD_PCI=y
++# CONFIG_CMD_PCI_MPS is not set
 +CONFIG_CMD_PINMUX=y
 +# CONFIG_CMD_POWEROFF is not set
 +# CONFIG_CMD_READ is not set
@@ -3293,6 +3348,7 @@
 +# CONFIG_CALXEDA_XGMAC is not set
 +# CONFIG_DRIVER_DM9000 is not set
 +# CONFIG_DWC_ETH_QOS is not set
++# CONFIG_E1000 is not set
 +# CONFIG_EEPRO100 is not set
 +# CONFIG_ETH_DESIGNWARE is not set
 +# CONFIG_ETH_DESIGNWARE_MESON8B is not set
@@ -3313,6 +3369,7 @@
 +# CONFIG_PCNET is not set
 +# CONFIG_QE_UEC is not set
 +# CONFIG_RTL8139 is not set
++# CONFIG_RTL8169 is not set
 +# CONFIG_SMC911X is not set
 +# CONFIG_SUN7I_GMAC is not set
 +# CONFIG_SUN4I_EMAC is not set
@@ -3331,8 +3388,32 @@
 +CONFIG_MEDIATEK_ETH=y
 +# CONFIG_HIFEMAC_ETH is not set
 +# CONFIG_HIGMACV300_ETH is not set
-+# CONFIG_NVME is not set
++CONFIG_NVME=y
 +# CONFIG_NVME_APPLE is not set
++CONFIG_NVME_PCI=y
++# CONFIG_DM_PCI_COMPAT is not set
++CONFIG_PCI_PNP=y
++# CONFIG_PCI_REGION_MULTI_ENTRY is not set
++# CONFIG_PCI_CONFIG_HOST_BRIDGE is not set
++# CONFIG_PCI_SRIOV is not set
++CONFIG_PCI_ENHANCED_ALLOCATION=y
++# CONFIG_PCI_ARID is not set
++# CONFIG_PCIE_ECAM_GENERIC is not set
++# CONFIG_PCIE_ECAM_SYNQUACER is not set
++# CONFIG_PCI_FTPCI100 is not set
++# CONFIG_PCI_PHYTIUM is not set
++# CONFIG_PCIE_FSL is not set
++# CONFIG_PCI_MPC85XX is not set
++# CONFIG_PCI_XILINX is not set
++# CONFIG_PCIE_LAYERSCAPE_RC is not set
++# CONFIG_PCIE_LAYERSCAPE_EP is not set
++# CONFIG_PCIE_LAYERSCAPE_GEN4 is not set
++# CONFIG_PCIE_INTEL_FPGA is not set
++# CONFIG_PCIE_IPROC is not set
++# CONFIG_PCI_KEYSTONE is not set
++# CONFIG_PCIE_MEDIATEK is not set
++CONFIG_PCIE_MEDIATEK_GEN3=y
++# CONFIG_PCIE_STARFIVE_JH7110 is not set
 +
 +#
 +# PCI Endpoint
@@ -3509,6 +3590,7 @@
 +# Sound support
 +#
 +# CONFIG_SOUND is not set
++# CONFIG_SOUND_MAX98357A is not set
 +
 +#
 +# SOC (System On Chip) specific Drivers
@@ -3600,6 +3682,7 @@
 +# CONFIG_USB_XHCI_DWC3 is not set
 +# CONFIG_USB_XHCI_DWC3_OF_SIMPLE is not set
 +CONFIG_USB_XHCI_MTK=y
++# CONFIG_USB_XHCI_PCI is not set
 +# CONFIG_USB_XHCI_FSL is not set
 +# CONFIG_USB_XHCI_BRCM is not set
 +# CONFIG_USB_EHCI_HCD is not set
@@ -3659,6 +3742,8 @@
 +# VirtIO Drivers
 +#
 +# CONFIG_VIRTIO_MMIO is not set
++# CONFIG_VIRTIO_PCI is not set
++# CONFIG_VIRTIO_PCI_LEGACY is not set
 +
 +#
 +# 1-Wire support
