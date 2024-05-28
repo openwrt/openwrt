@@ -766,7 +766,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct mtk_tx_dma_desc_info {
  	dma_addr_t	addr;
-@@ -1184,6 +1311,24 @@ struct mtk_soc_data {
+@@ -1187,6 +1314,24 @@ struct mtk_soc_data {
  /* currently no SoC has more than 3 macs */
  #define MTK_MAX_DEVS	3
  
@@ -791,7 +791,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* struct mtk_eth -	This is the main datasructure for holding the state
   *			of the driver
   * @dev:		The device pointer
-@@ -1204,6 +1349,12 @@ struct mtk_soc_data {
+@@ -1207,6 +1352,12 @@ struct mtk_soc_data {
   * @infra:              The register map pointing at the range used to setup
   *                      SGMII and GePHY path
   * @sgmii_pcs:		Pointers to mtk-pcs-lynxi phylink_pcs instances
@@ -804,7 +804,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @pctl:		The register map pointing at the range used to setup
   *			GMAC port drive/slew values
   * @dma_refcnt:		track how many netdevs are using the DMA engine
-@@ -1247,6 +1398,10 @@ struct mtk_eth {
+@@ -1250,6 +1401,10 @@ struct mtk_eth {
  	struct regmap			*ethsys;
  	struct regmap			*infra;
  	struct phylink_pcs		*sgmii_pcs[MTK_MAX_DEVS];
@@ -815,7 +815,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct regmap			*pctl;
  	bool				hwlro;
  	refcount_t			dma_refcnt;
-@@ -1434,6 +1589,19 @@ static inline u32 mtk_get_ib2_multicast_
+@@ -1437,6 +1592,19 @@ static inline u32 mtk_get_ib2_multicast_
  	return MTK_FOE_IB2_MULTICAST;
  }
  
@@ -835,7 +835,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* read the hardware status register */
  void mtk_stats_update_mac(struct mtk_mac *mac);
  
-@@ -1442,8 +1610,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
+@@ -1445,8 +1613,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
  u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned int reg);
  
  int mtk_gmac_sgmii_path_setup(struct mtk_eth *eth, int mac_id);
@@ -846,7 +846,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  int mtk_eth_offload_init(struct mtk_eth *eth);
  int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
-@@ -1453,5 +1623,63 @@ int mtk_flow_offload_cmd(struct mtk_eth
+@@ -1456,5 +1626,63 @@ int mtk_flow_offload_cmd(struct mtk_eth
  void mtk_flow_offload_cleanup(struct mtk_eth *eth, struct list_head *list);
  void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev);
  

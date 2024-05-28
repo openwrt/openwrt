@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	eth->rx_events++;
  	if (likely(napi_schedule_prep(&eth->rx_napi))) {
 -		__napi_schedule(&eth->rx_napi);
- 		mtk_rx_irq_disable(eth, eth->soc->txrx.rx_irq_done_mask);
+ 		mtk_rx_irq_disable(eth, eth->soc->rx.irq_done_mask);
 +		__napi_schedule(&eth->rx_napi);
  	}
  
