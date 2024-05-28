@@ -1,13 +1,19 @@
+From 5d0fad48d2dec175ecb999974b94203c577973ef Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Thu, 2 Nov 2023 16:47:07 +0100
-Subject: [PATCH net-next 1/2] net: ethernet: mediatek: split tx and rx fields
- in mtk_soc_data struct
+Date: Wed, 8 May 2024 11:43:34 +0100
+Subject: [PATCH] net: ethernet: mediatek: split tx and rx fields in
+ mtk_soc_data struct
 
 Split tx and rx fields in mtk_soc_data struct. This is a preliminary
-patch to roll back to QDMA for MT7986 SoC in order to fix a hw hang
-if the device receives a corrupted packet.
+patch to roll back to ADMAv1 for MT7986 and MT7981 SoC in order to fix a
+hw hang if the device receives a corrupted packet when using ADMAv2.0.
 
+Fixes: 197c9e9b17b1 ("net: ethernet: mtk_eth_soc: introduce support for mt7986 chipset")
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Przemek Kitszel <przemyslaw.kitszel@intel.com>
+Link: https://lore.kernel.org/r/70a799b1f060ec2f57883e88ccb420ac0fb0abb5.1715164770.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 210 ++++++++++++--------
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |  29 +--
@@ -15,7 +21,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1281,7 +1281,7 @@ static int mtk_init_fq_dma(struct mtk_et
+@@ -1138,7 +1138,7 @@ static int mtk_init_fq_dma(struct mtk_et
  		eth->scratch_ring = eth->sram_base;
  	else
  		eth->scratch_ring = dma_alloc_coherent(eth->dma_dev,
@@ -24,7 +30,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  						       &eth->phy_scratch_ring,
  						       GFP_KERNEL);
  	if (unlikely(!eth->scratch_ring))
-@@ -1297,16 +1297,16 @@ static int mtk_init_fq_dma(struct mtk_et
+@@ -1154,16 +1154,16 @@ static int mtk_init_fq_dma(struct mtk_et
  	if (unlikely(dma_mapping_error(eth->dma_dev, dma_addr)))
  		return -ENOMEM;
  
@@ -44,7 +50,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  		txd->txd3 = TX_DMA_PLEN0(MTK_QDMA_PAGE_SIZE);
  		txd->txd4 = 0;
-@@ -1555,7 +1555,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1412,7 +1412,7 @@ static int mtk_tx_map(struct sk_buff *sk
  	if (itxd == ring->last_free)
  		return -ENOMEM;
  
@@ -53,7 +59,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	memset(itx_buf, 0, sizeof(*itx_buf));
  
  	txd_info.addr = dma_map_single(eth->dma_dev, skb->data, txd_info.size,
-@@ -1596,7 +1596,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1453,7 +1453,7 @@ static int mtk_tx_map(struct sk_buff *sk
  
  			memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
  			txd_info.size = min_t(unsigned int, frag_size,
@@ -62,7 +68,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			txd_info.qid = queue;
  			txd_info.last = i == skb_shinfo(skb)->nr_frags - 1 &&
  					!(frag_size - txd_info.size);
-@@ -1609,7 +1609,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1466,7 +1466,7 @@ static int mtk_tx_map(struct sk_buff *sk
  			mtk_tx_set_dma_desc(dev, txd, &txd_info);
  
  			tx_buf = mtk_desc_to_tx_buf(ring, txd,
@@ -71,7 +77,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			if (new_desc)
  				memset(tx_buf, 0, sizeof(*tx_buf));
  			tx_buf->data = (void *)MTK_DMA_DUMMY_DESC;
-@@ -1652,7 +1652,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1509,7 +1509,7 @@ static int mtk_tx_map(struct sk_buff *sk
  	} else {
  		int next_idx;
  
@@ -80,7 +86,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  					 ring->dma_size);
  		mtk_w32(eth, next_idx, MT7628_TX_CTX_IDX0);
  	}
-@@ -1661,7 +1661,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1518,7 +1518,7 @@ static int mtk_tx_map(struct sk_buff *sk
  
  err_dma:
  	do {
@@ -89,7 +95,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  		/* unmap dma */
  		mtk_tx_unmap(eth, tx_buf, NULL, false);
-@@ -1686,7 +1686,7 @@ static int mtk_cal_txd_req(struct mtk_et
+@@ -1543,7 +1543,7 @@ static int mtk_cal_txd_req(struct mtk_et
  		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
  			frag = &skb_shinfo(skb)->frags[i];
  			nfrags += DIV_ROUND_UP(skb_frag_size(frag),
@@ -98,7 +104,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		}
  	} else {
  		nfrags += skb_shinfo(skb)->nr_frags;
-@@ -1827,7 +1827,7 @@ static struct mtk_rx_ring *mtk_get_rx_ri
+@@ -1650,7 +1650,7 @@ static struct mtk_rx_ring *mtk_get_rx_ri
  
  		ring = &eth->rx_ring[i];
  		idx = NEXT_DESP_IDX(ring->calc_idx, ring->dma_size);
@@ -107,7 +113,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		if (rxd->rxd2 & RX_DMA_DONE) {
  			ring->calc_idx_update = true;
  			return ring;
-@@ -1995,7 +1995,7 @@ static int mtk_xdp_submit_frame(struct m
+@@ -1818,7 +1818,7 @@ static int mtk_xdp_submit_frame(struct m
  	}
  	htxd = txd;
  
@@ -116,7 +122,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	memset(tx_buf, 0, sizeof(*tx_buf));
  	htx_buf = tx_buf;
  
-@@ -2014,7 +2014,7 @@ static int mtk_xdp_submit_frame(struct m
+@@ -1837,7 +1837,7 @@ static int mtk_xdp_submit_frame(struct m
  				goto unmap;
  
  			tx_buf = mtk_desc_to_tx_buf(ring, txd,
@@ -125,7 +131,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			memset(tx_buf, 0, sizeof(*tx_buf));
  			n_desc++;
  		}
-@@ -2052,7 +2052,7 @@ static int mtk_xdp_submit_frame(struct m
+@@ -1875,7 +1875,7 @@ static int mtk_xdp_submit_frame(struct m
  	} else {
  		int idx;
  
@@ -134,7 +140,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		mtk_w32(eth, NEXT_DESP_IDX(idx, ring->dma_size),
  			MT7628_TX_CTX_IDX0);
  	}
-@@ -2063,7 +2063,7 @@ static int mtk_xdp_submit_frame(struct m
+@@ -1886,7 +1886,7 @@ static int mtk_xdp_submit_frame(struct m
  
  unmap:
  	while (htxd != txd) {
@@ -143,7 +149,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		mtk_tx_unmap(eth, tx_buf, NULL, false);
  
  		htxd->txd3 = TX_DMA_LS0 | TX_DMA_OWNER_CPU;
-@@ -2194,7 +2194,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2017,7 +2017,7 @@ static int mtk_poll_rx(struct napi_struc
  			goto rx_done;
  
  		idx = NEXT_DESP_IDX(ring->calc_idx, ring->dma_size);
@@ -152,7 +158,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		data = ring->data[idx];
  
  		if (!mtk_rx_get_desc(eth, &trxd, rxd))
-@@ -2329,7 +2329,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2152,7 +2152,7 @@ static int mtk_poll_rx(struct napi_struc
  			rxdcsum = &trxd.rxd4;
  		}
  
@@ -161,7 +167,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			skb->ip_summed = CHECKSUM_UNNECESSARY;
  		else
  			skb_checksum_none_assert(skb);
-@@ -2453,7 +2453,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
+@@ -2276,7 +2276,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
  			break;
  
  		tx_buf = mtk_desc_to_tx_buf(ring, desc,
@@ -170,7 +176,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		if (!tx_buf->data)
  			break;
  
-@@ -2504,7 +2504,7 @@ static int mtk_poll_tx_pdma(struct mtk_e
+@@ -2327,7 +2327,7 @@ static int mtk_poll_tx_pdma(struct mtk_e
  		}
  		mtk_tx_unmap(eth, tx_buf, &bq, true);
  
@@ -179,7 +185,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		ring->last_free = desc;
  		atomic_inc(&ring->free_count);
  
-@@ -2594,7 +2594,7 @@ static int mtk_napi_rx(struct napi_struc
+@@ -2417,7 +2417,7 @@ static int mtk_napi_rx(struct napi_struc
  	do {
  		int rx_done;
  
@@ -188,7 +194,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			reg_map->pdma.irq_status);
  		rx_done = mtk_poll_rx(napi, budget - rx_done_total, eth);
  		rx_done_total += rx_done;
-@@ -2610,10 +2610,10 @@ static int mtk_napi_rx(struct napi_struc
+@@ -2433,10 +2433,10 @@ static int mtk_napi_rx(struct napi_struc
  			return budget;
  
  	} while (mtk_r32(eth, reg_map->pdma.irq_status) &
@@ -201,7 +207,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	return rx_done_total;
  }
-@@ -2622,7 +2622,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -2445,7 +2445,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  {
  	const struct mtk_soc_data *soc = eth->soc;
  	struct mtk_tx_ring *ring = &eth->tx_ring;
@@ -210,7 +216,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	struct mtk_tx_dma_v2 *txd;
  	int ring_size;
  	u32 ofs, val;
-@@ -2745,14 +2745,14 @@ static void mtk_tx_clean(struct mtk_eth
+@@ -2568,14 +2568,14 @@ static void mtk_tx_clean(struct mtk_eth
  	}
  	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && ring->dma) {
  		dma_free_coherent(eth->dma_dev,
@@ -227,7 +233,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  				  ring->dma_pdma, ring->phys_pdma);
  		ring->dma_pdma = NULL;
  	}
-@@ -2807,15 +2807,15 @@ static int mtk_rx_alloc(struct mtk_eth *
+@@ -2630,15 +2630,15 @@ static int mtk_rx_alloc(struct mtk_eth *
  	if (!MTK_HAS_CAPS(eth->soc->caps, MTK_SRAM) ||
  	    rx_flag != MTK_RX_FLAGS_NORMAL) {
  		ring->dma = dma_alloc_coherent(eth->dma_dev,
@@ -247,7 +253,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	}
  
  	if (!ring->dma)
-@@ -2826,7 +2826,7 @@ static int mtk_rx_alloc(struct mtk_eth *
+@@ -2649,7 +2649,7 @@ static int mtk_rx_alloc(struct mtk_eth *
  		dma_addr_t dma_addr;
  		void *data;
  
@@ -256,7 +262,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		if (ring->page_pool) {
  			data = mtk_page_pool_get_buff(ring->page_pool,
  						      &dma_addr, GFP_KERNEL);
-@@ -2917,7 +2917,7 @@ static void mtk_rx_clean(struct mtk_eth
+@@ -2740,7 +2740,7 @@ static void mtk_rx_clean(struct mtk_eth
  			if (!ring->data[i])
  				continue;
  
@@ -265,7 +271,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			if (!rxd->rxd1)
  				continue;
  
-@@ -2934,7 +2934,7 @@ static void mtk_rx_clean(struct mtk_eth
+@@ -2757,7 +2757,7 @@ static void mtk_rx_clean(struct mtk_eth
  
  	if (!in_sram && ring->dma) {
  		dma_free_coherent(eth->dma_dev,
@@ -274,7 +280,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  				  ring->dma, ring->phys);
  		ring->dma = NULL;
  	}
-@@ -3297,7 +3297,7 @@ static void mtk_dma_free(struct mtk_eth
+@@ -3120,7 +3120,7 @@ static void mtk_dma_free(struct mtk_eth
  			netdev_reset_queue(eth->netdev[i]);
  	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && eth->scratch_ring) {
  		dma_free_coherent(eth->dma_dev,
@@ -283,7 +289,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  				  eth->scratch_ring, eth->phy_scratch_ring);
  		eth->scratch_ring = NULL;
  		eth->phy_scratch_ring = 0;
-@@ -3347,7 +3347,7 @@ static irqreturn_t mtk_handle_irq_rx(int
+@@ -3170,7 +3170,7 @@ static irqreturn_t mtk_handle_irq_rx(int
  
  	eth->rx_events++;
  	if (likely(napi_schedule_prep(&eth->rx_napi))) {
@@ -292,7 +298,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		__napi_schedule(&eth->rx_napi);
  	}
  
-@@ -3373,9 +3373,9 @@ static irqreturn_t mtk_handle_irq(int ir
+@@ -3196,9 +3196,9 @@ static irqreturn_t mtk_handle_irq(int ir
  	const struct mtk_reg_map *reg_map = eth->soc->reg_map;
  
  	if (mtk_r32(eth, reg_map->pdma.irq_mask) &
@@ -304,7 +310,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  			mtk_handle_irq_rx(irq, _eth);
  	}
  	if (mtk_r32(eth, reg_map->tx_irq_mask) & MTK_TX_DONE_INT) {
-@@ -3393,10 +3393,10 @@ static void mtk_poll_controller(struct n
+@@ -3216,10 +3216,10 @@ static void mtk_poll_controller(struct n
  	struct mtk_eth *eth = mac->hw;
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
@@ -317,7 +323,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
  #endif
  
-@@ -3563,7 +3563,7 @@ static int mtk_open(struct net_device *d
+@@ -3383,7 +3383,7 @@ static int mtk_open(struct net_device *d
  		napi_enable(&eth->tx_napi);
  		napi_enable(&eth->rx_napi);
  		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
@@ -326,7 +332,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		refcount_set(&eth->dma_refcnt, 1);
  	}
  	else
-@@ -3647,7 +3647,7 @@ static int mtk_stop(struct net_device *d
+@@ -3467,7 +3467,7 @@ static int mtk_stop(struct net_device *d
  	mtk_gdm_config(eth, MTK_GDMA_DROP_ALL);
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
@@ -335,7 +341,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	napi_disable(&eth->tx_napi);
  	napi_disable(&eth->rx_napi);
  
-@@ -4126,9 +4126,9 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3943,9 +3943,9 @@ static int mtk_hw_init(struct mtk_eth *e
  
  	/* FE int grouping */
  	mtk_w32(eth, MTK_TX_DONE_INT, reg_map->pdma.int_grp);
@@ -347,7 +353,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
  	if (mtk_is_netsys_v3_or_greater(eth)) {
-@@ -5305,11 +5305,15 @@ static const struct mtk_soc_data mt2701_
+@@ -5037,11 +5037,15 @@ static const struct mtk_soc_data mt2701_
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.version = 1,
@@ -368,7 +374,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5325,11 +5329,15 @@ static const struct mtk_soc_data mt7621_
+@@ -5057,11 +5061,15 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -389,7 +395,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5347,11 +5355,15 @@ static const struct mtk_soc_data mt7622_
+@@ -5079,11 +5087,15 @@ static const struct mtk_soc_data mt7622_
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -410,7 +416,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5368,11 +5380,15 @@ static const struct mtk_soc_data mt7623_
+@@ -5100,11 +5112,15 @@ static const struct mtk_soc_data mt7623_
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
@@ -431,7 +437,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5387,11 +5403,15 @@ static const struct mtk_soc_data mt7629_
+@@ -5119,11 +5135,15 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.has_accounting = true,
  	.version = 1,
@@ -452,7 +458,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5409,11 +5429,15 @@ static const struct mtk_soc_data mt7981_
+@@ -5141,11 +5161,15 @@ static const struct mtk_soc_data mt7981_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -473,7 +479,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5431,11 +5455,15 @@ static const struct mtk_soc_data mt7986_
+@@ -5163,11 +5187,15 @@ static const struct mtk_soc_data mt7986_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -494,7 +500,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5453,11 +5481,15 @@ static const struct mtk_soc_data mt7988_
+@@ -5185,11 +5213,15 @@ static const struct mtk_soc_data mt7988_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
@@ -515,7 +521,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5470,11 +5502,15 @@ static const struct mtk_soc_data rt5350_
+@@ -5202,11 +5234,15 @@ static const struct mtk_soc_data rt5350_
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,
  	.version = 1,
@@ -560,7 +566,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #define RX_DMA_VTAG		BIT(15)
  #define RX_DMA_ADDR64_MASK	GENMASK(3, 0)
  #if IS_ENABLED(CONFIG_64BIT)
-@@ -1209,10 +1209,9 @@ struct mtk_reg_map {
+@@ -1153,10 +1153,9 @@ struct mtk_reg_map {
   * @foe_entry_size		Foe table entry size.
   * @has_accounting		Bool indicating support for accounting of
   *				offloaded flows.
@@ -574,7 +580,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
   * @dma_max_len			Max DMA tx/rx buffer length.
   * @dma_len_offset		Tx/Rx DMA length field offset.
   */
-@@ -1230,13 +1229,17 @@ struct mtk_soc_data {
+@@ -1174,13 +1173,17 @@ struct mtk_soc_data {
  	bool		has_accounting;
  	bool		disable_pll_modes;
  	struct {

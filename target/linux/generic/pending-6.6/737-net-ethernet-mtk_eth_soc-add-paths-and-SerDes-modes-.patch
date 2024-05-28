@@ -893,7 +893,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct mtk_tx_dma_desc_info {
  	dma_addr_t	addr;
-@@ -1314,6 +1371,9 @@ struct mtk_mac {
+@@ -1317,6 +1374,9 @@ struct mtk_mac {
  	struct device_node		*of_node;
  	struct phylink			*phylink;
  	struct phylink_config		phylink_config;
@@ -903,7 +903,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mtk_eth			*hw;
  	struct mtk_hw_stats		*hw_stats;
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
-@@ -1437,6 +1497,19 @@ static inline u32 mtk_get_ib2_multicast_
+@@ -1440,6 +1500,19 @@ static inline u32 mtk_get_ib2_multicast_
  	return MTK_FOE_IB2_MULTICAST;
  }
  
@@ -923,7 +923,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* read the hardware status register */
  void mtk_stats_update_mac(struct mtk_mac *mac);
  
-@@ -1445,8 +1518,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
+@@ -1448,8 +1521,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
  u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned int reg);
  
  int mtk_gmac_sgmii_path_setup(struct mtk_eth *eth, int mac_id);
