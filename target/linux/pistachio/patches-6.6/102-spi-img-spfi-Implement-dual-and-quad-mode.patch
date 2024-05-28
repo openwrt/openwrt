@@ -103,10 +103,10 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  			return 0;
  		}
  		cpu_relax();
-@@ -441,9 +460,32 @@ static void img_spfi_config(struct spi_m
+@@ -441,9 +460,32 @@ static void img_spfi_config(struct spi_c
  			    struct spi_transfer *xfer)
  {
- 	struct img_spfi *spfi = spi_master_get_devdata(spi->master);
+ 	struct img_spfi *spfi = spi_controller_get_devdata(spi->controller);
 -	u32 val, div;
 +	u32 val, div, transact;
 +	bool is_pending;
@@ -137,13 +137,13 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  	 * output = spfi_clk * (BITCLK / 512), where BITCLK must be a
  	 * power of 2 up to 128
  	 */
-@@ -456,20 +498,52 @@ static void img_spfi_config(struct spi_m
+@@ -456,20 +498,52 @@ static void img_spfi_config(struct spi_c
  	val |= div << SPFI_DEVICE_PARAMETER_BITCLK_SHIFT;
- 	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi->chip_select));
+ 	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi_get_chipselect(spi, 0)));
  
 -	spfi_writel(spfi, xfer->len << SPFI_TRANSACTION_TSIZE_SHIFT,
 -		    SPFI_TRANSACTION);
-+	if (!list_is_last(&xfer->transfer_list, &master->cur_msg->transfers) &&
++	if (!list_is_last(&xfer->transfer_list, &host->cur_msg->transfers) &&
 +		/*
 +		 * For duplex mode (both the tx and rx buffers are !NULL) the
 +		 * CMD, ADDR, and DUMMY byte parts of the transaction register

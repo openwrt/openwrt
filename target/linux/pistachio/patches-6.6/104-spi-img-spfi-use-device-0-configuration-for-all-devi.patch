@@ -15,8 +15,8 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -429,18 +429,23 @@ static int img_spfi_prepare(struct spi_m
- 	struct img_spfi *spfi = spi_master_get_devdata(master);
+@@ -429,18 +429,23 @@ static int img_spfi_prepare(struct spi_c
+ 	struct img_spfi *spfi = spi_controller_get_devdata(host);
  	u32 val;
  
 +	/*
@@ -28,27 +28,27 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 +	/* 0 for device selection */
  	val &= ~(SPFI_PORT_STATE_DEV_SEL_MASK <<
  		 SPFI_PORT_STATE_DEV_SEL_SHIFT);
--	val |= msg->spi->chip_select << SPFI_PORT_STATE_DEV_SEL_SHIFT;
+-	val |= spi_get_chipselect(msg->spi, 0) << SPFI_PORT_STATE_DEV_SEL_SHIFT;
  	if (msg->spi->mode & SPI_CPHA)
--		val |= SPFI_PORT_STATE_CK_PHASE(msg->spi->chip_select);
+-		val |= SPFI_PORT_STATE_CK_PHASE(spi_get_chipselect(msg->spi, 0));
 +		val |= SPFI_PORT_STATE_CK_PHASE(0);
  	else
--		val &= ~SPFI_PORT_STATE_CK_PHASE(msg->spi->chip_select);
+-		val &= ~SPFI_PORT_STATE_CK_PHASE(spi_get_chipselect(msg->spi, 0));
 +		val &= ~SPFI_PORT_STATE_CK_PHASE(0);
  	if (msg->spi->mode & SPI_CPOL)
--		val |= SPFI_PORT_STATE_CK_POL(msg->spi->chip_select);
+-		val |= SPFI_PORT_STATE_CK_POL(spi_get_chipselect(msg->spi, 0));
 +		val |= SPFI_PORT_STATE_CK_POL(0);
  	else
--		val &= ~SPFI_PORT_STATE_CK_POL(msg->spi->chip_select);
+-		val &= ~SPFI_PORT_STATE_CK_POL(spi_get_chipselect(msg->spi, 0));
 +		val &= ~SPFI_PORT_STATE_CK_POL(0);
  	spfi_writel(spfi, val, SPFI_PORT_STATE);
  
  	return 0;
-@@ -492,11 +497,15 @@ static void img_spfi_config(struct spi_m
+@@ -492,11 +497,15 @@ static void img_spfi_config(struct spi_c
  	div = DIV_ROUND_UP(clk_get_rate(spfi->spfi_clk), xfer->speed_hz);
  	div = clamp(512 / (1 << get_count_order(div)), 1, 128);
  
--	val = spfi_readl(spfi, SPFI_DEVICE_PARAMETER(spi->chip_select));
+-	val = spfi_readl(spfi, SPFI_DEVICE_PARAMETER(spi_get_chipselect(spi, 0)));
 +	/*
 +	 * The chip select line is controlled externally so
 +	 * we can use the CS0 parameters for all devices
@@ -57,8 +57,8 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  	val &= ~(SPFI_DEVICE_PARAMETER_BITCLK_MASK <<
  		 SPFI_DEVICE_PARAMETER_BITCLK_SHIFT);
  	val |= div << SPFI_DEVICE_PARAMETER_BITCLK_SHIFT;
--	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi->chip_select));
+-	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi_get_chipselect(spi, 0)));
 +	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(0));
  
- 	if (!list_is_last(&xfer->transfer_list, &master->cur_msg->transfers) &&
+ 	if (!list_is_last(&xfer->transfer_list, &host->cur_msg->transfers) &&
  		/*

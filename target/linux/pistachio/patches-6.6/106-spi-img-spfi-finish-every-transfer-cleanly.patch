@@ -101,7 +101,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 -	if (!spfi->tx_dma_busy)
 +	if (!spfi->tx_dma_busy) {
 +		spfi_finish(spfi);
- 		spi_finalize_current_transfer(spfi->master);
+ 		spi_finalize_current_transfer(spfi->host);
 +	}
  	spin_unlock_irqrestore(&spfi->lock, flags);
  }
@@ -113,7 +113,7 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
 -	if (!spfi->rx_dma_busy)
 +	if (!spfi->rx_dma_busy) {
 +		spfi_finish(spfi);
- 		spi_finalize_current_transfer(spfi->master);
+ 		spi_finalize_current_transfer(spfi->host);
 +	}
  	spin_unlock_irqrestore(&spfi->lock, flags);
  }
