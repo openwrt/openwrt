@@ -10,8 +10,8 @@ define Build/tegra-sdcard
 	mkdir -p $@.boot
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot
 	$(if $(DEVICE_DTS),\
-		$(foreach dtb,$(DEVICE_DTS),$(CP) $(DTS_DIR)/$(dtb).dtb $@.boot), \
-		$(CP) $(DTS_DIR)/*.dtb $@.boot)
+		$(foreach dtb,$(DEVICE_DTS),$(CP) $(DEVICE_DTS_DIR)/$(dtb).dtb $@.boot), \
+		$(CP) $(DEVICE_DTS_DIR)/*.dtb $@.boot)
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 		-n '$(DEVICE_TITLE) OpenWrt bootscript' \
 		-d $(BOOT_SCRIPT) \
@@ -32,6 +32,11 @@ DEVICE_VARS += BOOT_SCRIPT UBOOT
 
 define Device/Default
   BOOT_SCRIPT := generic-bootscript
+ifeq ($(KERNEL),6.6)
+  DEVICE_DTS_DIR := $$(DTS_DIR)/nvidia
+else
+  DEVICE_DTS_DIR := $$(DTS_DIR)
+endif
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := append-rootfs | pad-extra 128k | tegra-sdcard | gzip | append-metadata
   KERNEL_NAME := zImage
