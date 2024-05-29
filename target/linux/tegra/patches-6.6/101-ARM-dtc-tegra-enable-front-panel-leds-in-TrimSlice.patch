@@ -1,5 +1,5 @@
---- a/arch/arm/boot/dts/tegra20-trimslice.dts
-+++ b/arch/arm/boot/dts/tegra20-trimslice.dts
+--- a/arch/arm/boot/dts/nvidia/tegra20-trimslice.dts
++++ b/arch/arm/boot/dts/nvidia/tegra20-trimslice.dts
 @@ -201,16 +201,17 @@
  			conf_ata {
  				nvidia,pins = "ata", "atc", "atd", "ate",
@@ -23,7 +23,7 @@
  				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
  				nvidia,tristate = <TEGRA_PIN_DISABLE>;
  			};
-@@ -396,6 +397,20 @@
+@@ -408,6 +409,20 @@
  		};
  	};
  
