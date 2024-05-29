@@ -20,7 +20,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed_mcu.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed_mcu.c
-@@ -316,6 +316,39 @@ next:
+@@ -320,6 +320,39 @@ next:
  }
  
  static int
@@ -60,7 +60,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  mtk_wed_mcu_load_firmware(struct mtk_wed_wo *wo)
  {
  	const struct mtk_wed_fw_trailer *trailer;
-@@ -324,14 +357,20 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
+@@ -328,14 +361,20 @@ mtk_wed_mcu_load_firmware(struct mtk_wed
  	u32 val, boot_cr;
  	int ret, i;
  
