@@ -91,6 +91,24 @@ define Device/extreme-networks_ws-ap3825i
 endef
 TARGET_DEVICES += extreme-networks_ws-ap3825i
 
+define Device/hpe_msm460
+  DEVICE_VENDOR := Hewlett-Packard
+  DEVICE_MODEL := MSM460
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += hpe_msm460
+
 define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
@@ -104,4 +122,3 @@ define Device/ocedo_panda
   IMAGE/fdt.bin := append-dtb
 endef
 TARGET_DEVICES += ocedo_panda
-
