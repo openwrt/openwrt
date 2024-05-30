@@ -5,8 +5,8 @@ set_netdev_labels() {
 
 	for dir in /sys/class/net/*; do
 		[ -r "$dir/of_node/label" ] || continue
-		label="$(cat "$dir/of_node/label")"
-		netdev="$(basename $dir)"
+		read -r label < "$dir/of_node/label"
+		netdev="${dir##*/}"
 		[ "$netdev" = "$label" ] && continue
 		ip link set "$netdev" name "$label"
 	done
