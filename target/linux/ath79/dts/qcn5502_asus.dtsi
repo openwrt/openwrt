@@ -75,6 +75,7 @@
 			};
 
 			partition@40000 {
+				compatible = "u-boot,env";
 				label = "nvram";
 				reg = <0x040000 0x010000>;
 				read-only;

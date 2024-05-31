@@ -156,6 +156,7 @@
 			};
 
 			partition@40000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x40000 0x10000>;
 			};
@@ -167,6 +168,7 @@
 			};
 
 			partition@fe0000 {
+				compatible = "u-boot,env";
 				label = "nvram";
 				reg = <0xfe0000 0x10000>;
 			};

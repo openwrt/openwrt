@@ -45,6 +45,7 @@
 		};
 
 		partition@80000 {
+			compatible = "u-boot,env";
 			label = "u-boot-env";
 			reg = <0x080000 0x020000>;
 			read-only;
