@@ -435,7 +435,6 @@ config KERNEL_DEBUG_INFO
 	  This will compile your kernel and modules with debug information.
 
 config KERNEL_DEBUG_INFO_BTF
-
 	bool "Enable additional BTF type information"
 	depends on !HOST_OS_MACOS
 	depends on KERNEL_DEBUG_INFO && !KERNEL_DEBUG_INFO_REDUCED
@@ -447,9 +446,13 @@ config KERNEL_DEBUG_INFO_BTF
 
 	  Required to run BPF CO-RE applications.
 
+config KERNEL_DEBUG_INFO_BTF_MODULES
+	def_bool y
+	depends on KERNEL_DEBUG_INFO_BTF
+
 config KERNEL_MODULE_ALLOW_BTF_MISMATCH
 	bool "Allow loading modules with non-matching BTF type info"
-	depends on KERNEL_DEBUG_INFO_BTF
+	depends on KERNEL_DEBUG_INFO_BTF_MODULES
 	help
 	  For modules whose split BTF does not match vmlinux, load without
 	  BTF rather than refusing to load. The default behavior with
