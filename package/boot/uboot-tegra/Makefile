@@ -13,6 +13,8 @@ PKG_HASH := 18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
 
 PKG_MAINTAINER := Tomasz Maciej Nowak <tmn505@gmail.com>
 
+UBOOT_USE_INTREE_DTC:=1
+
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 
