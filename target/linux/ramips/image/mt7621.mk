@@ -771,6 +771,14 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
+define Device/dlink_dir-2055-a1
+  $(Device/dlink_dir_nand_128m)
+  DEVICE_PACKAGES += -kmod-usb-ledtrig-usbport
+  DEVICE_MODEL := DIR-2055
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-2055-a1
+
 define Device/dlink_dir-2150-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2150
