@@ -68,6 +68,7 @@ ifeq ($(HOST_OS),Darwin)
 endif
 
 HOST_CFLAGS += -Wno-error -fPIC
+HOST_CXXFLAGS += -O2
 
 HOST_CONFIGURE_ARGS += \
 	--without-libintl-prefix \
