@@ -20,8 +20,6 @@ case "$FIRMWARE" in
 	netgear,sxr80|\
 	netgear,sxs80|\
 	netgear,wax218|\
-	netgear,wax620|\
-	netgear,wax630|\
 	qnap,301w|\
 	redmi,ax6|\
 	xiaomi,ax3600|\
@@ -49,6 +47,21 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0xc) 0
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x0) 1
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x6) 2
+		ath11k_set_macflag
+		;;
+	netgear,wax620)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -31) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_set_macflag
+		;;
+	netgear,wax630)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -31) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 33) 2
 		ath11k_set_macflag
 		;;
 	prpl,haze|\
