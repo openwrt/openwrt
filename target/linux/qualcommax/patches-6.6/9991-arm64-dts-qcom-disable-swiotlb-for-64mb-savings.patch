@@ -1,0 +1,99 @@
+--- a/arch/arm64/boot/dts/qcom/ipq6010-wax214.dts
++++ b/arch/arm64/boot/dts/qcom/ipq6010-wax214.dts
+@@ -25,7 +25,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8070-cax1800.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8070-cax1800.dts
+@@ -27,7 +27,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8070-rm2-6.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8070-rm2-6.dts
+@@ -32,7 +32,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8071-ax3600.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8071-ax3600.dtsi
+@@ -20,7 +20,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_0";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_0";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8071-mf269.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8071-mf269.dts
+@@ -24,7 +24,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_0";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_0";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8072-ax880.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8072-ax880.dts
+@@ -29,7 +29,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8072-wax218.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8072-wax218.dts
+@@ -27,7 +27,7 @@
+ 		 * Netgear's U-Boot adds "ubi.mtd=rootfs root=mtd:ubi_rootfs"
+ 		 * That fails to create a UBI block device, so add it here.
+ 		*/
+-		bootargs-append = " ubi.block=0,rootfs root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce ubi.block=0,rootfs root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8072-wpq873.dts
++++ b/arch/arm64/boot/dts/qcom/ipq8072-wpq873.dts
+@@ -31,7 +31,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_1";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_1";
+ 	};
+ 
+ 	keys {
+--- a/arch/arm64/boot/dts/qcom/ipq8174-mx4200.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8174-mx4200.dtsi
+@@ -29,7 +29,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+-		bootargs-append = " root=/dev/ubiblock0_0";
++		bootargs-append = " coherent_pool=2M swiotlb=noforce root=/dev/ubiblock0_0";
+ 	};
+ 
+ 	keys {

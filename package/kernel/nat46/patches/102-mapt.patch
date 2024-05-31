@@ -1,0 +1,209 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Sat Aug 1 13:27:20 2020 +0530
+
+nat46: Export APIs for acceleration engine support in nat46 for kernel 5.4
+
+This patch is propagated from kernel 4.4 commit
+861e64a607fd22d5af089cf56539f42a2e31d581
+
+The patch defines and exports APIs in nat46 to be used for accelaration.
+
+Change-Id: I7934b15544953f870d3595b8b359433b4fff7c30
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1497,7 +1497,6 @@ static uint16_t nat46_fixup_icmp_dest_un
+   return 0;
+ }
+ 
+-
+ /* Fixup ICMP->ICMP6 before IP header translation, according to http://tools.ietf.org/html/rfc6145 */
+ 
+ static uint16_t nat46_fixup_icmp(nat46_instance_t *nat46, struct iphdr *iph, struct sk_buff *old_skb) {
+@@ -1579,6 +1578,10 @@ int pairs_xlate_v6_to_v4_outer(nat46_ins
+   return ( (xlate_src >= 0) && (xlate_dst >= 0) );
+ }
+ 
++int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
++	return pairs_xlate_v6_to_v4_outer(netdev_nat46_instance(dev), ip6h, proto, pv4saddr, pv4daddr);
++}
++EXPORT_SYMBOL(xlate_6_to_4);
+ 
+ int nat46_ipv6_input(struct sk_buff *old_skb) {
+   struct ipv6hdr *ip6h = ipv6_hdr(old_skb);
+@@ -1733,6 +1736,10 @@ int nat46_ipv6_input(struct sk_buff *old
+ 
+   nat46debug(5, "about to send v4 packet, flags: %02x",  IPCB(new_skb)->flags);
+   nat46_netdev_count_xmit(new_skb, old_skb->dev);
++
++  /* set skb->iif */
++  new_skb->skb_iif = old_skb->skb_iif;
++
+   netif_rx(new_skb);
+ 
+   /* TBD: should copy be released here? */
+@@ -1841,6 +1848,10 @@ int pairs_xlate_v4_to_v6_outer(nat46_ins
+   return 0;
+ }
+ 
++int xlate_4_to_6(struct net_device *dev, struct iphdr *hdr4, uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr) {
++	return pairs_xlate_v4_to_v6_outer(netdev_nat46_instance(dev), hdr4, &sport, &dport, v6saddr, v6daddr);
++}
++EXPORT_SYMBOL(xlate_4_to_6);
+ 
+ int nat46_ipv4_input(struct sk_buff *old_skb) {
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
+@@ -1981,6 +1992,10 @@ int nat46_ipv4_input(struct sk_buff *old
+ 
+   nat46debug(5, "about to send v6 packet, flags: %02x",  IP6CB(new_skb)->flags);
+   nat46_netdev_count_xmit(new_skb, old_skb->dev);
++
++  /* set skb->iif */
++  new_skb->skb_iif = old_skb->skb_iif;
++
+   netif_rx(new_skb);
+ 
+ done:
+@@ -1988,4 +2003,22 @@ done:
+   return err;
+ }
+ 
++int nat46_get_npairs(struct net_device *dev) {
++	nat46_instance_t *nat46 = netdev_nat46_instance(dev);
++	return nat46->npairs;
++}
++EXPORT_SYMBOL(nat46_get_npairs);
+ 
++bool nat46_get_rule_config(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair, int *count) {
++	nat46_instance_t *nat46 = netdev_nat46_instance(dev);
++	if (nat46->npairs < 1) {
++		/*
++		 * no rules ?
++		 */
++		return false;
++	}
++	*count = nat46->npairs;
++	*nat46_rule_pair = nat46->pairs;
++	return true;
++}
++EXPORT_SYMBOL(nat46_get_rule_config);
+--- a/nat46/modules/nat46-core.h
++++ b/nat46/modules/nat46-core.h
+@@ -42,18 +42,18 @@ typedef enum {
+ #define NAT46_SIGNATURE 0x544e3634
+ #define FREED_NAT46_SIGNATURE 0xdead544e
+ 
+-typedef struct {
++typedef struct nat46_xlate_rule {
+   nat46_xlate_style_t style;
+   struct in6_addr v6_pref;
+-  int 		  v6_pref_len;
+-  u32		  v4_pref;
+-  int             v4_pref_len;
+-  int		  ea_len;
+-  int             psid_offset;
+-  int             fmr_flag;
++  int v6_pref_len;
++  u32 v4_pref;
++  int v4_pref_len;
++  int ea_len;
++  int psid_offset;
++  int fmr_flag;
+ } nat46_xlate_rule_t;
+ 
+-typedef struct {
++typedef struct nat46_xlate_rulepair {
+   nat46_xlate_rule_t local;
+   nat46_xlate_rule_t remote;
+ } nat46_xlate_rulepair_t;
+@@ -82,4 +82,9 @@ nat46_instance_t *get_nat46_instance(str
+ nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair, int remove_ipair);
+ void release_nat46_instance(nat46_instance_t *nat46);
+ 
++int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr);
++int xlate_4_to_6(struct net_device *dev, struct iphdr *hdr4, uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr);
++bool nat46_get_rule_config(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair, int *count);
++int nat46_get_npairs(struct net_device *dev);
++
+ #endif
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -24,10 +24,12 @@
+ #include <net/ip6_route.h>
+ #include <net/ipv6.h>
+ #include <linux/version.h>
++#include <linux/radix-tree.h>
+ #include "nat46-core.h"
+ #include "nat46-module.h"
+ 
+ #define NETDEV_DEFAULT_NAME "nat46."
++static RADIX_TREE(netdev_tree, GFP_ATOMIC);
+ 
+ typedef struct {
+   u32 sig;
+@@ -83,6 +85,18 @@ void nat46_netdev_count_xmit(struct sk_b
+ 	dev->stats.tx_bytes += skb->len;
+ }
+ 
++void nat46_update_stats(struct net_device *dev, uint32_t rx_packets, uint32_t rx_bytes,
++			uint32_t tx_packets, uint32_t tx_bytes, uint32_t rx_dropped, uint32_t tx_dropped)
++{
++	dev->stats.rx_packets += rx_packets;
++	dev->stats.rx_bytes += rx_bytes;
++	dev->stats.tx_packets += tx_packets;
++	dev->stats.tx_bytes += tx_bytes;
++	dev->stats.rx_dropped += rx_dropped;
++	dev->stats.tx_dropped += tx_dropped;
++}
++EXPORT_SYMBOL(nat46_update_stats);
++
+ void *netdev_nat46_instance(struct net_device *dev) {
+ 	nat46_netdev_priv_t *priv = netdev_priv(dev);
+ 	return priv->nat46;
+@@ -159,6 +173,11 @@ int nat46_netdev_create(char *basename,
+ 	printk("nat46: netdevice nat46 '%s' created successfully.\n", devname);
+ 	kfree(devname);
+ 
++	/*
++	 * add this netdevice to list
++	 */
++	radix_tree_insert(&netdev_tree, (*dev)->ifindex, (void *)*dev);
++
+ 	return 0;
+ 
+ err_register_dev:
+@@ -175,10 +194,24 @@ void nat46_netdev_destroy(struct net_dev
+ 	netif_stop_queue(dev);
+ 	netdev_nat46_set_instance(dev, NULL);
+ 	unregister_netdev(dev);
++	radix_tree_delete(&netdev_tree, dev->ifindex);
+ 	free_netdev(dev);
+ 	printk("nat46: Destroying nat46 device.\n");
+ }
+ 
++bool is_map_t_dev(struct net_device *dev)
++{
++	if(!dev) {
++		return false;
++	}
++
++	if(radix_tree_lookup(&netdev_tree, dev->ifindex)) {
++		return true;
++	}
++	return false;
++}
++EXPORT_SYMBOL(is_map_t_dev);
++
+ static int is_nat46(struct net_device *dev) {
+ 	nat46_netdev_priv_t *priv = netdev_priv(dev);
+ 	return (priv && (NAT46_DEVICE_SIGNATURE == priv->sig));
+--- a/nat46/modules/nat46-netdev.h
++++ b/nat46/modules/nat46-netdev.h
+@@ -26,3 +26,6 @@ void nat64_show_all_configs(struct seq_f
+ void nat46_netdev_count_xmit(struct sk_buff *skb, struct net_device *dev);
+ void *netdev_nat46_instance(struct net_device *dev);
+ 
++void nat46_update_stats(struct net_device *dev, uint32_t rx_packets, uint32_t rx_bytes, uint32_t tx_packets, uint32_t tx_bytes,
++							uint32_t rx_dropped, uint32_t tx_dropped);
++bool is_map_t_dev(struct net_device *dev);

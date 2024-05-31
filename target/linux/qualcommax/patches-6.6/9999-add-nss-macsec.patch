@@ -1,0 +1,13 @@
+--- a/arch/arm64/boot/dts/qcom/ipq8074-nss.dtsi	2024-01-08 16:04:51.957322224 -0500
++++ b/arch/arm64/boot/dts/qcom/ipq8074-nss.dtsi	2024-01-08 16:09:29.079630738 -0500
+@@ -268,4 +268,10 @@
+ 			};
+ 		};
+ 	};
++	nss-macsec1 {
++		compatible = "qcom,nss-macsec";
++		phy_addr = <0x1c>;
++		phy_access_mode = <0x00>;
++		mdiobus = <&mdio>;
++	};
+ };

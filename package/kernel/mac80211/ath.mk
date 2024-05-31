@@ -13,7 +13,14 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
-	CONFIG_ATH_USER_REGD
+	CONFIG_ATH11K_DEBUGFS_STA \
+	CONFIG_ATH11K_DEBUGFS_HTT_STATS \
+	CONFIG_ATH_USER_REGD \
+	CONFIG_ATH11K_MEM_PROFILE_1G \
+	CONFIG_ATH11K_MEM_PROFILE_512M \
+	CONFIG_ATH11K_MEM_PROFILE_256M \
+	CONFIG_ATH11K_NSS_SUPPORT \
+	CONFIG_ATH11K_NSS_MESH_SUPPORT
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
   config-y += \
@@ -56,6 +63,13 @@ config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
+config-$(CONFIG_ATH11K_MEM_PROFILE_1G) += ATH11K_MEM_PROFILE_1G
+config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512M
+config-$(CONFIG_ATH11K_MEM_PROFILE_256M) += ATH11K_MEM_PROFILE_256M
+config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
+config-$(CONFIG_ATH11K_NSS_MESH_SUPPORT) += ATH11K_NSS_MESH_SUPPORT
+config-$(CONFIG_ATH11K_DEBUGFS_STA) += ATH11K_DEBUGFS_STA
+config-$(CONFIG_ATH11K_DEBUGFS_HTT_STATS) += ATH11K_DEBUGFS_HTT_STATS
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k,regular) += ATH10K ATH10K_PCI
@@ -297,14 +311,26 @@ define KernelPackage/ath11k
   TITLE:=Qualcomm 802.11ax wireless chipset support (common code)
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
-  +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal
+  +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal \
+  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv \
+  +ATH11K_NSS_MESH_SUPPORT:kmod-qca-nss-drv-wifi-meshmgr \
+  +@(ATH11K_NSS_SUPPORT):NSS_DRV_WIFIOFFLOAD_ENABLE \
+  +@(ATH11K_NSS_SUPPORT):NSS_DRV_WIFI_EXT_VDEV_ENABLE
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+  AUTOLOAD:=$(call AutoProbe,ath11k)
+  MODPARAMS.ath11k:=nss_offload=1 frame_mode=2
+endif
 endef
 
 define KernelPackage/ath11k/description
 This module adds support for Qualcomm Technologies 802.11ax family of
 chipsets.
+endef
+
+define KernelPackage/ath11k/conffiles
+/etc/config/pbuf
 endef
 
 define KernelPackage/ath11k/config
@@ -314,6 +340,68 @@ define KernelPackage/ath11k/config
                depends on PACKAGE_kmod-ath11k
                default y if TARGET_qualcommax
 
+      config ATH11K_DEBUGFS_STA
+               bool "Enable ath11k station statistics"
+               depends on PACKAGE_kmod-ath11k
+               depends on PACKAGE_MAC80211_DEBUGFS
+               default y
+               help
+                  Say Y to enable access to the station statistics via debugfs.
+
+      config ATH11K_DEBUGFS_HTT_STATS
+               bool "Enable ath11k HTT statistics"
+               depends on PACKAGE_kmod-ath11k
+               depends on PACKAGE_MAC80211_DEBUGFS
+               default y
+               help
+                  Say Y to enable access to the HTT statistics via debugfs.
+
+       config ATH11K_NSS_SUPPORT
+               bool "Enable NSS WiFi offload"
+               select ATH11K_MEM_PROFILE_512M if (TARGET_qualcommax_ipq807x_DEVICE_edimax_cax1800 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_compex_wpq873 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_linksys_mx4200v1 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_redmi_ax6 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_xiaomi_ax3600 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_zte_mf269 )
+               select ATH11K_MEM_PROFILE_256M if TARGET_qualcommax_ipq807x_DEVICE_netgear_wax218
+               default y
+               help
+                  Say Y to enable NSS WiFi offload support. Ensure you enable feeds for NSS drivers.
+                  https://github.com/qosmio/nss-packages
+
+       config ATH11K_NSS_MESH_SUPPORT
+               bool "Enable NSS WiFi Mesh offload"
+               depends on ATH11K_NSS_SUPPORT
+               select PACKAGE_MAC80211_MESH
+               select NSS_FIRMWARE_VERSION_11_4
+               default n
+
+       choice
+            prompt "Memory Profile"
+            depends on PACKAGE_kmod-ath11k
+            default ATH11K_MEM_PROFILE_1G
+            help
+            	This option allows you to select the memory profile.
+            	It should correspond to the total RAM of your board.
+
+          config ATH11K_MEM_PROFILE_1G
+               bool "Use 1G memory profile"
+               help
+                  This allows configuring ath11k for boards with 1GB+ memory.
+
+          config ATH11K_MEM_PROFILE_512M
+               bool "Use 512MB memory profile"
+               help
+                  This allows configuring ath11k for boards with 512M memory.
+                  The default is 1GB if not selected
+
+          config ATH11K_MEM_PROFILE_256M
+               bool "Use 256MB memory profile"
+               help
+                  This allows configuring ath11k for boards with 256M memory.
+                  The default is 1GB if not selected
+       endchoice
 endef
 
 define KernelPackage/ath11k-ahb

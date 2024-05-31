@@ -1,0 +1,39 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Sat Aug 1 13:55:33 2020 +0530
+
+nat46: Set IPv6 traffic class from IPv4 ToS value
+
+Set IPv6 traffic class from IPv4 ToS value during
+IPv4 to IPv6 translation and vice-versa.
+
+This patch is propagated from kernel 4.4 commit
+1cd3b55b059d4513649bb73bc69da931ed3beb7b
+
+Change-Id: Ia14e53447e829c8648c01656237ac902ad8674ec
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -886,11 +886,12 @@ void *get_next_header_ptr6(void *pv6, in
+ }
+ 
+ void fill_v4hdr_from_v6hdr(struct iphdr * iph, struct ipv6hdr *ip6h, __u32 v4saddr, __u32 v4daddr, __u16 id, __u16 frag_off, __u16 proto, int l3_payload_len) {
++  uint32_t ver_class_flow = ntohl(*(__be32 *)ip6h);
+   iph->ttl = ip6h->hop_limit;
+   iph->saddr = v4saddr;
+   iph->daddr = v4daddr;
+   iph->protocol = proto;
+-  *((__be16 *)iph) = htons((4 << 12) | (5 << 8) | (0x00/*tos*/ & 0xff));
++  *((__be16 *)iph) = htons((4 << 12) | (5 << 8) | ((ver_class_flow >> 20) & 0xff));
+   iph->frag_off = frag_off;
+   iph->id = id;
+   iph->tot_len = htons( l3_payload_len + IPV4HDRSIZE );
+@@ -1859,7 +1860,7 @@ int nat46_ipv4_input(struct sk_buff *old
+   uint16_t sport = 0, dport = 0;
+ 
+   int err = 0;
+-  int tclass = 0;
++  uint8_t tclass = 0;
+   int flowlabel = 0;
+   int check_for_l4 = 0;
+   int having_l4 = 0;

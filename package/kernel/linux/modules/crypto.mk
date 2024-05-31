@@ -1159,3 +1159,20 @@ endef
 
 $(eval $(call KernelPackage,crypto-xts))
 
+define KernelPackage/crypto-qce
+  TITLE:=QTI Crypto Engine (QCE)
+  KCONFIG:= \
+	CONFIG_CRYPTO_DEV_QCE \
+	CONFIG_CRYPTO_DEV_QCE_AEAD=y \
+	CONFIG_CRYPTO_DEV_QCE_ENABLE_ALL=y \
+	CONFIG_CRYPTO_DEV_QCE_SHA=y \
+	CONFIG_CRYPTO_DEV_QCE_SKCIPHER=y \
+	CONFIG_CRYPTO_DEV_QCE_SW_MAX_LEN=512
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/qce/qcrypto.ko
+  AUTOLOAD:=$(call AutoLoad,09,qcrypto)
+  DEPENDS:=@TARGET_qualcommax +kmod-crypto-manager +kmod-crypto-hash +kmod-crypto-des
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-qce))
