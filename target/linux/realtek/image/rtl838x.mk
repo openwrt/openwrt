@@ -71,7 +71,7 @@ define Device/d-link_dgs-1210-28mp-f
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-28MP
   DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
 endef
 TARGET_DEVICES += d-link_dgs-1210-28mp-f
 

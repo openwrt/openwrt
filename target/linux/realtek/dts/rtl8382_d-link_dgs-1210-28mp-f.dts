@@ -9,6 +9,22 @@
 / {
 	compatible = "d-link,dgs-1210-28mp-f", "realtek,rtl8382-soc", "realtek,rtl838x-soc";
 	model = "D-Link DGS-1210-28MP F";
+
+	/* LM63 */
+	i2c-gpio-4 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 32 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 31 GPIO_ACTIVE_HIGH>;
+		i2c-gpio,delay-us = <2>;
+		i2c-gpio,scl-open-drain; /* should be replaced by i2c-gpio,scl-has-no-pullup in kernel 6.6 */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lm63@4c {
+			compatible = "national,lm63";
+			reg = <0x4c>;
+		};
+	};
 };
 
 &leds {
