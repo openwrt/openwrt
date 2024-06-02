@@ -268,4 +268,19 @@
 			};
 		};
 	};
+
+	nss-macsec0 {
+		compatible = "qcom,nss-macsec";
+		mdiobus = <&mdio>;
+		phy_addr = <0x18>;
+		phy_access_mode = <0x00>;
+	};
+
+	nss-macsec1 {
+		compatible = "qcom,nss-macsec";
+		mdiobus = <&mdio>;
+		phy_addr = <0x1c>;
+		phy_access_mode = <0x00>;
+	};
+
 };
