@@ -16,17 +16,17 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -345,6 +345,7 @@ image-$(CONFIG_MPC836x_MDS)		+= cuImage.
+@@ -342,6 +342,7 @@ image-$(CONFIG_MPC834x_ITX)		+= cuImage.
  image-$(CONFIG_ASP834x)			+= dtbImage.asp834x-redboot
  
  # Board ports in arch/powerpc/platform/85xx/Kconfig
 +image-y					+= zImage.la3000000
- image-$(CONFIG_MPC8540_ADS)		+= cuImage.mpc8540ads
- image-$(CONFIG_MPC8560_ADS)		+= cuImage.mpc8560ads
- image-$(CONFIG_MPC85xx_CDS)		+= cuImage.mpc8541cds \
+ image-$(CONFIG_MPC85xx_MDS)		+= cuImage.mpc8568mds
+ image-$(CONFIG_MPC85xx_DS)		+= cuImage.mpc8544ds \
+ 					   cuImage.mpc8572ds
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -254,6 +254,11 @@ if [ -n "$esm_blob" -a "$platform" != "p
+@@ -258,6 +258,11 @@ if [ -n "$esm_blob" -a "$platform" != "p
  fi
  
  case "$platform" in

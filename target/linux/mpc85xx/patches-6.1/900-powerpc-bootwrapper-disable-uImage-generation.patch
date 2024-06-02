@@ -24,7 +24,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  image-$(CONFIG_EPAPR_BOOT)		+= zImage.epapr
  
  #
-@@ -430,15 +429,6 @@ $(obj)/dtbImage.%: vmlinux $(wrapperbits
+@@ -431,15 +430,6 @@ $(obj)/dtbImage.%: vmlinux $(wrapperbits
  $(obj)/vmlinux.strip: vmlinux
  	$(STRIP) -s -R .comment $< -o $@
  
