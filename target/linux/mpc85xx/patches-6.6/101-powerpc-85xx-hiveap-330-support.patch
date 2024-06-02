@@ -38,7 +38,7 @@
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
  
  src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
-@@ -352,6 +353,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
+@@ -353,6 +354,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
  image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
@@ -48,7 +48,7 @@
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -345,6 +345,7 @@ adder875-redboot)
+@@ -350,6 +350,7 @@ adder875-redboot)
      platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
      ;;

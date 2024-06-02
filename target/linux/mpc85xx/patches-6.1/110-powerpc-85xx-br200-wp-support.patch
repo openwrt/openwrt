@@ -37,7 +37,7 @@
  src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_WS_AP3710I) += simpleboot.c fixed-head.S
-@@ -364,6 +365,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
+@@ -365,6 +366,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
  image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
@@ -47,7 +47,7 @@
  image-$(CONFIG_WS_AP3710I)		+= simpleImage.ws-ap3710i
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -341,6 +341,7 @@ adder875-redboot)
+@@ -346,6 +346,7 @@ adder875-redboot)
      platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
      ;;
