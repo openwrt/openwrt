@@ -536,7 +536,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
 -		ATH11K_NSS_TXRX_NETDEV_STATS(rx, peer->vif, rx_bytes, rx_packets);
 +		if (peer->nss.ext_vdev_up)
-+			ATH11K_NSS_TXRX_NETDEV_STATS(tx, peer->nss.ext_vif, rx_bytes, rx_packets);
++			ATH11K_NSS_TXRX_NETDEV_STATS(rx, peer->nss.ext_vif, rx_bytes, rx_packets);
 +		else
 +			ATH11K_NSS_TXRX_NETDEV_STATS(rx, peer->vif, rx_bytes, rx_packets);
  
