@@ -1,0 +1,11 @@
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -961,7 +961,7 @@ struct ieee80211_tim_ie {
+ 	u8 dtim_period;
+ 	u8 bitmap_ctrl;
+ 	/* variable size: 1 - 251 bytes */
+-	u8 virtual_map[1];
++	u8 virtual_map[];
+ } __packed;
+ 
+ /**
