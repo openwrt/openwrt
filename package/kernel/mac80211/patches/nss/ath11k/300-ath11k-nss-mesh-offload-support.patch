@@ -1494,8 +1494,8 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +	case NSS_WIFI_MESH_MSG_MPATH_UPDATE:
 +		if (response == NSS_CMN_RESPONSE_EMSG)
 +			ath11k_warn(ab, "failed to update mpath entry mesh_da %pM vdev_id %d"
-+				    "next_hop %pM old_next_hop %pM metric %d flags 0x%u hop_count %d"
-+				    "exp_time %u mesh_gate %u\n",
++				    " next_hop %pM old_next_hop %pM metric %d flags 0x%u hop_count %d"
++				    " exp_time %u mesh_gate %u\n",
 +				    (&msg->msg.mpath_update)->dest_mac_addr,
 +				    (&msg->msg.mpath_update)->link_vap_id,
 +				    (&msg->msg.mpath_update)->next_hop_mac_addr,
@@ -1508,14 +1508,14 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +		break;
 +	case NSS_WIFI_MESH_MSG_MPATH_DELETE:
 +		if (response == NSS_CMN_RESPONSE_EMSG)
-+			ath11k_warn(ab,"failed to remove mpath entry mesh_da %pM"
-+				    "vdev_id %d\n",
++			ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to remove mpath entry mesh_da %pM"
++				    " vdev_id %d\n",
 +				    (&msg->msg.mpath_del)->mesh_dest_mac_addr,
 +				    (&msg->msg.mpath_del)->link_vap_id);
 +		break;
 +	case NSS_WIFI_MESH_MSG_PROXY_PATH_ADD:
 +		if (response == NSS_CMN_RESPONSE_EMSG)
-+			ath11k_warn(ab,"failed to add proxy entry da %pM mesh_da %pM \n",
++			ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to add proxy entry da %pM mesh_da %pM\n",
 +				    (&msg->msg.proxy_add_msg)->dest_mac_addr,
 +				    (&msg->msg.proxy_add_msg)->mesh_dest_mac);
 +		break;
@@ -1527,13 +1527,13 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +		break;
 +	case NSS_WIFI_MESH_MSG_PROXY_PATH_DELETE:
 +		if (response == NSS_CMN_RESPONSE_EMSG)
-+			ath11k_warn(ab,"failed to remove proxy path entry da %pM mesh_da %pM\n",
++			ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to remove proxy path entry da %pM mesh_da %pM\n",
 +				    (&msg->msg.proxy_del_msg)->dest_mac_addr,
 +				    (&msg->msg.proxy_del_msg)->mesh_dest_mac_addr);
 +		break;
 +	case NSS_WIFI_MESH_MSG_EXCEPTION_FLAG:
 +		if (response == NSS_CMN_RESPONSE_EMSG)
-+			ath11k_warn(ab,"failed to add the exception  da %pM\n",
++			ath11k_warn(ab,"failed to add the exception da %pM\n",
 +				    (&msg->msg.exception_msg)->dest_mac_addr);
 +		break;
 +	default:
@@ -1589,7 +1589,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +	ret = ieee80211_mesh_path_offld_change_notify(arvif->vif, &path,
 +			IEEE80211_MESH_PATH_OFFLD_ACTION_MPATH_REFRESH);
 +	if (ret)
-+		ath11k_warn(ab, "failed to notify mpath refresh nss event %d\n", ret);
++		ath11k_dbg(ab, ATH11K_DBG_NSS, "failed to notify mpath refresh nss event %d\n", ret);
 +}
 +
 +static void ath11k_nss_mesh_path_not_found(struct ath11k_vif *arvif,
@@ -1683,7 +1683,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +	 ret = ieee80211_mesh_path_offld_change_notify(arvif->vif, &path,
 +			 IEEE80211_MESH_PATH_OFFLD_ACTION_MPP_LEARN);
 +	 if (ret)
-+		 ath11k_warn(ab, "failed to notify proxy learn event %d\n", ret);
++		 ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to notify proxy learn event %d\n", ret);
 +}
 +
 +static void ath11k_nss_mesh_mpp_add(struct ath11k_vif *arvif,
@@ -1706,7 +1706,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +	ret = ieee80211_mesh_path_offld_change_notify(arvif->vif, &path,
 +				IEEE80211_MESH_PATH_OFFLD_ACTION_MPP_ADD);
 +	if (ret)
-+		ath11k_warn(ab, "failed to notify proxy add event %d\n", ret);
++		ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to notify proxy add event %d\n", ret);
 +}
 +
 +static void ath11k_nss_mesh_mpp_update(struct ath11k_vif *arvif,
@@ -1729,7 +1729,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +	ret = ieee80211_mesh_path_offld_change_notify(arvif->vif, &path,
 +				IEEE80211_MESH_PATH_OFFLD_ACTION_MPP_UPDATE);
 +	if (ret)
-+		ath11k_warn(ab, "failed to notify proxy update event %d\n", ret);
++		ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "failed to notify proxy update event %d\n", ret);
 +}
 +
 +static int
@@ -2572,10 +2572,10 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  
 -	if (encap_type != arvif->nss.encap) {
 +	if (!arvif->ar->ab->nss.debug_mode && encap_type != arvif->nss.encap) {
- 		ath11k_warn(ar->ab, "encap mismatch in nss tx skb encap type %d" \
+ 		ath11k_dbg(ar->ab, ATH11K_DBG_DP_TX, "encap mismatch in nss tx skb encap type %d" \
  			    " vif encap type %d\n", encap_type, arvif->nss.encap);
- 		goto drop;
-@@ -946,16 +2040,45 @@ int ath11k_nss_tx(struct ath11k_vif *arv
+ 		ath11k_dbg_dump(ar->ab, (ATH11K_DBG_NSS | ATH11K_DBG_DP_TX), "", "nss tx msdu: ",
+@@ -948,16 +2042,45 @@ int ath11k_nss_tx(struct ath11k_vif *arv
  		ath11k_nss_tx_encap_nwifi(skb);
  
  send:

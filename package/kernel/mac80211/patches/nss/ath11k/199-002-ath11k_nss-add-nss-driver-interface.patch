@@ -48,7 +48,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  ath11k_ahb-y += ahb.o
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -0,0 +1,2396 @@
+@@ -0,0 +1,2399 @@
 +// SPDX-License-Identifier: BSD-3-Clause-Clear
 +/*
 + * Copyright (c) 2020 The Linux Foundation. All rights reserved.
@@ -320,7 +320,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +		peer_id = (&msg->msg.peermsg)->peer_id;
 +
 +		if (response == NSS_CMN_RESPONSE_EMSG)
-+			ath11k_warn(ab, "ath11k_nss: peer delete failed%d\n",
++			ath11k_warn(ab, "ath11k_nss: peer delete failed (peer_id: %d)\n",
 +				    peer_id);
 +
 +		/* free peer memory allocated during peer create irrespective of
@@ -677,8 +677,10 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	struct ath11k_soc_dp_stats *soc_stats = &ar->ab->soc_stats;
 +
 +	if (encap_type != arvif->nss.encap) {
-+		ath11k_warn(ar->ab, "encap mismatch in nss tx skb encap type %d" \
++		ath11k_dbg(ar->ab, ATH11K_DBG_DP_TX, "encap mismatch in nss tx skb encap type %d" \
 +			    " vif encap type %d\n", encap_type, arvif->nss.encap);
++		ath11k_dbg_dump(ar->ab, (ATH11K_DBG_NSS | ATH11K_DBG_DP_TX), "", "nss tx msdu: ",
++			skb->data, skb->len);
 +		goto drop;
 +	}
 +
@@ -705,7 +707,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	return status;
 +drop:
 +	atomic_inc(&soc_stats->tx_err.misc_fail);
-+	WARN_ON_ONCE(1);
++	if(ar->ab->nss.debug_mode)
++	  WARN_ON_ONCE(1);
 +	return -EINVAL;
 +}
 +
