@@ -167,10 +167,6 @@ define Build/wrg-header
 	mv $@.new $@
 endef
 
-define Build/zyimage
-	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
-endef
-
 define Device/Default
   PROFILES = Default
   BLOCKSIZE := 64k

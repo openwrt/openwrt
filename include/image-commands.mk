@@ -732,6 +732,10 @@ define Build/zip
 	rm -rf $@.tmp
 endef
 
+define Build/zyimage
+	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
+endef
+
 define Build/zyxel-ras-image
 	let \
 		newsize="$(call exp_units,$(RAS_ROOTFS_SIZE))"; \
