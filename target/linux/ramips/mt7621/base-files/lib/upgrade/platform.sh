@@ -111,6 +111,8 @@ platform_do_upgrade() {
 	netgear,wac124|\
 	netgear,wax202|\
 	netis,wf2881|\
+	mediatek,mt7621-rfb-ax-nand|\
+	mediatek,mt7621-rfb-nor|\
 	raisecom,msg1500-x-00|\
 	rostelecom,rt-fe-1a|\
 	rostelecom,rt-sf-1|\
