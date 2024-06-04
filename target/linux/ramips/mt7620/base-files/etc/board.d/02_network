@@ -150,7 +150,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
-	edimax,br-6478ac-v2|\
 	lb-link,bl-w1200|\
 	tplink,archer-c2-v1)
 		ucidef_add_switch "switch0"
@@ -185,6 +184,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "5:wan" "6@eth0"
 		;;
+	edimax,br-6478ac-v2|\
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3|\
 	iptime,a1004ns)
