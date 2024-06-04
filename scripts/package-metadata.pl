@@ -655,7 +655,7 @@ sub dump_cyclonedxsbom_json {
 		serialNumber => "urn:uuid:$uuid",
 		version => 1,
 		metadata => {
-			timestamp => gmtime->datetime,
+			timestamp => gmtime->datetime . 'Z',
 		},
 		"components" => [@components],
 	};
