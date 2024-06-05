@@ -2833,6 +2833,17 @@ define Device/wifire_s1500-nbn
 endef
 TARGET_DEVICES += wifire_s1500-nbn
 
+define Device/winstars_ws-wn536p3
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Winstars
+  DEVICE_MODEL := WS-WN536P3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 -uboot-envtools
+endef
+TARGET_DEVICES += winstars_ws-wn536p3
+
 define Device/winstars_ws-wn583a6
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
