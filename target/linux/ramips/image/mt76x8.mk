@@ -1097,6 +1097,15 @@ define Device/xiaomi_miwifi-nano
 endef
 TARGET_DEVICES += xiaomi_miwifi-nano
 
+define Device/xiaomi_miwifi-3a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi 3A
+  DEVICE_PACKAGES := uboot-envtools kmod-mt76x2
+  SUPPORTED_DEVICES += miwifi-3a
+endef
+TARGET_DEVICES += xiaomi_miwifi-3a
+
 define Device/xiaomi_mi-ra75
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
