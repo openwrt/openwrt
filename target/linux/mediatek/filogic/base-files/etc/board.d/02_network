@@ -145,11 +145,6 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
-	jdcloud,re-cp-03)
-		wan_mac=$(mmc_get_mac_binary factory 0x2a)
-		lan_mac=$(mmc_get_mac_binary factory 0x24)
-		label_mac=$lan_mac
-		;;
 	mercusys,mr90x-v1)
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac
