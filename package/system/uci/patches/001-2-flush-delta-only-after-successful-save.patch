@@ -1,0 +1,46 @@
+From 17586039934498210dc0a10bbe5a21cc042cdcd2 Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Thu, 6 Jun 2024 15:42:46 +0800
+Subject: [PATCH] file: flush delta only after successful save
+
+Signed-off-by: Liangbin Lian <jjm2473@gmail.com>
+---
+ file.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/file.c b/file.c
+index 5c942b8..a6f30fe 100644
+--- a/file.c
++++ b/file.c
+@@ -787,8 +787,8 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
+ 			path = NULL;
+ 		}
+ 
+-		/* flush delta */
+-		if (!uci_load_delta(ctx, p, true))
++		/* flush delta after successful save */
++		if (!uci_load_delta(ctx, p, false))
+ 			goto done;
+ 	}
+ 
+@@ -830,6 +830,17 @@ done:
+ 		if (!path || stat(path, &statbuf) || chmod(filename, statbuf.st_mode) || rename(filename, path)) {
+ 			unlink(filename);
+ 			UCI_THROW(ctx, UCI_ERR_IO);
++		} else if (p->has_delta) {
++			/* flush delta */
++			filename = NULL;
++			if ((asprintf(&filename, "%s/%s", ctx->savedir, p->e.name) < 0) || !filename)
++				UCI_THROW(ctx, UCI_ERR_MEM);
++			f1 = uci_open_stream(ctx, filename, NULL, SEEK_SET, true, false);
++			if (f1) {
++				ftruncate(fileno(f1), 0);
++				uci_close_stream(f1);
++			}
++			free(filename);
+ 		}
+ 		free(path);
+ 	} else if (clean_temp) {
+-- 
+2.41.0
+

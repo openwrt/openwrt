@@ -1,0 +1,97 @@
+From 237d5542986ddb00733e172e638339544058d2d8 Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Thu, 6 Jun 2024 15:42:11 +0800
+Subject: [PATCH] file: don't save broken uci config
+
+Signed-off-by: Liangbin Lian <jjm2473@gmail.com>
+---
+ file.c | 32 +++++++++++++++++++++++---------
+ 1 file changed, 23 insertions(+), 9 deletions(-)
+
+diff --git a/file.c b/file.c
+index 93abfae..5c942b8 100644
+--- a/file.c
++++ b/file.c
+@@ -607,7 +607,7 @@ static const char *uci_escape(struct uci_context *ctx, const char *str)
+ /*
+  * export a single config package to a file stream
+  */
+-static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
++static int uci_export_package(struct uci_package *p, FILE *stream, bool header)
+ {
+ 	struct uci_context *ctx = p->ctx;
+ 	struct uci_element *s, *o, *i;
+@@ -639,7 +639,8 @@ static void uci_export_package(struct uci_package *p, FILE *stream, bool header)
+ 			}
+ 		}
+ 	}
+-	fprintf(stream, "\n");
++	/* return last fprintf to check 'No space left on device' error */
++	return fprintf(stream, "\n");
+ }
+ 
+ int uci_export(struct uci_context *ctx, FILE *stream, struct uci_package *package, bool header)
+@@ -649,11 +650,15 @@ int uci_export(struct uci_context *ctx, FILE *stream, struct uci_package *packag
+ 	UCI_HANDLE_ERR(ctx);
+ 	UCI_ASSERT(ctx, stream != NULL);
+ 
+-	if (package)
+-		uci_export_package(package, stream, header);
+-	else {
++	if (package) {
++		if (uci_export_package(package, stream, header) < 0) {
++			return UCI_ERR_IO;
++		}
++	} else {
+ 		uci_foreach_element(&ctx->root, e) {
+-			uci_export_package(uci_to_package(e), stream, header);
++			if (uci_export_package(uci_to_package(e), stream, header) < 0) {
++				return UCI_ERR_IO;
++			}
+ 		}
+ 	}
+ 
+@@ -739,6 +744,7 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
+ 	char *filename = NULL;
+ 	struct stat statbuf;
+ 	volatile bool do_rename = false;
++	volatile bool clean_temp = false;
+ 	int fd, sz;
+ 
+ 	if (!p->path) {
+@@ -800,14 +806,19 @@ static void uci_file_commit(struct uci_context *ctx, struct uci_package **packag
+ 	if (!f2)
+ 		UCI_THROW(ctx, UCI_ERR_IO);
+ 
+-	uci_export(ctx, f2, p, false);
++	clean_temp = true;
++	if (uci_export(ctx, f2, p, false))
++		goto no_space;
+ 
+-	fflush(f2);
++	if (fflush(f2))
++		goto no_space;
+ 	fsync(fileno(f2));
+-	uci_close_stream(f2);
+ 
+ 	do_rename = true;
+ 
++no_space:
++	uci_close_stream(f2);
++
+ 	UCI_TRAP_RESTORE(ctx);
+ 
+ done:
+@@ -821,6 +832,9 @@ done:
+ 			UCI_THROW(ctx, UCI_ERR_IO);
+ 		}
+ 		free(path);
++	} else if (clean_temp) {
++		unlink(filename);
++		UCI_THROW(ctx, UCI_ERR_IO);
+ 	}
+ 	if (ctx->err)
+ 		UCI_THROW(ctx, ctx->err);
+-- 
+2.41.0
+
