@@ -173,16 +173,6 @@ config KERNEL_KASAN
 	  Currently CONFIG_KASAN doesn't work with CONFIG_DEBUG_SLAB
 	  (the resulting kernel does not boot).
 
-config KERNEL_KASAN_EXTRA
-	bool "KAsan: extra checks"
-	depends on KERNEL_KASAN && KERNEL_DEBUG_KERNEL
-	help
-	  This enables further checks in the kernel address sanitizer, for now
-	  it only includes the address-use-after-scope check that can lead
-	  to excessive kernel stack usage, frame size warnings and longer
-	  compile time.
-	  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81715 has more
-
 config KERNEL_KASAN_VMALLOC
 	bool "Back mappings in vmalloc space with real shadow memory"
 	depends on KERNEL_KASAN
