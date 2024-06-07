@@ -370,7 +370,7 @@ TARGET_DEVICES += netgear_dm200
 define Device/zyxel_p-2812hnu-f1
   $(Device/dsa-migration)
   $(Device/NAND)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F1
   BOARD_NAME := P2812HNUF1
@@ -384,7 +384,7 @@ TARGET_DEVICES += zyxel_p-2812hnu-f1
 define Device/zyxel_p-2812hnu-f3
   $(Device/dsa-migration)
   $(Device/NAND)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F3
   BOARD_NAME := P2812HNUF3

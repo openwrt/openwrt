@@ -1136,12 +1136,12 @@ TARGET_DEVICES += zbtlink_zbt-we1226
 
 define Device/zyxel_keenetic-extra-ii
   IMAGE_SIZE := 29824k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Extra II
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-	check-size | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
+	check-size | zyimage -d 6162 -v "Zyxel Keenetic Extra II"
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
