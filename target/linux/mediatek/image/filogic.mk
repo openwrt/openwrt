@@ -1461,7 +1461,7 @@ endef
 TARGET_DEVICES += zyxel_ex5601-t0-ubootmod
 
 define Device/zyxel_ex5700-telenor
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := EX5700 (Telenor)
   DEVICE_DTS := mt7986a-zyxel-ex5700-telenor
   DEVICE_DTS_DIR := ../dts
@@ -1475,7 +1475,7 @@ endef
 TARGET_DEVICES += zyxel_ex5700-telenor
 
 define Device/zyxel_nwa50ax-pro
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NWA50AX Pro
   DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
   DEVICE_DTS_DIR := ../dts
