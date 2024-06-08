@@ -1,0 +1,38 @@
+From a322b1cbb3f3e606d33a11fd18df20811e5c16f2 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 21 Jun 2024 11:41:30 +0200
+Subject: [PATCH 1/3] mvebu: armada-8k: respect CONFIG_DISTRO_DEFAULTS
+
+Currently, Armada 8k config header is setting boot devices and including
+<config_distro_bootcmd.h> regardless of the CONFIG_DISTRO_DEFAULTS being
+enabled or not, thus populating the environment for distro boot even on
+devices that have no need for it.
+
+So, lets simply respect the value of CONFIG_DISTRO_DEFAULTS.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ include/configs/mvebu_armada-8k.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/include/configs/mvebu_armada-8k.h
++++ b/include/configs/mvebu_armada-8k.h
+@@ -30,7 +30,7 @@
+ /*
+  * PCI configuration
+  */
+-
++#ifdef CONFIG_DISTRO_DEFAULTS
+ #define BOOT_TARGET_DEVICES(func) \
+ 	func(MMC, mmc, 1) \
+ 	func(MMC, mmc, 0) \
+@@ -40,6 +40,9 @@
+ 	func(DHCP, dhcp, na)
+ 
+ #include <config_distro_bootcmd.h>
++#else
++#define BOOTENV
++#endif
+ 
+ #define CFG_EXTRA_ENV_SETTINGS	\
+ 	"scriptaddr=0x6d00000\0"	\
