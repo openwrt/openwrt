@@ -286,21 +286,25 @@
 		port@1 {
 			reg = <1>;
 			label = "lan1";
+			phy-handle = <&swphy1>;
 		};
 
 		port@2 {
 			reg = <2>;
 			label = "lan2";
+			phy-handle = <&swphy2>;
 		};
 
 		port@3 {
 			reg = <3>;
 			label = "lan3";
+			phy-handle = <&swphy3>;
 		};
 
 		port@4 {
 			reg = <4>;
 			label = "lan4";
+			phy-handle = <&swphy4>;
 		};
 
 		port@6 {
@@ -321,7 +325,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy@1 {
+		swphy1: phy@1 {
 			reg = <1>;
 
 			mediatek,led-config = <
@@ -335,7 +339,7 @@
 			>;
 		};
 
-		phy@2 {
+		swphy2: phy@2 {
 			reg = <2>;
 
 			mediatek,led-config = <
@@ -349,7 +353,7 @@
 			>;
 		};
 
-		phy@3 {
+		swphy3: phy@3 {
 			reg = <3>;
 
 			mediatek,led-config = <
@@ -363,7 +367,7 @@
 			>;
 		};
 
-		phy@4 {
+		swphy4: phy@4 {
 			reg = <4>;
 
 			mediatek,led-config = <

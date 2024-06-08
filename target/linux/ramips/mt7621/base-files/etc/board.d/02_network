@@ -11,6 +11,8 @@ ramips_setup_interfaces()
 	alfa-network,ax1800rm|\
 	ampedwireless,ally-r1900k|\
 	asus,rt-ax53u|\
+	buffalo,wsr-2533dhpl2|\
+	buffalo,wsr-2533dhpls|\
 	gehua,ghl-r-001|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
@@ -71,6 +73,7 @@ ramips_setup_interfaces()
 	asiarf,ap7621-nv1|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
+	elecom,wrc-x1800gs|\
 	glinet,gl-mt1300|\
 	iodata,wn-deax1800gr|\
 	iptime,a3002mesh|\
@@ -102,16 +105,17 @@ ramips_setup_interfaces()
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
 		;;
+	elecom,wmc-s1267gs2|\
+	linksys,re6500|\
+	netgear,wac104|\
+	zyxel,lte3301-plus)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
 		;;
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "ethblack ethblue ethyellow"
-		;;
-	linksys,re6500|\
-	netgear,wac104|\
-	zyxel,lte3301-plus)
-		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-750gr3)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
@@ -213,7 +217,9 @@ ramips_setup_macs()
 		label_mac=$(macaddr_add "$wan_mac" 3)
 		lan_mac=$label_mac
 		;;
-	buffalo,wsr-1166dhp)
+	buffalo,wsr-1166dhp|\
+	buffalo,wsr-2533dhpl2|\
+	buffalo,wsr-2533dhpls)
 		wan_mac=$(mtd_get_mac_ascii board_data "mac")
 		lan_mac=$wan_mac
 		label_mac=$wan_mac

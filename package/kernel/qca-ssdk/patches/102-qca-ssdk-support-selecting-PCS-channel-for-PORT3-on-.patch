@@ -24,15 +24,15 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 
 --- a/include/init/ssdk_dts.h
 +++ b/include/init/ssdk_dts.h
-@@ -101,6 +101,7 @@ typedef struct
+@@ -99,6 +99,7 @@ typedef struct
  	a_uint32_t emu_chip_ver; /*only valid when is_emulation is true*/
  	a_uint32_t clk_mode;
  	a_uint32_t pcie_hw_base;
 +	a_uint32_t port3_pcs_channel;
+ 	led_ctrl_pattern_t source_pattern[SSDK_MAX_PORT_NUM][PORT_LED_SOURCE_MAX];
  } ssdk_dt_cfg;
  
- #define SSDK_MAX_NR_ETH 6
-@@ -162,6 +163,7 @@ a_uint32_t ssdk_device_id_get(a_uint32_t
+@@ -161,6 +162,7 @@ a_uint32_t ssdk_device_id_get(a_uint32_t
  struct device_node *ssdk_dts_node_get(a_uint32_t dev_id);
  struct clk *ssdk_dts_essclk_get(a_uint32_t dev_id);
  struct clk *ssdk_dts_cmnclk_get(a_uint32_t dev_id);
@@ -62,7 +62,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  					cppe_port_mux_ctrl.bf.port4_pcs_sel =
 --- a/src/adpt/hppe/adpt_hppe_uniphy.c
 +++ b/src/adpt/hppe/adpt_hppe_uniphy.c
-@@ -1122,9 +1122,6 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
+@@ -1160,9 +1160,6 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
  {
  	a_uint32_t i;
  	sw_error_t rv = SW_OK;
@@ -72,7 +72,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  
  	union uniphy_mode_ctrl_u uniphy_mode_ctrl;
  
-@@ -1134,9 +1131,7 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
+@@ -1172,9 +1169,7 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
  	SSDK_DEBUG("uniphy %d is psgmii mode\n", uniphy_index);
  #if defined(CPPE)
  	if (adpt_ppe_type_get(dev_id) == CPPE_TYPE) {
@@ -92,14 +92,14 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 +a_uint32_t ssdk_dts_port3_pcs_channel_get(a_uint32_t dev_id)
 +{
 +	ssdk_dt_cfg* cfg = ssdk_dt_global.ssdk_dt_switch_nodes[dev_id];
-+	
++
 +	return cfg->port3_pcs_channel;
 +}
 +
- #ifndef BOARD_AR71XX
  #if defined(CONFIG_OF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
  static void ssdk_dt_parse_mac_mode(a_uint32_t dev_id,
-@@ -306,6 +313,25 @@ static void ssdk_dt_parse_mac_mode(a_uin
+ 		struct device_node *switch_node, ssdk_init_cfg *cfg)
+@@ -305,6 +312,25 @@ static void ssdk_dt_parse_mac_mode(a_uin
  
  	return;
  }
@@ -109,7 +109,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 +{
 +	const __be32 *port3_pcs_channel;
 +	a_uint32_t len = 0;
-+	
++
 +	port3_pcs_channel = of_get_property(switch_node, "port3_pcs_channel", &len);
 +	if (!port3_pcs_channel) {
 +		ssdk_dt_global.ssdk_dt_switch_nodes[dev_id]->port3_pcs_channel = 2;
@@ -125,7 +125,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  #ifdef IN_UNIPHY
  static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
  {
-@@ -1292,6 +1318,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *
+@@ -1347,6 +1373,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *
  	rv = ssdk_dt_parse_access_mode(switch_node, ssdk_dt_priv);
  	SW_RTN_ON_ERROR(rv);
  	ssdk_dt_parse_mac_mode(*dev_id, switch_node, cfg);

@@ -313,6 +313,10 @@ define Device/zyxel_gs1900-8
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := ZyXEL
+  DEVICE_ALT0_MODEL := GS1900-8
+  DEVICE_ALT0_VARIANT := v2
   ZYXEL_VERS := AAHH
 endef
 TARGET_DEVICES += zyxel_gs1900-8
@@ -353,6 +357,15 @@ define Device/zyxel_gs1900-24e
   ZYXEL_VERS := AAHK
 endef
 TARGET_DEVICES += zyxel_gs1900-24e
+
+define Device/zyxel_gs1900-24ep
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24EP
+  ZYXEL_VERS := ABTO
+  DEVICE_PACKAGES += realtek-poe
+endef
+TARGET_DEVICES += zyxel_gs1900-24ep
 
 define Device/zyxel_gs1900-24hp-v1
   $(Device/zyxel_gs1900)

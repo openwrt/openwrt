@@ -23,7 +23,7 @@
 #define MT7988_TOPRGU_XFI_PLL_GRST		16
 
 / {
-	compatible = "mediatek,mt7988";
+	compatible = "mediatek,mt7988a";
 	interrupt-parent = <&gic>;
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -149,8 +149,8 @@
 
 	fan: pwm-fan {
 		compatible = "pwm-fan";
-		/* cooling level (0, 1, 2) : (0% duty, 50% duty, 100% duty) */
-		cooling-levels = <0 128 255>;
+		/* cooling level (0, 1, 2, 3) : (0% duty, 30% duty, 50% duty, 100% duty) */
+		cooling-levels = <0 80 128 255>;
 		#cooling-cells = <2>;
 		#thermal-sensor-cells = <1>;
 		status = "disabled";
@@ -159,7 +159,7 @@
 	pmu {
 		compatible = "arm,cortex-a73-pmu";
 		interrupt-parent = <&gic>;
-		interrupt = <GIC_PPI 7 IRQ_TYPE_LEVEL_LOW>;
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_LOW>;
 	};
 
 	psci {
@@ -1282,6 +1282,7 @@
 				gsw_phy0: ethernet-phy@0 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <0>;
+					interrupts = <0>;
 					phy-mode = "internal";
 					nvmem-cells = <&phy_calibration_p0>;
 					nvmem-cell-names = "phy-cal-data";
@@ -1307,6 +1308,7 @@
 				gsw_phy1: ethernet-phy@1 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <1>;
+					interrupts = <1>;
 					phy-mode = "internal";
 					nvmem-cells = <&phy_calibration_p1>;
 					nvmem-cell-names = "phy-cal-data";
@@ -1332,6 +1334,7 @@
 				gsw_phy2: ethernet-phy@2 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <2>;
+					interrupts = <2>;
 					phy-mode = "internal";
 					nvmem-cells = <&phy_calibration_p2>;
 					nvmem-cell-names = "phy-cal-data";
@@ -1357,6 +1360,7 @@
 				gsw_phy3: ethernet-phy@3 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <3>;
+					interrupts = <3>;
 					phy-mode = "internal";
 					nvmem-cells = <&phy_calibration_p3>;
 					nvmem-cell-names = "phy-cal-data";

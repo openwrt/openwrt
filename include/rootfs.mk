@@ -43,6 +43,17 @@ opkg = \
 	--add-arch all:100 \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
+apk = \
+  IPKG_INSTROOT=$(1) \
+  $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
+	--root $(1) \
+	--repositories-file /dev/zero \
+	--keys-dir $(TOPDIR) \
+	--no-cache \
+	--no-logfile \
+	--preserve-env \
+	--repository file://$(PACKAGE_DIR_ALL)/packages.adb
+
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 ifdef CONFIG_CLEAN_IPKG
@@ -68,6 +79,11 @@ define prepare_rootfs
 	@mkdir -p $(1)/var/lock
 	@( \
 		cd $(1); \
+		if [ -n "$(CONFIG_USE_APK)" ]; then \
+		$(STAGING_DIR_HOST)/bin/tar -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install" -O > script.sh; \
+		chmod +x script.sh; \
+		IPKG_INSTROOT=$(1) $$(command -v bash) script.sh; \
+		else \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
 			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
 			ret=$$?; \
@@ -76,6 +92,13 @@ define prepare_rootfs
 				exit 1; \
 			fi; \
 		done; \
+		$(if $(IB),,awk -i inplace \
+			'/^Status:/ { \
+				if ($$3 == "user") { $$3 = "ok" } \
+				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
+			}1' $(1)/usr/lib/opkg/status) ; \
+		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
+		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
@@ -87,12 +110,7 @@ define prepare_rootfs
 			fi; \
 		done || true \
 	)
-	awk -i inplace \
-		'/^Status:/ { \
-			if ($$3 == "user") { $$3 = "ok" } \
-			else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-		}1' $(1)/usr/lib/opkg/status
-	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
+
 	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	rm -rf \
 		$(1)/boot \

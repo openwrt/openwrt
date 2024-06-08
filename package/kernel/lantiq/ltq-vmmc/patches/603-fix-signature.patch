@@ -1,0 +1,37 @@
+--- a/src/drv_vmmc_init.c
++++ b/src/drv_vmmc_init.c
+@@ -202,11 +202,20 @@ IFX_int32_t VMMC_GetDevice (IFX_uint16_t
+ /**
+    Wrapper for the voice buffer get function that sets the FW as owner.
+ */
+-static IFX_void_t* vmmc_WrapperVoiceBufferGet (IFX_void_t)
++static IFX_void_t* vmmc_WrapperVoiceBufferGet (IFX_size_t size,
++                                               IFX_int32_t priority)
+ {
+    return IFX_TAPI_VoiceBufferGetWithOwnerId (IFX_TAPI_BUFFER_OWNER_FW);
+ }
+ 
++/**
++   Wrapper for the voice buffer get function that sets the FW as owner.
++*/
++static IFX_void_t vmmc_WrapperVoiceBufferPut (const IFX_void_t *ptr)
++{
++   IFX_TAPI_VoiceBufferPut ((IFX_void_t *)ptr);
++}
++
+ 
+ /**
+    Wrapper for the voice buffer free all function freeing all buffers that
+@@ -263,10 +272,8 @@ IFX_int32_t VMMC_ChipAccessInit(VMMC_DEV
+ 
+    /* Register the buffer handler. */
+ #ifdef USE_BUFFERPOOL
+-   ifx_mps_bufman_register((IFX_void_t* (*)(IFX_size_t, IFX_int32_t))
+-                           vmmc_WrapperVoiceBufferGet,
+-                           (IFX_void_t (*)(const IFX_void_t*))
+-                           IFX_TAPI_VoiceBufferPut,
++   ifx_mps_bufman_register(vmmc_WrapperVoiceBufferGet,
++                           vmmc_WrapperVoiceBufferPut,
+                            sizeof(PACKET), POBX_BUFFER_THRESHOLD);
+    ifx_mps_register_bufman_freeall_callback (vmmc_WrapperVoiceBufferFreeAll);
+ #else

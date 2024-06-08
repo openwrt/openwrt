@@ -13,7 +13,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
-#include <linux/gpio.h>
+#include <linux/gpio/driver.h>
 #include <linux/version.h>
 #include <linux/dmi.h>
 #include <linux/string.h>

@@ -49,9 +49,12 @@ platform_do_upgrade() {
 	dynalink,dl-wrx36|\
 	edimax,cax1800|\
 	netgear,rax120v2|\
+	netgear,sxr80|\
+	netgear,sxs80|\
 	netgear,wax218|\
 	netgear,wax620|\
-	netgear,wax630)
+	netgear,wax630|\
+	zbtlink,zbt-z800ax)
 		nand_do_upgrade "$1"
 		;;
 	buffalo,wxr-5950ax12)
@@ -76,7 +79,8 @@ platform_do_upgrade() {
 		;;
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
-	linksys,mx5300)
+	linksys,mx5300|\
+	linksys,mx8500)
 		boot_part="$(fw_printenv -n boot_part)"
 		if [ "$boot_part" -eq "1" ]; then
 			fw_setenv boot_part 2
@@ -91,7 +95,8 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze|\
-	qnap,301w)
+	qnap,301w|\
+	spectrum,sax1v1k)
 		kernelname="0:HLOS"
 		rootfsname="rootfs"
 		mmc_do_upgrade "$1"

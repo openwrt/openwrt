@@ -5,6 +5,13 @@ START=99
 
 boot() {
 	case $(board_name) in
+	dlink,aquila-pro-ai-m30-a1)
+		if grep -q bootpart=ubi0 /proc/cmdline; then
+			fw_setenv bootpart 0
+		else
+			fw_setenv bootpart 1
+		fi
+		;;
 	zyxel,ex5700-telenor)
 		fw_setenv uboot_bootcount 0
 		;;

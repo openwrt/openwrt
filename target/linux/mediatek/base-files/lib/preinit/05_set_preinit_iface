@@ -1,10 +1,7 @@
 set_preinit_iface() {
 	case $(board_name) in
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
-		ip link set lan up
-		ifname=lan
-		;;
+	cudy,m3000-v1|\
+	cudy,tr3000-v1|\
 	glinet,gl-mt3000)
 		ip link set eth1 up
 		ifname=eth1
@@ -14,6 +11,11 @@ set_preinit_iface() {
 	zyxel,nwa50ax-pro)
 		ip link set eth0 up
 		ifname=eth0
+		;;
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
+		ip link set lan up
+		ifname=lan
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\

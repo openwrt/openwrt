@@ -12,6 +12,16 @@ define Build/linksys-ixp425-image
 	mv $@.new $@
 endef
 
+define Build/freecom-image
+	mkdir -p $@.tmptar
+	# Add kernel
+	cp $@ $@.tmptar/zImage
+	cd $@.tmptar && tar -c -j -f $@.new --numeric-owner --owner=0 --group=0 *
+	rm -rf $@.tmptar
+	encode_crc $@.new $@
+	rm -f $@.new
+endef
+
 # Build sysupgrade image
 define BuildFirmware/Generic
 	dd if=$(KDIR)/zImage of=$(KDIR)/zImage.pad bs=64k conv=sync; \
@@ -29,11 +39,38 @@ endef
 
 define Device/Default
 	PROFILES := Default
+	DEVICE_DTS_DIR = $$(DTS_DIR)/intel/ixp
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb
 	BLOCKSIZE := 128k
 endef
+
+define Device/dlink_dsm_g600_a
+	DEVICE_VENDOR := D-Link
+	DEVICE_MODEL := DSM G600 A
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-pcf8563 kmod-via-velocity kmod-ata-artop kmod-ath5k wpad-basic-mbedtls
+	DEVICE_DTS := intel-ixp42x-dlink-dsm-g600
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += dlink_dsm_g600_a
+
+define Device/freecom_fsg_3
+	DEVICE_VENDOR := Freecom
+	DEVICE_MODEL := FSG-3
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-isl1208 kmod-ath5k wpad-basic-mbedtls
+	# Only 4 MB of Flash so not building by default
+	DEFAULT := n
+	DEVICE_DTS := intel-ixp42x-freecom-fsg-3
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := factory.bin
+	# This has to boot from harddisk so just append the kernel
+	IMAGE/factory.bin := append-kernel | freecom-image
+endef
+TARGET_DEVICES += freecom_fsg_3
 
 define Device/gateworks_avila
 	DEVICE_VENDOR := Gateworks
@@ -58,6 +95,19 @@ define Device/gateworks_cambria
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
 endef
 TARGET_DEVICES += gateworks_cambria
+
+define Device/iomega_nas100d
+	DEVICE_VENDOR := Iomega
+	DEVICE_MODEL := NAS100d
+	# USB2 is compiled in and needs no package
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-pcf8563
+	DEVICE_DTS := intel-ixp42x-iomega-nas100d
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := factory.bin
+	# This has to boot from harddisk so just append the kernel
+	IMAGE/factory.bin := append-kernel | linksys-ixp425-image "nas100d"
+endef
+TARGET_DEVICES += iomega_nas100d
 
 define Device/linksys_nslu2
 	DEVICE_VENDOR := Linksys

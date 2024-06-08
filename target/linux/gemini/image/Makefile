@@ -124,6 +124,7 @@ endef
 # All DTB files are prefixed with "gemini-"
 define Device/Default
 	PROFILES := Default
+	DEVICE_DTS_DIR = $$(DTS_DIR)/gemini
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_NAME := zImage
 	KERNEL := kernel-bin | append-dtb

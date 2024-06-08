@@ -5,9 +5,9 @@ PKG_RELEASE=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uclient.git
-PKG_MIRROR_HASH:=761d8b357eb0c37a0833cc76106948c5f2bfe9abe785728996a8d050a25b0a8a
-PKG_SOURCE_DATE:=2023-04-13
-PKG_SOURCE_VERSION:=007d945467499f43656b141171d31f5643b83a6c
+PKG_MIRROR_HASH:=0a0ea0752d534db87f2a13342d1b1b33fb94e43b934bdd015f96f19c635aa08c
+PKG_SOURCE_DATE:=2024-04-19
+PKG_SOURCE_VERSION:=e8780fa7792aaa2d68af21c0df91cd9c05e1f73a
 CMAKE_INSTALL:=1
 
 PKG_BUILD_DEPENDS:=ustream-ssl
@@ -16,6 +16,7 @@ PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_CONFIG_DEPENDS := CONFIG_PACKAGE_ucode-mod-uclient
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -37,6 +38,16 @@ define Package/uclient-fetch
   DEPENDS:=+libuclient
 endef
 
+define Package/ucode-mod-uclient
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=ucode uclient module
+  DEPENDS:=+libucode +libuclient
+endef
+
+CMAKE_OPTIONS += \
+	-DBUILD_UCODE=$(if $(CONFIG_PACKAGE_ucode-mod-uclient),ON,OFF)
+
 define Package/libuclient/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libuclient.so $(1)/usr/lib/
@@ -47,5 +58,11 @@ define Package/uclient-fetch/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uclient-fetch $(1)/bin/
 endef
 
+define Package/ucode-mod-uclient/install
+	$(INSTALL_DIR) $(1)/usr/lib/ucode
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/*.so $(1)/usr/lib/ucode
+endef
+
 $(eval $(call BuildPackage,libuclient))
 $(eval $(call BuildPackage,uclient-fetch))
+$(eval $(call BuildPackage,ucode-mod-uclient))

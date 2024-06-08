@@ -1,0 +1,26 @@
+From 7a9e185075ababa827d1d3a33b787ad6d718c8ec Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Mon, 1 Aug 2022 22:24:24 +0200
+Subject: [PATCH 739/768] net: dsa: lantiq_gswip: Forbid
+ gswip_add_single_port_br on the CPU port
+
+Calling gswip_add_single_port_br() with the CPU port would be a bug
+because then only the CPU port could talk to itself. Add the CPU port to
+the validation at the beginning of gswip_add_single_port_br().
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -633,7 +633,7 @@ static int gswip_add_single_port_br(stru
+ 	unsigned int max_ports = priv->hw_info->max_ports;
+ 	int err;
+ 
+-	if (port >= max_ports) {
++	if (port >= max_ports || dsa_is_cpu_port(priv->ds, port)) {
+ 		dev_err(priv->dev, "single port for %i supported\n", port);
+ 		return -EIO;
+ 	}

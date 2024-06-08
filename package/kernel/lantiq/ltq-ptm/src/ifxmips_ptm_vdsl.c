@@ -153,7 +153,11 @@ static void ptm_setup(struct net_device *dev, int ndev)
     dev->netdev_ops      = &g_ptm_netdev_ops;
     /* Allow up to 1508 bytes, for RFC4638 */
     dev->max_mtu         = ETH_DATA_LEN + 8;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0))
     netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
+#else
+    netif_napi_add_weight(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
+#endif
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
     addr[0] = 0x00;
@@ -1009,8 +1013,14 @@ static int ltq_ptm_probe(struct platform_device *pdev)
             goto REGISTER_NETDEV_FAIL;
     }
 
+    g_ptm_priv_data.irq = platform_get_irq(pdev, 0);
+    if (g_ptm_priv_data.irq < 0) {
+        err("platform_get_irq fail");
+        goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
+    }
+
     /*  register interrupt handler  */
-    ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
+    ret = request_irq(g_ptm_priv_data.irq, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
     if ( ret ) {
         if ( ret == -EBUSY ) {
             err("IRQ may be occupied by other driver, please reconfig to disable it.");
@@ -1020,7 +1030,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
         }
         goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
     }
-    disable_irq(PPE_MAILBOX_IGU1_INT);
+    disable_irq(g_ptm_priv_data.irq);
 
     ret = ifx_pp32_start(0);
     if ( ret ) {
@@ -1030,7 +1040,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     IFX_REG_W32(1 << 16, MBOX_IGU1_IER);    //  enable SWAP interrupt
     IFX_REG_W32(~0, MBOX_IGU1_ISRC);
 
-    enable_irq(PPE_MAILBOX_IGU1_INT);
+    enable_irq(g_ptm_priv_data.irq);
 
     ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
     if ( g_showtime ) {
@@ -1048,7 +1058,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     return 0;
 
 PP32_START_FAIL:
-    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+    free_irq(g_ptm_priv_data.irq, &g_ptm_priv_data);
 REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL:
     i = ARRAY_SIZE(g_net_dev);
 REGISTER_NETDEV_FAIL:
@@ -1076,7 +1086,7 @@ static int ltq_ptm_remove(struct platform_device *pdev)
 
     ifx_pp32_stop(0);
 
-    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+    free_irq(g_ptm_priv_data.irq, &g_ptm_priv_data);
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
         unregister_netdev(g_net_dev[i]);

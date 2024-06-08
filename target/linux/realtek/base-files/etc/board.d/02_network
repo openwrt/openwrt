@@ -84,10 +84,10 @@ engenius,ews2910p)
 	ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-65w)
-	ucidef_set_poe 65 "$(filter_port_list_reversed "$lan_list" "lan9 lan10")"
+	ucidef_set_poe 65 "$(filter_port_list_reverse "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-180w)
-	ucidef_set_poe 180 "$(filter_port_list_reversed "$lan_list" "lan9 lan10")"
+	ucidef_set_poe 180 "$(filter_port_list_reverse "$lan_list" "lan9 lan10")"
 	;;
 netgear,gs110tpp-v1)
 	ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
@@ -104,6 +104,9 @@ zyxel,gs1900-10hp)
 zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
 	ucidef_set_poe 70 "$lan_list"
+	;;
+zyxel,gs1900-24ep)
+	ucidef_set_poe 130 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"
 	;;
 zyxel,gs1900-24hp-v1|\
 zyxel,gs1900-24hp-v2)

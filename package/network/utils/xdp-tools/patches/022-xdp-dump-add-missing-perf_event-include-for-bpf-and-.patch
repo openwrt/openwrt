@@ -1,0 +1,34 @@
+From 0388d7447de027e0d2369d6b8a9c58ea0f8f027c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 18 Jan 2023 20:37:12 +0100
+Subject: [PATCH] xdp-dump: add missing perf_event include for bpf and xdp
+
+Add missing perf_event include needed for struct perf_event_header for
+bpf and xdp.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ xdp-dump/xdpdump_bpf.c | 1 +
+ xdp-dump/xdpdump_xdp.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/xdp-dump/xdpdump_bpf.c
++++ b/xdp-dump/xdpdump_bpf.c
+@@ -4,6 +4,7 @@
+  * Include files
+  *****************************************************************************/
+ #include <stdbool.h>
++#include <linux/perf_event.h>
+ #include <linux/bpf.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_trace_helpers.h>
+--- a/xdp-dump/xdpdump_xdp.c
++++ b/xdp-dump/xdpdump_xdp.c
+@@ -4,6 +4,7 @@
+  * Include files
+  *****************************************************************************/
+ #include <stdbool.h>
++#include <linux/perf_event.h>
+ #include <linux/bpf.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_trace_helpers.h>

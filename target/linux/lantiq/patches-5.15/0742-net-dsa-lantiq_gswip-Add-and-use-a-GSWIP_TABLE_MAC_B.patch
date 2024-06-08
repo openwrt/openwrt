@@ -1,0 +1,33 @@
+From 4775f9543e691d9a2f5dd9aa5d46c66d37928250 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Fri, 14 Oct 2022 14:19:05 +0200
+Subject: [PATCH 742/768] net: dsa: lantiq_gswip: Add and use a
+ GSWIP_TABLE_MAC_BRIDGE_FID macro
+
+Only bits [5:0] in mac_bridge.key[3] are reserved for the FID. Add a
+macro so this becomes obvious when reading the driver code.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -238,6 +238,7 @@
+ #define GSWIP_TABLE_MAC_BRIDGE		0x0b
+ #define  GSWIP_TABLE_MAC_BRIDGE_STATIC	BIT(0)		/* Static not, aging entry */
+ #define  GSWIP_TABLE_MAC_BRIDGE_PORT	GENMASK(7, 4)	/* Port on learned entries */
++#define  GSWIP_TABLE_MAC_BRIDGE_FID	GENMASK(5, 0)	/* Filtering identifier */
+ 
+ #define XRX200_GPHY_FW_ALIGN	(16 * 1024)
+ 
+@@ -1357,7 +1358,7 @@ static int gswip_port_fdb(struct dsa_swi
+ 	mac_bridge.key[0] = addr[5] | (addr[4] << 8);
+ 	mac_bridge.key[1] = addr[3] | (addr[2] << 8);
+ 	mac_bridge.key[2] = addr[1] | (addr[0] << 8);
+-	mac_bridge.key[3] = fid;
++	mac_bridge.key[3] = FIELD_PREP(GSWIP_TABLE_MAC_BRIDGE_FID, fid);
+ 	mac_bridge.val[0] = add ? BIT(port) : 0; /* port map */
+ 	mac_bridge.val[1] = GSWIP_TABLE_MAC_BRIDGE_STATIC;
+ 	mac_bridge.valid = add;

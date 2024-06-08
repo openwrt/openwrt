@@ -18,6 +18,18 @@ define Device/ubnt_aircube-isp
 endef
 TARGET_DEVICES += ubnt_aircube-isp
 
+define Device/ubnt_amplifi-router-hd
+  IMAGE_SIZE := 11264k
+  UBNT_BOARD := AFi-R-HD
+  UBNT_TYPE := AFi-R
+  UBNT_VERSION := 3.6.3
+  SOC := qca9563
+  DEVICE_MODEL := AmpliFi Router HD
+  UBNT_CHIP := qca956x
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct kmod-usb2
+endef
+TARGET_DEVICES += ubnt_amplifi-router-hd
+
 define Device/ubnt_bullet-ac
   $(Device/ubnt-2wa)
   DEVICE_MODEL := Bullet AC

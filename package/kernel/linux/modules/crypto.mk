@@ -11,7 +11,7 @@ CRYPTO_MODULES = \
 	ALGAPI2=crypto_algapi \
 	BLKCIPHER2=crypto_blkcipher
 
-CRYPTO_TARGET = $(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)
+CRYPTO_TARGET = $(BOARD)/$(SUBTARGET)
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
@@ -319,7 +319,8 @@ define KernelPackage/crypto-ghash/arm-ce
   AUTOLOAD+=$(call AutoLoad,09,ghash-arm-ce)
 endef
 
-KernelPackage/crypto-ghash/imx=$(KernelPackage/crypto-ghash/arm-ce)
+KernelPackage/crypto-ghash/imx/cortexa7=$(KernelPackage/crypto-ghash/arm-ce)
+KernelPackage/crypto-ghash/imx/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/ipq40xx=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/mvebu/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
 
@@ -410,7 +411,7 @@ define KernelPackage/crypto-hw-ixp4xx
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_IXP4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.ko
+  FILES:=$(LINUX_DIR)/drivers/crypto/intel/ixp4xx/ixp4xx_crypto.ko
   AUTOLOAD:=$(call AutoProbe,ixp4xx_crypto)
   $(call AddDepends/crypto)
 endef
@@ -952,7 +953,8 @@ define KernelPackage/crypto-sha1/aarch64-ce
   AUTOLOAD+=$(call AutoLoad,09,sha1-ce)
 endef
 
-KernelPackage/crypto-sha1/imx=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/imx/cortexa7=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/imx/cortexa9=$(KernelPackage/crypto-sha1/arm-neon)
 KernelPackage/crypto-sha1/ipq40xx=$(KernelPackage/crypto-sha1/arm-neon)
 KernelPackage/crypto-sha1/mediatek/filogic=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/mediatek/mt7622=$(KernelPackage/crypto-sha1/aarch64-ce)
@@ -1085,7 +1087,8 @@ define KernelPackage/crypto-sha512/aarch64
   AUTOLOAD+=$(call AutoLoad,09,sha512-arm64)
 endef
 
-KernelPackage/crypto-sha512/imx=$(KernelPackage/crypto-sha512/arm)
+KernelPackage/crypto-sha512/imx/cortexa7=$(KernelPackage/crypto-sha512/arm)
+KernelPackage/crypto-sha512/imx/cortexa9=$(KernelPackage/crypto-sha512/arm)
 KernelPackage/crypto-sha512/ipq40xx=$(KernelPackage/crypto-sha512/arm)
 KernelPackage/crypto-sha512/mvebu/cortexa9=$(KernelPackage/crypto-sha512/arm)
 

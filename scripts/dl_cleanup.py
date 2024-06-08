@@ -100,6 +100,7 @@ extensions = (
     ".tar.gz",
     ".tar.bz2",
     ".tar.xz",
+    ".tar.zst",
     ".orig.tar.gz",
     ".orig.tar.bz2",
     ".orig.tar.xz",

@@ -9,9 +9,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2023.04
+PKG_VERSION:=2024.01
 
-PKG_HASH:=e31cac91545ff41b71cec5d8c22afd695645cd6e2a442ccdacacd60534069341
+PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
@@ -138,6 +138,12 @@ define U-Boot/Linksprite_pcDuino
   BUILD_SUBTARGET:=cortexa8
   NAME:=Linksprite pcDuino
   BUILD_DEVICES:=linksprite_a10-pcduino
+endef
+
+define U-Boot/LicheePi_Zero
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Lichee Pi Zero V3s
+  BUILD_DEVICES:=licheepi_licheepi-zero-dock
 endef
 
 define U-Boot/Linksprite_pcDuino3
@@ -339,6 +345,15 @@ define U-Boot/orangepi_zero2
   ATF:=h616
 endef
 
+define U-Boot/orangepi_zero3
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Xunlong Orange Pi Zero3
+  BUILD_DEVICES:=xunlong_orangepi-zero3
+  DEPENDS:=+PACKAGE_u-boot-orangepi_zero3:trusted-firmware-a-sunxi-h616
+  UENV:=h616
+  ATF:=h616
+endef
+
 define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
@@ -380,6 +395,7 @@ UBOOT_TARGETS := \
 	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
+	LicheePi_Zero \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Linksprite_pcDuino3_Nano \
@@ -402,6 +418,7 @@ UBOOT_TARGETS := \
 	orangepi_2 \
 	orangepi_pc2 \
 	orangepi_zero2 \
+	orangepi_zero3 \
 	pangolin \
 	pine64_plus \
 	Sinovoip_BPI_M3 \

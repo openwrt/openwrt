@@ -121,17 +121,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		mt7530: switch@0 {
-			compatible = "mediatek,mt7530";
+		mt7530: switch@1f {
 		};
 	};
 };
 
 &mt7530 {
 	compatible = "mediatek,mt7530";
+	reg = <31>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0>;
 	pinctrl-names = "default";
 	mediatek,mcm;
 	resets = <&ethsys 2>;

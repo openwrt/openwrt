@@ -1,0 +1,32 @@
+From 82ea7c7fb4e90620beba8b6436fc12df2379ef8d Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Mon, 10 Oct 2022 16:52:25 +0200
+Subject: [PATCH 731/768] dt-bindings: net: dsa: lantiq_gswip: Add missing
+ phy-mode and fixed-link
+
+The CPU port has to specify a phy-mode and either a phy or a fixed-link.
+Since GSWIP is connected using a SoC internal protocol there's no PHY
+involved. Add phy-mode = "internal" and a fixed-link to describe the
+communication between the PMAC (Ethernet controller) and GSWIP switch.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ Documentation/devicetree/bindings/net/dsa/lantiq-gswip.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/dsa/lantiq-gswip.txt
++++ b/Documentation/devicetree/bindings/net/dsa/lantiq-gswip.txt
+@@ -96,7 +96,13 @@ switch@e108000 {
+ 
+ 		port@6 {
+ 			reg = <0x6>;
++			phy-mode = "internal";
+ 			ethernet = <&eth0>;
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 		};
+ 	};
+ 

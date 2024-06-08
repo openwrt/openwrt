@@ -31,6 +31,9 @@ case "$FIRMWARE" in
 			;;
 		esac
 		;;
+	openwrt,one)
+		caldata_extract "factory" 0x0 0x1000
+		;;
 	ubnt,unifi-6-plus)
 		caldata_extract_mmc "factory" 0x0 0x1000
 		;;

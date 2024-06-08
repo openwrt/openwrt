@@ -4,10 +4,13 @@
 board_config_update
 
 case "$(board_name)" in
+freecom,fsg-3|\
 gateworks,gw2348|\
 gateworks,gw2358)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
+dlink,dsm-g600-a|\
+iom,nas-100d|\
 linksys,nslu2)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;

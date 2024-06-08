@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-whw03.dtsi"
+
+/ {
+	model = "Linksys WHW03 V2 (Velop)";
+	compatible = "linksys,whw03v2", "qcom,ipq4019";
+
+	// Default bootargs include rootfstype=ext4 and need to be overriden.
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		stdout-path = &blsp1_uart1;
+	};
+};
+
+&tlmm {
+	i2c_0_pins: i2c-0-pinmux {
+		pins = "gpio20", "gpio21";
+		function = "blsp_i2c0";
+		bias-disable;
+	};
+
+	spi_0_pins: spi-0-pinmux {
+		mux {
+			pins = "gpio13", "gpio14", "gpio15";
+			function = "blsp_spi0";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		mux-cs {
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&spi_1_pins {
+	mux-wake {
+		pins = "gpio31";
+		function = "gpio";
+		bias-pull-up;
+		output-high;
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	phy-reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+};
+
+&ethphy3 {
+	reg = <0x1b>;
+};
+
+&ethphy4 {
+	reg = <0x1c>;
+};
+
+&psgmiiphy {
+	reg = <0x1d>;
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "MIBIB";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "QSEE";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "CDT";
+				reg = <0x300000 0x80000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "APPSBL";
+				reg = <0x380000 0x200000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "ART";
+				reg = <0x580000 0x80000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_gmac1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@600000 {
+				label = "u_env";
+				reg = <0x600000 0x80000>;
+			};
+
+			partition@680000 {
+				label = "s_env";
+				reg = <0x680000 0x40000>;
+			};
+
+			partition@6c0000 {
+				label = "devinfo";
+				reg = <0x6c0000 0x40000>;
+				read-only;
+			};
+
+			partition@700000 {
+				label = "kernel";
+				reg = <0x700000 0xa100000>;
+			};
+
+			partition@d00000 {
+				label = "rootfs";
+				reg = <0xd00000 0x9b00000>;
+			};
+
+			partition@a800000 {
+				label = "alt_kernel";
+				reg = <0xa800000 0xa100000>;
+			};
+
+			partition@ae00000 {
+				label = "alt_rootfs";
+				reg = <0xae00000 0x9b00000>;
+			};
+
+			partition@14900000 {
+				label = "sysdiag";
+				reg = <0x14900000 0x200000>;
+				read-only;
+			};
+
+			partition@14b00000 {
+				label = "syscfg";
+				reg = <0x14b00000 0xb500000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&swport4 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+};
+
+&swport5 {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0 1>;
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 2>;
+};
+
+&wifi2 {
+	reg = <0x00010000 0 0 0 0>;
+
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
+};

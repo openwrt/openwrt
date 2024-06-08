@@ -23,6 +23,9 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r5s)
 		ucidef_set_interfaces_lan_wan 'eth1 eth2' 'eth0'
 		;;
+	sinovoip,rk3568-bpi-r2pro)
+		ucidef_set_interfaces_lan_wan 'lan0 lan1 lan2 lan3' 'eth0'
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
@@ -44,7 +47,8 @@ rockchip_setup_macs()
 		;;
 	friendlyarm,nanopi-r2c-plus|\
 	friendlyarm,nanopi-r4s|\
-	friendlyarm,nanopi-r5s)
+	friendlyarm,nanopi-r5s|\
+	sinovoip,rk3568-bpi-r2pro)
 		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;

@@ -1,0 +1,631 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "qcom-ipq4019.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Sony NCP-HG100/Cellular";
+	compatible = "sony,ncp-hg100-cellular";
+
+	aliases {
+		led-boot = &led_cloud_green;
+		led-failsafe = &led_cloud_red;
+		led-running = &led_cloud_green;
+		led-upgrade = &led_cloud_green;
+		label-mac-device = &gmac;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 root=/dev/mmcblk0p15 rootfstype=squashfs,ext4";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x80000000 0x20000000>;
+	};
+
+	soc {
+		tcsr@1949000 {
+			status = "okay";
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			status = "okay";
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			status = "okay";
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			status = "okay";
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	keys-repeat {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&keys_pins>;
+		pinctrl-names = "default";
+		autorepeat;
+
+		key-volup {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
+			linux,input-type = <EV_KEY>;
+		};
+
+		key-voldown {
+			label = "volume down";
+			linux,code = <KEY_VOLUMEDOWN>;
+			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
+			linux,input-type = <EV_KEY>;
+		};
+
+		key-alexatrigger {
+			label = "alexa trigger";
+			linux,code = <BTN_0>;
+			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+			linux,input-type = <EV_KEY>;
+		};
+
+		key-mute {
+			label = "mic mute";
+			linux,code = <BTN_1>;
+			gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "reset";
+			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		key-wps {
+			label = "setup";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&tlmm {
+	pinctrl-0 = <&bt_pins>, <&aud_pins>, <&mcu_pins>;
+	pinctrl-names = "default";
+
+	/*
+	 * uart0 is shared for debug console and Z-Wave,
+	 * use only for debug console in OpenWrt.
+	 *
+	 * 1: debug console
+	 * 0: Z-Wave
+	 */
+	uart0_ctrl_pins: uart0_ctrl_pinmux {
+		mux {
+			pins = "gpio15";
+			function = "gpio";
+			output-high;
+		};
+	};
+
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	/*
+	 * reset pin for Z-Wave
+	 * active-low, >= 20ns
+	 */
+	zwave_pins: zwave_pinmux {
+		mux {
+			pins = "gpio59";
+			function = "gpio";
+			output-high;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			pins = "gpio8", "gpio9",
+				"gpio10", "gpio11";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	bt_pins: bt_pinmux {
+		mux_reset {
+			pins = "gpio66";
+			function = "gpio";
+			output-high;
+		};
+
+		mux_pwr {
+			pins = "gpio68";
+			function = "gpio";
+			output-high;
+		};
+	};
+
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	i2c_1_pins: i2c_1_pinmux {
+		mux {
+			pins = "gpio12", "gpio13";
+			function = "blsp_i2c1";
+			bias-disable;
+		};
+	};
+
+	keys_pins: keys_pinmux {
+		mux_1 {
+			pins = "gpio39", "gpio40", "gpio42", "gpio47";
+			function = "gpio";
+			bias-disable;
+		};
+
+		mux_2 {
+			pins = "gpio2";
+			function = "gpio";
+			input;
+		};
+	};
+
+	sd_pins: sd_pins {
+		mux {
+			function = "sdio";
+			pins = "gpio23", "gpio24", "gpio25", "gpio26",
+				"gpio28", "gpio29", "gpio30", "gpio31";
+			drive-strength = <4>;
+		};
+
+		mux_sd_clk {
+			function = "sdio";
+			pins = "gpio27";
+			drive-strength = <16>;
+		};
+
+		mux_sd7 {
+			function = "sdio";
+			pins = "gpio32";
+			drive-strength = <4>;
+			bias-disable;
+		};
+	};
+
+	aud_pins: aud_pinmux {
+		mux {
+			pins = "gpio48", "gpio49", "gpio50", "gpio51";
+			function = "aud_pin";
+		};
+	};
+
+	alc1304_pins: alc1304_pinmux {
+		mux_1 {
+			pins = "gpio44";
+			function = "gpio";
+			bias-disable;
+		};
+
+		mux_2 {
+			pins = "gpio45";
+			function = "gpio";
+			bias-disable;
+		};
+	};
+
+	cx2902x_reset: cx2902x_pinmux {
+		mux_1 {
+			pins = "gpio64";
+			function = "gpio";
+			bias-disable;
+		};
+
+		mux_2 {
+			pins = "gpio65";
+			function = "gpio";
+			bias-disable;
+		};
+	};
+
+	lte_pins: lte_pinmux {
+		mux_en {
+			pins = "gpio20";
+			function = "gpio";
+			output-high;
+		};
+
+		mux_reset {
+			pins = "gpio35";
+			function = "gpio";
+			input;
+		};
+	};
+
+	usb3_pins: usb3_pinmux {
+		mux_en {
+			pins = "gpio36";
+			function = "gpio";
+			output-high;
+		};
+
+		mux_flt {
+			pins = "gpio4";
+			function = "gpio";
+			input;
+		};
+	};
+
+	mcu_pins: mcu_pinmux {
+		mux_boot {
+			pins = "gpio38";
+			function = "gpio";
+			output-low;
+		};
+
+		mux_reset {
+			pins = "gpio5";
+			function = "gpio";
+			output-high;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_i2c4 {
+	/*
+	 * There is no driver for the following devices:
+	 * - CY8C4014LQI@14	: Touch-Sensor for buttons on top
+	 * - MINI54FDE@15	: MCU for Fan/RGB LED/Thermal control
+	 * - ALC5629@18		: I2S/PCM Audio DAC
+	 * - CX20924@41		: Voice Input Processor
+	 */
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	led-controller@32 {
+		compatible = "ti,lp55231";
+		reg = <0x32>;
+		clock-mode = /bits/ 8 <0>;
+		enable-gpio = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			chan-name = "green:wan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x0>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@1 {
+			chan-name = "blue:wan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@2 {
+			chan-name = "green:lan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x2>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+		};
+
+		led@3 {
+			chan-name = "blue:lan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x3>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+		};
+
+		led@4 {
+			chan-name = "green:wlan-2";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x4>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led@5 {
+			chan-name = "blue:wlan-2";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x5>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+		};
+
+		led@6 {
+			chan-name = "red:wan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x6>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led@7 {
+			chan-name = "red:lan";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x7>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+		};
+
+		led@8 {
+			chan-name = "red:wlan-2";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x8>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+		};
+	};
+
+	led-controller@33 {
+		compatible = "ti,lp55231";
+		reg = <0x33>;
+		clock-mode = /bits/ 8 <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			chan-name = "green:wlan-5";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x0>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy1tpt";
+			function-enumerator = <5>;
+		};
+
+		led@1 {
+			chan-name = "blue:wlan-5";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <5>;
+		};
+
+		led@2 {
+			chan-name = "green:wan-4";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x2>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN; /* WWAN/LTE/4G */
+			function-enumerator = <4>; /* WWAN/LTE/4G */
+		};
+
+		led@3 {
+			chan-name = "blue:wan-4";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x3>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN; /* WWAN/LTE/4G */
+			function-enumerator = <4>; /* WWAN/LTE/4G */
+		};
+
+		led_cloud_green: led@4 {
+			chan-name = "green:power";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x4>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led@5 {
+			chan-name = "blue:power";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x5>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led@6 {
+			chan-name = "red:wlan-5";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x6>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <5>;
+		};
+
+		led@7 {
+			chan-name = "red:wan-4";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x7>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN; /* WWAN/LTE/4G */
+			function-enumerator = <4>; /* WWAN/LTE/4G */
+		};
+
+		led_cloud_red: led@8 {
+			chan-name = "red:power";
+			led-cur = /bits/ 8 <50>;
+			max-cur = /bits/ 8 <100>;
+			reg = <0x8>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>, <&uart0_ctrl_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+};
+
+&prng {
+	status = "okay";
+};
+
+&vqmmc {
+	status = "okay";
+};
+
+&sdhci {
+	status = "okay";
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	vqmmc-supply = <&vqmmc>;
+	non-removable;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	emmc@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+	};
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+
+	pinctrl-0 = <&usb3_pins>, <&lte_pins>;
+	pinctrl-names = "default";
+};
+
+&usb3_dwc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	device@1 {
+		compatible = "usb1bc7,1900";
+		reg = <1>;
+	};
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Sony-NCP-HG100-Cellular";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Sony-NCP-HG100-Cellular";
+};
+
+&watchdog {
+	status = "okay";
+};

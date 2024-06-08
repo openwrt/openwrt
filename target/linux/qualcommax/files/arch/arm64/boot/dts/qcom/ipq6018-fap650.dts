@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: MIT, GPL-2.0 or later
+/* Copyright (c) 2023, Ruslan Isaev <legale.legale@gmail.com> */
+
+/dts-v1/;
+
+#include "ipq6018-512m.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Yuncore FAP650";
+	compatible = "yuncore,fap650", "qcom,ipq6018";
+	
+	aliases {
+		ethernet0 = &dp5;
+		ethernet1 = &dp4;
+		ethernet2 = &dp3;
+		ethernet3 = &dp2;
+		ethernet4 = &dp1;
+		label-mac-device = &dp5;
+		serial0 = &blsp1_uart3;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan5g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8075_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+	switch_lan_bmp = <(ESS_PORT1|ESS_PORT2|ESS_PORT3|ESS_PORT4)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <0>;
+		};
+
+		port@2 {
+			port_id = <2>;
+			phy_address = <1>;
+		};
+
+		port@3 {
+			port_id = <3>;
+			phy_address = <2>;
+		};
+
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+
+		port@5 {
+			port_id = <5>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp1 {
+	status = "okay";
+	phy-handle = <&qca8075_0>;
+	label = "lan1";
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan2";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan3";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan4";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	phy-mode = "psgmii";
+	label = "wan";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+	
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+
+			partition@0 {
+				reg = <0x00000000 0x000c0000>;
+				label = "0:sbl1";
+			};
+
+			partition@c0000 {
+				reg = <0x000c0000 0x00010000>;
+				label = "0:mibib";
+			};
+
+			partition@d0000 {
+				reg = <0x000d0000 0x00020000>;
+				label = "0:bootconfig";
+			};
+
+			partition@f0000 {
+				reg = <0x000f0000 0x00020000>;
+				label = "0:bootconfig1";
+			};
+
+			partition@110000 {
+				reg = <0x00110000 0x001a0000>;
+				label = "0:qsee";
+			};
+
+			partition@2b0000 {
+				reg = <0x002b0000 0x001a0000>;
+				label = "0:qsee_1";
+			};
+
+			partition@450000 {
+				reg = <0x00450000 0x00010000>;
+				label = "0:devcfg";
+			};
+
+			partition@460000 {
+				reg = <0x00460000 0x00010000>;
+				label = "0:devcfg_1";
+			};
+
+			partition@470000 {
+				reg = <0x00470000 0x00040000>;
+				label = "0:rpm";
+			};
+
+			partition@4b0000 {
+				reg = <0x004b0000 0x00040000>;
+				label = "0:rpm_1";
+			};
+
+			partition@4f0000 {
+				reg = <0x004f0000 0x00010000>;
+				label = "0:cdt";
+			};
+
+			partition@500000 {
+				reg = <0x00500000 0x00010000>;
+				label = "0:cdt_1";
+			};
+
+			partition@510000 {
+				reg = <0x00510000 0x00010000>;
+				label = "0:appsblenv";
+			};
+
+			partition@520000 {
+				reg = <0x00520000 0x000a0000>;
+				label = "0:appsbl";
+			};
+
+			partition@5c0000 {
+				reg = <0x005c0000 0x000a0000>;
+				label = "0:appsbl_1";
+			};
+
+			partition@660000 {
+				reg = <0x00660000 0x00040000>;
+				label = "0:art";
+			};
+		};
+	};
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+	
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x00000000 0x03c00000>;
+			};
+
+			partition@3c00000 {
+				label = "rootfs_1";
+				reg = <0x03c00000 0x03c00000>;
+			};
+		};
+	};
+};
+
+&wifi {
+ 	qcom,ath11k-calibration-variant = "Yuncore-FAP650";
+	qcom,ath11k-fw-memory-mode = <1>;
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};

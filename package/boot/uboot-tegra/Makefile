@@ -6,12 +6,14 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION := 2020.04
-PKG_RELEASE:=3
+PKG_VERSION := 2024.04
+PKG_RELEASE:=1
 
-PKG_HASH := fe732aaf037d9cc3c0909bad8362af366ae964bbdac6913a34081ff4ad565372
+PKG_HASH := 18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
 
 PKG_MAINTAINER := Tomasz Maciej Nowak <tmn505@gmail.com>
+
+UBOOT_USE_INTREE_DTC:=1
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -44,11 +46,6 @@ define Build/bct-image
 			$(PKG_BUILD_DIR)/$(bct).img; \
 		rm -f $(bct).bct; \
 	)
-endef
-
-define Build/Configure
-	sed '/select BINMAN/d' -i $(PKG_BUILD_DIR)/arch/arm/mach-tegra/Kconfig
-	$(call Build/Configure/U-Boot)
 endef
 
 define Build/Compile

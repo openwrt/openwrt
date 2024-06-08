@@ -29,7 +29,6 @@ define KernelPackage/cryptodev
   SUBMENU:=Cryptographic API modules
   TITLE:=Driver for cryptographic acceleration
   URL:=http://cryptodev-linux.org/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash
   FILES:=$(PKG_BUILD_DIR)/cryptodev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,cryptodev)

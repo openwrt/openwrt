@@ -1,0 +1,95 @@
+From 91fb8a7328dda827bc6c0da240a1eb17028416cd Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 9 May 2024 23:59:28 +0200
+Subject: [PATCH 2/5] net: ethernet: cortina: Use TSO also on common TCP
+
+It is possible to push the segment offloader to also
+process non-segmented frames: just pass the skb->len
+or desired MSS to the offloader and it will handle them.
+
+This is especially good if the user sets up the MTU
+and the frames get big, because the checksumming engine
+cannot handle any frames bigger than 1518 bytes, so
+segmenting them all to be at max that will be helpful
+for the hardware, which only need to quirk odd frames
+such as big UDP ping packets.
+
+The vendor driver always uses the TSO like this, and
+the driver seems more stable after this, so apparently
+the hardware may have been engineered to always use
+the TSO on anything it can handle.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/net/ethernet/cortina/gemini.c | 31 +++++++++++++++++++++------
+ 1 file changed, 24 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -1148,6 +1148,7 @@ static int gmac_map_tx_bufs(struct net_d
+ 	struct gmac_txdesc *txd;
+ 	skb_frag_t *skb_frag;
+ 	dma_addr_t mapping;
++	bool tcp = false;
+ 	void *buffer;
+ 	u16 mss;
+ 	int ret;
+@@ -1155,6 +1156,13 @@ static int gmac_map_tx_bufs(struct net_d
+ 	word1 = skb->len;
+ 	word3 = SOF_BIT;
+ 
++	/* Determine if we are doing TCP */
++	if (skb->protocol == htons(ETH_P_IP))
++		tcp = (ip_hdr(skb)->protocol == IPPROTO_TCP);
++	else
++		/* IPv6 */
++		tcp = (ipv6_hdr(skb)->nexthdr == IPPROTO_TCP);
++
+ 	mss = skb_shinfo(skb)->gso_size;
+ 	if (mss) {
+ 		/* This means we are dealing with TCP and skb->len is the
+@@ -1167,6 +1175,20 @@ static int gmac_map_tx_bufs(struct net_d
+ 			   mss, skb->len);
+ 		word1 |= TSS_MTU_ENABLE_BIT;
+ 		word3 |= mss;
++	} else if (tcp) {
++		/* Even if we are not using TSO, use the segment offloader
++		 * for transferring the TCP frame: the TSO engine will deal
++		 * with chopping up frames that exceed ETH_DATA_LEN which
++		 * the checksumming engine cannot handle (see below) into
++		 * manageable chunks. It flawlessly deals with quite big
++		 * frames and frames containing custom DSA EtherTypes.
++		 */
++		mss = netdev->mtu + skb_tcp_all_headers(skb);
++		mss = min(mss, skb->len);
++		netdev_dbg(netdev, "botched TSO len %04x mtu %04x mss %04x\n",
++			   skb->len, netdev->mtu, mss);
++		word1 |= TSS_MTU_ENABLE_BIT;
++		word3 |= mss;
+ 	} else if (skb->len >= ETH_FRAME_LEN) {
+ 		/* Hardware offloaded checksumming isn't working on frames
+ 		 * bigger than 1514 bytes. A hypothesis about this is that the
+@@ -1185,21 +1207,16 @@ static int gmac_map_tx_bufs(struct net_d
+ 	}
+ 
+ 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
+-		int tcp = 0;
+-
+ 		/* We do not switch off the checksumming on non TCP/UDP
+ 		 * frames: as is shown from tests, the checksumming engine
+ 		 * is smart enough to see that a frame is not actually TCP
+ 		 * or UDP and then just pass it through without any changes
+ 		 * to the frame.
+ 		 */
+-		if (skb->protocol == htons(ETH_P_IP)) {
++		if (skb->protocol == htons(ETH_P_IP))
+ 			word1 |= TSS_IP_CHKSUM_BIT;
+-			tcp = ip_hdr(skb)->protocol == IPPROTO_TCP;
+-		} else { /* IPv6 */
++		else
+ 			word1 |= TSS_IPV6_ENABLE_BIT;
+-			tcp = ipv6_hdr(skb)->nexthdr == IPPROTO_TCP;
+-		}
+ 
+ 		word1 |= tcp ? TSS_TCP_CHKSUM_BIT : TSS_UDP_CHKSUM_BIT;
+ 	}

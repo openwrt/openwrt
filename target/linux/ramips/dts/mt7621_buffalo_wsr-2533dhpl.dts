@@ -159,7 +159,7 @@
 			};
 
 			partition@50000 {
-				compatible = "openwrt,trx";
+				compatible = "brcm,trx";
 				label = "firmware";
 				reg = <0x50000 0x7c0000>;
 			};
@@ -199,10 +199,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

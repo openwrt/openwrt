@@ -3,6 +3,8 @@
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
 
+DTS_DIR := $(DTS_DIR)/marvell
+
 define Build/fortigate-header
   ( \
     dd if=/dev/zero bs=384 count=1 2>/dev/null; \
@@ -112,35 +114,72 @@ define Device/cznic_turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
-define Device/fortinet_fg-30e
+define Device/fortinet
   DEVICE_VENDOR := Fortinet
-  DEVICE_MODEL := FortiGate 30E
   SOC := armada-385
   KERNEL := kernel-bin | append-dtb
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
-    gzip-filename FGT30E
   KERNEL_SIZE := 6144k
-  DEVICE_DTS := armada-385-fortinet-fg-30e
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
     sysupgrade-tar rootfs=$$$$@ | append-metadata
   DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+
+define Device/fortinet_fg-30e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiGate 30E
+  DEVICE_DTS := armada-385-fortinet-fg-30e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT30E
 endef
 TARGET_DEVICES += fortinet_fg-30e
 
 define Device/fortinet_fg-50e
-  DEVICE_VENDOR := Fortinet
+  $(Device/fortinet)
   DEVICE_MODEL := FortiGate 50E
-  SOC := armada-385
-  KERNEL := kernel-bin | append-dtb
+  DEVICE_DTS := armada-385-fortinet-fg-50e
   KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
     gzip-filename FGT50E
-  KERNEL_SIZE := 6144k
-  DEVICE_DTS := armada-385-fortinet-fg-50e
-  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
-    sysupgrade-tar rootfs=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-hwmon-nct7802
 endef
 TARGET_DEVICES += fortinet_fg-50e
+
+define Device/fortinet_fg-51e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiGate 51E
+  DEVICE_DTS := armada-385-fortinet-fg-51e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT51E
+endef
+TARGET_DEVICES += fortinet_fg-51e
+
+define Device/fortinet_fg-52e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiGate 52E
+  DEVICE_DTS := armada-385-fortinet-fg-52e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT52E
+endef
+TARGET_DEVICES += fortinet_fg-52e
+
+define Device/fortinet_fwf-50e-2r
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 50E-2R
+  DEVICE_DTS := armada-385-fortinet-fwf-50e-2r
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FW502R
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-50e-2r
+
+define Device/fortinet_fwf-51e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 51E
+  DEVICE_DTS := armada-385-fortinet-fwf-51e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF51E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-51e
 
 define Device/globalscale_mirabox
   $(Device/NAND-512K)

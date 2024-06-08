@@ -46,7 +46,7 @@ endef
 
 ifdef IB
 define Build/append-image-stage
-	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1) >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1) >> $@
 endef
 else
 define Build/append-image-stage
@@ -54,7 +54,7 @@ define Build/append-image-stage
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
 	mkdir -p "$(STAGING_DIR_IMAGE)"
-	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1)"
 	dd if="$@.stripmeta" >> "$@"
 	rm "$@.stripmeta"
 endef
@@ -231,6 +231,27 @@ define Build/buffalo-tag-dhp
 	mv $@.new $@
 endef
 
+define Build/buffalo-trx
+	$(eval magic=$(word 1,$(1)))
+	$(eval kern_bin=$(if $(1),$(IMAGE_KERNEL),$@))
+	$(eval rtfs_bin=$(word 2,$(1)))
+	$(eval apnd_bin=$(word 3,$(1)))
+	$(eval kern_size=$(if $(KERNEL_SIZE),$(KERNEL_SIZE),0x400000))
+
+	$(if $(rtfs_bin),touch $(rtfs_bin))
+	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
+		$(if $(magic),-M $(magic),) \
+		-f $(kern_bin) \
+		$(if $(rtfs_bin),\
+			-a 0x20000 \
+			-b $$(( $(call exp_units,$(kern_size)) )) \
+			-f $(rtfs_bin),) \
+		$(if $(apnd_bin),\
+			-A $(apnd_bin) \
+			-a 0x20000)
+	mv $@.new $@
+endef
+
 define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(call exp_units,$(if $(1),$(1),$(IMAGE_SIZE)))))"; \
@@ -242,6 +263,43 @@ endef
 
 define Build/copy-file
 	cat "$(1)" > "$@"
+endef
+
+# Create a header for a D-Link AI series recovery image and add it at the beginning of the image
+# Currently supported: AQUILA M30, EAGLE M32 and R32
+# Arguments:
+# 1: Start string of the header
+# 2: Firmware version
+# 3: Block start address
+# 4: Block length
+# 5: Device FMID
+define Build/dlink-ai-recovery-header
+	$(eval header_start=$(word 1,$(1)))
+	$(eval firmware_version=$(word 2,$(1)))
+	$(eval block_start=$(word 3,$(1)))
+	$(eval block_length=$(word 4,$(1)))
+	$(eval device_fmid=$(word 5,$(1)))
+# create $@.header without the checksum
+	echo -en "$(header_start)\x00\x00" > "$@.header"
+# Calculate checksum over data area ($@) and append it to the header.
+# The checksum is the 2byte-sum over the whole data area.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@" | awk '{ s+=$$1; } END { s%=65535; printf "%c%c",s%256,s/256; }' >> "$@.header"
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00" >> "$@.header"
+	echo -en "$(firmware_version)" >> "$@.header"
+# Only one block supported: Erase start/length is identical to data start/length
+	echo -en "$(block_start)$(block_length)$(block_start)$(block_length)" >> "$@.header"
+# Only zeros
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >> "$@.header"
+# Last 16 bytes, but without checksum
+	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00" >> "$@.header"
+	echo -en "$(device_fmid)" >> "$@.header"
+# Calculate and append checksum: The checksum must be set so that the 2byte-sum of the whole header is 0.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@.header" | awk '{s+=65535-$$1;}END{s%=65535;printf "%c%c",s%256,s/256;}' >> "$@.header"
+	cat "$@.header" "$@" > "$@.new"
+	mv "$@.new" "$@"
+	rm "$@.header"
 endef
 
 define Build/dlink-sge-image
@@ -393,12 +451,18 @@ define Build/jffs2
 	@mv $@.new $@
 endef
 
-define Build/kernel2minor
-	$(eval temp_file := $(shell mktemp))
-	cp $@ $(temp_file)
-	kernel2minor -k $(temp_file) -r $(temp_file).new $(1)
-	mv $(temp_file).new $@
-	rm -f $(temp_file)
+define Build/yaffs-filesystem
+	let \
+		kernel_size="$$(stat -c%s $@)" \
+		kernel_chunks="(kernel_size / 1024) + 1" \
+		filesystem_chunks="kernel_chunks + 3" \
+		filesystem_blocks="(filesystem_chunks / 63) + 1" \
+		filesystem_size="filesystem_blocks * 64 * 1024" \
+		filesystem_size_with_reserve="(filesystem_blocks + 2) * 64 * 1024"; \
+		head -c $$filesystem_size_with_reserve /dev/zero | tr "\000" "\377" > $@.img \
+		&& yafut -d $@.img -w -i $@ -o kernel -C 1040 -B 64k -E -P -S $(1) \
+		&& truncate -s $$filesystem_size $@.img \
+		&& mv $@.img $@
 endef
 
 define Build/kernel-bin

@@ -1,7 +1,6 @@
-diff -ruN u-boot-2020.04.old/arch/arm/mach-kirkwood/Kconfig u-boot-2020.04/arch/arm/mach-kirkwood/Kconfig
---- u-boot-2020.04.old/arch/arm/mach-kirkwood/Kconfig	2020-07-09 00:46:15.000000000 +0200
-+++ u-boot-2020.04/arch/arm/mach-kirkwood/Kconfig	2020-07-09 01:07:00.309219477 +0200
-@@ -44,6 +44,9 @@
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -44,6 +44,9 @@ config TARGET_NET2BIG_V2
  config TARGET_NETSPACE_V2
  	bool "LaCie netspace_v2 Board"
  
@@ -11,7 +10,7 @@ diff -ruN u-boot-2020.04.old/arch/arm/mach-kirkwood/Kconfig u-boot-2020.04/arch/
  config TARGET_IB62X0
  	bool "ib62x0 Board"
  
-@@ -92,6 +95,7 @@
+@@ -95,6 +98,7 @@ source "board/iomega/iconnect/Kconfig"
  source "board/keymile/Kconfig"
  source "board/LaCie/net2big_v2/Kconfig"
  source "board/LaCie/netspace_v2/Kconfig"
@@ -19,9 +18,8 @@ diff -ruN u-boot-2020.04.old/arch/arm/mach-kirkwood/Kconfig u-boot-2020.04/arch/
  source "board/raidsonic/ib62x0/Kconfig"
  source "board/Seagate/dockstar/Kconfig"
  source "board/Seagate/goflexhome/Kconfig"
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/Kconfig u-boot-2020.04/board/Marvell/netgear_ms2110/Kconfig
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/Kconfig	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/Kconfig
 @@ -0,0 +1,12 @@
 +if TARGET_NETGEAR_MS2110
 +
@@ -35,9 +33,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/Kconfig u-boot-2020.04
 +	default "netgear_ms2110"
 +
 +endif
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/kwbimage.cfg u-boot-2020.04/board/Marvell/netgear_ms2110/kwbimage.cfg
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/kwbimage.cfg	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/kwbimage.cfg	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/kwbimage.cfg
 @@ -0,0 +1,167 @@
 +#
 +# (C) Copyright 2009
@@ -206,9 +203,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/kwbimage.cfg u-boot-20
 +
 +# End of Header extension
 +DATA 0x0 0x0
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/MAINTAINERS u-boot-2020.04/board/Marvell/netgear_ms2110/MAINTAINERS
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/MAINTAINERS	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/MAINTAINERS	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/MAINTAINERS
 @@ -0,0 +1,6 @@
 +NETGEAR_MS2110 BOARD
 +M:	bodhi <mibodhi@gmail.com>
@@ -216,9 +212,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/MAINTAINERS u-boot-202
 +F:	board/Marvell/netgear_ms2110
 +F:	include/configs/netgear_ms2110.h
 +F:	configs/netgear_ms2110_defconfig
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/Makefile u-boot-2020.04/board/Marvell/netgear_ms2110/Makefile
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/Makefile	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/Makefile
 @@ -0,0 +1,13 @@
 +#
 +# (C) Copyright 2014 bodhi <mibodhi@gmail.com>
@@ -233,9 +228,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/Makefile u-boot-2020.0
 +
 +obj-y	:= netgear_ms2110.o
 +
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.c u-boot-2020.04/board/Marvell/netgear_ms2110/netgear_ms2110.c
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.c	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/netgear_ms2110.c	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/netgear_ms2110.c
 @@ -0,0 +1,151 @@
 +/*
 + * Copyright (C) 2014-2017 bodhi <mibodhi@gmail.com>
@@ -388,9 +382,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.c u-boo
 +}
 +#endif /* CONFIG_RESET_PHY_R */
 +
-diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.h u-boot-2020.04/board/Marvell/netgear_ms2110/netgear_ms2110.h
---- u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.h	1970-01-01 01:00:00.000000000 +0100
-+++ u-boot-2020.04/board/Marvell/netgear_ms2110/netgear_ms2110.h	2020-07-09 00:59:29.000000000 +0200
+--- /dev/null
++++ b/board/Marvell/netgear_ms2110/netgear_ms2110.h
 @@ -0,0 +1,41 @@
 +/*
 + * (C) Copyright 2009
@@ -433,9 +426,8 @@ diff -ruN u-boot-2020.04.old/board/Marvell/netgear_ms2110/netgear_ms2110.h u-boo
 +#define MV88E1116_RGMII_RXTM_CTRL	(1 << 5)
 +
 +#endif /* __NETGEAR_MS2110_H */
-diff -ruN a/configs/netgear_ms2110_defconfig b/configs/netgear_ms2110_defconfig
---- a/configs/netgear_ms2110_defconfig	1970-01-01 01:00:00.000000000 +0100
-+++ b/configs/netgear_ms2110_defconfig	2020-07-14 17:59:18.000000000 +0200
+--- /dev/null
++++ b/configs/netgear_ms2110_defconfig
 @@ -0,0 +1,50 @@
 +CONFIG_ARM=y
 +CONFIG_KIRKWOOD=y
@@ -487,9 +479,8 @@ diff -ruN a/configs/netgear_ms2110_defconfig b/configs/netgear_ms2110_defconfig
 +CONFIG_MVSATA_IDE=y
 +CONFIG_DM_RTC=y
 +CONFIG_RTC_MV=y
-diff -ruN a/include/configs/netgear_ms2110.h b/include/configs/netgear_ms2110.h
---- a/include/configs/netgear_ms2110.h	1970-01-01 01:00:00.000000000 +0100
-+++ b/include/configs/netgear_ms2110.h	2020-07-14 17:49:15.000000000 +0200
+--- /dev/null
++++ b/include/configs/netgear_ms2110.h
 @@ -0,0 +1,155 @@
 +/*
 + * (C) Copyright 2014-2017 bodhi <mibodhi@gmail.com>

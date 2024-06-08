@@ -10,7 +10,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs ext4 vdi vmdk vhdx pcmcia targz fpu boot-part rootfs-part
 SUBTARGETS:=generic legacy geode 64
 
-KERNEL_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.6
 
 KERNELNAME:=bzImage
 

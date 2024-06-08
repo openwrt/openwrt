@@ -1,0 +1,304 @@
+From 504188183408fac0f61b59f5ed8ea1773fe43669 Mon Sep 17 00:00:00 2001
+From: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Date: Wed, 15 Jun 2022 16:59:30 +0200
+Subject: [PATCH 2/2] ARM: dts: qcom: add MDIO dedicated controller node for
+ ipq806x
+
+Add MDIO dedicated controller attached to gmac0 and fix rb3011 dts to
+correctly use the new tag.
+
+Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts | 134 +++++++++++-----------
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi       |  14 +++
+ 2 files changed, 81 insertions(+), 67 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts
+@@ -25,131 +25,6 @@
+ 		device_type = "memory";
+ 	};
+ 
+-	mdio0: mdio-0 {
+-		status = "okay";
+-		compatible = "virtual,mdio-gpio";
+-		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH>,
+-			<&qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		pinctrl-0 = <&mdio0_pins>;
+-		pinctrl-names = "default";
+-
+-		switch0: switch@10 {
+-			compatible = "qca,qca8337";
+-
+-			dsa,member = <0 0>;
+-
+-			pinctrl-0 = <&sw0_reset_pin>;
+-			pinctrl-names = "default";
+-
+-			reset-gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
+-			reg = <0x10>;
+-
+-			ports {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				switch0cpu: port@0 {
+-					reg = <0>;
+-					label = "cpu";
+-					ethernet = <&gmac0>;
+-					phy-mode = "rgmii-id";
+-					fixed-link {
+-						speed = <1000>;
+-						full-duplex;
+-					};
+-				};
+-
+-				port@1 {
+-					reg = <1>;
+-					label = "sw1";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
+-				};
+-
+-				port@2 {
+-					reg = <2>;
+-					label = "sw2";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
+-				};
+-
+-				port@3 {
+-					reg = <3>;
+-					label = "sw3";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
+-				};
+-
+-				port@4 {
+-					reg = <4>;
+-					label = "sw4";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
+-				};
+-
+-				port@5 {
+-					reg = <5>;
+-					label = "sw5";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
+-				};
+-			};
+-		};
+-	};
+-
+ 	mdio1: mdio-1 {
+ 		status = "okay";
+ 		compatible = "virtual,mdio-gpio";
+@@ -337,6 +212,131 @@
+ 	status = "okay";
+ };
+ 
++&mdio0 {
++	status = "okay";
++	compatible = "virtual,mdio-gpio";
++	gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH>,
++		<&qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	pinctrl-0 = <&mdio0_pins>;
++	pinctrl-names = "default";
++
++	switch0: switch@10 {
++		compatible = "qca,qca8337";
++
++		dsa,member = <0 0>;
++
++		pinctrl-0 = <&sw0_reset_pin>;
++		pinctrl-names = "default";
++
++		reset-gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
++		reg = <0x10>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			switch0cpu: port@0 {
++				reg = <0>;
++				label = "cpu";
++				ethernet = <&gmac0>;
++				phy-mode = "rgmii-id";
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "sw1";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "sw2";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "sw3";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "sw4";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++
++			port@5 {
++				reg = <5>;
++				label = "sw5";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
++			};
++		};
++	};
++};
++
+ &gmac0 {
+ 	status = "okay";
+ 
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
+@@ -1429,6 +1429,20 @@
+ 			status = "disabled";
+ 		};
+ 
++		mdio0: mdio@37000000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			compatible = "qcom,ipq8064-mdio", "syscon";
++			reg = <0x37000000 0x200000>;
++			resets = <&gcc GMAC_CORE1_RESET>;
++			reset-names = "stmmaceth";
++			clocks = <&gcc GMAC_CORE1_CLK>;
++			clock-names = "stmmaceth";
++
++			status = "disabled";
++		};
++
+ 		gmac0: ethernet@37000000 {
+ 			device_type = "network";
+ 			compatible = "qcom,ipq806x-gmac", "snps,dwmac";

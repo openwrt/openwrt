@@ -267,6 +267,43 @@ define U-Boot/mt7981_jcg_q30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_nokia_ea0326gmp
+  NAME:=Nokia EA0326GMP
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=nokia_ea0326gmp
+  UBOOT_CONFIG:=mt7981_nokia_ea0326gmp
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_openwrt_one-snand
+  NAME:=OpenWrt One NAND
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=openwrt_one
+  UBOOT_CONFIG:=mt7981_openwrt-one-spi-nand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr4
+endef
+
+define U-Boot/mt7981_openwrt_one-nor
+  NAME:=OpenWrt One NOR
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=openwrt_one
+  UBOOT_CONFIG:=mt7981_openwrt-one-nor
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  FIP_COMPRESS:=1
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr4
+endef
+
 define U-Boot/mt7981_rfb-spim-nand
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -472,6 +509,18 @@ define U-Boot/mt7986_jdcloud_re-cp-03
   DEPENDS:=+trusted-firmware-a-mt7986-emmc-ddr4
 endef
 
+define U-Boot/mt7986_netcore_n60
+  NAME:=Netcore N60
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netcore_n60
+  UBOOT_CONFIG:=mt7986_netcore_n60
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr3
+endef
+
 define U-Boot/mt7986_tplink_tl-xdr4288
   NAME:=TP-LINK TL-XDR4288
   BUILD_SUBTARGET:=filogic
@@ -568,6 +617,42 @@ define U-Boot/mt7988_bananapi_bpi-r4-snand
   DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-comb
 endef
 
+define U-Boot/mt7988_bananapi_bpi-r4-poe-emmc
+  NAME:=BananaPi BPi-R4 2.5GE
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-poe
+  UBOOT_CONFIG:=mt7988a_bananapi_bpi-r4-poe-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-emmc-comb
+endef
+
+define U-Boot/mt7988_bananapi_bpi-r4-poe-sdmmc
+  NAME:=BananaPi BPi-R4 2.5GE
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-poe
+  UBOOT_CONFIG:=mt7988a_bananapi_bpi-r4-poe-sdmmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
+endef
+
+define U-Boot/mt7988_bananapi_bpi-r4-poe-snand
+  NAME:=BananaPi BPi-R4 2.5GE
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-poe
+  UBOOT_CONFIG:=mt7988a_bananapi_bpi-r4-poe-snand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-comb
+endef
+
 define U-Boot/mt7988_rfb-spim-nand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -643,7 +728,7 @@ UBOOT_TARGETS := \
 	mt7622_ubnt_unifi-6-lr-v1 \
 	mt7622_ubnt_unifi-6-lr-v2 \
 	mt7622_ubnt_unifi-6-lr-v3 \
-  mt7622_xiaomi_redmi-router-ax6s-ubi-loader \
+	mt7622_xiaomi_redmi-router-ax6s-ubi-loader \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
@@ -653,6 +738,9 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
+	mt7981_nokia_ea0326gmp \
+	mt7981_openwrt_one-snand \
+	mt7981_openwrt_one-nor \
 	mt7981_rfb-spim-nand \
 	mt7981_rfb-emmc \
 	mt7981_rfb-nor \
@@ -669,6 +757,7 @@ UBOOT_TARGETS := \
 	mt7986_bananapi_bpi-r3-mini-snand \
 	mt7986_glinet_gl-mt6000 \
 	mt7986_jdcloud_re-cp-03 \
+	mt7986_netcore_n60 \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
@@ -678,6 +767,9 @@ UBOOT_TARGETS := \
 	mt7988_bananapi_bpi-r4-emmc \
 	mt7988_bananapi_bpi-r4-sdmmc \
 	mt7988_bananapi_bpi-r4-snand \
+	mt7988_bananapi_bpi-r4-poe-emmc \
+	mt7988_bananapi_bpi-r4-poe-sdmmc \
+	mt7988_bananapi_bpi-r4-poe-snand \
 	mt7988_rfb-spim-nand \
 	mt7988_rfb-snand \
 	mt7988_rfb-nor \

@@ -37,6 +37,7 @@ ipq40xx_setup_interfaces()
 	glinet,gl-ap1300|\
 	glinet,gl-b2200|\
 	google,wifi|\
+	linksys,whw03|\
 	linksys,whw03v2|\
 	luma,wrtq-329acn|\
 	mikrotik,cap-ac|\
@@ -51,6 +52,7 @@ ipq40xx_setup_interfaces()
 	aruba,ap-365|\
 	avm,fritzrepeater-1200|\
 	dlink,dap-2610|\
+	engenius,eap1300|\
 	extreme-networks,ws-ap3915i|\
 	meraki,mr33|\
 	meraki,mr74|\
@@ -168,11 +170,6 @@ ipq40xx_setup_macs()
 	asus,rt-ac42u)
 		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		;;
-	asus,rt-ac58u)
-		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
-		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
-		label_mac=$wan_mac
-		;;
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
@@ -214,6 +211,10 @@ ipq40xx_setup_macs()
 	linksys,mr8300)
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	linksys,whw03)
+		wan_mac=$(mmc_get_mac_ascii devinfo hw_mac_addr)
+		lan_mac="$wan_mac"
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\

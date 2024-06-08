@@ -25,8 +25,6 @@
 #define IFXMIPS_ATM_CORE_H
 
 
-#define INT_NUM_IM2_IRL24	(INT_NUM_IM2_IRL0 + 24)
-#define INT_NUM_IM2_IRL13	(INT_NUM_IM2_IRL0 + 13)
 #define CONFIG_IFXMIPS_DSL_CPE_MEI
 #define IFX_REG_W32(_v, _r)               __raw_writel((_v), (volatile unsigned int *)(_r))
 #define IFX_REG_R32(_r)                    __raw_readl((volatile unsigned int *)(_r))
@@ -239,6 +237,8 @@ struct atm_priv_data {
 	void *oam_buf_base;
 	void *tx_desc_base;
 	void *tx_skb_base;
+
+	int irq;
 };
 
 #include "ifxmips_atm_ppe_common.h"

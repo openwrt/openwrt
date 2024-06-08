@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2023 Tony Ambardar <itugrok@yahoo.com>
+# Copyright (C) 2020-2024 Tony Ambardar <itugrok@yahoo.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,18 +7,18 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=bpftools
-PKG_VERSION:=7.3.0
+PKG_NAME:=bpftool
+PKG_VERSION:=7.4.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
-PKG_MIRROR_HASH:=c8fe336005019fee4d4fd416ce68a749fb479786dead69d6a0b3b04bcd903b98
+PKG_MIRROR_HASH:=18e22f72e67ff402b5ecaf314445f25c40bfe23299cb783b5834a496297c51ed
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v7.3.0
+PKG_SOURCE_VERSION:=v7.4.0
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
-PKG_BUILD_FLAGS:=no-mips16
+PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
@@ -62,18 +62,11 @@ define Package/bpftool-full/description
   eBPF programs and jited code.
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
-TARGET_LDFLAGS += -Wl,--gc-sections -flto
-
 ifeq ($(BUILD_VARIANT),full)
   full:=1
 else
   full:=0
 endif
-
-MAKE_VARS = \
-	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)"
 
 MAKE_FLAGS += \
 	OUTPUT="$(PKG_BUILD_DIR)/" \

@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_dlink_dir_nand_128m.dtsi"
+
+/ {
+	compatible = "dlink,dir-3040-a1", "mediatek,mt7621-soc";
+	model = "D-Link DIR-3040 A1";
+};
+
+&wps {
+	gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+};
+
+&leds {
+	led-4 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <2>;
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&ehci_port2>;
+		linux,default-trigger = "usbport";
+	};
+
+	led-5 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <3>;
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&xhci_ehci_port1>;
+		linux,default-trigger = "usbport";
+	};
+
+	led-6 {
+		function = LED_FUNCTION_WLAN_2GHZ;
+		color = <LED_COLOR_ID_WHITE>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy0radio";
+	};
+
+	led-7 {
+		function = LED_FUNCTION_WLAN_5GHZ;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <0>;
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy1radio";
+	};
+
+	led-8 {
+		function = LED_FUNCTION_WLAN_5GHZ;
+		color = <LED_COLOR_ID_WHITE>;
+		function-enumerator = <1>;
+		gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy2radio";
+	};
+};
+
+&wifi0 {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	ieee80211-freq-limit;
+	/delete-property/ ieee80211-freq-limit;
+};
+
+&wifi1 {
+	nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_e000 3>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};

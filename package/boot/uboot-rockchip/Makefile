@@ -5,9 +5,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2024.01
+PKG_VERSION:=2024.04
 PKG_RELEASE:=1
-PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
+PKG_HASH:=18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
 
 PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 
@@ -131,8 +131,8 @@ endef
 define U-Boot/rk3566/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3566
-  ATF:=rk3568_bl31_v1.43.elf
-  TPL:=rk3566_ddr_1056MHz_v1.18.bin
+  ATF:=rk3568_bl31_v1.44.elf
+  TPL:=rk3566_ddr_1056MHz_v1.21.bin
 endef
 
 define U-Boot/radxa-cm3-io-rk3566
@@ -147,8 +147,15 @@ endef
 define U-Boot/rk3568/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568
-  ATF:=rk3568_bl31_v1.43.elf
-  TPL:=rk3568_ddr_1560MHz_v1.18.bin
+  ATF:=rk3568_bl31_v1.44.elf
+  TPL:=rk3568_ddr_1560MHz_v1.21.bin
+endef
+
+define U-Boot/bpi-r2-pro-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=Bananapi-R2 Pro
+  BUILD_DEVICES:= \
+    sinovoip_bpi-r2-pro
 endef
 
 define U-Boot/nanopi-r5c-rk3568
@@ -186,6 +193,7 @@ UBOOT_TARGETS := \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
   radxa-cm3-io-rk3566 \
+  bpi-r2-pro-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568

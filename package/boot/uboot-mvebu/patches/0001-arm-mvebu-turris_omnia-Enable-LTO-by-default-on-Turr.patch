@@ -1,0 +1,30 @@
+From ca4ecdce4cdcfab7df101b5df6ddad43d2f549e1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>
+Date: Thu, 4 Apr 2024 09:50:50 +0200
+Subject: [PATCH] arm: mvebu: turris_omnia: Enable LTO by default on Turris
+ Omnia
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+U-Boot builds for Turris Omnia are approaching the limit of 0xf0000
+bytes, which is the size of the U-Boot partition on Omnia.
+
+Enable LTO to get more size optimized binaries.
+
+Signed-off-by: Marek Behún <kabel@kernel.org>
+Reviewed-by: Stefan Roese <sr@denx.de>
+---
+ configs/turris_omnia_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/configs/turris_omnia_defconfig
++++ b/configs/turris_omnia_defconfig
+@@ -31,6 +31,7 @@ CONFIG_AHCI=y
+ CONFIG_OF_BOARD_FIXUP=y
+ CONFIG_SYS_MEMTEST_START=0x00800000
+ CONFIG_SYS_MEMTEST_END=0x00ffffff
++CONFIG_LTO=y
+ CONFIG_HAS_BOARD_SIZE_LIMIT=y
+ CONFIG_BOARD_SIZE_LIMIT=983040
+ CONFIG_FIT=y

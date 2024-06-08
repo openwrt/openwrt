@@ -6,25 +6,30 @@ START=19
 USE_PROCD=1
 PROG=/usr/sbin/bridger
 
-add_blacklist() {
+get_defaults() {
 	cfg="$1"
 
 	config_get blacklist "$cfg" blacklist
+	json_add_array blacklist
 	for i in $blacklist; do
 		json_add_string "" "$i"
 	done
+	json_close_array
+
+	config_get_bool bridge_local_tx "$cfg" bridge_local_tx 1
+	json_add_boolean bridge_local_tx "$bridge_local_tx"
+
+	config_get_bool bridge_local_rx "$cfg" bridge_local_rx 0
+	json_add_boolean bridge_local_rx "$bridge_local_rx"
 }
 
 reload_service() {
 	config_load bridger
 
 	json_init
-	json_add_string name "config"
-	json_add_array devices
-	config_foreach add_blacklist defaults
-	json_close_array
+	config_foreach get_defaults defaults
 
-	ubus call bridger set_blacklist "$(json_dump)"
+	ubus call bridger set_config "$(json_dump)"
 }
 
 service_triggers() {

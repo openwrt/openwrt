@@ -19,6 +19,7 @@ kirkwood_setup_interfaces()
 	cloudengines,pogoe02|\
 	cloudengines,pogoplugv4|\
 	ctera,c200-v1|\
+	dlink,dns320l|\
 	globalscale,sheevaplug|\
 	iom,iconnect-1.1|\
 	iom,ix2-200|\
@@ -60,6 +61,9 @@ kirkwood_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	dlink,dns320l)
+		lan_mac=$(mtd_get_mac_text "mini firmware")
+		;;
 	iptime,nas1)
 		lan_mac=$(mtd_get_mac_binary u-boot 0x3ffa8)
 		label_mac=$lan_mac

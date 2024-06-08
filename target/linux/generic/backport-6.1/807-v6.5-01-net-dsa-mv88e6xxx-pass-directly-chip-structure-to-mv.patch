@@ -44,7 +44,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		__set_bit(PHY_INTERFACE_MODE_MII, config->supported_interfaces);
  	} else {
  		if (cmode < ARRAY_SIZE(mv88e6185_phy_interface_modes) &&
-@@ -839,7 +837,7 @@ static void mv88e6xxx_get_caps(struct ds
+@@ -851,7 +849,7 @@ static void mv88e6xxx_get_caps(struct ds
  	chip->info->ops->phylink_get_caps(chip, port, config);
  	mv88e6xxx_reg_unlock(chip);
  
@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  config->supported_interfaces);
  		/* Internal ports with no phy-mode need GMII for PHYLIB */
-@@ -860,7 +858,7 @@ static void mv88e6xxx_mac_config(struct
+@@ -872,7 +870,7 @@ static void mv88e6xxx_mac_config(struct
  
  	mv88e6xxx_reg_lock(chip);
  

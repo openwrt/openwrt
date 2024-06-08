@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -5226,6 +5226,9 @@ static int wpa_driver_nl80211_set_ap(voi
+@@ -5315,6 +5315,9 @@ static int wpa_driver_nl80211_set_ap(voi
  		nla_nest_end(msg, ftm);
  	}
  
@@ -22,13 +22,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_IEEE80211AX
  	if (params->he_spr_ctrl) {
  		struct nlattr *spr;
-@@ -5260,9 +5263,6 @@ static int wpa_driver_nl80211_set_ap(voi
+@@ -5349,9 +5352,6 @@ static int wpa_driver_nl80211_set_ap(voi
  		nla_nest_end(msg, spr);
  	}
  
 -	if (params->freq && nl80211_put_freq_params(msg, params->freq) < 0)
 -		goto fail;
 -
- 	if (params->freq && params->freq->he_enabled) {
+ 	if (params->freq && params->freq->he_enabled &&
+ 	    nl80211_attr_supported(drv, NL80211_ATTR_HE_BSS_COLOR)) {
  		struct nlattr *bss_color;
- 

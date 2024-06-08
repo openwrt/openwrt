@@ -16,7 +16,6 @@
 #include <linux/slab.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <linux/version.h>
 #include <linux/gpio/consumer.h>
 #include <linux/gpio/driver.h>
 #include <linux/pinctrl/pinconf.h>
@@ -810,7 +809,7 @@ static int aw9523_init_gpiochip(struct aw9523 *awi, unsigned int npins)
 	gpiochip->set_multiple = aw9523_gpio_set_multiple;
 	gpiochip->set_config = gpiochip_generic_config;
 	gpiochip->parent = dev;
-	gpiochip->of_node = dev->of_node;
+	gpiochip->fwnode = dev->fwnode;
 	gpiochip->owner = THIS_MODULE;
 	gpiochip->can_sleep = true;
 
@@ -984,8 +983,7 @@ static int aw9523_hw_init(struct aw9523 *awi)
 	return regmap_reinit_cache(awi->regmap, &aw9523_regmap);
 }
 
-static int aw9523_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int aw9523_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
 	struct pinctrl_desc *pdesc;

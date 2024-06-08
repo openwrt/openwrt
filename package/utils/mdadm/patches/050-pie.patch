@@ -1,0 +1,33 @@
+From 893a55831e5abbcd15b171db66fa1f389fb61506 Mon Sep 17 00:00:00 2001
+From: Fabrice Fontaine <fontaine.fabrice@gmail.com>
+Date: Tue, 7 May 2024 19:32:16 +0200
+Subject: Makefile: Move -pie to LDFLAGS
+
+Move -pie from LDLIBS to LDFLAGS and make LDFLAGS configurable to allow
+the user to drop it by setting their own LDFLAGS (e.g. PIE could be
+enabled or disabled by the buildsystem such as buildroot).
+
+Suggested-by: Mariusz Tkaczyk <mariusz.tkaczyk@linux.intel.com>
+Signed-off-by: Fabrice Fontaine <fontaine.fabrice@gmail.com>
+Signed-off-by: Mariusz Tkaczyk <mariusz.tkaczyk@linux.intel.com>
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -132,12 +132,12 @@ CFLAGS += -DUSE_PTHREADS
+ MON_LDFLAGS += -pthread
+ endif
+ 
+-LDFLAGS = -Wl,-z,now,-z,noexecstack
++LDFLAGS ?= -pie -Wl,-z,now,-z,noexecstack
+ 
+ # If you want a static binary, you might uncomment these
+ # LDFLAGS += -static
+ # STRIP = -s
+-LDLIBS = -ldl -pie
++LDLIBS = -ldl
+ 
+ # To explicitly disable libudev, set -DNO_LIBUDEV in CXFLAGS
+ ifeq (, $(findstring -DNO_LIBUDEV,  $(CXFLAGS)))

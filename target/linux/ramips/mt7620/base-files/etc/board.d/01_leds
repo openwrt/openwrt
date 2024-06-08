@@ -40,6 +40,11 @@ asus,rt-n14u)
 bdcom,wap2100-sk)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan0"
 	;;
+bolt,bl100)
+	ucidef_set_led_default "power" "power" "blue:power" "1"
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0.1"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth0.2"
+	;;
 comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "white:ethernet" eth0.1
 	ucidef_set_led_netdev "wifi_led" "wifi" "white:wifi" "wlan0"
@@ -236,6 +241,10 @@ tplink,archer-c50-v1)
 tplink,archer-mr200)
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0.1"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "usb0"
+	;;
+tplink,ec220-g5-v2)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
+	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
 	;;
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"

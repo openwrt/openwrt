@@ -235,9 +235,13 @@ $(eval $(call KernelPackage,can-usb-ems))
 
 define KernelPackage/can-usb-esd
   TITLE:=ESD USB/2 CAN/USB interface
-  KCONFIG:=CONFIG_CAN_ESD_USB2
-  FILES:=$(LINUX_DIR)/drivers/net/can/usb/esd_usb2.ko
-  AUTOLOAD:=$(call AutoProbe,esd_usb2)
+  KCONFIG:= \
+	CONFIG_CAN_ESD_USB2@lt6.0 \
+	CONFIG_CAN_ESD_USB@ge6.0
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/usb/esd_usb2.ko@lt6.0 \
+	$(LINUX_DIR)/drivers/net/can/usb/esd_usb.ko@ge6.0
+  AUTOLOAD:=$(call AutoProbe,esd_usb2 esd_usb)
   $(call AddDepends/can,+kmod-usb-core)
 endef
 

@@ -6,6 +6,9 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+bolt,bl100)
+	ucidef_add_gpio_switch "modem_enable" "Enable LTE Modem" "28" "1"
+	;;
 dlink,dir-510l)
 	ucidef_add_gpio_switch "usb_enable1" "USB 1A enable" "12" "0"
 	ucidef_add_gpio_switch "usb_enable05" "USB 0.5A enable" "13" "1"
