@@ -30,7 +30,7 @@
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -181,6 +181,7 @@ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) +=
+@@ -182,6 +182,7 @@ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) +=
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
  src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
@@ -38,7 +38,7 @@
  
  src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
  
-@@ -364,6 +365,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
+@@ -365,6 +366,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
  image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
