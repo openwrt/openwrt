@@ -47,12 +47,12 @@ WS-AP3825i AP.
  
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -327,7 +327,8 @@ adder875-redboot)
+@@ -326,7 +326,8 @@ adder875-redboot)
+     platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
      ;;
- simpleboot-tl-wdr4900-v1|\
--simpleboot-ws-ap3710i)
-+simpleboot-ws-ap3710i|\
+-simpleboot-tl-wdr4900-v1)
++simpleboot-tl-wdr4900-v1|\
 +simpleboot-ws-ap3825i)
      platformo="$object/fixed-head.o $object/simpleboot.o"
      link_address='0x1000000'

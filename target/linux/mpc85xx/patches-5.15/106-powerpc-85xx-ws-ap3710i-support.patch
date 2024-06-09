@@ -48,13 +48,15 @@
  
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -326,7 +326,8 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+@@ -331,6 +331,11 @@ simpleboot-tl-wdr4900-v1)
+     link_address='0x1000000'
      binary=y
      ;;
--simpleboot-tl-wdr4900-v1)
-+simpleboot-tl-wdr4900-v1|\
 +simpleboot-ws-ap3710i)
++    platformo="$object/fixed-head.o $object/simpleboot.o"
++    link_address='0x1500000'
++    binary=y
++    ;;
+ simpleboot-*)
      platformo="$object/fixed-head.o $object/simpleboot.o"
-     link_address='0x1000000'
      binary=y
