@@ -16,7 +16,7 @@
  
  static const struct platform_device_id ath9k_platform_id_table[] = {
  	{
-@@ -69,6 +77,236 @@ static const struct ath_bus_ops ath_ahb_
+@@ -69,6 +77,192 @@ static const struct ath_bus_ops ath_ahb_
  	.eeprom_read = ath_ahb_eeprom_read,
  };
  
@@ -24,47 +24,6 @@
 +
 +#define QCA955X_DDR_CTL_CONFIG          0x108
 +#define QCA955X_DDR_CTL_CONFIG_ACT_WMAC BIT(23)
-+
-+static int of_get_wifi_cal(struct device_node *np, struct ath9k_platform_data *pdata)
-+{
-+#ifdef CONFIG_MTD
-+	struct device_node *mtd_np = NULL;
-+	size_t retlen;
-+	int size, ret;
-+	struct mtd_info *mtd;
-+	const char *part;
-+	const __be32 *list;
-+	phandle phandle;
-+
-+	list = of_get_property(np, "mtd-cal-data", &size);
-+	if (!list)
-+		return 0;
-+
-+	if (size != (2 * sizeof(*list)))
-+		return 1;
-+
-+	phandle = be32_to_cpup(list++);
-+	if (phandle)
-+		mtd_np = of_find_node_by_phandle(phandle);
-+
-+	if (!mtd_np)
-+		return 1;
-+
-+	part = of_get_property(mtd_np, "label", NULL);
-+	if (!part)
-+		part = mtd_np->name;
-+
-+	mtd = get_mtd_device_nm(part);
-+	if (IS_ERR(mtd))
-+		return 1;
-+
-+	ret = mtd_read(mtd, be32_to_cpup(list), sizeof(pdata->eeprom_data),
-+			&retlen, (u8*)pdata->eeprom_data);
-+	put_mtd_device(mtd);
-+
-+#endif
-+	return 0;
-+}
 +
 +static int ar913x_wmac_reset(void)
 +{
@@ -242,9 +201,6 @@
 +	}
 +
 +	pdata->get_mac_revision = data->soc_revision;
-+
-+	if (of_get_wifi_cal(pdev->dev.of_node, pdata))
-+		dev_err(&pdev->dev, "failed to load calibration data from mtd device\n");
 +
 +	return data->dev_id;
 +}
