@@ -15,4 +15,10 @@ config MIKROTIK_RB_SYSFS
 	help
 	  This driver exposes RouterBoot configuration in sysfs.
 
+config NVMEM_LAYOUT_MIKROTIK
+	tristate "RouterBoot NVMEM layout support"
+	depends on NVMEM_LAYOUTS
+	help
+	  This driver exposes MikroTik hard_config via NVMEM layout.
+
 endif # MIKROTIK
