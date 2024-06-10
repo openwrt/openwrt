@@ -11,7 +11,7 @@ PKG_RELRO ?= 1
 
 ifdef CONFIG_PKG_CHECK_FORMAT_SECURITY
   ifeq ($(strip $(PKG_CHECK_FORMAT_SECURITY)),1)
-    TARGET_CFLAGS += -Wformat -Werror=format-security
+    TARGET_CFLAGS += -Werror=format=2 -Wno-error=format-nonliteral -Wno-error=format-truncation -Wno-error=format-overflow
   endif
 endif
 ifdef CONFIG_PKG_ASLR_PIE_ALL
