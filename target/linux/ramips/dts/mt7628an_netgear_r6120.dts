@@ -12,7 +12,7 @@
 		compatible = "regulator-fixed";
 
 		regulator-name = "USB-power";
-		gpio = <&gpio 45 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;

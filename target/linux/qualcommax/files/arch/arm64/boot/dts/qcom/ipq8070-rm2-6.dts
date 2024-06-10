@@ -57,26 +57,26 @@
 		led_status_amber: status-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_STATUS;
-			gpio = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_blue: status-blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
-			gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_red: status-red {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
-			gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	fan: gpio-fan {
 		#cooling-cells = <2>;
 		compatible = "gpio-fan";
-		gpio = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
 		gpio-fan,speed-map = <0 0>, <1 1>;
 	};
 };
