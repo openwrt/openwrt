@@ -48,40 +48,6 @@
  saved_LIBS="$LIBS"
  AC_SEARCH_LIBS([argp_parse], [argp])
  LIBS="$saved_LIBS"
---- a/libelf/elf_update.c
-+++ b/libelf/elf_update.c
-@@ -37,6 +37,31 @@
- 
- #include "libelfP.h"
- 
-+#ifdef __APPLE__
-+static int posix_fallocate(int fd, off_t offset, off_t len)
-+{
-+     off_t c_test;
-+     int ret;
-+     if (!__builtin_saddll_overflow(offset, len, &c_test)) {
-+         fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, offset + len, 0};
-+         // Try to get a continuous chunk of disk space
-+         ret = fcntl(fd, F_PREALLOCATE, &store);
-+         if (ret < 0) {
-+             // OK, perhaps we are too fragmented, allocate non-continuous
-+             store.fst_flags = F_ALLOCATEALL;
-+             ret = fcntl(fd, F_PREALLOCATE, &store);
-+             if (ret < 0) {
-+                 return ret;
-+             }
-+         }
-+         ret = ftruncate(fd, offset + len);
-+     } else {
-+         // offset+len would overflow.
-+         ret = -1;
-+     }
-+     return ret;
-+}
-+#endif
- 
- static int64_t
- write_file (Elf *elf, int64_t size, int change_bo, size_t shnum)
 --- a/lib/eu-config.h
 +++ b/lib/eu-config.h
 @@ -59,14 +59,18 @@

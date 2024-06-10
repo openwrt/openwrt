@@ -44,6 +44,7 @@ PKG_GNULIB_ARGS = \
 
 PKG_GNULIB_MODS = \
 	argp \
+	fallocate-posix \
 	fnmatch-gnu \
 	fts \
 	obstack \
@@ -54,6 +55,7 @@ PKG_GNULIB_MODS = \
 include $(INCLUDE_DIR)/host-build.mk
 
 export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE).la
+export $(PKG_GNULIB_BASE)_fallocate-posix=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-posix_fallocate.lo
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.lo
 
 HOST_MAKE_FLAGS += \
@@ -62,6 +64,7 @@ HOST_MAKE_FLAGS += \
 	libelf_la_LIBADD='../lib/libeu.la -lz $$$$(zstd_LIBS) -lpthread' \
 	libdw_la_LIBADD='../libdwfl/libdwfl.la ../libdwelf/libdwelf.la ../libebl/libebl.la ../backends/libebl_backends.la ../libcpu/libcpu.la' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_fallocate-posix))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_tsearch))' \
 	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
 	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
