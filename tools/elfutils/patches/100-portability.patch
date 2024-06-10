@@ -565,10 +565,10 @@
 +noinst_LTLIBRARIES = libebl_backends.la
  
  modules = i386 sh x86_64 ia64 alpha arm aarch64 sparc ppc ppc64 s390 \
- 	  m68k bpf riscv csky loongarch arc
-@@ -102,17 +102,13 @@ loongarch_SRCS = loongarch_init.c loonga
- 
- arc_SRCS = arc_init.c arc_symbol.c
+ 	  m68k bpf riscv csky loongarch arc mips
+@@ -106,17 +106,13 @@ mips_SRCS = mips_init.c mips_symbol.c mi
+ 	    mips_cfi.c mips_unwind.c mips_regs.c mips_retval.c \
+ 	    mips_corenote.c mips64_corenote.c
  
 -libebl_backends_a_SOURCES = $(i386_SRCS) $(sh_SRCS) $(x86_64_SRCS) \
 +libebl_backends_la_SOURCES = $(i386_SRCS) $(sh_SRCS) $(x86_64_SRCS) \
@@ -576,7 +576,7 @@
  			    $(aarch64_SRCS) $(sparc_SRCS) $(ppc_SRCS) \
  			    $(ppc64_SRCS) $(s390_SRCS) \
  			    $(m68k_SRCS) $(bpf_SRCS) $(riscv_SRCS) $(csky_SRCS) \
- 			    $(loongarch_SRCS) $(arc_SRCS)
+ 			    $(loongarch_SRCS) $(arc_SRCS) $(mips_SRCS)
  
 -libebl_backends_pic_a_SOURCES =
 -am_libebl_backends_pic_a_OBJECTS = $(libebl_backends_a_SOURCES:.c=.os)
@@ -806,7 +806,7 @@
  elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
-@@ -689,17 +689,11 @@ installcheck-local:
+@@ -690,17 +690,11 @@ installcheck-local:
  		TESTS_ENVIRONMENT="$(installed_TESTS_ENVIRONMENT)" \
  		LOG_COMPILER="$(installed_LOG_COMPILER)" check-TESTS
  
@@ -900,7 +900,7 @@
  
 --- a/libebl/eblopenbackend.c
 +++ b/libebl/eblopenbackend.c
-@@ -198,8 +198,6 @@ static bool default_object_note (const c
+@@ -200,8 +200,6 @@ static bool default_object_note (const c
  				 uint32_t descsz, const char *desc);
  static bool default_debugscn_p (const char *name);
  static bool default_copy_reloc_p (int reloc);
@@ -909,7 +909,7 @@
  static bool default_check_special_symbol (Elf *elf,
  					  const GElf_Sym *sym,
  					  const char *name,
-@@ -251,8 +249,8 @@ fill_defaults (Ebl *result)
+@@ -253,8 +251,8 @@ fill_defaults (Ebl *result)
    result->object_note = default_object_note;
    result->debugscn_p = default_debugscn_p;
    result->copy_reloc_p = default_copy_reloc_p;
@@ -920,7 +920,7 @@
    result->check_special_symbol = default_check_special_symbol;
    result->data_marker_symbol = default_data_marker_symbol;
    result->check_st_other_bits = default_check_st_other_bits;
-@@ -634,8 +632,6 @@ default_copy_reloc_p (int reloc __attrib
+@@ -636,8 +634,6 @@ default_copy_reloc_p (int reloc __attrib
  {
    return false;
  }
