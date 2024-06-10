@@ -17,7 +17,7 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_INSTALL:=1
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
-PKG_BUILD_DEPENDS:=lua/host
+HOST_BUILD_DEPENDS:=lua/host
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -52,7 +52,6 @@ MESON_HOST_VARS+=VERSION=$(PKG_VERSION)
 MESON_VARS+=VERSION=$(PKG_VERSION)
 
 MESON_HOST_ARGS += \
-	-Dhelp=disabled \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
 	-Dcrypto_backend=openssl \
