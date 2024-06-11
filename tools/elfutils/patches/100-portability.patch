@@ -34,7 +34,7 @@
  LIBS="$saved_LIBS"
 --- a/lib/eu-config.h
 +++ b/lib/eu-config.h
-@@ -59,14 +59,18 @@
+@@ -59,14 +59,19 @@
  # define once(once_control, init_routine)	init_routine()
  #endif	/* USE_LOCKS */
  
@@ -45,8 +45,9 @@
  #define _(Str) dgettext ("elfutils", Str)
  
  /* Compiler-specific definitions.  */
++#define __PRAGMA(str) _Pragma (#str)
 +#ifdef __APPLE__
-+#define strong_alias(name, aliasname)
++#define strong_alias(name, aliasname) __PRAGMA(weak aliasname = name)
 +#else
  #define strong_alias(name, aliasname) \
    extern __typeof (name) aliasname __attribute__ ((alias (#name)));
@@ -54,7 +55,7 @@
  
  #ifdef __i386__
  # define internal_function __attribute__ ((regparm (3), stdcall))
-@@ -77,7 +81,7 @@
+@@ -77,7 +82,7 @@
  #define internal_strong_alias(name, aliasname) \
    extern __typeof (name) aliasname __attribute__ ((alias (#name))) internal_function;
  
@@ -63,7 +64,7 @@
  #define attribute_hidden \
    __attribute__ ((visibility ("hidden")))
  #else
-@@ -166,7 +170,7 @@ asm (".section predict_data, \"aw\"; .pr
+@@ -166,7 +171,7 @@ asm (".section predict_data, \"aw\"; .pr
  #endif
  
  /* Avoid PLT entries.  */
