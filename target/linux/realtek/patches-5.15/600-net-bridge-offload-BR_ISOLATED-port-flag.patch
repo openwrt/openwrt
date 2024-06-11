@@ -1,0 +1,26 @@
+From 757d95dbcee53c6c34ecbca325f2c6bf9c495eb3 Mon Sep 17 00:00:00 2001
+From: sudoBash418 <sudoBash418@gmail.com>
+Date: Thu, 13 Jun 2024 18:08:51 -0600
+Subject: [PATCH] net: bridge: offload `BR_ISOLATED` port flag
+
+This commit allows switch drivers to offload port isolation to hardware.
+
+Superseded by upstream commit `c3976a3f8445`.
+
+Signed-off-by: sudoBash418 <sudoBash418@gmail.com>
+---
+ net/bridge/br_switchdev.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/net/bridge/br_switchdev.c
++++ b/net/bridge/br_switchdev.c
+@@ -71,7 +71,8 @@ bool nbp_switchdev_allowed_egress(const
+ 
+ /* Flags that can be offloaded to hardware */
+ #define BR_PORT_FLAGS_HW_OFFLOAD (BR_LEARNING | BR_FLOOD | \
+-				  BR_MCAST_FLOOD | BR_BCAST_FLOOD)
++                                  BR_MCAST_FLOOD | BR_BCAST_FLOOD | \
++                                  BR_ISOLATED)
+ 
+ int br_switchdev_set_port_flag(struct net_bridge_port *p,
+ 			       unsigned long flags,

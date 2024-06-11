@@ -1,0 +1,33 @@
+From 38cb32377fbd75ac26e585cc3ee1fca5eecec38a Mon Sep 17 00:00:00 2001
+From: sudoBash418 <sudoBash418@gmail.com>
+Date: Thu, 13 Jun 2024 18:25:52 -0600
+Subject: [PATCH] net: dsa: sync BR_ISOLATED brport flag to drivers
+
+Ensure that DSA switch drivers are notified of changes to the
+BR_ISOLATED port flag for offloading port isolation.
+
+Signed-off-by: sudoBash418 <sudoBash418@gmail.com>
+---
+ net/dsa/port.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -195,7 +195,7 @@ static int dsa_port_inherit_brport_flags
+ 					 struct netlink_ext_ack *extack)
+ {
+ 	const unsigned long mask = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD |
+-				   BR_BCAST_FLOOD;
++	                           BR_BCAST_FLOOD | BR_ISOLATED;
+ 	struct net_device *brport_dev = dsa_port_to_bridge_port(dp);
+ 	int flag, err;
+ 
+@@ -219,7 +219,7 @@ static void dsa_port_clear_brport_flags(
+ {
+ 	const unsigned long val = BR_FLOOD | BR_MCAST_FLOOD | BR_BCAST_FLOOD;
+ 	const unsigned long mask = BR_LEARNING | BR_FLOOD | BR_MCAST_FLOOD |
+-				   BR_BCAST_FLOOD;
++	                           BR_BCAST_FLOOD | BR_ISOLATED;
+ 	int flag, err;
+ 
+ 	for_each_set_bit(flag, &mask, 32) {

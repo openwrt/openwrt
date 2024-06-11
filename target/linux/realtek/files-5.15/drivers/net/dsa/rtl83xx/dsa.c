@@ -1027,6 +1027,11 @@ static void rtl83xx_port_update_traffic(struct rtl838x_switch_priv *priv, int po
 			/* add all bridge neighbors */
 			mask |= priv->ports[port].bridge_neighbors;
 
+			/* if isolated, remove all other isolated ports */
+			if (priv->isolated_ports & BIT_ULL(port)) {
+				mask &= ~priv->isolated_ports;
+			}
+
 			/* remove all disabled ports */
 			for (u8 i = 0; i < priv->cpu_port; i++) {
 				if (!priv->ports[i].enable) {
@@ -1258,6 +1263,44 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 		priv->r->set_static_move_action(port, true);
 
 	mutex_unlock(&priv->reg_mutex);
+}
+
+/*
+ * Update the isolation status of `port`.
+ */
+static int rtl83xx_port_isolate(struct dsa_switch *ds, int port, bool isolate)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	pr_debug("%s: port %d, isolate %d\n", __func__, port, isolate);
+
+	/* isolating the CPU port is not supported */
+	if (port >= priv->cpu_port)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* skip update if it would be a no-op */
+	if (!!(priv->isolated_ports & BIT_ULL(port)) == isolate) {
+		pr_debug("%s: no-op\n", __func__);
+		goto out_unlock;
+	}
+
+	/* update switch isolation bitmask */
+	if (isolate)
+		priv->isolated_ports |= BIT_ULL(port);
+	else
+		priv->isolated_ports &= ~BIT_ULL(port);
+
+	/* if this port is disabled, all traffic should already be blocked unconditionally */
+	if (priv->ports[port].enable)
+		/* enable/disable traffic between ourselves and any isolated neighbors */
+		rtl83xx_port_update_traffic(priv, port);
+
+out_unlock:
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
 }
 
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
@@ -1991,6 +2034,7 @@ static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct
 		features |= BR_MCAST_FLOOD;
 	if (priv->r->enable_bcast_flood)
 		features |= BR_BCAST_FLOOD;
+	features |= BR_ISOLATED;
 	if (flags.mask & ~(features))
 		return -EINVAL;
 
@@ -2013,6 +2057,9 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 
 	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
 		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+
+	if (flags.mask & BR_ISOLATED)
+		rtl83xx_port_isolate(ds, port, !!(flags.val & BR_ISOLATED));
 
 	return 0;
 }
