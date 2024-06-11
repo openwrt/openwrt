@@ -186,10 +186,11 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	/* Configure ports so they are disabled by default, but once enabled
 	 * they will work in isolated mode (only traffic between port and CPU).
+	 *
+	 * When ports are added to a bridge, traffic is allowed between bridge members.
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
-			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
 	}
@@ -261,10 +262,11 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 
 	/* Configure ports so they are disabled by default, but once enabled
 	 * they will work in isolated mode (only traffic between port and CPU).
+	 *
+	 * When ports are added to a bridge, traffic is allowed between bridge members.
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
-			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
 	}
@@ -1001,11 +1003,73 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
+/*
+ * Update the traffic forwarding status of the given user port
+ * (bidirectional; affects bridge neighbors).
+ *
+ * Caller must hold `priv->reg_mutex`.
+ */
+static void rtl83xx_port_update_traffic(struct rtl838x_switch_priv *priv, int port)
+{
+	if (!dsa_is_user_port(priv->ds, port)) {
+		pr_err("%s: not a user port: %d\n", __func__, port);
+		return;
+	}
+
+	if (priv->ports[port].enable) {
+		u64 mask = 0;
+
+		/* CPU port should always be added */
+		mask |= BIT_ULL(priv->cpu_port);
+
+		/* non-primary LAG members should not add anything else */
+		if (!priv->is_lagmember[port]) {
+			/* add all bridge neighbors */
+			mask |= priv->ports[port].bridge_neighbors;
+
+			/* remove all disabled ports */
+			for (u8 i = 0; i < priv->cpu_port; i++) {
+				if (!priv->ports[i].enable) {
+					mask &= ~BIT_ULL(i);
+				}
+			}
+
+			/* remove all non-primary LAG members */
+			for (u8 i = 0; i < ARRAY_SIZE(priv->is_lagmember); i++) {
+				if (priv->is_lagmember[i]) {
+					mask &= ~BIT_ULL(i);
+				}
+			}
+		}
+
+		pr_debug("%s: port %d, applying traffic mask 0x%llx\n",
+		         __func__, port, mask);
+
+		/* update traffic forwarding from this port */
+		priv->r->traffic_set(port, mask);
+
+		/* update traffic forwarding to this port */
+		for (u8 i = 0; i <= priv->cpu_port; i++) {
+			if (mask & BIT_ULL(i))
+				priv->r->traffic_enable(i, port);
+			else
+				priv->r->traffic_disable(i, port);
+		}
+	} else {
+		pr_debug("%s: port %d is disabled, blocking all traffic\n", __func__, port);
+		/* disable forwarding any traffic from this port */
+		priv->r->traffic_set(port, 0);
+		/* disable forwarding any traffic to this port */
+		for (u8 i = 0; i < priv->cpu_port; i++) {
+			priv->r->traffic_disable(i, port);
+		}
+	}
+}
+
 static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 				struct phy_device *phydev)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s: %x %d", __func__, (u32) priv, port);
 	priv->ports[port].enable = true;
@@ -1016,18 +1080,15 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	if (dsa_is_cpu_port(ds, port))
 		return 0;
 
-	/* add port to switch mask of CPU_PORT */
-	priv->r->traffic_enable(priv->cpu_port, port);
+	mutex_lock(&priv->reg_mutex);
+
+	/* enable traffic forwarding */
+	rtl83xx_port_update_traffic(priv, port);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
+		goto out_unlock;
 	}
-
-	/* add all other ports in the same bridge to switch mask of port */
-	v = priv->r->traffic_get(port);
-	v |= priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
 
 	/* TODO: Figure out if this is necessary */
 	if (priv->family_id == RTL9300_FAMILY_ID) {
@@ -1038,29 +1099,28 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	if (priv->ports[port].sds_num < 0)
 		priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
 
+out_unlock:
+	mutex_unlock(&priv->reg_mutex);
 	return 0;
 }
 
 static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 	/* you can only disable user ports */
 	if (!dsa_is_user_port(ds, port))
 		return;
 
-	/* BUG: This does not work on RTL931X */
-	/* remove port from switch mask of CPU_PORT */
-	priv->r->traffic_disable(priv->cpu_port, port);
-
-	/* remove all other ports in the same bridge from switch mask of port */
-	v = priv->r->traffic_get(port);
-	v &= ~priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
-
 	priv->ports[port].enable = false;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* BUG: This does not work on RTL931X */
+	rtl83xx_port_update_traffic(priv, port);
+
+	mutex_unlock(&priv->reg_mutex);
 }
 
 static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
@@ -1130,9 +1190,9 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 					struct net_device *bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
+	u64 neighbors = 0;
 
-	pr_debug("%s %x: %d %llx", __func__, (u32)priv, port, port_bitmap);
+	pr_debug("%s %x: %d\n", __func__, (u32)priv, port);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
@@ -1140,30 +1200,25 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
+
+	/* find all ports in the same bridge */
 	for (int i = 0; i < ds->num_ports; i++) {
-		/* Add this port to the port matrix of the other ports in the
-		 * same bridge. If the port is disabled, port matrix is kept
-		 * and not being setup until the port becomes enabled.
-		 */
 		if (dsa_is_user_port(ds, i) && !priv->is_lagmember[i] && i != port) {
+			/* do not add neighbor if other port is not a member of the same bridge */
 			if (dsa_to_port(ds, i)->bridge_dev != bridge)
 				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_enable(i, port);
 
-			priv->ports[i].pm |= BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
+			/* add ourselves to neighbor's bitmask */
+			priv->ports[i].bridge_neighbors |= BIT_ULL(port);
+			/* add neighbor to our bitmask */
+			neighbors |= BIT_ULL(i);
 		}
 	}
+	priv->ports[port].bridge_neighbors = neighbors;
 
-	/* Add all other ports to this port matrix. */
-	if (priv->ports[port].enable) {
-		priv->r->traffic_enable(priv->cpu_port, port);
-		v = priv->r->traffic_get(port);
-		v |= port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm |= port_bitmap;
+	/* enable traffic forwarding to/from bridge neighbors */
+	if (priv->ports[port].enable)
+		rtl83xx_port_update_traffic(priv, port);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, false);
@@ -1177,35 +1232,27 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 					struct net_device *bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = 0, v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 	mutex_lock(&priv->reg_mutex);
+
+	/* find all ports in the same bridge */
 	for (int i = 0; i < ds->num_ports; i++) {
-		/* Remove this port from the port matrix of the other ports
-		 * in the same bridge. If the port is disabled, port matrix
-		 * is kept and not being setup until the port becomes enabled.
-		 * And the other port's port matrix cannot be broken when the
-		 * other port is still a VLAN-aware port.
-		 */
 		if (dsa_is_user_port(ds, i) && i != port) {
+			/* ignore ports that are not members of the same bridge */
 			if (dsa_to_port(ds, i)->bridge_dev != bridge)
 				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_disable(i, port);
 
-			priv->ports[i].pm &= ~BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
+			/* remove ourselves from neighbor's bitmask */
+			priv->ports[i].bridge_neighbors &= ~BIT_ULL(port);
 		}
 	}
+	/* clear our own neighbor bitmask */
+	priv->ports[port].bridge_neighbors = 0;
 
-	/* Remove all other ports from this port matrix. */
-	if (priv->ports[port].enable) {
-		v = priv->r->traffic_get(port);
-		v &= ~port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm &= ~port_bitmap;
+	/* disable traffic forwarding to/from previous bridge neighbors */
+	if (priv->ports[port].enable)
+		rtl83xx_port_update_traffic(priv, port);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, true);

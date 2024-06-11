@@ -626,9 +626,9 @@ enum pbvlan_mode {
 
 struct rtl838x_port {
 	bool enable;
-	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
+	u64 bridge_neighbors;
 	enum phy_type phy;
 	bool phy_is_integrated;
 	bool is10G;
