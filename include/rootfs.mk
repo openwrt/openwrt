@@ -95,12 +95,12 @@ define prepare_rootfs
 			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
 		done; \
 		if [ -z "$(CONFIG_USE_APK)" ]; then \
-		$(if $(IB),,awk -i inplace \
-			'/^Status:/ { \
-				if ($$3 == "user") { $$3 = "ok" } \
-				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-			}1' $(1)/usr/lib/opkg/status) ; \
-		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
+			$(if $(IB),,awk -i inplace \
+				'/^Status:/ { \
+					if ($$3 == "user") { $$3 = "ok" } \
+					else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
+				}1' $(1)/usr/lib/opkg/status) ; \
+			$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
 		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
