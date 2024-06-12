@@ -1911,6 +1911,17 @@ define Device/joyit_jt-or750i
 endef
 TARGET_DEVICES += joyit_jt-or750i
 
+define Device/kuwfi_cpe206
+  SOC := qca9531
+  DEVICE_VENDOR := KuWfi
+  DEVICE_MODEL := CPE206
+  DEVICE_ALT0_VENDOR = KuWfi
+  DEVICE_ALT0_MODEL = CPE2G-9531
+  DEVICE_PACKAGES := -uboot-envtools
+  IMAGE_SIZE := 7680k
+endef
+TARGET_DEVICES += kuwfi_cpe206
+
 define Device/kuwfi_c910
   $(Device/loader-okli-uimage)
   SOC := qca9533
