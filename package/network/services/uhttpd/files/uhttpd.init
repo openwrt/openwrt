@@ -31,7 +31,7 @@ append_bool() {
 	[ "$val" = 1 ] && procd_append_param command "$opt"
 }
 
-generate_keys() {
+generate_cert() {
 	local cfg="$1"
 	local key="$2"
 	local crt="$3"
@@ -56,12 +56,13 @@ generate_keys() {
 	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
-			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
+			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "$key.new" -out "$crt.new" \
 			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${organization:-OpenWrt$UNIQUEID}"/CN="${commonname:-OpenWrt}"
 		sync
-		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
-		mv "${UHTTPD_CERT}.new" "${UHTTPD_CERT}"
+		mv "$key.new" "$key"
+		mv "$crt.new" "$crt"
 	}
+	config_foreach_break
 }
 
 create_httpauth() {
@@ -105,9 +106,6 @@ append_ucode_prefix() {
 
 start_instance()
 {
-	UHTTPD_CERT=""
-	UHTTPD_KEY=""
-
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path handler httpdconf haveauth
@@ -191,15 +189,15 @@ start_instance()
 	done
 
 	config_get https "$cfg" listen_https
-	config_get UHTTPD_KEY  "$cfg" key  /etc/uhttpd.key
-	config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
+	config_get key  "$cfg" key  /etc/uhttpd.key
+	config_get crt "$cfg" cert /etc/uhttpd.crt
 
 	[ -f /lib/libustream-ssl.so ] && [ -n "$https" ] && {
-		[ -s "$UHTTPD_CERT" -a -s "$UHTTPD_KEY" ] || {
-			config_foreach generate_keys cert
+		[ -s "$crt" -a -s "$key" ] || {
+			config_foreach generate_cert cert "$key" "$crt"
 		}
 
-		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] && {
+		[ -f "$crt" -a -f "$key" ] && {
 			append_arg "$cfg" cert "-C"
 			append_arg "$cfg" key  "-K"
 
