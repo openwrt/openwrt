@@ -37,7 +37,7 @@ function iface_start(phydev, iface, macaddr_list)
 
 	wpas.data.iface_phy[ifname] = phy;
 	wdev_remove(ifname);
-	let ret = wdev_create(phy, ifname, wdev_config);
+	let ret = phydev.wdev_add(ifname, wdev_config);
 	if (ret)
 		wpas.printf(`Failed to create device ${ifname}: ${ret}`);
 	wdev_set_up(ifname, true);
@@ -61,22 +61,27 @@ function iface_cb(new_if, old_if)
 		iface_stop(old_if);
 }
 
-function prepare_config(config)
+function prepare_config(config, radio)
 {
 	config.config_data = readfile(config.config);
 
-	return { config: config };
+	return { config };
 }
 
-function set_config(phy_name, num_global_macaddr, config_list)
+function set_config(config_name, phy_name, radio, num_global_macaddr, config_list)
 {
-	let phy = wpas.data.config[phy_name];
+	let phy = wpas.data.config[config_name];
+
+	if (radio < 0)
+		radio = null;
 
 	if (!phy) {
 		phy = vlist_new(iface_cb, false);
-		wpas.data.config[phy_name] = phy;
+		phy.name = phy_name;
+		wpas.data.config[config_name] = phy;
 	}
 
+	phy.radio = radio;
 	phy.num_global_macaddr = num_global_macaddr;
 
 	let values = [];
@@ -94,7 +99,7 @@ function start_pending(phy_name)
 	if (!phy || !phy.data)
 		return;
 
-	let phydev = phy_open(phy_name);
+	let phydev = phy_open(phy.name, phy.radio);
 	if (!phydev) {
 		wpas.printf(`Could not open phy ${phy_name}`);
 		return;
@@ -107,17 +112,30 @@ function start_pending(phy_name)
 		iface_start(phydev, phy.data[ifname]);
 }
 
+function phy_name(phy, radio)
+{
+	if (!phy)
+		return null;
+
+	if (radio != null && radio >= 0)
+		phy += "." + radio;
+
+	return phy;
+}
+
 let main_obj = {
 	phy_set_state: {
 		args: {
 			phy: "",
+			radio: 0,
 			stop: true,
 		},
 		call: function(req) {
-			if (!req.args.phy || req.args.stop == null)
+			let name = phy_name(req.args.phy, req.args.radio);
+			if (!name || req.args.stop == null)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
-			let phy = wpas.data.config[req.args.phy];
+			let phy = wpas.data.config[name];
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
@@ -126,7 +144,7 @@ let main_obj = {
 					for (let ifname in phy.data)
 						iface_stop(phy.data[ifname]);
 				} else {
-					start_pending(req.args.phy);
+					start_pending(name);
 				}
 			} catch (e) {
 				wpas.printf(`Error chaging state: ${e}\n${e.stacktrace[0].context}`);
@@ -138,10 +156,11 @@ let main_obj = {
 	phy_set_macaddr_list: {
 		args: {
 			phy: "",
+			radio: 0,
 			macaddr: [],
 		},
 		call: function(req) {
-			let phy = req.args.phy;
+			let phy = phy_name(req.args.phy, req.args.radio);
 			if (!phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
@@ -151,13 +170,15 @@ let main_obj = {
 	},
 	phy_status: {
 		args: {
-			phy: ""
+			phy: "",
+			radio: 0,
 		},
 		call: function(req) {
-			if (!req.args.phy)
+			let phy = phy_name(req.args.phy, req.args.radio);
+			if (!phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
-			let phy = wpas.data.config[req.args.phy];
+			phy = wpas.data.config[phy];
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
@@ -187,21 +208,23 @@ let main_obj = {
 	config_set: {
 		args: {
 			phy: "",
+			radio: 0,
 			num_global_macaddr: 0,
 			config: [],
 			defer: true,
 		},
 		call: function(req) {
-			if (!req.args.phy)
+			let phy = phy_name(req.args.phy, req.args.radio);
+			if (!phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
-			wpas.printf(`Set new config for phy ${req.args.phy}`);
+			wpas.printf(`Set new config for phy ${phy}`);
 			try {
 				if (req.args.config)
-					set_config(req.args.phy, req.args.num_global_macaddr, req.args.config);
+					set_config(phy, req.args.phy, req.args.radio, req.args.num_global_macaddr, req.args.config);
 
 				if (!req.args.defer)
-					start_pending(req.args.phy);
+					start_pending(phy);
 			} catch (e) {
 				wpas.printf(`Error loading config: ${e}\n${e.stacktrace[0].context}`);
 				return libubus.STATUS_INVALID_ARGUMENT;
