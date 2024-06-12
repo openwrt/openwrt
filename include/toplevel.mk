@@ -88,7 +88,7 @@ check-dynamic-def-pkg: FORCE
 	fi; \
 	[ ! -f tmp/.packagedynamicdefault ] || OLD_DEF_PKG_CONFS=$$(cat tmp/.packagedynamicdefault); \
 	[ "$$DEF_PKG_CONFS" = "$$OLD_DEF_PKG_CONFS" ] || rm -rf tmp/info/.targetinfo*; \
-	echo "$$DEF_PKG_CONFS" > tmp/.packagedynamicdefault;
+	mkdir -p tmp && echo "$$DEF_PKG_CONFS" > tmp/.packagedynamicdefault;
 
 prepare-tmpinfo: check-dynamic-def-pkg FORCE
 	@+$(MAKE) -r -s $(STAGING_DIR_HOST)/.prereq-build $(PREP_MK)
