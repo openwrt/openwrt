@@ -33,18 +33,18 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
  find_tool()
 --- a/lib/common.mk
 +++ b/lib/common.mk
-@@ -115,7 +115,7 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
+@@ -118,7 +118,7 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
  	    -Werror \
  	    $(BPF_CFLAGS) \
  	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
 -	$(QUIET_LLC)$(LLC) -march=$(BPF_TARGET) -filetype=obj -o $@ ${@:.o=.ll}
 +	$(QUIET_LLC)$(LLC) $(BPF_LDFLAGS) -filetype=obj -o $@ ${@:.o=.ll}
  
- .PHONY: man
- ifeq ($(EMACS),)
+ $(BPF_SKEL_H): %.skel.h: %.bpf.o
+ 	$(QUIET_GEN)$(BPFTOOL) gen skeleton $< name ${@:.skel.h=} > $@
 --- a/lib/libxdp/Makefile
 +++ b/lib/libxdp/Makefile
-@@ -146,7 +146,7 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
+@@ -145,7 +145,7 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
  	    -Werror \
  	    $(BPF_CFLAGS) \
  	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<

@@ -18,7 +18,7 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
 
 --- a/lib/libxdp/protocol.org
 +++ b/lib/libxdp/protocol.org
-@@ -54,7 +54,7 @@ static volatile const struct xdp_dispatc
+@@ -59,7 +59,7 @@ static volatile const struct xdp_dispatc
  /* The volatile return value prevents the compiler from assuming it knows the
   * return value and optimising based on that.
   */
@@ -29,7 +29,7 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
  
 --- a/lib/libxdp/xdp-dispatcher.c.in
 +++ b/lib/libxdp/xdp-dispatcher.c.in
-@@ -30,7 +30,7 @@ static volatile const struct xdp_dispatc
+@@ -29,7 +29,7 @@ static volatile const struct xdp_dispatc
   * return value and optimising based on that.
   */
  forloop(`i', `0', NUM_PROGS,
@@ -38,7 +38,7 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
  int format(`prog%d', i)(struct xdp_md *ctx) {
          volatile int ret = XDP_DISPATCHER_RETVAL;
  
-@@ -40,7 +40,7 @@ int format(`prog%d', i)(struct xdp_md *c
+@@ -39,7 +39,7 @@ int format(`prog%d', i)(struct xdp_md *c
  }
  ')
  
