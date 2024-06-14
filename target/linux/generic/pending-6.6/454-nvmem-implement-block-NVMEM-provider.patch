@@ -1,63 +1,66 @@
-From b9936aa8a3775c2027f655d91a206d0e6e1c7ec0 Mon Sep 17 00:00:00 2001
+From 9703951cdfe868b130e64d6122420396c2807be8 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Tue, 11 Jul 2023 00:17:31 +0100
-Subject: [PATCH 11/15] block: implement NVMEM provider
+Date: Thu, 30 May 2024 03:15:02 +0100
+Subject: [PATCH 5/9] nvmem: implement block NVMEM provider
 
 On embedded devices using an eMMC it is common that one or more partitions
 on the eMMC are used to store MAC addresses and Wi-Fi calibration EEPROM
-data. Allow referencing the partition in device tree for the kernel and
-Wi-Fi drivers accessing it via the NVMEM layer.
+data. Allow referencing any block device or partition in Device Tree to
+allow e.g. Ethernet and Wi-Fi drivers accessing them via the NVMEM layer.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- block/Kconfig     |   9 +++
- block/Makefile    |   1 +
- block/blk-nvmem.c | 186 ++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 196 insertions(+)
- create mode 100644 block/blk-nvmem.c
+ drivers/nvmem/Kconfig  |  11 +++
+ drivers/nvmem/Makefile |   2 +
+ drivers/nvmem/block.c  | 197 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 210 insertions(+)
+ create mode 100644 drivers/nvmem/block.c
 
---- a/block/Kconfig
-+++ b/block/Kconfig
-@@ -208,6 +208,15 @@ config BLK_INLINE_ENCRYPTION_FALLBACK
- 	  by falling back to the kernel crypto API when inline
- 	  encryption hardware is not present.
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -40,6 +40,17 @@ config NVMEM_APPLE_EFUSES
+ 	  This driver can also be built as a module. If so, the module will
+ 	  be called nvmem-apple-efuses.
  
-+config BLK_NVMEM
-+	bool "Block device NVMEM provider"
++config NVMEM_BLOCK
++	tristate "Block device NVMEM provider"
++	depends on BLOCK
 +	depends on OF
 +	depends on NVMEM
++	select BLOCK_NOTIFIERS
 +	help
 +	  Allow block devices (or partitions) to act as NVMEM prodivers,
 +	  typically used with eMMC to store MAC addresses or Wi-Fi
 +	  calibration data on embedded devices.
 +
- source "block/partitions/Kconfig"
- 
- config BLK_MQ_PCI
---- a/block/Makefile
-+++ b/block/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_BLK_DEV_ZONED)	+= blk-zoned
- obj-$(CONFIG_BLK_WBT)		+= blk-wbt.o
- obj-$(CONFIG_BLK_DEBUG_FS)	+= blk-mq-debugfs.o
- obj-$(CONFIG_BLK_DEBUG_FS_ZONED)+= blk-mq-debugfs-zoned.o
-+obj-$(CONFIG_BLK_NVMEM)		+= blk-nvmem.o
- obj-$(CONFIG_BLK_SED_OPAL)	+= sed-opal.o
- obj-$(CONFIG_BLK_PM)		+= blk-pm.o
- obj-$(CONFIG_BLK_INLINE_ENCRYPTION)	+= blk-crypto.o blk-crypto-profile.o \
+ config NVMEM_BCM_OCOTP
+ 	tristate "Broadcom On-Chip OTP Controller support"
+ 	depends on ARCH_BCM_IPROC || COMPILE_TEST
+--- a/drivers/nvmem/Makefile
++++ b/drivers/nvmem/Makefile
+@@ -14,6 +14,8 @@ obj-$(CONFIG_NVMEM_APPLE_EFUSES)	+= nvme
+ nvmem-apple-efuses-y 			:= apple-efuses.o
+ obj-$(CONFIG_NVMEM_BCM_OCOTP)		+= nvmem-bcm-ocotp.o
+ nvmem-bcm-ocotp-y			:= bcm-ocotp.o
++obj-$(CONFIG_NVMEM_BLOCK)		+= nvmem-block.o
++nvmem-block-y				:= block.o
+ obj-$(CONFIG_NVMEM_BRCM_NVRAM)		+= nvmem_brcm_nvram.o
+ nvmem_brcm_nvram-y			:= brcm_nvram.o
+ obj-$(CONFIG_NVMEM_IMX_IIM)		+= nvmem-imx-iim.o
 --- /dev/null
-+++ b/block/blk-nvmem.c
-@@ -0,0 +1,186 @@
++++ b/drivers/nvmem/block.c
+@@ -0,0 +1,208 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * block device NVMEM provider
 + *
-+ * Copyright (c) 2023 Daniel Golle <daniel@makrotopia.org>
++ * Copyright (c) 2024 Daniel Golle <daniel@makrotopia.org>
 + *
 + * Useful on devices using a partition on an eMMC for MAC addresses or
 + * Wi-Fi calibration EEPROM data.
 + */
 +
-+#include "blk.h"
++#include <linux/blkdev.h>
 +#include <linux/nvmem-provider.h>
 +#include <linux/of.h>
 +#include <linux/pagemap.h>
@@ -216,20 +219,42 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	kfree(bnv);
 +}
 +
-+static struct class_interface blk_nvmem_bus_interface __refdata = {
-+	.class = &block_class,
-+	.add_dev = &blk_nvmem_register,
-+	.remove_dev = &blk_nvmem_unregister,
++static int blk_nvmem_handler(struct notifier_block *this, unsigned long code, void *obj)
++{
++	struct device *dev = (struct device *)obj;
++
++	switch (code) {
++	case BLK_DEVICE_ADD:
++		return blk_nvmem_register(dev);
++	case BLK_DEVICE_REMOVE:
++		blk_nvmem_unregister(dev);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static struct notifier_block blk_nvmem_notifier = {
++	.notifier_call = blk_nvmem_handler,
 +};
 +
 +static int __init blk_nvmem_init(void)
 +{
-+	int ret;
-+
-+	ret = class_interface_register(&blk_nvmem_bus_interface);
-+	if (ret)
-+		return ret;
++	blk_register_notify(&blk_nvmem_notifier);
 +
 +	return 0;
 +}
-+device_initcall(blk_nvmem_init);
++
++static void __exit blk_nvmem_exit(void)
++{
++	blk_unregister_notify(&blk_nvmem_notifier);
++}
++
++module_init(blk_nvmem_init);
++module_exit(blk_nvmem_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
++MODULE_DESCRIPTION("block device NVMEM provider");

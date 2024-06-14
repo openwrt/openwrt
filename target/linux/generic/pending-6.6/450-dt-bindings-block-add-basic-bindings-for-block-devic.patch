@@ -1,8 +1,7 @@
-From 9ffc1d7d73609a89eb264d6066340f8b7b3b0ebe Mon Sep 17 00:00:00 2001
+From 3245921a87154bdfbe7a55d743ea62dd559a8fb0 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 7 Aug 2023 21:19:45 +0100
-Subject: [PATCH 08/15] dt-bindings: block: add basic bindings for block
- devices
+Date: Thu, 30 May 2024 03:13:09 +0100
+Subject: [PATCH 1/9] dt-bindings: block: add basic bindings for block devices
 
 Add bindings for block devices which are used to allow referencing
 nvmem bits on them.
@@ -10,9 +9,9 @@ nvmem bits on them.
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  .../bindings/block/block-device.yaml          | 22 ++++++++
- .../devicetree/bindings/block/partition.yaml  | 50 +++++++++++++++++++
+ .../devicetree/bindings/block/partition.yaml  | 51 +++++++++++++++++++
  .../devicetree/bindings/block/partitions.yaml | 20 ++++++++
- 3 files changed, 92 insertions(+)
+ 3 files changed, 93 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/block/block-device.yaml
  create mode 100644 Documentation/devicetree/bindings/block/partition.yaml
  create mode 100644 Documentation/devicetree/bindings/block/partitions.yaml
@@ -44,7 +43,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +unevaluatedProperties: false
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/block/partition.yaml
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 +%YAML 1.2
 +---
@@ -66,16 +65,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +    pattern: '^block-partition-.+$'
 +
 +  partnum:
++    $ref: /schemas/types.yaml#/definitions/uint32
 +    description:
 +      Matches partition by number if present.
 +
 +  partname:
-+    "$ref": "/schemas/types.yaml#/definitions/string"
++    $ref: /schemas/types.yaml#/definitions/string
 +    description:
 +      Matches partition by PARTNAME if present.
 +
-+  uuid:
-+    "$ref": "/schemas/types.yaml#/definitions/string"
++  partuuid:
++    $ref: /schemas/types.yaml#/definitions/string
 +    description:
 +      Matches partition by PARTUUID if present.
 +
@@ -86,13 +86,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +anyOf:
 +  - required:
-+    - partnum
++      - partnum
 +
 +  - required:
-+    - partname
++      - partname
 +
 +  - required:
-+    - uuid
++      - partuuid
 +
 +unevaluatedProperties: false
 --- /dev/null
