@@ -200,6 +200,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "2:lan:1" "4:wan" "6@eth0"
 		;;
+	xiaomi,miwifi-3a)
+		ucidef_add_switch "switch0" \
+			"0:wan" "2:lan:1" "4:lan:2" "6@eth0"
+		;;
 	zbtlink,zbt-we1226)
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
