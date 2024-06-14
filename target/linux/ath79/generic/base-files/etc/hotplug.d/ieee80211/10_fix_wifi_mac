@@ -93,6 +93,8 @@ case "$board" in
 	qihoo,c301)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
