@@ -20,7 +20,7 @@ In your bin directory you will find a Kernel and an root file system when it's
 finished. Just run it like this:-
 
 ```shell
-./openwrt-uml-vmlinux ubd0=openwrt-uml-squashfs.img
+./openwrt-uml-generic-vmlinux ubd0=openwrt-uml-generic-squashfs.img
 ```
 
 The uml will start and eventually the serial console of the uml will be at your
