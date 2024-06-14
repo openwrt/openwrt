@@ -86,12 +86,16 @@ static uc_value_t *
 uc_hostapd_add_iface(uc_vm_t *vm, size_t nargs)
 {
 	uc_value_t *iface = uc_fn_arg(0);
+	char *data;
 	int ret;
 
 	if (ucv_type(iface) != UC_STRING)
 		return ucv_int64_new(-1);
 
-	ret = hostapd_add_iface(interfaces, ucv_string_get(iface));
+	data = strdup(ucv_string_get(iface));
+	ret = hostapd_add_iface(interfaces, data);
+	free(data);
+
 	hostapd_ucode_update_interfaces();
 
 	return ucv_int64_new(ret);
