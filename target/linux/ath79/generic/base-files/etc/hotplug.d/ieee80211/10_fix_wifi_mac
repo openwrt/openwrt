@@ -57,12 +57,6 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii u-boot-env athaddr > /sys${DEVPATH}/macaddress
 		;;
-	engenius,epg5000|\
-	engenius,esr1200|\
-	engenius,esr1750|\
-	engenius,esr900)
-		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" "$PHYNBR" > /sys${DEVPATH}/macaddress
-		;;
 	engenius,ews511ap)
 		[ "$PHYNBR" -eq 0 ] && \
 		macaddr_add $(cat /sys/class/net/eth0/address) 1 > /sys${DEVPATH}/macaddress
