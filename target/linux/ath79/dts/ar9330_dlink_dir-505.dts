@@ -73,6 +73,9 @@
 &eth0 {
 	status = "okay";
 
+	nvmem-cells = <&macaddr_mac_4 0>;
+	nvmem-cell-names = "mac-address";
+
 	gmac-config {
 		device = <&gmac>;
 		switch-phy-addr-swap = <0>;
@@ -108,12 +111,34 @@
 				label = "art";
 				reg = <0x10000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 
-			mac: partition@20000 {
+			partition@20000 {
 				label = "mac";
 				reg = <0x20000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mac_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -139,5 +164,7 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_art_1000>, <&macaddr_mac_4 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
