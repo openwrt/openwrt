@@ -73,12 +73,20 @@
 	status = "okay";
 };
 
-&wmac {
-	nvmem-cells = <&calibration_art_1000>;
-	nvmem-cell-names = "calibration";
+&nvmem {
+	calibration_art_5000: calibration@5000 {
+		reg = <0x5000 0x844>;
+	};
 };
 
-&ath10k_0 {
-	nvmem-cells = <&calibration_art_5000>;
-	nvmem-cell-names = "calibration";
+&wmac {
+	nvmem-cells = <&calibration_art_1000>, <&macaddr_uboot_eth 1>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&wifi0 {
+	compatible = "qcom,ath10k";
+
+	nvmem-cells = <&calibration_art_5000>, <&macaddr_uboot_eth 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
