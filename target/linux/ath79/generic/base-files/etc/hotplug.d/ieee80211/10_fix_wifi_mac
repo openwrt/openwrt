@@ -49,8 +49,7 @@ case "$board" in
 		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)
-		[ "$PHYNBR" -eq 0 ] && \
-			mtd_get_mac_ascii u-boot-env athaddr > /sys${DEVPATH}/macaddress
+		macaddr_add "$(mtd_get_mac_ascii u-boot-env athaddr)" ${PHYNBR} > /sys${DEVPATH}/macaddress
 		;;
 	enterasys,ws-ap3705i)
 		[ "$PHYNBR" -eq 0 ] && \
