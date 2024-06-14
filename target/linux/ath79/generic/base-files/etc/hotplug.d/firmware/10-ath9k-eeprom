@@ -20,10 +20,6 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	dlink,dir-505)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
-		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
