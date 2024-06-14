@@ -67,9 +67,9 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii u-boot-env0 RADIOADDR0 > /sys${DEVPATH}/macaddress
 		;;
-	extreme-networks,ws-ap3805i)
-		[ "$PHYNBR" -eq 0 ] && \
-		mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+	extreme-networks,ws-ap3805i|\
+	siemens,ws-ap3610)
+		mtd_get_mac_ascii cfg1 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
 		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
@@ -111,9 +111,6 @@ case "$board" in
 		# The K2T factory firmware does use LAN mac address as the 2.4G wifi mac address
 		[ "$PHYNBR" -eq 1 ] && \
 			k2t_get_mac "lan_mac" > /sys${DEVPATH}/macaddress
-		;;
-	siemens,ws-ap3610)
-		mtd_get_mac_ascii cfg1 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
 		;;
 	tplink,deco-s4-v2)
 		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
