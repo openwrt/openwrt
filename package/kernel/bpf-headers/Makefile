@@ -86,8 +86,49 @@ define Build/Configure
 		> $(PKG_BUILD_DIR)/tools/lib/bpf/bpf_helper_defs.h
 endef
 
+SRC_BPFTOOL = $(REAL_LINUX_DIR)/tools/bpf/bpftool
+DST_BPFTOOL = $(PKG_BUILD_DIR)/bpf_tool
+MAKE_BPFTOOL = $(MAKE) -C $(SRC_BPFTOOL)
+BPFTOOL = $(DST_BPFTOOL)/bpftool
+
+VMLINUX = $(REAL_LINUX_DIR)/vmlinux
+KERNEL_CONFIG = $(REAL_LINUX_DIR)/.config
+
+VMLINUX_H_TEMP = $(PKG_BUILD_DIR)/vmlinux.h
+VMLINUX_H_DEST = $(PKG_BUILD_DIR)/include/bpf/vmlinux.h
+
+define Build/RemoveVmlinuxHeader
+	rm -f $(VMLINUX_H_DEST)
+endef
+ifdef CONFIG_KERNEL_DEBUG_INFO_BTF
+  define Build/GenerateVmlinuxHeader
+	@[ -s '$(VMLINUX)' ] || { echo ; echo 'missing "vmlinux" in $(dir $(VMLINUX))' >&2 ; echo ; exit 1 ; }
+	grep -Fxq CONFIG_DEBUG_INFO_BTF=y $(KERNEL_CONFIG) || { echo ; echo 'Kernel is built without CONFIG_DEBUG_INFO_BTF' >&2 ; echo ; exit 1 ; }
+	@rm -rf $(DST_BPFTOOL) ; mkdir -p $(DST_BPFTOOL)
+	+$(MAKE_BPFTOOL) O=$(DST_BPFTOOL) \
+	  $(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
+	  CC='$(HOSTCC)' LD='$(HOSTCC)' \
+	  EXTRA_CFLAGS='$(HOST_CFLAGS) -I$(STAGING_DIR_HOSTPKG)/include -I$(STAGING_DIR)/host/include' \
+	  LDFLAGS='$(HOST_LDFLAGS) -L$(STAGING_DIR_HOSTPKG)/lib -L$(STAGING_DIR)/host/lib' \
+	  CROSS_COMPILE=
+	$(BPFTOOL) btf dump file $(VMLINUX) format c > $(VMLINUX_H_TEMP)
+  endef
+else
+  define Build/GenerateVmlinuxHeader
+	echo '#error "Kernel is built without CONFIG_DEBUG_INFO_BTF, no type info available"' > $(VMLINUX_H_TEMP)
+  endef
+endif
+define Build/InstallVmlinuxHeader
+	@if [ -s '$(VMLINUX_H_DEST)' ] ; then echo ; echo '"include/bpf/vmlinux.h" already exists in $(PKG_BUILD_DIR)/' >&2 ; echo ; exit 1 ; fi
+	mkdir -p $(dir $(VMLINUX_H_DEST))
+	$(CP) $(VMLINUX_H_TEMP) $(dir $(VMLINUX_H_DEST))
+endef
+
 define Build/Compile
+	$(Build/RemoveVmlinuxHeader)
 	$(KERNEL_MAKE) archprepare headers_install
+	$(Build/GenerateVmlinuxHeader)
+	$(Build/InstallVmlinuxHeader)
 endef
 
 define Build/InstallDev
