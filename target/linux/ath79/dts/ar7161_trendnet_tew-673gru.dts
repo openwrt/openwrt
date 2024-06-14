@@ -11,6 +11,7 @@
 	model = "TRENDNET TEW-673GRU";
 
 	aliases {
+		label-mac-device = &eth1;
 		led-boot = &led_wps;
 		led-failsafe = &led_wps;
 		led-running = &led_wps;
@@ -97,13 +98,15 @@
 	wifi@11,0 {
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_caldata_1000>, <&macaddr_lan 0>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 
 	wifi@12,0 {
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_caldata_5000>, <&macaddr_wan 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -141,6 +144,32 @@
 				label = "caldata";
 				reg = <0x660000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_caldata_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
+					};
+
+					cal_caldata_5000: calibration@5000 {
+						reg = <0x5000 0xeb8>;
+					};
+
+					macaddr_lan: macaddr@ffa0 {
+						compatible = "mac-base";
+						reg = <0xffa0 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_wan: macaddr@ffb4 {
+						compatible = "mac-base";
+						reg = <0xffb4 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			fwconcat1: partition@670000 {
@@ -156,6 +185,9 @@
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
 
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -166,6 +198,9 @@
 	status = "okay";
 
 	pll-data = <0x11110000 0x00001099 0x00991099>;
+
+	nvmem-cells = <&macaddr_wan 0>;
+	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy4>;
 };
