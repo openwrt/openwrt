@@ -1,0 +1,21 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 14 Jun 2024 14:41:16 +0200
+Subject: [PATCH] nl80211: fix crash when adding an interface fails
+
+When adding an interface fails early, the bss link is still NULL.
+Avoid crashing on deleting beacons.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -3004,7 +3004,7 @@ static int wpa_driver_nl80211_del_beacon
+ 	struct nl_msg *msg;
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 
+-	if (!link->beacon_set)
++	if (!link || !link->beacon_set)
+ 		return 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "nl80211: Remove beacon (ifindex=%d)",
