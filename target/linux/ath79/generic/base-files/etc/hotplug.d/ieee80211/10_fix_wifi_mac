@@ -78,12 +78,9 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
 		;;
-	qihoo,c301)
-		[ "$PHYNBR" -eq 0 ] && \
-			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
-		;;
 	nec,wf1200cr|\
 	nec,wg1200cr|\
+	qihoo,c301)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" -eq 1 ] && \
