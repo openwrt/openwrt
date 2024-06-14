@@ -1,7 +1,7 @@
-From e5cf19bd8204925f3bd2067df9e867313eac388b Mon Sep 17 00:00:00 2001
+From 2bba1cdcfcd2907d0696cc0139f1bd078d36ee81 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 1 May 2023 11:57:51 +0100
-Subject: [PATCH 03/15] mtd: ubi: block: use notifier to create ubiblock from
+Date: Tue, 19 Dec 2023 02:32:35 +0000
+Subject: [PATCH 3/8] mtd: ubi: block: use notifier to create ubiblock from
  parameter
 
 Use UBI_VOLUME_ADDED notification to create ubiblock device specified
@@ -12,21 +12,16 @@ will still be created.
 
 Suggested-by: Zhihao Cheng <chengzhihao1@huawei.com>
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- drivers/mtd/ubi/block.c | 154 ++++++++++++++++++++++------------------
- 1 file changed, 85 insertions(+), 69 deletions(-)
+ drivers/mtd/ubi/block.c | 136 ++++++++++++++++++++--------------------
+ drivers/mtd/ubi/kapi.c  |  54 +++++++++++-----
+ drivers/mtd/ubi/ubi.h   |   1 +
+ 3 files changed, 106 insertions(+), 85 deletions(-)
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -33,6 +33,7 @@
- #include <linux/kernel.h>
- #include <linux/list.h>
- #include <linux/mutex.h>
-+#include <linux/namei.h>
- #include <linux/slab.h>
- #include <linux/mtd/ubi.h>
- #include <linux/blkdev.h>
-@@ -65,10 +66,10 @@ struct ubiblock_pdu {
+@@ -65,10 +65,10 @@ struct ubiblock_pdu {
  };
  
  /* Numbers of elements set in the @ubiblock_param array */
@@ -39,50 +34,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct ubiblock {
  	struct ubi_volume_desc *desc;
-@@ -469,7 +470,7 @@ int ubiblock_remove(struct ubi_volume_in
- 	}
- 
- 	/* Found a device, let's lock it so we can check if it's busy */
--	mutex_lock(&dev->dev_mutex);
-+	mutex_lock_nested(&dev->dev_mutex, SINGLE_DEPTH_NESTING);
- 	if (dev->refcnt > 0) {
- 		ret = -EBUSY;
- 		goto out_unlock_dev;
-@@ -532,6 +533,85 @@ static int ubiblock_resize(struct ubi_vo
+@@ -532,6 +532,70 @@ static int ubiblock_resize(struct ubi_vo
  	return 0;
  }
  
 +static bool
 +match_volume_desc(struct ubi_volume_info *vi, const char *name, int ubi_num, int vol_id)
 +{
-+	int err, len;
-+	struct path path;
-+	struct kstat stat;
++	int err, len, cur_ubi_num, cur_vol_id;
 +
 +	if (ubi_num == -1) {
 +		/* No ubi num, name must be a vol device path */
-+		err = kern_path(name, LOOKUP_FOLLOW, &path);
-+		if (err)
-+			return false;
-+
-+		err = vfs_getattr(&path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
-+		path_put(&path);
-+		if (err)
-+			return false;
-+
-+		if (!S_ISCHR(stat.mode))
-+			return false;
-+
-+		if (vi->ubi_num != ubi_major2num(MAJOR(stat.rdev)))
-+			return false;
-+
-+		if (vi->vol_id != MINOR(stat.rdev) - 1)
++		err = ubi_get_num_by_path(name, &cur_ubi_num, &cur_vol_id);
++		if (err || vi->ubi_num != cur_ubi_num || vi->vol_id != cur_vol_id)
 +			return false;
 +
 +		return true;
 +	}
 +
 +	if (vol_id == -1) {
++		/* Got ubi_num, but no vol_id, name must be volume name */
 +		if (vi->ubi_num != ubi_num)
 +			return false;
 +
@@ -134,7 +105,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int ubiblock_notify(struct notifier_block *nb,
  			 unsigned long notification_type, void *ns_ptr)
  {
-@@ -539,10 +619,7 @@ static int ubiblock_notify(struct notifi
+@@ -539,10 +603,7 @@ static int ubiblock_notify(struct notifi
  
  	switch (notification_type) {
  	case UBI_VOLUME_ADDED:
@@ -146,7 +117,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	case UBI_VOLUME_REMOVED:
  		ubiblock_remove(&nt->vi);
-@@ -568,56 +645,6 @@ static struct notifier_block ubiblock_no
+@@ -568,56 +629,6 @@ static struct notifier_block ubiblock_no
  	.notifier_call = ubiblock_notify,
  };
  
@@ -203,7 +174,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void ubiblock_remove_all(void)
  {
  	struct ubiblock *next;
-@@ -643,18 +670,7 @@ int __init ubiblock_init(void)
+@@ -643,18 +654,7 @@ int __init ubiblock_init(void)
  	if (ubiblock_major < 0)
  		return ubiblock_major;
  
@@ -223,3 +194,92 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ret)
  		goto err_unreg;
  	return 0;
+--- a/drivers/mtd/ubi/kapi.c
++++ b/drivers/mtd/ubi/kapi.c
+@@ -280,6 +280,41 @@ struct ubi_volume_desc *ubi_open_volume_
+ EXPORT_SYMBOL_GPL(ubi_open_volume_nm);
+ 
+ /**
++ * ubi_get_num_by_path - get UBI device and volume number from device path
++ * @pathname: volume character device node path
++ * @ubi_num: pointer to UBI device number to be set
++ * @vol_id: pointer to UBI volume ID to be set
++ *
++ * Returns 0 on success and sets ubi_num and vol_id, returns error otherwise.
++ */
++int ubi_get_num_by_path(const char *pathname, int *ubi_num, int *vol_id)
++{
++	int error;
++	struct path path;
++	struct kstat stat;
++
++	error = kern_path(pathname, LOOKUP_FOLLOW, &path);
++	if (error)
++		return error;
++
++	error = vfs_getattr(&path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
++	path_put(&path);
++	if (error)
++		return error;
++
++	if (!S_ISCHR(stat.mode))
++		return -EINVAL;
++
++	*ubi_num = ubi_major2num(MAJOR(stat.rdev));
++	*vol_id = MINOR(stat.rdev) - 1;
++
++	if (*vol_id < 0 || *ubi_num < 0)
++		return -ENODEV;
++
++	return 0;
++}
++
++/**
+  * ubi_open_volume_path - open UBI volume by its character device node path.
+  * @pathname: volume character device node path
+  * @mode: open mode
+@@ -290,32 +325,17 @@ EXPORT_SYMBOL_GPL(ubi_open_volume_nm);
+ struct ubi_volume_desc *ubi_open_volume_path(const char *pathname, int mode)
+ {
+ 	int error, ubi_num, vol_id;
+-	struct path path;
+-	struct kstat stat;
+ 
+ 	dbg_gen("open volume %s, mode %d", pathname, mode);
+ 
+ 	if (!pathname || !*pathname)
+ 		return ERR_PTR(-EINVAL);
+ 
+-	error = kern_path(pathname, LOOKUP_FOLLOW, &path);
+-	if (error)
+-		return ERR_PTR(error);
+-
+-	error = vfs_getattr(&path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
+-	path_put(&path);
++	error = ubi_get_num_by_path(pathname, &ubi_num, &vol_id);
+ 	if (error)
+ 		return ERR_PTR(error);
+ 
+-	if (!S_ISCHR(stat.mode))
+-		return ERR_PTR(-EINVAL);
+-
+-	ubi_num = ubi_major2num(MAJOR(stat.rdev));
+-	vol_id = MINOR(stat.rdev) - 1;
+-
+-	if (vol_id >= 0 && ubi_num >= 0)
+-		return ubi_open_volume(ubi_num, vol_id, mode);
+-	return ERR_PTR(-ENODEV);
++	return ubi_open_volume(ubi_num, vol_id, mode);
+ }
+ EXPORT_SYMBOL_GPL(ubi_open_volume_path);
+ 
+--- a/drivers/mtd/ubi/ubi.h
++++ b/drivers/mtd/ubi/ubi.h
+@@ -956,6 +956,7 @@ void ubi_free_internal_volumes(struct ub
+ void ubi_do_get_device_info(struct ubi_device *ubi, struct ubi_device_info *di);
+ void ubi_do_get_volume_info(struct ubi_device *ubi, struct ubi_volume *vol,
+ 			    struct ubi_volume_info *vi);
++int ubi_get_num_by_path(const char *pathname, int *ubi_num, int *vol_id);
+ /* scan.c */
+ int ubi_compare_lebs(struct ubi_device *ubi, const struct ubi_ainf_peb *aeb,
+ 		      int pnum, const struct ubi_vid_hdr *vid_hdr);

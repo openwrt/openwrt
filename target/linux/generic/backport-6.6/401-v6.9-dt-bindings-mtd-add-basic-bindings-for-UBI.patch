@@ -1,11 +1,13 @@
-From ffbbe7d66872ff8957dad2136133e28a1fd5d437 Mon Sep 17 00:00:00 2001
+From 25d88bfd35bac3196eafa666e3b05033b46ffa21 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 7 Aug 2023 22:51:05 +0100
-Subject: [PATCH 01/15] dt-bindings: mtd: add basic bindings for UBI
+Date: Tue, 19 Dec 2023 02:32:00 +0000
+Subject: [PATCH 1/8] dt-bindings: mtd: add basic bindings for UBI
 
 Add basic bindings for UBI devices and volumes.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
  .../bindings/mtd/partitions/linux,ubi.yaml    | 65 +++++++++++++++++++
  .../bindings/mtd/partitions/ubi-volume.yaml   | 35 ++++++++++
@@ -101,21 +103,21 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +properties:
 +  volid:
-+    $ref: "/schemas/types.yaml#/definitions/uint32"
++    $ref: /schemas/types.yaml#/definitions/uint32
 +    description:
 +      Match UBI volume ID
 +
 +  volname:
-+    $ref: "/schemas/types.yaml#/definitions/string"
++    $ref: /schemas/types.yaml#/definitions/string
 +    description:
 +      Match UBI volume ID
 +
 +anyOf:
 +  - required:
-+    - volid
++      - volid
 +
 +  - required:
-+    - volname
++      - volname
 +
 +# This is a generic file other binding inherit from and extend
 +additionalProperties: true

@@ -1,7 +1,7 @@
-From 3a041ee543cdf2e707a1dd72946cd6a583509b28 Mon Sep 17 00:00:00 2001
+From 1c54542170819e36baa43c17ca55bb3d7da89a53 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Fri, 21 Jul 2023 19:26:37 +0100
-Subject: [PATCH 06/15] mtd: ubi: populate ubi volume fwnode
+Date: Tue, 19 Dec 2023 02:33:38 +0000
+Subject: [PATCH 6/8] mtd: ubi: populate ubi volume fwnode
 
 Look for the 'volumes' subnode of an MTD partition attached to a UBI
 device and attach matching child nodes to UBI volumes.
@@ -9,6 +9,7 @@ This allows UBI volumes to be referenced in device tree, e.g. for use
 as NVMEM providers.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
  drivers/mtd/ubi/vmt.c | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)

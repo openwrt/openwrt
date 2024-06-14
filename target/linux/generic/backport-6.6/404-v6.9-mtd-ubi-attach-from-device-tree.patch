@@ -1,7 +1,7 @@
-From 471a17d8d1b838092d1a76e48cdce8b5b67ff809 Mon Sep 17 00:00:00 2001
+From 6e331888643887ce85657527bc03f97d46235e71 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 27 Nov 2023 01:54:28 +0000
-Subject: [PATCH 04/15] mtd: ubi: attach from device tree
+Date: Tue, 19 Dec 2023 02:33:14 +0000
+Subject: [PATCH 4/8] mtd: ubi: attach from device tree
 
 Introduce device tree compatible 'linux,ubi' and attach compatible MTD
 devices using the MTD add notifier. This is needed for a UBI device to
@@ -9,11 +9,10 @@ be available early at boot (and not only after late_initcall), so
 volumes on them can be used eg. as NVMEM providers for other drivers.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- drivers/mtd/ubi/build.c | 146 ++++++++++++++++++++++++++++------------
- drivers/mtd/ubi/cdev.c  |   2 +-
- drivers/mtd/ubi/ubi.h   |   2 +-
- 3 files changed, 106 insertions(+), 44 deletions(-)
+ drivers/mtd/ubi/build.c | 135 ++++++++++++++++++++++++++++------------
+ 1 file changed, 96 insertions(+), 39 deletions(-)
 
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
@@ -25,37 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/slab.h>
  #include <linux/major.h>
  #include "ubi.h"
-@@ -1072,6 +1073,7 @@ out_free:
-  * ubi_detach_mtd_dev - detach an MTD device.
-  * @ubi_num: UBI device number to detach from
-  * @anyway: detach MTD even if device reference count is not zero
-+ * @have_lock: called by MTD notifier holding mtd_table_mutex
-  *
-  * This function destroys an UBI device number @ubi_num and detaches the
-  * underlying MTD device. Returns zero in case of success and %-EBUSY if the
-@@ -1081,7 +1083,7 @@ out_free:
-  * Note, the invocations of this function has to be serialized by the
-  * @ubi_devices_mutex.
-  */
--int ubi_detach_mtd_dev(int ubi_num, int anyway)
-+int ubi_detach_mtd_dev(int ubi_num, int anyway, bool have_lock)
- {
- 	struct ubi_device *ubi;
- 
-@@ -1137,7 +1139,11 @@ int ubi_detach_mtd_dev(int ubi_num, int
- 	vfree(ubi->peb_buf);
- 	vfree(ubi->fm_buf);
- 	ubi_msg(ubi, "mtd%d is detached", ubi->mtd->index);
--	put_mtd_device(ubi->mtd);
-+	if (have_lock)
-+		__put_mtd_device(ubi->mtd);
-+	else
-+		put_mtd_device(ubi->mtd);
-+
- 	put_device(&ubi->dev);
- 	return 0;
- }
-@@ -1214,43 +1220,43 @@ static struct mtd_info * __init open_mtd
+@@ -1214,43 +1215,43 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
  
@@ -111,7 +80,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -	}
 +static void ubi_notify_remove(struct mtd_info *mtd)
 +{
-+	WARN(1, "mtd%d removed despite UBI still being attached", mtd->index);
++	/* do nothing for now */
 +}
  
 -	err = ubi_debugfs_init();
@@ -128,7 +97,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* Attach MTD devices */
  	for (i = 0; i < mtd_devs; i++) {
-@@ -1298,25 +1304,79 @@ static int __init ubi_init(void)
+@@ -1298,25 +1299,79 @@ static int __init ubi_init(void)
  		}
  	}
  
@@ -138,7 +107,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	for (k = 0; k < i; k++)
 +		if (ubi_devices[k]) {
 +			mutex_lock(&ubi_devices_mutex);
-+			ubi_detach_mtd_dev(ubi_devices[k]->ubi_num, 1, false);
++			ubi_detach_mtd_dev(ubi_devices[k]->ubi_num, 1);
 +			mutex_unlock(&ubi_devices_mutex);
 +		}
 +	return err;
@@ -217,7 +186,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  out_slab:
  	kmem_cache_destroy(ubi_wl_entry_slab);
  out_dev_unreg:
-@@ -1326,18 +1386,20 @@ out:
+@@ -1326,13 +1381,15 @@ out:
  	pr_err("UBI error: cannot initialize UBI, error %d\n", err);
  	return err;
  }
@@ -234,31 +203,3 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	for (i = 0; i < UBI_MAX_DEVICES; i++)
  		if (ubi_devices[i]) {
- 			mutex_lock(&ubi_devices_mutex);
--			ubi_detach_mtd_dev(ubi_devices[i]->ubi_num, 1);
-+			ubi_detach_mtd_dev(ubi_devices[i]->ubi_num, 1, false);
- 			mutex_unlock(&ubi_devices_mutex);
- 		}
- 	ubi_debugfs_exit();
---- a/drivers/mtd/ubi/cdev.c
-+++ b/drivers/mtd/ubi/cdev.c
-@@ -1065,7 +1065,7 @@ static long ctrl_cdev_ioctl(struct file
- 		}
- 
- 		mutex_lock(&ubi_devices_mutex);
--		err = ubi_detach_mtd_dev(ubi_num, 0);
-+		err = ubi_detach_mtd_dev(ubi_num, 0, false);
- 		mutex_unlock(&ubi_devices_mutex);
- 		break;
- 	}
---- a/drivers/mtd/ubi/ubi.h
-+++ b/drivers/mtd/ubi/ubi.h
-@@ -939,7 +939,7 @@ int ubi_io_write_vid_hdr(struct ubi_devi
- int ubi_attach_mtd_dev(struct mtd_info *mtd, int ubi_num,
- 		       int vid_hdr_offset, int max_beb_per1024,
- 		       bool disable_fm);
--int ubi_detach_mtd_dev(int ubi_num, int anyway);
-+int ubi_detach_mtd_dev(int ubi_num, int anyway, bool have_lock);
- struct ubi_device *ubi_get_device(int ubi_num);
- void ubi_put_device(struct ubi_device *ubi);
- struct ubi_device *ubi_get_by_major(int major);

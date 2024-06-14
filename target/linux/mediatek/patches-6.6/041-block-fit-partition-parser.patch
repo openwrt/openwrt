@@ -193,7 +193,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  	set_capacity(gd, ((u64)new->size * tr->blksize) >> 9);
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -411,7 +411,9 @@ int ubiblock_create(struct ubi_volume_in
+@@ -410,7 +410,9 @@ int ubiblock_create(struct ubi_volume_in
  		ret = -ENODEV;
  		goto out_cleanup_disk;
  	}

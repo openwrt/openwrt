@@ -1,7 +1,7 @@
-From 2d664266cfdd114cc7a1fa28dd64275e99222455 Mon Sep 17 00:00:00 2001
+From 924731fbed3247e3b82b8ab17db587ee28c2e781 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Thu, 8 Jun 2023 17:18:09 +0100
-Subject: [PATCH 05/15] mtd: ubi: introduce pre-removal notification for UBI
+Date: Tue, 19 Dec 2023 02:33:24 +0000
+Subject: [PATCH 5/8] mtd: ubi: introduce pre-removal notification for UBI
  volumes
 
 Introduce a new notification type UBI_VOLUME_SHUTDOWN to inform users
@@ -12,57 +12,15 @@ still available (for removal of sysfs nodes, for example, in case of
 NVMEM which otherwise WARNs on volume removal).
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- drivers/mtd/ubi/block.c | 26 ++++++++++++++++++++++++++
- drivers/mtd/ubi/build.c | 20 +++++++++++++++-----
+ drivers/mtd/ubi/build.c | 19 ++++++++++++++-----
  drivers/mtd/ubi/kapi.c  |  2 +-
  drivers/mtd/ubi/ubi.h   |  2 ++
  drivers/mtd/ubi/vmt.c   | 17 +++++++++++++++--
  include/linux/mtd/ubi.h |  2 ++
- 6 files changed, 61 insertions(+), 8 deletions(-)
+ 5 files changed, 34 insertions(+), 8 deletions(-)
 
---- a/drivers/mtd/ubi/block.c
-+++ b/drivers/mtd/ubi/block.c
-@@ -533,6 +533,29 @@ static int ubiblock_resize(struct ubi_vo
- 	return 0;
- }
- 
-+static int ubiblock_shutdown(struct ubi_volume_info *vi)
-+{
-+	struct ubiblock *dev;
-+	struct gendisk *disk;
-+	int ret = 0;
-+
-+	mutex_lock(&devices_mutex);
-+	dev = find_dev_nolock(vi->ubi_num, vi->vol_id);
-+	if (!dev) {
-+		ret = -ENODEV;
-+		goto out_unlock;
-+	}
-+	disk = dev->gd;
-+
-+out_unlock:
-+	mutex_unlock(&devices_mutex);
-+
-+	if (!ret)
-+		blk_mark_disk_dead(disk);
-+
-+	return ret;
-+};
-+
- static bool
- match_volume_desc(struct ubi_volume_info *vi, const char *name, int ubi_num, int vol_id)
- {
-@@ -624,6 +647,9 @@ static int ubiblock_notify(struct notifi
- 	case UBI_VOLUME_REMOVED:
- 		ubiblock_remove(&nt->vi);
- 		break;
-+	case UBI_VOLUME_SHUTDOWN:
-+		ubiblock_shutdown(&nt->vi);
-+		break;
- 	case UBI_VOLUME_RESIZED:
- 		ubiblock_resize(&nt->vi);
- 		break;
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
 @@ -91,7 +91,7 @@ static struct ubi_device *ubi_devices[UB
@@ -111,7 +69,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			continue;
  		ubi_eba_replace_table(ubi->volumes[i], NULL);
  		ubi_fastmap_destroy_checkmap(ubi->volumes[i]);
-@@ -1095,10 +1098,10 @@ int ubi_detach_mtd_dev(int ubi_num, int
+@@ -1094,7 +1097,6 @@ int ubi_detach_mtd_dev(int ubi_num, int
  		return -EINVAL;
  
  	spin_lock(&ubi_devices_lock);
@@ -119,11 +77,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ubi->ref_count -= 1;
  	if (ubi->ref_count) {
  		if (!anyway) {
-+			ubi->ref_count += 1;
- 			spin_unlock(&ubi_devices_lock);
- 			return -EBUSY;
- 		}
-@@ -1106,6 +1109,13 @@ int ubi_detach_mtd_dev(int ubi_num, int
+@@ -1105,6 +1107,13 @@ int ubi_detach_mtd_dev(int ubi_num, int
  		ubi_err(ubi, "%s reference count %d, destroy anyway",
  			ubi->ubi_name, ubi->ref_count);
  	}
