@@ -1,0 +1,119 @@
+From 9047361575e7219f46665637180ce4a9012006ab Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Fri, 14 Jun 2024 14:19:24 +0800
+Subject: [PATCH] uci: recovery from a failed uci commit
+
+---
+ uci.c | 50 +++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 37 insertions(+), 13 deletions(-)
+
+diff --git a/uci.c b/uci.c
+index 3cd2b82..d4ea103 100644
+--- a/uci.c
++++ b/uci.c
+@@ -1320,11 +1320,13 @@ rpc_uci_trigger_event(struct ubus_context *ctx, const char *config)
+ 	free(pkg);
+ }
+ 
++static int
++rpc_uci_apply_config(struct ubus_context *ctx, const char *config);
++
+ static int
+ rpc_uci_revert_commit(struct ubus_context *ctx, struct blob_attr *msg, bool commit)
+ {
+ 	struct blob_attr *tb[__RPC_C_MAX];
+-	struct uci_package *p = NULL;
+ 	struct uci_ptr ptr = { 0 };
+ 
+ 	if (apply_sid[0])
+@@ -1343,12 +1345,7 @@ rpc_uci_revert_commit(struct ubus_context *ctx, struct blob_attr *msg, bool comm
+ 
+ 	if (commit)
+ 	{
+-		if (!uci_load(cursor, ptr.package, &p))
+-		{
+-			uci_commit(cursor, &p, false);
+-			uci_unload(cursor, p);
+-			rpc_uci_trigger_event(ctx, blobmsg_get_string(tb[RPC_C_CONFIG]));
+-		}
++		rpc_uci_apply_config(ctx, ptr.package);
+ 	}
+ 	else
+ 	{
+@@ -1441,17 +1438,19 @@ rpc_uci_purge_dir(const char *path)
+ }
+ 
+ static int
+-rpc_uci_apply_config(struct ubus_context *ctx, char *config)
++rpc_uci_apply_config(struct ubus_context *ctx, const char *config)
+ {
+ 	struct uci_package *p = NULL;
++	int ret = 0;
+ 
+ 	if (!uci_load(cursor, config, &p)) {
+-		uci_commit(cursor, &p, false);
++		ret = uci_commit(cursor, &p, false);
+ 		uci_unload(cursor, p);
+ 	}
+-	rpc_uci_trigger_event(ctx, config);
++	if (!ret)
++		rpc_uci_trigger_event(ctx, config);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static void
+@@ -1531,7 +1530,7 @@ rpc_uci_do_rollback(struct ubus_context *ctx, glob_t *gl)
+ 			continue;
+ 
+ 		rpc_uci_copy_file(RPC_SNAPSHOT_FILES, RPC_UCI_DIR, config);
+-		rpc_uci_apply_config(ctx, config);
++		rpc_uci_trigger_event(ctx, config);
+ 
+ 		if (deny)
+ 			continue;
+@@ -1547,6 +1546,25 @@ rpc_uci_do_rollback(struct ubus_context *ctx, glob_t *gl)
+ 	apply_ctx = NULL;
+ }
+ 
++static void
++rpc_uci_do_rollback_im(struct ubus_context *ctx, glob_t *gl, int end) {
++	int i;
++	char tmp[PATH_MAX];
++	for (i = end; i >= 0; i--) {
++		char *config = basename(gl->gl_pathv[i]);
++
++		if (*config == '.')
++			continue;
++
++		rpc_uci_copy_file(RPC_SNAPSHOT_FILES, RPC_UCI_DIR, config);
++		rpc_uci_trigger_event(ctx, config);
++
++		rpc_uci_copy_file(RPC_SNAPSHOT_DELTA, tmp, config);
++	}
++	rpc_uci_purge_dir(RPC_SNAPSHOT_FILES);
++	rpc_uci_purge_dir(RPC_SNAPSHOT_DELTA);
++}
++
+ static void
+ rpc_uci_apply_timeout(struct uloop_timeout *t)
+ {
+@@ -1629,7 +1647,13 @@ rpc_uci_apply(struct ubus_context *ctx, struct ubus_object *obj,
+ 
+ 			rpc_uci_copy_file(RPC_UCI_DIR, RPC_SNAPSHOT_FILES, config);
+ 			rpc_uci_copy_file(tmp, RPC_SNAPSHOT_DELTA, config);
+-			rpc_uci_apply_config(ctx, config);
++			ret = rpc_uci_apply_config(ctx, config);
++			if (ret) {
++				rpc_uci_do_rollback_im(ctx, &gl, i - 1);
++				apply_sid[0] = 0;
++				globfree(&gl);
++				return UBUS_STATUS_UNKNOWN_ERROR;
++			}
+ 		}
+ 
+ 		globfree(&gl);
+-- 
+2.41.0
+
