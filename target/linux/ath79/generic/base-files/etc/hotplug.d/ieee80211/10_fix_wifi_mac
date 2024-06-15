@@ -108,6 +108,10 @@ case "$board" in
 			macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
 
 		;;
+	wd,mynet-wifi-rangeextender)
+		[ "$PHYNBR" -eq 0 ] && \
+			nvram get wl0_hwaddr > /sys${DEVPATH}/macaddress
+		;;
 	zyxel,nbg6616)
 		# Set mac address for 2.4g device
 		[ "$PHYNBR" -eq 1 ] && \
