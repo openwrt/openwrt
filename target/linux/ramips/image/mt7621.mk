@@ -2898,6 +2898,17 @@ define Device/winstars_ws-wn583a6
 endef
 TARGET_DEVICES += winstars_ws-wn583a6
 
+define Device/wodesys_wd-r1802u
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Wodesys
+  DEVICE_MODEL := WD-R1802U
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  SUPPORTED_DEVICES += mt7621-rfb-ax-nor
+endef
+TARGET_DEVICES += wodesys_wd-r1802u
+
 define Device/xiaomi_nand_separate
   $(Device/nand)
   $(Device/uimage-lzma-loader)
