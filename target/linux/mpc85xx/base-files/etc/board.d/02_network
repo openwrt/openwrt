@@ -16,6 +16,10 @@ aerohive,hiveap-330|\
 enterasys,ws-ap3715i)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
+enterasys,ws-ap3710i)
+	ucidef_set_interface_lan "eth0"
+	ucidef_set_label_macaddr "$(mtd_get_mac_ascii cfg1 ethaddr)"
+	;;
 hpe,msm460)
 	ucidef_set_interface_lan "eth0"
 	;;	
