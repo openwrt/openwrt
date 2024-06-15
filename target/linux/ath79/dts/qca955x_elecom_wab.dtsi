@@ -8,6 +8,7 @@
 
 / {
 	aliases {
+		label-mac-device = &eth0;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-upgrade = &led_status;
@@ -107,6 +108,9 @@
 	phy-mode = "rgmii-rxid";
 	pll-data = <0xae000000 0x80000101 0x80001313>;
 
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+
 	gmac-config {
 		device = <&gmac>;
 
@@ -144,8 +148,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_5000>, <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -169,9 +173,14 @@
 			};
 
 			partition@40000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				macaddr_uboot_ethaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@50000 {
@@ -252,6 +261,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>;
-	nvmem-cell-names = "calibration";
+	nvmem-cells = <&cal_art_1000>, <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
