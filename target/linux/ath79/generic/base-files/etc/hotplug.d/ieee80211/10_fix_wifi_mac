@@ -72,9 +72,7 @@ case "$board" in
 		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
-	iodata,wn-ac1600dgr2|\
-	sitecom,wlr-7100|\
-	sitecom,wlr-8100)
+	iodata,wn-ac1600dgr2)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
