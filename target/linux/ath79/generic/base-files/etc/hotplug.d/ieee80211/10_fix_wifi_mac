@@ -75,8 +75,7 @@ case "$board" in
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	sitecom,wlr-7100|\
-	sitecom,wlr-8100|\
-	zyxel,nbg6616)
+	sitecom,wlr-8100)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
@@ -120,11 +119,6 @@ case "$board" in
 		# set the 5G interface mac address to WAN MAC + 1
 		[ "$PHYNBR" -eq 0 ] && \
 			macaddr_add "$(mtd_get_mac_text mac 0x18)" 1 > /sys${DEVPATH}/macaddress
-		;;
-	zyxel,nbg6616)
-		# Set mac address for 2.4g device
-		[ "$PHYNBR" -eq 1 ] && \
-			mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
 		;;
 	zyxel,nwa1123-ac)
 		[ "$PHYNBR" -eq 0 ] && \
