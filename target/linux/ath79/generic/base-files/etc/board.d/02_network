@@ -781,7 +781,6 @@ ath79_setup_macs()
 		label_mac=$wan_mac
 		;;
 	nec,wg800hp)
-		lan_mac=$(mtd_get_mac_text board_data 0x280)
 		wan_mac=$(mtd_get_mac_text board_data 0x480)
 		label_mac=$wan_mac
 		;;
