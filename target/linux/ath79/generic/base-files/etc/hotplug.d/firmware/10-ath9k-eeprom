@@ -51,11 +51,6 @@ case "$FIRMWARE" in
 	buffalo,wzr-hp-g450h)
 		caldata_extract "art" 0x1000 0x440
 		;;
-	dlink,dir-825-c1|\
-	dlink,dir-835-a1)
-		caldata_extract "art" 0x5000 0x440
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
-		;;
 	meraki,mr12)
 		caldata_extract "art" 0x11000 0xeb8
 		;;
