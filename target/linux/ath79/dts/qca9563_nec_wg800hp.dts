@@ -142,6 +142,24 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					macaddr_board_data_280: macaddr@280 {
+						compatible = "mac-base";
+						reg = <0x280 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_board_data_480: macaddr@480 {
+						compatible = "mac-base";
+						reg = <0x480 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_board_data_680: macaddr@680 {
+						compatible = "mac-base";
+						reg = <0x680 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
 					macaddr_board_data_880: macaddr@880 {
 						compatible = "mac-base";
 						reg = <0x880 0x11>;
@@ -159,6 +177,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
 					cal_art_5000: calibration@5000 {
 						reg = <0x5000 0x844>;
@@ -191,6 +213,9 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_board_data_280 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &pcie {
@@ -206,5 +231,7 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&macaddr_board_data_680 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
