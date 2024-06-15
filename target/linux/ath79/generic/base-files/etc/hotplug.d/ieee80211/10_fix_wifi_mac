@@ -60,20 +60,11 @@ case "$board" in
 	siemens,ws-ap3610)
 		mtd_get_mac_ascii cfg1 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
 		;;
-	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr|\
-	iodata,wn-ac1600dgr2|\
 	sitecom,wlr-7100|\
 	sitecom,wlr-8100)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
-			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
-		;;
-	iodata,wn-ag300dgr)
-		# There is no eeprom data for 5 GHz wlan in "art" partition
-		# which would allow to patch the macaddress
-		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
 		;;
 	dlink,dir-842-c1|\
