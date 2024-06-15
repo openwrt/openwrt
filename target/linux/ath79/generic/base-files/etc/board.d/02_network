@@ -861,9 +861,6 @@ ath79_setup_macs()
 	xiaomi,aiot-ac2350)
 		lan_mac=$(mtd_get_mac_binary art 0x1002)
 		;;
-	zyxel,nbg6616)
-		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		;;
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
