@@ -479,7 +479,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct phylink_mac_ops mtk_phylink_ops = {
  	.validate = phylink_generic_validate,
  	.mac_select_pcs = mtk_mac_select_pcs,
-@@ -4564,8 +4679,21 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4574,8 +4689,21 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -501,7 +501,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4758,6 +4886,13 @@ static int mtk_probe(struct platform_dev
+@@ -4768,6 +4896,13 @@ static int mtk_probe(struct platform_dev
  
  		if (err)
  			return err;
@@ -517,7 +517,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (eth->soc->required_pctl) {
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -499,6 +499,21 @@
+@@ -501,6 +501,21 @@
  #define INTF_MODE_RGMII_1000    (TRGMII_MODE | TRGMII_CENTRAL_ALIGNED)
  #define INTF_MODE_RGMII_10_100  0
  
@@ -539,7 +539,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* GPIO port control registers for GMAC 2*/
  #define GPIO_OD33_CTRL8		0x4c0
  #define GPIO_BIAS_CTRL		0xed0
-@@ -524,6 +539,7 @@
+@@ -526,6 +541,7 @@
  #define SYSCFG0_SGMII_GMAC2    ((3 << 8) & SYSCFG0_SGMII_MASK)
  #define SYSCFG0_SGMII_GMAC1_V2 BIT(9)
  #define SYSCFG0_SGMII_GMAC2_V2 BIT(8)
@@ -547,7 +547,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  
  /* ethernet subsystem clock register */
-@@ -556,12 +572,74 @@
+@@ -558,12 +574,74 @@
  #define ETHSYS_DMA_AG_MAP_QDMA	BIT(1)
  #define ETHSYS_DMA_AG_MAP_PPE	BIT(2)
  
@@ -622,7 +622,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define USB_PHY_SWITCH_REG	0x218
  #define QPHY_SEL_MASK		GENMASK(1, 0)
  #define SGMII_QPHY_SEL		0x2
-@@ -586,6 +664,8 @@
+@@ -588,6 +666,8 @@
  #define MT7628_SDM_RBCNT	(MT7628_SDM_OFFSET + 0x10c)
  #define MT7628_SDM_CS_ERR	(MT7628_SDM_OFFSET + 0x110)
  
@@ -631,7 +631,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MTK_FE_CDM1_FSM		0x220
  #define MTK_FE_CDM2_FSM		0x224
  #define MTK_FE_CDM3_FSM		0x238
-@@ -594,6 +674,11 @@
+@@ -596,6 +676,11 @@
  #define MTK_FE_CDM6_FSM		0x328
  #define MTK_FE_GDM1_FSM		0x228
  #define MTK_FE_GDM2_FSM		0x22C
@@ -643,7 +643,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define MTK_MAC_FSM(x)		(0x1010C + ((x) * 0x100))
  
-@@ -940,6 +1025,8 @@ enum mkt_eth_capabilities {
+@@ -942,6 +1027,8 @@ enum mkt_eth_capabilities {
  	MTK_RGMII_BIT = 0,
  	MTK_TRGMII_BIT,
  	MTK_SGMII_BIT,
@@ -652,7 +652,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	MTK_ESW_BIT,
  	MTK_GEPHY_BIT,
  	MTK_MUX_BIT,
-@@ -960,8 +1047,11 @@ enum mkt_eth_capabilities {
+@@ -962,8 +1049,11 @@ enum mkt_eth_capabilities {
  	MTK_ETH_MUX_GDM1_TO_GMAC1_ESW_BIT,
  	MTK_ETH_MUX_GMAC2_GMAC0_TO_GEPHY_BIT,
  	MTK_ETH_MUX_U3_GMAC2_TO_QPHY_BIT,
@@ -664,7 +664,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* PATH BITS */
  	MTK_ETH_PATH_GMAC1_RGMII_BIT,
-@@ -969,14 +1059,21 @@ enum mkt_eth_capabilities {
+@@ -971,14 +1061,21 @@ enum mkt_eth_capabilities {
  	MTK_ETH_PATH_GMAC1_SGMII_BIT,
  	MTK_ETH_PATH_GMAC2_RGMII_BIT,
  	MTK_ETH_PATH_GMAC2_SGMII_BIT,
@@ -686,7 +686,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MTK_ESW			BIT_ULL(MTK_ESW_BIT)
  #define MTK_GEPHY		BIT_ULL(MTK_GEPHY_BIT)
  #define MTK_MUX			BIT_ULL(MTK_MUX_BIT)
-@@ -999,10 +1096,16 @@ enum mkt_eth_capabilities {
+@@ -1001,10 +1098,16 @@ enum mkt_eth_capabilities {
  	BIT_ULL(MTK_ETH_MUX_GMAC2_GMAC0_TO_GEPHY_BIT)
  #define MTK_ETH_MUX_U3_GMAC2_TO_QPHY		\
  	BIT_ULL(MTK_ETH_MUX_U3_GMAC2_TO_QPHY_BIT)
@@ -703,7 +703,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /* Supported path present on SoCs */
  #define MTK_ETH_PATH_GMAC1_RGMII	BIT_ULL(MTK_ETH_PATH_GMAC1_RGMII_BIT)
-@@ -1010,8 +1113,13 @@ enum mkt_eth_capabilities {
+@@ -1012,8 +1115,13 @@ enum mkt_eth_capabilities {
  #define MTK_ETH_PATH_GMAC1_SGMII	BIT_ULL(MTK_ETH_PATH_GMAC1_SGMII_BIT)
  #define MTK_ETH_PATH_GMAC2_RGMII	BIT_ULL(MTK_ETH_PATH_GMAC2_RGMII_BIT)
  #define MTK_ETH_PATH_GMAC2_SGMII	BIT_ULL(MTK_ETH_PATH_GMAC2_SGMII_BIT)
@@ -717,7 +717,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define MTK_GMAC1_RGMII		(MTK_ETH_PATH_GMAC1_RGMII | MTK_RGMII)
  #define MTK_GMAC1_TRGMII	(MTK_ETH_PATH_GMAC1_TRGMII | MTK_TRGMII)
-@@ -1019,7 +1127,12 @@ enum mkt_eth_capabilities {
+@@ -1021,7 +1129,12 @@ enum mkt_eth_capabilities {
  #define MTK_GMAC2_RGMII		(MTK_ETH_PATH_GMAC2_RGMII | MTK_RGMII)
  #define MTK_GMAC2_SGMII		(MTK_ETH_PATH_GMAC2_SGMII | MTK_SGMII)
  #define MTK_GMAC2_GEPHY		(MTK_ETH_PATH_GMAC2_GEPHY | MTK_GEPHY)
@@ -730,7 +730,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /* MUXes present on SoCs */
  /* 0: GDM1 -> GMAC1, 1: GDM1 -> ESW */
-@@ -1038,10 +1151,20 @@ enum mkt_eth_capabilities {
+@@ -1040,10 +1153,20 @@ enum mkt_eth_capabilities {
  	(MTK_ETH_MUX_GMAC1_GMAC2_TO_SGMII_RGMII | MTK_MUX | \
  	MTK_SHARED_SGMII)
  
@@ -751,7 +751,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MTK_HAS_CAPS(caps, _x)		(((caps) & (_x)) == (_x))
  
  #define MT7621_CAPS  (MTK_GMAC1_RGMII | MTK_GMAC1_TRGMII | \
-@@ -1073,8 +1196,12 @@ enum mkt_eth_capabilities {
+@@ -1075,8 +1198,12 @@ enum mkt_eth_capabilities {
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
  		      MTK_RSTCTRL_PPE1 | MTK_SRAM)
  
@@ -766,7 +766,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct mtk_tx_dma_desc_info {
  	dma_addr_t	addr;
-@@ -1187,6 +1314,24 @@ struct mtk_soc_data {
+@@ -1192,6 +1319,24 @@ struct mtk_soc_data {
  /* currently no SoC has more than 3 macs */
  #define MTK_MAX_DEVS	3
  
@@ -791,7 +791,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* struct mtk_eth -	This is the main datasructure for holding the state
   *			of the driver
   * @dev:		The device pointer
-@@ -1207,6 +1352,12 @@ struct mtk_soc_data {
+@@ -1212,6 +1357,12 @@ struct mtk_soc_data {
   * @infra:              The register map pointing at the range used to setup
   *                      SGMII and GePHY path
   * @sgmii_pcs:		Pointers to mtk-pcs-lynxi phylink_pcs instances
@@ -804,7 +804,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * @pctl:		The register map pointing at the range used to setup
   *			GMAC port drive/slew values
   * @dma_refcnt:		track how many netdevs are using the DMA engine
-@@ -1250,6 +1401,10 @@ struct mtk_eth {
+@@ -1255,6 +1406,10 @@ struct mtk_eth {
  	struct regmap			*ethsys;
  	struct regmap			*infra;
  	struct phylink_pcs		*sgmii_pcs[MTK_MAX_DEVS];
@@ -815,7 +815,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct regmap			*pctl;
  	bool				hwlro;
  	refcount_t			dma_refcnt;
-@@ -1437,6 +1592,19 @@ static inline u32 mtk_get_ib2_multicast_
+@@ -1442,6 +1597,19 @@ static inline u32 mtk_get_ib2_multicast_
  	return MTK_FOE_IB2_MULTICAST;
  }
  
@@ -835,7 +835,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* read the hardware status register */
  void mtk_stats_update_mac(struct mtk_mac *mac);
  
-@@ -1445,8 +1613,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
+@@ -1450,8 +1618,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
  u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned int reg);
  
  int mtk_gmac_sgmii_path_setup(struct mtk_eth *eth, int mac_id);
@@ -846,7 +846,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  int mtk_eth_offload_init(struct mtk_eth *eth);
  int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
-@@ -1456,5 +1626,63 @@ int mtk_flow_offload_cmd(struct mtk_eth
+@@ -1461,5 +1631,63 @@ int mtk_flow_offload_cmd(struct mtk_eth
  void mtk_flow_offload_cleanup(struct mtk_eth *eth, struct list_head *list);
  void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev);
  
