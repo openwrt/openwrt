@@ -58,11 +58,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env mac_addr)
 		;;
-	tplink,deco-s4-v2)
-		caldata_extract "art" 0x1000 0x440
-		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
-		ath9k_patch_mac $(macaddr_add $base_mac 1)
-		;;
 	*)
 		caldata_die "board $board is not supported yet"
 		;;
