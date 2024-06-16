@@ -56,6 +56,6 @@
 };
 
 &wifi {
-	nvmem-cells = <&macaddr_bdinfo_de00 0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
