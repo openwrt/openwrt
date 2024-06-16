@@ -44,6 +44,6 @@
 };
 
 &wifi5 {
-	nvmem-cells = <&macaddr_factory_4 2>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_4 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
