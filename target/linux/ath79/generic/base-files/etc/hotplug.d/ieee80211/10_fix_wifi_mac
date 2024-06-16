@@ -74,6 +74,10 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
 		;;
+	moxa,awk-1137c)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii u-boot-env mac_addr > /sys${DEVPATH}/macaddress
+		;;
 	phicomm,k2t)
 		[ "$PHYNBR" -eq 0 ] && \
 			k2t_get_mac "5g_mac" > /sys${DEVPATH}/macaddress
