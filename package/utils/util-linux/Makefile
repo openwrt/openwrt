@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.39.3
+PKG_VERSION:=2.40.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.39
-PKG_HASH:=7b6605e48d1a49f43cc4b4cfc59f313d0dd5402fa40b96810bd572e167dfed0f
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.40
+PKG_HASH:=59e676aa53ccb44b6c39f0ffe01a8fa274891c91bef1474752fad92461def24f
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_LICENSE:=GPL-2.0-only
@@ -318,7 +318,7 @@ endef
 define Package/lsblk
 $(call Package/util-linux/Default)
   TITLE:=list block devices
-  DEPENDS:= +libblkid +libmount +libsmartcols
+  DEPENDS:= +libblkid +libmount +libsmartcols +libncurses
   SUBMENU=Disc
 endef
 
@@ -623,6 +623,7 @@ MESON_ARGS += \
 	-Dbuild-write=disabled \
 	-Dbuild-bash-completion=disabled \
 	-Dbuild-pylibmount=disabled \
+	-Dbuild-liblastlog2=disabled \
 	-Dreadline=disabled \
 	-Dmagic=disabled \
 	-Dncursesw=enabled

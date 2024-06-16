@@ -1,0 +1,31 @@
+From b66b70d62e50923502aeb3f6420a5f9c20f769d3 Mon Sep 17 00:00:00 2001
+From: Jordan Williams <jordan@jwillikers.com>
+Date: Thu, 9 May 2024 15:57:12 -0500
+Subject: [PATCH] meson: Fix build-python option
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The build-python option is for controlling whether or not pylibmount is
+built.
+Unfortunately, commit b6799cc rendered the option unused.
+This change uses the build-python option again.
+
+Signed-off-by: Jordan Williams <jordan@jwillikers.com>
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ libmount/python/meson.build | 40 ++++++++++++++++++-------------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/libmount/python/meson.build b/libmount/python/meson.build
+index 72985eca6b21..5dcdf807da89 100644
+--- a/libmount/python/meson.build
++++ b/libmount/python/meson.build
+@@ -1,4 +1,6 @@
+-build_python = python.found()
++if get_option('build-python').disabled()
++  subdir_done()
++endif
+ 
+ pylibmount_sources = '''
+   pylibmount.c
