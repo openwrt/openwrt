@@ -110,7 +110,8 @@ case "$board" in
 		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
 		[ "$PHYNBR" -eq 0 ] && \
 			macaddr_add $base_mac 2 > /sys${DEVPATH}/macaddress
-
+		[ "$PHYNBR" -eq 1 ] && \
+			macaddr_add $base_mac 1 > /sys${DEVPATH}/macaddress
 		;;
 	trendnet,tew-823dru)
 		# set the 2.4G interface mac address to LAN MAC
