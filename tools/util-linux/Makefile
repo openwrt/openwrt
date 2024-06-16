@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.39.3
+PKG_VERSION:=2.40.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.39
-PKG_HASH:=40ea07584d56c310455471afa92c119ec259776a561af7159cc802344c2c370d
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.40
+PKG_HASH:=8e396eececae2b3b68db232c33b8810faa7c31f6df19f98f512739293d5829b7
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 HOST_BUILD_PARALLEL:=1
@@ -100,6 +100,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-bash-completion \
 	--disable-pylibmount \
 	--disable-pg-bell \
+	--disable-liblastlog2 \
 	--without-util \
 	--without-selinux \
 	--without-audit \
