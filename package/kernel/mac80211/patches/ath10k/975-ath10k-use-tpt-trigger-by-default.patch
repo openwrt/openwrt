@@ -29,12 +29,10 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  };
 --- a/drivers/net/wireless/ath/ath10k/leds.c
 +++ b/drivers/net/wireless/ath/ath10k/leds.c
-@@ -81,9 +81,7 @@ int ath10k_leds_register(struct ath10k *
+@@ -70,7 +70,7 @@ int ath10k_leds_register(struct ath10k *
  
  	ar->leds.cdev.name = ar->leds.label;
  	ar->leds.cdev.brightness_set_blocking = ath10k_leds_set_brightness_blocking;
--
--	/* FIXME: this assignment doesn't make sense as it's NULL, remove it? */
 -	ar->leds.cdev.default_trigger = ar->leds.wifi_led.default_trigger;
 +	ar->leds.cdev.default_trigger = ar->led_default_trigger;
  
