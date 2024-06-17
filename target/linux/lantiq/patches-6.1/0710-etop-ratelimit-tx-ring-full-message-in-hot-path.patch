@@ -1,0 +1,26 @@
+From b83110e0fe915c73bf8346ce34ba2b63f8271dd9 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Mon, 17 Jun 2024 23:40:56 +0200
+Subject: [PATCH] etop: ratelimit tx ring full message in hot path
+
+Ratelimit tx ring full messages:
+ltq_etop 1e180000.etop eth0: tx ring full
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/ethernet/lantiq_etop.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -676,8 +676,9 @@ ltq_etop_tx(struct sk_buff *skb, struct
+ 
+ 	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) ||
+ 			priv->txch.skb[priv->txch.dma.desc]) {
+-		netdev_err(dev, "tx ring full\n");
+ 		netif_tx_stop_queue(txq);
++		if (net_ratelimit())
++			netdev_err(dev, "tx ring full\n");
+ 		return NETDEV_TX_BUSY;
+ 	}
+ 
