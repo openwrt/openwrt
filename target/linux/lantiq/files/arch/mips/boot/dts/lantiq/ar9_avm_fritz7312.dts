@@ -177,7 +177,7 @@
 	pinctrl-names = "default";
 
 	req-mask = <0xf>;
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@0,0 {
 		compatible = "pci0,0";

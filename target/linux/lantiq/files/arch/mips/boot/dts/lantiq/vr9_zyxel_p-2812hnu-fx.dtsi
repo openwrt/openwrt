@@ -216,7 +216,7 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
 
 &stp {
