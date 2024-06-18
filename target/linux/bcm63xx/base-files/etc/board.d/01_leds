@@ -94,6 +94,12 @@ sercomm,h500-s-vfes)
 telsey,cpva502plus)
 	ucidef_set_led_netdev "lan" "LAN" "amber:link" "eth0"
 	;;
+tp-link,td-w8968-v3)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "green:inet" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI" "green:wlan" "wlan0"
+	ucidef_set_led_usbdev "usb" "USB" "green:usb" "1-1"
+	;;
 esac
 
 board_config_flush
