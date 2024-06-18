@@ -1580,27 +1580,10 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  __clear_user_memset(void __user *addr, unsigned long n)
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
-@@ -182,6 +182,30 @@ config ARCH_BCM_53573
+@@ -182,6 +182,13 @@ config ARCH_BCM_53573
  	  The base chip is BCM53573 and there are some packaging modifications
  	  like BCM47189 and BCM47452.
  
-+config ARCH_BCM_63XX
-+	bool "Broadcom BCM63xx DSL SoC"
-+	depends on ARCH_MULTI_V7
-+	select ARCH_HAS_RESET_CONTROLLER
-+	select ARM_ERRATA_754322
-+	select ARM_ERRATA_764369 if SMP
-+	select ARM_GIC
-+	select ARM_GLOBAL_TIMER
-+	select CACHE_L2X0
-+	select HAVE_ARM_ARCH_TIMER
-+	select HAVE_ARM_TWD if SMP
-+	select HAVE_ARM_SCU if SMP
-+	help
-+	  This enables support for systems based on Broadcom DSL SoCs.
-+	  It currently supports the 'BCM63XX' ARM-based family, which includes
-+	  the BCM63138 variant.
-+
 +config BCM2835_FAST_MEMCPY
 +	bool "Enable optimized __copy_to_user and __copy_from_user"
 +	depends on ARCH_BCM2835 && ARCH_MULTI_V6
