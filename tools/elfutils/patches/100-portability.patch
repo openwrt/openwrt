@@ -204,6 +204,26 @@
  #include <libdw.h>
  #include <dwarf.h>
  
+--- a/config/libdebuginfod.pc.in
++++ b/config/libdebuginfod.pc.in
+@@ -8,5 +8,5 @@ Description: elfutils library to query d
+ Version: @VERSION@
+ URL: http://elfutils.org/
+ 
+-Libs: -L${libdir} -ldebuginfod
++Libs: -L${libdir} -ldebuginfod -lpthread
+ Cflags: -I${includedir}
+--- a/config/libdw.pc.in
++++ b/config/libdw.pc.in
+@@ -8,7 +8,7 @@ Description: elfutils library for DWARF
+ Version: @VERSION@
+ URL: http://elfutils.org/
+ 
+-Libs: -L${libdir} -ldw
++Libs: -L${libdir} -ldw -lz -lelf -lz -ldl -lpthread
+ Cflags: -I${includedir}
+ 
+ # We need the exact matching elfutils libelf version since internal data
 --- a/config/libelf.pc.in
 +++ b/config/libelf.pc.in
 @@ -8,7 +8,7 @@ Description: elfutils libelf library to
