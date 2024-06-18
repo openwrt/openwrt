@@ -159,6 +159,9 @@ case "$board" in
 	tplink,tl-xdr6088)
 		[ "$PHYNBR" = "0" ] && get_mac_label > /sys${DEVPATH}/macaddress
 		;;
+	tplink,tl-xtr8488)
+		[ "$PHYNBR" = "1" ] && get_mac_label > /sys${DEVPATH}/macaddress
+		;;
 	ubnt,unifi-6-plus)
 		addr=$(mtd_get_mac_binary EEPROM 0x6)
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
