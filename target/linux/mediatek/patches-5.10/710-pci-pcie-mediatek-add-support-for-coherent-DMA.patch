@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi
-@@ -814,6 +814,8 @@
+@@ -809,6 +809,8 @@
  		reg = <0 0x1a143000 0 0x1000>;
  		reg-names = "port0";
  		mediatek,pcie-cfg = <&pciecfg>;
@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		#address-cells = <3>;
  		#size-cells = <2>;
  		interrupts = <GIC_SPI 228 IRQ_TYPE_LEVEL_LOW>;
-@@ -831,6 +833,7 @@
+@@ -826,6 +828,7 @@
  		bus-range = <0x00 0xff>;
  		ranges = <0x82000000 0 0x20000000  0x0 0x20000000  0 0x8000000>;
  		status = "disabled";
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		slot0: pcie@0,0 {
  			reg = <0x0000 0 0 0 0>;
-@@ -857,6 +860,8 @@
+@@ -852,6 +855,8 @@
  		reg = <0 0x1a145000 0 0x1000>;
  		reg-names = "port1";
  		mediatek,pcie-cfg = <&pciecfg>;
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		#address-cells = <3>;
  		#size-cells = <2>;
  		interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_LOW>;
-@@ -875,6 +880,7 @@
+@@ -870,6 +875,7 @@
  		bus-range = <0x00 0xff>;
  		ranges = <0x82000000 0 0x28000000  0x0 0x28000000  0 0x8000000>;
  		status = "disabled";
@@ -44,6 +44,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		slot1: pcie@1,0 {
  			reg = <0x0800 0 0 0 0>;
+@@ -930,7 +936,7 @@
+ 	};
+ 
+ 	hifsys: clock-controller@1af00000 {
+-		compatible = "mediatek,mt7622-hifsys";
++		compatible = "mediatek,mt7622-hifsys", "syscon";
+ 		reg = <0 0x1af00000 0 0x70>;
+ 		#clock-cells = <1>;
+ 	};
 --- a/drivers/pci/controller/pcie-mediatek.c
 +++ b/drivers/pci/controller/pcie-mediatek.c
 @@ -20,6 +20,7 @@
