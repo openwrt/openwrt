@@ -11,9 +11,19 @@ ifneq ($(DUMP),)
   # default package configuration
   # Keep DYNAMIC_DEF_PKG_CONF in sync with toplevel.mk to reflect the same configs
   DYNAMIC_DEF_PKG_CONF := CONFIG_USE_APK CONFIG_SELINUX CONFIG_SMALL_FLASH CONFIG_SECCOMP
-  $(foreach config, $(DYNAMIC_DEF_PKG_CONF), \
-    $(eval $(config) := $(shell grep "$(config)=y" $(TOPDIR)/.config 2>/dev/null)) \
-  )
+  ifneq ($(wildcard $(TOPDIR)/.config),)
+    $(foreach config, $(DYNAMIC_DEF_PKG_CONF), \
+      $(eval $(config) := $(shell grep "$(config)=y" $(TOPDIR)/.config 2>/dev/null)) \
+    )
+  # Init config that are enabled by default. Dependency are checked matching the one in
+  # the config.
+  else
+    ifeq ($(filter $(BOARD), uml),)
+    ifneq ($(filter $(ARCH), aarch64 arm armeb mips mipsel mips64 mips64el i386 powerpc x86_64),)
+      CONFIG_SECCOMP := y
+    endif
+    endif
+  endif
 endif
 
 # default device type
