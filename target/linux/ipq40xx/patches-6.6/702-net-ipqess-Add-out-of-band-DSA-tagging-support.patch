@@ -15,6 +15,8 @@ done on the TX side, where the driver pulls the tag from the skb and
 builds the descriptor accordingly.
 
 Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+[Matthias Schiffer: Fixed outbound port tag computation]
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
 ---
  drivers/net/ethernet/qualcomm/Kconfig         |  1 +
  drivers/net/ethernet/qualcomm/ipqess/ipqess.c | 64 ++++++++++++++++++-
@@ -70,7 +72,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  		napi_gro_receive(&rx_ring->napi_rx, skb);
  
  		rx_ring->ess->stats.rx_packets++;
-@@ -706,6 +715,23 @@ static void ipqess_rollback_tx(struct ip
+@@ -706,6 +715,26 @@ static void ipqess_rollback_tx(struct ip
  	tx_ring->head = start_index;
  }
  
@@ -80,21 +82,24 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	struct dsa_oob_tag_info *tag_info;
 +
 +	if (unlikely(!ess->dsa_ports))
-+		return;
++		goto no_dsa;
 +
 +	tag_info = skb_ext_find(skb, SKB_EXT_DSA_OOB);
 +	if (!tag_info)
-+		return;
++		goto no_dsa;
 +
-+	*word3 |= tag_info->port << IPQESS_TPD_PORT_BITMAP_SHIFT;
++	*word3 |= BIT(tag_info->port) << IPQESS_TPD_PORT_BITMAP_SHIFT;
 +	*word3 |= BIT(IPQESS_TPD_FROM_CPU_SHIFT);
++	return;
++
++no_dsa:
 +	*word3 |= 0x3e << IPQESS_TPD_PORT_BITMAP_SHIFT;
 +}
 +
  static int ipqess_tx_map_and_fill(struct ipqess_tx_ring *tx_ring,
  				  struct sk_buff *skb)
  {
-@@ -716,6 +742,8 @@ static int ipqess_tx_map_and_fill(struct
+@@ -716,6 +745,8 @@ static int ipqess_tx_map_and_fill(struct
  	u16 len;
  	int i;
  
@@ -103,7 +108,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  	if (skb_is_gso(skb)) {
  		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4) {
  			lso_word1 |= IPQESS_TPD_IPV4_EN;
-@@ -917,6 +945,33 @@ static const struct net_device_ops ipqes
+@@ -917,6 +948,33 @@ static const struct net_device_ops ipqes
  	.ndo_tx_timeout		= ipqess_tx_timeout,
  };
  
@@ -137,7 +142,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  static void ipqess_hw_stop(struct ipqess *ess)
  {
  	int i;
-@@ -1184,12 +1239,19 @@ static int ipqess_axi_probe(struct platf
+@@ -1184,12 +1242,19 @@ static int ipqess_axi_probe(struct platf
  		netif_napi_add(netdev, &ess->rx_ring[i].napi_rx, ipqess_rx_napi);
  	}
  
