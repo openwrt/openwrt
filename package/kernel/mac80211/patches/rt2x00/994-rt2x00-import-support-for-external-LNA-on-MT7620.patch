@@ -52,7 +52,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
  	[EEPROM_CHIP_ID]		= 0x0000,
  	[EEPROM_VERSION]		= 0x0001,
-@@ -10407,8 +10425,10 @@ static void rt2800_calibration_rt6352(st
+@@ -10404,8 +10422,10 @@ static void rt2800_calibration_rt6352(st
  	u32 reg;
  
  	if (rt2x00_has_cap_external_pa(rt2x00dev) ||
@@ -64,7 +64,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rt2800_r_calibration(rt2x00dev);
  	rt2800_rf_self_txdc_cal(rt2x00dev);
-@@ -10426,6 +10446,8 @@ static void rt2800_calibration_rt6352(st
+@@ -10423,6 +10443,8 @@ static void rt2800_calibration_rt6352(st
  	    !rt2x00_has_cap_external_lna_bg(rt2x00dev))
  		return;
  

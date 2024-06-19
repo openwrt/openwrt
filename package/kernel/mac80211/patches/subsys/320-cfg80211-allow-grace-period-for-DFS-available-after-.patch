@@ -11,23 +11,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -175,6 +175,8 @@ enum ieee80211_channel_flags {
+@@ -189,6 +189,8 @@ enum ieee80211_channel_flags {
   * @dfs_state: current state of this channel. Only relevant if radar is required
   *	on this channel.
   * @dfs_state_entered: timestamp (jiffies) when the dfs state was entered.
 + * @dfs_state_last_available: timestamp (jiffies) of the last time when the
 + *	channel was available.
   * @dfs_cac_ms: DFS CAC time in milliseconds, this is valid for DFS channels.
+  * @psd: power spectral density (in dBm)
   */
- struct ieee80211_channel {
-@@ -191,6 +193,7 @@ struct ieee80211_channel {
+@@ -206,6 +208,7 @@ struct ieee80211_channel {
  	int orig_mag, orig_mpwr;
  	enum nl80211_dfs_state dfs_state;
  	unsigned long dfs_state_entered;
 +	unsigned long dfs_state_last_available;
  	unsigned int dfs_cac_ms;
+ 	s8 psd;
  };
- 
 --- a/net/wireless/ap.c
 +++ b/net/wireless/ap.c
 @@ -30,6 +30,9 @@ static int ___cfg80211_stop_ap(struct cf
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -461,6 +461,8 @@ static void cfg80211_set_chans_dfs_state
+@@ -560,6 +560,8 @@ static void cfg80211_set_chans_dfs_state
  
  		c->dfs_state = dfs_state;
  		c->dfs_state_entered = jiffies;
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -874,6 +876,49 @@ static bool cfg80211_get_chans_dfs_avail
+@@ -1049,6 +1051,49 @@ static bool cfg80211_get_chans_dfs_avail
  	return true;
  }
  
@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -481,6 +481,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -467,6 +467,8 @@ void cfg80211_set_dfs_state(struct wiphy
  			    enum nl80211_dfs_state dfs_state);
  
  void cfg80211_dfs_channels_update_work(struct work_struct *work);
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/mlme.c
 +++ b/net/wireless/mlme.c
-@@ -930,6 +930,8 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1037,6 +1037,8 @@ void cfg80211_dfs_channels_update_work(s
  			if (c->dfs_state == NL80211_DFS_UNAVAILABLE) {
  				time_dfs_update = IEEE80211_DFS_MIN_NOP_TIME_MS;
  				radar_event = NL80211_RADAR_NOP_FINISHED;
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			} else {
  				if (regulatory_pre_cac_allowed(wiphy) ||
  				    cfg80211_any_wiphy_oper_chan(wiphy, c))
-@@ -937,11 +939,10 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1044,11 +1046,10 @@ void cfg80211_dfs_channels_update_work(s
  
  				time_dfs_update = REG_PRE_CAC_EXPIRY_GRACE_MS;
  				radar_event = NL80211_RADAR_PRE_CAC_EXPIRED;

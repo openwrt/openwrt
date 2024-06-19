@@ -1,14 +1,16 @@
 --- a/core.c
 +++ b/core.c
-@@ -718,7 +718,7 @@ static void mwl_chnl_switch_event(struct
+@@ -718,8 +718,8 @@ static void mwl_chnl_switch_event(struct
  		vif = container_of((void *)mwl_vif, struct ieee80211_vif,
  				   drv_priv);
  
 -		if (vif->csa_active)
+-			ieee80211_csa_finish(vif);
 +		if (vif->bss_conf.csa_active)
- 			ieee80211_csa_finish(vif);
++			ieee80211_csa_finish(vif, 0);
  	}
  	spin_unlock_bh(&priv->vif_lock);
+ 
 --- a/debugfs.c
 +++ b/debugfs.c
 @@ -498,9 +498,9 @@ static ssize_t mwl_debugfs_vif_read(stru
@@ -95,6 +97,27 @@
  	if (priv->chip_type == MWL8997)
  		ether_addr_copy(pcmd->start_cmd.bssid, mwl_vif->bssid);
  	pcmd->start_cmd.bss_type = 1;
+@@ -674,7 +678,7 @@ static int mwl_fwcmd_set_ap_beacon(struc
+ 	phy_ds_param_set = &pcmd->start_cmd.phy_param_set.ds_param_set;
+ 	phy_ds_param_set->elem_id = WLAN_EID_DS_PARAMS;
+ 	phy_ds_param_set->len = sizeof(phy_ds_param_set->current_chnl);
+-	phy_ds_param_set->current_chnl = bss_conf->chandef.chan->hw_value;
++	phy_ds_param_set->current_chnl = bss_conf->chanreq.oper.chan->hw_value;
+ 
+ 	pcmd->start_cmd.probe_delay = cpu_to_le16(10);
+ 	pcmd->start_cmd.cap_info = cpu_to_le16(mwl_vif->beacon_info.cap_info);
+@@ -768,9 +772,9 @@ static int mwl_fwcmd_set_country_code(st
+ 	bool enable = false;
+ 
+ 	if (b_inf->ie_country_ptr) {
+-		if (bss_conf->chandef.chan->band == NL80211_BAND_2GHZ)
++		if (bss_conf->chanreq.oper.chan->band == NL80211_BAND_2GHZ)
+ 			a_band = false;
+-		else if (bss_conf->chandef.chan->band == NL80211_BAND_5GHZ)
++		else if (bss_conf->chanreq.oper.chan->band == NL80211_BAND_5GHZ)
+ 			a_band = true;
+ 		else
+ 			return -EINVAL;
 @@ -2090,7 +2094,7 @@ int mwl_fwcmd_set_beacon(struct ieee8021
  	if (mwl_fwcmd_set_wsc_ie(hw, b_inf->ie_wsc_len, b_inf->ie_wsc_ptr))
  		goto err;
@@ -236,6 +259,15 @@
  	}
 --- a/hif/pcie/8864/tx.c
 +++ b/hif/pcie/8864/tx.c
+@@ -490,7 +490,7 @@ static void pcie_non_pfu_tx_done(struct
+ 				} else
+ 					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+ 				skb_pull(done_skb, sizeof(*dma_data) - hdrlen);
+-				ieee80211_tx_status(priv->hw, done_skb);
++				ieee80211_tx_status_skb(priv->hw, done_skb);
+ 				dev_kfree_skb_any(done_skb);
+ 				done_skb = NULL;
+ 			}
 @@ -743,7 +743,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
  	index = SYSADPT_TX_WMM_QUEUES - index - 1;
  	txpriority = index;
@@ -245,9 +277,41 @@
  	  !(xmitcontrol & EAGLE_TXD_XMITCTRL_USE_MC_RATE) &&
  	    ieee80211_is_data_qos(wh->frame_control)) {
  		tid = qos & 0xf;
+@@ -925,4 +925,4 @@ void pcie_8864_tx_del_sta_amsdu_pkts(str
+ 		}
+ 	}
+ 	spin_unlock_bh(&sta_info->amsdu_lock);
+-}
+\ No newline at end of file
++}
 --- a/hif/pcie/8964/tx_ndp.c
 +++ b/hif/pcie/8964/tx_ndp.c
-@@ -607,7 +607,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+@@ -287,7 +287,7 @@ static inline int pcie_tx_skb_ndp(struct
+ 		skb_get(tx_skb);
+ 		pcie_tx_prepare_info(priv, tx_ctrl->rate, tx_info);
+ 		tx_ctrl->flags |= TX_CTRL_TYPE_DATA;
+-		ieee80211_tx_status(priv->hw, tx_skb);
++		ieee80211_tx_status_skb(priv->hw, tx_skb);
+ 	}
+ 
+ 	if (++tx_send_head_new >= MAX_NUM_TX_DESC)
+@@ -488,7 +488,7 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 		}
+ 
+ 		pcie_tx_prepare_info(priv, 0, tx_info);
+-		ieee80211_tx_status(hw, skb);
++		ieee80211_tx_status_skb(hw, skb);
+ 
+ bypass_ack:
+ 		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
+@@ -601,13 +601,13 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+ 			ack_skb = skb_copy(skb, GFP_ATOMIC);
+ 			ack_info = IEEE80211_SKB_CB(ack_skb);
+ 			pcie_tx_prepare_info(priv, 0, ack_info);
+-			ieee80211_tx_status(hw, ack_skb);
++			ieee80211_tx_status_skb(hw, ack_skb);
+ 		}
+ 
  		pcie_tx_encapsulate_frame(priv, skb, k_conf);
  	} else {
  		tid = qos & 0x7;
@@ -267,6 +331,15 @@
  		   pcie_priv->txbd_ring_size);
  
  	for (num = 0; num < PCIE_MAX_TXRX_BD; num++) {
+@@ -444,7 +444,7 @@ static void pcie_pfu_tx_done(struct mwl_
+ 				} else
+ 					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+ 				skb_pull(done_skb, sizeof(*pfu_dma) - hdrlen);
+-				ieee80211_tx_status(priv->hw, done_skb);
++				ieee80211_tx_status_skb(priv->hw, done_skb);
+ 			}
+ 		}
+ next:
 @@ -694,7 +694,7 @@ void pcie_8997_tx_xmit(struct ieee80211_
  	index = SYSADPT_TX_WMM_QUEUES - index - 1;
  	txpriority = index;
@@ -276,6 +349,13 @@
  	  !(xmitcontrol & EAGLE_TXD_XMITCTRL_USE_MC_RATE) &&
  	    ieee80211_is_data_qos(wh->frame_control)) {
  		tid = qos & 0xf;
+@@ -875,4 +875,4 @@ void pcie_8997_tx_del_sta_amsdu_pkts(str
+ 		}
+ 	}
+ 	spin_unlock_bh(&sta_info->amsdu_lock);
+-}
+\ No newline at end of file
++}
 --- a/mac80211.c
 +++ b/mac80211.c
 @@ -368,15 +368,15 @@ static void mwl_mac80211_bss_info_change

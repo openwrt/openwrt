@@ -1,0 +1,678 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1614,8 +1614,8 @@ EXPORT_SYMBOL_GPL(mt76_get_sar_power);
+ static void
+ __mt76_csa_finish(void *priv, u8 *mac, struct ieee80211_vif *vif)
+ {
+-	if (vif->bss_conf.csa_active && ieee80211_beacon_cntdwn_is_complete(vif))
+-		ieee80211_csa_finish(vif);
++	if (vif->bss_conf.csa_active && ieee80211_beacon_cntdwn_is_complete(vif, 0))
++		ieee80211_csa_finish(vif, 0);
+ }
+ 
+ void mt76_csa_finish(struct mt76_dev *dev)
+@@ -1639,7 +1639,7 @@ __mt76_csa_check(void *priv, u8 *mac, st
+ 	if (!vif->bss_conf.csa_active)
+ 		return;
+ 
+-	dev->csa_complete |= ieee80211_beacon_cntdwn_is_complete(vif);
++	dev->csa_complete |= ieee80211_beacon_cntdwn_is_complete(vif, 0);
+ }
+ 
+ void mt76_csa_check(struct mt76_dev *dev)
+--- a/mt76.h
++++ b/mt76.h
+@@ -1611,6 +1611,18 @@ s8 mt76_get_rate_power_limits(struct mt7
+ 			      struct mt76_power_limits *dest,
+ 			      s8 target_power);
+ 
++static inline bool mt76_queue_is_rx(struct mt76_dev *dev, struct mt76_queue *q)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(dev->q_rx); i++) {
++		if (q == &dev->q_rx[i])
++			return true;
++	}
++
++	return false;
++}
++
+ static inline bool mt76_queue_is_wed_tx_free(struct mt76_queue *q)
+ {
+ 	return (q->flags & MT_QFLAG_WED) &&
+--- a/mt7603/main.c
++++ b/mt7603/main.c
+@@ -701,6 +701,10 @@ static void mt7603_tx(struct ieee80211_h
+ }
+ 
+ const struct ieee80211_ops mt7603_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt7603_tx,
+ 	.start = mt7603_start,
+ 	.stop = mt7603_stop,
+@@ -728,6 +732,7 @@ const struct ieee80211_ops mt7603_ops =
+ 	.set_sar_specs = mt7603_set_sar_specs,
+ };
+ 
++MODULE_DESCRIPTION("MediaTek MT7603E and MT76x8 wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
+ static int __init mt7603_init(void)
+--- a/mt7615/Kconfig
++++ b/mt7615/Kconfig
+@@ -11,7 +11,7 @@ config MT7615E
+ 	depends on MAC80211
+ 	depends on PCI
+ 	help
+-	  This adds support for MT7615-based wireless PCIe devices,
++	  This adds support for MT7615-based PCIe wireless devices,
+ 	  which support concurrent dual-band operation at both 5GHz
+ 	  and 2.4GHz, IEEE 802.11ac 4x4:4SS 1733Mbps PHY rate, wave2
+ 	  MU-MIMO up to 4 users/group and 160MHz channels.
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -1326,6 +1326,10 @@ static void mt7615_set_rekey_data(struct
+ #endif /* CONFIG_PM */
+ 
+ const struct ieee80211_ops mt7615_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt7615_tx,
+ 	.start = mt7615_start,
+ 	.stop = mt7615_stop,
+@@ -1375,4 +1379,5 @@ const struct ieee80211_ops mt7615_ops =
+ };
+ EXPORT_SYMBOL_GPL(mt7615_ops);
+ 
++MODULE_DESCRIPTION("MediaTek MT7615E and MT7663E wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7615/mcu.c
++++ b/mt7615/mcu.c
+@@ -353,7 +353,7 @@ static void
+ mt7615_mcu_csa_finish(void *priv, u8 *mac, struct ieee80211_vif *vif)
+ {
+ 	if (vif->bss_conf.csa_active)
+-		ieee80211_csa_finish(vif);
++		ieee80211_csa_finish(vif, 0);
+ }
+ 
+ static void
+--- a/mt7615/mmio.c
++++ b/mt7615/mmio.c
+@@ -270,4 +270,5 @@ static void __exit mt7615_exit(void)
+ 
+ module_init(mt7615_init);
+ module_exit(mt7615_exit);
++MODULE_DESCRIPTION("MediaTek MT7615E MMIO helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7615/sdio.c
++++ b/mt7615/sdio.c
+@@ -180,7 +180,6 @@ static void mt7663s_remove(struct sdio_f
+ 	mt76_free_device(&dev->mt76);
+ }
+ 
+-#ifdef CONFIG_PM
+ static int mt7663s_suspend(struct device *dev)
+ {
+ 	struct sdio_func *func = dev_to_sdio_func(dev);
+@@ -235,31 +234,24 @@ static int mt7663s_resume(struct device
+ 	return err;
+ }
+ 
+-static const struct dev_pm_ops mt7663s_pm_ops = {
+-	.suspend = mt7663s_suspend,
+-	.resume = mt7663s_resume,
+-};
+-#endif
+-
+ MODULE_DEVICE_TABLE(sdio, mt7663s_table);
+ MODULE_FIRMWARE(MT7663_OFFLOAD_FIRMWARE_N9);
+ MODULE_FIRMWARE(MT7663_OFFLOAD_ROM_PATCH);
+ MODULE_FIRMWARE(MT7663_FIRMWARE_N9);
+ MODULE_FIRMWARE(MT7663_ROM_PATCH);
+ 
++static DEFINE_SIMPLE_DEV_PM_OPS(mt7663s_pm_ops, mt7663s_suspend, mt7663s_resume);
++
+ static struct sdio_driver mt7663s_driver = {
+ 	.name		= KBUILD_MODNAME,
+ 	.probe		= mt7663s_probe,
+ 	.remove		= mt7663s_remove,
+ 	.id_table	= mt7663s_table,
+-#ifdef CONFIG_PM
+-	.drv = {
+-		.pm = &mt7663s_pm_ops,
+-	}
+-#endif
++	.drv.pm		= pm_sleep_ptr(&mt7663s_pm_ops),
+ };
+ module_sdio_driver(mt7663s_driver);
+ 
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT7663S (SDIO) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7615/usb.c
++++ b/mt7615/usb.c
+@@ -281,4 +281,5 @@ module_usb_driver(mt7663u_driver);
+ 
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT7663U (USB) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7615/usb_sdio.c
++++ b/mt7615/usb_sdio.c
+@@ -349,4 +349,5 @@ EXPORT_SYMBOL_GPL(mt7663_usb_sdio_regist
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
++MODULE_DESCRIPTION("MediaTek MT7663 SDIO/USB helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76_connac_mcu.c
++++ b/mt76_connac_mcu.c
+@@ -3171,4 +3171,5 @@ exit:
+ EXPORT_SYMBOL_GPL(mt76_connac2_mcu_fill_message);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT76x connac layer helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76_connac_mcu.h
++++ b/mt76_connac_mcu.h
+@@ -128,7 +128,7 @@ struct mt76_connac2_mcu_rxd {
+ 	u8 rsv1[2];
+ 	u8 s2d_index;
+ 
+-	u8 tlv[0];
++	u8 tlv[];
+ };
+ 
+ struct mt76_connac2_patch_hdr {
+@@ -1460,7 +1460,7 @@ struct mt76_connac_beacon_loss_event {
+ } __packed;
+ 
+ struct mt76_connac_rssi_notify_event {
+-	s32 rssi[4];
++	__le32 rssi[4];
+ } __packed;
+ 
+ struct mt76_connac_mcu_bss_event {
+--- a/mt76x0/eeprom.c
++++ b/mt76x0/eeprom.c
+@@ -342,4 +342,5 @@ int mt76x0_eeprom_init(struct mt76x02_de
+ 	return 0;
+ }
+ 
++MODULE_DESCRIPTION("MediaTek MT76x EEPROM helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76x0/pci.c
++++ b/mt76x0/pci.c
+@@ -59,6 +59,10 @@ mt76x0e_flush(struct ieee80211_hw *hw, s
+ }
+ 
+ static const struct ieee80211_ops mt76x0e_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt76x02_tx,
+ 	.start = mt76x0e_start,
+ 	.stop = mt76x0e_stop,
+@@ -302,6 +306,7 @@ static const struct pci_device_id mt76x0
+ MODULE_DEVICE_TABLE(pci, mt76x0e_device_table);
+ MODULE_FIRMWARE(MT7610E_FIRMWARE);
+ MODULE_FIRMWARE(MT7650E_FIRMWARE);
++MODULE_DESCRIPTION("MediaTek MT76x0E (PCIe) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
+ static struct pci_driver mt76x0e_driver = {
+--- a/mt76x0/usb.c
++++ b/mt76x0/usb.c
+@@ -118,6 +118,10 @@ static int mt76x0u_start(struct ieee8021
+ }
+ 
+ static const struct ieee80211_ops mt76x0u_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt76x02_tx,
+ 	.start = mt76x0u_start,
+ 	.stop = mt76x0u_stop,
+@@ -336,6 +340,7 @@ err:
+ MODULE_DEVICE_TABLE(usb, mt76x0_device_table);
+ MODULE_FIRMWARE(MT7610E_FIRMWARE);
+ MODULE_FIRMWARE(MT7610U_FIRMWARE);
++MODULE_DESCRIPTION("MediaTek MT76x0U (USB) wireless driver");
+ MODULE_LICENSE("GPL");
+ 
+ static struct usb_driver mt76x0_driver = {
+--- a/mt76x02_usb_mcu.c
++++ b/mt76x02_usb_mcu.c
+@@ -293,4 +293,5 @@ void mt76x02u_init_mcu(struct mt76_dev *
+ EXPORT_SYMBOL_GPL(mt76x02u_init_mcu);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>");
++MODULE_DESCRIPTION("MediaTek MT76x02 MCU helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76x02_util.c
++++ b/mt76x02_util.c
+@@ -696,4 +696,5 @@ void mt76x02_config_mac_addr_list(struct
+ }
+ EXPORT_SYMBOL_GPL(mt76x02_config_mac_addr_list);
+ 
++MODULE_DESCRIPTION("MediaTek MT76x02 helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76x2/eeprom.c
++++ b/mt76x2/eeprom.c
+@@ -506,4 +506,5 @@ int mt76x2_eeprom_init(struct mt76x02_de
+ }
+ EXPORT_SYMBOL_GPL(mt76x2_eeprom_init);
+ 
++MODULE_DESCRIPTION("MediaTek MT76x2 EEPROM helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76x2/pci.c
++++ b/mt76x2/pci.c
+@@ -165,6 +165,7 @@ mt76x2e_resume(struct pci_dev *pdev)
+ MODULE_DEVICE_TABLE(pci, mt76x2e_device_table);
+ MODULE_FIRMWARE(MT7662_FIRMWARE);
+ MODULE_FIRMWARE(MT7662_ROM_PATCH);
++MODULE_DESCRIPTION("MediaTek MT76x2E (PCIe) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
+ static struct pci_driver mt76pci_driver = {
+--- a/mt76x2/pci_main.c
++++ b/mt76x2/pci_main.c
+@@ -132,6 +132,10 @@ static int mt76x2_set_antenna(struct iee
+ }
+ 
+ const struct ieee80211_ops mt76x2_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt76x02_tx,
+ 	.start = mt76x2_start,
+ 	.stop = mt76x2_stop,
+--- a/mt76x2/usb.c
++++ b/mt76x2/usb.c
+@@ -148,4 +148,5 @@ static struct usb_driver mt76x2u_driver
+ module_usb_driver(mt76x2u_driver);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>");
++MODULE_DESCRIPTION("MediaTek MT76x2U (USB) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt76x2/usb_main.c
++++ b/mt76x2/usb_main.c
+@@ -103,6 +103,10 @@ mt76x2u_config(struct ieee80211_hw *hw,
+ }
+ 
+ const struct ieee80211_ops mt76x2u_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt76x02_tx,
+ 	.start = mt76x2u_start,
+ 	.stop = mt76x2u_stop,
+--- a/mt7915/Kconfig
++++ b/mt7915/Kconfig
+@@ -7,7 +7,7 @@ config MT7915E
+ 	depends on PCI
+ 	select RELAY
+ 	help
+-	  This adds support for MT7915-based wireless PCIe devices,
++	  This adds support for MT7915-based PCIe wireless devices,
+ 	  which support concurrent dual-band operation at both 5GHz
+ 	  and 2.4GHz IEEE 802.11ax 4x4:4SS 1024-QAM, 160MHz channels,
+ 	  OFDMA, spatial reuse and dual carrier modulation.
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -4,6 +4,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/hwmon.h>
+ #include <linux/hwmon-sysfs.h>
++#include <linux/of.h>
+ #include <linux/thermal.h>
+ #include "mt7915.h"
+ #include "mac.h"
+@@ -1151,8 +1152,7 @@ void mt7915_set_stream_he_caps(struct mt
+ 		n = mt7915_init_he_caps(phy, NL80211_BAND_2GHZ, data);
+ 
+ 		band = &phy->mt76->sband_2g.sband;
+-		band->iftype_data = data;
+-		band->n_iftype_data = n;
++		_ieee80211_set_sband_iftype_data(band, data, n);
+ 	}
+ 
+ 	if (phy->mt76->cap.has_5ghz) {
+@@ -1160,8 +1160,7 @@ void mt7915_set_stream_he_caps(struct mt
+ 		n = mt7915_init_he_caps(phy, NL80211_BAND_5GHZ, data);
+ 
+ 		band = &phy->mt76->sband_5g.sband;
+-		band->iftype_data = data;
+-		band->n_iftype_data = n;
++		_ieee80211_set_sband_iftype_data(band, data, n);
+ 	}
+ 
+ 	if (phy->mt76->cap.has_6ghz) {
+@@ -1169,8 +1168,7 @@ void mt7915_set_stream_he_caps(struct mt
+ 		n = mt7915_init_he_caps(phy, NL80211_BAND_6GHZ, data);
+ 
+ 		band = &phy->mt76->sband_6g.sband;
+-		band->iftype_data = data;
+-		band->n_iftype_data = n;
++		_ieee80211_set_sband_iftype_data(band, data, n);
+ 	}
+ }
+ 
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -1661,6 +1661,10 @@ mt7915_net_fill_forward_path(struct ieee
+ #endif
+ 
+ const struct ieee80211_ops mt7915_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt7915_tx,
+ 	.start = mt7915_start,
+ 	.stop = mt7915_stop,
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -228,7 +228,7 @@ mt7915_mcu_csa_finish(void *priv, u8 *ma
+ 	if (!vif->bss_conf.csa_active || vif->type == NL80211_IFTYPE_STATION)
+ 		return;
+ 
+-	ieee80211_csa_finish(vif);
++	ieee80211_csa_finish(vif, 0);
+ }
+ 
+ static void
+@@ -463,10 +463,10 @@ static bool mt7915_check_he_obss_narrow_
+ 		.tolerated = true,
+ 	};
+ 
+-	if (!(vif->bss_conf.chandef.chan->flags & IEEE80211_CHAN_RADAR))
++	if (!(vif->bss_conf.chanreq.oper.chan->flags & IEEE80211_CHAN_RADAR))
+ 		return false;
+ 
+-	cfg80211_bss_iter(hw->wiphy, &vif->bss_conf.chandef,
++	cfg80211_bss_iter(hw->wiphy, &vif->bss_conf.chanreq.oper,
+ 			  mt7915_check_he_obss_narrow_bw_ru_iter,
+ 			  &iter_data);
+ 
+--- a/mt7915/mmio.c
++++ b/mt7915/mmio.c
+@@ -993,4 +993,5 @@ static void __exit mt7915_exit(void)
+ 
+ module_init(mt7915_init);
+ module_exit(mt7915_exit);
++MODULE_DESCRIPTION("MediaTek MT7915E MMIO helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7921/main.c
++++ b/mt7921/main.c
+@@ -196,8 +196,7 @@ void mt7921_set_stream_he_caps(struct mt
+ 		n = mt7921_init_he_caps(phy, NL80211_BAND_2GHZ, data);
+ 
+ 		band = &phy->mt76->sband_2g.sband;
+-		band->iftype_data = data;
+-		band->n_iftype_data = n;
++		_ieee80211_set_sband_iftype_data(band, data, n);
+ 	}
+ 
+ 	if (phy->mt76->cap.has_5ghz) {
+@@ -205,16 +204,14 @@ void mt7921_set_stream_he_caps(struct mt
+ 		n = mt7921_init_he_caps(phy, NL80211_BAND_5GHZ, data);
+ 
+ 		band = &phy->mt76->sband_5g.sband;
+-		band->iftype_data = data;
+-		band->n_iftype_data = n;
++		_ieee80211_set_sband_iftype_data(band, data, n);
+ 
+ 		if (phy->mt76->cap.has_6ghz) {
+ 			data = phy->iftype[NL80211_BAND_6GHZ];
+ 			n = mt7921_init_he_caps(phy, NL80211_BAND_6GHZ, data);
+ 
+ 			band = &phy->mt76->sband_6g.sband;
+-			band->iftype_data = data;
+-			band->n_iftype_data = n;
++			_ieee80211_set_sband_iftype_data(band, data, n);
+ 		}
+ 	}
+ }
+@@ -1464,5 +1461,6 @@ const struct ieee80211_ops mt7921_ops =
+ };
+ EXPORT_SYMBOL_GPL(mt7921_ops);
+ 
++MODULE_DESCRIPTION("MediaTek MT7921 core driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+--- a/mt7921/pci.c
++++ b/mt7921/pci.c
+@@ -570,4 +570,5 @@ MODULE_FIRMWARE(MT7922_FIRMWARE_WM);
+ MODULE_FIRMWARE(MT7922_ROM_PATCH);
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT7921E (PCIe) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7921/sdio.c
++++ b/mt7921/sdio.c
+@@ -201,7 +201,6 @@ static void mt7921s_remove(struct sdio_f
+ 	mt7921s_unregister_device(dev);
+ }
+ 
+-#ifdef CONFIG_PM
+ static int mt7921s_suspend(struct device *__dev)
+ {
+ 	struct sdio_func *func = dev_to_sdio_func(__dev);
+@@ -312,27 +311,20 @@ failed:
+ 	return err;
+ }
+ 
+-static const struct dev_pm_ops mt7921s_pm_ops = {
+-	.suspend = mt7921s_suspend,
+-	.resume = mt7921s_resume,
+-};
+-#endif
+-
+ MODULE_DEVICE_TABLE(sdio, mt7921s_table);
+ MODULE_FIRMWARE(MT7921_FIRMWARE_WM);
+ MODULE_FIRMWARE(MT7921_ROM_PATCH);
+ 
++static DEFINE_SIMPLE_DEV_PM_OPS(mt7921s_pm_ops, mt7921s_suspend, mt7921s_resume);
++
+ static struct sdio_driver mt7921s_driver = {
+ 	.name		= KBUILD_MODNAME,
+ 	.probe		= mt7921s_probe,
+ 	.remove		= mt7921s_remove,
+ 	.id_table	= mt7921s_table,
+-#ifdef CONFIG_PM
+-	.drv = {
+-		.pm = &mt7921s_pm_ops,
+-	}
+-#endif
++	.drv.pm		= pm_sleep_ptr(&mt7921s_pm_ops),
+ };
+ module_sdio_driver(mt7921s_driver);
++MODULE_DESCRIPTION("MediaTek MT7921S (SDIO) wireless driver");
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7921/usb.c
++++ b/mt7921/usb.c
+@@ -336,5 +336,6 @@ static struct usb_driver mt7921u_driver
+ };
+ module_usb_driver(mt7921u_driver);
+ 
++MODULE_DESCRIPTION("MediaTek MT7921U (USB) wireless driver");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -14,7 +14,7 @@
+ static void
+ mt7925_init_he_caps(struct mt792x_phy *phy, enum nl80211_band band,
+ 		    struct ieee80211_sband_iftype_data *data,
+-			enum nl80211_iftype iftype)
++		    enum nl80211_iftype iftype)
+ {
+ 	struct ieee80211_sta_he_cap *he_cap = &data->he_cap;
+ 	struct ieee80211_he_cap_elem *he_cap_elem = &he_cap->he_cap_elem;
+@@ -53,7 +53,7 @@ mt7925_init_he_caps(struct mt792x_phy *p
+ 		IEEE80211_HE_PHY_CAP2_UL_MU_FULL_MU_MIMO |
+ 		IEEE80211_HE_PHY_CAP2_UL_MU_PARTIAL_MU_MIMO;
+ 
+-	switch (i) {
++	switch (iftype) {
+ 	case NL80211_IFTYPE_AP:
+ 		he_cap_elem->mac_cap_info[2] |=
+ 			IEEE80211_HE_MAC_CAP2_BSR;
+@@ -1470,4 +1470,5 @@ const struct ieee80211_ops mt7925_ops =
+ EXPORT_SYMBOL_GPL(mt7925_ops);
+ 
+ MODULE_AUTHOR("Deren Wu <deren.wu@mediatek.com>");
++MODULE_DESCRIPTION("MediaTek MT7925 core driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7925/pci.c
++++ b/mt7925/pci.c
+@@ -586,4 +586,5 @@ MODULE_FIRMWARE(MT7925_FIRMWARE_WM);
+ MODULE_FIRMWARE(MT7925_ROM_PATCH);
+ MODULE_AUTHOR("Deren Wu <deren.wu@mediatek.com>");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT7925E (PCIe) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt7925/usb.c
++++ b/mt7925/usb.c
+@@ -329,4 +329,5 @@ static struct usb_driver mt7925u_driver
+ module_usb_driver(mt7925u_driver);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT7925U (USB) wireless driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -685,9 +685,10 @@ mt792x_get_mac80211_ops(struct device *d
+ 	if (!(*fw_features & MT792x_FW_CAP_CNM)) {
+ 		ops->remain_on_channel = NULL;
+ 		ops->cancel_remain_on_channel = NULL;
+-		ops->add_chanctx = NULL;
+-		ops->remove_chanctx = NULL;
+-		ops->change_chanctx = NULL;
++		ops->add_chanctx = ieee80211_emulate_add_chanctx;
++		ops->remove_chanctx = ieee80211_emulate_remove_chanctx;
++		ops->change_chanctx = ieee80211_emulate_change_chanctx;
++		ops->switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx;
+ 		ops->assign_vif_chanctx = NULL;
+ 		ops->unassign_vif_chanctx = NULL;
+ 		ops->mgd_prepare_tx = NULL;
+@@ -863,5 +864,6 @@ int mt792x_load_firmware(struct mt792x_d
+ }
+ EXPORT_SYMBOL_GPL(mt792x_load_firmware);
+ 
++MODULE_DESCRIPTION("MediaTek MT792x core driver");
+ MODULE_LICENSE("Dual BSD/GPL");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+--- a/mt792x_usb.c
++++ b/mt792x_usb.c
+@@ -312,5 +312,6 @@ void mt792xu_disconnect(struct usb_inter
+ }
+ EXPORT_SYMBOL_GPL(mt792xu_disconnect);
+ 
++MODULE_DESCRIPTION("MediaTek MT792x USB helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -4,9 +4,10 @@
+  */
+ 
+ #include <linux/etherdevice.h>
+-#include <linux/thermal.h>
++#include <linux/of.h>
+ #include <linux/hwmon.h>
+ #include <linux/hwmon-sysfs.h>
++#include <linux/thermal.h>
+ #include "mt7996.h"
+ #include "mac.h"
+ #include "mcu.h"
+@@ -1278,8 +1279,7 @@ __mt7996_set_stream_he_eht_caps(struct m
+ 		n++;
+ 	}
+ 
+-	sband->iftype_data = data;
+-	sband->n_iftype_data = n;
++	_ieee80211_set_sband_iftype_data(sband, data, n);
+ }
+ 
+ void mt7996_set_stream_he_eht_caps(struct mt7996_phy *phy)
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -1467,6 +1467,10 @@ mt7996_net_fill_forward_path(struct ieee
+ #endif
+ 
+ const struct ieee80211_ops mt7996_ops = {
++	.add_chanctx = ieee80211_emulate_add_chanctx,
++	.remove_chanctx = ieee80211_emulate_remove_chanctx,
++	.change_chanctx = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
+ 	.tx = mt7996_tx,
+ 	.start = mt7996_start,
+ 	.stop = mt7996_stop,
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -341,7 +341,7 @@ mt7996_mcu_csa_finish(void *priv, u8 *ma
+ 	if (!vif->bss_conf.csa_active || vif->type == NL80211_IFTYPE_STATION)
+ 		return;
+ 
+-	ieee80211_csa_finish(vif);
++	ieee80211_csa_finish(vif, 0);
+ }
+ 
+ static void
+--- a/mt7996/mmio.c
++++ b/mt7996/mmio.c
+@@ -670,4 +670,5 @@ static void __exit mt7996_exit(void)
+ 
+ module_init(mt7996_init);
+ module_exit(mt7996_exit);
++MODULE_DESCRIPTION("MediaTek MT7996 MMIO helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/sdio.c
++++ b/sdio.c
+@@ -677,4 +677,5 @@ EXPORT_SYMBOL_GPL(mt76s_init);
+ 
+ MODULE_AUTHOR("Sean Wang <sean.wang@mediatek.com>");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
++MODULE_DESCRIPTION("MediaTek MT76x SDIO helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/usb.c
++++ b/usb.c
+@@ -286,8 +286,7 @@ static bool mt76u_check_sg(struct mt76_d
+ 	struct usb_device *udev = interface_to_usbdev(uintf);
+ 
+ 	return (!disable_usb_sg && udev->bus->sg_tablesize > 0 &&
+-		(udev->bus->no_sg_constraint ||
+-		 udev->speed == USB_SPEED_WIRELESS));
++		udev->bus->no_sg_constraint);
+ }
+ 
+ static int
+@@ -1136,4 +1135,5 @@ int mt76u_init(struct mt76_dev *dev, str
+ EXPORT_SYMBOL_GPL(mt76u_init);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>");
++MODULE_DESCRIPTION("MediaTek MT76x USB helpers");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/util.c
++++ b/util.c
+@@ -138,4 +138,5 @@ int __mt76_worker_fn(void *ptr)
+ }
+ EXPORT_SYMBOL_GPL(__mt76_worker_fn);
+ 
++MODULE_DESCRIPTION("MediaTek MT76x helpers");
+ MODULE_LICENSE("Dual BSD/GPL");

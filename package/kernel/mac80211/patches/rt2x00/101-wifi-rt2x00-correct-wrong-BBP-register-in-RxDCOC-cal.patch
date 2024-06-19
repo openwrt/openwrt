@@ -15,12 +15,12 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8711,7 +8711,7 @@ static void rt2800_rxdcoc_calibration(st
- 	rt2800_rfcsr_write_bank(rt2x00dev, 5, 4, saverfb5r4);
- 	rt2800_rfcsr_write_bank(rt2x00dev, 7, 4, saverfb7r4);
+@@ -8692,7 +8692,7 @@ static void rt2800_rxdcoc_calibration(st
+ 	rfvalue |= 0x03;
+ 	rt2800_rfcsr_write_bank(rt2x00dev, 0, 2, rfvalue);
  
 -	rt2800_bbp_write(rt2x00dev, 158, 141);
 +	rt2800_bbp_write(rt2x00dev, 158, 140);
  	bbpreg = rt2800_bbp_read(rt2x00dev, 159);
- 	bbpreg = bbpreg & (~0x40);
+ 	bbpreg |= 0x10;
  	rt2800_bbp_write(rt2x00dev, 159, bbpreg);

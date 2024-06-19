@@ -38,7 +38,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
 
 --- a/drivers/net/wireless/ath/ath10k/Kconfig
 +++ b/drivers/net/wireless/ath/ath10k/Kconfig
-@@ -72,6 +72,12 @@ config ATH10K_DEBUGFS
+@@ -73,6 +73,12 @@ config ATH10K_DEBUGFS
  
  	  If unsure, say Y to make it easier to debug problems.
  
@@ -63,7 +63,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  ath10k_core-$(CONFIG_DEV_COREDUMP) += coredump.o
 --- a/local-symbols
 +++ b/local-symbols
-@@ -161,6 +161,7 @@ ATH10K_DEBUG=
+@@ -154,6 +154,7 @@ ATH10K_DEBUG=
  ATH10K_DEBUGFS=
  ATH10K_SPECTRAL=
  ATH10K_THERMAL=
@@ -73,7 +73,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  WCN36XX=
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -26,6 +26,7 @@
+@@ -27,6 +27,7 @@
  #include "testmode.h"
  #include "wmi-ops.h"
  #include "coredump.h"
@@ -81,7 +81,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  
  unsigned int ath10k_debug_mask;
  EXPORT_SYMBOL(ath10k_debug_mask);
-@@ -67,6 +68,7 @@ static const struct ath10k_hw_params ath
+@@ -68,6 +69,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca988x hw2.0",
  		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -89,7 +89,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
-@@ -107,6 +109,7 @@ static const struct ath10k_hw_params ath
+@@ -109,6 +111,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca988x hw2.0 ubiquiti",
  		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -97,7 +97,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
-@@ -148,6 +151,7 @@ static const struct ath10k_hw_params ath
+@@ -151,6 +154,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9887 hw1.0",
  		.patch_load_addr = QCA9887_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -105,7 +105,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_ALL,
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
-@@ -189,6 +193,7 @@ static const struct ath10k_hw_params ath
+@@ -193,6 +197,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca6174 hw3.2 sdio",
  		.patch_load_addr = QCA6174_HW_3_0_PATCH_LOAD_ADDR,
  		.uart_pin = 19,
@@ -113,7 +113,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -225,6 +230,7 @@ static const struct ath10k_hw_params ath
+@@ -230,6 +235,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca6164 hw2.1",
  		.patch_load_addr = QCA6174_HW_2_1_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -121,7 +121,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -265,6 +271,7 @@ static const struct ath10k_hw_params ath
+@@ -271,6 +277,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca6174 hw2.1",
  		.patch_load_addr = QCA6174_HW_2_1_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -129,7 +129,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -305,6 +312,7 @@ static const struct ath10k_hw_params ath
+@@ -312,6 +319,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca6174 hw3.0",
  		.patch_load_addr = QCA6174_HW_3_0_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -137,7 +137,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -345,6 +353,7 @@ static const struct ath10k_hw_params ath
+@@ -353,6 +361,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca6174 hw3.2",
  		.patch_load_addr = QCA6174_HW_3_0_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -145,7 +145,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -389,6 +398,7 @@ static const struct ath10k_hw_params ath
+@@ -398,6 +407,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca99x0 hw2.0",
  		.patch_load_addr = QCA99X0_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -153,7 +153,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0x00000700,
  		.continuous_frag_desc = true,
  		.cck_rate_map_rev2 = true,
-@@ -435,6 +445,7 @@ static const struct ath10k_hw_params ath
+@@ -445,6 +455,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9984/qca9994 hw1.0",
  		.patch_load_addr = QCA9984_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -161,7 +161,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
  		.otp_exe_param = 0x00000700,
  		.continuous_frag_desc = true,
-@@ -488,6 +499,7 @@ static const struct ath10k_hw_params ath
+@@ -499,6 +510,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9888 hw2.0",
  		.patch_load_addr = QCA9888_HW_2_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -169,7 +169,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
  		.otp_exe_param = 0x00000700,
  		.continuous_frag_desc = true,
-@@ -538,6 +550,7 @@ static const struct ath10k_hw_params ath
+@@ -550,6 +562,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9377 hw1.0",
  		.patch_load_addr = QCA9377_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -177,7 +177,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -578,6 +591,7 @@ static const struct ath10k_hw_params ath
+@@ -591,6 +604,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9377 hw1.1",
  		.patch_load_addr = QCA9377_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 6,
@@ -185,7 +185,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -620,6 +634,7 @@ static const struct ath10k_hw_params ath
+@@ -634,6 +648,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca9377 hw1.1 sdio",
  		.patch_load_addr = QCA9377_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 19,
@@ -193,7 +193,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.otp_exe_param = 0,
  		.channel_counters_freq_hz = 88000,
  		.max_probe_resp_desc_thres = 0,
-@@ -653,6 +668,7 @@ static const struct ath10k_hw_params ath
+@@ -668,6 +683,7 @@ static const struct ath10k_hw_params ath
  		.name = "qca4019 hw1.0",
  		.patch_load_addr = QCA4019_HW_1_0_PATCH_LOAD_ADDR,
  		.uart_pin = 7,
@@ -201,7 +201,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.cc_wraparound_type = ATH10K_HW_CC_WRAP_SHIFTED_EACH,
  		.otp_exe_param = 0x0010000,
  		.continuous_frag_desc = true,
-@@ -698,6 +714,7 @@ static const struct ath10k_hw_params ath
+@@ -714,6 +730,7 @@ static const struct ath10k_hw_params ath
  		.dev_id = 0,
  		.bus = ATH10K_BUS_SNOC,
  		.name = "wcn3990 hw1.0",
@@ -209,7 +209,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		.continuous_frag_desc = true,
  		.tx_chain_mask = 0x7,
  		.rx_chain_mask = 0x7,
-@@ -3222,6 +3239,10 @@ int ath10k_core_start(struct ath10k *ar,
+@@ -3242,6 +3259,10 @@ int ath10k_core_start(struct ath10k *ar,
  		goto err_hif_stop;
  	}
  
@@ -220,7 +220,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	return 0;
  
  err_hif_stop:
-@@ -3480,9 +3501,18 @@ static void ath10k_core_register_work(st
+@@ -3500,9 +3521,18 @@ static void ath10k_core_register_work(st
  		goto err_spectral_destroy;
  	}
  
@@ -239,7 +239,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  err_spectral_destroy:
  	ath10k_spectral_destroy(ar);
  err_debug_destroy:
-@@ -3528,6 +3558,8 @@ void ath10k_core_unregister(struct ath10
+@@ -3548,6 +3578,8 @@ void ath10k_core_unregister(struct ath10
  	if (!test_bit(ATH10K_FLAG_CORE_REGISTERED, &ar->dev_flags))
  		return;
  
@@ -250,7 +250,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	 * relayfs debugfs file cleanly. Otherwise the parent debugfs tree
 --- a/drivers/net/wireless/ath/ath10k/core.h
 +++ b/drivers/net/wireless/ath/ath10k/core.h
-@@ -14,6 +14,7 @@
+@@ -15,6 +15,7 @@
  #include <linux/pci.h>
  #include <linux/uuid.h>
  #include <linux/time.h>
@@ -258,7 +258,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  
  #include "htt.h"
  #include "htc.h"
-@@ -1256,6 +1257,13 @@ struct ath10k {
+@@ -1257,6 +1258,13 @@ struct ath10k {
  	} testmode;
  
  	struct {
@@ -274,7 +274,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  		u32 fw_crash_counter;
 --- a/drivers/net/wireless/ath/ath10k/hw.h
 +++ b/drivers/net/wireless/ath/ath10k/hw.h
-@@ -519,6 +519,7 @@ struct ath10k_hw_params {
+@@ -521,6 +521,7 @@ struct ath10k_hw_params {
  	const char *name;
  	u32 patch_load_addr;
  	int uart_pin;
@@ -414,7 +414,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
 +#endif /* _LEDS_H_ */
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -24,6 +24,7 @@
+@@ -25,6 +25,7 @@
  #include "wmi-tlv.h"
  #include "wmi-ops.h"
  #include "wow.h"
@@ -473,7 +473,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  {
 --- a/drivers/net/wireless/ath/ath10k/wmi-tlv.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi-tlv.c
-@@ -4601,6 +4601,8 @@ static const struct wmi_ops wmi_tlv_ops
+@@ -4606,6 +4606,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
  	.gen_vdev_spectral_enable = ath10k_wmi_tlv_op_gen_vdev_spectral_enable,
@@ -484,7 +484,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  static const struct wmi_peer_flags_map wmi_tlv_peer_flags_map = {
 --- a/drivers/net/wireless/ath/ath10k/wmi.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi.c
-@@ -7472,6 +7472,49 @@ ath10k_wmi_op_gen_peer_set_param(struct
+@@ -7493,6 +7493,49 @@ ath10k_wmi_op_gen_peer_set_param(struct
  	return skb;
  }
  
@@ -534,7 +534,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  static struct sk_buff *
  ath10k_wmi_op_gen_set_psmode(struct ath10k *ar, u32 vdev_id,
  			     enum wmi_sta_ps_mode psmode)
-@@ -9138,6 +9181,9 @@ static const struct wmi_ops wmi_ops = {
+@@ -9157,6 +9200,9 @@ static const struct wmi_ops wmi_ops = {
  	.fw_stats_fill = ath10k_wmi_main_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -544,7 +544,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9208,6 +9254,8 @@ static const struct wmi_ops wmi_10_1_ops
+@@ -9227,6 +9273,8 @@ static const struct wmi_ops wmi_10_1_ops
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
  	.gen_echo = ath10k_wmi_op_gen_echo,
@@ -553,7 +553,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9280,6 +9328,8 @@ static const struct wmi_ops wmi_10_2_ops
+@@ -9299,6 +9347,8 @@ static const struct wmi_ops wmi_10_2_ops
  	.gen_delba_send = ath10k_wmi_op_gen_delba_send,
  	.fw_stats_fill = ath10k_wmi_10x_op_fw_stats_fill,
  	.get_vdev_subtype = ath10k_wmi_op_get_vdev_subtype,
@@ -562,7 +562,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	/* .gen_pdev_enable_adaptive_cca not implemented */
  };
  
-@@ -9351,6 +9401,8 @@ static const struct wmi_ops wmi_10_2_4_o
+@@ -9370,6 +9420,8 @@ static const struct wmi_ops wmi_10_2_4_o
  		ath10k_wmi_op_gen_pdev_enable_adaptive_cca,
  	.get_vdev_subtype = ath10k_wmi_10_2_4_op_get_vdev_subtype,
  	.gen_bb_timing = ath10k_wmi_10_2_4_op_gen_bb_timing,
@@ -571,7 +571,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  	/* .gen_bcn_tmpl not implemented */
  	/* .gen_prb_tmpl not implemented */
  	/* .gen_p2p_go_bcn_ie not implemented */
-@@ -9432,6 +9484,8 @@ static const struct wmi_ops wmi_10_4_ops
+@@ -9451,6 +9503,8 @@ static const struct wmi_ops wmi_10_4_ops
  	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
  	.gen_echo = ath10k_wmi_op_gen_echo,
  	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
@@ -582,7 +582,7 @@ Link: https://msgid.link/20230611080505.17393-1-ansuelsmth@gmail.com
  int ath10k_wmi_attach(struct ath10k *ar)
 --- a/drivers/net/wireless/ath/ath10k/wmi.h
 +++ b/drivers/net/wireless/ath/ath10k/wmi.h
-@@ -3030,6 +3030,41 @@ enum wmi_10_4_feature_mask {
+@@ -3034,6 +3034,41 @@ enum wmi_10_4_feature_mask {
  
  };
  
