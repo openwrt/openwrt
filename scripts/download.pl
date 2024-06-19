@@ -59,6 +59,7 @@ sub localmirrors {
 
 sub projectsmirrors {
 	my $project = shift;
+	my $append = shift;
 
 	open (PM, "$scriptdir/projectsmirrors.json") ||
 		die "Can´t open $scriptdir/projectsmirrors.json: $!\n";
@@ -67,7 +68,7 @@ sub projectsmirrors {
 	my $mirror = decode_json $mirror_json;
 
 	foreach (@{$mirror->{$project}}) {
-		push @mirrors, $_ . "/" . ($1 or "");
+		push @mirrors, $_ . "/" . ($append or "");
 	}
 }
 
