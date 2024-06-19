@@ -1,0 +1,42 @@
+--- a/gdbsupport/enum-flags.h
++++ b/gdbsupport/enum-flags.h
+@@ -21,1 +21,2 @@ template<> struct integer_for_size<8, 1> { typedef int64_t type; };
+ #include "traits.h"
++#include "diagnostics.h"
+ 
+@@ -91,9 +92,12 @@ template<> struct integer_for_size<8, 1> { typedef int64_t type; };
+ template<typename T>
+ struct enum_underlying_type
+ {
++  DIAGNOSTIC_PUSH
++  DIAGNOSTIC_IGNORE_ENUM_CONSTEXPR_CONVERSION
+   typedef typename
+     integer_for_size<sizeof (T), static_cast<bool>(T (-1) < T (0))>::type
+     type;
++  DIAGNOSTIC_POP
+ };
+ 
+ namespace enum_flags_detail
+--- a/include/diagnostics.h
++++ b/include/diagnostics.h
+@@ -61,4 +61,9 @@
+ # define DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL \
+   DIAGNOSTIC_IGNORE ("-Wformat-nonliteral")
+ 
++# if __has_warning ("-Wenum-constexpr-conversion")
++#  define DIAGNOSTIC_IGNORE_ENUM_CONSTEXPR_CONVERSION \
++   DIAGNOSTIC_IGNORE ("-Wenum-constexpr-conversion")
++# endif
++
+ #elif defined (__GNUC__) /* GCC */
+@@ -100,4 +105,8 @@
+ # define DIAGNOSTIC_IGNORE_FORMAT_NONLITERAL
+ #endif
+ 
++#ifndef DIAGNOSTIC_IGNORE_ENUM_CONSTEXPR_CONVERSION
++# define DIAGNOSTIC_IGNORE_ENUM_CONSTEXPR_CONVERSION
++#endif
++
+ #endif /* DIAGNOSTICS_H */
+-- 
+2.31.1
