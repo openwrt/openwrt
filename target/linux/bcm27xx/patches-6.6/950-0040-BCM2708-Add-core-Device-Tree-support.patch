@@ -558,8 +558,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  .../boot/dts/broadcom/bcm2710-rpi-zero-2.dts  |    1 +
  .../boot/dts/broadcom/bcm2711-rpi-cm4.dts     |    1 +
  .../boot/dts/broadcom/bcm2711-rpi-cm4s.dts    |    1 +
- .../dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi  |    1 +
- .../dts/broadcom/bcm283x-rpi-lan7515.dtsi     |    1 +
  arch/arm64/boot/dts/overlays                  |    1 +
  include/dt-bindings/gpio/gpio-fsm.h           |   21 +
  scripts/Makefile.dtbinst                      |    5 +-
@@ -910,8 +908,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  create mode 100644 arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2.dts
  create mode 100644 arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4.dts
  create mode 100644 arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
- create mode 120000 arch/arm64/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi
- create mode 120000 arch/arm64/boot/dts/broadcom/bcm283x-rpi-lan7515.dtsi
  create mode 120000 arch/arm64/boot/dts/overlays
  create mode 100644 include/dt-bindings/gpio/gpio-fsm.h
 
@@ -38522,22 +38518,6 @@ index 000000000000..c72d752e7400
 +++ b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2711-rpi-cm4s.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi b/arch/arm64/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi
-new file mode 120000
-index 000000000000..e5c400284467
---- /dev/null
-+++ b/arch/arm64/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi
-@@ -0,0 +1 @@
-+../../../../arm/boot/dts/bcm283x-rpi-csi1-2lane.dtsi
-\ No newline at end of file
-diff --git a/arch/arm64/boot/dts/broadcom/bcm283x-rpi-lan7515.dtsi b/arch/arm64/boot/dts/broadcom/bcm283x-rpi-lan7515.dtsi
-new file mode 120000
-index 000000000000..fc4c05bbe7fd
---- /dev/null
-+++ b/arch/arm64/boot/dts/broadcom/bcm283x-rpi-lan7515.dtsi
-@@ -0,0 +1 @@
-+../../../../arm/boot/dts/bcm283x-rpi-lan7515.dtsi
-\ No newline at end of file
 diff --git a/arch/arm64/boot/dts/overlays b/arch/arm64/boot/dts/overlays
 new file mode 120000
 index 000000000000..ded08646b6f6
