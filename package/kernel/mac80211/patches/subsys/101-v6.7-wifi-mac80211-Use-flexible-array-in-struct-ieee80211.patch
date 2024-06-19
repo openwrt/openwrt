@@ -1,0 +1,58 @@
+From 2ae5c9248e06dac2c2360be26b4e25f673238337 Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <quic_jjohnson@quicinc.com>
+Date: Thu, 31 Aug 2023 11:22:58 -0700
+Subject: [PATCH] wifi: mac80211: Use flexible array in struct ieee80211_tim_ie
+
+Currently struct ieee80211_tim_ie defines:
+	u8 virtual_map[1];
+
+Per the guidance in [1] change this to be a flexible array.
+
+Per the discussion in [2] wrap the virtual_map in a union with a u8
+item in order to preserve the existing expectation that the
+virtual_map must contain at least one octet (at least when used in a
+non-S1G PPDU). This means that no driver changes are required.
+
+[1] https://docs.kernel.org/process/deprecated.html#zero-length-and-one-element-arrays
+[2] https://lore.kernel.org/linux-wireless/202308301529.AC90A9EF98@keescook/
+
+Suggested-by: Kees Cook <keescook@chromium.org>
+Signed-off-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Reviewed-by: Kees Cook <keescook@chromium.org>
+Link: https://lore.kernel.org/r/20230831-ieee80211_tim_ie-v3-2-e10ff584ab5d@quicinc.com
+[add wifi prefix]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ include/linux/ieee80211.h | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -951,17 +951,24 @@ struct ieee80211_wide_bw_chansw_ie {
+  * @dtim_count: DTIM Count
+  * @dtim_period: DTIM Period
+  * @bitmap_ctrl: Bitmap Control
++ * @required_octet: "Syntatic sugar" to force the struct size to the
++ *                  minimum valid size when carried in a non-S1G PPDU
+  * @virtual_map: Partial Virtual Bitmap
+  *
+  * This structure represents the payload of the "TIM element" as
+- * described in IEEE Std 802.11-2020 section 9.4.2.5.
++ * described in IEEE Std 802.11-2020 section 9.4.2.5. Note that this
++ * definition is only applicable when the element is carried in a
++ * non-S1G PPDU. When the TIM is carried in an S1G PPDU, the Bitmap
++ * Control and Partial Virtual Bitmap may not be present.
+  */
+ struct ieee80211_tim_ie {
+ 	u8 dtim_count;
+ 	u8 dtim_period;
+ 	u8 bitmap_ctrl;
+-	/* variable size: 1 - 251 bytes */
+-	u8 virtual_map[1];
++	union {
++		u8 required_octet;
++		DECLARE_FLEX_ARRAY(u8, virtual_map);
++	};
+ } __packed;
+ 
+ /**
