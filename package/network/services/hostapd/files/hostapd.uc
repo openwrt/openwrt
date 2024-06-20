@@ -701,6 +701,14 @@ function iface_load_config(filename)
 			continue;
 		}
 
+		if (val[0] == "#uci_wps_psk_file") {
+			bss.uci_wps_psk_file = val[1];
+			continue;
+		}
+
+		if (val[0] == "wpa_psk_file")
+			bss.wpa_psk_file = val[1];
+
 		if (hostapd.data.file_fields[val[0]])
 			bss.hash[val[0]] = hostapd.sha1(readfile(val[1]));
 
@@ -882,6 +890,50 @@ function bss_event(type, name, data) {
 	ubus.call("service", "event", { type: `hostapd.${name}.${type}`, data: {} });
 }
 
+function add_station_wps_psk(iface, mac_addr, key) {
+	let wps_psk_file;
+	let iface_info = split(iface, "-", 2);
+	let wps_str = sprintf("wps=1 %s %s\n", mac_addr, key);
+
+	// Find the wps_psk_file for the iface
+	for (let bss in hostapd.data.config[iface_info[0]].bss) {
+		if (bss.ifname == iface) {
+			wps_psk_file = bss.uci_wps_psk_file;
+			break;
+		}
+	}
+	if (!wps_psk_file)
+		return null;
+
+	// Write the entry in the wps_psk_file
+	let f = open(wps_psk_file, "a");
+	if (!f)
+		return null;
+
+	f.write(wps_str);
+	f.close();
+
+	// Check if other bss share the same wps_psk_file and update
+	// their .psk file
+	for (let phy in hostapd.data.config) {
+		for (let bss in hostapd.data.config[phy].bss) {
+			if (bss.ifname == iface)
+				continue;
+
+			if (bss.uci_wps_psk_file == wps_psk_file) {
+				f = open(bss.wpa_psk_file, 'a');
+				f.write(wps_str);
+				f.close();
+
+				// Trigger reload PSK file
+				let ret = hostapd.bss[bss.ifname].ctrl("RELOAD_WPA_PSK");
+				if (ret == "failed")
+					hostapd.printf(`Reload WPA PSK file for bss ${config.ifname}: ${ret}`);
+			}
+		}
+	}
+}
+
 return {
 	shutdown: function() {
 		for (let phy in hostapd.data.config)
@@ -897,5 +949,8 @@ return {
 	},
 	bss_remove: function(name, obj) {
 		bss_event("remove", name);
+	},
+	station_wps_psk: function(iface, encryption, ssid, mac_addr, key) {
+		add_station_wps_psk(iface, mac_addr, key);
 	}
 };

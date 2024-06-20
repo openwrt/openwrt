@@ -304,7 +304,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
-	config_add_string wpa_psk_file
+	config_add_string wpa_psk_file wps_psk_file
 
 	config_add_int multi_ap
 
@@ -416,6 +416,14 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+hostapd_set_wps_psk() {
+	local ifname="$1"
+	local wps_psk_file="$2"
+
+	[ -f /etc/hostapd/${wps_psk_file} ] && \
+		cat /etc/hostapd/${wps_psk_file} >> /var/run/hostapd-${ifname}.psk
 }
 
 append_iw_roaming_consortium() {
@@ -672,7 +680,7 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk|sae|psk-sae)
-			json_get_vars key wpa_psk_file
+			json_get_vars key wpa_psk_file wps_psk_file
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -689,9 +697,13 @@ hostapd_set_bss_options() {
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
 			[ -n "$wpa_psk_file" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+				[ -e "$wpa_psk_file" ] || {
+					touch "$wpa_psk_file"
+					chown network:network "$wpa_psk_file"
+				}
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
+			[ -n "$wps_psk_file" ] && append bss_conf "#uci_wps_psk_file=/etc/hostapd/$wps_psk_file" "$N"
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
 			set_default dynamic_vlan 0
