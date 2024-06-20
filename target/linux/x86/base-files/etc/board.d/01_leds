@@ -16,11 +16,22 @@ pc-engines-apu1|pc-engines-apu2|pc-engines-apu3|pc-engines-apu4|pc-engines-apu5|
 	ucidef_set_led_netdev "lan" "LAN" "apu:green:2" "br-lan"
 	ucidef_set_led_default "diag" "DIAG" "apu:green:1" "1"
 	;;
-sophos-sg-105wr1|sophos-sg-125wr1|sophos-sg-135wr1|sophos-xg-105wr1|sophos-xg-125wr1|sophos-xg-135wr1)
+sophos-sg-105wr1|sophos-sg-115wr1|sophos-sg-125wr1|sophos-sg-135wr1| \
+sophos-xg-105wr1|sophos-xg-115wr1|sophos-xg-125wr1|sophos-xg-135wr1)
 	ucidef_set_led_netdev "wlan" "WiFi" "ath9k-phy0" "phy0tpt"
 	;;
-sophos-sg-105wr2|sophos-sg-125wr2|sophos-sg-135wr2|sophos-xg-105wr2|sophos-xg-125wr2|sophos-xg-135wr2|\
-sophos-sg-105wr3|sophos-sg-125wr3|sophos-sg-135wr3|sophos-xg-105wr3|sophos-xg-125wr3|sophos-xg-135wr3)
+sophos-sg-105wr2|sophos-sg-115wr2|sophos-sg-125wr2|sophos-sg-135wr2| \
+sophos-xg-105wr2|sophos-xg-115wr2|sophos-xg-125wr2|sophos-xg-135wr2)
+	ucidef_set_led_netdev "wlan" "WiFi" "ath10k-phy0" "phy0tpt"
+	;;
+sophos-sg-105wr3|sophos-sg-115wr3|sophos-sg-125wr3|sophos-sg-135wr3| \
+sophos-xg-105wr3|sophos-xg-115wr3|sophos-xg-125wr3|sophos-xg-135wr3)
+	ucidef_set_led_netdev "wlan" "WiFi" "ath10k-phy0" "phy0tpt"
+	;;
+sophos-xg-85wr1|sophos-xg-86wr1)
+	ucidef_set_led_netdev "wlan" "WiFi" "ath10k-phy0" "phy0tpt"
+	;;
+sophos-xg-106wr1|sophos-xg-116wr1)
 	ucidef_set_led_netdev "wlan" "WiFi" "ath10k-phy0" "phy0tpt"
 	;;
 traverse-technologies-geos)
