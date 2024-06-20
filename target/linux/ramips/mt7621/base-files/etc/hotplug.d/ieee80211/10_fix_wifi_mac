@@ -89,25 +89,11 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1 > /sys${DEVPATH}/macaddress
 		;;
-	h3c,tx1800-plus|\
-	h3c,tx1801-plus|\
-	h3c,tx1806)
-		addr=$(macaddr_setbit $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2) 7)
-		[ "$PHYNBR" = "0" ] && echo -n ${addr:0:9}'1'${addr:10:7} > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && echo -n ${addr:0:9}'7'${addr:10:7} > /sys${DEVPATH}/macaddress
-		;;
 	haier,har-20s2u1|\
 	jcg,y2|\
 	sim,simax1800t)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
-		;;
-	hiwifi,hc5962)
-		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
-		[ "$PHYNBR" = "0" ] && [ -n "$label_mac" ] && \
-		echo -n "$label_mac" > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && [ -n "$label_mac" ] && \
-		macaddr_unsetbit "$label_mac" 6 > /sys${DEVPATH}/macaddress
 		;;
 	iptime,a3002mesh|\
 	iptime,a3004t)

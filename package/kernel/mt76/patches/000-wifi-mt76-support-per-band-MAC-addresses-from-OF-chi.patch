@@ -1,0 +1,67 @@
+From 48792fe163fd35607cdc341f658d52ec8772b383 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 31 Jul 2023 23:24:06 +0100
+Subject: [PATCH] wifi: mt76: support per-band MAC addresses from OF child
+ nodes
+
+With dual-band-dual-congruent front-ends which appear as two independent
+radios it is desirable to assign a per-band MAC address from device-tree,
+eg. using nvmem-cells.
+Support specifying MAC-address related properties in band-specific child
+nodes, e.g.
+        wifi@0,0 {
+                reg = <0x0000 0 0 0 0>;
+                #addr-cells = <1>;
+                #size-cells = <0>;
+
+                band@0 {
+                        /* 2.4 GHz */
+                        reg = <0>;
+                        nvmem-cells = <&macaddr 2>;
+                        nvmem-cell-names = "mac-address";
+                };
+
+                band@1 {
+                        /* 5 GHz */
+                        reg = <1>;
+                        nvmem-cells = <&macaddr 3>;
+                        nvmem-cell-names = "mac-address";
+                };
+        };
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Tested-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ eeprom.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -163,9 +163,25 @@ void
+ mt76_eeprom_override(struct mt76_phy *phy)
+ {
+ 	struct mt76_dev *dev = phy->dev;
+-	struct device_node *np = dev->dev->of_node;
++	struct device_node *np = dev->dev->of_node, *band_np;
++	bool found_mac = false;
++	u32 reg;
++	int ret;
+ 
+-	of_get_mac_address(np, phy->macaddr);
++	for_each_child_of_node(np, band_np) {
++		ret = of_property_read_u32(band_np, "reg", &reg);
++		if (ret)
++			continue;
++
++		if (reg == phy->band_idx) {
++			found_mac = !of_get_mac_address(band_np, phy->macaddr);
++			of_node_put(band_np);
++			break;
++		}
++	}
++
++	if (!found_mac)
++		of_get_mac_address(np, phy->macaddr);
+ 
+ 	if (!is_valid_ether_addr(phy->macaddr)) {
+ 		eth_random_addr(phy->macaddr);

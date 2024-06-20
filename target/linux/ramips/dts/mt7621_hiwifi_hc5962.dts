@@ -9,6 +9,7 @@
 	model = "HiWiFi HC5962";
 
 	aliases {
+		label-mac-device = &gmac0;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_status;
@@ -116,6 +117,18 @@
 			label = "bdinfo";
 			reg = <0x21c0000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bdinfo_18a: macaddr@18a {
+					compatible = "mac-base";
+					reg = <0x18a 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		ubiconcat1: partition@2240000 {
@@ -130,27 +143,38 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		mac-address-bitwise-clear = <0x0400 0x00000000>;
 	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_bdinfo_18a 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_bdinfo_18a 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy4 {

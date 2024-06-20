@@ -8,6 +8,7 @@
 
 / {
 	aliases {
+		label-mac-device = &gmac1;
 		led-boot = &led_status_amber;
 		led-failsafe = &led_status_green;
 		led-running = &led_status_green;
@@ -52,10 +53,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy4 {
@@ -82,8 +91,21 @@
 		};
 
 		partition@80000 {
+			compatible = "fixed-partitions";
 			label = "u-boot-env";
 			reg = <0x0080000 0x0080000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "u-boot,env";
+				label = "env-data";
+				reg = <0x00000 0x20000>;
+
+				macaddr_ubootenv_ethaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@100000 {
@@ -139,9 +161,27 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
+		mediatek,disable-radar-background;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
-		mediatek,disable-radar-background;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_ubootenv_ethaddr 2>;
+			nvmem-cell-names = "mac-address";
+			mac-address-bitwise-clear = <0x0000 0x00f00000>;
+			mac-address-bitwise-set = <0x0200 0x00100000>;
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_ubootenv_ethaddr 2>;
+			nvmem-cell-names = "mac-address";
+			mac-address-bitwise-clear = <0x0000 0x00f00000>;
+			mac-address-bitwise-set = <0x0200 0x00700000>;
+		};
 	};
 };
 
