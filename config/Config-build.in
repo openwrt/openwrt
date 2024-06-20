@@ -114,6 +114,7 @@ menu "Global build settings"
 	config IPK_FILES_CHECKSUMS
 		bool
 		prompt "Record files checksums in package metadata"
+		depends on !USE_APK
 		help
 		  This makes file checksums part of package metadata. It increases size
 		  but provides you with pkg_check command to check for flash corruptions.
