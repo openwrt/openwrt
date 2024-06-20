@@ -54,6 +54,10 @@ platform_check_image() {
 	toradex,apalis_imx6q-ixora-v1.1)
 		return 0
 		;;
+	versalogic,imx6q-swordtail)
+		legacy_sdcard_check_image "$1"
+		return $?;
+		;;
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."
@@ -96,6 +100,9 @@ platform_do_upgrade() {
 	toradex,apalis_imx6q-ixora-v1.1)
 		imx_sdcard_do_upgrade "$1"
 		;;
+	versalogic,imx6q-swordtail)
+		legacy_sdcard_do_upgrade "$1"
+		;;
 	esac
 }
 
@@ -107,6 +114,9 @@ platform_copy_config() {
 	toradex,apalis_imx6q-ixora|\
 	toradex,apalis_imx6q-ixora-v1.1)
 		imx_sdcard_copy_config
+		;;
+	versalogic,imx6q-swordtail)
+		legacy_sdcard_copy_config
 		;;
 	esac
 }

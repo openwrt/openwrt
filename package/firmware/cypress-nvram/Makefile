@@ -18,6 +18,18 @@ define Build/Compile
 	true
 endef
 
+define Package/brcmfmac-nvram-43430-sdio-swordtail
+  $(Package/cypress-nvram-default)
+  TITLE:=BCM43430 SDIO NVRAM for Versalogic Swordtail
+endef
+
+define Package/brcmfmac-nvram-43430-sdio-swordtail/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(INSTALL_DATA) \
+		./files/brcmfmac43430-sdio.versalogic,imx6q-swordtail.txt \
+		$(1)/lib/firmware/brcm/
+endef
+
 # Cypress 4339 SDIO NVRAM
 define Package/cypress-nvram-4339-sdio
   $(Package/cypress-nvram-default)
@@ -35,4 +47,5 @@ define Package/cypress-nvram-4339-sdio/install
 		$(1)/lib/firmware/brcm/brcmfmac4339-sdio.technexion,imx7d-pico-pi.txt
 endef
 
+$(eval $(call BuildPackage,brcmfmac-nvram-43430-sdio-swordtail))
 $(eval $(call BuildPackage,cypress-nvram-4339-sdio))

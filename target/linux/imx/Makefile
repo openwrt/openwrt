@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=imx
 BOARDNAME:=NXP i.MX
-FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz nand ubifs boot-part rootfs-part
+FEATURES:=audio display fpu gpio legacy-sdcard pcie rtc usb usbgadget squashfs targz nand ubifs boot-part rootfs-part
 SUBTARGETS:=cortexa7 cortexa9 cortexa53
 
 KERNEL_PATCHVER:=6.1
