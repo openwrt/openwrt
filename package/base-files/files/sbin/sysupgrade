@@ -33,6 +33,7 @@ export SAVE_CONFIG=1
 export IGNORE_MINOR_COMPAT=0
 export FORCE=0
 export CONFFILES=/tmp/sysupgrade.conffiles
+export IGNOREFILES=/tmp/sysupgrade.ignore
 
 # parse options
 while [ -n "$1" ]; do
@@ -129,6 +130,24 @@ fi
 [ "$CONF_BACKUP" = "-" ] && export VERBOSE=0
 
 
+filter_exclusions() {
+	local path glob globs=
+
+	while read glob; do
+		globs="${globs:+$globs|}$glob"
+	done < "$IGNOREFILES"
+
+	while read path; do
+		eval "case \"${path##*/}\" in
+		$globs)
+			;;
+		*)
+			echo \"\$path\" ;;
+		esac
+		"
+	done
+}
+
 list_conffiles() {
 	if [ -f /usr/lib/opkg/status ]; then
 		awk '
@@ -147,16 +166,18 @@ list_conffiles() {
 }
 
 list_changed_conffiles() {
+	local file csum
+
 	# Cannot handle spaces in filenames - but opkg cannot either...
 	list_conffiles | while read file csum; do
 		[ -r "$file" ] || continue
 
-		echo "${csum}  ${file}" | busybox sha256sum -sc - || echo "$file"
+		echo "${csum} ${file}" | busybox sha256sum -sc - || echo "$file"
 	done
 }
 
 list_static_conffiles() {
-	local filter=$1
+	local filter="$1"
 
 	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
@@ -167,7 +188,8 @@ build_list_of_backup_config_files() {
 	local file="$1"
 
 	( list_static_conffiles "$find_filter"; list_changed_conffiles ) |
-		sort -u > "$file"
+		sort -u |
+		filter_exclusions > "$file"
 	return 0
 }
 
@@ -252,6 +274,10 @@ create_backup_archive() {
 		ask_bool 0 "Abort" && exit
 		return 0
 	}
+
+	sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
+		/etc/sysignore.conf /lib/upgrade/ignore.d/* > "$IGNOREFILES"
+
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
 
@@ -302,16 +328,19 @@ create_backup_archive() {
 		[ -f "$conf_tar" ] && rm -f "$conf_tar"
 	fi
 
-	rm -f "$CONFFILES"
+	rm -f "$CONFFILES" "$IGNOREFILES"
 
 	return "$err"
 }
 
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
+	sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
+		/etc/sysignore.conf /lib/upgrade/ignore.d/* > "$IGNOREFILES"
+
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	[ "$SAVE_INSTALLED_PKGS" -eq 1 ] && echo ${INSTALLED_PACKAGES} >> "$CONFFILES"
 	cat "$CONFFILES"
-	rm -f "$CONFFILES"
+	rm -f "$CONFFILES" "$IGNOREFILES"
 	exit 0
 fi
 
