@@ -1,0 +1,29 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath10k/cal-pci-0000:00:00.0.bin")
+	case $board in
+	esac
+	;;
+"ath10k/cal-pci-0000:01:00.0.bin")
+	case $board in
+	edimax,ew-7476hpc-16m)
+		caldata_extract "art" 0x0 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary factory 0x4) +1)
+		;;
+	esac
+	;;
+"ath10k/pre-cal-pci-0000:00:00.0.bin")
+	case $board in
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

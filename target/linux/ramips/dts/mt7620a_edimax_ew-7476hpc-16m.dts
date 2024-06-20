@@ -1,0 +1,184 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "edimax,ew-7476hpc-16m", "ralink,mt7620a-soc";
+	model = "Edimax EW-7476HPC (CAP1200, 16M)";
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan2g {
+			label = "blue:wlan2g";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g {
+			label = "yellow:wlan5g";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
+	};
+	
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x0>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <41600000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+			
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x8000>;
+				read-only;
+			};
+
+			art: partition@48000 {
+				label = "art";
+				reg = <0x48000 0x8000>;
+				read-only;
+			};
+
+			fwconcat0: partition@50000 {
+				label = "fwconcat0";
+				reg = <0x50000 0x179000>;
+			};
+			
+			fwconcat1: partition@1c9000 {
+				label = "fwconcat1";
+				reg = <0x1c9000 0xb11000>;
+			};
+			
+			partition@cda000 {
+				label = "nms_data";
+				reg = <0xcda000 0x200000>;
+			};
+
+			partition@eda000 {
+				label = "manufacture";
+				reg = <0xeda000 0x96000>;
+			};
+
+			partition@f70000 {
+				label = "backup";
+				reg = <0xf70000 0x10000>;
+			};
+
+			fwconcat2: partition@f80000 {
+				label = "fwconcat2";
+				reg = <0xf80000 0x80000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf";
+		function = "gpio";
+	};
+};
+
+&pinctrl {
+	phy_reset_pins: phy-reset {
+		gpio {
+			groups = "spi refclk";
+			function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &mdio_pins &phy_reset_pins>;
+
+	mtd-mac-address = <&factory 0x4>;
+
+	mediatek,mdio-mode = <1>;
+
+	port@5 {
+		status = "okay";
+		mediatek,fixed-link = <1000 1 1 1>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+	};
+};
+
+&gsw {
+	mediatek,port5 = "gmac";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0x0>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&art 0x0>;
+		mediatek,2ghz = <0>;
+	};
+};
