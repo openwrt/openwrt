@@ -1,0 +1,176 @@
+# To-do:
+
+# Use config_foreach for mapping information to variables.
+# Create a new function for printing the new config using the variables.
+
+# ---
+
+# - Add every DSA interface under "option device" with "list ports".
+
+# - If the CPU port doesn't exist on a switch_vlan, "local option '0'" must be issued for that bridge-vlan.
+
+# - Increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
+
+# - Check for tagged/untagged status for CPU ports which are not defined on DSA binding as well.
+# Therefore set "local option '0'" if it's anything other than tagged.
+# This is just minor a inconvinience. There will be just an unused brX.X interface since the local option won't be disabled.
+
+# - Change ethX.X interfaces on the old config to the bridge interface.
+# There can be multiple CPU ports set as tagged on a single VLAN.
+# In that case, there will be multiple br0.1 interfaces after converting eth0.1, eth1.1, etc. to bridge interface.
+# Check to make sure we don't have duplicate bridge interfaces.
+
+# - Support multiple switch configuration.
+#   - Create a bridge per switch?
+#   - Create a single bridge and put all DSA interfaces of multiple switches on it?
+#   - Check Linksys EA9500 on OpenWrt 19.07. See how multiple switches are configured with swconfig.
+
+# Along with the migration script, increment the image version for specific (sub)targets and make these warnings on the info section for image version mismatch.
+
+# This update automatically converts swconfig configuration to DSA with bridge VLAN filtering.
+# Before updating, read below to make ready your current configuration.
+
+# DO NOT USE UNTAGGED FOR CPU PORTS
+# UCI doesn't support untagged CPU ports on Bridge VLAN filtering. You'd have to manually associate the VLAN to the bridge interface as untagged with the bridge(8) tool.
+
+# DO NOT USE MULTIPLE TAGGED CPU PORTS ON A SINGLE VLAN
+# DSA uses only one CPU port, you cannot have multiple networks on the same VLAN using multiple ethX.X interfaces anymore.
+
+findDSASwitch()
+{
+	echo "config device"
+	echo -e "\toption type 'bridge'"
+	# Hardcode bridge interface name for now.
+	bridgeInterface=br0
+	echo -e "\toption name '$bridgeInterface'"
+	echo -e "\tlist ports ''"
+}
+
+findDSAInterfaces()
+# Read old UCI config with swconfig options.
+{
+	# echo "ports = ${ports}"
+	# echo "vlan = ${vlan}"
+	# echo "$device"
+
+	echo "config bridge-vlan"
+	echo -e "\toption device '$bridgeInterface'"
+	echo -e "\toption vlan '$vlan'"
+
+	for port in ${ports}; do
+		if [[ ! -z "$port" ]]; then
+			# swconfig configuration can either have a number or a number with "t" next to it.
+			case $port in
+				*t)
+					# echo "tagged_port = ${port%.t}"
+					# string manipulation (substring removal) %*t prints before "t".
+					# Feed this to findPorts with "t" removed.
+					tag_type="tagged"
+					# echo $(echo "list ports" && findPorts ${port%*t} "tagged")
+					;;
+				*)
+					tag_type="untagged"
+					#echo "port = ${port}"
+					#test = $(findPorts ${port} "untagged")
+					#echo $(echo "list ports" && findPorts ${port} "untagged")
+					;;
+			esac
+
+			is_valid=$(findPorts ${port%*t} "$tag_type")
+
+			if [[ ! -z "$is_valid" ]]; then
+				if [[ ! -z "$(echo $is_valid | grep "cpu_port")" ]]; then
+					if [[ -z "$(echo $is_valid | grep "cpu_port tagged")" ]]; then
+						echo -e "\toption local '0'"
+					fi
+				else
+					echo -e "\tlist ports" "'$is_valid'"
+				fi
+			fi
+		fi
+	done
+}
+
+findPorts()
+# Differentiate ports between user and cpu ports. Display DSA interface name of user ports.
+# Check compiled devicetree to do this.
+{
+	local port=$1
+	local tag_type=$2
+
+	# Find the path for the DSA bindings on the devicetree.
+	# Automatically find the directory for "ethernet-port@" or "port@" in "/proc/device-tree/".
+	# Refer to dsa.yaml.
+	dsa_dt_path=$(find /proc/device-tree/ -name "*port@*" | head -1)
+	dsa_dt_path=$(echo "$dsa_dt_path" | sed 's/ethernet-port@.*$\|port@.*$//g')
+
+	# Some ports may be missing from DSA bindings, it's always another CPU port.
+	# These must be treated as CPU ports along with the ones on the second check.
+	if [[ ! -d "${dsa_dt_path}port@${port}" ]]; then
+		undefined_cpu_ports=$(echo "$port")
+		return
+	fi
+
+	# Check if ethernet property exists, to find CPU ports. Only CPU ports use this property.
+	if [[ -f "${dsa_dt_path}port@${port}/ethernet" ]]; then
+		all_cpu_ports=$(echo "$undefined_cpu_ports" "$port")
+
+		# This checks for tagged/untagged status of the CPU ports.
+		# Move this part to somewhere else where it takes CPU port information from both checks.
+		if [ "$tag_type" == "untagged" ]; then
+			echo "${port} = cpu_port untagged"
+		else
+			echo "${port} = cpu_port tagged"
+		fi
+
+	# Anything else must be a user port.
+	else
+		# echo "${port} = user_port"
+		for user_port in ${port}; do
+			if [[ ! -z "$user_port" ]]; then
+				# echo "$tag_type $user_port"
+				# Print the name of the DSA interface.
+				if [ "$tag_type" == "tagged" ]; then
+					echo "$(cat ${dsa_dt_path}port@${user_port}/label):t"
+				else
+					echo "$(cat ${dsa_dt_path}port@${user_port}/label)"
+				fi
+			fi
+		done
+	fi
+}
+
+#print_new_config()
+#{
+#}
+
+validate_section_switch()
+# Take sections in switch option from UCI.
+{
+	uci_load_validate network-test switch "$1" "$2" \
+		'name:string'
+}
+
+validate_section_switch_vlan()
+# Take sections in switch_vlan option from UCI.
+{
+	uci_load_validate network-test switch_vlan "$1" "$2" \
+		'device:string' \
+		'vlan:uinteger' \
+		'ports:string'
+}
+
+validate_section_device()
+# Take sections in device option from UCI.
+{
+	uci_load_validate network-test device "$1" "$2" \
+		'ifname:string'
+}
+
+	. /lib/functions.sh
+	. /lib/functions/procd.sh
+
+	config_load "network-test"
+	config_foreach validate_section_switch switch findDSASwitch
+	config_foreach validate_section_switch_vlan switch_vlan findDSAInterfaces
+	# config_foreach validate_section_device device replaceToBridgeInterface
