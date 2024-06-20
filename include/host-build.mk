@@ -110,11 +110,11 @@ define Host/Compile/Default
 endef
 
 define Host/Compile
-  $(call Host/Compile/Default)
+  $(call Host/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))'))
 endef
 
 define Host/Install/Default
-	$(call Host/Compile/Default,install)
+  $(call Host/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))') install)
 endef
 
 define Host/Install
