@@ -32,6 +32,7 @@ $valid_mk or die "Unsupported version of make found: $mk\n";
 my @feeds;
 my %build_packages;
 my %installed;
+my %installed_over;
 my %installed_pkg;
 my %installed_targets;
 my %feed_cache;
@@ -273,6 +274,7 @@ sub get_installed() {
 	parse_package_metadata("./tmp/.packageinfo");
 	%installed_pkg = %vpackage;
 	%installed = %srcpackage;
+	%installed_over = %overrides;
 	%installed_targets = get_targets("./tmp/.targetinfo");
 }
 
@@ -557,7 +559,7 @@ sub install_src {
 	my $override = 0;
 	if (is_core_src($name)) {
 		if (!$force) {
-			if ($name ne "toolchain" && $name ne "linux") {
+			if ($name ne "toolchain" && $name ne "linux" && !$installed_over{$name}) {
 				warn "WARNING: Not overriding core package '$name'; use -f to force\n";
 			}
 			return 0;
@@ -579,6 +581,7 @@ sub install_src {
 	}
 
 	if ($override) {
+		$installed_over{$name} = 1;
 		warn "Overriding core package '$name' with version from $select_feed->[1]\n";
 	} else {
 		warn "Installing package '$name' from $select_feed->[1]\n";
