@@ -40,6 +40,27 @@ network_get_ipaddr6() {
 		return 1
 }
 
+# determine the most preferred IPv6 address of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_preferred_ipaddr6() {
+	local __tmp_options __tmp_option __tmp_best_ip="" __tmp_best_score=0 __tmp_current_ip __tmp_current_score
+
+	__network_ifstatus __tmp_options $2 "['ipv6-address'][*]['address','preferred']" "P " || return 1
+
+	for __tmp_option in $__tmp_options; do
+		__tmp_current_score="${__tmp_option##*P}"
+		__tmp_current_ip="${__tmp_option%%P*}"
+
+		if [ "$__tmp_current_score" -gt "$__tmp_best_score" ] || [ -z "$__tmp_current_ip" ]; then
+			__tmp_best_score="$__tmp_current_score"
+			__tmp_best_ip="$__tmp_current_ip"
+		fi
+	done
+
+	export "$1=$__tmp_best_ip"
+}
+
 # determine first IPv4 subnet of given logical interface
 # 1: destination variable
 # 2: interface
