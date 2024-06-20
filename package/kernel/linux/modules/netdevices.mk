@@ -1439,85 +1439,28 @@ endef
 $(eval $(call KernelPackage,mlxfw))
 
 
-define KernelPackage/mlxsw-core
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Mellanox Technologies Switch ASICs support
-  DEPENDS:=+kmod-mlxfw +kmod-hwmon-core
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_core.ko
-  KCONFIG:= \
-  CONFIG_MLXSW_CORE \
-  CONFIG_MLXSW_CORE_HWMON=y \
-  CONFIG_MLXSW_CORE_THERMAL=y
-  AUTOLOAD:=$(call AutoProbe,mlxsw_core)
-endef
-
-define KernelPackage/mlxsw-core/description
-  This driver supports Mellanox Technologies Switch ASICs family.
-endef
-
-$(eval $(call KernelPackage,mlxsw-core))
-
-
-define KernelPackage/mlxsw-i2c
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=I2C bus implementation for Mellanox Technologies Switch ASICs
-  DEPENDS:=+kmod-mlxsw-core +kmod-i2c-core
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_i2c.ko
-  KCONFIG:=CONFIG_MLXSW_I2C
-  AUTOLOAD:=$(call AutoProbe,mlxsw_i2c)
-endef
-
-define KernelPackage/mlxsw-i2c/description
-  This is I2C bus implementation for Mellanox Technologies Switch ASICs.
-endef
-
-$(eval $(call KernelPackage,mlxsw-i2c))
-
-
-define KernelPackage/mlxsw-minimal
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Mellanox Technologies minimal I2C support
-  DEPENDS:=+kmod-mlxsw-core +kmod-mlxsw-i2c
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_minimal.ko
-  KCONFIG:=CONFIG_MLXSW_MINIMAL
-  AUTOLOAD:=$(call AutoProbe,mlxsw_minimal)
-endef
-
-define KernelPackage/mlxsw-minimal/description
-  This driver supports I2C access for Mellanox Technologies Switch
-  ASICs.
-endef
-
-$(eval $(call KernelPackage,mlxsw-minimal))
-
-
-define KernelPackage/mlxsw-pci
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=PCI bus implementation for Mellanox Technologies Switch ASICs
-  DEPENDS:=@PCI_SUPPORT +kmod-mlxsw-core
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_pci.ko
-  KCONFIG:=CONFIG_MLXSW_PCI
-  AUTOLOAD:=$(call AutoProbe,mlxsw_pci)
-endef
-
-define KernelPackage/mlxsw-pci/description
-  This is PCI bus implementation for Mellanox Technologies Switch ASICs.
-endef
-
-$(eval $(call KernelPackage,mlxsw-pci))
-
-
 define KernelPackage/mlxsw-spectrum
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Mellanox Technologies Spectrum family support
-  DEPENDS:= \
-  +kmod-mlxsw-core +kmod-mlxsw-pci +kmod-lib-objagg +kmod-lib-parman \
+  DEPENDS:=@TARGET_x86_64 @PCI_SUPPORT \
+  +kmod-mlxfw +kmod-lib-objagg +kmod-lib-parman \
   +kmod-ip6-tunnel +kmod-ptp +kmod-sched-act-sample +kmod-vxlan
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_spectrum.ko
+  FILES:= \
+  $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_core.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_i2c.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_pci.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_minimal.ko \
+  $(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_spectrum.ko
   KCONFIG:= \
+  CONFIG_MLXSW_CORE \
+  CONFIG_MLXSW_CORE_HWMON=y \
+  CONFIG_MLXSW_CORE_THERMAL=y \
+  CONFIG_MLXSW_I2C \
+  CONFIG_MLXSW_PCI \
+  CONFIG_MLXSW_MINIMAL \
   CONFIG_MLXSW_SPECTRUM \
-  CONFIG_NET_SWITCHDEV=y \
   CONFIG_MLXSW_SPECTRUM_DCB=y \
+  CONFIG_NET_SWITCHDEV=y \
   CONFIG_DCB=y \
   CONFIG_AMD_XGBE_DCB=n \
   CONFIG_IXGBE_DCB=n \
