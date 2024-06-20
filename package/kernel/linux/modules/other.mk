@@ -43,7 +43,13 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIBTUSB_MTK=y \
 	CONFIG_BT_HCIBTUSB_RTL=y \
 	CONFIG_BT_HCIUART \
-	CONFIG_BT_HCIUART_BCM=n \
+	CONFIG_BT_HCIUART_BCM=y \
+	CONFIG_BT_HCIUART_SERDEV=y \
+	CONFIG_SERIAL_DEV_CTRL_TTYPORT=y \
+	CONFIG_SERIAL_DEV_BUS=y \
+	CONFIG_RAVE_SP_CORE=n \
+	CONFIG_MFD_IEI_WT61P803_PUZZLE=n \
+	CONFIG_X86_ANDROID_TABLETS=n \
 	CONFIG_BT_HCIUART_INTEL=n \
 	CONFIG_BT_HCIUART_H4 \
 	CONFIG_BT_HCIUART_NOKIA=n \
@@ -58,6 +64,7 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btintel.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btbcm.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btmtk.ko@ge5.17
   AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
