@@ -225,6 +225,10 @@ append_interface_name() {
 	xappend "--interface-name=$1,$2"
 }
 
+append_tag_if() {
+        xappend "--tag-if=$1"
+}
+
 filter_dnsmasq() {
 	local cfg="$1" func="$2" match_cfg="$3" found_cfg
 
@@ -1032,6 +1036,7 @@ dnsmasq_start()
 	append_parm "$cfg" "pxe_prompt" "--pxe-prompt"
 	append_parm "$cfg" "tftp_unique_root" "--tftp-unique-root"
 	config_list_foreach "$cfg" "pxe_service" append_pxe_service
+        config_list_foreach "$cfg" "tag_if" append_tag_if
 	config_get DOMAIN "$cfg" domain
 
 	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
