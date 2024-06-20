@@ -343,7 +343,7 @@ endef
 
 Build/Prepare=$(call Build/Prepare/Default,)
 Build/Configure=$(call Build/Configure/Default,)
-Build/Compile=$(call Build/Compile/Default,)
+Build/Compile=$(call Build/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))'))
 Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
 Build/Dist=$(call Build/Dist/Default,)
 Build/DistCheck=$(call Build/DistCheck/Default,)
