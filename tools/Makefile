@@ -144,11 +144,11 @@ else
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
 endif
 
-ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
+ifneq ($(CONFIG_CCACHE),)
 $(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
-tools-y += ccache
-$(curdir)/ccache/compile := $(curdir)/cmake/compile
 endif
+tools-$(if $(CONFIG_CCACHE)$(CONFIG_SDK),y) += ccache
+$(curdir)/ccache/compile := $(curdir)/cmake/compile
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
