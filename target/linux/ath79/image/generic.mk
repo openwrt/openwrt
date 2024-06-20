@@ -658,6 +658,14 @@ define Device/belkin_f9k1115-v2
 endef
 TARGET_DEVICES += belkin_f9k1115-v2
 
+define Device/belkin_f9k1119-v1
+  $(Device/belkin_f9x-v1)
+  DEVICE_MODEL := F9K1119 v1 (AC1600 DB Wi-Fi)
+  EDIMAX_HEADER_MAGIC := eDiMaXsUpEr
+  EDIMAX_HEADER_MODEL := F9K1119V1
+endef
+TARGET_DEVICES += belkin_f9k1119-v1
+
 define Device/buffalo_bhr-4grv
   $(Device/buffalo_common)
   SOC := ar7242
