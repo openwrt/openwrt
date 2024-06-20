@@ -226,6 +226,15 @@ endif
 
 	$(RSTRIP) $$(IDIR_$(1))
 
+    ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
+	(cd $$(IDIR_$(1)); \
+		( \
+			find . -type f \! -path ./CONTROL/\* -exec $(MKHASH) sha256 -n \{\} \; 2> /dev/null | \
+			sed 's|\([[:blank:]]\)\./| \1/|' > $$(IDIR_$(1))/CONTROL/files-sha256sum \
+		) || true \
+	)
+    endif
+
     ifneq ($$(KEEP_$(1)),)
 		@( \
 			keepfiles=""; \
@@ -319,10 +328,6 @@ else
 		done; \
 		rm -rf $$(IDIR_$(1))/CONTROL/conffiles; \
 	fi
-
-    ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
-	if [ -f $$(IDIR_$(1))/CONTROL/files-sha256sum ]; then mv -f $$(IDIR_$(1))/CONTROL/files-sha256sum $$(IDIR_$(1))/lib/apk/packages/$(1).files-sha256sum; fi
-    endif
 
 	if [ -z "$$$$(ls -A $$(IDIR_$(1))/CONTROL 2>/dev/null)" ]; then \
 		rm -rf $$(IDIR_$(1))/CONTROL; \
