@@ -249,6 +249,16 @@ menu "Global build settings"
 
 	comment "Hardening build options"
 
+	config PKG_FANALYZER
+		bool
+		prompt "Enable gcc fanalyzer"
+		depends on GCC_USE_VERSION_13
+		default n
+		help
+		  Add -fanalyzer to the CFLAGS. As a result of this option, a static analysis
+		  of the program flow is conducted, allowing interprocedural paths to be
+		  identified and warnings to be issued if problems are identified.
+
 	config PKG_CHECK_FORMAT_SECURITY
 		bool
 		prompt "Enable gcc format-security"
