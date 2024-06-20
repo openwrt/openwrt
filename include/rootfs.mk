@@ -71,6 +71,47 @@ ifdef CONFIG_CLEAN_IPKG
   endef
 endif
 
+ifdef CONFIG_TARGET_ROOTFS_COMP_FW
+  COMPRESS_XZ=$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -v -9e --check=crc32
+  COMPRESS_ZSTD=$(STAGING_DIR_HOST)/bin/zstd -T$(if $(filter 1,$(NPROC)),2,1) -v --ultra -22 --rm --
+  ifdef CONFIG_TARGET_ROOTFS_COMP_FW_XZ
+    define compress_firmware
+	@( \
+		cd $(1); \
+		for file in $$(find ./lib/firmware -type f -and -not -name 'regulatory.db'); do \
+			$(COMPRESS_XZ) $$file; \
+		done || true \
+	)
+    endef
+  endif
+  ifdef CONFIG_TARGET_ROOTFS_COMP_FW_ZSTD
+    define compress_firmware
+	@( \
+		cd $(1); \
+		for file in $$(find ./lib/firmware -type f -and -not -name 'regulatory.db'); do \
+			$(COMPRESS_ZSTD) $$file; \
+		done || true \
+	)
+    endef
+  endif
+  ifdef CONFIG_TARGET_ROOTFS_COMP_FW_SMALLEST
+    define compress_firmware
+	@( \
+		cd $(1); \
+		for file in $$(find ./lib/firmware -type f -and -not -name 'regulatory.db'); do \
+			$(COMPRESS_XZ) --keep $$file; \
+			$(COMPRESS_ZSTD) $$file; \
+			if [ $$(cat $${file}.xz | wc -c) -lt $$(cat $${file}.zst | wc -c) ]; then \
+				rm -vf $${file}.zst; \
+			else \
+				rm -vf $${file}.xz; \
+			fi; \
+		done || true \
+	)
+    endef
+  endif
+endif
+
 define prepare_rootfs
 	$(if $(2),@if [ -d '$(2)' ]; then \
 		$(call file_copy,$(2)/.,$(1)); \
@@ -124,5 +165,6 @@ define prepare_rootfs
 		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
+	$(call compress_firmware,$(1))
 	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
 endef

@@ -99,6 +99,14 @@ define Kernel/SetNoInitramfs
 	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUX_DIR)/.config.set
 endef
 
+define Kernel/Configure/FirmwareCompression
+	mv $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.old
+	grep -Ev 'CONFIG_FW_LOADER_COMPRESS' $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config.set || /bin/true
+	echo "$(if $(CONFIG_TARGET_ROOTFS_COMP_FW),CONFIG_FW_LOADER_COMPRESS=y,# CONFIG_FW_LOADER_COMPRESS is not set)" >> $(LINUX_DIR)/.config.set
+	echo "$(if $(CONFIG_TARGET_ROOTFS_COMP_FW_SMALLEST)$(CONFIG_TARGET_ROOTFS_COMP_FW_XZ),CONFIG_FW_LOADER_COMPRESS_XZ=y,# CONFIG_FW_LOADER_COMPRESS_XZ is not set)" >> $(LINUX_DIR)/.config.set
+	echo "$(if $(CONFIG_TARGET_ROOTFS_COMP_FW_SMALLEST)$(CONFIG_TARGET_ROOTFS_COMP_FW_ZSTD),CONFIG_FW_LOADER_COMPRESS_ZSTD=y,# CONFIG_FW_LOADER_COMPRESS_ZSTD is not set)" >> $(LINUX_DIR)/.config.set
+endef
+
 define Kernel/Configure/Default
 	rm -f $(LINUX_DIR)/localversion
 	$(LINUX_CONF_CMD) > $(LINUX_DIR)/.config.target
@@ -110,6 +118,7 @@ define Kernel/Configure/Default
 	$(SCRIPT_DIR)/package-metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config $(KERNEL_PATCHVER) > $(LINUX_DIR)/.config.override
 	$(SCRIPT_DIR)/kconfig.pl 'm+' '+' $(LINUX_DIR)/.config.target /dev/null $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config.set
 	$(call Kernel/SetNoInitramfs)
+	$(call Kernel/Configure/FirmwareCompression)
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	cmp -s $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev || { \
 		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config; \
