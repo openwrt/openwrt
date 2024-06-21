@@ -37,6 +37,19 @@ define Device/netgear_wax214
 endef
 TARGET_DEVICES += netgear_wax214
 
+define Device/qihoo_360v6
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Qihoo
+	DEVICE_MODEL := 360V6
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6000
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	DEVICE_PACKAGES := ipq-wifi-qihoo_360v6
+endef
+TARGET_DEVICES += qihoo_360v6
+
 define Device/yuncore_fap650
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

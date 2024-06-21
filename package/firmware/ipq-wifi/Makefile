@@ -49,6 +49,7 @@ ALLWIFIBOARDS:= \
 	netgear_wax620 \
 	netgear_wax630 \
 	prpl_haze \
+	qihoo_360v6 \
 	qnap_301w \
 	redmi_ax6 \
 	skspruce_wia3300-20 \
@@ -175,6 +176,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
+$(eval $(call generate-ipq-wifi-package,qihoo_360v6,Qihoo 360V6))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
