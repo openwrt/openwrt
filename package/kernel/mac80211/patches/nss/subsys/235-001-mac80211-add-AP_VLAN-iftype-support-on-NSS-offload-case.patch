@@ -21,7 +21,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -5100,6 +5100,17 @@ void ieee80211_sta_pspoll(struct ieee802
+@@ -5105,6 +5105,17 @@ void ieee80211_sta_pspoll(struct ieee802
   */
  void ieee80211_sta_uapsd_trigger(struct ieee80211_sta *sta, u8 tid);
  
@@ -137,23 +137,21 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4298,8 +4298,13 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4307,8 +4307,11 @@ void __ieee80211_subif_start_xmit(struct
  		sta = NULL;
  
-         if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
--                ap_sdata = container_of(sdata->bss,
--                                        struct ieee80211_sub_if_data, u.ap);
-+                if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD))
-+                        ap_sdata = container_of(sdata->bss,
-+                                                struct ieee80211_sub_if_data,
-+                                                u.ap);
-+                else
-+                        ap_sdata = sdata;
-+
-                 if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
-                     !is_multicast_ether_addr(skb->data)) {
-                         if (sta)
-@@ -4689,7 +4694,8 @@ static void ieee80211_8023_xmit(struct i
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
+-		ap_sdata = container_of(sdata->bss,
+-					struct ieee80211_sub_if_data, u.ap);
++		if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD))
++			ap_sdata = container_of(
++				sdata->bss, struct ieee80211_sub_if_data, u.ap);
++		else
++			ap_sdata = sdata;
+ 		if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
+ 		    !is_multicast_ether_addr(skb->data)) {
+ 			if (sta)
+@@ -4698,7 +4701,8 @@ static void ieee80211_8023_xmit(struct i
  
  	info->hw_queue = sdata->vif.hw_queue[queue];
  

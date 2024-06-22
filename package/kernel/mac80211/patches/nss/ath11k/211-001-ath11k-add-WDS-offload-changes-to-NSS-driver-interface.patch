@@ -327,7 +327,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		dev_kfree_skb_any(skb);
  		return;
  	}
-@@ -1321,7 +1546,7 @@ void ath11k_nss_update_sta_rxrate(struct
+@@ -1324,7 +1549,7 @@ void ath11k_nss_update_sta_rxrate(struct
  	peer->nss.nss_stats->rxrate.bw = ath11k_mac_bw_to_mac80211_bw(ppdu_info->bw);
  }
  
@@ -336,7 +336,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  {
  	struct nss_wifili_peer_msg *peer_msg;
  	struct nss_wifili_msg *wlmsg = NULL;
-@@ -1335,9 +1560,10 @@ int ath11k_nss_peer_delete(struct ath11k
+@@ -1338,9 +1563,10 @@ int ath11k_nss_peer_delete(struct ath11k
  
  	spin_lock_bh(&ab->base_lock);
  
@@ -349,7 +349,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		spin_unlock_bh(&ab->base_lock);
  		return -EINVAL;
  	}
-@@ -1410,8 +1636,9 @@ free_peer:
+@@ -1413,8 +1639,9 @@ free_peer:
  	return ret;
  }
  
@@ -360,7 +360,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	struct nss_wifili_peer_msg *peer_msg;
  	struct nss_wifili_msg *wlmsg = NULL;
  	nss_wifili_msg_callback_t msg_cb;
-@@ -1468,17 +1695,23 @@ int ath11k_nss_peer_create(struct ath11k
+@@ -1471,17 +1698,23 @@ int ath11k_nss_peer_create(struct ath11k
  	status = nss_wifili_tx_msg(ab->nss.ctx, wlmsg);
  	if (status != NSS_TX_SUCCESS) {
  		ret = -EINVAL;
@@ -387,7 +387,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	peer->nss.nss_stats = kzalloc(sizeof(*peer->nss.nss_stats), GFP_ATOMIC);
  	if (!peer->nss.nss_stats) {
  		ret = -ENOMEM;
-@@ -1497,6 +1730,199 @@ msg_free:
+@@ -1500,6 +1733,199 @@ msg_free:
  	return ret;
  }
  
@@ -587,7 +587,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /*-------------------------------INIT/DEINIT---------------------------------*/
  
  static int ath11k_nss_radio_buf_cfg(struct ath11k *ar, int range, int buf_sz)
-@@ -1890,7 +2316,7 @@ static int ath11k_nss_init(struct ath11k
+@@ -1893,7 +2319,7 @@ static int ath11k_nss_init(struct ath11k
  
  	status = nss_wifili_tx_msg(nss_contex, wlmsg);
  	if (status != NSS_TX_SUCCESS) {
@@ -596,7 +596,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		goto unregister;
  	}
  
-@@ -1944,7 +2370,8 @@ static int ath11k_nss_stats_cfg(struct a
+@@ -1947,7 +2373,8 @@ static int ath11k_nss_stats_cfg(struct a
  
  	status = nss_wifili_tx_msg(ar->nss.ctx, wlmsg);
  	if (status != NSS_TX_SUCCESS) {

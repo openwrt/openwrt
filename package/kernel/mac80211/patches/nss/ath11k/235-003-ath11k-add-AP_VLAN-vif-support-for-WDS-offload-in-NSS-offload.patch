@@ -542,7 +542,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
  		spin_unlock_bh(&ab->base_lock);
  		rcu_read_unlock();
-@@ -997,6 +1003,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
+@@ -1000,6 +1006,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
  	case ATH11K_NSS_WIFI_VDEV_DECAP_TYPE_CMD:
  		cmd = NSS_WIFI_VDEV_DECAP_TYPE_CMD;
  		break;

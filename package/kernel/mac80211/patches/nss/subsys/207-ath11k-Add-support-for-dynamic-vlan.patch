@@ -42,18 +42,18 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	if (IS_ERR(sta))
  		sta = NULL;
  
-+        if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
-+                ap_sdata = container_of(sdata->bss,
-+                                        struct ieee80211_sub_if_data, u.ap);
-+                if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
-+                    !is_multicast_ether_addr(skb->data)) {
-+                        if (sta)
-+                                key = rcu_dereference(sta->ptk[sta->ptk_idx]);
-+                        ieee80211_8023_xmit(sdata, dev, sta, key, skb);
-+                        rcu_read_unlock();
-+                        return;
-+                }
-+        }
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
++		ap_sdata = container_of(sdata->bss,
++					struct ieee80211_sub_if_data, u.ap);
++		if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
++		    !is_multicast_ether_addr(skb->data)) {
++			if (sta)
++				key = rcu_dereference(sta->ptk[sta->ptk_idx]);
++			ieee80211_8023_xmit(sdata, dev, sta, key, skb);
++			rcu_read_unlock();
++			return;
++		}
++	}
 +
  	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
  	ieee80211_aggr_check(sdata, sta, skb);

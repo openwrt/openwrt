@@ -53,7 +53,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  /**
-@@ -1410,7 +1426,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1413,7 +1429,7 @@ ieee80211_tx_info_clear_status(struct ie
   * @RX_FLAG_AMPDU_EOF_BIT_KNOWN: The EOF value is known
   * @RX_FLAG_RADIOTAP_HE: HE radiotap data is present
   *	(&struct ieee80211_radiotap_he, mac80211 will fill in
@@ -62,7 +62,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	 - DATA3_DATA_MCS
   *	 - DATA3_DATA_DCM
   *	 - DATA3_CODING
-@@ -1418,7 +1434,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1421,7 +1437,7 @@ ieee80211_tx_info_clear_status(struct ie
   *	 - DATA5_DATA_BW_RU_ALLOC
   *	 - DATA6_NSTS
   *	 - DATA3_STBC
@@ -71,7 +71,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	from the RX info data, so leave those zeroed when building this data)
   * @RX_FLAG_RADIOTAP_HE_MU: HE MU radiotap data is present
   *	(&struct ieee80211_radiotap_he_mu)
-@@ -1991,6 +2007,16 @@ static inline bool lockdep_vif_mutex_hel
+@@ -1996,6 +2012,16 @@ static inline bool lockdep_vif_mutex_hel
  			      lockdep_vif_mutex_held(vif))
  
  /**
@@ -88,7 +88,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * enum ieee80211_key_flags - key flags
   *
   * These flags are used for communication about keys between the driver
-@@ -2682,6 +2708,8 @@ struct ieee80211_txq {
+@@ -2687,6 +2713,8 @@ struct ieee80211_txq {
   * @IEEE80211_HW_MLO_MCAST_MULTI_LINK_TX: Hardware/driver handles transmitting
   *	multicast frames on all links, mac80211 should not do that.
   *
@@ -97,7 +97,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2739,6 +2767,7 @@ enum ieee80211_hw_flags {
+@@ -2744,6 +2772,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_CONC_MON_RX_DECAP,
  	IEEE80211_HW_DETECTS_COLOR_COLLISION,
  	IEEE80211_HW_MLO_MCAST_MULTI_LINK_TX,
@@ -105,7 +105,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -3751,6 +3780,10 @@ struct ieee80211_prep_tx_info {
+@@ -3756,6 +3785,10 @@ struct ieee80211_prep_tx_info {
   *	non-MLO connections.
   *	The callback can sleep.
   *
@@ -116,7 +116,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @prepare_multicast: Prepare for multicast filter configuration.
   *	This callback is optional, and its return value is passed
   *	to configure_filter(). This callback must be atomic.
-@@ -4302,7 +4335,9 @@ struct ieee80211_ops {
+@@ -4307,7 +4340,9 @@ struct ieee80211_ops {
  				  struct ieee80211_vif *vif,
  				  struct ieee80211_bss_conf *info,
  				  u64 changed);
@@ -127,7 +127,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	int (*start_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  			struct ieee80211_bss_conf *link_conf);
  	void (*stop_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-@@ -4607,7 +4642,7 @@ struct ieee80211_ops {
+@@ -4612,7 +4647,7 @@ struct ieee80211_ops {
  	int (*reset_tid_config)(struct ieee80211_hw *hw,
  				struct ieee80211_vif *vif,
  				struct ieee80211_sta *sta, u8 tids);
@@ -361,7 +361,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1847,6 +1847,8 @@ void ieee80211_vif_cfg_change_notify(str
+@@ -1844,6 +1844,8 @@ void ieee80211_vif_cfg_change_notify(str
  void ieee80211_link_info_change_notify(struct ieee80211_sub_if_data *sdata,
  				       struct ieee80211_link_data *link,
  				       u64 changed);

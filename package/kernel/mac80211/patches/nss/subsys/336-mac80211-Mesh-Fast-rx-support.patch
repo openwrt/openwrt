@@ -94,7 +94,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  	if (action) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -4649,10 +4649,15 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4653,10 +4653,15 @@ void ieee80211_check_fast_rx(struct sta_
  
  		break;
  	case NL80211_IFTYPE_MESH_POINT:
@@ -112,7 +112,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  		break;
  	default:
  		goto clear;
-@@ -4693,7 +4698,7 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4697,7 +4702,7 @@ void ieee80211_check_fast_rx(struct sta_
  	__release(check_fast_rx);
  
  	if (assign)
@@ -121,7 +121,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  
  	offload_flags = get_bss_sdata(sdata)->vif.offload_flags;
  	offload = offload_flags & IEEE80211_OFFLOAD_DECAP_ENABLED;
-@@ -4875,6 +4880,10 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4879,6 +4884,10 @@ static bool ieee80211_invoke_fast_rx(str
  		u8 sa[ETH_ALEN];
  	} addrs __aligned(2);
  	struct ieee80211_sta_rx_stats *stats;
@@ -132,7 +132,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  
  	/* for parallel-rx, we need to have DUP_VALIDATED, otherwise we write
  	 * to a common data structure; drivers can implement that per queue
-@@ -4924,6 +4933,37 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4928,6 +4937,37 @@ static bool ieee80211_invoke_fast_rx(str
  		snap_offs += IEEE80211_CCMP_HDR_LEN;
  	}
  
@@ -170,7 +170,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  	if (!ieee80211_vif_is_mesh(&rx->sdata->vif) &&
  	    !(status->rx_flags & IEEE80211_RX_AMSDU)) {
  		if (!pskb_may_pull(skb, snap_offs + sizeof(*payload)))
-@@ -4961,9 +5001,33 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4965,9 +5005,33 @@ static bool ieee80211_invoke_fast_rx(str
  		return true;
  	}
  

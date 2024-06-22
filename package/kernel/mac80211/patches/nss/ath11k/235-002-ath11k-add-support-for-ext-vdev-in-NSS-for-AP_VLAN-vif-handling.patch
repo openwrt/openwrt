@@ -180,7 +180,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  int ath11k_nss_tx(struct ath11k_vif *arvif, struct sk_buff *skb)
  {
  	struct ath11k *ar = arvif->ar;
-@@ -867,10 +940,16 @@ int ath11k_nss_tx(struct ath11k_vif *arv
+@@ -869,10 +942,16 @@ int ath11k_nss_tx(struct ath11k_vif *arv
  		ath11k_nss_tx_encap_nwifi(skb);
  
  send:
@@ -201,7 +201,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
  	if (status != NSS_TX_SUCCESS) {
  		ath11k_dbg(ar->ab, (ATH11K_DBG_NSS | ATH11K_DBG_DP_TX),
-@@ -1211,6 +1290,7 @@ int ath11k_nss_vdev_up(struct ath11k_vif
+@@ -1214,6 +1293,7 @@ int ath11k_nss_vdev_up(struct ath11k_vif
  	struct nss_wifi_vdev_msg *vdev_msg = NULL;
  	struct nss_wifi_vdev_enable_msg *vdev_en;
  	struct ath11k *ar = arvif->ar;
@@ -209,7 +209,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	nss_tx_status_t status;
  	int ret = 0;
  
-@@ -1242,6 +1322,12 @@ int ath11k_nss_vdev_up(struct ath11k_vif
+@@ -1245,6 +1325,12 @@ int ath11k_nss_vdev_up(struct ath11k_vif
  	}
  
  	ath11k_dbg(ar->ab, ATH11K_DBG_NSS, "nss vdev up tx msg success\n");
@@ -222,7 +222,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  free:
  	kfree(vdev_msg);
  	return ret;
-@@ -1251,6 +1337,7 @@ int ath11k_nss_vdev_down(struct ath11k_v
+@@ -1254,6 +1340,7 @@ int ath11k_nss_vdev_down(struct ath11k_v
  {
  	struct nss_wifi_vdev_msg *vdev_msg = NULL;
  	struct ath11k *ar = arvif->ar;
@@ -230,7 +230,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	nss_tx_status_t status;
  	int ret = 0;
  
-@@ -1278,11 +1365,362 @@ int ath11k_nss_vdev_down(struct ath11k_v
+@@ -1281,11 +1368,362 @@ int ath11k_nss_vdev_down(struct ath11k_v
  	}
  
  	ath11k_dbg(ar->ab, ATH11K_DBG_NSS, "nss vdev down tx msg success\n");
@@ -593,7 +593,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /*----------------------------Peer Setup/Config -----------------------------*/
  
  int ath11k_nss_set_peer_sec_type(struct ath11k *ar,
-@@ -1376,22 +1814,22 @@ free:
+@@ -1379,22 +1817,22 @@ free:
  	return status;
  }
  
@@ -623,7 +623,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  					sta->addr);
  		goto exit;
  	}
-@@ -1463,13 +1901,13 @@ void ath11k_nss_update_sta_rxrate(struct
+@@ -1466,13 +1904,13 @@ void ath11k_nss_update_sta_rxrate(struct
  				  struct ath11k_peer *peer,
  				  struct hal_rx_user_status *user_stats)
  {
@@ -639,7 +639,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	struct ath11k_base *ab = ar->ab;
  
  	if (!ab->nss.enabled)
-@@ -1773,8 +2211,8 @@ int ath11k_nss_add_wds_peer(struct ath11
+@@ -1776,8 +2214,8 @@ int ath11k_nss_add_wds_peer(struct ath11
  	}
  
  	ath11k_dbg(ab, ATH11K_DBG_NSS_WDS,
@@ -650,7 +650,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
  msg_free:
  	kfree(wlmsg);
-@@ -1819,8 +2257,8 @@ int ath11k_nss_update_wds_peer(struct at
+@@ -1822,8 +2260,8 @@ int ath11k_nss_update_wds_peer(struct at
  	}
  
  	ath11k_dbg(ab, ATH11K_DBG_NSS_WDS,
