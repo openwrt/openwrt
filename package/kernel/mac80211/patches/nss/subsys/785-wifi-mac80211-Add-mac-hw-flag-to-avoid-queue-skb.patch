@@ -23,7 +23,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2732,6 +2732,9 @@ struct ieee80211_txq {
+@@ -2737,6 +2737,9 @@ struct ieee80211_txq {
   *
   * @IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD: Hardware suports tid calssification offload.
   *
@@ -33,7 +33,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2792,6 +2795,7 @@ enum ieee80211_hw_flags {
+@@ -2797,6 +2800,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_MESH_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD,
@@ -83,9 +83,9 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		return false;
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-@@ -4329,7 +4336,8 @@ void __ieee80211_subif_start_xmit(struct
-                 }
-         }
+@@ -4336,7 +4343,8 @@ void __ieee80211_subif_start_xmit(struct
+ 		}
+ 	}
  
 -	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
 +	if (unlikely(!ieee80211_hw_check(&local->hw, HAS_TX_QUEUE)))
@@ -93,7 +93,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	ieee80211_aggr_check(sdata, sta, skb);
  
  	if (sta) {
-@@ -4681,8 +4689,10 @@ static void ieee80211_8023_xmit(struct i
+@@ -4688,8 +4696,10 @@ static void ieee80211_8023_xmit(struct i
  	bool multicast;
  	u8 tid;
  
@@ -106,7 +106,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  
  	multicast = is_multicast_ether_addr(ra);
  
-@@ -6379,9 +6389,12 @@ int ieee80211_tx_control_port(struct wip
+@@ -6386,9 +6396,12 @@ int ieee80211_tx_control_port(struct wip
  	}
  
  	if (!IS_ERR(sta)) {

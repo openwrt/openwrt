@@ -31,7 +31,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
  				struct net_device *dev, struct sta_info *sta,
  				struct ieee80211_key *key, struct sk_buff *skb,
-@@ -3632,7 +3634,7 @@ ieee80211_sdata_netdev_features(struct i
+@@ -3641,7 +3643,7 @@ ieee80211_sdata_netdev_features(struct i
  }
  
  static struct sk_buff *
@@ -40,7 +40,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  {
  	if (skb_is_gso(skb)) {
  		struct sk_buff *segs;
-@@ -3650,7 +3652,7 @@ ieee80211_tx_skb_fixup(struct sk_buff *s
+@@ -3659,7 +3661,7 @@ ieee80211_tx_skb_fixup(struct sk_buff *s
  	if (skb_needs_linearize(skb, features) && __skb_linearize(skb))
  		goto free;
  
@@ -49,7 +49,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  		int ofs = skb_checksum_start_offset(skb);
  
  		if (skb->encapsulation)
-@@ -3796,7 +3798,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3805,7 +3807,7 @@ static bool ieee80211_xmit_fast(struct i
  	memcpy(&eth, skb->data, ETH_HLEN - 2);
  
  	/* after this point (skb is modified) we cannot return false */
@@ -58,7 +58,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	if (!skb)
  		return true;
  
-@@ -4344,7 +4346,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4351,7 +4353,7 @@ void __ieee80211_subif_start_xmit(struct
  	 * things so we cannot really handle checksum or GSO offload.
  	 * fix it up in software before we handle anything else.
  	 */
@@ -67,7 +67,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	if (!skb) {
  		len = 0;
  		goto out;
-@@ -4715,7 +4717,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4722,7 +4724,7 @@ static void ieee80211_8023_xmit(struct i
  		}
  	}
  

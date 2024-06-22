@@ -24,7 +24,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2088,6 +2088,8 @@ enum ieee80211_key_flags {
+@@ -2093,6 +2093,8 @@ enum ieee80211_key_flags {
   * @tx_pn: PN used for TX keys, may be used by the driver as well if it
   *	needs to do software PN assignment by itself (e.g. due to TSO)
   * @flags: key flags, see &enum ieee80211_key_flags.
@@ -33,7 +33,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
   * @keyidx: the key index (0-3)
   * @keylen: key material length
   * @key: key material. For ALG_TKIP the key is encoded as a 256-bit (32 byte)
-@@ -2107,6 +2109,7 @@ struct ieee80211_key_conf {
+@@ -2112,6 +2114,7 @@ struct ieee80211_key_conf {
  	u8 hw_key_idx;
  	s8 keyidx;
  	u16 flags;
@@ -102,7 +102,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	key->conf.cipher = cipher;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4650,16 +4650,25 @@ static void ieee80211_8023_xmit(struct i
+@@ -4657,16 +4657,25 @@ static void ieee80211_8023_xmit(struct i
  				struct ieee80211_key *key, struct sk_buff *skb)
  {
  	struct ieee80211_tx_info *info;

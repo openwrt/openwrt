@@ -126,7 +126,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  }
  
  static void
-@@ -2129,6 +2163,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
+@@ -2132,6 +2166,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
  	case ATH11K_NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD:
  		cmd = NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD;
  		break;
@@ -136,7 +136,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	default:
  		return -EINVAL;
  	}
-@@ -2651,12 +2688,31 @@ int ath11k_nss_vdev_create(struct ath11k
+@@ -2654,12 +2691,31 @@ int ath11k_nss_vdev_create(struct ath11k
  		goto free_vdev;
  
  	switch (arvif->vif->type) {
@@ -169,7 +169,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  		break;
  #ifdef CPTCFG_ATH11K_NSS_MESH_SUPPORT
  	case NL80211_IFTYPE_MESH_POINT:
-@@ -2987,7 +3043,6 @@ static int ath11k_nss_ext_vdev_register(
+@@ -2990,7 +3046,6 @@ static int ath11k_nss_ext_vdev_register(
  {
  	struct ath11k *ar = arvif->ar;
  	struct ath11k_base *ab = ar->ab;
@@ -177,7 +177,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	u32 features = 0;
  
  	if (arvif->vif->type != NL80211_IFTYPE_AP_VLAN || arvif->nss.ctx)
-@@ -3001,7 +3056,7 @@ static int ath11k_nss_ext_vdev_register(
+@@ -3004,7 +3059,7 @@ static int ath11k_nss_ext_vdev_register(
  
  	if (!arvif->nss.ctx) {
  		ath11k_warn(ab, "failed to register nss vdev if_num %d nss_err:%d\n",

@@ -233,7 +233,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  
  	return budget - quota;
  }
-@@ -6182,12 +6225,12 @@ static void ath11k_dp_rx_mon_dest_proces
+@@ -6176,12 +6219,12 @@ static void ath11k_dp_rx_mon_dest_proces
  			ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
  						   &dp->rxdma_mon_buf_ring,
  						   rx_bufs_used,
@@ -248,7 +248,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	}
  }
  
-@@ -6697,7 +6740,7 @@ next_entry:
+@@ -6691,7 +6734,7 @@ next_entry:
  		ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
  					   &dp->rxdma_mon_buf_ring,
  					   rx_bufs_used,

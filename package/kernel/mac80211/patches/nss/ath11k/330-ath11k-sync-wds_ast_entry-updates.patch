@@ -124,7 +124,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  			break;
  		default:
  			ath11k_warn(ab, "unsupported wds_type %d\n", wds_type);
-@@ -3796,11 +3797,7 @@ int ath11k_nss_add_wds_peer(struct ath11
+@@ -3799,11 +3800,7 @@ int ath11k_nss_add_wds_peer(struct ath11
  	wds_peer_msg->ast_type = type;
  	wds_peer_msg->peer_id = peer->peer_id;
  
@@ -137,7 +137,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	ether_addr_copy(wds_peer_msg->dest_mac, dest_mac);
  
  	msg_cb = (nss_wifili_msg_callback_t)ath11k_nss_wifili_event_receive;
-@@ -3923,7 +3920,7 @@ msg_free:
+@@ -3926,7 +3923,7 @@ msg_free:
  	return ret;
  }
  
@@ -146,7 +146,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  			    u8 *dest_mac)
  {
  	struct ath11k_base *ab = ar->ab;
-@@ -3941,8 +3938,8 @@ int ath11k_nss_del_wds_peer(struct ath11
+@@ -3944,8 +3941,8 @@ int ath11k_nss_del_wds_peer(struct ath11
  
  	wds_peer_msg->pdev_id = ar->pdev->pdev_id;
  	wds_peer_msg->ast_type = ATH11K_AST_TYPE_NONE;
