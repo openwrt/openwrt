@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 22 Jun 2024 21:00:46 +0000
+Subject: [PATCH] gpio: ath79: choose GPIO numberspace base dynamically
+
+Suppress warning:
+
+gpio gpiochip0: Static allocation of GPIO base is deprecated, use dynamic allocation.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/gpio/gpio-ath79.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpio/gpio-ath79.c
++++ b/drivers/gpio/gpio-ath79.c
+@@ -273,8 +273,8 @@ static int ath79_gpio_probe(struct platf
+ 		dev_err(dev, "bgpio_init failed\n");
+ 		return err;
+ 	}
+-	/* Use base 0 to stay compatible with legacy platforms */
+-	ctrl->gc.base = 0;
++	/* Dynamic allocation */
++	ctrl->gc.base = -1;
+ 
+ 	/* Optional interrupt setup */
+ 	if (!np || of_property_read_bool(np, "interrupt-controller")) {
