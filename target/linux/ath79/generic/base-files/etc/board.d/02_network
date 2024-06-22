@@ -633,16 +633,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	alfa-network,ap121f|\
-	alfa-network,ap121fe|\
-	alfa-network,n2q|\
-	alfa-network,n5q|\
-	alfa-network,pi-wifi4|\
-	alfa-network,r36a|\
-	alfa-network,tube-2hq|\
-	alfa-network,wifi-camppro-nano-duo)
-		label_mac=$(mtd_get_mac_binary art 0x1002)
-		;;
 	arduino,yun)
 		base_mac=$(mtd_get_mac_binary art 0x1002)
 		lan_mac=$(macaddr_setbit $base_mac 29)
