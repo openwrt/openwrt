@@ -82,8 +82,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_5000>, <&macaddr_uboot_e9 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -109,6 +109,18 @@
 			ubootenv: partition@40000 {
 				label = "u-boot-env";
 				reg = <0x040000 0x010000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_e9: macaddr@e9 {
+						compatible = "mac-base";
+						reg = <0xe9 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -144,6 +156,14 @@
 	status = "okay";
 
 	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_uboot_e9 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_uboot_e9 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {

@@ -739,12 +739,6 @@ ath79_setup_macs()
 	engenius,esr900)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
-	engenius,ews511ap)
-		lan_mac=$(mtd_get_mac_text "u-boot-env" 0xe9)
-		eth1_mac=$(macaddr_add "$lan_mac" 1)
-		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
-		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
-		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
