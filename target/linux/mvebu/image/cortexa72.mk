@@ -1,3 +1,27 @@
+define Build/append-bootscript
+	cat $@-boot.scr >> $@
+endef
+
+define Device/checkpoint_v-80
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Check Point
+  DEVICE_MODEL := V-80
+  SOC := armada-7040
+  BOOT_SCRIPT := v-80
+  IMAGES += sysupgrade.gz usb.img.gz
+  IMAGE/sysupgrade.gz := boot-scr 654d4d43 | append-bootscript | pad-to 2048 | \
+	append-kernel | \
+	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+	gzip | append-metadata
+  IMAGE/usb.img.gz := boot-scr 55575254 | boot-img-ext4 | \
+	sdcard-img-ext4 55575254 | gzip | append-metadata
+  ARTIFACTS := initramfs.dtb initramfs.scr
+  ARTIFACT/initramfs.dtb := append-dtb
+  ARTIFACT/initramfs.scr := boot-scr 494e4954 | append-bootscript
+  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-hwmon-nct7802 kmod-rtc-ds1307
+endef
+TARGET_DEVICES += checkpoint_v-80
+
 define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
