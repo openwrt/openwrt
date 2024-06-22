@@ -622,10 +622,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	engenius,eap300-v2|\
-	engenius,ens202ext-v1)
-		label_mac=$(mtd_get_mac_binary art 0x1002)
-		;;
 	arduino,yun)
 		base_mac=$(mtd_get_mac_binary art 0x1002)
 		lan_mac=$(macaddr_setbit $base_mac 29)
