@@ -689,9 +689,6 @@ ath79_setup_macs()
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
-	dlink,dir-629-a1)
-		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
-		;;
 	trendnet,tew-673gru)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
