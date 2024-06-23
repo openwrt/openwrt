@@ -74,8 +74,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_1002>, <&cal_art_1000>;
-		nvmem-cell-names = "mac-address", "calibration";
+		nvmem-cells = <&cal_art_1000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
