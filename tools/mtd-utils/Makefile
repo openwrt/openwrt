@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
 PKG_VERSION:=2.2.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/
@@ -33,7 +33,7 @@ HOST_CONFIGURE_VARS+= \
 	UUID_CFLAGS="-I$(STAGING_DIR_HOST)/include/e2fsprogs/uuid"
 
 HOST_CONFIGURE_ARGS+= \
-	--disable-tests \
+	--without-tests \
 	--without-crypto \
 	--without-xattr \
 	--without-zstd \
