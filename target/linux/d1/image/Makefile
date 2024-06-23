@@ -63,7 +63,7 @@ define Device/lichee_rv_dock
   DEVICE_VENDOR := Sipeed
   DEVICE_MODEL := LicheePi RV (dock)
   DEVICE_DTS := allwinner/sun20i-d1-lichee-rv-dock
-  DEVICE_PACKAGES += kmod-rtl8723bs
+  DEVICE_PACKAGES += kmod-rtw88-8723ds wpad-basic-mbedtls
   UBOOT := lichee_rv_dock
 endef
 TARGET_DEVICES += lichee_rv_dock
@@ -73,7 +73,7 @@ define Device/mangopi_mq_pro
   DEVICE_VENDOR := MangoPi
   DEVICE_MODEL := MQ Pro
   DEVICE_DTS := allwinner/sun20i-d1-mangopi-mq-pro
-  DEVICE_PACKAGES += kmod-rtl8723bs
+  DEVICE_PACKAGES += kmod-rtw88-8723ds wpad-basic-mbedtls
   UBOOT := mangopi_mq_pro
 endef
 TARGET_DEVICES += mangopi_mq_pro
