@@ -13,7 +13,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -274,19 +274,13 @@ config BMIPS_GENERIC
+@@ -272,19 +272,13 @@ config BMIPS_GENERIC
  	select SYNC_R4K
  	select COMMON_CLK
  	select BCM6345_L1_IRQ
@@ -33,7 +33,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	select SWAP_IO_SPACE
  	select USB_EHCI_BIG_ENDIAN_DESC if CPU_BIG_ENDIAN
  	select USB_EHCI_BIG_ENDIAN_MMIO if CPU_BIG_ENDIAN
-@@ -296,6 +290,7 @@ config BMIPS_GENERIC
+@@ -294,6 +288,7 @@ config BMIPS_GENERIC
  	select HAVE_PCI
  	select PCI_DRIVERS_GENERIC
  	select FW_CFE
@@ -43,7 +43,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	  BCM33xx cable modem chips, BCM63xx DSL chips, and BCM7xxx set-top
 --- a/drivers/irqchip/Kconfig
 +++ b/drivers/irqchip/Kconfig
-@@ -122,7 +122,6 @@ config BCM6345_L1_IRQ
+@@ -124,7 +124,6 @@ config BCM6345_L1_IRQ
  config BCM7038_L1_IRQ
  	tristate "Broadcom STB 7038-style L1/L2 interrupt controller driver"
  	depends on ARCH_BRCMSTB || BMIPS_GENERIC
@@ -51,7 +51,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	select GENERIC_IRQ_CHIP
  	select IRQ_DOMAIN
  	select GENERIC_IRQ_EFFECTIVE_AFF_MASK if SMP
-@@ -130,14 +129,12 @@ config BCM7038_L1_IRQ
+@@ -132,14 +131,12 @@ config BCM7038_L1_IRQ
  config BCM7120_L2_IRQ
  	tristate "Broadcom STB 7120-style L2 interrupt controller driver"
  	depends on ARCH_BRCMSTB || BMIPS_GENERIC

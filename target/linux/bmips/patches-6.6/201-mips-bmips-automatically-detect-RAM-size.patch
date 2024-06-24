@@ -15,15 +15,15 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
-@@ -19,6 +19,7 @@
- #include <linux/of_platform.h>
+@@ -18,6 +18,7 @@
+ #include <linux/of_fdt.h>
  #include <linux/libfdt.h>
  #include <linux/smp.h>
 +#include <linux/types.h>
  #include <asm/addrspace.h>
  #include <asm/bmips.h>
  #include <asm/bootinfo.h>
-@@ -35,13 +36,16 @@
+@@ -34,13 +35,16 @@
  #define REG_BCM6318_SOB		((void __iomem *)CKSEG1ADDR(0x10000900))
  #define BCM6318_FREQ_SHIFT	23
  #define BCM6318_FREQ_MASK	(0x3 << BCM6318_FREQ_SHIFT)
@@ -40,7 +40,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  #define REG_BCM6358_DDR_PLLC	((void __iomem *)0xfffe12b8)
  #define BCM6358_PLLC_M1_SHIFT	0
  #define BCM6358_PLLC_M1_MASK	(0xff << BCM6358_PLLC_M1_SHIFT)
-@@ -53,7 +57,9 @@
+@@ -52,7 +56,9 @@
  #define REG_BCM6362_MISC_SB	((void __iomem *)CKSEG1ADDR(0x10001814))
  #define BCM6362_FCVO_SHIFT	1
  #define BCM6362_FCVO_MASK	(0x1f << BCM6362_FCVO_SHIFT)
@@ -50,7 +50,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  #define REG_BCM6368_DDR_PLLC	((void __iomem *)CKSEG1ADDR(0x100012a0))
  #define BCM6368_PLLC_P1_SHIFT	0
  #define BCM6368_PLLC_P1_MASK	(0xf << BCM6368_PLLC_P1_SHIFT)
-@@ -68,6 +74,21 @@
+@@ -67,6 +73,21 @@
  #define REG_BCM63268_MISC_SB	((void __iomem *)CKSEG1ADDR(0x10001814))
  #define BCM63268_FCVO_SHIFT	21
  #define BCM63268_FCVO_MASK	(0xf << BCM63268_FCVO_SHIFT)
@@ -72,7 +72,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  extern bool bmips_rac_flush_disable;
  
-@@ -78,6 +99,11 @@ struct bmips_cpufreq {
+@@ -77,6 +98,11 @@ struct bmips_cpufreq {
  	u32			(*cpu_freq)(void);
  };
  
@@ -84,7 +84,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -352,9 +378,90 @@ void __init plat_time_init(void)
+@@ -351,9 +377,90 @@ void __init plat_time_init(void)
  	mips_hpt_frequency = freq;
  }
  
@@ -175,7 +175,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	const struct bmips_quirk *q;
  
  	set_io_port_base(0);
-@@ -372,6 +479,18 @@ void __init plat_mem_setup(void)
+@@ -374,6 +481,18 @@ void __init plat_mem_setup(void)
  
  	__dt_setup_arch(dtb);
  

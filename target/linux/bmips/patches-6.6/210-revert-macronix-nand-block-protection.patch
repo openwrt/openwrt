@@ -19,7 +19,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/mtd/nand/raw/nand_macronix.c
 +++ b/drivers/mtd/nand/raw/nand_macronix.c
-@@ -12,10 +12,6 @@
+@@ -13,10 +13,6 @@
  #define MACRONIX_READ_RETRY_BIT BIT(0)
  #define MACRONIX_NUM_READ_RETRY_MODES 6
  
@@ -30,7 +30,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  #define ONFI_FEATURE_ADDR_MXIC_RANDOMIZER 0xB0
  #define MACRONIX_RANDOMIZER_BIT BIT(1)
  #define MACRONIX_RANDOMIZER_ENPGM BIT(0)
-@@ -179,73 +175,6 @@ static void macronix_nand_fix_broken_get
+@@ -189,73 +185,6 @@ static void macronix_nand_fix_broken_get
  		     ONFI_FEATURE_ADDR_TIMING_MODE, 1);
  }
  
@@ -104,11 +104,11 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  static int nand_power_down_op(struct nand_chip *chip)
  {
  	int ret;
-@@ -323,7 +252,6 @@ static int macronix_nand_init(struct nan
+@@ -488,7 +417,6 @@ static int macronix_nand_init(struct nan
  
  	macronix_nand_fix_broken_get_timings(chip);
  	macronix_nand_onfi_init(chip);
 -	macronix_nand_block_protection_support(chip);
  	macronix_nand_deep_power_down_support(chip);
+ 	macronix_nand_setup_otp(chip);
  
- 	return 0;

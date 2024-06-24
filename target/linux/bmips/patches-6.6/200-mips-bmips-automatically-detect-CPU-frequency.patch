@@ -15,7 +15,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
-@@ -32,13 +32,52 @@
+@@ -31,13 +31,52 @@
  
  #define RELO_NORMAL_VEC		BIT(18)
  
@@ -68,7 +68,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -154,17 +193,161 @@ const char *get_system_type(void)
+@@ -153,17 +192,161 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
