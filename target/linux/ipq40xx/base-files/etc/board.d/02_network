@@ -25,6 +25,7 @@ ipq40xx_setup_interfaces()
 	p2w,r619ac-128m|\
 	pakedge,wr-1|\
 	teltonika,rutx50|\
+	tel,x1pro|\
 	yyets,le1|\
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -235,6 +236,11 @@ ipq40xx_setup_macs()
 	netgear,srs60|\
 	pakedge,wr-1)
 		wan_mac=$(macaddr_add $(get_mac_label) 1)
+		;;
+	tel,x1pro)
+		label_mac=$(mtd_get_mac_binary "0:ART" 0x1006)
+		wan_mac=$(macaddr_add "$label_mac" 1)
+		lan_mac=$(macaddr_add "$label_mac" 2)
 		;;
 	esac
 
