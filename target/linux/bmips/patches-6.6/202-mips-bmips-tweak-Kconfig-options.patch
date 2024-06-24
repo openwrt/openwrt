@@ -1,0 +1,68 @@
+From 20a4b57c0fafd23ae0f6bcab5b5adf4af4c80280 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 16 Mar 2023 19:31:21 +0100
+Subject: [PATCH] mips: bmips: tweak Kconfig options
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ arch/mips/Kconfig | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -274,19 +274,13 @@ config BMIPS_GENERIC
+ 	select SYNC_R4K
+ 	select COMMON_CLK
+ 	select BCM6345_L1_IRQ
+-	select BCM7038_L1_IRQ
+-	select BCM7120_L2_IRQ
+-	select BRCMSTB_L2_IRQ
+ 	select IRQ_MIPS_CPU
+ 	select DMA_NONCOHERENT
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+-	select SYS_SUPPORTS_LITTLE_ENDIAN
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+-	select SYS_SUPPORTS_HIGHMEM
+ 	select SYS_HAS_CPU_BMIPS32_3300
+ 	select SYS_HAS_CPU_BMIPS4350
+ 	select SYS_HAS_CPU_BMIPS4380
+-	select SYS_HAS_CPU_BMIPS5000
+ 	select SWAP_IO_SPACE
+ 	select USB_EHCI_BIG_ENDIAN_DESC if CPU_BIG_ENDIAN
+ 	select USB_EHCI_BIG_ENDIAN_MMIO if CPU_BIG_ENDIAN
+@@ -296,6 +290,7 @@ config BMIPS_GENERIC
+ 	select HAVE_PCI
+ 	select PCI_DRIVERS_GENERIC
+ 	select FW_CFE
++	select MIPS_L1_CACHE_SHIFT_4
+ 	help
+ 	  Build a generic DT-based kernel image that boots on select
+ 	  BCM33xx cable modem chips, BCM63xx DSL chips, and BCM7xxx set-top
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -122,7 +122,6 @@ config BCM6345_L1_IRQ
+ config BCM7038_L1_IRQ
+ 	tristate "Broadcom STB 7038-style L1/L2 interrupt controller driver"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC
+-	default ARCH_BRCMSTB || BMIPS_GENERIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 	select GENERIC_IRQ_EFFECTIVE_AFF_MASK if SMP
+@@ -130,14 +129,12 @@ config BCM7038_L1_IRQ
+ config BCM7120_L2_IRQ
+ 	tristate "Broadcom STB 7120-style L2 interrupt controller driver"
+ 	depends on ARCH_BRCMSTB || BMIPS_GENERIC
+-	default ARCH_BRCMSTB || BMIPS_GENERIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 
+ config BRCMSTB_L2_IRQ
+ 	tristate "Broadcom STB generic L2 interrupt controller driver"
+ 	depends on ARCH_BCM2835 || ARCH_BRCMSTB || BMIPS_GENERIC
+-	default ARCH_BCM2835 || ARCH_BRCMSTB || BMIPS_GENERIC
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN
+ 
