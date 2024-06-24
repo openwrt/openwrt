@@ -597,6 +597,7 @@ procd_add_mdns_service() {
 	proto=$1; shift
 	port=$1; shift
 	json_add_object "${service}_$port"
+	[ -n "$MDNS_INSTANCE_NAME" ] && json_add_string "instance" "$MDNS_INSTANCE_NAME"
 	json_add_string "service" "_$service._$proto.local"
 	json_add_int port "$port"
 	for txt in "$@"; do
