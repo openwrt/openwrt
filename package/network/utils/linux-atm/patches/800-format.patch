@@ -1,0 +1,166 @@
+--- a/src/arpd/atmarp.c
++++ b/src/arpd/atmarp.c
+@@ -67,7 +67,7 @@ static int send_request(struct atmarp_re
+     }
+     if (req->type == art_query) return query_result(&reply);
+     if (len != sizeof(int)) {
+-	fprintf(stderr,"bad read: %d != %d\n",len,sizeof(int));
++	fprintf(stderr,"bad read: %d != %zu\n",len,sizeof(int));
+ 	exit(1);
+     }
+     if (*(int *) &reply < 0) {
+--- a/src/lane/mem_lecs.c
++++ b/src/lane/mem_lecs.c
+@@ -77,7 +77,7 @@ mem_free(const char *unit, const void *m
+     free(tmp->start);
+     free(tmp);
+   } else {
+-    printf("Trying to free memory by %s, allocated by %s, size %d\n",
++    printf("Trying to free memory by %s, allocated by %s, size %zu\n",
+ 	   unit, tmp->unit, tmp->size);
+   }
+ }
+@@ -89,6 +89,6 @@ mem_dump(void)
+ 
+   printf("Dumping memory allocation\n");
+   for (tmp=memlist;tmp;tmp=tmp->next)
+-    printf("%s : %d bytes from %p\n", tmp->unit, tmp->size, tmp->start);
++    printf("%s : %zu bytes from %p\n", tmp->unit, tmp->size, tmp->start);
+   printf("-------------------------\n");
+ }
+--- a/src/maint/atmaddr.c
++++ b/src/maint/atmaddr.c
+@@ -97,7 +97,7 @@ int main(int argc,char **argv)
+     }
+     if (cmd != ATM_GETADDR) return 0;
+     if (req.length % sizeof(*addr)) {
+-	fprintf(stderr,"internal error: len %d %% %d\n",req.length,
++	fprintf(stderr,"internal error: len %d %% %zu\n",req.length,
+ 	  sizeof(*addr));
+ 	return 1;
+     }
+--- a/src/maint/atmtcp.c
++++ b/src/maint/atmtcp.c
+@@ -579,7 +579,7 @@ static void file_write(int fd,int stream
+ 	exit(1);
+     }
+     if (wrote != sizeof(stream)) {
+-	fprintf(stderr,"short write (%d < %d)\n",wrote,sizeof(stream));
++	fprintf(stderr,"short write (%d < %zd)\n",wrote,sizeof(stream));
+ 	exit(1);
+     }
+     wrote = write(fd,data,size);
+--- a/src/mpoad/lecs.c
++++ b/src/mpoad/lecs.c
+@@ -157,7 +157,7 @@ static int get_reply(int fd, char *buff,
+                 /* Sampo-Add: end */
+         }
+         if (end_of_tlvs - tlvs != 0)
+-                printf("mpcd: lecs.c: get_reply: ignoring %d bytes of trailing TLV carbage\n",
++                printf("mpcd: lecs.c: get_reply: ignoring %" PRIdPTR " bytes of trailing TLV carbage\n",
+                        end_of_tlvs - tlvs);
+         return 1;
+ }
+--- a/src/switch/swc.c
++++ b/src/switch/swc.c
+@@ -28,7 +28,7 @@ static void dialog(int s,SWC_MSG *msg)
+ 	exit(1);
+     }
+     if (size != sizeof(*msg)) {
+-	fprintf(stderr,"bad write: %d != %d\n",size,sizeof(*msg));
++	fprintf(stderr,"bad write: %d != %zu\n",size,sizeof(*msg));
+ 	exit(1);
+     }
+     size = read(s,msg,sizeof(*msg));
+@@ -37,7 +37,7 @@ static void dialog(int s,SWC_MSG *msg)
+ 	exit(1);
+     }
+     if (size != sizeof(*msg)) {
+-	fprintf(stderr,"bad read: %d != %d\n",size,sizeof(*msg));
++	fprintf(stderr,"bad read: %d != %zu\n",size,sizeof(*msg));
+ 	exit(1);
+     }
+ }
+--- a/src/test/isp.c
++++ b/src/test/isp.c
+@@ -37,7 +37,7 @@ void send_msg(const struct atmsvc_msg *m
+     wrote = write(sock,msg,sizeof(*msg));
+     if (wrote == sizeof(*msg)) return;
+     if (wrote < 0) perror("write");
+-    else fprintf(stderr,"bad write: %d != %d\n",wrote,sizeof(*msg));
++    else fprintf(stderr,"bad write: %d != %zd\n",wrote,sizeof(*msg));
+     exit(1);
+ }
+ 
+@@ -49,7 +49,7 @@ void recv_msg(struct atmsvc_msg *msg)
+     got = read(sock,msg,sizeof(*msg));
+     if (got == sizeof(*msg)) return;
+     if (got < 0) perror("read");
+-    else fprintf(stderr,"bad read: %d != %d\n",got,sizeof(*msg));
++    else fprintf(stderr,"bad read: %d != %zd\n",got,sizeof(*msg));
+     exit(1);
+ }
+ 
+--- a/src/test/ttcp.c
++++ b/src/test/ttcp.c
+@@ -836,13 +836,13 @@ prusage(r0, r1, e, b, outp)
+ 
+ 		case 'U':
+ 			tvsub(&tdiff, &r1->ru_utime, &r0->ru_utime);
+-			sprintf(outp,"%ld.%01ld", tdiff.tv_sec, tdiff.tv_usec/100000);
++			sprintf(outp,"%" PRIu64 ".%01" PRIu64 , (uint64_t)tdiff.tv_sec, (uint64_t)tdiff.tv_usec/100000);
+ 			END(outp);
+ 			break;
+ 
+ 		case 'S':
+ 			tvsub(&tdiff, &r1->ru_stime, &r0->ru_stime);
+-			sprintf(outp,"%ld.%01ld", tdiff.tv_sec, tdiff.tv_usec/100000);
++			sprintf(outp,"%" PRIu64 ".%01" PRIu64, (uint64_t)tdiff.tv_sec, (uint64_t)tdiff.tv_usec/100000);
+ 			END(outp);
+ 			break;
+ 
+@@ -864,19 +864,19 @@ prusage(r0, r1, e, b, outp)
+ 			break;
+ 
+ 		case 'X':
+-			sprintf(outp,"%ld", t == 0 ? 0 : (r1->ru_ixrss-r0->ru_ixrss)/t);
++			sprintf(outp, PRIu64, t == 0 ? 0 : (uint64_t)(r1->ru_ixrss-r0->ru_ixrss)/t);
+ 			END(outp);
+ 			break;
+ 
+ 		case 'D':
+-			sprintf(outp,"%ld", t == 0 ? 0 :
+-			    (r1->ru_idrss+r1->ru_isrss-(r0->ru_idrss+r0->ru_isrss))/t);
++			sprintf(outp, PRIu64, t == 0 ? 0 :
++			    (uint64_t)(r1->ru_idrss+r1->ru_isrss-(r0->ru_idrss+r0->ru_isrss))/t);
+ 			END(outp);
+ 			break;
+ 
+ 		case 'K':
+-			sprintf(outp,"%ld", t == 0 ? 0 :
+-			    ((r1->ru_ixrss+r1->ru_isrss+r1->ru_idrss) -
++			sprintf(outp, PRIu64, t == 0 ? 0 :
++			    (uint64_t)((r1->ru_ixrss+r1->ru_isrss+r1->ru_idrss) -
+ 			    (r0->ru_ixrss+r0->ru_idrss+r0->ru_isrss))/t);
+ 			END(outp);
+ 			break;
+--- a/src/test/window.c
++++ b/src/test/window.c
+@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
+        /* Get a reply */
+        size = read(s2, buffer2, REPLY_SIZE);
+        if (size != REPLY_SIZE) {
+-	 fprintf(stderr,"Received reply of length %d, should be %d.\n",
++	 fprintf(stderr,"Received reply of length %zd, should be %d.\n",
+ 		 size,REPLY_SIZE);
+        }
+ #endif
+@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
+ 	 }
+ 
+        } else {
+-	 fprintf(stderr,"Received message of length %d, should be %d.\n",
++	 fprintf(stderr,"Received message of length %zd, should be %d.\n",
+ 		 size,PINGPONG_SIZE);
+        }
+      }
