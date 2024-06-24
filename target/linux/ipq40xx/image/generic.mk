@@ -1135,7 +1135,7 @@ endef
 TARGET_DEVICES += teltonika_rutx50
 
 define Device/tel_x1pro
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := Telco
 	DEVICE_MODEL := X1 Pro
 	SOC := qcom-ipq4019
