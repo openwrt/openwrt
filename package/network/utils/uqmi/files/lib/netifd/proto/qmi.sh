@@ -24,6 +24,7 @@ proto_qmi_init_config() {
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_boolean autoconnect
 	proto_config_add_int plmn
 	proto_config_add_int timeout
@@ -42,7 +43,7 @@ proto_qmi_setup() {
 	local profile_pdptype
 
 	json_get_vars device apn v6apn auth username password pincode delay modes
-	json_get_vars pdptype profile v6profile dhcp dhcpv6 sourcefilter autoconnect plmn ip4table
+	json_get_vars pdptype profile v6profile dhcp dhcpv6 sourcefilter delegate autoconnect plmn ip4table
 	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
 
 	[ "$timeout" = "" ] && timeout="10"
@@ -442,6 +443,7 @@ proto_qmi_setup() {
 			proto_add_dynamic_defaults
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
+			[ "$delegate" = "0" ] && json_add_boolean delegate "0"
 			[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object

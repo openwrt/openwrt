@@ -28,6 +28,7 @@ if [ -n "$AUTOIPV6" ]; then
 	[ -n "$IP6TABLE" ] && json_add_string ip6table $IP6TABLE
 	[ -n "$PEERDNS" ] && json_add_boolean peerdns $PEERDNS
 	[ "$NOSOURCEFILTER" = "1" ] && json_add_boolean sourcefilter "0"
+	[ "$DELEGATE" = "0" ] && json_add_boolean delegate "0"
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 fi
