@@ -26,6 +26,7 @@ qstrip=$(strip $(subst ",,$(1)))
 empty:=
 space:= $(empty) $(empty)
 comma:=,
+pound:=\#
 merge=$(subst $(space),,$(1))
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
@@ -376,6 +377,19 @@ endef
 
 define shexport
 export $(call shvar,$(1))=$$(call $(1))
+endef
+
+# Test support for 64-bit time with C code from largefile.m4 provided by GNU Gnulib
+# the value is 'y' when successful and '' otherwise
+define YEAR_2038
+$(shell \
+  mkdir -p $(TMP_DIR); \
+  echo '$(pound) include <time.h>' > $(TMP_DIR)/year2038.c; \
+  echo '$(pound) define LARGE_TIME_T ((time_t) (((time_t) 1 << 30) - 1 + 3 * ((time_t) 1 << 30)))' >> $(TMP_DIR)/year2038.c; \
+  echo 'int verify_time_t_range[(LARGE_TIME_T / 65537 == 65535 && LARGE_TIME_T % 65537 == 0) ? 1 : -1];' >> $(TMP_DIR)/year2038.c; \
+  echo 'int main (void) {return 0;}' >> $(TMP_DIR)/year2038.c; \
+  $(HOSTCC) $(TMP_DIR)/year2038.c -o /dev/null 2>/dev/null && echo y && rm -f $(TMP_DIR)/year2038.c || rm -f $(TMP_DIR)/year2038.c; \
+)
 endef
 
 # Execute commands under flock
