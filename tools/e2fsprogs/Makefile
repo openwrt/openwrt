@@ -38,9 +38,8 @@ define Host/Prepare
 	rm -rf $(HOST_BUILD_DIR)/doc
 endef
 
-define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/e2fsck
-	rm -f $(STAGING_DIR_HOST)/bin/tune2fs
+define Host/Uninstall
+	-$(call Host/Compile/Default,uninstall)
 endef
 
 $(eval $(call HostBuild))
