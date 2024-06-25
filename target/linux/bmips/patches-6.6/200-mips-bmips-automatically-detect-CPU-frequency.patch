@@ -15,7 +15,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
-@@ -31,13 +31,52 @@
+@@ -31,8 +31,42 @@
  
  #define RELO_NORMAL_VEC		BIT(18)
  
@@ -56,7 +56,9 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +#define BCM63268_FCVO_SHIFT	21
 +#define BCM63268_FCVO_MASK	(0xf << BCM63268_FCVO_SHIFT)
  
- extern bool bmips_rac_flush_disable;
+ /*
+  * CBR addr doesn't change and we can cache it.
+@@ -45,6 +79,11 @@ extern bool bmips_rac_flush_disable;
  
  static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
  
@@ -68,7 +70,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -153,17 +192,161 @@ const char *get_system_type(void)
+@@ -163,17 +202,161 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
