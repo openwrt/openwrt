@@ -44,12 +44,8 @@ HOST_CONFIGURE_ARGS += \
 	--without-python \
 	--without-cryptsetup
 
-define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/hexdump $(STAGING_DIR_HOST)/bin/
-endef
-
 define Host/Uninstall
-	rm -f $(STAGING_DIR_HOST)/bin/hexdump
+	-$(call Host/Compile/Default,uninstall)
 endef
 
 $(eval $(call HostBuild))
