@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0
-/dts-v1/;
 
 /*
  * Devicetree for the Inteno XG6846 router, mostly used as a
@@ -16,26 +15,18 @@
  * Some devices have a USB type A host receptacle mounted,
  * some do not.
  */
+
 #include "bcm6328.dtsi"
-#include <dt-bindings/input/input.h>
-#include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Inteno XG6846";
 	compatible = "inteno,xg6846", "brcm,bcm6328";
 
-	/* OpenWrt-specific aliases */
 	aliases {
-		led-boot = &led_pwr_red;
-		led-failsafe = &led_pwr_red;
-		led-running = &led_pwr_green;
-		led-upgrade = &led_pwr_red;
-		led-usb = &led_usb_green;
-	};
-
-	chosen {
-		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
-		stdout-path = "serial0:115200n8";
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
 	};
 
 	/*
@@ -60,17 +51,9 @@
 		#size-cells = <0>;
 	};
 
-	sfp0: sfp0 {
-		compatible = "sff,sfp";
-		i2c-bus = <&i2c0>;
-		los-gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		reset {
 			label = "reset";
@@ -78,6 +61,12 @@
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
+	};
+
+	sfp0: sfp0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -110,10 +99,20 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cfe: partition@0 {
+			partition@0 {
 				label = "cfe";
 				reg = <0x0000000 0x0010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cfe_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
 			};
 
 			partition@10000 {
@@ -131,16 +130,6 @@
 	};
 };
 
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
-};
-
 &ethernet {
 	status = "okay";
 
@@ -148,20 +137,33 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&switch0 {
-	dsa,member = <0 0>;
+&leds {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds>,
+		    <&pinctrl_ephy1_spd_led>,
+		    <&pinctrl_ephy3_spd_led>;
 
-	ports {
-		switch0port4: port@4 {
-			reg = <4>;
-			label = "extsw";
+	led@16 {
+		reg = <16>;
+		active-low;
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+	};
 
-			phy-mode = "rgmii";
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-			};
-		};
+	led_power_red: led@18 {
+		reg = <18>;
+		active-low;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
+		panic-indicator;
+	};
+
+	led_power_green: led@20 {
+		reg = <20>;
+		active-low;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 
@@ -172,8 +174,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
+
 		interrupt-controller;
 		#interrupt-cells = <2>;
+
 		dsa,member = <1 0>;
 
 		ports {
@@ -183,38 +187,45 @@
 			port@0 {
 				reg = <0>;
 				label = "lan1";
+
 				phy-handle = <&lan1phy>;
 			};
 
 			port@1 {
 				reg = <1>;
 				label = "lan2";
+
 				phy-handle = <&lan2phy>;
 			};
 
 			port@2 {
 				reg = <2>;
 				label = "lan3";
+
 				phy-handle = <&lan3phy>;
 			};
 
 			port@3 {
 				reg = <3>;
 				label = "lan4";
+
 				phy-handle = <&lan4phy>;
 			};
 
 			port@4 {
 				reg = <4>;
 				label = "ext1";
+
 				phy-handle = <&ext1phy>;
 			};
 
 			port@5 {
 				reg = <5>;
-				phy-mode = "rgmii-id";
 				label = "wan";
+
+				phy-mode = "rgmii-id";
 				sfp = <&sfp0>;
+
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
@@ -223,9 +234,10 @@
 
 			port@6 {
 				reg = <6>;
+
 				phy-mode = "rgmii-id";
-				label = "cpu";
 				ethernet = <&switch0port4>;
+
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
@@ -242,21 +254,25 @@
 				interrupt-parent = <&switch1>;
 				interrupts = <0 IRQ_TYPE_LEVEL_HIGH>;
 			};
+
 			lan2phy: ethernet-phy@1 {
 				reg = <1>;
 				interrupt-parent = <&switch1>;
 				interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
 			};
+
 			lan3phy: ethernet-phy@2 {
 				reg = <2>;
 				interrupt-parent = <&switch1>;
 				interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
 			};
+
 			lan4phy: ethernet-phy@3 {
 				reg = <3>;
 				interrupt-parent = <&switch1>;
 				interrupts = <3 IRQ_TYPE_LEVEL_HIGH>;
 			};
+
 			ext1phy: ethernet-phy@4 {
 				reg = <4>;
 				interrupt-parent = <&switch1>;
@@ -271,43 +287,26 @@
 };
 
 &pinctrl {
-	pinctrl_xg6846_usb_spd_led: xg6846_usb_spd_led-pins {
+	pinctrl_leds: leds {
 		function = "led";
-		pins = "gpio17";
+		pins = "gpio16", "gpio18", "gpio20";
 	};
 };
 
-&leds {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_xg6846_usb_spd_led>, /* GPIO16 LED USB */
-		    <&pinctrl_ephy1_spd_led>, /* GPIO18 LED PWR red */
-		    <&pinctrl_ephy3_spd_led>; /* GPIO20 LED PWR green */
+&switch0 {
+	dsa,member = <0 0>;
 
-	/* On board variants without USB this LED is not mounted */
-	led_usb_green: led@16 {
-		reg = <16>;
-		active-low;
-		label = "green:usb";
-		default-state = "off";
+	ports {
+		switch0port4: port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
 	};
-
-	/*
-	 * LED 18 and 20 drive the same physical LED, the PWR
-	 * LED that can be both red and green.
-	 */
-	led_pwr_red: led@18 {
-		reg = <18>;
-		active-low;
-		label = "red:pwr";
-		default-state = "off";
-	};
-
-	led_pwr_green: led@20 {
-		reg = <20>;
-		active-low;
-		label = "green:pwr";
-		default-state = "off";
-	};
-
 };
