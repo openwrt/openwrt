@@ -1,0 +1,35 @@
+From b068706b7831ccf7c7f1a56a65862fbcc28d061f Mon Sep 17 00:00:00 2001
+From: Martin Schiller <ms@dev.tdt.de>
+Date: Tue, 11 Jun 2024 15:54:32 +0200
+Subject: net: dsa: lantiq_gswip: Remove dead code from
+ gswip_add_single_port_br()
+
+The port validation in gswip_add_single_port_br() is superfluous and
+can be omitted.
+
+Suggested-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://lore.kernel.org/r/20240611135434.3180973-11-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -648,14 +648,8 @@ static int gswip_add_single_port_br(stru
+ 	struct gswip_pce_table_entry vlan_active = {0,};
+ 	struct gswip_pce_table_entry vlan_mapping = {0,};
+ 	unsigned int cpu_port = priv->hw_info->cpu_port;
+-	unsigned int max_ports = priv->hw_info->max_ports;
+ 	int err;
+ 
+-	if (port >= max_ports) {
+-		dev_err(priv->dev, "single port for %i supported\n", port);
+-		return -EIO;
+-	}
+-
+ 	vlan_active.index = port + 1;
+ 	vlan_active.table = GSWIP_TABLE_ACTIVE_VLAN;
+ 	vlan_active.key[0] = 0; /* vid */

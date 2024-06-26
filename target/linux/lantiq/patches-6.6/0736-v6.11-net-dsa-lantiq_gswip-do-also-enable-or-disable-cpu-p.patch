@@ -1,7 +1,7 @@
-From 54a2f7f2c134738bd3f4ea0a213138d169f2726e Mon Sep 17 00:00:00 2001
+From 86b9ea6412af41914ef6549f85a849c3b987f4f3 Mon Sep 17 00:00:00 2001
 From: Martin Schiller <ms@dev.tdt.de>
-Date: Fri, 10 May 2024 13:52:10 +0200
-Subject: [PATCH] net: dsa: lantiq_gswip: do also enable or disable cpu port
+Date: Tue, 11 Jun 2024 15:54:28 +0200
+Subject: net: dsa: lantiq_gswip: do also enable or disable cpu port
 
 Before commit 74be4babe72f ("net: dsa: do not enable or disable non user
 ports"), gswip_port_enable/disable() were also executed for the cpu port
@@ -9,10 +9,13 @@ in gswip_setup() which disabled the cpu port during initialization.
 
 Let's restore this by removing the dsa_is_user_port checks. Also, let's
 clean up the gswip_port_enable() function so that we only have to check
-for the cpu port once.
+for the cpu port once. The operation reordering done here is safe.
 
-Fixes: 74be4babe72f ("net: dsa: do not enable or disable non user ports")
 Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://lore.kernel.org/r/20240611135434.3180973-7-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/lantiq_gswip.c | 24 ++++++++----------------
  1 file changed, 8 insertions(+), 16 deletions(-)
