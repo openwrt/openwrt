@@ -38,6 +38,14 @@
 	};
 };
 
+&gpio_export {
+	poe_passthrough {
+		gpio-export,name = "poe_passthrough";
+		gpio-export,output = <0>;
+		gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &mdio {
 	ephy7: ethernet-phy@7 {
 		reg = <7>;
