@@ -1,8 +1,7 @@
-From 4d3dd68a1c56674ff666d0622b545992fac31754 Mon Sep 17 00:00:00 2001
+From 1763b155da022ac0f984463e68cb0cda8ffc1fe8 Mon Sep 17 00:00:00 2001
 From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
-Date: Sun, 31 Jul 2022 22:54:52 +0200
-Subject: [PATCH 733/768] net: dsa: lantiq_gswip: Use dev_err_probe where
- appropriate
+Date: Tue, 11 Jun 2024 15:54:26 +0200
+Subject: net: dsa: lantiq_gswip: Use dev_err_probe where appropriate
 
 dev_err_probe() can be used to simplify the existing code. Also it means
 we get rid of the following warning which is seen whenever the PMAC
@@ -11,8 +10,13 @@ probed yet:
   gswip 1e108000.switch: dsa switch register failed: -517
 
 Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-5-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/dsa/lantiq_gswip.c | 53 ++++++++++++++++------------------
+ drivers/net/dsa/lantiq_gswip.c | 53 ++++++++++++++++++++----------------------
  1 file changed, 25 insertions(+), 28 deletions(-)
 
 --- a/drivers/net/dsa/lantiq_gswip.c
@@ -70,10 +74,10 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  			priv->gphy_fw_name_cfg = &xrx200a2x_gphy_data;
  			break;
  		default:
--			dev_err(dev, "unknown GSWIP version: 0x%x", version);
+-			dev_err(dev, "unknown GSWIP version: 0x%x\n", version);
 -			return -ENOENT;
 +			return dev_err_probe(dev, -ENOENT,
-+					     "unknown GSWIP version: 0x%x",
++					     "unknown GSWIP version: 0x%x\n",
 +					     version);
  		}
  	}
@@ -83,12 +87,12 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  		priv->gphy_fw_name_cfg = match->data;
  
 -	if (!priv->gphy_fw_name_cfg) {
--		dev_err(dev, "GPHY compatible type not supported");
+-		dev_err(dev, "GPHY compatible type not supported\n");
 -		return -ENOENT;
 -	}
 +	if (!priv->gphy_fw_name_cfg)
 +		return dev_err_probe(dev, -ENOENT,
-+				     "GPHY compatible type not supported");
++				     "GPHY compatible type not supported\n");
  
  	priv->num_gphy_fw = of_get_available_child_count(gphy_fw_list_np);
  	if (!priv->num_gphy_fw)
@@ -96,10 +100,10 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  			return -EINVAL;
  		break;
  	default:
--		dev_err(dev, "unknown GSWIP version: 0x%x", version);
+-		dev_err(dev, "unknown GSWIP version: 0x%x\n", version);
 -		return -ENOENT;
 +		return dev_err_probe(dev, -ENOENT,
-+				     "unknown GSWIP version: 0x%x", version);
++				     "unknown GSWIP version: 0x%x\n", version);
  	}
  
  	/* bring up the mdio bus */
@@ -134,11 +138,11 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  		goto mdio_bus;
  	}
  	if (!dsa_is_cpu_port(priv->ds, priv->hw_info->cpu_port)) {
--		dev_err(dev, "wrong CPU port defined, HW only supports port: %i",
+-		dev_err(dev, "wrong CPU port defined, HW only supports port: %i\n",
 -			priv->hw_info->cpu_port);
 -		err = -EINVAL;
 +		err = dev_err_probe(dev, -EINVAL,
-+				    "wrong CPU port defined, HW only supports port: %i",
++				    "wrong CPU port defined, HW only supports port: %i\n",
 +				    priv->hw_info->cpu_port);
  		goto disable_switch;
  	}
