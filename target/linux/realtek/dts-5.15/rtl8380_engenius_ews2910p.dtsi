@@ -7,9 +7,6 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "engenius,ews2910p", "realtek,rtl838x-soc";
-	model = "EnGenius EWS2910P";
-
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_fault;
@@ -154,13 +151,11 @@
 				label = "jffs2-log";
 				reg = <0xe00000 0x200000>;
 			};
-			partition@1000000 {
-				compatible = "openwrt,uimage";
+			firmware_partition_1: partition@1000000 {
 				label = "firmware";
 				reg = <0x1000000 0x800000>;
-				openwrt,ih-magic = <0x03802910>;
 			};
-			partition@1800000 {
+			firmware_partition_2: partition@1800000 {
 				label = "firmware2";
 				reg = <0x1800000 0x800000>;
 			};
