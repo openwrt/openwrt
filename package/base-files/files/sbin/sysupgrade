@@ -160,7 +160,7 @@ list_static_conffiles() {
 
 	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
-		\( -type f -o -type l \) $filter 2>/dev/null
+		\( -type f -o -type l -o -type d \) $filter 2>/dev/null
 }
 
 build_list_of_backup_config_files() {
