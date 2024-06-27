@@ -46,6 +46,7 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r4-poe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth1" "wan eth2"
 		;;
+	buffalo,wsr-6000ax8|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
 	nokia,ea0326gmp|\
@@ -130,6 +131,11 @@ mediatek_setup_macs()
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	buffalo,wsr-6000ax8)
+		lan_mac=$(mtd_get_mac_ascii board_data mac)
+		wan_mac=$lan_mac
+		label_mac=$lan_mac
 		;;
 	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in

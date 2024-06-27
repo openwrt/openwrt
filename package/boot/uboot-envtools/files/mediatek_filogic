@@ -56,6 +56,12 @@ jdcloud,re-cp-03)
 		;;
 	esac
 	;;
+buffalo,wsr-6000ax8|\
+mercusys,mr90x-v1|\
+routerich,ax3000)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
+	;;
 cmcc,rax3000m)
 	case "$(cmdline_get_var root)" in
 	/dev/mmc*)
@@ -100,11 +106,6 @@ glinet,gl-mt6000)
 	;;
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
-	;;
-mercusys,mr90x-v1|\
-routerich,ax3000)
-	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
