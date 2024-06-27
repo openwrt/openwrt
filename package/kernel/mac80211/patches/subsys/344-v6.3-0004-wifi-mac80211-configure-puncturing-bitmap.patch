@@ -38,7 +38,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1220,7 +1220,7 @@ static int ieee80211_start_ap(struct wip
+@@ -1223,7 +1223,7 @@ static int ieee80211_start_ap(struct wip
  	struct ieee80211_local *local = sdata->local;
  	struct beacon_data *old;
  	struct ieee80211_sub_if_data *vlan;
@@ -47,7 +47,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		      BSS_CHANGED_BEACON_ENABLED |
  		      BSS_CHANGED_BEACON |
  		      BSS_CHANGED_P2P_PS |
-@@ -1307,6 +1307,11 @@ static int ieee80211_start_ap(struct wip
+@@ -1310,6 +1310,11 @@ static int ieee80211_start_ap(struct wip
  				IEEE80211_HE_PHY_CAP2_UL_MU_FULL_MU_MIMO;
  	}
  
@@ -59,7 +59,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (sdata->vif.type == NL80211_IFTYPE_AP &&
  	    params->mbssid_config.tx_wdev) {
  		err = ieee80211_set_ap_mbssid_options(sdata,
-@@ -3559,6 +3564,12 @@ static int __ieee80211_csa_finalize(stru
+@@ -3569,6 +3574,12 @@ static int __ieee80211_csa_finalize(stru
  	lockdep_assert_held(&local->mtx);
  	lockdep_assert_held(&local->chanctx_mtx);
  
@@ -72,7 +72,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/*
  	 * using reservation isn't immediate as it may be deferred until later
  	 * with multi-vif. once reservation is complete it will re-schedule the
-@@ -3601,7 +3612,7 @@ static int __ieee80211_csa_finalize(stru
+@@ -3611,7 +3622,7 @@ static int __ieee80211_csa_finalize(stru
  		return err;
  
  	cfg80211_ch_switch_notify(sdata->dev, &sdata->deflink.csa_chandef, 0,
@@ -81,7 +81,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return 0;
  }
-@@ -3863,9 +3874,13 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3873,9 +3884,13 @@ __ieee80211_channel_switch(struct wiphy
  		goto out;
  	}
  
@@ -95,7 +95,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (sdata->deflink.csa_block_tx)
  		ieee80211_stop_vif_queues(local, sdata,
-@@ -3873,7 +3888,8 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3883,7 +3898,8 @@ __ieee80211_channel_switch(struct wiphy
  
  	cfg80211_ch_switch_started_notify(sdata->dev,
  					  &sdata->deflink.csa_chandef, 0,

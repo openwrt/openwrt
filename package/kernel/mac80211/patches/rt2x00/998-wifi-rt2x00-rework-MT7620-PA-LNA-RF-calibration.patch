@@ -39,8 +39,8 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 -	}
  }
  
- static void rt2800_config_alc_rt6352(struct rt2x00_dev *rt2x00dev,
-@@ -4457,89 +4449,63 @@ static void rt2800_config_channel(struct
+ static void rt2800_config_alc(struct rt2x00_dev *rt2x00dev,
+@@ -4438,89 +4430,63 @@ static void rt2800_config_channel(struct
  		usleep_range(1000, 1500);
  	}
  
@@ -174,7 +174,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  
  	bbp = rt2800_bbp_read(rt2x00dev, 4);
-@@ -5649,43 +5615,6 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -5630,43 +5596,6 @@ void rt2800_vco_calibration(struct rt2x0
  		}
  	}
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
@@ -218,7 +218,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  }
  EXPORT_SYMBOL_GPL(rt2800_vco_calibration);
  
-@@ -8650,7 +8579,7 @@ static void rt2800_r_calibration(struct
+@@ -8631,7 +8560,7 @@ static void rt2800_r_calibration(struct
  		rt2x00_warn(rt2x00dev, "Wait MAC Tx Status to MAX !!!\n");
  
  	maccfg = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
@@ -227,7 +227,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, maccfg);
  
  	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_RX)))
-@@ -10688,30 +10617,143 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10669,30 +10598,143 @@ static void rt2800_init_rfcsr_6352(struc
  		rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  	}
@@ -385,7 +385,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  }
  
-@@ -10804,6 +10846,10 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -10785,6 +10827,10 @@ int rt2800_enable_radio(struct rt2x00_de
  	rt2800_init_bbp(rt2x00dev);
  	rt2800_init_rfcsr(rt2x00dev);
  

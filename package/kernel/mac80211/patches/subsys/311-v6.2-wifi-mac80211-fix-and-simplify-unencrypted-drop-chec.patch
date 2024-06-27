@@ -26,7 +26,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2403,7 +2403,6 @@ static int ieee80211_802_1x_port_control
+@@ -2405,7 +2405,6 @@ static int ieee80211_802_1x_port_control
  
  static int ieee80211_drop_unencrypted(struct ieee80211_rx_data *rx, __le16 fc)
  {
@@ -34,7 +34,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  
-@@ -2414,31 +2413,6 @@ static int ieee80211_drop_unencrypted(st
+@@ -2416,31 +2415,6 @@ static int ieee80211_drop_unencrypted(st
  	if (status->flag & RX_FLAG_DECRYPTED)
  		return 0;
  
@@ -66,7 +66,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/* Drop unencrypted frames if key is set. */
  	if (unlikely(!ieee80211_has_protected(fc) &&
  		     !ieee80211_is_any_nullfunc(fc) &&
-@@ -2892,8 +2866,16 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2898,8 +2872,16 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  	hdr = (struct ieee80211_hdr *) skb->data;
  	mesh_hdr = (struct ieee80211s_hdr *) (skb->data + hdrlen);
  

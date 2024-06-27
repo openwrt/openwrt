@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -6194,6 +6194,19 @@ static inline int ieee80211_data_to_8023
+@@ -6310,6 +6310,19 @@ static inline int ieee80211_data_to_8023
  }
  
  /**
@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * Decode an IEEE 802.11 A-MSDU and convert it to a list of 802.3 frames.
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2899,7 +2899,6 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2905,7 +2905,6 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  	static ieee80211_rx_result res;
  	struct ethhdr ethhdr;
  	const u8 *check_da = ethhdr.h_dest, *check_sa = ethhdr.h_source;
@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (unlikely(ieee80211_has_a4(hdr->frame_control))) {
  		check_da = NULL;
-@@ -2917,7 +2916,6 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2923,7 +2922,6 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  		case NL80211_IFTYPE_MESH_POINT:
  			check_sa = NULL;
  			check_da = NULL;
@@ -57,7 +57,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			break;
  		default:
  			break;
-@@ -2932,10 +2930,21 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2938,10 +2936,21 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  					  data_offset, true))
  		return RX_DROP_UNUSABLE;
  
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		rx->skb = __skb_dequeue(&frame_list);
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -591,6 +591,9 @@ __sta_info_alloc(struct ieee80211_sub_if
+@@ -594,6 +594,9 @@ __sta_info_alloc(struct ieee80211_sub_if
  
  	sta->sta_state = IEEE80211_STA_NONE;
  
