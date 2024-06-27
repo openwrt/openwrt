@@ -1,6 +1,7 @@
 /*
  * Platform driver for Realtek RTL8367B family chips, i.e. RTL8367R-VB, RTL8367RB and RTL8363SB
  * extended with support for RTL8367C family chips, i.e. RTL8367S and RTL8367RB-VB
+ * extended with support for RTL8367D family chips, i.e. RTL8367S-VB
  *
  * Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -273,6 +274,7 @@ struct rtl8367b_initval {
 #define RTL8367B_FAMILY_B_RLVID0	1
 #define RTL8367B_FAMILY_B_RLVID1	2
 #define RTL8367B_FAMILY_C		3
+#define RTL8367B_FAMILY_D		4
 
 #define RTL8367B_TYPE_UNKNOWN			((RTL8367B_FAMILY_UNKNOWN << RTL8367B_FAMILY_SHIFT) + 0)
 #define RTL8367B_TYPE_UNKNOWN_RLVID0		((RTL8367B_FAMILY_B_RLVID0 << RTL8367B_FAMILY_SHIFT) + 0)
@@ -282,6 +284,7 @@ struct rtl8367b_initval {
 #define RTL8367B_TYPE_RTL8363SB			((RTL8367B_FAMILY_B_RLVID1 << RTL8367B_FAMILY_SHIFT) + 3)
 #define RTL8367B_TYPE_RTL8367S			((RTL8367B_FAMILY_C << RTL8367B_FAMILY_SHIFT) + 0)
 #define RTL8367B_TYPE_RTL8367RB_VB		((RTL8367B_FAMILY_C << RTL8367B_FAMILY_SHIFT) + 1)
+#define RTL8367B_TYPE_RTL8367S_VB		((RTL8367B_FAMILY_D << RTL8367B_FAMILY_SHIFT) + 0) /* chip with exception in extif assignment */
 
 static struct rtl8366_mib_counter
 rtl8367b_mib_counters[RTL8367B_NUM_MIB_COUNTERS] = {
@@ -751,6 +754,7 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 
 	switch (smi->chip >> RTL8367B_FAMILY_SHIFT) {
 	case RTL8367B_FAMILY_C:
+	case RTL8367B_FAMILY_D:
 		initvals = rtl8367c_initvals;
 		count = ARRAY_SIZE(rtl8367c_initvals);
 		break;
@@ -977,6 +981,13 @@ static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 			if (cpu_port == RTL8367B_CPU_PORT_NUM)
 				id = 1;
 			else {
+				dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
+				return -EINVAL;
+			}
+		} else if (smi->chip == RTL8367B_TYPE_RTL8367S_VB) { /* for the RTL8367S-VB chip, cpu_port 7 corresponds to extif1, cpu_port 6 corresponds to extif0 */
+			if (cpu_port != RTL8367B_CPU_PORT_NUM) {
+				id = cpu_port - RTL8367B_CPU_PORT_NUM - 1;
+			} else {
 				dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
 				return -EINVAL;
 			}
@@ -1590,6 +1601,12 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 	}
 
 	switch (chip_ver) {
+	case 0x0010:
+		if (chip_num == 0x6642) {
+			chip_name = "8367S-VB";
+			smi->chip = RTL8367B_TYPE_RTL8367S_VB;
+		}
+		break;
 	case 0x0020:
 		if (chip_num == 0x6367) {
 			chip_name = "8367RB-VB";
