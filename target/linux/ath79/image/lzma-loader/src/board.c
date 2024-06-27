@@ -51,9 +51,9 @@ static void tlwr1043nd_init(void)
 static inline void tlwr1043nd_init(void) {}
 #endif
 
-#ifdef CONFIG_BOARD_MERAKI_MR18
+#if defined(CONFIG_BOARD_MERAKI_MR18)
 
-static int mr18_extract_sgmii_res_cal(void)
+static int extract_qca955x_sgmii_res_cal(void)
 {
 	unsigned int base;
 	unsigned int reversed_sgmii_value;
@@ -138,7 +138,7 @@ static void qca955x_device_reset_clear(unsigned int mask)
 	WRITEREG(reg, t & ~mask);
 }
 
-static void mr18_setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
+static void setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
 {
 	unsigned int ethbase, pllbase, t;
 
@@ -166,16 +166,18 @@ static void mr18_setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
 		QCA955X_SGMII_SERDES_LOCK_DETECT_STATUS))
 		;
 }
+#endif
 
+#ifdef CONFIG_BOARD_MERAKI_MR18
 static inline void mr18_init(void)
 {
 	int res;
 
 	printf("Meraki MR18\n");
 
-	res = mr18_extract_sgmii_res_cal();
+	res = extract_qca955x_sgmii_res_cal();
 	if (res >= 0)
-		mr18_setup_qca955x_eth_serdes_cal(res);
+		setup_qca955x_eth_serdes_cal(res);
 
 }
 #else
