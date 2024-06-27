@@ -1,5 +1,5 @@
 /*
- * Platform driver for Realtek RTL8367B family chips, i.e. RTL8367R-VB and RTL8367RB
+ * Platform driver for Realtek RTL8367B family chips, i.e. RTL8367R-VB, RTL8367RB and RTL8363SB
  * extended with support for RTL8367C family chips, i.e. RTL8367S and RTL8367RB-VB
  *
  * Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
@@ -279,6 +279,7 @@ struct rtl8367b_initval {
 #define RTL8367B_TYPE_UNKNOWN_RLVID1		((RTL8367B_FAMILY_B_RLVID1 << RTL8367B_FAMILY_SHIFT) + 0)
 #define RTL8367B_TYPE_RTL8367R_VB		((RTL8367B_FAMILY_B_RLVID1 << RTL8367B_FAMILY_SHIFT) + 1) /* chip with exception in extif assignment */
 #define RTL8367B_TYPE_RTL8367RB			((RTL8367B_FAMILY_B_RLVID1 << RTL8367B_FAMILY_SHIFT) + 2)
+#define RTL8367B_TYPE_RTL8363SB			((RTL8367B_FAMILY_B_RLVID1 << RTL8367B_FAMILY_SHIFT) + 3)
 #define RTL8367B_TYPE_RTL8367S			((RTL8367B_FAMILY_C << RTL8367B_FAMILY_SHIFT) + 0)
 #define RTL8367B_TYPE_RTL8367RB_VB		((RTL8367B_FAMILY_C << RTL8367B_FAMILY_SHIFT) + 1)
 
@@ -1579,8 +1580,13 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		}
 		break;
 	case 0x1000:
-		chip_name = "8367RB";
-		smi->chip = RTL8367B_TYPE_RTL8367RB;
+		if (chip_num == 0x6000) {
+			chip_name = "8363SB";
+			smi->chip = RTL8367B_TYPE_RTL8363SB;
+		} else {
+			chip_name = "8367RB";
+			smi->chip = RTL8367B_TYPE_RTL8367RB;
+		}
 		break;
 	case 0x1010:
 		chip_name = "8367R-VB";
