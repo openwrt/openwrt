@@ -1077,20 +1077,40 @@ static int rtl8367_led_blinkrate_set(struct rtl8366_smi *smi, unsigned int rate)
 }
 
 #ifdef CONFIG_OF
-static int rtl8367_extif_init_of(struct rtl8366_smi *smi, int id,
+static int rtl8367_extif_init_of(struct rtl8366_smi *smi,
 				 const char *name)
 {
 	struct rtl8367_extif_config *cfg;
 	const __be32 *prop;
 	int size;
 	int err;
+	unsigned cpu_port;
+	unsigned id;
 
 	prop = of_get_property(smi->parent->of_node, name, &size);
-	if (!prop)
-		return rtl8367_extif_init(smi, id, NULL);
+	if (!prop) {
+		rtl8367_extif_init(smi, 0, NULL);
+		rtl8367_extif_init(smi, 1, NULL);
+		dev_err(smi->parent, "%s property is not defined\n", name);
+		return -EINVAL;
+	}
 
-	if (size != (9 * sizeof(*prop))) {
+	if (size != (10 * sizeof(*prop))) {
 		dev_err(smi->parent, "%s property is invalid\n", name);
+		return -EINVAL;
+	}
+
+	cpu_port = be32_to_cpup(prop++);
+	switch (cpu_port) {
+	case RTL8367_CPU_PORT_NUM-1:
+	case RTL8367_CPU_PORT_NUM:
+		id = RTL8367_CPU_PORT_NUM - cpu_port;
+		rtl8367_extif_init(smi, (id == 0) ? 1 : 0, NULL);
+		smi->cpu_port = cpu_port;
+		break;
+
+	default:
+		dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
 		return -EINVAL;
 	}
 
@@ -1114,7 +1134,7 @@ static int rtl8367_extif_init_of(struct rtl8366_smi *smi, int id,
 	return err;
 }
 #else
-static int rtl8367_extif_init_of(struct rtl8366_smi *smi, int id,
+static int rtl8367_extif_init_of(struct rtl8366_smi *smi,
 				 const char *name)
 {
 	return -EINVAL;
@@ -1135,11 +1155,7 @@ static int rtl8367_setup(struct rtl8366_smi *smi)
 
 	/* initialize external interfaces */
 	if (smi->parent->of_node) {
-		err = rtl8367_extif_init_of(smi, 0, "realtek,extif0");
-		if (err)
-			return err;
-
-		err = rtl8367_extif_init_of(smi, 1, "realtek,extif1");
+		err = rtl8367_extif_init_of(smi, "realtek,extif");
 		if (err)
 			return err;
 	} else {
@@ -1721,11 +1737,6 @@ static int rtl8367_detect(struct rtl8366_smi *smi)
 
 	dev_info(smi->parent, "RTL%s ver. %u chip found\n",
 		 chip_name, rtl_ver & RTL8367_RTL_VER_MASK);
-
-	if (of_property_present(smi->parent->of_node, "realtek,extif1"))
-		smi->cpu_port = RTL8367_CPU_PORT_NUM - 1;
-
-	dev_info(smi->parent, "CPU port: %u\n", smi->cpu_port);
 
 	return 0;
 }
