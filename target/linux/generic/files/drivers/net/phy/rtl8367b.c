@@ -268,6 +268,22 @@ struct rtl8367b_initval {
 #define RTL8367B_MIB_RXB_ID		0	/* IfInOctets */
 #define RTL8367B_MIB_TXB_ID		28	/* IfOutOctets */
 
+#define RTL8367D_PORT_STATUS_REG(_p)		(0x12d0 + (_p))
+
+#define RTL8367D_PORT_STATUS_SPEED1_MASK	0x3000
+#define RTL8367D_PORT_STATUS_SPEED1_SHIFT	10 /*12-2*/
+
+#define RTL8367D_REG_MAC0_FORCE_SELECT		0x12c0
+#define RTL8367D_REG_MAC0_FORCE_SELECT_EN	0x12c8
+#define RTL8367D_DI_FORCE_REG(_x)		(RTL8367D_REG_MAC0_FORCE_SELECT + (_x) + 5)
+#define RTL8367D_DI_FORCE_REG_EN(_x)		(RTL8367D_REG_MAC0_FORCE_SELECT_EN + (_x) + 5)
+
+#define RTL8367B_SPEED_10		0
+#define RTL8367B_SPEED_100		1
+#define RTL8367B_SPEED_1000		2
+#define RTL8367D_SPEED_500		3
+#define RTL8367D_SPEED_2500		5
+
 #define RTL8367B_FAMILY_SHIFT		4
 
 #define RTL8367B_FAMILY_UNKNOWN		0
@@ -881,15 +897,7 @@ static int rtl8367b_extif_set_force(struct rtl8366_smi *smi, int id,
 	u32 val;
 	int err;
 
-	mask = (RTL8367B_DI_FORCE_MODE |
-		RTL8367B_DI_FORCE_NWAY |
-		RTL8367B_DI_FORCE_TXPAUSE |
-		RTL8367B_DI_FORCE_RXPAUSE |
-		RTL8367B_DI_FORCE_LINK |
-		RTL8367B_DI_FORCE_DUPLEX |
-		RTL8367B_DI_FORCE_SPEED_MASK);
-
-	val = pa->speed;
+	val = pa->speed & RTL8367B_DI_FORCE_SPEED_MASK;
 	val |= pa->force_mode ? RTL8367B_DI_FORCE_MODE : 0;
 	val |= pa->nway ? RTL8367B_DI_FORCE_NWAY : 0;
 	val |= pa->txpause ? RTL8367B_DI_FORCE_TXPAUSE : 0;
@@ -897,7 +905,23 @@ static int rtl8367b_extif_set_force(struct rtl8366_smi *smi, int id,
 	val |= pa->link ? RTL8367B_DI_FORCE_LINK : 0;
 	val |= pa->duplex ? RTL8367B_DI_FORCE_DUPLEX : 0;
 
-	REG_RMW(smi, RTL8367B_DI_FORCE_REG(id), mask, val);
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D) {
+		val |= (pa->speed << RTL8367D_PORT_STATUS_SPEED1_SHIFT) & RTL8367D_PORT_STATUS_SPEED1_MASK;
+
+		REG_WR(smi, RTL8367D_DI_FORCE_REG(id), val);
+
+		REG_WR(smi, RTL8367D_DI_FORCE_REG_EN(id), pa->force_mode ? 0xffff : 0x0000);
+	} else {
+		mask = (RTL8367B_DI_FORCE_MODE |
+			RTL8367B_DI_FORCE_NWAY |
+			RTL8367B_DI_FORCE_TXPAUSE |
+			RTL8367B_DI_FORCE_RXPAUSE |
+			RTL8367B_DI_FORCE_LINK |
+			RTL8367B_DI_FORCE_DUPLEX |
+			RTL8367B_DI_FORCE_SPEED_MASK);
+
+		REG_RMW(smi, RTL8367B_DI_FORCE_REG(id), mask, val);
+	}
 
 	return 0;
 }
@@ -1017,6 +1041,8 @@ static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 	cfg->ability.duplex = be32_to_cpup(prop++);
 	cfg->ability.speed = be32_to_cpup(prop++);
 
+	if (((smi->chip >> RTL8367B_FAMILY_SHIFT) != RTL8367B_FAMILY_D) && (cfg->ability.speed > RTL8367B_SPEED_1000))
+		cfg->ability.speed = RTL8367B_SPEED_1000;
 	err = rtl8367b_extif_init(smi, id, cfg);
 	kfree(cfg);
 
@@ -1333,7 +1359,10 @@ static int rtl8367b_sw_get_port_link(struct switch_dev *dev,
 	if (port >= RTL8367B_NUM_PORTS)
 		return -EINVAL;
 
-	rtl8366_smi_read_reg(smi, RTL8367B_PORT_STATUS_REG(port), &data);
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D)
+		rtl8366_smi_read_reg(smi, RTL8367D_PORT_STATUS_REG(port), &data);
+	else
+		rtl8366_smi_read_reg(smi, RTL8367B_PORT_STATUS_REG(port), &data);
 
 	link->link = !!(data & RTL8367B_PORT_STATUS_LINK);
 	if (!link->link)
@@ -1344,16 +1373,29 @@ static int rtl8367b_sw_get_port_link(struct switch_dev *dev,
 	link->tx_flow = !!(data & RTL8367B_PORT_STATUS_TXPAUSE);
 	link->aneg = !!(data & RTL8367B_PORT_STATUS_NWAY);
 
-	speed = (data & RTL8367B_PORT_STATUS_SPEED_MASK);
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D)
+		speed = (data & RTL8367B_PORT_STATUS_SPEED_MASK) | ((data & RTL8367D_PORT_STATUS_SPEED1_MASK) >> RTL8367D_PORT_STATUS_SPEED1_SHIFT);
+	else
+		speed = (data & RTL8367B_PORT_STATUS_SPEED_MASK);
 	switch (speed) {
-	case 0:
+	case RTL8367B_SPEED_10:
 		link->speed = SWITCH_PORT_SPEED_10;
 		break;
-	case 1:
+	case RTL8367B_SPEED_100:
 		link->speed = SWITCH_PORT_SPEED_100;
 		break;
-	case 2:
+	case RTL8367B_SPEED_1000:
 		link->speed = SWITCH_PORT_SPEED_1000;
+		break;
+	case RTL8367D_SPEED_500:
+		if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D) {
+			link->speed = SWITCH_PORT_SPEED_500;
+		} else {
+			link->speed = SWITCH_PORT_SPEED_UNKNOWN;
+		}
+		break;
+	case RTL8367D_SPEED_2500:
+		link->speed = SWITCH_PORT_SPEED_2500;
 		break;
 	default:
 		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
