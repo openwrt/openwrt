@@ -1,0 +1,345 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Zyxel WSQ50";
+	compatible = "zyxel,wsq50";
+
+	aliases {
+		led-boot = &status_green;
+		led-boot-aux1 = &status_red;
+		led-boot-aux2 = &status_blue;
+		led-running = &status_green;
+		led-running-aux1 = &status_red;
+		led-running-aux2 = &status_blue;
+		led-failsafe = &status_red;
+		led-upgrade = &status_blue;
+	};
+
+	chosen {
+		bootargs-append = " clk_ignore_unused fstools_ignore_partname=1";
+		stdout-path = &blsp1_uart1;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 0x12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	soc {
+		tcsr@1949000 {
+			reg = <0x1949000 0x100>;
+			compatible = "qcom,tcsr";
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			reg = <0x194b000 0x100>;
+			compatible = "qcom,tcsr";
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			reg = <0x1953000 0x1000>;
+			compatible = "qcom,tcsr";
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			reg = <0x1957000 0x100>;
+			compatible = "qcom,tcsr";
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+};
+
+&tlmm {
+	serial1_pins: serial1_pinmux {
+		pins = "gpio16", "gpio17";
+		function = "blsp_uart1";
+		bias-disable;
+	};
+
+	serial2_pins: serial2_pinmux {
+		pins = "gpio8", "gpio9", "gpio10", "gpio11";
+		function = "blsp_uart2";
+		bias-disable;
+	};
+
+	led_pins: led_pinmux {
+		pins = "gpio44", "gpio45", "gpio46";
+		output-high;
+		bias-pull-up;
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+
+	tricolor: lp5562@30 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/ 8 <1>;
+
+		status_red: chan@0 {
+			reg = <0>;
+			chan-name = "red:status";
+			led-cur = /bits/ 8 <144>;
+			max-cur = /bits/ 8 <255>;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+		status_green: chan@1 {
+			reg = <1>;
+			chan-name = "green:status";
+			led-cur = /bits/ 8 <69>;
+			max-cur = /bits/ 8 <255>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		status_blue: chan@2 {
+			reg = <2>;
+			chan-name = "blue:status";
+			led-cur = /bits/ 8 <192>;
+			max-cur = /bits/ 8 <255>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+	};
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fixed-partitions";
+
+			partition0@0 {
+				label = "0:QSEE";
+				reg = <0x00060000 0x00060000>;
+				read-only;
+			};
+
+			partition1@E0000 {
+				label = "u-boot";
+				reg = <0x000E0000 0x00080000>;
+				read-only;
+			};
+
+			partition2@160000 {
+				label = "u-boot-env";
+				reg = <0x00160000 0x00010000>;
+			};
+
+			partition3@170000 {
+				label = "0:ART";
+				reg = <0x00170000 0x00010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_gmac1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					precal_wifi0: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					macaddr_wifi0: macaddr@1006 {
+						reg = <0x1006 0x6>;
+					};
+
+					precal_wifi1: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					macaddr_wifi1: macaddr@5006 {
+						reg = <0x5006 0x6>;
+					};
+
+					precal_wifi2: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+
+					macaddr_wifi2: macaddr@9006 {
+						reg = <0x9006 0x6>;
+					};
+				};
+			};
+
+			partition4@180000 {
+				label = "dualflag";
+				reg = <0x00180000 0x00010000>;
+			};
+
+			partition5@190000 {
+				label = "CRT";
+				reg = <0x00190000 0x00010000>;
+				read-only;
+			};
+
+			partition6@1A0000 {
+				label = "reserved";
+				reg = <0x001A0000 0x00260000>;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&serial2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&sdhci {
+	status = "okay";
+	non-removable;
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+	label = "lan1";
+};
+
+&swport5 { /* WAN */
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
+};
+
+&wifi0 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_wifi0>, <&macaddr_wifi0>;
+	qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+};
+
+&wifi1 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_wifi1>, <&macaddr_wifi1>;
+	qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+};
+
+&pcie0 { /* QCA9984 */
+	status = "okay";
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
+	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		#address-cells = <3>;
+		#size-cells = <2>;
+		reg = <0x00000000 0 0 0 0>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			reg = <0x00010000 0 0 0 0>;
+			ieee80211-freq-limit = <5170000 5875000>;
+			compatible = "qcom,ath10k";
+			nvmem-cell-names = "pre-calibration", "mac-address";
+			nvmem-cells = <&precal_wifi2>, <&macaddr_wifi2>;
+			qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
+		};
+	};
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
