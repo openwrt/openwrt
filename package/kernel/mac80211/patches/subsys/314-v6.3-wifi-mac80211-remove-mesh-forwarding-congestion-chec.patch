@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -329,7 +329,6 @@ struct mesh_stats {
+@@ -333,7 +333,6 @@ struct mesh_stats {
  	__u32 fwded_frames;		/* Mesh total forwarded frames */
  	__u32 dropped_frames_ttl;	/* Not transmitted since mesh_ttl == 0*/
  	__u32 dropped_frames_no_route;	/* Not transmitted, no route found */
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define PREQ_Q_F_START		0x1
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2926,11 +2926,6 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
+@@ -2932,11 +2932,6 @@ ieee80211_rx_h_mesh_fwding(struct ieee80
  		return RX_CONTINUE;
  
  	ac = ieee802_1d_to_ac[skb->priority];

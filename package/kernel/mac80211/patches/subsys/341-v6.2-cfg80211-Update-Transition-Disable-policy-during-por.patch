@@ -26,7 +26,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -6005,7 +6005,7 @@ done:
+@@ -6010,7 +6010,7 @@ done:
  	brcmf_dbg(CONN, "Report roaming result\n");
  
  	if (profile->use_fwsup == BRCMF_PROFILE_FWSUP_1X && profile->is_ft) {
@@ -37,7 +37,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -7720,6 +7720,8 @@ void cfg80211_roamed(struct net_device *
+@@ -7836,6 +7836,8 @@ void cfg80211_roamed(struct net_device *
   *
   * @dev: network device
   * @bssid: the BSSID of the AP
@@ -46,7 +46,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @gfp: allocation flags
   *
   * This function should be called by a driver that supports 4 way handshake
-@@ -7730,7 +7732,7 @@ void cfg80211_roamed(struct net_device *
+@@ -7846,7 +7848,7 @@ void cfg80211_roamed(struct net_device *
   * indicate the 802.11 association.
   */
  void cfg80211_port_authorized(struct net_device *dev, const u8 *bssid,
@@ -76,7 +76,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -271,6 +271,8 @@ struct cfg80211_event {
+@@ -277,6 +277,8 @@ struct cfg80211_event {
  		} ij;
  		struct {
  			u8 bssid[ETH_ALEN];
@@ -85,7 +85,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} pa;
  	};
  };
-@@ -409,7 +411,8 @@ int cfg80211_disconnect(struct cfg80211_
+@@ -421,7 +423,8 @@ int cfg80211_disconnect(struct cfg80211_
  			bool wextev);
  void __cfg80211_roamed(struct wireless_dev *wdev,
  		       struct cfg80211_roam_info *info);
@@ -97,7 +97,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void cfg80211_autodisconnect_wk(struct work_struct *work);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -17936,7 +17936,8 @@ void nl80211_send_roamed(struct cfg80211
+@@ -17993,7 +17993,8 @@ void nl80211_send_roamed(struct cfg80211
  }
  
  void nl80211_send_port_authorized(struct cfg80211_registered_device *rdev,
@@ -107,7 +107,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct sk_buff *msg;
  	void *hdr;
-@@ -17956,6 +17957,11 @@ void nl80211_send_port_authorized(struct
+@@ -18013,6 +18014,11 @@ void nl80211_send_port_authorized(struct
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, bssid))
  		goto nla_put_failure;
  
