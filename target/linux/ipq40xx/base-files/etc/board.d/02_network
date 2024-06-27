@@ -119,6 +119,9 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
+	zyxel,wsq50)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	openmesh,a42|\
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
