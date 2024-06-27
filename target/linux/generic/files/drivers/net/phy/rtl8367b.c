@@ -288,6 +288,14 @@ struct rtl8367b_initval {
 #define RTL8367D_SPEED_500		3
 #define RTL8367D_SPEED_2500		5
 
+#define RTL8367D_FIDMAX			3
+#define RTL8367D_FID_MASK		3
+#define RTL8367D_TA_VLAN1_FID_SHIFT	0
+#define RTL8367D_TA_VLAN1_FID_MASK	RTL8367D_FID_MASK
+
+#define RTL8367D_VID_MASK		0xfff
+#define RTL8367D_TA_VLAN_VID_MASK	RTL8367D_VID_MASK
+
 #define RTL8367B_FAMILY_SHIFT		4
 
 #define RTL8367B_FAMILY_UNKNOWN		0
@@ -1184,8 +1192,12 @@ static int rtl8367b_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
 			 RTL8367B_TA_VLAN0_MEMBER_MASK;
 	vlan4k->untag = (data[0] >> RTL8367B_TA_VLAN0_UNTAG_SHIFT) &
 			RTL8367B_TA_VLAN0_UNTAG_MASK;
-	vlan4k->fid = (data[1] >> RTL8367B_TA_VLAN1_FID_SHIFT) &
-		      RTL8367B_TA_VLAN1_FID_MASK;
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D)
+		vlan4k->fid = (data[1] >> RTL8367D_TA_VLAN1_FID_SHIFT) &
+				RTL8367D_TA_VLAN1_FID_MASK;
+	else
+		vlan4k->fid = (data[1] >> RTL8367B_TA_VLAN1_FID_SHIFT) &
+				RTL8367B_TA_VLAN1_FID_MASK;
 
 	return 0;
 }
@@ -1200,7 +1212,7 @@ static int rtl8367b_set_vlan_4k(struct rtl8366_smi *smi,
 	if (vlan4k->vid >= RTL8367B_NUM_VIDS ||
 	    vlan4k->member > RTL8367B_TA_VLAN0_MEMBER_MASK ||
 	    vlan4k->untag > RTL8367B_UNTAG_MASK ||
-	    vlan4k->fid > RTL8367B_FIDMAX)
+	    vlan4k->fid > (((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D) ? RTL8367D_FIDMAX : RTL8367B_FIDMAX))
 		return -EINVAL;
 
 	memset(data, 0, sizeof(data));
@@ -1209,15 +1221,24 @@ static int rtl8367b_set_vlan_4k(struct rtl8366_smi *smi,
 		  RTL8367B_TA_VLAN0_MEMBER_SHIFT;
 	data[0] |= (vlan4k->untag & RTL8367B_TA_VLAN0_UNTAG_MASK) <<
 		   RTL8367B_TA_VLAN0_UNTAG_SHIFT;
-	data[1] = (vlan4k->fid & RTL8367B_TA_VLAN1_FID_MASK) <<
-		  RTL8367B_TA_VLAN1_FID_SHIFT;
+
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D)
+		data[1] = (vlan4k->fid & RTL8367D_TA_VLAN1_FID_MASK) <<
+			   RTL8367D_TA_VLAN1_FID_SHIFT;
+	else
+		data[1] = (vlan4k->fid & RTL8367B_TA_VLAN1_FID_MASK) <<
+			   RTL8367B_TA_VLAN1_FID_SHIFT;
 
 	for (i = 0; i < ARRAY_SIZE(data); i++)
 		REG_WR(smi, RTL8367B_TA_WRDATA_REG(i), data[i]);
 
 	/* write VID */
-	REG_WR(smi, RTL8367B_TA_ADDR_REG,
-	       vlan4k->vid & RTL8367B_TA_VLAN_VID_MASK);
+	if ((smi->chip >> RTL8367B_FAMILY_SHIFT) == RTL8367B_FAMILY_D)
+		REG_WR(smi, RTL8367B_TA_ADDR_REG,
+		       vlan4k->vid & RTL8367D_TA_VLAN_VID_MASK);
+	else
+		REG_WR(smi, RTL8367B_TA_ADDR_REG,
+		       vlan4k->vid & RTL8367B_TA_VLAN_VID_MASK);
 
 	/* write table access control word */
 	REG_WR(smi, RTL8367B_TA_CTRL_REG, RTL8367B_TA_CTRL_CVLAN_WRITE);
