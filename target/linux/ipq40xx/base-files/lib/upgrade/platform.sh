@@ -246,7 +246,8 @@ platform_do_upgrade() {
 		CI_KERNPART="vol"
 		nand_do_upgrade "$1"
 		;;
-	zyxel,nbg6617)
+	zyxel,nbg6617|\
+	zyxel,wsq50)
 		zyxel_do_upgrade "$1"
 		;;
 	*)
