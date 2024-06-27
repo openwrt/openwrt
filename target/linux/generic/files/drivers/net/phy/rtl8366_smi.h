@@ -64,6 +64,7 @@ struct rtl8366_smi {
 	u8			dbg_vlan_4k_page;
 #endif
 	u32			phy_id;
+	u8			chip;
 	struct mii_bus		*ext_mbus;
 };
 
