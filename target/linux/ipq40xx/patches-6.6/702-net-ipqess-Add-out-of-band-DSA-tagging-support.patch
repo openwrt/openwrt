@@ -72,7 +72,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  		napi_gro_receive(&rx_ring->napi_rx, skb);
  
  		rx_ring->ess->stats.rx_packets++;
-@@ -706,6 +715,26 @@ static void ipqess_rollback_tx(struct ip
+@@ -701,6 +710,26 @@ static void ipqess_rollback_tx(struct ip
  	tx_ring->head = start_index;
  }
  
@@ -99,7 +99,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  static int ipqess_tx_map_and_fill(struct ipqess_tx_ring *tx_ring,
  				  struct sk_buff *skb)
  {
-@@ -716,6 +745,8 @@ static int ipqess_tx_map_and_fill(struct
+@@ -711,6 +740,8 @@ static int ipqess_tx_map_and_fill(struct
  	u16 len;
  	int i;
  
@@ -108,7 +108,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  	if (skb_is_gso(skb)) {
  		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4) {
  			lso_word1 |= IPQESS_TPD_IPV4_EN;
-@@ -917,6 +948,33 @@ static const struct net_device_ops ipqes
+@@ -912,6 +943,33 @@ static const struct net_device_ops ipqes
  	.ndo_tx_timeout		= ipqess_tx_timeout,
  };
  
@@ -142,7 +142,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  static void ipqess_hw_stop(struct ipqess *ess)
  {
  	int i;
-@@ -1184,12 +1242,19 @@ static int ipqess_axi_probe(struct platf
+@@ -1189,12 +1247,19 @@ static int ipqess_axi_probe(struct platf
  		netif_napi_add(netdev, &ess->rx_ring[i].napi_rx, ipqess_rx_napi);
  	}
  
