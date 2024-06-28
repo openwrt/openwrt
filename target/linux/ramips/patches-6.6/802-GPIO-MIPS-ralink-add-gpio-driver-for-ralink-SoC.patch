@@ -9,8 +9,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  drivers/gpio/Kconfig       |   6 +
  drivers/gpio/Makefile      |   1 +
- drivers/gpio/gpio-ralink.c | 336 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 343 insertions(+)
+ drivers/gpio/gpio-ralink.c | 328 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 335 insertions(+)
  create mode 100644 drivers/gpio/gpio-ralink.c
 
 --- a/drivers/gpio/Kconfig
@@ -40,7 +40,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,336 @@
+@@ -0,0 +1,328 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -299,25 +299,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static int ralink_gpio_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node;
-+	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	struct ralink_gpio_chip *rg;
 +	const __be32 *ngpio;
-+
-+	if (!res) {
-+		dev_err(&pdev->dev, "failed to find resource\n");
-+		return -ENOMEM;
-+	}
 +
 +	rg = devm_kzalloc(&pdev->dev,
 +			sizeof(struct ralink_gpio_chip), GFP_KERNEL);
 +	if (!rg)
 +		return -ENOMEM;
 +
-+	rg->membase = devm_ioremap_resource(&pdev->dev, res);
-+	if (!rg->membase) {
-+		dev_err(&pdev->dev, "cannot remap I/O memory region\n");
-+		return -ENOMEM;
-+	}
++	rg->membase = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(rg->membase))
++		return PTR_ERR(rg->membase);
 +
 +	if (of_property_read_u8_array(np, "ralink,register-map",
 +			rg->regs, GPIO_REG_MAX)) {
