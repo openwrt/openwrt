@@ -72,6 +72,9 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 33) 2
 		ath11k_set_macflag
 		;;
+	tplink,eap660hd-v1)
+		caldata_from_file "/tmp/factory_data/radio" 0 0x20000
+		;;
 	prpl,haze|\
 	spectrum,sax1v1k)
 		caldata_extract_mmc "0:ART" 0x1000 0x20000
