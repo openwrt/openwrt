@@ -47,7 +47,7 @@
 		};
 
 		timer: timer@100 {
-			compatible = "ralink,rt3050-timer", "ralink,rt2880-timer";
+			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
 			clocks = <&sysc 3>;
@@ -57,7 +57,7 @@
 		};
 
 		watchdog: watchdog@120 {
-			compatible = "ralink,rt3050-wdt", "ralink,rt2880-wdt";
+			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
 			clocks = <&sysc 4>;
@@ -70,7 +70,7 @@
 		};
 
 		intc: intc@200 {
-			compatible = "ralink,rt3050-intc", "ralink,rt2880-intc";
+			compatible = "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
 			interrupt-controller;
@@ -89,7 +89,7 @@
 		};
 
 		uart: uart@500 {
-			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
+			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
 			clocks = <&sysc 5>;
@@ -105,7 +105,7 @@
 		};
 
 		gpio0: gpio@600 {
-			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x600 0x34>;
 
 			gpio-controller;
@@ -122,7 +122,7 @@
 		};
 
 		gpio1: gpio@638 {
-			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x638 0x24>;
 
 			gpio-controller;
@@ -138,7 +138,7 @@
 		};
 
 		gpio2: gpio@660 {
-			compatible = "ralink,rt3050-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x660 0x24>;
 
 			gpio-controller;
@@ -209,7 +209,7 @@
 		};
 
 		spi0: spi@b00 {
-			compatible = "ralink,rt3050-spi", "ralink,rt2880-spi";
+			compatible = "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;
 
 			resets = <&sysc 18>;
@@ -227,7 +227,7 @@
 		};
 
 		uartlite: uartlite@c00 {
-			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
+			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
 			clocks = <&sysc 10>;

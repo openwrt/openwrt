@@ -48,7 +48,7 @@
 		};
 
 		timer: timer@100 {
-			compatible = "ralink,mt7620a-timer", "ralink,rt2880-timer";
+			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
 			clocks = <&sysc 5>;
@@ -58,7 +58,7 @@
 		};
 
 		watchdog: watchdog@120 {
-			compatible = "ralink,mt7620a-wdt", "ralink,rt2880-wdt";
+			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
 			clocks = <&sysc 6>;
@@ -71,7 +71,7 @@
 		};
 
 		intc: intc@200 {
-			compatible = "ralink,mt7620a-intc", "ralink,rt2880-intc";
+			compatible = "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
 			interrupt-controller;
@@ -90,7 +90,7 @@
 		};
 
 		gpio0: gpio@600 {
-			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x600 0x34>;
 
 			interrupt-parent = <&intc>;
@@ -107,7 +107,7 @@
 		};
 
 		gpio1: gpio@638 {
-			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x638 0x24>;
 
 			interrupt-parent = <&intc>;
@@ -126,7 +126,7 @@
 		};
 
 		gpio2: gpio@660 {
-			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x660 0x24>;
 
 			interrupt-parent = <&intc>;
@@ -145,7 +145,7 @@
 		};
 
 		gpio3: gpio@688 {
-			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
+			compatible = "ralink,rt2880-gpio";
 			reg = <0x688 0x24>;
 
 			interrupt-parent = <&intc>;
@@ -182,7 +182,7 @@
 		};
 
 		spi0: spi@b00 {
-			compatible = "ralink,mt7620a-spi", "ralink,rt2880-spi";
+			compatible = "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
 
 			clocks = <&sysc 10>;
