@@ -3,6 +3,7 @@
 #include "rtl8380_netgear_gigabit.dtsi"
 
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/leds/rtl838x-leds.h>
 
 / {
 	compatible = "netgear,gs308t-v1", "realtek,rtl838x-soc";
@@ -29,6 +30,26 @@
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 31 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	port_leds {
+		compatible = "realtek,rtl838x-leds";
+
+		// two leds per port
+		leds-per-port = <RTL838x_NUM_LEDS_TWO_LEDS>;
+
+		// serial control mode
+		led-control = <RTL838x_LEDS_CONTROL_SERIAL>;
+
+		// blink all leds on power-on
+		power-on-blink;
+
+		// beware - due to how the leds are wired (back-to-back), only one of
+		// them can be active at any given time. if both would light up,
+		// both will go off.
+		// this limits the number of useful combinations.
+		led_green: led-0-mode = <RTL838x_LEDS_MODE_LINK_ACT_1G>;
+		led_amber: led-1-mode = <RTL838x_LEDS_MODE_LINK_ACT_100M_10M>;
 	};
 };
 
