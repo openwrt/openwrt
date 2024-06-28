@@ -1,20 +1,17 @@
-From 69fdd2c4f937796b934e89c33acde9d082e27bfd Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 4 Aug 2014 20:36:29 +0200
-Subject: [PATCH 27/53] GPIO: MIPS: ralink: add gpio driver for ralink SoC
+Subject: [PATCH 2/3] GPIO: MIPS: ralink: add gpio driver for ralink SoC
 
 Add gpio driver for Ralink SoC. This driver makes the gpio core on
 RT2880, RT305x, rt3352, rt3662, rt3883, rt5350 and mt7620 work.
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
-Cc: linux-mips@linux-mips.org
-Cc: linux-gpio@vger.kernel.org
 ---
- arch/mips/include/asm/mach-ralink/gpio.h |   24 ++
- drivers/gpio/Kconfig                     |    6 +
- drivers/gpio/Makefile                    |    1 +
- drivers/gpio/gpio-ralink.c               |  355 ++++++++++++++++++++++++++++++
- 4 files changed, 386 insertions(+)
+ arch/mips/include/asm/mach-ralink/gpio.h |  24 ++
+ drivers/gpio/Kconfig                     |   6 +
+ drivers/gpio/Makefile                    |   1 +
+ drivers/gpio/gpio-ralink.c               | 336 +++++++++++++++++++++++
+ 4 files changed, 367 insertions(+)
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
@@ -72,7 +69,7 @@ Cc: linux-gpio@vger.kernel.org
  obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,341 @@
+@@ -0,0 +1,336 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -333,7 +330,7 @@ Cc: linux-gpio@vger.kernel.org
 +	struct device_node *np = pdev->dev.of_node;
 +	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	struct ralink_gpio_chip *rg;
-+	const __be32 *ngpio, *gpiobase;
++	const __be32 *ngpio;
 +
 +	if (!res) {
 +		dev_err(&pdev->dev, "failed to find resource\n");
@@ -363,14 +360,9 @@ Cc: linux-gpio@vger.kernel.org
 +		return -EINVAL;
 +	}
 +
-+	gpiobase = of_get_property(np, "ralink,gpio-base", NULL);
-+	if (gpiobase)
-+		rg->chip.base = be32_to_cpu(*gpiobase);
-+	else
-+		rg->chip.base = -1;
-+
 +	spin_lock_init(&rg->lock);
 +
++	rg->chip.base = -1;
 +	rg->chip.parent = &pdev->dev;
 +	rg->chip.label = dev_name(&pdev->dev);
 +	rg->chip.fwnode = of_node_to_fwnode(np);
