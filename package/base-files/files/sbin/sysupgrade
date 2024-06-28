@@ -158,7 +158,7 @@ list_changed_conffiles() {
 list_static_conffiles() {
 	local filter=$1
 
-	find $(sed -ne '/^[[:space:]]*$/d; /^#/d; p' \
+	find $(sed -ne 's/^[[:space:]]*//; /^$/d; /^#/d; p' \
 		/etc/sysupgrade.conf /lib/upgrade/keep.d/* 2>/dev/null) \
 		\( -type f -o -type l \) $filter 2>/dev/null
 }
