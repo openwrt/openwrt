@@ -2081,6 +2081,16 @@ define Device/nec_wg1800hp
 endef
 TARGET_DEVICES += nec_wg1800hp
 
+define Device/nec_wg1800hp2
+  SOC := qca9558
+  DEVICE_MODEL := Aterm WG1800HP2
+  IMAGE_SIZE := 16128k
+  NEC_FW_TYPE := H049
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += nec_wg1800hp2
+
 define Device/nec_wg800hp
   SOC := qca9563
   DEVICE_VENDOR := NEC
