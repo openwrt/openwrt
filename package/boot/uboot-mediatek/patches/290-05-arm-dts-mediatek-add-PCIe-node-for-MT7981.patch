@@ -1,0 +1,57 @@
+From 8983b7465df1324e8b97e6a720204b426c52deb0 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 28 May 2024 23:35:38 +0200
+Subject: [PATCH 4/4] arm: dts: mediatek: add PCIe node for MT7981
+
+Add PCIe node for MT7981 with all the required properties to make PCIe
+work.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/dts/mt7981.dtsi | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+--- a/arch/arm/dts/mt7981.dtsi
++++ b/arch/arm/dts/mt7981.dtsi
+@@ -366,6 +366,41 @@
+ 		status = "okay";
+ 	};
+ 
++	pcie: pcie@11280000 {
++		compatible = "mediatek,mt8192-pcie";
++		device_type = "pci";
++		reg = <0x11280000 0x4000>;
++		reg-names = "pcie-mac";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&infracfg_ao CK_INFRA_IPCIE_CK>,
++				<&infracfg_ao CK_INFRA_IPCIE_PIPE_CK>,
++				<&infracfg_ao CK_INFRA_IPCIER_CK>,
++				<&infracfg_ao CK_INFRA_IPCIEB_CK>;
++		clock-names = "pl_250m", "tl_26m", "peri_26m", "top_133m";
++		phys = <&u3port0 PHY_TYPE_PCIE>;
++		phy-names = "pcie-phy";
++		bus-range = <0x00 0xff>;
++		ranges = <0x82000000 0 0x20000000 0x20000000 0 0x10000000>;
++
++		#interrupt-cells = <1>;
++
++		interrupt-map-mask = <0 0 0 7>;
++		interrupt-map = <0 0 0 1 &pcie_intc 0>,
++			<0 0 0 2 &pcie_intc 1>,
++			<0 0 0 3 &pcie_intc 2>,
++			<0 0 0 4 &pcie_intc 3>;
++
++		status = "disabled";
++
++		pcie_intc: interrupt-controller {
++			interrupt-controller;
++			#interrupt-cells = <1>;
++			#address-cells = <0>;
++		};
++	};
++
+ 	usbtphy: usb-phy@11e10000 {
+ 		compatible = "mediatek,mt7981",
+ 			     "mediatek,generic-tphy-v2";
