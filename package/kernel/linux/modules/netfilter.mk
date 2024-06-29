@@ -132,6 +132,22 @@ endef
 $(eval $(call KernelPackage,nf-conntrack6))
 
 
+define KernelPackage/nf-dup-inet
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables dup in ip/ip6/inet family support
+  HIDDEN:=1
+  DEPENDS:=+kmod-nf-conntrack +IPV6:kmod-nf-conntrack6
+  KCONFIG:= \
+	CONFIG_NF_DUP_IPV4 \
+	CONFIG_NF_DUP_IPV6
+  FILES:= \
+	$(LINUX_DIR)/net/ipv4/netfilter/nf_dup_ipv4.ko \
+	$(LINUX_DIR)/net/ipv6/netfilter/nf_dup_ipv6.ko
+endef
+
+$(eval $(call KernelPackage,nf-dup-inet))
+
+
 define KernelPackage/nf-log
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter Logging
@@ -716,7 +732,7 @@ $(eval $(call KernelPackage,ipt-tproxy))
 
 define KernelPackage/ipt-tee
   TITLE:=TEE support
-  DEPENDS:=+kmod-ipt-conntrack
+  DEPENDS:=+kmod-ipt-conntrack +kmod-nf-dup-inet
   KCONFIG:=$(KCONFIG_IPT_TEE)
   FILES:=$(foreach mod,$(IPT_TEE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir nf_tee $(IPT_TEE-m)))
@@ -1150,18 +1166,14 @@ $(eval $(call KernelPackage,nft-bridge))
 define KernelPackage/nft-dup-inet
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables dup in ip/ip6/inet family support
-  DEPENDS:=+kmod-nft-core +kmod-nf-conntrack +IPV6:kmod-nf-conntrack6
+  DEPENDS:=+kmod-nft-core +kmod-nf-dup-inet
   KCONFIG:= \
-	CONFIG_NF_DUP_IPV4 \
-	CONFIG_NF_DUP_IPV6 \
 	CONFIG_NFT_DUP_IPV4 \
 	CONFIG_NFT_DUP_IPV6
   FILES:= \
-	$(LINUX_DIR)/net/ipv4/netfilter/nf_dup_ipv4.ko \
-	$(LINUX_DIR)/net/ipv6/netfilter/nf_dup_ipv6.ko \
 	$(LINUX_DIR)/net/ipv4/netfilter/nft_dup_ipv4.ko \
 	$(LINUX_DIR)/net/ipv6/netfilter/nft_dup_ipv6.ko
-  AUTOLOAD:=$(call AutoProbe,nf_dup_ipv4 nf_dup_ipv6 nft_dup_ipv4 nft_dup_ipv6)
+  AUTOLOAD:=$(call AutoProbe,nft_dup_ipv4 nft_dup_ipv6)
 endef
 
 $(eval $(call KernelPackage,nft-dup-inet))
