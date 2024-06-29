@@ -67,6 +67,13 @@ ipq806x_setup_interfaces()
 	meraki,mr52)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
+	xiaomi,mi-router-hd)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
+	;;
 	*)
 		echo "Unsupported hardware. Network interfaces not intialized"
 		;;
