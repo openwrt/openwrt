@@ -655,7 +655,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	}
 +}
 +
-+static int __init ipqess_init(struct net_device *netdev)
++static int ipqess_init(struct net_device *netdev)
 +{
 +	struct ipqess *ess = netdev_priv(netdev);
 +	struct device_node *of_node = ess->pdev->dev.of_node;
