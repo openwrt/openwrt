@@ -1170,3 +1170,15 @@ endef
 
 $(eval $(call KernelPackage,crypto-xts))
 
+
+define KernelPackage/crypto-xxhash
+  TITLE:=xxHash non-cryptographic hash algorithm
+  DEPENDS:=+kmod-crypto-hash +kmod-lib-xxhash
+  KCONFIG:=CONFIG_CRYPTO_XXHASH
+  FILES:=$(LINUX_DIR)/crypto/xxhash_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,xxhash_generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-xxhash))
+
