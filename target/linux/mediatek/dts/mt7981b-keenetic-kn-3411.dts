@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+#include "mt7981.dtsi"
+
+/ {
+	model = "Keenetic KN-3411";
+	compatible = "keenetic,kn-3411", "mediatek,mt7981";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_green;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+		label-mac-device = &gmac1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-2 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	/* HeYang HYF1GQ4UDACAE (128M) */
+	spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* bl2 */
+			partition@0 {
+				label = "preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			/* fip */
+			partition@80000 {
+				label = "u-boot";
+				reg = <0x80000 0x200000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "u-config";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "rf-eeprom";
+				reg = <0x300000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			/* firmware_1 */
+			partition@500000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x500000 0x3500000>;
+			};
+
+			partition@3a00000 {
+				label = "config_1";
+				reg = <0x3a00000 0x80000>;
+				read-only;
+			};
+
+			partition@3a80000 {
+				label = "dump";
+				reg = <0x3a80000 0x80000>;
+				read-only;
+			};
+
+			partition@3c00000 {
+				label = "u-state";
+				reg = <0x3c00000 0x20000>;
+				read-only;
+			};
+
+			partition@3e80000 {
+				label = "u-config_res";
+				reg = <0x3e80000 0x80000>;
+				read-only;
+			};
+
+			partition@3f00000 {
+				label = "rf-eeprom_res";
+				reg = <0x3f00000 0x200000>;
+				read-only;
+			};
+
+			/* firmware_2 */
+			partition@4100000 {
+				label = "ubi";
+				reg = <0x4140000 0x3500000>;
+			};
+
+			partition@7600000 {
+				label = "config_2";
+				reg = <0x7600000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_4 0>;
+	};
+};
+
+&wifi {
+	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
+	status = "okay";
+};
+
+&xhci {
+	status = "disabled";
+};

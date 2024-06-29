@@ -737,6 +737,21 @@ define Device/jdcloud_re-cp-03
 endef
 TARGET_DEVICES += jdcloud_re-cp-03
 
+define Device/keenetic_kn-3411
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3411
+  DEVICE_DTS := mt7981b-keenetic-kn-3411
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE_SIZE := 54272k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to 128k | append-rootfs | \
+	pad-to 128k | check-size $$(IMAGE_SIZE) | zyimage -d 0x803411 -v "KN-3411"
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
+        pad-to 128k | append-metadata
+endef
+TARGET_DEVICES += keenetic_kn-3411
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb

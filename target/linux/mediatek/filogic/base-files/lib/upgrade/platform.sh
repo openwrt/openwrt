@@ -60,6 +60,29 @@ xiaomi_initial_setup()
 	esac
 }
 
+keenetic_upgrade_prepare_data() {
+	local ubidev ubivol
+
+	ubidev=$(nand_attach_ubi "$CI_UBIPART")
+	[ -n "$ubidev" ] || return 1
+
+	ubivol=$(nand_find_volume "$ubidev" rootfs_data)
+	if [ -n "$ubivol" ]; then
+		# remove ubiblock
+		nand_remove_ubiblock "$ubivol" || return 1
+
+		 # kill data volume
+		ubirmvol "/dev/$ubidev" -N rootfs_data
+	fi
+
+	# create data volume
+	if ! ubimkvol "/dev/$ubidev" -N rootfs_data -m; then
+		echo "cannot initialize rootfs_data volume"
+		return 1
+	fi
+	return 0
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -141,6 +164,15 @@ platform_do_upgrade() {
 	xiaomi,mi-router-wr30u-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
+		;;
+	keenetic,kn-3411)
+		CI_UBIPART="ubi"
+		sync
+		if keenetic_upgrade_prepare_data; then
+			get_image "$1" | mtd $MTD_ARGS write - "${PART_NAME:-image}"
+			[ $? -eq 0 ] && nand_do_upgrade_success
+		fi
+		nand_do_upgrade_failed
 		;;
 	mercusys,mr90x-v1)
 		CI_UBIPART="ubi0"
