@@ -434,7 +434,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	const __be32 *addr;
  	int index, len;
  	int ret;
-@@ -1651,11 +1508,6 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -1653,11 +1510,6 @@ static int vc4_hdmi_audio_init(struct vc
  	vc4_hdmi->audio.dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  	vc4_hdmi->audio.dma_data.maxburst = 2;
  
@@ -446,7 +446,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	ret = devm_snd_dmaengine_pcm_register(dev, &pcm_conf, 0);
  	if (ret) {
  		dev_err(dev, "Could not register PCM component: %d\n", ret);
-@@ -1669,12 +1521,13 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -1671,12 +1523,13 @@ static int vc4_hdmi_audio_init(struct vc
  		return ret;
  	}
  
@@ -466,7 +466,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	}
  
  	dai_link->cpus		= &vc4_hdmi->audio.cpu;
-@@ -1687,9 +1540,9 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -1689,9 +1542,9 @@ static int vc4_hdmi_audio_init(struct vc
  
  	dai_link->name = "MAI";
  	dai_link->stream_name = "MAI PCM";
