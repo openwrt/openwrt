@@ -339,7 +339,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return 0;
  }
-@@ -1912,6 +1973,17 @@ static int vc4_hdmi_cec_enable(struct ce
+@@ -1914,6 +1975,17 @@ static int vc4_hdmi_cec_enable(struct ce
  	u32 val;
  	int ret;
  
@@ -357,7 +357,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	ret = pm_runtime_resume_and_get(&vc4_hdmi->pdev->dev);
  	if (ret)
  		return ret;
-@@ -1958,6 +2030,17 @@ static int vc4_hdmi_cec_disable(struct c
+@@ -1960,6 +2032,17 @@ static int vc4_hdmi_cec_disable(struct c
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	unsigned long flags;
  
@@ -375,7 +375,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  
  	if (!vc4_hdmi->variant->external_irq_controller)
-@@ -1986,6 +2069,17 @@ static int vc4_hdmi_cec_adap_log_addr(st
+@@ -1988,6 +2071,17 @@ static int vc4_hdmi_cec_adap_log_addr(st
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	unsigned long flags;
  
@@ -393,7 +393,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	spin_lock_irqsave(&vc4_hdmi->hw_lock, flags);
  	HDMI_WRITE(HDMI_CEC_CNTRL_1,
  		   (HDMI_READ(HDMI_CEC_CNTRL_1) & ~VC4_HDMI_CEC_ADDR_MASK) |
-@@ -2004,6 +2098,17 @@ static int vc4_hdmi_cec_adap_transmit(st
+@@ -2006,6 +2100,17 @@ static int vc4_hdmi_cec_adap_transmit(st
  	u32 val;
  	unsigned int i;
  
@@ -411,7 +411,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (msg->len > 16) {
  		drm_err(dev, "Attempting to transmit too much data (%d)\n", msg->len);
  		return -ENOMEM;
-@@ -2360,6 +2465,7 @@ static int vc4_hdmi_bind(struct device *
+@@ -2362,6 +2467,7 @@ static int vc4_hdmi_bind(struct device *
  	vc4_hdmi = devm_kzalloc(dev, sizeof(*vc4_hdmi), GFP_KERNEL);
  	if (!vc4_hdmi)
  		return -ENOMEM;

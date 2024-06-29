@@ -553,7 +553,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	memcpy(&vc4_hdmi->audio.infoframe, &params->cea, sizeof(params->cea));
  	vc4_hdmi_set_audio_infoframe(encoder);
  
-@@ -1678,6 +1803,8 @@ static void vc4_cec_read_msg(struct vc4_
+@@ -1680,6 +1805,8 @@ static void vc4_cec_read_msg(struct vc4_
  	struct cec_msg *msg = &vc4_hdmi->cec_rx_msg;
  	unsigned int i;
  
@@ -562,7 +562,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	msg->len = 1 + ((cntrl1 & VC4_HDMI_CEC_REC_WRD_CNT_MASK) >>
  					VC4_HDMI_CEC_REC_WRD_CNT_SHIFT);
  
-@@ -1696,11 +1823,12 @@ static void vc4_cec_read_msg(struct vc4_
+@@ -1698,11 +1825,12 @@ static void vc4_cec_read_msg(struct vc4_
  	}
  }
  
@@ -577,7 +577,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	cntrl1 = HDMI_READ(HDMI_CEC_CNTRL_1);
  	vc4_hdmi->cec_tx_ok = cntrl1 & VC4_HDMI_CEC_TX_STATUS_GOOD;
  	cntrl1 &= ~VC4_HDMI_CEC_START_XMIT_BEGIN;
-@@ -1709,11 +1837,24 @@ static irqreturn_t vc4_cec_irq_handler_t
+@@ -1711,11 +1839,24 @@ static irqreturn_t vc4_cec_irq_handler_t
  	return IRQ_WAKE_THREAD;
  }
  
@@ -603,7 +603,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi->cec_rx_msg.len = 0;
  	cntrl1 = HDMI_READ(HDMI_CEC_CNTRL_1);
  	vc4_cec_read_msg(vc4_hdmi, cntrl1);
-@@ -1726,6 +1867,18 @@ static irqreturn_t vc4_cec_irq_handler_r
+@@ -1728,6 +1869,18 @@ static irqreturn_t vc4_cec_irq_handler_r
  	return IRQ_WAKE_THREAD;
  }
  
@@ -622,7 +622,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static irqreturn_t vc4_cec_irq_handler(int irq, void *priv)
  {
  	struct vc4_hdmi *vc4_hdmi = priv;
-@@ -1736,14 +1889,17 @@ static irqreturn_t vc4_cec_irq_handler(i
+@@ -1738,14 +1891,17 @@ static irqreturn_t vc4_cec_irq_handler(i
  	if (!(stat & VC4_HDMI_CPU_CEC))
  		return IRQ_NONE;
  
@@ -642,7 +642,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return ret;
  }
  
-@@ -1752,6 +1908,7 @@ static int vc4_hdmi_cec_enable(struct ce
+@@ -1754,6 +1910,7 @@ static int vc4_hdmi_cec_enable(struct ce
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	/* clock period in microseconds */
  	const u32 usecs = 1000000 / CEC_CLOCK_FREQ;
@@ -650,7 +650,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	u32 val;
  	int ret;
  
-@@ -1759,6 +1916,8 @@ static int vc4_hdmi_cec_enable(struct ce
+@@ -1761,6 +1918,8 @@ static int vc4_hdmi_cec_enable(struct ce
  	if (ret)
  		return ret;
  
@@ -659,7 +659,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	val = HDMI_READ(HDMI_CEC_CNTRL_5);
  	val &= ~(VC4_HDMI_CEC_TX_SW_RESET | VC4_HDMI_CEC_RX_SW_RESET |
  		 VC4_HDMI_CEC_CNT_TO_4700_US_MASK |
-@@ -1789,12 +1948,17 @@ static int vc4_hdmi_cec_enable(struct ce
+@@ -1791,12 +1950,17 @@ static int vc4_hdmi_cec_enable(struct ce
  	if (!vc4_hdmi->variant->external_irq_controller)
  		HDMI_WRITE(HDMI_CEC_CPU_MASK_CLEAR, VC4_HDMI_CPU_CEC);
  
@@ -677,7 +677,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	if (!vc4_hdmi->variant->external_irq_controller)
  		HDMI_WRITE(HDMI_CEC_CPU_MASK_SET, VC4_HDMI_CPU_CEC);
-@@ -1802,6 +1966,8 @@ static int vc4_hdmi_cec_disable(struct c
+@@ -1804,6 +1968,8 @@ static int vc4_hdmi_cec_disable(struct c
  	HDMI_WRITE(HDMI_CEC_CNTRL_5, HDMI_READ(HDMI_CEC_CNTRL_5) |
  		   VC4_HDMI_CEC_TX_SW_RESET | VC4_HDMI_CEC_RX_SW_RESET);
  
@@ -686,7 +686,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	pm_runtime_put(&vc4_hdmi->pdev->dev);
  
  	return 0;
-@@ -1818,10 +1984,14 @@ static int vc4_hdmi_cec_adap_enable(stru
+@@ -1820,10 +1986,14 @@ static int vc4_hdmi_cec_adap_enable(stru
  static int vc4_hdmi_cec_adap_log_addr(struct cec_adapter *adap, u8 log_addr)
  {
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
@@ -701,7 +701,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
  }
  
-@@ -1830,6 +2000,7 @@ static int vc4_hdmi_cec_adap_transmit(st
+@@ -1832,6 +2002,7 @@ static int vc4_hdmi_cec_adap_transmit(st
  {
  	struct vc4_hdmi *vc4_hdmi = cec_get_drvdata(adap);
  	struct drm_device *dev = vc4_hdmi->connector.dev;
@@ -709,7 +709,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	u32 val;
  	unsigned int i;
  
-@@ -1838,6 +2009,8 @@ static int vc4_hdmi_cec_adap_transmit(st
+@@ -1840,6 +2011,8 @@ static int vc4_hdmi_cec_adap_transmit(st
  		return -ENOMEM;
  	}
  
@@ -718,7 +718,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	for (i = 0; i < msg->len; i += 4)
  		HDMI_WRITE(HDMI_CEC_TX_DATA_1 + (i >> 2),
  			   (msg->msg[i]) |
-@@ -1853,6 +2026,9 @@ static int vc4_hdmi_cec_adap_transmit(st
+@@ -1855,6 +2028,9 @@ static int vc4_hdmi_cec_adap_transmit(st
  	val |= VC4_HDMI_CEC_START_XMIT_BEGIN;
  
  	HDMI_WRITE(HDMI_CEC_CNTRL_1, val);
@@ -728,7 +728,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
  }
  
-@@ -1867,6 +2043,7 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -1869,6 +2045,7 @@ static int vc4_hdmi_cec_init(struct vc4_
  	struct cec_connector_info conn_info;
  	struct platform_device *pdev = vc4_hdmi->pdev;
  	struct device *dev = &pdev->dev;
@@ -736,7 +736,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	u32 value;
  	int ret;
  
-@@ -1887,10 +2064,12 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -1889,10 +2066,12 @@ static int vc4_hdmi_cec_init(struct vc4_
  	cec_fill_conn_info_from_drm(&conn_info, &vc4_hdmi->connector);
  	cec_s_conn_info(vc4_hdmi->cec_adap, &conn_info);
  
@@ -749,7 +749,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	vc4_hdmi_cec_update_clk_div(vc4_hdmi);
  
-@@ -1909,7 +2088,9 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -1911,7 +2090,9 @@ static int vc4_hdmi_cec_init(struct vc4_
  		if (ret)
  			goto err_remove_cec_rx_handler;
  	} else {
@@ -759,7 +759,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  		ret = request_threaded_irq(platform_get_irq(pdev, 0),
  					   vc4_cec_irq_handler,
-@@ -2179,6 +2360,7 @@ static int vc4_hdmi_bind(struct device *
+@@ -2181,6 +2362,7 @@ static int vc4_hdmi_bind(struct device *
  	vc4_hdmi = devm_kzalloc(dev, sizeof(*vc4_hdmi), GFP_KERNEL);
  	if (!vc4_hdmi)
  		return -ENOMEM;
