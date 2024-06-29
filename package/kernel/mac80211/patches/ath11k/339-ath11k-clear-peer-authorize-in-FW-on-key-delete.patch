@@ -1,0 +1,109 @@
+From e03398efe88479b3fca16ec8e7c2407cb10e6dbb Mon Sep 17 00:00:00 2001
+From: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+Date: Mon, 3 Jan 2022 19:00:44 +0530
+Subject: [PATCH] ath11k: clear peer authorize in FW on key delete
+
+During station rekey/dissassoc hostapd initiates
+DEL_KEY first, when host deletes the PTK of active
+peer it causes some race between UMAC and LMAC while
+encrypting currently queued packets and
+causes FW assert.
+
+Reset Peer authorized flag before deleting keys
+to avoid this FW assert as advised by FW team.
+The flag will be set again during re/assoc via
+WMI_PEER_ASSOC_CMDID.
+
+Note: This race is exposed by the patch
+Ib6de7d1f6ee ("ath11k: clear the keys properly
+when DISABLE_KEY"), where changes are made to do
+clear key to take effect in FW by setting
+actual keylen for DISABLE_KEY.
+
+[58964.723224] ath11k c000000.wifi: mac sta 8c:fd:f0:02:1a:e5 old state 4 new state :3
+[58964.763188] ath11k c000000.wifi: WMI vdev install key idx 0 cipher 0 len 16
+[58964.763410] ath11k c000000.wifi: vdev install key ev idx 0 flags 00000000 macaddr 8c:fd:f0:02:1a:e5 status 0
+[58964.769068] ath11k c000000.wifi: mac disassoc sta 8c:fd:f0:02:1a:e5
+[58964.779149] ath11k c000000.wifi: mac sta 8c:fd:f0:02:1a:e5 old state 3 new state :2
+[58964.785072] ath11k c000000.wifi: mac chanctx change freq 2462 width 2 ptr 00000000bf135626 changed 10
+[58964.792700] ath11k c000000.wifi: mac sta 8c:fd:f0:02:1a:e5 old state 2 new state :1
+[58964.802249] ath11k c000000.wifi: WMI peer delete vdev_id 0 peer_addr 8c:fd:f0:02:1a:e5
+[58964.894130] whal_interrupt.c:4101 Assertion !(panic_mask & S3_RECD_LT_MPDU_BMSK) failed param0 :zero,param1 :zero,param2o
+[58964.894130] Thread ID : 0x00000059 Thread name : WLAN RT0 Process ID : 0x00000002 Process name :wlan0
+[58964.894130]
+[58964.894130] Registers:
+[58964.894130] SP : 0x4b830cd0
+[58964.894130] FP : 0x4b830cf0
+[58964.894130] PC : 0xb022b4d0
+[58964.894130] SSR : 0x01970127
+[58964.894130] BADVA : 0x00000000
+[58964.894130] LR : 0xb005190c
+[58964.894130]
+[58964.894130] StackDump
+[58964.894130] from:0x4b830cd0
+[58964.894130] to: 0xc01dd090:
+[58964.894130]
+[58964.946433] remoteproc remoteproc0: crash detected in cd00000.remoteproc: type fatal error
+[58964.968656] remoteproc remoteproc0: handling crash #1 in cd00000.remoteproc
+[58964.976886] remoteproc remoteproc0: recovering cd00000.remoteproc
+[58964.998985] ath11k c000000.wifi: ATH11K Driver Stats
+
+Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 29 ++++++++++++++++++++++++++++-
+ 1 file changed, 28 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4277,7 +4277,25 @@ static int ath11k_mac_op_set_key(struct
+ 	 */
+ 	if (peer && cmd == SET_KEY)
+ 		ath11k_peer_frags_flush(ar, peer);
+-	spin_unlock_bh(&ab->base_lock);
++
++	/* Reset peer authorized flag in FW before deleting keys
++	 * to avoid races in FW during encryption of queued packets.
++	 */
++	if (peer && sta && cmd == DISABLE_KEY && peer->is_authorized) {
++		peer->is_authorized = false;
++		spin_unlock_bh(&ab->base_lock);
++		ret = ath11k_wmi_set_peer_param(ar, sta->addr,
++						arvif->vdev_id,
++						WMI_PEER_AUTHORIZE,
++						0);
++		if (ret) {
++			ath11k_warn(ar->ab, "Unable to reset authorize flag for "
++				    "peer (%pM) vdev %d: %d\n",
++				    sta->addr, arvif->vdev_id, ret);
++		}
++	} else {
++		spin_unlock_bh(&ab->base_lock);
++	}
+ 
+ 	if (!peer) {
+ 		if (cmd == SET_KEY) {
+@@ -4867,10 +4867,22 @@ free:
+ 		spin_lock_bh(&ar->ab->base_lock);
+ 
+ 		peer = ath11k_peer_find(ar->ab, arvif->vdev_id, sta->addr);
+-		if (peer)
++		if (peer) {
+ 			peer->is_authorized = false;
+ 
+-		spin_unlock_bh(&ar->ab->base_lock);
++			spin_unlock_bh(&ar->ab->base_lock);
++			ret = ath11k_wmi_set_peer_param(ar, sta->addr,
++							arvif->vdev_id,
++							WMI_PEER_AUTHORIZE,
++							0);
++			if (ret) {
++				ath11k_warn(ar->ab, "Unable to reset authorize flag for "
++					    "peer (%pM) vdev %d: %d\n",
++					    sta->addr, arvif->vdev_id, ret);
++			}
++		} else {
++			spin_unlock_bh(&ar->ab->base_lock);
++		}
+ 	} else if (old_state == IEEE80211_STA_ASSOC &&
+ 		   new_state == IEEE80211_STA_AUTH &&
+ 		   (vif->type == NL80211_IFTYPE_AP ||
