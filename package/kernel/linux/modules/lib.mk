@@ -122,22 +122,31 @@ endef
 $(eval $(call KernelPackage,lib-lzo))
 
 
+define KernelPackage/lib-xxhash
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=xxhash support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_XXHASH
+  FILES:=$(LINUX_DIR)/lib/xxhash.ko
+endef
+
+$(eval $(call KernelPackage,lib-xxhash))
+
+
 define KernelPackage/lib-zstd
   SUBMENU:=$(LIB_MENU)
   TITLE:=ZSTD support
-  DEPENDS:=+kmod-crypto-acompress
+  DEPENDS:=+kmod-crypto-acompress +kmod-lib-xxhash
   KCONFIG:= \
 	CONFIG_CRYPTO_ZSTD \
 	CONFIG_ZSTD_COMPRESS \
-	CONFIG_ZSTD_DECOMPRESS \
-	CONFIG_XXHASH
+	CONFIG_ZSTD_DECOMPRESS
   FILES:= \
 	$(LINUX_DIR)/crypto/zstd.ko \
-	$(LINUX_DIR)/lib/xxhash.ko \
 	$(LINUX_DIR)/lib/zstd/zstd_common.ko@ge6.1 \
 	$(LINUX_DIR)/lib/zstd/zstd_compress.ko \
 	$(LINUX_DIR)/lib/zstd/zstd_decompress.ko
-  AUTOLOAD:=$(call AutoProbe,xxhash zstd zstd_compress zstd_decompress)
+  AUTOLOAD:=$(call AutoProbe,zstd zstd_compress zstd_decompress)
 endef
 
 define KernelPackage/lib-zstd/description
