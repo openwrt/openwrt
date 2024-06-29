@@ -52,7 +52,8 @@ static inline void tlwr1043nd_init(void) {}
 #endif
 
 #if defined(CONFIG_BOARD_MERAKI_MR18) || \
-    defined(CONFIG_BOARD_NEC_WG1400HP)
+    defined(CONFIG_BOARD_NEC_WG1400HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP)
 
 static int extract_qca955x_sgmii_res_cal(void)
 {
@@ -217,6 +218,7 @@ static inline void huawei_ap_init(void) {}
 #endif
 
 #if defined(CONFIG_BOARD_NEC_WG1400HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP) || \
     defined(CONFIG_BOARD_NEC_WG600HP) || \
     defined(CONFIG_BOARD_NEC_WR8750N) || \
     defined(CONFIG_BOARD_NEC_WR9500N)
@@ -290,7 +292,8 @@ static inline void nec_aterm_init(void)
 		 AR934X_RESET_RTC);
 	WRITEREG(reg + AR934X_RESET_REG_RESET_MODULE, val);
 }
-#elif defined(CONFIG_BOARD_NEC_WG1400HP)
+#elif defined(CONFIG_BOARD_NEC_WG1400HP) || \
+      defined(CONFIG_BOARD_NEC_WG1800HP)
 
 #define QCA955X_GMAC_MR_AN_CONTROL_PHY_RESET_MASK	BIT(15)
 #define QCA955X_GMAC_MR_AN_CONTROL_FULL_DUPLEX_MASK	BIT(8)

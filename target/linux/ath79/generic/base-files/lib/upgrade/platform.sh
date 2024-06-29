@@ -17,7 +17,8 @@ platform_check_image() {
 	ubnt,routerstation-pro)
 		platform_check_image_redboot_fis "$1"
 		;;
-	nec,wg1400hp)
+	nec,wg1400hp|\
+	nec,wg1800hp)
 		local uboot_mtd=$(find_mtd_part "bootloader")
 
 		# check "U-Boot <year>.<month>" string in the "bootloader" partition
