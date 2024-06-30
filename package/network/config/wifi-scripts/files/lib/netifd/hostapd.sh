@@ -674,11 +674,16 @@ hostapd_set_bss_options() {
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
-				json_get_vars auth_secret auth_port
+				json_get_vars auth_secret auth_port dae_client dae_secret dae_port dae_client dae_secret dae_port
 				set_default auth_port 1812
-				json_for_each_item append_auth_server auth_server
+    				set_default dae_port 3799
+				json_for_each_item append_auth_server auth_server 
 				append bss_conf "macaddr_acl=2" "$N"
 				append bss_conf "wpa_psk_radius=2" "$N"
+                                [ -n "$dae_client" -a -n "$dae_secret" ] && {
+        	                        append bss_conf "radius_das_port=$dae_port" "$N"
+                                        append bss_conf "radius_das_client=$dae_client $dae_secret" "$N"
+                                }
 			elif [ ${#key} -eq 64 ]; then
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
