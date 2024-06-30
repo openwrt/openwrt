@@ -167,9 +167,6 @@ ipq40xx_setup_macs()
 	8dev,habanero-dvk)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
-	asus,rt-ac42u)
-		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
-		;;
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
