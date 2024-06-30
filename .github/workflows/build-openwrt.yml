@@ -1,0 +1,62 @@
+name: Build OpenWrt
+
+on:
+  push:
+    branches:
+      - custom-build
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: 安装依赖
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential ccache ecj fastjar file g++ gawk \
+        gettext git java-propose-classpath libelf-dev libncurses5-dev \
+        libncursesw5-dev libssl-dev python python2.7-dev python3 unzip wget \
+        python3-distutils python3-setuptools rsync subversion swig time \
+        xsltproc zlib1g-dev 
+
+    - name: 更新 feeds
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: 配置 OpenWrt
+      run: |
+        cat >> .config <<EOF
+        CONFIG_TARGET_x86=y
+        CONFIG_TARGET_x86_64=y
+        CONFIG_TARGET_x86_64_DEVICE_generic=y
+        CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
+        CONFIG_PACKAGE_mosdns=y
+        CONFIG_PACKAGE_zerotier=y
+        CONFIG_PACKAGE_luci-app-openclash=y
+        CONFIG_PACKAGE_luci=y
+        EOF
+        make defconfig
+
+    - name: 下载包
+      run: make download -j8
+
+    - name: 编译 OpenWrt
+      run: |
+        make -j$(nproc) || make -j1 V=s
+      
+    - name: 组织文件
+      run: |
+        cd bin/targets/*/*
+        rm -rf packages
+        echo -e '[lan]\n\toption ipaddr 192.168.80.3\n\toption gateway 192.168.80.1\n\toption dns 192.168.80.1' > network
+
+    - name: 上传固件
+      uses: actions/upload-artifact@v2
+      with:
+        name: OpenWrt-Firmware
+        path: bin/targets
