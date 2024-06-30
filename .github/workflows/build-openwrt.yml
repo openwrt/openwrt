@@ -28,12 +28,20 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
+    - name: 克隆 OpenClash
+      run: |
+        mkdir -p package/luci-app-openclash
+        cd package/luci-app-openclash
+        git clone --depth=1 https://github.com/vernesong/OpenClash.git
+
     - name: 配置 OpenWrt
       run: |
         cat >> .config <<EOF
         CONFIG_TARGET_x86=y
         CONFIG_TARGET_x86_64=y
         CONFIG_TARGET_x86_64_DEVICE_generic=y
+        CONFIG_TARGET_IMAGES_GZIP=y
+        CONFIG_VMDK_IMAGES=y
         CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
         CONFIG_PACKAGE_mosdns=y
         CONFIG_PACKAGE_zerotier=y
@@ -59,4 +67,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: OpenWrt-Firmware
-        path: bin/targets
+        path: bin/targets/x86/64/openwrt-x86-64-generic-squashfs-combined-efi.vmdk
