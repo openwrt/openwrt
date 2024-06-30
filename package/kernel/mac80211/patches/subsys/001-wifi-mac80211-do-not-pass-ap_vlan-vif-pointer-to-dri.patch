@@ -53,12 +53,3 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  	if (sdata && !check_sdata_in_driver(sdata))
  		return;
  
-@@ -657,6 +660,8 @@ static inline void drv_flush_sta(struct
- {
- 	might_sleep();
- 
-+	sdata = get_bss_sdata(sdata);
-+
- 	if (sdata && !check_sdata_in_driver(sdata))
- 		return;
- 
