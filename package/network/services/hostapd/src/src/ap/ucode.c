@@ -712,6 +712,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "printf",	uc_wpa_printf },
 		{ "getpid", uc_wpa_getpid },
 		{ "sha1", uc_wpa_sha1 },
+		{ "rkh_derive_key", uc_wpa_rkh_derive_key },
 		{ "freq_info", uc_wpa_freq_info },
 		{ "add_iface", uc_hostapd_add_iface },
 		{ "remove_iface", uc_hostapd_remove_iface },

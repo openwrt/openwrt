@@ -325,7 +325,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean ieee80211r pmk_r1_push ft_psk_generate_local ft_over_ds
 	config_add_int r0_key_lifetime reassociation_deadline
-	config_add_string mobility_domain r1_key_holder
+	config_add_string mobility_domain r1_key_holder rxkh_file
 	config_add_array r0kh r1kh
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
@@ -552,7 +552,7 @@ hostapd_set_bss_options() {
 
 	wireless_vif_parse_encryption
 
-	local bss_conf bss_md5sum ft_key
+	local bss_conf bss_md5sum ft_key rxkhs
 	local wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wpa_key_mgmt
 
 	json_get_vars \
@@ -935,7 +935,7 @@ hostapd_set_bss_options() {
 			append bss_conf "reassociation_deadline=$reassociation_deadline" "$N"
 
 			if [ "$ft_psk_generate_local" -eq "0" ]; then
-				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push
+				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push rxkh_file
 				json_get_values r0kh r0kh
 				json_get_values r1kh r1kh
 
@@ -957,12 +957,20 @@ hostapd_set_bss_options() {
 				append bss_conf "r0_key_lifetime=$r0_key_lifetime" "$N"
 				append bss_conf "pmk_r1_push=$pmk_r1_push" "$N"
 
-				for kh in $r0kh; do
-					append bss_conf "r0kh=${kh//,/ }" "$N"
-				done
-				for kh in $r1kh; do
-					append bss_conf "r1kh=${kh//,/ }" "$N"
-				done
+				if [ -z "$rxkh_file" ]; then
+					set_default rxkh_file /var/run/hostapd-$ifname.rxkh
+					[ -e "$rxkh_file" ] && rm -f "$rxkh_file"
+					touch "$rxkh_file"
+
+					for kh in $r0kh; do
+						append rxkhs "r0kh=${kh//,/ }" "$N"
+					done
+					for kh in $r1kh; do
+						append rxkhs "r1kh=${kh//,/ }" "$N"
+					done
+					echo "$rxkhs" > "$rxkh_file"
+				fi
+				append bss_conf "rxkh_file=$rxkh_file" "$N"
 			fi
 		fi
 
