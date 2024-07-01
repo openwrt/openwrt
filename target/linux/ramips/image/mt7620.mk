@@ -1220,7 +1220,7 @@ define Device/tplink_archer-c2-v1
   DEVICE_MODEL := Archer C2
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
-	kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+	kmod-usb-ledtrig-usbport kmod-switch-rtl8367b
 endef
 TARGET_DEVICES += tplink_archer-c2-v1
 
@@ -1605,7 +1605,7 @@ define Device/zyxel_keenetic-viva
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+	kmod-switch-rtl8367b
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
 	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
