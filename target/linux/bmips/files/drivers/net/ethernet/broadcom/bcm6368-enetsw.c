@@ -20,7 +20,6 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 
 /* TODO: Bigger frames may work but we do not trust that they are safe on all
  * platforms so more research is needed, a max frame size of 2048 has been
@@ -1077,11 +1076,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	ndev->min_mtu = ETH_ZLEN;
 	ndev->mtu = ETH_DATA_LEN;
 	ndev->max_mtu = ENETSW_MAX_MTU;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
-	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll);
-#else
-	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
-#endif
+	netif_napi_add_weight(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
 
 	ret = devm_register_netdev(dev, ndev);
 	if (ret) {

@@ -25,7 +25,6 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 
 /* DMA channels */
 #define DMA_CHAN_WIDTH			0x10
@@ -1647,11 +1646,7 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 	ndev->min_mtu = ETH_ZLEN - ETH_HLEN;
 	ndev->mtu = ETH_DATA_LEN - VLAN_ETH_HLEN;
 	ndev->max_mtu = ENET_MAX_MTU - VLAN_ETH_HLEN;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
-	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll);
-#else
-	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll, 16);
-#endif
+	netif_napi_add_weight(ndev, &emac->napi, bcm6348_emac_poll, 16);
 	SET_NETDEV_DEV(ndev, dev);
 
 	ret = devm_register_netdev(dev, ndev);
