@@ -1,0 +1,24 @@
+set_preinit_iface() {
+	case $(board_name) in
+	friendlyarm,nanopi-r2c|\
+	friendlyarm,nanopi-r2c-plus|\
+	friendlyarm,nanopi-r2s|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r4s-enterprise|\
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		ip link set eth1 up
+		ifname=eth1
+		;;
+	sinovoip,rk3568-bpi-r2pro)
+		ip link set eth1 up
+		ifname=lan0
+		;;
+	*)
+		ip link set eth0 up
+		ifname=eth0
+		;;
+	esac
+}
+
+boot_hook_add preinit_main set_preinit_iface
