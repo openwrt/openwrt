@@ -1,0 +1,26 @@
+From a9ed9d5de35efb93637c6c716e7cb9ab6770a14a Mon Sep 17 00:00:00 2001
+From: Richard Levitte <levitte@openssl.org>
+Date: Thu, 20 Jun 2024 18:49:35 +0200
+Subject: [PATCH 3/3] fixup! Adapt all the exporter files to the new vars from
+ util/mkinstallvars.pl
+
+---
+ exporters/cmake/OpenSSLConfig.cmake.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/exporters/cmake/OpenSSLConfig.cmake.in b/exporters/cmake/OpenSSLConfig.cmake.in
+index 2d7f262..06f7961 100644
+--- a/exporters/cmake/OpenSSLConfig.cmake.in
++++ b/exporters/cmake/OpenSSLConfig.cmake.in
+@@ -91,7 +91,7 @@ get_filename_component(_ossl_prefix "${CMAKE_CURRENT_LIST_FILE}" PATH)
+ {-
+   # For each component in $OpenSSL::safe::installdata::CMAKECONFIGDIR relative to
+   # $OpenSSL::safe::installdata::PREFIX, have CMake figure out the parent directory.
+-  my $d = join('/', unixify($OpenSSL::safe::installdata::LIBDIR_REL_PREFIX)
++  my $d = join('/', unixify($OpenSSL::safe::installdata::LIBDIR_REL_PREFIX),
+                     unixify($OpenSSL::safe::installdata::CMAKECONFIGDIR_REL_LIBDIR));
+   $OUT = '';
+   $OUT .= 'get_filename_component(_ossl_prefix "${_ossl_prefix}" PATH)' . "\n"
+-- 
+2.39.2
+
