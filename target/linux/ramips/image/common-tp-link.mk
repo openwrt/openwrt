@@ -28,6 +28,22 @@ define Device/tplink-v1
 	append-metadata
 endef
 
+define Device/tplink-v2nolzma
+  DEVICE_VENDOR := TP-Link
+  TPLINK_FLASHLAYOUT :=
+  TPLINK_HWID :=
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0
+  TPLINK_HVERSION := 2
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES += factory.bin
+  IMAGE/factory.bin := tplink-v2-image -e -V "ver. 1.0"
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e -V "ver. 1.0" | \
+        check-size | append-metadata
+endef
+
 define Device/tplink-v2
   DEVICE_VENDOR := TP-Link
   TPLINK_FLASHLAYOUT :=

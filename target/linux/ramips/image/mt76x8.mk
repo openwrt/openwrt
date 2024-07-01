@@ -652,6 +652,21 @@ define Device/tplink_archer-mr200-v5
 endef
 TARGET_DEVICES += tplink_archer-mr200-v5
 
+define Device/tplink_archer-mr200-v6
+  $(Device/tplink-v2nolzma)
+  IMAGE_SIZE := 15936k
+  DEVICE_MODEL := Archer MR200
+  DEVICE_VARIANT := v6
+  TPLINK_FLASHLAYOUT := 16Mqca
+  TPLINK_HWID := 0x20000006
+  TPLINK_HWREV := 0x6
+  TPLINK_HWREVADD := 0x6
+  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+endef
+TARGET_DEVICES += tplink_archer-mr200-v6
+
 define Device/tplink_re200-v2
   $(Device/tplink-safeloader)
   IMAGE_SIZE := 7808k
