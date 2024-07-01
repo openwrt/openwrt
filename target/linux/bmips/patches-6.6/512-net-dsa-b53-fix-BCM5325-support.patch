@@ -1,0 +1,407 @@
+From b62cead6fd53d95824ecad885e9e2a686d9237e0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 6 Apr 2023 16:32:54 +0200
+Subject: [PATCH] net: dsa: b53: fix BCM5325 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 158 +++++++++++++++++++++++++------
+ drivers/net/dsa/b53/b53_regs.h   |  43 +++++++++
+ 2 files changed, 174 insertions(+), 27 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -337,15 +337,20 @@ static void b53_set_forwarding(struct b5
+ 
+ 	/* Include IMP port in dumb forwarding mode
+ 	 */
+-	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, &mgmt);
+-	mgmt |= B53_MII_DUMB_FWDG_EN;
+-	b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, mgmt);
++	if (!is5325(dev)) {
++		b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, &mgmt);
++		mgmt |= B53_MII_DUMB_FWDG_EN;
++		b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, mgmt);
++	}
+ 
+ 	/* Look at B53_UC_FWD_EN and B53_MC_FWD_EN to decide whether
+ 	 * frames should be flooded or not.
+ 	 */
+ 	b53_read8(dev, B53_CTRL_PAGE, B53_IP_MULTICAST_CTRL, &mgmt);
+-	mgmt |= B53_UC_FWD_EN | B53_MC_FWD_EN | B53_IPMC_FWD_EN;
++	if (is5325(dev))
++		mgmt |= B53_IP_MCAST_25;
++	else
++		mgmt |= B53_UC_FWD_EN | B53_MC_FWD_EN | B53_IPMC_FWD_EN;
+ 	b53_write8(dev, B53_CTRL_PAGE, B53_IP_MULTICAST_CTRL, mgmt);
+ }
+ 
+@@ -358,6 +363,9 @@ static void b53_enable_vlan(struct b53_d
+ 	b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL0, &vc0);
+ 	b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL1, &vc1);
+ 
++	if (is5325(dev))
++		mgmt |= SM_SW_RETRY_LIM_DIS | SM_SW_NO_BLK_CD;
++
+ 	if (is5325(dev) || is5365(dev)) {
+ 		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL4_25, &vc4);
+ 		b53_read8(dev, B53_VLAN_PAGE, B53_VLAN_CTRL5_25, &vc5);
+@@ -459,6 +467,9 @@ static int b53_flush_arl(struct b53_devi
+ {
+ 	unsigned int i;
+ 
++	if (is5325(dev))
++		return 0;
++
+ 	b53_write8(dev, B53_CTRL_PAGE, B53_FAST_AGE_CTRL,
+ 		   FAST_AGE_DONE | FAST_AGE_DYNAMIC | mask);
+ 
+@@ -483,6 +494,9 @@ out:
+ 
+ static int b53_fast_age_port(struct b53_device *dev, int port)
+ {
++	if (is5325(dev))
++		return 0;
++
+ 	b53_write8(dev, B53_CTRL_PAGE, B53_FAST_AGE_PORT_CTRL, port);
+ 
+ 	return b53_flush_arl(dev, FAST_AGE_PORT);
+@@ -490,6 +504,9 @@ static int b53_fast_age_port(struct b53_
+ 
+ static int b53_fast_age_vlan(struct b53_device *dev, u16 vid)
+ {
++	if (is5325(dev))
++		return 0;
++
+ 	b53_write16(dev, B53_CTRL_PAGE, B53_FAST_AGE_VID_CTRL, vid);
+ 
+ 	return b53_flush_arl(dev, FAST_AGE_VLAN);
+@@ -501,6 +518,10 @@ void b53_imp_vlan_setup(struct dsa_switc
+ 	unsigned int i;
+ 	u16 pvlan;
+ 
++	/* BCM5325 CPU port is at 8 */
++	if ((is5325(dev) || is5365(dev)) && cpu_port == B53_CPU_PORT_25)
++		cpu_port = B53_CPU_PORT;
++
+ 	/* Enable the IMP port to be in the same VLAN as the other ports
+ 	 * on a per-port basis such that we only have Port i and IMP in
+ 	 * the same VLAN.
+@@ -518,12 +539,36 @@ static void b53_port_set_ucast_flood(str
+ {
+ 	u16 uc;
+ 
+-	b53_read16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, &uc);
+-	if (unicast)
+-		uc |= BIT(port);
+-	else
+-		uc &= ~BIT(port);
+-	b53_write16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, uc);
++	if (is5325(dev)) {
++		u8 rc;
++
++		if (port == B53_CPU_PORT_25)
++			port = B53_CPU_PORT;
++
++		b53_read16(dev, B53_IEEE_PAGE, B53_IEEE_UCAST_DLF, &uc);
++		if (unicast)
++			uc |= BIT(port) | B53_IEEE_UCAST_DROP_EN;
++		else
++			uc &= ~BIT(port);
++		b53_write16(dev, B53_IEEE_PAGE, B53_IEEE_UCAST_DLF, uc);
++
++		if (port >= B53_CPU_PORT_25)
++			return;
++
++		b53_read8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), &rc);
++		if (unicast)
++			rc |= (RC_DLF_EN | RC_BKT_SIZE_8K | RC_PERCENT_40);
++		else
++			rc &= ~(RC_DLF_EN);
++		b53_write8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), rc);
++	} else {
++		b53_read16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, &uc);
++		if (unicast)
++			uc |= BIT(port);
++		else
++			uc &= ~BIT(port);
++		b53_write16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, uc);
++	}
+ }
+ 
+ static void b53_port_set_mcast_flood(struct b53_device *dev, int port,
+@@ -531,19 +576,44 @@ static void b53_port_set_mcast_flood(str
+ {
+ 	u16 mc;
+ 
+-	b53_read16(dev, B53_CTRL_PAGE, B53_MC_FLOOD_MASK, &mc);
+-	if (multicast)
+-		mc |= BIT(port);
+-	else
+-		mc &= ~BIT(port);
+-	b53_write16(dev, B53_CTRL_PAGE, B53_MC_FLOOD_MASK, mc);
++	if (is5325(dev)) {
++		u8 rc;
+ 
+-	b53_read16(dev, B53_CTRL_PAGE, B53_IPMC_FLOOD_MASK, &mc);
+-	if (multicast)
+-		mc |= BIT(port);
+-	else
+-		mc &= ~BIT(port);
+-	b53_write16(dev, B53_CTRL_PAGE, B53_IPMC_FLOOD_MASK, mc);
++		if (port == B53_CPU_PORT_25)
++			port = B53_CPU_PORT;
++
++		b53_read16(dev, B53_IEEE_PAGE, B53_IEEE_MCAST_DLF, &mc);
++		if (multicast)
++			mc |= BIT(port) | B53_IEEE_MCAST_DROP_EN;
++		else
++			mc &= ~BIT(port);
++		b53_write16(dev, B53_IEEE_PAGE, B53_IEEE_MCAST_DLF, mc);
++
++		if (port >= B53_CPU_PORT_25)
++			return;
++
++		b53_read8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), &rc);
++		if (multicast)
++			rc |= (RC_BCAST_EN | RC_MCAST_EN | RC_BKT_SIZE_8K |
++			       RC_PERCENT_40);
++		else
++			rc &= ~(RC_BCAST_EN | RC_MCAST_EN);
++		b53_write8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), rc);
++	} else {
++		b53_read16(dev, B53_CTRL_PAGE, B53_MC_FLOOD_MASK, &mc);
++		if (multicast)
++			mc |= BIT(port);
++		else
++			mc &= ~BIT(port);
++		b53_write16(dev, B53_CTRL_PAGE, B53_MC_FLOOD_MASK, mc);
++
++		b53_read16(dev, B53_CTRL_PAGE, B53_IPMC_FLOOD_MASK, &mc);
++		if (multicast)
++			mc |= BIT(port);
++		else
++			mc &= ~BIT(port);
++		b53_write16(dev, B53_CTRL_PAGE, B53_IPMC_FLOOD_MASK, mc);
++	}
+ }
+ 
+ static void b53_port_set_learning(struct b53_device *dev, int port,
+@@ -551,6 +621,9 @@ static void b53_port_set_learning(struct
+ {
+ 	u16 reg;
+ 
++	if (is5325(dev))
++		return;
++
+ 	b53_read16(dev, B53_CTRL_PAGE, B53_DIS_LEARNING, &reg);
+ 	if (learning)
+ 		reg &= ~BIT(port);
+@@ -657,6 +730,10 @@ void b53_brcm_hdr_setup(struct dsa_switc
+ 		hdr_ctl |= GC_FRM_MGMT_PORT_M;
+ 	b53_write8(dev, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, hdr_ctl);
+ 
++	/* B53_BRCM_HDR not present on BCM5325 */
++	if (is5325(dev))
++		return;
++
+ 	/* Enable Broadcom tags for IMP port */
+ 	b53_read8(dev, B53_MGMT_PAGE, B53_BRCM_HDR, &hdr_ctl);
+ 	if (tag_en)
+@@ -1128,6 +1205,9 @@ static int b53_setup(struct dsa_switch *
+ 
+ 	b53_enable_bpdu(ds);
+ 
++	if (is5325(dev))
++		b53_write8(dev, B53_CTRL_PAGE, B53_PD_MODE_CTRL_25, 0);
++
+ 	ret = b53_apply_config(dev);
+ 	if (ret) {
+ 		dev_err(ds->dev, "failed to apply configuration\n");
+@@ -1161,6 +1241,9 @@ static void b53_force_link(struct b53_de
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
+ 	} else {
++		if (is5325(dev))
++			return;
++
+ 		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
+ 		val = GMII_PO_EN;
+ 	}
+@@ -1185,6 +1268,9 @@ static void b53_force_port_config(struct
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
+ 	} else {
++		if (is5325(dev))
++			return;
++
+ 		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
+ 		val = GMII_PO_EN;
+ 	}
+@@ -1214,10 +1300,19 @@ static void b53_force_port_config(struct
+ 		return;
+ 	}
+ 
+-	if (rx_pause)
+-		reg |= PORT_OVERRIDE_RX_FLOW;
+-	if (tx_pause)
+-		reg |= PORT_OVERRIDE_TX_FLOW;
++	if (rx_pause) {
++		if (is5325(dev))
++			reg |= PORT_OVERRIDE_LP_FLOW_25;
++		else
++			reg |= PORT_OVERRIDE_RX_FLOW;
++	}
++
++	if (tx_pause) {
++		if (is5325(dev))
++			reg |= PORT_OVERRIDE_LP_FLOW_25;
++		else
++			reg |= PORT_OVERRIDE_TX_FLOW;
++	}
+ 
+ 	b53_write8(dev, B53_CTRL_PAGE, off, reg);
+ }
+@@ -1360,11 +1455,17 @@ static void b53_adjust_link(struct dsa_s
+ void b53_port_event(struct dsa_switch *ds, int port)
+ {
+ 	struct b53_device *dev = ds->priv;
++	int port_mask;
+ 	bool link;
+ 	u16 sts;
+ 
++	if (is5325(dev) && port == B53_CPU_PORT_25)
++		port_mask = BIT(B53_CPU_PORT);
++	else
++		port_mask = BIT(port);
++
+ 	b53_read16(dev, B53_STAT_PAGE, B53_LINK_STAT, &sts);
+-	link = !!(sts & BIT(port));
++	link = !!(sts & port_mask);
+ 	dsa_port_phylink_mac_change(ds, port, link);
+ }
+ EXPORT_SYMBOL(b53_port_event);
+@@ -2047,6 +2148,13 @@ void b53_br_set_stp_state(struct dsa_swi
+ 	reg &= ~PORT_CTRL_STP_STATE_MASK;
+ 	reg |= hw_state;
+ 	b53_write8(dev, B53_CTRL_PAGE, B53_PORT_CTRL(port), reg);
++
++	if (is5325(dev)) {
++		b53_read8(dev, B53_CTRL_PAGE, B53_PORT_CTRL(B53_CPU_PORT), &reg);
++		reg &= ~PORT_CTRL_STP_STATE_MASK;
++		reg |= hw_state;
++		b53_write8(dev, B53_CTRL_PAGE, B53_PORT_CTRL(B53_CPU_PORT), reg);
++	}
+ }
+ EXPORT_SYMBOL(b53_br_set_stp_state);
+ 
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -29,6 +29,7 @@
+ #define B53_ARLIO_PAGE			0x05 /* ARL Access */
+ #define B53_FRAMEBUF_PAGE		0x06 /* Management frame access */
+ #define B53_MEM_ACCESS_PAGE		0x08 /* Memory access */
++#define B53_IEEE_PAGE			0x0a /* IEEE 802.1X */
+ 
+ /* PHY Registers */
+ #define B53_PORT_MII_PAGE(i)		(0x10 + (i)) /* Port i MII Registers */
+@@ -47,6 +48,9 @@
+ /* VLAN Registers */
+ #define B53_VLAN_PAGE			0x34
+ 
++/* Rate Control Registers */
++#define B53_RATE_CTL_PAGE		0x35
++
+ /* Jumbo Frame Registers */
+ #define B53_JUMBO_PAGE			0x40
+ 
+@@ -83,6 +87,9 @@
+ #define B53_SWITCH_MODE			0x0b
+ #define   SM_SW_FWD_MODE		BIT(0)	/* 1 = Managed Mode */
+ #define   SM_SW_FWD_EN			BIT(1)	/* Forwarding Enable */
++#define   SM_SW_RETRY_LIM_DIS		BIT(2)
++#define   SM_SW_NO_BLK_CD		BIT(3)
++
+ 
+ /* IMP Port state override register (8 bit) */
+ #define B53_PORT_OVERRIDE_CTRL		0x0e
+@@ -92,6 +99,7 @@
+ #define   PORT_OVERRIDE_SPEED_10M	(0 << PORT_OVERRIDE_SPEED_S)
+ #define   PORT_OVERRIDE_SPEED_100M	(1 << PORT_OVERRIDE_SPEED_S)
+ #define   PORT_OVERRIDE_SPEED_1000M	(2 << PORT_OVERRIDE_SPEED_S)
++#define   PORT_OVERRIDE_LP_FLOW_25	BIT(3) /* BCM5325 only */
+ #define   PORT_OVERRIDE_RV_MII_25	BIT(4) /* BCM5325 only */
+ #define   PORT_OVERRIDE_RX_FLOW		BIT(4)
+ #define   PORT_OVERRIDE_TX_FLOW		BIT(5)
+@@ -103,6 +111,7 @@
+ 
+ /* IP Multicast control (8 bit) */
+ #define B53_IP_MULTICAST_CTRL		0x21
++#define  B53_IP_MCAST_25		BIT(0)
+ #define  B53_IPMC_FWD_EN		BIT(1)
+ #define  B53_UC_FWD_EN			BIT(6)
+ #define  B53_MC_FWD_EN			BIT(7)
+@@ -315,9 +324,9 @@
+ #define   ARLTBL_DATA_PORT_ID_S_25	48
+ #define   ARLTBL_DATA_PORT_ID_MASK_25	0xf
+ #define   ARLTBL_VID_S_65		53
+-#define   ARLTBL_AGE_25			BIT(61)
+-#define   ARLTBL_STATIC_25		BIT(62)
+-#define   ARLTBL_VALID_25		BIT(63)
++#define   ARLTBL_AGE_25			BIT_ULL(61)
++#define   ARLTBL_STATIC_25		BIT_ULL(62)
++#define   ARLTBL_VALID_25		BIT_ULL(63)
+ 
+ /* ARL Table Data Entry N Registers (32 bit) */
+ #define B53_ARLTBL_DATA_ENTRY(n)	((0x10 * (n)) + 0x18)
+@@ -357,6 +366,18 @@
+ #define B53_ARL_SRCH_RSTL(x)		(B53_ARL_SRCH_RSTL_0 + ((x) * 0x10))
+ 
+ /*************************************************************************
++ * IEEE 802.1X Registers
++ *************************************************************************/
++
++/* Multicast DLF Drop Control register (16 bit) */
++#define B53_IEEE_MCAST_DLF		0x94
++#define B53_IEEE_MCAST_DROP_EN		BIT(11)
++
++/* Unicast DLF Drop Control register (16 bit) */
++#define B53_IEEE_UCAST_DLF		0x96
++#define B53_IEEE_UCAST_DROP_EN		BIT(11)
++
++/*************************************************************************
+  * Port VLAN Registers
+  *************************************************************************/
+ 
+@@ -467,6 +488,28 @@
+ #define B53_VLAN_PORT_DEF_TAG(i)	(0x10 + 2 * (i))
+ 
+ /*************************************************************************
++ * Rate Control Page Registers
++ *************************************************************************/
++
++#define B53_RATE_CONTROL(i)		(0x00 + (i))
++#define   RC_PERCENT_S			0
++#define   RC_PERCENT_10			(0 << RC_PERCENT_S)
++#define   RC_PERCENT_20			(1 << RC_PERCENT_S)
++#define   RC_PERCENT_30			(2 << RC_PERCENT_S)
++#define   RC_PERCENT_40			(3 << RC_PERCENT_S)
++#define   RC_PERCENT_MASK		(3 << RC_PERCENT_S)
++#define   RC_BKT_SIZE_S			2
++#define   RC_BKT_SIZE_2K		(0 << RC_BKT_SIZE_S)
++#define   RC_BKT_SIZE_4K		(1 << RC_BKT_SIZE_S)
++#define   RC_BKT_SIZE_6K		(2 << RC_BKT_SIZE_S)
++#define   RC_BKT_SIZE_8K		(3 << RC_BKT_SIZE_S)
++#define   RC_BKT_SIZE_MASK		(3 << RC_BKT_SIZE_S)
++#define   RC_DLF_EN			BIT(4)
++#define   RC_BCAST_EN			BIT(5)
++#define   RC_MCAST_EN			BIT(6)
++#define   RC_DROP_FRAME			BIT(7)
++
++/*************************************************************************
+  * Jumbo Frame Page Registers
+  *************************************************************************/
+ 
