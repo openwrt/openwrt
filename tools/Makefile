@@ -96,7 +96,7 @@ $(curdir)/bison/compile := $(curdir)/flex/compile
 $(curdir)/cbootimage/compile += $(curdir)/automake/compile
 $(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
 $(curdir)/dosfstools/compile := $(curdir)/automake/compile
-$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile $(curdir)/util-linux/compile
 $(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile $(curdir)/gnulib/compile $(curdir)/libtool/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
@@ -121,7 +121,7 @@ $(curdir)/mklibs/compile := $(curdir)/libtool/compile
 $(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
-$(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
+$(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/zlib/compile $(curdir)/util-linux/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
@@ -129,7 +129,7 @@ $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compil
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/util-linux/compile := $(curdir)/bison/compile
+$(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/automake/compile
 $(curdir)/yafut/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)

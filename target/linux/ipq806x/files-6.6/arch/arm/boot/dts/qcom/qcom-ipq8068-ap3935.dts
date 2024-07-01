@@ -18,7 +18,6 @@
 	aliases {
 		serial0 = &gsbi7_serial;
 		serial1 = &gsbi2_serial;
-		mdio-gpio0 = &mdio0;
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac2;
 
@@ -138,6 +137,21 @@
 			pins = "gpio56";
 			function = "gpio";
 			bias-pull-up;
+		};
+	};
+
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		tx {
+			pins = "gpio53", "gpio64";
+			drive-strength = <2>;
+			bias-pull-down;
+			input-enable;
 		};
 	};
 };
@@ -299,26 +313,15 @@
 	};
 };
 
-&soc {
-	mdio1: mdio {
-		compatible = "virtual,mdio-gpio";
-		#address-cells = <1>;
-		#size-cells = <0>;
+&mdio0 {
+	status = "okay";
 
-		status = "okay";
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+	};
 
-		pinctrl-0 = <&mdio0_pins>;
-		pinctrl-names = "default";
-
-		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
-
-		phy1: ethernet-phy@1 {
-			reg = <1>;
-		};
-
-		phy2: ethernet-phy@2 {
-			reg = <2>;
-		};
+	phy2: ethernet-phy@2 {
+		reg = <2>;
 	};
 };
 
@@ -326,25 +329,23 @@
 	status = "okay";
 
 	qcom,id = <0>;
-	mdiobus = <&mdio1>;
+	mdiobus = <&mdio0>;
 
-	phy-mode = "rgmii";
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+
+	phy-mode = "rgmii-id";
 	phy-handle = <&phy1>;
 
 	nvmem-cells = <&ethaddr 0>;
 	nvmem-cell-names = "mac-address";
-
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &gmac2 {
 	status = "okay";
 
 	qcom,id = <2>;
-	mdiobus = <&mdio1>;
+	mdiobus = <&mdio0>;
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy2>;

@@ -29,7 +29,6 @@ HOST_GNULIB_SKIP := \
 	lib/locale.in.h
 
 HOST_CONFIGURE_ARGS += \
-	--disable-year2038 \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(PKG_PROGRAMS)))
 
 HOST_MAKE_FLAGS += \

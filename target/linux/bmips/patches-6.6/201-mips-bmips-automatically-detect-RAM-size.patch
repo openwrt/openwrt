@@ -70,9 +70,9 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +
 +#define DDR_CSEND_REG		0x8
  
- extern bool bmips_rac_flush_disable;
- 
-@@ -77,6 +98,11 @@ struct bmips_cpufreq {
+ /*
+  * CBR addr doesn't change and we can cache it.
+@@ -84,6 +105,11 @@ struct bmips_cpufreq {
  	u32			(*cpu_freq)(void);
  };
  
@@ -84,7 +84,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -351,9 +377,90 @@ void __init plat_time_init(void)
+@@ -361,9 +387,90 @@ void __init plat_time_init(void)
  	mips_hpt_frequency = freq;
  }
  
@@ -175,7 +175,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	const struct bmips_quirk *q;
  
  	set_io_port_base(0);
-@@ -374,6 +481,18 @@ void __init plat_mem_setup(void)
+@@ -384,6 +491,18 @@ void __init plat_mem_setup(void)
  
  	__dt_setup_arch(dtb);
  

@@ -31,7 +31,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-2-kernel@kempniu.pl
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -1676,6 +1676,9 @@ int mtd_read_oob(struct mtd_info *mtd, l
+@@ -1678,6 +1678,9 @@ int mtd_read_oob(struct mtd_info *mtd, l
  	if (!master->_read_oob && (!master->_read || ops->oobbuf))
  		return -EOPNOTSUPP;
  
@@ -41,7 +41,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-2-kernel@kempniu.pl
  	if (mtd->flags & MTD_SLC_ON_MLC_EMULATION)
  		ret_code = mtd_io_emulated_slc(mtd, from, true, ops);
  	else
-@@ -1693,6 +1696,8 @@ int mtd_read_oob(struct mtd_info *mtd, l
+@@ -1695,6 +1698,8 @@ int mtd_read_oob(struct mtd_info *mtd, l
  		return ret_code;
  	if (mtd->ecc_strength == 0)
  		return 0;	/* device lacks ecc */

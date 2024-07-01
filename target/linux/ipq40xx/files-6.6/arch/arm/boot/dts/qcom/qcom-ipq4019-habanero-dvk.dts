@@ -16,7 +16,6 @@
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_upgrade;
-		ethernet1 = &swport5;
 	};
 
 	soc {
@@ -266,6 +265,14 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					macaddr_lan: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_wan: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
 					precal_art_1000: precal@1000 {
 						reg = <0x1000 0x2f20>;
 					};
@@ -330,6 +337,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_wan>;
 };
 
 &switch {
@@ -338,22 +348,37 @@
 
 &swport1 {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_lan>;
 };
 
 &swport2 {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_lan>;
 };
 
 &swport3 {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_lan>;
 };
 
 &swport4 {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_lan>;
 };
 
 &swport5 {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_wan>;
 };
 
 &wifi0 {
