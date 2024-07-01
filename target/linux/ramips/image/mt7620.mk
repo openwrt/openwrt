@@ -1564,24 +1564,24 @@ TARGET_DEVICES += zte_q7
 define Device/zyxel_keenetic-lite-iii-a
   SOC := mt7620n
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Lite III
   DEVICE_VARIANT := A
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
-		zyimage -d 2102018 -v "ZyXEL Keenetic Lite III"
+		zyimage -d 2102018 -v "Zyxel Keenetic Lite III"
 endef
 TARGET_DEVICES += zyxel_keenetic-lite-iii-a
 
 define Device/zyxel_keenetic-omni
   SOC := mt7620n
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
-	zyimage -d 4882 -v "ZyXEL Keenetic Omni"
+	zyimage -d 4882 -v "Zyxel Keenetic Omni"
   SUPPORTED_DEVICES += kn_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-omni
@@ -1589,12 +1589,12 @@ TARGET_DEVICES += zyxel_keenetic-omni
 define Device/zyxel_keenetic-omni-ii
   SOC := mt7620n
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Omni II
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
-	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
+	zyimage -d 2102034 -v "Zyxel Keenetic Omni II"
   SUPPORTED_DEVICES += kn_rf
 endef
 TARGET_DEVICES += zyxel_keenetic-omni-ii
@@ -1602,13 +1602,13 @@ TARGET_DEVICES += zyxel_keenetic-omni-ii
 define Device/zyxel_keenetic-viva
   SOC := mt7620a
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
 	kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
-	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+	zyimage -d 8997 -v "Zyxel Keenetic Viva"
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva
