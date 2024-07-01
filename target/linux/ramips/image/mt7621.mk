@@ -1650,6 +1650,19 @@ define Device/keenetic_kn-3010
 endef
 TARGET_DEVICES += keenetic_kn-3010
 
+define Device/keenetic_kn-3510
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 121088k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3510
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | zyimage -d 0x803510 -v "KN-3510"
+endef
+TARGET_DEVICES += keenetic_kn-3510
+
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

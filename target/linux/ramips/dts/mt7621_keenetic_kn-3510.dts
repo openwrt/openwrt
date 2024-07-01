@@ -1,0 +1,247 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "keenetic,kn-3510", "mediatek,mt7621-soc";
+	model = "Keenetic KN-3510";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_green;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_green: led-1 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		fn1 {
+			label = "fn1";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&firmware1 &storage1 &firmware2 &storage2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x400000 0x0>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart3", "jtag";
+		function = "gpio";
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-config";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "rf-eeprom";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+
+				macaddr_factory_a: macaddr@a {
+					reg = <0xa 0x6>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
+		};
+
+		firmware1: partition@180000 {
+			label = "firmware_1";
+			reg = <0x180000 0x1a40000>;
+		};
+
+		partition@1bc0000 {
+			label = "config_1";
+			reg = <0x1bc0000 0x20000>;
+			read-only;
+		};
+
+		partition@1dc0000 {
+			label = "storage_legacy";
+			reg = <0x1dc0000 0x20000>;
+			read-only;
+		};
+
+		partition@1fc0000 {
+			label = "dump";
+			reg = <0x1fc0000 0x40000>;
+			read-only;
+		};
+
+		storage1: partition@2000000 {
+			label = "storage_a";
+			reg = <0x2000000 0x1fc0000>;
+		};
+
+		partition@3fc0000 {
+			label = "u-state";
+			reg = <0x3fc0000 0x80000>;
+			read-only;
+		};
+
+		partition@4040000 {
+			label = "u-config_res";
+			reg = <0x4040000 0x80000>;
+			read-only;
+		};
+
+		partition@40c0000 {
+			label = "rf-eeprom_res";
+			reg = <0x40c0000 0x80000>;
+			read-only;
+		};
+
+		firmware2: partition@4140000 {
+			label = "firmware_2";
+			reg = <0x4140000 0x1a40000>;
+		};
+
+		partition@5b80000 {
+			label = "config_2";
+			reg = <0x5d00000 0x20000>;
+			read-only;
+		};
+
+		storage2: partition@5d80000 {
+			label = "storage_b";
+			reg = <0x5d80000 0x2200000>;
+		};
+	};
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_a>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@3 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+	};
+};
+
+&xhci {
+	status = "disabled";
+};
