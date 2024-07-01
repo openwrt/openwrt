@@ -126,7 +126,7 @@
   *
   * @NL80211_ATTR_MU_MIMO_GROUP_DATA: array of 24 bytes that defines a MU-MIMO
   *	groupID for monitor mode.
-@@ -2663,6 +2716,44 @@ enum nl80211_commands {
+@@ -2663,6 +2716,49 @@ enum nl80211_commands {
   *	association request when used with NL80211_CMD_NEW_STATION). Can be set
   *	only if %NL80211_STA_FLAG_WME is set.
   *
@@ -165,13 +165,18 @@
 + *	the incoming frame RX timestamp.
 + * @NL80211_ATTR_TD_BITMAP: Transition Disable bitmap, for subsequent
 + *	(re)associations.
++ *
++ * @NL80211_ATTR_PUNCT_BITMAP: (u32) Preamble puncturing bitmap, lowest
++ *	bit corresponds to the lowest 20 MHz channel. Each bit set to 1
++ *	indicates that the sub-channel is punctured. Higher 16 bits are
++ *	reserved.
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
 + *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3177,6 +3268,23 @@ enum nl80211_attrs {
+@@ -3177,6 +3273,25 @@ enum nl80211_attrs {
  
  	NL80211_ATTR_DISABLE_EHT,
  
@@ -190,12 +195,14 @@
 +	NL80211_ATTR_RX_HW_TIMESTAMP,
 +	NL80211_ATTR_TD_BITMAP,
 +
++	NL80211_ATTR_PUNCT_BITMAP,
++
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -3231,6 +3339,11 @@ enum nl80211_attrs {
+@@ -3231,6 +3346,11 @@ enum nl80211_attrs {
  #define NL80211_HE_MIN_CAPABILITY_LEN           16
  #define NL80211_HE_MAX_CAPABILITY_LEN           54
  #define NL80211_MAX_NR_CIPHER_SUITES		5
@@ -207,7 +214,7 @@
  #define NL80211_MAX_NR_AKM_SUITES		2
  #define NL80211_EHT_MIN_CAPABILITY_LEN          13
  #define NL80211_EHT_MAX_CAPABILITY_LEN          51
-@@ -4853,6 +4966,8 @@ enum nl80211_bss_scan_width {
+@@ -4853,6 +4973,8 @@ enum nl80211_bss_scan_width {
   *	Contains a nested array of signal strength attributes (u8, dBm),
   *	using the nesting index as the antenna number.
   * @NL80211_BSS_FREQUENCY_OFFSET: frequency offset in KHz
@@ -216,7 +223,7 @@
   * @__NL80211_BSS_AFTER_LAST: internal
   * @NL80211_BSS_MAX: highest BSS attribute
   */
-@@ -4878,6 +4993,8 @@ enum nl80211_bss {
+@@ -4878,6 +5000,8 @@ enum nl80211_bss {
  	NL80211_BSS_PARENT_BSSID,
  	NL80211_BSS_CHAIN_SIGNAL,
  	NL80211_BSS_FREQUENCY_OFFSET,
@@ -225,7 +232,7 @@
  
  	/* keep last */
  	__NL80211_BSS_AFTER_LAST,
-@@ -5874,7 +5991,7 @@ enum nl80211_ap_sme_features {
+@@ -5874,7 +5998,7 @@ enum nl80211_ap_sme_features {
   * @NL80211_FEATURE_INACTIVITY_TIMER: This driver takes care of freeing up
   *	the connected inactive stations in AP mode.
   * @NL80211_FEATURE_CELL_BASE_REG_HINTS: This driver has been tested
@@ -234,7 +241,7 @@
   *	cellular base stations.
   * @NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL: (no longer available, only
   *	here to reserve the value for API/ABI compatibility)
-@@ -6174,6 +6291,14 @@ enum nl80211_feature_flags {
+@@ -6174,6 +6298,16 @@ enum nl80211_feature_flags {
   * @NL80211_EXT_FEATURE_RADAR_BACKGROUND: Device supports background radar/CAC
   *	detection.
   *
@@ -246,14 +253,17 @@
 + *	might apply, e.g. no scans in progress, no offchannel operations
 + *	in progress, and no active connections.
 + *
++ * @NL80211_EXT_FEATURE_PUNCT: Driver supports preamble puncturing in AP mode.
++ *
   * @NUM_NL80211_EXT_FEATURES: number of extended features.
   * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
   */
-@@ -6241,6 +6366,7 @@ enum nl80211_ext_feature_index {
+@@ -6241,6 +6375,8 @@ enum nl80211_ext_feature_index {
  	NL80211_EXT_FEATURE_BSS_COLOR,
  	NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD,
  	NL80211_EXT_FEATURE_RADAR_BACKGROUND,
 +	NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE,
++	NL80211_EXT_FEATURE_PUNCT,
  
  	/* add new features before the definition below */
  	NUM_NL80211_EXT_FEATURES,
