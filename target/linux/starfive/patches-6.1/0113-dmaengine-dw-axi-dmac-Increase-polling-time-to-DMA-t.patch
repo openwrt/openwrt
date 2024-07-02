@@ -18,7 +18,7 @@ Signed-off-by: Walker Chen <walker.chen@starfivetech.com>
 
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
-@@ -1147,7 +1147,7 @@ static int dma_chan_terminate_all(struct
+@@ -1145,7 +1145,7 @@ static int dma_chan_terminate_all(struct
  	axi_chan_disable(chan);
  
  	ret = readl_poll_timeout_atomic(chan->chip->regs + DMAC_CHEN, val,
