@@ -316,7 +316,15 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_CPU_MIPS32_R2),)
       FEATURES += mips16
     endif
-    FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
+    ifneq ($(CONFIG_CPU_V6),)
+      FEATURES += arm_v6
+    endif
+    ifneq ($(CONFIG_CPU_V6K),)
+      FEATURES += arm_v6
+    endif
+    ifneq ($(CONFIG_CPU_V7),)
+      FEATURES += arm_v7
+    endif
 
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
