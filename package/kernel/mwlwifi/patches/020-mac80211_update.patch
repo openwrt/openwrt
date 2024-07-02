@@ -247,7 +247,7 @@
  		tid = qos & 0xf;
 --- a/hif/pcie/8964/tx_ndp.c
 +++ b/hif/pcie/8964/tx_ndp.c
-@@ -607,7 +607,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+@@ -602,7 +602,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
  		pcie_tx_encapsulate_frame(priv, skb, k_conf);
  	} else {
  		tid = qos & 0x7;
