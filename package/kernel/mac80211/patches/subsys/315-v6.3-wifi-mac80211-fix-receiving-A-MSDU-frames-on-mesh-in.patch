@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			struct rx_packet_hdr *rx_hdr;
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -6208,11 +6208,36 @@ static inline int ieee80211_data_to_8023
+@@ -6324,11 +6324,36 @@ static inline int ieee80211_data_to_8023
   * @extra_headroom: The hardware extra headroom for SKBs in the @list.
   * @check_da: DA to check in the inner ethernet header, or NULL
   * @check_sa: SA to check in the inner ethernet header, or NULL
@@ -88,7 +88,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * cfg80211_classify8021d - determine the 802.1p/1d tag for a data frame
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2720,6 +2720,174 @@ ieee80211_deliver_skb(struct ieee80211_r
+@@ -2726,6 +2726,174 @@ ieee80211_deliver_skb(struct ieee80211_r
  	}
  }
  
@@ -263,7 +263,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static ieee80211_rx_result debug_noinline
  __ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx, u8 data_offset)
  {
-@@ -2728,8 +2896,10 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2734,8 +2902,10 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
  	__le16 fc = hdr->frame_control;
  	struct sk_buff_head frame_list;
@@ -274,7 +274,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (unlikely(ieee80211_has_a4(hdr->frame_control))) {
  		check_da = NULL;
-@@ -2746,6 +2916,8 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2752,6 +2922,8 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  			break;
  		case NL80211_IFTYPE_MESH_POINT:
  			check_sa = NULL;
@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			break;
  		default:
  			break;
-@@ -2763,17 +2935,29 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
+@@ -2769,17 +2941,29 @@ __ieee80211_rx_h_amsdu(struct ieee80211_
  	ieee80211_amsdu_to_8023s(skb, &frame_list, dev->dev_addr,
  				 rx->sdata->vif.type,
  				 rx->local->hw.extra_tx_headroom,
@@ -316,7 +316,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return RX_QUEUED;
-@@ -2806,6 +2990,8 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
+@@ -2812,6 +2996,8 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
  			if (!rx->sdata->u.mgd.use_4addr)
  				return RX_DROP_UNUSABLE;
  			break;
@@ -325,7 +325,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		default:
  			return RX_DROP_UNUSABLE;
  		}
-@@ -2834,155 +3020,6 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
+@@ -2840,155 +3026,6 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
  	return __ieee80211_rx_h_amsdu(rx, 0);
  }
  
@@ -481,7 +481,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static ieee80211_rx_result debug_noinline
  ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
  {
-@@ -2991,6 +3028,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_
+@@ -2997,6 +3034,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_
  	struct net_device *dev = sdata->dev;
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)rx->skb->data;
  	__le16 fc = hdr->frame_control;
@@ -489,7 +489,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool port_control;
  	int err;
  
-@@ -3017,6 +3055,10 @@ ieee80211_rx_h_data(struct ieee80211_rx_
+@@ -3023,6 +3061,10 @@ ieee80211_rx_h_data(struct ieee80211_rx_
  	if (unlikely(err))
  		return RX_DROP_UNUSABLE;
  
@@ -500,7 +500,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!ieee80211_frame_allowed(rx, fc))
  		return RX_DROP_MONITOR;
  
-@@ -3987,10 +4029,6 @@ static void ieee80211_rx_handlers(struct
+@@ -3997,10 +4039,6 @@ static void ieee80211_rx_handlers(struct
  		CALL_RXH(ieee80211_rx_h_defragment);
  		CALL_RXH(ieee80211_rx_h_michael_mic_verify);
  		/* must be after MMIC verify so header is counted in MPDU mic */

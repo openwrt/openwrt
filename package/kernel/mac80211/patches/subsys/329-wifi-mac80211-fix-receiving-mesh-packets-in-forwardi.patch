@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2828,14 +2828,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2834,14 +2834,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
  
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (mesh_hdr->flags & MESH_FLAGS_AE) {
  		struct mesh_path *mppath;
  		char *proxied_addr;
-@@ -2874,6 +2866,14 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2880,6 +2872,14 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	if (ether_addr_equal(sdata->vif.addr, eth->h_dest))
  		goto rx_accept;
  

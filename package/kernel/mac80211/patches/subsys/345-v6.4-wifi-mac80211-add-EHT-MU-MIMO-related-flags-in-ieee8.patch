@@ -43,7 +43,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1310,6 +1310,22 @@ static int ieee80211_start_ap(struct wip
+@@ -1313,6 +1313,22 @@ static int ieee80211_start_ap(struct wip
  	if (params->eht_cap) {
  		link_conf->eht_puncturing = params->punct_bitmap;
  		changed |= BSS_CHANGED_EHT_PUNCTURING;

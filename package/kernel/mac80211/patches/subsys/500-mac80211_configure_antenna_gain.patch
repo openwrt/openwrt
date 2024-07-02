@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -4092,6 +4092,7 @@ struct mgmt_frame_regs {
+@@ -4095,6 +4095,7 @@ struct mgmt_frame_regs {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @rfkill_poll: polls the hw rfkill line, use cfg80211 reporting
   *	functions to adjust rfkill hw state
-@@ -4442,6 +4443,7 @@ struct cfg80211_ops {
+@@ -4445,6 +4446,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -18,7 +18,7 @@
  
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1705,6 +1705,7 @@ enum ieee80211_smps_mode {
+@@ -1714,6 +1714,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -26,7 +26,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1725,6 +1726,7 @@ enum ieee80211_smps_mode {
+@@ -1734,6 +1735,7 @@ enum ieee80211_smps_mode {
  struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
@@ -56,7 +56,7 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3067,6 +3067,19 @@ static int ieee80211_get_tx_power(struct
+@@ -3077,6 +3077,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -76,7 +76,7 @@
  static void ieee80211_rfkill_poll(struct wiphy *wiphy)
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
-@@ -4989,6 +5002,7 @@ const struct cfg80211_ops mac80211_confi
+@@ -5007,6 +5020,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -86,7 +86,7 @@
  	CFG80211_TESTMODE_DUMP(ieee80211_testmode_dump)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1542,6 +1542,7 @@ struct ieee80211_local {
+@@ -1546,6 +1546,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -118,7 +118,7 @@
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
  		local->hw.conf.power_level = power;
-@@ -762,6 +768,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -759,6 +765,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
@@ -128,7 +128,7 @@
  	local->hw.max_mtu = IEEE80211_MAX_DATA_LEN;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -800,6 +800,7 @@ static const struct nla_policy nl80211_p
+@@ -820,6 +820,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_MLO_SUPPORT] = { .type = NLA_FLAG },
  	[NL80211_ATTR_MAX_NUM_AKM_SUITES] = { .type = NLA_REJECT },
  	[NL80211_ATTR_PUNCT_BITMAP] = NLA_POLICY_RANGE(NLA_U8, 0, 0xffff),
@@ -136,7 +136,7 @@
  };
  
  /* policy for the key attributes */
-@@ -3527,6 +3528,22 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -3547,6 +3548,22 @@ static int nl80211_set_wiphy(struct sk_b
  		if (result)
  			goto out;
  	}

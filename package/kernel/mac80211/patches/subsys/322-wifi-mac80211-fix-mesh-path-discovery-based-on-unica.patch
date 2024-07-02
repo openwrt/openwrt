@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2824,17 +2824,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2830,17 +2830,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	    mesh_rmc_check(sdata, eth->h_source, mesh_hdr))
  		return RX_DROP_MONITOR;
  
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* forward packet */
  	if (sdata->crypto_tx_tailroom_needed_cnt)
  		tailroom = IEEE80211_ENCRYPT_TAILROOM;
-@@ -2881,6 +2870,17 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2887,6 +2876,17 @@ ieee80211_rx_mesh_data(struct ieee80211_
  		rcu_read_unlock();
  	}
  

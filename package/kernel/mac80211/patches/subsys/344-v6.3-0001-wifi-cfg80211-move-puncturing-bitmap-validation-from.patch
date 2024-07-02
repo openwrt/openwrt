@@ -22,7 +22,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -8951,4 +8951,16 @@ static inline int cfg80211_color_change_
+@@ -9067,4 +9067,16 @@ static inline int cfg80211_color_change_
  					 0, 0);
  }
  
@@ -120,7 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			break;
  		link->u.mgd.conn_flags |=
  			ieee80211_chandef_downgrade(chandef);
-@@ -5584,8 +5523,8 @@ static bool ieee80211_config_puncturing(
+@@ -5613,8 +5552,8 @@ static bool ieee80211_config_puncturing(
  	    extracted == link->conf->eht_puncturing)
  		return true;
  
@@ -131,7 +131,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		link_info(link,
  			  "Got an invalid disable subchannel bitmap from AP %pM: bitmap = 0x%x, bw = 0x%x. disconnect\n",
  			  link->u.mgd.bssid,
-@@ -7072,8 +7011,8 @@ ieee80211_setup_assoc_link(struct ieee80
+@@ -7102,8 +7041,8 @@ ieee80211_setup_assoc_link(struct ieee80
  			u16 bitmap;
  
  			bitmap = get_unaligned_le16(disable_subchannel_bitmap);
