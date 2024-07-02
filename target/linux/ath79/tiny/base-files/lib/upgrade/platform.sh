@@ -9,7 +9,23 @@ RAMFS_COPY_BIN='fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config'
 
 platform_check_image() {
-	return 0
+	local board=$(board_name)
+
+	case "$board" in
+	nec,wg600hp|\
+	nec,wr8750n|\
+	nec,wr9500n)
+		local uboot_mtd=$(find_mtd_part "bootloader")
+
+		# check "U-Boot <year>.<month>" string in the "bootloader" partition
+		if ! grep -q "U-Boot [0-9]\{4\}\.[0-9]\{2\}" $uboot_mtd; then
+			v "The bootloader doesn't seem to be replaced to U-Boot!"
+			return 1
+		fi
+		;;
+	*)
+		return 0
+	esac
 }
 
 platform_do_upgrade() {
