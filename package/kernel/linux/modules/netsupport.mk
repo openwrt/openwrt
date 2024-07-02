@@ -1245,6 +1245,18 @@ endef
 $(eval $(call KernelPackage,sctp))
 
 
+define KernelPackage/sctp-diag
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=SCTP diag support
+  DEPENDS:=+kmod-sctp +kmod-inet-diag
+  KCONFIG:=CONFIG_INET_SCTP_DIAG
+  FILES:= $(LINUX_DIR)/net/sctp/sctp_diag.ko
+  AUTOLOAD:= $(call AutoLoad,33,sctp_diag)
+endef
+
+$(eval $(call KernelPackage,sctp-diag))
+
+
 define KernelPackage/netem
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Network emulation functionality

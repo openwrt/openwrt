@@ -148,7 +148,7 @@ define KernelPackage/hwmon-gsc
 	$(LINUX_DIR)/drivers/mfd/gateworks-gsc.ko \
 	$(LINUX_DIR)/drivers/hwmon/gsc-hwmon.ko
   AUTOLOAD:=$(call AutoLoad,20,gsc-hwmon,1)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-mfd)
 endef
 
 define KernelPackage/hwmon-gsc/description
