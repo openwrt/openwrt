@@ -1,0 +1,31 @@
+From 6dccd4cf32475d487a92c63bd0a089658a32a9d1 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Wed, 15 Mar 2023 13:47:56 +0200
+Subject: [PATCH 125/134] dt-bindings: firmware: arm,scmi: Document
+ assigned-clocks and assigned-clock-rates
+
+Since commit df4fdd0db475 ("dt-bindings: firmware: arm,scmi: Restrict
+protocol child node properties") the following dtbs_check warning is
+shown:
+
+  rk3588-rock-5b.dtb: scmi: protocol@14: Unevaluated properties are not allowed ('assigned-clock-rates', 'assigned-clocks' were unexpected)
+
+Add the missing properties.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+---
+ Documentation/devicetree/bindings/firmware/arm,scmi.yaml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/Documentation/devicetree/bindings/firmware/arm,scmi.yaml
++++ b/Documentation/devicetree/bindings/firmware/arm,scmi.yaml
+@@ -278,6 +278,9 @@ $defs:
+           Channel specifier required when using OP-TEE transport and
+           protocol has a dedicated communication channel.
+ 
++      assigned-clocks: true
++      assigned-clock-rates: true
++
+     required:
+       - reg
+ 

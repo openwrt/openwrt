@@ -37,9 +37,16 @@ define Trusted-Firmware-A/rk3568
   TPL:=rk35/rk3568_ddr_1560MHz_v1.21.bin
 endef
 
+define Trusted-Firmware-A/rk3588
+  BUILD_SUBTARGET:=armv8
+  ATF:=rk35/rk3588_bl31_v1.45.elf
+  TPL:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+endef
+
 TFA_TARGETS:= \
 	rk3566 \
-	rk3568
+	rk3568 \
+	rk3588
 
 define Build/Compile
 endef

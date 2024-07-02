@@ -1,0 +1,59 @@
+From 6cfe8bef631230ded1058ac72330a48fed5c0398 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Wed, 15 Mar 2023 13:47:57 +0200
+Subject: [PATCH 126/134] dt-bindings: serial: snps-dw-apb-uart: Relax
+ dma-names order constraint
+
+Commit 370f696e4474 ("dt-bindings: serial: snps-dw-apb-uart: add dma &
+dma-names properties") documented dma-names property to handle Allwiner
+D1 dtbs_check warnings, but relies on a strict rx->tx ordering, which is
+the reverse of what a different board expects:
+
+  rk3326-odroid-go2.dtb: serial@ff030000: dma-names:0: 'rx' was expected
+
+A quick and incomplete check shows the inconsistency is present in many
+other DT files:
+
+$ git grep -A10 snps,dw-apb-uart | grep dma-names | sort -u
+arch/arm64/boot/dts/rockchip/px30.dtsi-         dma-names = "tx", "rx";
+arch/arm64/boot/dts/rockchip/rk3328.dtsi-       dma-names = "tx", "rx";
+arch/arm64/boot/dts/rockchip/rk3588s.dtsi-      dma-names = "tx", "rx";
+arch/arm/boot/dts/rk3066a.dtsi-                 dma-names = "tx", "rx";
+arch/arm/boot/dts/rk3128.dtsi-                  dma-names = "tx", "rx";
+arch/arm/boot/dts/rk3288.dtsi-                  dma-names = "tx", "rx";
+arch/arm/boot/dts/rv1126.dtsi-                  dma-names = "tx", "rx";
+arch/arm/boot/dts/socfpga.dtsi-                 dma-names = "tx", "rx";
+arch/arm/boot/dts/sun6i-a31.dtsi-               dma-names = "rx", "tx";
+arch/arm/boot/dts/sun8i-a23-a33.dtsi-           dma-names = "rx", "tx";
+arch/arm/boot/dts/sun8i-v3s.dtsi-               dma-names = "rx", "tx";
+arch/arm/boot/dts/sunxi-h3-h5.dtsi-             dma-names = "rx", "tx";
+arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi-  dma-names = "rx", "tx";
+
+Do not enforce the order of the dma-names items.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+---
+ .../devicetree/bindings/serial/snps-dw-apb-uart.yaml | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/Documentation/devicetree/bindings/serial/snps-dw-apb-uart.yaml
++++ b/Documentation/devicetree/bindings/serial/snps-dw-apb-uart.yaml
+@@ -75,6 +75,18 @@ properties:
+       - const: tx
+       - const: rx
+ 
++  dmas:
++    minItems: 2
++
++  dma-names:
++    oneOf:
++      - items:
++          - const: tx
++          - const: rx
++      - items:
++          - const: rx
++          - const: tx
++
+   snps,uart-16550-compatible:
+     description: reflects the value of UART_16550_COMPATIBLE configuration
+       parameter. Define this if your UART does not implement the busy functionality.
