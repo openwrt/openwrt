@@ -3,6 +3,7 @@ define Device/glinet_gl-mv1000
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MV1000
   SOC := armada-3720
+  BOOT_SCRIPT := gl-mv1000
 endef
 TARGET_DEVICES += glinet_gl-mv1000
 
