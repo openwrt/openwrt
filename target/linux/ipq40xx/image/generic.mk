@@ -739,7 +739,7 @@ define Device/linksys_whw03
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | linksys-image type=WHW03
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-bluetooth \
-		kmod-fs-ext4 e2fsprogs kmod-fs-f2fs mkf2fs losetup
+		kmod-fs-ext4 e2fsprogs kmod-fs-f2fs mkf2fs losetup ipq-wifi-linksys_whw03
 endef
 TARGET_DEVICES += linksys_whw03
 
