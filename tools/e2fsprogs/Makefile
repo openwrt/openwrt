@@ -39,8 +39,8 @@ endef
 
 define Host/Install
 	$(call Host/Install/Default)
-	$(SED) 's|^DIR=.*|DIR=$$$$(STAGING_DIR_HOST)/share/et|' $(STAGING_DIR_HOST)/bin/compile_et
-	$(SED) 's|^DIR=.*|DIR=$$$$(STAGING_DIR_HOST)/share/ss|' $(STAGING_DIR_HOST)/bin/mk_cmds
+	$(SED) 's|^DIR=.*|DIR=$$$${STAGING_DIR_HOST}/share/et|' $(STAGING_DIR_HOST)/bin/compile_et
+	$(SED) 's|^DIR=.*|DIR=$$$${STAGING_DIR_HOST}/share/ss|' $(STAGING_DIR_HOST)/bin/mk_cmds
 endef
 
 define Host/Uninstall
