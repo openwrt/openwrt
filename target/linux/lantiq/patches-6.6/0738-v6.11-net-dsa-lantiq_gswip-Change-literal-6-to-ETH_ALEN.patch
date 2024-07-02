@@ -1,0 +1,29 @@
+From c927b6e47b5cc7324217bf5fe7e6ccd0633971a0 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:30 +0200
+Subject: net: dsa: lantiq_gswip: Change literal 6 to ETH_ALEN
+
+The addr variable in gswip_port_fdb_dump() stores a mac address. Use
+ETH_ALEN to make this consistent across other drivers.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-9-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1406,7 +1406,7 @@ static int gswip_port_fdb_dump(struct ds
+ {
+ 	struct gswip_priv *priv = ds->priv;
+ 	struct gswip_pce_table_entry mac_bridge = {0,};
+-	unsigned char addr[6];
++	unsigned char addr[ETH_ALEN];
+ 	int i;
+ 	int err;
+ 

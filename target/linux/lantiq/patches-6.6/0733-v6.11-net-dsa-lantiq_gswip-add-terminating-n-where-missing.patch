@@ -1,0 +1,82 @@
+From dd6d364e1895211df8a8fe02c2a5a0b2a7049957 Mon Sep 17 00:00:00 2001
+From: Martin Schiller <ms@dev.tdt.de>
+Date: Tue, 11 Jun 2024 15:54:25 +0200
+Subject: net: dsa: lantiq_gswip: add terminating \n where missing
+
+Some dev_err are missing the terminating \n. Let's add that.
+
+Suggested-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://lore.kernel.org/r/20240611135434.3180973-4-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -829,7 +829,7 @@ static int gswip_setup(struct dsa_switch
+ 
+ 	err = gswip_pce_load_microcode(priv);
+ 	if (err) {
+-		dev_err(priv->dev, "writing PCE microcode failed, %i", err);
++		dev_err(priv->dev, "writing PCE microcode failed, %i\n", err);
+ 		return err;
+ 	}
+ 
+@@ -1780,7 +1780,7 @@ static u32 gswip_bcm_ram_entry_read(stru
+ 	err = gswip_switch_r_timeout(priv, GSWIP_BM_RAM_CTRL,
+ 				     GSWIP_BM_RAM_CTRL_BAS);
+ 	if (err) {
+-		dev_err(priv->dev, "timeout while reading table: %u, index: %u",
++		dev_err(priv->dev, "timeout while reading table: %u, index: %u\n",
+ 			table, index);
+ 		return 0;
+ 	}
+@@ -2009,7 +2009,7 @@ static void gswip_gphy_fw_remove(struct
+ 
+ 	ret = regmap_write(priv->rcu_regmap, gphy_fw->fw_addr_offset, 0);
+ 	if (ret)
+-		dev_err(priv->dev, "can not reset GPHY FW pointer");
++		dev_err(priv->dev, "can not reset GPHY FW pointer\n");
+ 
+ 	clk_disable_unprepare(gphy_fw->clk_gate);
+ 
+@@ -2038,7 +2038,7 @@ static int gswip_gphy_fw_list(struct gsw
+ 			priv->gphy_fw_name_cfg = &xrx200a2x_gphy_data;
+ 			break;
+ 		default:
+-			dev_err(dev, "unknown GSWIP version: 0x%x", version);
++			dev_err(dev, "unknown GSWIP version: 0x%x\n", version);
+ 			return -ENOENT;
+ 		}
+ 	}
+@@ -2048,7 +2048,7 @@ static int gswip_gphy_fw_list(struct gsw
+ 		priv->gphy_fw_name_cfg = match->data;
+ 
+ 	if (!priv->gphy_fw_name_cfg) {
+-		dev_err(dev, "GPHY compatible type not supported");
++		dev_err(dev, "GPHY compatible type not supported\n");
+ 		return -ENOENT;
+ 	}
+ 
+@@ -2150,7 +2150,7 @@ static int gswip_probe(struct platform_d
+ 			return -EINVAL;
+ 		break;
+ 	default:
+-		dev_err(dev, "unknown GSWIP version: 0x%x", version);
++		dev_err(dev, "unknown GSWIP version: 0x%x\n", version);
+ 		return -ENOENT;
+ 	}
+ 
+@@ -2181,7 +2181,7 @@ static int gswip_probe(struct platform_d
+ 		goto mdio_bus;
+ 	}
+ 	if (!dsa_is_cpu_port(priv->ds, priv->hw_info->cpu_port)) {
+-		dev_err(dev, "wrong CPU port defined, HW only supports port: %i",
++		dev_err(dev, "wrong CPU port defined, HW only supports port: %i\n",
+ 			priv->hw_info->cpu_port);
+ 		err = -EINVAL;
+ 		goto disable_switch;

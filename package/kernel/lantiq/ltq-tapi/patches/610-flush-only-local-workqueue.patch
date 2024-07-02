@@ -1,0 +1,11 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -3351,7 +3351,7 @@ static void __exit ifx_tapi_module_exit(
+    /* as we are using work queues to schedule events from the interrupt
+       context to the process context, we use work queues in case of
+       Linux 2.6. they must be flushed on driver unload... */
+-   flush_scheduled_work();
++   flush_workqueue(pTapiWq);
+    destroy_workqueue(pTapiWq);
+ #endif /* LINUX_2_6 */
+ 

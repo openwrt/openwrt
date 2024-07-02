@@ -1,0 +1,82 @@
+From e6c34597f89ac98c06176eed57f125252015a330 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:31 +0200
+Subject: net: dsa: lantiq_gswip: Consistently use macros for the mac bridge
+ table
+
+Only bits [5:0] in mac_bridge.key[3] are reserved for the FID.
+Also, for dynamic (learned) entries, bits [7:4] in mac_bridge.val[0]
+represents the port.
+
+Introduce new macros GSWIP_TABLE_MAC_BRIDGE_KEY3_FID and
+GSWIP_TABLE_MAC_BRIDGE_VAL0_PORT macro and use it throughout the driver.
+Also rename and update GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC to use the
+BIT() macro. This makes the driver code easier to understand.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://lore.kernel.org/r/20240611135434.3180973-10-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -236,7 +236,9 @@
+ #define GSWIP_TABLE_ACTIVE_VLAN		0x01
+ #define GSWIP_TABLE_VLAN_MAPPING	0x02
+ #define GSWIP_TABLE_MAC_BRIDGE		0x0b
+-#define  GSWIP_TABLE_MAC_BRIDGE_STATIC	0x01	/* Static not, aging entry */
++#define  GSWIP_TABLE_MAC_BRIDGE_KEY3_FID	GENMASK(5, 0)	/* Filtering identifier */
++#define  GSWIP_TABLE_MAC_BRIDGE_VAL0_PORT	GENMASK(7, 4)	/* Port on learned entries */
++#define  GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC	BIT(0)		/* Static, non-aging entry */
+ 
+ #define XRX200_GPHY_FW_ALIGN	(16 * 1024)
+ 
+@@ -1297,10 +1299,11 @@ static void gswip_port_fast_age(struct d
+ 		if (!mac_bridge.valid)
+ 			continue;
+ 
+-		if (mac_bridge.val[1] & GSWIP_TABLE_MAC_BRIDGE_STATIC)
++		if (mac_bridge.val[1] & GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC)
+ 			continue;
+ 
+-		if (((mac_bridge.val[0] & GENMASK(7, 4)) >> 4) != port)
++		if (port != FIELD_GET(GSWIP_TABLE_MAC_BRIDGE_VAL0_PORT,
++				      mac_bridge.val[0]))
+ 			continue;
+ 
+ 		mac_bridge.valid = false;
+@@ -1375,9 +1378,9 @@ static int gswip_port_fdb(struct dsa_swi
+ 	mac_bridge.key[0] = addr[5] | (addr[4] << 8);
+ 	mac_bridge.key[1] = addr[3] | (addr[2] << 8);
+ 	mac_bridge.key[2] = addr[1] | (addr[0] << 8);
+-	mac_bridge.key[3] = fid;
++	mac_bridge.key[3] = FIELD_PREP(GSWIP_TABLE_MAC_BRIDGE_KEY3_FID, fid);
+ 	mac_bridge.val[0] = add ? BIT(port) : 0; /* port map */
+-	mac_bridge.val[1] = GSWIP_TABLE_MAC_BRIDGE_STATIC;
++	mac_bridge.val[1] = GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC;
+ 	mac_bridge.valid = add;
+ 
+ 	err = gswip_pce_table_entry_write(priv, &mac_bridge);
+@@ -1431,14 +1434,15 @@ static int gswip_port_fdb_dump(struct ds
+ 		addr[2] = (mac_bridge.key[1] >> 8) & 0xff;
+ 		addr[1] = mac_bridge.key[2] & 0xff;
+ 		addr[0] = (mac_bridge.key[2] >> 8) & 0xff;
+-		if (mac_bridge.val[1] & GSWIP_TABLE_MAC_BRIDGE_STATIC) {
++		if (mac_bridge.val[1] & GSWIP_TABLE_MAC_BRIDGE_VAL1_STATIC) {
+ 			if (mac_bridge.val[0] & BIT(port)) {
+ 				err = cb(addr, 0, true, data);
+ 				if (err)
+ 					return err;
+ 			}
+ 		} else {
+-			if (((mac_bridge.val[0] & GENMASK(7, 4)) >> 4) == port) {
++			if (port == FIELD_GET(GSWIP_TABLE_MAC_BRIDGE_VAL0_PORT,
++					      mac_bridge.val[0])) {
+ 				err = cb(addr, 0, false, data);
+ 				if (err)
+ 					return err;

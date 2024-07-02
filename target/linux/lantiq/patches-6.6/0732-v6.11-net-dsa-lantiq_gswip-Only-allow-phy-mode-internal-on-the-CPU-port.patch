@@ -1,0 +1,38 @@
+From b98f122ebdac28b0c932f3f4474eb0927c39297b Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:24 +0200
+Subject: net: dsa: lantiq_gswip: Only allow phy-mode = "internal" on the CPU
+ port
+
+Add the CPU port to gswip_xrx200_phylink_get_caps() and
+gswip_xrx300_phylink_get_caps(). It connects through a SoC-internal bus,
+so the only allowed phy-mode is PHY_INTERFACE_MODE_INTERNAL.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-3-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1509,6 +1509,7 @@ static void gswip_xrx200_phylink_get_cap
+ 	case 2:
+ 	case 3:
+ 	case 4:
++	case 6:
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
+ 		break;
+@@ -1540,6 +1541,7 @@ static void gswip_xrx300_phylink_get_cap
+ 	case 2:
+ 	case 3:
+ 	case 4:
++	case 6:
+ 		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
+ 			  config->supported_interfaces);
+ 		break;

@@ -1,0 +1,73 @@
+From 86b9ea6412af41914ef6549f85a849c3b987f4f3 Mon Sep 17 00:00:00 2001
+From: Martin Schiller <ms@dev.tdt.de>
+Date: Tue, 11 Jun 2024 15:54:28 +0200
+Subject: net: dsa: lantiq_gswip: do also enable or disable cpu port
+
+Before commit 74be4babe72f ("net: dsa: do not enable or disable non user
+ports"), gswip_port_enable/disable() were also executed for the cpu port
+in gswip_setup() which disabled the cpu port during initialization.
+
+Let's restore this by removing the dsa_is_user_port checks. Also, let's
+clean up the gswip_port_enable() function so that we only have to check
+for the cpu port once. The operation reordering done here is safe.
+
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://lore.kernel.org/r/20240611135434.3180973-7-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 24 ++++++++----------------
+ 1 file changed, 8 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -688,13 +688,18 @@ static int gswip_port_enable(struct dsa_
+ 	struct gswip_priv *priv = ds->priv;
+ 	int err;
+ 
+-	if (!dsa_is_user_port(ds, port))
+-		return 0;
+-
+ 	if (!dsa_is_cpu_port(ds, port)) {
++		u32 mdio_phy = 0;
++
+ 		err = gswip_add_single_port_br(priv, port, true);
+ 		if (err)
+ 			return err;
++
++		if (phydev)
++			mdio_phy = phydev->mdio.addr & GSWIP_MDIO_PHY_ADDR_MASK;
++
++		gswip_mdio_mask(priv, GSWIP_MDIO_PHY_ADDR_MASK, mdio_phy,
++				GSWIP_MDIO_PHYp(port));
+ 	}
+ 
+ 	/* RMON Counter Enable for port */
+@@ -707,16 +712,6 @@ static int gswip_port_enable(struct dsa_
+ 	gswip_switch_mask(priv, 0, GSWIP_SDMA_PCTRL_EN,
+ 			  GSWIP_SDMA_PCTRLp(port));
+ 
+-	if (!dsa_is_cpu_port(ds, port)) {
+-		u32 mdio_phy = 0;
+-
+-		if (phydev)
+-			mdio_phy = phydev->mdio.addr & GSWIP_MDIO_PHY_ADDR_MASK;
+-
+-		gswip_mdio_mask(priv, GSWIP_MDIO_PHY_ADDR_MASK, mdio_phy,
+-				GSWIP_MDIO_PHYp(port));
+-	}
+-
+ 	return 0;
+ }
+ 
+@@ -724,9 +719,6 @@ static void gswip_port_disable(struct ds
+ {
+ 	struct gswip_priv *priv = ds->priv;
+ 
+-	if (!dsa_is_user_port(ds, port))
+-		return;
+-
+ 	gswip_switch_mask(priv, GSWIP_FDMA_PCTRL_EN, 0,
+ 			  GSWIP_FDMA_PCTRLp(port));
+ 	gswip_switch_mask(priv, GSWIP_SDMA_PCTRL_EN, 0,
