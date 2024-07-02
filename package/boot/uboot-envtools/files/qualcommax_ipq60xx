@@ -9,7 +9,8 @@ board=$(board_name)
 
 case "$board" in
 8devices,mango-dvk|\
-8devices,mango-dvk-sfp)
+8devices,mango-dvk-sfp|\
+cambiumnetworks,xe3-4)
 	idx="$(find_mtd_index 0:APPSBLENV)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
