@@ -33,6 +33,8 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	glinet,gl-ax1800|\
+	glinet,gl-axt1800|\
 	netgear,wax214)
 		nand_do_upgrade "$1"
 		;;

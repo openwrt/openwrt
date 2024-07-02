@@ -1,0 +1,45 @@
+From 2a89fd2e8f55a6e8516d233a44f80f2a314c87a5 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 10 Dec 2023 23:19:38 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add sdhci node
+
+Add node to support mmc controller inside of IPQ6018.
+This controller supports both eMMC and SD cards.
+
+Tested with:
+  eMMC (HS200)
+  SD Card (SDR50/SDR104)
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -483,6 +483,25 @@
+ 			};
+ 		};
+ 
++		sdhc: mmc@7804000 {
++			compatible = "qcom,ipq6018-sdhci", "qcom,sdhci-msm-v5";
++			reg = <0x0 0x07804000 0x0 0x1000>,
++			      <0x0 0x07805000 0x0 0x1000>;
++			reg-names = "hc", "cqhci";
++
++			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "hc_irq", "pwr_irq";
++
++			clocks = <&gcc GCC_SDCC1_AHB_CLK>,
++				 <&gcc GCC_SDCC1_APPS_CLK>,
++				 <&xo>;
++			clock-names = "iface", "core", "xo";
++			resets = <&gcc GCC_SDCC1_BCR>;
++			max-frequency = <192000000>;
++			status = "disabled";
++		};
++
+ 		blsp_dma: dma-controller@7884000 {
+ 			compatible = "qcom,bam-v1.7.0";
+ 			reg = <0x0 0x07884000 0x0 0x2b000>;
