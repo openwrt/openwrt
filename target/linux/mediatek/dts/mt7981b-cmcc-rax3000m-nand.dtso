@@ -7,6 +7,13 @@
 	compatible = "cmcc,rax3000m", "mediatek,mt7981";
 
 	fragment@0 {
+		target = <&chosen>;
+		__overlay__ {
+			rootdisk = <&ubi_rootdisk>;
+		};
+	};
+
+	fragment@1 {
 		target = <&gmac0>;
 		__overlay__ {
 			nvmem-cells = <&macaddr_factory_2a 0>;
@@ -14,7 +21,7 @@
 		};
 	};
 
-	fragment@1 {
+	fragment@2 {
 		target = <&gmac1>;
 		__overlay__ {
 			nvmem-cells = <&macaddr_factory_24 0>;
@@ -22,7 +29,7 @@
 		};
 	};
 
-	fragment@2 {
+	fragment@3 {
 		target = <&pio>;
 		__overlay__ {
 			spi0_flash_pins: spi0-pins {
@@ -46,7 +53,7 @@
 		};
 	};
 
-	fragment@3 {
+	fragment@4 {
 		target = <&spi0>;
 		__overlay__ {
 			pinctrl-names = "default";
@@ -79,7 +86,7 @@
 						reg = <0x100000 0x80000>;
 					};
 
-					factory: partition@180000 {
+					partition@180000 {
 						label = "factory";
 						reg = <0x180000 0x200000>;
 						read-only;
@@ -88,6 +95,10 @@
 							compatible = "fixed-layout";
 							#address-cells = <1>;
 							#size-cells = <1>;
+
+							eeprom_factory_0: eeprom@0 {
+								reg = <0x0 0x1000>;
+							};
 
 							macaddr_factory_24: macaddr@24 {
 								compatible = "mac-base";
@@ -110,18 +121,26 @@
 					};
 
 					partition@580000 {
+						compatible = "linux,ubi";
 						label = "ubi";
 						reg = <0x580000 0x7200000>;
+
+						volumes {
+							ubi_rootdisk: ubi-volume-fit {
+								volname = "fit";
+							};
+						};
 					};
 				};
 			};
 		};
 	};
 
-	fragment@4 {
+	fragment@5 {
 		target = <&wifi>;
 		__overlay__ {
-			mediatek,mtd-eeprom = <&factory 0x0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
 		};
 	};
 };
