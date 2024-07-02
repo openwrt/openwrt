@@ -153,6 +153,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,wax214v2)
+		hw_mac_addr=$(mtd_get_mac_ascii Config ethaddr)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
 	mercusys,mr70x-v1|\
 	tplink,archer-ax23-v1)
 		hw_mac_addr="$(mtd_get_mac_binary config 0x8)"

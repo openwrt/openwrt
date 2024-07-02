@@ -2113,6 +2113,24 @@ define Device/netgear_wax202
 endef
 TARGET_DEVICES += netgear_wax202
 
+define Device/netgear_wax214v2
+  $(Device/nand)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WAX214v2
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  NETGEAR_ENC_MODEL := WAX214v2
+  NETGEAR_ENC_REGION := US
+  IMAGE_SIZE := 38912k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-encrypted-factory
+endef
+TARGET_DEVICES += netgear_wax214v2
+
 define Device/netgear_wndr3700-v5
   $(Device/dsa-migration)
   $(Device/netgear_sercomm_nor)
