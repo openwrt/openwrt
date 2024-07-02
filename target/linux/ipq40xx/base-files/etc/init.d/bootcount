@@ -2,6 +2,35 @@
 
 START=99
 
+mmc_resetbc() {
+	local part_label="$1"
+
+	. /lib/functions.sh
+
+	local part_device="$(find_mmc_part "$part_label")"
+	if [ "$part_device" = "" ]; then
+		>&2 echo "mmc_resetbc: Unknown partition label: $part_label"
+		return 1
+	fi
+
+	local magic_number="$(hexdump -e '"0x%02x\n"' -n 4 "$part_device")"
+	if [ "$magic_number" != "0x20110811" ]; then
+		>&2 echo "mmc_resetbc: Unexpected partition magic: $magic_number"
+		return 1
+	fi
+
+	local last_count=$(hexdump -e '"0x%02x\n"' -n 4 -s 4 "$part_device")
+	if [ "$last_count" != "0x00" ]; then
+		printf "\x00" | dd of="$part_device" bs=4 seek=1 count=1 conv=notrunc 2>/dev/null
+
+		last_count=$(hexdump -e '"0x%02x\n"' -n 4 -s 4 "$part_device")
+		if [ "$last_count" != "0x00" ]; then
+			>&2 echo "mmc_resetbc: Unable to reset boot counter"
+			return 1
+		fi
+	fi
+}
+
 boot() {
 	case $(board_name) in
 	alfa-network,ap120c-ac)
@@ -14,6 +43,9 @@ boot() {
 	linksys,whw01|\
 	linksys,whw03v2)
 		mtd resetbc s_env || true
+		;;
+	linksys,whw03)
+		mmc_resetbc s_env || true
 		;;
 	netgear,wac510)
 		fw_setenv boot_cnt=0
