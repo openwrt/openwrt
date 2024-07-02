@@ -1,0 +1,33 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Mon, 24 Jun 2024 03:56:08 +0000
+Subject: [PATCH] gpio: mmio: do not calculate bgpio_bits via "ngpios"
+
+bgpio_bits must be aligned with the data bus width. For example, on a
+32 bit big endian system and we only have 16 GPIOs. If we only assume
+bgpio_bits=16 we can never control the GPIO because the base address
+is the lowest address.
+
+low address                          high address
+-------------------------------------------------
+|   byte3   |   byte2   |   byte1   |   byte0   |
+-------------------------------------------------
+|    NaN    |    NaN    |  gpio8-15 |  gpio0-7  |
+-------------------------------------------------
+
+Fixes: 55b2395e4e92 ("gpio: mmio: handle "ngpios" properly in bgpio_init()")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/gpio/gpio-mmio.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -622,8 +622,6 @@ int bgpio_init(struct gpio_chip *gc, str
+ 	ret = gpiochip_get_ngpios(gc, dev);
+ 	if (ret)
+ 		gc->ngpio = gc->bgpio_bits;
+-	else
+-		gc->bgpio_bits = roundup_pow_of_two(round_up(gc->ngpio, 8));
+ 
+ 	ret = bgpio_setup_io(gc, dat, set, clr, flags);
+ 	if (ret)
