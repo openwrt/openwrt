@@ -1,0 +1,311 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Redmi AX3000";
+	compatible = "redmi,ax3000", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_yellow;
+		led-running = &led_system_blue;
+		led-upgrade = &led_system_yellow;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1";
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&xo_board_clk {
+	clock-frequency = <24000000>;
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&tlmm {
+	blsp_uart0_pins: blsp_uart0_pins {
+		pins =
+			"gpio28", /* RX */
+			"gpio29"; /* TX */
+		function = "blsp0_uart1";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdio1_pins: mdio1_pins {
+		mdc {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	leds_pins: leds_pins {
+		led_system_blue {
+			pins = "gpio19";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_system_yellow {
+			pins = "gpio17";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_internet_blue {
+			pins = "gpio22";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_internet_yellow {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	button_pins: button_pins {
+		button_reset {
+			pins = "gpio25";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		button_mesh {
+			pins = "gpio23";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&blsp_uart0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&soc {
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_system_blue: led_system_blue {
+			label = "blue:system";
+			gpio = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_yellow: led_system_yellow {
+			label = "yellow:system";
+			gpio = <&tlmm 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_blue: led_internet_blue {
+			label = "blue:internet";
+			gpio = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_yellow: led_internet_yellow {
+			label = "yellow:internet";
+			gpio = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	button {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button_reset {
+			label = "reset";
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_KEY>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		button_mesh {
+			label = "mesh";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_KEY>;
+			linux,code = <BTN_9>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		port@0 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+			phy_dac = <0x10 0x10>;
+
+			status = "disabled";
+		};
+
+		port@1 {
+			port_id = <2>;
+			forced-speed = <1000>;
+			forced-duplex = <1>;
+		};
+	};
+
+};
+
+&dp1 {
+	/*
+	 * ===============================================================
+	 *     _______________________         _______________________ 
+	 *    |        IPQ5018        |       |        QCA8337        |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | | MAC0 |---| GE Phy |-+--UTP--+-|  Phy4  |---| MAC5 | |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | | MAC1 |---| Uniphy |-+-SGMII-+-| SerDes |---| MAC0 | |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    |_______________________|       |_______________________|
+	 *
+	 * ===============================================================
+	 *
+	 * Current drivers don't support such topology. So dp1 and ge_phy
+	 * are useless. But they can't be disabled dut to qca-ssdk use
+	 * ge_phy to detect IPQ5018 dummy switch.
+	 */
+	status = "okay";
+};
+
+&dp2 {
+	status = "okay";
+	phy-mode = "sgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&ge_phy {
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+		status = "disabled";
+	};
+
+	switch0: ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		reg = <17>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0cpu: port@0 {
+				reg = <0>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp2>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&qca8337_0>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu2";
+				phy-handle = <&qca8337_4>;
+				status = "disabled";
+			};
+		};
+	};
+};

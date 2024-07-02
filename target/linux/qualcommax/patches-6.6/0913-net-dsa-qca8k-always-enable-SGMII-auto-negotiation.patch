@@ -1,0 +1,35 @@
+From 125af38177669263e17e230581b95e0c2857aae5 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Mon, 22 Apr 2024 22:05:56 +0800
+Subject: [PATCH] net: dsa: qca8k: always enable SGMII auto-negotiation
+
+fixed-link can't work well without this
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/dsa/qca/qca8k-8xxx.c b/drivers/net/dsa/qca/qca8k-8xxx.c
+index 052fc673..c76c11a7 100644
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1545,11 +1545,10 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 		return -EINVAL;
+ 	}
+ 
+-	/* Enable/disable SerDes auto-negotiation as necessary */
+-	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
+-		0 : QCA8K_PWS_SERDES_AEN_DIS;
+-
+-	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
++	/* Enable SerDes auto-negotiation always.
++	 * So fixed-link can work.
++	 */
++	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, 0);
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+2.40.1
+

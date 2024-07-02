@@ -1,0 +1,53 @@
+From 27360a6255db0b68353f6df30b6feea1db7d8539 Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Mon, 22 Apr 2024 21:41:55 +0800
+Subject: [PATCH] init: replace ioremap_nocache() with ioremap()
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ src/init/ssdk_clk.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/init/ssdk_clk.c b/src/init/ssdk_clk.c
+index 711423f3..8ba9b572 100755
+--- a/src/init/ssdk_clk.c
++++ b/src/init/ssdk_clk.c
+@@ -726,7 +726,7 @@ ssdk_mp_tcsr_get(a_uint32_t tcsr_offset, a_uint32_t *tcsr_val)
+ {
+ 	void __iomem *tcsr_base = NULL;
+ 
+-	tcsr_base = ioremap_nocache(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
++	tcsr_base = ioremap(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
+ 	if (!tcsr_base)
+ 	{
+ 		SSDK_ERROR("Failed to map tcsr eth address!\n");
+@@ -743,7 +743,7 @@ ssdk_mp_tcsr_set(a_uint32_t tcsr_offset, a_uint32_t tcsr_val)
+ {
+ 	void __iomem *tcsr_base = NULL;
+ 
+-	tcsr_base = ioremap_nocache(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
++	tcsr_base = ioremap(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
+ 	if (!tcsr_base)
+ 	{
+ 		SSDK_ERROR("Failed to map tcsr eth address!\n");
+@@ -791,7 +791,7 @@ ssdk_mp_cmnblk_stable_check(void)
+ 	a_uint32_t reg_val;
+ 	int i, loops = 20;
+ 
+-	pll_lock = ioremap_nocache(CMN_PLL_LOCKED_ADDR, CMN_PLL_LOCKED_SIZE);
++	pll_lock = ioremap(CMN_PLL_LOCKED_ADDR, CMN_PLL_LOCKED_SIZE);
+ 	if (!pll_lock) {
+ 		SSDK_ERROR("Failed to map CMN PLL LOCK register!\n");
+ 		return A_FALSE;
+@@ -848,7 +848,7 @@ static void ssdk_cmnblk_pll_src_set(enum cmnblk_pll_src_type pll_source)
+ 	void __iomem *cmn_pll_src_base = NULL;
+ 	a_uint32_t reg_val;
+ 
+-	cmn_pll_src_base = ioremap_nocache(CMN_BLK_PLL_SRC_ADDR, CMN_BLK_SIZE);
++	cmn_pll_src_base = ioremap(CMN_BLK_PLL_SRC_ADDR, CMN_BLK_SIZE);
+ 	if (!cmn_pll_src_base) {
+ 		SSDK_ERROR("Failed to map cmn pll source address!\n");
+ 		return;
+-- 
+2.40.1
+
