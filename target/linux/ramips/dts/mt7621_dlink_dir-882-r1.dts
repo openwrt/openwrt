@@ -9,15 +9,19 @@
 };
 
 &leds {
-	usb2 {
-		label = "green:usb2";
+	led-4 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+		function-enumerator = <2>;
 		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&ehci_port2>;
 		linux,default-trigger = "usbport";
 	};
 
-	usb3 {
-		label = "green:usb3";
+	led-5 {
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+		function-enumerator = <3>;
 		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&xhci_ehci_port1>;
 		linux,default-trigger = "usbport";
