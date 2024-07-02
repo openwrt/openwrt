@@ -58,6 +58,7 @@ prpl,haze)
 	[ -n "$mmcpart" ] && \
 		ubootenv_add_uci_config "$mmcpart" "0x0" "0x40000" "0x400" "0x100"
 	;;
+asus,rt-ax89x|\
 qnap,301w)
 	idx="$(find_mtd_index 0:appsblenv)"
 	[ -n "$idx" ] && \
