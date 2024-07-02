@@ -100,6 +100,9 @@ mediatek_setup_interfaces()
 	wavlink,wl-wn586x3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
+	tplink,re6000xd)
+		ucidef_set_interface_lan "lan1 lan2 eth1"
+		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-stock|\
@@ -145,7 +148,8 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
-	mercusys,mr90x-v1)
+	mercusys,mr90x-v1|\
+	tplink,re6000xd)
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac
 		;;
