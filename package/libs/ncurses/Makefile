@@ -82,6 +82,7 @@ CONFIGURE_VARS += \
 HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
+	--disable-ext-colors \
 	--without-cxx \
 	--without-cxx-binding \
 	--without-ada \
