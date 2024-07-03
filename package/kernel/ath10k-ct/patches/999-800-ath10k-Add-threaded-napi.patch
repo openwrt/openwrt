@@ -1,0 +1,50 @@
+--- a/ath10k-6.7/pci.c
++++ b/ath10k-6.7/pci.c
+@@ -2284,6 +2284,7 @@ static int ath10k_pci_hif_start(struct a
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot hif start\n");
+ 
++	dev_set_threaded(&ar->napi_dev, true);
+ 	ath10k_core_napi_enable(ar);
+ 
+ 	ath10k_pci_irq_enable(ar);
+@@ -3564,7 +3565,7 @@ static void ath10k_pci_free_irq(struct a
+ 
+ void ath10k_pci_init_napi(struct ath10k *ar)
+ {
+-	netif_napi_add(&ar->napi_dev, &ar->napi, ath10k_pci_napi_poll);
++	netif_threaded_napi_add(&ar->napi_dev, &ar->napi, ath10k_pci_napi_poll);
+ }
+ 
+ static int ath10k_pci_init_irq(struct ath10k *ar)
+--- a/ath10k-6.7/sdio.c
++++ b/ath10k-6.7/sdio.c
+@@ -1862,6 +1862,7 @@ static int ath10k_sdio_hif_start(struct
+ 	struct ath10k_sdio *ar_sdio = ath10k_sdio_priv(ar);
+ 	int ret;
+ 
++	dev_set_threaded(&ar->napi_dev, true);
+ 	ath10k_core_napi_enable(ar);
+ 
+ 	/* Sleep 20 ms before HIF interrupts are disabled.
+@@ -2531,7 +2532,7 @@ static int ath10k_sdio_probe(struct sdio
+ 		return -ENOMEM;
+ 	}
+ 
+-	netif_napi_add(&ar->napi_dev, &ar->napi, ath10k_sdio_napi_poll);
++	netif_threaded_napi_add(&ar->napi_dev, &ar->napi, ath10k_sdio_napi_poll);
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT,
+ 		   "sdio new func %d vendor 0x%x device 0x%x block 0x%x/0x%x\n",
+--- a/ath10k-6.7/core.c
++++ b/ath10k-6.7/core.c
+@@ -4571,6 +4571,9 @@ struct ath10k *ath10k_core_create(size_t
+ 	INIT_WORK(&ar->stop_scan_work, ath10k_wmi_stop_scan_work);
+ 
+ 	init_dummy_netdev(&ar->napi_dev);
++	snprintf(ar->napi_dev.name, sizeof(ar->napi_dev.name), "ath10k_%s",
++		 wiphy_name(ar->hw->wiphy));
++	ar->napi_dev.threaded = 1;
+ 
+ 	ret = ath10k_coredump_create(ar);
+ 	if (ret)
