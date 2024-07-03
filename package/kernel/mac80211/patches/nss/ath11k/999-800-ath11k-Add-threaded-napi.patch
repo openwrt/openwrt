@@ -29,17 +29,6 @@
  	return 0;
  }
  
---- a/drivers/net/wireless/ath/ath11k/pci.c
-+++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -308,6 +308,8 @@ static int ath11k_pci_fix_l1ss(struct at
- 		return ret;
- 	}
- 
-+	devidx++;
-+
- 	return 0;
- }
- 
 --- a/drivers/net/wireless/ath/ath11k/pcic.c
 +++ b/drivers/net/wireless/ath/ath11k/pcic.c
 @@ -505,8 +505,7 @@ static int ath11k_pcic_ext_grp_napi_poll
@@ -72,3 +61,12 @@
  			       ath11k_pcic_ext_grp_napi_poll);
  
  		/* tcl, reo, rx_err, wbm release, rxdma rings are offloaded to nss. */
+@@ -616,6 +619,8 @@ static int ath11k_pcic_ext_irq_config(st
+ 		ath11k_pcic_ext_grp_disable(irq_grp);
+ 	}
+ 
++	devidx++;
++
+ 	return 0;
+ }
+ 
