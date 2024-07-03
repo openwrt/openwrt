@@ -5,11 +5,23 @@
 . /lib/functions.sh
 . /lib/functions/leds.sh
 
+status_led_restore_trigger() {
+	local led_lc=$(echo "$status_led" | awk '{print tolower($0)}')
+	local led_path="/proc/device-tree/leds/led-$led_lc"
+	local led_trigger
+
+	[ -d "$led_path" ] && \
+		led_trigger=$(cat "$led_path/linux,default-trigger" 2>/dev/null)
+
+	[ -n "$led_trigger" ] && \
+		led_set_attr $status_led "trigger" "$led_trigger"
+}
+
 set_state() {
-	if [ -d "/sys/class/leds/PWR" ]; then
-		status_led="PWR"
-	else
+	if [ -d "/sys/class/leds/ACT" ]; then
 		status_led="ACT"
+	else
+		return
 	fi
 
 	case "$1" in
@@ -22,11 +34,11 @@ set_state() {
 	preinit_regular)
 		status_led_blink_preinit_regular
 		;;
-        upgrade)
-                status_led_blink_preinit_regular
-                ;;
+	upgrade)
+		status_led_blink_preinit_regular
+		;;
 	done)
-		status_led_on
+		status_led_restore_trigger
 		;;
 	esac
 }
