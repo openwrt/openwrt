@@ -1,7 +1,7 @@
-From c6cd3e6878e32548ea90c4160c534e952221c194 Mon Sep 17 00:00:00 2001
+From 3b42260d2130b5ca110c5340ab2bd055eede5968 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Wed, 28 Apr 2021 17:46:01 +0100
-Subject: [PATCH 0536/1085] dmaengine: dw-axi-dmac: Fixes for RP1
+Subject: [PATCH 1144/1145] dmaengine: dw-axi-dmac: Fixes for RP1
 
 Don't assume that DMA addresses of devices are the same as their
 physical addresses - convert correctly.
@@ -42,9 +42,9 @@ to the source register width.
 
 Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 ---
- .../dma/dw-axi-dmac/dw-axi-dmac-platform.c    | 132 +++++++++++++++---
+ .../dma/dw-axi-dmac/dw-axi-dmac-platform.c    | 136 +++++++++++++++---
  drivers/dma/dw-axi-dmac/dw-axi-dmac.h         |   1 +
- 2 files changed, 113 insertions(+), 20 deletions(-)
+ 2 files changed, 116 insertions(+), 21 deletions(-)
 
 --- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
 +++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
@@ -93,7 +93,15 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	for (i = 0; i < chip->dw->hdata->nr_channels; i++) {
  		axi_chan_irq_disable(&chip->dw->chan[i], DWAXIDMAC_IRQ_ALL);
  		axi_chan_disable(&chip->dw->chan[i]);
-@@ -283,7 +306,7 @@ static struct axi_dma_lli *axi_desc_get(
+@@ -256,7 +279,6 @@ static struct axi_dma_desc *axi_desc_all
+ 		kfree(desc);
+ 		return NULL;
+ 	}
+-	desc->nr_hw_descs = num;
+ 
+ 	return desc;
+ }
+@@ -283,7 +305,7 @@ static struct axi_dma_lli *axi_desc_get(
  static void axi_desc_put(struct axi_dma_desc *desc)
  {
  	struct axi_dma_chan *chan = desc->chan;
@@ -102,7 +110,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	struct axi_dma_hw_desc *hw_desc;
  	int descs_put;
  
-@@ -305,6 +328,48 @@ static void vchan_desc_put(struct virt_d
+@@ -305,6 +327,48 @@ static void vchan_desc_put(struct virt_d
  	axi_desc_put(vd_to_axi_desc(vdesc));
  }
  
@@ -151,7 +159,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static enum dma_status
  dma_chan_tx_status(struct dma_chan *dchan, dma_cookie_t cookie,
  		  struct dma_tx_state *txstate)
-@@ -314,10 +379,7 @@ dma_chan_tx_status(struct dma_chan *dcha
+@@ -314,10 +378,7 @@ dma_chan_tx_status(struct dma_chan *dcha
  	enum dma_status status;
  	u32 completed_length;
  	unsigned long flags;
@@ -162,7 +170,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	status = dma_cookie_status(dchan, cookie, txstate);
  	if (status == DMA_COMPLETE || !txstate)
-@@ -326,16 +388,31 @@ dma_chan_tx_status(struct dma_chan *dcha
+@@ -326,16 +387,31 @@ dma_chan_tx_status(struct dma_chan *dcha
  	spin_lock_irqsave(&chan->vc.lock, flags);
  
  	vdesc = vchan_find_desc(&chan->vc, cookie);
@@ -201,7 +209,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	return status;
  }
-@@ -523,7 +600,7 @@ static void dw_axi_dma_set_hw_channel(st
+@@ -521,7 +597,7 @@ static void dw_axi_dma_set_hw_channel(st
  	unsigned long reg_value, val;
  
  	if (!chip->apb_regs) {
@@ -210,7 +218,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		return;
  	}
  
-@@ -627,18 +704,25 @@ static int dw_axi_dma_set_hw_desc(struct
+@@ -625,18 +701,25 @@ static int dw_axi_dma_set_hw_desc(struct
  	switch (chan->direction) {
  	case DMA_MEM_TO_DEV:
  		reg_width = __ffs(chan->config.dst_addr_width);
@@ -238,7 +246,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  			DWAXIDMAC_CH_CTL_L_INC << CH_CTL_L_DST_INC_POS |
  			DWAXIDMAC_CH_CTL_L_NOINC << CH_CTL_L_SRC_INC_POS;
  		block_ts = len >> reg_width;
-@@ -674,9 +758,6 @@ static int dw_axi_dma_set_hw_desc(struct
+@@ -672,9 +755,6 @@ static int dw_axi_dma_set_hw_desc(struct
  	}
  
  	hw_desc->lli->block_ts_lo = cpu_to_le32(block_ts - 1);
@@ -248,7 +256,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	hw_desc->lli->ctl_lo = cpu_to_le32(ctllo);
  
  	set_desc_src_master(hw_desc);
-@@ -771,6 +852,8 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
+@@ -769,6 +849,8 @@ dw_axi_dma_chan_prep_cyclic(struct dma_c
  		src_addr += segment_len;
  	}
  
@@ -257,7 +265,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	llp = desc->hw_desc[0].llp;
  
  	/* Managed transfer list */
-@@ -850,6 +933,8 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
+@@ -851,6 +933,8 @@ dw_axi_dma_chan_prep_slave_sg(struct dma
  		} while (len >= segment_len);
  	}
  
@@ -266,7 +274,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Set end-of-link to the last link descriptor of list */
  	set_desc_last(&desc->hw_desc[num_sgs - 1]);
  
-@@ -957,6 +1042,8 @@ dma_chan_prep_dma_memcpy(struct dma_chan
+@@ -958,6 +1042,8 @@ dma_chan_prep_dma_memcpy(struct dma_chan
  		num++;
  	}
  
@@ -275,7 +283,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Set end-of-link to the last link descriptor of list */
  	set_desc_last(&desc->hw_desc[num - 1]);
  	/* Managed transfer list */
-@@ -1005,7 +1092,7 @@ static void axi_chan_dump_lli(struct axi
+@@ -1006,7 +1092,7 @@ static void axi_chan_dump_lli(struct axi
  static void axi_chan_list_dump_lli(struct axi_dma_chan *chan,
  				   struct axi_dma_desc *desc_head)
  {
@@ -284,7 +292,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int i;
  
  	for (i = 0; i < count; i++)
-@@ -1048,11 +1135,11 @@ out:
+@@ -1049,11 +1135,11 @@ out:
  
  static void axi_chan_block_xfer_complete(struct axi_dma_chan *chan)
  {
@@ -297,7 +305,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	u64 llp;
  	int i;
  
-@@ -1074,6 +1161,7 @@ static void axi_chan_block_xfer_complete
+@@ -1075,6 +1161,7 @@ static void axi_chan_block_xfer_complete
  	if (chan->cyclic) {
  		desc = vd_to_axi_desc(vd);
  		if (desc) {
@@ -305,7 +313,17 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  			llp = lo_hi_readq(chan->chan_regs + CH_LLP);
  			for (i = 0; i < count; i++) {
  				hw_desc = &desc->hw_desc[i];
-@@ -1323,6 +1411,10 @@ static int parse_device_properties(struc
+@@ -1095,6 +1182,9 @@ static void axi_chan_block_xfer_complete
+ 		/* Remove the completed descriptor from issued list before completing */
+ 		list_del(&vd->node);
+ 		vchan_cookie_complete(vd);
++
++		/* Submit queued descriptors after processing the completed ones */
++		axi_chan_start_first_queued(chan);
+ 	}
+ 
+ out:
+@@ -1324,6 +1414,10 @@ static int parse_device_properties(struc
  
  	chip->dw->hdata->nr_masters = tmp;
  
