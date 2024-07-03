@@ -51,7 +51,7 @@ endif
 define Download/git-kernel
   URL:=$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI))
   PROTO:=git
-  VERSION:=$(CONFIG_KERNEL_GIT_REF)
+  SOURCE_VERSION:=$(CONFIG_KERNEL_GIT_REF)
   FILE:=$(LINUX_SOURCE)
   SUBDIR:=linux-$(LINUX_VERSION)
   OPTS:=$(KERNEL_GIT_OPTS)
