@@ -1,0 +1,14 @@
+ksys_close() was removed in 5.10.220, see:
+https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.10.y&id=1aecdaa7e2c6619a7d2c0a81c8f5c06e52f870f3
+
+--- a/ioctl.c
++++ b/ioctl.c
+@@ -871,7 +871,7 @@ cryptodev_ioctl(struct file *filp, unsig
+ 		if (unlikely(ret)) {
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0))
+ 			sys_close(fd);
+-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
++#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 220))
+ 			ksys_close(fd);
+ #else
+ 			close_fd(fd);
