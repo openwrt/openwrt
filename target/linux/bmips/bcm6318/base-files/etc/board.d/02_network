@@ -5,7 +5,8 @@
 board_config_update
 
 case "$(board_name)" in
-comtrend,ar-5315u)
+comtrend,ar-5315u |\
+tp-link,td-w8968-v3)
 	ucidef_set_bridge_device switch
 	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 	;;
