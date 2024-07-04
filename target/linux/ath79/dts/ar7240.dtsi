@@ -15,6 +15,10 @@
 	};
 };
 
+&gpio {
+	ngpios = <18>;
+};
+
 &ahb {
 	usb: usb@1b000000 {
 		compatible = "generic-ohci";
