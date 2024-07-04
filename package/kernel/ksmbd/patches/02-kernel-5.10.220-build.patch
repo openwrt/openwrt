@@ -1,0 +1,25 @@
+vfs_rename() was changed in 5.10.220, see:
+https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-5.10.y&id=e864d4d834f820c8be01c9d048cdab6051fe3932
+
+--- a/vfs.c
++++ b/vfs.c
+@@ -1074,12 +1074,18 @@ static int __ksmbd_vfs_rename(struct ksm
+ 
+ 	err = -ENOTEMPTY;
+ 	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0) || \
++	(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 220) && \
++	 LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
+ 		struct renamedata rd = {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+ 			.old_mnt_userns	= src_user_ns,
++#endif
+ 			.old_dir	= d_inode(src_dent_parent),
+ 			.old_dentry	= src_dent,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+ 			.new_mnt_userns	= dst_user_ns,
++#endif
+ 			.new_dir	= d_inode(dst_dent_parent),
+ 			.new_dentry	= dst_dent,
+ 		};
