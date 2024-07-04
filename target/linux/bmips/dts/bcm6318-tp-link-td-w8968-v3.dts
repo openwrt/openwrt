@@ -1,0 +1,253 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6318.dtsi"
+
+/ {
+	model = "TP-Link TD-W8968 V3";
+	compatible = "tp-link,td-w8968-v3", "brcm,bcm6318";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+	
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+	
+	bcm43217-sprom {
+		compatible = "brcm,bcma-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		brcm,sprom = "brcm/bcm43217-sprom.bin";
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&hsspi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <62500000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x000000 0x010000>;
+				label = "cfe";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cfe_6a0: macaddr@6a0 {
+						compatible = "mac-base";
+						reg = <0x6a0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@10000 {
+				compatible = "brcm,bcm963xx-imagetag";
+				reg = <0x010000 0x7e0000>;
+				label = "firmware";
+			};
+
+			partition@7f0000 {
+				reg = <0x7f0000 0x010000>;
+				label = "nvram";
+			};
+		};
+	};
+};
+
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds
+		     &pinctrl_ephy0_act_led &pinctrl_ephy1_act_led
+		     &pinctrl_ephy2_act_led &pinctrl_ephy3_act_led>;
+
+	led@2 {
+		reg = <2>;
+		active-low;
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led_power_green: led@3 {
+		reg = <3>;
+		active-high;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@4 {
+		/* EPHY0 Act */
+		reg = <4>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <4>;
+	};
+
+	led@5 {
+		/* EPHY1 Act */
+		reg = <5>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <5>;
+	};
+
+	led@6 {
+		/* EPHY2 Act */
+		reg = <6>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <6>;
+	};
+
+	led@7 {
+		/* EPHY3 Act */
+		reg = <7>;
+		brcm,hardware-controlled;
+		brcm,link-signal-sources = <7>;
+	};
+
+	led@8 {
+		reg = <8>;
+		active-low;
+		function = LED_FUNCTION_WAN_ONLINE;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@10 {
+		reg = <10>;
+		active-low;
+		label = "green:dsl";
+	};
+
+	led@13 {
+		reg = <13>;
+		active-low;
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+	
+	led@16 {
+		reg = <16>;
+		active-low;
+		function = LED_FUNCTION_WLAN;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio2", "gpio3",
+		       "gpio8", "gpio10",
+		       "gpio13", "gpio16";
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "lan4";
+
+			phy-handle = <&phy1>;
+			phy-mode = "mii";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan3";
+
+			phy-handle = <&phy2>;
+			phy-mode = "mii";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+
+			phy-handle = <&phy3>;
+			phy-mode = "mii";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+
+			phy-handle = <&phy4>;
+			phy-mode = "mii";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
