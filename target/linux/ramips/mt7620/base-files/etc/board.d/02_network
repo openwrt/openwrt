@@ -257,6 +257,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
 		;;
+	wavlink,wl-wn531g3-a2)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
+		;;
 	wavlink,wl-wn535k1)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "5:lan:1" "4:wan" "6@eth0"
@@ -431,6 +435,7 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
 		;;
 	wavlink,wl-wn531g3|\
+	wavlink,wl-wn531g3-a2|\
 	zbtlink,zbt-we1026-5g-16m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
