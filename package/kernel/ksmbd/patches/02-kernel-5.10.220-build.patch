@@ -3,7 +3,7 @@ https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux
 
 --- a/vfs.c
 +++ b/vfs.c
-@@ -1081,12 +1081,18 @@ static int __ksmbd_vfs_rename(struct ksm
+@@ -1582,7 +1582,9 @@ static int __ksmbd_vfs_rename(struct ksm
  
  	err = -ENOTEMPTY;
  	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
@@ -11,6 +11,12 @@ https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0) || \
 +	(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 220) && \
 +	 LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
+ 		struct renamedata rd = {
+ 			.old_mnt_idmap	= src_idmap,
+@@ -1594,10 +1596,14 @@ static int __ksmbd_vfs_rename(struct ksm
+ 		};
+ #else
  		struct renamedata rd = {
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
  			.old_mnt_userns	= src_user_ns,
