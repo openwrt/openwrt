@@ -201,3 +201,52 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  /* initialisation/exit functions */
  
  int __init nl80211_init(void)
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -3805,6 +3805,46 @@ TRACE_EVENT(cfg80211_update_owe_info_eve
+ 		  __entry->assoc_link_id, __entry->peer_mld_addr)
+ );
+ 
++TRACE_EVENT(cfg80211_update_muedca_params_event,
++	TP_PROTO(struct wiphy *wiphy,
++		 const struct ieee80211_mu_edca_param_set *params),
++	TP_ARGS(wiphy, params),
++	TP_STRUCT__entry(
++		WIPHY_ENTRY
++		__field(u8, mu_qos_info)
++		__field(u8, be_aifsn)
++		__field(u8, be_ecw_min_max)
++		__field(u8, be_mu_edca_timer)
++		__field(u8, bk_aifsn)
++		__field(u8, bk_ecw_min_max)
++		__field(u8, bk_mu_edca_timer)
++		__field(u8, vi_aifsn)
++		__field(u8, vi_ecw_min_max)
++		__field(u8, vi_mu_edca_timer)
++		__field(u8, vo_aifsn)
++		__field(u8, vo_ecw_min_max)
++		__field(u8, vo_mu_edca_timer)
++	),
++	TP_fast_assign(
++		WIPHY_ASSIGN;
++		__entry->mu_qos_info = params->mu_qos_info
++		__entry->be_aifsn = params->ac_be.aifsn
++		__entry->be_ecw_min_max = params->ac_be.ecw_min_max
++		__entry->be_mu_edca_timer = params->ac_be.mu_edca_timer
++		__entry->bk_aifsn = params->ac_bk.aifsn
++		__entry->bk_ecw_min_max = params->ac_bk.ecw_min_max
++		__entry->bk_mu_edca_timer = params->ac_bk.mu_edca_timer
++		__entry->vi_aifsn = params->ac_vi.aifsn
++		__entry->vi_ecw_min_max = params->ac_vi.ecw_min_max
++		__entry->vi_mu_edca_timer = params->ac_vi.mu_edca_timer
++		__entry->vo_aifsn = params->ac_vo.aifsn
++		__entry->vo_ecw_min_max = params->ac_vo.ecw_min_max
++		__entry->vo_mu_edca_timer = params->ac_vo.mu_edca_timer
++	),
++	TP_printk(WIPHY_PR_FMT ", MU QOS info: %u", WIPHY_PR_ARG,
++		  __entry->mu_qos_info)
++);
++
+ TRACE_EVENT(cfg80211_bss_color_notify,
+ 	TP_PROTO(struct net_device *netdev,
+ 		 enum nl80211_commands cmd,
