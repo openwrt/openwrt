@@ -82,6 +82,7 @@ CONFIGURE_VARS += \
 HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
+	--enable-pc-files \
 	--without-cxx \
 	--without-cxx-binding \
 	--without-ada \
