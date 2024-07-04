@@ -37,9 +37,33 @@ define Trusted-Firmware-A/rk3568
   TPL:=rk35/rk3568_ddr_1560MHz_v1.21.bin
 endef
 
+define Trusted-Firmware-A/rk3568-e25
+  NAME:=Radxa E25 board
+  BUILD_SUBTARGET:=armv8
+  ATF:=rk35/rk3568_bl31_v1.44.elf
+  TPL:=rk35/rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
+endef
+
 TFA_TARGETS:= \
 	rk3566 \
-	rk3568
+	rk3568 \
+	rk3568-e25
+
+ifeq ($(BUILD_VARIANT),rk3568-e25)
+  TPL_FILE:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
+  define Download/rk3568-tpl-e25
+    FILE:=$(TPL_FILE)
+    URL:=https://github.com/radxa/rkbin/raw/5696fab20dcac57c1458f72dc7604ba60e553adf/bin/rk35/
+    HASH:=1815f9649dc5661a3ef184b052da39286e51453a66f6ff53cc3e345d65dfabd4
+  endef
+
+  define Build/Prepare
+	$(eval $(call Download,rk3568-tpl-e25))
+	$(call Build/Prepare/Default)
+
+	$(CP) $(DL_DIR)/$(TPL_FILE) $(PKG_BUILD_DIR)/bin/rk35/
+  endef
+endif
 
 define Build/Compile
 endef
