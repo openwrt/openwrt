@@ -1,0 +1,42 @@
+From f07798d7bb9c46d17d80103fb772fd2c75d47919 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 25 Jun 2024 09:19:49 +0800
+Subject: [PATCH] gpio: mmio: do not calculate bgpio_bits via "ngpios"
+
+bgpio_bits must be aligned with the data bus width. For example, on a
+32 bit big endian system and we only have 16 GPIOs. If we only assume
+bgpio_bits=16 we can never control the GPIO because the base address
+is the lowest address.
+
+low address                          high address
+-------------------------------------------------
+|   byte3   |   byte2   |   byte1   |   byte0   |
+-------------------------------------------------
+|    NaN    |    NaN    |  gpio8-15 |  gpio0-7  |
+-------------------------------------------------
+
+Fixes: 55b2395e4e92 ("gpio: mmio: handle "ngpios" properly in bgpio_init()")
+Fixes: https://github.com/openwrt/openwrt/issues/15739
+Reported-by: Mark Mentovai <mark@mentovai.com>
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Suggested-By: Mark Mentovai <mark@mentovai.com>
+Reviewed-by: Jonas Gorski <jonas.gorski@gmail.com>
+Tested-by: Lóránd Horváth <lorand.horvath82@gmail.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/TYCP286MB089577B47D70F0AB25ABA6F5BCD52@TYCP286MB0895.JPNP286.PROD.OUTLOOK.COM
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+---
+ drivers/gpio/gpio-mmio.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -622,8 +622,6 @@ int bgpio_init(struct gpio_chip *gc, str
+ 	ret = gpiochip_get_ngpios(gc, dev);
+ 	if (ret)
+ 		gc->ngpio = gc->bgpio_bits;
+-	else
+-		gc->bgpio_bits = roundup_pow_of_two(round_up(gc->ngpio, 8));
+ 
+ 	ret = bgpio_setup_io(gc, dat, set, clr, flags);
+ 	if (ret)
