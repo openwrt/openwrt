@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2024.01
-PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
+PKG_VERSION:=2024.07
+PKG_HASH:=f591da9ab90ef3d6b3d173766d0ddff90c4ed7330680897486117df390d83c8f
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -775,6 +775,10 @@ UBOOT_TARGETS := \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
 	mt7988_rfb-sd
+
+UBOOT_CUSTOMIZE_CONFIG := \
+	--disable TOOLS_KWBIMAGE \
+	--disable TOOLS_LIBCRYPTO
 
 ifdef CONFIG_TARGET_mediatek
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)

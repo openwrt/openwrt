@@ -125,7 +125,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +}
 --- /dev/null
 +++ b/configs/ravpower-rp-wd009-ram_defconfig
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,72 @@
 +CONFIG_MIPS=y
 +CONFIG_SYS_LOAD_ADDR=0x80010000
 +CONFIG_NR_DRAM_BANKS=1
@@ -145,6 +145,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +CONFIG_SYS_MIPS_TIMER_FREQ=290000000
 +CONFIG_SYS_BOOTPARAMS_LEN=0x20000
 +CONFIG_HUSH_PARSER=y
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_LICENSE=y
 +# CONFIG_CMD_ELF is not set
 +# CONFIG_CMD_XIMG is not set
@@ -234,7 +235,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
  config BOARD_VOCORE2
  	bool "VoCore2"
  	select SPL_SERIAL
-@@ -53,6 +61,7 @@ config SYS_CONFIG_NAME
+@@ -52,6 +60,7 @@ config SYS_CONFIG_NAME
  	default "mt7628" if BOARD_MT7628_RFB
  
  source "board/gardena/smart-gateway-mt7688/Kconfig"
