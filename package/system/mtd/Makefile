@@ -16,6 +16,7 @@ STAMP_PREPARED := $(STAMP_PREPARED)_$(call confvar,CONFIG_MTD_REDBOOT_PARTS)
 
 PKG_LICENSE:=GPL-2.0+
 PKG_LICENSE_FILES:=
+PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=lto
