@@ -383,7 +383,7 @@ define Build/fit
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
-				-i $(KERNEL_BUILD_DIR)/initrd.cpio$(strip $(call Build/initrd_compression)))) \
+				-i $(if $(TARGET_PER_DEVICE_ROOTFS),$(LINUX_DIR).$(ROOTFS_ID/$(DEVICE_NAME)),$(KERNEL_BUILD_DIR))/initrd.cpio$(strip $(call Build/initrd_compression)))) \
 		-a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		$(if $(DEVICE_FDT_NUM),-n $(DEVICE_FDT_NUM)) \
 		$(if $(DEVICE_DTS_DELIMITER),-l $(DEVICE_DTS_DELIMITER)) \
