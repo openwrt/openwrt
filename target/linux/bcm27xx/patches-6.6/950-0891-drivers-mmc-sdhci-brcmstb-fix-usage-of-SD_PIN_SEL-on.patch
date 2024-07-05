@@ -22,7 +22,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -38,7 +38,8 @@
+@@ -39,7 +39,8 @@
  
  #define SDIO_CFG_SD_PIN_SEL			0x44
  #define  SDIO_CFG_SD_PIN_SEL_MASK		0x3
@@ -32,7 +32,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  #define SDIO_CFG_MAX_50MHZ_MODE			0x1ac
  #define  SDIO_CFG_MAX_50MHZ_MODE_STRAP_OVERRIDE	BIT(31)
-@@ -102,6 +103,42 @@ static void sdhci_brcmstb_hs400es(struct
+@@ -103,6 +104,42 @@ static void sdhci_brcmstb_hs400es(struct
  	writel(reg, host->ioaddr + SDHCI_VENDOR);
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void sdhci_brcmstb_set_clock(struct sdhci_host *host, unsigned int clock)
  {
  	u16 clk;
-@@ -161,22 +198,16 @@ static void sdhci_brcmstb_cfginit_2712(s
+@@ -162,22 +199,16 @@ static void sdhci_brcmstb_cfginit_2712(s
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
  	struct sdhci_brcmstb_priv *brcmstb_priv = sdhci_pltfm_priv(pltfm_host);
@@ -102,7 +102,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		reg = readl(brcmstb_priv->cfg_regs + SDIO_CFG_MAX_50MHZ_MODE);
  		reg &= ~SDIO_CFG_MAX_50MHZ_MODE_ENABLE;
  		reg |= SDIO_CFG_MAX_50MHZ_MODE_STRAP_OVERRIDE;
-@@ -190,12 +221,6 @@ static void sdhci_brcmstb_cfginit_2712(s
+@@ -191,12 +222,6 @@ static void sdhci_brcmstb_cfginit_2712(s
  		reg &= ~SDIO_CFG_CTRL_SDCD_N_TEST_LEV;
  		reg |= SDIO_CFG_CTRL_SDCD_N_TEST_EN;
  		writel(reg, brcmstb_priv->cfg_regs + SDIO_CFG_CTRL);
@@ -115,7 +115,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
  }
  
-@@ -330,7 +355,7 @@ static struct sdhci_ops sdhci_brcmstb_op
+@@ -331,7 +356,7 @@ static struct sdhci_ops sdhci_brcmstb_op
  };
  
  static struct sdhci_ops sdhci_brcmstb_ops_2712 = {

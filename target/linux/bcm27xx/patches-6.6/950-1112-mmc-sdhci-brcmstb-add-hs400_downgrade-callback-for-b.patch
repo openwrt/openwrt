@@ -17,7 +17,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -197,6 +197,20 @@ static void sdhci_brcmstb_set_uhs_signal
+@@ -198,6 +198,20 @@ static void sdhci_brcmstb_set_uhs_signal
  	sdhci_writew(host, ctrl_2, SDHCI_HOST_CONTROL2);
  }
  
@@ -38,7 +38,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void sdhci_brcmstb_cfginit_2712(struct sdhci_host *host)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -215,6 +229,8 @@ static void sdhci_brcmstb_cfginit_2712(s
+@@ -216,6 +230,8 @@ static void sdhci_brcmstb_cfginit_2712(s
  		reg &= ~SDIO_CFG_MAX_50MHZ_MODE_ENABLE;
  		reg |= SDIO_CFG_MAX_50MHZ_MODE_STRAP_OVERRIDE;
  		writel(reg, brcmstb_priv->cfg_regs + SDIO_CFG_MAX_50MHZ_MODE);

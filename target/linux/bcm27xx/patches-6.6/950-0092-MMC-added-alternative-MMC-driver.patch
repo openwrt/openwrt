@@ -1993,7 +1993,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  #define MAX_TUNING_LOOP 40
  
-@@ -3209,7 +3209,7 @@ static void sdhci_timeout_timer(struct t
+@@ -3212,7 +3212,7 @@ static void sdhci_timeout_timer(struct t
  	spin_lock_irqsave(&host->lock, flags);
  
  	if (host->cmd && !sdhci_data_line_cmd(host->cmd)) {
@@ -2002,7 +2002,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		       mmc_hostname(host->mmc));
  		sdhci_err_stats_inc(host, REQ_TIMEOUT);
  		sdhci_dumpregs(host);
-@@ -3232,7 +3232,7 @@ static void sdhci_timeout_data_timer(str
+@@ -3235,7 +3235,7 @@ static void sdhci_timeout_data_timer(str
  
  	if (host->data || host->data_cmd ||
  	    (host->cmd && sdhci_data_line_cmd(host->cmd))) {

@@ -17,7 +17,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -338,6 +338,7 @@ static void sdhci_brcmstb_dumpregs(struc
+@@ -339,6 +339,7 @@ static void sdhci_brcmstb_dumpregs(struc
  static void sdhci_brcmstb_cqe_enable(struct mmc_host *mmc)
  {
  	struct sdhci_host *host = mmc_priv(mmc);
@@ -25,7 +25,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	u32 reg;
  
  	reg = sdhci_readl(host, SDHCI_PRESENT_STATE);
-@@ -347,6 +348,9 @@ static void sdhci_brcmstb_cqe_enable(str
+@@ -348,6 +349,9 @@ static void sdhci_brcmstb_cqe_enable(str
  	}
  
  	sdhci_cqe_enable(mmc);

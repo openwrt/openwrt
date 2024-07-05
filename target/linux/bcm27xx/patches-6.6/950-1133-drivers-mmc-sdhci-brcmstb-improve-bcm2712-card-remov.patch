@@ -17,7 +17,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -365,8 +365,21 @@ static void sdhci_brcmstb_cqe_enable(str
+@@ -366,8 +366,21 @@ static void sdhci_brcmstb_cqe_enable(str
  
  	sdhci_cqe_enable(mmc);
  
@@ -41,7 +41,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
  
  static const struct cqhci_host_ops sdhci_brcmstb_cqhci_ops = {
-@@ -386,7 +399,7 @@ static struct sdhci_ops sdhci_brcmstb_op
+@@ -387,7 +400,7 @@ static struct sdhci_ops sdhci_brcmstb_op
  	.set_clock = sdhci_bcm2712_set_clock,
  	.set_power = sdhci_brcmstb_set_power,
  	.set_bus_width = sdhci_set_bus_width,

@@ -17,7 +17,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-brcmstb.c
 +++ b/drivers/mmc/host/sdhci-brcmstb.c
-@@ -41,6 +41,9 @@
+@@ -42,6 +42,9 @@
  #define  SDIO_CFG_SD_PIN_SEL_SD			BIT(1)
  #define  SDIO_CFG_SD_PIN_SEL_MMC		BIT(0)
  
@@ -27,7 +27,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define SDIO_CFG_MAX_50MHZ_MODE			0x1ac
  #define  SDIO_CFG_MAX_50MHZ_MODE_STRAP_OVERRIDE	BIT(31)
  #define  SDIO_CFG_MAX_50MHZ_MODE_ENABLE		BIT(0)
-@@ -201,7 +204,7 @@ static void sdhci_brcmstb_cfginit_2712(s
+@@ -202,7 +205,7 @@ static void sdhci_brcmstb_cfginit_2712(s
  	u32 uhs_mask = (MMC_CAP_UHS_SDR50 | MMC_CAP_UHS_SDR104);
  	u32 hsemmc_mask = (MMC_CAP2_HS200_1_8V_SDR | MMC_CAP2_HS200_1_2V_SDR |
  			   MMC_CAP2_HS400_1_8V | MMC_CAP2_HS400_1_2V);
@@ -36,7 +36,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	/*
  	* If we support a speed that requires tuning,
-@@ -222,6 +225,11 @@ static void sdhci_brcmstb_cfginit_2712(s
+@@ -223,6 +226,11 @@ static void sdhci_brcmstb_cfginit_2712(s
  		reg |= SDIO_CFG_CTRL_SDCD_N_TEST_EN;
  		writel(reg, brcmstb_priv->cfg_regs + SDIO_CFG_CTRL);
  	}
@@ -48,7 +48,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
  
  static int bcm2712_init_sd_express(struct sdhci_host *host, struct mmc_ios *ios)
-@@ -493,6 +501,8 @@ static int sdhci_brcmstb_probe(struct pl
+@@ -494,6 +502,8 @@ static int sdhci_brcmstb_probe(struct pl
  		return PTR_ERR(host);
  
  	pltfm_host = sdhci_priv(host);
@@ -57,7 +57,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	priv = sdhci_pltfm_priv(pltfm_host);
  	if (device_property_read_bool(&pdev->dev, "supports-cqe")) {
  		priv->flags |= BRCMSTB_PRIV_FLAGS_HAS_CQE;
-@@ -623,7 +633,6 @@ add_host:
+@@ -627,7 +637,6 @@ add_host:
  	if (res)
  		goto err;
  

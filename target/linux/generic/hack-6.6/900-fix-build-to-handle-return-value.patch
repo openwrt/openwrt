@@ -1,0 +1,19 @@
+--- a/arch/arm64/net/bpf_jit_comp.c
++++ b/arch/arm64/net/bpf_jit_comp.c
+@@ -1526,6 +1526,7 @@ struct bpf_prog *bpf_int_jit_compile(str
+ 	bool extra_pass = false;
+ 	struct jit_ctx ctx;
+ 	u8 *image_ptr;
++	int ret;
+ 
+ 	if (!prog->jit_requested)
+ 		return orig_prog;
+@@ -1648,7 +1649,7 @@ skip_init_ctx:
+ 			prog->jited_len = 0;
+ 			goto out_off;
+ 		}
+-		bpf_jit_binary_lock_ro(header);
++		ret = bpf_jit_binary_lock_ro(header);
+ 	} else {
+ 		jit_data->ctx = ctx;
+ 		jit_data->image = image_ptr;
