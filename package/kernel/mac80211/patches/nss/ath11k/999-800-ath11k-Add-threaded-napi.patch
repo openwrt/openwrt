@@ -1,6 +1,16 @@
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -526,6 +526,7 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -494,8 +494,7 @@ static int ath11k_ahb_ext_grp_napi_poll(
+ 	int work_done;
+ 
+ 	work_done = ath11k_dp_service_srng(ab, irq_grp, budget);
+-	if (work_done < budget) {
+-		napi_complete_done(napi, work_done);
++	if (work_done < budget && napi_complete_done(napi, work_done)) {
+ 		ath11k_ahb_ext_grp_enable(irq_grp);
+ 	}
+ 
+@@ -526,6 +525,7 @@ static int ath11k_ahb_config_ext_irq(str
  	int irq;
  	int ret;
  	bool nss_offload;
@@ -8,18 +18,19 @@
  
  	/* TCL Completion, REO Dest, ERR, Exception and h2rxdma rings are offloaded
  	 * to nss when its enabled, hence don't enable these interrupts
-@@ -539,7 +540,10 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -539,8 +539,12 @@ static int ath11k_ahb_config_ext_irq(str
  		irq_grp->ab = ab;
  		irq_grp->grp_id = i;
  		init_dummy_netdev(&irq_grp->napi_ndev);
--		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
 +		snprintf(irq_grp->napi_ndev.name, sizeof(irq_grp->napi_ndev.name), "%s%d:%d",
 +			 "ath11k_ahb", devidx, i);
 +
-+		netif_threaded_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
+ 		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
  			       ath11k_ahb_ext_grp_napi_poll);
++		dev_set_threaded(&irq_grp->napi_ndev, true);
  
  		for (j = 0; j < ATH11K_EXT_IRQ_NUM_MAX; j++) {
+ 			if (!nss_offload && ab->hw_params.ring_mask->tx[i] & BIT(j)) {
 @@ -604,6 +608,8 @@ static int ath11k_ahb_config_ext_irq(str
  		}
  	}
@@ -49,19 +60,20 @@
  
  	ret = ath11k_pcic_get_user_msi_assignment(ab, "DP", &num_vectors,
  						  &user_base_data,
-@@ -568,7 +568,10 @@ static int ath11k_pcic_ext_irq_config(st
+@@ -568,8 +568,12 @@ static int ath11k_pcic_ext_irq_config(st
  		irq_grp->ab = ab;
  		irq_grp->grp_id = i;
  		init_dummy_netdev(&irq_grp->napi_ndev);
--		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
 +		snprintf(irq_grp->napi_ndev.name, sizeof(irq_grp->napi_ndev.name), "%s%d:%d",
 +			 "ath11k_pci", devidx, i);
 +
-+		netif_threaded_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
+ 		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
  			       ath11k_pcic_ext_grp_napi_poll);
++		dev_set_threaded(&irq_grp->napi_ndev, true);
  
  		/* tcl, reo, rx_err, wbm release, rxdma rings are offloaded to nss. */
-@@ -616,6 +619,8 @@ static int ath11k_pcic_ext_irq_config(st
+ 		if (ab->nss.enabled &&
+@@ -616,6 +620,8 @@ static int ath11k_pcic_ext_irq_config(st
  		ath11k_pcic_ext_grp_disable(irq_grp);
  	}
  
