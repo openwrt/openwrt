@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_linksys_e8450_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,141 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -35,6 +35,7 @@
 +CONFIG_LOG=y
 +CONFIG_DEFAULT_FDT_FILE="mt7622-linksys-e8450"
 +CONFIG_SYS_PROMPT="MT7622> "
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +CONFIG_CMD_BOOTP=y
 +CONFIG_CMD_BUTTON=y
@@ -360,7 +361,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1422,6 +1422,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1222,6 +1222,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \

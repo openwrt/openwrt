@@ -15,7 +15,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1425,6 +1425,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1225,6 +1225,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-linksys-e8450-ubi.dtb \
  	mt7622-ubnt-unifi-6-lr.dtb \
  	mt7622-ubnt-unifi-6-lr-v3.dtb \
@@ -194,7 +194,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +};
 --- /dev/null
 +++ b/configs/mt7622_xiaomi_redmi-router-ax6s-ubi-loader_defconfig
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,99 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -221,6 +221,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_HUSH_PARSER=y
 +# CONFIG_AUTO_COMPLETE is not set
 +CONFIG_SYS_PROMPT="MT7622> "
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_LICENSE=y
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y

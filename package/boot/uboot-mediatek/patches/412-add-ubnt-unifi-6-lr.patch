@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v1_defconfig
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,148 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -45,6 +45,7 @@
 +# CONFIG_BOOTM_VXWORKS is not set
 +# CONFIG_EFI is not set
 +# CONFIG_EFI_LOADER is not set
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +# CONFIG_CMD_BOOTEFI is not set
 +CONFIG_CMD_BOOTP=y
@@ -150,7 +151,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v2_defconfig
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,148 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -195,6 +196,7 @@
 +# CONFIG_BOOTM_VXWORKS is not set
 +# CONFIG_EFI is not set
 +# CONFIG_EFI_LOADER is not set
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +# CONFIG_CMD_BOOTEFI is not set
 +CONFIG_CMD_BOOTP=y
@@ -300,7 +302,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v3_defconfig
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,147 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -345,6 +347,7 @@
 +# CONFIG_BOOTM_VXWORKS is not set
 +# CONFIG_EFI is not set
 +# CONFIG_EFI_LOADER is not set
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +# CONFIG_CMD_BOOTEFI is not set
 +CONFIG_CMD_BOOTP=y
@@ -841,7 +844,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1423,6 +1423,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1223,6 +1223,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -1040,7 +1043,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -692,6 +707,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -681,6 +696,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_NMBM_MTD
  	initr_nmbm,
  #endif

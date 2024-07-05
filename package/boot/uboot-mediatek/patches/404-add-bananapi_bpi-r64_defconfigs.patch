@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-sdmmc_defconfig
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,165 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -39,6 +39,7 @@
 +CONFIG_LOG=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7622-bananapi-bpi-r64.dtb"
 +CONFIG_SYS_PROMPT="MT7622> "
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +CONFIG_CMD_BOOTP=y
 +CONFIG_CMD_BUTTON=y
@@ -251,7 +252,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-emmc_defconfig
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,153 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -290,6 +291,7 @@
 +CONFIG_LOG=y
 +CONFIG_DEFAULT_FDT_FILE="mt7622-bananapi-bpi-r64"
 +CONFIG_SYS_PROMPT="MT7622> "
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +CONFIG_CMD_BOOTP=y
 +CONFIG_CMD_BUTTON=y
@@ -465,7 +467,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-snand_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,146 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -503,6 +505,7 @@
 +CONFIG_LOG=y
 +CONFIG_DEFAULT_FDT_FILE="mediatek/mt7622-bananapi-bpi-r64.dtb"
 +CONFIG_SYS_PROMPT="MT7622> "
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
 +CONFIG_CMD_BOOTMENU=y
 +CONFIG_CMD_BOOTP=y
 +CONFIG_CMD_BUTTON=y
