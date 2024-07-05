@@ -48,45 +48,45 @@ endif
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
     define Kernel/SetInitramfs/PreConfigure
-	grep -v -e CONFIG_BLK_DEV_INITRD $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
+	grep -v -e CONFIG_BLK_DEV_INITRD $(2)/.config.old > $(2)/.config
+	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(2)/.config
+	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(2)/.config
     endef
   else
   ifeq ($(strip $(CONFIG_EXTERNAL_CPIO)),"")
     define Kernel/SetInitramfs/PreConfigure
-	grep -v -e INITRAMFS -e CONFIG_RD_ -e CONFIG_BLK_DEV_INITRD $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(1) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
+	grep -v -e INITRAMFS -e CONFIG_RD_ -e CONFIG_BLK_DEV_INITRD $(2)/.config.old > $(2)/.config
+	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(2)/.config
+	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(1) $(INITRAMFS_EXTRA_FILES))"' >> $(2)/.config
     endef
   else
     define Kernel/SetInitramfs/PreConfigure
-	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_SOURCE="$(call qstrip,$(CONFIG_EXTERNAL_CPIO))"' >> $(LINUX_DIR)/.config
+	grep -v INITRAMFS $(2)/.config.old > $(2)/.config
+	echo 'CONFIG_INITRAMFS_SOURCE="$(call qstrip,$(CONFIG_EXTERNAL_CPIO))"' >> $(2)/.config
     endef
   endif
 endif
 
   define Kernel/SetInitramfs
-	rm -f $(LINUX_DIR)/.config.prev
-	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
-	$(call Kernel/SetInitramfs/PreConfigure,$(1))
-	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUX_DIR)/.config
+	rm -f $(2)/.config.prev
+	mv $(2)/.config $(2)/.config.old
+	$(call Kernel/SetInitramfs/PreConfigure,$(1),$(2))
+	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(2)/.config
   ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
-	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(LINUX_DIR)/.config
-	echo "$(if $(CONFIG_TARGET_INITRAMFS_FORCE),CONFIG_INITRAMFS_FORCE=y,# CONFIG_INITRAMFS_FORCE is not set)" >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(2)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_GID=$(shell id -g)' >> $(2)/.config
+	echo "$(if $(CONFIG_TARGET_INITRAMFS_FORCE),CONFIG_INITRAMFS_FORCE=y,# CONFIG_INITRAMFS_FORCE is not set)" >> $(2)/.config
   else
-	echo "# CONFIG_INITRAMFS_FORCE is not set" >> $(LINUX_DIR)/.config
+	echo "# CONFIG_INITRAMFS_FORCE is not set" >> $(2)/.config
   endif
-	echo "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_NONE),CONFIG_INITRAMFS_COMPRESSION_NONE=y,# CONFIG_INITRAMFS_COMPRESSION_NONE is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP),CONFIG_INITRAMFS_COMPRESSION_GZIP=y\nCONFIG_RD_GZIP=y,# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set\n# CONFIG_RD_GZIP is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),CONFIG_INITRAMFS_COMPRESSION_BZIP2=y\nCONFIG_RD_BZIP2=y,# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set\n# CONFIG_RD_BZIP2 is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA),CONFIG_INITRAMFS_COMPRESSION_LZMA=y\nCONFIG_RD_LZMA=y,# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set\n# CONFIG_RD_LZMA is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),CONFIG_INITRAMFS_COMPRESSION_LZO=y\nCONFIG_RD_LZO=y,# CONFIG_INITRAMFS_COMPRESSION_LZO is not set\n# CONFIG_RD_LZO is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),CONFIG_INITRAMFS_COMPRESSION_XZ=y\nCONFIG_RD_XZ=y,# CONFIG_INITRAMFS_COMPRESSION_XZ is not set\n# CONFIG_RD_XZ is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),CONFIG_INITRAMFS_COMPRESSION_LZ4=y\nCONFIG_RD_LZ4=y,# CONFIG_INITRAMFS_COMPRESSION_LZ4 is not set\n# CONFIG_RD_LZ4 is not set)" >> $(LINUX_DIR)/.config
-	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),CONFIG_INITRAMFS_COMPRESSION_ZSTD=y\nCONFIG_RD_ZSTD=y,# CONFIG_INITRAMFS_COMPRESSION_ZSTD is not set\n# CONFIG_RD_ZSTD is not set)" >> $(LINUX_DIR)/.config
+	echo "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_NONE),CONFIG_INITRAMFS_COMPRESSION_NONE=y,# CONFIG_INITRAMFS_COMPRESSION_NONE is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP),CONFIG_INITRAMFS_COMPRESSION_GZIP=y\nCONFIG_RD_GZIP=y,# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set\n# CONFIG_RD_GZIP is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),CONFIG_INITRAMFS_COMPRESSION_BZIP2=y\nCONFIG_RD_BZIP2=y,# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set\n# CONFIG_RD_BZIP2 is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA),CONFIG_INITRAMFS_COMPRESSION_LZMA=y\nCONFIG_RD_LZMA=y,# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set\n# CONFIG_RD_LZMA is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),CONFIG_INITRAMFS_COMPRESSION_LZO=y\nCONFIG_RD_LZO=y,# CONFIG_INITRAMFS_COMPRESSION_LZO is not set\n# CONFIG_RD_LZO is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),CONFIG_INITRAMFS_COMPRESSION_XZ=y\nCONFIG_RD_XZ=y,# CONFIG_INITRAMFS_COMPRESSION_XZ is not set\n# CONFIG_RD_XZ is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),CONFIG_INITRAMFS_COMPRESSION_LZ4=y\nCONFIG_RD_LZ4=y,# CONFIG_INITRAMFS_COMPRESSION_LZ4 is not set\n# CONFIG_RD_LZ4 is not set)" >> $(2)/.config
+	echo -e "$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),CONFIG_INITRAMFS_COMPRESSION_ZSTD=y\nCONFIG_RD_ZSTD=y,# CONFIG_INITRAMFS_COMPRESSION_ZSTD is not set\n# CONFIG_RD_ZSTD is not set)" >> $(2)/.config
   endef
 else
 endif
@@ -120,7 +120,7 @@ define Kernel/Configure/Default
 endef
 
 define Kernel/Configure/Initramfs
-	$(call Kernel/SetInitramfs,$(1))
+	$(call Kernel/SetInitramfs,$(1),$(2))
 endef
 
 define Kernel/CompileModules/Default
@@ -160,7 +160,7 @@ endef
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 define Kernel/CompileImage/Initramfs
-	$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)))
+	$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2))
 	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(if $(1),$(1),$(TARGET_DIR))/init
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(if $(1),$(1),$(TARGET_DIR)) $(if $(1),$(1),$(TARGET_DIR))/init)
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
