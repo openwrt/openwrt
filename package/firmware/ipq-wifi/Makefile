@@ -46,6 +46,7 @@ ALLWIFIBOARDS:= \
 	netgear_wax218 \
 	netgear_wax620 \
 	netgear_wax630 \
+	tplink_eap660hd-v1 \
 	prpl_haze \
 	qnap_301w \
 	redmi_ax6 \
@@ -169,6 +170,7 @@ $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
+$(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
