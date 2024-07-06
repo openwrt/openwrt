@@ -10,6 +10,13 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	abt,asr3000)
+		# Originally, phy1 is phy0 mac with LA bit set. However, this would conflict
+		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
+		addr=$(cat /sys/class/net/eth1/address)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
+		;;
 	acer,predator-w6)
 		key_path="/var/qcidata/data"
 		[ "$PHYNBR" = "0" ] && cat $key_path/2gMAC > /sys${DEVPATH}/macaddress
