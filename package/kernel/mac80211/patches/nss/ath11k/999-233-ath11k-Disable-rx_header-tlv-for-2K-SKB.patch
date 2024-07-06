@@ -943,43 +943,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		ret = ath11k_dp_tx_htt_rx_filter_setup(ar->ab, ring_id,
 --- a/drivers/net/wireless/ath/ath11k/rx_desc.h
 +++ b/drivers/net/wireless/ath/ath11k/rx_desc.h
-@@ -1442,9 +1442,11 @@ struct hal_rx_desc_ipq8074 {
- 	__le32 mpdu_end_tag;
- 	struct rx_mpdu_end mpdu_end;
- 	u8 rx_padding1[HAL_RX_DESC_PADDING1_BYTES];
-+#ifndef CPTCFG_ATH11K_MEM_PROFILE_512M
- 	__le32 hdr_status_tag;
- 	__le32 phy_ppdu_id;
- 	u8 hdr_status[HAL_RX_DESC_HDR_STATUS_LEN];
-+#endif
- 	u8 msdu_payload[];
- } __packed;
- 
-@@ -1461,9 +1463,11 @@ struct hal_rx_desc_qcn9074 {
- 	__le32 mpdu_end_tag;
- 	struct rx_mpdu_end mpdu_end;
- 	u8 rx_padding1[HAL_RX_DESC_PADDING1_BYTES];
-+#ifndef CPTCFG_ATH11K_MEM_PROFILE_512M
- 	__le32 hdr_status_tag;
- 	__le32 phy_ppdu_id;
- 	u8 hdr_status[HAL_RX_DESC_HDR_STATUS_LEN];
-+#endif
- 	u8 msdu_payload[];
- } __packed;
- 
-@@ -1480,9 +1484,11 @@ struct hal_rx_desc_wcn6855 {
- 	__le32 mpdu_end_tag;
- 	struct rx_mpdu_end mpdu_end;
- 	u8 rx_padding1[HAL_RX_DESC_PADDING1_BYTES];
-+#ifndef CPTCFG_ATH11K_MEM_PROFILE_512M
- 	__le32 hdr_status_tag;
- 	__le32 phy_ppdu_id;
- 	u8 hdr_status[HAL_RX_DESC_HDR_STATUS_LEN];
-+#endif
- 	u8 msdu_payload[];
- } __packed;
- 
-@@ -1507,4 +1513,17 @@ struct hal_rx_desc {
+@@ -1507,4 +1507,17 @@ struct hal_rx_desc {
  #define RU_484 18
  #define RU_996 37
  
