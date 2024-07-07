@@ -136,14 +136,16 @@ ifeq ($(LINUX_KARCH),x86_64)
 IMAGES_DIR:=../../x86/boot
 endif
 
+# $1: image suffix
+# $2: Per Device Rootfs ID
 define Kernel/CopyImage
-	cmp -s $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug || { \
-		$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1); \
-		$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf; \
-		$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug; \
+	cmp -s $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2) || { \
+		$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1)$(2); \
+		$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf$(2); \
+		$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2); \
 		$(foreach k, \
 			$(if $(KERNEL_IMAGES),$(KERNEL_IMAGES),$(filter-out vmlinux dtbs,$(KERNELNAME))), \
-			$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1); \
+			$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1)$(2); \
 		) \
 	}
 endef
@@ -188,7 +190,7 @@ else
 	+$(call locked,$(if $(2),$(CP) $(LINUX_DIR)$(2)/.config* $(LINUX_DIR) && touch $(LINUX_DIR)/.config && )\
 		rm -rf $(LINUX_DIR)/usr/initramfs_data.cpio* $(LINUX_DIR)/.config.prev && \
 		$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) && \
-		{ $(call Kernel/CopyImage,-initramfs$(2)) },gen-initramfs)
+		{ $(call Kernel/CopyImage,-initramfs,$(2)) },gen-initramfs)
 endif
 endef
 else
