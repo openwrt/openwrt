@@ -127,8 +127,19 @@ define Device/radxa_rock-pi-e
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi E
   SOC := rk3328
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152 kmod-rtw88-8821cu # kmod-rtw88-8723du
 endef
 TARGET_DEVICES += radxa_rock-pi-e
+
+define Device/radxa_rock-pi-e-v3
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK Pi E v3.0
+  SOC := rk3328
+  DEVICE_DTS := rockchip/rk3328-rock-pi-e
+  UBOOT_DEVICE_NAME := rock-pi-e-v3-rk3328
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152 kmod-rtw88-8821cu # kmod-rtw88-8723du
+endef
+TARGET_DEVICES += radxa_rock-pi-e-v3
 
 define Device/sinovoip_bpi-r2-pro
   DEVICE_VENDOR := Sinovoip
