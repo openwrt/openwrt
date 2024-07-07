@@ -114,6 +114,36 @@ define Device/radxa_e25
 endef
 TARGET_DEVICES += radxa_e25
 
+define Device/radxa_rock-3a
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3A
+  SOC := rk3568
+  DEVICE_DTS := rockchip/rk3568-rock-3a
+  UBOOT_DEVICE_NAME := rock-3a-rk3568
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+endef
+TARGET_DEVICES += radxa_rock-3a
+
+define Device/radxa_rock-3b
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3B
+  SOC := rk3568
+  DEVICE_DTS := rockchip/rk3568-rock-3b
+  UBOOT_DEVICE_NAME := rock-3b-rk3568
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+endef
+TARGET_DEVICES += radxa_rock-3b
+
+define Device/radxa_rock-3c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3C
+  SOC := rk3566
+  DEVICE_DTS := rockchip/rk3566-rock-3c
+  UBOOT_DEVICE_NAME := rock-3c-rk3566
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152 # kmod-aic8800
+endef
+TARGET_DEVICES += radxa_rock-3c
+
 define Device/radxa_rock-pi-4a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi 4A
