@@ -57,7 +57,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
  
-@@ -170,12 +170,6 @@ static void bcm6358_quirks(void)
+@@ -170,13 +170,6 @@ static void bcm6358_quirks(void)
  	 * disable SMP for now
  	 */
  	bmips_smp_enabled = 0;
@@ -66,11 +66,12 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 -	 * RAC flush causes kernel panics on BCM6358 when booting from TP1
 -	 * because the bootloader is not initializing it properly.
 -	 */
--	bmips_rac_flush_disable = !!(read_c0_brcm_cmt_local() & (1 << 31));
+-	bmips_rac_flush_disable = !!(read_c0_brcm_cmt_local() & (1 << 31)) ||
+-				  !!BMIPS_GET_CBR();
  }
  
  static void bcm6368_quirks(void)
-@@ -198,6 +192,11 @@ static const struct bmips_quirk bmips_qu
+@@ -199,6 +192,11 @@ static const struct bmips_quirk bmips_qu
  
  void __init prom_init(void)
  {

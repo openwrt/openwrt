@@ -1984,7 +1984,7 @@ bcm2835-mmc: uninitialized_var is no more
  
  #define MAX_TUNING_LOOP 40
  
-@@ -3188,7 +3188,7 @@ static void sdhci_timeout_timer(struct t
+@@ -3191,7 +3191,7 @@ static void sdhci_timeout_timer(struct t
  	spin_lock_irqsave(&host->lock, flags);
  
  	if (host->cmd && !sdhci_data_line_cmd(host->cmd)) {
@@ -1993,7 +1993,7 @@ bcm2835-mmc: uninitialized_var is no more
  		       mmc_hostname(host->mmc));
  		sdhci_dumpregs(host);
  
-@@ -3210,7 +3210,7 @@ static void sdhci_timeout_data_timer(str
+@@ -3213,7 +3213,7 @@ static void sdhci_timeout_data_timer(str
  
  	if (host->data || host->data_cmd ||
  	    (host->cmd && sdhci_data_line_cmd(host->cmd))) {
