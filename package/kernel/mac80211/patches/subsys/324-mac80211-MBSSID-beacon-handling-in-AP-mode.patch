@@ -120,7 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	/* turn off carrier for this interface and dependent VLANs */
  	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
-@@ -3130,12 +3170,24 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3129,12 +3169,24 @@ cfg80211_beacon_dup(struct cfg80211_beac
  
  	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
  	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +
@@ -146,7 +146,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	pos = (u8 *)(new_beacon + 1);
  	if (beacon->head_len) {
  		new_beacon->head_len = beacon->head_len;
-@@ -3173,6 +3225,10 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3172,6 +3224,10 @@ cfg80211_beacon_dup(struct cfg80211_beac
  		memcpy(pos, beacon->probe_resp, beacon->probe_resp_len);
  		pos += beacon->probe_resp_len;
  	}
@@ -157,7 +157,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	/* might copy -1, meaning no changes requested */
  	new_beacon->ftm_responder = beacon->ftm_responder;
-@@ -3210,8 +3266,11 @@ static int ieee80211_set_after_csa_beaco
+@@ -3209,8 +3265,11 @@ static int ieee80211_set_after_csa_beaco
  	case NL80211_IFTYPE_AP:
  		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
  					      NULL, NULL);
@@ -171,7 +171,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		if (err < 0)
  			return err;
-@@ -3366,8 +3425,12 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3365,8 +3424,12 @@ static int ieee80211_set_csa_beacon(stru
  		if ((params->n_counter_offsets_beacon >
  		     IEEE80211_MAX_CNTDWN_COUNTERS_NUM) ||
  		    (params->n_counter_offsets_presp >
@@ -185,7 +185,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		csa.counter_offsets_beacon = params->counter_offsets_beacon;
  		csa.counter_offsets_presp = params->counter_offsets_presp;
-@@ -3377,7 +3440,9 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3376,7 +3439,9 @@ static int ieee80211_set_csa_beacon(stru
  
  		err = ieee80211_assign_beacon(sdata, &params->beacon_csa, &csa, NULL);
  		if (err < 0) {
@@ -195,7 +195,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			return err;
  		}
  		*changed |= err;
-@@ -3464,8 +3529,11 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3463,8 +3528,11 @@ static int ieee80211_set_csa_beacon(stru
  static void ieee80211_color_change_abort(struct ieee80211_sub_if_data  *sdata)
  {
  	sdata->vif.color_change_active = false;
@@ -209,7 +209,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	cfg80211_color_change_aborted_notify(sdata->dev);
  }
-@@ -4203,8 +4271,11 @@ ieee80211_set_after_color_change_beacon(
+@@ -4202,8 +4270,11 @@ ieee80211_set_after_color_change_beacon(
  
  		ret = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
  					      NULL, NULL);
@@ -223,7 +223,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		if (ret < 0)
  			return ret;
-@@ -4247,7 +4318,11 @@ ieee80211_set_color_change_beacon(struct
+@@ -4246,7 +4317,11 @@ ieee80211_set_color_change_beacon(struct
  		err = ieee80211_assign_beacon(sdata, &params->beacon_color_change,
  					      NULL, &color_change);
  		if (err < 0) {
