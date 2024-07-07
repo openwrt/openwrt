@@ -30,7 +30,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  			return -EINVAL;
  		if (lock)
  			regulator_lock(rdev);
-@@ -3234,7 +3235,8 @@ int regulator_list_hardware_vsel(struct
+@@ -3235,7 +3236,8 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  
@@ -40,7 +40,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		return -EINVAL;
  	if (ops->set_voltage_sel != regulator_set_voltage_sel_regmap)
  		return -EOPNOTSUPP;
-@@ -4157,6 +4159,9 @@ int regulator_set_voltage_time(struct re
+@@ -4158,6 +4160,9 @@ int regulator_set_voltage_time(struct re
  
  	for (i = 0; i < rdev->desc->n_voltages; i++) {
  		/* We only look for exact voltage matches here */

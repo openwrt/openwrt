@@ -34,7 +34,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		if (lock)
  			regulator_lock(rdev);
  		ret = ops->list_voltage(rdev, selector);
-@@ -3235,9 +3236,10 @@ int regulator_list_hardware_vsel(struct
+@@ -3236,9 +3237,10 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  
