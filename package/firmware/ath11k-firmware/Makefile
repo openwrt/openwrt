@@ -62,11 +62,25 @@ define Download/qcn9074-board
 endef
 $(eval $(call Download,qcn9074-board))
 
+QCN6018_BOARD_FILE:=board-2.bin
+
+define Download/qcn6018-board
+  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/ath11k/IPQ6018/hw1.0/board-2.bin
+  URL_FILE:=board-2.bin
+  FILE:=$(QCN6018_BOARD_FILE)
+  HASH:=17ddba8df0b36de4a83d7af6ad518e67dfc96f3dfd9b0832899fb1fd13887938
+endef
+$(eval $(call Download,qcn6018-board))
+
+
 define Package/ath11k-firmware-ipq6018/install
-	$(INSTALL_DIR) $(1)/lib/firmware/IPQ6018
+	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ6018
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/ath11k-firmware/IPQ6018/hw1.0/2.5.0.1/WLAN.HK.2.5.0.1-03982-QCAHKSWPL_SILICONZ-3/* \
-		$(1)/lib/firmware/IPQ6018/
+		$(1)/lib/firmware/ath11k/IPQ6018/
+	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ6018/hw1.0
+	$(INSTALL_BIN) \
+		$(DL_DIR)/$(QCN6018_BOARD_FILE) $(1)/lib/firmware/ath11k/QCN9074/hw1.0/board-2.bin
 endef
 
 define Package/ath11k-firmware-ipq8074/install

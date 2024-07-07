@@ -34,6 +34,8 @@ EOF
 platform_do_upgrade() {
 	case "$(board_name)" in
 	netgear,wax214)
+	wallys,dr6018)
+	wallys,dr6018-v4)
 		nand_do_upgrade "$1"
 		;;
 	yuncore,fap650)
