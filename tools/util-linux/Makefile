@@ -23,6 +23,7 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_CONFIGURE_ARGS += \
 	--with-pic \
 	--disable-shared \
+	--disable-nls \
 	--disable-all-programs \
 	--enable-hexdump \
 	--enable-libuuid \
