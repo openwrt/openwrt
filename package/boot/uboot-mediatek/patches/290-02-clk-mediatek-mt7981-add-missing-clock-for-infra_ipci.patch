@@ -1,0 +1,36 @@
+From 5d48f531145eae07c471e759b332490567f18539 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 28 May 2024 23:26:14 +0200
+Subject: [PATCH 2/4] clk: mediatek: mt7981: add missing clock for
+ infra_ipcie_pipe
+
+Add missing clock for infra_ipcie_pipe to make PCIe correctly work. This
+clock is a parent of the fixed clock from topckgen cb_cksq_40m.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/mediatek/clk-mt7981.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/mediatek/clk-mt7981.c
++++ b/drivers/clk/mediatek/clk-mt7981.c
+@@ -515,6 +515,7 @@ static const struct mtk_gate infracfg_ao
+ 	GATE_INFRA2(CK_INFRA_IUSB_CK, "infra_iusb", CK_INFRA_USB_CK, 3),
+ 	GATE_INFRA2(CK_INFRA_IPCIE_CK, "infra_ipcie",
+ 		    CK_INFRA_PCIE_GFMUX_TL_O_PRE, 12),
++	GATE_INFRA2(CK_INFRA_IPCIE_PIPE_CK, "infra_ipcie_pipe", CK_TOP_CB_CKSQ_40M, 13),
+ 	GATE_INFRA2(CK_INFRA_IPCIER_CK, "infra_ipcier", CK_INFRA_F26M_CK0, 14),
+ 	GATE_INFRA2(CK_INFRA_IPCIEB_CK, "infra_ipcieb", CK_INFRA_133M_PHCK, 15),
+ };
+--- a/include/dt-bindings/clock/mt7981-clk.h
++++ b/include/dt-bindings/clock/mt7981-clk.h
+@@ -226,7 +226,8 @@
+ #define CK_INFRA_IPCIE_CK		(54 - INFRACFG_AO_OFFSET)
+ #define CK_INFRA_IPCIER_CK		(55 - INFRACFG_AO_OFFSET)
+ #define CK_INFRA_IPCIEB_CK		(56 - INFRACFG_AO_OFFSET)
+-#define CLK_INFRA_AO_NR_CLK		(57 - INFRACFG_AO_OFFSET)
++#define CK_INFRA_IPCIE_PIPE_CK		(57 - INFRACFG_AO_OFFSET)
++#define CLK_INFRA_AO_NR_CLK		(58 - INFRACFG_AO_OFFSET)
+ 
+ /* APMIXEDSYS */
+ 
