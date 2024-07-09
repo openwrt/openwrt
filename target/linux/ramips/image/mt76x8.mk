@@ -406,7 +406,7 @@ define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := LinkIt Smart 7688
-  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-mmc-mtk
   SUPPORTED_DEVICES += linkits7688 linkits7688d
 endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
@@ -499,7 +499,7 @@ define Device/onion_omega2p
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Onion
   DEVICE_MODEL := Omega2+
-  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-sdhci-mt7620
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools kmod-mmc-mtk
   SUPPORTED_DEVICES += omega2p
 endef
 TARGET_DEVICES += onion_omega2p
@@ -526,7 +526,7 @@ define Device/ravpower_rp-wd009
   DEVICE_MODEL := RP-WD009
   UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7628_ravpower_rp-wd009-u-boot.bin
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
-	kmod-sdhci-mt7620 kmod-i2c-mt7628 ravpower-mcu
+	kmod-mmc-mtk kmod-i2c-mt7628 ravpower-mcu
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | ravpower-wd009-factory
 endef
@@ -954,7 +954,7 @@ define Device/vocore_vocore2
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-sdhci-mt7620
+	kmod-mmc-mtk
   SUPPORTED_DEVICES += vocore2
 endef
 TARGET_DEVICES += vocore_vocore2
@@ -964,7 +964,7 @@ define Device/vocore_vocore2-lite
   DEVICE_VENDOR := VoCore
   DEVICE_MODEL := VoCore2-Lite
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
-	kmod-sdhci-mt7620
+	kmod-mmc-mtk
   SUPPORTED_DEVICES += vocore2lite
 endef
 TARGET_DEVICES += vocore_vocore2-lite
