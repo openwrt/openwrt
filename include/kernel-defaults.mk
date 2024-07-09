@@ -166,6 +166,8 @@ endef
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 # $2: If defined Generate Per Rootfs Kernel Directory and use it
+# For Separate Initramf with $2 declared, skip kernel compile, it has
+# already been done previously on generic image build
 define Kernel/CompileImage/Initramfs
 	$(if $(2),$(call Kernel/PrepareConfigPerRootfs,$(LINUX_DIR)$(2)))
 	$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2))
@@ -185,6 +187,7 @@ endif
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),$(STAGING_DIR_HOST)/bin/lzop -9 -f $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio.zstd $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio)
+	$(if $(2),,$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all))
 	$(call Kernel/CopyImage,-initramfs,$(2))
 else
 	+$(call locked,$(if $(2),$(CP) $(LINUX_DIR)$(2)/.config* $(LINUX_DIR) && touch $(LINUX_DIR)/.config && )\
