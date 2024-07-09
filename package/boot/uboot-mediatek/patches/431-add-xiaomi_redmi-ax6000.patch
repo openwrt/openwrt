@@ -1,4 +1,3 @@
---- /dev/null
 +++ b/configs/mt7986_xiaomi_redmi-ax6000_defconfig
 @@ -0,0 +1,104 @@
 +CONFIG_ARM=y
@@ -315,7 +314,7 @@
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
 +mtd_write_fip=mtd erase fip && mtd write fip $loadaddr
 +mtd_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr
-+ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic 0 ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic 1
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr $part_fit && iminfo $loadaddr && run ubi_prepare_rootfs

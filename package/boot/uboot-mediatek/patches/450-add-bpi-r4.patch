@@ -480,7 +480,7 @@
 +sdmmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +sdmmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x80000 && mtd write bl2 $loadaddr 0x80000 0x80000 && mtd write bl2 $loadaddr 0x100000 0x80000 && mtd write bl2 $loadaddr 0x180000 0x80000
-+ubi_create_env=ubi create ubootenv 0x100000 dynamic 1 ; ubi create ubootenv2 0x100000 dynamic 2
++ubi_create_env=ubi create ubootenv 0x100000 dynamic ; ubi create ubootenv2 0x100000 dynamic
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi
 +ubi_init=run ubi_format && run ubi_init_bl && run ubi_create_env && run ubi_init_openwrt && run ubi_init_emmc_install
 +ubi_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run ubi_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run ubi_write_production
@@ -544,7 +544,7 @@
 +part_recovery=recovery
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
 +snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x80000 && mtd write bl2 $loadaddr 0x80000 0x80000 && mtd write bl2 $loadaddr 0x100000 0x80000 && mtd write bl2 $loadaddr 0x180000 0x80000
-+ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic 1 ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic 2
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
@@ -1416,7 +1416,7 @@
 +sdmmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +sdmmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x80000 && mtd write bl2 $loadaddr 0x80000 0x80000 && mtd write bl2 $loadaddr 0x100000 0x80000 && mtd write bl2 $loadaddr 0x180000 0x80000
-+ubi_create_env=ubi create ubootenv 0x100000 dynamic 1 ; ubi create ubootenv2 0x100000 dynamic 2
++ubi_create_env=ubi create ubootenv 0x100000 dynamic ; ubi create ubootenv2 0x100000 dynamic
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi
 +ubi_init=run ubi_format && run ubi_init_bl && run ubi_create_env && run ubi_init_openwrt && run ubi_init_emmc_install
 +ubi_init_openwrt=run sdmmc_read_recovery && iminfo $loadaddr && run ubi_write_recovery ; run sdmmc_read_production && iminfo $loadaddr && run ubi_write_production
@@ -1480,7 +1480,7 @@
 +part_recovery=recovery
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
 +snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x80000 && mtd write bl2 $loadaddr 0x80000 0x80000 && mtd write bl2 $loadaddr 0x100000 0x80000 && mtd write bl2 $loadaddr 0x180000 0x80000
-+ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic 1 ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic 2
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x100000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x100000 dynamic
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
