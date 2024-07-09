@@ -639,7 +639,7 @@ void skb_recycler_print_all_lists(void)
 	preempt_enable();
 }
 
-#ifdef SKB_FAST_RECYCLABLE_DEBUG_ENABLE
+#ifdef CONFIG_SKB_FAST_RECYCLABLE_DEBUG_ENABLE
 /**
  *	consume_skb_can_fast_recycle_debug - Debug API to flag any sanity check
  *      				     failures on a fast recycled skb
