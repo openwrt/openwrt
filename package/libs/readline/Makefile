@@ -48,6 +48,9 @@ endef
 HOST_CONFIGURE_ARGS += --disable-shared --with-pic
 CONFIGURE_ARGS += --with-curses --disable-install-examples
 
+HOST_CONFIGURE_VARS += \
+	bash_cv_termcap_lib=libncurses
+
 CONFIGURE_VARS += \
 	bash_cv_wcwidth_broken=no \
 	bash_cv_func_sigsetjmp=yes \
