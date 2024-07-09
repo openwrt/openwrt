@@ -51,12 +51,6 @@
 			gpio-export,output = <0>;
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
-
-		sdpower {
-			gpio-export,name = "sdpower";
-			gpio-export,output = <0>;
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -94,6 +88,12 @@
 	mediatek,ephy-base = /bits/ 8 <12>;
 };
 
+&mmc_reg_3v3 {
+	/delete-property/ enable-active-high;
+
+	gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+};
+
 &pcie {
 	status = "okay";
 };
@@ -106,6 +106,10 @@
 		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
+
+&sdhci {
+	max-frequency = <24000000>;
 };
 
 &wmac {
