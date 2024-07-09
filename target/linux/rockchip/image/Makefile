@@ -124,6 +124,11 @@ define Build/env-sd-img
 	mkenvimage -s 0x8000 -p 0x0 -o $(STAGING_DIR_IMAGE)/$(UBOOT_DEVICE_NAME)-env.img ./uboot.env.sd.txt
 endef
 
+### env.img generate scripts ###
+define Build/env-sfc-img
+	mkenvimage -s 0x8000 -p 0x0 -o $(STAGING_DIR_IMAGE)/$(UBOOT_DEVICE_NAME)-env.img ./uboot.env.sfc.txt
+endef
+
 ### Image scripts ###
 define Build/boot-arm-bin
 	# This creates a new folder copies the dtb (as rockchip.dtb)

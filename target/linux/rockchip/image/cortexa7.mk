@@ -35,12 +35,14 @@ define Device/Default-nandflash
 endef
 
 define Device/luckfox_pico-max
-  $(Device/Default-emmc)
+  $(Device/Default-nandflash)
   DEVICE_TITLE := Luckfox Pico Max
   SUPPORTED_DEVICES := luckfox,pico-max
   SOC := rv1106
   DEVICE_DTS := rv1106g-luckfox-pico-pro-max
   UBOOT_DEVICE_NAME := rv1106-sfc
+  IMAGES += sysupgrade.img.gz
+  IMAGE/sysupgrade.img.gz := env-sfc-img | rockchip32-legacy-bin | append-rootfs | pad-extra 128k | gzip | append-metadata
 endef
 TARGET_DEVICES += luckfox_pico-max
 
