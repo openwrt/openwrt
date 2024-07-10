@@ -39,6 +39,8 @@ define Device/luckfox_pico-max
   DEVICE_TITLE := Luckfox Pico Max
   SUPPORTED_DEVICES := luckfox,pico-max
   SOC := rv1106
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=126KiB --max-leb-cnt=2080
   DEVICE_DTS := rv1106g-luckfox-pico-pro-max
   UBOOT_DEVICE_NAME := rv1106-sfc
   IMAGES += sysupgrade.img.gz
