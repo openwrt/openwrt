@@ -33,6 +33,33 @@ endef
 $(eval $(call KernelPackage,skge))
 
 
+define KernelPackage/ag71xx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros AR7XXX/AR9XXX ethernet mac support
+  DEPENDS:=@PCI_SUPPORT||TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
+  KCONFIG:=CONFIG_AG71XX
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx.ko
+  AUTOLOAD:=$(call AutoLoad,50,ag71xx,1)
+endef
+
+$(eval $(call KernelPackage,ag71xx))
+
+
+define KernelPackage/ag71xx-legacy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Downstream Atheros AR7XXX/AR9XXX ethernet mac support
+  DEPENDS:=@TARGET_ath79 +kmod-libphy +kmod-mdio-devres
+  KCONFIG:=CONFIG_AG71XX_LEGACY \
+	CONFIG_AG71XX_LEGACY_DEBUG=n \
+	CONFIG_AG71XX_LEGACY_DEBUG_FS=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy.ko \
+	 $(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx/ag71xx_legacy_mdio.ko
+  AUTOLOAD:=$(call AutoLoad,50,ag71xx-legacy ag71xx-legacy-mdio,1)
+endef
+
+$(eval $(call KernelPackage,ag71xx-legacy))
+
+
 define KernelPackage/alx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Qualcomm Atheros AR816x/AR817x PCI-E Ethernet Network Driver
