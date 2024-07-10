@@ -33,7 +33,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4703,7 +4703,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4704,7 +4704,7 @@ static void ieee80211_8023_xmit(struct i
  
  	ieee80211_aggr_check(sdata, sta, skb);
  
@@ -42,7 +42,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
  		tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
  		if (tid_tx) {
-@@ -4754,7 +4754,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4755,7 +4755,7 @@ static void ieee80211_8023_xmit(struct i
  							     &info->flags, NULL);
  
  	dev_sw_netstats_tx_add(dev, skbs, len);
