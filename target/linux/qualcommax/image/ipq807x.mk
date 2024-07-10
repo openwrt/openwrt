@@ -46,7 +46,7 @@ endef
 TARGET_DEVICES += arcadyan_aw1000
 
 define Device/asus_rt-ax89x
-       DEVICE_VENDOR := Asus
+	DEVICE_VENDOR := Asus
 	DEVICE_MODEL := RT-AX89X
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
