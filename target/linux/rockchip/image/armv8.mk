@@ -111,7 +111,7 @@ define Device/radxa_e25
   DEVICE_DTS := rockchip/rk3568-radxa-e25
   BOOT_SCRIPT := radxa-e25
   UBOOT_DEVICE_NAME := radxa-e25-rk3568
-  DEVICE_PACKAGES := kmod-r8169 kmod-ata-ahci-platform
+  DEVICE_PACKAGES := kmod-r8169 kmod-ata-ahci-dwc
 endef
 TARGET_DEVICES += radxa_e25
 
