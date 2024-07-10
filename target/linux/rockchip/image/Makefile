@@ -100,7 +100,7 @@ define Build/rockchip32-legacy-bin
 	$(CP) $(IMAGE_KERNEL) $@.boot/kernel
 
 	# generate boot.img with boot.its
-	$(STAGING_DIR_IMAGE)/tools/mkimage -E -p 0x800 -f $@.boot/boot.its $@.boot/boot.img
+	mkimage -E -p 0x800 -f $@.boot/boot.its $@.boot/boot.img
 
 	# generate basic image
 	dd if=/dev/zero of="$@" bs=512 count=67136 conv=notrunc
