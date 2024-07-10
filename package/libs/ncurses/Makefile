@@ -126,6 +126,7 @@ ifneq ($(HOST_OS),FreeBSD)
 		a/ansi \
 		a/alacritty \
 		d/dumb \
+		f/foot \
 		l/linux \
 		r/rxvt \
 		r/rxvt-unicode \
