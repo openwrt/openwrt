@@ -916,6 +916,20 @@ define Device/dlink_dir-2150-a1
 endef
 TARGET_DEVICES += dlink_dir-2150-a1
 
+define Device/dlink_dir-2150-r1
+  $(Device/nand)
+  IMAGE_SIZE := 129536k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-2150
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES :=  -uboot-envtools kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+  KERNEL := $$(KERNEL)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | sign-dlink-ru e6587b35a6b34e07bedeca23e140322f 
+endef
+TARGET_DEVICES += dlink_dir-2150-r1
+
 define Device/dlink_dir-2640-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2640
