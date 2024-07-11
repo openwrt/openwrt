@@ -72,23 +72,27 @@
 		compatible = "gpio-leds";
 
 		led_user: user {
-			label = "green:user";
+			function = "user";
 			gpios = <&cp0_gpio2 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		sfp {
-			label = "green:sfp";
+			function = "sfp";
 			gpios = <&cp0_gpio2 25 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		hdr1 {
-			label = "blue:hdr1";
+			function = "hdr1";
 			gpios = <&cp0_gpio1 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		hdr2 {
-			label = "blue:hdr2";
+			function = "hdr2";
 			gpios = <&cp0_gpio2 19 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
 		};
 	};
 
