@@ -30,17 +30,18 @@ define Device/Default-nandflash
   $(Device/Default-arm32)
   FILESYSTEMS += squashfs ubifs
   IMAGES := boot.img rootfs.img
-  IMAGE/rootfs.img := append-rootfs | pad-extra 128k
+  IMAGE/rootfs.img := append-ubi
   IMAGE/boot.img := resource-img | boot-arm-bin
 endef
 
 define Device/luckfox_pico-max
+  PAGESIZE := 2048
+  BLOCKSIZE := 128k
   $(Device/Default-nandflash)
   DEVICE_TITLE := Luckfox Pico Max
   SUPPORTED_DEVICES := luckfox,pico-max
   SOC := rv1106
-  PAGESIZE := 2048
-  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=126KiB --max-leb-cnt=2080
+  MKUBIFS_OPTS := -m 2048 -e 124KiB -c 2114
   DEVICE_DTS := rv1106g-luckfox-pico-pro-max
   UBOOT_DEVICE_NAME := rv1106-sfc
   IMAGES += sysupgrade.img.gz
