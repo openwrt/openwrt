@@ -60,7 +60,7 @@ a state where an explicit start command is necessary to connect again.
 +      {
 +         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
 +            "Autoboot configuration for device (%d) failed!, nRet = %d!"
-+            DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
++            DSL_CPE_CRLF, nDevice, sAutobootCfg.accessCtl.nReturn));
 +      }
 +
 +      memset(&sAutobootCtl, 0, sizeof(DSL_AutobootControl_t));
