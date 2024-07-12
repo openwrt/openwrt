@@ -419,6 +419,16 @@ nand_do_restore_config() {
 }
 
 # Recognize type of passed file and start the upgrade process
+#
+# Supported firmware containers:
+# 1. Raw file
+# 2. Gzip
+#
+# Supported data formats:
+# 1. Tar with kernel/rootfs
+# 2. UBI image (built using "ubinized")
+# 3. UBIFS image (to update UBI volume with)
+# 4. FIT image (to update UBI volume with)
 nand_do_upgrade() {
 	local file="$1"
 
