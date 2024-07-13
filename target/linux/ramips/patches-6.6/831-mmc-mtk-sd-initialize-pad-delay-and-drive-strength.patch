@@ -4,6 +4,8 @@ Subject: [PATCH] mmc: mtk-sd: initialize the pad and tune registers
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
+ drivers/mmc/host/mtk-sd.c | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
 
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
@@ -20,19 +22,52 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #define PAD_DS_TUNE      0x188
  #define PAD_CMD_TUNE     0x18c
  #define EMMC51_CFG0	 0x204
-@@ -1795,6 +1799,16 @@ static void msdc_init_hw(struct msdc_hos
+@@ -400,6 +404,7 @@ struct mtk_mmc_compatible {
+ 	bool enhance_rx;
+ 	bool support_64g;
+ 	bool use_internal_cd;
++	bool legacy_mt762x; /* for mt7620, mt7621 and mt76x8 */
+ };
+ 
+ struct msdc_tune_para {
+@@ -537,6 +542,7 @@ static const struct mtk_mmc_compatible m
+ 	.stop_clk_fix = false,
+ 	.enhance_rx = false,
+ 	.use_internal_cd = true,
++	.legacy_mt762x = true,
+ };
+ 
+ static const struct mtk_mmc_compatible mt7622_compat = {
+@@ -1729,9 +1735,11 @@ static void msdc_init_hw(struct msdc_hos
+ 	}
+ 	writel(0, host->base + MSDC_IOCON);
+ 	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 0);
+-	writel(0x403c0046, host->base + MSDC_PATCH_BIT);
+-	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
+-	writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
++	if(!host->dev_comp->legacy_mt762x) {
++		writel(0x403c0046, host->base + MSDC_PATCH_BIT);
++		sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
++		writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
++	}
+ 	sdr_set_bits(host->base + EMMC50_CFG0, EMMC50_CFG_CFCSTS_SEL);
+ 
+ 	if (host->dev_comp->stop_clk_fix) {
+@@ -1795,6 +1803,18 @@ static void msdc_init_hw(struct msdc_hos
  				     MSDC_PAD_TUNE_RXDLYSEL);
  	}
  
-+	/* Set pins drive strength */
-+	writel(0x000d0044, host->base + MSDC_PAD_CTRL0);
-+	writel(0x000e0044, host->base + MSDC_PAD_CTRL1);
-+	writel(0x000e0044, host->base + MSDC_PAD_CTRL2);
++	if (host->dev_comp->legacy_mt762x) {
++		/* Set pins drive strength */
++		writel(0x000d0044, host->base + MSDC_PAD_CTRL0);
++		writel(0x000e0044, host->base + MSDC_PAD_CTRL1);
++		writel(0x000e0044, host->base + MSDC_PAD_CTRL2);
 +
-+	/* Set pad delay */
-+	writel(0x84101010, host->base + MSDC_PAD_TUNE);
-+	writel(0x10101010, host->base + MSDC_PAD_TUNE0);
-+	writel(0x10101010, host->base + MSDC_PAD_TUNE1);
++		/* Set pad delay */
++		writel(0x84101010, host->base + MSDC_PAD_TUNE);
++		writel(0x10101010, host->base + MSDC_PAD_TUNE0);
++		writel(0x10101010, host->base + MSDC_PAD_TUNE1);
++	}
 +
  	if (mmc->caps2 & MMC_CAP2_NO_SDIO) {
  		sdr_clr_bits(host->base + SDC_CFG, SDC_CFG_SDIO);
