@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# shellcheck disable=3043
+# shellcheck disable=3043,3010
 # Copyright (c) 2021 The Linux Foundation. All rights reserved.
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -15,6 +15,12 @@
 #
 
 START=71
+NAME=qca-nss-pbuf
+
+get_num_cpus() {
+  local num_cpus=$(awk -F': ' '/^processor/ {count++} END {print count}' /proc/cpuinfo)
+  echo ${num_cpus:-1}
+}
 
 apply_sysctl() {
   [ "$(sysctl -n -e dev.nss.general.redirect)" -eq 0 ] && /etc/init.d/qca-nss-ecm start
@@ -22,134 +28,146 @@ apply_sysctl() {
   # Running this script multiple times is useless, as extra_pbuf_core0
   # can't be changed if it is allocated, assume it's already been run.
   if [ "$(sysctl -n -e dev.nss.n2hcfg.extra_pbuf_core0)" -eq 0 ]; then
-    logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.extra_pbuf_core0=$extra_pbuf_core0"
+    logger -t $NAME "$board - setting dev.nss.n2hcfg.extra_pbuf_core0=$extra_pbuf_core0"
     sysctl -w dev.nss.n2hcfg.extra_pbuf_core0="$extra_pbuf_core0" > /dev/null 2>&1
   else
-    logger -t ath11k_nss "Sysctl key 'extra_pbuf_core0' already set to '""$extra_pbuf_core0""'. Skipping applying wifi nss configs"
+    logger -t $NAME "Sysctl key 'extra_pbuf_core0' already set to '""$extra_pbuf_core0""'. Skipping applying wifi nss configs"
   fi
 
   sysctl -w dev.nss.n2hcfg.n2h_high_water_core0="$n2h_high_water_core0" > /dev/null 2>&1
 
-  logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.n2h_wifi_pool_buf=$n2h_wifi_pool_buf"
+  logger -t $NAME "$board - setting dev.nss.n2hcfg.n2h_wifi_pool_buf=$n2h_wifi_pool_buf"
   sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf="$n2h_wifi_pool_buf" > /dev/null 2>&1
 
-  logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.n2h_high_water_core0=$n2h_high_water_core0"
+  logger -t $NAME "$board - setting dev.nss.n2hcfg.n2h_high_water_core0=$n2h_high_water_core0"
   sysctl -w dev.nss.n2hcfg.n2h_high_water_core0="$n2h_high_water_core0" > /dev/null 2>&1
 
 }
 
 apply_nss_config() {
-  local auto_scale n2h_queue_limit_core0 n2h_queue_limit_core1
+  local auto_scale n2h_queue_limit_core0 n2h_queue_limit_core1 num_cpus
+  local hash_bitmap
 
   if [ ! -r /sys/module/ath11k/parameters/nss_offload ]; then
-    logger -t ath11k_nss "Module parameter '/sys/module/ath11k/parameters/nss_offload' does NOT exist. Skipping applying wifi nss configs"
+    logger -t $NAME "Module parameter '/sys/module/ath11k/parameters/nss_offload' does NOT exist. Skipping applying wifi nss configs"
     exit 1
   fi
 
   enable_nss_offload=$(cat /sys/module/ath11k/parameters/nss_offload)
 
   if [ "$enable_nss_offload" -ne "1" ]; then
-    logger -t ath11k_nss -s user.warn "Module parameter 'nss_offload=0'. Skipping applying wifi nss configs"
+    logger -t $NAME -s user.warn "Module parameter 'nss_offload=0'. Skipping applying wifi nss configs"
     exit 1
   fi
 
   [ ! -d "/proc/sys/dev/nss/rps" ] && {
-    logger -s -t ath11k_nss -p user.error "NSS driver not loaded or disabled! Exiting... "
+    logger -s -t $NAME -p user.error "NSS driver not loaded or disabled! Exiting... "
     exit 1
   }
 
-  config_load     pbuf
-  config_get_bool auto_scale            opt auto_scale            0
-  config_get      n2h_queue_limit_core0 opt n2h_queue_limit_core0 2048
-  config_get      n2h_queue_limit_core1 opt n2h_queue_limit_core1 2048
+  config_load pbuf
+  config_get_bool auto_scale opt auto_scale 0
+  config_get n2h_queue_limit_core0 opt n2h_queue_limit_core0 256
+  config_get n2h_queue_limit_core1 opt n2h_queue_limit_core1 256
 
   sysctl -w dev.nss.clock.auto_scale="$auto_scale" > /dev/null 2>&1
 
   sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core0="$n2h_queue_limit_core0" > /dev/null 2>&1
   sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core1="$n2h_queue_limit_core1" > /dev/null 2>&1
 
-  sysctl -w dev.nss.rps.hash_bitmap=15 > /dev/null 2>&1
+  local memory_profile memtotal board
+  board=$(board_name)
 
-  local memory_profile
   if memory_profile=$(uci_get pbuf.opt.memory_profile); then
     case "$memory_profile" in
-       1g*|512m*|256m*)
-          board=$memory_profile
-          logger -t ath11k_nss "Using custom memory profile - $board"
-          ;;
-        off*|false*|disable*|0)
-          logger -s -t ath11k_nss -p user.warn "NSS pbuf option 'memory_profile=off'. Not running. Enable if you have issues connecting more than 65 clients"
-          exit 0
-          ;;
-        auto)
-          board=$(board_name)
-          logger -t ath11k_nss "Setting n2hcfg values for board: $board"
-          ;;
-          *)
-            logger -s -t ath11k_nss -p user.error "Unknown profile $memory_profile. Choose auto, 1gb, 512mb, or 256mb"
-          exit 1
-          ;;
+      1024 | 1g* | 512 | 512m* | 256 | 256m*)
+        logger -t $NAME "Using custom memory profile - $board"
+        ;;
+      off* | false* | disable* | 0)
+        logger -s -t $NAME -p user.warn "NSS pbuf option 'memory_profile=off'. Not running. Enable if you have issues connecting more than 65 clients"
+        exit 0
+        ;;
+      auto)
+        memtotal=$(awk '/MemTotal/{print $2}' /proc/meminfo)
+        [ "$memtotal" -gt 512000 ] && memory_profile=1024
+        [ "$memtotal" -le 512000 ] && memory_profile=512
+        [ "$memtotal" -le 256000 ] && memory_profile=256
+        logger -t $NAME "Setting n2hcfg values for board: $board"
+        ;;
+      *)
+        logger -s -t $NAME -p user.error "Unknown profile $memory_profile. Choose auto, 1gb, 512mb, or 256mb"
+        exit 1
+        ;;
     esac
   else
     exit 0
   fi
 
-  case "$board" in
+  case "$memory_profile" in
     # 1GB+ profile
-    arcadyan,aw1000 | \
-    buffalo,wxr-5950ax12 | \
-    dynalink,dl-wrx36 | \
-    edgecore,eap102 | \
-    linksys,mx4200v2 | \
-    linksys,mx5300 | \
-    netgear,rax120v2 | \
-    netgear,wax620 | \
-    netgear,wax630 | \
-    prpl,haze | \
-    qnap,301w | \
-    xiaomi,ax9000 | \
-    yuncore,ax880 | \
-    zyxel,nbg7815 | \
-    1g*)
+    1024 | 1g*)
       extra_pbuf_core0=10000000 n2h_high_water_core0=72512 n2h_wifi_pool_buf=36864 apply_sysctl
       ;;
-    # 512MB profile
-    edimax,cax1800 | \
-    compex,wpq873 | \
-    linksys,mx4200v1 | \
-    redmi,ax6 | \
-    xiaomi,ax3600 | \
-    zte,mf269 | \
-    512m*)
-      extra_pbuf_core0=3100000  n2h_high_water_core0=30624 n2h_wifi_pool_buf=8192 apply_sysctl
+      # 512MB profile
+    512 | 512m*)
+      extra_pbuf_core0=3100000 n2h_high_water_core0=30624 n2h_wifi_pool_buf=8192 apply_sysctl
       ;;
-    # 256MB profile
-    netgear,wax218 | \
-    256m*)
-      extra_pbuf_core0=3100000  n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
+      # 256MB profile
+    256 | 256m*)
+      extra_pbuf_core0=3100000 n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
       ;;
   esac
 }
 
-boost_performance() {
+set_stats_disable() {
 
-  find /sys/kernel/debug/ath11k -name stats_disable| while read -r stats_disable; do
-    echo 1 > "$stats_disable"
+  local stats_disable
+  config_load pbuf
+  config_get stats_disable opt stats_disable 1
+
+  find /sys/kernel/debug/ath11k -name stats_disable | while read -r stats_file; do
+    stats_msg_prefix="Disabling"
+    [ "$stats_disable" -eq 0 ] && stats_msg_prefix="Enabling"
+    logger -t $NAME -p user.notice "$stats_msg_prefix ath11k stats"
+    echo "$stats_disable" > "$stats_file"
   done
+}
 
-  ubus call iwinfo devices | jsonfilter -e "@.devices[*]"| while read -r device; do
-    tc qdisc replace dev "${device}" root noqueue
-  done
+set_scaling_governor() {
 
-  for num in 0 1 2 3; do
-    echo "performance" > /sys/devices/system/cpu/cpu${num}/cpufreq/scaling_governor
-  done
+  local scaling_governor num_cpus
+  config_load pbuf
+  config_get scaling_governor opt scaling_governor
 
+  scaling_available_governors=/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors
+
+  if [ -r "$scaling_available_governors" ]; then
+    scaling_available_governors=$(cat $scaling_available_governors)
+  else
+    return 0
+  fi
+
+  if [ -n "$scaling_available_governors" ] && [ -n "$scaling_governor" ]; then
+    if [[ "$scaling_available_governors" =~ $scaling_governor ]]; then
+      logger -t $NAME -p user.notice "Setting CPU scaling governor to '$scaling_governor'"
+      num_cpus=$(get_num_cpus)
+      for num in $(seq 0 $((num_cpus - 1))); do
+        echo "$scaling_governor" > "/sys/devices/system/cpu/cpu${num}/cpufreq/scaling_governor"
+      done
+    else
+      logger -t $NAME -p user.error "'$scaling_governor' not available in CPU governors [ $scaling_available_governors ]"
+    fi
+  fi
 }
 
 start() {
 
-  boost_performance
+  set_scaling_governor
+  set_stats_disable
   apply_nss_config
+
+  num_cpus=$(get_num_cpus)
+  hash_bitmap="$(((1 << num_cpus) - 1))"
+  sysctl -w dev.nss.rps.hash_bitmap=$hash_bitmap > /dev/null 2>&1
 
 }
