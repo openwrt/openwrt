@@ -1,0 +1,140 @@
+# vim: set ft=kconfig
+menu "Qualcomm IPQ Options"
+
+comment "Kernel build options"
+
+choice KERNEL_IPQ_MEM_PROFILE
+	prompt "IPQ memory profile"
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_edimax_cax1800
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_compex_wpq87
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_linksys_mx4200v1
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_redmi_ax6
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_xiaomi_ax3600
+	default IPQ_MEM_PROFILE_512 if TARGET_qualcommax_ipq807x_DEVICE_zte_mf269
+
+	config IPQ_MEM_PROFILE_1024
+			bool "1024"
+	config IPQ_MEM_PROFILE_512
+			bool "512"
+	config IPQ_MEM_PROFILE_256
+			bool "256"
+endchoice
+
+config KERNEL_IPQ_MEM_PROFILE
+	int
+	default 1024 if IPQ_MEM_PROFILE_1024
+	default 512 if IPQ_MEM_PROFILE_512
+	default 256 if IPQ_MEM_PROFILE_256
+
+	help
+	  This option select memory profile to used, which defines
+	  the reserved memory configuration used in device tree
+
+config KERNEL_SKB_RECYCLER
+	bool "Generic SKB recycling"
+	default y if KERNEL_IPQ_MEM_PROFILE < 1024
+
+choice KERNEL_SKB_RECYCLE_SIZE
+	prompt "SKB recycler size"
+	default SKB_RECYCLE_SIZE_2304
+	default SKB_RECYCLE_SIZE_1856 if KERNEL_IPQ_MEM_PROFILE < 1024
+
+	depends on KERNEL_SKB_RECYCLER
+	config SKB_RECYCLE_SIZE_1856
+			bool "1856"
+	config SKB_RECYCLE_SIZE_2304
+			bool "2304"
+endchoice
+
+config KERNEL_SKB_RECYCLE_SIZE
+	int
+	depends on KERNEL_SKB_RECYCLER
+	default 2304 if SKB_RECYCLE_SIZE_2304
+	default 1856 if SKB_RECYCLE_SIZE_1856
+
+	help
+	SKB recycler default size
+
+config KERNEL_SKB_RECYCLER_MULTI_CPU
+	bool "Cross-CPU recycling for CPU-locked workloads"
+	depends on KERNEL_SKB_RECYCLER
+	default y
+
+config KERNEL_SKB_RECYCLER_PREALLOC
+	bool "Enable preallocation of SKBs"
+	depends on KERNEL_SKB_RECYCLER
+	default n
+
+config KERNEL_SKB_RECYCLE_MAX_PREALLOC_SKBS
+	int "Number of SKBs to be preallocated"
+	depends on KERNEL_SKB_RECYCLER_PREALLOC
+	default 16384
+
+config KERNEL_SKB_FIXED_SIZE_2K
+	bool "SKB size fixed at 2K"
+	default n
+	help
+	   SKB size fixed at 2K.
+
+config KERNEL_ALLOC_SKB_PAGE_FRAG_DISABLE
+	depends on KERNEL_SKB_RECYCLER
+	bool "Disable alloc skb page frag"
+	default n
+
+choice KERNEL_PREEMPTION
+	prompt "Kernel preemption level"
+	default KERNEL_PREEMPT
+
+config KERNEL_PREEMPT_NONE
+	bool "No Forced Preemption (Server)"
+	help
+	  This is the traditional Linux preemption model, geared towards
+	  throughput. It will still provide good latencies most of the time,
+	  but there are no guarantees and occasional longer delays are
+	  possible.
+
+	  Select this option if you are building a kernel for a server or
+	  scientific/computation system, or if you want to maximize the
+	  raw processing power of the kernel, irrespective of scheduling
+	  latencies.
+
+config KERNEL_PREEMPT_NONE_BUILD
+	depends on KERNEL_PREEMPT_NONE
+	bool
+	default y
+
+config KERNEL_PREEMPT
+	bool "Preemptible Kernel (Low-Latency)"
+	help
+	  This option reduces the latency of the kernel by making
+	  all kernel code (that is not executing in a critical section)
+	  preemptible.  This allows reaction to interactive events by
+	  permitting a low priority process to be preempted involuntarily
+	  even if it is in kernel mode executing a system call and would
+	  otherwise not be about to reach a natural preemption point.
+	  This allows applications to run more 'smoothly' even when the
+	  system is under load, at the cost of slightly lower throughput
+	  and a slight runtime overhead to kernel code.
+
+	  Select this if you are building a kernel for a desktop or
+	  embedded system with latency requirements in the milliseconds
+	  range.
+
+if KERNEL_PREEMPT
+	config KERNEL_PREEMPT_RCU
+	bool "Preemptible RCU"
+	default y
+	select KERNEL_PREEMPT_COUNT
+	help
+	  This option selects the RCU implementation that is
+	  designed for very large SMP systems with hundreds or
+	  thousands of CPUs, but for which real-time response
+	  is also required.  It also scales down nicely to
+	  smaller systems.
+
+	  Select this option if you are unsure.
+
+endif
+endchoice
+
+endmenu
