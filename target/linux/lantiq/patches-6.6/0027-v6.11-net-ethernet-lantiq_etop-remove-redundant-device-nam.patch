@@ -1,0 +1,31 @@
+From 9283477e28913c1e7625c0a8d6959745e2431533 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sat, 13 Jul 2024 19:09:20 +0200
+Subject: [PATCH] net: ethernet: lantiq_etop: remove redundant device name
+ setup
+
+The same name is set when allocating the netdevice structure in the
+alloc_etherdev_mq()->alloc_etherrdev_mqs() function. Therefore, there
+is no need to manually set it.
+
+This fixes CheckPatch warnings:
+WARNING: Prefer strscpy over strcpy - see: https://github.com/KSPP/linux/issues/88
+	strcpy(dev->name, "eth%d");
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Link: https://patch.msgid.link/20240713170920.863171-1-olek2@wp.pl
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/lantiq_etop.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/ethernet/lantiq_etop.c
++++ b/drivers/net/ethernet/lantiq_etop.c
+@@ -675,7 +675,6 @@ ltq_etop_probe(struct platform_device *p
+ 		err = -ENOMEM;
+ 		goto err_out;
+ 	}
+-	strcpy(dev->name, "eth%d");
+ 	dev->netdev_ops = &ltq_eth_netdev_ops;
+ 	dev->ethtool_ops = &ltq_etop_ethtool_ops;
+ 	priv = netdev_priv(dev);
