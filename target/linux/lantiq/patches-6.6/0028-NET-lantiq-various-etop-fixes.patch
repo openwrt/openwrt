@@ -5,8 +5,8 @@ Subject: [PATCH 28/36] NET: lantiq: various etop fixes
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- drivers/net/ethernet/lantiq_etop.c |  555 +++++++++++++++++++++++++-----------
- 1 file changed, 389 insertions(+), 166 deletions(-)
+ drivers/net/ethernet/lantiq_etop.c | 531 ++++++++++++++++++++---------
+ 1 file changed, 374 insertions(+), 157 deletions(-)
 
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
@@ -275,7 +275,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (ch->dma.irq)
  		free_irq(ch->dma.irq, priv);
 -	if (IS_RX(ch->idx)) {
-+	if (ch == &priv->txch) {
++	if (ch == &priv->rxch) {
  		struct ltq_dma_channel *dma = &ch->dma;
  
  		for (dma->desc = 0; dma->desc < LTQ_DESC_NUM; dma->desc++)
