@@ -48,7 +48,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -6089,7 +6089,9 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6091,7 +6091,9 @@ int ath11k_dp_rx_process_mon_status(stru
  	if (!num_buffs_reaped)
  		goto exit;
  
@@ -59,7 +59,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	ppdu_info->peer_id = HAL_INVALID_PEERID;
  
  	while ((skb = __skb_dequeue(&skb_list))) {
-@@ -6107,7 +6109,6 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6109,7 +6111,6 @@ int ath11k_dp_rx_process_mon_status(stru
  		if (log_type != ATH11K_PKTLOG_TYPE_INVALID)
  			trace_ath11k_htt_rxdesc(ar, skb->data, log_type, rx_buf_sz);
  
@@ -67,7 +67,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		ppdu_info->peer_id = HAL_INVALID_PEERID;
  		hal_status = ath11k_hal_rx_parse_mon_status(ab, ppdu_info, skb);
  
-@@ -6135,6 +6136,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6137,6 +6138,7 @@ int ath11k_dp_rx_process_mon_status(stru
  		if ((ppdu_info->peer_id == HAL_INVALID_PEERID ||
  		    hal_status != HAL_RX_MON_STATUS_PPDU_DONE)) {
  			dev_kfree_skb_any(skb);
@@ -77,7 +77,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		rcu_read_lock();
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
-@@ -221,6 +221,7 @@ struct hal_rx_mon_ppdu_info {
+@@ -222,6 +222,7 @@ struct hal_rx_mon_ppdu_info {
  	u32 num_users;
  	u32 mpdu_fcs_ok_bitmap[HAL_RX_NUM_WORDS_PER_PPDU_BITMAP];
  	struct hal_rx_user_status userstats[HAL_MAX_UL_MU_USERS];

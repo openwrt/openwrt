@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -5530,7 +5530,7 @@ static int ath10k_mac_set_txbf_conf(stru
+@@ -5527,7 +5527,7 @@ static int ath10k_mac_set_txbf_conf(stru
  					 ar->wmi.vdev_param->txbf, value);
  }
  
@@ -9,7 +9,7 @@
  				      struct ieee80211_vif *vif)
  {
  	struct ath10k_vif *arvif = (void *)vif->drv_priv;
-@@ -5552,6 +5552,7 @@ static void ath10k_update_vif_offload(st
+@@ -5549,6 +5549,7 @@ static void ath10k_update_vif_offload(st
  		ath10k_warn(ar, "failed to set vdev %i TX encapsulation: %d\n",
  			    arvif->vdev_id, ret);
  	}

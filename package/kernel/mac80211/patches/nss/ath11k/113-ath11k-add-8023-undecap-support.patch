@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -2305,6 +2305,42 @@ static void ath11k_dp_rx_h_undecap_eth(s
+@@ -2306,6 +2306,42 @@ static void ath11k_dp_rx_h_undecap_eth(s
  	ether_addr_copy(ieee80211_get_SA(hdr), sa);
  }
  
@@ -43,7 +43,7 @@
  static void ath11k_dp_rx_h_undecap(struct ath11k *ar, struct sk_buff *msdu,
  				   struct hal_rx_desc *rx_desc,
  				   enum hal_encrypt_type enctype,
-@@ -2346,7 +2382,8 @@ static void ath11k_dp_rx_h_undecap(struc
+@@ -2347,7 +2383,8 @@ static void ath11k_dp_rx_h_undecap(struc
  						   enctype, status);
  		break;
  	case DP_RX_DECAP_TYPE_8023:

@@ -24,7 +24,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2093,6 +2093,8 @@ enum ieee80211_key_flags {
+@@ -2184,6 +2184,8 @@ enum ieee80211_key_flags {
   * @tx_pn: PN used for TX keys, may be used by the driver as well if it
   *	needs to do software PN assignment by itself (e.g. due to TSO)
   * @flags: key flags, see &enum ieee80211_key_flags.
@@ -33,7 +33,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
   * @keyidx: the key index (0-3)
   * @keylen: key material length
   * @key: key material. For ALG_TKIP the key is encoded as a 256-bit (32 byte)
-@@ -2112,6 +2114,7 @@ struct ieee80211_key_conf {
+@@ -2203,6 +2205,7 @@ struct ieee80211_key_conf {
  	u8 hw_key_idx;
  	s8 keyidx;
  	u16 flags;
@@ -43,7 +43,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	u8 key[];
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -538,6 +538,7 @@ static int ieee80211_add_key(struct wiph
+@@ -535,6 +535,7 @@ static int ieee80211_add_key(struct wiph
  		break;
  	case NL80211_IFTYPE_AP:
  	case NL80211_IFTYPE_AP_VLAN:
@@ -53,9 +53,9 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			key->conf.flags |= IEEE80211_KEY_FLAG_RX_MGMT;
 --- a/net/mac80211/driver-ops.c
 +++ b/net/mac80211/driver-ops.c
-@@ -116,7 +116,11 @@ int drv_sta_state(struct ieee80211_local
- 
+@@ -134,7 +134,11 @@ int drv_sta_state(struct ieee80211_local
  	might_sleep();
+ 	lockdep_assert_wiphy(local->hw.wiphy);
  
 -	sdata = get_bss_sdata(sdata);
 +	if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD) ||
@@ -68,9 +68,9 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
-@@ -453,7 +453,9 @@ static inline int drv_sta_add(struct iee
- 
+@@ -474,7 +474,9 @@ static inline int drv_sta_add(struct iee
  	might_sleep();
+ 	lockdep_assert_wiphy(local->hw.wiphy);
  
 -	sdata = get_bss_sdata(sdata);
 +	if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD))
@@ -81,7 +81,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
 --- a/net/mac80211/key.c
 +++ b/net/mac80211/key.c
-@@ -166,7 +166,8 @@ static int ieee80211_key_enable_hw_accel
+@@ -160,7 +160,8 @@ static int ieee80211_key_enable_hw_accel
  	if (sta && !sta->uploaded)
  		goto out_unsupported;
  
@@ -91,7 +91,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		/*
  		 * The driver doesn't know anything about VLAN interfaces.
  		 * Hence, don't send GTKs for VLAN interfaces to the driver.
-@@ -610,6 +611,8 @@ ieee80211_key_alloc(u32 cipher, int idx,
+@@ -606,6 +607,8 @@ ieee80211_key_alloc(u32 cipher, int idx,
  	 */
  	key->conf.flags = 0;
  	key->flags = 0;
@@ -102,7 +102,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	key->conf.cipher = cipher;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4658,16 +4658,25 @@ static void ieee80211_8023_xmit(struct i
+@@ -4682,16 +4682,25 @@ static void ieee80211_8023_xmit(struct i
  				struct ieee80211_key *key, struct sk_buff *skb)
  {
  	struct ieee80211_tx_info *info;

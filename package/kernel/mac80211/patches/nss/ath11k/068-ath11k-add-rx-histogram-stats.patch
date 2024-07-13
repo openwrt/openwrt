@@ -20,7 +20,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -41,6 +41,8 @@
+@@ -44,6 +44,8 @@
  
  #define ATH11K_INVALID_HW_MAC_ID	0xFF
  #define ATH11K_CONNECTION_LOSS_HZ	(3 * HZ)
@@ -29,7 +29,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  
  /* SMBIOS type containing Board Data File Name Extension */
  #define ATH11K_SMBIOS_BDF_EXT_TYPE 0xF8
-@@ -376,6 +378,17 @@ struct ath11k_vif_iter {
+@@ -415,6 +417,17 @@ struct ath11k_vif_iter {
  	struct ath11k_vif *arvif;
  };
  
@@ -47,7 +47,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  struct ath11k_rx_peer_stats {
  	u64 num_msdu;
  	u64 num_mpdu_fcs_ok;
-@@ -387,10 +400,6 @@ struct ath11k_rx_peer_stats {
+@@ -426,10 +439,6 @@ struct ath11k_rx_peer_stats {
  	u64 non_ampdu_msdu_count;
  	u64 stbc_count;
  	u64 beamformed_count;
@@ -58,7 +58,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	u64 coding_count[HAL_RX_SU_MU_CODING_MAX];
  	u64 tid_count[IEEE80211_NUM_TIDS + 1];
  	u64 pream_cnt[HAL_RX_PREAMBLE_MAX];
-@@ -398,6 +407,8 @@ struct ath11k_rx_peer_stats {
+@@ -437,6 +446,8 @@ struct ath11k_rx_peer_stats {
  	u64 rx_duration;
  	u64 dcm_count;
  	u64 ru_alloc_cnt[HAL_RX_RU_ALLOC_TYPE_MAX];
@@ -69,7 +69,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  #define ATH11K_HE_MCS_NUM       12
 --- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
-@@ -10,6 +10,7 @@
+@@ -11,6 +11,7 @@
  #include "peer.h"
  #include "debug.h"
  #include "dp_tx.h"
@@ -77,7 +77,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  #include "debugfs_htt_stats.h"
  
  void ath11k_debugfs_sta_add_tx_stats(struct ath11k_sta *arsta,
-@@ -247,8 +248,14 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
+@@ -248,8 +249,14 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
  	struct ath11k *ar = arsta->arvif->ar;
  	struct ath11k_rx_peer_stats *rx_stats = arsta->rx_stats;
  	int len = 0, i, retval = 0;
@@ -93,7 +93,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  
  	if (!rx_stats)
  		return -ENOENT;
-@@ -279,14 +286,6 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
+@@ -280,14 +287,6 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
  			 rx_stats->num_mpdu_fcs_ok);
  	len += scnprintf(buf + len, size - len, "Num of MPDUs with FCS error: %llu\n",
  			 rx_stats->num_mpdu_fcs_err);
@@ -108,7 +108,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	len += scnprintf(buf + len, size - len, "BCC %llu LDPC %llu\n",
  			 rx_stats->coding_count[0], rx_stats->coding_count[1]);
  	len += scnprintf(buf + len, size - len,
-@@ -301,14 +300,96 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
+@@ -302,14 +301,96 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
  	len += scnprintf(buf + len, size - len, "TID(0-15) Legacy TID(16):");
  	for (i = 0; i <= IEEE80211_NUM_TIDS; i++)
  		len += scnprintf(buf + len, size - len, "%llu ", rx_stats->tid_count[i]);
@@ -212,7 +212,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	len += scnprintf(buf + len, size - len,
  			 "\nDCM: %llu\nRU: 26 %llu 52: %llu 106: %llu 242: %llu 484: %llu 996: %llu\n",
  			 rx_stats->dcm_count, rx_stats->ru_alloc_cnt[0],
-@@ -847,6 +928,40 @@ static const struct file_operations fops
+@@ -848,6 +929,40 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -253,7 +253,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  void ath11k_debugfs_sta_op_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  			       struct ieee80211_sta *sta, struct dentry *dir)
  {
-@@ -855,9 +970,12 @@ void ath11k_debugfs_sta_op_add(struct ie
+@@ -856,9 +971,12 @@ void ath11k_debugfs_sta_op_add(struct ie
  	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar))
  		debugfs_create_file("tx_stats", 0400, dir, sta,
  				    &fops_tx_stats);
@@ -269,7 +269,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  			    &fops_htt_peer_stats);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -2762,10 +2762,43 @@ exit:
+@@ -2763,10 +2763,43 @@ exit:
  	return total_msdu_reaped;
  }
  
@@ -313,7 +313,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	u32 num_msdu;
  	int i;
  
-@@ -2775,6 +2808,8 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2776,6 +2809,8 @@ static void ath11k_dp_rx_update_peer_sta
  	arsta->rssi_comb = ppdu_info->rssi_comb;
  	ewma_avg_rssi_add(&arsta->avg_rssi, ppdu_info->rssi_comb);
  
@@ -322,7 +322,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	num_msdu = ppdu_info->tcp_msdu_count + ppdu_info->tcp_ack_msdu_count +
  		   ppdu_info->udp_msdu_count + ppdu_info->other_msdu_count;
  
-@@ -2791,18 +2826,6 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2792,18 +2827,6 @@ static void ath11k_dp_rx_update_peer_sta
  		ppdu_info->tid = IEEE80211_NUM_TIDS;
  	}
  
@@ -341,7 +341,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	if (ppdu_info->ldpc < HAL_RX_SU_MU_CODING_MAX)
  		rx_stats->coding_count[ppdu_info->ldpc] += num_msdu;
  
-@@ -2831,8 +2854,6 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2832,8 +2855,6 @@ static void ath11k_dp_rx_update_peer_sta
  	rx_stats->dcm_count += ppdu_info->dcm;
  	rx_stats->ru_alloc_cnt[ppdu_info->ru_alloc] += num_msdu;
  
@@ -350,7 +350,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	BUILD_BUG_ON(ARRAY_SIZE(arsta->chain_signal) >
  			     ARRAY_SIZE(ppdu_info->rssi_chain_pri20));
  
-@@ -2841,6 +2862,52 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2842,6 +2863,52 @@ static void ath11k_dp_rx_update_peer_sta
  
  	rx_stats->rx_duration += ppdu_info->rx_duration;
  	arsta->rx_duration = rx_stats->rx_duration;
@@ -433,7 +433,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  int ath11k_dp_rx_ampdu_stop(struct ath11k *ar,
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
-@@ -975,44 +975,78 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -976,44 +976,78 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  		ppdu_info->is_stbc = FIELD_GET(HAL_RX_HT_SIG_INFO_INFO1_STBC,
  					       info1);
  		ppdu_info->ldpc = FIELD_GET(HAL_RX_HT_SIG_INFO_INFO1_FEC_CODING, info1);
@@ -536,7 +536,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  		ppdu_info->reception_type = HAL_RX_RECEPTION_TYPE_SU;
  		break;
  	}
-@@ -1470,6 +1504,9 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -1471,6 +1505,9 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  		peer_id = ath11k_hal_rx_mpduinfo_get_peerid(ab, mpdu_info);
  		if (peer_id)
  			ppdu_info->peer_id = peer_id;
@@ -548,7 +548,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	case HAL_RXPCU_PPDU_END_INFO: {
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
-@@ -19,7 +19,11 @@ struct hal_rx_wbm_rel_info {
+@@ -20,7 +20,11 @@ struct hal_rx_wbm_rel_info {
  #define VHT_SIG_SU_NSS_MASK 0x7
  
  #define HAL_RX_MAX_MCS 12
@@ -560,7 +560,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  
  struct hal_rx_mon_status_tlv_hdr {
  	u32 hdr;
-@@ -103,6 +107,22 @@ struct hal_rx_user_status {
+@@ -104,6 +108,22 @@ struct hal_rx_user_status {
  	u32 mpdu_err_byte_count;
  };
  
@@ -583,7 +583,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  #define HAL_TLV_STATUS_PPDU_NOT_DONE    HAL_RX_MON_STATUS_PPDU_NOT_DONE
  #define HAL_TLV_STATUS_PPDU_DONE        HAL_RX_MON_STATUS_PPDU_DONE
  #define HAL_TLV_STATUS_BUF_DONE         HAL_RX_MON_STATUS_BUF_DONE
-@@ -127,6 +147,7 @@ struct hal_rx_mon_ppdu_info {
+@@ -128,6 +148,7 @@ struct hal_rx_mon_ppdu_info {
  	u32 num_mpdu_fcs_ok;
  	u32 num_mpdu_fcs_err;
  	u32 preamble_type;
@@ -661,7 +661,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  #define ATH11K_TX_RING_MASK_0 BIT(0)
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -269,6 +269,7 @@ struct ath11k_hw_ops {
+@@ -270,6 +270,7 @@ struct ath11k_hw_ops {
  	bool (*rx_desc_mac_addr2_valid)(struct hal_rx_desc *desc);
  	u8* (*rx_desc_mpdu_start_addr2)(struct hal_rx_desc *desc);
  	u32 (*get_ring_selector)(struct sk_buff *skb);

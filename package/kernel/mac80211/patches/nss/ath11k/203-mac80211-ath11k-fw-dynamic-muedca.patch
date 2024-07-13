@@ -40,7 +40,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	[WMI_TAG_11D_NEW_COUNTRY_EVENT] = {
  		.min_len = sizeof(struct wmi_11d_new_cc_ev) },
  	[WMI_TAG_PER_CHAIN_RSSI_STATS] = {
-@@ -8727,6 +8729,74 @@ exit:
+@@ -8708,6 +8710,74 @@ exit:
  	kfree(tb);
  }
  
@@ -54,7 +54,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 +	struct ath11k *ar;
 +	int ret;
 +
-+	tb = ath11k_wmi_tlv_parse_alloc(ab, skb->data, skb->len, GFP_ATOMIC);
++	tb = ath11k_wmi_tlv_parse_alloc(ab, skb, GFP_ATOMIC);
 +	if (IS_ERR(tb)) {
 +		ret = PTR_ERR(tb);
 +		ath11k_warn(ab, "failed to parse tlv: %d\n", ret);
@@ -115,7 +115,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -8845,6 +8915,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+@@ -8826,6 +8896,9 @@ static void ath11k_wmi_tlv_op_rx(struct
  	case WMI_11D_NEW_COUNTRY_EVENTID:
  		ath11k_reg_11d_new_cc_event(ab, skb);
  		break;
@@ -127,7 +127,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  		break;
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -759,6 +759,7 @@ enum wmi_tlv_event_id {
+@@ -776,6 +776,7 @@ enum wmi_tlv_event_id {
  	WMI_READ_DATA_FROM_FLASH_EVENTID,
  	WMI_REPORT_RX_AGGR_FAILURE_EVENTID,
  	WMI_PKGID_EVENTID,
@@ -135,7 +135,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	WMI_GPIO_INPUT_EVENTID = WMI_TLV_CMD(WMI_GRP_GPIO),
  	WMI_UPLOADH_EVENTID,
  	WMI_CAPTUREH_EVENTID,
-@@ -1869,6 +1870,7 @@ enum wmi_tlv_tag {
+@@ -1888,6 +1889,7 @@ enum wmi_tlv_tag {
  	WMI_TAG_NDP_EVENT,
  	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_CMD = 0x301,
  	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_INFO,
@@ -143,7 +143,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	WMI_TAG_FILS_DISCOVERY_TMPL_CMD = 0x344,
  	WMI_TAG_PDEV_SRG_BSS_COLOR_BITMAP_CMD = 0x37b,
  	WMI_TAG_PDEV_SRG_PARTIAL_BSSID_BITMAP_CMD,
-@@ -4868,6 +4870,16 @@ struct wmi_pdev_temperature_event {
+@@ -4890,6 +4892,16 @@ struct wmi_pdev_temperature_event {
  	u32 pdev_id;
  } __packed;
  

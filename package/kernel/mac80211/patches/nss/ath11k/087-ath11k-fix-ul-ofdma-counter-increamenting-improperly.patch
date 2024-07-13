@@ -5,7 +5,7 @@
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -5451,8 +5451,11 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -5452,8 +5452,11 @@ int ath11k_dp_rx_process_mon_status(stru
  			goto next_skb;
  		}
  
@@ -21,7 +21,7 @@
  			trace_ath11k_htt_rxdesc(ar, skb->data, log_type, rx_buf_sz);
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
-@@ -900,6 +900,9 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -901,6 +901,9 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  		ppdu_info->ast_index =
  			FIELD_GET(HAL_RX_PPDU_END_USER_STATS_INFO2_AST_INDEX,
  				  __le32_to_cpu(eu_stats->info2));
@@ -33,7 +33,7 @@
  				      __le32_to_cpu(eu_stats->info7))) - 1;
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
-@@ -70,6 +70,7 @@ enum hal_rx_reception_type {
+@@ -71,6 +71,7 @@ enum hal_rx_reception_type {
  };
  
  #define HAL_RX_FCS_LEN                          4
@@ -41,7 +41,7 @@
  
  enum hal_rx_mon_status {
  	HAL_RX_MON_STATUS_PPDU_NOT_DONE,
-@@ -171,6 +172,7 @@ struct hal_rx_mon_ppdu_info {
+@@ -172,6 +173,7 @@ struct hal_rx_mon_ppdu_info {
  	u8 rssi_comb;
  	u8 rssi_chain_pri20[HAL_RX_MAX_NSS];
  	u16 tid;

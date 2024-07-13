@@ -1,6 +1,6 @@
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4689,8 +4689,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4716,8 +4716,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  	if (!key)
  		key = rcu_dereference(sdata->default_unicast_key);
  

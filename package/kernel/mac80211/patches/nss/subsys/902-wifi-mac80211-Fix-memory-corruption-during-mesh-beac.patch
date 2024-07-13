@@ -25,7 +25,7 @@ Signed-off-by: Manish Dharanenthiran <quic_mdharane@quicinc.com>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -682,7 +682,7 @@ struct ieee80211_if_mesh {
+@@ -728,7 +728,7 @@ struct ieee80211_if_mesh {
  	struct timer_list mesh_path_root_timer;
  
  	unsigned long wrkq_flags;
@@ -36,7 +36,7 @@ Signed-off-by: Manish Dharanenthiran <quic_mdharane@quicinc.com>
  
 --- a/net/mac80211/mesh.c
 +++ b/net/mac80211/mesh.c
-@@ -1184,7 +1184,7 @@ void ieee80211_mbss_info_change_notify(s
+@@ -1168,7 +1168,7 @@ void ieee80211_mbss_info_change_notify(s
  
  	/* if we race with running work, worst case this work becomes a noop */
  	for_each_set_bit(bit, &bits, sizeof(changed) * BITS_PER_BYTE)
@@ -45,7 +45,7 @@ Signed-off-by: Manish Dharanenthiran <quic_mdharane@quicinc.com>
  	set_bit(MESH_WORK_MBSS_CHANGED, &ifmsh->wrkq_flags);
  	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
  }
-@@ -1266,7 +1266,7 @@ void ieee80211_stop_mesh(struct ieee8021
+@@ -1250,7 +1250,7 @@ void ieee80211_stop_mesh(struct ieee8021
  
  	/* clear any mesh work (for next join) we may have accrued */
  	ifmsh->wrkq_flags = 0;
@@ -54,7 +54,7 @@ Signed-off-by: Manish Dharanenthiran <quic_mdharane@quicinc.com>
  
  	local->fif_other_bss--;
  	atomic_dec(&local->iff_allmultis);
-@@ -1733,9 +1733,9 @@ static void mesh_bss_info_changed(struct
+@@ -1719,9 +1719,9 @@ static void mesh_bss_info_changed(struct
  	u32 bit;
  	u64 changed = 0;
  

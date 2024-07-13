@@ -40,7 +40,7 @@ Signed-off-by: Balamurugan Selvarajan <quic_bselvara@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -392,9 +392,9 @@ int ath11k_dp_rxbufs_replenish(struct at
+@@ -393,9 +393,9 @@ int ath11k_dp_rxbufs_replenish(struct at
  				 skb->data);
  		}
  
@@ -53,7 +53,7 @@ Signed-off-by: Balamurugan Selvarajan <quic_bselvara@quicinc.com>
  		if (dma_mapping_error(ab->dev, paddr))
  			goto fail_free_skb;
  
-@@ -430,8 +430,8 @@ fail_idr_remove:
+@@ -431,8 +431,8 @@ fail_idr_remove:
  	idr_remove(&rx_ring->bufs_idr, buf_id);
  	spin_unlock_bh(&rx_ring->idr_lock);
  fail_dma_unmap:

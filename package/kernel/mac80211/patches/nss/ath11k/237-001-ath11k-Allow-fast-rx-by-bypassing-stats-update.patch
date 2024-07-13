@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -1076,6 +1076,7 @@ struct ath11k_base {
+@@ -1126,6 +1126,7 @@ struct ath11k_base {
  	u32 max_ast_index;
  	u32 num_ast_entries;
  
@@ -10,7 +10,7 @@
  };
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -973,6 +973,79 @@ static const struct file_operations fops
+@@ -974,6 +974,79 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -90,7 +90,7 @@
  int ath11k_debugfs_pdev_create(struct ath11k_base *ab)
  {
  	if (test_bit(ATH11K_FLAG_REGISTERED, &ab->dev_flags))
-@@ -1022,6 +1095,8 @@ int ath11k_debugfs_soc_create(struct ath
+@@ -1023,6 +1096,8 @@ int ath11k_debugfs_soc_create(struct ath
  		ret = PTR_ERR(ab->debugfs_soc);
  		goto out;
  	}

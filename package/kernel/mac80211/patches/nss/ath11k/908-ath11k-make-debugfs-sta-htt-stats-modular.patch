@@ -27,9 +27,9 @@
  	depends on ATH11K && EVENT_TRACING
 --- a/drivers/net/wireless/ath/ath11k/Makefile
 +++ b/drivers/net/wireless/ath/ath11k/Makefile
-@@ -19,7 +19,9 @@ ath11k-y += core.o \
- 	    hw.o \
- 	    pcic.o
+@@ -20,7 +20,9 @@ ath11k-y += core.o \
+ 	    pcic.o \
+ 	    fw.o
  
 -ath11k-$(CPTCFG_ATH11K_DEBUGFS) += debugfs.o debugfs_htt_stats.o debugfs_sta.o
 +ath11k-$(CPTCFG_ATH11K_DEBUGFS) += debugfs.o
@@ -40,7 +40,7 @@
  ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -1875,7 +1875,9 @@ int ath11k_debugfs_register(struct ath11
+@@ -1876,7 +1876,9 @@ int ath11k_debugfs_register(struct ath11
  	snprintf(buf, 100, "../../ath11k/%pd2", ar->debug.debugfs_pdev);
  	debugfs_create_symlink("ath11k", ar->hw->wiphy->debugfsdir, buf);
  
@@ -52,7 +52,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
-@@ -11,7 +11,9 @@
+@@ -12,7 +12,9 @@
  #include "debug.h"
  #include "dp_tx.h"
  #include "dp_rx.h"
@@ -62,7 +62,7 @@
  
  static inline u32 ath11k_he_tones_in_ru_to_nl80211_he_ru_alloc(u16 ru_tones)
  {
-@@ -551,6 +553,7 @@ static const struct file_operations fops
+@@ -552,6 +554,7 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -70,7 +70,7 @@
  static int
  ath11k_dbg_sta_open_htt_peer_stats(struct inode *inode, struct file *file)
  {
-@@ -622,6 +625,7 @@ static const struct file_operations fops
+@@ -623,6 +626,7 @@ static const struct file_operations fops
  	.owner = THIS_MODULE,
  	.llseek = default_llseek,
  };
@@ -78,7 +78,7 @@
  
  static ssize_t ath11k_dbg_sta_write_peer_pktlog(struct file *file,
  						const char __user *buf,
-@@ -906,6 +910,7 @@ static const struct file_operations fops
+@@ -907,6 +911,7 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -86,7 +86,7 @@
  static ssize_t
  ath11k_write_htt_peer_stats_reset(struct file *file,
  				  const char __user *user_buf,
-@@ -965,6 +970,7 @@ static const struct file_operations fops
+@@ -966,6 +971,7 @@ static const struct file_operations fops
  	.owner = THIS_MODULE,
  	.llseek = default_llseek,
  };
@@ -94,7 +94,7 @@
  
  static ssize_t ath11k_dbg_sta_read_peer_ps_state(struct file *file,
  						 char __user *user_buf,
-@@ -1111,8 +1117,10 @@ void ath11k_debugfs_sta_op_add(struct ie
+@@ -1112,8 +1118,10 @@ void ath11k_debugfs_sta_op_add(struct ie
  				    &fops_reset_rx_stats);
  	}
  
@@ -105,7 +105,7 @@
  
  	debugfs_create_file("peer_pktlog", 0644, dir, sta,
  			    &fops_peer_pktlog);
-@@ -1122,10 +1130,12 @@ void ath11k_debugfs_sta_op_add(struct ie
+@@ -1123,10 +1131,12 @@ void ath11k_debugfs_sta_op_add(struct ie
  	debugfs_create_file("addba_resp", 0200, dir, sta, &fops_addba_resp);
  	debugfs_create_file("delba", 0200, dir, sta, &fops_delba);
  
@@ -120,7 +120,7 @@
  			    &fops_peer_ps_state);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1723,8 +1723,10 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1724,8 +1724,10 @@ ath11k_update_per_peer_tx_stats(struct a
  		peer_stats->mu_pos   = mu_pos;
  		peer_stats->ru_tones = arsta->txrate.he_ru_alloc;
  
@@ -131,7 +131,7 @@
  	}
  
  	usr_stats->rate_stats_updated = true;
-@@ -2170,7 +2172,9 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
+@@ -2171,7 +2173,9 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
  		ath11k_htt_pull_ppdu_stats(ab, skb);
  		break;
  	case HTT_T2H_MSG_TYPE_EXT_STATS_CONF:
@@ -176,18 +176,18 @@
  	spin_unlock_bh(&ab->base_lock);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9809,7 +9809,7 @@ static const struct ieee80211_ops ath11k
+@@ -10327,7 +10327,7 @@ static const struct ieee80211_ops ath11k
  	.set_wakeup			= ath11k_wow_op_set_wakeup,
  #endif
  
 -#ifdef CPTCFG_ATH11K_DEBUGFS
 +#ifdef CPTCFG_ATH11K_DEBUGFS_STA
+ 	.vif_add_debugfs		= ath11k_debugfs_op_vif_add,
  	.sta_add_debugfs		= ath11k_debugfs_sta_op_add,
  #endif
- 
 --- a/local-symbols
 +++ b/local-symbols
-@@ -176,6 +176,8 @@ ATH11K_MEM_PROFILE_256M=
+@@ -169,6 +169,8 @@ ATH11K_MEM_PROFILE_256M=
  ATH11K_MEM_PROFILE_512M=
  ATH11K_DEBUG=
  ATH11K_DEBUGFS=

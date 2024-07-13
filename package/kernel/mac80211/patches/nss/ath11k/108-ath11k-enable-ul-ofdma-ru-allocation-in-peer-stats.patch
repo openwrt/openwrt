@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
-@@ -524,6 +524,12 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
+@@ -525,6 +525,12 @@ static ssize_t ath11k_dbg_sta_dump_rx_st
  		len += scnprintf(buf + len, size - len, "%10llu%s",
  				rx_stats->byte_stats.rx_rate[i],
  				(i + 1) % (he_rates_avail ? 12 : 8) ? "\t" : "\n");
@@ -15,7 +15,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -2901,11 +2901,12 @@ exit:
+@@ -2902,11 +2902,12 @@ exit:
  static void
  ath11k_dp_rx_update_peer_rate_table_stats(struct ath11k_rx_peer_stats *rx_stats,
  					  struct hal_rx_mon_ppdu_info *ppdu_info,
@@ -30,7 +30,7 @@
  	u32 bw_idx = ppdu_info->bw;
  	u32 gi_idx = ppdu_info->gi;
  
-@@ -2927,10 +2928,13 @@ ath11k_dp_rx_update_peer_rate_table_stat
+@@ -2928,10 +2929,13 @@ ath11k_dp_rx_update_peer_rate_table_stat
  	}
  
  	rx_stats->pkt_stats.rx_rate[rate_idx] += num_msdu;
@@ -46,7 +46,7 @@
  					   struct hal_rx_mon_ppdu_info *ppdu_info)
  {
  	struct ath11k_rx_peer_stats *rx_stats = arsta->rx_stats;
-@@ -2988,7 +2992,6 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2989,7 +2993,6 @@ static void ath11k_dp_rx_update_peer_sta
  	rx_stats->num_mpdu_fcs_ok += ppdu_info->num_mpdu_fcs_ok;
  	rx_stats->num_mpdu_fcs_err += ppdu_info->num_mpdu_fcs_err;
  	rx_stats->dcm_count += ppdu_info->dcm;
@@ -54,7 +54,7 @@
  
  	BUILD_BUG_ON(ARRAY_SIZE(arsta->chain_signal) >
  			     ARRAY_SIZE(ppdu_info->rssi_chain_pri20));
-@@ -3006,10 +3009,10 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -3007,10 +3010,10 @@ static void ath11k_dp_rx_update_peer_sta
  
  	if (ppdu_info->preamble_type == HAL_RX_PREAMBLE_11N &&
  	    ppdu_info->mcs <= HAL_RX_MAX_MCS_HT) {
@@ -69,7 +69,7 @@
  	}
  
  	if (ppdu_info->preamble_type == HAL_RX_PREAMBLE_11AC &&
-@@ -3042,7 +3045,120 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -3043,7 +3046,120 @@ static void ath11k_dp_rx_update_peer_sta
  		rx_stats->byte_stats.bw_count[ppdu_info->bw] += ppdu_info->mpdu_len;
  	}
  
@@ -191,7 +191,7 @@
  
  }
  
-@@ -5380,6 +5496,55 @@ static void ath11k_dp_rx_mon_dest_proces
+@@ -5381,6 +5497,55 @@ static void ath11k_dp_rx_mon_dest_proces
  	}
  }
  
@@ -247,7 +247,7 @@
  int ath11k_dp_rx_process_mon_status(struct ath11k_base *ab, int mac_id,
  				    struct napi_struct *napi, int budget)
  {
-@@ -5453,8 +5618,13 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -5454,8 +5619,13 @@ int ath11k_dp_rx_process_mon_status(stru
  
  		if ((ppdu_info->fc_valid) &&
  		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
@@ -265,7 +265,7 @@
  		if (ath11k_debugfs_is_pktlog_peer_valid(ar, peer->addr))
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
-@@ -804,7 +804,6 @@ void ath11k_hal_reo_init_cmd_ring(struct
+@@ -805,7 +805,6 @@ void ath11k_hal_reo_init_cmd_ring(struct
  	}
  }
  
@@ -273,7 +273,7 @@
  static inline void
  ath11k_hal_rx_handle_ofdma_info(void *rx_tlv,
  				struct hal_rx_user_status *rx_user_status)
-@@ -836,6 +835,8 @@ ath11k_hal_rx_populate_mu_user_info(void
+@@ -837,6 +836,8 @@ ath11k_hal_rx_populate_mu_user_info(void
  {
  	rx_user_status->ast_index = ppdu_info->ast_index;
  	rx_user_status->tid = ppdu_info->tid;
@@ -282,7 +282,7 @@
  	rx_user_status->tcp_msdu_count =
  		ppdu_info->tcp_msdu_count;
  	rx_user_status->udp_msdu_count =
-@@ -859,6 +860,9 @@ ath11k_hal_rx_populate_mu_user_info(void
+@@ -860,6 +861,9 @@ ath11k_hal_rx_populate_mu_user_info(void
  		ppdu_info->num_mpdu_fcs_ok;
  	rx_user_status->mpdu_cnt_fcs_err =
  		ppdu_info->num_mpdu_fcs_err;
@@ -292,7 +292,7 @@
  
  	ath11k_hal_rx_populate_byte_count(rx_tlv, ppdu_info, rx_user_status);
  }
-@@ -888,6 +892,14 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -889,6 +893,14 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  				  __le32_to_cpu(ppdu_start->info0));
  		ppdu_info->chan_num = __le32_to_cpu(ppdu_start->chan_num);
  		ppdu_info->ppdu_ts = __le32_to_cpu(ppdu_start->ppdu_start_ts);
@@ -307,7 +307,7 @@
  		break;
  	}
  	case HAL_RX_PPDU_END_USER_STATS: {
-@@ -942,15 +954,16 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -943,15 +955,16 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  
  		if (userid < HAL_MAX_UL_MU_USERS) {
  			struct hal_rx_user_status *rxuser_stats =
@@ -327,7 +327,7 @@
  					__le32_to_cpu(eu_stats->rsvd1[1]);
  
  		break;
-@@ -958,12 +971,12 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -959,12 +972,12 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  	case HAL_RX_PPDU_END_USER_STATS_EXT: {
  		struct hal_rx_ppdu_end_user_stats_ext *eu_stats =
  			(struct hal_rx_ppdu_end_user_stats_ext *)tlv_data;
@@ -348,7 +348,7 @@
  	case HAL_PHYRX_HT_SIG: {
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.h
-@@ -72,6 +72,10 @@ enum hal_rx_reception_type {
+@@ -73,6 +73,10 @@ enum hal_rx_reception_type {
  #define HAL_RX_FCS_LEN                          4
  #define HAL_AST_IDX_INVALID                     0xFFFF
  
@@ -359,7 +359,7 @@
  enum hal_rx_mon_status {
  	HAL_RX_MON_STATUS_PPDU_NOT_DONE,
  	HAL_RX_MON_STATUS_PPDU_DONE,
-@@ -82,14 +86,15 @@ struct hal_rx_user_status {
+@@ -83,14 +87,15 @@ struct hal_rx_user_status {
  	u32 mcs:4,
  	nss:3,
  	ofdma_info_valid:1,
@@ -378,7 +378,7 @@
  	u16 udp_msdu_count;
  	u16 other_msdu_count;
  	u16 frame_control;
-@@ -103,7 +108,7 @@ struct hal_rx_user_status {
+@@ -104,7 +109,7 @@ struct hal_rx_user_status {
  	u8 rs_flags;
  	u32 mpdu_cnt_fcs_ok;
  	u32 mpdu_cnt_fcs_err;
@@ -387,7 +387,7 @@
  	u32 mpdu_ok_byte_count;
  	u32 mpdu_err_byte_count;
  };
-@@ -144,6 +149,7 @@ struct hal_sw_mon_ring_entries {
+@@ -145,6 +150,7 @@ struct hal_sw_mon_ring_entries {
  
  struct hal_rx_mon_ppdu_info {
  	u32 ppdu_id;
@@ -395,7 +395,7 @@
  	u32 ppdu_ts;
  	u32 num_mpdu_fcs_ok;
  	u32 num_mpdu_fcs_err;
-@@ -212,9 +218,20 @@ struct hal_rx_mon_ppdu_info {
+@@ -213,9 +219,20 @@ struct hal_rx_mon_ppdu_info {
  	u8 ltf_size;
  	u8 rxpcu_filter_pass;
  	char rssi_chain[8][8];

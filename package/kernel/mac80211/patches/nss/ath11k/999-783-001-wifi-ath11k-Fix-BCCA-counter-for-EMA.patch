@@ -20,7 +20,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -1601,27 +1601,6 @@ static int ath11k_mac_setup_bcn_tmpl(str
+@@ -1594,27 +1594,6 @@ static int ath11k_mac_setup_bcn_tmpl(str
  	return ath11k_mac_setup_bcn_tmpl_mbssid(arvif);
  }
  
@@ -32,7 +32,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 -		return;
 -
 -	if (vif->bss_conf.color_change_active &&
--	    ieee80211_beacon_cntdwn_is_complete(vif)) {
+-	    ieee80211_beacon_cntdwn_is_complete(vif, 0)) {
 -		arvif->bcca_zero_sent = true;
 -		ieee80211_color_change_finish(vif);
 -		return;
@@ -41,7 +41,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 -	arvif->bcca_zero_sent = false;
 -
 -	if (vif->bss_conf.color_change_active)
--		ieee80211_beacon_update_cntdwn(vif);
+-		ieee80211_beacon_update_cntdwn(vif, 0);
 -	ath11k_mac_setup_bcn_tmpl(arvif);
 -}
 -
@@ -50,7 +50,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  {
 --- a/drivers/net/wireless/ath/ath11k/mac.h
 +++ b/drivers/net/wireless/ath/ath11k/mac.h
-@@ -170,7 +170,6 @@ enum ath11k_supported_bw ath11k_mac_mac8
+@@ -171,7 +171,6 @@ enum ath11k_supported_bw ath11k_mac_mac8
  enum hal_encrypt_type ath11k_dp_tx_get_encrypt_type(u32 cipher);
  void ath11k_mac_handle_beacon(struct ath11k *ar, struct sk_buff *skb);
  void ath11k_mac_handle_beacon_miss(struct ath11k *ar, u32 vdev_id);
@@ -72,7 +72,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  	}
  
  	cmd->buf_len = bcn->len;
-@@ -7586,7 +7587,6 @@ static void ath11k_bcn_tx_status_event(s
+@@ -7567,7 +7568,6 @@ static void ath11k_bcn_tx_status_event(s
  		rcu_read_unlock();
  		return;
  	}
@@ -80,7 +80,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  	rcu_read_unlock();
  }
  
-@@ -8500,10 +8500,7 @@ ath11k_wmi_process_csa_switch_count_even
+@@ -8481,10 +8481,7 @@ ath11k_wmi_process_csa_switch_count_even
  {
  	int i;
  	struct ath11k_vif *arvif;
@@ -92,19 +92,19 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  
  	rcu_read_lock();
  	for (i = 0; i < ev->num_vdevs; i++) {
-@@ -8515,8 +8512,18 @@ ath11k_wmi_process_csa_switch_count_even
+@@ -8496,8 +8493,18 @@ ath11k_wmi_process_csa_switch_count_even
  			continue;
  		}
  
 -		if (arvif->is_up && arvif->vif->bss_conf.csa_active)
--			ieee80211_csa_finish(arvif->vif);
+-			ieee80211_csa_finish(arvif->vif, 0);
 +		bss_conf = &arvif->vif->bss_conf;
 +		if (arvif->is_up && (bss_conf->csa_active || bss_conf->color_change_active)) {
 +			if (!ev->current_switch_count) {
 +				if (bss_conf->csa_active)
-+					ieee80211_csa_finish(arvif->vif);
++					ieee80211_csa_finish(arvif->vif, 0);
 +			} else if (ev->current_switch_count > 1) {
-+				ieee80211_beacon_update_cntdwn(arvif->vif);
++				ieee80211_beacon_update_cntdwn(arvif->vif, 0);
 +			} else {
 +				if (bss_conf->color_change_active)
 +					ieee80211_color_change_finish(arvif->vif);
