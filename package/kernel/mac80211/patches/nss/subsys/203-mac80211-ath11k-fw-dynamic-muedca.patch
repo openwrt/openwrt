@@ -31,9 +31,9 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -9327,4 +9327,15 @@ bool cfg80211_valid_disable_subchannel_b
-  */
- void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
+@@ -9574,4 +9574,15 @@ ssize_t wiphy_locked_debugfs_write(struc
+ 				   void *data);
+ #endif
  
 +/**
 + * cfg80211_update_muedca_params_event - Notify the updated MU-EDCA parameters
@@ -49,7 +49,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  #endif /* __NET_CFG80211_H */
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -7368,6 +7368,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
+@@ -7506,6 +7506,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
  			      int len);
  
  /**
@@ -72,9 +72,9 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
   * This function calculates the estimated airtime usage of a frame based on the
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1314,6 +1314,10 @@
-  *	Multi-Link reconfiguration. %NL80211_ATTR_MLO_LINKS is used to provide
-  *	information about the removed STA MLD setup links.
+@@ -1334,6 +1334,10 @@
+  *      %NL80211_ATTR_MLO_TTLM_ULINK attributes are used to specify the
+  *      TID to Link mapping for downlink/uplink traffic.
   *
 + * @NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS: Updated MU-EDCA parameters from driver.
 + *	This event is used to update dynamic MU-EDCA parameters in Beacon frame,
@@ -83,26 +83,26 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
   * @NL80211_CMD_MAX: highest used command number
   * @__NL80211_CMD_AFTER_LAST: internal use
   */
-@@ -1569,6 +1573,7 @@ enum nl80211_commands {
+@@ -1591,6 +1595,7 @@ enum nl80211_commands {
  
- 	NL80211_CMD_LINKS_REMOVED,
+ 	NL80211_CMD_SET_TID_TO_LINK_MAPPING,
  
 +	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
  	/* add new commands above here */
  
  	/* used to define NL80211_CMD_MAX below */
-@@ -2815,6 +2820,8 @@ enum nl80211_commands {
-  * @NL80211_ATTR_MLO_LINK_DISABLED: Flag attribute indicating that the link is
-  *	disabled.
+@@ -2868,6 +2873,8 @@ enum nl80211_commands {
+  *	nested item, it contains attributes defined in
+  *	&enum nl80211_if_combination_attrs.
   *
 + * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
 + *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3353,6 +3360,8 @@ enum nl80211_attrs {
- 
- 	NL80211_ATTR_MLO_LINK_DISABLED,
+@@ -3416,6 +3423,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_WIPHY_RADIOS,
+ 	NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
  
 +	NL80211_ATTR_HE_MUEDCA_PARAMS,
 +
@@ -111,7 +111,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -7954,3 +7954,15 @@ void ieee80211_disable_rssi_reports(stru
+@@ -8727,3 +8727,15 @@ void ieee80211_disable_rssi_reports(stru
  	_ieee80211_enable_rssi_reports(sdata, 0, 0);
  }
  EXPORT_SYMBOL(ieee80211_disable_rssi_reports);
@@ -129,7 +129,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 +EXPORT_SYMBOL(ieee80211_update_muedca_params);
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -3092,6 +3092,26 @@ TRACE_EVENT(stop_queue,
+@@ -3125,6 +3125,26 @@ TRACE_EVENT(stop_queue,
  	)
  );
  
@@ -153,22 +153,22 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 +	)
 +);
 +
- #endif /* !__MAC80211_DRIVER_TRACE || TRACE_HEADER_MULTI_READ */
- 
- #undef TRACE_INCLUDE_PATH
+ TRACE_EVENT(drv_can_neg_ttlm,
+ 	    TP_PROTO(struct ieee80211_local *local,
+ 		     struct ieee80211_sub_if_data *sdata,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -812,6 +812,7 @@ static const struct nla_policy nl80211_p
+@@ -820,6 +820,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_HW_TIMESTAMP_ENABLED] = { .type = NLA_FLAG },
  	[NL80211_ATTR_EMA_RNR_ELEMS] = { .type = NLA_NESTED },
  	[NL80211_ATTR_MLO_LINK_DISABLED] = { .type = NLA_FLAG },
 +	[NL80211_ATTR_HE_MUEDCA_PARAMS] = NLA_POLICY_EXACT_LEN(sizeof(struct ieee80211_mu_edca_param_set)),
- };
- 
- /* policy for the key attributes */
-@@ -20211,6 +20212,42 @@ nla_put_failure:
+ 	[NL80211_ATTR_BSS_DUMP_INCLUDE_USE_DATA] = { .type = NLA_FLAG },
+ 	[NL80211_ATTR_MLO_TTLM_DLINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
+ 	[NL80211_ATTR_MLO_TTLM_ULINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
+@@ -20324,6 +20325,42 @@ void cfg80211_schedule_channels_check(st
  }
- EXPORT_SYMBOL(cfg80211_update_owe_info_event);
+ EXPORT_SYMBOL(cfg80211_schedule_channels_check);
  
 +void cfg80211_update_muedca_params_event(struct wiphy *wiphy,
 +					 struct ieee80211_mu_edca_param_set
@@ -211,7 +211,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  int __init nl80211_init(void)
 --- a/net/wireless/trace.h
 +++ b/net/wireless/trace.h
-@@ -3805,6 +3805,46 @@ TRACE_EVENT(cfg80211_update_owe_info_eve
+@@ -3809,6 +3809,46 @@ TRACE_EVENT(cfg80211_update_owe_info_eve
  		  __entry->assoc_link_id, __entry->peer_mld_addr)
  );
  

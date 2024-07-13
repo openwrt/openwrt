@@ -15,15 +15,15 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -29,6 +29,7 @@
+@@ -31,6 +31,7 @@
  #include "dbring.h"
  #include "spectral.h"
  #include "wow.h"
 +#include "rx_desc.h"
+ #include "fw.h"
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
- 
-@@ -469,6 +470,8 @@ struct ath11k_htt_data_stats {
+@@ -508,6 +509,8 @@ struct ath11k_htt_data_stats {
  	u64 bw[ATH11K_COUNTER_TYPE_MAX][ATH11K_BW_NUM];
  	u64 nss[ATH11K_COUNTER_TYPE_MAX][ATH11K_NSS_NUM];
  	u64 gi[ATH11K_COUNTER_TYPE_MAX][ATH11K_GI_NUM];
@@ -32,7 +32,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  };
  
  struct ath11k_htt_tx_stats {
-@@ -476,6 +479,9 @@ struct ath11k_htt_tx_stats {
+@@ -515,6 +518,9 @@ struct ath11k_htt_tx_stats {
  	u64 tx_duration;
  	u64 ba_fails;
  	u64 ack_fails;
@@ -42,7 +42,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  };
  
  struct ath11k_per_ppdu_tx_stats {
-@@ -592,11 +598,16 @@ struct ath11k_per_peer_tx_stats {
+@@ -631,11 +637,16 @@ struct ath11k_per_peer_tx_stats {
  	u32 succ_bytes;
  	u32 retry_bytes;
  	u32 failed_bytes;
@@ -62,7 +62,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
-@@ -13,13 +13,39 @@
+@@ -14,13 +14,39 @@
  #include "dp_rx.h"
  #include "debugfs_htt_stats.h"
  
@@ -103,7 +103,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  	if (!arsta->tx_stats)
  		return;
-@@ -64,6 +90,43 @@ void ath11k_debugfs_sta_add_tx_stats(str
+@@ -65,6 +91,43 @@ void ath11k_debugfs_sta_add_tx_stats(str
  		STATS_OP_FMT(RETRY).legacy[1][mcs] += peer_stats->retry_pkts;
  	}
  
@@ -147,7 +147,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  	if (peer_stats->is_ampdu) {
  		tx_stats->ba_fails += peer_stats->ba_fails;
  
-@@ -124,6 +187,17 @@ void ath11k_debugfs_sta_add_tx_stats(str
+@@ -125,6 +188,17 @@ void ath11k_debugfs_sta_add_tx_stats(str
  	STATS_OP_FMT(RETRY).gi[1][gi] += peer_stats->retry_pkts;
  
  	tx_stats->tx_duration += peer_stats->duration;
@@ -165,7 +165,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  }
  
  void ath11k_debugfs_sta_update_txcompl(struct ath11k *ar,
-@@ -140,12 +214,13 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -141,12 +215,13 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  	struct ath11k_sta *arsta = ath11k_sta_to_arsta(sta);
  	struct ath11k *ar = arsta->arvif->ar;
  	struct ath11k_htt_data_stats *stats;
@@ -181,7 +181,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  	if (!arsta->tx_stats)
  		return -ENOENT;
-@@ -163,45 +238,46 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -164,45 +239,46 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  			len += scnprintf(buf + len, size - len, "%s_%s\n",
  					 str_name[k],
  					 str[j]);
@@ -237,7 +237,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  					 stats->gi[j][0], stats->gi[j][1],
  					 stats->gi[j][2], stats->gi[j][3]);
  			len += scnprintf(buf + len, size - len,
-@@ -210,10 +286,68 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -211,10 +287,68 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  			for (i = 0; i < ATH11K_LEGACY_NUM; i++)
  				len += scnprintf(buf + len, size - len, "%llu ",
  						 stats->legacy[j][i]);
@@ -307,7 +307,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  	len += scnprintf(buf + len, size - len,
  			 "\nTX duration\n %llu usecs\n",
  			 arsta->tx_stats->tx_duration);
-@@ -221,6 +355,7 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -222,6 +356,7 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  			"BA fails\n %llu\n", arsta->tx_stats->ba_fails);
  	len += scnprintf(buf + len, size - len,
  			"ack fails\n %llu\n", arsta->tx_stats->ack_fails);
@@ -447,7 +447,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  };
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1252,9 +1252,10 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1253,9 +1253,10 @@ static int ath11k_htt_tlv_ppdu_stats_par
  					   void *data)
  {
  	struct htt_ppdu_stats_info *ppdu_info;
@@ -459,7 +459,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  	ppdu_info = data;
  
-@@ -1267,6 +1268,26 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1268,6 +1269,26 @@ static int ath11k_htt_tlv_ppdu_stats_par
  		}
  		memcpy((void *)&ppdu_info->ppdu_stats.common, ptr,
  		       sizeof(struct htt_ppdu_stats_common));
@@ -486,7 +486,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  		break;
  	case HTT_PPDU_STATS_TAG_USR_RATE:
  		if (len < sizeof(struct htt_ppdu_stats_user_rate)) {
-@@ -1299,6 +1320,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1300,6 +1321,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
  						      peer_id);
  		if (cur_user < 0)
  			return -EINVAL;
@@ -494,7 +494,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  		user_stats = &ppdu_info->ppdu_stats.user_stats[cur_user];
  		user_stats->peer_id = peer_id;
  		user_stats->is_valid_peer_id = true;
-@@ -1327,44 +1349,30 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1328,44 +1350,30 @@ static int ath11k_htt_tlv_ppdu_stats_par
  		       sizeof(struct htt_ppdu_stats_usr_cmpltn_ack_ba_status));
  		user_stats->tlv_flags |= BIT(tag);
  		break;
@@ -559,7 +559,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  	return 0;
  }
  
-@@ -1382,8 +1390,8 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1383,8 +1391,8 @@ ath11k_update_per_peer_tx_stats(struct a
  	struct htt_ppdu_stats_common *common = &ppdu_stats->common;
  	int ret;
  	u8 flags, mcs, nss, bw, sgi, dcm, rate_idx = 0;
@@ -570,7 +570,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  	u32 tx_duration = 0;
  	u8 tid = HTT_PPDU_STATS_NON_QOS_TID;
  	bool is_ampdu = false;
-@@ -1414,6 +1422,11 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1415,6 +1423,11 @@ ath11k_update_per_peer_tx_stats(struct a
  	mcs = HTT_USR_RATE_MCS(user_rate->rate_flags);
  	sgi = HTT_USR_RATE_GI(user_rate->rate_flags);
  	dcm = HTT_USR_RATE_DCM(user_rate->rate_flags);
@@ -582,7 +582,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  	/* Note: If host configured fixed rates and in some other special
  	 * cases, the broadcast/management frames are sent in different rates.
-@@ -1508,6 +1521,12 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1509,6 +1522,12 @@ ath11k_update_per_peer_tx_stats(struct a
  		peer_stats->ba_fails =
  			HTT_USR_CMPLTN_LONG_RETRY(usr_stats->cmpltn_cmn.flags) +
  			HTT_USR_CMPLTN_SHORT_RETRY(usr_stats->cmpltn_cmn.flags);
@@ -595,7 +595,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  		if (ath11k_debugfs_is_extd_tx_stats_enabled(ar))
  			ath11k_debugfs_sta_add_tx_stats(arsta, peer_stats, rate_idx);
-@@ -1560,13 +1579,89 @@ struct htt_ppdu_stats_info *ath11k_dp_ht
+@@ -1561,13 +1580,89 @@ struct htt_ppdu_stats_info *ath11k_dp_ht
  	return ppdu_info;
  }
  
@@ -686,7 +686,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  	u8 pdev_id;
  	u32 ppdu_id, len;
  
-@@ -1601,6 +1696,47 @@ static int ath11k_htt_pull_ppdu_stats(st
+@@ -1602,6 +1697,47 @@ static int ath11k_htt_pull_ppdu_stats(st
  		goto out_unlock_data;
  	}
  
@@ -736,7 +736,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/rx_desc.h
 +++ b/drivers/net/wireless/ath/ath11k/rx_desc.h
-@@ -1494,6 +1494,11 @@ struct hal_rx_desc {
+@@ -1495,6 +1495,11 @@ struct hal_rx_desc {
  	} u;
  } __packed;
  

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -494,8 +494,7 @@ static int ath11k_ahb_ext_grp_napi_poll(
+@@ -495,8 +495,7 @@ static int ath11k_ahb_ext_grp_napi_poll(
  	int work_done;
  
  	work_done = ath11k_dp_service_srng(ab, irq_grp, budget);
@@ -10,7 +10,7 @@
  		ath11k_ahb_ext_grp_enable(irq_grp);
  	}
  
-@@ -526,6 +525,7 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -527,6 +526,7 @@ static int ath11k_ahb_config_ext_irq(str
  	int irq;
  	int ret;
  	bool nss_offload;
@@ -18,7 +18,7 @@
  
  	/* TCL Completion, REO Dest, ERR, Exception and h2rxdma rings are offloaded
  	 * to nss when its enabled, hence don't enable these interrupts
-@@ -539,8 +539,12 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -540,8 +540,12 @@ static int ath11k_ahb_config_ext_irq(str
  		irq_grp->ab = ab;
  		irq_grp->grp_id = i;
  		init_dummy_netdev(&irq_grp->napi_ndev);
@@ -31,7 +31,7 @@
  
  		for (j = 0; j < ATH11K_EXT_IRQ_NUM_MAX; j++) {
  			if (!nss_offload && ab->hw_params.ring_mask->tx[i] & BIT(j)) {
-@@ -604,6 +608,8 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -605,6 +609,8 @@ static int ath11k_ahb_config_ext_irq(str
  		}
  	}
  
@@ -42,7 +42,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/pcic.c
 +++ b/drivers/net/wireless/ath/ath11k/pcic.c
-@@ -505,8 +505,7 @@ static int ath11k_pcic_ext_grp_napi_poll
+@@ -516,8 +516,7 @@ static int ath11k_pcic_ext_grp_napi_poll
  	int i;
  
  	work_done = ath11k_dp_service_srng(ab, irq_grp, budget);
@@ -52,7 +52,7 @@
  		for (i = 0; i < irq_grp->num_irq; i++)
  			enable_irq(irq_grp->ab->irq_num[irq_grp->irqs[i]]);
  	}
-@@ -550,6 +549,7 @@ static int ath11k_pcic_ext_irq_config(st
+@@ -561,6 +560,7 @@ static int ath11k_pcic_ext_irq_config(st
  	int i, j, ret, num_vectors = 0;
  	u32 user_base_data = 0, base_vector = 0;
  	unsigned long irq_flags;
@@ -60,7 +60,7 @@
  
  	ret = ath11k_pcic_get_user_msi_assignment(ab, "DP", &num_vectors,
  						  &user_base_data,
-@@ -568,8 +568,12 @@ static int ath11k_pcic_ext_irq_config(st
+@@ -579,8 +579,12 @@ static int ath11k_pcic_ext_irq_config(st
  		irq_grp->ab = ab;
  		irq_grp->grp_id = i;
  		init_dummy_netdev(&irq_grp->napi_ndev);
@@ -73,7 +73,7 @@
  
  		/* tcl, reo, rx_err, wbm release, rxdma rings are offloaded to nss. */
  		if (ab->nss.enabled &&
-@@ -616,6 +620,8 @@ static int ath11k_pcic_ext_irq_config(st
+@@ -627,6 +631,8 @@ static int ath11k_pcic_ext_irq_config(st
  		ath11k_pcic_ext_grp_disable(irq_grp);
  	}
  

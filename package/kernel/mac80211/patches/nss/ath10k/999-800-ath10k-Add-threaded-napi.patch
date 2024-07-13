@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/pci.c
 +++ b/drivers/net/wireless/ath/ath10k/pci.c
-@@ -1974,6 +1974,7 @@ static int ath10k_pci_hif_start(struct a
+@@ -1975,6 +1975,7 @@ static int ath10k_pci_hif_start(struct a
  
  	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot hif start\n");
  
@@ -10,7 +10,7 @@
  	ath10k_pci_irq_enable(ar);
 --- a/drivers/net/wireless/ath/ath10k/sdio.c
 +++ b/drivers/net/wireless/ath/ath10k/sdio.c
-@@ -1862,6 +1862,7 @@ static int ath10k_sdio_hif_start(struct
+@@ -1863,6 +1863,7 @@ static int ath10k_sdio_hif_start(struct
  	struct ath10k_sdio *ar_sdio = ath10k_sdio_priv(ar);
  	int ret;
  
@@ -20,7 +20,7 @@
  	/* Sleep 20 ms before HIF interrupts are disabled.
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -3702,6 +3702,9 @@ struct ath10k *ath10k_core_create(size_t
+@@ -3722,6 +3722,9 @@ struct ath10k *ath10k_core_create(size_t
  		  ath10k_core_set_coverage_class_work);
  
  	init_dummy_netdev(&ar->napi_dev);

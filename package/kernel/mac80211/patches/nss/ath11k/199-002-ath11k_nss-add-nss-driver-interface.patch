@@ -38,7 +38,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	depends on m
 --- a/drivers/net/wireless/ath/ath11k/Makefile
 +++ b/drivers/net/wireless/ath/ath11k/Makefile
-@@ -25,6 +25,7 @@ ath11k-$(CPTCFG_ATH11K_TRACING) += trace
+@@ -26,6 +26,7 @@ ath11k-$(CPTCFG_ATH11K_TRACING) += trace
  ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
  ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
  ath11k-$(CONFIG_PM) += wow.o
@@ -2760,7 +2760,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +#endif
 --- a/drivers/net/wireless/ath/ath11k/hif.h
 +++ b/drivers/net/wireless/ath/ath11k/hif.h
-@@ -30,6 +30,7 @@ struct ath11k_hif_ops {
+@@ -31,6 +31,7 @@ struct ath11k_hif_ops {
  	void (*ce_irq_enable)(struct ath11k_base *ab);
  	void (*ce_irq_disable)(struct ath11k_base *ab);
  	void (*get_ce_msi_idx)(struct ath11k_base *ab, u32 ce_id, u32 *msi_idx);
@@ -2768,7 +2768,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  static inline void ath11k_hif_ce_irq_enable(struct ath11k_base *ab)
-@@ -136,6 +137,14 @@ static inline void ath11k_get_msi_addres
+@@ -137,6 +138,14 @@ static inline void ath11k_get_msi_addres
  	ab->hif.ops->get_msi_address(ab, msi_addr_lo, msi_addr_hi);
  }
  
@@ -2785,7 +2785,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -67,6 +67,20 @@ static u32 ath11k_pci_get_window_start(s
+@@ -70,6 +70,20 @@ static u32 ath11k_pci_get_window_start(s
  		return ATH11K_PCI_WINDOW_START;
  }
  
@@ -2806,7 +2806,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offset)
  {
  	struct ath11k_base *ab = ab_pci->ab;
-@@ -710,6 +724,7 @@ static const struct ath11k_hif_ops ath11
+@@ -723,6 +737,7 @@ static const struct ath11k_hif_ops ath11
  	.map_service_to_pipe = ath11k_pcic_map_service_to_pipe,
  	.ce_irq_enable = ath11k_pci_hif_ce_irq_enable,
  	.ce_irq_disable = ath11k_pci_hif_ce_irq_disable,
@@ -2816,7 +2816,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -992,6 +992,29 @@ unlock_exit:
+@@ -993,6 +993,29 @@ unlock_exit:
  	spin_unlock_bh(&ab->base_lock);
  }
  
@@ -2895,7 +2895,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -2873,6 +2873,27 @@ struct pdev_set_regdomain_params {
+@@ -2894,6 +2894,27 @@ struct pdev_set_regdomain_params {
  	u32 pdev_id;
  };
  
@@ -2923,7 +2923,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct rx_reorder_queue_remove_params {
  	u8 *peer_macaddr;
  	u16 vdev_id;
-@@ -3121,6 +3142,16 @@ struct wmi_pdev_set_regdomain_cmd {
+@@ -3142,6 +3163,16 @@ struct wmi_pdev_set_regdomain_cmd {
  	u32 dfs_domain;
  } __packed;
  
@@ -2940,7 +2940,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct wmi_peer_set_param_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -6362,6 +6393,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
+@@ -6384,6 +6415,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
  int ath11k_wmi_vdev_set_param_cmd(struct ath11k *ar, u32 vdev_id,
  				  u32 param_id, u32 param_value);
  
@@ -2998,7 +2998,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_dp_pdev_reo_setup(struct ath11k_base *ab);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6367,6 +6367,16 @@ static int ath11k_mac_op_start(struct ie
+@@ -6153,6 +6153,16 @@ static int ath11k_mac_op_start(struct ie
  		goto err;
  	}
  
@@ -3017,7 +3017,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	/* TODO: Do we need to enable ANI? */
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -849,6 +849,8 @@ struct ath11k_soc_dp_tx_err_stats {
+@@ -887,6 +887,8 @@ struct ath11k_soc_dp_tx_err_stats {
  	 * idr unavailable etc.
  	 */
  	atomic_t misc_fail;
@@ -3026,7 +3026,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  struct ath11k_soc_dp_stats {
-@@ -935,6 +937,7 @@ struct ath11k_base {
+@@ -973,6 +975,7 @@ struct ath11k_base {
  	struct list_head peers;
  	wait_queue_head_t peer_mapping_wq;
  	u8 mac_addr[ETH_ALEN];

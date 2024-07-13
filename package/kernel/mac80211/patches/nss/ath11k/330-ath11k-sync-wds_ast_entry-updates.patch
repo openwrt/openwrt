@@ -46,7 +46,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -1245,6 +1245,7 @@ static void ath11k_ahb_remove_prepare(st
+@@ -1239,6 +1239,7 @@ static void ath11k_ahb_remove_prepare(st
  	set_bit(ATH11K_FLAG_UNREGISTERING, &ab->dev_flags);
  	cancel_work_sync(&ab->restart_work);
  	cancel_work_sync(&ab->qmi.event_work);
@@ -56,7 +56,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  static void ath11k_ahb_free_resources(struct ath11k_base *ab)
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -2211,6 +2211,7 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2316,6 +2316,7 @@ struct ath11k_base *ath11k_core_alloc(st
  
  	mutex_init(&ab->core_lock);
  	mutex_init(&ab->tbl_mtx_lock);
@@ -64,7 +64,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	spin_lock_init(&ab->base_lock);
  	mutex_init(&ab->vdev_id_11d_lock);
  	init_completion(&ab->reset_complete);
-@@ -2224,6 +2225,8 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2329,6 +2330,8 @@ struct ath11k_base *ath11k_core_alloc(st
  	INIT_WORK(&ab->restart_work, ath11k_core_restart);
  	INIT_WORK(&ab->update_11d_work, ath11k_update_11d);
  	INIT_WORK(&ab->reset_work, ath11k_core_reset);
@@ -75,15 +75,15 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	init_completion(&ab->wow.wakeup_completed);
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -31,6 +31,7 @@
+@@ -33,6 +33,7 @@
  #include "wow.h"
  #include "rx_desc.h"
  #include "nss.h"
 +#include "peer.h"
+ #include "fw.h"
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
- 
-@@ -1080,6 +1081,9 @@ struct ath11k_base {
+@@ -1130,6 +1131,9 @@ struct ath11k_base {
  
  	u32 max_ast_index;
  	u32 num_ast_entries;
@@ -183,7 +183,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  }
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -972,6 +972,7 @@ static void ath11k_pci_remove(struct pci
+@@ -1004,6 +1004,7 @@ static void ath11k_pci_remove(struct pci
  	}
  
  	set_bit(ATH11K_FLAG_UNREGISTERING, &ab->dev_flags);

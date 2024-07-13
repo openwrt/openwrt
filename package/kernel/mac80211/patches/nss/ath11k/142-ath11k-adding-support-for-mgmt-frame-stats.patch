@@ -1,7 +1,23 @@
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -314,6 +314,16 @@ struct ath11k_rekey_data {
- 	bool enable_offload;
+@@ -17,6 +17,7 @@
+ #include <linux/average.h>
+ #include <linux/firmware.h>
+ 
++#include "fw.h"
+ #include "qmi.h"
+ #include "htc.h"
+ #include "wmi.h"
+@@ -32,7 +33,6 @@
+ #include "spectral.h"
+ #include "wow.h"
+ #include "rx_desc.h"
+-#include "fw.h"
+ 
+ #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
+ 
+@@ -355,6 +355,16 @@ struct ath11k_reg_tpc_power_info {
+ 	struct ath11k_chan_power_info chan_power_info[IEEE80211_MAX_NUM_PWR_LEVEL];
  };
  
 +#define ATH11K_STATS_MGMT_FRM_TYPE_MAX 16
@@ -17,18 +33,17 @@
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -372,6 +382,8 @@ struct ath11k_vif {
- #ifdef CPTCFG_ATH11K_DEBUGFS
- 	struct dentry *debugfs_twt;
- #endif /* CPTCFG_ATH11K_DEBUGFS */
-+
+@@ -411,6 +421,7 @@ struct ath11k_vif {
+ 	struct ath11k_rekey_data rekey_data;
+ 
+ 	struct ath11k_reg_tpc_power_info reg_tpc_info;
 +	struct ath11k_mgmt_frame_stats mgmt_stats;
  };
  
  struct ath11k_vif_iter {
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -1588,6 +1588,87 @@ static const struct file_operations fops
+@@ -1589,6 +1589,87 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -116,7 +131,7 @@
  int ath11k_debugfs_register(struct ath11k *ar)
  {
  	struct ath11k_base *ab = ar->ab;
-@@ -1620,6 +1701,9 @@ int ath11k_debugfs_register(struct ath11
+@@ -1621,6 +1702,9 @@ int ath11k_debugfs_register(struct ath11
  	debugfs_create_file("fw_dbglog_config", 0600,
  			    ar->debug.debugfs_pdev, ar,
  			    &fops_fw_dbglog);
@@ -128,7 +143,7 @@
  		debugfs_create_file("dfs_simulate_radar", 0200,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6148,9 +6148,9 @@ static int ath11k_mac_mgmt_tx(struct ath
+@@ -5934,9 +5934,9 @@ static int ath11k_mac_mgmt_tx(struct ath
  	 */
  	if (is_prb_rsp &&
  	    atomic_read(&ar->num_pending_mgmt_tx) > ATH11K_PRB_RSP_DROP_THRESHOLD) {
@@ -140,7 +155,7 @@
  	}
  
  	if (skb_queue_len_lockless(q) >= ATH11K_TX_MGMT_NUM_PENDING_MAX) {
-@@ -6176,9 +6176,11 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -5962,9 +5962,11 @@ static void ath11k_mac_op_tx(struct ieee
  	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
  	struct ieee80211_key_conf *key = info->control.hw_key;
@@ -152,7 +167,7 @@
  	int ret;
  
  	memset(skb_cb, 0, sizeof(*skb_cb));
-@@ -6192,12 +6194,21 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -5978,12 +5980,21 @@ static void ath11k_mac_op_tx(struct ieee
  	if (info_flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		skb_cb->flags |= ATH11K_SKB_HW_80211_ENCAP;
  	} else if (ieee80211_is_mgmt(hdr->frame_control)) {
@@ -198,7 +213,7 @@
  	int peer_id;
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -5823,6 +5823,12 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5896,6 +5896,12 @@ static int wmi_process_mgmt_tx_comp(stru
  	struct sk_buff *msdu;
  	struct ieee80211_tx_info *info;
  	struct ath11k_skb_cb *skb_cb;
@@ -211,7 +226,7 @@
  	int num_mgmt;
  
  	spin_lock_bh(&ar->txmgmt_idr_lock);
-@@ -5850,6 +5856,31 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5923,6 +5929,31 @@ static int wmi_process_mgmt_tx_comp(stru
  			info->status.ack_signal = tx_compl_param->ack_rssi;
  	}
  
@@ -243,7 +258,7 @@
  	ieee80211_tx_status_irqsafe(ar->hw, msdu);
  
  	num_mgmt = atomic_dec_if_positive(&ar->num_pending_mgmt_tx);
-@@ -7519,6 +7550,11 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7500,6 +7531,11 @@ static void ath11k_mgmt_rx_event(struct
  	struct ieee80211_hdr *hdr;
  	u16 fc;
  	struct ieee80211_supported_band *sband;
@@ -255,7 +270,7 @@
  
  	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
  		ath11k_warn(ab, "failed to extract mgmt rx event");
-@@ -7584,7 +7620,34 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7565,7 +7601,34 @@ static void ath11k_mgmt_rx_event(struct
  
  	hdr = (struct ieee80211_hdr *)skb->data;
  	fc = le16_to_cpu(hdr->frame_control);

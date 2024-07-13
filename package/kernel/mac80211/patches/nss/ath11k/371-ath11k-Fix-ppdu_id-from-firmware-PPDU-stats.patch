@@ -24,7 +24,7 @@ Signed-off-by: Ramya Gnanasekar <quic_rgnanase@quicinc.com>
  	u32 ppdu_id;
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1288,7 +1288,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1289,7 +1289,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
  	struct htt_ppdu_user_stats *user_stats = NULL;
  	int cur_user;
  	u16 peer_id;
@@ -33,7 +33,7 @@ Signed-off-by: Ramya Gnanasekar <quic_rgnanase@quicinc.com>
  
  	ppdu_info = data;
  
-@@ -1369,6 +1369,8 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1370,6 +1370,8 @@ static int ath11k_htt_tlv_ppdu_stats_par
  			return -EINVAL;
  		}
  
@@ -42,7 +42,7 @@ Signed-off-by: Ramya Gnanasekar <quic_rgnanase@quicinc.com>
  		peer_id =
  		((struct htt_ppdu_stats_usr_cmpltn_ack_ba_status *)ptr)->sw_peer_id;
  		cur_user = ath11k_get_ppdu_user_index(&ppdu_info->ppdu_stats,
-@@ -1380,6 +1382,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1381,6 +1383,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
  		user_stats->is_valid_peer_id = true;
  		memcpy((void *)&user_stats->ack_ba, ptr,
  		       sizeof(struct htt_ppdu_stats_usr_cmpltn_ack_ba_status));

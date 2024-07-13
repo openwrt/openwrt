@@ -26,7 +26,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -115,6 +115,7 @@ static inline enum wme_ac ath11k_tid_to_
+@@ -118,6 +118,7 @@ static inline enum wme_ac ath11k_tid_to_
  enum ath11k_skb_flags {
  	ATH11K_SKB_HW_80211_ENCAP = BIT(0),
  	ATH11K_SKB_CIPHER_SET = BIT(1),
@@ -34,7 +34,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  };
  
  struct ath11k_skb_cb {
-@@ -883,10 +884,13 @@ struct ath11k_dp_ring_bp_stats {
+@@ -921,10 +922,13 @@ struct ath11k_dp_ring_bp_stats {
  struct ath11k_soc_dp_tx_err_stats {
  	/* TCL Ring Descriptor unavailable */
  	u32 desc_na[DP_TCL_NUM_RING_MAX];
@@ -50,7 +50,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  };
 --- a/drivers/net/wireless/ath/ath11k/dp.c
 +++ b/drivers/net/wireless/ath/ath11k/dp.c
-@@ -358,7 +358,7 @@ void ath11k_dp_stop_shadow_timers(struct
+@@ -372,7 +372,7 @@ void ath11k_dp_stop_shadow_timers(struct
  	if (!ab->hw_params.supports_shadow_regs)
  		return;
  
@@ -59,7 +59,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ath11k_dp_shadow_stop_timer(ab, &ab->dp.tx_ring_timer[i]);
  
  	ath11k_dp_shadow_stop_timer(ab, &ab->dp.reo_cmd_timer);
-@@ -373,7 +373,7 @@ static void ath11k_dp_srng_common_cleanu
+@@ -387,7 +387,7 @@ static void ath11k_dp_srng_common_cleanu
  	ath11k_dp_srng_cleanup(ab, &dp->wbm_desc_rel_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_cmd_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_status_ring);
@@ -68,7 +68,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ath11k_dp_srng_cleanup(ab, &dp->tx_ring[i].tcl_data_ring);
  		ath11k_dp_srng_cleanup(ab, &dp->tx_ring[i].tcl_comp_ring);
  	}
-@@ -407,6 +407,11 @@ static int ath11k_dp_srng_common_setup(s
+@@ -421,6 +421,11 @@ static int ath11k_dp_srng_common_setup(s
  		goto err;
  	}
  
@@ -80,7 +80,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	ret = ath11k_dp_srng_setup(ab, &dp->tcl_status_ring, HAL_TCL_STATUS,
  				   0, 0, DP_TCL_STATUS_RING_SIZE);
  	if (ret) {
-@@ -414,7 +419,7 @@ static int ath11k_dp_srng_common_setup(s
+@@ -428,7 +433,7 @@ static int ath11k_dp_srng_common_setup(s
  		goto err;
  	}
  
@@ -89,7 +89,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		tcl_num = ab->hw_params.hal_params->tcl2wbm_rbm_map[i].tcl_ring_num;
  		wbm_num = ab->hw_params.hal_params->tcl2wbm_rbm_map[i].wbm_ring_num;
  
-@@ -437,7 +442,7 @@ static int ath11k_dp_srng_common_setup(s
+@@ -451,7 +456,7 @@ static int ath11k_dp_srng_common_setup(s
  		}
  
  		srng = &ab->hal.srng_list[dp->tx_ring[i].tcl_data_ring.ring_id];
@@ -98,7 +98,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  		ath11k_dp_shadow_init_timer(ab, &dp->tx_ring_timer[i],
  					    ATH11K_SHADOW_DP_TIMER_INTERVAL,
-@@ -1051,7 +1056,7 @@ void ath11k_dp_free(struct ath11k_base *
+@@ -1065,7 +1070,7 @@ void ath11k_dp_free(struct ath11k_base *
  
  	ath11k_dp_reo_cmd_list_cleanup(ab);
  
@@ -107,7 +107,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		spin_lock_bh(&dp->tx_ring[i].tx_idr_lock);
  		idr_for_each(&dp->tx_ring[i].txbuf_idr,
  			     ath11k_dp_tx_pending_cleanup, ab);
-@@ -1102,7 +1107,7 @@ int ath11k_dp_alloc(struct ath11k_base *
+@@ -1116,7 +1121,7 @@ int ath11k_dp_alloc(struct ath11k_base *
  
  	size = sizeof(struct hal_wbm_release_ring) * DP_TX_COMP_RING_SIZE;
  
@@ -130,7 +130,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  	if (unlikely(!(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
  		     !ieee80211_is_data(hdr->frame_control)))
- 		return -ENOTSUPP;
+ 		return -EOPNOTSUPP;
  
 -	pool_id = skb_get_queue_mapping(skb) & (ATH11K_HW_MAX_QUEUES - 1);
 +	max_tx_ring = ab->hw_params.max_tx_ring;
@@ -430,7 +430,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6664,12 +6664,22 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6387,12 +6387,22 @@ static void ath11k_mac_op_tx(struct ieee
  	if (control->sta)
  		arsta = ath11k_sta_to_arsta(control->sta);
  
@@ -438,7 +438,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 +	 * the skb from driver. Own tx packets on monitor will also be disabled.
 +	 */
 +	if ((info->flags & (IEEE80211_TX_CTL_REQ_TX_STATUS | IEEE80211_TX_INTFL_NL80211_FRAME_TX)) ||
-+	    info->ack_frame_id || vif->type == NL80211_IFTYPE_MESH_POINT ||
++	    info->status_data || vif->type == NL80211_IFTYPE_MESH_POINT ||
 +	    test_bit(ATH11K_FLAG_MONITOR_VDEV_CREATED, &ar->monitor_flags))
 +		skb_cb->flags |= ATH11K_SKB_TX_STATUS;
 +
@@ -454,7 +454,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ieee80211_free_txskb(ar->hw, skb);
  		return;
  	}
-@@ -7617,7 +7627,7 @@ err_vdev_del:
+@@ -7339,7 +7349,7 @@ err_vdev_del:
  	idr_for_each(&ar->txmgmt_idr,
  		     ath11k_mac_vif_txmgmt_idr_remove, vif);
  
@@ -465,7 +465,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  			     ath11k_mac_vif_unref, vif);
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -832,10 +832,22 @@ static ssize_t ath11k_debugfs_dump_soc_d
+@@ -833,10 +833,22 @@ static ssize_t ath11k_debugfs_dump_soc_d
  		len += scnprintf(buf + len, size - len, "ring%d: %u\n",
  				 i, soc_stats->tx_err.desc_na[i]);
  
@@ -490,7 +490,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	if (len > size)
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -188,7 +188,6 @@ static struct ath11k_hw_params ath11k_hw
+@@ -190,7 +190,6 @@ static struct ath11k_hw_params ath11k_hw
  		.supports_regdb = false,
  		.fix_l1ss = true,
  		.credit_flow = false,
@@ -498,16 +498,16 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		.hal_params = &ath11k_hw_hal_params_ipq8074,
  		.supports_dynamic_smps_6ghz = false,
  		.alloc_cacheable_memory = true,
-@@ -213,6 +212,8 @@ static struct ath11k_hw_params ath11k_hw
- 		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
+@@ -216,6 +215,8 @@ static struct ath11k_hw_params ath11k_hw
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = false,
+ 		.support_dual_stations = false,
 +		/* In addition to TCL ring use TCL_CMD ring also for tx */
 +		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
  	},
  	{
  		.name = "qca6390 hw2.0",
-@@ -355,7 +356,6 @@ static struct ath11k_hw_params ath11k_hw
+@@ -359,7 +360,6 @@ static struct ath11k_hw_params ath11k_hw
  		.supports_regdb = false,
  		.fix_l1ss = true,
  		.credit_flow = false,
@@ -515,16 +515,16 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		.hal_params = &ath11k_hw_hal_params_ipq8074,
  		.supports_dynamic_smps_6ghz = true,
  		.alloc_cacheable_memory = true,
-@@ -380,6 +380,8 @@ static struct ath11k_hw_params ath11k_hw
- 		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
+@@ -385,6 +385,8 @@ static struct ath11k_hw_params ath11k_hw
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = false,
+ 		.support_dual_stations = false,
 +		/* In addition to TCL ring use TCL_CMD ring also for tx */
 +		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
  	},
  	{
  		.name = "wcn6855 hw2.0",
-@@ -2143,6 +2145,9 @@ int ath11k_core_pre_init(struct ath11k_b
+@@ -2247,6 +2249,9 @@ int ath11k_core_pre_init(struct ath11k_b
  	if (nss_offload)
  		ab->nss.stats_enabled = 1;
  

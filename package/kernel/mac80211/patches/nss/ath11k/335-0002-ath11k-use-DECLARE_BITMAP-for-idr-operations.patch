@@ -18,7 +18,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp.c
 +++ b/drivers/net/wireless/ath/ath11k/dp.c
-@@ -376,6 +376,8 @@ static void ath11k_dp_srng_common_cleanu
+@@ -390,6 +390,8 @@ static void ath11k_dp_srng_common_cleanu
  	for (i = 0; i < DP_TCL_NUM_RING_MAX; i++) {
  		ath11k_dp_srng_cleanup(ab, &dp->tx_ring[i].tcl_data_ring);
  		ath11k_dp_srng_cleanup(ab, &dp->tx_ring[i].tcl_comp_ring);
@@ -27,7 +27,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  	}
  	ath11k_dp_srng_cleanup(ab, &dp->reo_reinject_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->rx_rel_ring);
-@@ -388,7 +390,7 @@ static int ath11k_dp_srng_common_setup(s
+@@ -402,7 +404,7 @@ static int ath11k_dp_srng_common_setup(s
  {
  	struct ath11k_dp *dp = &ab->dp;
  	struct hal_srng *srng;
@@ -36,7 +36,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  	u8 tcl_num, wbm_num;
  
  	ret = ath11k_dp_srng_setup(ab, &dp->wbm_desc_rel_ring,
-@@ -447,6 +449,18 @@ static int ath11k_dp_srng_common_setup(s
+@@ -461,6 +463,18 @@ static int ath11k_dp_srng_common_setup(s
  		ath11k_dp_shadow_init_timer(ab, &dp->tx_ring_timer[i],
  					    ATH11K_SHADOW_DP_TIMER_INTERVAL,
  					    dp->tx_ring[i].tcl_data_ring.ring_id);
@@ -55,7 +55,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  	}
  
  	ret = ath11k_dp_srng_setup(ab, &dp->reo_reinject_ring, HAL_REO_REINJECT,
-@@ -1031,9 +1045,8 @@ void ath11k_dp_vdev_tx_attach(struct ath
+@@ -1045,9 +1059,8 @@ void ath11k_dp_vdev_tx_attach(struct ath
  	ath11k_dp_update_vdev_search(arvif);
  }
  
@@ -66,7 +66,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  	struct sk_buff *msdu = skb;
  
  	dma_unmap_single(ab->dev, ATH11K_SKB_CB(msdu)->paddr, msdu->len,
-@@ -1047,21 +1060,28 @@ static int ath11k_dp_tx_pending_cleanup(
+@@ -1061,21 +1074,28 @@ static int ath11k_dp_tx_pending_cleanup(
  void ath11k_dp_free(struct ath11k_base *ab)
  {
  	struct ath11k_dp *dp = &ab->dp;
