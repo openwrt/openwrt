@@ -61,9 +61,18 @@ config KERNEL_SKB_RECYCLER_MULTI_CPU
 	default y
 
 config KERNEL_SKB_RECYCLER_PREALLOC
-	bool "Enable preallocation of SKBs"
+	bool "Enable preallocation of SKBs (For SFE not NSS)"
 	depends on KERNEL_SKB_RECYCLER
 	default n
+	help
+	  NOTE: This is primarily for platforms utilizing SFE (Shortcut Forwarding Engine)
+	  and not NSS (Network Subsystem) offload.
+
+	  NSS offload platforms mostly utilize the SKB recycling feature when managing memory.
+	  Mostly when to "reclaim" it.
+
+	  This option enables preallocation of SKBs.
+	  The default is '16384' which means 16384 x 4096 (Size of SKB) = 64MB.
 
 config KERNEL_SKB_RECYCLE_MAX_PREALLOC_SKBS
 	int "Number of SKBs to be preallocated"
@@ -75,7 +84,7 @@ config KERNEL_SKB_FIXED_SIZE_2K
 	default n
 	default y if KERNEL_IPQ_MEM_PROFILE < 512
 	help
-	   SKB size fixed at 2K.
+	   SKB size fixed at 2K. Primarily for platforms with less than 512MB memory.
 
 config KERNEL_ALLOC_SKB_PAGE_FRAG_DISABLE
 	depends on KERNEL_SKB_RECYCLER
