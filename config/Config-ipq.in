@@ -32,7 +32,7 @@ config KERNEL_IPQ_MEM_PROFILE
 
 config KERNEL_SKB_RECYCLER
 	bool "Generic SKB recycling"
-	default y if KERNEL_IPQ_MEM_PROFILE < 1024
+	default y if KERNEL_IPQ_MEM_PROFILE > 256
 
 choice KERNEL_SKB_RECYCLE_SIZE
 	prompt "SKB recycler size"
@@ -73,6 +73,7 @@ config KERNEL_SKB_RECYCLE_MAX_PREALLOC_SKBS
 config KERNEL_SKB_FIXED_SIZE_2K
 	bool "SKB size fixed at 2K"
 	default n
+	default y if KERNEL_IPQ_MEM_PROFILE < 512
 	help
 	   SKB size fixed at 2K.
 
