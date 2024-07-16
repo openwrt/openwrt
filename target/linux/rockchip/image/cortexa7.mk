@@ -4,7 +4,7 @@
 
 define Device/Default-emmc
   $(Device/Default-arm32)
-  FILESYSTEMS += squashfs ext4
+  FILESYSTEMS += squashfs
   IMAGES := boot.img rootfs.img
   IMAGE/rootfs.img := append-rootfs | pad-extra 128k
   IMAGE/boot.img := resource-img | boot-arm-bin
@@ -12,7 +12,7 @@ endef
 
 define Device/Default-sdcard
   $(Device/Default-arm32)
-  FILESYSTEMS += squashfs ext4
+  FILESYSTEMS = squashfs
   IMAGES := boot.img rootfs.img
   IMAGE/rootfs.img := append-rootfs | pad-extra 128k
   IMAGE/boot.img := resource-img | boot-arm-bin
@@ -20,7 +20,7 @@ endef
 
 define Device/Default-spiflash
   $(Device/Default-arm32)
-  FILESYSTEMS += squashfs jffs2
+  FILESYSTEMS = squashfs
   IMAGES := boot.img rootfs.img
   IMAGE/rootfs.img := append-rootfs | pad-extra 128k
   IMAGE/boot.img := resource-img | boot-arm-bin
@@ -28,9 +28,10 @@ endef
 
 define Device/Default-nandflash
   $(Device/Default-arm32)
-  FILESYSTEMS += squashfs ubifs
-  IMAGES := boot.img rootfs.img
-  IMAGE/rootfs.img := append-ubi
+  $(Device/Default-sfc-128k)
+  FILESYSTEMS := squashfs
+  IMAGES := boot.img rootfs.img env.img idblock.img uboot.img
+  IMAGE/rootfs.img := append-ubi | pad-to $$$$(PAGESIZE) | check-size $$$$(IMAGE_SIZE)
   IMAGE/boot.img := resource-img | boot-arm-bin
 endef
 
