@@ -46,8 +46,8 @@ proto_6in4_setup() {
 	local link="6in4-$cfg"
 	local remoteip
 
-	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey device
-	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey device
+	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey device nohostroute
+	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey device nohostroute
 	json_for_each_item proto_6in4_add_prefix ip6prefix ip6prefixes
 
 	[ -n "$device" ] && link="$device"
@@ -70,7 +70,9 @@ proto_6in4_setup() {
 		break
 	done
 
-	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
+	if [ "${nohostroute}" != "1" ]; then
+		( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
+	fi
 
 	[ -z "$ipaddr" ] && {
 		local wanif="$tunlink"
@@ -172,6 +174,7 @@ proto_6in4_init_config() {
 	proto_config_add_int "ttl"
 	proto_config_add_string "tos"
 	proto_config_add_string "device"
+	proto_config_add_boolean "nohostroute"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
