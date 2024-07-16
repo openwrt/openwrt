@@ -44,6 +44,7 @@ proto_6in4_setup() {
 	local cfg="$1"
 	local iface="$2"
 	local link="6in4-$cfg"
+	local remoteip
 
 	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey device
 	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey device
@@ -52,10 +53,22 @@ proto_6in4_setup() {
 	[ -n "$device" ] && link="$device"
 
 	[ -z "$peeraddr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
 		proto_block_restart "$cfg"
 		return
 	}
+
+	remoteip=$(resolveip -t 10 -4 "$peeraddr")
+
+	if [ -z "$remoteip" ]; then
+		proto_notify_error "$cfg" "PEER_RESOLVE_FAIL"
+		return
+	fi
+
+	for ip in $remoteip; do
+		peeraddr=$ip
+		break
+	done
 
 	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
