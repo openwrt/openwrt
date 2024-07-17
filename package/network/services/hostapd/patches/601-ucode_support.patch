@@ -139,7 +139,16 @@ as adding/removing interfaces.
  {
  	struct hostapd_bss_config *conf = hapd->conf;
  	u8 ssid[SSID_MAX_LEN + 1];
-@@ -2954,7 +2958,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -1510,6 +1514,8 @@ setup_mld:
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	hostapd_ucode_create_bss(hapd);
++
+ 	if (conf->wmm_enabled < 0)
+ 		conf->wmm_enabled = hapd->iconf->ieee80211n |
+ 			hapd->iconf->ieee80211ax;
+@@ -2954,7 +2960,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  }
  
  
@@ -148,7 +157,7 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -4015,7 +4019,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4015,7 +4021,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;

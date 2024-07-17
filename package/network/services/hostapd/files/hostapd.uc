@@ -889,13 +889,13 @@ return {
 		hostapd.udebug_set(null);
 		hostapd.ubus.disconnect();
 	},
-	bss_add: function(name, obj) {
+	bss_add: function(phy, name, obj) {
 		bss_event("add", name);
 	},
-	bss_reload: function(name, obj, reconf) {
+	bss_reload: function(phy, name, obj, reconf) {
 		bss_event("reload", name, { reconf: reconf != 0 });
 	},
-	bss_remove: function(name, obj) {
+	bss_remove: function(phy, name, obj) {
 		bss_event("remove", name);
 	}
 };

@@ -34,7 +34,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  }
 --- a/src/ap/ucode.c
 +++ b/src/ap/ucode.c
-@@ -815,3 +815,20 @@ void hostapd_ucode_free_bss(struct hosta
+@@ -802,3 +802,20 @@ void hostapd_ucode_free_bss(struct hosta
  	ucv_put(wpa_ucode_call(2));
  	ucv_gc(vm);
  }
@@ -57,9 +57,9 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
 +#endif // def CONFIG_APUP
 --- a/src/ap/ucode.h
 +++ b/src/ap/ucode.h
-@@ -27,6 +27,10 @@ void hostapd_ucode_add_bss(struct hostap
+@@ -26,6 +26,10 @@ void hostapd_ucode_free_iface(struct hos
  void hostapd_ucode_free_bss(struct hostapd_data *hapd);
- void hostapd_ucode_reload_bss(struct hostapd_data *hapd);
+ void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
  
 +#ifdef CONFIG_APUP
 +void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
