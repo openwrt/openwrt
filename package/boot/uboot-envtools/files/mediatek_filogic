@@ -41,17 +41,17 @@ bananapi,bpi-r3-mini|\
 bananapi,bpi-r4|\
 bananapi,bpi-r4-poe|\
 jdcloud,re-cp-03)
-	. /lib/upgrade/common.sh
-
-	bootdev="$(fitblk_get_bootdev)"
-	case "$bootdev" in
-	ubi*)
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	case "$CI_METHOD" in
+	ubi)
 		ubootenv_add_ubi_default
 		;;
-	mmc*)
-		ubootenv_add_mmc_default "${bootdev%%p[0-9]*}"
+	emmc)
+		bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+		ubootenv_add_mmc_default "${bootdev#/dev/}"
 		;;
-	mtd*)
+	default)
 		ubootenv_add_nor_default
 		;;
 	esac
