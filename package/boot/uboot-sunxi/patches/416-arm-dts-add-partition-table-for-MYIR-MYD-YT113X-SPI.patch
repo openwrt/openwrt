@@ -1,0 +1,60 @@
+From 765140fa293f719cb11346a8b0474f78310a785f Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 26 Aug 2023 17:45:03 +0200
+Subject: [PATCH 4016/4018] arm: dts: add partition table for MYIR
+ MYD-YT113X-SPI
+
+The original bootloader reports the following as the partition table:
+
+device nand0 <nand>, # parts = 4
+ #: name                size            offset          mask_flags
+ 0: boot0               0x00100000      0x00000000      1
+ 1: uboot               0x00300000      0x00100000      1
+ 2: secure_storage      0x00100000      0x00400000      1
+ 3: sys                 0x0fb00000      0x00500000      0
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../dts/sun8i-t113s-myir-myd-yt113x-spi.dts   | 26 +++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+index 431d5593d6..a5fd8c6bea 100644
+--- a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+@@ -72,6 +72,32 @@
+ 		compatible = "spi-nand";
+ 		reg = <0>;
+ 		spi-max-frequency = <52000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "boot0";
++				reg = <0x0 0x100000>;
++			};
++
++			partition@100000 {
++				label = "uboot";
++				reg = <0x0 0x300000>;
++			};
++
++			partition@400000 {
++				label = "secure_storage";
++				reg = <0x0 0x400000>;
++			};
++
++			partition@500000 {
++				label = "sys";
++				reg = <0x0 0xfb00000>;
++			};
++		};
+ 	};
+ };
+ 
+-- 
+2.20.1
+

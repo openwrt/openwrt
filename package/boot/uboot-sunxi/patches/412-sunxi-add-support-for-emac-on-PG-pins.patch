@@ -1,0 +1,34 @@
+From b843c0563d331c591a5dfd18c17c76b4dff12695 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 29 Jul 2023 11:29:26 +0200
+Subject: [PATCH 4012/4018] sunxi: add support for emac on PG pins
+
+Some boards use Port G pins for muxing EMAC.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/riscv/dts/sunxi-d1s-t113.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/riscv/dts/sunxi-d1s-t113.dtsi b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+index ff8c8d766f..44d3523059 100644
+--- a/arch/riscv/dts/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+@@ -113,6 +113,14 @@
+ 				function = "emac";
+ 			};
+ 
++			/omit-if-no-ref/
++			rgmii_pg_pins: rgmii-pg-pins {
++				pins = "PG0", "PG1", "PG2", "PG3", "PG4",
++				       "PG5", "PG6", "PG7", "PG8", "PG9",
++				       "PG11", "PG12", "PG13", "PG14", "PG15";
++				function = "emac";
++			};
++
+ 			/omit-if-no-ref/
+ 			rmii_pe_pins: rmii-pe-pins {
+ 				pins = "PE0", "PE1", "PE2", "PE3", "PE4",
+-- 
+2.20.1
+

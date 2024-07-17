@@ -1,0 +1,160 @@
+From b1e6908b53c410fafe54a1b0c07f2bfbebcacf5d Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 3 Jun 2023 23:42:33 +0200
+Subject: [PATCH 4010/4018] sunxi: add support for Rongpin RP-T113 board
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/dts/Makefile                        |  3 +-
+ arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts | 99 ++++++++++++++++++++
+ configs/rongpin_rp_t113_defconfig            | 18 ++++
+ 3 files changed, 119 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
+ create mode 100644 configs/rongpin_rp_t113_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index b282d2efd4..418c6a5f6e 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -812,7 +812,8 @@ dtb-$(CONFIG_MACH_SUN8I_V3S) += \
+ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+ 	sun8i-t113s-mangopi-mqdual-t113.dtb \
+-	sun8i-t113s-myir-myd-yt113x.dtb
++	sun8i-t113s-myir-myd-yt113x.dtb \
++	sun8i-t113s-rongpin-rp-t113.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+ 	sun50i-h5-emlid-neutis-n5-devboard.dtb \
+diff --git a/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts b/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
+new file mode 100644
+index 0000000000..3f7633210b
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
+@@ -0,0 +1,99 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++
++/ {
++	model = "Rongpin RP-T113";
++	compatible = "rongpin,rp-t113", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial3 = &uart3;
++	};
++
++	chosen {
++		stdout-path = "serial3:115200n8";
++	};
++
++	/* board wide 5V supply directly from the USB-C socket */
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* SY8008 DC/DC regulator on the board, also supplying VDD-SYS */
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* XC6206 LDO on the board */
++	reg_avdd2v8: regulator-avdd {
++		compatible = "regulator-fixed";
++		regulator-name = "avdd2v8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		vin-supply = <&reg_3v3>;
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pd-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_avdd2v8>;
++	vcc-pf-supply = <&reg_3v3>;
++	vcc-pg-supply = <&reg_3v3>;
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart3_pe_pins>;
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	disable-wp;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&mmc2 {
++	pinctrl-0 = <&mmc2_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	non-removable;
++	bus-width = <4>;
++	status = "okay";
++};
+diff --git a/configs/rongpin_rp_t113_defconfig b/configs/rongpin_rp_t113_defconfig
+new file mode 100644
+index 0000000000..9b5a5bcd65
+--- /dev/null
++++ b/configs/rongpin_rp_t113_defconfig
+@@ -0,0 +1,18 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-rongpin-rp-t113"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=4
++CONFIG_MMC0_CD_PIN="PF6"
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_UART3_PINS_PE=y
+-- 
+2.20.1
+

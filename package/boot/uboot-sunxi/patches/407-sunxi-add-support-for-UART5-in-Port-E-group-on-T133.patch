@@ -1,0 +1,70 @@
+From 41ee73b7621cd4b689ad9c9f107aff2e8c30ef2f Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 3 Jun 2023 23:41:31 +0200
+Subject: [PATCH 4007/4018] sunxi: add support for UART5 in Port E group on
+ T133
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/include/asm/arch-sunxi/serial.h | 1 +
+ arch/arm/mach-sunxi/board.c              | 4 ++++
+ drivers/pinctrl/sunxi/pinctrl-sunxi.c    | 1 +
+ include/configs/sunxi-common.h           | 3 +++
+ 4 files changed, 9 insertions(+)
+
+diff --git a/arch/arm/include/asm/arch-sunxi/serial.h b/arch/arm/include/asm/arch-sunxi/serial.h
+index 9386287b65..48d0f42a3b 100644
+--- a/arch/arm/include/asm/arch-sunxi/serial.h
++++ b/arch/arm/include/asm/arch-sunxi/serial.h
+@@ -20,6 +20,7 @@
+ #elif defined(CONFIG_SUNXI_GEN_NCAT2)
+ #define SUNXI_UART0_BASE		0x02500000
+ #define SUNXI_R_UART_BASE		0		// 0x07080000 (?>
++#define SUNXI_UART5_BASE		(SUNXI_UART0_BASE + 0x1400)
+ #else
+ #define SUNXI_UART0_BASE		0x01c28000
+ #define SUNXI_R_UART_BASE		0x01f02800
+diff --git a/arch/arm/mach-sunxi/board.c b/arch/arm/mach-sunxi/board.c
+index 11a4941822..91de9b6c39 100644
+--- a/arch/arm/mach-sunxi/board.c
++++ b/arch/arm/mach-sunxi/board.c
+@@ -175,6 +175,10 @@ static int gpio_init(void)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(2), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(3), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_pull(SUNXI_GPL(3), SUNXI_GPIO_PULL_UP);
++#elif CONFIG_CONS_INDEX == 6 && defined(CONFIG_MACH_SUN8I_R528)
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(6), 9);
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(7), 9);
++	sunxi_gpio_set_pull(SUNXI_GPE(7), SUNXI_GPIO_PULL_UP);
+ #elif CONFIG_CONS_INDEX == 2 && defined(CONFIG_MACH_SUN8I) && \
+ 				!defined(CONFIG_MACH_SUN8I_R40)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPG(6), SUN8I_GPG_UART1);
+diff --git a/drivers/pinctrl/sunxi/pinctrl-sunxi.c b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
+index 37ea93715d..281d6a4249 100644
+--- a/drivers/pinctrl/sunxi/pinctrl-sunxi.c
++++ b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
+@@ -615,6 +615,7 @@ static const struct sunxi_pinctrl_function sun20i_d1_pinctrl_functions[] = {
+ 	{ "uart1",	2 },	/* PG6-PG7 */
+ 	{ "uart2",	7 },	/* PB0-PB1 */
+ 	{ "uart3",	7 },	/* PB6-PB7 */
++	{ "uart5",	3 },	/* PE6-PE7 */
+ };
+ 
+ static const struct sunxi_pinctrl_desc __maybe_unused sun20i_d1_pinctrl_desc = {
+diff --git a/include/configs/sunxi-common.h b/include/configs/sunxi-common.h
+index b8ca77d031..bdb568af4b 100644
+--- a/include/configs/sunxi-common.h
++++ b/include/configs/sunxi-common.h
+@@ -29,6 +29,9 @@
+ # define CFG_SYS_NS16550_COM3		SUNXI_UART2_BASE
+ # define CFG_SYS_NS16550_COM4		SUNXI_UART3_BASE
+ # define CFG_SYS_NS16550_COM5		SUNXI_R_UART_BASE
++#if defined(CONFIG_SUNXI_GEN_NCAT2)
++# define CFG_SYS_NS16550_COM6		SUNXI_UART5_BASE
++#endif
+ #endif
+ 
+ /* CPU */
+-- 
+2.20.1
+

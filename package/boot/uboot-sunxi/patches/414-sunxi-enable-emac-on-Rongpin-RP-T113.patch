@@ -1,0 +1,93 @@
+From d771b39a2439f29ce4d6e0031cfc57abf54d0e4e Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 4 Jun 2023 15:40:42 +0200
+Subject: [PATCH 4014/4018] sunxi: enable emac on Rongpin RP-T113
+
+The emac is connected to an IC+ IP101 PHY, for which the driver
+has been re-added (it was removed in 2014).
+
+Currently the driver init fails with the below, so further tweaking
+will be required.
+
+CPU:   Allwinner R528 (SUN8I)
+Model: Rongpin RP-T113
+DRAM:  128 MiB
+Core:  36 devices, 15 uclasses, devicetree: separate
+MMC:   mmc@4020000: 0, mmc@4022000: 1
+Loading Environment from FAT... Unable to read "uboot.env" from mmc0:1...
+In:    serial@2500c00
+Out:   serial@2500c00
+Err:   serial@2500c00
+Net:   eth_sun8i_emac ethernet@4500000: failed to get TX clock
+No ethernet found.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts | 28 ++++++++++++++++++++
+ configs/rongpin_rp_t113_defconfig            |  3 +++
+ 2 files changed, 31 insertions(+)
+
+diff --git a/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts b/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
+index 3f7633210b..348ae5eec6 100644
+--- a/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
++++ b/arch/arm/dts/sun8i-t113s-rongpin-rp-t113.dts
+@@ -55,6 +55,16 @@
+ 		regulator-max-microvolt = <2800000>;
+ 		vin-supply = <&reg_3v3>;
+ 	};
++
++        reg_gmac_3v3: gmac-3v3 {
++                compatible = "regulator-fixed";
++                regulator-name = "gmac-3v3";
++                regulator-min-microvolt = <3300000>;
++                regulator-max-microvolt = <3300000>;
++                startup-delay-us = <100000>;
++                enable-active-high;
++                gpio = <&pio 3 6 GPIO_ACTIVE_HIGH>; /* PD6 */
++	};
+ };
+ 
+ &cpu0 {
+@@ -79,6 +89,17 @@
+ 	status = "okay";
+ };
+ 
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rmii_pe_pins>;
++
++	phy-supply = <&reg_3v3>;
++	phy-handle = <&ext_rgmii_phy>;
++	phy-mode = "rmii";
++
++	status = "okay";
++};
++
+ &mmc0 {
+ 	pinctrl-0 = <&mmc0_pins>;
+ 	pinctrl-names = "default";
+@@ -97,3 +118,10 @@
+ 	bus-width = <4>;
+ 	status = "okay";
+ };
++
++&mdio {
++	ext_rgmii_phy: ethernet-phy@1 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <1>;
++	};
++};
+diff --git a/configs/rongpin_rp_t113_defconfig b/configs/rongpin_rp_t113_defconfig
+index 9b5a5bcd65..e234934f50 100644
+--- a/configs/rongpin_rp_t113_defconfig
++++ b/configs/rongpin_rp_t113_defconfig
+@@ -16,3 +16,6 @@ CONFIG_DRAM_SUNXI_TPR11=0x340000
+ CONFIG_DRAM_SUNXI_TPR12=0x46
+ CONFIG_DRAM_SUNXI_TPR13=0x34000100
+ CONFIG_UART3_PINS_PE=y
++CONFIG_SUN8I_EMAC=y
++CONFIG_PHY_ICPLUS=y
++CONFIG_RMII=y
+-- 
+2.20.1
+

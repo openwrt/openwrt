@@ -1,0 +1,304 @@
+From df7db8dd45d5e784a4a4de14c7b37b1c5171b4e9 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Thu, 31 Aug 2023 13:36:40 +0200
+Subject: [PATCH 25/25] ARM: dts: add support for MYIR MYD-YT113X with onboard
+ SPI
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/boot/dts/allwinner/Makefile                    |   1 +
+ .../boot/dts/allwinner/sun8i-t113s-myd-yt113x-spi.dts   | 278 ++++++++++++++++++
+ 2 files changed, 279 insertions(+)
+ create mode 100644 arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-spi.dts
+
+--- a/arch/arm/boot/dts/allwinner/Makefile
++++ b/arch/arm/boot/dts/allwinner/Makefile
+@@ -319,6 +319,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+ 	sun8i-t113s-mangopi-mqdual-t113.dtb \
+ 	sun8i-t113s-myd-yt113x.dtb \
++	sun8i-t113s-myd-yt113x-spi.dtb \
+ 	sun8i-t113s-rp-t113.dtb \
+ 	sun8i-t3-cqa3t-bv3.dtb \
+ 	sun8i-v3-sl631-imx179.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-myd-yt113x-spi.dts
+@@ -0,0 +1,278 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X SPI";
++	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial5 = &uart5;
++
++		led-boot = &led_blue;
++		led-failsafe = &led_blue;
++		led-running = &led_blue;
++		led-upgrade = &led_blue;
++	};
++
++	chosen {
++		stdout-path = "serial5:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_blue: blue {
++			label = "blue";
++			gpios = <&pio 4 2 GPIO_ACTIVE_LOW>; /* PD2 */
++		};
++
++		green {
++			label = "green";
++			gpios = <&pcf9555 6 GPIO_ACTIVE_LOW>;
++			default-state = "on";
++		};
++	};
++
++	/* board wide 5V supply directly from the USB-C socket */
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* SY8008 DC/DC regulator on the board, also supplying VDD-SYS */
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* XC6206 LDO on the board */
++	reg_avdd2v8: regulator-avdd {
++		compatible = "regulator-fixed";
++		regulator-name = "avdd2v8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		vin-supply = <&reg_3v3>;
++	};
++
++	reg_gmac_3v3: gmac-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "gmac-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <100000>;
++		enable-active-high;
++		gpio = <&pio 4 12 GPIO_ACTIVE_HIGH>; /* PE12 */
++	};
++};
++
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&dcxo {
++	clock-frequency = <24000000>;
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pd-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_avdd2v8>;
++	vcc-pf-supply = <&reg_3v3>;
++	vcc-pg-supply = <&reg_3v3>;
++
++	/omit-if-no-ref/
++	uart5_pins: uart5-pins {
++		pins = "PE6", "PE7";
++		function = "uart5";
++	};
++
++//	rmii_pg_pins: rmii-pg-pins {
++//		pins = "PG0", "PG1", "PG2", "PG3", "PG4",
++//		       "PG5", "PG12", "PG13", "PG14", "PG15";
++//		function = "emac";
++//	};
++
++	rgmii_pg_pins: rgmii-pg-pins {
++		pins = "PG0", "PG1", "PG2", "PG3", "PG4", "PG5",
++		       "PG6", "PG7", "PG8", "PG9", "PG10",
++		       "PG12", "PG14", "PG15";
++		function = "emac";
++	};
++
++	i2c1_pb_pins: i2c1-pb-pins {
++		pins = "PB4", "PB5";
++		function = "i2c1";
++	};
++
++	i2c3_pb_pins: i2c3-pb-pins {
++		pins = "PB6", "PB7";
++		function = "i2c3";
++	};
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	disable-wp;
++	bus-width = <4>;
++	status = "okay";
++};
++
++/* don't enable mmc2 on the SPI board, as the SPINAND and eMMC use the same pins across the two CPU modules
++
++[    1.126495] sun20i-d1-pinctrl 2000000.pinctrl: request pin 66 (PC2) for 4025000.spi
++[    1.135827] sun20i-d1-pinctrl 2000000.pinctrl: request pin 67 (PC3) for 4025000.spi
++[    1.135890] sun20i-d1-pinctrl 2000000.pinctrl: request pin 68 (PC4) for 4025000.spi
++[    1.135930] sun20i-d1-pinctrl 2000000.pinctrl: request pin 69 (PC5) for 4025000.spi
++[    1.481816] sun20i-d1-pinctrl 2000000.pinctrl: pin PC2 already requested by 4025000.spi; cannot claim for 4022000.mmc
++
++*/
++
++//&mmc2_pins {
++//	bias-pull-up;
++//	drive-strength = <40>;
++//};
++
++//&mmc2 {
++//	pinctrl-0 = <&mmc2_pins>;
++//	pinctrl-names = "default";
++//	vmmc-supply = <&reg_3v3>;
++//	non-removable;
++//	bus-width = <4>;
++//	status = "okay";
++//};
++
++
++&ehci0 {
++	status = "okay";
++};
++
++&ohci0 {
++	status = "okay";
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_vcc5v>;
++	status = "okay";
++};
++
++&i2c1 {
++	pinctrl-0 = <&i2c1_pb_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	rtc@32 {
++		compatible = "epson,rx8025";
++		reg = <0x32>;
++	};
++};
++
++&i2c3 {
++	pinctrl-0 = <&i2c3_pb_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c32";
++		reg = <0x50>;
++	};
++
++	pcf9555: pcf9555@20 {
++		#gpio-cells = <2>;
++		compatible = "nxp,pca9555";
++		reg = <0x20>;
++	};
++};
++
++&mdio {
++	reset-assert-us = <10000>;
++	reset-deassert-us = <10000>;
++	reset-gpios = <&pio 4 11 GPIO_ACTIVE_LOW>; /* PE11 */
++
++	extphy: ethernet-phy@7 {
++//		#address-cells = <1>;
++//		#size-cells = <0>;
++		compatible = "snps,dwmac-mdio";
++//		compatible = "ethernet-phy-ieee802.3-c22";
++
++		reg = <7>;
++//		reset-gpios = <&pio 4 11 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pg_pins>;
++
++	phy-supply = <&reg_3v3>;
++	phy-handle = <&extphy>;
++	phy-mode = "rgmii-id";
++
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi0_pc_pins>;
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++	};
++
++};
++
++&wdt {
++	status = "okay";
++};

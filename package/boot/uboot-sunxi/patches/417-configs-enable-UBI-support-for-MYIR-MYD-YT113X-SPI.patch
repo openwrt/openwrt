@@ -1,0 +1,22 @@
+From 0922f4d0e26eb573bd3214391993883937d2de93 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 26 Aug 2023 17:46:22 +0200
+Subject: [PATCH 4017/4018] configs: enable UBI support for MYIR MYD-YT113X-SPI
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ configs/myir_myd_t113x-spi_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/myir_myd_t113x-spi_defconfig b/configs/myir_myd_t113x-spi_defconfig
+index a433fe0449..a1c2a82c87 100644
+--- a/configs/myir_myd_t113x-spi_defconfig
++++ b/configs/myir_myd_t113x-spi_defconfig
+@@ -36,3 +36,4 @@ CONFIG_SPI_FLASH_WINBOND=y
+ # CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_SPI=y
++CONFIG_MTD_UBI_FASTMAP=y
+-- 
+2.20.1
+

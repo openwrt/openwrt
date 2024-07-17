@@ -1,0 +1,62 @@
+From d000fc9c1837dd627e01950dc8a60008ce5edbdf Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 29 Jul 2023 11:34:19 +0200
+Subject: [PATCH 4013/4018] sunxi: add ethernet support on MYIR MYD-YT113X-SPI
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../dts/sun8i-t113s-myir-myd-yt113x-spi.dts   | 34 +++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+index f72bab29a6..431d5593d6 100644
+--- a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+@@ -19,6 +19,23 @@
+ 	chosen {
+ 		stdout-path = "serial5:115200n8";
+ 	};
++
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
+ };
+ 
+ &cpu0 {
+@@ -57,3 +74,20 @@
+ 		spi-max-frequency = <52000000>;
+ 	};
+ };
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pg_pins>;
++	phy-supply = <&reg_3v3>;
++	phy-handle = <&ext_rgmii_phy>;
++	phy-mode = "rgmii-id";
++
++	status = "okay";
++};
++
++&mdio {
++	ext_rgmii_phy: ethernet-phy@4 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <4>;
++	};
++};
+-- 
+2.20.1
+

@@ -1,0 +1,38 @@
+From 94db257f9fd0b36e612dd6ea2ce3f695da0d8fc2 Mon Sep 17 00:00:00 2001
+From: Sam Edwards <cfsworks@gmail.com>
+Date: Wed, 16 Aug 2023 10:34:20 -0700
+Subject: [PATCH 4004/4018] HACK: sunxi: psci: be compatible with v1 of R528
+ patchset
+
+This is a hack for reviewer QoL. It is not being submitted for mainline
+inclusion.
+---
+ arch/arm/cpu/armv7/sunxi/psci.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm/cpu/armv7/sunxi/psci.c b/arch/arm/cpu/armv7/sunxi/psci.c
+index 5cb8cfa6cf..c8a9218d45 100644
+--- a/arch/arm/cpu/armv7/sunxi/psci.c
++++ b/arch/arm/cpu/armv7/sunxi/psci.c
+@@ -65,6 +65,18 @@
+ #define SUNXI_R_CPUCFG_BASE			0
+ #endif
+ 
++/* 3 hacks for compatibility across v1/v2 of Andre's R528 support series */
++#ifndef SUNXI_R_CPUCFG_BASE
++#define SUNXI_R_CPUCFG_BASE			0
++#endif
++#ifndef SUNXI_PRCM_BASE
++#define SUNXI_PRCM_BASE				0
++#endif
++#if defined(SUNXI_CPUX_BASE) && defined(SUNXI_CPUCFG_BASE)
++#undef SUNXI_CPUCFG_BASE
++#define SUNXI_CPUCFG_BASE SUNXI_CPUX_BASE
++#endif
++
+ static void __secure cp15_write_cntp_tval(u32 tval)
+ {
+ 	asm volatile ("mcr p15, 0, %0, c14, c2, 0" : : "r" (tval));
+-- 
+2.20.1
+

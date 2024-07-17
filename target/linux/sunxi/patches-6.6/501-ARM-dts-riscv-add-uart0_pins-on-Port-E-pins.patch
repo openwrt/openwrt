@@ -1,0 +1,25 @@
+From 0208e409b80562ad8e9d2de31f123cdeed37d88e Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 4 Jun 2023 16:46:05 +0200
+Subject: [PATCH 15/25] ARM: dts: riscv: add uart0_pins on Port E pins
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+@@ -150,6 +150,12 @@
+ 				       "PC7";
+ 				function = "spi0";
+ 			};
++
++			/omit-if-no-ref/
++			uart0_pins: uart0-pins {
++				pins = "PE2", "PE3";
++				function = "uart0";
++			};
+ 		};
+ 
+ 		ccu: clock-controller@2001000 {

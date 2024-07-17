@@ -1,0 +1,131 @@
+From ed5dca10146a654e7861cfb5bce95e2bb216dab5 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 4 Jun 2023 00:13:45 +0200
+Subject: [PATCH 4008/4018] sunxi: add MYIR MYD-YT113X board
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/dts/Makefile                        |  3 +-
+ arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dts | 68 ++++++++++++++++++++
+ configs/myir_myd_t113x_defconfig             | 20 ++++++
+ 3 files changed, 90 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dts
+ create mode 100644 configs/myir_myd_t113x_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 440a6976d6..b282d2efd4 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -811,7 +811,8 @@ dtb-$(CONFIG_MACH_SUN8I_V3S) += \
+ 	sun8i-v3s-licheepi-zero.dtb
+ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+-	sun8i-t113s-mangopi-mqdual-t113.dtb
++	sun8i-t113s-mangopi-mqdual-t113.dtb \
++	sun8i-t113s-myir-myd-yt113x.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+ 	sun50i-h5-emlid-neutis-n5-devboard.dtb \
+diff --git a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dts b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dts
+new file mode 100644
+index 0000000000..afd0d8f532
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x.dts
+@@ -0,0 +1,68 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++#include "sunxi-d1s-t113-mangopi-mq-r.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X";
++	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial5 = &uart5;
++	};
++
++	chosen {
++		stdout-path = "serial5:115200n8";
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&mmc2_pins {
++	bias-pull-up;
++	drive-strength = <40>;
++};
++
++&mmc2 {
++	pinctrl-0 = <&mmc2_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	non-removable;
++	bus-width = <4>;
++	status = "okay";
++
++	emmc: emmc@0 {
++		reg = <0>;
++		compatible = "mmc-card";
++		broken-hpi;
++	};
++};
++
++&pio {
++	/omit-if-no-ref/
++	uart5_pins: uart5-pins {
++		pins = "PE6", "PE7";
++		function = "uart5";
++	};
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "okay";
++};
++
++&uart3 {
++	status = "disabled";
++};
+diff --git a/configs/myir_myd_t113x_defconfig b/configs/myir_myd_t113x_defconfig
+new file mode 100644
+index 0000000000..2ae442c3ca
+--- /dev/null
++++ b/configs/myir_myd_t113x_defconfig
+@@ -0,0 +1,20 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-myir-myd-yt113x"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=6
++CONFIG_MMC0_CD_PIN="PF6"
++CONFIG_MMC_SUNXI_SLOT_EXTRA=2
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
+-- 
+2.20.1
+

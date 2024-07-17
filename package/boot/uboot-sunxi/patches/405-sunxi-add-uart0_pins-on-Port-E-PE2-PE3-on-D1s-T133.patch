@@ -1,0 +1,30 @@
+From 1be7791f220325b0d6f42c3f2c383d8423936942 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 3 Jun 2023 00:52:04 +0200
+Subject: [PATCH 4005/4018] sunxi: add uart0_pins on Port E PE2/PE3 on D1s/T133
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/riscv/dts/sunxi-d1s-t113.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/riscv/dts/sunxi-d1s-t113.dtsi b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+index 822f022eec..e32112972d 100644
+--- a/arch/riscv/dts/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+@@ -143,6 +143,12 @@
+ 				pins = "PB6", "PB7";
+ 				function = "uart3";
+ 			};
++
++			/omit-if-no-ref/
++			uart0_pins: uart0-pins {
++				pins = "PE2", "PE3";
++				function = "uart0";
++			};
+ 		};
+ 
+ 		ccu: clock-controller@2001000 {
+-- 
+2.20.1
+

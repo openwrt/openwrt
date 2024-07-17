@@ -1,0 +1,122 @@
+From 8f4d23ac2094fe2153fbe82b089d1d6d5e0c02d8 Mon Sep 17 00:00:00 2001
+From: Maxim Kiselev <bigunclemax@gmail.com>
+Date: Fri, 19 May 2023 16:40:08 +0300
+Subject: [PATCH 4003/4018] spi: sunxi: Add support for R329/D1/R528/T113 SPI
+ controller
+
+These SoCs have two SPI controllers that are quite similar to the SPI
+on previous Allwinner SoCs. The main difference is that new SoCs
+don't have a clock divider (SPI_CCR register) inside SPI IP.
+
+Instead SPI sample mode should be configured depending on the input clock.
+
+For now SPI input clock source selection is not supported by this driver,
+and only HOSC@24MHz can be used as input clock. Therefore, according to
+the, manual we could change the SPI sample mode from delay half
+cycle(default) to normal.
+
+This patch adds a quirk for this kind of SPI controllers
+
+Signed-off-by: Maxim Kiselev <bigunclemax@gmail.com>
+Tested-by: Sam Edwards <CFSworks@gmail.com>
+---
+ drivers/spi/spi-sunxi.c | 34 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-sunxi.c b/drivers/spi/spi-sunxi.c
+index c56d82d998..9ec6b359e2 100644
+--- a/drivers/spi/spi-sunxi.c
++++ b/drivers/spi/spi-sunxi.c
+@@ -117,6 +117,8 @@ enum sun4i_spi_bits {
+ 	SPI_TCR_XCH,
+ 	SPI_TCR_CS_MANUAL,
+ 	SPI_TCR_CS_LEVEL,
++	SPI_TCR_SDC,
++	SPI_TCR_SDM,
+ 	SPI_FCR_TF_RST,
+ 	SPI_FCR_RF_RST,
+ 	SPI_FSR_RF_CNT_MASK,
+@@ -128,6 +130,7 @@ struct sun4i_spi_variant {
+ 	u32 fifo_depth;
+ 	bool has_soft_reset;
+ 	bool has_burst_ctl;
++	bool has_clk_ctl;
+ };
+ 
+ struct sun4i_spi_plat {
+@@ -302,7 +305,19 @@ static int sun4i_spi_claim_bus(struct udevice *dev)
+ 	setbits_le32(SPI_REG(priv, SPI_TCR), SPI_BIT(priv, SPI_TCR_CS_MANUAL) |
+ 		     SPI_BIT(priv, SPI_TCR_CS_ACTIVE_LOW));
+ 
+-	sun4i_spi_set_speed_mode(dev->parent);
++	if (priv->variant->has_clk_ctl) {
++		sun4i_spi_set_speed_mode(dev->parent);
++	} else {
++		/*
++		 * At this moment there is no ability to change input clock.
++		 * Therefore, we can only use default HOSC@24MHz clock and
++		 * set SPI sampling mode to normal
++		 */
++		clrsetbits_le32(SPI_REG(priv, SPI_TCR),
++				SPI_BIT(priv, SPI_TCR_SDC) |
++				SPI_BIT(priv, SPI_TCR_SDM),
++				SPI_BIT(priv, SPI_TCR_SDM));
++	}
+ 
+ 	return 0;
+ }
+@@ -516,6 +531,8 @@ static const u32 sun6i_spi_bits[] = {
+ 	[SPI_TCR_CS_MASK]	= 0x30,
+ 	[SPI_TCR_CS_MANUAL]	= BIT(6),
+ 	[SPI_TCR_CS_LEVEL]	= BIT(7),
++	[SPI_TCR_SDC]		= BIT(11),
++	[SPI_TCR_SDM]		= BIT(13),
+ 	[SPI_TCR_XCH]		= BIT(31),
+ 	[SPI_FCR_RF_RST]	= BIT(15),
+ 	[SPI_FCR_TF_RST]	= BIT(31),
+@@ -526,6 +543,7 @@ static const struct sun4i_spi_variant sun4i_a10_spi_variant = {
+ 	.regs			= sun4i_spi_regs,
+ 	.bits			= sun4i_spi_bits,
+ 	.fifo_depth		= 64,
++	.has_clk_ctl		= true,
+ };
+ 
+ static const struct sun4i_spi_variant sun6i_a31_spi_variant = {
+@@ -534,6 +552,7 @@ static const struct sun4i_spi_variant sun6i_a31_spi_variant = {
+ 	.fifo_depth		= 128,
+ 	.has_soft_reset		= true,
+ 	.has_burst_ctl		= true,
++	.has_clk_ctl		= true,
+ };
+ 
+ static const struct sun4i_spi_variant sun8i_h3_spi_variant = {
+@@ -542,6 +561,15 @@ static const struct sun4i_spi_variant sun8i_h3_spi_variant = {
+ 	.fifo_depth		= 64,
+ 	.has_soft_reset		= true,
+ 	.has_burst_ctl		= true,
++	.has_clk_ctl		= true,
++};
++
++static const struct sun4i_spi_variant sun50i_r329_spi_variant = {
++	.regs			= sun6i_spi_regs,
++	.bits			= sun6i_spi_bits,
++	.fifo_depth		= 64,
++	.has_soft_reset		= true,
++	.has_burst_ctl		= true,
+ };
+ 
+ static const struct udevice_id sun4i_spi_ids[] = {
+@@ -557,6 +585,10 @@ static const struct udevice_id sun4i_spi_ids[] = {
+ 	  .compatible = "allwinner,sun8i-h3-spi",
+ 	  .data = (ulong)&sun8i_h3_spi_variant,
+ 	},
++	{
++	  .compatible = "allwinner,sun50i-r329-spi",
++	  .data = (ulong)&sun50i_r329_spi_variant,
++	},
+ 	{ /* sentinel */ }
+ };
+ 
+-- 
+2.20.1
+

@@ -1,0 +1,31 @@
+From e01de46856ec0d86a0e193dae2a9e2e0c6fa28b1 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 26 Aug 2023 21:09:17 +0200
+Subject: [PATCH 4018/4018] sunxi: r528/d1/t113: add SDC2 pinmux on PC2-7 pins
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ board/sunxi/board.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/board/sunxi/board.c b/board/sunxi/board.c
+index 8c12c8dead..f23908ed13 100644
+--- a/board/sunxi/board.c
++++ b/board/sunxi/board.c
+@@ -422,6 +422,13 @@ static void mmc_pinmux_setup(int sdc)
+ 		sunxi_gpio_set_cfgpin(SUNXI_GPC(24), SUNXI_GPC_SDC2);
+ 		sunxi_gpio_set_pull(SUNXI_GPC(24), SUNXI_GPIO_PULL_UP);
+ 		sunxi_gpio_set_drv(SUNXI_GPC(24), 2);
++#elif defined(CONFIG_MACH_SUN8I_R528)
++		/* SDC2: PC2-PC7 */
++		for (pin = SUNXI_GPC(2); pin <= SUNXI_GPC(7); pin++) {
++			sunxi_gpio_set_cfgpin(pin, SUNXI_GPC_SDC2);
++			sunxi_gpio_set_pull(pin, SUNXI_GPIO_PULL_UP);
++			sunxi_gpio_set_drv(pin, 2);
++		}
+ #elif defined(CONFIG_MACH_SUN8I) || defined(CONFIG_MACH_SUN50I)
+ 		/* SDC2: PC5-PC6, PC8-PC16 */
+ 		for (pin = SUNXI_GPC(5); pin <= SUNXI_GPC(6); pin++) {
+-- 
+2.20.1
+

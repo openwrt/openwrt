@@ -1,0 +1,75 @@
+From f26cc77a06a9efb561396adc1c02f01e5c5170c5 Mon Sep 17 00:00:00 2001
+From: Andre Przywara <andre.przywara@arm.com>
+Date: Fri, 21 Jul 2023 14:45:59 +0100
+Subject: [PATCH 4000/4018] sunxi: clock: h6: prepare for PRCM less SoCs
+
+The Allwinner D1/R528/T113 SoCs have a very minimal separate
+"management" power plane, with almost no device attached to it (so
+no r_i2c or r_uart). This means we don't need to flip any clock gates in
+the PRCM block, which in fact those SoCs do not have.
+
+Prepare the code for those SoCs by making the PRCM block optional in the
+H6 SPL clock code, which we otherwise share to this new family of SoCs.
+If the memory map (cpu.h) does not define the PRCM address, we simply
+skip any attempt to program gates there.
+
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+---
+ arch/arm/mach-sunxi/clock_sun50i_h6.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-sunxi/clock_sun50i_h6.c b/arch/arm/mach-sunxi/clock_sun50i_h6.c
+index bea91c78bc..0d15d53936 100644
+--- a/arch/arm/mach-sunxi/clock_sun50i_h6.c
++++ b/arch/arm/mach-sunxi/clock_sun50i_h6.c
+@@ -4,14 +4,20 @@
+ #include <asm/arch/clock.h>
+ #include <asm/arch/prcm.h>
+ 
++#ifndef SUNXI_PRCM_BASE
++#define SUNXI_PRCM_BASE 0
++#endif
++
+ #ifdef CONFIG_SPL_BUILD
+-void clock_init_safe(void)
++
++static void clock_init_safe_prcm(void)
+ {
+-	struct sunxi_ccm_reg *const ccm =
+-		(struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
+ 	struct sunxi_prcm_reg *const prcm =
+ 		(struct sunxi_prcm_reg *)SUNXI_PRCM_BASE;
+ 
++	if (!prcm)
++		return;
++
+ 	if (IS_ENABLED(CONFIG_MACH_SUN50I_H616)) {
+ 		/* this seems to enable PLLs on H616 */
+ 		setbits_le32(&prcm->sys_pwroff_gating, 0x10);
+@@ -30,6 +36,14 @@ void clock_init_safe(void)
+ 		/* set PLL VDD LDO output to 1.14 V */
+ 		setbits_le32(&prcm->pll_ldo_cfg, 0x60000);
+ 	}
++}
++
++void clock_init_safe(void)
++{
++	struct sunxi_ccm_reg *const ccm =
++		(struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
++
++	clock_init_safe_prcm();
+ 
+ 	clock_set_pll1(408000000);
+ 
+@@ -146,6 +160,8 @@ int clock_twi_onoff(int port, int state)
+ 	value = BIT(GATE_SHIFT) | BIT (RESET_SHIFT);
+ 
+ 	if (port == 5) {
++		if (!prcm)
++			return -ENODEV;
+ 		shift = 0;
+ 		ptr = &prcm->twi_gate_reset;
+ 	} else {
+-- 
+2.20.1
+

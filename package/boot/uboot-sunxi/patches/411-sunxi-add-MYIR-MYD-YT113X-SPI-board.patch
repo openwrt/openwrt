@@ -1,0 +1,140 @@
+From d39d26e888a4a4bc3333faed7308598b2cb7c3f8 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 29 Jul 2023 11:23:47 +0200
+Subject: [PATCH 4011/4018] sunxi: add MYIR MYD-YT113X-SPI board
+
+Instead of eMMC, this board sports a 256Mb SPI NAND flash.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/dts/Makefile                         |  1 +
+ .../dts/sun8i-t113s-myir-myd-yt113x-spi.dts   | 59 +++++++++++++++++++
+ configs/myir_myd_t113x-spi_defconfig          | 38 ++++++++++++
+ 3 files changed, 98 insertions(+)
+ create mode 100644 arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+ create mode 100644 configs/myir_myd_t113x-spi_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 418c6a5f6e..0572f4b8a6 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -813,6 +813,7 @@ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
+ 	sun8i-t113s-mangopi-mqdual-t113.dtb \
+ 	sun8i-t113s-myir-myd-yt113x.dtb \
++	sun8i-t113s-myir-myd-yt113x-spi.dtb \
+ 	sun8i-t113s-rongpin-rp-t113.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+diff --git a/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+new file mode 100644
+index 0000000000..f72bab29a6
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-myir-myd-yt113x-spi.dts
+@@ -0,0 +1,59 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++#include "sunxi-d1s-t113-mangopi-mq-r.dtsi"
++
++/ {
++	model = "MYIR MYD-YT113X (SPI)";
++	compatible = "myir,myd-yt113x", "myir,myc-yt113x", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial5 = &uart5;
++	};
++
++	chosen {
++		stdout-path = "serial5:115200n8";
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&pio {
++	/omit-if-no-ref/
++	uart5_pins: uart5-pins {
++		pins = "PE6", "PE7";
++		function = "uart5";
++	};
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "okay";
++};
++
++&uart3 {
++	status = "disabled";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "okay";
++	spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++	};
++};
+diff --git a/configs/myir_myd_t113x-spi_defconfig b/configs/myir_myd_t113x-spi_defconfig
+new file mode 100644
+index 0000000000..a433fe0449
+--- /dev/null
++++ b/configs/myir_myd_t113x-spi_defconfig
+@@ -0,0 +1,38 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-myir-myd-yt113x-spi"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_SPL_SPI_SUNXI=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=6
++CONFIG_MMC0_CD_PIN="PF6"
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_CLK_SUN20I_D1=y
++CONFIG_PHY_MOTORCOMM=y
++CONFIG_SUN8I_EMAC=y
++CONFIG_RGMII=y
++CONFIG_RMII=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_SYS_MTDPARTS_RUNTIME=y
++CONFIG_NAND_STM32_FMC2=y
++CONFIG_SYS_NAND_ONFI_DETECTION=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_SPI=y
+-- 
+2.20.1
+

@@ -1,0 +1,206 @@
+From 3cdcdfd064bb9a5c5082feb967e783c6e1ebf6d4 Mon Sep 17 00:00:00 2001
+From: Maxim Kiselev <bigunclemax@gmail.com>
+Date: Fri, 19 May 2023 16:40:07 +0300
+Subject: [PATCH 4002/4018] sunxi: SPL SPI: Add SPI boot support for the
+ Allwinner R528/T113 SoCs
+
+R528/T113 SoCs uses the same SPI IP as the H6, also have the same clocks
+and reset bits layout, but the CCU base is different. Another difference
+is that the new SoCs do not have a clock divider inside. Instead of this
+we should configure sample mode depending on input clock rate.
+
+The pin assignment is also different: the H6 uses PC0, the R528/T113 PC4
+instead. This makes for a change in spi0_pinmux_setup() routine.
+
+This patch extends the H6/H616 #ifdef guards to also cover the R528/T113,
+using the shared CONFIG_SUNXI_GEN_NCAT2 and CONFIG_MACH_SUN8I_R528
+symbols. Also use CONFIG_SUNXI_GEN_NCAT2 symbol for the Kconfig
+dependency.
+
+Signed-off-by: Maxim Kiselev <bigunclemax@gmail.com>
+Tested-by: Sam Edwards <CFSworks@gmail.com>
+---
+ arch/arm/mach-sunxi/Kconfig         |  2 +-
+ arch/arm/mach-sunxi/spl_spi_sunxi.c | 78 +++++++++++++++++++++--------
+ 2 files changed, 58 insertions(+), 22 deletions(-)
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index a4a8d8e944..d1acb88704 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -1061,7 +1061,7 @@ config SPL_STACK_R_ADDR
+ 
+ config SPL_SPI_SUNXI
+ 	bool "Support for SPI Flash on Allwinner SoCs in SPL"
+-	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_R40 || SUN50I_GEN_H6 || MACH_SUNIV
++	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_R40 || SUN50I_GEN_H6 || MACH_SUNIV || SUNXI_GEN_NCAT2
+ 	help
+ 	  Enable support for SPI Flash. This option allows SPL to read from
+ 	  sunxi SPI Flash. It uses the same method as the boot ROM, so does
+diff --git a/arch/arm/mach-sunxi/spl_spi_sunxi.c b/arch/arm/mach-sunxi/spl_spi_sunxi.c
+index c2410dd7bb..3cfbf56d59 100644
+--- a/arch/arm/mach-sunxi/spl_spi_sunxi.c
++++ b/arch/arm/mach-sunxi/spl_spi_sunxi.c
+@@ -73,18 +73,27 @@
+ #define SUN6I_CTL_ENABLE            BIT(0)
+ #define SUN6I_CTL_MASTER            BIT(1)
+ #define SUN6I_CTL_SRST              BIT(31)
++#define SUN6I_TCR_SDM               BIT(13)
+ #define SUN6I_TCR_XCH               BIT(31)
+ 
+ /*****************************************************************************/
+ 
+-#define CCM_AHB_GATING0             (0x01C20000 + 0x60)
+-#define CCM_H6_SPI_BGR_REG          (0x03001000 + 0x96c)
+-#ifdef CONFIG_SUN50I_GEN_H6
+-#define CCM_SPI0_CLK                (0x03001000 + 0x940)
++#if defined(CONFIG_SUN50I_GEN_H6)
++#define CCM_BASE                    0x03001000
++#elif defined(CONFIG_SUNXI_GEN_NCAT2)
++#define CCM_BASE                    0x02001000
+ #else
+-#define CCM_SPI0_CLK                (0x01C20000 + 0xA0)
++#define CCM_BASE                    0x01C20000
+ #endif
+-#define SUN6I_BUS_SOFT_RST_REG0     (0x01C20000 + 0x2C0)
++
++#define CCM_AHB_GATING0             (CCM_BASE + 0x60)
++#define CCM_H6_SPI_BGR_REG          (CCM_BASE + 0x96c)
++#if defined(CONFIG_SUN50I_GEN_H6) || defined(CONFIG_SUNXI_GEN_NCAT2)
++#define CCM_SPI0_CLK                (CCM_BASE + 0x940)
++#else
++#define CCM_SPI0_CLK                (CCM_BASE + 0xA0)
++#endif
++#define SUN6I_BUS_SOFT_RST_REG0     (CCM_BASE + 0x2C0)
+ 
+ #define AHB_RESET_SPI0_SHIFT        20
+ #define AHB_GATE_OFFSET_SPI0        20
+@@ -102,17 +111,22 @@
+  */
+ static void spi0_pinmux_setup(unsigned int pin_function)
+ {
+-	/* All chips use PC0 and PC2. */
+-	sunxi_gpio_set_cfgpin(SUNXI_GPC(0), pin_function);
++	/* All chips use PC2. And all chips use PC0, except R528/T113 */
++	if (!IS_ENABLED(CONFIG_MACH_SUN8I_R528))
++		sunxi_gpio_set_cfgpin(SUNXI_GPC(0), pin_function);
++
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPC(2), pin_function);
+ 
+-	/* All chips except H6 and H616 use PC1. */
+-	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6))
++	/* All chips except H6/H616/R528/T113 use PC1. */
++	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6) &&
++	    !IS_ENABLED(CONFIG_MACH_SUN8I_R528))
+ 		sunxi_gpio_set_cfgpin(SUNXI_GPC(1), pin_function);
+ 
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6))
++	if (IS_ENABLED(CONFIG_MACH_SUN50I_H6) ||
++	    IS_ENABLED(CONFIG_MACH_SUN8I_R528))
+ 		sunxi_gpio_set_cfgpin(SUNXI_GPC(5), pin_function);
+-	if (IS_ENABLED(CONFIG_MACH_SUN50I_H616))
++	if (IS_ENABLED(CONFIG_MACH_SUN50I_H616) ||
++	    IS_ENABLED(CONFIG_MACH_SUN8I_R528))
+ 		sunxi_gpio_set_cfgpin(SUNXI_GPC(4), pin_function);
+ 
+ 	/* Older generations use PC23 for CS, newer ones use PC3. */
+@@ -126,7 +140,8 @@ static void spi0_pinmux_setup(unsigned int pin_function)
+ static bool is_sun6i_gen_spi(void)
+ {
+ 	return IS_ENABLED(CONFIG_SUNXI_GEN_SUN6I) ||
+-	       IS_ENABLED(CONFIG_SUN50I_GEN_H6);
++	       IS_ENABLED(CONFIG_SUN50I_GEN_H6) ||
++	       IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2);
+ }
+ 
+ static uintptr_t spi0_base_address(void)
+@@ -137,6 +152,9 @@ static uintptr_t spi0_base_address(void)
+ 	if (IS_ENABLED(CONFIG_SUN50I_GEN_H6))
+ 		return 0x05010000;
+ 
++	if (IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
++		return 0x04025000;
++
+ 	if (!is_sun6i_gen_spi() ||
+ 	    IS_ENABLED(CONFIG_MACH_SUNIV))
+ 		return 0x01C05000;
+@@ -152,23 +170,30 @@ static void spi0_enable_clock(void)
+ 	uintptr_t base = spi0_base_address();
+ 
+ 	/* Deassert SPI0 reset on SUN6I */
+-	if (IS_ENABLED(CONFIG_SUN50I_GEN_H6))
++	if (IS_ENABLED(CONFIG_SUN50I_GEN_H6) ||
++	    IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
+ 		setbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
+ 	else if (is_sun6i_gen_spi())
+ 		setbits_le32(SUN6I_BUS_SOFT_RST_REG0,
+ 			     (1 << AHB_RESET_SPI0_SHIFT));
+ 
+ 	/* Open the SPI0 gate */
+-	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6))
++	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6) &&
++	    !IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
+ 		setbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
+ 
+ 	if (IS_ENABLED(CONFIG_MACH_SUNIV)) {
+ 		/* Divide by 32, clock source is AHB clock 200MHz */
+ 		writel(SPI0_CLK_DIV_BY_32, base + SUN6I_SPI0_CCTL);
+ 	} else {
+-		/* Divide by 4 */
+-		writel(SPI0_CLK_DIV_BY_4, base + (is_sun6i_gen_spi() ?
+-					  SUN6I_SPI0_CCTL : SUN4I_SPI0_CCTL));
++		/* New SoCs do not have a clock divider inside */
++		if (!IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2)) {
++			/* Divide by 4 */
++			writel(SPI0_CLK_DIV_BY_4,
++			       base + (is_sun6i_gen_spi() ? SUN6I_SPI0_CCTL :
++			       SUN4I_SPI0_CCTL));
++		}
++
+ 		/* 24MHz from OSC24M */
+ 		writel((1 << 31), CCM_SPI0_CLK);
+ 	}
+@@ -180,6 +205,14 @@ static void spi0_enable_clock(void)
+ 		/* Wait for completion */
+ 		while (readl(base + SUN6I_SPI0_GCR) & SUN6I_CTL_SRST)
+ 			;
++
++		/*
++		 * For new SoCs we should configure sample mode depending on
++		 * input clock. As 24MHz from OSC24M is used, we could use
++		 * normal sample mode by setting SDM bit in the TCR register
++		 */
++		if (IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
++			setbits_le32(base + SUN6I_SPI0_TCR, SUN6I_TCR_SDM);
+ 	} else {
+ 		/* Enable SPI in the master mode and reset FIFO */
+ 		setbits_le32(base + SUN4I_SPI0_CTL, SUN4I_CTL_MASTER |
+@@ -206,11 +239,13 @@ static void spi0_disable_clock(void)
+ 		writel(0, CCM_SPI0_CLK);
+ 
+ 	/* Close the SPI0 gate */
+-	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6))
++	if (!IS_ENABLED(CONFIG_SUN50I_GEN_H6) &&
++	    !IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
+ 		clrbits_le32(CCM_AHB_GATING0, (1 << AHB_GATE_OFFSET_SPI0));
+ 
+ 	/* Assert SPI0 reset on SUN6I */
+-	if (IS_ENABLED(CONFIG_SUN50I_GEN_H6))
++	if (IS_ENABLED(CONFIG_SUN50I_GEN_H6) ||
++	    IS_ENABLED(CONFIG_SUNXI_GEN_NCAT2))
+ 		clrbits_le32(CCM_H6_SPI_BGR_REG, (1U << 16) | 0x1);
+ 	else if (is_sun6i_gen_spi())
+ 		clrbits_le32(SUN6I_BUS_SOFT_RST_REG0,
+@@ -224,7 +259,8 @@ static void spi0_init(void)
+ 	if (IS_ENABLED(CONFIG_MACH_SUN50I) ||
+ 	    IS_ENABLED(CONFIG_SUN50I_GEN_H6))
+ 		pin_function = SUN50I_GPC_SPI0;
+-	else if (IS_ENABLED(CONFIG_MACH_SUNIV))
++	else if (IS_ENABLED(CONFIG_MACH_SUNIV) ||
++		 IS_ENABLED(CONFIG_MACH_SUN8I_R528))
+ 		pin_function = SUNIV_GPC_SPI0;
+ 
+ 	spi0_pinmux_setup(pin_function);
+-- 
+2.20.1
+

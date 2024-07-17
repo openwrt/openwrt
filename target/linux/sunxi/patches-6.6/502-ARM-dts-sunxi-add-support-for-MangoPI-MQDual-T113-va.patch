@@ -1,0 +1,80 @@
+From 7d38e964a627c99d238978fd1e9b8ec946dc7541 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 4 Jun 2023 16:46:43 +0200
+Subject: [PATCH 16/25] ARM: dts: sunxi: add support for MangoPI MQDual T113
+ variant
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/boot/dts/Makefile                    |  1 +
+ .../dts/sun8i-t113s-mangopi-mqdual-t113.dts   | 54 +++++++++++++++++++
+ 2 files changed, 55 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun8i-t113s-mangopi-mqdual-t113.dts
+
+--- a/arch/arm/boot/dts/allwinner/Makefile
++++ b/arch/arm/boot/dts/allwinner/Makefile
+@@ -317,6 +317,7 @@ dtb-$(CONFIG_MACH_SUN8I) += \
+ 	sun8i-s3-lichee-zero-plus.dtb \
+ 	sun8i-s3-pinecube.dtb \
+ 	sun8i-t113s-mangopi-mq-r-t113.dtb \
++	sun8i-t113s-mangopi-mqdual-t113.dtb \
+ 	sun8i-t3-cqa3t-bv3.dtb \
+ 	sun8i-v3-sl631-imx179.dtb \
+ 	sun8i-v3s-licheepi-zero.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/allwinner/sun8i-t113s-mangopi-mqdual-t113.dts
+@@ -0,0 +1,54 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++#include "sunxi-d1s-t113-mangopi-mq-r.dtsi"
++
++/ {
++	model = "MangoPi MQDual T113";
++	compatible = "widora,mangopi-mqdual-t113", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial0 = &uart0;
++		ethernet0 = &rtl8189ftv;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&mmc1 {
++	rtl8189ftv: wifi@1 {
++		reg = <1>;
++		interrupt-parent = <&pio>;
++		interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>; /* PG10 = WL_WAKE_AP */
++		interrupt-names = "host-wake";
++	};
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
++	status = "okay";
++};
++
++&uart3 {
++	status = "disabled";
++};
++
++&wdt {
++	status = "okay";
++};

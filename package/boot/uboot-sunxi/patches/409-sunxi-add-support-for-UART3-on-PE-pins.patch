@@ -1,0 +1,100 @@
+From e50a38fcd689bb3bc1e6cf191f482dbc179420b3 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 3 Jun 2023 23:57:46 +0200
+Subject: [PATCH 4009/4018] sunxi: add support for UART3 on PE pins
+
+Some boards use Port E pins for muxing the UART3 as console. Add a new
+Kconfig option allowing to select this (mimicking MMC_PINS_PH).
+
+Pinmux taken from https://bbs.aw-ol.com/assets/uploads/files/1648883311844-t113-s3_datasheet_v1.2.pdf
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/mach-sunxi/Kconfig           |  6 ++++++
+ arch/arm/mach-sunxi/board.c           | 10 ++++++++--
+ arch/riscv/dts/sunxi-d1s-t113.dtsi    |  6 ++++++
+ drivers/pinctrl/sunxi/pinctrl-sunxi.c |  4 ++++
+ 4 files changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index d1acb88704..cd45dde191 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -729,6 +729,12 @@ config UART0_PORT_F
+ 	at the same time, the system can be only booted in the FEL mode.
+ 	Only enable this if you really know what you are doing.
+ 
++config UART3_PINS_PE
++	bool "Pins for uart3 are on Port E"
++	---help---
++	Select this option for boards where uart3 uses the Port E pinmux.
++	(Some T113-S3 boards use uart3 as console.)
++
+ config OLD_SUNXI_KERNEL_COMPAT
+ 	bool "Enable workarounds for booting old kernels"
+ 	---help---
+diff --git a/arch/arm/mach-sunxi/board.c b/arch/arm/mach-sunxi/board.c
+index 91de9b6c39..d18880ea5a 100644
+--- a/arch/arm/mach-sunxi/board.c
++++ b/arch/arm/mach-sunxi/board.c
+@@ -168,16 +168,22 @@ static int gpio_init(void)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPB(1), SUN8I_GPB_UART2);
+ 	sunxi_gpio_set_pull(SUNXI_GPB(1), SUNXI_GPIO_PULL_UP);
+ #elif CONFIG_CONS_INDEX == 4 && defined(CONFIG_MACH_SUN8I_R528)
++#if defined(CONFIG_UART3_PINS_PE)
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(8), 5);
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(9), 5);
++	sunxi_gpio_set_pull(SUNXI_GPE(9), SUNXI_GPIO_PULL_UP);
++#else
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPB(6), 7);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPB(7), 7);
+ 	sunxi_gpio_set_pull(SUNXI_GPB(7), SUNXI_GPIO_PULL_UP);
++#endif
+ #elif CONFIG_CONS_INDEX == 5 && defined(CONFIG_MACH_SUN8I)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(2), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPL(3), SUN8I_GPL_R_UART);
+ 	sunxi_gpio_set_pull(SUNXI_GPL(3), SUNXI_GPIO_PULL_UP);
+ #elif CONFIG_CONS_INDEX == 6 && defined(CONFIG_MACH_SUN8I_R528)
+-	sunxi_gpio_set_cfgpin(SUNXI_GPE(6), 9);
+-	sunxi_gpio_set_cfgpin(SUNXI_GPE(7), 9);
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(6), 3);
++	sunxi_gpio_set_cfgpin(SUNXI_GPE(7), 3);
+ 	sunxi_gpio_set_pull(SUNXI_GPE(7), SUNXI_GPIO_PULL_UP);
+ #elif CONFIG_CONS_INDEX == 2 && defined(CONFIG_MACH_SUN8I) && \
+ 				!defined(CONFIG_MACH_SUN8I_R40)
+diff --git a/arch/riscv/dts/sunxi-d1s-t113.dtsi b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+index e32112972d..ff8c8d766f 100644
+--- a/arch/riscv/dts/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/dts/sunxi-d1s-t113.dtsi
+@@ -144,6 +144,12 @@
+ 				function = "uart3";
+ 			};
+ 
++			/omit-if-no-ref/
++			uart3_pe_pins: uart3-pe-pins {
++				pins = "PE8", "PE9";
++				function = "uart3";
++			};
++
+ 			/omit-if-no-ref/
+ 			uart0_pins: uart0-pins {
+ 				pins = "PE2", "PE3";
+diff --git a/drivers/pinctrl/sunxi/pinctrl-sunxi.c b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
+index 281d6a4249..3710757608 100644
+--- a/drivers/pinctrl/sunxi/pinctrl-sunxi.c
++++ b/drivers/pinctrl/sunxi/pinctrl-sunxi.c
+@@ -614,7 +614,11 @@ static const struct sunxi_pinctrl_function sun20i_d1_pinctrl_functions[] = {
+ #endif
+ 	{ "uart1",	2 },	/* PG6-PG7 */
+ 	{ "uart2",	7 },	/* PB0-PB1 */
++#if IS_ENABLED(CONFIG_UART3_PINS_E)
++	{ "uart3",	5 },	/* PE8-PE9 */
++#else
+ 	{ "uart3",	7 },	/* PB6-PB7 */
++#endif
+ 	{ "uart5",	3 },	/* PE6-PE7 */
+ };
+ 
+-- 
+2.20.1
+

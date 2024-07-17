@@ -1,0 +1,110 @@
+From 92c2cd5838666718cc55ee21f02e6959ab40e463 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sat, 3 Jun 2023 00:52:40 +0200
+Subject: [PATCH 4006/4018] sunxi: add support for MangoPI MQDual T113 variant
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/arm/dts/Makefile                         |  3 +-
+ .../dts/sun8i-t113s-mangopi-mqdual-t113.dts   | 50 +++++++++++++++++++
+ configs/mangopi_mqdual_t113_defconfig         | 17 +++++++
+ 3 files changed, 69 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/dts/sun8i-t113s-mangopi-mqdual-t113.dts
+ create mode 100644 configs/mangopi_mqdual_t113_defconfig
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 9d28a485be..440a6976d6 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -810,7 +810,8 @@ dtb-$(CONFIG_MACH_SUN8I_V3S) += \
+ 	sun8i-v3-sl631-imx179.dtb \
+ 	sun8i-v3s-licheepi-zero.dtb
+ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+-	sun8i-t113s-mangopi-mq-r-t113.dtb
++	sun8i-t113s-mangopi-mq-r-t113.dtb \
++	sun8i-t113s-mangopi-mqdual-t113.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+ 	sun50i-h5-emlid-neutis-n5-devboard.dtb \
+diff --git a/arch/arm/dts/sun8i-t113s-mangopi-mqdual-t113.dts b/arch/arm/dts/sun8i-t113s-mangopi-mqdual-t113.dts
+new file mode 100644
+index 0000000000..7de3ddb92f
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-mangopi-mqdual-t113.dts
+@@ -0,0 +1,50 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++#include "sunxi-d1s-t113-mangopi-mq-r.dtsi"
++
++/ {
++	model = "MangoPi MQDual T113";
++	compatible = "widora,mangopi-mqdual-t113", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial0 = &uart0;
++		ethernet0 = &rtl8189ftv;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&mmc1 {
++	rtl8189ftv: wifi@1 {
++		reg = <1>;
++		interrupt-parent = <&pio>;
++		interrupts = <6 10 IRQ_TYPE_LEVEL_LOW>; /* PG10 = WL_WAKE_AP */
++		interrupt-names = "host-wake";
++	};
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
++	status = "okay";
++};
++
++&uart3 {
++	status = "disabled";
++};
+diff --git a/configs/mangopi_mqdual_t113_defconfig b/configs/mangopi_mqdual_t113_defconfig
+new file mode 100644
+index 0000000000..98b90c55f4
+--- /dev/null
++++ b/configs/mangopi_mqdual_t113_defconfig
+@@ -0,0 +1,17 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-mangopi-mqdual-t113"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=1
++CONFIG_MMC0_CD_PIN="PF6"
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
+-- 
+2.20.1
+
