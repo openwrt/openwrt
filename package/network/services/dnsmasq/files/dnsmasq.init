@@ -1108,6 +1108,9 @@ dnsmasq_start()
 		[ "$addmac" = "1" ] && addmac=
 		xappend "--add-mac${addmac:+="$addmac"}"
 	}
+	append_bool "$cfg" stripmac "--strip-mac"
+	append_parm "$cfg" addsubnet "--add-subnet"
+	append_bool "$cfg" stripsubnet "--strip-subnet"
 
 	dhcp_option_add "$cfg" "" 0
 	dhcp_option_add "$cfg" "" 2
