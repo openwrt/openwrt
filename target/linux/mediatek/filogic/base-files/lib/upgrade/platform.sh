@@ -88,24 +88,13 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-poe|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7988a-rfb|\
-	openwrt,one)
-		[ -e /dev/fit0 ] && fitblk /dev/fit0
-		[ -e /dev/fitrw ] && fitblk /dev/fitrw
-		bootdev="$(fitblk_get_bootdev)"
-		case "$bootdev" in
-		mmcblk*)
-			EMMC_KERN_DEV="/dev/$bootdev"
-			emmc_do_upgrade "$1"
-			;;
-		mtdblock*)
-			PART_NAME="/dev/mtd${bootdev:8}"
-			default_do_upgrade "$1"
-			;;
-		ubiblock*)
-			CI_KERNPART="fit"
-			nand_do_upgrade "$1"
-			;;
-		esac
+	nokia,ea0326gmp|\
+	openwrt,one|\
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6086|\
+	tplink,tl-xdr6088|\
+	xiaomi,redmi-router-ax6000-ubootmod)
+		fit_do_upgrade "$1"
 		;;
 	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in
@@ -145,16 +134,6 @@ platform_do_upgrade() {
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
-		nand_do_upgrade "$1"
-		;;
-	nokia,ea0326gmp|\
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6086|\
-	tplink,tl-xdr6088|\
-	xiaomi,redmi-router-ax6000-ubootmod)
-		[ -e /dev/fit0 ] && fitblk /dev/fit0
-		[ -e /dev/fitrw ] && fitblk /dev/fitrw
-		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
 		;;
 	ubnt,unifi-6-plus)
