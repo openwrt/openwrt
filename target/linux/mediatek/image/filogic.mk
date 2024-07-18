@@ -1169,7 +1169,7 @@ TARGET_DEVICES += tplink_tl-xdr6088
 
 define Device/ubnt_unifi-6-plus
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_MODEL := UniFi 6 Plus
+  DEVICE_MODEL := UniFi U6+
   DEVICE_DTS := mt7981a-ubnt-unifi-6-plus
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware e2fsprogs f2fsck mkf2fs fdisk partx-utils
