@@ -27,6 +27,22 @@ define Device/iptime_a6004mx
 endef
 TARGET_DEVICES += iptime_a6004mx
 
+define Device/linksys_ea7500-v3
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA7500
+  DEVICE_VARIANT := v3
+  DEVICE_DTS := mt7629-linksys-ea7500-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 uboot-envtools
+  IMAGE_SIZE := 40m
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+endef
+TARGET_DEVICES += linksys_ea7500-v3
+
 define Device/netgear_ex6250-v2
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6250
