@@ -13,5 +13,8 @@ boot() {
 			exit 1
 		fi
 		;;
+	linksys,ea7500-v3)
+		mtd resetbc s_env || true
+		;;
 	esac
 }
