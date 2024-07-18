@@ -218,11 +218,9 @@ platform_copy_config() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe)
-		case "$(fitblk_get_bootdev)" in
-		mmcblk*)
+		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
-			;;
-		esac
+		fi
 		;;
 	acer,predator-w6|\
 	glinet,gl-mt2500|\

@@ -86,7 +86,7 @@ platform_check_image() {
 platform_copy_config() {
 	case "$(board_name)" in
 	bananapi,bpi-r64)
-		if fitblk_get_bootdev | grep -q mmc; then
+		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
 		fi
 		;;
