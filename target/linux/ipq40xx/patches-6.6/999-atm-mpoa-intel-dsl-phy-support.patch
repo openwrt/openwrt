@@ -4,7 +4,7 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
 
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -2953,6 +2953,22 @@ char *ppp_dev_name(struct ppp_channel *c
+@@ -2968,6 +2968,22 @@ char *ppp_dev_name(struct ppp_channel *c
  	return name;
  }
  
@@ -27,7 +27,7 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
  
  /*
   * Disconnect a channel from the generic layer.
-@@ -3599,6 +3615,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
+@@ -3614,6 +3630,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
  EXPORT_SYMBOL(ppp_channel_index);
  EXPORT_SYMBOL(ppp_unit_number);
  EXPORT_SYMBOL(ppp_dev_name);

@@ -276,9 +276,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		free_irq(ch->dma.irq, priv);
 -	if (IS_RX(ch->idx)) {
 +	if (ch == &priv->txch) {
- 		int desc;
+ 		struct ltq_dma_channel *dma = &ch->dma;
  
- 		for (desc = 0; desc < LTQ_DESC_NUM; desc++)
+ 		for (dma->desc = 0; dma->desc < LTQ_DESC_NUM; dma->desc++)
 @@ -228,80 +305,135 @@ static void
  ltq_etop_hw_exit(struct net_device *dev)
  {
