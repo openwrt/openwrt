@@ -1,0 +1,52 @@
+#!/bin/bash
+#!/bin/bash
+echo
+echo "this update script will delete contents of bin build_dir and tmp"
+echo "it will then hard reset git to head and update feeds"
+echo "finally it will create a new config seed and copy it to a new config"
+echo -e "\nPress a key to skip removing built reminants or C to continue "
+read -n1 -s -r  DELETE
+if [ "$DELETE" == "C" ] ; then
+	echo -e "\ncontinue"
+	echo "Removing built reminants now (progress removed to speed up processing)"
+	rm -rf bin build_dir tmp
+else
+  echo -e "\nskipped"
+fi
+
+echo -e "\nPress a key to skip git fetch and reset or C to continue"
+read -n1 -s -r GIT
+if [ "$GIT" == "C" ] ; then
+	echo -e "\ncontinue"
+	git fetch
+  git reset --hard origin/x80-5g
+else
+  echo
+  echo "skipped"
+fi
+
+echo -e "\nPress a key to skip updating feeds or C to continue"
+read -n1 -s -r GIT
+if [ "$GIT" == "C" ] ; then
+	echo -e "\ncontinue"
+	echo "downloading feeds now"
+	./scripts/feeds update -a
+	./scripts/feeds install -a
+
+else
+  echo -e "\nskipped"
+fi
+
+echo -e "\nPress a key to skip creation of default config or C to continue"
+read -n1 -s -r GIT
+if [ "$GIT" == "C" ] ; then
+	echo -e "\ncreating default config"
+	./scripts/diffconfig.sh >configdiff
+	cp configdiff .config
+	make defconfig
+
+else
+  echo -e "\nskipped"
+fi
+
+echo -e "\nAll done"

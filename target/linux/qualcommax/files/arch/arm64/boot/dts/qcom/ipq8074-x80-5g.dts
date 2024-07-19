@@ -1,0 +1,555 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2022, Robert Marko <robimarko@gmail.com> */
+/* altered by Jonathan Brophy <professor_jonny@hotmail.com> */
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "tplink x80-5g";
+	compatible = "tplink,x80-5g", "qcom,ipq8074";
+
+	aliases {
+		 //Aliases as required by u-boot to patch MAC addresses
+		 serial0 = &blsp1_uart5;
+ 		 ethernet0 = &dp5; // Aliases to capture wan mac from bootloader
+		 ethernet1 = &dp6_syn; // Aliases to capture lan mac  from bootloader (currently unused as mac patched from factory data partition)
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	modem {
+		compatible = "gpio-modem";
+		pinctrl-0 = <&modem_pins>;
+		pinctrl-names = "default";
+
+		w_disable {
+			label = "w_disable";
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>; // wwan disable output
+		};
+
+		modem-reset {
+			label = "modem_reset";
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>; // reset modem output
+		};
+	};
+
+		antennas {
+		compatible = "gpio-antenna";
+		pinctrl-0 = <&antenna_pins>;
+		pinctrl-names = "default";
+
+		ext_antenna_en {
+			label = "ext_antenna_en";
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>; // select external sma antennas for WWan output
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button@1 {
+			label = "reset";
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>; //reset button output
+			linux,code = <KEY_RESTART>; // Aliases for button to stitch to linux reset functioon
+		};
+	};
+
+	led_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>; //clock signal for spi connected led's
+		mosi-gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>; //serial data for spi connected led's
+
+		led_gpio: led_gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			enable-gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>; // powersupply for spi mux chip
+			spi-max-frequency = <1000000>;
+		};
+	};
+
+	phy-leds {
+		compatible = "gpio-leds";
+
+		led_wifi_son_green: led0 {
+			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_wifi_son_orange: led1 {
+			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_ORANGE>;
+		};
+
+		led_wifi_son_blue: led2 {
+			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+
+		led_2g: led3 {
+			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led_5gl: led4 {
+			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_5gh: led5 {
+			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_lan: led6 {
+			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_wan: led7 {
+			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "none";
+		};
+
+		led_10g_link: led8 {
+			gpios = <&led_gpio 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_sfp: led9 {
+			gpios = <&led_gpio 9 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_bt: led10 {
+			gpios = <&led_gpio 10 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led11 {
+			gpios = <&led_gpio 11 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_system_green: green {
+			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>; //green led output
+			color = <LED_COLOR_ID_GREEN>;/* pulsing  green updating firmware, solid green connected to 4G*/
+			default-state = "on";
+		};
+
+		led_system_red: red {
+			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>; //red led output
+			color = <LED_COLOR_ID_RED>; /* pulsing  red disconnected from Wan, solid red error*/
+			default-state = "on";
+		};
+
+		led_system_blue: blue {
+			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>; //blue led output
+			color = <LED_COLOR_ID_BLUE>; /* pulsing  blue is ready for setup or wps in in progress*/
+		};
+	};
+
+	gpio_fan: gpio-fan {
+		compatible = "gpio-fan";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		gpios = <&tlmm 42 GPIO_ACTIVE_LOW>, // fan gpio MSB
+						<&tlmm 41 GPIO_ACTIVE_LOW>,
+						<&tlmm 40 GPIO_ACTIVE_LOW>; // fan gpio LSB
+		/*
+		* Sunnon EF40201BX-Q18C-F99
+		* 6800 rpm
+		* gpio68 seemed to be the feedback rpm of the fan?
+		* no support for fan speed in kernel.
+		*/
+		//rpm-gpios = <&tlmm 68 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <0	   0>, // speed 0 binary drive bits 0,0,0 (idle state)
+												 <971	 1>, // speed 1 binary drive bits 0,0,1      ▼
+												 <1942 2>, // speed 3 binary drive bits 0,1,0 (active state)
+												 <2913 3>, // speed 4 binary drive bits 0,1,1      ▼
+												 <3884 4>, // speed 5 binary drive bits 1,0,0      ▼
+												 <4855 5>, // speed 6 binary drive bits 1,0,1 (high state)
+												 <5826 6>, // speed 7 binary drive bits 1,1,0      ▼
+												 <6800 7>; // speed 8 binary drive bits 1,1,1      ▼
+		//alarm-gpios = <&tlmm XX GPIO_ACTIVE_HIGH>;
+		cooling-min-level = <0>; // minimum speed allowable to be set via thermal
+		cooling-max-level = <7>; // max speed allowable to be set via thermal
+		#cooling-cells = <2>;  /* min followed by max */
+	};
+};
+
+&cpu0_thermal {
+	trips {
+		cpu0_high: cpu-high {
+			temperature = <70000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu0_active: cpu-active {
+			temperature = <50000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu0_idle: cpu-idle {
+			temperature = <25000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu0_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>; // minimum and maxium states of the cooling device
+		};
+		map3 {
+			trip = <&cpu0_active>;
+			cooling-device = <&gpio_fan 2 4>; // minimum and maxium states of the cooling device
+		};
+		map4 {
+			trip = <&cpu0_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>; // minimum and maxium states of the cooling device
+		};
+	};
+};
+
+&cpu1_thermal {
+	trips {
+		cpu1_high: cpu-high {
+			temperature = <70000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu1_active: cpu-active {
+			temperature = <50000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu1_idle: cpu-idle {
+			temperature = <25000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu1_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>; // minimum and maxium states of the cooling device
+		};
+		map3 {
+			trip = <&cpu1_active>;
+			cooling-device = <&gpio_fan 2 4>; // minimum and maxium states of the cooling device
+		};
+		map4 {
+			trip = <&cpu1_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>; // minimum and maxium states of the cooling device
+		};
+	};
+};
+
+&cpu2_thermal {
+	trips {
+		cpu2_high: cpu-high {
+			temperature = <70000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu2_active: cpu-active {
+			temperature = <50000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu2_idle: cpu-idle {
+			temperature = <25000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu2_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>; // minimum and maxium states of the cooling device
+		};
+		map3 {
+			trip = <&cpu2_active>;
+			cooling-device = <&gpio_fan 2 4>; // minimum and maxium states of the cooling device
+		};
+		map4 {
+			trip = <&cpu2_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>; // minimum and maxium states of the cooling device
+		};
+	};
+};
+
+&cpu3_thermal {
+	trips {
+		cpu3_high: cpu-high {
+			temperature = <70000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu3_active: cpu-active {
+			temperature = <50000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cpu3_idle: cpu-idle {
+			temperature = <25000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu3_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>; // minimum and maxium states of the cooling device
+		};
+		map3 {
+			trip = <&cpu3_active>;
+			cooling-device = <&gpio_fan 2 4>; // minimum and maxium states of the cooling device
+		};
+		map4 {
+			trip = <&cpu3_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>; // minimum and maxium states of the cooling device
+		};
+	};
+};
+
+
+&cluster_thermal {
+	trips {
+		cluster_high: cluster-high {
+			temperature = <70000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cluster_active: cluster-active {
+			temperature = <50000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+		cluster_idle: cluster-idle {
+			temperature = <25000>; // temp tripping point in millidegrees Celsius
+			hysteresis = <2000>; // dead band in millidegrees Celsius to avoid windup
+			type = "active"; // active to indicate active cooling device
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cluster_high>;
+			cooling-device = <&gpio_fan 5 THERMAL_NO_LIMIT>; // minimum and maxium states of the cooling device
+		};
+		map3 {
+			trip = <&cluster_active>;
+			cooling-device = <&gpio_fan 2 4>; // minimum and maxium states of the cooling device
+		};
+		map4 {
+			trip = <&cluster_idle>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT 1>; // minimum and maxium states of the cooling device
+		};
+	};
+};
+
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio27";
+		function = "gpio";
+		drive-strength = <2>;  //set 2ma max drive on reset button
+		bias-pull-up; // set pullup for reset button
+	};
+
+	fan_pins: fan-state {
+		pins = "gpio40", "gpio41", "gpio42";
+		function = "gpio";
+		drive-strength = <2>;  //set 2ma max drive on fan pins
+		bias-disable; // disaable bias for fan outputs
+	};
+
+	antenna_pins: antenna-state {
+		ext_antenna_en {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <2>;  //set 2ma max drive on antenna pins
+			bias-disable;  // disaable bias for external antenna control
+		};
+	};
+
+	modem_pins: modem-state {
+		modem_reset {
+			pins = "gpio29";
+			function = "gpio";
+			drive-strength = <2>; //set 2ma max drive on modem reset
+			bias-disable; // disaable bias for modem reset control
+		};
+
+		w_disable {
+			pins = "gpio55";
+			function = "gpio";
+			drive-strength = <2>;  //set 2ma max drive on modem reset
+			bias-disable;  // disaable bias for modem wan disable control
+		};
+	};
+
+	led_pins: led-state {
+		pins = "gpio50", "gpio51", "gpio52";
+		function = "gpio";
+		drive-strength = <8>;  //set ama max drive on led pins
+		bias-disable; // disaable bias for modem wan disable control
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay"; // enable msm high speed uart
+};
+
+&cryptobam {
+	status = "okay"; // enable dma controller
+};
+
+&crypto {
+	status = "okay";
+};
+
+&prng {
+	status = "okay"; // enable Pseudo-Random Number Generator
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay"; // enable nand controller
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay"; // enable first usb3 controller
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	qca8033: ethernet-phy@4 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x4>;
+	};
+
+	qca8081: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	};
+};
+
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <ESS_PORT6>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
+
+	qcom,port_phyinfo {
+		port@6 {
+			port_id = <6>;
+			phy_address = <4>;
+		};
+		port@5 {
+			port_id = <5>;
+			phy_address = <28>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp5 {
+	status = "okay"; // enable wan port
+	phy-handle = <&qca8081>;
+	label = "wan";
+};
+
+&dp6_syn {
+	status = "okay"; // enable lan port
+	phy-handle = <&qca8033>;
+	label = "lan";
+};
+
+&wifi {
+	status = "okay"; // enable wifi
+	qcom,ath11k-calibration-variant = "tplink_x80-5g";
+};

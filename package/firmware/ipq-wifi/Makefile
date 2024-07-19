@@ -5,10 +5,10 @@ PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2024-07-04
-PKG_SOURCE_VERSION:=fcdb2e74a6e4518266679292071c8f47f87b4df2
-PKG_MIRROR_HASH:=bfa2388468eb74221c7d1696089bb8ad3ca2b3b27ebff657f1962a6bbe6ccc11
+PKG_SOURCE_URL=https://github.com/professor-jonny/firmware_qca-wireless.git
+#PKG_SOURCE_DATE:=2024-07-04
+PKG_SOURCE_VERSION:=d319537d26e9be2b2b4b1d7f8ff16bcbaadca4aa
+# PKG_MIRROR_HASH:=bfa2388468eb74221c7d1696089bb8ad3ca2b3b27ebff657f1962a6bbe6ccc11
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -52,6 +52,7 @@ ALLWIFIBOARDS:= \
 	qnap_301w \
 	redmi_ax6 \
 	spectrum_sax1v1k \
+	tplink_x80-5g \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
@@ -180,6 +181,7 @@ $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
+$(eval $(call generate-ipq-wifi-package,tplink_x80-5g,tplink x80-5g))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))

@@ -64,7 +64,8 @@ platform_do_upgrade() {
 	netgear,sxs80|\
 	netgear,wax218|\
 	netgear,wax620|\
-	netgear,wax630)
+	netgear,wax630|\
+	tplink,x80-5g)
 		nand_do_upgrade "$1"
 		;;
 	asus,rt-ax89x)
