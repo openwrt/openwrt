@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
+
 define Device/Default-emmc
   $(Device/Default-arm32)
   FILESYSTEMS += squashfs ext4
@@ -28,7 +29,7 @@ endef
 
 define Device/Default-nandflash
   $(Device/Default-arm32)
-  FILESYSTEMS += squashfs ubifs
+  FILESYSTEMS += squashfs
   IMAGES := boot.img rootfs.img
   IMAGE/rootfs.img := append-ubi
   IMAGE/boot.img := resource-img | boot-arm-bin
@@ -42,6 +43,7 @@ define Device/luckfox_pico-max
   SUPPORTED_DEVICES := luckfox,pico-max
   SOC := rv1106
   MKUBIFS_OPTS := -m 2048 -e 124KiB -c 2114
+  UBINIZE_OPTS := -E 5
   DEVICE_DTS := rv1106g-luckfox-pico-pro-max
   UBOOT_DEVICE_NAME := rv1106-sfc
   IMAGES += sysupgrade.img.gz
