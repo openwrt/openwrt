@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <dt-bindings/leds/rtl838x-leds.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
 #include <net/nexthop.h>
@@ -1687,6 +1688,80 @@ void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
+static void rtl838x_led_init(struct rtl838x_switch_priv *priv)
+{
+	struct device_node *node;
+
+	// ins
+	u32 leds_per_port = RTL838x_NUM_LEDS_NO_LEDS;
+	u32 led_control_mode = RTL838x_LEDS_CONTROL_LEDS_DISABLED;
+	u32 pwr_on_blink = false;
+	u32 led_modes[3];
+
+	// outs
+	u32 led_glb_ctrl = 0x0;
+	u32 led_mode_sel = 0x0;
+	u32 led_p_en_ctrl = 0x0;
+	u32 led_mode_ctrl = 0x0;
+
+	pr_info("%s\n", __func__);
+
+	// read config from device tree
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-leds");
+	if (!node) {
+		pr_info("%s No compatible LED node found\n", __func__);
+		return;
+	}
+
+	of_property_read_u32(node, "leds-per-port", &leds_per_port);
+	of_property_read_u32(node, "led-control", &led_control_mode);
+	pwr_on_blink = of_property_read_bool(node, "power-on-blink");
+
+	for(int i = 0; i < 3; i++) {
+		u32 led_mode;
+		char prop_name[13];
+		snprintf(prop_name, 13, "led-%d-mode", i);
+
+		led_mode = RTL838x_LEDS_MODE_DISABLED;
+		of_property_read_u32(node, prop_name, &led_mode);
+		led_modes[i] = led_mode;
+	}
+
+	pr_info("leds_per_port=0x%02x led_control_mode=0x%02x pwr_on_blink=%d "
+		"led_modes[0]=%d, led_modes[1]=%d led_modes[2]=%d",
+		leds_per_port, led_control_mode, pwr_on_blink,
+		led_modes[0], led_modes[1], led_modes[2]);
+
+	// calculate register values
+	led_glb_ctrl = (leds_per_port<<3) + leds_per_port;
+	led_mode_sel = (pwr_on_blink<<2) + led_control_mode;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		led_p_en_ctrl |= (1<<i);
+	}
+	led_mode_ctrl =
+		(led_modes[2] << 25) |
+		(led_modes[1] << 20) |
+		(led_modes[0] << 15) |
+		(led_modes[2] << 10) |
+		(led_modes[1] <<  5) |
+		(led_modes[0] <<  0);
+
+	pr_info("led_glb_ctrl=0x%08x led_mode_sel=0x%08x "
+		"led_p_en_ctrl=%08x led_mode_ctrl=0x%08x",
+		led_glb_ctrl, led_mode_sel,
+		led_p_en_ctrl, led_mode_ctrl);
+
+	// write registers out
+	sw_w32_mask(0x3F, led_glb_ctrl, RTL838X_LED_GLB_CTRL);
+	sw_w32(led_mode_sel, RTL838X_LED_MODE_SEL);
+	sw_w32(led_mode_ctrl, RTL838X_LED_MODE_CTRL);
+	sw_w32(led_p_en_ctrl, RTL838X_LED_P_EN_CTRL);
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1772,6 +1847,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.l3_setup = rtl838x_l3_setup,
 	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
+	.led_init = rtl838x_led_init,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
