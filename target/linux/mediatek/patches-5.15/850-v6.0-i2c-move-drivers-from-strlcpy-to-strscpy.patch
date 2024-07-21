@@ -436,7 +436,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	pm_runtime_use_autosuspend(qup->dev);
 --- a/drivers/i2c/busses/i2c-rcar.c
 +++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -1059,7 +1059,7 @@ static int rcar_i2c_probe(struct platfor
+@@ -1068,7 +1068,7 @@ static int rcar_i2c_probe(struct platfor
  	adap->bus_recovery_info = &rcar_i2c_bri;
  	adap->quirks = &rcar_i2c_quirks;
  	i2c_set_adapdata(adap, priv);

@@ -97,7 +97,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-4-kernel@kempniu.pl
  	return ret;
 --- a/drivers/mtd/nand/raw/nand_base.c
 +++ b/drivers/mtd/nand/raw/nand_base.c
-@@ -3815,6 +3815,7 @@ static int nand_read_oob(struct mtd_info
+@@ -3822,6 +3822,7 @@ static int nand_read_oob(struct mtd_info
  			 struct mtd_oob_ops *ops)
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -105,7 +105,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-4-kernel@kempniu.pl
  	int ret;
  
  	ops->retlen = 0;
-@@ -3826,11 +3827,20 @@ static int nand_read_oob(struct mtd_info
+@@ -3833,11 +3834,20 @@ static int nand_read_oob(struct mtd_info
  
  	nand_get_device(chip);
  

@@ -372,7 +372,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #ifdef __KERNEL__
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -469,6 +469,7 @@ assign_new_owner:
+@@ -471,6 +471,7 @@ assign_new_owner:
  		goto retry;
  	}
  	WRITE_ONCE(mm->owner, c);

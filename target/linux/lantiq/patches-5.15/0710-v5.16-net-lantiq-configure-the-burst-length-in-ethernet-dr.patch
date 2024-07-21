@@ -34,7 +34,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int tx_irq;
  	int rx_irq;
  
-@@ -399,7 +402,7 @@ ltq_etop_dma_init(struct net_device *dev
+@@ -400,7 +403,7 @@ ltq_etop_dma_init(struct net_device *dev
  	int rx = priv->rx_irq - LTQ_DMA_ETOP;
  	int err;
  
@@ -43,7 +43,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	priv->txch.dma.nr = tx;
  	priv->txch.dma.dev = &priv->pdev->dev;
-@@ -676,8 +679,8 @@ ltq_etop_tx(struct sk_buff *skb, struct
+@@ -677,8 +680,8 @@ ltq_etop_tx(struct sk_buff *skb, struct
  		return NETDEV_TX_BUSY;
  	}
  
@@ -54,7 +54,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	priv->txch.skb[priv->txch.dma.desc] = skb;
  
  	netif_trans_update(dev);
-@@ -925,6 +928,18 @@ static int ltq_etop_probe(struct platfor
+@@ -926,6 +929,18 @@ static int ltq_etop_probe(struct platfor
  	spin_lock_init(&priv->lock);
  	SET_NETDEV_DEV(dev, &pdev->dev);
  

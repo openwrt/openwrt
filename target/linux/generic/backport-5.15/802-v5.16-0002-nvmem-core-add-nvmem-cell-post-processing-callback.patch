@@ -30,7 +30,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	struct gpio_desc	*wp_gpio;
  	void *priv;
  };
-@@ -799,6 +800,7 @@ struct nvmem_device *nvmem_register(cons
+@@ -798,6 +799,7 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->type = config->type;
  	nvmem->reg_read = config->reg_read;
  	nvmem->reg_write = config->reg_write;
@@ -38,7 +38,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	nvmem->keepout = config->keepout;
  	nvmem->nkeepout = config->nkeepout;
  	if (config->of_node)
-@@ -1441,6 +1443,13 @@ static int __nvmem_cell_read(struct nvme
+@@ -1440,6 +1442,13 @@ static int __nvmem_cell_read(struct nvme
  	if (cell->bit_offset || cell->nbits)
  		nvmem_shift_read_buffer_in_place(cell, buf);
  

@@ -56,7 +56,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static DEFINE_MUTEX(nvmem_mutex);
  static DEFINE_IDA(nvmem_ida);
  
-@@ -424,7 +428,7 @@ static struct bus_type nvmem_bus_type =
+@@ -423,7 +427,7 @@ static struct bus_type nvmem_bus_type =
  	.name		= "nvmem",
  };
  
@@ -65,7 +65,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	blocking_notifier_call_chain(&nvmem_notifier, NVMEM_CELL_REMOVE, cell);
  	mutex_lock(&nvmem_mutex);
-@@ -437,13 +441,13 @@ static void nvmem_cell_drop(struct nvmem
+@@ -436,13 +440,13 @@ static void nvmem_cell_drop(struct nvmem
  
  static void nvmem_device_remove_all_cells(const struct nvmem_device *nvmem)
  {
@@ -82,7 +82,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	mutex_lock(&nvmem_mutex);
  	list_add_tail(&cell->node, &cell->nvmem->cells);
-@@ -451,9 +455,9 @@ static void nvmem_cell_add(struct nvmem_
+@@ -450,9 +454,9 @@ static void nvmem_cell_add(struct nvmem_
  	blocking_notifier_call_chain(&nvmem_notifier, NVMEM_CELL_ADD, cell);
  }
  
@@ -95,7 +95,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	cell->nvmem = nvmem;
  	cell->offset = info->offset;
-@@ -477,13 +481,13 @@ static int nvmem_cell_info_to_nvmem_cell
+@@ -476,13 +480,13 @@ static int nvmem_cell_info_to_nvmem_cell
  	return 0;
  }
  
@@ -113,7 +113,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (err)
  		return err;
  
-@@ -507,7 +511,7 @@ static int nvmem_add_cells(struct nvmem_
+@@ -506,7 +510,7 @@ static int nvmem_add_cells(struct nvmem_
  		    const struct nvmem_cell_info *info,
  		    int ncells)
  {
@@ -122,7 +122,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	int i, rval;
  
  	cells = kcalloc(ncells, sizeof(*cells), GFP_KERNEL);
-@@ -521,13 +525,13 @@ static int nvmem_add_cells(struct nvmem_
+@@ -520,13 +524,13 @@ static int nvmem_add_cells(struct nvmem_
  			goto err;
  		}
  
@@ -138,7 +138,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	}
  
  	/* remove tmp array */
-@@ -536,7 +540,7 @@ static int nvmem_add_cells(struct nvmem_
+@@ -535,7 +539,7 @@ static int nvmem_add_cells(struct nvmem_
  	return 0;
  err:
  	while (i--)
@@ -147,7 +147,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	kfree(cells);
  
-@@ -573,7 +577,7 @@ static int nvmem_add_cells_from_table(st
+@@ -572,7 +576,7 @@ static int nvmem_add_cells_from_table(st
  {
  	const struct nvmem_cell_info *info;
  	struct nvmem_cell_table *table;
@@ -156,7 +156,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	int rval = 0, i;
  
  	mutex_lock(&nvmem_cell_mutex);
-@@ -588,15 +592,13 @@ static int nvmem_add_cells_from_table(st
+@@ -587,15 +591,13 @@ static int nvmem_add_cells_from_table(st
  					goto out;
  				}
  
@@ -174,7 +174,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  			}
  		}
  	}
-@@ -606,10 +608,10 @@ out:
+@@ -605,10 +607,10 @@ out:
  	return rval;
  }
  
@@ -188,7 +188,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	mutex_lock(&nvmem_mutex);
  	list_for_each_entry(iter, &nvmem->cells, node) {
-@@ -680,7 +682,7 @@ static int nvmem_add_cells_from_of(struc
+@@ -679,7 +681,7 @@ static int nvmem_add_cells_from_of(struc
  {
  	struct device_node *parent, *child;
  	struct device *dev = &nvmem->dev;
@@ -197,7 +197,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	const __be32 *addr;
  	int len;
  
-@@ -729,7 +731,7 @@ static int nvmem_add_cells_from_of(struc
+@@ -728,7 +730,7 @@ static int nvmem_add_cells_from_of(struc
  		}
  
  		cell->np = of_node_get(child);
@@ -206,7 +206,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	}
  
  	return 0;
-@@ -1142,9 +1144,33 @@ struct nvmem_device *devm_nvmem_device_g
+@@ -1141,9 +1143,33 @@ struct nvmem_device *devm_nvmem_device_g
  }
  EXPORT_SYMBOL_GPL(devm_nvmem_device_get);
  
@@ -240,7 +240,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	struct nvmem_cell *cell = ERR_PTR(-ENOENT);
  	struct nvmem_cell_lookup *lookup;
  	struct nvmem_device *nvmem;
-@@ -1169,11 +1195,15 @@ nvmem_cell_get_from_lookup(struct device
+@@ -1168,11 +1194,15 @@ nvmem_cell_get_from_lookup(struct device
  				break;
  			}
  
@@ -259,7 +259,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  			}
  			break;
  		}
-@@ -1184,10 +1214,10 @@ nvmem_cell_get_from_lookup(struct device
+@@ -1183,10 +1213,10 @@ nvmem_cell_get_from_lookup(struct device
  }
  
  #if IS_ENABLED(CONFIG_OF)
@@ -273,7 +273,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	mutex_lock(&nvmem_mutex);
  	list_for_each_entry(iter, &nvmem->cells, node) {
-@@ -1217,6 +1247,7 @@ struct nvmem_cell *of_nvmem_cell_get(str
+@@ -1216,6 +1246,7 @@ struct nvmem_cell *of_nvmem_cell_get(str
  {
  	struct device_node *cell_np, *nvmem_np;
  	struct nvmem_device *nvmem;
@@ -281,7 +281,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	struct nvmem_cell *cell;
  	int index = 0;
  
-@@ -1237,12 +1268,16 @@ struct nvmem_cell *of_nvmem_cell_get(str
+@@ -1236,12 +1267,16 @@ struct nvmem_cell *of_nvmem_cell_get(str
  	if (IS_ERR(nvmem))
  		return ERR_CAST(nvmem);
  
@@ -300,7 +300,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	return cell;
  }
  EXPORT_SYMBOL_GPL(of_nvmem_cell_get);
-@@ -1348,13 +1383,17 @@ EXPORT_SYMBOL(devm_nvmem_cell_put);
+@@ -1347,13 +1382,17 @@ EXPORT_SYMBOL(devm_nvmem_cell_put);
   */
  void nvmem_cell_put(struct nvmem_cell *cell)
  {
@@ -320,7 +320,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	u8 *p, *b;
  	int i, extra, bit_offset = cell->bit_offset;
-@@ -1388,8 +1427,8 @@ static void nvmem_shift_read_buffer_in_p
+@@ -1387,8 +1426,8 @@ static void nvmem_shift_read_buffer_in_p
  }
  
  static int __nvmem_cell_read(struct nvmem_device *nvmem,
@@ -331,7 +331,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	int rc;
  
-@@ -1420,18 +1459,18 @@ static int __nvmem_cell_read(struct nvme
+@@ -1419,18 +1458,18 @@ static int __nvmem_cell_read(struct nvme
   */
  void *nvmem_cell_read(struct nvmem_cell *cell, size_t *len)
  {
@@ -353,7 +353,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (rc) {
  		kfree(buf);
  		return ERR_PTR(rc);
-@@ -1441,7 +1480,7 @@ void *nvmem_cell_read(struct nvmem_cell
+@@ -1440,7 +1479,7 @@ void *nvmem_cell_read(struct nvmem_cell
  }
  EXPORT_SYMBOL_GPL(nvmem_cell_read);
  
@@ -362,7 +362,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  					     u8 *_buf, int len)
  {
  	struct nvmem_device *nvmem = cell->nvmem;
-@@ -1494,16 +1533,7 @@ err:
+@@ -1493,16 +1532,7 @@ err:
  	return ERR_PTR(rc);
  }
  
@@ -380,7 +380,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	struct nvmem_device *nvmem = cell->nvmem;
  	int rc;
-@@ -1529,6 +1559,21 @@ int nvmem_cell_write(struct nvmem_cell *
+@@ -1528,6 +1558,21 @@ int nvmem_cell_write(struct nvmem_cell *
  
  	return len;
  }
@@ -402,7 +402,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  EXPORT_SYMBOL_GPL(nvmem_cell_write);
  
  static int nvmem_cell_read_common(struct device *dev, const char *cell_id,
-@@ -1631,7 +1676,7 @@ static const void *nvmem_cell_read_varia
+@@ -1630,7 +1675,7 @@ static const void *nvmem_cell_read_varia
  	if (IS_ERR(cell))
  		return cell;
  
@@ -411,7 +411,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	buf = nvmem_cell_read(cell, len);
  	nvmem_cell_put(cell);
  	if (IS_ERR(buf))
-@@ -1727,18 +1772,18 @@ EXPORT_SYMBOL_GPL(nvmem_cell_read_variab
+@@ -1726,18 +1771,18 @@ EXPORT_SYMBOL_GPL(nvmem_cell_read_variab
  ssize_t nvmem_device_cell_read(struct nvmem_device *nvmem,
  			   struct nvmem_cell_info *info, void *buf)
  {
@@ -433,7 +433,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (rc)
  		return rc;
  
-@@ -1758,17 +1803,17 @@ EXPORT_SYMBOL_GPL(nvmem_device_cell_read
+@@ -1757,17 +1802,17 @@ EXPORT_SYMBOL_GPL(nvmem_device_cell_read
  int nvmem_device_cell_write(struct nvmem_device *nvmem,
  			    struct nvmem_cell_info *info, void *buf)
  {

@@ -29,7 +29,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
-@@ -646,23 +646,30 @@ static struct gpio_desc *of_parse_own_gp
+@@ -698,23 +698,30 @@ static struct gpio_desc *of_parse_own_gp
   * of_gpiochip_add_hog - Add all hogs in a hog device node
   * @chip:	gpio chip to act on
   * @hog:	device node describing the hogs
@@ -62,7 +62,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		ret = gpiod_hog(desc, name, lflags, dflags);
  		if (ret < 0)
  			return ret;
-@@ -678,12 +685,15 @@ static int of_gpiochip_add_hog(struct gp
+@@ -730,12 +737,15 @@ static int of_gpiochip_add_hog(struct gp
  /**
   * of_gpiochip_scan_gpios - Scan gpio-controller for gpio definitions
   * @chip:	gpio chip to act on
@@ -81,7 +81,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  {
  	struct device_node *np;
  	int ret;
-@@ -692,7 +702,7 @@ static int of_gpiochip_scan_gpios(struct
+@@ -744,7 +754,7 @@ static int of_gpiochip_scan_gpios(struct
  		if (!of_property_read_bool(np, "gpio-hog"))
  			continue;
  
@@ -90,7 +90,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (ret < 0) {
  			of_node_put(np);
  			return ret;
-@@ -758,7 +768,7 @@ static int of_gpio_notify(struct notifie
+@@ -810,7 +820,7 @@ static int of_gpio_notify(struct notifie
  		if (chip == NULL)
  			return NOTIFY_OK;	/* not for us */
  
@@ -99,7 +99,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (ret < 0) {
  			pr_err("%s: failed to add hogs for %pOF\n", __func__,
  			       rd->dn);
-@@ -1037,9 +1047,11 @@ int of_gpiochip_add(struct gpio_chip *ch
+@@ -1089,9 +1099,11 @@ int of_gpiochip_add(struct gpio_chip *ch
  
  	of_node_get(chip->of_node);
  
