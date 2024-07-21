@@ -278,6 +278,10 @@ struct rtl8367b_initval {
 #define RTL8367D_DI_FORCE_REG(_x)		(RTL8367D_REG_MAC0_FORCE_SELECT + (_x) + 5)
 #define RTL8367D_DI_FORCE_REG_EN(_x)		(RTL8367D_REG_MAC0_FORCE_SELECT_EN + (_x) + 5)
 
+#define RTL8367D_VLAN_PVID_CTRL_REG(_p)		(0x0700 + (_p))
+#define RTL8367D_VLAN_PVID_CTRL_MASK		0xfff
+#define RTL8367D_VLAN_PVID_CTRL_SHIFT(_p)	0
+
 #define RTL8367B_SPEED_10		0
 #define RTL8367B_SPEED_100		1
 #define RTL8367B_SPEED_1000		2
@@ -1050,10 +1054,17 @@ static int rtl8367b_get_mc_index(struct rtl8366_smi *smi, int port, int *val)
 	if (port >= RTL8367B_NUM_PORTS)
 		return -EINVAL;
 
-	REG_RD(smi, RTL8367B_VLAN_PVID_CTRL_REG(port), &data);
+	if (smi->rtl8367b_chip >= RTL8367B_CHIP_RTL8367S_VB) { /* Family D */
+		REG_RD(smi, RTL8367D_VLAN_PVID_CTRL_REG(port), &data);
 
-	*val = (data >> RTL8367B_VLAN_PVID_CTRL_SHIFT(port)) &
-	       RTL8367B_VLAN_PVID_CTRL_MASK;
+		*val = (data >> RTL8367D_VLAN_PVID_CTRL_SHIFT(port)) &
+			RTL8367D_VLAN_PVID_CTRL_MASK;
+	} else {
+		REG_RD(smi, RTL8367B_VLAN_PVID_CTRL_REG(port), &data);
+
+		*val = (data >> RTL8367B_VLAN_PVID_CTRL_SHIFT(port)) &
+			RTL8367B_VLAN_PVID_CTRL_MASK;
+	}
 
 	return 0;
 }
@@ -1063,7 +1074,14 @@ static int rtl8367b_set_mc_index(struct rtl8366_smi *smi, int port, int index)
 	if (port >= RTL8367B_NUM_PORTS || index >= RTL8367B_NUM_VLANS)
 		return -EINVAL;
 
-	return rtl8366_smi_rmwr(smi, RTL8367B_VLAN_PVID_CTRL_REG(port),
+	if (smi->rtl8367b_chip >= RTL8367B_CHIP_RTL8367S_VB) /* Family D */
+		return rtl8366_smi_rmwr(smi, RTL8367D_VLAN_PVID_CTRL_REG(port),
+				RTL8367D_VLAN_PVID_CTRL_MASK <<
+					RTL8367D_VLAN_PVID_CTRL_SHIFT(port),
+				(index & RTL8367D_VLAN_PVID_CTRL_MASK) <<
+					RTL8367D_VLAN_PVID_CTRL_SHIFT(port));
+	else
+		return rtl8366_smi_rmwr(smi, RTL8367B_VLAN_PVID_CTRL_REG(port),
 				RTL8367B_VLAN_PVID_CTRL_MASK <<
 					RTL8367B_VLAN_PVID_CTRL_SHIFT(port),
 				(index & RTL8367B_VLAN_PVID_CTRL_MASK) <<
