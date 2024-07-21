@@ -129,7 +129,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	new = kzalloc(size, GFP_KERNEL);
-@@ -3394,8 +3394,11 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3395,8 +3395,11 @@ cfg80211_beacon_dup(struct cfg80211_beac
  
  	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
  	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +

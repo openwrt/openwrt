@@ -17,7 +17,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -2344,6 +2344,35 @@ static int ieee80211_reconfig_nan(struct
+@@ -2348,6 +2348,35 @@ static int ieee80211_reconfig_nan(struct
  	return 0;
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  int ieee80211_reconfig(struct ieee80211_local *local)
  {
  	struct ieee80211_hw *hw = &local->hw;
-@@ -2606,7 +2635,13 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2610,7 +2639,13 @@ int ieee80211_reconfig(struct ieee80211_
  			changed |= BSS_CHANGED_IBSS;
  			fallthrough;
  		case NL80211_IFTYPE_AP:
@@ -68,7 +68,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  			if (sdata->vif.bss_conf.ftm_responder == 1 &&
  			    wiphy_ext_feature_isset(sdata->local->hw.wiphy,
-@@ -2616,6 +2651,13 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2620,6 +2655,13 @@ int ieee80211_reconfig(struct ieee80211_
  			if (sdata->vif.type == NL80211_IFTYPE_AP) {
  				changed |= BSS_CHANGED_AP_PROBE_RESP;
  

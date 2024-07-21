@@ -485,7 +485,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct {
  		u8 id;
  		u8 len;
-@@ -2542,7 +2542,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2546,7 +2546,7 @@ int ieee80211_reconfig(struct ieee80211_
  			continue;
  
  		sdata_lock(sdata);
@@ -494,7 +494,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			struct ieee80211_bss_conf *old[IEEE80211_MLD_MAX_NUM_LINKS] = {
  				[0] = &sdata->vif.bss_conf,
  			};
-@@ -2562,7 +2562,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2566,7 +2566,7 @@ int ieee80211_reconfig(struct ieee80211_
  		for (link_id = 0;
  		     link_id < ARRAY_SIZE(sdata->vif.link_conf);
  		     link_id++) {
@@ -503,7 +503,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			    !(sdata->vif.active_links & BIT(link_id)))
  				continue;
  
-@@ -2594,12 +2594,12 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2598,12 +2598,12 @@ int ieee80211_reconfig(struct ieee80211_
  		if (sdata->vif.bss_conf.mu_mimo_owner)
  			changed |= BSS_CHANGED_MU_GROUPS;
  
@@ -518,7 +518,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				changed |= BSS_CHANGED_ASSOC |
  					   BSS_CHANGED_ARP_FILTER |
  					   BSS_CHANGED_PS;
-@@ -2637,7 +2637,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2641,7 +2641,7 @@ int ieee80211_reconfig(struct ieee80211_
  		case NL80211_IFTYPE_AP:
  			changed |= BSS_CHANGED_P2P_PS;
  
@@ -527,7 +527,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				ieee80211_vif_cfg_change_notify(sdata,
  								BSS_CHANGED_SSID);
  			else
-@@ -2651,7 +2651,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2655,7 +2655,7 @@ int ieee80211_reconfig(struct ieee80211_
  			if (sdata->vif.type == NL80211_IFTYPE_AP) {
  				changed |= BSS_CHANGED_AP_PROBE_RESP;
  

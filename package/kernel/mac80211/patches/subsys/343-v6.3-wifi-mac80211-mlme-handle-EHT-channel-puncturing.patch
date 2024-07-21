@@ -62,7 +62,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	bool mu_mimo_owner;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4195,7 +4195,7 @@ static int ieee80211_set_ap_chanwidth(st
+@@ -4196,7 +4196,7 @@ static int ieee80211_set_ap_chanwidth(st
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_link_data *link;
  	int ret;
@@ -84,7 +84,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct ieee80211_bss_conf *link_conf = link->conf;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2497,7 +2497,7 @@ int ieee80211_link_unreserve_chanctx(str
+@@ -2499,7 +2499,7 @@ int ieee80211_link_unreserve_chanctx(str
  int __must_check
  ieee80211_link_change_bandwidth(struct ieee80211_link_data *link,
  				const struct cfg80211_chan_def *chandef,

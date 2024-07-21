@@ -157,7 +157,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return STA_STATS_RATE_INVALID;
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3898,6 +3898,19 @@ u64 ieee80211_calculate_rx_timestamp(str
+@@ -3902,6 +3902,19 @@ u64 ieee80211_calculate_rx_timestamp(str
  
  	/* Fill cfg80211 rate info */
  	switch (status->encoding) {
