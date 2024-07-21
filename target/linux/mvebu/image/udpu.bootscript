@@ -23,7 +23,7 @@ if test ${fdt_add_r}; then
 	setenv fdt_addr_r 0x4f00000
 fi
 
-setenv console 'console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000'
+setenv console 'console=ttyMV0,115200 earlycon=ar3700_uart,0xd0012000 rootfs_mount_options.compress_algorithm=zstd'
 setenv bootargs ${console} $rootdev rw rootwait
 
 load mmc ${mmcdev}:1 ${fdt_addr_r} @DTB@.dtb

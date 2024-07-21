@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbpf
-PKG_VERSION:=1.4.2
+PKG_VERSION:=1.4.3
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/libbpf
-PKG_MIRROR_HASH:=eaf56a8d4297a1dfb477d91b4fb7c7c5ad6b6df73e0f7ac3c8fd93f2664c2e85
+PKG_MIRROR_HASH:=53f2f290fced9663da309e9e03ddcb0b176a47d39d61639c74dbc555d6b979a8
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v1.4.2
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>

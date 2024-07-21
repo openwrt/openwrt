@@ -95,7 +95,7 @@
        &(dsl_cpe_api_version[4]));
  
     DSL_DRV_MemSet( ifxDevices, 0, sizeof(DSL_devCtx_t) * DSL_DRV_MAX_DEVICE_NUMBER );
-@@ -1124,7 +1099,7 @@ static int __devinit ltq_adsl_probe(stru
+@@ -1128,7 +1103,7 @@ static int __devinit ltq_adsl_probe(stru
     return 0;
  }
  
@@ -104,7 +104,7 @@
  {
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
-@@ -1169,7 +1144,7 @@ MODULE_DEVICE_TABLE(of, ltq_adsl_match);
+@@ -1173,7 +1148,7 @@ MODULE_DEVICE_TABLE(of, ltq_adsl_match);
  
  static struct platform_driver ltq_adsl_driver = {
  	.probe = ltq_adsl_probe,

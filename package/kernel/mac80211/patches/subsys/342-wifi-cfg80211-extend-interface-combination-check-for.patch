@@ -1,0 +1,172 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Jun 2024 21:01:50 +0200
+Subject: [PATCH] wifi: cfg80211: extend interface combination check for
+ multi-radio
+
+Add a field in struct iface_combination_params to check per-radio
+interface combinations instead of per-wiphy ones.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1598,6 +1598,7 @@ struct cfg80211_color_change_settings {
+  *
+  * Used to pass interface combination parameters
+  *
++ * @radio_idx: wiphy radio index or -1 for global
+  * @num_different_channels: the number of different channels we want
+  *	to use for verification
+  * @radar_detect: a bitmap where each bit corresponds to a channel
+@@ -1611,6 +1612,7 @@ struct cfg80211_color_change_settings {
+  *	the verification
+  */
+ struct iface_combination_params {
++	int radio_idx;
+ 	int num_different_channels;
+ 	u8 radar_detect;
+ 	int iftype_num[NUM_NL80211_IFTYPES];
+@@ -4579,6 +4581,8 @@ struct mgmt_frame_regs {
+  *
+  * @set_hw_timestamp: Enable/disable HW timestamping of TM/FTM frames.
+  * @set_ttlm: set the TID to link mapping.
++ * @get_radio_mask: get bitmask of radios in use.
++ *	(invoked with the wiphy mutex held)
+  */
+ struct cfg80211_ops {
+ 	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
+@@ -4940,6 +4944,7 @@ struct cfg80211_ops {
+ 				    struct cfg80211_set_hw_timestamp *hwts);
+ 	int	(*set_ttlm)(struct wiphy *wiphy, struct net_device *dev,
+ 			    struct cfg80211_ttlm_params *params);
++	u32	(*get_radio_mask)(struct wiphy *wiphy, struct net_device *dev);
+ };
+ 
+ /*
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -3930,6 +3930,7 @@ int ieee80211_check_combinations(struct
+ 	int total = 1;
+ 	struct iface_combination_params params = {
+ 		.radar_detect = radar_detect,
++		.radio_idx = -1,
+ 	};
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+@@ -4020,7 +4021,9 @@ int ieee80211_max_num_channels(struct ie
+ 	struct ieee80211_chanctx *ctx;
+ 	u32 max_num_different_channels = 1;
+ 	int err;
+-	struct iface_combination_params params = {0};
++	struct iface_combination_params params = {
++		.radio_idx = -1,
++	};
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+--- a/net/wireless/rdev-ops.h
++++ b/net/wireless/rdev-ops.h
+@@ -1542,4 +1542,16 @@ rdev_set_ttlm(struct cfg80211_registered
+ 
+ 	return ret;
+ }
++
++static inline u32
++rdev_get_radio_mask(struct cfg80211_registered_device *rdev,
++		    struct net_device *dev)
++{
++	struct wiphy *wiphy = &rdev->wiphy;
++
++	if (!rdev->ops->get_radio_mask)
++		return 0;
++
++	return rdev->ops->get_radio_mask(wiphy, dev);
++}
+ #endif /* __CFG80211_RDEV_OPS */
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -2305,13 +2305,16 @@ static int cfg80211_wdev_bi(struct wirel
+ 
+ static void cfg80211_calculate_bi_data(struct wiphy *wiphy, u32 new_beacon_int,
+ 				       u32 *beacon_int_gcd,
+-				       bool *beacon_int_different)
++				       bool *beacon_int_different,
++				       int radio_idx)
+ {
++	struct cfg80211_registered_device *rdev;
+ 	struct wireless_dev *wdev;
+ 
+ 	*beacon_int_gcd = 0;
+ 	*beacon_int_different = false;
+ 
++	rdev = wiphy_to_rdev(wiphy);
+ 	list_for_each_entry(wdev, &wiphy->wdev_list, list) {
+ 		int wdev_bi;
+ 
+@@ -2319,6 +2322,11 @@ static void cfg80211_calculate_bi_data(s
+ 		if (wdev->valid_links)
+ 			continue;
+ 
++		/* skip wdevs not active on the given wiphy radio */
++		if (radio_idx >= 0 &&
++		    !(rdev_get_radio_mask(rdev, wdev->netdev) & BIT(radio_idx)))
++			continue;
++
+ 		wdev_bi = cfg80211_wdev_bi(wdev);
+ 
+ 		if (!wdev_bi)
+@@ -2366,14 +2374,19 @@ int cfg80211_iter_combinations(struct wi
+ 					    void *data),
+ 			       void *data)
+ {
++	const struct wiphy_radio *radio = NULL;
++	const struct ieee80211_iface_combination *c, *cs;
+ 	const struct ieee80211_regdomain *regdom;
+ 	enum nl80211_dfs_regions region = 0;
+-	int i, j, iftype;
++	int i, j, n, iftype;
+ 	int num_interfaces = 0;
+ 	u32 used_iftypes = 0;
+ 	u32 beacon_int_gcd;
+ 	bool beacon_int_different;
+ 
++	if (params->radio_idx >= 0)
++		radio = &wiphy->radio[params->radio_idx];
++
+ 	/*
+ 	 * This is a bit strange, since the iteration used to rely only on
+ 	 * the data given by the driver, but here it now relies on context,
+@@ -2385,7 +2398,8 @@ int cfg80211_iter_combinations(struct wi
+ 	 * interfaces (while being brought up) and channel/radar data.
+ 	 */
+ 	cfg80211_calculate_bi_data(wiphy, params->new_beacon_int,
+-				   &beacon_int_gcd, &beacon_int_different);
++				   &beacon_int_gcd, &beacon_int_different,
++				   params->radio_idx);
+ 
+ 	if (params->radar_detect) {
+ 		rcu_read_lock();
+@@ -2402,13 +2416,18 @@ int cfg80211_iter_combinations(struct wi
+ 			used_iftypes |= BIT(iftype);
+ 	}
+ 
+-	for (i = 0; i < wiphy->n_iface_combinations; i++) {
+-		const struct ieee80211_iface_combination *c;
++	if (radio) {
++		cs = radio->iface_combinations;
++		n = radio->n_iface_combinations;
++	} else {
++		cs = wiphy->iface_combinations;
++		n = wiphy->n_iface_combinations;
++	}
++	for (i = 0; i < n; i++) {
+ 		struct ieee80211_iface_limit *limits;
+ 		u32 all_iftypes = 0;
+ 
+-		c = &wiphy->iface_combinations[i];
+-
++		c = &cs[i];
+ 		if (num_interfaces > c->max_interfaces)
+ 			continue;
+ 		if (params->num_different_channels > c->num_different_channels)

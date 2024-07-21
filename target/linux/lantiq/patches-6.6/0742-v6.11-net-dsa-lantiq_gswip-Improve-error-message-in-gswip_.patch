@@ -1,0 +1,30 @@
+From 3b0a95ed7782dce88a5ef4860dcaab962cec9527 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:34 +0200
+Subject: net: dsa: lantiq_gswip: Improve error message in gswip_port_fdb()
+
+Print that no FID is found for bridge %s instead of the incorrect
+message that the port is not part of a bridge.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-13-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1363,7 +1363,8 @@ static int gswip_port_fdb(struct dsa_swi
+ 	}
+ 
+ 	if (fid == -1) {
+-		dev_err(priv->dev, "Port not part of a bridge\n");
++		dev_err(priv->dev, "no FID found for bridge %s\n",
++			bridge->name);
+ 		return -EINVAL;
+ 	}
+ 

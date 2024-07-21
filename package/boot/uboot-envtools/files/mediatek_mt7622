@@ -31,17 +31,16 @@ dlink,eagle-pro-ai-m32-a1|\
 dlink,eagle-pro-ai-r32-a1)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
 	;;
+bananapi,bpi-r64|\
 linksys,e8450-ubi)
-	ubootenv_add_ubi_default
-	;;
-bananapi,bpi-r64)
-	. /lib/upgrade/common.sh
-	bootdev="$(fitblk_get_bootdev)"
-	case "$bootdev" in
-	mmc*)
-		ubootenv_add_mmc_default "${bootdev%p[0-9]*}"
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	case "$CI_METHOD" in
+	emmc)
+		bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+		ubootenv_add_mmc_default "${bootdev#/dev/}"
 		;;
-	ubi*)
+	ubi)
 		ubootenv_add_ubi_default
 		;;
 	esac

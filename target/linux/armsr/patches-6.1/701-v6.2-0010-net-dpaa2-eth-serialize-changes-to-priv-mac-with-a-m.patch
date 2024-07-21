@@ -121,7 +121,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return -EOPNOTSUPP;
  }
-@@ -4454,7 +4474,9 @@ static int dpaa2_eth_connect_mac(struct
+@@ -4458,7 +4478,9 @@ static int dpaa2_eth_connect_mac(struct
  			goto err_close_mac;
  	}
  
@@ -131,7 +131,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return 0;
  
-@@ -4467,9 +4489,12 @@ err_free_mac:
+@@ -4471,9 +4493,12 @@ err_free_mac:
  
  static void dpaa2_eth_disconnect_mac(struct dpaa2_eth_priv *priv)
  {
@@ -145,7 +145,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (!mac)
  		return;
-@@ -4488,6 +4513,7 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4492,6 +4517,7 @@ static irqreturn_t dpni_irq0_handler_thr
  	struct fsl_mc_device *dpni_dev = to_fsl_mc_device(dev);
  	struct net_device *net_dev = dev_get_drvdata(dev);
  	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
@@ -153,7 +153,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int err;
  
  	err = dpni_get_irq_status(dpni_dev->mc_io, 0, dpni_dev->mc_handle,
-@@ -4505,7 +4531,12 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4509,7 +4535,12 @@ static irqreturn_t dpni_irq0_handler_thr
  		dpaa2_eth_update_tx_fqids(priv);
  
  		rtnl_lock();
@@ -167,7 +167,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			dpaa2_eth_disconnect_mac(priv);
  		else
  			dpaa2_eth_connect_mac(priv);
-@@ -4606,6 +4637,8 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4610,6 +4641,8 @@ static int dpaa2_eth_probe(struct fsl_mc
  	priv = netdev_priv(net_dev);
  	priv->net_dev = net_dev;
  

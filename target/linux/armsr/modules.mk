@@ -288,6 +288,21 @@ define KernelPackage/octeontx2-net
 endef
 $(eval $(call KernelPackage,octeontx2-net))
 
+define KernelPackage/renesas-net-avb
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Renesas network drivers
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-mii +kmod-ptp +kmod-libphy +kmod-mdio-gpio
+  KCONFIG:=CONFIG_RAVB
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/renesas/ravb.ko
+  AUTOLOAD:=$(call AutoProbe,ravb)
+endef
+ 
+define KernelPackage/renesas-net-avb/description
+  Support Renesas RZ platform Ethernet module
+endef
+ 
+$(eval $(call KernelPackage,renesas-net-avb))
+
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ARM SP805 Watchdog

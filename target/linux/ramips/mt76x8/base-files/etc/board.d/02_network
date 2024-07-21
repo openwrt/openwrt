@@ -8,6 +8,8 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	7links,wlr-1230|\
+	7links,wlr-1240|\
 	alfa-network,awusfree1|\
 	d-team,pbr-d1|\
 	dlink,dap-1325-a1|\
@@ -94,7 +96,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
-	cudy,tr1200)
+	cudy,tr1200-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
 		;;

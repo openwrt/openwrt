@@ -87,7 +87,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -170,7 +170,7 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@168c,0029 {
 		compatible = "pci168c,0029";

@@ -1,7 +1,6 @@
-From 57fa7f2f4ef6f78ce1d30509c0d111aa3791b524 Mon Sep 17 00:00:00 2001
 From: Daniel Santos <daniel.santos@pobox.com>
 Date: Sun, 4 Nov 2018 20:24:32 -0600
-Subject: gpio-ralink: Add support for GPIO as interrupt-controller
+Subject: [PATCH 3/3] gpio-ralink: Add support for GPIO as interrupt-controller
 
 Signed-off-by: Daniel Santos <daniel.santos@pobox.com>
 ---
@@ -11,17 +10,17 @@ Signed-off-by: Daniel Santos <daniel.santos@pobox.com>
 
 --- a/Documentation/devicetree/bindings/gpio/gpio-ralink.txt
 +++ b/Documentation/devicetree/bindings/gpio/gpio-ralink.txt
-@@ -17,6 +17,9 @@ Required properties:
- 
- Optional properties:
- - ralink,gpio-base : Specify the GPIO chips base number
+@@ -14,6 +14,9 @@ Required properties:
+ - ralink,register-map : The register layout depends on the GPIO bank and actual
+ 		SoC type. Register offsets need to be in this order.
+ 		[ INT, EDGE, RENA, FENA, DATA, DIR, POL, SET, RESET, TOGGLE ]
 +- interrupt-controller : marks this as an interrupt controller
 +- #interrupt-cells : a standard two-cell interrupt flag, see
 +  interrupt-controller/interrupts.txt
  
  Example:
  
-@@ -28,6 +31,9 @@ Example:
+@@ -25,6 +28,9 @@ Example:
  
  		reg = <0x600 0x34>;
  
@@ -33,7 +32,7 @@ Signed-off-by: Daniel Santos <daniel.santos@pobox.com>
  
 --- a/drivers/gpio/gpio-ralink.c
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -220,7 +220,7 @@ static int gpio_map(struct irq_domain *d
+@@ -174,7 +174,7 @@ static int gpio_map(struct irq_domain *d
  }
  
  static const struct irq_domain_ops irq_domain_ops = {

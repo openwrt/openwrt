@@ -1,6 +1,6 @@
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
-@@ -114,6 +114,17 @@ config FIREBOX_T10
+@@ -114,6 +114,18 @@ config FIREBOX_T10
  	  This board is a VPN Gateway-Router with a
  	  Freescale P1010 SoC.
  
@@ -9,6 +9,7 @@
 +	select DEFAULT_UIMAGE
 +	select ARCH_REQUIRE_GPIOLIB
 +	select GPIO_MPC8XXX
++	select PPC_ZIMAGE_LA3000000
 +	help
 +	  This option enables support for the HPE MSM460 board.
 +

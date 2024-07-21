@@ -45,7 +45,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 29 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -99,7 +99,7 @@
 
 &pci0 {
 	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
 
 &usb_phy {

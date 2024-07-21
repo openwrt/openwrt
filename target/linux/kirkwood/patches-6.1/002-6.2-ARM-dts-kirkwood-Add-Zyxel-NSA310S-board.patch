@@ -160,7 +160,7 @@ Signed-off-by: Gregory CLEMENT <gregory.clement@bootlin.com>
 +		regulator-max-microvolt = <5000000>;
 +		regulator-always-on;
 +		regulator-boot-on;
-+		gpio = <&gpio0 21 GPIO_ACTIVE_HIGH>;
++		gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 +	};
 +
 +	sata1_power: regulator@2 {
@@ -171,7 +171,7 @@ Signed-off-by: Gregory CLEMENT <gregory.clement@bootlin.com>
 +		regulator-max-microvolt = <5000000>;
 +		regulator-always-on;
 +		regulator-boot-on;
-+		gpio = <&gpio1 1 GPIO_ACTIVE_HIGH>;
++		gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 +	};
 +
 +	thermal-zones {

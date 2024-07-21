@@ -31,12 +31,14 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -274,4 +274,6 @@ source "drivers/mtd/ubi/Kconfig"
+@@ -274,6 +274,8 @@ source "drivers/mtd/ubi/Kconfig"
  
  source "drivers/mtd/nvmxip/Kconfig"
  
 +source "drivers/mtd/nmbm/Kconfig"
 +
+ endif
+ 
  endmenu
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile

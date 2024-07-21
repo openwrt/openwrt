@@ -8,15 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
-PKG_VERSION:=2.1.6
-PKG_RELEASE:=2
+PKG_VERSION:=2.2.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/
-PKG_HASH:=c1d853bc4adf83bcabd2792fc95af33bdd8643c97e8f7b3f0180af36af76f0e5
+PKG_HASH:=250d082f67375ca8451b5fcfc9a23a53ced3ebebd8312c288daf2507bbab1324
 
 PKG_INSTALL:=1
-PKG_FIXUP:=autoreconf
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=gc-sections
@@ -63,7 +62,8 @@ CONFIGURE_ARGS += \
 	--without-crypto \
 	--without-xattr \
 	--without-zstd \
-	--without-lzo
+	--without-lzo \
+	--without-zlib
 
 define Package/ubi-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin

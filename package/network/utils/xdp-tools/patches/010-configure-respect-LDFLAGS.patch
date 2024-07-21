@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
+@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
      return 0;
  }
  EOF
@@ -9,16 +9,16 @@
      if [ "$?" -eq "0" ]; then
          echo "HAVE_PCAP:=y" >>$CONFIG
          [ -n "$LIBPCAP_CFLAGS" ] && echo 'CFLAGS += ' $LIBPCAP_CFLAGS >> $CONFIG
-@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
+@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
      return 0;
  }
  EOF
--    libbpf_err=$($CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS 2>&1)
-+    libbpf_err=$($CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS 2>&1)
+-    compile_cmd="$CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS"
++    compile_cmd="$CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS"
+     libbpf_err=$($compile_cmd 2>&1)
      if [ "$?" -eq "0" ]; then
          echo "HAVE_FEATURES+=${config_var}" >>"$CONFIG"
-         echo "yes"
-@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
+@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
  }
  EOF
  

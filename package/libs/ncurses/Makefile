@@ -82,6 +82,7 @@ CONFIGURE_VARS += \
 HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
+	--enable-pc-files \
 	--without-cxx \
 	--without-cxx-binding \
 	--without-ada \
@@ -125,6 +126,7 @@ ifneq ($(HOST_OS),FreeBSD)
 		a/ansi \
 		a/alacritty \
 		d/dumb \
+		f/foot \
 		l/linux \
 		r/rxvt \
 		r/rxvt-unicode \

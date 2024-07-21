@@ -531,6 +531,7 @@ define Device/tplink_rex5x-v1
   SOC := qca9558
   IMAGE_SIZE := 6016k
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEFAULT := n
 endef
 
 define Device/tplink_re355-v1
@@ -560,6 +561,7 @@ define Device/tplink_re450-v2
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
   TPLINK_BOARD_ID := RE450-V2
   LOADER_TYPE := elf
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_re450-v2
 

@@ -17,7 +17,7 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
 
 --- a/lib/common.mk
 +++ b/lib/common.mk
-@@ -108,12 +108,12 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
+@@ -111,12 +111,12 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
  	$(QUIET_CLANG)$(CLANG) -S \
  	    -target $(BPF_TARGET) \
  	    -D __BPF_TRACING__ \
@@ -33,7 +33,7 @@ Signed-off-by: Andre Heider <a.heider@gmail.com>
  
 --- a/lib/libxdp/Makefile
 +++ b/lib/libxdp/Makefile
-@@ -139,12 +139,12 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
+@@ -138,12 +138,12 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
  	$(QUIET_CLANG)$(CLANG) -S \
  	    -target $(BPF_TARGET) \
  	    -D __BPF_TRACING__ \

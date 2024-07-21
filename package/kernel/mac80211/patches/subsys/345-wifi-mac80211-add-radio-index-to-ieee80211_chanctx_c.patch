@@ -1,0 +1,66 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 5 Jun 2024 10:41:34 +0200
+Subject: [PATCH] wifi: mac80211: add radio index to
+ ieee80211_chanctx_conf
+
+Will be used to explicitly assign a channel context to a wiphy radio.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -250,6 +250,7 @@ struct ieee80211_chan_req {
+  * @min_def: the minimum channel definition currently required.
+  * @ap: the channel definition the AP actually is operating as,
+  *	for use with (wider bandwidth) OFDMA
++ * @radio_idx: index of the wiphy radio used used for this channel
+  * @rx_chains_static: The number of RX chains that must always be
+  *	active on the channel to receive MIMO transmissions
+  * @rx_chains_dynamic: The number of RX chains that must be enabled
+@@ -264,6 +265,7 @@ struct ieee80211_chanctx_conf {
+ 	struct cfg80211_chan_def min_def;
+ 	struct cfg80211_chan_def ap;
+ 
++	int radio_idx;
+ 	u8 rx_chains_static, rx_chains_dynamic;
+ 
+ 	bool radar_enabled;
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -623,7 +623,8 @@ ieee80211_chanctx_radar_required(struct
+ static struct ieee80211_chanctx *
+ ieee80211_alloc_chanctx(struct ieee80211_local *local,
+ 			const struct ieee80211_chan_req *chanreq,
+-			enum ieee80211_chanctx_mode mode)
++			enum ieee80211_chanctx_mode mode,
++			int radio_idx)
+ {
+ 	struct ieee80211_chanctx *ctx;
+ 
+@@ -641,6 +642,7 @@ ieee80211_alloc_chanctx(struct ieee80211
+ 	ctx->conf.rx_chains_dynamic = 1;
+ 	ctx->mode = mode;
+ 	ctx->conf.radar_enabled = false;
++	ctx->conf.radio_idx = radio_idx;
+ 	_ieee80211_recalc_chanctx_min_def(local, ctx, NULL);
+ 
+ 	return ctx;
+@@ -680,7 +682,7 @@ ieee80211_new_chanctx(struct ieee80211_l
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	ctx = ieee80211_alloc_chanctx(local, chanreq, mode);
++	ctx = ieee80211_alloc_chanctx(local, chanreq, mode, -1);
+ 	if (!ctx)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -1098,7 +1100,7 @@ int ieee80211_link_reserve_chanctx(struc
+ 			    !list_empty(&curr_ctx->reserved_links))
+ 				return -EBUSY;
+ 
+-			new_ctx = ieee80211_alloc_chanctx(local, chanreq, mode);
++			new_ctx = ieee80211_alloc_chanctx(local, chanreq, mode, -1);
+ 			if (!new_ctx)
+ 				return -ENOMEM;
+ 

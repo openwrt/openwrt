@@ -55,7 +55,6 @@
 
 	rtl8367rb {
 		compatible = "realtek,rtl8367b";
-		cpu_port = <6>;
 		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
 		mii-bus = <&mdio0>;
 	};
@@ -71,9 +70,6 @@
 &ethernet {
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-
-	nvmem-cells = <&macaddr_rom_f100 0>;
-	nvmem-cell-names = "mac-address";
 
 	port@5 {
 		status = "okay";

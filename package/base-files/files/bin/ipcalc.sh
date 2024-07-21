@@ -111,6 +111,8 @@ start=$((network | (start & hostmask)))
 
 if [ "$prefix" -le 30 ]; then
     upper=$(((network | hostmask) - 1))
+elif [ "$prefix" -eq 31 ]; then
+    upper=$((network | hostmask))
 else
     upper="$network"
 fi

@@ -1,0 +1,45 @@
+From f905e9a03cdf8edf6fa719ba89f37e6138c33834 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Tue, 21 Nov 2023 11:44:38 -0800
+Subject: [PATCH 408/413] 6.9: arm64: dts: imx8mm-venice-gw7901: add TPM device
+
+Add the TPM device found on the GW7901 revision D PCB.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
+@@ -285,7 +285,8 @@
+ &ecspi1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_spi1>;
+-	cs-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>;
++	cs-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>,
++		   <&gpio4 24 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
+ 
+ 	flash@0 {
+@@ -294,6 +295,12 @@
+ 		spi-max-frequency = <40000000>;
+ 		status = "okay";
+ 	};
++
++	tpm@1 {
++		compatible = "tcg,tpm_tis-spi";
++		reg = <0x1>;
++		spi-max-frequency = <36000000>;
++	};
+ };
+ 
+ &fec1 {
+@@ -989,6 +996,7 @@
+ 			MX8MM_IOMUXC_ECSPI1_MOSI_ECSPI1_MOSI	0x82
+ 			MX8MM_IOMUXC_ECSPI1_MISO_ECSPI1_MISO	0x82
+ 			MX8MM_IOMUXC_ECSPI1_SS0_GPIO5_IO9	0x140
++			MX8MM_IOMUXC_SAI2_TXFS_GPIO4_IO24	0x140
+ 		>;
+ 	};
+ 

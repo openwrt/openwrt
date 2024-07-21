@@ -125,7 +125,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  #ifdef IN_UNIPHY
  static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
  {
-@@ -1347,6 +1373,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *
+@@ -1354,6 +1380,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *
  	rv = ssdk_dt_parse_access_mode(switch_node, ssdk_dt_priv);
  	SW_RTN_ON_ERROR(rv);
  	ssdk_dt_parse_mac_mode(*dev_id, switch_node, cfg);

@@ -101,6 +101,9 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
+		nvmem-cells = <&macaddr_factory_2a 0>;
+		nvmem-cell-names = "mac-address";
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -113,6 +116,9 @@
 		reg = <1>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy6>;
+
+		nvmem-cells = <&macaddr_factory_24 0>;
+		nvmem-cell-names = "mac-address";
 	};
 
 	mdio: mdio-bus {
@@ -166,7 +172,34 @@
 
 		block {
 			compatible = "block-device";
+
 			partitions {
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						macaddr_factory_24: macaddr@24 {
+							compatible = "mac-base";
+							reg = <0x24 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+
+						macaddr_factory_2a: macaddr@2a {
+							compatible = "mac-base";
+							reg = <0x2a 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
 				emmc_rootdisk: block-partition-production {
 					partname = "production";
 				};
@@ -304,6 +337,8 @@
 };
 
 &wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	status = "okay";

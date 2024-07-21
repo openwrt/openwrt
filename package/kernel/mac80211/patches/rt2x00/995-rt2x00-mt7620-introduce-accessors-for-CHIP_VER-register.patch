@@ -49,9 +49,9 @@
 +static int rt2800pci_get_chipeco(void) { return 0; }
 +
  static const struct ieee80211_ops rt2800pci_mac80211_ops = {
- 	.tx			= rt2x00mac_tx,
- 	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
-@@ -329,6 +333,9 @@ static const struct rt2800_ops rt2800pci
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -333,6 +337,9 @@ static const struct rt2800_ops rt2800pci
  	.drv_init_registers	= rt2800mmio_init_registers,
  	.drv_get_txwi		= rt2800mmio_get_txwi,
  	.drv_get_dma_done	= rt2800mmio_get_dma_done,
@@ -102,9 +102,9 @@
 +#endif
 +
  static const struct ieee80211_ops rt2800soc_mac80211_ops = {
- 	.tx			= rt2x00mac_tx,
- 	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
-@@ -161,6 +188,9 @@ static const struct rt2800_ops rt2800soc
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -165,6 +192,9 @@ static const struct rt2800_ops rt2800soc
  	.drv_init_registers	= rt2800mmio_init_registers,
  	.drv_get_txwi		= rt2800mmio_get_txwi,
  	.drv_get_dma_done	= rt2800mmio_get_dma_done,
@@ -125,9 +125,9 @@
 +static int rt2800usb_get_chipeco(void) { return 0; }
 +
  static const struct ieee80211_ops rt2800usb_mac80211_ops = {
- 	.tx			= rt2x00mac_tx,
- 	.wake_tx_queue		= ieee80211_handle_wake_tx_queue,
-@@ -672,6 +676,9 @@ static const struct rt2800_ops rt2800usb
+ 	.add_chanctx = ieee80211_emulate_add_chanctx,
+ 	.remove_chanctx = ieee80211_emulate_remove_chanctx,
+@@ -676,6 +680,9 @@ static const struct rt2800_ops rt2800usb
  	.drv_init_registers	= rt2800usb_init_registers,
  	.drv_get_txwi		= rt2800usb_get_txwi,
  	.drv_get_dma_done	= rt2800usb_get_dma_done,

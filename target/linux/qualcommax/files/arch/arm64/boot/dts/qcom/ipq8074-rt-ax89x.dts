@@ -1,0 +1,741 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2024, Robert Marko <robimarko@gmail.com> */
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Asus RT-AX89X";
+	compatible = "asus,rt-ax89x", "qcom,ipq8074";
+
+	aliases {
+		serial0 = &blsp1_uart5;
+		mdio-gpio0 = &mdio1;
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+		ethernet4 = &dp5_syn;
+		ethernet5 = &dp6_syn;
+		led-boot = &led_pwr;
+		led-failsafe = &led_pwr;
+		led-running = &led_pwr;
+		led-upgrade = &led_pwr;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/* We have to override root and ubi device passed by bootloader */
+		bootargs-append = " ubi.block=0,jffs2 root=/dev/ubiblock0_4";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wifi-button {
+			label = "wifi";
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+		};
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps-button {
+			label = "wps";
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		led-button {
+			label = "led";
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_pwr: led-pwr {
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+
+		led-2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		led-5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led-10g-copper {
+			function = "aqr10g";
+			gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+
+		led-lan {
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+
+		led-sfp {
+			function = "sfp";
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+
+		led-wan-red {
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+		led-wan-white {
+			function = LED_FUNCTION_WAN;
+			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+	};
+
+	gpio_fan: gpio-fan {
+		compatible = "gpio-fan";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		gpios = <&tlmm 64 GPIO_ACTIVE_HIGH
+			 &tlmm 66 GPIO_ACTIVE_HIGH>;
+		/*
+		 * Not supported upstream, but good to document for
+		 * future uses.
+		 * It seems that Delta AFB0712VHB fan has its tacho
+		 * output connected to GPIO 65.
+		 */
+		//rpm-gpios = <&tlmm 65 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <    0 0
+				          1600 1
+				          1850 2
+				          2100 3 >;
+		#cooling-cells = <2>;
+	};
+
+	usb0_vbus: regulator-usb0-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb0_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb1_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	output-usb0-power {
+		compatible = "regulator-output";
+		vout-supply = <&usb0_vbus>;
+	};
+
+	output-usb1-power {
+		compatible = "regulator-output";
+		vout-supply = <&usb1_vbus>;
+	};
+};
+
+&cpu0_thermal {
+	trips {
+		cpu0_active: cpu-active {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu0_active>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu1_thermal {
+	trips {
+		cpu1_active: cpu-active {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu1_active>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu2_thermal {
+	trips {
+		cpu2_active: cpu-active {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu2_active>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu3_thermal {
+	trips {
+		cpu3_active: cpu-active {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cpu3_active>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cluster_thermal {
+	trips {
+		cluster_active: cluster-active {
+			temperature = <70000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map2 {
+			trip = <&cluster_active>;
+			cooling-device = <&gpio_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio25", "gpio26", "gpio34", "gpio61";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	i2c_pins: i2c-pins {
+		pins = "gpio42", "gpio43";
+		function = "blsp1_i2c";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <16>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <16>;
+			bias-pull-up;
+		};
+	};
+
+	mdio_gpio_pins: mdio-gpio-pins {
+		pins = "gpio54", "gpio56";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	uniphy_pins: uniphy_pinmux {
+		mux {
+			pins = "gpio60";
+			function = "rx2";
+			bias-disable;
+		};
+
+		sfp_tx_disable {
+			pins = "gpio48";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		sfp_tx_fault {
+			pins = "gpio62";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-high;
+		};
+
+		sfp_mod_def0 {
+			pins = "gpio46";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led-state {
+		power {
+			pins = "gpio21";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		default_off {
+			pins = "gpio18", "gpio19", "gpio20", "gpio47",
+			       "gpio44", "gpio35", "gpio36";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	fan_pins: fan-state {
+		pins = "gpio64", "gpio66";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-disable;
+		output-high;
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_1 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay";
+};
+
+&usb_1 {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:sbl1";
+				reg = <0x0 0x60000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:mibib";
+				reg = <0x00060000 0x40000>;
+				read-only;
+			};
+
+			partition@a0000 {
+				label = "0:qsee";
+				reg = <0x000a0000 0x1e0000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:devcfg";
+				reg = <0x00280000 0x20000>;
+				read-only;
+			};
+
+			partition@2a0000 {
+				label = "0:apdp";
+				reg = <0x002a0000 0x20000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				label = "0:rpm";
+				reg = <0x002c0000 0x40000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:cdt";
+				reg = <0x00300000 0x20000>;
+				read-only;
+			};
+
+			partition@320000 {
+				label = "0:appsbl";
+				reg = <0x00320000 0xc0000>;
+				read-only;
+			};
+
+			partition@3e0000 {
+				label = "0:appsblenv";
+				reg = <0x003e0000 0x20000>;
+			};
+
+			partition@400000 {
+				compatible = "linux,ubi";
+				label = "UBI_DEV";
+				reg = <0x00400000 0xfc00000>;
+			};
+		};
+	};
+};
+
+&blsp1_i2c2 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	qca8337_0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x0>;
+	};
+
+	qca8337_1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x1>;
+	};
+
+	qca8337_2: ethernet-phy@2 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x2>;
+	};
+
+	qca8337_3: ethernet-phy@3 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x3>;
+	};
+
+	qca8337_4: ethernet-phy@4 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x4>;
+	};
+
+	/*
+	 * Vendor bootloader has path for ethernet-phy@5 hardcoded
+	 * and if its there it will delete the node, but since we
+	 * need the QCA8035 for DSA lets fool the bootloader by using
+	 * ethernet-phy@05 even though it causes DTC to print a warning.
+	 */
+	qca8035: ethernet-phy@05 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x5>;
+	};
+
+	qca8033: ethernet-phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x6>;
+	};
+
+	ethernet-phy-package@8 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <8>;
+
+		qcom,package-mode = "qsgmii";
+
+		qca8075_8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x8>;
+		};
+
+		qca8075_9: ethernet-phy@9 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x9>;
+		};
+
+		qca8075_a: ethernet-phy@a {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0xa>;
+		};
+
+		qca8075_b: ethernet-phy@b {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0xb>;
+		};
+	};
+
+	qca8337: switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&dp1>;
+				phy-mode = "rgmii-rxid";
+				phy-handle = <&qca8035>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan7";
+				phy-handle = <&qca8337_0>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan6";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan5";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan3";
+				phy-handle = <&qca8337_4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "lan8";
+				phy-mode = "sgmii";
+				phy-handle = <&qca8033>;
+				managed = "in-band-status";
+				qca,sgmii-enable-pll;
+			};
+		};
+	};
+};
+
+&soc {
+	/*
+	 * This is techically incorrect and will cause a DTC warning as
+	 * all nodes under a bus are supposed to have addresses as well
+	 * but its required as bootloader has this path hardcoded in
+	 * order to enable AQR113C on newer revisions.
+	 */
+	mdio1: mdio1 {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-0 = <&mdio_gpio_pins>;
+		pinctrl-names = "default";
+		gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>,
+			<&tlmm 54 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * PCB R5.00, AQR113C
+		 * No idea why the bitbanged this one.
+		 * @5 is wrong, but their bootloader has it hardcoded in
+		 * order to dynamically enable the PHY for newer HW.
+		 */
+		aqr113c: ethernet-phy@5 {
+			status = "disabled";
+			compatible ="ethernet-phy-ieee802.3-c45";
+			reg = <8>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	pinctrl-0 = <&uniphy_pins>;
+	pinctrl-names = "default";
+
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT5 | ESS_PORT6)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT4>; /* wan port bitmap */
+	switch_mac_mode = <MAC_MODE_QSGMII>; /* mac mode for uniphy instance0*/
+	switch_mac_mode1 = <MAC_MODE_10GBASE_R>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance2*/
+
+	qcom,port_phyinfo {
+		port@0 {
+			port_id = <1>;
+			phy_address = <0x8>;
+		};
+		port@1 {
+			port_id = <2>;
+			phy_address = <0x9>;
+		};
+		port@2 {
+			port_id = <3>;
+			phy_address = <0xa>;
+		};
+		port@3 {
+			port_id = <4>;
+			phy_address = <0xb>;
+		};
+
+		sfp: port@4 {
+			port_id = <5>;
+			phy_address = <30>;
+			phy_i2c_address = <30>;
+			phy-i2c-mode; /*i2c access phy */
+			media-type = "sfp"; /* fiber mode */
+			sfp_tx_dis_pin = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+			sfp_mod_present_pin = <&tlmm 46 GPIO_ACTIVE_LOW>;
+		};
+
+		/* PCB R5.00, AQR113C */
+		port@5_113c {
+			status = "disabled";
+			port_id = <6>;
+			phy_address = <8>;
+			ethernet-phy-ieee802.3-c45;
+			mdiobus = <&mdio1>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp1 {
+	status = "okay";
+	phy-mode = "qsgmii";
+	phy-handle = <&qca8075_8>;
+	label = "switch";
+};
+
+&dp2 {
+	status = "okay";
+	phy-mode = "qsgmii";
+	phy-handle = <&qca8075_9>;
+	label = "lan2";
+};
+
+&dp3 {
+	status = "okay";
+	phy-mode = "qsgmii";
+	phy-handle = <&qca8075_a>;
+	label = "lan1";
+};
+
+&dp4 {
+	status = "okay";
+	phy-mode = "qsgmii";
+	phy-handle = <&qca8075_b>;
+	label = "wan";
+};
+
+&dp5_syn {
+	status = "okay";
+	phy-handle = <&sfp>;
+	label = "10g-sfp";
+};
+
+&dp6_syn {
+	status = "okay";
+	phy-handle = <&aqr113c>;
+	label = "10g-copper";
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Asus-RT-AX89X";
+};

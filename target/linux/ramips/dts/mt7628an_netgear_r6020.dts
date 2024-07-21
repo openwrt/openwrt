@@ -60,3 +60,8 @@
 &ohci {
 	status = "disabled";
 };
+
+&wifi5 {
+	nvmem-cells = <&eeprom_factory_8000>;
+	nvmem-cell-names = "eeprom";
+};

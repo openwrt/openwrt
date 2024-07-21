@@ -80,24 +80,27 @@ define prepare_rootfs
 	@( \
 		cd $(1); \
 		if [ -n "$(CONFIG_USE_APK)" ]; then \
-		$(STAGING_DIR_HOST)/bin/tar -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install" -O > script.sh; \
-		chmod +x script.sh; \
-		IPKG_INSTROOT=$(1) $$(command -v bash) script.sh; \
+			IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
+			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
 		else \
-		for script in ./usr/lib/opkg/info/*.postinst; do \
+			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
+		fi; \
+		for script in $$IPKG_POSTINST_PATH; do \
 			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
 			ret=$$?; \
 			if [ $$ret -ne 0 ]; then \
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
 				exit 1; \
 			fi; \
+			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
 		done; \
-		$(if $(IB),,awk -i inplace \
-			'/^Status:/ { \
-				if ($$3 == "user") { $$3 = "ok" } \
-				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-			}1' $(1)/usr/lib/opkg/status) ; \
-		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
+		if [ -z "$(CONFIG_USE_APK)" ]; then \
+			$(if $(IB),,awk -i inplace \
+				'/^Status:/ { \
+					if ($$3 == "user") { $$3 = "ok" } \
+					else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
+				}1' $(1)/usr/lib/opkg/status) ; \
+			$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
 		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
@@ -115,6 +118,7 @@ define prepare_rootfs
 	rm -rf \
 		$(1)/boot \
 		$(1)/tmp/* \
+		$(1)/lib/apk/db/*.post-install* \
 		$(1)/usr/lib/opkg/info/*.postinst* \
 		$(1)/usr/lib/opkg/lists/* \
 		$(1)/var/lock/*.lock

@@ -1,0 +1,39 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 10 Jul 2024 12:18:52 +0800
+Subject: [PATCH] mmc: mtk-sd: initialize the pad and tune registers
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+
+--- a/drivers/mmc/host/mtk-sd.c
++++ b/drivers/mmc/host/mtk-sd.c
+@@ -75,8 +75,12 @@
+ #define MSDC_PATCH_BIT   0xb0
+ #define MSDC_PATCH_BIT1  0xb4
+ #define MSDC_PATCH_BIT2  0xb8
++#define MSDC_PAD_CTRL0   0xe0
++#define MSDC_PAD_CTRL1   0xe4
++#define MSDC_PAD_CTRL2   0xe8
+ #define MSDC_PAD_TUNE    0xec
+ #define MSDC_PAD_TUNE0   0xf0
++#define MSDC_PAD_TUNE1   0xf4
+ #define PAD_DS_TUNE      0x188
+ #define PAD_CMD_TUNE     0x18c
+ #define EMMC51_CFG0	 0x204
+@@ -1795,6 +1799,16 @@ static void msdc_init_hw(struct msdc_hos
+ 				     MSDC_PAD_TUNE_RXDLYSEL);
+ 	}
+ 
++	/* Set pins drive strength */
++	writel(0x000d0044, host->base + MSDC_PAD_CTRL0);
++	writel(0x000e0044, host->base + MSDC_PAD_CTRL1);
++	writel(0x000e0044, host->base + MSDC_PAD_CTRL2);
++
++	/* Set pad delay */
++	writel(0x84101010, host->base + MSDC_PAD_TUNE);
++	writel(0x10101010, host->base + MSDC_PAD_TUNE0);
++	writel(0x10101010, host->base + MSDC_PAD_TUNE1);
++
+ 	if (mmc->caps2 & MMC_CAP2_NO_SDIO) {
+ 		sdr_clr_bits(host->base + SDC_CFG, SDC_CFG_SDIO);
+ 		sdr_clr_bits(host->base + MSDC_INTEN, MSDC_INTEN_SDIOIRQ);

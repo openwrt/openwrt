@@ -108,7 +108,7 @@
 				reg = <0x50000 0xfa0000>;
 			};
 
-			art: art@ff0000 {
+			art@ff0000 {
 				reg = <0xff0000 0x10000>;
 				read-only;
 
@@ -120,6 +120,10 @@
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 				};
 			};
 		};
@@ -128,5 +132,7 @@
 
 &wmac {
 	status = "okay";
-	mtd-cal-data = <&art 0x1000>;
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };

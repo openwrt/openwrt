@@ -38,7 +38,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		err = chip->info->ops->port_set_pause(chip, port, pause);
 --- a/drivers/net/dsa/mv88e6xxx/chip.h
 +++ b/drivers/net/dsa/mv88e6xxx/chip.h
-@@ -485,7 +485,8 @@ struct mv88e6xxx_ops {
+@@ -491,7 +491,8 @@ struct mv88e6xxx_ops {
  				     int speed, int duplex);
  
  	/* What interface mode should be used for maximum speed? */

@@ -91,7 +91,6 @@
 };
 
 &gpio {
-	ngpios = <17>;
 	gpio-line-names =
 		"","reset-zigbee","reset-zwave","reset",
 		"LED-orange","","","","","","",
@@ -131,7 +130,7 @@
 				reg = <0x040000 0x010000>;
 			};
 
-			art: partition@50000 {
+			partition@50000 {
 				label = "art";
 				reg = <0x050000 0x010000>;
 				read-only;
@@ -192,6 +191,7 @@
 
 &wmac {
 	status = "okay";
+
 	nvmem-cells = <&calibration_art_1000>;
 	nvmem-cell-names = "calibration";
 };

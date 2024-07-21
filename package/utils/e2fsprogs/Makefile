@@ -19,7 +19,7 @@ PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=NOTICE
 PKG_CPE_ID:=cpe:/a:e2fsprogs_project:e2fsprogs
 
-PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
+PKG_BUILD_DEPENDS:=util-linux
 PKG_INSTALL:=1
 
 PKG_BUILD_PARALLEL:=1
@@ -225,23 +225,6 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/lib/e2p/e2p.h $(1)/usr/include/e2p
 endef
 
-define Host/Compile
-	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/ss mk_cmds
-	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/et compile_et
-endef
-
-define Host/Install
-	$(INSTALL_DIR) $(1)/share/et
-	$(CP) $(HOST_BUILD_DIR)/lib/et/et_[ch].awk $(1)/share/et/
-	$(INSTALL_DIR) $(1)/share/ss
-	$(CP) $(HOST_BUILD_DIR)/lib/ss/ct_c.{sed,awk} $(1)/share/ss/
-	$(INSTALL_DIR) $(1)/bin
-	$(CP) \
-		$(HOST_BUILD_DIR)/lib/et/compile_et \
-		$(HOST_BUILD_DIR)/lib/ss/mk_cmds \
-		$(1)/bin/
-endef
-
 define Package/e2fsprogs/conffiles
 /etc/e2fsck.conf
 endef
@@ -354,4 +337,3 @@ $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))
 $(eval $(call BuildPackage,lsattr))
-$(eval $(call HostBuild))

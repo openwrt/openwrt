@@ -57,11 +57,11 @@ nand_find_ubi() {
 }
 
 nand_get_magic_long() {
-	(${3}cat "$1" | dd bs=4 "skip=${2:-0}" count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2> /dev/null
+	($2 < "$1" | dd bs=4 "skip=${3:-0}" count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2> /dev/null
 }
 
 get_magic_long_tar() {
-	(tar xO${3}f "$1" "$2" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2> /dev/null
+	($2 < "$1" | tar xOf - "$3" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2> /dev/null
 }
 
 identify() {
@@ -73,7 +73,7 @@ identify_tar() {
 }
 
 identify_if_gzip() {
-	if [ "$(identify "$1")" = gzip ]; then echo -n z; fi
+	if [ "$(identify "$1" "cat")" = gzip ]; then echo -n z; fi
 }
 
 nand_restore_config() {
@@ -259,64 +259,64 @@ nand_upgrade_prepare_ubi() {
 # Write the UBI image to MTD ubi partition
 nand_upgrade_ubinized() {
 	local ubi_file="$1"
-	local gz="$2"
+	local cmd="$2"
 
-	local ubi_length=$( (${gz}cat "$ubi_file" | wc -c) 2> /dev/null)
+	local ubi_length=$( ($cmd < "$ubi_file" | wc -c) 2> /dev/null)
 
 	nand_detach_ubi "$CI_UBIPART" || return 1
 
 	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
-	${gz}cat "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -S "$ubi_length" -y -f - && ubiattach -m "$mtdnum"
+	$cmd < "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -S "$ubi_length" -y -f - && ubiattach -m "$mtdnum"
 }
 
 # Write the UBIFS image to UBI rootfs volume
 nand_upgrade_ubifs() {
 	local ubifs_file="$1"
-	local gz="$2"
+	local cmd="$2"
 
-	local ubifs_length=$( (${gz}cat "$ubifs_file" | wc -c) 2> /dev/null)
+	local ubifs_length=$( ($cmd < "$ubifs_file" | wc -c) 2> /dev/null)
 
 	nand_upgrade_prepare_ubi "$ubifs_length" "ubifs" "" "" || return 1
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
 	local root_ubivol="$(nand_find_volume $ubidev "$CI_ROOTPART")"
-	${gz}cat "$ubifs_file" | ubiupdatevol /dev/$root_ubivol -s "$ubifs_length" -
+	$cmd < "$ubifs_file" | ubiupdatevol /dev/$root_ubivol -s "$ubifs_length" -
 }
 
 # Write the FIT image to UBI kernel volume
 nand_upgrade_fit() {
 	local fit_file="$1"
-	local gz="$2"
+	local cmd="$2"
 
-	local fit_length=$( (${gz}cat "$fit_file" | wc -c) 2> /dev/null)
+	local fit_length=$( ($cmd < "$fit_file" | wc -c) 2> /dev/null)
 
 	nand_upgrade_prepare_ubi "" "" "$fit_length" "1" || return 1
 
 	local fit_ubidev="$(nand_find_ubi "$CI_UBIPART")"
 	local fit_ubivol="$(nand_find_volume $fit_ubidev "$CI_KERNPART")"
-	${gz}cat "$fit_file" | ubiupdatevol /dev/$fit_ubivol -s "$fit_length" -
+	$cmd < "$fit_file" | ubiupdatevol /dev/$fit_ubivol -s "$fit_length" -
 }
 
 # Write images in the TAR file to MTD partitions and/or UBI volumes as required
 nand_upgrade_tar() {
 	local tar_file="$1"
-	local gz="$2"
+	local cmd="$2"
 	local jffs2_markers="${CI_JFFS2_CLEAN_MARKERS:-0}"
 
 	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
-	local board_dir="$(tar t${gz}f "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
+	local board_dir="$($cmd < "$tar_file" | tar tf - | grep -m 1 '^sysupgrade-.*/$')"
 	board_dir="${board_dir%/}"
 
 	local kernel_mtd kernel_length
 	if [ "$CI_KERNPART" != "none" ]; then
 		kernel_mtd="$(find_mtd_index "$CI_KERNPART")"
-		kernel_length=$( (tar xO${gz}f "$tar_file" "$board_dir/kernel" | wc -c) 2> /dev/null)
+		kernel_length=$( ($cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | wc -c) 2> /dev/null)
 		[ "$kernel_length" = 0 ] && kernel_length=
 	fi
-	local rootfs_length=$( (tar xO${gz}f "$tar_file" "$board_dir/root" | wc -c) 2> /dev/null)
+	local rootfs_length=$( ($cmd < "$tar_file" | tar xOf - "$board_dir/root" | wc -c) 2> /dev/null)
 	[ "$rootfs_length" = 0 ] && rootfs_length=
 	local rootfs_type
-	[ "$rootfs_length" ] && rootfs_type="$(identify_tar "$tar_file" "$board_dir/root" "$gz")"
+	[ "$rootfs_length" ] && rootfs_type="$(identify_tar "$tar_file" "$cmd" "$board_dir/root")"
 
 	local ubi_kernel_length
 	if [ "$kernel_length" ]; then
@@ -337,23 +337,23 @@ nand_upgrade_tar() {
 	if [ "$rootfs_length" ]; then
 		local ubidev="$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )"
 		local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
-		tar xO${gz}f "$tar_file" "$board_dir/root" | \
+		$cmd < "$tar_file" | tar xOf - "$board_dir/root" | \
 			ubiupdatevol /dev/$root_ubivol -s "$rootfs_length" -
 	fi
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
 			if [ "$jffs2_markers" = 1 ]; then
 				flash_erase -j "/dev/mtd${kernel_mtd}" 0 0
-				tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
+				$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
 					nandwrite "/dev/mtd${kernel_mtd}" -
 			else
-				tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
+				$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
 					mtd write - "$CI_KERNPART"
 			fi
 		else
 			local ubidev="$( nand_find_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}" )"
 			local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
-			tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
+			$cmd < "$tar_file" | tar xOf - "$board_dir/kernel" | \
 				ubiupdatevol /dev/$kern_ubivol -s "$kernel_length" -
 		fi
 	fi
@@ -363,9 +363,9 @@ nand_upgrade_tar() {
 
 nand_verify_if_gzip_file() {
 	local file="$1"
-	local gz="$2"
+	local cmd="$2"
 
-	if [ "$gz" = z ]; then
+	if [ "$cmd" = zcat ]; then
 		echo "verifying compressed sysupgrade file integrity"
 		if ! gzip -t "$file"; then
 			echo "corrupted compressed sysupgrade file"
@@ -376,10 +376,10 @@ nand_verify_if_gzip_file() {
 
 nand_verify_tar_file() {
 	local file="$1"
-	local gz="$2"
+	local cmd="$2"
 
 	echo "verifying sysupgrade tar file integrity"
-	if ! tar xO${gz}f "$file" > /dev/null; then
+	if ! $cmd < "$file" | tar xOf - > /dev/null; then
 		echo "corrupted sysupgrade tar file"
 		return 1
 	fi
@@ -388,27 +388,27 @@ nand_verify_tar_file() {
 nand_do_flash_file() {
 	local file="$1"
 
-	local gz="$(identify_if_gzip "$file")"
-	local file_type="$(identify "$file" "" "$gz")"
+	local cmd="$(identify_if_gzip "$file")cat"
+	local file_type="$(identify "$file" "$cmd" "")"
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART=rootfs
 
 	case "$file_type" in
 		"fit")
-			nand_verify_if_gzip_file "$file" "$gz" || return 1
-			nand_upgrade_fit "$file" "$gz"
+			nand_verify_if_gzip_file "$file" "$cmd" || return 1
+			nand_upgrade_fit "$file" "$cmd"
 			;;
 		"ubi")
-			nand_verify_if_gzip_file "$file" "$gz" || return 1
-			nand_upgrade_ubinized "$file" "$gz"
+			nand_verify_if_gzip_file "$file" "$cmd" || return 1
+			nand_upgrade_ubinized "$file" "$cmd"
 			;;
 		"ubifs")
-			nand_verify_if_gzip_file "$file" "$gz" || return 1
-			nand_upgrade_ubifs "$file" "$gz"
+			nand_verify_if_gzip_file "$file" "$cmd" || return 1
+			nand_upgrade_ubifs "$file" "$cmd"
 			;;
 		*)
-			nand_verify_tar_file "$file" "$gz" || return 1
-			nand_upgrade_tar "$file" "$gz"
+			nand_verify_tar_file "$file" "$cmd" || return 1
+			nand_upgrade_tar "$file" "$cmd"
 			;;
 	esac
 }
@@ -419,6 +419,16 @@ nand_do_restore_config() {
 }
 
 # Recognize type of passed file and start the upgrade process
+#
+# Supported firmware containers:
+# 1. Raw file
+# 2. Gzip
+#
+# Supported data formats:
+# 1. Tar with kernel/rootfs
+# 2. UBI image (built using "ubinized")
+# 3. UBIFS image (to update UBI volume with)
+# 4. FIT image (to update UBI volume with)
 nand_do_upgrade() {
 	local file="$1"
 
@@ -460,18 +470,18 @@ nand_do_platform_check() {
 	local board_name="$1"
 	local file="$2"
 
-	local gz="$(identify_if_gzip "$file")"
-	local file_type="$(identify "$file" "" "$gz")"
-	local control_length=$( (tar xO${gz}f "$file" "sysupgrade-${board_name//,/_}/CONTROL" | wc -c) 2> /dev/null)
+	local cmd="$(identify_if_gzip "$file")cat"
+	local file_type="$(identify "$file" "$cmd" "")"
+	local control_length=$( ($cmd < "$file" | tar xOf - "sysupgrade-${board_name//,/_}/CONTROL" | wc -c) 2> /dev/null)
 
 	if [ "$control_length" = 0 ]; then
-		control_length=$( (tar xO${gz}f "$file" "sysupgrade-${board_name//_/,}/CONTROL" | wc -c) 2> /dev/null)
+		control_length=$( ($cmd < "$file" | tar xOf - "sysupgrade-${board_name//_/,}/CONTROL" | wc -c) 2> /dev/null)
 	fi
 
 	if [ "$control_length" != 0 ]; then
-		nand_verify_tar_file "$file" "$gz" || return 1
+		nand_verify_tar_file "$file" "$cmd" || return 1
 	else
-		nand_verify_if_gzip_file "$file" "$gz" || return 1
+		nand_verify_if_gzip_file "$file" "$cmd" || return 1
 		if [ "$file_type" != "fit" -a "$file_type" != "ubi" -a "$file_type" != "ubifs" ]; then
 			echo "invalid sysupgrade file"
 			return 1

@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/bootconfig.h>
  #include <linux/console.h>
  #include <linux/nmi.h>
-@@ -932,6 +933,17 @@ void start_kernel(void)
+@@ -931,6 +932,17 @@ void start_kernel(void)
  	pr_notice("Kernel command line: %s\n", saved_command_line);
  	/* parameters may set static keys */
  	jump_label_init();

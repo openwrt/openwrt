@@ -56,7 +56,9 @@
 					};
 
 					macaddr_factory_e006: macaddr@e006 {
+						compatible = "mac-base";
 						reg = <0xe006 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

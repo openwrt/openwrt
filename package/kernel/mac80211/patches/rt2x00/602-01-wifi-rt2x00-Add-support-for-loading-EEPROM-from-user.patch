@@ -21,7 +21,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/local-symbols
 +++ b/local-symbols
-@@ -352,6 +352,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -334,6 +334,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
@@ -89,7 +89,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /* Firmware functions */
  static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
  {
-@@ -168,7 +155,7 @@ static const struct rt2800_ops rt2800soc
+@@ -172,7 +159,7 @@ static const struct rt2800_ops rt2800soc
  	.register_multiread	= rt2x00mmio_register_multiread,
  	.register_multiwrite	= rt2x00mmio_register_multiwrite,
  	.regbusy_read		= rt2x00mmio_regbusy_read,

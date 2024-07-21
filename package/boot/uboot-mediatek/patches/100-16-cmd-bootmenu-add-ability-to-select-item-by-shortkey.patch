@@ -94,10 +94,10 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	if (default_str)
 @@ -369,9 +393,9 @@ static struct bootmenu_data *bootmenu_cr
  
- 		/* Add Quit entry if entering U-Boot console is disabled */
+ 		/* Add Quit entry if exiting bootmenu is disabled */
  		if (!IS_ENABLED(CONFIG_BOOTMENU_DISABLE_UBOOT_CONSOLE))
--			entry->title = strdup("U-Boot console");
-+			entry->title = strdup("0. U-Boot console");
+-			entry->title = strdup("Exit");
++			entry->title = strdup("0. Exit");
  		else
 -			entry->title = strdup("Quit");
 +			entry->title = strdup("0. Quit");
@@ -301,7 +301,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  
  		switch (key) {
  		case BKEY_UP:
-@@ -1838,7 +1838,7 @@ char *eficonfig_choice_change_boot_order
+@@ -1839,7 +1839,7 @@ char *eficonfig_choice_change_boot_order
  
  	cli_ch_init(cch);
  	while (1) {
@@ -312,7 +312,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  		case BKEY_PLUS:
 --- a/boot/bootflow_menu.c
 +++ b/boot/bootflow_menu.c
-@@ -235,7 +235,7 @@ int bootflow_menu_run(struct bootstd_pri
+@@ -234,7 +234,7 @@ int bootflow_menu_run(struct bootstd_pri
  
  		key = 0;
  		if (ichar) {

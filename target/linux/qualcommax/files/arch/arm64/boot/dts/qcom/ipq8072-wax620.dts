@@ -15,6 +15,8 @@
 	aliases {
 		serial0 = &blsp1_uart5;
 		ethernet0 = &dp6;
+		label-mac-device = &dp6;
+
 		led-boot = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_green;

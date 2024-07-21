@@ -69,6 +69,7 @@ menu "Global build settings"
 		default y
 
 	config USE_APK
+		imply PACKAGE_apk-mbedtls
 		bool "Use APK instead of OPKG to build distribution (EXPERIMENTAL)"
 
 	comment "General build options"
@@ -113,6 +114,7 @@ menu "Global build settings"
 	config IPK_FILES_CHECKSUMS
 		bool
 		prompt "Record files checksums in package metadata"
+		depends on !USE_APK
 		help
 		  This makes file checksums part of package metadata. It increases size
 		  but provides you with pkg_check command to check for flash corruptions.

@@ -51,7 +51,7 @@ Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
  		cfg_hi = config->tt_fc << CH_CFG_H_TT_FC_POS |
  			 config->hs_sel_src << CH_CFG_H_HS_SEL_SRC_POS |
  			 config->hs_sel_dst << CH_CFG_H_HS_SEL_DST_POS |
-@@ -1367,11 +1374,12 @@ static int parse_device_properties(struc
+@@ -1365,11 +1372,12 @@ static int parse_device_properties(struc
  
  static int dw_probe(struct platform_device *pdev)
  {
@@ -65,7 +65,7 @@ Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
  	u32 i;
  	int ret;
  
-@@ -1400,12 +1408,25 @@ static int dw_probe(struct platform_devi
+@@ -1398,12 +1406,25 @@ static int dw_probe(struct platform_devi
  	if (IS_ERR(chip->regs))
  		return PTR_ERR(chip->regs);
  
@@ -92,7 +92,7 @@ Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
  	chip->core_clk = devm_clk_get(chip->dev, "core-clk");
  	if (IS_ERR(chip->core_clk))
  		return PTR_ERR(chip->core_clk);
-@@ -1556,8 +1577,15 @@ static const struct dev_pm_ops dw_axi_dm
+@@ -1554,8 +1575,15 @@ static const struct dev_pm_ops dw_axi_dm
  };
  
  static const struct of_device_id dw_dma_of_id_table[] = {

@@ -130,12 +130,20 @@ fi
 
 
 list_conffiles() {
-	awk '
-		BEGIN { conffiles = 0 }
-		/^Conffiles:/ { conffiles = 1; next }
-		!/^ / { conffiles = 0; next }
-		conffiles == 1 { print }
-	' /usr/lib/opkg/status
+	if [ -f /usr/lib/opkg/status ]; then
+		awk '
+			BEGIN { conffiles = 0 }
+			/^Conffiles:/ { conffiles = 1; next }
+			!/^ / { conffiles = 0; next }
+			conffiles == 1 { print }
+		' /usr/lib/opkg/status
+	elif [ -d /lib/apk/packages ]; then
+		conffiles=""
+		for file in /lib/apk/packages/*.conffiles_static; do
+			conffiles="$(echo -e "$(cat $file)\n$conffiles")"
+		done
+		echo "$conffiles"
+	fi
 }
 
 list_changed_conffiles() {

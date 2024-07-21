@@ -25,10 +25,10 @@ export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 HOST_GNULIB_SKIP := \
 	lib/nstrftime.c \
 	lib/fprintftime.c \
+	lib/fcntl.in.h \
 	lib/locale.in.h
 
 HOST_CONFIGURE_ARGS += \
-	--disable-year2038 \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(PKG_PROGRAMS)))
 
 HOST_MAKE_FLAGS += \

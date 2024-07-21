@@ -46,6 +46,9 @@ fortinet,fap-421e)
 	ucidef_set_led_wlan "wlan5g" "5G" "yellow:5g" "phy0tpt"
 	ucidef_set_led_usbport "usb" "USB" "amber:power" "usb1-port1" "usb2-port1"
 	;;
+linksys,e8350-v1)
+	ucidef_set_led_wlan "wlan" "WLAN" "green:wifi" "phy0tpt"
+	;;
 meraki,mr52)
 	ucidef_set_led_netdev "eth0" "eth0" "green:lan1" "eth0"
 	ucidef_set_led_netdev "eth1" "eth1" "green:lan2" "eth1"

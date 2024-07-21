@@ -15,7 +15,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1425,6 +1425,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1225,6 +1225,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-linksys-e8450-ubi.dtb \
  	mt7622-ubnt-unifi-6-lr.dtb \
  	mt7622-ubnt-unifi-6-lr-v3.dtb \
@@ -315,6 +315,6 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +ubi_init=ubi part ubi || run ubi_format
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
-+ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic 2 && ubi write $loadaddr fit $filesize
++ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
 +ubi_read_production=run ubi_init && ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +tftp_production=tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && run ubi_write_production && reset

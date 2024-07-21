@@ -383,7 +383,7 @@ define Build/fit
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
-				-i $(KERNEL_BUILD_DIR)/initrd.cpio$(strip $(call Build/initrd_compression)))) \
+				-i $(if $(TARGET_PER_DEVICE_ROOTFS),$(LINUX_DIR).$(ROOTFS_ID/$(DEVICE_NAME)),$(KERNEL_BUILD_DIR))/initrd.cpio$(strip $(call Build/initrd_compression)))) \
 		-a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		$(if $(DEVICE_FDT_NUM),-n $(DEVICE_FDT_NUM)) \
 		$(if $(DEVICE_DTS_DELIMITER),-l $(DEVICE_DTS_DELIMITER)) \
@@ -698,6 +698,23 @@ define Build/uImage
 		$(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC)) \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		-d $@ $@.new
+	mv $@.new $@
+endef
+
+define Build/multiImage
+	$(if $(UIMAGE_TIME),SOURCE_DATE_EPOCH="$(UIMAGE_TIME)") \
+	mkimage \
+		-A $(LINUX_KARCH) \
+		-O linux \
+		-T multi \
+		-C $(word 1,$(1)) \
+		-a $(KERNEL_LOADADDR) \
+		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-n '$(if $(UIMAGE_NAME),$(UIMAGE_NAME),$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION))' \
+		$(if $(UIMAGE_MAGIC),-M $(UIMAGE_MAGIC)) \
+		-d $@:$(word 2,$(1)):$(word 3,$(1)) \
+		$(wordlist 4,$(words $(1)),$(1)) \
+		$@.new
 	mv $@.new $@
 endef
 

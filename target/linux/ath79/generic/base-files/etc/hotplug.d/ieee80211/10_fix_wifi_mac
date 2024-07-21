@@ -55,7 +55,7 @@ case "$board" in
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		[ "$PHYNBR" -eq 0 ] && \
-		mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
+			mtd_get_mac_ascii u-boot-env athaddr > /sys${DEVPATH}/macaddress
 		;;
 	engenius,epg5000|\
 	engenius,esr1200|\

@@ -56,7 +56,7 @@
 	led-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "LED-Power";
-		gpio = <&gpio 46 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-always-on;

@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=3.0.13
-PKG_RELEASE:=1
+PKG_VERSION:=3.0.14
+PKG_RELEASE:=2
 PKG_BUILD_FLAGS:=no-mips16 gc-sections no-lto
 
 PKG_BUILD_PARALLEL:=1
@@ -24,7 +24,7 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/old/$(PKG_BASE)/
 
-PKG_HASH:=88525753f79d3bec27d2fa7c66aa0b92b3aa9498dafd93d7cfa4b3780cdae313
+PKG_HASH:=eeca035d4dd4e84fc25846d952da6297484afa0650a6f84c682e39df3a4123ca
 
 PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
@@ -416,6 +416,8 @@ define Package/libopenssl-conf/install
 	$(INSTALL_BIN) ./files/openssl.init $(1)/etc/init.d/openssl
 	$(SED) 's!%ENGINES_DIR%!/usr/lib/$(ENGINES_DIR)!' $(1)/etc/init.d/openssl
 	touch $(1)/etc/config/openssl
+	$(if $(CONFIG_OPENSSL_ENGINE),,
+		$(SED) 's!engines = engines_sect!#&!' $(1)/etc/ssl/openssl.cnf)
 	$(if $(CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO),
 		$(CP) ./files/devcrypto.cnf $(1)/etc/ssl/modules.cnf.d/
 		echo -e "config engine 'devcrypto'\n\toption enabled '1'\n\toption builtin '1'" >> $(1)/etc/config/openssl)

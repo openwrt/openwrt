@@ -83,6 +83,11 @@
 	nvmem-cell-names = "eeprom", "mac-address";
 };
 
+&ethernet {
+	nvmem-cells = <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &esw {
 	mediatek,portmap = <0x3e>;
 };

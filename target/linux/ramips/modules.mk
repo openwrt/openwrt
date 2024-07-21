@@ -4,6 +4,27 @@
 
 OTHER_MENU:=Other modules
 
+define KernelPackage/mmc-mtk
+  SUBMENU:=Other modules
+  TITLE:=MediaTek SD/MMC Card Interface support
+  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
+  KCONFIG:= \
+	CONFIG_MMC \
+	CONFIG_MMC_MTK \
+	CONFIG_MMC_CQHCI
+  FILES:= \
+	$(LINUX_DIR)/drivers/mmc/host/cqhci.ko \
+	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko
+  AUTOLOAD:=$(call AutoProbe,cqhci mtk-sd,1)
+endef
+
+define KernelPackage/mmc-mtk/description
+  MediaTek(R) Secure digital and Multimedia card Interface.
+  This is needed if support for any SD/SDIO/MMC devices is required.
+endef
+
+$(eval $(call KernelPackage,mmc-mtk))
+
 define KernelPackage/pwm-mediatek-ramips
   SUBMENU:=Other modules
   TITLE:=MT7628 PWM

@@ -50,7 +50,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
 +++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
-@@ -636,9 +636,22 @@ static int ipqess_stop(struct net_device
+@@ -631,9 +631,22 @@ static int ipqess_stop(struct net_device
  	netif_tx_stop_all_queues(netdev);
  	phylink_stop(ess->phylink);
  	ipqess_irq_disable(ess);
