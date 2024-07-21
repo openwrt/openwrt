@@ -1,0 +1,32 @@
+From fc0daeccc384233eadfa9d5ddbd00159653c6bdc Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Tue, 21 May 2024 21:10:07 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add sdmmc related properties on
+ rk3308-rock-pi-s
+
+Add cap-mmc-highspeed to allow use of high speed MMC mode using an eMMC
+to uSD board. Use disable-wp to signal that no physical write-protect
+line is present. Also add vcc_io used for card and IO line power as
+vmmc-supply.
+
+Fixes: 2e04c25b1320 ("arm64: dts: rockchip: add ROCK Pi S DTS support")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20240521211029.1236094-5-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3308-rock-pi-s.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3308-rock-pi-s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3308-rock-pi-s.dts
+@@ -272,7 +272,10 @@
+ };
+ 
+ &sdmmc {
++	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
++	disable-wp;
++	vmmc-supply = <&vcc_io>;
+ 	status = "okay";
+ };
+ 

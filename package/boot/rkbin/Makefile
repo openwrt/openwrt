@@ -25,6 +25,19 @@ define Trusted-Firmware-A/Default
   BUILD_TARGET:=rockchip
 endef
 
+define Trusted-Firmware-A/rk3308
+  BUILD_SUBTARGET:=armv8
+  ATF:=rk33/rk3308_bl31_v2.26.elf
+  TPL:=rk33/rk3308_ddr_589MHz_uart2_m1_v2.07.bin
+endef
+
+define Trusted-Firmware-A/rk3308-rock-pi-s
+  NAME:=Radxa ROCK Pi S
+  BUILD_SUBTARGET:=armv8
+  ATF:=rk33/rk3308_bl31_v2.26.elf
+  TPL:=rk33/rk3308_ddr_589MHz_uart0_m0_v2.07.bin
+endef
+
 define Trusted-Firmware-A/rk3566
   BUILD_SUBTARGET:=armv8
   ATF:=rk35/rk3568_bl31_v1.44.elf
@@ -45,9 +58,27 @@ define Trusted-Firmware-A/rk3568-e25
 endef
 
 TFA_TARGETS:= \
+	rk3308 \
+	rk3308-rock-pi-s \
 	rk3566 \
 	rk3568 \
 	rk3568-e25
+
+ifeq ($(BUILD_VARIANT),rk3308-rock-pi-s)
+  TPL_FILE:=rk3308_ddr_589MHz_uart0_m0_v2.07.bin
+  define Download/rk3308-tpl-rock-pi-s
+    FILE:=$(TPL_FILE)
+    URL:=https://github.com/radxa/rkbin/raw/5696fab20dcac57c1458f72dc7604ba60e553adf/bin/rk33/
+    HASH:=8a1a42df23cccb86a2dabc14a5c0e9227d64a51b9b83e9968ef5af3b30787f7d
+  endef
+
+  define Build/Prepare
+	$(eval $(call Download,rk3308-tpl-rock-pi-s))
+	$(call Build/Prepare/Default)
+
+	$(CP) $(DL_DIR)/$(TPL_FILE) $(PKG_BUILD_DIR)/bin/rk33/
+  endef
+endif
 
 ifeq ($(BUILD_VARIANT),rk3568-e25)
   TPL_FILE:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
