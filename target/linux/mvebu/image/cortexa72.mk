@@ -75,8 +75,16 @@ define Device/mikrotik_rb5009
   SOC := armada-7040
   KERNEL_LOADADDR := 0x22000000
   DEVICE_PACKAGES += kmod-i2c-gpio yafut
+  SUPPORTED_DEVICES := mikrotik,rb5009 mikrotik,rb5009upr
 endef
 TARGET_DEVICES += mikrotik_rb5009
+
+define Device/mikrotik_rb5009upr
+  $(call Device/mikrotik_rb5009)
+  DEVICE_DTS := armada-7040-rb5009upr
+  DEVICE_MODEL := RB5009UPr+S+IN
+endef
+TARGET_DEVICES += mikrotik_rb5009upr
 
 define Device/marvell_clearfog-gt-8k
   $(call Device/Default-arm64)
