@@ -44,7 +44,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  /* misc utils */
  
  static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
-@@ -4353,7 +4354,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4343,7 +4344,7 @@ void __ieee80211_subif_start_xmit(struct
  		    !is_multicast_ether_addr(skb->data)) {
  			if (sta)
  				key = rcu_dereference(sta->ptk[sta->ptk_idx]);
@@ -53,7 +53,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  			rcu_read_unlock();
  			return;
  		}
-@@ -4399,7 +4400,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4389,7 +4390,7 @@ void __ieee80211_subif_start_xmit(struct
  		if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		    	if (sta)
  				key = rcu_dereference(sta->ptk[sta->ptk_idx]);
@@ -62,7 +62,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  		} else {
  			dev_sw_netstats_tx_add(dev, 1, skb->len);
  			ieee80211_xmit(sdata, sta, skb);
-@@ -4699,7 +4700,8 @@ static bool ieee80211_tx_8023(struct iee
+@@ -4689,7 +4690,8 @@ static bool ieee80211_tx_8023(struct iee
  
  static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
  				struct net_device *dev, struct sta_info *sta,
@@ -72,7 +72,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  {
  	struct ieee80211_tx_info *info;
  	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
-@@ -4755,6 +4757,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4745,6 +4747,7 @@ static void ieee80211_8023_xmit(struct i
  	info = IEEE80211_SKB_CB(skb);
  	memset(info, 0, sizeof(*info));
  
@@ -80,7 +80,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  	info->hw_queue = sdata->vif.hw_queue[queue];
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
-@@ -4775,11 +4778,12 @@ static void ieee80211_8023_xmit(struct i
+@@ -4765,11 +4768,12 @@ static void ieee80211_8023_xmit(struct i
  			memcpy(IEEE80211_SKB_CB(seg), info, sizeof(*info));
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  		if (info->status_data)
  			info->status_data_idr = 1;
  	}
-@@ -4802,7 +4806,8 @@ out_free:
+@@ -4792,7 +4796,8 @@ out_free:
  
  void ieee80211_8023_xmit_ap(struct ieee80211_sub_if_data *sdata,
  			    struct net_device *dev, struct sta_info *sta,
@@ -106,7 +106,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  {
  	struct ieee80211_tx_info *info;
  	struct ieee80211_local *local = sdata->local;
-@@ -4811,6 +4816,9 @@ void ieee80211_8023_xmit_ap(struct ieee8
+@@ -4801,6 +4806,9 @@ void ieee80211_8023_xmit_ap(struct ieee8
  	unsigned long flags;
  	int q;
  	u16 q_map;
@@ -116,7 +116,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  
  	/*
  	 * If the skb is shared we need to obtain our own copy.
-@@ -4822,11 +4830,13 @@ void ieee80211_8023_xmit_ap(struct ieee8
+@@ -4812,11 +4820,13 @@ void ieee80211_8023_xmit_ap(struct ieee8
  
  	info = IEEE80211_SKB_CB(skb);
  	memset(info, 0, sizeof(*info));
@@ -133,7 +133,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  
  	info->flags |= IEEE80211_TX_CTL_HW_80211_ENCAP;
  	info->control.vif = &sdata->vif;
-@@ -4860,14 +4870,23 @@ void ieee80211_8023_xmit_ap(struct ieee8
+@@ -4850,14 +4860,23 @@ void ieee80211_8023_xmit_ap(struct ieee8
  	drv_tx(local, &control, skb);
  
  }
@@ -158,7 +158,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  
  #ifdef CPTCFG_MAC80211_NSS_SUPPORT
  	ieee80211_xmit_nss_fixup(skb, dev);
-@@ -4883,14 +4902,15 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4873,14 +4892,15 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		kfree_skb(skb);
  		goto out;
  	}
@@ -176,7 +176,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  		goto skip_offload;
  
  	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
-@@ -4901,13 +4921,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4891,13 +4911,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto skip_offload;
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP) {
@@ -192,7 +192,7 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  	goto out;
  
  skip_offload:
-@@ -6429,7 +6449,10 @@ int ieee80211_tx_control_port(struct wip
+@@ -6419,7 +6439,10 @@ int ieee80211_tx_control_port(struct wip
  
  start_xmit:
  	local_bh_disable();
