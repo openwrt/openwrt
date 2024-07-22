@@ -1,0 +1,22 @@
+--- a/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env	2024-07-08 15:45:44.851083500 +0200
++++ b/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env	2024-07-08 15:45:11.657761785 +0200
+@@ -1,4 +1,4 @@
+-openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009-initramfs-uImage.itb
++openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009-initramfs-uImage.itb openwrt-mvebu-cortexa72-mikrotik_rb5009upr-initramfs-uImage.itb
+ boot_devices=ubi usb net
+ recovery_boot_devices=usb net
+
+@@ -42,11 +42,9 @@
+ usbboot=
+	echo Booting from USB Storage;
+	usb start;
+-	load usb 0:1 ${loadaddr} ${openwrt_initramfs};
+-	bootm ${loadaddr};
++	for img in ${openwrt_initramfs}; do load usb 0:1 ${loadaddr} ${img} && bootm ${loadaddr}; done;
+
+ netboot=
+	echo Booting from Network;
+	dhcp;
+-	tftpboot ${loadaddr} ${openwrt_initramfs};
+-	bootm ${loadaddr};
++	for img in ${openwrt_initramfs}; do tftpboot ${loadaddr} ${img} && bootm ${loadaddr}; done;
