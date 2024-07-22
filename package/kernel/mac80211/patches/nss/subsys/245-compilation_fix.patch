@@ -30,7 +30,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	struct ieee80211_local *local;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4711,19 +4711,21 @@ static void ieee80211_8023_xmit(struct i
+@@ -4701,19 +4701,21 @@ static void ieee80211_8023_xmit(struct i
  
  	ieee80211_aggr_check(sdata, sta, skb);
  
@@ -64,7 +64,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	}
  
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
-@@ -4783,7 +4785,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4773,7 +4775,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
@@ -73,7 +73,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	struct sta_info *sta;
  
  #ifdef CPTCFG_MAC80211_NSS_SUPPORT
-@@ -4801,9 +4803,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4791,9 +4793,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto out;
  	}
  
@@ -90,7 +90,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  		goto skip_offload;
  
  	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
-@@ -4814,6 +4820,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4804,6 +4810,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto skip_offload;
  
  	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
@@ -98,7 +98,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
  	goto out;
  
-@@ -6336,13 +6343,7 @@ int ieee80211_tx_control_port(struct wip
+@@ -6326,13 +6333,7 @@ int ieee80211_tx_control_port(struct wip
  
  start_xmit:
  	local_bh_disable();
