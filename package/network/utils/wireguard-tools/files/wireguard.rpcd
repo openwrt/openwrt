@@ -1,0 +1,160 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+. /usr/share/libubox/jshn.sh
+
+proto_wireguard_setup_peer() {
+	local peer_config="$1"
+
+	local disabled
+	local public_key
+	local preshared_key
+	local allowed_ips
+	local route_allowed_ips
+	local endpoint_host
+	local endpoint_port
+	local persistent_keepalive
+
+	config_get device "${peer_config}" "device" "wg0"
+
+	if [ "$device" != "$name" ]; then
+		return 0
+	fi
+
+	config_get_bool disabled "${peer_config}" "disabled" 0
+	config_get public_key "${peer_config}" "public_key"
+	config_get preshared_key "${peer_config}" "preshared_key"
+	config_get allowed_ips "${peer_config}" "allowed_ips"
+	config_get_bool route_allowed_ips "${peer_config}" "route_allowed_ips" 0
+	config_get endpoint_host "${peer_config}" "endpoint_host"
+	config_get endpoint_port "${peer_config}" "endpoint_port"
+	config_get persistent_keepalive "${peer_config}" "persistent_keepalive"
+
+	if [ "${disabled}" -eq 1 ]; then
+		# skip disabled peers
+		return 0
+	fi
+
+	if [ -z "$public_key" ]; then
+		echo "Skipping peer config $peer_config because public key is not defined."
+		return 0
+	fi
+
+	echo "[Peer]" >> "${wg_cfg}"
+	echo "PublicKey=${public_key}" >> "${wg_cfg}"
+	if [ "${preshared_key}" ]; then
+		echo "PresharedKey=${preshared_key}" >> "${wg_cfg}"
+	fi
+	for allowed_ip in $allowed_ips; do
+		echo "AllowedIPs=${allowed_ip}" >> "${wg_cfg}"
+	done
+	if [ "${endpoint_host}" ]; then
+		case "${endpoint_host}" in
+			*:*)
+				endpoint="[${endpoint_host}]"
+				;;
+			*)
+				endpoint="${endpoint_host}"
+				;;
+		esac
+		if [ "${endpoint_port}" ]; then
+			endpoint="${endpoint}:${endpoint_port}"
+		else
+			endpoint="${endpoint}:51820"
+		fi
+		echo "Endpoint=${endpoint}" >> "${wg_cfg}"
+	fi
+	if [ "${persistent_keepalive}" ]; then
+		echo "PersistentKeepalive=${persistent_keepalive}" >> "${wg_cfg}"
+	fi
+
+	if [ ${route_allowed_ips} -ne 0 ]; then
+		for allowed_ip in ${allowed_ips}; do
+			case "${allowed_ip}" in
+				*:*/*)
+					proto_add_ipv6_route "${allowed_ip%%/*}" "${allowed_ip##*/}"
+					;;
+				*.*/*)
+					proto_add_ipv4_route "${allowed_ip%%/*}" "${allowed_ip##*/}"
+					;;
+				*:*)
+					proto_add_ipv6_route "${allowed_ip%%/*}" "128"
+					;;
+				*.*)
+					proto_add_ipv4_route "${allowed_ip%%/*}" "32"
+					;;
+			esac
+		done
+	fi
+}
+
+create() {
+	local name private_key listen_port addresses mtu fwmark ip6prefix nohostroute tunlink
+	read input;
+	json_load "$input"
+
+	json_get_var name name "wg0"
+	json_get_var private_key private_key 
+	json_get_var listen_port listen_port "51820"
+	json_get_var addresses addresses
+	json_get_var mtu mtu
+	json_get_var fwmark fwmark
+	json_get_var ip6prefix ip6prefix
+	json_get_var nohostroute nohostroute
+	json_get_var tunlink tunlink
+
+	local wg_dir="/tmp/wireguard"
+	local wg_cfg="${wg_dir}/${name}"
+
+	ip link add dev "$name" type wireguard || true
+
+	if [ "${mtu}" ]; then
+		ip link set mtu "${mtu}" dev "${name}"
+	fi
+
+	umask 077
+	mkdir -p "${wg_dir}"
+	echo "[Interface]" > "${wg_cfg}"
+	echo "PrivateKey=${private_key}" >> "${wg_cfg}"
+	if [ "${listen_port}" ]; then
+		echo "ListenPort=${listen_port}" >> "${wg_cfg}"
+	fi
+	if [ "${fwmark}" ]; then
+		echo "FwMark=${fwmark}" >> "${wg_cfg}"
+	fi
+	config_load network
+	config_foreach proto_wireguard_setup_peer "wireguard-peer"
+
+	# apply configuration file
+	wg setconf "$name" "$wg_cfg"
+	WG_RETURN="$?"
+
+	rm -f "${wg_cfg}"
+
+	if [ ${WG_RETURN} -ne 0 ]; then
+		sleep 5
+		proto_setup_failed "${name}"
+		exit 1
+	fi
+}
+
+main () {
+	case "$1" in
+		list)
+			json_init
+			json_add_object "create"
+			json_add_string "name" "wg0"
+			json_add_integer "listen_port" 55180
+			json_add_string "private_key" 
+			json_add_integer "mtu"
+			json_close_object
+			json_dump
+			;;
+		call)
+			create
+			;;
+	esac
+}
+
+main "$@"

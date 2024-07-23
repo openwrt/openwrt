@@ -37,7 +37,8 @@ define Package/wireguard-tools
   DEPENDS:= \
 	  +@BUSYBOX_CONFIG_IP \
 	  +@BUSYBOX_CONFIG_FEATURE_IP_LINK \
-	  +kmod-wireguard
+	  +kmod-wireguard \
+	  +rpcd
 endef
 
 define Package/wireguard-tools/description
@@ -56,8 +57,10 @@ define Package/wireguard-tools/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/wg $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/wireguard_watchdog $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/lib/netifd/proto/
-	$(INSTALL_BIN) ./files/wireguard.sh $(1)/lib/netifd/proto/
+	$(INSTALL_DIR) $(1)/usr/libexec/rpcd/
+	$(INSTALL_BIN) ./files/wireguard.rpcd $(1)/usr/libexec/rpcd/
+	$(INSTALL_DIR) $(1)/lib/netifd/extdev-config/
+	$(INSTALL_BIN) ./files/wireguard.extdev $(1)/lib/netifd/extdev-config/
 endef
 
 $(eval $(call BuildPackage,wireguard-tools))
