@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.40.1
+PKG_VERSION:=2.40.2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.40
-PKG_HASH:=8e396eececae2b3b68db232c33b8810faa7c31f6df19f98f512739293d5829b7
+PKG_HASH:=d78b37a66f5922d70edf3bdfb01a6b33d34ed3c3cafd6628203b2a2b67c8e8b3
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_FIXUP:=autoreconf
