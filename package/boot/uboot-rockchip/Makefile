@@ -199,6 +199,13 @@ define U-Boot/radxa-e25-rk3568
     radxa_e25
 endef
 
+define U-Boot/rock-3a-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=ROCK 3A
+  BUILD_DEVICES:= \
+    radxa_rock-3a
+endef
+
 UBOOT_TARGETS := \
   nanopc-t4-rk3399 \
   nanopi-r4s-rk3399 \
@@ -217,7 +224,8 @@ UBOOT_TARGETS := \
   bpi-r2-pro-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
-  radxa-e25-rk3568
+  radxa-e25-rk3568 \
+  rock-3a-rk3568
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
