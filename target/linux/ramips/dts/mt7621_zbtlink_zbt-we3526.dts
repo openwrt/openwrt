@@ -106,6 +106,7 @@
 
 		led {
 			led-sources = <2>;
+			led-active-low;
 		};
 	};
 };
@@ -116,6 +117,11 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 
