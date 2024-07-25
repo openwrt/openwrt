@@ -153,7 +153,7 @@ define Device/radxa_rock-pi-s
   DEVICE_MODEL := ROCK Pi S
   SOC := rk3308
   BOOT_SCRIPT := rock-pi-s
-  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+  DEVICE_PACKAGES := kmod-rtw88-8723ds kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-s
 
