@@ -1162,33 +1162,10 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 
+	if (ag->phy_dev == NULL)
+		return -ENODEV;
 
-	switch (cmd) {
-	case SIOCSIFHWADDR:
-		if (copy_from_user
-			((void*)dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
-			return -EFAULT;
-		return 0;
-
-	case SIOCGIFHWADDR:
-		if (copy_to_user
-			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
-			return -EFAULT;
-		return 0;
-
-	case SIOCGMIIPHY:
-	case SIOCGMIIREG:
-	case SIOCSMIIREG:
-		if (ag->phy_dev == NULL)
-			break;
-
-		return phy_mii_ioctl(ag->phy_dev, ifr, cmd);
-
-	default:
-		break;
-	}
-
-	return -EOPNOTSUPP;
+	return phy_mii_ioctl(ag->phy_dev, ifr, cmd);
 }
 
 static void ag71xx_oom_timer_handler(struct timer_list *t)
@@ -1501,7 +1478,7 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_open		= ag71xx_open,
 	.ndo_stop		= ag71xx_stop,
 	.ndo_start_xmit		= ag71xx_hard_start_xmit,
-	.ndo_do_ioctl		= ag71xx_do_ioctl,
+	.ndo_eth_ioctl		= ag71xx_do_ioctl,
 	.ndo_tx_timeout		= ag71xx_tx_timeout,
 	.ndo_change_mtu		= ag71xx_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
