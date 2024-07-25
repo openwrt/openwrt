@@ -1,0 +1,48 @@
+From 225990c487c1023e7b3aa89beb6a68011fbc0461 Mon Sep 17 00:00:00 2001
+From: Mark Mentovai <mark@mentovai.com>
+Date: Thu, 25 Jul 2024 16:41:44 -0400
+Subject: [PATCH] net: phy: realtek: add support for RTL8366S Gigabit PHY
+
+The PHY built in to the Realtek RTL8366S switch controller was
+previously supported by genphy_driver. This PHY does not implement MMD
+operations. Since commit 9b01c885be36 ("net: phy: c22: migrate to
+genphy_c45_write_eee_adv()"), MMD register reads have been made during
+phy_probe to determine EEE support. For genphy_driver, these reads are
+transformed into 802.3 annex 22D clause 45-over-clause 22
+mmd_phy_indirect operations that perform MII register writes to
+MII_MMD_CTRL and MII_MMD_DATA. This overwrites those two MII registers,
+which on this PHY are reserved and have another function, rendering the
+PHY unusable while so configured.
+
+Proper support for this PHY is restored by providing a phy_driver that
+declares MMD operations as unsupported by using the helper functions
+provided for that purpose, while remaining otherwise identical to
+genphy_driver.
+
+Fixes: 9b01c885be36 ("net: phy: c22: migrate to genphy_c45_write_eee_adv()")
+Reported-by: Russell Senior <russell@personaltelco.net>
+Closes: https://github.com/openwrt/openwrt/issues/15981
+Link: https://github.com/openwrt/openwrt/issues/15739
+Signed-off-by: Mark Mentovai <mark@mentovai.com>
+Reviewed-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/realtek.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -1083,6 +1083,13 @@ static struct phy_driver realtek_drvs[]
+ 		.handle_interrupt = genphy_handle_interrupt_no_ack,
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
++	}, {
++		PHY_ID_MATCH_EXACT(0x001cc960),
++		.name		= "RTL8366S Gigabit Ethernet",
++		.suspend	= genphy_suspend,
++		.resume		= genphy_resume,
++		.read_mmd	= genphy_read_mmd_unsupported,
++		.write_mmd	= genphy_write_mmd_unsupported,
+ 	},
+ };
+ 
