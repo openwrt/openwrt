@@ -145,8 +145,7 @@ ag71xx_ethtool_set_ringparam(struct net_device *dev,
 
 static int ag71xx_ethtool_nway_reset(struct net_device *dev)
 {
-	struct ag71xx *ag = netdev_priv(dev);
-	struct phy_device *phydev = ag->phy_dev;
+	struct phy_device *phydev = dev->phydev;
 
 	if (!phydev)
 		return -ENODEV;

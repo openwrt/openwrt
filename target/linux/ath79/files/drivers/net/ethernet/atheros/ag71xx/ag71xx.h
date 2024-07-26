@@ -176,8 +176,6 @@ struct ag71xx {
 	struct ag71xx_desc	*stop_desc;
 	dma_addr_t		stop_desc_dma;
 
-	struct phy_device	*phy_dev;
-	void			*phy_priv;
 	phy_interface_t		phy_if_mode;
 
 	unsigned int		link;
@@ -210,7 +208,6 @@ extern struct ethtool_ops ag71xx_ethtool_ops;
 void ag71xx_link_adjust(struct ag71xx *ag);
 
 int ag71xx_phy_connect(struct ag71xx *ag);
-void ag71xx_phy_disconnect(struct ag71xx *ag);
 
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 {

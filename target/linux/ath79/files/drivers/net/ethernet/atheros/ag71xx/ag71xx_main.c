@@ -1013,7 +1013,7 @@ static int ag71xx_open(struct net_device *dev)
 	if (ret)
 		goto err;
 
-	phy_start(ag->phy_dev);
+	phy_start(dev->phydev);
 
 	return 0;
 
@@ -1028,7 +1028,7 @@ static int ag71xx_stop(struct net_device *dev)
 	struct ag71xx *ag = netdev_priv(dev);
 
 	netif_carrier_off(dev);
-	phy_stop(ag->phy_dev);
+	phy_stop(dev->phydev);
 
 	spin_lock_irqsave(&ag->lock, flags);
 	if (ag->link) {
@@ -1156,16 +1156,6 @@ err_drop:
 
 	dev_kfree_skb(skb);
 	return NETDEV_TX_OK;
-}
-
-static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-{
-	struct ag71xx *ag = netdev_priv(dev);
-
-	if (ag->phy_dev == NULL)
-		return -ENODEV;
-
-	return phy_mii_ioctl(ag->phy_dev, ifr, cmd);
 }
 
 static void ag71xx_oom_timer_handler(struct timer_list *t)
@@ -1478,7 +1468,7 @@ static const struct net_device_ops ag71xx_netdev_ops = {
 	.ndo_open		= ag71xx_open,
 	.ndo_stop		= ag71xx_stop,
 	.ndo_start_xmit		= ag71xx_hard_start_xmit,
-	.ndo_eth_ioctl		= ag71xx_do_ioctl,
+	.ndo_eth_ioctl		= phy_do_ioctl,
 	.ndo_tx_timeout		= ag71xx_tx_timeout,
 	.ndo_change_mtu		= ag71xx_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
@@ -1727,7 +1717,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	return 0;
 
 err_phy_disconnect:
-	ag71xx_phy_disconnect(ag);
+	phy_disconnect(dev->phydev);
 	return err;
 }
 
@@ -1741,7 +1731,7 @@ static int ag71xx_remove(struct platform_device *pdev)
 
 	ag = netdev_priv(dev);
 	ag71xx_debugfs_exit(ag);
-	ag71xx_phy_disconnect(ag);
+	phy_disconnect(dev->phydev);
 	unregister_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;

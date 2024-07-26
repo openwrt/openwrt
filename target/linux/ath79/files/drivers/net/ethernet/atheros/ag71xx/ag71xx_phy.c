@@ -17,7 +17,7 @@
 static void ag71xx_phy_link_adjust(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	struct phy_device *phydev = ag->phy_dev;
+	struct phy_device *phydev = dev->phydev;
 	unsigned long flags;
 	int status_change = 0;
 
@@ -47,6 +47,7 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 {
 	struct device_node *np = ag->pdev->dev.of_node;
 	struct device_node *phy_node;
+	struct phy_device *phydev;
 	int ret;
 
 	if (of_phy_is_fixed_link(np)) {
@@ -68,25 +69,20 @@ int ag71xx_phy_connect(struct ag71xx *ag)
 		return -ENODEV;
 	}
 
-	ag->phy_dev = of_phy_connect(ag->dev, phy_node, ag71xx_phy_link_adjust,
+	phydev = of_phy_connect(ag->dev, phy_node, ag71xx_phy_link_adjust,
 				     0, ag->phy_if_mode);
 
 	of_node_put(phy_node);
 
-	if (!ag->phy_dev) {
+	if (!phydev) {
 		dev_err(&ag->pdev->dev,
 			"Could not connect to PHY device. Deferring probe.\n");
 		return -EPROBE_DEFER;
 	}
 
 	dev_info(&ag->pdev->dev, "connected to PHY at %s [uid=%08x, driver=%s]\n",
-		    phydev_name(ag->phy_dev),
-		    ag->phy_dev->phy_id, ag->phy_dev->drv->name);
+		    phydev_name(phydev),
+		    phydev->phy_id, phydev->drv->name);
 
 	return 0;
-}
-
-void ag71xx_phy_disconnect(struct ag71xx *ag)
-{
-	phy_disconnect(ag->phy_dev);
 }
