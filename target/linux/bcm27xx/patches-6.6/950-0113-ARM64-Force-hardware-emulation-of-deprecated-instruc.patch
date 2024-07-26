@@ -10,7 +10,7 @@ Subject: [PATCH 0113/1085] ARM64: Force hardware emulation of deprecated
 
 --- a/arch/arm64/kernel/armv8_deprecated.c
 +++ b/arch/arm64/kernel/armv8_deprecated.c
-@@ -539,9 +539,14 @@ static void __init register_insn_emulati
+@@ -542,9 +542,14 @@ static void __init register_insn_emulati
  
  	switch (insn->status) {
  	case INSN_DEPRECATED:
