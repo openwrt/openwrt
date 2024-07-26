@@ -37,6 +37,11 @@ linksys,mx8500)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000" "2"
 	;;
+linksys,mx4300)
+	idx="$(find_mtd_index u_env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x40000" "1"
+	;;
 netgear,sxr80|\
 netgear,sxs80|\
 tplink,eap620hd-v1|\
