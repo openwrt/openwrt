@@ -168,6 +168,7 @@ platform_do_upgrade() {
 		;;
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
+	linksys,mx4300|\
 	linksys,mx5300|\
 	linksys,mx8500)
 		boot_part="$(fw_printenv -n boot_part)"

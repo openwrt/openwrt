@@ -1,0 +1,273 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq8174-mx4x00.dtsi"
+
+/ {
+	model = "Linksys MX4300";
+	compatible = "linksys,mx4300", "qcom,ipq8074";
+
+	chosen {
+		/*
+		In the kernel command line, replace the first occurence of bootargs-find-X with bootargs-replace-X.
+		If bootargs-exact-match-X is set to "y", then replacement happens only if the kernel command line
+		is identical to bootargs-find-X.
+		*/
+		bootargs-find-1 = "ubi.mtd=22,2048";
+		bootargs-replace-1 = "ubi.mtd=22,4096";
+
+		bootargs-find-2 = "ubi.mtd=24,2048";
+		bootargs-replace-2 = "ubi.mtd=24,4096";
+	};
+};
+
+&qpic_nand {
+	status = "okay";
+
+	/*
+	 * Bootloader will find the NAND DT node by the compatible and
+	 * then "fixup" it by adding the partitions from the SMEM table
+	 * using the legacy bindings thus making it impossible for us
+	 * to change the partition table or utilize NVMEM for calibration.
+	 * So add a dummy partitions node that bootloader will populate
+	 * and set it as disabled so the kernel ignores it instead of
+	 * printing warnings due to the broken way bootloader adds the
+	 * partitions.
+	 */
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		reg = <0>;
+		/*
+		 * Some devices use Micron NAND with with 8 bit ECC 
+		 * other AMD/Spansion NAND with 4 bit ECC
+		 *nand-ecc-strength = <4>;
+		 *nand-ecc-step-size = <512>;
+		 */
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:sbl1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:mibib";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:bootconfig";
+				reg = <0x200000 0x80000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:bootconfig1";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:qsee";
+				reg = <0x300000 0x300000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:qsee_1";
+				reg = <0x600000 0x300000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:devcfg";
+				reg = <0x900000 0x80000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "0:devcfg_1";
+				reg = <0x980000 0x80000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "0:apdp";
+				reg = <0xa00000 0x80000>;
+				read-only;
+			};
+
+			partition@a80000 {
+				label = "0:apdp_1";
+				reg = <0xa80000 0x80000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:rpm";
+				reg = <0xb00000 0x80000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "0:rpm_1";
+				reg = <0xb80000 0x80000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "0:cdt";
+				reg = <0xc00000 0x80000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:cdt_1";
+				reg = <0xc80000 0x80000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "0:appsblenv";
+				reg = <0xd00000 0x80000>;
+			};
+
+			partition@d80000 {
+				label = "0:appsbl";
+				reg = <0xd80000 0x100000>;
+				read-only;
+			};
+
+			partition@e80000 {
+				label = "0:appsbl_1";
+				reg = <0xe80000 0x100000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "0:art";
+				reg = <0xf80000 0x80000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "u_env";
+				reg = <0x1000000 0x100000>;
+			};
+
+			partition@1100000 {
+				label = "s_env";
+				reg = <0x1100000 0x100000>;
+			};
+
+			partition@1200000 {
+				label = "devinfo";
+				reg = <0x1200000 0x40000>;
+				read-only;
+			};
+
+			partition@1240000 {
+				label = "kernel";
+				reg = <0x1240000 0xaf40000>;
+			};
+
+			partition@1a40000 {
+				label = "rootfs";
+				reg = <0x1a40000 0xa740000>;
+			};
+
+			partition@c180000 {
+				label = "alt_kernel";
+				reg = <0xc180000 0xaf40000>;
+			};
+
+			partition@c980000 {
+				label = "alt_rootfs";
+				reg = <0xc980000 0xa740000>;
+			};
+
+			partition@170c0000 {
+				label = "sysdiag";
+				reg = <0x170c0000 0x400000>;
+				read-only;
+			};
+
+			partition@174c0000 {
+				label = "0:ethphyfw";
+				reg = <0x174c0000 0x80000>;
+				read-only;
+			};
+
+			partition@17540000 {
+				label = "syscfg";
+				reg = <0x17540000 0x79c0000>;
+				read-only;
+			};
+
+			partition@1ef00000 {
+				label = "secured_store";
+				reg = <0x1ef00000 0x400000>;
+				read-only;
+			};
+
+			partition@1f300000 {
+				label = "0:wififw";
+				reg = <0x1f300000 0x1900000>;
+				read-only;
+			};
+
+			partition@20c00000 {
+				label = "app2_data";
+				reg = <0x20c00000 0x16180000>;
+				read-only;
+			};
+
+			partition@36d80000 {
+				label = "app2";
+				reg = <0x36d80000 0x9280000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "wan";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan3";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan2";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	label = "lan1";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Linksys-MX4200v1";
+};

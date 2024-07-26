@@ -29,6 +29,7 @@ ipq807x_setup_interfaces()
 	compex,wpq873|\
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
+	linksys,mx4300|\
 	prpl,haze|\
 	redmi,ax6|\
 	spectrum,sax1v1k|\
@@ -80,7 +81,8 @@ ipq807x_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-		linksys,mx4200v2)
+		linksys,mx4200v2|\
+		linksys,mx4300)
 			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 			[ "$(mtd_get_mac_ascii u_env eth1addr)" != "$label_mac" ] && wan_mac=$label_mac
 			[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && lan_mac=$label_mac

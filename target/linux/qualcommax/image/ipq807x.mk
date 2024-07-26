@@ -190,6 +190,17 @@ define Device/linksys_mx4200v2
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
+define Device/linksys_mx4300
+	$(call Device/linksys_mx4x00)
+	DEVICE_MODEL := MX4300
+	BLOCKSIZE := 256k
+	PAGESIZE := 4096
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 171264k
+	NAND_SIZE := 1024m
+endef
+TARGET_DEVICES += linksys_mx4300
+
 define Device/linksys_mx5300
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX5300
