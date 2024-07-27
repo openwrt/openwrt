@@ -170,12 +170,17 @@ define Device/linksys_mx
 	DEVICE_PACKAGES := kmod-leds-pca963x
 endef
 
-define Device/linksys_mx4200v1
+define Device/linksys_mx4x00
 	$(call Device/linksys_mx)
+	SOC := ipq8174
+	DEVICE_PACKAGES += ipq-wifi-linksys_mx4200
+endef
+
+define Device/linksys_mx4200v1
+	$(call Device/linksys_mx4x00)
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
-	SOC := ipq8174
-	DEVICE_PACKAGES += ipq-wifi-linksys_mx4200 kmod-bluetooth
+	DEVICE_PACKAGES += kmod-bluetooth
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
