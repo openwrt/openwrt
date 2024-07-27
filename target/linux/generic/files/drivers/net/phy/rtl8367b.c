@@ -709,21 +709,48 @@ static int rtl8367b_extif_init(struct rtl8366_smi *smi, int id,
 }
 
 #ifdef CONFIG_OF
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
+static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 				  const char *name)
 {
 	struct rtl8367_extif_config *cfg;
 	const __be32 *prop;
 	int size;
 	int err;
+	unsigned cpu_port;
+	unsigned id = UINT_MAX;
 
 	prop = of_get_property(smi->parent->of_node, name, &size);
-	if (!prop)
-		return rtl8367b_extif_init(smi, id, NULL);
+	if (!prop || (size != (10 * sizeof(*prop)))) {
+		dev_err(smi->parent, "%s property is not defined or invalid\n", name);
+		err = -EINVAL;
+		goto err_init;
+	}
 
-	if (size != (9 * sizeof(*prop))) {
-		dev_err(smi->parent, "%s property is invalid\n", name);
-		return -EINVAL;
+	cpu_port = be32_to_cpup(prop++);
+	switch (cpu_port) {
+	case RTL8367B_CPU_PORT_NUM:
+	case RTL8367B_CPU_PORT_NUM + 1:
+	case RTL8367B_CPU_PORT_NUM + 2:
+		if (smi->rtl8367b_chip == RTL8367B_CHIP_RTL8367R_VB) { /* for the RTL8367R-VB chip, cpu_port 5 corresponds to extif1 */
+			if (cpu_port == RTL8367B_CPU_PORT_NUM)
+				id = 1;
+			else {
+				dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
+				err = -EINVAL;
+				goto err_init;
+			}
+		} else {
+			id = cpu_port - RTL8367B_CPU_PORT_NUM;
+		}
+		if (smi->cpu_port == UINT_MAX) {
+			dev_info(smi->parent, "cpu_port:%u, assigned to extif%u\n", cpu_port, id);
+			smi->cpu_port = cpu_port;
+		}
+		break;
+	default:
+		dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
+		err = -EINVAL;
+		goto err_init;
 	}
 
 	cfg = kzalloc(sizeof(struct rtl8367_extif_config), GFP_KERNEL);
@@ -743,10 +770,15 @@ static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
 	err = rtl8367b_extif_init(smi, id, cfg);
 	kfree(cfg);
 
+err_init:
+	if (id != 0) rtl8367b_extif_init(smi, 0, NULL);
+	if (id != 1) rtl8367b_extif_init(smi, 1, NULL);
+	if (id != 2) rtl8367b_extif_init(smi, 2, NULL);
+
 	return err;
 }
 #else
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi, int id,
+static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 				  const char *name)
 {
 	return -EINVAL;
@@ -767,15 +799,7 @@ static int rtl8367b_setup(struct rtl8366_smi *smi)
 
 	/* initialize external interfaces */
 	if (smi->parent->of_node) {
-		err = rtl8367b_extif_init_of(smi, 0, "realtek,extif0");
-		if (err)
-			return err;
-
-		err = rtl8367b_extif_init_of(smi, 1, "realtek,extif1");
-		if (err)
-			return err;
-
-		err = rtl8367b_extif_init_of(smi, 2, "realtek,extif2");
+		err = rtl8367b_extif_init_of(smi, "realtek,extif");
 		if (err)
 			return err;
 	} else {
@@ -1352,13 +1376,6 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 
 	dev_info(smi->parent, "RTL%s chip found (num:%04x ver:%04x)\n", chip_name, chip_num, chip_ver);
 
-	if (of_property_present(smi->parent->of_node, "realtek,extif2"))
-		smi->cpu_port = RTL8367B_CPU_PORT_NUM + 2;
-	else if (of_property_present(smi->parent->of_node, "realtek,extif1") && (smi->rtl8367b_chip != RTL8367B_CHIP_RTL8367R_VB)) /* for the RTL8367R-VB chip, extif1 corresponds to cpu_port 5 */
-		smi->cpu_port = RTL8367B_CPU_PORT_NUM + 1;
-
-	dev_info(smi->parent, "CPU port: %u\n", smi->cpu_port);
-
 	return 0;
 }
 
@@ -1397,7 +1414,7 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 	smi->cmd_write = 0xb8;
 	smi->ops = &rtl8367b_smi_ops;
 	smi->num_ports = RTL8367B_NUM_PORTS;
-	smi->cpu_port = RTL8367B_CPU_PORT_NUM;
+	smi->cpu_port = UINT_MAX; /* not defined yet */
 	smi->num_vlan_mc = RTL8367B_NUM_VLANS;
 	smi->mib_counters = rtl8367b_mib_counters;
 	smi->num_mib_counters = ARRAY_SIZE(rtl8367b_mib_counters);
