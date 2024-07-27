@@ -1,6 +1,7 @@
 /*
  * Platform driver for Realtek RTL8367B family chips, i.e. RTL8367RB and RTL8367R-VB
  * extended with support for RTL8367C family chips, i.e. RTL8367RB-VB and RTL8367S
+ * extended with support for RTL8367D family chips, i.e. RTL8367S-VB
  *
  * Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -528,6 +529,7 @@ static int rtl8367b_init_regs(struct rtl8366_smi *smi)
 		break;
 	case RTL8367B_CHIP_RTL8367RB_VB:
 	case RTL8367B_CHIP_RTL8367S:
+	case RTL8367B_CHIP_RTL8367S_VB:
 		initvals = rtl8367c_initvals;
 		count = ARRAY_SIZE(rtl8367c_initvals);
 		break;
@@ -737,6 +739,14 @@ static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 			if (cpu_port == RTL8367B_CPU_PORT_NUM)
 				id = 1;
 			else {
+				dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
+				err = -EINVAL;
+				goto err_init;
+			}
+		} else if (smi->rtl8367b_chip == RTL8367B_CHIP_RTL8367S_VB) { /* for the RTL8367S-VB chip, cpu_port 7 corresponds to extif1, cpu_port 6 corresponds to extif0 */
+			if (cpu_port != RTL8367B_CPU_PORT_NUM) {
+				id = cpu_port - RTL8367B_CPU_PORT_NUM - 1;
+			} else {
 				dev_err(smi->parent, "wrong cpu_port %u in %s property\n", cpu_port, name);
 				err = -EINVAL;
 				goto err_init;
@@ -1348,6 +1358,12 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 	}
 
 	switch (chip_ver) {
+	case 0x0010:
+		if (chip_num == 0x6642) {
+			chip_name = "8367S-VB";
+			smi->rtl8367b_chip = RTL8367B_CHIP_RTL8367S_VB;
+		}
+		break;
 	case 0x0020:
 		if (chip_num == 0x6367) {
 			chip_name = "8367RB-VB";
