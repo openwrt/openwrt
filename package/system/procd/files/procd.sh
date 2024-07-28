@@ -1,5 +1,8 @@
 # procd API:
 #
+# procd_lock([timeout]):
+#   Protect the service from concurrent execution using flock.
+#
 # procd_open_service(name, [script]):
 #   Initialize a new procd command message containing a service with one or more instances
 #
@@ -46,17 +49,48 @@ PROCD_RELOAD_DELAY=1000
 _PROCD_SERVICE=
 
 procd_lock() {
-	local basescript=$(readlink "$initscript")
-	local service_name="$(basename ${basescript:-$initscript})"
+    local basescript=$(readlink "${initscript}")
+    local service_name="$(basename "${basescript:-${initscript}}")"
+	local lock_file="$IPKG_INSTROOT/var/lock/procd_${service_name}.lock"
+    local timeout=${1:-30}  # Default timeout is 30 seconds
+    local error_msg
 
-	flock -n 1000 &> /dev/null
-	if [ "$?" != "0" ]; then
-		exec 1000>"$IPKG_INSTROOT/var/lock/procd_${service_name}.lock"
-		flock 1000
-		if [ "$?" != "0" ]; then
-			logger "warning: procd flock for $service_name failed"
-		fi
+    if [ -z "${service_name}" ] ; then
+	    echo "Error: procd_lock(): Service name couldn't be determined." >&2
+		return 1
 	fi
+
+    # Check if we already hold the lock
+    if flock -n 1000 &> /dev/null; then
+        # We already hold the lock, so we can return immediately
+        return 0
+    fi
+
+    # If we don't hold the lock, try to acquire it
+    exec 1000>"${lock_file}"
+
+    while [ ${timeout} -gt 0 ]; do
+        if flock -n 1000; then
+            # Lock acquired successfully
+            return 0
+        fi
+
+		echo "Waiting for flock on '${lock_file}' (${timeout}s remaining)..." >&2
+        sleep 1
+        timeout=$((timeout - 1))
+    done
+
+    # Timeout reached
+    error_msg="Error: procd_flock() for '${service_name}' service failed (timeout expired)."
+    error_msg="${error_msg} Possible cause: Another instance of the service is running or"
+	error_msg="${error_msg} a previous instance did not release the lock properly."
+    error_msg="${error_msg} Possible remedies:"
+	error_msg="${error_msg} 1) Wait for the other instance to finish."
+	error_msg="${error_msg} 2) Check for and kill any stuck processes."
+	error_msg="${error_msg} 3) Manually remove the lock file: '${lock_file}'."
+
+    echo "${error_msg}" | tee /dev/stderr | logger
+    exit 1
 }
 
 _procd_call() {
@@ -186,7 +220,7 @@ _procd_add_jail() {
 	json_add_string name "$1"
 
 	shift
-	
+
 	for a in $@; do
 		case $a in
 		log)	json_add_boolean "log" "1";;
