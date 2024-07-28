@@ -24,8 +24,7 @@ DEFAULT_PACKAGES:=\
 	netifd \
 	uci \
 	uclient-fetch \
-	urandom-seed \
-	urngd
+	urandom-seed
 
 # For the basic set
 DEFAULT_PACKAGES.basic:=
