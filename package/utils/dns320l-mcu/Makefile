@@ -11,6 +11,8 @@ PKG_MIRROR_HASH:=e0f186a0c139ccfac3d311f49e2fecdbd02fa3f9fe6ced4b1ce0baa603d49fc
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 PKG_LICENSE:=GPL-3.0+
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/dns320l-mcu
