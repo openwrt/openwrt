@@ -11,6 +11,13 @@ mediatek_setup_interfaces()
 	acelink,ew-7886cax)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
+	abt,asr3000|\
+	cmcc,rax3000m|\
+	h3c,magic-nx30-pro|\
+	nokia,ea0326gmp|\
+	zbtlink,zbt-z8103ax)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		;;
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
@@ -46,12 +53,6 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r4-poe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth1" "wan eth2"
 		;;
-	cmcc,rax3000m|\
-	h3c,magic-nx30-pro|\
-	nokia,ea0326gmp|\
-	zbtlink,zbt-z8103ax)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
-		;;
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
@@ -70,7 +71,8 @@ mediatek_setup_interfaces()
 		;;
 	glinet,gl-mt6000|\
 	tplink,tl-xdr4288|\
-	tplink,tl-xdr6088)
+	tplink,tl-xdr6088|\
+	tplink,tl-xtr8488)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
 	mediatek,mt7986a-rfb)
@@ -133,15 +135,6 @@ mediatek_setup_macs()
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
-		;;
-	cmcc,rax3000m)
-		case "$(cmdline_get_var root)" in
-		/dev/mmc*)
-			wan_mac=$(mmc_get_mac_binary factory 0x2a)
-			lan_mac=$(mmc_get_mac_binary factory 0x24)
-			label_mac=$wan_mac
-		;;
-		esac
 		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)

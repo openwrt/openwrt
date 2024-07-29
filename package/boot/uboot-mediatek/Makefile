@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2024.01
-PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
+PKG_VERSION:=2024.07
+PKG_HASH:=f591da9ab90ef3d6b3d173766d0ddff90c4ed7330680897486117df390d83c8f
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -217,6 +217,18 @@ define U-Boot/mt7629_rfb
   BUILD_SUBTARGET:=mt7629
   BUILD_DEVICES:=mediatek_mt7629-rfb
   UBOOT_CONFIG:=mt7629_rfb
+endef
+
+define U-Boot/mt7981_abt_asr3000
+  NAME:=ABT ASR3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=abt_asr3000
+  UBOOT_CONFIG:=mt7981_abt_asr3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-emmc
@@ -557,6 +569,18 @@ define U-Boot/mt7986_tplink_tl-xdr6088
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr3
 endef
 
+define U-Boot/mt7986_tplink_tl-xtr8488
+  NAME:=TP-LINK TL-XTR8488
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-xtr8488
+  UBOOT_CONFIG:=mt7986_tplink_tl-xtr8488
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
+endef
+
 define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   NAME:=Xiaomi Redmi AX6000
   BUILD_SUBTARGET:=filogic
@@ -734,6 +758,7 @@ UBOOT_TARGETS := \
 	mt7628_rfb \
 	mt7628_ravpower_rp-wd009 \
 	mt7629_rfb \
+	mt7981_abt_asr3000 \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_h3c_magic-nx30-pro \
@@ -761,6 +786,7 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
+	mt7986_tplink_tl-xtr8488 \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \
@@ -775,6 +801,10 @@ UBOOT_TARGETS := \
 	mt7988_rfb-nor \
 	mt7988_rfb-emmc \
 	mt7988_rfb-sd
+
+UBOOT_CUSTOMIZE_CONFIG := \
+	--disable TOOLS_KWBIMAGE \
+	--disable TOOLS_LIBCRYPTO
 
 ifdef CONFIG_TARGET_mediatek
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)

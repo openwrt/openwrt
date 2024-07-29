@@ -1,0 +1,300 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344.dtsi"
+
+/ {
+	aliases {
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	chosen {
+		/*
+		 * don't specify bootargs property in DeviceTree to
+		 * enable a console with a default baudrate (9600)
+		 * or passed console= parameter from the bootloader
+		 */
+		/delete-property/ bootargs;
+		stdout-path = &uart;
+	};
+
+	keys: keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins>;
+
+		button-eco {
+			label = "eco";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+			debounce-interval = <60>;
+		};
+
+		switch-ap {
+			label = "ap";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+			debounce-interval = <60>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	ath9k_leds: ath9k-leds {
+		/* all LEDs are connected to ath9k chip (AR938x) */
+		compatible = "gpio-leds";
+
+		led_power_green: led-0 {
+			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			default-state = "on";
+		};
+
+		led-1 {
+			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led-2 {
+			gpios = <&ath9k 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		led-3 {
+			gpios = <&ath9k 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		led-4 {
+			gpios = <&ath9k 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-5 {
+			gpios = <&ath9k 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+		};
+
+		led-6 {
+			gpios = <&ath9k 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-7 {
+			gpios = <&ath9k 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+		};
+
+		led-8 {
+			gpios = <&ath9k 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "tv";
+		};
+
+		led-9 {
+			gpios = <&ath9k 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = "tv";
+		};
+	};
+
+	regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * since the OEM bootloader requires unknown
+			 * filesystem on firmware area, needs to be
+			 * replaced to u-boot before OpenWrt installation
+			 */
+			partition@0 {
+				label = "bootloader";
+				reg = <0x000000 0x020000>;
+			};
+
+			/* not compatible with u-boot */
+			partition@20000 {
+				label = "config";
+				reg = <0x020000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+				};
+			};
+
+			partition@30000 {
+				label = "art";
+				reg = <0x030000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+			0x04 0x07a00000 /* PORT0_PAD_MODE_CTRL */
+			0x08 0x00000000 /* PORT5_PAD_MODE_CTRL */
+			0x0c 0x00000000 /* PORT6_PAD_MODE_CTRL */
+			0x10 0x81000080 /* POWER_ON_STRAP */
+			0x50 0xcf37cf37 /* LED_CTRL0 */
+			0x54 0x00000000 /* LED_CTRL1 */
+			0x58 0x00000000 /* LED_CTRL2 */
+			0x5c 0x03ffff00 /* LED_CTRL3 */
+			0x7c 0x0000007e /* PORT0_STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x06000000 0x00000101 0x00001616>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_config_6>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+
+		rgmii-gmac0 = <1>;
+		rxdv-delay = <0>;
+		rxd-delay = <0>;
+		txd-delay = <0>;
+		txen-delay = <0>;
+	};
+};
+
+&gpio {
+	switch-reset {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0030";
+		reg = <0x0000 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+
+		usb-hub-reset {
+			gpio-hog;
+			gpios = <10 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	dr_mode = "host";
+
+	/delete-node/ port@1;
+
+	/* NEC uPD720114 */
+	hub@1 {
+		compatible = "usb0409,005a";
+		reg = <1>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+};

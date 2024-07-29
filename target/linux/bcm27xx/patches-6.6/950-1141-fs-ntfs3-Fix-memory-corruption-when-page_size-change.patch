@@ -25,7 +25,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/fs/ntfs3/fslog.c
 +++ b/fs/ntfs3/fslog.c
-@@ -3907,6 +3907,8 @@ check_restart_area:
+@@ -3914,6 +3914,8 @@ check_restart_area:
  		log->l_size = log->orig_file_size;
  		log->page_size = norm_file_page(t32, &log->l_size,
  						t32 == DefaultLogPageSize);

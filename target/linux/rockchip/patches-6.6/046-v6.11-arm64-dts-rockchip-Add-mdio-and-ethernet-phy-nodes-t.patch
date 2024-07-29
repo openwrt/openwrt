@@ -1,0 +1,61 @@
+From 4b64ed510ed946a4e4ca6d51d6512bf5361f6a04 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Tue, 21 May 2024 21:10:10 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add mdio and ethernet-phy nodes to
+ rk3308-rock-pi-s
+
+Be explicit about the Ethernet port and define mdio and ethernet-phy
+nodes in the device tree for ROCK Pi S.
+
+Fixes: bc3753aed81f ("arm64: dts: rockchip: rock-pi-s add more peripherals")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20240521211029.1236094-8-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3308-rock-pi-s.dts    | 26 ++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3308-rock-pi-s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3308-rock-pi-s.dts
+@@ -144,11 +144,25 @@
+ 
+ &gmac {
+ 	clock_in_out = "output";
++	phy-handle = <&rtl8201f>;
+ 	phy-supply = <&vcc_io>;
+-	snps,reset-gpio = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
+-	snps,reset-active-low;
+-	snps,reset-delays-us = <0 50000 50000>;
+ 	status = "okay";
++
++	mdio {
++		compatible = "snps,dwmac-mdio";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		rtl8201f: ethernet-phy@1 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <1>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&mac_rst>;
++			reset-assert-us = <20000>;
++			reset-deassert-us = <50000>;
++			reset-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
++		};
++	};
+ };
+ 
+ &gpio0 {
+@@ -221,6 +235,12 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&rtc_32k>;
+ 
++	gmac {
++		mac_rst: mac-rst {
++			rockchip,pins = <0 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	leds {
+ 		green_led: green-led {
+ 			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;

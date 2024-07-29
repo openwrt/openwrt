@@ -24,6 +24,7 @@ define Device/ubnt_amplifi-router-hd
   UBNT_TYPE := AFi-R
   UBNT_VERSION := 3.6.3
   SOC := qca9563
+  DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := AmpliFi Router HD
   UBNT_CHIP := qca956x
   DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct kmod-usb2

@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fitblk
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0-only
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
@@ -36,6 +36,8 @@ endef
 define Package/fitblk/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fitblk $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/lib/upgrade
+	$(INSTALL_DATA) ./files/fit.sh $(1)/lib/upgrade
 endef
 
 $(eval $(call BuildPackage,fitblk))

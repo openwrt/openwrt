@@ -10,6 +10,13 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	abt,asr3000)
+		# Originally, phy1 is phy0 mac with LA bit set. However, this would conflict
+		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
+		addr=$(cat /sys/class/net/eth1/address)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $addr > /sys${DEVPATH}/macaddress
+		;;
 	acer,predator-w6)
 		key_path="/var/qcidata/data"
 		[ "$PHYNBR" = "0" ] && cat $key_path/2gMAC > /sys${DEVPATH}/macaddress
@@ -55,15 +62,8 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 2) > /sys${DEVPATH}/macaddress
 		;;
 	cmcc,rax3000m)
-		case "$(cmdline_get_var root)" in
-		/dev/mmc*)
-			addr=$(mmc_get_mac_binary factory 0xa)
-			;;
-		*)
-			addr=$(mtd_get_mac_binary factory 0xa)
-			;;
-		esac
-		[ "$PHYNBR" = "1" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		addr=$(cat /sys/class/net/eth0/address)
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr -1 > /sys${DEVPATH}/macaddress
 		;;
 	comfast,cf-e393ax)
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
@@ -158,6 +158,9 @@ case "$board" in
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088)
 		[ "$PHYNBR" = "0" ] && get_mac_label > /sys${DEVPATH}/macaddress
+		;;
+	tplink,tl-xtr8488)
+		[ "$PHYNBR" = "1" ] && get_mac_label > /sys${DEVPATH}/macaddress
 		;;
 	ubnt,unifi-6-plus)
 		addr=$(mtd_get_mac_binary EEPROM 0x6)

@@ -76,7 +76,7 @@ static int ptm_stop(struct net_device *);
   static unsigned int ptm_poll(int, unsigned int);
   static int ptm_napi_poll(struct napi_struct *, int);
 static int ptm_hard_start_xmit(struct sk_buff *, struct net_device *);
-static int ptm_ioctl(struct net_device *, struct ifreq *, int);
+static int ptm_ioctl(struct net_device *, struct ifreq *, void __user *, int);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
 static void ptm_tx_timeout(struct net_device *);
 #else
@@ -120,7 +120,7 @@ static struct net_device_ops g_ptm_netdev_ops = {
     .ndo_start_xmit      = ptm_hard_start_xmit,
     .ndo_validate_addr   = eth_validate_addr,
     .ndo_set_mac_address = eth_mac_addr,
-    .ndo_do_ioctl        = ptm_ioctl,
+    .ndo_siocdevprivate  = ptm_ioctl,
     .ndo_tx_timeout      = ptm_tx_timeout,
 };
 
@@ -377,62 +377,62 @@ PTM_HARD_START_XMIT_FAIL:
     return 0;
 }
 
-static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *data, int cmd)
 {
     ASSERT(dev == g_net_dev[0], "incorrect device");
 
     switch ( cmd )
     {
     case IFX_PTM_MIB_CW_GET:
-	((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxNoIdleCodewords   = IFX_REG_R32(DREG_AR_CELL0) + IFX_REG_R32(DREG_AR_CELL1);
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxIdleCodewords     = IFX_REG_R32(DREG_AR_IDLE_CNT0) + IFX_REG_R32(DREG_AR_IDLE_CNT1);
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxCodingViolation   = IFX_REG_R32(DREG_AR_CVN_CNT0) + IFX_REG_R32(DREG_AR_CVN_CNT1) + IFX_REG_R32(DREG_AR_CVNP_CNT0) + IFX_REG_R32(DREG_AR_CVNP_CNT1);
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifTxNoIdleCodewords   = IFX_REG_R32(DREG_AT_CELL0) + IFX_REG_R32(DREG_AT_CELL1);
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifTxIdleCodewords     = IFX_REG_R32(DREG_AT_IDLE_CNT0) + IFX_REG_R32(DREG_AT_IDLE_CNT1);
+	((PTM_CW_IF_ENTRY_T *)data)->ifRxNoIdleCodewords   = IFX_REG_R32(DREG_AR_CELL0) + IFX_REG_R32(DREG_AR_CELL1);
+        ((PTM_CW_IF_ENTRY_T *)data)->ifRxIdleCodewords     = IFX_REG_R32(DREG_AR_IDLE_CNT0) + IFX_REG_R32(DREG_AR_IDLE_CNT1);
+        ((PTM_CW_IF_ENTRY_T *)data)->ifRxCodingViolation   = IFX_REG_R32(DREG_AR_CVN_CNT0) + IFX_REG_R32(DREG_AR_CVN_CNT1) + IFX_REG_R32(DREG_AR_CVNP_CNT0) + IFX_REG_R32(DREG_AR_CVNP_CNT1);
+        ((PTM_CW_IF_ENTRY_T *)data)->ifTxNoIdleCodewords   = IFX_REG_R32(DREG_AT_CELL0) + IFX_REG_R32(DREG_AT_CELL1);
+        ((PTM_CW_IF_ENTRY_T *)data)->ifTxIdleCodewords     = IFX_REG_R32(DREG_AT_IDLE_CNT0) + IFX_REG_R32(DREG_AT_IDLE_CNT1);
         break;
     case IFX_PTM_MIB_FRAME_GET:
 	{
-            PTM_FRAME_MIB_T data = {0};
+            PTM_FRAME_MIB_T tmp = {0};
             int i;
 
-            data.RxCorrect = IFX_REG_R32(DREG_AR_HEC_CNT0) + IFX_REG_R32(DREG_AR_HEC_CNT1) + IFX_REG_R32(DREG_AR_AIIDLE_CNT0) + IFX_REG_R32(DREG_AR_AIIDLE_CNT1);
+            tmp.RxCorrect = IFX_REG_R32(DREG_AR_HEC_CNT0) + IFX_REG_R32(DREG_AR_HEC_CNT1) + IFX_REG_R32(DREG_AR_AIIDLE_CNT0) + IFX_REG_R32(DREG_AR_AIIDLE_CNT1);
             for ( i = 0; i < 4; i++ )
-                data.RxDropped += WAN_RX_MIB_TABLE(i)->wrx_dropdes_pdu;
+                tmp.RxDropped += WAN_RX_MIB_TABLE(i)->wrx_dropdes_pdu;
             for ( i = 0; i < 8; i++ )
-                data.TxSend    += WAN_TX_MIB_TABLE(i)->wtx_total_pdu;
+                tmp.TxSend    += WAN_TX_MIB_TABLE(i)->wtx_total_pdu;
 
-            *((PTM_FRAME_MIB_T *)ifr->ifr_data) = data;
+            *((PTM_FRAME_MIB_T *)data) = tmp;
         }
         break;
     case IFX_PTM_CFG_GET:
 	//  use bear channel 0 preemption gamma interface settings
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcPresent = 1;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcCheck   = RX_GAMMA_ITF_CFG(0)->rx_eth_fcs_ver_dis == 0 ? 1 : 0;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen      = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size == 0 ? 0 : (RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size * 16);
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxEthCrcGen     = TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis == 0 ? 1 : 0;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcGen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : 1;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : (TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size * 16);
+        ((IFX_PTM_CFG_T *)data)->RxEthCrcPresent = 1;
+        ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck   = RX_GAMMA_ITF_CFG(0)->rx_eth_fcs_ver_dis == 0 ? 1 : 0;
+        ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;;
+        ((IFX_PTM_CFG_T *)data)->RxTcCrcLen      = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size == 0 ? 0 : (RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size * 16);
+        ((IFX_PTM_CFG_T *)data)->TxEthCrcGen     = TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis == 0 ? 1 : 0;
+        ((IFX_PTM_CFG_T *)data)->TxTcCrcGen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : 1;
+        ((IFX_PTM_CFG_T *)data)->TxTcCrcLen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : (TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size * 16);
         break;
     case IFX_PTM_CFG_SET:
 	{
             int i;
 
             for ( i = 0; i < 4; i++ ) {
-                RX_GAMMA_ITF_CFG(i)->rx_eth_fcs_ver_dis = ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcCheck ? 0 : 1;
+                RX_GAMMA_ITF_CFG(i)->rx_eth_fcs_ver_dis = ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck ? 0 : 1;
 
-                RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis = ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcCheck ? 0 : 1;
+                RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis = ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck ? 0 : 1;
 
-                switch ( ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen ) {
+                switch ( ((IFX_PTM_CFG_T *)data)->RxTcCrcLen ) {
                     case 16: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 1; break;
                     case 32: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 2; break;
                     default: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 0;
                 }
 
-                TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis = ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxEthCrcGen ? 0 : 1;
+                TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis = ((IFX_PTM_CFG_T *)data)->TxEthCrcGen ? 0 : 1;
 
-                if ( ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcGen ) {
-                    switch ( ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen ) {
+                if ( ((IFX_PTM_CFG_T *)data)->TxTcCrcGen ) {
+                    switch ( ((IFX_PTM_CFG_T *)data)->TxTcCrcLen ) {
                         case 16: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 1; break;
                         case 32: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 2; break;
                         default: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 0;
@@ -447,7 +447,7 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
         {
             struct ppe_prio_q_map cmd;
 
-            if ( copy_from_user(&cmd, ifr->ifr_data, sizeof(cmd)) )
+            if ( copy_from_user(&cmd, data, sizeof(cmd)) )
                 return -EFAULT;
 
             if ( cmd.pkt_prio < 0 || cmd.pkt_prio >= ARRAY_SIZE(g_ptm_prio_queue_map) )

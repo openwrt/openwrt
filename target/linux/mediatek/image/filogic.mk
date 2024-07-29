@@ -105,6 +105,30 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
+define Device/abt_asr3000
+  DEVICE_VENDOR := ABT
+  DEVICE_MODEL := ASR3000
+  DEVICE_DTS := mt7981b-abt-asr3000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot abt_asr3000
+endef
+TARGET_DEVICES += abt_asr3000
+
 define Device/acelink_ew-7886cax
   DEVICE_VENDOR := Acelink
   DEVICE_MODEL := EW-7886CAX
@@ -444,7 +468,7 @@ endef
 TARGET_DEVICES += cmcc_rax3000m
 
 define Device/comfast_cf-e393ax
-  DEVICE_VENDOR := Comfast
+  DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E393AX
   DEVICE_DTS := mt7981a-comfast-cf-e393ax
   DEVICE_DTS_DIR := ../dts
@@ -1143,9 +1167,19 @@ define Device/tplink_tl-xdr6088
 endef
 TARGET_DEVICES += tplink_tl-xdr6088
 
+define Device/tplink_tl-xtr8488
+  DEVICE_MODEL := TL-XTR8488
+  DEVICE_DTS := mt7986a-tplink-tl-xtr8488
+  $(call Device/tplink_tl-xdr-common)
+  DEVICE_PACKAGES += kmod-mt7915-firmware
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_tl-xtr8488
+endef
+TARGET_DEVICES += tplink_tl-xtr8488
+
 define Device/ubnt_unifi-6-plus
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_MODEL := UniFi 6 Plus
+  DEVICE_MODEL := UniFi U6+
   DEVICE_DTS := mt7981a-ubnt-unifi-6-plus
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware e2fsprogs f2fsck mkf2fs fdisk partx-utils

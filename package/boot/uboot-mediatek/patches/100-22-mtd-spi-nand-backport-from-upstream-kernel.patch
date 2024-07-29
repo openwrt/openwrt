@@ -22,11 +22,12 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/nand/spi/Makefile
 +++ b/drivers/mtd/nand/spi/Makefile
-@@ -1,4 +1,4 @@
+@@ -1,5 +1,5 @@
  # SPDX-License-Identifier: GPL-2.0
  
--spinand-objs := core.o gigadevice.o macronix.o micron.o paragon.o toshiba.o winbond.o
-+spinand-objs := core.o etron.o gigadevice.o macronix.o micron.o paragon.o toshiba.o winbond.o
+-spinand-objs := core.o esmt.o gigadevice.o macronix.o micron.o paragon.o
++spinand-objs := core.o esmt.o etron.o gigadevice.o macronix.o micron.o paragon.o
+ spinand-objs += toshiba.o winbond.o xtx.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
@@ -539,7 +540,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static int winbond_spinand_init(struct spinand_device *spinand)
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -245,6 +245,7 @@ struct spinand_manufacturer {
+@@ -244,6 +244,7 @@ struct spinand_manufacturer {
  };
  
  /* SPI NAND manufacturers */

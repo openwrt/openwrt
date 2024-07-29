@@ -112,6 +112,9 @@ endif
 	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
 	rm -f $(IB_KDIR)/root.*
 	rm -f $(IB_KDIR)/vmlinux.debug
+	# remove any file for initramfs and Per Device Rootfs initramfs files
+	rm -f $(IB_KDIR)/vmlinux-initramfs*
+	rm -f $(IB_KDIR)/Image-initramfs*
 	if [ -x $(LINUX_DIR)/scripts/dtc/dtc ]; then \
 		$(INSTALL_DIR) $(IB_LDIR)/scripts/dtc; \
 		$(INSTALL_BIN) $(LINUX_DIR)/scripts/dtc/dtc $(IB_LDIR)/scripts/dtc/dtc; \

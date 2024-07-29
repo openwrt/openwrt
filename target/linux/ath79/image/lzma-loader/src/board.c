@@ -182,34 +182,107 @@ static inline void mr18_init(void)
 static inline void mr18_init(void) { }
 #endif
 
-#ifdef CONFIG_BOARD_HUAWEI_AP5030DN
-static inline void ap5030dn_init(void)
+#if defined(CONFIG_BOARD_HUAWEI_AP5030DN) || defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+static inline void huawei_ap_init(void)
 {
-	const unsigned int ap5030dn_watchdog_gpio = 15;
+	const unsigned int watchdog_gpio = 15;
 	unsigned int gpiobase, reg;
 
 	gpiobase = KSEG1ADDR(AR71XX_GPIO_BASE);
 
-	printf("Huawei AP5030DN\n");
+	printf("Huawei AP\n");
 
 	reg = READREG(gpiobase + AR71XX_GPIO_REG_OE);
 	WRITEREG(gpiobase + AR71XX_GPIO_REG_OE,
-			reg & ~(1 << ap5030dn_watchdog_gpio));
+			reg & ~(1 << watchdog_gpio));
 
 	/* Set GPIO15 MUX to output CLK_OBS5 (= CPU_CLK/4)
-	 * to keep the watchdog happy until wdt-gpio takes over
+	 * or CLK_OBS4 (= AHB_CLK/2) to keep the watchdog happy
+	 * until wdt-gpio takes over
 	 */
 	reg = READREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3);
+#if defined(CONFIG_BOARD_HUAWEI_AP5030DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (QCA955X_GPIO_OUTSEL_CLK_OBS5 << 24));
+#else if defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
+			reg | (AR934X_GPIO_OUTSEL_CLK_OBS4 << 24));
+#endif
 }
 #else
-static inline void ap5030dn_init(void) { }
+static inline void huawei_ap_init(void) {}
+#endif
+
+#if defined(CONFIG_BOARD_NEC_WG600HP) || \
+    defined(CONFIG_BOARD_NEC_WR8750N) || \
+    defined(CONFIG_BOARD_NEC_WR9500N)
+
+#define AR934X_PLL_SWITCH_CLK_CTRL_REG			0x24
+#define AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL	BIT(0)
+
+static inline void nec_aterm_init(void)
+{
+	unsigned int reg, val;
+
+	printf("NEC Aterm series (AR9344)\n");
+
+	/* set REFCLK=40MHz to switch PLL */
+	reg = KSEG1ADDR(AR71XX_PLL_BASE);
+	val = READREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG);
+	val &= ~AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL;
+	WRITEREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG, val);
+
+	reg = KSEG1ADDR(AR71XX_RESET_BASE);
+#ifndef LOADADDR
+	/*
+	 * This is for initramfs-factory image.
+	 * When the system was reset by power source or FULL_CHIP_RESET
+	 * and started from the OEM bootloader with a dummy tp data
+	 * (this loader), reset again by timeout of the watchdog timer
+	 * to load an actual OpenWrt initramfs image in firmware block
+	 * in a factory image.
+	 * Note: On the stock firmware, TP block contains a POST function
+	 *       and sub commands of "tp" command.
+	 *
+	 * Behaviors of OEM bootloader:
+	 *
+	 * - reset by watchdog (ex.: rebooting on the stock firmware):
+	 *   called as "SOFT-RESET", boot a firmware without POST
+	 *
+	 * - reset by FULL_CHIP_RESET (or powering on):
+	 *   called as "HARD-RESET", run POST and boot a firmware
+	 */
+	printf("\n## booted with dummy tp (lzma-loader),"
+	       " waiting reset... (count: 0x%08x) ##\n",
+	       READREG(reg + AR71XX_RESET_REG_WDOG));
+	while (1);
+#endif
+	/*
+	 * set maximum watchdog count to avoid reset while
+	 * booting from stock bootloader
+	 */
+	WRITEREG(reg + AR71XX_RESET_REG_WDOG, 0xffffffff);
+
+	/*
+	 * deassert some RESET bits not handled by drivers
+	 * and mainline U-Boot
+	 *
+	 * - ETH_SWITCH(_ANALOG): eth0
+	 * - RTC                : wmac
+	 */
+	val = READREG(reg + AR934X_RESET_REG_RESET_MODULE);
+	val &= ~(AR934X_RESET_ETH_SWITCH | AR934X_RESET_ETH_SWITCH_ANALOG |
+		 AR934X_RESET_RTC);
+	WRITEREG(reg + AR934X_RESET_REG_RESET_MODULE, val);
+}
+#else
+static inline void nec_aterm_init(void) {}
 #endif
 
 void board_init(void)
 {
 	tlwr1043nd_init();
 	mr18_init();
-	ap5030dn_init();
+	huawei_ap_init();
+	nec_aterm_init();
 }

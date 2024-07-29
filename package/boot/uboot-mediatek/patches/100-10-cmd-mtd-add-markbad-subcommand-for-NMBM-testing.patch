@@ -20,7 +20,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/cmd/mtd.c
 +++ b/cmd/mtd.c
-@@ -504,6 +504,42 @@ out_put_mtd:
+@@ -722,6 +722,42 @@ out_put_mtd:
  	return CMD_RET_SUCCESS;
  }
  
@@ -63,15 +63,15 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  #ifdef CONFIG_AUTO_COMPLETE
  static int mtd_name_complete(int argc, char *const argv[], char last_char,
  			     int maxv, char *cmdv[])
-@@ -551,6 +587,7 @@ U_BOOT_LONGHELP(mtd,
+@@ -769,6 +805,7 @@ U_BOOT_LONGHELP(mtd,
  	"\n"
  	"Specific functions:\n"
  	"mtd bad                               <name>\n"
 +	"mtd markbad                           <name> <off>\n"
- 	"\n"
- 	"With:\n"
- 	"\t<name>: NAND partition/chip name (or corresponding DM device name or OF path)\n"
-@@ -575,4 +612,6 @@ U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils"
+ #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+ 	"mtd otpread                           <name> [u|f] <off> <size>\n"
+ 	"mtd otpwrite                          <name> <off> <hex string>\n"
+@@ -809,4 +846,6 @@ U_BOOT_CMD_WITH_SUBCMDS(mtd, "MTD utils"
  		U_BOOT_SUBCMD_MKENT_COMPLETE(erase, 4, 0, do_mtd_erase,
  					     mtd_name_complete),
  		U_BOOT_SUBCMD_MKENT_COMPLETE(bad, 2, 1, do_mtd_bad,

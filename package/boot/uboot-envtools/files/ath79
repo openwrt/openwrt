@@ -118,7 +118,8 @@ domywifi,dw33d)
 glinet,gl-ar150)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x8000" "0x10000"
 	;;
-huawei,ap5030dn)
+huawei,ap5030dn|\
+huawei,ap6010dn)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x20000" "0x20000"
 	;;
 netgear,wndr3700|\

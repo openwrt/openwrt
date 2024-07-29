@@ -126,7 +126,7 @@ static int ptm_stop(struct net_device *);
   static unsigned int ptm_poll(int, unsigned int);
   static int ptm_napi_poll(struct napi_struct *, int);
 static int ptm_hard_start_xmit(struct sk_buff *, struct net_device *);
-static int ptm_ioctl(struct net_device *, struct ifreq *, int);
+static int ptm_ioctl(struct net_device *, struct ifreq *, void __user *, int);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
 static void ptm_tx_timeout(struct net_device *);
 #else
@@ -247,7 +247,7 @@ static struct net_device_ops g_ptm_netdev_ops = {
     .ndo_start_xmit      = ptm_hard_start_xmit,
     .ndo_validate_addr   = eth_validate_addr,
     .ndo_set_mac_address = eth_mac_addr,
-    .ndo_do_ioctl        = ptm_ioctl,
+    .ndo_siocdevprivate  = ptm_ioctl,
     .ndo_tx_timeout      = ptm_tx_timeout,
 };
 
@@ -459,7 +459,7 @@ PTM_HARD_START_XMIT_FAIL:
     return NETDEV_TX_OK;
 }
 
-static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *data, int cmd)
 {
     int ndev;
 
@@ -469,45 +469,45 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
     switch ( cmd )
     {
     case IFX_PTM_MIB_CW_GET:
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxNoIdleCodewords   = WAN_MIB_TABLE[ndev].wrx_nonidle_cw;
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxIdleCodewords     = WAN_MIB_TABLE[ndev].wrx_idle_cw;
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifRxCodingViolation   = WAN_MIB_TABLE[ndev].wrx_err_cw;
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifTxNoIdleCodewords   = 0;
-        ((PTM_CW_IF_ENTRY_T *)ifr->ifr_data)->ifTxIdleCodewords     = 0;
+        ((PTM_CW_IF_ENTRY_T *)data)->ifRxNoIdleCodewords   = WAN_MIB_TABLE[ndev].wrx_nonidle_cw;
+        ((PTM_CW_IF_ENTRY_T *)data)->ifRxIdleCodewords     = WAN_MIB_TABLE[ndev].wrx_idle_cw;
+        ((PTM_CW_IF_ENTRY_T *)data)->ifRxCodingViolation   = WAN_MIB_TABLE[ndev].wrx_err_cw;
+        ((PTM_CW_IF_ENTRY_T *)data)->ifTxNoIdleCodewords   = 0;
+        ((PTM_CW_IF_ENTRY_T *)data)->ifTxIdleCodewords     = 0;
         break;
     case IFX_PTM_MIB_FRAME_GET:
-        ((PTM_FRAME_MIB_T *)ifr->ifr_data)->RxCorrect   = WAN_MIB_TABLE[ndev].wrx_correct_pdu;
-        ((PTM_FRAME_MIB_T *)ifr->ifr_data)->TC_CrcError = WAN_MIB_TABLE[ndev].wrx_tccrc_err_pdu;
-        ((PTM_FRAME_MIB_T *)ifr->ifr_data)->RxDropped   = WAN_MIB_TABLE[ndev].wrx_nodesc_drop_pdu + WAN_MIB_TABLE[ndev].wrx_len_violation_drop_pdu;
-        ((PTM_FRAME_MIB_T *)ifr->ifr_data)->TxSend      = WAN_MIB_TABLE[ndev].wtx_total_pdu;
+        ((PTM_FRAME_MIB_T *)data)->RxCorrect   = WAN_MIB_TABLE[ndev].wrx_correct_pdu;
+        ((PTM_FRAME_MIB_T *)data)->TC_CrcError = WAN_MIB_TABLE[ndev].wrx_tccrc_err_pdu;
+        ((PTM_FRAME_MIB_T *)data)->RxDropped   = WAN_MIB_TABLE[ndev].wrx_nodesc_drop_pdu + WAN_MIB_TABLE[ndev].wrx_len_violation_drop_pdu;
+        ((PTM_FRAME_MIB_T *)data)->TxSend      = WAN_MIB_TABLE[ndev].wtx_total_pdu;
         break;
     case IFX_PTM_CFG_GET:
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcPresent = CFG_ETH_EFMTC_CRC->rx_eth_crc_present;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcCheck   = CFG_ETH_EFMTC_CRC->rx_eth_crc_check;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcCheck    = CFG_ETH_EFMTC_CRC->rx_tc_crc_check;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen      = CFG_ETH_EFMTC_CRC->rx_tc_crc_len;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxEthCrcGen     = CFG_ETH_EFMTC_CRC->tx_eth_crc_gen;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcGen      = CFG_ETH_EFMTC_CRC->tx_tc_crc_gen;
-        ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen      = CFG_ETH_EFMTC_CRC->tx_tc_crc_len;
+        ((IFX_PTM_CFG_T *)data)->RxEthCrcPresent = CFG_ETH_EFMTC_CRC->rx_eth_crc_present;
+        ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck   = CFG_ETH_EFMTC_CRC->rx_eth_crc_check;
+        ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck    = CFG_ETH_EFMTC_CRC->rx_tc_crc_check;
+        ((IFX_PTM_CFG_T *)data)->RxTcCrcLen      = CFG_ETH_EFMTC_CRC->rx_tc_crc_len;
+        ((IFX_PTM_CFG_T *)data)->TxEthCrcGen     = CFG_ETH_EFMTC_CRC->tx_eth_crc_gen;
+        ((IFX_PTM_CFG_T *)data)->TxTcCrcGen      = CFG_ETH_EFMTC_CRC->tx_tc_crc_gen;
+        ((IFX_PTM_CFG_T *)data)->TxTcCrcLen      = CFG_ETH_EFMTC_CRC->tx_tc_crc_len;
         break;
     case IFX_PTM_CFG_SET:
-        CFG_ETH_EFMTC_CRC->rx_eth_crc_present   = ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcPresent ? 1 : 0;
-        CFG_ETH_EFMTC_CRC->rx_eth_crc_check     = ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxEthCrcCheck ? 1 : 0;
-        if ( ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcCheck && (((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen == 16 || ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen == 32) )
+        CFG_ETH_EFMTC_CRC->rx_eth_crc_present   = ((IFX_PTM_CFG_T *)data)->RxEthCrcPresent ? 1 : 0;
+        CFG_ETH_EFMTC_CRC->rx_eth_crc_check     = ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck ? 1 : 0;
+        if ( ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck && (((IFX_PTM_CFG_T *)data)->RxTcCrcLen == 16 || ((IFX_PTM_CFG_T *)data)->RxTcCrcLen == 32) )
         {
             CFG_ETH_EFMTC_CRC->rx_tc_crc_check  = 1;
-            CFG_ETH_EFMTC_CRC->rx_tc_crc_len    = ((IFX_PTM_CFG_T *)ifr->ifr_data)->RxTcCrcLen;
+            CFG_ETH_EFMTC_CRC->rx_tc_crc_len    = ((IFX_PTM_CFG_T *)data)->RxTcCrcLen;
         }
         else
         {
             CFG_ETH_EFMTC_CRC->rx_tc_crc_check  = 0;
             CFG_ETH_EFMTC_CRC->rx_tc_crc_len    = 0;
         }
-        CFG_ETH_EFMTC_CRC->tx_eth_crc_gen       = ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxEthCrcGen ? 1 : 0;
-        if ( ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcGen && (((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen == 16 || ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen == 32) )
+        CFG_ETH_EFMTC_CRC->tx_eth_crc_gen       = ((IFX_PTM_CFG_T *)data)->TxEthCrcGen ? 1 : 0;
+        if ( ((IFX_PTM_CFG_T *)data)->TxTcCrcGen && (((IFX_PTM_CFG_T *)data)->TxTcCrcLen == 16 || ((IFX_PTM_CFG_T *)data)->TxTcCrcLen == 32) )
         {
             CFG_ETH_EFMTC_CRC->tx_tc_crc_gen    = 1;
-            CFG_ETH_EFMTC_CRC->tx_tc_crc_len    = ((IFX_PTM_CFG_T *)ifr->ifr_data)->TxTcCrcLen;
+            CFG_ETH_EFMTC_CRC->tx_tc_crc_len    = ((IFX_PTM_CFG_T *)data)->TxTcCrcLen;
         }
         else
         {

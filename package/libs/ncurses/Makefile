@@ -181,6 +181,8 @@ define Build/InstallDev
 	$(SED) 's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' -e 's/$$$$INCS //g' \
 		$(2)/bin/ncursesw6-config
 	ln -sf $(STAGING_DIR)/host/bin/ncursesw6-config $(1)/usr/bin/ncursesw6-config
+	$(SED) 's,$(TOOLCHAIN_DIR),$(STAGING_DIR),g' \
+		$(1)/usr/lib/pkgconfig/ncursesw.pc
 endef
 
 define Host/Compile
