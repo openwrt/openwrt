@@ -11,6 +11,7 @@ PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/vrx518_ppe_fw.git
 PKG_SOURCE_VERSION:=47c48d52ba59df733ab21fd0c18f6d1a7b0e7229
 PKG_MIRROR_HASH:=33dd15b6c6205b5031498aac9a5a4876f8217aefea06dc511ac60ca1343b50d1
 
+PKG_FLAGS:=nonshared
 PKG_LICENSE:=MaxLinear-Software-License-Agreement
 PKG_LICENSE_FILES:=platform/xrx500/LICENSE
 
