@@ -1414,7 +1414,6 @@ static void fe_uninit(struct net_device *dev)
 	fe_mdio_cleanup(priv);
 
 	fe_reg_w32(0, FE_REG_FE_INT_ENABLE);
-	free_irq(dev->irq, dev);
 }
 
 static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
