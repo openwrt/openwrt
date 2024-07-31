@@ -905,7 +905,8 @@ define KernelPackage/ixgbe
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
-    CONFIG_IXGBE_DCA=n
+    CONFIG_IXGBE_DCA=n \
+    CONFIG_IXGBE_DCB=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,ixgbe)
 endef
@@ -943,7 +944,8 @@ define KernelPackage/i40e
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_VXLAN=n \
     CONFIG_I40E_HWMON=y \
-    CONFIG_I40E_DCA=n
+    CONFIG_I40E_DCA=n \
+    CONFIG_I40E_DCB=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
   AUTOLOAD:=$(call AutoProbe,i40e)
 endef
@@ -1519,9 +1521,6 @@ define KernelPackage/mlxsw-spectrum
   CONFIG_MLXSW_SPECTRUM_DCB=y \
   CONFIG_DCB=y \
   CONFIG_AMD_XGBE_DCB=n \
-  CONFIG_IXGBE_DCB=n \
-  CONFIG_I40E_DCB=n \
-  CONFIG_QLCNIC_DCB=n \
   CONFIG_FSL_DPAA2_ETH_DCB=n \
   CONFIG_FSL_DPAA2_SWITCH=n
   AUTOLOAD:=$(call AutoProbe,mlxsw_spectrum)
@@ -1558,7 +1557,8 @@ define KernelPackage/qlcnic
   KCONFIG:= \
 	CONFIG_QLCNIC \
 	CONFIG_QLCNIC_HWMON=y \
-	CONFIG_QLCNIC_SRIOV=y
+	CONFIG_QLCNIC_SRIOV=y \
+	CONFIG_QLCNIC_DCB=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef
