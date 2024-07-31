@@ -1,0 +1,43 @@
+From 364c2da8741f0979dae497551e70b94c0e6c8636 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sun, 7 Jul 2024 11:46:49 +0300
+Subject: [PATCH] SAE: Check for invalid Rejected Groups element length
+ explicitly
+
+Instead of practically ignoring an odd octet at the end of the element,
+check for such invalid case explicitly. This is needed to avoid a
+potential group downgrade attack.
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/ap/ieee802_11.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1223,7 +1223,7 @@ static int check_sae_rejected_groups(str
+ 				     struct sae_data *sae)
+ {
+ 	const struct wpabuf *groups;
+-	size_t i, count;
++	size_t i, count, len;
+ 	const u8 *pos;
+ 
+ 	if (!sae->tmp)
+@@ -1233,7 +1233,15 @@ static int check_sae_rejected_groups(str
+ 		return 0;
+ 
+ 	pos = wpabuf_head(groups);
+-	count = wpabuf_len(groups) / 2;
++	len = wpabuf_len(groups);
++	if (len & 1) {
++		wpa_printf(MSG_DEBUG,
++			   "SAE: Invalid length of the Rejected Groups element payload: %zu",
++			   len);
++		return 1;
++	}
++
++	count = len / 2;
+ 	for (i = 0; i < count; i++) {
+ 		int enabled;
+ 		u16 group;

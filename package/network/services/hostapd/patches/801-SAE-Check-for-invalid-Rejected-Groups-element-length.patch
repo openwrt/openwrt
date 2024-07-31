@@ -1,0 +1,42 @@
+From 593a7c2f8c93edd6b552f2d42e28164464b4e6ff Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Tue, 9 Jul 2024 23:33:38 +0300
+Subject: [PATCH] SAE: Check for invalid Rejected Groups element length
+ explicitly on STA
+
+Instead of practically ignoring an odd octet at the end of the element,
+check for such invalid case explicitly. This is needed to avoid a
+potential group downgrade attack.
+
+Fixes: 444d76f74f65 ("SAE: Check that peer's rejected groups are not enabled")
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ wpa_supplicant/sme.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -1596,14 +1596,21 @@ static int sme_sae_is_group_enabled(stru
+ static int sme_check_sae_rejected_groups(struct wpa_supplicant *wpa_s,
+ 					 const struct wpabuf *groups)
+ {
+-	size_t i, count;
++	size_t i, count, len;
+ 	const u8 *pos;
+ 
+ 	if (!groups)
+ 		return 0;
+ 
+ 	pos = wpabuf_head(groups);
+-	count = wpabuf_len(groups) / 2;
++	len = wpabuf_len(groups);
++	if (len & 1) {
++		wpa_printf(MSG_DEBUG,
++			   "SAE: Invalid length of the Rejected Groups element payload: %zu",
++			   len);
++		return 1;
++	}
++	count = len / 2;
+ 	for (i = 0; i < count; i++) {
+ 		int enabled;
+ 		u16 group;
