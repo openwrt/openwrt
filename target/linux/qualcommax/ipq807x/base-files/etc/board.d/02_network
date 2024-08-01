@@ -82,10 +82,8 @@ ipq807x_setup_macs()
 	case "$board" in
 		linksys,mx4200v2)
 			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-			for i in $(seq 3 5); do
-				[ "$(mtd_get_mac_ascii u_env eth${i}addr)" != "$label_mac" ] && lan_mac=$label_mac
-			done
-			[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && wan_mac=$label_mac
+			[ "$(mtd_get_mac_ascii u_env eth1addr)" != "$label_mac" ] && wan_mac=$label_mac
+			[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && lan_mac=$label_mac
 		;;
 		linksys,mx8500)
 			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
