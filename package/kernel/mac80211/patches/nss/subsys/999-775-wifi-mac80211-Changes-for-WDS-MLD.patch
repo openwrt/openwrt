@@ -1,0 +1,210 @@
+From abd9e23af3835b9d21b9e0b9d885142dff73d741 Mon Sep 17 00:00:00 2001
+From: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
+Date: Wed, 17 May 2023 16:26:23 +0530
+Subject: [PATCH] cfg80211/mac80211: Changes for WDS MLD
+
+Add link id attributes for NL80211_CMD_UNEXPECTED_4ADDR_FRAME.
+
+Based on the station's link, add links to the vlan interface
+
+Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
+---
+ include/net/cfg80211.h |  4 +++-
+ net/mac80211/cfg.c     | 37 +++++++++++++++++++++++++++++++++++++
+ net/mac80211/rx.c      |  8 +++++---
+ net/wireless/nl80211.c | 13 +++++++++----
+ 4 files changed, 54 insertions(+), 8 deletions(-)
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -8760,6 +8760,7 @@ bool cfg80211_rx_spurious_frame(struct n
+  * @dev: The device the frame matched to
+  * @addr: the transmitter address
+  * @gfp: context flags
++ * @link_id: link id
+  *
+  * This function is used in AP mode (only!) to inform userspace that
+  * an associated station sent a 4addr frame but that wasn't expected.
+@@ -8769,7 +8770,8 @@ bool cfg80211_rx_spurious_frame(struct n
+  * for a reason other than not having a subscription.)
+  */
+ bool cfg80211_rx_unexpected_4addr_frame(struct net_device *dev,
+-					const u8 *addr, gfp_t gfp);
++					const u8 *addr, gfp_t gfp,
++					const int link_id);
+ 
+ /**
+  * cfg80211_probe_status - notify userspace about probe status
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -2189,9 +2189,16 @@ static int ieee80211_change_station(stru
+ 		vlansdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
+ 
+ 		if (params->vlan->ieee80211_ptr->use_4addr) {
++			struct ieee80211_sub_if_data *master;
++			struct wireless_dev *wdev;
++
+ 			if (vlansdata->u.vlan.sta)
+ 				return -EBUSY;
+ 
++			wdev = &vlansdata->wdev;
++			master = container_of(vlansdata->bss,
++					      struct ieee80211_sub_if_data, u.ap);
++
+ 			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
+ 			__ieee80211_check_fast_rx_iface(vlansdata);
+ 
+@@ -2201,6 +2208,39 @@ static int ieee80211_change_station(stru
+ 			else
+ 				drv_sta_set_4addr(local, sta->sdata, &sta->sta,
+ 						  true);
++			if (sta->sta.valid_links) {
++				int link_id;
++				unsigned long valid_links = master->vif.valid_links;
++				for_each_set_bit(link_id,
++						 &valid_links,
++						 IEEE80211_MLD_MAX_NUM_LINKS) {
++					if (!(sta->sta.valid_links & BIT(link_id))) {
++						rcu_assign_pointer(
++						vlansdata->vif.link_conf[link_id],
++						NULL);
++						rcu_assign_pointer(
++						vlansdata->link[link_id],
++						NULL);
++						memset(wdev->links[link_id].addr,
++						       0, ETH_ALEN);
++						vlansdata->vif.valid_links &=
++								~BIT(link_id);
++						wdev->valid_links &= ~BIT(link_id);
++					}
++					else {
++						rcu_assign_pointer(
++						vlansdata->vif.link_conf[link_id],
++						master->vif.link_conf[link_id]);
++						rcu_assign_pointer(vlansdata->link[link_id],
++								   master->link[link_id]);
++						memcpy(wdev->links[link_id].addr,
++						       vlansdata->vif.link_conf[link_id]->bssid,
++							ETH_ALEN);
++						vlansdata->vif.valid_links |= BIT(link_id);
++						wdev->valid_links |= BIT(link_id);
++					}
++				}
++			}
+ 		}
+ 
+ 		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1683,7 +1683,7 @@ EXPORT_SYMBOL(ieee80211_sta_uapsd_trigge
+ 
+ void ieee80211_rx_nss_notify_4addr(struct net_device *dev, u8 *sta_addr)
+ {
+-	cfg80211_rx_unexpected_4addr_frame(dev, sta_addr, GFP_ATOMIC);
++	cfg80211_rx_unexpected_4addr_frame(dev, sta_addr, GFP_ATOMIC, -1);
+ }
+ EXPORT_SYMBOL(ieee80211_rx_nss_notify_4addr);
+ 
+@@ -1858,7 +1858,8 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 			if (!test_and_set_sta_flag(sta, WLAN_STA_4ADDR_EVENT))
+ 				cfg80211_rx_unexpected_4addr_frame(
+ 					rx->sdata->dev, sta->sta.addr,
+-					GFP_ATOMIC);
++					GFP_ATOMIC,
++					rx->link_id);
+ 			return RX_DROP_M_UNEXPECTED_4ADDR_FRAME;
+ 		}
+ 		/*
+@@ -3245,7 +3246,8 @@ ieee80211_rx_h_data(struct ieee80211_rx_
+ 		if (rx->sta &&
+ 		    !test_and_set_sta_flag(rx->sta, WLAN_STA_4ADDR_EVENT))
+ 			cfg80211_rx_unexpected_4addr_frame(
+-				rx->sdata->dev, rx->sta->sta.addr, GFP_ATOMIC);
++				rx->sdata->dev, rx->sta->sta.addr, GFP_ATOMIC,
++				rx->link_id);
+ 		return RX_DROP_MONITOR;
+ 	}
+ 
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -18887,7 +18887,8 @@ void cfg80211_conn_failed(struct net_dev
+ EXPORT_SYMBOL(cfg80211_conn_failed);
+ 
+ static bool __nl80211_unexpected_frame(struct net_device *dev, u8 cmd,
+-				       const u8 *addr, gfp_t gfp)
++				       const u8 *addr, gfp_t gfp,
++				       const int link_id)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
+@@ -18913,6 +18914,9 @@ static bool __nl80211_unexpected_frame(s
+ 	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr))
+ 		goto nla_put_failure;
+ 
++	if (link_id != -1)
++		nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, link_id);
++
+ 	genlmsg_end(msg, hdr);
+ 	genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, nlportid);
+ 	return true;
+@@ -18936,14 +18940,15 @@ bool cfg80211_rx_spurious_frame(struct n
+ 		return false;
+ 	}
+ 	ret = __nl80211_unexpected_frame(dev, NL80211_CMD_UNEXPECTED_FRAME,
+-					 addr, gfp);
++					 addr, gfp, -1);
+ 	trace_cfg80211_return_bool(ret);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(cfg80211_rx_spurious_frame);
+ 
+ bool cfg80211_rx_unexpected_4addr_frame(struct net_device *dev,
+-					const u8 *addr, gfp_t gfp)
++					const u8 *addr, gfp_t gfp,
++					const int link_id)
+ {
+ 	struct wireless_dev *wdev = dev->ieee80211_ptr;
+ 	bool ret;
+@@ -18958,7 +18963,7 @@ bool cfg80211_rx_unexpected_4addr_frame(
+ 	}
+ 	ret = __nl80211_unexpected_frame(dev,
+ 					 NL80211_CMD_UNEXPECTED_4ADDR_FRAME,
+-					 addr, gfp);
++					 addr, gfp, link_id);
+ 	trace_cfg80211_return_bool(ret);
+ 	return ret;
+ }
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -979,6 +979,8 @@ __ieee80211_link_copy_chanctx_to_vlans(s
+ 	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
+ 		struct ieee80211_bss_conf *vlan_conf;
+ 
++		if (!(vlan->vif.valid_links & BIT(link_id)))
++			continue;
+ 		vlan_conf = wiphy_dereference(local->hw.wiphy,
+ 					      vlan->vif.link_conf[link_id]);
+ 		if (WARN_ON(!vlan_conf))
+@@ -1220,6 +1222,8 @@ ieee80211_link_update_chanreq(struct iee
+ 	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
+ 		struct ieee80211_bss_conf *vlan_conf;
+ 
++		if (!(vlan->vif.valid_links & BIT(link_id)))
++			continue;
+ 		vlan_conf = wiphy_dereference(sdata->local->hw.wiphy,
+ 					      vlan->vif.link_conf[link_id]);
+ 		if (WARN_ON(!vlan_conf))
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1847,9 +1847,9 @@ void ieee80211_send_4addr_nullfunc(struc
+ 	fc = cpu_to_le16(IEEE80211_FTYPE_DATA | IEEE80211_STYPE_NULLFUNC |
+ 			 IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS);
+ 	nullfunc->frame_control = fc;
+-	memcpy(nullfunc->addr1, sdata->deflink.u.mgd.bssid, ETH_ALEN);
++	memcpy(nullfunc->addr1, sdata->vif.cfg.ap_addr, ETH_ALEN);
+ 	memcpy(nullfunc->addr2, sdata->vif.addr, ETH_ALEN);
+-	memcpy(nullfunc->addr3, sdata->deflink.u.mgd.bssid, ETH_ALEN);
++	memcpy(nullfunc->addr3, sdata->vif.cfg.ap_addr, ETH_ALEN);
+ 	memcpy(nullfunc->addr4, sdata->vif.addr, ETH_ALEN);
+ 
+ 	IEEE80211_SKB_CB(skb)->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT;
