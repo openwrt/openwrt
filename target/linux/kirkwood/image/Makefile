@@ -112,9 +112,7 @@ endef
 
 define Device/Default
   PROFILES := Default
-ifdef CONFIG_LINUX_6_6
   DEVICE_DTS_DIR := $(DTS_DIR)/marvell
-endif
   DEVICE_DTS = kirkwood-$(lastword $(subst _, ,$(1)))
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none

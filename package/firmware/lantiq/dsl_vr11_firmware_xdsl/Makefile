@@ -11,6 +11,7 @@ PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/dsl_vr11_firmware_xdsl.
 PKG_SOURCE_VERSION:=99cf1fe7a1711b9aa128eeb8419eab698448df9f
 PKG_MIRROR_HASH:=7fb37723f8db2558d774ba972f011598d2399609158c5dbc287eca0873b040f1
 
+PKG_FLAGS:=nonshared
 PKG_LICENSE:=MaxLinear-Software-License-Agreement
 PKG_LICENSE_FILES:=LICENSE
 
