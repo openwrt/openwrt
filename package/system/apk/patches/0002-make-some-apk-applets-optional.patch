@@ -1,0 +1,119 @@
+From ac7851f5768c54d8733b8400f4d7fbb5c3d464a9 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Fri, 10 May 2024 15:55:38 +0200
+Subject: [PATCH] make some apk applets optional
+
+We don't need apk's applets 'audit', 'dot', 'index' and 'stats' so make
+them optional to reduce binary size. Each can be excluded from build by
+specifying 'applet-xxx=false'.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,3 +1,8 @@
++option('applet-audit', description: 'Build with audit applet', type: 'boolean', value: true)
++option('applet-dot', description: 'Build with dot applet', type: 'boolean', value: true)
++option('applet-index', description: 'Build with index applet', type: 'boolean', value: true)
++option('applet-mkndx', description: 'Build with mkndx applet', type: 'boolean', value: true)
++option('applet-stats', description: 'Build with stats applet', type: 'boolean', value: true)
+ option('arch_prefix', description: 'Define a custom arch prefix for default arch', type: 'string')
+ option('crypto_backend', description: 'Crypto backend', type: 'combo', choices: ['openssl', 'mbedtls'], value: 'openssl')
+ option('compressed-help', description: 'Compress help database, needs lua-zlib', type: 'boolean', value: true)
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -64,32 +64,43 @@ apk_src = [
+ 	'app_adbdump.c',
+ 	'app_adbsign.c',
+ 	'app_add.c',
+-	'app_audit.c',
+ 	'app_cache.c',
+ 	'app_convdb.c',
+ 	'app_convndx.c',
+ 	'app_del.c',
+-	'app_dot.c',
+ 	'app_extract.c',
+ 	'app_fetch.c',
+ 	'app_fix.c',
+-	'app_index.c',
+ 	'app_info.c',
+ 	'app_list.c',
+ 	'app_manifest.c',
+-	'app_mkndx.c',
+ 	'app_mkpkg.c',
+ 	'app_policy.c',
+ 	'app_update.c',
+ 	'app_upgrade.c',
+ 	'app_search.c',
+-	'app_stats.c',
+ 	'app_verify.c',
+ 	'app_version.c',
+ 	'app_vertest.c',
+ 	'applet.c',
+ ]
+ 
++if get_option('applet-audit')
++	apk_src += ['app_audit.c']
++endif
++if get_option('applet-dot')
++	apk_src += ['app_dot.c']
++endif
++if get_option('applet-index')
++	apk_src += ['app_index.c']
++endif
++if get_option('applet-mkndx')
++	apk_src += ['app_mkndx.c']
++endif
++if get_option('applet-stats')
++        apk_src += ['app_stats.c']
++endif
++
+ apk_cargs = [
+ 	'-DAPK_VERSION="' + meson.project_version() + '"',
+ 	'-D_ATFILE_SOURCE',
+--- a/doc/meson.build
++++ b/doc/meson.build
+@@ -1,14 +1,11 @@
+ man_filenames = [
+     'apk.8.scd',
+     'apk-add.8.scd',
+-    'apk-audit.8.scd',
+     'apk-cache.5.scd',
+     'apk-cache.8.scd',
+     'apk-del.8.scd',
+-    'apk-dot.8.scd',
+     'apk-fetch.8.scd',
+     'apk-fix.8.scd',
+-    'apk-index.8.scd',
+     'apk-info.8.scd',
+     'apk-keys.5.scd',
+     'apk-list.8.scd',
+@@ -17,7 +14,6 @@ man_filenames = [
+     'apk-policy.8.scd',
+     'apk-repositories.5.scd',
+     'apk-search.8.scd',
+-    'apk-stats.8.scd',
+     'apk-update.8.scd',
+     'apk-upgrade.8.scd',
+     'apk-v2.5.scd',
+@@ -26,6 +22,20 @@ man_filenames = [
+     'apk-version.8.scd',
+     'apk-world.5.scd',
+ ]
++
++if get_option('applet-audit')
++	man_filenames += ['apk-audit.8.scd']
++endif
++if get_option('applet-dot')
++	man_filenames += ['apk-dot.8.scd']
++endif
++if get_option('applet-index')
++	man_filenames += ['apk-index.8.scd']
++endif
++if get_option('applet-stats')
++	man_filenames += ['apk-stats.8.scd']
++endif
++
+ man_files = files(man_filenames)
+ 
+ if scdoc_dep.found()
