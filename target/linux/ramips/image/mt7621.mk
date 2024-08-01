@@ -3262,7 +3262,7 @@ TARGET_DEVICES += zio_freezio
 
 define Device/zyxel_lte3301-plus
   $(Device/nand)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := LTE3301-PLUS
   KERNEL_SIZE := 31488k
   DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-usb-ledtrig-usbport \
@@ -3277,7 +3277,7 @@ TARGET_DEVICES += zyxel_lte3301-plus
 
 define Device/zyxel_lte5398-m904
   $(Device/nand)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := LTE5398-M904
   KERNEL_SIZE := 31488k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 uqmi \
@@ -3292,7 +3292,7 @@ TARGET_DEVICES += zyxel_lte5398-m904
 
 define Device/zyxel_nr7101
   $(Device/nand)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NR7101
   KERNEL_SIZE := 31488k
   DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
@@ -3304,7 +3304,7 @@ TARGET_DEVICES += zyxel_nr7101
 
 define Device/zyxel_nwa-ax
   $(Device/nand)
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   KERNEL_SIZE := 8192k
   DEVICE_PACKAGES := kmod-mt7915-firmware zyxel-bootconfig
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
@@ -3329,7 +3329,7 @@ define Device/zyxel_wap6805
   $(Device/nand)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := WAP6805
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7621-qtn-rgmii -uboot-envtools
   KERNEL := $$(KERNEL/lzma-loader) | uImage none | uimage-padhdr 160
@@ -3340,7 +3340,7 @@ define Device/zyxel_wsm20
   $(Device/nand)
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 41943040
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := WSM20
   DEVICE_PACKAGES := kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0

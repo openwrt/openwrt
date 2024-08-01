@@ -297,7 +297,7 @@
 +	/* reset the phy */
 +	miiphy_reset(name, devadr);
 +
-+	/* The ZyXEL NSA325 uses the 88E1310S Alaska (interface identical to 88E1318) */
++	/* The Zyxel NSA325 uses the 88E1310S Alaska (interface identical to 88E1318) */
 +	/* and has an MCU attached to the LED[2] via tristate interrupt */
 +	reg = 0;
 +
@@ -496,7 +496,7 @@
 +CONFIG_KIRKWOOD=y
 +CONFIG_SYS_TEXT_BASE=0x600000
 +CONFIG_TARGET_NSA325=y
-+CONFIG_IDENT_STRING="\nZyXEL NSA325 2-Bay Power Media Server"
++CONFIG_IDENT_STRING="\nZyxel NSA325 2-Bay Power Media Server"
 +CONFIG_NR_DRAM_BANKS=2
 +CONFIG_BOOTDELAY=3
 +CONFIG_SYS_PROMPT="NSA325> "
