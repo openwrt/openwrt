@@ -1,0 +1,260 @@
+.\" LICENSE
+.\"
+.\" This software program is released under the terms of a license agreement between you ('Licensee') and Intel. Do not use or load this software or any associated materials (collectively, the 'Software') until you have carefully read the full terms and conditions of the LICENSE located in this software package. By loading or using the Software, you agree to the terms of this Agreement. If you do not agree with the terms of this Agreement, do not install or use the Software.
+.\"
+.\" * Other names and brands may be claimed as the property of others.
+.\"
+.
+.TH e1000e 1 "December 10, 2015"
+.SH NAME
+e1000e \-This file describes the Linux* Base Driver
+for the Gigabit Family of Adapters.
+.SH SYNOPSIS
+.PD 0.4v
+modprobe e1000e [<option>=<VAL1>,<VAL2>,...]
+.PD 1v
+.SH DESCRIPTION
+This driver is intended for \fB2.4.x\fR and \fB2.6.x\fR kernels. A version of the driver may already be included by your distribution and/or the kernel.org kernel.
+
+.LP
+This driver is only supported as a loadable module at this time. Intel is not supplying patches against the kernel source to allow for static linking of the drivers.
+
+
+For questions related to hardware requirements, refer to the documentation
+supplied with your Intel adapter. All hardware requirements listed apply to
+use with Linux.
+.SH OPTIONS
+The following optional parameters are used by entering them on the
+command line with the modprobe command.
+For example:
+.IP
+modprobe e1000e InterruptThrottleRate=16000,16000
+.LP
+.B InterruptThrottleRate
+.IP
+.B Valid Range:
+0=off
+1=dynamic
+4=simplified balancing
+<min_ITR>-<max_ITR>
+.IP
+Interrupt Throttle Rate controls the number of interrupts each interrupt
+vector can generate per second. Increasing ITR lowers latency at the cost of
+increased CPU utilization, though it may help throughput in some circumstances.
+.IP
+0 = Setting InterruptThrottleRate to 0 turns off any interrupt moderation
+  and may improve small packet latency. However, this is generally not
+  suitable for bulk throughput traffic due to the increased CPU utilization
+  of the higher interrupt rate.
+.IP
+1 = Setting InterruptThrottleRate to Dynamic mode attempts to moderate
+  interrupts per vector while maintaining very low latency. This can
+  sometimes cause extra CPU utilization. If planning on deploying e1000e
+  in a latency sensitive environment, this parameter should be considered.
+.IP
+<min_ITR>-<max_ITR> =
+  Setting InterruptThrottleRate to a value greater or equal to <min_ITR>
+  will program the adapter to send at most that many interrupts
+  per second, even if more packets have come in. This reduces interrupt load
+  on the system and can lower CPU utilization under heavy load, but will
+  increase latency as packets are not processed as quickly.
+
+ .IP
+NOTE:
+- InterruptThrottleRate takes precedence over the TxAbsIntDelay and
+  RxAbsIntDelay parameters. In other words, minimizing the receive and/or
+  transmit absolute delays does not force the controller to generate more
+  interrupts than what the Interrupt Throttle Rate allows.
+.LP
+.B RxIntDelay
+.IP
+.B Valid Range: 0-65535 (0=off)
+.IP
+This value delays the generation of receive interrupts in units of 1.024
+microseconds. Receive interrupt reduction can improve CPU efficiency if
+properly tuned for specific network traffic. Increasing this value adds extra
+latency to frame reception and can end up decreasing the throughput of TCP
+traffic. If the system is reporting dropped receives, this value may be set
+too high, causing the driver to run out of available receive descriptors.
+.IP
+CAUTION: When setting RxIntDelay to a value other than 0, adapters may hang
+(stop transmitting) under certain network conditions. If this occurs a NETDEV
+WATCHDOG message is logged in the system event log. In addition, the
+controller is automatically reset, restoring the network connection. To
+eliminate the potential for the hang ensure that RxIntDelay is set to 0.
+.LP
+
+.LP
+.B RxAbsIntDelay
+.IP
+.B Valid Range: 0-65535 (0=off)
+.IP
+This value, in units of 1.024 microseconds, limits the delay in which a
+receive interrupt is generated. This value ensures that an interrupt is
+generated after the initial packet is received within the set amount of time,
+which is useful only if RxIntDelay is non-zero. Proper tuning, along with
+RxIntDelay, may improve traffic throughput in specific network conditions.
+.LP
+TxIntDelay
+.IP
+.B Valid Range: 0-65535 (0=off)
+.IP
+This value delays the generation of transmit interrupts in units of 1.024
+microseconds. Transmit interrupt reduction can improve CPU efficiency if
+properly tuned for specific network traffic. If the system is reporting
+dropped transmits, this value may be set too high causing the driver to run
+out of available transmit descriptors.
+.LP
+.B TxAbsIntDelay
+.IP
+.B Valid Range: 0-65535 (0=off)
+.IP
+This value, in units of 1.024 microseconds, limits the delay in which a
+transmit interrupt is generated. It is useful only if TxIntDelay is non-zero.
+It ensures that an interrupt is generated after the initial Packet is sent on
+the wire within the set amount of time. Proper tuning, along with TxIntDelay,
+may improve traffic throughput in specific network conditions.
+.LP
+copybreak
+.IP
+.B Valid Range: 0-xxxxxxx (0=off)
+.IP
+The driver copies all packets below or equaling this size to a fresh receive
+buffer before handing it up the stack.
+.IP
+This parameter differs from other parameters because it is a single (not 1,1,1
+etc.) parameter applied to all driver instances and it is also available
+during runtime at /sys/module/e1000e/parameters/copybreak.
+.LP
+SmartPowerDownEnable
+.IP
+.B Valid Range: 0-1
+.IP
+Allows Phy to turn off in lower power states. The user can turn off this
+parameter in supported chipsets.
+.LP
+.B KumeranLockLoss
+.IP
+.B Valid Range: 0-1
+.IP
+This workaround skips resetting the Phy at shutdown for the initial silicon
+releases of ICH8 systems.
+.LP
+.B IntMode
+.IP
+.B Valid Range: 0-2 (0 = Legacy Int, 1 = MSI and 2 = MSI-X)
+.IP
+IntMode controls the allowed load time control over the type of interrupt
+registered for by the driver. MSI-X is required for multiple queue
+support, and some kernels and combinations of kernel .config options
+will force a lower level of interrupt support.
+'cat /proc/interrupts' will show different values for each type of interrupt.
+.LP
+.B CrcStripping
+.IP
+.B Valid Range: 0-1
+.IP
+Strip the CRC from received packets before sending up the network stack. If
+you have a machine with a BMC enabled but cannot receive IPMI traffic after
+loading or enabling the driver, try disabling this feature.
+.LP
+.B EEE (Energy Efficient Ethernet)
+.IP
+.B Valid Range: 0-1
+.IP
+0 = Disables EEE
+.IP
+1 = Enables EEE
+.IP
+
+A link between two EEE-compliant devices will result in periodic bursts of data followed by periods where the link is in an idle state. This Low Power Idle (LPI) state is supported at 1 Gbps and 100 Mbps link speeds.
+
+NOTES:
+- EEE support requires auto-negotiation.
+- Both link partners must support EEE.
+- EEE is not supported on all Intel(R) Ethernet Network devices or at all link speeds.
+
+Example:
+
+# ethtool --show-eee <ethX>
+# ethtool --set-eee <ethX> [eee on|off]
+.LP
+.B Node
+.IP
+.B Valid Range: 0-n
+.IP
+0 - n: where n is the number of the NUMA node that should be used to allocate
+memory for this adapter port.
+.IP
+-1: uses the driver default of allocating memory on whichever processor is
+running modprobe.
+.IP
+The Node parameter allows you to choose which NUMA node you want to have the
+adapter allocate memory from. All driver structures, in-memory queues, and
+receive buffers will be allocated on the node specified. This parameter is
+only useful when interrupt affinity is specified; otherwise, part of the
+interrupt time could run on a different core than where the memory is
+allocated causing slower memory access and impacting throughput, CPU, or both.
+.SH Jumbo Frames
+.LP
+Jumbo Frames support is enabled by changing the Maximum Transmission Unit (MTU) to a value larger than the default value of 1500.
+
+Use the ifconfig command to increase the MTU size. For example, enter the following where <ethX> is the interface number:
+
+# ifconfig <ethX> mtu 9000 up
+
+Alternatively, you can use the ip command as follows:
+
+# ip link set mtu 9000 dev <ethX>
+# ip link set up dev <ethX>
+
+.LP
+NOTE: The maximum MTU setting for Jumbo Frames is 8996. This value coincides with the maximum Jumbo Frames size of 9018 bytes.
+
+NOTE: Using Jumbo frames at 10 or 100 Mbps is not supported and may result in poor performance or loss of link.
+
+NOTE: Packet loss may have a greater impact on throughput when you use jumbo frames. If you observe a drop in performance after enabling jumbo frames, enabling flow control may mitigate the issue.
+See the section "Jumbo Frames" in the Readme.
+.SH ethtool
+.LP
+The driver utilizes the ethtool interface for driver configuration and diagnostics, as well as displaying statistical information. The latest ethtool version is required for this functionality. Download it at:
+https://kernel.org/pub/software/network/ethtool/
+
+
+.SH SPEED AND DUPLEX SETTINGS
+In addressing speed and duplex configuration issues, you need to distinguish between copper-based adapters and fiber-based adapters.
+
+In the default mode, an Intel(R) Ethernet Network Adapter using copper connections will attempt to auto-negotiate with its link partner to determine the best setting. If the adapter cannot establish link with the link partner using auto-negotiation, you may need to manually configure the adapter and link partner to identical settings to establish link and pass packets. This should only be needed when attempting to link with an older switch that does not support auto-negotiation or one that has been forced to a specific speed or duplex mode. Your link partner must match the setting you choose. 1 Gbps speeds and higher cannot be forced. Use the autonegotiation advertising setting to manually set devices for 1 Gbps and higher.
+
+Speed, duplex, and autonegotiation advertising are configured through the ethtool* utility. ethtool is included with all versions of Red Hat after Red Hat 7.2. For the latest version, download and install ethtool from the following website:
+
+   https://kernel.org/pub/software/network/ethtool/
+
+To see the speed configurations your device supports, run the following:
+
+# ethtool <ethX>
+
+Caution: Only experienced network administrators should force speed and duplex or change autonegotiation advertising manually. The settings at the switch must always match the adapter settings. Adapter performance may suffer or your adapter may not operate if you configure the adapter differently from your switch.
+
+An Intel(R) Ethernet Network Adapter using fiber-based connections, however, will not attempt to auto-negotiate with its link partner since those adapters operate only in full duplex and only at their native speed.
+
+.SH NAPI
+.LP
+This driver supports NAPI (Rx polling mode).
+.LP
+To disable NAPI, compile the driver module, passing in a configuration option:
+# make CFLAGS_EXTRA=-DE1000E_NO_NAPI install
+.LP
+For more information on NAPI, see
+https://www.linuxfoundation.org/collaborate/workgroups/networking/napi
+.SH SUPPORT
+.LP
+For additional information regarding building and installation, see the
+README
+included with the driver.
+For general information, go to the Intel support website at:
+.B http://www.intel.com/support/
+
+.LP
+If an issue is identified with the released source code on a supported kernel with a supported adapter, email the specific information related to the issue to e1000-devel@lists.sf.net.
+.LP
