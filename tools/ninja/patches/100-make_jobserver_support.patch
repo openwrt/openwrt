@@ -33,7 +33,7 @@ Fixes https://github.com/ninja-build/ninja/issues/1139
 
 --- a/configure.py
 +++ b/configure.py
-@@ -517,11 +517,13 @@ for name in ['build',
+@@ -519,11 +519,13 @@ for name in ['build',
               'state',
               'status',
               'string_piece_util',
@@ -47,7 +47,7 @@ Fixes https://github.com/ninja-build/ninja/issues/1139
                   'includes_normalize-win32',
                   'msvc_helper-win32',
                   'msvc_helper_main-win32']:
-@@ -530,7 +532,9 @@ if platform.is_windows():
+@@ -532,7 +534,9 @@ if platform.is_windows():
          objs += cxx('minidump-win32', variables=cxxvariables)
      objs += cc('getopt')
  else:
@@ -58,7 +58,7 @@ Fixes https://github.com/ninja-build/ninja/issues/1139
  if platform.is_aix():
      objs += cc('getopt')
  if platform.is_msvc():
-@@ -588,6 +592,7 @@ for name in ['build_log_test',
+@@ -590,6 +594,7 @@ for name in ['build_log_test',
               'string_piece_util_test',
               'subprocess_test',
               'test',

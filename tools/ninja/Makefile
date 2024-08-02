@@ -11,15 +11,18 @@ PKG_HASH:=31747ae633213f1eda3842686f83c2aa1412e0f5691d1c14dbbcc67fe7400cea
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Configure
-endef
-
-define Host/Compile
 	cd $(HOST_BUILD_DIR) && \
 		$(HOST_MAKE_VARS) \
 		CXX="$(HOSTCXX_NOCACHE)" \
 		$(STAGING_DIR_HOST)/bin/$(PYTHON) configure.py \
-			--bootstrap \
+			$(if $(shell $(STAGING_DIR_HOST)/bin/ninja --version),,--bootstrap) \
+			--no-rebuild \
 			--verbose
+	-$(Host/Install)
+endef
+
+define Host/Compile
+	+$(NINJA) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Install
