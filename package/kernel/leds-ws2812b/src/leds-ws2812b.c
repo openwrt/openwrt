@@ -117,7 +117,7 @@ static int ws2812b_probe(struct spi_device *spi)
 	priv->data_len =
 		num_leds * WS2812B_BYTES_PER_COLOR * WS2812B_NUM_COLORS +
 		WS2812B_RESET_LEN;
-	priv->data_buf = kzalloc(priv->data_len, GFP_KERNEL);
+	priv->data_buf = devm_kzalloc(dev, priv->data_len, GFP_KERNEL);
 	if (!priv->data_buf)
 		return -ENOMEM;
 
@@ -171,7 +171,7 @@ static int ws2812b_probe(struct spi_device *spi)
 
 		priv->leds[cur_led].cascade = cascade;
 
-		ret = led_classdev_multicolor_register_ext(
+		ret = devm_led_classdev_multicolor_register_ext(
 			dev, &priv->leds[cur_led].mc_cdev, &init_data);
 		if (ret) {
 			dev_err(dev, "registration of %s failed.",
@@ -185,10 +185,7 @@ static int ws2812b_probe(struct spi_device *spi)
 
 	return 0;
 ERR_UNREG_LEDS:
-	for (; cur_led >= 0; cur_led--)
-		led_classdev_multicolor_unregister(&priv->leds[cur_led].mc_cdev);
 	mutex_destroy(&priv->mutex);
-	kfree(priv->data_buf);
 	return ret;
 }
 
@@ -199,11 +196,7 @@ static int ws2812b_remove(struct spi_device *spi)
 #endif
 {
 	struct ws2812b_priv *priv = spi_get_drvdata(spi);
-	int cur_led;
 
-	for (cur_led = priv->num_leds - 1; cur_led >= 0; cur_led--)
-		led_classdev_multicolor_unregister(&priv->leds[cur_led].mc_cdev);
-	kfree(priv->data_buf);
 	mutex_destroy(&priv->mutex);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
