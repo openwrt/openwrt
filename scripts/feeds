@@ -159,6 +159,8 @@ my %update_method = (
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff-only",
+		'update_rebase'	=> "git pull --rebase=merges",
+		'update_stash'	=> "git pull --rebase=merges --autostash",
 		'update_force'	=> "git pull --ff-only || (git reset --hard HEAD; git pull --ff-only; exit 1)",
 		'post_update'	=> "git submodule update --init --recursive",
 		'controldir'	=> ".git",
@@ -168,6 +170,8 @@ my %update_method = (
 		'init_branch'   => "git clone --branch '%s' '%s' '%s'",
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff-only",
+		'update_rebase'	=> "git pull --rebase=merges",
+		'update_stash'	=> "git pull --rebase=merges --autostash",
 		'update_force'	=> "git pull --ff-only || (git reset --hard HEAD; git pull --ff-only; exit 1)",
 		'post_update'	=> "git submodule update --init --recursive",
 		'controldir'	=> ".git",
@@ -194,12 +198,14 @@ my %update_method = (
 # src-git: pull broken
 # src-cpy: broken if `basename $src` != $name
 
-sub update_feed_via($$$$$) {
+sub update_feed_via($$$$$$$) {
 	my $type = shift;
 	my $name = shift;
 	my $src = shift;
 	my $relocate = shift;
 	my $force = shift;
+	my $rebase = shift;
+	my $stash = shift;
 
 	my $m = $update_method{$type};
 	my $localpath = "./feeds/$name";
@@ -223,6 +229,12 @@ sub update_feed_via($$$$$) {
 		my $update_cmd = $m->{'update'};
 		if ($force && exists $m->{'update_force'}) {
 			$update_cmd = $m->{'update_force'};
+		}
+		if ($rebase && exists $m->{'update_rebase'}) {
+			$update_cmd = $m->{'update_rebase'};
+		}
+		if ($stash && exists $m->{'update_stash'}) {
+			$update_cmd = $m->{'update_stash'};
 		}
 		system("cd '$safepath'; $update_cmd") == 0 or return 1;
 	}
@@ -776,12 +788,14 @@ sub uninstall {
 	return 0;
 }
 
-sub update_feed($$$$)
+sub update_feed($$$$$$)
 {
 	my $type=shift;
 	my $name=shift;
 	my $src=shift;
 	my $force_update=shift;
+	my $rebase_update=shift;
+	my $stash_update=shift;
 	my $force_relocate=update_location( $name, "@$src" );
 	my $rv=0;
 
@@ -796,7 +810,7 @@ sub update_feed($$$$)
 	my $failed = 1;
 	foreach my $feedsrc (@$src) {
 		warn "Updating feed '$name' from '$feedsrc' ...\n";
-		if (update_feed_via($type, $name, $feedsrc, $force_relocate, $force_update) != 0) {
+		if (update_feed_via($type, $name, $feedsrc, $force_relocate, $force_update, $rebase_update, $stash_update) != 0) {
 			if ($force_update) {
 				$rv=1;
 				$failed=0;
@@ -822,12 +836,17 @@ sub update {
 	$ENV{SCAN_COOKIE} = $$;
 	$ENV{OPENWRT_VERBOSE} = 's';
 
-	getopts('ahif', \%opts);
+	getopts('ahifrs', \%opts);
 	%argv_feeds = map { $_ => 1 } @ARGV;
 
 	if ($opts{h}) {
 		usage();
 		return 0;
+	}
+
+	if ($opts{f} && ($opts{r} || $opts{s})) {
+		warn "Force and rebase/stash are incompatible update options.\n";;
+		return 1;
 	}
 
 	-d "feeds" or do {
@@ -839,7 +858,7 @@ sub update {
 		my ($type, $name, $src) = @$feed;
 		next unless $#ARGV == -1 or $opts{a} or $argv_feeds{$name};
 		if (not $opts{i}) {
-			update_feed($type, $name, $src, $opts{f}) == 0 or $failed=1;
+			update_feed($type, $name, $src, $opts{f}, $opts{r}, $opts{s}) == 0 or $failed=1;
 		}
 		push @index_feeds, $name;
 	}
@@ -904,6 +923,8 @@ Commands:
 	update -a|<feedname(s)>: Update packages and lists of feeds in feeds.conf .
 	Options:
 	    -a :           Update all feeds listed within feeds.conf. Otherwise the specified feeds will be updated.
+	    -r :           Update by rebase. (git only. Useful if local commits exist)
+	    -s :           Update by rebase and autostash. (git only. Useful if local commits and uncommited changes exist)
 	    -i :           Recreate the index only. No feed update from repository is performed.
 	    -f :           Force updating feeds even if there are changed, uncommitted files.
 
