@@ -1,0 +1,34 @@
+From 5d8ae2928f71f0f9c2c3f8f13d00ecec35649ad3 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 15 Dec 2022 17:42:54 +0100
+Subject: [PATCH] pinctrl: at91: convert to NOIRQ_SYSTEM_SLEEP_PM_OPS
+
+With the old SET_NOIRQ_SYSTEM_SLEEP_PM_OPS, some configs result in a
+build warning:
+
+drivers/pinctrl/pinctrl-at91.c:1668:12: error: 'at91_gpio_resume' defined but not used [-Werror=unused-function]
+ 1668 | static int at91_gpio_resume(struct device *dev)
+      |            ^~~~~~~~~~~~~~~~
+drivers/pinctrl/pinctrl-at91.c:1650:12: error: 'at91_gpio_suspend' defined but not used [-Werror=unused-function]
+ 1650 | static int at91_gpio_suspend(struct device *dev)
+      |            ^~~~~~~~~~~~~~~~~
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Ryan Wanner <Ryan.Wanner@microchip.com>
+Link: https://lore.kernel.org/r/20221215164301.934805-1-arnd@kernel.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-at91.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/pinctrl-at91.c
++++ b/drivers/pinctrl/pinctrl-at91.c
+@@ -1921,7 +1921,7 @@ err:
+ }
+ 
+ static const struct dev_pm_ops at91_gpio_pm_ops = {
+-	SET_NOIRQ_SYSTEM_SLEEP_PM_OPS(at91_gpio_suspend, at91_gpio_resume)
++	NOIRQ_SYSTEM_SLEEP_PM_OPS(at91_gpio_suspend, at91_gpio_resume)
+ };
+ 
+ static struct platform_driver at91_gpio_driver = {
