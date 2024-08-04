@@ -362,6 +362,8 @@
 
 	resets = <&rst 9>, <&rst 22>;
 	reset-names = "mac", "mdio";
+	clocks = <&pll ATH79_CLK_AHB>, <&pll ATH79_CLK_REF>;
+	clock-names = "eth", "mdio";
 };
 
 &mdio1 {
@@ -379,4 +381,6 @@
 
 	resets = <&rst 13>, <&rst 23>;
 	reset-names = "mac", "mdio";
+	clocks = <&pll ATH79_CLK_AHB>, <&pll ATH79_CLK_REF>;
+	clock-names = "eth", "mdio";
 };
