@@ -10,11 +10,15 @@ emmc_upgrade_tar() {
 	[ "$CI_DATAPART" -a -z "$EMMC_DATA_DEV" ] && export EMMC_DATA_DEV="$(find_mmc_part $CI_DATAPART $CI_ROOTDEV)"
 	local has_kernel
 	local has_rootfs
-	local board_dir=$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
+	local gz
+	local board_dir
+	[ "$(identify_magic_long $(get_magic_long "$tar_file" cat))" = "gzip" ] && \
+		gz="z"
+	board_dir=$(tar t${gz}f "$tar_file" | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 
-	tar tf "$tar_file" ${board_dir}/kernel 1>/dev/null 2>/dev/null && has_kernel=1
-	tar tf "$tar_file" ${board_dir}/root 1>/dev/null 2>/dev/null && has_rootfs=1
+	tar t${gz}f "$tar_file" ${board_dir}/kernel 1>/dev/null 2>/dev/null && has_kernel=1
+	tar t${gz}f "$tar_file" ${board_dir}/root 1>/dev/null 2>/dev/null && has_rootfs=1
 
 	[ "$has_rootfs" = 1 -a "$EMMC_ROOT_DEV" ] && {
 		# Invalidate kernel image while rootfs is being written
@@ -23,14 +27,14 @@ emmc_upgrade_tar() {
 			sync
 		}
 
-		export EMMC_ROOTFS_BLOCKS=$(($(tar xf "$tar_file" ${board_dir}/root -O | dd of="$EMMC_ROOT_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
+		export EMMC_ROOTFS_BLOCKS=$(($(tar x${gz}f "$tar_file" ${board_dir}/root -O | dd of="$EMMC_ROOT_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
 		# Account for 64KiB ROOTDEV_OVERLAY_ALIGN in libfstools
 		EMMC_ROOTFS_BLOCKS=$(((EMMC_ROOTFS_BLOCKS + 127) & ~127))
 		sync
 	}
 
 	[ "$has_kernel" = 1 -a "$EMMC_KERN_DEV" ] &&
-		export EMMC_KERNEL_BLOCKS=$(($(tar xf "$tar_file" ${board_dir}/kernel -O | dd of="$EMMC_KERN_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
+		export EMMC_KERNEL_BLOCKS=$(($(tar x${gz}f "$tar_file" ${board_dir}/kernel -O | dd of="$EMMC_KERN_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
 
 	if [ -z "$UPGRADE_BACKUP" ]; then
 		if [ "$EMMC_DATA_DEV" ]; then
