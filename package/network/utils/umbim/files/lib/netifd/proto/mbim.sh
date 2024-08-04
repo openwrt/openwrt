@@ -23,6 +23,7 @@ proto_mbim_init_config() {
 	proto_config_add_string dhcp
 	proto_config_add_string dhcpv6
 	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_string pdptype
 	proto_config_add_int mtu
 	proto_config_add_defaults
@@ -48,7 +49,7 @@ _proto_mbim_setup() {
 	local device apn pincode delay auth username password allow_roaming allow_partner
 	local dhcp dhcpv6 pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
 	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner
-	json_get_vars dhcp dhcpv6 sourcefilter pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
+	json_get_vars dhcp dhcpv6 sourcefilter delegate pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
 
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
@@ -264,6 +265,7 @@ _proto_mbim_setup() {
 			echo "mbim[$$]" "Starting DHCPv6 on $ifname"
 			json_add_string proto "dhcpv6"
 			json_add_string extendprefix 1
+			[ "$delegate" = "0" ] && json_add_boolean delegate "0"
 			[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 		fi
 
