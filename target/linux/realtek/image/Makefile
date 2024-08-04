@@ -71,6 +71,16 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
+define Build/linksys-header
+	$(SCRIPT_DIR)/linksys-header.py $(@) $(@).new $(LINKSYS_MODEL_ID)
+	mv $@.new $@
+endef
+
+define Build/linksys-image
+	$(SCRIPT_DIR)/linksys-image.sh $(@) $(@).new
+	mv $@.new $@
+endef
+
 define Device/Default
   PROFILES = Default
   KERNEL := \
