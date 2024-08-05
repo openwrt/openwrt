@@ -106,17 +106,31 @@ int mtd_resetbc(const char *mtd)
 	}
 
 	num_bc = mtd_info.size / bc_offset_increment;
-        curr = malloc(bc_offset_increment);
+	curr = malloc(bc_offset_increment);
+
+	if(curr == NULL) {
+		DLOG_ERR("Failed to allocate %u bytes from memory.", bc_offset_increment);
+
+		retval = -6;
+		goto out;
+	}
 
 	for (i = 0; i < num_bc; i++) {
-		pread(fd, curr, sizeof(struct bootcounter), i * bc_offset_increment);
+		ret = pread(fd, curr, sizeof(struct bootcounter), i * bc_offset_increment);
+
+		if(ret != sizeof(struct bootcounter)) {
+			DLOG_ERR("Failed to read boot-count log at offset 0x%08x.", i * bc_offset_increment);
+
+			retval = -5;
+			goto out;
+		}
 
 		/* Existing code assumes erase is to 0xff; left as-is (2019) */
 		if (curr->magic == 0xffffffff)
 			break;
 
 		if (curr->magic != BOOTCOUNT_MAGIC || curr->checksum != curr->magic + curr->count) {
-			DLOG_ERR("Unexpected boot-count log at offset %08x: magic %08x boot count %08x checksum %08x; aborting.",
+			DLOG_ERR("Unexpected boot-count log at offset 0x%08x: magic 0x%08x boot count 0x%08x checksum 0x%08x; aborting.",
 				 i * bc_offset_increment, curr->magic, curr->count, curr->checksum);
 
 			retval = -2;
@@ -179,7 +193,9 @@ int mtd_resetbc(const char *mtd)
 	}
 
 out:
-	if (curr != NULL) free(curr);
+	if (curr != NULL)
+		free(curr);
+
 	close(fd);
 	return retval;
 }
