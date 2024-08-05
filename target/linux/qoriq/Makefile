@@ -12,6 +12,7 @@ FEATURES:=boot-part ext4 fpu legacy-sdcard powerpc64 ramdisk rootfs-part rtc sou
 SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=6.1
+KERNEL_TESTING_PATCHVER:=6.6
 
 KERNELNAME:=zImage
 
