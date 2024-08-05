@@ -906,25 +906,23 @@ static int rtl8366s_sw_set_port_led(struct switch_dev *dev,
 				    struct switch_val *val)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	u32 data;
-	u32 mask;
 	u32 reg;
+	u32 shift;
+	u32 mask;
 
-	if (val->port_vlan >= RTL8366S_NUM_PORTS ||
-	    (1 << val->port_vlan) == RTL8366S_PORT_UNKNOWN)
-		return -EINVAL;
-
-	if (val->port_vlan == RTL8366S_PORT_NUM_CPU) {
-		reg = RTL8366S_LED_BLINKRATE_REG;
-		mask = 0xF << 4;
-		data = val->value.i << 4;
-	} else {
+	if (val->port_vlan < RTL8366S_NUM_LEDGROUPS) {
 		reg = RTL8366S_LED_CTRL_REG;
-		mask = 0xF << (val->port_vlan * 4),
-		data = val->value.i << (val->port_vlan * 4);
+		shift = val->port_vlan * 4;
+		mask = 0xf;
+	} else if (val->port_vlan == RTL8366S_PORT_NUM_CPU) {
+		reg = RTL8366S_LED_BLINKRATE_REG;
+		shift = 4;
+		mask = 0x7;
+	} else {
+		return -EINVAL;
 	}
 
-	return rtl8366_smi_rmwr(smi, reg, mask, data);
+	return rtl8366_smi_rmwr(smi, reg, mask << shift, val->value.i << shift);
 }
 
 static int rtl8366s_sw_get_port_led(struct switch_dev *dev,
@@ -932,13 +930,29 @@ static int rtl8366s_sw_get_port_led(struct switch_dev *dev,
 				    struct switch_val *val)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 reg;
+	u32 shift;
+	u32 mask;
 	u32 data = 0;
+	int err;
 
-	if (val->port_vlan >= RTL8366S_NUM_LEDGROUPS)
+	if (val->port_vlan < RTL8366S_NUM_LEDGROUPS) {
+		reg = RTL8366S_LED_CTRL_REG;
+		shift = val->port_vlan * 4;
+		mask = 0xf;
+	} else if (val->port_vlan == RTL8366S_PORT_NUM_CPU) {
+		reg = RTL8366S_LED_BLINKRATE_REG;
+		shift = 4;
+		mask = 0x7;
+	} else {
 		return -EINVAL;
+	}
 
-	rtl8366_smi_read_reg(smi, RTL8366S_LED_CTRL_REG, &data);
-	val->value.i = (data >> (val->port_vlan * 4)) & 0x000F;
+	err = rtl8366_smi_read_reg(smi, reg, &data);
+	if (err != 0)
+		return err;
+
+	val->value.i = (data >> shift) & mask;
 
 	return 0;
 }
@@ -1063,7 +1077,7 @@ static struct switch_attr rtl8366s_port[] = {
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "led",
-		.description = "Get/Set port group (0 - 3) led mode (0 - 15)",
+		.description = "Get/Set port group (0 - 3, 5) led mode (0 - 15)",
 		.max = 15,
 		.set = rtl8366s_sw_set_port_led,
 		.get = rtl8366s_sw_get_port_led,
