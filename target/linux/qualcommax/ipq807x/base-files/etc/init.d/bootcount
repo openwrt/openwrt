@@ -4,8 +4,7 @@ START=99
 
 boot() {
 	case $(board_name) in
-	edgecore,eap102|\
-	yuncore,ax880)
+	edgecore,eap102)
 		fw_setenv upgrade_available 0
 		# Unset changed flag after sysupgrade complete
 		fw_setenv changed
@@ -15,6 +14,13 @@ boot() {
 	linksys,mx5300|\
 	linksys,mx8500)
 		mtd resetbc s_env || true
+	;;
+	yuncore,ax880)
+		(
+		# Using brackets and & to prevent block on sleep
+		echo resetting owrt_bootcount in 5 min...
+		sleep 300 && fw_setenv owrt_bootcount 0
+		) &
 	;;
 	esac
 }
