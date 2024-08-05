@@ -198,8 +198,8 @@ sub download
 			return;
 		}
 
-		print("Copying $filename from $link\n");
-		copy($link, "$target/$filename.dl");
+		print("Linking/Copying $filename from $link\n");
+		link($link, "$target/$filename.dl") or copy($link, "$target/$filename.dl");
 
 		$hash_cmd and do {
 			if (system("cat '$target/$filename.dl' | $hash_cmd > '$target/$filename.hash'")) {
