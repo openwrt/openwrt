@@ -21,17 +21,17 @@ PKG_SOURCE_URL:=https://mirror.ox.ac.uk/pub/OpenBSD/LibreSSL \
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 HOSTCC := $(HOSTCC_NOCACHE)
 
 HOST_CFLAGS += $(HOST_FPIC)
 
-HOST_CONFIGURE_ARGS += \
-	--enable-static \
-	--disable-shared \
-	--disable-asm \
-	--with-pic \
-	--disable-tests
+CMAKE_BINARY_SUBDIR:=openwrt-build
+
+CMAKE_HOST_OPTIONS += \
+	-DLIBRESSL_TESTS=OFF \
+	-DENABLE_ASM=OFF
 
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
