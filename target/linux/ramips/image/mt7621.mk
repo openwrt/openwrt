@@ -2551,6 +2551,8 @@ TARGET_DEVICES += tplink_ec330-g5u-v1
 
 define Device/tplink_er605-v2
   $(Device/nand)
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated because interface names have changed
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := ER605
   DEVICE_VARIANT := v2
