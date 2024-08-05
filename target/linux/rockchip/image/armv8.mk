@@ -132,6 +132,15 @@ define Device/radxa_rock-3a
 endef
 TARGET_DEVICES += radxa_rock-3a
 
+define Device/radxa_rock-5a
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 5A
+  SOC := rk3588s
+  UBOOT_DEVICE_NAME := rock5a-rk3588s
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan
+endef
+TARGET_DEVICES += radxa_rock-5a
+
 define Device/radxa_rock-pi-4a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi 4A
