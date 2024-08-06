@@ -110,10 +110,20 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cfe: partition@0 {
+			partition@0 {
 				label = "cfe";
 				reg = <0x0000000 0x0010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cfe_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
 			};
 
 			partition@10000 {
@@ -128,16 +138,6 @@
 				label = "nvram";
 			};
 		};
-	};
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
 	};
 };
 
