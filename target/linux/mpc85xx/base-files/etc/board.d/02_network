@@ -24,9 +24,7 @@ hpe,msm460)
 	ucidef_set_interface_lan "eth0"
 	;;	
 ocedo,panda)
-	ucidef_set_interface_wan "eth1"
-	ucidef_add_switch "switch0" \
-		"0:lan" "1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "6:lan" "7:lan" "8u@eth0"
+	ucidef_set_interface_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "eth1"
 	;;
 tplink,tl-wdr4900-v1)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
