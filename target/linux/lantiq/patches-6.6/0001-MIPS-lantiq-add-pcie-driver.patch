@@ -5524,7 +5524,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1599,6 +1599,8 @@ void pci_walk_bus_locked(struct pci_bus
+@@ -1600,6 +1600,8 @@ void pci_walk_bus_locked(struct pci_bus
  			 void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);
