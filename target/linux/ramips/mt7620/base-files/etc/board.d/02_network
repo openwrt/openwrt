@@ -168,6 +168,13 @@ ramips_setup_interfaces()
 			"5:lan" "6@eth0"
 		ucidef_add_switch_attr "switch1" "enable" "false"
 		;;
+	gaoke,fg7000n)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "6:sfp" "0@eth0"
+		ucidef_add_switch "switch1" \
+			"5:lan" "6@eth0"
+		ucidef_add_switch_attr "switch1" "enable" "false"
+		;;
 	fon,fon2601|\
 	vonets,var11n-300)
 		ucidef_add_switch "switch0" \
