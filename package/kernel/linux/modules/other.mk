@@ -597,7 +597,7 @@ define KernelPackage/mtdtests
 	$(LINUX_DIR)/drivers/mtd/tests/mtd_speedtest.ko \
 	$(LINUX_DIR)/drivers/mtd/tests/mtd_stresstest.ko \
 	$(LINUX_DIR)/drivers/mtd/tests/mtd_subpagetest.ko \
-	$(LINUX_DIR)/drivers/mtd/tests/mtd_test.ko@ge6.6 \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_test.ko@ge6.1 \
 	$(LINUX_DIR)/drivers/mtd/tests/mtd_torturetest.ko
 endef
 
