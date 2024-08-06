@@ -1,0 +1,46 @@
+From: Tony Butler <spudz76@gmail.com>
+Date:   Mon Nov 28 02:53:13 2022 -0800
+Subject: tools/squashfs4: adjust for squashfs option updates
+
+enable all compressors, set `COMP_DEFAULT` to zstd, configuration can
+easily override the default where zstd is not preferable
+
+add PREFIX support to upstream Makefile via patch
+
+define `Host/Uninstall` Makefile target, use default build args rather
+than overriding `Host/Compile` and `Host/Install` targets
+
+Signed-off-by: Tony Butler <spudz76@gmail.com>
+---
+ squashfs-tools/Makefile     | 6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -22,7 +22,7 @@
+ # Obviously, you must select at least one of the available gzip, xz, lzo,
+ # lz4, zstd or lzma (deprecated) compression types.
+ #
+-GZIP_SUPPORT = 1
++#GZIP_SUPPORT = 1
+ 
+ ########### Building XZ support #############
+ #
+@@ -92,7 +92,7 @@
+ # in Mksquashfs.  Obviously the compression algorithm must have been
+ # selected to be built
+ #
+-COMP_DEFAULT = gzip
++#COMP_DEFAULT = gzip
+ 
+ 
+ ###############################################
+@@ -104,7 +104,7 @@
+ # If your C library or build/target environment doesn't support XATTRs then
+ # comment out the next line to build Mksquashfs and Unsquashfs without XATTR
+ # support
+-XATTR_SUPPORT = 1
++#XATTR_SUPPORT = 1
+ 
+ # Select whether you wish xattrs to be stored by Mksquashfs and extracted
+ # by Unsquashfs by default.  If selected users can disable xattr support by
