@@ -144,7 +144,7 @@ define Device/radxa_rock-pi-e-v3
   DEVICE_MODEL := ROCK Pi E v3.0
   SOC := rk3328
   DEVICE_DTS := rockchip/rk3328-rock-pi-e
-  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+  DEVICE_PACKAGES := kmod-rtw88-8723du kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-e-v3
 
@@ -153,7 +153,7 @@ define Device/radxa_rock-pi-s
   DEVICE_MODEL := ROCK Pi S
   SOC := rk3308
   BOOT_SCRIPT := rock-pi-s
-  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+  DEVICE_PACKAGES := kmod-rtw88-8723ds kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-s
 
