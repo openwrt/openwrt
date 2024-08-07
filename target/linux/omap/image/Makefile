@@ -30,6 +30,9 @@ define Build/omap-sdcard
 endef
 
 define Device/Default
+  ifdef CONFIG_LINUX_6_6
+	DTS_DIR := $(DTS_DIR)/ti/omap
+  endif
   PROFILES := Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
