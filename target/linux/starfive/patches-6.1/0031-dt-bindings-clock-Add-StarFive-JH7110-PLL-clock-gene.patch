@@ -1,0 +1,80 @@
+From 07f62b08668c0295b1c6342f9708b7e36093ff59 Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Tue, 21 Feb 2023 17:13:48 +0800
+Subject: [PATCH 031/122] dt-bindings: clock: Add StarFive JH7110 PLL clock
+ generator
+
+Add bindings for the PLL clock generator on the JH7110 RISC-V SoC.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+---
+ .../bindings/clock/starfive,jh7110-pll.yaml   | 46 +++++++++++++++++++
+ .../dt-bindings/clock/starfive,jh7110-crg.h   |  6 +++
+ 2 files changed, 52 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/starfive,jh7110-pll.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/starfive,jh7110-pll.yaml
+@@ -0,0 +1,46 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/clock/starfive,jh7110-pll.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: StarFive JH7110 PLL Clock Generator
++
++description:
++  This PLL are high speed, low jitter frequency synthesizers in JH7110.
++  Each PLL clocks work in integer mode or fraction mode by some dividers,
++  and the configuration registers and dividers are set in several syscon
++  registers. So pll node should be a child of SYS-SYSCON node.
++  The formula for calculating frequency is that,
++  Fvco = Fref * (NI + NF) / M / Q1
++
++maintainers:
++  - Xingyu Wu <xingyu.wu@starfivetech.com>
++
++properties:
++  compatible:
++    const: starfive,jh7110-pll
++
++  clocks:
++    maxItems: 1
++    description: Main Oscillator (24 MHz)
++
++  '#clock-cells':
++    const: 1
++    description:
++      See <dt-bindings/clock/starfive,jh7110-crg.h> for valid indices.
++
++required:
++  - compatible
++  - clocks
++  - '#clock-cells'
++
++additionalProperties: false
++
++examples:
++  - |
++    pll-clock-controller {
++      compatible = "starfive,jh7110-pll";
++      clocks = <&osc>;
++      #clock-cells = <1>;
++    };
+--- a/include/dt-bindings/clock/starfive,jh7110-crg.h
++++ b/include/dt-bindings/clock/starfive,jh7110-crg.h
+@@ -6,6 +6,12 @@
+ #ifndef __DT_BINDINGS_CLOCK_STARFIVE_JH7110_CRG_H__
+ #define __DT_BINDINGS_CLOCK_STARFIVE_JH7110_CRG_H__
+ 
++/* PLL clocks */
++#define JH7110_CLK_PLL0_OUT			0
++#define JH7110_CLK_PLL1_OUT			1
++#define JH7110_CLK_PLL2_OUT			2
++#define JH7110_PLLCLK_END			3
++
+ /* SYSCRG clocks */
+ #define JH7110_SYSCLK_CPU_ROOT			0
+ #define JH7110_SYSCLK_CPU_CORE			1

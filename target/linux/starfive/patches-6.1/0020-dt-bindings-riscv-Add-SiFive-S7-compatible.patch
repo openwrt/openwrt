@@ -1,0 +1,27 @@
+From fccbb0c52438762999ea16c85d4ebf4cc7e2deff Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Sat, 1 Apr 2023 19:19:30 +0800
+Subject: [PATCH 020/122] dt-bindings: riscv: Add SiFive S7 compatible
+
+Add a new compatible string in cpu.yaml for SiFive S7 CPU
+core which is used on SiFive U74-MC core complex etc.
+
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ Documentation/devicetree/bindings/riscv/cpus.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/riscv/cpus.yaml
++++ b/Documentation/devicetree/bindings/riscv/cpus.yaml
+@@ -33,6 +33,7 @@ properties:
+               - sifive,e5
+               - sifive,e7
+               - sifive,e71
++              - sifive,s7
+               - sifive,u74-mc
+               - sifive,u54
+               - sifive,u74

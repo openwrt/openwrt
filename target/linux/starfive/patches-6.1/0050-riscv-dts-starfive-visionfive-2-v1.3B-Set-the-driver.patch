@@ -1,0 +1,34 @@
+From c156cb9ec64669600c96dbb01bf38dd2370b1850 Mon Sep 17 00:00:00 2001
+From: Samin Guo <samin.guo@starfivetech.com>
+Date: Wed, 26 Apr 2023 14:41:12 +0800
+Subject: [PATCH 050/122] riscv: dts: starfive: visionfive-2-v1.3B: Set the
+ driver strength of RXC/RXD
+
+VisionFive 2 v1.3B needs to increase the driver strength of rxd/rxc
+to increase the stability of gmac's transmission.
+
+Signed-off-by: Samin Guo <samin.guo@starfivetech.com>
+---
+ .../boot/dts/starfive/jh7110-starfive-visionfive-2-v1.3b.dts  | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.3b.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.3b.dts
+@@ -28,6 +28,8 @@
+ 	motorcomm,tx-clk-adj-enabled;
+ 	motorcomm,tx-clk-100-inverted;
+ 	motorcomm,tx-clk-1000-inverted;
++	rx-clk-driver-strength = <0x6>;
++	rx-data-driver-strength = <0x3>;
+ 	rx-internal-delay-ps = <1500>;
+ 	tx-internal-delay-ps = <1500>;
+ };
+@@ -35,6 +37,8 @@
+ &phy1 {
+ 	motorcomm,tx-clk-adj-enabled;
+ 	motorcomm,tx-clk-100-inverted;
++	rx-clk-driver-strength = <0x6>;
++	rx-data-driver-strength = <0x3>;
+ 	rx-internal-delay-ps = <300>;
+ 	tx-internal-delay-ps = <0>;
+ };

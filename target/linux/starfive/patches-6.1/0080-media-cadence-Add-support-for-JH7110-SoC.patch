@@ -1,0 +1,23 @@
+From d541f0ab42983dbc856f2229ee471677e80945a3 Mon Sep 17 00:00:00 2001
+From: Jack Zhu <jack.zhu@starfivetech.com>
+Date: Tue, 23 May 2023 16:56:26 +0800
+Subject: [PATCH 080/122] media: cadence: Add support for JH7110 SoC
+
+Add support for Starfive JH7110 SoC which has the cadence csi2 receiver.
+
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Jack Zhu <jack.zhu@starfivetech.com>
+---
+ drivers/media/platform/cadence/cdns-csi2rx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/cadence/cdns-csi2rx.c
++++ b/drivers/media/platform/cadence/cdns-csi2rx.c
+@@ -565,6 +565,7 @@ static int csi2rx_remove(struct platform
+ }
+ 
+ static const struct of_device_id csi2rx_of_table[] = {
++	{ .compatible = "starfive,jh7110-csi2rx" },
+ 	{ .compatible = "cdns,csi2rx" },
+ 	{ },
+ };

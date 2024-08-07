@@ -1,0 +1,79 @@
+From a3749d68d81488ae07878393485278eab24a5818 Mon Sep 17 00:00:00 2001
+From: William Qiu <william.qiu@starfivetech.com>
+Date: Thu, 2 Mar 2023 18:52:21 +0800
+Subject: [PATCH 095/122] spi: cadence-quadspi: Add support for StarFive JH7110
+ QSPI
+
+Add QSPI reset operation in device probe and add RISCV support to
+QUAD SPI Kconfig.
+
+Co-developed-by: Ziv Xu <ziv.xu@starfivetech.com>
+Signed-off-by: Ziv Xu <ziv.xu@starfivetech.com>
+Signed-off-by: William Qiu <william.qiu@starfivetech.com>
+---
+ drivers/spi/Kconfig               |  2 +-
+ drivers/spi/spi-cadence-quadspi.c | 21 ++++++++++++++++++++-
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -230,7 +230,7 @@ config SPI_CADENCE
+ 
+ config SPI_CADENCE_QUADSPI
+ 	tristate "Cadence Quad SPI controller"
+-	depends on OF && (ARM || ARM64 || X86 || COMPILE_TEST)
++	depends on OF && (ARM || ARM64 || X86 || RISCV || COMPILE_TEST)
+ 	help
+ 	  Enable support for the Cadence Quad SPI Flash controller.
+ 
+--- a/drivers/spi/spi-cadence-quadspi.c
++++ b/drivers/spi/spi-cadence-quadspi.c
+@@ -1575,7 +1575,7 @@ static int cqspi_setup_flash(struct cqsp
+ static int cqspi_probe(struct platform_device *pdev)
+ {
+ 	const struct cqspi_driver_platdata *ddata;
+-	struct reset_control *rstc, *rstc_ocp;
++	struct reset_control *rstc, *rstc_ocp, *rstc_ref;
+ 	struct device *dev = &pdev->dev;
+ 	struct spi_master *master;
+ 	struct resource *res_ahb;
+@@ -1668,6 +1668,17 @@ static int cqspi_probe(struct platform_d
+ 		goto probe_reset_failed;
+ 	}
+ 
++	if (of_device_is_compatible(pdev->dev.of_node, "starfive,jh7110-qspi")) {
++		rstc_ref = devm_reset_control_get_optional_exclusive(dev, "rstc_ref");
++		if (IS_ERR(rstc_ref)) {
++			ret = PTR_ERR(rstc_ref);
++			dev_err(dev, "Cannot get QSPI REF reset.\n");
++			goto probe_reset_failed;
++		}
++		reset_control_assert(rstc_ref);
++		reset_control_deassert(rstc_ref);
++	}
++
+ 	reset_control_assert(rstc);
+ 	reset_control_deassert(rstc);
+ 
+@@ -1827,6 +1838,10 @@ static const struct cqspi_driver_platdat
+ 	.get_dma_status = cqspi_get_versal_dma_status,
+ };
+ 
++static const struct cqspi_driver_platdata jh7110_qspi = {
++	.quirks = CQSPI_DISABLE_DAC_MODE,
++};
++
+ static const struct of_device_id cqspi_dt_ids[] = {
+ 	{
+ 		.compatible = "cdns,qspi-nor",
+@@ -1852,6 +1867,10 @@ static const struct of_device_id cqspi_d
+ 		.compatible = "intel,socfpga-qspi",
+ 		.data = &socfpga_qspi,
+ 	},
++	{
++		.compatible = "starfive,jh7110-qspi",
++		.data = &jh7110_qspi,
++	},
+ 	{ /* end of table */ }
+ };
+ 
