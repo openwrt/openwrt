@@ -1,0 +1,78 @@
+From 464fa29e8f3fb2c209647efbb365470b35daec38 Mon Sep 17 00:00:00 2001
+From: William Qiu <william.qiu@starfivetech.com>
+Date: Thu, 2 Mar 2023 18:52:20 +0800
+Subject: [PATCH 092/122] dt-bindings: qspi: cdns,qspi-nor: constrain
+ minItems/maxItems of resets
+
+The QSPI controller needs three reset items to work properly on JH7110 SoC,
+so there is need to change the maxItems's value to 3 and add minItems
+whose value is equal to 2. Other platforms do not have this constraint.
+
+Signed-off-by: William Qiu <william.qiu@starfivetech.com>
+---
+ .../bindings/spi/cdns,qspi-nor.yaml           | 37 +++++++++++++++++--
+ 1 file changed, 33 insertions(+), 4 deletions(-)
+
+--- a/Documentation/devicetree/bindings/spi/cdns,qspi-nor.yaml
++++ b/Documentation/devicetree/bindings/spi/cdns,qspi-nor.yaml
+@@ -19,6 +19,33 @@ allOf:
+     then:
+       required:
+         - power-domains
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: starfive,jh7110-qspi
++    then:
++      properties:
++        resets:
++          minItems: 2
++          maxItems: 3
++
++        reset-names:
++          minItems: 2
++          maxItems: 3
++          items:
++            enum: [ qspi, qspi-ocp, rstc_ref ]
++
++    else:
++      properties:
++        resets:
++          maxItems: 2
++
++        reset-names:
++          minItems: 1
++          maxItems: 2
++          items:
++            enum: [ qspi, qspi-ocp ]
+ 
+ properties:
+   compatible:
+@@ -30,6 +57,7 @@ properties:
+               - intel,lgm-qspi
+               - xlnx,versal-ospi-1.0
+               - intel,socfpga-qspi
++              - starfive,jh7110-qspi
+           - const: cdns,qspi-nor
+       - const: cdns,qspi-nor
+ 
+@@ -79,13 +107,14 @@ properties:
+     maxItems: 1
+ 
+   resets:
+-    maxItems: 2
++    minItems: 2
++    maxItems: 3
+ 
+   reset-names:
+-    minItems: 1
+-    maxItems: 2
++    minItems: 2
++    maxItems: 3
+     items:
+-      enum: [ qspi, qspi-ocp ]
++      enum: [ qspi, qspi-ocp, rstc_ref ]
+ 
+ required:
+   - compatible

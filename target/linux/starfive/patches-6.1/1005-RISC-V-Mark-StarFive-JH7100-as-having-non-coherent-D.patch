@@ -1,0 +1,21 @@
+From a22e1110a6ffcc2cf4b3b598f037879cbd0915d3 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Wed, 31 Aug 2022 22:54:07 +0200
+Subject: [PATCH 1005/1024] RISC-V: Mark StarFive JH7100 as having non-coherent
+ DMAs
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/boot/dts/starfive/jh7100.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7100.dtsi
+@@ -111,6 +111,7 @@
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&plic>;
++		dma-noncoherent;
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+ 		ranges;

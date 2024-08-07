@@ -1,0 +1,40 @@
+From 790e1157753b4dcc9bad4521987fe09aa6657876 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 25 Nov 2021 14:21:18 +0100
+Subject: [PATCH 1003/1024] riscv: dts: starfive: Group tuples in interrupt
+ properties
+
+To improve human readability and enable automatic validation, the tuples
+in the various properties containing interrupt specifiers should be
+grouped.
+
+Fix this by grouping the tuples of "interrupts-extended" properties
+using angle brackets.
+
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/riscv/boot/dts/starfive/jh7100.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7100.dtsi
+@@ -118,15 +118,15 @@
+ 		clint: clint@2000000 {
+ 			compatible = "starfive,jh7100-clint", "sifive,clint0";
+ 			reg = <0x0 0x2000000 0x0 0x10000>;
+-			interrupts-extended = <&cpu0_intc 3 &cpu0_intc 7
+-					       &cpu1_intc 3 &cpu1_intc 7>;
++			interrupts-extended = <&cpu0_intc 3>, <&cpu0_intc 7>,
++					      <&cpu1_intc 3>, <&cpu1_intc 7>;
+ 		};
+ 
+ 		plic: interrupt-controller@c000000 {
+ 			compatible = "starfive,jh7100-plic", "sifive,plic-1.0.0";
+ 			reg = <0x0 0xc000000 0x0 0x4000000>;
+-			interrupts-extended = <&cpu0_intc 11 &cpu0_intc 9
+-					       &cpu1_intc 11 &cpu1_intc 9>;
++			interrupts-extended = <&cpu0_intc 11>, <&cpu0_intc 9>,
++					      <&cpu1_intc 11>, <&cpu1_intc 9>;
+ 			interrupt-controller;
+ 			#address-cells = <0>;
+ 			#interrupt-cells = <1>;

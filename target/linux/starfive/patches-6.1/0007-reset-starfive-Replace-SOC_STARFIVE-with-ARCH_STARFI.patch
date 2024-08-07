@@ -1,0 +1,30 @@
+From 0ee5a7565601fa785d7e55c57f26ff5d79473eb2 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Sat, 1 Apr 2023 19:19:19 +0800
+Subject: [PATCH 007/122] reset: starfive: Replace SOC_STARFIVE with
+ ARCH_STARFIVE
+
+Using ARCH_FOO symbol is preferred than SOC_FOO.
+
+Reviewed-by: Philipp Zabel <p.zabel@pengutronix.de>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ drivers/reset/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
+@@ -234,8 +234,8 @@ config RESET_SOCFPGA
+ 
+ config RESET_STARFIVE_JH7100
+ 	bool "StarFive JH7100 Reset Driver"
+-	depends on SOC_STARFIVE || COMPILE_TEST
+-	default SOC_STARFIVE
++	depends on ARCH_STARFIVE || COMPILE_TEST
++	default ARCH_STARFIVE
+ 	help
+ 	  This enables the reset controller driver for the StarFive JH7100 SoC.
+ 

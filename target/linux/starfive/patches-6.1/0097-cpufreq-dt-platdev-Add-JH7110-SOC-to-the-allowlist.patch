@@ -1,0 +1,24 @@
+From 214c40d5393cdf08c8b0746224e76bfd2a8d9cf7 Mon Sep 17 00:00:00 2001
+From: Mason Huo <mason.huo@starfivetech.com>
+Date: Fri, 21 Apr 2023 11:14:30 +0800
+Subject: [PATCH 097/122] cpufreq: dt-platdev: Add JH7110 SOC to the allowlist
+
+Add the compatible strings for supporting the generic
+cpufreq driver on the StarFive JH7110 SoC.
+
+Signed-off-by: Mason Huo <mason.huo@starfivetech.com>
+---
+ drivers/cpufreq/cpufreq-dt-platdev.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/cpufreq/cpufreq-dt-platdev.c
++++ b/drivers/cpufreq/cpufreq-dt-platdev.c
+@@ -86,6 +86,8 @@ static const struct of_device_id allowli
+ 	{ .compatible = "st-ericsson,u9500", },
+ 	{ .compatible = "st-ericsson,u9540", },
+ 
++	{ .compatible = "starfive,jh7110", },
++
+ 	{ .compatible = "ti,omap2", },
+ 	{ .compatible = "ti,omap4", },
+ 	{ .compatible = "ti,omap5", },

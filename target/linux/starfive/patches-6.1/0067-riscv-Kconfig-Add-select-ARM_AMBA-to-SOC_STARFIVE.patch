@@ -1,0 +1,23 @@
+From e8d070e2eb856856055566d3515072a8346446f3 Mon Sep 17 00:00:00 2001
+From: "shanlong.li" <shanlong.li@starfivetech.com>
+Date: Wed, 31 May 2023 01:37:41 -0700
+Subject: [PATCH 067/122] riscv: Kconfig: Add select ARM_AMBA to SOC_STARFIVE
+
+Selects ARM_AMBA platform support for StarFive SoCs required by spi and
+crypto dma engine.
+
+Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
+---
+ arch/riscv/Kconfig.socs | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -4,6 +4,7 @@ config SOC_MICROCHIP_POLARFIRE
+ 	bool "Microchip PolarFire SoCs"
+ 	select MCHP_CLK_MPFS
+ 	select SIFIVE_PLIC
++	select ARM_AMBA
+ 	help
+ 	  This enables support for Microchip PolarFire SoC platforms.
+ 

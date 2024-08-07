@@ -1,0 +1,61 @@
+From a04a6eb3b4d112f3600bbd783249f24a43797e7a Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Thu, 18 May 2023 18:12:31 +0800
+Subject: [PATCH 057/122] reset: starfive: jh7110: Add StarFive STG/ISP/VOUT
+ resets support
+
+Add new struct members and auxiliary_device_id of resets to support
+System-Top-Group, Image-Signal-Process and Video-Output on the StarFive
+JH7110 SoC.
+
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+---
+ .../reset/starfive/reset-starfive-jh7110.c    | 30 +++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/drivers/reset/starfive/reset-starfive-jh7110.c
++++ b/drivers/reset/starfive/reset-starfive-jh7110.c
+@@ -31,6 +31,24 @@ static const struct jh7110_reset_info jh
+ 	.status_offset = 0x3C,
+ };
+ 
++static const struct jh7110_reset_info jh7110_stg_info = {
++	.nr_resets = JH7110_STGRST_END,
++	.assert_offset = 0x74,
++	.status_offset = 0x78,
++};
++
++static const struct jh7110_reset_info jh7110_isp_info = {
++	.nr_resets = JH7110_ISPRST_END,
++	.assert_offset = 0x38,
++	.status_offset = 0x3C,
++};
++
++static const struct jh7110_reset_info jh7110_vout_info = {
++	.nr_resets = JH7110_VOUTRST_END,
++	.assert_offset = 0x48,
++	.status_offset = 0x4C,
++};
++
+ static int jh7110_reset_probe(struct auxiliary_device *adev,
+ 			      const struct auxiliary_device_id *id)
+ {
+@@ -58,6 +76,18 @@ static const struct auxiliary_device_id
+ 		.name = "clk_starfive_jh7110_sys.rst-aon",
+ 		.driver_data = (kernel_ulong_t)&jh7110_aon_info,
+ 	},
++	{
++		.name = "clk_starfive_jh7110_sys.rst-stg",
++		.driver_data = (kernel_ulong_t)&jh7110_stg_info,
++	},
++	{
++		.name = "clk_starfive_jh7110_sys.rst-isp",
++		.driver_data = (kernel_ulong_t)&jh7110_isp_info,
++	},
++	{
++		.name = "clk_starfive_jh7110_sys.rst-vo",
++		.driver_data = (kernel_ulong_t)&jh7110_vout_info,
++	},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(auxiliary, jh7110_reset_ids);

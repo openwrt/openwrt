@@ -1,0 +1,53 @@
+From 124f322d1c42232e439ea9a356d68caf1d0656f3 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Sat, 1 Apr 2023 19:19:15 +0800
+Subject: [PATCH 003/122] clk: starfive: Replace SOC_STARFIVE with
+ ARCH_STARFIVE
+
+Using ARCH_FOO symbol is preferred than SOC_FOO.
+Set obj-y for starfive/ in Makefile, so the StarFive drivers
+can be compiled with COMPILE_TEST=y but ARCH_STARFIVE=n.
+
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Heiko Stuebner <heiko.stuebner@vrull.eu>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ drivers/clk/Makefile         | 2 +-
+ drivers/clk/starfive/Kconfig | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -117,7 +117,7 @@ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+ obj-y					+= sprd/
+ obj-$(CONFIG_ARCH_STI)			+= st/
+ obj-$(CONFIG_ARCH_STM32)		+= stm32/
+-obj-$(CONFIG_SOC_STARFIVE)		+= starfive/
++obj-y					+= starfive/
+ obj-$(CONFIG_ARCH_SUNXI)		+= sunxi/
+ obj-y					+= sunxi-ng/
+ obj-$(CONFIG_ARCH_TEGRA)		+= tegra/
+--- a/drivers/clk/starfive/Kconfig
++++ b/drivers/clk/starfive/Kconfig
+@@ -2,8 +2,8 @@
+ 
+ config CLK_STARFIVE_JH7100
+ 	bool "StarFive JH7100 clock support"
+-	depends on SOC_STARFIVE || COMPILE_TEST
+-	default SOC_STARFIVE
++	depends on ARCH_STARFIVE || COMPILE_TEST
++	default ARCH_STARFIVE
+ 	help
+ 	  Say yes here to support the clock controller on the StarFive JH7100
+ 	  SoC.
+@@ -11,7 +11,7 @@ config CLK_STARFIVE_JH7100
+ config CLK_STARFIVE_JH7100_AUDIO
+ 	tristate "StarFive JH7100 audio clock support"
+ 	depends on CLK_STARFIVE_JH7100
+-	default m if SOC_STARFIVE
++	default m if ARCH_STARFIVE
+ 	help
+ 	  Say Y or M here to support the audio clocks on the StarFive JH7100
+ 	  SoC.
