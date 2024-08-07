@@ -383,6 +383,9 @@ hostapd_common_add_bss_config() {
 	config_add_string fils_dhcp
 
 	config_add_int ocv
+
+	config_add_boolean apup
+	config_add_string apup_peer_ifname_prefix
 }
 
 hostapd_set_vlan_file() {
@@ -569,7 +572,7 @@ hostapd_set_bss_options() {
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
-		vendor_elements fils ocv
+		vendor_elements fils ocv apup
 
 	set_default fils 0
 	set_default isolate 0
@@ -593,6 +596,7 @@ hostapd_set_bss_options() {
 	set_default airtime_bss_weight 0
 	set_default airtime_bss_limit 0
 	set_default eap_server 0
+	set_default apup 0
 
 	/usr/sbin/hostapd -vfils || fils=0
 
@@ -1161,6 +1165,16 @@ hostapd_set_bss_options() {
 	set_default per_sta_vif 0
 	if [ "$per_sta_vif" -gt 0 ]; then
 		append bss_conf "per_sta_vif=$per_sta_vif" "$N"
+	fi
+
+	if [ "$apup" -gt 0 ]; then
+		append bss_conf "apup=$apup" "$N"
+
+		local apup_peer_ifname_prefix
+		json_get_vars apup_peer_ifname_prefix
+		if [ -n "$apup_peer_ifname_prefix" ] ; then
+			append bss_conf "apup_peer_ifname_prefix=$apup_peer_ifname_prefix" "$N"
+		fi
 	fi
 
 	json_get_values opts hostapd_bss_options
