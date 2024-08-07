@@ -5,6 +5,45 @@
 / {
 	compatible = "linksys,ea7300-v2", "mediatek,mt7621-soc";
 	model = "Linksys EA7300 v2";
+
+	leds {
+		compatible = "gpio-leds";
+
+		wan_green {
+			label = "green:wan";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1_green {
+			label = "green:lan1";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2_green {
+			label = "green:lan2";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3_green {
+			label = "green:lan3";
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan4_green {
+			label = "green:lan4";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			label = "white:power";
+			gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 /* override EEPROM size to 0x400 for MT7603 */
