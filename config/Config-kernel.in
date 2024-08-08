@@ -1238,6 +1238,66 @@ if KERNEL_IP_PNP
 
 endif
 
+#
+# FS related symbols
+#
+config KERNEL_SQUASHFS
+	bool "Enable SquashFS Support"
+
+config KERNEL_SQUASHFS_DECOMP_MULTI_PERCPU
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_SQUASHFS_EMBEDDED
+	bool
+	default y if KERNEL_SQUASHFS
+	
+config KERNEL_SQUASHFS_FILE_DIRECT
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_SQUASHFS_XZ
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_JFFS2_FS
+	bool "Enable JFFS2 FS Support"
+
+config KERNEL_JFFS2_CMODE_PRIORITY
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_COMPRESSION_OPTIONS
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_FS_WRITEBUFFER
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_LZMA
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_RTIME
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_SUMMARY
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_EROFS_FS
+	bool "Enable EroFS Support"
+
+config KERNEL_EROFS_FS_ZIP
+	bool
+	default y if KERNEL_EROFS_FS
+
+config KERNEL_EROFS_FS_ZIP_LZMA
+	bool
+	default y if KERNEL_EROFS_FS
+
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
@@ -1254,6 +1314,11 @@ menu "Filesystem ACL and attr support options"
 
 	config KERNEL_BTRFS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for BtrFS Filesystems"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_ATTR
+
+	config KERNEL_EROFS_FS_POSIX_ACL
+		bool "Enable POSIX ACL for EroFS Filesystems"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
 
@@ -1333,10 +1398,20 @@ config KERNEL_DEVKMEM
 	  /dev/kmem device is rarely used, but can be used for certain
 	  kind of kernel debugging operations.
 
+config KERNEL_JFFS2_FS_DEBUG
+	int
+	default 0
+
 config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	int "Number of squashfs fragments cached"
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	default 3
+
+config KERNEL_EROFS_FS_XATTR
+	bool "EroFS XATTR support"
+
+config KERNEL_JFFS2_FS_XATTR
+	bool "JFFS2 FS XATTR support"
 
 config KERNEL_SQUASHFS_XATTR
 	bool "Squashfs XATTR support"
@@ -1406,6 +1481,9 @@ config KERNEL_LSM
 	string
 	default "lockdown,yama,loadpin,safesetid,integrity,selinux"
 	depends on KERNEL_SECURITY_SELINUX
+
+config KERNEL_EROFS_FS_SECURITY
+	bool "EroFS Security Labels"
 
 config KERNEL_EXT4_FS_SECURITY
 	bool "Ext4 Security Labels"

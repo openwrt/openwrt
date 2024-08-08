@@ -134,6 +134,7 @@ menu "Target Images"
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		depends on USES_JFFS2
+		select KERNEL_JFFS2_FS
 		help
 		  Build a JFFS2 root filesystem.
 
@@ -141,12 +142,22 @@ menu "Target Images"
 		bool "jffs2 for NAND"
 		default y if USES_JFFS2_NAND
 		depends on USES_JFFS2_NAND
+		select KERNEL_JFFS2_FS
 		help
 		  Build a JFFS2 root filesystem for NAND flash.
+
+	config TARGET_ROOTFS_EROFS
+		bool "erofs"
+		default y if USES_EROFS
+		depends on LINUX_6_1
+		select KERNEL_EROFS_FS
+		help
+		  Build a EroFS-lzma root filesystem.
 
 	menuconfig TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
+		select KERNEL_SQUASHFS
 		help
 		  Build a squashfs root filesystem.
 
