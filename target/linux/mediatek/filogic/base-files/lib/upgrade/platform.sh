@@ -77,6 +77,7 @@ platform_do_upgrade() {
 	mediatek,mt7988a-rfb|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
+	netcore,n60|\
 	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
@@ -117,10 +118,6 @@ platform_do_upgrade() {
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
-		;;
-	netcore,n60)
-		CI_KERNPART="fit"
-		nand_do_upgrade "$1"
 		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
