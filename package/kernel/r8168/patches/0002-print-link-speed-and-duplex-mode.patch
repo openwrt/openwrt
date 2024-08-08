@@ -1,0 +1,39 @@
+From 1e7b4b74a61c6627e1051ef67f11fa11e2c365dc Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 4 Aug 2024 16:15:12 +0800
+Subject: [PATCH] r8168: print link speed and duplex mode
+
+Like other Ethernet drivers, print link speed and duplex mode
+when the interface is up. Formatting output at the same time.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ src/r8168_n.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/src/r8168_n.c
++++ b/src/r8168_n.c
+@@ -5377,6 +5377,7 @@ static void
+ rtl8168_check_link_status(struct net_device *dev)
+ {
+         struct rtl8168_private *tp = netdev_priv(dev);
++        u16 status = RTL_R8(tp, PHYstatus);
+         int link_status_on;
+ 
+ #ifdef ENABLE_FIBER_SUPPORT
+@@ -5393,10 +5394,13 @@ rtl8168_check_link_status(struct net_dev
+                         rtl8168_link_on_patch(dev);
+ 
+                         if (netif_msg_ifup(tp))
+-                                printk(KERN_INFO PFX "%s: link up\n", dev->name);
++                                printk(KERN_INFO PFX "%s: Link is Up - %dMbps/%s\n",
++                                       dev->name, rtl8168_convert_link_speed(status),
++                                       ((status & _1000bpsF) || (status & FullDup))
++                                        ? "Full" : "Half");
+                 } else {
+                         if (netif_msg_ifdown(tp))
+-                                printk(KERN_INFO PFX "%s: link down\n", dev->name);
++                                printk(KERN_INFO PFX "%s: Link is Down\n", dev->name);
+ 
+                         rtl8168_link_down_patch(dev);
+                 }
