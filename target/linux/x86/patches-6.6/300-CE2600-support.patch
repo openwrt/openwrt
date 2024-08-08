@@ -1,0 +1,4833 @@
+From 120998ebc605fefccd456df7eb2d3e8199e4d668 Mon Sep 17 00:00:00 2001
+From: Santiago Hormazabal <santiagohssl@gmail.com>
+Date: Tue, 7 May 2024 21:26:51 -0300
+Subject: [PATCH 1/1] CE2600 support (SDIO, GPIO, SPIflash, E1000 with
+ MV88E6172, Serial ports)
+
+---
+ arch/x86/Kconfig                              |   13 +
+ arch/x86/boot/compressed/misc.c               |    5 +
+ arch/x86/boot/early_serial_console.c          |   15 +-
+ arch/x86/include/asm/setup.h                  |    8 +
+ arch/x86/include/uapi/asm/bootparam.h         |    6 +
+ arch/x86/kernel/head32.c                      |    4 +
+ arch/x86/kernel/reboot_fixups_32.c            |   16 +-
+ arch/x86/kernel/setup.c                       |   10 +
+ arch/x86/platform/Makefile                    |    1 +
+ arch/x86/platform/ce2600/Makefile             |    7 +
+ arch/x86/platform/ce2600/ce2600-arm-bridge.c  |  500 ++++++++
+ arch/x86/platform/ce2600/ce2600-fixups.c      |  140 +++
+ arch/x86/platform/ce2600/ce2600-pci.c         |  967 +++++++++++++++
+ arch/x86/platform/ce2600/ce2600-platform.c    |  173 +++
+ arch/x86/platform/ce2600/ce2600-setup.c       |  119 ++
+ drivers/gpio/Kconfig                          |    9 +
+ drivers/gpio/Makefile                         |    1 +
+ drivers/gpio/gpio-intel-ce2600.c              |  837 +++++++++++++
+ drivers/i2c/busses/i2c-pxa-pci.c              |   25 +-
+ drivers/mmc/host/sdhci-pci-core.c             |   31 +
+ drivers/mmc/host/sdhci-pci.h                  |    1 +
+ drivers/net/dsa/mv88e6xxx/chip.c              |    4 +
+ drivers/net/ethernet/intel/Kconfig            |   14 +
+ drivers/net/ethernet/intel/e1000/e1000_hw.c   |  225 ++++
+ drivers/net/ethernet/intel/e1000/e1000_hw.h   |   18 +
+ drivers/net/ethernet/intel/e1000/e1000_main.c |   65 ++
+ drivers/pci/probe.c                           |    9 +-
+ drivers/spi/Kconfig                           |   11 +
+ drivers/spi/Makefile                          |    1 +
+ drivers/spi/spi-intel-ce-5xxx.c               | 1039 +++++++++++++++++
+ drivers/tty/serial/8250/8250_port.c           |   12 +
+ drivers/usb/host/ehci-pci.c                   |   13 +-
+ include/linux/pci_ids.h                       |   14 +
+ mm/mm_init.c                                  |    5 +
+ 34 files changed, 4307 insertions(+), 11 deletions(-)
+ create mode 100644 arch/x86/platform/ce2600/Makefile
+ create mode 100644 arch/x86/platform/ce2600/ce2600-arm-bridge.c
+ create mode 100644 arch/x86/platform/ce2600/ce2600-fixups.c
+ create mode 100644 arch/x86/platform/ce2600/ce2600-pci.c
+ create mode 100644 arch/x86/platform/ce2600/ce2600-platform.c
+ create mode 100644 arch/x86/platform/ce2600/ce2600-setup.c
+ create mode 100644 drivers/gpio/gpio-intel-ce2600.c
+ create mode 100644 drivers/spi/spi-intel-ce-5xxx.c
+
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -594,6 +594,19 @@ config X86_GOLDFISH
+ 	  for Android development. Unless you are building for the Android
+ 	  Goldfish emulator say N here.
+ 
++config X86_INTEL_CE_2600
++	bool "CE2600 SoC"
++	depends on PCI
++	depends on PCI_GODIRECT
++	depends on X86_IO_APIC
++	depends on X86_32
++	depends on X86_EXTENDED_PLATFORM
++	select X86_REBOOTFIXUPS
++	help
++	  Select for the dreaded Puma 6 Intel CE processor (CE2600) SoC.
++	  This option compiles in support for the CE2600 SoC for cablemodems
++	  and NAS.
++
+ config X86_INTEL_CE
+ 	bool "CE4100 TV platform"
+ 	depends on PCI
+--- a/arch/x86/boot/compressed/misc.c
++++ b/arch/x86/boot/compressed/misc.c
+@@ -107,7 +107,12 @@ static void scroll(void)
+ #define LSR             5       /*  Line Status               */
+ static void serial_putchar(int ch)
+ {
++#ifdef CONFIG_X86_INTEL_CE_2600
++	/* for some reason, the CE2600 wants more time... */
++	unsigned timeout = 0x8fffff;
++#else
+ 	unsigned timeout = 0xffff;
++#endif
+ 
+ 	while ((inb(early_serial_base + LSR) & XMTRDY) == 0 && --timeout)
+ 		cpu_relax();
+--- a/arch/x86/boot/early_serial_console.c
++++ b/arch/x86/boot/early_serial_console.c
+@@ -52,8 +52,21 @@ static void parse_earlyprintk(void)
+ 
+ 	if (cmdline_find_option("earlyprintk", arg, sizeof(arg)) > 0) {
+ 		char *e;
+-
++#ifdef CONFIG_X86_INTEL_CE_2600
++		if (!strncmp(arg, "intelce", 7)) {
++			/*
++			 * Process the earlyprintk=intelce as a specific case, where
++			 * we'd only enable the console on the decompressor stage and
++			 * the kernel would initialize the console using the mmio (otherwise
++			 * the IOAPIC would hang, per Intel's comments). assumes 115200 bps,
++			 * using the weird BASE_BAUD that the SoC has.
++			 */
++			early_serial_init(DEFAULT_SERIAL_PORT, 14400);
++			return;
++		} else if (!strncmp(arg, "serial", 6)) {
++#else
+ 		if (!strncmp(arg, "serial", 6)) {
++#endif
+ 			port = DEFAULT_SERIAL_PORT;
+ 			pos += 6;
+ 		}
+--- a/arch/x86/include/asm/setup.h
++++ b/arch/x86/include/asm/setup.h
+@@ -66,6 +66,14 @@ extern void x86_ce4100_early_setup(void)
+ static inline void x86_ce4100_early_setup(void) { }
+ #endif
+ 
++#ifdef CONFIG_X86_INTEL_CE_2600
++extern void x86_ce2600_early_setup(void);
++extern void x86_ce2600_set_setup_data(u32 type, const void *buf, size_t len);
++#else
++static inline void x86_ce2600_early_setup(void) { }
++static inline void x86_ce2600_set_setup_data(u32 type, const void *buf, size_t len) { }
++#endif
++
+ #ifndef _SETUP
+ 
+ #include <asm/espfix.h>
+--- a/arch/x86/include/uapi/asm/bootparam.h
++++ b/arch/x86/include/uapi/asm/bootparam.h
+@@ -15,6 +15,12 @@
+ #define SETUP_RNG_SEED			9
+ #define SETUP_ENUM_MAX			SETUP_RNG_SEED
+ 
++/* special types only used by CEFDK on CE2600 SoCs */
++#define SETUP_INTEL_CE_BOARD_TYPE 		0x1000
++#define SETUP_INTEL_CE_NIC_PHY_MODE 		0x1001
++#define SETUP_INTEL_CE_BOARD_REV 		0x1002
++#define SETUP_INTEL_CE_FLASH_LAYOUT_TABLE 	0x1003
++
+ #define SETUP_INDIRECT			(1<<31)
+ #define SETUP_TYPE_MAX			(SETUP_ENUM_MAX | SETUP_INDIRECT)
+ 
+--- a/arch/x86/kernel/head32.c
++++ b/arch/x86/kernel/head32.c
+@@ -50,6 +50,10 @@ asmlinkage __visible void __init __noret
+ 		break;
+ 	default:
+ 		i386_default_early_setup();
++#ifdef CONFIG_X86_INTEL_CE_2600
++		/* sadly, CEFDK doesn't change the hardware_subarch, so rely on this CONFIG */
++		x86_ce2600_early_setup();
++#endif
+ 		break;
+ 	}
+ 
+--- a/arch/x86/kernel/reboot_fixups_32.c
++++ b/arch/x86/kernel/reboot_fixups_32.c
+@@ -54,6 +54,18 @@ static void ce4100_reset(struct pci_dev
+ 	}
+ }
+ 
++static void ce2600_reset(struct pci_dev *dev)
++{
++	int i;
++	/*
++	 * Intel CE2600 SoC uses this specific method to reboot.
++	 */
++	for (i = 0; i < 10; i++) {
++		outb(0x8, 0xcf9);
++		udelay(50);
++	}
++}
++
+ struct device_fixup {
+ 	unsigned int vendor;
+ 	unsigned int device;
+@@ -63,14 +75,14 @@ struct device_fixup {
+ /*
+  * PCI ids solely used for fixups_table go here
+  */
+-#define PCI_DEVICE_ID_INTEL_CE4100	0x0708
+ 
+ static const struct device_fixup fixups_table[] = {
+ { PCI_VENDOR_ID_CYRIX, PCI_DEVICE_ID_CYRIX_5530_LEGACY, cs5530a_warm_reset },
+ { PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_CS5536_ISA, cs5536_warm_reset },
+ { PCI_VENDOR_ID_NS, PCI_DEVICE_ID_NS_SC1100_BRIDGE, cs5530a_warm_reset },
+ { PCI_VENDOR_ID_RDC, PCI_DEVICE_ID_RDC_R6030, rdc321x_reset },
+-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CE4100, ce4100_reset },
++{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CE4100_SOC, ce4100_reset },
++{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CE2600_SOC, ce2600_reset },
+ };
+ 
+ /*
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -419,6 +419,16 @@ static void __init parse_setup_data(void
+ 			memzero_explicit(&data->len, sizeof(data->len));
+ 			early_memunmap(data, data_len);
+ 			break;
++#ifdef CONFIG_X86_INTEL_CE_2600
++		case SETUP_INTEL_CE_BOARD_TYPE:
++		case SETUP_INTEL_CE_NIC_PHY_MODE:
++		case SETUP_INTEL_CE_BOARD_REV:
++		case SETUP_INTEL_CE_FLASH_LAYOUT_TABLE:
++			data = early_memremap(pa_data, data_len);
++			x86_ce2600_set_setup_data(data_type, data->data, data->len);
++			early_memunmap(data, data_len);
++			break;
++#endif
+ 		default:
+ 			break;
+ 		}
+--- a/arch/x86/platform/Makefile
++++ b/arch/x86/platform/Makefile
+@@ -2,6 +2,7 @@
+ # Platform specific code goes here
+ obj-y	+= atom/
+ obj-y	+= ce4100/
++obj-y	+= ce2600/
+ obj-y	+= efi/
+ obj-y	+= geode/
+ obj-y	+= iris/
+--- /dev/null
++++ b/arch/x86/platform/ce2600/Makefile
+@@ -0,0 +1,7 @@
++# SPDX-License-Identifier: GPL-2.0-only
++
++obj-$(CONFIG_X86_INTEL_CE_2600)	+= ce2600-arm-bridge.o
++obj-$(CONFIG_X86_INTEL_CE_2600)	+= ce2600-fixups.o
++obj-$(CONFIG_X86_INTEL_CE_2600)	+= ce2600-pci.o
++obj-$(CONFIG_X86_INTEL_CE_2600)	+= ce2600-platform.o
++obj-$(CONFIG_X86_INTEL_CE_2600)	+= ce2600-setup.o
+--- /dev/null
++++ b/arch/x86/platform/ce2600/ce2600-arm-bridge.c
+@@ -0,0 +1,498 @@
++/*
++ *  DOCSIS IP interface for Intel's CE2600 SoC.
++ *
++ *  Santiago Hormazabal 2024, <santiagohssl@gmail.com>
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License 2 as published
++ *  by the Free Software Foundation.
++ *
++ */
++
++#include <linux/errno.h>
++#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/pci.h>
++#include <linux/pci_ids.h>
++#include <linux/platform_device.h>
++#include <linux/proc_fs.h>
++#include <linux/debugfs.h>
++#include <linux/delay.h>
++
++#define CE2600_ARM_BRIDGE_DRV_NAME		"ce2600_arm_bridge"
++
++#define CE2600_DOCSIS_BAR 0
++
++struct ce2600_arm_bridge_chip {
++	void __iomem *reg_base;
++	spinlock_t lock;
++	struct dentry *debug_root;
++	struct dentry *debug;
++};
++
++/*----------------------------------------------------
++ * Puma6's DOCSIS-IP Module's Base Addresses
++ *--------------------------------------------------*/
++#define AVALANCHE_SRAM_BASE		(0x00000000)
++#define AVALANCHE_WATCHDOG_TIMER_BASE	(0x00010000)
++#define AVALANCHE_DSP_PROXY_BASE	(0x00020000)
++#define AVALANCHE_TIMER0_BASE		(0x00030000)
++#define AVALANCHE_DSP_INC_BASE		(0x00040000)
++#define AVALANCHE_SPDMA0_BASE		(0x00080000)
++#define AVALANCHE_SPDMA1_BASE		(0x00090000)
++#define AVALANCHE_IIC_REGS_BASE		(0x000A0000)
++#define AVALANCHE_BBU_REGS_BASE		(0x000B0000)
++#define AVALANCHE_BOOTCFG_BASE		(0x000C0000)
++#define AVALANCHE_CRU_BASE		(0x000D0000)
++#define AVALANCHE_PERF_MON_BASE		(0x000E0000)
++#define AVALANCHE_IIC_DMA_REGS_BASE	(0x000F2000) /* new i2c dma */
++#define AVALANCHE_TDM_BASE		(0x00100000)
++#define AVALANCHE_TIMER1_BASE		(0x00110000)
++#define AVALANCHE_TDM_1_BASE		(0x00120000)
++#define AVALANCHE_TIMER2_BASE		(0x00130000)
++#define AVALANCHE_SSX_BASE		(0x00200000)
++#define AVALANCHE_DOCSIS_SS_BASE	(0x01000000)
++#define AVALANCHE_PP_PHY_ADDR_BASE	(0x03000000)
++#define AVALANCHE_PP_PHY_ADDR_END	(0x04000000)
++#define AVALANCHE_PP_BASE		(AVALANCHE_PP_PHY_ADDR_BASE)
++#define AVALANCHE_DSPSS_LOCAL_BASE	(0x04000000)
++#define AVALANCHE_INTC_BASE		(INTC_VIRT)  // 0x05000000
++
++/* ARM peripheral: CRU */
++#define CRU_MOD_STATE_BASE		(AVALANCHE_CRU_BASE)
++#define CRU_MOD_STATUS_BASE		(CRU_MOD_STATE_BASE + 0x4)
++
++typedef enum PAL_SYS_CRU_MODULE_tag {
++	/* 0 */   CRU_NUM_ARM11, /* ATOM must enable this module's clocks to take ARM11 out of reset, after it uses DOCSIS_CNTL register to take Docsis IP out of reset */
++	/* 1 */   CRU_NUM_C55,
++	/* 2 */   CRU_NUM_I2C_DMA,
++	/* 3 */   CRU_NUM_DOCSIS_MAC0,
++	/* 4 */   CRU_NUM_DOCSIS_MAC1,
++	/* 5 */   CRU_NUM_DOCSIS_PHY0,
++	/* 6 */   CRU_NUM_DOCSIS_PHY1,
++	/* 7 */   CRU_NUM_DOCSIS_PHY2,
++	/* 8 */   CRU_NUM_PKT_PROCESSOR,
++	/* 9 */   CRU_NUM_DOCSIS_IP_INFRA,/* This module's clocks are enabled by defualt */
++	/* 10 */  CRU_NUM_BBU,
++	/* 11 */  CRU_NUM_WDT,
++	/* 12 */  CRU_NUM_RAM,/* This module's clocks are enabled by defualt */
++	/* 13 */  CRU_NUM_TIMER0,
++	/* 14 */  CRU_NUM_TIMER1,
++	/* 15 */  CRU_NUM_TIMER2,
++	/* 16 */  CRU_NUM_UART0,
++	/* 17 */  CRU_NUM_UART1,
++	/* 18 */  CRU_NUM_UART2,
++	/* 19 */  CRU_NUM_CPSPDMA0,
++	/* 20 */  CRU_NUM_CPSPDMA1,
++	/* 21 */  CRU_NUM_BOOT_CFG,/* This module's clocks are enabled by defualt */
++	/* 22 */  CRU_NUM_TDM00,
++	/* 23 */  CRU_NUM_TDM01,
++	/* 24 */  CRU_NUM_TDM10,
++	/* 25 */  CRU_NUM_TDM11,
++	/* 26 */  CRU_NUM_DSP_PROXY,
++	/* 27 */  CRU_NUM_DSP_INC,
++	/* 28 */  CRU_NUM_I2C,
++	/* 29 */  CRU_NUM_PREF_MON,
++	/* 30 */  CRU_NUM_C55_CLK,
++	/* 31 */  CRU_NUM_NBADC,
++	/* 32 */  CRU_NUM_DAC,
++	/* 33 */  CRU_MAX,
++} PAL_SYS_CRU_MODULE_T;
++
++typedef enum PAL_SYS_RESET_CTRL_tag {
++	IN_RESET = 0,
++	OUT_OF_RESET,
++	CLK_DISABLE
++} PAL_SYS_RESET_CTRL_T;
++
++/* ARM peripheral: BootCFG */
++
++#define GET_SRAM_ADDR(offset)		(AVALANCHE_SRAM_BASE  + offset)
++
++#define BOOT_PARAM_MAX_NAME	65	/* The max length allowed for the parameter name. */
++
++/* This enum defines the ids of each boot param, when adding a new boot param need to add an enum for it  */
++typedef enum {
++	BOOT_PARAM_VER_ID,
++	NP_CPU_BOOT_STATUS_ID,
++	BOOT_MODE_ID,
++	BOARD_TYPE_ID,
++	NUMBER_OF_FLASHES_ID,
++	NP_CPU_DDR_OFFSET_ID,
++	NP_CPU_DDR_SIZE_ID,
++	ACTIVE_AID_ID,
++	AID_1_OFFSET_ID,
++	AID_2_OFFSET_ID,
++	UBOOT_OFFSET_ID,
++	UBOOT_SIZE_ID,
++	UBOOT_ENV1_OFFSET_ID,
++	UBOOT_ENV2_OFFSET_ID,
++	UBOOT_ENV_SIZE_ID,
++	NP_CPU_NVRAM_OFFSET_ID,
++	NP_CPU_NVRAM_SIZE_ID,
++	NP_CPU_UBFI1_OFFSET_ID,
++	NP_CPU_UBFI1_SIZE_ID,
++	NP_CPU_UBFI2_OFFSET_ID,
++	NP_CPU_UBFI2_SIZE_ID,
++	APP_CPU_UBFI1_OFFSET_ID,
++	APP_CPU_UBFI1_SIZE_ID,
++	APP_CPU_UBFI2_OFFSET_ID,
++	APP_CPU_UBFI2_SIZE_ID,
++	NP_CPU_KERNEL_1_PARTITION_ID,
++	NP_CPU_KERNEL_2_PARTITION_ID,
++	NP_CPU_ROOTFS_1_PARTITION_ID,
++	NP_CPU_ROOTFS_2_PARTITION_ID,
++	NP_CPU_GW_FS_1_PARTITION_ID,
++	NP_CPU_GW_FS_2_PARTITION_ID,
++	NP_CPU_NVRAM_1_PARTITION_ID,
++	NP_CPU_NVRAM_2_PARTITION_ID,
++	APP_CPU_KERNEL_1_PARTITION_ID,
++	APP_CPU_KERNEL_2_PARTITION_ID,
++	APP_CPU_ROOTFS_1_PARTITION_ID,
++	APP_CPU_ROOTFS_2_PARTITION_ID,
++	SILICON_STEPPING_ID,
++	CEFDK_VERSION_ID,
++	SIGNATURE1_OFFSET_ID,
++	SIGNATURE2_OFFSET_ID,
++	SIGNATURE_SIZE_ID,
++	SIGNATURE_NUMBER_ID,
++	EMMC_FLASH_SIZE_ID,
++	CEFDK_S1_OFFSET_ID,
++	CEFDK_S1_SIZE_ID,
++	CEFDK_S2_OFFSET_ID,
++	CEFDK_S2_SIZE_ID,
++	CEFDK_S3_OFFSET_ID,
++	CEFDK_S3_SIZE_ID,
++	CEFDK_S1H_OFFSET_ID,
++	CEFDK_S1H_SIZE_ID,
++	CEFDK_S2H_OFFSET_ID,
++	CEFDK_S2H_SIZE_ID,
++	CEFDK_S3H_OFFSET_ID,
++	CEFDK_S3H_SIZE_ID,
++	AEP_MODE_ID,
++	AIDIDX_APP_KERNEL_ID,
++	AIDIDX_APP_ROOT_FS_ID,
++	AIDIDX_APP_VGW_FS_ID,
++	AIDIDX_NP_KERNEL_ID,
++	AIDIDX_NP_ROOT_FS_ID,
++	AIDIDX_NP_GW_FS_ID,
++	AIDIDX_RSVD_6_ID,
++	AIDIDX_RSVD_7_ID,
++	AIDIDX_RSVD_8_ID,
++	AIDIDX_RSVD_9_ID,
++	AIDIDX_RSVD_10_ID,
++	AIDIDX_RSVD_11_ID,
++	AIDIDX_RSVD_12_ID,
++	AIDIDX_RSVD_13_ID,
++	AIDIDX_RSVD_14_ID,
++	AIDIDX_RSVD_15_ID,
++	BOARD_REVISION_ID,
++	NPCPU_ONLY_MODE_ID,
++	MAX_BOOT_PARAMS
++} BootParamId_e;
++
++
++/* This structure defines each parameter that is saved in the boot_param section in the SRAM */
++typedef struct {
++	uint8_t		name[BOOT_PARAM_MAX_NAME];
++	uint32_t	size;
++	uint32_t	addr;
++} boot_param_t;
++
++/* BootParams hold the boot parameters info. */
++static boot_param_t BootParams[MAX_BOOT_PARAMS] =
++{
++	[BOOT_PARAM_VER_ID] =			{ "Boot Params Version",	sizeof(int),	GET_SRAM_ADDR(0x1FFC) },
++	[NP_CPU_BOOT_STATUS_ID] =		{ "NP_CPU Boot Status",		sizeof(int),	GET_SRAM_ADDR(0x1FF8) },
++	[BOOT_MODE_ID] =			{ "Boot Mode",			sizeof(int),	GET_SRAM_ADDR(0x1FF4) },
++	[BOARD_TYPE_ID] =			{ "Board Type",			sizeof(int),	GET_SRAM_ADDR(0x1FF0) },
++	[NUMBER_OF_FLASHES_ID] =		{ "Numebr of flashes",		sizeof(int),	GET_SRAM_ADDR(0x1FEC) },
++	[NP_CPU_DDR_OFFSET_ID] =		{ "RAM Offset",			sizeof(int),	GET_SRAM_ADDR(0x1FE8) },
++	[NP_CPU_DDR_SIZE_ID] =			{ "RAM Size",			sizeof(int),	GET_SRAM_ADDR(0x1FE4) },
++	[ACTIVE_AID_ID] =			{ "Active AID ",		sizeof(int),	GET_SRAM_ADDR(0x1FE0) },
++	[AID_1_OFFSET_ID] =			{ "AID 1 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1FDC) },
++	[AID_2_OFFSET_ID] =			{ "AID 2 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1FD8) },
++	[UBOOT_OFFSET_ID] =			{ "Uboot Offset",		sizeof(int),	GET_SRAM_ADDR(0x1FD4) },
++	[UBOOT_SIZE_ID] =			{ "Uboot Size",			sizeof(int),	GET_SRAM_ADDR(0x1FD0) },
++	[UBOOT_ENV1_OFFSET_ID] =		{ "Uboot Env1 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1FCC) },
++	[UBOOT_ENV2_OFFSET_ID] =		{ "Uboot Env2 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1FC8) },
++	[UBOOT_ENV_SIZE_ID] =			{ "Uboot Env Size",		sizeof(int),	GET_SRAM_ADDR(0x1FC4) },
++	[NP_CPU_NVRAM_OFFSET_ID] =		{ "NP CPU NVRAM Offset",	sizeof(int),	GET_SRAM_ADDR(0x1FC0) },
++	[NP_CPU_NVRAM_SIZE_ID] =		{ "NP CPU NVRAM Size",		sizeof(int),	GET_SRAM_ADDR(0x1FBC) },
++	[NP_CPU_UBFI1_OFFSET_ID] =		{ "NP CPU UBFI1 Offset",	sizeof(int),	GET_SRAM_ADDR(0x1FB8) },
++	[NP_CPU_UBFI1_SIZE_ID] =		{ "NP CPU UBFI1 Size",		sizeof(int),	GET_SRAM_ADDR(0x1FB4) },
++	[NP_CPU_UBFI2_OFFSET_ID] =		{ "NP CPU UBFI2 Offset",	sizeof(int),	GET_SRAM_ADDR(0x1FB0) },
++	[NP_CPU_UBFI2_SIZE_ID] =		{ "NP CPU UBFI2 Size",		sizeof(int),	GET_SRAM_ADDR(0x1FAC) },
++	[APP_CPU_UBFI1_OFFSET_ID] =		{ "APP CPU UBFI1 Offset",	sizeof(int),	GET_SRAM_ADDR(0x1FA8) },
++	[APP_CPU_UBFI1_SIZE_ID] =		{ "APP CPU UBFI1 Size",		sizeof(int),	GET_SRAM_ADDR(0x1FA4) },
++	[APP_CPU_UBFI2_OFFSET_ID] =		{ "APP CPU UBFI2 Offset",	sizeof(int),	GET_SRAM_ADDR(0x1FA0) },
++	[APP_CPU_UBFI2_SIZE_ID] =		{ "APP CPU UBFI2 Size",		sizeof(int),	GET_SRAM_ADDR(0x1F9F) },
++	[NP_CPU_KERNEL_1_PARTITION_ID] =	{ "NP CPU Kernel 1 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F9E) },
++	[NP_CPU_KERNEL_2_PARTITION_ID] =	{ "NP CPU Kernel 2 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F9D) },
++	[NP_CPU_ROOTFS_1_PARTITION_ID] =	{ "NP CPU Root FS 1 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F9C) },
++	[NP_CPU_ROOTFS_2_PARTITION_ID] =	{ "NP CPU Root FS 2 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F9B) },
++	[NP_CPU_GW_FS_1_PARTITION_ID] =		{ "NP CPU GW FS 1 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F9A) },
++	[NP_CPU_GW_FS_2_PARTITION_ID] =		{ "NP CPU GW FS 2 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F99) },
++	[NP_CPU_NVRAM_1_PARTITION_ID] =		{ "NP CPU NVRAM 1 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F98) },
++	[NP_CPU_NVRAM_2_PARTITION_ID] =		{ "NP CPU NVRAM 2 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F97) },
++	[APP_CPU_KERNEL_1_PARTITION_ID] =	{ "APP CPU Kernel 1 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F96) },
++	[APP_CPU_KERNEL_2_PARTITION_ID] =	{ "APP CPU Kernel 2 partition",	sizeof(char),	GET_SRAM_ADDR(0x1F95) },
++	[APP_CPU_ROOTFS_1_PARTITION_ID] =	{ "APP CPU Root FS 1 partition",sizeof(char),	GET_SRAM_ADDR(0x1F94) },
++	[APP_CPU_ROOTFS_2_PARTITION_ID] =	{ "APP CPU Root FS 2 partition",sizeof(char),	GET_SRAM_ADDR(0x1F90) },
++	[SILICON_STEPPING_ID] =			{ "Silicon stepping",		sizeof(int),	GET_SRAM_ADDR(0x1F8C) },
++	[CEFDK_VERSION_ID] =			{ "CEFDK version",		sizeof(int),	GET_SRAM_ADDR(0x1F88) },
++	[SIGNATURE1_OFFSET_ID] =		{ "Signature 1 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F84) },
++	[SIGNATURE2_OFFSET_ID] =		{ "Signature 2 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F80) },
++	[SIGNATURE_SIZE_ID] =			{ "Signature Size",		sizeof(int),	GET_SRAM_ADDR(0x1F7C) },
++	[SIGNATURE_NUMBER_ID] =			{ "Signature number",		sizeof(int),	GET_SRAM_ADDR(0x1F78) },
++	[EMMC_FLASH_SIZE_ID] =			{ "EMMC flash Size",		sizeof(int),	GET_SRAM_ADDR(0x1F74) },
++	[CEFDK_S1_OFFSET_ID] =			{ "CEFDK S1 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F70) },
++	[CEFDK_S1_SIZE_ID] =			{ "CEFDK S1 Size",		sizeof(int),	GET_SRAM_ADDR(0x1F6C) },
++	[CEFDK_S2_OFFSET_ID] =			{ "CEFDK S2 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F68) },
++	[CEFDK_S2_SIZE_ID] =			{ "CEFDK S2 Size",		sizeof(int),	GET_SRAM_ADDR(0x1F64) },
++	[CEFDK_S3_OFFSET_ID] =			{ "CEFDK S3 Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F60) },
++	[CEFDK_S3_SIZE_ID] =			{ "CEFDK S3 Size",		sizeof(int),	GET_SRAM_ADDR(0x1F5C) },
++	[CEFDK_S1H_OFFSET_ID] =			{ "CEFDK S1H Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F58) },
++	[CEFDK_S1H_SIZE_ID] =			{ "CEFDK S1H Size",		sizeof(int),	GET_SRAM_ADDR(0x1F54) },
++	[CEFDK_S2H_OFFSET_ID] =			{ "CEFDK S2H Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F50) },
++	[CEFDK_S2H_SIZE_ID] =			{ "CEFDK S2H Size",		sizeof(int),	GET_SRAM_ADDR(0x1F4C) },
++	[CEFDK_S3H_OFFSET_ID] =			{ "CEFDK S3H Offset",		sizeof(int),	GET_SRAM_ADDR(0x1F48) },
++	[CEFDK_S3H_SIZE_ID] =			{ "CEFDK S3H Size",		sizeof(int),	GET_SRAM_ADDR(0x1F44) },
++	[AEP_MODE_ID] =				{ "AEP MODE",			sizeof(int),	GET_SRAM_ADDR(0x1F40) },
++	[AIDIDX_APP_KERNEL_ID] =		{ "AIDIDX APP KERNEL",		sizeof(char),	GET_SRAM_ADDR(0x1F3F) },
++	[AIDIDX_APP_ROOT_FS_ID] =		{ "AIDIDX APP ROOT FS",		sizeof(char),	GET_SRAM_ADDR(0x1F3E) },
++	[AIDIDX_APP_VGW_FS_ID] =		{ "AIDIDX APP VGW FS",		sizeof(char),	GET_SRAM_ADDR(0x1F3D) },
++	[AIDIDX_NP_KERNEL_ID] =			{ "AIDIDX NP KERNEL",		sizeof(char),	GET_SRAM_ADDR(0x1F3C) },
++	[AIDIDX_NP_ROOT_FS_ID] =		{ "AIDIDX NP ROOT FS",		sizeof(char),	GET_SRAM_ADDR(0x1F3B) },
++	[AIDIDX_NP_GW_FS_ID] =			{ "AIDIDX NP GW FS",		sizeof(char),	GET_SRAM_ADDR(0x1F3A) },
++	[AIDIDX_RSVD_6_ID] =			{ "AIDIDX RSVD 6",		sizeof(char),	GET_SRAM_ADDR(0x1F39) },
++	[AIDIDX_RSVD_7_ID] =			{ "AIDIDX RSVD 7",		sizeof(char),	GET_SRAM_ADDR(0x1F38) },
++	[AIDIDX_RSVD_8_ID] =			{ "AIDIDX RSVD 8",		sizeof(char),	GET_SRAM_ADDR(0x1F37) },
++	[AIDIDX_RSVD_9_ID] =			{ "AIDIDX RSVD 9",		sizeof(char),	GET_SRAM_ADDR(0x1F36) },
++	[AIDIDX_RSVD_10_ID] =			{ "AIDIDX RSVD 10",		sizeof(char),	GET_SRAM_ADDR(0x1F35) },
++	[AIDIDX_RSVD_11_ID] =			{ "AIDIDX RSVD 11",		sizeof(char),	GET_SRAM_ADDR(0x1F34) },
++	[AIDIDX_RSVD_12_ID] =			{ "AIDIDX RSVD 12",		sizeof(char),	GET_SRAM_ADDR(0x1F33) },
++	[AIDIDX_RSVD_13_ID] =			{ "AIDIDX RSVD 13",		sizeof(char),	GET_SRAM_ADDR(0x1F32) },
++	[AIDIDX_RSVD_14_ID] =			{ "AIDIDX RSVD 14",		sizeof(char),	GET_SRAM_ADDR(0x1F31) },
++	[AIDIDX_RSVD_15_ID] =			{ "AIDIDX RSVD 15",		sizeof(char),	GET_SRAM_ADDR(0x1F30) },
++	[BOARD_REVISION_ID] =			{ "BOARD REVISION",		sizeof(int ),	GET_SRAM_ADDR(0x1F2C) },
++	[NPCPU_ONLY_MODE_ID] =			{ "NPCPU ONLY MODE",		sizeof(int ),	GET_SRAM_ADDR(0x1F28) },
++};
++static const char *cru_names[] = {
++	"CRU_NUM_ARM11",
++	"CRU_NUM_C55",
++	"CRU_NUM_I2C_DMA",
++	"CRU_NUM_DOCSIS_MAC0",
++	"CRU_NUM_DOCSIS_MAC1",
++	"CRU_NUM_DOCSIS_PHY0",
++	"CRU_NUM_DOCSIS_PHY1",
++	"CRU_NUM_DOCSIS_PHY2",
++	"CRU_NUM_PKT_PROCESSOR",
++	"CRU_NUM_DOCSIS_IP_INFRA",
++	"CRU_NUM_BBU",
++	"CRU_NUM_WDT",
++	"CRU_NUM_RAM",
++	"CRU_NUM_TIMER0",
++	"CRU_NUM_TIMER1",
++	"CRU_NUM_TIMER2",
++	"CRU_NUM_UART0",
++	"CRU_NUM_UART1",
++	"CRU_NUM_UART2",
++	"CRU_NUM_CPSPDMA0",
++	"CRU_NUM_CPSPDMA1",
++	"CRU_NUM_BOOT_CFG",
++	"CRU_NUM_TDM00",
++	"CRU_NUM_TDM01",
++	"CRU_NUM_TDM10",
++	"CRU_NUM_TDM11",
++	"CRU_NUM_DSP_PROXY",
++	"CRU_NUM_DSP_INC",
++	"CRU_NUM_I2C",
++	"CRU_NUM_PREF_MON",
++	"CRU_NUM_C55_CLK",
++	"CRU_NUM_NBADC",
++	"CRU_NUM_DAC",
++};
++
++#ifdef CONFIG_DEBUG_FS
++int cru_get_module_reset_state(struct ce2600_arm_bridge_chip *c,
++	unsigned int cru_module_id, PAL_SYS_RESET_CTRL_T *state)
++{
++	void *cru_reg = NULL;
++	unsigned long flags;
++
++	if (cru_module_id >= CRU_MAX)
++		return -EINVAL;
++
++	cru_reg = c->reg_base + CRU_MOD_STATUS_BASE + (cru_module_id << 4);
++
++	spin_lock_irqsave(&c->lock, flags);
++	*state = (PAL_SYS_RESET_CTRL_T)(be32_to_cpu(*(uint32_t*)cru_reg) & 0x3);
++	spin_unlock_irqrestore(&c->lock, flags);
++
++	return 0;
++}
++
++static int dbg_cru_show(struct seq_file *s, void *data)
++{
++	struct ce2600_arm_bridge_chip *c = s->private;
++	int i;
++	PAL_SYS_RESET_CTRL_T state;
++	const char* cru_states[] = { "DISABLED", "SYNC_RST", "CLK_DISABLE", "ENABLE" };
++
++	seq_puts(s, "Name                    ID State       Value\n");
++
++	for (i = 0; i < CRU_MAX; ++i) {
++		cru_get_module_reset_state(c, i, &state);
++
++		seq_printf(s, "%-23s %.2d %-11s    %.2d\n",
++			cru_names[i],
++			i,
++			cru_states[state],
++			state);
++	}
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(dbg_cru);
++
++static int dbg_bootcfg_show(struct seq_file *s, void *data)
++{
++	uint32_t rd = 0;
++	void *param = NULL;
++	unsigned long flags;
++	struct ce2600_arm_bridge_chip *c = s->private;
++	int i;
++
++	seq_puts(s, "Name                         ID Type      Value\n");
++	for (i = 0; i < MAX_BOOT_PARAMS; ++i) {
++		param = c->reg_base + BootParams[i].addr;
++
++		spin_lock_irqsave(&c->lock, flags);
++		if (BootParams[i].size == sizeof(int))
++			rd = *(int*)param;
++		else
++			rd = *(char*)param;
++
++		spin_unlock_irqrestore(&c->lock, flags);
++
++		seq_printf(s, "%-27s %.3d %-4s 0x%.8x\n",
++			BootParams[i].name,
++			i,
++			BootParams[i].size == sizeof(int) ? "int" : "char",
++			be32_to_cpu(rd));
++	}
++
++	return 0;
++}
++
++DEFINE_SHOW_ATTRIBUTE(dbg_bootcfg);
++#endif
++
++static int ce2600_arm_bridge_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
++{
++	struct ce2600_arm_bridge_chip *c;
++	unsigned long paddr;
++	int ret;
++
++	dev_info(&pdev->dev, "CE2600 ARM (DOCSIS IP) bridge driver.\n");
++
++	c = kzalloc(sizeof(struct ce2600_arm_bridge_chip), GFP_KERNEL);
++	if (!c)
++		return -ENOMEM;
++	ret = pci_enable_device(pdev);
++	if (ret) {
++		dev_err(&pdev->dev, "can't enable device.\n");
++		goto done;
++	}
++
++	ret = pci_request_region(pdev, CE2600_DOCSIS_BAR, CE2600_ARM_BRIDGE_DRV_NAME);
++	if (ret) {
++		dev_err(&pdev->dev, "can't alloc PCI BAR #%d\n", CE2600_DOCSIS_BAR);
++		goto disable_pci;
++	}
++
++	paddr = pci_resource_start(pdev, CE2600_DOCSIS_BAR);
++	dev_info(&pdev->dev, "Phyiscal address: 0x%lx.", paddr);
++
++	if (!paddr) {
++		dev_err(&pdev->dev, "can't get resource on BAR #%d\n", CE2600_DOCSIS_BAR);
++		goto release_reg;
++	}
++
++	c->reg_base = ioremap(paddr, pci_resource_len(pdev, CE2600_DOCSIS_BAR));
++
++	spin_lock_init(&c->lock);
++	pci_set_drvdata(pdev, c);
++
++#ifdef CONFIG_DEBUG_FS
++	c->debug_root = debugfs_lookup("docsis", NULL);
++	if (!c->debug_root)
++		c->debug_root = debugfs_create_dir("docsis", NULL);
++
++	c->debug = debugfs_create_dir(dev_name(&pdev->dev), c->debug_root);
++	debugfs_create_file("bootcfg", 0444, c->debug, c, &dbg_bootcfg_fops);
++	debugfs_create_file("cru", 0444, c->debug, c, &dbg_cru_fops);
++#endif
++
++	return 0;
++
++release_reg:
++	pci_release_region(pdev, CE2600_DOCSIS_BAR);
++disable_pci:
++	pci_disable_device(pdev);
++done:
++	kfree(c);
++	return ret;
++}
++
++static void ce2600_arm_bridge_remove(struct pci_dev *pdev)
++{
++	struct ce2600_arm_bridge_chip *c = pci_get_drvdata(pdev);
++
++#ifdef CONFIG_DEBUG_FS
++	debugfs_remove_recursive(c->debug_root);
++#endif
++
++	put_device(&pdev->dev);
++	pci_release_region(pdev, CE2600_DOCSIS_BAR);
++	iounmap(c->reg_base);
++	pci_disable_device(pdev);
++	pci_set_drvdata(pdev, NULL);
++	kfree(c);
++}
++
++static struct pci_device_id ce2600_arm_bridge_pci_ids[] = {
++	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTELCE_DOCSIS) },
++	{ 0, },
++};
++
++static struct pci_driver ce2600_arm_bridge_driver = {
++	.name = CE2600_ARM_BRIDGE_DRV_NAME,
++	.id_table = ce2600_arm_bridge_pci_ids,
++	.probe = ce2600_arm_bridge_probe,
++	.remove = ce2600_arm_bridge_remove,
++};
++
++static int __init ce2600_arm_bridge_init(void)
++{
++	return pci_register_driver(&ce2600_arm_bridge_driver);
++}
++
++static void __exit ce2600_arm_bridge_exit(void)
++{
++	pci_unregister_driver(&ce2600_arm_bridge_driver);
++}
++
++module_init(ce2600_arm_bridge_init);
++module_exit(ce2600_arm_bridge_exit);
++
++MODULE_AUTHOR("Santiago Hormazabal <santiagohssl@gmail.com>");
++MODULE_DESCRIPTION("ARM bridge for Intel CE2600 SoCs");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/arch/x86/platform/ce2600/ce2600-fixups.c
+@@ -0,0 +1,140 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Intel ce2600 platform specific fixups
++ *
++ * (C) Copyright 2010 Intel Corporation
++ * Santiago Hormazabal 2024, <santiagohssl@gmail.com>
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/irq.h>
++#include <linux/reboot.h>
++#include <linux/serial_reg.h>
++#include <linux/serial_8250.h>
++
++#include <asm/i8259.h>
++#include <asm/io.h>
++#include <asm/io_apic.h>
++#include <asm/processor.h>
++
++#ifdef CONFIG_SERIAL_8250
++static unsigned int mem_serial_in(struct uart_port *p, int offset)
++{
++	offset = offset << p->regshift;
++	return readl(p->membase + offset);
++}
++
++/*
++ * The UART Tx interrupts are not set under some conditions and therefore serial
++ * transmission hangs. This is a silicon issue and has not been root caused. The
++ * workaround for this silicon issue checks UART_LSR_THRE bit and UART_LSR_TEMT
++ * bit of LSR register in interrupt handler to see whether at least one of these
++ * two bits is set, if so then process the transmit request. If this workaround
++ * is not applied, then the serial transmission may hang. This workaround is for
++ * errata number 9 in Errata - B step.
++*/
++
++static unsigned int ce2600_mem_serial_in(struct uart_port *p, int offset)
++{
++	unsigned int ret, ier, lsr;
++
++	if (offset == UART_IIR) {
++		offset = offset << p->regshift;
++		ret = readl(p->membase + offset);
++		if (ret & UART_IIR_NO_INT) {
++			/* see if the TX interrupt should have really set */
++			ier = mem_serial_in(p, UART_IER);
++			/* see if the UART's XMIT interrupt is enabled */
++			if (ier & UART_IER_THRI) {
++				lsr = mem_serial_in(p, UART_LSR);
++				/* now check to see if the UART should be
++				   generating an interrupt (but isn't) */
++				if (lsr & (UART_LSR_THRE | UART_LSR_TEMT))
++					ret &= ~UART_IIR_NO_INT;
++			}
++		}
++	} else
++		ret =  mem_serial_in(p, offset);
++	return ret;
++}
++
++static void ce2600_mem_serial_out(struct uart_port *p, int offset, int value)
++{
++	offset = offset << p->regshift;
++	writel(value, p->membase + offset);
++}
++
++static void ce2600_serial_fixup(int port, struct uart_port *up,
++	u32 *capabilities)
++{
++#ifdef CONFIG_EARLY_PRINTK
++	/*
++	 * Over ride the legacy port configuration that comes from
++	 * asm/serial.h. Using the ioport driver then switching to the
++	 * PCI memmaped driver hangs the IOAPIC
++	 */
++	if (up->iotype !=  UPIO_MEM32) {
++		up->uartclk  = 14745600;
++		up->mapbase = 0xdffe0200;
++		set_fixmap_nocache(FIX_EARLYCON_MEM_BASE,
++				up->mapbase & PAGE_MASK);
++		up->membase =
++			(void __iomem *)__fix_to_virt(FIX_EARLYCON_MEM_BASE);
++		up->membase += up->mapbase & ~PAGE_MASK;
++		up->mapbase += port * 0x100;
++		up->membase += port * 0x100;
++		up->iotype   = UPIO_MEM32;
++		up->regshift = 2;
++		up->irq = 4;
++	}
++#endif
++	up->iobase = 0;
++	up->serial_in = ce2600_mem_serial_in;
++	up->serial_out = ce2600_mem_serial_out;
++
++	*capabilities |= (1 << 12);
++}
++
++static __init void serial_fixup(void)
++{
++	serial8250_set_isa_configurator(ce2600_serial_fixup);
++}
++#endif
++
++/*
++ * The CE2600 platform has an internal 8051 Microcontroller which is
++ * responsible for signaling to the external Power Management Unit the
++ * intention to reset, reboot or power off the system. This 8051 device has
++ * its command register mapped at I/O port 0xcf9 and the value 0x4 is used
++ * to power off the system.
++ */
++static void ce2600_power_off(void)
++{
++	outb(0x4, 0xcf9);
++}
++
++/*
++ * CE2600 specific x86_init function overrides and early setup
++ * calls.
++ */
++void __init x86_ce2600_early_setup(void)
++{
++	x86_platform.legacy.devices.pnpbios = 0;
++	x86_platform.legacy.rtc = 0;
++	x86_platform.legacy.i8042 = X86_LEGACY_I8042_PLATFORM_ABSENT;
++	/*
++	* By default, the reboot method is ACPI which is supported by the
++	* ce2600 bootloader CEFDK using FADT.ResetReg Address and ResetValue
++	* the bootloader will however issue a system power off instead of
++	* reboot. By using BOOT_KBD we ensure proper system reboot as
++	* expected.
++	*/
++	reboot_type = BOOT_KBD;
++
++	pm_power_off = ce2600_power_off;
++
++#ifdef CONFIG_SERIAL_8250
++	/* fix the Serial port so the IOAPIC doesn't hang! */
++	serial_fixup();
++#endif
++}
+--- /dev/null
++++ b/arch/x86/platform/ce2600/ce2600-pci.c
+@@ -0,0 +1,965 @@
++/*
++ *  GPL LICENSE SUMMARY
++ *
++ *  Copyright(c) 2005 - 2013 Intel Corporation. All rights reserved.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of version 2 of the GNU General Public License as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope that it will be useful, but
++ *  WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ *  General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *  The full GNU General Public License is included in this distribution
++ *  in the file called LICENSE.GPL.
++ *
++ *  Contact Information:
++ *    Intel Corporation
++ *    2200 Mission College Blvd.
++ *    Santa Clara, CA  97052
++ *
++ */
++
++/*
++ * The following code is for Intel Media SOC Gen3 base support.
++ */
++
++/*
++ * This file contains PCI access simulation code for Intel Media SOC Gen3.
++ */
++
++#include <linux/kernel.h>
++#include <linux/export.h>
++#include <linux/pci.h>
++#include <linux/init.h>
++#include <asm/pci_x86.h>
++
++#undef DBG
++#define DEBUG_PCI_SIM
++
++#ifdef DEBUG_PCI_SIM
++#define DBG(a...) printk("intel_media_proc_gen3: " a)
++#else
++#define DBG(a...) \
++	do {      \
++	} while (0)
++#endif
++
++typedef struct {
++	u32 value;
++	u32 mask;
++} sim_reg_t;
++
++typedef struct {
++	int dev;
++	int func;
++	int reg;
++	sim_reg_t sim_reg;
++} sim_dev_reg_t;
++
++#define MB (1024 * 1024)
++#define KB (1024)
++#define SIZE_TO_MASK(size) (~(size - 1))
++
++#define CHICKENBIT_MASK 0x7FE
++
++static sim_dev_reg_t av_dev_reg_fixups[] = {
++	{ 2, 0, 0x10, { 0, SIZE_TO_MASK(16 * MB) } },
++	{ 2, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 2, 1, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 3, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 4, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 4, 1, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 6, 0, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 1, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 8, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 8, 1, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 8, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 9, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 9, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 10, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 10, 0, 0x14, { 0, SIZE_TO_MASK(256 * MB) } },
++	{ 11, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 1, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x18, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 3, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 3, 0x14, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 4, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 5, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 11, 6, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 7, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 12, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 12, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 12, 1, 0x10, { 0, SIZE_TO_MASK(1024) } },
++	{ 13, 0, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 1, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++
++	{ 14, 0, 8, { 0x01060100, 0 } },
++
++	{ 14, 0, 0x10, { 0, 0 } },
++	{ 14, 0, 0x14, { 0, 0 } },
++	{ 14, 0, 0x18, { 0, 0 } },
++	{ 14, 0, 0x1C, { 0, 0 } },
++	{ 14, 0, 0x20, { 0, 0 } },
++	{ 14, 0, 0x24, { 0, SIZE_TO_MASK(0x200) } },
++
++	{ 15, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 15, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 16, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 16, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 16, 0, 0x18, { 0, SIZE_TO_MASK(64 * MB) } },
++
++	{ 17, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 18, 0, 0x10, { 0, SIZE_TO_MASK(1 * KB) } }
++};
++
++static sim_dev_reg_t av_dev_reg_fixups3[] = {
++	{ 2, 0, 0x10, { 0, SIZE_TO_MASK(16 * MB) } },
++	{ 2, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 2, 1, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 3, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 4, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 4, 1, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 6, 0, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 1, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 8, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 8, 1, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 8, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 9, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 9, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 10, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 10, 0, 0x14, { 0, SIZE_TO_MASK(256 * MB) } },
++	{ 11, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 1, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x18, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 3, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 3, 0x14, { 0, SIZE_TO_MASK(256) } },
++
++	{ 11, 4, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 5, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 11, 6, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 7, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 12, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 12, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 12, 1, 0x10, { 0, SIZE_TO_MASK(1024) } },
++	{ 13, 0, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 1, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 2, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 3, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++
++	{ 14, 0, 8, { 0x01060100, 0 } },
++
++	{ 14, 0, 0x10, { 0, 0 } },
++	{ 14, 0, 0x14, { 0, 0 } },
++	{ 14, 0, 0x18, { 0, 0 } },
++	{ 14, 0, 0x1C, { 0, 0 } },
++	{ 14, 0, 0x20, { 0, 0 } },
++	{ 14, 0, 0x24, { 0, SIZE_TO_MASK(0x200) } },
++
++	{ 15, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 15, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 16, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 16, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 16, 0, 0x18, { 0, SIZE_TO_MASK(64 * MB) } },
++
++	{ 17, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 18, 0, 0x10, { 0, SIZE_TO_MASK(1 * KB) } },
++
++	{ 27, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++
++	{ 27, 0, 0x14, { 0, SIZE_TO_MASK(256) } }
++};
++
++/*
++ * This table is for Gen 5 fixing
++ */
++static sim_dev_reg_t av_dev_reg_fixups5[] = {
++	{ 2, 0, 0x10, { 0, SIZE_TO_MASK(16 * MB) } },
++	{ 2, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++
++	/* Multi-Function Decoder */
++	{ 3, 0, 0x10, { 0, SIZE_TO_MASK(16 * KB) } },
++	{ 3, 0, 0x14, { 0, SIZE_TO_MASK(4 * KB) } },
++	{ 3, 0, 0x18, { 0, SIZE_TO_MASK(4 * KB) } },
++	{ 3, 0, 0x1C, { 0, SIZE_TO_MASK(4 * KB) } },
++
++	{ 4, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++
++	{ 6, 0, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 1, 0x10, { 0, SIZE_TO_MASK(512 * KB) } },
++	{ 6, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 8, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 8, 1, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 8, 2, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 9, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 9, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 10, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 10, 0, 0x14, { 0, SIZE_TO_MASK(256 * MB) } },
++
++	/* UART */
++	{ 11, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x18, { 0, SIZE_TO_MASK(256) } },
++	/* GPIO */
++	{ 11, 1, 0x10, { 0, SIZE_TO_MASK(256) } },
++	/* I2C */
++	{ 11, 2, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x18, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x1C, { 0, SIZE_TO_MASK(256) } },
++	/* Smart Card */
++	{ 11, 3, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 3, 0x14, { 0, SIZE_TO_MASK(256) } },
++	/* SPI Master */
++	{ 11, 4, 0x10, { 0, SIZE_TO_MASK(256) } },
++	/* MSPOD */
++	{ 11, 5, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	/* PWM */
++	{ 11, 6, 0x10, { 0, SIZE_TO_MASK(256) } },
++	/* DFV */
++	{ 11, 7, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 12, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 12, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 12, 1, 0x10, { 0, SIZE_TO_MASK(1024) } },
++
++	/* USB */
++	{ 13, 0, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 1, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 2, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++
++	{ 16, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 16, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 16, 0, 0x18, { 0, SIZE_TO_MASK(64 * MB) } },
++
++	{ 17, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++
++	{ 18, 0, 0x10, { 0, SIZE_TO_MASK(1 * KB) } },
++
++	{ 19, 0, 0x10, { 0, SIZE_TO_MASK(1 * KB) } },
++
++	{ 20, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++
++	/* SPI Slave */
++	{ 21, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++
++	{ 22, 0, 0x10, { 0, SIZE_TO_MASK(256 * KB) } },
++	{ 22, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	/* SPI Flash */
++	{ 23, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 23, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 23, 0, 0x18, { 0, SIZE_TO_MASK(256) } },
++
++	{ 24, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 25, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++
++	{ 26, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 27, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 27, 0, 0x14, { 0, SIZE_TO_MASK(256) } }
++};
++
++/*
++ * This table is for ce2600 fixing
++ */
++static sim_dev_reg_t av_dev_reg_fixups_ce2600[] = {
++	/* L2 Switch-DMA0*/
++	{ 0, 0, 0x10, { 0, SIZE_TO_MASK(512) } },
++	/* L2 Switch-DMA1*/
++	{ 1, 0, 0x10, { 0, SIZE_TO_MASK(512) } },
++
++	{ 4, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	/* Docsis-DMA*/
++	{ 5, 0, 0x10, { 0, SIZE_TO_MASK(512) } },
++
++	{ 9, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	{ 9, 0, 0x14, { 0, SIZE_TO_MASK(64 * KB) } },
++	/* UART */
++	{ 11, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 0, 0x18, { 0, SIZE_TO_MASK(256) } },
++	/* GPIO */
++	{ 11, 1, 0x10, { 0, SIZE_TO_MASK(256) } },
++	/* I2C */
++	{ 11, 2, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x18, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 2, 0x1C, { 0, SIZE_TO_MASK(256) } },
++	/* Smart Card */
++	{ 11, 3, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 11, 3, 0x14, { 0, SIZE_TO_MASK(256) } },
++	/* MSPOD */
++	{ 11, 5, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	/* PWM */
++	{ 11, 6, 0x10, { 0, SIZE_TO_MASK(256) } },
++	/* DFV */
++	{ 11, 7, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++
++	{ 12, 0, 0x10, { 0, SIZE_TO_MASK(128 * KB) } },
++	{ 12, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	{ 12, 1, 0x10, { 0, SIZE_TO_MASK(1024) } },
++
++	/* USB */
++	{ 13, 0, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 1, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	{ 13, 2, 0x10, { 0, SIZE_TO_MASK(32 * KB) } },
++	/* Mutex */
++	{ 14, 0, 0x10, { 0, SIZE_TO_MASK(2 * KB) } },
++	/* Watchdog Timer */
++	{ 15, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++
++	{ 16, 0, 0x10, { 0, SIZE_TO_MASK(64 * KB) } },
++	{ 16, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 16, 0, 0x18, { 0, SIZE_TO_MASK(64 * MB) } },
++
++	{ 20, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	/* SPI Flash */
++	{ 23, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 23, 0, 0x14, { 0, SIZE_TO_MASK(64 * MB) } },
++	{ 23, 0, 0x18, { 0, SIZE_TO_MASK(256) } },
++
++	{ 27, 0, 0x10, { 0, SIZE_TO_MASK(256) } },
++	{ 27, 0, 0x14, { 0, SIZE_TO_MASK(256) } },
++	/* L2 Switch */
++	{ 29, 0, 0x10, { 0, SIZE_TO_MASK(256 * KB) } },
++	/* MoCA */
++	{ 30, 0, 0x10, { 0, SIZE_TO_MASK(1 * MB) } },
++	/* Docsis */
++	{ 31, 0, 0x10, { 0, SIZE_TO_MASK(128 * MB) } }
++};
++
++static const int num_av_dev_reg_fixups =
++	sizeof(av_dev_reg_fixups) / sizeof(av_dev_reg_fixups[0]);
++static const int num_av_dev_reg_fixups3 =
++	sizeof(av_dev_reg_fixups3) / sizeof(av_dev_reg_fixups3[0]);
++static const int num_av_dev_reg_fixups5 =
++	sizeof(av_dev_reg_fixups5) / sizeof(av_dev_reg_fixups5[0]);
++static const int num_av_dev_reg_fixups_ce2600 =
++	sizeof(av_dev_reg_fixups_ce2600) / sizeof(av_dev_reg_fixups_ce2600[0]);
++
++static u32 sata_cfg_phys_addr = 0;
++
++static void init_sim_regs(void)
++{
++	int i;
++
++	pci_direct_conf1.read(0, 1, PCI_DEVFN(14, 0), 0x10, 4,
++			      &sata_cfg_phys_addr);
++	for (i = 0; i < num_av_dev_reg_fixups; i++) {
++		if (av_dev_reg_fixups[i].dev == 14) {
++			if (av_dev_reg_fixups[i].reg == 0x24) {
++				/* SATA AHCI base address has an offset 0x400 from the SATA base
++                                 * physical address.
++                                 */
++				av_dev_reg_fixups[i].sim_reg.value =
++					sata_cfg_phys_addr + 0x400;
++			}
++		} else {
++			pci_direct_conf1.read(
++				0, 1,
++				PCI_DEVFN(av_dev_reg_fixups[i].dev,
++					  av_dev_reg_fixups[i].func),
++				av_dev_reg_fixups[i].reg, 4,
++				&av_dev_reg_fixups[i].sim_reg.value);
++		}
++	}
++}
++
++static void init_sim_regs3(void)
++{
++	int i;
++
++	pci_direct_conf1.read(0, 1, PCI_DEVFN(14, 0), 0x10, 4,
++			      &sata_cfg_phys_addr);
++	for (i = 0; i < num_av_dev_reg_fixups3; i++) {
++		if (av_dev_reg_fixups3[i].dev == 14) {
++			if (av_dev_reg_fixups3[i].reg == 0x24) {
++				/* SATA AHCI base address has an offset 0x400 from the SATA base
++                                 * physical address.
++                                 */
++				av_dev_reg_fixups3[i].sim_reg.value =
++					sata_cfg_phys_addr + 0x400;
++			}
++		} else {
++			pci_direct_conf1.read(
++				0, 1,
++				PCI_DEVFN(av_dev_reg_fixups3[i].dev,
++					  av_dev_reg_fixups3[i].func),
++				av_dev_reg_fixups3[i].reg, 4,
++				&av_dev_reg_fixups3[i].sim_reg.value);
++		}
++	}
++}
++
++static void init_sim_regs5(void)
++{
++	int i;
++
++	for (i = 0; i < num_av_dev_reg_fixups5; i++) {
++		pci_direct_conf1.read(0, 1,
++				      PCI_DEVFN(av_dev_reg_fixups5[i].dev,
++						av_dev_reg_fixups5[i].func),
++				      av_dev_reg_fixups5[i].reg, 4,
++				      &av_dev_reg_fixups5[i].sim_reg.value);
++	}
++}
++
++static void init_sim_regs_ce2600(void)
++{
++	int i;
++
++	printk("CE2600: init_sim_regs_ce2600");
++
++	for (i = 0; i < num_av_dev_reg_fixups_ce2600; i++) {
++		pci_direct_conf1.read(
++			0, 1,
++			PCI_DEVFN(av_dev_reg_fixups_ce2600[i].dev,
++				  av_dev_reg_fixups_ce2600[i].func),
++			av_dev_reg_fixups_ce2600[i].reg, 4,
++			&av_dev_reg_fixups_ce2600[i].sim_reg.value);
++	}
++}
++
++sim_reg_t *get_sim_reg(unsigned int bus, unsigned int devfn, int reg, int len)
++{
++	unsigned int dev;
++	unsigned int func;
++	int i;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	/* A/V bridge devices are on bus 1. */
++	if (bus == 1) {
++		for (i = 0; i < num_av_dev_reg_fixups; i++) {
++			if ((reg & ~3) == av_dev_reg_fixups[i].reg &&
++			    dev == av_dev_reg_fixups[i].dev &&
++			    func == av_dev_reg_fixups[i].func) {
++				return &av_dev_reg_fixups[i].sim_reg;
++			}
++		}
++	}
++
++	return NULL;
++}
++
++sim_reg_t *get_sim_reg3(unsigned int bus, unsigned int devfn, int reg, int len)
++{
++	unsigned int dev;
++	unsigned int func;
++	int i;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	/* A/V bridge devices are on bus 1. */
++	if (bus == 1) {
++		for (i = 0; i < num_av_dev_reg_fixups3; i++) {
++			if ((reg & ~3) == av_dev_reg_fixups3[i].reg &&
++			    dev == av_dev_reg_fixups3[i].dev &&
++			    func == av_dev_reg_fixups3[i].func) {
++				return &av_dev_reg_fixups3[i].sim_reg;
++			}
++		}
++	}
++
++	return NULL;
++}
++
++sim_reg_t *get_sim_reg5(unsigned int bus, unsigned int devfn, int reg, int len)
++{
++	unsigned int dev;
++	unsigned int func;
++	int i;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	/* A/V bridge devices are on bus 1. */
++	if (bus == 1) {
++		for (i = 0; i < num_av_dev_reg_fixups5; i++) {
++			if ((reg & ~3) == av_dev_reg_fixups5[i].reg &&
++			    dev == av_dev_reg_fixups5[i].dev &&
++			    func == av_dev_reg_fixups5[i].func) {
++				return &av_dev_reg_fixups5[i].sim_reg;
++			}
++		}
++	}
++
++	return NULL;
++}
++
++sim_reg_t *get_sim_reg_ce2600(unsigned int bus, unsigned int devfn, int reg,
++			      int len)
++{
++	unsigned int dev;
++	unsigned int func;
++	int i;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	/* A/V bridge devices are on bus 1. */
++	if (bus == 1) {
++		for (i = 0; i < num_av_dev_reg_fixups_ce2600; i++) {
++			if ((reg & ~3) == av_dev_reg_fixups_ce2600[i].reg &&
++			    dev == av_dev_reg_fixups_ce2600[i].dev &&
++			    func == av_dev_reg_fixups_ce2600[i].func) {
++				return &av_dev_reg_fixups_ce2600[i].sim_reg;
++			}
++		}
++	}
++
++	return NULL;
++}
++
++static inline void extract_bytes(u32 *value, int reg, int len)
++{
++	uint32_t mask;
++
++	*value >>= ((reg & 3) * 8);
++	mask = 0xFFFFFFFF >> ((4 - len) * 8);
++	*value &= mask;
++}
++
++static int gen3_conf_read(unsigned int seg, unsigned int bus,
++			  unsigned int devfn, int reg, int len, u32 *value)
++{
++	unsigned long flags;
++	unsigned int dev;
++	unsigned int func;
++	u32 av_bridge_base;
++	u32 av_bridge_limit;
++	int retval;
++	sim_reg_t *sim_reg = NULL;
++	int simulated_read;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++
++	simulated_read = true;
++	retval = 0;
++
++	sim_reg = get_sim_reg(bus, devfn, reg, len);
++
++	if (sim_reg != NULL) {
++		raw_spin_lock_irqsave(&pci_config_lock, flags);
++		*value = sim_reg->value;
++		raw_spin_unlock_irqrestore(&pci_config_lock, flags);
++
++		/* EHCI registers has 0x100 offset. */
++		if (bus == 1 && dev == 13 && reg == 0x10 && func < 2) {
++			if (*value != sim_reg->mask) {
++				*value |= 0x100;
++			}
++		}
++		extract_bytes(value, reg, len);
++		/* Emulate TDI USB controllers. */
++	} else if (bus == 1 && dev == 13 && (func == 0 || func == 1) &&
++		   ((reg & ~3) == PCI_VENDOR_ID)) {
++		*value = 0x0101192E;
++		extract_bytes(value, reg, len);
++		/* b0:d1:f0 is A/V bridge. */
++	} else if (bus == 0 && dev == 1 && func == 0) {
++		switch (reg) {
++		/* Make BARs appear to not request any memory. */
++		case PCI_BASE_ADDRESS_0:
++		case PCI_BASE_ADDRESS_0 + 1:
++		case PCI_BASE_ADDRESS_0 + 2:
++		case PCI_BASE_ADDRESS_0 + 3:
++			*value = 0;
++			break;
++
++		/* Since subordinate bus number register is hardwired
++                         * to zero and read only, so do the simulation.
++                         */
++		case PCI_PRIMARY_BUS:
++			if (len == 4) {
++				*value = 0x00010100;
++			} else {
++				simulated_read = false;
++			}
++			break;
++
++		case PCI_SUBORDINATE_BUS:
++			*value = 1;
++			break;
++
++		case PCI_MEMORY_BASE:
++		case PCI_MEMORY_LIMIT:
++			/* Get the A/V bridge base address. */
++			pci_direct_conf1.read(0, 0, PCI_DEVFN(1, 0),
++					      PCI_BASE_ADDRESS_0, 4,
++					      &av_bridge_base);
++
++			av_bridge_limit =
++				av_bridge_base + (512 * 1024 * 1024 - 1);
++			av_bridge_limit >>= 16;
++			av_bridge_limit &= 0xFFF0;
++
++			av_bridge_base >>= 16;
++			av_bridge_base &= 0xFFF0;
++
++			if (reg == PCI_MEMORY_LIMIT) {
++				*value = av_bridge_limit;
++			} else if (len == 2) {
++				*value = av_bridge_base;
++			} else {
++				*value = (av_bridge_limit << 16) |
++					 av_bridge_base;
++			}
++			break;
++		/* Make prefetchable memory limit smaller than prefetchable
++                         * memory base, so not claim prefetchable memory space.
++                         */
++		case PCI_PREF_MEMORY_BASE:
++			*value = 0xFFF0;
++			break;
++		case PCI_PREF_MEMORY_LIMIT:
++			*value = 0x0;
++			break;
++		/* Make IO limit smaller than IO base, so not claim IO space. */
++		case PCI_IO_BASE:
++			*value = 0xF0;
++			break;
++		case PCI_IO_LIMIT:
++			*value = 0;
++			break;
++
++		default:
++			simulated_read = false;
++			break;
++		}
++	} else {
++		simulated_read = false;
++	}
++
++	if (!simulated_read) {
++		retval =
++			pci_direct_conf1.read(seg, bus, devfn, reg, len, value);
++	}
++
++	DBG("gen3_conf_read: %2x:%2x.%d[%2X(%d)] = %X\n", bus, dev, func, reg,
++	    len, *value);
++	return retval;
++}
++
++static int gen3_conf_write(unsigned int seg, unsigned int bus,
++			   unsigned int devfn, int reg, int len, u32 value)
++{
++	unsigned long flags;
++	int dev;
++	int func;
++	int retval = -1;
++	sim_reg_t *sim_reg = NULL;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++
++	DBG("gen3_conf_write: %2x:%2x.%d[%2X(%d)] <- %X\n", bus, dev, func, reg,
++	    len, value);
++
++	sim_reg = get_sim_reg(bus, devfn, reg, len);
++	if (sim_reg != NULL) {
++		raw_spin_lock_irqsave(&pci_config_lock, flags);
++		sim_reg->value = (value & sim_reg->mask) |
++				 (sim_reg->value & ~sim_reg->mask);
++		raw_spin_unlock_irqrestore(&pci_config_lock, flags);
++		retval = 0;
++	} else if (bus == 0 && dev == 1 && func == 0 &&
++		   ((reg & ~3) == PCI_BASE_ADDRESS_0)) {
++		/* Discard writes to A/V bridge BAR. */
++		retval = 0;
++	} else {
++		retval = pci_direct_conf1.write(seg, bus, devfn, reg, len,
++						value);
++	}
++
++	return retval;
++}
++
++static unsigned int soc_device_id, soc_device_rev;
++int intelce_get_soc_info(unsigned int *pid, unsigned int *prev)
++{
++	if (pid) {
++		*pid = soc_device_id;
++	}
++	if (prev) {
++		*prev = soc_device_rev;
++	}
++	return 0;
++}
++EXPORT_SYMBOL(intelce_get_soc_info);
++
++extern int intelce_set_board_type(unsigned int board);
++
++static int ce_soc_conf_read(unsigned int seg, unsigned int bus,
++			    unsigned int devfn, int reg, int len, u32 *value)
++{
++	unsigned long flags, usb_number = 0;
++	u32 id = 0;
++	unsigned int dev;
++	unsigned int func;
++	u32 av_bridge_base;
++	u32 av_bridge_limit;
++	int retval;
++	sim_reg_t *sim_reg = NULL;
++	int simulated_read;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	intelce_get_soc_info(&id, NULL);
++	simulated_read = true;
++	retval = 0;
++	switch (id) {
++	case PCI_DEVICE_ID_INTEL_CE4200_SOC:
++		sim_reg = get_sim_reg3(bus, devfn, reg, len);
++		usb_number = 4;
++		break;
++	case PCI_DEVICE_ID_INTEL_CE5300_SOC:
++		sim_reg = get_sim_reg5(bus, devfn, reg, len);
++		usb_number = 3;
++		break;
++	case PCI_DEVICE_ID_INTEL_CE2600_SOC:
++	default:
++		sim_reg = get_sim_reg_ce2600(bus, devfn, reg, len);
++		usb_number = 3;
++		break;
++	}
++
++	if (sim_reg != NULL) {
++		raw_spin_lock_irqsave(&pci_config_lock, flags);
++		*value = sim_reg->value;
++		raw_spin_unlock_irqrestore(&pci_config_lock, flags);
++
++		/* EHCI registers has 0x100 offset. */
++		if (bus == 1 && dev == 13 && reg == 0x10 && func < usb_number) {
++			if (*value != sim_reg->mask) {
++				*value |= 0x100;
++			}
++		}
++		extract_bytes(value, reg, len);
++		/* b0:d1:f0 is A/V bridge. */
++	} else if (bus == 0 && dev == 1 && func == 0) {
++		switch (reg) {
++		/* Make BARs appear to not request any memory. */
++		case PCI_BASE_ADDRESS_0:
++		case PCI_BASE_ADDRESS_0 + 1:
++		case PCI_BASE_ADDRESS_0 + 2:
++		case PCI_BASE_ADDRESS_0 + 3:
++			*value = 0;
++			break;
++
++		/* Since subordinate bus number register is hardwired
++                         * to zero and read only, so do the simulation.
++                         */
++		case PCI_PRIMARY_BUS:
++			if (len == 4) {
++				*value = 0x00010100;
++			} else {
++				simulated_read = false;
++			}
++			break;
++
++		case PCI_SUBORDINATE_BUS:
++			*value = 1;
++			break;
++
++		case PCI_MEMORY_BASE:
++		case PCI_MEMORY_LIMIT:
++			/* Get the A/V bridge base address. */
++			pci_direct_conf1.read(0, 0, PCI_DEVFN(1, 0),
++					      PCI_BASE_ADDRESS_0, 4,
++					      &av_bridge_base);
++
++			av_bridge_limit =
++				av_bridge_base + (512 * 1024 * 1024 - 1);
++			av_bridge_limit >>= 16;
++			av_bridge_limit &= 0xFFF0;
++
++			av_bridge_base >>= 16;
++			av_bridge_base &= 0xFFF0;
++
++			if (reg == PCI_MEMORY_LIMIT) {
++				*value = av_bridge_limit;
++			} else if (len == 2) {
++				*value = av_bridge_base;
++			} else {
++				*value = (av_bridge_limit << 16) |
++					 av_bridge_base;
++			}
++			break;
++		/* Make prefetchable memory limit smaller than prefetchable
++                         * memory base, so not claim prefetchable memory space.
++                         */
++		case PCI_PREF_MEMORY_BASE:
++			*value = 0xFFF0;
++			break;
++		case PCI_PREF_MEMORY_LIMIT:
++			*value = 0x0;
++			break;
++		/* Make IO limit smaller than IO base, so not claim IO space. */
++		case PCI_IO_BASE:
++			*value = 0xF0;
++			break;
++		case PCI_IO_LIMIT:
++			*value = 0;
++			break;
++
++		default:
++			simulated_read = false;
++			break;
++		}
++	} else {
++		simulated_read = false;
++	}
++
++	if (!simulated_read) {
++		retval =
++			pci_direct_conf1.read(seg, bus, devfn, reg, len, value);
++	}
++
++	DBG("ce_soc_conf_read: %2x:%2x.%d[%2X(%d)] = %X\n", bus, dev, func, reg,
++	    len, *value);
++	return retval;
++}
++
++static int ce_soc_conf_write(unsigned int seg, unsigned int bus,
++			     unsigned int devfn, int reg, int len, u32 value)
++{
++	unsigned long flags;
++	u32 id = 0;
++	int dev;
++	int func;
++	int retval = -1;
++	sim_reg_t *sim_reg = NULL;
++
++	dev = PCI_SLOT(devfn);
++	func = PCI_FUNC(devfn);
++	intelce_get_soc_info(&id, NULL);
++	switch (id) {
++	case PCI_DEVICE_ID_INTEL_CE4200_SOC:
++		sim_reg = get_sim_reg3(bus, devfn, reg, len);
++		break;
++	case PCI_DEVICE_ID_INTEL_CE5300_SOC:
++		sim_reg = get_sim_reg5(bus, devfn, reg, len);
++		break;
++	case PCI_DEVICE_ID_INTEL_CE2600_SOC:
++	default:
++		sim_reg = get_sim_reg_ce2600(bus, devfn, reg, len);
++		break;
++	}
++	if (sim_reg != NULL) {
++		raw_spin_lock_irqsave(&pci_config_lock, flags);
++		sim_reg->value = (value & sim_reg->mask) |
++				 (sim_reg->value & ~sim_reg->mask);
++		raw_spin_unlock_irqrestore(&pci_config_lock, flags);
++		retval = 0;
++	} else if (bus == 0 && dev == 1 && func == 0 &&
++		   ((reg & ~3) == PCI_BASE_ADDRESS_0)) {
++		/* Discard writes to A/V bridge BAR. */
++		retval = 0;
++	} else {
++		retval = pci_direct_conf1.write(seg, bus, devfn, reg, len,
++						value);
++	}
++
++	return retval;
++}
++
++struct pci_raw_ops gen3_pci_conf = {
++	.read = gen3_conf_read,
++	.write = gen3_conf_write,
++};
++
++/*We use same structure here for CE4200, CE5300 and CE2600 platform*/
++struct pci_raw_ops ce_soc_pci_conf = {
++	.read = ce_soc_conf_read,
++	.write = ce_soc_conf_write,
++};
++
++static int __init gen3_pci_init(void)
++{
++	unsigned int pcimode = 0;
++
++	pci_direct_conf1.read(0, 0, PCI_DEVFN(0, 0), PCI_DEVICE_ID, 2,
++			      &soc_device_id);
++	pci_direct_conf1.read(0, 0, PCI_DEVFN(0, 0), PCI_REVISION_ID, 1,
++			      &soc_device_rev);
++	switch (soc_device_id) {
++	case PCI_DEVICE_ID_INTEL_CE3100_SOC:
++	case PCI_DEVICE_ID_INTEL_CE4100_SOC:
++		init_sim_regs();
++		raw_pci_ops = &gen3_pci_conf;
++		break;
++	case PCI_DEVICE_ID_INTEL_CE4200_SOC:
++		/* check if the chicken bit enabled*/
++		pci_direct_conf1.write(0, 0, 0, 0xd0, 4, 0xd00040f0);
++		pci_direct_conf1.read(0, 0, 0, 0xd4, 4, &pcimode);
++		printk("ce4200: pcimode=0x%x\n", pcimode);
++		if (CHICKENBIT_MASK == (pcimode & CHICKENBIT_MASK)) {
++			init_sim_regs3();
++			raw_pci_ops = &ce_soc_pci_conf;
++		} else if (0 != pcimode) {
++			printk("wrong pci mode\n");
++		}
++		break;
++	case PCI_DEVICE_ID_INTEL_CE5300_SOC:
++		/* check if the chicken bit enabled*/
++		pci_direct_conf1.write(0, 0, 0, 0xd0, 4, 0x060040f0);
++		pci_direct_conf1.read(0, 0, 0, 0xd4, 4, &pcimode);
++		printk("ce5300: pcimode=0x%x\n", pcimode);
++		if (CHICKENBIT_MASK == (pcimode & CHICKENBIT_MASK)) {
++			init_sim_regs5();
++			raw_pci_ops = &ce_soc_pci_conf;
++		} else if (0 != pcimode) {
++			printk("wrong pci mode\n");
++		}
++		break;
++	case PCI_DEVICE_ID_INTEL_CE2600_SOC:
++		fallthrough;
++	default:
++		/* check if the chicken bit enabled*/
++		pci_direct_conf1.write(0, 0, 0, 0xd0, 4, 0x060040f0);
++		pci_direct_conf1.read(0, 0, 0, 0xd4, 4, &pcimode);
++		printk("cexxxx: pcimode=0x%x (using SIM: %d)\n", pcimode,
++		       CHICKENBIT_MASK == (pcimode & CHICKENBIT_MASK));
++		if (CHICKENBIT_MASK == (pcimode & CHICKENBIT_MASK)) {
++			init_sim_regs_ce2600();
++			raw_pci_ops = &ce_soc_pci_conf;
++		} else if (0 != pcimode) {
++			printk("wrong pci mode\n");
++		}
++		break;
++	}
++	return 0;
++}
++
++arch_initcall_sync(gen3_pci_init);
+--- /dev/null
++++ b/arch/x86/platform/ce2600/ce2600-platform.c
+@@ -0,0 +1,173 @@
++#include <linux/leds.h>
++#include <linux/input.h>
++#include <linux/gpio.h>
++#include <linux/gpio_keys.h>
++#include <linux/io.h>
++#include <linux/init.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <asm/cpu_device_id.h>
++#include <linux/types.h>
++#include <linux/pci.h>
++#include <linux/pci_ids.h>
++
++static struct gpio_led ce2600_platform[] = {
++	[0] = {
++	       .gpio = 50,
++	       .name = "ce2600:orange:ds",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[1] = {
++	       .gpio = 51,
++	       .name = "ce2600:green:power",
++	       .default_trigger = "heartbeat",
++	       .active_low = 1,
++	},
++	[2] = {
++	       .gpio = 58,
++	       .name = "ce2600:orange:online",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[3] = {
++	       .gpio = 61,
++	       .name = "ce2600:orange:us",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[4] = {
++	       .gpio = 69,
++	       .name = "ce2600:green:ds",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[5] = {
++	       .gpio = 98,
++	       .name = "ce2600:green:us",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[6] = {
++	       .gpio = 116,
++	       .name = "ce2600:green:online",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++	[7] = {
++	       .gpio = 26,
++	       .name = "ce2600:green:wps",
++	       .default_trigger = "none",
++	       .active_low = 1,
++	},
++};
++
++static struct gpio_led_platform_data ce2600_led_pdata = {
++	.num_leds = ARRAY_SIZE(ce2600_platform),
++	.leds = ce2600_platform,
++};
++
++static struct platform_device ce2600_led_device = {
++	.name = "leds-gpio",
++	.id = -1,
++	.dev = {
++		.platform_data = &ce2600_led_pdata,
++	},
++};
++
++static struct gpio_keys_button ce2600_buttons[] = {
++	[0] = {
++	       .code = KEY_WLAN,
++	       .gpio = 59,
++	       .desc = "WiFi button",
++	       .active_low = 0,
++		   .debounce_interval = 100,
++		   .type = EV_KEY,
++	},
++	[1] = {
++	       .code = KEY_WPS_BUTTON,
++	       .gpio = 37,
++	       .desc = "WPS button",
++	       .active_low = 0,
++		   .debounce_interval = 100,
++		   .type = EV_KEY,
++	},
++};
++
++static struct gpio_keys_platform_data ce2600_button_pdata = {
++	.buttons = ce2600_buttons,
++	.nbuttons = ARRAY_SIZE(ce2600_buttons),
++	.poll_interval = 20,
++};
++
++static struct platform_device ce2600_button_device = {
++	.name = "gpio-keys-polled",
++	.id = -1,
++	.dev = {
++		.platform_data  = &ce2600_button_pdata,
++	},
++};
++
++static const struct x86_cpu_id ce2600_cpu_ids[] __initconst = {
++	X86_MATCH_INTEL_FAM6_MODEL(ATOM_SALTWELL_TABLET, NULL),
++	{}
++};
++MODULE_DEVICE_TABLE(x86cpu, ce2600_cpu_ids);
++
++static const struct x86_cpu_desc ce2600_cpu_desc[] = {
++	INTEL_CPU_DESC(INTEL_FAM6_ATOM_SALTWELL_TABLET,		 8, 0x00000004),
++	{}
++};
++
++static bool already_init = false;
++
++static int __init ce2600_platform_init(void)
++{
++	struct pci_dev *dev;
++
++	if (already_init) {
++		printk("ce2600: ALREADY INITIALIZED!!!\n");
++		return -ENODEV;
++	}
++
++	/* match the CPU */
++	if (!x86_match_cpu(ce2600_cpu_ids)) {
++		printk("ce2600: NOT FOUND????\n");
++		return -ENODEV;
++	}
++	/* and maybe the microcode? */
++	if (!x86_cpu_has_min_microcode_rev(ce2600_cpu_desc)) {
++		printk("ce2600: microcode not found?\n");
++	}
++
++	/* figure out if the root bridge exists */
++	dev = pci_get_device(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CE2600_SOC, NULL);
++	if (!dev) {
++		printk("ce2600: root host bridge not found?\n");
++	}
++	pci_dev_put(dev);
++
++    printk("ce2600: registering %d leds\n", ce2600_led_pdata.num_leds);
++	platform_device_register(&ce2600_led_device);
++    printk("ce2600: registering %d buttons\n", ce2600_button_pdata.nbuttons);
++	platform_device_register(&ce2600_button_device);
++	already_init = true;
++
++	return 0;
++}
++
++static void __exit ce2600_platform_exit(void)
++{
++	if (!already_init)
++		return;
++
++    platform_device_unregister(&ce2600_led_device);
++    platform_device_unregister(&ce2600_button_device);
++}
++
++module_init(ce2600_platform_init);
++module_exit(ce2600_platform_exit);
++
++MODULE_AUTHOR("Santiago Hormazabal <santiagohssl@gmail.com>");
++MODULE_DESCRIPTION("Platform for CE2600 modems");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/arch/x86/platform/ce2600/ce2600-setup.c
+@@ -0,0 +1,119 @@
++/*
++ *  Setup for Intel's CE2600 SoC.
++ *
++ *  Santiago Hormazabal 2024, <santiagohssl@gmail.com>
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License 2 as published
++ *  by the Free Software Foundation.
++ *
++ */
++
++#include <asm/setup.h>
++#include <linux/errno.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++
++enum ce2600_board_type {
++	CE_BOARD_TYPE_HP_BOARD_TYPE = 0,
++	CE_BOARD_TYPE_HP_MG_BOARD_TYPE,
++	CE_BOARD_TYPE_FM_BOARD_TYPE,
++	CE_BOARD_TYPE_CAT_ISLAND_BOARD_TYPE,
++	CE_BOARD_TYPE_GS_BOARD_TYPE,
++	CE_BOARD_TYPE_CR_BOARD_TYPE,
++
++	CE_BOARD_TYPE_MAX = CE_BOARD_TYPE_CR_BOARD_TYPE
++};
++
++static const char* _ce2600_board_types_strings[CE_BOARD_TYPE_MAX+1] = {
++	"Harbor Park",
++	"Harbor Park - MG",
++	"Falcon Mine",
++	"Cat Island",
++	"Golden Spring",
++	"Cat River(CR)",
++};
++
++static unsigned int _intel_ce_board_type = -1;
++static unsigned int _intel_ce_nic_phy_mode = -1;
++static unsigned int _intel_ce_board_rev = -1;
++static unsigned int _intel_ce_flash_layout_table = -1;
++
++int intelce_get_board_type(unsigned int *board_type)
++{
++	if (!board_type)
++		return -EINVAL;
++
++	*board_type = _intel_ce_board_type;
++	return 0;
++}
++EXPORT_SYMBOL(intelce_get_board_type);
++
++int intelce_get_nic_phy_mode(unsigned int *nic_phy_mode)
++{
++	if (!nic_phy_mode)
++		return -EINVAL;
++
++	*nic_phy_mode = _intel_ce_nic_phy_mode;
++	return 0;
++}
++EXPORT_SYMBOL(intelce_get_nic_phy_mode);
++
++int intelce_get_board_rev(unsigned int *board_rev)
++{
++	if (!board_rev)
++		return -EINVAL;
++
++	*board_rev = _intel_ce_board_rev;
++	return 0;
++}
++EXPORT_SYMBOL(intelce_get_board_rev);
++
++int intelce_get_flash_layout_table(unsigned int *flash_layout_table)
++{
++	if (!flash_layout_table)
++		return -EINVAL;
++
++	*flash_layout_table = _intel_ce_flash_layout_table;
++	return 0;
++}
++EXPORT_SYMBOL(intelce_get_flash_layout_table);
++
++/*
++ * ce2600 specific setup data parsing. Happens AFTER x86_ce2600_early_setup.
++ */
++void __init x86_ce2600_set_setup_data(u32 type, const void *buf, size_t len)
++{
++	/* only proceed if the type of loader is exactly 0x10 (only thing set by CEFDK) */
++	if (boot_params.hdr.type_of_loader != 0x10)
++		return;
++
++	switch (type) {
++		case SETUP_INTEL_CE_BOARD_TYPE:
++			if (*((u32*)buf) > CE_BOARD_TYPE_MAX)
++				return;
++			_intel_ce_board_type = *((u32*)buf);
++			printk("ce2600 setup data: board type 0x%x (%s)\n",
++				_intel_ce_board_type,
++				_ce2600_board_types_strings[_intel_ce_board_type]);
++			break;
++		case SETUP_INTEL_CE_NIC_PHY_MODE:
++			_intel_ce_nic_phy_mode = *((u32*)buf);
++			printk("ce2600 setup data: nic phy mode 0x%x\n",
++				_intel_ce_nic_phy_mode);
++			break;
++		case SETUP_INTEL_CE_BOARD_REV:
++			_intel_ce_board_rev = *((u32*)buf);
++			printk("ce2600 setup data: board rev 0x%x\n",
++				_intel_ce_board_rev);
++			break;
++		case SETUP_INTEL_CE_FLASH_LAYOUT_TABLE:
++			_intel_ce_flash_layout_table = *((u32*)buf);
++			printk("ce2600 setup data: layout table 0x%x\n",
++				_intel_ce_flash_layout_table);
++			break;
++		default:
++			/* shouldn't happen */
++			return;
++	}
++}
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -371,6 +371,15 @@ config GPIO_IXP4XX
+ 
+ 	  If unsure, say N.
+ 
++config GPIO_CE_2600
++	tristate "Intel CE2600 SoC GPIO"
++	depends on X86_INTEL_CE_2600
++	help
++	  Say yes here to support the GPIO functionality for the Intel CE2600
++	  SoCs.
++
++	  If unsure, say N.
++
+ config GPIO_LOGICVC
+ 	tristate "Xylon LogiCVC GPIO support"
+ 	depends on MFD_SYSCON && OF
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -73,6 +73,7 @@ obj-$(CONFIG_GPIO_HLWD)			+= gpio-hlwd.o
+ obj-$(CONFIG_HTC_EGPIO)			+= gpio-htc-egpio.o
+ obj-$(CONFIG_GPIO_I8255)		+= gpio-i8255.o
+ obj-$(CONFIG_GPIO_ICH)			+= gpio-ich.o
++obj-$(CONFIG_GPIO_CE_2600)		+= gpio-intel-ce2600.o
+ obj-$(CONFIG_GPIO_IDIO_16)		+= gpio-idio-16.o
+ obj-$(CONFIG_GPIO_IDT3243X)		+= gpio-idt3243x.o
+ obj-$(CONFIG_GPIO_IMX_SCU)		+= gpio-imx-scu.o
+--- /dev/null
++++ b/drivers/gpio/gpio-intel-ce2600.c
+@@ -0,0 +1,830 @@
++/*
++ *  GPIO interface for Intel SOC CE2600.
++ *
++ *  Copyright (c) 2010, 2012 Intel Corporation
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License 2 as published
++ *  by the Free Software Foundation.
++ *
++ */
++
++#include <linux/errno.h>
++#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/pci.h>
++#include <linux/pci_ids.h>
++#include <linux/platform_device.h>
++
++#ifdef CONFIG_HW_MUTEXES
++#include <linux/hw_mutex.h>
++#endif
++
++#define INTELCE_GPIO_DRV_NAME		"intelce_gpio"
++
++#define INTELCE_GPIO_BAR        0
++
++#define INTELCE_GPIO_IRQ_BASE 128 /* Search free IRQS start from this number*/
++
++struct intelce_gpio_chip{
++	int irq_base;
++	void __iomem *reg_base;
++	void __iomem *high_base;
++	void __iomem *mux_ctl_base;
++	struct gpio_chip chip;
++	struct spinlock lock;
++};
++
++static inline uint32_t intelce_gpio_mmio_read32(const volatile void  __iomem *addr)
++{
++	return readl(addr);
++}
++
++static inline void  intelce_gpio_mmio_write32(uint32_t value, volatile void __iomem *addr)
++{
++	writel(value, addr);
++}
++
++static inline uint32_t intelce_gpio_port_read32(int port)
++{
++	return inl(port);
++}
++
++static inline void  intelce_gpio_port_write32(uint32_t value, int port)
++{
++	outl(value, port);
++}
++
++static inline struct intelce_gpio_chip *to_intelce_gpio_chip(struct gpio_chip *c)
++{
++     return container_of(c, struct intelce_gpio_chip, chip);;
++}
++
++#define CE2600_PUB_GPIOS_PER_BANK		32
++#define CE2600_PUB_GPIO_BANKS			4
++
++#define CE2600_PUB_GPIO_BANK0_BASE		0x0
++#define CE2600_PUB_GPIO_BANK1_BASE		0x20
++#define CE2600_PUB_GPIO_BANK2_BASE		0x40
++#define CE2600_PUB_GPIO_BANK3_BASE		0x60
++
++#define CE2600_PUB_GPIO_OUT			0x00
++#define CE2600_PUB_GPIO_OUT_EN			0x04
++#define CE2600_PUB_GPIO_INPUT			0x08
++#define CE2600_PUB_GPIO_INT_STAT		0x0c
++
++#define CE2600_PUB_GPIO_INT_EN			0x10
++#define CE2600_PUB_GPIO_INT_MODE_LE		0x14
++#define CE2600_PUB_GPIO_INT_MODE_RF		0x18
++
++#define CE2600_PUB_GPIO_MUX_CTL		0x1c
++
++#define CE2600_PUB_GPIO_BANK0_HIGH_BASE	0x80
++#define CE2600_PUB_GPIO_BANK1_HIGH_BASE	0x90
++#define CE2600_PUB_GPIO_BANK2_HIGH_BASE	0xA0
++#define CE2600_PUB_GPIO_BANK3_HIGH_BASE	0xB0
++
++#define CE2600_PUB_GPIO_CLEAR			0x00
++#define CE2600_PUB_GPIO_SET			0x04
++
++#define CE2600_PUB_GPIO_POLARITY0		0x88
++#define CE2600_PUB_GPIO_POLARITY1		0x98
++#define CE2600_PUB_GPIO_POLARITY2		0xa8
++#define CE2600_PUB_GPIO_POLARITY3		0xb8
++
++#define CE2600_PUB_GPIO_INT_ROUTER  0xbc
++
++/* Core Well GPIO Group in North brige */
++/* Core Well GPIO[7:0] */
++#define CE2600_CORE_WELL_GPIO_CGEN		0x00
++#define CE2600_CORE_WELL_GPIO_CGIO		0x04
++#define CE2600_CORE_WELL_GPIO_CGLV		0x08
++#define CE2600_CORE_WELL_GPIO_CGTPE		0x0C
++#define CE2600_CORE_WELL_GPIO_CGTNE		0x10
++#define CE2600_CORE_WELL_GPIO_CGGPE		0x14
++#define CE2600_CORE_WELL_GPIO_CGSMI		0x18
++#define CE2600_CORE_WELL_GPIO_CGTS		0x1C
++
++
++void ce2600_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
++int ce2600_gpio_direction_output(struct gpio_chip *chip, unsigned offset, int value);
++int ce2600_gpio_direction_input(struct gpio_chip *chip, unsigned offset);
++int ce2600_set_multi_function(struct gpio_chip *chip, unsigned offset,  int fn_num);
++int ce2600_get_multi_function(struct gpio_chip *chip, unsigned offset);
++int ce2600_gpio_irq_setup(struct intelce_gpio_chip *c, struct pci_dev *pdev);
++
++int ce2600_gpio_suspend(void *io_mem, unsigned short io_port);
++int ce2600_gpio_resume(void *io_mem, unsigned short io_port);
++
++
++int ce2600_gpio_get(struct gpio_chip *chip, unsigned offset)
++{
++	void *reg_base = to_intelce_gpio_chip(chip)->reg_base;
++
++	return (intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_INPUT) >> offset) & 0x1;
++}
++void ce2600_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
++{
++	struct intelce_gpio_chip *c = to_intelce_gpio_chip(chip);
++	void *reg_base = c->high_base;
++
++	if (value)
++		intelce_gpio_mmio_write32(1 << offset, reg_base + CE2600_PUB_GPIO_SET);
++	else
++		intelce_gpio_mmio_write32(1 << offset, reg_base + CE2600_PUB_GPIO_CLEAR);
++}
++
++int ce2600_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
++{
++	struct intelce_gpio_chip *c = to_intelce_gpio_chip(chip);
++	void *reg_base = c->reg_base;
++	uint32_t orig;
++	unsigned long flags;
++
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_lock(HW_MUTEX_GPIO);
++#endif
++	spin_lock_irqsave(&c->lock, flags);
++	orig = intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_OUT_EN);
++	orig &= ~(1 << offset);
++	intelce_gpio_mmio_write32(orig, reg_base + CE2600_PUB_GPIO_OUT_EN);
++	spin_unlock_irqrestore(&c->lock, flags);
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_unlock(HW_MUTEX_GPIO);
++#endif
++	return 0;
++}
++
++int ce2600_gpio_direction_output(struct gpio_chip *chip, unsigned offset, int value)
++{
++	struct intelce_gpio_chip *c = to_intelce_gpio_chip(chip);
++	void *reg_base = c->reg_base;
++	uint32_t orig;
++	unsigned long flags;
++
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_lock(HW_MUTEX_GPIO);
++#endif
++	spin_lock_irqsave(&c->lock, flags);
++	orig = intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_OUT);
++	if (value)
++		orig |= (1 << offset);
++	else
++		orig &= ~(1 << offset);
++
++	intelce_gpio_mmio_write32(orig, reg_base + CE2600_PUB_GPIO_OUT);
++
++	orig = intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_OUT_EN);
++	orig |= (1 << offset);
++	intelce_gpio_mmio_write32(orig, reg_base + CE2600_PUB_GPIO_OUT_EN);
++
++	spin_unlock_irqrestore(&c->lock, flags);
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_unlock(HW_MUTEX_GPIO);
++#endif
++	return 0;
++}
++
++int ce2600_set_multi_function(struct gpio_chip *chip, unsigned offset,  int fn_num)
++{
++	struct intelce_gpio_chip *c = to_intelce_gpio_chip(chip);
++	void *reg_base = c->mux_ctl_base;
++	uint32_t curr_reg_value = 0;
++	uint32_t new_reg_value = 0;
++	uint32_t bit_num = 0;
++	uint32_t revert = 0;
++	uint32_t gpio = chip->base + offset;
++	unsigned long flags;
++
++	switch (gpio)
++	{
++		case 50:
++			bit_num = 0;
++			break;
++		case 116:
++		case 117:
++		case 118:
++		case 38:
++		case 39:
++		case 40:
++		case 41:
++			bit_num = 3;
++			break;
++		case 42:
++		case 43:
++			bit_num = 4;
++			break;
++		case 48:
++			bit_num = 7;
++			break;
++		case 55:
++			bit_num = 12;
++			revert = 1;
++			break;
++		case 54:
++			bit_num = 13;
++			revert = 1;
++			break;
++		case 53:
++			bit_num = 14;
++			revert = 1;
++			break;
++		case 52:
++			bit_num = 15;
++			revert = 1;
++			break;
++		case 56:
++			bit_num = 12;
++			break;
++		case 57:
++			bit_num = 13;
++			break;
++		case 58:
++			bit_num = 14;
++			break;
++		case 93:
++			bit_num = 15;
++			break;
++		case 51:
++			bit_num = 16;
++			break;
++		default:
++			return -EINVAL;
++	}
++	if (revert)
++		fn_num = !fn_num;
++
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_lock(HW_MUTEX_GPIO);
++#endif
++	spin_lock_irqsave(&c->lock, flags);
++	curr_reg_value = intelce_gpio_mmio_read32(reg_base);
++	if (0 == fn_num)
++		new_reg_value = curr_reg_value & ~(1 << bit_num);
++	else
++		new_reg_value = curr_reg_value | (1 << bit_num);
++	intelce_gpio_mmio_write32(new_reg_value, reg_base);
++	spin_unlock_irqrestore(&c->lock, flags);
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_unlock(HW_MUTEX_GPIO);
++#endif
++	return 0;
++}
++
++int ce2600_get_multi_function(struct gpio_chip *chip, unsigned offset)
++{
++/*
++ *  This function will set the pin associated with the gpio_num to it's alternate function.
++ *  bit_num-----function [0] / [1]
++ *  0 --- -disable / enable UART1_TXD_GPIO_50
++ *  3 ---- GPIO fucntions /Smart Card0  GPIO 116, 117,118, 38, 39, 40, 41
++ *  4 ---- gbe link assigned to 1 / GBE use LOS (loss of signal) pin as gbe link GPIO 42, 43
++ *  7--- - disable / enable UART0_TXD_GPIO_48
++ *  16---- disable  /eanble UART0 RTS GPIO 51
++ */
++	struct intelce_gpio_chip *c = to_intelce_gpio_chip(chip);
++	void *reg_base = c->mux_ctl_base;
++	uint32_t gpio = chip->base + offset;
++	int bit_num = -1;
++	int revert = 0;
++
++	switch (gpio) {
++		case 50:
++			bit_num = 0;
++			break;
++		case 38 ... 41:
++		case 116 ... 118:
++			bit_num = 3;
++			break;
++		case 42 ... 43:
++			bit_num = 4;
++			break;
++		case 48:
++			bit_num = 7;
++			break;
++		case 51:
++			bit_num = 16;
++			break;
++		case 52:
++			bit_num = 15;
++			revert = 1;
++			break;
++		case 53:
++			bit_num = 14;
++			revert = 1;
++			break;
++		case 54:
++			bit_num = 13;
++			revert = 1;
++			break;
++		case 55:
++			bit_num = 12;
++			revert = 1;
++			break;
++		case 56:
++			bit_num = 12;
++			break;
++		case 57:
++			bit_num = 13;
++			break;
++		case 58:
++			bit_num = 14;
++			break;
++		case 93:
++			bit_num = 15;
++			break;
++		default:
++			break;
++	}
++	if (-1 == bit_num) return -EINVAL;
++
++	if (revert)
++		return !((intelce_gpio_mmio_read32(reg_base) >> bit_num) & 0x1);
++	else
++		return (intelce_gpio_mmio_read32(reg_base) >> bit_num) & 0x1;
++
++}
++
++static int ce2600_gpio_irq_set_type(struct irq_data *d, unsigned int type)
++{
++	struct intelce_gpio_chip *c = irq_data_get_irq_chip_data(d);
++	void __iomem *mode_le_reg, *mode_rf_reg;
++	uint32_t irq_offs = d->irq - c->irq_base;
++	uint32_t reg1, reg2;
++	int ret = 0;
++
++	if (irq_offs > 32)
++		return -EINVAL;
++
++	mode_le_reg = c->reg_base + CE2600_PUB_GPIO_INT_MODE_LE;
++	mode_rf_reg = c->reg_base + CE2600_PUB_GPIO_INT_MODE_RF;
++
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_lock(HW_MUTEX_GPIO);
++#endif
++	reg1 = intelce_gpio_mmio_read32(mode_le_reg);
++	reg2 = intelce_gpio_mmio_read32(mode_rf_reg);
++
++	switch (type) {
++	case IRQ_TYPE_EDGE_RISING:
++		reg1 |= BIT(irq_offs);
++		reg2 &= ~BIT(irq_offs);
++		break;
++
++	case IRQ_TYPE_EDGE_FALLING:
++		reg1 |= BIT(irq_offs);
++		reg2 |= BIT(irq_offs);
++		break;
++
++	case IRQ_TYPE_LEVEL_HIGH:
++		reg1 &= ~BIT(irq_offs);
++		reg2 &= ~BIT(irq_offs);
++		break;
++
++	case IRQ_TYPE_LEVEL_LOW:
++		reg1 &= ~BIT(irq_offs);
++		reg2 |= BIT(irq_offs);
++		break;
++
++	default:
++		ret =-EINVAL;
++		break;
++	}
++	intelce_gpio_mmio_write32(reg1, mode_le_reg);
++	intelce_gpio_mmio_write32(reg2, mode_rf_reg);
++#ifdef CONFIG_HW_MUTEXES
++	hw_mutex_unlock(HW_MUTEX_GPIO);
++#endif
++	return ret;
++}
++
++int ce2600_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
++{
++	return to_intelce_gpio_chip(chip)->irq_base + offset;
++}
++
++irqreturn_t ce2600_gpio_irq_handler(int irq, void *data)
++{
++	struct intelce_gpio_chip *c = data;
++	u32 irq_stat = intelce_gpio_mmio_read32(c->reg_base + CE2600_PUB_GPIO_INT_STAT);
++
++	irq_stat &= intelce_gpio_mmio_read32(c->reg_base + CE2600_PUB_GPIO_INT_EN);
++	if (!irq_stat)
++		return IRQ_NONE;
++
++	while (irq_stat) {
++		u32 irq_bit = __fls(irq_stat);
++
++		irq_stat &= ~BIT(irq_bit);
++		//printk("interterrupt %d coming\n", c->irq_base + irq_bit);
++		generic_handle_irq(c->irq_base + irq_bit);
++	}
++
++	return IRQ_HANDLED;
++}
++
++void ce2600_gpio_irq_mask(struct irq_data *data)
++{
++	struct intelce_gpio_chip *c = irq_data_get_irq_chip_data(data);
++	void *reg_base = c->reg_base;
++	u32 orig;
++
++	orig = intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_INT_EN);
++	orig &= ~(1 << (data->irq - c->irq_base));
++	intelce_gpio_mmio_write32(orig, reg_base + CE2600_PUB_GPIO_INT_EN);
++}
++
++void ce2600_gpio_irq_unmask(struct irq_data *data)
++{
++	struct intelce_gpio_chip *c = irq_data_get_irq_chip_data(data);
++	void *reg_base = c->reg_base;
++	u32 orig;
++
++	orig = intelce_gpio_mmio_read32(reg_base + CE2600_PUB_GPIO_INT_EN);
++	orig |= (1 << (data->irq - c->irq_base));
++	intelce_gpio_mmio_write32(orig, reg_base + CE2600_PUB_GPIO_INT_EN);
++}
++
++void ce2600_gpio_irq_eoi(struct irq_data *data)
++{
++	struct intelce_gpio_chip *c = irq_data_get_irq_chip_data(data);
++	void *reg_base = c->reg_base;
++
++	intelce_gpio_mmio_write32(1 << (data->irq -c->irq_base), reg_base + CE2600_PUB_GPIO_INT_STAT);
++}
++
++static struct irq_chip ce2600_irq_chip = {
++	.irq_mask = ce2600_gpio_irq_mask,
++	.irq_unmask = ce2600_gpio_irq_unmask,
++	.irq_eoi = ce2600_gpio_irq_eoi,
++	.irq_set_type = ce2600_gpio_irq_set_type,
++};
++
++__init int ce2600_gpio_irq_setup(struct intelce_gpio_chip *c, struct pci_dev *pdev)
++{
++	int i;
++	int irq;
++	int ret;
++
++	c->irq_base = irq_alloc_descs(-1, INTELCE_GPIO_IRQ_BASE, CE2600_PUB_GPIOS_PER_BANK, -1);
++	if (c->irq_base < 0)
++		return c->irq_base;
++
++	/* mask + ACK all interrupt sources */
++	intelce_gpio_mmio_write32(0, c->reg_base + CE2600_PUB_GPIO_INT_EN);
++	intelce_gpio_mmio_write32(0xFFFFFFFF, c->reg_base + CE2600_PUB_GPIO_INT_STAT);
++
++	ret = request_irq(pdev->irq, ce2600_gpio_irq_handler, IRQF_SHARED, "ce2600_gpio", c);
++	if (ret)
++		goto out_free_desc;
++
++	/*
++	 * This gpio irq controller latches level irqs. Testing shows that if
++	 * we unmask & ACK the IRQ before the source of the interrupt is gone
++	 * then the interrupt is active again.
++	 */
++	irq = c->irq_base;
++	for (i=0; i < c->chip.ngpio; i++) {
++		irq_set_chip_and_handler_name(irq, &ce2600_irq_chip, handle_fasteoi_irq, "gpio_irq");
++		irq_set_chip_data(irq, c);
++		irq++;
++	}
++	return 0;
++
++out_free_desc:
++	irq_free_descs(c->irq_base, CE2600_PUB_GPIOS_PER_BANK);
++	return ret;
++}
++
++struct gpio_group {
++	uint32_t input;
++	uint32_t output;
++	uint32_t output_enable;
++	uint32_t int_status;
++	uint32_t int_enable;
++	uint32_t mode_le;
++	uint32_t mode_rf;
++	uint32_t polarity;
++};
++
++struct _gpio {
++	uint32_t cgen;
++	uint32_t cgio;
++	uint32_t cglv;
++	uint32_t cgtpe;
++	uint32_t cgtne;
++	uint32_t cggpe;
++	uint32_t cgsmi;
++	uint32_t cgts;
++
++	struct gpio_group group[4];
++	uint32_t mux_ctl;
++	uint32_t int_router;
++};
++
++static struct _gpio  _gpio;
++
++/* CE2600 gpio suspend routine */
++int ce2600_gpio_suspend(void *io_mem, unsigned short io_port)
++{
++	char *virt_io_mem = (char *)io_mem;
++	int i;
++
++	/* Keep status of Core Well GPIO*/
++	_gpio.cgen = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGEN);
++	_gpio.cgio = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGIO);
++	_gpio.cglv = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGLV);
++	_gpio.cgtpe = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGTPE);
++	_gpio.cgtne = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGTNE);
++	_gpio.cggpe = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGGPE);
++	_gpio.cgsmi = intelce_gpio_port_read32(io_port + CE2600_CORE_WELL_GPIO_CGSMI);
++
++
++	/* Keep status of general purpose GPIO*/
++	_gpio.mux_ctl = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_MUX_CTL);
++	_gpio.group[0].polarity = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_POLARITY0);
++	_gpio.group[1].polarity = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_POLARITY1);
++	_gpio.group[2].polarity = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_POLARITY2);
++	_gpio.group[3].polarity = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_POLARITY3);
++	_gpio.int_router = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_INT_ROUTER);
++	for (i=0; i < 4; i++) {
++		_gpio.group[i].output = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_OUT);
++		_gpio.group[i].output_enable = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_OUT_EN);
++		_gpio.group[i].int_enable = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_INT_EN);
++		_gpio.group[i].mode_le = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_INT_MODE_LE);
++		_gpio.group[i].mode_rf = intelce_gpio_mmio_read32(virt_io_mem + CE2600_PUB_GPIO_INT_MODE_RF);
++		virt_io_mem += 0x20;
++	}
++	return 0;
++}
++
++/* CE2600 gpio resume routine */
++int ce2600_gpio_resume(void *io_mem, unsigned short io_port)
++{
++	char *virt_io_mem = (char *)io_mem;
++	int i;
++
++	/* Restore status of general purpose GPIO*/
++	intelce_gpio_mmio_write32(_gpio.mux_ctl, virt_io_mem + CE2600_PUB_GPIO_MUX_CTL);
++	intelce_gpio_mmio_write32(_gpio.group[0].polarity, virt_io_mem + CE2600_PUB_GPIO_POLARITY0);
++	intelce_gpio_mmio_write32(_gpio.group[1].polarity, virt_io_mem + CE2600_PUB_GPIO_POLARITY1);
++	intelce_gpio_mmio_write32(_gpio.group[2].polarity, virt_io_mem + CE2600_PUB_GPIO_POLARITY2);
++	intelce_gpio_mmio_write32(_gpio.group[3].polarity, virt_io_mem + CE2600_PUB_GPIO_POLARITY3);
++	intelce_gpio_mmio_write32(_gpio.int_router, virt_io_mem + CE2600_PUB_GPIO_INT_ROUTER);
++	for (i=0; i < 4; i++) {
++		intelce_gpio_mmio_write32(_gpio.group[i].output, virt_io_mem + CE2600_PUB_GPIO_OUT);
++		intelce_gpio_mmio_write32(_gpio.group[i].output_enable, virt_io_mem + CE2600_PUB_GPIO_OUT_EN);
++		intelce_gpio_mmio_write32(_gpio.group[i].int_enable, virt_io_mem + CE2600_PUB_GPIO_INT_EN);
++		intelce_gpio_mmio_write32(_gpio.group[i].mode_le, virt_io_mem + CE2600_PUB_GPIO_INT_MODE_LE);
++		intelce_gpio_mmio_write32(_gpio.group[i].mode_rf, virt_io_mem + CE2600_PUB_GPIO_INT_MODE_RF);
++		virt_io_mem += 0x20;
++	}
++
++	/* Restore status of Core Well GPIO*/
++	intelce_gpio_port_write32(_gpio.cgen & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGEN);
++	intelce_gpio_port_write32(_gpio.cgio & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGIO);
++	intelce_gpio_port_write32(_gpio.cglv & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGLV);
++	intelce_gpio_port_write32(_gpio.cgtpe & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGTPE);
++	intelce_gpio_port_write32(_gpio.cgtne & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGTNE);
++	intelce_gpio_port_write32(_gpio.cggpe & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGGPE);
++	intelce_gpio_port_write32(_gpio.cgsmi & 0x3FF, io_port + CE2600_CORE_WELL_GPIO_CGSMI);
++	return 0;
++}
++
++static int banks, gpios_per_bank;
++static char *label[CE2600_PUB_GPIO_BANKS] = {
++	"gpio_bank0",
++	"gpio_bank1",
++	"gpio_bank2",
++	"gpio_bank3",
++};
++#if 0
++static struct resource sch_gpio_resource[] = {
++	[0] = {
++		.start = 1048,
++		.end   = 1048 + 64 - 1,
++		.flags = IORESOURCE_IO,
++	},
++	[1] = {
++		.start = 0,
++		.end   = 0,
++		.flags = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sch_device_gpio = {
++	.name		  = "sch_gpio_ce",
++	.id		  = PCI_DEVICE_ID_INTEL_SCH_LPC,
++	.num_resources	  = ARRAY_SIZE(sch_gpio_resource),
++	.resource	  = sch_gpio_resource,
++};
++
++static uint16_t  legacy_iobase = 1048;
++static int sch_gpio_setup(struct pci_dev *pdev, int gpio_base)
++{
++    struct pci_dev *lpc;
++
++	sch_device_gpio.dev.parent = get_device(&pdev->dev);
++
++    lpc = pci_get_domain_bus_and_slot(0, 0, PCI_DEVFN(31, 0));
++    if (NULL == lpc) {
++       printk(KERN_ERR "Can't detect the  LPC PCI device!!");
++       return -ENODEV;
++    }
++    pci_read_config_word(lpc, 0x44, &legacy_iobase);
++    pci_dev_put(lpc);
++	legacy_iobase &= ~(64 - 1);
++	sch_gpio_resource[0].start = legacy_iobase;
++	sch_gpio_resource[0].end = legacy_iobase + 64 - 1;
++	sch_gpio_resource[1].start = gpio_base;
++	sch_gpio_resource[1].end = gpio_base;
++
++	return platform_device_register(&sch_device_gpio);
++}
++#endif
++
++static int (*intelce_gpio_suspend)(void *io_mem, unsigned short io_port);
++static int (*intelce_gpio_resume)(void *io_mem, unsigned short io_port);
++
++static int intelce_gpio_probe(struct pci_dev *pdev, const struct pci_device_id *pci_id)
++{
++	struct intelce_gpio_chip *c, *p;
++	unsigned long paddr;
++	void *vaddr;
++	int i;
++	int gpio_base = 0;
++	int mux_ctl_offset = CE2600_PUB_GPIO_MUX_CTL;
++	int ret;
++
++    banks = CE2600_PUB_GPIO_BANKS;
++    gpios_per_bank = CE2600_PUB_GPIOS_PER_BANK;
++    mux_ctl_offset = CE2600_PUB_GPIO_MUX_CTL;
++    intelce_gpio_suspend = NULL;
++    intelce_gpio_resume = NULL;
++    dev_info(&pdev->dev, "CE2600 GPIO controller detected.\n");
++
++	c = kzalloc(sizeof(struct intelce_gpio_chip)*banks, GFP_KERNEL);
++	if (!c)
++		return -ENOMEM;
++	ret = pci_enable_device(pdev);
++	if (ret) {
++		dev_err(&pdev->dev, "can't enable device.\n");
++		goto done;
++	}
++
++	ret = pci_request_region(pdev, INTELCE_GPIO_BAR, INTELCE_GPIO_DRV_NAME);
++	if (ret) {
++		dev_err(&pdev->dev, "can't alloc PCI BAR #%d\n", INTELCE_GPIO_BAR);
++		goto disable_pci;
++	}
++
++	paddr = pci_resource_start(pdev, INTELCE_GPIO_BAR);
++	if (!paddr)
++		goto release_reg;
++	vaddr = ioremap(paddr, pci_resource_len(pdev, INTELCE_GPIO_BAR));
++
++	for (i=0; i < banks; i++) {
++		p = c + i;
++		spin_lock_init(&p->lock);
++		p->reg_base = vaddr + 0x20*i;
++		p->high_base = vaddr + 0x80 + 0x10*i;
++		p->mux_ctl_base = vaddr + mux_ctl_offset;
++		p->chip.ngpio = gpios_per_bank;
++		p->chip.set = ce2600_gpio_set;
++		p->chip.get = ce2600_gpio_get;
++		p->chip.direction_output = ce2600_gpio_direction_output;
++		p->chip.direction_input = ce2600_gpio_direction_input;
++		p->chip.label = label[i];
++		p->chip.base = gpio_base;
++		ret = gpiochip_add(&p->chip);
++		if (ret)
++			goto unmap;
++		//ret = ce2600_gpio_irq_setup(p, pdev);
++		if (ret) {
++			gpiochip_remove(&p->chip);
++			goto unmap;
++		}
++		gpio_base += p->chip.ngpio;
++	}
++	pci_set_drvdata(pdev, c);
++	return 0;
++
++unmap:
++	for (i--; i >= 0; i--) {
++		p = c + i ;
++		free_irq(pdev->irq, p);
++		irq_free_descs(p->irq_base, gpios_per_bank);
++		gpiochip_remove(&p->chip);
++	}
++	iounmap(c->reg_base);
++release_reg:
++	pci_release_region(pdev, INTELCE_GPIO_BAR);
++disable_pci:
++	pci_disable_device(pdev);
++done:
++	kfree(c);
++	return ret;
++}
++
++static void intelce_gpio_remove(struct pci_dev *pdev)
++{
++	struct intelce_gpio_chip *p;
++	struct intelce_gpio_chip *c = pci_get_drvdata(pdev);
++	int i;
++
++	put_device(&pdev->dev);
++	for (i=0; i < banks; i++) {
++		p = c + i;
++		free_irq(pdev->irq, p);
++		irq_free_descs(p->irq_base, gpios_per_bank);
++		gpiochip_remove(&p->chip);
++	}
++	pci_release_region(pdev, INTELCE_GPIO_BAR);
++	iounmap(c->reg_base);
++	pci_disable_device(pdev);
++	kfree(c);
++	pci_set_drvdata(pdev, NULL);
++}
++
++static struct pci_device_id intelce_gpio_pci_ids[] = {
++	{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTELCE_GPIO) },
++	{ 0, },
++};
++
++#ifdef CONFIG_PM
++
++int intelce_gpio_device_suspend(struct device *dev)
++{
++	struct pci_dev *pdev = to_pci_dev(dev);
++	int ret = 0;
++
++    /*gpio suspend */
++	if (intelce_gpio_suspend) {
++		//ret = intelce_gpio_suspend(c->reg_base, legacy_iobase);
++		if (ret)
++			 return ret;
++	}
++	/*pci device save*/
++	pci_save_state(pdev);
++	pci_disable_device(pdev);
++	pci_set_power_state(pdev, PCI_D3hot);
++	return 0;
++}
++
++int intelce_gpio_device_resume(struct device *dev)
++{
++	struct pci_dev *pdev = to_pci_dev(dev);
++	int ret = 0;
++
++	/*pci device restore*/
++	pci_set_power_state(pdev, PCI_D0);
++	pci_restore_state(pdev);
++	ret = pci_enable_device(pdev);
++	if (ret)
++		return ret;
++	/*gpio resume */
++	if (intelce_gpio_resume) {
++		//return intelce_gpio_resume(c->reg_base, legacy_iobase);
++        return -1;
++	} else {
++		return 0;
++	}
++}
++
++static const struct dev_pm_ops intelce_gpio_pm_ops = {
++	.suspend	= intelce_gpio_device_suspend,
++	.resume		= intelce_gpio_device_resume,
++};
++#endif
++
++static struct pci_driver intelce_gpio_driver = {
++	.name = INTELCE_GPIO_DRV_NAME,
++	.id_table = intelce_gpio_pci_ids,
++	.probe = intelce_gpio_probe,
++	.remove = intelce_gpio_remove,
++#ifdef CONFIG_PM
++	.driver.pm = &intelce_gpio_pm_ops,
++#endif
++};
++
++static int __init intelce_gpio_init(void)
++{
++	return pci_register_driver(&intelce_gpio_driver);
++
++}
++module_init(intelce_gpio_init);
++
++static void __exit intelce_gpio_exit(void)
++{
++	pci_unregister_driver(&intelce_gpio_driver);
++}
++module_exit(intelce_gpio_exit);
++
++MODULE_DESCRIPTION("GPIO interface for Intel intelce SoCs");
++MODULE_LICENSE("GPL v2");
+--- a/drivers/i2c/busses/i2c-pxa-pci.c
++++ b/drivers/i2c/busses/i2c-pxa-pci.c
+@@ -15,8 +15,10 @@
+ #include <linux/of_address.h>
+ 
+ #define CE4100_PCI_I2C_DEVS	3
++#define CE2600_PCI_I2C_DEVS	2
+ 
+ struct ce4100_devices {
++	unsigned int dev_num;
+ 	struct platform_device *pdev[CE4100_PCI_I2C_DEVS];
+ };
+ 
+@@ -25,7 +27,9 @@ static struct platform_device *add_i2c_d
+ 	struct platform_device *pdev;
+ 	struct i2c_pxa_platform_data pdata;
+ 	struct resource res[2];
++#if !defined(CONFIG_X86_INTEL_CE_2600)
+ 	struct device_node *child;
++#endif
+ 	static int devnum;
+ 	int ret;
+ 
+@@ -40,6 +44,7 @@ static struct platform_device *add_i2c_d
+ 	res[1].start = dev->irq;
+ 	res[1].end = dev->irq;
+ 
++#if !defined(CONFIG_X86_INTEL_CE_2600)
+ 	for_each_child_of_node(dev->dev.of_node, child) {
+ 		const void *prop;
+ 		struct resource r;
+@@ -68,15 +73,20 @@ static struct platform_device *add_i2c_d
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
++#endif
+ 
+ 	pdev = platform_device_alloc("ce4100-i2c", devnum);
+ 	if (!pdev) {
++#if !defined(CONFIG_X86_INTEL_CE_2600)
+ 		of_node_put(child);
++#endif
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}
+ 	pdev->dev.parent = &dev->dev;
++#if !defined(CONFIG_X86_INTEL_CE_2600)
+ 	pdev->dev.of_node = child;
++#endif
+ 
+ 	ret = platform_device_add_resources(pdev, res, ARRAY_SIZE(res));
+ 	if (ret)
+@@ -108,21 +118,28 @@ static int ce4100_i2c_probe(struct pci_d
+ 	if (ret)
+ 		return ret;
+ 
++#if !defined(CONFIG_X86_INTEL_CE_2600)
+ 	if (!dev->dev.of_node) {
+ 		dev_err(&dev->dev, "Missing device tree node.\n");
+ 		return -EINVAL;
+ 	}
++#endif
++
+ 	sds = kzalloc(sizeof(*sds), GFP_KERNEL);
+ 	if (!sds)
+ 		return -ENOMEM;
+ 
+-	for (i = 0; i < ARRAY_SIZE(sds->pdev); i++) {
++#if defined(CONFIG_X86_INTEL_CE_2600)
++	sds->dev_num = CE2600_PCI_I2C_DEVS;
++#else
++	sds->dev_num = ARRAY_SIZE(sds->pdev);
++#endif
++
++	for (i = 0; i < sds->dev_num; i++) {
+ 		sds->pdev[i] = add_i2c_device(dev, i);
+ 		if (IS_ERR(sds->pdev[i])) {
+ 			ret = PTR_ERR(sds->pdev[i]);
+-			while (--i >= 0)
+-				platform_device_unregister(sds->pdev[i]);
+-			goto err_dev_add;
++			dev_err(&dev->dev, "i2c pdev %d is error (count = %d, ret = %d)\n", i, sds->dev_num, ret);
+ 		}
+ 	}
+ 	pci_set_drvdata(dev, sds);
+--- a/drivers/mmc/host/sdhci-pci-core.c
++++ b/drivers/mmc/host/sdhci-pci-core.c
+@@ -683,6 +683,12 @@ static int intel_start_signal_voltage_sw
+ 	return 0;
+ }
+ 
++static void sdhci_intel_ce_emmc_reset(struct sdhci_host *host, u8 mask)
++{
++	/* TODO: add HWMUTEX stuff here */
++	sdhci_reset(host, mask);
++}
++
+ static const struct sdhci_ops sdhci_intel_byt_ops = {
+ 	.set_clock		= sdhci_set_clock,
+ 	.set_power		= sdhci_intel_set_power,
+@@ -704,6 +710,15 @@ static const struct sdhci_ops sdhci_inte
+ 	.irq			= sdhci_cqhci_irq,
+ };
+ 
++static const struct sdhci_ops sdhci_intel_ce_emmc_ops = {
++	.set_clock		= sdhci_set_clock,
++	.enable_dma		= sdhci_pci_enable_dma,
++	.set_bus_width		= sdhci_set_bus_width,
++	.reset			= sdhci_intel_ce_emmc_reset,
++	.set_uhs_signaling 	= sdhci_set_uhs_signaling,
++	.hw_reset		= sdhci_pci_hw_reset,
++};
++
+ static void byt_read_dsm(struct sdhci_pci_slot *slot)
+ {
+ 	struct intel_host *intel_host = sdhci_pci_priv(slot);
+@@ -1132,6 +1147,14 @@ static int byt_sd_probe_slot(struct sdhc
+ 	return 0;
+ }
+ 
++static int sdhci_intel_ce_emmc_add_host(struct sdhci_pci_slot *slot)
++{
++	/* taken AS-IS from Intel's source :) */
++	slot->host->caps |= SDHCI_CAN_VDD_330;
++	slot->host->mmc->caps |= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE;
++	return sdhci_add_host(slot->host);
++}
++
+ #ifdef CONFIG_PM_SLEEP
+ 
+ static int byt_resume(struct sdhci_pci_chip *chip)
+@@ -1196,6 +1219,13 @@ static const struct sdhci_pci_fixes sdhc
+ 	.priv_size		= sizeof(struct intel_host),
+ };
+ 
++static const struct sdhci_pci_fixes sdhci_intel_ce_emmc = {
++	.allow_runtime_pm 	= false,
++	.add_host		= sdhci_intel_ce_emmc_add_host,
++	.quirks			= SDHCI_QUIRK_BROKEN_CARD_DETECTION,
++	.ops			= &sdhci_intel_ce_emmc_ops,
++};
++
+ static const struct sdhci_pci_fixes sdhci_ni_byt_sdio = {
+ #ifdef CONFIG_PM_SLEEP
+ 	.resume		= byt_resume,
+@@ -1891,6 +1921,7 @@ static const struct pci_device_id pci_id
+ 	SDHCI_PCI_DEVICE(INTEL, LKF_EMMC,  intel_glk_emmc),
+ 	SDHCI_PCI_DEVICE(INTEL, LKF_SD,    intel_byt_sd),
+ 	SDHCI_PCI_DEVICE(INTEL, ADL_EMMC,  intel_glk_emmc),
++	SDHCI_PCI_DEVICE(INTEL, CE_EMMC,   intel_ce_emmc),
+ 	SDHCI_PCI_DEVICE(O2, 8120,     o2),
+ 	SDHCI_PCI_DEVICE(O2, 8220,     o2),
+ 	SDHCI_PCI_DEVICE(O2, 8221,     o2),
+--- a/drivers/mmc/host/sdhci-pci.h
++++ b/drivers/mmc/host/sdhci-pci.h
+@@ -64,6 +64,7 @@
+ #define PCI_DEVICE_ID_INTEL_LKF_EMMC	0x98c4
+ #define PCI_DEVICE_ID_INTEL_LKF_SD	0x98f8
+ #define PCI_DEVICE_ID_INTEL_ADL_EMMC	0x54c4
++#define PCI_DEVICE_ID_INTEL_CE_EMMC	0x070b
+ 
+ #define PCI_DEVICE_ID_SYSKONNECT_8000	0x8000
+ #define PCI_DEVICE_ID_VIA_95D0		0x95d0
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -7246,6 +7246,10 @@ static const struct of_device_id mv88e6x
+ 		.compatible = "marvell,mv88e6250",
+ 		.data = &mv88e6xxx_table[MV88E6250],
+ 	},
++	{
++		.compatible = "marvell,mv88e6172",
++		.data = &mv88e6xxx_table[MV88E6172],
++	},
+ 	{ /* sentinel */ },
+ };
+ 
+--- a/drivers/net/ethernet/intel/Kconfig
++++ b/drivers/net/ethernet/intel/Kconfig
+@@ -55,6 +55,20 @@ config E1000
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called e1000.
+ 
++config E1000_MDIC_MDIO
++	bool "Expose E1000 MDIC as a MDIO bus"
++	depends on E1000
++	select MDIO
++	select PHYLIB
++	help
++	  The E1000 has a memory mapped MDIC, which the original driver only uses
++	  to configure a certain set of PHYs. However, embedded systems that use
++	  this card might use a different set of PHYs, or even connect the RGMII
++	  interface to a Switch.
++	  In order to make it easier to communicate with the PHY or Switch, the
++	  MDIC bus can be exported as MDIO bus.
++	  Select this option to expose the MDIC bus as a new MDIO bus.
++
+ config E1000E
+ 	tristate "Intel(R) PRO/1000 PCI-Express Gigabit Ethernet support"
+ 	depends on PCI && (!SPARC32 || BROKEN)
+--- a/drivers/net/ethernet/intel/e1000/e1000_hw.c
++++ b/drivers/net/ethernet/intel/e1000/e1000_hw.c
+@@ -8,6 +8,12 @@
+ #include <linux/bitfield.h>
+ #include "e1000.h"
+ 
++#ifdef CONFIG_X86_INTEL_CE_2600
++#define M88E6XXX_REG_PORT(p)		(0x10 + (p))
++#define M88E6XXX_REG_GLOBAL		0x1b
++#define M88E6XXX_REG_GLOBAL2		0x1c
++#endif
++
+ static s32 e1000_check_downshift(struct e1000_hw *hw);
+ static s32 e1000_check_polarity(struct e1000_hw *hw,
+ 				e1000_rev_polarity *polarity);
+@@ -102,6 +108,9 @@ static s32 e1000_set_phy_type(struct e10
+ 	case M88E1118_E_PHY_ID:
+ 		hw->phy_type = e1000_phy_m88;
+ 		break;
++	case M88E6172_E_PHY_ID:
++		hw->phy_type = e1000_phy_m88e6;
++		break;
+ 	case IGP01E1000_I_PHY_ID:
+ 		if (hw->mac_type == e1000_82541 ||
+ 		    hw->mac_type == e1000_82541_rev_2 ||
+@@ -1432,6 +1441,11 @@ static s32 e1000_setup_copper_link(struc
+ 		ret_val = e1000_copper_link_mgp_setup(hw);
+ 		if (ret_val)
+ 			return ret_val;
++#ifdef CONFIG_X86_INTEL_CE_2600
++	} else if (hw->phy_type == e1000_phy_m88e6) {
++		e_dbg("TODO: add proper setup of m88e6 phy (instead of relying on CEFDK)");
++		return E1000_SUCCESS;
++#endif
+ 	} else {
+ 		ret_val = gbe_dhg_phy_setup(hw);
+ 		if (ret_val) {
+@@ -1939,6 +1953,12 @@ static s32 e1000_config_mac_to_phy(struc
+ 
+ 		e1000_config_collision_dist(hw);
+ 		break;
++#ifdef CONFIG_X86_INTEL_CE_2600
++	case e1000_phy_m88e6:
++		e_dbg("TODO: implement M88E6xxx change of upstream port parameters!\n");
++		e1000_config_collision_dist(hw);
++		break;
++#endif
+ 	default:
+ 		/* Set up duplex in the Device Control and Transmit Control
+ 		 * registers depending on negotiated values.
+@@ -2392,6 +2412,14 @@ s32 e1000_check_for_link(struct e1000_hw
+ 		}
+ 	}
+ 
++#ifdef CONFIG_X86_INTEL_CE_2600
++	if ((hw->phy_type == e1000_phy_m88e6) && hw->get_link_status) {
++		hw->get_link_status = false;
++		e_dbg("TODO: implement M88E6xxx check of status of upstream port as E1000 link status!\n");
++		return E1000_SUCCESS;
++	}
++#endif
++
+ 	/* If we have a copper PHY then we only want to go out to the PHY
+ 	 * registers to see if Auto-Neg has completed and/or if our link
+ 	 * status has changed.  The get_link_status flag will be set if we
+@@ -2773,6 +2801,31 @@ static u16 e1000_shift_in_mdi_bits(struc
+ 	return data;
+ }
+ 
++#ifdef CONFIG_X86_INTEL_CE_2600
++/**
++ * e1000_m88e6_read_phy_reg - read a M88E6xxx phy register
++ * @hw: Struct containing variables accessed by shared code
++ * @reg_addr: address of the PHY register to read
++ * @phy_data: pointer to the value on the PHY register
++ *
++ * Reads the value from a PHY register, if the value is on a specific non zero
++ * page, sets the page first.
++ */
++s32 e1000_m88e6_read_phy_reg(struct e1000_hw *hw, s32 addr, s32 reg, u16 *phy_data)
++{
++	s32 ret = -1;
++
++	/* Transmit the read command. */
++	ret = e1000_write_phy_reg(hw, 0, 0x9800 | (addr << 5) | reg);
++	if (ret < 0)
++		return ret;
++
++	/* Read the data. */
++	ret = e1000_read_phy_reg(hw, 1, phy_data);
++	return ret;
++}
++#endif
++
+ /**
+  * e1000_read_phy_reg - read a phy register
+  * @hw: Struct containing variables accessed by shared code
+@@ -3176,6 +3229,20 @@ static s32 e1000_detect_gig_phy(struct e
+ 		    (hw->phy_id == RTL8201N_PHY_ID) ||
+ 		    (hw->phy_id == M88E1118_E_PHY_ID))
+ 			match = true;
++#ifdef CONFIG_X86_INTEL_CE_2600
++		else {
++			/* try to address a M88E6xxx instead */
++			ret_val = e1000_m88e6_read_phy_reg(hw, M88E6XXX_REG_PORT(0), 0x03, &phy_id_low);
++			if (ret_val < 0) {
++				break;
++			}
++			hw->phy_id = (u32)(phy_id_low & PHY_REVISION_MASK);
++			hw->phy_revision = (u32)phy_id_low & ~PHY_REVISION_MASK;
++
++			if (hw->phy_id == M88E6172_E_PHY_ID)
++				match = true;
++		}
++#endif
+ 		break;
+ 	case e1000_82541:
+ 	case e1000_82541_rev_2:
+@@ -5628,3 +5695,161 @@ static s32 e1000_get_phy_cfg_done(struct
+ 	msleep(10);
+ 	return E1000_SUCCESS;
+ }
++
++#if defined(CONFIG_E1000_MDIC_MDIO)
++#include <linux/mdio.h>
++#include <linux/mii.h>
++#include <linux/phy.h>
++
++static int e1000_ce_mdic_write(struct mii_bus *bus, int phy_addr, int reg_addr, u16 phy_data)
++{
++	struct e1000_adapter *adapter = bus->priv;
++	struct e1000_hw *hw = &adapter->hw;
++
++	u32 i;
++	u32 mdic = 0;
++	unsigned long flags;
++
++	if (reg_addr > MAX_PHY_REG_ADDRESS) {
++		dev_err(&bus->dev, "%s: PHY Address %d is out of range\n", __func__, reg_addr);
++		return -EINVAL;
++	}
++
++	spin_lock_irqsave(&e1000_phy_lock, flags);
++
++	mdic = (((u32)phy_data) |
++		(reg_addr << E1000_MDIC_REG_SHIFT) |
++		(phy_addr << E1000_MDIC_PHY_SHIFT) |
++		(INTEL_CE_GBE_MDIC_OP_WRITE) |
++		(INTEL_CE_GBE_MDIC_GO));
++
++	writel(mdic, E1000_MDIO_CMD);
++
++	/* Poll the ready bit to see if the MDI read
++		* completed
++		*/
++	for (i = 0; i < 640; i++) {
++		udelay(5);
++		mdic = readl(E1000_MDIO_CMD);
++		if (!(mdic & INTEL_CE_GBE_MDIC_GO))
++			break;
++	}
++	if (mdic & INTEL_CE_GBE_MDIC_GO) {
++		dev_err(&bus->dev, "MDI Write did not complete\n");
++		spin_unlock_irqrestore(&e1000_phy_lock, flags);
++		return -ETIMEDOUT;
++	}
++	spin_unlock_irqrestore(&e1000_phy_lock, flags);
++
++	return 0;
++} /* e1000_ce_mdic_write */
++
++static int e1000_ce_mdic_read(struct mii_bus *bus, int phy_addr, int reg_addr)
++{
++	struct e1000_adapter *adapter = bus->priv;
++	struct e1000_hw *hw = &adapter->hw;
++
++	u32 i;
++	u32 mdic = 0;
++	unsigned long flags;
++
++	if (reg_addr > MAX_PHY_REG_ADDRESS) {
++		dev_err(&bus->dev, "%s: PHY Address %d is out of range\n", __func__, reg_addr);
++		return -EINVAL;
++	}
++
++	spin_lock_irqsave(&e1000_phy_lock, flags);
++
++	mdic = ((reg_addr << E1000_MDIC_REG_SHIFT) |
++		(phy_addr << E1000_MDIC_PHY_SHIFT) |
++		(INTEL_CE_GBE_MDIC_OP_READ) |
++		(INTEL_CE_GBE_MDIC_GO));
++
++	writel(mdic, E1000_MDIO_CMD);
++
++	/* Poll the ready bit to see if the MDI read
++		* completed
++		*/
++	for (i = 0; i < 64; i++) {
++		udelay(50);
++		mdic = readl(E1000_MDIO_CMD);
++		if (!(mdic & INTEL_CE_GBE_MDIC_GO))
++			break;
++	}
++
++	if (mdic & INTEL_CE_GBE_MDIC_GO) {
++		dev_err(&bus->dev, "MDI Read did not complete\n");
++		spin_unlock_irqrestore(&e1000_phy_lock, flags);
++		return -EINVAL;
++	}
++
++	mdic = readl(E1000_MDIO_STS);
++	if (mdic & INTEL_CE_GBE_MDIC_READ_ERROR) {
++		dev_err(&bus->dev, "MDI Read Error\n");
++		spin_unlock_irqrestore(&e1000_phy_lock, flags);
++		return -ETIMEDOUT;
++	}
++	spin_unlock_irqrestore(&e1000_phy_lock, flags);
++
++	return (u16)mdic;
++
++}  /* e1000_ce_mdic_read */
++
++int e1000_ce_register_mdio(struct e1000_adapter *adapter)
++{
++	struct e1000_hw *hw = &adapter->hw;
++	struct mii_bus *bus;
++	char buf[80];
++	int err;
++	int i = 0;
++
++	snprintf(buf, sizeof(buf), "%s:%02x", "e1000-mdic.%u", i);
++	if (bus_find_device_by_name(&mdio_bus_type, NULL, buf))
++		return -ENODEV;
++
++	bus = mdiobus_alloc();
++	if (bus == NULL) {
++		err = -ENOMEM;
++		goto mii_init_reg;
++	}
++	hw->mii_bus = bus;
++
++	bus->name = "Intel E1000 MDIC bus",
++	bus->read = e1000_ce_mdic_read;
++	bus->write = e1000_ce_mdic_write;
++	snprintf(bus->id, MII_BUS_ID_SIZE, "e1000-mdic.%d", i);
++	bus->parent = &adapter->pdev->dev;
++	bus->phy_mask = ~0;
++	bus->priv = adapter;
++
++	for (i = 0; i < PHY_MAX_ADDR; i++)
++		bus->irq[i] = -1;
++
++	/* this triggers all previously-registered devices to show up */
++	err = mdiobus_register(bus);
++	if (err < 0)
++		goto mii_init_free_mii_bus;
++
++	return 0;
++
++mii_init_free_mii_bus:
++	mdiobus_free(bus);
++
++mii_init_reg:
++	return err;
++} /* e1000_ce_register_mdio */
++
++int e1000_ce_unregister_mdio(struct e1000_adapter *adapter)
++{
++	struct e1000_hw *hw = &adapter->hw;
++	struct mii_bus *bus = hw->mii_bus;
++
++	if (!bus)
++		return 0;
++
++	mdiobus_unregister(bus);
++	mdiobus_free(bus);
++
++	return 0;
++} /* e1000_ce_unregister_mdio */
++#endif
+--- a/drivers/net/ethernet/intel/e1000/e1000_hw.h
++++ b/drivers/net/ethernet/intel/e1000/e1000_hw.h
+@@ -189,6 +189,9 @@ typedef enum {
+ 	e1000_phy_igp,
+ 	e1000_phy_8211,
+ 	e1000_phy_8201,
++#ifdef CONFIG_X86_INTEL_CE_2600
++	e1000_phy_m88e6,
++#endif
+ 	e1000_phy_undefined = 0xFF
+ } e1000_phy_type;
+ 
+@@ -278,6 +281,9 @@ s32 e1000_get_speed_and_duplex(struct e1
+ s32 e1000_force_mac_fc(struct e1000_hw *hw);
+ 
+ /* PHY */
++#ifdef CONFIG_X86_INTEL_CE_2600
++s32 e1000_m88e6_read_phy_reg(struct e1000_hw *hw, s32 addr, s32 reg, u16 *phy_data);
++#endif
+ s32 e1000_read_phy_reg(struct e1000_hw *hw, u32 reg_addr, u16 * phy_data);
+ s32 e1000_write_phy_reg(struct e1000_hw *hw, u32 reg_addr, u16 data);
+ s32 e1000_phy_hw_reset(struct e1000_hw *hw);
+@@ -373,6 +379,12 @@ int e1000_pcix_get_mmrbc(struct e1000_hw
+ /* Port I/O is only supported on 82544 and newer */
+ void e1000_io_write(struct e1000_hw *hw, unsigned long port, u32 value);
+ 
++#if defined(CONFIG_E1000_MDIC_MDIO)
++/* MDIC -> MDIO for Intel CEs */
++int e1000_ce_register_mdio(struct e1000_adapter *adapter);
++int e1000_ce_unregister_mdio(struct e1000_adapter *adapter);
++#endif
++
+ #define E1000_READ_REG_IO(a, reg) \
+     e1000_read_reg_io((a), E1000_##reg)
+ #define E1000_WRITE_REG_IO(a, reg, val) \
+@@ -1403,6 +1415,9 @@ struct e1000_hw {
+ 	bool leave_av_bit_off;
+ 	bool bad_tx_carr_stats_fd;
+ 	bool has_smbus;
++#if defined(CONFIG_E1000_MDIC_MDIO)
++	struct mii_bus* mii_bus;
++#endif
+ };
+ 
+ #define E1000_EEPROM_SWDPIN0   0x0001	/* SWDPIN 0 EEPROM Value */
+@@ -2904,6 +2919,9 @@ struct e1000_host_command_info {
+ #define RTL_PHY_CTRL_FD    0x0100 /* Full duplex.0=half; 1=full */
+ #define RTL_PHY_CTRL_SPD_100    0x200000 /* Force 100Mb */
+ 
++#ifdef CONFIG_X86_INTEL_CE_2600
++#define M88E6172_E_PHY_ID    0x1720
++#endif
+ /* Bits...
+  * 15-5: page
+  * 4-0: register offset
+--- a/drivers/net/ethernet/intel/e1000/e1000_main.c
++++ b/drivers/net/ethernet/intel/e1000/e1000_main.c
+@@ -907,6 +907,43 @@ static int e1000_init_hw_struct(struct e
+ 	return 0;
+ }
+ 
++#if defined(CONFIG_X86_INTEL_CE_2600)
++/* define the MV88E6172 switch used on most CE_2600 boards */
++#include <linux/platform_data/mv88e6xxx.h>
++#include <linux/platform_device.h>
++#include <linux/mdio.h>
++#include <linux/mii.h>
++#include <linux/moduleparam.h>
++#include <linux/phy.h>
++
++static struct dsa_mv88e6xxx_pdata dsa_mv88e6xxx_pdata = {
++	.cd = {
++		.port_names[0] = "lan1",
++		.port_names[1] = "lan2",
++		.port_names[2] = "lan3",
++		.port_names[3] = "lan4",
++		.port_names[4] = NULL,
++		.port_names[5] = "cpu",
++		.port_names[6] = NULL,
++	},
++	.compatible = "marvell,mv88e6172",
++	.enabled_ports = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(5),
++	.eeprom_len = 65536,
++	.irq = 0,
++};
++
++static struct mdio_board_info bdinfo = {
++	.bus_id = "e1000-mdic.0",
++	.modalias = "mv88e6085",
++	.mdio_addr = 4,
++	.platform_data = &dsa_mv88e6xxx_pdata,
++};
++
++static short int register_mv88e6172 = 1;
++module_param(register_mv88e6172, short, S_IRUSR);
++MODULE_PARM_DESC(register_mv88e6172, "Register a Marvell MV88E6172 on the MDIC-to-MDIO bus");
++#endif
++
+ /**
+  * e1000_probe - Device Initialization Routine
+  * @pdev: PCI device information struct
+@@ -1188,6 +1225,12 @@ static int e1000_probe(struct pci_dev *p
+ 
+ 			if (tmp != 0 && tmp != 0xFF)
+ 				break;
++#ifdef CONFIG_X86_INTEL_CE_2600
++			/* try with M88E6xxx phys (dummy) */
++			e1000_m88e6_read_phy_reg(hw, 0x10, 0x03, &tmp);
++			if (tmp != 0 && tmp != 0xFF)
++				break;
++#endif
+ 		}
+ 
+ 		if (i >= 32)
+@@ -1220,6 +1263,24 @@ static int e1000_probe(struct pci_dev *p
+ 	e_info(probe, "Intel(R) PRO/1000 Network Connection\n");
+ 
+ 	cards_found++;
++
++#if defined(CONFIG_E1000_MDIC_MDIO)
++	if (hw->mac_type == e1000_ce4100) {
++#if defined(CONFIG_X86_INTEL_CE_2600)
++		if (register_mv88e6172) {
++			dsa_mv88e6xxx_pdata.netdev = netdev;
++			err = mdiobus_register_board_info(&bdinfo, 1);
++			if (err)
++				printk("%s: Error setting up MDIO board info, ret %d\n", __func__, err);
++		} else {
++			printk("%s: marvell chip registration is disabled\n", __func__);
++		}
++#endif
++		/* call this last so the previously registered phy/switches get registered now */
++		e1000_ce_register_mdio(adapter);
++	}
++#endif
++
+ 	return 0;
+ 
+ err_register:
+@@ -1262,6 +1323,10 @@ static void e1000_remove(struct pci_dev
+ 	struct e1000_hw *hw = &adapter->hw;
+ 	bool disable_dev;
+ 
++#if defined(CONFIG_E1000_MDIC_MDIO)
++	e1000_ce_unregister_mdio(adapter);
++#endif
++
+ 	e1000_down_and_stop(adapter);
+ 	e1000_release_manageability(adapter);
+ 
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -178,12 +178,15 @@ int __pci_read_base(struct pci_dev *dev,
+ {
+ 	u32 l = 0, sz = 0, mask;
+ 	u64 l64, sz64, mask64;
++#ifdef CONFIG_X86_INTEL_CE_2600
+ 	u16 orig_cmd;
++#endif
+ 	struct pci_bus_region region, inverted_region;
+ 
+ 	mask = type ? PCI_ROM_ADDRESS_MASK : ~0;
+ 
+ 	/* No printks while decoding is disabled! */
++#ifdef CONFIG_X86_INTEL_CE_2600
+ 	if (!dev->mmio_always_on) {
+ 		pci_read_config_word(dev, PCI_COMMAND, &orig_cmd);
+ 		if (orig_cmd & PCI_COMMAND_DECODE_ENABLE) {
+@@ -191,7 +194,7 @@ int __pci_read_base(struct pci_dev *dev,
+ 				orig_cmd & ~PCI_COMMAND_DECODE_ENABLE);
+ 		}
+ 	}
+-
++#endif
+ 	res->name = pci_name(dev);
+ 
+ 	pci_read_config_dword(dev, pos, &l);
+@@ -245,10 +248,10 @@ int __pci_read_base(struct pci_dev *dev,
+ 		sz64 |= ((u64)sz << 32);
+ 		mask64 |= ((u64)~0 << 32);
+ 	}
+-
++#ifdef CONFIG_X86_INTEL_CE_2600
+ 	if (!dev->mmio_always_on && (orig_cmd & PCI_COMMAND_DECODE_ENABLE))
+ 		pci_write_config_word(dev, PCI_COMMAND, orig_cmd);
+-
++#endif
+ 	if (!sz64)
+ 		goto fail;
+ 
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -507,6 +507,17 @@ config SPI_INTEL_PLATFORM
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called spi-intel-platform.
+ 
++config SPI_CE_2600
++	tristate "Intel CE2600 SoC SPI flash PCI driver"
++	depends on PCI
++	depends on X86_INTEL_CE_2600
++	help
++	  This enables PCI support for the Intel CE2600 SoC's SPI controller
++	  in master mode. This controller is used to hold firmware.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called spi-intel-ce.
++
+ config SPI_JCORE
+ 	tristate "J-Core SPI Master"
+ 	depends on OF && (SUPERH || COMPILE_TEST)
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -67,6 +67,7 @@ obj-$(CONFIG_SPI_IMG_SPFI)		+= spi-img-s
+ obj-$(CONFIG_SPI_IMX)			+= spi-imx.o
+ obj-$(CONFIG_SPI_INGENIC)		+= spi-ingenic.o
+ obj-$(CONFIG_SPI_INTEL)			+= spi-intel.o
++obj-$(CONFIG_SPI_CE_2600)		+= spi-intel-ce-5xxx.o
+ obj-$(CONFIG_SPI_INTEL_PCI)		+= spi-intel-pci.o
+ obj-$(CONFIG_SPI_INTEL_PLATFORM)	+= spi-intel-platform.o
+ obj-$(CONFIG_SPI_LANTIQ_SSC)		+= spi-lantiq-ssc.o
+--- /dev/null
++++ b/drivers/spi/spi-intel-ce-5xxx.c
+@@ -0,0 +1,1039 @@
++/*
++ * SPI flash controller driver for Intel media processor CE5300 series
++ *
++ * GPL LICENSE SUMMARY
++ * Copyright (c) 2011-2012, Intel Corporation and its suppliers.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program; if not, write to the Free Software Foundation, Inc.,
++ * 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ */
++
++#include <linux/init.h>
++#include <linux/pci.h>
++#include <linux/module.h>
++
++#include <linux/errno.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/sched.h>
++#include <linux/reboot.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
++#ifdef CONFIG_HW_MUTEXES
++#include <linux/hw_mutex.h>
++#endif
++#include <linux/delay.h>
++
++#include <linux/io.h>
++
++/* Set controller working in boot mode, using direct memory window for device read */
++#define CE5XX_BOOT_MODE_ENABLE			1
++
++#define CERSV1_DEVID 				0x0DC0
++#define CERSV2_DEVID 				0x0932
++
++#define CE5300_SPI_FLASH_REVISION_ID		0x00
++#define CE2600_SPI_FLASH_REVISION_ID		0x02
++
++
++/* Controller Register Set */
++#define MODE_CONTL_REG       			0
++
++#define MODE_CONTL_CLK_RATIOR_SHIFT		0
++#define MODE_CONTL_BOOT_MODE_ENABLE		(1<<4)
++#define MODE_CONTL_BOOT_MODE_DISABLE		(~(1<<4))
++#define MODE_CONTL_SPI_UNIT_EN			(1<<5)
++#define MODE_CONTL_SS1_EN			(1<<6)
++
++#define MODE_CONTL_CMD_WIDTH_EQUAL_TO_DATA	(0<<9)
++#define MODE_CONTL_CMD_WIDTH_1_DATA_LINE	(1<<9)
++
++#define MODE_CONTL_SPI_WIDTH_1_BIT		(1<<10)
++#define MODE_CONTL_SPI_WIDTH_2_BIT		(2<<10)
++#define MODE_CONTL_SPI_WIDTH_4_BIT		(3<<10)
++#define MODE_CONTL_SPI_WIDTH_BIT_MASK		(~(3<<10))
++
++#define MODE_CONTL_N_ADDR_2_BYTES		(2<<12)
++#define MODE_CONTL_N_ADDR_3_BYTES		(3<<12)
++#define MODE_CONTL_N_ADDR_4_BYTES		(4<<12)
++#define MODE_CONTL_N_ADDR_BYTES_MASK		(~(0xf<<12))
++
++
++#define MODE_CONTL_CS0_MODE_ENABLE		(1<<16)
++#define MODE_CONTL_CS0_WP			(1<<18)
++#define MODE_CONTL_CS0_MODE_DISABLE_MASK	(~(3<<16))
++
++#define MODE_CONTL_CS1_MODE_ENABLE		(1<<20)
++#define MODE_CONTL_CS1_WP			(1<<22)
++#define MODE_CONTL_CS1_MODE_DISABLE_MASK	(~(3<<20))
++
++#define MODE_CONTL_CS_TAR_SHIFT		24
++
++
++#define ADDR_SPLIT_REG				0x04
++#define CS0_CMP				0
++#define CS0_MASK				4
++#define CS1_CMP				8
++#define CS1_MASK				12
++
++#define CURRENT_ADDR_REG			0x08
++#define DATA_COMMAND_REG			0x0C
++#define DCR_CS_HOLD				26
++#define DCR_NBYTES				24
++#define DCR_NBYTES_MAX				3
++#define DCR_DATA_FIRST_BYTE			16
++#define DCR_DATA_SECOND_BYTE			8
++#define DCR_DATA_THIRD_BYTE			0
++#define DCR_DATA				0
++#define INTERFACE_CONFIG_REG			0x10
++
++#define HIGH_EFFICY_CMD_DATA_REG		0x20
++#define HECDR_FIRST_BYTE			24
++#define HECDR_SECOND_BYTE			16
++#define HECDR_THIRD_BYTE			8
++#define HECDR_FORTH_BYTE			0
++
++
++#define HIGH_EFFICY_TRS_PAR_REG		0x24
++#define HETPR_DUMMY_CYCLE			28
++#define HETPR_CS_HOLD				27
++#define HETPR_NBYTES_WR			24
++#define HETPR_NBYTES_WR_MAX			4
++#define HETPR_NBYTES_RD			0
++#define HETPR_NBYTES_RD_MAX			0xFFFF
++#define HIGH_EFFICY_OPCODE_REG			0x28
++
++enum {
++	SPI_FLASH_REMOVE_BIT = 1,
++	SPI_FLASH_SUSPEND_BIT,
++};
++
++#define SPI_FLASH_REMOVE	(1 << SPI_FLASH_REMOVE_BIT)
++#define SPI_FLASH_SUSPEND	(1 << SPI_FLASH_SUSPEND_BIT)
++
++struct ce5xx_sflash {
++	struct work_struct 		work;
++	struct workqueue_struct		*workqueue;
++	spinlock_t 			lock;			/* protect 'queue' */
++	struct list_head 		queue;
++
++	void __iomem 			*mem_base;
++	void __iomem 			*regs_base;
++
++	struct pci_dev 			*pdev;
++	struct spi_master 		*master;
++
++	uint16_t			mode;
++	struct flash_cs_info 		*cntl_data;		/* Device size info in each chip select */
++	struct ce5xx_address_split 	*addr_split_methd;	/* Address Split register value for the current flash layout */
++	struct notifier_block 		*reboot_notifier;	/* Reboot notification */
++	int				status;
++
++	uint32_t (*transmiter)	(struct ce5xx_sflash *dev, void *buf, size_t len);
++	uint32_t (*dma_receiver)(struct ce5xx_sflash *dev, void *to, uint32_t offset, size_t len);
++	uint32_t (*csr_receiver)(struct ce5xx_sflash *dev, void *buf, size_t len);
++
++	/* S2Ram stored register */
++	uint32_t			mode_contrl;		/* mode control */
++	uint32_t			addr_split;		/* address split */
++	uint32_t			cur_addr;		/* current address */
++	uint32_t			command;		/* command/data */
++	uint32_t			inf_conf;		/* interface configuration */
++	uint32_t			hecd;			/* high efficiency command/data */
++	uint32_t			hetp;			/* high efficiency transaction parameters */
++	uint32_t			heop;			/* high efficiency opcode */
++};
++
++struct ce5xx_address_split {
++	uint32_t	cs0_size;
++	uint32_t	cs1_size;
++
++	uint16_t	cs0_cmp:4;
++	uint16_t	cs0_mask:4;
++	uint16_t	cs1_cmp:4;
++	uint16_t	cs1_mask:4;
++}__attribute__((aligned(4)));
++
++
++#define SPI_MODE_QUAD_IO		0x05
++#define SPI_MODE_DUAL_IO		0x06
++
++/* Device info for each chip select */
++struct flash_cs_info{
++        unsigned int cs0_size;		/* flash size in cs0 */
++        unsigned int cs1_size;		/* chip size in cs1   */
++};
++
++/*
++ * CS_HOLD is incorrect for legacy mode, causes possible spurrious CS assertion.
++ * If CS_TAR field is set, CS will go low and will not be released until we do
++ * another write to one of the legacy registers with data bit 26 = 0
++*/
++
++#define MB			(1024*1024)
++#define SIZE_4_MB		(4*MB)
++#define SIZE_8_MB		(8*MB)
++#define SIZE_16_MB		(16*MB)
++#define SIZE_32_MB		(32*MB)
++#define SIZE_64_MB		(64*MB)
++
++#define BITS_OF_BYTES(bytenum)	(BITS_PER_BYTE*(bytenum))
++/*
++ * Device read contains two methods: CSR or Memory Window
++ * CSR: Configuration Space Registers
++ * CS0 is always the boot device
++ */
++
++static const struct pci_device_id ce5xx_sflash_pci_tbl[] = {
++  { PCI_DEVICE( PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTELCE_SFLASH), .driver_data = 1 },
++  {0},
++};
++
++struct spi_board_info CE5xx_sflash_devices[] = {
++	{
++		.modalias = "m25p80",
++		.chip_select = 0,
++		.bus_num = 1,
++	},
++};
++
++// #define SPI_CE_DEBUG 1
++#ifdef  SPI_CE_DEBUG
++#define spi_dbg(fmt, args...) do \
++				{ \
++					printk(KERN_INFO fmt, ##args); \
++				} while(0)
++
++#define spi_dbg_func	spi_dbg("func %s, line %d\n",__FUNCTION__,__LINE__)
++#else
++#define spi_dbg(fmt,args...) do {} while(0)
++#define spi_dbg_func	do {} while(0)
++#endif
++
++MODULE_DEVICE_TABLE(pci, ce5xx_sflash_pci_tbl);
++
++/*
++ * Serial Flash controller using memory window for read, not by CSR read
++ * When using memory window read, the Address Split Register should be
++ * correctly configured.
++ * The match algorithm is :
++ * Mask is M; value is CS, address is A
++ * match= !((A xor CS) and (not M))
++ *
++ * Different device size in two chip selects require different Address Spilit
++ * Value.
++ */
++static struct ce5xx_address_split addr_split_tbl[] = {
++
++	/* single 4MB */
++	{ SIZE_4_MB,	0,		0x8,	0x0,	0x0,	0x0 },
++	{ 0,		SIZE_4_MB,	0x0,	0x0,	0x8,	0x0 },
++
++	/* single 8MB*/
++	{ SIZE_8_MB,	0,		0x8,	0x0,	0x0,	0x0 },
++	{ 0,		SIZE_8_MB,	0x0,	0x0,	0x8,	0x0 },
++
++	/* single 16MB*/
++	{ SIZE_16_MB,	0,		0x8,	0x0,	0x0,	0x0 },
++	{ 0, 		SIZE_16_MB,	0x0,	0x0,	0x8,	0x0 },
++
++	/* single 32MB*/
++	{ SIZE_32_MB,	0,		0x8,	0x1,	0xA,	0x1 },
++	{ 0,		SIZE_32_MB,	0x8,	0x1,	0xA,	0x1 },
++
++	/* single 64MB*/
++	{ SIZE_64_MB,	0,		0x8,	0x0,	0x0,	0x0 },
++	{ 0, 		SIZE_64_MB,	0x0,	0x0,	0x8,	0x0 },
++
++	/* Double 8MB */
++	{ SIZE_8_MB,	SIZE_8_MB,	0x8,	0x0,	0x9,	0x0 },
++
++	/* Double 16MB */
++	{ SIZE_16_MB,	SIZE_16_MB,	0x8,	0x0,	0x9,	0x0 },
++
++	/* Double 32MB */
++	{ SIZE_32_MB,	SIZE_32_MB,	0x8,	0x1,	0xA,	0x1 },
++
++	/* Double 64MB */
++	/* [WARNING] Two 64MB devices can not be totally mapped, using CSR windows */
++	/* {SIZE_64_MB,	SIZE_64_MB,	0x8,	0x3,	0x8,	0x3 },	*/
++	{ /* sentinel */ },
++};
++
++static inline uint32_t flash_read32(void volatile *addr)
++{
++	return readl(addr);
++}
++
++static inline void flash_write32(uint32_t data, void volatile *addr)
++{
++	return writel(data, addr);
++}
++
++static struct ce5xx_address_split * match_address_split(struct flash_cs_info *cntl_data)
++{
++	int tmp = 0;
++	uint32_t cs0_size = cntl_data->cs0_size;
++	uint32_t cs1_size = cntl_data->cs1_size;
++	struct ce5xx_address_split *split = NULL;
++
++	spi_dbg(" [%s] cs0 0x%x, cs1 0x%x\n", __FUNCTION__,cs0_size,cs1_size);
++
++	for (tmp = 0; tmp < ARRAY_SIZE(addr_split_tbl) - 1; tmp++) {
++		split = &addr_split_tbl[tmp];
++		if ((split->cs0_size== cs0_size) && (split->cs1_size == cs1_size)){
++			spi_dbg("found address split method \n");
++			return &addr_split_tbl[tmp];
++		}
++	}
++	return 0;
++}
++
++/* Config address split register at init */
++static int address_split_cfg(struct ce5xx_sflash *dev)
++{
++	struct ce5xx_address_split *split = dev->addr_split_methd;
++	volatile void __iomem *reg = dev->regs_base;
++
++	uint32_t write_data = 0;
++
++	if (split)
++		return 0;
++
++	split = match_address_split(dev->cntl_data);
++	if (!split)
++		return -ENODEV;
++
++	write_data = ((uint32_t)split->cs0_cmp<<CS0_CMP)|((uint32_t)split->cs0_mask<<CS0_MASK)|((uint32_t)split->cs1_cmp<<CS1_CMP)|((uint32_t)split->cs1_mask<<CS1_MASK);
++	__raw_writel(write_data, reg + ADDR_SPLIT_REG);
++
++
++	return 0;
++}
++
++/*
++ * Chip select signal goes high
++ */
++static void ce5xx_sflash_turn_off_chip_sel(struct ce5xx_sflash *dev)
++{
++
++	volatile void __iomem *reg = dev->regs_base;
++	if (dev->mode & SPI_MODE_QUAD_IO){
++		__raw_writel(0, reg + HIGH_EFFICY_TRS_PAR_REG);
++	}
++	else{ /* Default Legacy mode */
++		__raw_writel(0, reg + DATA_COMMAND_REG);
++	}
++
++}
++
++static void ce5xx_sflash_cs_enable(struct ce5xx_sflash *dev, int cs0_on, int cs1_on)
++{
++	volatile void __iomem *reg = dev->regs_base;
++	uint32_t writeData = 0;
++	uint32_t readData = 0;
++	readData = __raw_readl(reg + MODE_CONTL_REG);
++	writeData = readData;
++
++	if (cs0_on)
++		writeData |= MODE_CONTL_CS0_MODE_ENABLE;
++	else
++		writeData &= (~MODE_CONTL_CS0_MODE_ENABLE);
++
++	if (cs1_on)
++		writeData |= MODE_CONTL_CS1_MODE_ENABLE;
++	else
++		writeData &= (~MODE_CONTL_CS1_MODE_ENABLE);
++
++	if (writeData != readData)
++		__raw_writel(writeData, reg + MODE_CONTL_REG);
++}
++
++/*
++ * __sflash_write_data_unit: program data to SPI flash, data size should be no more than 4 bytes
++ * In quad mode, write size should no more than 4 bytes
++ * In legacy mode, write size should no more than 3 bytes
++ * @buf, location of the data
++ * @len, write size, size could be 1, 2, 3, 4 bytes
++ * return 0 if success, else the remaining bytes
++ *
++ * Data in the source buffer is in little endian format, it should be transformed to big endian format.
++ */
++static uint32_t ce5xx_sflash_unit_write(struct ce5xx_sflash* dev, const char * buf, size_t len)
++{
++	uint32_t writeData = 0;
++	volatile void __iomem *reg = dev->regs_base;
++	uint32_t tmpData = 0;
++	volatile uint8_t *src = (uint8_t *)&tmpData;
++	uint32_t finished = 0;
++
++	//spi_dbg(" [%s] transmiting 0x%x bytes data to buf 0x%x\n", __FUNCTION__, len, buf);
++	memcpy((void *)src,buf,len);
++	if (dev->mode & SPI_MODE_QUAD_IO){
++		/* Sanity checks */
++		if ((!len) || (len > HETPR_NBYTES_WR_MAX))
++			return 0;
++
++		/* quad mode write parameter */
++		/* [FIX ME: do we need to add dummy cycle here? ] */
++		writeData = (uint32_t)((0x1<<HETPR_CS_HOLD)|(len<<HETPR_NBYTES_WR));
++		__raw_writel(writeData, reg + HIGH_EFFICY_TRS_PAR_REG);
++		printk("len %x, high efficiency write Data %x\n", (unsigned int)len, writeData);
++
++
++		/* quad mode write data */
++		writeData = __cpu_to_be32p((uint32_t *)src);
++		__raw_writel(writeData, reg + HIGH_EFFICY_CMD_DATA_REG);
++		printk("original data %x, len %x, write Data %x\n",*(uint32_t *)src, (unsigned int)len, writeData);
++		finished = len;
++	}
++	else{ /* Legacy SPI mode */
++		/* Sanity checks */
++		if ((!len) || ( len > DCR_NBYTES_MAX ))
++			return 0;
++		/* transformed to big endian format */
++
++		writeData = __cpu_to_be32p((uint32_t *)src)>>BITS_PER_BYTE;
++
++		 writeData = (uint32_t)((0x1<<DCR_CS_HOLD) | (len<<DCR_NBYTES) | (writeData & 0x00FFFFFF));
++
++		__raw_writel(writeData, reg + DATA_COMMAND_REG);
++		finished = len;
++		/* Dummy read */
++		//dummyData = __raw_readl(reg + DATA_COMMAND_REG);
++	}
++
++
++	return finished;
++}
++
++/*
++ * sflash_unit_read_csr: read data from SPI flash by CSR window
++ * In quad mode, read length should no more than 0xFFFF bytes
++ * In legacy mode, read length should no more than 3 bytes
++ * @buf, location of the data
++ * @len, read length
++ *
++ * Data read from command/data register is big endian format. It will be
++ * transformed to little endian format.
++ *
++ */
++static uint32_t sflash_unit_read_csr(struct ce5xx_sflash *dev, const u_char *buf, size_t len)
++{
++	uint32_t readData = 0;
++    uint32_t writeData = 0;
++
++	volatile void __iomem *reg = dev->regs_base;
++
++	int num1 = 0, num2 = 0, i;
++	volatile u_char *dst = (u_char *)&readData;
++	uint32_t finished = 0;
++	uint32_t tmp = 0;
++
++	if (dev->mode & SPI_MODE_QUAD_IO){
++		spi_dbg_func;
++
++		/* Sanity checks */
++		if ((!len) || ( len > HETPR_NBYTES_RD_MAX))
++			return 0;
++
++		num1 = len/(sizeof(uint32_t));
++		num2 = len%(sizeof(uint32_t));
++
++		writeData = (uint32_t)((0x1<<HETPR_CS_HOLD)|(len<<HETPR_NBYTES_RD));
++		__raw_writel(writeData, reg + HIGH_EFFICY_TRS_PAR_REG);
++
++		if (num1){
++			for (i = 0; i < num1; i++){
++				readData =__raw_readl(reg + HIGH_EFFICY_CMD_DATA_REG)<<BITS_OF_BYTES(4-len);
++				tmp = (*(uint32_t *)dst>>BITS_OF_BYTES(len))<<BITS_OF_BYTES(len);
++				*(uint32_t *)dst = __be32_to_cpu(readData)|tmp;
++
++				finished += sizeof(uint32_t);
++			}
++		}
++		if (num2){
++			readData = __raw_readl(reg + HIGH_EFFICY_CMD_DATA_REG)<<BITS_OF_BYTES(4-len);
++			tmp = (*(uint32_t *)dst>>BITS_OF_BYTES(len))<<BITS_OF_BYTES(len);
++			*(uint32_t *)dst = __be32_to_cpu(readData)|tmp;
++
++			finished+=num2;
++		}
++	}
++	else {
++
++		/* Sanity checks */
++		if ((!len)||( len > DCR_NBYTES_MAX))
++			return 0;
++		__raw_writel((0x1<<DCR_CS_HOLD)|(len<<DCR_NBYTES),reg + DATA_COMMAND_REG);
++
++		/* Alligned to a integar in big endian format */
++	    readData = __raw_readl(reg + DATA_COMMAND_REG)<<BITS_OF_BYTES(4-len);
++		readData = __be32_to_cpu(readData);
++		finished+=len;
++	}
++	memcpy((void *)buf,(void *)dst,len);
++	//spi_dbg(" [%s], buf 0x%x, len 0x%x\n", __FUNCTION__, buf, len);
++
++	return finished;
++}
++
++/*
++ * ce5xx_sflash_transmiter: program data to SPI flash
++ * @buf, location of the data
++ * @len, write size
++ */
++static uint32_t ce5xx_sflash_transmiter(struct ce5xx_sflash	 *dev, void *buf, size_t len)
++{
++	uint32_t remain = len;
++	uint32_t finished = 0;
++	u_char * src = (u_char *)buf;
++	int limit = 0;
++	int count =0;
++
++	/* Sanity checks */
++	if ((!len) || (!src))
++		return 0;
++
++	if (dev->mode & SPI_MODE_QUAD_IO)
++		limit = HETPR_NBYTES_WR_MAX;
++	else
++		limit = DCR_NBYTES_MAX;
++
++	while (remain)
++	{
++		count = (remain>limit?limit:remain);
++		count = ce5xx_sflash_unit_write(dev,src + finished,count);
++		finished += count;
++		remain -=count;
++	}
++//	printk(" [%s] transmiting 0x%x bytes data to buf 0x%x\n", __FUNCTION__, len, buf);
++	return finished;
++}
++
++/*
++ * ce5xx_sflash_read: read data from flash device
++ */
++static uint32_t ce5xx_sflash_csr_receiver(struct ce5xx_sflash *dev, void *buf, size_t len)
++{
++	uint32_t remain = len;
++	uint32_t finished = 0;
++	u_char * src = (u_char *)buf;
++
++	int limit = 0;
++	int count =0;
++
++	/* Sanity checks */
++	if (!len)
++		return 0;
++
++	if (dev->mode & SPI_MODE_QUAD_IO)
++		limit = HETPR_NBYTES_RD_MAX;
++	else
++		limit = DCR_NBYTES_MAX;
++
++	//spi_dbg(" [%s] reading 0x%x bytes data to buf 0x%x\n", __FUNCTION__, len, buf);
++
++
++	while (remain)
++	{
++		count = (remain>limit?limit:remain);
++		count = sflash_unit_read_csr(dev,src + finished,count);
++		finished += count;
++		remain -=count;
++	}
++	return finished;
++}
++
++/*
++ * ce5xx_sflash_read: read data from memory window
++ */
++static uint32_t ce5xx_sflash_dma_receiver(struct ce5xx_sflash *dev, void *to, uint32_t offset, size_t len)
++{
++	void __iomem *from;
++
++	/* Sanity checks */
++	if ((!len) || (!to))
++		return 0;
++
++	from = dev->mem_base + offset;
++	spi_dbg(" [%s], flash addr: 0x%x, to %p, len 0x%x\n",__FUNCTION__,(uint32_t)(dev->mem_base + offset), to, len);
++	memcpy(to,from, len);
++
++	return len;
++}
++
++/* Switch to a target CS_num and disable the other CS
++ * This is only used for CSR access
++ */
++static void ce5xx_sflash_cs_switch(struct ce5xx_sflash *dev, int cs_num)
++{
++	ce5xx_sflash_cs_enable(dev,(cs_num == 0),(cs_num == 1));
++}
++
++/* This is responsible for entire one operation */
++static void ce5xx_sflash_work_one(struct ce5xx_sflash *dev, struct spi_message *m)
++{
++	struct spi_device *spi = m->spi;
++	struct spi_transfer *t;
++
++	ce5xx_sflash_turn_off_chip_sel(dev);
++	list_for_each_entry(t, &m->transfers, transfer_list) {
++
++		void *txbuf = (void *)t->tx_buf;
++		void *rxbuf = (void *)t->rx_buf;
++		uint32_t len = t->len;
++		uint32_t	actual_len = 0;
++
++		//spi_dbg(" [%s] m 0x%x, t 0x%x ,buf 0x%x, dma 0x%x, len 0x%x\n",__FUNCTION__,m,t,(u32)t->rx_buf, (u32)t->rx_dma, t->len);
++
++		/*
++		 * A transfer could be one of three types, csr_read, data_read, write
++		 * chip select number is decided by spi->chip_select
++		 */
++		/* Memory mapped method access
++		 * rx_dma is used to indicate memory window read access
++		 */
++
++		if (t->rx_buf && m->is_dma_mapped) {
++			/* CSR access method */
++			ce5xx_sflash_cs_enable(dev,dev->cntl_data->cs0_size,dev->cntl_data->cs1_size);
++
++			actual_len = dev->dma_receiver(dev,rxbuf,t->rx_dma,len);
++		}
++		else {
++
++		/* CSR access method */
++			ce5xx_sflash_cs_switch(dev, spi->chip_select);
++
++			if (t->tx_buf)
++				actual_len = dev->transmiter(dev,txbuf,len);
++			if (t->rx_buf)
++				actual_len = dev->csr_receiver(dev,rxbuf,len);
++
++		}
++		m->actual_length += actual_len;
++	}
++		spi_dbg_func;
++	ce5xx_sflash_turn_off_chip_sel(dev);
++
++	m->status = 0;
++	m->complete(m->context);
++	return;
++}
++
++static void ce5xx_sflash_work(struct work_struct *work)
++{
++	struct ce5xx_sflash *c = container_of(work, struct ce5xx_sflash, work);
++	unsigned long flags;
++
++	spin_lock_irqsave(&c->lock, flags);
++	while (!list_empty(&c->queue)) {
++		struct spi_message *m;
++		m = container_of(c->queue.next, struct spi_message, queue);
++		list_del_init(&m->queue);
++		spin_unlock_irqrestore(&c->lock, flags);
++		ce5xx_sflash_work_one(c, m);
++			spi_dbg_func;
++		spin_lock_irqsave(&c->lock, flags);
++	}
++	spin_unlock_irqrestore(&c->lock, flags);
++	spi_dbg_func;
++
++}
++
++static int ce5xx_sflash_transfer(struct spi_device *spi, struct spi_message *m)
++{
++	struct spi_master *master = spi->master;
++	struct ce5xx_sflash *c = spi_master_get_devdata(master);
++	struct spi_transfer *t;
++	unsigned long flags;
++
++	m->actual_length = 0;
++
++	/* check each transfer's parameters */
++	list_for_each_entry (t, &m->transfers, transfer_list) {
++		if (!t->len)
++			return -EINVAL;
++		else if (!t->tx_buf && !t->rx_buf)
++			return -EINVAL;
++	}
++
++	spin_lock_irqsave(&c->lock, flags);
++	if (c->status & (SPI_FLASH_SUSPEND | SPI_FLASH_REMOVE)) {
++		spin_unlock_irqrestore(&c->lock, flags);
++		return -ESHUTDOWN;
++	}
++	list_add_tail(&m->queue, &c->queue);
++	queue_work(c->workqueue, &c->work);
++	spin_unlock_irqrestore(&c->lock, flags);
++
++	return 0;
++}
++
++/*
++ * Initia configuration of controller
++ * Set to legacy mode
++ * Default value is 0x44450031, SLE clock divider = 1, 33.3MHZ
++ */
++static int ce5xx_sflash_set_up_default_mode(struct ce5xx_sflash *dev)
++{
++	uint32_t	mode_cntl = 0;
++
++	void __iomem *reg = dev->regs_base;
++	mode_cntl = __raw_readl(reg + MODE_CONTL_REG);
++	/* CLK RATIO */
++	mode_cntl = (mode_cntl>>3<<3)|(0x1<<MODE_CONTL_CLK_RATIOR_SHIFT);
++	/* Boot Mode */
++#ifdef CE5XX_BOOT_MODE_ENABLE
++	mode_cntl |= MODE_CONTL_BOOT_MODE_ENABLE;
++#else
++	mode_cntl &= MODE_CONTL_BOOT_MODE_DISABLE;
++#endif
++	/* SS1_UNIT_EN */
++	/*
++	 * In Golden Spring, SPI IO unit will be disabled by BIOS. Thus SPI
++	 * controller initialization need be bypassed
++	*/
++	if (!(MODE_CONTL_SPI_UNIT_EN & mode_cntl)) {
++		spi_dbg("%s: Should return ENODEV, but let's continue!\n", __func__);
++		//return -ENODEV;
++	}
++
++	/* SS1_EN Enable CS1*/
++	mode_cntl |= MODE_CONTL_SS1_EN;
++
++	/* CMD WIDTH */
++	mode_cntl |= MODE_CONTL_CMD_WIDTH_EQUAL_TO_DATA;
++
++	/* Set SPI_WIDTH */
++	mode_cntl |= MODE_CONTL_SPI_WIDTH_1_BIT;
++
++	/* NR_ADDR_BYTES  */
++	mode_cntl |= MODE_CONTL_N_ADDR_3_BYTES;
++
++	/* Chip select */
++	mode_cntl |= MODE_CONTL_CS0_WP|MODE_CONTL_CS0_MODE_ENABLE|MODE_CONTL_CS1_MODE_ENABLE|MODE_CONTL_CS1_WP;
++
++	/* CS_TAR */
++	mode_cntl |= 0x4<<MODE_CONTL_CS_TAR_SHIFT;
++
++	__raw_writel(mode_cntl, reg + MODE_CONTL_REG);
++
++
++	spi_dbg("initial mode cntl 0x%x\n",mode_cntl);
++	return 0;
++}
++
++/*
++ * Set controller to be the mode defined by serial flash devices
++ */
++static int ce5xx_sflash_setup(struct spi_device *spi)
++{
++	uint32_t	mode_cntl = 0;
++	struct ce5xx_sflash *dev = spi_master_get_devdata(spi->master) ;
++	void __iomem *reg = dev->regs_base;
++	unsigned long flags;
++
++	dev->cntl_data = spi->controller_data;
++	dev->mode = spi->mode;
++
++	spi_dbg_func;
++
++	spin_lock_irqsave(&dev->lock, flags);
++	if (dev->status & (SPI_FLASH_SUSPEND | SPI_FLASH_REMOVE)) {
++		spin_unlock_irqrestore(&dev->lock, flags);
++		return -ESHUTDOWN;
++	}
++	spin_unlock_irqrestore(&dev->lock, flags);
++	/*If no controller data from device layer, then set the controller works in default mode */
++	if (!dev->cntl_data)
++		return ce5xx_sflash_set_up_default_mode(dev);
++
++	/* Setup up Address Split Register */
++	if (address_split_cfg(dev))
++		return -ENODEV;
++
++	mode_cntl = __raw_readl(reg + MODE_CONTL_REG);
++
++	/* Setup up Mode Contrl Register */
++	mode_cntl &= MODE_CONTL_N_ADDR_BYTES_MASK;
++	switch (spi->bits_per_word>>3)
++	{
++
++		case 3:
++			mode_cntl |= MODE_CONTL_N_ADDR_3_BYTES;
++			break;
++		case 4:
++			mode_cntl |= MODE_CONTL_N_ADDR_4_BYTES;
++			break;
++		default:
++			dev_err(&spi->dev, "Error: not supported yet addr_width %d\n",spi->bits_per_word>>3);
++			return -ENODEV;
++	}
++	/* Using 4 BIT WIDTH in QUAD IO mode */
++	mode_cntl &= MODE_CONTL_SPI_WIDTH_BIT_MASK;
++	if (dev->mode & SPI_MODE_QUAD_IO)
++		mode_cntl |= MODE_CONTL_SPI_WIDTH_4_BIT;
++	else
++		mode_cntl |= MODE_CONTL_SPI_WIDTH_1_BIT;
++
++
++	/* Enable CS1 if there's device connected*/
++	mode_cntl &= (MODE_CONTL_CS0_MODE_DISABLE_MASK & MODE_CONTL_CS1_MODE_DISABLE_MASK);
++	if (dev->cntl_data->cs0_size)
++		mode_cntl |= MODE_CONTL_CS0_MODE_ENABLE;
++	if (dev->cntl_data->cs1_size)
++		mode_cntl |= MODE_CONTL_CS1_MODE_ENABLE;
++
++	__raw_writel(mode_cntl, reg + MODE_CONTL_REG);
++	return 0;
++}
++
++static int ce5xx_sflash_reboot(struct notifier_block *self, unsigned long event, void *data)
++{
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block ce5xx_sflash_reboot_notifier = {
++           .notifier_call   = ce5xx_sflash_reboot
++};
++
++/* Probe and Init controller */
++static int ce5xx_sflash_probe (struct pci_dev *pdev,
++                                const struct pci_device_id *id)
++{
++	struct spi_master *master;
++	struct ce5xx_sflash *c;
++	int ret = -ENODEV;
++
++	if ((pdev->device != PCI_DEVICE_ID_INTELCE_SFLASH) || (pdev->revision < CE5300_SPI_FLASH_REVISION_ID))
++		   return -ENODEV;
++	else
++		spi_dbg("found device 0x%08x, rev id 0x%08x\n", pdev->device, pdev->revision);
++
++	/* Determine BAR values */
++	ret = pci_enable_device(pdev);
++	if (ret)
++		 return ret;
++
++	/* SPI master register */
++	master = spi_alloc_master(&pdev->dev, sizeof(*c));
++	if (!master) {
++		ret = -ENOMEM;
++		return ret;
++	}
++	c = spi_master_get_devdata(master);
++	c->master = master;
++	c->pdev	= pdev;
++
++	if (pci_request_region(pdev, 0, "spi_flash_csr")) {
++		dev_err(&pdev->dev, "error, failed to request sflash registers\n");
++		ret = -ENOMEM;
++		goto out_release_master;
++	}
++	if (pci_request_region(pdev, 1, "spi_flash_mem")) {
++		dev_err(&pdev->dev, "error, failed to request mem space registers\n");
++		ret = -ENOMEM;
++		goto out_release_master;
++	}
++
++	c->regs_base = (void __iomem * )pci_ioremap_bar(pdev, 0);
++	if (!c->regs_base){
++		dev_err(&pdev->dev, "error, failed to ioremap sflash registers, regs_base %x\n",(uint32_t)c->regs_base);
++		ret = -ENOMEM;
++		goto out_release_master;
++	}
++	c->mem_base = (void __iomem * )pci_ioremap_bar(pdev, 1);
++	if (!c->regs_base){
++		dev_err(&pdev->dev, "error, failed to ioremap sflash mem space, mem_base %x\n",(uint32_t)c->mem_base);
++		ret = -ENOMEM;
++		goto out_release_bar0;
++	}
++
++	dev_info(&pdev->dev, "csr iobase 0x%x, iosize 0x%x , mapped to 0x%x\n",
++		(uint32_t)pci_resource_start(pdev,0),(uint32_t)pci_resource_len(pdev,0),(uint32_t)c->regs_base);
++	dev_info(&pdev->dev, "mem iobase 0x%x, iosize 0x%x , mapped to 0x%x\n",
++		(uint32_t)pci_resource_start(pdev,1),(uint32_t)pci_resource_len(pdev,1),(uint32_t)c->mem_base);
++
++
++	/* Lock/queue initliazation */
++	INIT_WORK(&c->work, ce5xx_sflash_work);
++	spin_lock_init(&c->lock);
++	INIT_LIST_HEAD(&c->queue);
++
++	c->workqueue = create_singlethread_workqueue(
++					dev_name(master->dev.parent));
++	if (!c->workqueue)
++		goto out_free_region;
++
++	master->bus_num 	= id->driver_data;
++	master->setup 		= ce5xx_sflash_setup;
++	master->transfer 	= ce5xx_sflash_transfer;
++	master->num_chipselect = 2; /* Two chip selects */
++	master->mode_bits	= SPI_MODE_0|SPI_MODE_QUAD_IO;
++
++
++	pci_set_drvdata(pdev, c);
++
++	/* Set controller working in legacy SPI mode */
++	c->transmiter	= ce5xx_sflash_transmiter;
++	c->csr_receiver	= ce5xx_sflash_csr_receiver;
++	c->dma_receiver	= ce5xx_sflash_dma_receiver;
++
++	spi_register_board_info(CE5xx_sflash_devices,ARRAY_SIZE(CE5xx_sflash_devices));
++	ret = spi_register_master(master);
++	if (ret)
++		goto out_unregister_board;
++	
++	c->reboot_notifier	= &ce5xx_sflash_reboot_notifier;
++	register_reboot_notifier(c->reboot_notifier);
++	return 0;
++
++out_unregister_board:
++	//spi_unregister_board_info(CE5xx_sflash_devices,1);
++	pci_set_drvdata(pdev, NULL);
++
++	if (c->workqueue)
++		destroy_workqueue(c->workqueue);
++out_free_region:
++	pci_release_region(pdev, 0);
++	pci_release_region(pdev, 1);
++	iounmap(c->mem_base);
++out_release_bar0:
++	iounmap(c->regs_base);
++
++out_release_master:
++	spi_master_put(master);
++	pci_disable_device(pdev);
++	return ret;
++}
++
++static void ce5xx_sflash_remove(struct pci_dev *pdev)
++{
++	struct ce5xx_sflash *c = pci_get_drvdata(pdev);
++	unsigned long flags;
++	spi_dbg_func;
++
++
++	spin_lock_irqsave(&c->lock, flags);
++	c->status |= SPI_FLASH_REMOVE;
++	spin_unlock_irqrestore(&c->lock, flags);
++
++	flush_workqueue(c->workqueue);
++
++	unregister_reboot_notifier(c->reboot_notifier);
++	//spi_unregister_board_info(CE5xx_sflash_devices,1);
++	pci_set_drvdata(pdev,NULL);
++	if (c->workqueue)
++		destroy_workqueue(c->workqueue);
++	if (c->regs_base)
++		iounmap(c->regs_base);
++	if (c->mem_base)
++		iounmap(c->mem_base);
++	pci_release_region(pdev, 0);
++	pci_release_region(pdev, 1);
++	spi_unregister_master(c->master);
++	pci_disable_device(pdev);
++
++}
++
++#ifdef CONFIG_PM
++static int ce5xx_sflash_device_suspend(struct device *dev)
++{
++	struct ce5xx_sflash *c = dev_get_drvdata(dev);
++	struct pci_dev *pdev = to_pci_dev(dev);
++	unsigned long flags;
++	int ret = 0;
++
++	/*set SUSPEND flag*/
++	spin_lock_irqsave(&c->lock, flags);
++	c->status |= SPI_FLASH_SUSPEND;
++	spin_unlock_irqrestore(&c->lock, flags);
++
++	flush_workqueue(c->workqueue);
++
++	c->mode_contrl = flash_read32(c->regs_base + MODE_CONTL_REG);
++	c->addr_split  = flash_read32(c->regs_base + ADDR_SPLIT_REG);
++	c->inf_conf = flash_read32(c->regs_base + INTERFACE_CONFIG_REG);
++	c->hetp = flash_read32(c->regs_base + HIGH_EFFICY_TRS_PAR_REG);
++	c->heop = flash_read32(c->regs_base + HIGH_EFFICY_OPCODE_REG);
++
++	pci_disable_device(pdev);
++	pci_save_state(pdev);
++	pci_set_power_state(pdev, PCI_D3hot);
++
++	return ret;
++ }
++
++ static int ce5xx_sflash_device_resume(struct device *dev)
++ {
++	struct ce5xx_sflash *c = dev_get_drvdata(dev);
++	struct pci_dev *pdev = to_pci_dev(dev);
++	unsigned long flags;
++	int ret = 0;
++
++	pci_set_power_state(pdev, PCI_D0);
++	pci_restore_state(pdev);
++	ret = pci_enable_device(pdev);
++
++	flash_write32(c->mode_contrl, c->regs_base + MODE_CONTL_REG);
++	flash_write32(c->addr_split, c->regs_base + ADDR_SPLIT_REG);
++	flash_write32(c->inf_conf, c->regs_base + INTERFACE_CONFIG_REG);
++	flash_write32(c->hetp & (0xF0000000), c->regs_base + HIGH_EFFICY_TRS_PAR_REG);
++	flash_write32(c->heop, c->regs_base + HIGH_EFFICY_OPCODE_REG);
++
++	/*clear SUSPEND flag*/
++	spin_lock_irqsave(&c->lock, flags);
++	c->status &= ~SPI_FLASH_SUSPEND;
++	spin_unlock_irqrestore(&c->lock, flags);
++	return ret;
++}
++
++static const struct dev_pm_ops nmyx25_pm_ops = {
++	.suspend    = ce5xx_sflash_device_suspend,
++	.resume     = ce5xx_sflash_device_resume,
++};
++#endif
++
++static struct pci_driver ce5xx_sflash_driver = {
++	.name			= "ce5xx-spi-flash",
++	.id_table		= ce5xx_sflash_pci_tbl,
++	.probe			= ce5xx_sflash_probe,
++	.remove			= ce5xx_sflash_remove,
++#ifdef CONFIG_PM
++	.driver.pm		= &nmyx25_pm_ops,
++#endif
++};
++
++static int ce5xx_sflash_init(void)
++{
++	printk(KERN_INFO "Intel(R) SPI FLASH CONTROLLER Driver\n");
++
++	return pci_register_driver(&ce5xx_sflash_driver);
++
++}
++static void ce5xx_sflash_exit(void)
++{
++	pci_unregister_driver(&ce5xx_sflash_driver);
++}
++
++module_init(ce5xx_sflash_init);
++module_exit(ce5xx_sflash_exit);
++
++MODULE_DESCRIPTION("Intel(R) SPI FLASH CONTROLLER Driver");
++MODULE_AUTHOR("Intel Corporation");
++MODULE_LICENSE("GPL");
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -157,10 +157,22 @@ static const struct serial8250_config ua
+ 		.flags		= UART_CAP_FIFO | UART_NATSEMI,
+ 	},
+ 	[PORT_XSCALE] = {
++#ifdef CONFIG_X86_INTEL_CE_2600
++/*
++ * The following code is for Intel Media SOC Gen3.
++ * Funny: they changed the XScale name to GEN3_serial because
++ * of "legal issues".
++ */
++		.name		= "GEN3_serial",
++		.fifo_size	= 64,
++		.tx_loadsz	= 64,
++		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_DMA_SELECT | UART_FCR_R_TRIG_10,
++#else
+ 		.name		= "XScale",
+ 		.fifo_size	= 32,
+ 		.tx_loadsz	= 32,
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
++#endif
+ 		.flags		= UART_CAP_FIFO | UART_CAP_UUE | UART_CAP_RTOIE,
+ 	},
+ 	[PORT_OCTEON] = {
+--- a/drivers/usb/host/ehci-pci.c
++++ b/drivers/usb/host/ehci-pci.c
+@@ -146,8 +146,19 @@ static int ehci_pci_setup(struct usb_hcd
+ 			hcd->has_tt = 1;
+ 		break;
+ 	case PCI_VENDOR_ID_TDI:
+-		if (pdev->device == PCI_DEVICE_ID_TDI_EHCI)
++		if (pdev->device == PCI_DEVICE_ID_TDI_EHCI) {
+ 			hcd->has_tt = 1;
++#ifdef CONFIG_X86_INTEL_CE_2600
++			if (pdev->revision >= 0x6) {
++				/* Intel CExxx USB controller has some extensions similar with Moorestown
++				 * such as host mode control, device speed report and power management.
++				 * So set ehci->has_hostpc to utilize the support code for Moorestown.
++				 */
++				ehci->has_hostpc = 1;
++				ehci->has_tdi_phy_lpm = 0;
++			}
++#endif
++		}
+ 		break;
+ 	case PCI_VENDOR_ID_AMD:
+ 		/* AMD PLL quirk */
+--- a/include/linux/pci_ids.h
++++ b/include/linux/pci_ids.h
+@@ -3108,6 +3108,20 @@
+ #define PCI_DEVICE_ID_INTEL_HDA_CML_R	0xf0c8
+ #define PCI_DEVICE_ID_INTEL_HDA_RKL_S	0xf1c8
+ 
++#define PCI_DEVICE_ID_INTELCE_EMMC		0x070b
++#define PCI_DEVICE_ID_INTELCE_SFLASH		0x08a0
++#define PCI_DEVICE_ID_INTELCE_HWMUTEX		0x0949
++#define PCI_DEVICE_ID_INTELCE_GPIO		0x2e67
++#define PCI_DEVICE_ID_INTELCE_CP_TOP		0x2e52
++#define PCI_DEVICE_ID_INTELCE_DOCSIS		0x0946
++#define PCI_DEVICE_ID_INTELCE_DOCSIS_DMA	0x0948
++#define PCI_DEVICE_ID_INTELCE_L2_SWITCH	0x0947
++#define PCI_DEVICE_ID_INTEL_CE3100_SOC		0x2E50
++#define PCI_DEVICE_ID_INTEL_CE4100_SOC		0x0708
++#define PCI_DEVICE_ID_INTEL_CE4200_SOC		0x0709
++#define PCI_DEVICE_ID_INTEL_CE5300_SOC		0x0C40
++#define PCI_DEVICE_ID_INTEL_CE2600_SOC		0x0931
++
+ #define PCI_VENDOR_ID_WANGXUN		0x8088
+ 
+ #define PCI_VENDOR_ID_SCALEMP		0x8686
+--- a/mm/mm_init.c
++++ b/mm/mm_init.c
+@@ -1673,7 +1673,12 @@ static void __init alloc_node_mem_map(st
+ 	if (pgdat == NODE_DATA(0)) {
+ 		mem_map = NODE_DATA(0)->node_mem_map;
+ 		if (page_to_pfn(mem_map) != pgdat->node_start_pfn)
++#ifdef CONFIG_X86_INTEL_CE_2600
++			/* CE2600 crashes with the other case! */
++			mem_map -= offset;
++#else
+ 			mem_map -= offset + (pgdat->node_start_pfn - ARCH_PFN_OFFSET);
++#endif
+ 	}
+ #endif
+ }
