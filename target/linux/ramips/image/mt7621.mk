@@ -1872,6 +1872,19 @@ define Device/mikrotik_routerboard-m33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
 
+# Do not remove SUPPORTED_DEVICES! The customized Mofi version of OpenWRT (stock firmware) expects
+# to see mofi5500 as the device name. The stock firmware does not allow for forcing an installation.
+# Without this line, users cannot upload the new firmware through the stock Mofi firmware.
+define Device/mofinetwork_mofi5500-5gxelte
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 27656k
+  DEVICE_VENDOR := MoFi Network
+  DEVICE_MODEL := MOFI5500-5GXeLTE
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb2 kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += mofi5500
+endef
+TARGET_DEVICES += mofinetwork_mofi5500-5gxelte
+
 define Device/mqmaker_witi
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
