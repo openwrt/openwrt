@@ -77,6 +77,7 @@ platform_do_upgrade() {
 	mediatek,mt7988a-rfb|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
+	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -116,7 +117,6 @@ platform_do_upgrade() {
 		emmc_do_upgrade "$1"
 		;;
 	netcore,n60|\
-	qihoo,360t7|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-ubootmod)
 		CI_KERNPART="fit"
