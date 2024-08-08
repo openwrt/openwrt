@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-poe|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
+	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
@@ -114,7 +115,6 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	jcg,q30-pro|\
 	netcore,n60|\
 	qihoo,360t7|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
