@@ -16,6 +16,9 @@ iptime,a6004mx|\
 netgear,ex6250-v2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000"
 	;;
+linksys,ea7500-v3)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
