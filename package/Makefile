@@ -85,6 +85,10 @@ ifneq ($(CONFIG_USE_APK),)
 else
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
 endif
+else
+ifneq ($(CONFIG_USE_APK),)
+  $(curdir)/compile: $(BUILD_KEY_APK_SEC) $(BUILD_KEY_APK_PUB)
+endif
 endif
 
 $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(curdir)/merge-index
