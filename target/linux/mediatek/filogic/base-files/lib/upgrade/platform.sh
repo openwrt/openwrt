@@ -85,7 +85,8 @@ platform_do_upgrade() {
 	tplink,tl-xtr8488|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod|\
-	xiaomi,mi-router-wr30u-ubootmod)
+	xiaomi,mi-router-wr30u-ubootmod|\
+	zyxel,ex5601-t0-ubootmod)
 		fit_do_upgrade "$1"
 		;;
 	acer,predator-w6|\
@@ -136,11 +137,6 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
-        zyxel,ex5601-t0-ubootmod)
-		CI_KERNPART="fit"
-		CI_ROOTPART="ubi_rootfs"
-                nand_do_upgrade "$1"
-                ;;
 	unielec,u7981-01*)
 		local rootdev="$(cmdline_get_var root)"
 		rootdev="${rootdev##*/}"
