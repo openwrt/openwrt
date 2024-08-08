@@ -82,6 +82,7 @@ platform_do_upgrade() {
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
+	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		fit_do_upgrade "$1"
 		;;
@@ -117,7 +118,6 @@ platform_do_upgrade() {
 		emmc_do_upgrade "$1"
 		;;
 	netcore,n60|\
-	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
