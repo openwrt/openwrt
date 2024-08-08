@@ -215,3 +215,30 @@ define Package/e100-firmware/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/e100/d102e_ucode.bin $(1)/lib/firmware/e100/
 endef
 $(eval $(call BuildPackage,e100-firmware))
+
+Package/intel-igpu-firmware-dmc = $(call Package/firmware-default,Intel iGPU DMC Display MC firmware)
+define Package/intel-igpu-firmware-dmc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	$(CP) \
+		$(PKG_BUILD_DIR)/i915/*_dmc_*.bin* \
+		$(1)/lib/firmware/i915/
+endef
+$(eval $(call BuildPackage,intel-igpu-firmware-dmc))
+
+Package/intel-igpu-firmware-guc = $(call Package/firmware-default,Intel iGPU GUC Graphics MC firmware)
+define Package/intel-igpu-firmware-guc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	$(CP) \
+		$(PKG_BUILD_DIR)/i915/*_guc_*.bin* \
+		$(1)/lib/firmware/i915/
+endef
+$(eval $(call BuildPackage,intel-igpu-firmware-guc))
+
+Package/intel-igpu-firmware-huc = $(call Package/firmware-default,Intel iGPU HUC H.265 MC firmware)
+define Package/intel-igpu-firmware-huc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	$(CP) \
+		$(PKG_BUILD_DIR)/i915/*_huc_*.bin* \
+		$(1)/lib/firmware/i915/
+endef
+$(eval $(call BuildPackage,intel-igpu-firmware-huc))
