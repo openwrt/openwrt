@@ -1178,6 +1178,19 @@ define Device/snr_cpe-w4n-mt
 endef
 TARGET_DEVICES += snr_cpe-w4n-mt
 
+define Device/telewell_tw-4g-lte
+  $(Device/amit_jboot)
+  SOC := mt7620a
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := Telewell
+  DEVICE_MODEL := TW-4G (LTE)
+  DLINK_ROM_ID := TLW6E3804001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  DEVICE_PACKAGES += kmod-mt76x0e
+endef
+TARGET_DEVICES += telewell_tw-4g-lte
+
 define Device/tplink_archer-c20i
   $(Device/tplink-v2)
   SOC := mt7620a
