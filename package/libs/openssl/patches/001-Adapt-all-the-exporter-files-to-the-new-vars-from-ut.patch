@@ -1,0 +1,90 @@
+From 90a633e0f86d957d436315736866260f6dbbc530 Mon Sep 17 00:00:00 2001
+From: Richard Levitte <levitte@openssl.org>
+Date: Thu, 20 Jun 2024 14:33:15 +0200
+Subject: [PATCH 2/3] Adapt all the exporter files to the new vars from
+ util/mkinstallvars.pl
+
+With this, the pkg-config files take better advantage of relative directory
+values.
+
+Fixes #24298
+---
+ exporters/cmake/OpenSSLConfig.cmake.in |  7 ++++---
+ exporters/pkg-config/libcrypto.pc.in   | 12 ++++++++----
+ exporters/pkg-config/libssl.pc.in      |  8 ++++++--
+ exporters/pkg-config/openssl.pc.in     |  8 ++++++--
+ 4 files changed, 24 insertions(+), 11 deletions(-)
+
+diff --git a/exporters/cmake/OpenSSLConfig.cmake.in b/exporters/cmake/OpenSSLConfig.cmake.in
+index 2d23219..2d7f262 100644
+--- a/exporters/cmake/OpenSSLConfig.cmake.in
++++ b/exporters/cmake/OpenSSLConfig.cmake.in
+@@ -89,9 +89,10 @@ unset(_ossl_undefined_targets)
+ # Set up the import path, so all other import paths are made relative this file
+ get_filename_component(_ossl_prefix "${CMAKE_CURRENT_LIST_FILE}" PATH)
+ {-
+-  # For each component in $OpenSSL::safe::installdata::CMAKECONFIGDIR_REL, have CMake
+-  # out the parent directory.
+-  my $d = unixify($OpenSSL::safe::installdata::CMAKECONFIGDIR_REL);
++  # For each component in $OpenSSL::safe::installdata::CMAKECONFIGDIR relative to
++  # $OpenSSL::safe::installdata::PREFIX, have CMake figure out the parent directory.
++  my $d = join('/', unixify($OpenSSL::safe::installdata::LIBDIR_REL_PREFIX)
++                    unixify($OpenSSL::safe::installdata::CMAKECONFIGDIR_REL_LIBDIR));
+   $OUT = '';
+   $OUT .= 'get_filename_component(_ossl_prefix "${_ossl_prefix}" PATH)' . "\n"
+       foreach (split '/', $d);
+diff --git a/exporters/pkg-config/libcrypto.pc.in b/exporters/pkg-config/libcrypto.pc.in
+index 14ed339..fbc8ea4 100644
+--- a/exporters/pkg-config/libcrypto.pc.in
++++ b/exporters/pkg-config/libcrypto.pc.in
+@@ -1,7 +1,11 @@
+-libdir={- $OpenSSL::safe::installdata::LIBDIR -}
+-includedir={- $OpenSSL::safe::installdata::INCLUDEDIR -}
+-enginesdir={- $OpenSSL::safe::installdata::ENGINESDIR -}
+-modulesdir={- $OpenSSL::safe::installdata::MODULESDIR -}
++prefix={- $OpenSSL::safe::installdata::PREFIX -}
++exec_prefix=${prefix}
++libdir={- $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          ? '${exec_prefix}/' . $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          : $OpenSSL::safe::installdata::libdir -}
++includedir=${prefix}/{- $OpenSSL::safe::installdata::INCLUDEDIR_REL_PREFIX -}
++enginesdir=${libdir}/{- $OpenSSL::safe::installdata::ENGINESDIR_REL_LIBDIR -}
++modulesdir=${libdir}/{- $OpenSSL::safe::installdata::MODULESDIR_REL_LIBDIR -}
+ 
+ Name: OpenSSL-libcrypto
+ Description: OpenSSL cryptography library
+diff --git a/exporters/pkg-config/libssl.pc.in b/exporters/pkg-config/libssl.pc.in
+index a7828b3..9635388 100644
+--- a/exporters/pkg-config/libssl.pc.in
++++ b/exporters/pkg-config/libssl.pc.in
+@@ -1,5 +1,9 @@
+-libdir={- $OpenSSL::safe::installdata::LIBDIR -}
+-includedir={- $OpenSSL::safe::installdata::INCLUDEDIR -}
++prefix={- $OpenSSL::safe::installdata::PREFIX -}
++exec_prefix=${prefix}
++libdir={- $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          ? '${exec_prefix}/' . $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          : $OpenSSL::safe::installdata::libdir -}
++includedir=${prefix}/{- $OpenSSL::safe::installdata::INCLUDEDIR_REL_PREFIX -}
+ 
+ Name: OpenSSL-libssl
+ Description: Secure Sockets Layer and cryptography libraries
+diff --git a/exporters/pkg-config/openssl.pc.in b/exporters/pkg-config/openssl.pc.in
+index dbb77aa..225bef9 100644
+--- a/exporters/pkg-config/openssl.pc.in
++++ b/exporters/pkg-config/openssl.pc.in
+@@ -1,5 +1,9 @@
+-libdir={- $OpenSSL::safe::installdata::LIBDIR -}
+-includedir={- $OpenSSL::safe::installdata::INCLUDEDIR -}
++prefix={- $OpenSSL::safe::installdata::PREFIX -}
++exec_prefix=${prefix}
++libdir={- $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          ? '${exec_prefix}/' . $OpenSSL::safe::installdata::LIBDIR_REL_PREFIX
++          : $OpenSSL::safe::installdata::libdir -}
++includedir=${prefix}/{- $OpenSSL::safe::installdata::INCLUDEDIR_REL_PREFIX -}
+ 
+ Name: OpenSSL
+ Description: Secure Sockets Layer and cryptography libraries and tools
+-- 
+2.39.2
+
