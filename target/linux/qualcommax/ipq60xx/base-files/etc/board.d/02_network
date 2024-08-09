@@ -9,6 +9,7 @@
 ipq60xx_setup_interfaces()
 {
 	local board="$1"
+	local macaddr
 
 	case "$board" in
 	8devices,mango-dvk)
@@ -19,6 +20,12 @@ ipq60xx_setup_interfaces()
 		;;
 	netgear,wax214)
 		ucidef_set_interfaces_lan_wan "lan"
+		;;
+	tplink,eap610-outdoor)
+		# /tmp/factory_data should be mounted by preinit
+		macaddr=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		ucidef_set_interface_macaddr "lan" "$macaddr"
+		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"

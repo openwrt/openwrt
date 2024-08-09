@@ -18,6 +18,10 @@ case "$FIRMWARE" in
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
 		;;
+	tplink,eap610-outdoor)
+		# /tmp/factory_data should be mounted by preinit
+		cp /tmp/factory_data/radio "/lib/firmware/$FIRMWARE"
+		;;
 	yuncore,fap650)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
