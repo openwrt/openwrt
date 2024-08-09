@@ -58,14 +58,12 @@ static struct gpio_led tl_wdr4900_v1_wmac_leds_gpio[] = {
 
 static struct ath9k_platform_data tl_wdr4900_v1_wmac0_data = {
 	.led_pin = 0,
-	.eeprom_name = "pci_wmac0.eeprom",
 	.leds = tl_wdr4900_v1_wmac_leds_gpio,
 	.num_leds = ARRAY_SIZE(tl_wdr4900_v1_wmac_leds_gpio),
 };
 
 static struct ath9k_platform_data tl_wdr4900_v1_wmac1_data = {
 	.led_pin = 0,
-	.eeprom_name = "pci_wmac1.eeprom",
 };
 
 static void tl_wdr4900_v1_pci_wmac_fixup(struct pci_dev *dev)
