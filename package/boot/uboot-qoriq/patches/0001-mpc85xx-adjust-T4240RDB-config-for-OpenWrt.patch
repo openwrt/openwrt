@@ -1,0 +1,77 @@
+From ec36a44809e22a60fc153a4078d35c83a2bf9676 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Thu, 6 Oct 2022 15:18:38 +0200
+Subject: [PATCH] mpc85xx: adjust T4240RDB config for OpenWrt
+
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+---
+ configs/T4240RDB_SDCARD_defconfig | 6 ++++--
+ include/configs/T4240RDB.h        | 6 +++++-
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/configs/T4240RDB_SDCARD_defconfig b/configs/T4240RDB_SDCARD_defconfig
+index 2def90140f2e..0f254e2363aa 100644
+--- a/configs/T4240RDB_SDCARD_defconfig
++++ b/configs/T4240RDB_SDCARD_defconfig
+@@ -3,7 +3,7 @@ CONFIG_SYS_TEXT_BASE=0x00201000
+ CONFIG_SPL_LIBCOMMON_SUPPORT=y
+ CONFIG_SPL_LIBGENERIC_SUPPORT=y
+ CONFIG_ENV_SIZE=0x2000
+-CONFIG_ENV_OFFSET=0x100000
++CONFIG_ENV_OFFSET=0x101000
+ CONFIG_SPL_TEXT_BASE=0xFFFD8000
+ CONFIG_SPL_MMC_SUPPORT=y
+ CONFIG_SPL_SERIAL_SUPPORT=y
+@@ -17,7 +17,7 @@ CONFIG_FIT_VERBOSE=y
+ CONFIG_OF_BOARD_SETUP=y
+ CONFIG_OF_STDOUT_VIA_ALIAS=y
+ CONFIG_SYS_EXTRA_OPTIONS="RAMBOOT_PBL,SDCARD"
+-CONFIG_BOOTDELAY=10
++CONFIG_BOOTDELAY=1
+ CONFIG_BOARD_EARLY_INIT_R=y
+ # CONFIG_SPL_FRAMEWORK is not set
+ CONFIG_SPL_MMC_BOOT=y
+@@ -37,6 +37,7 @@ CONFIG_CMD_MII=y
+ CONFIG_CMD_PING=y
+ CONFIG_MP=y
+ CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
+ CONFIG_CMD_FAT=y
+ CONFIG_OF_CONTROL=y
+ CONFIG_ENV_OVERWRITE=y
+@@ -58,6 +59,7 @@ CONFIG_SPI_FLASH_SST=y
+ CONFIG_PHYLIB=y
+ CONFIG_PHYLIB_10G=y
+ CONFIG_PHY_CORTINA=y
++CONFIG_SYS_CORTINA_FW_IN_MMC=y
+ CONFIG_PHY_TERANETICS=y
+ CONFIG_PHY_VITESSE=y
+ CONFIG_DM_ETH=y
+diff --git a/include/configs/T4240RDB.h b/include/configs/T4240RDB.h
+index a04d9137b32d..b7543aa826ce 100644
+--- a/include/configs/T4240RDB.h
++++ b/include/configs/T4240RDB.h
+@@ -538,7 +538,11 @@ unsigned long get_board_ddr_clk(void);
+ #endif /* CONFIG_NOBQFMAN */
+ 
+ #ifdef CONFIG_SYS_DPAA_FMAN
++#ifdef CONFIG_SYS_CORTINA_FW_IN_MMC
++#define CONFIG_CORTINA_FW_ADDR		0x200000
++#else
+ #define CONFIG_CORTINA_FW_ADDR		0xefe00000
++#endif
+ #define CONFIG_CORTINA_FW_LENGTH	0x40000
+ #define SGMII_PHY_ADDR1 0x0
+ #define SGMII_PHY_ADDR2 0x1
+@@ -633,7 +637,7 @@ unsigned long get_board_ddr_clk(void);
+ 	"console=$consoledev,$baudrate $othbootargs;"	\
+ 	"setenv ramdiskaddr 0x02000000;"		\
+ 	"setenv fdtaddr 0x00c00000;"			\
+-	"setenv loadaddr 0x1000000;"			\
++	"setenv loadaddr 0x10000000;"			\
+ 	"bootm $loadaddr $ramdiskaddr $fdtaddr"
+ 
+ #define CONFIG_HDBOOT					\
+-- 
+2.25.1
+

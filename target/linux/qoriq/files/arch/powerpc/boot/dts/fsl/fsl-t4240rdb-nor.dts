@@ -1,0 +1,39 @@
+/include/ "fsl-t4240rdb.dtsi"
+
+/ {
+	model = "NXP T4240RDB (NOR BOOT)";
+	compatible = "fsl,t4240rdb-nor", "fsl,T4240RDB";
+};
+
+&ifc {
+    nor@0,0 {
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                reg = <0x0 0x7e00000>;
+                compatible = "denx,fit";
+                label = "firmware";
+            };
+            partition@7e00000 {
+                reg = <0x7e00000 0x100000>;
+                label = "cortina-ucode";
+            };
+            partition@7f00000 {
+                reg = <0x7f00000 0x20000>;
+                label = "fman-ucode";
+            };
+            partition@7f20000 {
+                reg = <0x7f20000 0x20000>;
+                label = "u-boot-env";
+            };
+            partition@7f40000 {
+                reg = <0x7f40000 0xc0000>;
+                label = "u-boot";
+                read-only;
+            };
+        };
+    };
+};

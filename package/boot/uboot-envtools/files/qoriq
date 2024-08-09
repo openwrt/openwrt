@@ -8,6 +8,12 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+fsl,t4240rdb-nor)
+	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x2000" "0x20000"
+	;;
+fsl,t4240rdb-sdboot)
+	ubootenv_add_uci_config "/dev/mmcblk0" "0x101000" "0x2000" "0x1000"
+	;;
 watchguard,firebox-m300)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x2000" "0x10000"
 	;;

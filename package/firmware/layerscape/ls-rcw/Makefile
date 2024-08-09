@@ -24,7 +24,7 @@ define Package/layerscape-rcw
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=NXP Layerscape RCW binaries
-  DEPENDS:=@TARGET_layerscape
+  DEPENDS:=@TARGET_layerscape||TARGET_qoriq
 endef
 
 BOARDS := \
@@ -44,7 +44,8 @@ BOARDS := \
   ls2088a-rdb \
   lx2160a-rdb \
   lx2160a-rdb-sdboot \
-  ls1021a-twr
+  ls1021a-twr \
+  t4240rdb-nor \
 
 RCW_ls1012a-rdb         :=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin
 RCW_ls1012a-frdm        :=ls1012afrdm/N_SSNP_3305/rcw_800.bin
@@ -63,6 +64,7 @@ RCW_ls2088a-rdb         :=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/rcw_1800.bin
 RCW_lx2160a-rdb         :=lx2160ardb_rev2/XGGFF_PP_HHHH_RR_19_5_2/rcw_2000_700_2900_19_5_2.bin
 RCW_lx2160a-rdb-sdboot  :=lx2160ardb_rev2/XGGFF_PP_HHHH_RR_19_5_2/rcw_2000_700_2900_19_5_2.bin
 RCW_ls1021a-twr         :=ls1021atwr/SSR_PNS_30/rcw_1200.bin
+RCW_t4240rdb-nor        :=t4240rdb/SSFFPPH_27_55_1_9/rcw_27_55_1_9_1666MHz.bin
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
