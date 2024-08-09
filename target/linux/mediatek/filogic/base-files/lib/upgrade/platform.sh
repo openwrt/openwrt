@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-poe|\
 	cmcc,rax3000m|\
 	jdcloud,re-cp-03|\
+	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
@@ -114,7 +115,6 @@ platform_do_upgrade() {
 		;;
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
-	mediatek,mt7981-rfb|\
 	netcore,n60|\
 	qihoo,360t7|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
