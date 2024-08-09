@@ -98,13 +98,19 @@ platform_do_upgrade() {
 	linksys,mx5300|\
 	linksys,mx8500)
 		boot_part="$(fw_printenv -n boot_part)"
-		if [ "$boot_part" -eq "1" ]; then
-			fw_setenv boot_part 2
-			CI_KERNPART="alt_kernel"
-			CI_UBIPART="alt_rootfs"
+		if [ -n "$UPGRADE_OPT_CURR_PARTITION" ]; then
+			if [ "$boot_part" -eq "2" ]; then
+				CI_KERNPART="alt_kernel"
+				CI_UBIPART="alt_rootfs"
+			fi
 		else
-			fw_setenv boot_part 1
-			CI_UBIPART="rootfs"
+			if [ "$boot_part" -eq "1" ]; then
+				fw_setenv boot_part 2
+				CI_KERNPART="alt_kernel"
+				CI_UBIPART="alt_rootfs"
+			else
+				fw_setenv boot_part 1
+			fi
 		fi
 		fw_setenv boot_part_ready 3
 		fw_setenv auto_recovery yes
