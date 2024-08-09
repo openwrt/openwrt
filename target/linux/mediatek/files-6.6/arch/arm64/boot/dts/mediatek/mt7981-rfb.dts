@@ -15,8 +15,9 @@
 		serial0 = &uart0;
 	};
 
-	chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/fit0 rootwait";
 	};
 
 	memory {
