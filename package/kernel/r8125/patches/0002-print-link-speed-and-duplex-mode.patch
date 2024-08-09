@@ -1,0 +1,37 @@
+From 6b89b2bb75fd12195631b8009c0548d1d81bec99 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 4 Aug 2024 21:16:23 +0800
+Subject: [PATCH] r8125: print link speed and duplex mode
+
+Like other Ethernet drivers, print link speed and duplex mode
+when the interface is up. Formatting output at the same time.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ src/r8125_n.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/src/r8125_n.c
++++ b/src/r8125_n.c
+@@ -5116,15 +5116,19 @@ static void
+ _rtl8125_check_link_status(struct net_device *dev)
+ {
+         struct rtl8125_private *tp = netdev_priv(dev);
++        u16 status = RTL_R16(tp, PHYstatus);
+ 
+         if (tp->link_ok(dev)) {
+                 rtl8125_link_on_patch(dev);
+ 
+                 if (netif_msg_ifup(tp))
+-                        printk(KERN_INFO PFX "%s: link up\n", dev->name);
++                        printk(KERN_INFO PFX "%s: Link is Up - %dMbps/%s\n",
++                               dev->name, rtl8125_convert_link_speed(status),
++                               ((status & (_1000bpsF | _2500bpsF)) ||
++                                (status & FullDup)) ? "Full" : "Half");
+         } else {
+                 if (netif_msg_ifdown(tp))
+-                        printk(KERN_INFO PFX "%s: link down\n", dev->name);
++                        printk(KERN_INFO PFX "%s: Link is Down\n", dev->name);
+ 
+                 rtl8125_link_down_patch(dev);
+         }
