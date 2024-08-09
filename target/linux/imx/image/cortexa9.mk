@@ -84,9 +84,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   KERNEL_LOADADDR := 0x10008000
-ifdef CONFIG_LINUX_6_6
   DTS_DIR := $(DTS_DIR)/nxp/imx
-endif
   IMAGES :=
 endef
 
