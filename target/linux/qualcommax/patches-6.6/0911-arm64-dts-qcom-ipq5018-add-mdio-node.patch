@@ -1,0 +1,44 @@
+From 26890ef30e083d149b9f8ba61f4f64721627d0de Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Mon, 22 Apr 2024 21:50:05 +0800
+Subject: [PATCH 1/2] arm64: dts: qcom: ipq5018: add mdio node
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5018.dtsi b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+index bd0198aa..ff537e32 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -94,6 +94,26 @@ soc: soc@0 {
+ 		#size-cells = <1>;
+ 		ranges = <0 0 0 0xffffffff>;
+ 
++		mdio0: mdio@88000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "qcom,ipq5018-mdio", "qcom,qca-mdio";
++			reg = <0x88000 0x64>, <0x19475C4 0x4>;
++			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
++			clock-names = "gcc_mdio_ahb_clk";
++			status = "disabled";
++		};
++
++		mdio1: mdio@90000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "qcom,ipq5018-mdio";
++			reg = <0x90000 0x64>;
++			clocks = <&gcc GCC_MDIO1_AHB_CLK>;
++			clock-names = "gcc_mdio_ahb_clk";
++			status = "disabled";
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5018-tlmm";
+ 			reg = <0x01000000 0x300000>;
+-- 
+2.40.1
+

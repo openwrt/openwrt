@@ -1,0 +1,28 @@
+From 35c05ef3a6616e8fb2e97a590ce1221a10df404a Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Mon, 22 Apr 2024 21:50:34 +0800
+Subject: [PATCH 2/2] arm64: dts: qcom: ipq5018: add ge_phy node
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5018.dtsi b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+index ff537e32..32bef8ab 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -102,6 +102,10 @@ mdio0: mdio@88000 {
+ 			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
+ 			clock-names = "gcc_mdio_ahb_clk";
+ 			status = "disabled";
++
++			ge_phy: ethernet-phy@7 {
++				reg = <7>;
++			};
+ 		};
+ 
+ 		mdio1: mdio@90000 {
+-- 
+2.40.1
+
