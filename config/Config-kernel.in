@@ -1238,6 +1238,12 @@ if KERNEL_IP_PNP
 
 endif
 
+config KERNEL_BTRFS_FS
+	bool "Compile the kernel with built-in BTRFS support"
+	help
+	  Say Y here if you want to make the kernel to be able to boot off a
+	  BTRFS partition.
+
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
