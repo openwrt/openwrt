@@ -63,7 +63,9 @@
 							#size-cells = <1>;
 
 							macaddr_uboot_4fc00: macaddr@4fc00 {
+								compatible = "mac-base";
 								reg = <0x4fc00 0x6>;
+								#nvmem-cell-cells = <1>;
 							};
 						};
 					};
@@ -148,6 +150,10 @@
 						reg = <1>;
 						label = "wan";
 						phy-handle = <&phy_port1>;
+
+						nvmem-cells = <&macaddr_uboot_4fc00 1>;
+						nvmem-cell-names = "mac-address";
+
 					};
 
 					port@2 {
@@ -187,7 +193,7 @@
 
 		enet0: ethernet@b0000 {
 			phy-connection-type = "rgmii-id";
-			nvmem-cells = <&macaddr_uboot_4fc00>;
+			nvmem-cells = <&macaddr_uboot_4fc00 0>;
 			nvmem-cell-names = "mac-address";
 
 			fixed-link {

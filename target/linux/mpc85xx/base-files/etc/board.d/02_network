@@ -28,7 +28,6 @@ ocedo,panda)
 	;;
 tplink,tl-wdr4900-v1)
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
-	ucidef_set_interface_macaddr "wan" "$(macaddr_add $(mtd_get_mac_binary u-boot 0x4fc00) 1)"
 	;;
 watchguard,firebox-t10)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
