@@ -1,0 +1,25 @@
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -2686,7 +2686,12 @@ mtk_wed_setup_tc_block_cb(enum tc_setup_type type, void *type_data, void *cb_pri
+ 	struct flow_cls_offload *cls = type_data;
+-	struct mtk_wed_hw *hw = priv->hw;
++	struct mtk_wed_hw *hw = NULL;
++
++	if(priv)
++		hw = priv->hw;
++	else
++		return -EOPNOTSUPP;
+ 
+ 	if (!tc_can_offload(priv->dev))
+ 		return -EOPNOTSUPP;
+ 
+ 	if (type != TC_SETUP_CLSFLOWER)
+@@ -2747,6 +2747,7 @@ mtk_wed_setup_tc_block(struct mtk_wed_hw *hw, struct net_device *dev,
+ 			flow_block_cb_remove(block_cb, f);
+ 			list_del(&block_cb->driver_list);
+ 			kfree(block_cb->cb_priv);
++			block_cb->cb_priv = NULL;
+ 		}
+ 		return 0;
+ 	default:
+
