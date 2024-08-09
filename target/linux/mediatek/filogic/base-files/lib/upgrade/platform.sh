@@ -64,6 +64,23 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	abt,asr3000|\
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini|\
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m|\
+	jdcloud,re-cp-03|\
+	mediatek,mt7988a-rfb|\
+	nokia,ea0326gmp|\
+	openwrt,one|\
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6086|\
+	tplink,tl-xdr6088|\
+	tplink,tl-xtr8488|\
+	xiaomi,redmi-router-ax6000-ubootmod)
+		fit_do_upgrade "$1"
+		;;
 	acer,predator-w6|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
@@ -81,21 +98,6 @@ platform_do_upgrade() {
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
-		;;
-	bananapi,bpi-r3|\
-	bananapi,bpi-r3-mini|\
-	bananapi,bpi-r4|\
-	bananapi,bpi-r4-poe|\
-	cmcc,rax3000m|\
-	jdcloud,re-cp-03|\
-	mediatek,mt7988a-rfb|\
-	nokia,ea0326gmp|\
-	openwrt,one|\
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6086|\
-	tplink,tl-xdr6088|\
-	xiaomi,redmi-router-ax6000-ubootmod)
-		fit_do_upgrade "$1"
 		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\

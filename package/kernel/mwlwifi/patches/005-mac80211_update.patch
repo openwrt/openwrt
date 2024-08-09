@@ -428,11 +428,15 @@
  				const struct ieee80211_tx_queue_params *params)
  {
  	struct mwl_priv *priv = hw->priv;
-@@ -934,4 +934,5 @@ const struct ieee80211_ops mwl_mac80211_
+@@ -934,4 +934,9 @@ const struct ieee80211_ops mwl_mac80211_
  	.pre_channel_switch = mwl_mac80211_chnl_switch,
  	.sw_scan_start      = mwl_mac80211_sw_scan_start,
  	.sw_scan_complete   = mwl_mac80211_sw_scan_complete,
 +	.wake_tx_queue	    = ieee80211_handle_wake_tx_queue,
++	.add_chanctx        = ieee80211_emulate_add_chanctx,
++	.remove_chanctx     = ieee80211_emulate_remove_chanctx,
++	.change_chanctx     = ieee80211_emulate_change_chanctx,
++	.switch_vif_chanctx = ieee80211_emulate_switch_vif_chanctx,
  };
 --- a/utils.c
 +++ b/utils.c

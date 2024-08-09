@@ -47,6 +47,7 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-m11g|\
 	netgear,eax12|\
 	netgear,ex6150|\
+	netgear,wax214v2|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	thunder,timecloud|\
@@ -60,12 +61,14 @@ ramips_setup_interfaces()
 	ubnt,unifi-nanohd|\
 	yuncore,fap690|\
 	wavlink,wl-wn573hx1|\
+	wodesys,wd-r1802u|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		ucidef_set_interface_lan "lan"
 		;;
 	asiarf,ap7621-001|\
 	humax,e10|\
+	keenetic,kn-3510|\
 	openfi,5pro|\
 	wavlink,ws-wn572hp3-4g|\
 	winstars,ws-wn583a6)
@@ -323,6 +326,10 @@ ramips_setup_macs()
 	netgear,wax202)
 		lan_mac=$(mtd_get_mac_ascii Config mac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$lan_mac
+		;;
+	netgear,wax214v2)
+		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
 		;;
 	yuncore,ax820)

@@ -96,6 +96,7 @@ echo "COUNT=$count"
 
 # if there's no range, we're done
 [ $# -eq 0 ] && exit 0
+[ -z "$1$2" ] && exit 0
 
 if [ "$prefix" -le 30 ]; then
     lower=$((network + 1))

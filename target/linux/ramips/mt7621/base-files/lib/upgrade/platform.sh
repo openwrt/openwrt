@@ -100,6 +100,7 @@ platform_do_upgrade() {
 	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
+	keenetic,kn-3510|\
 	linksys,e5600|\
 	linksys,e7350|\
 	linksys,ea6350-v4|\
@@ -122,6 +123,7 @@ platform_do_upgrade() {
 	netgear,wac104|\
 	netgear,wac124|\
 	netgear,wax202|\
+	netgear,wax214v2|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
 	rostelecom,rt-fe-1a|\

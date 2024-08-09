@@ -1,0 +1,47 @@
+From 542440fd7b30983cae23e32bd22f69a076ec7ef4 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 19 Jul 2024 12:40:24 +0200
+Subject: regmap: maple: work around gcc-14.1 false-positive warning
+
+With gcc-14.1, there is a false-postive -Wuninitialized warning in
+regcache_maple_drop:
+
+drivers/base/regmap/regcache-maple.c: In function 'regcache_maple_drop':
+drivers/base/regmap/regcache-maple.c:113:23: error: 'lower_index' is used uninitialized [-Werror=uninitialized]
+  113 |         unsigned long lower_index, lower_last;
+      |                       ^~~~~~~~~~~
+drivers/base/regmap/regcache-maple.c:113:36: error: 'lower_last' is used uninitialized [-Werror=uninitialized]
+  113 |         unsigned long lower_index, lower_last;
+      |                                    ^~~~~~~~~~
+
+I've created a reduced test case to see if this needs to be reported
+as a gcc, but it appears that the gcc-14.x branch already has a change
+that turns this into a more sensible -Wmaybe-uninitialized warning, so
+I ended up not reporting it so far.
+
+The reduced test case also produces a warning for gcc-13 and gcc-12
+but I don't see that with the version in the kernel.
+
+Link: https://godbolt.org/z/oKbohKqd3
+Link: https://lore.kernel.org/all/CAMuHMdWj=FLmkazPbYKPevDrcym2_HDb_U7Mb9YE9ovrP0jJfA@mail.gmail.com/
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Link: https://patch.msgid.link/20240719104030.1382465-1-arnd@kernel.org
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/base/regmap/regcache-maple.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+(limited to 'drivers/base/regmap/regcache-maple.c')
+
+--- a/drivers/base/regmap/regcache-maple.c
++++ b/drivers/base/regmap/regcache-maple.c
+@@ -110,7 +110,8 @@ static int regcache_maple_drop(struct re
+ 	struct maple_tree *mt = map->cache;
+ 	MA_STATE(mas, mt, min, max);
+ 	unsigned long *entry, *lower, *upper;
+-	unsigned long lower_index, lower_last;
++	/* initialized to work around false-positive -Wuninitialized warning */
++	unsigned long lower_index = 0, lower_last = 0;
+ 	unsigned long upper_index, upper_last;
+ 	int ret = 0;
+ 

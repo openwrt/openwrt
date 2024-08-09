@@ -11,6 +11,19 @@ define Device/8devices_mango-dvk
 endef
 TARGET_DEVICES += 8devices_mango-dvk
 
+define Device/cambiumnetworks_xe3-4
+       $(call Device/FitImage)
+       $(call Device/UbiFit)
+       DEVICE_VENDOR := Cambium Networks
+       DEVICE_MODEL := XE3-4
+       BLOCKSIZE := 128k
+       PAGESIZE := 2048
+       DEVICE_DTS_CONFIG := config@cp01-c3-xv3-4
+       SOC := ipq6010
+       DEVICE_PACKAGES := ipq-wifi-cambiumnetworks_xe34 ath11k-firmware-qcn9074 kmod-ath11k-pci
+endef
+TARGET_DEVICES += cambiumnetworks_xe3-4
+
 define Device/netgear_wax214
        $(call Device/FitImage)
        $(call Device/UbiFit)

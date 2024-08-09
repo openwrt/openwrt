@@ -11,8 +11,7 @@ CPU_TYPE:=8548
 FEATURES:=squashfs ramdisk nand
 SUBTARGETS:=p1010 p1020 p2020
 
-KERNEL_PATCHVER:=6.1
-KERNEL_TESTING_PATCHVER:=6.6
+KERNEL_PATCHVER:=6.6
 
 KERNELNAME:=zImage
 
@@ -21,6 +20,6 @@ include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
 	kmod-leds-gpio swconfig kmod-ath9k wpad-basic-mbedtls kmod-usb2 \
-	uboot-envtools
+	uboot-envtools kmod-crypto-hw-talitos
 
 $(eval $(call BuildTarget))

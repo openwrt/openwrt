@@ -996,7 +996,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	.ndo_uninit		= ipqess_uninit,
 +	.ndo_open		= ipqess_open,
 +	.ndo_stop		= ipqess_stop,
-+	.ndo_do_ioctl		= ipqess_do_ioctl,
++	.ndo_eth_ioctl		= ipqess_do_ioctl,
 +	.ndo_start_xmit		= ipqess_xmit,
 +	.ndo_get_stats		= ipqess_get_stats,
 +	.ndo_set_mac_address	= ipqess_set_mac_address,

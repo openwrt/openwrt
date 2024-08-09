@@ -780,6 +780,21 @@ endef
 $(eval $(call KernelPackage,video-gspca-pac207))
 
 
+define KernelPackage/video-gspca-pac7302
+  TITLE:=pac7302 webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_PAC7302
+  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/gspca/gspca_pac7302.ko
+  AUTOLOAD:=$(call AutoProbe,gspca_pac7302)
+  $(call AddDepends/camera-gspca)
+endef
+
+define KernelPackage/video-gspca-pac7302/description
+ The Pixart PAC7302 USB Camera Driver (pac7302) kernel module
+endef
+
+$(eval $(call KernelPackage,video-gspca-pac7302))
+
+
 define KernelPackage/video-gspca-pac7311
   TITLE:=pac7311 webcam support
   KCONFIG:=CONFIG_USB_GSPCA_PAC7311

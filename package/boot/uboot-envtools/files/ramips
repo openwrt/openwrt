@@ -146,6 +146,10 @@ xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
 	;;
+netgear,wax214v2)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd1" "0x20000" "0x8000" "0x20000"
+	;;
 esac
 
 config_load ubootenv

@@ -219,6 +219,18 @@ define U-Boot/mt7629_rfb
   UBOOT_CONFIG:=mt7629_rfb
 endef
 
+define U-Boot/mt7981_abt_asr3000
+  NAME:=ABT ASR3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=abt_asr3000
+  UBOOT_CONFIG:=mt7981_abt_asr3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_cmcc_rax3000m-emmc
   NAME:=CMCC RAX3000M
   BUILD_SUBTARGET:=filogic
@@ -557,6 +569,18 @@ define U-Boot/mt7986_tplink_tl-xdr6088
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr3
 endef
 
+define U-Boot/mt7986_tplink_tl-xtr8488
+  NAME:=TP-LINK TL-XTR8488
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-xtr8488
+  UBOOT_CONFIG:=mt7986_tplink_tl-xtr8488
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
+endef
+
 define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   NAME:=Xiaomi Redmi AX6000
   BUILD_SUBTARGET:=filogic
@@ -734,6 +758,7 @@ UBOOT_TARGETS := \
 	mt7628_rfb \
 	mt7628_ravpower_rp-wd009 \
 	mt7629_rfb \
+	mt7981_abt_asr3000 \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_h3c_magic-nx30-pro \
@@ -761,6 +786,7 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
+	mt7986_tplink_tl-xtr8488 \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \

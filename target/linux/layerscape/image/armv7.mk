@@ -6,11 +6,7 @@ define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs
   IMAGES := firmware.bin sysupgrade.bin
-ifdef CONFIG_LINUX_6_1
-  DEVICE_DTS_DIR := $(DTS_DIR)
-else
   DEVICE_DTS_DIR := $(DTS_DIR)/nxp/ls
-endif
   KERNEL := kernel-bin | uImage none
   KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DEVICE_DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage

@@ -68,7 +68,8 @@ platform_do_upgrade() {
 		ROOTFS_FILE="root.squashfs"
 		platform_do_upgrade_failsafe_datachk "$1"
 		;;
-	huawei,ap5030dn)
+	huawei,ap5030dn|\
+	huawei,ap6010dn)
 		# Store beginning address of the "firmware" partition
 		# as KernelA address and KernelB address, each to BootupA & BootupB
 		# This is the address from which the bootloader will try to load the kernel.
