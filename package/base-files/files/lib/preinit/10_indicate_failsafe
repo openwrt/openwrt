@@ -9,9 +9,14 @@ indicate_failsafe_led () {
 
 indicate_failsafe() {
 	[ "$pi_preinit_no_failsafe" = "y" ] && return
-	echo "- failsafe -"
+	local consoles="$(cat /sys/class/tty/console/active)"
+	[ -n "$consoles" ] || consoles=console
+	for console in $consoles; do
+		[ -c "/dev/$console" ] && echo "- failsafe -" >"/dev/$console"
+	done
 	preinit_net_echo "Entering Failsafe!\n"
 	indicate_failsafe_led
+	echo OpenWrt-failsafe > /proc/sys/kernel/hostname
 }
 
 boot_hook_add failsafe indicate_failsafe
