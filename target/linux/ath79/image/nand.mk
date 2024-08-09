@@ -190,7 +190,7 @@ define Device/glinet_gl-e750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-E750
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct kmod-usb2 \
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb2 \
 	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
   SUPPORTED_DEVICES += gl-e750
   KERNEL_SIZE := 4096k
