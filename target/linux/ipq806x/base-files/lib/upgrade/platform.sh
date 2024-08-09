@@ -23,7 +23,8 @@ platform_do_upgrade() {
 	netgear,xr500 |\
 	nokia,ac400i |\
 	qcom,ipq8064-ap148 |\
-	qcom,ipq8064-ap161)
+	qcom,ipq8064-ap161 |\
+	xiaomi,mi-router-hd)
 		nand_do_upgrade "$1"
 		;;
 	asrock,g10)
