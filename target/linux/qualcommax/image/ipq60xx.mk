@@ -1,3 +1,21 @@
+define Device/wallys_dr6018-v4
+        $(call Device/FitImage)
+        $(call Device/UbiFit)
+        DEVICE_VENDOR := Wallys
+        DEVICE_MODEL := DR6018-V4
+        BLOCKSIZE := 128k
+        PAGESIZE := 2048
+        SOC := ipq6010
+        DEVICE_DTS_CONFIG := config@cp01-c4
+        IMAGES := sysupgrade.tar nand-factory.bin
+        IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+        IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+        SUPPORTED_DEVICES := wallys,dr6018
+        DEVICE_PACKAGES := ath11k-wifi-wallys-dr6018-v4 uboot-envtools -kmod-usb-dwc3-of-simple kmod-usb-dwc3-qcom kmod-usb3 kmod-usb2
+
+endef
+TARGET_DEVICES += wallys_dr6018-v4
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
