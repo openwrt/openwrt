@@ -849,6 +849,23 @@ define Device/netgear_ex6150v2
 endef
 TARGET_DEVICES += netgear_ex6150v2
 
+define Device/netgear_ex62x0v2
+        $(call Device/DniImage)
+        DEVICE_VENDOR := NETGEAR
+        DEVICE_DTS_CONFIG := config@4
+        NETGEAR_BOARD_ID := EX6200v2series
+        NETGEAR_HW_ID := 29765285+16+0+256+2x2
+        IMAGE_SIZE := 14400k
+        SOC := qcom-ipq4018
+endef
+
+define Device/netgear_ex6200v2
+        $(call Device/netgear_ex62x0v2)
+        DEVICE_MODEL := EX6200
+        DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += netgear_ex6200v2
+
 define Device/netgear_orbi
 	$(call Device/DniImage)
 	SOC := qcom-ipq4019
