@@ -560,6 +560,7 @@ define KernelPackage/dsa-mv88e6xxx
   TITLE:=Marvell MV88E6XXX DSA Switch
   DEPENDS:=+kmod-dsa +kmod-ptp +kmod-phy-marvell +kmod-dsa-tag-dsa
   KCONFIG:=CONFIG_NET_DSA_MV88E6XXX \
+	CONFIG_NET_DSA_MV88E6XXX_LEDS=y \
 	CONFIG_NET_DSA_MV88E6XXX_PTP=y
   FILES:=$(LINUX_DIR)/drivers/net/dsa/mv88e6xxx/mv88e6xxx.ko
   AUTOLOAD:=$(call AutoLoad,41,mv88e6xxx,1)
