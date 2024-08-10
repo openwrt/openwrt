@@ -1,0 +1,403 @@
+#!/bin/sh -e
+# shellcheck disable=3037,2091,3010 shell=busybox
+# Custom UCI defaults script for Linksys MX4200/4300/5300 etc
+# Create folder "files/etc/uci-defaults/" in your buildroot and copy this script there.
+# Customize to your needs.
+
+# Uncomment the following line to capture all output to a log file
+# exec > /root/uci-defaults.log 2>&1
+
+mac=$(fw_printenv -n ethaddr | tr '[:upper:]' '[:lower:]')
+
+# Set to '0' to enable WDS and disable mesh
+wds_disable=1
+bridge_mode=true
+
+channel_2g=6
+
+ap_5g_radio="radio0"
+ap_2g_radio="radio1"
+mesh_radio="radio2"
+wds_radio="${mesh_radio}"
+
+mesh_channel="161"
+ap_5g_channel="64"
+
+# Unique UCI config names for each interface
+ap_5g_iface="ap_5g"
+ap_2g_iface="ap_2g"
+mesh_iface="mesh"
+wds_iface="wds"
+
+# Must be the same SSID for both 2G and 5G for 802.11 k/v/r
+ap_2g_ssid="OpenWrt"
+ap_5g_ssid="${ap_2g_ssid}"
+
+mesh_id="OpenWrt-Mesh"
+wds_ssid="OpenWrt-WDS"
+
+mesh_gate_key='SOME_KEY'
+ap_key='SOME_KEY'
+wds_key="${mesh_gate_key}"
+
+country="US"
+timezone="EST5EDT,M3.2.0,M11.1.0"
+zonename="America/New_York"
+
+# In case you want to reset firmware in future, but want to use different mesh band
+# use `fw_setenv mesh_band low_5g` to use "radio0" (low 5G band) (36-64)
+# use `fw_setenv mesh_band high_5g` to use "radio2" (high 5G band) (100-165)
+# This will then be used to set the channel for the mesh interface.
+# Default is high_5g (radio2) (channel 161)
+mesh_band="$(fw_printenv -n mesh_band 2> /dev/null)"
+mesh_band="${mesh_band:-high_5g}"
+mesh_rssi_threshold='-65'
+
+if [ "$mesh_band" = "low_5g" ]; then
+  mesh_radio="radio0"
+  mesh_channel="64"
+  ap_5g_radio="radio2"
+  ap_5g_channel="100"
+fi
+
+# Setup satellite nodes to simply extend wifi coverage from the main router.
+# This avoids "daisy chaining" traffic through multiple nodes.
+# This usecase covers 99% for typical home setups.
+mesh_gate_announcements='0'
+mesh_hwmp_rootmode='0'
+mesh_fwding='0'
+
+stp_priority=8192
+
+# Only version version 11.4.0.5 has mesh offload support, so disable and use WDS instead
+if ! grep -q NSS.HK.11.4.0.5 /lib/firmware/qca-nss0-retail.bin 2> /dev/null; then
+  wds_disable=0
+fi
+
+# For Linksys MX4200/4300/5300 etc, only need to match the first 5 bytes
+# replace 'xx:xx' with the one found on the bottom of the device
+if [[ "${mac}" =~ "80:69:1a:xx:xx" ]]; then
+  suffix=0
+  wds_mode=ap
+  # Not required as it will generate based on device mac.
+  # But recommended to set static mac address after the
+  # device is up and running.
+  ap_5g_channel="64"
+  # If the node is connected to a router via cable, or itself is acting as a router.
+  mesh_gate_announcements='1'
+  mesh_hwmp_rootmode='2'
+  mesh_fwding='1'
+elif [[ "${mac}" =~ "80:69:1a:22:xx" ]]; then
+  suffix=1
+  wds_mode=sta
+  channel_2g=1
+  if [ "$mesh_band" = "low_5g" ]; then
+    ap_5g_channel="144"
+  fi
+fi
+
+hostname="MX4300-$((suffix + 1))"
+router=192.168.1.1
+netmask=24
+ipaddr="192.168.1.$((suffix + 1))"
+ip6addr="fd00:cafe:cafe::$((suffix + 1))"
+
+[ -n "$hostname" ] && {
+  uci batch <<- EOF > /dev/null
+	del system.@system[0]
+	add system system
+	set system.@system[0]=system
+	set system.@system[0].hostname='${hostname}'
+	set system.@system[0].timezone='${timezone}'
+	set system.@system[0].ttylogin='0'
+	set system.@system[0].log_size='128'
+	set system.@system[0].urandom_seed='1'
+	set system.@system[0].zonename='${zonename}'
+	set system.@system[0].cronloglevel='9'
+	set system.@system[0].conloglevel='6'
+	del system.ntp
+	set system.ntp=timeserver
+	set system.ntp.enable_server='1'
+	set system.ntp.interface='lan'
+	add_list system.ntp.server='${router}'
+	add_list system.ntp.server='129.6.15.28'
+	add_list system.ntp.server='129.6.15.29'
+	add_list system.ntp.server='129.6.15.30'
+	add_list system.ntp.server='2610:20:6f15:15::27'
+	add_list system.ntp.server='2610:20:6f15:15::28'
+	add_list system.ntp.server='129.6.15.27'
+	add_list system.ntp.server='129.6.15.26'
+EOF
+}
+
+# satellite nodes should not have any DHCP/DNS services running.
+# Nor should they have any firewall/dnsmasq rules.
+
+${bridge_mode} && {
+
+  # Disable services services in case we are running as dumb ap
+  for prog in firewall sqm unbound adblock-fast banip; do
+    CMD=/etc/init.d/${prog}
+    if [ -r ${CMD} ]; then
+      ${CMD} disable
+    fi
+  done
+
+  [ -r /etc/hotplug.d/ntp/25-unbound ] && rm /etc/hotplug.d/ntp/25-unbound
+
+  uci import <<- EOF > /dev/null
+
+package dhcp
+
+config dnsmasq
+	option boguspriv '0'
+	option rebind_protection '0'
+	option domain 'lan'
+	option expandhosts '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.d/resolv.conf.auto'
+	option localservice '0'
+	option ednspacket_max '1232'
+
+config dhcp 'lan'
+	option interface 'lan'
+	option dhcpv4 'disabled'
+	option dhcpv6 'disabled'
+	option ignore '1'
+	option dynamicdhcp '0'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+	option loglevel '4'
+
+EOF
+
+  uci import <<- EOF > /dev/null
+package network
+
+config globals 'globals'
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan1'
+	list ports 'lan2'
+	list ports 'lan3'
+	option macaddr '${mac}'
+	option stp '1'
+	option igmp_snooping '1'
+	option arp_accept '1'
+	option priority '$((stp_priority + suffix))'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	list ipaddr '${ipaddr}/${netmask:-24}'
+	list ip6addr '${ip6addr}'
+	list dns '${router}'
+	option gateway '${router}'
+	option delegate '0'
+
+config interface 'lan6'
+	option device '@lan'
+	option proto 'dhcpv6'
+	option reqaddress 'try'
+	option reqprefix 'no'
+	option delegate '0'
+
+config device
+	option name 'lan1'
+	option macaddr '${mac}'
+
+config device
+	option name 'lan2'
+	option macaddr '${mac}'
+
+config device
+	option name 'lan3'
+	option macaddr '${mac}'
+EOF
+}
+
+# If not in bridge mode, then assume setting up as a router
+${bridge_mode} || {
+  uci batch <<- EOF > /dev/null
+	set network.lan.proto='static'
+	set network.lan.ipaddr=''${ipaddr}/${netmask:-24}''
+EOF
+}
+
+uci import <<- EOF
+package wireless
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path 'platform/soc@0/c000000.wifi'
+	option band '5g'
+	option txpower '21'
+	option country '${country:-US}'
+	option htmode 'HE80'
+	option channel '64'
+	option cell_density '0'
+	option noscan '1'
+
+config wifi-device 'radio1'
+	option type 'mac80211'
+	option path 'platform/soc@0/c000000.wifi+1'
+	option band '2g'
+	option txpower '24'
+	option country '${country:-US}'
+	option htmode 'HE20'
+	option channel '${channel_2g:-6}'
+	option cell_density '0'
+
+config wifi-device 'radio2'
+	option type 'mac80211'
+	option path 'platform/soc@0/c000000.wifi+2'
+	option band '5g'
+	option txpower '30'
+	option country '${country:-US}'
+	option htmode 'HE80'
+	option channel '161'
+	option cell_density '3'
+	option noscan '1'
+
+config wifi-iface '${ap_5g_iface}'
+	option device '${ap_5g_radio}'
+	option mode 'ap'
+	option network 'lan'
+	option ssid '${ap_5g_ssid}'
+	option encryption 'psk2+ccmp'
+	option key '${ap_key}'
+	option beacon_int '97'
+	option bss_transition '1'
+	option disassoc_low_ack '0'
+	option dtim_period '3'
+	option ft_over_ds '0'
+	option ft_psk_generate_local '1'
+	option ieee80211r '1'
+	option ieee80211k '1'
+	option proxy_arp '1'
+	option reassociation_deadline '20000'
+	option time_advertisement '2'
+	option time_zone 'GMT0'
+	option wnm_sleep_mode '1'
+	option wpa_group_rekey '86400'
+	option pmk_r1_push '1'
+
+config wifi-iface '${ap_2g_iface}'
+	option device '${ap_2g_radio}'
+	option mode 'ap'
+	option network 'lan'
+	option ssid '${ap_2g_ssid}'
+	option encryption 'psk2+ccmp'
+	option key '${ap_key}'
+	option bss_transition '1'
+	option beacon_int '100'
+	option disassoc_low_ack '0'
+	option dtim_period '3'
+	option ft_over_ds '0'
+	option ft_psk_generate_local '1'
+	option ieee80211r '1'
+	option ieee80211k '1'
+	option proxy_arp '1'
+	option reassociation_deadline '20000'
+	option time_advertisement '2'
+	option time_zone 'GMT0'
+	option wnm_sleep_mode '1'
+	option wpa_group_rekey '86400'
+	option max_inactivity '4260'
+	option pmk_r1_push '1'
+
+config wifi-iface '${mesh_iface}'
+	option device '${mesh_radio}'
+	option encryption 'sae'
+	option key '${mesh_gate_key}'
+	option mesh_id '${mesh_id}'
+	option mode 'mesh'
+	option network 'lan'
+	option mesh_fwding '${mesh_fwding:-0}'
+	option mesh_gate_announcements '${mesh_gate_announcements:-0}'
+	option mesh_hwmp_rootmode '${mesh_hwmp_rootmode:-0}'
+	option mesh_max_peer_links '16'
+	option mesh_rssi_threshold '${mesh_rssi_threshold}'
+	option disabled $([ ${wds_disable:-1} -eq 1 ] && echo '0' || echo '1')
+
+config wifi-iface '${wds_iface}'
+	option device '${wds_radio}'
+	option mode '${wds_mode:-ap}'
+	option network 'lan'
+	option ssid '${wds_ssid}'
+	option encryption 'psk2+ccmp'
+	option key '${wds_key}'
+	option wds '1'
+	option disabled '${wds_disable:-1}'
+	$([ "${wds_mode:-ap}" = "ap" ] && echo "option hidden '1'")
+EOF
+
+cat << EOF | uci batch
+	set wireless.${mesh_radio}.channel=''${mesh_channel}''
+	set wireless.${ap_5g_radio}.channel=''${ap_5g_channel}''
+
+	set wireless.${mesh_radio}.cell_density='3'
+	set wireless.${ap_5g_radio}.cell_density='0'
+
+	set wireless.${mesh_iface}.device=''${mesh_radio}''
+	set wireless.${wds_iface}.device=''${mesh_radio}''
+	set wireless.${ap_5g_iface}.device=''${ap_5g_radio}''
+EOF
+
+# Set to a less annoying dim green color
+uci import <<- EOF
+package system
+
+config led
+	option name 'Blue Off'
+	option sysfs 'blue:status'
+	option trigger 'none'
+	option default '0'
+
+config led
+	option name 'Red Off'
+	option sysfs 'red:status'
+	option trigger 'none'
+	option default '0'
+EOF
+
+# Sometimes nodes may not be able to reach the gateway for whatever reason
+# Since they will be connected via wifi it's cumbersome having to hardwire just to troubleshoot
+# Install the `watchcat` package to automatically reboot the node if it can't reach the gateway
+uci import <<- EOF > /dev/null
+
+package watchcat
+
+config watchcat
+	option period '5m'
+	option mode 'ping_reboot'
+	option pinghosts '${router}'
+	option addressfamily 'any'
+	option pingperiod '10s'
+	option pingsize 'standard'
+	option forcedelay '1m'
+EOF
+
+uci changes
+
+uci commit system
+uci commit luci_statistics
+uci commit dhcp
+uci commit network
+uci commit wireless
+
+fw_setenv mesh_band "${mesh_band}"
+
+exit 0
