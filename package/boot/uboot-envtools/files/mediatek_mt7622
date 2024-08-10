@@ -56,7 +56,8 @@ ubnt,unifi-6-lr-v2-ubootmod|\
 ubnt,unifi-6-lr-v3-ubootmod)
 	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index "u-boot-env")" "0x0" "0x4000" "0x1000"
 	;;
-ubnt,unifi-6-lr-v2)
+ubnt,unifi-6-lr-v2|\
+ubnt,unifi-6-lr-v3)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x1000" "1"
 	;;
 xiaomi,redmi-router-ax6s)
