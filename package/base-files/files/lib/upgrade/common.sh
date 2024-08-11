@@ -196,7 +196,6 @@ export_bootdevice() {
 			done
 		;;
 		/dev/*)
-			[ "$rootpart" = "/dev/fit0" ] && rootpart="$(fitblk_get_bootdev)"
 			uevent="/sys/class/block/${rootpart##*/}/../uevent"
 		;;
 		0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
