@@ -1231,6 +1231,22 @@ define Device/tp-link_td-w8900gb
 endef
 TARGET_DEVICES += tp-link_td-w8900gb
 
+define Device/tplink_td-w8968-v3
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := W8968
+  DEVICE_VARIANT := v3
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := W8968
+  DEVICE_ALT0_VARIANT := v4
+  CFE_BOARD_ID := TD-W8968
+  CHIP_ID := 6318
+  FLASH_MB := 8
+  DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
+endef
+TARGET_DEVICES += tplink_td-w8968-v3
+
 ### USRobotics ###
 define Device/usrobotics_usr9108
   $(Device/bcm63xx-legacy)
