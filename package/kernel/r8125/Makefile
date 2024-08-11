@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=r8125
 PKG_VERSION:=9.013.02
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://github.com/Noltari/rtl8125/releases/download/$(PKG_VERSION)
@@ -24,9 +24,15 @@ define KernelPackage/r8125
   PROVIDES:=kmod-r8169
 endef
 
+define KernelPackage/r8125/config
+config KERNELPACKAGE_r8125_ENABLE_RSS_SUPPORT
+	bool "Include RSS support"
+endef
+
 define Build/Compile
 	+$(KERNEL_MAKE) $(PKG_JOBS) \
 		M="$(PKG_BUILD_DIR)/src" \
+		ENABLE_RSS_SUPPORT=$(if $(CONFIG_KERNELPACKAGE_r8125_ENABLE_RSS_SUPPORT),y,n) \
 		modules
 endef
 
