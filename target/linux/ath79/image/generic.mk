@@ -2913,7 +2913,7 @@ endef
 TARGET_DEVICES += sitecom_wlr-8100
 
 define Device/sophos_ap15
-  SOC := qca9558
+  SOC := qca9557
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := AP15
   IMAGE_SIZE := 15936k
