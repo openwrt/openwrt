@@ -14,6 +14,7 @@
 		led-boot = &led_rssihigh;
 		led-failsafe = &led_rssihigh;
 		led-upgrade = &led_rssihigh;
+        label-mac-device = &eth0;  // Assuming eth0's MAC is the label MAC
 	};
 
 	leds {
@@ -133,14 +134,15 @@
 
 &eth0 {
 	status = "okay";
-
 	phy-handle = <&swphy4>;
 
+	// Use MAC address from the ART partition at offset 0x0
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
+	// Use MAC address from the ART partition at offset 0x6
 	nvmem-cells = <&macaddr_art_6>;
 	nvmem-cell-names = "mac-address";
 };
@@ -148,6 +150,7 @@
 &wmac {
 	status = "okay";
 
+	// Calibration data from ART partition
 	mtd-cal-data = <&art 0x1000>;
 };
 
@@ -164,3 +167,4 @@
 		reg = <0x6 0x6>;
 	};
 };
+
