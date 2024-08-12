@@ -1,34 +1,39 @@
 #!/bin/sh -e
-# shellcheck disable=3037,2091,3010 shell=busybox
+# shellcheck disable=2034,2091,3010,3037,3060 shell=busybox
 # Custom UCI defaults script for Linksys MX4200/4300/5300 etc
-# Create folder "files/etc/uci-defaults/" in your buildroot and copy this script there.
+# Create folder "files/etc/uci-defaults/" in build root and copy this script there.
 # Customize to your needs.
 
 # Uncomment the following line to capture all output to a log file
 # exec > /root/uci-defaults.log 2>&1
 
+# We will also use this MAC to set br-lan, and lan ports 1,2,3.
+# That is how they are supposed to be but there's an issue on MX4300
+# where the MAC is not set correctly for lan 2 and 3 and randomly changes each boot.
 mac=$(fw_printenv -n ethaddr | tr '[:upper:]' '[:lower:]')
 
 # Set to '0' to enable WDS and disable mesh
 wds_disable=1
 bridge_mode=true
 
-channel_2g=6
-
 ap_5g_radio="radio0"
 ap_2g_radio="radio1"
 mesh_radio="radio2"
 wds_radio="${mesh_radio}"
 
-mesh_channel="161"
-ap_5g_channel="64"
+# for 80mhz channel 161 will use channels 149-161 (leave as is)
+mesh_channel=161
+# for 80mhz channel 64 will use channels 52-64 (change below for specific devices if needed)
+ap_5g_channel=64
+ap_2g_channel=6
 
-# Unique UCI config names for each interface
+# Unique UCI config names for each section
 ap_5g_iface="ap_5g"
 ap_2g_iface="ap_2g"
 mesh_iface="mesh"
 wds_iface="wds"
 
+# You should start customizing from here
 # Must be the same SSID for both 2G and 5G for 802.11 k/v/r
 ap_2g_ssid="OpenWrt"
 ap_5g_ssid="${ap_2g_ssid}"
@@ -36,22 +41,34 @@ ap_5g_ssid="${ap_2g_ssid}"
 mesh_id="OpenWrt-Mesh"
 wds_ssid="OpenWrt-WDS"
 
-mesh_gate_key='SOME_KEY'
-ap_key='SOME_KEY'
+ap_key="SOME_KEY"
+mesh_gate_key="SOME_LONG_RANDOM_KEY"
 wds_key="${mesh_gate_key}"
 
 country="US"
 timezone="EST5EDT,M3.2.0,M11.1.0"
-zonename="America/New_York"
+zonename="America/New York"
+
+router="192.168.1.1"
+netmask=24
+lan_proto="static"
+prefix="mx4300"
+
+# If node is setup to use DHCP and fails to get an IP,
+# a cable connection can be used to login and manage it.
+# You'll need to set a static IP on your computer in the same subnet.
+# (i.e. 10.1.1.2/24) and connect to the fallback management IP.
+fallback_mgmt_ip="10.1.1.1"
 
 # In case you want to reset firmware in future, but want to use different mesh band
 # use `fw_setenv mesh_band low_5g` to use "radio0" (low 5G band) (36-64)
 # use `fw_setenv mesh_band high_5g` to use "radio2" (high 5G band) (100-165)
 # This will then be used to set the channel for the mesh interface.
 # Default is high_5g (radio2) (channel 161)
+# NOTE: ON MX4300 ONLY THE 2ND RADIO WORKS WITH MESH. LEAVE THIS UNCHANGED.
 mesh_band="$(fw_printenv -n mesh_band 2> /dev/null)"
 mesh_band="${mesh_band:-high_5g}"
-mesh_rssi_threshold='-65'
+mesh_rssi_threshold="-65"
 
 if [ "$mesh_band" = "low_5g" ]; then
   mesh_radio="radio0"
@@ -62,10 +79,10 @@ fi
 
 # Setup satellite nodes to simply extend wifi coverage from the main router.
 # This avoids "daisy chaining" traffic through multiple nodes.
-# This usecase covers 99% for typical home setups.
-mesh_gate_announcements='0'
-mesh_hwmp_rootmode='0'
-mesh_fwding='0'
+# This usecase covers 99% of typical home setups.
+mesh_gate_announcements="0"
+mesh_hwmp_rootmode="0"
+mesh_fwding="0"
 
 stp_priority=8192
 
@@ -75,35 +92,55 @@ if ! grep -q NSS.HK.11.4.0.5 /lib/firmware/qca-nss0-retail.bin 2> /dev/null; the
 fi
 
 # For Linksys MX4200/4300/5300 etc, only need to match the first 5 bytes
-# replace 'xx:xx' with the one found on the bottom of the device
+# of the MAC address to determine it's the same device.
+# Replace 'xx:xx' with the one found on the bottom of your device.
+# Add a new `elif` block for each device if needed.
 if [[ "${mac}" =~ "80:69:1a:xx:xx" ]]; then
-  suffix=0
+  suffix=2
+  # If the node is in bridge mode and connected to a router via ethernet, or itself is a router.
+  # set the following for gate announcements, rootmode and forwarding.
+  mesh_gate_announcements=1
+  mesh_hwmp_rootmode=2
+  mesh_fwding=1
+  # Only ONE of the nodes should be in ap mode if setting up WDS.
   wds_mode=ap
-  # Not required as it will generate based on device mac.
-  # But recommended to set static mac address after the
-  # device is up and running.
-  ap_5g_channel="64"
-  # If the node is connected to a router via cable, or itself is acting as a router.
-  mesh_gate_announcements='1'
-  mesh_hwmp_rootmode='2'
-  mesh_fwding='1'
-elif [[ "${mac}" =~ "80:69:1a:22:xx" ]]; then
-  suffix=1
+elif [[ "${mac}" =~ "80:69:1a:xx:xx" ]]; then
+  suffix=3
   wds_mode=sta
-  channel_2g=1
-  if [ "$mesh_band" = "low_5g" ]; then
-    ap_5g_channel="144"
+  # it's a good idea to spread out the channels on the AP
+  # to ensure they don't interfere with each other.
+  # This is especially important if you have multiple APs in close proximity.
+  # For 80mhz channel 48 will use channels 36-48
+  ap_5g_channel=48
+  ap_2g_channel=1
+else
+  lan_proto="dhcp"
+fi
+
+if { [ "$lan_proto" = "dhcp" ] && [ -z "$suffix" ]; } || [ -z "$suffix" ] ; then
+  # get last 2 octets of the MAC address
+  # The final hostname will be "${prefix}-${suffix}", e.g. "mx4300-9efc"
+  # otherwise, the suffix will be you specified above.
+  suffix="${mac#*:*:*:*:}"
+  suffix="${suffix/:/}"
+else
+  # If bridge mode      : true
+  # and router IP is    : 192.168.1.1
+  # and suffix is       : 2
+  # then the IP will be : 192.168.1.2
+  if $bridge_mode; then
+    ipaddr="${router%.*}.${suffix}"
+  else
+    # otherwise assume the node is a router and set the IP to the router IP specified above.
+    # If you DO disable bridge mode for a device, make sure you ONLY do it for ONE device.
+    ipaddr="${router}"
+    stp_priority=0
   fi
 fi
 
-hostname="MX4300-$((suffix + 1))"
-router=192.168.1.1
-netmask=24
-ipaddr="192.168.1.$((suffix + 1))"
-ip6addr="fd00:cafe:cafe::$((suffix + 1))"
+hostname="${prefix}-${suffix}"
 
-[ -n "$hostname" ] && {
-  uci batch <<- EOF > /dev/null
+uci batch <<- EOF > /dev/null
 	del system.@system[0]
 	add system system
 	set system.@system[0]=system
@@ -114,12 +151,10 @@ ip6addr="fd00:cafe:cafe::$((suffix + 1))"
 	set system.@system[0].urandom_seed='1'
 	set system.@system[0].zonename='${zonename}'
 	set system.@system[0].cronloglevel='9'
-	set system.@system[0].conloglevel='6'
 	del system.ntp
 	set system.ntp=timeserver
 	set system.ntp.enable_server='1'
 	set system.ntp.interface='lan'
-	add_list system.ntp.server='${router}'
 	add_list system.ntp.server='129.6.15.28'
 	add_list system.ntp.server='129.6.15.29'
 	add_list system.ntp.server='129.6.15.30'
@@ -127,8 +162,18 @@ ip6addr="fd00:cafe:cafe::$((suffix + 1))"
 	add_list system.ntp.server='2610:20:6f15:15::28'
 	add_list system.ntp.server='129.6.15.27'
 	add_list system.ntp.server='129.6.15.26'
+	# Set the LED to a less annoying dim green color
+	set system.@led[0]=led
+	set system.@led[0].name='Blue Off'
+	set system.@led[0].sysfs='blue:status'
+	set system.@led[0].trigger='none'
+	set system.@led[0].default='0'
+	set system.@led[1]=led
+	set system.@led[1].name='Red Off'
+	set system.@led[1].sysfs='red:status'
+	set system.@led[1].trigger='none'
+	set system.@led[1].default='0'
 EOF
-}
 
 # satellite nodes should not have any DHCP/DNS services running.
 # Nor should they have any firewall/dnsmasq rules.
@@ -146,7 +191,6 @@ ${bridge_mode} && {
   [ -r /etc/hotplug.d/ntp/25-unbound ] && rm /etc/hotplug.d/ntp/25-unbound
 
   uci import <<- EOF > /dev/null
-
 package dhcp
 
 config dnsmasq
@@ -196,16 +240,33 @@ config device
 	option stp '1'
 	option igmp_snooping '1'
 	option arp_accept '1'
-	option priority '$((stp_priority + suffix))'
+	option priority '${stp_priority}'
 
 config interface 'lan'
 	option device 'br-lan'
+$(
+    if [ "$lan_proto" = "static" ]; then
+      cat <<- EOD
 	option proto 'static'
 	list ipaddr '${ipaddr}/${netmask:-24}'
-	list ip6addr '${ip6addr}'
 	list dns '${router}'
 	option gateway '${router}'
 	option delegate '0'
+EOD
+    else
+      cat <<- EOD
+	option proto 'dhcp'
+	option delegate '0'
+
+config interface 'mgmt'
+	option device '@lan'
+	option proto 'static'
+	option ipaddr '${fallback_mgmt_ip}'
+	option netmask '255.255.255.0'
+	option delegate '0'
+EOD
+    fi
+  )
 
 config interface 'lan6'
 	option device '@lan'
@@ -226,13 +287,31 @@ config device
 	option name 'lan3'
 	option macaddr '${mac}'
 EOF
+
+# Sometimes nodes may not be able to reach the gateway for whatever reason
+# Since they will be connected via wifi it's cumbersome having to hardwire just to troubleshoot
+# Install the `watchcat` package to automatically reboot the node if it can't reach the gateway
+uci import <<- EOF > /dev/null
+
+package watchcat
+
+config watchcat
+	option period '5m'
+	option mode 'ping_reboot'
+	option pinghosts '${router}'
+	option addressfamily 'any'
+	option pingperiod '10s'
+	option pingsize 'standard'
+	option forcedelay '1m'
+EOF
 }
 
 # If not in bridge mode, then assume setting up as a router
 ${bridge_mode} || {
   uci batch <<- EOF > /dev/null
 	set network.lan.proto='static'
-	set network.lan.ipaddr=''${ipaddr}/${netmask:-24}''
+	del_list network.lan.ipaddr
+	set network.lan.ipaddr='${router}/${netmask:-24}'
 EOF
 }
 
@@ -246,7 +325,7 @@ config wifi-device 'radio0'
 	option txpower '21'
 	option country '${country:-US}'
 	option htmode 'HE80'
-	option channel '64'
+	option channel '${ap_5g_channel:-64}'
 	option cell_density '0'
 	option noscan '1'
 
@@ -257,8 +336,9 @@ config wifi-device 'radio1'
 	option txpower '24'
 	option country '${country:-US}'
 	option htmode 'HE20'
-	option channel '${channel_2g:-6}'
+	option channel '${ap_2g_channel:-6}'
 	option cell_density '0'
+	option noscan '1'
 
 config wifi-device 'radio2'
 	option type 'mac80211'
@@ -267,7 +347,7 @@ config wifi-device 'radio2'
 	option txpower '30'
 	option country '${country:-US}'
 	option htmode 'HE80'
-	option channel '161'
+	option channel '${mesh_channel:-161}'
 	option cell_density '3'
 	option noscan '1'
 
@@ -344,56 +424,21 @@ config wifi-iface '${wds_iface}'
 	$([ "${wds_mode:-ap}" = "ap" ] && echo "option hidden '1'")
 EOF
 
-cat << EOF | uci batch
-	set wireless.${mesh_radio}.channel=''${mesh_channel}''
-	set wireless.${ap_5g_radio}.channel=''${ap_5g_channel}''
+uci batch <<- EOF
+	set wireless.${mesh_radio}.channel='${mesh_channel}'
+	set wireless.${ap_5g_radio}.channel='${ap_5g_channel}'
 
 	set wireless.${mesh_radio}.cell_density='3'
 	set wireless.${ap_5g_radio}.cell_density='0'
 
-	set wireless.${mesh_iface}.device=''${mesh_radio}''
-	set wireless.${wds_iface}.device=''${mesh_radio}''
-	set wireless.${ap_5g_iface}.device=''${ap_5g_radio}''
-EOF
-
-# Set to a less annoying dim green color
-uci import <<- EOF
-package system
-
-config led
-	option name 'Blue Off'
-	option sysfs 'blue:status'
-	option trigger 'none'
-	option default '0'
-
-config led
-	option name 'Red Off'
-	option sysfs 'red:status'
-	option trigger 'none'
-	option default '0'
-EOF
-
-# Sometimes nodes may not be able to reach the gateway for whatever reason
-# Since they will be connected via wifi it's cumbersome having to hardwire just to troubleshoot
-# Install the `watchcat` package to automatically reboot the node if it can't reach the gateway
-uci import <<- EOF > /dev/null
-
-package watchcat
-
-config watchcat
-	option period '5m'
-	option mode 'ping_reboot'
-	option pinghosts '${router}'
-	option addressfamily 'any'
-	option pingperiod '10s'
-	option pingsize 'standard'
-	option forcedelay '1m'
+	set wireless.${mesh_iface}.device='${mesh_radio}'
+	set wireless.${wds_iface}.device='${mesh_radio}'
+	set wireless.${ap_5g_iface}.device='${ap_5g_radio}'
 EOF
 
 uci changes
 
 uci commit system
-uci commit luci_statistics
 uci commit dhcp
 uci commit network
 uci commit wireless
