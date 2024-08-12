@@ -140,39 +140,41 @@ fi
 
 hostname="${prefix}-${suffix}"
 
-uci batch <<- EOF > /dev/null
-	del system.@system[0]
-	add system system
-	set system.@system[0]=system
-	set system.@system[0].hostname='${hostname}'
-	set system.@system[0].timezone='${timezone}'
-	set system.@system[0].ttylogin='0'
-	set system.@system[0].log_size='128'
-	set system.@system[0].urandom_seed='1'
-	set system.@system[0].zonename='${zonename}'
-	set system.@system[0].cronloglevel='9'
-	del system.ntp
-	set system.ntp=timeserver
-	set system.ntp.enable_server='1'
-	set system.ntp.interface='lan'
-	add_list system.ntp.server='129.6.15.28'
-	add_list system.ntp.server='129.6.15.29'
-	add_list system.ntp.server='129.6.15.30'
-	add_list system.ntp.server='2610:20:6f15:15::27'
-	add_list system.ntp.server='2610:20:6f15:15::28'
-	add_list system.ntp.server='129.6.15.27'
-	add_list system.ntp.server='129.6.15.26'
-	# Set the LED to a less annoying dim green color
-	set system.@led[0]=led
-	set system.@led[0].name='Blue Off'
-	set system.@led[0].sysfs='blue:status'
-	set system.@led[0].trigger='none'
-	set system.@led[0].default='0'
-	set system.@led[1]=led
-	set system.@led[1].name='Red Off'
-	set system.@led[1].sysfs='red:status'
-	set system.@led[1].trigger='none'
-	set system.@led[1].default='0'
+uci import <<- EOF
+package system
+
+config system
+	option hostname '${hostname}'
+	option timezone '${timezone}'
+	option ttylogin '0'
+	option log_size '128'
+	option urandom_seed '1'
+	option zonename '${zonename}'
+	option cronloglevel '9'
+
+config timeserver 'ntp'
+	option enable_server '1'
+	option interface 'lan'
+	$(${bridge_mode} && echo list server ''${router}'')
+	list server '129.6.15.28'
+	list server '129.6.15.29'
+	list server '129.6.15.30'
+	list server '2610:20:6f15:15::27'
+	list server '2610:20:6f15:15::28'
+	list server '129.6.15.27'
+	list server '129.6.15.26'
+
+config led
+	option name 'Blue Off'
+	option sysfs 'blue:status'
+	option trigger 'none'
+	option default '0'
+
+config led
+	option name 'Red Off'
+	option sysfs 'red:status'
+	option trigger 'none'
+	option default '0'
 EOF
 
 # satellite nodes should not have any DHCP/DNS services running.
