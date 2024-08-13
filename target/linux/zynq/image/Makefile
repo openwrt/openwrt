@@ -29,9 +29,7 @@ endef
 
 define Device/Default
 	PROFILES := Default
-ifdef CONFIG_LINUX_6_6
 	DTS_DIR := $(DTS_DIR)/xilinx
-endif
 	DEVICE_DTS := $(lastword $(subst _, ,$(1)))
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_LOADADDR := 0x8000

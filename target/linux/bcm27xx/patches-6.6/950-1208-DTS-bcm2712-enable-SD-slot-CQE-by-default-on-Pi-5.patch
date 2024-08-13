@@ -1,0 +1,39 @@
+From 216df57950849f905c398904e7d6cbdf278b5717 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Mon, 5 Aug 2024 11:28:36 +0100
+Subject: [PATCH 1208/1215] DTS: bcm2712: enable SD slot CQE by default on Pi 5
+
+The corresponding driver implementation has seen sufficient testing,
+so enable by default. Retain the dtparam so it can be turned off for test.
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ arch/arm/boot/dts/overlays/README                | 6 +++---
+ arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts | 1 +
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -378,9 +378,9 @@ Params:
+                                 non-lite SKU of CM4).
+                                 (default "on")
+ 
+-        sd_cqe                  Use to enable Command Queueing on the SD
+-                                interface for faster Class A2 card performance
+-                                (Pi 5 only, default "off")
++        sd_cqe                  Set to "off" to disable Command Queueing if you
++                                have an incompatible Class A2 SD card
++                                (Pi 5 only, default "on")
+ 
+         sd_overclock            Clock (in MHz) to use when the MMC framework
+                                 requests 50MHz
+--- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
++++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
+@@ -363,6 +363,7 @@ dpi_16bit_gpio2:        &rp1_dpi_16bit_g
+ 	sd-uhs-sdr50;
+ 	sd-uhs-ddr50;
+ 	sd-uhs-sdr104;
++	supports-cqe;
+ 	cd-gpios = <&gio_aon 5 GPIO_ACTIVE_LOW>;
+ 	//no-1-8-v;
+ 	status = "okay";

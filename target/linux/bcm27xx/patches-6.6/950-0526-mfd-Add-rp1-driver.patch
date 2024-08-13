@@ -39,11 +39,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	depends on I2C && OF
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -285,3 +285,5 @@ rsmu-i2c-objs			:= rsmu_core.o rsmu_i2c.
- rsmu-spi-objs			:= rsmu_core.o rsmu_spi.o
- obj-$(CONFIG_MFD_RSMU_I2C)	+= rsmu-i2c.o
- obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu-spi.o
-+ 
+@@ -283,3 +283,5 @@ obj-$(CONFIG_MFD_ATC260X_I2C)	+= atc260x
+ 
+ obj-$(CONFIG_MFD_RSMU_I2C)	+= rsmu_i2c.o rsmu_core.o
+ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o rsmu_core.o
++
 +obj-$(CONFIG_MFD_RP1)		+= rp1.o
 --- /dev/null
 +++ b/drivers/mfd/rp1.c
