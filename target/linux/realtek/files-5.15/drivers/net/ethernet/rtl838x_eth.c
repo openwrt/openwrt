@@ -1621,261 +1621,424 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
 	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
 }
 
-static int rtl838x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+/*
+ * On all RealTek switch platforms the hardware periodically reads the link status of all
+ * PHYs. This is to some degree programmable, so that one can tell the hardware to read
+ * specific C22 registers from specific pages, or C45 registers, to determine the current
+ * link speed, duplex, flow-control, ...
+ *
+ * This happens without any need for the driver to do anything at runtime, completely
+ * invisible and in a parallel hardware thread, independent of the CPU running Linux.
+ * All one needs to do is to set it up once. Having the MAC link settings automatically
+ * follow the PHY link status also happens to be the only way to control MAC port status
+ * in a meaningful way, or at least it's the only way we fully understand, as this is
+ * what every vendor firmware is doing.
+ *
+ * The hardware PHY polling unit doesn't care about bus locking, it just assumes that all
+ * paged PHY operations are also done via the same hardware unit offering this PHY access
+ * abstractions.
+ *
+ * Additionally at least the RTL838x and RTL839x devices are known to have a so called
+ * raw mode. Using the special MAX_PAGE-1 with the MDIO controller found in RealTek
+ * SoCs allows to access the PHY in raw mode, ie. bypassing the cache and paging engine
+ * of the MDIO controller. E.g. for RTL838x this is
+ *
+ * On the other hand Realtek PHYs usually make use of select register 0x1f to switch
+ * pages. There is no problem to issue separate page and access bus calls to the PHYs.
+ * The paradigm should be to keep the PHY implementation bus independent.
+ *
+ * To bring all this together we need a tricky bus design that intercepts select page
+ * calls but lets raw page accesses through. And especially knows how to handle raw
+ * accesses to the select register. The following call sequence should clarify the logic
+ * as best as possible.
+ *
+ * phy_write(phydev, RTL8XXX_PAGE_SELECT, 12)	: store internal page 12 in driver
+ * phy_write(phydev, 7, 33)			: issue bus write page=12, reg=7, val=33
+ *
+ * All other phy_write_paged()/phy_read_paged() that are split in multiple internal
+ * __phy_read/__phy_write call sequences are handled in such a way that they only
+ * issue a single bus access.
+ */
+ 
+#define RTL8XXX_PAGE_SELECT	0x1f
+#define RTL838X_PAGE_RAW	0xfff
+#define RTL839X_PAGE_RAW	0x1fff
+#define RTL930X_PAGE_RAW	0xfff
+#define RTL931X_PAGE_RAW	0x1fff
+
+/*
+ * Provide two additional bus functions so we can access multiple PHYs on a shared
+ * package of the bus with separate addresses individually. The basically resemble
+ * the phy_read_paged() and phy_write_paged() functions.
+ */
+
+static int rtmdio_package_write(struct phy_device *phydev, int port, int page, u32 regnum, u16 val)
 {
-	u32 val;
-	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	int ret = 0, oldpage;
+	struct phy_package_shared *shared = phydev->shared;
 
-	if (mii_id >= 24 && mii_id <= 27 && priv->id == 0x8380)
-		return rtl838x_read_sds_phy(mii_id, regnum);
+	if (!shared)
+		return -EIO;
 
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl838x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-		err = rtl838x_read_phy(mii_id, page, regnum, &val);
-	}
-	if (err)
-		return err;
+	oldpage = phy_select_page(phydev, page);
+	if (oldpage >= 0)
+		ret = __mdiobus_write(phydev->mdio.bus, shared->addr + port, regnum, val);
 
-	return val;
+	return phy_restore_page(phydev, oldpage, ret);
 }
 
-static int rtl838x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+static int rtmdio_package_read(struct phy_device *phydev, int port, int page, u32 regnum)
 {
-	return rtl838x_mdio_read_paged(bus, mii_id, 0, regnum);
+	int ret = 0, oldpage;
+	struct phy_package_shared *shared = phydev->shared;
+
+	if (!shared)
+		return -EIO;
+
+	oldpage = phy_select_page(phydev, page);
+	if (oldpage >= 0)
+		ret = __mdiobus_read(phydev->mdio.bus, shared->addr + port, regnum);
+
+	return phy_restore_page(phydev, oldpage, ret);
 }
 
-static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+/*
+ * To make use of the shared package functions provide wrappers that align with kernel
+ * naming conventions. The package() functions are useful to change settings on the
+ * package as a whole. The package_port() functions will allow to target the PHYs
+ * individually.
+ */
+
+int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val)
 {
-	u32 val;
-	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl839x_read_sds_phy(mii_id, regnum);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl839x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		err = rtl839x_read_phy(mii_id, page, regnum, &val);
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-	}
-
-	if (err)
-		return err;
-
-	return val;
+	return rtmdio_package_write(phydev, port, page, regnum, val);
 }
 
-static int rtl839x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val)
 {
-	return rtl839x_mdio_read_paged(bus, mii_id, 0, regnum);
+	return rtmdio_package_write(phydev, 0, page, regnum, val);
 }
 
-static int rtl930x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum)
 {
-	u32 val;
-	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl930x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl930x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		err = rtl930x_read_phy(mii_id, page, regnum, &val);
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-	}
-
-	if (err)
-		return err;
-
-	return val;
+	return rtmdio_package_read(phydev, port, page, regnum);
 }
 
-static int rtl930x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum)
 {
-	return rtl930x_mdio_read_paged(bus, mii_id, 0, regnum);
+	return rtmdio_package_read(phydev, 0, page, regnum);
 }
 
-static int rtl931x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+/*
+ * These are the core functions of our fancy Realtec SoC MDIO bus. While the C45 clause
+ * stuff is pretty standard the legacy functions basically track the accesses and the
+ * state of the bus with the attributes page[] and raw[] of the bus_priv structure. Any
+ * Realtek PHY that will be connected to this bus must simply provide the standard page
+ * functions:
+ *
+ * define RTL8XXX_PAGE_SELECT 0x1f
+ *
+ * static int rtl821x_read_page(struct phy_device *phydev)
+ * {
+ *   return __phy_read(phydev, RTL8XXX_PAGE_SELECT);
+ * }
+ *
+ * static int rtl821x_write_page(struct phy_device *phydev, int page)
+ * {
+ *   return __phy_write(phydev, RTL8XXX_PAGE_SELECT, page);
+ * }
+ */
+
+static int rtl838x_mdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
 {
-	u32 val;
-	int err, v;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	int err, val;
 
-	pr_debug("%s: In here, port %d\n", __func__, mii_id);
-	if (priv->phy_is_internal[mii_id]) {
-		v = rtl931x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
-		if (v < 0) {
-			err = v;
-		} else {
-			err = 0;
-			val = v;
-		}
-	} else {
-		if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-			err = rtl931x_read_mmd_phy(mii_id,
-						   mdiobus_c45_devad(regnum),
-						   regnum, &val);
-			pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-				 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-				 val, err);
-		} else {
-			err = rtl931x_read_phy(mii_id, page, regnum, &val);
-			pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-		}
-	}
-
-	if (err)
-		return err;
-
-	return val;
+	err = rtl838x_read_mmd_phy(addr, devnum, regnum, &val);
+	return err ? err : val;
 }
 
-static int rtl931x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+static int rtl838x_mdio_read(struct mii_bus *bus, int addr, int regnum)
 {
-	return rtl931x_mdio_read_paged(bus, mii_id, 0, regnum);
+	int err, val;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+
+	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380)
+		return rtl838x_read_sds_phy(addr, regnum);
+
+	if (regnum == RTL8XXX_PAGE_SELECT && bus_priv->page[addr] != RTL838X_PAGE_RAW)
+		return bus_priv->page[addr];
+
+	bus_priv->raw[addr] = (bus_priv->page[addr] == RTL838X_PAGE_RAW);
+	err = rtl838x_read_phy(addr, bus_priv->page[addr], regnum, &val);
+	return err ? err : val;
 }
 
-static int rtl838x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
+static int rtl838x_mdio_read_legacy(struct mii_bus *bus, int addr, int regnum)
 {
-	u32 offset = 0;
-	struct rtl838x_eth_priv *priv = bus->priv;
-	int err;
+	if (regnum & MII_ADDR_C45)
+		return rtl838x_mdio_read_c45(bus, addr,
+					     mdiobus_c45_devad(regnum),
+					     mdiobus_c45_regad(regnum));
+	else
+		return rtl838x_mdio_read(bus, addr, regnum);
+}
 
-	if (mii_id >= 24 && mii_id <= 27 && priv->id == 0x8380) {
-		if (mii_id == 26)
+static int rtl839x_mdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
+{
+	int err, val;
+
+	err = rtl839x_read_mmd_phy(addr, devnum, regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl839x_mdio_read(struct mii_bus *bus, int addr, int regnum)
+{
+	int err, val;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+
+	if (eth_priv->phy_is_internal[addr])
+		return rtl839x_read_sds_phy(addr, regnum);
+
+	if (regnum == RTL8XXX_PAGE_SELECT && bus_priv->page[addr] != RTL839X_PAGE_RAW)
+		return bus_priv->page[addr];
+
+	bus_priv->raw[addr] = (bus_priv->page[addr] == RTL839X_PAGE_RAW);
+	err = rtl839x_read_phy(addr, bus_priv->page[addr], regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl839x_mdio_read_legacy(struct mii_bus *bus, int addr, int regnum)
+{
+	if (regnum & MII_ADDR_C45)
+		return rtl839x_mdio_read_c45(bus, addr,
+					     mdiobus_c45_devad(regnum),
+					     mdiobus_c45_regad(regnum));
+	else
+		return rtl839x_mdio_read(bus, addr, regnum);
+}
+
+static int rtl930x_mdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
+{
+	int err, val;
+
+	err = rtl930x_read_mmd_phy(addr, devnum, regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl930x_mdio_read(struct mii_bus *bus, int addr, int regnum)
+{
+	int err, val;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+
+	if (regnum == RTL8XXX_PAGE_SELECT && bus_priv->page[addr] != RTL930X_PAGE_RAW)
+		return bus_priv->page[addr];
+
+	bus_priv->raw[addr] = (bus_priv->page[addr] == RTL930X_PAGE_RAW);
+	if (eth_priv->phy_is_internal[addr])
+		return rtl930x_read_sds_phy(eth_priv->sds_id[addr], bus_priv->page[addr], regnum);
+
+	err = rtl930x_read_phy(addr, bus_priv->page[addr], regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl930x_mdio_read_legacy(struct mii_bus *bus, int addr, int regnum)
+{
+	if (regnum & MII_ADDR_C45)
+		return rtl930x_mdio_read_c45(bus, addr,
+					     mdiobus_c45_devad(regnum),
+					     mdiobus_c45_regad(regnum));
+	else
+		return rtl930x_mdio_read(bus, addr, regnum);
+}
+
+static int rtl931x_mdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
+{
+	int err, val;
+
+	err = rtl931x_read_mmd_phy(addr, devnum, regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl931x_mdio_read(struct mii_bus *bus, int addr, int regnum)
+{
+	int err, val;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+
+	if (regnum == RTL8XXX_PAGE_SELECT && bus_priv->page[addr] != RTL931X_PAGE_RAW)
+		return bus_priv->page[addr];
+
+	bus_priv->raw[addr] = (bus_priv->page[addr] == RTL930X_PAGE_RAW);
+	if (eth_priv->phy_is_internal[addr])
+		return rtl931x_read_sds_phy(eth_priv->sds_id[addr], bus_priv->page[addr], regnum);
+
+	err = rtl931x_read_phy(addr, bus_priv->page[addr], regnum, &val);
+	return err ? err : val;
+}
+
+static int rtl931x_mdio_read_legacy(struct mii_bus *bus, int addr, int regnum)
+{
+	if (regnum & MII_ADDR_C45)
+		return rtl931x_mdio_read_c45(bus, addr,
+					     mdiobus_c45_devad(regnum),
+					     mdiobus_c45_regad(regnum));
+	else
+		return rtl931x_mdio_read(bus, addr, regnum);
+}
+
+static int rtl838x_mdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
+{
+	return rtl838x_write_mmd_phy(addr, devnum, regnum, val);
+}
+
+static int rtl838x_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+	int page = bus_priv->page[addr], offset = 0;
+
+	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380) {
+		if (addr == 26)
 			offset = 0x100;
-		sw_w32(value, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
+		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
 		return 0;
 	}
 
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl838x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
+	if (regnum == RTL8XXX_PAGE_SELECT)
+		bus_priv->page[addr] = val;
 
-		return err;
-	}
-	err = rtl838x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-
-	return err;
-}
-
-static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
-{
-	return rtl838x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
-
-static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	struct rtl838x_eth_priv *priv = bus->priv;
-	int err;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl839x_write_sds_phy(mii_id, regnum, value);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl839x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
-
-		return err;
+	if (!bus_priv->raw[addr] && (regnum != RTL8XXX_PAGE_SELECT || page == RTL838X_PAGE_RAW)) {
+		bus_priv->raw[addr] = (page == RTL838X_PAGE_RAW);
+		return rtl838x_write_phy(addr, page, regnum, val);
 	}
 
-	err = rtl839x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-
-	return err;
+	bus_priv->raw[addr] = false;
+	return 0;
 }
 
-static int rtl839x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
+static int rtl838x_mdio_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
-	return rtl839x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+	if (regnum & MII_ADDR_C45)
+		return rtl838x_mdio_write_c45(bus, addr,
+					      mdiobus_c45_devad(regnum),
+					      mdiobus_c45_regad(regnum),
+					      val);
+	else
+		return rtl838x_mdio_write(bus, addr, regnum, val);
 }
 
-static int rtl930x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
+static int rtl839x_mdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
-	int err;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl930x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD))
-		return rtl930x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					     regnum, value);
-
-	err = rtl930x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-
-	return err;
+	return rtl839x_write_mmd_phy(addr, devnum, regnum, val);
 }
 
-static int rtl930x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
+static int rtl839x_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
-	return rtl930x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
+	int page = bus_priv->page[addr];
 
-static int rtl931x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	struct rtl838x_eth_priv *priv = bus->priv;
-	int err;
+	if (eth_priv->phy_is_internal[addr])
+		return rtl839x_write_sds_phy(addr, regnum, val);
 
-	if (priv->phy_is_internal[mii_id])
-		return rtl931x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
+	if (regnum == RTL8XXX_PAGE_SELECT)
+		bus_priv->page[addr] = val;
 
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl931x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
-
-		return err;
+	if (!bus_priv->raw[addr] && (regnum != RTL8XXX_PAGE_SELECT || page == RTL839X_PAGE_RAW)) {
+		bus_priv->raw[addr] = (page == RTL839X_PAGE_RAW);
+		return rtl839x_write_phy(addr, bus_priv->page[addr], regnum, val);
 	}
 
-	err = rtl931x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-
-	return err;
+	bus_priv->raw[addr] = false;
+	return 0;
 }
 
-static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
+static int rtl839x_mdio_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
-	return rtl931x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+	if (regnum & MII_ADDR_C45)
+		return rtl839x_mdio_write_c45(bus, addr,
+					      mdiobus_c45_devad(regnum),
+					      mdiobus_c45_regad(regnum),
+					      val);
+	else
+		return rtl839x_mdio_write(bus, addr, regnum, val);
+}
+
+static int rtl930x_mdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
+{
+	return rtl930x_write_mmd_phy(addr, devnum, regnum, val);
+}
+
+static int rtl930x_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
+	int page = bus_priv->page[addr];
+
+	if (regnum == RTL8XXX_PAGE_SELECT)
+		bus_priv->page[addr] = val;
+
+	if (!bus_priv->raw[addr] && (regnum != RTL8XXX_PAGE_SELECT || page == RTL930X_PAGE_RAW)) {
+		bus_priv->raw[addr] = (page == RTL930X_PAGE_RAW);
+		if (priv->phy_is_internal[addr])
+			return rtl930x_write_sds_phy(priv->sds_id[addr], bus_priv->page[addr], regnum, val);
+		else
+			return rtl930x_write_phy(addr, bus_priv->page[addr], regnum, val);
+	}
+
+	bus_priv->raw[addr] = false;
+	return 0;
+}
+
+static int rtl930x_mdio_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	if (regnum & MII_ADDR_C45)
+		return rtl930x_mdio_write_c45(bus, addr,
+					      mdiobus_c45_devad(regnum),
+					      mdiobus_c45_regad(regnum),
+					      val);
+	else
+		return rtl930x_mdio_write(bus, addr, regnum, val);
+}
+
+static int rtl931x_mdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
+{
+	return rtl931x_write_mmd_phy(addr, devnum, regnum, val);
+}
+
+static int rtl931x_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
+	int page = bus_priv->page[addr];
+
+	if (regnum == RTL8XXX_PAGE_SELECT)
+		bus_priv->page[addr] = val;
+
+	if (!bus_priv->raw[addr] && (regnum != RTL8XXX_PAGE_SELECT || page == RTL931X_PAGE_RAW)) {
+		bus_priv->raw[addr] = (page == RTL931X_PAGE_RAW);
+		if (priv->phy_is_internal[addr])
+			return rtl931x_write_sds_phy(priv->sds_id[addr], bus_priv->page[addr], regnum, val);
+		else
+			return rtl931x_write_phy(addr, bus_priv->page[addr], regnum, val);
+	}
+
+	bus_priv->raw[addr] = false;
+	return 0;
+}
+
+static int rtl931x_mdio_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	if (regnum & MII_ADDR_C45)
+		return rtl931x_mdio_write_c45(bus, addr,
+					      mdiobus_c45_devad(regnum),
+					      mdiobus_c45_regad(regnum),
+					      val);
+	else
+		return rtl931x_mdio_write(bus, addr, regnum, val);
 }
 
 static int rtl838x_mdio_reset(struct mii_bus *bus)
@@ -1912,7 +2075,8 @@ u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6
 
 static int rtl930x_mdio_reset(struct mii_bus *bus)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
 	u32 poll_ctrl = 0;
@@ -2016,7 +2180,8 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 
 static int rtl931x_mdio_reset(struct mii_bus *bus)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[4];
 	u32 poll_ctrl = 0;
@@ -2112,8 +2277,9 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 {
 	struct device_node *mii_np, *dn;
+	struct rtl838x_bus_priv *bus_priv;
 	u32 pn;
-	int ret;
+	int i, ret;
 
 	pr_debug("%s called\n", __func__);
 	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
@@ -2128,7 +2294,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		goto err_put_node;
 	}
 
-	priv->mii_bus = devm_mdiobus_alloc(&priv->pdev->dev);
+	priv->mii_bus = devm_mdiobus_alloc_size(&priv->pdev->dev, sizeof(*bus_priv));
 	if (!priv->mii_bus) {
 		ret = -ENOMEM;
 		goto err_put_node;
@@ -2137,42 +2303,67 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	switch(priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		priv->mii_bus->name = "rtl838x-eth-mdio";
-		priv->mii_bus->read = rtl838x_mdio_read;
-		priv->mii_bus->read_paged = rtl838x_mdio_read_paged;
-		priv->mii_bus->write = rtl838x_mdio_write;
-		priv->mii_bus->write_paged = rtl838x_mdio_write_paged;
+		priv->mii_bus->read = rtl838x_mdio_read_legacy;
+		priv->mii_bus->write = rtl838x_mdio_write_legacy;
+/*
+ *		after upgrade to kernel 6.6 exchange the legacy calls
+ *		priv->mii_bus->read = rtl838x_mdio_read;
+ *		priv->mii_bus->write = rtl838x_mdio_write;
+ *		priv->mii_bus->read_c45 = rtl838x_mdio_read_c45;
+ *		priv->mii_bus->write_c45 = rtl838x_mdio_write_c45;
+ */
 		priv->mii_bus->reset = rtl838x_mdio_reset;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->mii_bus->name = "rtl839x-eth-mdio";
-		priv->mii_bus->read = rtl839x_mdio_read;
-		priv->mii_bus->read_paged = rtl839x_mdio_read_paged;
-		priv->mii_bus->write = rtl839x_mdio_write;
-		priv->mii_bus->write_paged = rtl839x_mdio_write_paged;
+		priv->mii_bus->read = rtl839x_mdio_read_legacy;
+		priv->mii_bus->write = rtl839x_mdio_write_legacy;
+/*
+ *		after upgrade to kernel 6.6 exchange the legacy calls
+ *		priv->mii_bus->read = rtl839x_mdio_read;
+ *		priv->mii_bus->write = rtl839x_mdio_write;
+ *		priv->mii_bus->read_c45 = rtl839x_mdio_read_c45;
+ *		priv->mii_bus->write_c45 = rtl839x_mdio_write_c45;
+ */
 		priv->mii_bus->reset = rtl839x_mdio_reset;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->mii_bus->name = "rtl930x-eth-mdio";
-		priv->mii_bus->read = rtl930x_mdio_read;
-		priv->mii_bus->read_paged = rtl930x_mdio_read_paged;
-		priv->mii_bus->write = rtl930x_mdio_write;
-		priv->mii_bus->write_paged = rtl930x_mdio_write_paged;
+		priv->mii_bus->read = rtl930x_mdio_read_legacy;
+		priv->mii_bus->write = rtl930x_mdio_write_legacy;
+/*
+ *		after upgrade to kernel 6.6 exchange the legacy calls
+ *		priv->mii_bus->read = rtl930x_mdio_read;
+ *		priv->mii_bus->write = rtl930x_mdio_write;
+ *		priv->mii_bus->read_c45 = rtl930x_mdio_read_c45;
+ *		priv->mii_bus->write_c45 = rtl930x_mdio_write_c45;
+ */
 		priv->mii_bus->reset = rtl930x_mdio_reset;
 		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->mii_bus->name = "rtl931x-eth-mdio";
-		priv->mii_bus->read = rtl931x_mdio_read;
-		priv->mii_bus->read_paged = rtl931x_mdio_read_paged;
-		priv->mii_bus->write = rtl931x_mdio_write;
-		priv->mii_bus->write_paged = rtl931x_mdio_write_paged;
+		priv->mii_bus->read = rtl931x_mdio_read_legacy;
+		priv->mii_bus->write = rtl931x_mdio_write_legacy;
+/*
+ *		after upgrade to kernel 6.6 exchange the legacy calls
+ *		priv->mii_bus->read = rtl930x_mdio_read;
+ *		priv->mii_bus->write = rtl930x_mdio_write;
+ *		priv->mii_bus->read_c45 = rtl930x_mdio_read_c45;
+ *		priv->mii_bus->write_c45 = rtl930x_mdio_write_c45;
+ */
 		priv->mii_bus->reset = rtl931x_mdio_reset;
 		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	}
-	priv->mii_bus->access_capabilities = MDIOBUS_ACCESS_C22_MMD;
-	priv->mii_bus->priv = priv;
 	priv->mii_bus->parent = &priv->pdev->dev;
+
+	bus_priv = priv->mii_bus->priv;
+	bus_priv->eth_priv = priv;
+	for (i=0; i < 64; i++) {
+		bus_priv->page[i] = 0;
+		bus_priv->raw[i] = false;
+	}
 
 	for_each_node_by_name(dn, "ethernet-phy") {
 		u32 smi_addr[2];
