@@ -1136,6 +1136,13 @@ define Device/xiaomi_mi-ra75
 endef
 TARGET_DEVICES += xiaomi_mi-ra75
 
+define Device/yuncore_m300
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Yuncore
+  DEVICE_MODEL := M300
+endef
+TARGET_DEVICES += yuncore_m300
+
 define Device/zbtlink_zbt-we1226
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Zbtlink
