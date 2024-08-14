@@ -167,6 +167,13 @@ define U-Boot/radxa-cm3-io-rk3566
     radxa_cm3-io
 endef
 
+define U-Boot/rock-3c-rk3566
+  $(U-Boot/rk3566/Default)
+  NAME:=ROCK 3C
+  BUILD_DEVICES:= \
+    radxa_rock-3c
+endef
+
 # RK3568 boards
 
 define U-Boot/rk3568/Default
@@ -270,6 +277,7 @@ UBOOT_TARGETS := \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
   radxa-cm3-io-rk3566 \
+  rock-3c-rk3566 \
   bpi-r2-pro-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
