@@ -228,6 +228,13 @@ define U-Boot/rock-3a-rk3568
     radxa_rock-3a
 endef
 
+define U-Boot/rock-3b-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=ROCK 3B
+  BUILD_DEVICES:= \
+    radxa_rock-3b
+endef
+
 
 # RK3588 boards
 
@@ -292,6 +299,7 @@ UBOOT_TARGETS := \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
+  rock-3b-rk3568 \
   rock5b-rk3588 \
   nanopc-t6-rk3588 \
   nanopi-r6s-rk3588s \

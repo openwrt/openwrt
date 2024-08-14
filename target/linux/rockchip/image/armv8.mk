@@ -140,6 +140,14 @@ define Device/radxa_rock-3a
 endef
 TARGET_DEVICES += radxa_rock-3a
 
+define Device/radxa_rock-3b
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3B
+  SOC := rk3568
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_rock-3b
+
 define Device/radxa_rock-3c
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 3C
