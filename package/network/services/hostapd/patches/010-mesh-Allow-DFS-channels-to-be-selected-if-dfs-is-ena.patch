@@ -14,7 +14,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2698,7 +2698,7 @@ static int drv_supports_vht(struct wpa_s
+@@ -2809,7 +2809,7 @@ static int drv_supports_vht(struct wpa_s
  }
  
  
@@ -23,7 +23,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  {
  	int i;
  
-@@ -2707,7 +2707,10 @@ static bool ibss_mesh_is_80mhz_avail(int
+@@ -2818,7 +2818,10 @@ static bool ibss_mesh_is_80mhz_avail(int
  
  		chan = hw_get_channel_chan(mode, i, NULL);
  		if (!chan ||
@@ -35,7 +35,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  			return false;
  	}
  
-@@ -2834,7 +2837,7 @@ static void ibss_mesh_select_40mhz(struc
+@@ -2945,7 +2948,7 @@ static void ibss_mesh_select_40mhz(struc
  				   const struct wpa_ssid *ssid,
  				   struct hostapd_hw_modes *mode,
  				   struct hostapd_freq_params *freq,
@@ -44,7 +44,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	int chan_idx;
  	struct hostapd_channel_data *pri_chan = NULL, *sec_chan = NULL;
  	int i, res;
-@@ -2858,8 +2861,11 @@ static void ibss_mesh_select_40mhz(struc
+@@ -2969,8 +2972,11 @@ static void ibss_mesh_select_40mhz(struc
  		return;
  
  	/* Check primary channel flags */
@@ -57,7 +57,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  #ifdef CONFIG_HT_OVERRIDES
  	if (ssid->disable_ht40)
-@@ -2885,8 +2891,11 @@ static void ibss_mesh_select_40mhz(struc
+@@ -2996,8 +3002,11 @@ static void ibss_mesh_select_40mhz(struc
  		return;
  
  	/* Check secondary channel flags */
@@ -70,7 +70,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  	if (ht40 == -1) {
  		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40MINUS))
-@@ -2940,7 +2949,7 @@ static bool ibss_mesh_select_80_160mhz(s
+@@ -3052,7 +3061,7 @@ static bool ibss_mesh_select_80_160mhz(s
  				       const struct wpa_ssid *ssid,
  				       struct hostapd_hw_modes *mode,
  				       struct hostapd_freq_params *freq,
@@ -79,7 +79,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  	static const int bw80[] = {
  		5180, 5260, 5500, 5580, 5660, 5745, 5825,
  		5955, 6035, 6115, 6195, 6275, 6355, 6435,
-@@ -2985,7 +2994,7 @@ static bool ibss_mesh_select_80_160mhz(s
+@@ -3097,7 +3106,7 @@ static bool ibss_mesh_select_80_160mhz(s
  		goto skip_80mhz;
  
  	/* Use 40 MHz if channel not usable */
@@ -88,7 +88,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  		goto skip_80mhz;
  
  	chwidth = CONF_OPER_CHWIDTH_80MHZ;
-@@ -2999,7 +3008,7 @@ static bool ibss_mesh_select_80_160mhz(s
+@@ -3111,7 +3120,7 @@ static bool ibss_mesh_select_80_160mhz(s
  	if ((mode->he_capab[ieee80211_mode].phy_cap[
  		     HE_PHYCAP_CHANNEL_WIDTH_SET_IDX] &
  	     HE_PHYCAP_CHANNEL_WIDTH_SET_160MHZ_IN_5G) && is_6ghz &&
@@ -97,7 +97,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  		for (j = 0; j < ARRAY_SIZE(bw160); j++) {
  			if (freq->freq == bw160[j]) {
  				chwidth = CONF_OPER_CHWIDTH_160MHZ;
-@@ -3027,10 +3036,12 @@ static bool ibss_mesh_select_80_160mhz(s
+@@ -3139,10 +3148,12 @@ static bool ibss_mesh_select_80_160mhz(s
  				if (!chan)
  					continue;
  
@@ -113,15 +113,15 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
  
  				/* Found a suitable second segment for 80+80 */
  				chwidth = CONF_OPER_CHWIDTH_80P80MHZ;
-@@ -3085,6 +3096,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
- 	int i, obss_scan = 1;
+@@ -3197,6 +3208,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 	int obss_scan = 1;
  	u8 channel;
  	bool is_6ghz, is_24ghz;
 +	bool dfs_enabled = wpa_s->conf->country[0] && (wpa_s->drv_flags & WPA_DRIVER_FLAGS_RADAR);
  
  	freq->freq = ssid->frequency;
  
-@@ -3133,9 +3145,9 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3239,9 +3251,9 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	freq->channel = channel;
  	/* Setup higher BW only for 5 GHz */
  	if (mode->mode == HOSTAPD_MODE_IEEE80211A) {

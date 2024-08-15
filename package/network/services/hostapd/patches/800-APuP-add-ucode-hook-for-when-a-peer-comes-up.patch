@@ -10,8 +10,6 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  src/ap/ucode.h |  4 ++++
  3 files changed, 29 insertions(+)
 
-diff --git a/src/ap/apup.c b/src/ap/apup.c
-index 3a3991f4d6..f736ddc8e3 100644
 --- a/src/ap/apup.c
 +++ b/src/ap/apup.c
 @@ -27,6 +27,10 @@
@@ -25,7 +23,7 @@ index 3a3991f4d6..f736ddc8e3 100644
  void apup_process_beacon(struct hostapd_data *hapd,
                const struct ieee80211_mgmt *mgmt, size_t len,
                const struct ieee802_11_elems *elems )
-@@ -157,4 +161,8 @@ void apup_process_beacon(struct hostapd_data *hapd,
+@@ -157,4 +161,8 @@ void apup_process_beacon(struct hostapd_
  #ifdef UBUS_SUPPORT
  	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
  #endif
@@ -34,11 +32,9 @@ index 3a3991f4d6..f736ddc8e3 100644
 +	hostapd_ucode_apup_newpeer(hapd, mIfname);
 +#endif
  }
-diff --git a/src/ap/ucode.c b/src/ap/ucode.c
-index d344190208..391002feae 100644
 --- a/src/ap/ucode.c
 +++ b/src/ap/ucode.c
-@@ -811,3 +811,20 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
+@@ -815,3 +815,20 @@ void hostapd_ucode_free_bss(struct hosta
  	ucv_put(wpa_ucode_call(2));
  	ucv_gc(vm);
  }
@@ -59,11 +55,9 @@ index d344190208..391002feae 100644
 +	ucv_gc(vm);
 +}
 +#endif // def CONFIG_APUP
-diff --git a/src/ap/ucode.h b/src/ap/ucode.h
-index d00b787169..c9bdde6516 100644
 --- a/src/ap/ucode.h
 +++ b/src/ap/ucode.h
-@@ -27,6 +27,10 @@ void hostapd_ucode_add_bss(struct hostapd_data *hapd);
+@@ -27,6 +27,10 @@ void hostapd_ucode_add_bss(struct hostap
  void hostapd_ucode_free_bss(struct hostapd_data *hapd);
  void hostapd_ucode_reload_bss(struct hostapd_data *hapd);
  
@@ -74,6 +68,3 @@ index d00b787169..c9bdde6516 100644
  #else
  
  static inline int hostapd_ucode_init(struct hapd_interfaces *ifaces)
--- 
-2.44.2
-

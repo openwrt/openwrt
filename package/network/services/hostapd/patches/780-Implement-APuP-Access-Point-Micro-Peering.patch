@@ -37,11 +37,9 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  create mode 100644 src/ap/apup.c
  create mode 100644 src/ap/apup.h
 
-diff --git a/hostapd/Makefile b/hostapd/Makefile
-index 73048c1297..c890a7f29c 100644
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1415,6 +1415,11 @@ ifdef CONFIG_NO_TKIP
+@@ -1416,6 +1416,11 @@ ifdef CONFIG_NO_TKIP
  CFLAGS += -DCONFIG_NO_TKIP
  endif
  
@@ -53,11 +51,9 @@ index 73048c1297..c890a7f29c 100644
  $(DESTDIR)$(BINDIR)/%: %
  	install -D $(<) $(@)
  
-diff --git a/hostapd/config_file.c b/hostapd/config_file.c
-index bba5b19164..ef906199ec 100644
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5058,6 +5058,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+@@ -5125,6 +5125,15 @@ static int hostapd_config_fill(struct ho
  		bss->mld_indicate_disabled = atoi(pos);
  #endif /* CONFIG_TESTING_OPTIONS */
  #endif /* CONFIG_IEEE80211BE */
@@ -73,11 +69,9 @@ index bba5b19164..ef906199ec 100644
  	} else {
  		wpa_printf(MSG_ERROR,
  			   "Line %d: unknown configuration item '%s'",
-diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
-index 0e52a9990d..9102db5ed0 100644
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -970,6 +970,35 @@ struct hostapd_bss_config {
+@@ -985,6 +985,35 @@ struct hostapd_bss_config {
  	bool mld_indicate_disabled;
  #endif /* CONFIG_TESTING_OPTIONS */
  #endif /* CONFIG_IEEE80211BE */
@@ -113,11 +107,9 @@ index 0e52a9990d..9102db5ed0 100644
  };
  
  /**
-diff --git a/src/ap/ap_drv_ops.c b/src/ap/ap_drv_ops.c
-index e7396d9aea..0a49ae515e 100644
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -382,13 +382,39 @@ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
+@@ -385,13 +385,39 @@ int hostapd_set_wds_sta(struct hostapd_d
  			const u8 *addr, int aid, int val)
  {
  	const char *bridge = NULL;
@@ -158,11 +150,9 @@ index e7396d9aea..0a49ae515e 100644
  }
  
  
-diff --git a/src/ap/ap_drv_ops.h b/src/ap/ap_drv_ops.h
-index fa89d2398e..ab4dc8eb16 100644
 --- a/src/ap/ap_drv_ops.h
 +++ b/src/ap/ap_drv_ops.h
-@@ -33,6 +33,9 @@ int hostapd_set_drv_ieee8021x(struct hostapd_data *hapd, const char *ifname,
+@@ -35,6 +35,9 @@ int hostapd_set_drv_ieee8021x(struct hos
  			      int enabled);
  int hostapd_vlan_if_add(struct hostapd_data *hapd, const char *ifname);
  int hostapd_vlan_if_remove(struct hostapd_data *hapd, const char *ifname);
@@ -171,10 +161,7 @@ index fa89d2398e..ab4dc8eb16 100644
 + */
  int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
  			const u8 *addr, int aid, int val);
- 
-diff --git a/src/ap/apup.c b/src/ap/apup.c
-new file mode 100644
-index 0000000000..3575f1b6c6
+ int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
 @@ -0,0 +1,152 @@
@@ -330,9 +317,6 @@ index 0000000000..3575f1b6c6
 +	           " capabilities %d",
 +	           mIfname, sta_ret->flags, sta_ret->capability);
 +}
-diff --git a/src/ap/apup.h b/src/ap/apup.h
-new file mode 100644
-index 0000000000..a14a283bb4
 --- /dev/null
 +++ b/src/ap/apup.h
 @@ -0,0 +1,24 @@
@@ -360,8 +344,6 @@ index 0000000000..a14a283bb4
 +void apup_process_beacon(struct hostapd_data *hapd,
 +              const struct ieee80211_mgmt *mgmt, size_t len,
 +              const struct ieee802_11_elems *elems );
-diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
-index 1c4dd22da1..09254f18f2 100644
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
 @@ -59,6 +59,9 @@
@@ -374,7 +356,7 @@ index 1c4dd22da1..09254f18f2 100644
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3469,8 +3472,8 @@ static u16 check_multi_ap(struct hostapd_data *hapd, struct sta_info *sta,
+@@ -3562,8 +3565,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -385,7 +367,7 @@ index 1c4dd22da1..09254f18f2 100644
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -3855,7 +3858,7 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
+@@ -3950,7 +3953,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
@@ -394,7 +376,7 @@ index 1c4dd22da1..09254f18f2 100644
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
  
-@@ -5927,6 +5930,11 @@ static void handle_beacon(struct hostapd_data *hapd,
+@@ -6002,6 +6005,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -406,11 +388,9 @@ index 1c4dd22da1..09254f18f2 100644
  }
  
  
-diff --git a/src/ap/ieee802_11.h b/src/ap/ieee802_11.h
-index a35486d464..0861bef82e 100644
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -108,6 +108,8 @@ int hostapd_process_ml_assoc_req_addr(struct hostapd_data *hapd,
+@@ -108,6 +108,8 @@ int hostapd_process_ml_assoc_req_addr(st
  				      const u8 *basic_mle, size_t basic_mle_len,
  				      u8 *mld_addr);
  int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta);
@@ -419,11 +399,9 @@ index a35486d464..0861bef82e 100644
  u16 copy_sta_ht_capab(struct hostapd_data *hapd, struct sta_info *sta,
  		      const u8 *ht_capab);
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
-diff --git a/src/drivers/driver.h b/src/drivers/driver.h
-index 1bbb9672cd..8d26561e97 100644
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3976,7 +3976,7 @@ struct wpa_driver_ops {
+@@ -4013,7 +4013,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -432,11 +410,9 @@ index 1bbb9672cd..8d26561e97 100644
  
  	/**
  	 * send_action - Transmit an Action frame
-diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
-index aeb1e6beef..b6e4ddd86d 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8415,24 +8415,14 @@ static int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
+@@ -8434,24 +8434,14 @@ static int have_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
@@ -463,6 +439,3 @@ index aeb1e6beef..b6e4ddd86d 100644
  	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
  		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
  	if (val) {
--- 
-2.44.2
-
