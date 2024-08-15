@@ -379,7 +379,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4;
 --- a/net/ipv4/udp_offload.c
 +++ b/net/ipv4/udp_offload.c
-@@ -433,33 +433,6 @@ out:
+@@ -447,33 +447,6 @@ out:
  	return segs;
  }
  
