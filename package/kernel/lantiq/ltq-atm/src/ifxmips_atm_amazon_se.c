@@ -263,7 +263,7 @@ extern void ase_fw_ver(unsigned int *major, unsigned int *minor)
     *minor = FW_VER_ID->minor;
 }
 
-void ase_init(struct platform_device *pdev)
+int ase_init(struct platform_device *pdev)
 {
     init_pmu();
 
@@ -276,6 +276,8 @@ void ase_init(struct platform_device *pdev)
     init_atm_tc();
 
     clear_share_buffer();
+
+    return 0;
 }
 
 void ase_shutdown(void)

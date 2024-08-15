@@ -194,13 +194,15 @@ void ar9_fw_ver(unsigned int *major, unsigned int *minor)
     *minor = FW_VER_ID->minor;
 }
 
-void ar9_init(struct platform_device *pdev)
+int ar9_init(struct platform_device *pdev)
 {
 	init_pmu();
 	reset_ppe(pdev);
 	init_ema();
 	init_mailbox();
 	clear_share_buffer();
+
+	return 0;
 }
 
 void ar9_shutdown(void)
