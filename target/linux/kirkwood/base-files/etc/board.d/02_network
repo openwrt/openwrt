@@ -64,10 +64,6 @@ kirkwood_setup_macs()
 	dlink,dns320l)
 		lan_mac=$(mtd_get_mac_text "mini firmware")
 		;;
-	iptime,nas1)
-		lan_mac=$(mtd_get_mac_binary u-boot 0x3ffa8)
-		label_mac=$lan_mac
-		;;
 	linksys,e4200-v2|\
 	linksys,ea3500|\
 	linksys,ea4500)
