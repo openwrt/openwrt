@@ -121,24 +121,19 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	mutex_init(&glc->latch_mutex);
 
 	n = gpiod_count(dev, NULL);
-	if (n <= 0) {
-		dev_err(dev, "failed to get gpios: %d\n", n);
-		return n;
-	} else if (n != GPIO_LATCH_LINES) {
-		dev_err(dev, "expected %d gpios\n", GPIO_LATCH_LINES);
+	if (n <= 0)
+		return dev_err_probe(dev, n, "failed to get gpios");
+	if (n != GPIO_LATCH_LINES) {
+		dev_err(dev, "expected %d gpios", GPIO_LATCH_LINES);
 		return -EINVAL;
 	}
 
 	for (i = 0; i < n; i++) {
 		glc->gpios[i] = devm_gpiod_get_index_optional(dev, NULL, i,
 			GPIOD_OUT_LOW);
-		if (IS_ERR(glc->gpios[i])) {
-			if (PTR_ERR(glc->gpios[i]) != -EPROBE_DEFER) {
-				dev_err(dev, "failed to get gpio %d: %ld\n", i,
-					PTR_ERR(glc->gpios[i]));
-			}
-			return PTR_ERR(glc->gpios[i]);
-		}
+		if (IS_ERR(glc->gpios[i]))
+			return dev_err_probe(dev, PTR_ERR(glc->gpios[i]),
+					     "failed to get gpio %d", i);
 	}
 
 	glc->le_gpio = 8;
@@ -162,13 +157,7 @@ static int gpio_latch_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, glc);
 
-	i = gpiochip_add(&glc->gc);
-	if (i) {
-		dev_err(dev, "gpiochip_add() failed: %d\n", i);
-		return i;
-	}
-
-	return 0;
+	return gpiochip_add(&glc->gc);
 }
 
 static int gpio_latch_remove(struct platform_device *pdev)
