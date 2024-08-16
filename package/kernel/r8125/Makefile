@@ -5,7 +5,7 @@ PKG_VERSION:=9.013.02
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=https://github.com/Noltari/rtl8125/releases/download/$(PKG_VERSION)
+PKG_SOURCE_URL:=https://github.com/openwrt/rtl8125/releases/download/$(PKG_VERSION)
 PKG_HASH:=d36410ee99c956f250d9cd08340d8c36567d190f420a8ee128ff6e51225aac0c
 
 PKG_BUILD_PARALLEL:=1
