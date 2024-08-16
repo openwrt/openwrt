@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -110,6 +110,7 @@ static int gpiochip_irqchip_init_valid_m
+@@ -111,6 +111,7 @@ static int gpiochip_irqchip_init_valid_m
  static void gpiochip_irqchip_free_valid_mask(struct gpio_chip *gc);
  
  static bool gpiolib_initialized;
@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  static inline void desc_set_label(struct gpio_desc *d, const char *label)
  {
-@@ -745,6 +746,7 @@ int gpiochip_add_data_with_key(struct gp
+@@ -746,6 +747,7 @@ int gpiochip_add_data_with_key(struct gp
  	unsigned int i;
  	int base = 0;
  	int ret = 0;
@@ -30,7 +30,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/*
  	 * First: allocate and populate the internal stat container, and
-@@ -769,7 +771,16 @@ int gpiochip_add_data_with_key(struct gp
+@@ -770,7 +772,16 @@ int gpiochip_add_data_with_key(struct gp
  	else if (gc->parent)
  		device_set_node(&gdev->dev, dev_fwnode(gc->parent));
  
