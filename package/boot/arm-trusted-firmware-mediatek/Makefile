@@ -547,7 +547,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7981,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x100000)) \
-	all
+	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 define Package/trusted-firmware-a-ram/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
