@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2024-10-08
-PKG_SOURCE_VERSION:=dcbab62272bf5cab2ed857bc655d240970e14f2a
-PKG_MIRROR_HASH:=e53a3872abf5e35db6baaceb56e6ffa289f8dd9b6226cf8a4d5b87b541179175
+PKG_SOURCE_DATE:=2025-01-15
+PKG_SOURCE_VERSION:=6e1801a4992fe72a98a2219f2dcd038194785971
+PKG_MIRROR_HASH:=569cf6894e21712ed6a5553b4fad0bbdeed14e0cc4b9292f5f86343f7897fc7e
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -37,6 +37,7 @@ ALLWIFIBOARDS:= \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
 	edimax_cax1800 \
+	linksys_homewrk \
 	linksys_mx4200 \
 	linksys_mx5300 \
 	linksys_mx8500 \
@@ -164,6 +165,7 @@ $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
 $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
+$(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
 $(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
