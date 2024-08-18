@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arm-trusted-firmware-mediatek
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
@@ -50,6 +50,27 @@ define Trusted-Firmware-A/mt7622-nor-2ddr
   PLAT:=mt7622
   BOOT_DEVICE:=nor
   DDR3_FLYBY:=1
+endef
+
+define Trusted-Firmware-A/mt7622-ram-1ddr
+  NAME:=MediaTek MT7622 (RAM, 1x DDR3)
+  BOOT_DEVICE:=ram
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  RAM_BOOT_UART_DL:=1
+  HIDDEN:=
+  DEFAULT:=TARGET_mediatek_mt7622
+endef
+
+define Trusted-Firmware-A/mt7622-ram-2ddr
+  NAME:=MediaTek MT7622 (RAM, 2x DDR3)
+  BOOT_DEVICE:=ram
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  DDR3_FLYBY:=1
+  RAM_BOOT_UART_DL:=1
+  HIDDEN:=
+  DEFAULT:=TARGET_mediatek_mt7622
 endef
 
 define Trusted-Firmware-A/mt7622-snand-1ddr
@@ -483,6 +504,8 @@ endef
 TFA_TARGETS:= \
 	mt7622-nor-1ddr \
 	mt7622-nor-2ddr \
+	mt7622-ram-1ddr \
+	mt7622-ram-2ddr \
 	mt7622-snand-1ddr \
 	mt7622-snand-ubi-1ddr \
 	mt7622-snand-2ddr \
@@ -547,12 +570,14 @@ TFA_MAKE_FLAGS += \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7981,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x100000)) \
-	all
+	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 define Package/trusted-firmware-a-ram/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/$(PLAT)/release/bl2.bin $(BIN_DIR)/$(BUILD_VARIANT)-bl2.bin
 endef
+Package/trusted-firmware-a-mt7622-ram-1ddr/install = $(Package/trusted-firmware-a-ram/install)
+Package/trusted-firmware-a-mt7622-ram-2ddr/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7981-ram-ddr3/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7981-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7986-ram-ddr3/install = $(Package/trusted-firmware-a-ram/install)

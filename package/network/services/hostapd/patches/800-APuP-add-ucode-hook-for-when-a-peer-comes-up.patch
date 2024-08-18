@@ -1,0 +1,79 @@
+From aaeb60b39a72774c651187208ec47efd0daeb75b Mon Sep 17 00:00:00 2001
+From: Gioacchino Mazzurco <gio@polymathes.cc>
+Date: Tue, 7 May 2024 11:54:23 +0200
+Subject: [PATCH 3/3] APuP add ucode hook for when a peer comes up
+
+Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
+---
+ src/ap/apup.c  |  8 ++++++++
+ src/ap/ucode.c | 17 +++++++++++++++++
+ src/ap/ucode.h |  4 ++++
+ 3 files changed, 29 insertions(+)
+
+diff --git a/src/ap/apup.c b/src/ap/apup.c
+index 3a3991f4d6..f736ddc8e3 100644
+--- a/src/ap/apup.c
++++ b/src/ap/apup.c
+@@ -27,6 +27,10 @@
+ #	include "ubus.h"
+ #endif
+ 
++#ifdef UCODE_SUPPORT
++#	include "ucode.h"
++#endif
++
+ void apup_process_beacon(struct hostapd_data *hapd,
+               const struct ieee80211_mgmt *mgmt, size_t len,
+               const struct ieee802_11_elems *elems )
+@@ -157,4 +161,8 @@ void apup_process_beacon(struct hostapd_data *hapd,
+ #ifdef UBUS_SUPPORT
+ 	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
+ #endif
++
++#ifdef UCODE_SUPPORT
++	hostapd_ucode_apup_newpeer(hapd, mIfname);
++#endif
+ }
+diff --git a/src/ap/ucode.c b/src/ap/ucode.c
+index d344190208..391002feae 100644
+--- a/src/ap/ucode.c
++++ b/src/ap/ucode.c
+@@ -811,3 +811,20 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
+ 	ucv_put(wpa_ucode_call(2));
+ 	ucv_gc(vm);
+ }
++
++#ifdef CONFIG_APUP
++void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname)
++{
++	uc_value_t *val;
++
++	if (wpa_ucode_call_prepare("apup_newpeer"))
++		return;
++
++	val = hostapd_ucode_bss_get_uval(hapd);
++	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface))); // BSS ifname
++	uc_value_push(ucv_get(val));
++	uc_value_push(ucv_get(ucv_string_new(ifname))); // APuP peer ifname
++	ucv_put(wpa_ucode_call(2));
++	ucv_gc(vm);
++}
++#endif // def CONFIG_APUP
+diff --git a/src/ap/ucode.h b/src/ap/ucode.h
+index d00b787169..c9bdde6516 100644
+--- a/src/ap/ucode.h
++++ b/src/ap/ucode.h
+@@ -27,6 +27,10 @@ void hostapd_ucode_add_bss(struct hostapd_data *hapd);
+ void hostapd_ucode_free_bss(struct hostapd_data *hapd);
+ void hostapd_ucode_reload_bss(struct hostapd_data *hapd);
+ 
++#ifdef CONFIG_APUP
++void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
++#endif // def CONFIG_APUP
++
+ #else
+ 
+ static inline int hostapd_ucode_init(struct hapd_interfaces *ifaces)
+-- 
+2.44.2
+

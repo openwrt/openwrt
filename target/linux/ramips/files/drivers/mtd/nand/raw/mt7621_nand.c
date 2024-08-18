@@ -1290,44 +1290,28 @@ static int mt7621_nfc_probe(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "nfi");
 	nfc->nfi_base = res->start;
 	nfc->nfi_regs = devm_ioremap_resource(dev, res);
-	if (IS_ERR(nfc->nfi_regs)) {
-		ret = PTR_ERR(nfc->nfi_regs);
-		return ret;
-	}
+	if (IS_ERR(nfc->nfi_regs))
+		return PTR_ERR(nfc->nfi_regs);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ecc");
 	nfc->ecc_regs = devm_ioremap_resource(dev, res);
-	if (IS_ERR(nfc->ecc_regs)) {
-		ret = PTR_ERR(nfc->ecc_regs);
-		return ret;
-	}
+	if (IS_ERR(nfc->ecc_regs))
+		return PTR_ERR(nfc->ecc_regs);
 
-	nfc->nfi_clk = devm_clk_get(dev, "nfi_clk");
-	if (IS_ERR(nfc->nfi_clk)) {
+	nfc->nfi_clk = devm_clk_get_optional_enabled(dev, "nfi_clk");
+	if (IS_ERR(nfc->nfi_clk))
+		return PTR_ERR(nfc->nfi_clk);
+
+	if (!nfc->nfi_clk)
 		dev_warn(dev, "nfi clk not provided\n");
-		nfc->nfi_clk = NULL;
-	} else {
-		ret = clk_prepare_enable(nfc->nfi_clk);
-		if (ret) {
-			dev_err(dev, "Failed to enable nfi core clock\n");
-			return ret;
-		}
-	}
 
 	platform_set_drvdata(pdev, nfc);
 
 	ret = mt7621_nfc_init_chip(nfc);
-	if (ret) {
-		dev_err(dev, "Failed to initialize nand chip\n");
-		goto clk_disable;
-	}
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to initialize nand chip\n");
 
 	return 0;
-
-clk_disable:
-	clk_disable_unprepare(nfc->nfi_clk);
-
-	return ret;
 }
 
 static int mt7621_nfc_remove(struct platform_device *pdev)
@@ -1339,7 +1323,6 @@ static int mt7621_nfc_remove(struct platform_device *pdev)
 	mtk_bmt_detach(mtd);
 	mtd_device_unregister(mtd);
 	nand_cleanup(nand);
-	clk_disable_unprepare(nfc->nfi_clk);
 
 	return 0;
 }

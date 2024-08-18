@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=omnia-mcu-firmware
 PKG_DISTNAME:=omnia_hw_ctrl
-PKG_VERSION:=4.0
+PKG_VERSION:=4.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_SUBDIR:=$(PKG_DISTNAME)-binaries-v$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 PKG_SOURCE_URL:=https://gitlab.nic.cz/turris/hw/$(PKG_DISTNAME)/-/releases/v$(PKG_VERSION)/downloads/
-PKG_HASH:=64b6010f587d89c192685d152644075a5e0abf431eb069ac42981524065a0053
+PKG_HASH:=9c6a3d88ae2ca093dd35aace040f0b1eb1cb5c1141575b45623bdd64d733c59f
 
 PKG_MAINTAINER:=Marek Mojik <marek.mojik@nic.cz>
 PKG_LICENSE:=GPL-3.0-or-later

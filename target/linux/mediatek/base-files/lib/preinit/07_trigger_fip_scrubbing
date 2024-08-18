@@ -1,0 +1,16 @@
+#!/bin/sh
+
+trigger_fip_scrubbing() {
+	local vol voltype volname
+	for vol in /sys/class/ubi/ubi*_*; do
+		[ -e "$vol" ] || continue
+		voltype="$(cat "$vol"/type)"
+		volname="$(cat "$vol"/name)"
+		if [ "$voltype" = "static" ] && [ "$volname" = "fip" ]; then
+			cat "/dev/${vol##*/}" > /dev/null
+			break
+		fi
+	done
+}
+
+boot_hook_add preinit_main trigger_fip_scrubbing
