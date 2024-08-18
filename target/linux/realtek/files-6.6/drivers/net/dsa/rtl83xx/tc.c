@@ -21,7 +21,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 	/* KEY_CONTROL and KEY_BASIC are needed for forming a meaningful key */
 	if ((dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_CONTROL)) == 0 ||
 	    (dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_BASIC)) == 0) {
-		pr_err("Cannot form TC key: used_keys = 0x%x\n", dissector->used_keys);
+		pr_err("Cannot form TC key: used_keys = 0x%llx\n", dissector->used_keys);
 		return -EOPNOTSUPP;
 	}
 
