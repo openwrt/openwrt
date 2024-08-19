@@ -187,6 +187,7 @@ struct rtl838x_eth_priv {
 	struct rtl838x_rx_q rx_qs[MAX_RXRINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
+	struct phylink_pcs pcs;
 	u16 id;
 	u16 family_id;
 	const struct rtl838x_eth_reg *r;
@@ -1441,10 +1442,9 @@ static void rtl838x_mac_config(struct phylink_config *config,
 	pr_info("In %s, mode %x\n", __func__, mode);
 }
 
-static void rtl838x_mac_an_restart(struct phylink_config *config)
+static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
 {
-	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 
 	/* This works only on RTL838x chips */
 	if (priv->family_id != RTL8380_FAMILY_ID)
@@ -1457,12 +1457,11 @@ static void rtl838x_mac_an_restart(struct phylink_config *config)
 	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
+static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
 				  struct phylink_link_state *state)
 {
 	u32 speed;
-	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 	int port = priv->cpu_port;
 
 	pr_info("In %s\n", __func__);
@@ -1501,6 +1500,14 @@ static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_mac_tx_pause_sts(port))
 		state->pause |= MLO_PAUSE_TX;
+}
+
+static int rtl838x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			      phy_interface_t interface,
+			      const unsigned long *advertising,
+			      bool permit_pause_to_mac)
+{
+	return 0;
 }
 
 static void rtl838x_mac_link_down(struct phylink_config *config,
@@ -2362,6 +2369,15 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
+static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
+						  phy_interface_t interface)
+{
+	struct net_device *dev = to_net_dev(config->dev);
+	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+
+	return &priv->pcs;
+}
+
 static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
@@ -2417,10 +2433,15 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_fix_features = rtl838x_fix_features,
 };
 
+static const struct phylink_pcs_ops rtl838x_pcs_ops = {
+	.pcs_get_state = rtl838x_pcs_get_state,
+	.pcs_an_restart = rtl838x_pcs_an_restart,
+	.pcs_config = rtl838x_pcs_config,
+};
+
 static const struct phylink_mac_ops rtl838x_phylink_ops = {
 	.validate = rtl838x_validate,
-	.mac_pcs_get_state = rtl838x_mac_pcs_get_state,
-	.mac_an_restart = rtl838x_mac_an_restart,
+	.mac_select_pcs = rtl838x_mac_select_pcs,
 	.mac_config = rtl838x_mac_config,
 	.mac_link_down = rtl838x_mac_link_down,
 	.mac_link_up = rtl838x_mac_link_up,
@@ -2618,6 +2639,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
+	priv->pcs.ops = &rtl838x_pcs_ops;
 	priv->phylink_config.dev = &dev->dev;
 	priv->phylink_config.type = PHYLINK_NETDEV;
 
