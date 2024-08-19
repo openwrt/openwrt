@@ -2428,6 +2428,17 @@ define Device/rostelecom_rt-sf-1
 endef
 TARGET_DEVICES += rostelecom_rt-sf-1
 
+define Device/ruijie_rg-ew1200g-pro-v1.1
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EW1200G PRO
+  DEVICE_VARIANT := v1.1
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += ruijie_rg-ew1200g-pro-v1.1
+
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
