@@ -266,9 +266,12 @@
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
 
-			wifi@0,0 {
+			ath9k: wifi@0,0 {
 				compatible = "pci168c,0033";
 				reg = <0x0000 0 0 0 0>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_1000>, <&macaddr_uboot_4fc00 0>;
 				nvmem-cell-names = "calibration", "mac-address";
 			};
@@ -291,6 +294,15 @@
 			wifi@0,0 {
 				compatible = "pci168c,0030";
 				reg = <0x0000 0 0 0 0>;
+				/*
+				* The PCI header of the AR9381 chip is not programmed
+				* correctly by the bootloader and the device uses wrong
+				* data due to that. Replace the broken values with the
+				* correct ones.
+				*/
+				device-id = <0x0030>;
+				class-code = <0x028000>;
+				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_5000>, <&macaddr_uboot_4fc00 (-1)>;
 				nvmem-cell-names = "calibration", "mac-address";
 			};
@@ -303,6 +315,11 @@
 
 	leds {
 		compatible = "gpio-leds";
+
+		wps {
+			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
+			label = "tp-link:green:wps";
+		};
 
 		system_green: system {
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
