@@ -396,7 +396,7 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	 * 0x1: 1G MMD register (MMD via Clause 22 registers 13 and 14)
 	 * 0x2: 10G MMD register (MMD via Clause 45)
 	 */
-	int type = (regnum & MII_ADDR_C45)?2:1;
+	int type = 2;
 
 	mutex_lock(&smi_lock);
 
@@ -404,7 +404,7 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
 
 	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | mdiobus_c45_regad(regnum), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = type << 2 | BIT(0); /* MMD-access-type | EXEC */
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -420,7 +420,7 @@ int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	*val = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
 
 	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
-		 port, devnum, mdiobus_c45_regad(regnum), *val, err);
+		 port, devnum, regnum, *val, err);
 
 	mutex_unlock(&smi_lock);
 
@@ -432,7 +432,7 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
-	int type = (regnum & MII_ADDR_C45)?2:1;
+	int type = 2;
 	u64 pm;
 
 	mutex_lock(&smi_lock);
@@ -446,7 +446,7 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
 
 	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | mdiobus_c45_regad(regnum), RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
 
 	v = BIT(4) | type << 2 | BIT(0); /* WRITE | MMD-access-type | EXEC */
 	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
@@ -456,7 +456,7 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	} while (v & BIT(0));
 
 	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
-		 port, devnum, mdiobus_c45_regad(regnum), val, err);
+		 port, devnum, regnum, val, err);
 	mutex_unlock(&smi_lock);
 
 	return err;
