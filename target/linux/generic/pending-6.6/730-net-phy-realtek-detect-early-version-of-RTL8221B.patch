@@ -1,0 +1,41 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Subject: generic: fix realtek PHY detection
+
+Fixes the issue of RTL8221B-VB-CG not being detected correctly.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+--- a/drivers/net/phy/realtek.c
++++ b/drivers/net/phy/realtek.c
+@@ -981,9 +981,28 @@ static int rtl8226_match_phy_device(stru
+ static int rtlgen_is_c45_match(struct phy_device *phydev, unsigned int id,
+ 			       bool is_c45)
+ {
+-	if (phydev->is_c45)
+-		return is_c45 && (id == phydev->c45_ids.device_ids[1]);
+-	else
++	int val;
++	u32 rid;
++
++	if (phydev->is_c45) {
++		if (!is_c45)
++			return 0;
++
++		rid = phydev->c45_ids.device_ids[1];
++		if ((rid == 0xffffffff) && phydev->mdio.bus->read_c45) {
++			val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PKGID1);
++			if (val < 0)
++				return 0;
++
++			rid = val << 16;
++			val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PKGID2);
++			if (val < 0)
++				return 0;
++
++			rid |= val;
++		}
++		return (id == rid);
++	} else
+ 		return !is_c45 && (id == phydev->phy_id);
+ }
+ 
