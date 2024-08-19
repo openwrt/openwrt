@@ -20,6 +20,10 @@
 
 extern struct rtl83xx_soc_info soc_info;
 extern struct mutex smi_lock;
+extern int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
+extern int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
+extern int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
+extern int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum);
 
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
@@ -437,12 +441,12 @@ static int rtl8393_read_status(struct phy_device *phydev)
 	return err;
 }
 
-static int rtl8226_read_page(struct phy_device *phydev)
+static int rtl821x_read_page(struct phy_device *phydev)
 {
 	return __phy_read(phydev, RTL8XXX_PAGE_SELECT);
 }
 
-static int rtl8226_write_page(struct phy_device *phydev, int page)
+static int rtl821x_write_page(struct phy_device *phydev, int page)
 {
 	return __phy_write(phydev, RTL8XXX_PAGE_SELECT, page);
 }
@@ -3840,9 +3844,10 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214C),
 		.name		= "Realtek RTL8214C",
 		.features	= PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.match_phy_device = rtl8214c_match_phy_device,
 		.probe		= rtl8214c_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3851,9 +3856,10 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
 		.name		= "Realtek RTL8214FC",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.match_phy_device = rtl8214fc_match_phy_device,
 		.probe		= rtl8214fc_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= rtl8214fc_suspend,
 		.resume		= rtl8214fc_resume,
 		.set_loopback	= genphy_loopback,
@@ -3866,9 +3872,10 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_E),
 		.name		= "Realtek RTL8218B (external)",
 		.features	= PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.match_phy_device = rtl8218b_ext_match_phy_device,
 		.probe		= rtl8218b_ext_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3879,8 +3886,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218D),
 		.name		= "REALTEK RTL8218D",
 		.features	= PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.probe		= rtl8218d_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3891,12 +3899,11 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8221B),
 		.name           = "REALTEK RTL8221B",
 		.features       = PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.suspend        = genphy_suspend,
 		.resume         = genphy_resume,
 		.set_loopback   = genphy_loopback,
-		.read_page      = rtl8226_read_page,
-		.write_page     = rtl8226_write_page,
+		.read_page      = rtl821x_read_page,
+		.write_page     = rtl821x_write_page,
 		.read_status    = rtl8226_read_status,
 		.config_aneg    = rtl8226_config_aneg,
 		.set_eee        = rtl8226_set_eee,
@@ -3906,12 +3913,11 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8226),
 		.name		= "REALTEK RTL8226",
 		.features	= PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
-		.read_page	= rtl8226_read_page,
-		.write_page	= rtl8226_write_page,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.read_status	= rtl8226_read_status,
 		.config_aneg	= rtl8226_config_aneg,
 		.set_eee	= rtl8226_set_eee,
@@ -3921,8 +3927,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_I),
 		.name		= "Realtek RTL8218B (internal)",
 		.features	= PHY_GBIT_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.probe		= rtl8218b_int_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3933,8 +3940,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_I),
 		.name		= "Realtek RTL8380 SERDES",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.probe		= rtl838x_serdes_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3944,8 +3952,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8393_I),
 		.name		= "Realtek RTL8393 SERDES",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
 		.probe		= rtl8393_serdes_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
@@ -3955,7 +3964,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8390_GENERIC),
 		.name		= "Realtek RTL8390 Generic",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.probe		= rtl8390_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
@@ -3965,7 +3975,8 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL9300_I),
 		.name		= "REALTEK RTL9300 SERDES",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.flags		= PHY_HAS_REALTEK_PAGES,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
 		.probe		= rtl9300_serdes_probe,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
