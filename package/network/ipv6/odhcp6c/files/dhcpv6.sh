@@ -107,7 +107,11 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ip6prefixes" ] && proto_export "USERPREFIX=$ip6prefixes"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
+	[ -n "$iface_dslite" ] && append opts "-r64"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
+	[ -n "$iface_map" ] && append opts "-r94"
+	[ -n "$iface_map" ] && append opts "-r95"
+	[ -n "$iface_map" ] && append opts "-r96"
 	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"
 	[ "$delegate" = "0" ] && proto_export "IFACE_MAP_DELEGATE=0"
