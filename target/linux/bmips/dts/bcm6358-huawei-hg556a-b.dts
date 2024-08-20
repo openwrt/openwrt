@@ -49,69 +49,69 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@0 {
+		led-0 {
 			label = "red:message";
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
-		led@1 {
+		led-1 {
 			label = "red:hspa";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		led@2 {
+		led-2 {
 			label = "red:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: led@3 {
+		led_power_red: led-3 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		led@6 {
+		led-6 {
 			label = "all";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		led@12 {
+		led-12 {
 			label = "green:lan1";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		led@13 {
+		led-13 {
 			label = "red:lan1";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led@15 {
+		led-15 {
 			label = "green:lan2";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		led@22 {
+		led-22 {
 			label = "red:lan2";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
-		led@23 {
+		led-23 {
 			label = "green:lan3";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 
-		led@26 {
+		led-26 {
 			label = "red:lan3";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 
-		led@27 {
+		led-27 {
 			label = "green:lan4";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
 
-		led@28 {
+		led-28 {
 			label = "red:lan4";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
@@ -120,7 +120,7 @@
 	ath9k-leds {
 		compatible = "gpio-leds";
 
-		wlan {
+		led-2 {
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
