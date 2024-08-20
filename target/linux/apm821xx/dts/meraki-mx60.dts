@@ -71,8 +71,27 @@
 			};
 
 			partition@240000 {
+				compatible = "linux,ubi";
 				label = "ubi";
 				reg = <0x00240000 0x3fdc0000>;
+
+				volumes {
+					ubi-volume-board-config {
+						volume = "board-config";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr_board_66: macaddr@66 {
+								compatible = "mac-base";
+								reg = <0x66 0x6>;
+								#nvmem-cell-cells = <1>;
+							};
+						};
+					};
+				};
 			};
 		};
 	};
@@ -92,6 +111,9 @@
 
 &EMAC0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_board_66 0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -296,6 +318,8 @@
 					label = "wan";
 					phy-mode = "internal";
 					phy-handle = <&phy_port5>;
+					nvmem-cells = <&macaddr_board_66 1>;
+					nvmem-cell-names = "mac-address";
 
 					leds {
 						#address-cells = <1>;
