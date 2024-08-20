@@ -37,6 +37,8 @@ endef
 define Package/ds-lite/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/dslite.sh $(1)/lib/netifd/proto/dslite.sh
+	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+	$(INSTALL_BIN) ./files/dslite.defaults $(1)/etc/uci-defaults/15_dslite
 endef
 
 $(eval $(call BuildPackage,ds-lite))
