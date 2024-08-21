@@ -99,12 +99,12 @@ proto_dhcpv6_setup() {
 	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
 
 	# Dynamically add OROs to support loaded packages
-  json_load "$(ubus call network get_proto_handlers)"
-  json_get_vars handler_map map
-  json_get_vars handler_dslite dslite
+	json_load "$(ubus call network get_proto_handlers)"
+	json_get_vars handler_map map
+	json_get_vars handler_dslite dslite
 
-  [ -n "$handler_dslite" ] && append reqopts "64"
-  [ -n "$handler_map" ] && append reqopts "94"
+	[ -n "$handler_dslite" ] && append reqopts "64"
+	[ -n "$handler_map" ] && append reqopts "94"
 	[ -n "$handler_map" ] && append reqopts "95"
 	[ -n "$handler_map" ] && append reqopts "96"
 
