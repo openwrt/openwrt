@@ -35,8 +35,6 @@ define Package/map/install
 	$(INSTALL_BIN) ./files/map.sh $(1)/lib/netifd/proto/map.sh
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mapcalc $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/uci-defaults/
-	$(INSTALL_BIN) ./files/map.defaults $(1)/etc/uci-defaults/15_map
 endef
 
 $(eval $(call BuildPackage,map))

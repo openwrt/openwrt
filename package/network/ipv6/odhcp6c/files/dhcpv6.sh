@@ -96,22 +96,28 @@ proto_dhcpv6_setup() {
 
 	[ "$verbose" = "1" ] && append opts "-v"
 
+	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
+
+	# Dynamically add OROs to support loaded packages
+  json_load "$(ubus call network get_proto_handlers)"
+  json_get_vars handler_map map
+  json_get_vars handler_dslite dslite
+
+  [ -n "$handler_dslite" ] && append reqopts "64"
+  [ -n "$handler_map" ] && append reqopts "94"
+	[ -n "$handler_map" ] && append reqopts "95"
+	[ -n "$handler_map" ] && append reqopts "96"
+
 	local opt
 	for opt in $reqopts; do
 		append opts "-r$opt"
 	done
 
-	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
-
 	append opts "-t${soltimeout:-120}"
 
 	[ -n "$ip6prefixes" ] && proto_export "USERPREFIX=$ip6prefixes"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
-	[ -n "$iface_dslite" ] && append opts "-r64"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
-	[ -n "$iface_map" ] && append opts "-r94"
-	[ -n "$iface_map" ] && append opts "-r95"
-	[ -n "$iface_map" ] && append opts "-r96"
 	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"
 	[ "$delegate" = "0" ] && proto_export "IFACE_MAP_DELEGATE=0"
