@@ -1,6 +1,7 @@
 #!/bin/sh /etc/rc.common
 
 START=30
+DEFAULT_ENABLE=0
 
 USE_PROCD=1
 NAME=radius
@@ -8,9 +9,9 @@ NAME=radius
 radius_start() {
 	local cfg="$1"
 
+	# Migration
 	config_get_bool disabled "$cfg" disabled 0
-
-	[ "$disabled" -gt 0 ] && return
+	[ "$disabled" -gt 0 ] && { disable; return 1; }
 
 	config_get ca "$cfg" ca_cert
 	config_get key "$cfg" key

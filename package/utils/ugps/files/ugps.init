@@ -2,6 +2,7 @@
 # Copyright (c) 2014 OpenWrt.org
 
 START=80
+DEFAULT_ENABLE=0
 
 USE_PROCD=1
 PROG=/usr/sbin/ugps
@@ -14,9 +15,11 @@ start_service() {
 	local tty="$(uci get gps.@gps[-1].tty)"
 	local baudrate="$(uci get gps.@gps[-1].baudrate || echo 0)"
 	local atime="$(uci get gps.@gps[-1].adjust_time)"
-	local disabled="$(uci get gps.@gps[-1].disabled || echo 0)"
 
-	[ "$disabled" == "0" ] || return
+	# Migration
+	local disabled="$(uci get gps.@gps[-1].disabled || echo 0)"
+	[ "$disabled" == "0" ] || { disable; return 1; }
+
 	[ "$tty" ] || return
 
 	case "$tty" in
