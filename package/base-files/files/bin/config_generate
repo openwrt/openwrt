@@ -91,12 +91,12 @@ generate_static_network() {
 
 addr_offset=2
 generate_network() {
-	local ports device macaddr protocol type ipaddr netmask vlan force_link
+	local ports device macaddr protocol type ipaddr netmask vlan force_link auto
 	local bridge=$2
 
 	json_select network
 		json_select "$1"
-			json_get_vars device macaddr metric protocol ipaddr netmask vlan force_link
+			json_get_vars device macaddr metric protocol ipaddr netmask vlan force_link auto
 			json_get_values ports ports
 		json_select ..
 	json_select ..
@@ -189,6 +189,7 @@ generate_network() {
 					set network.${1}6.device='$device'
 					set network.${1}6.proto='dhcpv6'
 				EOF
+				[ -n "$auto" ] && uci -q set network.${1}6.auto="${auto}"
 			}
 		;;
 
@@ -206,6 +207,7 @@ generate_network() {
 					set network.${1}6.device='@${1}'
 					set network.${1}6.proto='dhcpv6'
 				EOF
+				[ -n "$auto" ] && uci -q set network.${1}6.auto="${auto}"
 			}
 		;;
 
@@ -218,6 +220,8 @@ generate_network() {
 			EOF
 		;;
 	esac
+
+	[ -n "$auto" ] && uci -q set network.${1}.auto="${auto}"
 }
 
 generate_switch_vlans_ports() {
