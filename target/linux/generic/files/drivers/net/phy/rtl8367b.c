@@ -288,6 +288,17 @@ struct rtl8367b_initval {
 #define RTL8367D_VID_MASK		0xfff
 #define RTL8367D_TA_VLAN_VID_MASK	RTL8367D_VID_MASK
 
+#define RTL8367D_REG_EXT_TXC_DLY		0x13f9
+#define RTL8367D_EXT1_RGMII_TX_DLY_MASK		0x38
+
+#define RTL8367D_REG_TOP_CON0			0x1d70
+#define   RTL8367D_MAC7_SEL_EXT1_MASK		0x2000
+#define   RTL8367D_MAC4_SEL_EXT1_MASK		0x1000
+
+#define RTL8367D_REG_SDS1_MISC0			0x1d78
+#define   RTL8367D_SDS1_MODE_MASK		0x1f
+#define   RTL8367D_PORT_SDS_MODE_DISABLE		0x1f
+
 static struct rtl8366_mib_counter
 rtl8367b_mib_counters[RTL8367B_NUM_MIB_COUNTERS] = {
 	{0,   0, 4, "ifInOctets"			},
@@ -589,6 +600,7 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 				   enum rtl8367_extif_mode mode)
 {
 	int err;
+	u32 data;
 
 	/* set port mode */
 	switch (mode) {
@@ -608,6 +620,15 @@ static int rtl8367b_extif_set_mode(struct rtl8366_smi *smi, int id,
 					RTL8367B_DEBUG1_DP_MASK(id),
 				(7 << RTL8367B_DEBUG1_DN_SHIFT(id)) |
 					(7 << RTL8367B_DEBUG1_DP_SHIFT(id)));
+			if ((smi->rtl8367b_chip == RTL8367B_CHIP_RTL8367S_VB) && (id == 1)) {
+				REG_RMW(smi, RTL8367D_REG_EXT_TXC_DLY, RTL8367D_EXT1_RGMII_TX_DLY_MASK, 0);
+				/* Configure RGMII/MII mux to port 7 if UTP_PORT4 is not RGMII mode */
+				REG_RD(smi, RTL8367D_REG_TOP_CON0, &data);
+				data &= RTL8367D_MAC4_SEL_EXT1_MASK;
+				if (data == 0)
+					REG_RMW(smi, RTL8367D_REG_TOP_CON0, RTL8367D_MAC7_SEL_EXT1_MASK, RTL8367D_MAC7_SEL_EXT1_MASK);
+				REG_RMW(smi, RTL8367D_REG_SDS1_MISC0, RTL8367D_SDS1_MODE_MASK, RTL8367D_PORT_SDS_MODE_DISABLE);
+			}
 		} else {
 			REG_RMW(smi, RTL8367B_CHIP_DEBUG2_REG,
 				RTL8367B_DEBUG2_DRI_EXT2 |
