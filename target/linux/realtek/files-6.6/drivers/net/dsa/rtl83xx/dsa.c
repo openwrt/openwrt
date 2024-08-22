@@ -312,11 +312,13 @@ static int rtl93xx_get_sds(struct phy_device *phydev)
 	return sds_num;
 }
 
-static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
-				     unsigned long *supported,
-				     struct phylink_link_state *state)
+static int rtl83xx_pcs_validate(struct phylink_pcs *pcs,
+				unsigned long *supported,
+				const struct phylink_link_state *state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
+	struct rtl838x_switch_priv *priv = rtpcs->priv;
+	int port = rtpcs->port;
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
 
 	pr_debug("In %s port %d, state is %d", __func__, port, state->interface);
@@ -331,10 +333,10 @@ static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
 	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
 	    state->interface != PHY_INTERFACE_MODE_SGMII) {
 		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(ds->dev,
+		dev_err(priv->ds->dev,
 			"Unsupported interface: %d for port %d\n",
 			state->interface, port);
-		return;
+		return -EINVAL;
 	}
 
 	/* Allow all the expected bits */
@@ -367,15 +369,17 @@ static void rtl83xx_phylink_validate(struct dsa_switch *ds, int port,
 
 	bitmap_and(supported, supported, mask,
 		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-	bitmap_and(state->advertising, state->advertising, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
+
+	return 0;
 }
 
-static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
-				     unsigned long *supported,
-				     struct phylink_link_state *state)
+static int rtl93xx_pcs_validate(struct phylink_pcs *pcs,
+				unsigned long *supported,
+				const struct phylink_link_state *state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
+	struct rtl838x_switch_priv *priv = rtpcs->priv;
+	int port = rtpcs->port;
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
 
 	pr_debug("In %s port %d, state is %d (%s)", __func__, port, state->interface,
@@ -396,10 +400,10 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
 	    state->interface != PHY_INTERFACE_MODE_SGMII) {
 		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(ds->dev,
+		dev_err(priv->ds->dev,
 			"Unsupported interface: %d for port %d\n",
 			state->interface, port);
-		return;
+		return -EINVAL;
 	}
 
 	/* Allow all the expected bits */
@@ -449,20 +453,24 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 
 	bitmap_and(supported, supported, mask,
 		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-	bitmap_and(state->advertising, state->advertising, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
 	pr_debug("%s leaving supported: %*pb", __func__, __ETHTOOL_LINK_MODE_MASK_NBITS, supported);
+
+	return 0;
 }
 
-static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
-					  struct phylink_link_state *state)
+static void rtl83xx_pcs_get_state(struct phylink_pcs *pcs,
+				  struct phylink_link_state *state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
+	struct rtl838x_switch_priv *priv = rtpcs->priv;
+	int port = rtpcs->port;
 	u64 speed;
 	u64 link;
 
-	if (port < 0 || port > priv->cpu_port)
-		return -EINVAL;
+	if (port < 0 || port > priv->cpu_port) {
+		state->link = false;
+		return;
+	}
 
 	state->link = 0;
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
@@ -499,20 +507,22 @@ static int rtl83xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_TX;
-
-	return 1;
 }
 
-static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
-					  struct phylink_link_state *state)
+static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
+				  struct phylink_link_state *state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
+	struct rtl838x_switch_priv *priv = rtpcs->priv;
+	int port = rtpcs->port;
 	u64 speed;
 	u64 link;
 	u64 media;
 
-	if (port < 0 || port > priv->cpu_port)
-		return -EINVAL;
+	if (port < 0 || port > priv->cpu_port) {
+		state->link = false;
+		return;
+	}
 
 	/* On the RTL9300 for at least the RTL8226B PHY, the MAC-side link
 	 * state needs to be read twice in order to read a correct result.
@@ -581,8 +591,28 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_TX;
+}
 
-	return 1;
+static int rtl83xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			      phy_interface_t interface,
+			      const unsigned long *advertising,
+			      bool permit_pause_to_mac)
+{
+	return 0;
+}
+
+static void rtl83xx_pcs_an_restart(struct phylink_pcs *pcs)
+{
+/* No restart functionality existed before we migrated to pcs */
+}
+
+static struct phylink_pcs *rtl83xx_phylink_mac_select_pcs(struct dsa_switch *ds,
+							  int port,
+							  phy_interface_t interface)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	return &priv->pcs[port].pcs;
 }
 
 static void rtl83xx_config_interface(int port, phy_interface_t interface)
@@ -2126,6 +2156,13 @@ int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 	return write_phy(phy_addr, 0, phy_reg, val);
 }
 
+const struct phylink_pcs_ops rtl83xx_pcs_ops = {
+	.pcs_an_restart		= rtl83xx_pcs_an_restart,
+	.pcs_validate		= rtl83xx_pcs_validate,
+	.pcs_get_state		= rtl83xx_pcs_get_state,
+	.pcs_config		= rtl83xx_pcs_config,
+};
+
 const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
@@ -2133,11 +2170,10 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
-	.phylink_validate	= rtl83xx_phylink_validate,
-	.phylink_mac_link_state	= rtl83xx_phylink_mac_link_state,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
+	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
 
 	.get_strings		= rtl83xx_get_strings,
 	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
@@ -2177,6 +2213,13 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
+const struct phylink_pcs_ops rtl93xx_pcs_ops = {
+	.pcs_an_restart		= rtl83xx_pcs_an_restart,
+	.pcs_validate		= rtl93xx_pcs_validate,
+	.pcs_get_state		= rtl93xx_pcs_get_state,
+	.pcs_config		= rtl83xx_pcs_config,
+};
+
 const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
@@ -2184,11 +2227,10 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
-	.phylink_validate	= rtl93xx_phylink_validate,
-	.phylink_mac_link_state	= rtl93xx_phylink_mac_link_state,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
+	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
 
 	.get_strings		= rtl83xx_get_strings,
 	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
