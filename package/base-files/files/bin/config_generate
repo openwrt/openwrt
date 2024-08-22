@@ -340,6 +340,41 @@ generate_static_system() {
 				uci -q set "system.@system[-1].hostname=$hostname"
 			fi
 
+			local conloglevel
+			if json_get_var conloglevel conloglevel; then
+				uci -q set "system.@system[-1].conloglevel=$conloglevel"
+			fi
+
+			local ttylogin
+			if json_get_var ttylogin ttylogin; then
+				uci -q set "system.@system[-1].ttylogin=$ttylogin"
+			fi
+
+			local zonename
+			if json_get_var zonename zonename; then
+				uci -q set "system.@system[-1].zonename=$zonename"
+			fi
+
+			local timezone
+			if json_get_var timezone timezone; then
+				uci -q set "system.@system[-1].timezone=$timezone"
+			fi
+
+			local cronloglevel
+			if json_get_var cronloglevel cronloglevel; then
+				uci -q set "system.@system[-1].cronloglevel=$cronloglevel"
+			fi
+
+			local log_size
+			if json_get_var log_size log_size; then
+				uci -q set "system.@system[-1].log_size=$log_size"
+			fi
+
+			local log_file
+			if json_get_var log_file log_file; then
+				uci -q set "system.@system[-1].log_file=$log_file"
+			fi
+
 			local compat_version
 			if json_get_var compat_version compat_version; then
 				uci -q set "system.@system[-1].compat_version=$compat_version"
