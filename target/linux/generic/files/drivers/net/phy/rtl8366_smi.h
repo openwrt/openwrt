@@ -78,6 +78,7 @@ struct rtl8366_smi {
 	u32			phy_id;
 	rtl8367b_chip_t		rtl8367b_chip;
 	struct mii_bus		*ext_mbus;
+	struct rtl8366_vlan_mc *emu_vlanmc;
 };
 
 struct rtl8366_vlan_mc {
