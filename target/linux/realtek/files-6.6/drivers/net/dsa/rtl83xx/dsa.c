@@ -652,6 +652,21 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
 }
 
+static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
+				     struct phylink_config *config)
+{
+/*
+ * This capability check will need some love. Depending on the model and the port
+ * different link modes are supported. For now just enable all required values
+ * so that we can make use of the ports.
+ */
+	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+}
+
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
@@ -2170,6 +2185,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
+	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
@@ -2227,6 +2243,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
+	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,

@@ -2642,6 +2642,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	priv->pcs.ops = &rtl838x_pcs_ops;
 	priv->phylink_config.dev = &dev->dev;
 	priv->phylink_config.type = PHYLINK_NETDEV;
+	__set_bit(PHY_INTERFACE_MODE_INTERNAL, priv->phylink_config.supported_interfaces);
 
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
 				 phy_mode, &rtl838x_phylink_ops);
