@@ -34,6 +34,7 @@ platform_copy_config() {
 	itus,shield-router)
 		platform_copy_config_helper /dev/mmcblk1p1
 		;;
+	er|\
 	ubnt,edgerouter-4|\
 	ubnt,edgerouter-6p)
 		platform_copy_config_helper /dev/mmcblk0p1
