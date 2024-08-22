@@ -25,6 +25,9 @@ extern const struct rtl838x_reg rtl931x_reg;
 extern const struct dsa_switch_ops rtl83xx_switch_ops;
 extern const struct dsa_switch_ops rtl930x_switch_ops;
 
+extern const struct phylink_pcs_ops rtl83xx_pcs_ops;
+extern const struct phylink_pcs_ops rtl93xx_pcs_ops;
+
 DEFINE_MUTEX(smi_lock);
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
@@ -1461,7 +1464,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	int err = 0;
+	int i, err = 0;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
 	u64 bpdu_mask;
@@ -1558,6 +1561,22 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
+
+	for (i = 0; i <= priv->cpu_port; i++) {
+		switch(soc_info.family) {
+		case RTL8380_FAMILY_ID:
+		case RTL8390_FAMILY_ID:
+			priv->pcs[i].pcs.ops = &rtl83xx_pcs_ops;
+			break;
+		case RTL9300_FAMILY_ID:
+		case RTL9310_FAMILY_ID:
+			priv->pcs[i].pcs.ops = &rtl93xx_pcs_ops;
+			break;
+		}
+		priv->pcs[i].pcs.neg_mode = true;
+		priv->pcs[i].priv = priv;
+		priv->pcs[i].port = i;
+	}
 
 	err = rtl83xx_mdio_probe(priv);
 	if (err) {

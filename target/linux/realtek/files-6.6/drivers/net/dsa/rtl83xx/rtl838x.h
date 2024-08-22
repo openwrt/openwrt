@@ -639,6 +639,12 @@ struct rtl838x_port {
 	const struct dsa_port *dp;
 };
 
+struct rtl838x_pcs {
+	struct phylink_pcs pcs;
+	struct rtl838x_switch_priv *priv;
+	int port;
+};
+
 struct rtl838x_vlan_info {
 	u64 untagged_ports;
 	u64 tagged_ports;
@@ -1058,6 +1064,7 @@ struct rtl838x_switch_priv {
 	u16 family_id;
 	char version;
 	struct rtl838x_port ports[57];
+	struct rtl838x_pcs pcs[57];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
