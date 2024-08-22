@@ -201,6 +201,26 @@ define Device/radxa_rock-pi-s
 endef
 TARGET_DEVICES += radxa_rock-pi-s
 
+define Device/radxa_zero-3e
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ZERO 3E
+  SOC := rk3566
+  DEVICE_DTS := rockchip/rk3566-radxa-zero-3e
+  UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_zero-3e
+
+define Device/radxa_zero-3w
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ZERO 3W
+  SOC := rk3566
+  DEVICE_DTS := rockchip/rk3566-radxa-zero-3w
+  UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_zero-3w
+
 define Device/sinovoip_bpi-r2-pro
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Bananapi-R2 Pro
