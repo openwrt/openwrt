@@ -185,30 +185,90 @@
 
 						nvmem-cells = <&macaddr_uboot_4fc00 1>;
 						nvmem-cell-names = "mac-address";
+
+						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
+							led@0 {
+								reg = <0>;
+								color = <LED_COLOR_ID_GREEN>;
+								function = LED_FUNCTION_WAN;
+								default-state = "keep";
+							};
+						};
 					};
 
 					port@2 {
 						reg = <2>;
 						label = "lan1";
 						phy-handle = <&phy_port2>;
+
+						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
+							led@0 {
+								reg = <0>;
+								color = <LED_COLOR_ID_GREEN>;
+								function = LED_FUNCTION_LAN;
+								default-state = "keep";
+							};
+						};
 					};
 
 					port@3 {
 						reg = <3>;
 						label = "lan2";
 						phy-handle = <&phy_port3>;
+
+						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
+							led@0 {
+								reg = <0>;
+								color = <LED_COLOR_ID_GREEN>;
+								function = LED_FUNCTION_LAN;
+								default-state = "keep";
+							};
+						};
 					};
 
 					port@4 {
 						reg = <4>;
 						label = "lan3";
 						phy-handle = <&phy_port4>;
+
+						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
+							led@0 {
+								reg = <0>;
+								color = <LED_COLOR_ID_GREEN>;
+								function = LED_FUNCTION_LAN;
+								default-state = "keep";
+							};
+						};
 					};
 
 					port@5 {
 						reg = <5>;
 						label = "lan4";
 						phy-handle = <&phy_port5>;
+
+						leds {
+							#address-cells = <1>;
+							#size-cells = <0>;
+
+							led@0 {
+								reg = <0>;
+								color = <LED_COLOR_ID_GREEN>;
+								function = LED_FUNCTION_LAN;
+								default-state = "keep";
+							};
+						};
 					};
 				};
 			};
