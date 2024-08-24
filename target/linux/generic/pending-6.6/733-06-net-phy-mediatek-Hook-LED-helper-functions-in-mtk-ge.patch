@@ -16,7 +16,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/drivers/net/phy/mediatek/mtk-ge.c
 +++ b/drivers/net/phy/mediatek/mtk-ge.c
-@@ -14,6 +14,10 @@
+@@ -13,6 +13,10 @@
  #define MTK_PHY_PAGE_EXTENDED_2A30	0x2a30
  #define MTK_PHY_PAGE_EXTENDED_52B5	0x52b5
  
@@ -27,7 +27,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static void mtk_gephy_config_init(struct phy_device *phydev)
  {
  	/* Disable EEE */
-@@ -94,6 +98,96 @@ static int mt7531_phy_config_init(struct
+@@ -60,6 +64,96 @@ static int mt7531_phy_config_init(struct
  	return 0;
  }
  
@@ -124,7 +124,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static struct phy_driver mtk_gephy_driver[] = {
  	{
  		PHY_ID_MATCH_EXACT(0x03a29412),
-@@ -112,6 +206,7 @@ static struct phy_driver mtk_gephy_drive
+@@ -78,6 +172,7 @@ static struct phy_driver mtk_gephy_drive
  	{
  		PHY_ID_MATCH_EXACT(0x03a29441),
  		.name		= "MediaTek MT7531 PHY",
@@ -132,7 +132,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		.config_init	= mt7531_phy_config_init,
  		/* Interrupts are handled by the switch, not the PHY
  		 * itself.
-@@ -122,6 +217,11 @@ static struct phy_driver mtk_gephy_drive
+@@ -88,6 +183,11 @@ static struct phy_driver mtk_gephy_drive
  		.resume		= genphy_resume,
  		.read_page	= mtk_phy_read_page,
  		.write_page	= mtk_phy_write_page,

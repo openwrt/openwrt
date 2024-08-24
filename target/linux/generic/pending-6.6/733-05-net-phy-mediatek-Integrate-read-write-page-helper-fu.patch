@@ -58,7 +58,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		.led_hw_is_supported = mt798x_phy_led_hw_is_supported,
 --- a/drivers/net/phy/mediatek/mtk-ge.c
 +++ b/drivers/net/phy/mediatek/mtk-ge.c
-@@ -4,6 +4,8 @@
+@@ -3,6 +3,8 @@
  #include <linux/module.h>
  #include <linux/phy.h>
  
@@ -67,7 +67,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  #define MTK_EXT_PAGE_ACCESS		0x1f
  #define MTK_PHY_PAGE_STANDARD		0x0000
  #define MTK_PHY_PAGE_EXTENDED		0x0001
-@@ -12,16 +14,6 @@
+@@ -11,16 +13,6 @@
  #define MTK_PHY_PAGE_EXTENDED_2A30	0x2a30
  #define MTK_PHY_PAGE_EXTENDED_52B5	0x52b5
  
@@ -84,7 +84,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static void mtk_gephy_config_init(struct phy_device *phydev)
  {
  	/* Disable EEE */
-@@ -114,8 +106,8 @@ static struct phy_driver mtk_gephy_drive
+@@ -80,8 +72,8 @@ static struct phy_driver mtk_gephy_drive
  		.handle_interrupt = genphy_handle_interrupt_no_ack,
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
@@ -95,7 +95,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	},
  	{
  		PHY_ID_MATCH_EXACT(0x03a29441),
-@@ -128,8 +120,8 @@ static struct phy_driver mtk_gephy_drive
+@@ -94,8 +86,8 @@ static struct phy_driver mtk_gephy_drive
  		.handle_interrupt = genphy_handle_interrupt_no_ack,
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,

@@ -26,7 +26,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -313,22 +313,7 @@ config MAXLINEAR_GPHY
+@@ -239,22 +239,7 @@ config MAXLINEAR_GPHY
  	  Support for the Maxlinear GPY115, GPY211, GPY212, GPY215,
  	  GPY241, GPY245 PHYs.
  
@@ -52,7 +52,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	tristate "Micrel PHYs"
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -82,8 +82,7 @@ obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
+@@ -67,8 +67,7 @@ obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
  obj-$(CONFIG_MARVELL_88Q2XXX_PHY)	+= marvell-88q2xxx.o
  obj-$(CONFIG_MARVELL_88X2222_PHY)	+= marvell-88x2222.o
  obj-$(CONFIG_MAXLINEAR_GPHY)	+= mxl-gpy.o
@@ -1653,9 +1653,8 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 -MODULE_DEVICE_TABLE(mdio, mtk_socphy_tbl);
 --- a/drivers/net/phy/mediatek-ge.c
 +++ /dev/null
-@@ -1,148 +0,0 @@
+@@ -1,114 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0+
--#include <linux/of.h>
 -#include <linux/bitfield.h>
 -#include <linux/module.h>
 -#include <linux/phy.h>
@@ -1710,36 +1709,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 -	return 0;
 -}
 -
--static int mt7530_led_config_of(struct phy_device *phydev)
--{
--	struct device_node *np = phydev->mdio.dev.of_node;
--	const __be32 *paddr;
--	int len;
--	int i;
--
--	paddr = of_get_property(np, "mediatek,led-config", &len);
--	if (!paddr)
--		return 0;
--
--	if (len < (2 * sizeof(*paddr)))
--		return -EINVAL;
--
--	len /= sizeof(*paddr);
--
--	phydev_warn(phydev, "Configure LED registers (num=%d)\n", len);
--	for (i = 0; i < len - 1; i += 2) {
--		u32 reg;
--		u32 val;
--
--		reg = be32_to_cpup(paddr + i);
--		val = be32_to_cpup(paddr + i + 1);
--
--		phy_write_mmd(phydev, MDIO_MMD_VEND2, reg, val);
--	}
--
--	return 0;
--}
--
 -static int mt7531_phy_config_init(struct phy_device *phydev)
 -{
 -	mtk_gephy_config_init(phydev);
@@ -1751,9 +1720,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 -	/* Set TX Pair delay selection */
 -	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x13, 0x404);
 -	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x14, 0x404);
--
--	/* LED Config*/
--	mt7530_led_config_of(phydev);
 -
 -	return 0;
 -}
@@ -3362,9 +3328,8 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +MODULE_DEVICE_TABLE(mdio, mtk_socphy_tbl);
 --- /dev/null
 +++ b/drivers/net/phy/mediatek/mtk-ge.c
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,114 @@
 +// SPDX-License-Identifier: GPL-2.0+
-+#include <linux/of.h>
 +#include <linux/bitfield.h>
 +#include <linux/module.h>
 +#include <linux/phy.h>
@@ -3419,36 +3384,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	return 0;
 +}
 +
-+static int mt7530_led_config_of(struct phy_device *phydev)
-+{
-+	struct device_node *np = phydev->mdio.dev.of_node;
-+	const __be32 *paddr;
-+	int len;
-+	int i;
-+
-+	paddr = of_get_property(np, "mediatek,led-config", &len);
-+	if (!paddr)
-+		return 0;
-+
-+	if (len < (2 * sizeof(*paddr)))
-+		return -EINVAL;
-+
-+	len /= sizeof(*paddr);
-+
-+	phydev_warn(phydev, "Configure LED registers (num=%d)\n", len);
-+	for (i = 0; i < len - 1; i += 2) {
-+		u32 reg;
-+		u32 val;
-+
-+		reg = be32_to_cpup(paddr + i);
-+		val = be32_to_cpup(paddr + i + 1);
-+
-+		phy_write_mmd(phydev, MDIO_MMD_VEND2, reg, val);
-+	}
-+
-+	return 0;
-+}
-+
 +static int mt7531_phy_config_init(struct phy_device *phydev)
 +{
 +	mtk_gephy_config_init(phydev);
@@ -3460,9 +3395,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	/* Set TX Pair delay selection */
 +	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x13, 0x404);
 +	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x14, 0x404);
-+
-+	/* LED Config*/
-+	mt7530_led_config_of(phydev);
 +
 +	return 0;
 +}

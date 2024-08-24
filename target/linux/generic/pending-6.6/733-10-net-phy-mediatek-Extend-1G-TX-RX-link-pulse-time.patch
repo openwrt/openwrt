@@ -48,7 +48,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  		.probe		= mt7988_phy_probe,
 --- a/drivers/net/phy/mediatek/mtk-ge.c
 +++ b/drivers/net/phy/mediatek/mtk-ge.c
-@@ -9,10 +9,6 @@
+@@ -8,10 +8,6 @@
  #define MTK_GPHY_ID_MT7530		0x03a29412
  #define MTK_GPHY_ID_MT7531		0x03a29441
  
@@ -59,7 +59,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  #define MTK_PHY_PAGE_EXTENDED_2			0x0002
  #define MTK_PHY_PAGE_EXTENDED_3			0x0003
  #define MTK_PHY_RG_LPI_PCS_DSP_CTRL_REG11	0x11
-@@ -251,6 +247,7 @@ static struct phy_driver mtk_gephy_drive
+@@ -217,6 +213,7 @@ static struct phy_driver mtk_gephy_drive
  		.name		= "MediaTek MT7531 PHY",
  		.probe		= mt7531_phy_probe,
  		.config_init	= mt7531_phy_config_init,

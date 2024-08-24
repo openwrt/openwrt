@@ -367,7 +367,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	phy_select_page(phydev, MTK_PHY_PAGE_EXTENDED_3);
 --- a/drivers/net/phy/mediatek/mtk-ge.c
 +++ b/drivers/net/phy/mediatek/mtk-ge.c
-@@ -9,13 +9,35 @@
+@@ -8,13 +8,35 @@
  #define MTK_GPHY_ID_MT7530		0x03a29412
  #define MTK_GPHY_ID_MT7531		0x03a29441
  
@@ -410,7 +410,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
  struct mtk_gephy_priv {
  	unsigned long		led_state;
-@@ -27,20 +49,29 @@ static void mtk_gephy_config_init(struct
+@@ -26,20 +48,29 @@ static void mtk_gephy_config_init(struct
  	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
  
  	/* Enable HW auto downshift */
@@ -450,7 +450,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  }
  
  static int mt7530_phy_config_init(struct phy_device *phydev)
-@@ -48,7 +79,8 @@ static int mt7530_phy_config_init(struct
+@@ -47,7 +78,8 @@ static int mt7530_phy_config_init(struct
  	mtk_gephy_config_init(phydev);
  
  	/* Increase post_update_timer */
@@ -460,7 +460,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
  	return 0;
  }
-@@ -89,11 +121,19 @@ static int mt7531_phy_config_init(struct
+@@ -58,11 +90,19 @@ static int mt7531_phy_config_init(struct
  
  	/* PHY link down power saving enable */
  	phy_set_bits(phydev, 0x17, BIT(4));
@@ -481,8 +481,8 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +		       FIELD_PREP(MTK_TX_DELAY_PAIR_B_MASK, 0x4) |
 +		       FIELD_PREP(MTK_TX_DELAY_PAIR_D_MASK, 0x4));
  
- 	/* LED Config*/
- 	mt7530_led_config_of(phydev);
+ 	return 0;
+ }
 --- a/drivers/net/phy/mediatek/mtk-phy-lib.c
 +++ b/drivers/net/phy/mediatek/mtk-phy-lib.c
 @@ -6,6 +6,97 @@
