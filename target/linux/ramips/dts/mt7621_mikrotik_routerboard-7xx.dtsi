@@ -40,29 +40,44 @@
 
 &switch0 {
 	ports {
-		port@0 {
+		port0: port@0 {
 			status = "okay";
 			label = "wan";
+
+			nvmem-cells = <&macaddr_hard 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@1 {
 			status = "okay";
 			label = "lan2";
+
+			nvmem-cells = <&macaddr_hard 1>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@2 {
 			status = "okay";
 			label = "lan3";
+
+			nvmem-cells = <&macaddr_hard 2>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@3 {
 			status = "okay";
 			label = "lan4";
+
+			nvmem-cells = <&macaddr_hard 3>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@4 {
 			status = "okay";
 			label = "lan5";
+
+			nvmem-cells = <&macaddr_hard 4>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
