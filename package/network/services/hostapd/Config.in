@@ -33,11 +33,11 @@ config WPA_WOLFSSL
 
 config DRIVER_11AC_SUPPORT
 	bool
-	default n
+	default y
 
 config DRIVER_11AX_SUPPORT
 	bool
-	default n
+	default y
 	select WPA_MBO_SUPPORT
 
 config WPA_ENABLE_WEP
@@ -59,3 +59,8 @@ config WPA_MBO_SUPPORT
 	  that facilitate efficient use of multiple frequency bands.
 	  Enabling MBO on an AP using RSN requires 802.11w to be enabled.
 	  Hostapd will refuse to start if MBO and RSN are enabled without 11w.
+
+config DRIVER_11BE_SUPPORT
+	bool
+	default y
+
