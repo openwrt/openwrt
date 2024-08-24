@@ -9,6 +9,7 @@
 		led-failsafe = &led_usr;
 		led-running = &led_usr;
 		led-upgrade = &led_usr;
+		label-mac-device = &gmac1;
 	};
 
 	leds {
@@ -94,6 +95,9 @@
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy0 {
@@ -105,11 +109,17 @@
 		port@1 {
 			status = "okay";
 			label = "lan1";
+
+			nvmem-cells = <&macaddr_hard 1>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@2 {
 			status = "okay";
 			label = "lan2";
+
+			nvmem-cells = <&macaddr_hard 2>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
