@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -419,6 +419,12 @@ config ROCKCHIP_PHY
+@@ -404,6 +404,12 @@ config ROCKCHIP_PHY
  	help
  	  Currently supports the integrated Ethernet PHY.
  
@@ -15,7 +15,7 @@
  	select CRC16
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -102,6 +102,7 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+@@ -101,6 +101,7 @@ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
  obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
