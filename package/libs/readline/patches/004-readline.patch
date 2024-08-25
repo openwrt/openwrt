@@ -1,0 +1,52 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-004
+
+Bug-Reported-by:	Henry Bent <henry.r.bent@gmail.com>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-bash/2022-11/msg00044.html
+
+Bug-Description:
+
+
+There are systems that supply one of select or pselect, but not both.
+
+--- a/input.c
++++ b/input.c
+@@ -151,7 +151,9 @@ int rl_timeout_remaining (unsigned int *
+ 
+ int _rl_timeout_init (void);
+ int _rl_timeout_sigalrm_handler (void);
++#if defined (RL_TIMEOUT_USE_SELECT)
+ int _rl_timeout_select (int, fd_set *, fd_set *, fd_set *, const struct timeval *, const sigset_t *);
++#endif
+ 
+ static void _rl_timeout_handle (void);
+ #if defined (RL_TIMEOUT_USE_SIGALRM)
+@@ -248,7 +250,7 @@ rl_gather_tyi (void)
+   register int tem, result;
+   int chars_avail, k;
+   char input;
+-#if defined(HAVE_SELECT)
++#if defined (HAVE_PSELECT) || defined (HAVE_SELECT)
+   fd_set readfds, exceptfds;
+   struct timeval timeout;
+ #endif
+@@ -805,7 +807,7 @@ rl_getc (FILE *stream)
+   int result;
+   unsigned char c;
+   int fd;
+-#if defined (HAVE_PSELECT)
++#if defined (HAVE_PSELECT) || defined (HAVE_SELECT)
+   sigset_t empty_set;
+   fd_set readfds;
+ #endif
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-3
++4

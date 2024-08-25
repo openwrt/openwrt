@@ -1,0 +1,41 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-005
+
+Bug-Reported-by:	Simon Marchi <simon.marchi@polymtl.ca>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2022-09/msg00005.html
+
+Bug-Description:
+
+If an application is using readline in callback mode, and a signal arrives
+after readline checks for it in rl_callback_read_char() but before it
+restores the application's signal handlers, it won't get processed until the
+next time the application calls rl_callback_read_char(). Readline needs to
+check for and resend any pending signals after restoring the application's
+signal handlers.
+
+
+--- a/callback.c
++++ b/callback.c
+@@ -115,7 +115,10 @@ rl_callback_handler_install (const char
+ #define CALLBACK_READ_RETURN() \
+   do { \
+     if (rl_persistent_signal_handlers == 0) \
+-      rl_clear_signals (); \
++      { \
++        rl_clear_signals (); \
++        if (_rl_caught_signal) _rl_signal_handler (_rl_caught_signal); \
++      } \
+     return; \
+   } while (0)
+ #else
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-4
++5

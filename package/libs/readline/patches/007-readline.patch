@@ -1,0 +1,38 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-007
+
+Bug-Reported-by:	Kevin Pulo <kev@pulo.com.au>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2022-11/msg00002.html
+
+Bug-Description:
+
+If readline is called with no prompt, it should display a newline if return
+is typed on an empty line. It should still suppress the final newline if
+return is typed on the last (empty) line of a multi-line command.
+
+
+--- a/display.c
++++ b/display.c
+@@ -3338,9 +3338,9 @@ _rl_update_final (void)
+       puts_face (&last_line[_rl_screenwidth - 1 + woff],
+ 		 &last_face[_rl_screenwidth - 1 + woff], 1);
+     }
+-  _rl_vis_botlin = 0;
+-  if (botline_length > 0 || _rl_last_c_pos > 0)
++  if ((_rl_vis_botlin == 0 && botline_length == 0) || botline_length > 0 || _rl_last_c_pos > 0)
+     rl_crlf ();
++  _rl_vis_botlin = 0;
+   fflush (rl_outstream);
+   rl_display_fixed++;
+ }
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-6
++7

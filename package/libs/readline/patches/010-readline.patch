@@ -1,0 +1,55 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-010
+
+Bug-Reported-by:	Martin Castillo <castilma@uni-bremen.de>
+Bug-Reference-ID:	<2d42153b-cf65-caba-dff1-cd3bc6268c7e@uni-bremen.de>
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2023-01/msg00000.html
+
+Bug-Description:
+
+Fix the case where text to be completed from the line buffer (quoted) is
+compared to the common prefix of the possible matches (unquoted) and the
+quoting makes the former appear to be longer than the latter. Readline
+assumes the match doesn't add any characters to the word and doesn't display
+multiple matches.
+
+
+--- a/complete.c
++++ b/complete.c
+@@ -2031,9 +2031,25 @@ rl_complete_internal (int what_to_do)
+ 
+   text = rl_copy_text (start, end);
+   matches = gen_completion_matches (text, start, end, our_func, found_quote, quote_char);
++  /* If TEXT contains quote characters, it will be dequoted as part of
++     generating the matches, and the matches will not contain any quote
++     characters. We need to dequote TEXT before performing the comparison.
++     Since compare_match performs the dequoting, and we only want to do it
++     once, we don't call compare_matches after dequoting TEXT; we call
++     strcmp directly. */
+   /* nontrivial_lcd is set if the common prefix adds something to the word
+      being completed. */
+-  nontrivial_lcd = matches && compare_match (text, matches[0]) != 0;
++  if (rl_filename_completion_desired && rl_filename_quoting_desired &&
++      rl_completion_found_quote && rl_filename_dequoting_function)
++    {
++      char *t;
++      t = (*rl_filename_dequoting_function) (text, rl_completion_quote_character);
++      xfree (text);
++      text = t;
++      nontrivial_lcd = matches && strcmp (text, matches[0]) != 0;
++    }
++  else
++    nontrivial_lcd = matches && strcmp (text, matches[0]) != 0;
+   if (what_to_do == '!' || what_to_do == '@')
+     tlen = strlen (text);
+   xfree (text);
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-9
++10

@@ -1,0 +1,59 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-008
+
+Bug-Reported-by:
+Bug-Reference-ID:
+Bug-Reference-URL:
+
+Bug-Description:
+
+Add missing prototypes for several function declarations.
+
+
+--- a/text.c
++++ b/text.c
+@@ -1764,8 +1764,7 @@ _rl_char_search (int count, int fdir, in
+ 
+ #if defined (READLINE_CALLBACKS)
+ static int
+-_rl_char_search_callback (data)
+-     _rl_callback_generic_arg *data;
++_rl_char_search_callback (_rl_callback_generic_arg *data)
+ {
+   _rl_callback_func = 0;
+   _rl_want_redisplay = 1;
+--- a/bind.c
++++ b/bind.c
+@@ -1167,9 +1167,7 @@ _rl_init_file_error (va_alist)
+ /* **************************************************************** */
+ 
+ static int
+-parse_comparison_op (s, indp)
+-     const char *s;
+-     int *indp;
++parse_comparison_op (const char *s, int *indp)
+ {
+   int i, peekc, op;
+ 
+--- a/rltty.c
++++ b/rltty.c
+@@ -80,8 +80,7 @@ static int ksrflow;
+ /* Dummy call to force a backgrounded readline to stop before it tries
+    to get the tty settings. */
+ static void
+-set_winsize (tty)
+-     int tty;
++set_winsize (int tty)
+ {
+ #if defined (TIOCGWINSZ)
+   struct winsize w;
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-7
++8

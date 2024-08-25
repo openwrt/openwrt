@@ -1,0 +1,39 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-002
+
+Bug-Reported-by:	srobertson@peratonlabs.com
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-bash/2022-09/msg00049.html
+
+Bug-Description:
+
+It's possible for readline to try to zero out a line that's not null-
+terminated, leading to a memory fault.
+
+
+--- a/display.c
++++ b/display.c
+@@ -2683,11 +2683,8 @@ rl_forced_update_display (void)
+   register char *temp;
+ 
+   if (visible_line)
+-    {
+-      temp = visible_line;
+-      while (*temp)
+-	*temp++ = '\0';
+-    }
++    memset (visible_line, 0, line_size);
++
+   rl_on_new_line ();
+   forced_display++;
+   (*rl_redisplay_function) ();
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-1
++2

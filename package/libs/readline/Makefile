@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=readline
 PKG_VERSION:=8.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/readline
@@ -32,7 +32,7 @@ define Package/libreadline
   CATEGORY:=Libraries
   TITLE:=Command lines edition library
   DEPENDS:=+libncursesw
-  URL:=http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
+  URL:=https://tiswww.case.edu/php/chet/readline/rltop.html
   ABI_VERSION:=8
 endef
 
