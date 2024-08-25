@@ -7,7 +7,7 @@
 #include <dt-bindings/leds/common.h>
 
 / {
-	compatible = "sophos,ap15", "qca,qca9558";
+	compatible = "sophos,ap15", "qca,qca9557";
 	model = "Sophos AP15";
 
 	aliases {
@@ -37,17 +37,6 @@
 			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
-	};
-};
-
-&pcie0 {
-	status = "okay";
-
-	wifi@0,0 {
-		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -87,10 +76,6 @@
 
 					cal_art_1000: calibration@1000 {
 						reg = <0x1000 0x440>;
-					};
-
-					cal_art_5000: calibration@5000 {
-						reg = <0x5000 0x844>;
 					};
 				};
 			};
