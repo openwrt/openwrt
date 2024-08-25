@@ -1740,7 +1740,7 @@ static int rtmdio_package_rw(struct phy_device *phydev, int op, int port,
 	/* lock and inform bus about non default addressing */
 	phy_lock_mdio_bus(phydev);
 	__mdiobus_write(phydev->mdio.bus, phydev->mdio.addr,
-			RTL821X_PORT_SELECT, shared->addr + port);
+			RTL821X_PORT_SELECT, shared->base_addr + port);
 
 	oldpage = ret = rtmdio_read_page(phydev);
 	if (oldpage >= 0 && oldpage != page) {
@@ -1943,44 +1943,6 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	bus_priv->raw[portaddr] = false;
 	return 0;
-}
-
-/* These wrappers can be dropped after switch to kernel 6.6 */
-
-static int rtmdio_83xx_read_legacy(struct mii_bus *bus, int addr, int regnum)
-{
-	if (regnum & MII_ADDR_C45)
-		return rtmdio_read_c45(bus, addr, mdiobus_c45_devad(regnum),
-				       mdiobus_c45_regad(regnum));
-	else
-		return rtmdio_83xx_read(bus, addr, regnum);
-}
-
-static int rtmdio_93xx_read_legacy(struct mii_bus *bus, int addr, int regnum)
-{
-	if (regnum & MII_ADDR_C45)
-		return rtmdio_read_c45(bus, addr, mdiobus_c45_devad(regnum),
-				       mdiobus_c45_regad(regnum));
-	else
-		return rtmdio_93xx_read(bus, addr, regnum);
-}
-
-static int rtmdio_83xx_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
-{
-	if (regnum & MII_ADDR_C45)
-		return rtmdio_write_c45(bus, addr, mdiobus_c45_devad(regnum),
-					mdiobus_c45_regad(regnum), val);
-	else
-		return rtmdio_83xx_write(bus, addr, regnum, val);
-}
-
-static int rtmdio_93xx_write_legacy(struct mii_bus *bus, int addr, int regnum, u16 val)
-{
-	if (regnum & MII_ADDR_C45)
-		return rtmdio_write_c45(bus, addr, mdiobus_c45_devad(regnum),
-					mdiobus_c45_regad(regnum), val);
-	else
-		return rtmdio_93xx_write(bus, addr, regnum, val);
 }
 
 static int rtmdio_838x_reset(struct mii_bus *bus)
@@ -2253,8 +2215,8 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	switch(priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		priv->mii_bus->name = "rtl838x-eth-mdio";
-		priv->mii_bus->read = rtmdio_83xx_read_legacy;
-		priv->mii_bus->write = rtmdio_83xx_write_legacy;
+		priv->mii_bus->read = rtmdio_83xx_read;
+		priv->mii_bus->write = rtmdio_83xx_write;
 		priv->mii_bus->reset = rtmdio_838x_reset;
 		bus_priv->read_mmd_phy = rtl838x_read_mmd_phy;
 		bus_priv->write_mmd_phy = rtl838x_write_mmd_phy;
@@ -2263,8 +2225,8 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->mii_bus->name = "rtl839x-eth-mdio";
-		priv->mii_bus->read = rtmdio_83xx_read_legacy;
-		priv->mii_bus->write = rtmdio_83xx_write_legacy;
+		priv->mii_bus->read = rtmdio_83xx_read;
+		priv->mii_bus->write = rtmdio_83xx_write;
 		priv->mii_bus->reset = rtmdio_839x_reset;
 		bus_priv->read_mmd_phy = rtl839x_read_mmd_phy;
 		bus_priv->write_mmd_phy = rtl839x_write_mmd_phy;
@@ -2273,27 +2235,27 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->mii_bus->name = "rtl930x-eth-mdio";
-		priv->mii_bus->read = rtmdio_93xx_read_legacy;
-		priv->mii_bus->write = rtmdio_93xx_write_legacy;
+		priv->mii_bus->read = rtmdio_93xx_read;
+		priv->mii_bus->write = rtmdio_93xx_write;
 		priv->mii_bus->reset = rtmdio_930x_reset;
 		bus_priv->read_mmd_phy = rtl930x_read_mmd_phy;
 		bus_priv->write_mmd_phy = rtl930x_write_mmd_phy;
 		bus_priv->read_phy = rtl930x_read_phy;
 		bus_priv->write_phy = rtl930x_write_phy;
-		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->mii_bus->name = "rtl931x-eth-mdio";
-		priv->mii_bus->read = rtmdio_93xx_read_legacy;
-		priv->mii_bus->write = rtmdio_93xx_write_legacy;
+		priv->mii_bus->read = rtmdio_93xx_read;
+		priv->mii_bus->write = rtmdio_93xx_write;
  		priv->mii_bus->reset = rtmdio_931x_reset;
 		bus_priv->read_mmd_phy = rtl931x_read_mmd_phy;
 		bus_priv->write_mmd_phy = rtl931x_write_mmd_phy;
 		bus_priv->read_phy = rtl931x_read_phy;
 		bus_priv->write_phy = rtl931x_write_phy;
-		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
 		break;
 	}
+	priv->mii_bus->read_c45 = rtmdio_read_c45;
+	priv->mii_bus->write_c45 = rtmdio_write_c45;
 	priv->mii_bus->parent = &priv->pdev->dev;
 
 	for_each_node_by_name(dn, "ethernet-phy") {
