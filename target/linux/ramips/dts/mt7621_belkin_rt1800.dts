@@ -58,12 +58,6 @@
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
-
-		led-wan {
-			color = <LED_COLOR_ID_WHITE>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&switch0 0 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -164,12 +158,21 @@
 
 &ethphy0 {
 	/delete-property/ interrupts;
+
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN;
+			default-state = "keep";
+		};
+	};
 };
 
 &switch0 {
-	gpio-controller;
-	#gpio-cells = <2>;
-
 	ports {
 		port@1 {
 			status = "okay";
