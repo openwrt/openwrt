@@ -156,6 +156,10 @@
 	};
 };
 
+&gmac0 {
+	phy-mode = "trgmii";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
@@ -189,6 +193,10 @@
 		port@4 {
 			status = "okay";
 			label = "lan1";
+		};
+
+		port@6 {
+			phy-mode = "trgmii";
 		};
 	};
 };
