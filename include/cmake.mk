@@ -68,6 +68,8 @@ ifeq ($(HOST_USE_NINJA),1)
   define Host/Uninstall/Default
 	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) uninstall
   endef
+else
+  CMAKE_HOST_OPTIONS += -DCMAKE_GENERATOR="Unix Makefiles"
 endif
 
 ifeq ($(PKG_USE_NINJA),1)
@@ -80,6 +82,8 @@ ifeq ($(PKG_USE_NINJA),1)
   define Build/Install/Default
 	+DESTDIR="$(PKG_INSTALL_DIR)" $(NINJA) -C $(CMAKE_BINARY_DIR) install
   endef
+else
+  CMAKE_OPTIONS += -DCMAKE_GENERATOR="Unix Makefiles"
 endif
 
 define Build/Configure/Default
