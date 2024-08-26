@@ -629,6 +629,19 @@ define Device/comfast_cf-ew72-v2
 endef
 TARGET_DEVICES += comfast_cf-ew72-v2
 
+define Device/cudy_ap1300outdoor
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP1300 Outdoor
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R39
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+  SUPPORTED_DEVICES += R39
+endef
+TARGET_DEVICES += cudy_ap1300outdoor
+
 define Device/cudy_m1800
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy
