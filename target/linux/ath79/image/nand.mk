@@ -487,7 +487,7 @@ TARGET_DEVICES += zte_mf286r
 
 define Device/zyxel_nbg6716
   SOC := qca9558
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NBG6716
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
 	ath10k-firmware-qca988x-ct

@@ -3262,7 +3262,7 @@ TARGET_DEVICES += zbtlink_zbt-wd323
 define Device/zyxel_nwa11xx
   $(Device/loader-okli-uimage)
   SOC := ar9342
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   LOADER_FLASH_OFFS := 0x050000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
   IMAGE_SIZE := 8192k
@@ -3309,7 +3309,7 @@ TARGET_DEVICES += zyxel_nwa1123-ni
 
 define Device/zyxel_nbg6616
   SOC := qca9557
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NBG6616
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-rtc-pcf8563 \
 	kmod-ath10k-ct ath10k-firmware-qca988x-ct

@@ -57,7 +57,7 @@ define Device/hpe_1920
 endef
 
 define Device/zyxel_gs1900
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   IMAGE_SIZE := 6976k
   UIMAGE_MAGIC := 0x83800000
   KERNEL_INITRAMFS := \
