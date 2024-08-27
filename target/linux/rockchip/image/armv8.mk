@@ -89,6 +89,14 @@ define Device/friendlyarm_nanopi-r5s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r5s
 
+define Device/friendlyarm_nanopi-r6c
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R6C
+  SOC := rk3588s
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r6c
+
 define Device/friendlyarm_nanopi-r6s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R6S
