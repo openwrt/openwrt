@@ -671,104 +671,31 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 reg;
-	int speed_bit = priv->family_id == RTL8380_FAMILY_ID ? 4 : 3;
+	u32 mcr;
 
 	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
 
-	if (port == priv->cpu_port) {
-		/* Set Speed, duplex, flow control
-		 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
-		 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
-		 * | MEDIA_SEL
-		 */
-		if (priv->family_id == RTL8380_FAMILY_ID) {
-			sw_w32(0x6192F, priv->r->mac_force_mode_ctrl(priv->cpu_port));
-			/* allow CRC errors on CPU-port */
-			sw_w32_mask(0, 0x8, RTL838X_MAC_PORT_CTRL(priv->cpu_port));
-		} else {
-			sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl(priv->cpu_port));
-		}
+	/* currently only needed for RTL8380 */
+	if (priv->family_id != RTL8380_FAMILY_ID)
+		return;
+
+	if (dsa_port_is_cpu(dp)) {
+		/* allow CRC errors on CPU-port */
+		sw_w32_mask(0, 0x8, priv->r->mac_port_ctrl(port));
 		return;
 	}
 
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-	/* Auto-Negotiation does not work for MAC in RTL8390 */
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
-			pr_debug("PHY autonegotiates\n");
-			reg |= RTL838X_NWAY_EN;
-			sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
-			rtl83xx_config_interface(port, state->interface);
-			return;
-		}
+	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
+		pr_debug("port %d PHY autonegotiates\n", port);
+		rtl83xx_config_interface(port, state->interface);
+		mcr |= RTL838X_NWAY_EN;
+	} else {
+		mcr &= ~RTL838X_NWAY_EN;
 	}
-
-	if (mode != MLO_AN_FIXED)
-		pr_debug("Fixed state.\n");
-
-	/* Clear id_mode_dis bit, and the existing port mode, let
-		 * RGMII_MODE_EN bet set by mac_link_{up,down}  */
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		reg &= ~(RTL838X_RX_PAUSE_EN | RTL838X_TX_PAUSE_EN);
-		if (state->pause & MLO_PAUSE_TXRX_MASK) {
-			if (state->pause & MLO_PAUSE_TX)
-				reg |= RTL838X_TX_PAUSE_EN;
-			reg |= RTL838X_RX_PAUSE_EN;
-		}
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
-		reg &= ~(RTL839X_RX_PAUSE_EN | RTL839X_TX_PAUSE_EN);
-		if (state->pause & MLO_PAUSE_TXRX_MASK) {
-			if (state->pause & MLO_PAUSE_TX)
-				reg |= RTL839X_TX_PAUSE_EN;
-			reg |= RTL839X_RX_PAUSE_EN;
-		}
-	}
-
-
-	reg &= ~(3 << speed_bit);
-	switch (state->speed) {
-	case SPEED_1000:
-		reg |= 2 << speed_bit;
-		break;
-	case SPEED_100:
-		reg |= 1 << speed_bit;
-		break;
-	default:
-		break; /* Ignore, including 10MBit which has a speed value of 0 */
-	}
-
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		reg &= ~(RTL838X_DUPLEX_MODE | RTL838X_FORCE_LINK_EN);
-		if (state->link)
-			reg |= RTL838X_FORCE_LINK_EN;
-		if (state->duplex == RTL838X_DUPLEX_MODE)
-			reg |= RTL838X_DUPLEX_MODE;
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
-		reg &= ~(RTL839X_DUPLEX_MODE | RTL839X_FORCE_LINK_EN);
-		if (state->link)
-			reg |= RTL839X_FORCE_LINK_EN;
-		if (state->duplex == RTL839X_DUPLEX_MODE)
-			reg |= RTL839X_DUPLEX_MODE;
-	}
-
-	/* LAG members must use DUPLEX and we need to enable the link */
-	if (priv->lagmembers & BIT_ULL(port)) {
-		switch(priv->family_id) {
-		case RTL8380_FAMILY_ID:
-			reg |= (RTL838X_DUPLEX_MODE | RTL838X_FORCE_LINK_EN);
-		break;
-		case RTL8390_FAMILY_ID:
-			reg |= (RTL839X_DUPLEX_MODE | RTL839X_FORCE_LINK_EN);
-		break;
-		}
-	}
-
-	/* Disable AN */
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		reg &= ~RTL838X_NWAY_EN;
-	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -916,12 +843,14 @@ static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 				     phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int mask = 0;
 
 	/* Stop TX/RX to port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(port));
 
 	/* No longer force link */
-	sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl(port));
+	mask = RTL83XX_FORCE_EN | RTL83XX_FORCE_LINK_EN;
+	sw_w32_mask(mask, 0, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
@@ -949,10 +878,60 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   int speed, int duplex,
 				   bool tx_pause, bool rx_pause)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+
+	if (priv->family_id == RTL8380_FAMILY_ID) {
+		mcr &= ~RTL838X_RX_PAUSE_EN;
+		mcr &= ~RTL838X_TX_PAUSE_EN;
+		mcr &= ~RTL838X_DUPLEX_MODE;
+		mcr &= ~RTL838X_SPEED_MASK;
+		mcr |= RTL83XX_FORCE_LINK_EN;
+		mcr |= spdsel << RTL838X_SPEED_SHIFT;
+
+		if (tx_pause)
+			mcr |= RTL838X_TX_PAUSE_EN;
+		if (rx_pause)
+			mcr |= RTL838X_RX_PAUSE_EN;
+		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+			mcr |= RTL838X_DUPLEX_MODE;
+		if (dsa_port_is_cpu(dp))
+			mcr |= RTL83XX_FORCE_EN;
+
+	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+		mcr &= ~RTL839X_RX_PAUSE_EN;
+		mcr &= ~RTL839X_TX_PAUSE_EN;
+		mcr &= ~RTL839X_DUPLEX_MODE;
+		mcr &= ~RTL839X_SPEED_MASK;
+		mcr |= RTL83XX_FORCE_LINK_EN;
+		mcr |= spdsel << RTL839X_SPEED_SHIFT;
+
+		if (tx_pause)
+			mcr |= RTL839X_TX_PAUSE_EN;
+		if (rx_pause)
+			mcr |= RTL839X_RX_PAUSE_EN;
+		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+			mcr |= RTL839X_DUPLEX_MODE;
+		if (dsa_port_is_cpu(dp))
+			mcr |= RTL83XX_FORCE_EN;
+	}
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
+
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
-	/* TODO: Set speed/duplex/pauses */
 }
 
 static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
