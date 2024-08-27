@@ -144,17 +144,24 @@
 #define RTL931X_MAC_LINK_MEDIA_STS		(0x0EC8)
 
 /* MAC link state bits */
-#define RTL838X_FORCE_EN			(1 << 0)
-#define RTL838X_FORCE_LINK_EN			(1 << 1)
+#define RTL_SPEED_10				0
+#define RTL_SPEED_100				1
+#define RTL_SPEED_1000				2
+
+#define RTL83XX_FORCE_EN			(1 << 0)
+#define RTL83XX_FORCE_LINK_EN			(1 << 1)
+
 #define RTL838X_NWAY_EN				(1 << 2)
 #define RTL838X_DUPLEX_MODE			(1 << 3)
+#define RTL838X_SPEED_SHIFT			(4)
+#define RTL838X_SPEED_MASK			(3 << RTL838X_SPEED_SHIFT)
 #define RTL838X_TX_PAUSE_EN			(1 << 6)
 #define RTL838X_RX_PAUSE_EN			(1 << 7)
 #define RTL838X_MAC_FORCE_FC_EN			(1 << 8)
 
-#define RTL839X_FORCE_EN			(1 << 0)
-#define RTL839X_FORCE_LINK_EN			(1 << 1)
 #define RTL839X_DUPLEX_MODE			(1 << 2)
+#define RTL839X_SPEED_SHIFT			(3)
+#define RTL839X_SPEED_MASK			(3 << RTL839X_SPEED_SHIFT)
 #define RTL839X_TX_PAUSE_EN			(1 << 5)
 #define RTL839X_RX_PAUSE_EN			(1 << 6)
 #define RTL839X_MAC_FORCE_FC_EN			(1 << 7)
