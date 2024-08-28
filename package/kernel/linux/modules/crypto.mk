@@ -365,7 +365,7 @@ $(eval $(call KernelPackage,crypto-hmac))
 define KernelPackage/crypto-hw-ccp
   TITLE:=AMD Cryptographic Coprocessor
   DEPENDS:= \
-	@TARGET_x86 \
+	@(x86_64||x86) \
 	+kmod-crypto-authenc \
 	+kmod-crypto-hash \
 	+kmod-crypto-manager \
@@ -794,7 +794,7 @@ define KernelPackage/crypto-misc
   $(call AddDepends/crypto)
 endef
 
-ifndef CONFIG_TARGET_x86_64
+ifndef CONFIG_x86_64
   define KernelPackage/crypto-misc/x86
     FILES+= \
 	$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko \

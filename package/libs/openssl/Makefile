@@ -207,7 +207,7 @@ define Package/libopenssl-padlock
   $(call Package/openssl/Default)
   $(call Package/openssl/engine/Default)
   TITLE:=VIA Padlock hardware acceleration engine
-  DEPENDS += @TARGET_x86 +PACKAGE_libopenssl-padlock:kmod-crypto-hw-padlock \
+  DEPENDS += @(x86_64||x86) +PACKAGE_libopenssl-padlock:kmod-crypto-hw-padlock \
 	     @!OPENSSL_ENGINE_BUILTIN
 endef
 

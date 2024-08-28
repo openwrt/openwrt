@@ -18,7 +18,7 @@ $(eval $(call KernelPackage,irqbypass))
 define KernelPackage/kvm-x86
   SUBMENU:=Virtualization
   TITLE:=Kernel-based Virtual Machine (KVM) support
-  DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
+  DEPENDS:=@TARGET_x86_generic||x86_64 +kmod-irqbypass
   KCONFIG:=\
 	  CONFIG_KVM \
 	  CONFIG_KVM_MMU_AUDIT=n \
@@ -78,7 +78,7 @@ $(eval $(call KernelPackage,kvm-amd))
 define KernelPackage/vfio
   SUBMENU:=Virtualization
   TITLE:=VFIO Non-Privileged userspace driver framework
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8
+  DEPENDS:=@x86_64||TARGET_armsr_armv8
   KCONFIG:= \
 	CONFIG_VFIO \
 	CONFIG_VFIO_NOIOMMU=n \
@@ -100,7 +100,7 @@ $(eval $(call KernelPackage,vfio))
 define KernelPackage/vfio-pci
   SUBMENU:=Virtualization
   TITLE:=Generic VFIO support for any PCI device
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 @PCI_SUPPORT +kmod-vfio +kmod-irqbypass
+  DEPENDS:=@x86_64||TARGET_armsr_armv8 @PCI_SUPPORT +kmod-vfio +kmod-irqbypass
   KCONFIG:= \
 	CONFIG_VFIO_PCI \
 	CONFIG_VFIO_PCI_IGD=n

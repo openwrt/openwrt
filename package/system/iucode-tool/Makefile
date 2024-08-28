@@ -33,7 +33,7 @@ define Package/iucode-tool
   SECTION:=utils
   CATEGORY:=Base system
   URL:=$(PKG_SOURCE_URL)
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@(x86_64||x86)
   TITLE:=Intel microcode loader
 endef
 

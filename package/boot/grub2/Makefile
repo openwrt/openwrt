@@ -50,7 +50,7 @@ define Package/grub2-editenv
   SUBMENU:=Boot Loaders
   TITLE:=Grub2 Environment editor
   URL:=http://www.gnu.org/software/grub/
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@(x86_64||x86)
   VARIANT:=none
 endef
 
@@ -64,7 +64,7 @@ define Package/grub2-bios-setup
   SUBMENU:=Boot Loaders
   TITLE:=Grub2 BIOS boot setup tool
   URL:=http://www.gnu.org/software/grub/
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@(x86_64||x86)
   VARIANT:=none
 endef
 
