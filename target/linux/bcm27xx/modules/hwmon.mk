@@ -5,7 +5,7 @@
 define KernelPackage/hwmon-raspberrypi
   TITLE:=Raspberry Pi voltage monitor
   KCONFIG:=CONFIG_SENSORS_RASPBERRYPI_HWMON
-  FILES:=$(LINUX_DIR)/drivers/hwmon/raspberrypi-hwmon.ko
+  FILES:=drivers/hwmon/raspberrypi-hwmon.ko
   AUTOLOAD:=$(call AutoLoad,60,raspberrypi-hwmon)
   $(call AddDepends/hwmon,@TARGET_bcm27xx)
 endef

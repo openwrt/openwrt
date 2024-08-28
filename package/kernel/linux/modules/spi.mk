@@ -15,8 +15,8 @@ define KernelPackage/mmc-spi
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
   FILES:=\
-	$(LINUX_DIR)/drivers/mmc/host/of_mmc_spi.ko \
-	$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
+	drivers/mmc/host/of_mmc_spi.ko \
+	drivers/mmc/host/mmc_spi.ko
   AUTOLOAD:=$(call AutoProbe,of_mmc_spi mmc_spi)
 endef
 
@@ -33,7 +33,7 @@ define KernelPackage/spi-bitbang
   KCONFIG:=CONFIG_SPI_BITBANG \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi-bitbang.ko
+  FILES:=drivers/spi/spi-bitbang.ko
 endef
 
 define KernelPackage/spi-bitbang/description
@@ -48,7 +48,7 @@ define KernelPackage/spi-gpio
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
-  FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
+  FILES:=drivers/spi/spi-gpio.ko
   AUTOLOAD:=$(call AutoProbe,spi-gpio)
 endef
 
@@ -64,7 +64,7 @@ define KernelPackage/spi-dev
   KCONFIG:=CONFIG_SPI_SPIDEV \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spidev.ko
+  FILES:=drivers/spi/spidev.ko
   AUTOLOAD:=$(call AutoProbe,spidev)
 endef
 

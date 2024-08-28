@@ -29,8 +29,6 @@ else
     export GCC_HONOUR_COPTS=s
   endif
 
-  LINUX_KMOD_SUFFIX=ko
-
   ifneq (,$(findstring uml,$(BOARD)))
     KERNEL_CC?=$(HOSTCC)
     KERNEL_CROSS?=
@@ -102,7 +100,7 @@ else
   LINUX_KARCH := $(ARCH)
 endif
 
-KERNEL_MAKE = $(MAKE) $(KERNEL_MAKEOPTS)
+KERNEL_MAKE = $(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
 
 KERNEL_MAKE_FLAGS = \
 	KCFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR))) $(filter-out -fno-plt,$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))) $(call qstrip,$(CONFIG_KERNEL_CFLAGS))" \
@@ -138,10 +136,8 @@ ifneq ($(HOST_OS),Linux)
   export SKIP_STACK_VALIDATION:=1
 endif
 
-KERNEL_MAKEOPTS = -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
-
 ifdef CONFIG_USE_SPARSE
-  KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
+  KERNEL_MAKE_FLAGS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
 PKG_EXTMOD_SUBDIRS ?= .
@@ -244,12 +240,21 @@ $(call KernelPackage/$(1)/config)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(call version_filter,$(filter-out %=y %=n %=m,$(KCONFIG))),$($(c)))),.),)
     define Package/kmod-$(1)/install
-		  @for mod in $$(call version_filter,$$(FILES)); do \
-			if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
+		  @for entr in $$(call version_filter,$$(FILES)); do \
+			mod="$$$$$$$${entr#-}"; \
+	$(if $(KCONFIG), \
+			if grep -q -e"$$$$$$$$mod" '$(LINUX_DIR)/modules.builtin'; then \
 				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
-			elif [ -e $$$$$$$$mod ]; then \
-				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
-				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
+			elif [ -e "$(LINUX_DIR)/$$$$$$$$mod" ]; then \
+				mkdir -p '$$(1)/$(MODULES_SUBDIR)' ; \
+				$(CP) -l -L "$(LINUX_DIR)/$$$$$$$$mod" '$$(1)/$(MODULES_SUBDIR)/' ; \
+			elif [ -z "$$$$$$$${entr%%-*}" ]; then \
+				echo "NOTICE: module '$$$$$$$$mod' skipped."; \
+	, \
+			if [ -e "$$$$$$$$mod" ]; then \
+				mkdir -p '$$(1)/$(MODULES_SUBDIR)' ; \
+				$(CP) -l -L "$$$$$$$$mod" '$$(1)/$(MODULES_SUBDIR)/' ; \
+	) \
 			else \
 				echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
 				exit 1; \

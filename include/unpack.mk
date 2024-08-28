@@ -62,10 +62,10 @@ ifeq ($(strip $(UNPACK_CMD)),)
 endif
 
 ifdef PKG_BUILD_DIR
-  PKG_UNPACK ?= $(SH_FUNC) $(call UNPACK_CMD,$(PKG_BUILD_DIR))
+  PKG_UNPACK ?= $(call UNPACK_CMD,$(PKG_BUILD_DIR))
 endif
 ifdef HOST_BUILD_DIR
-  HOST_UNPACK ?= $(SH_FUNC) $(call UNPACK_CMD,$(HOST_BUILD_DIR))
+  HOST_UNPACK ?= $(call UNPACK_CMD,$(HOST_BUILD_DIR))
 endif
 
 endif # PKG_SOURCE

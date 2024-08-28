@@ -5,9 +5,9 @@
 define KernelPackage/amd-xgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AMD Ethernet on SoC support
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86_64 +kmod-lib-crc32c +kmod-ptp +kmod-libphy +kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT @x86_64 +kmod-lib-crc32c +kmod-ptp +kmod-libphy +kmod-mdio-devres
   KCONFIG:=CONFIG_AMD_XGBE
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/xgbe/amd-xgbe.ko
+  FILES:=drivers/net/ethernet/amd/xgbe/amd-xgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,amd-xgbe)
 endef
 
@@ -23,7 +23,7 @@ define KernelPackage/dwmac-intel
   TITLE:=Intel GMAC support
   DEPENDS:=@TARGET_x86_64 +kmod-stmmac-core
   KCONFIG:=CONFIG_DWMAC_INTEL
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-intel.ko
+  FILES=drivers/net/ethernet/stmicro/stmmac/dwmac-intel.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-intel)
 endef
 
@@ -37,7 +37,7 @@ define KernelPackage/f71808e-wdt
   KCONFIG:=\
 	CONFIG_F71808E_WDT \
 	CONFIG_WATCHDOG_CORE=y
-  FILES:=$(LINUX_DIR)/drivers/watchdog/f71808e_wdt.ko
+  FILES:=drivers/watchdog/f71808e_wdt.ko
   AUTOLOAD:=$(call AutoProbe,f71808e-wdt,1)
 endef
 
@@ -52,7 +52,7 @@ define KernelPackage/sound-cs5535audio
   TITLE:=CS5535/CS5536 Audio Controller
   DEPENDS:=@TARGET_x86_geode +kmod-ac97
   KCONFIG:=CONFIG_SND_CS5535AUDIO
-  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko
+  FILES:=sound/pci/cs5535audio/snd-cs5535audio.ko
   AUTOLOAD:=$(call AutoLoad,36,snd-cs5535audio)
   $(call AddDepends/sound)
 endef
@@ -69,7 +69,7 @@ define KernelPackage/sp5100-tco
   TITLE:=SP5100 Watchdog Support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SP5100_TCO
-  FILES:=$(LINUX_DIR)/drivers/watchdog/sp5100_tco.ko
+  FILES:=drivers/watchdog/sp5100_tco.ko
   AUTOLOAD:=$(call AutoLoad,50,sp5100_tco,1)
 endef
 
@@ -85,7 +85,7 @@ define KernelPackage/ib700-wdt
   TITLE:=IB700 SBC Watchdog Timer
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_IB700_WDT
-  FILES:=$(LINUX_DIR)/drivers/watchdog/ib700wdt.ko
+  FILES:=drivers/watchdog/ib700wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,ib700wdt,1)
 endef
 
@@ -102,7 +102,7 @@ define KernelPackage/it87-wdt
   TITLE:=ITE IT87 Watchdog Timer
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_IT87_WDT
-  FILES:=$(LINUX_DIR)/drivers/watchdog/it87_wdt.ko
+  FILES:=drivers/watchdog/it87_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,it87-wdt,1)
   MODPARAMS.it87-wdt:= \
 	nogameport=1 \
@@ -124,8 +124,8 @@ define KernelPackage/itco-wdt
 	CONFIG_ITCO_WDT \
 	CONFIG_ITCO_VENDOR_SUPPORT=y \
 	CONFIG_WATCHDOG_CORE=y
-  FILES:=$(LINUX_DIR)/drivers/watchdog/iTCO_wdt.ko \
-         $(LINUX_DIR)/drivers/watchdog/iTCO_vendor_support.ko
+  FILES:=drivers/watchdog/iTCO_wdt.ko \
+         drivers/watchdog/iTCO_vendor_support.ko
   AUTOLOAD:=$(call AutoLoad,50,iTCO_vendor_support iTCO_wdt,1)
 endef
 
@@ -141,7 +141,7 @@ define KernelPackage/pcengines-apuv2
   TITLE:=PC Engines APUv2/3 front button and LEDs driver
   DEPENDS:=@TARGET_x86 +kmod-gpio-amd-fch +kmod-leds-gpio
   KCONFIG:=CONFIG_PCENGINES_APU2
-  FILES:=$(LINUX_DIR)/drivers/platform/x86/pcengines-apuv2.ko
+  FILES:=drivers/platform/x86/pcengines-apuv2.ko
   AUTOLOAD:=$(call AutoLoad,60,pcengines-apuv2)
 endef
 
@@ -160,7 +160,7 @@ define KernelPackage/meraki-mx100
     +kmod-usb-ledtrig-usbport +PACKAGE_kmod-meraki-mx100:nu801 +kmod-itco-wdt \
     +kmod-leds-uleds
   KCONFIG:=CONFIG_MERAKI_MX100
-  FILES:=$(LINUX_DIR)/drivers/platform/x86/meraki-mx100.ko
+  FILES:=drivers/platform/x86/meraki-mx100.ko
   AUTOLOAD:=$(call AutoLoad,60,meraki-mx100,1)
 endef
 
@@ -180,7 +180,7 @@ define KernelPackage/w83627hf-wdt
   KCONFIG:=\
 	CONFIG_W83627HF_WDT \
 	CONFIG_WATCHDOG_CORE=y
-  FILES:=$(LINUX_DIR)/drivers/watchdog/w83627hf_wdt.ko
+  FILES:=drivers/watchdog/w83627hf_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,w83627hf-wdt,1)
 endef
 

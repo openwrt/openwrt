@@ -3,7 +3,7 @@ define KernelPackage/acpi-mdio
   TITLE:=ACPI MDIO support
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-mdio-devres
   KCONFIG:=CONFIG_ACPI_MDIO
-  FILES:=$(LINUX_DIR)/drivers/net/mdio/acpi_mdio.ko
+  FILES:=drivers/net/mdio/acpi_mdio.ko
   AUTOLOAD:=$(call AutoLoad,11,acpi_mdio)
 endef
 
@@ -18,7 +18,7 @@ define KernelPackage/bcmgenet
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-mdio-bcm-unimac
   TITLE:=Broadcom GENET internal MAC (Raspberry Pi 4)
   KCONFIG:=CONFIG_BCMGENET
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/broadcom/genet/genet.ko
+  FILES:=drivers/net/ethernet/broadcom/genet/genet.ko
   AUTOLOAD=$(call AutoLoad,30,genet)
 endef
 
@@ -29,7 +29,7 @@ define KernelPackage/mdio-bcm-unimac
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
   TITLE:=Broadcom UniMAC MDIO bus controller
   KCONFIG:=CONFIG_MDIO_BCM_UNIMAC
-  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-bcm-unimac.ko
+  FILES:=drivers/net/mdio/mdio-bcm-unimac.ko
   AUTOLOAD=$(call AutoLoad,30,mdio-bcm-unimac)
 endef
 
@@ -41,7 +41,7 @@ define KernelPackage/fsl-pcs-lynx
   TITLE:=NXP (Freescale) Lynx PCS
   HIDDEN:=1
   KCONFIG:=CONFIG_PCS_LYNX
-  FILES=$(LINUX_DIR)/drivers/net/pcs/pcs-lynx.ko
+  FILES:=drivers/net/pcs/pcs-lynx.ko
   AUTOLOAD=$(call AutoLoad,30,pcs-lynx)
 endef
 
@@ -53,7 +53,7 @@ define KernelPackage/fsl-fec
     +kmod-ptp +kmod-net-selftests
   TITLE:=NXP (Freescale) FEC Ethernet controller (i.MX)
   KCONFIG:=CONFIG_FEC
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/fec.ko
+  FILES:=drivers/net/ethernet/freescale/fec.ko
   AUTOLOAD:=$(call AutoLoad,35,fec)
 endef
 
@@ -64,7 +64,7 @@ define KernelPackage/fsl-xgmac-mdio
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio +kmod-acpi-mdio
   TITLE:=NXP (Freescale) MDIO bus
   KCONFIG:=CONFIG_FSL_XGMAC_MDIO
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/freescale/xgmac_mdio.ko
+  FILES:=drivers/net/ethernet/freescale/xgmac_mdio.ko
   AUTOLOAD=$(call AutoLoad,30,xgmac_mdio)
 endef
 
@@ -76,7 +76,7 @@ define KernelPackage/fsl-mc-dpio
   HIDDEN:=1
   KCONFIG:=CONFIG_FSL_MC_BUS=y \
     CONFIG_FSL_MC_DPIO
-  FILES:=$(LINUX_DIR)/drivers/soc/fsl/dpio/fsl-mc-dpio.ko
+  FILES:=drivers/soc/fsl/dpio/fsl-mc-dpio.ko
   AUTOLOAD=$(call AutoLoad,30,fsl-mc-dpio)
 endef
 
@@ -91,11 +91,11 @@ define KernelPackage/fsl-enetc-net
     CONFIG_FSL_ENETC_VF \
     CONFIG_FSL_ENETC_QOS=y
   FILES:= \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-core.ko@ge6.3 \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-mdio.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-ierb.ko
+    drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
+    drivers/net/ethernet/freescale/enetc/fsl-enetc-core.ko@ge6.3 \
+    drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
+    drivers/net/ethernet/freescale/enetc/fsl-enetc-mdio.ko \
+    drivers/net/ethernet/freescale/enetc/fsl-enetc-ierb.ko
   AUTOLOAD=$(call AutoLoad,35,fsl-enetc)
 endef
 
@@ -113,9 +113,9 @@ define KernelPackage/fsl-dpaa1-net
     CONFIG_FSL_BMAN_TEST=n \
     CONFIG_FSL_QMAN_TEST=n
   MODULES:= \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/dpaa/fsl_dpa.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/fman/fsl_dpaa_fman.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/fman/fsl_dpaa_mac.ko
+    drivers/net/ethernet/freescale/dpaa/fsl_dpa.ko \
+    drivers/net/ethernet/freescale/fman/fsl_dpaa_fman.ko \
+    drivers/net/ethernet/freescale/fman/fsl_dpaa_mac.ko
   AUTOLOAD=$(call AutoLoad,35,fsl-dpa)
 endef
 
@@ -130,7 +130,7 @@ define KernelPackage/fsl-dpaa2-net
     CONFIG_FSL_MC_UAPI_SUPPORT=y \
     CONFIG_FSL_DPAA2_ETH
   FILES:= \
-  $(LINUX_DIR)/drivers/net/ethernet/freescale/dpaa2/fsl-dpaa2-eth.ko
+  drivers/net/ethernet/freescale/dpaa2/fsl-dpaa2-eth.ko
   AUTOLOAD=$(call AutoLoad,35,fsl-dpaa2-eth)
 endef
 
@@ -141,7 +141,7 @@ define KernelPackage/fsl-dpaa2-console
   TITLE:=NXP DPAA2 Debug console
   DEPENDS:=@(TARGET_armsr_armv8)
   KCONFIG:=CONFIG_DPAA2_CONSOLE
-  FILES=$(LINUX_DIR)/drivers/soc/fsl/dpaa2-console.ko
+  FILES:=drivers/soc/fsl/dpaa2-console.ko
   AUTOLOAD=$(call AutoLoad,40,dpaa2-console)
 endef
 
@@ -157,7 +157,7 @@ define KernelPackage/marvell-mdio
   TITLE:=Marvell Armada platform MDIO driver
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio +kmod-acpi-mdio
   KCONFIG:=CONFIG_MVMDIO
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvmdio.ko
+  FILES:=drivers/net/ethernet/marvell/mvmdio.ko
   AUTOLOAD=$(call AutoLoad,30,marvell-mdio)
 endef
 
@@ -168,7 +168,7 @@ define KernelPackage/mvneta
   TITLE:=Marvell Armada 370/38x/XP/37xx network driver
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-marvell-mdio +kmod-phylink
   KCONFIG:=CONFIG_MVNETA
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvneta.ko
+  FILES:=drivers/net/ethernet/marvell/mvneta.ko
   AUTOLOAD=$(call AutoLoad,30,mvneta)
 endef
 
@@ -180,7 +180,7 @@ define KernelPackage/mvpp2
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-marvell-mdio +kmod-phylink
   KCONFIG:=CONFIG_MVPP2 \
     CONFIG_MVPP2_PTP=n
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/mvpp2/mvpp2.ko
+  FILES:=drivers/net/ethernet/marvell/mvpp2/mvpp2.ko
   AUTOLOAD=$(call AutoLoad,40,mvpp2)
 endef
 
@@ -190,7 +190,7 @@ define KernelPackage/imx2-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP (Freescale) i.MX2+ and Layerscape watchdog driver
   KCONFIG:=CONFIG_IMX2_WDT
-  FILES=$(LINUX_DIR)/drivers/watchdog/imx2_wdt.ko
+  FILES:=drivers/watchdog/imx2_wdt.ko
   AUTOLOAD=$(call AutoLoad,60,imx2_wdt)
 endef
 
@@ -200,7 +200,7 @@ define KernelPackage/imx7-ulp-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP (Freescale) i.MX7ULP and later watchdog
   KCONFIG:=CONFIG_IMX7ULP_WDT
-  FILES=$(LINUX_DIR)/drivers/watchdog/imx7ulp_wdt.ko
+  FILES:=drivers/watchdog/imx7ulp_wdt.ko
   AUTOLOAD=$(call AutoLoad,60,imx7ulp_wdt)
 endef
 
@@ -211,7 +211,7 @@ define KernelPackage/dwmac-imx
   TITLE:=NXP i.MX8 Ethernet controller
   DEPENDS:=+kmod-stmmac-core +kmod-of-mdio
   KCONFIG:=CONFIG_DWMAC_IMX8
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-imx.ko
+  FILES:=drivers/net/ethernet/stmicro/stmmac/dwmac-imx.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-imx)
 endef
 
@@ -222,7 +222,7 @@ define KernelPackage/dwmac-sun8i
   TITLE:=Allwinner H3/A83T/A64 (sun8i) Ethernet
   DEPENDS:=+kmod-stmmac-core +kmod-of-mdio +kmod-mdio-bus-mux
   KCONFIG:=CONFIG_DWMAC_SUN8I
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko
+  FILES:=drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-sun8i)
 endef
 
@@ -233,7 +233,7 @@ define KernelPackage/dwmac-rockchip
   TITLE:=Rockchip RK3328/RK3399/RK3568 Ethernet
   DEPENDS:=+kmod-stmmac-core +kmod-of-mdio +kmod-mdio-bus-mux
   KCONFIG:=CONFIG_DWMAC_ROCKCHIP
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.ko
+  FILES:=drivers/net/ethernet/stmicro/stmmac/dwmac-rk.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-rk)
 endef
 
@@ -244,8 +244,8 @@ define KernelPackage/mdio-thunder
   TITLE:=Marvell (Cavium) Thunder MDIO controller
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
   KCONFIG:=CONFIG_MDIO_THUNDER
-  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-cavium.ko \
-    $(LINUX_DIR)/drivers/net/mdio/mdio-thunder.ko
+  FILES:=drivers/net/mdio/mdio-cavium.ko \
+    drivers/net/mdio/mdio-thunder.ko
   AUTOLOAD=$(call AutoLoad,30,mdio-cavium mdio-thunder)
 endef
 
@@ -260,10 +260,10 @@ define KernelPackage/thunderx-net
     CONFIG_THUNDER_NIC_VF \
     CONFIG_THUNDER_NIC_BGX \
     CONFIG_THUNDER_NIC_RGX
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/nicvf.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/nicpf.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/thunder_xcv.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/thunder_bgx.ko
+  FILES:=drivers/net/ethernet/cavium/thunder/nicvf.ko \
+    drivers/net/ethernet/cavium/thunder/nicpf.ko \
+    drivers/net/ethernet/cavium/thunder/thunder_xcv.ko \
+    drivers/net/ethernet/cavium/thunder/thunder_bgx.ko
   AUTOLOAD=$(call AutoLoad,40,nicpf nicvf thunder_xcv thunder_bgx)
 endef
 
@@ -279,11 +279,11 @@ define KernelPackage/octeontx2-net
     CONFIG_OCTEONTX2_PF \
     CONFIG_OCTEONTX2_VF \
     CONFIG_NDC_DIS_DYNAMIC_CACHING=n
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_mbox.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_af.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicpf.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicvf.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/otx2_ptp.ko
+  FILES:=drivers/net/ethernet/marvell/octeontx2/af/rvu_mbox.ko \
+    drivers/net/ethernet/marvell/octeontx2/af/rvu_af.ko \
+    drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicpf.ko \
+    drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicvf.ko \
+    drivers/net/ethernet/marvell/octeontx2/nic/otx2_ptp.ko
   AUTOLOAD=$(call AutoLoad,40,rvu_af rvu_mbox rvu_nicpf rvu_nicvf otx2_ptp)
 endef
 $(eval $(call KernelPackage,octeontx2-net))
@@ -293,7 +293,7 @@ define KernelPackage/renesas-net-avb
   TITLE:=Renesas network drivers
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-mii +kmod-ptp +kmod-libphy +kmod-mdio-gpio
   KCONFIG:=CONFIG_RAVB
-  FILES=$(LINUX_DIR)/drivers/net/ethernet/renesas/ravb.ko
+  FILES=drivers/net/ethernet/renesas/ravb.ko
   AUTOLOAD:=$(call AutoProbe,ravb)
 endef
  
@@ -307,7 +307,7 @@ define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ARM SP805 Watchdog
   KCONFIG:=CONFIG_ARM_SP805_WATCHDOG
-  FILES=$(LINUX_DIR)/drivers/watchdog/sp805_wdt.ko
+  FILES:=drivers/watchdog/sp805_wdt.ko
   AUTOLOAD=$(call AutoLoad,50,sp805_wdt)
 endef
 

@@ -33,15 +33,7 @@ $(strip \
     $(if $(2),$(2), \
       $(if $(filter @OPENWRT @APACHE/% @DEBIAN/% @GITHUB/% @GNOME/% @GNU/% @KERNEL/% @SF/% @SAVANNAH/% ftp://% http://% https://% file://%,$(1)),default, \
         $(if $(filter git://%,$(1)),$(call dl_method_git,$(1),$(2)), \
-          $(if $(filter svn://%,$(1)),svn, \
-            $(if $(filter cvs://%,$(1)),cvs, \
-              $(if $(filter hg://%,$(1)),hg, \
-                $(if $(filter sftp://%,$(1)),bzr, \
-                  unknown \
-                ) \
-              ) \
-            ) \
-          ) \
+          unknown \
         ) \
       ) \
     ) \
@@ -49,7 +41,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
+# code for creating tarballs from git checkouts - useful for mirror support
 dl_pack/bz2=bzip2 -c > $(1)
 dl_pack/gz=gzip -nc > $(1)
 dl_pack/xz=xz -zc -7e > $(1)
@@ -161,39 +153,6 @@ $(if $(filter check,$(1)), \
 )
 endef
 
-define DownloadMethod/cvs
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the cvs repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		cvs -d $(URL) export $(SOURCE_VERSION) $(SUBDIR) && \
-		echo "Packing checkout..." && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
-endef
-
-define DownloadMethod/svn
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the svn repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		( svn help export | grep -q trust-server-cert && \
-		svn export --non-interactive --trust-server-cert -r$(SOURCE_VERSION) $(URL) $(SUBDIR) || \
-		svn export --non-interactive -r$(SOURCE_VERSION) $(URL) $(SUBDIR) ) && \
-		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP="`svn info -r$(SOURCE_VERSION) --show-item last-changed-date $(URL)`" && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
-endef
-
 define DownloadMethod/git
 	$(call wrap_mirror,$(1),$(2), \
 		$(call DownloadMethod/rawgit) \
@@ -243,62 +202,7 @@ define DownloadMethod/rawgit
 	rm -rf $(SUBDIR);
 endef
 
-define DownloadMethod/bzr
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the bzr repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		bzr export --per-file-timestamps -r$(SOURCE_VERSION) $(SUBDIR) $(URL) && \
-		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP="" && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
-endef
-
-define DownloadMethod/hg
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the hg repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		hg clone -r $(SOURCE_VERSION) $(URL) $(SUBDIR) && \
-		export TAR_TIMESTAMP=`cd $(SUBDIR) && hg log --template '@{date}' -l 1` && \
-		find $(SUBDIR) -name .hg | xargs rm -rf && \
-		echo "Packing checkout..." && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
-endef
-
-define DownloadMethod/darcs
-	$(call wrap_mirror, $(1), $(2), \
-		echo "Checking out files from the darcs repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		darcs get -t $(SOURCE_VERSION) $(URL) $(SUBDIR) && \
-		export TAR_TIMESTAMP=`cd $(SUBDIR) && LC_ALL=C darcs log --last 1 | sed -ne 's!^Date: \+!!p'` && \
-		find $(SUBDIR) -name _darcs | xargs rm -rf && \
-		echo "Packing checkout..." && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
-endef
-
-Validate/cvs=SOURCE_VERSION SUBDIR
-Validate/svn=SOURCE_VERSION SUBDIR
 Validate/git=SOURCE_VERSION SUBDIR
-Validate/bzr=SOURCE_VERSION SUBDIR
-Validate/hg=SOURCE_VERSION SUBDIR
-Validate/darcs=SOURCE_VERSION SUBDIR
 
 define Download/Defaults
   URL:=

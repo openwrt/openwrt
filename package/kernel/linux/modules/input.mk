@@ -12,7 +12,7 @@ define KernelPackage/hid
   TITLE:=HID Devices
   DEPENDS:=+kmod-input-core +kmod-input-evdev
   KCONFIG:=CONFIG_HID CONFIG_HID_SUPPORT=y CONFIG_HIDRAW=y CONFIG_HID_BATTERY_STRENGTH=y
-  FILES:=$(LINUX_DIR)/drivers/hid/hid.ko
+  FILES:=drivers/hid/hid.ko
   AUTOLOAD:=$(call AutoLoad,61,hid)
 endef
 
@@ -27,7 +27,7 @@ define KernelPackage/hid-generic
   TITLE:=Generic HID device support
   DEPENDS:=+kmod-hid
   KCONFIG:=CONFIG_HID_GENERIC
-  FILES:=$(LINUX_DIR)/drivers/hid/hid-generic.ko
+  FILES:=drivers/hid/hid-generic.ko
   AUTOLOAD:=$(call AutoProbe,hid-generic)
 endef
 
@@ -41,7 +41,7 @@ define KernelPackage/input-core
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Input device core
   KCONFIG:=CONFIG_INPUT
-  FILES:=$(LINUX_DIR)/drivers/input/input-core.ko
+  FILES:=drivers/input/input-core.ko
 endef
 
 define KernelPackage/input-core/description
@@ -56,7 +56,7 @@ define KernelPackage/input-evdev
   TITLE:=Input event device
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_EVDEV
-  FILES:=$(LINUX_DIR)/drivers/input/evdev.ko
+  FILES:=drivers/input/evdev.ko
   AUTOLOAD:=$(call AutoLoad,60,evdev)
 endef
 
@@ -74,7 +74,7 @@ define KernelPackage/input-gpio-keys
   KCONFIG:= \
 	CONFIG_KEYBOARD_GPIO \
 	CONFIG_INPUT_KEYBOARD=y
-  FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.ko
+  FILES:=drivers/input/keyboard/gpio_keys.ko
   AUTOLOAD:=$(call AutoProbe,gpio_keys,1)
 endef
 
@@ -96,7 +96,7 @@ define KernelPackage/input-gpio-keys-polled
   KCONFIG:= \
 	CONFIG_KEYBOARD_GPIO_POLLED \
 	CONFIG_INPUT_KEYBOARD=y
-  FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys_polled.ko
+  FILES:=drivers/input/keyboard/gpio_keys_polled.ko
   AUTOLOAD:=$(call AutoProbe,gpio_keys_polled,1)
 endef
 
@@ -115,7 +115,7 @@ define KernelPackage/input-gpio-encoder
   TITLE:=GPIO rotary encoder
   DEPENDS:=@GPIO_SUPPORT +kmod-input-core
   KCONFIG:=CONFIG_INPUT_GPIO_ROTARY_ENCODER
-  FILES:=$(LINUX_DIR)/drivers/input/misc/rotary_encoder.ko
+  FILES:=drivers/input/misc/rotary_encoder.ko
   AUTOLOAD:=$(call AutoProbe,rotary_encoder)
 endef
 
@@ -131,7 +131,7 @@ define KernelPackage/input-joydev
   TITLE:=Joystick device support
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_JOYDEV
-  FILES:=$(LINUX_DIR)/drivers/input/joydev.ko
+  FILES:=drivers/input/joydev.ko
   AUTOLOAD:=$(call AutoProbe,joydev)
 endef
 
@@ -147,7 +147,7 @@ define KernelPackage/input-matrixkmap
   TITLE:=Input matrix devices support
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_MATRIXKMAP
-  FILES:=$(LINUX_DIR)/drivers/input/matrix-keymap.ko
+  FILES:=drivers/input/matrix-keymap.ko
   AUTOLOAD:=$(call AutoProbe,matrix-keymap)
 endef
 
@@ -165,7 +165,7 @@ define KernelPackage/input-touchscreen-ads7846
   KCONFIG:= \
 	CONFIG_INPUT_TOUCHSCREEN=y \
 	CONFIG_TOUCHSCREEN_ADS7846
-  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/ads7846.ko
+  FILES:=drivers/input/touchscreen/ads7846.ko
   AUTOLOAD:=$(call AutoProbe,ads7846)
 endef
 
@@ -183,7 +183,7 @@ define KernelPackage/input-touchscreen-edt-ft5x06
   KCONFIG:= \
 	CONFIG_INPUT_TOUCHSCREEN=y \
 	CONFIG_TOUCHSCREEN_EDT_FT5X06
-  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/edt-ft5x06.ko
+  FILES:=drivers/input/touchscreen/edt-ft5x06.ko
   AUTOLOAD:=$(call AutoProbe,edt-ft5x06)
 endef
 
@@ -202,7 +202,7 @@ define KernelPackage/keyboard-imx
   KCONFIG:= \
 	CONFIG_KEYBOARD_IMX \
 	CONFIG_INPUT_KEYBOARD=y
-  FILES:=$(LINUX_DIR)/drivers/input/keyboard/imx_keypad.ko
+  FILES:=drivers/input/keyboard/imx_keypad.ko
   AUTOLOAD:=$(call AutoProbe,imx_keypad)
 endef
 
@@ -220,7 +220,7 @@ define KernelPackage/input-uinput
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_UINPUT
-  FILES:=$(LINUX_DIR)/drivers/input/misc/uinput.ko
+  FILES:=drivers/input/misc/uinput.ko
   AUTOLOAD:=$(call AutoProbe,uinput)
 endef
 

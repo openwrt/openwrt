@@ -8,7 +8,7 @@ define KernelPackage/pwm-raspberrypi-poe
   KCONFIG:= \
     CONFIG_PWM=y \
     CONFIG_PWM_RASPBERRYPI_POE
-  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-raspberrypi-poe.ko
+  FILES:=drivers/pwm/pwm-raspberrypi-poe.ko
   AUTOLOAD:=$(call AutoLoad,20,pwm-raspberrypi-poe)
   DEPENDS:=@TARGET_bcm27xx +kmod-hwmon-pwmfan
 endef
@@ -24,7 +24,7 @@ define KernelPackage/smi-bcm2835
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BCM2835 SMI driver
   KCONFIG:=CONFIG_BCM2835_SMI
-  FILES:=$(LINUX_DIR)/drivers/misc/bcm2835_smi.ko
+  FILES:=drivers/misc/bcm2835_smi.ko
   AUTOLOAD:=$(call AutoLoad,20,bcm2835_smi)
   DEPENDS:=@TARGET_bcm27xx
 endef
@@ -41,7 +41,7 @@ define KernelPackage/smi-bcm2835-dev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BCM2835 SMI device driver
   KCONFIG:=CONFIG_BCM2835_SMI_DEV
-  FILES:=$(LINUX_DIR)/drivers/char/broadcom/bcm2835_smi_dev.ko
+  FILES:=drivers/char/broadcom/bcm2835_smi_dev.ko
   AUTOLOAD:=$(call AutoLoad,21,bcm2835_smi_dev)
   DEPENDS:=@TARGET_bcm27xx +kmod-smi-bcm2835
 endef

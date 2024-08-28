@@ -5,7 +5,7 @@ define KernelPackage/usb-fotg210
   CONFIG_USB_FOTG210 \
   CONFIG_USB_FOTG210_HCD=y \
   CONFIG_USB_FOTG210_UDC=y
-  FILES:=$(LINUX_DIR)/drivers/usb/fotg210/fotg210.ko
+  FILES:=drivers/usb/fotg210/fotg210.ko
   AUTOLOAD:=$(call AutoLoad,50,fotg210,1)
   $(call AddDepends/usb)
 endef

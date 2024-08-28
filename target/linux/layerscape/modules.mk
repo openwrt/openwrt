@@ -6,7 +6,7 @@ define KernelPackage/ahci-qoriq
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Freescale QorIQ AHCI SATA support
   KCONFIG:=CONFIG_AHCI_QORIQ
-  FILES:=$(LINUX_DIR)/drivers/ata/ahci_qoriq.ko
+  FILES:=drivers/ata/ahci_qoriq.ko
   AUTOLOAD:=$(call AutoLoad,40,ahci-qoriq,1)
   $(call AddDepends/ata,+kmod-ata-ahci-platform @TARGET_layerscape)
 endef
@@ -24,7 +24,7 @@ define KernelPackage/ppfe
   DEPENDS:=@TARGET_layerscape
   KCONFIG:=CONFIG_FSL_PPFE \
   	CONFIG_FSL_PPFE_UTIL_DISABLED=y
-  FILES:=$(LINUX_DIR)/drivers/staging/fsl_ppfe/pfe.ko
+  FILES:=drivers/staging/fsl_ppfe/pfe.ko
   AUTOLOAD:=$(call AutoLoad,35,pfe)
 endef
 

@@ -8,7 +8,7 @@ define KernelPackage/mux-core
   SUBMENU:=$(MENU_TITLE)
   TITLE:=Multiplexer Support
   KCONFIG:=CONFIG_MULTIPLEXER
-  FILES:=$(LINUX_DIR)/drivers/mux/mux-core.ko
+  FILES:=drivers/mux/mux-core.ko
   AUTOLOAD:=$(call AutoLoad,25,mux-core,1)
 endef
 
@@ -23,7 +23,7 @@ define KernelPackage/mux-gpio
   TITLE:=GPIO-controlled Multiplexer controller
   KCONFIG:=CONFIG_MUX_GPIO
   DEPENDS:=@GPIO_SUPPORT kmod-mux-core
-  FILES:=$(LINUX_DIR)/drivers/mux/mux-gpio.ko
+  FILES:=drivers/mux/mux-gpio.ko
   AUTOLOAD:=$(call AutoLoad,25,mux-gpio,1)
 endef
 

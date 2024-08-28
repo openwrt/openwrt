@@ -8,9 +8,9 @@ define KernelPackage/bgmac
   DEPENDS:=@TARGET_bcm47xx @!TARGET_bcm47xx_legacy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:= \
-	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac-bcma.ko \
-	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac-bcma-mdio.ko \
-	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac.ko
+	drivers/net/ethernet/broadcom/bgmac-bcma.ko \
+	drivers/net/ethernet/broadcom/bgmac-bcma-mdio.ko \
+	drivers/net/ethernet/broadcom/bgmac.ko
   AUTOLOAD:=$(call AutoProbe,bgmac-bcma)
 endef
 

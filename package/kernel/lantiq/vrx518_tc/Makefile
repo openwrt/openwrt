@@ -33,10 +33,6 @@ define KernelPackage/$(PKG_NAME)
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=VRX518 TC driver
-  KCONFIG:= \
-    CONFIG_ATM_LANE=m \
-    CONFIG_ATM_MPOA=m \
-    CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT=y
   DEPENDS:=@TARGET_ipq40xx +kmod-vrx518_ep +vrx518_ppe_fw +kmod-crypto-md5 +kmod-atm +kmod-ipoa +br2684ctl
   AUTOLOAD:=$(call AutoLoad,27,vrx518_tc)
   FILES:=$(PKG_BUILD_DIR)/$(PLAT_DIR)/$(PKG_NAME).ko
@@ -58,14 +54,22 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/$(PLAT_DIR)/inc/dsl_tc.h $(1)/usr/include/net/
 endef
 
+EXTRA_KCONFIG:= \
+	CONFIG_ATM_LANE=m \
+	CONFIG_ATM_MPOA=m \
+	CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT=y \
+	FEATURE_VRX518_CPU=y
+
 EXTRA_CFLAGS:= \
+	$(patsubst CONFIG_%=m,-DCONFIG_%=1,$(filter CONFIG_%=m,$(EXTRA_KCONFIG))) \
+	$(patsubst CONFIG_%=y,-DCONFIG_%=1,$(filter CONFIG_%=y,$(EXTRA_KCONFIG))) \
 	-I$(STAGING_DIR)/usr/include
 
 define Build/Compile
 	$(KERNEL_MAKE) \
 		M="$(PKG_BUILD_DIR)/$(PLAT_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-		FEATURE_VRX518_CPU=y \
+		$(EXTRA_KCONFIG) \
 		modules
 endef
 

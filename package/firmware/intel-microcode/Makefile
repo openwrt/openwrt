@@ -19,7 +19,7 @@ PKG_CPE_ID:=cpe:/a:intel:microcode
 
 PKG_BUILD_DEPENDS:=iucode-tool/host
 
-ifdef CONFIG_TARGET_x86_64
+ifdef CONFIG_x86_64
 	MICROCODE:="intel-microcode-64"
 else
 	MICROCODE:="intel-microcode"
@@ -33,7 +33,7 @@ define Package/intel-microcode
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=$(PKG_SOURCE_URL)
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@(x86_64||x86)
   TITLE:=Intel x86 CPU microcode
 endef
 
