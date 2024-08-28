@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020 Tobias Maedel <openwrt@tbspace.de>
+# Copyright (C) 2020 Sarah Maedel <openwrt@tbspace.de>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ PKG_RELEASE:=1
 
 PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
 
-PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
+PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
