@@ -70,15 +70,23 @@ platform_do_upgrade() {
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
 	cmcc,rax3000m|\
+	h3c,magic-nx30-pro|\
+	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
+	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
+	netcore,n60|\
+	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
 	tplink,tl-xtr8488|\
-	xiaomi,redmi-router-ax6000-ubootmod)
+	xiaomi,mi-router-ax3000t-ubootmod|\
+	xiaomi,redmi-router-ax6000-ubootmod|\
+	xiaomi,mi-router-wr30u-ubootmod|\
+	zyxel,ex5601-t0-ubootmod)
 		fit_do_upgrade "$1"
 		;;
 	acer,predator-w6|\
@@ -112,16 +120,6 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	h3c,magic-nx30-pro|\
-	jcg,q30-pro|\
-	mediatek,mt7981-rfb|\
-	netcore,n60|\
-	qihoo,360t7|\
-	xiaomi,mi-router-ax3000t-ubootmod|\
-	xiaomi,mi-router-wr30u-ubootmod)
-		CI_KERNPART="fit"
-		nand_do_upgrade "$1"
-		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
@@ -139,11 +137,6 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
-        zyxel,ex5601-t0-ubootmod)
-		CI_KERNPART="fit"
-		CI_ROOTPART="ubi_rootfs"
-                nand_do_upgrade "$1"
-                ;;
 	unielec,u7981-01*)
 		local rootdev="$(cmdline_get_var root)"
 		rootdev="${rootdev##*/}"
