@@ -28,6 +28,7 @@ define Host/Bootstrap
 		cd $(HOST_BUILD_DIR); \
 		$(AM_TOOL_PATHS) \
 		./bootstrap \
+			--copy \
 			--force \
 			--skip-git \
 			--skip-po \
