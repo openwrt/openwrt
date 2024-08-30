@@ -1,0 +1,56 @@
+From d7340ce1c07e5715a1dd218f39fc32c417f6f302 Mon Sep 17 00:00:00 2001
+From: Coia Prant <coiaprant@gmail.com>
+Date: Thu, 29 Aug 2024 23:31:39 +0800
+Subject: [PATCH 1/2] ethernet: stmicro: stmmac: Add SGMII/QSGMII support for
+ RK3568
+
+After the completion of Clause 37 auto-negotiation, xpcs automatically
+switches to the negotiated speed for 10/100/1000M.
+
+Change-Id: Iab9dd6ee61a35bf89fd3a0721f5d398de501a7ec
+Signed-off-by: David Wu <david.wu@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi | 6 ++++--
+ arch/arm64/boot/dts/rockchip/rk356x.dtsi | 6 ++++++
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3568.dtsi b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+index f1be76a54..6aa85e65b 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+@@ -175,11 +175,13 @@ gmac0: ethernet@fe2a0000 {
+ 		clocks = <&cru SCLK_GMAC0>, <&cru SCLK_GMAC0_RX_TX>,
+ 			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_MAC0_REFOUT>,
+ 			 <&cru ACLK_GMAC0>, <&cru PCLK_GMAC0>,
+-			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_GMAC0_PTP_REF>;
++			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_GMAC0_PTP_REF>,
++			 <&cru PCLK_XPCS>;
+ 		clock-names = "stmmaceth", "mac_clk_rx",
+ 			      "mac_clk_tx", "clk_mac_refout",
+ 			      "aclk_mac", "pclk_mac",
+-			      "clk_mac_speed", "ptp_ref";
++			      "clk_mac_speed", "ptp_ref",
++			      "pclk_xpcs";
+ 		resets = <&cru SRST_A_GMAC0>;
+ 		reset-names = "stmmaceth";
+ 		rockchip,grf = <&grf>;
+diff --git a/arch/arm64/boot/dts/rockchip/rk356x.dtsi b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+index 2f885bc36..a03e3a0c5 100644
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -369,6 +369,12 @@ usb_host1_ohci: usb@fd8c0000 {
+ 		status = "disabled";
+ 	};
+ 
++	xpcs: syscon@fda00000 {
++		compatible = "rockchip,rk3568-xpcs", "syscon";
++		reg = <0x0 0xfda00000 0x0 0x200000>;
++		status = "disabled";
++	};
++
+ 	pmugrf: syscon@fdc20000 {
+ 		compatible = "rockchip,rk3568-pmugrf", "syscon", "simple-mfd";
+ 		reg = <0x0 0xfdc20000 0x0 0x10000>;
+-- 
+2.39.2
+

@@ -1,0 +1,60 @@
+From 440d07fac52f157047294b296b6c7a68ab4add70 Mon Sep 17 00:00:00 2001
+From: Coia Prant <coiaprant@gmail.com>
+Date: Fri, 30 Aug 2024 17:59:42 +0800
+Subject: [PATCH] yt8521 led init
+
+---
+ drivers/net/phy/motorcomm.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/drivers/net/phy/motorcomm.c b/drivers/net/phy/motorcomm.c
+index 7a11fdb68..45a0eff42 100644
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -248,6 +248,13 @@
+ 
+ #define YTPHY_SYNCE_CFG_REG			0xA012
+ #define YT8521_SCR_SYNCE_ENABLE			BIT(5)
++
++#define YT8521_EXTREG_LED_GENERAL_CFG		0xA00B
++#define YT8521_EXTREG_LED0_CFG			0xA00C
++#define YT8521_EXTREG_LED1_CFG			0xA00D
++#define YT8521_EXTREG_LED2_CFG			0xA00E
++#define YT8521_EXTREG_LED_BLINK_CFG		0xA00F
++
+ /* 1b0 output 25m clock
+  * 1b1 output 125m clock  *default*
+  */
+@@ -1563,6 +1570,20 @@ static int yt8521_resume(struct phy_device *phydev)
+ 	return yt8521_modify_utp_fiber_bmcr(phydev, BMCR_PDOWN, 0);
+ }
+ 
++static int yt8521_led_init(struct phy_device *phydev)
++{
++	int ret;
++	u16 val;
++	
++	val = (0x7 << 4);
++	ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED2_CFG, val);
++	
++	val = 0x7;
++	ret = ytphy_write_ext(phydev, YT8521_EXTREG_LED1_CFG, val);
++
++	return 0;
++}
++
+ /**
+  * yt8521_config_init() - called to initialize the PHY
+  * @phydev: a pointer to a &struct phy_device
+@@ -2035,6 +2056,8 @@ static int yt8521_config_aneg_paged(struct phy_device *phydev, int page)
+ 	else
+ 		ret = ytphy_utp_config_aneg(phydev, false);
+ 
++	yt8521_led_init(phydev);
++
+ err_restore_page:
+ 	return phy_restore_page(phydev, old_page, ret);
+ }
+-- 
+2.39.2
+
