@@ -21,21 +21,16 @@ mips: ath79: cleanup defconfig for NEC QCA9558 Aterm series
  create mode 100644 configs/nec_qca9558_aterm_defconfig
  create mode 100644 include/configs/nec_qca9558_aterm.h
 
-diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
-index 14fbce597b..dd3a13a68f 100644
 --- a/arch/mips/dts/Makefile
 +++ b/arch/mips/dts/Makefile
-@@ -24,6 +24,7 @@ dtb-$(CONFIG_BOARD_GARDENA_SMART_GATEWAY_MT7688) += gardena-smart-gateway-mt7688
- dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) += linkit-smart-7688.dtb
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) +=
  dtb-$(CONFIG_TARGET_OCTEON_EBB7304) += mrvl,octeon-ebb7304.dtb
  dtb-$(CONFIG_TARGET_OCTEON_NIC23) += mrvl,octeon-nic23.dtb
+ dtb-$(CONFIG_BOARD_NEC_AR9344_ATERM) += nec,ar9344-aterm.dtb
 +dtb-$(CONFIG_BOARD_NEC_QCA9558_ATERM) += nec,qca9558-aterm.dtb
  dtb-$(CONFIG_BOARD_NETGEAR_CG3100D) += netgear,cg3100d.dtb
  dtb-$(CONFIG_BOARD_NETGEAR_DGND3700V2) += netgear,dgnd3700v2.dtb
  dtb-$(CONFIG_BOARD_SAGEM_FAST1704) += sagem,f@st1704.dtb
-diff --git a/arch/mips/dts/nec,qca9558-aterm.dts b/arch/mips/dts/nec,qca9558-aterm.dts
-new file mode 100644
-index 0000000000..4fa58cfc92
 --- /dev/null
 +++ b/arch/mips/dts/nec,qca9558-aterm.dts
 @@ -0,0 +1,32 @@
@@ -71,13 +66,11 @@ index 0000000000..4fa58cfc92
 +
 +/* delete unused node to reduce dtb size */
 +/delete-node/ &spi0;
-diff --git a/arch/mips/mach-ath79/Kconfig b/arch/mips/mach-ath79/Kconfig
-index 21ac4b9f95..4fb8291157 100644
 --- a/arch/mips/mach-ath79/Kconfig
 +++ b/arch/mips/mach-ath79/Kconfig
-@@ -67,6 +67,10 @@ config TARGET_AP152
- 	bool "AP152 Reference Board"
- 	select SOC_QCA956X
+@@ -71,6 +71,10 @@ config BOARD_NEC_AR9344_ATERM
+ 	bool "NEC Aterm series Boards (AR9344)"
+ 	select SOC_AR934X
  
 +config BOARD_NEC_QCA9558_ATERM
 +	bool "NEC Aterm series Boards (QCA9558)"
@@ -86,17 +79,14 @@ index 21ac4b9f95..4fb8291157 100644
  config BOARD_TPLINK_WDR4300
  	bool "TP-Link WDR4300 Board"
  	select SOC_AR934X
-@@ -76,6 +80,7 @@ endchoice
- source "board/qca/ap121/Kconfig"
+@@ -81,6 +85,7 @@ source "board/qca/ap121/Kconfig"
  source "board/qca/ap143/Kconfig"
  source "board/qca/ap152/Kconfig"
+ source "board/nec/ar9344_aterm/Kconfig"
 +source "board/nec/qca9558_aterm/Kconfig"
  source "board/tplink/wdr4300/Kconfig"
  
  endmenu
-diff --git a/board/nec/qca9558_aterm/Kconfig b/board/nec/qca9558_aterm/Kconfig
-new file mode 100644
-index 0000000000..d6501827e2
 --- /dev/null
 +++ b/board/nec/qca9558_aterm/Kconfig
 @@ -0,0 +1,30 @@
@@ -130,18 +120,12 @@ index 0000000000..d6501827e2
 +	default 32
 +
 +endif
-diff --git a/board/nec/qca9558_aterm/Makefile b/board/nec/qca9558_aterm/Makefile
-new file mode 100644
-index 0000000000..c372bdb80c
 --- /dev/null
 +++ b/board/nec/qca9558_aterm/Makefile
 @@ -0,0 +1,3 @@
 +# SPDX-License-Identifier: GPL-2.0+
 +
 +obj-y	= qca9558_aterm.o
-diff --git a/board/nec/qca9558_aterm/qca9558_aterm.c b/board/nec/qca9558_aterm/qca9558_aterm.c
-new file mode 100644
-index 0000000000..5c5f3972c7
 --- /dev/null
 +++ b/board/nec/qca9558_aterm/qca9558_aterm.c
 @@ -0,0 +1,58 @@
@@ -203,9 +187,6 @@ index 0000000000..5c5f3972c7
 +	return 0;
 +}
 +#endif
-diff --git a/configs/nec_qca9558_aterm_defconfig b/configs/nec_qca9558_aterm_defconfig
-new file mode 100644
-index 0000000000..c714522f8f
 --- /dev/null
 +++ b/configs/nec_qca9558_aterm_defconfig
 @@ -0,0 +1,61 @@
@@ -270,9 +251,6 @@ index 0000000000..c714522f8f
 +CONFIG_DM_SERIAL=y
 +CONFIG_SYS_NS16550=y
 +# CONFIG_GZIP is not set
-diff --git a/include/configs/nec_qca9558_aterm.h b/include/configs/nec_qca9558_aterm.h
-new file mode 100644
-index 0000000000..05bc4d1cdb
 --- /dev/null
 +++ b/include/configs/nec_qca9558_aterm.h
 @@ -0,0 +1,28 @@
@@ -304,6 +282,3 @@ index 0000000000..05bc4d1cdb
 + */
 +
 +#endif  /* __NEC_QCA9558_ATERM_H */
--- 
-2.43.0
-
