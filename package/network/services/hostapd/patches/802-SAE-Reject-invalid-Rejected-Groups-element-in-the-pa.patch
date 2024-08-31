@@ -15,7 +15,7 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
 
 --- a/src/common/sae.c
 +++ b/src/common/sae.c
-@@ -2120,6 +2120,12 @@ static int sae_parse_rejected_groups(str
+@@ -2160,6 +2160,12 @@ static int sae_parse_akm_suite_selector(
  		return WLAN_STATUS_UNSPECIFIED_FAILURE;
  	epos++; /* skip ext ID */
  	len--;
@@ -26,5 +26,5 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
 +		return WLAN_STATUS_UNSPECIFIED_FAILURE;
 +	}
  
- 	wpabuf_free(sae->tmp->peer_rejected_groups);
- 	sae->tmp->peer_rejected_groups = wpabuf_alloc(len);
+ 	if (len < RSN_SELECTOR_LEN)
+ 		return WLAN_STATUS_UNSPECIFIED_FAILURE;

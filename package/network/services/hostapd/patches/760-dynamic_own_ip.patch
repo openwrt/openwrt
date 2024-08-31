@@ -7,7 +7,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2819,6 +2819,8 @@ static int hostapd_config_fill(struct ho
+@@ -2865,6 +2865,8 @@ static int hostapd_config_fill(struct ho
  	} else if (os_strcmp(buf, "iapp_interface") == 0) {
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */
@@ -25,10 +25,10 @@ Some servers use the NAS-IP-Address attribute as a destination address
 +	int dynamic_own_ip_addr;
  	char *nas_identifier;
  	struct hostapd_radius_servers *radius;
- 	int acct_interim_interval;
+ 	int radius_require_message_authenticator;
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -601,6 +601,10 @@ int add_common_radius_attr(struct hostap
+@@ -600,6 +600,10 @@ int add_common_radius_attr(struct hostap
  	struct hostapd_radius_attr *attr;
  	int len;
  

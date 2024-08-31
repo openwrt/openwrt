@@ -13,8 +13,6 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  src/ap/ubus.h |  5 +++++
  3 files changed, 28 insertions(+)
 
-diff --git a/src/ap/apup.c b/src/ap/apup.c
-index 3575f1b6c6..3a3991f4d6 100644
 --- a/src/ap/apup.c
 +++ b/src/ap/apup.c
 @@ -23,6 +23,10 @@
@@ -28,7 +26,7 @@ index 3575f1b6c6..3a3991f4d6 100644
  void apup_process_beacon(struct hostapd_data *hapd,
                const struct ieee80211_mgmt *mgmt, size_t len,
                const struct ieee802_11_elems *elems )
-@@ -149,4 +153,8 @@ void apup_process_beacon(struct hostapd_data *hapd,
+@@ -149,4 +153,8 @@ void apup_process_beacon(struct hostapd_
  	           "apup_process_beacon(...) Added APuP peer at %s with flags: %d,"
  	           " capabilities %d",
  	           mIfname, sta_ret->flags, sta_ret->capability);
@@ -37,11 +35,9 @@ index 3575f1b6c6..3a3991f4d6 100644
 +	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
 +#endif
  }
-diff --git a/src/ap/ubus.c b/src/ap/ubus.c
-index 8689494bcf..f21516fc3c 100644
 --- a/src/ap/ubus.c
 +++ b/src/ap/ubus.c
-@@ -2004,3 +2004,18 @@ int hostapd_ubus_notify_bss_transition_query(
+@@ -2004,3 +2004,18 @@ int hostapd_ubus_notify_bss_transition_q
  	return ureq.resp;
  #endif
  }
@@ -60,11 +56,9 @@ index 8689494bcf..f21516fc3c 100644
 +	ubus_notify(ctx, &hapd->ubus.obj, "apup-newpeer", b.head, -1);
 +}
 +#endif // def CONFIG_APUP
-diff --git a/src/ap/ubus.h b/src/ap/ubus.h
-index 22767d67ee..1c65e4dcb9 100644
 --- a/src/ap/ubus.h
 +++ b/src/ap/ubus.h
-@@ -71,6 +71,11 @@ int hostapd_ubus_notify_bss_transition_query(
+@@ -71,6 +71,11 @@ int hostapd_ubus_notify_bss_transition_q
  void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
  				    const char *auth_alg);
  
@@ -76,6 +70,3 @@ index 22767d67ee..1c65e4dcb9 100644
  #else
  
  struct hostapd_ubus_bss {};
--- 
-2.44.2
-
