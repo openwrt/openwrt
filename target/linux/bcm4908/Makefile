@@ -9,8 +9,7 @@ FEATURES:=squashfs nand usb gpio
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.1
-KERNEL_TESTING_PATCHVER:=6.6
+KERNEL_PATCHVER:=6.6
 
 define Target/Description
 	Build firmware images for Broadcom BCM4908 SoC family routers.

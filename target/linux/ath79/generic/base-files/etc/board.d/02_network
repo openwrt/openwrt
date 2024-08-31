@@ -712,9 +712,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
-	elecom,wab-i1750-ps|\
-	elecom,wab-s1167-ps|\
-	elecom,wab-s600-ps|\
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -784,7 +781,6 @@ ath79_setup_macs()
 		label_mac=$wan_mac
 		;;
 	nec,wg800hp)
-		lan_mac=$(mtd_get_mac_text board_data 0x280)
 		wan_mac=$(mtd_get_mac_text board_data 0x480)
 		label_mac=$wan_mac
 		;;
