@@ -23,6 +23,21 @@ define Build/append-dlink-covr-metadata
 	rm $@metadata.tmp
 endef
 
+define Build/append-netis-n6-metadata
+	( echo -ne '{ \
+		"up_model": "Netis-N6R", \
+		"supported_devices": ["mt7621-rfb-ax-nand"], \
+		"version": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"board": "$(call json_quote,$(BOARD))" \
+		} }' \
+	) > $@.metadata.tmp
+	fwtool -I $@.metadata.tmp $@
+	rm $@.metadata.tmp
+endef
+
 define Build/arcadyan-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(eval trx_magic=$(word 1,$(1)))
@@ -2249,6 +2264,23 @@ define Device/netgear_wndr3700-v5
 endef
 TARGET_DEVICES += netgear_wndr3700-v5
 
+define Device/netis_n6
+  $(Device/dsa-migration)
+  $(Device/nand)
+  IMAGE_SIZE := 121344k
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := N6
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | append-netis-n6-metadata
+  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb-ledtrig-usbport \
+	kmod-usb3
+endef
+TARGET_DEVICES += netis_n6
+
 define Device/netis_wf2881
   $(Device/nand)
   $(Device/uimage-lzma-loader)
@@ -2902,7 +2934,6 @@ define Device/wavlink_ws-wn572hp3-4g
 	kmod-usb3 kmod-usb-net-rndis comgt-ncm -uboot-envtools
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
-
 
 define Device/wavlink_wl-wn573hx1
   $(Device/uimage-lzma-loader)

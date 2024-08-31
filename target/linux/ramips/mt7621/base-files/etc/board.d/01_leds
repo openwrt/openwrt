@@ -187,6 +187,9 @@ netgear,r7450)
 netgear,wax202)
 	ucidef_set_led_netdev "internet" "Internet" "green:net" "wan"
 	;;
+netis,n6)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	;;
 oraybox,x3a)
 	ucidef_set_led_netdev "wan" "wan link" "red:status" "wan"
 	ucidef_set_led_netdev "lan" "lan link" "green:status" "br-lan"
