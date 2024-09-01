@@ -260,7 +260,7 @@ mac80211_hostapd_setup_base() {
 			vht_oper_chwidth=1
 			vht_center_seg0=$idx
 		;;
-		VHT160|HE160|EHT160)
+		VHT160|HE160|EHT160|EHT320)
 			if [ "$band" = "6g" ]; then
 				case "$channel" in
 					1|5|9|13|17|21|25|29) idx=15;;
@@ -288,15 +288,32 @@ mac80211_hostapd_setup_base() {
 
 		[ "$background_radar" -eq 1 ] && append base_cfg "enable_background_radar=1" "$N"
 	}
+
+	eht_oper_chwidth=$vht_oper_chwidth
+	eht_center_seg0=$vht_center_seg0
+
 	[ "$band" = "6g" ] && {
 		op_class=
 		case "$htmode" in
 			HE20|EHT20) op_class=131;;
+			EHT320)
+				case "$channel" in
+					1|5|9|13|17|21|25|29|33|37|41|45|49|53|57|61) idx=31;;
+					65|69|73|77|81|85|89|93|97|101|105|109|113|117|121|125) idx=95;;
+					129|133|137|141|145|149|153|157|161|165|169|173|177|181|185|189) idx=159;;
+					193|197|201|205|209|213|217|221) idx=191;;
+				esac
+
+				op_class=137
+				eht_center_seg0=$idx
+				eht_oper_chwidth=9
+			;;
 			HE*|EHT*) op_class=$((132 + $vht_oper_chwidth));;
 		esac
 		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
 	}
 	[ "$hwmode" = "a" ] || enable_ac=0
+	[ "$band" = "6g" ] && enable_ac=0
 
 	if [ "$enable_ac" != "0" ]; then
 		json_get_vars \
@@ -499,8 +516,8 @@ mac80211_hostapd_setup_base() {
 	if [ "$enable_be" != "0" ]; then
 		append base_cfg "ieee80211be=1" "$N"
 		[ "$hwmode" = "a" ] && {
-			append base_cfg "eht_oper_chwidth=$vht_oper_chwidth" "$N"
-			append base_cfg "eht_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
+			append base_cfg "eht_oper_chwidth=$eht_oper_chwidth" "$N"
+			append base_cfg "eht_oper_centr_freq_seg0_idx=$eht_center_seg0" "$N"
 		}
 	fi
 
