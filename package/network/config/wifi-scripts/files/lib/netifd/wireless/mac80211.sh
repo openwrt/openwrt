@@ -159,77 +159,79 @@ mac80211_hostapd_setup_base() {
 	chan_ofs=0
 	[ "$band" = "6g" ] && chan_ofs=1
 
-	ieee80211n=1
-	ht_capab=
-	case "$htmode" in
-		VHT20|HT20|HE20) ;;
-		HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160)
-			case "$hwmode" in
-				a)
-					case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
-						1) ht_capab="[HT40+]";;
-						0) ht_capab="[HT40-]";;
-					esac
-				;;
-				*)
-					case "$htmode" in
-						HT40+) ht_capab="[HT40+]";;
-						HT40-) ht_capab="[HT40-]";;
-						*)
-							if [ "$channel" -lt 7 ]; then
-								ht_capab="[HT40+]"
-							else
-								ht_capab="[HT40-]"
-							fi
-						;;
-					esac
-				;;
-			esac
-			[ "$auto_channel" -gt 0 ] && ht_capab="[HT40+]"
-		;;
-		*) ieee80211n= ;;
-	esac
+	if [ "$band" != "6g" ]; then
+		ieee80211n=1
+		ht_capab=
+		case "$htmode" in
+			VHT20|HT20|HE20|EHT20) ;;
+			HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160|EHT40|EHT80|EHT160)
+				case "$hwmode" in
+					a)
+						case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
+							1) ht_capab="[HT40+]";;
+							0) ht_capab="[HT40-]";;
+						esac
+					;;
+					*)
+						case "$htmode" in
+							HT40+) ht_capab="[HT40+]";;
+							HT40-) ht_capab="[HT40-]";;
+							*)
+								if [ "$channel" -lt 7 ]; then
+									ht_capab="[HT40+]"
+								else
+									ht_capab="[HT40-]"
+								fi
+							;;
+						esac
+					;;
+				esac
+				[ "$auto_channel" -gt 0 ] && ht_capab="[HT40+]"
+			;;
+			*) ieee80211n= ;;
+		esac
 
-	[ -n "$ieee80211n" ] && {
-		append base_cfg "ieee80211n=1" "$N"
+		[ -n "$ieee80211n" ] && {
+			append base_cfg "ieee80211n=1" "$N"
 
-		set_default ht_coex 0
-		append base_cfg "ht_coex=$ht_coex" "$N"
+			set_default ht_coex 0
+			append base_cfg "ht_coex=$ht_coex" "$N"
 
-		json_get_vars \
-			ldpc:1 \
-			greenfield:0 \
-			short_gi_20:1 \
-			short_gi_40:1 \
-			tx_stbc:1 \
-			rx_stbc:3 \
-			max_amsdu:1 \
-			dsss_cck_40:1
+			json_get_vars \
+				ldpc:1 \
+				greenfield:0 \
+				short_gi_20:1 \
+				short_gi_40:1 \
+				tx_stbc:1 \
+				rx_stbc:3 \
+				max_amsdu:1 \
+				dsss_cck_40:1
 
-		ht_cap_mask=0
-		for cap in $(iw phy "$phy" info | grep 'Capabilities:' | cut -d: -f2); do
-			ht_cap_mask="$(($ht_cap_mask | $cap))"
-		done
+			ht_cap_mask=0
+			for cap in $(iw phy "$phy" info | grep 'Capabilities:' | cut -d: -f2); do
+				ht_cap_mask="$(($ht_cap_mask | $cap))"
+			done
 
-		cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
-		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
-		ht_cap_mask="$(( ($ht_cap_mask & ~(0x300)) | ($cap_rx_stbc << 8) ))"
+			cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
+			[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
+			ht_cap_mask="$(( ($ht_cap_mask & ~(0x300)) | ($cap_rx_stbc << 8) ))"
 
-		mac80211_add_capabilities ht_capab_flags $ht_cap_mask \
-			LDPC:0x1::$ldpc \
-			GF:0x10::$greenfield \
-			SHORT-GI-20:0x20::$short_gi_20 \
-			SHORT-GI-40:0x40::$short_gi_40 \
-			TX-STBC:0x80::$tx_stbc \
-			RX-STBC1:0x300:0x100:1 \
-			RX-STBC12:0x300:0x200:1 \
-			RX-STBC123:0x300:0x300:1 \
-			MAX-AMSDU-7935:0x800::$max_amsdu \
-			DSSS_CCK-40:0x1000::$dsss_cck_40
+			mac80211_add_capabilities ht_capab_flags $ht_cap_mask \
+				LDPC:0x1::$ldpc \
+				GF:0x10::$greenfield \
+				SHORT-GI-20:0x20::$short_gi_20 \
+				SHORT-GI-40:0x40::$short_gi_40 \
+				TX-STBC:0x80::$tx_stbc \
+				RX-STBC1:0x300:0x100:1 \
+				RX-STBC12:0x300:0x200:1 \
+				RX-STBC123:0x300:0x300:1 \
+				MAX-AMSDU-7935:0x800::$max_amsdu \
+				DSSS_CCK-40:0x1000::$dsss_cck_40
 
-		ht_capab="$ht_capab$ht_capab_flags"
-		[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
-	}
+			ht_capab="$ht_capab$ht_capab_flags"
+			[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
+		}
+	fi
 
 	# 802.11ac
 	enable_ac=0
@@ -238,8 +240,8 @@ mac80211_hostapd_setup_base() {
 
 	idx="$channel"
 	case "$htmode" in
-		VHT20|HE20) enable_ac=1;;
-		VHT40|HE40)
+		VHT20|HE20|EHT20) enable_ac=1;;
+		VHT40|HE40|EHT40)
 			case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
 				1) idx=$(($channel + 2));;
 				0) idx=$(($channel - 2));;
@@ -247,7 +249,7 @@ mac80211_hostapd_setup_base() {
 			enable_ac=1
 			vht_center_seg0=$idx
 		;;
-		VHT80|HE80)
+		VHT80|HE80|EHT80)
 			case "$(( (($channel / 4) + $chan_ofs) % 4 ))" in
 				1) idx=$(($channel + 6));;
 				2) idx=$(($channel + 2));;
@@ -258,7 +260,7 @@ mac80211_hostapd_setup_base() {
 			vht_oper_chwidth=1
 			vht_center_seg0=$idx
 		;;
-		VHT160|HE160)
+		VHT160|HE160|EHT160)
 			if [ "$band" = "6g" ]; then
 				case "$channel" in
 					1|5|9|13|17|21|25|29) idx=15;;
@@ -289,8 +291,8 @@ mac80211_hostapd_setup_base() {
 	[ "$band" = "6g" ] && {
 		op_class=
 		case "$htmode" in
-			HE20) op_class=131;;
-			HE*) op_class=$((132 + $vht_oper_chwidth))
+			HE20|EHT20) op_class=131;;
+			HE*|EHT*) op_class=$((132 + $vht_oper_chwidth));;
 		esac
 		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
 	}
@@ -417,8 +419,10 @@ mac80211_hostapd_setup_base() {
 
 	# 802.11ax
 	enable_ax=0
+	enable_be=0
 	case "$htmode" in
 		HE*) enable_ax=1 ;;
+		EHT*) enable_ax=1; enable_be=1 ;;
 	esac
 
 	if [ "$enable_ax" != "0" ]; then
@@ -490,6 +494,14 @@ mac80211_hostapd_setup_base() {
 		append base_cfg "he_mu_edca_ac_vo_ecwmin=5" "$N"
 		append base_cfg "he_mu_edca_ac_vo_ecwmax=7" "$N"
 		append base_cfg "he_mu_edca_ac_vo_timer=255" "$N"
+	fi
+
+	if [ "$enable_be" != "0" ]; then
+		append base_cfg "ieee80211be=1" "$N"
+		[ "$hwmode" = "a" ] && {
+			append base_cfg "eht_oper_chwidth=$vht_oper_chwidth" "$N"
+			append base_cfg "eht_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
+		}
 	fi
 
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
