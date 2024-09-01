@@ -1,0 +1,71 @@
+From 17a781895079f8f9b2c089d13a1e4d9789e018c5 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Wed, 20 Mar 2024 17:36:14 +0800
+Subject: [PATCH 107/116] riscv: dts: starfive: evb-overlay: Support SPI
+ overlay
+
+Add new compatibles to support SPI overlay.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ .../dts/starfive/evb-overlay/jh7110-evb-overlay-spi.dtso   | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-spi.dtso
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-spi.dtso
+@@ -9,6 +9,7 @@
+ 	fragment@0 {
+ 		target-path = "/soc/spi@10060000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -17,6 +18,7 @@
+ 	fragment@1 {
+ 		target-path = "/soc/spi@10070000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -25,6 +27,7 @@
+ 	fragment@2 {
+ 		target-path = "/soc/spi@10080000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -33,6 +36,7 @@
+ 	fragment@3 {
+ 		target-path = "/soc/spi@12070000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -41,6 +45,7 @@
+ 	fragment@4 {
+ 		target-path = "/soc/spi@12080000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -49,6 +54,7 @@
+ 	fragment@5 {
+ 		target-path = "/soc/spi@12090000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};
+@@ -57,6 +63,7 @@
+ 	fragment@6 {
+ 		target-path = "/soc/spi@120a0000";
+ 		__overlay__ {
++			compatible = "starfive,jh7110-spi-pl022";
+ 			status = "okay";
+ 		};
+ 	};

@@ -1,0 +1,30 @@
+From 30e0cdcf9e05faa65ecde4ed8b70039568fdb660 Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Thu, 2 Mar 2023 17:16:01 +0800
+Subject: [PATCH 076/116] perf: sbi: disable cpu hotplug callback.
+
+register cpu hotplug callback will cause dhrystone
+and coremark benchmark reduce the scores. this CPU
+hotplug ops will do in sbi cpu/on and off. So disable
+this no side effect.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ drivers/perf/riscv_pmu_sbi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/perf/riscv_pmu_sbi.c
++++ b/drivers/perf/riscv_pmu_sbi.c
+@@ -1114,9 +1114,11 @@ static int pmu_sbi_device_probe(struct p
+ 	}
+ 	pdev->dev.groups = pmu_sbi_groups;
+ 
++#ifndef CONFIG_ARCH_STARFIVE
+ 	ret = cpuhp_state_add_instance(CPUHP_AP_PERF_RISCV_STARTING, &pmu->node);
+ 	if (ret)
+ 		return ret;
++#endif
+ 
+ 	ret = riscv_pm_pmu_register(pmu);
+ 	if (ret)

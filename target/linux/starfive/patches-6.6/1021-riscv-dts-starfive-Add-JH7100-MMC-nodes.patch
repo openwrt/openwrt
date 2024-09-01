@@ -1,0 +1,49 @@
+From 7be159c760aa8a1ece1354892af215b2f8c21152 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Date: Thu, 30 Nov 2023 16:19:30 +0100
+Subject: [PATCH 1021/1024] riscv: dts: starfive: Add JH7100 MMC nodes
+
+Add device tree nodes for the Synopsis MMC controllers on the
+StarFive JH7100 SoC.
+
+Signed-off-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ arch/riscv/boot/dts/starfive/jh7100.dtsi | 26 ++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7100.dtsi
+@@ -188,6 +188,32 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		sdio0: mmc@10000000 {
++			compatible = "snps,dw-mshc";
++			reg = <0x0 0x10000000 0x0 0x10000>;
++			clocks = <&clkgen JH7100_CLK_SDIO0_AHB>,
++				 <&clkgen JH7100_CLK_SDIO0_CCLKINT_INV>;
++			clock-names = "biu", "ciu";
++			interrupts = <4>;
++			data-addr = <0>;
++			fifo-depth = <32>;
++			fifo-watermark-aligned;
++			status = "disabled";
++		};
++
++		sdio1: mmc@10010000 {
++			compatible = "snps,dw-mshc";
++			reg = <0x0 0x10010000 0x0 0x10000>;
++			clocks = <&clkgen JH7100_CLK_SDIO1_AHB>,
++				 <&clkgen JH7100_CLK_SDIO1_CCLKINT_INV>;
++			clock-names = "biu", "ciu";
++			interrupts = <5>;
++			data-addr = <0>;
++			fifo-depth = <32>;
++			fifo-watermark-aligned;
++			status = "disabled";
++		};
++
+ 		clkgen: clock-controller@11800000 {
+ 			compatible = "starfive,jh7100-clkgen";
+ 			reg = <0x0 0x11800000 0x0 0x10000>;
