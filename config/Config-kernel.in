@@ -1247,6 +1247,7 @@ config KERNEL_BTRFS_FS
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
+		default y if !SMALL_FLASH
 		help
 		  Make using ACLs (e.g. POSIX ACL, NFSv4 ACL) the default
 		  for kernel and packages, except tmpfs, flash filesystems,
@@ -1415,15 +1416,19 @@ config KERNEL_LSM
 
 config KERNEL_EXT4_FS_SECURITY
 	bool "Ext4 Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_F2FS_FS_SECURITY
 	bool "F2FS Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_UBIFS_FS_SECURITY
 	bool "UBIFS Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_JFFS2_FS_SECURITY
 	bool "JFFS2 Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_WERROR
 	bool "Compile the kernel with warnings as errors"
