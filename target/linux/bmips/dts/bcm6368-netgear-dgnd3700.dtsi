@@ -41,66 +41,66 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@2 {
+		led-2 {
 			label = "green:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led@4 {
+		led-4 {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
-		led@5 {
+		led-5 {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led@11 {
+		led-11 {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		led@13 {
+		led-13 {
 			/* Front USB port */
 			label = "green:usb2";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led@14 {
+		led-14 {
 			/* Back USB port */
 			label = "green:usb1";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: led@22 {
+		led_power_red: led-22 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
-		led@23 {
+		led-23 {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_green: led@24 {
+		led_power_green: led-24 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
-		led@26 {
+		led-26 {
 			label = "green:wifi2g";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 
-		led@27 {
+		led-27 {
 			label = "blue:wifi5g";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};

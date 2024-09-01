@@ -35,45 +35,45 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@2 {
+		led-2 {
 			label = "blue:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led@5 {
+		led-5 {
 			label = "red:dsl";
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led@11 {
+		led-11 {
 			label = "blue:hspa";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		led@12 {
+		led-12 {
 			label = "red:hspa";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_blue: led@22 {
+		led_power_blue: led-22 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_power_red: led@24 {
+		led_power_red: led-24 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
-		led@25 {
+		led-25 {
 			label = "blue:voice";
 			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 		};
 
-		led@26 {
+		led-26 {
 			label = "red:voice";
 			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};

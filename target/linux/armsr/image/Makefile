@@ -12,6 +12,7 @@ GRUB_TERMINAL_CONFIG =
 GRUB_CONSOLE_CMDLINE = earlycon
 
 ifneq ($(CONFIG_GRUB_CONSOLE),)
+  GRUB_CONSOLE_CMDLINE += console=tty1
   GRUB_TERMINALS += console
 endif
 

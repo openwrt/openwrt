@@ -53,6 +53,7 @@ define Device/tplink_tl-wdr4900-v1
   DEVICE_VARIANT := v1
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
   TPLINK_HEADER_VERSION := 1
   TPLINK_HWID := 0x49000001
   TPLINK_HWREV := 1

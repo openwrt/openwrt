@@ -39,6 +39,27 @@ define Device/comtrend_ar-5387un
 endef
 TARGET_DEVICES += comtrend_ar-5387un
 
+define Device/dlink_dsl-2750b-b1
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DSL-2750B
+  DEVICE_VARIANT := B1
+  DEVICE_ALT0_VENDOR := D-Link
+  DEVICE_ALT0_MODEL := DSL-2740B
+  DEVICE_ALT0_VARIANT := F1
+  DEVICE_ALT1_VENDOR := D-Link
+  DEVICE_ALT1_MODEL := DSL-2741B
+  DEVICE_ALT1_VARIANT := F1
+  CFE_BOARD_ID := AW4339U
+  CHIP_ID := 6328
+  IMAGES := cfe-EU.bin cfe-AU.bin
+  IMAGE/cfe-AU.bin := cfe-bin --signature2 "4.06.01.AUF1" --pad 4
+  IMAGE/cfe-EU.bin := cfe-bin --signature2 "4.06.01.EUF1" --pad 4
+  DEVICE_PACKAGES += $(USB2_PACKAGES) $(ATH9K_PACKAGES) \
+    kmod-leds-gpio kmod-leds-bcm6328
+endef
+TARGET_DEVICES += dlink_dsl-2750b-b1
+
 define Device/innacomm_w3400v6
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := Innacomm

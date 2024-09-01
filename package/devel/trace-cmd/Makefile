@@ -1,12 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=trace-cmd
-PKG_VERSION:=v3.2
+PKG_VERSION:=3.3
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/utils/trace-cmd/trace-cmd.git/snapshot/
-PKG_HASH:=62af2c6062eeb434925921bb5936774b0a0e17a5f86671fa2ea2f40704a080cd
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=$(PKG_NAME)-v$(PKG_VERSION)
+PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/utils/trace-cmd/trace-cmd
+PKG_MIRROR_HASH:=7a4f9c3a18a01012cd76ab9a0a2c4447aed8293d005679d5228ef2aef243445c
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
@@ -36,8 +37,6 @@ MAKE_FLAGS += \
 	NO_AUDIT=1 \
 	NO_LIBZSTD=1 \
 	prefix=/usr
-
-TARGET_CFLAGS += --std=gnu99 -D_GNU_SOURCE
 
 define Package/trace-cmd/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/usr/lib/traceevent/plugins

@@ -47,60 +47,6 @@ void __init tl_wdr4900_v1_pic_init(void)
 	mpic_init(mpic);
 }
 
-#ifdef CONFIG_PCI
-static struct gpio_led tl_wdr4900_v1_wmac_leds_gpio[] = {
-	{
-		.name		= "tp-link:blue:wps",
-		.gpio		= 1,
-		.active_low	= 1,
-	},
-};
-
-static struct ath9k_platform_data tl_wdr4900_v1_wmac0_data = {
-	.led_pin = 0,
-	.eeprom_name = "pci_wmac0.eeprom",
-	.leds = tl_wdr4900_v1_wmac_leds_gpio,
-	.num_leds = ARRAY_SIZE(tl_wdr4900_v1_wmac_leds_gpio),
-};
-
-static struct ath9k_platform_data tl_wdr4900_v1_wmac1_data = {
-	.led_pin = 0,
-	.eeprom_name = "pci_wmac1.eeprom",
-};
-
-static void tl_wdr4900_v1_pci_wmac_fixup(struct pci_dev *dev)
-{
-	if (!machine_is(tl_wdr4900_v1))
-		return;
-
-	if (dev->bus->number == 1 &&
-	    PCI_SLOT(dev->devfn) == 0) {
-		dev->dev.platform_data = &tl_wdr4900_v1_wmac0_data;
-		return;
-	}
-
-	if (dev->bus->number == 3 &&
-	    PCI_SLOT(dev->devfn) == 0 &&
-	    dev->device == 0xabcd) {
-		dev->dev.platform_data = &tl_wdr4900_v1_wmac1_data;
-
-		/*
-		 * The PCI header of the AR9381 chip is not programmed
-		 * correctly by the bootloader and the device uses wrong
-		 * data due to that. Replace the broken values with the
-		 * correct ones.
-		 */
-		dev->device = 0x30;
-		dev->class = 0x028000;
-
-		pr_info("pci %s: AR9381 fixup applied\n", pci_name(dev));
-	}
-}
-
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID,
-			tl_wdr4900_v1_pci_wmac_fixup);
-#endif /* CONFIG_PCI */
-
 /*
  * Setup the architecture
  */

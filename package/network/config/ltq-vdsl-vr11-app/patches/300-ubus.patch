@@ -10,7 +10,7 @@
  DSL_char_t *g_sFirmwareName1 = DSL_NULL;
  DSL_FirmwareFeatures_t g_nFwFeatures1 = {DSL_FW_XDSLMODE_CLEANED, DSL_FW_XDSLFEATURE_CLEANED,
     DSL_FW_XDSLFEATURE_CLEANED};
-@@ -7831,6 +7834,8 @@ DSL_int_t dsl_cpe_daemon (
+@@ -7882,6 +7885,8 @@ DSL_int_t dsl_cpe_daemon (
  #endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
  #endif /* RTEMS*/
  
@@ -19,7 +19,7 @@
     /* Open DSL_CPE_MAX_DSL_ENTITIES devices*/
     for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; nDevice++)
     {
-@@ -8367,6 +8372,7 @@ DSL_int_t dsl_cpe_daemon (
+@@ -8420,6 +8425,7 @@ DSL_int_t dsl_cpe_daemon (
  #endif /* INCLUDE_DSL_CPE_CLI_SUPPORT */
  
  DSL_CPE_CONTROL_EXIT:

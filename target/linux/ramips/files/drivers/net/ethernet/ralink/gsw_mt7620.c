@@ -245,7 +245,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 	mt7620_ephy_init(gsw);
 
 	if (gsw->irq) {
-		ret = request_irq(gsw->irq, gsw_interrupt_mt7620, 0,
+		ret = devm_request_irq(&pdev->dev, gsw->irq, gsw_interrupt_mt7620, 0,
 				  "gsw", priv);
 		if (ret) {
 			dev_err(&pdev->dev, "Failed to request irq");
