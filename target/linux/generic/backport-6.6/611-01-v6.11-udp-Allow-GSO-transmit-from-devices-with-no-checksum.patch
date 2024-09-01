@@ -65,7 +65,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		}
 --- a/net/ipv4/udp_offload.c
 +++ b/net/ipv4/udp_offload.c
-@@ -361,6 +361,14 @@ struct sk_buff *__udp_gso_segment(struct
+@@ -362,6 +362,14 @@ struct sk_buff *__udp_gso_segment(struct
  	else
  		uh->check = gso_make_checksum(seg, ~check) ? : CSUM_MANGLED_0;
  
