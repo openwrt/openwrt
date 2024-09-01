@@ -1,0 +1,30 @@
+From 9cc8de0cdc1600f460f618e342e1f524adad07c4 Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Wed, 21 Feb 2024 10:23:48 +0800
+Subject: [PATCH 052/116] ASoC: dwc: i2s: Fix getting platform data error for
+ StarFive JH7110
+
+JH7110 need to use a DT specific function to get the platform data,
+otherwise, it fails in probe().
+
+Fixes: 9c97790a07dc ("ASoC: dwc: Fix non-DT instantiation")
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ sound/soc/dwc/dwc-i2s.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/sound/soc/dwc/dwc-i2s.c
++++ b/sound/soc/dwc/dwc-i2s.c
+@@ -917,7 +917,11 @@ static int jh7110_i2stx0_clk_cfg(struct
+ 
+ static int dw_i2s_probe(struct platform_device *pdev)
+ {
++#ifdef CONFIG_OF
++	const struct i2s_platform_data *pdata = of_device_get_match_data(&pdev->dev);
++#else
+ 	const struct i2s_platform_data *pdata = pdev->dev.platform_data;
++#endif
+ 	struct dw_i2s_dev *dev;
+ 	struct resource *res;
+ 	int ret, irq;

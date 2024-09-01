@@ -1,0 +1,85 @@
+From 015edaccef82200d913d5f1e99fd95641f526bc6 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Date: Thu, 30 Nov 2023 16:19:31 +0100
+Subject: [PATCH 1022/1024] riscv: dts: starfive: Enable SD-card on JH7100
+ boards
+
+Add pinctrl and MMC device tree nodes for the SD-card on the
+BeagleV Starlight and StarFive VisionFive V1 boards.
+
+Signed-off-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ .../boot/dts/starfive/jh7100-common.dtsi      | 47 +++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100-common.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7100-common.dtsi
+@@ -12,6 +12,7 @@
+ 
+ / {
+ 	aliases {
++		mmc0 = &sdio0;
+ 		serial0 = &uart3;
+ 	};
+ 
+@@ -108,6 +109,43 @@
+ 		};
+ 	};
+ 
++	sdio0_pins: sdio0-0 {
++		clk-pins {
++			pinmux = <GPIOMUX(54, GPO_SDIO0_PAD_CCLK_OUT,
++				  GPO_ENABLE, GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++		sdio-pins {
++			pinmux = <GPIOMUX(55, GPO_LOW, GPO_DISABLE,
++				  GPI_SDIO0_PAD_CARD_DETECT_N)>,
++				 <GPIOMUX(53,
++				  GPO_SDIO0_PAD_CCMD_OUT,
++				  GPO_SDIO0_PAD_CCMD_OEN,
++				  GPI_SDIO0_PAD_CCMD_IN)>,
++				 <GPIOMUX(49,
++				  GPO_SDIO0_PAD_CDATA_OUT_BIT0,
++				  GPO_SDIO0_PAD_CDATA_OEN_BIT0,
++				  GPI_SDIO0_PAD_CDATA_IN_BIT0)>,
++				 <GPIOMUX(50,
++				  GPO_SDIO0_PAD_CDATA_OUT_BIT1,
++				  GPO_SDIO0_PAD_CDATA_OEN_BIT1,
++				  GPI_SDIO0_PAD_CDATA_IN_BIT1)>,
++				 <GPIOMUX(51,
++				  GPO_SDIO0_PAD_CDATA_OUT_BIT2,
++				  GPO_SDIO0_PAD_CDATA_OEN_BIT2,
++				  GPI_SDIO0_PAD_CDATA_IN_BIT2)>,
++				 <GPIOMUX(52,
++				  GPO_SDIO0_PAD_CDATA_OUT_BIT3,
++				  GPO_SDIO0_PAD_CDATA_OEN_BIT3,
++				  GPI_SDIO0_PAD_CDATA_IN_BIT3)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
+ 	uart3_pins: uart3-0 {
+ 		rx-pins {
+ 			pinmux = <GPIOMUX(13, GPO_LOW, GPO_DISABLE,
+@@ -178,6 +216,15 @@
+ 	clock-frequency = <27000000>;
+ };
+ 
++&sdio0 {
++	broken-cd;
++	bus-width = <4>;
++	cap-sd-highspeed;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdio0_pins>;
++	status = "okay";
++};
++
+ &uart3 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart3_pins>;

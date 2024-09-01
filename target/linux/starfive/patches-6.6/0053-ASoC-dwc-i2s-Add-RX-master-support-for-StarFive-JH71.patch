@@ -1,0 +1,67 @@
+From 1be9bd37fdb5f50162dba0158e1fee295ebca9aa Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Tue, 17 Oct 2023 17:22:52 +0800
+Subject: [PATCH 053/116] ASoC: dwc: i2s: Add RX master support for StarFive
+ JH7110 SoC
+
+Add JH7110 I2S RX master support, so the PDM can work on JH7110
+EVB board.
+
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ sound/soc/dwc/dwc-i2s.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+--- a/sound/soc/dwc/dwc-i2s.c
++++ b/sound/soc/dwc/dwc-i2s.c
+@@ -906,6 +906,27 @@ static int jh7110_i2srx_crg_init(struct
+ 	return jh7110_i2s_crg_slave_init(dev);
+ }
+ 
++/* Special syscon initialization about RX channel with master mode on JH7110 SoC */
++static int jh7110_i2srx_mst_crg_init(struct dw_i2s_dev *dev)
++{
++	struct regmap *regmap;
++	unsigned int args[5];
++
++	regmap = syscon_regmap_lookup_by_phandle_args(dev->dev->of_node,
++						      "starfive,syscon",
++						      5, args);
++	if (IS_ERR(regmap))
++		return dev_err_probe(dev->dev, PTR_ERR(regmap), "getting the regmap failed\n");
++
++	/* Enable I2Srx with syscon register, args[0]: offset, args[1]: mask */
++	regmap_update_bits(regmap, args[0], args[1], args[1]);
++
++	/* Change I2Srx source (PDM) with syscon register, args[0]: offset, args[1]: mask */
++	regmap_update_bits(regmap, args[2], args[3], args[4]);
++
++	return jh7110_i2s_crg_master_init(dev);
++}
++
+ static int jh7110_i2stx0_clk_cfg(struct i2s_clk_config_data *config)
+ {
+ 	struct dw_i2s_dev *dev = container_of(config, struct dw_i2s_dev, config);
+@@ -1086,11 +1107,21 @@ static const struct i2s_platform_data jh
+ 	.i2s_pd_init = jh7110_i2srx_crg_init,
+ };
+ 
++static const struct i2s_platform_data jh7110_i2srx_mst_data = {
++	.cap = DWC_I2S_RECORD | DW_I2S_MASTER,
++	.channel = TWO_CHANNEL_SUPPORT,
++	.snd_fmts = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S32_LE,
++	.snd_rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_11025 | SNDRV_PCM_RATE_16000,
++	.i2s_clk_cfg = jh7110_i2stx0_clk_cfg,
++	.i2s_pd_init = jh7110_i2srx_mst_crg_init,
++};
++
+ static const struct of_device_id dw_i2s_of_match[] = {
+ 	{ .compatible = "snps,designware-i2s",	 },
+ 	{ .compatible = "starfive,jh7110-i2stx0", .data = &jh7110_i2stx0_data, },
+ 	{ .compatible = "starfive,jh7110-i2stx1", .data = &jh7110_i2stx1_data,},
+ 	{ .compatible = "starfive,jh7110-i2srx", .data = &jh7110_i2srx_data,},
++	{ .compatible = "starfive,jh7110-i2srx-master", .data = &jh7110_i2srx_mst_data,},
+ 	{},
+ };
+ 

@@ -1,0 +1,24 @@
+From fc4b5c7c27e1b56b1f848e50511c4fd081b1b6c5 Mon Sep 17 00:00:00 2001
+From: Walker Chen <walker.chen@starfivetech.com>
+Date: Mon, 12 Jun 2023 21:21:45 +0800
+Subject: [PATCH 077/116] dmaengine: dw-axi-dmac: Drop unused print message
+
+Removed printing information which is not related to StarFive
+platform.
+
+Signed-off-by: Walker Chen <walker.chen@starfivetech.com>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -523,7 +523,7 @@ static void dw_axi_dma_set_hw_channel(st
+ 	unsigned long reg_value, val;
+ 
+ 	if (!chip->apb_regs) {
+-		dev_err(chip->dev, "apb_regs not initialized\n");
++		dev_dbg(chip->dev, "apb_regs not initialized\n");
+ 		return;
+ 	}
+ 

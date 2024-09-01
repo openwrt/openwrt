@@ -1,0 +1,46 @@
+From eea9f2c55cf944bbd5cdd43eb655416a867846af Mon Sep 17 00:00:00 2001
+From: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Date: Mon, 20 Nov 2023 11:12:42 +0800
+Subject: [PATCH 011/116] crypto: starfive - Pad adata with zeroes
+
+Aad requires padding with zeroes up to 15 bytes in some cases. This
+patch increases the allocated buffer size for aad and prevents the
+driver accessing uninitialized memory region.
+
+v1->v2: Specify reason for alloc size change in descriptions.
+
+Signed-off-by: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/starfive/jh7110-aes.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/crypto/starfive/jh7110-aes.c
++++ b/drivers/crypto/starfive/jh7110-aes.c
+@@ -500,7 +500,7 @@ static int starfive_aes_prepare_req(stru
+ 	scatterwalk_start(&cryp->out_walk, rctx->out_sg);
+ 
+ 	if (cryp->assoclen) {
+-		rctx->adata = kzalloc(ALIGN(cryp->assoclen, AES_BLOCK_SIZE), GFP_KERNEL);
++		rctx->adata = kzalloc(cryp->assoclen + AES_BLOCK_SIZE, GFP_KERNEL);
+ 		if (!rctx->adata)
+ 			return dev_err_probe(cryp->dev, -ENOMEM,
+ 					     "Failed to alloc memory for adata");
+@@ -569,7 +569,7 @@ static int starfive_aes_aead_do_one_req(
+ 	struct starfive_cryp_ctx *ctx =
+ 		crypto_aead_ctx(crypto_aead_reqtfm(req));
+ 	struct starfive_cryp_dev *cryp = ctx->cryp;
+-	struct starfive_cryp_request_ctx *rctx = ctx->rctx;
++	struct starfive_cryp_request_ctx *rctx;
+ 	u32 block[AES_BLOCK_32];
+ 	u32 stat;
+ 	int err;
+@@ -579,6 +579,8 @@ static int starfive_aes_aead_do_one_req(
+ 	if (err)
+ 		return err;
+ 
++	rctx = ctx->rctx;
++
+ 	if (!cryp->assoclen)
+ 		goto write_text;
+ 
