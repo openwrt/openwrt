@@ -19,15 +19,9 @@ watchguard,firebox-m300)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	wg_set_opt_interface "eth2" "2"
 
-	sweth_mac_offset=0x186d
-
 	for sweth in $(find /sys/class/net/ -name 'sweth*' -print); do
 		device="$(basename "$sweth")"
-		mac="$(mtd_get_mac_text wg_cfg0 "$sweth_mac_offset")"
-		switchports="$switchports $device"
-		ucidef_set_network_device_mac "$device" "$mac"
 		wg_set_opt_interface "$device" "${device#sweth}"
-		sweth_mac_offset=$(printf "0x%X\n" $(( $sweth_mac_offset + 0x14)))
 	done
 
 	;;
