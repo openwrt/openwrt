@@ -1253,6 +1253,7 @@ define Device/tplink_re200-v1
   IMAGE_SIZE := 7936k
   TPLINK_HWID := 0x02000001
   TPLINK_FLASHLAYOUT := 8Mmtk
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_re200-v1
 
@@ -1265,6 +1266,7 @@ define Device/tplink_re210-v1
   IMAGE_SIZE := 7936k
   TPLINK_HWID := 0x02100001
   TPLINK_FLASHLAYOUT := 8Mmtk
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_re210-v1
 
