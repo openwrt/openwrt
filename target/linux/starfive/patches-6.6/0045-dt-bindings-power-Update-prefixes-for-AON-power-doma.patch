@@ -1,0 +1,31 @@
+From cac9ce9c7f388a741389b1ec47af65420254db55 Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Wed, 27 Sep 2023 06:07:33 -0700
+Subject: [PATCH 045/116] dt-bindings: power: Update prefixes for AON power
+ domain
+
+Use "JH7110_AON_PD_" prefix for AON power domain for JH7110 SoC.
+
+Reviewed-by: Walker Chen <walker.chen@starfivetech.com>
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Link: https://lore.kernel.org/r/20230927130734.9921-2-changhuang.liang@starfivetech.com
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ include/dt-bindings/power/starfive,jh7110-pmu.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/include/dt-bindings/power/starfive,jh7110-pmu.h
++++ b/include/dt-bindings/power/starfive,jh7110-pmu.h
+@@ -14,7 +14,8 @@
+ #define JH7110_PD_ISP		5
+ #define JH7110_PD_VENC		6
+ 
+-#define JH7110_PD_DPHY_TX	0
+-#define JH7110_PD_DPHY_RX	1
++/* AON Power Domain */
++#define JH7110_AON_PD_DPHY_TX	0
++#define JH7110_AON_PD_DPHY_RX	1
+ 
+ #endif

@@ -1,0 +1,34 @@
+From b513eb2cabee212ba1a23839f18c0026a21e653e Mon Sep 17 00:00:00 2001
+From: William Qiu <william.qiu@starfivetech.com>
+Date: Fri, 22 Sep 2023 14:28:32 +0800
+Subject: [PATCH 004/116] dt-bindings: mmc: starfive: Remove properties from
+ required
+
+Due to the change of tuning implementation, it's no longer necessary to
+use the "starfive,sysreg" property in dts, so remove it from required.
+
+Signed-off-by: William Qiu <william.qiu@starfivetech.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Link: https://lore.kernel.org/r/20230922062834.39212-2-william.qiu@starfivetech.com
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ Documentation/devicetree/bindings/mmc/starfive,jh7110-mmc.yaml | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/mmc/starfive,jh7110-mmc.yaml
++++ b/Documentation/devicetree/bindings/mmc/starfive,jh7110-mmc.yaml
+@@ -55,7 +55,6 @@ required:
+   - clocks
+   - clock-names
+   - interrupts
+-  - starfive,sysreg
+ 
+ unevaluatedProperties: false
+ 
+@@ -73,5 +72,4 @@ examples:
+         fifo-depth = <32>;
+         fifo-watermark-aligned;
+         data-addr = <0>;
+-        starfive,sysreg = <&sys_syscon 0x14 0x1a 0x7c000000>;
+     };

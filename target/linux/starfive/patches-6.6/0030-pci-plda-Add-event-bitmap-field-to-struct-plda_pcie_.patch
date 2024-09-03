@@ -1,0 +1,67 @@
+From 142fc300fd7511a217783dcfa342031d8ad70188 Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Mon, 8 Jan 2024 19:06:07 +0800
+Subject: [PATCH 030/116] pci: plda: Add event bitmap field to struct
+ plda_pcie_rp
+
+For PLDA DMA interrupts are not all implemented. The non-implemented
+interrupts should be masked. So add a bitmap field to mask the non-
+implemented interrupts.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+---
+ drivers/pci/controller/plda/pcie-microchip-host.c | 1 +
+ drivers/pci/controller/plda/pcie-plda-host.c      | 6 ++++--
+ drivers/pci/controller/plda/pcie-plda.h           | 1 +
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/controller/plda/pcie-microchip-host.c
++++ b/drivers/pci/controller/plda/pcie-microchip-host.c
+@@ -636,6 +636,7 @@ static int mc_platform_init(struct pci_c
+ 
+ 	port->plda.event_ops = &mc_event_ops;
+ 	port->plda.event_irq_chip = &mc_event_irq_chip;
++	port->plda.events_bitmap = GENMASK(NUM_EVENTS - 1, 0);
+ 
+ 	/* Address translation is up; safe to enable interrupts */
+ 	ret = plda_init_interrupts(pdev, &port->plda, &mc_event);
+--- a/drivers/pci/controller/plda/pcie-plda-host.c
++++ b/drivers/pci/controller/plda/pcie-plda-host.c
+@@ -290,6 +290,7 @@ static void plda_handle_event(struct irq
+ 
+ 	events = port->event_ops->get_events(port);
+ 
++	events &= port->events_bitmap;
+ 	for_each_set_bit(bit, &events, port->num_events)
+ 		generic_handle_domain_irq(port->event_domain, bit);
+ 
+@@ -420,8 +421,9 @@ int plda_init_interrupts(struct platform
+ {
+ 	struct device *dev = &pdev->dev;
+ 	int irq;
+-	int i, intx_irq, msi_irq, event_irq;
++	int intx_irq, msi_irq, event_irq;
+ 	int ret;
++	u32 i;
+ 
+ 	if (!port->event_ops)
+ 		port->event_ops = &plda_event_ops;
+@@ -439,7 +441,7 @@ int plda_init_interrupts(struct platform
+ 	if (irq < 0)
+ 		return -ENODEV;
+ 
+-	for (i = 0; i < port->num_events; i++) {
++	for_each_set_bit(i, &port->events_bitmap, port->num_events) {
+ 		event_irq = irq_create_mapping(port->event_domain, i);
+ 		if (!event_irq) {
+ 			dev_err(dev, "failed to map hwirq %d\n", i);
+--- a/drivers/pci/controller/plda/pcie-plda.h
++++ b/drivers/pci/controller/plda/pcie-plda.h
+@@ -159,6 +159,7 @@ struct plda_pcie_rp {
+ 	const struct plda_event_ops *event_ops;
+ 	const struct irq_chip *event_irq_chip;
+ 	void __iomem *bridge_addr;
++	unsigned long events_bitmap;
+ 	int num_events;
+ };
+ 

@@ -1,0 +1,25 @@
+From 52de0270ed6453727936b5a793dc367d75280e84 Mon Sep 17 00:00:00 2001
+From: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Date: Wed, 15 Nov 2023 01:12:13 +0800
+Subject: [PATCH 009/116] crypto: starfive - Update driver dependencies
+
+Change AMBA_PL08X to required dependency as the hash ops depends on it
+for data transfer.
+
+Signed-off-by: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/starfive/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/crypto/starfive/Kconfig
++++ b/drivers/crypto/starfive/Kconfig
+@@ -4,7 +4,7 @@
+ 
+ config CRYPTO_DEV_JH7110
+ 	tristate "StarFive JH7110 cryptographic engine driver"
+-	depends on SOC_STARFIVE || AMBA_PL08X || COMPILE_TEST
++	depends on (SOC_STARFIVE && AMBA_PL08X) || COMPILE_TEST
+ 	depends on HAS_DMA
+ 	select CRYPTO_ENGINE
+ 	select CRYPTO_HMAC

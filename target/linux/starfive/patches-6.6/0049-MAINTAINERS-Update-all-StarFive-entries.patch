@@ -1,0 +1,147 @@
+From ae7b57a0c69953f5ec06a378aedeed4c86637998 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Tue, 11 Apr 2023 16:25:57 +0800
+Subject: [PATCH 049/116] MAINTAINERS: Update all StarFive entries
+
+Merge all StarFive maintainers changes together.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ MAINTAINERS | 61 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 57 insertions(+), 4 deletions(-)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -7053,6 +7053,14 @@ T:	git git://anongit.freedesktop.org/drm
+ F:	Documentation/devicetree/bindings/display/rockchip/
+ F:	drivers/gpu/drm/rockchip/
+ 
++DRM DRIVERS FOR STARFIVE
++M:	Keith Zhao <keith.zhao@starfivetech.com>
++L:	dri-devel@lists.freedesktop.org
++S:	Maintained
++T:	git git://anongit.freedesktop.org/drm/drm-misc
++F:	Documentation/devicetree/bindings/display/starfive/
++F:	drivers/gpu/drm/verisilicon/
++
+ DRM DRIVERS FOR STI
+ M:	Alain Volmat <alain.volmat@foss.st.com>
+ L:	dri-devel@lists.freedesktop.org
+@@ -16016,6 +16024,13 @@ F:	Documentation/i2c/busses/i2c-ocores.r
+ F:	drivers/i2c/busses/i2c-ocores.c
+ F:	include/linux/platform_data/i2c-ocores.h
+ 
++OPENCORES PWM DRIVER
++M:	William Qiu <william.qiu@starfivetech.com>
++M:	Hal Feng <hal.feng@starfivetech.com>
++S:	Supported
++F:	Documentation/devicetree/bindings/pwm/opencores,pwm.yaml
++F:	drivers/pwm/pwm-ocores.c
++
+ OPENRISC ARCHITECTURE
+ M:	Jonas Bonn <jonas@southpole.se>
+ M:	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
+@@ -16427,6 +16442,14 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/pci/layerscape-pcie-gen4.txt
+ F:	drivers/pci/controller/mobiveil/pcie-layerscape-gen4.c
+ 
++PCI DRIVER FOR PLDA PCIE IP
++M:	Daire McNamara <daire.mcnamara@microchip.com>
++M:	Kevin Xie <kevin.xie@starfivetech.com>
++L:	linux-pci@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/pci/plda,*
++F:	drivers/pci/controller/plda/*plda*
++
+ PCI DRIVER FOR RENESAS R-CAR
+ M:	Marek Vasut <marek.vasut+renesas@gmail.com>
+ M:	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+@@ -16658,7 +16681,7 @@ M:	Daire McNamara <daire.mcnamara@microc
+ L:	linux-pci@vger.kernel.org
+ S:	Supported
+ F:	Documentation/devicetree/bindings/pci/microchip*
+-F:	drivers/pci/controller/*microchip*
++F:	drivers/pci/controller/plda/*microchip*
+ 
+ PCIE DRIVER FOR QUALCOMM MSM
+ M:	Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+@@ -16682,6 +16705,13 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/pci/socionext,uniphier-pcie*
+ F:	drivers/pci/controller/dwc/pcie-uniphier*
+ 
++PCIE DRIVER FOR STARFIVE JH71x0
++M:	Kevin Xie <kevin.xie@starfivetech.com>
++L:	linux-pci@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/pci/starfive*
++F:	drivers/pci/controller/plda/pcie-starfive.c
++
+ PCIE DRIVER FOR ST SPEAR13XX
+ M:	Pratyush Anand <pratyush.anand@gmail.com>
+ L:	linux-pci@vger.kernel.org
+@@ -18454,7 +18484,7 @@ F:	drivers/char/hw_random/mpfs-rng.c
+ F:	drivers/clk/microchip/clk-mpfs*.c
+ F:	drivers/i2c/busses/i2c-microchip-corei2c.c
+ F:	drivers/mailbox/mailbox-mpfs.c
+-F:	drivers/pci/controller/pcie-microchip-host.c
++F:	drivers/pci/controller/plda/pcie-microchip-host.c
+ F:	drivers/pwm/pwm-microchip-core.c
+ F:	drivers/reset/reset-mpfs.c
+ F:	drivers/rtc/rtc-mpfs.c
+@@ -20435,6 +20465,15 @@ M:	Ion Badulescu <ionut@badula.org>
+ S:	Odd Fixes
+ F:	drivers/net/ethernet/adaptec/starfire*
+ 
++STARFIVE CAMERA SUBSYSTEM DRIVER
++M:	Jack Zhu <jack.zhu@starfivetech.com>
++M:	Changhuang Liang <changhuang.liang@starfivetech.com>
++L:	linux-media@vger.kernel.org
++S:	Maintained
++F:	Documentation/admin-guide/media/starfive_camss.rst
++F:	Documentation/devicetree/bindings/media/starfive,jh7110-camss.yaml
++F:	drivers/staging/media/starfive/camss
++
+ STARFIVE CRYPTO DRIVER
+ M:	Jia Jie Ho <jiajie.ho@starfivetech.com>
+ M:	William Qiu <william.qiu@starfivetech.com>
+@@ -20473,6 +20512,13 @@ S:	Supported
+ F:	Documentation/devicetree/bindings/clock/starfive,jh7110-pll.yaml
+ F:	drivers/clk/starfive/clk-starfive-jh7110-pll.c
+ 
++STARFIVE JH7110 PWMDAC DRIVER
++M:	Hal Feng <hal.feng@starfivetech.com>
++M:	Xingyu Wu <xingyu.wu@starfivetech.com>
++S:	Supported
++F:	Documentation/devicetree/bindings/sound/starfive,jh7110-pwmdac.yaml
++F:	sound/soc/starfive/jh7110_pwmdac.c
++
+ STARFIVE JH7110 SYSCON
+ M:	William Qiu <william.qiu@starfivetech.com>
+ M:	Xingyu Wu <xingyu.wu@starfivetech.com>
+@@ -20520,9 +20566,10 @@ F:	drivers/usb/cdns3/cdns3-starfive.c
+ 
+ STARFIVE JH71XX PMU CONTROLLER DRIVER
+ M:	Walker Chen <walker.chen@starfivetech.com>
++M:	Changhuang Liang <changhuang.liang@starfivetech.com>
+ S:	Supported
+ F:	Documentation/devicetree/bindings/power/starfive*
+-F:	drivers/pmdomain/starfive/jh71xx-pmu.c
++F:	drivers/pmdomain/starfive/
+ F:	include/dt-bindings/power/starfive,jh7110-pmu.h
+ 
+ STARFIVE SOC DRIVERS
+@@ -20530,7 +20577,13 @@ M:	Conor Dooley <conor@kernel.org>
+ S:	Maintained
+ T:	git https://git.kernel.org/pub/scm/linux/kernel/git/conor/linux.git/
+ F:	Documentation/devicetree/bindings/soc/starfive/
+-F:	drivers/soc/starfive/
++
++STARFIVE JH7110 TIMER DRIVER
++M:	Samin Guo <samin.guo@starfivetech.com>
++M:	Xingyu Wu <xingyu.wu@starfivetech.com>
++S:	Supported
++F:	Documentation/devicetree/bindings/timer/starfive,jh7110-timer.yaml
++F:	drivers/clocksource/timer-jh7110.c
+ 
+ STARFIVE TRNG DRIVER
+ M:	Jia Jie Ho <jiajie.ho@starfivetech.com>

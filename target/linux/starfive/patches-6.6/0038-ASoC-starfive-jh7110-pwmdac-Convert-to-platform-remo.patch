@@ -1,0 +1,52 @@
+From 312c3c407c363f0ec7417d2d389cbe936c503729 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Sat, 14 Oct 2023 00:19:49 +0200
+Subject: [PATCH 038/116] ASoC: starfive/jh7110-pwmdac: Convert to platform
+ remove callback returning void
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The .remove() callback for a platform driver returns an int which makes
+many driver authors wrongly assume it's possible to do error handling by
+returning an error code. However the value returned is ignored (apart
+from emitting a warning) and this typically results in resource leaks.
+
+To improve here there is a quest to make the remove callback return
+void. In the first step of this quest all drivers are converted to
+.remove_new(), which already returns void. Eventually after all drivers
+are converted, .remove_new() will be renamed to .remove().
+
+Trivially convert this driver from always returning zero in the remove
+callback to the void returning variant.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Link: https://lore.kernel.org/r/20231013221945.1489203-12-u.kleine-koenig@pengutronix.de
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/starfive/jh7110_pwmdac.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/sound/soc/starfive/jh7110_pwmdac.c
++++ b/sound/soc/starfive/jh7110_pwmdac.c
+@@ -498,10 +498,9 @@ err_pm_disable:
+ 	return ret;
+ }
+ 
+-static int jh7110_pwmdac_remove(struct platform_device *pdev)
++static void jh7110_pwmdac_remove(struct platform_device *pdev)
+ {
+ 	pm_runtime_disable(&pdev->dev);
+-	return 0;
+ }
+ 
+ static const struct of_device_id jh7110_pwmdac_of_match[] = {
+@@ -517,7 +516,7 @@ static struct platform_driver jh7110_pwm
+ 		.pm = pm_ptr(&jh7110_pwmdac_pm_ops),
+ 	},
+ 	.probe		= jh7110_pwmdac_probe,
+-	.remove		= jh7110_pwmdac_remove,
++	.remove_new	= jh7110_pwmdac_remove,
+ };
+ module_platform_driver(jh7110_pwmdac_driver);
+ 

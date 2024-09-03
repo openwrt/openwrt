@@ -1,0 +1,29 @@
+From 6edee93a89254f30c3387c88231e7ecec06ba84a Mon Sep 17 00:00:00 2001
+From: "shanlong.li" <shanlong.li@starfivetech.com>
+Date: Mon, 10 Jul 2023 03:07:57 -0700
+Subject: [PATCH 067/116] driver:uart: fix up uart communicate fail
+
+fix up uart communicate fail
+
+Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
+---
+ drivers/tty/serial/8250/8250_dw.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/tty/serial/8250/8250_dw.c
++++ b/drivers/tty/serial/8250/8250_dw.c
+@@ -652,10 +652,10 @@ static int dw8250_probe(struct platform_
+ 	if (err)
+ 		return err;
+ 
+-	data->rst = devm_reset_control_get_optional_exclusive(dev, NULL);
+-	if (IS_ERR(data->rst))
+-		return PTR_ERR(data->rst);
+-
++	data->rst = devm_reset_control_array_get_exclusive(dev);
++	if (IS_ERR(data->rst)) {
++		err = PTR_ERR(data->rst);
++	}
+ 	reset_control_deassert(data->rst);
+ 
+ 	err = devm_add_action_or_reset(dev, dw8250_reset_control_assert, data->rst);
