@@ -93,8 +93,7 @@ lantiq_setup_macs()
 	lantiq,easy80920-nor|\
 	zyxel,p-2812hnu-f1|\
 	zyxel,p-2812hnu-f3)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1)
 		;;
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
@@ -131,8 +130,7 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary_ubi caldata 0x110c)" 5)
 		;;
 	buffalo,wbmr-300hpd)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac="$lan_mac"
+		wan_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
 		;;
 	tplink,vr200|\
 	tplink,vr200v)
