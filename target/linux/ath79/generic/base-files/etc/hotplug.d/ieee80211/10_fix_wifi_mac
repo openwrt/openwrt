@@ -42,16 +42,6 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
-	elecom,wab-i1750-ps|\
-	elecom,wab-s1167-ps|\
-	elecom,wab-s600-ps)
-		# set the 5G MAC address (= ethaddr + 1)
-		[ "$PHYNBR" -eq 0 ] && \
-			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
-		# set the 2.4G MAC address (= ethaddr)
-		[ "$PHYNBR" -eq 1 ] && \
-			mtd_get_mac_ascii u-boot-env "ethaddr" > /sys${DEVPATH}/macaddress
-		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		[ "$PHYNBR" -eq 0 ] && \
@@ -93,6 +83,8 @@ case "$board" in
 	qihoo,c301)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
 		;;
 	phicomm,k2t)
 		[ "$PHYNBR" -eq 0 ] && \

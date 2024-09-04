@@ -1,0 +1,30 @@
+From e7e3d62b7a470ddf15e30574232b52b2e23ba606 Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Mon, 21 Aug 2023 22:41:50 +0800
+Subject: [PATCH 047/116] riscv: dts: starfive: pinfunc: Fix the pins name of
+ I2STX1
+
+These pins are actually I2STX1 clock input, not I2STX0,
+so their names should be changed.
+
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+Reviewed-by: Walker Chen <walker.chen@starfivetech.com>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ arch/riscv/boot/dts/starfive/jh7110-pinfunc.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-pinfunc.h
++++ b/arch/riscv/boot/dts/starfive/jh7110-pinfunc.h
+@@ -240,8 +240,8 @@
+ #define GPI_SYS_MCLK_EXT			30
+ #define GPI_SYS_I2SRX_BCLK			31
+ #define GPI_SYS_I2SRX_LRCK			32
+-#define GPI_SYS_I2STX0_BCLK			33
+-#define GPI_SYS_I2STX0_LRCK			34
++#define GPI_SYS_I2STX1_BCLK			33
++#define GPI_SYS_I2STX1_LRCK			34
+ #define GPI_SYS_TDM_CLK				35
+ #define GPI_SYS_TDM_RXD				36
+ #define GPI_SYS_TDM_SYNC			37

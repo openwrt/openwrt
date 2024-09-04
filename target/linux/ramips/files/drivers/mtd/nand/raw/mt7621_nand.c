@@ -1248,7 +1248,6 @@ static int mt7621_nfc_init_chip(struct mt7621_nfc *nfc)
 	nand->ecc.write_oob_raw = mt7621_nfc_write_oob_raw;
 
 	mtd = nand_to_mtd(nand);
-	mtd->owner = THIS_MODULE;
 	mtd->dev.parent = nfc->dev;
 	mtd->name = MT7621_NFC_NAME;
 	mtd_set_ooblayout(mtd, &mt7621_nfc_ooblayout_ops);
@@ -1338,7 +1337,6 @@ static struct platform_driver mt7621_nfc_driver = {
 	.remove = mt7621_nfc_remove,
 	.driver = {
 		.name = MT7621_NFC_NAME,
-		.owner = THIS_MODULE,
 		.of_match_table = mt7621_nfc_id_table,
 	},
 };

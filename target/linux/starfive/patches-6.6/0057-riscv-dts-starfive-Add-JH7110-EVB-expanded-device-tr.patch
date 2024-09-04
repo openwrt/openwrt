@@ -1,0 +1,728 @@
+From cae7550054ca0cd940bbc1501ae5611f5d2957e6 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Wed, 20 Sep 2023 14:53:22 +0800
+Subject: [PATCH 057/116] riscv: dts: starfive: Add JH7110 EVB expanded device
+ tree
+
+Add JH7110 EVB expanded device tree.
+The code is ported from tag JH7110_SDK_6.1_v5.11.3
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/Makefile         |  11 +-
+ .../starfive/jh7110-evb-can-pdm-pwmdac.dts    | 102 ++++++++++++++++
+ .../dts/starfive/jh7110-evb-dvp-rgb2hdmi.dts  |  37 ++++++
+ .../dts/starfive/jh7110-evb-i2s-ac108.dts     |  72 ++++++++++++
+ .../dts/starfive/jh7110-evb-pcie-i2s-sd.dts   | 111 ++++++++++++++++++
+ .../dts/starfive/jh7110-evb-spi-uart2.dts     |  65 ++++++++++
+ .../starfive/jh7110-evb-uart1-rgb2hdmi.dts    |  57 +++++++++
+ .../starfive/jh7110-evb-uart4-emmc-spdif.dts  |  78 ++++++++++++
+ .../starfive/jh7110-evb-uart5-pwm-i2c-tdm.dts |  95 +++++++++++++++
+ .../dts/starfive/jh7110-evb-usbdevice.dts     |  35 ++++++
+ 10 files changed, 662 insertions(+), 1 deletion(-)
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-can-pdm-pwmdac.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-dvp-rgb2hdmi.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-i2s-ac108.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-pcie-i2s-sd.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-spi-uart2.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-uart1-rgb2hdmi.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-uart4-emmc-spdif.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-uart5-pwm-i2c-tdm.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-usbdevice.dts
+
+--- a/arch/riscv/boot/dts/starfive/Makefile
++++ b/arch/riscv/boot/dts/starfive/Makefile
+@@ -12,4 +12,13 @@ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-st
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.2a.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.3b.dtb
+ 
+-dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-evb.dtb
++dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-evb.dtb			\
++			       jh7110-evb-pcie-i2s-sd.dtb	\
++			       jh7110-evb-spi-uart2.dtb		\
++			       jh7110-evb-uart4-emmc-spdif.dtb	\
++			       jh7110-evb-uart5-pwm-i2c-tdm.dtb	\
++			       jh7110-evb-dvp-rgb2hdmi.dtb	\
++			       jh7110-evb-can-pdm-pwmdac.dtb	\
++			       jh7110-evb-i2s-ac108.dtb		\
++			       jh7110-evb-usbdevice.dtb		\
++			       jh7110-evb-uart1-rgb2hdmi.dtb
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-can-pdm-pwmdac.dts
+@@ -0,0 +1,102 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++
++	sound2: snd-card2 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-PDM-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "i2s";
++			bitclock-master = <&dailink_master>;
++			frame-master = <&dailink_master>;
++
++			dailink_master:cpu {
++				sound-dai = <&i2srx_mst>;
++			};
++
++			dailink_slave:codec {
++				sound-dai = <&pdm>;
++			};
++		};
++	};
++
++	pwmdac_codec: pwmdac-codec {
++		compatible = "linux,spdif-dit";
++		#sound-dai-cells = <0>;
++	};
++
++	sound3: snd-card3 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-PWMDAC-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "left_j";
++			bitclock-master = <&sndcpu0>;
++			frame-master = <&sndcpu0>;
++
++			sndcpu0: cpu {
++				sound-dai = <&pwmdac>;
++			};
++
++			codec {
++				sound-dai = <&pwmdac_codec>;
++			};
++		};
++	};
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&can0 {
++	status = "okay";
++};
++
++&can1 {
++	status = "okay";
++};
++
++&i2srx_mst {
++	status = "okay";
++};
++
++&pwmdac {
++	status = "okay";
++};
++
++&pdm {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-dvp-rgb2hdmi.dts
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++};
++
++&vin_sysctl {
++	pinctrl-names = "default";
++	pinctrl-0 = <&dvp_pins>;
++};
++
++&rgb_output {
++	status = "okay";
++};
++
++&tda988x_pin {
++	status = "okay";
++};
++
++&dsi_output {
++	status = "disabled";
++};
++
++&mipi_dsi {
++	status = "disabled";
++};
++
++&mipi_dphy {
++	status = "disabled";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-i2s-ac108.dts
+@@ -0,0 +1,72 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++
++	/* i2s + ac108 */
++	sound0: snd-card0 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-AC108-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "i2s";
++			bitclock-master = <&sndcodec1>;
++			frame-master = <&sndcodec1>;
++
++			widgets = "Microphone", "Mic Jack",
++				  "Line", "Line In",
++				  "Line", "Line Out",
++				  "Speaker", "Speaker",
++				  "Headphone", "Headphone Jack";
++			routing = "Headphone Jack", "HP_L",
++				  "Headphone Jack", "HP_R",
++				  "Speaker", "SPK_LP",
++				  "Speaker", "SPK_LN",
++				  "LINPUT1", "Mic Jack",
++				  "LINPUT3", "Mic Jack",
++				  "RINPUT1", "Mic Jack",
++				  "RINPUT2", "Mic Jack";
++
++			cpu {
++				sound-dai = <&i2srx>;
++			};
++
++			sndcodec1: codec {
++				sound-dai = <&ac108>;
++				clocks = <&ac108_mclk>;
++				clock-names = "mclk";
++			};
++		};
++	};
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&i2c0 {
++	status = "okay";
++};
++
++&i2srx {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-pcie-i2s-sd.dts
+@@ -0,0 +1,111 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++
++	/* i2s + wm8960 */
++	sound6: snd-card6 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-WM8960-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			status = "okay";
++			format = "i2s";
++			bitclock-master = <&sndcodec1>;
++			frame-master = <&sndcodec1>;
++
++			widgets = "Microphone", "Mic Jack",
++				  "Line", "Line In",
++				  "Line", "Line Out",
++				  "Speaker", "Speaker",
++				  "Headphone", "Headphone Jack";
++			routing = "Headphone Jack", "HP_L",
++				  "Headphone Jack", "HP_R",
++				  "Speaker", "SPK_LP",
++				  "Speaker", "SPK_LN",
++				  "LINPUT1", "Mic Jack",
++				  "LINPUT3", "Mic Jack",
++				  "RINPUT1", "Mic Jack",
++				  "RINPUT2", "Mic Jack";
++			cpu0 {
++				sound-dai = <&i2srx>;
++			};
++			cpu1 {
++				sound-dai = <&i2stx1>;
++			};
++
++			sndcodec1:codec {
++				sound-dai = <&wm8960>;
++				clocks = <&wm8960_mclk>;
++				clock-names = "mclk";
++			};
++		};
++	};
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&uart3 {
++	status = "okay";
++};
++
++&i2c0 {
++	status = "okay";
++};
++
++&usb0 {
++	clocks = <&stgcrg JH7110_STGCLK_USB0_LPM>,
++		 <&stgcrg JH7110_STGCLK_USB0_STB>,
++		 <&stgcrg JH7110_STGCLK_USB0_APB>,
++		 <&stgcrg JH7110_STGCLK_USB0_AXI>,
++		 <&stgcrg JH7110_STGCLK_USB0_UTMI_APB>;
++	clock-names = "lpm", "stb", "apb", "axi", "utmi_apb";
++	resets = <&stgcrg JH7110_STGRST_USB0_PWRUP>,
++		 <&stgcrg JH7110_STGRST_USB0_APB>,
++		 <&stgcrg JH7110_STGRST_USB0_AXI>,
++		 <&stgcrg JH7110_STGRST_USB0_UTMI_APB>;
++	reset-names = "pwrup", "apb", "axi", "utmi_apb";
++	dr_mode = "host"; /*host or peripheral*/
++	starfive,usb2-only;
++	pinctrl-names = "default";
++	pinctrl-0 = <&usb_pins>;
++	status = "okay";
++};
++
++&i2srx {
++	status = "okay";
++};
++
++&i2stx1 {
++	status = "okay";
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-spi-uart2.dts
+@@ -0,0 +1,65 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&uart2 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++};
++
++&spi1 {
++	status = "okay";
++};
++
++&spi2 {
++	status = "okay";
++};
++
++&spi3 {
++	status = "okay";
++};
++
++&spi4 {
++	status = "okay";
++};
++
++&spi5 {
++	status = "okay";
++};
++
++&spi6 {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-uart1-rgb2hdmi.dts
+@@ -0,0 +1,57 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&uart1 {
++	status = "okay";
++};
++
++&rgb_output {
++	status = "okay";
++};
++
++&tda988x_pin {
++	status = "okay";
++};
++
++&dsi_output {
++	status = "disabled";
++};
++
++&mipi_dsi {
++	status = "disabled";
++};
++
++&mipi_dphy {
++	status = "disabled";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-uart4-emmc-spdif.dts
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++
++	spdif_transmitter: spdif_transmitter {
++		compatible = "linux,spdif-dit";
++		#sound-dai-cells = <0>;
++	};
++
++	sound4: snd-card4 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-SPDIF-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "left_j";
++			bitclock-master = <&sndcpu0>;
++			frame-master = <&sndcpu0>;
++
++			sndcpu0: cpu {
++				sound-dai = <&spdif>;
++			};
++
++			codec {
++				sound-dai = <&spdif_transmitter>;
++			};
++		};
++	};
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&uart4 {
++	status = "okay";
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&emmc0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <8>;
++	cap-mmc-highspeed;
++	mmc-hs200-1_8v;
++	non-removable;
++	cap-mmc-hw-reset;
++	board-is-evb;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm_ch6to7_pins>;
++	status = "okay";
++};
++
++&spdif {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-uart5-pwm-i2c-tdm.dts
+@@ -0,0 +1,95 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++
++	sound5: snd-card5 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-TDM-Sound-Card";
++		simple-audio-card,widgets = "Microphone", "Mic Jack",
++					    "Line", "Line In",
++					    "Line", "Line Out",
++					    "Speaker", "Speaker",
++					    "Headphone", "Headphone Jack";
++		simple-audio-card,routing = "Headphone Jack", "HP_L",
++					    "Headphone Jack", "HP_R",
++					    "Speaker", "SPK_LP",
++					    "Speaker", "SPK_LN",
++					    "LINPUT1", "Mic Jack",
++					    "LINPUT3", "Mic Jack",
++					    "RINPUT1", "Mic Jack",
++					    "RINPUT2", "Mic Jack";
++
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "dsp_a";
++			bitclock-master = <&dailink_master>;
++			frame-master = <&dailink_master>;
++
++			cpu {
++				sound-dai = <&tdm>;
++			};
++			dailink_master: codec {
++				sound-dai = <&wm8960>;
++				clocks = <&wm8960_mclk>;
++			};
++		};
++	};
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&uart5 {
++	status = "okay";
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm_ch0to3_pins &pwm_ch4to5_pins>;
++	status = "okay";
++};
++
++&tdm {
++	status = "okay";
++};
++
++&i2c0 {
++	status = "okay";
++};
++
++&i2c1 {
++	status = "okay";
++};
++
++&i2c3 {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-usbdevice.dts
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++};
++
++/* default sd card */
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&usb0 {
++	dr_mode = "peripheral"; /*host or peripheral*/
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};

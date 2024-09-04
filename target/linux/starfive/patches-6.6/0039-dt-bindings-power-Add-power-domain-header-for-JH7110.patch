@@ -1,0 +1,35 @@
+From 8d84bac6d7471ba2e29b33d19a2ef887822e9cce Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Wed, 13 Sep 2023 14:54:25 +0100
+Subject: [PATCH 039/116] dt-bindings: power: Add power-domain header for
+ JH7110
+
+Add power-domain header for JH7110 SoC, it can use to operate dphy
+power.
+
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+Link: https://lore.kernel.org/r/20230913-grumbly-rewrite-34c85539f2ed@spud
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ include/dt-bindings/power/starfive,jh7110-pmu.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/include/dt-bindings/power/starfive,jh7110-pmu.h
++++ b/include/dt-bindings/power/starfive,jh7110-pmu.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
+ /*
+- * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ * Copyright (C) 2022-2023 StarFive Technology Co., Ltd.
+  * Author: Walker Chen <walker.chen@starfivetech.com>
+  */
+ #ifndef __DT_BINDINGS_POWER_JH7110_POWER_H__
+@@ -14,4 +14,7 @@
+ #define JH7110_PD_ISP		5
+ #define JH7110_PD_VENC		6
+ 
++#define JH7110_PD_DPHY_TX	0
++#define JH7110_PD_DPHY_RX	1
++
+ #endif

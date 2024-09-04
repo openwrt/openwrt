@@ -35,44 +35,44 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@5 {
+		led-5 {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
-		led@21 {
+		led-21 {
 			function = LED_FUNCTION_USB;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_green: led@22 {
+		led_power_green: led-22 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
-		led@23 {
+		led-23 {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: led@24 {
+		led_power_red: led-24 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
-		led@30 {
+		led-30 {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
 		};
 
-		led@31 {
+		led-31 {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;

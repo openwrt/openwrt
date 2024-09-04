@@ -1,0 +1,67 @@
+From fdb2822982887c7048f34601688ae2406ccbcfcc Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Mon, 15 Apr 2024 11:29:17 +0800
+Subject: [PATCH 114/116] riscv: dts: starfive: visionfive 2: Sync the sound
+ card names with v5.15 and v6.1
+
+Sync the sound card names. So we can build Debian images with the
+same process.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ .../dts/starfive/jh7110-starfive-visionfive-2-tdm.dts     | 2 +-
+ .../dts/starfive/jh7110-starfive-visionfive-2-wm8960.dts  | 2 +-
+ .../boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi   | 8 ++++----
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-tdm.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-tdm.dts
+@@ -8,7 +8,7 @@
+ #include "jh7110-starfive-visionfive-2-v1.3b.dts"
+ 
+ / {
+-	sound-tdm {
++	sound5: snd-card5 {
+ 		compatible = "simple-audio-card";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-wm8960.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-wm8960.dts
+@@ -9,7 +9,7 @@
+ 
+ / {
+ 	/* i2s + wm8960 */
+-	sound-wm8960 {
++	sound6: snd-card6 {
+ 		compatible = "simple-audio-card";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -91,9 +91,9 @@
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
+-	sound-pwmdac {
++	sound3: snd-card3 {
+ 		compatible = "simple-audio-card";
+-		simple-audio-card,name = "StarFive-PWMDAC-Sound-Card";
++		simple-audio-card,name = "Starfive-PWMDAC-Sound-Card";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+@@ -113,12 +113,12 @@
+ 		};
+ 	};
+ 
+-	sound-hdmi {
++	sound1: snd-card1 {
+ 		compatible = "simple-audio-card";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		simple-audio-card,name = "StarFive-HDMI-Sound-Card";
++		simple-audio-card,name = "Starfive-HDMI-Sound-Card";
+ 		simple-audio-card,dai-link@0 {
+ 			reg = <0>;
+ 			format = "i2s";

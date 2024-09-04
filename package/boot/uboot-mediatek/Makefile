@@ -686,7 +686,7 @@ define U-Boot/mt7988_rfb-spim-nand
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7988
   BL2_DDRTYPE:=comb
-  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-comb
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-comb +trusted-firmware-a-mt7988-spim-nand-ubi-comb
 endef
 
 define U-Boot/mt7988_rfb-snand

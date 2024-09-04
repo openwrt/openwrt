@@ -1,9 +1,13 @@
 This enables automatic connection after the control daemon is started,
 and also changes the way the connection is stopped on termination.
 
-Using the autoboot restart command is necessary because the stop command
-would stop the autoboot thread, and the driver offers no working way to
-start it again later, short of unloading and reloading the module.
+Using the autoboot restart command (in combination with configuring the
+state machine to wait) is necessary because the stop command would stop
+the autoboot thread, and the driver offers no working way to start it
+again later, short of unloading and reloading the module.
+
+The disconnection code is also moved to a separate function, so it can
+be called in other exit code paths than the one for SIGTERM.
 
 --- a/src/dsl_cpe_init_cfg.c
 +++ b/src/dsl_cpe_init_cfg.c
@@ -18,18 +22,19 @@ start it again later, short of unloading and reloading the module.
     DSL_CPE_LINE_ACTIVATE_CTRL_SET(DSL_G997_INHIBIT_LDSF, DSL_G997_INHIBIT_ACSF, DSL_G997_NORMAL_STARTUP),
 --- a/src/dsl_cpe_control.c
 +++ b/src/dsl_cpe_control.c
-@@ -7338,6 +7338,7 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termi
- {
-    DSL_Error_t nRet = DSL_SUCCESS;
-    DSL_int_t nDevice = 0;
+@@ -7252,6 +7252,58 @@ static DSL_boolean_t DSL_CPE_DebugAndTes
+ #endif /* defined(DSL_DEBUG_TOOL_INTERFACE) || defined(INCLUDE_DSL_CPE_DTI_SUPPORT) */
+ #endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+ 
++DSL_CPE_STATIC DSL_void_t DSL_CPE_ShutdownConnection(void)
++{
++   DSL_Error_t nRet = DSL_SUCCESS;
++   DSL_int_t nDevice = 0;
 +   DSL_AutobootConfig_t sAutobootCfg;
-    DSL_AutobootControl_t sAutobootCtl;
-    DSL_CPE_Control_Context_t *pCtrlCtx = DSL_NULL;
- 
-@@ -7349,8 +7350,32 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termi
- 
-    for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; ++nDevice)
-    {
++   DSL_AutobootControl_t sAutobootCtl;
++
++   for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; ++nDevice)
++   {
 +      g_bWaitBeforeConfigWrite[nDevice]    = DSL_TRUE;
 +      g_bWaitBeforeLinkActivation[nDevice] = DSL_TRUE;
 +      g_bWaitBeforeRestart[nDevice]        = DSL_TRUE;
@@ -51,32 +56,91 @@ start it again later, short of unloading and reloading the module.
 +      {
 +         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
 +            "Autoboot configuration for device (%d) failed!, nRet = %d!"
-+            DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
++            DSL_CPE_CRLF, nDevice, sAutobootCfg.accessCtl.nReturn));
 +      }
 +
-       memset(&sAutobootCtl, 0, sizeof(DSL_AutobootControl_t));
--      sAutobootCtl.data.nCommand = DSL_AUTOBOOT_CTRL_STOP;
++      memset(&sAutobootCtl, 0, sizeof(DSL_AutobootControl_t));
 +      sAutobootCtl.data.nCommand = DSL_AUTOBOOT_CTRL_RESTART;
- 
-       nRet = (DSL_Error_t)DSL_CPE_Ioctl(
-          DSL_CPE_GetGlobalContext()->fd[nDevice],
-@@ -7359,13 +7384,13 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termi
-       if (nRet < DSL_SUCCESS)
-       {
-          DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
--            "Autoboot stop for device (%d) failed!, nRet = %d!"
++
++      nRet = (DSL_Error_t)DSL_CPE_Ioctl(
++         DSL_CPE_GetGlobalContext()->fd[nDevice],
++         DSL_FIO_AUTOBOOT_CONTROL_SET, (DSL_int_t)&sAutobootCtl);
++
++      if (nRet < DSL_SUCCESS)
++      {
++         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
 +            "Autoboot restart for device (%d) failed!, nRet = %d!"
-             DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
-       }
-    }
++            DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
++      }
++   }
++
++   DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
++      "Connection shutdown finished." DSL_CPE_CRLF));
++}
++
+ #ifndef RTEMS
+ /**
+    Signal handler.
+@@ -7327,6 +7379,8 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_CLI_Q
  
-    DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
--      "Autoboot stop executed" DSL_CPE_CRLF));
-+      "Autoboot restart executed" DSL_CPE_CRLF));
- 
+ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Interruption(void)
+ {
++   DSL_CPE_ShutdownConnection();
++
     DSL_CPE_DaemonExit();
  
-@@ -8798,4 +8823,4 @@ DSL_CPE_STATIC DSL_Error_t DSL_CPE_Firmw
+ #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
+@@ -7336,37 +7390,16 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Inter
+ 
+ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termination(void)
+ {
+-   DSL_Error_t nRet = DSL_SUCCESS;
+-   DSL_int_t nDevice = 0;
+-   DSL_AutobootControl_t sAutobootCtl;
+    DSL_CPE_Control_Context_t *pCtrlCtx = DSL_NULL;
+ 
++   DSL_CPE_ShutdownConnection();
++
+    pCtrlCtx = DSL_CPE_GetGlobalContext();
+    if (pCtrlCtx != DSL_NULL)
+    {
+       pCtrlCtx->bEvtRun = DSL_FALSE;
+    }
+ 
+-   for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; ++nDevice)
+-   {
+-      memset(&sAutobootCtl, 0, sizeof(DSL_AutobootControl_t));
+-      sAutobootCtl.data.nCommand = DSL_AUTOBOOT_CTRL_STOP;
+-
+-      nRet = (DSL_Error_t)DSL_CPE_Ioctl(
+-         DSL_CPE_GetGlobalContext()->fd[nDevice],
+-         DSL_FIO_AUTOBOOT_CONTROL_SET, (DSL_int_t)&sAutobootCtl);
+-
+-      if (nRet < DSL_SUCCESS)
+-      {
+-         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
+-            "Autoboot stop for device (%d) failed!, nRet = %d!"
+-            DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
+-      }
+-   }
+-
+-   DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
+-      "Autoboot stop executed" DSL_CPE_CRLF));
+-
+    DSL_CPE_DaemonExit();
+ 
+ #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
+@@ -8551,6 +8584,9 @@ void DSL_CPE_main(void)
+ DSL_CPE_STATIC  DSL_Error_t DSL_CPE_Control_Exit (DSL_void_t * pContext)
+ {
+    dummy_console_t *pConsole = pContext;
++
++   DSL_CPE_ShutdownConnection();
++
+    pConsole->bRun = DSL_FALSE;
+    return DSL_SUCCESS;
+ }
+@@ -8798,4 +8834,4 @@ DSL_CPE_STATIC DSL_Error_t DSL_CPE_Firmw
        pDecimal));
  
     return nErrCode;

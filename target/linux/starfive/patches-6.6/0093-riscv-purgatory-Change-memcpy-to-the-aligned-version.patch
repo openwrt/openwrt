@@ -1,0 +1,37 @@
+From 41c9e97bb70321f7848bd489e45246a9dc985974 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Sun, 4 Feb 2024 15:27:09 +0800
+Subject: [PATCH 093/116] riscv/purgatory: Change memcpy to the aligned version
+
+Change memcpy to the aligned version, for purgatory.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/purgatory/Makefile | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/purgatory/Makefile
++++ b/arch/riscv/purgatory/Makefile
+@@ -1,7 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ OBJECT_FILES_NON_STANDARD := y
+ 
+-purgatory-y := purgatory.o sha256.o entry.o string.o ctype.o memcpy.o memset.o
++purgatory-y := purgatory.o sha256.o entry.o string.o ctype.o memcpy_aligned.o memcpy.o memset.o
+ purgatory-y += strcmp.o strlen.o strncmp.o
+ 
+ targets += $(purgatory-y)
+@@ -13,9 +13,12 @@ $(obj)/string.o: $(srctree)/lib/string.c
+ $(obj)/ctype.o: $(srctree)/lib/ctype.c FORCE
+ 	$(call if_changed_rule,cc_o_c)
+ 
+-$(obj)/memcpy.o: $(srctree)/arch/riscv/lib/memcpy.S FORCE
++$(obj)/memcpy_aligned.o: $(srctree)/arch/riscv/lib/memcpy_aligned.S FORCE
+ 	$(call if_changed_rule,as_o_S)
+ 
++$(obj)/memcpy.o: $(srctree)/arch/riscv/lib/string.c FORCE
++	$(call if_changed_rule,cc_o_c)
++
+ $(obj)/memset.o: $(srctree)/arch/riscv/lib/memset.S FORCE
+ 	$(call if_changed_rule,as_o_S)
+ 

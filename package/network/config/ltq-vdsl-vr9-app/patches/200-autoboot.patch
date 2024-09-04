@@ -1,9 +1,10 @@
 This enables automatic connection after the control daemon is started,
 and also stops the connection on termination.
 
-Using the autoboot restart command is necessary because the stop command
-doesn't actually stop the connection, and would also leave the driver in
-a state where an explicit start command is necessary to connect again.
+Using the autoboot restart command (in combination with configuring the
+state machine to wait) is necessary because the stop command doesn't
+actually stop the connection, and would also leave the driver in a state
+where an explicit start command is necessary to connect again.
 
 --- a/src/dsl_cpe_init_cfg.c
 +++ b/src/dsl_cpe_init_cfg.c
@@ -18,25 +19,17 @@ a state where an explicit start command is necessary to connect again.
     DSL_CPE_LINE_ACTIVATE_CTRL_SET(DSL_G997_INHIBIT_LDSF, DSL_G997_INHIBIT_ACSF, DSL_G997_NORMAL_STARTUP),
 --- a/src/dsl_cpe_control.c
 +++ b/src/dsl_cpe_control.c
-@@ -6515,10 +6515,13 @@ DSL_CPE_STATIC  void DSL_CPE_Termination
- DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termination (void)
- {
- #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
--   DSL_int_t nDevice = 0;
-    DSL_char_t buf[32] = "quit";
- #endif
+@@ -6491,6 +6491,57 @@ DSL_int32_t DSL_CPE_DeviceInit (
+    return ret;
+ }
  
++DSL_CPE_STATIC DSL_void_t DSL_CPE_ShutdownConnection(void)
++{
 +   DSL_Error_t nRet = DSL_SUCCESS;
 +   DSL_int_t nDevice = 0;
 +   DSL_AutobootConfig_t sAutobootCfg;
 +   DSL_AutobootControl_t sAutobootCtl;
-    DSL_CPE_Control_Context_t *pCtrlCtx;
- 
-    pCtrlCtx = DSL_CPE_GetGlobalContext();
-@@ -6527,6 +6530,50 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termi
-       pCtrlCtx->bRun = DSL_FALSE;
-    }
- 
++
 +   for (nDevice = 0; nDevice < DSL_CPE_MAX_DSL_ENTITIES; ++nDevice)
 +   {
 +      g_bWaitBeforeConfigWrite[nDevice]    = DSL_TRUE;
@@ -60,7 +53,7 @@ a state where an explicit start command is necessary to connect again.
 +      {
 +         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
 +            "Autoboot configuration for device (%d) failed!, nRet = %d!"
-+            DSL_CPE_CRLF, nDevice, sAutobootCtl.accessCtl.nReturn));
++            DSL_CPE_CRLF, nDevice, sAutobootCfg.accessCtl.nReturn));
 +      }
 +
 +      memset(&sAutobootCtl, 0, sizeof(DSL_AutobootControl_t));
@@ -79,8 +72,27 @@ a state where an explicit start command is necessary to connect again.
 +   }
 +
 +   DSL_CCA_DEBUG(DSL_CCA_DBG_MSG, (DSL_CPE_PREFIX
-+      "Autoboot restart executed" DSL_CPE_CRLF));
++      "Connection shutdown finished." DSL_CPE_CRLF));
++}
+ 
+ /**
+    Termination handler. Will clean up in case of ctrl-c.
+@@ -6521,6 +6572,8 @@ DSL_CPE_STATIC  DSL_void_t DSL_CPE_Termi
+ 
+    DSL_CPE_Control_Context_t *pCtrlCtx;
+ 
++   DSL_CPE_ShutdownConnection();
 +
- #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
-    for (nDevice = 0; nDevice < DSL_CPE_MAX_DSL_ENTITIES; nDevice++)
+    pCtrlCtx = DSL_CPE_GetGlobalContext();
+    if (pCtrlCtx != DSL_NULL)
     {
+@@ -7416,6 +7469,9 @@ void DSL_CPE_main(void)
+ DSL_CPE_STATIC  DSL_Error_t DSL_CPE_Control_Exit (DSL_void_t * pContext)
+ {
+    dummy_console_t *pConsole = pContext;
++
++   DSL_CPE_ShutdownConnection();
++
+    pConsole->bRun = DSL_FALSE;
+    return DSL_SUCCESS;
+ }

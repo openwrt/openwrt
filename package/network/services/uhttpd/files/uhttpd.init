@@ -204,6 +204,9 @@ start_instance()
 			append_arg "$cfg" cert "-C"
 			append_arg "$cfg" key  "-K"
 
+			procd_append_param file "$UHTTPD_CERT"
+			procd_append_param file "$UHTTPD_KEY"
+
 			for listen in $https; do
 				procd_append_param command -s "$listen"
 			done

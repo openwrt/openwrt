@@ -1,0 +1,26 @@
+From 29e4bc0fafd9add93acc967f3992948b3afe7176 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Thu, 30 Nov 2023 16:19:27 +0100
+Subject: [PATCH 1018/1024] riscv: dts: starfive: Mark the JH7100 as having
+ non-coherent DMAs
+
+The StarFive JH7100 SoC has non-coherent device DMAs, so mark the
+soc bus as such.
+
+Link: https://github.com/starfive-tech/JH7100_Docs/blob/main/JH7100%20Cache%20Coherence%20V1.0.pdf
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ arch/riscv/boot/dts/starfive/jh7100.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7100.dtsi
+@@ -138,6 +138,7 @@
+ 		interrupt-parent = <&plic>;
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
++		dma-noncoherent;
+ 		ranges;
+ 
+ 		clint: clint@2000000 {

@@ -41,12 +41,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_phone_green: led@28 {
+		led_phone_green: led-28 {
 			label = "green:phone";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
-		led@30 {
+		led-30 {
 			function = LED_FUNCTION_USB;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
