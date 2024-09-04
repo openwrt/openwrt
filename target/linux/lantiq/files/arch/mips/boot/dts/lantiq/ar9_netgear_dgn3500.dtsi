@@ -125,6 +125,9 @@
 
 &gsw {
 	phy-mode = "mii";
+
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &pci0 {
@@ -138,7 +141,8 @@
 	wifi@168c,0029 {
 		compatible = "pci168c,0029";
 		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&cal_f000>, <&ethaddr_uboot 2>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -162,15 +166,30 @@
 			};
 
 			partition@10000 {
+				compatible = "u-boot,env";
 				reg = <0x10000 0x10000>;
 				label = "u-boot-env";
 				read-only;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
-			ath9k_cal: partition@20000 {
+			partition@20000 {
 				reg = <0x20000 0x10000>;
 				label = "calibration";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_f000: calibration@f000 {
+						reg = <0xf000 0x440>;
+					};
+				};
 			};
 
 			partition@50000 {
