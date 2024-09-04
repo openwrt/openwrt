@@ -15,6 +15,10 @@ case "$1" in
 	;;
 esac
 
+for var in $(env | grep '^DNSMASQ_'); do
+	json_add_string "" "${var%%=*}=${var#*=}"
+done
+
 case "$1" in
 	add)
 		json_add_string "" "ACTION=add"
