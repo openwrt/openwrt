@@ -16,12 +16,9 @@
 
 #include <linux/stddef.h>
 #include <linux/kernel.h>
-#include <linux/pci.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/of_platform.h>
-#include <linux/ath9k_platform.h>
-#include <linux/leds.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
