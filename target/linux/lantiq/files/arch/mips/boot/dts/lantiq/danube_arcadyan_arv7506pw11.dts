@@ -104,7 +104,14 @@
 /* GPIO 19: switch reset */
 &gsw {
 	phy-mode = "rmii";
+
 	nvmem-cells = <&macaddr_boardconfig_16 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+
+	nvmem-cells = <&macaddr_boardconfig_16 2>;
 	nvmem-cell-names = "mac-address";
 };
 

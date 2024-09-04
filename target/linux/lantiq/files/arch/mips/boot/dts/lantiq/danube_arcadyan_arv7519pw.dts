@@ -143,7 +143,13 @@
 
 &gsw {
 	phy-mode = "mii";
-	nvmem-cells = <&macaddr_boardconfig_16>;
+
+	nvmem-cells = <&macaddr_boardconfig_16 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_boardconfig_16 1>;
 	nvmem-cell-names = "mac-address";
 };
 

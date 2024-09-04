@@ -100,6 +100,7 @@
 &gsw {
 	phy-mode = "rmii";
 	phy-handle = <&phy0>;
+
 	nvmem-cells = <&macaddr_ath9k_cal_a91 (-2)>;
 	nvmem-cell-names = "mac-address";
 
@@ -113,6 +114,11 @@
 			max-speed = <100>;
 		};
 	};
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_ath9k_cal_a91 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &localbus {
