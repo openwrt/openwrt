@@ -344,8 +344,6 @@ define Device/tplink_x80-5g
 	DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-usb3 ipq-wifi-tplink_x80-5g \
 	 	 kmod-usb-serial-option kmod-usb-net-qmi-wwan kmod-usb-serial-qualcomm uqmi\
 		 usbutils kmod-usb-storage
-
-
 endef
 TARGET_DEVICES += tplink_x80-5g
 
