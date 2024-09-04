@@ -92,6 +92,11 @@
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
+&gswip {
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip_mdio {
 	phy13: ethernet-phy@13 {
 		reg = <0x13>;
@@ -157,6 +162,18 @@
 				reg = <0x7f2000 0x1000>;
 				label = "ART";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@7f3000 {
