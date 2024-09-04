@@ -74,6 +74,83 @@
 		sck-gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>; //clock signal for spi connected led's
 		mosi-gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>; //serial data for spi connected led's
 
+		led_gpio: led_gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			enable-gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>; // powersupply for spi mux chip
+			spi-max-frequency = <1000000>;
+		};
+	};
+
+	phy-leds {
+		compatible = "gpio-leds";
+
+		led_wifi_son_green: led0 {
+			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_wifi_son_orange: led1 {
+			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_ORANGE>;
+		};
+
+		led_wifi_son_blue: led2 {
+			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+
+		led_2g: led3 {
+			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led_5gl: led4 {
+			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_5gh: led5 {
+			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_lan: led6 {
+			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_wan: led7 {
+			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "none";
+		};
+
+		led_10g_link: led8 {
+			gpios = <&led_gpio 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_sfp: led9 {
+			gpios = <&led_gpio 9 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_bt: led10 {
+			gpios = <&led_gpio 10 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led11 {
+			gpios = <&led_gpio 11 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-0 = <&led_pins>;

@@ -1,0 +1,31 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 28 Mar 2024 10:24:34 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcmbca: bcm4908: set
+ brcm,wp-not-connected
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Every described BCM4908 board has WP pin not connected. This caused
+problems for drivers since day 0 but there was no property to describe
+that properly. Projects like OpenWrt were modifying Linux driver to deal
+with it.
+
+It's not clear if that is hardware limitation or just reference design
+being copied over and over but this applies to all known / supported
+BCM4908 boards. Handle it by marking WP as not connected by default.
+
+Fixes: 2961f69f151c ("arm64: dts: broadcom: add BCM4908 and Asus GT-AC5300 early DTS files")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
+@@ -593,6 +593,7 @@
+ 			reg-names = "nand", "nand-int-base";
+ 			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "nand_ctlrdy";
++			brcm,wp-not-connected;
+ 			status = "okay";
+ 
+ 			nandcs: nand@0 {

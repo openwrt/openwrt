@@ -150,9 +150,8 @@ $(eval $(call KernelPackage,leds-apu))
 define KernelPackage/leds-mlxcpld
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED support for the Mellanox boards
-  DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_LEDS_MLXCPLD
   FILES:=$(LINUX_DIR)/drivers/leds/leds-mlxcpld.ko
+  KCONFIG:=CONFIG_LEDS_MLXCPLD
   AUTOLOAD:=$(call AutoProbe,leds-mlxcpld)
 endef
 

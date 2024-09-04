@@ -81,8 +81,7 @@ ramips_setup_interfaces()
 	buffalo,wcr-1166ds|\
 	elecom,wrc-1167fs|\
 	wavlink,wl-wn577a2|\
-	wavlink,wl-wn578a2|\
-	yuncore,m300)
+	wavlink,wl-wn578a2)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
@@ -203,10 +202,6 @@ ramips_setup_interfaces()
 	xiaomi,miwifi-nano)
 		ucidef_add_switch "switch0" \
 			"0:lan:2" "2:lan:1" "4:wan" "6@eth0"
-		;;
-	yuncore,cpe200)
-		ucidef_add_switch "switch0" \
-			"0:lan" "4:wan" "6@eth0"
 		;;
 	zbtlink,zbt-we1226)
 		ucidef_add_switch "switch0" \

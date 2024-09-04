@@ -30,9 +30,7 @@ typedef enum rtl8367b_chip_e {
 	RTL8367B_CHIP_RTL8367R_VB, /* chip with exception in extif assignment */
 /* Family C */
 	RTL8367B_CHIP_RTL8367RB_VB,
-	RTL8367B_CHIP_RTL8367S,
-/* Family D */
-	RTL8367B_CHIP_RTL8367S_VB /* chip with exception in extif assignment */
+	RTL8367B_CHIP_RTL8367S
 } rtl8367b_chip_t;
 
 struct rtl8366_mib_counter {
@@ -78,7 +76,6 @@ struct rtl8366_smi {
 	u32			phy_id;
 	rtl8367b_chip_t		rtl8367b_chip;
 	struct mii_bus		*ext_mbus;
-	struct rtl8366_vlan_mc *emu_vlanmc;
 };
 
 struct rtl8366_vlan_mc {
