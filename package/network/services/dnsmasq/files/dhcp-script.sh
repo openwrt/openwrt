@@ -8,6 +8,10 @@ json_init
 json_add_array env
 hotplugobj=""
 
+for var in $(env | grep '^DNSMASQ_'); do
+	json_add_string "" "${var%%=*}=${var#*=}"
+done
+
 case "$1" in
 	add | del | old | arp-add | arp-del)
 		json_add_string "" "MACADDR=$2"
