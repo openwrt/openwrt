@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -66,19 +65,9 @@ static void __init ws_ap3825i_setup_arch(void)
 
 machine_arch_initcall(ws_ap3825i, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init ws_ap3825i_probe(void)
-{
-	if (of_machine_is_compatible("extreme-networks,ws-ap3825i"))
-		return 1;
-	return 0;
-}
-
 define_machine(ws_ap3825i) {
 	.name			= "P1020 RDB",
-	.probe			= ws_ap3825i_probe,
+	.compatible		= "extreme-networks,ws-ap3825i",
 	.setup_arch		= ws_ap3825i_setup_arch,
 	.init_IRQ		= ws_ap3825i_pic_init,
 #ifdef CONFIG_PCI

@@ -18,7 +18,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -64,19 +63,9 @@ static void __init hiveap_330_setup_arch(void)
 
 machine_arch_initcall(hiveap_330, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init hiveap_330_probe(void)
-{
-	if (of_machine_is_compatible("aerohive,hiveap-330"))
-		return 1;
-	return 0;
-}
-
 define_machine(hiveap_330) {
 	.name			= "P1020 RDB",
-	.probe			= hiveap_330_probe,
+	.compatible		= "aerohive,hiveap-330",
 	.setup_arch		= hiveap_330_setup_arch,
 	.init_IRQ		= hiveap_330_pic_init,
 #ifdef CONFIG_PCI

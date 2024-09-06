@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -66,19 +65,9 @@ static void __init panda_setup_arch(void)
 
 machine_arch_initcall(panda, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init panda_probe(void)
-{
-	if (of_machine_is_compatible("ocedo,panda"))
-		return 1;
-	return 0;
-}
-
 define_machine(panda) {
 	.name			= "P1020 RDB",
-	.probe			= panda_probe,
+	.compatible		= "ocedo,panda",
 	.setup_arch		= panda_setup_arch,
 	.init_IRQ		= panda_pic_init,
 #ifdef CONFIG_PCI
