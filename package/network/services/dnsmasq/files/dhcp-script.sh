@@ -8,9 +8,12 @@ json_init
 json_add_array env
 hotplugobj=""
 
+oldIFS=$IFS
+IFS=$'\n'
 for var in $(env | grep '^DNSMASQ_'); do
 	json_add_string "" "${var%%=*}=${var#*=}"
 done
+IFS=$oldIFS
 
 case "$1" in
 	add | del | old | arp-add | arp-del)
