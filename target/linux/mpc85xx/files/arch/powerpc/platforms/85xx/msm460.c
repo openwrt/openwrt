@@ -35,7 +35,7 @@
 
 #include "mpc85xx.h"
 
-void __init msm_pic_init(void)
+static void __init msm_pic_init(void)
 {
 	struct mpic *mpic;
 

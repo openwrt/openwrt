@@ -33,7 +33,7 @@
 
 #include "mpc85xx.h"
 
-void __init hiveap_330_pic_init(void)
+static void __init hiveap_330_pic_init(void)
 {
 	struct mpic *mpic;
 

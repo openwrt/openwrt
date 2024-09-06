@@ -34,7 +34,7 @@
 
 #include "mpc85xx.h"
 
-void __init red_15w_rev1_pic_init(void)
+static void __init red_15w_rev1_pic_init(void)
 {
 	struct mpic *mpic;
 

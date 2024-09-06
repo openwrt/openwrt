@@ -34,7 +34,7 @@
 
 #include "mpc85xx.h"
 
-void __init wsap3715i_pic_init(void)
+static void __init wsap3715i_pic_init(void)
 {
 	struct mpic *mpic;
 
