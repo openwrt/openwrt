@@ -1,6 +1,6 @@
---- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
-+++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
-@@ -19,6 +19,10 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -20,6 +20,10 @@
  	aliases {
  		mmc0 = &sdhci;
  		mmc1 = &sdmmc;
@@ -10,8 +10,8 @@
 +		led-upgrade = &sys_led;
  	};
  
- 	chosen {
-@@ -31,7 +35,7 @@
+ 	adc-keys-0 {
+@@ -53,7 +57,7 @@
  		sys_led: led-0 {
  			gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
  			label = "system-led";

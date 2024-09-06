@@ -1,0 +1,28 @@
+From 170c77276d470a63d22a2634a38846dd88538637 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Thu, 29 Aug 2024 15:20:58 +0200
+Subject: [PATCH] arm64: dts: rockchip: use correct
+ fcs,suspend-voltage-selector on NanoPC-T6
+
+A remant from moving from the vendor kernel, the regulator is using
+a fairchild fcs prefix instead of rockchip,* in the mainline kernel
+according to its binding.
+
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20240829132100.1723127-2-heiko@sntech.de
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -366,7 +366,7 @@
+ 	vdd_npu_s0: regulator@42 {
+ 		compatible = "rockchip,rk8602";
+ 		reg = <0x42>;
+-		rockchip,suspend-voltage-selector = <1>;
++		fcs,suspend-voltage-selector = <1>;
+ 		regulator-name = "vdd_npu_s0";
+ 		regulator-always-on;
+ 		regulator-boot-on;

@@ -1,0 +1,40 @@
+From a22a629c63b1addcf2d81eaf30383c1deca5b7a9 Mon Sep 17 00:00:00 2001
+From: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Date: Thu, 29 Aug 2024 14:26:56 +0200
+Subject: [PATCH] arm64: dts: rockchip: add SPI flash on NanoPC-T6
+
+FriendlyELEC NanoPC-T6 has optional SPI flash chip on-board.
+It is populated with 32MB one on LTS version.
+
+Signed-off-by: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Reviewed-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20240829-friendlyelec-nanopc-t6-lts-v6-5-edff247e8c02@linaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -560,6 +560,21 @@
+ 	status = "okay";
+ };
+ 
++/* optional on non-LTS, populated on LTS version */
++&sfc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&fspim1_pins>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <1>;
++	};
++};
++
+ &spi2 {
+ 	status = "okay";
+ 	assigned-clocks = <&cru CLK_SPI2>;
