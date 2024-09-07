@@ -158,11 +158,13 @@
 	phy5: phy@5 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <5>;
+		mxl,led-config = <0x3f0 0x330 0x0 0x0>;
 	};
 
 	phy6: phy@6 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <6>;
+		mxl,led-config = <0x3f0 0x330 0x0 0x0>;
 	};
 
 	switch: switch@1f {
