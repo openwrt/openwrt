@@ -29,7 +29,7 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  
  
  enum dfs_channel_type {
-@@ -527,9 +528,14 @@ dfs_get_valid_channel(struct hostapd_ifa
+@@ -534,9 +535,14 @@ dfs_get_valid_channel(struct hostapd_ifa
  	int num_available_chandefs;
  	int chan_idx, chan_idx2;
  	int sec_chan_idx_80p80 = -1;
@@ -44,7 +44,7 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  	wpa_printf(MSG_DEBUG, "DFS: Selecting random channel");
  	*secondary_channel = 0;
  	*oper_centr_freq_seg0_idx = 0;
-@@ -549,8 +555,20 @@ dfs_get_valid_channel(struct hostapd_ifa
+@@ -556,8 +562,20 @@ dfs_get_valid_channel(struct hostapd_ifa
  	if (num_available_chandefs == 0)
  		return NULL;
  
@@ -68,7 +68,7 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  		   chan_idx, num_available_chandefs);
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -11306,6 +11306,10 @@ static int nl80211_switch_channel(void *
+@@ -11465,6 +11465,10 @@ static int nl80211_switch_channel(void *
  	if (ret)
  		goto error;
  

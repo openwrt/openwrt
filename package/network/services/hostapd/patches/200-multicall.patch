@@ -71,7 +71,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	@$(E) "  LD " $@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -692,6 +692,11 @@ fail:
+@@ -696,6 +696,11 @@ fail:
  	return -1;
  }
  
@@ -83,7 +83,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  #ifdef CONFIG_WPS
  static int gen_uuid(const char *txt_addr)
-@@ -808,6 +813,8 @@ int main(int argc, char *argv[])
+@@ -817,6 +822,8 @@ int main(int argc, char *argv[])
  		return -1;
  #endif /* CONFIG_DPP */
  
@@ -94,8 +94,8 @@ This allows building both hostapd and wpa_supplicant as a single binary
  		if (c < 0)
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -2409,8 +2409,8 @@ static void hostapd_event_color_change(s
- #endif  /* CONFIG_IEEE80211AX */
+@@ -2520,8 +2520,8 @@ static void hostapd_mld_iface_disable(st
+ #endif /* CONFIG_IEEE80211BE */
  
  
 -void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
@@ -105,7 +105,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  {
  	struct hostapd_data *hapd = ctx;
  	struct sta_info *sta;
-@@ -2769,7 +2769,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2879,7 +2879,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -116,7 +116,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	struct hapd_interfaces *interfaces = ctx;
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -6847,8 +6847,8 @@ union wpa_event_data {
+@@ -6974,8 +6974,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -127,7 +127,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  /**
   * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
-@@ -6860,7 +6860,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -6987,7 +6987,7 @@ void wpa_supplicant_event(void *ctx, enu
   * Same as wpa_supplicant_event(), but we search for the interface in
   * wpa_global.
   */
@@ -278,8 +278,8 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	os_memset(&eapol_test, 0, sizeof(eapol_test));
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5979,8 +5979,8 @@ static void wpas_link_reconfig(struct wp
- }
+@@ -6131,8 +6131,8 @@ static int wpas_pasn_auth(struct wpa_sup
+ #endif /* CONFIG_PASN */
  
  
 -void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
@@ -289,7 +289,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  {
  	struct wpa_supplicant *wpa_s = ctx;
  	int resched;
-@@ -6932,7 +6932,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -7084,7 +7084,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -331,7 +331,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	os_memset(&global, 0, sizeof(global));
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7714,7 +7714,6 @@ struct wpa_interface * wpa_supplicant_ma
+@@ -7787,7 +7787,6 @@ struct wpa_interface * wpa_supplicant_ma
  	return NULL;
  }
  
@@ -339,7 +339,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  /**
   * wpa_supplicant_match_existing - Match existing interfaces
   * @global: Pointer to global data from wpa_supplicant_init()
-@@ -7749,6 +7748,11 @@ static int wpa_supplicant_match_existing
+@@ -7822,6 +7821,11 @@ static int wpa_supplicant_match_existing
  
  #endif /* CONFIG_MATCH_IFACE */
  
@@ -351,7 +351,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -8005,6 +8009,8 @@ struct wpa_global * wpa_supplicant_init(
+@@ -8078,6 +8082,8 @@ struct wpa_global * wpa_supplicant_init(
  #ifndef CONFIG_NO_WPA_MSG
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */

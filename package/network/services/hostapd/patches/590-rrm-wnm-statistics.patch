@@ -10,7 +10,7 @@ method.
 
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -168,6 +168,21 @@ struct hostapd_sae_commit_queue {
+@@ -185,6 +185,21 @@ struct mld_link_info {
  };
  
  /**
@@ -32,7 +32,7 @@ method.
   * struct hostapd_data - hostapd per-BSS data structure
   */
  struct hostapd_data {
-@@ -181,6 +196,9 @@ struct hostapd_data {
+@@ -198,6 +213,9 @@ struct hostapd_data {
  
  	u8 own_addr[ETH_ALEN];
  

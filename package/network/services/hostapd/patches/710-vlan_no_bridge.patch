@@ -8,7 +8,7 @@ was provided by the config
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3583,6 +3583,8 @@ static int hostapd_config_fill(struct ho
+@@ -3646,6 +3646,8 @@ static int hostapd_config_fill(struct ho
  #ifndef CONFIG_NO_VLAN
  	} else if (os_strcmp(buf, "dynamic_vlan") == 0) {
  		bss->ssid.dynamic_vlan = atoi(pos);

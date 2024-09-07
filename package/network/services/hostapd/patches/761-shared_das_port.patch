@@ -7,7 +7,7 @@ Use the NAS identifier to find the right receiver context on incoming messages
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1366,6 +1366,7 @@ static int hostapd_bss_radius_init(struc
+@@ -1379,6 +1379,7 @@ static int hostapd_bss_radius_init(struc
  
  		os_memset(&das_conf, 0, sizeof(das_conf));
  		das_conf.port = conf->radius_das_port;
