@@ -5,6 +5,14 @@
 # FIT will be loaded at 0x02080000. Leave 16M for that, align it to 2M and load the kernel after it.
 KERNEL_LOADADDR := 0x03200000
 
+define Device/ariaboard_photonicat
+  DEVICE_VENDOR := Ariaboard
+  DEVICE_MODEL := Photonicat
+  SOC := rk3568
+  DEVICE_PACKAGES := ath10k-firmware-qca9377-sdio kmod-ath10k-sdio kmod-ath11k-pci kmod-usb2 kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option minicom uqmi wpad-basic-mbedtls
+endef
+TARGET_DEVICES += ariaboard_photonicat
+
 define Device/firefly_roc-rk3328-cc
   DEVICE_VENDOR := Firefly
   DEVICE_MODEL := ROC-RK3328-CC

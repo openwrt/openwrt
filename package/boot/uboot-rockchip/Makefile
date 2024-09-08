@@ -191,6 +191,13 @@ define U-Boot/rk3568/Default
   TPL:=rk3568_ddr_1560MHz_v1.21.bin
 endef
 
+define U-Boot/photonicat-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=Photonicat
+  BUILD_DEVICES:= \
+    ariaboard_photonicat
+endef
+
 define U-Boot/bpi-r2-pro-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=Bananapi-R2 Pro
@@ -300,6 +307,7 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
+  photonicat-rk3568 \
   rock5b-rk3588 \
   nanopc-t6-rk3588 \
   nanopi-r6s-rk3588s \

@@ -1,0 +1,13 @@
+--- a/drivers/irqchip/irq-gic-v3-its.c
++++ b/drivers/irqchip/irq-gic-v3-its.c
+@@ -4736,7 +4736,9 @@ static bool __maybe_unused its_enable_rk
+ {
+ 	struct its_node *its = data;
+ 
+-	if (!of_machine_is_compatible("rockchip,rk3588") &&
++	if (!of_machine_is_compatible("rockchip,rk3566") &&
++	    !of_machine_is_compatible("rockchip,rk3568") &&
++	    !of_machine_is_compatible("rockchip,rk3588") &&
+ 	    !of_machine_is_compatible("rockchip,rk3588s"))
+ 		return false;
+ 
