@@ -15,7 +15,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -23,6 +23,7 @@ platform-$(CONFIG_NLM_COMMON)		+= netlog
+@@ -22,6 +22,7 @@ platform-$(CONFIG_MACH_NINTENDO64)	+= n6
  platform-$(CONFIG_PIC32MZDA)		+= pic32/
  platform-$(CONFIG_RALINK)		+= ralink/
  platform-$(CONFIG_MIKROTIK_RB532)	+= rb532/
@@ -25,9 +25,9 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1056,8 +1056,58 @@ config NLM_XLP_BOARD
- 	  This board is based on Netlogic XLP Processor.
- 	  Say Y here if you have a XLP based board.
+@@ -968,8 +968,58 @@ config CAVIUM_OCTEON_SOC
+ 		Hikari
+ 	  Say Y here for most Octeon reference boards.
  
 +config RTL83XX
 +	bool "Realtek based platforms"
