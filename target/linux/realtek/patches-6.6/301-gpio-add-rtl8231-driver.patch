@@ -25,7 +25,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -529,6 +529,12 @@ config GPIO_ROCKCHIP
+@@ -553,6 +553,12 @@ config GPIO_ROCKCHIP
  	help
  	  Say yes here to support GPIO on Rockchip SoCs.
  
@@ -40,7 +40,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  	depends on MFD_SYSCON
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -129,6 +129,7 @@ obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc3
+@@ -138,6 +138,7 @@ obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc3
  obj-$(CONFIG_GPIO_REALTEK_OTTO)		+= gpio-realtek-otto.o
  obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o
  obj-$(CONFIG_GPIO_ROCKCHIP)	+= gpio-rockchip.o
