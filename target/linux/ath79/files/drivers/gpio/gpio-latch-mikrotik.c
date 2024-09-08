@@ -155,17 +155,7 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	gc->direction_output = gpio_latch_direction_output;
 	gc->fwnode = fwnode;
 
-	platform_set_drvdata(pdev, glc);
-
-	return gpiochip_add(&glc->gc);
-}
-
-static int gpio_latch_remove(struct platform_device *pdev)
-{
-	struct gpio_latch_chip *glc = platform_get_drvdata(pdev);
-
-	gpiochip_remove(&glc->gc);
-	return 0;
+	return devm_gpiochip_add_data(dev, gc, glc);
 }
 
 static const struct of_device_id gpio_latch_match[] = {
@@ -177,7 +167,6 @@ MODULE_DEVICE_TABLE(of, gpio_latch_match);
 
 static struct platform_driver gpio_latch_driver = {
 	.probe = gpio_latch_probe,
-	.remove = gpio_latch_remove,
 	.driver = {
 		.name = GPIO_LATCH_DRIVER_NAME,
 		.owner = THIS_MODULE,
