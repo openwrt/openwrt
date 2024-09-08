@@ -1,0 +1,62 @@
+From f91eafcb18e096108cd19d24ab71a0db5bc12416 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:16 +0200
+Subject: [PATCH] pinctrl: aw9523: Use correct error code for not supported
+ functionality
+
+The pin control subsystem internally uses ENOTSUPP for the not supported
+functionality. The checkpatch is false positive about this error code.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-3-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include <linux/bitfield.h>
++#include <linux/errno.h>
+ #include <linux/gpio/consumer.h>
+ #include <linux/gpio/driver.h>
+ #include <linux/i2c.h>
+@@ -239,7 +240,7 @@ static int aw9523_pcfg_param_to_reg(enum
+ 		reg = AW9523_REG_OUT_STATE(pin);
+ 		break;
+ 	default:
+-		return -EOPNOTSUPP;
++		return -ENOTSUPP;
+ 	}
+ 	*r = reg;
+ 
+@@ -290,7 +291,7 @@ static int aw9523_pconf_get(struct pinct
+ 			val = FIELD_GET(AW9523_GCR_GPOMD_MASK, val);
+ 		break;
+ 	default:
+-		return -EOPNOTSUPP;
++		return -ENOTSUPP;
+ 	}
+ 	if (val < 1)
+ 		return -EINVAL;
+@@ -344,7 +345,7 @@ static int aw9523_pconf_set(struct pinct
+ 		case PIN_CONFIG_DRIVE_OPEN_DRAIN:
+ 			/* Open-Drain is supported only on port 0 */
+ 			if (pin >= AW9523_PINS_PER_PORT) {
+-				rc = -EOPNOTSUPP;
++				rc = -ENOTSUPP;
+ 				goto end;
+ 			}
+ 			mask = AW9523_GCR_GPOMD_MASK;
+@@ -361,7 +362,7 @@ static int aw9523_pconf_set(struct pinct
+ 			val = AW9523_GCR_GPOMD_MASK;
+ 			break;
+ 		default:
+-			rc = -EOPNOTSUPP;
++			rc = -ENOTSUPP;
+ 			goto end;
+ 		}
+ 

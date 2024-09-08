@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -35,7 +34,7 @@
 
 #include "mpc85xx.h"
 
-void __init firebox_t10_pic_init(void)
+static void __init firebox_t10_pic_init(void)
 {
 	struct mpic *mpic;
 
@@ -62,19 +61,9 @@ static void __init firebox_t10_setup_arch(void)
 
 machine_arch_initcall(firebox_t10, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init firebox_t10_probe(void)
-{
-	if (of_machine_is_compatible("watchguard,firebox-t10"))
-		return 1;
-	return 0;
-}
-
 define_machine(firebox_t10) {
 	.name			= "P1010 RDB",
-	.probe			= firebox_t10_probe,
+	.compatible		= "watchguard,firebox-t10",
 	.setup_arch		= firebox_t10_setup_arch,
 	.init_IRQ		= firebox_t10_pic_init,
 #ifdef CONFIG_PCI
@@ -82,6 +71,5 @@ define_machine(firebox_t10) {
 	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 	.get_irq		= mpic_get_irq,
-	.calibrate_decr		= generic_calibrate_decr,
 	.progress		= udbg_progress,
 };
