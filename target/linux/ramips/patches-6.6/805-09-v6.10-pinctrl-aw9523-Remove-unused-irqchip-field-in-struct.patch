@@ -1,0 +1,52 @@
+From 6bf270863ade776485d1c6bdb8f69d642b0e5f64 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:21 +0200
+Subject: [PATCH] pinctrl: aw9523: Remove unused irqchip field in struct
+ aw9523_irq
+
+The irqchip field is allocated, assigned but never used. Remove it.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-8-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -57,12 +57,10 @@
+ /*
+  * struct aw9523_irq - Interrupt controller structure
+  * @lock: mutex locking for the irq bus
+- * @irqchip: structure holding irqchip params
+  * @cached_gpio: stores the previous gpio status for bit comparison
+  */
+ struct aw9523_irq {
+ 	struct mutex lock;
+-	struct irq_chip *irqchip;
+ 	u16 cached_gpio;
+ };
+ 
+@@ -805,21 +803,15 @@ static int aw9523_init_irq(struct aw9523
+ {
+ 	struct device *dev = awi->dev;
+ 	struct gpio_irq_chip *girq;
+-	struct irq_chip *irqchip;
+ 	int ret;
+ 
+ 	if (!device_property_read_bool(dev, "interrupt-controller"))
+ 		return 0;
+ 
+-	irqchip = devm_kzalloc(dev, sizeof(*irqchip), GFP_KERNEL);
+-	if (!irqchip)
+-		return -ENOMEM;
+-
+ 	awi->irq = devm_kzalloc(dev, sizeof(*awi->irq), GFP_KERNEL);
+ 	if (!awi->irq)
+ 		return -ENOMEM;
+ 
+-	awi->irq->irqchip = irqchip;
+ 	mutex_init(&awi->irq->lock);
+ 
+ 	ret = devm_request_threaded_irq(dev, irq, NULL, aw9523_irq_thread_func,

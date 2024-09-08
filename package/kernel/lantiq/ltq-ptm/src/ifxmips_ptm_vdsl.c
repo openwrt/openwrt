@@ -993,7 +993,9 @@ static int ltq_ptm_probe(struct platform_device *pdev)
         goto INIT_PRIV_DATA_FAIL;
     }
 
-    ifx_ptm_init_chip(pdev);
+    ret = ifx_ptm_init_chip(pdev);
+    if (ret)
+        goto INIT_PRIV_DATA_FAIL;
     ret = init_tables();
     if ( ret != 0 ) {
         err("INIT_TABLES_FAIL");

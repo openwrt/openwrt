@@ -245,18 +245,18 @@ define U-Boot/rk3588/Default
   TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
 endef
 
-define U-Boot/rock5b-rk3588
-  $(U-Boot/rk3588/Default)
-  NAME:=ROCK 5B
-  BUILD_DEVICES:= \
-    radxa_rock-5b
-endef
-
 define U-Boot/nanopc-t6-rk3588
   $(U-Boot/rk3588/Default)
   NAME:=NanoPC T6
   BUILD_DEVICES:= \
     friendlyarm_nanopc-t6
+endef
+
+define U-Boot/rock5b-rk3588
+  $(U-Boot/rk3588/Default)
+  NAME:=ROCK 5B
+  BUILD_DEVICES:= \
+    radxa_rock-5b
 endef
 
 
@@ -300,8 +300,8 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
-  rock5b-rk3588 \
   nanopc-t6-rk3588 \
+  rock5b-rk3588 \
   nanopi-r6s-rk3588s \
   rock5a-rk3588s
 

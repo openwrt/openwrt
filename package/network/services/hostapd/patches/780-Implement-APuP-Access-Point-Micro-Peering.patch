@@ -1,4 +1,4 @@
-From 40041ecea334c0106c0e840a32aef92b0cbb004b Mon Sep 17 00:00:00 2001
+From 806c84ac8e8f60eaec22772b627f85eb5ac13544 Mon Sep 17 00:00:00 2001
 From: Gioacchino Mazzurco <gio@polymathes.cc>
 Date: Mon, 6 May 2024 13:53:48 +0200
 Subject: [PATCH 1/3] Implement APuP Access Point Micro Peering
@@ -18,11 +18,14 @@ automatically if wds_bridge is not an empty string), or feeded to a
 routing daemon.
 
 Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
+Reviewed-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Moritz Warning <moritzwarning@web.de>
+Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a69e8d8300569e416de856c96e903ad130
 ---
  hostapd/Makefile             |   5 ++
  hostapd/config_file.c        |   9 +++
  src/ap/ap_config.h           |  29 +++++++
- src/ap/ap_drv_ops.c          |  26 ++++++
+ src/ap/ap_drv_ops.c          |  28 ++++++-
  src/ap/ap_drv_ops.h          |   3 +
  src/ap/apup.c                | 152 +++++++++++++++++++++++++++++++++++
  src/ap/apup.h                |  24 ++++++
@@ -30,7 +33,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  src/ap/ieee802_11.h          |   2 +
  src/drivers/driver.h         |   2 +-
  src/drivers/driver_nl80211.c |  14 +---
- 11 files changed, 264 insertions(+), 16 deletions(-)
+ 11 files changed, 265 insertions(+), 17 deletions(-)
  create mode 100644 src/ap/apup.c
  create mode 100644 src/ap/apup.h
 
@@ -111,10 +114,10 @@ index 0e52a9990d..9102db5ed0 100644
  
  /**
 diff --git a/src/ap/ap_drv_ops.c b/src/ap/ap_drv_ops.c
-index e7396d9aea..05460e3d73 100644
+index e7396d9aea..0a49ae515e 100644
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -382,9 +382,35 @@ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
+@@ -382,13 +382,39 @@ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
  			const u8 *addr, int aid, int val)
  {
  	const char *bridge = NULL;
@@ -150,6 +153,11 @@ index e7396d9aea..05460e3d73 100644
  	if (hapd->conf->wds_bridge[0])
  		bridge = hapd->conf->wds_bridge;
  	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val,
+-					 bridge, ifname_wds);
++					 bridge, ifName);
+ }
+ 
+ 
 diff --git a/src/ap/ap_drv_ops.h b/src/ap/ap_drv_ops.h
 index fa89d2398e..ab4dc8eb16 100644
 --- a/src/ap/ap_drv_ops.h
