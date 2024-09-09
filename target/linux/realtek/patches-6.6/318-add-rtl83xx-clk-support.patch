@@ -13,8 +13,8 @@ Submitted-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
-@@ -406,6 +406,7 @@ source "drivers/clk/mstar/Kconfig"
- source "drivers/clk/mvebu/Kconfig"
+@@ -484,6 +484,7 @@ source "drivers/clk/mvebu/Kconfig"
+ source "drivers/clk/nuvoton/Kconfig"
  source "drivers/clk/pistachio/Kconfig"
  source "drivers/clk/qcom/Kconfig"
 +source "drivers/clk/realtek/Kconfig"
@@ -23,7 +23,7 @@ Submitted-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  source "drivers/clk/rockchip/Kconfig"
 --- a/drivers/clk/Makefile
 +++ b/drivers/clk/Makefile
-@@ -101,6 +101,7 @@ obj-$(CONFIG_COMMON_CLK_PISTACHIO)	+= pi
+@@ -112,6 +112,7 @@ obj-$(CONFIG_COMMON_CLK_PISTACHIO)	+= pi
  obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
  obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
  obj-y					+= ralink/
