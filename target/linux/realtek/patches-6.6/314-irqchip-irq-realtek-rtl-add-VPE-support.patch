@@ -3,23 +3,33 @@ From: Birger Koblitz <git@birger-koblitz.de>
 Date: Fri, 31 Dec 2021 11:56:49 +0100
 Subject: [PATCH] realtek: Add VPE support for the IRQ driver
 
-In order to support VSMP, enable support for both VPEs
-of the RTL839X and RTL930X SoCs in the irq-realtek-rtl
-driver. Add support for IRQ affinity setting.
+In order to support VSMP, enable support for both VPEs of the RTL839X
+and RTL930X SoCs in the irq-realtek-rtl driver. Add support for IRQ
+affinity setting.
+
+Up to kernel 5.15 this patch was divided into two parts
+
+315-irqchip-irq-realtek-rtl-add-VPE-support.patch
+319-irqchip-irq-realtek-rtl-fix-VPE-affinity.patch
+
+As both parts will only work in combination they have been merged into
+one patch.
 
 Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 ---
- drivers/irqchip/irq-realtek-rtl.c             | 152 +++++++++++++++---
- 1 file changed, 73 insertions(+), 76 deletions(-)
+ drivers/irqchip/irq-realtek-rtl.c | 296 +++++++++++++++++++++++++-----
+ 1 file changed, 249 insertions(+), 47 deletions(-)
 
 --- a/drivers/irqchip/irq-realtek-rtl.c
 +++ b/drivers/irqchip/irq-realtek-rtl.c
-@@ -21,21 +21,63 @@
- #define RTL_ICTL_IRR2		0x10
+@@ -22,22 +22,58 @@
  #define RTL_ICTL_IRR3		0x14
  
+ #define RTL_ICTL_NUM_INPUTS	32
+-
 -#define REG(x)		(realtek_ictl_base + x)
-+#define RTL_ICTL_NUM_INPUTS	32
 +#define RTL_ICTL_NUM_OUTPUTS	15
  
  static DEFINE_RAW_SPINLOCK(irq_lock);
@@ -27,6 +37,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +
 +#define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
 +
++static u32 realtek_ictl_unmask[NR_CPUS];
 +static void __iomem *realtek_ictl_base[NR_CPUS];
 +static cpumask_t realtek_ictl_cpu_configurable;
 +
@@ -38,36 +49,74 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	struct irq_domain *domain;
 +	u32 child_mask;
 +};
+ 
+ /*
+- * IRR0-IRR3 store 4 bits per interrupt, but Realtek uses inverted numbering,
+- * placing IRQ 31 in the first four bits. A routing value of '0' means the
+- * interrupt is left disconnected. Routing values {1..15} connect to output
+- * lines {0..14}.
++ * Per CPU we have a set of 5 registers that determine interrupt handling for
++ * 32 external interrupts. GIMR (enable/disable interrupt) plus IRR0-IRR3 that
++ * contain "routing" or "priority" values. GIMR uses one bit for each interrupt
++ * and IRRx store 4 bits per interrupt. Realtek uses inverted numbering,
++ * placing IRQ 31 in the first four bits. The register combinations give the
++ * following results for a single interrupt in the wild:
++ *
++ * a) GIMR = 0 / IRRx > 0 -> no interrupts
++ * b) GIMR = 0 / IRRx = 0 -> no interrupts
++ * c) GIMR = 1 / IRRx > 0 -> interrupts
++ * d) GIMR = 1 / IRRx = 0 -> rare interrupts in SMP environment
++ *
++ * Combination d) seems to trigger interrupts only on a VPE if the other VPE
++ * has GIMR = 0 and IRRx > 0. E.g. busy without interrupts allowed. To provide
++ * IRQ balancing features in SMP this driver will handle the registers as
++ * follows:
++ *
++ * 1) set IRRx > 0 for VPE where the interrupt is desired
++ * 2) set IRRx = 0 for VPE where the interrupt is not desired
++ * 3) set both GIMR = 0 to mask (disabled) interrupt
++ * 4) set GIMR = 1 to unmask (enable) interrupt but only for VPE where IRRx > 0
+  */
 +
-+/*
-+ * IRR0-IRR3 store 4 bits per interrupt, but Realtek uses inverted numbering,
-+ * placing IRQ 31 in the first four bits. A routing value of '0' means the
-+ * interrupt is left disconnected. Routing values {1..15} connect to output
-+ * lines {0..14}.
-+ */
-+#define IRR_OFFSET(idx)		(4 * (3 - (idx * 4) / 32))
-+#define IRR_SHIFT(idx)		((idx * 4) % 32)
-+
+ #define IRR_OFFSET(idx)		(4 * (3 - (idx * 4) / 32))
+ #define IRR_SHIFT(idx)		((idx * 4) % 32)
+ 
+-static void write_irr(void __iomem *irr0, int idx, u32 value)
 +static inline u32 read_irr(void __iomem *irr0, int idx)
 +{
 +	return (readl(irr0 + IRR_OFFSET(idx)) >> IRR_SHIFT(idx)) & 0xf;
 +}
 +
 +static inline void write_irr(void __iomem *irr0, int idx, u32 value)
-+{
-+	unsigned int offset = IRR_OFFSET(idx);
-+	unsigned int shift = IRR_SHIFT(idx);
-+	u32 irr;
-+
-+	irr = readl(irr0 + offset) & ~(0xf << shift);
-+	irr |= (value & 0xf) << shift;
-+	writel(irr, irr0 + offset);
-+}
+ {
+ 	unsigned int offset = IRR_OFFSET(idx);
+ 	unsigned int shift = IRR_SHIFT(idx);
+@@ -48,16 +84,33 @@ static void write_irr(void __iomem *irr0
+ 	writel(irr, irr0 + offset);
+ }
  
++static inline void enable_gimr(int hwirq, int cpu)
++{
++	u32 value;
++
++	value = readl(REG(RTL_ICTL_GIMR, cpu));
++	value |= (BIT(hwirq) & realtek_ictl_unmask[cpu]);
++	writel(value, REG(RTL_ICTL_GIMR, cpu));
++}
++
++static inline void disable_gimr(int hwirq, int cpu)
++{
++	u32 value;
++
++	value = readl(REG(RTL_ICTL_GIMR, cpu));
++	value &= ~BIT(hwirq);
++	writel(value, REG(RTL_ICTL_GIMR, cpu));
++}
++
  static void realtek_ictl_unmask_irq(struct irq_data *i)
  {
  	unsigned long flags;
- 	u32 value;
+-	u32 value;
 +	int cpu;
  
  	raw_spin_lock_irqsave(&irq_lock, flags);
@@ -75,18 +124,16 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 -	value = readl(REG(RTL_ICTL_GIMR));
 -	value |= BIT(i->hwirq);
 -	writel(value, REG(RTL_ICTL_GIMR));
-+	for_each_cpu(cpu, &realtek_ictl_cpu_configurable) {
-+		value = readl(REG(RTL_ICTL_GIMR, cpu));
-+		value |= BIT(i->hwirq);
-+		writel(value, REG(RTL_ICTL_GIMR, cpu));
-+	}
++	for_each_cpu(cpu, &realtek_ictl_cpu_configurable)
++		enable_gimr(i->hwirq, cpu);
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -44,52 +86,137 @@ static void realtek_ictl_mask_irq(struct
+@@ -65,110 +118,259 @@ static void realtek_ictl_unmask_irq(stru
+ static void realtek_ictl_mask_irq(struct irq_data *i)
  {
  	unsigned long flags;
- 	u32 value;
+-	u32 value;
 +	int cpu;
  
  	raw_spin_lock_irqsave(&irq_lock, flags);
@@ -94,11 +141,8 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 -	value = readl(REG(RTL_ICTL_GIMR));
 -	value &= ~BIT(i->hwirq);
 -	writel(value, REG(RTL_ICTL_GIMR));
-+	for_each_cpu(cpu, &realtek_ictl_cpu_configurable) {
-+		value = readl(REG(RTL_ICTL_GIMR, cpu));
-+		value &= ~BIT(i->hwirq);
-+		writel(value, REG(RTL_ICTL_GIMR, cpu));
-+	}
++	for_each_cpu(cpu, &realtek_ictl_cpu_configurable)
++		disable_gimr(i->hwirq, cpu);
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
@@ -120,11 +164,17 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	cpumask_and(&cpu_enable, &cpu_configure, dest);
 +	cpumask_andnot(&cpu_disable, &cpu_configure, dest);
 +
-+	for_each_cpu(cpu, &cpu_disable)
++	for_each_cpu(cpu, &cpu_disable) {
 +		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, 0);
++		realtek_ictl_unmask[cpu] &= ~BIT(i->hwirq);
++		disable_gimr(i->hwirq, cpu);
++	}
 +
-+	for_each_cpu(cpu, &cpu_enable)
++	for_each_cpu(cpu, &cpu_enable) {
 +		write_irr(REG(RTL_ICTL_IRR0, cpu), i->hwirq, output->output_index + 1);
++		realtek_ictl_unmask[cpu] |= BIT(i->hwirq);
++		enable_gimr(i->hwirq, cpu);
++	}
 +
 +	irq_data_update_effective_affinity(i, &cpu_enable);
 +
@@ -145,17 +195,19 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
  {
 +	struct realtek_ictl_output *output = d->host_data;
-+	unsigned long flags;
-+
+ 	unsigned long flags;
+ 
  	irq_set_chip_and_handler(irq, &realtek_ictl_irq, handle_level_irq);
  
-+	raw_spin_lock_irqsave(&irq_lock, flags);
+ 	raw_spin_lock_irqsave(&irq_lock, flags);
+-	write_irr(REG(RTL_ICTL_IRR0), hw, 1);
 +
 +	output->child_mask |= BIT(hw);
 +	write_irr(REG(RTL_ICTL_IRR0, 0), hw, output->output_index + 1);
++	realtek_ictl_unmask[0] |= BIT(hw);
 +
-+	raw_spin_unlock_irqrestore(&irq_lock, flags);
-+
+ 	raw_spin_unlock_irqrestore(&irq_lock, flags);
+ 
  	return 0;
  }
  
@@ -229,84 +281,42 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  out:
  	chained_irq_exit(chip, desc);
-@@ -102,85 +229,110 @@ out:
-  * thus go into 4 IRRs. A routing value of '0' means the interrupt is left
-  * disconnected. Routing values {1..15} connect to output lines {0..14}.
-  */
--static int __init map_interrupts(struct device_node *node, struct irq_domain *domain)
+ }
+ 
++/*
++ * SoC interrupts are cascaded to MIPS CPU interrupts according to the
++ * interrupt-map in the device tree. Each SoC interrupt gets 4 bits for
++ * the CPU interrupt in an Interrupt Routing Register. Max 32 SoC interrupts
++ * thus go into 4 IRRs. A routing value of '0' means the interrupt is left
++ * disconnected. Routing values {1..15} connect to output lines {0..14}.
++ */
 +static int __init setup_parent_interrupts(struct device_node *node, int *parents,
 +	unsigned int num_parents)
- {
--	struct device_node *cpu_ictl;
--	const __be32 *imap;
--	u32 imaplen, soc_int, cpu_int, tmp, regs[4];
--	int ret, i, irr_regs[] = {
--		RTL_ICTL_IRR3,
--		RTL_ICTL_IRR2,
--		RTL_ICTL_IRR1,
--		RTL_ICTL_IRR0,
--	};
--	u8 mips_irqs_set;
++{
 +	struct realtek_ictl_output *outputs;
 +	struct realtek_ictl_output *output;
 +	struct irq_domain *domain;
 +	unsigned int p;
- 
--	ret = of_property_read_u32(node, "#address-cells", &tmp);
--	if (ret || tmp)
--		return -EINVAL;
++
 +	outputs = kcalloc(num_parents, sizeof(*outputs), GFP_KERNEL);
 +	if (!outputs)
 +		return -ENOMEM;
- 
--	imap = of_get_property(node, "interrupt-map", &imaplen);
--	if (!imap || imaplen % 3)
--		return -EINVAL;
++
 +	for (p = 0; p < num_parents; p++) {
 +		output = outputs + p;
- 
--	mips_irqs_set = 0;
--	memset(regs, 0, sizeof(regs));
--	for (i = 0; i < imaplen; i += 3 * sizeof(u32)) {
--		soc_int = be32_to_cpup(imap);
--		if (soc_int > 31)
--			return -EINVAL;
--
--		cpu_ictl = of_find_node_by_phandle(be32_to_cpup(imap + 1));
--		if (!cpu_ictl)
--			return -EINVAL;
--		ret = of_property_read_u32(cpu_ictl, "#interrupt-cells", &tmp);
--		of_node_put(cpu_ictl);
--		if (ret || tmp != 1)
--			return -EINVAL;
--
--		cpu_int = be32_to_cpup(imap + 2);
--		if (cpu_int > 7 || cpu_int < 2)
--			return -EINVAL;
--
--		if (!(mips_irqs_set & BIT(cpu_int))) {
--			irq_set_chained_handler_and_data(cpu_int, realtek_irq_dispatch,
--							 domain);
--			mips_irqs_set |= BIT(cpu_int);
--		}
++
 +		domain = irq_domain_add_linear(node, RTL_ICTL_NUM_INPUTS, &irq_domain_ops, output);
 +		if (!domain)
 +			goto domain_err;
- 
--		/* Use routing values (1..6) for CPU interrupts (2..7) */
--		regs[(soc_int * 4) / 32] |= (cpu_int - 1) << (soc_int * 4) % 32;
--		imap += 3;
--	}
++
 +		output->fwnode = of_node_to_fwnode(node);
 +		output->output_index = p;
 +		output->domain = domain;
- 
--	for (i = 0; i < 4; i++)
--		writel(regs[i], REG(irr_regs[i]));
++
 +		irq_set_chained_handler_and_data(parents[p], realtek_irq_dispatch, output);
 +	}
- 
- 	return 0;
++
++	return 0;
 +
 +domain_err:
 +	while (p--) {
@@ -317,65 +327,68 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	kfree(outputs);
 +
 +	return -ENOMEM;
- }
- 
++}
++
  static int __init realtek_rtl_of_init(struct device_node *node, struct device_node *parent)
  {
--	struct irq_domain *domain;
--	int ret;
 +	int parent_irqs[RTL_ICTL_NUM_OUTPUTS];
-+	struct of_phandle_args oirq;
+ 	struct of_phandle_args oirq;
+-	struct irq_domain *domain;
 +	unsigned int num_parents;
-+	unsigned int soc_irq;
+ 	unsigned int soc_irq;
+-	int parent_irq;
 +	unsigned int p;
 +	int cpu;
 +
 +	cpumask_clear(&realtek_ictl_cpu_configurable);
-+
+ 
+-	realtek_ictl_base = of_iomap(node, 0);
+-	if (!realtek_ictl_base)
 +	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 +		realtek_ictl_base[cpu] = of_iomap(node, cpu);
 +		if (realtek_ictl_base[cpu]) {
 +			cpumask_set_cpu(cpu, &realtek_ictl_cpu_configurable);
 +
 +			/* Disable all cascaded interrupts and clear routing */
-+			writel(0, REG(RTL_ICTL_GIMR, cpu));
-+			for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++)
++			for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++) {
 +				write_irr(REG(RTL_ICTL_IRR0, cpu), soc_irq, 0);
++				realtek_ictl_unmask[cpu] &= ~BIT(soc_irq);
++				disable_gimr(soc_irq, cpu);
++			}
 +		}
 +	}
- 
--	realtek_ictl_base = of_iomap(node, 0);
--	if (!realtek_ictl_base)
++
 +	if (cpumask_empty(&realtek_ictl_cpu_configurable))
  		return -ENXIO;
  
--	/* Disable all cascaded interrupts */
+-	/* Disable all cascaded interrupts and clear routing */
 -	writel(0, REG(RTL_ICTL_GIMR));
+-	for (soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++)
+-		write_irr(REG(RTL_ICTL_IRR0), soc_irq, 0);
 +	num_parents = of_irq_count(node);
 +	if (num_parents > RTL_ICTL_NUM_OUTPUTS) {
 +		pr_err("too many parent interrupts\n");
 +		return -EINVAL;
 +	}
  
--	domain = irq_domain_add_simple(node, 32, 0,
--				       &irq_domain_ops, NULL);
+-	if (WARN_ON(!of_irq_count(node))) {
 +	for (p = 0; p < num_parents; p++)
 +		parent_irqs[p] = of_irq_get(node, p);
- 
--	ret = map_interrupts(node, domain);
--	if (ret) {
--		pr_err("invalid interrupt map\n");
--		return ret;
++
 +	if (WARN_ON(!num_parents)) {
-+		/*
-+		 * If DT contains no parent interrupts, assume MIPS CPU IRQ 2
-+		 * (HW0) is connected to the first output. This is the case for
-+		 * all known hardware anyway. "interrupt-map" is deprecated, so
-+		 * don't bother trying to parse that.
+ 		/*
+ 		 * If DT contains no parent interrupts, assume MIPS CPU IRQ 2
+ 		 * (HW0) is connected to the first output. This is the case for
+ 		 * all known hardware anyway. "interrupt-map" is deprecated, so
+ 		 * don't bother trying to parse that.
 +		 * Since this is to account for old devicetrees with one-cell
 +		 * interrupt specifiers, only one output domain is needed.
-+		 */
-+		oirq.np = of_find_compatible_node(NULL, NULL, "mti,cpu-interrupt-controller");
+ 		 */
+ 		oirq.np = of_find_compatible_node(NULL, NULL, "mti,cpu-interrupt-controller");
+-		oirq.args_count = 1;
+-		oirq.args[0] = 2;
+-
+-		parent_irq = irq_create_of_mapping(&oirq);
 +		if (oirq.np) {
 +			oirq.args_count = 1;
 +			oirq.args[0] = 2;
@@ -383,11 +396,22 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +			parent_irqs[0] = irq_create_of_mapping(&oirq);
 +			num_parents = 1;
 +		}
-+
-+		of_node_put(oirq.np);
+ 
+ 		of_node_put(oirq.np);
+-	} else {
+-		parent_irq = of_irq_get(node, 0);
  	}
  
--	return 0;
+-	if (parent_irq < 0)
+-		return parent_irq;
+-	else if (!parent_irq)
+-		return -ENODEV;
+-
+-	domain = irq_domain_add_linear(node, RTL_ICTL_NUM_INPUTS, &irq_domain_ops, NULL);
+-	if (!domain)
+-		return -ENOMEM;
+-
+-	irq_set_chained_handler_and_data(parent_irq, realtek_irq_dispatch, domain);
 +	/* Ensure we haven't collected any errors before proceeding */
 +	for (p = 0; p < num_parents; p++) {
 +		if (parent_irqs[p] < 0)
@@ -395,7 +419,8 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +		if (!parent_irqs[p])
 +			return -ENODEV;
 +	}
-+
+ 
+-	return 0;
 +	return setup_parent_interrupts(node, &parent_irqs[0], num_parents);
  }
  
