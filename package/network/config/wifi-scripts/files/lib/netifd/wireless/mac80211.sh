@@ -308,7 +308,7 @@ mac80211_hostapd_setup_base() {
 				eht_center_seg0=$idx
 				eht_oper_chwidth=9
 			;;
-			HE*|EHT*) op_class=$((132 + $vht_oper_chwidth))
+			HE*|EHT*) op_class=$((132 + $vht_oper_chwidth));;
 		esac
 		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
 	}
