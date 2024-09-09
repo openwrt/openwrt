@@ -22,11 +22,11 @@ Signed-off-by: Vincent Tremblay <vincent@vtremblay.dev>
  	{},
  };
  MODULE_DEVICE_TABLE(spi, spidev_spi_ids);
-@@ -707,6 +708,7 @@ static const struct of_device_id spidev_
- 	{ .compatible = "cisco,spi-petra" },
- 	{ .compatible = "micron,spi-authenta" },
- 	{ .compatible = "silabs,em3581" },
-+	{ .compatible = "silabs,si3210" },
+@@ -720,6 +721,7 @@ static const struct of_device_id spidev_
+ 	{ .compatible = "rohm,dh2228fv", .data = &spidev_of_check },
+ 	{ .compatible = "semtech,sx1301", .data = &spidev_of_check },
+ 	{ .compatible = "silabs,em3581", .data = &spidev_of_check },
++	{ .compatible = "silabs,si3210", .data = &spidev_of_check },
  	{},
  };
  MODULE_DEVICE_TABLE(of, spidev_dt_ids);

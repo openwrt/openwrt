@@ -45,7 +45,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  int stmmac_bus_clks_config(struct stmmac_priv *priv, bool enabled)
  {
-@@ -2726,9 +2726,7 @@ static int stmmac_tx_clean(struct stmmac
+@@ -2728,9 +2728,7 @@ static int stmmac_tx_clean(struct stmmac
  
  	/* We still have pending packets, let's call for a new scheduling */
  	if (tx_q->dirty_tx != tx_q->cur_tx)
@@ -56,7 +56,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	__netif_tx_unlock_bh(netdev_get_tx_queue(priv->dev, queue));
  
-@@ -3020,9 +3018,7 @@ static void stmmac_tx_timer_arm(struct s
+@@ -3022,9 +3020,7 @@ static void stmmac_tx_timer_arm(struct s
  {
  	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
  
@@ -67,7 +67,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  }
  
  /**
-@@ -3031,9 +3027,9 @@ static void stmmac_tx_timer_arm(struct s
+@@ -3033,9 +3029,9 @@ static void stmmac_tx_timer_arm(struct s
   * Description:
   * This is the timer handler to directly invoke the stmmac_tx_clean.
   */
@@ -79,7 +79,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	struct stmmac_priv *priv = tx_q->priv_data;
  	struct stmmac_channel *ch;
  	struct napi_struct *napi;
-@@ -3049,8 +3045,6 @@ static enum hrtimer_restart stmmac_tx_ti
+@@ -3051,8 +3047,6 @@ static enum hrtimer_restart stmmac_tx_ti
  		spin_unlock_irqrestore(&ch->lock, flags);
  		__napi_schedule(napi);
  	}
@@ -88,7 +88,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  }
  
  /**
-@@ -3073,8 +3067,7 @@ static void stmmac_init_coalesce(struct
+@@ -3075,8 +3069,7 @@ static void stmmac_init_coalesce(struct
  		priv->tx_coal_frames[chan] = STMMAC_TX_FRAMES;
  		priv->tx_coal_timer[chan] = STMMAC_COAL_TX_TIMER;
  
@@ -98,7 +98,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	}
  
  	for (chan = 0; chan < rx_channel_count; chan++)
-@@ -3904,7 +3897,7 @@ irq_error:
+@@ -3906,7 +3899,7 @@ irq_error:
  	phylink_stop(priv->phylink);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -107,7 +107,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -3962,7 +3955,7 @@ static int stmmac_release(struct net_dev
+@@ -3964,7 +3957,7 @@ static int stmmac_release(struct net_dev
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -116,7 +116,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	netif_tx_disable(dev);
  
-@@ -6637,7 +6630,7 @@ void stmmac_xdp_release(struct net_devic
+@@ -6639,7 +6632,7 @@ void stmmac_xdp_release(struct net_devic
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -125,7 +125,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	/* Free the IRQ lines */
  	stmmac_free_irq(dev, REQ_IRQ_ERR_ALL, 0);
-@@ -6732,8 +6725,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6734,8 +6727,7 @@ int stmmac_xdp_open(struct net_device *d
  		stmmac_set_tx_tail_ptr(priv, priv->ioaddr,
  				       tx_q->tx_tail_addr, chan);
  
@@ -135,7 +135,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	}
  
  	/* Enable the MAC Rx/Tx */
-@@ -6756,7 +6748,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6758,7 +6750,7 @@ int stmmac_xdp_open(struct net_device *d
  
  irq_error:
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -144,7 +144,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -7483,7 +7475,7 @@ int stmmac_suspend(struct device *dev)
+@@ -7485,7 +7477,7 @@ int stmmac_suspend(struct device *dev)
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)

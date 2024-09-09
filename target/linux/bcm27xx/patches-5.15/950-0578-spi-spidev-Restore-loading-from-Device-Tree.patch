@@ -15,11 +15,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -678,6 +678,7 @@ static const struct file_operations spid
+@@ -677,6 +677,7 @@ static const struct file_operations spid
  static struct class *spidev_class;
  
  static const struct spi_device_id spidev_spi_ids[] = {
 +	{ .name = "spidev" },
+ 	{ .name = "bh2228fv" },
  	{ .name = "dh2228fv" },
  	{ .name = "ltc2488" },
- 	{ .name = "sx1301" },

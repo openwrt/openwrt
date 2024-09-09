@@ -13,12 +13,12 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -759,7 +759,7 @@ static int spidev_probe(struct spi_devic
- 	 * compatible string, it is a Linux implementation thing
- 	 * rather than a description of the hardware.
- 	 */
--	WARN(spi->dev.of_node &&
-+	WARN(0 && spi->dev.of_node &&
- 	     of_device_is_compatible(spi->dev.of_node, "spidev"),
- 	     "%pOF: buggy DT: spidev listed directly in DT\n", spi->dev.of_node);
+@@ -698,7 +698,7 @@ MODULE_DEVICE_TABLE(spi, spidev_spi_ids)
+  */
+ static int spidev_of_check(struct device *dev)
+ {
+-	if (device_property_match_string(dev, "compatible", "spidev") < 0)
++	if (1 || device_property_match_string(dev, "compatible", "spidev") < 0)
+ 		return 0;
  
+ 	dev_err(dev, "spidev listed directly in DT is not supported\n");
