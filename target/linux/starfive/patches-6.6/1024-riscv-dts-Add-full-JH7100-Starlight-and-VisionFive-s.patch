@@ -64,7 +64,15 @@ Signed-off-by: Jonas Hahnfeld <hahnjo@hahnjo.de>
 +};
 --- a/arch/riscv/boot/dts/starfive/jh7100-common.dtsi
 +++ b/arch/riscv/boot/dts/starfive/jh7100-common.dtsi
-@@ -64,9 +64,174 @@
+@@ -14,6 +14,7 @@
+ 	aliases {
+ 		mmc0 = &sdio0;
+ 		serial0 = &uart3;
++		serial1 = &uart0;
+ 	};
+ 
+ 	chosen {
+@@ -64,9 +65,174 @@
  			     <0x00 0xfa000000 0x10 0x7a000000 0x00 0x01000000>,
  			     <0x00 0xfb000000 0x00 0xfb000000 0x07 0x85000000>;
  	};
@@ -239,7 +247,7 @@ Signed-off-by: Jonas Hahnfeld <hahnjo@hahnjo.de>
  	i2c0_pins: i2c0-0 {
  		i2c-pins {
  			pinmux = <GPIOMUX(62, GPO_LOW,
-@@ -146,6 +311,166 @@
+@@ -146,6 +312,166 @@
  		};
  	};
  
@@ -406,7 +414,7 @@ Signed-off-by: Jonas Hahnfeld <hahnjo@hahnjo.de>
  	uart3_pins: uart3-0 {
  		rx-pins {
  			pinmux = <GPIOMUX(13, GPO_LOW, GPO_DISABLE,
-@@ -186,6 +511,17 @@
+@@ -186,6 +512,17 @@
  		regulators {
  		};
  	};
@@ -424,7 +432,7 @@ Signed-off-by: Jonas Hahnfeld <hahnjo@hahnjo.de>
  };
  
  &i2c1 {
-@@ -225,8 +561,104 @@
+@@ -225,8 +562,104 @@
  	status = "okay";
  };
  
