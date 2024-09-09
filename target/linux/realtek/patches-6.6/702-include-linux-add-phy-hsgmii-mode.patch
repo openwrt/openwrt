@@ -1,0 +1,62 @@
+From 9d9bf16aa8d966834ac1280f96c37d22552c33d1 Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Wed, 8 Sep 2021 16:13:18 +0200
+Subject: phy: Add PHY hsgmii mode
+
+This adds RTL93xx-specific MAC configuration routines that allow also configuration
+of 10GBit links for phylink. There is support for the Realtek-specific HISGMI
+protocol.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ drivers/net/phy/phylink.c                     | 2 ++
+ include/linux/phy.h                           | 3 +++
+ 2 file changed, 5 insertions(+)
+
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -124,6 +124,7 @@ int phy_interface_num_ports(phy_interfac
+ 	case PHY_INTERFACE_MODE_MOCA:
+ 	case PHY_INTERFACE_MODE_TRGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_HSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_SMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -410,6 +410,7 @@ void phylink_get_linkmodes(unsigned long
+ 
+ 	case PHY_INTERFACE_MODE_XGMII:
+ 	case PHY_INTERFACE_MODE_RXAUI:
++	case PHY_INTERFACE_MODE_HSGMII:
+ 	case PHY_INTERFACE_MODE_XAUI:
+ 	case PHY_INTERFACE_MODE_10GBASER:
+ 	case PHY_INTERFACE_MODE_10GKR:
+@@ -665,6 +666,7 @@ static int phylink_parse_mode(struct phy
+ 			fallthrough;
+ 		case PHY_INTERFACE_MODE_USXGMII:
+ 		case PHY_INTERFACE_MODE_10GKR:
++		case PHY_INTERFACE_MODE_HSGMII:
+ 		case PHY_INTERFACE_MODE_10GBASER:
+ 			phylink_set(pl->supported, 10baseT_Half);
+ 			phylink_set(pl->supported, 10baseT_Full);
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -141,6 +141,7 @@ typedef enum {
+ 	PHY_INTERFACE_MODE_XGMII,
+ 	PHY_INTERFACE_MODE_XLGMII,
+ 	PHY_INTERFACE_MODE_MOCA,
++	PHY_INTERFACE_MODE_HSGMII,
+ 	PHY_INTERFACE_MODE_QSGMII,
+ 	PHY_INTERFACE_MODE_TRGMII,
+ 	PHY_INTERFACE_MODE_100BASEX,
+@@ -248,6 +249,8 @@ static inline const char *phy_modes(phy_
+ 		return "xlgmii";
+ 	case PHY_INTERFACE_MODE_MOCA:
+ 		return "moca";
++	case PHY_INTERFACE_MODE_HSGMII:
++		return "hsgmii";
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 		return "qsgmii";
+ 	case PHY_INTERFACE_MODE_TRGMII:
