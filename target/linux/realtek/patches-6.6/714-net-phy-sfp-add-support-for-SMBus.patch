@@ -5,12 +5,12 @@ Subject: [PATCH 3/3] net: phy: sfp: add support for SMBus
 
 Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 ---
- drivers/net/phy/sfp.c | 68 ++++++++++++++++++++++++++++++++++---------
- 1 file changed, 54 insertions(+), 14 deletions(-)
+ drivers/net/phy/sfp.c | 92 +++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 88 insertions(+), 4 deletions(-)
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -556,32 +556,72 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -662,10 +662,64 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
@@ -18,13 +18,18 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +			  size_t len)
 +{
 +	u8 bus_addr = a2 ? 0x51 : 0x50, *val = buf;
++	union i2c_smbus_data data;
++	int ret;
 +
 +	bus_addr -= 0x40;
 +
 +	while (len > 0) {
-+		*val = sfp->i2c_mii->read(sfp->i2c_mii, bus_addr, dev_addr);
-+
-+		val++;
++		ret = i2c_smbus_xfer(sfp->i2c, i2c_mii_phy_addr(bus_addr), 0,
++				     I2C_SMBUS_READ, dev_addr,
++				     I2C_SMBUS_BYTE_DATA, &data);
++		if (ret)
++			return ret;
++		*val++ = data.byte;
 +		dev_addr++;
 +		len--;
 +	}
@@ -33,67 +38,90 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +}
 +
 +static int sfp_smbus_write(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
-+			   size_t len)
++			  size_t len)
 +{
-+	u8 bus_addr = a2 ? 0x51 : 0x50;
-+	u16 val;
++	u8 bus_addr = a2 ? 0x51 : 0x50, *val = buf;
++	union i2c_smbus_data data;
++	int ret;
 +
-+	memcpy(&val, buf, len);
++	bus_addr -= 0x40;
 +
-+	return sfp->i2c_mii->write(sfp->i2c_mii, bus_addr, dev_addr, val);
++	while (len > 0) {
++		data.byte = *val++;
++		ret = i2c_smbus_xfer(sfp->i2c, i2c_mii_phy_addr(bus_addr), 0,
++				     I2C_SMBUS_WRITE, dev_addr,
++				     I2C_SMBUS_BYTE_DATA, &data);
++		if (ret)
++			return ret;
++		dev_addr++;
++		len--;
++	}
++
++	return val - (u8 *)buf;
 +}
 +
  static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
  {
--	struct mii_bus *i2c_mii;
-+	struct mii_bus *mii;
- 	int ret;
- 
 -	if (!i2c_check_functionality(i2c, I2C_FUNC_I2C))
 -		return -EINVAL;
--
- 	sfp->i2c = i2c;
--	sfp->read = sfp_i2c_read;
--	sfp->write = sfp_i2c_write;
- 
--	i2c_mii = mdio_i2c_alloc(sfp->dev, i2c);
--	if (IS_ERR(i2c_mii))
--		return PTR_ERR(i2c_mii);
-+	if (i2c_check_functionality(i2c, I2C_FUNC_I2C)) {
-+		sfp->read = sfp_i2c_read;
-+		sfp->write = sfp_i2c_write;
++	if (!i2c_check_functionality(i2c, I2C_FUNC_I2C)) {
++		if (i2c_check_functionality(i2c, I2C_FUNC_SMBUS_BYTE_DATA)) {
++			sfp->i2c = i2c;
++			sfp->read = sfp_smbus_read;
++			sfp->write = sfp_smbus_write;
 +
-+		mii = mdio_i2c_alloc(sfp->dev, i2c);
-+		if (IS_ERR(mii))
-+			return PTR_ERR(mii);
-+
-+		mii->name = "SFP I2C Bus";
-+	} else if (i2c_check_functionality(i2c, I2C_FUNC_SMBUS_BYTE_DATA)) {
-+		sfp->read = sfp_smbus_read;
-+		sfp->write = sfp_smbus_write;
-+
-+		mii = mdio_smbus_alloc(sfp->dev, i2c);
-+		if (IS_ERR(mii))
-+			return PTR_ERR(mii);
- 
--	i2c_mii->name = "SFP I2C Bus";
--	i2c_mii->phy_mask = ~0;
-+		mii->name = "SFP SMBus";
-+	} else {
-+		return -EINVAL;
++			return 0;
++		} else
++			return -EINVAL;
 +	}
  
--	ret = mdiobus_register(i2c_mii);
-+	mii->phy_mask = ~0;
-+	ret = mdiobus_register(mii);
- 	if (ret < 0) {
--		mdiobus_free(i2c_mii);
-+		mdiobus_free(mii);
- 		return ret;
- 	}
+ 	sfp->i2c = i2c;
+ 	sfp->read = sfp_i2c_read;
+@@ -697,6 +751,29 @@ static int sfp_i2c_mdiobus_create(struct
+ 	return 0;
+ }
  
--	sfp->i2c_mii = i2c_mii;
-+	sfp->i2c_mii = mii;
++static int sfp_sm_mdiobus_create(struct sfp *sfp)
++{
++	struct mii_bus *sm_mii;
++	int ret;
++
++	sm_mii = mdio_smbus_alloc(sfp->dev, sfp->i2c);
++	if (IS_ERR(sm_mii))
++		return PTR_ERR(sm_mii);
++
++	sm_mii->name = "SFP SMBus";
++	sm_mii->phy_mask = ~0;
++
++	ret = mdiobus_register(sm_mii);
++	if (ret < 0) {
++		mdiobus_free(sm_mii);
++		return ret;
++	}
++
++	sfp->i2c_mii = sm_mii;
++
++	return 0;
++}
++
+ static void sfp_i2c_mdiobus_destroy(struct sfp *sfp)
+ {
+ 	mdiobus_unregister(sfp->i2c_mii);
+@@ -1870,8 +1947,15 @@ static void sfp_sm_fault(struct sfp *sfp
+ 
+ static int sfp_sm_add_mdio_bus(struct sfp *sfp)
+ {
+-	if (sfp->mdio_protocol != MDIO_I2C_NONE)
+-		return sfp_i2c_mdiobus_create(sfp);
++	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_I2C)) {
++		if (sfp->mdio_protocol != MDIO_I2C_NONE)
++			return sfp_i2c_mdiobus_create(sfp);
++
++		return 0;
++	}
++
++	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_SMBUS_BYTE_DATA))
++		return sfp_sm_mdiobus_create(sfp);
  
  	return 0;
  }
