@@ -21,7 +21,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/net/dsa/tag_trailer.c
 +++ b/net/dsa/tag_trailer.c
-@@ -17,7 +17,12 @@ static struct sk_buff *trailer_xmit(stru
+@@ -19,7 +19,12 @@ static struct sk_buff *trailer_xmit(stru
  
  	trailer = skb_put(skb, 4);
  	trailer[0] = 0x80;
@@ -34,7 +34,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  	trailer[2] = 0x10;
  	trailer[3] = 0x00;
  
-@@ -33,12 +38,23 @@ static struct sk_buff *trailer_rcv(struc
+@@ -35,12 +40,23 @@ static struct sk_buff *trailer_rcv(struc
  		return NULL;
  
  	trailer = skb_tail_pointer(skb) - 4;
