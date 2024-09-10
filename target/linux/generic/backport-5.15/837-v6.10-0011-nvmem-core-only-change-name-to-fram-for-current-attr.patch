@@ -1,0 +1,39 @@
+From 0ba424c934fd43dccf0d597e1ae8851f07cb2edf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Fri, 28 Jun 2024 12:37:03 +0100
+Subject: [PATCH] nvmem: core: only change name to fram for current attribute
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+bin_attr_nvmem_eeprom_compat is the template from which all future
+compat attributes are created.
+Changing it means to change all subsquent compat attributes, too.
+
+Instead only use the "fram" name for the currently registered attribute.
+
+Fixes: fd307a4ad332 ("nvmem: prepare basics for FRAM support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240628113704.13742-4-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -397,10 +397,9 @@ static int nvmem_sysfs_setup_compat(stru
+ 	if (!config->base_dev)
+ 		return -EINVAL;
+ 
+-	if (config->type == NVMEM_TYPE_FRAM)
+-		bin_attr_nvmem_eeprom_compat.attr.name = "fram";
+-
+ 	nvmem->eeprom = bin_attr_nvmem_eeprom_compat;
++	if (config->type == NVMEM_TYPE_FRAM)
++		nvmem->eeprom.attr.name = "fram";
+ 	nvmem->eeprom.attr.mode = nvmem_bin_attr_get_umode(nvmem);
+ 	nvmem->eeprom.size = nvmem->size;
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
