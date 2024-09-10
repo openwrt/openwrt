@@ -1,0 +1,25 @@
+From 25be4eaa7c01153ae123d76f138a4e0c7c60f272 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@linaro.org>
+Date: Thu, 29 Aug 2024 22:22:45 +0300
+Subject: [PATCH] igc: Unlock on error in igc_io_resume()
+
+Call rtnl_unlock() on this error path, before returning.
+
+Fixes: bc23aa949aeb ("igc: Add pcie error handler support")
+Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+Reviewed-by: Gerhard Engleder <gerhard@engleder-embedded.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/intel/igc/igc_main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/ethernet/intel/igc/igc_main.c
++++ b/drivers/net/ethernet/intel/igc/igc_main.c
+@@ -7288,6 +7288,7 @@ static void igc_io_resume(struct pci_dev
+ 	rtnl_lock();
+ 	if (netif_running(netdev)) {
+ 		if (igc_open(netdev)) {
++			rtnl_unlock();
+ 			netdev_err(netdev, "igc_open failed after reset\n");
+ 			return;
+ 		}
