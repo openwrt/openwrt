@@ -1,0 +1,35 @@
+From 76c345edef754b16cab81ad9452cc49c09e67066 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wenst@chromium.org>
+Date: Sat, 24 Feb 2024 11:45:14 +0000
+Subject: [PATCH] nvmem: mtk-efuse: Drop NVMEM device name
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The MT8183 has not one but two efuse devices. The static name and ID
+causes the second efuse device to fail to probe, due to duplicate sysfs
+entries.
+
+With the rework of the mtk-socinfo driver, lookup by name is no longer
+necessary. The custom name can simply be dropped.
+
+Signed-off-by: Chen-Yu Tsai <wenst@chromium.org>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Tested-by: "Nícolas F. R. A. Prado" <nfraprado@collabora.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240224114516.86365-10-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/mtk-efuse.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/nvmem/mtk-efuse.c
++++ b/drivers/nvmem/mtk-efuse.c
+@@ -86,7 +86,6 @@ static int mtk_efuse_probe(struct platfo
+ 	econfig.size = resource_size(res);
+ 	econfig.priv = priv;
+ 	econfig.dev = dev;
+-	econfig.name = "mtk-efuse";
+ 	if (pdata->uses_post_processing)
+ 		econfig.fixup_dt_cell_info = &mtk_efuse_fixup_dt_cell_info;
+ 	nvmem = devm_nvmem_register(dev, &econfig);
