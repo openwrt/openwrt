@@ -1164,6 +1164,24 @@ define Device/elecom_wmc-s1267gs2
 endef
 TARGET_DEVICES += elecom_wmc-s1267gs2
 
+define Device/elecom_wmc-x1800gst
+  $(Device/nand)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WMC-X1800GST
+  KERNEL_SIZE := 15360k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size $$$$(KERNEL_SIZE) | elecom-wrc-gs-factory WMC-2LX 0.00 -N | \
+	append-string MT7621_ELECOM_WMC-2LX
+endif
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+endef
+TARGET_DEVICES += elecom_wmc-x1800gst
+
 define Device/elecom_wrc-1167ghbk2-s
   $(Device/dsa-migration)
   IMAGE_SIZE := 15488k
