@@ -582,7 +582,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  endmenu
 --- a/mm/huge_memory.c
 +++ b/mm/huge_memory.c
-@@ -2366,7 +2366,8 @@ static void __split_huge_page_tail(struc
+@@ -2362,7 +2362,8 @@ static void __split_huge_page_tail(struc
  #ifdef CONFIG_64BIT
  			 (1L << PG_arch_2) |
  #endif
@@ -594,7 +594,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	VM_BUG_ON_PAGE(tail > 2 && page_tail->mapping != TAIL_MAPPING,
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -5179,6 +5179,7 @@ static void __mem_cgroup_free(struct mem
+@@ -5182,6 +5182,7 @@ static void __mem_cgroup_free(struct mem
  
  static void mem_cgroup_free(struct mem_cgroup *memcg)
  {
@@ -602,7 +602,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	memcg_wb_domain_exit(memcg);
  	__mem_cgroup_free(memcg);
  }
-@@ -5242,6 +5243,7 @@ static struct mem_cgroup *mem_cgroup_all
+@@ -5245,6 +5246,7 @@ static struct mem_cgroup *mem_cgroup_all
  	memcg->deferred_split_queue.split_queue_len = 0;
  #endif
  	idr_replace(&mem_cgroup_idr, memcg, memcg->id.id);
@@ -612,7 +612,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	mem_cgroup_id_remove(memcg);
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -4805,6 +4805,27 @@ static inline void mm_account_fault(stru
+@@ -4804,6 +4804,27 @@ static inline void mm_account_fault(stru
  		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
  }
  
@@ -640,7 +640,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  /*
   * By the time we get here, we already hold the mm semaphore
   *
-@@ -4836,11 +4857,15 @@ vm_fault_t handle_mm_fault(struct vm_are
+@@ -4835,11 +4856,15 @@ vm_fault_t handle_mm_fault(struct vm_are
  	if (flags & FAULT_FLAG_USER)
  		mem_cgroup_enter_user_fault();
  

@@ -263,7 +263,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__ETHTOOL_A_LINKMODES_CNT,
 --- a/net/ethtool/ioctl.c
 +++ b/net/ethtool/ioctl.c
-@@ -559,6 +559,7 @@ static int ethtool_get_link_ksettings(st
+@@ -562,6 +562,7 @@ static int ethtool_get_link_ksettings(st
  		= __ETHTOOL_LINK_MODE_MASK_NU32;
  	link_ksettings.base.master_slave_cfg = MASTER_SLAVE_CFG_UNSUPPORTED;
  	link_ksettings.base.master_slave_state = MASTER_SLAVE_STATE_UNSUPPORTED;
