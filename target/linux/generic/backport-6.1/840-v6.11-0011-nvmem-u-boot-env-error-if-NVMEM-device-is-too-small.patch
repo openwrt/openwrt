@@ -1,0 +1,40 @@
+From 8679e8b4a1ebdb40c4429e49368d29353e07b601 Mon Sep 17 00:00:00 2001
+From: John Thomson <git@johnthomson.fastmail.com.au>
+Date: Mon, 2 Sep 2024 15:25:08 +0100
+Subject: [PATCH] nvmem: u-boot-env: error if NVMEM device is too small
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Verify data size before trying to parse it to avoid reading out of
+buffer. This could happen in case of problems at MTD level or invalid DT
+bindings.
+
+Signed-off-by: John Thomson <git@johnthomson.fastmail.com.au>
+Cc: stable <stable@kernel.org>
+Fixes: d5542923f200 ("nvmem: add driver handling U-Boot environment variables")
+[rmilecki: simplify commit description & rebase]
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240902142510.71096-2-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/u-boot-env.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/nvmem/u-boot-env.c
++++ b/drivers/nvmem/u-boot-env.c
+@@ -176,6 +176,13 @@ static int u_boot_env_parse(struct u_boo
+ 		data_offset = offsetof(struct u_boot_env_image_broadcom, data);
+ 		break;
+ 	}
++
++	if (dev_size < data_offset) {
++		dev_err(dev, "Device too small for u-boot-env\n");
++		err = -EIO;
++		goto err_kfree;
++	}
++
+ 	crc32_addr = (__le32 *)(buf + crc32_offset);
+ 	crc32 = le32_to_cpu(*crc32_addr);
+ 	crc32_data_len = dev_size - crc32_data_offset;
