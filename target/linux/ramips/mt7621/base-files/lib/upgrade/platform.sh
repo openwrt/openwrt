@@ -91,6 +91,7 @@ platform_do_upgrade() {
 	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
 	elecom,wmc-x1800gst|\
+	elecom,wsc-x1800gs|\
 	etisalat,s3|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
