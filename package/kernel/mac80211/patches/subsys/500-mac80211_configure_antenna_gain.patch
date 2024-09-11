@@ -56,7 +56,7 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3078,6 +3078,19 @@ static int ieee80211_get_tx_power(struct
+@@ -3079,6 +3079,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -76,7 +76,7 @@
  static void ieee80211_rfkill_poll(struct wiphy *wiphy)
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
-@@ -5008,6 +5021,7 @@ const struct cfg80211_ops mac80211_confi
+@@ -5009,6 +5022,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -128,7 +128,7 @@
  	local->hw.max_mtu = IEEE80211_MAX_DATA_LEN;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -820,6 +820,7 @@ static const struct nla_policy nl80211_p
+@@ -830,6 +830,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_MLO_SUPPORT] = { .type = NLA_FLAG },
  	[NL80211_ATTR_MAX_NUM_AKM_SUITES] = { .type = NLA_REJECT },
  	[NL80211_ATTR_PUNCT_BITMAP] = NLA_POLICY_RANGE(NLA_U8, 0, 0xffff),
@@ -136,7 +136,7 @@
  };
  
  /* policy for the key attributes */
-@@ -3547,6 +3548,22 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -3584,6 +3585,22 @@ static int nl80211_set_wiphy(struct sk_b
  		if (result)
  			goto out;
  	}

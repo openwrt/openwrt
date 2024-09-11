@@ -91,7 +91,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * ieee80211_operating_class_to_band - convert operating class to band
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3611,7 +3611,8 @@ static int __ieee80211_csa_finalize(stru
+@@ -3612,7 +3612,8 @@ static int __ieee80211_csa_finalize(stru
  	if (err)
  		return err;
  
@@ -101,7 +101,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return 0;
  }
-@@ -3883,7 +3884,7 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3884,7 +3885,7 @@ __ieee80211_channel_switch(struct wiphy
  
  	cfg80211_ch_switch_started_notify(sdata->dev,
  					  &sdata->deflink.csa_chandef, 0,
@@ -132,7 +132,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		/* use driver's channel switch callback */
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -19054,7 +19054,7 @@ static void nl80211_ch_switch_notify(str
+@@ -19085,7 +19085,7 @@ static void nl80211_ch_switch_notify(str
  				     struct cfg80211_chan_def *chandef,
  				     gfp_t gfp,
  				     enum nl80211_commands notif,
@@ -141,7 +141,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct wireless_dev *wdev = netdev->ieee80211_ptr;
  	struct sk_buff *msg;
-@@ -19088,6 +19088,9 @@ static void nl80211_ch_switch_notify(str
+@@ -19119,6 +19119,9 @@ static void nl80211_ch_switch_notify(str
  			goto nla_put_failure;
  	}
  
@@ -151,7 +151,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	genlmsg_end(msg, hdr);
  
  	genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy), msg, 0,
-@@ -19100,7 +19103,7 @@ static void nl80211_ch_switch_notify(str
+@@ -19131,7 +19134,7 @@ static void nl80211_ch_switch_notify(str
  
  void cfg80211_ch_switch_notify(struct net_device *dev,
  			       struct cfg80211_chan_def *chandef,
@@ -160,7 +160,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	struct wiphy *wiphy = wdev->wiphy;
-@@ -19109,7 +19112,7 @@ void cfg80211_ch_switch_notify(struct ne
+@@ -19140,7 +19143,7 @@ void cfg80211_ch_switch_notify(struct ne
  	ASSERT_WDEV_LOCK(wdev);
  	WARN_INVALID_LINK_ID(wdev, link_id);
  
@@ -169,7 +169,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	switch (wdev->iftype) {
  	case NL80211_IFTYPE_STATION:
-@@ -19137,14 +19140,15 @@ void cfg80211_ch_switch_notify(struct ne
+@@ -19168,14 +19171,15 @@ void cfg80211_ch_switch_notify(struct ne
  	cfg80211_sched_dfs_chan_update(rdev);
  
  	nl80211_ch_switch_notify(rdev, dev, link_id, chandef, GFP_KERNEL,
@@ -187,7 +187,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	struct wiphy *wiphy = wdev->wiphy;
-@@ -19153,11 +19157,13 @@ void cfg80211_ch_switch_started_notify(s
+@@ -19184,11 +19188,13 @@ void cfg80211_ch_switch_started_notify(s
  	ASSERT_WDEV_LOCK(wdev);
  	WARN_INVALID_LINK_ID(wdev, link_id);
  

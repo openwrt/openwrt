@@ -76,7 +76,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -277,6 +277,8 @@ struct cfg80211_event {
+@@ -283,6 +283,8 @@ struct cfg80211_event {
  		} ij;
  		struct {
  			u8 bssid[ETH_ALEN];
@@ -85,7 +85,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} pa;
  	};
  };
-@@ -421,7 +423,8 @@ int cfg80211_disconnect(struct cfg80211_
+@@ -427,7 +429,8 @@ int cfg80211_disconnect(struct cfg80211_
  			bool wextev);
  void __cfg80211_roamed(struct wireless_dev *wdev,
  		       struct cfg80211_roam_info *info);
@@ -97,7 +97,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void cfg80211_autodisconnect_wk(struct work_struct *work);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -17993,7 +17993,8 @@ void nl80211_send_roamed(struct cfg80211
+@@ -18024,7 +18024,8 @@ void nl80211_send_roamed(struct cfg80211
  }
  
  void nl80211_send_port_authorized(struct cfg80211_registered_device *rdev,
@@ -107,7 +107,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct sk_buff *msg;
  	void *hdr;
-@@ -18013,6 +18014,11 @@ void nl80211_send_port_authorized(struct
+@@ -18044,6 +18045,11 @@ void nl80211_send_port_authorized(struct
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, bssid))
  		goto nla_put_failure;
  
@@ -176,7 +176,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	 * Use the wdev event list so that if there are pending
 --- a/net/wireless/util.c
 +++ b/net/wireless/util.c
-@@ -1059,7 +1059,9 @@ void cfg80211_process_wdev_events(struct
+@@ -1065,7 +1065,9 @@ void cfg80211_process_wdev_events(struct
  			__cfg80211_leave(wiphy_to_rdev(wdev->wiphy), wdev);
  			break;
  		case EVENT_PORT_AUTHORIZED:

@@ -94,7 +94,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  
  #include <linux/module.h>
-@@ -2389,6 +2389,13 @@ static void sta_stats_decode_rate(struct
+@@ -2403,6 +2403,13 @@ static void sta_stats_decode_rate(struct
  		rinfo->he_ru_alloc = STA_STATS_GET(HE_RU, rate);
  		rinfo->he_dcm = STA_STATS_GET(HE_DCM, rate);
  		break;
@@ -110,7 +110,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -930,6 +930,7 @@ enum sta_stats_type {
+@@ -936,6 +936,7 @@ enum sta_stats_type {
  	STA_STATS_RATE_TYPE_VHT,
  	STA_STATS_RATE_TYPE_HE,
  	STA_STATS_RATE_TYPE_S1G,
@@ -118,7 +118,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  #define STA_STATS_FIELD_HT_MCS		GENMASK( 7,  0)
-@@ -939,12 +940,16 @@ enum sta_stats_type {
+@@ -945,12 +946,16 @@ enum sta_stats_type {
  #define STA_STATS_FIELD_VHT_NSS		GENMASK( 7,  4)
  #define STA_STATS_FIELD_HE_MCS		GENMASK( 3,  0)
  #define STA_STATS_FIELD_HE_NSS		GENMASK( 7,  4)
@@ -141,7 +141,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  #define STA_STATS_FIELD(_n, _v)		FIELD_PREP(STA_STATS_FIELD_ ## _n, _v)
  #define STA_STATS_GET(_n, _v)		FIELD_GET(STA_STATS_FIELD_ ## _n, _v)
-@@ -983,6 +988,13 @@ static inline u32 sta_stats_encode_rate(
+@@ -989,6 +994,13 @@ static inline u32 sta_stats_encode_rate(
  		r |= STA_STATS_FIELD(HE_RU, s->he_ru);
  		r |= STA_STATS_FIELD(HE_DCM, s->he_dcm);
  		break;

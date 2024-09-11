@@ -63,7 +63,7 @@ Link: https://lore.kernel.org/r/20230405221648.17950-5-quic_alokad@quicinc.com
  	if (ret) {
  		ath11k_warn(ar->ab, "failed to set vdev %d up: %d\n",
  			    arvif->vdev_id, ret);
-@@ -7130,7 +7138,8 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7137,7 +7145,8 @@ ath11k_mac_update_vif_chan(struct ath11k
  			   int n_vifs)
  {
  	struct ath11k_base *ab = ar->ab;
@@ -73,7 +73,7 @@ Link: https://lore.kernel.org/r/20230405221648.17950-5-quic_alokad@quicinc.com
  	int ret;
  	int i;
  	bool monitor_vif = false;
-@@ -7184,8 +7193,15 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7191,8 +7200,15 @@ ath11k_mac_update_vif_chan(struct ath11k
  			ath11k_warn(ab, "failed to update bcn tmpl during csa: %d\n",
  				    ret);
  
@@ -90,7 +90,7 @@ Link: https://lore.kernel.org/r/20230405221648.17950-5-quic_alokad@quicinc.com
  		if (ret) {
  			ath11k_warn(ab, "failed to bring vdev up %d: %d\n",
  				    arvif->vdev_id, ret);
-@@ -7303,7 +7319,8 @@ static int ath11k_start_vdev_delay(struc
+@@ -7310,7 +7326,8 @@ static int ath11k_start_vdev_delay(struc
  	}
  
  	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {

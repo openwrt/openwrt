@@ -36,7 +36,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.remove_interface	= ar5523_remove_interface,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -8592,6 +8592,7 @@ err_fallback:
+@@ -8599,6 +8599,7 @@ err_fallback:
  
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,

@@ -88,7 +88,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ieee80211_fill_mesh_addresses(&hdr, &hdr.frame_control,
  				      eth->h_dest, eth->h_source);
  	hdrlen = ieee80211_hdrlen(hdr.frame_control);
-@@ -2868,6 +2931,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2871,6 +2934,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	info->control.flags |= IEEE80211_TX_INTCFL_NEED_TXPROCESSING;
  	info->control.vif = &sdata->vif;
  	info->control.jiffies = jiffies;
@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (multicast) {
  		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_mcast);
  		memcpy(fwd_hdr->addr2, sdata->vif.addr, ETH_ALEN);
-@@ -2889,7 +2953,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2892,7 +2956,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	}
  
  	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_frames);

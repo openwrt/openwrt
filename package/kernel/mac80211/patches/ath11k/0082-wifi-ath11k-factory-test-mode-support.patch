@@ -226,7 +226,7 @@ Link: https://lore.kernel.org/r/20230517135934.16408-4-quic_rajkbhag@quicinc.com
  
  		if (pdev && pdev->pdev_id == pdev_id)
  			return (pdev->ar ? pdev->ar : NULL);
-@@ -6268,6 +6271,11 @@ static int ath11k_mac_op_start(struct ie
+@@ -6275,6 +6278,11 @@ static int ath11k_mac_op_start(struct ie
  	struct ath11k_pdev *pdev = ar->pdev;
  	int ret;
  
@@ -238,7 +238,7 @@ Link: https://lore.kernel.org/r/20230517135934.16408-4-quic_rajkbhag@quicinc.com
  	ath11k_mac_drain_tx(ar);
  	mutex_lock(&ar->conf_mutex);
  
-@@ -6282,6 +6290,7 @@ static int ath11k_mac_op_start(struct ie
+@@ -6289,6 +6297,7 @@ static int ath11k_mac_op_start(struct ie
  	case ATH11K_STATE_RESTARTED:
  	case ATH11K_STATE_WEDGED:
  	case ATH11K_STATE_ON:

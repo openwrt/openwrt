@@ -698,7 +698,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2797,6 +2797,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2778,6 +2778,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
  	if (mesh_hdr->flags & MESH_FLAGS_AE) {
  		struct mesh_path *mppath;
  		char *proxied_addr;
@@ -706,7 +706,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (multicast)
  			proxied_addr = mesh_hdr->eaddr1;
-@@ -2812,11 +2813,18 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2793,11 +2794,18 @@ ieee80211_rx_mesh_data(struct ieee80211_
  			mpp_path_add(sdata, proxied_addr, eth->h_source);
  		} else {
  			spin_lock_bh(&mppath->state_lock);
