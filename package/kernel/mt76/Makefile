@@ -9,8 +9,8 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/rmandrad/mt76
 PKG_SOURCE_PROTO:=git
 
-PKG_SOURCE_DATE:=2024-09-05
-PKG_SOURCE_VERSION:=97fdd6d61a55398d891f6ffd87344acc3f92df97
+PKG_SOURCE_DATE:=2024-09-11
+PKG_SOURCE_VERSION:=c12640ee09baf17f8a286c92e9e600426073e30d
 PKG_MIRROR_HASH:=decd9901d7a82d570faa52cc02ea8fa47f252e2e320f04170faa5e19b5bfb21f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -634,11 +634,7 @@ endef
 define KernelPackage/mt7996-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7996
 	cp \
-		$(PKG_BUILD_DIR)/firmware/mt7996/mt7996_dsp.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7996/mt7996_eeprom.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7996/mt7996_rom_patch.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7996/mt7996_wa.bin \
-		$(PKG_BUILD_DIR)/firmware/mt7996/mt7996_wm.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7996/* \
 		$(1)/lib/firmware/mediatek/mt7996
 endef
 

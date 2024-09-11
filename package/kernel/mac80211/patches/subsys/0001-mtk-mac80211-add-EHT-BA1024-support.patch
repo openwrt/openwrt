@@ -1,0 +1,114 @@
+From ce225a315119c4a961341653729745e57b1b183b Mon Sep 17 00:00:00 2001
+From: Howard Hsu <howard-yh.hsu@mediatek.com>
+Date: Tue, 20 Aug 2024 11:37:46 +0800
+Subject: [PATCH] mtk: mac80211: add EHT BA1024 support
+---
+ include/linux/ieee80211.h |  2 ++
+ net/mac80211/agg-tx.c     | 47 +++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 47 insertions(+), 2 deletions(-)
+diff --git a/include/linux/ieee80211.h b/include/linux/ieee80211.h
+index 4fd9735..8ca8db9 100644
+--- a/include/linux/ieee80211.h
++++ b/include/linux/ieee80211.h
+@@ -1393,6 +1393,8 @@ struct ieee80211_mgmt {
+ 					__le16 status;
+ 					__le16 capab;
+ 					__le16 timeout;
++					/* followed by BA Extension */
++					u8 variable[];
+ 				} __packed addba_resp;
+ 				struct{
+ 					u8 action_code;
+diff --git a/net/mac80211/agg-tx.c b/net/mac80211/agg-tx.c
+index 21d55dc..fefbf17 100644
+--- a/net/mac80211/agg-tx.c
++++ b/net/mac80211/agg-tx.c
+@@ -66,9 +66,16 @@ static void ieee80211_send_addba_request(struct ieee80211_sub_if_data *sdata,
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct sk_buff *skb;
+ 	struct ieee80211_mgmt *mgmt;
++	struct ieee80211_addba_ext_ie *addba_ext;
++	u8 *pos;
+ 	u16 capab;
+ 
+-	skb = dev_alloc_skb(sizeof(*mgmt) + local->hw.extra_tx_headroom);
++	if (agg_size >= 1024)
++		skb = dev_alloc_skb(sizeof(*mgmt) +
++				    2 + sizeof(struct ieee80211_addba_ext_ie) +
++				    local->hw.extra_tx_headroom);
++	else
++		skb = dev_alloc_skb(sizeof(*mgmt) + local->hw.extra_tx_headroom);
+ 
+ 	if (!skb)
+ 		return;
+@@ -106,6 +113,15 @@ static void ieee80211_send_addba_request(struct ieee80211_sub_if_data *sdata,
+ 	mgmt->u.action.u.addba_req.start_seq_num =
+ 					cpu_to_le16(start_seq_num << 4);
+ 
++	if (agg_size >= 1024) {
++		pos = skb_put_zero(skb, 2 + sizeof(struct ieee80211_addba_ext_ie));
++		*pos++ = WLAN_EID_ADDBA_EXT;
++		*pos++ = sizeof(struct ieee80211_addba_ext_ie);
++		addba_ext = (struct ieee80211_addba_ext_ie *)pos;
++		addba_ext->data = u8_encode_bits(agg_size >> IEEE80211_ADDBA_EXT_BUF_SIZE_SHIFT,
++						 IEEE80211_ADDBA_EXT_BUF_SIZE_MASK);
++	}
++
+ 	ieee80211_tx_skb_tid(sdata, skb, tid, -1);
+ }
+ 
+@@ -473,8 +489,11 @@ static void ieee80211_send_addba_with_timeout(struct sta_info *sta,
+ 	sta->ampdu_mlme.addba_req_num[tid]++;
+ 	spin_unlock_bh(&sta->lock);
+ 
+-	if (sta->sta.deflink.he_cap.has_he) {
++	if (sta->sta.deflink.eht_cap.has_eht) {
+ 		buf_size = local->hw.max_tx_aggregation_subframes;
++	} else if (sta->sta.deflink.he_cap.has_he) {
++		buf_size = min_t(u16, local->hw.max_tx_aggregation_subframes,
++				 IEEE80211_MAX_AMPDU_BUF_HE);
+ 	} else {
+ 		/*
+ 		 * We really should use what the driver told us it will
+@@ -972,8 +991,10 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
+ {
+ 	struct tid_ampdu_tx *tid_tx;
+ 	struct ieee80211_txq *txq;
++	struct ieee802_11_elems *elems;
+ 	u16 capab, tid, buf_size;
+ 	bool amsdu;
++	int ext_ie_len;
+ 
+ 	lockdep_assert_wiphy(sta->local->hw.wiphy);
+ 
+@@ -981,6 +1002,28 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
+ 	amsdu = capab & IEEE80211_ADDBA_PARAM_AMSDU_MASK;
+ 	tid = u16_get_bits(capab, IEEE80211_ADDBA_PARAM_TID_MASK);
+ 	buf_size = u16_get_bits(capab, IEEE80211_ADDBA_PARAM_BUF_SIZE_MASK);
++
++	ext_ie_len = len - offsetof(struct ieee80211_mgmt,
++				    u.action.u.addba_resp.variable);
++
++	if (ext_ie_len < 0)
++		goto next;
++
++	elems = ieee802_11_parse_elems(mgmt->u.action.u.addba_resp.variable,
++				       ext_ie_len, true, NULL);
++
++	if (elems && !elems->parse_error) {
++		if (sta->sta.deflink.eht_cap.has_eht && elems->addba_ext_ie) {
++			u8 buf_size_1k = u8_get_bits(elems->addba_ext_ie->data,
++						     IEEE80211_ADDBA_EXT_BUF_SIZE_MASK);
++			buf_size |= buf_size_1k << IEEE80211_ADDBA_EXT_BUF_SIZE_SHIFT;
++		}
++	}
++
++	if (elems)
++		kfree(elems);
++
++next:
+ 	buf_size = min(buf_size, local->hw.max_tx_aggregation_subframes);
+ 
+ 	txq = sta->sta.txq[tid];
+-- 
+2.45.2

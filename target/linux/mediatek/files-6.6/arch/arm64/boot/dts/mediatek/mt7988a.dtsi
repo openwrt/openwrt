@@ -1512,7 +1512,11 @@
 		};
 
 		crypto: crypto@15600000 {
-			compatible = "inside-secure,safexcel-eip197b";
+			compatible = "security-ip-197-srv",
+				"inside-secure,safexcel-eip197b",
+				"inside-secure,safexcel-eip197d",
+				"inside-secure,safexcel-eip197",
+				"inside-secure,safexcel-eip97";
 			reg = <0 0x15600000 0 0x180000>;
 			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
