@@ -22,7 +22,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
   *                 If the verification couldn't be completed, the flag value is
 --- a/library/x509_crt.c
 +++ b/library/x509_crt.c
-@@ -45,6 +45,10 @@
+@@ -46,6 +46,10 @@
  
  #if defined(MBEDTLS_HAVE_TIME)
  #if defined(_WIN32) && !defined(EFIX64) && !defined(EFI32)
@@ -33,7 +33,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  #include <windows.h>
  #else
  #include <time.h>
-@@ -2990,6 +2994,61 @@ find_parent:
+@@ -2991,6 +2995,61 @@ find_parent:
      }
  }
  
@@ -95,7 +95,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  /*
   * Check for CN match
   */
-@@ -3010,24 +3069,51 @@ static int x509_crt_check_cn(const mbedt
+@@ -3011,24 +3070,51 @@ static int x509_crt_check_cn(const mbedt
      return -1;
  }
  
@@ -158,7 +158,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  }
  
  /*
-@@ -3038,31 +3124,23 @@ static void x509_crt_verify_name(const m
+@@ -3039,31 +3125,23 @@ static void x509_crt_verify_name(const m
                                   uint32_t *flags)
  {
      const mbedtls_x509_name *name;
