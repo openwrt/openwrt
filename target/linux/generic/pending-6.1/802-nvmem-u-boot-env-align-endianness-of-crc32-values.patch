@@ -1,7 +1,7 @@
 From 0e71cac033bb7689c4dfa2e6814191337ef770f5 Mon Sep 17 00:00:00 2001
 From: INAGAKI Hiroshi <musashino.open@gmail.com>
 Date: Thu, 13 Oct 2022 00:51:33 +0900
-Subject: [PATCH] nvmem: u-boot-env: align endianness of crc32 values
+Subject: [PATCH] nvmem: layouts: u-boot-env: align endianness of crc32 values
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -31,12 +31,10 @@ Acked-by: Rafał Miłecki <rafal@milecki.pl>
 Tested-by: Christian Lamparter <chunkeey@gmail.com>
 Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 ---
- drivers/nvmem/u-boot-env.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
---- a/drivers/nvmem/u-boot-env.c
-+++ b/drivers/nvmem/u-boot-env.c
-@@ -188,7 +188,7 @@ static int u_boot_env_parse(struct u_boo
+--- a/drivers/nvmem/layouts/u-boot-env.c
++++ b/drivers/nvmem/layouts/u-boot-env.c
+@@ -148,7 +148,7 @@ int u_boot_env_parse(struct device *dev,
  	crc32_data_len = dev_size - crc32_data_offset;
  	data_len = dev_size - data_offset;
  
