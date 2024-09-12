@@ -98,7 +98,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		kfree(ap);
  		host->ports[i] = NULL;
  	}
-@@ -5878,7 +5903,23 @@ int ata_host_register(struct ata_host *h
+@@ -5880,7 +5905,23 @@ int ata_host_register(struct ata_host *h
  		host->ports[i]->print_id = atomic_inc_return(&ata_print_id);
  		host->ports[i]->local_port_no = i + 1;
  	}
