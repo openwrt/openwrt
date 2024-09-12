@@ -594,7 +594,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	VM_BUG_ON_PAGE(tail > 2 && page_tail->mapping != TAIL_MAPPING,
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -5182,6 +5182,7 @@ static void __mem_cgroup_free(struct mem
+@@ -5199,6 +5199,7 @@ static void __mem_cgroup_free(struct mem
  
  static void mem_cgroup_free(struct mem_cgroup *memcg)
  {
@@ -602,10 +602,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	memcg_wb_domain_exit(memcg);
  	__mem_cgroup_free(memcg);
  }
-@@ -5245,6 +5246,7 @@ static struct mem_cgroup *mem_cgroup_all
- 	memcg->deferred_split_queue.split_queue_len = 0;
- #endif
+@@ -5262,6 +5263,7 @@ static struct mem_cgroup *mem_cgroup_all
+ 	spin_lock(&memcg_idr_lock);
  	idr_replace(&mem_cgroup_idr, memcg, memcg->id.id);
+ 	spin_unlock(&memcg_idr_lock);
 +	lru_gen_init_memcg(memcg);
  	return memcg;
  fail:

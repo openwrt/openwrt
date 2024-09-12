@@ -328,7 +328,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	if (order > 0)
  		return 0;
  
-@@ -5325,6 +5338,7 @@ static int mem_cgroup_css_online(struct
+@@ -5342,6 +5355,7 @@ static int mem_cgroup_css_online(struct
  	if (unlikely(mem_cgroup_is_root(memcg)))
  		queue_delayed_work(system_unbound_wq, &stats_flush_dwork,
  				   2UL*HZ);
@@ -336,7 +336,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return 0;
  }
  
-@@ -5351,6 +5365,7 @@ static void mem_cgroup_css_offline(struc
+@@ -5368,6 +5382,7 @@ static void mem_cgroup_css_offline(struc
  	memcg_offline_kmem(memcg);
  	reparent_shrinker_deferred(memcg);
  	wb_memcg_offline(memcg);
@@ -344,7 +344,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	drain_all_stock(memcg);
  
-@@ -5362,6 +5377,7 @@ static void mem_cgroup_css_released(stru
+@@ -5379,6 +5394,7 @@ static void mem_cgroup_css_released(stru
  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
  
  	invalidate_reclaim_iterators(memcg);
