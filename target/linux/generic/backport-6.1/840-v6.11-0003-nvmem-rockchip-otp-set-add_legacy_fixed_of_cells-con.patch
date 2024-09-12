@@ -1,0 +1,28 @@
+From 2933e79db3c00a8cdc56f6bb050a857fec1875ad Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko.stuebner@cherry.de>
+Date: Fri, 5 Jul 2024 08:48:41 +0100
+Subject: [PATCH] nvmem: rockchip-otp: set add_legacy_fixed_of_cells config
+ option
+
+The Rockchip OTP describes its layout via devicetree subnodes,
+so set the appropriate property.
+
+Fixes: 2cc3b37f5b6d ("nvmem: add explicit config option to read old syntax fixed OF cells")
+Signed-off-by: Heiko Stuebner <heiko.stuebner@cherry.de>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-5-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/rockchip-otp.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/rockchip-otp.c
++++ b/drivers/nvmem/rockchip-otp.c
+@@ -255,6 +255,7 @@ static int rockchip_otp_read(void *conte
+ static struct nvmem_config otp_config = {
+ 	.name = "rockchip-otp",
+ 	.owner = THIS_MODULE,
++	.add_legacy_fixed_of_cells = true,
+ 	.read_only = true,
+ 	.stride = 1,
+ 	.word_size = 1,

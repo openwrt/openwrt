@@ -1,0 +1,122 @@
+From 9d7eb234ac7a56b88aea8a52ed81553a730fe25c Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marex@denx.de>
+Date: Fri, 5 Jul 2024 08:48:52 +0100
+Subject: [PATCH] nvmem: core: Implement force_ro sysfs attribute
+
+Implement "force_ro" sysfs attribute to allow users to set read-write
+devices as read-only and back to read-write from userspace. The choice
+of the name is based on MMC core 'force_ro' attribute.
+
+This solves a situation where an AT24 I2C EEPROM with GPIO based nWP
+signal may have to be occasionally updated. Such I2C EEPROM device is
+usually set as read-only during most of the regular system operation,
+but in case it has to be updated in a controlled manner, it could be
+unlocked using this new "force_ro" sysfs attribute and then re-locked
+again.
+
+The "read-only" DT property and config->read_only configuration is
+respected and is used to set default state of the device, read-only
+or read-write, for devices which do implement .reg_write function.
+For devices which do not implement .reg_write function, the device
+is unconditionally read-only and the "force_ro" attribute is not
+visible.
+
+Signed-off-by: Marek Vasut <marex@denx.de>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-16-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ Documentation/ABI/stable/sysfs-bus-nvmem | 17 ++++++++++
+ drivers/nvmem/core.c                     | 43 ++++++++++++++++++++++++
+ 2 files changed, 60 insertions(+)
+
+--- a/Documentation/ABI/stable/sysfs-bus-nvmem
++++ b/Documentation/ABI/stable/sysfs-bus-nvmem
+@@ -1,3 +1,20 @@
++What:		/sys/bus/nvmem/devices/.../force_ro
++Date:		June 2024
++KernelVersion:	6.11
++Contact:	Marek Vasut <marex@denx.de>
++Description:
++		This read/write attribute allows users to set read-write
++		devices as read-only and back to read-write from userspace.
++		This can be used to unlock and relock write-protection of
++		devices which are generally locked, except during sporadic
++		programming operation.
++		Read returns '0' or '1' for read-write or read-only modes
++		respectively.
++		Write parses one of 'YyTt1NnFf0', or [oO][NnFf] for "on"
++		and "off", i.e. what kstrbool() supports.
++		Note: This file is only present if CONFIG_NVMEM_SYSFS
++		is enabled.
++
+ What:		/sys/bus/nvmem/devices/.../nvmem
+ Date:		July 2015
+ KernelVersion:  4.2
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -184,7 +184,30 @@ static ssize_t type_show(struct device *
+ 
+ static DEVICE_ATTR_RO(type);
+ 
++static ssize_t force_ro_show(struct device *dev, struct device_attribute *attr,
++			     char *buf)
++{
++	struct nvmem_device *nvmem = to_nvmem_device(dev);
++
++	return sysfs_emit(buf, "%d\n", nvmem->read_only);
++}
++
++static ssize_t force_ro_store(struct device *dev, struct device_attribute *attr,
++			      const char *buf, size_t count)
++{
++	struct nvmem_device *nvmem = to_nvmem_device(dev);
++	int ret = kstrtobool(buf, &nvmem->read_only);
++
++	if (ret < 0)
++		return ret;
++
++	return count;
++}
++
++static DEVICE_ATTR_RW(force_ro);
++
+ static struct attribute *nvmem_attrs[] = {
++	&dev_attr_force_ro.attr,
+ 	&dev_attr_type.attr,
+ 	NULL,
+ };
+@@ -285,6 +308,25 @@ static umode_t nvmem_bin_attr_is_visible
+ 	return nvmem_bin_attr_get_umode(nvmem);
+ }
+ 
++static umode_t nvmem_attr_is_visible(struct kobject *kobj,
++				     struct attribute *attr, int i)
++{
++	struct device *dev = kobj_to_dev(kobj);
++	struct nvmem_device *nvmem = to_nvmem_device(dev);
++
++	/*
++	 * If the device has no .reg_write operation, do not allow
++	 * configuration as read-write.
++	 * If the device is set as read-only by configuration, it
++	 * can be forced into read-write mode using the 'force_ro'
++	 * attribute.
++	 */
++	if (attr == &dev_attr_force_ro.attr && !nvmem->reg_write)
++		return 0;	/* Attribute not visible */
++
++	return attr->mode;
++}
++
+ static struct nvmem_cell *nvmem_create_cell(struct nvmem_cell_entry *entry,
+ 					    const char *id, int index);
+ 
+@@ -341,6 +383,7 @@ static const struct attribute_group nvme
+ 	.bin_attrs	= nvmem_bin_attributes,
+ 	.attrs		= nvmem_attrs,
+ 	.is_bin_visible = nvmem_bin_attr_is_visible,
++	.is_visible	= nvmem_attr_is_visible,
+ };
+ 
+ static const struct attribute_group *nvmem_dev_groups[] = {

@@ -127,11 +127,7 @@ define Build/dwl8610ap-image
 	mv $@.new $@
 endef
 
-ifneq ($(KERNEL),5.15)
-ifneq ($(KERNEL),6.1)
 DTS_DIR := $(DTS_DIR)/broadcom
-endif
-endif
 
 DEVICE_VARS += ASUS_PRODUCTID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR

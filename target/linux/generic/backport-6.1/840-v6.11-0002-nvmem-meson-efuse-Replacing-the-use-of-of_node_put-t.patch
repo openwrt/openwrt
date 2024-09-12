@@ -1,0 +1,48 @@
+From 5fecb932607d83d37a703c731268e9d9051457f5 Mon Sep 17 00:00:00 2001
+From: MarileneGarcia <marilene.agarcia@gmail.com>
+Date: Fri, 5 Jul 2024 08:48:40 +0100
+Subject: [PATCH] nvmem: meson-efuse: Replacing the use of of_node_put to
+ __free
+
+Use __free for device_node values, and thus drop calls to
+of_node_put.
+
+The goal is to reduce memory management issues by using this
+scope-based of_node_put() cleanup to simplify function exit
+handling. When using __free a resource is allocated within a
+block, it is automatically freed at the end of the block.
+
+Suggested-by: Julia Lawall <julia.lawall@inria.fr>
+Signed-off-by: MarileneGarcia <marilene.agarcia@gmail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-4-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/meson-efuse.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/meson-efuse.c
++++ b/drivers/nvmem/meson-efuse.c
+@@ -48,20 +48,19 @@ static int meson_efuse_probe(struct plat
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct meson_sm_firmware *fw;
+-	struct device_node *sm_np;
+ 	struct nvmem_device *nvmem;
+ 	struct nvmem_config *econfig;
+ 	struct clk *clk;
+ 	unsigned int size;
++	struct device_node *sm_np __free(device_node) =
++			of_parse_phandle(pdev->dev.of_node, "secure-monitor", 0);
+ 
+-	sm_np = of_parse_phandle(pdev->dev.of_node, "secure-monitor", 0);
+ 	if (!sm_np) {
+ 		dev_err(&pdev->dev, "no secure-monitor node\n");
+ 		return -ENODEV;
+ 	}
+ 
+ 	fw = meson_sm_get(sm_np);
+-	of_node_put(sm_np);
+ 	if (!fw)
+ 		return -EPROBE_DEFER;
+ 

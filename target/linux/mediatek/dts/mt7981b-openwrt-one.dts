@@ -8,8 +8,6 @@
 	compatible = "openwrt,one", "mediatek,mt7981";
 
 	aliases {
-		ethernet0 = &gmac0;
-		ethernet1 = &gmac1;
 		serial0 = &uart0;
 		led-boot = &led_status_white;
 		led-failsafe = &led_status_red;
@@ -140,7 +138,7 @@
 		phy-handle = <&phy15>;
 		phy-mode = "2500base-x";
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cells = <&macaddr_factory_24>;
 	};
 
 	gmac1: mac@1 {
@@ -149,7 +147,7 @@
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_a>;
+		nvmem-cells = <&macaddr_factory_2a>;
 	};
 };
 
@@ -331,7 +329,7 @@
 
 			partition@580000 {
 				label = "ubi";
-				reg = <0x100000 0x7F00000>;
+				reg = <0x100000 0xFF00000>;
 				compatible = "linux,ubi";
 
 				volumes {
@@ -388,15 +386,19 @@
 					};
 
 					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
 						compatible = "mac-base";
-						reg = <0x24 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
 
-					macaddr_factory_a: macaddr@a {
+					macaddr_factory_24: macaddr@24 {
+						reg = <0x24 0x6>;
 						compatible = "mac-base";
+					};
+
+					macaddr_factory_2a: macaddr@2a {
 						reg = <0x2a 0x6>;
-						#nvmem-cell-cells = <1>;
+						compatible = "mac-base";
 					};
 				};
 			};
@@ -444,6 +446,18 @@
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_4 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &pcie {

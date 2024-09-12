@@ -104,6 +104,9 @@ openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
 	ubootenv_add_uci_sys_config "/dev/mtd3" "0x0" "0x100000" "0x100000"
 	;;
+openwrt,one)
+	ubootenv_add_ubi_default
+	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8734)
 	local envdev=$(find_mmc_part "u-boot-env" "mmcblk0")

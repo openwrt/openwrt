@@ -1,0 +1,59 @@
+From 7a0a6d0a7c805f9380381f4deedffdf87b93f408 Mon Sep 17 00:00:00 2001
+From: Joy Chakraborty <joychakr@google.com>
+Date: Fri, 28 Jun 2024 12:37:02 +0100
+Subject: [PATCH] nvmem: meson-efuse: Fix return value of nvmem callbacks
+
+Read/write callbacks registered with nvmem core expect 0 to be returned
+on success and a negative value to be returned on failure.
+
+meson_efuse_read() and meson_efuse_write() call into
+meson_sm_call_read() and meson_sm_call_write() respectively which return
+the number of bytes read or written on success as per their api
+description.
+
+Fix to return error if meson_sm_call_read()/meson_sm_call_write()
+returns an error else return 0.
+
+Fixes: a29a63bdaf6f ("nvmem: meson-efuse: simplify read callback")
+Cc: stable@vger.kernel.org
+Signed-off-by: Joy Chakraborty <joychakr@google.com>
+Reviewed-by: Dan Carpenter <dan.carpenter@linaro.org>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240628113704.13742-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/meson-efuse.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+--- a/drivers/nvmem/meson-efuse.c
++++ b/drivers/nvmem/meson-efuse.c
+@@ -18,18 +18,24 @@ static int meson_efuse_read(void *contex
+ 			    void *val, size_t bytes)
+ {
+ 	struct meson_sm_firmware *fw = context;
++	int ret;
+ 
+-	return meson_sm_call_read(fw, (u8 *)val, bytes, SM_EFUSE_READ, offset,
+-				  bytes, 0, 0, 0);
++	ret = meson_sm_call_read(fw, (u8 *)val, bytes, SM_EFUSE_READ, offset,
++				 bytes, 0, 0, 0);
++
++	return ret < 0 ? ret : 0;
+ }
+ 
+ static int meson_efuse_write(void *context, unsigned int offset,
+ 			     void *val, size_t bytes)
+ {
+ 	struct meson_sm_firmware *fw = context;
++	int ret;
++
++	ret = meson_sm_call_write(fw, (u8 *)val, bytes, SM_EFUSE_WRITE, offset,
++				  bytes, 0, 0, 0);
+ 
+-	return meson_sm_call_write(fw, (u8 *)val, bytes, SM_EFUSE_WRITE, offset,
+-				   bytes, 0, 0, 0);
++	return ret < 0 ? ret : 0;
+ }
+ 
+ static const struct of_device_id meson_efuse_match[] = {

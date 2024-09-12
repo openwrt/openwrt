@@ -10,7 +10,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs ramdisk pci usb
 CPU_TYPE:=octeonplus
 
-KERNEL_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.6
 
 define Target/Description
 	Build firmware images for Cavium Networks Octeon-based boards.
