@@ -677,6 +677,29 @@ ucidef_set_country() {
 	json_select ..
 }
 
+ucidef_set_root_password_plain() {
+	local passwd="$1"
+	json_select_object credentials
+		json_add_string root_password_plain "$passwd"
+	json_select ..
+}
+
+ucidef_set_root_password_hash() {
+	local passwd="$1"
+	json_select_object credentials
+		json_add_string root_password_hash "$passwd"
+	json_select ..
+}
+
+ucidef_set_ssh_authorized_key() {
+	local ssh_key="$1"
+	json_select_object credentials
+		json_select_array ssh_authorized_keys
+			json_add_string "" "$ssh_key"
+		json_select ..
+	json_select ..
+}
+
 ucidef_set_ntpserver() {
 	local server
 
