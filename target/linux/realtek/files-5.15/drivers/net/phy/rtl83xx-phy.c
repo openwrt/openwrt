@@ -22,8 +22,10 @@ extern struct rtl83xx_soc_info soc_info;
 extern struct mutex smi_lock;
 extern int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
 extern int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
+extern int phy_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
 extern int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
 extern int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum);
+extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
 
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
