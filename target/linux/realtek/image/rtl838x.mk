@@ -162,6 +162,27 @@ define Device/iodata_bsh-g24mb
 endef
 TARGET_DEVICES += iodata_bsh-g24mb
 
+define Device/linksys_lgs310c
+  SOC := rtl8380
+  IMAGE_SIZE := 13504k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := LGS310C
+  BELKIN_MODEL := BKS-RTL83xx
+  BELKIN_HEADER := 0x07800001
+  LINKSYS_MODEL := 60402060
+  IMAGES += factory.imag
+  IMAGE/factory.imag := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	append-metadata | \
+	linksys-image | \
+	belkin-header
+endef
+TARGET_DEVICES += linksys_lgs310c
+
 # "NGE" refers to the uImage magic
 define Device/netgear_nge
   KERNEL := \
