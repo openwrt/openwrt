@@ -1,0 +1,11 @@
+--- a/src/r8168_rss.c
++++ b/src/r8168_rss.c
+@@ -80,7 +80,7 @@ int rtl8168_get_rxnfc(struct net_device *dev, struct ethtool_rxnfc *cmd,
+         struct rtl8168_private *tp = netdev_priv(dev);
+         int ret = -EOPNOTSUPP;
+ 
+-        netif_info(tp, drv, tp->dev, "rss get rxnfc\n");
++        netif_dbg(tp, drv, tp->dev, "rss get rxnfc\n");
+ 
+         if (!(dev->features & NETIF_F_RXHASH))
+                 return ret;
