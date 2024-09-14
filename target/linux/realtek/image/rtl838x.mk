@@ -144,6 +144,15 @@ define Device/hpe_1920-24g
 endef
 TARGET_DEVICES += hpe_1920-24g
 
+define Device/hpe_1920-24g-poe-370w
+  $(Device/hpe_1920)
+  SOC := rtl8382
+  DEVICE_MODEL := 1920-24G-PoE+ 370W (JG926A)
+  DEVICE_PACKAGES += realtek-poe
+  H3C_DEVICE_ID := 0x00010029
+endef
+TARGET_DEVICES += hpe_1920-24g-poe-370w
+
 define Device/inaba_aml2-17gp
   SOC := rtl8382
   IMAGE_SIZE := 13504k
