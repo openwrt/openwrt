@@ -178,17 +178,18 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 		return;
 	}
 
-	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num],
-		    RTL930X_SDS_OFF << rtl9300_sds_lsb[sds_num],
-		    rtl9300_sds_regs[sds_num]);
+	iomask32(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num],
+		 RTL930X_SDS_OFF << rtl9300_sds_lsb[sds_num],
+		 RTPH_REG(rtl9300_sds_regs[sds_num]));
 	mdelay(10);
 
-	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
-		    rtl9300_sds_regs[sds_num]);
+	iomask32(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
+		 RTPH_REG(rtl9300_sds_regs[sds_num]));
 	mdelay(10);
 
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+		 ioread32(RTPH_REG(0x194)), ioread32(RTPH_REG(0x198)),
+		 ioread32(RTPH_REG(0x2a0)), ioread32(RTPH_REG(0x2a4)));
 }
 
 void rtl9300_sds_set(int sds_num, u32 mode)
@@ -199,12 +200,13 @@ void rtl9300_sds_set(int sds_num, u32 mode)
 		return;
 	}
 
-	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
-		    rtl9300_sds_regs[sds_num]);
+	iomask32(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
+		 RTPH_REG(rtl9300_sds_regs[sds_num]));
 	mdelay(10);
 
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+		 ioread32(RTPH_REG(0x194)), ioread32(RTPH_REG(0x198)),
+		 ioread32(RTPH_REG(0x2a0)), ioread32(RTPH_REG(0x2a4)));
 }
 
 u32 rtl9300_sds_mode_get(int sds_num)
@@ -216,7 +218,7 @@ u32 rtl9300_sds_mode_get(int sds_num)
 		return 0;
 	}
 
-	v = sw_r32(rtl9300_sds_regs[sds_num]);
+	v = ioread32(RTPH_REG(rtl9300_sds_regs[sds_num]));
 	v >>= rtl9300_sds_lsb[sds_num];
 
 	return v & RTL930X_SDS_MASK;
@@ -1509,7 +1511,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	/* take serdes into reset */
 	i = 0;
 	while (rtl8380_sds_take_reset[2 * i]) {
-		sw_w32(rtl8380_sds_take_reset[2 * i + 1], rtl8380_sds_take_reset[2 * i]);
+		iowrite32(rtl8380_sds_take_reset[2 * i + 1], RTPH_REG(rtl8380_sds_take_reset[2 * i]));
 		i++;
 		udelay(1000);
 	}
@@ -1517,7 +1519,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	/* apply common serdes patch */
 	i = 0;
 	while (rtl8380_sds_common[2 * i]) {
-		sw_w32(rtl8380_sds_common[2 * i + 1], rtl8380_sds_common[2 * i]);
+		iowrite32(rtl8380_sds_common[2 * i + 1], RTPH_REG(rtl8380_sds_common[2 * i]));
 		i++;
 		udelay(1000);
 	}
@@ -1538,38 +1540,38 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	sw_w32_mask(0xfffffff0, 0xaaaaaaaf & 0xf, RTL838X_PLL_CML_CTRL);
 	i = 0;
 	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
-		sw_w32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
-		       rtl8380_sds01_qsgmii_6275b[2 * i]);
+		iowrite32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
+			  RTPH_REG(rtl8380_sds01_qsgmii_6275b[2 * i]));
 		i++;
 	}
 
 	i = 0;
 	while (rtl8380_sds23_qsgmii_6275b[2 * i]) {
-		sw_w32(rtl8380_sds23_qsgmii_6275b[2 * i + 1], rtl8380_sds23_qsgmii_6275b[2 * i]);
+		iowrite32(rtl8380_sds23_qsgmii_6275b[2 * i + 1], RTPH_REG(rtl8380_sds23_qsgmii_6275b[2 * i]));
 		i++;
 	}
 
 	i = 0;
 	while (rtl8380_sds4_fiber_6275b[2 * i]) {
-		sw_w32(rtl8380_sds4_fiber_6275b[2 * i + 1], rtl8380_sds4_fiber_6275b[2 * i]);
+		iowrite32(rtl8380_sds4_fiber_6275b[2 * i + 1], RTPH_REG(rtl8380_sds4_fiber_6275b[2 * i]));
 		i++;
 	}
 
 	i = 0;
 	while (rtl8380_sds5_fiber_6275b[2 * i]) {
-		sw_w32(rtl8380_sds5_fiber_6275b[2 * i + 1], rtl8380_sds5_fiber_6275b[2 * i]);
+		iowrite32(rtl8380_sds5_fiber_6275b[2 * i + 1], RTPH_REG(rtl8380_sds5_fiber_6275b[2 * i]));
 		i++;
 	}
 
 	i = 0;
 	while (rtl8380_sds_reset[2 * i]) {
-		sw_w32(rtl8380_sds_reset[2 * i + 1], rtl8380_sds_reset[2 * i]);
+		iowrite32(rtl8380_sds_reset[2 * i + 1], RTPH_REG(rtl8380_sds_reset[2 * i]));
 		i++;
 	}
 
 	i = 0;
 	while (rtl8380_sds_release_reset[2 * i]) {
-		sw_w32(rtl8380_sds_release_reset[2 * i + 1], rtl8380_sds_release_reset[2 * i]);
+		iowrite32(rtl8380_sds_release_reset[2 * i + 1], RTPH_REG(rtl8380_sds_release_reset[2 * i]));
 		i++;
 	}
 
