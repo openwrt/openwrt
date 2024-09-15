@@ -85,6 +85,8 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
  */
 DEFINE_MUTEX(poll_lock);
 
+static struct rtph_soc_data rtph_soc;
+
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
@@ -3995,6 +3997,32 @@ static struct mdio_device_id __maybe_unused rtl83xx_tbl[] = {
 };
 
 MODULE_DEVICE_TABLE(mdio, rtl83xx_tbl);
+
+static int __init rtph_init(void)
+{
+	rtph_soc.id = ioread32(RTPH_93XX_MODEL_NAME_INFO) >> 16;
+	if ((rtph_soc.id & 0xffec) == 0x9300)
+		goto found;
+
+	rtph_soc.id = ioread32(RTPH_839X_MODEL_NAME_INFO) >> 16;
+	if ((rtph_soc.id & 0xfff8) == 0x8390)
+		goto found;
+
+	rtph_soc.id = ioread32(RTPH_838X_MODEL_NAME_INFO) >> 16;
+found:
+	rtph_soc.id &= 0xffff;
+	rtph_soc.family = rtph_soc.id & 0xfff0;
+	rtph_soc.rawpage = rtph_soc.family & 0x10 ? 0x1fff : 0xfff;
+	/*
+	 * Using the top most page with the MDIO controller found in RealTek
+	 * SoCs allows to access the PHY in RAW mode, i.e. bypassing the cache
+	 * and paging engine of the MDIO controller. The RTL838x and RTL930x
+	 * families (<28 port) have 4096 pages the larger models 8192.
+	 */
+	return 0;
+}
+
+module_init(rtph_init);
 
 MODULE_AUTHOR("B. Koblitz");
 MODULE_DESCRIPTION("RTL83xx PHY driver");

@@ -18,6 +18,12 @@ struct __attribute__ ((__packed__)) fw_header {
 	struct part parts[10];
 };
 
+struct rtph_soc_data {
+	unsigned int id;
+	unsigned int family;
+	unsigned int rawpage;
+};
+
 /* TODO: fixed path? */
 #define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
 #define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
@@ -34,6 +40,46 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8390_GENERIC	0x001ccab0
 #define PHY_ID_RTL8393_I	0x001c8393
 #define PHY_ID_RTL9300_I	0x70d03106
+
+/* SOC identifiers */
+#define RTPH_SOC_FAMILY_8380  			(0x8380)
+#define RTPH_SOC_FAMILY_8390  			(0x8390)
+#define RTPH_SOC_FAMILY_9300  			(0x9300)
+#define RTPH_SOC_FAMILY_9310  			(0x9310)
+#define RTPH_SOC_TYPE_8380			(0x8380)
+#define RTPH_SOC_TYPE_8393			(0x8393)
+
+/* Switch register helpers */
+#define RTPH_SWITCH_ADDR_BASE			(0xbb000000)
+#define RTPH_REG(x)				((void __iomem __force *)RTPH_SWITCH_ADDR_BASE + (x))
+#define iomask32(mask, value, addr)		iowrite32((ioread32(addr) & ~(mask)) | (value), addr)
+
+/*  Switch registers */
+#define RTPH_838X_INT_MODE_CTRL			RTPH_REG(0x005c)
+#define RTPH_838X_INT_RW_CTRL			RTPH_REG(0x0058)
+#define RTPH_838X_MODEL_NAME_INFO		RTPH_REG(0x00d4)
+#define RTPH_838X_PLL_CML_CTRL			RTPH_REG(0x0ff8)
+#define RTPH_838X_SDS_CFG_REG			RTPH_REG(0x0034)
+#define RTPH_838X_SDS_MODE_SEL			RTPH_REG(0x0028)
+#define RTPH_838X_SDS4_FIB_REG0			RTPH_REG(0xf800)
+#define RTPH_838X_SMI_POLL_CTRL			RTPH_REG(0xa17c)
+
+#define RTPH_839X_MODEL_NAME_INFO		RTPH_REG(0x0ff0)
+#define RTPH_839X_SDS12_13_XSG0			RTPH_REG(0xb800)
+#define RTPH_839X_SMI_PORT_POLLING_CTRL		RTPH_REG(0x03fc)
+
+#define RTPH_930X_MAC_FORCE_MODE_CTRL		RTPH_REG(0xca1c)
+#define RTPH_930X_SDS_INDACS_CMD		RTPH_REG(0x03b0)
+#define RTPH_930X_SDS_INDACS_DATA		RTPH_REG(0x03b4)
+#define RTPH_930X_SMI_POLL_CTRL			RTPH_REG(0xca90)
+
+#define RTPH_931X_CHIP_INFO_ADDR		RTPH_REG(0x0008)
+#define RTPH_931X_PS_SERDES_OFF_MODE_CTRL_ADDR	RTPH_REG(0x13f4)
+#define RTPH_931X_SERDES_INDRT_ACCESS_CTRL	RTPH_REG(0x5638)
+#define RTPH_931X_SERDES_INDRT_DATA_CTRL	RTPH_REG(0x563c)
+#define RTPH_931X_SERDES_MODE_CTRL		RTPH_REG(0x13cc)
+
+#define RTPH_93XX_MODEL_NAME_INFO		RTPH_REG(0x0004)
 
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS_MODE_SEL			(0x0028)
