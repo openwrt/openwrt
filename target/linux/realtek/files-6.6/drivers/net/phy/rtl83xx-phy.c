@@ -15,7 +15,6 @@
 #include <linux/mii.h>
 #include <linux/mdio.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
 
 extern struct mutex smi_lock;
@@ -51,8 +50,6 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
 #define RTL821X_MEDIA_PAGE_COPPER	1
 #define RTL821X_MEDIA_PAGE_FIBRE	3
 #define RTL821X_MEDIA_PAGE_INTERNAL	8
-
-#define RTL9300_PHY_ID_MASK 0xf0ffffff
 
 /* RTL930X SerDes supports the following modes:
  * 0x02: SGMII		0x04: 1000BX_FIBER	0x05: FIBER100
@@ -2811,7 +2808,6 @@ void rtl9300_phy_enable_10g_1g(int sds_num)
 static int rtl9300_sds_10g_idle(int sds_num);
 static void rtl9300_serdes_patch(int sds_num);
 
-#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 {
 	int calib_tries = 0;

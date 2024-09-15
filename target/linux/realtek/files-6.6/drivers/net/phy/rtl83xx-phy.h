@@ -80,31 +80,3 @@ struct rtph_soc_data {
 #define RTPH_931X_SERDES_MODE_CTRL		RTPH_REG(0x13cc)
 
 #define RTPH_93XX_MODEL_NAME_INFO		RTPH_REG(0x0004)
-
-/* Registers of the internal Serdes of the 8380 */
-#define RTL838X_SDS_MODE_SEL			(0x0028)
-#define RTL838X_SDS_CFG_REG			(0x0034)
-#define RTL838X_INT_MODE_CTRL			(0x005c)
-#define RTL838X_DMY_REG31			(0x3b28)
-
-#define RTL8380_SDS4_FIB_REG0			(0xF800)
-#define RTL838X_SDS4_REG28			(0xef80)
-#define RTL838X_SDS4_DUMMY0			(0xef8c)
-#define RTL838X_SDS5_EXT_REG6			(0xf18c)
-#define RTL838X_SDS4_FIB_REG0			(RTL838X_SDS4_REG28 + 0x880)
-#define RTL838X_SDS5_FIB_REG0			(RTL838X_SDS4_REG28 + 0x980)
-
-/* Registers of the internal SerDes of the RTL8390 */
-#define RTL839X_SDS12_13_XSG0			(0xB800)
-
-/* Registers of the internal Serdes of the 9300 */
-#define RTL930X_SDS_INDACS_CMD			(0x03B0)
-#define RTL930X_SDS_INDACS_DATA			(0x03B4)
-#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-
-/* Registers of the internal SerDes of the 9310 */
-#define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
-#define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
-#define RTL931X_SERDES_MODE_CTRL		(0x13cc)
-#define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
-#define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
