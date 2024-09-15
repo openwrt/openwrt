@@ -5,6 +5,10 @@
 
 #include "rtl83xx.h"
 
+#define RTL839X_PHY_MAX_PAGE					0x1fff
+#define RTL839X_PHY_MAX_PORT					0x3f
+#define RTL839X_PHY_MAX_REG					0x1f
+
 #define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
 #define RTL839X_VLAN_PORT_TAG_STS_TAGGED			0x1
 #define RTL839X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x2
@@ -659,10 +663,11 @@ static int rtl839x_smi_wait_op(int timeout)
 
 int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	u32 v;
+	u32 parkpage, v;
 	int err = 0;
 
-	if (port > 63 || page > 4095 || reg > 31)
+	if (port > RTL839X_PHY_MAX_PORT || page > RTL839X_PHY_MAX_PAGE ||
+	    reg > RTL839X_PHY_MAX_REG)
 		return -ENOTSUPP;
 
 	/* Take bug on RTL839x Rev <= C into account */
@@ -672,7 +677,8 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	mutex_lock(&smi_lock);
 
 	sw_w32_mask(0xffff0000, port << 16, RTL839X_PHYREG_DATA_CTRL);
-	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
+	parkpage = page == RTL839X_PHY_MAX_PAGE ? 0x1f : 0;
+	v = reg << 5 | page << 10 | parkpage << 23;
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
 	sw_w32(0x1ff, RTL839X_PHYREG_CTRL);
@@ -694,12 +700,14 @@ errout:
 
 int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	u32 v;
+	u32 parkpage, v;
 	int err = 0;
 
-	val &= 0xffff;
-	if (port > 63 || page > 4095 || reg > 31)
+	if (port > RTL839X_PHY_MAX_PORT || page > RTL839X_PHY_MAX_PAGE ||
+	    reg > RTL839X_PHY_MAX_REG)
 		return -ENOTSUPP;
+
+	val &= 0xffff;
 
 	/* Take bug on RTL839x Rev <= C into account */
 	if (port >= RTL839X_CPU_PORT)
@@ -712,7 +720,8 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 	sw_w32_mask(0xffff0000, val << 16, RTL839X_PHYREG_DATA_CTRL);
 
-	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
+	parkpage = page == RTL839X_PHY_MAX_PAGE ? 0x1f : 0;
+	v = reg << 5 | page << 10 | parkpage << 23;
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
 	sw_w32(0x1ff, RTL839X_PHYREG_CTRL);
