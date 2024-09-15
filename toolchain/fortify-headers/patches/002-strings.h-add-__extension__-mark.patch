@@ -10,8 +10,6 @@ Add __extension__ before #include-next in strings.h as was done for all other he
  include/strings.h | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/include/strings.h b/include/strings.h
-index a16e1ad..d1902db 100644
 --- a/include/strings.h
 +++ b/include/strings.h
 @@ -16,6 +16,9 @@
@@ -24,6 +22,3 @@ index a16e1ad..d1902db 100644
  #include_next <strings.h>
  
  #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
--- 
-2.34.1
-

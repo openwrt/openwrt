@@ -304,14 +304,11 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	 */
 	bus->read = priv->mii_bus->read;
 	bus->write = priv->mii_bus->write;
-	bus->read_paged = priv->mii_bus->read_paged;
-	bus->write_paged = priv->mii_bus->write_paged;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
 
 	bus->parent = dev;
 	priv->ds->slave_mii_bus = bus;
 	priv->ds->slave_mii_bus->priv = priv->mii_bus->priv;
-	priv->ds->slave_mii_bus->access_capabilities = priv->mii_bus->access_capabilities;
 
 	ret = mdiobus_register(priv->ds->slave_mii_bus);
 	if (ret && mii_np) {
