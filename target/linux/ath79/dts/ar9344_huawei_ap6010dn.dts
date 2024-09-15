@@ -1,0 +1,243 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Huawei AP6010DN";
+	compatible = "huawei,ap6010dn", "qca,ar9344";
+
+	chosen {
+		bootargs = "console=ttyS0,9600n8";
+	};
+
+	aliases {
+		led-boot = &led_function_green;
+		led-failsafe = &led_function_red;
+		led-running = &led_function_green;
+		led-upgrade = &led_function_red;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_function_green: led-status-green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_function_red: led-status-red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		restart {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	watchdog {
+		pinctrl-names = "default";
+		pinctrl-0 = <&wdt_gpio15>;
+
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <100>;
+		always-running;
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x1e00000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+			};
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot-a";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "BootupA";
+				reg = <0x80000 0x20000>;
+			};
+
+			partition@a0000 {
+				label = "BootupB";
+				reg = <0xa0000 0x20000>;
+			};
+
+			partition@c0000 {
+				label = "u-boot-env";
+				reg = <0xc0000 0x20000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "BoardData";
+				reg = <0xe0000 0x20000>;
+				read-only;
+			};
+
+			// In the vendor layout, there are the "SysImageA" (12 MiB)
+			// and the "ConfigA" (3 MiB) partitions here.
+			fwconcat0: partition@100000 {
+				label = "fwconcat0";
+				reg = <0x100000 0xf00000>;
+			};
+
+			partition@1000000 {
+				label = "u-boot-b";
+				reg = <0x1000000 0x80000>;
+				read-only;
+			};
+
+			partition@1080000 {
+				label = "ResultA";
+				reg = <0x1080000 0x20000>;
+				read-only;
+			};
+
+			partition@10a0000 {
+				label = "ResultB";
+				reg = <0x10a0000 0x20000>;
+				read-only;
+			};
+
+			// In the vendor layout, there are the "SysImageB" (12 MiB)
+			// and the "ConfigB" (3 MiB) partitions here.
+			fwconcat1: partition@10c0000 {
+				label = "fwconcat1";
+				reg = <0x10c0000 0xf00000>;
+			};
+
+			art: partition@1fc0000 {
+				label = "art";
+				reg = <0x1fc0000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_2005b: macaddr@2005b {
+						compatible = "mac-base";
+						reg = <0x2005b 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: cal@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_2005b 1>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		nvmem-cells = <&macaddr_art_2005b 2>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_2005b 0>;
+	nvmem-cell-names = "mac-address";
+
+	pll-data = <0x06000000 0x04000101 0x0c001313>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-gmac0 = <1>;
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy: ethernet-phy@18 {
+		reg = <0x4>;
+	};
+};
+
+&pinmux {
+	wdt_gpio15: pinmux_wdt_gpio15 {
+		pinctrl-single,bits = <0xc 0x0 0xFF000000>;
+	};
+};
+
+&wdt {
+	status = "disabled";
+};
