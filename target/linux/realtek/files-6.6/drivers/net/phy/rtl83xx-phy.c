@@ -18,7 +18,6 @@
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
 
-extern struct rtl83xx_soc_info soc_info;
 extern struct mutex smi_lock;
 extern int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
 extern int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
@@ -91,23 +90,23 @@ static u64 disable_polling(int port)
 
 	mutex_lock(&poll_lock);
 
-	switch (soc_info.family) {
-	case RTL8380_FAMILY_ID:
+	switch (rtph_soc.family) {
+	case RTPH_SOC_FAMILY_8380:
 		saved_state = sw_r32(RTL838X_SMI_POLL_CTRL);
 		sw_w32_mask(BIT(port), 0, RTL838X_SMI_POLL_CTRL);
 		break;
-	case RTL8390_FAMILY_ID:
+	case RTPH_SOC_FAMILY_8390:
 		saved_state = sw_r32(RTL839X_SMI_PORT_POLLING_CTRL + 4);
 		saved_state <<= 32;
 		saved_state |= sw_r32(RTL839X_SMI_PORT_POLLING_CTRL);
 		sw_w32_mask(BIT(port % 32), 0,
 		            RTL839X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
-	case RTL9300_FAMILY_ID:
+	case RTPH_SOC_FAMILY_9300:
 		saved_state = sw_r32(RTL930X_SMI_POLL_CTRL);
 		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
 		break;
-	case RTL9310_FAMILY_ID:
+	case RTPH_SOC_FAMILY_9310:
 		pr_warn("%s not implemented for RTL931X\n", __func__);
 		break;
 	}
@@ -121,18 +120,18 @@ static int resume_polling(u64 saved_state)
 {
 	mutex_lock(&poll_lock);
 
-	switch (soc_info.family) {
-	case RTL8380_FAMILY_ID:
+	switch (rtph_soc.family) {
+	case RTPH_SOC_FAMILY_8380:
 		sw_w32(saved_state, RTL838X_SMI_POLL_CTRL);
 		break;
-	case RTL8390_FAMILY_ID:
+	case RTPH_SOC_FAMILY_8390:
 		sw_w32(saved_state >> 32, RTL839X_SMI_PORT_POLLING_CTRL + 4);
 		sw_w32(saved_state, RTL839X_SMI_PORT_POLLING_CTRL);
 		break;
-	case RTL9300_FAMILY_ID:
+	case RTPH_SOC_FAMILY_9300:
 		sw_w32(saved_state, RTL930X_SMI_POLL_CTRL);
 		break;
-	case RTL9310_FAMILY_ID:
+	case RTPH_SOC_FAMILY_9310:
 		pr_warn("%s not implemented for RTL931X\n", __func__);
 		break;
 	}
@@ -238,11 +237,11 @@ int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
 	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
 	 * which would otherwise read as 0.
 	 */
-	if (soc_info.id == 0x8393) {
+	if (rtph_soc.id == RTPH_SOC_TYPE_8393) {
 		if (phy_reg == MII_PHYSID1)
 			return 0x1c;
 		if (phy_reg == MII_PHYSID2)
-			return 0x8393;
+			return RTPH_SOC_TYPE_8393;
 	}
 
 	/* Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
@@ -825,7 +824,7 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	u32 *rtl8218B_6276B_rtl8380_perport;
 	u32 *rtl8380_rtl8218b_perport;
 
-	if (soc_info.family == RTL8380_FAMILY_ID && mac != 0 && mac != 16) {
+	if (rtph_soc.family == RTPH_SOC_FAMILY_8380 && mac != 0 && mac != 16) {
 		phydev_err(phydev, "External RTL8218B must have PHY-IDs 0 or 16!\n");
 		return -1;
 	}
@@ -940,7 +939,7 @@ static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
 	 * at PHY IDs 0-7, while the RTL8214FC must be attached via
 	 * the pair of SGMII/1000Base-X with higher PHY-IDs
 	 */
-	if (soc_info.family == RTL8380_FAMILY_ID)
+	if (rtph_soc.family == RTPH_SOC_FAMILY_8380)
 		return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
 	else
 		return phydev->phy_id == PHY_ID_RTL8218B_E;
@@ -3676,7 +3675,7 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	int ret = 0;
 
 	/* 839x has internal SerDes */
-	if (soc_info.id == 0x8393)
+	if (rtph_soc.id == RTPH_SOC_TYPE_8393)
 		return -ENODEV;
 
 	/* All base addresses of the PHYs start at multiples of 8 */
@@ -3726,7 +3725,7 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 	if (!(addr % 8)) {
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8380_FAMILY_ID) {
+		if (rtph_soc.family == RTPH_SOC_FAMILY_8380) {
 			/* Configuration must be done while patching still possible */
 			return rtl8380_configure_ext_rtl8218b(phydev);
 		}
@@ -3740,7 +3739,7 @@ static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 	struct device *dev = &phydev->mdio.dev;
 	int addr = phydev->mdio.addr;
 
-	if (soc_info.family != RTL8380_FAMILY_ID)
+	if (rtph_soc.family != RTPH_SOC_FAMILY_8380)
 		return -ENODEV;
 	if (addr >= 24)
 		return -ENODEV;
@@ -3785,13 +3784,13 @@ static int rtl838x_serdes_probe(struct phy_device *phydev)
 {
 	int addr = phydev->mdio.addr;
 
-	if (soc_info.family != RTL8380_FAMILY_ID)
+	if (rtph_soc.family != RTPH_SOC_FAMILY_8380)
 		return -ENODEV;
 	if (addr < 24)
 		return -ENODEV;
 
 	/* On the RTL8380M, PHYs 24-27 connect to the internal SerDes */
-	if (soc_info.id == 0x8380) {
+	if (rtph_soc.id == RTPH_SOC_TYPE_8380) {
 		if (addr == 24)
 			return rtl8380_configure_serdes(phydev);
 		return 0;
@@ -3805,7 +3804,7 @@ static int rtl8393_serdes_probe(struct phy_device *phydev)
 	int addr = phydev->mdio.addr;
 
 	pr_info("%s: id: %d\n", __func__, addr);
-	if (soc_info.family != RTL8390_FAMILY_ID)
+	if (rtph_soc.family != RTPH_SOC_FAMILY_8390)
 		return -ENODEV;
 
 	if (addr < 24)
@@ -3818,7 +3817,7 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 {
 	int addr = phydev->mdio.addr;
 
-	if (soc_info.family != RTL8390_FAMILY_ID)
+	if (rtph_soc.family != RTPH_SOC_FAMILY_8390)
 		return -ENODEV;
 
 	if (addr < 24)
@@ -3829,7 +3828,7 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL9300_FAMILY_ID)
+	if (rtph_soc.family != RTPH_SOC_FAMILY_9300)
 		return -ENODEV;
 
 	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
