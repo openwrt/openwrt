@@ -15,5 +15,9 @@ boot() {
 	linksys,e8450)
 		mtd erase senv || true
 		;;
+	 xiaomi,redmi-router-ax6s)
+		fw_setenv flag_try_sys1_failed 0
+		fw_setenv flag_try_sys2_failed 0
+		;;
 	esac
 }
