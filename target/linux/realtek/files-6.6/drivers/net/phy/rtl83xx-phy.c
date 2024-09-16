@@ -59,6 +59,7 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
 DEFINE_MUTEX(poll_lock);
 
 static struct rtph_soc_data rtph_soc;
+static const struct firmware *rtph_firmware;
 
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
@@ -733,6 +734,92 @@ out:
 	return NULL;
 }
 
+static struct rtph_fw_seq *rtph_load_fw_sequence(struct phy_device *phydev,
+						 unsigned int seqid)
+{
+
+	struct device *dev = &phydev->mdio.dev;
+	struct rtph_fw_head *h;
+	unsigned int checksum;
+	char *fwname;
+	int i, err;
+
+	if (rtph_soc.family == RTPH_SOC_FAMILY_8390)
+		fwname = RTPH_FIRMWARE_839X;
+	else
+		return NULL;
+
+	if (!rtph_firmware) {
+		err = request_firmware(&rtph_firmware, fwname, dev);
+		if (err < 0)
+			goto out;
+
+		pr_info("firmware %s loaded, size %d bytes.\n", fwname, rtph_firmware->size);
+
+		if (rtph_firmware->size < 12) {
+			pr_err("firmware size too small.\n");
+			rtph_firmware = NULL;
+			err = -EINVAL;
+			goto out;
+		}
+
+		h = (struct rtph_fw_head *)rtph_firmware->data;
+		if (h->magic != RTPH_FIRMWARE_MAGIC) {
+			pr_err("firmware magic mismatch.\n");
+			rtph_firmware = NULL;
+			err = -EINVAL;
+			goto out;
+		}
+
+		checksum = ~crc32(0xFFFFFFFFU, rtph_firmware->data + 8, rtph_firmware->size - 8);
+		if (h->checksum != checksum) {
+			pr_err("firmware checksum mismatch.\n");
+			rtph_firmware = NULL;
+			err = -EINVAL;
+			goto out;
+		}
+	}
+
+	h = (struct rtph_fw_head *)rtph_firmware->data;
+	for (i = 0; i < h->dirsize; i++)
+		if (h->dir[i].seqid == seqid)
+			return (struct rtph_fw_seq *)(rtph_firmware->data + h->dir[i].offset);
+	err = -ENOTSUPP;
+out:
+	dev_err(dev, "patch %08x not found in firmware %s, error %d.\n",
+		seqid, fwname, err);
+	return NULL;
+}
+
+static int rtph_patch_phy(struct phy_device *phydev, unsigned int seqid)
+{
+	int p, i, val;
+	struct rtph_fw_seq *seq;
+
+	seq = rtph_load_fw_sequence(phydev, seqid);
+	if (!seq)
+		return -ENOTSUPP;
+
+	for (p = seq->portstart; p <= seq->portend; p++) {
+		i = 0;
+		while (seq->data[i].port != -1) {
+			if (seq->data[i].mask != 0xffff) {
+				val = phy_package_port_read_paged(phydev, seq->data[i].port + p,
+								  rtph_soc.rawpage, seq->data[i].reg);
+				val &= ~seq->data[i].mask;
+				val |= seq->data[i].val;
+			} else
+				val = seq->data[i].val;
+
+			phy_package_port_write_paged(phydev, seq->data[i].port + p,
+						     rtph_soc.rawpage, seq->data[i].reg, val);
+			i++;
+		}
+	}
+
+	return 0;
+}
+
 static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool enable)
 {
 	int mac = phydev->mdio.addr;
@@ -750,6 +837,56 @@ static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool 
 	/* write to 0x0 to register 0x1d on main page 0 */
 	phy_write_paged(phydev, rtph_soc.rawpage, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	mdelay(1);
+}
+
+static int rtph_8218x_read_efuse(struct phy_device *phydev, int addr)
+{
+	int oldpage, cnt = 100, ret = -EIO;
+	/*
+	 * The efuse is accessed through the first port of the package with the following registers
+	 * 16: command register
+	 *     bit 0: read = 0, write = 1
+	 *     bit 2: busy = 1, ready = 0
+	 * 17: address register
+	 * 18: data register for writing
+	 * 19: data register for reading
+	 */
+	oldpage = phy_package_port_read_paged(phydev, 0, 0, 30);
+	phy_package_port_write_paged(phydev, 0, 0, 30, 8);
+	phy_package_port_write_paged(phydev, 0, 0x26e, 17, addr);
+	phy_package_port_write_paged(phydev, 0, 0x26e, 16, 0);
+
+	while (--cnt && (phy_package_port_read_paged(phydev, 0, 0x26e, 16) & 0x4))
+
+	if (cnt)
+		ret = phy_package_port_read_paged(phydev, 0, 0x26e, 19);
+
+	phy_package_port_write_paged(phydev, 0, 0, 30, oldpage);
+
+	return ret;
+}
+
+static int rtph_821x_request_patch(struct phy_device *phydev, int portstart, int portend)
+{
+	int p, val, ret = -EIO, cnt = 100;
+
+	/* Request patch */
+	for (p = portstart; p <= portend; p++) {
+		val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_PATCH, 0x10) | 0x10;
+		phy_package_port_write_paged(phydev, p, RTL821X_PAGE_PATCH, 0x10, val);
+	}
+
+	mdelay(100);
+
+	/* Verify patch readiness */
+	p = portstart;
+	while (--cnt && p <= portend) {
+		if (phy_package_port_read_paged(phydev, p, RTL821X_PAGE_STATE, 0x10) & 0x40)
+			p++;
+	}
+
+	cnt ? ret = 0 : phydev_err(phydev, "port %d not ready for patch.\n", p);
+	return ret;
 }
 
 static int rtl8390_configure_generic(struct phy_device *phydev)
@@ -979,6 +1116,83 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 
 	return 0;
 }
+
+static int rtph_8390_configure_ext_rtl8218b(struct phy_device *phydev)
+{
+	unsigned int ver, rom, val;
+	int p, cnt;
+
+	if (phydev->phy_id == PHY_ID_RTL8218B_E) {
+		phydev_err(phydev, "old version of RTL8218B not yet supported\n");
+		return -ENOTSUPP;
+	}
+
+	phy_write_paged(phydev, rtph_soc.rawpage, 29, 1);
+	phy_write_paged(phydev, 0xa43, 19, 2);
+	ver = phy_read_paged(phydev, 0xa43, 20);
+	phy_write_paged(phydev, rtph_soc.rawpage, 29, 0);
+
+	if (ver != RTL821X_CHIP_ID) {
+		phydev_err(phydev, "RTL8218B engineering sample not yet supported\n");
+		return -ENOTSUPP;
+	}
+
+	phy_write_paged(phydev, rtph_soc.rawpage, 19, 4);
+	ver = phy_read_paged(phydev, rtph_soc.rawpage, 20);
+
+	phy_write_paged(phydev, rtph_soc.rawpage, 27, 4);
+	rom = phy_read_paged(phydev, rtph_soc.rawpage, 28);
+
+	phydev_info(phydev, "initialize external RTL8218B version %d, romid %d\n", ver, rom);
+
+	rtph_patch_phy(phydev, RTPH_FW_8218B_6276A_PERCHIP);
+	rtph_patch_phy(phydev, RTPH_FW_8218B_6276A_PERPORT);
+
+	if ((rtph_8218x_read_efuse(phydev, 11) & 0xf0) == 0x10) {
+		rtph_patch_phy(phydev, RTPH_FW_8218B_6276C_IPD_PERPORT);
+		rtph_patch_phy(phydev, RTPH_FW_8218B_6276C_IPD_PERCHIP);
+	} else if (rom <= 2) {
+		/* ESD for old chips, might not be needed */
+
+		/* power on ports */
+		for (p = 0; p < 8; ++p) {
+			val = phy_package_port_read_paged(phydev, p, 0, 0);
+			phy_package_port_write_paged(phydev, p, 0, 0, val & ~BIT(11));
+		}
+
+		p = 0;
+		cnt = 100;
+		while (--cnt && p < 8) {
+			val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_GPHY, 0x10);
+			if ((val & 0x7) == 3)
+				p++;
+		}
+
+		if (!cnt) {
+			pr_err("port %d LAN on failed\n", p);
+			return -EIO;
+		}
+
+		if (rtph_821x_request_patch(phydev, 0, 7))
+			return -EIO;
+
+		/* patch SRAM */
+		for (p = 0; p < 8; p++) {
+			phy_package_port_write_paged(phydev, p, rtph_soc.rawpage, 27, 0x8146);
+			phy_package_port_write_paged(phydev, p, rtph_soc.rawpage, 28, 0x7600 | rom);
+		}
+
+		rtph_patch_phy(phydev, RTPH_FW_8218B_6276_PATCH);
+
+		/* power off ports */
+		for (p = 0; p < 8; p++) {
+			val = phy_package_port_read_paged(phydev, p, 0, 0);
+			phy_package_port_write_paged(phydev, p, 0, 0, val | BIT(11));
+		}
+	}
+	return 0;
+}
+
 
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
@@ -3755,6 +3969,9 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 		if (rtph_soc.family == RTPH_SOC_FAMILY_8380) {
 			/* Configuration must be done while patching still possible */
 			return rtl8380_configure_ext_rtl8218b(phydev);
+		}
+		if (rtph_soc.family == RTPH_SOC_FAMILY_8390) {
+			return rtph_8390_configure_ext_rtl8218b(phydev);
 		}
 	}
 

@@ -24,10 +24,44 @@ struct rtph_soc_data {
 	unsigned int rawpage;
 };
 
+struct __attribute__ ((__packed__)) rtph_fw_dir {
+	uint32_t seqid;
+	uint32_t offset;
+};
+
+struct __attribute__ ((__packed__)) rtph_fw_head {
+	uint32_t magic;
+	uint32_t checksum;
+	uint32_t dirsize;
+	struct rtph_fw_dir dir[];
+};
+
+struct __attribute__ ((__packed__)) rtph_fw_data {
+	int16_t port;
+	uint16_t reg;
+	uint16_t val;
+	uint16_t mask;
+};
+
+struct __attribute__ ((__packed__)) rtph_fw_seq {
+        uint16_t portstart;
+        uint16_t portend;
+        struct rtph_fw_data data[];
+};
+
 /* TODO: fixed path? */
-#define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
-#define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
-#define FIRMWARE_838X_8218b_1	"rtl838x_phy/rtl838x_8218b.fw"
+#define FIRMWARE_838X_8380_1			"rtl838x_phy/rtl838x_8380.fw"
+#define FIRMWARE_838X_8214FC_1			"rtl838x_phy/rtl838x_8214fc.fw"
+#define FIRMWARE_838X_8218b_1			"rtl838x_phy/rtl838x_8218b.fw"
+
+#define RTPH_FIRMWARE_MAGIC			0x83009300
+#define RTPH_FIRMWARE_839X			"rtl839x_phy.fw"
+
+#define RTPH_FW_8218B_6276A_PERCHIP		0x455b5b24
+#define RTPH_FW_8218B_6276A_PERPORT		0xace3ba53
+#define RTPH_FW_8218B_6276C_IPD_PERPORT		0xbcd92344
+#define RTPH_FW_8218B_6276C_IPD_PERCHIP		0x5561c233
+#define RTPH_FW_8218B_6276_PATCH		0xa0607d5f
 
 #define PHY_ID_RTL8214C		0x001cc942
 #define PHY_ID_RTL8218B_E	0x001cc980
