@@ -153,13 +153,13 @@ endif
 # $1: image suffix
 # $2: Per Device Rootfs ID
 define Kernel/CopyImage
-	cmp -s $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2) || { \
-		$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)$(1)$(2); \
-		$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf$(2); \
-		$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2); \
+	cmp -s $(LINUX_DIR)$(2)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2) || { \
+		$(KERNEL_CROSS)objcopy -O binary $(OBJCOPY_STRIP) -S $(LINUX_DIR)$(2)/vmlinux $(LINUX_KERNEL)$(1)$(2); \
+		$(KERNEL_CROSS)objcopy $(OBJCOPY_STRIP) -S $(LINUX_DIR)$(2)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).elf$(2); \
+		$(CP) $(LINUX_DIR)$(2)/vmlinux $(KERNEL_BUILD_DIR)/vmlinux$(1).debug$(2); \
 		$(foreach k, \
 			$(if $(KERNEL_IMAGES),$(KERNEL_IMAGES),$(filter-out vmlinux dtbs,$(KERNELNAME))), \
-			$(CP) $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1)$(2); \
+			$(CP) $(LINUX_DIR)$(2)/arch/$(LINUX_KARCH)/boot/$(IMAGES_DIR)/$(k) $(KERNEL_BUILD_DIR)/$(k)$(1)$(2); \
 		) \
 	}
 endef
@@ -173,7 +173,9 @@ endef
 define Kernel/PrepareConfigPerRootfs
 	{ \
 		[ ! -d "$(1)" ] || rm -rf $(1); \
-		mkdir $(1) && $(CP) $(LINUX_DIR)/.config $(1); \
+		mkdir $(1) && $(CP) -T $(LINUX_DIR) $(1); \
+		touch $(1)/.config; \
+		rm -rf $(1)/usr/initramfs_data.cpio*; \
 	}
 endef
 
@@ -209,10 +211,9 @@ define Kernel/CompileImage/Initramfs
 			$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD), \
 				$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio.zstd $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio;) \
 			$(if $(2),,$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);),\
-			$(call locked,$(if $(2),$(CP) $(LINUX_DIR)$(2)/.config* $(LINUX_DIR) && touch $(LINUX_DIR)/.config && ) \
-				rm -rf $(LINUX_DIR)/usr/initramfs_data.cpio* $(LINUX_DIR)/.config.prev && \
-				$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all), compile-initramfs);) \
+			$(KERNEL_MAKE) $(if $(2),-C $(LINUX_DIR)$(2)) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);) \
 		$(call Kernel/CopyImage,-initramfs,$(2)); \
+		$(if $(2),rm -rf $(LINUX_DIR)$(2);) \
 	}, gen-initramfs$(if $(2),-$(2)));
 endef
 else
