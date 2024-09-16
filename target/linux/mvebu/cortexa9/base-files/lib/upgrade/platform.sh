@@ -3,7 +3,7 @@
 # Copyright (C) 2016 LEDE-Project.org
 #
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv strings'
+RAMFS_COPY_BIN='fw_printenv fw_setenv seq strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 PART_NAME=firmware
