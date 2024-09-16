@@ -410,7 +410,8 @@ struct dsa_tag;
 
 struct rtl838x_bus_priv {
 	struct rtl838x_eth_priv *eth_priv;
-	int portaddr;
+	int extaddr;
+	int rawpage;
 	int page[64];
 	bool raw[64];
 	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);

@@ -17,9 +17,9 @@ devices in OpenWrt usable again with the default network config.)
 Signed-off-by: Jan Hoffmann <jan@3e8.eu>
 ---
 
---- a/arch/arm/boot/dts/am335x-bone-common.dtsi
-+++ b/arch/arm/boot/dts/am335x-bone-common.dtsi
-@@ -353,27 +353,24 @@
+--- a/arch/arm/boot/dts/ti/omap/am335x-bone-common.dtsi
++++ b/arch/arm/boot/dts/ti/omap/am335x-bone-common.dtsi
+@@ -358,27 +358,24 @@
  	};
  };
  
@@ -52,8 +52,8 @@ Signed-off-by: Jan Hoffmann <jan@3e8.eu>
  
  	ethphy0: ethernet-phy@0 {
  		reg = <0>;
---- a/arch/arm/boot/dts/am335x-evm.dts
-+++ b/arch/arm/boot/dts/am335x-evm.dts
+--- a/arch/arm/boot/dts/ti/omap/am335x-evm.dts
++++ b/arch/arm/boot/dts/ti/omap/am335x-evm.dts
 @@ -682,31 +682,28 @@
  	};
  };
