@@ -979,7 +979,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
              raise HwsimSkip("Crypto library does not support Brainpool curves: " + tls)
      capa = dev.request("GET_CAPABILITY dpp")
      ver = 1
-@@ -3902,6 +3903,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
+@@ -3925,6 +3926,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
  
  def test_dpp_proto_auth_req_invalid_i_proto_key(dev, apdev):
      """DPP protocol testing - invalid I-proto key in Auth Req"""
@@ -989,7 +989,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      run_dpp_proto_auth_req_missing(dev, 66, "Invalid Initiator Protocol Key")
  
  def test_dpp_proto_auth_req_no_i_nonce(dev, apdev):
-@@ -3997,7 +4001,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
+@@ -4020,7 +4024,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
  
  def test_dpp_proto_auth_resp_invalid_r_proto_key(dev, apdev):
      """DPP protocol testing - invalid R-Proto Key in Auth Resp"""
@@ -1003,7 +1003,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  def test_dpp_proto_auth_resp_no_r_nonce(dev, apdev):
      """DPP protocol testing - no R-nonce in Auth Resp"""
-@@ -4359,11 +4368,17 @@ def test_dpp_proto_pkex_exchange_resp_in
+@@ -4382,11 +4391,17 @@ def test_dpp_proto_pkex_exchange_resp_in
  
  def test_dpp_proto_pkex_cr_req_invalid_bootstrap_key(dev, apdev):
      """DPP protocol testing - invalid Bootstrap Key in PKEX Commit-Reveal Request"""

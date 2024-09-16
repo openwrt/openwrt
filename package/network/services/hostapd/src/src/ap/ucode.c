@@ -3,7 +3,7 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "utils/ucode.h"
-#include "hostapd.h"
+#include "sta_info.h"
 #include "beacon.h"
 #include "hw_features.h"
 #include "ap_drv_ops.h"

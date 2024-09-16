@@ -1,4 +1,4 @@
-From 40041ecea334c0106c0e840a32aef92b0cbb004b Mon Sep 17 00:00:00 2001
+From 806c84ac8e8f60eaec22772b627f85eb5ac13544 Mon Sep 17 00:00:00 2001
 From: Gioacchino Mazzurco <gio@polymathes.cc>
 Date: Mon, 6 May 2024 13:53:48 +0200
 Subject: [PATCH 1/3] Implement APuP Access Point Micro Peering
@@ -18,11 +18,14 @@ automatically if wds_bridge is not an empty string), or feeded to a
 routing daemon.
 
 Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
+Reviewed-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Moritz Warning <moritzwarning@web.de>
+Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a69e8d8300569e416de856c96e903ad130
 ---
  hostapd/Makefile             |   5 ++
  hostapd/config_file.c        |   9 +++
  src/ap/ap_config.h           |  29 +++++++
- src/ap/ap_drv_ops.c          |  26 ++++++
+ src/ap/ap_drv_ops.c          |  28 ++++++-
  src/ap/ap_drv_ops.h          |   3 +
  src/ap/apup.c                | 152 +++++++++++++++++++++++++++++++++++
  src/ap/apup.h                |  24 ++++++
@@ -30,7 +33,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  src/ap/ieee802_11.h          |   2 +
  src/drivers/driver.h         |   2 +-
  src/drivers/driver_nl80211.c |  14 +---
- 11 files changed, 264 insertions(+), 16 deletions(-)
+ 11 files changed, 265 insertions(+), 17 deletions(-)
  create mode 100644 src/ap/apup.c
  create mode 100644 src/ap/apup.h
 
@@ -106,7 +109,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  /**
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -385,9 +385,35 @@ int hostapd_set_wds_sta(struct hostapd_d
+@@ -385,13 +385,39 @@ int hostapd_set_wds_sta(struct hostapd_d
  			const u8 *addr, int aid, int val)
  {
  	const char *bridge = NULL;
@@ -142,6 +145,11 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  	if (hapd->conf->wds_bridge[0])
  		bridge = hapd->conf->wds_bridge;
  	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val,
+-					 bridge, ifname_wds);
++					 bridge, ifName);
+ }
+ 
+ 
 --- a/src/ap/ap_drv_ops.h
 +++ b/src/ap/ap_drv_ops.h
 @@ -35,6 +35,9 @@ int hostapd_set_drv_ieee8021x(struct hos
@@ -338,7 +346,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
 +              const struct ieee802_11_elems *elems );
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -59,6 +59,9 @@
+@@ -60,6 +60,9 @@
  #include "nan_usd_ap.h"
  #include "pasn/pasn_common.h"
  
@@ -348,7 +356,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3586,8 +3589,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -3588,8 +3591,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -359,7 +367,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -3974,7 +3977,7 @@ static int __check_assoc_ies(struct host
+@@ -3976,7 +3979,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
@@ -368,7 +376,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
  
-@@ -6029,6 +6032,11 @@ static void handle_beacon(struct hostapd
+@@ -6031,6 +6034,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
@@ -393,7 +401,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4042,7 +4042,7 @@ struct wpa_driver_ops {
+@@ -4048,7 +4048,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, -1 on failure
  	 */
  	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
@@ -404,7 +412,7 @@ Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8557,25 +8557,15 @@ static int have_ifidx(struct wpa_driver_
+@@ -8559,25 +8559,15 @@ static int have_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
