@@ -83,7 +83,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  #ifdef CONFIG_WPS
  static int gen_uuid(const char *txt_addr)
-@@ -817,6 +822,8 @@ int main(int argc, char *argv[])
+@@ -812,6 +817,8 @@ int main(int argc, char *argv[])
  		return -1;
  #endif /* CONFIG_DPP */
  
@@ -94,7 +94,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  		if (c < 0)
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -2520,8 +2520,8 @@ static void hostapd_mld_iface_disable(st
+@@ -2514,8 +2514,8 @@ static void hostapd_mld_iface_disable(st
  #endif /* CONFIG_IEEE80211BE */
  
  
@@ -105,7 +105,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  {
  	struct hostapd_data *hapd = ctx;
  	struct sta_info *sta;
-@@ -2879,7 +2879,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2873,7 +2873,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -116,7 +116,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	struct hapd_interfaces *interfaces = ctx;
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -6974,8 +6974,8 @@ union wpa_event_data {
+@@ -6897,8 +6897,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -127,7 +127,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  
  /**
   * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
-@@ -6987,7 +6987,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -6910,7 +6910,7 @@ void wpa_supplicant_event(void *ctx, enu
   * Same as wpa_supplicant_event(), but we search for the interface in
   * wpa_global.
   */
@@ -278,8 +278,8 @@ This allows building both hostapd and wpa_supplicant as a single binary
  	os_memset(&eapol_test, 0, sizeof(eapol_test));
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -6131,8 +6131,8 @@ static int wpas_pasn_auth(struct wpa_sup
- #endif /* CONFIG_PASN */
+@@ -6099,8 +6099,8 @@ static void wpas_link_reconfig(struct wp
+ }
  
  
 -void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
@@ -289,7 +289,7 @@ This allows building both hostapd and wpa_supplicant as a single binary
  {
  	struct wpa_supplicant *wpa_s = ctx;
  	int resched;
-@@ -7084,7 +7084,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -7052,7 +7052,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  

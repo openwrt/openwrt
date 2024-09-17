@@ -41,7 +41,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	hostapd_set_state(iface, HAPD_IFACE_HT_SCAN);
 --- a/src/ap/ieee802_11_ht.c
 +++ b/src/ap/ieee802_11_ht.c
-@@ -279,6 +279,9 @@ void hostapd_2040_coex_action(struct hos
+@@ -239,6 +239,9 @@ void hostapd_2040_coex_action(struct hos
  		return;
  	}
  
@@ -51,7 +51,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	if (len < IEEE80211_HDRLEN + 2 + sizeof(*bc_ie)) {
  		wpa_printf(MSG_DEBUG,
  			   "Ignore too short 20/40 BSS Coexistence Management frame");
-@@ -439,6 +442,9 @@ void ht40_intolerant_add(struct hostapd_
+@@ -399,6 +402,9 @@ void ht40_intolerant_add(struct hostapd_
  	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211G)
  		return;
  
