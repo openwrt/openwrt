@@ -92,7 +92,7 @@ probe/assoc/auth requests via object subscribe.
  		return 0;
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -316,6 +316,10 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -317,6 +317,10 @@ int hostapd_notif_assoc(struct hostapd_d
  	struct hostapd_iface *iface = hapd->iface;
  #endif /* CONFIG_OWE */
  	bool updated = false;
@@ -103,7 +103,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (addr == NULL) {
  		/*
-@@ -460,6 +464,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -461,6 +465,12 @@ int hostapd_notif_assoc(struct hostapd_d
  		goto fail;
  	}
  
@@ -135,7 +135,7 @@ probe/assoc/auth requests via object subscribe.
  	return 0;
  }
  
-@@ -2497,6 +2500,7 @@ static int hostapd_setup_interface_compl
+@@ -2525,6 +2528,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -143,7 +143,7 @@ probe/assoc/auth requests via object subscribe.
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->freq) {
  #ifdef NEED_AP_MLME
-@@ -2722,6 +2726,7 @@ dfs_offload:
+@@ -2750,6 +2754,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -151,7 +151,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3440,6 +3445,7 @@ void hostapd_interface_deinit_free(struc
+@@ -3478,6 +3483,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -169,7 +169,7 @@ probe/assoc/auth requests via object subscribe.
  
  #define OCE_STA_CFON_ENABLED(hapd) \
  	((hapd->conf->oce & OCE_STA_CFON) && \
-@@ -204,6 +205,7 @@ struct hostapd_data {
+@@ -206,6 +207,7 @@ struct hostapd_data {
  	struct hostapd_iface *iface;
  	struct hostapd_config *iconf;
  	struct hostapd_bss_config *conf;
@@ -177,7 +177,7 @@ probe/assoc/auth requests via object subscribe.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -766,6 +768,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -776,6 +778,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  		       struct hostapd_bss_config *bss);
  int hostapd_setup_interface(struct hostapd_iface *iface);
  int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
@@ -187,7 +187,7 @@ probe/assoc/auth requests via object subscribe.
  struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -2895,7 +2895,7 @@ static void handle_auth(struct hostapd_d
+@@ -2897,7 +2897,7 @@ static void handle_auth(struct hostapd_d
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
  	struct sta_info *sta = NULL;
@@ -196,7 +196,7 @@ probe/assoc/auth requests via object subscribe.
  	u16 fc;
  	const u8 *challenge = NULL;
  	u8 resp_ies[2 + WLAN_AUTH_CHALLENGE_LEN];
-@@ -2906,6 +2906,11 @@ static void handle_auth(struct hostapd_d
+@@ -2908,6 +2908,11 @@ static void handle_auth(struct hostapd_d
  #ifdef CONFIG_IEEE80211BE
  	bool mld_sta = false;
  #endif /* CONFIG_IEEE80211BE */
@@ -208,7 +208,7 @@ probe/assoc/auth requests via object subscribe.
  
  	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
  		wpa_printf(MSG_INFO, "handle_auth - too short payload (len=%lu)",
-@@ -3102,6 +3107,13 @@ static void handle_auth(struct hostapd_d
+@@ -3104,6 +3109,13 @@ static void handle_auth(struct hostapd_d
  		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
  		goto fail;
  	}
@@ -222,7 +222,7 @@ probe/assoc/auth requests via object subscribe.
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -5365,7 +5377,7 @@ static void handle_assoc(struct hostapd_
+@@ -5367,7 +5379,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -231,7 +231,7 @@ probe/assoc/auth requests via object subscribe.
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -5607,6 +5619,11 @@ static void handle_assoc(struct hostapd_
+@@ -5609,6 +5621,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -243,7 +243,7 @@ probe/assoc/auth requests via object subscribe.
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -5709,6 +5726,13 @@ static void handle_assoc(struct hostapd_
+@@ -5711,6 +5728,13 @@ static void handle_assoc(struct hostapd_
  	if (set_beacon)
  		ieee802_11_update_beacons(hapd->iface);
  
@@ -257,7 +257,7 @@ probe/assoc/auth requests via object subscribe.
   fail:
  
  	/*
-@@ -5938,6 +5962,7 @@ static void handle_disassoc(struct hosta
+@@ -5940,6 +5964,7 @@ static void handle_disassoc(struct hosta
  			   (unsigned long) len);
  		return;
  	}
@@ -265,7 +265,7 @@ probe/assoc/auth requests via object subscribe.
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
-@@ -5969,6 +5994,8 @@ static void handle_deauth(struct hostapd
+@@ -5971,6 +5996,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  
@@ -286,16 +286,15 @@ probe/assoc/auth requests via object subscribe.
  }
  
  
-@@ -399,6 +402,9 @@ void hostapd_handle_radio_measurement(st
- 		   mgmt->u.action.u.rrm.action, MAC2STR(mgmt->sa));
- 
- 	switch (mgmt->u.action.u.rrm.action) {
-+	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
-+		hostapd_ubus_handle_link_measurement(hapd, buf, len);
-+		break;
- 	case WLAN_RRM_RADIO_MEASUREMENT_REPORT:
- 		hostapd_handle_radio_msmt_report(hapd, buf, len);
+@@ -406,7 +409,7 @@ void hostapd_handle_radio_measurement(st
+ 		hostapd_handle_nei_report_req(hapd, buf, len);
  		break;
+ 	case WLAN_RRM_LINK_MEASUREMENT_REPORT:
+-		hostapd_handle_link_mesr_report(hapd, buf, len);
++		hostapd_ubus_handle_link_measurement(hapd, buf, len);
+ 		break;
+ 	default:
+ 		wpa_printf(MSG_DEBUG, "RRM action %u is not supported",
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
 @@ -542,6 +542,7 @@ void ap_handle_timer(void *eloop_ctx, vo

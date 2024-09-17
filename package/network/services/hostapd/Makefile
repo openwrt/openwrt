@@ -5,13 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://github.com/rmandrad/hostapd
+PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2024-09-04
-PKG_SOURCE_VERSION:=9907c324a0846f3a4899133b9f08ebefb0719ca5
-PKG_MIRROR_HASH:=32deaa53c684be89f9bd69398595d1f539278a1aecb3a3bf605078fe932e2bc3
+PKG_SOURCE_DATE:=2024-09-15
+PKG_SOURCE_VERSION:=5ace39b0a4cdbe18ddbc4e18f80ee3876233c20b
+PKG_MIRROR_HASH:=43187d1ddd923970ef3821a0fe267880c2483f6f1a5acd0dd2d7906661ab1372
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -27,7 +27,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_WPA_RFKILL_SUPPORT \
 	CONFIG_DRIVER_11AC_SUPPORT \
 	CONFIG_DRIVER_11AX_SUPPORT \
-	CONFIG_DRIVER_11BE_SUPPORT \
+  	CONFIG_DRIVER_11BE_SUPPORT \
 	CONFIG_WPA_ENABLE_WEP
 
 PKG_BUILD_FLAGS:=gc-sections lto
@@ -83,8 +83,6 @@ endif
 ifneq ($(CONFIG_DRIVER_11BE_SUPPORT),)
   HOSTAPD_IEEE80211BE:=y
 endif
-
-
 
 CORE_DEPENDS = +ucode +libubus +libucode +ucode-mod-fs +ucode-mod-nl80211 +ucode-mod-rtnl +ucode-mod-ubus +ucode-mod-uloop +libblobmsg-json +libudebug
 OPENSSL_DEPENDS = +PACKAGE_$(1):libopenssl +PACKAGE_$(1):libopenssl-legacy
