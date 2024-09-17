@@ -8,6 +8,7 @@ NAME=wpad
 
 start_service() {
 	if [ -x "/usr/sbin/hostapd" ]; then
+		[ -d /etc/hostapd ] && chown network:network /etc/hostapd
 		mkdir -p /var/run/hostapd
 		chown network:network /var/run/hostapd
 		procd_open_instance hostapd

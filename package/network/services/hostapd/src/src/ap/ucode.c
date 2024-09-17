@@ -815,3 +815,52 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
 }
+
+#ifdef CONFIG_WPS
+void hostapd_ucode_wps_psk_file_notify(struct hostapd_data *hapd,
+				       const u8 *mac_addr, const u8 *psk,
+				       size_t psk_len)
+{
+	char *encryption, mac[ETH_ALEN * 2 + 5 + 1], key[PMK_LEN * 2 + 1];
+	u16 auth_type;
+
+	auth_type = hapd->wps->auth_types;
+	if (auth_type == (WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK))
+		auth_type = WPS_AUTH_WPA2PSK;
+
+	if (auth_type != WPS_AUTH_OPEN &&
+	    auth_type != WPS_AUTH_WPAPSK &&
+	    auth_type != WPS_AUTH_WPA2PSK) {
+		wpa_printf(MSG_DEBUG, "WPS: Ignored credentials for "
+			   "unsupported authentication type 0x%x",
+			   auth_type);
+		return;
+	}
+
+	switch (auth_type) {
+		case WPS_AUTH_WPA2PSK:
+			encryption = "psk2";
+			break;
+		case WPS_AUTH_WPAPSK:
+			encryption = "psk";
+			break;
+		default:
+			encryption = "none";
+			break;
+	}
+
+	os_snprintf(mac, ETH_ALEN * 2 + 5 + 1, MACSTR, MAC2STR(mac_addr));
+	wpa_snprintf_hex(key, PMK_LEN * 2 + 1, psk, psk_len);
+
+	if (wpa_ucode_call_prepare("station_wps_psk"))
+		return;
+
+	uc_value_push(ucv_string_new(hapd->conf->iface));
+	uc_value_push(ucv_string_new(encryption));
+	uc_value_push(ucv_string_new(hapd->wps->ssid));
+	uc_value_push(ucv_string_new(mac));
+	uc_value_push(ucv_string_new(key));
+	ucv_put(wpa_ucode_call(5));
+	ucv_gc(vm);
+}
+#endif /* CONFIG_WPS */
