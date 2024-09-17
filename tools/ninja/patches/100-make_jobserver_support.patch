@@ -1,2172 +1,1891 @@
-From afec30f5caf4b051827ffdd822ebd27c58219fee Mon Sep 17 00:00:00 2001
-From: Stefan Becker <stefanb@gpartner-nvidia.com>
-Date: Tue, 22 Mar 2016 13:48:07 +0200
-Subject: [PATCH 01/11] Add GNU make jobserver client support
+From 0e23593321fd8ee6d8d46b07a39354b296d57e30 Mon Sep 17 00:00:00 2001
+From: David 'Digit' Turner <digit+github@google.com>
+Date: Wed, 11 Sep 2024 18:32:23 +0200
+Subject: [PATCH 1/7] Add misc/jobserver_pool.py
 
-- add new TokenPool interface
-- GNU make implementation for TokenPool parses and verifies the magic
-  information from the MAKEFLAGS environment variable
-- RealCommandRunner tries to acquire TokenPool
-  * if no token pool is available then there is no change in behaviour
-- When a token pool is available then RealCommandRunner behaviour
-  changes as follows
-  * CanRunMore() only returns true if TokenPool::Acquire() returns true
-  * StartCommand() calls TokenPool::Reserve()
-  * WaitForCommand() calls TokenPool::Release()
+This implements a GNU jobserver token pool that will be used
+for testing the upcoming jobserver Ninja client implementation.
 
-Documentation for GNU make jobserver
-
-  http://make.mad-scientist.net/papers/jobserver-implementation/
-
-Fixes https://github.com/ninja-build/ninja/issues/1139
+Note that the implementation is basic and doesn't try to deal
+with broken protocol clients (which release more tokens than
+they acquired). Supporting them would require something vastly
+more complex that would monitor the state of the pipe/fifo
+at all times.
 ---
- configure.py              |   2 +
- src/build.cc              |  63 ++++++++----
- src/build.h               |   3 +
- src/tokenpool-gnu-make.cc | 211 ++++++++++++++++++++++++++++++++++++++
- src/tokenpool-none.cc     |  27 +++++
- src/tokenpool.h           |  26 +++++
- 6 files changed, 310 insertions(+), 22 deletions(-)
- create mode 100644 src/tokenpool-gnu-make.cc
- create mode 100644 src/tokenpool-none.cc
- create mode 100644 src/tokenpool.h
+ misc/jobserver_pool.py      | 319 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 487 insertions(+)
+ create mode 100755 misc/jobserver_pool.py
 
+--- /dev/null
++++ b/misc/jobserver_pool.py
+@@ -0,0 +1,319 @@
++#!/usr/bin/env python3
++# Copyright 2024 Google Inc. All Rights Reserved.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++"""Setup a GNU Make Jobserver token pool then launch a command with it.
++
++On Windows, this only supports the semaphore-based scheme.
++On Posix, this uses a pipe by default, unless `--fifo=FIFO` is used.
++
++NOTE: This is a basic implementation that doesn't support broken
++      protocol clients that release more tokens than they acquired
++      to the pool. Using these in your build will result in extra job
++      slots being created, severely degrading overall performance
++      over time.
++
++See --help-usage for usage examples.
++"""
++import argparse
++import os
++import platform
++import subprocess
++import sys
++import typing as T
++
++_DEFAULT_NAME = "jobserver_tokens"
++_IS_WINDOWS = sys.platform in ("win32", "cygwin")
++
++if _IS_WINDOWS:
++
++    try:
++        # This requires pywin32 to be installed.
++        import pywintypes
++        import win32event
++        import win32api
++    except ModuleNotFoundError as e:
++        print(
++            "\nERROR: Could not import Win32 API, please install pywin32, e.g. `python -m pip install pywin32`.\n",
++            file=sys.stderr,
++        )
++        raise e
++
++    # It seems impossible to import a proper mypy-compatible type definition for PyHANDLE
++    # 'from pywintypes import PyHANDLE' fails stating there is no such name.
++    # 'from pywintypes import HANDLE as PyHANDLE' fails because HANDLE is a function, not a type.
++    PyHandle: T.TypeAlias = T.Any
++
++    def create_sem(
++        sem_name: str, token_count: int
++    ) -> T.Tuple[PyHandle, T.Dict[str, str]]:
++        """Create and initialize Win32 semaphore."""
++        assert token_count > 0, f"Token count must be strictly positive"
++        # The win32event documentation states that the first argument to CreateSemaphore()
++        # can be None to indicate default security attributes, byut mypy only wants
++        # a PySECURITY_ATTRIBUTES for some reason.
++        handle = win32event.CreateSemaphore(
++            None,  # type: ignore
++            token_count - 1,
++            token_count - 1,
++            sem_name,
++        )
++        assert bool(handle), f"Error creating Win32 semaphore {win32api.GetLastError()}"
++        env = dict(os.environ)
++        env["MAKEFLAGS"] = f" -j{token_count} --jobserver-auth=" + sem_name
++        return handle, env
++
++    def check_sem_count(handle: PyHandle, token_count: int) -> int:
++        if token_count <= 1:
++            # Nothing to check here.
++            return 0
++
++        expected_count = token_count - 1
++
++        read_count = win32event.ReleaseSemaphore(handle, 1)
++        if read_count < expected_count:
++            print(
++                f"ERROR: {expected_count - read_count} were missing from the token pool (got {read_count}, expected {expected_count})",
++                file=sys.stderr,
++            )
++            return 1
++        if read_count > expected_count:
++            print(
++                f"ERROR: {read_count - expected_count} extra tokens were released to the token pool (got {read_count}, expected {expected_count})",
++                file=sys.stderr,
++            )
++            return 1
++
++        return 0
++
++    def print_usage() -> int:
++        print(
++            """Example usage:
++
++# Start <command> after setting the server to provide as many tokens
++# as available CPUs (the default)
++python \\path\\to\\jobserver_pool.py <command>
++
++# Start <command> with a fixed number of job slots.
++python \\path\\to\\jobserver_pool.py -j10 <command>
++
++# Disable the feature with a non-positive count. This is equivalent
++# to running <command> directly.
++python \\path\\to\\jobserver_pool.py -j0 <command>
++
++# Use a specific semaphore name
++python \\path\\to\\jobserver_pool.py --name=my_build_jobs <command>
++
++# Setup jobserver then start new interactive PowerShell
++# session, print MAKEFLAGS value, build stuff, then exit.
++python \\path\\to\\jobserver_pool.py powershell.exe
++$env:MAKEFLAGS
++... build stuff ...
++exit
++"""
++        )
++        return 0
++
++else:  # !_IS_WINDOWS
++
++    def create_pipe(token_count: int) -> T.Tuple[int, int, T.Dict[str, str]]:
++        """Create and fill Posix PIPE."""
++        read_fd, write_fd = os.pipe()
++        os.set_inheritable(read_fd, True)
++        os.set_inheritable(write_fd, True)
++        assert token_count > 0, f"Token count must be strictly positive"
++        os.write(write_fd, (token_count - 1) * b"x")
++        env = dict(os.environ)
++        env["MAKEFLAGS"] = (
++            f" -j{token_count} --jobserver-fds={read_fd},{write_fd} --jobserver-auth={read_fd},{write_fd}"
++        )
++        return read_fd, write_fd, env
++
++    def create_fifo(path: str, token_count: int) -> T.Tuple[int, int, T.Dict[str, str]]:
++        """Create and fill Posix FIFO."""
++        if os.path.exists(path):
++            os.remove(path)
++
++        # mypy complains that this does not exit on Windows.
++        os.mkfifo(path)  # type: ignore
++
++        read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
++        write_fd = os.open(path, os.O_WRONLY | os.O_NONBLOCK)
++        assert token_count > 0, f"Token count must be strictly positive"
++        os.write(write_fd, (token_count - 1) * b"x")
++        env = dict(os.environ)
++        env["MAKEFLAGS"] = f" -j{token_count} --jobserver-auth=fifo:" + path
++        return read_fd, write_fd, env
++
++    def print_usage() -> int:
++        print(
++            """Example usage:
++
++# Start <command> after setting the job pool to provide as many tokens
++# as available CPUs (the default)
++/path/to/jobserver_pool.py <command>
++
++# Start <command> with a fixed number of tokens
++/path/to/jobserver_pool.py -j10 <command>
++
++# Disable the feature with a non-positive count. This is equivalent
++# to running <command> directly.
++/path/to/jobserver_pool.py -j0 <command>
++
++# Use a specific FIFO path
++/path/to/jobserver_pool.py --fifo=/tmp/my_build_jobs <command>
++
++# Setup jobserver then start new interactive Bash shell
++# session, print MAKEFLAGS value, build stuff, then exit.
++/path/to/jobserver_pool.py bash -i
++echo "$MAKEFLAGS"
++... build stuff ...
++exit
++"""
++        )
++        return 0
++
++    def check_pipe_tokens(read_fd: int, token_count: int) -> int:
++        if token_count <= 1:  # Nothing to check
++            return 0
++
++        # Remove implicit token from the expected count.
++        expected_count = token_count - 1
++        os.set_blocking(read_fd, False)
++        read_count = 0
++        while True:
++            try:
++                token = os.read(read_fd, 1)
++                if len(token) == 0:  # End of pipe?
++                    break
++                read_count += 1
++            except BlockingIOError:
++                break
++
++        if read_count < expected_count:
++            print(
++                f"ERROR: {expected_count - read_count} were missing from the token pool (got {read_count}, expected {expected_count})",
++                file=sys.stderr,
++            )
++            return 1
++        if read_count > expected_count:
++            print(
++                f"ERROR: {read_count - expected_count} extra tokens were released to the token pool (got {read_count}, expected {expected_count})",
++                file=sys.stderr,
++            )
++            return 1
++
++        return 0
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser(
++        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
++    )
++    if _IS_WINDOWS:
++        parser.add_argument(
++            "--name",
++            help=f"Specify semaphore name, default is {_DEFAULT_NAME}",
++            default=_DEFAULT_NAME,
++        )
++    else:
++        mutex_group = parser.add_mutually_exclusive_group()
++        mutex_group.add_argument(
++            "--pipe",
++            action="store_true",
++            help="Implement the pool with a Unix pipe (the default)",
++        )
++        mutex_group.add_argument(
++            "--fifo",
++            help=f"Implement the pool with a FIFO file path. E,g, ./{_DEFAULT_NAME}",
++        )
++
++    parser.add_argument(
++        "--check",
++        action="store_true",
++        help="Check that all job slots were returned to the pool on exit.",
++    )
++
++    parser.add_argument(
++        "--help-usage", action="store_true", help="Print usage examples."
++    )
++
++    parser.add_argument(
++        "-j",
++        "--jobs",
++        action="store",
++        metavar="COUNT",
++        dest="token_count",
++        type=int,
++        default=os.cpu_count(),
++        help="Set job slots ccount, default is available CPUs count",
++    )
++
++    parser.add_argument("command", nargs=argparse.REMAINDER, help="Command to run.")
++    args = parser.parse_args()
++
++    if args.help_usage:
++        return print_usage()
++
++    if not args.command:
++        parser.error("This script requires at least one command argument!")
++
++    token_count = args.token_count
++    if token_count <= 0:
++        # Disable the feature.
++        ret = subprocess.run(args.command)
++        exit_code = ret.returncode
++    elif _IS_WINDOWS:
++        # Run with a Window semaphore.
++        try:
++            handle, env = create_sem(args.name, token_count)
++            ret = subprocess.run(args.command, env=env)
++            exit_code = ret.returncode
++
++            if exit_code == 0 and args.check:
++                exit_code = check_sem_count(handle, token_count)
++
++        finally:
++            win32api.CloseHandle(handle)
++    else:
++        # Run with pipe descriptors by default, or a FIFO if --fifo is used.
++        exit_code = 0
++        fifo_path = ""
++        try:
++            if args.fifo:
++                fifo_path = os.path.abspath(args.fifo)
++                read_fd, write_fd, env = create_fifo(fifo_path, (args.token_count))
++                ret = subprocess.run(args.command, env=env)
++            else:
++                read_fd, write_fd, env = create_pipe(int(args.token_count))
++                ret = subprocess.run(
++                    args.command, env=env, pass_fds=(read_fd, write_fd)
++                )
++
++            exit_code = ret.returncode
++            if exit_code == 0 and args.check:
++                exit_code = check_pipe_tokens(read_fd, token_count)
++
++        finally:
++            os.close(read_fd)
++            os.close(write_fd)
++
++            if fifo_path:
++                os.remove(fifo_path)
++
++    return exit_code
++
++
++if __name__ == "__main__":
++    sys.exit(main())
 --- a/configure.py
 +++ b/configure.py
-@@ -517,11 +517,13 @@ for name in ['build',
-              'state',
-              'status',
-              'string_piece_util',
-+             'tokenpool-gnu-make',
-              'util',
-              'version']:
-     objs += cxx(name, variables=cxxvariables)
+@@ -528,6 +528,7 @@ for name in ['build',
+              'eval_env',
+              'graph',
+              'graphviz',
++             'jobserver',
+              'json',
+              'line_printer',
+              'manifest_parser',
+@@ -543,6 +544,7 @@ for name in ['build',
  if platform.is_windows():
      for name in ['subprocess-win32',
-+                 'tokenpool-gnu-make-win32',
                   'includes_normalize-win32',
++                 'jobserver-win32',
                   'msvc_helper-win32',
                   'msvc_helper_main-win32']:
-@@ -530,7 +532,9 @@ if platform.is_windows():
+         objs += cxx(name, variables=cxxvariables)
+@@ -550,7 +552,9 @@ if platform.is_windows():
          objs += cxx('minidump-win32', variables=cxxvariables)
      objs += cc('getopt')
  else:
 -    objs += cxx('subprocess-posix')
-+    for name in ['subprocess-posix',
-+                 'tokenpool-gnu-make-posix']:
-+        objs += cxx(name)
++    for name in ['jobserver-posix',
++                 'subprocess-posix']:
++      objs += cxx(name, variables=cxxvariables)
  if platform.is_aix():
      objs += cc('getopt')
  if platform.is_msvc():
-@@ -588,6 +592,7 @@ for name in ['build_log_test',
-              'string_piece_util_test',
-              'subprocess_test',
-              'test',
-+             'tokenpool_test',
-              'util_test']:
-     objs += cxx(name, variables=cxxvariables)
- if platform.is_windows():
---- a/src/build.cc
-+++ b/src/build.cc
-@@ -35,6 +35,7 @@
- #include "state.h"
- #include "status.h"
- #include "subprocess.h"
-+#include "tokenpool.h"
- #include "util.h"
- 
- using namespace std;
-@@ -47,8 +48,9 @@ struct DryRunCommandRunner : public Comm
- 
-   // Overridden from CommandRunner:
-   virtual bool CanRunMore() const;
-+  virtual bool AcquireToken();
-   virtual bool StartCommand(Edge* edge);
--  virtual bool WaitForCommand(Result* result);
-+  virtual bool WaitForCommand(Result* result, bool more_ready);
- 
-  private:
-   queue<Edge*> finished_;
-@@ -58,12 +60,16 @@ bool DryRunCommandRunner::CanRunMore() c
-   return true;
- }
- 
-+bool DryRunCommandRunner::AcquireToken() {
+--- /dev/null
++++ b/src/jobserver.cc
+@@ -0,0 +1,264 @@
++// Copyright 2024 Google Inc. All Rights Reserved.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++#include "jobserver.h"
++
++#include <assert.h>
++#include <stdio.h>
++
++#include <vector>
++
++#include "string_piece.h"
++
++namespace {
++
++// If |input| starts with |prefix|, return true and sets |*value| to the rest
++// of the input. Otherwise return false.
++bool GetPrefixedValue(StringPiece input, StringPiece prefix,
++                      StringPiece* value) {
++  assert(prefix.len_ > 0);
++  if (input.len_ < prefix.len_ || memcmp(prefix.str_, input.str_, prefix.len_))
++    return false;
++
++  *value = StringPiece(input.str_ + prefix.len_, input.len_ - prefix.len_);
 +  return true;
 +}
 +
- bool DryRunCommandRunner::StartCommand(Edge* edge) {
-   finished_.push(edge);
-   return true;
- }
++// Try to read a comma-separated pair of file descriptors from |input|.
++// On success return true and set |*config| accordingly. Otherwise return
++// false if the input doesn't follow the appropriate format.
++bool GetFileDescriptorPair(StringPiece input, Jobserver::Config* config) {
++  std::string pair = input.AsString();
++  if (sscanf(pair.c_str(), "%d,%d", &config->read_fd, &config->write_fd) != 2)
++    return false;
++
++  // From
++  // https://www.gnu.org/software/make/manual/html_node/POSIX-Jobserver.html Any
++  // negative descriptor means the feature is disabled.
++  if (config->read_fd < 0 || config->write_fd < 0)
++    config->mode = Jobserver::Config::kModeNone;
++  else
++    config->mode = Jobserver::Config::kModePipe;
++
++  return true;
++}
++
++static const struct {
++  const char* mode_str;
++  Jobserver::Config::Mode mode_value;
++} kValidModes[] = {
++  { "none", Jobserver::Config::kModeNone },
++  { "pipe", Jobserver::Config::kModePipe },
++  { "fifo", Jobserver::Config::kModePosixFifo },
++  { "sem", Jobserver::Config::kModeWin32Semaphore },
++  { "0", Jobserver::Config::kModeNone },
++  { "1", Jobserver::Config::kModeDefault },
++};
++
++}  // namespace
++
++// static
++const int16_t Jobserver::Slot::kImplicitValue;
++
++uint8_t Jobserver::Slot::GetExplicitValue() const {
++  assert(IsExplicit());
++  return static_cast<uint8_t>(value_);
++}
++
++bool Jobserver::ParseMakeFlagsValue(const char* makeflags_env,
++                                    Jobserver::Config* config,
++                                    std::string* error) {
++  *config = Config();
++
++  if (!makeflags_env || !makeflags_env[0]) {
++    /// Return default Config instance with kModeNone if input is null or empty.
++    return true;
++  }
++
++  // Decompose input into vector of space or tab separated string pieces.
++  std::vector<StringPiece> args;
++  const char* p = makeflags_env;
++  while (*p) {
++    const char* next_space = strchr(p, '\t');
++    const char* next_tab = strchr(p, ' ');
++    if (next_tab) {
++      if (!next_space)
++        next_space = next_tab;
++      else if (next_tab < next_space)
++        next_space = next_tab;
++    }
++    if (!next_space) {
++      args.emplace_back(p);
++      break;
++    }
++
++    if (next_space > p)
++      args.emplace_back(p, next_space - p);
++
++    p = next_space + 1;
++  }
++
++  // clang-format off
++  //
++  // From:
++  // https://www.gnu.org/software/make/manual/html_node/POSIX-Jobserver.html
++  //
++  // """
++  // Your tool may also examine the first word of the MAKEFLAGS variable and
++  // look for the character n. If this character is present then make was
++  // invoked with the ‘-n’ option and your tool may want to stop without
++  // performing any operations.
++  // """
++  //
++  // Where according to
++  // https://www.gnu.org/software/make/manual/html_node/Options_002fRecursion.html
++  // MAKEFLAGS begins with all "flag letters" passed to make.
++  //
++  // Experimentation shows that GNU Make 4.3, at least, will set MAKEFLAGS with
++  // an initial space if no letter flag are passed to its invocation (except -j),
++  // i.e.:
++  //
++  //    make -ks --> MAKEFLAGS="ks"
++  //    make -j  --> MAKEFLAGS=" -j"
++  //    make -ksj --> MAKEFLAGS="ks -j"
++  //    make -ks -j3  --> MAKEFLAGS="ks -j3 --jobserver-auth=3,4"
++  //    make -j3      --> MAKEFLAGS=" -j3 --jobserver-auth=3,4"
++  //
++  // However, other jobserver implementation will not, for example the one
++  // at https://github.com/rust-lang/jobserver-rs will set MAKEFLAGS to just
++  // "--jobserver-fds=R,W --jobserver-auth=R,W" instead, without an initial
++  // space.
++  //
++  // Another implementation is from Rust's Cargo itself which will set it to
++  // "-j --jobserver-fds=R,W --jobserver-auth=R,W".
++  //
++  // For the record --jobserver-fds=R,W is an old undocumented and deprecated
++  // version of --jobserver-auth=R,W that was implemented by GNU Make before 4.2
++  // was released, and some tooling may depend on it. Hence it makes sense to
++  // define both --jobserver-fds and --jobserver-auth at the same time, since
++  // the last recognized one should win in client code.
++  //
++  // The initial space will have been stripped by the loop above, but we can
++  // still support the requirement by ignoring the first arg if it begins with a
++  // dash (-).
++  //
++  // clang-format on
++  if (!args.empty() && args[0][0] != '-' &&
++      !!memchr(args[0].str_, 'n', args[0].len_)) {
++    return true;
++  }
++
++  // Loop over all arguments, the last one wins, except in case of errors.
++  for (const auto& arg : args) {
++    StringPiece value;
++
++    // Handle --jobserver-auth=... here.
++    if (GetPrefixedValue(arg, "--jobserver-auth=", &value)) {
++      if (GetFileDescriptorPair(value, config)) {
++        continue;
++      }
++      StringPiece fifo_path;
++      if (GetPrefixedValue(value, "fifo:", &fifo_path)) {
++        config->mode = Jobserver::Config::kModePosixFifo;
++        config->path = fifo_path.AsString();
++      } else {
++        config->mode = Jobserver::Config::kModeWin32Semaphore;
++        config->path = value.AsString();
++      }
++      continue;
++    }
++
++    // Handle --jobserver-fds which is an old undocumented variant of
++    // --jobserver-auth that only accepts a pair of file descriptor.
++    // This was replaced by --jobserver-auth=R,W in GNU Make 4.2.
++    if (GetPrefixedValue(arg, "--jobserver-fds=", &value)) {
++      if (!GetFileDescriptorPair(value, config)) {
++        *error = "Invalid file descriptor pair [" + value.AsString() + "]";
++        return false;
++      }
++      config->mode = Jobserver::Config::kModePipe;
++      continue;
++    }
++
++    // Ignore this argument. This assumes that MAKEFLAGS does not
++    // use spaces to separate the option from its argument, e.g.
++    // `--jobserver-auth <something>`, which has been confirmed with
++    // Make 4.3, even if it receives such a value in its own env.
++  }
++
++  return true;
++}
++
++bool Jobserver::ParseNativeMakeFlagsValue(const char* makeflags_env,
++                                          Jobserver::Config* config,
++                                          std::string* error) {
++  if (!ParseMakeFlagsValue(makeflags_env, config, error))
++    return false;
++
++#ifdef _WIN32
++  if (config->mode == Jobserver::Config::kModePosixFifo) {
++    *error = "FIFO mode is not available on Windows!";
++    return false;
++  }
++  if (config->mode == Jobserver::Config::kModePipe) {
++    *error =
++        "File-descriptor based authentication is not available on Windows!";
++    return false;
++  }
++#else   // !_WIN32
++  if (config->mode == Jobserver::Config::kModeWin32Semaphore) {
++    *error = "Semaphore mode is only available on Windows!";
++    return false;
++  }
++#endif  // !_WIN32
++  return true;
++}
++
++// static
++std::string Jobserver::Config::ModeToString(Jobserver::Config::Mode mode) {
++  std::string result;
++  for (const auto& valid : kValidModes) {
++    if (valid.mode_value == mode) {
++      result = valid.mode_str;
++      break;
++    }
++  }
++  return result;
++}
++
++std::pair<bool, Jobserver::Config::Mode> Jobserver::Config::ModeFromString(
++    const std::string& mode_str) {
++  std::pair<bool, Jobserver::Config::Mode> result = {
++    false, Jobserver::Config::kModeNone
++  };
++  for (const auto& valid : kValidModes) {
++    if (mode_str == valid.mode_str) {
++      result.first = true;
++      result.second = valid.mode_value;
++      break;
++    }
++  }
++  return result;
++}
++
++std::string Jobserver::Config::GetValidModesListAsString(
++    const char* separator) {
++  std::string result;
++  for (const auto& valid : kValidModes) {
++    if (!result.empty())
++      result += separator;
++    result += valid.mode_str;
++  }
++  return result;
++}
+--- /dev/null
++++ b/src/jobserver.h
+@@ -0,0 +1,267 @@
++// Copyright 2024 Google Inc. All Rights Reserved.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++#pragma once
++
++#include <stdint.h>
++
++#include <memory>
++#include <string>
++#include <utility>
++
++/// Jobserver provides types related to managing a pool of "job slots"
++/// using the GNU Make jobserver ptocol described at:
++///
++/// https://www.gnu.org/software/make/manual/html_node/Job-Slots.html
++///
++struct Jobserver {
++  /// A Jobserver::Slot models a single job slot that can be acquired from.
++  /// or released to a jobserver pool. This class is move-only, and can
++  /// wrap three types of values:
++  ///
++  /// - An "invalid" value (the default), used to indicate errors, e.g.
++  ///   that no slot could be acquired from the pool.
++  ///
++  /// - The "implicit" value, used to model the job slot that is implicitly
++  ///   assigned to a jobserver client by the parent process that spawned
++  ///   it.
++  ///
++  /// - The "explicit" values, which correspond to an actual byte read from
++  ///   the slot pool's pipe (for Posix), or a semaphore decrement operation
++  ///   (for Windows).
++  ///
++  /// Use IsValid(), IsImplicit(), HasValue() to test for categories.
++  ///
++  /// TECHNICAL NOTE: This design complies with the requirements laid out
++  /// on https://www.gnu.org/software/make/manual/html_node/POSIX-Jobserver.html
++  /// which requires clients to write back the exact token values they
++  /// received from a Posix pipe.
++  ///
++  /// Note that *currently* all pool implementations write the same token
++  /// values to the pipe ('+' for GNU Make, and '|' for the Rust jobserver),
++  /// and do not care about the values written back by clients.
++  ///
++  struct Slot {
++    /// Default constructor creates invalid instance.
++    Slot() = default;
++
++    /// Move operations are allowed.
++    Slot(Slot&& o) noexcept : value_(o.value_) { o.value_ = -1; }
++
++    Slot& operator=(Slot&& o) noexcept {
++      if (this != &o) {
++        this->value_ = o.value_;
++        o.value_ = -1;
++      }
++      return *this;
++    }
++
++    /// Copy operations are disallowed.
++    Slot(const Slot&) = delete;
++    Slot& operator=(const Slot&) = delete;
++
++    /// Return true iff this instance is valid, i.e. that it is either
++    /// implicit or explicit job slot.
++    bool IsValid() const { return value_ >= 0; }
++
++    /// Return true iff this instance represents an implicit job slot.
++    bool IsImplicit() const { return value_ == kImplicitValue; }
++
++    /// Return true iff this instance represents an explicit job slot
++    bool IsExplicit() const { return IsValid() && !IsImplicit(); }
++
++    /// Return value of an explicit slot. It is a runtime error to call
++    /// this from an invalid instance.
++    uint8_t GetExplicitValue() const;
++
++    /// Create instance for explicit byte value.
++    static Slot CreateExplicit(uint8_t value) {
++      return Slot(static_cast<int16_t>(value));
++    }
++
++    /// Create instance for the implicit value.
++    static Slot CreateImplicit() { return Slot(kImplicitValue); }
++
++   private:
++    Slot(int16_t value) : value_(value) {}
++
++    static constexpr int16_t kImplicitValue = 256;
++
++    int16_t value_ = -1;
++  };
++
++  /// A Jobserver::Config models how to access or implement a GNU jobserver
++  /// implementation.
++  struct Config {
++    /// Different implementation modes for the slot pool.
++    ///
++    /// kModeNone means there is no pool.
++    ///
++    /// kModePipe means that `--jobserver-auth=R,W` is used to
++    ///    pass a pair of file descriptors to client processes. This also
++    ///    matches `--jobserver-fds=R,W` which is an old undocumented
++    ///    variant of the same scheme.
++    ///
++    /// kModePosixFifo means that `--jobserver-auth=fifo:PATH` is used to
++    ///    pass the path of a Posix FIFO to client processes. This is not
++    ///    supported on Windows. Implemented by GNU Make 4.4 and above
++    ///    when `--jobserver-style=fifo` is used.
++    ///
++    /// kModeWin32Semaphore means that `--jobserver-auth=SEMAPHORE_NAME` is
++    ///    used to pass the name of a Win32 semaphore to client processes.
++    ///    This is not supported on Posix.
++    ///
++    /// kModeDefault is the default mode to enable on the current platform.
++    ///    This is an alias for kModeWin32Semaphore on Windows ,and
++    ///    kModePipe on Posix, since FIFO mode was only introduced in
++    ///    GNU Make 4.4, and older clients may not support it.
++    enum Mode {
++      kModeNone = 0,
++      kModePipe,
++      kModePosixFifo,
++      kModeWin32Semaphore,
++#ifdef _WIN32
++      kModeDefault = kModeWin32Semaphore,
++#else   // _WIN32
++      kModeDefault = kModePipe,
++#endif  // _WIN32
++    };
++
++    /// Convert a mode value into an equivalent string value.
++    /// Useful for debugging and error messages.
++    static std::string ModeToString(Mode mode);
++
++    /// Convert a string into the equivalent Mode value.
++    /// On success, return (true, <mode>), on failure,
++    /// return (false, kModeNone). NOTE: As a special case,
++    /// this also accepts "0" for kModeNone. and "1" for kModeDefault
++    /// which is useful when reading the value from an environment
++    /// variable.
++    static std::pair<bool, Mode> ModeFromString(const std::string& str);
++
++    /// Return the list of valid modes as a space-separated string.
++    /// Allow using a custom separator. This includes "0" and "1" as
++    /// aliases for kModeNone and kModeDefault.
++    static std::string GetValidModesListAsString(const char* separator = " ");
++
++    /// Implementation mode for the pool.
++    Mode mode = kModeNone;
++
++    /// For kModeFifo, this is the path to the Unix FIFO to use.
++    /// For kModeSemaphore, this is the name of the Win32 semaphore to use.
++    std::string path;
++
++    /// For kModePipe, these are the file descriptor values
++    /// extracted from MAKEFLAGS.
++    int read_fd = -1;
++    int write_fd = -1;
++
++    /// Return true if this instance matches an active implementation mode.
++    /// This does not try to validate configuration parameters though.
++    bool HasMode() { return mode != kModeNone; }
++  };
++
++  /// Parse the value of a MAKEFLAGS environment variable. On success return
++  /// true and set |*config|. On failure, return false and set |*error| to
++  /// explain what's wrong. If |makeflags_env| is nullptr or an empty string,
++  /// this returns success and sets |config->mode| to Config::kModeNone.
++  static bool ParseMakeFlagsValue(const char* makeflags_env, Config* config,
++                                  std::string* error);
++
++  /// A variant of ParseMakeFlagsValue() that will return an error if the parsed
++  /// result is not compatible with the native system. For example
++  /// --jobserver-auth=R,W or --jobserver-auth=fifo:PATH only work on Posix,
++  /// while --jobserver-auth=NAME only work on Windows.
++  static bool ParseNativeMakeFlagsValue(const char* makeflags_env,
++                                        Config* config, std::string* error);
++
++  /// A Jobserver::Client instance models a client of an external GNU jobserver
++  /// pool, which can be implemented as a Unix FIFO, or a Windows named semaphore.
++  /// Usage is the following:
++  ///
++  ///  - Call Jobserver::Client::Create(), passing a Config value as argument,
++  ///    (e.g. one initialized with ParseNativeMakeFlagsValue()) to create
++  ///    a new instance.
++  ///
++  ///  - Call TryAcquire() to try to acquire a job slot from the pool.
++  ///    If the result is not an invalid slot, store it until the
++  ///    corresponding command completes, then call Release() to send it
++  ///    back to the pool.
++  ///
++  ///  - It is important that all acquired slots are released to the pool,
++  ///    even if Ninja terminates early (e.g. due to a build command failing).
++  ///
++  class Client {
++   public:
++    /// Destructor.
++    virtual ~Client() {}
++
++    /// Try to acquire a slot from the pool. On failure, i.e. if no slot
++    /// can be acquired, this returns an invalid Token instance.
++    ///
++    /// Note that this will always return the implicit slot value the first
++    /// time this is called, without reading anything from the pool, as
++    /// specified by the protocol. This implicit value *must* be released
++    /// just like any other one. In general, users of this class should not
++    /// care about this detail, except unit-tests.
++    virtual Slot TryAcquire() { return Slot(); }
++
++    /// Release a slot to the pool. Does nothing if slot is invalid,
++    /// or if writing to the pool fails (and if this is not the implicit slot).
++    /// If the pool is destroyed before Ninja, then only the implicit slot
++    /// can be acquired in the next calls (if it was released). This simply
++    /// enforces serialization of all commands, instead of blocking.
++    virtual void Release(Slot slot) {}
++
++    /// Create a new Client instance from a given configuration. On failure,
++    /// this returns null after setting |*error|. Note that it is an error to
++    /// call this function with |config.HasMode() == false|.
++    static std::unique_ptr<Client> Create(const Config&, std::string* error);
++
++   protected:
++    Client() = default;
++  };
++
++  /// Jobserver::Pool implements a jobserver pool of job slots according
++  /// to the GNU Make protocol. Usage is the following:
++  ///
++  /// - Use Create() method to create new instances.
++  ///
++  /// - Retrieve the value of the MAKEFLAGS environment variable, and
++  ///   ensure it is passed to each client.
++  ///
++  class Pool {
++   public:
++    /// Destructor.
++    virtual ~Pool() {}
++
++    /// Default implementation mode for the current platform.
++#ifdef _WIN32
++    static constexpr Config::Mode kDefaultMode = Config::kModeWin32Semaphore;
++#else   // !_WIN32
++    static constexpr Config::Mode kDefaultMode = Config::kModePipe;
++#endif  // !_WIN32
++
++    /// Create new instance to use |num_slots| job slots, using a specific
++    /// implementation mode. On failure, set |*error| and return null.
++    ///
++    /// Note that it is an error to use a value of |num_slots| that is <= 1.
++    static std::unique_ptr<Pool> Create(size_t num_job_slots, Config::Mode mode,
++                                        std::string* error);
++
++    /// Return the value of the MAKEFLAGS variable, corresponding to this
++    /// instance, to pass to sub-processes.
++    virtual std::string GetEnvMakeFlagsValue() const = 0;
++  };
++};
+--- /dev/null
++++ b/src/jobserver-posix.cc
+@@ -0,0 +1,336 @@
++// Copyright 2024 Google Inc. All Rights Reserved.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++#include <assert.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
++#include <string>
++
++#include "jobserver.h"
++#include "util.h"
++
++namespace {
++
++// Return true if |fd| is a fifo or pipe descriptor.
++bool IsFifoDescriptor(int fd) {
++  struct stat info;
++  int ret = ::fstat(fd, &info);
++  return (ret == 0) && ((info.st_mode & S_IFMT) == S_IFIFO);
++}
++
++bool SetNonBlockingFd(int fd) {
++  // First, ensure FD_CLOEXEC is set.
++  int flags = fcntl(fd, F_GETFL, 0);
++  if (!(flags & O_NONBLOCK)) {
++    int ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
++    if (ret < 0)
++      return false;
++  }
++  return true;
++}
++
++bool SetCloseOnExecFd(int fd) {
++  int flags = fcntl(fd, F_GETFD, 0);
++  if (!(flags & FD_CLOEXEC)) {
++    int ret = fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
++    if (ret < 0)
++      return false;
++  }
++  return true;
++}
++
++// Duplicate the descriptor and make the result non-blocking and
++// close-on-exec.
++bool DuplicateDescriptor(int from_fd, int* to_fd) {
++  int new_fd = dup(from_fd);
++  if (new_fd < 0) {
++    return false;
++  }
++  if (!SetNonBlockingFd(new_fd) || !SetCloseOnExecFd(new_fd)) {
++    ::close(new_fd);
++    return false;
++  }
++  *to_fd = new_fd;
++  return true;
++}
++
++// Implementation of Jobserver::Client for Posix systems
++class PosixJobserverClient : public Jobserver::Client {
++ public:
++  virtual ~PosixJobserverClient() {
++    if (write_fd_ >= 0)
++      ::close(write_fd_);
++    if (read_fd_ >= 0)
++      ::close(read_fd_);
++  }
++
++  Jobserver::Slot TryAcquire() override {
++    if (has_implicit_slot_) {
++      has_implicit_slot_ = false;
++      return Jobserver::Slot::CreateImplicit();
++    }
++    uint8_t slot_char = '\0';
++    int ret;
++    do {
++      ret = ::read(read_fd_, &slot_char, 1);
++    } while (ret < 0 && errno == EINTR);
++    if (ret == 1) {
++      return Jobserver::Slot::CreateExplicit(slot_char);
++    }
++    return Jobserver::Slot();
++  }
++
++  void Release(Jobserver::Slot slot) override {
++    if (!slot.IsValid())
++      return;
++
++    if (slot.IsImplicit()) {
++      assert(!has_implicit_slot_ && "Implicit slot cannot be released twice!");
++      has_implicit_slot_ = true;
++      return;
++    }
++
++    uint8_t slot_char = slot.GetExplicitValue();
++    int ret;
++    do {
++      ret = ::write(write_fd_, &slot_char, 1);
++    } while (ret < 0 && errno == EINTR);
++    (void)ret;  // Nothing can be done in case of error here.
++  }
++
++  // Initialize instance with two explicit pipe file descriptors.
++  bool InitWithPipeFds(int read_fd, int write_fd, std::string* error) {
++    // Verify that the file descriptors belong to FIFOs.
++    if (!IsFifoDescriptor(read_fd) || !IsFifoDescriptor(write_fd)) {
++      *error = "Invalid file descriptors";
++      return false;
++    }
++    // Duplicate the file descriptors to make then non-blocking, and
++    // close-on-exec. This is important because the original descriptors
++    // might be inherited by sub-processes of this client.
++    if (!DuplicateDescriptor(read_fd, &read_fd_)) {
++      *error = "Could not duplicate read descriptor";
++      return false;
++    }
++    if (!DuplicateDescriptor(write_fd, &write_fd_)) {
++      *error = "Could not duplicate write descriptor";
++      // Let destructor close read_fd_.
++      return false;
++    }
++    return true;
++  }
++
++  // Initialize with FIFO file path.
++  bool InitWithFifo(const std::string& fifo_path, std::string* error) {
++    if (fifo_path.empty()) {
++      *error = "Empty fifo path";
++      return false;
++    }
++    read_fd_ = ::open(fifo_path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
++    if (read_fd_ < 0) {
++      *error =
++          std::string("Error opening fifo for reading: ") + strerror(errno);
++      return false;
++    }
++    if (!IsFifoDescriptor(read_fd_)) {
++      *error = "Not a fifo path: " + fifo_path;
++      // Let destructor close read_fd_.
++      return false;
++    }
++    write_fd_ = ::open(fifo_path.c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
++    if (write_fd_ < 0) {
++      *error =
++          std::string("Error opening fifo for writing: ") + strerror(errno);
++      // Let destructor close read_fd_
++      return false;
++    }
++    return true;
++  }
++
++ private:
++  // Set to true if the implicit slot has not been acquired yet.
++  bool has_implicit_slot_ = true;
++
++  // read and write descriptors.
++  int read_fd_ = -1;
++  int write_fd_ = -1;
++};
++
++class PosixJobserverPool : public Jobserver::Pool {
++ public:
++  std::string GetEnvMakeFlagsValue() const override {
++    std::string result;
++    if (!fifo_.empty()) {
++      result.resize(fifo_.size() + 32);
++      int ret = snprintf(const_cast<char*>(result.data()), result.size(),
++                         " -j%zd --jobserver-auth=fifo:%s", job_count_,
++                         fifo_.c_str());
++      if (ret < 0 || ret > static_cast<int>(result.size()))
++        Fatal("Could not format PosixJobserverPool MAKEFLAGS!");
++      result.resize(static_cast<size_t>(ret));
++    }
++    if (read_fd_ >= 0 && write_fd_ >= 0) {
++      result.resize(256);
++      // See technical note in jobserver.c for formatting justification.
++      int ret = snprintf(const_cast<char*>(result.data()), result.size(),
++                         " -j%zu --jobserver-fds=%d,%d --jobserver-auth=%d,%d",
++                         job_count_, read_fd_, write_fd_, read_fd_, write_fd_);
++      if (ret < 0 || ret > static_cast<int>(result.size()))
++        Fatal("Could not format PosixJobserverPool MAKEFLAGS!");
++      result.resize(static_cast<size_t>(ret));
++    }
++    return result;
++  }
++
++  virtual ~PosixJobserverPool() {
++    if (read_fd_ >= 0)
++      ::close(read_fd_);
++    if (write_fd_ >= 0)
++      ::close(write_fd_);
++    if (!fifo_.empty())
++      ::unlink(fifo_.c_str());
++  }
++
++  bool InitWithPipe(size_t slot_count, std::string* error) {
++    // Create anonymous pipe, then write job slot tokens into it.
++    int fds[2] = { -1, -1 };
++    int ret = pipe(fds);
++    if (ret < 0) {
++      *error =
++          std::string("Could not create anonymous pipe: ") + strerror(errno);
++      return false;
++    }
++
++    // The file descriptors returned by pipe() are already heritable and
++    // blocking, which is exactly what's needed here.
++    read_fd_ = fds[0];
++    write_fd_ = fds[1];
++
++    return FillSlots(slot_count, error);
++  }
++
++  bool InitWithFifo(size_t slot_count, std::string* error) {
++    const char* tmp_dir = getenv("TMPDIR");
++    if (!tmp_dir)
++      tmp_dir = "/tmp";
++
++    fifo_.resize(strlen(tmp_dir) + 32);
++    int len = snprintf(const_cast<char*>(fifo_.data()), fifo_.size(),
++                       "%s/NinjaFIFO%d", tmp_dir, getpid());
++    if (len < 0) {
++      *error = "Cannot create fifo path!";
++      return false;
++    }
++    fifo_.resize(static_cast<size_t>(len));
++
++    int ret = mknod(fifo_.c_str(), S_IFIFO | 0666, 0);
++    if (ret < 0) {
++      *error = std::string("Cannot create fifo: ") + strerror(errno);
++      return false;
++    }
++
++    do {
++      write_fd_ = ::open(fifo_.c_str(), O_RDWR | O_CLOEXEC);
++    } while (write_fd_ < 0 && errno == EINTR);
++    if (write_fd_ < 0) {
++      *error = std::string("Could not open fifo: ") + strerror(errno);
++      // Let destructor remove the fifo.
++      return false;
++    }
++
++    return FillSlots(slot_count, error);
++  }
++
++ private:
++  // Fill the pool to satisfy |slot_count| job slots. This
++  // writes |slot_count - 1| bytes to the pipe to satisfy the
++  // implicit job slot requirement.
++  bool FillSlots(size_t slot_count, std::string* error) {
++    job_count_ = slot_count;
++    for (; slot_count > 1; --slot_count) {
++      // Write '+' into the pipe, just like GNU Make. Note that some
++      // implementations write '|' instead, but so far no client or pool
++      // implementation cares about the exact value, though the official spec
++      // says this might change in the future.
++      const char slot_char = '+';
++      int ret = ::write(write_fd_, &slot_char, 1);
++      if (ret != 1) {
++        if (ret < 0 && errno == EINTR)
++          continue;
++        *error =
++            std::string("Could not fill job slots pool: ") + strerror(errno);
++        return false;
++      }
++    }
++    return true;
++  }
++
++  // Number of parallel job slots (including implicit one).
++  size_t job_count_ = 0;
++
++  // In pipe mode, these are inheritable read and write descriptors for the
++  // pipe. In fifo mode, read_fd_ will be -1, and write_fd_ will be a
++  // non-inheritable descriptor to keep the FIFO alive.
++  int read_fd_ = -1;
++  int write_fd_ = -1;
++
++  // Path to fifo, this will be empty when using an anonymous pipe.
++  std::string fifo_;
++};
++
++}  // namespace
++
++// static
++std::unique_ptr<Jobserver::Client> Jobserver::Client::Create(
++    const Jobserver::Config& config, std::string* error) {
++  bool success = false;
++  auto client =
++      std::unique_ptr<PosixJobserverClient>(new PosixJobserverClient());
++  if (config.mode == Jobserver::Config::kModePipe) {
++    success = client->InitWithPipeFds(config.read_fd, config.write_fd, error);
++  } else if (config.mode == Jobserver::Config::kModePosixFifo) {
++    success = client->InitWithFifo(config.path, error);
++  } else {
++    *error = "Unsupported jobserver mode";
++  }
++  if (!success)
++    client.reset();
++  return client;
++}
++
++// static
++std::unique_ptr<Jobserver::Pool> Jobserver::Pool::Create(
++    size_t num_job_slots, Jobserver::Config::Mode mode, std::string* error) {
++  std::unique_ptr<PosixJobserverPool> pool;
++  if (num_job_slots < 2) {
++    *error = "At least 2 job slots needed";
++    return pool;
++  }
++  bool success = false;
++  pool.reset(new PosixJobserverPool());
++  if (mode == Jobserver::Config::kModePipe) {
++    success = pool->InitWithPipe(num_job_slots, error);
++  } else if (mode == Jobserver::Config::kModePosixFifo) {
++    success = pool->InitWithFifo(num_job_slots, error);
++  } else {
++    *error = "Unsupported jobserver mode";
++  }
++  if (!success)
++    pool.reset();
++  return pool;
++}
+--- /dev/null
++++ b/src/jobserver-win32.cc
+@@ -0,0 +1,180 @@
++// Copyright 2024 Google Inc. All Rights Reserved.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++#include <assert.h>
++#include <windows.h>
++
++#include "jobserver.h"
++#include "util.h"
++
++namespace {
++
++// Implementation of Jobserver::Client for Win32 systems.
++// At the moment, only the semaphore scheme is supported,
++// even when running under Cygwin which could support the
++// pipe version, in theory.
++class Win32JobserverClient : public Jobserver::Client {
++ public:
++  virtual ~Win32JobserverClient() {
++    // NOTE: OpenSemaphore() returns NULL on failure.
++    if (IsValid()) {
++      ::CloseHandle(handle_);
++    }
++  }
++
++  Jobserver::Slot TryAcquire() override {
++    if (IsValid()) {
++      if (has_implicit_slot_) {
++        has_implicit_slot_ = false;
++        return Jobserver::Slot::CreateImplicit();
++      }
++
++      DWORD ret = ::WaitForSingleObject(handle_, 0);
++      if (ret == WAIT_OBJECT_0) {
++        // Hard-code value 1 for the explicit slot value.
++        return Jobserver::Slot::CreateExplicit(1);
++      }
++    }
++    return Jobserver::Slot();
++  }
++
++  void Release(Jobserver::Slot slot) override {
++    if (!slot.IsValid())
++      return;
++
++    if (slot.IsImplicit()) {
++      assert(!has_implicit_slot_ && "Implicit slot cannot be released twice!");
++      has_implicit_slot_ = true;
++      return;
++    }
++
++    // Nothing can be done in case of error here.
++    (void)::ReleaseSemaphore(handle_, 1, NULL);
++  }
++
++  bool InitWithSemaphore(const std::string& name, std::string* error) {
++    handle_ = ::OpenSemaphoreA(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE,
++                               name.c_str());
++    if (handle_ == NULL) {
++      *error = "Error opening semaphore: " + GetLastErrorString();
++      return false;
++    }
++    return true;
++  }
++
++ protected:
++  bool IsValid() const {
++    // NOTE: OpenSemaphore() returns NULL on failure, not INVALID_HANDLE_VALUE.
++    return handle_ != NULL;
++  }
++
++  // Set to true if the implicit slot has not been acquired yet.
++  bool has_implicit_slot_ = true;
++
++  // Semaphore handle. NULL means not in use.
++  HANDLE handle_ = NULL;
++};
++
++class Win32JobserverPool : public Jobserver::Pool {
++ public:
++  bool InitWithSemaphore(size_t slot_count, std::string* error) {
++    job_count_ = slot_count;
++    sem_name_ = GetSemaphoreName();
++    LONG count = static_cast<LONG>(slot_count - 1);
++    handle_ = ::CreateSemaphoreA(NULL, count, count, sem_name_.c_str());
++    if (!IsValid()) {
++      *error = "Could not create semaphore: " + GetLastErrorString();
++      return false;
++    }
++    return true;
++  }
++
++  std::string GetEnvMakeFlagsValue() const override {
++    std::string result;
++    result.resize(sem_name_.size() + 32);
++    int ret =
++        snprintf(const_cast<char*>(result.data()), result.size(),
++                 " -j%zd --jobserver-auth=%s", job_count_, sem_name_.c_str());
++    if (ret < 0 || ret > static_cast<int>(result.size()))
++      Fatal("Could not format Win32JobserverPool MAKEFLAGS!");
++
++    return result;
++  }
++
++  virtual ~Win32JobserverPool() {
++    if (IsValid())
++      ::CloseHandle(handle_);
++  }
++
++ private:
++  // CreateSemaphore returns NULL on failure.
++  bool IsValid() const { return handle_ != NULL; }
++
++  // Compute semaphore name for new instance.
++  static std::string GetSemaphoreName() {
++    static int counter = 0;
++    counter += 1;
++    char name[64];
++    snprintf(name, sizeof(name), "ninja_jobserver_pool_%d_%d",
++             GetCurrentProcessId(), counter);
++    return std::string(name);
++  }
++
++  // Semaphore handle.
++  HANDLE handle_ = NULL;
++
++  // Saved slot count.
++  size_t job_count_ = 0;
++
++  // Semaphore name.
++  std::string sem_name_;
++};
++
++}  // namespace
++
++// static
++std::unique_ptr<Jobserver::Client> Jobserver::Client::Create(
++    const Jobserver::Config& config, std::string* error) {
++  bool success = false;
++  auto client =
++      std::unique_ptr<Win32JobserverClient>(new Win32JobserverClient());
++  if (config.mode == Jobserver::Config::kModeWin32Semaphore) {
++    success = client->InitWithSemaphore(config.path, error);
++  } else {
++    *error = "Unsupported jobserver mode";
++  }
++  if (!success)
++    client.reset();
++  return client;
++}
++
++// static
++std::unique_ptr<Jobserver::Pool> Jobserver::Pool::Create(
++    size_t num_job_slots, Jobserver::Config::Mode mode, std::string* error) {
++  if (num_job_slots < 2) {
++    *error = "At least 2 job slots needed";
++    return nullptr;
++  }
++  bool success;
++  auto pool = std::unique_ptr<Win32JobserverPool>(new Win32JobserverPool());
++  if (mode == Jobserver::Config::kModeWin32Semaphore) {
++    success = pool->InitWithSemaphore(num_job_slots, error);
++  } else {
++    *error = "Unsupported jobserver mode";
++    success = false;
++  }
++  if (!success)
++    pool.reset(nullptr);
++  return pool;
++}
+--- a/doc/manual.asciidoc
++++ b/doc/manual.asciidoc
+@@ -188,10 +188,57 @@ Ninja defaults to running commands in pa
+ you don't need to pass `-j`.)
  
--bool DryRunCommandRunner::WaitForCommand(Result* result) {
-+bool DryRunCommandRunner::WaitForCommand(Result* result, bool more_ready) {
-    if (finished_.empty())
-      return false;
  
-@@ -149,7 +155,7 @@ void Plan::EdgeWanted(const Edge* edge)
- }
++GNU Jobserver support
++~~~~~~~~~~~~~~~~~~~~~
++
++Since version 1.13., Ninja builds support the
++https://https://www.gnu.org/software/make/manual/html_node/Job-Slots.html[GNU Make jobserver]
++protocol (on Posix systems). If supports both client and
++server modes.
++
++Client mode is useful when Ninja is invoked as part of a larger
++build system controlled by a top-level GNU Make instance, as it
++allows better coordination between concurrent build tasks.
++
++Server mode is useful when Ninja is the top-level build tool that
++invokes sub-builds recursively in a similar setup.
++
++To enable server mode, use `--jobserver` or `--jobserver=MODE`
++on the command line, or set `NINJA_JOBSERVER=MODE` in your
++environment, where `MODE` can be one of the following values:
++
++`0`: Do not enable the feature (the default)
++`1`: Enable the feature, using the best mode for the current system.
++`pipe`: Enable the feature, implemented with an anonymous pipe (Posix only).
++`fifo`: Enable the feature, implemented with a FIFO file path (Posix only).
++`sem`: Enable the feature, implemented with a Win32 semaphore (Windows only).
++
++Note that `--jobserver` is equivalent to `--jobserver=1`.
++
++Otherwise, the client feature is automatically enabled for builds
++(not tools) under the following conditions:
++
++- Dry-run (i.e. `-n` or `--dry-run`) is not enabled.
++
++- `-j1` (no parallelism) is not used on the command line.
++  Note that `-j0` means "infinite" parallelism and does not
++  disable client mode.
++
++- The `MAKEFLAGS` environment variable is defined and
++  describes a valid jobserver mode using `--jobserver-auth` or
++  even `--jobserver-fds`.
++
++In this case, Ninja will use the shared pool of job slots
++to control parallelism, instead of its default implementation
++of `-j<count>`.
++
++Note that other parallelism limitations, (such as `-l<count>`) are *still*
++being enforced in this mode however.
++
+ Environment variables
+ ~~~~~~~~~~~~~~~~~~~~~
  
- Edge* Plan::FindWork() {
--  if (ready_.empty())
-+  if (!more_ready())
+-Ninja supports one environment variable to control its behavior:
++Ninja supports a few environment variables to control its behavior:
+ `NINJA_STATUS`, the progress status printed before the rule being run.
+ 
+ Several placeholders are available:
+@@ -216,6 +263,9 @@ The default progress status is `"[%f/%t]
+ to separate from the build rule). Another example of possible progress status
+ could be `"[%u/%r/%f] "`.
+ 
++`NINJA_JOBSERVER` and `MAKEFLAGS` may impact how Ninja dispatches
++parallel jobs, as described in the "GNU Jobserver support" section.
++
+ Extra tools
+ ~~~~~~~~~~~
+ 
+--- a/src/build.cc
++++ b/src/build.cc
+@@ -35,6 +35,7 @@
+ #include "deps_log.h"
+ #include "disk_interface.h"
+ #include "graph.h"
++#include "jobserver.h"
+ #include "metrics.h"
+ #include "state.h"
+ #include "status.h"
+@@ -164,6 +165,15 @@ Edge* Plan::FindWork() {
      return NULL;
-   EdgeSet::iterator e = ready_.begin();
-   Edge* edge = *e;
-@@ -448,19 +454,39 @@ void Plan::Dump() const {
+ 
+   Edge* work = ready_.top();
++
++  // If jobserver mode is enabled, try to acquire a token first,
++  // and return null in case of failure.
++  if (builder_ && builder_->jobserver_) {
++    work->job_slot_ = builder_->jobserver_->TryAcquire();
++    if (!work->job_slot_.IsValid())
++      return nullptr;
++  }
++
+   ready_.pop();
+   return work;
+ }
+@@ -200,6 +210,10 @@ bool Plan::EdgeFinished(Edge* edge, Edge
+     edge->pool()->EdgeFinished(*edge);
+   edge->pool()->RetrieveReadyEdges(&ready_);
+ 
++  // Release job slot if needed.
++  if (builder_ && builder_->jobserver_)
++    builder_->jobserver_->Release(std::move(edge->job_slot_));
++
+   // The rest of this function only applies to successful commands.
+   if (result != kEdgeSucceeded)
+     return true;
+@@ -595,7 +609,10 @@ void Plan::Dump() const {
  }
  
  struct RealCommandRunner : public CommandRunner {
 -  explicit RealCommandRunner(const BuildConfig& config) : config_(config) {}
--  virtual ~RealCommandRunner() {}
-+  explicit RealCommandRunner(const BuildConfig& config);
-+  virtual ~RealCommandRunner();
-   virtual bool CanRunMore() const;
-+  virtual bool AcquireToken();
++  explicit RealCommandRunner(const BuildConfig& config,
++                             Jobserver::Client* jobserver)
++      : config_(config), jobserver_(jobserver) {}
++
+   virtual ~RealCommandRunner() {}
+   virtual size_t CanRunMore() const;
    virtual bool StartCommand(Edge* edge);
--  virtual bool WaitForCommand(Result* result);
-+  virtual bool WaitForCommand(Result* result, bool more_ready);
+@@ -603,7 +620,16 @@ struct RealCommandRunner : public Comman
    virtual vector<Edge*> GetActiveEdges();
    virtual void Abort();
  
++  void ClearJobTokens() {
++    if (jobserver_) {
++      for (Edge* edge : GetActiveEdges()) {
++        jobserver_->Release(std::move(edge->job_slot_));
++      }
++    }
++  }
++
    const BuildConfig& config_;
-+  // copy of config_.max_load_average; can be modified by TokenPool setup
-+  double max_load_average_;
++  Jobserver::Client* jobserver_;
    SubprocessSet subprocs_;
-+  TokenPool* tokens_;
    map<const Subprocess*, Edge*> subproc_to_edge_;
  };
- 
-+RealCommandRunner::RealCommandRunner(const BuildConfig& config) : config_(config) {
-+  max_load_average_ = config.max_load_average;
-+  if ((tokens_ = TokenPool::Get()) != NULL) {
-+    if (!tokens_->Setup(config_.parallelism_from_cmdline,
-+                        config_.verbosity == BuildConfig::VERBOSE,
-+                        max_load_average_)) {
-+      delete tokens_;
-+      tokens_ = NULL;
-+    }
-+  }
-+}
-+
-+RealCommandRunner::~RealCommandRunner() {
-+  delete tokens_;
-+}
-+
- vector<Edge*> RealCommandRunner::GetActiveEdges() {
-   vector<Edge*> edges;
-   for (map<const Subprocess*, Edge*>::iterator e = subproc_to_edge_.begin();
-@@ -471,14 +497,23 @@ vector<Edge*> RealCommandRunner::GetActi
+@@ -617,6 +643,7 @@ vector<Edge*> RealCommandRunner::GetActi
+ }
  
  void RealCommandRunner::Abort() {
++  ClearJobTokens();
    subprocs_.Clear();
-+  if (tokens_)
-+    tokens_->Clear();
  }
  
- bool RealCommandRunner::CanRunMore() const {
--  size_t subproc_number =
--      subprocs_.running_.size() + subprocs_.finished_.size();
--  return (int)subproc_number < config_.parallelism
--    && ((subprocs_.running_.empty() || config_.max_load_average <= 0.0f)
--        || GetLoadAverage() < config_.max_load_average);
-+  bool parallelism_limit_not_reached =
-+    tokens_ || // ignore config_.parallelism
-+    ((int) (subprocs_.running_.size() +
-+            subprocs_.finished_.size()) < config_.parallelism);
-+  return parallelism_limit_not_reached
-+    && (subprocs_.running_.empty() ||
-+        (max_load_average_ <= 0.0f ||
-+         GetLoadAverage() < max_load_average_));
-+}
-+
-+bool RealCommandRunner::AcquireToken() {
-+  return (!tokens_ || tokens_->Acquire());
- }
+@@ -626,6 +653,13 @@ size_t RealCommandRunner::CanRunMore() c
  
- bool RealCommandRunner::StartCommand(Edge* edge) {
-@@ -486,19 +521,33 @@ bool RealCommandRunner::StartCommand(Edg
-   Subprocess* subproc = subprocs_.Add(command, edge->use_console());
-   if (!subproc)
-     return false;
-+  if (tokens_)
-+    tokens_->Reserve();
-   subproc_to_edge_.insert(make_pair(subproc, edge));
+   int64_t capacity = config_.parallelism - subproc_number;
  
-   return true;
- }
- 
--bool RealCommandRunner::WaitForCommand(Result* result) {
-+bool RealCommandRunner::WaitForCommand(Result* result, bool more_ready) {
-   Subprocess* subproc;
--  while ((subproc = subprocs_.NextFinished()) == NULL) {
--    bool interrupted = subprocs_.DoWork();
-+  subprocs_.ResetTokenAvailable();
-+  while (((subproc = subprocs_.NextFinished()) == NULL) &&
-+         !subprocs_.IsTokenAvailable()) {
-+    bool interrupted = subprocs_.DoWork(more_ready ? tokens_ : NULL);
-     if (interrupted)
-       return false;
-   }
- 
-+  // token became available
-+  if (subproc == NULL) {
-+    result->status = ExitTokenAvailable;
-+    return true;
++  if (jobserver_) {
++    // When a jobserver token pool is used, make the
++    // capacity infinite, and let FindWork() limit jobs
++    // through token acquisitions instead.
++    capacity = INT_MAX;
 +  }
 +
-+  // command completed
-+  if (tokens_)
-+    tokens_->Release();
-+
-   result->status = subproc->Finish();
-   result->output = subproc->GetOutput();
+   if (config_.max_load_average > 0.0f) {
+     int load_capacity = config_.max_load_average - GetLoadAverage();
+     if (load_capacity < capacity)
+@@ -777,7 +811,7 @@ bool Builder::Build(string* err) {
+     if (config_.dry_run)
+       command_runner_.reset(new DryRunCommandRunner);
+     else
+-      command_runner_.reset(new RealCommandRunner(config_));
++      command_runner_.reset(new RealCommandRunner(config_, jobserver_));
+   }
  
-@@ -620,38 +669,43 @@ bool Builder::Build(string* err) {
-   // command runner.
-   // Second, we attempt to wait for / reap the next finished command.
-   while (plan_.more_to_do()) {
--    // See if we can start any more commands.
--    if (failures_allowed && command_runner_->CanRunMore()) {
--      if (Edge* edge = plan_.FindWork()) {
--        if (edge->GetBindingBool("generator")) {
-+    // See if we can start any more commands...
-+    bool can_run_more =
-+        failures_allowed   &&
-+        plan_.more_ready() &&
-+        command_runner_->CanRunMore();
-+
-+    // ... but we also need a token to do that.
-+    if (can_run_more && command_runner_->AcquireToken()) {
-+      Edge* edge = plan_.FindWork();
-+      if (edge->GetBindingBool("generator")) {
-           scan_.build_log()->Close();
-         }
- 
--        if (!StartEdge(edge, err)) {
-+      if (!StartEdge(edge, err)) {
-+        Cleanup();
-+        status_->BuildFinished();
-+        return false;
-+      }
-+
-+      if (edge->is_phony()) {
-+        if (!plan_.EdgeFinished(edge, Plan::kEdgeSucceeded, err)) {
-           Cleanup();
-           status_->BuildFinished();
-           return false;
-         }
--
--        if (edge->is_phony()) {
--          if (!plan_.EdgeFinished(edge, Plan::kEdgeSucceeded, err)) {
--            Cleanup();
--            status_->BuildFinished();
--            return false;
--          }
--        } else {
--          ++pending_commands;
--        }
--
--        // We made some progress; go back to the main loop.
--        continue;
-+      } else {
-+        ++pending_commands;
-       }
-+
-+      // We made some progress; go back to the main loop.
-+      continue;
-     }
- 
-     // See if we can reap any finished commands.
-     if (pending_commands) {
-       CommandRunner::Result result;
--      if (!command_runner_->WaitForCommand(&result) ||
-+      if (!command_runner_->WaitForCommand(&result, can_run_more) ||
-           result.status == ExitInterrupted) {
-         Cleanup();
-         status_->BuildFinished();
-@@ -659,6 +713,10 @@ bool Builder::Build(string* err) {
-         return false;
-       }
- 
-+      // We might be able to start another command; start the main loop over.
-+      if (result.status == ExitTokenAvailable)
-+        continue;
-+
-       --pending_commands;
-       if (!FinishCommand(&result, err)) {
-         Cleanup();
+   // We are about to start the build process.
 --- a/src/build.h
 +++ b/src/build.h
-@@ -52,6 +52,9 @@ struct Plan {
-   /// Returns true if there's more work to be done.
-   bool more_to_do() const { return wanted_edges_ > 0 && command_edges_ > 0; }
+@@ -24,6 +24,7 @@
+ #include "depfile_parser.h"
+ #include "graph.h"
+ #include "exit_status.h"
++#include "jobserver.h"
+ #include "util.h"  // int64_t
  
-+  /// Returns true if there's more edges ready to start
-+  bool more_ready() const { return !ready_.empty(); }
-+
-   /// Dumps the current state of the plan.
-   void Dump() const;
- 
-@@ -136,6 +139,7 @@ private:
- struct CommandRunner {
-   virtual ~CommandRunner() {}
-   virtual bool CanRunMore() const = 0;
-+  virtual bool AcquireToken() = 0;
-   virtual bool StartCommand(Edge* edge) = 0;
- 
-   /// The result of waiting for a command.
-@@ -147,7 +151,9 @@ struct CommandRunner {
-     bool success() const { return status == ExitSuccess; }
-   };
-   /// Wait for a command to complete, or return false if interrupted.
--  virtual bool WaitForCommand(Result* result) = 0;
-+  /// If more_ready is true then the optional TokenPool is monitored too
-+  /// and we return when a token becomes available.
-+  virtual bool WaitForCommand(Result* result, bool more_ready) = 0;
- 
-   virtual std::vector<Edge*> GetActiveEdges() { return std::vector<Edge*>(); }
-   virtual void Abort() {}
-@@ -155,7 +161,8 @@ struct CommandRunner {
- 
- /// Options (e.g. verbosity, parallelism) passed to a build.
- struct BuildConfig {
--  BuildConfig() : verbosity(NORMAL), dry_run(false), parallelism(1),
-+  BuildConfig() : verbosity(NORMAL), dry_run(false),
-+                  parallelism(1), parallelism_from_cmdline(false),
-                   failures_allowed(1), max_load_average(-0.0f) {}
- 
-   enum Verbosity {
-@@ -167,6 +174,7 @@ struct BuildConfig {
-   Verbosity verbosity;
-   bool dry_run;
-   int parallelism;
-+  bool parallelism_from_cmdline;
-   int failures_allowed;
-   /// The maximum load average we must not exceed. A negative value
+ struct BuildLog;
+@@ -182,6 +183,7 @@ struct BuildConfig {
    /// means that we do not have any limit.
---- /dev/null
-+++ b/src/tokenpool-gnu-make.cc
-@@ -0,0 +1,108 @@
-+// Copyright 2016-2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#include "tokenpool-gnu-make.h"
-+
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <string.h>
-+
-+#include "line_printer.h"
-+
-+// TokenPool implementation for GNU make jobserver - common bits
-+// every instance owns an implicit token -> available_ == 1
-+GNUmakeTokenPool::GNUmakeTokenPool() : available_(1), used_(0) {
-+}
-+
-+GNUmakeTokenPool::~GNUmakeTokenPool() {
-+}
-+
-+bool GNUmakeTokenPool::Setup(bool ignore,
-+                             bool verbose,
-+                             double& max_load_average) {
-+  const char* value = GetEnv("MAKEFLAGS");
-+  if (!value)
-+    return false;
-+
-+  // GNU make <= 4.1
-+  const char* jobserver = strstr(value, "--jobserver-fds=");
-+  if (!jobserver)
-+    // GNU make => 4.2
-+    jobserver = strstr(value, "--jobserver-auth=");
-+  if (jobserver) {
-+    LinePrinter printer;
-+
-+    if (ignore) {
-+      printer.PrintOnNewLine("ninja: warning: -jN forced on command line; ignoring GNU make jobserver.\n");
-+    } else {
-+      if (ParseAuth(jobserver)) {
-+        const char* l_arg = strstr(value, " -l");
-+        int load_limit = -1;
-+
-+        if (verbose) {
-+          printer.PrintOnNewLine("ninja: using GNU make jobserver.\n");
-+        }
-+
-+        // translate GNU make -lN to ninja -lN
-+        if (l_arg &&
-+            (sscanf(l_arg + 3, "%d ", &load_limit) == 1) &&
-+            (load_limit > 0)) {
-+          max_load_average = load_limit;
-+        }
-+
-+        return true;
-+      }
-+    }
-+  }
-+
-+  return false;
-+}
-+
-+bool GNUmakeTokenPool::Acquire() {
-+  if (available_ > 0)
-+    return true;
-+
-+  if (AcquireToken()) {
-+    // token acquired
-+    available_++;
-+    return true;
-+  }
-+
-+  // no token available
-+  return false;
-+}
-+
-+void GNUmakeTokenPool::Reserve() {
-+  available_--;
-+  used_++;
-+}
-+
-+void GNUmakeTokenPool::Return() {
-+  if (ReturnToken())
-+    available_--;
-+}
-+
-+void GNUmakeTokenPool::Release() {
-+  available_++;
-+  used_--;
-+  if (available_ > 1)
-+    Return();
-+}
-+
-+void GNUmakeTokenPool::Clear() {
-+  while (used_ > 0)
-+    Release();
-+  while (available_ > 1)
-+    Return();
-+}
---- /dev/null
-+++ b/src/tokenpool.h
-@@ -0,0 +1,42 @@
-+// Copyright 2016-2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#ifdef _WIN32
-+#include <windows.h>
-+#endif
-+
-+// interface to token pool
-+struct TokenPool {
-+  virtual ~TokenPool() {}
-+
-+  virtual bool Acquire() = 0;
-+  virtual void Reserve() = 0;
-+  virtual void Release() = 0;
-+  virtual void Clear() = 0;
-+
-+  // returns false if token pool setup failed
-+  virtual bool Setup(bool ignore, bool verbose, double& max_load_average) = 0;
-+
-+#ifdef _WIN32
-+  virtual void WaitForTokenAvailability(HANDLE ioport) = 0;
-+  // returns true if a token has become available
-+  // key is result from GetQueuedCompletionStatus()
-+  virtual bool TokenIsAvailable(ULONG_PTR key) = 0;
-+#else
-+  virtual int GetMonitorFd() = 0;
-+#endif
-+
-+  // returns NULL if token pool is not available
-+  static TokenPool* Get();
-+};
---- a/src/build_test.cc
-+++ b/src/build_test.cc
-@@ -15,6 +15,7 @@
- #include "build.h"
- 
- #include <assert.h>
-+#include <stdarg.h>
- 
- #include "build_log.h"
- #include "deps_log.h"
-@@ -474,8 +475,9 @@ struct FakeCommandRunner : public Comman
- 
-   // CommandRunner impl
-   virtual bool CanRunMore() const;
-+  virtual bool AcquireToken();
-   virtual bool StartCommand(Edge* edge);
--  virtual bool WaitForCommand(Result* result);
-+  virtual bool WaitForCommand(Result* result, bool more_ready);
-   virtual vector<Edge*> GetActiveEdges();
-   virtual void Abort();
- 
-@@ -578,6 +580,10 @@ bool FakeCommandRunner::CanRunMore() con
-   return active_edges_.size() < max_active_edges_;
- }
- 
-+bool FakeCommandRunner::AcquireToken() {
-+  return true;
-+}
-+
- bool FakeCommandRunner::StartCommand(Edge* edge) {
-   assert(active_edges_.size() < max_active_edges_);
-   assert(find(active_edges_.begin(), active_edges_.end(), edge)
-@@ -649,7 +655,7 @@ bool FakeCommandRunner::StartCommand(Edg
-   return true;
- }
- 
--bool FakeCommandRunner::WaitForCommand(Result* result) {
-+bool FakeCommandRunner::WaitForCommand(Result* result, bool more_ready) {
-   if (active_edges_.empty())
-     return false;
- 
-@@ -3985,3 +3991,356 @@ TEST_F(BuildTest, ValidationWithCircular
-   EXPECT_FALSE(builder_.AddTarget("out", &err));
-   EXPECT_EQ("dependency cycle: validate -> validate_in -> validate", err);
- }
-+
-+/// The token tests are concerned with the main loop functionality when
-+// the CommandRunner has an active TokenPool. It is therefore intentional
-+// that the plan doesn't complete and that builder_.Build() returns false!
-+
-+/// Fake implementation of CommandRunner that simulates a TokenPool
-+struct FakeTokenCommandRunner : public CommandRunner {
-+  explicit FakeTokenCommandRunner() {}
-+
-+  // CommandRunner impl
-+  virtual bool CanRunMore() const;
-+  virtual bool AcquireToken();
-+  virtual bool StartCommand(Edge* edge);
-+  virtual bool WaitForCommand(Result* result, bool more_ready);
-+  virtual vector<Edge*> GetActiveEdges();
-+  virtual void Abort();
-+
-+  vector<string> commands_ran_;
-+  vector<Edge *> edges_;
-+
-+  vector<bool> acquire_token_;
-+  vector<bool> can_run_more_;
-+  vector<bool> wait_for_command_;
-+};
-+
-+bool FakeTokenCommandRunner::CanRunMore() const {
-+  if (can_run_more_.size() == 0) {
-+    EXPECT_FALSE("unexpected call to CommandRunner::CanRunMore()");
-+    return false;
-+  }
-+
-+  bool result = can_run_more_[0];
-+
-+  // Unfortunately CanRunMore() isn't "const" for tests
-+  const_cast<FakeTokenCommandRunner*>(this)->can_run_more_.erase(
-+    const_cast<FakeTokenCommandRunner*>(this)->can_run_more_.begin()
-+  );
-+
-+  return result;
-+}
-+
-+bool FakeTokenCommandRunner::AcquireToken() {
-+  if (acquire_token_.size() == 0) {
-+    EXPECT_FALSE("unexpected call to CommandRunner::AcquireToken()");
-+    return false;
-+  }
-+
-+  bool result = acquire_token_[0];
-+  acquire_token_.erase(acquire_token_.begin());
-+  return result;
-+}
-+
-+bool FakeTokenCommandRunner::StartCommand(Edge* edge) {
-+  commands_ran_.push_back(edge->EvaluateCommand());
-+  edges_.push_back(edge);
-+  return true;
-+}
-+
-+bool FakeTokenCommandRunner::WaitForCommand(Result* result, bool more_ready) {
-+  if (wait_for_command_.size() == 0) {
-+    EXPECT_FALSE("unexpected call to CommandRunner::WaitForCommand()");
-+    return false;
-+  }
-+
-+  bool expected = wait_for_command_[0];
-+  if (expected != more_ready) {
-+    EXPECT_EQ(expected, more_ready);
-+    return false;
-+  }
-+  wait_for_command_.erase(wait_for_command_.begin());
-+
-+  if (edges_.size() == 0)
-+    return false;
-+
-+  Edge* edge = edges_[0];
-+  result->edge = edge;
-+
-+  if (more_ready &&
-+      (edge->rule().name() == "token-available")) {
-+    result->status = ExitTokenAvailable;
-+  } else {
-+    edges_.erase(edges_.begin());
-+    result->status = ExitSuccess;
-+  }
-+
-+  return true;
-+}
-+
-+vector<Edge*> FakeTokenCommandRunner::GetActiveEdges() {
-+  return edges_;
-+}
-+
-+void FakeTokenCommandRunner::Abort() {
-+  edges_.clear();
-+}
-+
-+struct BuildTokenTest : public BuildTest {
-+  virtual void SetUp();
-+  virtual void TearDown();
-+
-+  FakeTokenCommandRunner token_command_runner_;
-+
-+  void ExpectAcquireToken(int count, ...);
-+  void ExpectCanRunMore(int count, ...);
-+  void ExpectWaitForCommand(int count, ...);
-+
-+private:
-+  void EnqueueBooleans(vector<bool>& booleans, int count, va_list ap);
-+};
-+
-+void BuildTokenTest::SetUp() {
-+  BuildTest::SetUp();
-+
-+  // replace FakeCommandRunner with FakeTokenCommandRunner
-+  builder_.command_runner_.release();
-+  builder_.command_runner_.reset(&token_command_runner_);
-+}
-+void BuildTokenTest::TearDown() {
-+  EXPECT_EQ(0u, token_command_runner_.acquire_token_.size());
-+  EXPECT_EQ(0u, token_command_runner_.can_run_more_.size());
-+  EXPECT_EQ(0u, token_command_runner_.wait_for_command_.size());
-+
-+  BuildTest::TearDown();
-+}
-+
-+void BuildTokenTest::ExpectAcquireToken(int count, ...) {
-+  va_list ap;
-+  va_start(ap, count);
-+  EnqueueBooleans(token_command_runner_.acquire_token_, count, ap);
-+  va_end(ap);
-+}
-+
-+void BuildTokenTest::ExpectCanRunMore(int count, ...) {
-+  va_list ap;
-+  va_start(ap, count);
-+  EnqueueBooleans(token_command_runner_.can_run_more_, count, ap);
-+  va_end(ap);
-+}
-+
-+void BuildTokenTest::ExpectWaitForCommand(int count, ...) {
-+  va_list ap;
-+  va_start(ap, count);
-+  EnqueueBooleans(token_command_runner_.wait_for_command_, count, ap);
-+  va_end(ap);
-+}
-+
-+void BuildTokenTest::EnqueueBooleans(vector<bool>& booleans, int count, va_list ap) {
-+  while (count--) {
-+    int value = va_arg(ap, int);
-+    booleans.push_back(!!value); // force bool
-+  }
-+}
-+
-+TEST_F(BuildTokenTest, DoNotAquireToken) {
-+  // plan should execute one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat1", &err));
-+  ASSERT_EQ("", err);
-+
-+  // pretend we can't run anything
-+  ExpectCanRunMore(1, false);
-+
-+  EXPECT_FALSE(builder_.Build(&err));
-+  EXPECT_EQ("stuck [this is a bug]", err);
-+
-+  EXPECT_EQ(0u, token_command_runner_.commands_ran_.size());
-+}
-+
-+TEST_F(BuildTokenTest, DoNotStartWithoutToken) {
-+  // plan should execute one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat1", &err));
-+  ASSERT_EQ("", err);
-+
-+  // we could run a command but do not have a token for it
-+  ExpectCanRunMore(1,   true);
-+  ExpectAcquireToken(1, false);
-+
-+  EXPECT_FALSE(builder_.Build(&err));
-+  EXPECT_EQ("stuck [this is a bug]", err);
-+
-+  EXPECT_EQ(0u, token_command_runner_.commands_ran_.size());
-+}
-+
-+TEST_F(BuildTokenTest, CompleteOneStep) {
-+  // plan should execute one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat1", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of one command
-+  ExpectCanRunMore(1,   true);
-+  ExpectAcquireToken(1, true);
-+  // block and wait for command to finalize
-+  ExpectWaitForCommand(1, false);
-+
-+  EXPECT_TRUE(builder_.Build(&err));
-+  EXPECT_EQ("", err);
-+
-+  EXPECT_EQ(1u, token_command_runner_.commands_ran_.size());
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[0] == "cat in1 > cat1");
-+}
-+
-+TEST_F(BuildTokenTest, AcquireOneToken) {
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat12", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of one command
-+  ExpectCanRunMore(3,     true, false, false);
-+  ExpectAcquireToken(1,   true);
-+  // block and wait for command to finalize
-+  ExpectWaitForCommand(1, false);
-+
-+  EXPECT_FALSE(builder_.Build(&err));
-+  EXPECT_EQ("stuck [this is a bug]", err);
-+
-+  EXPECT_EQ(1u, token_command_runner_.commands_ran_.size());
-+  // any of the two dependencies could have been executed
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[0] == "cat in1 > cat1" ||
-+              token_command_runner_.commands_ran_[0] == "cat in1 in2 > cat2");
-+}
-+
-+TEST_F(BuildTokenTest, WantTwoTokens) {
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat12", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of one command
-+  ExpectCanRunMore(3,     true, true, false);
-+  ExpectAcquireToken(2,   true, false);
-+  // wait for command to finalize or token to become available
-+  ExpectWaitForCommand(1, true);
-+
-+  EXPECT_FALSE(builder_.Build(&err));
-+  EXPECT_EQ("stuck [this is a bug]", err);
-+
-+  EXPECT_EQ(1u, token_command_runner_.commands_ran_.size());
-+  // any of the two dependencies could have been executed
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[0] == "cat in1 > cat1" ||
-+              token_command_runner_.commands_ran_[0] == "cat in1 in2 > cat2");
-+}
-+
-+TEST_F(BuildTokenTest, CompleteTwoSteps) {
-+  ASSERT_NO_FATAL_FAILURE(AssertParse(&state_,
-+"build out1: cat in1\n"
-+"build out2: cat out1\n"));
-+
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("out2", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of two commands
-+  ExpectCanRunMore(2,     true, true);
-+  ExpectAcquireToken(2,   true, true);
-+  // wait for commands to finalize
-+  ExpectWaitForCommand(2, false, false);
-+
-+  EXPECT_TRUE(builder_.Build(&err));
-+  EXPECT_EQ("", err);
-+
-+  EXPECT_EQ(2u, token_command_runner_.commands_ran_.size());
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[0] == "cat in1 > out1");
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[1] == "cat out1 > out2");
-+}
-+
-+TEST_F(BuildTokenTest, TwoCommandsInParallel) {
-+  ASSERT_NO_FATAL_FAILURE(AssertParse(&state_,
-+"rule token-available\n"
-+"  command = cat $in > $out\n"
-+"build out1: token-available in1\n"
-+"build out2: token-available in2\n"
-+"build out12: cat out1 out2\n"));
-+
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("out12", &err));
-+  ASSERT_EQ("", err);
-+
-+  // 1st command: token available -> allow running
-+  // 2nd command: no token available but becomes available later
-+  ExpectCanRunMore(4,     true, true,  true,  false);
-+  ExpectAcquireToken(3,   true, false, true);
-+  // 1st call waits for command to finalize or token to become available
-+  // 2nd call waits for command to finalize
-+  // 3rd call waits for command to finalize
-+  ExpectWaitForCommand(3, true, false, false);
-+
-+  EXPECT_FALSE(builder_.Build(&err));
-+  EXPECT_EQ("stuck [this is a bug]", err);
-+
-+  EXPECT_EQ(2u, token_command_runner_.commands_ran_.size());
-+  EXPECT_TRUE((token_command_runner_.commands_ran_[0] == "cat in1 > out1" &&
-+               token_command_runner_.commands_ran_[1] == "cat in2 > out2") ||
-+              (token_command_runner_.commands_ran_[0] == "cat in2 > out2" &&
-+               token_command_runner_.commands_ran_[1] == "cat in1 > out1"));
-+}
-+
-+TEST_F(BuildTokenTest, CompleteThreeStepsSerial) {
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("cat12", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of all commands
-+  ExpectCanRunMore(4,     true, true,  true,  true);
-+  ExpectAcquireToken(4,   true, false, true,  true);
-+  // wait for commands to finalize
-+  ExpectWaitForCommand(3, true, false, false);
-+
-+  EXPECT_TRUE(builder_.Build(&err));
-+  EXPECT_EQ("", err);
-+
-+  EXPECT_EQ(3u, token_command_runner_.commands_ran_.size());
-+  EXPECT_TRUE((token_command_runner_.commands_ran_[0] == "cat in1 > cat1"     &&
-+               token_command_runner_.commands_ran_[1] == "cat in1 in2 > cat2") ||
-+              (token_command_runner_.commands_ran_[0] == "cat in1 in2 > cat2" &&
-+               token_command_runner_.commands_ran_[1] == "cat in1 > cat1"    ));
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[2] == "cat cat1 cat2 > cat12");
-+}
-+
-+TEST_F(BuildTokenTest, CompleteThreeStepsParallel) {
-+  ASSERT_NO_FATAL_FAILURE(AssertParse(&state_,
-+"rule token-available\n"
-+"  command = cat $in > $out\n"
-+"build out1: token-available in1\n"
-+"build out2: token-available in2\n"
-+"build out12: cat out1 out2\n"));
-+
-+  // plan should execute more than one command
-+  string err;
-+  EXPECT_TRUE(builder_.AddTarget("out12", &err));
-+  ASSERT_EQ("", err);
-+
-+  // allow running of all commands
-+  ExpectCanRunMore(4,     true, true,  true,  true);
-+  ExpectAcquireToken(4,   true, false, true,  true);
-+  // wait for commands to finalize
-+  ExpectWaitForCommand(4, true, false, false, false);
-+
-+  EXPECT_TRUE(builder_.Build(&err));
-+  EXPECT_EQ("", err);
-+
-+  EXPECT_EQ(3u, token_command_runner_.commands_ran_.size());
-+  EXPECT_TRUE((token_command_runner_.commands_ran_[0] == "cat in1 > out1" &&
-+               token_command_runner_.commands_ran_[1] == "cat in2 > out2") ||
-+              (token_command_runner_.commands_ran_[0] == "cat in2 > out2" &&
-+               token_command_runner_.commands_ran_[1] == "cat in1 > out1"));
-+  EXPECT_TRUE(token_command_runner_.commands_ran_[2] == "cat out1 out2 > out12");
-+}
---- a/src/exit_status.h
-+++ b/src/exit_status.h
-@@ -18,7 +18,8 @@
- enum ExitStatus {
-   ExitSuccess,
-   ExitFailure,
--  ExitInterrupted
-+  ExitTokenAvailable,
-+  ExitInterrupted,
+   double max_load_average;
+   DepfileParserOptions depfile_parser_options;
++  Jobserver::Config::Mode jobserver_mode = Jobserver::Config::kModeNone;
  };
  
- #endif  // NINJA_EXIT_STATUS_H_
---- a/src/subprocess-posix.cc
-+++ b/src/subprocess-posix.cc
-@@ -13,6 +13,7 @@
- // limitations under the License.
+ /// Builder wraps the build process: starting commands, updating status.
+@@ -192,6 +194,12 @@ struct Builder {
+           int64_t start_time_millis);
+   ~Builder();
  
- #include "subprocess.h"
-+#include "tokenpool.h"
- 
- #include <sys/select.h>
- #include <assert.h>
-@@ -249,7 +250,7 @@ Subprocess *SubprocessSet::Add(const str
- }
- 
- #ifdef USE_PPOLL
--bool SubprocessSet::DoWork() {
-+bool SubprocessSet::DoWork(TokenPool* tokens) {
-   vector<pollfd> fds;
-   nfds_t nfds = 0;
- 
-@@ -263,6 +264,12 @@ bool SubprocessSet::DoWork() {
-     ++nfds;
-   }
- 
-+  if (tokens) {
-+    pollfd pfd = { tokens->GetMonitorFd(), POLLIN | POLLPRI, 0 };
-+    fds.push_back(pfd);
-+    ++nfds;
++  /// Set Jobserver client instance for this builder.
++  void SetJobserverClient(Jobserver::Client* jobserver_client) {
++    jobserver_ = jobserver_client;
++    ;
 +  }
 +
-   interrupted_ = 0;
-   int ret = ppoll(&fds.front(), nfds, NULL, &old_mask_);
-   if (ret == -1) {
-@@ -295,11 +302,20 @@ bool SubprocessSet::DoWork() {
-     ++i;
-   }
+   /// Clean up after interrupted commands by deleting output files.
+   void Cleanup();
  
-+  if (tokens) {
-+    pollfd *pfd = &fds[nfds - 1];
-+    if (pfd->fd >= 0) {
-+      assert(pfd->fd == tokens->GetMonitorFd());
-+      if (pfd->revents != 0)
-+        token_available_ = true;
-+    }
-+  }
+@@ -225,6 +233,7 @@ struct Builder {
+   State* state_;
+   const BuildConfig& config_;
+   Plan plan_;
++  Jobserver::Client* jobserver_ = nullptr;
+   std::unique_ptr<CommandRunner> command_runner_;
+   Status* status_;
+ 
+--- a/src/graph.h
++++ b/src/graph.h
+@@ -23,6 +23,7 @@
+ 
+ #include "dyndep.h"
+ #include "eval_env.h"
++#include "jobserver.h"
+ #include "timestamp.h"
+ #include "util.h"
+ 
+@@ -265,6 +266,9 @@ struct Edge {
+   bool use_console() const;
+   bool maybe_phonycycle_diagnostic() const;
+ 
++  /// A Jobserver slot instance. Invalid by default.
++  Jobserver::Slot job_slot_;
 +
-   return IsInterrupted();
- }
- 
- #else  // !defined(USE_PPOLL)
--bool SubprocessSet::DoWork() {
-+bool SubprocessSet::DoWork(TokenPool* tokens) {
-   fd_set set;
-   int nfds = 0;
-   FD_ZERO(&set);
-@@ -314,6 +330,13 @@ bool SubprocessSet::DoWork() {
-     }
-   }
- 
-+  if (tokens) {
-+    int fd = tokens->GetMonitorFd();
-+    FD_SET(fd, &set);
-+    if (nfds < fd+1)
-+      nfds = fd+1;
-+  }
-+
-   interrupted_ = 0;
-   int ret = pselect(nfds, &set, 0, 0, 0, &old_mask_);
-   if (ret == -1) {
-@@ -342,6 +365,12 @@ bool SubprocessSet::DoWork() {
-     ++i;
-   }
- 
-+  if (tokens) {
-+    int fd = tokens->GetMonitorFd();
-+    if ((fd >= 0) && FD_ISSET(fd, &set))
-+    token_available_ = true;
-+  }
-+
-   return IsInterrupted();
- }
- #endif  // !defined(USE_PPOLL)
---- a/src/subprocess-win32.cc
-+++ b/src/subprocess-win32.cc
-@@ -13,6 +13,7 @@
- // limitations under the License.
- 
- #include "subprocess.h"
-+#include "tokenpool.h"
- 
- #include <assert.h>
- #include <stdio.h>
-@@ -251,11 +252,14 @@ Subprocess *SubprocessSet::Add(const str
-   return subprocess;
- }
- 
--bool SubprocessSet::DoWork() {
-+bool SubprocessSet::DoWork(TokenPool* tokens) {
-   DWORD bytes_read;
-   Subprocess* subproc;
-   OVERLAPPED* overlapped;
- 
-+  if (tokens)
-+    tokens->WaitForTokenAvailability(ioport_);
-+
-   if (!GetQueuedCompletionStatus(ioport_, &bytes_read, (PULONG_PTR)&subproc,
-                                  &overlapped, INFINITE)) {
-     if (GetLastError() != ERROR_BROKEN_PIPE)
-@@ -266,6 +270,11 @@ bool SubprocessSet::DoWork() {
-                 // delivered by NotifyInterrupted above.
-     return true;
- 
-+  if (tokens && tokens->TokenIsAvailable((ULONG_PTR)subproc)) {
-+    token_available_ = true;
-+    return false;
-+  }
-+
-   subproc->OnPipeReady();
- 
-   if (subproc->Done()) {
---- a/src/subprocess.h
-+++ b/src/subprocess.h
-@@ -76,6 +76,8 @@ struct Subprocess {
-   friend struct SubprocessSet;
- };
- 
-+struct TokenPool;
-+
- /// SubprocessSet runs a ppoll/pselect() loop around a set of Subprocesses.
- /// DoWork() waits for any state change in subprocesses; finished_
- /// is a queue of subprocesses as they finish.
-@@ -84,13 +86,17 @@ struct SubprocessSet {
-   ~SubprocessSet();
- 
-   Subprocess* Add(const std::string& command, bool use_console = false);
--  bool DoWork();
-+  bool DoWork(TokenPool* tokens);
-   Subprocess* NextFinished();
-   void Clear();
- 
-   std::vector<Subprocess*> running_;
-   std::queue<Subprocess*> finished_;
- 
-+  bool token_available_;
-+  bool IsTokenAvailable() { return token_available_; }
-+  void ResetTokenAvailable() { token_available_ = false; }
-+
- #ifdef _WIN32
-   static BOOL WINAPI NotifyInterrupted(DWORD dwCtrlType);
-   static HANDLE ioport_;
---- a/src/subprocess_test.cc
-+++ b/src/subprocess_test.cc
-@@ -13,6 +13,7 @@
- // limitations under the License.
- 
- #include "subprocess.h"
-+#include "tokenpool.h"
- 
- #include "test.h"
- 
-@@ -34,8 +35,30 @@ const char* kSimpleCommand = "cmd /c dir
- const char* kSimpleCommand = "ls /";
- #endif
- 
-+struct TestTokenPool : public TokenPool {
-+  bool Acquire()     { return false; }
-+  void Reserve()     {}
-+  void Release()     {}
-+  void Clear()       {}
-+  bool Setup(bool ignore_unused, bool verbose, double& max_load_average) { return false; }
-+
-+#ifdef _WIN32
-+  bool _token_available;
-+  void WaitForTokenAvailability(HANDLE ioport) {
-+    if (_token_available)
-+      // unblock GetQueuedCompletionStatus()
-+      PostQueuedCompletionStatus(ioport, 0, (ULONG_PTR) this, NULL);
-+  }
-+  bool TokenIsAvailable(ULONG_PTR key) { return key == (ULONG_PTR) this; }
-+#else
-+  int _fd;
-+  int GetMonitorFd() { return _fd; }
-+#endif
-+};
-+
- struct SubprocessTest : public testing::Test {
-   SubprocessSet subprocs_;
-+  TestTokenPool tokens_;
- };
- 
- }  // anonymous namespace
-@@ -45,10 +68,12 @@ TEST_F(SubprocessTest, BadCommandStderr)
-   Subprocess* subproc = subprocs_.Add("cmd /c ninja_no_such_command");
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
-     // Pretend we discovered that stderr was ready for writing.
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-   EXPECT_EQ(ExitFailure, subproc->Finish());
-   EXPECT_NE("", subproc->GetOutput());
-@@ -59,10 +84,12 @@ TEST_F(SubprocessTest, NoSuchCommand) {
-   Subprocess* subproc = subprocs_.Add("ninja_no_such_command");
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
-     // Pretend we discovered that stderr was ready for writing.
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-   EXPECT_EQ(ExitFailure, subproc->Finish());
-   EXPECT_NE("", subproc->GetOutput());
-@@ -78,9 +105,11 @@ TEST_F(SubprocessTest, InterruptChild) {
-   Subprocess* subproc = subprocs_.Add("kill -INT $$");
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-   EXPECT_EQ(ExitInterrupted, subproc->Finish());
- }
-@@ -90,7 +119,7 @@ TEST_F(SubprocessTest, InterruptParent)
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-   while (!subproc->Done()) {
--    bool interrupted = subprocs_.DoWork();
-+    bool interrupted = subprocs_.DoWork(NULL);
-     if (interrupted)
-       return;
-   }
-@@ -102,9 +131,11 @@ TEST_F(SubprocessTest, InterruptChildWit
-   Subprocess* subproc = subprocs_.Add("kill -TERM $$");
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-   EXPECT_EQ(ExitInterrupted, subproc->Finish());
- }
-@@ -114,7 +145,7 @@ TEST_F(SubprocessTest, InterruptParentWi
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-   while (!subproc->Done()) {
--    bool interrupted = subprocs_.DoWork();
-+    bool interrupted = subprocs_.DoWork(NULL);
-     if (interrupted)
-       return;
-   }
-@@ -126,9 +157,11 @@ TEST_F(SubprocessTest, InterruptChildWit
-   Subprocess* subproc = subprocs_.Add("kill -HUP $$");
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-   EXPECT_EQ(ExitInterrupted, subproc->Finish());
- }
-@@ -138,7 +171,7 @@ TEST_F(SubprocessTest, InterruptParentWi
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-   while (!subproc->Done()) {
--    bool interrupted = subprocs_.DoWork();
-+    bool interrupted = subprocs_.DoWork(NULL);
-     if (interrupted)
-       return;
-   }
-@@ -153,9 +186,11 @@ TEST_F(SubprocessTest, Console) {
-         subprocs_.Add("test -t 0 -a -t 1 -a -t 2", /*use_console=*/true);
-     ASSERT_NE((Subprocess*)0, subproc);
- 
-+    subprocs_.ResetTokenAvailable();
-     while (!subproc->Done()) {
--      subprocs_.DoWork();
-+      subprocs_.DoWork(NULL);
-     }
-+    ASSERT_FALSE(subprocs_.IsTokenAvailable());
- 
-     EXPECT_EQ(ExitSuccess, subproc->Finish());
-   }
-@@ -167,9 +202,11 @@ TEST_F(SubprocessTest, SetWithSingle) {
-   Subprocess* subproc = subprocs_.Add(kSimpleCommand);
-   ASSERT_NE((Subprocess *) 0, subproc);
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
-   ASSERT_EQ(ExitSuccess, subproc->Finish());
-   ASSERT_NE("", subproc->GetOutput());
- 
-@@ -200,12 +237,13 @@ TEST_F(SubprocessTest, SetWithMulti) {
-     ASSERT_EQ("", processes[i]->GetOutput());
-   }
- 
-+  subprocs_.ResetTokenAvailable();
-   while (!processes[0]->Done() || !processes[1]->Done() ||
-          !processes[2]->Done()) {
-     ASSERT_GT(subprocs_.running_.size(), 0u);
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
--
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
-   ASSERT_EQ(0u, subprocs_.running_.size());
-   ASSERT_EQ(3u, subprocs_.finished_.size());
- 
-@@ -237,8 +275,10 @@ TEST_F(SubprocessTest, SetWithLots) {
-     ASSERT_NE((Subprocess *) 0, subproc);
-     procs.push_back(subproc);
-   }
-+  subprocs_.ResetTokenAvailable();
-   while (!subprocs_.running_.empty())
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
-   for (size_t i = 0; i < procs.size(); ++i) {
-     ASSERT_EQ(ExitSuccess, procs[i]->Finish());
-     ASSERT_NE("", procs[i]->GetOutput());
-@@ -254,10 +294,91 @@ TEST_F(SubprocessTest, SetWithLots) {
- // that stdin is closed.
- TEST_F(SubprocessTest, ReadStdin) {
-   Subprocess* subproc = subprocs_.Add("cat -");
-+  subprocs_.ResetTokenAvailable();
-   while (!subproc->Done()) {
--    subprocs_.DoWork();
-+    subprocs_.DoWork(NULL);
-   }
-+  ASSERT_FALSE(subprocs_.IsTokenAvailable());
-   ASSERT_EQ(ExitSuccess, subproc->Finish());
-   ASSERT_EQ(1u, subprocs_.finished_.size());
- }
- #endif  // _WIN32
-+
-+TEST_F(SubprocessTest, TokenAvailable) {
-+  Subprocess* subproc = subprocs_.Add(kSimpleCommand);
-+  ASSERT_NE((Subprocess *) 0, subproc);
-+
-+  // simulate GNUmake jobserver pipe with 1 token
-+#ifdef _WIN32
-+  tokens_._token_available = true;
-+#else
-+  int fds[2];
-+  ASSERT_EQ(0u, pipe(fds));
-+  tokens_._fd = fds[0];
-+  ASSERT_EQ(1u, write(fds[1], "T", 1));
-+#endif
-+
-+  subprocs_.ResetTokenAvailable();
-+  subprocs_.DoWork(&tokens_);
-+#ifdef _WIN32
-+  tokens_._token_available = false;
-+  // we need to loop here as we have no control where the token
-+  // I/O completion post ends up in the queue
-+  while (!subproc->Done() && !subprocs_.IsTokenAvailable()) {
-+    subprocs_.DoWork(&tokens_);
-+  }
-+#endif
-+
-+  EXPECT_TRUE(subprocs_.IsTokenAvailable());
-+  EXPECT_EQ(0u, subprocs_.finished_.size());
-+
-+  // remove token to let DoWork() wait for command again
-+#ifndef _WIN32
-+  char token;
-+  ASSERT_EQ(1u, read(fds[0], &token, 1));
-+#endif
-+
-+  while (!subproc->Done()) {
-+    subprocs_.DoWork(&tokens_);
-+  }
-+
-+#ifndef _WIN32
-+  close(fds[1]);
-+  close(fds[0]);
-+#endif
-+
-+  EXPECT_EQ(ExitSuccess, subproc->Finish());
-+  EXPECT_NE("", subproc->GetOutput());
-+
-+  EXPECT_EQ(1u, subprocs_.finished_.size());
-+}
-+
-+TEST_F(SubprocessTest, TokenNotAvailable) {
-+  Subprocess* subproc = subprocs_.Add(kSimpleCommand);
-+  ASSERT_NE((Subprocess *) 0, subproc);
-+
-+  // simulate GNUmake jobserver pipe with 0 tokens
-+#ifdef _WIN32
-+  tokens_._token_available = false;
-+#else
-+  int fds[2];
-+  ASSERT_EQ(0u, pipe(fds));
-+  tokens_._fd = fds[0];
-+#endif
-+
-+  subprocs_.ResetTokenAvailable();
-+  while (!subproc->Done()) {
-+    subprocs_.DoWork(&tokens_);
-+  }
-+
-+#ifndef _WIN32
-+  close(fds[1]);
-+  close(fds[0]);
-+#endif
-+
-+  EXPECT_FALSE(subprocs_.IsTokenAvailable());
-+  EXPECT_EQ(ExitSuccess, subproc->Finish());
-+  EXPECT_NE("", subproc->GetOutput());
-+
-+  EXPECT_EQ(1u, subprocs_.finished_.size());
-+}
+   // Historical info: how long did this edge take last time,
+   // as per .ninja_log, if known? Defaults to -1 if unknown.
+   int64_t prev_elapsed_time_millis = -1;
 --- a/src/ninja.cc
 +++ b/src/ninja.cc
-@@ -1447,6 +1447,7 @@ int ReadFlags(int* argc, char*** argv,
-         // We want to run N jobs in parallel. For N = 0, INT_MAX
-         // is close enough to infinite for most sane builds.
-         config->parallelism = value > 0 ? value : INT_MAX;
-+        config->parallelism_from_cmdline = true;
-         deferGuessParallelism.needGuess = false;
-         break;
-       }
---- /dev/null
-+++ b/src/tokenpool_test.cc
-@@ -0,0 +1,279 @@
-+// Copyright 2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#include "tokenpool.h"
-+
-+#include "test.h"
-+
-+#ifdef _WIN32
-+#include <windows.h>
-+#else
-+#include <unistd.h>
-+#endif
-+
-+#include <stdio.h>
-+#include <stdlib.h>
-+
-+#ifdef _WIN32
-+// should contain all valid characters
-+#define SEMAPHORE_NAME      "abcdefghijklmnopqrstwxyz01234567890_"
-+#define AUTH_FORMAT(tmpl)   "foo " tmpl "=%s bar"
-+#define ENVIRONMENT_CLEAR() SetEnvironmentVariable("MAKEFLAGS", NULL)
-+#define ENVIRONMENT_INIT(v) SetEnvironmentVariable("MAKEFLAGS", v)
-+#else
-+#define AUTH_FORMAT(tmpl)   "foo " tmpl "=%d,%d bar"
-+#define ENVIRONMENT_CLEAR() unsetenv("MAKEFLAGS")
-+#define ENVIRONMENT_INIT(v) setenv("MAKEFLAGS", v, true)
-+#endif
-+
-+namespace {
-+
-+const double kLoadAverageDefault = -1.23456789;
-+
-+struct TokenPoolTest : public testing::Test {
-+  double load_avg_;
-+  TokenPool* tokens_;
-+  char buf_[1024];
-+#ifdef _WIN32
-+  const char* semaphore_name_;
-+  HANDLE semaphore_;
-+#else
-+  int fds_[2];
-+
-+  char random() {
-+    return int((rand() / double(RAND_MAX)) * 256);
-+  }
-+#endif
-+
-+  virtual void SetUp() {
-+    load_avg_ = kLoadAverageDefault;
-+    tokens_ = NULL;
-+    ENVIRONMENT_CLEAR();
-+#ifdef _WIN32
-+    semaphore_name_ = SEMAPHORE_NAME;
-+    if ((semaphore_ = CreateSemaphore(0, 0, 2, SEMAPHORE_NAME)) == NULL)
-+#else
-+    if (pipe(fds_) < 0)
-+#endif
-+      ASSERT_TRUE(false);
-+  }
-+
-+  void CreatePool(const char* format, bool ignore_jobserver = false) {
-+    if (format) {
-+      sprintf(buf_, format,
-+#ifdef _WIN32
-+              semaphore_name_
-+#else
-+              fds_[0], fds_[1]
-+#endif
-+      );
-+      ENVIRONMENT_INIT(buf_);
-+    }
-+    if ((tokens_ = TokenPool::Get()) != NULL) {
-+      if (!tokens_->Setup(ignore_jobserver, false, load_avg_)) {
-+        delete tokens_;
-+        tokens_ = NULL;
-+      }
-+    }
-+  }
-+
-+  void CreateDefaultPool() {
-+    CreatePool(AUTH_FORMAT("--jobserver-auth"));
-+  }
-+
-+  virtual void TearDown() {
-+    if (tokens_)
-+      delete tokens_;
-+#ifdef _WIN32
-+    CloseHandle(semaphore_);
-+#else
-+    close(fds_[0]);
-+    close(fds_[1]);
-+#endif
-+    ENVIRONMENT_CLEAR();
-+  }
-+};
-+
-+} // anonymous namespace
-+
-+// verifies none implementation
-+TEST_F(TokenPoolTest, NoTokenPool) {
-+  CreatePool(NULL, false);
-+
-+  EXPECT_EQ(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+}
-+
-+TEST_F(TokenPoolTest, SuccessfulOldSetup) {
-+  // GNUmake <= 4.1
-+  CreatePool(AUTH_FORMAT("--jobserver-fds"));
-+
-+  EXPECT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+}
-+
-+TEST_F(TokenPoolTest, SuccessfulNewSetup) {
-+  // GNUmake => 4.2
-+  CreateDefaultPool();
-+
-+  EXPECT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+}
-+
-+TEST_F(TokenPoolTest, IgnoreWithJN) {
-+  CreatePool(AUTH_FORMAT("--jobserver-auth"), true);
-+
-+  EXPECT_EQ(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+}
-+
-+TEST_F(TokenPoolTest, HonorLN) {
-+  CreatePool(AUTH_FORMAT("-l9 --jobserver-auth"));
-+
-+  EXPECT_NE(NULL, tokens_);
-+  EXPECT_EQ(9.0, load_avg_);
-+}
-+
-+#ifdef _WIN32
-+TEST_F(TokenPoolTest, SemaphoreNotFound) {
-+  semaphore_name_ = SEMAPHORE_NAME "_foobar";
-+  CreateDefaultPool();
-+
-+  EXPECT_EQ(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+}
-+
-+TEST_F(TokenPoolTest, TokenIsAvailable) {
-+  CreateDefaultPool();
-+
-+  ASSERT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+
-+  EXPECT_TRUE(tokens_->TokenIsAvailable((ULONG_PTR)tokens_));
-+}
-+#else
-+TEST_F(TokenPoolTest, MonitorFD) {
-+  CreateDefaultPool();
-+
-+  ASSERT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+
-+  EXPECT_EQ(fds_[0], tokens_->GetMonitorFd());
-+}
-+#endif
-+
-+TEST_F(TokenPoolTest, ImplicitToken) {
-+  CreateDefaultPool();
-+
-+  ASSERT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_FALSE(tokens_->Acquire());
-+  tokens_->Release();
-+  EXPECT_TRUE(tokens_->Acquire());
-+}
-+
-+TEST_F(TokenPoolTest, TwoTokens) {
-+  CreateDefaultPool();
-+
-+  ASSERT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+
-+  // implicit token
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_FALSE(tokens_->Acquire());
-+
-+  // jobserver offers 2nd token
-+#ifdef _WIN32
-+  LONG previous;
-+  ASSERT_TRUE(ReleaseSemaphore(semaphore_, 1, &previous));
-+  ASSERT_EQ(0, previous);
-+#else
-+  char test_tokens[1] = { random() };
-+  ASSERT_EQ(1u, write(fds_[1], test_tokens, sizeof(test_tokens)));
-+#endif
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_FALSE(tokens_->Acquire());
-+
-+  // release 2nd token
-+  tokens_->Release();
-+  EXPECT_TRUE(tokens_->Acquire());
-+
-+  // release implicit token - must return 2nd token back to jobserver
-+  tokens_->Release();
-+  EXPECT_TRUE(tokens_->Acquire());
-+
-+  // there must be one token available
-+#ifdef _WIN32
-+  EXPECT_EQ(WAIT_OBJECT_0, WaitForSingleObject(semaphore_, 0));
-+  EXPECT_TRUE(ReleaseSemaphore(semaphore_, 1, &previous));
-+  EXPECT_EQ(0, previous);
-+#else
-+  EXPECT_EQ(1u, read(fds_[0], buf_, sizeof(buf_)));
-+  EXPECT_EQ(test_tokens[0], buf_[0]);
-+#endif
-+
-+  // implicit token
-+  EXPECT_TRUE(tokens_->Acquire());
-+}
-+
-+TEST_F(TokenPoolTest, Clear) {
-+  CreateDefaultPool();
-+
-+  ASSERT_NE(NULL, tokens_);
-+  EXPECT_EQ(kLoadAverageDefault, load_avg_);
-+
-+  // implicit token
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_FALSE(tokens_->Acquire());
-+
-+  // jobserver offers 2nd & 3rd token
-+#ifdef _WIN32
-+  LONG previous;
-+  ASSERT_TRUE(ReleaseSemaphore(semaphore_, 2, &previous));
-+  ASSERT_EQ(0, previous);
-+#else
-+  char test_tokens[2] = { random(), random() };
-+  ASSERT_EQ(2u, write(fds_[1], test_tokens, sizeof(test_tokens)));
-+#endif
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_TRUE(tokens_->Acquire());
-+  tokens_->Reserve();
-+  EXPECT_FALSE(tokens_->Acquire());
-+
-+  tokens_->Clear();
-+  EXPECT_TRUE(tokens_->Acquire());
-+
-+  // there must be two tokens available
-+#ifdef _WIN32
-+  EXPECT_EQ(WAIT_OBJECT_0, WaitForSingleObject(semaphore_, 0));
-+  EXPECT_EQ(WAIT_OBJECT_0, WaitForSingleObject(semaphore_, 0));
-+  EXPECT_TRUE(ReleaseSemaphore(semaphore_, 2, &previous));
-+  EXPECT_EQ(0, previous);
-+#else
-+  EXPECT_EQ(2u, read(fds_[0], buf_, sizeof(buf_)));
-+  // tokens are pushed onto a stack, hence returned in reverse order
-+  EXPECT_EQ(test_tokens[0], buf_[1]);
-+  EXPECT_EQ(test_tokens[1], buf_[0]);
-+#endif
-+
-+  // implicit token
-+  EXPECT_TRUE(tokens_->Acquire());
-+}
---- /dev/null
-+++ b/src/tokenpool-gnu-make-posix.cc
-@@ -0,0 +1,214 @@
-+// Copyright 2016-2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#include "tokenpool-gnu-make.h"
-+
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <poll.h>
-+#include <unistd.h>
-+#include <signal.h>
-+#include <sys/time.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <stdlib.h>
-+#include <stack>
-+
-+// TokenPool implementation for GNU make jobserver - POSIX implementation
-+// (http://make.mad-scientist.net/papers/jobserver-implementation/)
-+struct GNUmakeTokenPoolPosix : public GNUmakeTokenPool {
-+  GNUmakeTokenPoolPosix();
-+  virtual ~GNUmakeTokenPoolPosix();
-+
-+  virtual int GetMonitorFd();
-+
-+  virtual const char* GetEnv(const char* name) { return getenv(name); };
-+  virtual bool ParseAuth(const char* jobserver);
-+  virtual bool AcquireToken();
-+  virtual bool ReturnToken();
-+
-+ private:
-+  int rfd_;
-+  int wfd_;
-+
-+  struct sigaction old_act_;
-+  bool restore_;
-+
-+  // See https://www.gnu.org/software/make/manual/html_node/POSIX-Jobserver.html
-+  //
-+  //   It’s important that when you release the job slot, you write back
-+  //   the same character you read. Don’t assume that all tokens are the
-+  //   same character different characters may have different meanings to
-+  //   GNU make. The order is not important, since make has no idea in
-+  //   what order jobs will complete anyway.
-+  //
-+  std::stack<char> tokens_;
-+
-+  static int dup_rfd_;
-+  static void CloseDupRfd(int signum);
-+
-+  bool CheckFd(int fd);
-+  bool SetAlarmHandler();
-+};
-+
-+GNUmakeTokenPoolPosix::GNUmakeTokenPoolPosix() : rfd_(-1), wfd_(-1), restore_(false) {
-+}
-+
-+GNUmakeTokenPoolPosix::~GNUmakeTokenPoolPosix() {
-+  Clear();
-+  if (restore_)
-+    sigaction(SIGALRM, &old_act_, NULL);
-+}
-+
-+bool GNUmakeTokenPoolPosix::CheckFd(int fd) {
-+  if (fd < 0)
-+    return false;
-+  int ret = fcntl(fd, F_GETFD);
-+  return ret >= 0;
-+}
-+
-+int GNUmakeTokenPoolPosix::dup_rfd_ = -1;
-+
-+void GNUmakeTokenPoolPosix::CloseDupRfd(int signum) {
-+  close(dup_rfd_);
-+  dup_rfd_ = -1;
-+}
-+
-+bool GNUmakeTokenPoolPosix::SetAlarmHandler() {
-+  struct sigaction act;
-+  memset(&act, 0, sizeof(act));
-+  act.sa_handler = CloseDupRfd;
-+  if (sigaction(SIGALRM, &act, &old_act_) < 0) {
-+    perror("sigaction:");
-+    return false;
-+  }
-+  restore_ = true;
-+  return true;
-+}
-+
-+bool GNUmakeTokenPoolPosix::ParseAuth(const char* jobserver) {
-+  int rfd = -1;
-+  int wfd = -1;
-+  if ((sscanf(jobserver, "%*[^=]=%d,%d", &rfd, &wfd) == 2) &&
-+      CheckFd(rfd) &&
-+      CheckFd(wfd) &&
-+      SetAlarmHandler()) {
-+    rfd_ = rfd;
-+    wfd_ = wfd;
-+    return true;
-+  }
-+
-+  return false;
-+}
-+
-+bool GNUmakeTokenPoolPosix::AcquireToken() {
-+  // Please read
-+  //
-+  //   http://make.mad-scientist.net/papers/jobserver-implementation/
-+  //
-+  // for the reasoning behind the following code.
-+  //
-+  // Try to read one character from the pipe. Returns true on success.
-+  //
-+  // First check if read() would succeed without blocking.
-+#ifdef USE_PPOLL
-+  pollfd pollfds[] = {{rfd_, POLLIN, 0}};
-+  int ret = poll(pollfds, 1, 0);
-+#else
-+  fd_set set;
-+  struct timeval timeout = { 0, 0 };
-+  FD_ZERO(&set);
-+  FD_SET(rfd_, &set);
-+  int ret = select(rfd_ + 1, &set, NULL, NULL, &timeout);
-+#endif
-+  if (ret > 0) {
-+    // Handle potential race condition:
-+    //  - the above check succeeded, i.e. read() should not block
-+    //  - the character disappears before we call read()
-+    //
-+    // Create a duplicate of rfd_. The duplicate file descriptor dup_rfd_
-+    // can safely be closed by signal handlers without affecting rfd_.
-+    dup_rfd_ = dup(rfd_);
-+
-+    if (dup_rfd_ != -1) {
-+      struct sigaction act, old_act;
-+      int ret = 0;
-+      char buf;
-+
-+      // Temporarily replace SIGCHLD handler with our own
-+      memset(&act, 0, sizeof(act));
-+      act.sa_handler = CloseDupRfd;
-+      if (sigaction(SIGCHLD, &act, &old_act) == 0) {
-+        struct itimerval timeout;
-+
-+        // install a 100ms timeout that generates SIGALARM on expiration
-+        memset(&timeout, 0, sizeof(timeout));
-+        timeout.it_value.tv_usec = 100 * 1000; // [ms] -> [usec]
-+        if (setitimer(ITIMER_REAL, &timeout, NULL) == 0) {
-+          // Now try to read() from dup_rfd_. Return values from read():
-+          //
-+          // 1. token read                               ->  1
-+          // 2. pipe closed                              ->  0
-+          // 3. alarm expires                            -> -1 (EINTR)
-+          // 4. child exits                              -> -1 (EINTR)
-+          // 5. alarm expired before entering read()     -> -1 (EBADF)
-+          // 6. child exited before entering read()      -> -1 (EBADF)
-+          // 7. child exited before handler is installed -> go to 1 - 3
-+          ret = read(dup_rfd_, &buf, 1);
-+
-+          // disarm timer
-+          memset(&timeout, 0, sizeof(timeout));
-+          setitimer(ITIMER_REAL, &timeout, NULL);
-+        }
-+
-+        sigaction(SIGCHLD, &old_act, NULL);
-+      }
-+
-+      CloseDupRfd(0);
-+
-+      // Case 1 from above list
-+      if (ret > 0) {
-+        tokens_.push(buf);
-+        return true;
-+      }
-+    }
-+  }
-+
-+  // read() would block, i.e. no token available,
-+  // cases 2-6 from above list or
-+  // select() / poll() / dup() / sigaction() / setitimer() failed
-+  return false;
-+}
-+
-+bool GNUmakeTokenPoolPosix::ReturnToken() {
-+  const char buf = tokens_.top();
-+  while (1) {
-+    int ret = write(wfd_, &buf, 1);
-+    if (ret > 0) {
-+      tokens_.pop();
-+      return true;
-+    }
-+    if ((ret != -1) || (errno != EINTR))
-+      return false;
-+    // write got interrupted - retry
-+  }
-+}
-+
-+int GNUmakeTokenPoolPosix::GetMonitorFd() {
-+  return rfd_;
-+}
-+
-+TokenPool* TokenPool::Get() {
-+  return new GNUmakeTokenPoolPosix;
-+}
---- /dev/null
-+++ b/src/tokenpool-gnu-make-win32.cc
-@@ -0,0 +1,239 @@
-+// Copyright 2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#include "tokenpool-gnu-make.h"
-+
-+// Always include this first.
-+// Otherwise the other system headers don't work correctly under Win32
-+#include <windows.h>
-+
-+#include <ctype.h>
-+#include <stdlib.h>
-+#include <string.h>
-+
-+#include "util.h"
-+
-+// TokenPool implementation for GNU make jobserver - Win32 implementation
-+// (https://www.gnu.org/software/make/manual/html_node/Windows-Jobserver.html)
-+struct GNUmakeTokenPoolWin32 : public GNUmakeTokenPool {
-+  GNUmakeTokenPoolWin32();
-+  virtual ~GNUmakeTokenPoolWin32();
-+
-+  virtual void WaitForTokenAvailability(HANDLE ioport);
-+  virtual bool TokenIsAvailable(ULONG_PTR key);
-+
-+  virtual const char* GetEnv(const char* name);
-+  virtual bool ParseAuth(const char* jobserver);
-+  virtual bool AcquireToken();
-+  virtual bool ReturnToken();
-+
-+ private:
-+  // Semaphore for GNU make jobserver protocol
-+  HANDLE semaphore_jobserver_;
-+  // Semaphore Child -> Parent
-+  // - child releases it before entering wait on jobserver semaphore
-+  // - parent blocks on it to know when child enters wait
-+  HANDLE semaphore_enter_wait_;
-+  // Semaphore Parent -> Child
-+  // - parent releases it to allow child to restart loop
-+  // - child blocks on it to know when to restart loop
-+  HANDLE semaphore_restart_;
-+  // set to false if child should exit loop and terminate thread
-+  bool running_;
-+  // child thread
-+  HANDLE child_;
-+  // I/O completion port from SubprocessSet
-+  HANDLE ioport_;
-+
-+
-+  DWORD SemaphoreThread();
-+  void ReleaseSemaphore(HANDLE semaphore);
-+  void WaitForObject(HANDLE object);
-+  static DWORD WINAPI SemaphoreThreadWrapper(LPVOID param);
-+  static void NoopAPCFunc(ULONG_PTR param);
-+};
-+
-+GNUmakeTokenPoolWin32::GNUmakeTokenPoolWin32() : semaphore_jobserver_(NULL),
-+                                                 semaphore_enter_wait_(NULL),
-+                                                 semaphore_restart_(NULL),
-+                                                 running_(false),
-+                                                 child_(NULL),
-+                                                 ioport_(NULL) {
-+}
-+
-+GNUmakeTokenPoolWin32::~GNUmakeTokenPoolWin32() {
-+  Clear();
-+  CloseHandle(semaphore_jobserver_);
-+  semaphore_jobserver_ = NULL;
-+
-+  if (child_) {
-+    // tell child thread to exit
-+    running_ = false;
-+    ReleaseSemaphore(semaphore_restart_);
-+
-+    // wait for child thread to exit
-+    WaitForObject(child_);
-+    CloseHandle(child_);
-+    child_ = NULL;
-+  }
-+
-+  if (semaphore_restart_) {
-+    CloseHandle(semaphore_restart_);
-+    semaphore_restart_ = NULL;
-+  }
-+
-+  if (semaphore_enter_wait_) {
-+    CloseHandle(semaphore_enter_wait_);
-+    semaphore_enter_wait_ = NULL;
-+  }
-+}
-+
-+const char* GNUmakeTokenPoolWin32::GetEnv(const char* name) {
-+  // getenv() does not work correctly together with tokenpool_tests.cc
-+  static char buffer[MAX_PATH + 1];
-+  if (GetEnvironmentVariable(name, buffer, sizeof(buffer)) == 0)
-+    return NULL;
-+  return buffer;
-+}
-+
-+bool GNUmakeTokenPoolWin32::ParseAuth(const char* jobserver) {
-+  // match "--jobserver-auth=gmake_semaphore_<INTEGER>..."
-+  const char* start = strchr(jobserver, '=');
-+  if (start) {
-+    const char* end = start;
-+    unsigned int len;
-+    char c, *auth;
-+
-+    while ((c = *++end) != '\0')
-+      if (!(isalnum(c) || (c == '_')))
+@@ -36,13 +36,14 @@
+ #include "browse.h"
+ #include "build.h"
+ #include "build_log.h"
+-#include "deps_log.h"
+ #include "clean.h"
+ #include "debug_flags.h"
+ #include "depfile_parser.h"
++#include "deps_log.h"
+ #include "disk_interface.h"
+ #include "graph.h"
+ #include "graphviz.h"
++#include "jobserver.h"
+ #include "json.h"
+ #include "manifest_parser.h"
+ #include "metrics.h"
+@@ -1346,8 +1347,8 @@ bool NinjaMain::EnsureBuildDirExists() {
+ }
+ 
+ int NinjaMain::RunBuild(int argc, char** argv, Status* status) {
+-  string err;
+-  vector<Node*> targets;
++  std::string err;
++  std::vector<Node*> targets;
+   if (!CollectTargetsFromArgs(argc, argv, &targets, &err)) {
+     status->Error("%s", err.c_str());
+     return 1;
+@@ -1357,6 +1358,58 @@ int NinjaMain::RunBuild(int argc, char**
+ 
+   Builder builder(&state_, config_, &build_log_, &deps_log_, &disk_interface_,
+                   status, start_time_millis_);
++
++  // If MAKEFLAGS is set, only setup a Jobserver client if needed.
++  // (this means that an empty MAKEFLAGS value disables the feature).
++  std::unique_ptr<Jobserver::Client> jobserver_client;
++
++  // Determine whether to use a Jobserver client in this build.
++  // Disallowed for dry-runs, and for explicit -j1. Note that
++  // `-j0` means "infinite" parallelism but is translated as
++  // `config_.parallelism == INT_MAX` in ReadFlags().
++  bool use_jobserver = !config_.dry_run && config_.parallelism > 1;
++
++  if (use_jobserver) {
++    do {
++      const char* makeflags = getenv("MAKEFLAGS");
++      if (!makeflags) {
++        // MAKEFLAGS is not defined.
 +        break;
-+    len = end - start; // includes string terminator in count
-+
-+    if ((len > 1) && ((auth = (char*)malloc(len)) != NULL)) {
-+      strncpy(auth, start + 1, len - 1);
-+      auth[len - 1] = '\0';
-+
-+      if ((semaphore_jobserver_ =
-+           OpenSemaphore(SEMAPHORE_ALL_ACCESS, /* Semaphore access setting */
-+                         FALSE,                /* Child processes DON'T inherit */
-+                         auth                  /* Semaphore name */
-+                        )) != NULL) {
-+        free(auth);
-+        return true;
 +      }
 +
-+      free(auth);
++      Jobserver::Config jobserver_config;
++      if (!Jobserver::ParseNativeMakeFlagsValue(makeflags, &jobserver_config,
++                                                &err)) {
++        // MAKEFLAGS is defined but could not be parsed correctly.
++        if (config_.verbosity > BuildConfig::QUIET)
++          status->Warning("Unsupported MAKEFLAGS value: %s [%s]", err.c_str(),
++                          makeflags);
++        break;
++      }
++      if (!jobserver_config.HasMode()) {
++        // MAKEFLAGS is defined, but does not describe a jobserver mode.
++        break;
++      }
++
++      if (config_.verbosity > BuildConfig::NO_STATUS_UPDATE)
++        status->Info("Jobserver mode detected: %s", makeflags);
++
++      jobserver_client = Jobserver::Client::Create(jobserver_config, &err);
++      if (!jobserver_client.get()) {
++        // Jobserver client initialization failed !?
++        if (config_.verbosity > BuildConfig::QUIET)
++          status->Error("Could not initialize jobserver: %s", err.c_str());
++        break;
++      }
++
++      // Initialization succeeded, setup builder to use it.
++      builder.SetJobserverClient(jobserver_client.get());
++
++    } while (0);
++
++    err.clear();
++  }
++
+   for (size_t i = 0; i < targets.size(); ++i) {
+     if (!builder.AddTarget(targets[i], &err)) {
+       if (!err.empty()) {
+@@ -1436,15 +1489,16 @@ int ReadFlags(int* argc, char*** argv,
+               Options* options, BuildConfig* config) {
+   DeferGuessParallelism deferGuessParallelism(config);
+ 
+-  enum { OPT_VERSION = 1, OPT_QUIET = 2 };
+-  const option kLongOptions[] = {
+-    { "help", no_argument, NULL, 'h' },
+-    { "version", no_argument, NULL, OPT_VERSION },
+-    { "verbose", no_argument, NULL, 'v' },
+-    { "quiet", no_argument, NULL, OPT_QUIET },
+-    { NULL, 0, NULL, 0 }
+-  };
++  enum { OPT_VERSION = 1, OPT_QUIET = 2, OPT_JOBSERVER = 3 };
++  const option kLongOptions[] = { { "help", no_argument, NULL, 'h' },
++                                  { "version", no_argument, NULL, OPT_VERSION },
++                                  { "verbose", no_argument, NULL, 'v' },
++                                  { "quiet", no_argument, NULL, OPT_QUIET },
++                                  { "jobserver", optional_argument, NULL,
++                                    OPT_JOBSERVER },
++                                  { NULL, 0, NULL, 0 } };
+ 
++  const char* jobserver_mode = nullptr;
+   int opt;
+   while (!options->tool &&
+          (opt = getopt_long(*argc, *argv, "d:f:j:k:l:nt:vw:C:h", kLongOptions,
+@@ -1513,6 +1567,9 @@ int ReadFlags(int* argc, char*** argv,
+       case OPT_VERSION:
+         printf("%s\n", kNinjaVersion);
+         return 0;
++      case OPT_JOBSERVER:
++        jobserver_mode = optarg ? optarg : "1";
++        break;
+       case 'h':
+       default:
+         deferGuessParallelism.Refresh();
+@@ -1523,6 +1580,29 @@ int ReadFlags(int* argc, char*** argv,
+   *argv += optind;
+   *argc -= optind;
+ 
++  // If an explicit --jobserver has not been used, lookup the NINJA_JOBSERVER
++  // environment variable. Ignore it if parallelism was set explicitly on the
++  // command line though (and warn about it).
++  if (jobserver_mode == nullptr) {
++    jobserver_mode = getenv("NINJA_JOBSERVER");
++    if (jobserver_mode && !deferGuessParallelism.needGuess) {
++      if (!config->dry_run && config->verbosity > BuildConfig::QUIET)
++        Warning(
++            "Explicit parallelism (-j), ignoring NINJA_JOBSERVER environment "
++            "variable.");
++      jobserver_mode = nullptr;
++    }
++  }
++  if (jobserver_mode) {
++    auto ret = Jobserver::Config::ModeFromString(jobserver_mode);
++    config->jobserver_mode = ret.second;
++    if (!ret.first && !config->dry_run &&
++        config->verbosity > BuildConfig::QUIET) {
++      Warning("Invalid jobserver mode '%s': Must be one of: %s", jobserver_mode,
++              Jobserver::Config::GetValidModesListAsString(", ").c_str());
 +    }
 +  }
 +
-+  return false;
-+}
+   return -1;
+ }
+ 
+@@ -1562,6 +1642,72 @@ NORETURN void real_main(int argc, char**
+     exit((ninja.*options.tool->func)(&options, argc, argv));
+   }
+ 
++  // Determine whether to setup a Jobserver pool. This depends on
++  // --jobserver or --jobserver=MODE being passed on the command-line,
++  // or NINJA_JOBSERVER=MODE being set in the environment.
++  //
++  // This must be ignored if a tool is being used, or no/infinite
++  // parallelism is being asked.
++  //
++  // At the moment, this overrides any MAKEFLAGS definition in
++  // the environment.
++  std::unique_ptr<Jobserver::Pool> jobserver_pool;
 +
-+bool GNUmakeTokenPoolWin32::AcquireToken() {
-+  return WaitForSingleObject(semaphore_jobserver_, 0) == WAIT_OBJECT_0;
-+}
++  do {
++    if (options.tool)  // Do not setup pool when a tool is used.
++      break;
 +
-+bool GNUmakeTokenPoolWin32::ReturnToken() {
-+  ReleaseSemaphore(semaphore_jobserver_);
-+  return true;
-+}
-+
-+DWORD GNUmakeTokenPoolWin32::SemaphoreThread() {
-+  while (running_) {
-+    // indicate to parent that we are entering wait
-+    ReleaseSemaphore(semaphore_enter_wait_);
-+
-+    // alertable wait forever on token semaphore
-+    if (WaitForSingleObjectEx(semaphore_jobserver_, INFINITE, TRUE) == WAIT_OBJECT_0) {
-+      // release token again for AcquireToken()
-+      ReleaseSemaphore(semaphore_jobserver_);
-+
-+      // indicate to parent on ioport that a token might be available
-+      if (!PostQueuedCompletionStatus(ioport_, 0, (ULONG_PTR) this, NULL))
-+        Win32Fatal("PostQueuedCompletionStatus");
++    if (config.parallelism == 1 || config.parallelism == INT_MAX) {
++      // No-parallelism (-j1) or infinite parallelism (-j0) was specified.
++      break;
 +    }
 +
-+    // wait for parent to allow loop restart
-+    WaitForObject(semaphore_restart_);
-+    // semaphore is now in nonsignaled state again for next run...
-+  }
++    if (config.jobserver_mode == Jobserver::Config::kModeNone) {
++      // --jobserver was not used, and NINJA_JOBSERVER is not set.
++      break;
++    }
 +
-+  return 0;
-+}
++    if (config.verbosity >= BuildConfig::VERBOSE)
++      status->Info("Creating jobserver pool for %d parallel jobs",
++                   config.parallelism);
 +
-+DWORD WINAPI GNUmakeTokenPoolWin32::SemaphoreThreadWrapper(LPVOID param) {
-+  GNUmakeTokenPoolWin32* This = (GNUmakeTokenPoolWin32*) param;
-+  return This->SemaphoreThread();
-+}
++    std::string err;
++    jobserver_pool = Jobserver::Pool::Create(
++        static_cast<size_t>(config.parallelism), config.jobserver_mode, &err);
++    if (!jobserver_pool.get()) {
++      if (config.verbosity > BuildConfig::QUIET)
++        status->Warning("Jobserver pool creation failed: %s", err.c_str());
++      break;
++    }
 +
-+void GNUmakeTokenPoolWin32::NoopAPCFunc(ULONG_PTR param) {
-+}
++    std::string makeflags = jobserver_pool->GetEnvMakeFlagsValue();
 +
-+void GNUmakeTokenPoolWin32::WaitForTokenAvailability(HANDLE ioport) {
-+  if (child_ == NULL) {
-+    // first invocation
-+    //
-+    // subprocess-win32.cc uses I/O completion port (IOCP) which can't be
-+    // used as a waitable object. Therefore we can't use WaitMultipleObjects()
-+    // to wait on the IOCP and the token semaphore at the same time. Create
-+    // a child thread that waits on the semaphore and posts an I/O completion
-+    ioport_ = ioport;
++    //  Set or override the MAKEFLAGS environment variable in
++    // the current process. This ensures it is passed to sub-commands
++    // as well.
++#ifdef _WIN32
++    // TODO(digit): Verify that this works correctly on Win32.
++    // this code assumes that _putenv(), unlike Posix putenv()
++    // does create a copy of the input string, and that the
++    // resulting environment is passed to processes launched
++    // with CreateProcess (the documentation only mentions
++    // _spawn() and _exec()).
++    std::string env = "MAKEFLAGS=" + makeflags;
++    _putenv(env.c_str());
++#else   // !_WIN32
++    setenv("MAKEFLAGS", makeflags.c_str(), 1);
++#endif  // !_WIN32
 +
-+    // create both semaphores in nonsignaled state
-+    if ((semaphore_enter_wait_ = CreateSemaphore(NULL, 0, 1, NULL))
-+        == NULL)
-+      Win32Fatal("CreateSemaphore/enter_wait");
-+    if ((semaphore_restart_ = CreateSemaphore(NULL, 0, 1, NULL))
-+        == NULL)
-+      Win32Fatal("CreateSemaphore/restart");
++  } while (0);
 +
-+    // start child thread
-+    running_ = true;
-+    if ((child_ = CreateThread(NULL, 0, &SemaphoreThreadWrapper, this, 0, NULL))
-+        == NULL)
-+      Win32Fatal("CreateThread");
++  // Unset NINJA_JOBSERVER unconditionally in subprocesses
++  // to avoid multiple sub-pools to be started by mistake.
++#ifdef _WIN32
++  _putenv("NINJA_JOBSERVER=");
++#else   // !_WIN32
++  unsetenv("NINJA_JOBSERVER");
++#endif  // !_WIN32
 +
-+  } else {
-+    // all further invocations - allow child thread to loop
-+    ReleaseSemaphore(semaphore_restart_);
-+  }
-+
-+  // wait for child thread to enter wait
-+  WaitForObject(semaphore_enter_wait_);
-+  // semaphore is now in nonsignaled state again for next run...
-+
-+  // now SubprocessSet::DoWork() can enter GetQueuedCompletionStatus()...
-+}
-+
-+bool GNUmakeTokenPoolWin32::TokenIsAvailable(ULONG_PTR key) {
-+  // alert child thread to break wait on token semaphore
-+  QueueUserAPC((PAPCFUNC)&NoopAPCFunc, child_, (ULONG_PTR)NULL);
-+
-+  // return true when GetQueuedCompletionStatus() returned our key
-+  return key == (ULONG_PTR) this;
-+}
-+
-+void GNUmakeTokenPoolWin32::ReleaseSemaphore(HANDLE semaphore) {
-+  if (!::ReleaseSemaphore(semaphore, 1, NULL))
-+    Win32Fatal("ReleaseSemaphore");
-+}
-+
-+void GNUmakeTokenPoolWin32::WaitForObject(HANDLE object) {
-+  if (WaitForSingleObject(object, INFINITE) != WAIT_OBJECT_0)
-+    Win32Fatal("WaitForSingleObject");
-+}
-+
-+TokenPool* TokenPool::Get() {
-+  return new GNUmakeTokenPoolWin32;
-+}
---- /dev/null
-+++ b/src/tokenpool-gnu-make.h
-@@ -0,0 +1,40 @@
-+// Copyright 2016-2018 Google Inc. All Rights Reserved.
-+//
-+// Licensed under the Apache License, Version 2.0 (the "License");
-+// you may not use this file except in compliance with the License.
-+// You may obtain a copy of the License at
-+//
-+//     http://www.apache.org/licenses/LICENSE-2.0
-+//
-+// Unless required by applicable law or agreed to in writing, software
-+// distributed under the License is distributed on an "AS IS" BASIS,
-+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+// See the License for the specific language governing permissions and
-+// limitations under the License.
-+
-+#include "tokenpool.h"
-+
-+// interface to GNU make token pool
-+struct GNUmakeTokenPool : public TokenPool {
-+  GNUmakeTokenPool();
-+  ~GNUmakeTokenPool();
-+
-+  // token pool implementation
-+  virtual bool Acquire();
-+  virtual void Reserve();
-+  virtual void Release();
-+  virtual void Clear();
-+  virtual bool Setup(bool ignore, bool verbose, double& max_load_average);
-+
-+  // platform specific implementation
-+  virtual const char* GetEnv(const char* name) = 0;
-+  virtual bool ParseAuth(const char* jobserver) = 0;
-+  virtual bool AcquireToken() = 0;
-+  virtual bool ReturnToken() = 0;
-+
-+ private:
-+  int available_;
-+  int used_;
-+
-+  void Return();
-+};
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -112,6 +112,7 @@ add_library(libninja OBJECT
- 	src/state.cc
- 	src/status.cc
- 	src/string_piece_util.cc
-+	src/tokenpool-gnu-make.cc
- 	src/util.cc
- 	src/version.cc
- )
-@@ -123,9 +124,14 @@ if(WIN32)
- 		src/msvc_helper_main-win32.cc
- 		src/getopt.c
- 		src/minidump-win32.cc
-+		src/tokenpool-gnu-make-win32.cc
- 	)
- else()
- 	target_sources(libninja PRIVATE src/subprocess-posix.cc)
-+	target_sources(libninja PRIVATE
-+		src/subprocess-posix.cc
-+		src/tokenpool-gnu-make-posix.cc
-+	)
- 	if(CMAKE_SYSTEM_NAME STREQUAL "OS400" OR CMAKE_SYSTEM_NAME STREQUAL "AIX")
- 		target_sources(libninja PRIVATE src/getopt.c)
- 	endif()
-@@ -204,6 +210,7 @@ if(BUILD_TESTING)
-     src/string_piece_util_test.cc
-     src/subprocess_test.cc
-     src/test.cc
-+    src/tokenpool_test.cc
-     src/util_test.cc
-   )
-   if(WIN32)
+   // Limit number of rebuilds, to prevent infinite loops.
+   const int kCycleLimit = 100;
+   for (int cycle = 1; cycle <= kCycleLimit; ++cycle) {
+--- a/src/getopt.h
++++ b/src/getopt.h
+@@ -6,6 +6,7 @@
+ /* macros defined by this include file */
+ #define no_argument       0
+ #define required_argument 1
++#define optional_argument 2
+ #define OPTIONAL_ARG      2
+ 
+ /* types defined by this include file */
