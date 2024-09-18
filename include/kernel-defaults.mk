@@ -214,7 +214,7 @@ define Kernel/CompileImage/Initramfs
 			$(KERNEL_MAKE) $(if $(2),-C $(LINUX_DIR)$(2)) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);) \
 		$(call Kernel/CopyImage,-initramfs,$(2)); \
 		$(if $(2),rm -rf $(LINUX_DIR)$(2);) \
-	}, gen-initramfs$(if $(2),-$(2)));
+	}, gen-initramfs$(2));
 endef
 else
 define Kernel/CompileImage/Initramfs
