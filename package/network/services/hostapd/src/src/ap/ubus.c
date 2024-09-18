@@ -2024,3 +2024,16 @@ void hostapd_ubus_notify_apup_newpeer(
 	ubus_notify(ctx, &hapd->ubus.obj, "apup-newpeer", b.head, -1);
 }
 #endif // def CONFIG_APUP
+
+void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
+{
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
+	blobmsg_add_u32(&b, "freq", freq);
+	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
+
+	ubus_notify(ctx, &hapd->ubus.obj, "channel-switch", b.head, -1);
+}
