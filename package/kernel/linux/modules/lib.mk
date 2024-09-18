@@ -143,7 +143,7 @@ define KernelPackage/lib-zstd
 	CONFIG_ZSTD_DECOMPRESS
   FILES:= \
 	$(LINUX_DIR)/crypto/zstd.ko \
-	$(LINUX_DIR)/lib/zstd/zstd_common.ko@ge6.1 \
+	$(LINUX_DIR)/lib/zstd/zstd_common.ko \
 	$(LINUX_DIR)/lib/zstd/zstd_compress.ko \
 	$(LINUX_DIR)/lib/zstd/zstd_decompress.ko
   AUTOLOAD:=$(call AutoProbe,zstd zstd_compress zstd_decompress)

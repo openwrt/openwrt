@@ -1200,7 +1200,7 @@ define KernelPackage/usb-net-asix
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
   DEPENDS:= \
 	+kmod-libphy +kmod-net-selftests +kmod-mdio-devres +kmod-phy-ax88796b \
-	+LINUX_6_1:kmod-phylink +LINUX_6_6:kmod-phylink
+	+kmod-phylink
   KCONFIG:=CONFIG_USB_NET_AX8817X
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.ko
   AUTOLOAD:=$(call AutoProbe,asix)
@@ -1328,7 +1328,7 @@ $(eval $(call KernelPackage,usb-net-smsc75xx))
 
 define KernelPackage/usb-net-smsc95xx
   TITLE:=SMSC LAN95XX based USB 2.0 10/100 ethernet devices
-  DEPENDS:=+kmod-libphy +kmod-phy-smsc +!LINUX_5_15:kmod-net-selftests
+  DEPENDS:=+kmod-libphy +kmod-phy-smsc +kmod-net-selftests
   KCONFIG:=CONFIG_USB_NET_SMSC95XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc95xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc95xx)
