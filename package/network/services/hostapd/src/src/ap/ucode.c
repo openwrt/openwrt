@@ -802,3 +802,20 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
 }
+
+#ifdef CONFIG_APUP
+void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname)
+{
+	uc_value_t *val;
+
+	if (wpa_ucode_call_prepare("apup_newpeer"))
+		return;
+
+	val = hostapd_ucode_bss_get_uval(hapd);
+	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface))); // BSS ifname
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_get(ucv_string_new(ifname))); // APuP peer ifname
+	ucv_put(wpa_ucode_call(2));
+	ucv_gc(vm);
+}
+#endif // def CONFIG_APUP

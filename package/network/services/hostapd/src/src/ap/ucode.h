@@ -26,6 +26,10 @@ void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
 
+#ifdef CONFIG_APUP
+void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
+#endif // def CONFIG_APUP
+
 #else
 
 static inline int hostapd_ucode_init(struct hapd_interfaces *ifaces)
