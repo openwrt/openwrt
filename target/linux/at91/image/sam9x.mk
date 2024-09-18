@@ -125,6 +125,7 @@ define Device/calamp_lmu5000
   $(Device/production)
   DEVICE_VENDOR := CalAmp
   DEVICE_MODEL := LMU5000
+  DEVICE_DTS := at91-lmu5000
   DEVICE_PACKAGES := kmod-rtc-pcf2123 kmod-usb-acm \
 	kmod-usb-serial-option kmod-usb-serial-sierrawireless \
 	kmod-pinctrl-mcp23s08-spi
