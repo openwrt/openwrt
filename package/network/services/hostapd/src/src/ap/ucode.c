@@ -259,6 +259,7 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 
 	hostapd_setup_bss(hapd, hapd == iface->bss[0], true);
 	hostapd_ucode_update_interfaces();
+	hostapd_owe_update_trans(iface);
 
 done:
 	ret = 0;
@@ -379,6 +380,7 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	conf->bss[idx] = NULL;
 	ret = hostapd_ucode_bss_get_uval(hapd);
 	hostapd_ucode_update_interfaces();
+	hostapd_owe_update_trans(iface);
 	goto out;
 
 deinit_ctrl:
@@ -607,6 +609,7 @@ out:
 
 		ieee802_11_set_beacon(hapd);
 	}
+	hostapd_owe_update_trans(iface);
 
 	return ucv_boolean_new(true);
 }
@@ -698,6 +701,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	hostapd_ubus_add_bss(hapd);
 
 	hostapd_ucode_update_interfaces();
+	hostapd_owe_update_trans(hapd->iface);
 out:
 	if (interfaces->ctrl_iface_init)
 		interfaces->ctrl_iface_init(hapd);
