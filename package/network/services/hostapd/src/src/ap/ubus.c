@@ -1858,6 +1858,7 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 
 	ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
 }
