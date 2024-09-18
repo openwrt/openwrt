@@ -207,7 +207,7 @@ define Kernel/CompileImage/Initramfs
 			$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO), \
 				$(STAGING_DIR_HOST)/bin/lzop -9 -f $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio;) \
 			$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ), \
-				$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(KERNEL_BUILD_DIR)/initrd.cpio;) \
+				$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio;) \
 			$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD), \
 				$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio.zstd $(if $(2),$(LINUX_DIR)$(2),$(KERNEL_BUILD_DIR))/initrd.cpio;) \
 			$(if $(2),,$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all);),\
