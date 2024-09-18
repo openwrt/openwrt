@@ -1870,6 +1870,9 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 
 	blob_buf_init(&b, 0);
 	blobmsg_add_macaddr(&b, "address", sta->addr);
+	if (sta->vlan_id)
+		blobmsg_add_u32(&b, "vlan", sta->vlan_id);
+	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 	if (auth_alg)
 		blobmsg_add_string(&b, "auth-alg", auth_alg);
 
