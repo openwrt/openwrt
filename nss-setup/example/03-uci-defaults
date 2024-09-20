@@ -94,6 +94,8 @@ fi
 # For Linksys MX4200/4300/5300 etc, only need to match the first 5 bytes
 # of the MAC address to determine it's the same device.
 # Replace 'xx:xx' with the one found on the bottom of your device.
+# NOTE: '80:69:1a' is just one of the OUI for Linksys. Yours may be different.
+# i.e. 'D8:EC:5E:xx:xx', or others. We just need the first 10 characters.
 # Add a new `elif` block for each device if needed.
 if [[ "${mac}" =~ "80:69:1a:xx:xx" ]]; then
   suffix=2
@@ -156,6 +158,8 @@ config timeserver 'ntp'
 	option enable_server '1'
 	option interface 'lan'
 	$(${bridge_mode} && echo list server ''${router}'')
+	# The following NTP servers are NIST Internet Time Servers.
+	# Change them to suit your needs/regional location.
 	list server '129.6.15.28'
 	list server '129.6.15.29'
 	list server '129.6.15.30'
