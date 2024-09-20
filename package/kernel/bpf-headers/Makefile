@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 
 PKG_NAME:=linux
-PKG_PATCHVER:=5.15
+PKG_PATCHVER:=6.6
 # Manually include kernel version and hash from kernel details file
 include $(INCLUDE_DIR)/kernel-$(PKG_PATCHVER)
 
