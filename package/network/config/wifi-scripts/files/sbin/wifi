@@ -175,8 +175,33 @@ wifi_detect_notice() {
 }
 
 wifi_config() {
+	# Add sleep to prevent parsing before wifi modules get ready
+	sleep 1
+
 	[ -e /tmp/.config_pending ] && return
 	ucode /usr/share/hostap/wifi-detect.uc
+
+	if (dmesg | grep -q "WM_TM"); then
+		export MT76_ENV_WM_TM=1
+	fi
+
+	if (lspci | grep -q "7992"); then
+		export MT76_ENV_TX_BURST_ZERO=1
+	fi
+
+	if (dmesg | grep -q "eeprom load fail"); then
+		# generate random bytes for macaddr
+		rand=$(hexdump -C /dev/urandom | head -n 1 &)
+		killall hexdump
+
+		macaddr=""
+		for i in $(seq 2 3); do
+			macaddr=${macaddr}:$(echo $rand | cut -d ' ' -f $i)
+		done
+
+		export MT76_ENV_RANDOM_MAC_BYTES=${macaddr}
+	fi
+
 	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
 	ucode /lib/wifi/mac80211.uc | uci -q batch
 
