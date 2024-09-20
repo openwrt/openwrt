@@ -17,7 +17,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -8760,6 +8760,7 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -8756,6 +8756,7 @@ bool cfg80211_rx_spurious_frame(struct n
   * @dev: The device the frame matched to
   * @addr: the transmitter address
   * @gfp: context flags
@@ -25,7 +25,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
   *
   * This function is used in AP mode (only!) to inform userspace that
   * an associated station sent a 4addr frame but that wasn't expected.
-@@ -8769,7 +8770,8 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -8765,7 +8766,8 @@ bool cfg80211_rx_spurious_frame(struct n
   * for a reason other than not having a subscription.)
   */
  bool cfg80211_rx_unexpected_4addr_frame(struct net_device *dev,
@@ -37,7 +37,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
   * cfg80211_probe_status - notify userspace about probe status
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2189,9 +2189,16 @@ static int ieee80211_change_station(stru
+@@ -2188,9 +2188,16 @@ static int ieee80211_change_station(stru
  		vlansdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
  
  		if (params->vlan->ieee80211_ptr->use_4addr) {
@@ -54,7 +54,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
  			__ieee80211_check_fast_rx_iface(vlansdata);
  
-@@ -2201,6 +2208,39 @@ static int ieee80211_change_station(stru
+@@ -2200,6 +2207,39 @@ static int ieee80211_change_station(stru
  			else
  				drv_sta_set_4addr(local, sta->sdata, &sta->sta,
  						  true);
@@ -127,7 +127,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -18887,7 +18887,8 @@ void cfg80211_conn_failed(struct net_dev
+@@ -18877,7 +18877,8 @@ void cfg80211_conn_failed(struct net_dev
  EXPORT_SYMBOL(cfg80211_conn_failed);
  
  static bool __nl80211_unexpected_frame(struct net_device *dev, u8 cmd,
@@ -137,7 +137,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
-@@ -18913,6 +18914,9 @@ static bool __nl80211_unexpected_frame(s
+@@ -18903,6 +18904,9 @@ static bool __nl80211_unexpected_frame(s
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr))
  		goto nla_put_failure;
  
@@ -147,7 +147,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  	genlmsg_end(msg, hdr);
  	genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, nlportid);
  	return true;
-@@ -18936,14 +18940,15 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -18926,14 +18930,15 @@ bool cfg80211_rx_spurious_frame(struct n
  		return false;
  	}
  	ret = __nl80211_unexpected_frame(dev, NL80211_CMD_UNEXPECTED_FRAME,
@@ -165,7 +165,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	bool ret;
-@@ -18958,7 +18963,7 @@ bool cfg80211_rx_unexpected_4addr_frame(
+@@ -18948,7 +18953,7 @@ bool cfg80211_rx_unexpected_4addr_frame(
  	}
  	ret = __nl80211_unexpected_frame(dev,
  					 NL80211_CMD_UNEXPECTED_4ADDR_FRAME,

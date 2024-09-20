@@ -161,7 +161,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	return total_msdu_reaped;
  }
  
-@@ -4829,7 +4861,7 @@ exit:
+@@ -4832,7 +4864,7 @@ exit:
  		rx_ring = &ar->dp.rx_refill_buf_ring;
  
  		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, n_bufs_reaped[i],
@@ -170,7 +170,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	}
  
  	return tot_n_bufs_reaped;
-@@ -5045,14 +5077,17 @@ int ath11k_dp_rx_process_wbm_err(struct
+@@ -5048,14 +5080,17 @@ int ath11k_dp_rx_process_wbm_err(struct
  	struct sk_buff *msdu;
  	struct sk_buff_head msdu_list[MAX_RADIOS];
  	struct ath11k_skb_rxcb *rxcb;
@@ -189,7 +189,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  
  	srng = &ab->hal.srng_list[dp->rx_rel_ring.ring_id];
  
-@@ -5078,9 +5113,15 @@ int ath11k_dp_rx_process_wbm_err(struct
+@@ -5081,9 +5116,15 @@ int ath11k_dp_rx_process_wbm_err(struct
  
  		ar = ab->pdevs[mac_id].ar;
  		rx_ring = &ar->dp.rx_refill_buf_ring;
@@ -206,7 +206,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  		spin_unlock_bh(&rx_ring->idr_lock);
  		if (!msdu) {
  			ath11k_warn(ab, "frame rx with invalid buf_id %d pdev %d\n",
-@@ -5125,7 +5166,7 @@ int ath11k_dp_rx_process_wbm_err(struct
+@@ -5128,7 +5169,7 @@ int ath11k_dp_rx_process_wbm_err(struct
  		rx_ring = &ar->dp.rx_refill_buf_ring;
  
  		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],
@@ -215,7 +215,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	}
  
  	rcu_read_lock();
-@@ -5147,6 +5188,8 @@ int ath11k_dp_rx_process_wbm_err(struct
+@@ -5150,6 +5191,8 @@ int ath11k_dp_rx_process_wbm_err(struct
  	}
  	rcu_read_unlock();
  done:
@@ -224,7 +224,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	return total_num_buffs_reaped;
  }
  
-@@ -5232,7 +5275,7 @@ int ath11k_dp_process_rxdma_err(struct a
+@@ -5235,7 +5278,7 @@ int ath11k_dp_process_rxdma_err(struct a
  
  	if (num_buf_freed)
  		ath11k_dp_rxbufs_replenish(ab, mac_id, rx_ring, num_buf_freed,
@@ -233,7 +233,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  
  	return budget - quota;
  }
-@@ -6178,12 +6221,12 @@ static void ath11k_dp_rx_mon_dest_proces
+@@ -6181,12 +6224,12 @@ static void ath11k_dp_rx_mon_dest_proces
  			ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
  						   &dp->rxdma_mon_buf_ring,
  						   rx_bufs_used,
@@ -248,7 +248,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	}
  }
  
-@@ -6693,7 +6736,7 @@ next_entry:
+@@ -6696,7 +6739,7 @@ next_entry:
  		ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
  					   &dp->rxdma_mon_buf_ring,
  					   rx_bufs_used,
