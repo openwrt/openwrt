@@ -162,6 +162,14 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	netis,n6)
+		hw_mac_addr="$(mtd_get_mac_binary Factory 0x4)"
+		hw_mac_addr=$(macaddr_setbit $hw_mac_addr 28)
+		hw_mac_2g=$(macaddr_unsetbit $hw_mac_addr 26)
+		hw_mac_5g=$(macaddr_setbit $hw_mac_addr 27)
+		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_2g" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n "$hw_mac_5g" > /sys${DEVPATH}/macaddress
+		;;
 	mercusys,mr70x-v1|\
 	tplink,archer-ax23-v1)
 		hw_mac_addr="$(mtd_get_mac_binary config 0x8)"

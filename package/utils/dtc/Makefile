@@ -5,11 +5,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dtc
-PKG_VERSION:=1.7.0
-PKG_RELEASE:=3
+PKG_VERSION:=1.7.1
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=29edce3d302a15563d8663198bbc398c5a0554765c83830d0d4c0409d21a16c4
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_HASH:=9532f10098455711a4da37816fd567dfc8523bb01f59ad6c44887a112e553d9e
 PKG_SOURCE_URL:=@KERNEL/software/utils/dtc
 
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
@@ -88,6 +88,7 @@ define Package/libfdt/install
 endef
 
 MESON_ARGS += \
+	-Dtests=false \
 	-Dtools=true \
 	-Dyaml=disabled \
 	-Dvalgrind=disabled \
