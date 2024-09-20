@@ -216,29 +216,49 @@ define Package/e100-firmware/install
 endef
 $(eval $(call BuildPackage,e100-firmware))
 
-Package/intel-igpu-firmware-dmc = $(call Package/firmware-default,Intel iGPU DMC Display MC firmware)
-define Package/intel-igpu-firmware-dmc/install
-	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_dmc_*.bin* \
-		$(1)/lib/firmware/i915/
+i915_deps:=+i915-firmware-dmc +i915-firmware-guc +i915-firmware-huc +i915-firmware-gsc
+Package/i915-firmware = $(call Package/firmware-default,Intel I915 firmware \(meta package\),$(i915_deps),LICENSE.i915)
+define Package/i915-firmware/install
+	true
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-dmc))
+$(eval $(call BuildPackage,i915-firmware))
 
-Package/intel-igpu-firmware-guc = $(call Package/firmware-default,Intel iGPU GUC Graphics MC firmware)
-define Package/intel-igpu-firmware-guc/install
+Package/i915-firmware-dmc = $(call Package/firmware-default,Intel I915 DMC firmware,,LICENSE.i915)
+define Package/i915-firmware-dmc/install
 	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_guc_*.bin* \
-		$(1)/lib/firmware/i915/
+	for f in $(PKG_BUILD_DIR)/i915/*_dmc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = dmc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-guc))
+$(eval $(call BuildPackage,i915-firmware-dmc))
 
-Package/intel-igpu-firmware-huc = $(call Package/firmware-default,Intel iGPU HUC H.265 MC firmware)
-define Package/intel-igpu-firmware-huc/install
+Package/i915-firmware-guc = $(call Package/firmware-default,Intel I915 GUC firmware,,LICENSE.i915)
+define Package/i915-firmware-guc/install
 	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_huc_*.bin* \
-		$(1)/lib/firmware/i915/
+	for f in $(PKG_BUILD_DIR)/i915/*_guc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = guc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-huc))
+$(eval $(call BuildPackage,i915-firmware-guc))
+
+Package/i915-firmware-huc = $(call Package/firmware-default,Intel I915 HUC firmware,,LICENSE.i915)
+define Package/i915-firmware-huc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	for f in $(PKG_BUILD_DIR)/i915/*_huc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = huc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
+endef
+$(eval $(call BuildPackage,i915-firmware-huc))
+
+Package/i915-firmware-gsc = $(call Package/firmware-default,Intel I915 GSC firmware,,LICENSE.i915)
+define Package/i915-firmware-gsc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	for f in $(PKG_BUILD_DIR)/i915/*_gsc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = gsc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
+endef
+$(eval $(call BuildPackage,i915-firmware-gsc))
