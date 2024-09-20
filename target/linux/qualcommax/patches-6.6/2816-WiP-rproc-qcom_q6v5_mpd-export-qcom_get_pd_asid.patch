@@ -1,0 +1,32 @@
+From 073fe2948e53676c0dd633103b22b7ca781b1ecc Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 20 Oct 2024 20:32:28 +0800
+Subject: [PATCH 1/1] WiP: rproc: qcom_q6v5_mpd: export qcom_get_pd_asid()
+
+---
+ drivers/remoteproc/qcom_q6v5_mpd.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/remoteproc/qcom_q6v5_mpd.c b/drivers/remoteproc/qcom_q6v5_mpd.c
+index 7416ba231445..e92d5fed8d37 100644
+--- a/drivers/remoteproc/qcom_q6v5_mpd.c
++++ b/drivers/remoteproc/qcom_q6v5_mpd.c
+@@ -102,13 +102,14 @@ struct wcss_data {
+  *
+  * Returns asid on success
+  */
+-static u8 qcom_get_pd_asid(struct rproc *rproc)
++u8 qcom_get_pd_asid(struct rproc *rproc)
+ {
+ 	struct userpd *upd = rproc->priv;
+ 	u8 bit = upd->q6.spawn_bit;
+ 
+ 	return bit / 8;
+ }
++EXPORT_SYMBOL(qcom_get_pd_asid);
+ 
+ static int q6_wcss_start(struct rproc *rproc)
+ {
+-- 
+2.40.1
+

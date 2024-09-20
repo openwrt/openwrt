@@ -1,0 +1,35 @@
+From 4b327d077b38606a684bb775cda127f15c34bbd5 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 8 Sep 2024 16:40:11 +0800
+Subject: [PATCH 2/2] spi: spi-qpic-snand: address build issue
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ drivers/spi/spi-qpic-snand.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-qpic-snand.c b/drivers/spi/spi-qpic-snand.c
+index b6a2d2bd8bf8..df5b7fee4459 100644
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -1589,7 +1589,7 @@ static int qcom_spi_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static void qcom_spi_remove(struct platform_device *pdev)
++static int qcom_spi_remove(struct platform_device *pdev)
+ {
+ 	struct spi_controller *ctlr = platform_get_drvdata(pdev);
+ 	struct qcom_nand_controller *snandc = spi_controller_get_devdata(ctlr);
+@@ -1605,6 +1605,8 @@ static void qcom_spi_remove(struct platform_device *pdev)
+ 
+ 	dma_unmap_resource(&pdev->dev, snandc->base_dma, resource_size(res),
+ 			   DMA_BIDIRECTIONAL, 0);
++
++	return 0;
+ }
+ 
+ static const struct qcom_nandc_props ipq9574_snandc_props = {
+-- 
+2.40.1
+

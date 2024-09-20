@@ -1,0 +1,56 @@
+From b5e0542e5cc05df7dcde72b49951aa0b019e916a Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 8 Sep 2024 16:40:11 +0800
+Subject: [PATCH 1/2] mtd: nand: qpic_common: fix build issue
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ drivers/mtd/nand/qpic_common.c       |  2 +-
+ include/linux/mtd/nand-qpic-common.h | 18 ++++++++++--------
+ 2 files changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/mtd/nand/qpic_common.c b/drivers/mtd/nand/qpic_common.c
+index 2fe1a82307b4..30bb22ea6d29 100644
+--- a/drivers/mtd/nand/qpic_common.c
++++ b/drivers/mtd/nand/qpic_common.c
+@@ -82,7 +82,7 @@ void qcom_clear_bam_transaction(struct qcom_nand_controller *nandc)
+ 	if (!nandc->props->supports_bam)
+ 		return;
+ 
+-	memset(&bam_txn->bam_ce_pos, 0, sizeof(u32) * 8);
++	memset(&bam_txn->indexes, 0, sizeof(bam_txn->indexes));
+ 	bam_txn->last_data_desc = NULL;
+ 
+ 	sg_init_table(bam_txn->cmd_sgl, nandc->max_cwperpage *
+diff --git a/include/linux/mtd/nand-qpic-common.h b/include/linux/mtd/nand-qpic-common.h
+index 7dba89654d6c..a15018a58693 100644
+--- a/include/linux/mtd/nand-qpic-common.h
++++ b/include/linux/mtd/nand-qpic-common.h
+@@ -254,14 +254,16 @@ struct bam_transaction {
+ 	struct dma_async_tx_descriptor *last_data_desc;
+ 	struct dma_async_tx_descriptor *last_cmd_desc;
+ 	struct completion txn_done;
+-	u32 bam_ce_pos;
+-	u32 bam_ce_start;
+-	u32 cmd_sgl_pos;
+-	u32 cmd_sgl_start;
+-	u32 tx_sgl_pos;
+-	u32 tx_sgl_start;
+-	u32 rx_sgl_pos;
+-	u32 rx_sgl_start;
++	struct_group(indexes,
++		u32 bam_ce_pos;
++		u32 bam_ce_start;
++		u32 cmd_sgl_pos;
++		u32 cmd_sgl_start;
++		u32 tx_sgl_pos;
++		u32 tx_sgl_start;
++		u32 rx_sgl_pos;
++		u32 rx_sgl_start;
++	);
+ };
+ 
+ /*
+-- 
+2.40.1
+

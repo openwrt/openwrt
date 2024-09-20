@@ -1,0 +1,21 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ5018/hw1.0/caldata.bin")
+	case "$board" in
+	esac
+	;;
+"ath11k/qcn6122/hw1.0/cal-ahb-soc@0:wifi1@c000000.bin")
+	case "$board" in
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac
