@@ -1,52 +1,77 @@
-From 0e79fe8c6937e080816230892d5382af5a5a86c6 Mon Sep 17 00:00:00 2001
 From: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
-Date: Mon, 29 Nov 2021 11:07:53 +0530
-Subject: [PATCH] ath11k: skip status ring entry processing
+Date: Mon, 29 Apr 2024 13:06:24 +0530
+Subject: [PATCHv5] wifi: ath11k: skip status ring entry processing
 
 If STATUS_BUFFER_DONE is not set for a monitor status ring entry,
 we don't process the status ring until STATUS_BUFFER_DONE set
 for that status ring entry.
 
-During LMAC reset it may happnen that HW will not write
+During LMAC reset it may happen that hardware will not write
 STATUS_BUFFER_DONE tlv in status buffer, in that case we end up
 waiting for STATUS_BUFFER_DONE leading to backpressure on monitor
 status ring.
 
-As per MAC team's suggestion, when HP + 1 entry is peeked and if DMA
+To fix the issue, when HP(Head Pointer) + 1 entry is peeked and if DMA
 is not done and if HP + 2 entry's DMA done is set,
 replenish HP + 1 entry and start processing in next interrupt.
-If HP + 2 entry's DMA done is not set,
-poll onto HP + 1 entry DMA done to be set.
+If HP + 2 entry's DMA done is not set, poll onto HP + 1 entry DMA
+done to be set.
 
-Also, During monitor attach HP points to the end of the ring and TP
-points to the start of the ring. Using ath11k_hal_srng_src_peek()
-may result in processing invali buffer for the very first interrupt.
-Since, HW starts writing buffer from TP.
+Also, during monitor attach HP points to the end of the ring and
+TP(Tail Pointer) points to the start of the ring.
+Using ath11k_hal_srng_src_peek() may result in processing invalid buffer
+for the very first interrupt. Since, HW starts writing buffer from TP.
 
-Hence, replaced ath11k_hal_srng_src_peek() with
-ath11k_hal_srng_src_next_peek().
+To avoid this issue call ath11k_hal_srng_src_next_peek() instead of
+calling ath11k_hal_srng_src_peek().
+
+Tested-on: IPQ5018 hw1.0 AHB WLAN.HK.2.6.0.1-00861-QCAHKSWPL_SILICONZ-1
 
 Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
+Co-developed-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
+Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
+Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 ---
- drivers/net/wireless/ath/ath11k/dp_rx.c | 92 ++++++++++++++++++++++++++++-----
- drivers/net/wireless/ath/ath11k/hal.c   | 30 +++++++++++
- drivers/net/wireless/ath/ath11k/hal.h   |  4 ++
- 3 files changed, 113 insertions(+), 13 deletions(-)
+v5:
+  * Updated copyright info in dp_rx.c and hal.c
+v4:
+  * Removed kernel reported compilation warning from Signed off place
+v3:
+  * Rebased on top of ToT
+v2:
+  * Fixed compilation warning Reported-by: kernel test robot <lkp@intel.com>
+
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 90 ++++++++++++++++++++++---
+ drivers/net/wireless/ath/ath11k/hal.c   | 16 ++++-
+ drivers/net/wireless/ath/ath11k/hal.h   |  2 +
+ 3 files changed, 96 insertions(+), 12 deletions(-)
+
+
+base-commit: bf99bc7423e18aa3475ef00a7a6fb773c31ce6df
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -3662,6 +3662,46 @@ ath11k_dp_rx_mon_update_status_buf_state
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include <linux/ieee80211.h>
+@@ -3662,11 +3662,52 @@ ath11k_dp_rx_mon_update_status_buf_state
  	}
  }
  
-+enum dp_mon_status_buf_state
-+dp_rx_mon_handle_status_buf_done(struct ath11k_base *ab, struct hal_srng *srng,
-+				 struct dp_rxdma_ring *rx_ring)
++static enum dp_mon_status_buf_state
++ath11k_dp_rx_mon_handle_status_buf_done(struct ath11k_base *ab, struct hal_srng *srng,
++					struct dp_rxdma_ring *rx_ring)
 +{
-+	void *status_desc;
-+	struct sk_buff *skb;
 +	struct ath11k_skb_rxcb *rxcb;
 +	struct hal_tlv_hdr *tlv;
++	struct sk_buff *skb;
++	void *status_desc;
 +	dma_addr_t paddr;
 +	u32 cookie;
 +	int buf_id;
@@ -69,8 +94,8 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
 +
 +	rxcb = ATH11K_SKB_RXCB(skb);
 +	dma_sync_single_for_cpu(ab->dev, rxcb->paddr,
-+			skb->len + skb_tailroom(skb),
-+			DMA_FROM_DEVICE);
++				skb->len + skb_tailroom(skb),
++				DMA_FROM_DEVICE);
 +
 +	tlv = (struct hal_tlv_hdr *)skb->data;
 +	if (FIELD_GET(HAL_TLV_HDR_TAG, tlv->tl) != HAL_RX_STATUS_BUFFER_DONE)
@@ -82,14 +107,12 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  static int ath11k_dp_rx_reap_mon_status_ring(struct ath11k_base *ab, int mac_id,
  					     int *budget, struct sk_buff_head *skb_list)
  {
-@@ -3675,6 +3715,7 @@ static int ath11k_dp_rx_reap_mon_status_
- 	struct sk_buff *skb;
- 	struct ath11k_skb_rxcb *rxcb;
- 	struct hal_tlv_hdr *tlv;
+ 	struct ath11k *ar;
+ 	const struct ath11k_hw_hal_params *hal_params;
 +	enum dp_mon_status_buf_state reap_status;
- 	u32 cookie;
- 	int buf_id, srng_id;
- 	dma_addr_t paddr;
+ 	struct ath11k_pdev_dp *dp;
+ 	struct dp_rxdma_ring *rx_ring;
+ 	struct ath11k_mon_data *pmon;
 @@ -3694,8 +3735,7 @@ static int ath11k_dp_rx_reap_mon_status_
  	ath11k_hal_srng_access_begin(ab, srng);
  	while (*budget) {
@@ -100,13 +123,10 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  		if (!rx_mon_status_desc) {
  			pmon->buf_state = DP_MON_STATUS_REPLINISH;
  			break;
-@@ -3726,18 +3766,43 @@ static int ath11k_dp_rx_reap_mon_status_
- 			tlv = (struct hal_tlv_hdr *)skb->data;
- 			if (FIELD_GET(HAL_TLV_HDR_TAG, tlv->tl) !=
- 					HAL_RX_STATUS_BUFFER_DONE) {
--				ath11k_warn(ab, "mon status DONE not set %lx, buf_id %d\n",
--					    FIELD_GET(HAL_TLV_HDR_TAG,
--						      tlv->tl), buf_id);
+@@ -3729,15 +3769,43 @@ static int ath11k_dp_rx_reap_mon_status_
+ 				ath11k_warn(ab, "mon status DONE not set %lx, buf_id %d\n",
+ 					    FIELD_GET(HAL_TLV_HDR_TAG,
+ 						      tlv->tl), buf_id);
 -				/* If done status is missing, hold onto status
 -				 * ring until status is done for this status
 -				 * ring buffer.
@@ -131,8 +151,8 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
 +				 *    dp_rx_mon_status_srng_process
 +				 */
 +
-+				reap_status = dp_rx_mon_handle_status_buf_done(ab, srng,
-+									       rx_ring);
++				reap_status = ath11k_dp_rx_mon_handle_status_buf_done(ab, srng,
++										      rx_ring);
 +				if (reap_status == DP_MON_STATUS_NO_DMA) {
 +					continue;
 +				} else if (reap_status == DP_MON_STATUS_REPLINISH) {
@@ -157,6 +177,15 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  			spin_lock_bh(&rx_ring->idr_lock);
 --- a/drivers/net/wireless/ath/ath11k/hal.c
 +++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: BSD-3-Clause-Clear
+ /*
+  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ #include <linux/dma-mapping.h>
+ #include "hal_tx.h"
 @@ -852,6 +852,20 @@ u32 *ath11k_hal_srng_src_get_next_reaped
  	return desc;
  }
