@@ -51,8 +51,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	if (!ret) {
 +		if (fw_mem_mode == 0) {
 +			ab->hw_params.fw_mem_mode = 0;
-+			ab->hw_params.num_vdevs = 16 + 1;
-+			ab->hw_params.num_peers = 512;
++			ab->hw_params.num_vdevs = 8 + 1;
++			ab->hw_params.num_peers = 128;
 +		}
 +		else if (fw_mem_mode == 1) {
 +			ab->hw_params.fw_mem_mode = 1;
@@ -60,8 +60,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			ab->hw_params.num_peers = 128;
 +		} else if (fw_mem_mode == 2) {
 +			ab->hw_params.fw_mem_mode = 2;
-+			ab->hw_params.num_vdevs = 8;
-+			ab->hw_params.num_peers = 128;
++			ab->hw_params.num_vdevs = 4;
++			ab->hw_params.num_peers = 32;
 +			ab->hw_params.coldboot_cal_mm = false;
 +			ab->hw_params.coldboot_cal_ftm = false;
 +		} else

@@ -1,0 +1,41 @@
+From 545f00608ebd5a440965ecb6768818c4929a7edb Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sun, 20 Oct 2024 20:28:28 +0800
+Subject: [PATCH 1/1] wifi: ath11k: move ATH11K_FIRMWARE_MODE_OFF to
+ ath11k_firmware_mode
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/core.h | 3 +++
+ drivers/net/wireless/ath/ath11k/qmi.h  | 1 -
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/core.h b/drivers/net/wireless/ath/ath11k/core.h
+index db893cb..14a6ec3 100644
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -157,6 +157,9 @@ enum ath11k_firmware_mode {
+ 	/* factory tests etc */
+ 	ATH11K_FIRMWARE_MODE_FTM,
+ 
++	/* power off */
++	ATH11K_FIRMWARE_MODE_OFF = 4,
++
+ 	/* Cold boot calibration */
+ 	ATH11K_FIRMWARE_MODE_COLD_BOOT = 7,
+ };
+diff --git a/drivers/net/wireless/ath/ath11k/qmi.h b/drivers/net/wireless/ath/ath11k/qmi.h
+index 7e06d10..5e8fd22 100644
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -36,7 +36,6 @@
+ #define QMI_WLFW_FW_INIT_DONE_IND_V01		0x0038
+ 
+ #define QMI_WLANFW_MAX_DATA_SIZE_V01		6144
+-#define ATH11K_FIRMWARE_MODE_OFF		4
+ #define ATH11K_COLD_BOOT_FW_RESET_DELAY		(60 * HZ)
+ 
+ #define ATH11K_QMI_DEVICE_BAR_SIZE		0x200000
+-- 
+2.40.1
+
