@@ -123,6 +123,7 @@ define Device/fortinet
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
     sysupgrade-tar rootfs=$$$$@ | append-metadata
   DEVICE_PACKAGES := kmod-hwmon-nct7802
+  DEVICE_COMPAT_MESSAGE := mtdsplit
 endef
 
 define Device/fortinet_fg-30e
