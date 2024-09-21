@@ -90,6 +90,7 @@ platform_do_upgrade() {
 		fit_do_upgrade "$1"
 		;;
 	acer,predator-w6|\
+	arcadyan,mozart|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
@@ -202,6 +203,7 @@ platform_copy_config() {
 		fi
 		;;
 	acer,predator-w6|\
+	arcadyan,mozart|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
