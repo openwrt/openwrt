@@ -107,7 +107,7 @@ define KernelPackage/fb
 	CONFIG_VT_HW_CONSOLE_BINDING=y
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
 	$(LINUX_DIR)/lib/fonts/font.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko@ge6.6
+	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko
   AUTOLOAD:=$(call AutoLoad,06,fb font)
 endef
 
@@ -299,7 +299,7 @@ define KernelPackage/drm-exec
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=Execution context for command submissions
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_6
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
   KCONFIG:=CONFIG_DRM_EXEC
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_exec.ko
   AUTOLOAD:=$(call AutoProbe,drm_exec)
@@ -363,7 +363,7 @@ define KernelPackage/drm-suballoc-helper
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
   TITLE:=DRM suballocation helper
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_6
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
   KCONFIG:=CONFIG_DRM_SUBALLOC_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_suballoc_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_suballoc_helper)
@@ -381,7 +381,7 @@ define KernelPackage/drm-amdgpu
   DEPENDS:=@TARGET_x86||TARGET_loongarch64 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
-	+LINUX_6_6:kmod-drm-exec +LINUX_6_6:kmod-drm-suballoc-helper
+	+kmod-drm-exec +kmod-drm-suballoc-helper
   KCONFIG:=CONFIG_DRM_AMDGPU \
 	CONFIG_DRM_AMDGPU_SI=y \
 	CONFIG_DRM_AMDGPU_CIK=y \
@@ -389,7 +389,7 @@ define KernelPackage/drm-amdgpu
 	CONFIG_DEBUG_KERNEL_DC=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/amd/amdgpu/amdgpu.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/amd/amdxcp/amdxcp.ko@ge6.5
+	$(LINUX_DIR)/drivers/gpu/drm/amd/amdxcp/amdxcp.ko
   AUTOLOAD:=$(call AutoProbe,amdgpu)
 endef
 
@@ -426,8 +426,7 @@ define KernelPackage/drm-imx
 	CONFIG_DRM_IMX_LDB=n \
 	CONFIG_DRM_IMX_HDMI=n
   FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko@lt6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko@ge6.6 \
+	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko
   AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
@@ -449,8 +448,7 @@ define KernelPackage/drm-imx-hdmi
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko@lt6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko@ge6.6
+	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/dw_hdmi-imx.ko
   AUTOLOAD:=$(call AutoLoad,08,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
 endef
 
@@ -474,8 +472,8 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_LVDS=n \
 	CONFIG_DRM_PANEL_S6E8AA0=n \
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
-  FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko@lt6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imx-ldb.ko@ge6.6 \
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imx-ldb.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
   AUTOLOAD:=$(call AutoLoad,08,imx-ldb)
 endef
@@ -491,7 +489,7 @@ define KernelPackage/drm-radeon
   TITLE:=Radeon DRM support
   DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
-	+kmod-drm-display-helper +kmod-acpi-video +LINUX_6_6:kmod-drm-suballoc-helper
+	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)
@@ -606,10 +604,10 @@ $(eval $(call KernelPackage,video-pwc))
 define KernelPackage/video-uvc
   TITLE:=USB Video Class (UVC) support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-video-videobuf2 +kmod-input-core
-  KCONFIG:= CONFIG_USB_VIDEO_CLASS CONFIG_UVC_COMMON@ge6.3
+  KCONFIG:= CONFIG_USB_VIDEO_CLASS CONFIG_UVC_COMMON
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/uvc/uvcvideo.ko \
-	$(LINUX_DIR)/drivers/media/common/uvc.ko@ge6.3
-  AUTOLOAD:=$(call AutoProbe,uvc@ge6.3 uvcvideo)
+	$(LINUX_DIR)/drivers/media/common/uvc.ko
+  AUTOLOAD:=$(call AutoProbe,uvc uvcvideo)
   $(call AddDepends/camera)
 endef
 
