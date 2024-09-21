@@ -270,6 +270,35 @@
 				 *
 				 * Note: block size --> 0x200 (512 bytes)
 				 */
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					fwinfo_magic: magic@160 {
+						reg = <0x160 0x4>;
+					};
+
+					fwinfo_active_image: active-image@170 {
+						reg = <0x170 0x1>;
+					};
+
+					fwinfo_kernel1_offset: kernel-offset@180 {
+						reg = <0x180 0x4>;
+					};
+
+					fwinfo_kernel1_size: kernel-size@184 {
+						reg = <0x184 0x4>;
+					};
+
+					fwinfo_kernel2_offset: kernel-offset@190 {
+						reg = <0x190 0x4>;
+					};
+
+					fwinfo_kernel2_size: kernel-size@194 {
+						reg = <0x194 0x4>;
+					};
+				};
 			};
 
 			partition@1d0000 {
@@ -303,25 +332,33 @@
 			};
 
 			partition@200000 {
-				reg = <0x200000 0x600000>;
-				label = "kernel";
-			};
-
-			partition@800000 {
-				reg = <0x800000 0x1800000>;
-				label = "rootfs";
+				compatible = "fortinet,fortigate-firmware";
+				reg = <0x200000 0x1e00000>;
+				label = "firmware";
+				nvmem-cells = <&fwinfo_magic>,
+					      <&fwinfo_active_image>,
+					      <&fwinfo_kernel1_offset>,
+					      <&fwinfo_kernel1_size>;
+				nvmem-cell-names = "magic",
+						   "active-image",
+						   "kernel-offset",
+						   "kernel-length";
+				fortinet,image-index = <0>;
 			};
 
 			partition@2000000 {
-				reg = <0x2000000 0x600000>;
-				label = "kn2";
-				read-only;
-			};
-
-			partition@2600000 {
-				reg = <0x2600000 0x1800000>;
-				label = "rfs2";
-				read-only;
+				compatible = "fortinet,fortigate-firmware";
+				reg = <0x2000000 0x1e00000>;
+				label = "firmware2";
+				nvmem-cells = <&fwinfo_magic>,
+					      <&fwinfo_active_image>,
+					      <&fwinfo_kernel2_offset>,
+					      <&fwinfo_kernel2_size>;
+				nvmem-cell-names = "magic",
+						   "active-image",
+						   "kernel-offset",
+						   "kernel-length";
+				fortinet,image-index = <1>;
 			};
 
 			partition@3e00000 {
