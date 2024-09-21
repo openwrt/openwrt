@@ -17,6 +17,14 @@ platform_check_image() {
 	solidrun,clearfog-pro-a1)
 		legacy_sdcard_check_image "$1"
 		;;
+	fortinet,fg-30e|\
+	fortinet,fg-50e|\
+	fortinet,fg-51e|\
+	fortinet,fg-52e|\
+	fortinet,fwf-50e-2r|\
+	fortinet,fwf-51e)
+		fortinet_check_image "$1"
+		;;
 	*)
 		return 0
 		;;
