@@ -629,6 +629,18 @@ define U-Boot/mt7986_zyxel_ex5601-t0
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-4k-ddr4
 endef
 
+define U-Boot/mt7988_arcadyan_mozart
+  NAME:=Arcadyan Mozart
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=arcadyan_mozart
+  UBOOT_CONFIG:=mt7988a_arcadyan_mozart
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-emmc-comb
+endef
+
 define U-Boot/mt7988_bananapi_bpi-r4-emmc
   NAME:=BananaPi BPi-R4
   BUILD_SUBTARGET:=filogic
@@ -816,6 +828,7 @@ UBOOT_TARGETS := \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \
+	mt7988_arcadyan_mozart \
 	mt7988_bananapi_bpi-r4-emmc \
 	mt7988_bananapi_bpi-r4-sdmmc \
 	mt7988_bananapi_bpi-r4-snand \
