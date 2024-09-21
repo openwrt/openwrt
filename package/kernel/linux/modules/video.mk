@@ -268,7 +268,7 @@ $(eval $(call KernelPackage,drm))
 define KernelPackage/drm-buddy
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=A page based buddy allocator
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_1||LINUX_6_6
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
   KCONFIG:=CONFIG_DRM_BUDDY
   FILES:= $(LINUX_DIR)/drivers/gpu/drm/drm_buddy.ko
   AUTOLOAD:=$(call AutoProbe,drm_buddy)
@@ -283,7 +283,7 @@ $(eval $(call KernelPackage,drm-buddy))
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper @LINUX_6_1||LINUX_6_6
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_display_helper)
@@ -428,7 +428,7 @@ define KernelPackage/drm-imx
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko@lt6.6 \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imxdrm.ko@ge6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko@ge6.1 \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko
   AUTOLOAD:=$(call AutoLoad,08,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
 endef
@@ -476,8 +476,7 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko@lt6.6 \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imx-ldb.ko@ge6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_dp_aux_bus.ko@lt6.1
+	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
   AUTOLOAD:=$(call AutoLoad,08,imx-ldb)
 endef
 
@@ -517,7 +516,7 @@ define KernelPackage/video-core
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
 	CONFIG_VIDEO_DEV \
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
-	CONFIG_MEDIA_PLATFORM_DRIVERS=y@ge6.1
+	CONFIG_MEDIA_PLATFORM_DRIVERS=y
   FILES:= \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videodev.ko
   AUTOLOAD:=$(call AutoLoad,60,videodev)
@@ -572,7 +571,7 @@ $(eval $(call KernelPackage,video-videobuf2))
 
 define KernelPackage/video-cpia2
   TITLE:=CPIA2 video driver
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core @LINUX_5_15
+  DEPENDS:=@USB_SUPPORT
   KCONFIG:=CONFIG_VIDEO_CPIA2
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/cpia2/cpia2.ko
   AUTOLOAD:=$(call AutoProbe,cpia2)
@@ -1234,10 +1233,8 @@ define KernelPackage/video-coda
   	CONFIG_VIDEO_CODA \
   	CONFIG_VIDEO_IMX_VDOA
   FILES:= \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/coda-vpu.ko@lt6.1 \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda-vpu.ko@ge6.1 \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/imx-vdoa.ko@lt6.1 \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/imx-vdoa.ko@ge6.1 \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda-vpu.ko \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/imx-vdoa.ko \
  	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-jpeg.ko
   AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
   $(call AddDepends/video)
@@ -1253,8 +1250,7 @@ define KernelPackage/video-pxp
   TITLE:=i.MX PXP support
   DEPENDS:=@TARGET_imx +kmod-video-mem2mem +kmod-video-dma-contig
   KCONFIG:= CONFIG_VIDEO_IMX_PXP
-  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/imx-pxp.ko@lt6.1 \
-	$(LINUX_DIR)/drivers/media/platform/nxp/imx-pxp.ko@ge6.1
+  FILES:= $(LINUX_DIR)/drivers/media/platform/nxp/imx-pxp.ko
   AUTOLOAD:=$(call AutoProbe,imx-pxp)
   $(call AddDepends/video)
 endef

@@ -378,7 +378,7 @@ $(eval $(call KernelPackage,phy-smsc))
 define KernelPackage/phy-airoha-en8811h
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Airoha EN8811H 2.5G Ethernet PHY
-  DEPENDS:=+airoha-en8811h-firmware +kmod-libphy @!LINUX_5_15
+  DEPENDS:=+airoha-en8811h-firmware +kmod-libphy
   KCONFIG:=CONFIG_AIR_EN8811H_PHY
   FILES:= \
    $(LINUX_DIR)/drivers/net/phy/air_en8811h.ko
@@ -1737,7 +1737,7 @@ $(eval $(call KernelPackage,mhi-wwan-mbim))
 define KernelPackage/mtk-t7xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MediaTek T7xx 5G modem
-  DEPENDS:=@!LINUX_5_15 @PCI_SUPPORT +kmod-wwan
+  DEPENDS:=@PCI_SUPPORT +kmod-wwan
   KCONFIG:=CONFIG_MTK_T7XX
   FILES:=$(LINUX_DIR)/drivers/net/wwan/t7xx/mtk_t7xx.ko
   AUTOLOAD:=$(call AutoProbe,mtk_t7xx)

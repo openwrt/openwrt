@@ -208,6 +208,14 @@ $(call Device/adtran_smartrg)
 endef
 TARGET_DEVICES += smartrg_sdg-8733
 
+define Device/smartrg_sdg-8733a
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-8733A
+  DEVICE_DTS := mt7988d-smartrg-SDG-8733A
+  DEVICE_PACKAGES += mt7988-2p5g-phy-firmware kmod-mt7996-firmware kmod-phy-aquantia
+endef
+TARGET_DEVICES += smartrg_sdg-8733a
+
 define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8734

@@ -52,7 +52,7 @@ define KernelPackage/hwmon-adt7410
 	$(LINUX_DIR)/drivers/hwmon/adt7x10.ko \
 	$(LINUX_DIR)/drivers/hwmon/adt7410.ko
   AUTOLOAD:=$(call AutoLoad,60,adt7x10 adt7410)
-  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_5_15:kmod-regmap-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-adt7410/description
@@ -130,7 +130,7 @@ define KernelPackage/hwmon-emc2305
   KCONFIG:=CONFIG_SENSORS_EMC2305
   FILES:=$(LINUX_DIR)/drivers/hwmon/emc2305.ko
   AUTOLOAD:=$(call AutoProbe,emc2305)
-  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c @LINUX_6_1||LINUX_6_6)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c)
 endef
 
 define KernelPackage/hwmon-emc2305/description

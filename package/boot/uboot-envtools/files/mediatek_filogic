@@ -108,6 +108,7 @@ openwrt,one)
 	ubootenv_add_ubi_default
 	;;
 smartrg,sdg-8733|\
+smartrg,sdg-8733a|\
 smartrg,sdg-8734)
 	local envdev=$(find_mmc_part "u-boot-env" "mmcblk0")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x8000" "0x8000"
