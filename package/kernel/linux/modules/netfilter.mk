@@ -818,27 +818,6 @@ endef
 
 $(eval $(call KernelPackage,ipt-cluster))
 
-define KernelPackage/ipt-clusterip
-  TITLE:=Module for CLUSTERIP
-  KCONFIG:=$(KCONFIG_IPT_CLUSTERIP)
-  FILES:=$(foreach mod,$(IPT_CLUSTERIP-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CLUSTERIP-m)))
-  $(call AddDepends/ipt,+kmod-nf-conntrack @LINUX_6_1)
-endef
-
-define KernelPackage/ipt-clusterip/description
- Netfilter (IPv4-only) module for CLUSTERIP
- The CLUSTERIP target allows you to build load-balancing clusters of
- network servers without having a dedicated load-balancing
- router/server/switch.
-
- To use it also enable iptables-mod-clusterip
-
- see `iptables -j CLUSTERIP --help` for more information.
-endef
-
-$(eval $(call KernelPackage,ipt-clusterip))
-
 
 define KernelPackage/ipt-extra
   TITLE:=Extra modules
@@ -1197,15 +1176,11 @@ define KernelPackage/nft-offload
   DEPENDS:=@IPV6 +kmod-nf-flow +kmod-nft-nat
   KCONFIG:= \
 	CONFIG_NF_FLOW_TABLE_INET \
-	CONFIG_NF_FLOW_TABLE_IPV4@lt5.17 \
-	CONFIG_NF_FLOW_TABLE_IPV6@lt5.17 \
 	CONFIG_NFT_FLOW_OFFLOAD
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table_inet.ko \
-	$(LINUX_DIR)/net/ipv4/netfilter/nf_flow_table_ipv4.ko@lt5.17 \
-	$(LINUX_DIR)/net/ipv6/netfilter/nf_flow_table_ipv6.ko@lt5.17 \
 	$(LINUX_DIR)/net/netfilter/nft_flow_offload.ko
-  AUTOLOAD:=$(call AutoProbe,nf_flow_table_inet nf_flow_table_ipv4@lt5.17 nf_flow_table_ipv6@lt5.17 nft_flow_offload)
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table_inet nft_flow_offload)
 endef
 
 $(eval $(call KernelPackage,nft-offload))

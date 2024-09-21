@@ -910,7 +910,6 @@ $(eval $(call KernelPackage,sched-ipset))
 define KernelPackage/sched-mqprio-common
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mqprio queue common dependencies support
-  DEPENDS:=@LINUX_6_6
   HIDDEN:=1
   KCONFIG:=CONFIG_NET_SCH_MQPRIO_LIB
   FILES:=$(LINUX_DIR)/net/sched/sch_mqprio_lib.ko
@@ -926,7 +925,7 @@ $(eval $(call KernelPackage,sched-mqprio-common))
 define KernelPackage/sched-mqprio
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Multi-queue priority scheduler (MQPRIO)
-  DEPENDS:=+kmod-sched-core +LINUX_6_6:kmod-sched-mqprio-common
+  DEPENDS:=+kmod-sched-core +kmod-sched-mqprio-common
   KCONFIG:=CONFIG_NET_SCH_MQPRIO
   FILES:=$(LINUX_DIR)/net/sched/sch_mqprio.ko
   AUTOLOAD:=$(call AutoProbe, sch_mqprio)
@@ -1361,7 +1360,7 @@ define KernelPackage/9pnet
   KCONFIG:= \
 	CONFIG_NET_9P \
 	CONFIG_NET_9P_DEBUG=n \
-	CONFIG_NET_9P_FD=n@ge5.17
+	CONFIG_NET_9P_FD=n
   FILES:= \
 	$(LINUX_DIR)/net/9p/9pnet.ko
   AUTOLOAD:=$(call AutoLoad,29,9pnet)
