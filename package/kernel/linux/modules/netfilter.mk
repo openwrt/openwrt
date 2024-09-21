@@ -818,27 +818,6 @@ endef
 
 $(eval $(call KernelPackage,ipt-cluster))
 
-define KernelPackage/ipt-clusterip
-  TITLE:=Module for CLUSTERIP
-  KCONFIG:=$(KCONFIG_IPT_CLUSTERIP)
-  FILES:=$(foreach mod,$(IPT_CLUSTERIP-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CLUSTERIP-m)))
-  $(call AddDepends/ipt,+kmod-nf-conntrack @LINUX_6_1)
-endef
-
-define KernelPackage/ipt-clusterip/description
- Netfilter (IPv4-only) module for CLUSTERIP
- The CLUSTERIP target allows you to build load-balancing clusters of
- network servers without having a dedicated load-balancing
- router/server/switch.
-
- To use it also enable iptables-mod-clusterip
-
- see `iptables -j CLUSTERIP --help` for more information.
-endef
-
-$(eval $(call KernelPackage,ipt-clusterip))
-
 
 define KernelPackage/ipt-extra
   TITLE:=Extra modules
