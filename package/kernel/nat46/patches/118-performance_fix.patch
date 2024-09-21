@@ -412,4 +412,4 @@ Date: Fri Dec 17 13:37:15 2021 -0800
 +	dev->priv_flags_ext = IFF_EXT_MAPT;
  }
  
- int nat46_netdev_create(char *basename, struct net_device **dev)
+ int nat46_netdev_create(struct net *net, char *basename, struct net_device **dev)

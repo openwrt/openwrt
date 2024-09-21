@@ -622,7 +622,7 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
  int nat46_ipv6_input(struct sk_buff *old_skb);
 --- a/nat46/modules/nat46-netdev.c
 +++ b/nat46/modules/nat46-netdev.c
-@@ -270,7 +270,14 @@ int nat46_insert(char *devname, char *bu
+@@ -270,7 +270,14 @@ int nat46_insert(struct net *net, char *
  	int ret = -1;
  	if(dev) {
  		nat46_instance_t *nat46 = netdev_nat46_instance(dev);

@@ -161,7 +161,7 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
  void *netdev_nat46_instance(struct net_device *dev) {
  	nat46_netdev_priv_t *priv = netdev_priv(dev);
  	return priv->nat46;
-@@ -159,6 +173,11 @@ int nat46_netdev_create(char *basename,
+@@ -160,6 +174,11 @@ int nat46_netdev_create(struct net *net,
  	printk("nat46: netdevice nat46 '%s' created successfully.\n", devname);
  	kfree(devname);
  
@@ -173,7 +173,7 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
  	return 0;
  
  err_register_dev:
-@@ -175,10 +194,24 @@ void nat46_netdev_destroy(struct net_dev
+@@ -176,10 +195,24 @@ void nat46_netdev_destroy(struct net_dev
  	netif_stop_queue(dev);
  	netdev_nat46_set_instance(dev, NULL);
  	unregister_netdev(dev);
@@ -200,7 +200,7 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
  	return (priv && (NAT46_DEVICE_SIGNATURE == priv->sig));
 --- a/nat46/modules/nat46-netdev.h
 +++ b/nat46/modules/nat46-netdev.h
-@@ -26,3 +26,6 @@ void nat64_show_all_configs(struct seq_f
+@@ -26,3 +26,6 @@ void nat64_show_all_configs(struct net *
  void nat46_netdev_count_xmit(struct sk_buff *skb, struct net_device *dev);
  void *netdev_nat46_instance(struct net_device *dev);
  
