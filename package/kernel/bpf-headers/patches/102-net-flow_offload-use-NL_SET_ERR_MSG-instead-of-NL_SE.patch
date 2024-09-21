@@ -12,11 +12,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  include/net/flow_offload.h | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/include/net/flow_offload.h b/include/net/flow_offload.h
-index 7a2b022..f17c485 100644
 --- a/include/net/flow_offload.h
 +++ b/include/net/flow_offload.h
-@@ -321,7 +321,7 @@ flow_action_mixed_hw_stats_check(const struct flow_action *action,
+@@ -376,7 +376,7 @@ flow_action_mixed_hw_stats_check(const s
  
  	flow_action_for_each(i, action_entry, action) {
  		if (i && action_entry->hw_stats != last_hw_stats) {
@@ -25,7 +23,7 @@ index 7a2b022..f17c485 100644
  			return false;
  		}
  		last_hw_stats = action_entry->hw_stats;
-@@ -356,11 +356,11 @@ __flow_action_hw_stats_check(const struct flow_action *action,
+@@ -411,11 +411,11 @@ __flow_action_hw_stats_check(const struc
  
  	if (!check_allow_bit &&
  	    ~action_entry->hw_stats & FLOW_ACTION_HW_STATS_ANY) {
@@ -39,6 +37,3 @@ index 7a2b022..f17c485 100644
  		return false;
  	}
  	return true;
--- 
-2.38.1
-
