@@ -642,6 +642,13 @@ ucidef_set_hostname() {
 	json_select ..
 }
 
+ucidef_set_timezone() {
+	local timezone="$1"
+	json_select_object system
+		json_add_string timezone "$timezone"
+	json_select ..
+}
+
 ucidef_set_wireless() {
 	local band="$1"
 	local ssid="$2"
