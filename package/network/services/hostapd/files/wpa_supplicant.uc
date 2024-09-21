@@ -68,7 +68,7 @@ function prepare_config(config)
 	return { config: config };
 }
 
-function set_config(phy_name, config_list)
+function set_config(phy_name, num_global_macaddr, config_list)
 {
 	let phy = wpas.data.config[phy_name];
 
@@ -76,6 +76,8 @@ function set_config(phy_name, config_list)
 		phy = vlist_new(iface_cb, false);
 		wpas.data.config[phy_name] = phy;
 	}
+
+	phy.num_global_macaddr = num_global_macaddr;
 
 	let values = [];
 	for (let config in config_list)
@@ -99,7 +101,7 @@ function start_pending(phy_name)
 	}
 
 	let macaddr_list = wpas.data.macaddr_list[phy_name];
-	phydev.macaddr_init(macaddr_list);
+	phydev.macaddr_init(macaddr_list, { num_global: phy.num_global_macaddr });
 
 	for (let ifname in phy.data)
 		iface_start(phydev, phy.data[ifname]);
@@ -185,6 +187,7 @@ let main_obj = {
 	config_set: {
 		args: {
 			phy: "",
+			num_global_macaddr: 0,
 			config: [],
 			defer: true,
 		},
@@ -195,7 +198,7 @@ let main_obj = {
 			wpas.printf(`Set new config for phy ${req.args.phy}`);
 			try {
 				if (req.args.config)
-					set_config(req.args.phy, req.args.config);
+					set_config(req.args.phy, req.args.num_global_macaddr, req.args.config);
 
 				if (!req.args.defer)
 					start_pending(req.args.phy);
