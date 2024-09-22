@@ -87,7 +87,7 @@ define KernelPackage/fs-smbfs-common
   SUBMENU:=$(FS_MENU)
   TITLE:=SMBFS common dependencies support
   HIDDEN:=1
-  DEPENDS:=+LINUX_6_6:kmod-fs-netfs +LINUX_6_6:kmod-nls-ucs2-utils
+  DEPENDS:=+kmod-fs-netfs +kmod-nls-ucs2-utils
   KCONFIG:=\
 	CONFIG_SMBFS
   FILES:= \
@@ -272,8 +272,8 @@ define KernelPackage/fs-fscache
 	CONFIG_CACHEFILES \
 	CONFIG_CACHEFILES_DEBUG=n \
 	CONFIG_CACHEFILES_HISTOGRAM=n \
-	CONFIG_CACHEFILES_ERROR_INJECTION=n@ge5.17 \
-	CONFIG_CACHEFILES_ONDEMAND=n@ge5.19
+	CONFIG_CACHEFILES_ERROR_INJECTION=n \
+	CONFIG_CACHEFILES_ONDEMAND=n
   FILES:= \
 	$(LINUX_DIR)/fs/fscache/fscache.ko \
 	$(LINUX_DIR)/fs/cachefiles/cachefiles.ko
@@ -340,7 +340,7 @@ define KernelPackage/fs-jfs
   KCONFIG:=CONFIG_JFS_FS
   FILES:=$(LINUX_DIR)/fs/jfs/jfs.ko
   AUTOLOAD:=$(call AutoLoad,30,jfs,1)
-  DEPENDS:=+LINUX_6_6:kmod-nls-ucs2-utils
+  DEPENDS:=+kmod-nls-ucs2-utils
   $(call AddDepends/nls)
 endef
 
@@ -708,7 +708,7 @@ define KernelPackage/pstore
 	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
-  DEPENDS:=+LINUX_6_6:kmod-lib-zlib-deflate +LINUX_6_6:kmod-lib-zlib-inflate
+  DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
 endef
 
 define KernelPackage/pstore/description

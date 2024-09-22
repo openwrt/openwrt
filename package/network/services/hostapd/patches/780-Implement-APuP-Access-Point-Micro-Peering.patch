@@ -164,7 +164,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  int hostapd_sta_add(struct hostapd_data *hapd,
 --- /dev/null
 +++ b/src/ap/apup.c
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,168 @@
 +/*
 + * hostapd / APuP Access Point Micro Peering
 + *
@@ -189,6 +189,14 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +#include "ieee802_11.h"
 +#include "ap_drv_ops.h"
 +#include "sta_info.h"
++
++#ifdef UBUS_SUPPORT
++#	include "ubus.h"
++#endif
++
++#ifdef UCODE_SUPPORT
++#	include "ucode.h"
++#endif
 +
 +void apup_process_beacon(struct hostapd_data *hapd,
 +              const struct ieee80211_mgmt *mgmt, size_t len,
@@ -316,6 +324,14 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
 +	           "apup_process_beacon(...) Added APuP peer at %s with flags: %d,"
 +	           " capabilities %d",
 +	           mIfname, sta_ret->flags, sta_ret->capability);
++
++#ifdef UBUS_SUPPORT
++	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
++#endif
++
++#ifdef UCODE_SUPPORT
++	hostapd_ucode_apup_newpeer(hapd, mIfname);
++#endif
 +}
 --- /dev/null
 +++ b/src/ap/apup.h
@@ -356,7 +372,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3588,8 +3591,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -3615,8 +3618,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -367,7 +383,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -3976,7 +3979,7 @@ static int __check_assoc_ies(struct host
+@@ -4003,7 +4006,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
@@ -376,7 +392,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
  
-@@ -6031,6 +6034,11 @@ static void handle_beacon(struct hostapd
+@@ -6058,6 +6061,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
