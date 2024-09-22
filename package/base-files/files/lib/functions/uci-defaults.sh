@@ -684,6 +684,27 @@ ucidef_set_country() {
 	json_select ..
 }
 
+ucidef_set_wireless_mac_count() {
+	local band="$1"
+	local mac_count="$2"
+
+	case "$band" in
+	2g|5g|6g) ;;
+	*) return;;
+	esac
+	[ -z "$mac_count" ] && return
+
+	json_select_object wlan
+		json_select_object defaults
+			json_select_object ssids
+				json_select_object "$band"
+					json_add_string mac_count "$mac_count"
+				json_select ..
+			json_select ..
+		json_select ..
+	json_select ..
+}
+
 ucidef_set_root_password_plain() {
 	local passwd="$1"
 	json_select_object credentials
