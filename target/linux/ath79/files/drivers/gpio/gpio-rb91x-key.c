@@ -144,7 +144,6 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	struct gpio_rb91x_key *drvdata;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
-	struct fwnode_handle *fwnode = dev->fwnode;
 
 	drvdata = devm_kzalloc(dev, sizeof(*drvdata), GFP_KERNEL);
 	if (!drvdata)
@@ -159,6 +158,7 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 
 	gc = &drvdata->gc;
 	gc->label = GPIO_RB91X_KEY_DRIVER_NAME;
+	gc->parent = dev;
 	gc->can_sleep = 1;
 	gc->base = -1;
 	gc->ngpio = GPIO_RB91X_KEY_NGPIOS;
@@ -166,7 +166,6 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	gc->set = gpio_rb91x_key_set;
 	gc->direction_output = gpio_rb91x_key_direction_output;
 	gc->direction_input = gpio_rb91x_key_direction_input;
-	gc->fwnode = fwnode;
 
 	platform_set_drvdata(pdev, drvdata);
 
