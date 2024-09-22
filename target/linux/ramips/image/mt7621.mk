@@ -2679,7 +2679,6 @@ define Device/tplink_er605-v2
   KERNEL_LOADADDR := 0x82000000
   KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += sysupgrade.tar
   IMAGE_SIZE := 127744k
 endef
 TARGET_DEVICES += tplink_er605-v2
