@@ -10,7 +10,6 @@ uci_apply_defaults() {
 	cd /etc/uci-defaults || return 0
 	files="$(ls)"
 	[ -z "$files" ] && return 0
-	mkdir -p /tmp/.uci
 	for file in $files; do
 		( . "./$(basename $file)" ) && rm -f "$file"
 	done
@@ -47,6 +46,8 @@ boot() {
 		sleep 1
 	}
 
+	mkdir -p /tmp/.uci
+	[ -f /etc/uci-defaults/30_uboot-envtools ] && (. /etc/uci-defaults/30_uboot-envtools)
 	/bin/config_generate
 	rm -f /tmp/.config_pending
 	/sbin/wifi config
