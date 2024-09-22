@@ -147,6 +147,79 @@ static int resume_polling(u64 saved_state)
 	return 0;
 }
 
+int rtl821x_match_phy_device(struct phy_device *phydev)
+{
+	u64 poll_state;
+	int rawpage, port = phydev->mdio.addr & ~3;
+	int oldpage, chip_mode, chip_cfg_mode;
+
+	if (phydev->phy_id == PHY_ID_RTL8218B_E)
+		return PHY_IS_RTL8218B_E;
+
+	if (phydev->phy_id != PHY_ID_RTL8214_OR_8218)
+		return PHY_IS_NOT_RTL821X;
+
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		rawpage = RTL838X_PAGE_RAW;
+	else if (soc_info.family == RTL8390_FAMILY_ID)
+		rawpage = RTL839X_PAGE_RAW;
+	else
+		return PHY_IS_NOT_RTL821X;
+
+	poll_state = disable_polling(port);
+	/*
+	 * At this stage the write_page()/read_page() PHY functions are not yet
+	 * registered and normal paged access is not possible. The following
+	 * detection routine works because our MDIO bus has all the Realtek
+	 * PHY page handling (register 31) integrated into the port functions.
+	 */
+	oldpage = phy_port_read_paged(phydev, port, rawpage, 31);
+	phy_port_write_paged(phydev, port, rawpage, 31, 0xa42);
+	phy_port_write_paged(phydev, port, rawpage, 29, 0x008);
+	phy_port_write_paged(phydev, port, rawpage, 31, 0x278);
+	phy_port_write_paged(phydev, port, rawpage, 18, 0x455);
+	phy_port_write_paged(phydev, port, rawpage, 31, 0x260);
+	chip_mode = phy_port_read_paged(phydev, port, rawpage, 18);
+	phy_port_write_paged(phydev, port, rawpage, 31, 0xa42);
+	phy_port_write_paged(phydev, port, rawpage, 29, 0x000);
+	phy_port_write_paged(phydev, port, rawpage, 31, oldpage);
+
+	resume_polling(poll_state);
+
+	pr_debug("%s(%d): got chip mode %x\n", __func__, phydev->mdio.addr, chip_mode);
+
+	/* we checked the 4th port of a RTL8218B and got no config values */
+	if (!chip_mode)
+		return PHY_IS_RTL8218B_E;
+
+	chip_cfg_mode = (chip_mode >> 4) & 0xf;
+	chip_mode &= 0xf;
+
+	if (chip_mode == 0xd || chip_mode == 0xf)
+		return PHY_IS_RTL8218B_E;
+
+	if (chip_mode == 0x4 || chip_mode == 0x6)
+		return PHY_IS_RTL8214FC;
+
+	if (chip_mode != 0xc && chip_mode != 0xe)
+		return PHY_IS_NOT_RTL821X;
+
+	if (chip_cfg_mode == 0x4 || chip_cfg_mode == 0x6)
+		return PHY_IS_RTL8214FC;
+
+	return PHY_IS_RTL8214FB;
+}
+
+static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
+{
+	return rtl821x_match_phy_device(phydev) == PHY_IS_RTL8218B_E;
+}
+
+static int rtl8214fc_match_phy_device(struct phy_device *phydev)
+{
+	return rtl821x_match_phy_device(phydev) == PHY_IS_RTL8214FC;
+}
+
 static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
 {
 	phy_modify(phydev, 0, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
@@ -936,21 +1009,6 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
-{
-	int addr = phydev->mdio.addr;
-
-	/* Both the RTL8214FC and the external RTL8218B have the same
-	 * PHY ID. On the RTL838x, the RTL8218B can only be attached_dev
-	 * at PHY IDs 0-7, while the RTL8214FC must be attached via
-	 * the pair of SGMII/1000Base-X with higher PHY-IDs
-	 */
-	if (soc_info.family == RTL8380_FAMILY_ID)
-		return phydev->phy_id == PHY_ID_RTL8218B_E && addr < 8;
-	else
-		return phydev->phy_id == PHY_ID_RTL8218B_E;
-}
-
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
 	int mac = phydev->mdio.addr;
@@ -1457,13 +1515,6 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	}
 
 	return 0;
-}
-
-static int rtl8214fc_match_phy_device(struct phy_device *phydev)
-{
-	int addr = phydev->mdio.addr;
-
-	return phydev->phy_id == PHY_ID_RTL8214FC && addr >= 24;
 }
 
 static int rtl8380_configure_serdes(struct phy_device *phydev)
@@ -3856,10 +3907,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.set_loopback	= genphy_loopback,
 	},
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC),
+		.match_phy_device = rtl8214fc_match_phy_device,
 		.name		= "Realtek RTL8214FC",
 		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.match_phy_device = rtl8214fc_match_phy_device,
 		.probe		= rtl8214fc_phy_probe,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
@@ -3872,10 +3922,9 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.get_eee	= rtl8214fc_get_eee,
 	},
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218B_E),
+		.match_phy_device = rtl8218b_ext_match_phy_device,
 		.name		= "Realtek RTL8218B (external)",
 		.features	= PHY_GBIT_FEATURES,
-		.match_phy_device = rtl8218b_ext_match_phy_device,
 		.probe		= rtl8218b_ext_phy_probe,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
@@ -3991,7 +4040,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 module_phy_driver(rtl83xx_phy_driver);
 
 static struct mdio_device_id __maybe_unused rtl83xx_tbl[] = {
-	{ PHY_ID_MATCH_MODEL(PHY_ID_RTL8214FC) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_RTL8214_OR_8218) },
 	{ }
 };
 
