@@ -1079,11 +1079,11 @@ define Device/dna_valokuitu-plus-ex400
   DEVICE_MODEL := Valokuitu Plus EX400
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGES := factory.bin sysupgrade.tar
+  IMAGES := factory.bin sysupgrade.bin
   IMAGE/factory.bin := kernel-initramfs-bin | lzma | uImage lzma | \
                        dna-bootfs with-initrd | dna-header | \
                        append-md5sum-ascii-salted
-  IMAGE/sysupgrade.tar := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
+  IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
   			  append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
