@@ -3929,7 +3929,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.get_eee	= rtl8218b_get_eee,
 	},
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8218D),
+		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218D),
 		.name		= "REALTEK RTL8218D",
 		.features	= PHY_GBIT_FEATURES,
 		.probe		= rtl8218d_phy_probe,
