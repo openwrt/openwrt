@@ -139,7 +139,25 @@ as adding/removing interfaces.
  {
  	struct hostapd_bss_config *conf = hapd->conf;
  	u8 ssid[SSID_MAX_LEN + 1];
-@@ -2954,7 +2958,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -1510,6 +1514,8 @@ setup_mld:
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	hostapd_ucode_create_bss(hapd);
++
+ 	if (conf->wmm_enabled < 0)
+ 		conf->wmm_enabled = hapd->iconf->ieee80211n |
+ 			hapd->iconf->ieee80211ax;
+@@ -2487,7 +2493,7 @@ static int hostapd_owe_iface_iter2(struc
+ #endif /* CONFIG_OWE */
+ 
+ 
+-static void hostapd_owe_update_trans(struct hostapd_iface *iface)
++void hostapd_owe_update_trans(struct hostapd_iface *iface)
+ {
+ #ifdef CONFIG_OWE
+ 	/* Check whether the enabled BSS can complete OWE transition mode
+@@ -2954,7 +2960,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  }
  
  
@@ -148,7 +166,7 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -4015,7 +4019,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4015,7 +4021,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;
@@ -204,6 +222,14 @@ as adding/removing interfaces.
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
  			   int reassoc);
  void hostapd_interface_deinit_free(struct hostapd_iface *iface);
+@@ -815,6 +824,7 @@ hostapd_switch_channel_fallback(struct h
+ void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
+ void hostapd_periodic_iface(struct hostapd_iface *iface);
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
++void hostapd_owe_update_trans(struct hostapd_iface *iface);;
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -3928,6 +3928,25 @@ struct wpa_driver_ops {

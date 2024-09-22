@@ -2004,3 +2004,18 @@ int hostapd_ubus_notify_bss_transition_query(
 	return ureq.resp;
 #endif
 }
+
+#ifdef CONFIG_APUP
+void hostapd_ubus_notify_apup_newpeer(
+	struct hostapd_data *hapd, const u8 *addr, const char *ifname)
+{
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", addr);
+	blobmsg_add_string(&b, "ifname", ifname);
+
+	ubus_notify(ctx, &hapd->ubus.obj, "apup-newpeer", b.head, -1);
+}
+#endif // def CONFIG_APUP

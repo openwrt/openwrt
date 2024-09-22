@@ -79,9 +79,9 @@ full device, e.g. in order to deal with hardware/driver limitations
  {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -825,6 +825,7 @@ void hostapd_cleanup_cs_params(struct ho
- void hostapd_periodic_iface(struct hostapd_iface *iface);
+@@ -826,6 +826,7 @@ void hostapd_periodic_iface(struct hosta
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
+ void hostapd_owe_update_trans(struct hostapd_iface *iface);;
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
 +int hostapd_check_max_sta(struct hostapd_data *hapd);
  
