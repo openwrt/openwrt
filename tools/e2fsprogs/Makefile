@@ -24,7 +24,7 @@ ifneq ($(shell $(HOSTCC) --version | grep clang),)
 endif
 HOST_CFLAGS += $(HOST_FPIC)
 
-HOST_CONFIGURE_ARGS += \
+HOST_CONFIGURE_ARGS += LDFLAGS="-lpthread" \
 	--disable-elf-shlibs \
 	--disable-libuuid \
 	--disable-tls \
