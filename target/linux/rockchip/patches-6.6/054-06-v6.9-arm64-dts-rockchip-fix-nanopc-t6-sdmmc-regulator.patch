@@ -1,0 +1,44 @@
+From 6cb02674a061e4ef4f437ab60c91038d4c0d85ef Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Tue, 2 Jan 2024 02:40:53 +0000
+Subject: [PATCH] arm64: dts: rockchip: fix nanopc-t6 sdmmc regulator
+
+sdmmc on the nanopc-t6 is powered by vcc3v3_sd_s0, not vcc_3v3_s3
+add the vcc3v3_sd_s0 regulator, and control it with gpio4_a5
+
+Signed-off-by: John Clark <inindev@gmail.com>
+Link: https://lore.kernel.org/r/20240102024054.1030313-1-inindev@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
+@@ -160,6 +160,17 @@
+ 		vin-supply = <&vcc5v0_sys>;
+ 	};
+ 
++	vcc3v3_sd_s0: vcc3v3-sd-s0-regulator {
++		compatible = "regulator-fixed";
++		enable-active-low;
++		gpio = <&gpio4 RK_PA5 GPIO_ACTIVE_LOW>;
++		regulator-boot-on;
++		regulator-max-microvolt = <3300000>;
++		regulator-min-microvolt = <3300000>;
++		regulator-name = "vcc3v3_sd_s0";
++		vin-supply = <&vcc_3v3_s3>;
++	};
++
+ 	vdd_4g_3v3: vdd-4g-3v3-regulator {
+ 		compatible = "regulator-fixed";
+ 		enable-active-high;
+@@ -560,7 +571,7 @@
+ 	no-mmc;
+ 	no-sdio;
+ 	sd-uhs-sdr104;
+-	vmmc-supply = <&vcc_3v3_s3>;
++	vmmc-supply = <&vcc3v3_sd_s0>;
+ 	vqmmc-supply = <&vccio_sd_s0>;
+ 	status = "okay";
+ };

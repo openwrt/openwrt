@@ -18,6 +18,7 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r2s|\
 	friendlyarm,nanopi-r4s|\
 	friendlyarm,nanopi-r4s-enterprise|\
+	friendlyarm,nanopi-r6c|\
 	radxa,rockpi-e|\
 	xunlong,orangepi-r1-plus|\
 	xunlong,orangepi-r1-plus-lts)
@@ -64,6 +65,7 @@ rockchip_setup_macs()
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
 		;;
 	friendlyarm,nanopi-r5c|\
+	friendlyarm,nanopi-r6c|\
 	friendlyarm,nanopi-r6s)
 		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk*)
 		lan_mac=$(macaddr_add "$wan_mac" 1)

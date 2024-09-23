@@ -241,7 +241,7 @@ static struct platform_driver ag71xx_mdio_driver = {
 	.probe		= ag71xx_mdio_probe,
 	.remove		= ag71xx_mdio_remove,
 	.driver = {
-		.name	 = "ag71xx-mdio",
+		.name	 = "ag71xx-legacy-mdio",
 		.of_match_table = ag71xx_mdio_match,
 	}
 };

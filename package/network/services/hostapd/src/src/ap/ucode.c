@@ -533,10 +533,12 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 		return NULL;
 
 #define UPDATE_VAL(field, name)							\
-	if ((intval = ucv_int64_get(ucv_object_get(info, name, NULL))) &&	\
-		!errno && intval != conf->field) do {				\
-		conf->field = intval;						\
-		changed = true;							\
+	do {									\
+		intval = ucv_int64_get(ucv_object_get(info, name, NULL));	\
+		if (!errno && intval != conf->field) {				\
+			conf->field = intval;					\
+			changed = true;						\
+		}								\
 	} while(0)
 
 	conf = iface->conf;
