@@ -386,8 +386,8 @@ hostapd_common_add_bss_config() {
         config_add_array radius_auth_req_attr
         config_add_array radius_acct_req_attr
 
-        config_add_int eap_server
-        config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+	config_add_int eap_server radius_server_auth_port
+	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients
 
         config_add_boolean fils
         config_add_string fils_dhcp
@@ -601,7 +601,7 @@ hostapd_set_bss_options() {
                 multicast_to_unicast_all proxy_arp per_sta_vif \
                 eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
                 vendor_elements fils ocv apup unsol_bcast_probe_resp_interval fils_discovery_min_interval \
-                fils_discovery_max_interval rnr group_cipher group_mgmt_cipher
+                fils_discovery_max_interval rnr group_cipher group_mgmt_cipher radius_server_clients radius_server_auth_port
 
         set_default fils 0
         set_default isolate 0
@@ -1239,16 +1239,18 @@ hostapd_set_bss_options() {
                 json_for_each_item append_operator_icon operator_icon
         fi
 
-        if [ "$eap_server" = "1" ]; then
-                append bss_conf "eap_server=1" "$N"
-                append bss_conf "eap_server_erp=1" "$N"
-                [ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
-                [ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
-                [ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
-                [ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
-                [ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
-                [ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
-        fi
+	if [ "$eap_server" = "1" ]; then
+		append bss_conf "eap_server=1" "$N"
+		append bss_conf "eap_server_erp=1" "$N"
+		[ -n "$eap_user_file" ] && append bss_conf "eap_user_file=$eap_user_file" "$N"
+		[ -n "$ca_cert" ] && append bss_conf "ca_cert=$ca_cert" "$N"
+		[ -n "$server_cert" ] && append bss_conf "server_cert=$server_cert" "$N"
+		[ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
+		[ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
+		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
+		[ -n "$radius_server_clients" ] && append bss_conf "radius_server_clients=$radius_server_clients" "$N"
+		[ -n "$radius_server_auth_port" ] && append bss_conf "radius_server_auth_port=$radius_server_auth_port" "$N"
+	fi
 
         set_default multicast_to_unicast_all 0
         if [ "$multicast_to_unicast_all" -gt 0 ]; then
