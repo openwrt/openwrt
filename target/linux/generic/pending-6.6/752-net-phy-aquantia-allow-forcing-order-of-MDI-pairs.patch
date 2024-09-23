@@ -74,7 +74,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	ret = of_property_read_u32(np, "marvell,mdi-cfg-order", &mdi_conf);
 +
 +	/* Do nothing in case property "marvell,mdi-cfg-order" is not present */
-+	if (ret == -ENOENT)
++	if (ret == -EINVAL)
 +		return 0;
 +
 +	if (ret)
