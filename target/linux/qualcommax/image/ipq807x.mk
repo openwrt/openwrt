@@ -340,7 +340,7 @@ define Device/spectrum_sax1v1k
 	DEVICE_DTS_CONFIG := config@rt5010w-d187-rev6
 	SOC := ipq8072
 	IMAGES := sysupgrade.bin
-	DEVICE_PACKAGES := ipq-wifi-spectrum_sax1v1k
+	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools ipq-wifi-spectrum_sax1v1k
 endef
 TARGET_DEVICES += spectrum_sax1v1k
 
