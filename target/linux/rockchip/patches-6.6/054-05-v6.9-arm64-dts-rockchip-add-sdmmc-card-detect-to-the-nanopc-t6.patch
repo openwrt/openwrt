@@ -1,0 +1,25 @@
+From d8bb6c2311b6b2aad11b937f96db1d6c3393246a Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Sat, 30 Dec 2023 11:50:53 -0500
+Subject: [PATCH] arm64: dts: rockchip: add sdmmc card detect to the nanopc-t6
+
+The nanopc-t6 has an sdmmc card detect connected to gpio0_a4 which is
+active low.
+
+Signed-off-by: John Clark <inindev@gmail.com>
+Link: https://lore.kernel.org/r/20231230165053.3781-1-inindev@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
+@@ -555,6 +555,7 @@
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
++	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+ 	disable-wp;
+ 	no-mmc;
+ 	no-sdio;

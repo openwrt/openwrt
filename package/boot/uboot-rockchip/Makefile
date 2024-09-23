@@ -262,6 +262,13 @@ endef
 
 # RK3588S boards
 
+define U-Boot/nanopi-r6c-rk3588s
+  $(U-Boot/rk3588/Default)
+  NAME:=NanoPi R6C
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r6c
+endef
+
 define U-Boot/nanopi-r6s-rk3588s
   $(U-Boot/rk3588/Default)
   NAME:=NanoPi R6S
@@ -302,6 +309,7 @@ UBOOT_TARGETS := \
   rock-3b-rk3568 \
   nanopc-t6-rk3588 \
   rock5b-rk3588 \
+  nanopi-r6c-rk3588s \
   nanopi-r6s-rk3588s \
   rock5a-rk3588s
 

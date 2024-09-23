@@ -15,6 +15,8 @@ proto_directip_init_config() {
 	proto_config_add_string "auth"
 	proto_config_add_string "username"
 	proto_config_add_string "password"
+	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_defaults
 }
 
@@ -22,8 +24,8 @@ proto_directip_setup() {
 	local interface="$1"
 	local chat devpath devname
 
-	local device apn pincode ifname auth username password $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode auth username password $PROTO_DEFAULT_OPTIONS
+	local device apn pincode ifname auth username password sourcefilter delegate $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn pincode auth username password sourcefilter delegate $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -89,6 +91,8 @@ proto_directip_setup() {
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
 	json_add_string extendprefix 1
+	[ "$delegate" = "0" ] && json_add_boolean delegate "0"
+	[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 	proto_add_dynamic_defaults
 	ubus call network add_dynamic "$(json_dump)"
 

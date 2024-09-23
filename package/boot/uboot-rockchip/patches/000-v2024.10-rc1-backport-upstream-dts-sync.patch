@@ -1,3 +1,32 @@
+From 6bb92fcf7d2fea2314d616e5e2391a8bf2b0fdfa Mon Sep 17 00:00:00 2001
+From: Tom Rini <trini@konsulko.com>
+Date: Mon, 20 May 2024 09:54:58 -0600
+Subject: [PATCH] Squashed 'dts/upstream/' changes from
+ b35b9bd1d4ee..7e08733c96c8
+---
+ .../src/arm64/rockchip/rk3588s-nanopi-r6c.dts |  14 +
+ .../src/arm64/rockchip/rk3588s-nanopi-r6s.dts | 764 ++++++++++++++++++
+ 2 files changed, 778 insertions(+)
+ create mode 100644 dts/upstream/src/arm64/rockchip/rk3588s-nanopi-r6c.dts
+ create mode 100644 dts/upstream/src/arm64/rockchip/rk3588s-nanopi-r6s.dts
+
+--- /dev/null
++++ b/dts/upstream/src/arm64/rockchip/rk3588s-nanopi-r6c.dts
+@@ -0,0 +1,14 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++/dts-v1/;
++
++#include "rk3588s-nanopi-r6s.dts"
++
++/ {
++	model = "FriendlyElec NanoPi R6C";
++	compatible = "friendlyarm,nanopi-r6c", "rockchip,rk3588s";
++};
++
++&lan2_led {
++	label = "user_led";
++};
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3588s-nanopi-r6s.dts
 @@ -0,0 +1,764 @@

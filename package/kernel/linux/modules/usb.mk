@@ -272,13 +272,13 @@ $(eval $(call KernelPackage,usb-uhci,1))
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
   DEPENDS:= \
+	+TARGET_ath79:kmod-phy-ath79-usb \
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm47xx:kmod-usb-bcma \
 	+TARGET_bcm47xx:kmod-usb-ssb
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
-	CONFIG_USB_OHCI_ATH79=y \
 	CONFIG_USB_OHCI_HCD_AT91=y \
 	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y \
