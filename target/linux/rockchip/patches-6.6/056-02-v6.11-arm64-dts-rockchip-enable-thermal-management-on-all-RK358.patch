@@ -25,6 +25,19 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts              | 4 ++++
  8 files changed, 32 insertions(+)
 
+--- a/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
+@@ -673,6 +673,10 @@
+ 	};
+ };
+ 
++&tsadc {
++	status = "okay";
++};
++
+ &u2phy0 {
+ 	status = "okay";
+ };
 --- a/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-evb1-v10.dts
 @@ -807,6 +807,10 @@
