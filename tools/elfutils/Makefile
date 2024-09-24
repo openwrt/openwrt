@@ -43,7 +43,7 @@ PKG_GNULIB_MODS = \
 	fallocate-posix \
 	fnmatch-gnu \
 	fts \
-	obstack \
+	obstack-printf-posix \
 	progname \
 	strchrnul \
 	tsearch
@@ -51,16 +51,35 @@ PKG_GNULIB_MODS = \
 include $(INCLUDE_DIR)/host-build.mk
 
 export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/.libs/$(PKG_GNULIB_BASE).a
+
+export $(PKG_GNULIB_BASE)_exitfail=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-exitfail.o
 export $(PKG_GNULIB_BASE)_fallocate-posix=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-posix_fallocate.o
+export $(PKG_GNULIB_BASE)_obstack=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-obstack.o
+export $(PKG_GNULIB_BASE)_obstack-printf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/obstack_printf.o
+export $(PKG_GNULIB_BASE)_printf-args=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/printf-args.o
+export $(PKG_GNULIB_BASE)_printf-frexp=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexp.o
+export $(PKG_GNULIB_BASE)_printf-frexpl=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexpl.o
+export $(PKG_GNULIB_BASE)_printf-parse=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/printf-parse.o
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.o
+export $(PKG_GNULIB_BASE)_vasnprintf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/vasnprintf.o
 
 HOST_MAKE_FLAGS += \
+	am__CONFIG_DISTCLEAN_FILES= \
 	DEFAULT_INCLUDES='-iquote . -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_exitfail))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_fallocate-posix))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_obstack))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_obstack-printf))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-args))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-frexp))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-frexpl))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-parse))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_tsearch))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_vasnprintf))' \
 	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
+	REPLACE_OBSTACK=0 REPLACE_OBSTACK_PRINTF=0 \
 	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
 
 HOST_CPPFLAGS += "'-I$$$$(top_srcdir)/lib'"
@@ -72,6 +91,7 @@ endif
 HOST_CFLAGS += -Wno-error -fPIC
 
 HOST_CONFIGURE_ARGS += \
+	--enable-maintainer-mode \
 	--without-libintl-prefix \
 	--without-libiconv-prefix \
 	--disable-debuginfod \
@@ -96,8 +116,14 @@ HOST_CONFIGURE_VARS += \
 Hooks/HostConfigure/Pre := Host/Gnulib/Prepare $(Hooks/HostConfigure/Pre)
 Hooks/HostCompile/Pre := Host/Gnulib/Compile $(Hooks/HostCompile/Pre)
 
+define Host/Configure
+	$(call Host/Configure/Default)
+	$(call Host/Uninstall)
+endef
+
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
+	-$(call Host/Compile/Default,maintainer-clean) # Clean bootstrap files from the release
 endef
 
 $(eval $(call HostBuild))
