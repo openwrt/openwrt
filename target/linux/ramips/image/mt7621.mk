@@ -1071,7 +1071,8 @@ define Device/dna_valokuitu-plus-ex400
   IMAGE/sysupgrade.tar := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
   			  append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 \
+	kmod-nvmem-layout-uboot-env kmod-ubi-nvmem
 endef
 TARGET_DEVICES += dna_valokuitu-plus-ex400
 

@@ -77,13 +77,14 @@
 		partition@100000 {
 			reg = <0x100000 0xff00000>;
 			label = "ubi";
+			compatible = "linux,ubi";
 
 			volumes {
 				ubi-volume-env1 {
 					volname = "env1";
 
 					nvmem-layout {
-						compatible = "u-boot,env";
+						compatible = "u-boot,env-redundant-count";
 
 						ethaddr: ethaddr {
 							#nvmem-cell-cells = <1>;
