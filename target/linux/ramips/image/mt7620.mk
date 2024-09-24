@@ -1245,7 +1245,7 @@ endef
 TARGET_DEVICES += tplink_archer-mr200
 
 define Device/tplink_re200-v1
-  $(Device/tplink-v1)
+  $(Device/tplink-v1-okli)
   SOC := mt7620a
   DEVICE_MODEL := RE200
   DEVICE_VARIANT := v1
@@ -1257,7 +1257,7 @@ endef
 TARGET_DEVICES += tplink_re200-v1
 
 define Device/tplink_re210-v1
-  $(Device/tplink-v1)
+  $(Device/tplink-v1-okli)
   SOC := mt7620a
   DEVICE_MODEL := RE210
   DEVICE_VARIANT := v1
