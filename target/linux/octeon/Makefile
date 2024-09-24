@@ -7,14 +7,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips64
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
-FEATURES:=squashfs ramdisk pci usb
-CPU_TYPE:=octeonplus
+SUBTARGETS:=cn5020 cn6120 cn6130 cn7120 cn7130
+FEATURES:=squashfs ramdisk pci usb emmc
 
 KERNEL_PATCHVER:=6.6
-
-define Target/Description
-	Build firmware images for Cavium Networks Octeon-based boards.
-endef
 
 include $(INCLUDE_DIR)/target.mk
 
