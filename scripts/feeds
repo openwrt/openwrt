@@ -461,6 +461,11 @@ sub do_install_target($) {
 		return 1;
 	}
 
+	# Clean packageinfo of linux kernel to force the scan.
+	# Otherwise kernel modules defined at target level are not scanned, as the
+	# linux kernel package was scanned before the installation of the target.
+	unlink "tmp/info/.packageinfo-kernel_linux";
+
 	return 0;
 }
 
