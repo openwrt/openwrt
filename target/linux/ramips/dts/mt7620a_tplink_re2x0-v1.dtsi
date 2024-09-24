@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	aliases {
@@ -63,9 +64,11 @@
 			};
 
 			partition@20000 {
-				compatible = "tplink,firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
 				label = "firmware";
 				reg = <0x20000 0x7c0000>;
+				openwrt,offset = <0x1000>;
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
 			};
 
 			partition@7e0000 {
