@@ -255,6 +255,30 @@ define U-Boot/mt7981_cmcc_rax3000m-nand
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr4
 endef
 
+define U-Boot/mt7981_glinet_gl-x3000
+  NAME:=GL.iNet GL-X3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-x3000
+  UBOOT_CONFIG:=mt7981_glinet_gl-x3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
+endef
+
+define U-Boot/mt7981_glinet_gl-xe3000
+  NAME:=GL.iNet GL-XE3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-xe3000
+  UBOOT_CONFIG:=mt7981_glinet_gl-x3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
+endef
+
 define U-Boot/mt7981_h3c_magic-nx30-pro
   NAME:=H3C Magic NX30 Pro
   BUILD_SUBTARGET:=filogic
@@ -761,6 +785,8 @@ UBOOT_TARGETS := \
 	mt7981_abt_asr3000 \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
+	mt7981_glinet_gl-x3000 \
+	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
 	mt7981_nokia_ea0326gmp \

@@ -376,8 +376,8 @@ hostapd_common_add_bss_config() {
 	config_add_array radius_auth_req_attr
 	config_add_array radius_acct_req_attr
 
-	config_add_int eap_server
-	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id
+	config_add_int eap_server radius_server_auth_port
+	config_add_string eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients
 
 	config_add_boolean fils
 	config_add_string fils_dhcp
@@ -571,7 +571,7 @@ hostapd_set_bss_options() {
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif \
-		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
+		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
 		vendor_elements fils ocv apup
 
 	set_default fils 0
@@ -1151,6 +1151,8 @@ hostapd_set_bss_options() {
 		[ -n "$private_key" ] && append bss_conf "private_key=$private_key" "$N"
 		[ -n "$private_key_passwd" ] && append bss_conf "private_key_passwd=$private_key_passwd" "$N"
 		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
+		[ -n "$radius_server_clients" ] && append bss_conf "radius_server_clients=$radius_server_clients" "$N"
+		[ -n "$radius_server_auth_port" ] && append bss_conf "radius_server_auth_port=$radius_server_auth_port" "$N"
 	fi
 
 	set_default multicast_to_unicast_all 0

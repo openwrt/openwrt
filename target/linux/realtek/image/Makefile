@@ -83,7 +83,7 @@ define Device/Default
 	append-dtb | \
 	libdeflate-gzip | \
 	uImage gzip
-  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \

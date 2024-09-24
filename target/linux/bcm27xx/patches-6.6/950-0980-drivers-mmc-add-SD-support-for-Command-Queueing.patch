@@ -91,7 +91,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	cmd.flags       &= ~MMC_RSP_CRC; /* Ignore CRC */
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1015,8 +1015,8 @@ static bool mmc_sd_card_using_v18(struct
+@@ -1016,8 +1016,8 @@ static bool mmc_sd_card_using_v18(struct
  	       (SD_MODE_UHS_SDR50 | SD_MODE_UHS_SDR104 | SD_MODE_UHS_DDR50);
  }
  
@@ -102,7 +102,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  {
  	struct mmc_host *host = card->host;
  	struct mmc_request mrq = {};
-@@ -1174,8 +1174,14 @@ static int sd_parse_ext_reg_perf(struct
+@@ -1175,8 +1175,14 @@ static int sd_parse_ext_reg_perf(struct
  		card->ext_perf.feature_support |= SD_EXT_PERF_CACHE;
  
  	/* Command queue support indicated via queue depth bits (0 to 4). */
@@ -118,7 +118,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	card->ext_perf.fno = fno;
  	card->ext_perf.page = page;
-@@ -1559,13 +1565,41 @@ cont:
+@@ -1563,13 +1569,41 @@ cont:
  			goto free_card;
  	}
  

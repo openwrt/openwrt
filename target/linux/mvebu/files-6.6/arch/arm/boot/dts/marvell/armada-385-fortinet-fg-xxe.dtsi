@@ -86,7 +86,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <4>;
-			linux,default-trigger = "mv88e6xxx-1:01:1Gbps";
+			linux,default-trigger = "mv88e6xxx-0:01:1Gbps";
 		};
 
 		led-7 {
@@ -94,7 +94,7 @@
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <4>;
-			linux,default-trigger = "mv88e6xxx-1:01:100Mbps";
+			linux,default-trigger = "mv88e6xxx-0:01:100Mbps";
 		};
 
 		led-8 {
@@ -102,7 +102,7 @@
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <3>;
-			linux,default-trigger = "mv88e6xxx-1:02:100Mbps";
+			linux,default-trigger = "mv88e6xxx-0:02:100Mbps";
 		};
 
 		led-9 {
@@ -110,7 +110,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <3>;
-			linux,default-trigger = "mv88e6xxx-1:02:1Gbps";
+			linux,default-trigger = "mv88e6xxx-0:02:1Gbps";
 		};
 
 		led-10 {
@@ -118,7 +118,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <1>;
-			linux,default-trigger = "mv88e6xxx-1:04:1Gbps";
+			linux,default-trigger = "mv88e6xxx-0:04:1Gbps";
 		};
 
 		led-11 {
@@ -126,7 +126,7 @@
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <1>;
-			linux,default-trigger = "mv88e6xxx-1:04:100Mbps";
+			linux,default-trigger = "mv88e6xxx-0:04:100Mbps";
 		};
 
 		led-12 {
@@ -134,7 +134,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <2>;
-			linux,default-trigger = "mv88e6xxx-1:03:1Gbps";
+			linux,default-trigger = "mv88e6xxx-0:03:1Gbps";
 		};
 
 		led-13 {
@@ -142,12 +142,12 @@
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_SPEED_LAN;
 			function-enumerator = <2>;
-			linux,default-trigger = "mv88e6xxx-1:03:100Mbps";
+			linux,default-trigger = "mv88e6xxx-0:03:100Mbps";
 		};
 	};
 
 	reg_usb_vbus: regulator-usb-vbus {
-		compatible = "fixed-regulator";
+		compatible = "regulator-fixed";
 		regulator-name = "usb-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;

@@ -31,15 +31,6 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		pr_debug("%s: cqhci: CQE off\n", mmc_hostname(mmc));
  
  	if (cq_host->ops->post_disable)
-@@ -612,7 +614,7 @@ static int cqhci_request(struct mmc_host
- 		cqhci_writel(cq_host, 0, CQHCI_CTL);
- 		mmc->cqe_on = true;
- 		pr_debug("%s: cqhci: CQE on\n", mmc_hostname(mmc));
--		if (cqhci_readl(cq_host, CQHCI_CTL) && CQHCI_HALT) {
-+		if (cqhci_readl(cq_host, CQHCI_CTL) & CQHCI_HALT) {
- 			pr_err("%s: cqhci: CQE failed to exit halt state\n",
- 			       mmc_hostname(mmc));
- 		}
 @@ -975,8 +977,11 @@ static bool cqhci_halt(struct mmc_host *
  
  	ret = cqhci_halted(cq_host);

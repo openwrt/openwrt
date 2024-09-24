@@ -696,7 +696,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 +    if tls.startswith("mbed TLS"):
 +        raise HwsimSkip("TLS v1.3 not supported")
      ok = ['run=OpenSSL 1.1.1', 'run=OpenSSL 3.0', 'run=OpenSSL 3.1',
-           'run=OpenSSL 3.2', 'wolfSSL']
+           'run=OpenSSL 3.2', 'run=OpenSSL 3.3', 'wolfSSL']
      for s in ok:
 @@ -122,11 +161,15 @@ def check_pkcs12_support(dev):
      #    raise HwsimSkip("PKCS#12 not supported with this TLS library: " + tls)
@@ -935,7 +935,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
 --- a/tests/hwsim/test_ap_ft.py
 +++ b/tests/hwsim/test_ap_ft.py
-@@ -2486,11 +2486,11 @@ def test_ap_ft_ap_oom5(dev, apdev):
+@@ -2494,11 +2494,11 @@ def test_ap_ft_ap_oom5(dev, apdev):
          # This will fail to roam
          dev[0].roam(bssid1, check_bssid=False)
  
@@ -979,7 +979,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
              raise HwsimSkip("Crypto library does not support Brainpool curves: " + tls)
      capa = dev.request("GET_CAPABILITY dpp")
      ver = 1
-@@ -3902,6 +3903,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
+@@ -3925,6 +3926,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
  
  def test_dpp_proto_auth_req_invalid_i_proto_key(dev, apdev):
      """DPP protocol testing - invalid I-proto key in Auth Req"""
@@ -989,7 +989,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      run_dpp_proto_auth_req_missing(dev, 66, "Invalid Initiator Protocol Key")
  
  def test_dpp_proto_auth_req_no_i_nonce(dev, apdev):
-@@ -3997,7 +4001,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
+@@ -4020,7 +4024,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
  
  def test_dpp_proto_auth_resp_invalid_r_proto_key(dev, apdev):
      """DPP protocol testing - invalid R-Proto Key in Auth Resp"""
@@ -1003,7 +1003,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  def test_dpp_proto_auth_resp_no_r_nonce(dev, apdev):
      """DPP protocol testing - no R-nonce in Auth Resp"""
-@@ -4359,11 +4368,17 @@ def test_dpp_proto_pkex_exchange_resp_in
+@@ -4382,11 +4391,17 @@ def test_dpp_proto_pkex_exchange_resp_in
  
  def test_dpp_proto_pkex_cr_req_invalid_bootstrap_key(dev, apdev):
      """DPP protocol testing - invalid Bootstrap Key in PKEX Commit-Reveal Request"""
@@ -1079,7 +1079,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
              dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TTLS",
 --- a/tests/hwsim/test_fils.py
 +++ b/tests/hwsim/test_fils.py
-@@ -1472,6 +1472,10 @@ def check_ec_group(dev, group):
+@@ -1477,6 +1477,10 @@ def check_ec_group(dev, group):
      tls = dev.request("GET tls_library")
      if tls.startswith("wolfSSL"):
          return
@@ -1124,7 +1124,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      heavy_groups = [14, 15, 16]
      suitable_groups = [15, 16, 17, 18, 19, 20, 21]
      groups = [str(g) for g in sae_groups]
-@@ -2194,6 +2199,8 @@ def run_sae_pwe_group(dev, apdev, group)
+@@ -2232,6 +2237,8 @@ def run_sae_pwe_group(dev, apdev, group)
              logger.info("Add Brainpool EC groups since OpenSSL is new enough")
          elif tls.startswith("wolfSSL"):
              logger.info("Make sure Brainpool EC groups were enabled when compiling wolfSSL")
@@ -1154,7 +1154,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
                     ca_cert="auth_serv/rsa3072-ca.pem",
 --- a/tests/hwsim/test_wpas_ctrl.py
 +++ b/tests/hwsim/test_wpas_ctrl.py
-@@ -1842,7 +1842,7 @@ def _test_wpas_ctrl_oom(dev):
+@@ -1856,7 +1856,7 @@ def _test_wpas_ctrl_oom(dev):
      tls = dev[0].request("GET tls_library")
      if not tls.startswith("internal"):
          tests.append(('NFC_GET_HANDOVER_SEL NDEF P2P-CR-TAG', 'FAIL',
@@ -1294,7 +1294,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  		if (need_more_data) {
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1188,6 +1188,7 @@ TLS_FUNCS=y
+@@ -1189,6 +1189,7 @@ TLS_FUNCS=y
  endif
  
  ifeq ($(CONFIG_TLS), wolfssl)
@@ -1302,7 +1302,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef TLS_FUNCS
  CFLAGS += -DWOLFSSL_DER_LOAD
  OBJS += ../src/crypto/tls_wolfssl.o
-@@ -1203,6 +1204,7 @@ LIBS_p += -lwolfssl -lm
+@@ -1204,6 +1205,7 @@ LIBS_p += -lwolfssl -lm
  endif
  
  ifeq ($(CONFIG_TLS), openssl)
@@ -1310,7 +1310,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  ifdef TLS_FUNCS
  CFLAGS += -DEAP_TLS_OPENSSL
-@@ -1230,6 +1232,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
+@@ -1231,6 +1233,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
  endif
  
  ifeq ($(CONFIG_TLS), mbedtls)
@@ -1318,7 +1318,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=mbedtls
  endif
-@@ -1249,6 +1252,7 @@ endif
+@@ -1250,6 +1253,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), gnutls)
@@ -1326,7 +1326,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
  CONFIG_CRYPTO=gnutls
-@@ -1279,6 +1283,7 @@ endif
+@@ -1280,6 +1284,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), internal)
@@ -1334,7 +1334,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=internal
  endif
-@@ -1359,6 +1364,7 @@ endif
+@@ -1360,6 +1365,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), linux)

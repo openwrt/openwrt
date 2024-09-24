@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 
 PKG_NAME:=linux
-PKG_PATCHVER:=5.15
+PKG_PATCHVER:=6.6
 # Manually include kernel version and hash from kernel details file
 include $(INCLUDE_DIR)/kernel-$(PKG_PATCHVER)
 
@@ -53,7 +53,9 @@ KERNEL_MAKE := \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(BPF_KARCH) \
 		CROSS_COMPILE=$(BPF_ARCH)-linux- \
-		LLVM=1 CC="$(CLANG)" LD="$(TARGET_CROSS)ld" \
+		LLVM=1 KBUILD_SYM32=n \
+		CC="$(CLANG) --target=$(BPF_TARGET)" \
+		LD="$(TARGET_CROSS)ld" \
 		HOSTCC="$(HOSTCC)" \
 		HOSTCXX="$(HOSTCXX)" \
 		KBUILD_HOSTLDLIBS="-L$(STAGING_DIR_HOST)/lib" \

@@ -23,6 +23,21 @@ define Build/append-dlink-covr-metadata
 	rm $@metadata.tmp
 endef
 
+define Build/append-netis-n6-metadata
+	( echo -ne '{ \
+		"up_model": "Netis-N6R", \
+		"supported_devices": ["mt7621-rfb-ax-nand"], \
+		"version": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"board": "$(call json_quote,$(BOARD))" \
+		} }' \
+	) > $@.metadata.tmp
+	fwtool -I $@.metadata.tmp $@
+	rm $@.metadata.tmp
+endef
+
 define Build/arcadyan-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(eval trx_magic=$(word 1,$(1)))
@@ -34,6 +49,68 @@ define Build/arcadyan-trx
 		conv=notrunc 2>/dev/null
 	dd if=$@.tail >> $@ 2>/dev/null
 	rm $@.hsqs $@.tail
+endef
+
+define Build/dna-header
+	BC='$(STAGING_DIR_HOST)/bin/bc' ;\
+	ubifsofs="1024" ;\
+	ubifs="$$(stat -c%s $@)" ;\
+	pkginfoofs="$$(echo $${ubifsofs} + $${ubifs} | $${BC})" ;\
+	pkginfo="0" ;\
+	scrofs="$$(echo $${pkginfoofs} + $${pkginfo} | $${BC})" ;\
+	scr="0" ;\
+	sigofs="$$(echo $${scrofs} + $${scr} | $${BC})" ;\
+	sig="0" ;\
+	md5ofs="$$(echo $${sigofs} + $${sig} | $${BC})" ;\
+	md5="32" ;\
+	size="$$(echo $${md5ofs} + $${md5} | $${BC})" ;\
+	echo "IntenoIopY" > $@.tmp ;\
+	echo "version 5" >> $@.tmp ;\
+	echo "integrity MD5SUM" >> $@.tmp ;\
+	echo "board EX400" >> $@.tmp ;\
+	echo "chip 7621" >> $@.tmp ;\
+	echo "arch all mipsel_1004kc" >> $@.tmp ;\
+	echo "model EX400" >> $@.tmp ;\
+	echo "release EX400-X-DNA-4.3.6.100-R-210518_0935" >> $@.tmp ;\
+	echo "customer DNA" >> $@.tmp ;\
+	echo "ubifsofs $${ubifsofs}" >> $@.tmp ;\
+	echo "ubifs $${ubifs}" >> $@.tmp ;\
+	echo "pkginfoofs $${pkginfoofs}" >> $@.tmp ;\
+	echo "pkginfo $${pkginfo}" >> $@.tmp ;\
+	echo "scrofs $${scrofs}" >> $@.tmp ;\
+	echo "scr $${scr}" >> $@.tmp ;\
+	echo "sigofs $${sigofs}" >> $@.tmp ;\
+	echo "sig $${sig}" >> $@.tmp ;\
+	echo "md5ofs $${md5ofs}" >> $@.tmp ;\
+	echo "md5 $${md5}" >> $@.tmp ;\
+	echo "size $${size}" >> $@.tmp
+
+	dd if=$@.tmp of=$@.tmp2 bs=1024 count=1 conv=sync
+	cat $@.tmp2 $@ > $@.tmp
+	rm $@.tmp2
+	mv $@.tmp $@
+endef
+
+define Build/dna-bootfs
+	mkdir -p $@.ubifs-dir/boot
+
+	# populate the boot fs with the dtb and with either initramfs kernel or
+	# the normal kernel
+	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.ubifs-dir/boot/dtb
+
+	$(if $(findstring with-initrd,$(word 1,$(1))),\
+		( \
+			$(CP) $@ $@.ubifs-dir/boot/uImage \
+		) , \
+		( \
+			$(CP) $(IMAGE_KERNEL) $@.ubifs-dir/boot/uImage \
+		) \
+	)
+
+	# create ubifs
+	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
+	rm -rf $@.ubifs-dir
+	mv $@.new $@
 endef
 
 define Build/gemtek-trailer
@@ -101,6 +178,10 @@ define Build/iodata-mstc-header2
 	) | dd of=$@.new bs=4 oflag=seek_bytes seek=110 conv=notrunc
 
 	mv $@.new $@
+endef
+
+define Build/kernel-initramfs-bin
+	$(CP) $(KDIR)/vmlinux-initramfs $@
 endef
 
 define Build/znet-header
@@ -835,6 +916,20 @@ define Device/dlink_dir-2150-a1
 endef
 TARGET_DEVICES += dlink_dir-2150-a1
 
+define Device/dlink_dir-2150-r1
+  $(Device/nand)
+  IMAGE_SIZE := 129536k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-2150
+  DEVICE_VARIANT := R1
+  DEVICE_PACKAGES :=  -uboot-envtools kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+  KERNEL := $$(KERNEL)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size | sign-dlink-ru e6587b35a6b34e07bedeca23e140322f 
+endef
+TARGET_DEVICES += dlink_dir-2150-r1
+
 define Device/dlink_dir-2640-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2640
@@ -988,6 +1083,27 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+define Device/dna_valokuitu-plus-ex400
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 117m
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
+  		  --log-lebs=2 --space-fixup --squash-uids
+  DEVICE_VENDOR := DNA
+  DEVICE_MODEL := Valokuitu Plus EX400
+  KERNEL := kernel-bin | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := kernel-initramfs-bin | lzma | uImage lzma | \
+                       dna-bootfs with-initrd | dna-header | \
+                       append-md5sum-ascii-salted
+  IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
+  			  append-metadata
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += dna_valokuitu-plus-ex400
+
 define Device/edimax_ra21s
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1061,6 +1177,24 @@ define Device/elecom_wmc-s1267gs2
   ELECOM_HWNAME := WMC-DLGST2
 endef
 TARGET_DEVICES += elecom_wmc-s1267gs2
+
+define Device/elecom_wmc-x1800gst
+  $(Device/nand)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WMC-X1800GST
+  KERNEL_SIZE := 15360k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size $$$$(KERNEL_SIZE) | elecom-wrc-gs-factory WMC-2LX 0.00 -N | \
+	append-string MT7621_ELECOM_WMC-2LX
+endif
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+endef
+TARGET_DEVICES += elecom_wmc-x1800gst
 
 define Device/elecom_wrc-1167ghbk2-s
   $(Device/dsa-migration)
@@ -1194,6 +1328,24 @@ endif
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += elecom_wrc-x1800gs
+
+define Device/elecom_wsc-x1800gs
+  $(Device/nand)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WSC-X1800GS
+  KERNEL_SIZE := 15360k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size $$$$(KERNEL_SIZE) | elecom-wrc-gs-factory WMC-2LX 0.00 -N | \
+	append-string MT7621_ELECOM_WMC-2LX
+endif
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+endef
+TARGET_DEVICES += elecom_wsc-x1800gs
 
 define Device/etisalat_s3
   $(Device/sercomm_dxx)
@@ -2162,6 +2314,23 @@ define Device/netgear_wndr3700-v5
 endef
 TARGET_DEVICES += netgear_wndr3700-v5
 
+define Device/netis_n6
+  $(Device/dsa-migration)
+  $(Device/nand)
+  IMAGE_SIZE := 121344k
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := N6
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | append-netis-n6-metadata
+  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb-ledtrig-usbport \
+	kmod-usb3
+endef
+TARGET_DEVICES += netis_n6
+
 define Device/netis_wf2881
   $(Device/nand)
   $(Device/uimage-lzma-loader)
@@ -2273,6 +2442,17 @@ define Device/rostelecom_rt-sf-1
 endef
 TARGET_DEVICES += rostelecom_rt-sf-1
 
+define Device/ruijie_rg-ew1200g-pro-v1.1
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EW1200G PRO
+  DEVICE_VARIANT := v1.1
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += ruijie_rg-ew1200g-pro-v1.1
+
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -2297,6 +2477,7 @@ TARGET_DEVICES += sercomm_na502
 
 define Device/sercomm_na502s
   $(Device/nand)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 20971520
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502S
@@ -2559,7 +2740,6 @@ define Device/tplink_er605-v2
   KERNEL_LOADADDR := 0x82000000
   KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += sysupgrade.tar
   IMAGE_SIZE := 127744k
 endef
 TARGET_DEVICES += tplink_er605-v2
@@ -2814,7 +2994,6 @@ define Device/wavlink_ws-wn572hp3-4g
 	kmod-usb3 kmod-usb-net-rndis comgt-ncm -uboot-envtools
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
-
 
 define Device/wavlink_wl-wn573hx1
   $(Device/uimage-lzma-loader)

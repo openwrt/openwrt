@@ -42,7 +42,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  		return irq;
 --- a/drivers/crypto/starfive/jh7110-cryp.h
 +++ b/drivers/crypto/starfive/jh7110-cryp.h
-@@ -125,6 +125,15 @@ union starfive_pka_cacr {
+@@ -126,6 +126,15 @@ union starfive_pka_cacr {
  	};
  };
  
@@ -58,7 +58,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  struct starfive_rsa_key {
  	u8	*n;
  	u8	*e;
-@@ -183,7 +192,6 @@ struct starfive_cryp_dev {
+@@ -184,7 +193,6 @@ struct starfive_cryp_dev {
  	struct crypto_engine			*engine;
  	struct tasklet_struct			aes_done;
  	struct tasklet_struct			hash_done;
@@ -99,8 +99,8 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 +/* A * A * R mod N ==> A */
  #define CRYPTO_CMD_AARN			0x7
  
- #define STARFIVE_RSA_MAX_KEYSZ		256
-@@ -43,21 +37,10 @@
+ #define STARFIVE_RSA_RESET		0x2
+@@ -42,21 +36,10 @@
  static inline int starfive_pka_wait_done(struct starfive_cryp_ctx *ctx)
  {
  	struct starfive_cryp_dev *cryp = ctx->cryp;
@@ -125,7 +125,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  }
  
  static void starfive_rsa_free_key(struct starfive_rsa_key *key)
-@@ -114,10 +97,9 @@ static int starfive_rsa_montgomery_form(
+@@ -113,10 +96,9 @@ static int starfive_rsa_montgomery_form(
  		rctx->csr.pka.not_r2 = 1;
  		rctx->csr.pka.ie = 1;
  
@@ -137,7 +137,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  			return -ETIMEDOUT;
  
  		for (loop = 0; loop <= opsize; loop++)
-@@ -136,10 +118,9 @@ static int starfive_rsa_montgomery_form(
+@@ -135,10 +117,9 @@ static int starfive_rsa_montgomery_form(
  		rctx->csr.pka.start = 1;
  		rctx->csr.pka.ie = 1;
  
@@ -149,7 +149,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  			return -ETIMEDOUT;
  	} else {
  		rctx->csr.pka.v = 0;
-@@ -151,10 +132,9 @@ static int starfive_rsa_montgomery_form(
+@@ -150,10 +131,9 @@ static int starfive_rsa_montgomery_form(
  		rctx->csr.pka.pre_expf = 1;
  		rctx->csr.pka.ie = 1;
  
@@ -161,7 +161,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  			return -ETIMEDOUT;
  
  		for (loop = 0; loop <= count; loop++)
-@@ -172,10 +152,9 @@ static int starfive_rsa_montgomery_form(
+@@ -171,10 +151,9 @@ static int starfive_rsa_montgomery_form(
  		rctx->csr.pka.start = 1;
  		rctx->csr.pka.ie = 1;
  
@@ -173,7 +173,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  			return -ETIMEDOUT;
  	}
  
-@@ -226,11 +205,10 @@ static int starfive_rsa_cpu_start(struct
+@@ -225,11 +204,10 @@ static int starfive_rsa_cpu_start(struct
  		rctx->csr.pka.start = 1;
  		rctx->csr.pka.ie = 1;
  
@@ -186,7 +186,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  			goto rsa_err;
  
  		if (mlen) {
-@@ -242,10 +220,9 @@ static int starfive_rsa_cpu_start(struct
+@@ -241,10 +219,9 @@ static int starfive_rsa_cpu_start(struct
  			rctx->csr.pka.start = 1;
  			rctx->csr.pka.ie = 1;
  

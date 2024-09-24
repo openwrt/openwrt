@@ -22,7 +22,7 @@ define KernelPackage/kvm-x86
   KCONFIG:=\
 	  CONFIG_KVM \
 	  CONFIG_KVM_MMU_AUDIT=n \
-	  CONFIG_KVM_SMM=y@ge6.6 \
+	  CONFIG_KVM_SMM=y \
 	  CONFIG_VIRTUALIZATION=y
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm.ko
   AUTOLOAD:=$(call AutoProbe,kvm.ko)
@@ -85,9 +85,8 @@ define KernelPackage/vfio
 	CONFIG_VFIO_MDEV=n
   FILES:= \
 	$(LINUX_DIR)/drivers/vfio/vfio.ko \
-	$(LINUX_DIR)/drivers/vfio/vfio_virqfd.ko@lt6.2 \
 	$(LINUX_DIR)/drivers/vfio/vfio_iommu_type1.ko
-  AUTOLOAD:=$(call AutoProbe,vfio vfio_iommu_type1 +LINUX_6_1:vfio_virqfd)
+  AUTOLOAD:=$(call AutoProbe,vfio vfio_iommu_type1)
 endef
 
 define KernelPackage/vfio/description

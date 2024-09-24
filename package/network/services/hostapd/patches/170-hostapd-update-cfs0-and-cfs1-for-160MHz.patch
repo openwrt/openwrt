@@ -40,7 +40,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  #endif /* CONFIG_IEEE80211AC */
 --- a/src/ap/ieee802_11_ht.c
 +++ b/src/ap/ieee802_11_ht.c
-@@ -82,7 +82,9 @@ u8 * hostapd_eid_ht_capabilities(struct
+@@ -127,7 +127,9 @@ no_update:
  u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
  {
  	struct ieee80211_ht_operation *oper;
@@ -50,9 +50,9 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  	if (!hapd->iconf->ieee80211n || hapd->conf->disable_11n ||
  	    is_6ghz_op_class(hapd->iconf->op_class))
-@@ -103,6 +105,13 @@ u8 * hostapd_eid_ht_operation(struct hos
- 		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
- 			HT_INFO_HT_PARAM_STA_CHNL_WIDTH;
+@@ -143,6 +145,13 @@ u8 * hostapd_eid_ht_operation(struct hos
+ 	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
+ 	set_ht_param(hapd, oper);
  
 +	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
 +	chwidth = hostapd_get_oper_chwidth(hapd->iconf);
@@ -130,7 +130,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  #undef VHT_CAP_CHECK_MAX
 --- a/src/common/ieee802_11_defs.h
 +++ b/src/common/ieee802_11_defs.h
-@@ -1397,6 +1397,8 @@ struct ieee80211_ampe_ie {
+@@ -1401,6 +1401,8 @@ struct ieee80211_ampe_ie {
  #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
  #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
  #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))

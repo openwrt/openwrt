@@ -1,0 +1,45 @@
+Subject: [PATCH] clk: ralink: mtmips: fix clock plan for Ralink SoC RT3883
+Date: Tue,  6 Aug 2024 16:29:02 +0200
+Message-Id: <20240806142902.224164-1-sergio.paracuellos@gmail.com>
+
+Clock plan for Ralink SoC RT3883 needs an extra 'periph' clock to properly
+set some peripherals that has this clock as their parent. When this driver
+was mainlined we could not find any active users of this SoC so we cannot
+perform any real tests for it. Now, one user of a Belkin f9k1109 version 1
+device which uses this SoC appear and reported some issues in openWRT:
+- https://github.com/openwrt/openwrt/issues/16054
+The peripherals that are wrong are 'uart', 'i2c', 'i2s' and 'uartlite' which
+has a not defined 'periph' clock as parent. Hence, introduce it to have a
+properly working clock plan for this SoC.
+
+Fixes: 6f3b15586eef ("clk: ralink: add clock and reset driver for MTMIPS SoCs")
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+---
+ drivers/clk/ralink/clk-mtmips.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/ralink/clk-mtmips.c
++++ b/drivers/clk/ralink/clk-mtmips.c
+@@ -267,6 +267,11 @@ static struct mtmips_clk_fixed rt305x_fi
+ 	CLK_FIXED("xtal", NULL, 40000000)
+ };
+ 
++static struct mtmips_clk_fixed rt3383_fixed_clocks[] = {
++	CLK_FIXED("xtal", NULL, 40000000),
++	CLK_FIXED("periph", "xtal", 40000000)
++};
++
+ static struct mtmips_clk_fixed rt3352_fixed_clocks[] = {
+ 	CLK_FIXED("periph", "xtal", 40000000)
+ };
+@@ -779,8 +784,8 @@ static const struct mtmips_clk_data rt33
+ static const struct mtmips_clk_data rt3883_clk_data = {
+ 	.clk_base = rt3883_clks_base,
+ 	.num_clk_base = ARRAY_SIZE(rt3883_clks_base),
+-	.clk_fixed = rt305x_fixed_clocks,
+-	.num_clk_fixed = ARRAY_SIZE(rt305x_fixed_clocks),
++	.clk_fixed = rt3383_fixed_clocks,
++	.num_clk_fixed = ARRAY_SIZE(rt3383_fixed_clocks),
+ 	.clk_factor = NULL,
+ 	.num_clk_factor = 0,
+ 	.clk_periph = rt5350_pherip_clks,

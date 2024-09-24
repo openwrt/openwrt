@@ -36,7 +36,8 @@ preinit_set_mac_address() {
 		ip link set dev lan4 address "$lan_addr"
 		;;
 	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733a)
 		addr=$(mmc_get_mac_ascii mfginfo MFG_MAC)
 		ip link set dev wan address "$addr"
 		ip link set dev lan address "$(macaddr_add $addr 1)"

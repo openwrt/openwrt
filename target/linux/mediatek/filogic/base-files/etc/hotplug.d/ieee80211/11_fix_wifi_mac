@@ -149,7 +149,8 @@ case "$board" in
 		[ "$PHYNBR" = "2" ] && macaddr_add $addr 4 > /sys${DEVPATH}/macaddress
 		;;
 	smartrg,sdg-8733|\
-	smartrg,sdg-8634)
+	smartrg,sdg-8733a|\
+	smartrg,sdg-8734)
 		addr=$(mmc_get_mac_ascii mfginfo MFG_MAC)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 4 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr a > /sys${DEVPATH}/macaddress
