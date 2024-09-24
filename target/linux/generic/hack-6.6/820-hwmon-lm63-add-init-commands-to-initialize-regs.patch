@@ -1,0 +1,80 @@
+From 7c3953b2cd382911c21eeb9de94529d8a27f8a5e Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Tue, 24 Sep 2024 17:36:42 -0300
+Subject: [PATCH] hwmon: (lm63) add init-commands to initialize regs
+
+Normally, the lm63 is initialized by the BIOS or equivalent. However,
+in some cases like embeded devices, the OS is completely responsible for
+setting the device.
+
+The new init-commands property is an array of registers/values (reg1,
+val1, reg2, val2...) that, if present, are applied before the old
+initalization procedure.
+
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/hwmon/lm63.c | 46 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+--- a/drivers/hwmon/lm63.c
++++ b/drivers/hwmon/lm63.c
+@@ -1007,6 +1007,50 @@ static int lm63_detect(struct i2c_client
+ 	return 0;
+ }
+ 
++/* When the BIOS (or equivalent) does not initialize anything, "init-command"
++ * property can specify an array of [reg1 value1 reg2 value2...] up to 32
++ * elements (or 16 commands)
++ */
++static void lm63_load_init_command(struct lm63_data *data)
++{
++	struct i2c_client *client = data->client;
++	struct device *dev = &client->dev;
++	u8 init_commands[32];
++	u8 reg, value;
++	int count, err, i;
++
++	count = of_property_count_u8_elems(dev->of_node, "init-commands");
++	if (count <= 0) {
++		dev_dbg(dev, "init-commands property not found\n");
++		return;
++	}
++
++	if (count > ARRAY_SIZE(init_commands)) {
++		dev_err(dev, "init-commands larger than %ld bytes",
++			     ARRAY_SIZE(init_commands));
++		return;
++	}
++	if (count % 2) {
++		dev_err(dev,
++			"init-commands should have even number of elements");
++		return;
++	}
++
++	err = of_property_read_u8_array(dev->of_node, "init-commands",
++					init_commands, count);
++	if (err) {
++		dev_dbg(dev, "failed to load init-commands property\n");
++		return;
++	}
++
++	for (i=0; i<count; i+=2) {
++		reg = init_commands[i];
++		value = init_commands[i+1];
++		dev_dbg(dev, "Writing %02x to %02x\n", reg, value);
++		i2c_smbus_write_byte_data(client, reg, value);
++	}
++}
++
+ /*
+  * Ideally we shouldn't have to initialize anything, since the BIOS
+  * should have taken care of everything
+@@ -1017,6 +1061,8 @@ static void lm63_init_client(struct lm63
+ 	struct device *dev = &client->dev;
+ 	u8 convrate;
+ 
++	lm63_load_init_command(data);
++
+ 	data->config = i2c_smbus_read_byte_data(client, LM63_REG_CONFIG1);
+ 	data->config_fan = i2c_smbus_read_byte_data(client,
+ 						    LM63_REG_CONFIG_FAN);
