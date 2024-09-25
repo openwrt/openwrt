@@ -578,7 +578,7 @@ mac80211_hostapd_setup_base() {
 		append base_cfg "he_mu_edca_ac_vo_timer=3" "$N"
 	fi
 
-	set_default tx_burst 2
+	set_default tx_burst 2.0
 
 	# 802.11be
 	enable_be=0
