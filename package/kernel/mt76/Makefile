@@ -340,7 +340,7 @@ define KernelPackage/mt7925-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7925 wireless driver common code
   HIDDEN:=1
-  DEPENDS+=+kmod-mt792x-common +@DRIVER_11AX_SUPPORT +kmod-hwmon-core
+  DEPENDS+=+kmod-mt792x-common +@DRIVER_11AX_SUPPORT +kmod-hwmon-core +@DRIVER_11BE_SUPPORT
   FILES:= $(PKG_BUILD_DIR)/mt7925/mt7925-common.ko
 endef
 
