@@ -48,6 +48,8 @@ PKG_GNULIB_MODS = \
 	strchrnul \
 	tsearch
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/.libs/$(PKG_GNULIB_BASE).a
