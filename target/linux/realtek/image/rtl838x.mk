@@ -75,6 +75,15 @@ define Device/d-link_dgs-1210-28mp-f
 endef
 TARGET_DEVICES += d-link_dgs-1210-28mp-f
 
+define Device/d-link_dgs-1210-28p-f
+  $(Device/d-link_dgs-1210)
+  SOC := rtl8382
+  DEVICE_MODEL := DGS-1210-28P
+  DEVICE_VARIANT := F
+  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
+endef
+TARGET_DEVICES += d-link_dgs-1210-28p-f
+
 # The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
 # Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
 define Device/engenius_ews2910p
