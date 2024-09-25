@@ -149,7 +149,6 @@ static int ubnt_ledbar_init_led(struct device_node *np, struct ubnt_ledbar *ledb
 				struct led_classdev *led_cdev)
 {
 	struct led_init_data init_data = {};
-	int ret;
 
 	if (!np)
 		return 0;
@@ -158,12 +157,7 @@ static int ubnt_ledbar_init_led(struct device_node *np, struct ubnt_ledbar *ledb
 
 	led_cdev->max_brightness = UBNT_LEDBAR_MAX_BRIGHTNESS;
 
-	ret = devm_led_classdev_register_ext(&ledbar->client->dev, led_cdev,
-					     &init_data);
-	if (ret)
-		dev_err(&ledbar->client->dev, "led register err: %d\n", ret);
-
-	return ret;
+	return devm_led_classdev_register_ext(&ledbar->client->dev, led_cdev, &init_data);
 }
 
 static int ubnt_ledbar_probe(struct i2c_client *client)
