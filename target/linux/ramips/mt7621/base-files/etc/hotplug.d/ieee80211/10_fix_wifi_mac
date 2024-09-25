@@ -184,6 +184,11 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary rom_file 0xf100)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add "$hw_mac_addr" 2 > "/sys${DEVPATH}/macaddress"
 		;;
+	viettel,vap-120wd)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \
+				> /sys${DEVPATH}/macaddress
+		;;
 	yuncore,ax820|\
 	yuncore,g720)
 		[ "$PHYNBR" = "1" ] && \

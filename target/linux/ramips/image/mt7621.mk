@@ -2547,6 +2547,20 @@ define Device/unielec_u7621-06-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
 
+define Device/viettel_vap-120wd
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 121600k
+  DEVICE_VENDOR := Viettel
+  DEVICE_MODEL := VAP-120WD
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7615-firmware -uboot-envtools
+endef
+TARGET_DEVICES += viettel_vap-120wd
+
 define Device/wavlink_wl-wn531a6
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
