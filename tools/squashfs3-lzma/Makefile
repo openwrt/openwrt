@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=squashfs3-lzma
 PKG_CPE_ID:=cpe:/a:phillip_lougher:squashfs
-PKG_VERSION:=3.0
+PKG_VERSION:=3.4
 
 PKG_SOURCE:=squashfs$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/squashfs
-PKG_HASH:=39dbda43cf118536deb746c7730b468702d514a19f4cfab73b710e32908ddf20
+PKG_HASH:=9ea1a9b3bd4f387ca11b5e96f00f8ae996fb81c4c7ad41f7c7f359917628a339
 
 # Tar directory is squashfs3.0 that conflict with any pattern
 # currently using for host tools. (PKG_NAME-PKG_VERSION)
