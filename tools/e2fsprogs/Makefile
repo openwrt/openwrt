@@ -30,7 +30,8 @@ HOST_CONFIGURE_ARGS += \
 	--disable-tls \
 	--disable-nls \
 	--enable-threads=pth \
-	--disable-fuse2fs
+	--disable-fuse2fs \
+	--with-crond-dir=no
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
