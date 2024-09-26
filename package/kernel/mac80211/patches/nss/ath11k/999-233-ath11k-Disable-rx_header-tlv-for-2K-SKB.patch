@@ -18,14 +18,14 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  	ar->debug.rx_filter = tlv_filter.rx_filter;
 +	tlv_filter.offset_valid = false;
  
- 	for (i = 0; i < ab->hw_params.num_rxmda_per_pdev; i++) {
+ 	for (i = 0; i < ab->hw_params.num_rxdma_per_pdev; i++) {
  		ring_id = ar->dp.rx_mon_status_refill_ring[i].refill_buf_ring.ring_id;
 @@ -1229,6 +1230,7 @@ static ssize_t ath11k_write_pktlog_filte
  	}
  
  	/* Clear rx filter set for monitor mode and rx status */
 +	tlv_filter.offset_valid = false;
- 	for (i = 0; i < ab->hw_params.num_rxmda_per_pdev; i++) {
+ 	for (i = 0; i < ab->hw_params.num_rxdma_per_pdev; i++) {
  		ring_id = ar->dp.rx_mon_status_refill_ring[i].refill_buf_ring.ring_id;
  		ret = ath11k_dp_tx_htt_rx_filter_setup(ar->ab, ring_id, ar->dp.mac_id,
 --- a/drivers/net/wireless/ath/ath11k/dp.h
@@ -933,12 +933,12 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  extern const struct ath11k_hw_ops ipq8074_ops;
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6438,6 +6438,7 @@ static int ath11k_mac_config_mon_status_
+@@ -6535,6 +6535,7 @@ static int ath11k_mac_config_mon_status_
  			tlv_filter.rx_filter = ath11k_debugfs_rx_filter(ar);
  	}
  
 +	tlv_filter.offset_valid = false;
- 	for (i = 0; i < ab->hw_params.num_rxmda_per_pdev; i++) {
+ 	for (i = 0; i < ab->hw_params.num_rxdma_per_pdev; i++) {
  		ring_id = ar->dp.rx_mon_status_refill_ring[i].refill_buf_ring.ring_id;
  		ret = ath11k_dp_tx_htt_rx_filter_setup(ar->ab, ring_id,
 --- a/drivers/net/wireless/ath/ath11k/rx_desc.h

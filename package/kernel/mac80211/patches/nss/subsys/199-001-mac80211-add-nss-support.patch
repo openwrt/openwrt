@@ -48,23 +48,23 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  /*
   * The maximum number of IPv4 addresses listed for ARP filtering. If the number
   * of addresses for an interface increase beyond this value, hardware ARP
-@@ -703,6 +717,7 @@ struct ieee80211_fils_discovery {
-  *	beamformee
-  * @eht_mu_beamformer: in AP-mode, does this BSS enable operation as an EHT MU
-  *	beamformer
+@@ -740,6 +754,7 @@ struct ieee80211_parsed_tpe {
+  * @eht_80mhz_full_bw_ul_mumimo: in AP-mode, does this BSS support the
+  *	reception of an EHT TB PPDU on an RU that spans the entire PPDU
+  *	bandwidth
 + * @nss_ap_isolate: Used for notifying the NSS host about AP isolate feature
   */
  struct ieee80211_bss_conf {
  	struct ieee80211_vif *vif;
-@@ -795,6 +810,7 @@ struct ieee80211_bss_conf {
- 	bool eht_su_beamformer;
+@@ -834,6 +849,7 @@ struct ieee80211_bss_conf {
  	bool eht_su_beamformee;
  	bool eht_mu_beamformer;
+ 	bool eht_80mhz_full_bw_ul_mumimo;
 +	bool nss_ap_isolate;
  };
  
  /**
-@@ -1445,7 +1461,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1484,7 +1500,7 @@ ieee80211_tx_info_clear_status(struct ie
   * @RX_FLAG_AMPDU_EOF_BIT_KNOWN: The EOF value is known
   * @RX_FLAG_RADIOTAP_HE: HE radiotap data is present
   *	(&struct ieee80211_radiotap_he, mac80211 will fill in
@@ -108,15 +108,15 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2847,6 +2875,7 @@ enum ieee80211_hw_flags {
- 	IEEE80211_HW_MLO_MCAST_MULTI_LINK_TX,
+@@ -2884,6 +2912,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_DISALLOW_PUNCTURING,
+ 	IEEE80211_HW_DISALLOW_PUNCTURING_5GHZ,
  	IEEE80211_HW_HANDLES_QUIET_CSA,
 +	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -3860,6 +3889,10 @@ struct ieee80211_prep_tx_info {
+@@ -3899,6 +3928,10 @@ struct ieee80211_prep_tx_info {
   *	non-MLO connections.
   *	The callback can sleep.
   *
@@ -150,8 +150,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
 @@ -508,6 +508,7 @@ static const char *hw_flag_names[] = {
- 	FLAG(MLO_MCAST_MULTI_LINK_TX),
  	FLAG(DISALLOW_PUNCTURING),
+ 	FLAG(DISALLOW_PUNCTURING_5GHZ),
  	FLAG(HANDLES_QUIET_CSA),
 +	FLAG(SUPPORTS_NSS_OFFLOAD),
  #undef FLAG

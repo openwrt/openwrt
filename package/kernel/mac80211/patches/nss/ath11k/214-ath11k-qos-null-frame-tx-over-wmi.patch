@@ -378,13 +378,13 @@ Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
 +	u32 tx_params_valid;
 +} __packed;
 +
- #define WMI_MAX_MEM_REQS 32
- 
  #define MAX_RADIOS 3
-@@ -6422,6 +6451,8 @@ int ath11k_wmi_cmd_send(struct ath11k_pd
- struct sk_buff *ath11k_wmi_alloc_skb(struct ath11k_wmi_base *wmi_sc, u32 len);
- int ath11k_wmi_mgmt_send(struct ath11k *ar, u32 vdev_id, u32 buf_id,
+ 
+ #define WMI_SERVICE_READY_TIMEOUT_HZ (5 * HZ)
+@@ -6428,6 +6457,8 @@ int ath11k_wmi_mgmt_send(struct ath11k *
  			 struct sk_buff *frame);
+ int ath11k_wmi_p2p_go_bcn_ie(struct ath11k *ar, u32 vdev_id,
+ 			     const u8 *p2p_ie);
 +int ath11k_wmi_qos_null_send(struct ath11k *ar, u32 vdev_id, u32 buf_id,
 +			     struct sk_buff *frame);
  int ath11k_wmi_bcn_tmpl(struct ath11k *ar, u32 vdev_id,

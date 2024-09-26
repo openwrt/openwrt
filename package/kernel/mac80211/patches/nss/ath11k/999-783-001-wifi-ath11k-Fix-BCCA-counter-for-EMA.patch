@@ -20,7 +20,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -1594,27 +1594,6 @@ static int ath11k_mac_setup_bcn_tmpl(str
+@@ -1681,27 +1681,6 @@ static int ath11k_mac_setup_bcn_tmpl(str
  	return ath11k_mac_setup_bcn_tmpl_mbssid(arvif);
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 -	if (vif->bss_conf.color_change_active &&
 -	    ieee80211_beacon_cntdwn_is_complete(vif, 0)) {
 -		arvif->bcca_zero_sent = true;
--		ieee80211_color_change_finish(vif);
+-		ieee80211_color_change_finish(vif, 0);
 -		return;
 -	}
 -
@@ -107,7 +107,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
 +				ieee80211_beacon_update_cntdwn(arvif->vif, 0);
 +			} else {
 +				if (bss_conf->color_change_active)
-+					ieee80211_color_change_finish(arvif->vif);
++					ieee80211_color_change_finish(arvif->vif, 0);
 +			}
 +		}
  	}

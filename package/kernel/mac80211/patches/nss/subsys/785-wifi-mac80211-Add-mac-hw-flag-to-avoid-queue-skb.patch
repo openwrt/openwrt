@@ -70,7 +70,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
 +	if (ieee80211_hw_check(&local->hw, HAS_TX_QUEUE))
 +		return;
 +
- 	kfree(local->cvars);
+ 	kvfree(local->cvars);
  	local->cvars = NULL;
  
 @@ -1664,7 +1670,8 @@ static bool ieee80211_queue_skb(struct i
