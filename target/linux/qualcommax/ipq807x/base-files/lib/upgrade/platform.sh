@@ -183,14 +183,17 @@ platform_do_upgrade() {
 		fw_setenv auto_recovery yes
 		nand_do_upgrade "$1"
 		;;
-	prpl,haze|\
-	qnap,301w)
+	prpl,haze)
 		kernelname="0:HLOS"
 		rootfsname="rootfs"
 		mmc_do_upgrade "$1"
 		;;
-	tplink,eap660hd-v1)
-		tplink_do_upgrade "$1"
+	qnap,301w|\
+	spectrum,sax1v1k)
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
 		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
@@ -211,11 +214,8 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
-	spectrum,sax1v1k)
-		CI_KERNPART="0:HLOS"
-		CI_ROOTPART="rootfs"
-		CI_DATAPART="rootfs_data"
-		emmc_do_upgrade "$1"
+	tplink,eap660hd-v1)
+		tplink_do_upgrade "$1"
 		;;
 	yuncore,ax880)
 		active="$(fw_printenv -n active)"
@@ -267,6 +267,7 @@ platform_do_upgrade() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	qnap,301w|\
 	spectrum,sax1v1k|\
 	zyxel,nbg7815)
 		emmc_copy_config
