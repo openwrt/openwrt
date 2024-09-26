@@ -184,9 +184,9 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze)
-		kernelname="0:HLOS"
-		rootfsname="rootfs"
-		mmc_do_upgrade "$1"
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		emmc_do_upgrade "$1"
 		;;
 	qnap,301w|\
 	spectrum,sax1v1k)
@@ -267,6 +267,7 @@ platform_do_upgrade() {
 
 platform_copy_config() {
 	case "$(board_name)" in
+	prpl,haze|\
 	qnap,301w|\
 	spectrum,sax1v1k|\
 	zyxel,nbg7815)

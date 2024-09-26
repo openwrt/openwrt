@@ -308,7 +308,7 @@ define Device/prpl_haze
 	DEVICE_DTS_CONFIG := config@hk09
 	SOC := ipq8072
 	DEVICE_PACKAGES := ath11k-firmware-qcn9074 ipq-wifi-prpl_haze kmod-ath11k-pci \
-		mkf2fs f2fsck kmod-fs-f2fs kmod-leds-lp5562
+		kmod-fs-f2fs f2fs-tools kmod-leds-lp5562
 endef
 TARGET_DEVICES += prpl_haze
 
