@@ -292,8 +292,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
 -	for (i = 0; i < ab->num_radios; i++) {
 +	for (i = 0; !nss_offload && i < ab->num_radios; i++) {
- 		for (j = 0; j < ab->hw_params.num_rxmda_per_pdev; j++) {
- 			int id = i * ab->hw_params.num_rxmda_per_pdev + j;
+ 		for (j = 0; j < ab->hw_params.num_rxdma_per_pdev; j++) {
+ 			int id = i * ab->hw_params.num_rxdma_per_pdev + j;
  
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
@@ -357,16 +357,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	if (ar->ab->hw_params.rxdma1_enable) {
  		rx_ring = &dp->rxdma_mon_buf_ring;
-@@ -2036,7 +2039,7 @@ static void ath11k_dp_rx_h_csum_offload(
- 			  CHECKSUM_NONE : CHECKSUM_UNNECESSARY;
- }
- 
--static int ath11k_dp_rx_crypto_mic_len(struct ath11k *ar,
-+int ath11k_dp_rx_crypto_mic_len(struct ath11k *ar,
- 				       enum hal_encrypt_type enctype)
- {
- 	switch (enctype) {
-@@ -2063,7 +2066,7 @@ static int ath11k_dp_rx_crypto_mic_len(s
+@@ -2062,7 +2065,7 @@ int ath11k_dp_rx_crypto_mic_len(struct a
  	return 0;
  }
  
@@ -462,12 +453,10 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  				ath11k_dp_rx_update_peer_mu_stats(ar, ppdu_info);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.h
-@@ -145,4 +145,18 @@ int ath11k_peer_rx_frag_setup(struct ath
- int ath11k_dp_rx_pktlog_start(struct ath11k_base *ab);
- int ath11k_dp_rx_pktlog_stop(struct ath11k_base *ab, bool stop_timer);
+@@ -148,4 +148,16 @@ int ath11k_dp_rx_pktlog_stop(struct ath1
  
-+int ath11k_dp_rx_crypto_mic_len(struct ath11k *ar,
-+				       enum hal_encrypt_type enctype);
+ int ath11k_dp_rx_crypto_mic_len(struct ath11k *ar, enum hal_encrypt_type enctype);
+ 
 +int ath11k_dp_rx_crypto_param_len(struct ath11k *ar,
 +					 enum hal_encrypt_type enctype);
 +int ath11k_dp_rx_crypto_icv_len(struct ath11k *ar,
@@ -740,16 +729,16 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	/* Restart the internal monitor vdev on new channel */
-@@ -8982,6 +9087,8 @@ static void ath11k_mac_op_sta_statistics
- 	sinfo->signal_avg = ewma_avg_rssi_read(&arsta->avg_rssi) +
- 		ATH11K_DEFAULT_NOISE_FLOOR;
+@@ -9014,6 +9119,8 @@ static void ath11k_mac_op_sta_statistics
+ 		sinfo->signal_avg += ATH11K_DEFAULT_NOISE_FLOOR;
+ 
  	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
 +
 +	ath11k_nss_update_sta_stats(sinfo, sta, arsta);
  }
  
  #if IS_ENABLED(CONFIG_IPV6)
-@@ -9674,6 +9781,7 @@ static const struct ieee80211_ops ath11k
+@@ -9711,6 +9818,7 @@ static const struct ieee80211_ops ath11k
  	.update_vif_offload		= ath11k_mac_op_update_vif_offload,
  	.config                         = ath11k_mac_op_config,
  	.bss_info_changed               = ath11k_mac_op_bss_info_changed,
@@ -1195,8 +1184,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_hif_write32(ab, reo_base + HAL_REO1_DEST_RING_CTRL_IX_3,
 --- a/drivers/net/wireless/ath/ath11k/pcic.c
 +++ b/drivers/net/wireless/ath/ath11k/pcic.c
-@@ -582,6 +582,12 @@ static int ath11k_pcic_ext_irq_config(st
- 		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
+@@ -589,6 +589,12 @@ static int ath11k_pcic_ext_irq_config(st
+ 		netif_napi_add(irq_grp->napi_ndev, &irq_grp->napi,
  			       ath11k_pcic_ext_grp_napi_poll);
  
 +		/* tcl, reo, rx_err, wbm release, rxdma rings are offloaded to nss. */

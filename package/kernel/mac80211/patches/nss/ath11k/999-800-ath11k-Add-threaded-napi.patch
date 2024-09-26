@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/ahb.c
 +++ b/drivers/net/wireless/ath/ath11k/ahb.c
-@@ -495,8 +495,7 @@ static int ath11k_ahb_ext_grp_napi_poll(
+@@ -496,8 +496,7 @@ static int ath11k_ahb_ext_grp_napi_poll(
  	int work_done;
  
  	work_done = ath11k_dp_service_srng(ab, irq_grp, budget);
@@ -10,7 +10,7 @@
  		ath11k_ahb_ext_grp_enable(irq_grp);
  	}
  
-@@ -527,6 +526,7 @@ static int ath11k_ahb_config_ext_irq(str
+@@ -528,6 +527,7 @@ static int ath11k_ahb_config_ext_irq(str
  	int irq;
  	int ret;
  	bool nss_offload;
@@ -18,20 +18,22 @@
  
  	/* TCL Completion, REO Dest, ERR, Exception and h2rxdma rings are offloaded
  	 * to nss when its enabled, hence don't enable these interrupts
-@@ -540,8 +540,12 @@ static int ath11k_ahb_config_ext_irq(str
- 		irq_grp->ab = ab;
- 		irq_grp->grp_id = i;
- 		init_dummy_netdev(&irq_grp->napi_ndev);
-+		snprintf(irq_grp->napi_ndev.name, sizeof(irq_grp->napi_ndev.name), "%s%d:%d",
+@@ -545,9 +545,14 @@ static int ath11k_ahb_config_ext_irq(str
+ 		if (!irq_grp->napi_ndev)
+ 			return -ENOMEM;
+ 
++		snprintf(irq_grp->napi_ndev->name, sizeof(irq_grp->napi_ndev->name), "%s%d:%d",
 +			 "ath11k_ahb", devidx, i);
 +
- 		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
+ 		netif_napi_add(irq_grp->napi_ndev, &irq_grp->napi,
  			       ath11k_ahb_ext_grp_napi_poll);
-+		dev_set_threaded(&irq_grp->napi_ndev, true);
  
++		dev_set_threaded(irq_grp->napi_ndev, true);
++
  		for (j = 0; j < ATH11K_EXT_IRQ_NUM_MAX; j++) {
  			if (!nss_offload && ab->hw_params.ring_mask->tx[i] & BIT(j)) {
-@@ -605,6 +609,8 @@ static int ath11k_ahb_config_ext_irq(str
+ 				irq_grp->irqs[num_irq++] =
+@@ -610,6 +615,8 @@ static int ath11k_ahb_config_ext_irq(str
  		}
  	}
  
@@ -42,7 +44,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/pcic.c
 +++ b/drivers/net/wireless/ath/ath11k/pcic.c
-@@ -516,8 +516,7 @@ static int ath11k_pcic_ext_grp_napi_poll
+@@ -517,8 +517,7 @@ static int ath11k_pcic_ext_grp_napi_poll
  	int i;
  
  	work_done = ath11k_dp_service_srng(ab, irq_grp, budget);
@@ -52,33 +54,35 @@
  		for (i = 0; i < irq_grp->num_irq; i++)
  			enable_irq(irq_grp->ab->irq_num[irq_grp->irqs[i]]);
  	}
-@@ -561,6 +560,7 @@ static int ath11k_pcic_ext_irq_config(st
- 	int i, j, ret, num_vectors = 0;
+@@ -563,6 +562,7 @@ static int ath11k_pcic_ext_irq_config(st
  	u32 user_base_data = 0, base_vector = 0;
+ 	struct ath11k_ext_irq_grp *irq_grp;
  	unsigned long irq_flags;
 +	static int devidx = 0;
  
  	ret = ath11k_pcic_get_user_msi_assignment(ab, "DP", &num_vectors,
  						  &user_base_data,
-@@ -579,8 +579,12 @@ static int ath11k_pcic_ext_irq_config(st
- 		irq_grp->ab = ab;
- 		irq_grp->grp_id = i;
- 		init_dummy_netdev(&irq_grp->napi_ndev);
-+		snprintf(irq_grp->napi_ndev.name, sizeof(irq_grp->napi_ndev.name), "%s%d:%d",
+@@ -586,9 +586,14 @@ static int ath11k_pcic_ext_irq_config(st
+ 			goto fail_allocate;
+ 		}
+ 
++		snprintf(irq_grp->napi_ndev->name, sizeof(irq_grp->napi_ndev->name), "%s%d:%d",
 +			 "ath11k_pci", devidx, i);
 +
- 		netif_napi_add(&irq_grp->napi_ndev, &irq_grp->napi,
+ 		netif_napi_add(irq_grp->napi_ndev, &irq_grp->napi,
  			       ath11k_pcic_ext_grp_napi_poll);
-+		dev_set_threaded(&irq_grp->napi_ndev, true);
  
++		dev_set_threaded(irq_grp->napi_ndev, true);
++
  		/* tcl, reo, rx_err, wbm release, rxdma rings are offloaded to nss. */
  		if (ab->nss.enabled &&
-@@ -627,6 +631,8 @@ static int ath11k_pcic_ext_irq_config(st
+ 		    !(ab->hw_params.ring_mask->reo_status[i] ||
+@@ -640,6 +645,8 @@ static int ath11k_pcic_ext_irq_config(st
  		ath11k_pcic_ext_grp_disable(irq_grp);
  	}
  
 +	devidx++;
 +
  	return 0;
- }
- 
+ fail_irq:
+ 	/* i ->napi_ndev was properly allocated. Free it also */

@@ -263,14 +263,14 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	INIT_DELAYED_WORK(&arvif->connection_loss_work,
  			  ath11k_mac_vif_sta_connection_loss_work);
  
-@@ -6689,6 +6839,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -6788,6 +6938,7 @@ static int ath11k_mac_op_add_interface(s
  		fallthrough;
  	case NL80211_IFTYPE_AP:
  		arvif->vdev_type = WMI_VDEV_TYPE_AP;
 +		INIT_LIST_HEAD(&arvif->ap_vlan_arvifs);
+ 		if (vif->p2p)
+ 			arvif->vdev_subtype = WMI_VDEV_SUBTYPE_P2P_GO;
  		break;
- 	case NL80211_IFTYPE_MONITOR:
- 		arvif->vdev_type = WMI_VDEV_TYPE_MONITOR;
 @@ -6917,13 +7068,30 @@ static void ath11k_mac_op_remove_interfa
  	struct ath11k *ar = hw->priv;
  	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);

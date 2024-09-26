@@ -776,16 +776,16 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  #endif /* _PEER_H_ */
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -156,6 +156,8 @@ static const struct wmi_tlv_policy wmi_t
- 		.min_len = sizeof(struct wmi_per_chain_rssi_stats) },
- 	[WMI_TAG_TWT_ADD_DIALOG_COMPLETE_EVENT] = {
- 		.min_len = sizeof(struct wmi_twt_add_dialog_event) },
+@@ -161,6 +161,8 @@ static const struct wmi_tlv_policy wmi_t
+ 		.min_len = sizeof(struct ath11k_wmi_p2p_noa_info) },
+ 	[WMI_TAG_P2P_NOA_EVENT] = {
+ 		.min_len = sizeof(struct wmi_p2p_noa_event) },
 +	[WMI_TAG_WDS_ADDR_EVENT] = {
 +		.min_len = sizeof(struct wmi_wds_addr_event) },
  };
  
  #define PRIMAP(_hw_mode_) \
-@@ -1126,6 +1128,51 @@ int ath11k_wmi_send_peer_delete_cmd(stru
+@@ -1131,6 +1133,51 @@ int ath11k_wmi_send_peer_delete_cmd(stru
  	return ret;
  }
  
@@ -905,9 +905,9 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -8908,6 +9002,9 @@ static void ath11k_wmi_tlv_op_rx(struct
- 	case WMI_GTK_OFFLOAD_STATUS_EVENTID:
- 		ath11k_wmi_gtk_offload_status_event(ab, skb);
+@@ -9008,6 +9102,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+ 	case WMI_P2P_NOA_EVENTID:
+ 		ath11k_wmi_p2p_noa_event(ab, skb);
  		break;
 +	case WMI_WDS_PEER_EVENTID:
 +		ath11k_wmi_wds_peer_event(ab, skb);

@@ -4,7 +4,7 @@
  
  	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot hif start\n");
  
-+	dev_set_threaded(&ar->napi_dev, true);
++	dev_set_threaded(ar->napi_dev, true);
  	ath10k_core_napi_enable(ar);
  
  	ath10k_pci_irq_enable(ar);
@@ -20,22 +20,23 @@
  	/* Sleep 20 ms before HIF interrupts are disabled.
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -3722,6 +3722,9 @@ struct ath10k *ath10k_core_create(size_t
- 		  ath10k_core_set_coverage_class_work);
+@@ -3707,6 +3707,10 @@ struct ath10k *ath10k_core_create(size_t
+ 	if (!ar->napi_dev)
+ 		goto err_free_tx_complete;
  
- 	init_dummy_netdev(&ar->napi_dev);
-+	snprintf(ar->napi_dev.name, sizeof(ar->napi_dev.name), "ath10k_%s",
++	snprintf(ar->napi_dev->name, sizeof(ar->napi_dev->name), "ath10k_%s",
 +		 wiphy_name(ar->hw->wiphy));
-+	dev_set_threaded(&ar->napi_dev, true);
- 
++	dev_set_threaded(ar->napi_dev, true);
++
  	ret = ath10k_coredump_create(ar);
  	if (ret)
+ 		goto err_free_netdev;
 --- a/drivers/net/wireless/ath/ath10k/ahb.c
 +++ b/drivers/net/wireless/ath/ath10k/ahb.c
 @@ -622,6 +622,7 @@ static int ath10k_ahb_hif_start(struct a
  	ath10k_core_napi_enable(ar);
  	ath10k_ce_enable_interrupts(ar);
- 	ath10k_pci_enable_legacy_irq(ar);
+ 	ath10k_pci_enable_intx_irq(ar);
 +	dev_set_threaded(&ar->napi_dev, true);
  
  	ath10k_pci_rx_post(ar);
