@@ -189,19 +189,11 @@ ERR_UNREG_LEDS:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
 static void ws2812b_remove(struct spi_device *spi)
-#else
-static int ws2812b_remove(struct spi_device *spi)
-#endif
 {
 	struct ws2812b_priv *priv = spi_get_drvdata(spi);
 
 	mutex_destroy(&priv->mutex);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
-	return 0;
-#endif
 }
 
 static const struct spi_device_id ws2812b_spi_ids[] = {
