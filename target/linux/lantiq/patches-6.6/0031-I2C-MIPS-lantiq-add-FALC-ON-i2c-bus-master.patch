@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_MESON)		+= i2c-meson.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.c
-@@ -0,0 +1,747 @@
+@@ -0,0 +1,746 @@
 +
 +/*
 + * Lantiq I2C bus adapter
@@ -625,14 +625,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct device_node *node = pdev->dev.of_node;
 +	struct ltq_i2c *priv;
 +	struct i2c_adapter *adap;
-+	struct resource *mmres, irqres[4];
++	struct resource irqres[4];
 +	int ret = 0;
 +
 +	dev_dbg(&pdev->dev, "probing\n");
 +
-+	mmres = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	ret = of_irq_to_resource_table(node, irqres, 4);
-+	if (!mmres || (ret != 4)) {
++	if (ret != 4) {
 +		dev_err(&pdev->dev, "no resources\n");
 +		return -ENODEV;
 +	}
@@ -661,7 +660,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	init_completion(&priv->cmd_complete);
 +	mutex_init(&priv->mutex);
 +
-+	priv->membase = devm_ioremap_resource(&pdev->dev, mmres);
++	priv->membase = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(priv->membase))
 +		return PTR_ERR(priv->membase);
 +

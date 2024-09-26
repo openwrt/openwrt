@@ -28,7 +28,7 @@ Subject: SoC: add qualcomm syscon
  	depends on ARCH_QCOM || COMPILE_TEST
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_tcsr.c
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,62 @@
 +/*
 + * Copyright (c) 2014, The Linux foundation. All rights reserved.
 + *
@@ -54,13 +54,11 @@ Subject: SoC: add qualcomm syscon
 +
 +static int tcsr_probe(struct platform_device *pdev)
 +{
-+	struct resource *res;
 +	const struct device_node *node = pdev->dev.of_node;
 +	void __iomem *base;
 +	u32 val;
 +
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	base = devm_ioremap_resource(&pdev->dev, res);
++	base = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(base))
 +		return PTR_ERR(base);
 +

@@ -1387,7 +1387,6 @@ static const struct switch_dev_ops esw_ops = {
 
 static int esw_probe(struct platform_device *pdev)
 {
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	struct device_node *np = pdev->dev.of_node;
 	const __be32 *port_map, *port_disable, *reg_init;
 	struct rt305x_esw *esw;
@@ -1398,7 +1397,7 @@ static int esw_probe(struct platform_device *pdev)
 
 	esw->dev = &pdev->dev;
 	esw->irq = irq_of_parse_and_map(np, 0);
-	esw->base = devm_ioremap_resource(&pdev->dev, res);
+	esw->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(esw->base))
 		return PTR_ERR(esw->base);
 

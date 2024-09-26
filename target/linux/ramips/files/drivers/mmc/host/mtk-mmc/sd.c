@@ -2204,7 +2204,6 @@ static void msdc_init_gpd_bd(struct msdc_host *host, struct msdc_dma *dma)
 
 static int msdc_drv_probe(struct platform_device *pdev)
 {
-	struct resource *res;
 	__iomem void *base;
 	struct mmc_host *mmc;
 	struct msdc_host *host;
@@ -2227,8 +2226,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	if (!mmc)
 		return -ENOMEM;
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	base = devm_ioremap_resource(&pdev->dev, res);
+	base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(base)) {
 		ret = PTR_ERR(base);
 		goto host_free;

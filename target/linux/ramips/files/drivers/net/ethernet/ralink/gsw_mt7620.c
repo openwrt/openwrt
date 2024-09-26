@@ -259,14 +259,13 @@ int mtk_gsw_init(struct fe_priv *priv)
 
 static int mt7620_gsw_probe(struct platform_device *pdev)
 {
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	struct mt7620_gsw *gsw;
 
 	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
 	if (!gsw)
 		return -ENOMEM;
 
-	gsw->base = devm_ioremap_resource(&pdev->dev, res);
+	gsw->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(gsw->base))
 		return PTR_ERR(gsw->base);
 

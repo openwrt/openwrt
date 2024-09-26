@@ -336,7 +336,6 @@ struct i2c_adapter_quirks rtl9300_i2c_quirks = {
 
 static int rtl9300_i2c_probe(struct platform_device *pdev)
 {
-	struct resource *res;
 	struct rtl9300_i2c *i2c;
 	struct i2c_adapter *adap;
 	struct i2c_drv_data *drv_data;
@@ -351,15 +350,13 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-
 	drv_data = (struct i2c_drv_data *) device_get_match_data(&pdev->dev);
 
 	i2c = devm_kzalloc(&pdev->dev, sizeof(struct rtl9300_i2c), GFP_KERNEL);
 	if (!i2c)
 		return -ENOMEM;
 
-	i2c->base = devm_ioremap_resource(&pdev->dev, res);
+	i2c->base = devm_platform_ioremap_resource(pdev, 0);
 	i2c->mst2_offset = drv_data->mst2_offset;
 	if (IS_ERR(i2c->base))
 		return PTR_ERR(i2c->base);
