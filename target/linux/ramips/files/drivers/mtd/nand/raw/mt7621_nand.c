@@ -1292,8 +1292,7 @@ static int mt7621_nfc_probe(struct platform_device *pdev)
 	if (IS_ERR(nfc->nfi_regs))
 		return PTR_ERR(nfc->nfi_regs);
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ecc");
-	nfc->ecc_regs = devm_ioremap_resource(dev, res);
+	nfc->ecc_regs = devm_platform_ioremap_resource_byname(pdev, "ecc");
 	if (IS_ERR(nfc->ecc_regs))
 		return PTR_ERR(nfc->ecc_regs);
 
