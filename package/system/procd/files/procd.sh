@@ -239,6 +239,17 @@ _procd_add_jail_mount_rw() {
 	json_select ..
 }
 
+_procd_set_jail_param() {
+	local type="$1"; shift
+
+	local _json_no_warning=1
+
+	json_select "jail"
+	[ $? = 0 ] || return
+	json_add_string "$type" "$1"
+	json_select ..
+}
+
 _procd_set_param() {
 	local type="$1"; shift
 
@@ -672,6 +683,7 @@ _procd_wrapper \
 	procd_add_jail \
 	procd_add_jail_mount \
 	procd_add_jail_mount_rw \
+	procd_set_jail_param \
 	procd_set_param \
 	procd_append_param \
 	procd_add_validation \
