@@ -16,7 +16,7 @@ PKG_HASH:=2bec616375002c92c1ed5ead32a092b174fe44c14bc736d32e5961053b821d84
 
 HOST_BUILD_PARALLEL := 1
 
-PKG_PROGRAMS:=chown cp date ginstall ln readlink realpath seq stat touch
+PKG_PROGRAMS:=chown cp date ginstall ln readlink realpath rmdir seq stat touch
 
 include $(INCLUDE_DIR)/host-build.mk
 
