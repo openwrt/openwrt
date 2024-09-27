@@ -38,7 +38,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	depends on m
 --- a/drivers/net/wireless/ath/ath11k/Makefile
 +++ b/drivers/net/wireless/ath/ath11k/Makefile
-@@ -26,6 +26,7 @@ ath11k-$(CPTCFG_ATH11K_TRACING) += trace
+@@ -27,6 +27,7 @@ ath11k-$(CPTCFG_ATH11K_TRACING) += trace
  ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
  ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
  ath11k-$(CONFIG_PM) += wow.o
@@ -2848,7 +2848,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  			     enum hal_pn_type pn_type)
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -1164,6 +1164,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
+@@ -1169,6 +1169,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
  	return ret;
  }
  
@@ -2895,7 +2895,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -2894,6 +2894,27 @@ struct pdev_set_regdomain_params {
+@@ -2890,6 +2890,27 @@ struct pdev_set_regdomain_params {
  	u32 pdev_id;
  };
  
@@ -2923,7 +2923,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct rx_reorder_queue_remove_params {
  	u8 *peer_macaddr;
  	u16 vdev_id;
-@@ -3142,6 +3163,16 @@ struct wmi_pdev_set_regdomain_cmd {
+@@ -3138,6 +3159,16 @@ struct wmi_pdev_set_regdomain_cmd {
  	u32 dfs_domain;
  } __packed;
  
@@ -2940,7 +2940,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct wmi_peer_set_param_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -6384,6 +6415,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
+@@ -6390,6 +6421,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
  int ath11k_wmi_vdev_set_param_cmd(struct ath11k *ar, u32 vdev_id,
  				  u32 param_id, u32 param_value);
  
@@ -2951,7 +2951,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_wmi_force_fw_hang_cmd(struct ath11k *ar, u32 type, u32 delay_time_ms);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.h
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.h
-@@ -20,6 +20,34 @@
+@@ -21,6 +21,34 @@
  #define DP_RX_MPDU_ERR_MPDU_LEN			BIT(6)
  #define DP_RX_MPDU_ERR_UNENCRYPTED_FRAME	BIT(7)
  
@@ -2986,7 +2986,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  enum dp_rx_decap_type {
  	DP_RX_DECAP_TYPE_RAW,
  	DP_RX_DECAP_TYPE_NATIVE_WIFI,
-@@ -75,6 +103,9 @@ void ath11k_peer_rx_tid_delete(struct at
+@@ -76,6 +104,9 @@ void ath11k_peer_rx_tid_delete(struct at
  int ath11k_peer_rx_tid_setup(struct ath11k *ar, const u8 *peer_mac, int vdev_id,
  			     u8 tid, u32 ba_win_sz, u16 ssn,
  			     enum hal_pn_type pn_type);
@@ -2998,7 +2998,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_dp_pdev_reo_setup(struct ath11k_base *ab);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6153,6 +6153,16 @@ static int ath11k_mac_op_start(struct ie
+@@ -6250,6 +6250,16 @@ static int ath11k_mac_op_start(struct ie
  		goto err;
  	}
  
@@ -3017,7 +3017,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	/* TODO: Do we need to enable ANI? */
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -887,6 +887,8 @@ struct ath11k_soc_dp_tx_err_stats {
+@@ -890,6 +890,8 @@ struct ath11k_soc_dp_tx_err_stats {
  	 * idr unavailable etc.
  	 */
  	atomic_t misc_fail;
@@ -3026,7 +3026,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  struct ath11k_soc_dp_stats {
-@@ -973,6 +975,7 @@ struct ath11k_base {
+@@ -976,6 +978,7 @@ struct ath11k_base {
  	struct list_head peers;
  	wait_queue_head_t peer_mapping_wq;
  	u8 mac_addr[ETH_ALEN];

@@ -26,7 +26,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -679,6 +679,7 @@ struct ath11k {
+@@ -682,6 +682,7 @@ struct ath11k {
  	struct ath11k_pdev_wmi *wmi;
  #ifdef CPTCFG_ATH11K_NSS_SUPPORT
  	struct ath11k_nss nss;
@@ -34,7 +34,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  #endif
  	struct ath11k_pdev_dp dp;
  	u8 mac_addr[ETH_ALEN];
-@@ -1097,6 +1098,9 @@ struct ath11k_base {
+@@ -1100,6 +1101,9 @@ struct ath11k_base {
  	} testmode;
  #endif
  
@@ -111,7 +111,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		break;
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -495,7 +495,7 @@ ath11k_dp_tx_process_htt_tx_complete(str
+@@ -499,7 +499,7 @@ ath11k_dp_tx_process_htt_tx_complete(str
  		break;
  	case HAL_WBM_REL_HTT_TX_COMP_STATUS_MEC_NOTIFY:
  		/* This event is to be handled only when the driver decides to
@@ -837,7 +837,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  int ath11k_wmi_send_pdev_set_regdomain(struct ath11k *ar,
  				       struct pdev_set_regdomain_params *param)
  {
-@@ -6436,6 +6483,36 @@ static int ath11k_pull_peer_assoc_conf_e
+@@ -6481,6 +6528,36 @@ static int ath11k_pull_peer_assoc_conf_e
  	return 0;
  }
  
@@ -874,7 +874,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static void ath11k_wmi_pull_pdev_stats_base(const struct wmi_pdev_stats_base *src,
  					    struct ath11k_fw_stats_pdev *dst)
  {
-@@ -7260,6 +7337,7 @@ static int ath11k_wmi_tlv_rdy_parse(stru
+@@ -7305,6 +7382,7 @@ static int ath11k_wmi_tlv_rdy_parse(stru
  
  		ether_addr_copy(ab->mac_addr,
  				fixed_param.ready_event_min.mac_addr.addr);
@@ -882,7 +882,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		ab->pktlog_defs_checksum = fixed_param.pktlog_defs_checksum;
  		break;
  	case WMI_TAG_ARRAY_FIXED_STRUCT:
-@@ -8778,6 +8856,22 @@ exit:
+@@ -8875,6 +8953,22 @@ exit:
  	kfree(tb);
  }
  
@@ -917,7 +917,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		break;
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -3032,6 +3032,21 @@ struct wmi_peer_delete_cmd {
+@@ -3028,6 +3028,21 @@ struct wmi_peer_delete_cmd {
  	struct wmi_mac_addr peer_macaddr;
  } __packed;
  
@@ -939,7 +939,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  struct wmi_peer_reorder_queue_setup_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -4635,6 +4650,21 @@ struct wmi_probe_resp_tx_status_event {
+@@ -4641,6 +4656,21 @@ struct wmi_probe_resp_tx_status_event {
  	u32 tx_status;
  } __packed;
  
@@ -961,7 +961,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /*
   * PDEV statistics
   */
-@@ -6434,6 +6464,9 @@ int ath11k_wmi_set_sta_ps_param(struct a
+@@ -6440,6 +6470,9 @@ int ath11k_wmi_set_sta_ps_param(struct a
  int ath11k_wmi_force_fw_hang_cmd(struct ath11k *ar, u32 type, u32 delay_time_ms);
  int ath11k_wmi_send_peer_delete_cmd(struct ath11k *ar,
  				    const u8 *peer_addr, u8 vdev_id);

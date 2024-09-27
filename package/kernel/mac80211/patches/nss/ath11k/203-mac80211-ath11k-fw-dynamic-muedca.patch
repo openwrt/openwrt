@@ -31,7 +31,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -148,6 +148,8 @@ static const struct wmi_tlv_policy wmi_t
+@@ -149,6 +149,8 @@ static const struct wmi_tlv_policy wmi_t
  		.min_len = sizeof(struct wmi_vdev_delete_resp_event) },
  	[WMI_TAG_OBSS_COLOR_COLLISION_EVT] = {
  		.min_len = sizeof(struct wmi_obss_color_collision_event) },
@@ -40,7 +40,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	[WMI_TAG_11D_NEW_COUNTRY_EVENT] = {
  		.min_len = sizeof(struct wmi_11d_new_cc_ev) },
  	[WMI_TAG_PER_CHAIN_RSSI_STATS] = {
-@@ -8708,6 +8710,74 @@ exit:
+@@ -8805,6 +8807,74 @@ out:
  	kfree(tb);
  }
  
@@ -115,7 +115,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -8826,6 +8896,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+@@ -8923,6 +8993,9 @@ static void ath11k_wmi_tlv_op_rx(struct
  	case WMI_11D_NEW_COUNTRY_EVENTID:
  		ath11k_reg_11d_new_cc_event(ab, skb);
  		break;
@@ -127,7 +127,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  		break;
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -776,6 +776,7 @@ enum wmi_tlv_event_id {
+@@ -772,6 +772,7 @@ enum wmi_tlv_event_id {
  	WMI_READ_DATA_FROM_FLASH_EVENTID,
  	WMI_REPORT_RX_AGGR_FAILURE_EVENTID,
  	WMI_PKGID_EVENTID,
@@ -135,7 +135,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	WMI_GPIO_INPUT_EVENTID = WMI_TLV_CMD(WMI_GRP_GPIO),
  	WMI_UPLOADH_EVENTID,
  	WMI_CAPTUREH_EVENTID,
-@@ -1888,6 +1889,7 @@ enum wmi_tlv_tag {
+@@ -1884,6 +1885,7 @@ enum wmi_tlv_tag {
  	WMI_TAG_NDP_EVENT,
  	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_CMD = 0x301,
  	WMI_TAG_PDEV_PEER_PKTLOG_FILTER_INFO,
@@ -143,7 +143,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	WMI_TAG_FILS_DISCOVERY_TMPL_CMD = 0x344,
  	WMI_TAG_PDEV_SRG_BSS_COLOR_BITMAP_CMD = 0x37b,
  	WMI_TAG_PDEV_SRG_PARTIAL_BSSID_BITMAP_CMD,
-@@ -4890,6 +4892,16 @@ struct wmi_pdev_temperature_event {
+@@ -4896,6 +4898,16 @@ struct wmi_pdev_temperature_event {
  	u32 pdev_id;
  } __packed;
  

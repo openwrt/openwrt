@@ -137,7 +137,7 @@
  #define ATH11K_HWMON_NAME_LEN           15
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -3193,6 +3193,7 @@ ath11k_wmi_send_thermal_mitigation_param
+@@ -3237,6 +3237,7 @@ ath11k_wmi_send_thermal_mitigation_param
  		lvl_conf->temp_hwm = param->levelconf[i].tmphwm;
  		lvl_conf->dc_off_percent = param->levelconf[i].dcoffpercent;
  		lvl_conf->prio = param->levelconf[i].priority;
@@ -147,7 +147,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -4053,12 +4053,14 @@ struct wmi_11d_new_cc_ev {
+@@ -4059,12 +4059,14 @@ struct wmi_11d_new_cc_ev {
  	u32 new_alpha2;
  } __packed;
  
@@ -163,7 +163,7 @@
  };
  
  struct thermal_mitigation_params {
-@@ -4069,6 +4071,14 @@ struct thermal_mitigation_params {
+@@ -4075,6 +4077,14 @@ struct thermal_mitigation_params {
  	struct tt_level_config levelconf[THERMAL_LEVELS];
  };
  
@@ -178,7 +178,7 @@
  struct wmi_therm_throt_config_request_cmd {
  	u32 tlv_header;
  	u32 pdev_id;
-@@ -4076,14 +4086,48 @@ struct wmi_therm_throt_config_request_cm
+@@ -4082,14 +4092,48 @@ struct wmi_therm_throt_config_request_cm
  	u32 dc;
  	u32 dc_per_event;
  	u32 therm_throt_levels;
@@ -229,7 +229,7 @@
  struct wmi_delba_send_cmd {
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6586,6 +6586,9 @@ static int ath11k_mac_op_start(struct ie
+@@ -6683,6 +6683,9 @@ static int ath11k_mac_op_start(struct ie
  		}
  	}
  

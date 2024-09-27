@@ -251,7 +251,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  
  	if (unlikely(!msdu)) {
  		ath11k_warn(ab, "htt tx completion for unknown msdu_id %d\n",
-@@ -870,6 +881,7 @@ void ath11k_dp_tx_completion_handler(str
+@@ -878,6 +889,7 @@ void ath11k_dp_tx_completion_handler(str
  	}
  
  	while (count--) {
@@ -259,7 +259,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  		tx_status = &tx_ring->tx_status[i++];
  
  		desc_id = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
-@@ -888,17 +900,19 @@ void ath11k_dp_tx_completion_handler(str
+@@ -896,17 +908,19 @@ void ath11k_dp_tx_completion_handler(str
  			continue;
  		}
  
