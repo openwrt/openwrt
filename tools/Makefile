@@ -139,6 +139,7 @@ else
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_SDK),y) += coreutils
 endif
 ifneq ($(filter coreutils,$(tools-y)),)
+  $(curdir)/elfutils/compile += $(curdir)/coreutils/compile
   $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
 endif
 
