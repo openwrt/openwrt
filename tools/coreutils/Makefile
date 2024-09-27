@@ -30,6 +30,8 @@ HOST_CONFIGURE_ARGS += \
 
 HOST_MAKE_FLAGS += \
 	$(AM_TOOL_PATHS) AUTOPOINT="$(TRUE)" GTKDOCIZE="$(TRUE)" \
+	am__CONFIG_DISTCLEAN_FILES= \
+	MAINTAINERCLEANFILES='$$$$(filter-out lib/iconv_open% %.texi,$$$$(BUILT_SOURCES))' \
 	PROGRAMS="$(patsubst %,src/%,$(PKG_PROGRAMS))" \
 	LIBRARIES= MANS= SUBDIRS=.
 
@@ -55,6 +57,8 @@ define Host/Configure
 	$(if $(QUILT),$(call Host/Bootstrap))
 	$(foreach src,$(HOST_GNULIB_SKIP),mv -f $(HOST_BUILD_DIR)/$(src)~ $(HOST_BUILD_DIR)/$(src) || true; )
 	$(call Host/Configure/Default)
+	$(call Host/Uninstall)
+	$(call Host/Compile/Default,lib/config.h)
 endef
 
 define Host/Install
@@ -68,6 +72,7 @@ endef
 define Host/Uninstall
 	rm -f $(STAGING_DIR_HOST)/bin/install
 	#$(call Host/Compile/Default,uninstall) removes necessary symlinks
+	-$(call Host/Compile/Default,maintainer-clean) # Clean bootstrap files from the release
 endef
 
 $(eval $(call HostBuild))
