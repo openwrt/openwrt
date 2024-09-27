@@ -49,7 +49,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +obj-$(CONFIG_QCOM_APM)		+= apm.o
 --- /dev/null
 +++ b/drivers/power/qcom/apm.c
-@@ -0,0 +1,943 @@
+@@ -0,0 +1,897 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -166,7 +166,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +				     struct msm_apm_ctrl_dev *ctrl)
 +{
 +	struct device *dev = &pdev->dev;
-+	struct resource *res;
 +	static const char *res_name[SPM_EVENT_NUM] = {
 +		"apc0-l2-spm",
 +		"apc1-l2-spm",
@@ -177,26 +176,16 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	};
 +	int i, ret = 0;
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pm-apcc-glb");
-+	if (!res) {
-+		dev_err(dev, "Missing PM APCC Global register physical address");
-+		return -EINVAL;
-+	}
-+	ctrl->reg_base = devm_ioremap(dev, res->start, resource_size(res));
-+	if (!ctrl->reg_base) {
++	ctrl->reg_base = devm_platform_ioremap_resource_byname(pdev, "pm-apcc-glb");
++	if (IS_ERR(ctrl->reg_base)) {
 +		dev_err(dev, "Failed to map PM APCC Global registers\n");
-+		return -ENOMEM;
++		return PTR_ERR(ctrl->reg_base);
 +	}
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "apcs-csr");
-+	if (!res) {
-+		dev_err(dev, "Missing APCS CSR physical base address");
-+		return -EINVAL;
-+	}
-+	ctrl->apcs_csr_base = devm_ioremap(dev, res->start, resource_size(res));
-+	if (!ctrl->apcs_csr_base) {
++	ctrl->apcs_csr_base = devm_platform_ioremap_resource_byname(pdev, "apcs-csr");
++	if (IS_ERR(ctrl->apcs_csr_base)) {
 +		dev_err(dev, "Failed to map APCS CSR registers\n");
-+		return -ENOMEM;
++		return PTR_ERR(ctrl->apcs_csr_base);
 +	}
 +
 +	ctrl->version = readl_relaxed(ctrl->apcs_csr_base + APCS_VERSION);
@@ -214,57 +203,28 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	}
 +
 +	for (i = 0; i < SPM_EVENT_NUM; i++) {
-+		res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
-+						   res_name[i]);
-+		if (!res) {
-+			dev_err(dev, "Missing address for %s\n", res_name[i]);
-+			ret = -EINVAL;
-+			goto free_events;
-+		}
-+
-+		ctrl->apcs_spm_events_addr[i] = devm_ioremap(dev, res->start,
-+						resource_size(res));
-+		if (!ctrl->apcs_spm_events_addr[i]) {
++		ctrl->apcs_spm_events_addr[i] = devm_platform_ioremap_resource_byname(
++						pdev, res_name[i]);
++		if (IS_ERR(ctrl->apcs_spm_events_addr[i])) {
 +			dev_err(dev, "Failed to map %s\n", res_name[i]);
-+			ret = -ENOMEM;
++			ret = PTR_ERR(ctrl->apcs_spm_events_addr[i]);
 +			goto free_events;
 +		}
-+
-+		dev_dbg(dev, "%s event phys: %pa virt:0x%p\n", res_name[i],
-+			&res->start, ctrl->apcs_spm_events_addr[i]);
 +	}
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
-+					   "apc0-pll-ctl");
-+	if (!res) {
-+		dev_err(dev, "Missing APC0 PLL CTL physical address\n");
-+		ret = -EINVAL;
-+		goto free_events;
-+	}
-+
-+	ctrl->apc0_pll_ctl_addr = devm_ioremap(dev,
-+					   res->start,
-+					   resource_size(res));
-+	if (!ctrl->apc0_pll_ctl_addr) {
++	ctrl->apc0_pll_ctl_addr = devm_platform_ioremap_resource_byname(
++					   pdev, "apc0-pll-ctl");
++	if (IS_ERR(ctrl->apc0_pll_ctl_addr)) {
 +		dev_err(dev, "Failed to map APC0 PLL CTL register\n");
-+		ret = -ENOMEM;
++		ret = PTR_ERR(ctrl->apc0_pll_ctl_addr);
 +		goto free_events;
 +	}
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
-+					   "apc1-pll-ctl");
-+	if (!res) {
-+		dev_err(dev, "Missing APC1 PLL CTL physical address\n");
-+		ret = -EINVAL;
-+		goto free_events;
-+	}
-+
-+	ctrl->apc1_pll_ctl_addr = devm_ioremap(dev,
-+					   res->start,
-+					   resource_size(res));
-+	if (!ctrl->apc1_pll_ctl_addr) {
++	ctrl->apc1_pll_ctl_addr = devm_platform_ioremap_resource_byname(
++					   pdev, "apc1-pll-ctl");
++	if (IS_ERR(ctrl->apc1_pll_ctl_addr)) {
 +		dev_err(dev, "Failed to map APC1 PLL CTL register\n");
-+		ret = -ENOMEM;
++		ret = PTR_ERR(ctrl->apc1_pll_ctl_addr);
 +		goto free_events;
 +	}
 +
@@ -299,19 +259,13 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +				     struct msm_apm_ctrl_dev *ctrl)
 +{
 +	struct device *dev = &pdev->dev;
-+	struct resource *res;
 +	u32 delay_counter, val = 0, regval = 0;
 +	int rc = 0;
 +
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pm-apcc-glb");
-+	if (!res) {
-+		dev_err(dev, "Missing PM APCC Global register physical address\n");
-+		return -ENODEV;
-+	}
-+	ctrl->reg_base = devm_ioremap(dev, res->start, resource_size(res));
-+	if (!ctrl->reg_base) {
++	ctrl->reg_base = devm_platform_ioremap_resource_byname(pdev, "pm-apcc-glb");
++	if (IS_ERR(ctrl->reg_base)) {
 +		dev_err(dev, "Failed to map PM APCC Global registers\n");
-+		return -ENOMEM;
++		return PTR_ERR(ctrl->reg_base);
 +	}
 +
 +	/*
