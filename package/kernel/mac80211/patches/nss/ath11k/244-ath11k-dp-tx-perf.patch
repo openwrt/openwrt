@@ -34,7 +34,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  };
  
  struct ath11k_skb_cb {
-@@ -921,10 +922,13 @@ struct ath11k_dp_ring_bp_stats {
+@@ -924,10 +925,13 @@ struct ath11k_dp_ring_bp_stats {
  struct ath11k_soc_dp_tx_err_stats {
  	/* TCL Ring Descriptor unavailable */
  	u32 desc_na[DP_TCL_NUM_RING_MAX];
@@ -295,7 +295,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	if (!skb_cb->vif) {
  		ieee80211_free_txskb(ar->hw, msdu);
  		return;
-@@ -632,6 +663,7 @@ static void ath11k_dp_tx_complete_msdu(s
+@@ -636,6 +667,7 @@ static void ath11k_dp_tx_complete_msdu(s
  	struct ath11k_peer *peer;
  	struct ath11k_sta *arsta;
  	struct rate_info rate;
@@ -303,7 +303,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  	if (WARN_ON_ONCE(ts->buf_rel_source != HAL_WBM_REL_SRC_MODULE_TQM)) {
  		/* Must not happen */
-@@ -642,6 +674,20 @@ static void ath11k_dp_tx_complete_msdu(s
+@@ -646,6 +678,20 @@ static void ath11k_dp_tx_complete_msdu(s
  
  	dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len, DMA_TO_DEVICE);
  
@@ -324,7 +324,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	if (unlikely(!rcu_access_pointer(ab->pdevs_active[ar->pdev_idx]))) {
  		ieee80211_free_txskb(ar->hw, msdu);
  		return;
-@@ -696,7 +742,7 @@ static void ath11k_dp_tx_complete_msdu(s
+@@ -704,7 +750,7 @@ static void ath11k_dp_tx_complete_msdu(s
  
  	spin_lock_bh(&ab->base_lock);
  	peer = ath11k_peer_find_by_id(ab, ts->peer_id);
@@ -333,7 +333,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ath11k_dbg(ab, ATH11K_DBG_DATA,
  			   "dp_tx: failed to find the peer with peer_id %d\n",
  			    ts->peer_id);
-@@ -752,19 +798,36 @@ static inline void ath11k_dp_tx_status_p
+@@ -760,19 +806,36 @@ static inline void ath11k_dp_tx_status_p
  		ts->rate_stats = 0;
  }
  
@@ -372,7 +372,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  	spin_lock_bh(&status_ring->lock);
  
-@@ -779,33 +842,27 @@ void ath11k_dp_tx_completion_handler(str
+@@ -787,33 +850,27 @@ void ath11k_dp_tx_completion_handler(str
  
  	ath11k_hal_srng_dst_invalidate_entry(ab, status_ring, valid_entries);
  
@@ -420,7 +420,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ath11k_dp_tx_status_parse(ab, tx_status, &ts);
  
  		desc_id = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
-@@ -838,7 +895,6 @@ void ath11k_dp_tx_completion_handler(str
+@@ -846,7 +903,6 @@ void ath11k_dp_tx_completion_handler(str
  			wake_up(&ar->dp.tx_empty_waitq);
  
  		ath11k_dp_tx_complete_msdu(ar, msdu, &ts);
@@ -430,7 +430,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6387,12 +6387,22 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6484,12 +6484,22 @@ static void ath11k_mac_op_tx(struct ieee
  	if (control->sta)
  		arsta = ath11k_sta_to_arsta(control->sta);
  
@@ -454,7 +454,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ieee80211_free_txskb(ar->hw, skb);
  		return;
  	}
-@@ -7339,7 +7349,7 @@ err_vdev_del:
+@@ -7445,7 +7455,7 @@ err_vdev_del:
  	idr_for_each(&ar->txmgmt_idr,
  		     ath11k_mac_vif_txmgmt_idr_remove, vif);
  
@@ -507,7 +507,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	},
  	{
  		.name = "qca6390 hw2.0",
-@@ -359,7 +360,6 @@ static struct ath11k_hw_params ath11k_hw
+@@ -362,7 +363,6 @@ static struct ath11k_hw_params ath11k_hw
  		.supports_regdb = false,
  		.fix_l1ss = true,
  		.credit_flow = false,
@@ -515,7 +515,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		.hal_params = &ath11k_hw_hal_params_ipq8074,
  		.supports_dynamic_smps_6ghz = true,
  		.alloc_cacheable_memory = true,
-@@ -385,6 +385,8 @@ static struct ath11k_hw_params ath11k_hw
+@@ -388,6 +388,8 @@ static struct ath11k_hw_params ath11k_hw
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = false,
  		.support_dual_stations = false,
@@ -524,7 +524,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	},
  	{
  		.name = "wcn6855 hw2.0",
-@@ -2247,6 +2249,9 @@ int ath11k_core_pre_init(struct ath11k_b
+@@ -2256,6 +2258,9 @@ int ath11k_core_pre_init(struct ath11k_b
  	if (nss_offload)
  		ab->nss.stats_enabled = 1;
  

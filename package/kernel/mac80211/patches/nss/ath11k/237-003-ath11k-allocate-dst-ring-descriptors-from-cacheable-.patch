@@ -24,7 +24,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -761,6 +761,7 @@ void ath11k_dp_tx_completion_handler(str
+@@ -769,6 +769,7 @@ void ath11k_dp_tx_completion_handler(str
  	struct sk_buff *msdu;
  	struct hal_tx_status ts = { 0 };
  	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
@@ -32,7 +32,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	u32 *desc;
  	u32 msdu_id;
  	u8 mac_id;
-@@ -769,9 +770,18 @@ void ath11k_dp_tx_completion_handler(str
+@@ -777,9 +778,18 @@ void ath11k_dp_tx_completion_handler(str
  
  	ath11k_hal_srng_access_begin(ab, status_ring);
  
@@ -143,5 +143,5 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 +void ath11k_hal_srng_dst_invalidate_entry(struct ath11k_base *ab,
 +					  struct hal_srng *srng, int entries);
  u32 *ath11k_hal_srng_src_peek(struct ath11k_base *ab, struct hal_srng *srng);
- u32 *ath11k_hal_srng_src_get_next_reaped(struct ath11k_base *ab,
- 					 struct hal_srng *srng);
+ u32 *ath11k_hal_srng_src_next_peek(struct ath11k_base *ab,
+ 				   struct hal_srng *srng);

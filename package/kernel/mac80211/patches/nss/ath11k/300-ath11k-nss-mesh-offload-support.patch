@@ -36,7 +36,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/Makefile
 +++ b/drivers/net/wireless/ath/ath11k/Makefile
-@@ -28,6 +28,10 @@ ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spec
+@@ -29,6 +29,10 @@ ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spec
  ath11k-$(CONFIG_PM) += wow.o
  ath11k-$(CPTCFG_ATH11K_NSS_SUPPORT) += nss.o
  
@@ -1238,7 +1238,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -3476,6 +3476,18 @@ static void ath11k_mac_op_nss_bss_info_c
+@@ -3563,6 +3563,18 @@ static void ath11k_mac_op_nss_bss_info_c
  			ath11k_warn(ar->ab, "failed to set ap_isolate in nss %d\n", ret);
  	}
  
@@ -1257,7 +1257,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	mutex_unlock(&ar->conf_mutex);
  }
  
-@@ -10237,6 +10249,28 @@ static int ath11k_mac_op_sta_state(struc
+@@ -10274,6 +10286,28 @@ static int ath11k_mac_op_sta_state(struc
  	return ret;
  }
  
@@ -1286,7 +1286,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
  	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
-@@ -10295,6 +10329,9 @@ static const struct ieee80211_ops ath11k
+@@ -10332,6 +10366,9 @@ static const struct ieee80211_ops ath11k
  	.set_sar_specs			= ath11k_mac_op_set_bios_sar_specs,
  	.remain_on_channel		= ath11k_mac_op_remain_on_channel,
  	.cancel_remain_on_channel	= ath11k_mac_op_cancel_remain_on_channel,
@@ -1296,7 +1296,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  };
  
  static void ath11k_mac_update_ch_list(struct ath11k *ar,
-@@ -10804,6 +10841,8 @@ static int __ath11k_mac_register(struct
+@@ -10844,6 +10881,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, SUPPORTS_NSS_OFFLOAD);
  		wiphy_ext_feature_set(ar->hw->wiphy,
  				      NL80211_EXT_FEATURE_VLAN_OFFLOAD);
@@ -3337,7 +3337,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	ATH11K_DBG_WMI		= 0x00000002,
 --- a/local-symbols
 +++ b/local-symbols
-@@ -164,6 +164,7 @@ ATH11K=
+@@ -166,6 +166,7 @@ ATH11K=
  ATH11K_AHB=
  ATH11K_PCI=
  ATH11K_NSS_SUPPORT=

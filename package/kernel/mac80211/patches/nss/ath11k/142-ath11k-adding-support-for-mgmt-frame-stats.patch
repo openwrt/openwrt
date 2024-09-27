@@ -16,8 +16,8 @@
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
  
-@@ -355,6 +355,16 @@ struct ath11k_reg_tpc_power_info {
- 	struct ath11k_chan_power_info chan_power_info[IEEE80211_MAX_NUM_PWR_LEVEL];
+@@ -358,6 +358,16 @@ struct ath11k_reg_tpc_power_info {
+ 	struct ath11k_chan_power_info chan_power_info[ATH11K_NUM_PWR_LEVELS];
  };
  
 +#define ATH11K_STATS_MGMT_FRM_TYPE_MAX 16
@@ -33,7 +33,7 @@
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -411,6 +421,7 @@ struct ath11k_vif {
+@@ -414,6 +424,7 @@ struct ath11k_vif {
  	struct ath11k_rekey_data rekey_data;
  
  	struct ath11k_reg_tpc_power_info reg_tpc_info;
@@ -143,7 +143,7 @@
  		debugfs_create_file("dfs_simulate_radar", 0200,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -5934,9 +5934,9 @@ static int ath11k_mac_mgmt_tx(struct ath
+@@ -6031,9 +6031,9 @@ static int ath11k_mac_mgmt_tx(struct ath
  	 */
  	if (is_prb_rsp &&
  	    atomic_read(&ar->num_pending_mgmt_tx) > ATH11K_PRB_RSP_DROP_THRESHOLD) {
@@ -155,7 +155,7 @@
  	}
  
  	if (skb_queue_len_lockless(q) >= ATH11K_TX_MGMT_NUM_PENDING_MAX) {
-@@ -5962,9 +5962,11 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6059,9 +6059,11 @@ static void ath11k_mac_op_tx(struct ieee
  	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
  	struct ieee80211_key_conf *key = info->control.hw_key;
@@ -167,7 +167,7 @@
  	int ret;
  
  	memset(skb_cb, 0, sizeof(*skb_cb));
-@@ -5978,12 +5980,21 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6075,12 +6077,21 @@ static void ath11k_mac_op_tx(struct ieee
  	if (info_flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		skb_cb->flags |= ATH11K_SKB_HW_80211_ENCAP;
  	} else if (ieee80211_is_mgmt(hdr->frame_control)) {
@@ -213,7 +213,7 @@
  	int peer_id;
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -5896,6 +5896,12 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5941,6 +5941,12 @@ static int wmi_process_mgmt_tx_comp(stru
  	struct sk_buff *msdu;
  	struct ieee80211_tx_info *info;
  	struct ath11k_skb_cb *skb_cb;
@@ -226,7 +226,7 @@
  	int num_mgmt;
  
  	spin_lock_bh(&ar->txmgmt_idr_lock);
-@@ -5923,6 +5929,31 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5968,6 +5974,31 @@ static int wmi_process_mgmt_tx_comp(stru
  			info->status.ack_signal = tx_compl_param->ack_rssi;
  	}
  
@@ -258,7 +258,7 @@
  	ieee80211_tx_status_irqsafe(ar->hw, msdu);
  
  	num_mgmt = atomic_dec_if_positive(&ar->num_pending_mgmt_tx);
-@@ -7500,6 +7531,11 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7545,6 +7576,11 @@ static void ath11k_mgmt_rx_event(struct
  	struct ieee80211_hdr *hdr;
  	u16 fc;
  	struct ieee80211_supported_band *sband;
@@ -270,7 +270,7 @@
  
  	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
  		ath11k_warn(ab, "failed to extract mgmt rx event");
-@@ -7565,7 +7601,34 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7610,7 +7646,34 @@ static void ath11k_mgmt_rx_event(struct
  
  	hdr = (struct ieee80211_hdr *)skb->data;
  	fc = le16_to_cpu(hdr->frame_control);
