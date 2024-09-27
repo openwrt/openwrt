@@ -1,0 +1,91 @@
+--- a/libkmod/libkmod-config.c
++++ b/libkmod/libkmod-config.c
+@@ -21,6 +21,7 @@
+ #include <ctype.h>
+ #include <dirent.h>
+ #include <errno.h>
++#include <libgen.h>
+ #include <stdarg.h>
+ #include <stddef.h>
+ #include <stdio.h>
+@@ -794,7 +795,9 @@ static int conf_files_insert_sorted(stru
+ 	bool is_single = false;
+ 
+ 	if (name == NULL) {
+-		name = basename(path);
++		char *pathc = strdup(path);
++		name = basename(pathc);
++		free(pathc);
+ 		is_single = true;
+ 	}
+ 
+--- a/shared/util.c
++++ b/shared/util.c
+@@ -22,6 +22,7 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <errno.h>
++#include <libgen.h>
+ #include <stdarg.h>
+ #include <stddef.h>
+ #include <stdio.h>
+@@ -173,8 +174,10 @@ char *modname_normalize(const char *modn
+ char *path_to_modname(const char *path, char buf[static PATH_MAX], size_t *len)
+ {
+ 	char *modname;
++	char *pathc = strdup(path);
+ 
+-	modname = basename(path);
++	modname = basename(pathc);
++	free(pathc);
+ 	if (modname == NULL || modname[0] == '\0')
+ 		return NULL;
+ 
+--- a/tools/depmod.c
++++ b/tools/depmod.c
+@@ -22,6 +22,7 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <getopt.h>
++#include <libgen.h>
+ #include <limits.h>
+ #include <regex.h>
+ #include <stdio.h>
+@@ -757,14 +758,17 @@ static int cfg_files_insert_sorted(struc
+ 	struct cfg_file **files, *f;
+ 	size_t i, n_files, namelen, dirlen;
+ 	void *tmp;
++	char *dirc;
+ 
+ 	dirlen = strlen(dir);
+ 	if (name != NULL)
+ 		namelen = strlen(name);
+ 	else {
+-		name = basename(dir);
++		dirc = strdup(dir);
++		name = basename(dirc);
+ 		namelen = strlen(name);
+ 		dirlen -= namelen + 1;
++		free(dirc);
+ 	}
+ 
+ 	n_files = *p_n_files;
+@@ -2613,7 +2617,7 @@ static int depmod_output(struct depmod *
+ 			int mode = 0644;
+ 			int fd;
+ 
+-			snprintf(tmp, sizeof(tmp), "%s.%i.%li.%li", itr->name, getpid(),
++			snprintf(tmp, sizeof(tmp), "%s.%i.%" PRId64 ".%" PRId64, itr->name, getpid(),
+ 					tv.tv_usec, tv.tv_sec);
+ 			fd = openat(dfd, tmp, flags, mode);
+ 			if (fd < 0) {
+--- a/tools/kmod.c
++++ b/tools/kmod.c
+@@ -22,6 +22,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <libgen.h>
+ 
+ #include <shared/util.h>
+ 
