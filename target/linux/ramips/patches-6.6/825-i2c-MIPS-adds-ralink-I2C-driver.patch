@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,440 @@
+@@ -0,0 +1,397 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -410,101 +410,58 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int rt_i2c_probe(struct platform_device *pdev)
 +{
-+	struct resource *res;
++	struct device *dev = &pdev->dev;
 +	struct rt_i2c *i2c;
 +	struct i2c_adapter *adap;
-+	const struct of_device_id *match;
-+	int ret, restart;
++	int restart;
 +
-+	match = of_match_device(i2c_rt_dt_ids, &pdev->dev);
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res) {
-+		dev_err(&pdev->dev, "no memory resource found\n");
-+		return -ENODEV;
-+	}
-+
-+	i2c = devm_kzalloc(&pdev->dev, sizeof(struct rt_i2c), GFP_KERNEL);
++	i2c = devm_kzalloc(dev, sizeof(struct rt_i2c), GFP_KERNEL);
 +	if (!i2c) {
-+		dev_err(&pdev->dev, "failed to allocate i2c_adapter\n");
++		dev_err(dev, "failed to allocate i2c_adapter\n");
 +		return -ENOMEM;
 +	}
 +
-+	i2c->base = devm_ioremap_resource(&pdev->dev, res);
++	i2c->base = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(i2c->base))
 +		return PTR_ERR(i2c->base);
 +
-+	i2c->clk = devm_clk_get(&pdev->dev, NULL);
-+	if (IS_ERR(i2c->clk)) {
-+		dev_err(&pdev->dev, "no clock defined\n");
-+		return -ENODEV;
-+	}
-+	clk_prepare_enable(i2c->clk);
-+	i2c->dev = &pdev->dev;
++	i2c->clk = devm_clk_get_enabled(dev, NULL);
++	if (IS_ERR(i2c->clk))
++		return dev_err_probe(dev, PTR_ERR(i2c->clk), "no clock defined");
++
++	i2c->dev = dev;
 +
 +	if (of_property_read_u32(pdev->dev.of_node,
 +				"clock-frequency", &i2c->cur_clk))
 +		i2c->cur_clk = 100000;
 +
 +	adap = &i2c->adap;
-+	adap->owner = THIS_MODULE;
 +	adap->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
 +	adap->algo = &rt_i2c_algo;
 +	adap->retries = 3;
-+	adap->dev.parent = &pdev->dev;
++	adap->dev.parent = dev;
 +	i2c_set_adapdata(adap, i2c);
 +	adap->dev.of_node = pdev->dev.of_node;
-+	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
++	strlcpy(adap->name, dev_name(dev), sizeof(adap->name));
 +	adap->quirks = &rt_i2c_quirks;
-+
-+	platform_set_drvdata(pdev, i2c);
 +
 +	restart = rt_i2c_init(i2c);
 +
-+	ret = i2c_add_adapter(adap);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "failed to add adapter\n");
-+		clk_disable_unprepare(i2c->clk);
-+		return ret;
-+	}
-+
-+	dev_info(&pdev->dev, "clock %uKHz, re-start %ssupport\n",
++	dev_info(dev, "clock %uKHz, re-start %ssupport\n",
 +			i2c->cur_clk/1000, restart ? "" : "not ");
 +
-+	return ret;
-+}
-+
-+static int rt_i2c_remove(struct platform_device *pdev)
-+{
-+	struct rt_i2c *i2c = platform_get_drvdata(pdev);
-+
-+	i2c_del_adapter(&i2c->adap);
-+	clk_disable_unprepare(i2c->clk);
-+
-+	return 0;
++	return devm_i2c_add_adapter(dev, adap);
 +}
 +
 +static struct platform_driver rt_i2c_driver = {
 +	.probe		= rt_i2c_probe,
-+	.remove		= rt_i2c_remove,
 +	.driver		= {
-+		.owner	= THIS_MODULE,
 +		.name	= "i2c-ralink",
 +		.of_match_table = i2c_rt_dt_ids,
 +	},
 +};
 +
-+static int __init i2c_rt_init (void)
-+{
-+	return platform_driver_register(&rt_i2c_driver);
-+}
-+subsys_initcall(i2c_rt_init);
-+
-+static void __exit i2c_rt_exit (void)
-+{
-+	platform_driver_unregister(&rt_i2c_driver);
-+}
-+module_exit(i2c_rt_exit);
++module_platform_driver(rt_i2c_driver);
 +
 +MODULE_AUTHOR("Steven Liu <steven_liu@mediatek.com>");
 +MODULE_DESCRIPTION("Ralink I2c host driver");
