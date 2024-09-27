@@ -1,0 +1,15 @@
+--- a/Makefile
++++ b/Makefile
+@@ -162,9 +162,9 @@ distclean: clean
+ install: all
+ # -c is ignored on Linux, but required on FreeBSD
+ 	$(DIRINSTALL) -m 755 $(DESTDIR)$(BINDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(IDSDIR) $(DESTDIR)$(MANDIR)/man8 $(DESTDIR)$(MANDIR)/man7 $(DESTDIR)$(MANDIR)/man5
+-	$(INSTALL) -c -m 755 $(STRIP) lspci$(EXEEXT) $(DESTDIR)$(LSPCIDIR)
+-	$(INSTALL) -c -m 755 $(STRIP) setpci$(EXEEXT) $(DESTDIR)$(SBINDIR)
+-	$(INSTALL) -c -m 755 $(STRIP) pcilmr$(EXEEXT) $(DESTDIR)$(SBINDIR)
++	$(INSTALL) -c -m 755 lspci$(EXEEXT) $(DESTDIR)$(LSPCIDIR)
++	$(INSTALL) -c -m 755 setpci$(EXEEXT) $(DESTDIR)$(SBINDIR)
++	$(INSTALL) -c -m 755 pcilmr$(EXEEXT) $(DESTDIR)$(SBINDIR)
+ 	$(INSTALL) -c -m 755 update-pciids $(DESTDIR)$(SBINDIR)
+ ifneq ($(IDSDIR),)
+ 	$(INSTALL) -c -m 644 $(PCI_IDS) $(DESTDIR)$(IDSDIR)
