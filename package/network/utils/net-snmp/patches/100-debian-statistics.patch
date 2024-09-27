@@ -1,0 +1,13 @@
+--- a/agent/mibgroup/mibII/interfaces.c
++++ b/agent/mibgroup/mibII/interfaces.c
+@@ -1586,6 +1586,10 @@ Interface_Scan_Init(void)
+         char           *stats, *ifstart = line;
+         size_t          len;
+ 
++	/* Ignore interfaces with no statistics. */
++	if (strstr(line, "No statistics available."))
++	continue;
++
+         len = strlen(line);
+         if (len && line[len - 1] == '\n')
+             line[len - 1] = '\0';
