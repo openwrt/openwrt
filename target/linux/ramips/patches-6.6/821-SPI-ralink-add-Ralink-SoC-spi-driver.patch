@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,519 @@
+@@ -0,0 +1,473 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -166,8 +166,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +#define RT2880_SPI_MODE_BITS	(SPI_CPOL | SPI_CPHA | SPI_LSB_FIRST | \
 +		SPI_CS_HIGH)
-+
-+static atomic_t hw_reset_count = ATOMIC_INIT(0);
 +
 +struct rt2880_spi {
 +	struct spi_master	*master;
@@ -451,33 +449,25 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static int rt2880_spi_probe(struct platform_device *pdev)
 +{
++	struct device *dev = &pdev->dev;
 +	struct spi_master *master;
 +	struct rt2880_spi *rs;
 +	void __iomem *base;
-+	struct resource *r;
 +	struct clk *clk;
 +	int ret;
 +
-+	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	base = devm_ioremap_resource(&pdev->dev, r);
++	base = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(base))
 +		return PTR_ERR(base);
 +
-+	clk = devm_clk_get(&pdev->dev, NULL);
-+	if (IS_ERR(clk)) {
-+		dev_err(&pdev->dev, "unable to get SYS clock\n");
-+		return PTR_ERR(clk);
-+	}
++	clk = devm_clk_get_enabled(dev, NULL);
++	if (IS_ERR(clk))
++		return dev_err_probe(dev, PTR_ERR(clk), "unable to get SYS clock");
 +
-+	ret = clk_prepare_enable(clk);
-+	if (ret)
-+		goto err_clk;
-+
-+	master = spi_alloc_master(&pdev->dev, sizeof(*rs));
-+	if (master == NULL) {
-+		dev_dbg(&pdev->dev, "master allocation failed\n");
-+		ret = -ENOMEM;
-+		goto err_clk;
++	master = devm_spi_alloc_master(dev, sizeof(*rs));
++	if (!master) {
++		dev_err(dev, "master allocation failed\n");
++		return -ENOMEM;
 +	}
 +
 +	master->dev.of_node = pdev->dev.of_node;
@@ -491,50 +481,16 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	master->set_cs = rt2880_spi_set_cs;
 +	master->transfer_one = rt2880_spi_transfer_one,
 +
-+	dev_set_drvdata(&pdev->dev, master);
-+
 +	rs = spi_master_get_devdata(master);
 +	rs->master = master;
 +	rs->base = base;
 +	rs->clk = clk;
 +
-+	if (atomic_inc_return(&hw_reset_count) == 1) {
-+		ret = device_reset(&pdev->dev);
-+		if (ret) {
-+			dev_err(&pdev->dev, "device_reset error.\n");
-+			goto err_master;
-+		}
-+	}
++	ret = device_reset(&pdev->dev);
++	if (ret)
++		return ret;
 +
-+	ret = devm_spi_register_master(&pdev->dev, master);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "devm_spi_register_master error.\n");
-+		goto err_master;
-+	}
-+
-+	return ret;
-+
-+err_master:
-+	spi_master_put(master);
-+	kfree(master);
-+err_clk:
-+	clk_disable_unprepare(clk);
-+
-+	return ret;
-+}
-+
-+static int rt2880_spi_remove(struct platform_device *pdev)
-+{
-+	struct spi_master *master;
-+	struct rt2880_spi *rs;
-+
-+	master = dev_get_drvdata(&pdev->dev);
-+	rs = spi_master_get_devdata(master);
-+
-+	clk_disable_unprepare(rs->clk);
-+	atomic_dec(&hw_reset_count);
-+
-+	return 0;
++	return devm_spi_register_master(dev, master);
 +}
 +
 +MODULE_ALIAS("platform:" DRIVER_NAME);
@@ -548,11 +504,9 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +static struct platform_driver rt2880_spi_driver = {
 +	.driver = {
 +		.name = DRIVER_NAME,
-+		.owner = THIS_MODULE,
 +		.of_match_table = rt2880_spi_match,
 +	},
 +	.probe = rt2880_spi_probe,
-+	.remove = rt2880_spi_remove,
 +};
 +
 +module_platform_driver(rt2880_spi_driver);
