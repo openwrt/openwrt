@@ -545,6 +545,15 @@ yuncore,a770)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x10"
 	;;
+yuncore,cpe830)
+	ucidef_set_led_netdev "wan" "WAN" "wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "lan" "eth0"
+	ucidef_set_rssimon "phy0-sta0" "200000" "1"
+	ucidef_set_led_rssi "wifi_low" "WIFILOW" "green:signal0" "phy0-sta0" "1" "100"
+	ucidef_set_led_rssi "wifi_mediumlow" "WIFIMEDIUMLOW" "green:signal1" "phy0-sta0" "26" "100"
+	ucidef_set_led_rssi "wifi_mediumhigh" "WIFIMEDIUMHIGH" "green:signal2" "phy0-sta0" "51" "100"
+	ucidef_set_led_rssi "wifi_high" "WIFIHIGH" "green:signal3" "phy0-sta0" "76" "100"
+	;;
 zbtlink,zbt-wd323)
 	ucidef_set_led_switch "lan1" "LAN1" "orange:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "orange:lan2" "switch0" "0x08"
