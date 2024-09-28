@@ -1545,7 +1545,7 @@ static int fe_probe(struct platform_device *pdev)
 	if (IS_ERR(fe_base))
 		return PTR_ERR(fe_base);
 
-	netdev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(*priv), 4, 4);
+	netdev = devm_alloc_etherdev(&pdev->dev, sizeof(*priv));
 	if (!netdev) {
 		dev_err(&pdev->dev, "alloc_etherdev failed\n");
 		return -ENOMEM;
