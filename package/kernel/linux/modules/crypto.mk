@@ -531,34 +531,35 @@ $(eval $(call KernelPackage,crypto-kpp))
 
 define KernelPackage/crypto-lib-chacha20
   TITLE:=ChaCha library interface
+  DEPENDS:=+kmod-crypto-chacha20
   KCONFIG:=CONFIG_CRYPTO_LIB_CHACHA
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/crypto/libchacha.ko
   $(call AddDepends/crypto)
 endef
 
-define KernelPackage/crypto-lib-chacha20/x86_64
-  KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko
+define KernelPackage/crypto-lib-chacha20poly1305/config
+  imply PACKAGE_kmod-crypto-chacha20
 endef
 
-# Note that a non-neon fallback implementation is available on arm32 when
-# NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
+define KernelPackage/crypto-lib-chacha20/x86_64
+  KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
+endef
+
 define KernelPackage/crypto-lib-chacha20/arm
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_NEON
-  FILES:=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
+  FILES:=
 endef
 
 KernelPackage/crypto-lib-chacha20/armeb=$(KernelPackage/crypto-lib-chacha20/arm)
 
 define KernelPackage/crypto-lib-chacha20/aarch64
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_NEON
-  FILES+=$(LINUX_DIR)/arch/arm64/crypto/chacha-neon.ko
 endef
 
 define KernelPackage/crypto-lib-chacha20/mips32r2
   KCONFIG+=CONFIG_CRYPTO_CHACHA_MIPS
-  FILES:=$(LINUX_DIR)/arch/mips/crypto/chacha-mips.ko
+  FILES:=
 endef
 
 ifeq ($(CONFIG_CPU_MIPS32_R2),y)
@@ -580,6 +581,11 @@ define KernelPackage/crypto-lib-chacha20poly1305
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/crypto/libchacha20poly1305.ko
   $(call AddDepends/crypto, +kmod-crypto-lib-chacha20 +kmod-crypto-lib-poly1305)
+endef
+
+define KernelPackage/crypto-lib-chacha20poly1305/config
+  imply PACKAGE_kmod-crypto-lib-chacha20
+  imply PACKAGE_kmod-crypto-lib-poly1305
 endef
 
 $(eval $(call KernelPackage,crypto-lib-chacha20poly1305))
@@ -624,6 +630,7 @@ $(eval $(call KernelPackage,crypto-lib-curve25519))
 
 define KernelPackage/crypto-lib-poly1305
   TITLE:=Poly1305 library interface
+  DEPENDS:=+kmod-crypto-poly1305
   KCONFIG:=CONFIG_CRYPTO_LIB_POLY1305
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/crypto/libpoly1305.ko
@@ -632,28 +639,28 @@ endef
 
 define KernelPackage/crypto-lib-poly1305/config
   imply PACKAGE_kmod-crypto-hash
+  imply PACKAGE_kmod-crypto-poly1305
 endef
 
 define KernelPackage/crypto-lib-poly1305/x86_64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_X86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko
 endef
 
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
-  FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
+  FILES:=
 endef
 
 KernelPackage/crypto-lib-poly1305/armeb=$(KernelPackage/crypto-lib-poly1305/arm)
 
 define KernelPackage/crypto-lib-poly1305/aarch64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_NEON
-  FILES:=$(LINUX_DIR)/arch/arm64/crypto/poly1305-neon.ko
+  FILES:=
 endef
 
 define KernelPackage/crypto-lib-poly1305/mips
   KCONFIG+=CONFIG_CRYPTO_POLY1305_MIPS
-  FILES:=$(LINUX_DIR)/arch/mips/crypto/poly1305-mips.ko
+  FILES:=
 endef
 
 KernelPackage/crypto-lib-poly1305/mipsel=$(KernelPackage/crypto-lib-poly1305/mips)
@@ -680,6 +687,113 @@ define KernelPackage/crypto-manager
 endef
 
 $(eval $(call KernelPackage,crypto-manager))
+
+
+define KernelPackage/crypto-chacha20
+  TITLE:=ChaCha stream cipher algorithms
+  KCONFIG:=CONFIG_CRYPTO_CHACHA20
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/chacha_generic.ko
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-chacha20/x86_64
+  KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko
+endef
+
+# Note that a non-neon fallback implementation is available on arm32 when
+# NEON is not supported, hence all arm targets can utilize chacha20/arm
+define KernelPackage/crypto-chacha20/arm
+  KCONFIG:=CONFIG_CRYPTO_CHACHA20_NEON
+  FILES:=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
+endef
+
+define KernelPackage/crypto-chacha20/aarch64
+  KCONFIG:=CONFIG_CRYPTO_CHACHA20_NEON
+  FILES:=$(LINUX_DIR)/arch/arm64/crypto/chacha-neon.ko
+endef
+
+define KernelPackage/crypto-chacha20/mips32r2
+  KCONFIG:=CONFIG_CRYPTO_CHACHA_MIPS
+  FILES:=$(LINUX_DIR)/arch/mips/crypto/chacha-mips.ko
+endef
+
+ifeq ($(CONFIG_CPU_MIPS32_R2),y)
+  KernelPackage/crypto-chacha20/$(ARCH)=\
+	  $(KernelPackage/crypto-chacha20/mips32r2)
+endif
+
+ifdef KernelPackage/crypto-chacha20/$(ARCH)
+  KernelPackage/crypto-chacha20/$(CRYPTO_TARGET)=\
+	  $(KernelPackage/crypto-chacha20/$(ARCH))
+endif
+
+$(eval $(call KernelPackage,crypto-chacha20))
+
+
+define KernelPackage/crypto-chacha20poly1305
+  TITLE:=ChaCha20-Poly1305 AEAD support (RFC7539)
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-manager
+  KCONFIG:=CONFIG_CRYPTO_CHACHA20POLY1305
+  FILES:=$(LINUX_DIR)/crypto/chacha20poly1305.ko
+  $(call AddDepends/crypto, +kmod-crypto-chacha20 +kmod-crypto-poly1305)
+endef
+
+define KernelPackage/crypto-poly1305/config
+  imply PACKAGE_kmod-crypto-aead
+  imply PACKAGE_kmod-crypto-chacha20
+  imply PACKAGE_kmod-crypto-hash
+  imply PACKAGE_kmod-crypto-manager
+  imply PACKAGE_kmod-crypto-poly1305
+endef
+
+$(eval $(call KernelPackage,crypto-chacha20poly1305))
+
+
+define KernelPackage/crypto-poly1305
+  TITLE:=Poly1305 authenticator algorithm
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_POLY1305
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/poly1305_generic.ko
+  $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-poly1305/config
+  imply PACKAGE_kmod-crypto-hash
+endef
+
+define KernelPackage/crypto-poly1305/x86_64
+  KCONFIG+=CONFIG_CRYPTO_POLY1305_X86_64
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko
+endef
+
+define KernelPackage/crypto-poly1305/arm
+  KCONFIG:=CONFIG_CRYPTO_POLY1305_ARM
+  FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
+endef
+
+define KernelPackage/crypto-poly1305/aarch64
+  KCONFIG:=CONFIG_CRYPTO_POLY1305_NEON
+  FILES:=$(LINUX_DIR)/arch/arm64/crypto/poly1305-neon.ko
+endef
+
+define KernelPackage/crypto-poly1305/mips
+  KCONFIG:=CONFIG_CRYPTO_POLY1305_MIPS
+  FILES:=$(LINUX_DIR)/arch/mips/crypto/poly1305-mips.ko
+endef
+
+KernelPackage/crypto-poly1305/mipsel=$(KernelPackage/crypto-poly1305/mips)
+KernelPackage/crypto-poly1305/mips64=$(KernelPackage/crypto-poly1305/mips)
+KernelPackage/crypto-poly1305/mips64el=$(KernelPackage/crypto-poly1305/mips)
+
+ifdef KernelPackage/crypto-poly1305/$(ARCH)
+  KernelPackage/crypto-poly1305/$(CRYPTO_TARGET)=\
+	  $(KernelPackage/crypto-poly1305/$(ARCH))
+endif
+
+$(eval $(call KernelPackage,crypto-poly1305))
 
 
 define KernelPackage/crypto-md4
