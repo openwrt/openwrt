@@ -32,6 +32,12 @@ my $download_tool;
 
 $url_filename or $url_filename = $filename;
 
+sub cat {
+	open my $fh, '<', $_[0] or die "Can't open file $!";
+	read $fh, my $file_content, -s $fh;
+	return $file_content;
+}
+
 sub localmirrors {
 	my @mlist;
 	open LM, "$scriptdir/localmirrors" and do {
@@ -203,7 +209,7 @@ sub download
 		copy($link, "$target/$filename.dl");
 
 		$hash_cmd and do {
-			if (system("cat '$target/$filename.dl' | $hash_cmd > '$target/$filename.hash'")) {
+			if (system("$hash_cmd '$target/$filename.dl' > '$target/$filename.hash'")) {
 				print("Failed to generate hash for $filename\n");
 				return;
 			}
@@ -233,7 +239,7 @@ sub download
 	}
 
 	$hash_cmd and do {
-		my $sum = `cat "$target/$filename.hash"`;
+		my $sum = cat("$target/$filename.hash");
 		$sum =~ /^(\w+)\s*/ or die "Could not generate file hash\n";
 		$sum = $1;
 
@@ -299,11 +305,11 @@ projectsmirrors '@OPENWRT';
 
 if (-f "$target/$filename") {
 	$hash_cmd and do {
-		if (system("cat '$target/$filename' | $hash_cmd > '$target/$filename.hash'")) {
+		if (system("$hash_cmd '$target/$filename' > '$target/$filename.hash'")) {
 			die "Failed to generate hash for $filename\n";
 		}
 
-		my $sum = `cat "$target/$filename.hash"`;
+		my $sum = cat("$target/$filename.hash");
 		$sum =~ /^(\w+)\s*/ or die "Could not generate file hash\n";
 		$sum = $1;
 
