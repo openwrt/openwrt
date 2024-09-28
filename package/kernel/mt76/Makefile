@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=3
+PKG_RELEASE=1
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -9,9 +9,9 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/rmandrad/mt76
 PKG_SOURCE_PROTO:=git
 
-PKG_SOURCE_DATE:=2024-09-23
-PKG_SOURCE_VERSION:=716d296048fd27286d15a825a4611d445b0b439e
-PKG_MIRROR_HASH:=d2451dbbdeadf1238ff16c9cf71d485902ee73c7e575eb46e4be6bec3e4db667
+PKG_SOURCE_DATE:=2024-09-28
+PKG_SOURCE_VERSION:=92d81f9038dff83c085bb2d824feafb48c574d6b
+PKG_MIRROR_HASH:=a06e015bf120863c9b29de424a9998b022fca6c1dc8e0ee644a3a41b958a5f30
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -321,7 +321,7 @@ endef
 define KernelPackage/mt7996e
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7996E wireless driver
-  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac +kmod-hwmon-core +@DRIVER_11AX_SUPPORT +@DRIVER_11BE_SUPPORT +@KERNEL_RELAY
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-core +kmod-mt76-connac +kmod-hwmon-core +kmod-thermal +@DRIVER_11AX_SUPPORT +@DRIVER_11BE_SUPPORT +@KERNEL_RELAY
   FILES:= $(PKG_BUILD_DIR)/mt7996/mt7996e.ko
   AUTOLOAD:=$(call AutoProbe,mt7996e)
 endef
