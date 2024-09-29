@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -3026,6 +3026,7 @@ int ppp_check_kernel_support(void)
+@@ -3033,6 +3033,7 @@ int ppp_check_kernel_support(void)
  
  void logwtmp (const char *line, const char *name, const char *host)
  {
@@ -15,7 +15,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      struct utmp ut, *utp;
      pid_t  mypid = getpid();
  #if __GLIBC__ < 2
-@@ -3091,6 +3092,7 @@ void logwtmp (const char *line, const ch
+@@ -3098,6 +3099,7 @@ void logwtmp (const char *line, const ch
  	close (wtmp);
      }
  #endif

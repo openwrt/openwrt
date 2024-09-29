@@ -137,7 +137,7 @@
  	} else {
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
-@@ -1911,7 +1911,7 @@ ipcp_up(fsm *f)
+@@ -1915,7 +1915,7 @@ ipcp_up(fsm *f)
  		    proxy_arp_set[f->unit] = 1;
  
  	}
@@ -159,7 +159,7 @@
      } else {
 --- a/pppd/pppd-private.h
 +++ b/pppd/pppd-private.h
-@@ -362,7 +362,7 @@ void demand_conf(void);	/* config interf
+@@ -368,7 +368,7 @@ void demand_conf(void);	/* config interf
  void demand_block(void);	/* set all NPs to queue up packets */
  void demand_unblock(void); /* set all NPs to pass packets */
  void demand_discard(void); /* set all NPs to discard packets */

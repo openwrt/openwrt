@@ -7,9 +7,9 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/plugins/pppoe/discovery.c
 +++ b/pppd/plugins/pppoe/discovery.c
-@@ -685,7 +685,9 @@ discovery1(PPPoEConnection *conn)
+@@ -689,7 +689,9 @@ discovery1(PPPoEConnection *conn, int wa
  	conn->discoveryState = STATE_SENT_PADI;
- 	waitForPADO(conn, timeout);
+ 	waitForPADO(conn, timeout, waitWholeTimeoutForPADO);
  
 +#if 0
  	timeout *= 2;
@@ -17,7 +17,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      } while (conn->discoveryState == STATE_SENT_PADI);
  }
  
-@@ -715,7 +717,9 @@ discovery2(PPPoEConnection *conn)
+@@ -719,7 +721,9 @@ discovery2(PPPoEConnection *conn)
  	sendPADR(conn);
  	conn->discoveryState = STATE_SENT_PADR;
  	waitForPADS(conn, timeout);
