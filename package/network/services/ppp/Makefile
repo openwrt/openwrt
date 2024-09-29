@@ -9,14 +9,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_VERSION:=2.5.0
+PKG_VERSION:=2.5.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/ppp-project/ppp
-PKG_SOURCE_DATE:=2023-03-18
-PKG_SOURCE_VERSION:=760ce18f82670eb81cc186fb792919339a2e2fbe
-PKG_MIRROR_HASH:=e7fe5947ce9e59d73f6d2fdec5d2e40832e656b9edad288578391f8f169b8b9b
+PKG_SOURCE_DATE:=2024-09-18
+PKG_SOURCE_VERSION:=d5aeec65752d4a9b3bb46771d0b221c4a4a6539e
+PKG_MIRROR_HASH:=b98125933d8160ff3476b053414e787e65a94948c0ecee53f6261cd403ff4b03
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
@@ -37,7 +37,9 @@ CONFIGURE_VARS += \
 
 CONFIGURE_ARGS += \
 	with_openssl=no \
+	with_pam=no \
 	with_pcap=no \
+	with_srp=no \
 	with_static_pcap=yes
 
 define Package/ppp/Default

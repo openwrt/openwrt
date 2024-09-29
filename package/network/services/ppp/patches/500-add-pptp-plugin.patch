@@ -1,6 +1,6 @@
 --- a/configure.ac
 +++ b/configure.ac
-@@ -336,6 +336,7 @@ AC_CONFIG_FILES([
+@@ -344,6 +344,7 @@ AC_CONFIG_FILES([
      pppd/plugins/pppoatm/Makefile
      pppd/plugins/pppol2tp/Makefile
      pppd/plugins/radius/Makefile
@@ -371,7 +371,7 @@
 +
 +#include "pptp_callmgr.h"
 +#include <net/if.h>
-+#include <net/ethernet.h>
++#include <linux/if_ether.h>
 +#include <linux/if_pppox.h>
 +
 +#include <stdio.h>

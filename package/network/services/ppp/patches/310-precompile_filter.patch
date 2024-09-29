@@ -13,7 +13,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -296,6 +296,9 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
+@@ -306,6 +306,9 @@ AM_CONDITIONAL(PPP_WITH_PAM, test "x${wi
  # With libpcap support, activate pppd on network activity
  AX_CHECK_PCAP
  
@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #
  # SunOS provides a version of libpcap that would work, but SunOS has no support for activity filter
  AM_CONDITIONAL([PPP_WITH_FILTER], [ test "x${with_pcap}" = "xyes" && test "x${build_sunos}" != "xyes" ])
-@@ -417,6 +420,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
+@@ -359,6 +362,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      With libatm..........: ${with_atm:-no}
      With libpam..........: ${with_pam:-no}
      With libpcap.........: ${with_pcap:-no}
@@ -33,7 +33,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      Linker...............: $LD $LDFLAGS $LIBS
 --- a/pppd/Makefile.am
 +++ b/pppd/Makefile.am
-@@ -128,6 +128,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
+@@ -138,6 +138,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
  pppd_LIBS += $(PCAP_LIBS)
  endif
  
@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  /*
   * There have been 3 or 4 different names for this in libpcap CVS, but
   * this seems to be what they have settled on...
-@@ -178,6 +179,13 @@ static int setlogfile(char **);
+@@ -182,6 +183,13 @@ static int setlogfile(char **);
  static int loadplugin(char **);
  #endif
  
@@ -70,7 +70,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #ifdef PPP_WITH_FILTER
  static int setpassfilter(char **);
  static int setactivefilter(char **);
-@@ -374,6 +382,14 @@ struct option general_options[] = {
+@@ -391,6 +399,14 @@ struct option general_options[] = {
        "set filter for active pkts", OPT_PRIO },
  #endif
  
@@ -85,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      { "maxoctets", o_int, &maxoctets,
        "Set connection traffic limit",
        OPT_PRIO | OPT_LLIMIT | OPT_NOINCR | OPT_ZEROINF },
-@@ -1648,6 +1664,27 @@ callfile(char **argv)
+@@ -1666,6 +1682,27 @@ callfile(char **argv)
      return ok;
  }
  

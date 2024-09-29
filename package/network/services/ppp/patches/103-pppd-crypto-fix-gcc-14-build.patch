@@ -1,0 +1,42 @@
+From: Tan Zien <nabsdh9@gmail.com>
+Date: Tue, 1 Oct 2024 10:38:45 +0800
+Subject: [PATCH] pppd/crypto: fix gcc 14 build
+
+fix this:
+
+crypto.c: In function 'PPP_crypto_error':
+crypto.c:178:11: error: implicit declaration of function 'vsnprintf' [-Wimplicit-function-declaration]
+  178 |     off = vsnprintf(buf, len, fmt, args);
+      |           ^~~~~~~~~
+crypto.c:41:1: note: include '<stdio.h>' or provide a declaration of 'vsnprintf'
+   40 | #include "crypto-priv.h"
+  +++ |+#include <stdio.h>
+   41 |
+crypto.c:178:26: warning: 'vsnprintf' argument 2 type is 'int' where 'long unsigned int' is expected in a call to built-in function declared without prototype [-Wbuiltin-declaration-mismatch]
+  178 |     off = vsnprintf(buf, len, fmt, args);
+      |                          ^~~
+<built-in>: note: built-in 'vsnprintf' declared here
+
+Signed-off-by: Tan Zien <nabsdh9@gmail.com>
+---
+ pppd/crypto.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/pppd/crypto.c
++++ b/pppd/crypto.c
+@@ -34,6 +34,7 @@
+ 
+ #include <stdlib.h>
+ #include <string.h>
++#include <stdio.h>
+ 
+ #include "pppd.h"
+ #include "crypto.h"
+@@ -247,7 +248,6 @@ int PPP_crypto_deinit()
+ }
+ 
+ #ifdef UNIT_TEST
+-#include <stdio.h>
+ 
+ int debug;
+ int error_count;
