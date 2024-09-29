@@ -1,0 +1,76 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5274,14 +5274,19 @@ skip_nss_ext:
+ 	 * AP vif of the AP_VLAN vif
+ 	 */
+ 	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-					    WMI_VDEV_PARAM_AP_ENABLE_NAWDS,
+-					    MIN_IDLE_INACTIVE_TIME_SECS);
++					    WMI_VDEV_PARAM_WDS,
++					    1);
+ 	if (ret) {
+-		ath11k_warn(ab, "failed to set vdev %i nawds parameters: %d\n",
++		ath11k_warn(ab, "failed to set vdev %i wds parameters: %d\n",
+ 			    arvif->vdev_id, ret);
+ 		goto ext_vdev_down;
+ 	}
+ 
++	ret = ath11k_nss_vdev_set_cmd(arvif, ATH11K_NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD, true);
++	if (ret) {
++		ath11k_warn(ab, "failed to cfg wds backhaul in nss %d\n", ret);
++	}
++
+ 	return;
+ 
+ ext_vdev_down:
+@@ -7207,6 +7212,23 @@ static int ath11k_mac_op_add_interface(s
+ 		goto err_vdev_del;
+ 	}
+ 
++	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++					    WMI_VDEV_PARAM_WDS, 1);
++	if (ret) {
++		ath11k_warn(ab, "failed to enable wds%d\n", ret);
++	}
++
++	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
++					    WMI_VDEV_PARAM_CAPABILITIES,
++					    WMI_VDEV_WDS_LRN_ENABLED);
++	if (ret) {
++		ath11k_warn(
++			ab,
++			"failed to set vdev %d capability 0x%x, nss %d :%d\n",
++			arvif->vdev_id, WMI_VDEV_WDS_LRN_ENABLED, nss, ret);
++		goto err_vdev_del;
++	}
++
+ 	nss = get_num_chains(ar->cfg_tx_chainmask) ? : 1;
+ 	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+ 					    WMI_VDEV_PARAM_NSS, nss);
+--- a/drivers/net/wireless/ath/ath11k/nss.c
++++ b/drivers/net/wireless/ath/ath11k/nss.c
+@@ -3255,6 +3255,11 @@ int ath11k_nss_ext_vdev_create(struct at
+ 		   "nss ext vdev interface created ctx %pK, ifnum %d\n",
+ 		   arvif->nss.ctx, arvif->nss.if_num);
+ 
++	ret = ath11k_nss_vdev_set_cmd(arvif, ATH11K_NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD, true);
++	if (ret) {
++		ath11k_warn(ab, "failed to enable wds backhaul %d\n", ret);
++	}
++
+ 	return ret;
+ 
+ free_ext_vdev:
+--- a/drivers/net/wireless/ath/ath11k/wmi.h
++++ b/drivers/net/wireless/ath/ath11k/wmi.h
+@@ -1112,6 +1112,10 @@ enum wmi_tlv_vdev_param {
+ 	WMI_VDEV_PARAM_HEOPS_0_31 = 0x8003,
+ };
+ 
++#define WMI_VDEV_BEACON_SUPPORT  0x1
++#define WMI_VDEV_WDS_LRN_ENABLED 0x2
++#define WMI_VDEV_VOW_ENABLED     0x4
++
+ enum wmi_tlv_peer_flags {
+ 	WMI_PEER_AUTH		= 0x00000001,
+ 	WMI_PEER_QOS		= 0x00000002,
