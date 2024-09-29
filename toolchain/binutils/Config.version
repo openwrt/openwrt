@@ -18,9 +18,6 @@ config BINUTILS_VERSION_2_42
 	default y if !TOOLCHAINOPTS
 	bool
 
-config BINUTILS_VERSION_2_43
-	bool
-
 config BINUTILS_VERSION
 	string
 	default "2.37"			if BINUTILS_VERSION_2_37
@@ -29,4 +26,3 @@ config BINUTILS_VERSION
 	default "2.40"			if BINUTILS_VERSION_2_40
 	default "2.41"			if BINUTILS_VERSION_2_41
 	default "2.42"			if BINUTILS_VERSION_2_42
-	default "2.43.1"		if BINUTILS_VERSION_2_43

@@ -1806,21 +1806,6 @@ define Device/huawei_ap5030dn
 endef
 TARGET_DEVICES += huawei_ap5030dn
 
-define Device/huawei_ap6010dn
-  SOC := ar9344
-  DEVICE_VENDOR := Huawei
-  DEVICE_MODEL := AP6010DN
-  LOADER_TYPE := bin
-  LOADER_FLASH_OFFS := 0x111DC0
-  KERNEL_SIZE := 15360k
-  IMAGE_SIZE := 30720k
-  COMPILE := loader-$(1).bin
-  COMPILE/loader-$(1).bin := loader-okli-compile | pad-to 64k | uImage none
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
-endef
-TARGET_DEVICES += huawei_ap6010dn
-
 define Device/iodata_etg3-r
   SOC := ar9342
   DEVICE_VENDOR := I-O DATA
@@ -2913,9 +2898,10 @@ endef
 TARGET_DEVICES += sitecom_wlr-8100
 
 define Device/sophos_ap15
-  SOC := qca9557
+  SOC := qca9558
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := AP15
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += sophos_ap15
@@ -3217,6 +3203,19 @@ define Device/yuncore_a930
 endef
 TARGET_DEVICES += yuncore_a930
 
+define Device/yuncore_wb5g08
+  SOC := qca9563
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := WB 5G08
+  DEVICE_ALT0_VENDOR = KuWfi
+  DEVICE_ALT0_MODEL = WB 5G08
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+  DEVICE_PACKAGES := -uboot-envtools swconfig kmod-switch-ar8xx kmod-ath10k-ct
+endef
+TARGET_DEVICES += yuncore_wb5g08
+
 define Device/yuncore_xd3200
   SOC := qca9563
   DEVICE_VENDOR := YunCore
@@ -3262,7 +3261,7 @@ TARGET_DEVICES += zbtlink_zbt-wd323
 define Device/zyxel_nwa11xx
   $(Device/loader-okli-uimage)
   SOC := ar9342
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   LOADER_FLASH_OFFS := 0x050000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
   IMAGE_SIZE := 8192k
@@ -3309,7 +3308,7 @@ TARGET_DEVICES += zyxel_nwa1123-ni
 
 define Device/zyxel_nbg6616
   SOC := qca9557
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NBG6616
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-rtc-pcf8563 \
 	kmod-ath10k-ct ath10k-firmware-qca988x-ct

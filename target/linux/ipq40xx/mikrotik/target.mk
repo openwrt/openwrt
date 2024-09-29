@@ -1,4 +1,4 @@
 BOARDNAME:=MikroTik
-FEATURES += minor nand
+FEATURES += minor
 KERNEL_IMAGES:=vmlinux
 IMAGES_DIR:=compressed

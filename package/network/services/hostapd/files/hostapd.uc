@@ -229,16 +229,6 @@ function iface_pending_init(phydev, config)
 	pending.next();
 }
 
-function iface_macaddr_init(phydev, config, macaddr_list)
-{
-	let macaddr_data = {
-		num_global: config.num_global_macaddr ?? 1,
-		mbssid: config.mbssid ?? 0,
-	};
-
-	return phydev.macaddr_init(macaddr_list, macaddr_data);
-}
-
 function iface_restart(phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -256,7 +246,7 @@ function iface_restart(phydev, config, old_config)
 		return;
 	}
 
-	iface_macaddr_init(phydev, config, iface_config_macaddr_list(config));
+	phydev.macaddr_init(iface_config_macaddr_list(config));
 	for (let i = 0; i < length(config.bss); i++) {
 		let bss = config.bss[i];
 		if (bss.default_macaddr)
@@ -510,7 +500,11 @@ function iface_reload_config(phydev, config, old_config)
 	}
 
 	// Step 6: assign BSSID for newly created interfaces
-	macaddr_list = iface_macaddr_init(phydev, config, macaddr_list);
+	let macaddr_data = {
+		num_global: config.num_global_macaddr ?? 1,
+		mbssid: config.mbssid ?? 0,
+	};
+	macaddr_list = phydev.macaddr_init(macaddr_list, macaddr_data);
 	for (let i = 0; i < length(config.bss); i++) {
 		if (bss_list[i])
 			continue;
@@ -681,7 +675,7 @@ function iface_load_config(filename)
 
 		if (val[0] == "#num_global_macaddr" ||
 		    val[0] == "mbssid")
-			config[substr(val[0], 1)] = int(val[1]);
+			config[val[0]] = int(val[1]);
 
 		push(config.radio.data, line);
 	}
@@ -895,13 +889,13 @@ return {
 		hostapd.udebug_set(null);
 		hostapd.ubus.disconnect();
 	},
-	bss_add: function(phy, name, obj) {
+	bss_add: function(name, obj) {
 		bss_event("add", name);
 	},
-	bss_reload: function(phy, name, obj, reconf) {
+	bss_reload: function(name, obj, reconf) {
 		bss_event("reload", name, { reconf: reconf != 0 });
 	},
-	bss_remove: function(phy, name, obj) {
+	bss_remove: function(name, obj) {
 		bss_event("remove", name);
 	}
 };

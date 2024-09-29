@@ -120,7 +120,9 @@ $(eval $(call KernelPackage,can-c-can-platform))
 define KernelPackage/can-flexcan
   TITLE:=Support for Freescale FLEXCAN based chips
   KCONFIG:=CONFIG_CAN_FLEXCAN
-  FILES:=$(LINUX_DIR)/drivers/net/can/flexcan/flexcan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/flexcan.ko@lt5.17 \
+	$(LINUX_DIR)/drivers/net/can/flexcan/flexcan.ko@ge5.17
   AUTOLOAD:=$(call AutoProbe,flexcan)
   $(call AddDepends/can,@TARGET_imx)
 endef
@@ -183,7 +185,9 @@ $(eval $(call KernelPackage,can-raw))
 define KernelPackage/can-slcan
   TITLE:=Serial / USB serial CAN Adaptors (slcan)
   KCONFIG:=CONFIG_CAN_SLCAN
-  FILES:=$(LINUX_DIR)/drivers/net/can/slcan/slcan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/slcan.ko@lt6.0 \
+	$(LINUX_DIR)/drivers/net/can/slcan/slcan.ko@ge6.0
   AUTOLOAD:=$(call AutoProbe,slcan)
   $(call AddDepends/can)
 endef
@@ -231,8 +235,12 @@ $(eval $(call KernelPackage,can-usb-ems))
 
 define KernelPackage/can-usb-esd
   TITLE:=ESD USB/2 CAN/USB interface
-  KCONFIG:=CONFIG_CAN_ESD_USB
-  FILES:=$(LINUX_DIR)/drivers/net/can/usb/esd_usb.ko
+  KCONFIG:= \
+	CONFIG_CAN_ESD_USB2@lt6.0 \
+	CONFIG_CAN_ESD_USB@ge6.0
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/usb/esd_usb2.ko@lt6.0 \
+	$(LINUX_DIR)/drivers/net/can/usb/esd_usb.ko@ge6.0
   AUTOLOAD:=$(call AutoProbe,esd_usb2 esd_usb)
   $(call AddDepends/can,+kmod-usb-core)
 endef

@@ -1,0 +1,20 @@
+From 21e0e009b1bffea86890fcbf6e1be4c4121258ef Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Fri, 11 Aug 2023 11:28:27 +0200
+Subject: [PATCH 1025/1025] riscv: dts: visionfive1: enable QSPI
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../riscv/boot/dts/starfive/jh7100-starfive-visionfive-v1.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7100-starfive-visionfive-v1.dts
++++ b/arch/riscv/boot/dts/starfive/jh7100-starfive-visionfive-v1.dts
+@@ -37,3 +37,7 @@
+ 		reg = <0>;
+ 	};
+ };
++
++&qspi {
++	status = "okay";
++};

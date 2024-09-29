@@ -1,0 +1,54 @@
+From fb42378dcc7f247df56f0ecddfdae85487495fbc Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Mon, 6 Feb 2023 17:42:04 -0800
+Subject: [PATCH] mtd: mtdpart: Don't create platform device that'll never
+ probe
+
+These "nvmem-cells" platform devices never get probed because there's no
+platform driver for it and it's never used anywhere else. So it's a
+waste of memory. These devices also cause fw_devlink to block nvmem
+consumers of "nvmem-cells" partition from probing because the supplier
+device never probes.
+
+So stop creating platform devices for nvmem-cells partitions to avoid
+wasting memory and to avoid blocking probing of consumers.
+
+Reported-by: Maxim Kiselev <bigunclemax@gmail.com>
+Fixes: bcdf0315a61a ("mtd: call of_platform_populate() for MTD partitions")
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Tested-by: Maksim Kiselev <bigunclemax@gmail.com>
+Tested-by: Douglas Anderson <dianders@chromium.org>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Luca Weiss <luca.weiss@fairphone.com> # qcom/sm7225-fairphone-fp4
+Link: https://lore.kernel.org/r/20230207014207.1678715-13-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/mtd/mtdpart.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -577,6 +577,7 @@ static int mtd_part_of_parse(struct mtd_
+ {
+ 	struct mtd_part_parser *parser;
+ 	struct device_node *np;
++	struct device_node *child;
+ 	struct property *prop;
+ 	struct device *dev;
+ 	const char *compat;
+@@ -594,6 +595,15 @@ static int mtd_part_of_parse(struct mtd_
+ 	else
+ 		np = of_get_child_by_name(np, "partitions");
+ 
++	/*
++	 * Don't create devices that are added to a bus but will never get
++	 * probed. That'll cause fw_devlink to block probing of consumers of
++	 * this partition until the partition device is probed.
++	 */
++	for_each_child_of_node(np, child)
++		if (of_device_is_compatible(child, "nvmem-cells"))
++			of_node_set_flag(child, OF_POPULATED);
++
+ 	of_property_for_each_string(np, "compatible", prop, compat) {
+ 		parser = mtd_part_get_compatible_parser(compat);
+ 		if (!parser)

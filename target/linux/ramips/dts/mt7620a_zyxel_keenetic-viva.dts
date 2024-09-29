@@ -6,7 +6,7 @@
 
 / {
 	compatible = "zyxel,keenetic-viva", "ralink,mt7620a-soc";
-	model = "Zyxel Keenetic Viva";
+	model = "ZyXEL Keenetic Viva";
 
 	aliases {
 		led-boot = &led_power_green;
@@ -85,7 +85,7 @@
 
 	rtl8367rb {
 		compatible = "realtek,rtl8367b";
-		realtek,extif = <7 1 0 1 1 1 1 1 1 2>;
+		realtek,extif2 = <1 0 1 1 1 1 1 1 2>;
 		mii-bus = <&mdio0>;
 	};
 };

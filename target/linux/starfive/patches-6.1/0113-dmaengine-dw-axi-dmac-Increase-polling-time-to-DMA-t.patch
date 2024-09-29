@@ -1,0 +1,29 @@
+From 92c2dc96af79b2f181cc97157ce3ef2be5b48f4c Mon Sep 17 00:00:00 2001
+From: Walker Chen <walker.chen@starfivetech.com>
+Date: Wed, 22 Mar 2023 17:48:19 +0800
+Subject: [PATCH 113/122] dmaengine: dw-axi-dmac: Increase polling time to DMA
+ transmission completion status
+
+The bit DMAC_CHEN[0] is automatically cleared by hardware to disable the
+channel after the last AMBA transfer of the DMA transfer to the
+destination has completed. Software can therefore poll this bit to
+determine when this channel is free for a new DMA transfer.
+This time requires at least 40 milliseconds on JH7110 SoC, otherwise an
+error message 'failed to stop' will be reported.
+
+Signed-off-by: Walker Chen <walker.chen@starfivetech.com>
+---
+ drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
++++ b/drivers/dma/dw-axi-dmac/dw-axi-dmac-platform.c
+@@ -1145,7 +1145,7 @@ static int dma_chan_terminate_all(struct
+ 	axi_chan_disable(chan);
+ 
+ 	ret = readl_poll_timeout_atomic(chan->chip->regs + DMAC_CHEN, val,
+-					!(val & chan_active), 1000, 10000);
++					!(val & chan_active), 1000, 50000);
+ 	if (ret == -ETIMEDOUT)
+ 		dev_warn(dchan2dev(dchan),
+ 			 "%s failed to stop\n", axi_chan_name(chan));

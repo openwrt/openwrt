@@ -1,0 +1,61 @@
+From 5c9b66f3c8a3f72fa2a58e89a57c6d7afd550bf0 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 29 Sep 2021 13:23:22 +0200
+Subject: [PATCH 07/11] net: dsa: rtl8366rb: Use core filtering tracking
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We added a state variable to track whether a certain port
+was VLAN filtering or not, but we can just inquire the DSA
+core about this.
+
+Cc: Vladimir Oltean <olteanv@gmail.com>
+Cc: Mauri Sandberg <sandberg@mailfence.com>
+Cc: DENG Qingfang <dqfext@gmail.com>
+Cc: Alvin Šipraga <alsi@bang-olufsen.dk>
+Cc: Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/rtl8366rb.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/rtl8366rb.c
++++ b/drivers/net/dsa/rtl8366rb.c
+@@ -337,12 +337,10 @@
+  * struct rtl8366rb - RTL8366RB-specific data
+  * @max_mtu: per-port max MTU setting
+  * @pvid_enabled: if PVID is set for respective port
+- * @vlan_filtering: if VLAN filtering is enabled for respective port
+  */
+ struct rtl8366rb {
+ 	unsigned int max_mtu[RTL8366RB_NUM_PORTS];
+ 	bool pvid_enabled[RTL8366RB_NUM_PORTS];
+-	bool vlan_filtering[RTL8366RB_NUM_PORTS];
+ };
+ 
+ static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
+@@ -1262,12 +1260,9 @@ static int rtl8366rb_vlan_filtering(stru
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Keep track if filtering is enabled on each port */
+-	rb->vlan_filtering[port] = vlan_filtering;
+-
+ 	/* If VLAN filtering is enabled and PVID is also enabled, we must
+ 	 * not drop any untagged or C-tagged frames. If we turn off VLAN
+-	 * filtering on a port, we need ti accept any frames.
++	 * filtering on a port, we need to accept any frames.
+ 	 */
+ 	if (vlan_filtering)
+ 		ret = rtl8366rb_drop_untagged(smi, port, !rb->pvid_enabled[port]);
+@@ -1512,7 +1507,7 @@ static int rtl8366rb_set_mc_index(struct
+ 	 * not drop any untagged or C-tagged frames. Make sure to update the
+ 	 * filtering setting.
+ 	 */
+-	if (rb->vlan_filtering[port])
++	if (dsa_port_is_vlan_filtering(dsa_to_port(smi->ds, port)))
+ 		ret = rtl8366rb_drop_untagged(smi, port, !pvid_enabled);
+ 
+ 	return ret;

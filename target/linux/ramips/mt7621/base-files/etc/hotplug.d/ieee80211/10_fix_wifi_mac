@@ -126,10 +126,6 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
-	keenetic,kn-3510)
-		[ "$PHYNBR" = "1" ] && \
-			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
-		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
@@ -157,19 +153,6 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
-	netgear,wax214v2)
-		hw_mac_addr=$(mtd_get_mac_ascii Config ethaddr)
-		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
-		;;
-	netis,n6)
-		hw_mac_addr="$(mtd_get_mac_binary Factory 0x4)"
-		hw_mac_addr=$(macaddr_setbit $hw_mac_addr 28)
-		hw_mac_2g=$(macaddr_unsetbit $hw_mac_addr 26)
-		hw_mac_5g=$(macaddr_setbit $hw_mac_addr 27)
-		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_2g" > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && echo -n "$hw_mac_5g" > /sys${DEVPATH}/macaddress
-		;;
 	mercusys,mr70x-v1|\
 	tplink,archer-ax23-v1)
 		hw_mac_addr="$(mtd_get_mac_binary config 0x8)"
@@ -192,11 +175,6 @@ case "$board" in
 	raisecom,msg1500-x-00)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(get_mac_label)" > /sys${DEVPATH}/macaddress
-		;;
-	ruijie,rg-ew1200g-pro-v1.1)
-		hw_mac_addr="$(mtd_get_mac_ascii product_info ethaddr)"
-		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	snr,snr-cpe-me2-sfp)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x8004)"

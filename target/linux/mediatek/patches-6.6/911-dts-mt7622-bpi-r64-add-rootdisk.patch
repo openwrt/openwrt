@@ -25,7 +25,7 @@
 +				block-partition-env {
 +					partname = "ubootenv";
 +					nvmem-layout {
-+						compatible = "u-boot,env";
++						compatible = "u-boot,env-layout";
 +					};
 +				};
 +				emmc_rootfs: block-partition-production {
@@ -52,7 +52,7 @@
 +				block-partition-env {
 +					partname = "ubootenv";
 +					nvmem-layout {
-+						compatible = "u-boot,env";
++						compatible = "u-boot,env-layout";
 +					};
 +				};
 +				sd_rootfs: block-partition-production {

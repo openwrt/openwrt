@@ -1,0 +1,99 @@
+From 5e61fe157a27afc7c0d4f7bcbceefdca536c015f Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Wed, 17 Aug 2022 14:32:52 +0200
+Subject: [PATCH] net: phy: Introduce QUSGMII PHY mode
+
+The QUSGMII mode is a derivative of Cisco's USXGMII standard. This
+standard is pretty similar to SGMII, but allows for faster speeds, and
+has the build-in bits for Quad and Octa variants (like QSGMII).
+
+The main difference with SGMII/QSGMII is that USXGMII/QUSGMII re-uses
+the preamble to carry various information, named 'Extensions'.
+
+As of today, the USXGMII standard only mentions the "PCH" extension,
+which is used to convey timestamps, allowing in-band signaling of PTP
+timestamps without having to modify the frame itself.
+
+This commit adds support for that mode. When no extension is in use, it
+behaves exactly like QSGMII, although it's not compatible with QSGMII.
+
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ Documentation/networking/phy.rst | 9 +++++++++
+ drivers/net/phy/phylink.c        | 3 +++
+ include/linux/phy.h              | 4 ++++
+ 3 files changed, 16 insertions(+)
+
+--- a/Documentation/networking/phy.rst
++++ b/Documentation/networking/phy.rst
+@@ -303,6 +303,15 @@ Some of the interface modes are describe
+     rate of 125Mpbs using a 4B/5B encoding scheme, resulting in an underlying
+     data rate of 100Mpbs.
+ 
++``PHY_INTERFACE_MODE_QUSGMII``
++    This defines the Cisco the Quad USGMII mode, which is the Quad variant of
++    the USGMII (Universal SGMII) link. It's very similar to QSGMII, but uses
++    a Packet Control Header (PCH) instead of the 7 bytes preamble to carry not
++    only the port id, but also so-called "extensions". The only documented
++    extension so-far in the specification is the inclusion of timestamps, for
++    PTP-enabled PHYs. This mode isn't compatible with QSGMII, but offers the
++    same capabilities in terms of link speed and negociation.
++
+ Pause frames / flow control
+ ===========================
+ 
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -367,6 +367,7 @@ void phylink_get_linkmodes(unsigned long
+ 	case PHY_INTERFACE_MODE_RGMII_ID:
+ 	case PHY_INTERFACE_MODE_RGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_QUSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_GMII:
+ 		caps |= MAC_1000HD | MAC_1000FD;
+@@ -630,6 +631,7 @@ static int phylink_parse_mode(struct phy
+ 		switch (pl->link_config.interface) {
+ 		case PHY_INTERFACE_MODE_SGMII:
+ 		case PHY_INTERFACE_MODE_QSGMII:
++		case PHY_INTERFACE_MODE_QUSGMII:
+ 			phylink_set(pl->supported, 10baseT_Half);
+ 			phylink_set(pl->supported, 10baseT_Full);
+ 			phylink_set(pl->supported, 100baseT_Half);
+@@ -2956,6 +2958,7 @@ void phylink_mii_c22_pcs_get_state(struc
+ 
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_QUSGMII:
+ 		phylink_decode_sgmii_word(state, lpa);
+ 		break;
+ 
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -115,6 +115,7 @@ extern const int phy_10gbit_features_arr
+  * @PHY_INTERFACE_MODE_25GBASER: 25G BaseR
+  * @PHY_INTERFACE_MODE_USXGMII:  Universal Serial 10GE MII
+  * @PHY_INTERFACE_MODE_10GKR: 10GBASE-KR - with Clause 73 AN
++ * @PHY_INTERFACE_MODE_QUSGMII: Quad Universal SGMII
+  * @PHY_INTERFACE_MODE_MAX: Book keeping
+  *
+  * Describes the interface between the MAC and PHY.
+@@ -152,6 +153,7 @@ typedef enum {
+ 	PHY_INTERFACE_MODE_USXGMII,
+ 	/* 10GBASE-KR - with Clause 73 AN */
+ 	PHY_INTERFACE_MODE_10GKR,
++	PHY_INTERFACE_MODE_QUSGMII,
+ 	PHY_INTERFACE_MODE_MAX,
+ } phy_interface_t;
+ 
+@@ -267,6 +269,8 @@ static inline const char *phy_modes(phy_
+ 		return "10gbase-kr";
+ 	case PHY_INTERFACE_MODE_100BASEX:
+ 		return "100base-x";
++	case PHY_INTERFACE_MODE_QUSGMII:
++		return "qusgmii";
+ 	default:
+ 		return "unknown";
+ 	}

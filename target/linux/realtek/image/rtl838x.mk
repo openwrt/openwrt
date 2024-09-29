@@ -71,18 +71,9 @@ define Device/d-link_dgs-1210-28mp-f
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-28MP
   DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
+  DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += d-link_dgs-1210-28mp-f
-
-define Device/d-link_dgs-1210-28p-f
-  $(Device/d-link_dgs-1210)
-  SOC := rtl8382
-  DEVICE_MODEL := DGS-1210-28P
-  DEVICE_VARIANT := F
-  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
-endef
-TARGET_DEVICES += d-link_dgs-1210-28p-f
 
 # The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
 # Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
@@ -323,7 +314,7 @@ define Device/zyxel_gs1900-8
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
   DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Zyxel
+  DEVICE_ALT0_VENDOR := ZyXEL
   DEVICE_ALT0_MODEL := GS1900-8
   DEVICE_ALT0_VARIANT := v2
   ZYXEL_VERS := AAHH

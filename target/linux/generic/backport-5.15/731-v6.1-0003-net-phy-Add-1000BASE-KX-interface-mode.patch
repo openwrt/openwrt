@@ -1,0 +1,96 @@
+From 05ad5d4581c3c1cc724fe50d4652833fb9f3037b Mon Sep 17 00:00:00 2001
+From: Sean Anderson <sean.anderson@seco.com>
+Date: Fri, 2 Sep 2022 18:02:39 -0400
+Subject: [PATCH] net: phy: Add 1000BASE-KX interface mode
+
+Add 1000BASE-KX interface mode. This 1G backplane ethernet as described in
+clause 70. Clause 73 autonegotiation is mandatory, and only full duplex
+operation is supported.
+
+Although at the PMA level this interface mode is identical to
+1000BASE-X, it uses a different form of in-band autonegation. This
+justifies a separate interface mode, since the interface mode (along
+with the MLO_AN_* autonegotiation mode) sets the type of autonegotiation
+which will be used on a link. This results in more than just electrical
+differences between the link modes.
+
+With regard to 1000BASE-X, 1000BASE-KX holds a similar position to
+SGMII: same signaling, but different autonegotiation. PCS drivers
+(which typically handle in-band autonegotiation) may only support
+1000BASE-X, and not 1000BASE-KX. Similarly, the phy mode is used to
+configure serdes phys with phy_set_mode_ext. Due to the different
+electrical standards (SFI or XFI vs Clause 70), they will likely want to
+use different configuration. Adding a phy interface mode for
+1000BASE-KX helps simplify configuration in these areas.
+
+Signed-off-by: Sean Anderson <sean.anderson@seco.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ Documentation/networking/phy.rst | 6 ++++++
+ drivers/net/phy/phy-core.c       | 1 +
+ drivers/net/phy/phylink.c        | 1 +
+ include/linux/phy.h              | 4 ++++
+ 4 files changed, 12 insertions(+)
+
+--- a/Documentation/networking/phy.rst
++++ b/Documentation/networking/phy.rst
+@@ -312,6 +312,12 @@ Some of the interface modes are describe
+     PTP-enabled PHYs. This mode isn't compatible with QSGMII, but offers the
+     same capabilities in terms of link speed and negociation.
+ 
++``PHY_INTERFACE_MODE_1000BASEKX``
++    This is 1000BASE-X as defined by IEEE 802.3 Clause 36 with Clause 73
++    autonegotiation. Generally, it will be used with a Clause 70 PMD. To
++    contrast with the 1000BASE-X phy mode used for Clause 38 and 39 PMDs, this
++    interface mode has different autonegotiation and only supports full duplex.
++
+ Pause frames / flow control
+ ===========================
+ 
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -114,6 +114,7 @@ int phy_interface_num_ports(phy_interfac
+ 	case PHY_INTERFACE_MODE_100BASEX:
+ 	case PHY_INTERFACE_MODE_RXAUI:
+ 	case PHY_INTERFACE_MODE_XAUI:
++	case PHY_INTERFACE_MODE_1000BASEKX:
+ 		return 1;
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -390,6 +390,7 @@ void phylink_get_linkmodes(unsigned long
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 		caps |= MAC_1000HD;
+ 		fallthrough;
++	case PHY_INTERFACE_MODE_1000BASEKX:
+ 	case PHY_INTERFACE_MODE_TRGMII:
+ 		caps |= MAC_1000FD;
+ 		break;
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -116,6 +116,7 @@ extern const int phy_10gbit_features_arr
+  * @PHY_INTERFACE_MODE_USXGMII:  Universal Serial 10GE MII
+  * @PHY_INTERFACE_MODE_10GKR: 10GBASE-KR - with Clause 73 AN
+  * @PHY_INTERFACE_MODE_QUSGMII: Quad Universal SGMII
++ * @PHY_INTERFACE_MODE_1000BASEKX: 1000Base-KX - with Clause 73 AN
+  * @PHY_INTERFACE_MODE_MAX: Book keeping
+  *
+  * Describes the interface between the MAC and PHY.
+@@ -154,6 +155,7 @@ typedef enum {
+ 	/* 10GBASE-KR - with Clause 73 AN */
+ 	PHY_INTERFACE_MODE_10GKR,
+ 	PHY_INTERFACE_MODE_QUSGMII,
++	PHY_INTERFACE_MODE_1000BASEKX,
+ 	PHY_INTERFACE_MODE_MAX,
+ } phy_interface_t;
+ 
+@@ -251,6 +253,8 @@ static inline const char *phy_modes(phy_
+ 		return "trgmii";
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 		return "1000base-x";
++	case PHY_INTERFACE_MODE_1000BASEKX:
++		return "1000base-kx";
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		return "2500base-x";
+ 	case PHY_INTERFACE_MODE_5GBASER:

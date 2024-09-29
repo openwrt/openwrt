@@ -1,0 +1,322 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 4 Jun 2024 21:48:48 +0200
+Subject: [PATCH] wifi: mac80211: extend ifcomb check functions for
+ multi-radio
+
+Add support for counting global and per-radio max/current number of
+channels, as well as checking radio-specific interface combinations.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -263,7 +263,7 @@ static int ieee80211_start_p2p_device(st
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
+-	ret = ieee80211_check_combinations(sdata, NULL, 0, 0);
++	ret = ieee80211_check_combinations(sdata, NULL, 0, 0, -1);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -285,7 +285,7 @@ static int ieee80211_start_nan(struct wi
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
+-	ret = ieee80211_check_combinations(sdata, NULL, 0, 0);
++	ret = ieee80211_check_combinations(sdata, NULL, 0, 0, -1);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -3992,7 +3992,7 @@ __ieee80211_channel_switch(struct wiphy
+ 		goto out;
+ 
+ 	/* if reservation is invalid then this will fail */
+-	err = ieee80211_check_combinations(sdata, NULL, chanctx->mode, 0);
++	err = ieee80211_check_combinations(sdata, NULL, chanctx->mode, 0, -1);
+ 	if (err) {
+ 		ieee80211_link_unreserve_chanctx(link_data);
+ 		goto out;
+@@ -5161,4 +5161,5 @@ const struct cfg80211_ops mac80211_confi
+ 	.del_link_station = ieee80211_del_link_station,
+ 	.set_hw_timestamp = ieee80211_set_hw_timestamp,
+ 	.set_ttlm = ieee80211_set_ttlm,
++	.get_radio_mask = ieee80211_get_radio_mask,
+ };
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -47,24 +47,29 @@ int ieee80211_chanctx_refcount(struct ie
+ 	       ieee80211_chanctx_num_reserved(local, ctx);
+ }
+ 
+-static int ieee80211_num_chanctx(struct ieee80211_local *local)
++static int ieee80211_num_chanctx(struct ieee80211_local *local, int radio_idx)
+ {
+ 	struct ieee80211_chanctx *ctx;
+ 	int num = 0;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	list_for_each_entry(ctx, &local->chanctx_list, list)
++	list_for_each_entry(ctx, &local->chanctx_list, list) {
++		if (radio_idx >= 0 && ctx->conf.radio_idx != radio_idx)
++			continue;
+ 		num++;
++	}
+ 
+ 	return num;
+ }
+ 
+-static bool ieee80211_can_create_new_chanctx(struct ieee80211_local *local)
++static bool ieee80211_can_create_new_chanctx(struct ieee80211_local *local,
++					     int radio_idx)
+ {
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	return ieee80211_num_chanctx(local) < ieee80211_max_num_channels(local);
++	return ieee80211_num_chanctx(local, radio_idx) <
++	       ieee80211_max_num_channels(local, radio_idx);
+ }
+ 
+ static struct ieee80211_chanctx *
+@@ -1045,7 +1050,7 @@ int ieee80211_link_reserve_chanctx(struc
+ 
+ 	new_ctx = ieee80211_find_reservation_chanctx(local, chanreq, mode);
+ 	if (!new_ctx) {
+-		if (ieee80211_can_create_new_chanctx(local)) {
++		if (ieee80211_can_create_new_chanctx(local, -1)) {
+ 			new_ctx = ieee80211_new_chanctx(local, chanreq, mode);
+ 			if (IS_ERR(new_ctx))
+ 				return PTR_ERR(new_ctx);
+@@ -1736,7 +1741,7 @@ int ieee80211_link_use_channel(struct ie
+ 	link->radar_required = ret;
+ 
+ 	ret = ieee80211_check_combinations(sdata, &chanreq->oper, mode,
+-					   radar_detect_width);
++					   radar_detect_width, -1);
+ 	if (ret < 0)
+ 		goto out;
+ 
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -1745,7 +1745,7 @@ int ieee80211_ibss_join(struct ieee80211
+ 		IEEE80211_CHANCTX_SHARED : IEEE80211_CHANCTX_EXCLUSIVE;
+ 
+ 	ret = ieee80211_check_combinations(sdata, &params->chandef, chanmode,
+-					   radar_detect_width);
++					   radar_detect_width, -1);
+ 	if (ret < 0)
+ 		return ret;
+ 
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -2596,8 +2596,9 @@ void ieee80211_recalc_dtim(struct ieee80
+ int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
+ 				 const struct cfg80211_chan_def *chandef,
+ 				 enum ieee80211_chanctx_mode chanmode,
+-				 u8 radar_detect);
+-int ieee80211_max_num_channels(struct ieee80211_local *local);
++				 u8 radar_detect, int radio_idx);
++int ieee80211_max_num_channels(struct ieee80211_local *local, int radio_idx);
++u32 ieee80211_get_radio_mask(struct wiphy *wiphy, struct net_device *dev);
+ void ieee80211_recalc_chanctx_chantype(struct ieee80211_local *local,
+ 				       struct ieee80211_chanctx *ctx);
+ 
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -397,7 +397,7 @@ static int ieee80211_check_concurrent_if
+ 		}
+ 	}
+ 
+-	return ieee80211_check_combinations(sdata, NULL, 0, 0);
++	return ieee80211_check_combinations(sdata, NULL, 0, 0, -1);
+ }
+ 
+ static int ieee80211_check_queues(struct ieee80211_sub_if_data *sdata,
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -3918,20 +3918,103 @@ static u8 ieee80211_chanctx_radar_detect
+ 	return radar_detect;
+ }
+ 
++static u32
++__ieee80211_get_radio_mask(struct ieee80211_sub_if_data *sdata)
++{
++	struct ieee80211_bss_conf *link_conf;
++	struct ieee80211_chanctx_conf *conf;
++	unsigned int link_id;
++	u32 mask = 0;
++
++	for_each_vif_active_link(&sdata->vif, link_conf, link_id) {
++		conf = sdata_dereference(link_conf->chanctx_conf, sdata);
++		if (!conf || conf->radio_idx < 0)
++			continue;
++
++		mask |= BIT(conf->radio_idx);
++	}
++
++	return mask;
++}
++
++u32 ieee80211_get_radio_mask(struct wiphy *wiphy, struct net_device *dev)
++{
++	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
++
++	return __ieee80211_get_radio_mask(sdata);
++}
++
++static bool
++ieee80211_sdata_uses_radio(struct ieee80211_sub_if_data *sdata, int radio_idx)
++{
++	if (radio_idx < 0)
++		return true;
++
++	return __ieee80211_get_radio_mask(sdata) & BIT(radio_idx);
++}
++
++static int
++ieee80211_fill_ifcomb_params(struct ieee80211_local *local,
++			     struct iface_combination_params *params,
++			     const struct cfg80211_chan_def *chandef,
++			     struct ieee80211_sub_if_data *sdata)
++{
++	struct ieee80211_sub_if_data *sdata_iter;
++	struct ieee80211_chanctx *ctx;
++	int total = !!sdata;
++
++	list_for_each_entry(ctx, &local->chanctx_list, list) {
++		if (ctx->replace_state == IEEE80211_CHANCTX_WILL_BE_REPLACED)
++			continue;
++
++		if (params->radio_idx >= 0 &&
++		    ctx->conf.radio_idx != params->radio_idx)
++			continue;
++
++		params->radar_detect |=
++			ieee80211_chanctx_radar_detect(local, ctx);
++
++		if (chandef && ctx->mode != IEEE80211_CHANCTX_EXCLUSIVE &&
++		    cfg80211_chandef_compatible(chandef, &ctx->conf.def))
++			continue;
++
++		params->num_different_channels++;
++	}
++
++	list_for_each_entry(sdata_iter, &local->interfaces, list) {
++		struct wireless_dev *wdev_iter;
++
++		wdev_iter = &sdata_iter->wdev;
++
++		if (sdata_iter == sdata ||
++		    !ieee80211_sdata_running(sdata_iter) ||
++		    cfg80211_iftype_allowed(local->hw.wiphy,
++					    wdev_iter->iftype, 0, 1))
++			continue;
++
++		if (!ieee80211_sdata_uses_radio(sdata_iter, params->radio_idx))
++			continue;
++
++		params->iftype_num[wdev_iter->iftype]++;
++		total++;
++	}
++
++	return total;
++}
++
+ int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
+ 				 const struct cfg80211_chan_def *chandef,
+ 				 enum ieee80211_chanctx_mode chanmode,
+-				 u8 radar_detect)
++				 u8 radar_detect, int radio_idx)
+ {
++	bool shared = chanmode == IEEE80211_CHANCTX_SHARED;
+ 	struct ieee80211_local *local = sdata->local;
+-	struct ieee80211_sub_if_data *sdata_iter;
+ 	enum nl80211_iftype iftype = sdata->wdev.iftype;
+-	struct ieee80211_chanctx *ctx;
+-	int total = 1;
+ 	struct iface_combination_params params = {
+ 		.radar_detect = radar_detect,
+-		.radio_idx = -1,
++		.radio_idx = radio_idx,
+ 	};
++	int total;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+@@ -3968,37 +4051,9 @@ int ieee80211_check_combinations(struct
+ 	if (iftype != NL80211_IFTYPE_UNSPECIFIED)
+ 		params.iftype_num[iftype] = 1;
+ 
+-	list_for_each_entry(ctx, &local->chanctx_list, list) {
+-		if (ctx->replace_state == IEEE80211_CHANCTX_WILL_BE_REPLACED)
+-			continue;
+-		params.radar_detect |=
+-			ieee80211_chanctx_radar_detect(local, ctx);
+-		if (ctx->mode == IEEE80211_CHANCTX_EXCLUSIVE) {
+-			params.num_different_channels++;
+-			continue;
+-		}
+-		if (chandef && chanmode == IEEE80211_CHANCTX_SHARED &&
+-		    cfg80211_chandef_compatible(chandef,
+-						&ctx->conf.def))
+-			continue;
+-		params.num_different_channels++;
+-	}
+-
+-	list_for_each_entry_rcu(sdata_iter, &local->interfaces, list) {
+-		struct wireless_dev *wdev_iter;
+-
+-		wdev_iter = &sdata_iter->wdev;
+-
+-		if (sdata_iter == sdata ||
+-		    !ieee80211_sdata_running(sdata_iter) ||
+-		    cfg80211_iftype_allowed(local->hw.wiphy,
+-					    wdev_iter->iftype, 0, 1))
+-			continue;
+-
+-		params.iftype_num[wdev_iter->iftype]++;
+-		total++;
+-	}
+-
++	total = ieee80211_fill_ifcomb_params(local, &params,
++					     shared ? chandef : NULL,
++					     sdata);
+ 	if (total == 1 && !params.radar_detect)
+ 		return 0;
+ 
+@@ -4015,30 +4070,17 @@ ieee80211_iter_max_chans(const struct ie
+ 					  c->num_different_channels);
+ }
+ 
+-int ieee80211_max_num_channels(struct ieee80211_local *local)
++int ieee80211_max_num_channels(struct ieee80211_local *local, int radio_idx)
+ {
+-	struct ieee80211_sub_if_data *sdata;
+-	struct ieee80211_chanctx *ctx;
+ 	u32 max_num_different_channels = 1;
+ 	int err;
+ 	struct iface_combination_params params = {
+-		.radio_idx = -1,
++		.radio_idx = radio_idx,
+ 	};
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	list_for_each_entry(ctx, &local->chanctx_list, list) {
+-		if (ctx->replace_state == IEEE80211_CHANCTX_WILL_BE_REPLACED)
+-			continue;
+-
+-		params.num_different_channels++;
+-
+-		params.radar_detect |=
+-			ieee80211_chanctx_radar_detect(local, ctx);
+-	}
+-
+-	list_for_each_entry_rcu(sdata, &local->interfaces, list)
+-		params.iftype_num[sdata->wdev.iftype]++;
++	ieee80211_fill_ifcomb_params(local, &params, NULL, NULL);
+ 
+ 	err = cfg80211_iter_combinations(local->hw.wiphy, &params,
+ 					 ieee80211_iter_max_chans,

@@ -1,0 +1,38 @@
+From 07ae4fde9efada7878e1383d6ccc7da70315ca23 Mon Sep 17 00:00:00 2001
+From: Samuel Holland <samuel@sholland.org>
+Date: Sun, 20 Feb 2022 15:15:20 +0000
+Subject: [PATCH] nvmem: sunxi_sid: Add support for D1 variant
+
+D1 has a smaller eFuse block than some other recent SoCs, and it no
+longer requires a workaround to read the eFuse data.
+
+Signed-off-by: Samuel Holland <samuel@sholland.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220220151527.17216-7-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sunxi_sid.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/nvmem/sunxi_sid.c
++++ b/drivers/nvmem/sunxi_sid.c
+@@ -184,6 +184,11 @@ static const struct sunxi_sid_cfg sun8i_
+ 	.need_register_readout = true,
+ };
+ 
++static const struct sunxi_sid_cfg sun20i_d1_cfg = {
++	.value_offset = 0x200,
++	.size = 0x100,
++};
++
+ static const struct sunxi_sid_cfg sun50i_a64_cfg = {
+ 	.value_offset = 0x200,
+ 	.size = 0x100,
+@@ -200,6 +205,7 @@ static const struct of_device_id sunxi_s
+ 	{ .compatible = "allwinner,sun7i-a20-sid", .data = &sun7i_a20_cfg },
+ 	{ .compatible = "allwinner,sun8i-a83t-sid", .data = &sun50i_a64_cfg },
+ 	{ .compatible = "allwinner,sun8i-h3-sid", .data = &sun8i_h3_cfg },
++	{ .compatible = "allwinner,sun20i-d1-sid", .data = &sun20i_d1_cfg },
+ 	{ .compatible = "allwinner,sun50i-a64-sid", .data = &sun50i_a64_cfg },
+ 	{ .compatible = "allwinner,sun50i-h5-sid", .data = &sun50i_a64_cfg },
+ 	{ .compatible = "allwinner,sun50i-h6-sid", .data = &sun50i_h6_cfg },

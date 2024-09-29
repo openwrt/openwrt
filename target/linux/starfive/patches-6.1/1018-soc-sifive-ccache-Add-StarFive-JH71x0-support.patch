@@ -1,0 +1,77 @@
+From cde57aebfd86b3b062ce0bcf71395d735d05b2f6 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Wed, 6 Apr 2022 00:38:05 +0200
+Subject: [PATCH 1018/1024] soc: sifive: ccache: Add StarFive JH71x0 support
+
+This adds support for the StarFive JH7100 and JH7110 SoCs which also
+feature this SiFive cache controller.
+
+Unfortunately the interrupt for uncorrected data is broken on the JH7100
+and fires continuously, so add a quirk to not register a handler for it.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/Kconfig.socs            |  1 +
+ drivers/soc/sifive/Kconfig         |  2 +-
+ drivers/soc/sifive/sifive_ccache.c | 12 +++++++++++-
+ 3 files changed, 13 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -28,6 +28,7 @@ config SOC_STARFIVE
+ 	bool "StarFive SoCs"
+ 	select PINCTRL
+ 	select RESET_CONTROLLER
++	select SIFIVE_CCACHE
+ 	select SIFIVE_PLIC
+ 	select ARM_AMBA
+ 	help
+--- a/drivers/soc/sifive/Kconfig
++++ b/drivers/soc/sifive/Kconfig
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-if SOC_SIFIVE
++if SOC_SIFIVE || SOC_STARFIVE
+ 
+ config SIFIVE_CCACHE
+ 	bool "Sifive Composable Cache controller"
+--- a/drivers/soc/sifive/sifive_ccache.c
++++ b/drivers/soc/sifive/sifive_ccache.c
+@@ -106,6 +106,8 @@ static void ccache_config_read(void)
+ static const struct of_device_id sifive_ccache_ids[] = {
+ 	{ .compatible = "sifive,fu540-c000-ccache" },
+ 	{ .compatible = "sifive,fu740-c000-ccache" },
++	{ .compatible = "starfive,jh7100-ccache", .data = (void *)BIT(DATA_UNCORR) },
++	{ .compatible = "starfive,jh7110-ccache" },
+ 	{ .compatible = "sifive,ccache0" },
+ 	{ /* end of table */ }
+ };
+@@ -210,11 +212,15 @@ static int __init sifive_ccache_init(voi
+ 	struct device_node *np;
+ 	struct resource res;
+ 	int i, rc, intr_num;
++	const struct of_device_id *match;
++	unsigned long broken_irqs;
+ 
+-	np = of_find_matching_node(NULL, sifive_ccache_ids);
++	np = of_find_matching_node_and_match(NULL, sifive_ccache_ids, &match);
+ 	if (!np)
+ 		return -ENODEV;
+ 
++	broken_irqs = (uintptr_t)match->data;
++
+ 	if (of_address_to_resource(np, 0, &res)) {
+ 		rc = -ENODEV;
+ 		goto err_node_put;
+@@ -240,6 +246,10 @@ static int __init sifive_ccache_init(voi
+ 
+ 	for (i = 0; i < intr_num; i++) {
+ 		g_irq[i] = irq_of_parse_and_map(np, i);
++
++		if (broken_irqs & BIT(i))
++			continue;
++
+ 		rc = request_irq(g_irq[i], ccache_int_handler, 0, "ccache_ecc",
+ 				 NULL);
+ 		if (rc) {

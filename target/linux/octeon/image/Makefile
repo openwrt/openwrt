@@ -42,8 +42,7 @@ define Device/itus_shield-router
 endef
 TARGET_DEVICES += itus_shield-router
 
-# Disable PCIe on ER as it doesn't have PCIe peripherals and some devices lock up on initialization
-ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait pcie_octeon.pcie_disable=1
+ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro root=/dev/mmcblk0p2 rootfstype=squashfs,ext4 rootwait
 define Device/ubnt_edgerouter
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter
@@ -100,16 +99,13 @@ define Device/cisco_vedge1000
   DEVICE_MODEL := vEdge 1000
   BOARD_NAME := cisco,vedge1000
   DEVICE_PACKAGES += \
-	blkid \
 	kmod-hwmon-jc42 \
 	kmod-hwmon-max6697 \
 	kmod-of-mdio \
 	kmod-rtc-ds1307 \
 	kmod-usb-dwc3 \
 	kmod-usb-storage-uas \
-	kmod-usb3 \
-	sfdisk \
-	uboot-envtools
+	kmod-usb3
   KERNEL := kernel-bin | append-dtb-elf
   KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
   DEVICE_DTS := cn6130_cisco_vedge1000

@@ -896,7 +896,6 @@ wpa_supplicant_set_config() {
 	json_set_namespace wpa_supp prev
 	json_close_array
 	json_add_string phy "$phy"
-	json_add_int num_global_macaddr "$num_global_macaddr"
 	json_add_boolean defer 1
 	local data="$(json_dump)"
 
@@ -939,7 +938,7 @@ wpa_supplicant_start() {
 
 	[ -n "$wpa_supp_init" ] || return 0
 
-	ubus_call wpa_supplicant config_set '{ "phy": "'"$phy"'", "num_global_macaddr": '"$num_global_macaddr"' }' > /dev/null
+	ubus_call wpa_supplicant config_set '{ "phy": "'"$phy"'" }' > /dev/null
 }
 
 mac80211_setup_supplicant() {

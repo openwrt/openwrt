@@ -100,7 +100,6 @@ static struct bh_map button_map[] = {
 	BH_MAP(KEY_WIMAX,		"wwan"),
 	BH_MAP(KEY_WLAN,		"wlan"),
 	BH_MAP(KEY_WPS_BUTTON,		"wps"),
-	BH_MAP(KEY_VENDOR,		"vendor"),
 };
 
 /* -------------------------------------------------------------------------*/
@@ -525,9 +524,10 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 					button->active_low ? GPIOF_ACTIVE_LOW :
 					0), desc);
 				if (error) {
-					dev_err_probe(dev, error,
-						      "unable to claim gpio %d",
-						      button->gpio);
+					if (error != -EPROBE_DEFER) {
+						dev_err(dev, "unable to claim gpio %d, err=%d\n",
+							button->gpio, error);
+					}
 					goto out;
 				}
 

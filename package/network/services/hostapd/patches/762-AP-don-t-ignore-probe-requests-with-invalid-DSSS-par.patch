@@ -26,9 +26,11 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  src/ap/beacon.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index 8cd1c4170..bb9329085 100644
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1477,7 +1477,7 @@ void handle_probe_req(struct hostapd_dat
+@@ -905,7 +905,7 @@ void handle_probe_req(struct hostapd_data *hapd,
  	 * is less likely to see them (Probe Request frame sent on a
  	 * neighboring, but partially overlapping, channel).
  	 */
@@ -37,3 +39,6 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	    hapd->iface->current_mode &&
  	    (hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211G ||
  	     hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211B) &&
+-- 
+2.43.0
+

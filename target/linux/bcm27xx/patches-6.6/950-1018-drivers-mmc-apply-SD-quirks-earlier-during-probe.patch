@@ -1,0 +1,77 @@
+From 598e155f3467316b9ad70bde46b92fc30e3eea73 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Mon, 8 Apr 2024 16:01:34 +0100
+Subject: [PATCH 1018/1085] drivers: mmc: apply SD quirks earlier during probe
+
+Applying MMC_QUIRK_BROKEN_SD_CACHE is broken, as the card's extended
+registers are parsed prior to the quirk being applied in mmc_blk.
+
+Split this out into an SD-specific list of quirks and apply in
+mmc_sd_init_card instead.
+
+Fixes: c467c8f08185 ("mmc: Add MMC_QUIRK_BROKEN_SD_CACHE for Kingston Canvas Go Plus from 11/2019")
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ drivers/mmc/core/quirks.h | 22 +++++++++++++---------
+ drivers/mmc/core/sd.c     |  4 ++++
+ 2 files changed, 17 insertions(+), 9 deletions(-)
+
+--- a/drivers/mmc/core/quirks.h
++++ b/drivers/mmc/core/quirks.h
+@@ -15,6 +15,19 @@
+ 
+ #include "card.h"
+ 
++static const struct mmc_fixup __maybe_unused mmc_sd_fixups[] = {
++	/*
++	 * Kingston Canvas Go! Plus microSD cards never finish SD cache flush.
++	 * This has so far only been observed on cards from 11/2019, while new
++	 * cards from 2023/05 do not exhibit this behavior.
++	 */
++	_FIXUP_EXT("SD64G", CID_MANFID_KINGSTON_SD, 0x5449, 2019, 11,
++		   0, -1ull, SDIO_ANY_ID, SDIO_ANY_ID, add_quirk_sd,
++		   MMC_QUIRK_BROKEN_SD_CACHE, EXT_CSD_REV_ANY),
++
++	END_FIXUP
++};
++
+ static const struct mmc_fixup __maybe_unused mmc_blk_fixups[] = {
+ #define INAND_CMD38_ARG_EXT_CSD  113
+ #define INAND_CMD38_ARG_ERASE    0x00
+@@ -54,15 +67,6 @@ static const struct mmc_fixup __maybe_un
+ 		  MMC_QUIRK_BLK_NO_CMD23),
+ 
+ 	/*
+-	 * Kingston Canvas Go! Plus microSD cards never finish SD cache flush.
+-	 * This has so far only been observed on cards from 11/2019, while new
+-	 * cards from 2023/05 do not exhibit this behavior.
+-	 */
+-	_FIXUP_EXT("SD64G", CID_MANFID_KINGSTON_SD, 0x5449, 2019, 11,
+-		   0, -1ull, SDIO_ANY_ID, SDIO_ANY_ID, add_quirk_sd,
+-		   MMC_QUIRK_BROKEN_SD_CACHE, EXT_CSD_REV_ANY),
+-
+-	/*
+ 	 * Some SD cards lockup while using CMD23 multiblock transfers.
+ 	 */
+ 	MMC_FIXUP("AF SD", CID_MANFID_ATP, CID_OEMID_ANY, add_quirk_sd,
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -26,6 +26,7 @@
+ #include "host.h"
+ #include "bus.h"
+ #include "mmc_ops.h"
++#include "quirks.h"
+ #include "sd.h"
+ #include "sd_ops.h"
+ 
+@@ -1408,6 +1409,9 @@ retry:
+ 			goto free_card;
+ 	}
+ 
++	/* Apply quirks prior to card setup */
++	mmc_fixup_device(card, mmc_sd_fixups);
++
+ 	err = mmc_sd_setup_card(host, card, oldcard != NULL);
+ 	if (err)
+ 		goto free_card;

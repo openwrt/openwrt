@@ -1,0 +1,63 @@
+From 9bfb4bcda7ba32d73ea322ea56a8ebe32e9247f6 Mon Sep 17 00:00:00 2001
+From: Lech Perczak <lech.perczak@gmail.com>
+Date: Sat, 2 Apr 2022 02:19:57 +0200
+Subject: [PATCH 3/3] rndis_host: limit scope of bogus MAC address detection to
+ ZTE devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reporting of bogus MAC addresses and ignoring configuration of new
+destination address wasn't observed outside of a range of ZTE devices,
+among which this seems to be the common bug. Align rndis_host driver
+with implementation found in cdc_ether, which also limits this workaround
+to ZTE devices.
+
+Suggested-by: Bjørn Mork <bjorn@mork.no>
+Cc: Kristian Evensen <kristian.evensen@gmail.com>
+Cc: Oliver Neukum <oliver@neukum.org>
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+---
+ drivers/net/usb/rndis_host.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/usb/rndis_host.c
++++ b/drivers/net/usb/rndis_host.c
+@@ -419,10 +419,7 @@ generic_rndis_bind(struct usbnet *dev, s
+ 		goto halt_fail_and_release;
+ 	}
+ 
+-	if (bp[0] & 0x02)
+-		eth_hw_addr_random(net);
+-	else
+-		ether_addr_copy(net->dev_addr, bp);
++	ether_addr_copy(net->dev_addr, bp);
+ 
+ 	/* set a nonzero filter to enable data transfers */
+ 	memset(u.set, 0, sizeof *u.set);
+@@ -464,6 +461,16 @@ static int rndis_bind(struct usbnet *dev
+ 	return generic_rndis_bind(dev, intf, FLAG_RNDIS_PHYM_NOT_WIRELESS);
+ }
+ 
++static int zte_rndis_bind(struct usbnet *dev, struct usb_interface *intf)
++{
++	int status = rndis_bind(dev, intf);
++
++	if (!status && (dev->net->dev_addr[0] & 0x02))
++		eth_hw_addr_random(dev->net);
++
++	return status;
++}
++
+ void rndis_unbind(struct usbnet *dev, struct usb_interface *intf)
+ {
+ 	struct rndis_halt	*halt;
+@@ -616,7 +623,7 @@ static const struct driver_info	zte_rndi
+ 	.description =	"ZTE RNDIS device",
+ 	.flags =	FLAG_ETHER | FLAG_POINTTOPOINT | FLAG_FRAMING_RN | FLAG_NO_SETINT,
+ 	.data =		RNDIS_DRIVER_DATA_DST_MAC_FIXUP,
+-	.bind =		rndis_bind,
++	.bind =		zte_rndis_bind,
+ 	.unbind =	rndis_unbind,
+ 	.status =	rndis_status,
+ 	.rx_fixup =	rndis_rx_fixup,

@@ -1,0 +1,58 @@
+From 12cf1b89a66828719b2135891b65bd5d03eedea9 Mon Sep 17 00:00:00 2001
+From: Bhadram Varka <vbhadram@nvidia.com>
+Date: Tue, 21 Jun 2022 09:10:27 +0530
+Subject: [PATCH] net: phy: Add support for AQR113C EPHY
+
+Add support multi-gigabit and single-port Ethernet
+PHY transceiver (AQR113C).
+
+Signed-off-by: Bhadram Varka <vbhadram@nvidia.com>
+Link: https://lore.kernel.org/r/20220621034027.56508-1-vbhadram@nvidia.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/phy/aquantia_main.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/net/phy/aquantia_main.c
++++ b/drivers/net/phy/aquantia_main.c
+@@ -22,6 +22,7 @@
+ #define PHY_ID_AQR107	0x03a1b4e0
+ #define PHY_ID_AQCS109	0x03a1b5c2
+ #define PHY_ID_AQR405	0x03a1b4b0
++#define PHY_ID_AQR113C	0x31c31c12
+ 
+ #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
+@@ -744,6 +745,24 @@ static struct phy_driver aqr_driver[] =
+ 	.handle_interrupt = aqr_handle_interrupt,
+ 	.read_status	= aqr_read_status,
+ },
++{
++	PHY_ID_MATCH_MODEL(PHY_ID_AQR113C),
++	.name           = "Aquantia AQR113C",
++	.probe          = aqr107_probe,
++	.config_init    = aqr107_config_init,
++	.config_aneg    = aqr_config_aneg,
++	.config_intr    = aqr_config_intr,
++	.handle_interrupt       = aqr_handle_interrupt,
++	.read_status    = aqr107_read_status,
++	.get_tunable    = aqr107_get_tunable,
++	.set_tunable    = aqr107_set_tunable,
++	.suspend        = aqr107_suspend,
++	.resume         = aqr107_resume,
++	.get_sset_count = aqr107_get_sset_count,
++	.get_strings    = aqr107_get_strings,
++	.get_stats      = aqr107_get_stats,
++	.link_change_notify = aqr107_link_change_notify,
++},
+ };
+ 
+ module_phy_driver(aqr_driver);
+@@ -756,6 +775,7 @@ static struct mdio_device_id __maybe_unu
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
++	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
+ 	{ }
+ };
+ 

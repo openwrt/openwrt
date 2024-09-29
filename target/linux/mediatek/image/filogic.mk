@@ -105,30 +105,6 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
-define Device/abt_asr3000
-  DEVICE_VENDOR := ABT
-  DEVICE_MODEL := ASR3000
-  DEVICE_DTS := mt7981b-abt-asr3000
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_IN_UBI := 1
-  UBOOTENV_IN_UBI := 1
-  IMAGES := sysupgrade.itb
-  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  KERNEL := kernel-bin | gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
-  IMAGE/sysupgrade.itb := append-kernel | \
-        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
-  ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot abt_asr3000
-endef
-TARGET_DEVICES += abt_asr3000
-
 define Device/acelink_ew-7886cax
   DEVICE_VENDOR := Acelink
   DEVICE_MODEL := EW-7886CAX
@@ -207,14 +183,6 @@ $(call Device/adtran_smartrg)
   DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-usb3
 endef
 TARGET_DEVICES += smartrg_sdg-8733
-
-define Device/smartrg_sdg-8733a
-$(call Device/adtran_smartrg)
-  DEVICE_MODEL := SDG-8733A
-  DEVICE_DTS := mt7988d-smartrg-SDG-8733A
-  DEVICE_PACKAGES += mt7988-2p5g-phy-firmware kmod-mt7996-firmware kmod-phy-aquantia
-endef
-TARGET_DEVICES += smartrg_sdg-8733a
 
 define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
@@ -476,7 +444,7 @@ endef
 TARGET_DEVICES += cmcc_rax3000m
 
 define Device/comfast_cf-e393ax
-  DEVICE_VENDOR := COMFAST
+  DEVICE_VENDOR := Comfast
   DEVICE_MODEL := CF-E393AX
   DEVICE_DTS := mt7981a-comfast-cf-e393ax
   DEVICE_DTS_DIR := ../dts
@@ -514,23 +482,6 @@ define Device/confiabits_mt7981
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += confiabits_mt7981
-
-define Device/cudy_ap3000outdoor-v1
-  DEVICE_VENDOR := Cudy
-  DEVICE_MODEL := AP3000 Outdoor
-  DEVICE_VARIANT := v1
-  DEVICE_DTS := mt7981b-cudy-ap3000outdoor-v1
-  DEVICE_DTS_DIR := ../dts
-  SUPPORTED_DEVICES += R51
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  IMAGE_SIZE := 65536k
-  KERNEL_IN_UBI := 1
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
-endef
-TARGET_DEVICES += cudy_ap3000outdoor-v1
 
 define Device/cudy_m3000-v1
   DEVICE_VENDOR := Cudy
@@ -692,11 +643,7 @@ define Device/glinet_gl-x3000-xe3000-common
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware mkf2fs \
     kmod-fs-f2fs kmod-hwmon-pwmfan kmod-usb3 kmod-usb-serial-option \
     kmod-usb-storage kmod-usb-net-qmi-wwan uqmi
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 emmc-ddr4
 endef
 
 define Device/glinet_gl-x3000
@@ -704,7 +651,6 @@ define Device/glinet_gl-x3000
   DEVICE_DTS := mt7981a-glinet-gl-x3000
   SUPPORTED_DEVICES := glinet,gl-x3000
   $(call Device/glinet_gl-x3000-xe3000-common)
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot glinet_gl-x3000
 endef
 TARGET_DEVICES += glinet_gl-x3000
 
@@ -713,7 +659,6 @@ define Device/glinet_gl-xe3000
   DEVICE_DTS := mt7981a-glinet-gl-xe3000
   SUPPORTED_DEVICES := glinet,gl-xe3000
   $(call Device/glinet_gl-x3000-xe3000-common)
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot glinet_gl-xe3000
 endef
 TARGET_DEVICES += glinet_gl-xe3000
 
@@ -1198,19 +1143,9 @@ define Device/tplink_tl-xdr6088
 endef
 TARGET_DEVICES += tplink_tl-xdr6088
 
-define Device/tplink_tl-xtr8488
-  DEVICE_MODEL := TL-XTR8488
-  DEVICE_DTS := mt7986a-tplink-tl-xtr8488
-  $(call Device/tplink_tl-xdr-common)
-  DEVICE_PACKAGES += kmod-mt7915-firmware
-  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr4
-  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_tl-xtr8488
-endef
-TARGET_DEVICES += tplink_tl-xtr8488
-
 define Device/ubnt_unifi-6-plus
   DEVICE_VENDOR := Ubiquiti
-  DEVICE_MODEL := UniFi U6+
+  DEVICE_MODEL := UniFi 6 Plus
   DEVICE_DTS := mt7981a-ubnt-unifi-6-plus
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware e2fsprogs f2fsck mkf2fs fdisk partx-utils
@@ -1492,7 +1427,7 @@ endef
 TARGET_DEVICES += zyxel_ex5601-t0-ubootmod
 
 define Device/zyxel_ex5700-telenor
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := EX5700 (Telenor)
   DEVICE_DTS := mt7986a-zyxel-ex5700-telenor
   DEVICE_DTS_DIR := ../dts
@@ -1506,7 +1441,7 @@ endef
 TARGET_DEVICES += zyxel_ex5700-telenor
 
 define Device/zyxel_nwa50ax-pro
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NWA50AX Pro
   DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
   DEVICE_DTS_DIR := ../dts

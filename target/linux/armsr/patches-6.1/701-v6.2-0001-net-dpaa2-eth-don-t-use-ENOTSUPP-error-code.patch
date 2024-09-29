@@ -1,0 +1,44 @@
+From f3763a0c1b07273218cbf5886bdf8df9df501111 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:10 +0200
+Subject: [PATCH 03/14] net: dpaa2-eth: don't use -ENOTSUPP error code
+
+dpaa2_eth_setup_dpni() is called from the probe path and
+dpaa2_eth_set_link_ksettings() is propagated to user space.
+
+include/linux/errno.h says that ENOTSUPP is "Defined for the NFSv3
+protocol". Conventional wisdom has it to not use it in networking
+drivers. Replace it with -EOPNOTSUPP.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c     | 2 +-
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
+@@ -3618,7 +3618,7 @@ static int dpaa2_eth_setup_dpni(struct f
+ 		dev_err(dev, "DPNI version %u.%u not supported, need >= %u.%u\n",
+ 			priv->dpni_ver_major, priv->dpni_ver_minor,
+ 			DPNI_VER_MAJOR, DPNI_VER_MINOR);
+-		err = -ENOTSUPP;
++		err = -EOPNOTSUPP;
+ 		goto close;
+ 	}
+ 
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
+@@ -118,7 +118,7 @@ dpaa2_eth_set_link_ksettings(struct net_
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
+ 
+ 	if (!dpaa2_eth_is_type_phy(priv))
+-		return -ENOTSUPP;
++		return -EOPNOTSUPP;
+ 
+ 	return phylink_ethtool_ksettings_set(priv->mac->phylink, link_settings);
+ }

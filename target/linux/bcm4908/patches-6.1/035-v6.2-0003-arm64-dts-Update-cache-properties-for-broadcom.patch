@@ -1,0 +1,134 @@
+From e567e58d6819adc002c57b81e16b88da24d3b4aa Mon Sep 17 00:00:00 2001
+From: Pierre Gondois <pierre.gondois@arm.com>
+Date: Tue, 22 Nov 2022 17:32:07 +0100
+Subject: [PATCH] arm64: dts: Update cache properties for broadcom
+
+The DeviceTree Specification v0.3 specifies that the cache node
+'compatible' and 'cache-level' properties are 'required'. Cf.
+s3.8 Multi-level and Shared Cache Nodes
+The 'cache-unified' property should be present if one of the
+properties for unified cache is present ('cache-size', ...).
+
+Update the Device Trees accordingly.
+
+Acked-by: William Zhang <william.zhang@broadcom.com>
+Signed-off-by: Pierre Gondois <pierre.gondois@arm.com>
+Link: https://lore.kernel.org/r/20221122163208.3810985-3-pierre.gondois@arm.com
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4912.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm63146.dtsi   | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm63158.dtsi   | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm6813.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm6856.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm6858.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/northstar2/ns2.dtsi    | 1 +
+ arch/arm64/boot/dts/broadcom/stingray/stingray.dtsi | 4 ++++
+ 9 files changed, 12 insertions(+)
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
+@@ -63,6 +63,7 @@
+ 
+ 		l2: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4912.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4912.dtsi
+@@ -51,6 +51,7 @@
+ 
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm63146.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm63146.dtsi
+@@ -35,6 +35,7 @@
+ 
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm63158.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm63158.dtsi
+@@ -51,6 +51,7 @@
+ 
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm6813.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm6813.dtsi
+@@ -51,6 +51,7 @@
+ 
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm6856.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm6856.dtsi
+@@ -35,6 +35,7 @@
+ 
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm6858.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm6858.dtsi
+@@ -50,6 +50,7 @@
+ 		};
+ 		L2_0: l2-cache0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/northstar2/ns2.dtsi
++++ b/arch/arm64/boot/dts/broadcom/northstar2/ns2.dtsi
+@@ -79,6 +79,7 @@
+ 
+ 		CLUSTER0_L2: l2-cache@0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/broadcom/stingray/stingray.dtsi
++++ b/arch/arm64/boot/dts/broadcom/stingray/stingray.dtsi
+@@ -108,18 +108,22 @@
+ 
+ 		CLUSTER0_L2: l2-cache@0 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 
+ 		CLUSTER1_L2: l2-cache@100 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 
+ 		CLUSTER2_L2: l2-cache@200 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 
+ 		CLUSTER3_L2: l2-cache@300 {
+ 			compatible = "cache";
++			cache-level = <2>;
+ 		};
+ 	};
+ 

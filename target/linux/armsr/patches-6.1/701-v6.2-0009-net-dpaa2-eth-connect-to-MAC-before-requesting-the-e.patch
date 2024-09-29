@@ -1,0 +1,93 @@
+From e0ea63162cb5f1ca7f844d6ef5fc4079448ee2d5 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:18 +0200
+Subject: [PATCH 11/14] net: dpaa2-eth: connect to MAC before requesting the
+ "endpoint changed" IRQ
+
+dpaa2_eth_connect_mac() is called both from dpaa2_eth_probe() and from
+dpni_irq0_handler_thread().
+
+It could happen that the DPNI gets connected to a DPMAC on the fsl-mc
+bus exactly during probe, as soon as the "endpoint change" interrupt is
+requested in dpaa2_eth_setup_irqs(). This will cause the
+dpni_irq0_handler_thread() to register a phylink instance for that DPMAC.
+
+Then, the probing function will also try to register a phylink instance
+for the same DPMAC, operation which should fail (and this will fail the
+probing of the driver).
+
+Reorder dpaa2_eth_setup_irqs() and dpaa2_eth_connect_mac(), such that
+dpni_irq0_handler_thread() never races with the DPMAC-related portion of
+the probing path.
+
+Also reorder dpaa2_eth_disconnect_mac() to be in the mirror position of
+dpaa2_eth_connect_mac() in the teardown path.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../net/ethernet/freescale/dpaa2/dpaa2-eth.c   | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
+@@ -4715,6 +4715,10 @@ static int dpaa2_eth_probe(struct fsl_mc
+ 	}
+ #endif
+ 
++	err = dpaa2_eth_connect_mac(priv);
++	if (err)
++		goto err_connect_mac;
++
+ 	err = dpaa2_eth_setup_irqs(dpni_dev);
+ 	if (err) {
+ 		netdev_warn(net_dev, "Failed to set link interrupt, fall back to polling\n");
+@@ -4727,10 +4731,6 @@ static int dpaa2_eth_probe(struct fsl_mc
+ 		priv->do_link_poll = true;
+ 	}
+ 
+-	err = dpaa2_eth_connect_mac(priv);
+-	if (err)
+-		goto err_connect_mac;
+-
+ 	err = dpaa2_eth_dl_alloc(priv);
+ 	if (err)
+ 		goto err_dl_register;
+@@ -4766,13 +4766,13 @@ err_dl_port_add:
+ err_dl_trap_register:
+ 	dpaa2_eth_dl_free(priv);
+ err_dl_register:
+-	dpaa2_eth_disconnect_mac(priv);
+-err_connect_mac:
+ 	if (priv->do_link_poll)
+ 		kthread_stop(priv->poll_thread);
+ 	else
+ 		fsl_mc_free_irqs(dpni_dev);
+ err_poll_thread:
++	dpaa2_eth_disconnect_mac(priv);
++err_connect_mac:
+ 	dpaa2_eth_free_rings(priv);
+ err_alloc_rings:
+ err_csum:
+@@ -4820,9 +4820,6 @@ static int dpaa2_eth_remove(struct fsl_m
+ #endif
+ 
+ 	unregister_netdev(net_dev);
+-	rtnl_lock();
+-	dpaa2_eth_disconnect_mac(priv);
+-	rtnl_unlock();
+ 
+ 	dpaa2_eth_dl_port_del(priv);
+ 	dpaa2_eth_dl_traps_unregister(priv);
+@@ -4833,6 +4830,9 @@ static int dpaa2_eth_remove(struct fsl_m
+ 	else
+ 		fsl_mc_free_irqs(ls_dev);
+ 
++	rtnl_lock();
++	dpaa2_eth_disconnect_mac(priv);
++	rtnl_unlock();
+ 	dpaa2_eth_free_rings(priv);
+ 	free_percpu(priv->fd);
+ 	free_percpu(priv->sgt_cache);

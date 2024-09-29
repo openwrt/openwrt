@@ -112,7 +112,9 @@ endef
 
 define Device/Default
   PROFILES := Default
+ifdef CONFIG_LINUX_6_6
   DEVICE_DTS_DIR := $(DTS_DIR)/marvell
+endif
   DEVICE_DTS = kirkwood-$(lastword $(subst _, ,$(1)))
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -373,7 +375,7 @@ endef
 TARGET_DEVICES += seagate_goflexhome
 
 define Device/zyxel_nsa310b
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310b
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-r8169 kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-hwmon-lm85 kmod-rtc-mv
@@ -382,7 +384,7 @@ endef
 TARGET_DEVICES += zyxel_nsa310b
 
 define Device/zyxel_nsa310s
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310S
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-rtc-mv
@@ -390,7 +392,7 @@ endef
 TARGET_DEVICES += zyxel_nsa310s
 
 define Device/zyxel_nsa325
-  DEVICE_VENDOR := Zyxel
+  DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA325
   DEVICE_VARIANT := v1/v2
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \

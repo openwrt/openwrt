@@ -1,0 +1,48 @@
+From edcf2fb660526b5ed29f93bd17328a2b4835c8b2 Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Fri, 27 Jan 2023 10:40:12 +0000
+Subject: [PATCH] nvmem: core: fix device node refcounting
+
+In of_nvmem_cell_get(), of_get_next_parent() is used on cell_np. This
+will decrement the refcount on cell_np, but cell_np is still used later
+in the code. Use of_get_parent() instead and of_node_put() in the
+appropriate places.
+
+Fixes: 69aba7948cbe ("nvmem: Add a simple NVMEM framework for consumers")
+Fixes: 7ae6478b304b ("nvmem: core: rework nvmem cell instance creation")
+Cc: stable@vger.kernel.org
+Signed-off-by: Michael Walle <michael@walle.cc>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20230127104015.23839-8-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -1237,16 +1237,21 @@ struct nvmem_cell *of_nvmem_cell_get(str
+ 	if (!cell_np)
+ 		return ERR_PTR(-ENOENT);
+ 
+-	nvmem_np = of_get_next_parent(cell_np);
+-	if (!nvmem_np)
++	nvmem_np = of_get_parent(cell_np);
++	if (!nvmem_np) {
++		of_node_put(cell_np);
+ 		return ERR_PTR(-EINVAL);
++	}
+ 
+ 	nvmem = __nvmem_device_get(nvmem_np, device_match_of_node);
+ 	of_node_put(nvmem_np);
+-	if (IS_ERR(nvmem))
++	if (IS_ERR(nvmem)) {
++		of_node_put(cell_np);
+ 		return ERR_CAST(nvmem);
++	}
+ 
+ 	cell_entry = nvmem_find_cell_entry_by_node(nvmem, cell_np);
++	of_node_put(cell_np);
+ 	if (!cell_entry) {
+ 		__nvmem_device_put(nvmem);
+ 		return ERR_PTR(-ENOENT);

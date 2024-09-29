@@ -22,8 +22,7 @@
 		serial0 = &uart0;
 	};
 
-	chosen: chosen {
-		bootargs-override = "root=/dev/fit0 rootwait";
+	chosen {
 		stdout-path = "serial0:115200n8";
 	};
 

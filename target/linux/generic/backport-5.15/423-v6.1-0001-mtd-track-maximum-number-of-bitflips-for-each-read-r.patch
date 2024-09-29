@@ -1,0 +1,73 @@
+From e237285113963bd1dd2e925770aa8b3aa8a1894c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micha=C5=82=20K=C4=99pie=C5=84?= <kernel@kempniu.pl>
+Date: Wed, 29 Jun 2022 14:57:34 +0200
+Subject: [PATCH 1/4] mtd: track maximum number of bitflips for each read
+ request
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+mtd_read_oob() callers are currently oblivious to the details of ECC
+errors detected during the read operation - they only learn (through the
+return value) whether any corrected bitflips or uncorrectable errors
+occurred.  More detailed ECC information can be useful to user-space
+applications for making better-informed choices about moving data
+around.
+
+Extend struct mtd_oob_ops with a pointer to a newly-introduced struct
+mtd_req_stats and set its 'max_bitflips' field to the maximum number of
+bitflips found in a single ECC step during the read operation performed
+by mtd_read_oob().  This is a prerequisite for ultimately passing that
+value back to user space.
+
+Suggested-by: Boris Brezillon <boris.brezillon@collabora.com>
+Signed-off-by: Michał Kępień <kernel@kempniu.pl>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-2-kernel@kempniu.pl
+---
+ drivers/mtd/mtdcore.c   | 5 +++++
+ include/linux/mtd/mtd.h | 5 +++++
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -1678,6 +1678,9 @@ int mtd_read_oob(struct mtd_info *mtd, l
+ 	if (!master->_read_oob && (!master->_read || ops->oobbuf))
+ 		return -EOPNOTSUPP;
+ 
++	if (ops->stats)
++		memset(ops->stats, 0, sizeof(*ops->stats));
++
+ 	if (mtd->flags & MTD_SLC_ON_MLC_EMULATION)
+ 		ret_code = mtd_io_emulated_slc(mtd, from, true, ops);
+ 	else
+@@ -1695,6 +1698,8 @@ int mtd_read_oob(struct mtd_info *mtd, l
+ 		return ret_code;
+ 	if (mtd->ecc_strength == 0)
+ 		return 0;	/* device lacks ecc */
++	if (ops->stats)
++		ops->stats->max_bitflips = ret_code;
+ 	return ret_code >= mtd->bitflip_threshold ? -EUCLEAN : 0;
+ }
+ EXPORT_SYMBOL_GPL(mtd_read_oob);
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -40,6 +40,10 @@ struct mtd_erase_region_info {
+ 	unsigned long *lockmap;		/* If keeping bitmap of locks */
+ };
+ 
++struct mtd_req_stats {
++	unsigned int max_bitflips;
++};
++
+ /**
+  * struct mtd_oob_ops - oob operation operands
+  * @mode:	operation mode
+@@ -70,6 +74,7 @@ struct mtd_oob_ops {
+ 	uint32_t	ooboffs;
+ 	uint8_t		*datbuf;
+ 	uint8_t		*oobbuf;
++	struct mtd_req_stats *stats;
+ };
+ 
+ #define MTD_MAX_OOBFREE_ENTRIES_LARGE	32

@@ -1,0 +1,132 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 5 Jun 2024 18:39:55 +0200
+Subject: [PATCH] wifi: mac80211: add wiphy radio assignment and
+ validation
+
+Validate number of channels and interface combinations per radio.
+Assign each channel context to a radio.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -680,14 +680,15 @@ static int ieee80211_add_chanctx(struct
+ static struct ieee80211_chanctx *
+ ieee80211_new_chanctx(struct ieee80211_local *local,
+ 		      const struct ieee80211_chan_req *chanreq,
+-		      enum ieee80211_chanctx_mode mode)
++		      enum ieee80211_chanctx_mode mode,
++		      int radio_idx)
+ {
+ 	struct ieee80211_chanctx *ctx;
+ 	int err;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	ctx = ieee80211_alloc_chanctx(local, chanreq, mode, -1);
++	ctx = ieee80211_alloc_chanctx(local, chanreq, mode, radio_idx);
+ 	if (!ctx)
+ 		return ERR_PTR(-ENOMEM);
+ 
+@@ -1040,6 +1041,8 @@ ieee80211_replace_chanctx(struct ieee802
+ 			  struct ieee80211_chanctx *curr_ctx)
+ {
+ 	struct ieee80211_chanctx *new_ctx, *ctx;
++	struct wiphy *wiphy = local->hw.wiphy;
++	const struct wiphy_radio *radio;
+ 
+ 	if (!curr_ctx || (curr_ctx->replace_state ==
+ 			  IEEE80211_CHANCTX_WILL_BE_REPLACED) ||
+@@ -1069,6 +1072,12 @@ ieee80211_replace_chanctx(struct ieee802
+ 			if (!list_empty(&ctx->reserved_links))
+ 				continue;
+ 
++			if (ctx->conf.radio_idx >= 0) {
++				radio = &wiphy->radio[ctx->conf.radio_idx];
++				if (!cfg80211_radio_chandef_valid(radio, &chanreq->oper))
++					continue;
++			}
++
+ 			curr_ctx = ctx;
+ 			break;
+ 		}
+@@ -1098,6 +1107,34 @@ ieee80211_replace_chanctx(struct ieee802
+ 	return new_ctx;
+ }
+ 
++static bool
++ieee80211_find_available_radio(struct ieee80211_local *local,
++			       const struct ieee80211_chan_req *chanreq,
++			       int *radio_idx)
++{
++	struct wiphy *wiphy = local->hw.wiphy;
++	const struct wiphy_radio *radio;
++	int i;
++
++	*radio_idx = -1;
++	if (!wiphy->n_radio)
++		return true;
++
++	for (i = 0; i < wiphy->n_radio; i++) {
++		radio = &wiphy->radio[i];
++		if (!cfg80211_radio_chandef_valid(radio, &chanreq->oper))
++			continue;
++
++		if (!ieee80211_can_create_new_chanctx(local, i))
++			continue;
++
++		*radio_idx = i;
++		return true;
++	}
++
++	return false;
++}
++
+ int ieee80211_link_reserve_chanctx(struct ieee80211_link_data *link,
+ 				   const struct ieee80211_chan_req *chanreq,
+ 				   enum ieee80211_chanctx_mode mode,
+@@ -1106,6 +1143,7 @@ int ieee80211_link_reserve_chanctx(struc
+ 	struct ieee80211_sub_if_data *sdata = link->sdata;
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ieee80211_chanctx *new_ctx, *curr_ctx;
++	int radio_idx;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+@@ -1115,8 +1153,10 @@ int ieee80211_link_reserve_chanctx(struc
+ 
+ 	new_ctx = ieee80211_find_reservation_chanctx(local, chanreq, mode);
+ 	if (!new_ctx) {
+-		if (ieee80211_can_create_new_chanctx(local, -1))
+-			new_ctx = ieee80211_new_chanctx(local, chanreq, mode);
++		if (ieee80211_can_create_new_chanctx(local, -1) &&
++		    ieee80211_find_available_radio(local, chanreq, &radio_idx))
++			new_ctx = ieee80211_new_chanctx(local, chanreq, mode,
++							radio_idx);
+ 		else
+ 			new_ctx = ieee80211_replace_chanctx(local, chanreq,
+ 							    mode, curr_ctx);
+@@ -1724,6 +1764,7 @@ int ieee80211_link_use_channel(struct ie
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ieee80211_chanctx *ctx;
+ 	u8 radar_detect_width = 0;
++	int radio_idx;
+ 	int ret;
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+@@ -1751,8 +1792,12 @@ int ieee80211_link_use_channel(struct ie
+ 	__ieee80211_link_release_channel(link);
+ 
+ 	ctx = ieee80211_find_chanctx(local, chanreq, mode);
+-	if (!ctx)
+-		ctx = ieee80211_new_chanctx(local, chanreq, mode);
++	if (!ctx) {
++		if (!ieee80211_find_available_radio(local, chanreq, &radio_idx))
++			ctx = ERR_PTR(-EBUSY);
++		else
++			ctx = ieee80211_new_chanctx(local, chanreq, mode, radio_idx);
++	}
+ 	if (IS_ERR(ctx)) {
+ 		ret = PTR_ERR(ctx);
+ 		goto out;

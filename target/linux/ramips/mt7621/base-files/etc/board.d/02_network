@@ -47,7 +47,6 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-m11g|\
 	netgear,eax12|\
 	netgear,ex6150|\
-	netgear,wax214v2|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	thunder,timecloud|\
@@ -61,15 +60,12 @@ ramips_setup_interfaces()
 	ubnt,unifi-nanohd|\
 	yuncore,fap690|\
 	wavlink,wl-wn573hx1|\
-	wodesys,wd-r1802u|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		ucidef_set_interface_lan "lan"
 		;;
 	asiarf,ap7621-001|\
-	dna,valokuitu-plus-ex400|\
 	humax,e10|\
-	keenetic,kn-3510|\
 	openfi,5pro|\
 	wavlink,ws-wn572hp3-4g|\
 	winstars,ws-wn583a6)
@@ -78,7 +74,6 @@ ramips_setup_interfaces()
 	asiarf,ap7621-nv1|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
-	elecom,wmc-x1800gst|\
 	elecom,wrc-x1800gs|\
 	glinet,gl-mt1300|\
 	iodata,wn-deax1800gr|\
@@ -116,9 +111,6 @@ ramips_setup_interfaces()
 	netgear,wac104|\
 	zyxel,lte3301-plus)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
-		;;
-	elecom,wsc-x1800gs)
-		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
@@ -172,9 +164,6 @@ ramips_setup_interfaces()
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
-		;;
-	ruijie,rg-ew1200g-pro-v1.1)
-		ucidef_set_interfaces_lan_wan "lan3 lan2 lan1" "wan"
 		;;
 	comfast,cf-e390ax|\
 	comfast,cf-ew72-v2|\
@@ -322,11 +311,6 @@ ramips_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
 		;;
-	ruijie,rg-ew1200g-pro-v1.1)
-		lan_mac=$(mtd_get_mac_ascii product_info ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 8)
-		label_mac=$lan_mac
-		;;
 	mts,wg430223)
 		wan_mac=$(mtd_get_mac_encrypted_arcadyan "board_data")
 		label_mac=$wan_mac
@@ -339,10 +323,6 @@ ramips_setup_macs()
 	netgear,wax202)
 		lan_mac=$(mtd_get_mac_ascii Config mac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
-		label_mac=$lan_mac
-		;;
-	netgear,wax214v2)
-		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
 		;;
 	yuncore,ax820)

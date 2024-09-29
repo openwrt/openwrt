@@ -58,7 +58,7 @@
 #define IFX_PMU_MODULE_AHBS       BIT(13)
 #define IFX_PMU_MODULE_DSL_DFE    BIT(9)
 
-static inline int vr9_reset_ppe(struct platform_device *pdev)
+static inline void vr9_reset_ppe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct reset_control *dsp;
@@ -66,16 +66,25 @@ static inline int vr9_reset_ppe(struct platform_device *pdev)
 	struct reset_control *tc;
 
 	dsp = devm_reset_control_get(dev, "dsp");
-	if (IS_ERR(dsp))
-		return dev_err_probe(dev, PTR_ERR(dsp), "Failed to lookup dsp reset");
+	if (IS_ERR(dsp)) {
+		if (PTR_ERR(dsp) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup dsp reset\n");
+// 		return PTR_ERR(dsp);
+	}
 
 	dfe = devm_reset_control_get(dev, "dfe");
-	if (IS_ERR(dfe))
-		return dev_err_probe(dev, PTR_ERR(dfe), "Failed to lookup dfe reset");
+	if (IS_ERR(dfe)) {
+		if (PTR_ERR(dfe) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup dfe reset\n");
+// 		return PTR_ERR(dfe);
+	}
 
 	tc = devm_reset_control_get(dev, "tc");
-	if (IS_ERR(tc))
-		return dev_err_probe(dev, PTR_ERR(tc), "Failed to lookup tc reset");
+	if (IS_ERR(tc)) {
+		if (PTR_ERR(tc) != -EPROBE_DEFER)
+			dev_err(dev, "Failed to lookup tc reset\n");
+// 		return PTR_ERR(tc);
+	}
 
 	reset_control_assert(dsp);
 	udelay(1000);
@@ -87,8 +96,6 @@ static inline int vr9_reset_ppe(struct platform_device *pdev)
 	udelay(1000);
 	*PP32_SRST |= 0x000303CF;
 	udelay(1000);
-
-	return 0;
 }
 
 static inline int vr9_pp32_download_code(int pp32, u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)
@@ -125,11 +132,10 @@ static void vr9_fw_ver(unsigned int *major, unsigned int *minor)
     *minor = FW_VER_ID->minor;
 }
 
-static int vr9_init(struct platform_device *pdev)
+static void vr9_init(struct platform_device *pdev)
 {
 	volatile u32 *p;
 	unsigned int i;
-	int ret;
 
 	/* setup pmu */
 	ltq_pmu_enable(IFX_PMU_MODULE_PPE_SLL01 |
@@ -139,9 +145,7 @@ static int vr9_init(struct platform_device *pdev)
 		IFX_PMU_MODULE_AHBS |
 		IFX_PMU_MODULE_DSL_DFE);
 
-	ret = vr9_reset_ppe(pdev);
-	if (ret)
-		return ret;
+	vr9_reset_ppe(pdev);
 
 	/* pdma init */
 	IFX_REG_W32(0x08,       PDMA_CFG);
@@ -166,8 +170,6 @@ static int vr9_init(struct platform_device *pdev)
 	p = SB_RAM6_ADDR(0);
 	for ( i = 0; i < SB_RAM6_DWLEN; i++ )
 		IFX_REG_W32(0, p++);
-
-	return 0;
 }
 
 static void vr9_shutdown(void)

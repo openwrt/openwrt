@@ -1,0 +1,71 @@
+From 7de26bf144f6a72858ab60afb2bd2b43265ee0ad Mon Sep 17 00:00:00 2001
+From: Sean Anderson <sean.anderson@seco.com>
+Date: Tue, 20 Sep 2022 18:12:34 -0400
+Subject: [PATCH] net: phy: aquantia: Add some additional phy interfaces
+
+These are documented in the AQR115 register reference. I haven't tested
+them, but perhaps they'll be useful to someone.
+
+Signed-off-by: Sean Anderson <sean.anderson@seco.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/aquantia_main.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/aquantia_main.c
++++ b/drivers/net/phy/aquantia_main.c
+@@ -27,9 +27,12 @@
+ #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_KR	0
++#define MDIO_PHYXS_VEND_IF_STATUS_TYPE_KX	1
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_XFI	2
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_USXGMII	3
++#define MDIO_PHYXS_VEND_IF_STATUS_TYPE_XAUI	4
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_SGMII	6
++#define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+ 
+ #define MDIO_AN_VEND_PROV			0xc400
+@@ -401,15 +404,24 @@ static int aqr107_read_status(struct phy
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_KR:
+ 		phydev->interface = PHY_INTERFACE_MODE_10GKR;
+ 		break;
++	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_KX:
++		phydev->interface = PHY_INTERFACE_MODE_1000BASEKX;
++		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_XFI:
+ 		phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+ 		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_USXGMII:
+ 		phydev->interface = PHY_INTERFACE_MODE_USXGMII;
+ 		break;
++	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_XAUI:
++		phydev->interface = PHY_INTERFACE_MODE_XAUI;
++		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_SGMII:
+ 		phydev->interface = PHY_INTERFACE_MODE_SGMII;
+ 		break;
++	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI:
++		phydev->interface = PHY_INTERFACE_MODE_RXAUI;
++		break;
+ 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII:
+ 		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
+ 		break;
+@@ -522,11 +534,14 @@ static int aqr107_config_init(struct phy
+ 
+ 	/* Check that the PHY interface type is compatible */
+ 	if (phydev->interface != PHY_INTERFACE_MODE_SGMII &&
++	    phydev->interface != PHY_INTERFACE_MODE_1000BASEKX &&
+ 	    phydev->interface != PHY_INTERFACE_MODE_2500BASEX &&
+ 	    phydev->interface != PHY_INTERFACE_MODE_XGMII &&
+ 	    phydev->interface != PHY_INTERFACE_MODE_USXGMII &&
+ 	    phydev->interface != PHY_INTERFACE_MODE_10GKR &&
+-	    phydev->interface != PHY_INTERFACE_MODE_10GBASER)
++	    phydev->interface != PHY_INTERFACE_MODE_10GBASER &&
++	    phydev->interface != PHY_INTERFACE_MODE_XAUI &&
++	    phydev->interface != PHY_INTERFACE_MODE_RXAUI)
+ 		return -ENODEV;
+ 
+ 	WARN(phydev->interface == PHY_INTERFACE_MODE_XGMII,

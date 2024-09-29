@@ -1,0 +1,34 @@
+From 1aeb122d214b92474c86fde00a03d6e2d69381b5 Mon Sep 17 00:00:00 2001
+From: Horatiu Vultur <horatiu.vultur@microchip.com>
+Date: Wed, 28 Sep 2022 21:51:12 +0200
+Subject: [PATCH] nvmem: lan9662-otp: Fix compatible string
+
+The device tree bindings for lan9662-otp expects the compatible string
+to be one of following compatible strings:
+microchip,lan9662-otpc
+microchip,lan9668-otpc
+
+The problem is that the lan9662-otp driver contains the
+microchip,lan9662-otp compatible string instead of
+microchip,lan9662-otpc.
+Fix this by updating the compatible string in the driver.
+
+Fixes: 9e8f208ad5229d ("nvmem: lan9662-otp: add support")
+Signed-off-by: Horatiu Vultur <horatiu.vultur@microchip.com>
+Link: https://lore.kernel.org/r/20220928195112.630351-1-horatiu.vultur@microchip.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/lan9662-otpc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/lan9662-otpc.c
++++ b/drivers/nvmem/lan9662-otpc.c
+@@ -203,7 +203,7 @@ static int lan9662_otp_probe(struct plat
+ }
+ 
+ static const struct of_device_id lan9662_otp_match[] = {
+-	{ .compatible = "microchip,lan9662-otp", },
++	{ .compatible = "microchip,lan9662-otpc", },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, lan9662_otp_match);

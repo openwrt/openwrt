@@ -1,0 +1,99 @@
+From bf03b9281b119bcdc167b2dd6ac98294587eb5ff Mon Sep 17 00:00:00 2001
+From: Richard Zhu <hongxing.zhu@nxp.com>
+Date: Thu, 13 Oct 2022 09:47:02 +0800
+Subject: [PATCH 3/3] phy: freescale: imx8m-pcie: Add i.MX8MP PCIe PHY support
+
+Add i.MX8MP PCIe PHY support.
+
+Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+Tested-by: Marek Vasut <marex@denx.de>
+Tested-by: Richard Leitner <richard.leitner@skidata.com>
+Tested-by: Alexander Stein <alexander.stein@ew.tq-group.com>
+Reviewed-by: Lucas Stach <l.stach@pengutronix.de>
+Reviewed-by: Ahmad Fatoum <a.fatoum@pengutronix.de>
+---
+ drivers/phy/freescale/phy-fsl-imx8m-pcie.c | 25 ++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+--- a/drivers/phy/freescale/phy-fsl-imx8m-pcie.c
++++ b/drivers/phy/freescale/phy-fsl-imx8m-pcie.c
+@@ -48,6 +48,7 @@
+ 
+ enum imx8_pcie_phy_type {
+ 	IMX8MM,
++	IMX8MP,
+ };
+ 
+ struct imx8_pcie_phy_drvdata {
+@@ -60,6 +61,7 @@ struct imx8_pcie_phy {
+ 	struct clk		*clk;
+ 	struct phy		*phy;
+ 	struct regmap		*iomuxc_gpr;
++	struct reset_control	*perst;
+ 	struct reset_control	*reset;
+ 	u32			refclk_pad_mode;
+ 	u32			tx_deemph_gen1;
+@@ -74,11 +76,11 @@ static int imx8_pcie_phy_power_on(struct
+ 	u32 val, pad_mode;
+ 	struct imx8_pcie_phy *imx8_phy = phy_get_drvdata(phy);
+ 
+-	reset_control_assert(imx8_phy->reset);
+-
+ 	pad_mode = imx8_phy->refclk_pad_mode;
+ 	switch (imx8_phy->drvdata->variant) {
+ 	case IMX8MM:
++		reset_control_assert(imx8_phy->reset);
++
+ 		/* Tune PHY de-emphasis setting to pass PCIe compliance. */
+ 		if (imx8_phy->tx_deemph_gen1)
+ 			writel(imx8_phy->tx_deemph_gen1,
+@@ -87,6 +89,8 @@ static int imx8_pcie_phy_power_on(struct
+ 			writel(imx8_phy->tx_deemph_gen2,
+ 			       imx8_phy->base + PCIE_PHY_TRSV_REG6);
+ 		break;
++	case IMX8MP: /* Do nothing. */
++		break;
+ 	}
+ 
+ 	if (pad_mode == IMX8_PCIE_REFCLK_PAD_INPUT ||
+@@ -143,6 +147,9 @@ static int imx8_pcie_phy_power_on(struct
+ 			   IMX8MM_GPR_PCIE_CMN_RST);
+ 
+ 	switch (imx8_phy->drvdata->variant) {
++	case IMX8MP:
++		reset_control_deassert(imx8_phy->perst);
++		fallthrough;
+ 	case IMX8MM:
+ 		reset_control_deassert(imx8_phy->reset);
+ 		usleep_range(200, 500);
+@@ -183,8 +190,14 @@ static const struct imx8_pcie_phy_drvdat
+ 	.variant = IMX8MM,
+ };
+ 
++static const struct imx8_pcie_phy_drvdata imx8mp_drvdata = {
++	.gpr = "fsl,imx8mp-iomuxc-gpr",
++	.variant = IMX8MP,
++};
++
+ static const struct of_device_id imx8_pcie_phy_of_match[] = {
+ 	{.compatible = "fsl,imx8mm-pcie-phy", .data = &imx8mm_drvdata, },
++	{.compatible = "fsl,imx8mp-pcie-phy", .data = &imx8mp_drvdata, },
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, imx8_pcie_phy_of_match);
+@@ -240,6 +253,14 @@ static int imx8_pcie_phy_probe(struct pl
+ 		return PTR_ERR(imx8_phy->reset);
+ 	}
+ 
++	if (imx8_phy->drvdata->variant == IMX8MP) {
++		imx8_phy->perst =
++			devm_reset_control_get_exclusive(dev, "perst");
++		if (IS_ERR(imx8_phy->perst))
++			dev_err_probe(dev, PTR_ERR(imx8_phy->perst),
++				      "Failed to get PCIE PHY PERST control\n");
++	}
++
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	imx8_phy->base = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(imx8_phy->base))

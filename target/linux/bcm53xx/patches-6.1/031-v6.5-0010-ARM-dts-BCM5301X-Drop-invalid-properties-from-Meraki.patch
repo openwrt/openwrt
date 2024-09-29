@@ -1,0 +1,31 @@
+From 676bf7d062c14191c3fc12f1e36e1f3809041483 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 2 Jun 2023 15:34:55 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: Drop invalid properties from Meraki MR32
+ keys
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes:
+arch/arm/boot/dts/bcm53015-meraki-mr26.dtb: keys: '#address-cells', '#size-cells' do not match any of the regexes: '^(button|event|key|switch|(button|event|key|switch)-[a-z0-9-]+|[a-z0-9-]+-(button|event|key|switch))$', 'pinctrl-[0-9]+'
+        From schema: Documentation/devicetree/bindings/input/gpio-keys.yaml
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20230602133455.7441-2-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm53015-meraki-mr26.dts | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
++++ b/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
+@@ -39,8 +39,6 @@
+ 
+ 	keys {
+ 		compatible = "gpio-keys";
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+ 
+ 		key-restart {
+ 			label = "Reset";
