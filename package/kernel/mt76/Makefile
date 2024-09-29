@@ -326,7 +326,7 @@ endef
 define KernelPackage/mt7992-firmware
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7992 firmware
-  DEPENDS+=+kmod-mt7996
+  DEPENDS+=+kmod-mt7996e
 endef
 
 define KernelPackage/mt7992-23-firmware
