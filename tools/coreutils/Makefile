@@ -67,8 +67,7 @@ define Host/Install
 endef
 
 define Host/Uninstall
-	rm -f $(STAGING_DIR_HOST)/bin/install
-	-$(call Host/Compile/Default,uninstall)
+	#$(call Host/Compile/Default,uninstall) # Removes necessary symlinks
 endef
 
 $(eval $(call HostBuild))
