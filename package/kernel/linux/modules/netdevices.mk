@@ -527,7 +527,7 @@ $(eval $(call KernelPackage,phy-aquantia))
 define KernelPackage/dsa
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Distributed Switch Architecture support
-  DEPENDS:=+kmod-mdio-devres +kmod-net-selftests +kmod-phylink
+  DEPENDS:=+kmod-net-selftests +kmod-phylink
   KCONFIG:=CONFIG_NET_DSA
   FILES:=$(LINUX_DIR)/net/dsa/dsa_core.ko
 endef
