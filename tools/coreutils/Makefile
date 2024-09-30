@@ -16,7 +16,7 @@ PKG_HASH:=767ae6a22950ec42f3ba5f7c1de79dd27800ee8e9b8642da5dedb5974a1741e5
 
 HOST_BUILD_PARALLEL := 1
 
-PKG_PROGRAMS:=date readlink touch ln chown ginstall
+PKG_PROGRAMS:=chown cp date ginstall ln readlink realpath seq stat touch
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -62,8 +62,10 @@ endef
 
 define Host/Install
 	$(INSTALL_DIR) $(1)/bin
-	$(INSTALL_BIN) $(patsubst %,$(HOST_BUILD_DIR)/src/%,$(PKG_PROGRAMS)) $(1)/bin/
-	ln -sf ginstall $(1)/bin/install
+	$(foreach prog,$(filter-out g%,$(PKG_PROGRAMS)),$(INSTALL_BIN) $(patsubst %,$(HOST_BUILD_DIR)/src/%,$(prog)) $(1)/bin/g$(prog); )
+	$(foreach prog,$(filter g%,$(PKG_PROGRAMS)),$(INSTALL_BIN) $(patsubst %,$(HOST_BUILD_DIR)/src/%,$(prog)) $(1)/bin/$(prog); )
+	$(foreach prog,$(filter-out g%,$(PKG_PROGRAMS)),$(1)/bin/g$(LN) g$(prog) $(1)/bin/$(prog); )
+	$(foreach prog,$(filter g%,$(PKG_PROGRAMS)),$(1)/bin/g$(LN) $(prog) $(1)/bin/$(patsubst g%,%,$(prog)); )
 endef
 
 define Host/Uninstall
