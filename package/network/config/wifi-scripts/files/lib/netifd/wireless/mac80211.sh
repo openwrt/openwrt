@@ -579,10 +579,8 @@ mac80211_hostapd_setup_base() {
 		append base_cfg "he_mu_edca_ac_vo_ecwmin=5" "$N"
 		append base_cfg "he_mu_edca_ac_vo_ecwmax=7" "$N"
 		append base_cfg "he_mu_edca_ac_vo_timer=3" "$N"
-		append base_cfg "acs_exclude_6ghz_non_psc=1" "$N"
-        append base_cfg "he_6ghz_reg_pwr_type=0" "$N"
-        append base_cfg "stationary_ap=1" "$N"
-        append base_cfg "he_6ghz_rx_ant_pat=1" "$N
+        	append base_cfg "he_6ghz_reg_pwr_type=0" "$N"
+        	append base_cfg "stationary_ap=1" "$N"
 
 	fi
 
@@ -609,18 +607,10 @@ mac80211_hostapd_setup_base() {
 					append base_cfg "eht_oper_chwidth=$eht_oper_chwidth" "$N"
 					append base_cfg "eht_oper_centr_freq_seg0_idx=$eht_oper_centr_freq_seg0_idx" "$N"
 					append base_cfg "eht_bw320_offset=$eht_bw320_offset" "$N"
-					append base_cfg "acs_exclude_6ghz_non_psc=1" "$N"
-					append base_cfg "he_6ghz_reg_pwr_type=0" "$N"
-					append base_cfg "stationary_ap=1" "$N"
-					append base_cfg "he_6ghz_rx_ant_pat=1" "$N
 				;;
 				*)
 					append base_cfg "eht_oper_chwidth=$vht_oper_chwidth" "$N"
 					append base_cfg "eht_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
-					append base_cfg "acs_exclude_6ghz_non_psc=1" "$N"
-					append base_cfg "he_6ghz_reg_pwr_type=0" "$N"
-					append base_cfg "stationary_ap=1" "$N"
-					append base_cfg "he_6ghz_rx_ant_pat=1" "$N
 				;;
 			esac
 		}
