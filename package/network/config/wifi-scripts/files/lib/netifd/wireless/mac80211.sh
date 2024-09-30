@@ -60,7 +60,9 @@ drv_mac80211_init_device_config() {
 		he_twt_required \
 		he_twt_responder \
 		etxbfen \
-		itxbfen
+		itxbfen \
+		lpi_enable \
+		beacon_dup
 	config_add_int \
 		beamformer_antennas \
 		beamformee_antennas \
@@ -71,7 +73,8 @@ drv_mac80211_init_device_config() {
 		rx_stbc \
 		tx_stbc \
 		he_bss_color \
-		he_spr_non_srg_obss_pd_max_offset
+		he_spr_non_srg_obss_pd_max_offset \
+		sku_idx 
 	config_add_boolean \
 		ldpc \
 		greenfield \
@@ -148,7 +151,7 @@ mac80211_hostapd_setup_base() {
 		append base_cfg "acs_exclude_dfs=1" "$N"
 
 	json_get_vars noscan ht_coex min_tx_power:0 tx_burst mbssid mu_onoff rnr obss_interval
-	json_get_vars etxbfen:1 itxbfen:0
+	json_get_vars etxbfen:1 itxbfen:0 lpi_enable:0 sku_idx:0 beacon_dup:1
 	json_get_values ht_capab_list ht_capab
 	json_get_values channel_list channels
 
@@ -625,6 +628,13 @@ ${mbssid:+mbssid=$mbssid}
 ${rnr:+rnr=$rnr}
 ${multiple_bssid:+mbssid=$multiple_bssid}
 #num_global_macaddr=$num_global_macaddr
+${mbssid:+mbssid=$mbssid}
+${mu_onoff:+mu_onoff=$mu_onoff}
+#${itxbfen:+ibf_enable=$itxbfen}
+#${lpi_enable:+lpi_enable=$lpi_enable}
+#${sku_idx:+sku_idx=$sku_idx}
+#${beacon_dup:+beacon_dup=$beacon_dup}
+${rnr:+rnr=$rnr}
 $base_cfg
 
 EOF
