@@ -73,7 +73,7 @@ define Host/Install
 endef
 
 define Host/Uninstall
-	-$(call Host/Compile/Default,uninstall)
+	#$(call Host/Compile/Default,uninstall) # Removes necessary symlinks
 	-$(call Host/Compile/Default,maintainer-clean) # Clean bootstrap files from the release
 endef
 
