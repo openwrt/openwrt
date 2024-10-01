@@ -18,6 +18,11 @@ load_ifaces() {
 }
 
 reload_service() {
+	stop
+	start
+}
+
+configure_interfaces() {
 	json_init
 	json_add_array interfaces
 	for i in $(load_ifaces); do
@@ -29,6 +34,12 @@ reload_service() {
 }
 
 start_service() {
+	local enable="$(uci -q get umdns.@umdns[-1].enable)"
+
+	if [ "${enable}" == "0" ] || [ "${enable}" == "false" ]; then
+		return
+	fi
+
 	local network="$(uci -q get umdns.@umdns[-1].network)"
 
 	procd_open_instance
@@ -46,10 +57,18 @@ start_service() {
 		procd_add_jail umdns ubus log
 		[ -d /etc/umdns ] && procd_add_jail_mount "/etc/umdns"
 	}
+
+	procd_add_mdns "mdns" "udp" "5353" "daemon=umdns"
+
 	procd_close_instance
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger umdns
 }
 
 service_started() {
 	ubus -t 10 wait_for umdns
-	[ $? = 0 ] && reload_service
+	[ $? = 0 ] && configure_interfaces
 }
