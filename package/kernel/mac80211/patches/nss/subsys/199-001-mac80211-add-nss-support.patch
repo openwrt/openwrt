@@ -64,7 +64,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  /**
-@@ -1484,7 +1500,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1485,7 +1501,7 @@ ieee80211_tx_info_clear_status(struct ie
   * @RX_FLAG_AMPDU_EOF_BIT_KNOWN: The EOF value is known
   * @RX_FLAG_RADIOTAP_HE: HE radiotap data is present
   *	(&struct ieee80211_radiotap_he, mac80211 will fill in
@@ -73,7 +73,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	 - DATA3_DATA_MCS
   *	 - DATA3_DATA_DCM
   *	 - DATA3_CODING
-@@ -1492,7 +1508,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1493,7 +1509,7 @@ ieee80211_tx_info_clear_status(struct ie
   *	 - DATA5_DATA_BW_RU_ALLOC
   *	 - DATA6_NSTS
   *	 - DATA3_STBC
@@ -82,7 +82,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	from the RX info data, so leave those zeroed when building this data)
   * @RX_FLAG_RADIOTAP_HE_MU: HE MU radiotap data is present
   *	(&struct ieee80211_radiotap_he_mu)
-@@ -2127,6 +2143,16 @@ static inline bool lockdep_vif_wiphy_mut
+@@ -2128,6 +2144,16 @@ static inline bool lockdep_vif_wiphy_mut
  			      lockdep_vif_wiphy_mutex_held(vif))
  
  /**
@@ -99,7 +99,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * enum ieee80211_key_flags - key flags
   *
   * These flags are used for communication about keys between the driver
-@@ -2825,6 +2851,8 @@ struct ieee80211_txq {
+@@ -2826,6 +2852,8 @@ struct ieee80211_txq {
   *	implements MLO, so operation can continue on other links when one
   *	link is switching.
   *
@@ -108,7 +108,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2884,6 +2912,7 @@ enum ieee80211_hw_flags {
+@@ -2885,6 +2913,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_DISALLOW_PUNCTURING,
  	IEEE80211_HW_DISALLOW_PUNCTURING_5GHZ,
  	IEEE80211_HW_HANDLES_QUIET_CSA,
@@ -116,7 +116,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -3899,6 +3928,10 @@ struct ieee80211_prep_tx_info {
+@@ -3900,6 +3929,10 @@ struct ieee80211_prep_tx_info {
   *	non-MLO connections.
   *	The callback can sleep.
   *
@@ -127,7 +127,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @prepare_multicast: Prepare for multicast filter configuration.
   *	This callback is optional, and its return value is passed
   *	to configure_filter(). This callback must be atomic.
-@@ -4461,7 +4494,9 @@ struct ieee80211_ops {
+@@ -4462,7 +4495,9 @@ struct ieee80211_ops {
  				  struct ieee80211_vif *vif,
  				  struct ieee80211_bss_conf *info,
  				  u64 changed);
@@ -138,7 +138,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	int (*start_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  			struct ieee80211_bss_conf *link_conf);
  	void (*stop_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-@@ -4771,7 +4806,7 @@ struct ieee80211_ops {
+@@ -4772,7 +4807,7 @@ struct ieee80211_ops {
  	int (*reset_tid_config)(struct ieee80211_hw *hw,
  				struct ieee80211_vif *vif,
  				struct ieee80211_sta *sta, u8 tids);
@@ -189,14 +189,14 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
 +void ieee80211_nss_bss_info_change_notify(struct ieee80211_sub_if_data *sdata,
-+                                         u64 changed)
++					  u64 changed)
 +{
-+       struct ieee80211_local *local = sdata->local;
++	struct ieee80211_local *local = sdata->local;
 +
-+       if (!changed || sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-+               return;
++	if (!changed || sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		return;
 +
-+       drv_nss_bss_info_changed(local, sdata, &sdata->vif.bss_conf, changed);
++	drv_nss_bss_info_changed(local, sdata, &sdata->vif.bss_conf, changed);
 +}
 +
  u64 ieee80211_reset_erp_info(struct ieee80211_sub_if_data *sdata)
@@ -308,7 +308,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
 --- a/net/wireless/util.c
 +++ b/net/wireless/util.c
-@@ -2629,6 +2629,9 @@ bool cfg80211_does_bw_fit_range(const st
+@@ -2631,6 +2631,9 @@ bool cfg80211_does_bw_fit_range(const st
  
  int cfg80211_sinfo_alloc_tid_stats(struct station_info *sinfo, gfp_t gfp)
  {
@@ -375,7 +375,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1859,6 +1859,8 @@ void ieee80211_vif_cfg_change_notify(str
+@@ -1860,6 +1860,8 @@ void ieee80211_vif_cfg_change_notify(str
  void ieee80211_link_info_change_notify(struct ieee80211_sub_if_data *sdata,
  				       struct ieee80211_link_data *link,
  				       u64 changed);
@@ -427,7 +427,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	TP_PROTO(struct ieee80211_local *local,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -969,7 +969,8 @@ static bool ieee80211_set_sdata_offload_
+@@ -984,7 +984,8 @@ static bool ieee80211_set_sdata_offload_
  		    local->hw.wiphy->frag_threshold != (u32)-1)
  			flags &= ~IEEE80211_OFFLOAD_ENCAP_ENABLED;
  

@@ -215,8 +215,8 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	ath11k_dbg(ar->ab, ATH11K_DBG_NSS, "nss vdev up tx msg success\n");
 +
 +	if (arvif->vif->type == NL80211_IFTYPE_AP)
-+		list_for_each_entry_safe(ap_vlan_arvif, tmp, &arvif->ap_vlan_arvifs,
-+                                         list)
++		list_for_each_entry_safe(ap_vlan_arvif, tmp,
++					 &arvif->ap_vlan_arvifs, list)
 +			if (ap_vlan_arvif->nss.added)
 +				ath11k_nss_ext_vdev_up(ap_vlan_arvif);
  free:
@@ -236,8 +236,8 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	ath11k_dbg(ar->ab, ATH11K_DBG_NSS, "nss vdev down tx msg success\n");
 +
 +	if (arvif->vif->type == NL80211_IFTYPE_AP)
-+		list_for_each_entry_safe(ap_vlan_arvif, tmp, &arvif->ap_vlan_arvifs,
-+                                         list)
++		list_for_each_entry_safe(ap_vlan_arvif, tmp,
++					 &arvif->ap_vlan_arvifs, list)
 +			ath11k_nss_ext_vdev_down(ap_vlan_arvif);
  free:
  	kfree(vdev_msg);

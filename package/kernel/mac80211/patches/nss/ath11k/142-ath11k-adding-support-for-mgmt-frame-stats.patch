@@ -33,7 +33,7 @@
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -414,6 +424,7 @@ struct ath11k_vif {
+@@ -415,6 +425,7 @@ struct ath11k_vif {
  	struct ath11k_rekey_data rekey_data;
  
  	struct ath11k_reg_tpc_power_info reg_tpc_info;
@@ -258,7 +258,7 @@
  	ieee80211_tx_status_irqsafe(ar->hw, msdu);
  
  	num_mgmt = atomic_dec_if_positive(&ar->num_pending_mgmt_tx);
-@@ -7545,6 +7576,11 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7547,6 +7578,11 @@ static void ath11k_mgmt_rx_event(struct
  	struct ieee80211_hdr *hdr;
  	u16 fc;
  	struct ieee80211_supported_band *sband;
@@ -270,7 +270,7 @@
  
  	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
  		ath11k_warn(ab, "failed to extract mgmt rx event");
-@@ -7610,7 +7646,34 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7612,7 +7648,34 @@ static void ath11k_mgmt_rx_event(struct
  
  	hdr = (struct ieee80211_hdr *)skb->data;
  	fc = le16_to_cpu(hdr->frame_control);

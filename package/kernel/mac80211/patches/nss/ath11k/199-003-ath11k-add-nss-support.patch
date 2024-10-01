@@ -164,7 +164,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
  
-@@ -425,6 +426,9 @@ struct ath11k_vif {
+@@ -426,6 +427,9 @@ struct ath11k_vif {
  
  	struct ath11k_reg_tpc_power_info reg_tpc_info;
  	struct ath11k_mgmt_frame_stats mgmt_stats;
@@ -174,7 +174,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  struct ath11k_vif_iter {
-@@ -578,6 +582,9 @@ struct ath11k_sta {
+@@ -579,6 +583,9 @@ struct ath11k_sta {
  #endif
  
  	bool use_4addr_set;
@@ -184,7 +184,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	u16 tcl_metadata;
  
  	/* Protected with ar->data_lock */
-@@ -672,6 +679,9 @@ struct ath11k {
+@@ -673,6 +680,9 @@ struct ath11k {
  	struct ath11k_pdev *pdev;
  	struct ieee80211_hw *hw;
  	struct ath11k_pdev_wmi *wmi;
@@ -194,7 +194,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	struct ath11k_pdev_dp dp;
  	u8 mac_addr[ETH_ALEN];
  	struct ath11k_he ar_he;
-@@ -933,9 +943,11 @@ struct ath11k_base {
+@@ -934,9 +944,11 @@ struct ath11k_base {
  	struct ath11k_htc htc;
  
  	struct ath11k_dp dp;
@@ -380,7 +380,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
 +void ath11k_dp_rx_from_nss(struct ath11k *ar, struct sk_buff *msdu,
-+                           struct napi_struct *napi)
++			   struct napi_struct *napi)
 +{
 +	struct ieee80211_rx_status rx_status = {0};
 +	struct ath11k_skb_rxcb *rxcb;
@@ -674,7 +674,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ret = ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
  	if (ret) {
  		ath11k_warn(ar->ab, "failed to delete WMI vdev %d: %d\n",
-@@ -6740,7 +6813,34 @@ static int ath11k_mac_op_add_interface(s
+@@ -6751,7 +6824,34 @@ static int ath11k_mac_op_add_interface(s
  	list_add(&arvif->list, &ar->arvifs);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -710,7 +710,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	nss = get_num_chains(ar->cfg_tx_chainmask) ? : 1;
  	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
-@@ -6870,6 +6970,7 @@ err_peer_del:
+@@ -6881,6 +6981,7 @@ err_peer_del:
  	}
  
  err_vdev_del:
@@ -718,7 +718,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_mac_vdev_delete(ar, arvif);
  	spin_lock_bh(&ar->data_lock);
  	list_del(&arvif->list);
-@@ -7387,6 +7488,10 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7399,6 +7500,10 @@ ath11k_mac_update_vif_chan(struct ath11k
  				    arvif->vdev_id, ret);
  			continue;
  		}
@@ -729,7 +729,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	/* Restart the internal monitor vdev on new channel */
-@@ -9014,6 +9119,8 @@ static void ath11k_mac_op_sta_statistics
+@@ -9026,6 +9131,8 @@ static void ath11k_mac_op_sta_statistics
  		sinfo->signal_avg += ATH11K_DEFAULT_NOISE_FLOOR;
  
  	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
@@ -738,7 +738,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
  #if IS_ENABLED(CONFIG_IPV6)
-@@ -9711,6 +9818,7 @@ static const struct ieee80211_ops ath11k
+@@ -9723,6 +9830,7 @@ static const struct ieee80211_ops ath11k
  	.update_vif_offload		= ath11k_mac_op_update_vif_offload,
  	.config                         = ath11k_mac_op_config,
  	.bss_info_changed               = ath11k_mac_op_bss_info_changed,
@@ -746,7 +746,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	.configure_filter		= ath11k_mac_op_configure_filter,
  	.hw_scan                        = ath11k_mac_op_hw_scan,
  	.cancel_hw_scan                 = ath11k_mac_op_cancel_hw_scan,
-@@ -10149,7 +10257,8 @@ static int __ath11k_mac_register(struct
+@@ -10161,7 +10269,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
  		ieee80211_hw_set(ar->hw, SUPPORTS_REORDERING_BUFFER);
  		ieee80211_hw_set(ar->hw, SUPPORTS_AMSDU_IN_AMPDU);
@@ -756,7 +756,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	ar->hw->wiphy->features |= NL80211_FEATURE_STATIC_SMPS;
-@@ -10264,6 +10373,9 @@ static int __ath11k_mac_register(struct
+@@ -10276,6 +10385,9 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  

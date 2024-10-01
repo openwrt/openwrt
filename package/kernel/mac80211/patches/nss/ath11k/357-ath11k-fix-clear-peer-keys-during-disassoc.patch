@@ -30,7 +30,7 @@ Signed-off-by: Karthikeyan Kathirvel <quic_kathirve@quicinc.com>
  	return 0;
  }
  
-@@ -10186,6 +10180,17 @@ static int ath11k_mac_op_sta_state(struc
+@@ -10198,6 +10192,17 @@ static int ath11k_mac_op_sta_state(struc
  		arsta->bw = ath11k_mac_ieee80211_sta_bw_to_wmi(ar, sta);
  		arsta->bw_prev = arsta->bw;
  		spin_unlock_bh(&ar->data_lock);

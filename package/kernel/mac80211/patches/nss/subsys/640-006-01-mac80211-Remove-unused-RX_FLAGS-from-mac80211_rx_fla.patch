@@ -14,7 +14,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1481,8 +1481,6 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1482,8 +1482,6 @@ ieee80211_tx_info_clear_status(struct ie
   * @RX_FLAG_AMPDU_IS_LAST: this subframe is the last subframe of the A-MPDU
   * @RX_FLAG_AMPDU_DELIM_CRC_ERROR: A delimiter CRC error has been detected
   *	on this subframe
@@ -23,7 +23,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
   * @RX_FLAG_MIC_STRIPPED: The mic was stripped of this packet. Decryption was
   *	done by the hardware
   * @RX_FLAG_ONLY_MONITOR: Report frame only to monitor interfaces without
-@@ -1539,39 +1537,38 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1540,39 +1538,38 @@ ieee80211_tx_info_clear_status(struct ie
   *	hardware or driver)
   */
  enum mac80211_rx_flags {

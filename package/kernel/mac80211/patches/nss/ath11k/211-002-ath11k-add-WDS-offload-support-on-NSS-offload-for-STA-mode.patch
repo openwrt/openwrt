@@ -26,7 +26,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -682,6 +682,7 @@ struct ath11k {
+@@ -683,6 +683,7 @@ struct ath11k {
  	struct ath11k_pdev_wmi *wmi;
  #ifdef CPTCFG_ATH11K_NSS_SUPPORT
  	struct ath11k_nss nss;
@@ -34,7 +34,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  #endif
  	struct ath11k_pdev_dp dp;
  	u8 mac_addr[ETH_ALEN];
-@@ -1100,6 +1101,9 @@ struct ath11k_base {
+@@ -1101,6 +1102,9 @@ struct ath11k_base {
  	} testmode;
  #endif
  
@@ -378,7 +378,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 +}
 +
 +void ath11k_peer_ast_cleanup(struct ath11k *ar, struct ath11k_peer *peer,
-+                             bool is_wds, u32 free_wds_count)
++			     bool is_wds, u32 free_wds_count)
 +{
 +	struct ath11k_ast_entry *ast_entry, *tmp;
 +	u32 ast_deleted_count = 0;
@@ -882,7 +882,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		ab->pktlog_defs_checksum = fixed_param.pktlog_defs_checksum;
  		break;
  	case WMI_TAG_ARRAY_FIXED_STRUCT:
-@@ -8875,6 +8953,22 @@ exit:
+@@ -8877,6 +8955,22 @@ exit:
  	kfree(tb);
  }
  
@@ -905,7 +905,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -9008,6 +9102,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+@@ -9010,6 +9104,9 @@ static void ath11k_wmi_tlv_op_rx(struct
  	case WMI_P2P_NOA_EVENTID:
  		ath11k_wmi_p2p_noa_event(ab, skb);
  		break;

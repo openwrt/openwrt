@@ -69,7 +69,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -431,6 +450,11 @@ struct ath11k_vif {
+@@ -432,6 +451,11 @@ struct ath11k_vif {
  	struct arvif_nss nss;
  #endif
  	struct list_head ap_vlan_arvifs;
@@ -346,7 +346,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 +	} else if (!peer) {
  		/* impossible unless FW goes crazy */
  		ath11k_warn(ab, "peer %pM disappeared!\n", peer_addr);
-+  }
++	}
  
 -	if (sta) {
 -		arsta = ath11k_sta_to_arsta(sta);
@@ -354,7 +354,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
  		switch (key->cipher) {
  		case WLAN_CIPHER_SUITE_TKIP:
-@@ -6889,7 +7063,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -6899,7 +7073,7 @@ static int ath11k_mac_op_add_interface(s
  	if ((vif->type == NL80211_IFTYPE_AP_VLAN ||
  	     vif->type == NL80211_IFTYPE_STATION) && ab->nss.enabled) {
  		if (ath11k_frame_mode == ATH11K_HW_TXRX_ETHERNET &&
@@ -363,7 +363,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			vif->offload_flags |= IEEE80211_OFFLOAD_ENCAP_4ADDR;
  			arvif->nss.encap = ATH11K_HW_TXRX_ETHERNET;
  			arvif->nss.decap = ATH11K_HW_TXRX_ETHERNET;
-@@ -6902,6 +7076,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -6912,6 +7086,7 @@ static int ath11k_mac_op_add_interface(s
  					    vif->addr, ret);
  				goto err;
  			}
@@ -371,7 +371,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			mutex_unlock(&ar->conf_mutex);
  			return ret;
  		}
-@@ -6926,6 +7101,20 @@ static int ath11k_mac_op_add_interface(s
+@@ -6937,6 +7112,20 @@ static int ath11k_mac_op_add_interface(s
  	arvif->vdev_id = bit;
  	arvif->vdev_subtype = WMI_VDEV_SUBTYPE_NONE;
  
@@ -392,7 +392,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	switch (vif->type) {
  	case NL80211_IFTYPE_UNSPECIFIED:
  	case NL80211_IFTYPE_STATION:
-@@ -6975,7 +7164,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -6986,7 +7175,7 @@ static int ath11k_mac_op_add_interface(s
  	if (ret) {
  		ath11k_warn(ab, "failed to create WMI vdev %d: %d\n",
  			    arvif->vdev_id, ret);
@@ -401,7 +401,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	}
  
  	ar->num_created_vdevs++;
-@@ -7140,7 +7329,7 @@ err_peer_del:
+@@ -7151,7 +7340,7 @@ err_peer_del:
  		if (fbret) {
  			ath11k_warn(ar->ab, "fallback fail to delete peer addr %pM vdev_id %d ret %d\n",
  				    vif->addr, arvif->vdev_id, fbret);
@@ -410,7 +410,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		}
  	}
  
-@@ -7151,6 +7340,8 @@ err_vdev_del:
+@@ -7162,6 +7351,8 @@ err_vdev_del:
  	list_del(&arvif->list);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -419,7 +419,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  err:
  	mutex_unlock(&ar->conf_mutex);
  
-@@ -7248,6 +7439,7 @@ err_vdev_del:
+@@ -7260,6 +7451,7 @@ err_vdev_del:
  	list_del(&arvif->list);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -427,7 +427,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	ath11k_peer_cleanup(ar, arvif->vdev_id);
  
  	idr_for_each(&ar->txmgmt_idr,
-@@ -9872,6 +10064,33 @@ static int ath11k_mac_station_remove(str
+@@ -9884,6 +10076,33 @@ static int ath11k_mac_station_remove(str
  	return ret;
  }
  
@@ -461,7 +461,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static int ath11k_mac_op_sta_state(struct ieee80211_hw *hw,
  				   struct ieee80211_vif *vif,
  				   struct ieee80211_sta *sta,
-@@ -9961,6 +10180,34 @@ static int ath11k_mac_op_sta_state(struc
+@@ -9973,6 +10192,34 @@ static int ath11k_mac_op_sta_state(struc
  			if (ret)
  				ath11k_warn(ar->ab, "Unable to authorize peer %pM vdev %d: %d\n",
  					    sta->addr, arvif->vdev_id, ret);
@@ -496,7 +496,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		}
  
  		if (!ret &&
-@@ -10575,8 +10822,11 @@ static int __ath11k_mac_register(struct
+@@ -10587,8 +10834,11 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  

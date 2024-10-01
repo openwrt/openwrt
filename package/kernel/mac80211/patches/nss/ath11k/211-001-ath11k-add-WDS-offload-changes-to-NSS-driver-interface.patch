@@ -652,7 +652,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
 -static inline int ath11k_nss_peer_delete(struct ath11k_base *ab, const u8 *addr)
 +static inline int ath11k_nss_peer_delete(struct ath11k_base *ab, u32 vdev_id,
-+                                         const u8 *addr)
++					 const u8 *addr)
  {
  	return 0;
  }

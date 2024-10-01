@@ -34,7 +34,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  };
  
  struct ath11k_skb_cb {
-@@ -924,10 +925,13 @@ struct ath11k_dp_ring_bp_stats {
+@@ -925,10 +926,13 @@ struct ath11k_dp_ring_bp_stats {
  struct ath11k_soc_dp_tx_err_stats {
  	/* TCL Ring Descriptor unavailable */
  	u32 desc_na[DP_TCL_NUM_RING_MAX];
@@ -454,7 +454,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ieee80211_free_txskb(ar->hw, skb);
  		return;
  	}
-@@ -7445,7 +7455,7 @@ err_vdev_del:
+@@ -7457,7 +7467,7 @@ err_vdev_del:
  	idr_for_each(&ar->txmgmt_idr,
  		     ath11k_mac_vif_txmgmt_idr_remove, vif);
  

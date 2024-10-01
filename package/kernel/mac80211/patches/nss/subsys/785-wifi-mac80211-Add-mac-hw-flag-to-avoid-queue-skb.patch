@@ -23,7 +23,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2875,6 +2875,9 @@ struct ieee80211_txq {
+@@ -2876,6 +2876,9 @@ struct ieee80211_txq {
   *
   * @IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD: Hardware suports tid calssification offload.
   *
@@ -33,7 +33,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2937,6 +2940,7 @@ enum ieee80211_hw_flags {
+@@ -2938,6 +2941,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_MESH_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD,
@@ -123,7 +123,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		 * for MLO STA, the SA should be the AP MLD address, but
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4576,6 +4576,9 @@ static int ieee80211_get_txq_stats(struc
+@@ -4584,6 +4584,9 @@ static int ieee80211_get_txq_stats(struc
  	struct ieee80211_sub_if_data *sdata;
  	int ret = 0;
  

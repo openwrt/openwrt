@@ -17,7 +17,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -8803,6 +8803,7 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -8806,6 +8806,7 @@ bool cfg80211_rx_spurious_frame(struct n
   * @dev: The device the frame matched to
   * @addr: the transmitter address
   * @gfp: context flags
@@ -25,7 +25,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
   *
   * This function is used in AP mode (only!) to inform userspace that
   * an associated station sent a 4addr frame but that wasn't expected.
-@@ -8812,7 +8813,8 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -8815,7 +8816,8 @@ bool cfg80211_rx_spurious_frame(struct n
   * for a reason other than not having a subscription.)
   */
  bool cfg80211_rx_unexpected_4addr_frame(struct net_device *dev,
@@ -127,7 +127,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -18916,7 +18916,8 @@ void cfg80211_conn_failed(struct net_dev
+@@ -18945,7 +18945,8 @@ void cfg80211_conn_failed(struct net_dev
  EXPORT_SYMBOL(cfg80211_conn_failed);
  
  static bool __nl80211_unexpected_frame(struct net_device *dev, u8 cmd,
@@ -137,7 +137,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
-@@ -18942,6 +18943,9 @@ static bool __nl80211_unexpected_frame(s
+@@ -18971,6 +18972,9 @@ static bool __nl80211_unexpected_frame(s
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, addr))
  		goto nla_put_failure;
  
@@ -147,7 +147,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  	genlmsg_end(msg, hdr);
  	genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, nlportid);
  	return true;
-@@ -18965,14 +18969,15 @@ bool cfg80211_rx_spurious_frame(struct n
+@@ -18994,14 +18998,15 @@ bool cfg80211_rx_spurious_frame(struct n
  		return false;
  	}
  	ret = __nl80211_unexpected_frame(dev, NL80211_CMD_UNEXPECTED_FRAME,
@@ -165,7 +165,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	bool ret;
-@@ -18987,7 +18992,7 @@ bool cfg80211_rx_unexpected_4addr_frame(
+@@ -19016,7 +19021,7 @@ bool cfg80211_rx_unexpected_4addr_frame(
  	}
  	ret = __nl80211_unexpected_frame(dev,
  					 NL80211_CMD_UNEXPECTED_4ADDR_FRAME,
@@ -176,7 +176,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  }
 --- a/net/mac80211/chan.c
 +++ b/net/mac80211/chan.c
-@@ -1035,6 +1035,8 @@ __ieee80211_link_copy_chanctx_to_vlans(s
+@@ -1036,6 +1036,8 @@ __ieee80211_link_copy_chanctx_to_vlans(s
  	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
  		struct ieee80211_bss_conf *vlan_conf;
  
@@ -185,7 +185,7 @@ Signed-off-by: Ramasamy Kaliappan <quic_rkaliapp@quicinc.com>
  		vlan_conf = wiphy_dereference(local->hw.wiphy,
  					      vlan->vif.link_conf[link_id]);
  		if (WARN_ON(!vlan_conf))
-@@ -1276,6 +1278,8 @@ ieee80211_link_update_chanreq(struct iee
+@@ -1277,6 +1279,8 @@ ieee80211_link_update_chanreq(struct iee
  	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list) {
  		struct ieee80211_bss_conf *vlan_conf;
  

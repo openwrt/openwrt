@@ -23,7 +23,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -7464,8 +7464,10 @@ err_vdev_del:
+@@ -7476,8 +7476,10 @@ err_vdev_del:
  	kfree(arvif->vlan_keyid_map);
  	ath11k_peer_cleanup(ar, arvif->vdev_id);
  
