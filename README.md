@@ -1,108 +1,168 @@
-![OpenWrt logo](include/logo.png)
+# NSS Fork for IPQ807x
+| Branch                                                                                  | mac80211 Version | Notes                                                                 |
+|-----------------------------------------------------------------------------------------|------------------|----------------------------------------------------------------------|
+| [qualcommax-6.x-nss-wifi](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-wifi)             |6.11|Current with upstream|
+| [qualcommax-6.x-nss-mx4300](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-mx4300)         |6.11|Current with upstream. [Supports Linksys MX4300](https://github.com/openwrt/openwrt/pull/16070) |
+| [qualcommax-6.x-nss-wifi-6.9](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-wifi-6.9)     |6.9.9|Current with upstream, except older mac80211|
+| [qualcommax-6.x-nss-mx4300-6.9](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-mx4300-6.11) |6.9.9|Current with upstream, except older mac80211. [Supports Linksys MX4300](https://github.com/openwrt/openwrt/pull/16070) |
 
-OpenWrt Project is a Linux operating system targeting embedded devices. Instead
-of trying to create a single, static firmware, OpenWrt provides a fully
-writable filesystem with package management. This frees you from the
-application selection and configuration provided by the vendor and allows you
-to customize the device through the use of packages to suit any application.
-For developers, OpenWrt is the framework to build an application without having
-to build a complete firmware around it; for users this means the ability for
-full customization, to use the device in ways never envisioned.
+NOTE: The 6.9 branches are meant for folks having issues with the current 6.11.2 version of backports/mac80211. These are mostly just meant as a workaround for the time being. I don't plan on supporting these branches longterm.
 
-Sunshine!
+The MX4300 branches will soon be merged in once the PR for MX4300 is approved upstream.
 
-## Download
+## Table of Contents
+- [Overview](#overview)
+- [What's NSS?](#whats-nss)
+- [How Does OpenWrt "Offload" Traffic?](#how-does-openwrt-offload-traffic)
+- [How Is NSS Different from OpenWrt's Offloading Options?](#how-is-nss-different-from-openwrts-offloading-options)
+- [Do I Need NSS?](#do-i-need-nss)
+- [OK, I Want NSS. Does My Device Support It?](#ok-i-want-nss-does-my-device-support-it)
+- [Quickstart](#quickstart)
+- [Important Note](#important-note)
+- [Donate](#donate)
 
-Built firmware images are available for many architectures and come with a
-package selection to be used as WiFi home router. To quickly find a factory
-image usable to migrate from a vendor stock firmware to OpenWrt, try the
-*Firmware Selector*.
+---
 
-* [OpenWrt Firmware Selector](https://firmware-selector.openwrt.org/)
+## Overview
+This repository contains a fork of OpenWrt that integrates Qualcomm's NSS (Network Subsystem) support for the IPQ807x and IPQ6018 series of SoCs. The goal of this project is to provide enhanced network performance and reliability through hardware offloading, leveraging NSS's capabilities to improve throughput and reduce CPU load.
 
-If your device is supported, please follow the **Info** link to see install
-instructions or consult the support resources listed below.
+---
+#### What's NSS?
 
-## 
+NSS (**N**etwork **S**ub**s**ystem) is a specialized hardware offloading engine developed by Qualcomm, integrated into their IPQ series SoCs (System-on-Chip), such as the IPQ807x and IPQ6018. NSS is designed to handle high-throughput network tasks like NAT, routing, and even security tasks such as IPsec, without burdening the main CPU cores.
 
-An advanced user may require additional or specific package. (Toolchain, SDK, ...) For everything else than simple firmware download, try the wiki download page:
+---
+#### How Does OpenWrt "Offload" Traffic?
 
-* [OpenWrt Wiki Download](https://openwrt.org/downloads)
+OpenWrt offers three primary methods for offloading network traffic, each aimed at reducing CPU load and improving throughput:
 
-## Development
+1. **Packet Steering**: Distributes network processing across multiple CPU cores. It helps balance the load on multi-core CPUs but still relies on the CPU to handle packet processing.
 
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case
-sensitive filesystem required). Cygwin is unsupported because of the lack of a
-case sensitive file system.
+2. **Software Flow Offloading**: Accelerates traffic processing by using the CPU’s fast path, allowing more efficient handling of routing and NAT (Network Address Translation) by bypassing the kernel's normal slow path. This relies entirely on the CPU to speed up packet forwarding.
 
-### Requirements
+3. **Hardware Flow Offloading**: Available only on select devices (e.g., Mediatek), this method offloads packet forwarding directly to the network hardware using kernel-based mechanisms (nftables/iptables) to accelerate traffic. However, this is limited to devices that have hardware acceleration capabilities supported by OpenWrt.
 
-You need the following tools to compile OpenWrt, the package names vary between
-distributions. A complete list with distribution specific packages is found in
-the [Build System Setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem)
-documentation.
+---
+#### Why Isn't NSS Supported in Vanilla OpenWrt?
 
-```
-binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
-make4.1+ perl python3.7+ rsync subversion unzip which
-```
+NSS requires proprietary binaries (NSS firmware) and extensive patches to the Linux kernel and networking stack. Qualcomm does not openly release the necessary firmware or detailed documentation on how to integrate NSS support, making it extremely difficult for the OpenWrt community to maintain. The required patches are invasive and complex, altering significant portions of the network stack, which makes upstream integration into OpenWrt unlikely. Maintaining compatibility with each new kernel version is another barrier, as Qualcomm’s support for these patches is minimal and sporadic.
 
-### Quickstart
+---
 
-1. Run `./scripts/feeds update -a` to obtain all the latest package definitions
-   defined in feeds.conf / feeds.conf.default
+#### How Is NSS Different from OpenWrt's Offloading Options?
 
-2. Run `./scripts/feeds install -a` to install symlinks for all obtained
-   packages into package/feeds/
+The main difference between NSS and OpenWrt's offloading methods is that NSS provides **hardware acceleration** directly within the SoC, bypassing the CPU almost entirely for certain network tasks. OpenWrt's offloading, on the other hand, relies heavily on the **CPU** to manage and accelerate traffic, either via multi-core CPU distribution (Packet Steering) or kernel-level acceleration (Software/Hardware Flow Offloading).
 
-3. Run `make menuconfig` to select your preferred configuration for the
-   toolchain, target system & firmware packages.
+NSS doesn’t play nice with OpenWrt’s built-in offloading because they conflict in how they handle packets, leading to performance issues or even outright failures.
 
-4. Run `make` to build your firmware. This will download all sources, build the
-   cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen
-   applications for your target system.
+---
 
-### Related Repositories
+#### Key Differences:
 
-The main repository uses multiple sub-repositories to manage packages of
-different categories. All packages are installed via the OpenWrt package
-manager called `opkg`. If you're looking to develop the web interface or port
-packages to OpenWrt, please find the fitting repository below.
+- **Packet Steering**: While it redistributes packet processing across multiple CPU cores, it still involves the CPU heavily. With NSS, dedicated hardware cores handle packet processing, so packet steering can interfere by unnecessarily involving the CPU, reducing the benefits of offloading to hardware.
 
-* [LuCI Web Interface](https://github.com/openwrt/luci): Modern and modular
-  interface to control the device via a web browser.
+- **Software Flow Offloading**: This uses kernel-level mechanisms (nftables/iptables) to accelerate packet forwarding by utilizing the CPU’s fast path. NSS, however, bypasses the kernel’s networking stack and offloads these tasks directly to the hardware. If both are enabled, packet handling may be done redundantly in software and hardware, leading to inefficiencies or conflicts.
 
-* [OpenWrt Packages](https://github.com/openwrt/packages): Community repository
-  of ported packages.
+- **Hardware Flow Offloading**: Available only for certain devices like Mediatek, this method offloads packet processing to specific hardware via kernel drivers. However, this hardware-based acceleration is entirely separate from NSS and not as efficient on Qualcomm devices. Using it alongside NSS can lead to unpredictable behavior, as both try to accelerate traffic but in incompatible ways.
 
-* [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
-  focused on (mesh) routing.
+---
 
-* [OpenWrt Video](https://github.com/openwrt/video): Packages specifically
-  focused on display servers and clients (Xorg and Wayland).
+#### Do I Need NSS?
 
-## Support Information
+Here are some reasons you might need NSS:
 
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
+- You require high network throughput (e.g., gigabit speeds) on devices like the IPQ807x or IPQ6018 series.
+- Your router handles resource-intensive tasks like NAT, VPN (IPsec), or other routing-heavy activities that would otherwise overwhelm the CPU.
+- You’re seeking better performance than what OpenWrt’s software and hardware offloading options can provide.
 
-### Documentation
+However, it’s important to note that **NSS is NOT supported upstream** in OpenWrt. As of now, there are only a few community-driven projects that maintain NSS patches.
 
-* [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-* [User Guide](https://openwrt.org/docs/guide-user/start)
-* [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-* [Technical Reference](https://openwrt.org/docs/techref/start)
+I personally maintain an NSS fork of OpenWrt [qosmio/openwrt-ipq](https://github.com/qosmio/openwrt-ipq) and the necessary NSS packages [qosmio/nss-packages](https://github.com/qosmio/nss-packages).
 
-### Support Community
+---
 
-* [Forum](https://forum.openwrt.org): For usage, projects, discussions and hardware advise.
-* [Support Chat](https://webchat.oftc.net/#openwrt): Channel `#openwrt` on **oftc.net**.
+#### OK, I Want NSS. Does My Device Support It?
 
-### Developer Community
+NSS is available for most Qualcomm IPQ807x and IPQ6018 devices. If your device is part of this chipset family and supported in OpenWrt, it can run NSS.
 
-* [Bug Reports](https://bugs.openwrt.org): Report bugs in OpenWrt
-* [Dev Mailing List](https://lists.openwrt.org/mailman/listinfo/openwrt-devel): Send patches
-* [Dev Chat](https://webchat.oftc.net/#openwrt-devel): Channel `#openwrt-devel` on **oftc.net**.
+Supported devices include, but are not limited to:
+- Devices based on the **IPQ807x** (e.g., some high-end Netgear and TP-Link routers)
+- Devices based on the **IPQ6018** (e.g., certain enterprise routers)
 
-## License
+---
 
-OpenWrt is licensed under GPL-2.0
+## Quickstart
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/qosmio/openwrt-ipq -b qualcommax-6.x-nss-wifi-6.11
+   cd openwrt-ipq
+   ```
+2. Update feeds:
+   ```bash
+   ./scripts/feeds update
+   ./scripts/feeds install -a
+   ```
+3. Copy over the seed file
+   ```bash
+   cp nss-setup/config-nss.seed .config
+   ```
+4. Open the `.config` in a text editor, find your device, and remove the "#" and change `"is not set"` to `"=y"`
+
+   Example:
+   ```diff
+   -# CONFIG_TARGET_qualcommax_ipq807x_DEVICE_dynalink_dl-wrx36 is not set
+   +CONFIG_TARGET_qualcommax_ipq807x_DEVICE_dynalink_dl-wrx36=y
+   ```
+6. Generate the full config
+   ```bash
+   make defconfig V=s
+   ```
+7. Now run full build
+   ```bash
+   make download -j$(nproc) V=s
+   make -j$(nproc) V=s
+   ```
+---
+### Important Note:
+
+Many users report issues after enabling Packet Steering or Flow Offloading (Software or Hardware), often because they are used to these options or they get carried over during a sysupgrade. Even if the setup seems to work initially, it is not optimized for NSS offloading, and you are losing the full benefits of hardware acceleration.
+
+If you plan to use NSS, **start fresh** and **disable all other offloading options**.
+
+By default OpenWrt's offloading is disabled, but if you ever happen to enable it accidentally, make sure you disable it.
+
+---
+   ```bash
+   uci set network.@device[0].packet_steering=0
+   uci set network.@device[0].flow_offloading=0
+   uci set network.@device[0].flow_offloading_hw=0
+   uci commit network
+   ```
+If you have questions or issues, please join the discussion on OpenWrt's forums.
+[Qualcomm NSS Build](https://forum.openwrt.org/t/qualcommax-nss-build)
+
+## Please remember when posting about an issue:
+   1. Include your device make and model.
+   2. Relevant logs and screenshots.
+   3. State clearly and concisely the issue you're having.
+      > "My router doesn't work", "I'm getting an error"
+
+      Is not something I can help with.
+   4. Include the specific commit you're building from.
+      > "I'm building from latest"
+
+      Also not helpful as I'm always pushing changes...
+
+   5. Be respectful and mindful. I dedicate my free time to maintain and improve this project, and I do it for the benefit of the community. Remember that I'm not a full-time developer or support team—I'm just an individual sharing my work. Constructive feedback is always welcome, but please refrain from being overly critical or demanding.
+
+## Support the Project
+
+I never really thought about setting up donations before, but with so many people being receptive and appreciative and asking how to contribute, I figured, why not? Of course, this project also builds on the incredible work done by the talented devs upstream who put in countless hours into OpenWrt itself. I’ll definitely continue working on this, but if you’d like to support, every bit helps.
+
+[![Donate with PayPal](./paypal.png)](https://www.paypal.com/donate?business=3V3H2SZFY7DNQ&item_name=Maintaining+NSS+fork+of+OpenWRT+and+NSS+packages.)
+<a href="https://cash.app/$austinzk">
+  <img src="./cashapp.png" alt="Cashapp" width="150px"/>
+</a>
+
+Consider donating to the [OpenWrt Foundation](https://openwrt.org/donate)
