@@ -29,7 +29,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  };
  
  enum ath11k_hw_rev {
-@@ -1129,6 +1130,7 @@ struct ath11k_base {
+@@ -1130,6 +1131,7 @@ struct ath11k_base {
  	u32 max_ast_index;
  	u32 num_ast_entries;
  
@@ -124,7 +124,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		goto out;
  	}
 +	debugfs_create_file("stats_disable", 0600, ab->debugfs_soc, ab,
-+                            &fops_soc_stats_disable);
++				    &fops_soc_stats_disable);
  
  	ret = 0;
  
@@ -425,7 +425,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	bool (*rx_desc_get_mpdu_fc_valid)(struct hal_rx_desc *desc);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -10234,6 +10234,14 @@ static int ath11k_mac_op_sta_state(struc
+@@ -10246,6 +10246,14 @@ static int ath11k_mac_op_sta_state(struc
  		}
  	} else if (old_state == IEEE80211_STA_AUTHORIZED &&
  		   new_state == IEEE80211_STA_ASSOC) {

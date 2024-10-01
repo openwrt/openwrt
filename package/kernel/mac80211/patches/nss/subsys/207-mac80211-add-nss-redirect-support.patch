@@ -40,7 +40,7 @@ Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
  
  extern const struct cfg80211_ops mac80211_config_ops;
  
-@@ -1184,6 +1187,9 @@ struct ieee80211_sub_if_data {
+@@ -1185,6 +1188,9 @@ struct ieee80211_sub_if_data {
  		struct dentry *default_beacon_key;
  	} debugfs;
  #endif
@@ -65,7 +65,7 @@ Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
  /**
   * DOC: Interface list locking
   *
-@@ -759,6 +765,13 @@ static int ieee80211_stop(struct net_dev
+@@ -774,6 +780,13 @@ static int ieee80211_stop(struct net_dev
  		ieee80211_stop_mbssid(sdata);
  	}
  
@@ -79,7 +79,7 @@ Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
  	wiphy_lock(sdata->local->hw.wiphy);
  	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->activate_links_work);
  
-@@ -1204,6 +1217,34 @@ void ieee80211_del_virtual_monitor(struc
+@@ -1219,6 +1232,34 @@ void ieee80211_del_virtual_monitor(struc
  	kfree(sdata);
  }
  
@@ -114,7 +114,7 @@ Signed-off-by: Sowmiya Sree Elavalagan <ssreeela@codeaurora.org>
  /*
   * NOTE: Be very careful when changing this function, it must NOT return
   * an error on interface type changes that have been pre-checked, so most
-@@ -1431,6 +1472,21 @@ int ieee80211_do_open(struct wireless_de
+@@ -1446,6 +1487,21 @@ int ieee80211_do_open(struct wireless_de
  
  	ieee80211_recalc_ps(local);
  

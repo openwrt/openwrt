@@ -40,7 +40,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	[WMI_TAG_11D_NEW_COUNTRY_EVENT] = {
  		.min_len = sizeof(struct wmi_11d_new_cc_ev) },
  	[WMI_TAG_PER_CHAIN_RSSI_STATS] = {
-@@ -8805,6 +8807,74 @@ out:
+@@ -8807,6 +8809,74 @@ out:
  	kfree(tb);
  }
  
@@ -115,7 +115,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -8923,6 +8993,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+@@ -8925,6 +8995,9 @@ static void ath11k_wmi_tlv_op_rx(struct
  	case WMI_11D_NEW_COUNTRY_EVENTID:
  		ath11k_reg_11d_new_cc_event(ab, skb);
  		break;

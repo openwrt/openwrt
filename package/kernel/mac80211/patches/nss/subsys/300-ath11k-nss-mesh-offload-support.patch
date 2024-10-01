@@ -78,7 +78,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	bool eht_mu_beamformer;
  	bool eht_80mhz_full_bw_ul_mumimo;
  	bool nss_ap_isolate;
-@@ -1341,6 +1355,8 @@ struct ieee80211_rate_status {
+@@ -1342,6 +1356,8 @@ struct ieee80211_rate_status {
   * @ack_hwtstamp: Hardware timestamp of the received ack in nanoseconds
   *	Only needed for Timing measurement and Fine timing measurement action
   *	frames. Only reported by devices that have timestamping enabled.
@@ -87,7 +87,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
   */
  struct ieee80211_tx_status {
  	struct ieee80211_sta *sta;
-@@ -1351,6 +1367,8 @@ struct ieee80211_tx_status {
+@@ -1352,6 +1368,8 @@ struct ieee80211_tx_status {
  	u8 n_rates;
  
  	struct list_head *free_list;
@@ -96,7 +96,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  };
  
  /**
-@@ -1859,6 +1877,7 @@ struct ieee80211_channel_switch {
+@@ -1860,6 +1878,7 @@ struct ieee80211_channel_switch {
   *	operation on this interface and request a channel context without
   *	the AP definition. Use this e.g. because the device is able to
   *	handle OFDMA (downlink and trigger for uplink) on a per-AP basis.
@@ -104,7 +104,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
   */
  enum ieee80211_vif_flags {
  	IEEE80211_VIF_BEACON_FILTER		= BIT(0),
-@@ -1867,6 +1886,7 @@ enum ieee80211_vif_flags {
+@@ -1868,6 +1887,7 @@ enum ieee80211_vif_flags {
  	IEEE80211_VIF_GET_NOA_UPDATE		= BIT(3),
  	IEEE80211_VIF_EML_ACTIVE	        = BIT(4),
  	IEEE80211_VIF_IGNORE_OFDMA_WIDER_BW	= BIT(5),
@@ -112,7 +112,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  };
  
  
-@@ -2916,6 +2936,7 @@ enum ieee80211_hw_flags {
+@@ -2917,6 +2937,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_DISALLOW_PUNCTURING_5GHZ,
  	IEEE80211_HW_HANDLES_QUIET_CSA,
  	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
@@ -120,7 +120,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -4424,6 +4445,8 @@ struct ieee80211_prep_tx_info {
+@@ -4425,6 +4446,8 @@ struct ieee80211_prep_tx_info {
   * @set_sar_specs: Update the SAR (TX power) settings.
   * @sta_set_decap_offload: Called to notify the driver when a station is allowed
   *	to use rx decapsulation offload
@@ -129,7 +129,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
   * @add_twt_setup: Update hw with TWT agreement parameters received from the peer.
   *	This callback allows the hw to check if requested parameters
   *	are supported and if there is enough room for a new agreement.
-@@ -4818,6 +4841,12 @@ struct ieee80211_ops {
+@@ -4819,6 +4842,12 @@ struct ieee80211_ops {
  	void (*sta_set_decap_offload)(struct ieee80211_hw *hw,
  				      struct ieee80211_vif *vif,
  				      struct ieee80211_sta *sta, bool enabled);
@@ -142,7 +142,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	void (*add_twt_setup)(struct ieee80211_hw *hw,
  			      struct ieee80211_sta *sta,
  			      struct ieee80211_twt_setup *twt);
-@@ -7722,4 +7751,100 @@ int ieee80211_emulate_switch_vif_chanctx
+@@ -7726,4 +7755,100 @@ int ieee80211_emulate_switch_vif_chanctx
  					 int n_vifs,
  					 enum ieee80211_chanctx_switch_mode mode);
  

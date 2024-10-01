@@ -1257,7 +1257,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	mutex_unlock(&ar->conf_mutex);
  }
  
-@@ -10274,6 +10286,28 @@ static int ath11k_mac_op_sta_state(struc
+@@ -10286,6 +10298,28 @@ static int ath11k_mac_op_sta_state(struc
  	return ret;
  }
  
@@ -1286,7 +1286,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
  	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
-@@ -10332,6 +10366,9 @@ static const struct ieee80211_ops ath11k
+@@ -10344,6 +10378,9 @@ static const struct ieee80211_ops ath11k
  	.set_sar_specs			= ath11k_mac_op_set_bios_sar_specs,
  	.remain_on_channel		= ath11k_mac_op_remain_on_channel,
  	.cancel_remain_on_channel	= ath11k_mac_op_cancel_remain_on_channel,
@@ -1296,7 +1296,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  };
  
  static void ath11k_mac_update_ch_list(struct ath11k *ar,
-@@ -10844,6 +10881,8 @@ static int __ath11k_mac_register(struct
+@@ -10856,6 +10893,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, SUPPORTS_NSS_OFFLOAD);
  		wiphy_ext_feature_set(ar->hw->wiphy,
  				      NL80211_EXT_FEATURE_VLAN_OFFLOAD);
@@ -3272,7 +3272,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +				enum ieee80211_mesh_path_offld_cmd cmd,
 +				struct ieee80211_mesh_path_offld *path)
 +{
-+  return 0;
++	return 0;
 +}
 +#endif
 +int ath11k_nss_mesh_config_update(struct ieee80211_vif *vif, int changed);

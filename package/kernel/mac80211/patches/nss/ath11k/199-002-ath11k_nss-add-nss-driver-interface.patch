@@ -260,8 +260,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	if (!peer) {
 +		spin_unlock_bh(&ab->base_lock);
 +		if(ab->nss.debug_mode)
-+      ath11k_warn(ab, "ath11k_nss: unable to free peer mem, peer_id:%d\n",
-+            peer_id);
++			ath11k_warn(ab, "ath11k_nss: unable to free peer mem, peer_id:%d\n",
++					peer_id);
 +		return;
 +	}
 +
@@ -1298,9 +1298,9 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +		preamble_type = ppdu_info->preamble_type;
 +	}
 +
-+        if ((preamble_type == WMI_RATE_PREAMBLE_CCK ||
-+                preamble_type == WMI_RATE_PREAMBLE_OFDM) &&
-+                (ppdu_info->rate < ATH11K_LEGACY_NUM)) {
++	if ((preamble_type == WMI_RATE_PREAMBLE_CCK ||
++		preamble_type == WMI_RATE_PREAMBLE_OFDM) &&
++		(ppdu_info->rate < ATH11K_LEGACY_NUM)) {
 +		rate = ath11k_hal_rx_legacy_rates[ppdu_info->rate];
 +	}
 +
@@ -3017,7 +3017,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	/* TODO: Do we need to enable ANI? */
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -890,6 +890,8 @@ struct ath11k_soc_dp_tx_err_stats {
+@@ -891,6 +891,8 @@ struct ath11k_soc_dp_tx_err_stats {
  	 * idr unavailable etc.
  	 */
  	atomic_t misc_fail;
@@ -3026,7 +3026,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  struct ath11k_soc_dp_stats {
-@@ -976,6 +978,7 @@ struct ath11k_base {
+@@ -977,6 +979,7 @@ struct ath11k_base {
  	struct list_head peers;
  	wait_queue_head_t peer_mapping_wq;
  	u8 mac_addr[ETH_ALEN];

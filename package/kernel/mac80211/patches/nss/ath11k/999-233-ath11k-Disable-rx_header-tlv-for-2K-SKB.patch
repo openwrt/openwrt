@@ -688,13 +688,13 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
 +static bool ath11k_hw_qcn9074_rx_desc_mac_addr2_valid(struct hal_rx_desc *desc)
  {
 -	return &desc->u.ipq8074.msdu_payload[0];
-+        return __le32_to_cpu(desc->u.qcn9074.mpdu_start.info11) &
++	return __le32_to_cpu(desc->u.qcn9074.mpdu_start.info11) &
 +	       RX_MPDU_START_INFO11_MAC_ADDR2_VALID;
 +}
 +
 +static u8* ath11k_hw_qcn9074_rx_desc_mpdu_start_addr2(struct hal_rx_desc *desc)
 +{
-+        return desc->u.qcn9074.mpdu_start.addr2;
++	return desc->u.qcn9074.mpdu_start.addr2;
  }
  
  static bool ath11k_hw_qcn9074_rx_desc_get_first_msdu(struct hal_rx_desc *desc)
@@ -943,7 +943,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		ret = ath11k_dp_tx_htt_rx_filter_setup(ar->ab, ring_id,
 --- a/drivers/net/wireless/ath/ath11k/rx_desc.h
 +++ b/drivers/net/wireless/ath/ath11k/rx_desc.h
-@@ -1508,4 +1508,17 @@ struct hal_rx_desc {
+@@ -1508,4 +1508,16 @@ struct hal_rx_desc {
  #define RU_484 18
  #define RU_996 37
  
@@ -958,7 +958,6 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
 +
 +#define HAL_RX_MPDU_INFO_PN_GET_BYTE4(__val) \
 +	FIELD_GET(GENMASK(31, 24), __le32_to_cpu(__val))
-+
 +
  #endif /* ATH11K_RX_DESC_H */
 --- a/drivers/net/wireless/ath/ath11k/nss.c

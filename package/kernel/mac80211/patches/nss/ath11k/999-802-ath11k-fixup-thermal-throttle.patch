@@ -137,7 +137,7 @@
  #define ATH11K_HWMON_NAME_LEN           15
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -3237,6 +3237,7 @@ ath11k_wmi_send_thermal_mitigation_param
+@@ -3236,6 +3236,7 @@ ath11k_wmi_send_thermal_mitigation_param
  		lvl_conf->temp_hwm = param->levelconf[i].tmphwm;
  		lvl_conf->dc_off_percent = param->levelconf[i].dcoffpercent;
  		lvl_conf->prio = param->levelconf[i].priority;
@@ -168,11 +168,11 @@
  };
  
 +typedef enum {
-+    WMI_THERMAL_CLIENT_UNSPECIFIED = 0,
-+    WMI_THERMAL_CLIENT_APPS        = 1,
-+    WMI_THERMAL_CLIENT_WPSS        = 2,
-+    WMI_THERMAL_CLIENT_FW          = 3,
-+    WMI_THERMAL_CLIENT_MAX
++	WMI_THERMAL_CLIENT_UNSPECIFIED = 0,
++	WMI_THERMAL_CLIENT_APPS        = 1,
++	WMI_THERMAL_CLIENT_WPSS        = 2,
++	WMI_THERMAL_CLIENT_FW          = 3,
++	WMI_THERMAL_CLIENT_MAX
 +} WMI_THERMAL_MITIGATION_CLIENTS;
 +
  struct wmi_therm_throt_config_request_cmd {
@@ -229,7 +229,7 @@
  struct wmi_delba_send_cmd {
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6683,6 +6683,9 @@ static int ath11k_mac_op_start(struct ie
+@@ -6704,6 +6704,9 @@ static int ath11k_mac_op_start(struct ie
  		}
  	}
  
