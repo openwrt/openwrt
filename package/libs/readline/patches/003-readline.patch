@@ -1,0 +1,34 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-003
+
+Bug-Reported-by:	Stefan Klinger <readline-gnu.org@stefan-klinger.de>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2023-08/msg00018.html
+
+Bug-Description:
+
+
+The custom color prefix that readline uses to color possible completions
+must have a leading `.'.
+
+--- a/colors.c
++++ b/colors.c
+@@ -73,7 +73,7 @@
+ static bool is_colored (enum indicator_no type);
+ static void restore_default_color (void);
+ 
+-#define RL_COLOR_PREFIX_EXTENSION	"readline-colored-completion-prefix"
++#define RL_COLOR_PREFIX_EXTENSION	".readline-colored-completion-prefix"
+ 
+ COLOR_EXT_TYPE *_rl_color_ext_list = 0;
+ 
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-2
++3

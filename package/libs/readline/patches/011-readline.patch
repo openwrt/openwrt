@@ -1,0 +1,62 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-011
+
+Bug-Reported-by:	Grisha Levit <grishalevit@gmail.com>
+Bug-Reference-ID:	<CAMu=BrqWa_iNkiEwchpFmtrUhFrAanOO8pjy7VCKqRKUvqdsbw@mail.gmail.com>
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-bash/2024-02/msg00075.html
+
+Bug-Description:
+
+
+Some systems (e.g., macOS) send signals early on in interactive initialization,
+so readline should retry a failed open of the init file.
+
+--- a/bind.c
++++ b/bind.c
+@@ -978,11 +978,20 @@ _rl_read_file (char *filename, size_t *s
+   char *buffer;
+   int i, file;
+ 
+-  file = -1;
+-  if (((file = open (filename, O_RDONLY, 0666)) < 0) || (fstat (file, &finfo) < 0))
++  file = open (filename, O_RDONLY, 0666);
++  /* If the open is interrupted, retry once */
++  if (file < 0 && errno == EINTR)
+     {
++      RL_CHECK_SIGNALS ();
++      file = open (filename, O_RDONLY, 0666);
++    }
++  
++  if ((file < 0) || (fstat (file, &finfo) < 0))
++    {
++      i = errno;
+       if (file >= 0)
+ 	close (file);
++      errno = i;
+       return ((char *)NULL);
+     }
+ 
+@@ -991,10 +1000,13 @@ _rl_read_file (char *filename, size_t *s
+   /* check for overflow on very large files */
+   if (file_size != finfo.st_size || file_size + 1 < file_size)
+     {
++      i = errno;
+       if (file >= 0)
+ 	close (file);
+ #if defined (EFBIG)
+       errno = EFBIG;
++#else
++      errno = i;
+ #endif
+       return ((char *)NULL);
+     }
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-10
++11

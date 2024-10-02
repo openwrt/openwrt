@@ -1,0 +1,36 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-001
+
+Bug-Reported-by:	Kan-Ru Chen <koster@debian.org>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1021109
+
+Bug-Description:
+
+Starting a readline application with an invalid locale specification for
+LC_ALL/LANG/LC_CTYPE can cause it crash on the first call to readline.
+
+
+--- a/nls.c
++++ b/nls.c
+@@ -141,6 +141,10 @@ _rl_init_locale (void)
+   if (lspec == 0)
+     lspec = "";
+   ret = setlocale (LC_CTYPE, lspec);	/* ok, since it does not change locale */
++  if (ret == 0 || *ret == 0)
++    ret = setlocale (LC_CTYPE, (char *)NULL);
++  if (ret == 0 || *ret == 0)
++    ret = RL_DEFAULT_LOCALE;
+ #else
+   ret = (lspec == 0 || *lspec == 0) ? RL_DEFAULT_LOCALE : lspec;
+ #endif
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-0
++1
