@@ -341,6 +341,11 @@ generate_static_system() {
 				uci -q set "system.@system[-1].compat_version=1.0"
 			fi
 
+			local timezone
+			if json_get_var timezone timezone; then
+				uci -q set "system.@system[-1].timezone=$timezone"
+			fi
+
 			if json_is_a ntpserver array; then
 				local keys key
 				json_get_keys keys ntpserver

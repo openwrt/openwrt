@@ -39,22 +39,18 @@
   - any-glob-to-any-file:
     - "target/linux/bcm4908/**"
     - "package/boot/uboot-bcm4908/**"
+    - "package/boot/arm-trusted-firmware-bcm63xx/**"
 "target/bcm53xx":
 - changed-files:
   - any-glob-to-any-file:
     - "target/linux/bcm53xx/**"
     - "package/boot/uboot-bcm53xx/**"
-"target/bcm63xx":
-- changed-files:
-  - any-glob-to-any-file:
-    - "target/linux/bcm63xx/**"
-    - "package/kernel/bcm63xx-cfe/**"
-    - "package/boot/arm-trusted-firmware-bcm63xx/**"
 "target/bmips":
 - changed-files:
   - any-glob-to-any-file:
     - "target/linux/bmips/**"
     - "package/boot/uboot-bmips/**"
+    - "package/kernel/bcm63xx-cfe/**"
 "target/d1":
 - changed-files:
   - any-glob-to-any-file:
@@ -83,6 +79,12 @@
 - changed-files:
   - any-glob-to-any-file:
     - "target/linux/qualcommax/**"
+"target/ixp4xx":
+- changed-files:
+  - any-glob-to-any-file:
+    - "target/linux/ixp4xx/**"
+    - "package/boot/apex/Makefile/**"
+    - "package/firmware/ixp4xx-microcode/**"
 "target/kirkwood":
 - changed-files:
   - any-glob-to-any-file:
@@ -103,6 +105,10 @@
     - "package/boot/tfa-layerscape/**"
     - "package/boot/uboot-layerscape/**"
     - "package/network/utils/layerscape/**"
+"target/loongarch64":
+- changed-files:
+  - any-glob-to-any-file:
+    - "target/linux/loongarch64/**"
 "target/malta":
 - changed-files:
   - any-glob-to-any-file:
@@ -165,6 +171,14 @@
     - "target/linux/sifiveu/**"
     - "package/boot/uboot-sifiveu/**"
     - "package/boot/opensbi/**"
+"target/siflower":
+- changed-files:
+  - any-glob-to-any-file:
+    - "target/linux/siflower/**"
+"target/starfive":
+- changed-files:
+  - any-glob-to-any-file:
+    - "target/linux/starfive/**"
 "target/sunxi":
 - changed-files:
   - any-glob-to-any-file:

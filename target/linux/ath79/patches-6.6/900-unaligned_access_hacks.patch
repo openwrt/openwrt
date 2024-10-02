@@ -867,7 +867,7 @@ SVN-Revision: 35130
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -258,7 +258,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -264,7 +264,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -876,7 +876,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -324,8 +324,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -330,8 +330,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)
