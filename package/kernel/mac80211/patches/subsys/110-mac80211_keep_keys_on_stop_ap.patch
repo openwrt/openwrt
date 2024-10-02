@@ -9,7 +9,7 @@ Used for AP+STA support in OpenWrt - preserve AP mode keys across STA reconnect
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1647,12 +1647,6 @@ static int ieee80211_stop_ap(struct wiph
+@@ -1649,12 +1649,6 @@ static int ieee80211_stop_ap(struct wiph
  
  	__sta_info_flush(sdata, true, link_id);
  

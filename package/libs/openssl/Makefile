@@ -17,13 +17,9 @@ PKG_BUILD_PARALLEL:=1
 PKG_BASE:=$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(PKG_VERSION))))
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
-	http://www.openssl.org/source/ \
-	http://www.openssl.org/source/old/$(PKG_BASE)/ \
-	https://github.com/openssl/openssl/releases/download/$(PKG_NAME)-$(PKG_VERSION)/ \
-	http://ftp.fi.muni.cz/pub/openssl/source/ \
-	http://ftp.fi.muni.cz/pub/openssl/source/old/$(PKG_BASE)/ \
-	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
-	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/old/$(PKG_BASE)/
+	https://www.openssl.org/source/ \
+	https://www.openssl.org/source/old/$(PKG_BASE)/ \
+	https://github.com/openssl/openssl/releases/download/$(PKG_NAME)-$(PKG_VERSION)/
 
 PKG_HASH:=23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533
 
@@ -74,7 +70,7 @@ endif
 
 define Package/openssl/Default
   TITLE:=Open source SSL toolkit
-  URL:=http://www.openssl.org/
+  URL:=https://www.openssl.org/
   SECTION:=libs
   CATEGORY:=Libraries
 endef
