@@ -16,14 +16,21 @@ emmc_upgrade_tar() {
 	tar tf "$tar_file" ${board_dir}/kernel 1>/dev/null 2>/dev/null && has_kernel=1
 	tar tf "$tar_file" ${board_dir}/root 1>/dev/null 2>/dev/null && has_rootfs=1
 
-	[ "$has_kernel" = 1 -a "$EMMC_KERN_DEV" ] &&
-		export EMMC_KERNEL_BLOCKS=$(($(tar xf "$tar_file" ${board_dir}/kernel -O | dd of="$EMMC_KERN_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
-
 	[ "$has_rootfs" = 1 -a "$EMMC_ROOT_DEV" ] && {
+		# Invalidate kernel image while rootfs is being written
+		[ "$has_kernel" = 1 -a "$EMMC_KERN_DEV" ] && {
+			dd if=/dev/zero of="$EMMC_KERN_DEV" bs=512 count=8
+			sync
+		}
+
 		export EMMC_ROOTFS_BLOCKS=$(($(tar xf "$tar_file" ${board_dir}/root -O | dd of="$EMMC_ROOT_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
 		# Account for 64KiB ROOTDEV_OVERLAY_ALIGN in libfstools
 		EMMC_ROOTFS_BLOCKS=$(((EMMC_ROOTFS_BLOCKS + 127) & ~127))
+		sync
 	}
+
+	[ "$has_kernel" = 1 -a "$EMMC_KERN_DEV" ] &&
+		export EMMC_KERNEL_BLOCKS=$(($(tar xf "$tar_file" ${board_dir}/kernel -O | dd of="$EMMC_KERN_DEV" bs=512 2>&1 | grep "records out" | cut -d' ' -f1)))
 
 	if [ -z "$UPGRADE_BACKUP" ]; then
 		if [ "$EMMC_DATA_DEV" ]; then

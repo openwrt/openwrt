@@ -54,9 +54,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	depends on MHI_BUS
 +	depends on QRTR
 +	depends on QRTR_MHI
+ 	select PCI_PWRCTL_PWRSEQ if HAVE_PWRCTL
  	help
  	  This module adds support for PCIE bus
- 
 --- a/local-symbols
 +++ b/local-symbols
 @@ -59,14 +59,6 @@ MAC80211_MESH_PS_DEBUG=

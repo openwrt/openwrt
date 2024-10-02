@@ -1,7 +1,7 @@
-From de2cad82c4d0872066f83ce59462603852b47f03 Mon Sep 17 00:00:00 2001
+From 5af43708d21c30e2f418cb25d337779c56d235f6 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Fri, 6 Jan 2017 17:55:24 +0100
-Subject: [PATCH 2/2] usb: dwc2:  add support for other Lantiq SoCs
+Date: Tue, 9 Jul 2024 00:20:54 +0200
+Subject: [PATCH] usb: dwc2: add support for other Lantiq SoCs
 
 The size of the internal RAM of the DesignWare USB controller changed
 between the different Lantiq SoCs. We have the following sizes:
@@ -16,10 +16,15 @@ and for the xrx200 and xrx300 SCs a little bit bigger periodic fifo.
 The auto detection of max_transfer_size and max_packet_count should
 work, so remove it.
 
+This patch is included in OpenWrt for many years.
+
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: Minas Harutyunyan <hminas@synopsys.com>
+Link: https://lore.kernel.org/r/20240708222054.2727789-1-hauke@hauke-m.de
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/usb/dwc2/platform.c | 46 ++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 39 insertions(+), 7 deletions(-)
+ drivers/usb/dwc2/params.c | 30 +++++++++++++++++++++++++-----
+ 1 file changed, 25 insertions(+), 5 deletions(-)
 
 --- a/drivers/usb/dwc2/params.c
 +++ b/drivers/usb/dwc2/params.c
