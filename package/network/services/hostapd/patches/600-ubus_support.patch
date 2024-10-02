@@ -116,6 +116,14 @@ probe/assoc/auth requests via object subscribe.
  #ifdef CONFIG_P2P
  	if (elems.p2p) {
  		wpabuf_free(sta->p2p_ie);
+@@ -1369,6 +1379,7 @@ void hostapd_event_ch_switch(struct host
+ 
+ 		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_CSA_FINISHED
+ 			"freq=%d dfs=%d", freq, is_dfs);
++		hostapd_ubus_notify_csa(hapd, freq);
+ 	} else if (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_DFS_OFFLOAD) {
+ 		/* Complete AP configuration for the first bring up. */
+ 		if (is_dfs0 > 0 &&
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
 @@ -475,6 +475,7 @@ void hostapd_free_hapd_data(struct hosta
