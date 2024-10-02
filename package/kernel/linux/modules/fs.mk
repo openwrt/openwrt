@@ -702,10 +702,7 @@ define KernelPackage/pstore
   DEFAULT:=m if ALL_KMODS
   KCONFIG:= \
 	CONFIG_PSTORE \
-	CONFIG_PSTORE_COMPRESS=y \
-	CONFIG_PSTORE_COMPRESS_DEFAULT="deflate" \
-	CONFIG_PSTORE_DEFLATE_COMPRESS=y \
-	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
+	CONFIG_PSTORE_COMPRESS=y
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
   DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
