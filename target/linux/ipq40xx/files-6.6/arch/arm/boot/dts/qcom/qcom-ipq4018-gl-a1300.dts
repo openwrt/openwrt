@@ -63,7 +63,7 @@
 			label = "WiFi on/off switch";
 			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
-			linux,type = <EV_SW>;
+			linux,input-type = <EV_SW>;
 		};
 	};
 
