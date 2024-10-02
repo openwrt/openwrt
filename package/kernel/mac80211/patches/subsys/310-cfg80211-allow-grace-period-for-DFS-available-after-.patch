@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -189,6 +189,8 @@ enum ieee80211_channel_flags {
+@@ -187,6 +187,8 @@ enum ieee80211_channel_flags {
   * @dfs_state: current state of this channel. Only relevant if radar is required
   *	on this channel.
   * @dfs_state_entered: timestamp (jiffies) when the dfs state was entered.
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @dfs_cac_ms: DFS CAC time in milliseconds, this is valid for DFS channels.
   * @psd: power spectral density (in dBm)
   */
-@@ -206,6 +208,7 @@ struct ieee80211_channel {
+@@ -204,6 +206,7 @@ struct ieee80211_channel {
  	int orig_mag, orig_mpwr;
  	enum nl80211_dfs_state dfs_state;
  	unsigned long dfs_state_entered;
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -560,6 +560,8 @@ static void cfg80211_set_chans_dfs_state
+@@ -598,6 +598,8 @@ static void cfg80211_set_chans_dfs_state
  
  		c->dfs_state = dfs_state;
  		c->dfs_state_entered = jiffies;
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1049,6 +1051,49 @@ static bool cfg80211_get_chans_dfs_avail
+@@ -1087,6 +1089,49 @@ static bool cfg80211_get_chans_dfs_avail
  	return true;
  }
  

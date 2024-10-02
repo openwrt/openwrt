@@ -358,6 +358,15 @@
 +}
 --- a/mac80211.c
 +++ b/mac80211.c
+@@ -159,7 +159,7 @@ fwcmd_fail:
+ 	return rc;
+ }
+ 
+-static void mwl_mac80211_stop(struct ieee80211_hw *hw)
++static void mwl_mac80211_stop(struct ieee80211_hw *hw, bool suspend)
+ {
+ 	mwl_fwcmd_radio_disable(hw);
+ 
 @@ -368,15 +368,15 @@ static void mwl_mac80211_bss_info_change
  		}
  	}
