@@ -1,0 +1,11 @@
+--- a/ath10k-6.9/mac.c
++++ b/ath10k-6.9/mac.c
+@@ -6238,7 +6238,7 @@ err:
+ 	return ret;
+ }
+ 
+-static void ath10k_stop(struct ieee80211_hw *hw)
++static void ath10k_stop(struct ieee80211_hw *hw, bool suspend)
+ {
+ 	struct ath10k *ar = hw->priv;
+ 	u32 opt;
