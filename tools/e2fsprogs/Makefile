@@ -30,7 +30,12 @@ HOST_CONFIGURE_ARGS += \
 	--disable-tls \
 	--disable-nls \
 	--enable-threads=pth \
-	--disable-fuse2fs
+	--disable-fuse2fs \
+	--with-crond-dir=no
+
+# The following uses pkg-config the wrong way around. Just override it.
+HOST_CONFIGURE_VARS += \
+	ac_cv_lib_uuid_uuid_generate=yes
 
 define Host/Prepare
 	$(call Host/Prepare/Default)

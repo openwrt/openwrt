@@ -110,7 +110,6 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	struct gpio_latch_chip *glc;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
-	struct fwnode_handle *fwnode = dev->fwnode;
 	int i, n;
 
 	glc = devm_kzalloc(dev, sizeof(*glc), GFP_KERNEL);
@@ -121,24 +120,19 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	mutex_init(&glc->latch_mutex);
 
 	n = gpiod_count(dev, NULL);
-	if (n <= 0) {
-		dev_err(dev, "failed to get gpios: %d\n", n);
-		return n;
-	} else if (n != GPIO_LATCH_LINES) {
-		dev_err(dev, "expected %d gpios\n", GPIO_LATCH_LINES);
+	if (n <= 0)
+		return dev_err_probe(dev, n, "failed to get gpios");
+	if (n != GPIO_LATCH_LINES) {
+		dev_err(dev, "expected %d gpios", GPIO_LATCH_LINES);
 		return -EINVAL;
 	}
 
 	for (i = 0; i < n; i++) {
 		glc->gpios[i] = devm_gpiod_get_index_optional(dev, NULL, i,
 			GPIOD_OUT_LOW);
-		if (IS_ERR(glc->gpios[i])) {
-			if (PTR_ERR(glc->gpios[i]) != -EPROBE_DEFER) {
-				dev_err(dev, "failed to get gpio %d: %ld\n", i,
-					PTR_ERR(glc->gpios[i]));
-			}
-			return PTR_ERR(glc->gpios[i]);
-		}
+		if (IS_ERR(glc->gpios[i]))
+			return dev_err_probe(dev, PTR_ERR(glc->gpios[i]),
+					     "failed to get gpio %d", i);
 	}
 
 	glc->le_gpio = 8;
@@ -152,31 +146,15 @@ static int gpio_latch_probe(struct platform_device *pdev)
 
 	gc = &glc->gc;
 	gc->label = GPIO_LATCH_DRIVER_NAME;
+	gc->parent = dev;
 	gc->can_sleep = true;
 	gc->base = -1;
 	gc->ngpio = GPIO_LATCH_LINES;
 	gc->get = gpio_latch_get;
 	gc->set = gpio_latch_set;
 	gc->direction_output = gpio_latch_direction_output;
-	gc->fwnode = fwnode;
 
-	platform_set_drvdata(pdev, glc);
-
-	i = gpiochip_add(&glc->gc);
-	if (i) {
-		dev_err(dev, "gpiochip_add() failed: %d\n", i);
-		return i;
-	}
-
-	return 0;
-}
-
-static int gpio_latch_remove(struct platform_device *pdev)
-{
-	struct gpio_latch_chip *glc = platform_get_drvdata(pdev);
-
-	gpiochip_remove(&glc->gc);
-	return 0;
+	return devm_gpiochip_add_data(dev, gc, glc);
 }
 
 static const struct of_device_id gpio_latch_match[] = {
@@ -188,7 +166,6 @@ MODULE_DEVICE_TABLE(of, gpio_latch_match);
 
 static struct platform_driver gpio_latch_driver = {
 	.probe = gpio_latch_probe,
-	.remove = gpio_latch_remove,
 	.driver = {
 		.name = GPIO_LATCH_DRIVER_NAME,
 		.owner = THIS_MODULE,

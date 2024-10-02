@@ -1,0 +1,12 @@
+. /usr/share/libubox/jshn.sh
+
+json_init
+json_load "$(cat /etc/board.json)"
+
+json_select credentials
+	json_get_vars root_password_hash root_password_hash
+	[ -z "$root_password_hash" ] || sed -i "s|^root:[^:]*|root:$root_password_hash|g" /etc/shadow
+
+	json_get_vars root_password_plain root_password_plain
+	[ -z "$root_password_plain" ] || { (echo "$root_password_plain"; sleep 1; echo "$root_password_plain") | passwd root }
+json_select ..
