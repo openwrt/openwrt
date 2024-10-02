@@ -642,6 +642,92 @@ ucidef_set_hostname() {
 	json_select ..
 }
 
+ucidef_set_timezone() {
+	local timezone="$1"
+	json_select_object system
+		json_add_string timezone "$timezone"
+	json_select ..
+}
+
+ucidef_set_wireless() {
+	local band="$1"
+	local ssid="$2"
+	local encryption="$3"
+	local key="$4"
+
+	case "$band" in
+	all|2g|5g|6g) ;;
+	*) return;;
+	esac
+	[ -z "$ssid" ] && return
+
+	json_select_object wlan
+		json_select_object defaults
+			json_select_object ssids
+				json_select_object "$band"
+					json_add_string ssid "$ssid"
+					[ -n "$encryption" ] && json_add_string encryption "$encryption"
+					[ -n "$key" ] && json_add_string key "$key"
+				json_select ..
+			json_select ..
+		json_select ..
+	json_select ..
+}
+
+ucidef_set_country() {
+	local country="$1"
+
+	json_select_object wlan
+		json_select_object defaults
+			json_add_string country "$country"
+		json_select ..
+	json_select ..
+}
+
+ucidef_set_wireless_mac_count() {
+	local band="$1"
+	local mac_count="$2"
+
+	case "$band" in
+	2g|5g|6g) ;;
+	*) return;;
+	esac
+	[ -z "$mac_count" ] && return
+
+	json_select_object wlan
+		json_select_object defaults
+			json_select_object ssids
+				json_select_object "$band"
+					json_add_string mac_count "$mac_count"
+				json_select ..
+			json_select ..
+		json_select ..
+	json_select ..
+}
+
+ucidef_set_root_password_plain() {
+	local passwd="$1"
+	json_select_object credentials
+		json_add_string root_password_plain "$passwd"
+	json_select ..
+}
+
+ucidef_set_root_password_hash() {
+	local passwd="$1"
+	json_select_object credentials
+		json_add_string root_password_hash "$passwd"
+	json_select ..
+}
+
+ucidef_set_ssh_authorized_key() {
+	local ssh_key="$1"
+	json_select_object credentials
+		json_select_array ssh_authorized_keys
+			json_add_string "" "$ssh_key"
+		json_select ..
+	json_select ..
+}
+
 ucidef_set_ntpserver() {
 	local server
 
