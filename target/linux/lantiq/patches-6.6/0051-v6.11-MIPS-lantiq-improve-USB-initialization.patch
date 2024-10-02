@@ -1,17 +1,19 @@
-From 14909c4e4e836925668e74fc6e0e85ba0283cbf9 Mon Sep 17 00:00:00 2001
+From 9c7a86c935074525f24cc20e78a7d5150e4600e3 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Fri, 6 Jan 2017 17:40:12 +0100
-Subject: [PATCH 2/2] MIPS: lantiq: improve USB initialization
+Date: Tue, 9 Jul 2024 00:23:04 +0200
+Subject: [PATCH] MIPS: lantiq: improve USB initialization
 
 This adds code to initialize the USB controller and PHY also on Danube,
 Amazon SE and AR10. This code is based on the Vendor driver from
 different UGW versions and compared to the hardware documentation.
 
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- arch/mips/lantiq/xway/sysctrl.c |  20 +++++++
- 2 files changed, 110 insertions(+), 30 deletions(-)
+This patch is included in OpenWrt for many years.
 
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/lantiq/xway/sysctrl.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
