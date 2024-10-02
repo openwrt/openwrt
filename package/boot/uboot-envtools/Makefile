@@ -71,6 +71,9 @@ define Package/uboot-envtools/install
 	$(LN) fw_printenv $(1)/usr/sbin/fw_setenv
 	$(INSTALL_BIN) ./files/fw_printsys $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/fw_setsys $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/fw_loadenv $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/board.d
+	$(INSTALL_DATA) ./files/fw_defaults $(1)/etc/board.d/05_fw_defaults
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
 	$(INSTALL_DIR) $(1)/etc/uci-defaults

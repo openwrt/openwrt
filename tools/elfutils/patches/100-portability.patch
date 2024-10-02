@@ -288,3 +288,13 @@
  
  /* Definitions of arguments for argp functions.  */
  static const struct argp_option options[] =
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -92,6 +92,7 @@ strings_LDADD = $(libelf) $(libeu) $(arg
+ ar_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
+ unstrip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+ stack_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(demanglelib)
++EXTRA_stack_DEPENDENCIES = $(if $(findstring srcfiles,$(bin_PROGRAMS)),$(srcfiles_OBJECTS))
+ elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+ elfclassify_LDADD = $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+ srcfiles_SOURCES = srcfiles.cxx
