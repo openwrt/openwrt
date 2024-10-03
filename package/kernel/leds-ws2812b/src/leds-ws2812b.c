@@ -124,7 +124,10 @@ static int ws2812b_probe(struct spi_device *spi)
 	for (i = 0; i < num_leds * WS2812B_NUM_COLORS; i++)
 		ws2812b_set_byte(priv, i, 0);
 
-	mutex_init(&priv->mutex);
+	ret = devm_mutex_init(dev, &priv->mutex);
+	if (ret)
+		return ret;
+
 	priv->num_leds = num_leds;
 	priv->spi = spi;
 
@@ -144,13 +147,12 @@ static int ws2812b_probe(struct spi_device *spi)
 		if (ret) {
 			dev_err(dev, "failed to obtain numerical LED index for %s",
 				fwnode_get_name(led_node));
-			goto ERR_UNREG_LEDS;
+			return ret;
 		}
 		if (cascade >= num_leds) {
 			dev_err(dev, "LED index of %s is larger than the number of LEDs.",
 				fwnode_get_name(led_node));
-			ret = -EINVAL;
-			goto ERR_UNREG_LEDS;
+			return -EINVAL;
 		}
 
 		cnt = fwnode_property_count_u32(led_node, "color-index");
@@ -176,7 +178,7 @@ static int ws2812b_probe(struct spi_device *spi)
 		if (ret) {
 			dev_err(dev, "registration of %s failed.",
 				fwnode_get_name(led_node));
-			goto ERR_UNREG_LEDS;
+			return ret;
 		}
 		cur_led++;
 	}
@@ -184,16 +186,6 @@ static int ws2812b_probe(struct spi_device *spi)
 	spi_set_drvdata(spi, priv);
 
 	return 0;
-ERR_UNREG_LEDS:
-	mutex_destroy(&priv->mutex);
-	return ret;
-}
-
-static void ws2812b_remove(struct spi_device *spi)
-{
-	struct ws2812b_priv *priv = spi_get_drvdata(spi);
-
-	mutex_destroy(&priv->mutex);
 }
 
 static const struct spi_device_id ws2812b_spi_ids[] = {
@@ -210,7 +202,6 @@ MODULE_DEVICE_TABLE(of, ws2812b_dt_ids);
 
 static struct spi_driver ws2812b_driver = {
 	.probe		= ws2812b_probe,
-	.remove		= ws2812b_remove,
 	.id_table	= ws2812b_spi_ids,
 	.driver = {
 		.name		= KBUILD_MODNAME,
