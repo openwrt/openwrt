@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Copyright (c) 2019-2020 Realtek Semiconductor Corp.
+ */
+
+/dts-v1/;
+
+#include "rtd1319-pymparticles.dtsi"
+
+/ {
+	compatible = "realtek,pym-particles", "realtek,rtd1319";
+	model = "Realtek Pym Particles EVB (2GB, TEE)";
+
+	memory@40000 {
+		device_type = "memory";
+		reg = <0x00040000 0x7ffc0000>; /* 2 GiB */
+	};
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0x98007800 console=ttyS0,460800 uio_pdrv_genirq.of_id=generic-uioi init=/etc/init root=/dev/mmcblk0p1 rootfstype=squashfs rootwait loglevel=8";
+	};
+};
