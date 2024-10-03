@@ -1,9 +1,9 @@
 --- a/jffsX-utils/Makemodule.am
 +++ b/jffsX-utils/Makemodule.am
-@@ -10,8 +10,9 @@ mkfs_jffs2_SOURCES = \
- 	jffsX-utils/summary.h \
- 	include/linux/jffs2.h \
- 	include/mtd/jffs2-user.h
+@@ -9,8 +9,9 @@ mkfs_jffs2_SOURCES = \
+ 	include/mtd/jffs2-user.h \
+ 	include/list.h \
+ 	include/rbtree.h
 +
  mkfs_jffs2_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
 -mkfs_jffs2_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
@@ -11,7 +11,7 @@
  
  jffs2reader_SOURCES = jffsX-utils/jffs2reader.c	include/mtd/jffs2-user.h
  jffs2reader_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
-@@ -33,6 +34,14 @@ if WITH_ZLIB
+@@ -32,6 +33,14 @@ if WITH_ZLIB
  mkfs_jffs2_SOURCES += jffsX-utils/compr_zlib.c
  endif
  
@@ -28,7 +28,7 @@
  dist_man1_MANS += jffsX-utils/mkfs.jffs2.1
 --- a/jffsX-utils/compr.c
 +++ b/jffsX-utils/compr.c
-@@ -520,6 +520,9 @@ int jffs2_compressors_init(void)
+@@ -471,6 +471,9 @@ int jffs2_compressors_init(void)
  #ifdef WITH_LZO
  	jffs2_lzo_init();
  #endif
@@ -38,7 +38,7 @@
  	return 0;
  }
  
-@@ -534,5 +537,8 @@ int jffs2_compressors_exit(void)
+@@ -485,5 +488,8 @@ int jffs2_compressors_exit(void)
  #ifdef WITH_LZO
  	jffs2_lzo_exit();
  #endif
@@ -49,7 +49,7 @@
  }
 --- a/jffsX-utils/compr.h
 +++ b/jffsX-utils/compr.h
-@@ -21,8 +21,9 @@
+@@ -22,8 +22,9 @@
  #define JFFS2_RUBINMIPS_PRIORITY 10
  #define JFFS2_DYNRUBIN_PRIORITY  20
  #define JFFS2_RTIME_PRIORITY     50
@@ -61,7 +61,7 @@
  
  #define JFFS2_COMPR_MODE_NONE       0
  #define JFFS2_COMPR_MODE_PRIORITY   1
-@@ -113,5 +114,10 @@ void jffs2_rtime_exit(void);
+@@ -110,5 +111,10 @@ void jffs2_rtime_exit(void);
  int jffs2_lzo_init(void);
  void jffs2_lzo_exit(void);
  #endif
@@ -5055,7 +5055,7 @@
  AC_ARG_WITH([selinux],
  	[AS_HELP_STRING([--with-selinux],
  		[Support for selinux extended attributes])],
-@@ -268,6 +272,7 @@ fi
+@@ -269,6 +273,7 @@ fi
  AM_CONDITIONAL([WITH_LZO], [test "x$with_lzo" = "xyes"])
  AM_CONDITIONAL([WITH_ZLIB], [test "x$with_zlib" = "xyes"])
  AM_CONDITIONAL([WITH_ZSTD], [test "x$with_zstd" = "xyes"])
@@ -5063,7 +5063,7 @@
  AM_CONDITIONAL([WITH_XATTR], [test "x$with_xattr" = "xyes"])
  AM_CONDITIONAL([WITH_SELINUX], [test "x$with_selinux" = "xyes"])
  AM_CONDITIONAL([WITH_CRYPTO], [test "x$with_crypto" = "xyes"])
-@@ -312,6 +317,7 @@ AC_MSG_RESULT([
+@@ -313,6 +318,7 @@ AC_MSG_RESULT([
  	lzo support:       ${with_lzo}
  	zlib support:      ${with_zlib}
  	zstd support:      ${with_zstd}
