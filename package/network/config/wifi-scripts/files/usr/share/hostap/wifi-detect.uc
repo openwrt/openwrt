@@ -191,7 +191,7 @@ function wiphy_detect() {
 				push(modes, "EHT160");
 
 			if (eht_phy_cap & 2)
-				push(modes, "ETH320");
+				push(modes, "EHT320");
 		}
 
 		let entry = wiphy_get_entry(name, path);
