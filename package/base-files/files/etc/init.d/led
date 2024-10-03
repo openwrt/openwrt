@@ -64,6 +64,8 @@ load_led() {
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
 
+	[ "$2" ] && [ "$sysfs" != "$2" ] && return
+
 	# execute application led trigger
 	[ -f "/usr/libexec/led-trigger/${trigger}" ] && {
 		. "/usr/libexec/led-trigger/${trigger}"
@@ -121,7 +123,7 @@ load_led() {
 					[ -e "/sys/class/leds/${sysfs}/$m" ] && \
 						echo 1 > /sys/class/leds/${sysfs}/$m
 				done
-				echo $interval > /sys/class/leds/${sysfs}/interval
+				echo $interval > /sys/class/leds/${sysfs}/interval 2>/dev/null
 			}
 			;;
 
@@ -171,6 +173,7 @@ start() {
 		[ -s /var/run/led.state ] && {
 			local led trigger brightness color
 			while read led trigger brightness color; do
+				[ "$1" ] && [ "$1" != "$led" ] && continue
 				[ -e "/sys/class/leds/$led/trigger" ] && \
 					echo "$trigger" > "/sys/class/leds/$led/trigger"
 
@@ -185,6 +188,6 @@ start() {
 		}
 
 		config_load system
-		config_foreach load_led led
+		config_foreach load_led led "$1"
 	}
 }
