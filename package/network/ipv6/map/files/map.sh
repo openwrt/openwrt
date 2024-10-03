@@ -25,9 +25,9 @@ proto_map_setup() {
 	local iface="$2"
 	local link="map-$cfg"
 
-	local maptype type legacymap mtu ttl tunlink zone encaplimit
+	local maptype type legacymap snat_fix dont_snat_to mtu ttl tunlink zone encaplimit
 	local rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
-	json_get_vars maptype type legacymap mtu ttl tunlink zone encaplimit
+	json_get_vars maptype type legacymap snat_fix dont_snat_to mtu ttl tunlink zone encaplimit
 	json_get_vars rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
 
 	[ "$zone" = "-" ] && zone=""
@@ -101,7 +101,6 @@ proto_map_setup() {
 			fi
 		json_close_object
 
-
 		proto_close_tunnel
 	elif [ "$maptype" = "map-t" -a -f "/proc/net/nat46/control" ]; then
 		proto_init_update "$link" 1
@@ -140,19 +139,51 @@ proto_map_setup() {
 	      json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
 	    json_close_object
 	  else
-	    for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
-              for proto in icmp tcp udp; do
-	        json_add_object ""
-	          json_add_string type nat
-	          json_add_string target SNAT
-	          json_add_string family inet
-	          json_add_string proto "$proto"
-                  json_add_boolean connlimit_ports 1
-                  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
-                  json_add_string snat_port "$portset"
-	        json_close_object
-              done
-	    done
+	    if [ "$snat_fix" = "1" ]; then
+			# SNAT Fix: Get all ports and full port count, excluding DONT_SNAT_TO ports
+			DONT_SNAT_TO="${dont_snat_to:-0}"
+			local portcount=0
+			local allports=""
+			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+				local startport=$(echo $portset | cut -d'-' -f1)
+				local endport=$(echo $portset | cut -d'-' -f2)
+				for x in $(seq $startport $endport); do
+					if ! echo "$DONT_SNAT_TO" | tr ' ' '\n' | grep -qw $x; then
+						allports="$allports $portcount : $x , "
+						portcount=$((portcount + 1))
+					fi
+				done
+			done
+			allports=${allports%??}
+
+			# SNAT Fix: Create mape table
+			if nft list tables | grep -q "table inet mape"; then
+				nft delete table inet mape
+			fi
+			nft add table inet mape
+			nft add chain inet mape srcnat { type nat hook postrouting priority 0\; policy accept\; }
+
+			# SNAT Fix: Create the rules to SNAT to all the ports
+			for proto in icmp tcp udp; do
+				nft add rule inet mape srcnat ip protocol $proto oifname "map-$cfg" snat ip to $(eval "echo \$RULE_${k}_IPV4ADDR") : numgen inc mod $portcount map { $allports }
+			done
+
+	    else
+			# Original SNAT implementation
+			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+			  for proto in icmp tcp udp; do
+				json_add_object ""
+				  json_add_string type nat
+				  json_add_string target SNAT
+				  json_add_string family inet
+				  json_add_string proto "$proto"
+				  json_add_boolean connlimit_ports 1
+				  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+				  json_add_string snat_port "$portset"
+				json_close_object
+			  done
+			done
+	    fi
 	  fi
 	  if [ "$maptype" = "map-t" ]; then
 		[ -z "$zone" ] && zone=$(fw3 -q network $iface 2>/dev/null)
@@ -204,6 +235,7 @@ proto_map_teardown() {
 	local link="map-$cfg"
 
 	json_get_var type type
+	json_get_var snat_fix snat_fix
 
 	[ -z "$maptype" ] && maptype="$type"
 	[ -z "$maptype" ] && maptype="map-e"
@@ -212,6 +244,10 @@ proto_map_teardown() {
 		"map-e"|"lw4o6") ifdown "${cfg}_" ;;
 		"map-t") [ -f "/proc/net/nat46/control" ] && echo del $link > /proc/net/nat46/control ;;
 	esac
+
+	if [ "$snat_fix" = "1" ]; then
+		nft delete table inet mape 2>/dev/null
+	fi
 
 	rm -f /tmp/map-$cfg.rules
 }
@@ -232,6 +268,8 @@ proto_map_init_config() {
 	proto_config_add_int "psid"
 	proto_config_add_int "offset"
 	proto_config_add_boolean "legacymap"
+	proto_config_add_boolean "snat_fix"
+	proto_config_add_string "dont_snat_to"
 
 	proto_config_add_string "tunlink"
 	proto_config_add_int "mtu"
@@ -241,5 +279,5 @@ proto_map_init_config() {
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
-        add_protocol map
+	add_protocol map
 }
