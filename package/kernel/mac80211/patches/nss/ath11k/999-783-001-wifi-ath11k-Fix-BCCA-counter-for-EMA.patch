@@ -48,6 +48,31 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  static void ath11k_control_beaconing(struct ath11k_vif *arvif,
  				     struct ieee80211_bss_conf *info)
  {
+@@ -7039,16 +7018,6 @@ static int ath11k_mac_vdev_delete(struct
+ 	return ret;
+ }
+ 
+-static void ath11k_mac_bcn_tx_work(struct work_struct *work)
+-{
+-	struct ath11k_vif *arvif = container_of(work, struct ath11k_vif,
+-						bcn_tx_work);
+-
+-	mutex_lock(&arvif->ar->conf_mutex);
+-	ath11k_mac_bcn_tx_event(arvif);
+-	mutex_unlock(&arvif->ar->conf_mutex);
+-}
+-
+ static int ath11k_mac_op_add_interface(struct ieee80211_hw *hw,
+ 				       struct ieee80211_vif *vif)
+ {
+@@ -7111,7 +7080,6 @@ static int ath11k_mac_op_add_interface(s
+ 		}
+ 	}
+ 
+-	INIT_WORK(&arvif->bcn_tx_work, ath11k_mac_bcn_tx_work);
+ 	INIT_DELAYED_WORK(&arvif->connection_loss_work,
+ 			  ath11k_mac_vif_sta_connection_loss_work);
+ 
 --- a/drivers/net/wireless/ath/ath11k/mac.h
 +++ b/drivers/net/wireless/ath/ath11k/mac.h
 @@ -171,7 +171,6 @@ enum ath11k_supported_bw ath11k_mac_mac8
@@ -72,15 +97,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  	}
  
  	cmd->buf_len = bcn->len;
-@@ -7612,7 +7613,6 @@ static void ath11k_bcn_tx_status_event(s
- 		rcu_read_unlock();
- 		return;
- 	}
--	ath11k_mac_bcn_tx_event(arvif);
- 	rcu_read_unlock();
- }
- 
-@@ -8526,10 +8526,7 @@ ath11k_wmi_process_csa_switch_count_even
+@@ -8528,10 +8529,7 @@ ath11k_wmi_process_csa_switch_count_even
  {
  	int i;
  	struct ath11k_vif *arvif;
@@ -92,7 +109,7 @@ Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
  
  	rcu_read_lock();
  	for (i = 0; i < ev->num_vdevs; i++) {
-@@ -8541,8 +8538,18 @@ ath11k_wmi_process_csa_switch_count_even
+@@ -8543,8 +8541,18 @@ ath11k_wmi_process_csa_switch_count_even
  			continue;
  		}
  
