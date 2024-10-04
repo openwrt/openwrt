@@ -14,12 +14,20 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-START=71
+START=95
 NAME=qca-nss-pbuf
 
+reload_wifi() {
+  if [ -r /sys/module/ath11k/parameters/nss_offload ]; then
+    nss_offload=$(cat /sys/module/ath11k/parameters/nss_offload 2> /dev/null)
+    [ "$nss_offload" -eq 1 ] && wifi up
+  fi
+}
+
 get_num_cpus() {
-  local num_cpus=$(awk -F': ' '/^processor/ {count++} END {print count}' /proc/cpuinfo)
-  echo ${num_cpus:-1}
+  local num_cpus
+  num_cpus=$(awk -F': ' '/^processor/ {count++} END {print count}' /proc/cpuinfo)
+  echo "${num_cpus:-1}"
 }
 
 apply_sysctl() {
@@ -169,5 +177,6 @@ start() {
   num_cpus=$(get_num_cpus)
   hash_bitmap="$(((1 << num_cpus) - 1))"
   sysctl -w dev.nss.rps.hash_bitmap=$hash_bitmap > /dev/null 2>&1
+  reload_wifi
 
 }
