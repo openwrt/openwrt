@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# If the Marvell switch is forcefully disabled, don't do anything :)
+if grep -q "e1000.register_mv88e6172=0" /proc/cmdline; then
+    echo "Marvell switch is not registered, so not seting up each port's MAC!"
+    exit 0
+fi
+
+ROOT_IF=eth0
+# https://stackoverflow.com/a/23830537
+ROOT_IF_MAC="$(ifconfig $ROOT_IF | grep HWaddr | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')"
+
+# https://stackoverflow.com/a/56686201
+ROOT_MAC_HEX=$(echo $ROOT_IF_MAC | tr -d ':')
+
+echo "Root ($ROOT_IF) MAC is '$ROOT_IF_MAC'"
+
+# only apply this to lan1, lan2, lan3 and lan4
+for i in 1 2 3 4; do
+    NEW_MAC=$(( 0x$ROOT_MAC_HEX + $i ))
+    NEW_MAC=$(printf "%012x" $NEW_MAC | sed 's/../&:/g;s/:$//')
+
+    echo "New MAC for lan$i: $NEW_MAC"
+
+    if ! ip link set dev lan$i address $NEW_MAC; then
+        echo " Error setting MAC for lan$i"
+    fi
+done
