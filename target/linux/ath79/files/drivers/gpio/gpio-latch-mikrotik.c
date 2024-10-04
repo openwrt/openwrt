@@ -110,14 +110,19 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	struct gpio_latch_chip *glc;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
-	int i, n;
+	int err, i, n;
 
 	glc = devm_kzalloc(dev, sizeof(*glc), GFP_KERNEL);
 	if (!glc)
 		return -ENOMEM;
 
-	mutex_init(&glc->mutex);
-	mutex_init(&glc->latch_mutex);
+	err = devm_mutex_init(&pdev->dev, &glc->mutex);
+	if (err)
+		return err;
+
+	err = devm_mutex_init(&pdev->dev, &glc->latch_mutex);
+	if (err)
+		return err;
 
 	n = gpiod_count(dev, NULL);
 	if (n <= 0)
