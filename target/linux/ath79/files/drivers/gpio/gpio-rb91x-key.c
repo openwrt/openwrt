@@ -144,13 +144,19 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	struct gpio_rb91x_key *drvdata;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
+	int err;
 
 	drvdata = devm_kzalloc(dev, sizeof(*drvdata), GFP_KERNEL);
 	if (!drvdata)
 		return -ENOMEM;
 
-	mutex_init(&drvdata->mutex);
-	mutex_init(&drvdata->poll_mutex);
+	err = devm_mutex_init(dev, &drvdata->mutex);
+	if (err)
+		return err;
+
+	err = devm_mutex_init(dev, &drvdata->poll_mutex);
+	if (err)
+		return err;
 
 	drvdata->gpio = devm_gpiod_get(dev, NULL, GPIOD_OUT_LOW);
 	if (IS_ERR(drvdata->gpio))
@@ -166,8 +172,6 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	gc->set = gpio_rb91x_key_set;
 	gc->direction_output = gpio_rb91x_key_direction_output;
 	gc->direction_input = gpio_rb91x_key_direction_input;
-
-	platform_set_drvdata(pdev, drvdata);
 
 	return devm_gpiochip_add_data(dev, gc, drvdata);
 }
