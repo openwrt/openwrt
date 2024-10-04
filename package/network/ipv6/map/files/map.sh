@@ -20,6 +20,8 @@
 	init_proto "$@"
 }
 
+FW4=$(command -v fw4)
+
 proto_map_setup() {
 	local cfg="$1"
 	local iface="$2"
@@ -141,33 +143,54 @@ proto_map_setup() {
 	  else
 	    if [ "$snat_fix" = "1" ]; then
 			# SNAT Fix: Get all ports and full port count, excluding DONT_SNAT_TO ports
-			DONT_SNAT_TO="${dont_snat_to:-0}"
+			DONT_SNAT_TO=" ${dont_snat_to:-0} "
 			local portcount=0
-			local allports=""
+			local allports_fw4=""
+			local allports_fw3=""
 			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
-				local startport=$(echo $portset | cut -d'-' -f1)
-				local endport=$(echo $portset | cut -d'-' -f2)
+				local startport=${portset%-*}
+				local endport=${portset#*-}
 				for x in $(seq $startport $endport); do
-					if ! echo "$DONT_SNAT_TO" | tr ' ' '\n' | grep -qw $x; then
-						allports="$allports $portcount : $x , "
+					case " $DONT_SNAT_TO " in *" $x "*) ;; *)
+						allports_fw4="$allports_fw4 $portcount : $x , "
+						allports_fw3="$allports_fw3 $x"
 						portcount=$((portcount + 1))
-					fi
+					;; esac
 				done
 			done
-			allports=${allports%??}
+			allports_fw4=${allports_fw4%??}
+			if [ -n "$FW4" ]; then
+				# SNAT Fix: Create mape table
+				nft delete table inet mape 2>/dev/null
+				nft add table inet mape
+				nft add chain inet mape srcnat { type nat hook postrouting priority 0\; policy accept\; }
+				# SNAT Fix: Create the rules to SNAT to all the ports
+				for proto in icmp tcp udp; do
+					nft add rule inet mape srcnat ip protocol $proto oifname "map-$cfg" snat ip to $(eval "echo \$RULE_${k}_IPV4ADDR") : numgen inc mod $portcount map { $allports_fw4 }
+				done
+			else
+				# SNAT Fix: fw3 (Untested)
+                iptables -t nat -N MAPE_SNAT 2>/dev/null
+                iptables -t nat -F MAPE_SNAT
+                iptables -t nat -D POSTROUTING -o "map-$cfg" -j MAPE_SNAT 2>/dev/null
+                iptables -t nat -A POSTROUTING -o "map-$cfg" -j MAPE_SNAT
 
-			# SNAT Fix: Create mape table
-			if nft list tables | grep -q "table inet mape"; then
-				nft delete table inet mape
+                local total_ports=$(echo $allports_fw3 | wc -w)
+                local index=0
+                for proto in icmp tcp udp; do
+                    iptables -t nat -A MAPE_SNAT -p $proto -m connmark --mark 0x0 -j CONNMARK --set-mark 0x1
+                    iptables -t nat -A MAPE_SNAT -p $proto -m connmark --mark 0x1 -j MAPE_SNAT_LOOP
+                done
+
+                iptables -t nat -N MAPE_SNAT_LOOP 2>/dev/null
+                iptables -t nat -F MAPE_SNAT_LOOP
+
+                for port in $allports_fw3; do
+                    iptables -t nat -A MAPE_SNAT_LOOP -j CONNMARK --save-mark
+                    iptables -t nat -A MAPE_SNAT_LOOP -j SNAT --to-source $(eval "echo \$RULE_${k}_IPV4ADDR"):$port
+                    iptables -t nat -A MAPE_SNAT_LOOP -j RETURN
+                done
 			fi
-			nft add table inet mape
-			nft add chain inet mape srcnat { type nat hook postrouting priority 0\; policy accept\; }
-
-			# SNAT Fix: Create the rules to SNAT to all the ports
-			for proto in icmp tcp udp; do
-				nft add rule inet mape srcnat ip protocol $proto oifname "map-$cfg" snat ip to $(eval "echo \$RULE_${k}_IPV4ADDR") : numgen inc mod $portcount map { $allports }
-			done
-
 	    else
 			# Original SNAT implementation
 			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
@@ -213,6 +236,8 @@ proto_map_setup() {
 		proto_add_ipv6_route $(eval "echo \$RULE_${k}_IPV6ADDR") 128
 	  fi
 	json_close_array
+	json_add_string "ipv6addr" "$(eval "echo \$RULE_${k}_IPV6ADDR")"
+	json_add_string "portsets" "$(eval "echo \$RULE_${k}_PORTSETS")"
 	proto_close_data
 
 	proto_send_update "$cfg"
@@ -246,7 +271,15 @@ proto_map_teardown() {
 	esac
 
 	if [ "$snat_fix" = "1" ]; then
-		nft delete table inet mape 2>/dev/null
+		if [ -n "$FW4" ]; then
+			nft delete table inet mape 2>/dev/null
+		else
+			iptables -t nat -D POSTROUTING -o "map-$cfg" -j MAPE_SNAT 2>/dev/null
+			iptables -t nat -F MAPE_SNAT 2>/dev/null
+			iptables -t nat -X MAPE_SNAT 2>/dev/null
+			iptables -t nat -F MAPE_SNAT_LOOP 2>/dev/null
+			iptables -t nat -X MAPE_SNAT_LOOP 2>/dev/null
+		fi
 	fi
 
 	rm -f /tmp/map-$cfg.rules
