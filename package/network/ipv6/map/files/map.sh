@@ -213,6 +213,8 @@ proto_map_setup() {
 		proto_add_ipv6_route $(eval "echo \$RULE_${k}_IPV6ADDR") 128
 	  fi
 	json_close_array
+	json_add_string "ipv6addr" "$(eval "echo \$RULE_${k}_IPV6ADDR")"
+	json_add_string "portsets" "$(eval "echo \$RULE_${k}_PORTSETS")"
 	proto_close_data
 
 	proto_send_update "$cfg"
