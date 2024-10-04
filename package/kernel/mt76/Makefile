@@ -661,6 +661,7 @@ define KernelPackage/mt7992-firmware/install
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_dsp.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_eeprom.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_eeprom_2i5i.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_eeprom_2i5e.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_rom_patch.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_wa.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7996/mt7992_wm.bin \
