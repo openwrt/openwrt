@@ -184,35 +184,9 @@ This tool performs the same discovery process as pppoe, but does
 not initiate a session. Can be useful to debug pppoe.
 endef
 
-
-define Build/Configure
-$(call Build/Configure/Default,, \
-	UNAME_S="Linux" \
-	UNAME_R="$(LINUX_VERSION)" \
-	UNAME_M="$(ARCH)" \
-)
-	mkdir -p $(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux
-	$(CP) \
-		$(LINUX_DIR)/include/linux/compiler.h \
-		$(LINUX_DIR)/include/$(LINUX_UAPI_DIR)linux/atm*.h \
-		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
-
-	# Kernel 4.14.9+ only, ignore the exit status of cp in case the file
-	# doesn't exits
-	-$(CP) $(LINUX_DIR)/include/linux/compiler_types.h \
-		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
-endef
-
-MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
-		STAGING_DIR="$(STAGING_DIR)"
-
 ifeq ($(BUILD_VARIANT),multilink)
   CONFIGURE_VARS += \
 	enable_multilink=yes
-endif
-
-ifdef CONFIG_USE_MUSL
-  MAKE_FLAGS += USE_LIBUTIL=
 endif
 
 define Build/InstallDev
