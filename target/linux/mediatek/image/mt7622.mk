@@ -52,6 +52,17 @@ define Build/mt7622-gpt
 	rm $@.tmp
 endef
 
+define Device/smartrg_sdg-841-t6
+  DEVICE_VENDOR := Adtran
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_MODEL := SDG-841-t6
+  DEVICE_DTS := mt7622-smartrg-SDG-841-t6
+  DEVICE_PACKAGES += kmod-mt7915e kmod-mt7915-firmware
+endef
+TARGET_DEVICES += smartrg_sdg-841-t6
+
 define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
