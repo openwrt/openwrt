@@ -17,6 +17,9 @@
 	compatible = "meraki,mx60", "meraki,buckminster", "apm,bluestone";
 
 	aliases {
+		/* U-Boot env has a bad ethaddr MAC address that is sent to
+		 * the kernel. The real MAC is in UBI */
+		/delete-property/ ethernet0;
 		serial0 = &UART1;
 	};
 
