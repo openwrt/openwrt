@@ -47,6 +47,9 @@ include $(INCLUDE_DIR)/package.mk
 WMENU:=Wireless Drivers
 
 NSS_PATCH:= subsys ath10k ath11k
+IPQ_BRANCH:=$(shell git -C $(TOPDIR) rev-parse --abbrev-ref HEAD)
+IPQ_DATE:=$(shell git -C $(TOPDIR) log -1 --format=%cd --date=format:%Y-%m-%d)
+IPQ_COMMIT:=$(shell git -C $(TOPDIR) log -1 --format=%h)
 
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
@@ -438,9 +441,13 @@ endef
 
 ifdef CONFIG_ATH11K_NSS_SUPPORT
 define KernelPackage/ath11k/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/usr/bin
 	$(INSTALL_BIN) ./files/qca-nss-pbuf.init $(1)/etc/init.d/qca-nss-pbuf
-	$(INSTALL_BIN) ./files/pbuf.uci $(1)/etc/config/pbuf
+	$(INSTALL_DATA) ./files/pbuf.uci $(1)/etc/config/pbuf
+	$(INSTALL_BIN) ./files/nss_diag.sh $(1)/usr/bin/nss_diag
+	echo "IPQ_BRANCH=$(IPQ_BRANCH)" > $(1)/etc/ipq_release
+	echo "IPQ_DATE=$(IPQ_DATE)" >> $(1)/etc/ipq_release
+	echo "IPQ_COMMIT=$(IPQ_COMMIT)" >> $(1)/etc/ipq_release
 endef
 endif
 
