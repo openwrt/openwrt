@@ -1,0 +1,50 @@
+From 933237400c0e2fa997470b70ff0e407996fa239c Mon Sep 17 00:00:00 2001
+From: Shiming Cheng <shiming.cheng@mediatek.com>
+Date: Wed, 24 Apr 2024 13:42:35 +0800
+Subject: [PATCH net] net: prevent BPF pull GROed skb's fraglist
+
+A GROed skb with fraglist can't be pulled data
+from its fraglist as it may result a invalid
+segmentation or kernel exception.
+
+For such structured skb we limit the BPF pull
+data length smaller than skb_headlen() and return
+error if exceeding.
+
+Fixes: 3a1296a38d0c ("net: Support GRO/GSO fraglist chaining.")
+Signed-off-by: Shiming Cheng <shiming.cheng@mediatek.com>
+Signed-off-by: Lena Wang <lena.wang@mediatek.com>
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -1662,6 +1662,11 @@ static inline int __bpf_try_make_writabl
+ 	if (write_len > INT_MAX)
+ 		return -EINVAL;
+ #endif
++	if (skb_is_gso(skb) &&
++	    (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
++	     write_len > skb_headlen(skb)) {
++		return -ENOMEM;
++	}
+ 	return skb_ensure_writable(skb, write_len);
+ }
+ 
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -4357,6 +4357,7 @@ struct sk_buff *skb_segment_list(struct
+ {
+ 	struct sk_buff *list_skb = skb_shinfo(skb)->frag_list;
+ 	unsigned int tnl_hlen = skb_tnl_header_len(skb);
++	unsigned int mss = skb_shinfo(skb)->gso_size;
+ 	unsigned int delta_truesize = 0;
+ 	unsigned int delta_len = 0;
+ 	struct sk_buff *tail = NULL;
+@@ -4370,6 +4371,9 @@ struct sk_buff *skb_segment_list(struct
+ 	if (err)
+ 		goto err_linearize;
+ 
++	if (mss != GSO_BY_FRAGS && mss != skb_headlen(skb))
++		return ERR_PTR(-EFAULT);
++
+ 	skb_shinfo(skb)->frag_list = NULL;
+ 
+ 	while (list_skb) {

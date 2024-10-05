@@ -169,7 +169,7 @@ mac80211_hostapd_setup_base() {
 	ht_capab=
 	case "$htmode" in
 		VHT20|HT20|HE20|EHT20) ;;
-		HT40*|VHT40|VHT80|VHT160|HE40*|HE80|HE160|EHT40*|EHT80|EHT160|EHT320*)
+		HT40*|VHT40|VHT80|VHT160|HE40*|HE80|HE160|EHT40*|EHT80|EHT160)
 			case "$hwmode" in
 				a)
 					case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
@@ -238,9 +238,13 @@ mac80211_hostapd_setup_base() {
 			dsss_cck_40:1
 
 		ht_cap_mask=0
-		for cap in $(iw phy "$phy" info | grep 'Capabilities: 0x' | cut -d: -f2); do
-			ht_cap_mask="$(($ht_cap_mask | $cap))"
-		done
+
+		[ "$band" = "2g" ] && {
+			ht_cap_mask=$(iw phy phy0 info | grep 'Band 1:' -A 1 | grep 'Capabilities: ' | cut -d: -f2)
+		}
+		[ "$band" = "5g" ] && {
+			ht_cap_mask=$(iw phy phy1 info | grep 'Band 2:' -A 1 | grep 'Capabilities: ' | cut -d: -f2)
+		}
 
 		cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
 		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
@@ -379,7 +383,7 @@ mac80211_hostapd_setup_base() {
 			mu_beamformee:1 \
 			vht_txop_ps:1 \
 			htc_vht:1 \
-			beamformee_antennas:4 \
+			beamformee_antennas:5 \
 			beamformer_antennas:4 \
 			rx_antenna_pattern:1 \
 			tx_antenna_pattern:1 \
@@ -617,8 +621,6 @@ mac80211_hostapd_setup_base() {
 	fi
 
 	
-	append base_cfg "country3=0x49" "$N"
-
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
 	cat >> "$hostapd_conf_file" <<EOF
 ${channel:+channel=$channel}
