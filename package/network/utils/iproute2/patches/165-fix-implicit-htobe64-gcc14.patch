@@ -1,0 +1,10 @@
+--- a/include/libnetlink.h
++++ b/include/libnetlink.h
+@@ -12,6 +12,7 @@
+ #include <linux/neighbour.h>
+ #include <linux/netconf.h>
+ #include <arpa/inet.h>
++#include <endian.h>
+ 
+ struct rtnl_handle {
+ 	int			fd;
