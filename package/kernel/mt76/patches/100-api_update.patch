@@ -9,3 +9,56 @@
  		head = &wcid->tx_offchannel;
  	else
  		head = &wcid->tx_pending;
+--- a/mt7615/mcu.c
++++ b/mt7615/mcu.c
+@@ -394,7 +394,7 @@ mt7615_mcu_rx_radar_detected(struct mt76
+ 	if (mt76_phy_dfs_state(mphy) < MT_DFS_STATE_CAC)
+ 		return;
+ 
+-	ieee80211_radar_detected(mphy->hw);
++	ieee80211_radar_detected(mphy->hw, NULL);
+ 	dev->hw_pattern++;
+ }
+ 
+--- a/mt76x02_dfs.c
++++ b/mt76x02_dfs.c
+@@ -630,7 +630,7 @@ static void mt76x02_dfs_tasklet(struct t
+ 		radar_detected = mt76x02_dfs_check_detection(dev);
+ 		if (radar_detected) {
+ 			/* sw detector rx radar pattern */
+-			ieee80211_radar_detected(dev->mt76.hw);
++			ieee80211_radar_detected(dev->mt76.hw, NULL);
+ 			mt76x02_dfs_detector_reset(dev);
+ 
+ 			return;
+@@ -658,7 +658,7 @@ static void mt76x02_dfs_tasklet(struct t
+ 
+ 		/* hw detector rx radar pattern */
+ 		dfs_pd->stats[i].hw_pattern++;
+-		ieee80211_radar_detected(dev->mt76.hw);
++		ieee80211_radar_detected(dev->mt76.hw, NULL);
+ 		mt76x02_dfs_detector_reset(dev);
+ 
+ 		return;
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -297,7 +297,7 @@ mt7915_mcu_rx_radar_detected(struct mt79
+ 						&dev->rdd2_chandef,
+ 						GFP_ATOMIC);
+ 	else
+-		ieee80211_radar_detected(mphy->hw);
++		ieee80211_radar_detected(mphy->hw, NULL);
+ 	dev->hw_pattern++;
+ }
+ 
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -383,7 +383,7 @@ mt7996_mcu_rx_radar_detected(struct mt79
+ 						&dev->rdd2_chandef,
+ 						GFP_ATOMIC);
+ 	else
+-		ieee80211_radar_detected(mphy->hw);
++		ieee80211_radar_detected(mphy->hw, NULL);
+ 	dev->hw_pattern++;
+ }
+ 

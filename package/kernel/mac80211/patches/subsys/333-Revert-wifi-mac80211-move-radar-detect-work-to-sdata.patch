@@ -1,0 +1,136 @@
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Fri, 6 Sep 2024 12:14:19 +0530
+Subject: [PATCH] Revert "wifi: mac80211: move radar detect work to sdata"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit ce9e660ef32e ("wifi: mac80211: move radar detect work to sdata").
+
+To enable radar detection with MLO, it’s essential to handle it on a
+per-link basis. This is because when using MLO, multiple links may already
+be active and beaconing. In this scenario, another link should be able to
+initiate a radar detection. Also, if underlying links are associated with
+different hardware devices but grouped together for MLO, they could
+potentially start radar detection simultaneously. Therefore, it makes
+sense to manage radar detection settings separately for each link by moving
+them back to a per-link data structure.
+
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Link: https://patch.msgid.link/20240906064426.2101315-2-quic_adisi@quicinc.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1658,7 +1658,7 @@ static int ieee80211_stop_ap(struct wiph
+ 
+ 	if (sdata->wdev.cac_started) {
+ 		chandef = link_conf->chanreq.oper;
+-		wiphy_delayed_work_cancel(wiphy, &sdata->dfs_cac_timer_work);
++		wiphy_delayed_work_cancel(wiphy, &link->dfs_cac_timer_work);
+ 		cfg80211_cac_event(sdata->dev, &chandef,
+ 				   NL80211_RADAR_CAC_ABORTED,
+ 				   GFP_KERNEL);
+@@ -3482,7 +3482,7 @@ static int ieee80211_start_radar_detecti
+ 	if (err)
+ 		goto out_unlock;
+ 
+-	wiphy_delayed_work_queue(wiphy, &sdata->dfs_cac_timer_work,
++	wiphy_delayed_work_queue(wiphy, &sdata->deflink.dfs_cac_timer_work,
+ 				 msecs_to_jiffies(cac_time_ms));
+ 
+  out_unlock:
+@@ -3499,7 +3499,7 @@ static void ieee80211_end_cac(struct wip
+ 
+ 	list_for_each_entry(sdata, &local->interfaces, list) {
+ 		wiphy_delayed_work_cancel(wiphy,
+-					  &sdata->dfs_cac_timer_work);
++					  &sdata->deflink.dfs_cac_timer_work);
+ 
+ 		if (sdata->wdev.cac_started) {
+ 			ieee80211_link_release_channel(&sdata->deflink);
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -1069,6 +1069,7 @@ struct ieee80211_link_data {
+ 	int ap_power_level; /* in dBm */
+ 
+ 	bool radar_required;
++	struct wiphy_delayed_work dfs_cac_timer_work;
+ 
+ 	union {
+ 		struct ieee80211_link_data_managed mgd;
+@@ -1167,8 +1168,6 @@ struct ieee80211_sub_if_data {
+ 	struct ieee80211_link_data deflink;
+ 	struct ieee80211_link_data __rcu *link[IEEE80211_MLD_MAX_NUM_LINKS];
+ 
+-	struct wiphy_delayed_work dfs_cac_timer_work;
+-
+ 	/* for ieee80211_set_active_links_async() */
+ 	struct wiphy_work activate_links_work;
+ 	u16 desired_active_links;
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -551,7 +551,7 @@ static void ieee80211_do_stop(struct iee
+ 	wiphy_work_cancel(local->hw.wiphy,
+ 			  &sdata->deflink.color_change_finalize_work);
+ 	wiphy_delayed_work_cancel(local->hw.wiphy,
+-				  &sdata->dfs_cac_timer_work);
++				  &sdata->deflink.dfs_cac_timer_work);
+ 
+ 	if (sdata->wdev.cac_started) {
+ 		chandef = sdata->vif.bss_conf.chanreq.oper;
+@@ -1744,8 +1744,6 @@ static void ieee80211_setup_sdata(struct
+ 	wiphy_work_init(&sdata->work, ieee80211_iface_work);
+ 	wiphy_work_init(&sdata->activate_links_work,
+ 			ieee80211_activate_links_work);
+-	wiphy_delayed_work_init(&sdata->dfs_cac_timer_work,
+-				ieee80211_dfs_cac_timer_work);
+ 
+ 	switch (type) {
+ 	case NL80211_IFTYPE_P2P_GO:
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -45,6 +45,8 @@ void ieee80211_link_init(struct ieee8021
+ 			  ieee80211_color_collision_detection_work);
+ 	INIT_LIST_HEAD(&link->assigned_chanctx_list);
+ 	INIT_LIST_HEAD(&link->reserved_chanctx_list);
++	wiphy_delayed_work_init(&link->dfs_cac_timer_work,
++				ieee80211_dfs_cac_timer_work);
+ 
+ 	if (!deflink) {
+ 		switch (sdata->vif.type) {
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3031,15 +3031,16 @@ void ieee80211_dynamic_ps_timer(struct t
+ 
+ void ieee80211_dfs_cac_timer_work(struct wiphy *wiphy, struct wiphy_work *work)
+ {
+-	struct ieee80211_sub_if_data *sdata =
+-		container_of(work, struct ieee80211_sub_if_data,
++	struct ieee80211_link_data *link =
++		container_of(work, struct ieee80211_link_data,
+ 			     dfs_cac_timer_work.work);
+-	struct cfg80211_chan_def chandef = sdata->vif.bss_conf.chanreq.oper;
++	struct cfg80211_chan_def chandef = link->conf->chanreq.oper;
++	struct ieee80211_sub_if_data *sdata = link->sdata;
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
+ 	if (sdata->wdev.cac_started) {
+-		ieee80211_link_release_channel(&sdata->deflink);
++		ieee80211_link_release_channel(link);
+ 		cfg80211_cac_event(sdata->dev, &chandef,
+ 				   NL80211_RADAR_CAC_FINISHED,
+ 				   GFP_KERNEL);
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -3460,7 +3460,7 @@ void ieee80211_dfs_cac_cancel(struct iee
+ 
+ 	list_for_each_entry(sdata, &local->interfaces, list) {
+ 		wiphy_delayed_work_cancel(local->hw.wiphy,
+-					  &sdata->dfs_cac_timer_work);
++					  &sdata->deflink.dfs_cac_timer_work);
+ 
+ 		if (sdata->wdev.cac_started) {
+ 			chandef = sdata->vif.bss_conf.chanreq.oper;
