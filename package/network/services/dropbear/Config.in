@@ -1,196 +1,789 @@
-menu "Configuration"
-	depends on PACKAGE_dropbear
+##### GENERIC
+comment "Generic options"
+  depends on PACKAGE_dropbear
 
-config DROPBEAR_CURVE25519
-	bool "Curve25519 support"
-	default y
-	help
-		This enables the following key exchange algorithm:
-		  curve25519-sha256@libssh.org
+config DROPBEAR_DEBUG_TRACE
+  depends on PACKAGE_dropbear
+  int "Verbose debug log level"
+  range 0 5
+  default 0
+  help
+    Define how much debug output is compiled in.
+    * 0 = No verbose debug (default)
+    * 1-3 = approx 4 Kb (connection, remote identity, algos, auth type info)
+    * 4 = approx 17 Kb (detailed before connection)
+    * 5 = approx 8 Kb (detailed after connection)
+    Debug is enabled with -v at runtime. Repeat to increase.
 
-		Increases binary size by about 4 kB (MIPS).
+config DROPBEAR_LOG_COMMANDS
+  depends on PACKAGE_dropbear
+  bool "Log commands"
+  default n
+  help
+    Log the initial command sent by the clients.
+    This does not include all shell / scp / sftp commands that a user executes during a session.
+    
+    Default: disabled.
 
-config DROPBEAR_ECC
-	bool "Elliptic curve cryptography (ECC)"
-	help
-		Enables basic support for elliptic curve cryptography (ECC)
-		in key exchange and public key authentication.
+config DROPBEAR_SMALL_CODE
+  depends on PACKAGE_dropbear
+  bool "Small code"
+  default y if SMALL_FLASH
+  help
+    Reduces binary size by several KB, but makes the symmetrical ciphers and hashes slower, perhaps by 50%.
+    
+    Default: disabled, except devices with very small flash.
 
-		Key exchange algorithms:
-		  ecdh-sha2-nistp256
+config DROPBEAR_INETD_MODE
+  depends on PACKAGE_dropbear
+  bool "inetd mode"
+  default 0
+  help
+    Allow Dropbear server to be started on-demand by inetd superserver.
+    
+    Default: disabled. OpenWrt init script starts Dropbear as daemon.
 
-		Public key algorithms:
-		  ecdsa-sha2-nistp256
+#### LOGIN
+comment "Login options"
+  depends on PACKAGE_dropbear
 
-		Increases binary size by about 24 kB (MIPS).
+config DROPBEAR_DO_HOST_LOOKUP
+  depends on PACKAGE_dropbear
+  bool "Reverse DNS"
+  default n
+  help
+    Whether to do reverse DNS lookups of incoming connection IP addresses and report the DNS name in the log.
+    Warning: If the system is under attack from many IP addresses, this will flood the DNS servers too.
+    
+    Default: disabled.
 
-		Note: select DROPBEAR_ECC_FULL if full ECC support is required.
+config DROPBEAR_SVR_PUBKEY_OPTIONS
+  depends on PACKAGE_dropbear
+  bool "Options in authorized_keys file"
+  default y
+  help
+    Whether to take into account the key options in authorized_keys file.
+    Supported options are:
+    * no-port-forwarding
+    * no-agent-forwarding
+    * no-X11-forwarding
+    * no-pty
+    * restrict
+    * permitopen="host:port"
+    * command="forced_command"
+    These options are documented in dropbear man page (not installed).
+    
+    Default: enabled.
 
-config DROPBEAR_ECC_FULL
-	bool "Elliptic curve cryptography (ECC), full support"
-	depends on DROPBEAR_ECC
-	help
-		Enables full support for elliptic curve cryptography (ECC)
-		in key exchange and public key authentication.
+config DROPBEAR_LASTLOG
+  depends on PACKAGE_dropbear
+  bool "Write lastlog"
+  default n
+  help
+    /var/log/lastlog is a record of the last login of each user.
+    To view the last login, use "lastlog" command (OpenWrt package shadow-lastlog).
+    
+    If enabled, Drobear will update it with SSH logins.
+    If disabled (default), SSH logins will not be recorded.
+    
+    Warning: The lastlog record is considered a security and privacy risk by some.
 
-		Key exchange algorithms:
-		  ecdh-sha2-nistp256 (*)
-		  ecdh-sha2-nistp384
-		  ecdh-sha2-nistp521
+config DROPBEAR_WTMP
+  depends on PACKAGE_dropbear
+  bool "Write wtmp"
+  default n
+  help
+    /var/log/wtmp is a record of all previous logins. The file needs to be manually created.
+    Dropbear will update it only if it already exists.
+    To view login history, use "last" command, available in Busybox but not included by default.
+    
+    If enabled, Dropbear will add SSH logins to the record.
+    If disabled (default), SSH logins will not be recorded.
+    
+    Warning: The wtmp record is considered a security and privacy risk by some.
 
-		Public key algorithms:
-		  ecdsa-sha2-nistp256 (*)
-		  ecdsa-sha2-nistp384
-		  ecdsa-sha2-nistp521
-
-		(*) - basic ECC support; provided by DROPBEAR_ECC.
-
-		Increases binary size by about 4 kB (MIPS).
-
-config DROPBEAR_ED25519
-	bool "Ed25519 support"
-	default y if !SMALL_FLASH
-	help
-		This enables the following public key algorithm:
-		  ssh-ed25519
-
-		Increases binary size by about 12 kB (MIPS).
-
-config DROPBEAR_CHACHA20POLY1305
-	bool "Chacha20-Poly1305 support"
-	default y
-	help
-		This enables the following authenticated encryption cipher:
-		  chacha20-poly1305@openssh.com
-
-		Increases binary size by about 4 kB (MIPS).
-
-config DROPBEAR_U2F
-	bool "U2F/FIDO support"
-	default y
-	help
-		This option itself doesn't enable any support for U2F/FIDO
-		but subordinate options do:
-
-		- DROPBEAR_ECDSA_SK   - ecdsa-sk keys support
-		  depends on DROPBEAR_ECC ("Elliptic curve cryptography (ECC)")
-		- DROPBEAR_ED25519_SK - ed25519-sk keys support
-		  depends on DROPBEAR_ED25519 ("Ed25519 support")
-
-config DROPBEAR_ECDSA_SK
-	bool "ECDSA-SK support"
-	default y
-	depends on DROPBEAR_U2F && DROPBEAR_ECC
-	help
-		This enables the following public key algorithm:
-		  sk-ecdsa-sha2-nistp256@openssh.com
-
-config DROPBEAR_ED25519_SK
-	bool "Ed25519-SK support"
-	default y
-	depends on DROPBEAR_U2F && DROPBEAR_ED25519
-	help
-		This enables the following public key algorithm:
-		  sk-ssh-ed25519@openssh.com
-
-config DROPBEAR_ZLIB
-	bool "Enable compression"
-	help
-		Enables compression using shared zlib library.
-
-		Increases binary size by about 0.1 kB (MIPS) and requires
-		additional 62 kB (MIPS) for a shared zlib library.
+# ---- MUSL UTMP ----
+# In musl, pututline() and related functions are all stubs, and login(), logout() and ttyslot() don't exist.
+# In Dropbear there is an option to write to utmp directly, but it uses ttyslot().
+# So, there is currently no way to make utmp work with musl.
+# Revisit this if/when Dropbear implements ttyslot() or an independent utmp direct write.
+comment "utmp is unavailable with musl libc."
+  depends on PACKAGE_dropbear
+  depends on USE_MUSL
 
 config DROPBEAR_UTMP
-	bool "Utmp support"
-	depends on BUSYBOX_CONFIG_FEATURE_UTMP
-	help
-		This enables dropbear utmp support, the file /var/run/utmp is
-		used to track who is currently logged in.
+  depends on PACKAGE_dropbear
+  depends on !USE_MUSL
+  bool "Write utmp"
+  default n
+  help
+    /var/run/utmp is a record of currently logged-in users.
+    To view logged-in users, use "w", "who" or "users" commands.
+    
+    If enabled, Dropbear will keep it updated with users that log in via SSH.
+    If disabled (default), SSH logins will not be recorded.
+    
+    Warning: The utmp record is considered a security and privacy risk by some.
 
+# musl pututline() and related functions are all stubs.
 config DROPBEAR_PUTUTLINE
-	bool "Pututline support"
-	depends on DROPBEAR_UTMP
-	help
-		Dropbear will use pututline() to write the utmp structure into
-		the utmp file.
+  depends on DROPBEAR_UTMP
+  depends on !USE_MUSL
+  depends on !DROPBEAR_LOGINFUNC
+  bool "Use pututline() to write to utmp"
+  default y if !DROPBEAR_LOGINFUNC
+  help
+    If enabled, Dropbear will use pututline() from glibc to write into the utmp file.
+    If disabled, Dropbear will write to utmp file directly.
+    
+    Default: enabled, if utmp is enabled, but login() functions are better.
+    
+# musl doesn't have login() and logout()
+config DROPBEAR_LOGINFUNC
+  depends on PACKAGE_dropbear
+  depends on !USE_MUSL
+  select DROPBEAR_UTMP
+  select DROPBEAR_WTMP
+  bool "Use login functions from glibc"
+  default n
+  help
+    If enabled, Dropbear will use login() and logout() functions from glibc
+    to record logins in utmp and wtmp files.
+    If disabled, see DROPBEAR_UTMP and DROPBEAR_WTMP options.
+    
+    Default: disabled.
 
-config DROPBEAR_DBCLIENT
-	bool "Build dropbear with dbclient"
-	default y
+#### FEATURES
+comment "Features"
+  depends on PACKAGE_dropbear
 
-config DROPBEAR_ASKPASS
-	bool "Enable askpass helper support"
-	depends on DROPBEAR_DBCLIENT
-	help
-		This enables support for ssh-askpass helper in dropbear client
-		in order to authenticate on remote hosts.
+config DROPBEAR_ZLIB
+  depends on PACKAGE_dropbear
+  select PACKAGE_zlib
+  bool "Compression"
+  default n
+  help
+    Enable support for compression using shared zlib library.
+    Compression slows down transfer speed, especially on low-power CPUs found in routers,
+    but may increase speed over slow network links if the CPU is fast enough
+    to handle both compression and encryption at network speed.
+    
+    Default: disabled.
 
-		Increases binary size by about 0.1 kB (MIPS).
+config DROPBEAR_SVR_AGENTFWD
+  depends on PACKAGE_dropbear
+  bool "Authentication agent forwarding"
+  default n
+  help
+    Enables support for authentication agent forwarding.
+    This allows the use of local client keys to run a second ssh client
+    to connect from the server to another server, without the need to install
+    the keys on the fist server too.
+    
+    Common example: ssh to a server and use git on that server to push to
+    github using local ssh keys, not the keys installed on the server.
+    Server only; see DROPBEAR_CLI_AGENTFWD for client.
+    
+    Default: disabled.
+    
+    Security note:
+    SSH agent forwarding might cause security issues (locally and on the server).
 
-config DROPBEAR_DBCLIENT_AGENTFORWARD
-	bool "Enable agent forwarding in dbclient [LEGACY/SECURITY]"
-	default y
-	depends on DROPBEAR_DBCLIENT
-	help
-		Increases binary size by about 0.1 kB (MIPS).
+config DROPBEAR_SVR_REMOTETCPFWD
+  depends on PACKAGE_dropbear
+  bool "Port forwarding, remote (server to client)"
+  default y
+  help
+    Support remote port forwarding (-R).
+    Server listens and forwards connections to client.
+    Server only; see DROPBEAR_CLI_REMOTETCPFWD for client.
+    
+    Default: enabled.
 
-		Security notes:
+config DROPBEAR_SVR_LOCALTCPFWD
+  depends on PACKAGE_dropbear
+  bool "Port forwarding, local (client to server)"
+  default y
+  help
+    Support local port forwarding (-L).
+    Client listens and forwards connections to server.
+    Server only; see DROPBEAR_CLI_LOCALTCPFWD for client.
+    
+    Default: enabled.
 
-		SSH agent forwarding might cause security issues (locally and
-		on the jump machine).
+config DROPBEAR_X11FWD
+  depends on PACKAGE_dropbear
+  bool "X11 forwarding"
+  default n
+  help
+    Supports X11 forwarding.
+    OpenWrt doesn't have any Xorg programs by default.
+    Server only.
+    
+    Default: disabled.
 
-		Hovewer, it's enabled by default for compatibility with
-		previous OpenWrt/dropbear releases.
+config DROPBEAR_SVR_LOCALSTREAMFWD
+  depends on PACKAGE_dropbear
+  bool "DROPBEAR_SVR_LOCALSTREAMFWD"
+  default y
+  help
+    This option is undocumented.
 
-		Consider DISABLING this option if you're building own OpenWrt
-		image.
+#### Dropbear Client
+menuconfig DROPBEAR_DBCLIENT
+  depends on PACKAGE_dropbear
+  bool "dbclient (Dropbear SSH client)"
+  default y if !SMALL_FLASH
+  help
+    Build dbclient, the Dropbear SSH client.
+    
+    Default: enabled, except devices with very small flash.
 
-		Also see DROPBEAR_AGENTFORWARD (agent forwarding in dropbear
-		server itself).
+config DROPBEAR_USE_SSH_CONFIG
+  depends on DROPBEAR_DBCLIENT
+  bool "Use ssh_config"
+  default n
+  help
+    Whether to use host options from /etc/ssh/ssh_config and ~/.ssh/config .
+    Options are documented in ssh_config(5) man page.
+    
+    Default: disabled.
+
+config DROPBEAR_CLI_IMMEDIATE_AUTH
+  depends on DROPBEAR_DBCLIENT
+  bool "Send auth request immediately"
+  default n
+  help
+    Save a network roundtrip by sending a real auth request
+    immediately after sending a query for the available methods.
+    This is not yet enabled by default since it could
+    cause problems with non-compliant servers.
+    
+    Default: disabled.
+
+config DROPBEAR_USE_PASSWORD_ENV
+  depends on DROPBEAR_DBCLIENT
+  bool "Use env password"
+  default y
+  help
+    Allow specifying the password for dbclient
+    via the DROPBEAR_PASSWORD environment variable.
+    
+    Default: enabled.
+
+config DROPBEAR_CLI_ASKPASS_HELPER
+  depends on DROPBEAR_DBCLIENT
+  bool "askpass helper"
+  default n
+  help
+    Allow the use of a helper program for the ssh client.
+    The helper program should be specified in the SSH_ASKPASS environment variable,
+    and dbclient should be run with DISPLAY set and no tty.
+    The program should return the password on standard output.
+    
+    Default: disabled.
+  
+config DROPBEAR_CLI_AGENTFWD
+  depends on DROPBEAR_DBCLIENT
+  bool "Authentication agent forwarding"
+  default n
+  help
+    Enables support for authentication agent forwarding.
+    This allows the use of local client keys to run a second ssh client
+    to connect from the server to another server, without the need to install
+    the keys on the fist server too.
+
+    Common example: ssh to a server and use git on that server to push to
+    github using local ssh keys, not the keys installed on the server.
+    Server only; see DROPBEAR_CLI_AGENTFWD for client.
+
+    Default: disabled.
+    
+    Security note:
+    SSH agent forwarding might cause security issues (locally and on the server).
+
+config DROPBEAR_CLI_LOCALTCPFWD
+  depends on DROPBEAR_DBCLIENT
+  bool "Port forwarding, local (client to server)"
+  default y
+  help
+    Support local port forwarding (-L).
+    Client listens and forwards connections to server.
+    Client only; see DROPBEAR_SRV_LOCALTCPFWD for server.
+    
+    Default: enabled.
+
+config DROPBEAR_CLI_REMOTETCPFWD
+  depends on DROPBEAR_DBCLIENT
+  bool "Port forwarding, remote (server to client)"
+  default y
+  help
+    Support remote port forwarding (-R).
+    Server listens and forwards connections to client.
+    Client only; see DROPBEAR_SRV_REMOTETCPFWD for server.
+    
+    Default: enabled.
+
+config DROPBEAR_CLI_PROXYCMD
+  depends on DROPBEAR_DBCLIENT
+  bool "Proxy"
+  default n
+  help
+    Allow using -J <proxycommand> to run the connection
+    through a pipe to a program, rather the normal TCP connection.
+    
+    Default: disabled.
+
+config DROPBEAR_CLI_NETCAT
+  depends on DROPBEAR_DBCLIENT
+  bool "netcat mode"
+  default n
+  help
+    This option is undocumented.
+#### END dbclient
 
 config DROPBEAR_SCP
-	bool "Build dropbear with scp"
-	default y
+  depends on PACKAGE_dropbear
+  bool "SCP file transfer program"
+  default y if !SMALL_FLASH
+  help
+    Include the SCP file transfer program.
+    
+    Default: enabled, except devices with very small flash.
 
-config DROPBEAR_AGENTFORWARD
-	bool "Enable agent forwarding [LEGACY/SECURITY]"
-	default y
-	help
-		Increases binary size by about 0.1 kB (MIPS).
+config DROPBEAR_SFTPSERVER
+  depends on PACKAGE_dropbear
+  bool "Support external SFTP server"
+  default y if !SMALL_FLASH
+  help
+    Enable running a SFTP server (such as the one included with OpenSSH).
+    The SFTP server program is not provided by Dropbear itself.
+    SFTP server must be installed as /usr/libexec/sftp-server
+    
+    Default: enabled, except devices with very small flash.
 
-		Security notes:
+#### Security
+comment "Security"
+  depends on PACKAGE_dropbear
 
-		SSH agent forwarding might cause security issues (locally and
-		on the jump machine).
+config DROPBEAR_REEXEC
+  depends on PACKAGE_dropbear
+  bool "ASLR for each connection"
+  default y if !LOW_MEMORY_FOOTPRINT
+  help
+    Dropbear will re-execute itself for each incoming connection
+    so that memory layout may be re-randomised (ASLR).
+    Exploiting Dropbear vulnerabilities becomes harder
+    but uses slightly more memory per connection.
+    
+    Default: enabled, except devices with very low memory.
 
-		Hovewer, it's enabled by default for compatibility with
-		previous OpenWrt/dropbear releases.
+config DROPBEAR_DELAY_HOSTKEY
+  depends on PACKAGE_dropbear
+  default y
+  bool "Auto-generate host keys"
+  help
+    Add command line argument "-R" to generate hostkeys as-needed
+    when the first connection using that key type occurs.
+    This avoids the need to otherwise run "dropbearkey" and avoids
+    some problems with badly seeded /dev/urandom when systems first boot.
+    
+    Default: enabled.
 
-		Consider DISABLING this option if you're building own OpenWrt
-		image.
+#### Resource limits
+menu "Resource limits"
+  depends on PACKAGE_dropbear
 
-		Also see DROPBEAR_DBCLIENT_AGENTFORWARD (agent forwarding in
-		dropbear client) if DROPBEAR_DBCLIENT is selected.
+config DROPBEAR_MAX_UNAUTH_PER_IP
+  int "Max. unauthenticated connections per IP"
+  range 1 32767
+  default 5
+  help
+    Specify the number of clients allowed to be connected but not yet authenticated.
+    After this limit, connections are rejected.
+    This setting is per IP, to prevent DoS attacks.
+    
+    Default: 5
 
-config DROPBEAR_MODERN_ONLY
-	bool "Use modern crypto only [BREAKS COMPATIBILITY]"
-	select DROPBEAR_ED25519
-	select DROPBEAR_CURVE25519
-	select DROPBEAR_CHACHA20POLY1305
-	help
-		This option enables:
-		 - Chacha20-Poly1305
-		 - Curve25519
-		 - Ed25519
-		and disables:
-		 - AES
-		 - RSA
+config DROPBEAR_MAX_UNAUTH_CLIENTS
+  int "Max. unauthenticated connections (total)"
+  range 1 32767
+  default 30
+  help
+    Specify the number of clients allowed to be connected but not yet authenticated.
+    After this limit, connections are rejected.
+    This setting is the global number, to prevent memory exhaustion
+    when attacks come from different IPs.
+    
+    Default: 30
 
-		Reduces binary size by about 64 kB (MIPS) from default
-		configuration.
+config DROPBEAR_UNAUTH_CLOSE_DELAY
+  int "Delay closing unauth. connections (s)"
+  range 0 32767
+  default 0
+  help
+    Delay introduced before closing an unauthenticated session (seconds).
+    Disabled by default (0). Can be set to, say 30 seconds,
+    to reduce the speed of password brute forcing.
+    
+    Note that there is a risk of denial of service by setting this.
 
-		Consider enabling this option if you're building own OpenWrt
-		image and using modern SSH software everywhere.
+config DROPBEAR_MAX_AUTH_TRIES
+  int "Max. failed authentications"
+  range 1 80
+  default 10
+  help
+    Default maximum number of failed authentication tries (server option).
+        
+    Possible values: 1 to 80 (from src/sysoptions.h)
+    Default: 10
+    This can be changed at run-time with the -T argument.
+
+config DROPBEAR_DEFAULT_RECV_WINDOW
+  int "Default TCP receive window size"
+  range 1 10485760
+  default 262144
+  help
+    TCP connections require acknowledgement of received data.
+    Window size is the maximum number of bytes that can be sent
+    on a connection before having to wait for an ACK packet.
+    This amount of memory is allocated as a per-connection receive buffer.
+    Increasing this value can make a significant difference to network performance
+    when SSH is used for large data transfers (SCP, SFTP, tunnels)
+    and the CPU can handle the encryption at network speed.
+    
+    Possible values: 1 to 10485760 (10MB, from src/sysoptions.h)
+    Default: 262144
+    This can be changed at run-time with the -W argument.
+
+config DROPBEAR_DEFAULT_KEEPALIVE
+  int "Default KeepAlive interval"
+  range 0 3600
+  default 0
+  help
+    Ensure that data is transmitted every KeepAlive seconds.
+    Applies to both server and client.
+    
+    Possible values: 0 to 3600
+    Default: 0 (KeepAlives disabled)
+    This can be changed at run-time with the -K argument.
+
+config DROPBEAR_DEFAULT_KEEPALIVE_LIMIT
+  int "Default KeepAlive limit"
+  range 1 65535
+  default 3
+  help
+    If this many KEEPALIVES are sent with no packets received from the other side, disconnect.
+    Applies to both server and client.
+    
+    Default: 3
+    Not run-time configurable.
+
+config DROPBEAR_DEFAULT_IDLE_TIMEOUT
+  int "Default idle timeout"
+  range 0 2147483647
+  default 0
+  help
+    If no traffic is sent/received in IDLE_TIMEOUT seconds, disconnect.
+    Applies to both server and client.
+    
+    Default: 0 (idle timeouts disabled).
+    This can be changed at run-time with the -I argument.
 
 endmenu
+#### END Security
+
+#### Cryptography
+menu "Encryption options"
+  depends on PACKAGE_dropbear
+
+config DROPBEAR_USER_ALGO_LIST
+  bool "Let user choose ciphers and MACs"
+  default y
+  help
+    Adds dbclient "-c" and "-m" command line options.
+    Does not apply to server.
+
+# ciphers, symmetric, block
+comment "Symmetric-key ciphers"
+
+config DROPBEAR_3DES
+  bool "3DES (weak)"
+  default n
+  help
+    Enables Triple-DES (not recommended).
+    
+    DES is a symmetric-key block cipher published in 1975.
+    3DES applies DES 3 times to each data block to increase security.
+    3DES is no longer considered secure and has been replaced by AES.
+    
+    Some very old SSH implementations might only support 3DES.
+    Keeping this cipher enables a downgrade attack on the connection, if the client allows it.
+
+config DROPBEAR_AES128
+  bool "AES128"
+  default y
+  help
+    Enables AES with 128 bit key size (recommended).
+    
+    AES is a symmetric-key block cipher established by NIST in 2001.
+    AES is very secure, but slow. It is preferred on systems with AES hardware acceleration.
+    Including both AES keysize variants (128 and 256) will result in a minimal size increase.
+
+config DROPBEAR_AES256
+  bool "AES256"
+  default y
+  help
+    Enables AES with 256 bit key size (recommended).
+    
+    AES is a symmetric-key block cipher established by NIST in 2001.
+    AES is very secure, but slow. It is preferred on systems with AES hardware acceleration.
+    Including both AES keysize variants (128 and 256) will result in a minimal size increase.
+
+# ciphers, symmetric, stream
+config DROPBEAR_CHACHA20POLY1305
+  bool "ChaCha20-Poly1305"
+  default y
+  help
+    Enable Chacha20-Poly1305 (recommended).
+    
+    ChaCha20 is a symmetric-key stream cipher.
+    Poli1305 is hash function used for authentication.
+    ChaCha20-Poly1305 provides both encryption and authentication
+    without any additional cipher modes or MACs.
+    These algorithms are generally faster than AES on CPUs without dedicated AES instructions.
+    
+    Compiling in will add ~5,5kB to binary size on x86-64.
+
+comment "WARNING! At least one cipher must be selected."
+  depends on !DROPBEAR_3DES && !DROPBEAR_AES128 && !DROPBEAR_AES256 && !DROPBEAR_CHACHA20POLY1305
+
+# modes
+comment "Cipher modes"
+
+config DROPBEAR_ENABLE_CTR_MODE
+  bool "CTR, Counter mode"
+  default y
+  help
+    Enable CTR mode (recommended).
+    
+    Counter mode converts a block cipher into a stream cipher
+    by adding a simple incrementing counter to prevent generating
+    identical ciphertext from identical plaintext data.
+    As the counter value is predictable, blocks can be processed
+    in parallel on multi-core CPUs.
+    The usage of a simple deterministic input function used to be controversial;
+    critics argued that "deliberately exposing a cryptosystem to a known
+    systematic input represents an unnecessary risk". However, today, CTR mode
+    is widely accepted, and any problems are considered a weakness of the underlying
+    block cipher, which is expected to be secure regardless of systematic bias in its input.
+    
+    CTR does not protect against accidental or malicious data modification - a MAC is required.
+
+config DROPBEAR_ENABLE_CBC_MODE
+  bool "CBC, Cipher Block Chaining mode (weak)"
+  default n
+  help
+    Enable CBC mode (not recommended).
+    
+    In CBC mode, each block of plaintext is XORed with the previous ciphertext block
+    before being encrypted. This way, each ciphertext block depends on all plaintext blocks
+    processed up to that point.
+    XOR is a fast function, but this mode cannot be parallelized,
+    as each block depends on the previous cyphertext.
+    
+    This mode is susceptible to ciphertext stealing and padding attacks.
+
+config DROPBEAR_ENABLE_GCM_MODE
+  bool "GCM, Galois-Counter mode (weak)"
+  default n
+  help
+    Enable GCM (not recommended).
+    
+    GCM combines CTR mode with GMAC (Galois Message Authentication Code).
+    It preserves parallelism capabilities of CTR, but GMAC is slow
+    on CPUs without GHASH instructions.
+    
+    The authentication part of the GCM can be attacked by ciphertext forgery.
+
+comment "WARNING! Block cipers require at least one cipher mode to be selected."
+  depends on ( DROPBEAR_3DES || DROPBEAR_AES128 || DROPBEAR_AES256 ) && !DROPBEAR_ENABLE_CTR_MODE && !DROPBEAR_ENABLE_CBC_MODE && !DROPBEAR_ENABLE_GCM_MODE
+
+# MACs
+comment "Message Authentication Codes (MAC)"
+
+config DROPBEAR_SHA1_96_HMAC
+  bool "SHA1-96-HMAC (very weak!)"
+  default n
+  help
+    Enables SHA1 with hash length truncated to 96 bit (not recommended!).
+    Very old implementations may need it.
+
+config DROPBEAR_SHA1_HMAC
+  bool "SHA1-HMAC (weak)"
+  default n
+  help
+    Enables SHA1 (not recommended).
+    
+    SHA1 generates 160 bit hashes. They are considered weak when used for signing (sha1-rsa keys).
+    Very old implementations may need it.
+
+config DROPBEAR_SHA2_256_HMAC
+  bool "SHA256-HMAC"
+  default y
+  help
+    SHA2 with 256 bit hash length.
+    Recommended.
+
+config DROPBEAR_SHA2_512_HMAC
+  bool "SHA512-HMAC"
+  default n
+  help
+    SHA2 with 512 bit hash length.
+    It is slower than SHA256 with little added benefits, as SHA256 is sufficiently strong.
+
+comment "WARNING! Ciphers without authentication require at least one MAC to be enabled."
+  depends on ( DROPBEAR_3DES || DROPBEAR_AES128 || DROPBEAR_AES256 ) && !DROPBEAR_SHA2_512_HMAC && !DROPBEAR_SHA2_256_HMAC && !DROPBEAR_SHA1_HMAC && !DROPBEAR_SHA1_96_HMAC
+
+# asymmetric key encryption,
+comment "Asymmetric-key ciphers"
+
+config DROPBEAR_DSS
+  bool "DSS (weak)"
+  default n
+  help
+    DSS (Digital Signature Standard) algorithms were established
+    by NIST in 1994 and the standard was updated several times.
+    This option refers to the original standard.
+    It uses 1024 bit private keys (too small) and SHA1 signing (weak).
+
+config DROPBEAR_RSA_SHA1
+  bool "RSA-SHA1 (weak)"
+  default n
+  help
+    RSA (Rivest-Shamir-Adleman) algorithms were published in 1977
+    and is still one of the most widely used systems.
+    RSA-SHA1 uses SHA1 for message authentication.
+    SHA1 support is required to communicate with some older implementations.
+    It will be removed in future due to SHA1 insecurity.
+    Not recommended.
+
+config DROPBEAR_RSA
+  bool "RSA-SHA256"
+  default y
+  help
+    RSA (Rivest-Shamir-Adleman) algorithms were published in 1977
+    and is still one of the most widely used systems.
+    RSA-SHA256 uses SHA2 256 bit hashes for authentication.
+    Recommended.
+
+config DROPBEAR_DEFAULT_RSA_SIZE
+  depends on DROPBEAR_RSA
+  int "Default RSA key size"
+  range 1024 8192
+  default 2048
+  help
+    Sets the default RSA key size, for example, when auto-generating server keys.
+    Possible values: 1024, 2048, 4096, 8192.
+
+config DROPBEAR_ECDSA
+  bool "ECDSA"
+  default y if !SMALL_FLASH
+  help
+    ECDSA (Elliptic Curve Digital Signature Algorithm) is an update to DSA standard
+    published by NIST.
+    There are concerns that ECDSA curve might be intentionally weakend by the NSA,
+    based on previous backdoors that NSA inserted into algorithms published by NIST.
+    So far, no backdoors have been discovered.
+    
+    ECDSA significantly faster than RSA or DSS, but slower than Ed25519.
+    Compiling-in ECC code (either ECDSA or ECDH) increases binary size - around 30kB on x86-64.
+
+config DROPBEAR_ED25519
+  bool "Ed25519"
+  default y
+  help
+    Ed25519 is a public-domain digital signature scheme. It uses Curve25519 and SHA512.
+    Ed25519 is designed to avoid execution branches in order to mitigate
+    side-channel attacks and improve pipeline execution of modern CPUs.
+    
+    Ed25519 is faster than ECDSA.
+    Compiling in Ed25519 code increases binary size - around 7,5kB on x86-64.
+
+comment "WARNING! At least one asymmetric-key algorithm must be enabled."
+  depends on !DROPBEAR_DSS && !DROPBEAR_RSA && !DROPBEAR_ECDSA && !DROPBEAR_ED25519
+
+config DROPBEAR_SK_KEYS
+  depends on DROPBEAR_ECDSA || DROPBEAR_ED25519
+  bool "U2F security keys"
+  default y if !SMALL_FLASH
+  help
+    Allows Dropbear server to validate U2F security keys:
+    sk-ecdsa-sha2-nistp256@openssh.com or sk-ssh-ed25519@openssh.com.
+    The corresponding DROPBEAR_ECDSA or DROPBEAR_ED25519 also needs to be set.
+    
+    Dropbear client does not support U2F.
+
+# key exchange
+comment "Key exchange algorithms"
+
+config DROPBEAR_DH_GROUP1
+  bool "DH group1: SHA1, 1024 bit (very weak!)"
+  default n
+  help
+    Diffie-Hellman group1 is too small for security, though is necessary for
+    compatibility with some very old implementations such as Dropbear < v0.53.
+
+config DROPBEAR_DH_GROUP1_CLIENTONLY
+  depends on DROPBEAR_DH_GROUP1
+  bool "DH group1 only for dbclient"
+  default y if DROPBEAR_DH_GROUP1
+  help
+    When enabled, Diffie-Hellman group1 will only be allowed by Dropbear client,
+    not by the server, due to concerns over its strength.
+    If disabled, DH group1 is allowed by Dropbear server too.
+
+config DROPBEAR_DH_GROUP14_SHA1
+  bool "DH group14: SHA1, 2048 bit"
+  default n
+  help
+    Diffie-Hellman group14 is supported by most implementations.
+    This variant uses weaker SHA1 hashes.
+
+config DROPBEAR_DH_GROUP14_SHA256
+  bool "DH group14: SHA2-256, 2048 bit"
+  default y
+  help
+    Diffie-Hellman group14 is supported by most implementations.
+
+config DROPBEAR_DH_GROUP16
+  bool "group16: SHA2-512, 4096 bit"
+  default n
+  help
+    Diffie-Hellman group16 provides a greater strength level
+    but it is slower and increases binary size.
+
+config DROPBEAR_ECDH
+  bool "ECDH"
+  default y
+  help
+    Curve25519 and ECDH algorithms are faster than non-elliptic-curve methods.
+    Small systems should generally include either Curve25519 or ECDH for performance.
+    
+    Compiling in ECC code (either ECDSA or ECDH) increases binary size - around 30kB on x86-64.
+
+config DROPBEAR_CURVE25519
+  depends on PACKAGE_dropbear
+  bool "curve25519"
+  default y
+  help
+    Curve25519 and ECDH algorithms are faster than non-elliptic-curve methods.
+    Curve25519 is less widely supported but faster than ECDH.
+    
+    Curve25519 increases binary size by ~2,5kB on x86-64.
+
+comment "WARNING! At least one key exchange algorithm must be enabled."
+  depends on !DROPBEAR_DH_GROUP1 && !DROPBEAR_DH_GROUP14_SHA1 && ! DROPBEAR_DH_GROUP14_SHA256 && !DROPBEAR_DH_GROUP16 && !DROPBEAR_ECDH && !DROPBEAR_CURVE25519
+
+endmenu
+#### END Encryption
