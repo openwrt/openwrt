@@ -1,0 +1,32 @@
+From: Tony Butler <spudz76@gmail.com>
+Date:   Mon Nov 28 02:53:13 2022 -0800
+Subject: tools/squashfs4: adjust for squashfs option updates
+
+enable all compressors, set `COMP_DEFAULT` to zstd, configuration can
+easily override the default where zstd is not preferable
+
+add PREFIX support to upstream Makefile via patch
+
+define `Host/Uninstall` Makefile target, use default build args rather
+than overriding `Host/Compile` and `Host/Install` targets
+
+Signed-off-by: Tony Butler <spudz76@gmail.com>
+---
+ squashfs-tools/Makefile     | 8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -463,8 +463,8 @@
+ .PHONY: install
+ install: mksquashfs unsquashfs
+ 	mkdir -p $(INSTALL_DIR)
+-	cp mksquashfs $(INSTALL_DIR)
+-	cp unsquashfs $(INSTALL_DIR)
+-	ln -fs unsquashfs $(INSTALL_DIR)/sqfscat
+-	ln -fs mksquashfs $(INSTALL_DIR)/sqfstar
++	cp mksquashfs $(INSTALL_DIR)/mksquashfs4
++	cp unsquashfs $(INSTALL_DIR)/unsquashfs4
++	ln -fs unsquashfs4 $(INSTALL_DIR)/sqfscat4
++	ln -fs mksquashfs4 $(INSTALL_DIR)/sqfstar4
+ 	../generate-manpages/install-manpages.sh $(shell pwd)/.. "$(INSTALL_MANPAGES_DIR)" "$(USE_PREBUILT_MANPAGES)"
