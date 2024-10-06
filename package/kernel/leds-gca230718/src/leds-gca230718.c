@@ -114,12 +114,7 @@ static int gca230718_set_brightness(struct led_classdev *led_cdev,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 static int gca230718_probe(struct i2c_client *client)
-#else
-static int gca230718_probe(struct i2c_client *client,
-			   const struct i2c_device_id *id)
-#endif
 {
 	int status = 0;
 	struct gca230718_private *gca230718_privateData;
@@ -195,20 +190,12 @@ static int gca230718_probe(struct i2c_client *client,
 	return status;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
 static void gca230718_remove(struct i2c_client *client)
-#else
-static int gca230718_remove(struct i2c_client *client)
-#endif
 {
 	struct gca230718_private *gca230718_privateData;
 	gca230718_privateData = i2c_get_clientdata(client);
 	mutex_destroy(&gca230718_privateData->lock);
 	gca230718_init_private_led_data(gca230718_privateData);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
-	return 0;
-#endif
 }
 
 static const struct i2c_device_id gca230718_i2c_ids[] = {
