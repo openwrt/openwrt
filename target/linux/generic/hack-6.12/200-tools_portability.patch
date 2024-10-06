@@ -87,6 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  
 +#define fls __linux_fls
+ static __always_inline int generic_fls(unsigned int x)
  static __always_inline int fls(unsigned int x)
  {
  	int r = 32;
@@ -214,33 +215,36 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/tools/objtool/orc_dump.c
 +++ b/tools/objtool/orc_dump.c
-@@ -4,10 +4,10 @@
-  */
+@@ -4,11 +4,11 @@
+ */
  
  #include <unistd.h>
 -#include <asm/orc_types.h>
  #include <objtool/objtool.h>
+ #include <objtool/orc.h>
  #include <objtool/warn.h>
  #include <objtool/endianness.h>
 +#include <asm/orc_types.h>
  
- static const char *reg_name(unsigned int reg)
+ int orc_dump(const char *_objname)
  {
 --- a/tools/objtool/orc_gen.c
 +++ b/tools/objtool/orc_gen.c
-@@ -7,11 +7,11 @@
+@@ -7,12 +7,12 @@
  #include <string.h>
  
  #include <linux/objtool_types.h>
 -#include <asm/orc_types.h>
  
  #include <objtool/check.h>
+ #include <objtool/orc.h>
  #include <objtool/warn.h>
  #include <objtool/endianness.h>
 +#include <asm/orc_types.h>
  
- static int init_orc_entry(struct orc_entry *orc, struct cfi_state *cfi,
- 			  struct instruction *insn)
+ struct orc_list_entry {
+ 	struct list_head list;
+
 --- a/tools/arch/x86/lib/insn.c
 +++ b/tools/arch/x86/lib/insn.c
 @@ -15,7 +15,11 @@

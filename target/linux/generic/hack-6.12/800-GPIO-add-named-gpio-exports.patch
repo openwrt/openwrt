@@ -143,7 +143,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 @@ -620,6 +620,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
  	if (chip->names && chip->names[offset])
- 		ioname = chip->names[offset];
+ 		ioname = guard.gc->names[offset];
 +	if (name)
 +		ioname = name;
  

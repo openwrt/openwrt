@@ -236,14 +236,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
 @@ -4448,6 +4448,8 @@ static const struct seq_operations vmall
- 
  static int __init proc_vmalloc_init(void)
  {
+ 	void *priv_data = NULL;
+ 
 +	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
 +		return 0;
  	if (IS_ENABLED(CONFIG_NUMA))
- 		proc_create_seq_private("vmallocinfo", 0400, NULL,
- 				&vmalloc_op,
+ 		priv_data = kmalloc(nr_node_ids * sizeof(unsigned int), GFP_KERNEL);
+ 
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
 @@ -2135,10 +2135,12 @@ void __init init_mm_internals(void)

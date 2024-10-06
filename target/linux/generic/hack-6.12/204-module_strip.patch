@@ -151,39 +151,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	check_sec_ref(mod, &info);
-@@ -1866,8 +1868,10 @@ static void add_header(struct buffer *b,
- 	buf_printf(b, "BUILD_SALT;\n");
- 	buf_printf(b, "BUILD_LTO_INFO;\n");
- 	buf_printf(b, "\n");
-+#ifndef CONFIG_MODULE_STRIPPED
- 	buf_printf(b, "MODULE_INFO(vermagic, VERMAGIC_STRING);\n");
- 	buf_printf(b, "MODULE_INFO(name, KBUILD_MODNAME);\n");
-+#endif
- 	buf_printf(b, "\n");
- 	buf_printf(b, "__visible struct module __this_module\n");
- 	buf_printf(b, "__section(\".gnu.linkonce.this_module\") = {\n");
-@@ -1881,8 +1885,10 @@ static void add_header(struct buffer *b,
- 	buf_printf(b, "\t.arch = MODULE_ARCH_INIT,\n");
- 	buf_printf(b, "};\n");
- 
-+#ifndef CONFIG_MODULE_STRIPPED
- 	if (!external_module)
- 		buf_printf(b, "\nMODULE_INFO(intree, \"Y\");\n");
-+#endif
- 
- 	buf_printf(b,
- 		   "\n"
-@@ -1890,8 +1896,10 @@ static void add_header(struct buffer *b,
- 		   "MODULE_INFO(retpoline, \"Y\");\n"
- 		   "#endif\n");
- 
-+#ifndef CONFIG_MODULE_STRIPPED
- 	if (strstarts(mod->name, "drivers/staging"))
- 		buf_printf(b, "\nMODULE_INFO(staging, \"Y\");\n");
-+#endif
- 
- 	if (strstarts(mod->name, "tools/testing"))
- 		buf_printf(b, "\nMODULE_INFO(test, \"Y\");\n");
 @@ -2001,11 +2009,13 @@ static void add_depends(struct buffer *b
  
  static void add_srcversion(struct buffer *b, struct module *mod)

@@ -46,18 +46,3 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		} else if (event == SFP_E_TIMEOUT || event == SFP_E_TX_CLEAR) {
  	init_done:
  			/* Create mdiobus and start trying for PHY */
-@@ -2843,10 +2847,12 @@ static void sfp_check_state(struct sfp *
- 	mutex_lock(&sfp->st_mutex);
- 	state = sfp_get_state(sfp);
- 	changed = state ^ sfp->state;
--	if (sfp->tx_fault_ignore)
-+	if (sfp->tx_fault_ignore) {
- 		changed &= SFP_F_PRESENT | SFP_F_LOS;
--	else
-+		state &= ~SFP_F_TX_FAULT;
-+	} else {
- 		changed &= SFP_F_PRESENT | SFP_F_LOS | SFP_F_TX_FAULT;
-+	}
- 
- 	for (i = 0; i < GPIO_MAX; i++)
- 		if (changed & BIT(i))
