@@ -45,9 +45,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  static const char * const output_format_str[] = {
  	[VC4_HDMI_OUTPUT_RGB]		= "RGB",
  	[VC4_HDMI_OUTPUT_YUV420]	= "YUV 4:2:0",
-@@ -472,7 +478,9 @@ static int vc4_hdmi_connector_detect_ctx
- 
- 	WARN_ON(pm_runtime_resume_and_get(&vc4_hdmi->pdev->dev));
+@@ -478,7 +484,9 @@ static int vc4_hdmi_connector_detect_ctx
+ 		return connector_status_unknown;
+ 	}
  
 -	if (vc4_hdmi->hpd_gpio) {
 +	if (force_hotplug & BIT(vc4_hdmi->encoder.type - VC4_ENCODER_TYPE_HDMI0))

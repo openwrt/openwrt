@@ -1,0 +1,56 @@
+From 3cdc20d9cc029ba9444be111bf4e55fd5331ccbe Mon Sep 17 00:00:00 2001
+From: Minda Chen <minda.chen@starfivetech.com>
+Date: Mon, 8 Jan 2024 19:06:03 +0800
+Subject: [PATCH 026/116] PCI: microchip: Add INTx and MSI event num to struct
+ plda_event
+
+The INTx and MSI interrupt event num is different in Microchip and
+StarFive platform.
+
+Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ drivers/pci/controller/plda/pcie-microchip-host.c | 6 ++++--
+ drivers/pci/controller/plda/pcie-plda.h           | 2 ++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/controller/plda/pcie-microchip-host.c
++++ b/drivers/pci/controller/plda/pcie-microchip-host.c
+@@ -817,6 +817,8 @@ static int mc_request_event_irq(struct p
+ 
+ static const struct plda_event mc_event = {
+ 	.request_event_irq = mc_request_event_irq,
++	.intx_event        = EVENT_LOCAL_PM_MSI_INT_INTX,
++	.msi_event         = EVENT_LOCAL_PM_MSI_INT_MSI,
+ };
+ 
+ static int plda_pcie_init_irq_domains(struct plda_pcie_rp *port)
+@@ -960,7 +962,7 @@ static int plda_init_interrupts(struct p
+ 	}
+ 
+ 	intx_irq = irq_create_mapping(port->event_domain,
+-				      EVENT_LOCAL_PM_MSI_INT_INTX);
++				      event->intx_event);
+ 	if (!intx_irq) {
+ 		dev_err(dev, "failed to map INTx interrupt\n");
+ 		return -ENXIO;
+@@ -970,7 +972,7 @@ static int plda_init_interrupts(struct p
+ 	irq_set_chained_handler_and_data(intx_irq, plda_handle_intx, port);
+ 
+ 	msi_irq = irq_create_mapping(port->event_domain,
+-				     EVENT_LOCAL_PM_MSI_INT_MSI);
++				     event->msi_event);
+ 	if (!msi_irq)
+ 		return -ENXIO;
+ 
+--- a/drivers/pci/controller/plda/pcie-plda.h
++++ b/drivers/pci/controller/plda/pcie-plda.h
+@@ -130,6 +130,8 @@ struct plda_pcie_rp {
+ struct plda_event {
+ 	int (*request_event_irq)(struct plda_pcie_rp *pcie,
+ 				 int event_irq, int event);
++	int intx_event;
++	int msi_event;
+ };
+ 
+ void plda_pcie_setup_window(void __iomem *bridge_base_addr, u32 index,

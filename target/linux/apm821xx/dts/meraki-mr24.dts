@@ -86,8 +86,25 @@
 			};
 
 			partition@180000 {
+				compatible = "linux,ubi";
 				label = "ubi";
 				reg = <0x00180000 0x01e80000>;
+
+				volumes {
+					ubi-volume-board-config {
+						volume = "board-config";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr_board_66: macaddr@66 {
+								reg = <0x66 0x6>;
+							};
+						};
+					};
+				};
 			};
 		};
 	};
@@ -109,6 +126,9 @@
 
 &EMAC0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_board_66>;
+	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
 	phy-map = <0x2>;

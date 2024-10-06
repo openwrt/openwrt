@@ -110,10 +110,6 @@ lantiq_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-	arcadyan,vgv7510kw22-brn|\
-	arcadyan,vgv7510kw22-nor)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 2)
-		;;
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
 	arcadyan,vrv9510kwac23)

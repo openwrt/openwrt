@@ -1,0 +1,36 @@
+From dff6605dcd1fc1e2af1437e59187a6f71ce389cd Mon Sep 17 00:00:00 2001
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 11 Sep 2023 17:22:15 +0200
+Subject: [PATCH 043/116] pmdomain: Prepare to move Kconfig files into the
+ pmdomain subsystem
+
+Rather than having the various Kconfig files for the genpd providers
+sprinkled across subsystems, let's prepare to move them into the pmdomain
+subsystem along with the implementations.
+
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/Kconfig          | 2 ++
+ drivers/pmdomain/Kconfig | 4 ++++
+ 2 files changed, 6 insertions(+)
+ create mode 100644 drivers/pmdomain/Kconfig
+
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -175,6 +175,8 @@ source "drivers/soundwire/Kconfig"
+ 
+ source "drivers/soc/Kconfig"
+ 
++source "drivers/pmdomain/Kconfig"
++
+ source "drivers/devfreq/Kconfig"
+ 
+ source "drivers/extcon/Kconfig"
+--- /dev/null
++++ b/drivers/pmdomain/Kconfig
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0-only
++menu "PM Domains"
++
++endmenu

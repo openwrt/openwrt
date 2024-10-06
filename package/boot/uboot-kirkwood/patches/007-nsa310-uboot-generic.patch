@@ -1,9 +1,9 @@
 
-arm: kirkwood: add ZyXEL NSA310 device
+arm: kirkwood: add Zyxel NSA310 device
 
-This patch add ZyXEL NSA310 1-Bay Media Server
+This patch add Zyxel NSA310 1-Bay Media Server
 
-The ZyXEL NSA310 device is a Kirkwood based NAS:
+The Zyxel NSA310 device is a Kirkwood based NAS:
 
 - SoC: Marvell 88F6702 1200Mhz
 - SDRAM memory: 256MB DDR2 400Mhz
@@ -512,7 +512,7 @@ NOTE: this patch is ready for upstream, LEDE-specific parts are in
 +CONFIG_KIRKWOOD=y
 +CONFIG_SYS_TEXT_BASE=0x600000
 +CONFIG_TARGET_NSA310=y
-+CONFIG_IDENT_STRING="\nZyXEL NSA310 1-Bay Power Media Server"
++CONFIG_IDENT_STRING="\nZyxel NSA310 1-Bay Power Media Server"
 +CONFIG_NR_DRAM_BANKS=2
 +CONFIG_BOOTDELAY=3
 +CONFIG_SYS_PROMPT="NSA310> "

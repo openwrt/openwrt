@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return features;
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -2449,7 +2449,7 @@ void sk_setup_caps(struct sock *sk, stru
+@@ -2441,7 +2441,7 @@ void sk_setup_caps(struct sock *sk, stru
  	if (sk_is_tcp(sk))
  		sk->sk_route_caps |= NETIF_F_GSO;
  	if (sk->sk_route_caps & NETIF_F_GSO)

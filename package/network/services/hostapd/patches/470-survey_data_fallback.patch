@@ -4,7 +4,7 @@ Subject: [PATCH] hostapd: implement fallback for incomplete survey data
 
 --- a/src/ap/acs.c
 +++ b/src/ap/acs.c
-@@ -467,17 +467,17 @@ static int acs_get_bw_center_chan(int fr
+@@ -471,17 +471,17 @@ static int acs_get_bw_center_chan(int fr
  static int acs_survey_is_sufficient(struct freq_survey *survey)
  {
  	if (!(survey->filled & SURVEY_HAS_NF)) {
@@ -24,7 +24,7 @@ Subject: [PATCH] hostapd: implement fallback for incomplete survey data
  	}
  
  	if (!(survey->filled & SURVEY_HAS_CHAN_TIME_BUSY) &&
-@@ -485,7 +485,6 @@ static int acs_survey_is_sufficient(stru
+@@ -489,7 +489,6 @@ static int acs_survey_is_sufficient(stru
  		wpa_printf(MSG_INFO,
  			   "ACS: Survey for freq %d is missing RX and busy time (at least one is required)",
  			   survey->freq);

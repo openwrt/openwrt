@@ -1,0 +1,69 @@
+From de12fe43dbd0ea9fa980ffa05822bd7fd5eed330 Mon Sep 17 00:00:00 2001
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Tue, 12 Sep 2023 13:31:44 +0200
+Subject: [PATCH 044/116] pmdomain: starfive: Move Kconfig file to the pmdomain
+ subsystem
+
+The Kconfig belongs closer to the corresponding implementation, hence let's
+move it from the soc subsystem to the pmdomain subsystem.
+
+Cc: Walker Chen <walker.chen@starfivetech.com>
+Cc: Conor Dooley <conor@kernel.org>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/pmdomain/Kconfig                   | 2 ++
+ drivers/{soc => pmdomain}/starfive/Kconfig | 0
+ drivers/soc/Kconfig                        | 1 -
+ 3 files changed, 2 insertions(+), 1 deletion(-)
+ rename drivers/{soc => pmdomain}/starfive/Kconfig (100%)
+
+--- a/drivers/pmdomain/Kconfig
++++ b/drivers/pmdomain/Kconfig
+@@ -1,4 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ menu "PM Domains"
+ 
++source "drivers/pmdomain/starfive/Kconfig"
++
+ endmenu
+--- a/drivers/soc/Kconfig
++++ b/drivers/soc/Kconfig
+@@ -24,7 +24,6 @@ source "drivers/soc/renesas/Kconfig"
+ source "drivers/soc/rockchip/Kconfig"
+ source "drivers/soc/samsung/Kconfig"
+ source "drivers/soc/sifive/Kconfig"
+-source "drivers/soc/starfive/Kconfig"
+ source "drivers/soc/sunxi/Kconfig"
+ source "drivers/soc/tegra/Kconfig"
+ source "drivers/soc/ti/Kconfig"
+--- /dev/null
++++ b/drivers/pmdomain/starfive/Kconfig
+@@ -0,0 +1,12 @@
++# SPDX-License-Identifier: GPL-2.0
++
++config JH71XX_PMU
++	bool "Support PMU for StarFive JH71XX Soc"
++	depends on PM
++	depends on ARCH_STARFIVE || COMPILE_TEST
++	default ARCH_STARFIVE
++	select PM_GENERIC_DOMAINS
++	help
++	  Say 'y' here to enable support power domain support.
++	  In order to meet low power requirements, a Power Management Unit (PMU)
++	  is designed for controlling power resources in StarFive JH71XX SoCs.
+--- a/drivers/soc/starfive/Kconfig
++++ /dev/null
+@@ -1,12 +0,0 @@
+-# SPDX-License-Identifier: GPL-2.0
+-
+-config JH71XX_PMU
+-	bool "Support PMU for StarFive JH71XX Soc"
+-	depends on PM
+-	depends on ARCH_STARFIVE || COMPILE_TEST
+-	default ARCH_STARFIVE
+-	select PM_GENERIC_DOMAINS
+-	help
+-	  Say 'y' here to enable support power domain support.
+-	  In order to meet low power requirements, a Power Management Unit (PMU)
+-	  is designed for controlling power resources in StarFive JH71XX SoCs.

@@ -1,0 +1,1169 @@
+From f03b7c834baef87e4f740e10a8bbcbfc57bd985a Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Thu, 15 Jun 2023 11:32:50 +0800
+Subject: [PATCH 080/116] ASoC: starfive: Add SPDIF and PCM driver
+
+Add SPDIF and SPDIF-PCM driver for StarFive JH7110.
+
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ sound/soc/starfive/Kconfig            |  17 +
+ sound/soc/starfive/Makefile           |   5 +
+ sound/soc/starfive/jh7110_spdif.c     | 568 ++++++++++++++++++++++++++
+ sound/soc/starfive/jh7110_spdif.h     | 196 +++++++++
+ sound/soc/starfive/jh7110_spdif_pcm.c | 339 +++++++++++++++
+ 5 files changed, 1125 insertions(+)
+ create mode 100644 sound/soc/starfive/jh7110_spdif.c
+ create mode 100644 sound/soc/starfive/jh7110_spdif.h
+ create mode 100644 sound/soc/starfive/jh7110_spdif_pcm.c
+
+--- a/sound/soc/starfive/Kconfig
++++ b/sound/soc/starfive/Kconfig
+@@ -16,6 +16,23 @@ config SND_SOC_JH7110_PWMDAC
+ 	 Say Y or M if you want to add support for StarFive JH7110
+ 	 PWM-DAC driver.
+ 
++config SND_SOC_JH7110_SPDIF
++	tristate "JH7110 SPDIF module"
++	depends on HAVE_CLK && SND_SOC_STARFIVE
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	select REGMAP_MMIO
++	help
++	  Say Y or M if you want to add support for SPDIF driver of StarFive
++	  JH7110 SoC.
++
++config SND_SOC_JH7110_SPDIF_PCM
++	bool "PCM PIO extension for JH7110 SPDIF"
++	depends on SND_SOC_JH7110_SPDIF
++	default y if SND_SOC_JH7110_SPDIF
++	help
++	  Say Y or N if you want to add a custom ALSA extension that registers
++	  a PCM and uses PIO to transfer data.
++
+ config SND_SOC_JH7110_TDM
+ 	tristate "JH7110 TDM device driver"
+ 	depends on HAVE_CLK && SND_SOC_STARFIVE
+--- a/sound/soc/starfive/Makefile
++++ b/sound/soc/starfive/Makefile
+@@ -1,3 +1,8 @@
+ # StarFive Platform Support
+ obj-$(CONFIG_SND_SOC_JH7110_PWMDAC) += jh7110_pwmdac.o
++
++obj-$(CONFIG_SND_SOC_JH7110_SPDIF) += spdif.o
++spdif-y := jh7110_spdif.o
++spdif-$(CONFIG_SND_SOC_JH7110_SPDIF_PCM) += jh7110_spdif_pcm.o
++
+ obj-$(CONFIG_SND_SOC_JH7110_TDM) += jh7110_tdm.o
+--- /dev/null
++++ b/sound/soc/starfive/jh7110_spdif.c
+@@ -0,0 +1,568 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * SPDIF driver for the StarFive JH7110 SoC
++ *
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/slab.h>
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#include "jh7110_spdif.h"
++
++static irqreturn_t spdif_irq_handler(int irq, void *dev_id)
++{
++	struct sf_spdif_dev *dev = dev_id;
++	bool irq_valid = false;
++	unsigned int intr;
++	unsigned int stat;
++
++	regmap_read(dev->regmap, SPDIF_INT_REG, &intr);
++	regmap_read(dev->regmap, SPDIF_STAT_REG, &stat);
++	regmap_update_bits(dev->regmap, SPDIF_CTRL, SPDIF_MASK_ENABLE, 0);
++	regmap_update_bits(dev->regmap, SPDIF_INT_REG, SPDIF_INT_REG_BIT, 0);
++
++	if ((stat & SPDIF_EMPTY_FLAG) || (stat & SPDIF_AEMPTY_FLAG)) {
++		sf_spdif_pcm_push_tx(dev);
++		irq_valid = true;
++	}
++
++	if ((stat & SPDIF_FULL_FLAG) || (stat & SPDIF_AFULL_FLAG)) {
++		sf_spdif_pcm_pop_rx(dev);
++		irq_valid = true;
++	}
++
++	if (stat & SPDIF_PARITY_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_UNDERR_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_OVRERR_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_SYNCERR_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_LOCK_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_BEGIN_FLAG)
++		irq_valid = true;
++
++	if (stat & SPDIF_RIGHT_LEFT)
++		irq_valid = true;
++
++	regmap_update_bits(dev->regmap, SPDIF_CTRL,
++		SPDIF_MASK_ENABLE, SPDIF_MASK_ENABLE);
++
++	if (irq_valid)
++		return IRQ_HANDLED;
++	else
++		return IRQ_NONE;
++}
++
++static int sf_spdif_trigger(struct snd_pcm_substream *substream, int cmd,
++			    struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
++
++	if (tx) {
++		/* tx mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_TR_MODE, SPDIF_TR_MODE);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_MASK_FIFO, SPDIF_EMPTY_MASK | SPDIF_AEMPTY_MASK);
++	} else {
++		/* rx mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_TR_MODE, 0);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_MASK_FIFO, SPDIF_FULL_MASK | SPDIF_AFULL_MASK);
++	}
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		/* clock recovery form the SPDIF data stream  0:clk_enable */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_CLK_ENABLE, 0);
++
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_ENABLE, SPDIF_ENABLE);
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		/* clock recovery form the SPDIF data stream  1:power save mode */
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_ENABLE, 0);
++		break;
++	default:
++		dev_err(dai->dev, "%s L.%d cmd:%d\n", __func__, __LINE__, cmd);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int sf_spdif_hw_params(struct snd_pcm_substream *substream,
++			      struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++	unsigned int channels = params_channels(params);
++	unsigned int rate = params_rate(params);
++	unsigned int format = params_format(params);
++	unsigned int tsamplerate;
++	unsigned int mclk;
++	unsigned int audio_root;
++	int ret;
++
++	switch (channels) {
++	case 1:
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_CHANNEL_MODE, SPDIF_CHANNEL_MODE);
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_DUPLICATE, SPDIF_DUPLICATE);
++		spdif->channels = false;
++		break;
++	case 2:
++		regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++				   SPDIF_CHANNEL_MODE, 0);
++		spdif->channels = true;
++		break;
++	default:
++		dev_err(dai->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	switch (format) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++	case SNDRV_PCM_FORMAT_S24_LE:
++	case SNDRV_PCM_FORMAT_S24_3LE:
++	case SNDRV_PCM_FORMAT_S32_LE:
++		break;
++	default:
++		dev_err(dai->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++	switch (rate) {
++	case 8000:
++		break;
++	case 11025:
++		audio_root = 148500000;
++		/* 11025 * 512 = 5644800 */
++		/* But now pll2 is 1188m and mclk should be 5711539 closely. */
++		mclk = 5711539;
++		break;
++	case 16000:
++		break;
++	case 22050:
++		audio_root = 148500000;
++		mclk = 11423077;
++		break;
++	default:
++		dev_err(dai->dev, "channel:%d sample rate:%d\n", channels, rate);
++		return -EINVAL;
++	}
++
++	/* use mclk_inner clock from 1188m PLL2 will be better about 11k and 22k*/
++	if ((rate == 11025) || (rate == 22050)) {
++		ret = clk_set_parent(spdif->mclk, spdif->mclk_inner);
++		if (ret) {
++			dev_err(dai->dev,
++				"failed to set parent to mclk_inner ret=%d\n", ret);
++			goto fail_ext;
++		}
++
++		ret = clk_set_rate(spdif->audio_root, audio_root);
++		if (ret) {
++			dev_err(dai->dev, "failed to set audio_root rate :%d\n", ret);
++			goto fail_ext;
++		}
++
++		ret = clk_set_rate(spdif->mclk_inner, mclk);
++		if (ret) {
++			dev_err(dai->dev, "failed to set mclk_inner rate :%d\n", ret);
++			goto fail_ext;
++		}
++
++		mclk = clk_get_rate(spdif->mclk_inner);
++	} else {
++		ret = clk_set_parent(spdif->mclk, spdif->mclk_ext);
++		if (ret) {
++			dev_err(dai->dev,
++				"failed to set parent to mclk_ext ret=%d\n", ret);
++			goto fail_ext;
++		}
++
++		mclk = clk_get_rate(spdif->mclk_ext);
++	}
++
++	/* (FCLK)4096000/128=32000 */
++	tsamplerate = (mclk / 128 + rate / 2) / rate - 1;
++	if (tsamplerate < 3)
++		tsamplerate = 3;
++
++	/* transmission sample rate */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL, 0xFF, tsamplerate);
++
++	return 0;
++
++fail_ext:
++	return ret;
++}
++
++static int sf_spdif_clks_get(struct platform_device *pdev,
++			     struct sf_spdif_dev *spdif)
++{
++	static struct clk_bulk_data clks[] = {
++		{ .id = "apb" },		/* clock-names in dts file */
++		{ .id = "core" },
++		{ .id = "audroot" },
++		{ .id = "mclk_inner"},
++		{ .id = "mclk_ext"},
++		{ .id = "mclk"},
++	};
++	int ret = devm_clk_bulk_get(&pdev->dev, ARRAY_SIZE(clks), clks);
++
++	spdif->spdif_apb = clks[0].clk;
++	spdif->spdif_core = clks[1].clk;
++	spdif->audio_root = clks[2].clk;
++	spdif->mclk_inner = clks[3].clk;
++	spdif->mclk_ext = clks[4].clk;
++	spdif->mclk = clks[5].clk;
++
++	return ret;
++}
++
++static int sf_spdif_resets_get(struct platform_device *pdev,
++			       struct sf_spdif_dev *spdif)
++{
++	struct reset_control_bulk_data resets[] = {
++			{ .id = "apb" },
++	};
++	int ret = devm_reset_control_bulk_get_exclusive(&pdev->dev, ARRAY_SIZE(resets), resets);
++
++	if (ret)
++		return ret;
++
++	spdif->rst_apb = resets[0].rstc;
++
++	return 0;
++}
++
++static int starfive_spdif_crg_enable(struct sf_spdif_dev *spdif, bool enable)
++{
++	int ret;
++
++	dev_dbg(spdif->dev, "starfive_spdif clk&rst %sable.\n", enable ? "en":"dis");
++	if (enable) {
++		ret = clk_prepare_enable(spdif->spdif_apb);
++		if (ret) {
++			dev_err(spdif->dev, "failed to prepare enable spdif_apb\n");
++			goto failed_apb_clk;
++		}
++
++		ret = clk_prepare_enable(spdif->spdif_core);
++		if (ret) {
++			dev_err(spdif->dev, "failed to prepare enable spdif_core\n");
++			goto failed_core_clk;
++		}
++
++		ret = reset_control_deassert(spdif->rst_apb);
++		if (ret) {
++			dev_err(spdif->dev, "failed to deassert apb\n");
++			goto failed_rst;
++		}
++	} else {
++		clk_disable_unprepare(spdif->spdif_core);
++		clk_disable_unprepare(spdif->spdif_apb);
++	}
++
++	return 0;
++
++failed_rst:
++	clk_disable_unprepare(spdif->spdif_core);
++failed_core_clk:
++	clk_disable_unprepare(spdif->spdif_apb);
++failed_apb_clk:
++	return ret;
++}
++
++static int sf_spdif_dai_probe(struct snd_soc_dai *dai)
++{
++	struct sf_spdif_dev *spdif = snd_soc_dai_get_drvdata(dai);
++
++	pm_runtime_get_sync(spdif->dev);
++
++	/* reset */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_ENABLE | SPDIF_SFR_ENABLE | SPDIF_FIFO_ENABLE, 0);
++
++	/* clear irq */
++	regmap_update_bits(spdif->regmap, SPDIF_INT_REG,
++			   SPDIF_INT_REG_BIT, 0);
++
++	/* power save mode */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++
++	/* power save mode */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_CLK_ENABLE, SPDIF_CLK_ENABLE);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_PARITCHECK|SPDIF_VALIDITYCHECK|SPDIF_DUPLICATE,
++			   SPDIF_PARITCHECK|SPDIF_VALIDITYCHECK|SPDIF_DUPLICATE);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_SETPREAMBB, SPDIF_SETPREAMBB);
++
++	regmap_update_bits(spdif->regmap, SPDIF_INT_REG,
++			   BIT8TO20MASK<<SPDIF_PREAMBLEDEL, 0x3<<SPDIF_PREAMBLEDEL);
++
++	regmap_update_bits(spdif->regmap, SPDIF_FIFO_CTRL,
++			   ALLBITMASK, 0x20|(0x20<<SPDIF_AFULL_THRESHOLD));
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_PARITYGEN, SPDIF_PARITYGEN);
++
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_MASK_ENABLE, SPDIF_MASK_ENABLE);
++
++	/* APB access to FIFO enable, disable if use DMA/FIFO */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_USE_FIFO_IF, 0);
++
++	/* two channel */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   SPDIF_CHANNEL_MODE, 0);
++
++	pm_runtime_put_sync(spdif->dev);
++	return 0;
++}
++
++static const struct snd_soc_dai_ops sf_spdif_dai_ops = {
++	.probe = sf_spdif_dai_probe,
++	.trigger = sf_spdif_trigger,
++	.hw_params = sf_spdif_hw_params,
++};
++
++#ifdef CONFIG_PM_SLEEP
++static int spdif_system_suspend(struct device *dev)
++{
++	struct sf_spdif_dev *spdif = dev_get_drvdata(dev);
++
++	/* save the register value */
++	regmap_read(spdif->regmap, SPDIF_CTRL, &spdif->reg_spdif_ctrl);
++	regmap_read(spdif->regmap, SPDIF_INT_REG, &spdif->reg_spdif_int);
++	regmap_read(spdif->regmap, SPDIF_FIFO_CTRL, &spdif->reg_spdif_fifo_ctrl);
++
++	return pm_runtime_force_suspend(dev);
++}
++
++static int spdif_system_resume(struct device *dev)
++{
++	struct sf_spdif_dev *spdif = dev_get_drvdata(dev);
++	int ret = pm_runtime_force_resume(dev);
++
++	if (ret)
++		return ret;
++
++	/* restore the register value */
++	regmap_update_bits(spdif->regmap, SPDIF_CTRL,
++			   ALLBITMASK, spdif->reg_spdif_ctrl);
++	regmap_update_bits(spdif->regmap, SPDIF_INT_REG,
++			   ALLBITMASK, spdif->reg_spdif_int);
++	regmap_update_bits(spdif->regmap, SPDIF_FIFO_CTRL,
++			   ALLBITMASK, spdif->reg_spdif_fifo_ctrl);
++
++	return 0;
++}
++#endif
++
++#ifdef CONFIG_PM
++static int spdif_runtime_suspend(struct device *dev)
++{
++	struct sf_spdif_dev *spdif = dev_get_drvdata(dev);
++
++	return starfive_spdif_crg_enable(spdif, false);
++}
++
++static int spdif_runtime_resume(struct device *dev)
++{
++	struct sf_spdif_dev *spdif = dev_get_drvdata(dev);
++
++	return starfive_spdif_crg_enable(spdif, true);
++}
++#endif
++
++static const struct dev_pm_ops spdif_pm_ops = {
++	SET_RUNTIME_PM_OPS(spdif_runtime_suspend, spdif_runtime_resume, NULL)
++	SET_SYSTEM_SLEEP_PM_OPS(spdif_system_suspend, spdif_system_resume)
++};
++
++#define SF_PCM_RATE_44100_192000 (SNDRV_PCM_RATE_44100 | \
++				  SNDRV_PCM_RATE_48000 | \
++				  SNDRV_PCM_RATE_96000 | \
++				  SNDRV_PCM_RATE_192000)
++
++#define SF_PCM_RATE_8000_22050 (SNDRV_PCM_RATE_8000 | \
++				SNDRV_PCM_RATE_11025 | \
++				SNDRV_PCM_RATE_16000 | \
++				SNDRV_PCM_RATE_22050)
++
++static struct snd_soc_dai_driver sf_spdif_dai = {
++	.name = "spdif",
++	.id = 0,
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SF_PCM_RATE_8000_22050,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE |
++			   SNDRV_PCM_FMTBIT_S24_LE |
++			   SNDRV_PCM_FMTBIT_S24_3LE |
++			   SNDRV_PCM_FMTBIT_S32_LE,
++	},
++	.ops = &sf_spdif_dai_ops,
++	.symmetric_rate = 1,
++};
++
++static const struct snd_soc_component_driver sf_spdif_component = {
++	.name = "starfive-spdif",
++};
++
++static const struct regmap_config sf_spdif_regmap_config = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.max_register = 0x200,
++};
++
++static int sf_spdif_probe(struct platform_device *pdev)
++{
++	struct sf_spdif_dev *spdif;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++	int irq;
++
++	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
++	if (!spdif)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, spdif);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	spdif->spdif_base = base;
++	spdif->regmap = devm_regmap_init_mmio(&pdev->dev, spdif->spdif_base,
++					      &sf_spdif_regmap_config);
++	if (IS_ERR(spdif->regmap))
++		return PTR_ERR(spdif->regmap);
++
++	spdif->dev = &pdev->dev;
++
++	ret = sf_spdif_clks_get(pdev, spdif);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get audio clock\n");
++		return ret;
++	}
++
++	ret = sf_spdif_resets_get(pdev, spdif);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to get audio reset controls\n");
++		return ret;
++	}
++
++	ret = starfive_spdif_crg_enable(spdif, true);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to enable audio clock\n");
++		return ret;
++	}
++
++	spdif->fifo_th = 16;
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq >= 0) {
++		ret = devm_request_irq(&pdev->dev, irq, spdif_irq_handler, 0,
++				pdev->name, spdif);
++		if (ret < 0) {
++			dev_err(&pdev->dev, "failed to request irq\n");
++			return ret;
++		}
++	}
++
++	ret = devm_snd_soc_register_component(&pdev->dev, &sf_spdif_component,
++					 &sf_spdif_dai, 1);
++	if (ret)
++		goto err_clk_disable;
++
++	if (irq >= 0) {
++		ret = sf_spdif_pcm_register(pdev);
++		spdif->use_pio = true;
++	} else {
++		ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL,
++					0);
++		spdif->use_pio = false;
++	}
++
++	if (ret)
++		goto err_clk_disable;
++
++	starfive_spdif_crg_enable(spdif, false);
++	pm_runtime_enable(&pdev->dev);
++	dev_dbg(&pdev->dev, "spdif register done.\n");
++
++	return 0;
++
++err_clk_disable:
++	return ret;
++}
++
++static const struct of_device_id sf_spdif_of_match[] = {
++	{ .compatible = "starfive,jh7110-spdif", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sf_spdif_of_match);
++
++static struct platform_driver sf_spdif_driver = {
++	.driver = {
++		.name = "starfive-spdif",
++		.of_match_table = sf_spdif_of_match,
++		.pm = &spdif_pm_ops,
++	},
++	.probe = sf_spdif_probe,
++};
++module_platform_driver(sf_spdif_driver);
++
++MODULE_AUTHOR("curry.zhang <curry.zhang@starfive.com>");
++MODULE_AUTHOR("Xingyu Wu <xingyu.wu@starfivetech.com>");
++MODULE_DESCRIPTION("starfive SPDIF driver");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/sound/soc/starfive/jh7110_spdif.h
+@@ -0,0 +1,196 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * SPDIF driver for the StarFive JH7110 SoC
++ *
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++#ifndef __SND_SOC_JH7110_SPDIF_H
++#define __SND_SOC_JH7110_SPDIF_H
++
++#include <linux/clk.h>
++#include <linux/device.h>
++#include <linux/dmaengine.h>
++#include <linux/types.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/pcm.h>
++
++#define SPDIF_CTRL			0x0
++#define SPDIF_INT_REG			0x4
++#define SPDIF_FIFO_CTRL			0x8
++#define SPDIF_STAT_REG			0xC
++
++#define SPDIF_FIFO_ADDR			0x100
++#define DMAC_SPDIF_POLLING_LEN		256
++
++/* ctrl: sampled on the rising clock edge */
++#define	SPDIF_TSAMPLERATE	0	/* [SRATEW-1:0] */
++/* 0:SFR reg reset to defualt value; auto set back to '1' after reset */
++#define SPDIF_SFR_ENABLE	(1<<8)
++/* 0:reset of SPDIF block, SRF bits are unchanged; 1:enables SPDIF module */
++#define SPDIF_ENABLE		(1<<9)
++/* 0:FIFO pointers are reset to zero,threshold levels for FIFO are unchaned; auto set back to 1 */
++#define SPDIF_FIFO_ENABLE	(1<<10)
++/* 1:blocked and the modules are in power save mode; 0:block feeds the modules */
++#define SPDIF_CLK_ENABLE	(1<<11)
++#define SPDIF_TR_MODE		(1<<12)	/* 0:rx; 1:tx */
++/* 0:party bit rx in a sub-frame is repeated on the parity; 1:check on a parity error */
++#define SPDIF_PARITCHECK	(1<<13)
++/*
++ * 0:parity bit from FIFO is transmitted in sub-frame;
++ * 1:parity bit generated inside the core and added to a transmitted sub-frame
++ */
++#define SPDIF_PARITYGEN		(1<<14)
++/* 0:validity bit in frame isn't checked and all frame are written; 1:validity bit rx is checked */
++#define SPDIF_VALIDITYCHECK	(1<<15)
++#define SPDIF_CHANNEL_MODE	(1<<16)	/* 0:two-channel; 1:single-channel */
++/* only tx -single-channel mode; 0:secondary channel; 1: left(primary) channel */
++#define SPDIF_DUPLICATE		(1<<17)
++/*
++ * only tx;
++ * 0:first preamble B after reset tx valid sub-frame;
++ * 1:first preamble B is tx after preambleddel(INT_REG)
++ */
++#define SPDIF_SETPREAMBB	(1<<18)
++/* 0:FIFO disabled ,APB accese FIFO; 1:FIFO enable, APB access to FIFO disable; */
++#define SPDIF_USE_FIFO_IF	(1<<19)
++#define SPDIF_PARITY_MASK	(1<<21)
++#define SPDIF_UNDERR_MASK	(1<<22)
++#define SPDIF_OVRERR_MASK	(1<<23)
++#define SPDIF_EMPTY_MASK	(1<<24)
++#define	SPDIF_AEMPTY_MASK	(1<<25)
++#define SPDIF_FULL_MASK		(1<<26)
++#define SPDIF_AFULL_MASK	(1<<27)
++#define SPDIF_SYNCERR_MASK	(1<<28)
++#define SPDIF_LOCK_MASK		(1<<29)
++#define SPDIF_BEGIN_MASK	(1<<30)
++#define SPDIF_INTEREQ_MAKS	(1<<31)
++
++#define SPDIF_MASK_ENABLE	(SPDIF_PARITY_MASK | SPDIF_UNDERR_MASK | \
++				 SPDIF_OVRERR_MASK | SPDIF_EMPTY_MASK | \
++				 SPDIF_AEMPTY_MASK | SPDIF_FULL_MASK | \
++				 SPDIF_AFULL_MASK | SPDIF_SYNCERR_MASK | \
++				 SPDIF_LOCK_MASK | SPDIF_BEGIN_MASK | \
++				 SPDIF_INTEREQ_MAKS)
++
++#define SPDIF_MASK_FIFO	(SPDIF_EMPTY_MASK | SPDIF_AEMPTY_MASK | \
++			 SPDIF_FULL_MASK | SPDIF_AFULL_MASK)
++
++/* INT_REG */
++#define SPDIF_RSAMPLERATE	0	/* [SRATEW-1:0] */
++#define SPDIF_PREAMBLEDEL	8	/* [PDELAYW+7:8] first B delay */
++#define SPDIF_PARITYO		(1<<21)	/* 0:clear parity error */
++#define SPDIF_TDATA_UNDERR	(1<<22)	/* tx data underrun error;0:clear */
++#define SPDIF_RDATA_OVRERR	(1<<23)	/* rx data overrun error; 0:clear */
++#define SPDIF_FIFO_EMPTY	(1<<24)	/* empty; 0:clear */
++#define SPDIF_FIOF_AEMPTY	(1<<25)	/* almost empty; 0:clear */
++#define SPDIF_FIFO_FULL		(1<<26)	/* FIFO full; 0:clear */
++#define SPDIF_FIFO_AFULL	(1<<27)	/* FIFO almost full; 0:clear */
++#define SPDIF_SYNCERR		(1<<28)	/* sync error; 0:clear */
++#define SPDIF_LOCK		(1<<29)	/* sync; 0:clear */
++#define SPDIF_BLOCK_BEGIN	(1<<30)	/* new start block rx data */
++
++#define SPDIF_INT_REG_BIT	(SPDIF_PARITYO | SPDIF_TDATA_UNDERR | \
++				 SPDIF_RDATA_OVRERR | SPDIF_FIFO_EMPTY | \
++				 SPDIF_FIOF_AEMPTY | SPDIF_FIFO_FULL | \
++				 SPDIF_FIFO_AFULL | SPDIF_SYNCERR | \
++				 SPDIF_LOCK | SPDIF_BLOCK_BEGIN)
++
++#define SPDIF_ERROR_INT_STATUS	(SPDIF_PARITYO | \
++				 SPDIF_TDATA_UNDERR | SPDIF_RDATA_OVRERR)
++#define SPDIF_FIFO_INT_STATUS	(SPDIF_FIFO_EMPTY | SPDIF_FIOF_AEMPTY | \
++				 SPDIF_FIFO_FULL | SPDIF_FIFO_AFULL)
++
++#define SPDIF_INT_PARITY_ERROR	(-1)
++#define SPDIF_INT_TDATA_UNDERR	(-2)
++#define SPDIF_INT_RDATA_OVRERR	(-3)
++#define SPDIF_INT_FIFO_EMPTY	1
++#define SPDIF_INT_FIFO_AEMPTY	2
++#define SPDIF_INT_FIFO_FULL	3
++#define SPDIF_INT_FIFO_AFULL	4
++#define SPDIF_INT_SYNCERR	(-4)
++#define SPDIF_INT_LOCK		5 /* reciever has become synchronized with input data stream */
++#define SPDIF_INT_BLOCK_BEGIN	6 /* start a new block in recieve data, written into FIFO */
++
++/* FIFO_CTRL */
++#define SPDIF_AEMPTY_THRESHOLD	0	/* [depth-1:0] */
++#define SPDIF_AFULL_THRESHOLD	16	/* [depth+15:16] */
++
++/* STAT_REG */
++#define SPDIF_FIFO_LEVEL	(1<<0)
++#define SPDIF_PARITY_FLAG	(1<<21)	/* 1:error; 0:repeated */
++#define SPDIF_UNDERR_FLAG	(1<<22)	/* 1:error */
++#define SPDIF_OVRERR_FLAG	(1<<23)	/* 1:error */
++#define SPDIF_EMPTY_FLAG	(1<<24)	/* 1:fifo empty */
++#define SPDIF_AEMPTY_FLAG	(1<<25)	/* 1:fifo almost empty */
++#define SPDIF_FULL_FLAG		(1<<26)	/* 1:fifo full */
++#define SPDIF_AFULL_FLAG	(1<<27)	/* 1:fifo almost full */
++#define SPDIF_SYNCERR_FLAG	(1<<28)	/* 1:rx sync error */
++#define SPDIF_LOCK_FLAG		(1<<29)	/* 1:RX sync */
++#define SPDIF_BEGIN_FLAG	(1<<30)	/* 1:start a new block */
++/* 1:left channel received and tx into FIFO; 0:right channel received and tx into FIFO */
++#define SPDIF_RIGHT_LEFT	(1<<31)
++
++#define BIT8TO20MASK	0x1FFF
++#define ALLBITMASK		0xFFFFFFFF
++
++#define SPDIF_STAT		(SPDIF_PARITY_FLAG | SPDIF_UNDERR_FLAG | \
++				 SPDIF_OVRERR_FLAG | SPDIF_EMPTY_FLAG | \
++				 SPDIF_AEMPTY_FLAG | SPDIF_FULL_FLAG | \
++				 SPDIF_AFULL_FLAG | SPDIF_SYNCERR_FLAG | \
++				 SPDIF_LOCK_FLAG | SPDIF_BEGIN_FLAG | \
++				 SPDIF_RIGHT_LEFT)
++struct sf_spdif_dev {
++	void __iomem *spdif_base;
++	struct regmap *regmap;
++	struct device *dev;
++	u32 fifo_th;
++	int active;
++
++	/* data related to DMA transfers b/w i2s and DMAC */
++	struct snd_dmaengine_dai_dma_data play_dma_data;
++	struct snd_dmaengine_dai_dma_data capture_dma_data;
++
++	bool use_pio;
++	struct snd_pcm_substream __rcu *tx_substream;
++	struct snd_pcm_substream __rcu *rx_substream;
++
++	unsigned int (*tx_fn)(struct sf_spdif_dev *dev,
++			      struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++			      bool *period_elapsed, snd_pcm_format_t format);
++	unsigned int (*rx_fn)(struct sf_spdif_dev *dev,
++			      struct snd_pcm_runtime *runtime, unsigned int rx_ptr,
++			      bool *period_elapsed, snd_pcm_format_t format);
++
++	snd_pcm_format_t format;
++	bool channels;
++	unsigned int tx_ptr;
++	unsigned int rx_ptr;
++	struct clk *spdif_apb;
++	struct clk *spdif_core;
++	struct clk *audio_root;
++	struct clk *mclk_inner;
++	struct clk *mclk;
++	struct clk *mclk_ext;
++	struct reset_control *rst_apb;
++	unsigned int reg_spdif_ctrl;
++	unsigned int reg_spdif_int;
++	unsigned int reg_spdif_fifo_ctrl;
++
++	struct snd_dmaengine_dai_dma_data dma_data;
++};
++
++#if IS_ENABLED(CONFIG_SND_SOC_JH7110_SPDIF_PCM)
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev);
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev);
++int sf_spdif_pcm_register(struct platform_device *pdev);
++#else
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev) { }
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev) { }
++int sf_spdif_pcm_register(struct platform_device *pdev)
++{
++	return -EINVAL;
++}
++#endif
++
++#endif	/* __SND_SOC_JH7110_SPDIF_H */
+--- /dev/null
++++ b/sound/soc/starfive/jh7110_spdif_pcm.c
+@@ -0,0 +1,339 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * SPDIF PCM driver for the StarFive JH7110 SoC
++ *
++ * Copyright (C) 2022 StarFive Technology Co., Ltd.
++ */
++
++#include <linux/io.h>
++#include <linux/rcupdate.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++
++#include "jh7110_spdif.h"
++
++#define BUFFER_BYTES_MAX	(3 * 2 * 8 * PERIOD_BYTES_MIN)
++#define PERIOD_BYTES_MIN	4096
++#define PERIODS_MIN		2
++
++static unsigned int sf_spdif_pcm_tx(struct sf_spdif_dev *dev,
++				    struct snd_pcm_runtime *runtime, unsigned int tx_ptr,
++				    bool *period_elapsed, snd_pcm_format_t format)
++{
++	unsigned int period_pos = tx_ptr % runtime->period_size;
++	u32 data[2];
++	int i;
++
++	/* two- channel and signal-channel mode */
++	if (dev->channels) {
++		const u16 (*p16)[2] = (void *)runtime->dma_area;
++		const u32 (*p32)[2] = (void *)runtime->dma_area;
++
++		for (i = 0; i < dev->fifo_th; i++) {
++			if (format == SNDRV_PCM_FORMAT_S16_LE) {
++				data[0] = p16[tx_ptr][0];
++				data[0] = data[0]<<8;
++				data[0] &= 0x00ffff00;
++				data[1] = p16[tx_ptr][1];
++				data[1] = data[1]<<8;
++				data[1] &= 0x00ffff00;
++			} else if (format == SNDRV_PCM_FORMAT_S24_LE) {
++				data[0] = p32[tx_ptr][0];
++				data[1] = p32[tx_ptr][1];
++
++				/*
++				 * To adapt S24_3LE and ALSA pass parameter of S24_LE.
++				 * operation of S24_LE should be same to S24_3LE.
++				 * So it would wrong when playback S24_LE file.
++				 * when want to playback S24_LE file, should add in there:
++				 * data[0] = data[0]>>8;
++				 * data[1] = data[1]>>8;
++				 */
++
++				data[0] &= 0x00ffffff;
++				data[1] &= 0x00ffffff;
++			} else if (format == SNDRV_PCM_FORMAT_S24_3LE) {
++				data[0] = p32[tx_ptr][0];
++				data[1] = p32[tx_ptr][1];
++				data[0] &= 0x00ffffff;
++				data[1] &= 0x00ffffff;
++			} else if (format == SNDRV_PCM_FORMAT_S32_LE) {
++				data[0] = p32[tx_ptr][0];
++				data[0] = data[0]>>8;
++				data[1] = p32[tx_ptr][1];
++				data[1] = data[1]>>8;
++			}
++
++			iowrite32(data[0], dev->spdif_base + SPDIF_FIFO_ADDR);
++			iowrite32(data[1], dev->spdif_base + SPDIF_FIFO_ADDR);
++			period_pos++;
++			if (++tx_ptr >= runtime->buffer_size)
++				tx_ptr = 0;
++		}
++	} else {
++		const u16 (*p16) = (void *)runtime->dma_area;
++		const u32 (*p32) = (void *)runtime->dma_area;
++
++		for (i = 0; i < dev->fifo_th; i++) {
++			if (format == SNDRV_PCM_FORMAT_S16_LE) {
++				data[0] = p16[tx_ptr];
++				data[0] = data[0]<<8;
++				data[0] &= 0x00ffff00;
++			} else if (format == SNDRV_PCM_FORMAT_S24_LE ||
++				format == SNDRV_PCM_FORMAT_S24_3LE) {
++				data[0] = p32[tx_ptr];
++				data[0] &= 0x00ffffff;
++			} else if (format == SNDRV_PCM_FORMAT_S32_LE) {
++				data[0] = p32[tx_ptr];
++				data[0] = data[0]>>8;
++			}
++
++			iowrite32(data[0], dev->spdif_base + SPDIF_FIFO_ADDR);
++			period_pos++;
++			if (++tx_ptr >= runtime->buffer_size)
++				tx_ptr = 0;
++		}
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++	return tx_ptr;
++}
++
++static unsigned int sf_spdif_pcm_rx(struct sf_spdif_dev *dev,
++				    struct snd_pcm_runtime *runtime, unsigned int rx_ptr,
++				    bool *period_elapsed, snd_pcm_format_t format)
++{
++	u16 (*p16)[2] = (void *)runtime->dma_area;
++	u32 (*p32)[2] = (void *)runtime->dma_area;
++	unsigned int period_pos = rx_ptr % runtime->period_size;
++	u32 data[2];
++	int i;
++
++	for (i = 0; i < dev->fifo_th; i++) {
++		data[0] = ioread32(dev->spdif_base + SPDIF_FIFO_ADDR);
++		data[1] = ioread32(dev->spdif_base + SPDIF_FIFO_ADDR);
++		if (format == SNDRV_PCM_FORMAT_S16_LE) {
++			p16[rx_ptr][0] = data[0]>>8;
++			p16[rx_ptr][1] = data[1]>>8;
++		} else if (format == SNDRV_PCM_FORMAT_S24_LE) {
++			p32[rx_ptr][0] = data[0];
++			p32[rx_ptr][1] = data[1];
++		} else if (format == SNDRV_PCM_FORMAT_S32_LE) {
++			p32[rx_ptr][0] = data[0]<<8;
++			p32[rx_ptr][1] = data[1]<<8;
++		}
++
++		period_pos++;
++		if (++rx_ptr >= runtime->buffer_size)
++			rx_ptr = 0;
++	}
++
++	*period_elapsed = period_pos >= runtime->period_size;
++	return rx_ptr;
++}
++
++static const struct snd_pcm_hardware sf_pcm_hardware = {
++	.info = SNDRV_PCM_INFO_INTERLEAVED |
++		SNDRV_PCM_INFO_MMAP |
++		SNDRV_PCM_INFO_MMAP_VALID |
++		SNDRV_PCM_INFO_BLOCK_TRANSFER |
++		SNDRV_PCM_INFO_PAUSE |
++		SNDRV_PCM_INFO_RESUME,
++	.rates = SNDRV_PCM_RATE_8000 |
++		SNDRV_PCM_RATE_11025 |
++		SNDRV_PCM_RATE_16000 |
++		SNDRV_PCM_RATE_22050 |
++		SNDRV_PCM_RATE_32000 |
++		SNDRV_PCM_RATE_44100 |
++		SNDRV_PCM_RATE_48000,
++	.rate_min = 8000,
++	.rate_max = 48000,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE |
++		SNDRV_PCM_FMTBIT_S24_LE |
++		SNDRV_PCM_FMTBIT_S24_3LE |
++		SNDRV_PCM_FMTBIT_S32_LE,
++	.channels_min = 1,
++	.channels_max = 2,
++	.buffer_bytes_max = BUFFER_BYTES_MAX,
++	.period_bytes_min = PERIOD_BYTES_MIN,
++	.period_bytes_max = BUFFER_BYTES_MAX / PERIODS_MIN,
++	.periods_min = PERIODS_MIN,
++	.periods_max = BUFFER_BYTES_MAX / PERIOD_BYTES_MIN,
++	.fifo_size = 16,
++};
++
++static void sf_spdif_pcm_transfer(struct sf_spdif_dev *dev, bool push)
++{
++	struct snd_pcm_substream *substream;
++	bool active, period_elapsed;
++
++	rcu_read_lock();
++	if (push)
++		substream = rcu_dereference(dev->tx_substream);
++	else
++		substream = rcu_dereference(dev->rx_substream);
++
++	active = substream && snd_pcm_running(substream);
++	if (active) {
++		unsigned int ptr;
++		unsigned int new_ptr;
++
++		if (push) {
++			ptr = READ_ONCE(dev->tx_ptr);
++			new_ptr = dev->tx_fn(dev, substream->runtime, ptr,
++					&period_elapsed, dev->format);
++			cmpxchg(&dev->tx_ptr, ptr, new_ptr);
++		} else {
++			ptr = READ_ONCE(dev->rx_ptr);
++			new_ptr = dev->rx_fn(dev, substream->runtime, ptr,
++					&period_elapsed, dev->format);
++			cmpxchg(&dev->rx_ptr, ptr, new_ptr);
++		}
++
++		if (period_elapsed)
++			snd_pcm_period_elapsed(substream);
++	}
++	rcu_read_unlock();
++}
++
++void sf_spdif_pcm_push_tx(struct sf_spdif_dev *dev)
++{
++	sf_spdif_pcm_transfer(dev, true);
++}
++
++void sf_spdif_pcm_pop_rx(struct sf_spdif_dev *dev)
++{
++	sf_spdif_pcm_transfer(dev, false);
++}
++
++static int sf_pcm_open(struct snd_soc_component *component,
++		       struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct sf_spdif_dev *dev = snd_soc_dai_get_drvdata(asoc_rtd_to_cpu(rtd, 0));
++
++	snd_soc_set_runtime_hwparams(substream, &sf_pcm_hardware);
++	snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
++	runtime->private_data = dev;
++
++	return 0;
++}
++
++static int sf_pcm_close(struct snd_soc_component *component,
++			struct snd_pcm_substream *substream)
++{
++	synchronize_rcu();
++	return 0;
++}
++
++static int sf_pcm_hw_params(struct snd_soc_component *component,
++			    struct snd_pcm_substream *substream,
++			    struct snd_pcm_hw_params *hw_params)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++
++	switch (params_channels(hw_params)) {
++	case 1:
++	case 2:
++		break;
++	default:
++		dev_err(dev->dev, "invalid channels number\n");
++		return -EINVAL;
++	}
++
++	dev->format = params_format(hw_params);
++	switch (dev->format) {
++	case SNDRV_PCM_FORMAT_S16_LE:
++	case SNDRV_PCM_FORMAT_S24_LE:
++	case SNDRV_PCM_FORMAT_S24_3LE:
++	case SNDRV_PCM_FORMAT_S32_LE:
++		break;
++	default:
++		dev_err(dev->dev, "invalid format\n");
++		return -EINVAL;
++	}
++
++	dev->tx_fn = sf_spdif_pcm_tx;
++	dev->rx_fn = sf_spdif_pcm_rx;
++
++	return 0;
++}
++
++static int sf_pcm_trigger(struct snd_soc_component *component,
++			  struct snd_pcm_substream *substream, int cmd)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++	int ret = 0;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++			WRITE_ONCE(dev->tx_ptr, 0);
++			rcu_assign_pointer(dev->tx_substream, substream);
++		} else {
++			WRITE_ONCE(dev->rx_ptr, 0);
++			rcu_assign_pointer(dev->rx_substream, substream);
++		}
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++			rcu_assign_pointer(dev->tx_substream, NULL);
++		else
++			rcu_assign_pointer(dev->rx_substream, NULL);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	return ret;
++}
++
++static snd_pcm_uframes_t sf_pcm_pointer(struct snd_soc_component *component,
++					struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sf_spdif_dev *dev = runtime->private_data;
++	snd_pcm_uframes_t pos;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		pos = READ_ONCE(dev->tx_ptr);
++	else
++		pos = READ_ONCE(dev->rx_ptr);
++
++	return pos < runtime->buffer_size ? pos : 0;
++}
++
++static int sf_pcm_new(struct snd_soc_component *component,
++		      struct snd_soc_pcm_runtime *rtd)
++{
++	size_t size = sf_pcm_hardware.buffer_bytes_max;
++
++	snd_pcm_set_managed_buffer_all(rtd->pcm,
++			SNDRV_DMA_TYPE_CONTINUOUS,
++			NULL, size, size);
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver sf_pcm_component = {
++	.open		= sf_pcm_open,
++	.close		= sf_pcm_close,
++	.hw_params	= sf_pcm_hw_params,
++	.trigger	= sf_pcm_trigger,
++	.pointer	= sf_pcm_pointer,
++	.pcm_construct	= sf_pcm_new,
++};
++
++int sf_spdif_pcm_register(struct platform_device *pdev)
++{
++	return devm_snd_soc_register_component(&pdev->dev, &sf_pcm_component,
++					       NULL, 0);
++}

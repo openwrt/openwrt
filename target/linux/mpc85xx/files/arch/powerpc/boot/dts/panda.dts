@@ -87,6 +87,7 @@
 			};
 
 			switch0: ethernet-phy@0 {
+				compatible = "brcm,bcm53128";
 				reg = <0x0>;
 
 				ports {
@@ -135,7 +136,8 @@
 
 					port@8 {
 						reg = <8>;
-						label = "cpu";
+						phy-mode = "rgmii-id";
+						ethernet = <&enet0>;
 
 						fixed-link {
 							speed = <1000>;
@@ -160,7 +162,6 @@
 
 		enet0: ethernet@b0000 {
 			phy-connection-type = "rgmii-id";
-			phy-handle = <&switch0>;
 
 			fixed-link {
 				speed = <1000>;

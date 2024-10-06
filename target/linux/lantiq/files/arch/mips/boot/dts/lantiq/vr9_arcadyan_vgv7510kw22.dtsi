@@ -169,6 +169,9 @@
 		label = "wan";
 		phy-mode = "mii";
 		phy-handle = <&phy1>;
+
+		nvmem-cells = <&macaddr_boardconfig_16 2>;
+		nvmem-cell-names = "mac-address";
 	};
 	port@2 {
 		reg = <2>;

@@ -6,6 +6,11 @@
 	compatible = "mediatek,mt7981-rfb", "mediatek,mt7981";
 
 	fragment@0 {
+		target = <&chosen>;
+		rootdisk-spim-nand = <&ubi_rootdisk>;
+	};
+
+	fragment@1 {
 		target = <&spi0>;
 		__overlay__ {
 			status = "okay";
@@ -50,13 +55,20 @@
 					partition@580000 {
 						label = "ubi";
 						reg = <0x580000 0x4000000>;
+						compatible = "linux,ubi";
+
+						volumes {
+							ubi_rootdisk: ubi-volume-fit {
+								volname = "fit";
+							};
+						};
 					};
 				};
 			};
 		};
 	};
 
-	fragment@1 {
+	fragment@2 {
 		target = <&wifi>;
 		__overlay__ {
 			mediatek,mtd-eeprom = <&factory 0x0>;

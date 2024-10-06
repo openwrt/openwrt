@@ -1,0 +1,200 @@
+From 68a1bbb99455fd5ea80b7e21ec726f369abc9572 Mon Sep 17 00:00:00 2001
+From: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Date: Wed, 15 Nov 2023 01:12:14 +0800
+Subject: [PATCH 010/116] crypto: starfive - RSA poll csr for done status
+
+Hardware could not clear irq status without resetting the entire module.
+Driver receives irq immediately when mask bit is cleared causing
+intermittent errors in RSA calculations. Switch to use csr polling for
+done status instead.
+
+Signed-off-by: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/starfive/jh7110-cryp.c |  8 -----
+ drivers/crypto/starfive/jh7110-cryp.h | 10 +++++-
+ drivers/crypto/starfive/jh7110-rsa.c  | 49 +++++++--------------------
+ 3 files changed, 22 insertions(+), 45 deletions(-)
+
+--- a/drivers/crypto/starfive/jh7110-cryp.c
++++ b/drivers/crypto/starfive/jh7110-cryp.c
+@@ -109,12 +109,6 @@ static irqreturn_t starfive_cryp_irq(int
+ 		tasklet_schedule(&cryp->hash_done);
+ 	}
+ 
+-	if (status & STARFIVE_IE_FLAG_PKA_DONE) {
+-		mask |= STARFIVE_IE_MASK_PKA_DONE;
+-		writel(mask, cryp->base + STARFIVE_IE_MASK_OFFSET);
+-		complete(&cryp->pka_done);
+-	}
+-
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -159,8 +153,6 @@ static int starfive_cryp_probe(struct pl
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(cryp->rst),
+ 				     "Error getting hardware reset line\n");
+ 
+-	init_completion(&cryp->pka_done);
+-
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+ 		return irq;
+--- a/drivers/crypto/starfive/jh7110-cryp.h
++++ b/drivers/crypto/starfive/jh7110-cryp.h
+@@ -126,6 +126,15 @@ union starfive_pka_cacr {
+ 	};
+ };
+ 
++union starfive_pka_casr {
++	u32 v;
++	struct {
++#define STARFIVE_PKA_DONE			BIT(0)
++		u32 done			:1;
++		u32 rsvd_0			:31;
++	};
++};
++
+ struct starfive_rsa_key {
+ 	u8	*n;
+ 	u8	*e;
+@@ -184,7 +193,6 @@ struct starfive_cryp_dev {
+ 	struct crypto_engine			*engine;
+ 	struct tasklet_struct			aes_done;
+ 	struct tasklet_struct			hash_done;
+-	struct completion			pka_done;
+ 	size_t					assoclen;
+ 	size_t					total_in;
+ 	size_t					total_out;
+--- a/drivers/crypto/starfive/jh7110-rsa.c
++++ b/drivers/crypto/starfive/jh7110-rsa.c
+@@ -6,13 +6,7 @@
+  */
+ 
+ #include <linux/crypto.h>
+-#include <linux/delay.h>
+-#include <linux/device.h>
+-#include <linux/dma-direct.h>
+-#include <linux/interrupt.h>
+ #include <linux/iopoll.h>
+-#include <linux/io.h>
+-#include <linux/mod_devicetable.h>
+ #include <crypto/akcipher.h>
+ #include <crypto/algapi.h>
+ #include <crypto/internal/akcipher.h>
+@@ -28,13 +22,13 @@
+ #define STARFIVE_PKA_CAER_OFFSET	(STARFIVE_PKA_REGS_OFFSET + 0x108)
+ #define STARFIVE_PKA_CANR_OFFSET	(STARFIVE_PKA_REGS_OFFSET + 0x208)
+ 
+-// R^2 mod N and N0'
++/* R ^ 2 mod N and N0' */
+ #define CRYPTO_CMD_PRE			0x0
+-// A * R mod N   ==> A
++/* A * R mod N   ==> A */
+ #define CRYPTO_CMD_ARN			0x5
+-// A * E * R mod N ==> A
++/* A * E * R mod N ==> A */
+ #define CRYPTO_CMD_AERN			0x6
+-// A * A * R mod N ==> A
++/* A * A * R mod N ==> A */
+ #define CRYPTO_CMD_AARN			0x7
+ 
+ #define STARFIVE_RSA_RESET		0x2
+@@ -42,21 +36,10 @@
+ static inline int starfive_pka_wait_done(struct starfive_cryp_ctx *ctx)
+ {
+ 	struct starfive_cryp_dev *cryp = ctx->cryp;
++	u32 status;
+ 
+-	return wait_for_completion_timeout(&cryp->pka_done,
+-					   usecs_to_jiffies(100000));
+-}
+-
+-static inline void starfive_pka_irq_mask_clear(struct starfive_cryp_ctx *ctx)
+-{
+-	struct starfive_cryp_dev *cryp = ctx->cryp;
+-	u32 stat;
+-
+-	stat = readl(cryp->base + STARFIVE_IE_MASK_OFFSET);
+-	stat &= ~STARFIVE_IE_MASK_PKA_DONE;
+-	writel(stat, cryp->base + STARFIVE_IE_MASK_OFFSET);
+-
+-	reinit_completion(&cryp->pka_done);
++	return readl_relaxed_poll_timeout(cryp->base + STARFIVE_PKA_CASR_OFFSET, status,
++					  status & STARFIVE_PKA_DONE, 10, 100000);
+ }
+ 
+ static void starfive_rsa_free_key(struct starfive_rsa_key *key)
+@@ -113,10 +96,9 @@ static int starfive_rsa_montgomery_form(
+ 		rctx->csr.pka.not_r2 = 1;
+ 		rctx->csr.pka.ie = 1;
+ 
+-		starfive_pka_irq_mask_clear(ctx);
+ 		writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+-		if (!starfive_pka_wait_done(ctx))
++		if (starfive_pka_wait_done(ctx))
+ 			return -ETIMEDOUT;
+ 
+ 		for (loop = 0; loop <= opsize; loop++)
+@@ -135,10 +117,9 @@ static int starfive_rsa_montgomery_form(
+ 		rctx->csr.pka.start = 1;
+ 		rctx->csr.pka.ie = 1;
+ 
+-		starfive_pka_irq_mask_clear(ctx);
+ 		writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+-		if (!starfive_pka_wait_done(ctx))
++		if (starfive_pka_wait_done(ctx))
+ 			return -ETIMEDOUT;
+ 	} else {
+ 		rctx->csr.pka.v = 0;
+@@ -150,10 +131,9 @@ static int starfive_rsa_montgomery_form(
+ 		rctx->csr.pka.pre_expf = 1;
+ 		rctx->csr.pka.ie = 1;
+ 
+-		starfive_pka_irq_mask_clear(ctx);
+ 		writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+-		if (!starfive_pka_wait_done(ctx))
++		if (starfive_pka_wait_done(ctx))
+ 			return -ETIMEDOUT;
+ 
+ 		for (loop = 0; loop <= count; loop++)
+@@ -171,10 +151,9 @@ static int starfive_rsa_montgomery_form(
+ 		rctx->csr.pka.start = 1;
+ 		rctx->csr.pka.ie = 1;
+ 
+-		starfive_pka_irq_mask_clear(ctx);
+ 		writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+-		if (!starfive_pka_wait_done(ctx))
++		if (starfive_pka_wait_done(ctx))
+ 			return -ETIMEDOUT;
+ 	}
+ 
+@@ -225,11 +204,10 @@ static int starfive_rsa_cpu_start(struct
+ 		rctx->csr.pka.start = 1;
+ 		rctx->csr.pka.ie = 1;
+ 
+-		starfive_pka_irq_mask_clear(ctx);
+ 		writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+ 		ret = -ETIMEDOUT;
+-		if (!starfive_pka_wait_done(ctx))
++		if (starfive_pka_wait_done(ctx))
+ 			goto rsa_err;
+ 
+ 		if (mlen) {
+@@ -241,10 +219,9 @@ static int starfive_rsa_cpu_start(struct
+ 			rctx->csr.pka.start = 1;
+ 			rctx->csr.pka.ie = 1;
+ 
+-			starfive_pka_irq_mask_clear(ctx);
+ 			writel(rctx->csr.pka.v, cryp->base + STARFIVE_PKA_CACR_OFFSET);
+ 
+-			if (!starfive_pka_wait_done(ctx))
++			if (starfive_pka_wait_done(ctx))
+ 				goto rsa_err;
+ 		}
+ 	}

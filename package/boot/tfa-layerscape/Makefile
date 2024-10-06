@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tfa-layerscape
-PKG_VERSION:=6.6.3.1.0.0
-PKG_RELEASE:=1
+PKG_VERSION:=6.6.23.2.0.0
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/atf
-PKG_SOURCE_VERSION:=lf-6.6.3-1.0.0
-PKG_MIRROR_HASH:=28b731c1c4cc3226ccaef2142c61127f213c03cbd219df556c1d191e95f8470c
+PKG_SOURCE_VERSION:=lf-6.6.23-2.0.0
+PKG_MIRROR_HASH:=628a95ba60a593ae0575ee9ede1154445ec3a86a07b18e4947e06e13c2b67859
 PKG_BUILD_DEPENDS:=tfa-layerscape/host
 
 include $(INCLUDE_DIR)/host-build.mk
@@ -25,7 +25,7 @@ HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/fiptool \
-		PLAT_FIPTOOL_HELPER_MK="$(HOST_BUILD_DIR)/tools/nxp/plat_fiptool/plat_fiptool.mk" \
+		PLAT_FIPTOOL_HELPER_MK="$(HOST_BUILD_DIR)/tools/fiptool/plat_fiptool/nxp/plat_fiptool.mk" \
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		HOSTCCFLAGS="$(HOST_CFLAGS)"

@@ -26,7 +26,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2340,6 +2340,9 @@ struct wpa_driver_capa {
+@@ -2390,6 +2390,9 @@ struct wpa_driver_capa {
  	/** Maximum number of iterations in a single scan plan */
  	u32 max_sched_scan_plan_iterations;
  
@@ -38,7 +38,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
 --- a/src/drivers/driver_nl80211_capa.c
 +++ b/src/drivers/driver_nl80211_capa.c
-@@ -972,6 +972,10 @@ static int wiphy_info_handler(struct nl_
+@@ -976,6 +976,10 @@ static int wiphy_info_handler(struct nl_
  			nla_get_u32(tb[NL80211_ATTR_MAX_SCAN_PLAN_ITERATIONS]);
  	}
  
@@ -51,7 +51,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  			nla_get_u8(tb[NL80211_ATTR_MAX_MATCH_SETS]);
 --- a/src/drivers/driver_nl80211_scan.c
 +++ b/src/drivers/driver_nl80211_scan.c
-@@ -221,7 +221,7 @@ nl80211_scan_common(struct i802_bss *bss
+@@ -235,7 +235,7 @@ nl80211_scan_common(struct i802_bss *bss
  		wpa_printf(MSG_DEBUG, "nl80211: Passive scan requested");
  	}
  

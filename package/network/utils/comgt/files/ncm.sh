@@ -20,6 +20,7 @@ proto_ncm_init_config() {
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_int profile
 	proto_config_add_defaults
 }
@@ -30,7 +31,7 @@ proto_ncm_setup() {
 	local manufacturer initialize setmode connect finalize devname devpath ifpath
 
 	local device ifname  apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
-	json_get_vars device ifname apn auth username password pincode delay mode pdptype sourcefilter profile $PROTO_DEFAULT_OPTIONS
+	json_get_vars device ifname apn auth username password pincode delay mode pdptype sourcefilter delegate profile $PROTO_DEFAULT_OPTIONS
 
 	local context_type
 
@@ -203,6 +204,7 @@ proto_ncm_setup() {
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcpv6"
 		json_add_string extendprefix 1
+		[ "$delegate" = "0" ] && json_add_boolean delegate "0"
 		[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 		proto_add_dynamic_defaults
 		[ -n "$zone" ] && {

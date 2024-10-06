@@ -14,7 +14,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -971,6 +971,9 @@ struct wpa_driver_associate_params {
+@@ -1004,6 +1004,9 @@ struct wpa_driver_associate_params {
  	 * responsible for selecting with which BSS to associate. */
  	const u8 *bssid;
  
@@ -155,7 +155,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	 * macsec_policy - Determines the policy for MACsec secure session
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -4249,6 +4249,12 @@ static void wpas_start_assoc_cb(struct w
+@@ -4435,6 +4435,12 @@ static void wpas_start_assoc_cb(struct w
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;

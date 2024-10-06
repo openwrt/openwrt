@@ -1,0 +1,309 @@
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Fri, 6 Sep 2024 12:14:22 +0530
+Subject: [PATCH] wifi: cfg80211: move DFS related members to links[] in
+ wireless_dev
+
+A few members related to DFS handling are currently under per wireless
+device data structure. However, in order to support DFS with MLO, there is
+a need to have them on a per-link manner.
+
+Hence, as a preliminary step, move members cac_started, cac_start_time
+and cac_time_ms to be on a per-link basis.
+
+Since currently, link ID is not known at all places, use default value of
+0 for now.
+
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Link: https://patch.msgid.link/20240906064426.2101315-5-quic_adisi@quicinc.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/drivers/net/wireless/marvell/mwifiex/11h.c
++++ b/drivers/net/wireless/marvell/mwifiex/11h.c
+@@ -117,7 +117,7 @@ void mwifiex_dfs_cac_work_queue(struct w
+ 				     dfs_cac_work);
+ 
+ 	chandef = priv->dfs_chandef;
+-	if (priv->wdev.cac_started) {
++	if (priv->wdev.links[0].cac_started) {
+ 		mwifiex_dbg(priv->adapter, MSG,
+ 			    "CAC timer finished; No radar detected\n");
+ 		cfg80211_cac_event(priv->netdev, &chandef,
+@@ -174,7 +174,7 @@ int mwifiex_stop_radar_detection(struct
+  */
+ void mwifiex_abort_cac(struct mwifiex_private *priv)
+ {
+-	if (priv->wdev.cac_started) {
++	if (priv->wdev.links[0].cac_started) {
+ 		if (mwifiex_stop_radar_detection(priv, &priv->dfs_chandef))
+ 			mwifiex_dbg(priv->adapter, ERROR,
+ 				    "failed to stop CAC in FW\n");
+--- a/drivers/net/wireless/marvell/mwifiex/cfg80211.c
++++ b/drivers/net/wireless/marvell/mwifiex/cfg80211.c
+@@ -1880,7 +1880,7 @@ mwifiex_cfg80211_del_station(struct wiph
+ 	struct mwifiex_sta_node *sta_node;
+ 	u8 deauth_mac[ETH_ALEN];
+ 
+-	if (!priv->bss_started && priv->wdev.cac_started) {
++	if (!priv->bss_started && priv->wdev.links[0].cac_started) {
+ 		mwifiex_dbg(priv->adapter, INFO, "%s: abort CAC!\n", __func__);
+ 		mwifiex_abort_cac(priv);
+ 	}
+@@ -3978,7 +3978,7 @@ mwifiex_cfg80211_channel_switch(struct w
+ 		return -EBUSY;
+ 	}
+ 
+-	if (priv->wdev.cac_started)
++	if (priv->wdev.links[0].cac_started)
+ 		return -EBUSY;
+ 
+ 	if (cfg80211_chandef_identical(&params->chandef,
+--- a/drivers/net/wireless/quantenna/qtnfmac/event.c
++++ b/drivers/net/wireless/quantenna/qtnfmac/event.c
+@@ -520,21 +520,21 @@ static int qtnf_event_handle_radar(struc
+ 		cfg80211_radar_event(wiphy, &chandef, GFP_KERNEL);
+ 		break;
+ 	case QLINK_RADAR_CAC_FINISHED:
+-		if (!vif->wdev.cac_started)
++		if (!vif->wdev.links[0].cac_started)
+ 			break;
+ 
+ 		cfg80211_cac_event(vif->netdev, &chandef,
+ 				   NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
+ 		break;
+ 	case QLINK_RADAR_CAC_ABORTED:
+-		if (!vif->wdev.cac_started)
++		if (!vif->wdev.links[0].cac_started)
+ 			break;
+ 
+ 		cfg80211_cac_event(vif->netdev, &chandef,
+ 				   NL80211_RADAR_CAC_ABORTED, GFP_KERNEL);
+ 		break;
+ 	case QLINK_RADAR_CAC_STARTED:
+-		if (vif->wdev.cac_started)
++		if (vif->wdev.links[0].cac_started)
+ 			break;
+ 
+ 		if (!wiphy_ext_feature_isset(wiphy,
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -6198,9 +6198,6 @@ enum ieee80211_ap_reg_power {
+  * @address: The address for this device, valid only if @netdev is %NULL
+  * @is_running: true if this is a non-netdev device that has been started, e.g.
+  *	the P2P Device.
+- * @cac_started: true if DFS channel availability check has been started
+- * @cac_start_time: timestamp (jiffies) when the dfs state was entered.
+- * @cac_time_ms: CAC time in ms
+  * @ps: powersave mode is enabled
+  * @ps_timeout: dynamic powersave timeout
+  * @ap_unexpected_nlportid: (private) netlink port ID of application
+@@ -6224,6 +6221,11 @@ enum ieee80211_ap_reg_power {
+  *	unprotected beacon report
+  * @links: array of %IEEE80211_MLD_MAX_NUM_LINKS elements containing @addr
+  *	@ap and @client for each link
++ * @links[].cac_started: true if DFS channel availability check has been
++ *	started
++ * @links[].cac_start_time: timestamp (jiffies) when the dfs state was
++ *	entered.
++ * @links[].cac_time_ms: CAC time in ms
+  * @valid_links: bitmap describing what elements of @links are valid
+  */
+ struct wireless_dev {
+@@ -6265,11 +6267,6 @@ struct wireless_dev {
+ 	u32 owner_nlportid;
+ 	bool nl_owner_dead;
+ 
+-	/* FIXME: need to rework radar detection for MLO */
+-	bool cac_started;
+-	unsigned long cac_start_time;
+-	unsigned int cac_time_ms;
+-
+ #ifdef CPTCFG_CFG80211_WEXT
+ 	/* wext data */
+ 	struct {
+@@ -6336,6 +6333,10 @@ struct wireless_dev {
+ 				struct cfg80211_internal_bss *current_bss;
+ 			} client;
+ 		};
++
++		bool cac_started;
++		unsigned long cac_start_time;
++		unsigned int cac_time_ms;
+ 	} links[IEEE80211_MLD_MAX_NUM_LINKS];
+ 	u16 valid_links;
+ };
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1656,7 +1656,7 @@ static int ieee80211_stop_ap(struct wiph
+ 	ieee80211_link_info_change_notify(sdata, link,
+ 					  BSS_CHANGED_BEACON_ENABLED);
+ 
+-	if (sdata->wdev.cac_started) {
++	if (sdata->wdev.links[0].cac_started) {
+ 		chandef = link_conf->chanreq.oper;
+ 		wiphy_delayed_work_cancel(wiphy, &link->dfs_cac_timer_work);
+ 		cfg80211_cac_event(sdata->dev, &chandef,
+@@ -3498,9 +3498,9 @@ static void ieee80211_end_cac(struct wip
+ 		wiphy_delayed_work_cancel(wiphy,
+ 					  &sdata->deflink.dfs_cac_timer_work);
+ 
+-		if (sdata->wdev.cac_started) {
++		if (sdata->wdev.links[0].cac_started) {
+ 			ieee80211_link_release_channel(&sdata->deflink);
+-			sdata->wdev.cac_started = false;
++			sdata->wdev.links[0].cac_started = false;
+ 		}
+ 	}
+ }
+@@ -3955,7 +3955,7 @@ __ieee80211_channel_switch(struct wiphy
+ 	if (!list_empty(&local->roc_list) || local->scanning)
+ 		return -EBUSY;
+ 
+-	if (sdata->wdev.cac_started)
++	if (sdata->wdev.links[0].cac_started)
+ 		return -EBUSY;
+ 
+ 	if (WARN_ON(link_id >= IEEE80211_MLD_MAX_NUM_LINKS))
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -553,7 +553,7 @@ static void ieee80211_do_stop(struct iee
+ 	wiphy_delayed_work_cancel(local->hw.wiphy,
+ 				  &sdata->deflink.dfs_cac_timer_work);
+ 
+-	if (sdata->wdev.cac_started) {
++	if (sdata->wdev.links[0].cac_started) {
+ 		chandef = sdata->vif.bss_conf.chanreq.oper;
+ 		WARN_ON(local->suspended);
+ 		ieee80211_link_release_channel(&sdata->deflink);
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3039,7 +3039,7 @@ void ieee80211_dfs_cac_timer_work(struct
+ 
+ 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
+ 
+-	if (sdata->wdev.cac_started) {
++	if (sdata->wdev.links[0].cac_started) {
+ 		ieee80211_link_release_channel(link);
+ 		cfg80211_cac_event(sdata->dev, &chandef,
+ 				   NL80211_RADAR_CAC_FINISHED,
+--- a/net/mac80211/scan.c
++++ b/net/mac80211/scan.c
+@@ -585,7 +585,7 @@ static bool __ieee80211_can_leave_ch(str
+ 		return false;
+ 
+ 	list_for_each_entry(sdata_iter, &local->interfaces, list) {
+-		if (sdata_iter->wdev.cac_started)
++		if (sdata_iter->wdev.links[0].cac_started)
+ 			return false;
+ 	}
+ 
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -3462,7 +3462,7 @@ void ieee80211_dfs_cac_cancel(struct iee
+ 		wiphy_delayed_work_cancel(local->hw.wiphy,
+ 					  &sdata->deflink.dfs_cac_timer_work);
+ 
+-		if (sdata->wdev.cac_started) {
++		if (sdata->wdev.links[0].cac_started) {
+ 			chandef = sdata->vif.bss_conf.chanreq.oper;
+ 			ieee80211_link_release_channel(&sdata->deflink);
+ 			cfg80211_cac_event(sdata->dev,
+--- a/net/wireless/ibss.c
++++ b/net/wireless/ibss.c
+@@ -94,7 +94,7 @@ int __cfg80211_join_ibss(struct cfg80211
+ 
+ 	lockdep_assert_held(&rdev->wiphy.mtx);
+ 
+-	if (wdev->cac_started)
++	if (wdev->links[0].cac_started)
+ 		return -EBUSY;
+ 
+ 	if (wdev->u.ibss.ssid_len)
+--- a/net/wireless/mesh.c
++++ b/net/wireless/mesh.c
+@@ -127,7 +127,7 @@ int __cfg80211_join_mesh(struct cfg80211
+ 	if (!rdev->ops->join_mesh)
+ 		return -EOPNOTSUPP;
+ 
+-	if (wdev->cac_started)
++	if (wdev->links[0].cac_started)
+ 		return -EBUSY;
+ 
+ 	if (!setup->chandef.chan) {
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -1124,13 +1124,14 @@ void cfg80211_cac_event(struct net_devic
+ 
+ 	trace_cfg80211_cac_event(netdev, event);
+ 
+-	if (WARN_ON(!wdev->cac_started && event != NL80211_RADAR_CAC_STARTED))
++	if (WARN_ON(!wdev->links[0].cac_started &&
++		    event != NL80211_RADAR_CAC_STARTED))
+ 		return;
+ 
+ 	switch (event) {
+ 	case NL80211_RADAR_CAC_FINISHED:
+-		timeout = wdev->cac_start_time +
+-			  msecs_to_jiffies(wdev->cac_time_ms);
++		timeout = wdev->links[0].cac_start_time +
++			  msecs_to_jiffies(wdev->links[0].cac_time_ms);
+ 		WARN_ON(!time_after_eq(jiffies, timeout));
+ 		cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
+ 		memcpy(&rdev->cac_done_chandef, chandef,
+@@ -1139,10 +1140,10 @@ void cfg80211_cac_event(struct net_devic
+ 		cfg80211_sched_dfs_chan_update(rdev);
+ 		fallthrough;
+ 	case NL80211_RADAR_CAC_ABORTED:
+-		wdev->cac_started = false;
++		wdev->links[0].cac_started = false;
+ 		break;
+ 	case NL80211_RADAR_CAC_STARTED:
+-		wdev->cac_started = true;
++		wdev->links[0].cac_started = true;
+ 		break;
+ 	default:
+ 		WARN_ON(1);
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -6066,7 +6066,7 @@ static int nl80211_start_ap(struct sk_bu
+ 	if (!rdev->ops->start_ap)
+ 		return -EOPNOTSUPP;
+ 
+-	if (wdev->cac_started)
++	if (wdev->links[0].cac_started)
+ 		return -EBUSY;
+ 
+ 	if (wdev->links[link_id].ap.beacon_interval)
+@@ -10122,7 +10122,7 @@ static int nl80211_start_radar_detection
+ 		goto unlock;
+ 	}
+ 
+-	if (cfg80211_beaconing_iface_active(wdev) || wdev->cac_started) {
++	if (cfg80211_beaconing_iface_active(wdev) || wdev->links[0].cac_started) {
+ 		err = -EBUSY;
+ 		goto unlock;
+ 	}
+@@ -10158,9 +10158,9 @@ static int nl80211_start_radar_detection
+ 		default:
+ 			break;
+ 		}
+-		wdev->cac_started = true;
+-		wdev->cac_start_time = jiffies;
+-		wdev->cac_time_ms = cac_time_ms;
++		wdev->links[0].cac_started = true;
++		wdev->links[0].cac_start_time = jiffies;
++		wdev->links[0].cac_time_ms = cac_time_ms;
+ 	}
+ unlock:
+ 	wiphy_unlock(wiphy);
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -4241,7 +4241,7 @@ static void cfg80211_check_and_end_cac(s
+ 	list_for_each_entry(wdev, &rdev->wiphy.wdev_list, list) {
+ 		struct cfg80211_chan_def *chandef;
+ 
+-		if (!wdev->cac_started)
++		if (!wdev->links[0].cac_started)
+ 			continue;
+ 
+ 		/* FIXME: radar detection is tied to link 0 for now */

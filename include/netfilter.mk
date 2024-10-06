@@ -131,9 +131,6 @@ $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, $(P_XT)xt_HL))
 # iprange
 $(eval $(call nf_add,IPT_IPRANGE,CONFIG_NETFILTER_XT_MATCH_IPRANGE, $(P_XT)xt_iprange))
 
-#clusterip
-$(eval $(call nf_add,IPT_CLUSTERIP,CONFIG_IP_NF_TARGET_CLUSTERIP, $(P_V4)ipt_CLUSTERIP))
-
 # ipsec
 $(eval $(call nf_add,IPT_IPSEC,CONFIG_IP_NF_MATCH_AH, $(P_V4)ipt_ah))
 $(eval $(call nf_add,IPT_IPSEC,CONFIG_NETFILTER_XT_MATCH_ESP, $(P_XT)xt_esp))
@@ -207,6 +204,8 @@ $(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp))
 # nathelper-extra
 
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_BROADCAST, $(P_XT)nf_conntrack_broadcast))
+$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_NETBIOS_NS, $(P_XT)nf_conntrack_netbios_ns))
+$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_SANE, $(P_XT)nf_conntrack_sane))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_AMANDA, $(P_XT)nf_conntrack_amanda))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_XT)nf_nat_amanda))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_H323, $(P_XT)nf_conntrack_h323))
@@ -369,7 +368,6 @@ IPT_BUILTIN += $(IPT_FLOW-y) $(IPT_FLOW-m)
 IPT_BUILTIN += $(IPT_IPOPT-y)
 IPT_BUILTIN += $(IPT_IPRANGE-y)
 IPT_BUILTIN += $(IPT_CLUSTER-y)
-IPT_BUILTIN += $(IPT_CLUSTERIP-y)
 IPT_BUILTIN += $(IPT_IPSEC-y)
 IPT_BUILTIN += $(IPT_IPV6-y) $(IPT_IPV6-m)
 IPT_BUILTIN += $(NF_NAT-y)

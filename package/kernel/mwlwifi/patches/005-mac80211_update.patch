@@ -68,6 +68,15 @@
  			sta->tdls,
  			sta->tdls_initiator,
  			sta->wme,
+@@ -1158,7 +1158,7 @@ static ssize_t mwl_debugfs_dfs_radar_wri
+ 	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
+ 
+ 	wiphy_info(priv->hw->wiphy, "simulate radar detected\n");
+-	ieee80211_radar_detected(priv->hw);
++	ieee80211_radar_detected(priv->hw, NULL);
+ 
+ 	return count;
+ }
 --- a/hif/fwcmd.c
 +++ b/hif/fwcmd.c
 @@ -633,11 +633,15 @@ einval:
@@ -358,6 +367,15 @@
 +}
 --- a/mac80211.c
 +++ b/mac80211.c
+@@ -159,7 +159,7 @@ fwcmd_fail:
+ 	return rc;
+ }
+ 
+-static void mwl_mac80211_stop(struct ieee80211_hw *hw)
++static void mwl_mac80211_stop(struct ieee80211_hw *hw, bool suspend)
+ {
+ 	mwl_fwcmd_radio_disable(hw);
+ 
 @@ -368,15 +368,15 @@ static void mwl_mac80211_bss_info_change
  		}
  	}
@@ -482,3 +500,32 @@
  
  	switch (format) {
  	case TX_RATE_FORMAT_LEGACY:
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -546,7 +546,7 @@ static irqreturn_t pcie_isr_8864(struct
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
+ 			wiphy_info(hw->wiphy, "radar detected by firmware\n");
+-			ieee80211_radar_detected(hw);
++			ieee80211_radar_detected(hw, NULL);
+ 		}
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH) ieee80211_queue_work(hw, &priv->chnl_switch_handle);
+@@ -593,7 +593,7 @@ static irqreturn_t pcie_isr_8997(struct
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
+ 			wiphy_info(hw->wiphy, "radar detected by firmware\n");
+-			ieee80211_radar_detected(hw);
++			ieee80211_radar_detected(hw, NULL);
+ 		}
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH)
+@@ -1071,7 +1071,7 @@ static irqreturn_t pcie_isr_ndp(struct i
+ 
+ 		if (int_status & MACREG_A2HRIC_NEWDP_DFS) {
+ 			wiphy_info(hw->wiphy, "radar detected by firmware\n");
+-			ieee80211_radar_detected(hw);
++			ieee80211_radar_detected(hw, NULL);
+ 		}
+ 
+ 		if (int_status & MACREG_A2HRIC_NEWDP_CHANNEL_SWITCH)

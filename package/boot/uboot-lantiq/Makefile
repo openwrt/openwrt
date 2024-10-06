@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=2013.10
-PKG_RELEASE:=66
+PKG_RELEASE:=67
 
 PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
 
@@ -280,14 +280,14 @@ define U-Boot/fb3370_sfspl
 endef
 
 define U-Boot/p2812hnufx_ram
-  NAME:=ZyXEL P-2812HNU-Fx (RAM)
+  NAME:=Zyxel P-2812HNU-Fx (RAM)
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=zyxel_p-2812hnu-f1
   DDR_SETTINGS:=board/zyxel/p2812hnufx/ddr_settings.h
 endef
 
 define U-Boot/p2812hnufx_nandspl
-  NAME:=ZyXEL P-2812HNU-Fx (NAND SPL)
+  NAME:=Zyxel P-2812HNU-Fx (NAND SPL)
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=zyxel_p-2812hnu-f1
   UBOOT_IMAGE:=u-boot.ltq.lzo.nandspl

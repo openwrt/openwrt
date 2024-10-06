@@ -1,0 +1,33 @@
+From 0dbdc763f10c5cfa968dffc290a7c060ee740172 Mon Sep 17 00:00:00 2001
+From: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Date: Mon, 4 Dec 2023 11:02:39 +0800
+Subject: [PATCH 013/116] crypto: starfive - Remove unneeded NULL checks
+
+NULL check before kfree_sensitive function is not needed.
+
+Signed-off-by: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202311301702.LxswfETY-lkp@intel.com/
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/starfive/jh7110-rsa.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+--- a/drivers/crypto/starfive/jh7110-rsa.c
++++ b/drivers/crypto/starfive/jh7110-rsa.c
+@@ -44,12 +44,9 @@ static inline int starfive_pka_wait_done
+ 
+ static void starfive_rsa_free_key(struct starfive_rsa_key *key)
+ {
+-	if (key->d)
+-		kfree_sensitive(key->d);
+-	if (key->e)
+-		kfree_sensitive(key->e);
+-	if (key->n)
+-		kfree_sensitive(key->n);
++	kfree_sensitive(key->d);
++	kfree_sensitive(key->e);
++	kfree_sensitive(key->n);
+ 	memset(key, 0, sizeof(*key));
+ }
+ 

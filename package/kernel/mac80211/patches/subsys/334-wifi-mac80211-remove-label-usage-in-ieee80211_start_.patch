@@ -1,0 +1,50 @@
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Fri, 6 Sep 2024 12:14:20 +0530
+Subject: [PATCH] wifi: mac80211: remove label usage in
+ ieee80211_start_radar_detection()
+
+After locks rework [1], ieee80211_start_radar_detection() function is no
+longer acquiring any lock as such explicitly. Hence, it is not unlocking
+anything as well. However, label "out_unlock" is still used which creates
+confusion. Also, now there is no need of goto label as such.
+
+Get rid of the goto logic and use direct return statements.
+
+[1]: https://lore.kernel.org/all/20230828135928.b1c6efffe9ad.I4aec875e25abc9ef0b5ad1e70b5747fd483fbd3c@changeid/
+
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Link: https://patch.msgid.link/20240906064426.2101315-3-quic_adisi@quicinc.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -3468,10 +3468,8 @@ static int ieee80211_start_radar_detecti
+ 
+ 	lockdep_assert_wiphy(local->hw.wiphy);
+ 
+-	if (!list_empty(&local->roc_list) || local->scanning) {
+-		err = -EBUSY;
+-		goto out_unlock;
+-	}
++	if (!list_empty(&local->roc_list) || local->scanning)
++		return -EBUSY;
+ 
+ 	/* whatever, but channel contexts should not complain about that one */
+ 	sdata->deflink.smps_mode = IEEE80211_SMPS_OFF;
+@@ -3480,13 +3478,12 @@ static int ieee80211_start_radar_detecti
+ 	err = ieee80211_link_use_channel(&sdata->deflink, &chanreq,
+ 					 IEEE80211_CHANCTX_SHARED);
+ 	if (err)
+-		goto out_unlock;
++		return err;
+ 
+ 	wiphy_delayed_work_queue(wiphy, &sdata->deflink.dfs_cac_timer_work,
+ 				 msecs_to_jiffies(cac_time_ms));
+ 
+- out_unlock:
+-	return err;
++	return 0;
+ }
+ 
+ static void ieee80211_end_cac(struct wiphy *wiphy,

@@ -6,6 +6,8 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80100000
 
 DEVICE_VARS += \
+	BELKIN_HEADER \
+	BELKIN_MODEL \
         CAMEO_BOARD_MODEL \
         CAMEO_BOARD_VERSION \
         CAMEO_CUSTOMER_SIGNATURE \
@@ -14,6 +16,7 @@ DEVICE_VARS += \
         CAMEO_ROOTFS_PART \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
+	LINKSYS_HEADER \
         ZYXEL_VERS
 
 define Build/zyxel-vers
@@ -71,6 +74,16 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
+define Build/belkin-header
+	$(SCRIPT_DIR)/belkin-header.py $(@) $(@).new $(BELKIN_HEADER) ${BELKIN_MODEL}
+	mv $@.new $@
+endef
+
+define Build/linksys-image
+	$(SCRIPT_DIR)/linksys-image.sh $(@) $(@).new $(LINKSYS_MODEL)
+	mv $@.new $@
+endef
+
 define Device/Default
   PROFILES = Default
   KERNEL := \
@@ -83,7 +96,7 @@ define Device/Default
 	append-dtb | \
 	libdeflate-gzip | \
 	uImage gzip
-  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \

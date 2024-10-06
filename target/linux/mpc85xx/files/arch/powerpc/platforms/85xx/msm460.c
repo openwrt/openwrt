@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -36,7 +35,7 @@
 
 #include "mpc85xx.h"
 
-void __init msm_pic_init(void)
+static void __init msm_pic_init(void)
 {
 	struct mpic *mpic;
 
@@ -66,19 +65,9 @@ static void __init msm_setup_arch(void)
 
 machine_arch_initcall(msm, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init msm_probe(void)
-{
-	if (of_machine_is_compatible("hpe,msm460"))
-		return 1;
-	return 0;
-}
-
 define_machine(msm) {
 	.name			= "P1020 RDB",
-	.probe			= msm_probe,
+	.compatible		= "hpe,msm460",
 	.setup_arch		= msm_setup_arch,
 	.init_IRQ		= msm_pic_init,
 #ifdef CONFIG_PCI
@@ -86,6 +75,5 @@ define_machine(msm) {
 	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 	.get_irq		= mpic_get_irq,
-	.calibrate_decr		= generic_calibrate_decr,
 	.progress		= udbg_progress,
 };

@@ -1247,10 +1247,11 @@ config KERNEL_BTRFS_FS
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
+		default y if !SMALL_FLASH
 		help
 		  Make using ACLs (e.g. POSIX ACL, NFSv4 ACL) the default
-		  for kernel and packages, except tmpfs, flash filesystems,
-		  and old NFS.  Also enable userspace extended attribute support
+		  for kernel and packages, except old NFS.
+		  Also enable userspace extended attribute support
 		  by default.  (OpenWrt already has an expection it will be
 		  present in the kernel).
 
@@ -1271,14 +1272,17 @@ menu "Filesystem ACL and attr support options"
 	config KERNEL_F2FS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for F2FS Filesystems"
 		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_ATTR
 
 	config KERNEL_JFFS2_FS_POSIX_ACL
 		bool "Enable POSIX ACL for JFFS2 Filesystems"
 		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_ATTR
 
 	config KERNEL_TMPFS_POSIX_ACL
 		bool "Enable POSIX ACL for TMPFS Filesystems"
 		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_ATTR
 
 	config KERNEL_CIFS_ACL
 		bool "Enable CIFS ACLs"
@@ -1415,15 +1419,19 @@ config KERNEL_LSM
 
 config KERNEL_EXT4_FS_SECURITY
 	bool "Ext4 Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_F2FS_FS_SECURITY
 	bool "F2FS Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_UBIFS_FS_SECURITY
 	bool "UBIFS Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_JFFS2_FS_SECURITY
 	bool "JFFS2 Security Labels"
+	default y if !SMALL_FLASH
 
 config KERNEL_WERROR
 	bool "Compile the kernel with warnings as errors"

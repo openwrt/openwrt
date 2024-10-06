@@ -95,7 +95,7 @@
 +void show_boot_progress(int arg)
 +{
 +	if (!do_gpio_init)
-+		return 0;
++		return;
 +
 +	if (arg >= 0) {
 +		/* Success - turn off the red power LED and turn on the green power LED */
@@ -107,7 +107,7 @@
 +		gpio_set_value(GPIO_POWER_RED, 0);
 +	}
 +
-+	return 0;
++	return;
 +}
 +
 +static const struct ltq_eth_port_config eth_port_config[] = {

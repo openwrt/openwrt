@@ -30,8 +30,6 @@ case "$FIRMWARE" in
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
-	nec,wf1200cr|\
-	nec,wg1200cr|\
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x1000 0x440
@@ -62,14 +60,6 @@ case "$FIRMWARE" in
 	moxa,awk-1137c)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env mac_addr)
-		;;
-	nec,wg800hp)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
-		;;
-	qihoo,c301)
-		caldata_extract "radiocfg" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
 	tplink,deco-s4-v2)
 		caldata_extract "art" 0x1000 0x440

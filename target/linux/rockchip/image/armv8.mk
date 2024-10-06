@@ -1,9 +1,20 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright (C) 2020 Tobias Maedel
+# Copyright (C) 2020 Sarah Maedel
 
 # FIT will be loaded at 0x02080000. Leave 16M for that, align it to 2M and load the kernel after it.
 KERNEL_LOADADDR := 0x03200000
+
+define Device/armsom_sige7
+  DEVICE_VENDOR := ArmSoM
+  DEVICE_MODEL := Sige7
+  DEVICE_ALT0_VENDOR := Bananapi
+  DEVICE_ALT0_MODEL := BPi-M7
+  SOC := rk3588
+  DEVICE_DTS := rockchip/rk3588-armsom-sige7
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += armsom_sige7
 
 define Device/firefly_roc-rk3328-cc
   DEVICE_VENDOR := Firefly
@@ -21,6 +32,14 @@ define Device/friendlyarm_nanopc-t4
   DEVICE_PACKAGES := kmod-brcmfmac brcmfmac-nvram-4356-sdio cypress-firmware-4356-sdio
 endef
 TARGET_DEVICES += friendlyarm_nanopc-t4
+
+define Device/friendlyarm_nanopc-t6
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPC T6
+  SOC := rk3588
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += friendlyarm_nanopc-t6
 
 define Device/friendlyarm_nanopi-r2c
   DEVICE_VENDOR := FriendlyARM
@@ -81,6 +100,14 @@ define Device/friendlyarm_nanopi-r5s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r5s
 
+define Device/friendlyarm_nanopi-r6c
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R6C
+  SOC := rk3588s
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r6c
+
 define Device/friendlyarm_nanopi-r6s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R6S
@@ -132,6 +159,40 @@ define Device/radxa_rock-3a
 endef
 TARGET_DEVICES += radxa_rock-3a
 
+define Device/radxa_rock-3b
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3B
+  SOC := rk3568
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_rock-3b
+
+define Device/radxa_rock-3c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3C
+  SOC := rk3566
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_rock-3c
+
+define Device/radxa_rock-5a
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 5A
+  SOC := rk3588s
+  UBOOT_DEVICE_NAME := rock5a-rk3588s
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan
+endef
+TARGET_DEVICES += radxa_rock-5a
+
+define Device/radxa_rock-5b
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 5B
+  SOC := rk3588
+  UBOOT_DEVICE_NAME := rock5b-rk3588
+  DEVICE_PACKAGES := kmod-r8169 kmod-hwmon-pwmfan
+endef
+TARGET_DEVICES += radxa_rock-5b
+
 define Device/radxa_rock-pi-4a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi 4A
@@ -166,6 +227,26 @@ define Device/radxa_rock-pi-s
   DEVICE_PACKAGES := kmod-rtw88-8723ds kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-s
+
+define Device/radxa_zero-3e
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ZERO 3E
+  SOC := rk3566
+  DEVICE_DTS := rockchip/rk3566-radxa-zero-3e
+  UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_zero-3e
+
+define Device/radxa_zero-3w
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ZERO 3W
+  SOC := rk3566
+  DEVICE_DTS := rockchip/rk3566-radxa-zero-3w
+  UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_zero-3w
 
 define Device/sinovoip_bpi-r2-pro
   DEVICE_VENDOR := Sinovoip

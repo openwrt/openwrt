@@ -1,0 +1,41 @@
+From 7b8b9b5450b89d01e4b8f120b903cee85b529231 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:23 +0200
+Subject: [PATCH] pinctrl: aw9523: Sort headers and group pinctrl/*
+
+One header was misplaced and group pinctrl/* ones to show the relation
+with the pin control subsystem.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-10-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -13,17 +13,18 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/mutex.h>
+ #include <linux/module.h>
+-#include <linux/pinctrl/pinconf.h>
+-#include <linux/pinctrl/pinctrl.h>
+-#include <linux/pinctrl/pinmux.h>
+-#include <linux/pinctrl/pinconf-generic.h>
++#include <linux/mutex.h>
+ #include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/slab.h>
+ 
++#include <linux/pinctrl/pinconf-generic.h>
++#include <linux/pinctrl/pinconf.h>
++#include <linux/pinctrl/pinctrl.h>
++#include <linux/pinctrl/pinmux.h>
++
+ #define AW9523_MAX_FUNCS		2
+ #define AW9523_NUM_PORTS		2
+ #define AW9523_PINS_PER_PORT		8

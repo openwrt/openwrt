@@ -10,7 +10,7 @@ Avoids the 0x40000 cycles of warmup again if firmware has already used it
 
 --- a/drivers/char/hw_random/bcm2835-rng.c
 +++ b/drivers/char/hw_random/bcm2835-rng.c
-@@ -105,8 +105,10 @@ static int bcm2835_rng_init(struct hwrng
+@@ -107,8 +107,10 @@ static int bcm2835_rng_init(struct hwrng
  	}
  
  	/* set warm-up count & enable */

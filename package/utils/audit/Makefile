@@ -6,14 +6,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=audit-userspace
-PKG_VERSION:=3.1.4
-PKG_RELEASE:=2
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/linux-audit/audit-userspace/archive/refs/tags/v$(PKG_VERSION).tar.gz?
-PKG_HASH:=aec501760acd13ebbe00e78b9b59f795d16a430b1d673628e346cd18905c594b
+PKG_VERSION:=3.1.5
+PKG_RELEASE:=1
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/linux-audit/$(PKG_NAME).git
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+PKG_MIRROR_HASH:=60f479476d4f1b0beadbe3e516ea67490d38ca9b01db53e56f52b1731340d5bb
+
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
-PKG_LICENSE:=GPL-2.0-or-later
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE:=GPL-2.0-or-later LGPL-2.1-or-later
+PKG_LICENSE_FILES:=COPYING COPYING.LIB
 PKG_CPE_ID:=cpe:/a:linux_audit_project:linux_audit
 
 PKG_CONFIG_DEPENDS:=CONFIG_KERNEL_IO_URING

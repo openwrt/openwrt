@@ -18,7 +18,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -3589,6 +3589,7 @@ static int vc4_hdmi_runtime_suspend(stru
+@@ -3595,6 +3595,7 @@ static int vc4_hdmi_runtime_suspend(stru
  {
  	struct vc4_hdmi *vc4_hdmi = dev_get_drvdata(dev);
  
@@ -26,7 +26,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	clk_disable_unprepare(vc4_hdmi->hsm_clock);
  
  	return 0;
-@@ -3621,6 +3622,10 @@ static int vc4_hdmi_runtime_resume(struc
+@@ -3627,6 +3628,10 @@ static int vc4_hdmi_runtime_resume(struc
  		goto err_disable_clk;
  	}
  

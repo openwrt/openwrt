@@ -179,12 +179,14 @@ endef
 define Device/aruba_ap-303
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303
+	DEVICE_DTS_CONFIG := Glenmorangie@1
 endef
 TARGET_DEVICES += aruba_ap-303
 
 define Device/aruba_ap-303h
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303H
+	DEVICE_DTS_CONFIG := Aberlour@1
 endef
 TARGET_DEVICES += aruba_ap-303h
 
@@ -192,6 +194,7 @@ define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-365
 	DEVICE_PACKAGES := kmod-hwmon-ad7418
+	DEVICE_DTS_CONFIG := Bunker@1
 endef
 TARGET_DEVICES += aruba_ap-365
 
@@ -1279,7 +1282,7 @@ TARGET_DEVICES += zte_mf289f
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)
-	DEVICE_VENDOR := ZyXEL
+	DEVICE_VENDOR := Zyxel
 	DEVICE_MODEL := NBG6617
 	SOC := qcom-ipq4018
 	KERNEL_SIZE := 4096k
@@ -1289,7 +1292,7 @@ define Device/zyxel_nbg6617
 	RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	IMAGES += factory.bin
-#	The ZyXEL firmware allows flashing thru the web-gui only when the rootfs is
+#	The Zyxel firmware allows flashing thru the web-gui only when the rootfs is
 #	at least as large as the one of the initial firmware image (not the current
 #	one on the device). This only applies to the Web-UI, the bootlaoder ignores
 #	this minimum-size. However, the larger image can be flashed both ways.
@@ -1301,7 +1304,7 @@ TARGET_DEVICES += zyxel_nbg6617
 
 define Device/zyxel_wre6606
 	$(call Device/FitImage)
-	DEVICE_VENDOR := ZyXEL
+	DEVICE_VENDOR := Zyxel
 	DEVICE_MODEL := WRE6606
 	DEVICE_DTS_CONFIG := config@4
 	SOC := qcom-ipq4018

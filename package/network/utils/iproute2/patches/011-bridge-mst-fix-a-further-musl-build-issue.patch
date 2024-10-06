@@ -1,0 +1,51 @@
+From 043ef90e2fa94397eb5c85330889ca4146a6d58a Mon Sep 17 00:00:00 2001
+From: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Date: Sun, 22 Sep 2024 16:50:11 +0200
+Subject: bridge: mst: fix a further musl build issue
+
+This patch fixes the following build errors:
+
+In file included from mst.c:11:
+../include/json_print.h:80:30: warning: 'struct timeval' declared inside parameter list will not be visible outside of this definition or declaration
+   80 | _PRINT_FUNC(tv, const struct timeval *)
+      |                              ^~~~~~~
+../include/json_print.h:50:37: note: in definition of macro '_PRINT_FUNC'
+   50 |                                     type value);                        \
+      |                                     ^~~~
+../include/json_print.h:80:30: warning: 'struct timeval' declared inside parameter list will not be visible outside of this definition or declaration
+   80 | _PRINT_FUNC(tv, const struct timeval *)
+      |                              ^~~~~~~
+../include/json_print.h:55:45: note: in definition of macro '_PRINT_FUNC'
+   55 |                                             type value)                 \
+      |                                             ^~~~
+../include/json_print.h: In function 'print_tv':
+../include/json_print.h:58:48: error: passing argument 5 of 'print_color_tv' from incompatible pointer type [-Wincompatible-pointer-types]
+   58 |                                                value);                  \
+      |                                                ^~~~~
+      |                                                |
+      |                                                const struct timeval *
+../include/json_print.h:80:1: note: in expansion of macro '_PRINT_FUNC'
+   80 | _PRINT_FUNC(tv, const struct timeval *)
+      | ^~~~~~~~~~~
+../include/json_print.h:50:42: note: expected 'const struct timeval *' but argument is of type 'const struct timeval *'
+   50 |                                     type value);                        \
+      |                                          ^
+../include/json_print.h:80:1: note: in expansion of macro '_PRINT_FUNC'
+   80 | _PRINT_FUNC(tv, const struct timeval *)
+
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
+---
+ bridge/mst.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/bridge/mst.c
++++ b/bridge/mst.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <sys/time.h>
+ #include <netinet/in.h>
+ #include <linux/if_bridge.h>
+ #include <net/if.h>

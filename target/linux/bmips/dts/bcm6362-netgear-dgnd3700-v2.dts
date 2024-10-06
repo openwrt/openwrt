@@ -42,12 +42,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led@28 {
+		led-28 {
 			label = "green:dsl";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: led@34 {
+		led_power_red: led-34 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;

@@ -1,0 +1,41 @@
+From e5e8a58023707472e5dbe9bc7b473a8703b401e0 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:15 +0200
+Subject: [PATCH] pinctrl: aw9523: Destroy mutex on ->remove()
+
+If aw9523_hw_init() fails on ->remove() the mutex left alive.
+Destroy it in that case as well. While at it, remove never
+true check at the beginning of the function.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-2-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -1067,10 +1067,6 @@ err_disable_vregs:
+ static void aw9523_remove(struct i2c_client *client)
+ {
+ 	struct aw9523 *awi = i2c_get_clientdata(client);
+-	int ret;
+-
+-	if (!awi)
+-		return;
+ 
+ 	/*
+ 	 * If the chip VIO is connected to a regulator that we can turn
+@@ -1082,10 +1078,8 @@ static void aw9523_remove(struct i2c_cli
+ 		regulator_disable(awi->vio_vreg);
+ 	} else {
+ 		mutex_lock(&awi->i2c_lock);
+-		ret = aw9523_hw_init(awi);
++		aw9523_hw_init(awi);
+ 		mutex_unlock(&awi->i2c_lock);
+-		if (ret)
+-			return;
+ 	}
+ 
+ 	mutex_destroy(&awi->i2c_lock);

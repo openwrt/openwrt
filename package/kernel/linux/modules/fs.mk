@@ -10,7 +10,7 @@ FS_MENU:=Filesystems
 define KernelPackage/fs-9p
   SUBMENU:=$(FS_MENU)
   TITLE:=Plan 9 Resource Sharing Support
-  DEPENDS:=+kmod-9pnet +LINUX_6_1:kmod-fs-netfs +LINUX_6_6:kmod-fs-netfs
+  DEPENDS:=+kmod-9pnet +kmod-fs-netfs
   KCONFIG:=\
 	CONFIG_9P_FS \
 	CONFIG_9P_FS_POSIX_ACL=n \
@@ -87,15 +87,12 @@ define KernelPackage/fs-smbfs-common
   SUBMENU:=$(FS_MENU)
   TITLE:=SMBFS common dependencies support
   HIDDEN:=1
-  DEPENDS:=+LINUX_6_6:kmod-fs-netfs +LINUX_6_6:kmod-nls-ucs2-utils
+  DEPENDS:=+kmod-fs-netfs +kmod-nls-ucs2-utils
   KCONFIG:=\
-	CONFIG_SMBFS_COMMON@lt6.1 \
-	CONFIG_SMBFS@ge6.1
+	CONFIG_SMBFS
   FILES:= \
-	$(LINUX_DIR)/fs/smbfs_common/cifs_arc4.ko@lt6.1 \
-	$(LINUX_DIR)/fs/smbfs_common/cifs_md4.ko@lt6.1 \
-	$(LINUX_DIR)/fs/smb/common/cifs_arc4.ko@ge6.1 \
-	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko@ge6.1
+	$(LINUX_DIR)/fs/smb/common/cifs_arc4.ko \
+	$(LINUX_DIR)/fs/smb/common/cifs_md4.ko
 endef
 
 define KernelPackage/fs-smbfs-common/description
@@ -113,8 +110,7 @@ define KernelPackage/fs-cifs
 	CONFIG_CIFS_DFS_UPCALL=n \
 	CONFIG_CIFS_UPCALL=n
   FILES:= \
-	$(LINUX_DIR)/fs/cifs/cifs.ko@lt6.1 \
-	$(LINUX_DIR)/fs/smb/client/cifs.ko@ge6.1
+	$(LINUX_DIR)/fs/smb/client/cifs.ko
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
   DEPENDS+= \
@@ -276,8 +272,8 @@ define KernelPackage/fs-fscache
 	CONFIG_CACHEFILES \
 	CONFIG_CACHEFILES_DEBUG=n \
 	CONFIG_CACHEFILES_HISTOGRAM=n \
-	CONFIG_CACHEFILES_ERROR_INJECTION=n@ge5.17 \
-	CONFIG_CACHEFILES_ONDEMAND=n@ge5.19
+	CONFIG_CACHEFILES_ERROR_INJECTION=n \
+	CONFIG_CACHEFILES_ONDEMAND=n
   FILES:= \
 	$(LINUX_DIR)/fs/fscache/fscache.ko \
 	$(LINUX_DIR)/fs/cachefiles/cachefiles.ko
@@ -344,7 +340,7 @@ define KernelPackage/fs-jfs
   KCONFIG:=CONFIG_JFS_FS
   FILES:=$(LINUX_DIR)/fs/jfs/jfs.ko
   AUTOLOAD:=$(call AutoLoad,30,jfs,1)
-  DEPENDS:=+LINUX_6_6:kmod-nls-ucs2-utils
+  DEPENDS:=+kmod-nls-ucs2-utils
   $(call AddDepends/nls)
 endef
 
@@ -380,8 +376,7 @@ define KernelPackage/fs-ksmbd
 	CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN=n \
 	CONFIG_SMB_SERVER_KERBEROS5=n
   FILES:= \
-	 $(LINUX_DIR)/fs/ksmbd/ksmbd.ko@lt6.1 \
-	 $(LINUX_DIR)/fs/smb/server/ksmbd.ko@ge6.1
+	 $(LINUX_DIR)/fs/smb/server/ksmbd.ko
   AUTOLOAD:=$(call AutoLoad,41,ksmbd)
 endef
 
@@ -707,13 +702,10 @@ define KernelPackage/pstore
   DEFAULT:=m if ALL_KMODS
   KCONFIG:= \
 	CONFIG_PSTORE \
-	CONFIG_PSTORE_COMPRESS=y \
-	CONFIG_PSTORE_COMPRESS_DEFAULT="deflate" \
-	CONFIG_PSTORE_DEFLATE_COMPRESS=y \
-	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
+	CONFIG_PSTORE_COMPRESS=y
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
-  DEPENDS:=+LINUX_6_6:kmod-lib-zlib-deflate +LINUX_6_6:kmod-lib-zlib-inflate
+  DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
 endef
 
 define KernelPackage/pstore/description

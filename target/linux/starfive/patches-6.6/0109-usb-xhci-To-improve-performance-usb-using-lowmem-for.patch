@@ -1,0 +1,297 @@
+From 146eb94a08d12b5831e1d30455469750f7c5f2a3 Mon Sep 17 00:00:00 2001
+From: "minda.chen" <minda.chen@starfivetech.com>
+Date: Tue, 18 Oct 2022 09:57:39 +0800
+Subject: [PATCH 109/116] usb:xhci:To improve performance,usb using lowmem for
+ bulk xfer.
+
+Generate an usb low memory pool for usb 3.0 host
+read/write transfer, default size is 8M.
+
+Signed-off-by: minda.chen <minda.chen@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/jh7110-evb.dts |  1 +
+ drivers/usb/core/hcd.c                      |  4 +-
+ drivers/usb/host/xhci-mem.c                 | 64 +++++++++++++++++++++
+ drivers/usb/host/xhci-plat.c                |  8 +++
+ drivers/usb/host/xhci-ring.c                |  3 +-
+ drivers/usb/host/xhci.c                     | 57 +++++++++++++++++-
+ drivers/usb/host/xhci.h                     | 11 ++++
+ 7 files changed, 145 insertions(+), 3 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-evb.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb.dts
+@@ -31,5 +31,6 @@
+ };
+ 
+ &usb0 {
++	xhci-lowmem-pool;
+ 	status = "okay";
+ };
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -1439,7 +1439,9 @@ int usb_hcd_map_urb_for_dma(struct usb_h
+ 			if (ret == 0)
+ 				urb->transfer_flags |= URB_MAP_LOCAL;
+ 		} else if (hcd_uses_dma(hcd)) {
+-			if (urb->num_sgs) {
++			if (urb->transfer_flags & URB_MAP_LOCAL)
++				return ret;
++			else if (urb->num_sgs) {
+ 				int n;
+ 
+ 				/* We don't support sg for isoc transfers ! */
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -14,6 +14,7 @@
+ #include <linux/slab.h>
+ #include <linux/dmapool.h>
+ #include <linux/dma-mapping.h>
++#include <linux/genalloc.h>
+ 
+ #include "xhci.h"
+ #include "xhci-trace.h"
+@@ -1842,6 +1843,7 @@ xhci_free_interrupter(struct xhci_hcd *x
+ void xhci_mem_cleanup(struct xhci_hcd *xhci)
+ {
+ 	struct device	*dev = xhci_to_hcd(xhci)->self.sysdev;
++	struct xhci_lowmem_pool *pool;
+ 	int i, j, num_ports;
+ 
+ 	cancel_delayed_work_sync(&xhci->cmd_timer);
+@@ -1887,6 +1889,13 @@ void xhci_mem_cleanup(struct xhci_hcd *x
+ 	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
+ 			"Freed medium stream array pool");
+ 
++	if (xhci->lowmem_pool.pool) {
++		pool = &xhci->lowmem_pool;
++		dma_free_coherent(dev, pool->size, (void *)pool->cached_base, pool->dma_addr);
++		gen_pool_destroy(pool->pool);
++		pool->pool = NULL;
++	}
++
+ 	if (xhci->dcbaa)
+ 		dma_free_coherent(dev, sizeof(*xhci->dcbaa),
+ 				xhci->dcbaa, xhci->dcbaa->dma);
+@@ -2300,6 +2309,55 @@ xhci_add_interrupter(struct xhci_hcd *xh
+ 	return 0;
+ }
+ 
++int xhci_setup_local_lowmem(struct xhci_hcd *xhci, size_t size)
++{
++	int err;
++	void *buffer;
++	dma_addr_t dma_addr;
++	struct usb_hcd *hcd = xhci_to_hcd(xhci);
++	struct xhci_lowmem_pool *pool = &xhci->lowmem_pool;
++
++	if (!pool->pool) {
++		/* minimal alloc one page */
++		pool->pool = gen_pool_create(PAGE_SHIFT, dev_to_node(hcd->self.sysdev));
++		if (IS_ERR(pool->pool))
++			return PTR_ERR(pool->pool);
++	}
++
++	buffer = dma_alloc_coherent(hcd->self.sysdev, size, &dma_addr,
++			GFP_KERNEL | GFP_DMA32);
++
++	if (IS_ERR(buffer)) {
++		err = PTR_ERR(buffer);
++		goto destroy_pool;
++	}
++
++	/*
++	 * Here we pass a dma_addr_t but the arg type is a phys_addr_t.
++	 * It's not backed by system memory and thus there's no kernel mapping
++	 * for it.
++	 */
++	err = gen_pool_add_virt(pool->pool, (unsigned long)buffer,
++				dma_addr, size, dev_to_node(hcd->self.sysdev));
++	if (err < 0) {
++		dev_err(hcd->self.sysdev, "gen_pool_add_virt failed with %d\n",
++			err);
++		dma_free_coherent(hcd->self.sysdev, size, buffer, dma_addr);
++		goto destroy_pool;
++	}
++
++	pool->cached_base = (u64)buffer;
++	pool->dma_addr = dma_addr;
++
++	return 0;
++
++destroy_pool:
++	gen_pool_destroy(pool->pool);
++	pool->pool = NULL;
++	return err;
++}
++EXPORT_SYMBOL_GPL(xhci_setup_local_lowmem);
++
+ int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
+ {
+ 	dma_addr_t	dma;
+@@ -2436,6 +2494,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+ 
+ 	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
+ 
++	if (xhci->quirks & XHCI_LOCAL_BUFFER) {
++		if (xhci_setup_local_lowmem(xhci,
++			xhci->lowmem_pool.size))
++			goto fail;
++	}
++
+ 	/*
+ 	 * XXX: Might need to set the Interrupter Moderation Register to
+ 	 * something other than the default (~1ms minimum between interrupts).
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -253,6 +253,14 @@ int xhci_plat_probe(struct platform_devi
+ 		if (device_property_read_bool(tmpdev, "xhci-sg-trb-cache-size-quirk"))
+ 			xhci->quirks |= XHCI_SG_TRB_CACHE_SIZE_QUIRK;
+ 
++		if (device_property_read_bool(tmpdev, "xhci-lowmem-pool")) {
++			xhci->quirks |= XHCI_LOCAL_BUFFER;
++			if (device_property_read_u32(tmpdev, "lowmem-pool-size",
++				&xhci->lowmem_pool.size)) {
++				xhci->lowmem_pool.size = 8 << 20;
++			} else
++				xhci->lowmem_pool.size <<= 20;
++		}
+ 		device_property_read_u32(tmpdev, "imod-interval-ns",
+ 					 &xhci->imod_interval);
+ 	}
+--- a/drivers/usb/host/xhci-ring.c
++++ b/drivers/usb/host/xhci-ring.c
+@@ -3664,7 +3664,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+ 
+ 	full_len = urb->transfer_buffer_length;
+ 	/* If we have scatter/gather list, we use it. */
+-	if (urb->num_sgs && !(urb->transfer_flags & URB_DMA_MAP_SINGLE)) {
++	if (urb->num_sgs && !(urb->transfer_flags & URB_DMA_MAP_SINGLE)
++			&& !(urb->transfer_flags & URB_MAP_LOCAL)) {
+ 		num_sgs = urb->num_mapped_sgs;
+ 		sg = urb->sg;
+ 		addr = (u64) sg_dma_address(sg);
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -18,6 +18,8 @@
+ #include <linux/slab.h>
+ #include <linux/dmi.h>
+ #include <linux/dma-mapping.h>
++#include <linux/dma-map-ops.h>
++#include <linux/genalloc.h>
+ 
+ #include "xhci.h"
+ #include "xhci-trace.h"
+@@ -1285,6 +1287,55 @@ static void xhci_unmap_temp_buf(struct u
+ 	urb->transfer_buffer = NULL;
+ }
+ 
++static void xhci_map_urb_local(struct usb_hcd *hcd, struct urb *urb,
++				gfp_t mem_flags)
++{
++	void *buffer;
++	dma_addr_t dma_handle;
++	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
++	struct xhci_lowmem_pool *lowmem_pool = &xhci->lowmem_pool;
++
++	if (lowmem_pool->pool
++		&& (usb_endpoint_type(&urb->ep->desc) == USB_ENDPOINT_XFER_BULK)
++		&& (urb->transfer_buffer_length > PAGE_SIZE)
++		&& urb->num_sgs && urb->sg && (sg_phys(urb->sg) > 0xffffffff)) {
++		buffer = gen_pool_dma_alloc(lowmem_pool->pool,
++			urb->transfer_buffer_length, &dma_handle);
++		if (buffer) {
++			urb->transfer_dma = dma_handle;
++			urb->transfer_buffer = buffer;
++			urb->transfer_flags |= URB_MAP_LOCAL;
++			if (usb_urb_dir_out(urb))
++				sg_copy_to_buffer(urb->sg, urb->num_sgs,
++					(void *)buffer,
++					urb->transfer_buffer_length);
++		}
++	}
++
++}
++
++static void xhci_unmap_urb_local(struct usb_hcd *hcd, struct urb *urb)
++{
++	dma_addr_t dma_handle;
++	u64 cached_buffer;
++	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
++	struct xhci_lowmem_pool *lowmem_pool = &xhci->lowmem_pool;
++
++	if (urb->transfer_flags & URB_MAP_LOCAL) {
++		dma_handle = urb->transfer_dma;
++		cached_buffer = lowmem_pool->cached_base +
++			((u32)urb->transfer_dma & (lowmem_pool->size - 1));
++		if (usb_urb_dir_in(urb))
++			sg_copy_from_buffer(urb->sg, urb->num_sgs,
++				(void *)cached_buffer, urb->transfer_buffer_length);
++		gen_pool_free(lowmem_pool->pool, (unsigned long)urb->transfer_buffer,
++				urb->transfer_buffer_length);
++		urb->transfer_flags &= ~URB_MAP_LOCAL;
++		urb->transfer_buffer = NULL;
++	}
++}
++
++
+ /*
+  * Bypass the DMA mapping if URB is suitable for Immediate Transfer (IDT),
+  * we'll copy the actual data into the TRB address register. This is limited to
+@@ -1305,9 +1356,11 @@ static int xhci_map_urb_for_dma(struct u
+ 		if (xhci_urb_temp_buffer_required(hcd, urb))
+ 			return xhci_map_temp_buffer(hcd, urb);
+ 	}
++	xhci_map_urb_local(hcd, urb, mem_flags);
+ 	return usb_hcd_map_urb_for_dma(hcd, urb, mem_flags);
+ }
+ 
++
+ static void xhci_unmap_urb_for_dma(struct usb_hcd *hcd, struct urb *urb)
+ {
+ 	struct xhci_hcd *xhci;
+@@ -1320,8 +1373,10 @@ static void xhci_unmap_urb_for_dma(struc
+ 
+ 	if ((xhci->quirks & XHCI_SG_TRB_CACHE_SIZE_QUIRK) && unmap_temp_buf)
+ 		xhci_unmap_temp_buf(hcd, urb);
+-	else
++	else {
++		xhci_unmap_urb_local(hcd, urb);
+ 		usb_hcd_unmap_urb_for_dma(hcd, urb);
++	}
+ }
+ 
+ /**
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1764,6 +1764,13 @@ struct xhci_hub {
+ 	u8			min_rev;
+ };
+ 
++struct xhci_lowmem_pool {
++	struct gen_pool *pool;
++	u64		cached_base;
++	dma_addr_t	dma_addr;
++	unsigned int	size;
++};
++
+ /* There is one xhci_hcd structure per controller */
+ struct xhci_hcd {
+ 	struct usb_hcd *main_hcd;
+@@ -1917,6 +1924,8 @@ struct xhci_hcd {
+ #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
+ #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
+ 
++#define XHCI_LOCAL_BUFFER	BIT_ULL(63)
++
+ 	unsigned int		num_active_eps;
+ 	unsigned int		limit_active_eps;
+ 	struct xhci_port	*hw_ports;
+@@ -1946,6 +1955,8 @@ struct xhci_hcd {
+ 	struct list_head	regset_list;
+ 
+ 	void			*dbc;
++	struct xhci_lowmem_pool lowmem_pool;
++
+ 	/* platform-specific data -- must come last */
+ 	unsigned long		priv[] __aligned(sizeof(s64));
+ };

@@ -92,7 +92,7 @@ define KernelPackage/fsl-enetc-net
     CONFIG_FSL_ENETC_QOS=y
   FILES:= \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
-    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-core.ko@ge6.3 \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-core.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-mdio.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-ierb.ko

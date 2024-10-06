@@ -58,7 +58,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  	if (!edid)
  		return;
  
-@@ -2691,8 +2705,23 @@ static int vc4_hdmi_audio_get_eld(struct
+@@ -2697,8 +2711,23 @@ static int vc4_hdmi_audio_get_eld(struct
  	return 0;
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  	.prepare = vc4_hdmi_audio_prepare,
  	.audio_shutdown = vc4_hdmi_audio_shutdown,
  	.audio_startup = vc4_hdmi_audio_startup,
-@@ -2712,6 +2741,22 @@ static void vc4_hdmi_audio_codec_release
+@@ -2718,6 +2747,22 @@ static void vc4_hdmi_audio_codec_release
  	vc4_hdmi->audio.codec_pdev = NULL;
  }
  
@@ -105,7 +105,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  static int vc4_hdmi_audio_init(struct vc4_hdmi *vc4_hdmi)
  {
  	const struct vc4_hdmi_register *mai_data =
-@@ -2841,6 +2886,8 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -2847,6 +2892,8 @@ static int vc4_hdmi_audio_init(struct vc
  	dai_link->codecs->name = dev_name(&codec_pdev->dev);
  	dai_link->platforms->name = dev_name(dev);
  
@@ -114,7 +114,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  	card->dai_link = dai_link;
  	card->num_links = 1;
  	card->name = vc4_hdmi->variant->card_name;
-@@ -3701,6 +3748,8 @@ static int vc4_hdmi_bind(struct device *
+@@ -3707,6 +3754,8 @@ static int vc4_hdmi_bind(struct device *
  	if (ret)
  		return ret;
  
@@ -123,7 +123,7 @@ Signed-off-by: David Turner <david.turner@raspberrypi.com>
  	spin_lock_init(&vc4_hdmi->hw_lock);
  	INIT_DELAYED_WORK(&vc4_hdmi->scrambling_work, vc4_hdmi_scrambling_wq);
  
-@@ -3813,8 +3862,16 @@ err_put_runtime_pm:
+@@ -3819,8 +3868,16 @@ err_put_runtime_pm:
  	return ret;
  }
  
