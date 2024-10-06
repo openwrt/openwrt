@@ -18,3 +18,11 @@
  
  .PHONY: clean mostlyclean distclean maintainer-clean \
  clean-generic mostlyclean-generic distclean-generic maintainer-clean-generic
+--- a/lib/am/libtool.am
++++ b/lib/am/libtool.am
+@@ -25,4 +25,4 @@ clean-libtool:
+ 
+ ?TOPDIR_P?distclean-am: distclean-libtool
+ ?TOPDIR_P?distclean-libtool:
+-?TOPDIR_P?	-rm -f libtool config.lt
++?TOPDIR_P?	-touch libtool config.lt
