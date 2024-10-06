@@ -23,23 +23,20 @@ include $(INCLUDE_DIR)/host-build.mk
 export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 
 HOST_GNULIB_SKIP := \
-	lib/nstrftime.c \
-	lib/fprintftime.c \
-	lib/fcntl.in.h \
-	lib/locale.in.h
+	lib/fcntl.in.h
 
 HOST_CONFIGURE_ARGS += \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(PKG_PROGRAMS)))
 
 HOST_MAKE_FLAGS += \
-	$(AM_TOOL_PATHS_FAKE) \
+	$(AM_TOOL_PATHS) AUTOPOINT="$(TRUE)" GTKDOCIZE="$(TRUE)" \
 	PROGRAMS="$(patsubst %,src/%,$(PKG_PROGRAMS))" \
 	LIBRARIES= MANS= SUBDIRS=.
 
 define Host/Bootstrap
 	( \
 		cd $(HOST_BUILD_DIR); \
-		$(AM_TOOL_PATHS_FAKE) \
+		$(AM_TOOL_PATHS) AUTOPOINT="$(TRUE)" GTKDOCIZE="$(TRUE)" \
 		./bootstrap \
 			--bootstrap-sync \
 			--force \
