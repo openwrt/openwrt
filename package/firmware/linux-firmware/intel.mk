@@ -173,7 +173,7 @@ $(eval $(call BuildPackage,iwlwifi-firmware-iwl9260))
 Package/iwlwifi-firmware-ax101 = $(call Package/firmware-default,Intel AX101 firmware)
 define Package/iwlwifi-firmware-ax101/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-hr-b0-83.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-hr-b0-89.ucode $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax101))
 
@@ -194,7 +194,7 @@ $(eval $(call BuildPackage,iwlwifi-firmware-ax201))
 Package/iwlwifi-firmware-ax210 = $(call Package/firmware-default,Intel AX210 firmware)
 define Package/iwlwifi-firmware-ax210/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-83.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-89.ucode $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0.pnvm $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax210))
