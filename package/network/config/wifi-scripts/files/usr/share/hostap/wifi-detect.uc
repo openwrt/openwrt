@@ -114,6 +114,7 @@ function wiphy_detect() {
 				band_info.vht = true;
 			let he_phy_cap = 0;
 			let eht_phy_cap = 0;
+			let eht_phy_cap = 0;
 
 			for (let ift in band.iftype_data) {
 				if (!ift.he_cap_phy)
@@ -121,6 +122,12 @@ function wiphy_detect() {
 
 				band_info.he = true;
 				he_phy_cap |= ift.he_cap_phy[0];
+
+				if (!ift.eht_cap_phy)
+					continue;
+
+				band_info.eht = true;
+				eht_phy_cap |= ift.eht_cap_phy[0];
 
 				if (!ift.eht_cap_phy)
 					continue;
@@ -149,13 +156,19 @@ function wiphy_detect() {
 				push(modes, "HE20");
 			if (band_info.eht)
 				push(modes, "EHT20");
+			if (band_info.eht)
+				push(modes, "EHT20");
 			if (band.ht_capa & 0x2) {
 				push(modes, "HT40");
 				if (band_info.vht)
 					push(modes, "VHT40")
 			}
 			if (he_phy_cap & 2)
+			if (he_phy_cap & 2)
 				push(modes, "HE40");
+
+			if (eht_phy_cap && he_phy_cap & 2)
+				push(modes, "EHT40");
 
 			if (eht_phy_cap && he_phy_cap & 2)
 				push(modes, "EHT40");
@@ -177,10 +190,17 @@ function wiphy_detect() {
 				push(modes, "HE40");
 			if (eht_phy_cap && he_phy_cap & 4)
 				push(modes, "EHT40");
+
+			if (he_phy_cap & 4)
+				push(modes, "HE40");
+			if (eht_phy_cap && he_phy_cap & 4)
+				push(modes, "EHT40");
 			if (band_info.vht)
 				push(modes, "VHT80");
 			if (he_phy_cap & 4)
 				push(modes, "HE80");
+			if (eht_phy_cap && he_phy_cap & 4)
+				push(modes, "EHT80");
 			if (eht_phy_cap && he_phy_cap & 4)
 				push(modes, "EHT80");
 			if ((band.vht_capa >> 2) & 0x3)

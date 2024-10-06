@@ -68,6 +68,7 @@ int hostapd_ubus_notify_bss_transition_query(
 	const u8 *candidate_list, u16 candidate_list_len);
 void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 				    const char *auth_alg);
+void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq);
 
 #ifdef CONFIG_APUP
 void hostapd_ubus_notify_apup_newpeer(
@@ -152,6 +153,11 @@ static inline int hostapd_ubus_notify_bss_transition_query(
 static inline void
 hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 			       const char *auth_alg)
+{
+}
+
+static inline void
+hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 {
 }
 

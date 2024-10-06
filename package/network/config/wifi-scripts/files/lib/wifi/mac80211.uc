@@ -4,6 +4,7 @@ import * as uci from 'uci';
 
 const bands_order = [ "6G", "5G", "2G" ];
 const htmode_order = [ "EHT", "HE", "VHT", "HT" ];
+const htmode_order = [ "EHT", "HE", "VHT", "HT" ];
 
 let board = json(readfile("/etc/board.json"));
 if (!board.wlan)
@@ -100,7 +101,7 @@ for (let phy_name, phy in board.wlan) {
         print(`set ${s}=wifi-device
 set ${s}.type='mac80211'
 set ${s}.${id}
-set ${s}.band='${lc(band_name)}'
+set ${s}.band='${band_name}'
 set ${s}.channel='${channel}'
 set ${s}.htmode='${htmode}'
 set ${s}.country='US'

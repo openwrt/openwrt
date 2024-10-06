@@ -72,7 +72,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	if (xhci->dcbaa)
  		dma_free_coherent(dev, sizeof(*xhci->dcbaa),
  				xhci->dcbaa, xhci->dcbaa->dma);
-@@ -2297,6 +2306,55 @@ xhci_add_interrupter(struct xhci_hcd *xh
+@@ -2300,6 +2309,55 @@ xhci_add_interrupter(struct xhci_hcd *xh
  	return 0;
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
  {
  	dma_addr_t	dma;
-@@ -2433,6 +2491,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+@@ -2436,6 +2494,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  
  	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
  
@@ -160,7 +160,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	}
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -3650,7 +3650,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3664,7 +3664,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  
  	full_len = urb->transfer_buffer_length;
  	/* If we have scatter/gather list, we use it. */
@@ -263,7 +263,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /**
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1763,6 +1763,13 @@ struct xhci_hub {
+@@ -1764,6 +1764,13 @@ struct xhci_hub {
  	u8			min_rev;
  };
  
@@ -277,16 +277,16 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /* There is one xhci_hcd structure per controller */
  struct xhci_hcd {
  	struct usb_hcd *main_hcd;
-@@ -1914,6 +1921,8 @@ struct xhci_hcd {
- #define XHCI_ZHAOXIN_TRB_FETCH	BIT_ULL(45)
- #define XHCI_ZHAOXIN_HOST	BIT_ULL(46)
+@@ -1917,6 +1924,8 @@ struct xhci_hcd {
+ #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
+ #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
  
 +#define XHCI_LOCAL_BUFFER	BIT_ULL(63)
 +
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
-@@ -1943,6 +1952,8 @@ struct xhci_hcd {
+@@ -1946,6 +1955,8 @@ struct xhci_hcd {
  	struct list_head	regset_list;
  
  	void			*dbc;

@@ -216,8 +216,8 @@ mac80211_hostapd_setup_base() {
 		*) ieee80211n= ;;
 	esac
 
-	[ -n "$ieee80211n" ] && {
-		append base_cfg "ieee80211n=1" "$N"
+		[ -n "$ieee80211n" ] && {
+			append base_cfg "ieee80211n=1" "$N"
 
 		set_default ht_coex 0
 		append base_cfg "ht_coex=$ht_coex" "$N"
@@ -227,15 +227,15 @@ mac80211_hostapd_setup_base() {
 			append base_cfg "obss_interval=$obss_interval" "$N"
 		}
 
-		json_get_vars \
-			ldpc:1 \
-			greenfield:0 \
-			short_gi_20:1 \
-			short_gi_40:1 \
-			tx_stbc:1 \
-			rx_stbc:3 \
-			max_amsdu:1 \
-			dsss_cck_40:1
+			json_get_vars \
+				ldpc:1 \
+				greenfield:0 \
+				short_gi_20:1 \
+				short_gi_40:1 \
+				tx_stbc:1 \
+				rx_stbc:3 \
+				max_amsdu:1 \
+				dsss_cck_40:1
 
 		ht_cap_mask=0
 
@@ -246,25 +246,26 @@ mac80211_hostapd_setup_base() {
 			ht_cap_mask=$(iw phy phy1 info | grep 'Band 2:' -A 1 | grep 'Capabilities: ' | cut -d: -f2)
 		}
 
-		cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
-		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
-		ht_cap_mask="$(( ($ht_cap_mask & ~(0x300)) | ($cap_rx_stbc << 8) ))"
+			cap_rx_stbc=$((($ht_cap_mask >> 8) & 3))
+			[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
+			ht_cap_mask="$(( ($ht_cap_mask & ~(0x300)) | ($cap_rx_stbc << 8) ))"
 
-		mac80211_add_capabilities ht_capab_flags $ht_cap_mask \
-			LDPC:0x1::$ldpc \
-			GF:0x10::$greenfield \
-			SHORT-GI-20:0x20::$short_gi_20 \
-			SHORT-GI-40:0x40::$short_gi_40 \
-			TX-STBC:0x80::$tx_stbc \
-			RX-STBC1:0x300:0x100:1 \
-			RX-STBC12:0x300:0x200:1 \
-			RX-STBC123:0x300:0x300:1 \
-			MAX-AMSDU-7935:0x800::$max_amsdu \
-			DSSS_CCK-40:0x1000::$dsss_cck_40
+			mac80211_add_capabilities ht_capab_flags $ht_cap_mask \
+				LDPC:0x1::$ldpc \
+				GF:0x10::$greenfield \
+				SHORT-GI-20:0x20::$short_gi_20 \
+				SHORT-GI-40:0x40::$short_gi_40 \
+				TX-STBC:0x80::$tx_stbc \
+				RX-STBC1:0x300:0x100:1 \
+				RX-STBC12:0x300:0x200:1 \
+				RX-STBC123:0x300:0x300:1 \
+				MAX-AMSDU-7935:0x800::$max_amsdu \
+				DSSS_CCK-40:0x1000::$dsss_cck_40
 
-		ht_capab="$ht_capab$ht_capab_flags"
-		[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
-	}
+			ht_capab="$ht_capab$ht_capab_flags"
+			[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
+		}
+	fi
 
 	# 802.11ac
 	enable_ac=0
@@ -275,6 +276,8 @@ mac80211_hostapd_setup_base() {
 	case "$htmode" in
 		VHT20|HE20|EHT20) enable_ac=1;;
 		VHT40|HE40|EHT40)
+		VHT20|HE20|EHT20) enable_ac=1;;
+		VHT40|HE40|EHT40)
 			case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
 				1) idx=$(($channel + 2));;
 				0) idx=$(($channel - 2));;
@@ -282,6 +285,7 @@ mac80211_hostapd_setup_base() {
 			enable_ac=1
 			vht_center_seg0=$idx
 		;;
+		VHT80|HE80|EHT80)
 		VHT80|HE80|EHT80)
 			case "$(( (($channel / 4) + $chan_ofs) % 4 ))" in
 				1) idx=$(($channel + 6));;
@@ -360,6 +364,10 @@ mac80211_hostapd_setup_base() {
 		[ "$background_radar" -eq 1 ] && append base_cfg "enable_background_radar=1" "$N"
 		[ "$background_cert_mode" -eq 1 ] && append base_cfg "background_radar_mode=1" "$N"
 	}
+
+	eht_oper_chwidth=$vht_oper_chwidth
+	eht_center_seg0=$vht_center_seg0
+
 	[ "$band" = "6g" ] && {
 		op_class=
 		case "$htmode" in
@@ -370,6 +378,7 @@ mac80211_hostapd_setup_base() {
 		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
 	}
 	[ "$hwmode" = "a" ] || enable_ac=0
+	[ "$band" = "6g" ] && enable_ac=0
 
 	if [ "$enable_ac" != "0" ]; then
 		json_get_vars \
@@ -497,6 +506,7 @@ mac80211_hostapd_setup_base() {
 
 	# 802.11ax
 	enable_ax=0
+	enable_be=0
 	case "$htmode" in
 		HE*|EHT*) enable_ax=1 ;;
 	esac

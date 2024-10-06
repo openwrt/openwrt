@@ -1,0 +1,159 @@
+From 54d6ad3348fb50f5b972fe9c05d0d8757bfe73ba Mon Sep 17 00:00:00 2001
+From: Aleksandar Rikalo <arikalo@gmail.com>
+Date: Fri, 10 May 2024 17:59:28 +0200
+Subject: mips: skip using shared syscall numbers for mips32
+
+mips does not use shared syscall numbers, so we can not use
+vki-scnums-shared-linux.h.
+
+This partially fixes KDE #444781.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Aleksandar Rikalo <arikalo@gmail.com>
+---
+ coregrind/m_syswrap/syswrap-mips32-linux.c |   1 +
+ include/pub_tool_vkiscnums_asm.h           |   2 -
+ include/vki/vki-scnums-mips32-linux.h      | 105 ++++++++++++++++-----
+ 3 files changed, 83 insertions(+), 25 deletions(-)
+
+--- a/coregrind/m_syswrap/syswrap-mips32-linux.c
++++ b/coregrind/m_syswrap/syswrap-mips32-linux.c
+@@ -1110,6 +1110,7 @@ static SyscallTableEntry syscall_main_ta
+    LINX_ (__NR_pwritev2,               sys_pwritev2),                // 362
+    //..
+    LINXY(__NR_statx,                   sys_statx),                   // 366
++   GENX_(__NR_rseq,                    sys_ni_syscall),              // 367
+ 
+    LINXY(__NR_clock_gettime64,         sys_clock_gettime64),         // 403
+    LINX_(__NR_clock_settime64,         sys_clock_settime64),         // 404
+--- a/include/pub_tool_vkiscnums_asm.h
++++ b/include/pub_tool_vkiscnums_asm.h
+@@ -63,8 +63,6 @@
+ #  include "vki/vki-scnums-arm64-linux.h"
+ 
+ #elif defined(VGP_mips32_linux)
+-#  include "vki/vki-scnums-shared-linux.h"
+-#  include "vki/vki-scnums-32bit-linux.h"
+ #  include "vki/vki-scnums-mips32-linux.h"
+ 
+ #elif defined(VGP_nanomips_linux)
+--- a/include/vki/vki-scnums-mips32-linux.h
++++ b/include/vki/vki-scnums-mips32-linux.h
+@@ -380,35 +380,94 @@
+ #define __NR_setns                      (__NR_Linux + 343)
+ #define __NR_process_vm_readv           (__NR_Linux + 345)
+ #define __NR_process_vm_writev          (__NR_Linux + 346)
+-#define __NR_kcmp			(__NR_Linux + 347)
+-#define __NR_finit_module		(__NR_Linux + 348)
+-#define __NR_sched_setattr		(__NR_Linux + 349)
+-#define __NR_sched_getattr		(__NR_Linux + 350)
+-#define __NR_renameat2			(__NR_Linux + 351)
+-#define __NR_seccomp			(__NR_Linux + 352)
+-#define __NR_getrandom			(__NR_Linux + 353)
+-#define __NR_memfd_create		(__NR_Linux + 354)
+-#define __NR_bpf			(__NR_Linux + 355)
+-#define __NR_execveat			(__NR_Linux + 356)
+-#define __NR_userfaultfd		(__NR_Linux + 357)
+-#define __NR_membarrier			(__NR_Linux + 358)
+-#define __NR_mlock2			(__NR_Linux + 359)
+-#define __NR_copy_file_range		(__NR_Linux + 360)
+-#define __NR_preadv2			(__NR_Linux + 361)
+-#define __NR_pwritev2			(__NR_Linux + 362)
+-#define __NR_pkey_mprotect		(__NR_Linux + 363)
+-#define __NR_pkey_alloc			(__NR_Linux + 364)
+-#define __NR_pkey_free			(__NR_Linux + 365)
+-#define __NR_statx			(__NR_Linux + 366)
+-
++#define __NR_kcmp                       (__NR_Linux + 347)
++#define __NR_finit_module               (__NR_Linux + 348)
++#define __NR_sched_setattr              (__NR_Linux + 349)
++#define __NR_sched_getattr              (__NR_Linux + 350)
++#define __NR_renameat2                  (__NR_Linux + 351)
++#define __NR_seccomp                    (__NR_Linux + 352)
++#define __NR_getrandom                  (__NR_Linux + 353)
++#define __NR_memfd_create               (__NR_Linux + 354)
++#define __NR_bpf                        (__NR_Linux + 355)
++#define __NR_execveat                   (__NR_Linux + 356)
++#define __NR_userfaultfd                (__NR_Linux + 357)
++#define __NR_membarrier                 (__NR_Linux + 358)
++#define __NR_mlock2                     (__NR_Linux + 359)
++#define __NR_copy_file_range            (__NR_Linux + 360)
++#define __NR_preadv2                    (__NR_Linux + 361)
++#define __NR_pwritev2                   (__NR_Linux + 362)
++#define __NR_pkey_mprotect              (__NR_Linux + 363)
++#define __NR_pkey_alloc                 (__NR_Linux + 364)
++#define __NR_pkey_free                  (__NR_Linux + 365)
++#define __NR_statx                      (__NR_Linux + 366)
++#define __NR_rseq                       (__NR_Linux + 367)
++#define __NR_io_pgetevents              (__NR_Linux + 368)
++#define __NR_semget                     (__NR_Linux + 393)
++#define __NR_semctl                     (__NR_Linux + 394)
++#define __NR_shmget                     (__NR_Linux + 395)
++#define __NR_shmctl                     (__NR_Linux + 396)
++#define __NR_shmat                      (__NR_Linux + 397)
++#define __NR_shmdt                      (__NR_Linux + 398)
++#define __NR_msgget                     (__NR_Linux + 399)
++#define __NR_msgsnd                     (__NR_Linux + 400)
++#define __NR_msgrcv                     (__NR_Linux + 401)
++#define __NR_msgctl                     (__NR_Linux + 402)
++#define __NR_clock_gettime64            (__NR_Linux + 403)
++#define __NR_clock_settime64            (__NR_Linux + 404)
++#define __NR_clock_adjtime64            (__NR_Linux + 405)
++#define __NR_clock_getres_time64        (__NR_Linux + 406)
++#define __NR_clock_nanosleep_time64     (__NR_Linux + 407)
++#define __NR_timer_gettime64            (__NR_Linux + 408)
++#define __NR_timer_settime64            (__NR_Linux + 409)
++#define __NR_timerfd_gettime64          (__NR_Linux + 410)
++#define __NR_timerfd_settime64          (__NR_Linux + 411)
++#define __NR_utimensat_time64           (__NR_Linux + 412)
++#define __NR_pselect6_time64            (__NR_Linux + 413)
++#define __NR_ppoll_time64               (__NR_Linux + 414)
++#define __NR_io_pgetevents_time64       (__NR_Linux + 416)
++#define __NR_recvmmsg_time64            (__NR_Linux + 417)
++#define __NR_mq_timedsend_time64        (__NR_Linux + 418)
++#define __NR_mq_timedreceive_time64     (__NR_Linux + 419)
++#define __NR_semtimedop_time64          (__NR_Linux + 420)
++#define __NR_rt_sigtimedwait_time64     (__NR_Linux + 421)
++#define __NR_futex_time64               (__NR_Linux + 422)
++#define __NR_sched_rr_get_interval_time64 (__NR_Linux + 423)
++#define __NR_pidfd_send_signal          (__NR_Linux + 424)
++#define __NR_io_uring_setup             (__NR_Linux + 425)
++#define __NR_io_uring_enter             (__NR_Linux + 426)
++#define __NR_io_uring_register          (__NR_Linux + 427)
++#define __NR_open_tree                  (__NR_Linux + 428)
++#define __NR_move_mount                 (__NR_Linux + 429)
++#define __NR_fsopen                     (__NR_Linux + 430)
++#define __NR_fsconfig                   (__NR_Linux + 431)
++#define __NR_fsmount                    (__NR_Linux + 432)
++#define __NR_fspick                     (__NR_Linux + 433)
++#define __NR_pidfd_open                 (__NR_Linux + 434)
++#define __NR_clone3                     (__NR_Linux + 435)
++#define __NR_close_range                (__NR_Linux + 436)
++#define __NR_openat2                    (__NR_Linux + 437)
++#define __NR_pidfd_getfd                (__NR_Linux + 438)
++#define __NR_faccessat2                 (__NR_Linux + 439)
++#define __NR_process_madvise            (__NR_Linux + 440)
++#define __NR_epoll_pwait2               (__NR_Linux + 441)
++#define __NR_mount_setattr              (__NR_Linux + 442)
++#define __NR_quotactl_fd                (__NR_Linux + 443)
++#define __NR_landlock_create_ruleset    (__NR_Linux + 444)
++#define __NR_landlock_add_rule          (__NR_Linux + 445)
++#define __NR_landlock_restrict_self     (__NR_Linux + 446)
++#define __NR_process_mrelease           (__NR_Linux + 448)
++#define __NR_futex_waitv                (__NR_Linux + 449)
++#define __NR_set_mempolicy_home_node    (__NR_Linux + 450)
++#define __NR_cachestat                  (__NR_Linux + 451)
++#define __NR_fchmodat2                  (__NR_Linux + 452)
+ /*
+  * Offset of the last Linux o32 flavoured syscall
+  */
+-#define __NR_Linux_syscalls	            366
++#define __NR_Linux_syscalls             366
+ 
+ 
+ #define __NR_O32_Linux                  4000
+-#define __NR_O32_Linux_syscalls	        366
++#define __NR_O32_Linux_syscalls         366
+ 
+ 
+ #endif                          /* __VKI_SCNUMS_MIPS32_LINUX_H */
