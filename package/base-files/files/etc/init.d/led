@@ -184,7 +184,12 @@ start() {
 					echo "$color" | sed 's/:/\ /g' > \
 						"/sys/class/leds/$led/multi_intensity"
 			done < /var/run/led.state
-			rm /var/run/led.state
+			if [ "$1" ]; then
+				grep -v "^$1 " /var/run/led.state > /var/run/led.state.new
+				mv /var/run/led.state.new /var/run/led.state
+			else
+				rm /var/run/led.state
+			fi
 		}
 
 		config_load system

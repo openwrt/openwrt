@@ -22,6 +22,14 @@ hostapd.data.file_fields = {
 	eap_sim_db: true,
 };
 
+hostapd.data.iface_fields = {
+	ft_iface: true,
+	upnp_iface: true,
+	snoop_iface: true,
+	bridge: true,
+	iapp_interface: true,
+};
+
 function iface_remove(cfg)
 {
 	if (!cfg || !cfg.bss || !cfg.bss[0] || !cfg.bss[0].ifname)
@@ -324,9 +332,24 @@ function bss_remove_file_fields(config)
 	return new_cfg;
 }
 
+function bss_ifindex_list(config)
+{
+	config = filter(config, (line) => !!hostapd.data.iface_fields[split(line, "=")[0]]);
+
+	return join(",", map(config, (line) => {
+		try {
+			let file = "/sys/class/net/" + split(line, "=")[1] + "/ifindex";
+			let val = trim(readfile(file));
+			return val;
+		} catch (e) {
+			return "";
+		}
+	}));
+}
+
 function bss_config_hash(config)
 {
-	return hostapd.sha1(remove_file_fields(config) + "");
+	return hostapd.sha1(remove_file_fields(config) + bss_ifindex_list(config));
 }
 
 function bss_find_existing(config, prev_config, prev_hash)
