@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,535 @@
+@@ -0,0 +1,519 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -66,7 +66,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +#include <linux/reset.h>
 +#include <linux/spi/spi.h>
 +#include <linux/platform_device.h>
-+#include <linux/gpio.h>
 +
 +#define DRIVER_NAME			"spi-rt2880"
 +
@@ -333,18 +332,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return err;
 +}
 +
-+/* copy from spi.c */
-+static void spi_set_cs(struct spi_device *spi, bool enable)
-+{
-+	if (spi->mode & SPI_CS_HIGH)
-+		enable = !enable;
-+
-+	if (spi->cs_gpiod)
-+		gpiod_set_value(spi->cs_gpiod, !enable);
-+	else if (spi->master->set_cs)
-+		spi->master->set_cs(spi, !enable);
-+}
-+
 +static int rt2880_spi_setup(struct spi_device *spi)
 +{
 +	struct spi_master *master = spi->master;
@@ -400,9 +387,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +	if (reg != old_reg)
 +		rt2880_spi_write(rs, arbit_off, reg);
-+
-+	/* deselected the spi device */
-+	spi_set_cs(spi, false);
 +
 +	rt2880_dump_reg(master);
 +
