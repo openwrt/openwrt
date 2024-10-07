@@ -300,7 +300,11 @@ err_gpiochip:
 	return err;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int nct5104d_gpio_remove(struct platform_device *pdev)
+#else
+static void nct5104d_gpio_remove(struct platform_device *pdev)
+#endif
 {
 	int i;
 	struct nct5104d_gpio_data *data = platform_get_drvdata(pdev);
@@ -311,7 +315,9 @@ static int nct5104d_gpio_remove(struct platform_device *pdev)
 		gpiochip_remove (&bank->chip);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static int __init nct5104d_find(int addr, struct nct5104d_sio *sio)

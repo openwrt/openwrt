@@ -143,7 +143,11 @@ static int ltq_deu_probe(struct platform_device *pdev)
  *  \ingroup IFX_DEU_FUNCTIONS
  *  \brief remove the loaded crypto algorithms   
 */                                 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ltq_deu_remove(struct platform_device *pdev)
+#else
+static void ltq_deu_remove(struct platform_device *pdev)
+#endif
 {
 //#ifdef CONFIG_CRYPTO_DEV_PWR_SAVE_MODE
     #if defined(CONFIG_CRYPTO_DEV_DES)
@@ -169,7 +173,9 @@ static int ltq_deu_remove(struct platform_device *pdev)
     #endif
     printk("DEU has exited successfully\n");
 
-	return 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
+    return 0;
+#endif
 }
 
 
