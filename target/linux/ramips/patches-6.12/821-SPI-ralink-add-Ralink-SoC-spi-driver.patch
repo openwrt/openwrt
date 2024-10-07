@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,535 @@
+@@ -0,0 +1,533 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -171,7 +171,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +static atomic_t hw_reset_count = ATOMIC_INIT(0);
 +
 +struct rt2880_spi {
-+	struct spi_master	*master;
++	struct spi_controller	*controller;
 +	void __iomem		*base;
 +	u32			speed;
 +	u16			wait_loops;
@@ -181,7 +181,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
 +{
-+	return spi_master_get_devdata(spi->master);
++	return spi_controller_get_devdata(spi->controller);
 +}
 +
 +static inline u32 rt2880_spi_read(struct rt2880_spi *rs, u32 reg)
@@ -238,12 +238,12 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return prescale;
 +}
 +
-+static u32 get_arbiter_offset(struct spi_master *master)
++static u32 get_arbiter_offset(struct spi_controller *controller)
 +{
 +	u32 offset;
 +
 +	offset = RAMIPS_SPI_ARBITER;
-+	if (master->bus_num == 1)
++	if (controller->bus_num == 1)
 +		offset -= RAMIPS_SPI_DEV_OFFSET;
 +
 +	return offset;
@@ -272,23 +272,23 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return -ETIMEDOUT;
 +}
 +
-+static void rt2880_dump_reg(struct spi_master *master)
++static void rt2880_dump_reg(struct spi_controller *controller)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(controller);
 +
-+	dev_dbg(&master->dev, "stat: %08x, cfg: %08x, ctl: %08x, " \
++	dev_dbg(&controller->dev, "stat: %08x, cfg: %08x, ctl: %08x, " \
 +			"data: %08x, arb: %08x\n",
 +			rt2880_spi_read(rs, RAMIPS_SPI_STAT),
 +			rt2880_spi_read(rs, RAMIPS_SPI_CFG),
 +			rt2880_spi_read(rs, RAMIPS_SPI_CTL),
 +			rt2880_spi_read(rs, RAMIPS_SPI_DATA),
-+			rt2880_spi_read(rs, get_arbiter_offset(master)));
++			rt2880_spi_read(rs, get_arbiter_offset(controller)));
 +}
 +
-+static int rt2880_spi_transfer_one(struct spi_master *master,
++static int rt2880_spi_transfer_one(struct spi_controller *controller,
 +		struct spi_device *spi, struct spi_transfer *xfer)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(controller);
 +	unsigned len;
 +	const u8 *tx = xfer->tx_buf;
 +	u8 *rx = xfer->rx_buf;
@@ -339,26 +339,26 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (spi->mode & SPI_CS_HIGH)
 +		enable = !enable;
 +
-+	if (spi->cs_gpiod)
-+		gpiod_set_value(spi->cs_gpiod, !enable);
-+	else if (spi->master->set_cs)
-+		spi->master->set_cs(spi, !enable);
++	if (spi_get_csgpiod(spi, 0))
++		gpiod_set_value(spi_get_csgpiod(spi, 0), !enable);
++	else if (spi->controller->set_cs)
++		spi->controller->set_cs(spi, !enable);
 +}
 +
 +static int rt2880_spi_setup(struct spi_device *spi)
 +{
-+	struct spi_master *master = spi->master;
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct spi_controller *controller = spi->controller;
++	struct rt2880_spi *rs = spi_controller_get_devdata(controller);
 +	u32 reg, old_reg, arbit_off;
 +
-+	if ((spi->max_speed_hz > master->max_speed_hz) ||
-+			(spi->max_speed_hz < master->min_speed_hz)) {
++	if ((spi->max_speed_hz > controller->max_speed_hz) ||
++			(spi->max_speed_hz < controller->min_speed_hz)) {
 +		dev_err(&spi->dev, "invalide requested speed %d Hz\n",
 +				spi->max_speed_hz);
 +		return -EINVAL;
 +	}
 +
-+	if (!(master->bits_per_word_mask &
++	if (!(controller->bits_per_word_mask &
 +				BIT(spi->bits_per_word - 1))) {
 +		dev_err(&spi->dev, "invalide bits_per_word %d\n",
 +				spi->bits_per_word);
@@ -372,10 +372,10 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	/* chip polarity */
-+	arbit_off = get_arbiter_offset(master);
++	arbit_off = get_arbiter_offset(controller);
 +	reg = old_reg = rt2880_spi_read(rs, arbit_off);
 +	if (spi->mode & SPI_CS_HIGH) {
-+		switch (master->bus_num) {
++		switch (controller->bus_num) {
 +		case 1:
 +			reg |= SPI1_POR;
 +			break;
@@ -384,7 +384,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +			break;
 +		}
 +	} else {
-+		switch (master->bus_num) {
++		switch (controller->bus_num) {
 +		case 1:
 +			reg &= ~SPI1_POR;
 +			break;
@@ -395,7 +395,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	/* enable spi1 */
-+	if (master->bus_num == 1)
++	if (controller->bus_num == 1)
 +		reg |= SPICTL_ARB_EN;
 +
 +	if (reg != old_reg)
@@ -404,15 +404,15 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	/* deselected the spi device */
 +	spi_set_cs(spi, false);
 +
-+	rt2880_dump_reg(master);
++	rt2880_dump_reg(controller);
 +
 +	return 0;
 +}
 +
-+static int rt2880_spi_prepare_message(struct spi_master *master,
++static int rt2880_spi_prepare_message(struct spi_controller *controller,
 +		struct spi_message *msg)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(controller);
 +	struct spi_device *spi = msg->spi;
 +	u32 reg;
 +
@@ -467,7 +467,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static int rt2880_spi_probe(struct platform_device *pdev)
 +{
-+	struct spi_master *master;
++	struct spi_controller *controller;
 +	struct rt2880_spi *rs;
 +	void __iomem *base;
 +	struct resource *r;
@@ -489,28 +489,28 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (ret)
 +		goto err_clk;
 +
-+	master = spi_alloc_master(&pdev->dev, sizeof(*rs));
-+	if (master == NULL) {
++	controller = spi_alloc_master(&pdev->dev, sizeof(*rs));
++	if (controller == NULL) {
 +		dev_dbg(&pdev->dev, "master allocation failed\n");
 +		ret = -ENOMEM;
 +		goto err_clk;
 +	}
 +
-+	master->dev.of_node = pdev->dev.of_node;
-+	master->mode_bits = RT2880_SPI_MODE_BITS;
-+	master->bits_per_word_mask = SPI_BPW_MASK(8);
-+	master->min_speed_hz = clk_get_rate(clk) / 128;
-+	master->max_speed_hz = clk_get_rate(clk) / 2;
-+	master->flags = SPI_MASTER_HALF_DUPLEX;
-+	master->setup = rt2880_spi_setup;
-+	master->prepare_message = rt2880_spi_prepare_message;
-+	master->set_cs = rt2880_spi_set_cs;
-+	master->transfer_one = rt2880_spi_transfer_one,
++	controller->dev.of_node = pdev->dev.of_node;
++	controller->mode_bits = RT2880_SPI_MODE_BITS;
++	controller->bits_per_word_mask = SPI_BPW_MASK(8);
++	controller->min_speed_hz = clk_get_rate(clk) / 128;
++	controller->max_speed_hz = clk_get_rate(clk) / 2;
++	controller->flags = SPI_CONTROLLER_HALF_DUPLEX;
++	controller->setup = rt2880_spi_setup;
++	controller->prepare_message = rt2880_spi_prepare_message;
++	controller->set_cs = rt2880_spi_set_cs;
++	controller->transfer_one = rt2880_spi_transfer_one,
 +
-+	dev_set_drvdata(&pdev->dev, master);
++	dev_set_drvdata(&pdev->dev, controller);
 +
-+	rs = spi_master_get_devdata(master);
-+	rs->master = master;
++	rs = spi_controller_get_devdata(controller);
++	rs->controller = controller;
 +	rs->base = base;
 +	rs->clk = clk;
 +
@@ -522,7 +522,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +		}
 +	}
 +
-+	ret = devm_spi_register_master(&pdev->dev, master);
++	ret = devm_spi_register_controller(&pdev->dev, controller);
 +	if (ret < 0) {
 +		dev_err(&pdev->dev, "devm_spi_register_master error.\n");
 +		goto err_master;
@@ -531,26 +531,24 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +
 +err_master:
-+	spi_master_put(master);
-+	kfree(master);
++	spi_controller_put(controller);
++	kfree(controller);
 +err_clk:
 +	clk_disable_unprepare(clk);
 +
 +	return ret;
 +}
 +
-+static int rt2880_spi_remove(struct platform_device *pdev)
++static void rt2880_spi_remove(struct platform_device *pdev)
 +{
-+	struct spi_master *master;
++	struct spi_controller *controller;
 +	struct rt2880_spi *rs;
 +
-+	master = dev_get_drvdata(&pdev->dev);
-+	rs = spi_master_get_devdata(master);
++	controller = dev_get_drvdata(&pdev->dev);
++	rs = spi_controller_get_devdata(controller);
 +
 +	clk_disable_unprepare(rs->clk);
 +	atomic_dec(&hw_reset_count);
-+
-+	return 0;
 +}
 +
 +MODULE_ALIAS("platform:" DRIVER_NAME);

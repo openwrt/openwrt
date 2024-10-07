@@ -90,7 +90,7 @@
 +	},
 +};
 +
-+int __init linkit_init(void)
++static int __init linkit_init(void)
 +{
 +	return platform_driver_register(&linkit_driver);
 +}

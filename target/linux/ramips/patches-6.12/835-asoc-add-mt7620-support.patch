@@ -60,7 +60,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,968 @@
+@@ -0,0 +1,967 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -533,9 +533,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+static int ralink_i2s_dai_remove(struct snd_soc_dai *dai)
++static void ralink_i2s_dai_remove(struct snd_soc_dai *dai)
 +{
-+	return 0;
 +}
 +
 +static const struct snd_soc_dai_ops ralink_i2s_dai_ops = {
