@@ -13,7 +13,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/spi/spi-nor-core.c
 +++ b/drivers/mtd/spi/spi-nor-core.c
-@@ -2908,6 +2908,100 @@ static int spi_nor_init_params(struct sp
+@@ -2958,6 +2958,100 @@ static int spi_nor_init_params(struct sp
  	return 0;
  }
  
@@ -114,7 +114,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static int spi_nor_hwcaps2cmd(u32 hwcaps, const int table[][2], size_t size)
  {
  	size_t i;
-@@ -4027,6 +4121,7 @@ int spi_nor_scan(struct spi_nor *nor)
+@@ -4077,6 +4171,7 @@ int spi_nor_scan(struct spi_nor *nor)
  	nor->write = spi_nor_write_data;
  	nor->read_reg = spi_nor_read_reg;
  	nor->write_reg = spi_nor_write_reg;

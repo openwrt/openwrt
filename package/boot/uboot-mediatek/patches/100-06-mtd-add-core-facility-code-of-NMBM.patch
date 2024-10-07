@@ -31,7 +31,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -274,6 +274,8 @@ source "drivers/mtd/ubi/Kconfig"
+@@ -282,6 +282,8 @@ source "drivers/mtd/ubi/Kconfig"
  
  source "drivers/mtd/nvmxip/Kconfig"
  
@@ -42,7 +42,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  endmenu
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -41,3 +41,4 @@ obj-$(CONFIG_SPL_UBI) += ubispl/
+@@ -42,3 +42,4 @@ obj-$(CONFIG_SPL_UBI) += ubispl/
  endif
  
  obj-$(CONFIG_MTK_SPI_NAND) += mtk-snand/
