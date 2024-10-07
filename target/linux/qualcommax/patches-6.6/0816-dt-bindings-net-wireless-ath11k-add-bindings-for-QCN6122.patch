@@ -1,0 +1,40 @@
+--- a/Documentation/devicetree/bindings/net/wireless/qcom,ath11k.yaml
++++ b/Documentation/devicetree/bindings/net/wireless/qcom,ath11k.yaml
+@@ -21,6 +21,7 @@ properties:
+       - qcom,ipq6018-wifi
+       - qcom,wcn6750-wifi
+       - qcom,ipq5018-wifi
++      - qcom,qcn6122-wifi
+ 
+   reg:
+     maxItems: 1
+@@ -258,6 +259,29 @@ allOf:
+             - description: interrupt event for ring DP20
+             - description: interrupt event for ring DP21
+             - description: interrupt event for ring DP22
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - qcom,qcn6122-wifi
++    then:
++      properties:
++        interrupts:
++          items:
++            - description: interrupt event for ring CE1
++            - description: interrupt event for ring CE2
++            - description: interrupt event for ring CE3
++            - description: interrupt event for ring CE4
++            - description: interrupt event for ring CE5
++            - description: interrupt event for ring DP1
++            - description: interrupt event for ring DP2
++            - description: interrupt event for ring DP3
++            - description: interrupt event for ring DP4
++            - description: interrupt event for ring DP5
++            - description: interrupt event for ring DP6
++            - description: interrupt event for ring DP7
++            - description: interrupt event for ring DP8
+ 
+ examples:
+   - |
