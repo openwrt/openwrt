@@ -139,23 +139,6 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
-	smartrg,sdg-8612|\
-	smartrg,sdg-8614|\
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
-		addr=$(mmc_get_mac_ascii mfginfo MFG_MAC)
-		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "2" ] && macaddr_add $addr 4 > /sys${DEVPATH}/macaddress
-		;;
-	smartrg,sdg-8733|\
-	smartrg,sdg-8733a|\
-	smartrg,sdg-8734)
-		addr=$(mmc_get_mac_ascii mfginfo MFG_MAC)
-		[ "$PHYNBR" = "0" ] && macaddr_add $addr 4 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $addr a > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "2" ] && macaddr_add $addr 6 > /sys${DEVPATH}/macaddress
-		;;
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088)
