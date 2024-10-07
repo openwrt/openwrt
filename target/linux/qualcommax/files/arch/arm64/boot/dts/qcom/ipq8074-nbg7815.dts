@@ -38,6 +38,47 @@
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	fan: gpio_fan {
+		compatible = "gpio-fan";
+		pinctrl-names = "default";
+		gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <0    0>,
+				<4500 1>;
+		#cooling-cells = <2>;
+	};
+
+	thermal-zones {
+		aqr113c_thermal: aqr113c-thermal {
+			polling-delay-passive = <1000>;
+			polling-delay = <5000>;
+
+			thermal-sensors = <&aqr113c>;
+
+			trips {
+				aqr113c-crit {
+					temperature = <100000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
+		};
+
+		tmp103_board: tmp103-board {
+			polling-delay = <5000>;
+			polling-delay-passive = <2000>;
+
+			thermal-sensors = <&tmp103>;
+
+			trips {
+				tmp103-crit {
+					temperature = <90000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
+		};
+	};
 };
 
 &tlmm {
@@ -306,6 +347,7 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
 		reset-gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+		#thermal-sensor-cells = <0>;
 
 		nvmem-cells = <&aqr_fw>;
 		nvmem-cell-names = "firmware";
@@ -415,9 +457,10 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	tmp103@70 {
+	tmp103: tmp103@70 {
 		compatible = "ti,tmp103";
 		reg = <0x70>;
+		#thermal-sensor-cells = <0>;
 	};
 };
 
