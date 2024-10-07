@@ -13,6 +13,7 @@
 #include <linux/of.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
 
 #define NAME "ubootenv"
 
@@ -132,13 +133,20 @@ static int ubootenv_probe(struct platform_device *pdev)
 	return misc_register(&data->misc);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ubootenv_remove(struct platform_device *pdev)
+#else
+static void ubootenv_remove(struct platform_device *pdev)
+#endif
 {
 	struct ubootenv_drvdata *data = platform_get_drvdata(pdev);
 
 	data->env = NULL;
 	misc_deregister(&data->misc);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static struct platform_driver ubootenv_driver = {
