@@ -335,13 +335,19 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int rb91x_nand_remove(struct platform_device *pdev)
+#else
+static void rb91x_nand_remove(struct platform_device *pdev)
+#endif
 {
 	struct rb91x_nand_drvdata *drvdata = platform_get_drvdata(pdev);
 
 	rb91x_nand_release(drvdata);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id rb91x_nand_match[] = {

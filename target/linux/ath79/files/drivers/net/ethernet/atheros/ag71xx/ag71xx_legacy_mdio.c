@@ -13,6 +13,7 @@
 
 #include <linux/clk.h>
 #include <linux/of_mdio.h>
+#include <linux/version.h>
 #include "ag71xx.h"
 
 #define AG71XX_MDIO_RETRY	1000
@@ -221,12 +222,18 @@ static int ag71xx_mdio_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ag71xx_mdio_remove(struct platform_device *pdev)
+#else
+static void ag71xx_mdio_remove(struct platform_device *pdev)
+#endif
 {
 	struct ag71xx_mdio *am = platform_get_drvdata(pdev);
 
 	mdiobus_unregister(am->mii_bus);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id ag71xx_mdio_match[] = {
