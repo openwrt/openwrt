@@ -1,0 +1,40 @@
+From 01fb404dbda1872ad99cea88bf43313bed30200a Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 8 Sep 2024 15:24:07 +0800
+Subject: [PATCH] init: MP: allow to ignore reset controlls
+
+The SSDK is not used anymore to initialize the internal IPQ5018 GE PHY as 
+there is a separate driver pending upstream review/approval:
+https://lore.kernel.org/all/TYZPR01MB5556D5568546D6DA4313209EC9762@ \
+TYZPR01MB5556.apcprd01.prod.exchangelabs.com/
+
+As such, change the code to not error out when the reset controls aren't 
+found in the DTS where the SSDK expects them. These resets are now defined
+under the definition based on the new driver mentioned above.
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ src/init/ssdk_clk.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/src/init/ssdk_clk.c b/src/init/ssdk_clk.c
+index 71e59452..bc244c6e 100644
+--- a/src/init/ssdk_clk.c
++++ b/src/init/ssdk_clk.c
+@@ -1282,10 +1282,8 @@ ssdk_mp_reset_init(void)
+ 
+ 	for (i = 0; i < MP_BCR_RST_MAX; i++) {
+ 		rst = of_reset_control_get(rst_node, mp_rst_ids[i]);
+-		if (IS_ERR(rst)) {
+-			SSDK_ERROR("%s not exist!\n", mp_rst_ids[i]);
+-			return;
+-		}
++		if (IS_ERR(rst))
++			continue;
+ 		ssdk_gcc_reset(rst, SSDK_RESET_ASSERT);
+ 		msleep(200);
+ 		ssdk_gcc_reset(rst, SSDK_RESET_DEASSERT);
+-- 
+2.40.1
+
