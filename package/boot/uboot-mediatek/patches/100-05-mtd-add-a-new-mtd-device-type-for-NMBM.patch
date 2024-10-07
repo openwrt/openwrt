@@ -15,7 +15,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/mtdparts.c
 +++ b/cmd/mtdparts.c
-@@ -1057,6 +1057,9 @@ int mtd_id_parse(const char *id, const c
+@@ -1054,6 +1054,9 @@ int mtd_id_parse(const char *id, const c
  	} else if (strncmp(p, "spi-nand", 8) == 0) {
  		*dev_type = MTD_DEV_TYPE_SPINAND;
  		p += 8;
@@ -27,7 +27,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  		return 1;
 --- a/include/jffs2/load_kernel.h
 +++ b/include/jffs2/load_kernel.h
-@@ -16,11 +16,13 @@
+@@ -17,11 +17,13 @@
  #define MTD_DEV_TYPE_NAND	0x0002
  #define MTD_DEV_TYPE_ONENAND	0x0004
  #define MTD_DEV_TYPE_SPINAND	0x0008

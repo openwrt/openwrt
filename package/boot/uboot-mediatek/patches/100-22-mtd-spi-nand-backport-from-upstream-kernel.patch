@@ -31,7 +31,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -822,6 +822,7 @@ static const struct nand_ops spinand_ops
+@@ -826,6 +826,7 @@ static const struct nand_ops spinand_ops
  };
  
  static const struct spinand_manufacturer *spinand_manufacturers[] = {
