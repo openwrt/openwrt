@@ -40,6 +40,7 @@
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
 #include <linux/of.h>
+#include <linux/version.h>
 
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
@@ -2346,7 +2347,11 @@ host_free:
 }
 
 /* 4 device share one driver, using "drvdata" to show difference */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int msdc_drv_remove(struct platform_device *pdev)
+#else
+static void msdc_drv_remove(struct platform_device *pdev)
+#endif
 {
 	struct mmc_host *mmc;
 	struct msdc_host *host;
@@ -2372,7 +2377,9 @@ static int msdc_drv_remove(struct platform_device *pdev)
 
 	mmc_free_host(host->mmc);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 /* Fix me: Power Flow */
