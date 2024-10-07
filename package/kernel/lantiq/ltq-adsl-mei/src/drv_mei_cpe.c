@@ -2780,7 +2780,11 @@ static int ltq_mei_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ltq_mei_remove(struct platform_device *pdev)
+#else
+static void ltq_mei_remove(struct platform_device *pdev)
+#endif
 {
 	int i = 0;
 	int num;
@@ -2794,7 +2798,9 @@ static int ltq_mei_remove(struct platform_device *pdev)
 			IFX_MEI_ExitDevice (i);
 		}
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id ltq_mei_match[] = {
