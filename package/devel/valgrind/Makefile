@@ -104,14 +104,7 @@ endif
 CONFIGURE_ARGS += \
 	--enable-lto \
 	--enable-tls \
-	--without-x \
 	--without-mpicc \
-	--without-uiout \
-	--disable-valgrindmi \
-	--disable-tui \
-	--disable-valgrindtk \
-	--without-included-gettext \
-	--with-pagesize=4 \
 
 define Package/valgrind/install
 	$(INSTALL_DIR) $(1)/usr/bin
