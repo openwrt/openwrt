@@ -39,14 +39,6 @@ struct gca230718_private {
 	struct gca230718_led leds[GCA230718_MAX_LEDS];
 };
 
-static void gca230718_init_private_led_data(struct gca230718_private *data)
-{
-	u8 ledIndex;
-	for (ledIndex = 0; ledIndex < GCA230718_MAX_LEDS; ledIndex++) {
-		data->leds[ledIndex].client = NULL;
-	}
-}
-
 static void gca230718_send_sequence(struct i2c_client *client, u8 byte0,
 				    struct gca230718_private *priv)
 {
@@ -114,6 +106,7 @@ static int gca230718_set_brightness(struct led_classdev *led_cdev,
 static int gca230718_probe(struct i2c_client *client)
 {
 	struct gca230718_private *priv;
+	int err;
 
 	pr_info("Enter gca230718_probe for device address %u\n", client->addr);
 	priv = devm_kzalloc(&client->dev, sizeof(struct gca230718_private),
@@ -122,11 +115,14 @@ static int gca230718_probe(struct i2c_client *client)
 		pr_info("Error during allocating memory for private data\n");
 		return -ENOMEM;
 	}
-	struct device_node *ledNode;
-	mutex_init(&priv->lock);
-	gca230718_init_private_led_data(priv);
+
+	err = devm_mutex_init(&client->dev, &priv->lock);
+	if (err)
+		return err;
+
 	i2c_set_clientdata(client, priv);
 
+	struct device_node *ledNode;
 	for_each_child_of_node(client->dev.of_node, ledNode) {
 		u32 regValue = 0;
 		if (of_property_read_u32(ledNode, "reg", &regValue))
@@ -173,14 +169,6 @@ static int gca230718_probe(struct i2c_client *client)
 	return 0;
 }
 
-static void gca230718_remove(struct i2c_client *client)
-{
-	struct gca230718_private *priv;
-	priv = i2c_get_clientdata(client);
-	mutex_destroy(&priv->lock);
-	gca230718_init_private_led_data(priv);
-}
-
 static const struct i2c_device_id gca230718_i2c_ids[] = {
 	{ "gca230718", 0 },
 	{},
@@ -195,7 +183,6 @@ MODULE_DEVICE_TABLE(of, gca230718_dt_ids);
 
 static struct i2c_driver gca230718_driver = {
 	.probe		= gca230718_probe,
-	.remove		= gca230718_remove,
 	.id_table	= gca230718_i2c_ids,
 	.driver = {
 		.name		= KBUILD_MODNAME,
