@@ -1452,7 +1452,11 @@ err_free_buf:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ar934x_nfc_remove(struct platform_device *pdev)
+#else
+static void ar934x_nfc_remove(struct platform_device *pdev)
+#endif
 {
 	struct ar934x_nfc *nfc;
 
@@ -1463,7 +1467,9 @@ static int ar934x_nfc_remove(struct platform_device *pdev)
 		ar934x_nfc_free_buf(nfc);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id ar934x_nfc_match[] = {

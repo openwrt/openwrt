@@ -15,6 +15,7 @@
 #include <linux/of_net.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/version.h>
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
@@ -1731,7 +1732,11 @@ err_phy_disconnect:
 	return err;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int ag71xx_remove(struct platform_device *pdev)
+#else
+static void ag71xx_remove(struct platform_device *pdev)
+#endif
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct ag71xx *ag;
@@ -1744,7 +1749,9 @@ static int ag71xx_remove(struct platform_device *pdev)
 	ag71xx_phy_disconnect(ag);
 	unregister_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id ag71xx_match[] = {
