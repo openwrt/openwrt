@@ -183,7 +183,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_NAT, $(P_V6)ip6table
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, $(P_V6)ip6t_NPT),))
 
 # userland only
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT,CONFIG_NF_NAT, ipt_SNAT ipt_DNAT)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT,CONFIG_NF_NAT, ipt_NAT)))
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, ip6t_DNPT ip6t_SNPT)))
 
 $(eval $(call nf_add,IPT_NAT,CONFIG_NETFILTER_XT_TARGET_MASQUERADE, $(P_XT)xt_MASQUERADE))
