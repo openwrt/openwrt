@@ -798,6 +798,16 @@ define Device/comfast_cf-e314n-v2
 endef
 TARGET_DEVICES += comfast_cf-e314n-v2
 
+define Device/comfast_cf-e320n-v2
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E320N
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := rssileds
+  IMAGE_SIZE := 15360k
+endef
+TARGET_DEVICES += comfast_cf-e320n-v2
+
 define Device/comfast_cf-e375ac
   SOC := qca9563
   DEVICE_VENDOR := COMFAST
