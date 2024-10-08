@@ -1,7 +1,6 @@
-From 0b04c37a1aae523025195c29a6477cf26234d26c Mon Sep 17 00:00:00 2001
 From: Chuanhong Guo <gch981213@gmail.com>
 Date: Tue, 10 Sep 2024 09:10:27 +0800
-Subject: [PATCH 9/9] usb: dwc2: handle OTG interrupt regardless of GINTSTS
+Subject: [PATCH 12/20] usb: dwc2: handle OTG interrupt regardless of GINTSTS
 
 The DWC OTG 3.30a found on Siflower SF19A2890 has battery charger
 support enabled. It triggers MultVallpChng interrupt (bit 20 of

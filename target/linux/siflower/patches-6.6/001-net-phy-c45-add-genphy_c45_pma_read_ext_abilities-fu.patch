@@ -1,0 +1,180 @@
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Tue, 12 Dec 2023 06:41:43 +0100
+Subject: [PATCH 01/20] net: phy: c45: add genphy_c45_pma_read_ext_abilities()
+ function
+
+Move part of the genphy_c45_pma_read_abilities() code to a separate
+function.
+
+Some PHYs do not implement PMA/PMD status 2 register (Register 1.8) but
+do implement PMA/PMD extended ability register (Register 1.11). To make
+use of it, we need to be able to access this part of code separately.
+
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Link: https://lore.kernel.org/r/20231212054144.87527-2-o.rempel@pengutronix.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 0c476157085fe2ad13b9bec70ea672e86647fa1a)
+---
+ drivers/net/phy/phy-c45.c | 129 ++++++++++++++++++++++----------------
+ include/linux/phy.h       |   1 +
+ 2 files changed, 75 insertions(+), 55 deletions(-)
+
+--- a/drivers/net/phy/phy-c45.c
++++ b/drivers/net/phy/phy-c45.c
+@@ -920,6 +920,79 @@ int genphy_c45_pma_baset1_read_abilities
+ EXPORT_SYMBOL_GPL(genphy_c45_pma_baset1_read_abilities);
+ 
+ /**
++ * genphy_c45_pma_read_ext_abilities - read supported link modes from PMA
++ * @phydev: target phy_device struct
++ *
++ * Read the supported link modes from the PMA/PMD extended ability register
++ * (Register 1.11).
++ */
++int genphy_c45_pma_read_ext_abilities(struct phy_device *phydev)
++{
++	int val;
++
++	val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_EXTABLE);
++	if (val < 0)
++		return val;
++
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10GBLRM);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10GBT);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10GBKX4);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10GBKR);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_1000BT);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_1000BKX);
++
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_100BTX);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_100BTX);
++
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10BT);
++	linkmode_mod_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT,
++			 phydev->supported,
++			 val & MDIO_PMA_EXTABLE_10BT);
++
++	if (val & MDIO_PMA_EXTABLE_NBT) {
++		val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
++				   MDIO_PMA_NG_EXTABLE);
++		if (val < 0)
++			return val;
++
++		linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
++				 phydev->supported,
++				 val & MDIO_PMA_NG_EXTABLE_2_5GBT);
++
++		linkmode_mod_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
++				 phydev->supported,
++				 val & MDIO_PMA_NG_EXTABLE_5GBT);
++	}
++
++	if (val & MDIO_PMA_EXTABLE_BT1) {
++		val = genphy_c45_pma_baset1_read_abilities(phydev);
++		if (val < 0)
++			return val;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(genphy_c45_pma_read_ext_abilities);
++
++/**
+  * genphy_c45_pma_read_abilities - read supported link modes from PMA
+  * @phydev: target phy_device struct
+  *
+@@ -962,63 +1035,9 @@ int genphy_c45_pma_read_abilities(struct
+ 			 val & MDIO_PMA_STAT2_10GBER);
+ 
+ 	if (val & MDIO_PMA_STAT2_EXTABLE) {
+-		val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PMA_EXTABLE);
++		val = genphy_c45_pma_read_ext_abilities(phydev);
+ 		if (val < 0)
+ 			return val;
+-
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10GBLRM);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10GBT);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10GBKX4);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10GBKR);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_1000BT);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_1000BKX);
+-
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_100BTX);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_100BTX);
+-
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10BT);
+-		linkmode_mod_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT,
+-				 phydev->supported,
+-				 val & MDIO_PMA_EXTABLE_10BT);
+-
+-		if (val & MDIO_PMA_EXTABLE_NBT) {
+-			val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD,
+-					   MDIO_PMA_NG_EXTABLE);
+-			if (val < 0)
+-				return val;
+-
+-			linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
+-					 phydev->supported,
+-					 val & MDIO_PMA_NG_EXTABLE_2_5GBT);
+-
+-			linkmode_mod_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
+-					 phydev->supported,
+-					 val & MDIO_PMA_NG_EXTABLE_5GBT);
+-		}
+-
+-		if (val & MDIO_PMA_EXTABLE_BT1) {
+-			val = genphy_c45_pma_baset1_read_abilities(phydev);
+-			if (val < 0)
+-				return val;
+-		}
+ 	}
+ 
+ 	/* This is optional functionality. If not supported, we may get an error
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -1896,6 +1896,7 @@ int genphy_c45_an_config_aneg(struct phy
+ int genphy_c45_an_disable_aneg(struct phy_device *phydev);
+ int genphy_c45_read_mdix(struct phy_device *phydev);
+ int genphy_c45_pma_read_abilities(struct phy_device *phydev);
++int genphy_c45_pma_read_ext_abilities(struct phy_device *phydev);
+ int genphy_c45_pma_baset1_read_abilities(struct phy_device *phydev);
+ int genphy_c45_read_eee_abilities(struct phy_device *phydev);
+ int genphy_c45_pma_baset1_read_master_slave(struct phy_device *phydev);

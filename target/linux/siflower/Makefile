@@ -5,7 +5,7 @@ ARCH:=mipsel
 BOARD:=siflower
 BOARDNAME:=Siflower SoCs
 FEATURES:=squashfs usb usbgadget source-only
-SUBTARGETS:=sf19a2890
+SUBTARGETS:=sf19a2890 sf21
 
 KERNEL_PATCHVER:=6.6
 
