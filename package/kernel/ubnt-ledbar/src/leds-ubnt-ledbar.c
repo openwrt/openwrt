@@ -185,7 +185,7 @@ static int ubnt_ledbar_probe(struct i2c_client *client)
 
 	ledbar->client = client;
 
-	err = devm_mutex_init(&ofdev->dev, &ledbar->lock);
+	err = devm_mutex_init(&client->dev, &ledbar->lock);
 	if (err)
 		return err;
 
