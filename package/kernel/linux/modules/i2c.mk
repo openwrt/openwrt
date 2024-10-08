@@ -127,6 +127,22 @@ endef
 $(eval $(call KernelPackage,i2c-designware-pci))
 
 
+I2C_DWPLATFORM_MODULES:= \
+  CONFIG_I2C_DESIGNWARE_PLATFORM:drivers/i2c/busses/i2c-designware-platform
+
+define KernelPackage/i2c-designware-platform
+  $(call i2c_defaults,$(I2C_DWPLATFORM_MODULES),59)
+  TITLE:=Synopsys DesignWare Platform
+  DEPENDS:=+kmod-i2c-designware-core
+endef
+
+define KernelPackage/i2c-designware-platform/description
+ Synopsys DesignWare I2C Platform driver.
+endef
+
+$(eval $(call KernelPackage,i2c-designware-platform))
+
+
 I2C_GPIO_MODULES:= \
   CONFIG_I2C_GPIO:drivers/i2c/busses/i2c-gpio
 
