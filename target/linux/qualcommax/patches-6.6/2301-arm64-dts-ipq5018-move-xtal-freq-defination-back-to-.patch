@@ -1,0 +1,32 @@
+From 7b86559ca8112dcf7c466406abde26ae8932f966 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 8 Sep 2024 16:40:11 +0800
+Subject: [PATCH] arm64: dts: ipq5018: move xtal freq defination back to
+ soc-level
+
+Signed-off-by: hzy <hzyitc@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5018.dtsi b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+index 4b03af4b4b99..a11971fe807d 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -18,11 +18,13 @@ / {
+ 	clocks {
+ 		sleep_clk: sleep-clk {
+ 			compatible = "fixed-clock";
++			clock-frequency = <32000>;
+ 			#clock-cells = <0>;
+ 		};
+ 
+ 		xo_board_clk: xo-board-clk {
+ 			compatible = "fixed-clock";
++			clock-frequency = <24000000>;
+ 			#clock-cells = <0>;
+ 		};
+ 	};
+-- 
+2.40.1
+

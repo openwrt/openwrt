@@ -1,0 +1,503 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Redmi AX3000";
+	compatible = "redmi,ax3000", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_yellow;
+		led-running = &led_system_blue;
+		led-upgrade = &led_system_yellow;
+	};
+
+	chosen {
+		// Override the root parameter from u-boot
+		// Increase coherent_pool size for WiFi
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	reserved-memory {
+		// Not sure why but without this, WiFi will crash
+		tz_apps@4a400000 {
+			no-map;
+			// The size is incorrent, but it works
+			reg = <0x0 0x4a400000 0x0 0x700000>;
+		};
+
+		q6_mem_regions: q6_mem_regions@4b000000 {
+			no-map;
+			// reg = <0x0 0x4b000000 0x0 0x3b00000>;
+			reg = <0x0 0x4b000000 0x0 0x3000000>;
+		};
+	};
+};
+
+&tlmm {
+	blsp_uart0_pins: blsp_uart0_pins {
+		pins =
+			"gpio28", /* RX */
+			"gpio29"; /* TX */
+		function = "blsp0_uart1";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	qspi_nand_pins: qspi_nand_pins {
+		clock {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	mdio1_pins: mdio1_pins {
+		mdc {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	leds_pins: leds_pins {
+		led_system_blue {
+			pins = "gpio19";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_system_yellow {
+			pins = "gpio17";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_internet_blue {
+			pins = "gpio22";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+
+		led_internet_yellow {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	button_pins: button_pins {
+		button_reset {
+			pins = "gpio25";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		button_mesh {
+			pins = "gpio23";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&blsp_uart0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qspi_nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&soc {
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_system_blue: led_system_blue {
+			label = "blue:system";
+			gpio = <&tlmm 19 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_system_yellow: led_system_yellow {
+			label = "yellow:system";
+			gpio = <&tlmm 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_blue: led_internet_blue {
+			label = "blue:internet";
+			gpio = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_yellow: led_internet_yellow {
+			label = "yellow:internet";
+			gpio = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	button {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		button_reset {
+			label = "reset";
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_KEY>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		button_mesh {
+			label = "mesh";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_KEY>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	// mdio-bus = <&mdio0>;
+
+	// switch_cpu_bmp = <ESS_PORT0>;
+	// switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2)>;
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy -> QCA8337 Phy4
+		port@0 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+			phy_dac = <0x10 0x10>;
+			// status = "disabled";
+		};
+
+		// MAC1 ---SGMII---> QCA8337 SerDes
+		port@1 {
+			port_id = <2>;
+			forced-speed = <1000>;
+			forced-duplex = <1>;
+		};
+	};
+};
+
+// MAC0 -> GE Phy
+&dp1 {
+	/*
+	 * ===============================================================
+	 *     _______________________         _______________________
+	 *    |        IPQ5018        |       |        QCA8337        |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | | MAC0 |---| GE Phy |-+--UTP--+-|  Phy4  |---| MAC5 | |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    | | MAC1 |---| Uniphy |-+-SGMII-+-| SerDes |---| MAC0 | |
+	 *    | +------+   +--------+ |       | +--------+   +------+ |
+	 *    |_______________________|       |_______________________|
+	 *
+	 * ===============================================================
+	 *
+	 * Current drivers don't support such topology. So dp1 and ge_phy
+	 * are useless. But they can't be disabled dut to qca-ssdk use
+	 * ge_phy to detect IPQ5018 dummy switch.
+	 */
+	status = "okay";
+};
+
+// MAC1 ---SGMII---> QCA8337 SerDes
+&dp2 {
+	status = "okay";
+	phy-mode = "sgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+// IPQ5018 GE Phy -> QCA8337 Phy4
+&ge_phy {
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	reset-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+
+	// QCA8337 Phy0 -> LAN1
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	// QCA8337 Phy1 -> LAN2
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN3
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 Phy3 -> WAN
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	// QCA8337 Phy4 -> IPQ5018 GE Phy
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+		status = "disabled";
+	};
+
+	switch0: ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		reg = <17>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0cpu: port@0 {
+				reg = <0>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp2>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&qca8337_0>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu2";
+				phy-handle = <&qca8337_4>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&q6v5_wcss {
+	memory-region = <&q6_mem_regions>;
+
+	firmware-name = "IPQ5018/q6_fw.mdt",
+			"IPQ5018/m3_fw.mdt",
+			"qcn6122/m3_fw.mdt";
+
+	qcom,bootargs_smem = <507>;
+	boot-args = </*       type: */ 0x2 /* PCIE1 */
+		     /*     length: */ 4
+		     /*      PD id: */ 2
+		     /* reset GPIO: */ 27
+		     /*   reserved: */ 0 0>;
+
+	status = "okay";
+
+	// IPQ5018
+	q6_wcss_pd1: pd-1 {
+		resets =
+			<&gcc GCC_WCSSAON_RESET>,
+			<&gcc GCC_WCSS_BCR>,
+			<&gcc GCC_CE_BCR>;
+		reset-names =
+			"wcss_aon_reset",
+			"wcss_reset",
+			"ce_reset";
+
+		clocks =
+			<&gcc GCC_WCSS_AHB_S_CLK>,
+			<&gcc GCC_WCSS_ACMT_CLK>,
+			<&gcc GCC_WCSS_AXI_M_CLK>;
+		clock-names =
+			"gcc_wcss_ahb_s_clk",
+					"gcc_wcss_acmt_clk",
+					"gcc_wcss_axi_m_clk";
+
+		reg = <0x4ab000 0x20>;
+		reg-names = "rmb";
+
+		// qcom,halt-regs = <&tcsr_q6_block 0xa000 0xd000 0x0>;
+
+		interrupts-extended =
+			<&wcss_smp2p_in 8 0>,
+			<&wcss_smp2p_in 9 0>,
+			<&wcss_smp2p_in 12 0>,
+			<&wcss_smp2p_in 11 0>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 8>,
+			<&wcss_smp2p_out 9>,
+			<&wcss_smp2p_out 10>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+
+		firmware-name = "IPQ5018/q6_fw.mdt";
+		// m3_firmware = "IPQ5018/m3_fw.mdt";
+	};
+
+	// QCN6102
+	q6_wcss_pd2: pd-2 {
+		interrupts-extended =
+			<&wcss_smp2p_in 16 0>,
+			<&wcss_smp2p_in 17 0>,
+			<&wcss_smp2p_in 20 0>,
+			<&wcss_smp2p_in 19 0>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 16>,
+			<&wcss_smp2p_out 17>,
+			<&wcss_smp2p_out 18>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+
+		firmware-name = "IPQ5018/q6_fw.mdt";
+		// m3_firmware = "qcn6122/m3_fw.mdt";
+	};
+};
+
+&wifi0 {
+	// IPQ5000
+	qcom,multipd_arch;
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+
+	// Be overridden by /etc/hotplug.d/firmware/10-ath11k-board_id
+	// M79: 0x10
+	// M81: 0x24
+	qcom,board_id = <0x24>;
+
+	// qcom,ath11k-fw-memory-mode = <0>;
+	// qcom,bdf-addr = <0x4c400000>;
+	// qcom,caldb-addr = <0x4d200000>;
+	// qcom,m3-dump-addr = <0x4d400000>;
+
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4c400000>;
+
+	status = "okay";
+};
+
+&wifi1 {
+	// QCN6102
+	qcom,multipd_arch;
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+
+	qcom,board_id = <0x60>;
+
+	// qcom,ath11k-fw-memory-mode = <0>;
+	// qcom,bdf-addr = <0x4d500000>;
+	// qcom,caldb-addr = <0x4e500000>;
+	// qcom,m3-dump-addr = <0x4ea00000>;
+
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+
+	status = "okay";
+};
