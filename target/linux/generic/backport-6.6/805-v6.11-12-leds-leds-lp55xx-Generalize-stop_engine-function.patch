@@ -1,0 +1,139 @@
+From 43e91e5eb9c8b36ddd1dc239e0d8c36cc034e8ca Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:19 +0200
+Subject: [PATCH 12/18] leds: leds-lp55xx: Generalize stop_engine function
+
+Generalize stop_engine function as the implementation is the same for
+most of the lp55xx based LED driver.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-15-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 20 +++-----------------
+ drivers/leds/leds-lp5523.c        | 20 +++-----------------
+ drivers/leds/leds-lp55xx-common.c | 13 +++++++++++++
+ drivers/leds/leds-lp55xx-common.h |  1 +
+ 4 files changed, 20 insertions(+), 34 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -108,27 +108,13 @@ static inline void lp5521_wait_enable_do
+ 	usleep_range(500, 600);
+ }
+ 
+-static void lp5521_stop_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP5521_MODE_R_M,
+-		[LP55XX_ENGINE_2] = LP5521_MODE_G_M,
+-		[LP55XX_ENGINE_3] = LP5521_MODE_B_M,
+-	};
+-
+-	lp55xx_update_bits(chip, LP5521_REG_OP_MODE, mask[idx], 0);
+-
+-	lp5521_wait_opmode_done();
+-}
+-
+ static void lp5521_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	int ret;
+ 
+ 	/* stop engine */
+ 	if (!start) {
+-		lp5521_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		lp55xx_write(chip, LP5521_REG_OP_MODE, LP5521_CMD_DIRECT);
+ 		lp5521_wait_opmode_done();
+ 		return;
+@@ -251,11 +237,11 @@ static ssize_t store_engine_mode(struct
+ 		lp5521_run_engine(chip, true);
+ 		engine->mode = LP55XX_ENGINE_RUN;
+ 	} else if (!strncmp(buf, "load", 4)) {
+-		lp5521_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		lp55xx_load_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_LOAD;
+ 	} else if (!strncmp(buf, "disabled", 8)) {
+-		lp5521_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_DISABLED;
+ 	}
+ 
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -153,25 +153,11 @@ static int lp5523_post_init_device(struc
+ 	return lp5523_init_program_engine(chip);
+ }
+ 
+-static void lp5523_stop_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 mask[] = {
+-		[LP55XX_ENGINE_1] = LP5523_MODE_ENG1_M,
+-		[LP55XX_ENGINE_2] = LP5523_MODE_ENG2_M,
+-		[LP55XX_ENGINE_3] = LP5523_MODE_ENG3_M,
+-	};
+-
+-	lp55xx_update_bits(chip, LP5523_REG_OP_MODE, mask[idx], 0);
+-
+-	lp5523_wait_opmode_done();
+-}
+-
+ static void lp5523_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	/* stop engine */
+ 	if (!start) {
+-		lp5523_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		lp55xx_turn_off_channels(chip);
+ 		return;
+ 	}
+@@ -277,11 +263,11 @@ static ssize_t store_engine_mode(struct
+ 		lp5523_run_engine(chip, true);
+ 		engine->mode = LP55XX_ENGINE_RUN;
+ 	} else if (!strncmp(buf, "load", 4)) {
+-		lp5523_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		lp55xx_load_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_LOAD;
+ 	} else if (!strncmp(buf, "disabled", 8)) {
+-		lp5523_stop_engine(chip);
++		lp55xx_stop_engine(chip);
+ 		engine->mode = LP55XX_ENGINE_DISABLED;
+ 	}
+ 
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -298,6 +298,19 @@ void lp55xx_turn_off_channels(struct lp5
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_turn_off_channels);
+ 
++void lp55xx_stop_engine(struct lp55xx_chip *chip)
++{
++	enum lp55xx_engine_index idx = chip->engine_idx;
++	const struct lp55xx_device_config *cfg = chip->cfg;
++	u8 mask;
++
++	mask = LP55xx_MODE_ENGn_MASK(idx, cfg->reg_op_mode.shift);
++	lp55xx_update_bits(chip, cfg->reg_op_mode.addr, mask, 0);
++
++	lp55xx_wait_opmode_done(chip);
++}
++EXPORT_SYMBOL_GPL(lp55xx_stop_engine);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -221,6 +221,7 @@ extern int lp55xx_led_brightness(struct
+ extern int lp55xx_multicolor_brightness(struct lp55xx_led *led);
+ extern void lp55xx_set_led_current(struct lp55xx_led *led, u8 led_current);
+ extern void lp55xx_turn_off_channels(struct lp55xx_chip *chip);
++extern void lp55xx_stop_engine(struct lp55xx_chip *chip);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
