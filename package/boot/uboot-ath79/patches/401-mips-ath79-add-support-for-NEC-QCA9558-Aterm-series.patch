@@ -1,49 +1,50 @@
-From 80a7688c478a6a372083c29ff0b1826db4dae5b2 Mon Sep 17 00:00:00 2001
+From 3e01c3042fdc638f6edc57a6e64a111a785589fd Mon Sep 17 00:00:00 2001
 From: INAGAKI Hiroshi <musashino.open@gmail.com>
-Date: Wed, 24 Apr 2024 23:54:46 +0900
-Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
+Date: Sun, 23 Jun 2024 04:09:14 +0900
+Subject: [PATCH 2/2] mips: ath79: add support for NEC QCA9558 Aterm series
 
+mips: ath79: cleanup defconfig for NEC QCA9558 Aterm series
 ---
- arch/mips/dts/Makefile                |  1 +
- arch/mips/dts/nec,ar9344-aterm.dts    | 35 +++++++++++++++
- arch/mips/mach-ath79/Kconfig          |  5 +++
- board/nec/ar9344_aterm/Kconfig        | 30 +++++++++++++
- board/nec/ar9344_aterm/Makefile       |  3 ++
- board/nec/ar9344_aterm/ar9344_aterm.c | 59 ++++++++++++++++++++++++++
- configs/nec_ar9344_aterm_defconfig    | 61 +++++++++++++++++++++++++++
- include/configs/nec_ar9344_aterm.h    | 28 ++++++++++++
- 8 files changed, 222 insertions(+)
- create mode 100644 arch/mips/dts/nec,ar9344-aterm.dts
- create mode 100644 board/nec/ar9344_aterm/Kconfig
- create mode 100644 board/nec/ar9344_aterm/Makefile
- create mode 100644 board/nec/ar9344_aterm/ar9344_aterm.c
- create mode 100644 configs/nec_ar9344_aterm_defconfig
- create mode 100644 include/configs/nec_ar9344_aterm.h
+ arch/mips/dts/Makefile                  |  1 +
+ arch/mips/dts/nec,qca9558-aterm.dts     | 32 +++++++++++++
+ arch/mips/mach-ath79/Kconfig            |  5 ++
+ board/nec/qca9558_aterm/Kconfig         | 30 ++++++++++++
+ board/nec/qca9558_aterm/Makefile        |  3 ++
+ board/nec/qca9558_aterm/qca9558_aterm.c | 58 +++++++++++++++++++++++
+ configs/nec_qca9558_aterm_defconfig     | 61 +++++++++++++++++++++++++
+ include/configs/nec_qca9558_aterm.h     | 28 ++++++++++++
+ 8 files changed, 218 insertions(+)
+ create mode 100644 arch/mips/dts/nec,qca9558-aterm.dts
+ create mode 100644 board/nec/qca9558_aterm/Kconfig
+ create mode 100644 board/nec/qca9558_aterm/Makefile
+ create mode 100644 board/nec/qca9558_aterm/qca9558_aterm.c
+ create mode 100644 configs/nec_qca9558_aterm_defconfig
+ create mode 100644 include/configs/nec_qca9558_aterm.h
 
 --- a/arch/mips/dts/Makefile
 +++ b/arch/mips/dts/Makefile
-@@ -24,6 +24,7 @@ dtb-$(CONFIG_BOARD_GARDENA_SMART_GATEWAY
- dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) += linkit-smart-7688.dtb
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) +=
  dtb-$(CONFIG_TARGET_OCTEON_EBB7304) += mrvl,octeon-ebb7304.dtb
  dtb-$(CONFIG_TARGET_OCTEON_NIC23) += mrvl,octeon-nic23.dtb
-+dtb-$(CONFIG_BOARD_NEC_AR9344_ATERM) += nec,ar9344-aterm.dtb
+ dtb-$(CONFIG_BOARD_NEC_AR9344_ATERM) += nec,ar9344-aterm.dtb
++dtb-$(CONFIG_BOARD_NEC_QCA9558_ATERM) += nec,qca9558-aterm.dtb
  dtb-$(CONFIG_BOARD_NETGEAR_CG3100D) += netgear,cg3100d.dtb
  dtb-$(CONFIG_BOARD_NETGEAR_DGND3700V2) += netgear,dgnd3700v2.dtb
  dtb-$(CONFIG_BOARD_SAGEM_FAST1704) += sagem,f@st1704.dtb
 --- /dev/null
-+++ b/arch/mips/dts/nec,ar9344-aterm.dts
-@@ -0,0 +1,35 @@
++++ b/arch/mips/dts/nec,qca9558-aterm.dts
+@@ -0,0 +1,32 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
 + */
 +
 +/dts-v1/;
-+#include "ar934x.dtsi"
++#include "qca955x.dtsi"
 +
 +/ {
-+	model = "NEC Aterm series (AR9344)";
-+	compatible = "nec,ar9344-aterm", "qca,ar934x";
++	model = "NEC Aterm series (QCA9558)";
++	compatible = "nec,qca9558-aterm", "qca,qca955x";
 +
 +	aliases {
 +		serial0 = &uart0;
@@ -63,36 +64,33 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +	clock-frequency = <40000000>;
 +};
 +
-+/* delete unused nodes to reduce dtb size */
-+/delete-node/ &ehci0;
-+/delete-node/ &gmac0;
-+/delete-node/ &gmac1;
++/* delete unused node to reduce dtb size */
 +/delete-node/ &spi0;
 --- a/arch/mips/mach-ath79/Kconfig
 +++ b/arch/mips/mach-ath79/Kconfig
-@@ -67,6 +67,10 @@ config TARGET_AP152
- 	bool "AP152 Reference Board"
- 	select SOC_QCA956X
+@@ -71,6 +71,10 @@ config BOARD_NEC_AR9344_ATERM
+ 	bool "NEC Aterm series Boards (AR9344)"
+ 	select SOC_AR934X
  
-+config BOARD_NEC_AR9344_ATERM
-+	bool "NEC Aterm series Boards (AR9344)"
-+	select SOC_AR934X
++config BOARD_NEC_QCA9558_ATERM
++	bool "NEC Aterm series Boards (QCA9558)"
++	select SOC_QCA955X
 +
  config BOARD_TPLINK_WDR4300
  	bool "TP-Link WDR4300 Board"
  	select SOC_AR934X
-@@ -76,6 +80,7 @@ endchoice
- source "board/qca/ap121/Kconfig"
+@@ -81,6 +85,7 @@ source "board/qca/ap121/Kconfig"
  source "board/qca/ap143/Kconfig"
  source "board/qca/ap152/Kconfig"
-+source "board/nec/ar9344_aterm/Kconfig"
+ source "board/nec/ar9344_aterm/Kconfig"
++source "board/nec/qca9558_aterm/Kconfig"
  source "board/tplink/wdr4300/Kconfig"
  
  endmenu
 --- /dev/null
-+++ b/board/nec/ar9344_aterm/Kconfig
++++ b/board/nec/qca9558_aterm/Kconfig
 @@ -0,0 +1,30 @@
-+if BOARD_NEC_AR9344_ATERM
++if BOARD_NEC_QCA9558_ATERM
 +
 +config SYS_VENDOR
 +	default "nec"
@@ -101,10 +99,10 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +	default "ath79"
 +
 +config SYS_BOARD
-+	default "ar9344_aterm"
++	default "qca9558_aterm"
 +
 +config SYS_CONFIG_NAME
-+	default "nec_ar9344_aterm"
++	default "nec_qca9558_aterm"
 +
 +config TEXT_BASE
 +	default 0x9f000000
@@ -123,17 +121,17 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +
 +endif
 --- /dev/null
-+++ b/board/nec/ar9344_aterm/Makefile
++++ b/board/nec/qca9558_aterm/Makefile
 @@ -0,0 +1,3 @@
 +# SPDX-License-Identifier: GPL-2.0+
 +
-+obj-y	= ar9344_aterm.o
++obj-y	= qca9558_aterm.o
 --- /dev/null
-+++ b/board/nec/ar9344_aterm/ar9344_aterm.c
-@@ -0,0 +1,59 @@
++++ b/board/nec/qca9558_aterm/qca9558_aterm.c
+@@ -0,0 +1,58 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
-+ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ * Copyright (C) INAGAKI Hiroshi <musashino.open@gmail.com>
 + */
 +
 +#include <init.h>
@@ -147,25 +145,24 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +
 +static void aterm_pinmux_config(void)
 +{
-+	void __iomem *regs;
-+
-+	regs = map_physmem(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
-+			   MAP_NOCACHE);
++	void __iomem *regs = map_physmem(AR71XX_GPIO_BASE,
++					 AR71XX_GPIO_SIZE, MAP_NOCACHE);
 +
 +	/* Disable JTAG */
-+	writel(0x2, regs + AR934X_GPIO_REG_FUNC);
++	writel(0x2, regs + QCA955X_GPIO_REG_FUNC);
 +
 +	/* Configure default GPIO OE/SET regs */
-+	writel(0x3db1f, regs + AR71XX_GPIO_REG_OE);
-+	writel(0x142000, regs + AR71XX_GPIO_REG_SET);
++	writel(0xa6031f, regs + AR71XX_GPIO_REG_OE);
++	writel(0x402800, regs + AR71XX_GPIO_REG_SET);
 +
 +	/* Configure pin multiplexing */
-+	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC0);
-+	writel(0x0b0a0900, regs + AR934X_GPIO_REG_OUT_FUNC1);
-+	writel(0x00180000, regs + AR934X_GPIO_REG_OUT_FUNC2);
-+	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC3);
-+	writel(0x2f2e0000, regs + AR934X_GPIO_REG_OUT_FUNC4);
-+	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC5);
++	writel(0x00000000, regs + QCA955X_GPIO_REG_OUT_FUNC0);
++	writel(0x0c080900, regs + QCA955X_GPIO_REG_OUT_FUNC1);
++	writel(0x00160000, regs + QCA955X_GPIO_REG_OUT_FUNC2);
++	writel(0x00000000, regs + QCA955X_GPIO_REG_OUT_FUNC3);
++	writel(0x00000000, regs + QCA955X_GPIO_REG_OUT_FUNC4);
++	writel(0x00000000, regs + QCA955X_GPIO_REG_OUT_FUNC5);
++	writel(0x00000908, regs + QCA955X_GPIO_REG_IN_ENABLE0);
 +}
 +
 +#ifdef CONFIG_DEBUG_UART_BOARD_INIT
@@ -183,25 +180,25 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +#endif
 +
 +#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
-+	ar934x_pll_init(560, 480, 240);
-+	ar934x_ddr_init(560, 480, 240);
++	qca955x_pll_init();
++	qca955x_ddr_init();
 +#endif
 +
 +	return 0;
 +}
 +#endif
 --- /dev/null
-+++ b/configs/nec_ar9344_aterm_defconfig
++++ b/configs/nec_qca9558_aterm_defconfig
 @@ -0,0 +1,61 @@
 +CONFIG_MIPS=y
 +CONFIG_SYS_MALLOC_LEN=0x40000
 +CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
 +CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0xbd007fff
 +CONFIG_ENV_SIZE=0x1000
-+CONFIG_DEFAULT_DEVICE_TREE="nec,ar9344-aterm"
++CONFIG_DEFAULT_DEVICE_TREE="nec,qca9558-aterm"
 +CONFIG_SYS_LOAD_ADDR=0x83000000
 +CONFIG_ARCH_ATH79=y
-+CONFIG_BOARD_NEC_AR9344_ATERM=y
++CONFIG_BOARD_NEC_QCA9558_ATERM=y
 +CONFIG_SYS_MIPS_TIMER_FREQ=280000000
 +CONFIG_MIPS_RELOCATION_TABLE_SIZE=0x4000
 +# CONFIG_LOCALVERSION_AUTO is not set
@@ -255,20 +252,20 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +CONFIG_SYS_NS16550=y
 +# CONFIG_GZIP is not set
 --- /dev/null
-+++ b/include/configs/nec_ar9344_aterm.h
++++ b/include/configs/nec_qca9558_aterm.h
 @@ -0,0 +1,28 @@
 +/* SPDX-License-Identifier: GPL-2.0+ */
 +/*
 + * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
 + */
 +
-+#ifndef __NEC_AR9344_ATERM_H
-+#define __NEC_AR9344_ATERM_H
++#ifndef __NEC_QCA9558_ATERM_H
++#define __NEC_QCA9558_ATERM_H
 +
 +#define CFG_SYS_SDRAM_BASE		0x80000000
 +
-+#define CFG_SYS_INIT_RAM_ADDR	0xbd000000
-+#define CFG_SYS_INIT_RAM_SIZE	0x8000
++#define CFG_SYS_INIT_RAM_ADDR		0xbd000000
++#define CFG_SYS_INIT_RAM_SIZE		0x8000
 +
 +/*
 + * Serial Port
@@ -284,4 +281,4 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 + * Diagnostics
 + */
 +
-+#endif  /* __NEC_AR9344_ATERM_H */
++#endif  /* __NEC_QCA9558_ATERM_H */

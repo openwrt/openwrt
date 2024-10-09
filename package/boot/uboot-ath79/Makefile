@@ -25,7 +25,14 @@ define U-Boot/ar9344_nec_aterm
   UBOOT_CONFIG:=nec_ar9344_aterm
 endef
 
-UBOOT_TARGETS := ar9344_nec_aterm
+define U-Boot/qca9558_nec_aterm
+  NAME:=NEC Aterm series (QCA9558)
+  BUILD_SUBTARGET:= generic
+  BUILD_DEVICES:=nec_wg1400hp nec_wg1800hp nec_wg1800hp2
+  UBOOT_CONFIG:=nec_qca9558_aterm
+endef
+
+UBOOT_TARGETS := ar9344_nec_aterm qca9558_nec_aterm
 
 # don't stage files to bindir, let target/linux/ath79/image/*.mk do that
 define Package/u-boot/install
