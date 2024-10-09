@@ -1,0 +1,43 @@
+From: Daniel Santos <daniel.santos@pobox.com>
+Date: Sun, 4 Nov 2018 20:24:32 -0600
+Subject: [PATCH 3/3] gpio-ralink: Add support for GPIO as interrupt-controller
+
+Signed-off-by: Daniel Santos <daniel.santos@pobox.com>
+---
+ Documentation/devicetree/bindings/gpio/gpio-ralink.txt | 6 ++++++
+ drivers/gpio/gpio-ralink.c                             | 2 +-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/gpio/gpio-ralink.txt
++++ b/Documentation/devicetree/bindings/gpio/gpio-ralink.txt
+@@ -14,6 +14,9 @@ Required properties:
+ - ralink,register-map : The register layout depends on the GPIO bank and actual
+ 		SoC type. Register offsets need to be in this order.
+ 		[ INT, EDGE, RENA, FENA, DATA, DIR, POL, SET, RESET, TOGGLE ]
++- interrupt-controller : marks this as an interrupt controller
++- #interrupt-cells : a standard two-cell interrupt flag, see
++  interrupt-controller/interrupts.txt
+ 
+ Example:
+ 
+@@ -25,6 +28,9 @@ Example:
+ 
+ 		reg = <0x600 0x34>;
+ 
++		interrupt-controller;
++		#interrupt-cells = <2>;
++
+ 		interrupt-parent = <&intc>;
+ 		interrupts = <6>;
+ 
+--- a/drivers/gpio/gpio-ralink.c
++++ b/drivers/gpio/gpio-ralink.c
+@@ -174,7 +174,7 @@ static int gpio_map(struct irq_domain *d
+ }
+ 
+ static const struct irq_domain_ops irq_domain_ops = {
+-	.xlate = irq_domain_xlate_onecell,
++	.xlate = irq_domain_xlate_twocell,
+ 	.map = gpio_map,
+ };
+ 
