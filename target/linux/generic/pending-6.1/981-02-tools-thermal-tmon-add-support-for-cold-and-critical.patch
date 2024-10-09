@@ -1,0 +1,54 @@
+From 143b6e9c4d4a94c261044b9ed1d6536b22e5ebdd Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 12 Dec 2023 22:27:57 +0100
+Subject: [PATCH 2/2] tools/thermal: tmon: add support for cold and critical
+ cold trip point
+
+Add support for cold and critical cold trip point.
+
+Add new char to represent these new values.
+Saddly trip point name initial char can't be used as it does conflicts
+with the Critical trip name conflicts with them, still a more or less
+symbolic char is used to represent these new trip points.
+
+Use:
+- N as Negative for Cold trip point
+- Z as Zero for Critical Cold trip point
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ tools/thermal/tmon/tmon.h | 2 ++
+ tools/thermal/tmon/tui.c  | 4 +++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/tools/thermal/tmon/tmon.h
++++ b/tools/thermal/tmon/tmon.h
+@@ -58,6 +58,8 @@ struct cdev_info {
+ enum trip_type {
+ 	THERMAL_TRIP_CRITICAL,
+ 	THERMAL_TRIP_HOT,
++	THERMAL_TRIP_COLD,
++	THERMAL_TRIP_CRITICAL_COLD,
+ 	THERMAL_TRIP_PASSIVE,
+ 	THERMAL_TRIP_ACTIVE,
+ 	NR_THERMAL_TRIP_TYPE,
+--- a/tools/thermal/tmon/tui.c
++++ b/tools/thermal/tmon/tui.c
+@@ -307,7 +307,7 @@ void show_dialogue(void)
+ 	wattroff(w, A_BOLD);
+ 	/* print legend at the bottom line */
+ 	mvwprintw(w, rows - 2, 1,
+-		"Legend: A=Active, P=Passive, C=Critical");
++		"Legend: A=Active, P=Passive, C=Critical, N=Cold, Z=Critical Cold");
+ 
+ 	wrefresh(dialogue_window);
+ }
+@@ -535,6 +535,8 @@ static char trip_type_to_char(int type)
+ 	switch (type) {
+ 	case THERMAL_TRIP_CRITICAL: return 'C';
+ 	case THERMAL_TRIP_HOT: return 'H';
++	case THERMAL_TRIP_COLD: return 'N';
++	case THERMAL_TRIP_CRITICAL_COLD: return 'Z';
+ 	case THERMAL_TRIP_PASSIVE: return 'P';
+ 	case THERMAL_TRIP_ACTIVE: return 'A';
+ 	default:
