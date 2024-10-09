@@ -1,0 +1,33 @@
+From e20cd62b1f1708a4dec7ff4beb9e748a0bdb5716 Mon Sep 17 00:00:00 2001
+From: Alexander Stein <alexander.stein@ew.tq-group.com>
+Date: Wed, 17 Jan 2024 09:32:06 +0100
+Subject: [PATCH] of: property: Make 'no port node found' output a debug
+ message
+
+There are cases where an unavailable port is not an error, making this
+error message a false-positive. Since commit d56de8c9a17d8 ("usb: typec:
+tcpm: try to get role switch from tcpc fwnode") the role switch is tried
+on the port dev first and tcpc fwnode afterwards. If using the latter
+bindings getting from port dev fails every time. The kernel log is flooded
+with the messages like:
+ OF: graph: no port node found in /soc@0/bus@42000000/i2c@42530000/usb-typec@50
+Silence this message by making it a debug message.
+
+Signed-off-by: Alexander Stein <alexander.stein@ew.tq-group.com>
+Link: https://lore.kernel.org/r/20240117083206.2901534-1-alexander.stein@ew.tq-group.com
+Signed-off-by: Rob Herring <robh@kernel.org>
+---
+ drivers/of/property.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -664,7 +664,7 @@ struct device_node *of_graph_get_next_en
+ 		of_node_put(node);
+ 
+ 		if (!port) {
+-			pr_err("graph: no port node found in %pOF\n", parent);
++			pr_debug("graph: no port node found in %pOF\n", parent);
+ 			return NULL;
+ 		}
+ 	} else {
