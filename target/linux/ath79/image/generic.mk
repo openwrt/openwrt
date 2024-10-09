@@ -3147,7 +3147,7 @@ define Device/wd_mynet-wifi-rangeextender
   SOC := ar9344
   DEVICE_VENDOR := Western Digital
   DEVICE_MODEL := My Net Wi-Fi Range Extender
-  DEVICE_PACKAGES := rssileds nvram -swconfig
+  DEVICE_PACKAGES := rssileds -swconfig
   IMAGE_SIZE := 7808k
   ADDPATTERN_ID := mynet-rext
   ADDPATTERN_VERSION := 1.00.01
