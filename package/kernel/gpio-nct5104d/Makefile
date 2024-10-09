@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=gpio-nct5104d
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_MAINTAINER:=Florian Eckert <Eckert.Florian@googlemail.com>
 PKG_LICENSE:=GPL-2.0
