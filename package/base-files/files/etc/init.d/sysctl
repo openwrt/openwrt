@@ -2,6 +2,7 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=11
+USE_PROCD=1
 
 apply_defaults() {
 	local mem="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
@@ -36,9 +37,55 @@ apply_defaults() {
 	fi
 }
 
-start() {
-	apply_defaults
-	for CONF in /etc/sysctl.d/*.conf /etc/sysctl.conf; do
+handle_sysctl() {
+	local cfg="$1"
+	local sysctl="$2"
+
+	local enable section value
+
+	config_get section "$cfg" section
+	[ -z "$section" ] && return
+
+	# check if section should be set and if not reset to default value
+	config_get_bool enable "$cfg" enable '0'
+	if [ "$enable" = '0' ]; then
+		value="$(grep "$section =" /tmp/sysctl-default.conf)"
+		value="${value##*= }"
+	else
+		config_get value "$cfg" value
+	fi
+
+	[ -z "$value" ] && return
+
+	echo "${section}=${value}" >> "$sysctl"
+}
+
+apply_uci() {
+	mkdir -p /tmp/run/sysctl.d
+
+	rm -f /tmp/run/sysctl.d/01-uci.conf
+
+	config_load sysctl
+	config_foreach handle_sysctl sysctl "/tmp/run/sysctl.d/01-uci.conf"
+}
+
+reload_service() {
+	apply_uci
+	for CONF in /etc/sysctl.d/*.conf /etc/sysctl.conf /tmp/run/sysctl.d/*.conf; do
 		[ -f "$CONF" ] && sysctl -e -p "$CONF" >&-
 	done
+}
+
+service_triggers() {
+	procd_add_reload_trigger "sysctl"
+}
+
+stop_service() {
+	[ -f /tmp/sysctl-default.conf ] && sysctl -e -p /tmp/sysctl-default.conf 1>/dev/null 2>&1
+}
+
+start_service() {
+	apply_defaults
+	[ -f /tmp/sysctl-default.conf ] || sysctl -a 1>/tmp/sysctl-default.conf 2>/dev/null
+	reload_service
 }
