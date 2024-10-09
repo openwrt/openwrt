@@ -97,17 +97,14 @@ else
 	BITS := 32bit
 endif
 
+ifeq ($(CONFIG_arm_v7),y)
+	CONFIGURE_ARGS += --host=armv7-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))
+endif
+
 CONFIGURE_ARGS += \
 	--enable-lto \
 	--enable-tls \
-	--without-x \
 	--without-mpicc \
-	--without-uiout \
-	--disable-valgrindmi \
-	--disable-tui \
-	--disable-valgrindtk \
-	--without-included-gettext \
-	--with-pagesize=4 \
 
 define Package/valgrind/install
 	$(INSTALL_DIR) $(1)/usr/bin

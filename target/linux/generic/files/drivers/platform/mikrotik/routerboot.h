@@ -15,6 +15,7 @@
 #define RB_MAGIC_HARD	(('H') | ('a' << 8) | ('r' << 16) | ('d' << 24))
 #define RB_MAGIC_SOFT	(('S') | ('o' << 8) | ('f' << 16) | ('t' << 24))
 #define RB_MAGIC_LZOR	(('L') | ('Z' << 8) | ('O' << 16) | ('R' << 24))
+#define RB_MAGIC_LZ77	(('L' << 24) | ('Z' << 16) | ('7' << 8) | ('7'))
 #define RB_MAGIC_ERD	(('E' << 16) | ('R' << 8) | ('D'))
 
 #define RB_ART_SIZE	0x10000

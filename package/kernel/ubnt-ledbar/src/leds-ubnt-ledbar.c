@@ -164,6 +164,7 @@ static int ubnt_ledbar_probe(struct i2c_client *client)
 {
 	struct device_node *np = client->dev.of_node;
 	struct ubnt_ledbar *ledbar;
+	int err;
 
 	ledbar = devm_kzalloc(&client->dev, sizeof(*ledbar), GFP_KERNEL);
 	if (!ledbar)
@@ -184,7 +185,9 @@ static int ubnt_ledbar_probe(struct i2c_client *client)
 
 	ledbar->client = client;
 
-	mutex_init(&ledbar->lock);
+	err = devm_mutex_init(&client->dev, &ledbar->lock);
+	if (err)
+		return err;
 
 	i2c_set_clientdata(client, ledbar);
 
@@ -201,13 +204,6 @@ static int ubnt_ledbar_probe(struct i2c_client *client)
 	ubnt_ledbar_init_led(of_get_child_by_name(np, "blue"), ledbar, &ledbar->led_blue);
 
 	return ubnt_ledbar_apply_state(ledbar);
-}
-
-static void ubnt_ledbar_remove(struct i2c_client *client)
-{
-	struct ubnt_ledbar *ledbar = i2c_get_clientdata(client);
-
-	mutex_destroy(&ledbar->lock);
 }
 
 static const struct i2c_device_id ubnt_ledbar_id[] = {
@@ -228,7 +224,6 @@ static struct i2c_driver ubnt_ledbar_driver = {
 		.of_match_table = of_ubnt_ledbar_match,
 	},
 	.probe		= ubnt_ledbar_probe,
-	.remove		= ubnt_ledbar_remove,
 	.id_table	= ubnt_ledbar_id,
 };
 module_i2c_driver(ubnt_ledbar_driver);

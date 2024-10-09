@@ -1092,6 +1092,19 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/skspruce_wia3300-20
+	$(call Device/FitImage)
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 55104k
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := SKSpruce
+	DEVICE_MODEL := WIA3300-20
+	DEVICE_PACKAGES := -ath10k-board-qca4019 ipq-wifi-skspruce_wia3300-20
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+		append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES +=skspruce_wia3300-20
+
 define Device/sony_ncp-hg100-cellular
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Sony
