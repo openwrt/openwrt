@@ -585,7 +585,7 @@
  			continue;
  		}
  
-@@ -3736,11 +3752,10 @@ static void ath11k_dp_rx_update_user_sta
+@@ -3736,7 +3752,7 @@ static void ath11k_dp_rx_update_user_sta
  	if (user_stats->ast_index == 0 || user_stats->ast_index == 0xFFFF)
  		return;
  
@@ -593,13 +593,8 @@
 +	peer = ath11k_peer_find_by_ast(ar, user_stats->ast_index);
  
  	if (peer == NULL) {
--		if (!ar->ab->nss.enabled)
--		  ath11k_warn(ar->ab, "peer ast idx %d can't be found\n",
-+		ath11k_warn(ar->ab, "peer ast idx %d can't be found\n",
- 			    user_stats->ast_index);
- 		return;
- 	}
-@@ -4210,7 +4225,7 @@ int ath11k_peer_rx_frag_setup(struct ath
+ 		if (!ar->ab->nss.enabled)
+@@ -4210,7 +4226,7 @@ int ath11k_peer_rx_frag_setup(struct ath
  
  	spin_lock_bh(&ab->base_lock);
  
@@ -608,7 +603,7 @@
  	if (!peer) {
  		ath11k_warn(ab, "failed to find the peer to set up fragment info\n");
  		spin_unlock_bh(&ab->base_lock);
-@@ -4666,7 +4681,7 @@ static int ath11k_dp_rx_frag_h_mpdu(stru
+@@ -4666,7 +4682,7 @@ static int ath11k_dp_rx_frag_h_mpdu(stru
  		return -EINVAL;
  
  	spin_lock_bh(&ab->base_lock);
@@ -617,7 +612,7 @@
  	if (!peer) {
  		ath11k_warn(ab, "failed to find the peer to de-fragment received fragment peer_id %d\n",
  			    peer_id);
-@@ -4728,7 +4743,7 @@ static int ath11k_dp_rx_frag_h_mpdu(stru
+@@ -4728,7 +4744,7 @@ static int ath11k_dp_rx_frag_h_mpdu(stru
  	del_timer_sync(&rx_tid->frag_timer);
  	spin_lock_bh(&ab->base_lock);
  
@@ -626,7 +621,7 @@
  	if (!peer)
  		goto err_frags_cleanup;
  
-@@ -6392,7 +6407,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6392,7 +6408,7 @@ int ath11k_dp_rx_process_mon_status(stru
  			trace_ath11k_htt_rxdesc(ar, skb->data, log_type, rx_buf_sz);
  
  		ppdu_info->peer_id = HAL_INVALID_PEERID;
@@ -635,7 +630,7 @@
  
  		if (test_bit(ATH11K_FLAG_MONITOR_STARTED, &ar->monitor_flags) &&
  		    pmon->mon_ppdu_status == DP_PPDU_STATUS_START &&
-@@ -6423,7 +6438,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6423,7 +6439,7 @@ int ath11k_dp_rx_process_mon_status(stru
  		}
  		rcu_read_lock();
  		spin_lock_bh(&ab->base_lock);
