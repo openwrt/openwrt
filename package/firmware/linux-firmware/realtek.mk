@@ -180,7 +180,6 @@ $(eval $(call BuildPackage,rtl8852ae-firmware))
 Package/rtl8852be-firmware = $(call Package/firmware-default,RealTek RTL8852BE firmware)
 define Package/rtl8852be-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtw89
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtw89/rtw8852b_fw.bin $(1)/lib/firmware/rtw89
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtw89/rtw8852b_fw-1.bin $(1)/lib/firmware/rtw89
 endef
 $(eval $(call BuildPackage,rtl8852be-firmware))
@@ -191,3 +190,10 @@ define Package/rtl8852ce-firmware/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtw89/rtw8852c_fw.bin $(1)/lib/firmware/rtw89
 endef
 $(eval $(call BuildPackage,rtl8852ce-firmware))
+
+Package/rtl8922ae-firmware = $(call Package/firmware-default,RealTek RTL8922AE firmware)
+define Package/rtl8922ae-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtw89
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtw89/rtw8922a_fw.bin $(1)/lib/firmware/rtw89
+endef
+$(eval $(call BuildPackage,rtl8922ae-firmware))
