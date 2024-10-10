@@ -32,9 +32,9 @@
  		val = readl(EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
 +		/* Clear axi_burst_size and rx_burst_size */
 +		val &= 0xffffff00;
-+		/* Set axi_burst_size = 3, rx_burst_size = 3 */
++		/* Set axi_burst_size = 3, rx_burst_size = 3 
 +		val |= EIP197_MST_CTRL_RD_CACHE(3);
-+		val |= EIP197_MST_CTRL_WD_CACHE(3);
++		val |= EIP197_MST_CTRL_WD_CACHE(3); */
  		val |= EIP197_MST_CTRL_TX_MAX_CMD(5);
  		writel(val, EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
  	}
