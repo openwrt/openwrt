@@ -42,13 +42,13 @@ sect=63
 
 # create real partition table using fdisk
 printf "Creating partition table: "
-set $(ptgen -o "$OUTFILE" -h $head -s $sect -l 1024 -S 0x$SIGNATURE $ptgen_args)
+set $(ptgen -o "$OUTFILE" -h $head -s $sect -l 8192 -S 0x$SIGNATURE $ptgen_args)
 printf "Done\n"
 
 # install bootloader
 if [ -n "$BOOTLOADER" ]; then
 	printf "Writing bootloader: "
-	dd of="$OUTFILE" if="$BOOTLOADER" bs=512 seek=1 conv=notrunc 2>/dev/null
+	dd of="$OUTFILE" if="$BOOTLOADER" bs=512 seek=4096 conv=notrunc 2>/dev/null
 	printf "Done\n"
 fi
 
