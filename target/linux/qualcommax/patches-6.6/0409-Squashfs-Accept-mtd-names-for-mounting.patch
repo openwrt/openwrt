@@ -1,0 +1,84 @@
+From c2622fd4e03d3f79ce341c3b417992831c9d785d Mon Sep 17 00:00:00 2001
+From: Varadarajan Narayanan <varada@codeaurora.org>
+Date: Fri, 3 Jan 2014 13:05:56 +0530
+Subject: [PATCH] Squashfs: Accept mtd names for mounting
+
+Enable SquashFS to mount using MTD partition names
+instead of device number.
+
+Signed-off-by: Varadarajan Narayanan <varada@codeaurora.org>
+(cherry picked from commit 4e9850b2e9ce7cdaaca70fc78a426f366f33655c)
+
+Change-Id: I49093c5139caa8d9e7a80fa8cce91b24f53f47e9
+Signed-off-by: Abhishek Sahu <absahu@codeaurora.org>
+(cherry picked from commit 247c68acccbd646522dcf5b5d823f216806cace6)
+Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
+Signed-off-by: Md Sadre Alam <quic_mdalam@quicinc.com>
+Signed-off-by: Saravanan Jaganathan <quic_sjaganat@quicinc.com>
+---
+ fs/squashfs/super.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/fs/squashfs/super.c b/fs/squashfs/super.c
+index 22e812808e5c..1e2bb05fd279 100644
+--- a/fs/squashfs/super.c
++++ b/fs/squashfs/super.c
+@@ -29,6 +29,10 @@
+ #include <linux/module.h>
+ #include <linux/magic.h>
+ #include <linux/xattr.h>
++#include <linux/root_dev.h>
++#include <linux/syscalls.h>
++#include <linux/mtd/mtd.h>
++#include <linux/init_syscalls.h>
+ 
+ #include "squashfs_fs.h"
+ #include "squashfs_fs_sb.h"
+@@ -480,8 +484,44 @@ static int squashfs_fill_super(struct super_block *sb, struct fs_context *fc)
+ 	return err;
+ }
+ 
++/* copy from init/do_mounts.h */
++static inline int create_dev(char *name, dev_t dev)
++{
++	init_unlink(name);
++	return init_mknod(name, S_IFBLK|0600, new_encode_dev(dev));
++}
++
++static void squashfs_mount(struct fs_context *fc)
++{
++	if (!strncmp(fc->source, "mtd:", 4) || !strncmp(fc->source, "ubi:", 4)) {
++		struct mtd_info *mtd = get_mtd_device_nm("ubi_rootfs");
++
++		if (!IS_ERR(mtd)) {
++			void *bdev;
++			char *dev;
++			dev = kmalloc(32, GFP_KERNEL);
++
++			scnprintf(dev, 32, "/dev/mtdblock%d", mtd->index);
++			bdev = blkdev_get_by_path(dev, FMODE_READ, fc->fs_type, NULL);
++
++			if (!IS_ERR(bdev)) {
++				kfree(fc->source);
++				fc->source = dev;
++			} else if (PTR_ERR(bdev) == -ENOENT) {
++				create_dev(dev,
++					MKDEV(MTD_BLOCK_MAJOR, mtd->index));
++				kfree(fc->source);
++				fc->source = dev;
++			} else
++				kfree(dev);
++		}
++	}
++
++}
++
+ static int squashfs_get_tree(struct fs_context *fc)
+ {
++	squashfs_mount(fc);
+ 	return get_tree_bdev(fc, squashfs_fill_super);
+ }
+ 
+-- 
+2.34.1
+
