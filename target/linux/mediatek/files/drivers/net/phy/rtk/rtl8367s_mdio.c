@@ -19,7 +19,7 @@
 #include <linux/of_mdio.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
-
+#include <linux/version.h>
 
 #include  "./rtl8367c/include/rtk_switch.h"
 #include  "./rtl8367c/include/port.h"
@@ -283,12 +283,18 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int rtk_gsw_remove(struct platform_device *pdev)
+#else
+static void rtk_gsw_remove(struct platform_device *pdev)
+#endif
 {
 	platform_set_drvdata(pdev, NULL);
 	gsw_debug_proc_exit();
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static struct platform_driver gsw_driver = {
