@@ -801,6 +801,23 @@ endef
 $(eval $(call KernelPackage,r6040))
 
 
+define KernelPackage/rmnet
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=RmNet MAP support
+  KCONFIG:=CONFIG_RMNET
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/qualcomm/rmnet/rmnet.ko
+  AUTOLOAD:=$(call AutoLoad,30,rmnet)
+endef
+
+define KernelPackage/rmnet/description
+  Kernel support for RMNET module which is used for handling data in the
+  multiplexing and aggregation protocol (MAP) format in the embedded data
+  path. RMNET devices can be attached to any IP mode physical device.
+endef
+
+$(eval $(call KernelPackage,rmnet))
+
+
 define KernelPackage/niu
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Sun Neptune 10Gbit Ethernet support
