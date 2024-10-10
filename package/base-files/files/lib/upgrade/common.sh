@@ -259,7 +259,7 @@ get_partitions() { # <device> <filename>
 		local magic=$(dd if="$disk" bs=2 count=1 skip=255 2>/dev/null)
 		if [ "$magic" != $'\x55\xAA' ]; then
 			v "Invalid partition table on $disk"
-			exit
+			return 1
 		fi
 
 		rm -f "/tmp/partmap.$filename"
