@@ -33,7 +33,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  };
  
  static int dw_reg_read(void *context, unsigned int reg, unsigned int *val)
-@@ -593,8 +595,16 @@ int i2c_dw_wait_bus_not_busy(struct dw_i
+@@ -607,8 +609,16 @@ int i2c_dw_wait_bus_not_busy(struct dw_i
  int i2c_dw_handle_tx_abort(struct dw_i2c_dev *dev)
  {
  	unsigned long abort_source = dev->abort_source;
@@ -50,7 +50,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	if (abort_source & DW_IC_TX_ABRT_NOACK) {
  		for_each_set_bit(i, &abort_source, ARRAY_SIZE(abort_sources))
  			dev_dbg(dev->dev,
-@@ -609,6 +619,8 @@ int i2c_dw_handle_tx_abort(struct dw_i2c
+@@ -623,6 +633,8 @@ int i2c_dw_handle_tx_abort(struct dw_i2c
  		return -EAGAIN;
  	else if (abort_source & DW_IC_TX_ABRT_GCALL_READ)
  		return -EINVAL; /* wrong msgs[] data */
@@ -74,11 +74,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #define DW_IC_COMP_TYPE				0xfc
  #define DW_IC_COMP_TYPE_VALUE			0x44570140 /* "DW" + 0x0140 */
  
-@@ -109,13 +112,16 @@
- 						 DW_IC_INTR_RX_UNDER | \
- 						 DW_IC_INTR_RD_REQ)
+@@ -111,12 +114,14 @@
  
-+#define DW_IC_ENABLE_ENABLE			BIT(0)
+ #define DW_IC_ENABLE_ENABLE			BIT(0)
  #define DW_IC_ENABLE_ABORT			BIT(1)
 +#define DW_IC_ENABLE_BUS_RECOVERY		BIT(3)
  
@@ -91,7 +89,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  #define DW_IC_SDA_HOLD_RX_SHIFT			16
  #define DW_IC_SDA_HOLD_RX_MASK			GENMASK(23, 16)
-@@ -163,6 +169,7 @@
+@@ -164,6 +169,7 @@
  #define ABRT_SLAVE_FLUSH_TXFIFO			13
  #define ABRT_SLAVE_ARBLOST			14
  #define ABRT_SLAVE_RD_INTX			15
@@ -99,7 +97,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  #define DW_IC_TX_ABRT_7B_ADDR_NOACK		BIT(ABRT_7B_ADDR_NOACK)
  #define DW_IC_TX_ABRT_10ADDR1_NOACK		BIT(ABRT_10ADDR1_NOACK)
-@@ -178,6 +185,7 @@
+@@ -179,6 +185,7 @@
  #define DW_IC_RX_ABRT_SLAVE_RD_INTX		BIT(ABRT_SLAVE_RD_INTX)
  #define DW_IC_RX_ABRT_SLAVE_ARBLOST		BIT(ABRT_SLAVE_ARBLOST)
  #define DW_IC_RX_ABRT_SLAVE_FLUSH_TXFIFO	BIT(ABRT_SLAVE_FLUSH_TXFIFO)
@@ -135,7 +133,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Write SDA hold time if supported */
  	if (dev->sda_hold_time)
  		regmap_write(dev->map, DW_IC_SDA_HOLD, dev->sda_hold_time);
-@@ -1033,6 +1045,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1071,6 +1083,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	struct i2c_adapter *adap = &dev->adapter;
  	unsigned long irq_flags;
  	unsigned int ic_con;
@@ -143,7 +141,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret;
  
  	init_completion(&dev->cmd_complete);
-@@ -1068,7 +1081,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1106,7 +1119,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	if (ret)
  		return ret;
  
