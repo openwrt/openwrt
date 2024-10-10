@@ -4,7 +4,8 @@ PKG_DRIVERS += \
 	rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-sdio rtw88-8821c rtw88-8822b rtw88-8822c \
 	rtw88-8723x rtw88-8723d rtw88-8821ce rtw88-8821cu rtw88-8822be rtw88-8822bu \
 	rtw88-8822ce rtw88-8822cu rtw88-8723de rtw88-8723ds rtw88-8723du \
-	rtw89 rtw89-pci rtw89-8851be rtw89-8852ae rtw89-8852b-common rtw89-8852be rtw89-8852ce
+	rtw89 rtw89-pci rtw89-8851be rtw89-8852ae rtw89-8852b-common \
+	rtw89-8852be rtw89-8852ce rtw89-8922ae
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
 config-$(call config_package,rtlwifi-pci) += RTLWIFI_PCI
@@ -56,6 +57,7 @@ config-$(call config_package,rtw89-8852ae) += RTW89_8852A RTW89_8852AE
 config-$(call config_package,rtw89-8852b-common) += RTW89_8852B_COMMON
 config-$(call config_package,rtw89-8852be) += RTW89_8852B RTW89_8852BE
 config-$(call config_package,rtw89-8852ce) += RTW89_8852C RTW89_8852CE
+config-$(call config_package,rtw89-8922ae) += RTW89_8922A RTW89_8922AE
 config-$(CONFIG_PACKAGE_RTW89_DEBUG) += RTW89_DEBUG
 config-$(CONFIG_PACKAGE_RTW89_DEBUGFS) += RTW89_DEBUGFS
 config-$(CONFIG_PACKAGE_RTW89_DEBUGMSG) += RTW89_DEBUGMSG
@@ -479,4 +481,14 @@ define KernelPackage/rtw89-8852ce
 	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw89/rtw89_8852c.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw89/rtw89_8852ce.ko
   AUTOLOAD:=$(call AutoProbe,rtw89_8852ce)
+endef
+
+define KernelPackage/rtw89-8922ae
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8922AE support
+  DEPENDS+= +kmod-rtw89-pci +rtl8922ae-firmware +@DRIVER_11BE_SUPPORT
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw89/rtw89_8922a.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw89/rtw89_8922ae.ko
+  AUTOLOAD:=$(call AutoProbe,rtw89_8922ae)
 endef
