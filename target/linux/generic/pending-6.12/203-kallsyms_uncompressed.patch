@@ -65,29 +65,27 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int absolute_percpu;
  static int base_relative;
  static int lto_clang;
-@@ -453,13 +454,15 @@ static void write_src(void)
- 	}
- 	printf("\n");
+@@ -453,12 +454,14 @@ static void write_src(void)
+ 		for (k = 0; k < table[i]->len; k++)
+ 			printf(", 0x%02x", table[i]->sym[k]);
  
--	/*
--	 * Now that we wrote out the compressed symbol names, restore the
--	 * original names, which are needed in some of the later steps.
--	 */
--	for (i = 0; i < table_cnt; i++) {
+-		/*
+-		 * Now that we wrote out the compressed symbol name, restore the
+-		 * original name and print it in the comment.
+-		 */
 -		expand_symbol(table[i]->sym, table[i]->len, buf);
 -		strcpy((char *)table[i]->sym, buf);
-+	if (!uncompressed) {
-+		/*
-+		 * Now that we wrote out the compressed symbol names, restore the
-+		 * original names, which are needed in some of the later steps.
-+		 */
-+		for (i = 0; i < table_cnt; i++) {
++		if (!uncompressed) {
++			/*
++			 * Now that we wrote out the compressed symbol name, restore the
++			 * original name and print it in the comment.
++			 */
 +			expand_symbol(table[i]->sym, table[i]->len, buf);
 +			strcpy((char *)table[i]->sym, buf);
 +		}
+		printf("\t/* %s */\n", table[i]->sym);
  	}
- 
- 	output_label("kallsyms_markers");
+ 	printf("\n");
 @@ -469,20 +472,22 @@ static void write_src(void)
  
  	free(markers);
@@ -145,9 +143,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
 @@ -815,6 +826,7 @@ int main(int argc, char **argv)
+ 		static const struct option long_options[] = {
+ 			{"all-symbols",     no_argument, &all_symbols,     1},
  			{"absolute-percpu", no_argument, &absolute_percpu, 1},
- 			{"base-relative",   no_argument, &base_relative,   1},
- 			{"lto-clang",       no_argument, &lto_clang,       1},
 +			{"uncompressed",   no_argument, &uncompressed,   1},
  			{},
  		};
@@ -155,13 +153,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
 @@ -165,6 +165,10 @@ kallsyms()
- 		kallsymopt="${kallsymopt} --lto-clang"
+ 		kallsymopt="${kallsymopt} --absolute-percpu"
  	fi
  
 +	if is_enabled CONFIG_KALLSYMS_UNCOMPRESSED; then
 +		kallsymopt="${kallsymopt} --uncompressed"
 +	fi
 +
- 	info KSYMS ${2}
+ 	info KSYMS "${2}.S"
  	scripts/kallsyms ${kallsymopt} ${1} > ${2}
  }

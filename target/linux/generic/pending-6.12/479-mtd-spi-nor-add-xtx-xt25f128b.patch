@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/xtx.c
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,20 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/mtd/spi-nor.h>
 +
@@ -49,9 +49,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +static const struct flash_info xtx_parts[] = {
 +	/* XTX Technology (Shenzhen) Limited */
-+	{ "xt25f128b", INFO(0x0B4018, 0, 64 * 1024, 256)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
-+			      SPI_NOR_QUAD_READ) },
++	{
++		.id = SNOR_ID(0x0B, 0x40, 0x18),
++		.name = "xt25f128b",
++		.size = SZ_16M,
++		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
++	},
 +};
 +
 +const struct spi_nor_manufacturer spi_nor_xtx = {

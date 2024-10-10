@@ -199,7 +199,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  {
 +	if (IS_ENABLED(CONFIG_MTD_SPI_NOR_USE_VARIABLE_ERASE))
 +		return false;
- 	return !!nor->params->erase_map.uniform_erase_type;
+ 	return !!nor->params->erase_map.uniform_region.erase_mask;
  }
  
 @@ -2582,6 +2584,7 @@ static int spi_nor_select_erase(struct s

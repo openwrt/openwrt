@@ -34,9 +34,9 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int __init nf_flow_table_module_init(void)
  {
  	int ret;
-@@ -674,8 +691,14 @@ static int __init nf_flow_table_module_i
+@@ -691,9 +691,14 @@
  	if (ret)
- 		goto out_offload;
+ 		goto out_bpf;
  
 +	ret = register_netdevice_notifier(&flow_offload_netdev_notifier);
 +	if (ret)
@@ -44,11 +44,11 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +
  	return 0;
  
+ out_bpf:
 +out_offload_init:
-+	nf_flow_table_offload_exit();
+ 	nf_flow_table_offload_exit();
  out_offload:
  	unregister_pernet_subsys(&nf_flow_table_net_ops);
- 	return ret;
 @@ -683,6 +706,7 @@ out_offload:
  
  static void __exit nf_flow_table_module_exit(void)

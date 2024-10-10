@@ -108,7 +108,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		 * the specified partno needs to match.
 +		 */
 +		got_partno = !fwnode_property_read_u32(fw_part, "partno", &partno);
-+		if (got_partno && bdev->bd_partno != partno)
++		if (got_partno && (atomic_read(&bdev->__bd_flags) & BD_PARTNO) != partno)
 +			continue;
 +
 +		/* Skip if no matching criteria is present in firmware node */

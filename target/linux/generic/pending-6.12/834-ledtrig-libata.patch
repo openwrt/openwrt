@@ -83,10 +83,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ata_sff_port_init(ap);
  
  	return ap;
-@@ -5507,6 +5524,12 @@ void ata_port_free(struct ata_port *ap)
+@@ -5481,6 +5481,12 @@
  	kfree(ap->pmp_link);
  	kfree(ap->slave_link);
- 	kfree(ap->ncq_sense_buf);
+ 	ida_free(&ata_ida, ap->print_id);
 +#ifdef CONFIG_ATA_LEDS
 +	if (ap->ledtrig) {
 +		led_trigger_unregister(ap->ledtrig);
@@ -132,16 +132,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * Define if arch has non-standard setup.  This is a _PCI_ standard
-@@ -875,6 +878,12 @@ struct ata_port {
- #ifdef CONFIG_ATA_ACPI
- 	struct ata_acpi_gtm	__acpi_init_gtm; /* use ata_acpi_init_gtm() */
+@@ -729,6 +729,10 @@
+ 	union acpi_object	*gtf_cache;
+ 	unsigned int		gtf_filter;
  #endif
-+
-+#ifdef CONFIG_ATA_LEDS
+++#ifdef CONFIG_ATA_LEDS
 +	struct led_trigger	*ledtrig;
 +	char			ledtrig_name[8];
 +#endif
-+
- 	/* owned by EH */
- 	u8			*ncq_sense_buf;
- 	u8			sector_buf[ATA_SECT_SIZE] ____cacheline_aligned;
+ #ifdef CONFIG_SATA_ZPODD
+ 	void			*zpodd;
+ #endif
