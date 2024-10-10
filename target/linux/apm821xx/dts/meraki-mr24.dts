@@ -17,6 +17,7 @@
 	compatible = "meraki,mr24", "meraki,ikarem", "apm,bluestone";
 
 	aliases {
+		/delete-property/ ethernet0;
 		serial0 = &UART1;
 	};
 
@@ -92,7 +93,7 @@
 
 				volumes {
 					ubi-volume-board-config {
-						volume = "board-config";
+						volname = "board-config";
 
 						nvmem-layout {
 							compatible = "fixed-layout";
