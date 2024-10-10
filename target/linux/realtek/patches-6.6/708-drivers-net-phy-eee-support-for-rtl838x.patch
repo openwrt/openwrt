@@ -21,7 +21,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -2484,6 +2484,11 @@ int phylink_ethtool_ksettings_set(struct
+@@ -2491,6 +2491,11 @@ int phylink_ethtool_ksettings_set(struct
  		 *   the presence of a PHY, this should not be changed as that
  		 *   should be determined from the media side advertisement.
  		 */
@@ -33,7 +33,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  		return phy_ethtool_ksettings_set(pl->phydev, &phy_kset);
  	}
  
-@@ -2786,8 +2791,11 @@ int phylink_ethtool_get_eee(struct phyli
+@@ -2793,8 +2798,11 @@ int phylink_ethtool_get_eee(struct phyli
  
  	ASSERT_RTNL();
  
@@ -46,7 +46,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  
  	return ret;
  }
-@@ -2804,8 +2812,11 @@ int phylink_ethtool_set_eee(struct phyli
+@@ -2811,8 +2819,11 @@ int phylink_ethtool_set_eee(struct phyli
  
  	ASSERT_RTNL();
  
