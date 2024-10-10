@@ -175,7 +175,28 @@ mediatek_setup_macs()
 	bananapi,bpi-r4)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		;;
-	h3c,magic-nx30-pro)
+	cetron,ct3003)
+		lan_mac=$(mtd_get_mac_binary "art" 0)
+		wan_mac=$(macaddr_add "$lan_mac" 3)
+		label_mac=$lan_mac
+		;;
+	cmcc,rax3000m)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			wan_mac=$(mmc_get_mac_binary factory 0x24)
+			lan_mac=$(mmc_get_mac_binary factory 0x2a)
+			label_mac=$wan_mac
+		;;
+		esac
+		;;
+	glinet,gl-mt6000)
+		label_mac=$(mmc_get_mac_binary factory 0x0a)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 2)
+		;;
+	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-114m-ubootmod|\
+	h3c,magic-nx30-pro-nmbm)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
