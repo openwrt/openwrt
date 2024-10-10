@@ -12,13 +12,13 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -1035,7 +1035,8 @@ get_input(void)
+@@ -1152,7 +1152,8 @@ get_input(void)
  	}
  	notice("Modem hangup");
  	hungup = 1;
--	status = EXIT_HANGUP;
-+	if (status == EXIT_OK)
-+		status = EXIT_HANGUP;
+-	code = EXIT_HANGUP;
++	if (code == EXIT_OK)
++		code = EXIT_HANGUP;
  	lcp_lowerdown(0);	/* serial link is no longer available */
  	link_terminated(0);
  	return;

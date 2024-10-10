@@ -13,7 +13,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -2198,6 +2198,9 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -2251,6 +2251,9 @@ int sifdefaultroute (int unit, u_int32_t
      memset (&rt, 0, sizeof (rt));
      SET_SA_FAMILY (rt.rt_dst, AF_INET);
  
@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      rt.rt_dev = ifname;
      rt.rt_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
  
-@@ -2206,7 +2209,7 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -2259,7 +2262,7 @@ int sifdefaultroute (int unit, u_int32_t
  	SIN_ADDR(rt.rt_genmask) = 0L;
      }
  

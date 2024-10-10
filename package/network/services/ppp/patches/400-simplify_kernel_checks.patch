@@ -10,7 +10,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -235,7 +235,7 @@ static int driver_is_old       = 0;
+@@ -231,7 +231,7 @@ static int driver_is_old       = 0;
  static int restore_term        = 0;	/* 1 => we've munged the terminal */
  static struct termios inittermios;	/* Initial TTY termios */
  
@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -254,8 +254,8 @@ static int	looped;			/* 1 if using loop
+@@ -250,8 +250,8 @@ static int	looped;			/* 1 if using loop
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
  static struct utsname utsname;	/* for the kernel version */
@@ -29,7 +29,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  #define MAX_IFS		100
  
-@@ -1933,11 +1933,12 @@ int ccp_fatal_error (int unit)
+@@ -1970,11 +1970,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +44,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1959,6 +1960,7 @@ static char *path_to_procfs(const char *
+@@ -1996,6 +1997,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2843,15 +2845,19 @@ int ppp_available(void)
+@@ -2895,15 +2897,19 @@ int ppp_check_kernel_support(void)
      int    my_version, my_modification, my_patch;
      int osmaj, osmin, ospatch;
  
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2911,6 +2917,7 @@ int ppp_available(void)
+@@ -2963,6 +2969,7 @@ int ppp_check_kernel_support(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -3592,6 +3599,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+@@ -3577,6 +3584,7 @@ get_pty(int *master_fdp, int *slave_fdp,
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -3610,6 +3618,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+@@ -3601,6 +3609,7 @@ get_pty(int *master_fdp, int *slave_fdp,
  	    }
  	}
      }
@@ -98,26 +98,26 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	return 0;
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -171,14 +171,6 @@ static void disconnect_pppoatm(void)
+@@ -179,14 +179,6 @@ static void disconnect_pppoatm(void)
  
  void plugin_init(void)
  {
 -#ifdef linux
 -	extern int new_style_driver;	/* From sys-linux.c */
--	if (!ppp_available() && !new_style_driver)
+-	if (!ppp_check_kernel_support() && !new_style_driver)
 -		fatal("Kernel doesn't support ppp_generic - "
 -		    "needed for PPPoATM");
 -#else
 -	fatal("No PPPoATM support on this OS");
 -#endif
- 	add_options(pppoa_options);
+ 	ppp_add_options(pppoa_options);
  }
  
 --- a/pppd/plugins/pppoe/plugin.c
 +++ b/pppd/plugins/pppoe/plugin.c
-@@ -58,9 +58,6 @@ static char const RCSID[] =
+@@ -57,9 +57,6 @@ static char const RCSID[] =
  
- char pppd_version[] = VERSION;
+ char pppd_version[] = PPPD_VERSION;
  
 -/* From sys-linux.c in pppd -- MUST FIX THIS! */
 -extern int new_style_driver;
@@ -125,30 +125,30 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  char *pppd_pppoe_service = NULL;
  static char *acName = NULL;
  static char *existingSession = NULL;
-@@ -407,10 +404,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+@@ -421,10 +418,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
  void
  plugin_init(void)
  {
--    if (!ppp_available() && !new_style_driver) {
+-    if (!ppp_check_kernel_support() && !new_style_driver) {
 -	fatal("Linux kernel does not support PPPoE -- are you running 2.4.x?");
 -    }
 -
-     add_options(Options);
+     ppp_add_options(Options);
  
-     info("PPPoE plugin from pppd %s", VERSION);
+     info("PPPoE plugin from pppd %s", PPPD_VERSION);
 --- a/pppd/plugins/pppol2tp/pppol2tp.c
 +++ b/pppd/plugins/pppol2tp/pppol2tp.c
-@@ -490,12 +490,7 @@ static void pppol2tp_cleanup(void)
+@@ -500,12 +500,7 @@ static void pppol2tp_cleanup(void)
  
  void plugin_init(void)
  {
 -#if defined(__linux__)
 -	extern int new_style_driver;	/* From sys-linux.c */
--	if (!ppp_available() && !new_style_driver)
+-	if (!ppp_check_kernel_support() && !new_style_driver)
 -		fatal("Kernel doesn't support ppp_generic - "
 -		    "needed for PPPoL2TP");
 -#else
 +#if !defined(__linux__)
  	fatal("No PPPoL2TP support on this OS");
  #endif
- 	add_options(pppol2tp_options);
+ 	ppp_add_options(pppol2tp_options);
