@@ -4,8 +4,33 @@
 #include "mt7981b-h3c-magic-nx30-pro.dtsi"
 
 / {
-	model = "H3C Magic NX30 Pro (Stock U-Boot layout)";
-	compatible = "h3c,magic-nx30-pro", "mediatek,mt7981";
+	model = "H3C Magic NX30 Pro (stock layout, NMBM-Enabled)";
+	compatible = "h3c,magic-nx30-pro-nmbm", "mediatek,mt7981";
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+
+	spi-cal-enable;
+	spi-cal-mode = "read-data";
+	spi-cal-datalen = <7>;
+	spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+	spi-cal-addrlen = <5>;
+	spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+};
+
+&spi0_flash_pins {
+	conf-pu {
+		/delete-property/ mediatek,pull-up-adv;
+		bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+	};
+
+	conf-pd {
+		/delete-property/ mediatek,pull-up-adv;
+		bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+	};
 };
 
 &partitions {
