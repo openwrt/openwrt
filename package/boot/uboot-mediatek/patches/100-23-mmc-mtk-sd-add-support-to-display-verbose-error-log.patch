@@ -15,7 +15,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mmc/Kconfig
 +++ b/drivers/mmc/Kconfig
-@@ -855,6 +855,14 @@ config MMC_MTK
+@@ -864,6 +864,14 @@ config MMC_MTK
  	  This is needed if support for any SD/SDIO/MMC devices is required.
  	  If unsure, say N.
  
@@ -42,7 +42,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +endif
 --- a/drivers/mmc/mtk-sd.c
 +++ b/drivers/mmc/mtk-sd.c
-@@ -779,18 +779,24 @@ static int msdc_ops_send_cmd(struct udev
+@@ -783,18 +783,24 @@ static int msdc_ops_send_cmd(struct udev
  	if (cmd_ret &&
  	    !(cmd_ret == -EIO &&
  	    (cmd->cmdidx == MMC_CMD_SEND_TUNING_BLOCK ||

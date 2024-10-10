@@ -1,6 +1,6 @@
 --- a/board/mediatek/mt7981/mt7981_rfb.c
 +++ b/board/mediatek/mt7981/mt7981_rfb.c
-@@ -11,7 +11,9 @@
+@@ -10,7 +10,9 @@
  #include <env.h>
  #include <init.h>
  #include <asm/global_data.h>
@@ -10,7 +10,7 @@
  
  #ifndef CONFIG_RESET_BUTTON_LABEL
  #define CONFIG_RESET_BUTTON_LABEL "reset"
-@@ -81,3 +83,54 @@ int board_nmbm_init(void)
+@@ -80,3 +82,54 @@ int board_nmbm_init(void)
  
  	return 0;
  }
@@ -81,9 +81,9 @@
 +CONFIG_OF_SYSTEM_SETUP=y
 --- a/configs/mt7981_rfb_defconfig
 +++ b/configs/mt7981_rfb_defconfig
-@@ -134,3 +134,4 @@ CONFIG_DM_SPI=y
- CONFIG_MTK_SPIM=y
+@@ -135,3 +135,4 @@ CONFIG_MTK_SPIM=y
  CONFIG_HEXDUMP=y
+ # CONFIG_EFI_LOADER is not set
  CONFIG_LMB_MAX_REGIONS=64
 +CONFIG_OF_SYSTEM_SETUP=y
 --- a/configs/mt7981_sd_rfb_defconfig
