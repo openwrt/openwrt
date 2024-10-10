@@ -315,6 +315,7 @@ hostapd_common_add_bss_config() {
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
 	config_add_string wpa_psk_file
+	config_add_string sae_password_file
 
 	config_add_int multi_ap
 
@@ -429,6 +430,66 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+is_sae_password_duplicate() {
+	local sae_password="$1"
+	local sae_password_file="$2"
+	local mac pwid
+
+	! [ -s "$sae_password_file" ] && return 1
+
+	[[ "$sae_password" == *"|mac="* ]] && mac=$(echo "${line#*mac=}" | cut -f1 -d\|)
+	[[ "$sae_password" == *"|id="* ]] && pwid=$(echo "${line#*id=}" | cut -f1 -d\|)
+	set_default mac "ff:ff:ff:ff:ff:ff"
+
+	if {
+		grep "mac=$mac" "$sae_password_file" |
+		(grep -q "id=$pwid" || grep -qv "|id=")
+	}; then
+		echo "${sae_password_file} already has an entry for ${mac} and id ${pwid:-null}"
+		return 0 
+	fi
+	return 1
+}
+
+hostapd_set_sae_password_file() {
+	local ifname="$1"
+	local internal_password_file="$2"
+
+	json_get_vars mac vid key pwid
+	set_default mac "ff:ff:ff:ff:ff:ff"
+
+	local sae_password="${key}|mac=${mac}"
+	[ -n "$vid" ] && sae_password="${sae_password}|vlanid=${vid}"
+	[ -n "$pwid" ] && sae_password="${sae_password}|id=${pwid}"
+	
+	is_sae_password_duplicate "$line" "$internal_password_file" && return 
+	printf '%s\n' "${sae_password}" >> "$internal_password_file"
+}
+
+merge_sae_password_file() {
+	local internal_password_file="$1"
+	local user_password_file="$2"
+
+	! [ -s "$user_password_file" ] && return
+
+	while IFS= read -r line; do
+		[ -z "$line" ] || [ "${line:0:1}" = "#" ] && continue
+		is_sae_password_duplicate "$line" "$internal_password_file" && continue
+		printf '%s\n' "$line" >> "$internal_password_file" 
+
+	done < "$user_password_file"
+}
+
+hostapd_set_sae_password() {
+	local ifname="$1"
+	local user_password_file="$2"
+	local internal_password_file="/var/run/hostapd-${ifname}.sae_passwords"
+
+	rm -f "${internal_password_file}"
+	for_each_station hostapd_set_sae_password_file "${ifname}" "${internal_password_file}"
+	merge_sae_password_file "${internal_password_file}" "${user_password_file}"
 }
 
 append_iw_roaming_consortium() {
@@ -687,6 +748,7 @@ hostapd_set_bss_options() {
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
+			local invalid_psk=0
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -697,15 +759,39 @@ hostapd_set_bss_options() {
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
-			elif [ -n "$key" ] || [ -z "$wpa_psk_file" ]; then
-				wireless_setup_vif_failed INVALID_WPA_PSK
-				return 1
+			elif [ -n "$key" ] && [ "$auth_type" = "sae" ]; then
+				append bss_conf "sae_password=$key" "$N"
+				invalid_psk=1
+			else
+				invalid_psk=2
 			fi
-			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
-			[ -n "$wpa_psk_file" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
-				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
-			}
+
+			if [[ "$auth_type" == "psk"* ]]; then
+				if [ $invalid_psk -ge 1 ] && ! [ -s "$wpa_psk_file" ]; then
+					wireless_setup_vif_failed INVALID_WPA_PSK
+					return 1
+				fi
+				set_default wpa_psk_file /var/run/hostapd-$ifname.psk
+				[ -n "$wpa_psk_file" ] && {
+					[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+					append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
+				}
+			fi
+
+			if [[ "$auth_type" == *"sae" ]]; then
+				local sae_password_file=/var/run/hostapd-$ifname.sae_passwords
+				if [ $invalid_psk -ge 2 ] && ! [ -s "$sae_password_file" ]; then
+					wireless_setup_vif_failed INVALID_SAE_PASSWORD
+					return 1
+				fi
+				# Packaged hostapd version does not support `sae_password_file` entry.
+				# Here we parse file to sae_password entries to work around limitation.
+				while IFS= read -r line; do
+					[ -z "$line" ] || [ "${line:0:1}" = "#" ] && continue
+					append bss_conf "sae_password=$line" "$N"
+				done < "$sae_password_file"
+			fi
+
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
 			set_default dynamic_vlan 0

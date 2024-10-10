@@ -10,6 +10,7 @@ hostapd.data.pending_config = {};
 hostapd.data.file_fields = {
 	vlan_file: true,
 	wpa_psk_file: true,
+	sae_password_file: true,
 	accept_mac_file: true,
 	deny_mac_file: true,
 	eap_user_file: true,
@@ -296,19 +297,30 @@ function find_array_idx(arr, key, val)
 	return -1;
 }
 
-function bss_reload_psk(bss, config, old_config)
+function __bss_reload_psk(bss, config, old_config, file, cmd, msg)
 {
-	if (is_equal(old_config.hash.wpa_psk_file, config.hash.wpa_psk_file))
+	if (is_equal(old_config.hash[file], config.hash[file]))
 		return;
 
-	old_config.hash.wpa_psk_file = config.hash.wpa_psk_file;
+	old_config.hash[file] = config.hash[file];
 	if (!is_equal(old_config, config))
 		return;
 
-	let ret = bss.ctrl("RELOAD_WPA_PSK");
+	let ret = bss.ctrl(cmd);
 	ret ??= "failed";
 
-	hostapd.printf(`Reload WPA PSK file for bss ${config.ifname}: ${ret}`);
+	hostapd.printf(`${msg} ${config.ifname}: ${ret}`);
+}
+
+function bss_reload_psk(bss, config, old_config)
+{
+	let msg;
+
+	msg = "Reload WPA PSK file for bss";
+	__bss_reload_psk(bss, config, old_config, "wpa_psk_file", "RELOAD_WPA_PSK", msg);
+
+	msg = "Reload config on sae_password_file change for bss";
+	__bss_reload_psk(bss, config, old_config, "sae_password_file", "RELOAD_CONFIG", msg);
 }
 
 function remove_file_fields(config)
@@ -327,6 +339,7 @@ function bss_remove_file_fields(config)
 	for (let key in config.hash)
 		new_cfg.hash[key] = config.hash[key];
 	delete new_cfg.hash.wpa_psk_file;
+	delete new_cfg.hash.sae_password_file;
 	delete new_cfg.hash.vlan_file;
 
 	return new_cfg;
