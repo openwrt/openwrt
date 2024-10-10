@@ -643,14 +643,16 @@ define KernelPackage/ramoops
   TITLE:=Ramoops (pstore-ram)
   DEFAULT:=m if ALL_KMODS
   KCONFIG:=CONFIG_PSTORE_RAM \
-	CONFIG_PSTORE_CONSOLE=y
+	CONFIG_PSTORE_CONSOLE=y \
+	CONFIG_IO_STRICT_DEVMEM=n
   DEPENDS:=+kmod-pstore +kmod-reed-solomon
   FILES:= $(LINUX_DIR)/fs/pstore/ramoops.ko
   AUTOLOAD:=$(call AutoLoad,30,ramoops,1)
 endef
 
 define KernelPackage/ramoops/description
- Kernel module for pstore-ram (ramoops) crash log storage
+  Kernel module for pstore-ram (ramoops) crash log storage.
+  Disables IO_STRICT_DEVMEM.
 endef
 
 $(eval $(call KernelPackage,ramoops))
