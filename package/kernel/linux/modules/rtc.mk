@@ -116,6 +116,22 @@ endef
 $(eval $(call KernelPackage,rtc-mv))
 
 
+define KernelPackage/rtc-nvmem
+  SUBMENU:=$(RTC_MENU)
+  TITLE:=RTC non volatile storage support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  KCONFIG:=CONFIG_RTC_NVMEM=y \
+	CONFIG_NVMEM_SYSFS=y
+endef
+
+define KernelPackage/rtc-nvmem/description
+ Say yes here to add support for the non volatile (often battery
+ backed) storage present on RTCs.
+endef
+
+$(eval $(call KernelPackage,rtc-nvmem))
+
+
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(RTC_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
