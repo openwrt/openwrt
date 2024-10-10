@@ -77,7 +77,6 @@ $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNTRACK, $(P_XT)x
 
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_CONNBYTES, $(P_XT)xt_connbytes))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_CONNLIMIT, $(P_XT)xt_connlimit))
-$(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_CONNCOUNT, $(P_XT)nf_conncount))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_CONNMARK, $(P_XT)xt_connmark))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_HELPER, $(P_XT)xt_helper))
 $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_RECENT, $(P_XT)xt_recent))
@@ -283,6 +282,10 @@ $(eval $(call nf_add,NFNETLINK_LOG,CONFIG_NETFILTER_NETLINK_LOG, $(P_XT)nfnetlin
 
 $(eval $(call nf_add,NFNETLINK_QUEUE,CONFIG_NETFILTER_NETLINK_QUEUE, $(P_XT)nfnetlink_queue))
 
+# conncount
+
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNCOUNT,CONFIG_NETFILTER_CONNCOUNT, $(P_XT)nf_conncount),))
+
 #
 # ebtables
 #
@@ -355,6 +358,8 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NFT_FIB,CONFIG_NFT_FIB_IPV4, $(P_V4)nft_fib
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_FIB,CONFIG_NFT_FIB_IPV6, $(P_V6)nft_fib_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NFT_QUEUE,CONFIG_NFT_QUEUE, $(P_XT)nft_queue),))
+
+$(eval $(if $(NF_KMOD),$(call nf_add,NFT_CONNLIMIT,CONFIG_NFT_CONNLIMIT, $(P_XT)nft_connlimit),))
 
 # userland only
 IPT_BUILTIN += $(NF_IPT-y) $(NF_IPT-m)
