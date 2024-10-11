@@ -180,10 +180,6 @@ define Build/iodata-mstc-header2
 	mv $@.new $@
 endef
 
-define Build/kernel-initramfs-bin
-	$(CP) $(KDIR)/vmlinux-initramfs $@
-endef
-
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	$(eval magic=$(if $(word 2,$(1)),$(word 2,$(1)),ZNET))
@@ -1093,8 +1089,8 @@ define Device/dna_valokuitu-plus-ex400
   DEVICE_MODEL := Valokuitu Plus EX400
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGES := factory.bin sysupgrade.bin
-  IMAGE/factory.bin := kernel-initramfs-bin | lzma | uImage lzma | \
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
                        dna-bootfs with-initrd | dna-header | \
                        append-md5sum-ascii-salted
   IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
