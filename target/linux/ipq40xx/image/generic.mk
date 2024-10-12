@@ -1093,7 +1093,7 @@ endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
 define Device/skspruce_wia3300-20
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 55104k
 	SOC := qcom-ipq4019

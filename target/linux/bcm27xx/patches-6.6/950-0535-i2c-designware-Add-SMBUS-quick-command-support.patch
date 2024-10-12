@@ -17,7 +17,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/i2c/busses/i2c-designware-core.h
 +++ b/drivers/i2c/busses/i2c-designware-core.h
-@@ -122,7 +122,9 @@
+@@ -123,7 +123,9 @@
  
  #define DW_IC_ERR_TX_ABRT			0x1
  
@@ -40,7 +40,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	regmap_update_bits(dev->map, DW_IC_CON, DW_IC_CON_10BITADDR_MASTER,
  			   ic_con);
  
-@@ -472,6 +476,14 @@ i2c_dw_xfer_msg(struct dw_i2c_dev *dev)
+@@ -500,6 +504,14 @@ i2c_dw_xfer_msg(struct dw_i2c_dev *dev)
  		regmap_read(dev->map, DW_IC_RXFLR, &flr);
  		rx_limit = dev->rx_fifo_depth - flr;
  
@@ -55,7 +55,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		while (buf_len > 0 && tx_limit > 0 && rx_limit > 0) {
  			u32 cmd = 0;
  
-@@ -743,7 +755,7 @@ static const struct i2c_algorithm i2c_dw
+@@ -781,7 +793,7 @@ static const struct i2c_algorithm i2c_dw
  };
  
  static const struct i2c_adapter_quirks i2c_dw_quirks = {
@@ -64,7 +64,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  };
  
  static u32 i2c_dw_read_clear_intrbits(struct dw_i2c_dev *dev)
-@@ -876,7 +888,8 @@ void i2c_dw_configure_master(struct dw_i
+@@ -914,7 +926,8 @@ void i2c_dw_configure_master(struct dw_i
  {
  	struct i2c_timings *t = &dev->timings;
  
