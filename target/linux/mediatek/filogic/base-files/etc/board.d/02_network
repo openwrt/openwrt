@@ -195,8 +195,7 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$label_mac" 2)
 		;;
 	h3c,magic-nx30-pro|\
-	h3c,magic-nx30-pro-114m-ubootmod|\
-	h3c,magic-nx30-pro-nmbm)
+	h3c,magic-nx30-pro-114m-ubootmod)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
