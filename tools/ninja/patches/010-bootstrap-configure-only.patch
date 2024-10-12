@@ -1,6 +1,6 @@
 --- a/configure.py
 +++ b/configure.py
-@@ -201,6 +201,8 @@ parser = OptionParser()
+@@ -198,6 +198,8 @@ parser = OptionParser()
  profilers = ['gmon', 'pprof']
  parser.add_option('--bootstrap', action='store_true',
                    help='bootstrap a ninja binary from nothing')
@@ -9,7 +9,7 @@
  parser.add_option('--verbose', action='store_true',
                    help='enable verbose build')
  parser.add_option('--platform',
-@@ -693,7 +695,11 @@ n.build('all', 'phony', all_targets)
+@@ -756,7 +758,11 @@ n.build('all', 'phony', all_targets)
  n.close()
  print('wrote %s.' % BUILD_FILENAME)
  
