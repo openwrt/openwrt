@@ -6,11 +6,12 @@ PKG_RELEASE=1
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
-PKG_SOURCE_URL:=https://github.com/openwrt/mt76
+#PKG_SOURCE_URL:=https://github.com/openwrt/mt76
+PKG_SOURCE_URL:=https://github.com/rmandrad/mt76
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2024-10-10
-PKG_SOURCE_VERSION:=6a1199463fc8f7758c32122613288ed95c09e3bd
-PKG_MIRROR_HASH:=4b42a586e098c1dc5970fbd3190ac2faf67992c7357161a3ef3040817a8ed8d6
+PKG_SOURCE_VERSION:=ec18e625eb0d9766f6e0724d36e0deb12b926031
+PKG_MIRROR_HASH:=816cfb2f9be846e856e7dd53545ce28577646c6c844443ac515e8a0083729f31
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -255,6 +256,12 @@ define KernelPackage/mt7986-firmware
   $(KernelPackage/mt76-default)
   DEPENDS:=@TARGET_mediatek_filogic
   TITLE:=MediaTek MT7986 firmware
+endef
+
+define KernelPackage/mt7988-wo-firmware
+  $(KernelPackage/mt76-default)
+  DEPENDS:=@TARGET_mediatek_filogic
+  TITLE:=MT7988 wo firmware
 endef
 
 define KernelPackage/mt7921-firmware
@@ -631,6 +638,15 @@ define KernelPackage/mt7986-firmware/install
 		$(1)/lib/firmware/mediatek
 endef
 
+define KernelPackage/mt7988-wo-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7988/mt7988_wo_0.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7988/mt7988_wo_1.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7988/mt7988_wo_2.bin \
+		$(1)/lib/firmware/mediatek/
+endef
+
 define KernelPackage/mt7921-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	cp \
@@ -746,6 +762,7 @@ $(eval $(call KernelPackage,mt7915e))
 $(eval $(call KernelPackage,mt7916-firmware))
 $(eval $(call KernelPackage,mt7981-firmware))
 $(eval $(call KernelPackage,mt7986-firmware))
+$(eval $(call KernelPackage,mt7988-wo-firmware))
 $(eval $(call KernelPackage,mt7921-firmware))
 $(eval $(call KernelPackage,mt7922-firmware))
 $(eval $(call KernelPackage,mt7925-firmware))
