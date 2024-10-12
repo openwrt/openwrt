@@ -614,17 +614,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	alfa-network,ap121f|\
-	alfa-network,ap121fe|\
-	alfa-network,n2q|\
-	alfa-network,n5q|\
-	alfa-network,pi-wifi4|\
-	alfa-network,r36a|\
-	alfa-network,tube-2hq|\
-	engenius,eap300-v2|\
-	engenius,ens202ext-v1)
-		label_mac=$(mtd_get_mac_binary art 0x1002)
-		;;
 	arduino,yun)
 		base_mac=$(mtd_get_mac_binary art 0x1002)
 		lan_mac=$(macaddr_setbit $base_mac 29)
@@ -667,12 +656,6 @@ ath79_setup_macs()
 		plc_mac=$(mtd_get_mac_ascii art "protest_plc_mac")
 		[ -n "$plc_mac" ] && ucidef_set_interface_macaddr "plc" $plc_mac
 		;;
-	dlink,dap-1330-a1|\
-	dlink,dap-1365-a1|\
-	dlink,dch-g020-a1)
-		lan_mac=$(mtd_get_mac_text "mp" 0x1)
-		label_mac=$lan_mac
-		;;
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -683,17 +666,6 @@ ath79_setup_macs()
 	dlink,dap-2695-a1|\
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
-		;;
-	dlink,dir-629-a1)
-		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
-		;;
-	trendnet,tew-673gru)
-		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
-		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
-		label_mac=$wan_mac
-		;;
-	dlink,dir-505)
-		lan_mac=$(mtd_get_mac_text "mac" 0x4)
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
@@ -726,24 +698,11 @@ ath79_setup_macs()
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		;;
-	engenius,ews511ap)
-		lan_mac=$(mtd_get_mac_text "u-boot-env" 0xe9)
-		eth1_mac=$(macaddr_add "$lan_mac" 1)
-		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
-		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
-		;;
-	enterasys,ws-ap3705i)
-		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
-		;;
-	huawei,ap5030dn)
-		label_mac=$(mtd_get_mac_binary art 0x2005b)
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
@@ -754,7 +713,6 @@ ath79_setup_macs()
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
 	iodata,wn-ag300dgr)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
@@ -811,9 +769,7 @@ ath79_setup_macs()
 		;;
 	sitecom,wlr-7100|\
 	sitecom,wlr-8100)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-a9-v6|\
@@ -823,11 +779,6 @@ ath79_setup_macs()
 	tplink,tl-wr1043n-v5)
 		base_mac=$(mtd_get_mac_binary info 0x8)
 		wan_mac=$(macaddr_add "$base_mac" 1)
-		;;
-	trendnet,tew-823dru)
-		lan_mac=$(mtd_get_mac_text mac 0x4)
-		wan_mac=$(mtd_get_mac_text mac 0x18)
-		label_mac=$wan_mac
 		;;
 	ubnt,powerbridge-m|\
 	ubnt,rocket-m|\
@@ -846,14 +797,8 @@ ath79_setup_macs()
 		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n ar7100_esa)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	wd,mynet-wifi-rangeextender)
-		lan_mac=$(nvram get et0macaddr)
-		;;
 	xiaomi,aiot-ac2350)
 		lan_mac=$(mtd_get_mac_binary art 0x1002)
-		;;
-	zyxel,nbg6616)
-		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	esac
 

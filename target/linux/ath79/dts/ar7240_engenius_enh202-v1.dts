@@ -93,7 +93,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_art_1000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -107,6 +108,10 @@
 
 		macaddr_art_0: macaddr@0 {
 			reg = <0x0 0x6>;
+		};
+
+		cal_art_1000: calibration@1000 {
+			reg = <0x1000 0xeb8>;
 		};
 	};
 };

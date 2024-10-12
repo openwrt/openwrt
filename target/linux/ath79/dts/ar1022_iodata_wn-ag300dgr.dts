@@ -126,9 +126,14 @@
 			};
 
 			partition@30000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x030000 0x010000>;
 				read-only;
+
+				macaddr_uboot_ethaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@40000 {
@@ -159,6 +164,16 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -186,6 +201,9 @@
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
 
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+
 	gmac-config {
 		device = <&gmac>;
 		rgmii-gmac0 = <1>;
@@ -194,6 +212,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath9k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &usb {
@@ -207,5 +232,6 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
+	nvmem-cells = <&cal_art_1000>, <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
