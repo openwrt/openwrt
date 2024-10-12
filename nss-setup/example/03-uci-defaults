@@ -16,16 +16,26 @@ mac=$(fw_printenv -n ethaddr | tr '[:upper:]' '[:lower:]')
 wds_disable=1
 bridge_mode=true
 
-ap_5g_radio="radio0"
-ap_2g_radio="radio1"
-mesh_radio="radio2"
-wds_radio="${mesh_radio}"
+# radio_5g_low is the low 5G band (36-64)
+# radio_5g_high is the high 5G band (100-165)
+radio_5g_low="radio0"
+radio_2g="radio1"
+radio_5g_high="radio2"
+
+ap_5g_radio="${radio_5g_low}"
+ap_2g_radio="${radio_2g}"
+mesh_radio="${radio_5g_high}"
+wds_radio="${radio_5g_high}"
 
 # for 80mhz channel 161 will use channels 149-161 (leave as is)
 mesh_channel=161
 # for 80mhz channel 64 will use channels 52-64 (change below for specific devices if needed)
 ap_5g_channel=64
 ap_2g_channel=6
+
+ap_2g_txpower=24
+ap_5g_txpower=21
+mesh_txpower=30
 
 # Unique UCI config names for each section
 ap_5g_iface="ap_5g"
@@ -68,13 +78,13 @@ fallback_mgmt_ip="10.1.1.1"
 # NOTE: ON MX4300 ONLY THE 2ND RADIO WORKS WITH MESH. LEAVE THIS UNCHANGED.
 mesh_band="$(fw_printenv -n mesh_band 2> /dev/null)"
 mesh_band="${mesh_band:-high_5g}"
-mesh_rssi_threshold="-65"
 
 if [ "$mesh_band" = "low_5g" ]; then
-  mesh_radio="radio0"
+  mesh_radio="${radio_5g_low}"
+  wds_radio="${radio_5g_low}"
   mesh_channel="64"
-  ap_5g_radio="radio2"
-  ap_5g_channel="100"
+  ap_5g_radio="${radio_5g_high}"
+  ap_5g_channel="161"
 fi
 
 # Setup satellite nodes to simply extend wifi coverage from the main router.
@@ -83,6 +93,7 @@ fi
 mesh_gate_announcements="0"
 mesh_hwmp_rootmode="0"
 mesh_fwding="0"
+mesh_rssi_threshold="-65"
 
 stp_priority=8192
 
@@ -251,16 +262,16 @@ config device
 config interface 'lan'
 	option device 'br-lan'
 $(
-    if [ "$lan_proto" = "static" ]; then
-      cat <<- EOD
+	if [ "$lan_proto" = "static" ]; then
+	  cat <<- EOD
 	option proto 'static'
 	list ipaddr '${ipaddr}/${netmask:-24}'
 	list dns '${router}'
 	option gateway '${router}'
 	option delegate '0'
 EOD
-    else
-      cat <<- EOD
+	else
+	  cat <<- EOD
 	option proto 'dhcp'
 	option delegate '0'
 
@@ -271,8 +282,8 @@ config interface 'mgmt'
 	option netmask '255.255.255.0'
 	option delegate '0'
 EOD
-    fi
-  )
+	fi
+)
 
 config interface 'lan6'
 	option device '@lan'
@@ -324,37 +335,37 @@ EOF
 uci import <<- EOF
 package wireless
 
-config wifi-device 'radio0'
+config wifi-device '${radio_5g_low}'
 	option type 'mac80211'
 	option path 'platform/soc@0/c000000.wifi'
 	option band '5g'
-	option txpower '21'
+	option txpower '${ap_5g_txpower}'
 	option country '${country:-US}'
 	option htmode 'HE80'
 	option channel '${ap_5g_channel:-64}'
 	option cell_density '0'
 	option noscan '1'
 
-config wifi-device 'radio1'
+config wifi-device '${radio_2g}'
 	option type 'mac80211'
 	option path 'platform/soc@0/c000000.wifi+1'
 	option band '2g'
-	option txpower '24'
+	option txpower '${ap_2g_txpower}'
 	option country '${country:-US}'
 	option htmode 'HE20'
 	option channel '${ap_2g_channel:-6}'
 	option cell_density '0'
 	option noscan '1'
 
-config wifi-device 'radio2'
+config wifi-device '${radio_5g_high}'
 	option type 'mac80211'
 	option path 'platform/soc@0/c000000.wifi+2'
 	option band '5g'
-	option txpower '30'
+	option txpower '${mesh_txpower}'
 	option country '${country:-US}'
 	option htmode 'HE80'
 	option channel '${mesh_channel:-161}'
-	option cell_density '3'
+	option cell_density '0'
 	option noscan '1'
 
 config wifi-iface '${ap_5g_iface}'
@@ -366,7 +377,6 @@ config wifi-iface '${ap_5g_iface}'
 	option key '${ap_key}'
 	option beacon_int '97'
 	option bss_transition '1'
-	option disassoc_low_ack '0'
 	option dtim_period '3'
 	option ft_over_ds '0'
 	option ft_psk_generate_local '1'
@@ -378,7 +388,6 @@ config wifi-iface '${ap_5g_iface}'
 	option time_zone 'GMT0'
 	option wnm_sleep_mode '1'
 	option wpa_group_rekey '86400'
-	option pmk_r1_push '1'
 
 config wifi-iface '${ap_2g_iface}'
 	option device '${ap_2g_radio}'
@@ -389,7 +398,6 @@ config wifi-iface '${ap_2g_iface}'
 	option key '${ap_key}'
 	option bss_transition '1'
 	option beacon_int '100'
-	option disassoc_low_ack '0'
 	option dtim_period '3'
 	option ft_over_ds '0'
 	option ft_psk_generate_local '1'
@@ -402,7 +410,6 @@ config wifi-iface '${ap_2g_iface}'
 	option wnm_sleep_mode '1'
 	option wpa_group_rekey '86400'
 	option max_inactivity '4260'
-	option pmk_r1_push '1'
 
 config wifi-iface '${mesh_iface}'
 	option device '${mesh_radio}'
@@ -414,7 +421,10 @@ config wifi-iface '${mesh_iface}'
 	option mesh_fwding '${mesh_fwding:-0}'
 	option mesh_gate_announcements '${mesh_gate_announcements:-0}'
 	option mesh_hwmp_rootmode '${mesh_hwmp_rootmode:-0}'
-	option mesh_max_peer_links '16'
+	option mesh_max_peer_links '5'
+	option mesh_ttl '5'
+	option mesh_element_ttl '3'
+	option mesh_hwmp_max_preq_retries '2'
 	option mesh_rssi_threshold '${mesh_rssi_threshold}'
 	option disabled $([ ${wds_disable:-1} -eq 1 ] && echo '0' || echo '1')
 
@@ -434,7 +444,7 @@ uci batch <<- EOF
 	set wireless.${mesh_radio}.channel='${mesh_channel}'
 	set wireless.${ap_5g_radio}.channel='${ap_5g_channel}'
 
-	set wireless.${mesh_radio}.cell_density='3'
+	set wireless.${mesh_radio}.cell_density='0'
 	set wireless.${ap_5g_radio}.cell_density='0'
 
 	set wireless.${mesh_iface}.device='${mesh_radio}'
