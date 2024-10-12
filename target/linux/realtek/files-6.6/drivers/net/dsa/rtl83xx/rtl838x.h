@@ -632,6 +632,19 @@ enum pbvlan_mode {
 	PBVLAN_MODE_ALL_PKT,
 };
 
+struct rtl838x_portgroup_led_config {
+	u32 installed_leds_mask;
+
+	// trigger of led 0, 1 and 2
+	u32 led_triggers[3];
+};
+
+struct rtl838x_led_config {
+	u32 enabled_ports_mask;
+	struct rtl838x_portgroup_led_config low_ports;
+	struct rtl838x_portgroup_led_config high_ports;
+};
+
 struct rtl838x_port {
 	bool enable;
 	u64 pm;
