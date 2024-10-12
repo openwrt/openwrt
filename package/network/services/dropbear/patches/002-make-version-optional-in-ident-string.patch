@@ -1,0 +1,32 @@
+From a63cad594c50867d0cc77a4dcb4a48dbac70b9aa Mon Sep 17 00:00:00 2001
+From: Marius Dinu <m95d+git@psihoexpert.ro>
+Date: Thu, 16 May 2024 10:20:36 +0300
+Subject: [PATCH] sysoptions.h: make version optional in ident string
+
+Allow defining version part of the ident string in localoptions.h
+
+Signed-off-by: Marius Dinu <m95d+git@psihoexpert.ro>
+---
+ src/sysoptions.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/sysoptions.h b/src/sysoptions.h
+index e9cf6c0..0533c6e 100644
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -7,7 +7,11 @@
+ #define DROPBEAR_VERSION "2024.85"
+ #endif
+ 
+-#define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
++/* IDENT_VERSION_PART is the optional part after "SSH-2.0-dropbear". Refer to RFC4253 for requirements. */
++#ifndef IDENT_VERSION_PART
++#define IDENT_VERSION_PART "_" DROPBEAR_VERSION
++#endif
++#define LOCAL_IDENT "SSH-2.0-dropbear" IDENT_VERSION_PART
+ #define PROGNAME "dropbear"
+ 
+ #ifndef DROPBEAR_CLIENT
+-- 
+2.43.2
+
