@@ -46,31 +46,142 @@ pc-engines-apu4|pc-engines-apu6)
 roqos-roqos-core-rc10)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
-sophos-sg-105r1|sophos-xg-105r1| \
-sophos-sg-105wr1|sophos-xg-105wr1| \
-sophos-sg-105r2|sophos-xg-105r2| \
-sophos-sg-105wr2|sophos-xg-105wr2| \
-sophos-sg-115r1|sophos-xg-115r1| \
-sophos-sg-115wr1|sophos-xg-115wr1| \
-sophos-sg-115r2|sophos-xg-115r2| \
-sophos-sg-115wr2|sophos-xg-115wr2| \
-sophos-xg-85*|sophos-xg-86*)
+sophos-sg-105r1|sophos-sg-105wr1| \
+sophos-sg-115r1|sophos-sg-115wr1)
+	ucidef_set_network_device_path "lan" "pci0000:00/0000:00:1c.0/0000:01:00.0"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:1c.1/0000:02:00.0"
+	ucidef_set_network_device_path "dmz" "pci0000:00/0000:00:1c.2/0000:03:00.0"
+	ucidef_set_network_device_path "ha"  "pci0000:00/0000:00:1c.3/0000:04:00.0/0000:05:01.0/0000:06:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha" "wan"
+	;;
+sophos-sg-105r2|sophos-sg-105wr2| \
+sophos-sg-115r2|sophos-sg-115wr2)
+	ucidef_set_network_device_path "lan" "pci0000:00/0000:00:1c.0/0000:01:00.0"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:1c.1/0000:02:00.0"
+	ucidef_set_network_device_path "dmz" "pci0000:00/0000:00:1c.2/0000:03:00.0"
+	ucidef_set_network_device_path "ha"  "pci0000:00/0000:00:1c.3/0000:04:00.0/0000:05:01.0/0000:06:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha" "wan"
+	;;
+sophos-sg-105wr3)
+	ucidef_set_network_device_path "lan" "pci0000:00/0000:00:13.1/0000:02:00.0"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:13.2/0000:03:00.0"
+	ucidef_set_network_device_path "dmz" "pci0000:00/0000:00:13.3/0000:04:00.0/0000:05:02.0/0000:07:00.0"
+	ucidef_set_network_device_path "ha"  "pci0000:00/0000:00:13.0/0000:01:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha" "wan"
+	;;
+sophos-sg-115r3)
+	ucidef_set_network_device_path "lan" "pci0000:00/0000:00:13.1/0000:02:00.0"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:13.2/0000:03:00.0"
+	ucidef_set_network_device_path "dmz" "pci0000:00/0000:00:13.3/0000:04:00.0"
+	ucidef_set_network_device_path "ha"  "pci0000:00/0000:00:13.0/0000:01:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha" "wan"
+	;;
+sophos-sg-125r1|sophos-sg-125wr1)
+	ucidef_set_network_device_path "lan"  "pci0000:00/0000:00:14.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:14.1"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:14.2"
+	ucidef_set_network_device_path "ha"   "pci0000:00/0000:00:14.3"
+	ucidef_set_network_device_path "eth4" "pci0000:00/0000:00:01.0/0000:01:00.0/0000:02:02.0/0000:03:00.0"
+	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:01.0/0000:01:00.0/0000:02:03.0/0000:04:00.0"
+	ucidef_set_network_device_path "eth6" "pci0000:00/0000:00:02.0/0000:05:00.0/0000:06:02.0/0000:07:00.0"
+	ucidef_set_network_device_path "eth7" "pci0000:00/0000:00:02.0/0000:05:00.0/0000:06:03.0/0000:08:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha eth4 eth5 eth6 eth7" "wan"
+	;;
+sophos-sg-125r2|sophos-sg-125wr2| \
+sophos-sg-135r2|sophos-sg-135wr2)
+	ucidef_set_network_device_path "lan"  "pci0000:00/0000:00:14.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:14.1"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:14.2"
+	ucidef_set_network_device_path "ha"   "pci0000:00/0000:00:14.3"
+	ucidef_set_network_device_path "eth4" "pci0000:00/0000:00:01.0/0000:01:00.0/0000:02:02.0/0000:03:00.0"
+	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:01.0/0000:01:00.0/0000:02:03.0/0000:04:00.0"
+	ucidef_set_network_device_path "eth6" "pci0000:00/0000:00:02.0/0000:05:00.0/0000:06:02.0/0000:07:00.0"
+	ucidef_set_network_device_path "eth7" "pci0000:00/0000:00:02.0/0000:05:00.0/0000:06:03.0/0000:08:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha eth4 eth5 eth6 eth7" "wan"
+	;;
+sophos-xg-85r1)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:1c.0/0000:01:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:1c.1/0000:02:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:1c.2/0000:03:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:1c.3/0000:04:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-xg-85wr1)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:1c.0/0000:01:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:1c.1/0000:02:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:1c.2/0000:03:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:1c.3/0000:04:00.0/0000:05:01.0/0000:06:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-xg-86r1|sophos-xg-86wr1)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:13.0/0000:02:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:13.1/0000:03:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:13.2/0000:04:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:13.3/0000:05:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-xg-105r2|sophos-xg-105wr2)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:1c.0/0000:01:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:1c.1/0000:02:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:1c.2/0000:03:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:1c.3/0000:04:00.0/0000:05:01.0/0000:06:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-xg-105r3|sophos-xg-115r3)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:13.1/0000:02:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:13.2/0000:03:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:13.3/0000:04:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:13.0/0000:01:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-xg-106r1)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:13.1/0000:02:00.0"
+	ucidef_set_network_device_path "wan"  "pci0000:00/0000:00:13.2/0000:03:00.0"
+	ucidef_set_network_device_path "dmz"  "pci0000:00/0000:00:13.3/0000:04:00.0"
+	ucidef_set_network_device_path "lan4" "pci0000:00/0000:00:13.0/0000:01:00.0"
+	ucidef_set_interfaces_lan_wan  "lan1 dmz lan4" "wan"
+	;;
+sophos-utm-110r5|sophos-utm-120r5)
+	ucidef_set_network_device_path "lan" "pci0000:00/0000:00:1c.3/0000:05:00.0"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:1c.2/0000:04:00.0"
+	ucidef_set_network_device_path "dmz" "pci0000:00/0000:00:1c.1/0000:03:00.0"
+	ucidef_set_network_device_path "ha"  "pci0000:00/0000:00:1c.0/0000:02:00.0"
+	ucidef_set_interfaces_lan_wan  "lan dmz ha" "wan"
+	;;
+sophos-sg-105r1|sophos-sg-105wr1| \
+sophos-sg-105r2|sophos-sg-105wr2| \
+sophos-sg-105r3|sophos-sg-105wr3| \
+sophos-sg-115r1|sophos-sg-115wr1| \
+sophos-sg-115r2|sophos-sg-115wr2| \
+sophos-sg-115r3|sophos-sg-115wr3| \
+sophos-xg-85r1|sophos-xg-85wr1| \
+sophos-xg-86r1|sophos-xg-86wr1| \
+sophos-xg-105r1|sophos-xg-105wr1| \
+sophos-xg-105r2|sophos-xg-105wr2| \
+sophos-xg-105r3|sophos-xg-105wr3| \
+sophos-xg-115r1|sophos-xg-115wr1| \
+sophos-xg-115r2|sophos-xg-115wr2| \
+sophos-xg-115r3|sophos-xg-115wr3| \
+sophos-xg-106r1|sophos-xg-106wr1| \
+sophos-xg-116r1|sophos-xg-116wr1| \
+sophos-utm-110r5|sophos-utm-120r5)
 	ucidef_set_interfaces_lan_wan "eth0 eth2 eth3" "eth1"
 	;;
-sophos-sg-125r1|sophos-xg-125r1| \
-sophos-sg-125wr1|sophos-xg-125wr1| \
-sophos-sg-125r2|sophos-xg-125r2| \
-sophos-sg-125wr2|sophos-xg-125wr2| \
-sophos-sg-135r1|sophos-xg-135r1| \
-sophos-sg-135wr1|sophos-xg-135wr1| \
-sophos-sg-135r2|sophos-xg-135r2| \
-sophos-sg-135wr2|sophos-xg-135wr2)
+sophos-sg-125r1|sophos-sg-125wr1| \
+sophos-sg-125r2|sophos-sg-125wr2| \
+sophos-sg-135r1|sophos-sg-135wr1| \
+sophos-sg-135r2|sophos-sg-135wr2| \
+sophos-xg-125r1|sophos-xg-125wr1| \
+sophos-xg-125r2|sophos-xg-125wr2| \
+sophos-xg-135r1|sophos-xg-135wr1| \
+sophos-xg-135r2|sophos-xg-135wr2)
 	ucidef_set_interfaces_lan_wan "eth0 eth2 eth3 eth4 eth5 eth6 eth7" "eth1"
 	;;
-sophos-sg-135r3|sophos-xg-135r3| \
-sophos-sg-135wr3|sophos-xg-135wr3)
+sophos-sg-135r3|sophos-sg-135wr3| \
+sophos-xg-135r3|sophos-xg-135wr3)
 	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth5 eth7 eth8" "eth6"
 	;;
+
 traverse-technologies-geos)
 	ucidef_set_interface_lan "eth0 eth1"
 	ucidef_add_atm_bridge "0" "35" "llc" "bridged"
