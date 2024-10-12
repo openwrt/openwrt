@@ -1,0 +1,50 @@
+$id: https://openwrt.org/schema/usb.yaml
+title: usb
+type: object
+
+required:
+  - plug
+  - version
+  - port_count
+
+examples:
+  - plug: Type A
+    version: USB 2.0
+    port_count: 4
+
+items:
+  anyOf:
+  - $id: '#/properties/usb/items/anyOf/0'
+    properties:
+      plug:
+        $id: '#/properties/usb/items/anyOf/0/properties/plug'
+        title: Plug
+        type: string
+        enum:
+          - Type A
+          - Mini-A
+          - Micro-A
+          - Type B
+          - Mini-B
+          - Micro-B
+          - Type-C
+
+      version:
+        $id: '#/properties/usb/items/anyOf/0/properties/speed_mbit'
+        title: Version
+        type: string
+        enum:
+          - USB 1.0
+          - USB 2.0
+          - USB 3.0
+          - USB 3.1 Gen1
+          - USB 3.2 Gen1
+          - USB 3.1 Gen2
+          - USB 3.2 Gen2
+          - USB 3.2 Gen 2x2
+
+      port_count:
+        $id: '#/properties/usb/items/anyOf/0/properties/port_count'
+        title: Port Count
+        type: integer
+        minimum: 1
