@@ -8,6 +8,10 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+aqara,zhwg11lm|\
+xiaomi,dgnwg05lm)
+	ubootenv_add_uci_config "/dev/mtd0" "0x2e0000" "0x20000" "0x20000" "4"
+	;;
 technexion,imx7d-pico-pi)
 	ubootenv_add_uci_config "/dev/mmcblk2" "0xc0000" "0x2000" "0x2000"
 	;;
