@@ -2,8 +2,6 @@
 
 #include "rtl8380_netgear_gigabit.dtsi"
 
-#include <dt-bindings/leds/common.h>
-
 / {
 	compatible = "netgear,gs308t-v1", "realtek,rtl838x-soc";
 	model = "Netgear GS308T v1";
@@ -35,3 +33,22 @@
 &firmware {
 	openwrt,ih-magic = <0x4e474335>;
 };
+
+&switch0 {
+	port-leds {
+		led-control-mode = <RTL838X_LEDS_CONTROL_MODE_SERIAL>;
+	};
+};
+
+#define SWITCH_PORT_LEDS(port) \
+	SWITCH_PORT_LED(##port,0, RTL838X_LEDS_TRIGGER_LINK_ACT_1G, LED_COLOR_ID_GREEN) \
+	SWITCH_PORT_LED(##port,1, RTL838X_LEDS_TRIGGER_LINK_ACT_100M_10M, LED_COLOR_ID_AMBER)
+
+SWITCH_PORT_LEDS(8)
+SWITCH_PORT_LEDS(9)
+SWITCH_PORT_LEDS(10)
+SWITCH_PORT_LEDS(11)
+SWITCH_PORT_LEDS(12)
+SWITCH_PORT_LEDS(13)
+SWITCH_PORT_LEDS(14)
+SWITCH_PORT_LEDS(15)
