@@ -86,6 +86,13 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
 		;;
+	wd,mynet-n600|\
+	wd,mynet-n750)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
+		;;
 	phicomm,k2t)
 		[ "$PHYNBR" -eq 0 ] && \
 			k2t_get_mac "5g_mac" > /sys${DEVPATH}/macaddress
