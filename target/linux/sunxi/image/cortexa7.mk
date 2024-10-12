@@ -46,6 +46,13 @@ define Device/friendlyarm_nanopi-neo-air
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-air
 
+define Device/friendlyarm_nanopi-neo-core2
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi NEO Core2
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += friendlyarm_nanopi-neo-core2
+
 define Device/friendlyarm_nanopi-r1
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R1
