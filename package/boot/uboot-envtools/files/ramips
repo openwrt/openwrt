@@ -109,7 +109,8 @@ ubnt,edgerouter-x-sfp)
 	;;
 snr,snr-cpe-me1|\
 snr,snr-cpe-me2-sfp|\
-snr,cpe-w4n-mt)
+snr,cpe-w4n-mt|\
+synertau,wi-cat-gl)
 	idx="$(find_mtd_index uboot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"

@@ -2542,6 +2542,17 @@ define Device/storylink_sap-g3200u3
 endef
 TARGET_DEVICES += storylink_sap-g3200u3
 
+define Device/synertau_wi-cat-gl
+	$(Device/dsa-migration)
+	$(Device/uimage-lzma-loader)
+	IMAGE_SIZE := 15040k
+	DEVICE_VENDOR := Synertau
+	DEVICE_MODEL := Wi-CAT-GL
+	UIMAGE_NAME := $$(DEVICE_MODEL)
+	DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += synertau_wi-cat-gl
+
 define Device/telco-electronics_x1
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
