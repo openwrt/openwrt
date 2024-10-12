@@ -260,3 +260,37 @@ define Device/xunlong_orangepi-2
   SOC := sun8i-h3
 endef
 TARGET_DEVICES += xunlong_orangepi-2
+
+define Device/widora_mangopi-mqdual-t113
+  DEVICE_VENDOR := Widora
+  DEVICE_MODEL := MangoPi MQDual T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += widora_mangopi-mqdual-t113
+
+define Device/myir_myd-yt113x
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X
+  DEVICE_PACKAGES := kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += myir_myd-yt113x
+
+define Device/myir_myd-yt113x-spi
+  DEVICE_VENDOR := MYIR
+  DEVICE_MODEL := MYD-YT113X SPI
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-eeprom-at24 kmod-gpio-pca953x kmod-rtc-rx8025
+  SOC := sun8i-t113s
+endef
+TARGET_DEVICES += myir_myd-yt113x-spi
+
+define Device/rongpin_rp-t113
+  DEVICE_VENDOR := Rongpin
+  DEVICE_MODEL := RP-T113
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-t113s
+  IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
+endef
+TARGET_DEVICES += rongpin_rp-t113
