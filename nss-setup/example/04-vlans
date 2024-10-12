@@ -1,0 +1,166 @@
+# For NSS setups, you CANNOT enable the option for vlan filtering.
+# This is done internally by NSS (via `kmod-qca-nss-drv-vlan-mgr`).
+#
+# Check if you have it enabled by running the following command:
+# `uci show network | grep vlan_filtering`
+#
+# If it's enabled, you might see:
+# `network.@device[0].vlan_filtering='1'`
+#
+# Disable it by running the following commands:
+# `uci del network.@device[0].vlan_filtering`
+# `uci commit network`
+# `service network restart` (or reboot the device)
+#
+# You also cannot use tagging in the typical way, as the NSS does not support it.
+# That means your config must not anything like:
+#
+# 'list ports 'lan1:u*'
+# 'list ports 'lan2:t'
+# 'list ports 'lan3:t'
+#
+# To set up VLANs you must:
+# 1.) Set them up on specific ports
+# 2.) Bridge them into interfaces (they can be left unmanaged)
+# 3.) Create firewall rules
+
+# Example setup:
+# 1.) Primary Network (vlan10) - untagged
+# 2.) Guest Network (vlan30)
+# 3.) IoT Network (vlan40)
+
+# /etc/config/network
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fd32:aa0c:9a35::/48'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan1'
+	list ports 'lan2'
+	list ports 'lan3'
+	list ports 'lan4'
+	list ports 'wan'
+	option igmp_snooping '1'
+
+config device
+	option name 'lan1'
+	option macaddr 'AA:BB:CC:DD:EE:FF'
+
+config device
+	option name 'lan2'
+	option macaddr 'AA:BB:CC:DD:EE:FF'
+
+config device
+	option name 'lan3'
+	option macaddr 'AA:BB:CC:DD:EE:FF'
+
+config device
+	option name 'lan4'
+	option macaddr 'AA:BB:CC:DD:EE:FF'
+
+config interface 'lan'
+	option device 'br-lan'
+	option proto 'static'
+	option ip6assign '60'
+	list ipaddr '192.168.1.1/24'
+	option force_link '0'
+
+config device
+	option type '8021q'
+	option ifname 'wan'
+	option vid '30'
+	option name 'wan.30'
+
+config device
+	option type '8021q'
+	option ifname 'wan'
+	option vid '40'
+	option name 'wan.40'
+
+config device
+	option type 'bridge'
+	option name 'br-iot'
+	list ports 'wan.40'
+	option igmp_snooping '1'
+
+config device
+	option type 'bridge'
+	option name 'br-guest'
+	list ports 'wan.30'
+	option igmp_snooping '1'
+
+config interface 'guest'
+	option proto 'none'
+	option device 'br-guest'
+
+config interface 'iot'
+	option proto 'none'
+	option device 'br-iot'
+
+# /etc/config/wireless
+
+config wifi-iface 'default_radio0''
+	option device 'radio0'
+	option mode 'ap'
+	option network 'lan'
+	option ssid 'OpenWrt'
+	option encryption 'psk2'
+	option key '********'
+	option ocv '0'
+	option bss_transition '1'
+	option dtim_period '3'
+
+config wifi-iface 'guest'
+	option device 'radio0'
+	option mode 'ap'
+	option network 'br-guest'
+	option ssid 'OpenWrt-Guest'
+	option encryption 'psk2'
+	option key '********'
+	option ocv '0'
+	option bss_transition '1'
+	option dtim_period '3'
+
+config wifi-iface 'iot'
+	option device 'radio0'
+	option mode 'ap'
+	option network 'br-iot'
+	option ssid 'OpenWrt-IoT'
+	option encryption 'psk2'
+	option key '********'
+	option ocv '0'
+	option bss_transition '1'
+	option dtim_period '3'
+
+# For creating VLANs on physical ports with a VLAN for DMZ on ports 3 and 4 (lan3,lan4)
+# Change the following:
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan1'
+	list ports 'lan2'
+	list ports 'wan'
+
+config device
+	option type '8021q'
+	option ifname 'wan'
+	option vid '30'
+	option name 'dmz.30'
+
+config device
+	option type 'bridge'
+	option name 'br-dmz'
+	list ports 'dmz.30'
+	list ports 'lan3'
+	list ports 'lan4'
+
+config interface 'dmz'
+	option proto 'none'
+	option device 'br-dmz'
