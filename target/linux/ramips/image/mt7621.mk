@@ -1382,6 +1382,29 @@ define Device/gehua_ghl-r-001
 endef
 TARGET_DEVICES += gehua_ghl-r-001
 
+define Device/gemtek_wvrtm-1xxacn
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 122368k
+  DEVICE_VENDOR := Gemtek
+  DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio \
+  kmod-usb3 -uboot-envtools 
+endef
+
+define Device/gemtek_wvrtm-127acn
+  $(Device/gemtek_wvrtm-1xxacn)
+  DEVICE_MODEL := WVRTM-127ACN
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += gemtek_wvrtm-127acn
+
+define Device/gemtek_wvrtm-130acn
+  $(Device/gemtek_wvrtm-1xxacn)
+  DEVICE_MODEL := WVRTM-130ACN
+  DEVICE_PACKAGES += kmod-mt7615-firmware
+endef
+TARGET_DEVICES += gemtek_wvrtm-130acn
+
 define Device/glinet_gl-mt1300
   $(Device/dsa-migration)
   IMAGE_SIZE := 32448k

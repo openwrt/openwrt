@@ -99,6 +99,8 @@ platform_do_upgrade() {
 	h3c,tx1806|\
 	haier,har-20s2u1|\
 	hiwifi,hc5962|\
+	gemtek,wvrtm-127acn|\
+	gemtek,wvrtm-130acn|\
 	iptime,a3004t|\
 	iptime,ax2004m|\
 	iptime,t5004|\
