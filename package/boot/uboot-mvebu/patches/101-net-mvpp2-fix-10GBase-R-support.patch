@@ -18,7 +18,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/net/mvpp2.c
 +++ b/drivers/net/mvpp2.c
-@@ -3255,6 +3255,76 @@ static int gop_gpcs_reset(struct mvpp2_p
+@@ -3254,6 +3254,76 @@ static int gop_gpcs_reset(struct mvpp2_p
  	return 0;
  }
  
@@ -95,7 +95,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static int gop_mpcs_mode(struct mvpp2_port *port)
  {
  	u32 val;
-@@ -3397,7 +3467,10 @@ static int gop_port_init(struct mvpp2_po
+@@ -3396,7 +3466,10 @@ static int gop_port_init(struct mvpp2_po
  		num_of_act_lanes = 2;
  		mac_num = 0;
  		/* configure PCS */
