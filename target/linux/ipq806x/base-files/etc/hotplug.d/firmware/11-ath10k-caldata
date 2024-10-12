@@ -45,7 +45,6 @@ case "$FIRMWARE" in
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
-		caldata_extract "art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
 		;;
 	meraki,mr42)
@@ -80,7 +79,6 @@ case "$FIRMWARE" in
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
-		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
 		;;
 	meraki,mr42 |\
