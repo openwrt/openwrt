@@ -1,6 +1,6 @@
 --- a/libxtables/xtables.c
 +++ b/libxtables/xtables.c
-@@ -476,7 +476,7 @@ char *xtables_strdup(const char *s)
+@@ -475,7 +475,7 @@ char *xtables_strdup(const char *s)
  	return dup;
  }
  
@@ -9,7 +9,7 @@
  {
  	int procfile;
  	char *ret;
-@@ -511,6 +511,7 @@ static char *get_modprobe(void)
+@@ -505,6 +505,7 @@ static char *get_modprobe(void)
  
  int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
  {
@@ -17,7 +17,7 @@
  	char *buf = NULL;
  	char *argv[4];
  	int status;
-@@ -545,6 +546,7 @@ int xtables_insmod(const char *modname,
+@@ -539,6 +540,7 @@ int xtables_insmod(const char *modname,
  	free(buf);
  	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
  		return 0;
