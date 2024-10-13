@@ -1,0 +1,55 @@
+From 0864e79acedd86ec34269291c2ac0630816856c8 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Sat, 9 Sep 2017 16:47:59 -0700
+Subject: [PATCH 2/2] net: dsa: b53: Enable Bridge PDUs reception
+
+We need to specifically allow the switch to forward Bridge PDUs ingressing all
+ports to the IMP port. Without this change, BPDUs would not be forwarded so we
+could possibly not react properly to loops, STP topology changes etc.
+
+Fixes: ff39c2d68679 ("net: dsa: b53: Add bridge support")
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 13 +++++++++++++
+ drivers/net/dsa/b53/b53_priv.h   |  1 +
+ 2 files changed, 14 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -924,6 +924,17 @@ static void b53_reset_mib(struct b53_dev
+ 	msleep(1);
+ }
+ 
++void b53_enable_bpdu(struct dsa_switch *ds)
++{
++	struct b53_device *priv = ds->priv;
++	u8 gc;
++
++	b53_read8(priv, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, &gc);
++	gc |= GC_RX_BPDU_EN;
++	b53_write8(priv, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, gc);
++}
++EXPORT_SYMBOL(b53_enable_bpdu);
++
+ static const struct b53_mib_desc *b53_get_mib(struct b53_device *dev)
+ {
+ 	if (is5365(dev))
+@@ -1115,6 +1126,8 @@ static int b53_setup(struct dsa_switch *
+ 
+ 	b53_reset_mib(dev);
+ 
++	b53_enable_bpdu(ds);
++
+ 	ret = b53_apply_config(dev);
+ 	if (ret) {
+ 		dev_err(ds->dev, "failed to apply configuration\n");
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -359,6 +359,7 @@ static inline int b53_switch_get_reset_g
+ /* Exported functions towards other drivers */
+ void b53_imp_vlan_setup(struct dsa_switch *ds, int cpu_port);
+ int b53_configure_vlan(struct dsa_switch *ds);
++void b53_enable_bpdu(struct dsa_switch *ds);
+ void b53_get_strings(struct dsa_switch *ds, int port, u32 stringset,
+ 		     uint8_t *data);
+ void b53_get_ethtool_stats(struct dsa_switch *ds, int port, uint64_t *data);
