@@ -71,6 +71,14 @@ define Build/relocate-kernel
 	@mv $@.relocate $@
 endef
 
+define Build/hcs-initramfs
+	# Use hcsmakeimage to prepend the compulsory HCS header and pack the firmware binary
+	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
+		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
+		--output_file=$@.hcs --ldaddress=$(LOADADDR)
+	mv $@.hcs $@
+endef
+
 ### Image scripts ###
 define rootfspad/jffs2-128k
 --align-rootfs
@@ -343,6 +351,17 @@ define Device/bcm63xx-nand
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES += nand-utils
 endef
+
+# BCM33xx HCS devices
+# For now, only generate ramdisks (unsupported bin images)
+define Device/bcm33xx-hcs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
+  IMAGES :=
+  HCS_MAGIC_BYTES :=
+  HCS_REV_MIN :=
+  HCS_REV_MAJ :=
+endef
+DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
 
 define Device/bcm63xx-netgear
   $(Device/bcm63xx-cfe)
