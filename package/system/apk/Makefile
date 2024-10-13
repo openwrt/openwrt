@@ -63,7 +63,12 @@ MESON_ARGS += \
 	-Ddocs=disabled \
 	-Durl_backend=wget \
 	-Dcrypto_backend=$(BUILD_VARIANT) \
-	-Dzstd=false
+	-Dzstd=false \
+	-Dapplet-audit=false \
+	-Dapplet-dot=false \
+	-Dapplet-index=false \
+	-Dapplet-mkndx=false \
+	-Dapplet-stats=false
 
 HOST_LDFLAGS += \
 	-Wl,-rpath $(STAGING_DIR_HOST)/lib
