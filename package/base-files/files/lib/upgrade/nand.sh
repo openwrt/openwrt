@@ -300,7 +300,7 @@ nand_upgrade_fit() {
 # Write images in the TAR file to MTD partitions and/or UBI volumes as required
 nand_upgrade_tar() {
 	local tar_file="$1"
-	local cmd="$2"
+	local cmd="${2:-cat}"
 	local jffs2_markers="${CI_JFFS2_CLEAN_MARKERS:-0}"
 
 	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
