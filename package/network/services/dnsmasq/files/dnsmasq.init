@@ -990,6 +990,14 @@ dnsmasq_start()
 	append_parm "$cfg" "local" "--local"
 	config_list_foreach "$cfg" "listen_address" append_listenaddress
 	config_list_foreach "$cfg" "server" append_server
+
+	local ntp_dnsupstream
+	config_get ntp_dnsupstream "$cfg" ntp_dnsupstream
+	[ -n "$ntp_dnsupstream" ] && {
+		local ntp_servers="$(uci_get system ntp server | tr ' ' '/')"
+		[ -n "$ntp_servers" ] && xappend "--server=/$ntp_servers/$ntp_dnsupstream"
+	}
+
 	config_list_foreach "$cfg" "rev_server" append_rev_server
 	config_list_foreach "$cfg" "address" append_address
 
