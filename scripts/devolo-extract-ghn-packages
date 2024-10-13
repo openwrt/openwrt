@@ -1,0 +1,144 @@
+#!/bin/bash
+
+for tool in binwalk patchelf sed
+do
+  if ! command -v ${tool} > /dev/null
+  then
+    echo "This script requires ${tool} to run!" >&2
+    exit 1
+  fi
+done
+
+if [ $# -ne 2 ]
+then
+  echo "Usage:   ${0} <devolo_firmware> <destination_directory>" >&2
+  echo "Example: ${0} delos_magic-2-wifi-next_6.0.1_2023-09-06.bin ghn-packages" >&2
+  exit 1
+fi
+
+firmware=$(realpath ${1})
+dest_dir=$(realpath ${2})
+script_dir=$(realpath $(dirname ${0}))
+
+NEW_LOADER="/lib/ld-musl-armhf.so.1"
+LIBUBOX=$(basename $(find ${script_dir}/../build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/ -name 'libubox.so.*' -print -quit))
+LIBUBUS=$(basename $(find ${script_dir}/../build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/ -name 'libubus.so.*' -print -quit))
+LIBBLOBMSG_JSON=$(basename $(find ${script_dir}/../build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/ -name 'libblobmsg_json.so.*' -print -quit))
+
+patch_file()
+{
+  file_to_patch=${1}
+  found_loader=$(patchelf --print-interpreter "${file_to_patch}" 2> /dev/null)
+  if [ $? -eq 0 ]
+  then
+    echo "Found loader ${found_loader}"
+    if [ ${found_loader} = "/lib/ld-musl-arm.so.1" ]
+    then
+      echo "Patching loader to point to $NEW_LOADER"
+      patchelf --set-interpreter "$NEW_LOADER" "${file_to_patch}"
+      if [ $? -eq 0 ]
+      then
+        echo "Successfully patched loader in $(basename ${file_to_patch})!"
+      fi
+    fi
+  fi
+  found_libs=$(patchelf --print-needed "${file_to_patch}" 2> /dev/null)
+  if [ $? -eq 0 ]
+  then
+    case "${found_libs}" in
+      *"libubox.so"*)
+        patchelf --replace-needed libubox.so "${LIBUBOX}" "${file_to_patch}"
+        echo "Successfully replaced library reference to "${LIBUBOX}" in $(basename ${file_to_patch})!"
+      ;;&
+      *"libubus.so"*)
+        patchelf --replace-needed libubus.so "${LIBUBUS}" "${file_to_patch}"
+        echo "Successfully replaced library reference to "${LIBUBUS}" in $(basename ${file_to_patch})!"
+      ;;&
+      *"libblobmsg_json.so"*)
+        patchelf --replace-needed libblobmsg_json.so "${LIBBLOBMSG_JSON}" "${file_to_patch}"
+        echo "Successfully replaced library reference to "${LIBBLOBMSG_JSON}" in $(basename ${file_to_patch})!"
+      ;;&
+    esac
+  fi
+
+  if grep --binary-files=without-match dlan2-2400-ac "${file_to_patch}" 2> /dev/null
+  then
+    sed -i 's/dlan2-2400-ac/devolo,magic-2-wifi-next/g' "${file_to_patch}"
+    echo "Successfully patched model reference $(basename ${file_to_patch})!"
+  fi
+  if grep --binary-files=without-match '/sys/class/gpio/gpio63' "${file_to_patch}" 2> /dev/null
+  then
+    sed -i 's|/sys/class/gpio/gpio63|/sys/class/gpio/plc-enable|g' "${file_to_patch}" 2> /dev/null
+    echo "Successfully patched gpio reference $(basename ${file_to_patch})!"
+  fi
+  if grep --binary-files=without-match 'ssdk_set_set_advertise 4' "${file_to_patch}" 2> /dev/null
+  then
+    sed -i 's/ssdk_set_set_advertise 4/ethtool -s ghn speed/g' "${file_to_patch}" 2> /dev/null
+    echo "Successfully patched ssdk_set_set_advertise to ethtool $(basename ${file_to_patch})!"
+  fi
+  if grep --binary-files=without-match '/lib/delos-functions.sh' "${file_to_patch}" 2> /dev/null
+  then
+    sed -i 's|/lib/delos-functions.sh|/lib/delos/functions.sh|g' "${file_to_patch}" 2> /dev/null
+    echo "Successfully patched /lib/delos-functions.sh to /lib/delos/functions.sh $(basename ${file_to_patch})!"
+  fi
+}
+
+build_package_for_opkg_data()
+{
+  dest_dir="${2}"
+  tmp_package="${tmp_dir}/package"
+
+  # This will be usr/lib/opkg/info/package[,.list,.control]
+  input_file="$(realpath "${1}")"
+  root_dir=$(dirname ${input_file})/../../../..
+
+  package_name=$(basename ${input_file})
+  config_result=$(grep "CONFIG_PACKAGE_${package_name}" ${script_dir}/../.config)
+  if [ $? -eq 0 ]
+  then
+    case "${config_result}" in
+      *"is not set"*)
+        echo "Please use the OpenWRT package"
+        echo "Enable ${package_name} in 'make menuconfig'"
+      ;;
+    esac
+    return 0
+  fi
+  mkdir -p ${tmp_package}/CONTROL
+  cp ${input_file}.control ${tmp_package}/CONTROL/control
+  sed -i 's/Architecture: ipq/Architecture: arm_cortex-a7_neon-vfpv4/' ${tmp_package}/CONTROL/control
+  if [ -e ${input_file}.conffiles ]
+  then
+    cp ${input_file}.conffiles ${tmp_package}/CONTROL/conffiles
+  fi
+
+  pushd ${root_dir}
+  while read line
+  do
+    cp -a --parents .${line} ${tmp_package}/
+    patch_file ${tmp_package}/.${line}
+  done < ${input_file}.list
+  popd
+
+  ${script_dir}/ipkg-build ${tmp_package} ${dest_dir}
+  if [ $? -ne 0 ]
+  then
+    exit 1
+  fi
+  rm -r ${tmp_package}
+}
+
+tmp_dir="${dest_dir}/$(basename ${0}).${$}"
+tmp_root="${tmp_dir}/root"
+mkdir -p "${tmp_root}"
+pushd "${tmp_dir}"
+binwalk --extract "${firmware}"
+root_dir=$(realpath ${tmp_dir}/*/squashfs-root)
+
+for package in ${root_dir}/usr/lib/opkg/info/{delos-base-files,delos-device-name,devolo-shared-configlayer,dlan2-fw-flashless-2400-ac,dlan2-tools,ghn-flashless,ghn-host,libssp,posix-timezone-db}.list
+do
+  build_package_for_opkg_data ${package::-5} "${dest_dir}"
+done
+
+popd
+rm -rf "${tmp_dir}"
