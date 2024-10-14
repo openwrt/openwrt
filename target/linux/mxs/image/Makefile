@@ -5,10 +5,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-FAT32_BLOCK_SIZE=1024
-FAT32_BLOCKS=$(shell echo $$(($(CONFIG_MXS_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+FAT32_BLOCK_SIZE = 1024
+FAT32_BLOCKS = $(shell echo $$(($(CONFIG_MXS_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
-KERNEL_LOADADDR:=0x40008000
+KERNEL_LOADADDR := 0x40008000
 
 define Build/mxs-ext4-rootfs-with-boot
 	rm -rf $(call mkfs_target_dir,$(1))/boot
@@ -69,11 +69,11 @@ define Device/i2se_duckbill
   DEVICE_VENDOR := I2SE
   DEVICE_MODEL := Duckbill
   DEVICE_PACKAGES := -dnsmasq -ppp -ip6tables -iptables -mtd \
-		     uboot-envtools kmod-leds-gpio -kmod-nf-nathelper
-  SUPPORTED_DEVICES:=i2se,duckbill
-  SOC:=imx28
+	uboot-envtools kmod-leds-gpio -kmod-nf-nathelper
+  SUPPORTED_DEVICES := i2se,duckbill
+  SOC := imx28
   KERNEL := kernel-bin
-  DEVICE_DTS:=imx28-duckbill imx28-duckbill-2 imx28-duckbill-2-485 imx28-duckbill-2-spi
+  DEVICE_DTS := imx28-duckbill imx28-duckbill-2 imx28-duckbill-2-485 imx28-duckbill-2-spi
   IMAGE/sdcard.img.gz = mxs-ext4-rootfs-with-boot | mxs-sdcard-ext4-ext4 | append-metadata | gzip
 endef
 TARGET_DEVICES += i2se_duckbill
@@ -82,10 +82,10 @@ define Device/olinuxino_maxi
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := OLinuXino Maxi
   DEVICE_PACKAGES := kmod-usb-net-smsc95xx kmod-pinctrl-mcp23s08-i2c \
-		     kmod-pinctrl-mcp23s08-spi kmod-leds-gpio kmod-sound-core
-  SUPPORTED_DEVICES:=olimex,imx23-olinuxino
-  SOC:=imx23
-  DEVICE_DTS:=imx23-olinuxino
+	kmod-pinctrl-mcp23s08-spi kmod-leds-gpio kmod-sound-core
+  SUPPORTED_DEVICES := olimex,imx23-olinuxino
+  SOC := imx23
+  DEVICE_DTS := imx23-olinuxino
   IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
 endef
 TARGET_DEVICES += olinuxino_maxi
@@ -94,10 +94,10 @@ define Device/olinuxino_micro
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := OLinuXino Micro
   DEVICE_PACKAGES := kmod-pinctrl-mcp23s08-spi kmod-pinctrl-mcp23s08-i2c \
-		     kmod-leds-gpio
-  SUPPORTED_DEVICES:=olimex,imx23-olinuxino
-  SOC:=imx23
-  DEVICE_DTS:=imx23-olinuxino
+	kmod-leds-gpio
+  SUPPORTED_DEVICES := olimex,imx23-olinuxino
+  SOC := imx23
+  DEVICE_DTS := imx23-olinuxino
   IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
 endef
 TARGET_DEVICES += olinuxino_micro
