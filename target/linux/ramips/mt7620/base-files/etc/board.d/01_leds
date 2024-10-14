@@ -130,6 +130,10 @@ engenius,esr600)
 	ucidef_set_led_netdev "wlan5g" "5.0GHz" "blue:wlan5g" "wlan0"
 	ucidef_set_led_netdev "wlan2g" "2.4GHz" "blue:wlan2g" "wlan1"
 	;;
+gaoke,fg7000n)
+	ucidef_set_led_netdev "wan" "WAN" "green:net" "eth0.2" "tx rx"
+	ucidef_set_led_netdev "sfp" "SFP" "green:net" "eth0.3" "tx rx"
+	;;
 glinet,gl-mt300a|\
 glinet,gl-mt300n|\
 glinet,gl-mt750)
