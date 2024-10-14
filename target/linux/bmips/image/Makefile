@@ -75,8 +75,22 @@ define Build/hcs-initramfs
 	# Use hcsmakeimage to prepend the compulsory HCS header and pack the firmware binary
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
 		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
-		--output_file=$@.hcs --ldaddress=$(LOADADDR)
+		--output_file=$@.hcs --ldaddress=$(KERNEL_LOADADDR) $(1)
 	mv $@.hcs $@
+endef
+
+define Build/aeolus-ProgramStore-initramfs
+	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
+	# header and pack the firmware binary
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@ -o $@.out \
+		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a $(KERNEL_LOADADDR) $(1)
+	mv $@.out $@
+endef
+
+define Build/aeolus-ProgramStore-initramfs-lzma
+	# Let ProgramStore compresses the firmware image with LZMA
+	$(call Build/aeolus-ProgramStore-initramfs, -c 4 $(1))
 endef
 
 ### Image scripts ###
@@ -355,7 +369,14 @@ endef
 # BCM33xx HCS devices
 # For now, only generate ramdisks (unsupported bin images)
 define Device/bcm33xx-hcs
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
+  # Option 1: Let the stock bootloader unpacks the LZMA compressed OpenWrt image.
+  #     A lot faster, the OpenWrt image is also smaller. 
+  # Option 2: Use OpenWrt's LZMA loader, packed in the image.
+  #     Being slow on BCM3380 for unknown reasons.
+  KERNEL_INITRAMFS :=\
+    kernel-bin | append-dtb | aeolus-ProgramStore-initramfs-lzma
+  # kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
+
   IMAGES :=
   HCS_MAGIC_BYTES :=
   HCS_REV_MIN :=
