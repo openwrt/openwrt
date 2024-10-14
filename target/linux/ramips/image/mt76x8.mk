@@ -939,6 +939,20 @@ define Device/tplink_tl-wr902ac-v4
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v4
 
+define Device/tuoshi_lt22m
+  IMAGE_SIZE := 7616k
+  DEVICE_VENDOR := Tuoshi
+  DEVICE_MODEL := LT22M 4G Wireless Router
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport uboot-envtools \
+    kmod-usb-net-rndis kmod-serial-option
+  UIMAGE_MAGIC := 0x27151967
+  UIMAGE_NAME := JBoneCloud M7628NNxCPET
+  FACTORY_IMAGE_SIZE := 6150k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$(FACTORY_IMAGE_SIZE)
+endef
+TARGET_DEVICES += tuoshi_lt22m
+
 define Device/unielec_u7628-01-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec

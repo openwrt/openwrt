@@ -114,6 +114,11 @@ snr,cpe-w4n-mt)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
 	;;
+tuoshi,lt22m)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x10000"
+	;;
 xiaomi,miwifi-mini)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	ubootenv_add_uci_sys_config "/dev/mtd9" "0x0" "0x4000" "0x10000"

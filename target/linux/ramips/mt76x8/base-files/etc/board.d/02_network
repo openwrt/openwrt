@@ -177,6 +177,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
 		;;
+	tuoshi,lt22m)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "6t@eth0"
+		;;
 	vocore,vocore2|\
 	vocore,vocore2-lite)
 		ucidef_add_switch "switch0" \
