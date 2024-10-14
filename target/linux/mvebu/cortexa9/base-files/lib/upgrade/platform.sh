@@ -75,8 +75,8 @@ platform_do_upgrade() {
 		;;
 	iptime,nas1dual)
 		PART_NAME=firmware
+		default_do_upgrade "$1"
 		;;
-
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
 	linksys,wrt1900ac-v2|\
