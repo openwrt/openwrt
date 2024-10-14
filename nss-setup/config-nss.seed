@@ -45,13 +45,15 @@ CONFIG_TARGET_qualcommax_ipq807x=y
 CONFIG_ATH11K_NSS_SUPPORT=y
 CONFIG_ATH11K_NSS_MESH_SUPPORT=y
 CONFIG_PACKAGE_MAC80211_NSS_SUPPORT=y
+CONFIG_PACKAGE_kmod-qca-nss-drv=y
+CONFIG_PACKAGE_kmod-qca-nss-drv-bridge-mgr=y
+CONFIG_PACKAGE_kmod-qca-nss-ecm=y
 
 # Additional NSS packages (VLAN, Multicast Snooping, etc)
 CONFIG_PACKAGE_kmod-qca-nss-drv-vlan-mgr=y
 CONFIG_PACKAGE_kmod-qca-mcs=y
 
 # NSS SQM Traffic Shaping
-CONFIG_PACKAGE_sqm-scripts=y
 CONFIG_PACKAGE_sqm-scripts-nss=y
 
 # Compiler Optimization
