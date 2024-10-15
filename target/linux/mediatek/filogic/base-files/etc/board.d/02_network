@@ -8,15 +8,15 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	acelink,ew-7886cax)
-		ucidef_set_interface_lan "eth0" "dhcp"
-		;;
 	abt,asr3000|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
 	nokia,ea0326gmp|\
 	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		;;
+	acelink,ew-7886cax)
+		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
@@ -36,10 +36,16 @@ mediatek_setup_interfaces()
 	netcore,n60|\
 	ruijie,rg-x60-pro|\
 	unielec,u7981-01*|\
-	zbtlink,zbt-z8102ax)
+	zbtlink,zbt-z8102ax|\
+	zyxel,ex5601-t0-stock|\
+	zyxel,ex5601-t0-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
-	asus,tuf-ax6000)
+	asus,tuf-ax6000|\
+	glinet,gl-mt6000|\
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6088|\
+	tplink,tl-xtr8488)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
 	bananapi,bpi-r3)
@@ -56,6 +62,13 @@ mediatek_setup_interfaces()
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
+	cudy,ap3000outdoor-v1|\
+	cudy,re3000-v1|\
+	netgear,wax220|\
+	ubnt,unifi-6-plus|\
+	zyxel,nwa50ax-pro)
+		ucidef_set_interface_lan "eth0"
+		;;
 	cudy,m3000-v1|\
 	cudy,tr3000-v1|\
 	glinet,gl-mt2500|\
@@ -69,30 +82,17 @@ mediatek_setup_interfaces()
 	dlink,aquila-pro-ai-m30-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
-	glinet,gl-mt6000|\
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6088|\
-	tplink,tl-xtr8488)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
-		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
 	mediatek,mt7986b-rfb)
-		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4" eth1
 		;;
 	mediatek,mt7988a-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 eth2" eth1
 		;;
 	mercusys,mr90x-v1)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
-		;;
-	cudy,ap3000outdoor-v1|\
-	cudy,re3000-v1|\
-	netgear,wax220|\
-	ubnt,unifi-6-plus|\
-	zyxel,nwa50ax-pro)
-		ucidef_set_interface_lan "eth0"
 		;;
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
@@ -114,10 +114,6 @@ mediatek_setup_interfaces()
 	xiaomi,redmi-router-ax6000-stock|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" wan
-		;;
-	zyxel,ex5601-t0-stock|\
-	zyxel,ex5601-t0-ubootmod)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
@@ -159,16 +155,6 @@ mediatek_setup_macs()
 		;;
 	ruijie,rg-x60-pro)
 		label_mac=$(mtd_get_mac_ascii product_info ethaddr)
-		wan_mac=$label_mac
-		lan_mac=$(macaddr_add "$label_mac" 1)
-		;;
-	smartrg,sdg-8612|\
-	smartrg,sdg-8614|\
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632|\
-	smartrg,sdg-8733|\
-	smartrg,sdg-8734)
-		label_mac=$(mmc_get_mac_ascii mfginfo MFG_MAC)
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;

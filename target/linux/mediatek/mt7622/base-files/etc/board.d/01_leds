@@ -11,6 +11,12 @@ linksys,e8450-ubi|\
 netgear,wax206)
 	ucidef_set_led_netdev "wan" "WAN" "inet:blue" "wan"
 	;;
+smartrg,sdg-841-t6)
+	ucidef_set_led_netdev "lan-green" "LAN" "mdio-bus:00:green:lan" "lan" "link_1000"
+	ucidef_set_led_netdev "lan-amber" "LAN" "mdio-bus:00:amber:lan" "lan" "link_10 link_100"
+	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:05:green:wan" "wan" "link_1000 link_2500"
+	ucidef_set_led_netdev "wan-amber" "WAN" "mdio-bus:05:amber:wan" "wan" "link_10 link_100"
+	;;
 xiaomi,redmi-router-ax6s)
 	ucidef_set_led_netdev "wan" "WAN" "blue:net" "wan"
 	;;
