@@ -1,0 +1,43 @@
+From aab8e6cf7afbbcef60593c6b1795fa5d8e78e597 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Tue, 15 Oct 2024 20:02:25 +0200
+Subject: [PATCH] arm: provide noncached_set_region prototype to fix build
+
+Due to the removal of weak functions in 7d6cee2cd0 ("cmd: cache: Remove
+weak function"), uboot fails to compile after updating to v2024.10 for
+mediatek target in OpenWrt with GCC-14 with error:
+cmd/cache.c: In function 'do_dcache':
+cmd/cache.c:57:25: error: implicit declaration of function
+	'noncached_set_region' [-Wimplicit-function-declaration]
+
+Thus, provide a prototype in arm's include/asm/system.h to fix a build
+error in cmd/cache.c, since related prototypes are also located there.
+Also add an include of asm/system.h in cmd/cache.c have the function
+available there.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+---
+ arch/arm/include/asm/system.h | 1 +
+ cmd/cache.c                   | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/include/asm/system.h
++++ b/arch/arm/include/asm/system.h
+@@ -658,6 +658,7 @@ void mmu_set_region_dcache_behaviour(phy
+  * Return: 0 if OK
+  */
+ int noncached_init(void);
++void noncached_set_region(void);
+ 
+ phys_addr_t noncached_alloc(size_t size, size_t align);
+ #endif /* CONFIG_SYS_NONCACHED_MEMORY */
+--- a/cmd/cache.c
++++ b/cmd/cache.c
+@@ -10,6 +10,7 @@
+ #include <command.h>
+ #include <cpu_func.h>
+ #include <linux/compiler.h>
++#include <asm/system.h>
+ 
+ static int parse_argv(const char *);
+ 
