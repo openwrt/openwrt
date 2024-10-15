@@ -38,8 +38,8 @@ gen_fwinfo() {
 	echo 'FW_VERSION=1.01.100\nBOOT_VERSION=01.00.01'
 }
 
-# The central upgrade script. It allows to install OpenWrt only to first partition.
-gen_imageupgrade() {
+# NOR upgrade script. It allows to install OpenWrt only to first partition.
+gen_nor_upgrade() {
 	echo '#!/bin/sh'
 	echo 'flash_bank=65536'
 	echo 'filesize=`stat --format=%s ./series_vmlinux.bix`'
@@ -58,16 +58,34 @@ gen_imageupgrade() {
 	echo 'esac'
 }
 
+# NAND upgrade script. It allows to install OpenWrt only to first partition.
+gen_nand_upgrade() {
+	echo '#!/bin/sh'
+	echo 'case $1 in'
+	echo '1)'
+	echo 'flash_eraseall $2 >/dev/null 2>&1'
+	echo 'nandwrite -p $2 ./series_vmlinux.bix >/dev/null 2>&1'
+	echo 'mtd_debug read $2 0 100 image1.img >/dev/null 2>&1'
+	echo 'CreateImage -r ./image1.img > /tmp/app/image1.txt'
+	echo 'echo 0'
+	echo ';;'
+	echo '*)'
+	echo 'echo 1'
+	echo 'esac'
+}
+
 tmpdir="$( mktemp -d 2> /dev/null )"
 imgdir=$tmpdir/image
 mkdir $imgdir
 
 gen_imagecheck $3 > $imgdir/iss_imagecheck.sh
-gen_imageupgrade > $imgdir/iss_imageupgrade.sh
+gen_nor_upgrade > $imgdir/iss_imageupgrade.sh
+gen_nand_upgrade > $imgdir/iss_nand_imageupgrade.sh
 gen_fwinfo > $imgdir/firmware_information.txt
 
 chmod +x $imgdir/iss_imagecheck.sh
 chmod +x $imgdir/iss_imageupgrade.sh
+chmod +x $imgdir/iss_nand_imageupgrade.sh
 
 cp $1 $imgdir/series_vmlinux.bix
 
