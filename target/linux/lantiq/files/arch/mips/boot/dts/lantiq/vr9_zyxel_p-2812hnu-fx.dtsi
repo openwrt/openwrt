@@ -157,6 +157,8 @@
 		    <&gphy0_led1_pins>, <&gphy0_led2_pins>,
 		    <&gphy1_led1_pins>, <&gphy1_led2_pins>;
 	pinctrl-names = "default";
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gswip_mdio {
@@ -207,6 +209,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&ethaddr_uboot 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

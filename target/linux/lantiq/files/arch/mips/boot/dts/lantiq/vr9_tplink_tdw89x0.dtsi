@@ -205,10 +205,9 @@
 			reg = <0 0 0 0 0>;
 			#gpio-cells = <2>;
 			gpio-controller;
-			qca,no-eeprom;
 			ieee80211-freq-limit = <2402000 2482000>;
-			nvmem-cells = <&macaddr_ath9k_cal_f100 2>;
-			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&cal_boardconfig_21000>, <&macaddr_ath9k_cal_f100 2>;
+			nvmem-cell-names = "calibration", "mac-address";
 		};
 	};
 };
@@ -258,6 +257,10 @@
 						compatible = "mac-base";
 						reg = <0xf100 0x6>;
 						#nvmem-cell-cells = <1>;
+					};
+
+					cal_boardconfig_21000: calibration@21000 {
+						reg = <0x21000 0x440>;
 					};
 				};
 			};

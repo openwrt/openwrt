@@ -22,8 +22,13 @@
 			};
 
 			partition@10000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x10000 0x10000>;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@20000 {
