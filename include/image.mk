@@ -164,8 +164,13 @@ DTC_FLAGS += $(DTC_WARN_FLAGS)
 DTCO_FLAGS += $(DTC_WARN_FLAGS)
 
 define Image/pad-to
-	dd if=$(1) of=$(1).new bs=$(2) conv=sync
-	mv $(1).new $(1)
+        $(eval PAD_BLOCKSIZE := 4096)
+        $(eval FULL_BLOCKCOUNT := $(shell echo $$(($(2) / $(PAD_BLOCKSIZE)))))
+        $(eval SMALL_BLOCKCOUNT := $(shell echo $$(($(2) % $(PAD_BLOCKSIZE)))))
+        dd if=$(1) of=$(1).new bs=$(PAD_BLOCKSIZE) count=$(FULL_BLOCKCOUNT) conv=sync
+        $(if $(SMALL_BLOCKCOUNT), \
+            dd if=/dev/zero bs=1 count=$(SMALL_BLOCKCOUNT) >>$(1).new)
+        mv $(1).new $(1)
 endef
 
 ifeq ($(DUMP),)
