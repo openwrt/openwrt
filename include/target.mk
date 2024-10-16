@@ -35,14 +35,17 @@ DEFAULT_PACKAGES.nas:=\
 	fdisk \
 	lsblk \
 	mdadm
-# For router targets
-DEFAULT_PACKAGES.router:=\
+# For switch targets
+DEFAULT_PACKAGES.switch:=\
 	dnsmasq \
 	firewall4 \
-	nftables \
 	kmod-nft-offload \
+	nftables \
 	odhcp6c \
-	odhcpd-ipv6only \
+	odhcpd-ipv6only
+# For router targets
+DEFAULT_PACKAGES.router:=\
+	$(DEFAULT_PACKAGES.switch) \
 	ppp \
 	ppp-mod-pppoe
 
