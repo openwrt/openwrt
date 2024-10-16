@@ -1,16 +1,45 @@
-# copy to `.config` and run `make defconfig`
+# vi: set syntax=make:
+
 # This builds for all ipq807x targets. 
 # To use this config, you must build from https://github.com/qosmio/openwrt-ipq
 
-# 1. copy this config to root of build folder name it ".config"
-# 2. run `make defconfig`
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~IMPORTANT~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 	Use `scripts/env` to create version controlled build environments.
+# 	This ensures you can easily reproduce builds and view changes
+# 	made during `make menuconfig`.
 #
+# 	It will also version control custom files you add to `files/`
+
+# 	To create a new environment, run:
+# 	(e.g `./scripts/env new nss`)
+# 	For more information, see `./scripts/env help`
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# 1. Copy this config to root of build folder name it ".config"
+#    `cp nss-setup/config-nss.seed .config`
+# 2. Uncomment the device you want to build for listed below, replace 'is not set' with '=y'
+#    (e.g. CONFIG_TARGET_qualcommax_ipq807x_DEVICE_linksys_mx4300=y)
+# 3. Update feeds
+#    `./scripts/feeds update -a && ./scripts/feeds install -a`
+# 4. Expand your seed file to a full config
+#    `make defconfig V=s`
+# 5. If you want to make further customizations, use `make menuconfig`
+# 6. Build the firmware
+#    `make -j$(nproc) V=s`
+
 # use `make menuconfig` to further customize building just for your target or adding custom packages.
+
+#####################################################################
 # Target platform
+#####################################################################
 CONFIG_TARGET_qualcommax=y
 CONFIG_TARGET_qualcommax_ipq807x=y
 
+#####################################################################
+# Target device
+#####################################################################
 # Uncomment target device you want to build for, set '=y'
+
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_arcadyan_aw1000 is not set
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_asus_rt-ax89x is not set
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_buffalo_wxr-5950ax12 is not set
@@ -41,7 +70,9 @@ CONFIG_TARGET_qualcommax_ipq807x=y
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_zte_mf269 is not set
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_zyxel_nbg7815 is not set
 
+#####################################################################
 # NSS Offloading
+#####################################################################
 CONFIG_ATH11K_NSS_SUPPORT=y
 CONFIG_ATH11K_NSS_MESH_SUPPORT=y
 CONFIG_PACKAGE_MAC80211_NSS_SUPPORT=y
@@ -56,16 +87,23 @@ CONFIG_PACKAGE_kmod-qca-mcs=y
 # NSS SQM Traffic Shaping
 CONFIG_PACKAGE_sqm-scripts-nss=y
 
+#####################################################################
 # Compiler Optimization
+#####################################################################
 CONFIG_BUILD_PATENTED=y
+# Use ccache to speed up subsequent builds
 CONFIG_CCACHE=y
 CONFIG_DEVEL=y
 CONFIG_EXPERIMENTAL=y
 CONFIG_TOOLCHAINOPTS=y
 CONFIG_TARGET_OPTIONS=y
 CONFIG_TARGET_OPTIMIZATION="-O2 -pipe -mcpu=cortex-a53+crc+crypto"
-CONFIG_TARGET_INIT_PATH="/usr/sbin:/usr/bin:/sbin:/bin:/opt/usr/bin:/opt/bin:/opt/sbin:/opt/usr/sbin"
 CONFIG_USE_GC_SECTIONS=y
+
+# If your device supports USB and plan on installing packages via opkg
+# Use a USB device, as these devices have limited storage and you avoid wearing out the internal flash.
+# We update the PATH to include the USB device. '/opt' is a common mount point.
+CONFIG_TARGET_INIT_PATH="/usr/sbin:/usr/bin:/sbin:/bin:/opt/usr/bin:/opt/bin:/opt/sbin:/opt/usr/sbin"
 
 # Kernel Config
 CONFIG_COLLECT_KERNEL_DEBUG=y
@@ -76,63 +114,135 @@ CONFIG_KERNEL_ARM_PMUV3=y
 CONFIG_KERNEL_PREEMPT_NONE=y
 CONFIG_KERNEL_PREEMPT_NONE_BUILD=y
 
+# Reduce kernel module size
+# Disable unnecessary debugging for Wi-Fi driver.
+CONFIG_ATH11K_DEBUGFS_HTT_STATS=n
+CONFIG_ATH11K_DEBUGFS_STA=n
+# Disables thermal throttling support for ath11k.
+CONFIG_ATH11K_THERMAL=n
+
+#####################################################################
 # SSL Configuration
+#####################################################################
+# Use OpenSSL as the preferred SSL library
 CONFIG_PACKAGE_libustream-openssl=y
 CONFIG_PACKAGE_libustream-mbedtls=n
 CONFIG_PACKAGE_libopenssl=y
 CONFIG_LUA_ECO_OPENSSL=y
 CONFIG_LUA_ECO_MBEDTLS=n
+# Optimize OpenSSL for speed over size
 CONFIG_OPENSSL_OPTIMIZE_SPEED=y
 
-# LUCI Config
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-ssl-openssl=y
+#####################################################################
+# Wireless Configuration
+#####################################################################
+# Enable WPA3 and Mesh support
 CONFIG_PACKAGE_wpad-mesh-openssl=y
+# Avoid using mbedTLS for consistency across packages and to avoid mixed SSL libraries.
 CONFIG_PACKAGE_wpad-basic-mbedtls=n
 
-# LUCI Applications
-CONFIG_PACKAGE_luci-app-firewall=y
-CONFIG_PACKAGE_luci-app-opkg=y
-CONFIG_PACKAGE_luci-app-sqm=y
-CONFIG_PACKAGE_luci-app-statistics=y
-CONFIG_PACKAGE_luci-app-acme=y
-CONFIG_PACKAGE_luci-app-firewall=y
-CONFIG_PACKAGE_luci-app-nlbwmon=y
-CONFIG_PACKAGE_luci-app-opkg=y
-CONFIG_PACKAGE_luci-app-sqm=y
-CONFIG_PACKAGE_luci-app-statistics=y
-CONFIG_PACKAGE_luci-app-watchcat=y
-CONFIG_PACKAGE_luci-proto-wireguard=y
-
+#####################################################################
 # Library Optimization
+#####################################################################
+# Optimize common libraries (zlib, zstd) for speed, improving performance on compression tasks.
 CONFIG_ZLIB_OPTIMIZE_SPEED=y
 CONFIG_ZSTD_OPTIMIZE_O3=y
 
-# Reduce kernel module size
-CONFIG_ATH11K_DEBUGFS_HTT_STATS=n
-CONFIG_ATH11K_DEBUGFS_STA=n
-CONFIG_ATH11K_THERMAL=n
-
-# Additional kernel modules
-CONFIG_PACKAGE_kmod-fs-vfat=y
-CONFIG_PACKAGE_kmod-fs-f2fs=y
-CONFIG_PACKAGE_kmod-fs-ntfs3=y
-CONFIG_PACKAGE_kmod-nft-bridge=y
-CONFIG_PACKAGE_kmod-usb-storage=y
-CONFIG_PACKAGE_kmod-ramoops=y
-
-# Additional packages
-CONFIG_PACKAGE_iperf3=y
-CONFIG_PACKAGE_htop=y
-CONFIG_PACKAGE_curl=y
-CONFIG_PACKAGE_rsync=y
-CONFIG_PACKAGE_jq=y
-CONFIG_PACKAGE_pigz=y
-CONFIG_PACKAGE_tar=y
-CONFIG_PACKAGE_tcpdump=y
-
-CONFIG_HTOP_LMSENSORS=n
-
-# Prevent opkg from adding custom feeds to /etc/opkg/distfeeds.conf
+#####################################################################
+# Feeds Configuration
+#####################################################################
+# Prevent opkg from adding custom feeds to /etc/opkg/distfeeds.conf in the final image.
 CONFIG_FEED_nss_packages=n
 CONFIG_FEED_sqm_scripts_nss=n
+
+# --- Essential Packages ---
+
+#####################################################################
+# LUCI (the web interface)
+#####################################################################
+CONFIG_PACKAGE_luci=y
+# Enable HTTPS support
+CONFIG_PACKAGE_luci-ssl-openssl=y
+
+#####################################################################
+# LUCI Applications
+#####################################################################
+# - Firewall: Manage firewall rules via LUCI.
+CONFIG_PACKAGE_luci-app-firewall=y
+# - OPKG: Package manager for OpenWRT, manage installed packages via LUCI.
+CONFIG_PACKAGE_luci-app-opkg=y
+
+# - iperf3: CLI tool to measure network performance.
+#           This is essential to test WiFi speeds,
+#           as posting speedtest.net results is useless
+#           without knowing the network conditions.
+CONFIG_PACKAGE_iperf3=y
+
+# --- Optional Packages --- #
+
+#### EVERYTHING BELOW THIS SECTION IS OPTIONAL!!
+
+#### You can delete or comment out with '#' any package you don't want to install.
+
+#####################################################################
+# LUCI Applications
+#####################################################################
+
+# - SQM: Smart Queue Management for bufferbloat control.
+CONFIG_PACKAGE_luci-app-sqm=y
+# - Statistics: Monitor your router’s performance (CPU, memory, bandwidth).
+CONFIG_PACKAGE_luci-app-statistics=y
+# - ACME: Automated SSL cert management. If you want to access your router via HTTPS and have a domain.
+CONFIG_PACKAGE_luci-app-acme=y
+# - Watchcat: Automate reboots on connection loss.
+CONFIG_PACKAGE_luci-app-watchcat=y
+# - WireGuard: VPN support. Will also select the kernel module.
+CONFIG_PACKAGE_luci-proto-wireguard=y
+# - NLBWMon: Network usage monitoring to track bandwidth by host.
+CONFIG_PACKAGE_luci-app-nlbwmon=y
+
+#####################################################################
+# Kernel Modules
+#####################################################################
+# Filesystem support for USB storage:
+# FAT32: Useful to load recovery or new images that can be booted by u-boot
+CONFIG_PACKAGE_kmod-fs-vfat=y
+# NTFS: Mostly useful for Windows users.
+CONFIG_PACKAGE_kmod-fs-ntfs3=y
+
+# Network
+# Bridge module support for working with nftables for more complex firewall setups.
+CONFIG_PACKAGE_kmod-nft-bridge=y
+
+# USB Storage
+# NOTE: Not all IPQ807x devices have USB ports, so this is optional.
+CONFIG_PACKAGE_kmod-usb-storage=y
+
+# Logging/Debugging
+
+# ramoops: kernel module that logs crashes to RAM which can be read after a reboot.
+# Check '/sys/fs/pstore' for logs after a crash.
+CONFIG_PACKAGE_kmod-ramoops=y
+
+#####################################################################
+# Packages
+#####################################################################
+
+# - curl: CLI tool to transfer data with URLs. Useful for scripting, and supperior to wget.
+CONFIG_PACKAGE_curl=y
+CONFIG_LIBCURL_OPENSSL=y
+CONFIG_LIBCURL_MBEDTLS=n
+# - rsync: Efficient file transfers and backups.
+CONFIG_PACKAGE_rsync=y
+# - jq: Parse JSON data from the command line. Useful for scripting, and WAY better than `jsonfilter`.
+CONFIG_PACKAGE_jq=y
+# - pigz: Parallel gzip for faster compression.
+CONFIG_PACKAGE_pigz=y
+# - tar: Archiving utility. The default busybox tar is very limited.
+CONFIG_PACKAGE_tar=y
+# - tcpdump: Capture and analyze network traffic.
+CONFIG_PACKAGE_tcpdump=y
+# - htop: CLI tool to monitor system resource usage.
+CONFIG_PACKAGE_htop=y
+# lm-sensors isn't needed for IPQ807x devices.
+CONFIG_HTOP_LMSENSORS=n
