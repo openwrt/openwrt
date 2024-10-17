@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -415,6 +415,15 @@ config PWM_MICROCHIP_CORE
+@@ -452,6 +452,15 @@ config PWM_MICROCHIP_CORE
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-microchip-core.
  
@@ -31,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_MXS || COMPILE_TEST
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -35,6 +35,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
+@@ -38,6 +38,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
  obj-$(CONFIG_PWM_MESON)		+= pwm-meson.o
  obj-$(CONFIG_PWM_MEDIATEK)	+= pwm-mediatek.o
@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek-ramips.c
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,195 @@
 +/*
 + * Mediatek Pulse Width Modulator driver
 + *
@@ -204,7 +204,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +}
 +
-+static int mtk_pwm_remove(struct platform_device *pdev)
++static void mtk_pwm_remove(struct platform_device *pdev)
 +{
 +	struct mtk_pwm_chip *pc = platform_get_drvdata(pdev);
 +	int i;
@@ -213,8 +213,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		pwm_disable(&pc->chip.pwms[i]);
 +
 +	pwmchip_remove(&pc->chip);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id mtk_pwm_of_match[] = {

@@ -14,7 +14,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
-@@ -532,6 +532,12 @@ config PLX_DMA
+@@ -564,6 +564,12 @@ config PLX_DMA
  	  These are exposed via extra functions on the switch's
  	  upstream port. Each function exposes one DMA channel.
  
@@ -29,7 +29,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	depends on ARCH_U8500
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
-@@ -64,6 +64,7 @@ obj-$(CONFIG_PL330_DMA) += pl330.o
+@@ -69,6 +69,7 @@ obj-$(CONFIG_PL330_DMA) += pl330.o
  obj-$(CONFIG_PLX_DMA) += plx_dma.o
  obj-$(CONFIG_PPC_BESTCOMM) += bestcomm/
  obj-$(CONFIG_PXA_DMA) += pxa_dma.o

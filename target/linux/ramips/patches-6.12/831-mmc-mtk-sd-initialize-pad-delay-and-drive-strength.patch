@@ -7,7 +7,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
-@@ -75,8 +75,12 @@
+@@ -74,8 +74,12 @@
  #define MSDC_PATCH_BIT   0xb0
  #define MSDC_PATCH_BIT1  0xb4
  #define MSDC_PATCH_BIT2  0xb8
@@ -20,7 +20,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #define PAD_DS_TUNE      0x188
  #define PAD_CMD_TUNE     0x18c
  #define EMMC51_CFG0	 0x204
-@@ -1795,6 +1799,16 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1812,6 +1816,16 @@ static void msdc_init_hw(struct msdc_hos
  				     MSDC_PAD_TUNE_RXDLYSEL);
  	}
  

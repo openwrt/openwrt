@@ -1,6 +1,6 @@
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -52,6 +52,7 @@ obj-$(CONFIG_ECHO)		+= echo/
+@@ -53,6 +53,7 @@ obj-$(CONFIG_ECHO)		+= echo/
  obj-$(CONFIG_CXL_BASE)		+= cxl/
  obj-$(CONFIG_DW_XDATA_PCIE)	+= dw-xdata-pcie.o
  obj-$(CONFIG_PCI_ENDPOINT_TEST)	+= pci_endpoint_test.o
@@ -90,7 +90,7 @@
 +	},
 +};
 +
-+int __init linkit_init(void)
++static int __init linkit_init(void)
 +{
 +	return platform_driver_register(&linkit_driver);
 +}
