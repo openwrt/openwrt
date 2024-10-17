@@ -124,3 +124,23 @@ define Device/ocedo_panda
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += ocedo_panda
+
+define Device/watchguard_t30-w
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := T30-W
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    kmod-usb2 kmod-usb-storage block-mount kmod-fs-vfat kmod-nls-cp437 \
+    kmod-nls-iso8859-1 kmod-loop losetup kmod-fs-ext4 e2fsprogs tune2fs
+  KERNEL_SIZE := 8192k
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := simpleImage.t30-w
+  #KERNEL := kernel-bin | uImage none
+  #KERNEL_INITRAMFS := kernel-bin | uImage none
+  KERNEL_ENTRY := 0x1500000
+  KERNEL_LOADADDR := 0x1500000
+  IMAGES := fdt.bin sysupgrade.bin sysupgrade-dtb.bin
+  IMAGE/fdt.bin := append-dtb
+  IMAGE/sysupgrade.bin := sysupgrade-dtb-tar \
+    $(KDIR)/image-$$(DEVICE_DTS).dtb | append-metadata
+endef
+TARGET_DEVICES += watchguard_t30-w
