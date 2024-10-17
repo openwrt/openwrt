@@ -1,0 +1,361 @@
+From 42a9eaac9784e9b3df56f1947526d7d4d0ed9b26 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:12 +0200
+Subject: [PATCH 05/18] leds: leds-lp55xx: Generalize run_engine function
+
+Generalize run_engine function for lp55xx based LED driver. The logic is
+similar to every LED driver, rework it with more macro magic and account
+for LED model that might have OP MODE and EXEC at base offset in the
+reg.
+
+Update any lp55xx based LED driver to use this generalized function and
+declare required bits.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-8-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 42 +++++-------------------------
+ drivers/leds/leds-lp5523.c        | 41 +++--------------------------
+ drivers/leds/leds-lp5562.c        | 42 +++++-------------------------
+ drivers/leds/leds-lp55xx-common.c | 43 +++++++++++++++++++++++++++++++
+ drivers/leds/leds-lp55xx-common.h |  2 ++
+ drivers/leds/leds-lp8501.c        | 41 +++--------------------------
+ 6 files changed, 65 insertions(+), 146 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -132,8 +132,6 @@ static void lp5521_stop_engine(struct lp
+ static void lp5521_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	int ret;
+-	u8 mode;
+-	u8 exec;
+ 
+ 	/* stop engine */
+ 	if (!start) {
+@@ -143,40 +141,9 @@ static void lp5521_run_engine(struct lp5
+ 		return;
+ 	}
+ 
+-	/*
+-	 * To run the engine,
+-	 * operation mode and enable register should updated at the same time
+-	 */
+-
+-	ret = lp55xx_read(chip, LP5521_REG_OP_MODE, &mode);
+-	if (ret)
+-		return;
+-
+-	ret = lp55xx_read(chip, LP5521_REG_ENABLE, &exec);
+-	if (ret)
+-		return;
+-
+-	/* change operation mode to RUN only when each engine is loading */
+-	if (LP5521_R_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5521_MODE_R_M) | LP5521_RUN_R;
+-		exec = (exec & ~LP5521_EXEC_R_M) | LP5521_RUN_R;
+-	}
+-
+-	if (LP5521_G_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5521_MODE_G_M) | LP5521_RUN_G;
+-		exec = (exec & ~LP5521_EXEC_G_M) | LP5521_RUN_G;
+-	}
+-
+-	if (LP5521_B_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5521_MODE_B_M) | LP5521_RUN_B;
+-		exec = (exec & ~LP5521_EXEC_B_M) | LP5521_RUN_B;
+-	}
+-
+-	lp55xx_write(chip, LP5521_REG_OP_MODE, mode);
+-	lp5521_wait_opmode_done();
+-
+-	lp55xx_update_bits(chip, LP5521_REG_ENABLE, LP5521_EXEC_M, exec);
+-	lp5521_wait_enable_done();
++	ret = lp55xx_run_engine_common(chip);
++	if (!ret)
++		lp5521_wait_enable_done();
+ }
+ 
+ static int lp5521_update_program_memory(struct lp55xx_chip *chip,
+@@ -474,6 +441,9 @@ static struct lp55xx_device_config lp552
+ 	.reg_op_mode = {
+ 		.addr = LP5521_REG_OP_MODE,
+ 	},
++	.reg_exec = {
++		.addr = LP5521_REG_ENABLE,
++	},
+ 	.reset = {
+ 		.addr = LP5521_REG_RESET,
+ 		.val  = LP5521_RESET,
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -184,10 +184,6 @@ static void lp5523_turn_off_channels(str
+ 
+ static void lp5523_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+-	int ret;
+-	u8 mode;
+-	u8 exec;
+-
+ 	/* stop engine */
+ 	if (!start) {
+ 		lp5523_stop_engine(chip);
+@@ -195,39 +191,7 @@ static void lp5523_run_engine(struct lp5
+ 		return;
+ 	}
+ 
+-	/*
+-	 * To run the engine,
+-	 * operation mode and enable register should updated at the same time
+-	 */
+-
+-	ret = lp55xx_read(chip, LP5523_REG_OP_MODE, &mode);
+-	if (ret)
+-		return;
+-
+-	ret = lp55xx_read(chip, LP5523_REG_ENABLE, &exec);
+-	if (ret)
+-		return;
+-
+-	/* change operation mode to RUN only when each engine is loading */
+-	if (LP5523_ENG1_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5523_MODE_ENG1_M) | LP5523_RUN_ENG1;
+-		exec = (exec & ~LP5523_EXEC_ENG1_M) | LP5523_RUN_ENG1;
+-	}
+-
+-	if (LP5523_ENG2_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5523_MODE_ENG2_M) | LP5523_RUN_ENG2;
+-		exec = (exec & ~LP5523_EXEC_ENG2_M) | LP5523_RUN_ENG2;
+-	}
+-
+-	if (LP5523_ENG3_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5523_MODE_ENG3_M) | LP5523_RUN_ENG3;
+-		exec = (exec & ~LP5523_EXEC_ENG3_M) | LP5523_RUN_ENG3;
+-	}
+-
+-	lp55xx_write(chip, LP5523_REG_OP_MODE, mode);
+-	lp5523_wait_opmode_done();
+-
+-	lp55xx_update_bits(chip, LP5523_REG_ENABLE, LP5523_EXEC_M, exec);
++	lp55xx_run_engine_common(chip);
+ }
+ 
+ static int lp5523_init_program_engine(struct lp55xx_chip *chip)
+@@ -840,6 +804,9 @@ static struct lp55xx_device_config lp552
+ 	.reg_op_mode = {
+ 		.addr = LP5523_REG_OP_MODE,
+ 	},
++	.reg_exec = {
++		.addr = LP5523_REG_ENABLE,
++	},
+ 	.engine_busy = {
+ 		.addr = LP5523_REG_STATUS,
+ 		.mask  = LP5523_ENGINE_BUSY,
+--- a/drivers/leds/leds-lp5562.c
++++ b/drivers/leds/leds-lp5562.c
+@@ -127,8 +127,6 @@ static void lp5562_set_led_current(struc
+ static void lp5562_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+ 	int ret;
+-	u8 mode;
+-	u8 exec;
+ 
+ 	/* stop engine */
+ 	if (!start) {
+@@ -141,40 +139,9 @@ static void lp5562_run_engine(struct lp5
+ 		return;
+ 	}
+ 
+-	/*
+-	 * To run the engine,
+-	 * operation mode and enable register should updated at the same time
+-	 */
+-
+-	ret = lp55xx_read(chip, LP5562_REG_OP_MODE, &mode);
+-	if (ret)
+-		return;
+-
+-	ret = lp55xx_read(chip, LP5562_REG_ENABLE, &exec);
+-	if (ret)
+-		return;
+-
+-	/* change operation mode to RUN only when each engine is loading */
+-	if (LP5562_ENG1_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5562_MODE_ENG1_M) | LP5562_RUN_ENG1;
+-		exec = (exec & ~LP5562_EXEC_ENG1_M) | LP5562_RUN_ENG1;
+-	}
+-
+-	if (LP5562_ENG2_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5562_MODE_ENG2_M) | LP5562_RUN_ENG2;
+-		exec = (exec & ~LP5562_EXEC_ENG2_M) | LP5562_RUN_ENG2;
+-	}
+-
+-	if (LP5562_ENG3_IS_LOADING(mode)) {
+-		mode = (mode & ~LP5562_MODE_ENG3_M) | LP5562_RUN_ENG3;
+-		exec = (exec & ~LP5562_EXEC_ENG3_M) | LP5562_RUN_ENG3;
+-	}
+-
+-	lp55xx_write(chip, LP5562_REG_OP_MODE, mode);
+-	lp5562_wait_opmode_done();
+-
+-	lp55xx_update_bits(chip, LP5562_REG_ENABLE, LP5562_EXEC_M, exec);
+-	lp5562_wait_enable_done();
++	ret = lp55xx_run_engine_common(chip);
++	if (!ret)
++		lp5562_wait_enable_done();
+ }
+ 
+ static int lp5562_update_firmware(struct lp55xx_chip *chip,
+@@ -472,6 +439,9 @@ static struct lp55xx_device_config lp556
+ 	.reg_op_mode = {
+ 		.addr = LP5562_REG_OP_MODE,
+ 	},
++	.reg_exec = {
++		.addr = LP5562_REG_ENABLE,
++	},
+ 	.reset = {
+ 		.addr = LP5562_REG_RESET,
+ 		.val  = LP5562_RESET,
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -46,6 +46,15 @@
+ #define   LP55xx_MODE_ENGn_GET(n, mode, shift)        \
+ 	(((mode) >> LP55xx_MODE_ENGn_SHIFT(n, shift)) & LP55xx_MODE_ENG_MASK)
+ 
++#define   LP55xx_EXEC_ENG_MASK         GENMASK(1, 0)
++#define   LP55xx_EXEC_HOLD_ENG         FIELD_PREP_CONST(LP55xx_EXEC_ENG_MASK, 0x0)
++#define   LP55xx_EXEC_STEP_ENG         FIELD_PREP_CONST(LP55xx_EXEC_ENG_MASK, 0x1)
++#define   LP55xx_EXEC_RUN_ENG          FIELD_PREP_CONST(LP55xx_EXEC_ENG_MASK, 0x2)
++#define   LP55xx_EXEC_ONCE_ENG         FIELD_PREP_CONST(LP55xx_EXEC_ENG_MASK, 0x3)
++
++#define   LP55xx_EXEC_ENGn_SHIFT(n, shift)    ((shift) + (2 * (3 - (n))))
++#define   LP55xx_EXEC_ENGn_MASK(n, shift)     (LP55xx_EXEC_ENG_MASK << LP55xx_EXEC_ENGn_SHIFT(n, shift))
++
+ /* Memory Page Selection */
+ #define LP55xx_REG_PROG_PAGE_SEL	0x4f
+ /* If supported, each ENGINE have an equal amount of pages offset from page 0 */
+@@ -117,6 +126,40 @@ void lp55xx_load_engine(struct lp55xx_ch
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_load_engine);
+ 
++int lp55xx_run_engine_common(struct lp55xx_chip *chip)
++{
++	const struct lp55xx_device_config *cfg = chip->cfg;
++	u8 mode, exec;
++	int i, ret;
++
++	/* To run the engine, both OP MODE and EXEC needs to be put in RUN mode */
++	ret = lp55xx_read(chip, cfg->reg_op_mode.addr, &mode);
++	if (ret)
++		return ret;
++
++	ret = lp55xx_read(chip, cfg->reg_exec.addr, &exec);
++	if (ret)
++		return ret;
++
++	/* Switch to RUN only for engine that were put in LOAD previously */
++	for (i = LP55XX_ENGINE_1; i <= LP55XX_ENGINE_3; i++) {
++		if (LP55xx_MODE_ENGn_GET(i, mode, cfg->reg_op_mode.shift) != LP55xx_MODE_LOAD_ENG)
++			continue;
++
++		mode &= ~LP55xx_MODE_ENGn_MASK(i, cfg->reg_op_mode.shift);
++		mode |= LP55xx_MODE_RUN_ENG << LP55xx_MODE_ENGn_SHIFT(i, cfg->reg_op_mode.shift);
++		exec &= ~LP55xx_EXEC_ENGn_MASK(i, cfg->reg_exec.shift);
++		exec |= LP55xx_EXEC_RUN_ENG << LP55xx_EXEC_ENGn_SHIFT(i, cfg->reg_exec.shift);
++	}
++
++	lp55xx_write(chip, cfg->reg_op_mode.addr, mode);
++	lp55xx_wait_opmode_done(chip);
++	lp55xx_write(chip, cfg->reg_exec.addr, exec);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(lp55xx_run_engine_common);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -112,6 +112,7 @@ struct lp55xx_reg {
+  */
+ struct lp55xx_device_config {
+ 	const struct lp55xx_reg reg_op_mode; /* addr, shift */
++	const struct lp55xx_reg reg_exec; /* addr, shift */
+ 	const struct lp55xx_reg engine_busy; /* addr, mask */
+ 	const struct lp55xx_reg reset;
+ 	const struct lp55xx_reg enable;
+@@ -206,6 +207,7 @@ extern bool lp55xx_is_extclk_used(struct
+ /* common chip functions */
+ extern void lp55xx_stop_all_engine(struct lp55xx_chip *chip);
+ extern void lp55xx_load_engine(struct lp55xx_chip *chip);
++extern int lp55xx_run_engine_common(struct lp55xx_chip *chip);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -127,10 +127,6 @@ static void lp8501_turn_off_channels(str
+ 
+ static void lp8501_run_engine(struct lp55xx_chip *chip, bool start)
+ {
+-	int ret;
+-	u8 mode;
+-	u8 exec;
+-
+ 	/* stop engine */
+ 	if (!start) {
+ 		lp55xx_stop_all_engine(chip);
+@@ -138,39 +134,7 @@ static void lp8501_run_engine(struct lp5
+ 		return;
+ 	}
+ 
+-	/*
+-	 * To run the engine,
+-	 * operation mode and enable register should updated at the same time
+-	 */
+-
+-	ret = lp55xx_read(chip, LP8501_REG_OP_MODE, &mode);
+-	if (ret)
+-		return;
+-
+-	ret = lp55xx_read(chip, LP8501_REG_ENABLE, &exec);
+-	if (ret)
+-		return;
+-
+-	/* change operation mode to RUN only when each engine is loading */
+-	if (LP8501_ENG1_IS_LOADING(mode)) {
+-		mode = (mode & ~LP8501_MODE_ENG1_M) | LP8501_RUN_ENG1;
+-		exec = (exec & ~LP8501_EXEC_ENG1_M) | LP8501_RUN_ENG1;
+-	}
+-
+-	if (LP8501_ENG2_IS_LOADING(mode)) {
+-		mode = (mode & ~LP8501_MODE_ENG2_M) | LP8501_RUN_ENG2;
+-		exec = (exec & ~LP8501_EXEC_ENG2_M) | LP8501_RUN_ENG2;
+-	}
+-
+-	if (LP8501_ENG3_IS_LOADING(mode)) {
+-		mode = (mode & ~LP8501_MODE_ENG3_M) | LP8501_RUN_ENG3;
+-		exec = (exec & ~LP8501_EXEC_ENG3_M) | LP8501_RUN_ENG3;
+-	}
+-
+-	lp55xx_write(chip, LP8501_REG_OP_MODE, mode);
+-	lp8501_wait_opmode_done();
+-
+-	lp55xx_update_bits(chip, LP8501_REG_ENABLE, LP8501_EXEC_M, exec);
++	lp55xx_run_engine_common(chip);
+ }
+ 
+ static int lp8501_update_program_memory(struct lp55xx_chip *chip,
+@@ -258,6 +222,9 @@ static struct lp55xx_device_config lp850
+ 	.reg_op_mode = {
+ 		.addr = LP8501_REG_OP_MODE,
+ 	},
++	.reg_exec = {
++		.addr = LP8501_REG_ENABLE,
++	},
+ 	.engine_busy = {
+ 		.addr = LP8501_REG_STATUS,
+ 		.mask = LP8501_ENGINE_BUSY,

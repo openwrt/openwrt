@@ -296,3 +296,20 @@ define KernelPackage/leds-lp5562/description
 endef
 
 $(eval $(call KernelPackage,leds-lp5562))
+
+
+define KernelPackage/leds-lp5569
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED driver for LP5569 controllers
+  DEPENDS:=+kmod-i2c-core +kmod-leds-lp55xx-common
+  KCONFIG:=CONFIG_LEDS_LP5569
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp5569.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-lp5569,1)
+endef
+
+define KernelPackage/leds-lp5569/description
+ This option enables support for Texas Instruments LP5569
+ LED controllers.
+endef
+
+$(eval $(call KernelPackage,leds-lp5569))
