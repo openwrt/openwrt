@@ -15,8 +15,13 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
-@@ -31,8 +31,42 @@
+@@ -29,10 +29,47 @@
+ #include <asm/traps.h>
+ #include <asm/fw/cfe/cfe_api.h>
  
++#define CP0_BCM_CFG_ICSHEN          (0x1 << 31)
++#define CP0_BCM_CFG_DCSHEN          (0x1 << 30)
++
  #define RELO_NORMAL_VEC		BIT(18)
  
 +#define REG_BCM6318_SOB		((void __iomem *)CKSEG1ADDR(0x10000900))
@@ -58,7 +63,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  /*
   * CBR addr doesn't change and we can cache it.
-@@ -45,6 +79,11 @@ extern bool bmips_rac_flush_disable;
+@@ -45,6 +82,11 @@ extern bool bmips_rac_flush_disable;
  
  static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
  
@@ -70,10 +75,39 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -163,17 +202,161 @@ const char *get_system_type(void)
+@@ -126,9 +168,22 @@ static void bcm6368_quirks(void)
+ 	bcm63xx_fixup_cpu1();
+ }
+ 
++static void bcm3380_quirks(void)
++{
++	// Enable cache to increase the running speed
++	// https://forum.openwrt.org/t/bringing-up-bcm3380-extremely-slow-instruction-execution
++	u32 c0_reg22 = read_c0_diag();
++	c0_reg22 |= CP0_BCM_CFG_ICSHEN | CP0_BCM_CFG_DCSHEN;
++	write_c0_diag(c0_reg22);
++	change_c0_config(CONF_CM_CMASK, CONF_CM_CACHABLE_NONCOHERENT);
++
++	bcm6358_quirks();
++	bcm63xx_fixup_cpu1();
++}
++
+ static const struct bmips_quirk bmips_quirk_list[] = {
+ 	{ "brcm,bcm3368",		&bcm6358_quirks			},
+-	{ "brcm,bcm3380",		&bcm6358_quirks			},
++	{ "brcm,bcm3380",		&bcm3380_quirks			},
+ 	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
+ 	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
+ 	{ "brcm,bcm6328",		&bcm6328_quirks			},
+@@ -164,17 +219,167 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
++static u32 bcm3380_cpufreq(void)
++{
++	return 333000000;
++}
++
 +static u32 bcm6318_cpufreq(void)
 +{
 +	u32 val = __raw_readl(REG_BCM6318_SOB);
@@ -197,6 +231,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +}
 +
 +static const struct bmips_cpufreq bmips_cpufreq_list[] = {
++	{ "brcm,bcm3380", &bcm3380_cpufreq },
 +	{ "brcm,bcm6318", &bcm6318_cpufreq },
 +	{ "brcm,bcm6328", &bcm6328_cpufreq },
 +	{ "brcm,bcm6358", &bcm6358_cpufreq },
