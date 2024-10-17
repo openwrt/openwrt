@@ -659,12 +659,12 @@ hostapd_set_bss_options() {
 		sae|owe|eap2|eap192)
 			set_default ieee80211w 2
 			set_default sae_require_mfp 1
-			set_default sae_pwe 2
+			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
 		psk-sae|eap-eap2)
 			set_default ieee80211w 1
 			set_default sae_require_mfp 1
-			set_default sae_pwe 2
+			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
 	esac
 	[ -n "$sae_require_mfp" ] && append bss_conf "sae_require_mfp=$sae_require_mfp" "$N"
@@ -687,7 +687,7 @@ hostapd_set_bss_options() {
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
-			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
+			if [ "$ppsk" -ne 0 ]; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
 				json_for_each_item append_auth_server auth_server
