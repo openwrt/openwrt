@@ -358,6 +358,20 @@ define Device/tplink_eap660hd-v1
 endef
 TARGET_DEVICES += tplink_eap660hd-v1
 
+define Device/tplink_deco-x80-5g
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Deco X80-5G
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk01.c5
+	SOC := ipq8074
+	DEVICE_PACKAGES := kmod-hwmon-gpiofan ipq-wifi-tplink_deco-x80-5g \
+	 	 kmod-usb-serial-option kmod-usb-net-qmi-wwan kmod-usb-serial-qualcomm uqmi
+endef
+TARGET_DEVICES += tplink_deco-x80-5g
+
 define Device/xiaomi_ax3600
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

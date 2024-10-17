@@ -54,6 +54,7 @@ ALLWIFIBOARDS:= \
 	skspruce_wia3300-20 \
 	spectrum_sax1v1k \
 	tplink_eap660hd-v1 \
+	tplink_deco-x80-5g \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
@@ -184,6 +185,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1)
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
+$(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))

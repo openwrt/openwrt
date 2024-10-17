@@ -45,6 +45,7 @@ tplink,eap660hd-v1)
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000"
 	;;
 redmi,ax6|\
+tplink,deco-x80-5g|\
 xiaomi,ax3600|\
 xiaomi,ax9000)
 	idx="$(find_mtd_index 0:appsblenv)"
