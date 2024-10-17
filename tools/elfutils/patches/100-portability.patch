@@ -245,6 +245,49 @@
  #include <stddef.h>
  
  
+--- a/libcpu/i386_lex.l
++++ b/libcpu/i386_lex.l
+@@ -1,3 +1,9 @@
++%top{
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++}
++
+ %{
+ /* Copyright (C) 2004, 2005, 2007, 2008 Red Hat, Inc.
+    Written by Ulrich Drepper <drepper@redhat.com>, 2004.
+@@ -26,10 +32,6 @@
+    the GNU Lesser General Public License along with this program.  If
+    not, see <http://www.gnu.org/licenses/>.  */
+ 
+-#ifdef HAVE_CONFIG_H
+-# include <config.h>
+-#endif
+-
+ #include <ctype.h>
+ 
+ #include <libeu.h>
+--- a/libcpu/i386_parse.y
++++ b/libcpu/i386_parse.y
+@@ -1158,7 +1158,7 @@ instrtable_out (void)
+   EMIT_SUFFIX (w1);
+   EMIT_SUFFIX (W1);
+ 
+-  fputc_unlocked ('\n', outfile);
++  fprintf (outfile, "\n");
+ 
+   for (int i = 0; i < 3; ++i)
+     {
+@@ -1333,7 +1333,7 @@ instrtable_out (void)
+ 	  b = b->next;
+ 	}
+ 
+-      fputc_unlocked ('\n', outfile);
++      fprintf (outfile, "\n");
+     }
+   fputs ("};\n", outfile);
+ }
 --- a/libebl/eblopenbackend.c
 +++ b/libebl/eblopenbackend.c
 @@ -200,8 +200,6 @@ static bool default_object_note (const c
