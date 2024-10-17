@@ -432,7 +432,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	mutex_init(&vc4file->perfmon.lock);
-@@ -126,7 +126,7 @@ void vc4_perfmon_close_file(struct vc4_f
+@@ -131,7 +131,7 @@ void vc4_perfmon_close_file(struct vc4_f
  {
  	struct vc4_dev *vc4 = vc4file->dev;
  
@@ -441,7 +441,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return;
  
  	mutex_lock(&vc4file->perfmon.lock);
-@@ -146,7 +146,7 @@ int vc4_perfmon_create_ioctl(struct drm_
+@@ -151,7 +151,7 @@ int vc4_perfmon_create_ioctl(struct drm_
  	unsigned int i;
  	int ret;
  
@@ -450,7 +450,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	if (!vc4->v3d) {
-@@ -200,7 +200,7 @@ int vc4_perfmon_destroy_ioctl(struct drm
+@@ -205,7 +205,7 @@ int vc4_perfmon_destroy_ioctl(struct drm
  	struct drm_vc4_perfmon_destroy *req = data;
  	struct vc4_perfmon *perfmon;
  
@@ -459,7 +459,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		return -ENODEV;
  
  	if (!vc4->v3d) {
-@@ -228,7 +228,7 @@ int vc4_perfmon_get_values_ioctl(struct
+@@ -233,7 +233,7 @@ int vc4_perfmon_get_values_ioctl(struct
  	struct vc4_perfmon *perfmon;
  	int ret;
  
