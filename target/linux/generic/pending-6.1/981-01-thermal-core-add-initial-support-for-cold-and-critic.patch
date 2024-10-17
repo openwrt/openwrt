@@ -1,0 +1,128 @@
+From 0406e249e33b1a1ea687cce7018c0ccb87e5a59b Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 12 Dec 2023 22:05:10 +0100
+Subject: [PATCH 1/2] thermal: core: add initial support for cold and
+ critical_cold trip point
+
+Add initial support for cold and critical_cold trip point. Many if not
+all hwmon and thermal device have normally trip point for hot
+temperature and for cold temperature.
+
+Till now only hot temperature were supported. Add support for also cold
+temperature to permit complete definition of cold trip point in DT.
+
+Thermal driver may use these additional trip point to correctly set
+interrupt for cold temperature values and react based on that with
+various measure like enabling attached heater, forcing higher voltage
+and other specialaized peripherals.
+
+For hwmon drivers this is needed as currently there is a problem with
+setting the full operating range of the device for thermal devices
+defined with hwmon. To better describe the problem, the following
+example is needed:
+
+In the scenario of a simple hwmon with an active trip point declared
+and a cooling device attached, the hwmon subsystem currently set the
+min and max trip point based on the single active trip point.
+Thermal subsystem parse all the trip points and calculate the lowest and
+the highest trip point and calls the .set_trip of hwmon to setup the
+trip points.
+
+The fact that we currently don't have a way to declare the cold/min
+temperature values, makes the thermal subsystem to set the low value as
+-INT_MAX.
+For hwmon drivers that doesn't use clamp_value and actually reject
+invalid values for the trip point, this results in the hwmon settings to
+be rejected.
+
+To permit to pass the correct range of trip point, permit to set in DT
+also cold and critical_cold trip point.
+
+Thermal driver may also define .cold and .critical_cold to act on these
+trip point tripped and apply the required measure.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/thermal/thermal_core.c  | 13 +++++++++++++
+ drivers/thermal/thermal_of.c    |  2 ++
+ drivers/thermal/thermal_sysfs.c |  4 ++++
+ drivers/thermal/thermal_trace.h |  4 ++++
+ include/linux/thermal.h         |  2 ++
+ include/uapi/linux/thermal.h    |  2 ++
+ 6 files changed, 27 insertions(+)
+
+--- a/drivers/thermal/thermal_core.c
++++ b/drivers/thermal/thermal_core.c
+@@ -341,6 +341,17 @@ static void handle_critical_trips(struct
+ 		tz->ops->critical(tz);
+ }
+ 
++static void handle_critical_cold_trips(struct thermal_zone_device *tz,
++				       int trip, enum thermal_trip_type trip_type)
++{
++	trace_thermal_zone_trip(tz, trip, trip_type);
++
++	if (trip_type == THERMAL_TRIP_CRITICAL_COLD && tz->ops->critical_cold)
++		tz->ops->critical_cold(tz);
++	else if (trip_type == THERMAL_TRIP_COLD && tz->ops->cold)
++		tz->ops->cold(tz);
++}
++
+ static void handle_thermal_trip(struct thermal_zone_device *tz, int trip)
+ {
+ 	enum thermal_trip_type type;
+@@ -368,6 +379,8 @@ static void handle_thermal_trip(struct t
+ 
+ 	if (type == THERMAL_TRIP_CRITICAL || type == THERMAL_TRIP_HOT)
+ 		handle_critical_trips(tz, trip, trip_temp, type);
++	else if (type == THERMAL_TRIP_CRITICAL_COLD || type == THERMAL_TRIP_COLD)
++		handle_critical_cold_trips(tz, trip, type);
+ 	else
+ 		handle_non_critical_trips(tz, trip);
+ }
+--- a/drivers/thermal/thermal_of.c
++++ b/drivers/thermal/thermal_of.c
+@@ -172,6 +172,8 @@ static const char * const trip_types[] =
+ 	[THERMAL_TRIP_PASSIVE]	= "passive",
+ 	[THERMAL_TRIP_HOT]	= "hot",
+ 	[THERMAL_TRIP_CRITICAL]	= "critical",
++	[THERMAL_TRIP_COLD]	= "cold",
++	[THERMAL_TRIP_CRITICAL_COLD] = "critical_cold",
+ };
+ 
+ /**
+--- a/drivers/thermal/thermal_sysfs.c
++++ b/drivers/thermal/thermal_sysfs.c
+@@ -101,6 +101,10 @@ trip_point_type_show(struct device *dev,
+ 		return sprintf(buf, "critical\n");
+ 	case THERMAL_TRIP_HOT:
+ 		return sprintf(buf, "hot\n");
++	case THERMAL_TRIP_COLD:
++		return sprintf(buf, "cold\n");
++	case THERMAL_TRIP_CRITICAL_COLD:
++		return sprintf(buf, "critical_cold\n");
+ 	case THERMAL_TRIP_PASSIVE:
+ 		return sprintf(buf, "passive\n");
+ 	case THERMAL_TRIP_ACTIVE:
+--- a/include/linux/thermal.h
++++ b/include/linux/thermal.h
+@@ -74,6 +74,8 @@ struct thermal_zone_device_ops {
+ 			  enum thermal_trend *);
+ 	void (*hot)(struct thermal_zone_device *);
+ 	void (*critical)(struct thermal_zone_device *);
++	void (*cold)(struct thermal_zone_device *);
++	void (*critical_cold)(struct thermal_zone_device *);
+ };
+ 
+ /**
+--- a/include/uapi/linux/thermal.h
++++ b/include/uapi/linux/thermal.h
+@@ -14,6 +14,8 @@ enum thermal_trip_type {
+ 	THERMAL_TRIP_PASSIVE,
+ 	THERMAL_TRIP_HOT,
+ 	THERMAL_TRIP_CRITICAL,
++	THERMAL_TRIP_COLD,
++	THERMAL_TRIP_CRITICAL_COLD,
+ };
+ 
+ /* Adding event notification support elements */
