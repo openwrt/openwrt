@@ -12,6 +12,7 @@ ADD_WAN_FQDN=0
 ADD_LOCAL_FQDN=""
 
 BASECONFIGFILE="/var/etc/dnsmasq.conf"
+EXTRACONFFILE="extraconfig.conf"
 BASEHOSTFILE="/tmp/hosts/dhcp"
 TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 TIMEVALIDFILE="/var/state/dnsmasqsec"
@@ -68,7 +69,7 @@ xappend() {
 	local opt="${value%%=*}"
 
 	if ! dnsmasq_ignore_opt "$opt"; then
-		echo "$value" >>$CONFIGFILE_TMP
+		echo "$value" >>"$CONFIGFILE_TMP"
 	fi
 }
 
@@ -353,7 +354,7 @@ dhcp_host_add() {
 
 	config_get_bool dns "$cfg" dns 0
 	[ "$dns" = "1" ] && [ -n "$ip" ] && [ -n "$name" ] && {
-		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> $HOSTFILE_TMP
+		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> "$HOSTFILE_TMP"
 	}
 
 	config_get mac "$cfg" mac
@@ -713,7 +714,7 @@ dhcp_domain_add() {
 		record="${record:+$record }$name"
 	done
 
-	echo "$ip $record" >> $HOSTFILE_TMP
+	echo "$ip $record" >> "$HOSTFILE_TMP"
 }
 
 dhcp_srv_add() {
@@ -785,6 +786,29 @@ dhcp_hostrecord_add() {
 	done
 
 	xappend "--host-record=$record"
+}
+
+dhcp_dnsrr_add() {
+	#This adds arbitrary resource record types (of IN class) whose optional data must be hex
+	local cfg="$1"
+	local rrname rrnumber hexdata
+
+	config_get rrname "$cfg" rrname
+	[ -n "$rrname" ] || return 0
+
+	config_get rrnumber "$cfg" rrnumber
+	[ -n "$rrnumber" ] && [ "$rrnumber" -gt 0 ] || return 0
+
+	config_get hexdata "$cfg" hexdata
+
+	# dnsmasq accepts colon XX:XX:.., space XX XX .., or contiguous XXXX.. hex forms or mixtures thereof
+	if [ -n "${hexdata//[0-9a-fA-F\:\ ]/}" ]; then
+		# is invalid hex literal
+		echo "dnsmasq: \"$hexdata\" is malformed hexadecimal (separate hex with colon, space or not at all)." >&2
+		return 1
+	fi
+
+	xappend "--dns-rr=${rrname},${rrnumber}${hexdata:+,$hexdata}"
 }
 
 dhcp_relay_add() {
@@ -881,13 +905,13 @@ dnsmasq_start()
 	# before we can call xappend
 	umask u=rwx,g=rx,o=rx
 	mkdir -p /var/run/dnsmasq/
-	mkdir -p $(dirname $CONFIGFILE)
+	mkdir -p "$(dirname "$CONFIGFILE")"
 	mkdir -p "$HOSTFILE_DIR"
 	mkdir -p /var/lib/misc
 	chown dnsmasq:dnsmasq /var/run/dnsmasq
 
-	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE_TMP
-	echo "# auto-generated config file from /etc/config/dhcp" > $HOSTFILE_TMP
+	echo "# auto-generated config file from /etc/config/dhcp" > "$CONFIGFILE_TMP"
+	echo "# auto-generated config file from /etc/config/dhcp" > "$HOSTFILE_TMP"
 
 	local dnsmasqconffile="/etc/dnsmasq.${cfg}.conf"
 	if [ ! -r "$dnsmasqconffile" ]; then
@@ -973,8 +997,11 @@ dnsmasq_start()
 	append_bool "$cfg" rapidcommit "--dhcp-rapid-commit"
 	append_bool "$cfg" scriptarp "--script-arp"
 
+	# deprecate or remove filter-X in favor of filter-rr?
 	append_bool "$cfg" filter_aaaa "--filter-AAAA"
 	append_bool "$cfg" filter_a "--filter-A"
+	append_parm "$cfg" filter_rr "--filter-rr"
+	append_parm "$cfg" cache_rr "--cache-rr"
 
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
@@ -1118,13 +1145,21 @@ dnsmasq_start()
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
 
 
-	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
-	xappend "--conf-dir=$dnsmasqconfdir"
-	dnsmasqconfdir="${dnsmasqconfdir%%,*}"
-	[ ! -d "$dnsmasqconfdir" ] && mkdir -p $dnsmasqconfdir
-	xappend "--user=dnsmasq"
-	xappend "--group=dnsmasq"
-	echo >> $CONFIGFILE_TMP
+	# Create a dnsmasq.d dir for each instance
+	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq${cfg:+.$cfg}.d"
+	# Ensure dnsmasqconfdir is an absolute path
+	[ "${dnsmasqconfdir:0:1}" = '/' ] && {
+		xappend "--conf-dir=$dnsmasqconfdir"
+		dnsmasqconfdir="${dnsmasqconfdir%%,*}"
+		[ ! -d "$dnsmasqconfdir" ] && mkdir -p "$dnsmasqconfdir"
+		xappend "--user=dnsmasq"
+		xappend "--group=dnsmasq"
+		echo >> "$CONFIGFILE_TMP"
+
+		# EXTRACONFFILE allows new dnsmasq parameters before they are natively handled in this init file
+		config_get extraconftext "$cfg" extraconftext
+		[ -n "$extraconftext" ] && echo -e "$extraconftext" > "$dnsmasqconfdir"/"$EXTRACONFFILE"
+	}
 
 	config_get_bool enable_tftp "$cfg" enable_tftp 0
 	[ "$enable_tftp" -gt 0 ] && {
@@ -1133,7 +1168,7 @@ dnsmasq_start()
 	}
 
 	config_foreach filter_dnsmasq host dhcp_host_add "$cfg"
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 
 	config_get_bool dhcpbogushostname "$cfg" dhcpbogushostname 1
 	[ "$dhcpbogushostname" -gt 0 ] && {
@@ -1152,12 +1187,13 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq match dhcp_match_add "$cfg"
 	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
 	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
+	config_foreach filter_dnsmasq dnsrr dhcp_dnsrr_add "$cfg"
 	[ -n "$BOOT" ] || config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
 
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
 	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 
 	config_get_bool boguspriv "$cfg" boguspriv 1
 	[ "$boguspriv" -gt 0 ] && {
@@ -1179,16 +1215,16 @@ dnsmasq_start()
 	fi
 
 
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 	config_foreach filter_dnsmasq cname dhcp_cname_add "$cfg"
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 	config_foreach filter_dnsmasq ipset dnsmasq_ipset_add "$cfg"
-	echo >> $CONFIGFILE_TMP
+	echo >> "$CONFIGFILE_TMP"
 
-	mv -f $CONFIGFILE_TMP $CONFIGFILE
-	mv -f $HOSTFILE_TMP $HOSTFILE
+	mv -f "$CONFIGFILE_TMP" "$CONFIGFILE"
+	mv -f "$HOSTFILE_TMP" "$HOSTFILE"
 
 	[ "$localuse" -gt 0 ] && {
 		rm -f /tmp/resolv.conf
