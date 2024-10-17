@@ -1,0 +1,12 @@
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
+@@ -917,6 +917,9 @@ iwl_nvm_fixup_sband_iftd(struct iwl_tran
+ 		 trans->pcie_link_speed < PCI_EXP_LNKSTA_CLS_8_0GB) ||
+ 		 trans->reduced_cap_sku;
+ 
++	/* Unlock 320MHz */
++	no_320 = false;
++
+ 	if (!data->sku_cap_11be_enable || iwlwifi_mod_params.disable_11be)
+ 		iftype_data->eht_cap.has_eht = false;
+ 
