@@ -555,6 +555,23 @@ endef
 
 $(eval $(call KernelPackage,dsa-tag-dsa))
 
+define KernelPackage/dsa-an8855
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Airoha AN8855 DSA switch
+  DEPENDS:=+kmod-dsa
+  KCONFIG:=CONFIG_NET_DSA_AN8855 \
+	CONFIG_NET_DSA_TAG_AIROHA
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/airoha/an8855/an8855-dsa.ko \
+	$(LINUX_DIR)/net/dsa/tag_arht.ko
+  AUTOLOAD:=$(call AutoLoad,41,an8855-dsa,1)
+endef
+
+define KernelPackage/dsa-an8855/description
+  Kernel modules for Airoha AN8855 DSA switch
+endef
+
+$(eval $(call KernelPackage,dsa-an8855))
+
 define KernelPackage/dsa-mv88e6xxx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell MV88E6XXX DSA Switch
