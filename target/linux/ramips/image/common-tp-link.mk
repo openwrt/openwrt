@@ -14,6 +14,72 @@ define Build/tplink-v1-okli-image
 	rm -f $(IMAGE_ROOTFS).$(word 2,$(1))
 endef
 
+define Build/tplink-jffs2
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
+		--little-endian \
+		--no-cleanmarkers \
+		--eraseblock=$(patsubst %k,%KiB,$(BLOCKSIZE)) \
+		--root=$(1) \
+		--output=$(2) \
+		--squash \
+		--compression-mode=none
+
+endef
+
+define Build/tplink-jffs2-incremental
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2\
+		--little-endian \
+		--no-cleanmarkers \
+		--eraseblock=$(patsubst %k,%KiB,$(BLOCKSIZE)) \
+		--root=$(1) \
+		--output=$(3) \
+		--squash \
+		--compression-mode=none \
+		--incremental=$(2)
+
+endef
+
+define Build/tplink-jffs2-kernel
+	mv $@ $@.kernel
+
+	rm -rf $@-kernel
+	mkdir -p $@-kernel
+	
+	# generate the tag_kernel file
+	echo "dummy" > $@-kernel/dummy_file
+	echo "dummy" > $@-kernel/dummy_file2
+	
+	#size=$(shell stat -c%s $@.kernel); \
+	#totalsize="$$(( $$size + $$size + 1024 ))"; \
+	#mktag_kernel -s "$$totalsize" -o $@-kernel/tag_kernel
+	mktag_kernel -s $(1) -o $@-kernel/tag_kernel
+	#mkdir -p $@-kernel/etc/
+	#ln -s /tag_kernel $@-kernel/etc/tag_kernel
+
+	echo "dummy" > $@-kernel/dummy_file3
+	echo "dummy" > $@-kernel/dummy_file4
+
+	$(call Build/tplink-jffs2,$@-kernel,$@-base)
+	
+	cp $@.kernel $@
+	$(call Build/uImage-tplink-c9,standalone '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)')
+	# Add vmlinuz as the last file in the JFFS2 partition
+	cp $@ $@-kernel/imageuboot
+	
+	cp $@.kernel $@
+	$(call Build/uImage-tplink-c9,firmware 'OS IMAGE ($(VERSION_DIST))')
+	cp $@ $@-kernel/vmlinuz
+	
+	$(call Build/tplink-jffs2-incremental,$@-kernel,$@-base,$@-addon)
+	
+	cat $@-base $@-addon > $@
+	# The JFFS2 partition creation should result in the following
+	# layout:
+	# 1) tag_kernel
+	# 2) uboot_image
+	# 3) vmlinuz 
+endef
+
 define Build/uImage-tplink-c9
 	mkimage \
 		-A $(LINUX_KARCH) \
