@@ -19,6 +19,7 @@
 #include <asm/mach-ralink/ralink_regs.h>
 #include <linux/of_device.h>
 #include <linux/of_irq.h>
+#include <linux/version.h>
 
 #include <linux/switch.h>
 #include <linux/reset.h>
@@ -1438,7 +1439,11 @@ static int esw_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int esw_remove(struct platform_device *pdev)
+#else
+static void esw_remove(struct platform_device *pdev)
+#endif
 {
 	struct rt305x_esw *esw = platform_get_drvdata(pdev);
 
@@ -1447,7 +1452,9 @@ static int esw_remove(struct platform_device *pdev)
 		platform_set_drvdata(pdev, NULL);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id ralink_esw_match[] = {

@@ -35,6 +35,7 @@
 #include <linux/of_gpio.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/version.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -1638,7 +1639,11 @@ static int fe_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int fe_remove(struct platform_device *pdev)
+#else
+static void fe_remove(struct platform_device *pdev)
+#endif
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct fe_priv *priv = netdev_priv(dev);
@@ -1649,7 +1654,9 @@ static int fe_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static struct platform_driver fe_driver = {
