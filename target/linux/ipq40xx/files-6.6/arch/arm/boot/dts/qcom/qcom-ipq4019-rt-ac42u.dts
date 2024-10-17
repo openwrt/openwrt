@@ -16,6 +16,7 @@
 	};
 
 	aliases {
+		label-mac-device = &gmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -231,9 +232,40 @@
 				read-only;
 			};
 			partition@400000 {
-				label = "ubi";
+				compatible = "linux,ubi";
 				reg = <0x00400000 0x07C00000>;
+				label = "ubi";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "Factory";
+					};
+				};
 			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		precal_factory_1000: precal@1000 {
+			reg = <0x1000 0x2f20>;
+		};
+
+		macaddr_factory_1006: macaddr@1006 {
+			reg = <0x1006 0x6>;
+		};
+
+		precal_factory_9000: precal@9000 {
+			reg = <0x9000 0x2f20>;
+		};
+
+		macaddr_factory_9006: macaddr@9006 {
+			reg = <0x9006 0x6>;
 		};
 	};
 };
@@ -271,6 +303,8 @@
 
 &gmac {
 	status = "okay";
+	nvmem-cells = <&macaddr_factory_1006>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -295,10 +329,14 @@
 
 &swport5 {
 	status = "okay";
+	nvmem-cells = <&macaddr_factory_9006>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi0 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_factory_1000>;
 	qcom,ath10k-calibration-variant = "ASUS-RT-AC42U";
 };
 
@@ -317,6 +355,8 @@
 		wifi2: wifi@1,0 {
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
+			nvmem-cell-names = "pre-calibration";
+			nvmem-cells = <&precal_factory_9000>;
 
 			qcom,ath10k-calibration-variant = "ASUS-RT-AC42U";
 		};
