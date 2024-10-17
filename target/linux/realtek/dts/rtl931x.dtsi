@@ -195,6 +195,13 @@
 		};
 	};
 
+	serdes0: serdes@1b005638 {
+		compatible = "realtek,rtl9310-serdes", "realtek,otto-serdes";
+		reg = <0x1b005638 0x8>;
+		controlled-ports = <0x0000>;
+		#phy-cells = <4>;
+	};
+
 	switch0: switch@1b000000 {
 		compatible = "realtek,rtl83xx-switch";
 		status = "okay";
