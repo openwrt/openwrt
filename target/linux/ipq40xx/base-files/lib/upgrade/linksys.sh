@@ -16,7 +16,7 @@ linksys_get_target_firmware() {
 			"${cur_boot_part}" "${mtd_ubi0}"
 	fi
 
-	# OEM U-Boot for EA6350v3, EA8300 and MR8300; bootcmd=
+	# OEM U-Boot for EA6350v3, EA8300, MR6350 and MR8300; bootcmd=
 	#  if test $auto_recovery = no;
 	#      then bootipq;
 	#  elif test $boot_part = 1;
