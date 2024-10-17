@@ -1,0 +1,28 @@
+From 23fd602f21953c03c0714257d36685cd6b486f04 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Tue, 30 Apr 2024 09:49:13 +0100
+Subject: [PATCH] nvmem: layouts: sl28vpd: drop driver owner initialization
+
+Core in nvmem_layout_driver_register() already sets the .owner, so
+driver does not need to.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Michael Walle <mwalle@kernel.org>
+Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240430084921.33387-4-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/layouts/sl28vpd.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/nvmem/layouts/sl28vpd.c
++++ b/drivers/nvmem/layouts/sl28vpd.c
+@@ -156,7 +156,6 @@ MODULE_DEVICE_TABLE(of, sl28vpd_of_match
+ 
+ static struct nvmem_layout_driver sl28vpd_layout = {
+ 	.driver = {
+-		.owner = THIS_MODULE,
+ 		.name = "kontron-sl28vpd-layout",
+ 		.of_match_table = sl28vpd_of_match_table,
+ 	},

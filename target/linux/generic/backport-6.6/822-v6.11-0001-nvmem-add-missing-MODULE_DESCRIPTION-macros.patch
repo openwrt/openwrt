@@ -1,0 +1,48 @@
+From c553bad4c5fc5ae44bd2fcaa73e1d6bedfb1c35c Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <quic_jjohnson@quicinc.com>
+Date: Fri, 5 Jul 2024 08:48:38 +0100
+Subject: [PATCH] nvmem: add missing MODULE_DESCRIPTION() macros
+
+make allmodconfig && make W=1 C=1 reports:
+WARNING: modpost: missing MODULE_DESCRIPTION() in drivers/nvmem/nvmem-apple-efuses.o
+WARNING: modpost: missing MODULE_DESCRIPTION() in drivers/nvmem/nvmem_brcm_nvram.o
+WARNING: modpost: missing MODULE_DESCRIPTION() in drivers/nvmem/nvmem_u-boot-env.o
+
+Add the missing invocations of the MODULE_DESCRIPTION() macro.
+
+Signed-off-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-2-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/apple-efuses.c | 1 +
+ drivers/nvmem/brcm_nvram.c   | 1 +
+ drivers/nvmem/u-boot-env.c   | 1 +
+ 3 files changed, 3 insertions(+)
+
+--- a/drivers/nvmem/apple-efuses.c
++++ b/drivers/nvmem/apple-efuses.c
+@@ -78,4 +78,5 @@ static struct platform_driver apple_efus
+ module_platform_driver(apple_efuses_driver);
+ 
+ MODULE_AUTHOR("Sven Peter <sven@svenpeter.dev>");
++MODULE_DESCRIPTION("Apple SoC eFuse driver");
+ MODULE_LICENSE("GPL");
+--- a/drivers/nvmem/brcm_nvram.c
++++ b/drivers/nvmem/brcm_nvram.c
+@@ -253,5 +253,6 @@ static int __init brcm_nvram_init(void)
+ subsys_initcall_sync(brcm_nvram_init);
+ 
+ MODULE_AUTHOR("Rafał Miłecki");
++MODULE_DESCRIPTION("Broadcom I/O-mapped NVRAM support driver");
+ MODULE_LICENSE("GPL");
+ MODULE_DEVICE_TABLE(of, brcm_nvram_of_match_table);
+--- a/drivers/nvmem/u-boot-env.c
++++ b/drivers/nvmem/u-boot-env.c
+@@ -256,5 +256,6 @@ static struct platform_driver u_boot_env
+ module_platform_driver(u_boot_env_driver);
+ 
+ MODULE_AUTHOR("Rafał Miłecki");
++MODULE_DESCRIPTION("U-Boot environment variables support module");
+ MODULE_LICENSE("GPL");
+ MODULE_DEVICE_TABLE(of, u_boot_env_of_match_table);
