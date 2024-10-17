@@ -13,13 +13,15 @@ Datasheet available at https://www.xmcwh.com/uploads/435/XM25QH128C.pdf
 
 --- a/drivers/mtd/spi-nor/xmc.c
 +++ b/drivers/mtd/spi-nor/xmc.c
-@@ -16,6 +16,9 @@ static const struct flash_info xmc_nor_p
- 	{ "XM25QH128A", INFO(0x207018, 0, 64 * 1024, 256)
- 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
- 			      SPI_NOR_QUAD_READ) },
-+	{ "XM25QH128C", INFO(0x204018, 0, 64 * 1024, 256)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
-+			      SPI_NOR_QUAD_READ) },
+@@ -19,6 +19,11 @@ static const struct flash_info xmc_nor_p
+ 		.name = "XM25QH128A",
+ 		.size = SZ_16M,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
++	}, {
++		.id = SNOR_ID(0x20, 0x40, 0x18),
++		.name = "XM25QH128C",
++		.size = SZ_16M,
++		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	},
  };
  
- const struct spi_nor_manufacturer spi_nor_xmc = {
