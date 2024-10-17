@@ -304,7 +304,7 @@
  	}
  
  	if (++tx_send_head_new >= MAX_NUM_TX_DESC)
-@@ -488,7 +488,7 @@ void pcie_tx_done_ndp(struct ieee80211_h
+@@ -483,7 +483,7 @@ void pcie_tx_done_ndp(struct ieee80211_h
  		}
  
  		pcie_tx_prepare_info(priv, 0, tx_info);
@@ -313,7 +313,7 @@
  
  bypass_ack:
  		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
-@@ -601,13 +601,13 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+@@ -596,13 +596,13 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
  			ack_skb = skb_copy(skb, GFP_ATOMIC);
  			ack_info = IEEE80211_SKB_CB(ack_skb);
  			pcie_tx_prepare_info(priv, 0, ack_info);
