@@ -41,6 +41,11 @@ case "$FIRMWARE" in
 		caldata_extract "factory" 0x0 0x200
 		caldata_patch_mac $wifi_mac 0x4
 		;;
+	zyxel,lte-3302-m432)
+		wifi_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
+		jboot_eeprom_extract "config" 0xE000
+		caldata_patch_mac $wifi_mac 0x4
+		;;
 	*)
 		caldata_die "Please define mtd-eeprom in $board DTS file!"
 		;;
