@@ -161,22 +161,25 @@
 			};
 
 			partition@360000 {
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 				label = "0:ART";
 				reg = <0x00360000 0x00040000>;
 
-				macaddr_eth0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_eth1: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
+					macaddr_eth0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 
-				macaddr_eth2: macaddr@c {
-					reg = <0xc 0x6>;
+					macaddr_eth1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					macaddr_eth2: macaddr@c {
+						reg = <0xc 0x6>;
+					};
 				};
 			};
 
