@@ -59,10 +59,30 @@
 			};
 
 			partition@100000 {
-				label = "u-boot-env";
+				compatible = "fixed-partitions";
 				reg = <0x00100000 0x00100000>;
-				compatible = "u-boot,env";
+				label = "u-boot-env";
 				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "u-boot-env-main";
+					reg = <0x0 0x20000>;
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				partition@80000 {
+					label= "u-boot-env-redundant";
+					reg = <0x80000 0x20000>;
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
 			};
 
 			partition@200000 {
