@@ -19,6 +19,9 @@ platform_do_upgrade() {
 	watchguard,firebox-t10)
 		nand_do_upgrade "$1"
 		;;
+	watchguard,t30-w)
+		watchguard_sdcard_do_upgrade "$1" uImage_t30 t30.dtb
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
