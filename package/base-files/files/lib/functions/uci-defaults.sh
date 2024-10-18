@@ -122,6 +122,11 @@ ucidef_set_network_device_path() {
 	_ucidef_set_network_device_common $1 path $2
 }
 
+ucidef_set_network_device_path_port() {
+	_ucidef_set_network_device_common $1 path $2
+	_ucidef_set_network_device_common $1 port $3
+}
+
 ucidef_set_network_device_gro() {
 	_ucidef_set_network_device_common $1 gro $2
 }
