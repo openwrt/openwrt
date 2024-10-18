@@ -2256,7 +2256,7 @@
 +#endif /* _EIP93_DES_H_ */
 --- /dev/null
 +++ b/drivers/crypto/mtk-eip93/eip93-main.c
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,465 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 - 2021
@@ -2636,7 +2636,6 @@
 +{
 +	struct device *dev = &pdev->dev;
 +	struct mtk_device *mtk;
-+	struct resource *res;
 +	int err;
 +
 +	mtk = devm_kzalloc(dev, sizeof(*mtk), GFP_KERNEL);
@@ -2646,8 +2645,7 @@
 +	mtk->dev = dev;
 +	platform_set_drvdata(pdev, mtk);
 +
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	mtk->base = devm_ioremap_resource(&pdev->dev, res);
++	mtk->base = devm_platform_ioremap_resource(pdev, 0);
 +
 +	if (IS_ERR(mtk->base))
 +		return PTR_ERR(mtk->base);
