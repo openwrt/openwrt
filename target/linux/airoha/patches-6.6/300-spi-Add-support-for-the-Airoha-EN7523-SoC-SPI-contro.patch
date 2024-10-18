@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -353,6 +353,12 @@ config SPI_DLN2
+@@ -363,6 +363,12 @@ config SPI_DLN2
  	 This driver can also be built as a module.  If so, the module
  	 will be called spi-dln2.
  
@@ -15,7 +15,7 @@
  	depends on ARCH_EP93XX || COMPILE_TEST
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -50,6 +50,7 @@ obj-$(CONFIG_SPI_DW_BT1)		+= spi-dw-bt1.
+@@ -51,6 +51,7 @@ obj-$(CONFIG_SPI_DW_BT1)		+= spi-dw-bt1.
  obj-$(CONFIG_SPI_DW_MMIO)		+= spi-dw-mmio.o
  obj-$(CONFIG_SPI_DW_PCI)		+= spi-dw-pci.o
  obj-$(CONFIG_SPI_EP93XX)		+= spi-ep93xx.o
