@@ -1,0 +1,9 @@
+
+. /lib/functions/system.sh
+
+switch_to_inband_interrupt_for_wifi_sdio() {
+	[ -e /lib/firmware/brcm/brcmfmac43430-sdio.txt ] && \
+		sed -i -E -e 's/^muxenab=0x10/#muxenab=0x10/' "$(readlink -f /lib/firmware/brcm/brcmfmac43430-sdio.txt)"
+}
+
+boot_hook_add preinit_mount_root switch_to_inband_interrupt_for_wifi_sdio

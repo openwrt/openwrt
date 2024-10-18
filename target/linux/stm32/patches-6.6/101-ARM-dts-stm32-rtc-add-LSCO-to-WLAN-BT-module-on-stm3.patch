@@ -1,0 +1,33 @@
+From efc03698200b363a447ef72e6b7e579f7b98522a Mon Sep 17 00:00:00 2001
+From: Valentin Caron <valentin.caron@foss.st.com>
+Date: Tue, 27 Aug 2024 16:04:50 +0200
+Subject: [PATCH 2/3] ARM: dts: stm32: rtc, add LSCO to WLAN/BT module on
+ stm32mp135f-dk
+
+On stm32mp135f-dk board, WLAN/BT module LPO_IN pin is wired to
+RTC OUT2_RMP pin.
+
+Provide a pinctrl configuration to enable LSCO on OUT2_RMP.
+
+Signed-off-by: Valentin Caron <valentin.caron@foss.st.com>
+---
+ arch/arm/boot/dts/st/stm32mp135f-dk.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/st/stm32mp135f-dk.dts
++++ b/arch/arm/boot/dts/st/stm32mp135f-dk.dts
+@@ -184,7 +184,14 @@
+ };
+ 
+ &rtc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rtc_rsvd_pins_a>;
+ 	status = "okay";
++
++	rtc_lsco_pins_a: rtc-lsco-0 {
++		pins = "out2_rmp";
++		function = "lsco";
++	};
+ };
+ 
+ &scmi_regu {
