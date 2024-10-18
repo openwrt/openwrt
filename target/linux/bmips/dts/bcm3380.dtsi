@@ -112,17 +112,17 @@
 		};
 
 		// Not in U-Boot DTS
-		periph_intc: interrupt-controller@14e00040 {
+		periph_intc: interrupt-controller@14e00048 {
 			#address-cells = <1>;
 			compatible = "brcm,bcm6345-l1-intc";
 			reg = <0x14e00048 0x08>,
-			      <0x14e00040 0x08>;
+				  <0x14e00040 0x08>;
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
 
 			interrupt-parent = <&cpu_intc>;
-			interrupts = <2>, <3>;
+			interrupts = <4>, <3>;
 		};
 
 		// Not in U-Boot DTS
