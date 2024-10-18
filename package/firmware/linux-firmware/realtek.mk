@@ -64,6 +64,13 @@ define Package/rtl8192de-firmware/install
 endef
 $(eval $(call BuildPackage,rtl8192de-firmware))
 
+Package/rtl8192du-firmware = $(call Package/firmware-default,RealTek RTL8192DU firmware,,LICENCE.rtlwifi_firmware.txt)
+define Package/rtl8192du-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtlwifi/rtl8192dufw.bin $(1)/lib/firmware/rtlwifi
+endef
+$(eval $(call BuildPackage,rtl8192du-firmware))
+
 Package/rtl8192eu-firmware = $(call Package/firmware-default,RealTek RTL8192EU firmware,,LICENCE.rtlwifi_firmware.txt)
 define Package/rtl8192eu-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi

@@ -1,10 +1,10 @@
 PKG_DRIVERS += \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common rtl8192d-common \
-	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8723-common rtl8723be rtl8723bs rtl8821ae \
-	rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-sdio rtw88-8821c rtw88-8822b rtw88-8822c \
-	rtw88-8723x rtw88-8723d rtw88-8821ce rtw88-8821cu rtw88-8822be rtw88-8822bu \
-	rtw88-8822ce rtw88-8822cu rtw88-8723de rtw88-8723ds rtw88-8723du \
-	rtw89 rtw89-pci rtw89-8851be rtw89-8852ae rtw89-8852b-common \
+	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8192du rtl8723-common rtl8723be \
+	rtl8723bs rtl8821ae rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-sdio rtw88-8821c \
+	rtw88-8822b rtw88-8822c rtw88-8723x rtw88-8723d rtw88-8821ce rtw88-8821cu \
+	rtw88-8822be rtw88-8822bu rtw88-8822ce rtw88-8822cu rtw88-8723de rtw88-8723ds \
+	rtw88-8723du rtw89 rtw89-pci rtw89-8851be rtw89-8852ae rtw89-8852b-common \
 	rtw89-8852be rtw89-8852ce rtw89-8922ae
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
@@ -16,6 +16,7 @@ config-$(call config_package,rtl8192ce) += RTL8192CE
 config-$(call config_package,rtl8192se) += RTL8192SE
 config-$(call config_package,rtl8192d-common) += RTL8192D_COMMON
 config-$(call config_package,rtl8192de) += RTL8192DE
+config-$(call config_package,rtl8192du) += RTL8192DU
 config-$(call config_package,rtl8192cu) += RTL8192CU
 config-$(call config_package,rtl8821ae) += RTL8821AE
 config-$(CONFIG_PACKAGE_RTLWIFI_DEBUG) += RTLWIFI_DEBUG
@@ -144,6 +145,14 @@ define KernelPackage/rtl8192de
   DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192d-common +rtl8192de-firmware
   FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192de/rtl8192de.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192de)
+endef
+
+define KernelPackage/rtl8192du
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192DU support
+  DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192d-common +rtl8192du-firmware
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192du/rtl8192du.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192du)
 endef
 
 define KernelPackage/rtl8192cu
