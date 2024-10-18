@@ -1,0 +1,15 @@
+--- a/libdw/Makefile.am
++++ b/libdw/Makefile.am
+@@ -99,7 +99,6 @@ libdw_a_SOURCES = dwarf_begin.c dwarf_be
+ 
+ if MAINTAINER_MODE
+ BUILT_SOURCES = $(srcdir)/known-dwarf.h
+-MAINTAINERCLEANFILES = $(srcdir)/known-dwarf.h
+ $(srcdir)/known-dwarf.h: $(top_srcdir)/config/known-dwarf.awk $(srcdir)/dwarf.h
+ 	gawk -f $^ > $@.new
+ 	mv -f $@.new $@
+@@ -167,3 +166,4 @@ libdw.manifest: $(libdw_a_OBJECTS)
+ 	echo $^ > $@
+ 
+ MOSTLYCLEANFILES = $(am_libdw_pic_a_OBJECTS) $(EXTRA_libdw_a_DEPENDENCIES) libdw.so libdw.so.$(VERSION)
++MAINTAINERCLEANFILES = $(srcdir)/known-dwarf.h
