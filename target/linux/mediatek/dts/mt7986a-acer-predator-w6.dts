@@ -446,10 +446,12 @@
 };
 
 &wifi {
-	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;
+	status = "okay";
 };
 
 &trng {
@@ -494,12 +496,52 @@
 	non-removable;
 	no-sd;
 	no-sdio;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						eeprom_factory_a0000: eeprom@a0000 {
+							reg = <0xa0000 0x1000>;
+						};
+					};
+				};
+			};
+		};
+	};
 };
 
 &pcie {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie_pins>;
 	status = "okay";
+
+	slot0: pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+
+		radio0: mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+
+			nvmem-cells = <&eeprom_factory_a0000>;
+			nvmem-cell-names = "eeprom";
+		};
+	};
 };
 
 &pcie_phy {
