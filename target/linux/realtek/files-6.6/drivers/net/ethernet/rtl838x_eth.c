@@ -2326,24 +2326,12 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	}
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
-	ret = of_mdiobus_register(priv->mii_bus, mii_np);
+	ret = devm_of_mdiobus_register(&priv->pdev->dev, priv->mii_bus, mii_np);
 
 err_put_node:
 	of_node_put(mii_np);
 
 	return ret;
-}
-
-static int rtl838x_mdio_remove(struct rtl838x_eth_priv *priv)
-{
-	pr_debug("%s called\n", __func__);
-	if (!priv->mii_bus)
-		return 0;
-
-	mdiobus_unregister(priv->mii_bus);
-	mdiobus_free(priv->mii_bus);
-
-	return 0;
 }
 
 static netdev_features_t rtl838x_fix_features(struct net_device *dev,
@@ -2489,11 +2477,9 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
 
-	dev = alloc_etherdev_mqs(sizeof(struct rtl838x_eth_priv), TXRINGS, rxrings);
-	if (!dev) {
-		err = -ENOMEM;
-		goto err_free;
-	}
+	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rtl838x_eth_priv), TXRINGS, rxrings);
+	if (!dev)
+		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	priv = netdev_priv(dev);
 
@@ -2504,16 +2490,14 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 			resource_size(res), res->name);
 		if (!mem) {
 			dev_err(&pdev->dev, "cannot request memory space\n");
-			err = -ENXIO;
-			goto err_free;
+			return -ENXIO;
 		}
 
 		dev->mem_start = mem->start;
 		dev->mem_end   = mem->end;
 	} else {
 		dev_err(&pdev->dev, "cannot request IO resource\n");
-		err = -ENXIO;
-		goto err_free;
+		return -ENXIO;
 	}
 
 	/* Allocate buffer memory */
@@ -2522,8 +2506,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	                                    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
-		err = -ENOMEM;
-		goto err_free;
+		return -ENOMEM;
 	}
 
 	/* Allocate ring-buffer space at the end of the allocated memory */
@@ -2581,7 +2564,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->irq = platform_get_irq(pdev, 0);
 	if (dev->irq < 0) {
 		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
-		goto err_free;
+		return err;
 	}
 
 	err = devm_request_irq(&pdev->dev, dev->irq, priv->r->net_irq,
@@ -2589,7 +2572,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
 			   __func__, err);
-		goto err_free;
+		return err;
 	}
 
 	rtl8380_init_mac(priv);
@@ -2628,11 +2611,11 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	err = rtl838x_mdio_init(priv);
 	if (err)
-		goto err_free;
+		return err;
 
-	err = register_netdev(dev);
+	err = devm_register_netdev(&pdev->dev, dev);
 	if (err)
-		goto err_free;
+		return err;
 
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
@@ -2646,8 +2629,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	err = of_get_phy_mode(dn, &phy_mode);
 	if (err < 0) {
 		dev_err(&pdev->dev, "incorrect phy-mode\n");
-		err = -EINVAL;
-		goto err_free;
+		return -EINVAL;
 	}
 
 	priv->pcs.ops = &rtl838x_pcs_ops;
@@ -2658,19 +2640,11 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
 				 phy_mode, &rtl838x_phylink_ops);
 
-	if (IS_ERR(phylink)) {
-		err = PTR_ERR(phylink);
-		goto err_free;
-	}
+	if (IS_ERR(phylink))
+		return PTR_ERR(phylink);
 	priv->phylink = phylink;
 
 	return 0;
-
-err_free:
-	pr_err("Error setting up netdev, freeing it again.\n");
-	free_netdev(dev);
-
-	return err;
 }
 
 static int rtl838x_eth_remove(struct platform_device *pdev)
@@ -2680,16 +2654,12 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 
 	if (dev) {
 		pr_info("Removing platform driver for rtl838x-eth\n");
-		rtl838x_mdio_remove(priv);
 		rtl838x_hw_stop(priv);
 
 		netif_tx_stop_all_queues(dev);
 
 		for (int i = 0; i < priv->rxrings; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
-
-		unregister_netdev(dev);
-		free_netdev(dev);
 	}
 
 	return 0;
