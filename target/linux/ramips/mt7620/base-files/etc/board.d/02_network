@@ -286,6 +286,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
+	zyxel,lte-3302-m432)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "6@eth0"
+		;;
 	esac
 }
 
@@ -452,6 +456,10 @@ ramips_setup_macs()
 	zyxel,keenetic-omni-ii|\
 	zyxel,keenetic-viva)
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
+		;;
+	zyxel,lte-3302-m432)
+		lan_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
+		label_mac=$lan_mac
 		;;
 	esac
 
