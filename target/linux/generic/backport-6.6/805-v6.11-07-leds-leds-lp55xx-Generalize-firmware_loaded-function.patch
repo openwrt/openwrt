@@ -1,0 +1,221 @@
+From a3df1906fb9aa9ff45149e0a3c6434b2cef4f6e7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:14 +0200
+Subject: [PATCH 07/18] leds: leds-lp55xx: Generalize firmware_loaded function
+
+Generalize firmware_loaded function as lp55xx based LED driver all share
+the same logic.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-10-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 22 +---------------------
+ drivers/leds/leds-lp5523.c        | 22 +---------------------
+ drivers/leds/leds-lp5562.c        | 26 +-------------------------
+ drivers/leds/leds-lp55xx-common.c | 25 +++++++++++++++++++++++++
+ drivers/leds/leds-lp55xx-common.h |  1 +
+ drivers/leds/leds-lp8501.c        | 22 +---------------------
+ 6 files changed, 30 insertions(+), 88 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -146,26 +146,6 @@ static void lp5521_run_engine(struct lp5
+ 		lp5521_wait_enable_done();
+ }
+ 
+-static void lp5521_firmware_loaded(struct lp55xx_chip *chip)
+-{
+-	const struct firmware *fw = chip->fw;
+-
+-	if (fw->size > LP5521_PROGRAM_LENGTH) {
+-		dev_err(&chip->cl->dev, "firmware data size overflow: %zu\n",
+-			fw->size);
+-		return;
+-	}
+-
+-	/*
+-	 * Program memory sequence
+-	 *  1) set engine mode to "LOAD"
+-	 *  2) write firmware data into program memory
+-	 */
+-
+-	lp55xx_load_engine(chip);
+-	lp55xx_update_program_memory(chip, fw->data, fw->size);
+-}
+-
+ static int lp5521_post_init_device(struct lp55xx_chip *chip)
+ {
+ 	int ret;
+@@ -411,7 +391,7 @@ static struct lp55xx_device_config lp552
+ 	.brightness_fn      = lp5521_led_brightness,
+ 	.multicolor_brightness_fn = lp5521_multicolor_brightness,
+ 	.set_led_current    = lp5521_set_led_current,
+-	.firmware_cb        = lp5521_firmware_loaded,
++	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp5521_run_engine,
+ 	.dev_attr_group     = &lp5521_group,
+ };
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -254,26 +254,6 @@ out:
+ 	return ret;
+ }
+ 
+-static void lp5523_firmware_loaded(struct lp55xx_chip *chip)
+-{
+-	const struct firmware *fw = chip->fw;
+-
+-	if (fw->size > LP5523_PROGRAM_LENGTH) {
+-		dev_err(&chip->cl->dev, "firmware data size overflow: %zu\n",
+-			fw->size);
+-		return;
+-	}
+-
+-	/*
+-	 * Program memory sequence
+-	 *  1) set engine mode to "LOAD"
+-	 *  2) write firmware data into program memory
+-	 */
+-
+-	lp55xx_load_engine(chip);
+-	lp55xx_update_program_memory(chip, fw->data, fw->size);
+-}
+-
+ static ssize_t show_engine_mode(struct device *dev,
+ 				struct device_attribute *attr,
+ 				char *buf, int nr)
+@@ -785,7 +765,7 @@ static struct lp55xx_device_config lp552
+ 	.brightness_fn      = lp5523_led_brightness,
+ 	.multicolor_brightness_fn = lp5523_multicolor_brightness,
+ 	.set_led_current    = lp5523_set_led_current,
+-	.firmware_cb        = lp5523_firmware_loaded,
++	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp5523_run_engine,
+ 	.dev_attr_group     = &lp5523_group,
+ };
+--- a/drivers/leds/leds-lp5562.c
++++ b/drivers/leds/leds-lp5562.c
+@@ -144,30 +144,6 @@ static void lp5562_run_engine(struct lp5
+ 		lp5562_wait_enable_done();
+ }
+ 
+-static void lp5562_firmware_loaded(struct lp55xx_chip *chip)
+-{
+-	const struct firmware *fw = chip->fw;
+-
+-	/*
+-	 * the firmware is encoded in ascii hex character, with 2 chars
+-	 * per byte
+-	 */
+-	if (fw->size > (LP5562_PROGRAM_LENGTH * 2)) {
+-		dev_err(&chip->cl->dev, "firmware data size overflow: %zu\n",
+-			fw->size);
+-		return;
+-	}
+-
+-	/*
+-	 * Program memory sequence
+-	 *  1) set engine mode to "LOAD"
+-	 *  2) write firmware data into program memory
+-	 */
+-
+-	lp55xx_load_engine(chip);
+-	lp55xx_update_program_memory(chip, fw->data, fw->size);
+-}
+-
+ static int lp5562_post_init_device(struct lp55xx_chip *chip)
+ {
+ 	int ret;
+@@ -404,7 +380,7 @@ static struct lp55xx_device_config lp556
+ 	.set_led_current    = lp5562_set_led_current,
+ 	.brightness_fn      = lp5562_led_brightness,
+ 	.run_engine         = lp5562_run_engine,
+-	.firmware_cb        = lp5562_firmware_loaded,
++	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.dev_attr_group     = &lp5562_group,
+ };
+ 
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -217,6 +217,31 @@ err:
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_update_program_memory);
+ 
++void lp55xx_firmware_loaded_cb(struct lp55xx_chip *chip)
++{
++	const struct firmware *fw = chip->fw;
++
++	/*
++	 * the firmware is encoded in ascii hex character, with 2 chars
++	 * per byte
++	 */
++	if (fw->size > LP55xx_PROGRAM_LENGTH * 2) {
++		dev_err(&chip->cl->dev, "firmware data size overflow: %zu\n",
++			fw->size);
++		return;
++	}
++
++	/*
++	 * Program memory sequence
++	 *  1) set engine mode to "LOAD"
++	 *  2) write firmware data into program memory
++	 */
++
++	lp55xx_load_engine(chip);
++	lp55xx_update_program_memory(chip, fw->data, fw->size);
++}
++EXPORT_SYMBOL_GPL(lp55xx_firmware_loaded_cb);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -212,6 +212,7 @@ extern void lp55xx_load_engine(struct lp
+ extern int lp55xx_run_engine_common(struct lp55xx_chip *chip);
+ extern int lp55xx_update_program_memory(struct lp55xx_chip *chip,
+ 					const u8 *data, size_t size);
++extern void lp55xx_firmware_loaded_cb(struct lp55xx_chip *chip);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -137,26 +137,6 @@ static void lp8501_run_engine(struct lp5
+ 	lp55xx_run_engine_common(chip);
+ }
+ 
+-static void lp8501_firmware_loaded(struct lp55xx_chip *chip)
+-{
+-	const struct firmware *fw = chip->fw;
+-
+-	if (fw->size > LP8501_PROGRAM_LENGTH) {
+-		dev_err(&chip->cl->dev, "firmware data size overflow: %zu\n",
+-			fw->size);
+-		return;
+-	}
+-
+-	/*
+-	 * Program memory sequence
+-	 *  1) set engine mode to "LOAD"
+-	 *  2) write firmware data into program memory
+-	 */
+-
+-	lp55xx_load_engine(chip);
+-	lp55xx_update_program_memory(chip, fw->data, fw->size);
+-}
+-
+ static int lp8501_led_brightness(struct lp55xx_led *led)
+ {
+ 	struct lp55xx_chip *chip = led->chip;
+@@ -198,7 +178,7 @@ static struct lp55xx_device_config lp850
+ 	.post_init_device   = lp8501_post_init_device,
+ 	.brightness_fn      = lp8501_led_brightness,
+ 	.set_led_current    = lp8501_set_led_current,
+-	.firmware_cb        = lp8501_firmware_loaded,
++	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp8501_run_engine,
+ };
+ 

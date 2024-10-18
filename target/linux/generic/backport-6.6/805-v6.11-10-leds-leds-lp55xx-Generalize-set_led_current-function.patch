@@ -1,0 +1,163 @@
+From 01e0290d17b2fb9717ee80fed512b32e0460b14c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:17 +0200
+Subject: [PATCH 10/18] leds: leds-lp55xx: Generalize set_led_current function
+
+Generalize set_led_current function as the implementation is the same for
+most of the lp55xx based LED driver.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-13-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5521.c        | 12 ++++--------
+ drivers/leds/leds-lp5523.c        | 12 ++++--------
+ drivers/leds/leds-lp55xx-common.c | 11 +++++++++++
+ drivers/leds/leds-lp55xx-common.h |  3 +++
+ drivers/leds/leds-lp8501.c        | 12 ++++--------
+ 5 files changed, 26 insertions(+), 24 deletions(-)
+
+--- a/drivers/leds/leds-lp5521.c
++++ b/drivers/leds/leds-lp5521.c
+@@ -108,13 +108,6 @@ static inline void lp5521_wait_enable_do
+ 	usleep_range(500, 600);
+ }
+ 
+-static void lp5521_set_led_current(struct lp55xx_led *led, u8 led_current)
+-{
+-	led->led_current = led_current;
+-	lp55xx_write(led->chip, LP5521_REG_LED_CURRENT_BASE + led->chan_nr,
+-		led_current);
+-}
+-
+ static void lp5521_stop_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -357,11 +350,14 @@ static struct lp55xx_device_config lp552
+ 	.reg_led_pwm_base = {
+ 		.addr = LP5521_REG_LED_PWM_BASE,
+ 	},
++	.reg_led_current_base = {
++		.addr = LP5521_REG_LED_CURRENT_BASE,
++	},
+ 	.max_channel  = LP5521_MAX_LEDS,
+ 	.post_init_device   = lp5521_post_init_device,
+ 	.brightness_fn      = lp55xx_led_brightness,
+ 	.multicolor_brightness_fn = lp55xx_multicolor_brightness,
+-	.set_led_current    = lp5521_set_led_current,
++	.set_led_current    = lp55xx_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp5521_run_engine,
+ 	.dev_attr_group     = &lp5521_group,
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -122,13 +122,6 @@ static inline void lp5523_wait_opmode_do
+ 	usleep_range(1000, 2000);
+ }
+ 
+-static void lp5523_set_led_current(struct lp55xx_led *led, u8 led_current)
+-{
+-	led->led_current = led_current;
+-	lp55xx_write(led->chip, LP5523_REG_LED_CURRENT_BASE + led->chan_nr,
+-		led_current);
+-}
+-
+ static int lp5523_post_init_device(struct lp55xx_chip *chip)
+ {
+ 	int ret;
+@@ -731,12 +724,15 @@ static struct lp55xx_device_config lp552
+ 	.reg_led_pwm_base = {
+ 		.addr = LP5523_REG_LED_PWM_BASE,
+ 	},
++	.reg_led_current_base = {
++		.addr = LP5523_REG_LED_CURRENT_BASE,
++	},
+ 	.pages_per_engine   = LP5523_PAGES_PER_ENGINE,
+ 	.max_channel  = LP5523_MAX_LEDS,
+ 	.post_init_device   = lp5523_post_init_device,
+ 	.brightness_fn      = lp55xx_led_brightness,
+ 	.multicolor_brightness_fn = lp55xx_multicolor_brightness,
+-	.set_led_current    = lp5523_set_led_current,
++	.set_led_current    = lp55xx_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp5523_run_engine,
+ 	.dev_attr_group     = &lp5523_group,
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -277,6 +277,17 @@ int lp55xx_multicolor_brightness(struct
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_multicolor_brightness);
+ 
++void lp55xx_set_led_current(struct lp55xx_led *led, u8 led_current)
++{
++	struct lp55xx_chip *chip = led->chip;
++	const struct lp55xx_device_config *cfg = chip->cfg;
++
++	led->led_current = led_current;
++	lp55xx_write(led->chip, cfg->reg_led_current_base.addr + led->chan_nr,
++		     led_current);
++}
++EXPORT_SYMBOL_GPL(lp55xx_set_led_current);
++
+ static void lp55xx_reset_device(struct lp55xx_chip *chip)
+ {
+ 	const struct lp55xx_device_config *cfg = chip->cfg;
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -101,6 +101,7 @@ struct lp55xx_reg {
+  * @enable             : Chip specific enable command
+  * @prog_mem_base      : Chip specific base reg address for chip SMEM programming
+  * @reg_led_pwm_base   : Chip specific base reg address for LED PWM conf
++ * @reg_led_current_base : Chip specific base reg address for LED current conf
+  * @pages_per_engine   : Assigned pages for each engine
+  *                       (if not set chip doesn't support pages)
+  * @max_channel        : Maximum number of channels
+@@ -120,6 +121,7 @@ struct lp55xx_device_config {
+ 	const struct lp55xx_reg enable;
+ 	const struct lp55xx_reg prog_mem_base;
+ 	const struct lp55xx_reg reg_led_pwm_base;
++	const struct lp55xx_reg reg_led_current_base;
+ 	const int pages_per_engine;
+ 	const int max_channel;
+ 
+@@ -217,6 +219,7 @@ extern int lp55xx_update_program_memory(
+ extern void lp55xx_firmware_loaded_cb(struct lp55xx_chip *chip);
+ extern int lp55xx_led_brightness(struct lp55xx_led *led);
+ extern int lp55xx_multicolor_brightness(struct lp55xx_led *led);
++extern void lp55xx_set_led_current(struct lp55xx_led *led, u8 led_current);
+ 
+ /* common probe/remove function */
+ extern int lp55xx_probe(struct i2c_client *client);
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -84,13 +84,6 @@ static inline void lp8501_wait_opmode_do
+ 	usleep_range(1000, 2000);
+ }
+ 
+-static void lp8501_set_led_current(struct lp55xx_led *led, u8 led_current)
+-{
+-	led->led_current = led_current;
+-	lp55xx_write(led->chip, LP8501_REG_LED_CURRENT_BASE + led->chan_nr,
+-		led_current);
+-}
+-
+ static int lp8501_post_init_device(struct lp55xx_chip *chip)
+ {
+ 	int ret;
+@@ -163,11 +156,14 @@ static struct lp55xx_device_config lp850
+ 	.reg_led_pwm_base = {
+ 		.addr = LP8501_REG_LED_PWM_BASE,
+ 	},
++	.reg_led_current_base = {
++		.addr = LP8501_REG_LED_CURRENT_BASE,
++	},
+ 	.pages_per_engine   = LP8501_PAGES_PER_ENGINE,
+ 	.max_channel  = LP8501_MAX_LEDS,
+ 	.post_init_device   = lp8501_post_init_device,
+ 	.brightness_fn      = lp55xx_led_brightness,
+-	.set_led_current    = lp8501_set_led_current,
++	.set_led_current    = lp55xx_set_led_current,
+ 	.firmware_cb        = lp55xx_firmware_loaded_cb,
+ 	.run_engine         = lp8501_run_engine,
+ };
