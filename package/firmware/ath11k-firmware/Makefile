@@ -92,6 +92,17 @@ define Build/Compile
 
 endef
 
+QCN9074_BOARD_REV:=9372f0a3be311bfaa11a214d039aa0fae5a74756
+QCN9074_BOARD_FILE:=board-2.bin.$(QCN9074_BOARD_REV)
+
+define Download/qcn9074-board
+  URL:=https://git.codelinaro.org/clo/qsdk/oss/ath11k-bdf/-/raw/NHSS.QSDK.12.5.5/QCN9074/hw1.0/WLAN.HK.2.9.0.1/WLAN.HK.2.9.0.1-01977-QCAHKSWPL_SILICONZ-1/
+  URL_FILE:=board-2.bin
+  FILE:=$(QCN9074_BOARD_FILE)
+  HASH:=2379460b1f9d44bb2d23d50712d6acf04cd067b5fd748043aeba3554190a84e9
+endef
+$(eval $(call Download,qcn9074-board))
+
 define Package/ath11k-firmware-ipq5018/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath11k/IPQ5018/hw1.0
 	$(INSTALL_DATA) \
@@ -126,7 +137,7 @@ define Package/ath11k-firmware-qcn9074/install
 		$(PKG_BUILD_DIR)/QCN9074/hw1.0/2.9.0.1/WLAN.HK.2.9.0.1-02146-QCAHKSWPL_SILICONZ-1/* \
 		$(1)/lib/firmware/ath11k/QCN9074/hw1.0/
 	$(INSTALL_BIN) \
-		$(PKG_BUILD_DIR)/QCN9074/hw1.0/board-2.bin $(1)/lib/firmware/ath11k/QCN9074/hw1.0/board-2.bin
+		$(DL_DIR)/$(QCN9074_BOARD_FILE) $(1)/lib/firmware/ath11k/QCN9074/hw1.0/board-2.bin
 endef
 
 $(eval $(call BuildPackage,ath11k-firmware-ipq5018))
