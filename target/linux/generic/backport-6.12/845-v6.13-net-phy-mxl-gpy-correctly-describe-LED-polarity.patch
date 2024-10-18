@@ -20,7 +20,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -981,7 +981,7 @@ static int gpy_led_hw_control_set(struct
+@@ -989,7 +989,7 @@ static int gpy_led_hw_control_set(struct
  static int gpy_led_polarity_set(struct phy_device *phydev, int index,
  				unsigned long modes)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 mode;
  
  	if (index >= GPY_MAX_LEDS)
-@@ -990,15 +990,23 @@ static int gpy_led_polarity_set(struct p
+@@ -998,15 +998,23 @@ static int gpy_led_polarity_set(struct p
  	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
  		switch (mode) {
  		case PHY_LED_ACTIVE_LOW:
