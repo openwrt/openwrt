@@ -1,0 +1,71 @@
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -2316,6 +2316,15 @@ config CMDLINE_OVERRIDE
+ 	  devices. This setting enables using "chosen/cmdline-override" as the
+ 	  cmdline if it exists in the device tree.
+ 
++config CMDLINE_REPLACE
++       bool "Replace specific cmdline from bootloader"
++	default n
++       help
++         Some bootloaders pass specific bootargs to the linux kernel that need
++         to additional behaviors for proper operation. This setting enables
++         replacing bootargs from "chosen/cmdline-replace" at early boot if it
++         exists in the device tree.
++
+ config EFI_STUB
+ 	bool
+ 
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1157,6 +1157,11 @@ int __init early_init_dt_scan_chosen(cha
+ 	const void *rng_seed;
+ 	const void *fdt = initial_boot_params;
+ 
++#ifdef CONFIG_CMDLINE_REPLACE
++	char *delim;
++	char *str;
++#endif
++
+ 	node = fdt_path_offset(fdt, "/chosen");
+ 	if (node < 0)
+ 		node = fdt_path_offset(fdt, "/chosen@0");
+@@ -1200,6 +1205,38 @@ int __init early_init_dt_scan_chosen(cha
+ 		strlcpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
+ #endif
+ 
++    /* CONFIG_CMDLINE_REPLACE is used to replace a kernel argument at early-
++     * boot with a different device tree option in chosen/bootargs-replace.
++     * This is helpful for boards where u-boot sets bootargs, and is need
++     * to be identified and replaced.
++     */
++#ifdef CONFIG_CMDLINE_REPLACE
++	p = of_get_flat_dt_prop(node, "bootargs-replace", &l);
++	if (p != NULL && l > 0) {
++		if ((delim = strstr(p, "|")) != NULL) {
++			*delim = '\0';
++
++			/* bound check and is replace available */
++			if (!(p + l < delim + 1) &&
++				(str = strstr(cmdline, p)) != NULL) {
++				if (strlen(p) != strlen(delim + 1))
++					memmove(str + strlen(delim + 1), str + strlen(p),
++						min_t(int, strlen(str + strlen(p)) + 1,
++						COMMAND_LINE_SIZE));
++
++				memcpy(str, delim + 1,
++					min_t(int, strlen(delim + 1), COMMAND_LINE_SIZE));
++
++				/* update CRC check value */
++				of_fdt_crc32 = crc32_be(~0, initial_boot_params,
++						fdt_totalsize(initial_boot_params));
++			}
++			else
++				*delim = '|';
++		}
++	}
++#endif
++
+ handle_cmdline:
+ 	/*
+ 	 * CONFIG_CMDLINE is meant to be a default in case nothing else
