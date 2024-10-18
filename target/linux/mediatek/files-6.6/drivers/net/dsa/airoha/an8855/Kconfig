@@ -1,0 +1,10 @@
+
+config NET_DSA_AN8855
+	tristate "Airoha AN8855 Ethernet switch support"
+	depends on NET_DSA
+	select NET_DSA_TAG_AIROHA
+	help
+	  AN8855 support 2.5G speed and managed by SMI interface.
+	  This enables support for the Airoha AN8855 Ethernet switch
+	  chip.
+	  To compile this driver as a module, choose M here.

@@ -1,0 +1,219 @@
+From 13b2da6a267d2d6435f80ec13679777ff30cb1c7 Mon Sep 17 00:00:00 2001
+From: dimfish <dimfish@gmail.com>
+Date: Fri, 11 Oct 2022 19:10:04 +0300
+Subject: 735-net-dsa-add-Airoha-AN8855.patch
+
+---
+ include/net/dsa.h  |   2 +
+ net/dsa/Makefile   |   2 +-
+ net/dsa/tag_arht.c | 128 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 131 insertions(+), 1 deletion(-)
+ create mode 100644 net/dsa/tag_arht.c
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -56,6 +56,7 @@ struct phylink_link_state;
+ #define DSA_TAG_PROTO_RTL8_4T_VALUE		25
+ #define DSA_TAG_PROTO_RZN1_A5PSW_VALUE		26
+ #define DSA_TAG_PROTO_LAN937X_VALUE		27
++#define DSA_TAG_PROTO_ARHT_VALUE		28
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -86,6 +87,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_RTL8_4T		= DSA_TAG_PROTO_RTL8_4T_VALUE,
+ 	DSA_TAG_PROTO_RZN1_A5PSW	= DSA_TAG_PROTO_RZN1_A5PSW_VALUE,
+ 	DSA_TAG_PROTO_LAN937X		= DSA_TAG_PROTO_LAN937X_VALUE,
++	DSA_TAG_PROTO_ARHT		= DSA_TAG_PROTO_ARHT_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -2,6 +2,8 @@
+ menu "Distributed Switch Architecture drivers"
+ 	depends on NET_DSA
+ 
++source "drivers/net/dsa/airoha/an8855/Kconfig"
++
+ source "drivers/net/dsa/b53/Kconfig"
+ 
+ config NET_DSA_BCM_SF2
+--- a/drivers/net/dsa/Makefile
++++ b/drivers/net/dsa/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_NET_DSA_SMSC_LAN9303_MDIO)
+ obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX) += vitesse-vsc73xx-core.o
+ obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX_PLATFORM) += vitesse-vsc73xx-platform.o
+ obj-$(CONFIG_NET_DSA_VITESSE_VSC73XX_SPI) += vitesse-vsc73xx-spi.o
++obj-y				+= airoha/an8855/
+ obj-y				+= b53/
+ obj-y				+= hirschmann/
+ obj-y				+= microchip/
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -24,6 +24,12 @@ config NET_DSA_TAG_NONE
+ 	  Say Y or M if you want to enable support for switches which don't tag
+ 	  frames over the CPU port.
+ 
++config NET_DSA_TAG_AIROHA
++	tristate "Tag driver for Airoha switches"
++	help
++	  Say Y or M if you want to enable support for tagging frames for
++	  Airoha switches.
++
+ config NET_DSA_TAG_AR9331
+ 	tristate "Tag driver for Atheros AR9331 SoC with built-in switch"
+ 	help
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -20,6 +20,7 @@ dsa_core-y += \
+ 	trace.o
+ 
+ # tagging formats
++obj-$(CONFIG_NET_DSA_TAG_AIROHA) += tag_arht.o
+ obj-$(CONFIG_NET_DSA_TAG_AR9331) += tag_ar9331.o
+ obj-$(CONFIG_NET_DSA_TAG_BRCM_COMMON) += tag_brcm.o
+ obj-$(CONFIG_NET_DSA_TAG_DSA_COMMON) += tag_dsa.o
+--- /dev/null
++++ b/net/dsa/tag_arht.c
+@@ -0,0 +1,140 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Airoha DSA Tag support
++ * Copyright (C) 2023 Min Yao <min.yao@airoha.com>
++ */
++
++#include <linux/etherdevice.h>
++#include <linux/if_vlan.h>
++#include <linux/version.h>
++#if (KERNEL_VERSION(6, 2, 0) <= LINUX_VERSION_CODE)
++#include "slave.h"
++#include "tag.h"
++#else
++#include "dsa_priv.h"
++#endif
++
++#define AIR_NAME		"air"
++
++#define AIR_HDR_LEN		4
++#define AIR_HDR_XMIT_UNTAGGED		0
++#define AIR_HDR_XMIT_TAGGED_TPID_8100	1
++#define AIR_HDR_XMIT_TAGGED_TPID_88A8	2
++#define AIR_HDR_RECV_SOURCE_PORT_MASK	GENMASK(2, 0)
++#define AIR_HDR_XMIT_DP_BIT_MASK	GENMASK(5, 0)
++
++static struct sk_buff *air_tag_xmit(struct sk_buff *skb,
++				    struct net_device *dev)
++{
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++	u8 xmit_tpid;
++	u8 *air_tag;
++
++	/* Build the special tag after the MAC Source Address. If VLAN header
++	 * is present, it's required that VLAN header and special tag is
++	 * being combined. Only in this way we can allow the switch can parse
++	 * the both special and VLAN tag at the same time and then look up VLAN
++	 * table with VID.
++	 */
++	switch (skb->protocol) {
++	case htons(ETH_P_8021Q):
++		xmit_tpid = AIR_HDR_XMIT_TAGGED_TPID_8100;
++		break;
++	case htons(ETH_P_8021AD):
++		xmit_tpid = AIR_HDR_XMIT_TAGGED_TPID_88A8;
++		break;
++	default:
++		if (skb_cow_head(skb, AIR_HDR_LEN) < 0)
++			return NULL;
++
++		xmit_tpid = AIR_HDR_XMIT_UNTAGGED;
++		skb_push(skb, AIR_HDR_LEN);
++		memmove(skb->data, skb->data + AIR_HDR_LEN, 2 * ETH_ALEN);
++	}
++
++	air_tag = skb->data + 2 * ETH_ALEN;
++
++	/* Mark tag attribute on special tag insertion to notify hardware
++	 * whether that's a combined special tag with 802.1Q header.
++	 */
++	air_tag[0] = xmit_tpid;
++	air_tag[1] = (1 << dp->index) & AIR_HDR_XMIT_DP_BIT_MASK;
++
++	/* Tag control information is kept for 802.1Q */
++	if (xmit_tpid == AIR_HDR_XMIT_UNTAGGED) {
++		air_tag[2] = 0;
++		air_tag[3] = 0;
++	}
++
++	return skb;
++}
++
++static struct sk_buff *air_tag_rcv(struct sk_buff *skb, struct net_device *dev)
++{
++	int port;
++	__be16 *phdr, hdr;
++	unsigned char *dest = eth_hdr(skb)->h_dest;
++	bool is_multicast_skb = is_multicast_ether_addr(dest) &&
++				!is_broadcast_ether_addr(dest);
++
++	if (dev->features & NETIF_F_HW_VLAN_CTAG_RX) {
++		hdr = ntohs(skb->vlan_proto);
++		skb->vlan_proto = 0;
++		skb->vlan_tci = 0;
++	} else {
++		if (unlikely(!pskb_may_pull(skb, AIR_HDR_LEN)))
++			return NULL;
++
++		/* The AIR header is added by the switch between src addr
++		 * and ethertype at this point, skb->data points to 2 bytes
++		 * after src addr so header should be 2 bytes right before.
++		 */
++		phdr = (__be16 *)(skb->data - 2);
++		hdr = ntohs(*phdr);
++
++		/* Remove AIR tag and recalculate checksum. */
++		skb_pull_rcsum(skb, AIR_HDR_LEN);
++
++		memmove(skb->data - ETH_HLEN,
++			skb->data - ETH_HLEN - AIR_HDR_LEN,
++			2 * ETH_ALEN);
++	}
++
++	/* Get source port information */
++	port = (hdr & AIR_HDR_RECV_SOURCE_PORT_MASK);
++
++	skb->dev = dsa_master_find_slave(dev, 0, port);
++	if (!skb->dev)
++		return NULL;
++
++	/* Only unicast or broadcast frames are offloaded */
++	if (likely(!is_multicast_skb))
++		skb->offload_fwd_mark = 1;
++
++	return skb;
++}
++
++static void air_tag_flow_dissect(const struct sk_buff *skb, __be16 *proto,
++				int *offset)
++{
++	*offset = 4;
++	*proto = ((__be16 *)skb->data)[1];
++}
++
++static const struct dsa_device_ops air_netdev_ops = {
++	.name		 = AIR_NAME,
++	.proto		 = DSA_TAG_PROTO_ARHT,
++	.xmit		 = air_tag_xmit,
++	.rcv		 = air_tag_rcv,
++	.flow_dissect	 = air_tag_flow_dissect,
++	.needed_headroom = AIR_HDR_LEN,
++};
++
++MODULE_LICENSE("GPL");
++#if (KERNEL_VERSION(6, 2, 0) <= LINUX_VERSION_CODE)
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_AIR, AIR_NAME);
++#else
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_AIR);
++#endif
++
++module_dsa_tag_driver(air_netdev_ops);
