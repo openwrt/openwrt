@@ -1355,11 +1355,6 @@ static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	return 0;
 }
 
-static int rtl8214c_match_phy_device(struct phy_device *phydev)
-{
-	return phydev->phy_id == PHY_ID_RTL8214C;
-}
-
 static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 {
 	u32 phy_id, val;
@@ -3895,10 +3890,9 @@ static int rtl9300_serdes_probe(struct phy_device *phydev)
 
 static struct phy_driver rtl83xx_phy_driver[] = {
 	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8214C),
+		PHY_ID_MATCH_EXACT(PHY_ID_RTL8214C),
 		.name		= "Realtek RTL8214C",
 		.features	= PHY_GBIT_FEATURES,
-		.match_phy_device = rtl8214c_match_phy_device,
 		.probe		= rtl8214c_phy_probe,
 		.read_page	= rtl821x_read_page,
 		.write_page	= rtl821x_write_page,
