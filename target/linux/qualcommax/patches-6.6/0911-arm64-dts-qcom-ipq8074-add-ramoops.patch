@@ -1,0 +1,16 @@
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -198,6 +198,13 @@
+ 			no-map;
+ 			reg = <0x0 0x51000000 0x0 0x100000>;
+ 		};
++
++		ramoops_region: ramoops@51200000 {
++			compatible = "ramoops";
++			reg = <0x0 0x51200000 0x0 0x100000>;
++			no-map;
++			record-size = <0x1000>;
++		};
+ 	};
+ 
+ 	firmware {
