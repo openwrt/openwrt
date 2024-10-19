@@ -53,7 +53,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_SENSORS_IBMPOWERNV)+= ibmpowernv.o
 --- /dev/null
 +++ b/drivers/hwmon/iei-wt61p803-puzzle-hwmon.c
-@@ -0,0 +1,445 @@
+@@ -0,0 +1,447 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU HWMON Driver
 + *
@@ -457,7 +457,9 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +
 +	mcu_hwmon->mcu = mcu;
 +	platform_set_drvdata(pdev, mcu_hwmon);
-+	mutex_init(&mcu_hwmon->lock);
++	ret = devm_mutex_init(dev, &mcu_hwmon->lock);
++	if (ret)
++		return ret;
 +
 +	hwmon_dev = devm_hwmon_device_register_with_info(dev, "iei_wt61p803_puzzle",
 +							 mcu_hwmon,
