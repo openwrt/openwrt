@@ -34,17 +34,20 @@ proto_qmi_init_config() {
 
 proto_qmi_setup() {
 	local interface="$1"
-	local dataformat connstat plmn_mode mcc mnc
-	local device apn v6apn auth username password pincode delay modes pdptype
-	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
-	local ip4table ip6table
-	local cid_4 pdh_4 cid_6 pdh_6
-	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
+
+	local connstat dataformat mcc mnc plmn_mode
+	local cid_4 cid_6 pdh_4 pdh_6
+	local dns1_6 dns2_6 gateway_6 ip_6 ip_prefix_length
 	local profile_pdptype
 
-	json_get_vars device apn v6apn auth username password pincode delay modes
-	json_get_vars pdptype profile v6profile dhcp dhcpv6 sourcefilter delegate autoconnect plmn ip4table
-	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
+	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+
+	local apn auth delay device modes password pdptype pincode username v6apn
+	json_get_vars apn auth delay device modes password pdptype pincode username v6apn
+
+	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout
+	json_get_vars profile v6profile dhcp dhcpv6 autoconnect plmn timeout
 
 	[ "$timeout" = "" ] && timeout="10"
 
