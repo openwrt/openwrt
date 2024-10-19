@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=dsl_cpe_control_danube
 PKG_VERSION:=3.24.4.4
-PKG_RELEASE:=12
+PKG_RELEASE:=13
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 PKG_SOURCE_URL:=@OPENWRT
@@ -77,6 +77,7 @@ define Package/ltq-adsl-app/install
 	$(INSTALL_BIN) ./files/10_atm.sh $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) ./files/10_ptm.sh $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin
+	$(INSTALL_BIN) ./files/dsl_cpe_pipe.sh $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ltq-adsl-app))
