@@ -47,7 +47,7 @@
  
  	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_power_cmd,
  						sizeof(led_power_cmd),
-@@ -90,39 +106,166 @@ static enum led_brightness iei_wt61p803_
+@@ -90,39 +106,168 @@ static enum led_brightness iei_wt61p803_
  	return led_state;
  }
  
@@ -194,7 +194,9 @@
 +			goto put_child_node;
 +		}
 +
-+		mutex_init(&priv->lock);
++		ret = devm_mutex_init(dev, &priv->lock);
++		if (ret)
++			goto put_child_node;
 +
 +		dev_set_drvdata(dev, priv);
 +
