@@ -29,8 +29,6 @@ struct sf_gpio_priv {
 	unsigned int irq[];
 };
 
-#define to_sf_gpio(x)	container_of(x, struct sf_gpio_priv, gc)
-
 static u32 sf_gpio_rd(struct sf_gpio_priv *priv, unsigned long reg)
 {
 	return readl_relaxed(priv->base + reg);
@@ -44,7 +42,7 @@ static void sf_gpio_wr(struct sf_gpio_priv *priv, unsigned long reg,
 
 static int sf_gpio_get_value(struct gpio_chip *gc, unsigned int offset)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	return sf_gpio_rd(priv, GPIO_IR(offset));
 }
@@ -52,14 +50,14 @@ static int sf_gpio_get_value(struct gpio_chip *gc, unsigned int offset)
 static void sf_gpio_set_value(struct gpio_chip *gc, unsigned int offset,
 			      int value)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	sf_gpio_wr(priv, GPIO_OR(offset), value);
 }
 
 static int sf_gpio_get_direction(struct gpio_chip *gc, unsigned int offset)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	if (sf_gpio_rd(priv, GPIO_OEN(offset)))
 		return GPIO_LINE_DIRECTION_IN;
@@ -69,7 +67,7 @@ static int sf_gpio_get_direction(struct gpio_chip *gc, unsigned int offset)
 
 static int sf_gpio_direction_input(struct gpio_chip *gc, unsigned int offset)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	sf_gpio_wr(priv, GPIO_OEN(offset), 1);
 	return 0;
@@ -78,7 +76,7 @@ static int sf_gpio_direction_input(struct gpio_chip *gc, unsigned int offset)
 static int sf_gpio_direction_output(struct gpio_chip *gc, unsigned int offset,
 				    int value)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 
 	sf_gpio_wr(priv, GPIO_OR(offset), value);
 	sf_gpio_wr(priv, GPIO_OEN(offset), 0);
@@ -88,7 +86,7 @@ static int sf_gpio_direction_output(struct gpio_chip *gc, unsigned int offset,
 static int sf_gpio_set_debounce(struct gpio_chip *gc, unsigned int offset,
 				u32 debounce)
 {
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned long freq = clk_get_rate(priv->clk);
 	u64 mul;
 
@@ -119,7 +117,7 @@ static int sf_gpio_set_config(struct gpio_chip *gc, unsigned int offset,
 static void sf_gpio_irq_ack(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned long offset = irqd_to_hwirq(data);
 
 	sf_gpio_wr(priv, GPIO_PIR(offset), 0);
@@ -128,7 +126,7 @@ static void sf_gpio_irq_ack(struct irq_data *data)
 static void sf_gpio_irq_mask(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned long offset = irqd_to_hwirq(data);
 
 	sf_gpio_wr(priv, GPIO_IMR(offset), 1);
@@ -138,7 +136,7 @@ static void sf_gpio_irq_mask(struct irq_data *data)
 static void sf_gpio_irq_unmask(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned long offset = irqd_to_hwirq(data);
 
 	sf_gpio_wr(priv, GPIO_IMR(offset), 0);
@@ -183,7 +181,7 @@ static int sf_gpio_irq_set_affinity(struct irq_data *data,
 static int sf_gpio_irq_set_type(struct irq_data *data, unsigned int flow_type)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned long offset = irqd_to_hwirq(data);
 	u32 val;
 
@@ -231,7 +229,7 @@ static void sf_gpio_irq_handler(struct irq_desc *desc)
 {
 	struct gpio_chip *gc = irq_desc_get_handler_data(desc);
 	struct irq_chip *ic = irq_desc_get_chip(desc);
-	struct sf_gpio_priv *priv = to_sf_gpio(gc);
+	struct sf_gpio_priv *priv = gpiochip_get_data(gc);
 	unsigned int irq = irq_desc_get_irq(desc);
 	unsigned int group = irq - priv->irq[0];
 	unsigned long pending;
