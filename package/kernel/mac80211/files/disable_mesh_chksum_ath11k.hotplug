@@ -1,0 +1,24 @@
+#!/bin/sh
+# shellcheck disable=1090
+PROG=${0##*/}
+[ "$ACTION" = "add" ] && [ "$DEVTYPE" = "wlan" ] || exit 0
+
+UEVENT="/sys/class/net/$INTERFACE/device/uevent"
+[ -r "$UEVENT" ] || exit 0
+
+DRIVER=$(awk -F= '/^DRIVER/{print $2}' "$UEVENT")
+case "$DRIVER" in
+  *ath11k*)
+    mode=$(ubus call network.wireless status \
+      | jsonfilter -e "@[*].interfaces[@.ifname='$INTERFACE'].config.mode" 2> /dev/null)
+    [ "$mode" = "mesh" ] || exit 0
+
+    INC="/lib/netifd/offload/disable_offloads.sh"
+    . "$INC" 2> /dev/null || {
+      logger -t "$PROG" -p user.error "missing include script $INC. exiting..."
+      exit 1
+    }
+
+    disable_feature tx-checksumming "$INTERFACE"
+    ;;
+esac
