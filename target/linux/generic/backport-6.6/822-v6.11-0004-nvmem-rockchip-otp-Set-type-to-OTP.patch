@@ -1,0 +1,25 @@
+From 39f95600d8c53355b212a117e91a6ba15e0cac47 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko.stuebner@cherry.de>
+Date: Fri, 5 Jul 2024 08:48:42 +0100
+Subject: [PATCH] nvmem: rockchip-otp: Set type to OTP
+
+The Rockchip OTP is obviously an OTP memory, so document this fact.
+
+Signed-off-by: Heiko Stuebner <heiko.stuebner@cherry.de>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-6-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/rockchip-otp.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/rockchip-otp.c
++++ b/drivers/nvmem/rockchip-otp.c
+@@ -256,6 +256,7 @@ static struct nvmem_config otp_config =
+ 	.name = "rockchip-otp",
+ 	.owner = THIS_MODULE,
+ 	.add_legacy_fixed_of_cells = true,
++	.type = NVMEM_TYPE_OTP,
+ 	.read_only = true,
+ 	.stride = 1,
+ 	.word_size = 1,

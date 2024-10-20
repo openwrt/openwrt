@@ -1,0 +1,171 @@
+From a5c05453a13ab324ad8719e8a23dfb6af01f3652 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 20 Jun 2024 17:26:42 +0200
+Subject: [PATCH 1/4] mips: bmips: rework and cache CBR addr handling
+
+Rework the handling of the CBR address and cache it. This address
+doesn't change and can be cached instead of reading the register every
+time.
+
+This is in preparation of permitting to tweak the CBR address in DT with
+broken SoC or bootloader.
+
+bmips_cbr_addr is defined in setup.c for each arch to keep compatibility
+with legacy brcm47xx/brcm63xx and generic BMIPS target.
+
+Acked-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/bcm47xx/prom.c      | 3 +++
+ arch/mips/bcm47xx/setup.c     | 4 ++++
+ arch/mips/bcm63xx/prom.c      | 3 +++
+ arch/mips/bcm63xx/setup.c     | 4 ++++
+ arch/mips/bmips/dma.c         | 2 +-
+ arch/mips/bmips/setup.c       | 7 ++++++-
+ arch/mips/include/asm/bmips.h | 1 +
+ arch/mips/kernel/smp-bmips.c  | 4 ++--
+ 8 files changed, 24 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/bcm47xx/prom.c
++++ b/arch/mips/bcm47xx/prom.c
+@@ -32,6 +32,7 @@
+ #include <linux/ssb/ssb_driver_chipcommon.h>
+ #include <linux/ssb/ssb_regs.h>
+ #include <linux/smp.h>
++#include <asm/bmips.h>
+ #include <asm/bootinfo.h>
+ #include <bcm47xx.h>
+ #include <bcm47xx_board.h>
+@@ -109,6 +110,8 @@ static __init void prom_init_mem(void)
+ 
+ void __init prom_init(void)
+ {
++	/* Cache CBR addr before CPU/DMA setup */
++	bmips_cbr_addr = BMIPS_GET_CBR();
+ 	prom_init_mem();
+ 	setup_8250_early_printk_port(CKSEG1ADDR(BCM47XX_SERIAL_ADDR), 0, 0);
+ }
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -37,6 +37,7 @@
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_embedded.h>
+ #include <linux/bcma/bcma_soc.h>
++#include <asm/bmips.h>
+ #include <asm/bootinfo.h>
+ #include <asm/idle.h>
+ #include <asm/prom.h>
+@@ -45,6 +46,9 @@
+ #include <bcm47xx.h>
+ #include <bcm47xx_board.h>
+ 
++/* CBR addr doesn't change and we can cache it */
++void __iomem *bmips_cbr_addr __read_mostly;
++
+ union bcm47xx_bus bcm47xx_bus;
+ EXPORT_SYMBOL(bcm47xx_bus);
+ 
+--- a/arch/mips/bcm63xx/prom.c
++++ b/arch/mips/bcm63xx/prom.c
+@@ -22,6 +22,9 @@ void __init prom_init(void)
+ {
+ 	u32 reg, mask;
+ 
++	/* Cache CBR addr before CPU/DMA setup */
++	bmips_cbr_addr = BMIPS_GET_CBR();
++
+ 	bcm63xx_cpu_init();
+ 
+ 	/* stop any running watchdog */
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -12,6 +12,7 @@
+ #include <linux/memblock.h>
+ #include <linux/ioport.h>
+ #include <linux/pm.h>
++#include <asm/bmips.h>
+ #include <asm/bootinfo.h>
+ #include <asm/time.h>
+ #include <asm/reboot.h>
+@@ -22,6 +23,9 @@
+ #include <bcm63xx_io.h>
+ #include <bcm63xx_gpio.h>
+ 
++/* CBR addr doesn't change and we can cache it */
++void __iomem *bmips_cbr_addr __read_mostly;
++
+ void bcm63xx_machine_halt(void)
+ {
+ 	pr_info("System halted\n");
+--- a/arch/mips/bmips/dma.c
++++ b/arch/mips/bmips/dma.c
+@@ -9,7 +9,7 @@ bool bmips_rac_flush_disable;
+ 
+ void arch_sync_dma_for_cpu_all(void)
+ {
+-	void __iomem *cbr = BMIPS_GET_CBR();
++	void __iomem *cbr = bmips_cbr_addr;
+ 	u32 cfg;
+ 
+ 	if (boot_cpu_type() != CPU_BMIPS3300 &&
+--- a/arch/mips/bmips/setup.c
++++ b/arch/mips/bmips/setup.c
+@@ -34,6 +34,9 @@
+ #define REG_BCM6328_OTP		((void __iomem *)CKSEG1ADDR(0x1000062c))
+ #define BCM6328_TP1_DISABLED	BIT(9)
+ 
++/* CBR addr doesn't change and we can cache it */
++void __iomem *bmips_cbr_addr __read_mostly;
++
+ extern bool bmips_rac_flush_disable;
+ 
+ static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
+@@ -111,7 +114,7 @@ static void bcm6358_quirks(void)
+ 	 * because the bootloader is not initializing it properly.
+ 	 */
+ 	bmips_rac_flush_disable = !!(read_c0_brcm_cmt_local() & (1 << 31)) ||
+-				  !!BMIPS_GET_CBR();
++				  !!bmips_cbr_addr;
+ }
+ 
+ static void bcm6368_quirks(void)
+@@ -144,6 +147,8 @@ static void __init bmips_init_cfe(void)
+ 
+ void __init prom_init(void)
+ {
++	/* Cache CBR addr before CPU/DMA setup */
++	bmips_cbr_addr = BMIPS_GET_CBR();
+ 	bmips_init_cfe();
+ 	bmips_cpu_setup();
+ 	register_bmips_smp_ops();
+--- a/arch/mips/include/asm/bmips.h
++++ b/arch/mips/include/asm/bmips.h
+@@ -81,6 +81,7 @@ extern char bmips_smp_movevec[];
+ extern char bmips_smp_int_vec[];
+ extern char bmips_smp_int_vec_end[];
+ 
++extern void __iomem *bmips_cbr_addr;
+ extern int bmips_smp_enabled;
+ extern int bmips_cpu_offset;
+ extern cpumask_t bmips_booted_mask;
+--- a/arch/mips/kernel/smp-bmips.c
++++ b/arch/mips/kernel/smp-bmips.c
+@@ -518,7 +518,7 @@ static void bmips_set_reset_vec(int cpu,
+ 		info.val = val;
+ 		bmips_set_reset_vec_remote(&info);
+ 	} else {
+-		void __iomem *cbr = BMIPS_GET_CBR();
++		void __iomem *cbr = bmips_cbr_addr;
+ 
+ 		if (cpu == 0)
+ 			__raw_writel(val, cbr + BMIPS_RELO_VECTOR_CONTROL_0);
+@@ -591,7 +591,7 @@ asmlinkage void __weak plat_wired_tlb_se
+ 
+ void bmips_cpu_setup(void)
+ {
+-	void __iomem __maybe_unused *cbr = BMIPS_GET_CBR();
++	void __iomem __maybe_unused *cbr = bmips_cbr_addr;
+ 	u32 __maybe_unused cfg;
+ 
+ 	switch (current_cpu_type()) {
