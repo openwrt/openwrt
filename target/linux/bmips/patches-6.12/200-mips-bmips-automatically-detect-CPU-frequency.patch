@@ -75,7 +75,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -126,9 +168,22 @@ static void bcm6368_quirks(void)
+@@ -126,9 +168,28 @@ static void bcm6368_quirks(void)
  	bcm63xx_fixup_cpu1();
  }
  
@@ -88,7 +88,13 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	write_c0_diag(c0_reg22);
 +	change_c0_config(CONF_CM_CMASK, CONF_CM_CACHABLE_NONCOHERENT);
 +
-+	bcm6358_quirks();
++	/*
++	 * RAC flush causes kernel panics on BCM6358 when booting from TP1
++	 * because the bootloader is not initializing it properly.
++	 */
++	bmips_rac_flush_disable = !!(read_c0_brcm_cmt_local() & (1 << 31)) ||
++				  !!bmips_cbr_addr;
++
 +	bcm63xx_fixup_cpu1();
 +}
 +
@@ -99,7 +105,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
  	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
  	{ "brcm,bcm6328",		&bcm6328_quirks			},
-@@ -164,17 +219,167 @@ const char *get_system_type(void)
+@@ -164,17 +225,167 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
