@@ -32,9 +32,9 @@ https://patchwork.kernel.org/project/netdevbpf/patch/20240425023325.15586-3-SkyL
 
 --- a/drivers/net/phy/air_en8811h.c
 +++ b/drivers/net/phy/air_en8811h.c
-@@ -544,6 +544,10 @@ static int air_hw_led_on_set(struct phy_
- 
- 	changed |= (priv->led[index].rules != 0);
+@@ -548,6 +548,10 @@ static int air_hw_led_on_set(struct phy_
+ 	if (!on)
+ 		priv->led[index].rules = 0;
  
 +	/* clear netdev trigger rules in case LED_OFF has been set */
 +	if (!on)
