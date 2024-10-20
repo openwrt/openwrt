@@ -55,6 +55,24 @@
 		partition@80000 {
 			label = "u-boot-env";
 			reg = <0x80000 0xc0000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x20000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
 		};
 
 		partition@140000 {
@@ -85,10 +103,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy0 {
