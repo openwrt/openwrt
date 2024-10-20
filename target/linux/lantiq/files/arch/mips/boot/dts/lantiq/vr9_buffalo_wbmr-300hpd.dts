@@ -182,6 +182,11 @@
 	};
 };
 
+&gswip {
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip_mdio {
 	phy11: ethernet-phy@11 {
 		reg = <0x11>;
@@ -265,8 +270,13 @@
 			};
 
 			partition@ff0000 {
+				compatible = "u-boot,env";
 				reg = <0xff0000 0x2000>;
 				label = "u-boot-env";
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@ff3000 {

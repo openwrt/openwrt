@@ -140,6 +140,8 @@
 &gswip {
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gswip_mdio {
@@ -190,6 +192,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&ethaddr_uboot 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
