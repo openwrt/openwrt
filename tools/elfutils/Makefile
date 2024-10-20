@@ -55,7 +55,7 @@ export $(PKG_GNULIB_BASE)_fallocate-posix=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.o
 
 HOST_MAKE_FLAGS += \
-	DEFAULT_INCLUDES='-I. -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
+	DEFAULT_INCLUDES='-iquote . -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_fallocate-posix))' \
