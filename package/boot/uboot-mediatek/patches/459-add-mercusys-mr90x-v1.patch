@@ -1,0 +1,343 @@
+--- /dev/null
++++ b/configs/mt7986_mercusys_mr90x-v1_defconfig
+@@ -0,0 +1,107 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEFAULT_DEVICE_TREE="mt7986b-mercusys_mr90x-v1"
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_TARGET_MT7986=y
++CONFIG_PRE_CON_BUF_ADDR=0x4007ef00
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986b-mercusys_mr90x-v1.dtb"
++CONFIG_LOGLEVEL=7
++CONFIG_PRE_CONSOLE_BUFFER=y
++CONFIG_LOG=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="MT7986> "
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_STRINGS=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_UUID=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_OF_EMBED=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="mercusys_mr90x-v1_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_VERSION_VARIABLE=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_NETCONSOLE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_GPIO_HOG=y
++# CONFIG_I2C is not set
++# CONFIG_MMC is not set
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7986=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_RANDOM_UUID=y
++CONFIG_ZSTD=y
++CONFIG_HEXDUMP=y
++CONFIG_LMB_MAX_REGIONS=64
+--- /dev/null
++++ b/arch/arm/dts/mt7986b-mercusys_mr90x-v1.dts
+@@ -0,0 +1,174 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2024
++ * Author: Mikhail Zhilkin <csharper2005@gmail.com>
++ */
++
++/dts-v1/;
++#include "mt7986.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "MERCUSYS MR90X v1";
++	compatible = "mediatek,mt7986", "mediatek,mt7986-rfb";
++
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-0 {
++			label = "green:lan2";
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++		};
++
++		led-1 {
++			label = "green:lan1";
++			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++		};
++
++		led-2 {
++			label = "green:lan0";
++			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
++		};
++
++		led-3 {
++			label = "green:wan";
++			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++		};
++
++		led-4 {
++			label = "amber:status";
++			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
++		};
++
++		led_status_green: led-5 {
++			label = "green:status";
++			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "disabled";
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "2500base-x";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <2500>;
++		full-duplex;
++	};
++};
++
++&pinctrl {
++	spi_flash_pins: spi0-pins-func-1 {
++		mux {
++			function = "flash";
++			groups = "spi0", "spi0_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_00>;
++		};
++
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
++		};
++	};
++
++	spic_pins: spi1-pins-func-1 {
++		mux {
++			function = "spi";
++			groups = "spi1_2";
++		};
++	};
++
++	uart1_pins: spi1-pins-func-3 {
++		mux {
++			function = "uart";
++			groups = "uart1_2";
++		};
++	};
++};
++
++&spi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	spi_nand@1 {
++		compatible = "spi-nand";
++		reg = <1>;
++		spi-max-frequency = <20000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				reg = <0x0 0x100000>;
++				label = "bl2";
++			};
++
++			partition@100000 {
++				reg = <0x100000 0x100000>;
++				label = "factory";
++			};
++
++			partition@200000 {
++				reg = <0x200000 0x7e00000>;
++				label = "ubi";
++			};
++		};
++	};
++};
++
++&watchdog {
++	status = "disabled";
++};
+--- /dev/null
++++ b/mercusys_mr90x-v1_env
+@@ -0,0 +1,53 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x46000000
++console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
++bootargs=console=ttyS0,115200n8 console_msg_format=syslog
++bootcmd=run check_buttons ; run boot_production ; run boot_recovery
++bootconf=config-1
++bootdelay=0
++bootfile=openwrt-mediatek-filogic-mercusys_mr90x-v1-ubi-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-filogic-mercusys_mr90x-v1-ubi-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-mercusys_mr90x-v1-ubi-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-filogic-mercusys_mr90x-v1-ubi-squashfs-sysupgrade.itb
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SPI-NAND][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_4=Load production system via TFTP then write to NAND.=noboot=1 ; replacevol=1 ; run boot_tftp_production ; noboot= ; replacevol= ; run bootmenu_confirm_return
++bootmenu_5=Load recovery system via TFTP then write to NAND.=noboot=1 ; replacevol=1 ; run boot_tftp_recovery ; noboot= ; replacevol= ; run bootmenu_confirm_return
++bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_8=Reboot.=reset
++bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=run led_boot ; run bootcmd ; run boot_recovery ; replacevol=1 ; run boot_tftp_forever
++boot_production=run led_boot ; run ubi_read_production && bootm $loadaddr#$bootconf
++boot_recovery=run led_boot ; run ubi_read_recovery && bootm $loadaddr#$bootconf
++boot_tftp=run led_boot ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
++boot_tftp_forever=run led_boot ; while true ; do run boot_tftp ; sleep 1 ; done
++boot_tftp_production=run led_boot ; tftpboot $loadaddr $bootfile_upg && test $replacevol = 1 && iminfo $loadaddr && run ubi_write_production ; if test $noboot = 1 ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=run led_boot ; tftpboot $loadaddr $bootfile && test $replacevol = 1 && iminfo $loadaddr && run ubi_write_recovery ; if test $noboot = 1 ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_write_fip=run led_boot ; tftpboot $loadaddr $bootfile_fip && run ubi_write_fip && run reset_factory
++boot_tftp_write_bl2=run led_boot ; tftpboot $loadaddr $bootfile_bl2 && run snand_write_bl2
++check_buttons=if button reset ; then run boot_tftp ; fi
++ethaddr_factory=mtd read factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x40088000 0x6 ; setenv ethaddr_factory
++led_boot=led green:status off ; led amber:status on
++reset_factory=mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000 ; ubi remove rootfs_data
++snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x40000
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x1f000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x1f000 dynamic
++ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
++ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
++ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
++ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
++ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; ubi create fip $filesize static && ubi write $loadaddr fip $filesize
++ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
++ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
++_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
++_firstboot=setenv _firstboot ; run ethaddr_factory ; run _switch_to_menu ; run _init_env ; bootmenu
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
