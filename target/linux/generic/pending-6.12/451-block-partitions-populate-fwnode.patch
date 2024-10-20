@@ -49,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include "check.h"
  
  static int (*const check_part[])(struct parsed_partitions *) = {
-@@ -295,6 +297,74 @@ static ssize_t whole_disk_show(struct de
+@@ -284,6 +286,74 @@ static ssize_t whole_disk_show(struct de
  }
  static const DEVICE_ATTR(whole_disk, 0444, whole_disk_show, NULL);
  
@@ -108,7 +108,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		 * the specified partno needs to match.
 +		 */
 +		got_partno = !fwnode_property_read_u32(fw_part, "partno", &partno);
-+		if (got_partno && bdev->bd_partno != partno)
++		if (got_partno && (atomic_read(&bdev->__bd_flags) & BD_PARTNO) != partno)
 +			continue;
 +
 +		/* Skip if no matching criteria is present in firmware node */
@@ -124,7 +124,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*
   * Must be called either with open_mutex held, before a disk can be opened or
   * after all disk users are gone.
-@@ -377,6 +447,8 @@ static struct block_device *add_partitio
+@@ -358,6 +428,8 @@ static struct block_device *add_partitio
  			goto out_put;
  	}
  
