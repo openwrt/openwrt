@@ -1,0 +1,47 @@
+From 7f06ac2b3fc0077f29bcc68064ca8e91fa7cd080 Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Thu, 10 Oct 2024 10:27:02 +0000
+Subject: [PATCH] libcpu: Include config.h before standard headers in lexer
+ source
+
+As part of the processing of flex, definitions and headers
+are added to output source before any literal text or generated code.
+
+This causes standard headers to come before config.h
+unless config.h is included in a %top block instead
+as specified in the flex manual, section 5.1 "Format of the Definitions".
+
+The %top block is non-POSIX, so using it reinforces
+the requirement of "flex" over a standardized "lex" even more.
+
+      * libcpu/i386_lex.l (%top): add flex %top block
+      and move config.h header inclusion to it.
+
+Signed-off-by: Michael Pratt <mcpratt@pm.me>
+---
+ libcpu/i386_lex.l | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/libcpu/i386_lex.l
++++ b/libcpu/i386_lex.l
+@@ -1,3 +1,9 @@
++%top{
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++}
++
+ %{
+ /* Copyright (C) 2004, 2005, 2007, 2008 Red Hat, Inc.
+    Written by Ulrich Drepper <drepper@redhat.com>, 2004.
+@@ -26,10 +32,6 @@
+    the GNU Lesser General Public License along with this program.  If
+    not, see <http://www.gnu.org/licenses/>.  */
+ 
+-#ifdef HAVE_CONFIG_H
+-# include <config.h>
+-#endif
+-
+ #include <ctype.h>
+ 
+ #include <libeu.h>

@@ -1,0 +1,687 @@
+From 12d58cf3e30dee91ed7aadb6475a15c6e74cc88b Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Wed, 16 Oct 2024 19:53:52 +0000
+Subject: [PATCH] Remove usage of "unlocked" variant of stdio print functions
+
+These "unlocked" Linux Standard Base variants of standard functions
+are not available on some systems that are still capable
+of building Linux and ELFs.
+
+The difference is negligible for simple printing to stdout.
+
+POSIX also states for the similar putc_unlocked():
+
+  These functions can safely be used in a multi-threaded program
+  if and only if they are called while the invoking thread owns
+  the (FILE *) object, as is the case after a successful call
+  to the flockfile() or ftrylockfile() functions.
+
+...
+
+  These unlocked versions can be safely used
+  only within explicitly locked program regions,
+  using exported locking primitives.
+
+and these precautions were never done.
+
+Use the standard forms of these print functions.
+
+There is inconsistent use of fputc_unlocked() with putc_unlocked(),
+so consistently use the safer fputc() instead.
+
+Signed-off-by: Michael Pratt <mcpratt@pm.me>
+---
+ libasm/asm_align.c  |  4 +-
+ libcpu/i386_parse.y |  4 +-
+ libebl/eblobjnote.c |  4 +-
+ src/nm.c            | 20 +++++-----
+ src/objdump.c       | 24 ++++++------
+ src/readelf.c       | 90 ++++++++++++++++++++++-----------------------
+ src/size.c          |  8 ++--
+ src/strings.c       | 20 +++++-----
+ tests/showptable.c  |  8 ++--
+ 9 files changed, 91 insertions(+), 91 deletions(-)
+
+--- a/libasm/asm_align.c
++++ b/libasm/asm_align.c
+@@ -60,13 +60,13 @@ asm_align (AsmScn_t *asmscn, GElf_Word v
+ 	fprintf (asmscn->ctx->out.file, "%02hhx\n", asmscn->pattern->bytes[0]);
+       else
+ 	{
+-	  fputc_unlocked ('"', asmscn->ctx->out.file);
++	  fputc ('"', asmscn->ctx->out.file);
+ 
+ 	  for (size_t cnt = 0; cnt < asmscn->pattern->len; ++cnt)
+ 	    fprintf (asmscn->ctx->out.file, "\\x%02hhx",
+ 		     asmscn->pattern->bytes[cnt]);
+ 
+-	  fputs_unlocked ("\"\n", asmscn->ctx->out.file);
++	  fputs ("\"\n", asmscn->ctx->out.file);
+ 	}
+       return 0;
+     }
+--- a/libcpu/i386_parse.y
++++ b/libcpu/i386_parse.y
+@@ -1158,7 +1158,7 @@ instrtable_out (void)
+   EMIT_SUFFIX (w1);
+   EMIT_SUFFIX (W1);
+ 
+-  fputc_unlocked ('\n', outfile);
++  fputc ('\n', outfile);
+ 
+   for (int i = 0; i < 3; ++i)
+     {
+@@ -1333,7 +1333,7 @@ instrtable_out (void)
+ 	  b = b->next;
+ 	}
+ 
+-      fputc_unlocked ('\n', outfile);
++      fputc ('\n', outfile);
+     }
+   fputs ("};\n", outfile);
+ }
+--- a/libebl/eblobjnote.c
++++ b/libebl/eblobjnote.c
+@@ -643,10 +643,10 @@ ebl_object_note (Ebl *ebl, uint32_t name
+ 		  for (size_t cnt = 1; cnt < descsz / 4; ++cnt)
+ 		    {
+ 		      if (cnt > 1)
+-			putchar_unlocked ('.');
++			putchar ('.');
+ 		      printf ("%" PRIu32, buf[cnt]);
+ 		    }
+-		  putchar_unlocked ('\n');
++		  putchar ('\n');
+ 		}
+ 	      if (descsz / 4 > FIXED_TAG_BYTES)
+ 		free (buf);
+--- a/src/nm.c
++++ b/src/nm.c
+@@ -439,7 +439,7 @@ handle_ar (int fd, Elf *elf, const char
+ 	  Elf_Arhdr *arhdr = NULL;
+ 	  size_t arhdr_off = 0;	/* Note: 0 is no valid offset.  */
+ 
+-	  fputs_unlocked (_("\nArchive index:\n"), stdout);
++	  fputs (_("\nArchive index:\n"), stdout);
+ 
+ 	  while (arsym->as_off != 0)
+ 	    {
+@@ -825,8 +825,8 @@ show_symbols_sysv (Ebl *ebl, GElf_Word s
+       /* If we have to precede the line with the file name.  */
+       if (print_file_name)
+ 	{
+-	  fputs_unlocked (fullname, stdout);
+-	  putchar_unlocked (':');
++	  fputs (fullname, stdout);
++	  putchar (':');
+ 	}
+ 
+       /* Convert the address.  */
+@@ -972,8 +972,8 @@ show_symbols_bsd (Elf *elf, const GElf_E
+       /* If we have to precede the line with the file name.  */
+       if (print_file_name)
+ 	{
+-	  fputs_unlocked (fullname, stdout);
+-	  putchar_unlocked (':');
++	  fputs (fullname, stdout);
++	  putchar (':');
+ 	}
+ 
+       bool is_tls = GELF_ST_TYPE (syms[cnt].sym.st_info) == STT_TLS;
+@@ -1046,8 +1046,8 @@ show_symbols_bsd (Elf *elf, const GElf_E
+ 	}
+ 
+       if (color_mode)
+-	fputs_unlocked (color_off, stdout);
+-      putchar_unlocked ('\n');
++	fputs (color_off, stdout);
++      putchar ('\n');
+     }
+ 
+ #ifdef USE_DEMANGLE
+@@ -1104,9 +1104,9 @@ show_symbols_posix (Elf *elf, const GElf
+       /* If we have to precede the line with the file name.  */
+       if (print_file_name)
+ 	{
+-	  fputs_unlocked (fullname, stdout);
+-	  putchar_unlocked (':');
+-	  putchar_unlocked (' ');
++	  fputs (fullname, stdout);
++	  putchar (':');
++	  putchar (' ');
+ 	}
+ 
+       printf ("%s %c%s", symstr,
+--- a/src/objdump.c
++++ b/src/objdump.c
+@@ -580,12 +580,12 @@ show_full_content (Ebl *ebl, const char
+ 		printf ("%02hhx%02hhx%02hhx%02hhx ",
+ 			cp[inner], cp[inner + 1], cp[inner + 2],
+ 			cp[inner + 3]);
+-	      fputc_unlocked (' ', stdout);
++	      fputc (' ', stdout);
+ 
+ 	      for (size_t inner = 0; inner < 16; ++inner)
+-		fputc_unlocked (isascii (cp[inner]) && isprint (cp[inner])
++		fputc (isascii (cp[inner]) && isprint (cp[inner])
+ 				? cp[inner] : '.', stdout);
+-	      fputc_unlocked ('\n', stdout);
++	      fputc ('\n', stdout);
+ 	    }
+ 
+ 	  printf (" %04zx ", cnt);
+@@ -601,14 +601,14 @@ show_full_content (Ebl *ebl, const char
+ 
+ 	  for (inner = 2 * (16 - inner) + (16 - inner + 3) / 4 + 1; inner > 0;
+ 	       --inner)
+-	    fputc_unlocked (' ', stdout);
++	    fputc (' ', stdout);
+ 
+ 	  for (inner = 0; inner < remaining; ++inner)
+-	    fputc_unlocked (isascii (cp[inner]) && isprint (cp[inner])
++	    fputc (isascii (cp[inner]) && isprint (cp[inner])
+ 			    ? cp[inner] : '.', stdout);
+-	  fputc_unlocked ('\n', stdout);
++	  fputc ('\n', stdout);
+ 
+-	  fputc_unlocked ('\n', stdout);
++	  fputc ('\n', stdout);
+ 	}
+     }
+ 
+@@ -640,12 +640,12 @@ disasm_output (char *buf, size_t buflen,
+     printf ("%8" PRIx64 ":   ", (uint64_t) info->addr);
+ 
+   if (info->bytes_color != NULL)
+-    fputs_unlocked (info->bytes_color, stdout);
++    fputs (info->bytes_color, stdout);
+   size_t cnt;
+   for (cnt = 0; cnt < (size_t) MIN (info->cur - info->last_end, 8); ++cnt)
+     printf (" %02" PRIx8, info->last_end[cnt]);
+   if (info->bytes_color != NULL)
+-    fputs_unlocked (color_off, stdout);
++    fputs (color_off, stdout);
+ 
+   printf ("%*s %.*s\n",
+ 	  (int) (8 - cnt) * 3 + 1, "", (int) buflen, buf);
+@@ -663,12 +663,12 @@ disasm_output (char *buf, size_t buflen,
+ 	printf ("%8" PRIx64 ":   ", (uint64_t) info->addr);
+ 
+       if (info->bytes_color != NULL)
+-	fputs_unlocked (info->bytes_color, stdout);
++	fputs (info->bytes_color, stdout);
+       for (; cnt < (size_t) (info->cur - info->last_end); ++cnt)
+ 	printf (" %02" PRIx8, info->last_end[cnt]);
+       if (info->bytes_color != NULL)
+-	fputs_unlocked (color_off, stdout);
+-      putchar_unlocked ('\n');
++	fputs (color_off, stdout);
++      putchar ('\n');
+       info->addr += info->cur - info->last_end - 8;
+     }
+ 
+--- a/src/readelf.c
++++ b/src/readelf.c
+@@ -1127,7 +1127,7 @@ print_file_type (unsigned short int e_ty
+ static void
+ print_ehdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ {
+-  fputs_unlocked (_("ELF Header:\n  Magic:  "), stdout);
++  fputs (_("ELF Header:\n  Magic:  "), stdout);
+   for (size_t cnt = 0; cnt < EI_NIDENT; ++cnt)
+     printf (" %02hhx", ehdr->e_ident[cnt]);
+ 
+@@ -1154,7 +1154,7 @@ print_ehdr (Ebl *ebl, GElf_Ehdr *ehdr)
+   printf (_("  ABI Version:                       %hhd\n"),
+ 	  ehdr->e_ident[EI_ABIVERSION]);
+ 
+-  fputs_unlocked (_("  Type:                              "), stdout);
++  fputs (_("  Type:                              "), stdout);
+   print_file_type (ehdr->e_type);
+ 
+   const char *machine = dwelf_elf_e_machine_string (ehdr->e_machine);
+@@ -1196,9 +1196,9 @@ print_ehdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ 	printf (_(" (%" PRIu32 " in [0].sh_info)"),
+ 		(uint32_t) shdr->sh_info);
+       else
+-	fputs_unlocked (_(" ([0] not available)"), stdout);
++	fputs (_(" ([0] not available)"), stdout);
+     }
+-  fputc_unlocked ('\n', stdout);
++  fputc ('\n', stdout);
+ 
+   printf (_("  Size of section header entries:    %" PRId16 " %s\n"),
+ 	  ehdr->e_shentsize, _("(bytes)"));
+@@ -1213,9 +1213,9 @@ print_ehdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ 	printf (_(" (%" PRIu32 " in [0].sh_size)"),
+ 		(uint32_t) shdr->sh_size);
+       else
+-	fputs_unlocked (_(" ([0] not available)"), stdout);
++	fputs (_(" ([0] not available)"), stdout);
+     }
+-  fputc_unlocked ('\n', stdout);
++  fputc ('\n', stdout);
+ 
+   if (unlikely (ehdr->e_shstrndx == SHN_XINDEX))
+     {
+@@ -1406,7 +1406,7 @@ There are %zd section headers, starting
+ 	}
+     }
+ 
+-  fputc_unlocked ('\n', stdout);
++  fputc ('\n', stdout);
+ }
+ 
+ 
+@@ -1552,22 +1552,22 @@ print_phdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ 		  && shdr->sh_addr >= relro_from
+ 		  && shdr->sh_addr + shdr->sh_size <= relro_to)
+ 		{
+-		  fputs_unlocked (" [RELRO:", stdout);
++		  fputs (" [RELRO:", stdout);
+ 		  in_relro = true;
+ 		}
+ 	      else if (has_relro && in_relro && shdr->sh_addr >= relro_to)
+ 		{
+-		  fputs_unlocked ("]", stdout);
++		  fputs ("]", stdout);
+ 		  in_relro =  false;
+ 		}
+ 	      else if (has_relro && in_relro
+ 		       && shdr->sh_addr + shdr->sh_size > relro_to)
+-		fputs_unlocked ("] <RELRO:", stdout);
++		fputs ("] <RELRO:", stdout);
+ 	      else if (phdr->p_type == PT_LOAD && (phdr->p_flags & PF_W) == 0)
+ 		{
+ 		  if (!in_ro)
+ 		    {
+-		      fputs_unlocked (" [RO:", stdout);
++		      fputs (" [RO:", stdout);
+ 		      in_ro = true;
+ 		    }
+ 		}
+@@ -1592,12 +1592,12 @@ print_phdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ 		    {
+ 		      if ((phdr2->p_flags & PF_W) == 0 && !in_ro)
+ 			{
+-			  fputs_unlocked (" [RO:", stdout);
++			  fputs (" [RO:", stdout);
+ 			  in_ro = true;
+ 			}
+ 		      else if ((phdr2->p_flags & PF_W) != 0 && in_ro)
+ 			{
+-			  fputs_unlocked ("]", stdout);
++			  fputs ("]", stdout);
+ 			  in_ro = false;
+ 			}
+ 		    }
+@@ -1610,16 +1610,16 @@ print_phdr (Ebl *ebl, GElf_Ehdr *ehdr)
+ 	      if (has_relro && in_relro
+ 		       && shdr->sh_addr + shdr->sh_size > relro_to)
+ 		{
+-		  fputs_unlocked (">", stdout);
++		  fputs (">", stdout);
+ 		  in_relro =  false;
+ 		}
+ 	    }
+ 	}
+       if (in_relro || in_ro)
+-	fputs_unlocked ("]", stdout);
++	fputs ("]", stdout);
+ 
+       /* Finish the line.  */
+-      fputc_unlocked ('\n', stdout);
++      fputc ('\n', stdout);
+     }
+ }
+ 
+@@ -1788,8 +1788,8 @@ print_flags (int class, GElf_Xword d_val
+     if (d_val & flags[cnt].mask)
+       {
+ 	if (!first)
+-	  putchar_unlocked (' ');
+-	fputs_unlocked (flags[cnt].str, stdout);
++	  putchar (' ');
++	fputs (flags[cnt].str, stdout);
+ 	d_val &= ~flags[cnt].mask;
+ 	first = false;
+       }
+@@ -1797,11 +1797,11 @@ print_flags (int class, GElf_Xword d_val
+   if (d_val != 0)
+     {
+       if (!first)
+-	putchar_unlocked (' ');
++	putchar (' ');
+       printf ("%#0*" PRIx64, class == ELFCLASS32 ? 10 : 18, d_val);
+     }
+ 
+-  putchar_unlocked ('\n');
++  putchar ('\n');
+ }
+ 
+ 
+@@ -1909,7 +1909,7 @@ handle_dynamic (Ebl *ebl, Elf_Scn *scn,
+ 	      phdr->p_offset);
+     }
+ 
+-  fputs_unlocked (_("  Type              Value\n"), stdout);
++  fputs (_("  Type              Value\n"), stdout);
+ 
+   /* if --use-dynamic option is enabled,
+      use the string table to get the related library info.  */
+@@ -1953,7 +1953,7 @@ handle_dynamic (Ebl *ebl, Elf_Scn *scn,
+ 	case DT_BIND_NOW:
+ 	case DT_TEXTREL:
+ 	  /* No further output.  */
+-	  fputc_unlocked ('\n', stdout);
++	  fputc ('\n', stdout);
+ 	  break;
+ 
+ 	case DT_NEEDED:
+@@ -2147,7 +2147,7 @@ handle_relocs_rel (Ebl *ebl, GElf_Ehdr *
+ 	    elf_strptr (ebl->elf, shstrndx, shdr->sh_name),
+ 	    shdr->sh_offset,
+ 	    nentries);
+-  fputs_unlocked (class == ELFCLASS32
++  fputs (class == ELFCLASS32
+ 		  ? _("\
+   Offset      Type                 Value       Name\n")
+ 		  : _("\
+@@ -2384,7 +2384,7 @@ handle_relocs_rela (Ebl *ebl, GElf_Ehdr
+ 	    elf_strptr (ebl->elf, shstrndx, shdr->sh_name),
+ 	    shdr->sh_offset,
+ 	    nentries);
+-  fputs_unlocked (class == ELFCLASS32
++  fputs (class == ELFCLASS32
+ 		  ? _("\
+   Offset      Type            Value       Addend Name\n")
+ 		  : _("\
+@@ -2891,7 +2891,7 @@ process_symtab (Ebl *ebl, unsigned int n
+             }
+         }
+ 
+-      putchar_unlocked ('\n');
++      putchar ('\n');
+     }
+ }
+ 
+@@ -2973,7 +2973,7 @@ handle_symtab (Ebl *ebl, Elf_Scn *scn, G
+ 	  (unsigned int) shdr->sh_link,
+ 	  elf_strptr (ebl->elf, shstrndx, glink->sh_name));
+ 
+-  fputs_unlocked (class == ELFCLASS32
++  fputs (class == ELFCLASS32
+ 		  ? _("\
+   Num:    Value   Size Type    Bind   Vis          Ndx Name\n")
+ 		  : _("\
+@@ -3649,12 +3649,12 @@ handle_versym (Ebl *ebl, Elf_Scn *scn, G
+ 	{
+ 	  ssize_t n;
+ 	case 0:
+-	  fputs_unlocked (_("   0 *local*                     "),
++	  fputs (_("   0 *local*                     "),
+ 			  stdout);
+ 	  break;
+ 
+ 	case 1:
+-	  fputs_unlocked (_("   1 *global*                    "),
++	  fputs (_("   1 *global*                    "),
+ 			  stdout);
+ 	  break;
+ 
+@@ -3671,7 +3671,7 @@ handle_versym (Ebl *ebl, Elf_Scn *scn, G
+ 	  break;
+ 	}
+     }
+-  putchar_unlocked ('\n');
++  putchar ('\n');
+ }
+ 
+ 
+@@ -3718,7 +3718,7 @@ print_hash_info (Ebl *ebl, Elf_Scn *scn,
+       uint64_t success = 0;
+ 
+       /* xgettext:no-c-format */
+-      fputs_unlocked (_("\
++      fputs (_("\
+  Length  Number  % of total  Coverage\n"), stdout);
+       printf (_("      0  %6" PRIu32 "      %5.1f%%\n"),
+ 	      counts[0], (counts[0] * 100.0) / nbucket);
+@@ -4140,7 +4140,7 @@ print_attributes (Ebl *ebl, const GElf_E
+       if (unlikely (*p++ != 'A'))
+ 	return;
+ 
+-      fputs_unlocked (_("  Owner          Size\n"), stdout);
++      fputs (_("  Owner          Size\n"), stdout);
+ 
+       /* Loop over the sections.  */
+       while (left (data, p) >= 4)
+@@ -7233,7 +7233,7 @@ print_encoding_base (const char *pfx, un
+       if (w & 0x70)
+ 	{
+ 	  if (w != fde_encoding)
+-	    fputc_unlocked (' ', stdout);
++	    fputc (' ', stdout);
+ 
+ 	  w = print_relinfo (w);
+ 	}
+@@ -9772,7 +9772,7 @@ print_debug_line_section (Dwfl_Module *d
+ 		{
+ 		  get_uleb128 (u128, linep, lineendp);
+ 		  if (n != standard_opcode_lengths[opcode])
+-		    putc_unlocked (',', stdout);
++		    fputc (',', stdout);
+ 		  printf (" %u", u128);
+ 		}
+ 
+@@ -10525,7 +10525,7 @@ print_debug_macinfo_section (Dwfl_Module
+ \nDWARF section [%2zu] '%s' at offset %#" PRIx64 ":\n"),
+ 	  elf_ndxscn (scn), section_name (ebl, shdr),
+ 	  (uint64_t) shdr->sh_offset);
+-  putc_unlocked ('\n', stdout);
++  fputc ('\n', stdout);
+ 
+   /* There is no function in libdw to iterate over the raw content of
+      the section but it is easy enough to do.  */
+@@ -10687,7 +10687,7 @@ print_debug_macro_section (Dwfl_Module *
+ \nDWARF section [%2zu] '%s' at offset %#" PRIx64 ":\n"),
+ 	  elf_ndxscn (scn), section_name (ebl, shdr),
+ 	  (uint64_t) shdr->sh_offset);
+-  putc_unlocked ('\n', stdout);
++  fputc ('\n', stdout);
+ 
+   /* Get the source file information for all CUs.  Uses same
+      datastructure as macinfo.  But uses offset field to directly
+@@ -10840,15 +10840,15 @@ print_debug_macro_section (Dwfl_Module *
+ 			goto invalid_data;
+ 		      args--;
+ 		      if (args > 0)
+-			putchar_unlocked (',');
++			putchar (',');
+ 		    }
+ 		}
+ 	      else
+ 		printf (_(" no arguments."));
+-	      putchar_unlocked ('\n');
++	      putchar ('\n');
+ 	    }
+ 	}
+-      putchar_unlocked ('\n');
++      putchar ('\n');
+ 
+       int level = 1;
+       if (readp + 1 > readendp)
+@@ -11025,14 +11025,14 @@ print_debug_macro_section (Dwfl_Module *
+ 		  if (args > 0)
+ 		    printf (", ");
+ 		}
+-	      putchar_unlocked ('\n');
++	      putchar ('\n');
+ 	    }
+ 
+ 	  if (readp + 1 > readendp)
+ 	    goto invalid_data;
+ 	  opcode = *readp++;
+ 	  if (opcode == 0)
+-	    putchar_unlocked ('\n');
++	    putchar ('\n');
+ 	}
+     }
+ }
+@@ -11368,7 +11368,7 @@ print_debug_frame_hdr_section (Dwfl_Modu
+ 		/* +4 because of the 4 byte header of the section.  */
+ 		(uint64_t) shdr->sh_offset + 4 + eh_frame_ptr);
+ 
+-      putchar_unlocked ('\n');
++      putchar ('\n');
+     }
+ 
+   uint64_t fde_count = 0;
+@@ -11546,7 +11546,7 @@ print_debug_exception_table (Dwfl_Module
+ 	  else if (ar_disp != 0)
+ 	    puts (" -> ???");
+ 	  else
+-	    putchar_unlocked ('\n');
++	    putchar ('\n');
+ 	  ++u;
+ 	}
+       while (readp < action_table_end);
+@@ -13200,19 +13200,19 @@ handle_core_note (Ebl *ebl, const GElf_N
+ 					  nregloc == 0 ? nhdr->n_descsz : 0,
+ 					  items, nitems);
+   if (colno != 0)
+-    putchar_unlocked ('\n');
++    putchar ('\n');
+ 
+   colno = handle_core_registers (ebl, ebl->elf, desc + regs_offset,
+ 				 reglocs, nregloc);
+   if (colno != 0)
+-    putchar_unlocked ('\n');
++    putchar ('\n');
+ }
+ 
+ static void
+ handle_notes_data (Ebl *ebl, const GElf_Ehdr *ehdr,
+ 		   GElf_Off start, Elf_Data *data)
+ {
+-  fputs_unlocked (_("  Owner          Data size  Type\n"), stdout);
++  fputs (_("  Owner          Data size  Type\n"), stdout);
+ 
+   if (data == NULL)
+     goto bad_note;
+--- a/src/size.c
++++ b/src/size.c
+@@ -411,7 +411,7 @@ show_sysv (Elf *elf, const char *prefix,
+ 	maxlen = MAX (maxlen, (int) strlen (name));
+     }
+ 
+-  fputs_unlocked (fname, stdout);
++  fputs (fname, stdout);
+   if (prefix != NULL)
+     printf (_(" (ex %s)"), prefix);
+   printf (":\n%-*s %*s %*s\n",
+@@ -483,7 +483,7 @@ show_sysv_one_line (Elf *elf)
+ 	continue;
+ 
+       if (! first)
+-	fputs_unlocked (" + ", stdout);
++	fputs (" + ", stdout);
+       first = false;
+ 
+       printf ((radix == radix_hex ? "%" PRIx64 "(%s)"
+@@ -555,7 +555,7 @@ show_bsd (Elf *elf, const char *prefix,
+ 	  fname);
+   if (prefix != NULL)
+     printf (_(" (ex %s)"), prefix);
+-  fputs_unlocked ("\n", stdout);
++  fputs ("\n", stdout);
+ 
+   total_textsize += textsize;
+   total_datasize += datasize;
+@@ -607,7 +607,7 @@ show_segments (Elf *elf, const char *ful
+ 	continue;
+ 
+       if (! first)
+-	fputs_unlocked (" + ", stdout);
++	fputs (" + ", stdout);
+       first = false;
+ 
+       printf (radix == radix_hex ? "%" PRIx64 "(%c%c%c)"
+--- a/src/strings.c
++++ b/src/strings.c
+@@ -345,8 +345,8 @@ process_chunk_mb (const char *fname, con
+ 	      /* We found a match.  */
+ 	      if (unlikely (fname != NULL))
+ 		{
+-		  fputs_unlocked (fname, stdout);
+-		  fputs_unlocked (": ", stdout);
++		  fputs (fname, stdout);
++		  fputs (": ", stdout);
+ 		}
+ 
+ 	      if (unlikely (radix != radix_none))
+@@ -357,7 +357,7 @@ process_chunk_mb (const char *fname, con
+ 
+ 	      if (unlikely (*unprinted != NULL))
+ 		{
+-		  fputs_unlocked (*unprinted, stdout);
++		  fputs (*unprinted, stdout);
+ 		  free (*unprinted);
+ 		  *unprinted = NULL;
+ 		}
+@@ -366,8 +366,8 @@ process_chunk_mb (const char *fname, con
+ 		 assume the file data is encoded in UCS-2/UTF-16 or
+ 		 UCS-4/UTF-32 respectively we could convert the string.
+ 		 But there is no such guarantee.  */
+-	      fwrite_unlocked (start, 1, buf - start, stdout);
+-	      putc_unlocked ('\n', stdout);
++	      fwrite (start, 1, buf - start, stdout);
++	      fputc ('\n', stdout);
+ 	    }
+ 
+ 	  start = ++buf;
+@@ -413,8 +413,8 @@ process_chunk (const char *fname, const
+ 	      /* We found a match.  */
+ 	      if (likely (fname != NULL))
+ 		{
+-		  fputs_unlocked (fname, stdout);
+-		  fputs_unlocked (": ", stdout);
++		  fputs (fname, stdout);
++		  fputs (": ", stdout);
+ 		}
+ 
+ 	      if (likely (radix != radix_none))
+@@ -425,12 +425,12 @@ process_chunk (const char *fname, const
+ 
+ 	      if (unlikely (*unprinted != NULL))
+ 		{
+-		  fputs_unlocked (*unprinted, stdout);
++		  fputs (*unprinted, stdout);
+ 		  free (*unprinted);
+ 		  *unprinted = NULL;
+ 		}
+-	      fwrite_unlocked (start, 1, buf - start, stdout);
+-	      putc_unlocked ('\n', stdout);
++	      fwrite (start, 1, buf - start, stdout);
++	      fputc ('\n', stdout);
+ 	    }
+ 
+ 	  start = ++buf;
+--- a/tests/showptable.c
++++ b/tests/showptable.c
+@@ -111,11 +111,11 @@ main (int argc, char *argv[])
+ 	      (unsigned long long int) phdr->p_memsz,
+ 	      (unsigned long long int) phdr->p_align);
+ 
+-      putc_unlocked ((phdr->p_flags & PF_X) ? 'X' : ' ', stdout);
+-      putc_unlocked ((phdr->p_flags & PF_W) ? 'W' : ' ', stdout);
+-      putc_unlocked ((phdr->p_flags & PF_R) ? 'R' : ' ', stdout);
++      fputc ((phdr->p_flags & PF_X) ? 'X' : ' ', stdout);
++      fputc ((phdr->p_flags & PF_W) ? 'W' : ' ', stdout);
++      fputc ((phdr->p_flags & PF_R) ? 'R' : ' ', stdout);
+ 
+-      putc_unlocked ('\n', stdout);
++      fputc ('\n', stdout);
+ 
+       if (phdr->p_type == PT_INTERP)
+ 	{

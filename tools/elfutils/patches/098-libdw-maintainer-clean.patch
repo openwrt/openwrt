@@ -1,0 +1,43 @@
+From b68f34725229b08380a1612899b0537f8f597dad Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Thu, 10 Oct 2024 10:27:09 +0000
+Subject: [PATCH] libdw: Let clean targets be unconditional
+
+The automake rule "maintainer-clean-generic"
+is always available and never conditional,
+so let the variable that uses it be define
+non-conditionally.
+
+If one actually wants conditional cleaning
+they should write a custom rule and set it
+as a dependency of a "*clean-local" automake rule.
+
+There is no need to do conditional cleaning here,
+so move the MAINTAINERCLEANFILES variable definition
+to the end of the Makefile.am file as it is
+in the rest of the project.
+
+      * libdw/Makefile.am: move MAINTAINERCLEANFILES
+      variable to the end of the file
+      as a non-conditional definition.
+
+Signed-off-by: Michael Pratt <mcpratt@pm.me>
+---
+ libdw/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libdw/Makefile.am
++++ b/libdw/Makefile.am
+@@ -97,7 +97,6 @@ libdw_a_SOURCES = dwarf_begin.c dwarf_be
+ 
+ if MAINTAINER_MODE
+ BUILT_SOURCES = $(srcdir)/known-dwarf.h
+-MAINTAINERCLEANFILES = $(srcdir)/known-dwarf.h
+ $(srcdir)/known-dwarf.h: $(top_srcdir)/config/known-dwarf.awk $(srcdir)/dwarf.h
+ 	gawk -f $^ > $@.new
+ 	mv -f $@.new $@
+@@ -154,3 +153,4 @@ noinst_HEADERS = libdwP.h memory-access.
+ EXTRA_DIST = libdw.map
+ 
+ MOSTLYCLEANFILES = $(am_libdw_pic_a_OBJECTS) libdw.so libdw.so.$(VERSION)
++MAINTAINERCLEANFILES = $(srcdir)/known-dwarf.h
