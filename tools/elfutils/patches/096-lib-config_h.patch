@@ -1,0 +1,29 @@
+From c981e61aa301d389f18df5fd279c1ca4d39d38a0 Mon Sep 17 00:00:00 2001
+From: Michael Pratt <mcpratt@pm.me>
+Date: Thu, 10 Oct 2024 10:26:54 +0000
+Subject: [PATCH] lib: Add missing config.h include to next_prime.c
+
+This is the last remaining C source file as of this commit
+without the standard conditional inclusion of config.h
+as the very first header.
+
+      * lib/next_prime.c: add missing config.h header.
+
+Signed-off-by: Michael Pratt <mcpratt@pm.me>
+---
+ lib/next_prime.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/lib/next_prime.c
++++ b/lib/next_prime.c
+@@ -27,6 +27,10 @@
+    the GNU Lesser General Public License along with this program.  If
+    not, see <http://www.gnu.org/licenses/>.  */
+ 
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++
+ #include <stddef.h>
+ 
+ 
