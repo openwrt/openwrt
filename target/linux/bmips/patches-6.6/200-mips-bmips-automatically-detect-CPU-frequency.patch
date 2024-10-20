@@ -15,13 +15,8 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c
-@@ -29,10 +29,47 @@
- #include <asm/traps.h>
- #include <asm/fw/cfe/cfe_api.h>
+@@ -31,8 +31,42 @@
  
-+#define CP0_BCM_CFG_ICSHEN          (0x1 << 31)
-+#define CP0_BCM_CFG_DCSHEN          (0x1 << 30)
-+
  #define RELO_NORMAL_VEC		BIT(18)
  
 +#define REG_BCM6318_SOB		((void __iomem *)CKSEG1ADDR(0x10000900))
@@ -63,7 +58,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  /*
   * CBR addr doesn't change and we can cache it.
-@@ -45,6 +82,11 @@ extern bool bmips_rac_flush_disable;
+@@ -45,6 +79,11 @@ extern bool bmips_rac_flush_disable;
  
  static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
  
@@ -75,17 +70,21 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -126,9 +168,28 @@ static void bcm6368_quirks(void)
+@@ -126,9 +165,46 @@ static void bcm6368_quirks(void)
  	bcm63xx_fixup_cpu1();
  }
  
 +static void bcm3380_quirks(void)
 +{
-+	// Enable cache to increase the running speed
-+	// https://forum.openwrt.org/t/bringing-up-bcm3380-extremely-slow-instruction-execution
-+	u32 c0_reg22 = read_c0_diag();
-+	c0_reg22 |= CP0_BCM_CFG_ICSHEN | CP0_BCM_CFG_DCSHEN;
-+	write_c0_diag(c0_reg22);
++	/*
++	* https://forum.openwrt.org/t/bringing-up-bcm3380-extremely-slow-instruction-execution
++	* Enable caches to increase the running speed:
++	* 1. In the BCM-specific CP0 config register($22, 0),
++	*    set CP0_BCM_CFG_ICSHEN(31) and CP0_BCM_CFG_DCSHEN(30) bits.
++	* 2. In the MIPS-generic CP0 config register($16, 0),
++	*    clear CONF_CM_CMASK and then set the CONF_CM_CACHABLE_NONCOHERENT.
++	*/
++	write_c0_brcm_config(read_c0_brcm_config() | (0x1 << 31) | (0x1 << 30));
 +	change_c0_config(CONF_CM_CMASK, CONF_CM_CACHABLE_NONCOHERENT);
 +
 +	/*
@@ -96,6 +95,20 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +				  !!bmips_cbr_addr;
 +
 +	bcm63xx_fixup_cpu1();
++
++	/*
++	* This function can only be called from CPU0.
++	*
++	* Linux only brings up CPU0 on boot.
++	* The highest bit of the CP0 CMT Local Register($22, 3) indicates which
++	* CPU the current code runs on.
++	* If set, we are on CPU1, otherwise, we are on CPU0.
++	*
++	* Route MIPS INT 2 & 4 to TP1 (CPU1).
++	* Set CP0_CMT_XIR_2(29) and CP0_CMT_XIR_4(31)
++	* in the CP0 CMT Interrupt Register($22, 1).
++	*/
++	write_c0_brcm_cmt_intr(read_c0_brcm_cmt_intr() | (1 << 29) | (1 << 31));
 +}
 +
  static const struct bmips_quirk bmips_quirk_list[] = {
@@ -105,7 +118,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
  	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
  	{ "brcm,bcm6328",		&bcm6328_quirks			},
-@@ -164,17 +225,167 @@ const char *get_system_type(void)
+@@ -164,17 +240,167 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
