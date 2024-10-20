@@ -79,7 +79,7 @@ define Build/hcs-initramfs
 	mv $@.hcs $@
 endef
 
-define Build/aeolus-ProgramStore-initramfs
+define Build/aeolus-initramfs
 	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
 	# header and pack the firmware binary
 	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@ -o $@.out \
@@ -88,9 +88,9 @@ define Build/aeolus-ProgramStore-initramfs
 	mv $@.out $@
 endef
 
-define Build/aeolus-ProgramStore-initramfs-lzma
+define Build/aeolus-initramfs-lzma
 	# Let ProgramStore compresses the firmware image with LZMA
-	$(call Build/aeolus-ProgramStore-initramfs, -c 4 $(1))
+	$(call Build/aeolus-initramfs, -c 4 $(1))
 endef
 
 ### Image scripts ###
@@ -374,7 +374,7 @@ define Device/bcm33xx-hcs
   # Option 2: Use OpenWrt's LZMA loader, packed in the image.
   #     Being slow on BCM3380 for unknown reasons.
 ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | aeolus-ProgramStore-initramfs-lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | aeolus-initramfs-lzma
 else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
 else

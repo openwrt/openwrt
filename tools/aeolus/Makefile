@@ -12,7 +12,6 @@ PKG_MIRROR_HASH:=4f5a39a52bc786c31c60cdefdc0f8a4858eda1b11f895b67dddc505a6853cfb
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
-	echo QwQ
 	+$(HOST_MAKE_VARS) $(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/ProgramStore
 endef
 
