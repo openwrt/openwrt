@@ -1,0 +1,50 @@
+From 66413f0468d35adb352c76bc286bf6f6746ba354 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:19 +0200
+Subject: [PATCH] pinctrl: aw9523: Use temporary variable for HW IRQ number
+
+There are two different ways on how to get HW IRQ number in some functions.
+Unify that by using temporary variable and irqd_to_hwirq() call.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-6-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -428,12 +428,12 @@ static int aw9523_gpio_irq_type(struct i
+ static void aw9523_irq_mask(struct irq_data *d)
+ {
+ 	struct aw9523 *awi = gpiochip_get_data(irq_data_get_irq_chip_data(d));
+-	unsigned int n = d->hwirq % AW9523_PINS_PER_PORT;
++	irq_hw_number_t hwirq = irqd_to_hwirq(d);
++	unsigned int n = hwirq % AW9523_PINS_PER_PORT;
+ 
+-	regmap_update_bits(awi->regmap,
+-			   AW9523_REG_INTR_DIS(d->hwirq),
++	regmap_update_bits(awi->regmap, AW9523_REG_INTR_DIS(hwirq),
+ 			   BIT(n), BIT(n));
+-	gpiochip_disable_irq(&awi->gpio, irqd_to_hwirq(d));
++	gpiochip_disable_irq(&awi->gpio, hwirq);
+ }
+ 
+ /*
+@@ -446,11 +446,11 @@ static void aw9523_irq_mask(struct irq_d
+ static void aw9523_irq_unmask(struct irq_data *d)
+ {
+ 	struct aw9523 *awi = gpiochip_get_data(irq_data_get_irq_chip_data(d));
+-	unsigned int n = d->hwirq % AW9523_PINS_PER_PORT;
++	irq_hw_number_t hwirq = irqd_to_hwirq(d);
++	unsigned int n = hwirq % AW9523_PINS_PER_PORT;
+ 
+-	gpiochip_enable_irq(&awi->gpio, irqd_to_hwirq(d));
+-	regmap_update_bits(awi->regmap,
+-			   AW9523_REG_INTR_DIS(d->hwirq),
++	gpiochip_enable_irq(&awi->gpio, hwirq);
++	regmap_update_bits(awi->regmap, AW9523_REG_INTR_DIS(hwirq),
+ 			   BIT(n), 0);
+ }
+ 

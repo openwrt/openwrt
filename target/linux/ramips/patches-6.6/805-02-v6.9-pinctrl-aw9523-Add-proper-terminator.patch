@@ -1,0 +1,26 @@
+From 52279c3d50d964c646692c42a0db87ef7bb451cc Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 6 Mar 2024 08:54:25 +0100
+Subject: [PATCH] pinctrl: aw9523: Add proper terminator
+
+The of_device_id array needs to be terminated with a NULL
+entry.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202403061147.85XYVsk3-lkp@intel.com/
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20240306-fix-aw9523-terminator-v1-1-13f90f87a7f6@linaro.org
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -1099,6 +1099,7 @@ MODULE_DEVICE_TABLE(i2c, aw9523_i2c_id_t
+ 
+ static const struct of_device_id of_aw9523_i2c_match[] = {
+ 	{ .compatible = "awinic,aw9523-pinctrl", },
++	{ }
+ };
+ MODULE_DEVICE_TABLE(of, of_aw9523_i2c_match);
+ 

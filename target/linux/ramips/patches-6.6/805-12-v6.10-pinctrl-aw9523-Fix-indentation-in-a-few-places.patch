@@ -1,0 +1,62 @@
+From 4aad0ad20f4ea80180a3e58b04b701728541c0f7 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:24 +0200
+Subject: [PATCH] pinctrl: aw9523: Fix indentation in a few places
+
+In the comment, function prototype, and array of strings indentation
+is kinda broken. Reindent that.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-11-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -1,8 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+  * Awinic AW9523B i2c pin controller driver
+- * Copyright (c) 2020, AngeloGioacchino Del Regno
+- *                     <angelogioacchino.delregno@somainline.org>
++ * Copyright (c) 2020, AngeloGioacchino Del Regno <angelogioacchino.delregno@somainline.org>
+  */
+ 
+ #include <linux/bitfield.h>
+@@ -139,9 +138,10 @@ static const struct pinctrl_ops aw9523_p
+ };
+ 
+ static const char * const gpio_pwm_groups[] = {
+-	"gpio0", "gpio1", "gpio2", "gpio3", "gpio4", "gpio5",
+-	"gpio6", "gpio7", "gpio8", "gpio9", "gpio10", "gpio11",
+-	"gpio12", "gpio13", "gpio14", "gpio15"
++	"gpio0", "gpio1", "gpio2", "gpio3",		/* 0-3 */
++	"gpio4", "gpio5", "gpio6", "gpio7",		/* 4-7 */
++	"gpio8", "gpio9", "gpio10", "gpio11",		/* 8-11 */
++	"gpio12", "gpio13", "gpio14", "gpio15",		/* 11-15 */
+ };
+ 
+ /* Warning: Do NOT reorder this array */
+@@ -388,8 +388,8 @@ static int aw9523_get_pin_direction(stru
+  *
+  * Return: Zero for success or negative number for error
+  */
+-static int aw9523_get_port_state(struct regmap *regmap, u8 pin,
+-				   u8 regbit, unsigned int *state)
++static int aw9523_get_port_state(struct regmap *regmap, u8 pin, u8 regbit,
++				 unsigned int *state)
+ {
+ 	u8 reg;
+ 	int dir;
+@@ -984,8 +984,7 @@ static int aw9523_probe(struct i2c_clien
+ 	}
+ 
+ 	mutex_init(&awi->i2c_lock);
+-	lockdep_set_subclass(&awi->i2c_lock,
+-			     i2c_adapter_depth(client->adapter));
++	lockdep_set_subclass(&awi->i2c_lock, i2c_adapter_depth(client->adapter));
+ 
+ 	pdesc = devm_kzalloc(dev, sizeof(*pdesc), GFP_KERNEL);
+ 	if (!pdesc)
