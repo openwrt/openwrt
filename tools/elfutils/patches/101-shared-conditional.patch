@@ -64,7 +64,7 @@
  
  include_HEADERS = dwarf.h
  pkginclude_HEADERS = libdw.h known-dwarf.h
-@@ -121,11 +123,13 @@ libdw.so: $(srcdir)/libdw.map $(libdw_so
+@@ -120,11 +122,13 @@ libdw.so: $(srcdir)/libdw.map $(libdw_so
  	@$(textrel_check)
  	$(AM_V_at)ln -fs $@ $@.$(VERSION)
  
@@ -78,7 +78,7 @@
  
  uninstall: uninstall-am
  	rm -f $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
-@@ -148,6 +152,10 @@ libdw_a_LIBADD += $(addprefix ../backend
+@@ -147,6 +151,10 @@ libdw_a_LIBADD += $(addprefix ../backend
  libcpu_objects = $(shell $(AR) t ../libcpu/libcpu.a)
  libdw_a_LIBADD += $(addprefix ../libcpu/,$(libcpu_objects))
  
