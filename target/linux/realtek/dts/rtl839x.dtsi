@@ -44,6 +44,15 @@
 		phy-mode = #m ; \
 	};
 
+#define SWITCH_PORT_SDS(n, s, m, sds1, sds2, portstart, portend) \
+	port@##n { \
+		reg = <##n>; \
+		label = SWITCH_PORT_LABEL(s) ; \
+		phy-handle = <&phy##n>; \
+		phy-mode = #m ; \
+		phys = <&serdes0 sds1 sds2 portstart portend>; \
+	};
+
 #define SWITCH_SFP_PORT(n, s, m) \
 	port@##n { \
 		reg = <##n>; \
@@ -292,9 +301,9 @@
 		};
 	};
 
-	ethernet0: ethernet@1b00a300 {
+	ethernet0: ethernet@1b00780c {
 		compatible = "realtek,rtl838x-eth";
-		reg = <0x1b00a300 0x100>;
+		reg = <0x1b00780c 0x74>;
 
 		interrupt-parent = <&intc>;
 		interrupts = <24 3>;
@@ -305,6 +314,13 @@
 			speed = <1000>;
 			full-duplex;
 		};
+	};
+
+	serdes0: serdes@1b00a000 {
+		compatible = "realtek,rtl8390-serdes", "realtek,otto-serdes";
+		reg = <0x1b00a000 0x1c00>;
+		controlled-ports = <0x0000>;
+		#phy-cells = <4>;
 	};
 
 	sram0: sram@9f000000 {
