@@ -58,7 +58,7 @@ endef
 
 define Device/zyxel_gs1900
   DEVICE_VENDOR := Zyxel
-  IMAGE_SIZE := 6976k
+  IMAGE_SIZE := 13952k
   UIMAGE_MAGIC := 0x83800000
   KERNEL_INITRAMFS := \
 	kernel-bin | \
