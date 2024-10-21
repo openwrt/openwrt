@@ -54,7 +54,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_INTEL_SOC_PMIC_BXTWC)	+= intel_soc_pmic_bxtwc.o
 --- /dev/null
 +++ b/drivers/mfd/iei-wt61p803-puzzle.c
-@@ -0,0 +1,908 @@
+@@ -0,0 +1,912 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU Driver
 + * System management microcontroller for fan control, temperature sensor reading,
@@ -894,8 +894,12 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	mcu->serdev = serdev;
 +	mcu->dev = dev;
 +	init_completion(&mcu->reply->received);
-+	mutex_init(&mcu->reply_lock);
-+	mutex_init(&mcu->lock);
++	ret = devm_mutex_init(dev, &mcu->reply_lock);
++	if (ret)
++		return ret;
++	ret = devm_mutex_init(dev, &mcu->lock);
++	if (ret)
++		return ret;
 +
 +	/* Setup UART interface */
 +	serdev_device_set_drvdata(serdev, mcu);

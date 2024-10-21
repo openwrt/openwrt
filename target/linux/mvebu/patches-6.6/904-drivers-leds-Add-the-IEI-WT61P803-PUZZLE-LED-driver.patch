@@ -57,7 +57,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_LEDS_LM3530)		+= leds-lm3530.o
 --- /dev/null
 +++ b/drivers/leds/leds-iei-wt61p803-puzzle.c
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,149 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU LED Driver
 + *
@@ -168,7 +168,9 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +
 +	priv->mcu = mcu;
 +	priv->led_power_state = 1;
-+	mutex_init(&priv->lock);
++	ret = devm_mutex_init(dev, &priv->lock);
++	if (ret)
++		return ret;
 +	dev_set_drvdata(dev, priv);
 +
 +	child = device_get_next_child_node(dev, NULL);
