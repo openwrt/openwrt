@@ -370,7 +370,7 @@ define U-Boot/mt7981_rfb-nor
   BUILD_DEVICES:=mediatek_mt7981-rfb
   UBOOT_CONFIG:=mt7981_nor_rfb
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=spim-nand
+  BL2_BOOTDEV:=nor
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr3
