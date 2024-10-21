@@ -12,6 +12,13 @@ boot() {
 			fw_setenv bootpart 1
 		fi
 		;;
+	iptime,ax3000m)
+		if grep -q rootfs2 /proc/cmdline; then
+			fw_setenv boot_from B
+		else
+			fw_setenv boot_from A
+		fi
+		;;
 	zyxel,ex5700-telenor)
 		fw_setenv uboot_bootcount 0
 		;;
