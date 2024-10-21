@@ -26,4 +26,7 @@ ocedo,panda)
 sophos,red-15w-rev1)
 	mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
 	;;
+watchguard,t30-w)
+	mtd_get_mac_text nor-cfg0 0x1894 > /sys${DEVPATH}/macaddress
+	;;
 esac
