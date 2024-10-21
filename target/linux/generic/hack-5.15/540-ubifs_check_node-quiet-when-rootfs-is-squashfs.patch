@@ -1,0 +1,40 @@
+From: Tony Butler <spudz76@gmail.com>
+Date: Mon, 22 Apr 2024 03:56:21 -0700
+Subject: kernel: ubifs: force ubifs_check_node to be quiet when rootfs is squashfs
+
+Kernel patches in generic/hack for 5.5, 6.1, and 6.6 that check for
+known SquashFS magic within the first region and sets `quiet` to avoid
+the complaint about non-UBIFS magic, as `do_mounts` falls through anyway
+to mounting according to kernel arg `rootfstypes` so the error is
+misleading.  Disabling the ubifs mount attempt seemed difficult to skip
+and some platforms might rely on that behavior (ignoring the kernel arg)
+
+If the magic is not ubifs and also not squashfs the message will still
+be logged, for cases where flash is truly corrupt or some other actual
+error has occurred.
+
+Signed-off-by: Tony Butler <spudz76@gmail.com>
+---
+ fs/ubifs/io.c               | 4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+--- a/fs/ubifs/io.c
++++ b/fs/ubifs/io.c
+@@ -60,6 +60,7 @@
+ 
+ #include <linux/crc32.h>
+ #include <linux/slab.h>
++#include <linux/magic.h>
+ #include "ubifs.h"
+ 
+ /**
+@@ -235,6 +236,9 @@ int ubifs_check_node(const struct ubifs_
+ 
+ 	magic = le32_to_cpu(ch->magic);
+ 	if (magic != UBIFS_NODE_MAGIC) {
++		if (magic == SQUASHFS_MAGIC) {
++			quiet = 1;
++		}
+ 		if (!quiet)
+ 			ubifs_err(c, "bad magic %#08x, expected %#08x",
+ 				  magic, UBIFS_NODE_MAGIC);
