@@ -188,9 +188,12 @@
 
 				partition@40000 {
 					label = "u-boot-env-main";
-					compatible = "u-boot,env-redundant-count";
 					reg = <0x00040000 0x20000>; /* one block is 128k */
 					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
 				};
 
 /*
@@ -199,9 +202,12 @@
  *
  *				partition@60000 {
  *					label = "u-boot-env-redundant";
- *					compatible = "u-boot,env-redundant-count";
  *					reg = <0x00060000 0x20000>;
  *					read-only;
+ *
+ *					nvmem-layout {
+ *						compatible = "u-boot,env-redundant-count";
+ *					};
  *				};
  */
 			};
