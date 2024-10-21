@@ -72,6 +72,8 @@ define Device/mikrotik_rb5009
   $(call Device/UbiFit)
   DEVICE_VENDOR := MikroTik
   DEVICE_MODEL := RB5009
+  DEVICE_ALT0_VENDOR := MikroTik
+  DEVICE_ALT0_MODEL := RB5009UPr+S+IN
   SOC := armada-7040
   KERNEL_LOADADDR := 0x22000000
   DEVICE_PACKAGES += kmod-i2c-gpio yafut
