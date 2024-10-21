@@ -593,6 +593,7 @@ typedef enum {
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
+#define MAX_PORTS 57
 #define RTL930X_PORT_IGNORE 0x3f
 #define MAX_MC_GROUPS 512
 #define UNKNOWN_MC_PMASK (MAX_MC_GROUPS - 1)
@@ -629,6 +630,19 @@ enum pbvlan_mode {
 	PBVLAN_MODE_UNTAG_AND_PRITAG = 0,
 	PBVLAN_MODE_UNTAG_ONLY,
 	PBVLAN_MODE_ALL_PKT,
+};
+
+struct rtl838x_portgroup_led_config {
+	u32 installed_leds_mask;
+
+	// trigger of led 0, 1 and 2
+	u32 led_triggers[3];
+};
+
+struct rtl838x_led_config {
+	u32 enabled_ports_mask;
+	struct rtl838x_portgroup_led_config low_ports;
+	struct rtl838x_portgroup_led_config high_ports;
 };
 
 struct rtl838x_port {
@@ -1070,8 +1084,8 @@ struct rtl838x_switch_priv {
 	u16 id;
 	u16 family_id;
 	char version;
-	struct rtl838x_port ports[57];
-	struct rtl838x_pcs pcs[57];
+	struct rtl838x_port ports[MAX_PORTS];
+	struct rtl838x_pcs pcs[MAX_PORTS];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
@@ -1090,7 +1104,7 @@ struct rtl838x_switch_priv {
 	u64 lags_port_members[MAX_LAGS];
 	struct net_device *lag_devs[MAX_LAGS];
 	u32 lag_primary[MAX_LAGS];
-	u32 is_lagmember[57];
+	u32 is_lagmember[MAX_PORTS];
 	u64 lagmembers;
 	struct notifier_block nb;  /* TODO: change to different name */
 	struct notifier_block ne_nb;
