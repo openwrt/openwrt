@@ -95,9 +95,10 @@ $(curdir)/bc/compile := $(curdir)/bison/compile $(curdir)/libtool/compile
 $(curdir)/bison/compile := $(curdir)/flex/compile
 $(curdir)/cbootimage/compile += $(curdir)/automake/compile
 $(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
+$(curdir)/coreutils/compile := $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
 $(curdir)/dosfstools/compile := $(curdir)/automake/compile
 $(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile $(curdir)/util-linux/compile
-$(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile $(curdir)/gnulib/compile $(curdir)/libtool/compile
+$(curdir)/elfutils/compile := $(curdir)/bison/compile $(curdir)/gnulib/compile $(curdir)/m4/compile $(curdir)/zlib/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
 $(curdir)/firmware-utils/compile += $(curdir)/cmake/compile
@@ -133,10 +134,17 @@ $(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/automake/compi
 $(curdir)/yafut/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)
-  $(curdir)/coreutils/compile += $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
-  $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
+else
+  tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_SDK),y) += coreutils
 endif
+ifneq ($(filter coreutils,$(tools-y)),)
+  $(curdir)/elfutils/compile += $(curdir)/coreutils/compile
+  $(curdir)/findutils/compile += $(curdir)/coreutils/compile
+  $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
+  $(curdir)/util-linux/compile += $(curdir)/coreutils/compile
+endif
+
 ifeq ($(HOST_OS),Darwin)
   tools-y += bash
 else

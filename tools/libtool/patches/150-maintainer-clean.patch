@@ -1,0 +1,11 @@
+--- a/libltdl/ltdl.mk
++++ b/libltdl/ltdl.mk
+@@ -134,7 +134,7 @@ EXTRA_DIST	       += libltdl/COPYING.LIB
+ ## Gnulib Makefile.am snippets ##
+ ## --------------------------- ##
+ 
+-BUILT_SOURCES	+= libltdl/libltdl/$(LT_ARGZ_H)
++BUILT_SOURCES	+= $(if $(LT_ARGZ_H),libltdl/libltdl/$(LT_ARGZ_H))
+ EXTRA_DIST	+= libltdl/libltdl/lt__argz_.h \
+ 		   libltdl/lt__argz.c
+ 
