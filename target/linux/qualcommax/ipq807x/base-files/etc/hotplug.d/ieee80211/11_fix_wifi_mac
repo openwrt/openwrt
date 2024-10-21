@@ -23,4 +23,9 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $(get_mac_label) 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $(get_mac_label) 3 > /sys${DEVPATH}/macaddress
 		;;
+	tplink,deco-x80-5g)
+		base_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		macaddr_add $base_mac $(expr "$PHYNBR" + 1) > /sys${DEVPATH}/macaddress
+		;;
+
 esac
