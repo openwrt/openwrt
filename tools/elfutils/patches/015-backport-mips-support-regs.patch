@@ -1,0 +1,475 @@
+From db33cb0cac3253c34881c0377ada51d9803eaae0 Mon Sep 17 00:00:00 2001
+From: Ying Huang <ying.huang@oss.cipunited.com>
+Date: Tue, 5 Mar 2024 17:51:22 +0800
+Subject: [PATCH] backends: Add register_info, return_value_location, core_note
+ on mips
+
+	* backends/Makefile.am (mips_SRCS): Add mips_regs.c,
+	mips_retval.c and mips_corenote.c.
+	* backends/mips_init.c (mips_init): HOOK register_info,
+	return_value_location and core_note.
+	* backends/mips_corenote.c: New file.
+	* backends/mips_regs.c: Likewise.
+	* backends/mips_retval.c: Likewise.
+
+Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
+---
+ backends/Makefile.am     |   3 +-
+ backends/mips_corenote.c |  85 +++++++++++++++++
+ backends/mips_init.c     |   3 +
+ backends/mips_regs.c     | 135 +++++++++++++++++++++++++++
+ backends/mips_retval.c   | 196 +++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 421 insertions(+), 1 deletion(-)
+ create mode 100644 backends/mips_corenote.c
+ create mode 100644 backends/mips_regs.c
+ create mode 100644 backends/mips_retval.c
+
+--- a/backends/Makefile.am
++++ b/backends/Makefile.am
+@@ -103,7 +103,8 @@ loongarch_SRCS = loongarch_init.c loonga
+ arc_SRCS = arc_init.c arc_symbol.c
+ 
+ mips_SRCS = mips_init.c mips_symbol.c mips_attrs.c mips_initreg.c \
+-	    mips_cfi.c mips_unwind.c
++	    mips_cfi.c mips_unwind.c mips_regs.c mips_retval.c \
++	    mips_corenote.c
+ 
+ libebl_backends_a_SOURCES = $(i386_SRCS) $(sh_SRCS) $(x86_64_SRCS) \
+ 			    $(ia64_SRCS) $(alpha_SRCS) $(arm_SRCS) \
+--- /dev/null
++++ b/backends/mips_corenote.c
+@@ -0,0 +1,85 @@
++/* MIPS specific core note handling.
++   Copyright (C) 2024 CIP United Inc.
++   This file is part of elfutils.
++
++   This file is free software; you can redistribute it and/or modify
++   it under the terms of either
++
++     * the GNU Lesser General Public License as published by the Free
++       Software Foundation; either version 3 of the License, or (at
++       your option) any later version
++
++   or
++
++     * the GNU General Public License as published by the Free
++       Software Foundation; either version 2 of the License, or (at
++       your option) any later version
++
++   or both in parallel, as here.
++
++   elfutils is distributed in the hope that it will be useful, but
++   WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   General Public License for more details.
++
++   You should have received copies of the GNU General Public License and
++   the GNU Lesser General Public License along with this program.  If
++   not, see <http://www.gnu.org/licenses/>.  */
++
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++
++#include <elf.h>
++#include <inttypes.h>
++#include <stddef.h>
++#include <stdio.h>
++#include <sys/time.h>
++
++#define BACKEND	mips_
++#include "libebl_CPU.h"
++
++#define BITS 64
++#ifndef BITS
++# define BITS 		32
++#else
++# define BITS 		64
++#endif
++
++#define PRSTATUS_REGS_SIZE	(45 * (BITS / 8))
++static const Ebl_Register_Location prstatus_regs[] =
++  {
++    { .offset = 0, .regno = 0, .count = (BITS == 32 ? 40 : 34), .bits = BITS },
++    { .offset = BITS/8 * (BITS == 32 ? 41 : 35), .regno = (BITS == 32 ? 41 : 35), .count = (BITS == 32 ? 4 : 10), .bits = BITS },
++  };
++
++#define PRSTATUS_REGSET_ITEMS						\
++  {									\
++    .name = "pc", .type = ELF_T_ADDR, .format = 'x',			\
++    .offset = offsetof (struct EBLHOOK(prstatus), pr_reg) + ((BITS/8) * (BITS == 32 ? 40 : 34)),	\
++    .group = "register",						\
++    .pc_register = true							\
++  }
++
++#if BITS == 32
++# define ULONG			uint32_t
++# define ALIGN_ULONG		4
++# define TYPE_ULONG		ELF_T_WORD
++#define TYPE_LONG		ELF_T_SWORD
++#else
++#define ULONG			uint64_t
++#define ALIGN_ULONG		8
++#define TYPE_ULONG		ELF_T_XWORD
++#define TYPE_LONG		ELF_T_SXWORD
++#endif
++#define PID_T			int32_t
++#define	UID_T			uint32_t
++#define	GID_T			uint32_t
++#define ALIGN_PID_T		4
++#define ALIGN_UID_T		4
++#define ALIGN_GID_T		4
++#define TYPE_PID_T		ELF_T_SWORD
++#define TYPE_UID_T		ELF_T_WORD
++#define TYPE_GID_T		ELF_T_WORD
++
++#include "linux-core-note.c"
+--- a/backends/mips_init.c
++++ b/backends/mips_init.c
+@@ -61,6 +61,9 @@ mips_init (Elf *elf __attribute__ ((unus
+   HOOK (eh, set_initial_registers_tid);
+   HOOK (eh, abi_cfi);
+   HOOK (eh, unwind);
++  HOOK (eh, register_info);
++  HOOK (eh, return_value_location);
++  HOOK (eh, core_note);
+   eh->frame_nregs = 71;
+   return eh;
+ }
+--- /dev/null
++++ b/backends/mips_regs.c
+@@ -0,0 +1,135 @@
++/* Register names and numbers for mips DWARF.
++   Copyright (C) 2006 Red Hat, Inc.
++   Copyright (C) 2024 CIP United Inc.
++   This file is part of elfutils.
++
++   This file is free software; you can redistribute it and/or modify
++   it under the terms of either
++
++     * the GNU Lesser General Public License as published by the Free
++       Software Foundation; either version 3 of the License, or (at
++       your option) any later version
++
++   or
++
++     * the GNU General Public License as published by the Free
++       Software Foundation; either version 2 of the License, or (at
++       your option) any later version
++
++   or both in parallel, as here.
++
++   elfutils is distributed in the hope that it will be useful, but
++   WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   General Public License for more details.
++
++   You should have received copies of the GNU General Public License and
++   the GNU Lesser General Public License along with this program.  If
++   not, see <http://www.gnu.org/licenses/>.  */
++
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++
++#include <assert.h>
++#include <dwarf.h>
++#include <string.h>
++
++#define BACKEND mips_
++#include "libebl_CPU.h"
++#include <system.h>
++ssize_t
++mips_register_info (Ebl *ebl __attribute__ ((unused)),
++		      int regno, char *name, size_t namelen,
++		      const char **prefix, const char **setname,
++		      int *bits, int *type)
++{
++  if (name == NULL)
++    return 72;
++
++  if (regno < 0 || regno > 71 || namelen < 4)
++    return -1;
++
++  *prefix = "$";
++  if (regno < 38)
++    {
++      *setname = "integer";
++      *type = DW_ATE_signed;
++      *bits = 32;
++    }
++  else
++    {
++      *setname = "FPU";
++      *type = DW_ATE_float;
++      *bits = 64;
++    }
++
++  if (regno < 32)
++    {
++      if (regno < 10)
++	{
++	  name[0] = regno + '0';
++	  namelen = 1;
++	}
++      else
++	{
++	  name[0] = (regno / 10) + '0';
++	  name[1] = (regno % 10) + '0';
++	  namelen = 2;
++	}
++      if (regno == 28 || regno == 29 || regno == 31)
++	*type = DW_ATE_address;
++    }
++  else if (regno == 32)
++    {
++      return stpcpy (name, "lo") + 1 - name;
++    }
++  else if (regno == 33)
++    {
++      return stpcpy (name, "hi") + 1 - name;
++    }
++  else if (regno == 34)
++    {
++      return stpcpy (name, "pc") + 1 - name;
++    }
++  else if (regno == 35)
++    {
++      *type = DW_ATE_address;
++      return stpcpy (name, "bad") + 1 - name;
++    }
++  else if (regno == 36)
++    {
++      return stpcpy (name, "sr") + 1 - name;
++    }
++  else if (regno == 37)
++    {
++      *type = DW_ATE_address;
++      return stpcpy (name, "cause") + 1 - name;
++    }
++  else if (regno < 70)
++    {
++      name[0] = 'f';
++      if (regno < 38 + 10)
++      {
++	name[1] = (regno - 38) + '0';
++	namelen = 2;
++      }
++      else
++      {
++	name[1] = (regno - 38) / 10 + '0';
++	name[2] = (regno - 38) % 10 + '0';
++	namelen = 3;
++      }
++    }
++  else if (regno == 70)
++    {
++      return stpcpy (name, "fsr") + 1 - name;
++    }
++  else if (regno == 71)
++    {
++      return stpcpy (name, "fir") + 1 - name;
++    }
++
++  name[namelen++] = '\0';
++  return namelen;
++}
+--- /dev/null
++++ b/backends/mips_retval.c
+@@ -0,0 +1,196 @@
++/* Function return value location for Linux/mips ABI.
++   Copyright (C) 2005 Red Hat, Inc.
++   Copyright (C) 2024 CIP United Inc.
++   This file is part of elfutils.
++
++   This file is free software; you can redistribute it and/or modify
++   it under the terms of either
++
++     * the GNU Lesser General Public License as published by the Free
++       Software Foundation; either version 3 of the License, or (at
++       your option) any later version
++
++   or
++
++     * the GNU General Public License as published by the Free
++       Software Foundation; either version 2 of the License, or (at
++       your option) any later version
++
++   or both in parallel, as here.
++
++   elfutils is distributed in the hope that it will be useful, but
++   WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   General Public License for more details.
++
++   You should have received copies of the GNU General Public License and
++   the GNU Lesser General Public License along with this program.  If
++   not, see <http://www.gnu.org/licenses/>.  */
++
++#ifdef HAVE_CONFIG_H
++# include <config.h>
++#endif
++
++#include <assert.h>
++#include <dwarf.h>
++#include <string.h>
++#include <elf.h>
++#include <stdio.h>
++
++#define BACKEND mips_
++#include "libebl_CPU.h"
++#include "libdwP.h"
++#include <stdio.h>
++
++/* $v0 or pair $v0, $v1 */
++static const Dwarf_Op loc_intreg_o32[] =
++  {
++    { .atom = DW_OP_reg2 }, { .atom = DW_OP_piece, .number = 4 },
++    { .atom = DW_OP_reg3 }, { .atom = DW_OP_piece, .number = 4 },
++  };
++
++static const Dwarf_Op loc_intreg[] =
++  {
++    { .atom = DW_OP_reg2 }, { .atom = DW_OP_piece, .number = 8 },
++    { .atom = DW_OP_reg3 }, { .atom = DW_OP_piece, .number = 8 },
++  };
++#define nloc_intreg	1
++#define nloc_intregpair	4
++
++/* $f0 (float), or pair $f0, $f1 (double).
++ * f2/f3 are used for COMPLEX (= 2 doubles) returns in Fortran */
++static const Dwarf_Op loc_fpreg_o32[] =
++  {
++    { .atom = DW_OP_regx, .number = 32 }, { .atom = DW_OP_piece, .number = 4 },
++    { .atom = DW_OP_regx, .number = 33 }, { .atom = DW_OP_piece, .number = 4 },
++    { .atom = DW_OP_regx, .number = 34 }, { .atom = DW_OP_piece, .number = 4 },
++    { .atom = DW_OP_regx, .number = 35 }, { .atom = DW_OP_piece, .number = 4 },
++  };
++
++/* $f0, or pair $f0, $f2.  */
++static const Dwarf_Op loc_fpreg[] =
++  {
++    { .atom = DW_OP_regx, .number = 32 }, { .atom = DW_OP_piece, .number = 8 },
++    { .atom = DW_OP_regx, .number = 34 }, { .atom = DW_OP_piece, .number = 8 },
++  };
++#define nloc_fpreg  1
++#define nloc_fpregpair 4
++#define nloc_fpregquad 8
++
++/* The return value is a structure and is actually stored in stack space
++   passed in a hidden argument by the caller.  But, the compiler
++   helpfully returns the address of that space in $v0.  */
++static const Dwarf_Op loc_aggregate[] =
++  {
++    { .atom = DW_OP_breg2, .number = 0 }
++  };
++#define nloc_aggregate 1
++
++int
++mips_return_value_location (Dwarf_Die *functypedie, const Dwarf_Op **locp)
++{
++  unsigned int regsize = (gelf_getclass (functypedie->cu->dbg->elf) == ELFCLASS32 ) ? 4 : 8;
++  if (!regsize)
++    return -2;
++
++  /* Start with the function's type, and get the DW_AT_type attribute,
++     which is the type of the return value.  */
++
++  Dwarf_Attribute attr_mem;
++  Dwarf_Attribute *attr = dwarf_attr_integrate (functypedie, DW_AT_type, &attr_mem);
++  if (attr == NULL)
++    /* The function has no return value, like a `void' function in C.  */
++    return 0;
++
++  Dwarf_Die die_mem;
++  Dwarf_Die *typedie = dwarf_formref_die (attr, &die_mem);
++  int tag = dwarf_tag (typedie);
++
++  /* Follow typedefs and qualifiers to get to the actual type.  */
++  while (tag == DW_TAG_typedef
++	 || tag == DW_TAG_const_type || tag == DW_TAG_volatile_type
++	 || tag == DW_TAG_restrict_type)
++    {
++      attr = dwarf_attr_integrate (typedie, DW_AT_type, &attr_mem);
++      typedie = dwarf_formref_die (attr, &die_mem);
++      tag = dwarf_tag (typedie);
++    }
++
++  switch (tag)
++    {
++    case -1:
++      return -1;
++
++    case DW_TAG_subrange_type:
++      if (! dwarf_hasattr_integrate (typedie, DW_AT_byte_size))
++	{
++	  attr = dwarf_attr_integrate (typedie, DW_AT_type, &attr_mem);
++	  typedie = dwarf_formref_die (attr, &die_mem);
++	  tag = dwarf_tag (typedie);
++	}
++      /* Fall through.  */
++      FALLTHROUGH;
++
++    case DW_TAG_base_type:
++    case DW_TAG_enumeration_type:
++    CASE_POINTER:
++      {
++	Dwarf_Word size;
++	if (dwarf_formudata (dwarf_attr_integrate (typedie, DW_AT_byte_size,
++					 &attr_mem), &size) != 0)
++	  {
++	    if (dwarf_is_pointer (tag))
++	      size = regsize;
++	    else
++	      return -1;
++	  }
++	if (tag == DW_TAG_base_type)
++	  {
++	    Dwarf_Word encoding;
++	    if (dwarf_formudata (dwarf_attr_integrate (typedie, DW_AT_encoding,
++					     &attr_mem), &encoding) != 0)
++	      return -1;
++
++#define ARCH_LOC(loc, regsize) ((regsize) == 4 ? (loc ## _o32) : (loc))
++
++	    if (encoding == DW_ATE_float)
++	      {
++		*locp = ARCH_LOC(loc_fpreg, regsize);
++		if (size <= regsize)
++		  return nloc_fpreg;
++
++		if (size <= 2*regsize)
++		  return nloc_fpregpair;
++
++		if (size <= 4*regsize)
++		  return nloc_fpregquad;
++
++		goto aggregate;
++	      }
++	  }
++	*locp = ARCH_LOC(loc_intreg, regsize);
++	if (size <= regsize)
++	  return nloc_intreg;
++	if (size <= 2*regsize)
++	  return nloc_intregpair;
++
++	/* Else fall through. Shouldn't happen though (at least with gcc) */
++      }
++      FALLTHROUGH;
++
++    case DW_TAG_structure_type:
++    case DW_TAG_class_type:
++    case DW_TAG_union_type:
++    case DW_TAG_array_type:
++    aggregate:
++      *locp = loc_aggregate;
++      return nloc_aggregate;
++    case DW_TAG_unspecified_type:
++      return 0;
++    }
++
++  /* XXX We don't have a good way to return specific errors from ebl calls.
++     This value means we do not understand the type, but it is well-formed
++     DWARF and might be valid.  */
++  return -2;
++}
