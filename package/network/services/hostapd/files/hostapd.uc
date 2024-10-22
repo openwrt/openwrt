@@ -30,6 +30,23 @@ hostapd.data.iface_fields = {
 	iapp_interface: true,
 };
 
+hostapd.data.bss_info_fields = {
+	// radio
+	hw_mode: true,
+	channel: true,
+	ieee80211ac: true,
+	ieee80211ax: true,
+
+	// bss
+	bssid: true,
+	ssid: true,
+	wpa: true,
+	wpa_key_mgmt: true,
+	wpa_pairwise: true,
+	auth_algs: true,
+	ieee80211w: true,
+};
+
 function iface_remove(cfg)
 {
 	if (!cfg || !cfg.bss || !cfg.bss[0] || !cfg.bss[0].ifname)
@@ -752,6 +769,17 @@ function ex_wrap(func) {
 	};
 }
 
+function bss_config(bss_name) {
+	for (let phy, config in hostapd.data.config) {
+		if (!config)
+			continue;
+
+		for (let bss in config.bss)
+			if (bss.ifname == bss_name)
+				return [ config, bss ];
+	}
+}
+
 let main_obj = {
 	reload: {
 		args: {
@@ -894,6 +922,32 @@ let main_obj = {
 
 			hostapd.remove_iface(req.args.iface);
 			return 0;
+		})
+	},
+	bss_info: {
+		args: {
+			iface: ""
+		},
+		call: ex_wrap(function(req) {
+			if (!req.args.iface)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let config = bss_config(req.args.iface);
+			if (!config)
+				return libubus.STATUS_NOT_FOUND;
+
+			let bss = config[1];
+			config = config[0];
+			let ret = {};
+
+			for (let line in [ ...config.radio.data, ...bss.data ]) {
+				let fields = split(line, "=", 2);
+				let name = fields[0];
+				if (hostapd.data.bss_info_fields[name])
+					ret[name] = fields[1];
+			}
+
+			return ret;
 		})
 	},
 };

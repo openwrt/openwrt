@@ -245,6 +245,33 @@ let main_obj = {
 			return 0;
 		}
 	},
+	bss_info: {
+		args: {
+			iface: "",
+		},
+		call: function(req) {
+			let ifname = req.args.iface;
+			if (!ifname)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let iface = wpas.interfaces[ifname];
+			if (!iface)
+				return libubus.STATUS_NOT_FOUND;
+
+			let status = iface.ctrl("STATUS");
+			if (!status)
+				return libubus.STATUS_NOT_FOUND;
+
+			let ret = {};
+			status = split(status, "\n");
+			for (let line in status) {
+				line = split(line, "=", 2);
+				ret[line[0]] = line[1];
+			}
+
+			return ret;
+		}
+	},
 };
 
 wpas.data.ubus = ubus;
