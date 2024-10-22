@@ -1,0 +1,156 @@
+#!/usr/bin/ucode
+
+'use strict';
+
+import * as iwinfo from 'iwinfo';
+
+function print_assoclist(stations) {
+	for (let mac, station in stations) {
+		printf(`${station.mac}  ${station.signal} dBm / ${station.noise} dBm (SNR ${station.snr})  ${station.inactive_time} ms ago\n`);
+		for (let k in [ 'rx', 'tx' ]) {
+			let bitrate = station[k];
+			let flags = join(', ', bitrate.flags);
+
+			printf(`\t${uc(k)}: ${bitrate.bitrate} MBit/s`);
+			if (length(bitrate.flags))
+				printf(', %s', flags);
+			printf('%10d Pkts.\n', bitrate.packets);
+		}
+		printf(`\texpected throughput: ${station.expected_throughput}\n\n`);
+	}
+}
+
+function print_countrylist(list) {
+	for (let k, v in list.countries)
+		printf(`${k == list.active ? '*' : ' '}   ${k} "${v}"\n`);
+}
+
+function print_freqlist(channels) {
+	for (let channel in channels) {
+		printf(`${channel.active ? '*' : ' '} ${channel.freq} GHz (Band: ${channel.band} GHz, Channel ${channel.channel})`);
+		if (length(channel.flags))
+			printf(` [${join(', ', channel.flags)}]`);
+		printf('\n');
+	}
+}
+
+function print_htmodelist(htmode) {
+	printf('%s\n', join(' ', htmode));
+}
+
+function print_info(list) {
+	let padding = '         ';
+
+	for (let bss in list) {
+		printf(`${bss.iface} ESSID: "${bss.ssid}"\n`);
+		printf(`${padding}Access Point: ${bss.mac}\n`);
+		printf(`${padding}Mode: ${bss.mode}  Channel: ${bss.channel} (${bss.freq} GHz)  HT Mode: ${bss.htmode}\n`);
+		printf(`${padding}Center Channel 1: ${bss.center_freq1} 2: ${bss.center_freq2}\n`);
+		printf(`${padding}Tx-Power: ${bss.txpower} dBm  Link Quality: ${bss.quality}/70\n`);
+		printf(`${padding}Signal: ${bss.signal}  Noise: ${bss.noise}\n`);
+		printf(`${padding}Bit Rate: ${bss.bitrate ?? 'unknown'} MBit/s\n`);
+		printf(`${padding}Encryption: ${bss.encryption}\n`);
+		printf(`${padding}Type: nl80211  HW Mode(s): 802.11${bss.hwmode}\n`);
+		printf(`${padding}Hardware: ${bss.hw_type} [${bss.hw_id}]\n`);
+		printf(`${padding}TX power offset: ${bss.power_offset}\n`);
+		printf(`${padding}Channel offset: ${bss.channel_offset}\n`);
+		printf(`${padding}Supports VAPs: ${bss.vaps}  PHY name: ${bss.phy}\n`);
+		if (bss.owe_transition_ifname)
+			printf(`${padding}OWE partner: ${bss.owe_transition_ifname}\n`);
+		printf('\n');
+	}
+	return 0;
+}
+
+function print_scan(cells) {
+	let idx = 1;
+
+	for (let cell in cells) {
+		printf('Cell %02d - Address: %s\n', idx++, cell.bssid);
+		printf('\t  Mode: %s  Frequency: %s GHz  Band: %s GHz  Channel: %d\n', cell.mode, cell.frequency, cell.band, cell.channel);
+		printf('\t  Signal: %d dBm  Quality: %2d/70\n', cell.dbm, cell.quality);
+
+		if (!length(cell.crypto.key_mgmt))
+			printf('\t  Encryption: NONE\n');
+		else
+			printf('\t  Encryption: %s (%s)\n', join(' / ', cell.crypto.key_mgmt), join(' / ', cell.crypto.pair));
+
+		if (cell.ht) {
+			printf('\t  HT Operation:\n');
+			printf('\t\tPrimary Channel: %d\n', cell.ht.primary_channel);
+			printf('\t\tSecondary Channel Offset: %s\n', cell.ht.secondary_chan_off);
+			printf('\t\tChannel Width: %s\n', cell.ht.chan_width);
+		}
+		
+		if (cell.vht) {
+			printf('\t  VHT Operation:\n');
+			printf('\t\tCenter Frequency 1: %d\n', cell.vht.center_chan_1);
+			printf('\t\tCenter Frequency 2: %s\n', cell.vht.center_chan_2);
+			printf('\t\tChannel Width: %s\n', cell.vht.chan_width);
+		}
+
+		printf('\n'); 
+	}
+}
+
+function print_txpowerlist(list) {
+	for (let power in list)
+		printf('%s %2d dbm (%4d mW)\n', power.active ? '*' : ' ', power.dbm, power.mw);
+}
+
+let pretty = true;
+if (ARGV[0] == '-j') {
+	pretty = false;
+	shift(ARGV);
+}
+
+if (!length(ARGV)) {
+	let info = iwinfo.info();
+	if (pretty)
+		print_info(info);
+	else
+		printf('%.J\n', info);
+	return 0;
+}
+
+const commands = {
+	assoclist: [ iwinfo.assoclist, print_assoclist ],
+	countrylist: [ iwinfo.countrylist, print_countrylist ],
+	freqlist: [ iwinfo.freqlist, print_freqlist ],
+	htmodelist: [ iwinfo.htmodelist, print_htmodelist ],
+	info: [ iwinfo.info, print_info ],
+	scan: [ iwinfo.scan, print_scan ],
+	txpowerlist: [ iwinfo.txpowerlist, print_txpowerlist ],
+};
+
+if (length(ARGV) == 2 && iwinfo.ifaces[ARGV[0]])
+	for (let cmd, cb in commands)
+		if (substr(cmd, 0, length(ARGV[1])) == ARGV[1]) {
+			let ret = cb[0](ARGV[0]);
+			
+			if (pretty)
+				cb[1](ret);
+			else
+				printf('%.J\n', ret);
+			return 0;
+		}
+
+switch(ARGV[0]) {
+case 'phy':
+	printf('%.J\n', iwinfo.phys);
+	return 0;
+
+case 'iface':
+	printf('%.J\n', iwinfo.ifaces);
+	return 0;
+}
+
+printf('Usage:\n' +
+	'\tiwinfo <device> info\n' +
+	'\tiwinfo <device> scan\n' +
+	'\tiwinfo <device> txpowerlist\n' +
+	'\tiwinfo <device> freqlist\n' +
+	'\tiwinfo <device> assoclist\n' +
+	'\tiwinfo <device> countrylist\n' +
+	'\tiwinfo <device> htmodelist\n' +
+	'\tiwinfo <backend> phyname <section>\n');
