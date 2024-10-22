@@ -372,7 +372,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
  #ifdef CONFIG_FILS
  static struct wpabuf *
-@@ -3615,8 +3618,8 @@ static u16 check_multi_ap(struct hostapd
+@@ -3617,8 +3620,8 @@ static u16 check_multi_ap(struct hostapd
  }
  
  
@@ -383,7 +383,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  {
  	/* Supported rates not used in IEEE 802.11ad/DMG */
  	if (hapd->iface->current_mode &&
-@@ -4003,7 +4006,7 @@ static int __check_assoc_ies(struct host
+@@ -4005,7 +4008,7 @@ static int __check_assoc_ies(struct host
  			       elems->ext_capab_len);
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
@@ -392,7 +392,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	if (resp != WLAN_STATUS_SUCCESS)
  		return resp;
  
-@@ -6058,6 +6061,11 @@ static void handle_beacon(struct hostapd
+@@ -6060,6 +6063,11 @@ static void handle_beacon(struct hostapd
  				      0);
  
  	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);

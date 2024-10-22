@@ -725,7 +725,7 @@ as adding/removing interfaces.
  	for (pw = hapd->conf->sae_passwords; pw; pw = pw->next) {
  		if (!is_broadcast_ether_addr(pw->peer_addr) &&
  		    (!sta ||
-@@ -582,12 +587,28 @@ const char * sae_get_password(struct hos
+@@ -582,12 +587,30 @@ const char * sae_get_password(struct hos
  		pt = hapd->conf->ssid.pt;
  	}
  
@@ -741,6 +741,7 @@ as adding/removing interfaces.
 +			if (!sta->use_sta_psk)
 +				break;
 +
++#ifdef CONFIG_SAE
 +			if (sta->sae_pt) {
 +				pt = sta->sae_pt;
  				break;
@@ -753,10 +754,11 @@ as adding/removing interfaces.
 +					   NULL);
 +			sta->sae_pt = pt;
 +			break;
++#endif
  		}
  	}
  
-@@ -3229,6 +3250,12 @@ static void handle_auth(struct hostapd_d
+@@ -3229,6 +3252,12 @@ static void handle_auth(struct hostapd_d
  		goto fail;
  	}
  
@@ -771,17 +773,19 @@ as adding/removing interfaces.
  
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -474,6 +474,9 @@ void ap_free_sta(struct hostapd_data *ha
+@@ -474,6 +474,11 @@ void ap_free_sta(struct hostapd_data *ha
  	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
  #endif /* CONFIG_TESTING_OPTIONS */
  
++#ifdef CONFIG_SAE
 +	if (sta->sae_pt)
 +		sae_deinit_pt(sta->sae_pt);
++#endif
 +
  	os_free(sta);
  }
  
-@@ -1507,6 +1510,8 @@ void ap_sta_set_authorized_event(struct
+@@ -1507,6 +1512,8 @@ void ap_sta_set_authorized_event(struct
  #endif /* CONFIG_P2P */
  	const u8 *ip_ptr = NULL;
  
