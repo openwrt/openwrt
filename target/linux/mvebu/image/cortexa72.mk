@@ -104,6 +104,10 @@ define Device/iei_puzzle-m902
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M902
   DEVICE_PACKAGES += kmod-rtc-ds1307
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := The Ethernet interface names were renamed \
+    to match the faceplate labels. Doing a sysupgrade while keeping \
+    the current config will break network and firewall settings.
 endef
 TARGET_DEVICES += iei_puzzle-m902
 
