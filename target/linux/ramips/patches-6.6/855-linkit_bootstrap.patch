@@ -10,7 +10,7 @@
  obj-y				+= cardreader/
 --- /dev/null
 +++ b/drivers/misc/linkit.c
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,83 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify
 + *  it under the terms of the GNU General Public License version 2 as
@@ -19,13 +19,11 @@
 + *  Copyright (C) 2015 John Crispin <blogic@openwrt.org>
 + */
 +
++#include <linux/gpio/consumer.h>
 +#include <linux/module.h>
-+#include <linux/platform_device.h>
-+#include <linux/of.h>
 +#include <linux/mtd/mtd.h>
-+#include <linux/gpio.h>
-+
-+#define LINKIT_LATCH_GPIO	11
++#include <linux/of.h>
++#include <linux/platform_device.h>
 +
 +struct linkit_hw_data {
 +	char board[16];
@@ -63,13 +61,15 @@
 +	dev_info(&pdev->dev, "Revision : %s\n", hw.rev);
 +
 +	if (!strcmp(hw.board, "LINKITS7688")) {
++		struct gpio_desc *latch;
++
 +		dev_info(&pdev->dev, "setting up bootstrap latch\n");
 +
-+		if (devm_gpio_request(&pdev->dev, LINKIT_LATCH_GPIO, "bootstrap")) {
++		latch = devm_gpiod_get(&pdev->dev, "bootstrap", GPIOD_OUT_LOW);
++		if (IS_ERR(latch)) {
 +			dev_err(&pdev->dev, "failed to setup bootstrap gpio\n");
-+			return -1;
++			return PTR_ERR(latch);
 +		}
-+		gpio_direction_output(LINKIT_LATCH_GPIO, 0);
 +	}
 +
 +	return 0;
@@ -85,7 +85,6 @@
 +	.probe = linkit_probe,
 +	.driver = {
 +		.name = "mtk-linkit",
-+		.owner = THIS_MODULE,
 +		.of_match_table = linkit_match,
 +	},
 +};
