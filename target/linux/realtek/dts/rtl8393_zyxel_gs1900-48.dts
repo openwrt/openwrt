@@ -39,11 +39,6 @@
 		gpio-controller;
 	};
 
-	gpio-restart {
-		compatible = "gpio-restart";
-		gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
-	};
-
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
@@ -131,13 +126,9 @@
 			};
 			partition@260000 {
 				label = "firmware";
-				reg = <0x260000 0x6d0000>;
+				reg = <0x260000 0xda0000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x83800000>;
-			};
-			partition@930000 {
-				label = "runtime2";
-				reg = <0x930000 0x6d0000>;
 			};
 		};
 	};
