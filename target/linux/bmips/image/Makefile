@@ -82,10 +82,12 @@ endef
 define Build/aeolus-initramfs
 	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
 	# header and pack the firmware binary
-	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@ -o $@.out \
+	mv $@ $@.uncompressed
+	pushd $(dir $@) && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.uncompressed -o $(notdir $@) \
 		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
-		-a $(KERNEL_LOADADDR) $(1)
-	mv $@.out $@
+		-a $(KERNEL_LOADADDR) $(1) && \
+	popd
 endef
 
 define Build/aeolus-initramfs-lzma
