@@ -8,11 +8,11 @@
  #include <dt-bindings/clock/bcm6318-clock.h>
  #include <dt-bindings/clock/bcm6328-clock.h>
  #include <dt-bindings/clock/bcm6358-clock.h>
-@@ -83,6 +84,109 @@ static const struct clk_bcm63xx_table_en
+@@ -83,6 +84,163 @@ static const struct clk_bcm63xx_table_en
  	},
  };
  
-+static const struct clk_bcm63xx_table_entry bcm3380_clocks[] = {
++static const struct clk_bcm63xx_table_entry bcm3380_clocks_low[] = {
 +	{
 +		.name = "ddr",
 +		.bit = BCM3380_CLK0_DDR,
@@ -115,24 +115,69 @@
 +	},
 +};
 +
++static const struct clk_bcm63xx_table_entry bcm3380_clocks_high[] = {
++	{
++		.name = "pciepll",
++		.bit = BCM3380_CLK1_PCIEPLL,
++	}, {
++		.name = "gphypll",
++		.bit = BCM3380_CLK1_GPHYPLL,
++	}, {
++		.name = "ds0",
++		.bit = BCM3380_CLK1_DS0,
++	}, {
++		.name = "ds1",
++		.bit = BCM3380_CLK1_DS1,
++	}, {
++		.name = "ds2",
++		.bit = BCM3380_CLK1_DS2,
++	}, {
++		.name = "ds3",
++		.bit = BCM3380_CLK1_DS3,
++	}, {
++		.name = "ds4b",
++		.bit = BCM3380_CLK1_DS4B,
++	}, {
++		.name = "ds5a",
++		.bit = BCM3380_CLK1_DS5A,
++	}, {
++		.name = "ds6",
++		.bit = BCM3380_CLK1_DS6,
++	}, {
++		.name = "ds7",
++		.bit = BCM3380_CLK1_DS7,
++	}, {
++		.name = "ustop",
++		.bit = BCM3380_CLK1_USTOP,
++	}, {
++		.name = "ob",
++		.bit = BCM3380_CLK1_OB,
++	}, {
++		.name = "dstunner",
++		.bit = BCM3380_CLK1_DSTUNNER,
++	}, {
++		.name = "usb0",
++		.bit = BCM3380_CLK1_USB0,
++	}, {
++		.name = "usb1",
++		.bit = BCM3380_CLK1_USB1,
++	}, {
++		.name = "gphy",
++		.bit = BCM3380_CLK1_GPHY,
++	}, {
++		/* sentinel */
++	},
++};
++
  static const struct clk_bcm63xx_table_entry bcm6318_clocks[] = {
  	{
  		.name = "adsl_asb",
-@@ -555,6 +659,7 @@ static void clk_bcm63xx_remove(struct pl
+@@ -555,6 +713,8 @@ static void clk_bcm63xx_remove(struct pl
  
  static const struct of_device_id clk_bcm63xx_dt_ids[] = {
  	{ .compatible = "brcm,bcm3368-clocks", .data = &bcm3368_clocks, },
-+	{ .compatible = "brcm,bcm3380-clocks", .data = &bcm3380_clocks, },
++	{ .compatible = "brcm,bcm3380-clocks-low", .data = &bcm3380_clocks_low, },
++	{ .compatible = "brcm,bcm3380-clocks-high", .data = &bcm3380_clocks_high, },
  	{ .compatible = "brcm,bcm6318-clocks", .data = &bcm6318_clocks, },
  	{ .compatible = "brcm,bcm6318-ubus-clocks", .data = &bcm6318_ubus_clocks, },
  	{ .compatible = "brcm,bcm6328-clocks", .data = &bcm6328_clocks, },
---- a/arch/mips/bmips/setup.c
-+++ b/arch/mips/bmips/setup.c
-@@ -193,6 +193,7 @@ static void bcm6368_quirks(void)
- 
- static const struct bmips_quirk bmips_quirk_list[] = {
- 	{ "brcm,bcm3368",		&bcm6358_quirks			},
-+	{ "brcm,bcm3380",		&bcm6358_quirks			},
- 	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
- 	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
- 	{ "brcm,bcm6328",		&bcm6328_quirks			},

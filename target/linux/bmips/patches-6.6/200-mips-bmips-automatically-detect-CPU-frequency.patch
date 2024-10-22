@@ -70,63 +70,10 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  struct bmips_quirk {
  	const char		*compatible;
  	void			(*quirk_fn)(void);
-@@ -126,9 +165,46 @@ static void bcm6368_quirks(void)
- 	bcm63xx_fixup_cpu1();
- }
- 
-+static void bcm3380_quirks(void)
-+{
-+	/*
-+	* https://forum.openwrt.org/t/bringing-up-bcm3380-extremely-slow-instruction-execution
-+	* Enable caches to increase the running speed:
-+	* 1. In the BCM-specific CP0 config register($22, 0),
-+	*    set CP0_BCM_CFG_ICSHEN(31) and CP0_BCM_CFG_DCSHEN(30) bits.
-+	* 2. In the MIPS-generic CP0 config register($16, 0),
-+	*    clear CONF_CM_CMASK and then set the CONF_CM_CACHABLE_NONCOHERENT.
-+	*/
-+	write_c0_brcm_config(read_c0_brcm_config() | (0x1 << 31) | (0x1 << 30));
-+	change_c0_config(CONF_CM_CMASK, CONF_CM_CACHABLE_NONCOHERENT);
-+
-+	/*
-+	 * RAC flush causes kernel panics on BCM6358 when booting from TP1
-+	 * because the bootloader is not initializing it properly.
-+	 */
-+	bmips_rac_flush_disable = !!(read_c0_brcm_cmt_local() & (1 << 31)) ||
-+				  !!bmips_cbr_addr;
-+
-+	bcm63xx_fixup_cpu1();
-+
-+	/*
-+	* This function can only be called from CPU0.
-+	*
-+	* Linux only brings up CPU0 on boot.
-+	* The highest bit of the CP0 CMT Local Register($22, 3) indicates which
-+	* CPU the current code runs on.
-+	* If set, we are on CPU1, otherwise, we are on CPU0.
-+	*
-+	* Route MIPS INT 2 & 4 to TP1 (CPU1).
-+	* Set CP0_CMT_XIR_2(29) and CP0_CMT_XIR_4(31)
-+	* in the CP0 CMT Interrupt Register($22, 1).
-+	*/
-+	write_c0_brcm_cmt_intr(read_c0_brcm_cmt_intr() | (1 << 29) | (1 << 31));
-+}
-+
- static const struct bmips_quirk bmips_quirk_list[] = {
- 	{ "brcm,bcm3368",		&bcm6358_quirks			},
--	{ "brcm,bcm3380",		&bcm6358_quirks			},
-+	{ "brcm,bcm3380",		&bcm3380_quirks			},
- 	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
- 	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
- 	{ "brcm,bcm6328",		&bcm6328_quirks			},
-@@ -164,17 +240,167 @@ const char *get_system_type(void)
+@@ -163,17 +202,161 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
-+static u32 bcm3380_cpufreq(void)
-+{
-+	return 333000000;
-+}
-+
 +static u32 bcm6318_cpufreq(void)
 +{
 +	u32 val = __raw_readl(REG_BCM6318_SOB);
@@ -250,7 +197,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +}
 +
 +static const struct bmips_cpufreq bmips_cpufreq_list[] = {
-+	{ "brcm,bcm3380", &bcm3380_cpufreq },
 +	{ "brcm,bcm6318", &bcm6318_cpufreq },
 +	{ "brcm,bcm6328", &bcm6328_cpufreq },
 +	{ "brcm,bcm6358", &bcm6358_cpufreq },

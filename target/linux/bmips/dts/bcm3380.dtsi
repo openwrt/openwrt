@@ -82,8 +82,14 @@
 		ranges;
 
 		periph_clk0: clock-controller@14e00004 {
-			compatible = "brcm,bcm3380-clocks";
+			compatible = "brcm,bcm3380-clocks-low";
 			reg = <0x14e00004 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_clk1: clock-controller@14e00008 {
+			compatible = "brcm,bcm3380-clocks-high";
+			reg = <0x14e00008 0x4>;
 			#clock-cells = <1>;
 		};
 
