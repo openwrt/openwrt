@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
-@@ -286,14 +286,46 @@ static inline void prot##extra##blast_##
+@@ -290,14 +290,46 @@ static inline void prot##extra##blast_##
  						    unsigned long end)	\
  {									\
  	unsigned long lsize = cpu_##desc##_line_size();			\
