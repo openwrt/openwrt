@@ -16,6 +16,7 @@
 		led-failsafe = &led_ready;
 		led-running = &led_ready;
 		led-upgrade = &led_ready;
+		label-mac-device = &eth1;
 	};
 
 	chosen {
@@ -154,6 +155,16 @@
 				label = "u-boot";
 				reg = <0x0 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_3ffa8: macaddr@3ffa8 {
+						reg = <0x3ffa8 0x6>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -213,6 +224,9 @@
 
 &eth1 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_uboot_3ffa8>;
+	nvmem-cell-names = "mac-address";
 };
 
 &eth1port {
