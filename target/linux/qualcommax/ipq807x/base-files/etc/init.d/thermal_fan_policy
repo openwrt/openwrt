@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	case $(board_name) in
+	zyxel_nbg7815)
+		# get correct thermal zone defined in DTS
+		aqr_thermal=$(grep -Ril "aqr-thermal" /sys/class/thermal/thermal_zone*/type | cut -d'/' -f 5)
+		tmp103_thermal=$(grep -Ril "tmp103-thermal" /sys/class/thermal/thermal_zone*/type | cut -d'/' -f 5)
+		# setting thermal governor from step_wise to bang_bang
+		echo "bang_bang" > /sys/class/thermal/${aqr_thermal}/policy
+		echo "bang_bang" > /sys/class/thermal/${tmp103_thermal}/policy
+		;;
+	esac
+}
