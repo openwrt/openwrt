@@ -6,11 +6,12 @@
 
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
-#include "en7581.dtsi"
+#include <dt-bindings/input/input.h>
+#include "an7581.dtsi"
 
 / {
-	model = "Airoha EN7581 Evaluation Board";
-	compatible = "airoha,en7581-evb", "airoha,en7581";
+	model = "Airoha AN7581 Evaluation Board";
+	compatible = "airoha,an7581-evb", "airoha,an7581", "airoha,en7581";
 
 	aliases {
 		serial0 = &uart1;
@@ -25,6 +26,57 @@
 	memory@80000000 {
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x2 0x00000000>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+		btn0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm_gpio18_idx10_pins>;
+		lan4_green {
+			label = "pon:green";
+			pwms = <&en7581_pwm 10 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+		};
+	};
+
+
+	leds {
+		compatible = "gpio-leds";
+
+		pwr_led: led-0 {
+			label = "pwr";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		los_led: led-2 {
+			label = "los";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		internet_led: led-3 {
+			label = "internet";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
 	};
 };
 
@@ -90,51 +142,43 @@
 		pins = "gpio18";
 		output-enable;
 	};
-
-	mmc_pins: mmc-pins {
-		mux {
-			function = "emmc";
-			groups = "emmc";
-		};
-	};
 };
 
-&mmc0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&mmc_pins>;
+&snfi {
 	status = "okay";
+};
 
-	#address-cells = <1>;
-	#size-cells = <0>;
+&spi_nand {
+	partitions {
+		compatible = "airoha,fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	card@0 {
-		compatible = "mmc-card";
-		reg = <0>;
+		bootloader@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00080000>;
+		};
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		tclinux@80000 {
+			label = "tclinux";
+			compatible = "denx,fit";
+			reg = <0x00080000 0x02800000>;
+		};
 
-			bootloader@0 {
-				label = "bootloader";
-				reg = <0x00000000 0x00080000>;
-			};
+		tclinux_slave@2880000 {
+			label = "tclinux_slave";
+			reg = <0x02880000 0x02800000>;
+		};
 
-			tclinux@80000 {
-				label = "tclinux";
-				reg = <0x00080000 0x02800000>;
-			};
+		rootfs_data@5080000 {
+			label = "rootfs_data";
+			reg = <0x5080000 0x00800000>;
+		};
 
-			tclinux_slave@2880000 {
-				label = "tclinux_slave";
-				reg = <0x02880000 0x02800000>;
-			};
-
-			rootfs_data@5080000 {
-				label = "rootfs_data";
-				reg = <0x5080000 0x00800000>;
-			};
+		art@ffffffff {
+			compatible = "airoha,dynamic-art";
+			label = "art";
+			reg = <0xffffffff 0x00300000>;
 		};
 	};
 };
