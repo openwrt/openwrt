@@ -439,9 +439,10 @@ define Device/bananapi_bpi-r4-common
   KERNEL_LOADADDR := 0x46000000
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   ARTIFACTS := \
-	       emmc-preloader.bin emmc-bl31-uboot.fip \
+	       emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip \
 	       sdcard.img.gz \
 	       snand-preloader.bin snand-bl31-uboot.fip
+  ARTIFACT/emmc-gpt.bin		:= mt798x-gpt emmc
   ARTIFACT/emmc-preloader.bin	:= mt7988-bl2 emmc-comb
   ARTIFACT/emmc-bl31-uboot.fip	:= mt7988-bl31-uboot $$(DEVICE_NAME)-emmc
   ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-ubi-comb
