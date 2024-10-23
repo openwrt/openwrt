@@ -1,0 +1,40 @@
+From d8ad903337b79bc32ae138bf9ef04f31613e4bf2 Mon Sep 17 00:00:00 2001
+From: Rex Lu <rex.lu@mediatek.com>
+Date: Mon, 21 Oct 2024 12:37:18 +0800
+Subject: [PATCH] mtk: wed: add dma mask limitation and GFP_DMA32 for board >=
+ 4GB dram
+
+---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_wed.c
++++ b/drivers/net/ethernet/mediatek/mtk_wed.c
+@@ -670,7 +670,7 @@ mtk_wed_tx_buffer_alloc(struct mtk_wed_d
+ 		void *buf;
+ 		int s;
+ 
+-		page = __dev_alloc_page(GFP_KERNEL);
++		page = __dev_alloc_pages(GFP_KERNEL | GFP_DMA32, 0);
+ 		if (!page)
+ 			return -ENOMEM;
+ 
+@@ -793,7 +793,7 @@ mtk_wed_hwrro_buffer_alloc(struct mtk_we
+ 		struct page *page;
+ 		int s;
+ 
+-		page = __dev_alloc_page(GFP_KERNEL);
++		page = __dev_alloc_pages(GFP_KERNEL | GFP_DMA32, 0);
+ 		if (!page)
+ 			return -ENOMEM;
+ 
+@@ -2435,6 +2435,9 @@ mtk_wed_attach(struct mtk_wed_device *de
+ 	dev->wdma_idx = hw->index;
+ 	dev->version = hw->version;
+ 	dev->hw->pcie_base = mtk_wed_get_pcie_base(dev);
++	ret = dma_set_mask_and_coherent(hw->dev, DMA_BIT_MASK(32));
++	if (ret)
++		return ret;
+ 
+ 	if (hw->eth->dma_dev == hw->eth->dev &&
+ 	    of_dma_is_coherent(hw->eth->dev->of_node))
