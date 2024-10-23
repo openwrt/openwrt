@@ -19,6 +19,7 @@ PKG_CPE_ID:=cpe:/a:dtc_project:dtc
 
 PKG_INSTALL:=1
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/meson.mk
 
@@ -102,6 +103,11 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/* $(1)/usr/lib
 endef
 
+define Host/Install
+	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/bin/
+	$(CP) $(MESON_HOST_BUILD_DIR)/dtc $(STAGING_DIR_HOST)/bin/
+endef
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,dtc))
 $(eval $(call BuildPackage,fdt-utils))
 $(eval $(call BuildPackage,libfdt))
