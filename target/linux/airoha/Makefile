@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=airoha
 BOARDNAME:=Airoha ARM
-SUBTARGETS:=en7523 en7581
+SUBTARGETS:=en7523 an7581
 FEATURES:=dt squashfs nand ramdisk gpio
 
 KERNEL_PATCHVER:=6.6

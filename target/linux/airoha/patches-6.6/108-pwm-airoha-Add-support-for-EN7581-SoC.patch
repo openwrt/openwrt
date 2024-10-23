@@ -1,18 +1,19 @@
-From b235c45e83c8c2a24746652982d569896b142de9 Mon Sep 17 00:00:00 2001
+From 97e4e7b106b08373f90ff1b8c4daf6c2254386a8 Mon Sep 17 00:00:00 2001
 From: Benjamin Larsson <benjamin.larsson@genexis.eu>
-Date: Wed, 16 Oct 2024 12:07:34 +0200
-Subject: [PATCH 2/2] pwm: airoha: Add support for EN7581 SoC
+Date: Wed, 23 Oct 2024 01:20:06 +0200
+Subject: [PATCH] pwm: airoha: Add support for EN7581 SoC
 
 Introduce driver for PWM module available on EN7581 SoC.
 
 Signed-off-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
 Co-developed-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 ---
- drivers/pwm/Kconfig      |  11 +
+ drivers/pwm/Kconfig      |  11 ++
  drivers/pwm/Makefile     |   1 +
- drivers/pwm/pwm-airoha.c | 424 +++++++++++++++++++++++++++++++++++++++
- 3 files changed, 436 insertions(+)
+ drivers/pwm/pwm-airoha.c | 386 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 398 insertions(+)
  create mode 100644 drivers/pwm/pwm-airoha.c
 
 --- a/drivers/pwm/Kconfig
@@ -47,7 +48,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  obj-$(CONFIG_PWM_ATMEL_HLCDC_PWM)	+= pwm-atmel-hlcdc.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-airoha.c
-@@ -0,0 +1,424 @@
+@@ -0,0 +1,400 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright 2022 Markus Gothe <markus.gothe@genexis.eu>
@@ -80,11 +81,12 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +#define SGPIO_LED_DATA_DATA		GENMASK(16, 0)
 +
 +#define REG_SGPIO_CLK_DIVR		0x0028
++#define REG_SGPIO_CLK_DIVR_MASK		GENMASK(1, 0)
 +#define REG_SGPIO_CLK_DLY		0x002c
 +
 +#define REG_SIPO_FLASH_MODE_CFG		0x0030
 +#define SERIAL_GPIO_FLASH_MODE		BIT(1)
-+#define SERIAL_GPIO_MODE		BIT(0)
++#define SERIAL_GPIO_MODE_74HC164	BIT(0)
 +
 +#define REG_GPIO_FLASH_PRD_SET(_n)	(0x003c + ((_n) << 2))
 +#define GPIO_FLASH_PRD_MASK(_n)		GENMASK(15 + ((_n) << 4), ((_n) << 4))
@@ -98,7 +100,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +#define REG_CYCLE_CFG_VALUE(_n)		(0x0098 + ((_n) << 2))
 +#define WAVE_GEN_CYCLE_MASK(_n)		GENMASK(7 + ((_n) << 3), ((_n) << 3))
 +
-+#define EN7581_NUM_BUCKETS		8
++#define PWM_NUM_BUCKETS			8
 +
 +struct airoha_pwm_bucket {
 +	/* Bitmask of PWM channels using this bucket */
@@ -115,7 +117,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	struct device_node *np;
 +	u64 initialized;
 +
-+	struct airoha_pwm_bucket bucket[EN7581_NUM_BUCKETS];
++	struct airoha_pwm_bucket bucket[PWM_NUM_BUCKETS];
 +};
 +
 +/*
@@ -200,62 +202,25 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +
 +static int airoha_pwm_sipo_init(struct airoha_pwm *pc)
 +{
-+	u32 clk_divr_val, sipo_clock_delay, sipo_clock_divisor;
 +	u32 val;
 +
 +	if (!(pc->initialized >> PWM_NUM_GPIO))
 +		return 0;
 +
-+	/*
-+	 * Select the right shift register chip.
-+	 * By default 74HC164 is assumed. With this enabled
-+	 * 74HC595 chip is used that requires the latch pin
-+	 * to be triggered to apply the configuration.
-+	 */
-+	if (of_property_read_bool(pc->np, "airoha,74hc595-mode"))
-+		regmap_set_bits(pc->regmap, REG_SIPO_FLASH_MODE_CFG,
-+				SERIAL_GPIO_MODE);
-+	else
-+		regmap_clear_bits(pc->regmap, REG_SIPO_FLASH_MODE_CFG,
-+				  SERIAL_GPIO_MODE);
++	regmap_clear_bits(pc->regmap, REG_SIPO_FLASH_MODE_CFG,
++			  SERIAL_GPIO_MODE_74HC164);
 +
-+	if (of_property_read_u32(pc->np, "airoha,sipo-clock-divisor",
-+				 &sipo_clock_divisor))
-+		sipo_clock_divisor = 32;
-+
-+	switch (sipo_clock_divisor) {
-+	case 4:
-+		clk_divr_val = 0;
-+		break;
-+	case 8:
-+		clk_divr_val = 1;
-+		break;
-+	case 16:
-+		clk_divr_val = 2;
-+		break;
-+	case 32:
-+		clk_divr_val = 3;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
-+
-+	/* Configure shift register timings */
-+	regmap_write(pc->regmap, REG_SGPIO_CLK_DIVR, clk_divr_val);
-+
-+	if (of_property_read_u32(pc->np, "airoha,sipo-clock-delay",
-+				 &sipo_clock_delay))
-+		sipo_clock_delay = 1;
-+
-+	if (sipo_clock_delay < 1 || sipo_clock_delay > sipo_clock_divisor / 2)
-+		return -EINVAL;
++	/* Configure shift register timings, use 32x divisor */
++	regmap_write(pc->regmap, REG_SGPIO_CLK_DIVR,
++		     FIELD_PREP(REG_SGPIO_CLK_DIVR_MASK, 0x3));
 +
 +	/*
-+	 * The actual delay is sclkdly + 1 so subtract 1 from
-+	 * sipo-clock-delay to calculate the register value
++	 * The actual delay is clock + 1.
++	 * Notice that clock delay should not be greater
++	 * than (divisor / 2) - 1.
++	 * Set to 0 by default. (aka 1)
 +	 */
-+	sipo_clock_delay--;
-+	regmap_write(pc->regmap, REG_SGPIO_CLK_DLY, sipo_clock_delay);
++	regmap_write(pc->regmap, REG_SGPIO_CLK_DLY, 0x0);
 +
 +	/*
 +	 * It it necessary to after muxing explicitly shift out all
@@ -365,7 +330,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +
 +static void airoha_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 +{
-+	struct airoha_pwm *pc = pwmchip_get_drvdata(chip);
++	struct airoha_pwm *pc = container_of(chip, struct airoha_pwm, chip);
 +
 +	/* Disable PWM and release the waveform */
 +	airoha_pwm_config_flash_map(pc, pwm->hwpwm, -1);
@@ -380,7 +345,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +static int airoha_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 +			    const struct pwm_state *state)
 +{
-+	struct airoha_pwm *pc = pwmchip_get_drvdata(chip);
++	struct airoha_pwm *pc = container_of(chip, struct airoha_pwm, chip);
 +	u64 duty = state->enabled ? state->duty_cycle : 0;
 +	u64 period = state->period;
 +
@@ -405,7 +370,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +static int airoha_pwm_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 +				struct pwm_state *state)
 +{
-+	struct airoha_pwm *pc = pwmchip_get_drvdata(chip);
++	struct airoha_pwm *pc = container_of(chip, struct airoha_pwm, chip);
 +	int i;
 +
 +	/* find hwpwm in waveform generator bucket */
@@ -428,28 +393,39 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +static const struct pwm_ops airoha_pwm_ops = {
 +	.get_state = airoha_pwm_get_state,
 +	.apply = airoha_pwm_apply,
++	.owner = THIS_MODULE,
 +};
 +
 +static int airoha_pwm_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct airoha_pwm *pc;
-+	struct pwm_chip *chip;
 +
-+	chip = devm_pwmchip_alloc(dev, PWM_NUM_GPIO + PWM_NUM_SIPO,
-+				  sizeof(*pc));
-+	if (IS_ERR(chip))
-+		return PTR_ERR(chip);
++	pc = devm_kzalloc(dev, sizeof(*pc), GFP_KERNEL);
++	if (!pc)
++		return -ENOMEM;
 +
-+	chip->ops = &airoha_pwm_ops;
-+	pc = pwmchip_get_drvdata(chip);
 +	pc->np = dev->of_node;
++	pc->chip.dev = dev;
++	pc->chip.ops = &airoha_pwm_ops;
++	pc->chip.npwm = PWM_NUM_GPIO + PWM_NUM_SIPO;
 +
 +	pc->regmap = device_node_to_regmap(dev->parent->of_node);
 +	if (IS_ERR(pc->regmap))
 +		return PTR_ERR(pc->regmap);
 +
-+	return devm_pwmchip_add(&pdev->dev, chip);
++	platform_set_drvdata(pdev, pc);
++
++	return pwmchip_add(&pc->chip);
++}
++
++static int airoha_pwm_remove(struct platform_device *pdev)
++{
++	struct airoha_pwm *pc = platform_get_drvdata(pdev);
++
++	pwmchip_remove(&pc->chip);
++
++	return 0;
 +}
 +
 +static const struct of_device_id airoha_pwm_of_match[] = {
@@ -464,6 +440,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		.of_match_table = airoha_pwm_of_match,
 +	},
 +	.probe = airoha_pwm_probe,
++	.remove = airoha_pwm_remove,
 +};
 +module_platform_driver(airoha_pwm_driver);
 +
