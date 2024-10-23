@@ -208,7 +208,7 @@ define Device/smartrg_sdg-8733
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8733
   DEVICE_DTS := mt7988a-smartrg-SDG-8733
-  DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-usb3
+  DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8733
 
@@ -216,7 +216,7 @@ define Device/smartrg_sdg-8733a
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8733A
   DEVICE_DTS := mt7988d-smartrg-SDG-8733A
-  DEVICE_PACKAGES += mt7988-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-phy-aquantia
+  DEVICE_PACKAGES += mt7988-2p5g-phy-firmware kmod-mt7996-233-firmware kmod-phy-aquantia mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8733a
 
@@ -224,7 +224,7 @@ define Device/smartrg_sdg-8734
 $(call Device/adtran_smartrg)
   DEVICE_MODEL := SDG-8734
   DEVICE_DTS := mt7988a-smartrg-SDG-8734
-  DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3
+  DEVICE_PACKAGES += kmod-mt7996-firmware kmod-phy-aquantia kmod-sfp kmod-usb3 mt7988-wo-firmware
 endef
 TARGET_DEVICES += smartrg_sdg-8734
 
@@ -378,7 +378,7 @@ define Device/bananapi_bpi-r4-common
   DEVICE_DTS_OVERLAY:= mt7988a-bananapi-bpi-r4-emmc mt7988a-bananapi-bpi-r4-rtc mt7988a-bananapi-bpi-r4-sd mt7988a-bananapi-bpi-r4-wifi-mt7996a
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7996-firmware kmod-mt7996-233-firmware \
-		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs
+		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs mt7988-wo-firmware
   IMAGES := sysupgrade.itb
   KERNEL_LOADADDR := 0x46000000
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
