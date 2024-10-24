@@ -27,7 +27,7 @@
 +obj-$(CONFIG_WS_AP3715I)  += ws-ap3715i.o
  obj-$(CONFIG_WS_AP3825I)  += ws-ap3825i.o
  obj-$(CONFIG_FIREBOX_T10) += firebox_t10.o
- obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
+ obj-$(CONFIG_FIREBOX_T15) += firebox_t15.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
 @@ -185,6 +185,7 @@ src-plat-$(CONFIG_MVME7100) += motload-h
