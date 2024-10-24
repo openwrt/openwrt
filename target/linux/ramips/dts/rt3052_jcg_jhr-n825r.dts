@@ -76,8 +76,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
