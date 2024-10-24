@@ -1146,7 +1146,7 @@ define Device/teltonika_rutx50
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
 	IMAGE/factory.ubi := append-ubi
-	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += teltonika_rutx50
 
