@@ -1,0 +1,69 @@
+--- a/drivers/crypto/inside-secure/safexcel.c
++++ b/drivers/crypto/inside-secure/safexcel.c
+@@ -455,6 +455,9 @@ retry_fw:
+ 
+ 	ipuesz = eip197_write_firmware(priv, fw[FW_IPUE]);
+ 
++	for (j = 0; j < i; j++)
++		release_firmware(fw[j]);
++
+ 	if (eip197_start_firmware(priv, ipuesz, ifppsz, minifw)) {
+ 		dev_dbg(priv->dev, "Firmware loaded successfully\n");
+ 		return 0;
+@@ -605,6 +608,11 @@ static int safexcel_hw_init(struct safex
+ 	 */
+ 	if (priv->flags & SAFEXCEL_HW_EIP197) {
+ 		val = readl(EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
++		/* Clear axi_burst_size and rx_burst_size */
++		val &= 0xffffff00;
++		/* Set axi_burst_size = 3, rx_burst_size = 3 */
++		val |= EIP197_MST_CTRL_RD_CACHE(3);
++		val |= EIP197_MST_CTRL_WD_CACHE(3); 
+ 		val |= EIP197_MST_CTRL_TX_MAX_CMD(5);
+ 		writel(val, EIP197_HIA_AIC(priv) + EIP197_HIA_MST_CTRL);
+ 	}
+@@ -805,6 +813,12 @@ static int safexcel_hw_init(struct safex
+ 			return ret;
+ 	}
+ 
++	/* Allow clocks to be forced on for EIP197 */
++	if (priv->flags & SAFEXCEL_HW_EIP197) {
++		writel(0xffffffff, EIP197_HIA_GEN_CFG(priv) + EIP197_FORCE_CLOCK_ON);
++		writel(0xffffffff, EIP197_HIA_GEN_CFG(priv) + EIP197_FORCE_CLOCK_ON2);
++	}
++
+ 	return safexcel_hw_setup_cdesc_rings(priv) ?:
+ 	       safexcel_hw_setup_rdesc_rings(priv) ?:
+ 	       0;
+@@ -1746,6 +1760,7 @@ static int safexcel_probe(struct platfor
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct safexcel_crypto_priv *priv;
++	struct resource *res;
+ 	int ret;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+@@ -1757,7 +1772,11 @@ static int safexcel_probe(struct platfor
+ 
+ 	platform_set_drvdata(pdev, priv);
+ 
+-	priv->base = devm_platform_ioremap_resource(pdev, 0);
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -EINVAL;
++
++	priv->base = devm_ioremap(dev, res->start, resource_size(res));
+ 	if (IS_ERR(priv->base)) {
+ 		dev_err(dev, "failed to get resource\n");
+ 		return PTR_ERR(priv->base);
+--- a/drivers/crypto/inside-secure/safexcel.h
++++ b/drivers/crypto/inside-secure/safexcel.h
+@@ -189,6 +189,8 @@
+ #define EIP197_PE_DEBUG(n)			(0x1ff4 + (0x2000 * (n)))
+ #define EIP197_PE_OPTIONS(n)			(0x1ff8 + (0x2000 * (n)))
+ #define EIP197_PE_VERSION(n)			(0x1ffc + (0x2000 * (n)))
++#define EIP197_FORCE_CLOCK_ON2			0xffd8
++#define EIP197_FORCE_CLOCK_ON			0xffe8
+ #define EIP197_MST_CTRL				0xfff4
+ #define EIP197_OPTIONS				0xfff8
+ #define EIP197_VERSION				0xfffc
