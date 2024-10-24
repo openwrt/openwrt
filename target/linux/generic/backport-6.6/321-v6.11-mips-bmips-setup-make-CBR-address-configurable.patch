@@ -1,0 +1,111 @@
+From b95b30e50aed225d26e20737873ae2404941901c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 20 Jun 2024 17:26:44 +0200
+Subject: [PATCH 3/4] mips: bmips: setup: make CBR address configurable
+
+Add support to provide CBR address from DT to handle broken
+SoC/Bootloader that doesn't correctly init it. This permits to use the
+RAC flush even in these condition.
+
+To provide a CBR address from DT, the property "brcm,bmips-cbr-reg"
+needs to be set in the "cpus" node. On DT init, this property presence
+will be checked and will set the bmips_cbr_addr value accordingly. Also
+bmips_rac_flush_disable will be set to false as RAC flush can be
+correctly supported.
+
+The CBR address from DT will overwrite the cached one and the
+one set in the CBR register will be ignored.
+
+Also the DT CBR address is validated on being outside DRAM window.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Acked-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/bcm47xx/setup.c |  6 +++++-
+ arch/mips/bcm63xx/setup.c |  6 +++++-
+ arch/mips/bmips/setup.c   | 30 ++++++++++++++++++++++++++++--
+ 3 files changed, 38 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -46,7 +46,11 @@
+ #include <bcm47xx.h>
+ #include <bcm47xx_board.h>
+ 
+-/* CBR addr doesn't change and we can cache it */
++/*
++ * CBR addr doesn't change and we can cache it.
++ * For broken SoC/Bootloader CBR addr might also be provided via DT
++ * with "brcm,bmips-cbr-reg" in the "cpus" node.
++ */
+ void __iomem *bmips_cbr_addr __read_mostly;
+ 
+ union bcm47xx_bus bcm47xx_bus;
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -23,7 +23,11 @@
+ #include <bcm63xx_io.h>
+ #include <bcm63xx_gpio.h>
+ 
+-/* CBR addr doesn't change and we can cache it */
++/*
++ * CBR addr doesn't change and we can cache it.
++ * For broken SoC/Bootloader CBR addr might also be provided via DT
++ * with "brcm,bmips-cbr-reg" in the "cpus" node.
++ */
+ void __iomem *bmips_cbr_addr __read_mostly;
+ 
+ void bcm63xx_machine_halt(void)
+--- a/arch/mips/bmips/setup.c
++++ b/arch/mips/bmips/setup.c
+@@ -34,7 +34,11 @@
+ #define REG_BCM6328_OTP		((void __iomem *)CKSEG1ADDR(0x1000062c))
+ #define BCM6328_TP1_DISABLED	BIT(9)
+ 
+-/* CBR addr doesn't change and we can cache it */
++/*
++ * CBR addr doesn't change and we can cache it.
++ * For broken SoC/Bootloader CBR addr might also be provided via DT
++ * with "brcm,bmips-cbr-reg" in the "cpus" node.
++ */
+ void __iomem *bmips_cbr_addr __read_mostly;
+ 
+ extern bool bmips_rac_flush_disable;
+@@ -208,13 +212,35 @@ void __init plat_mem_setup(void)
+ void __init device_tree_init(void)
+ {
+ 	struct device_node *np;
++	u32 addr;
+ 
+ 	unflatten_and_copy_device_tree();
+ 
+ 	/* Disable SMP boot unless both CPUs are listed in DT and !disabled */
+ 	np = of_find_node_by_name(NULL, "cpus");
+-	if (np && of_get_available_child_count(np) <= 1)
++	if (!np)
++		return;
++
++	if (of_get_available_child_count(np) <= 1)
+ 		bmips_smp_enabled = 0;
++
++	/* Check if DT provide a CBR address */
++	if (of_property_read_u32(np, "brcm,bmips-cbr-reg", &addr))
++		goto exit;
++
++	/* Make sure CBR address is outside DRAM window */
++	if (addr >= (u32)memblock_start_of_DRAM() &&
++	    addr < (u32)memblock_end_of_DRAM()) {
++		WARN(1, "DT CBR %x inside DRAM window. Ignoring DT CBR.\n",
++		     addr);
++		goto exit;
++	}
++
++	bmips_cbr_addr = (void __iomem *)addr;
++	/* Since CBR is provided by DT, enable RAC flush */
++	bmips_rac_flush_disable = false;
++
++exit:
+ 	of_node_put(np);
+ }
+ 

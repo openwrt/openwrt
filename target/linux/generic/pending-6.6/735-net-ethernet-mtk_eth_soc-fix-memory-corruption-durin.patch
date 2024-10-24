@@ -1,0 +1,24 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 15 Oct 2024 10:13:55 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: fix memory corruption during fq
+ dma init
+
+The loop responsible for allocating up to MTK_FQ_DMA_LENGTH buffers must
+only touch as many descriptors, otherwise it ends up corrupting unrelated
+memory. Fix the loop iteration count accordingly.
+
+Fixes: c57e55819443 ("net: ethernet: mtk_eth_soc: handle dma buffer size soc specific")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1172,7 +1172,7 @@ static int mtk_init_fq_dma(struct mtk_et
+ 		if (unlikely(dma_mapping_error(eth->dma_dev, dma_addr)))
+ 			return -ENOMEM;
+ 
+-		for (i = 0; i < cnt; i++) {
++		for (i = 0; i < len; i++) {
+ 			struct mtk_tx_dma_v2 *txd;
+ 
+ 			txd = eth->scratch_ring + (j * MTK_FQ_DMA_LENGTH + i) * soc->tx.desc_size;
