@@ -83,9 +83,9 @@ help: FORCE
 
 
 # override variables from rules.mk
-PACKAGE_DIR:=$(TOPDIR)/packages
+export PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
-PACKAGE_DIR_ALL:=$(TOPDIR)/packages
+export PACKAGE_DIR_ALL:=$(TOPDIR)/packages
 
 export OPKG_KEYS:=$(TOPDIR)/keys
 OPKG:=$(call opkg,$(TARGET_DIR)) \
