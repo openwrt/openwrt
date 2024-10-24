@@ -83,6 +83,8 @@ help: FORCE
 
 
 # override variables from rules.mk
+BUILD_KEY_APK_SEC=$(TOPDIR)/keys/local-private-key.pem
+BUILD_KEY_APK_PUB=$(TOPDIR)/keys/local-public-key.pem
 export PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
 export PACKAGE_DIR_ALL:=$(TOPDIR)/packages
@@ -94,6 +96,7 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 	--cache $(DL_DIR) \
 	--lists-dir $(LISTS_DIR)
 
+export APK_KEYS:=$(TOPDIR)/keys
 APK:=$(call apk,$(TARGET_DIR)) \
 	--repositories-file $(TOPDIR)/repositories \
 	$(if $(CONFIG_SIGNATURE_CHECK),,--allow-untrusted) \
@@ -180,6 +183,7 @@ ifeq ($(CONFIG_USE_APK),)
 else
 	$(APK) add --initdb
 	(cd $(PACKAGE_DIR); $(APK) mkndx \
+		$(if $(CONFIG_SIGNATURE_CHECK), --keys-dir $(APK_KEYS) --sign $(BUILD_KEY_APK_SEC)) \
 		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
 	$(APK) update >&2 || true
 endif
@@ -241,6 +245,13 @@ ifeq ($(CONFIG_USE_APK),)
 			$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub \
 		) \
 	)
+else
+	$(if $(CONFIG_SIGNATURE_CHECK), \
+		$(if $(ADD_LOCAL_KEY), \
+			mkdir -p $(TARGET_DIR)/etc/opkg/keys/; \
+			cp $(BUILD_KEY_APK_PUB) $(TARGET_DIR)/etc/apk/keys/; \
+		) \
+	)
 endif
 	$(call prepare_rootfs,$(TARGET_DIR),$(USER_FILES),$(DISABLED_SERVICES))
 
@@ -288,8 +299,8 @@ ifneq ($(PROFILE),)
 endif
 
 _check_keys: FORCE
-ifeq ($(CONFIG_USE_APK),)
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
+ifeq ($(CONFIG_USE_APK),)
 	@if [ ! -s $(BUILD_KEY) -o ! -s $(BUILD_KEY).pub ]; then \
 		echo Generate local signing keys... >&2; \
 		$(STAGING_DIR_HOST)/bin/usign -G \
@@ -303,9 +314,15 @@ ifneq ($(CONFIG_SIGNATURE_CHECK),)
 			-p $(BUILD_KEY).pub \
 			-s $(BUILD_KEY); \
 	fi
-endif
 else
-	# TODO
+	@if [ ! -s $(BUILD_KEY_APK_SEC) -o ! -s $(BUILD_KEY_APK_PUB) ]; then \
+		echo Generate local signing keys... >&2; \
+		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
+		sed -i '1s/^/untrusted comment: Local build key\n/' $(BUILD_KEY_APK_SEC); \
+		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB); \
+		sed -i '1s/^/untrusted comment: Local build key\n/' $(BUILD_KEY_APK_PUB); \
+	fi
+endif
 endif
 
 image:
