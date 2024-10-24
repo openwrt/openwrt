@@ -333,7 +333,9 @@ opkg_target = \
 	$(call opkg,$(mkfs_cur_target_dir)) \
 		-f $(mkfs_cur_target_dir).conf
 
-apk_target = $(call apk,$(mkfs_cur_target_dir)) --no-scripts
+apk_target = \
+	$(call apk,$(mkfs_cur_target_dir)) --no-scripts \
+		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
 
 target-dir-%: FORCE
