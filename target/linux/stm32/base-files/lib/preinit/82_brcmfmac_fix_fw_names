@@ -1,0 +1,15 @@
+
+. /lib/functions/system.sh
+
+brcmfmac_fix_fw_names() {
+	local fw="/lib/firmware/brcm/brcmfmac43430-sdio"
+	local board="$(board_name)"
+
+	for ext in bin clm_blob
+	do
+		[ ! -f "${fw}.${board}.${ext}" ] && [ -f "${fw}.${ext}" ] && \
+			ln -s "${fw##*/}.${ext}" "${fw}.${board}.${ext}"
+	done
+}
+
+boot_hook_add preinit_mount_root brcmfmac_fix_fw_names

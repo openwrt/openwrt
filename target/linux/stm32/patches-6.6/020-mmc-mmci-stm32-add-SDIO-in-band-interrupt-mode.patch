@@ -1,0 +1,206 @@
+From 7cc8750b7609968dc6362eb7f1f209a55bf19bc5 Mon Sep 17 00:00:00 2001
+From: Christophe Kerello <christophe.kerello@foss.st.com>
+Date: Wed, 24 May 2023 11:43:18 +0200
+Subject: [PATCH] mmc: mmci: stm32: add SDIO in-band interrupt mode
+
+Add the support of SDIO in-band interrupt mode for STM32 variant.
+It allows the SD I/O card to interrupt the host on SDMMC_D1 data line.
+
+Change-Id: I346dd9aa162c1148685adb0d8d2aa88e908449c7
+Signed-off-by: Christophe Kerello <christophe.kerello@foss.st.com>
+Reviewed-on: https://gerrit.st.com/c/mpu/oe/st/linux-stm32/+/308179
+ACI: CITOOLS <MDG-smet-aci-reviews@list.st.com>
+ACI: CIBUILD <MDG-smet-aci-builds@list.st.com>
+Tested-by: Christophe KERELLO <christophe.kerello@st.com>
+Reviewed-by: Christophe KERELLO <christophe.kerello@st.com>
+Reviewed-by: Yann GAUTIER <yann.gautier@foss.st.com>
+Domain-Review: Yann GAUTIER <yann.gautier@foss.st.com>
+---
+ drivers/mmc/host/mmci.c             | 61 +++++++++++++++++++++++++++++
+ drivers/mmc/host/mmci.h             |  4 ++
+ drivers/mmc/host/mmci_stm32_sdmmc.c | 21 ++++++++++
+ 3 files changed, 86 insertions(+)
+
+--- a/drivers/mmc/host/mmci.c
++++ b/drivers/mmc/host/mmci.c
+@@ -272,6 +272,7 @@ static struct variant_data variant_stm32
+ 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
+ 	.stm32_idmabsize_mask	= GENMASK(12, 5),
+ 	.stm32_idmabsize_align	= BIT(5),
++	.use_sdio_irq		= true,
+ 	.busy_timeout		= true,
+ 	.busy_detect		= true,
+ 	.busy_detect_flag	= MCI_STM32_BUSYD0,
+@@ -299,6 +300,7 @@ static struct variant_data variant_stm32
+ 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
+ 	.stm32_idmabsize_mask	= GENMASK(16, 5),
+ 	.stm32_idmabsize_align	= BIT(5),
++	.use_sdio_irq		= true,
+ 	.dma_lli		= true,
+ 	.busy_timeout		= true,
+ 	.busy_detect		= true,
+@@ -327,6 +329,7 @@ static struct variant_data variant_stm32
+ 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
+ 	.stm32_idmabsize_mask	= GENMASK(16, 6),
+ 	.stm32_idmabsize_align	= BIT(6),
++	.use_sdio_irq		= true,
+ 	.dma_lli		= true,
+ 	.busy_timeout		= true,
+ 	.busy_detect		= true,
+@@ -423,6 +426,10 @@ static void mmci_write_datactrlreg(struc
+ 	/* Keep busy mode in DPSM if enabled */
+ 	datactrl |= host->datactrl_reg & host->variant->busy_dpsm_flag;
+ 
++	/* Keep SD I/O interrupt mode enabled */
++	if (host->variant->use_sdio_irq && host->mmc->caps & MMC_CAP_SDIO_IRQ)
++		datactrl |= host->variant->datactrl_mask_sdio;
++
+ 	if (host->datactrl_reg != datactrl) {
+ 		host->datactrl_reg = datactrl;
+ 		writel(datactrl, host->base + MMCIDATACTRL);
+@@ -1805,6 +1812,11 @@ static irqreturn_t mmci_irq(int irq, voi
+ 			mmci_data_irq(host, host->data, status);
+ 		}
+ 
++		if (host->variant->use_sdio_irq &&
++		    host->mmc->caps & MMC_CAP_SDIO_IRQ &&
++		    host->ops && host->ops->sdio_irq)
++			host->ops->sdio_irq(host, status);
++
+ 		/*
+ 		 * Busy detection has been handled by mmci_cmd_irq() above.
+ 		 * Clear the status bit to prevent polling in IRQ context.
+@@ -2041,6 +2053,45 @@ static int mmci_sig_volt_switch(struct m
+ 	return ret;
+ }
+ 
++static void mmci_enable_sdio_irq(struct mmc_host *mmc, int enable)
++{
++	struct mmci_host *host = mmc_priv(mmc);
++	unsigned long flags;
++
++	if (!host->variant->use_sdio_irq)
++		return;
++
++	if (host->ops && host->ops->enable_sdio_irq) {
++		if (enable)
++			/* Keep device active while SDIO IRQ is enabled */
++			pm_runtime_get_sync(mmc_dev(mmc));
++
++		spin_lock_irqsave(&host->lock, flags);
++		host->ops->enable_sdio_irq(host, enable);
++		spin_unlock_irqrestore(&host->lock, flags);
++
++		if (!enable) {
++			pm_runtime_mark_last_busy(mmc_dev(mmc));
++			pm_runtime_put_autosuspend(mmc_dev(mmc));
++		}
++	}
++}
++
++static void mmci_ack_sdio_irq(struct mmc_host *mmc)
++{
++	struct mmci_host *host = mmc_priv(mmc);
++	unsigned long flags;
++
++	if (!host->variant->use_sdio_irq)
++		return;
++
++	if (host->ops && host->ops->enable_sdio_irq) {
++		spin_lock_irqsave(&host->lock, flags);
++		host->ops->enable_sdio_irq(host, 1);
++		spin_unlock_irqrestore(&host->lock, flags);
++	}
++}
++
+ static struct mmc_host_ops mmci_ops = {
+ 	.request	= mmci_request,
+ 	.pre_req	= mmci_pre_request,
+@@ -2049,6 +2100,8 @@ static struct mmc_host_ops mmci_ops = {
+ 	.get_ro		= mmc_gpio_get_ro,
+ 	.get_cd		= mmci_get_cd,
+ 	.start_signal_voltage_switch = mmci_sig_volt_switch,
++	.enable_sdio_irq = mmci_enable_sdio_irq,
++	.ack_sdio_irq	= mmci_ack_sdio_irq,
+ };
+ 
+ static void mmci_probe_level_translator(struct mmc_host *mmc)
+@@ -2316,6 +2369,14 @@ static int mmci_probe(struct amba_device
+ 		mmc->caps |= MMC_CAP_WAIT_WHILE_BUSY;
+ 	}
+ 
++	if (variant->use_sdio_irq && host->mmc->caps & MMC_CAP_SDIO_IRQ) {
++		mmc->caps2 |= MMC_CAP2_SDIO_IRQ_NOTHREAD;
++
++		if (variant->datactrl_mask_sdio)
++			mmci_write_datactrlreg(host,
++					       host->variant->datactrl_mask_sdio);
++	}
++
+ 	/* Variants with mandatory busy timeout in HW needs R1B responses. */
+ 	if (variant->busy_timeout)
+ 		mmc->caps |= MMC_CAP_NEED_RSP_BUSY;
+--- a/drivers/mmc/host/mmci.h
++++ b/drivers/mmc/host/mmci.h
+@@ -332,6 +332,7 @@ enum mmci_busy_state {
+  * @opendrain: bitmask identifying the OPENDRAIN bit inside MMCIPOWER register
+  * @dma_lli: true if variant has dma link list feature.
+  * @stm32_idmabsize_mask: stm32 sdmmc idma buffer size.
++ * @use_sdio_irq: allow SD I/O card to interrupt the host
+  */
+ struct variant_data {
+ 	unsigned int		clkreg;
+@@ -376,6 +377,7 @@ struct variant_data {
+ 	u32			start_err;
+ 	u32			opendrain;
+ 	u8			dma_lli:1;
++	u8			use_sdio_irq:1;
+ 	u32			stm32_idmabsize_mask;
+ 	u32			stm32_idmabsize_align;
+ 	void (*init)(struct mmci_host *host);
+@@ -400,6 +402,8 @@ struct mmci_host_ops {
+ 	bool (*busy_complete)(struct mmci_host *host, struct mmc_command *cmd, u32 status, u32 err_msk);
+ 	void (*pre_sig_volt_switch)(struct mmci_host *host);
+ 	int (*post_sig_volt_switch)(struct mmci_host *host, struct mmc_ios *ios);
++	void (*enable_sdio_irq)(struct mmci_host *host, int enable);
++	void (*sdio_irq)(struct mmci_host *host, u32 status);
+ };
+ 
+ struct mmci_host {
+--- a/drivers/mmc/host/mmci_stm32_sdmmc.c
++++ b/drivers/mmc/host/mmci_stm32_sdmmc.c
+@@ -691,6 +691,25 @@ static int sdmmc_post_sig_volt_switch(st
+ 	return ret;
+ }
+ 
++static void sdmmc_enable_sdio_irq(struct mmci_host *host, int enable)
++{
++	void __iomem *base = host->base;
++	u32 mask = readl_relaxed(base + MMCIMASK0);
++
++	if (enable)
++		writel_relaxed(mask | MCI_ST_SDIOITMASK, base + MMCIMASK0);
++	else
++		writel_relaxed(mask & ~MCI_ST_SDIOITMASK, base + MMCIMASK0);
++}
++
++static void sdmmc_sdio_irq(struct mmci_host *host, u32 status)
++{
++	if (status & MCI_ST_SDIOIT) {
++		sdmmc_enable_sdio_irq(host, 0);
++		sdio_signal_irq(host->mmc);
++	}
++}
++
+ static struct mmci_host_ops sdmmc_variant_ops = {
+ 	.validate_data = sdmmc_idma_validate_data,
+ 	.prep_data = sdmmc_idma_prep_data,
+@@ -705,6 +724,8 @@ static struct mmci_host_ops sdmmc_varian
+ 	.busy_complete = sdmmc_busy_complete,
+ 	.pre_sig_volt_switch = sdmmc_pre_sig_volt_vswitch,
+ 	.post_sig_volt_switch = sdmmc_post_sig_volt_switch,
++	.enable_sdio_irq = sdmmc_enable_sdio_irq,
++	.sdio_irq = sdmmc_sdio_irq,
+ };
+ 
+ static struct sdmmc_tuning_ops dlyb_tuning_mp15_ops = {
