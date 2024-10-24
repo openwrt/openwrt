@@ -34,7 +34,7 @@
 
 #include "mpc85xx.h"
 
-static void __init firebox_t10_pic_init(void)
+static void __init firebox_t1x_pic_init(void)
 {
 	struct mpic *mpic;
 
@@ -49,26 +49,40 @@ static void __init firebox_t10_pic_init(void)
 /*
  * Setup the architecture
  */
-static void __init firebox_t10_setup_arch(void)
+static void __init firebox_t1x_setup_arch(void)
 {
 	if (ppc_md.progress)
-		ppc_md.progress("firebox_t10_setup_arch()", 0);
+		ppc_md.progress("firebox_t1x_setup_arch()", 0);
 
 	fsl_pci_assign_primary();
 
-	pr_info("Firebox T10 from Watchguard\n");
+	pr_info("Firebox T10/T15 from Watchguard\n");
 }
 
 machine_arch_initcall(firebox_t10, mpc85xx_common_publish_devices);
+machine_arch_initcall(firebox_t15, mpc85xx_common_publish_devices);
 
 define_machine(firebox_t10) {
 	.name			= "P1010 RDB",
 	.compatible		= "watchguard,firebox-t10",
-	.setup_arch		= firebox_t10_setup_arch,
-	.init_IRQ		= firebox_t10_pic_init,
+	.setup_arch		= firebox_t1x_setup_arch,
+	.init_IRQ		= firebox_t1x_pic_init,
 #ifdef CONFIG_PCI
 	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
-	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
+	.pcibios_fixup_phb	= fsl_pcibios_fixup_phb,
+#endif
+	.get_irq		= mpic_get_irq,
+	.progress		= udbg_progress,
+};
+
+define_machine(firebox_t15) {
+	.name			= "P1010 RDB",
+	.compatible		= "watchguard,firebox-t15",
+	.setup_arch		= firebox_t1x_setup_arch,
+	.init_IRQ		= firebox_t1x_pic_init,
+#ifdef CONFIG_PCI
+	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb	= fsl_pcibios_fixup_phb,
 #endif
 	.get_irq		= mpic_get_irq,
 	.progress		= udbg_progress,

@@ -4,15 +4,15 @@
  	  This board is a Concurrent Dual-Band wireless access point with a
  	  Freescale P1020 SoC.
  
-+config FIREBOX_T10
-+	bool "Watchguard Firebox T10"
++config FIREBOX_T1X
++	bool "Watchguard Firebox T10/T15"
 +	select DEFAULT_UIMAGE
 +	select ARCH_REQUIRE_GPIOLIB
 +	select GPIO_MPC8XXX
++	select PPC_ZIMAGE_LA3000000
 +	help
-+	  This option enables support for the Watchguard Firebox T10 board.
-+	  This board is a VPN Gateway-Router with a
-+	  Freescale P1010 SoC.
++	  This option enables support for the Watchguard Firebox T10/T15 board.
++	  This board is a VPN Gateway-Router with a Freescale P1010 SoC.
 +
  config MPC8540_ADS
  	bool "Freescale MPC8540 ADS"
@@ -23,7 +23,7 @@
  obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
  obj-$(CONFIG_WS_AP3710I)  += ws-ap3710i.o
  obj-$(CONFIG_WS_AP3825I)  += ws-ap3825i.o
-+obj-$(CONFIG_FIREBOX_T10) += firebox_t10.o
++obj-$(CONFIG_FIREBOX_T1X) += firebox_t1x.o
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
