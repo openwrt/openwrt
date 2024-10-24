@@ -2,17 +2,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=bcm27xx-gpu-fw
-PKG_VERSION:=2024-04-24
-PKG_RELEASE:=969420b4121b522ab33c5001074cc4c2547dafaf
+PKG_RELEASE_HASH:=969420b4121b522ab33c5001074cc4c2547dafaf
+PKG_VERSION:=2024.04.24~$(PKG_RELEASE_HASH)
+PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE_HASH)
 
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
-RPI_FIRMWARE_URL:=@GITHUB/raspberrypi/firmware/$(PKG_RELEASE)/boot/
-RPI_FIRMWARE_FILE:=rpi-firmware-$(PKG_RELEASE)
+RPI_FIRMWARE_URL:=@GITHUB/raspberrypi/firmware/$(PKG_RELEASE_HASH)/boot/
+RPI_FIRMWARE_FILE:=rpi-firmware-$(PKG_RELEASE_HASH)
 
 define Download/LICENCE_broadcom
   FILE:=$(RPI_FIRMWARE_FILE)-LICENCE.broadcom
