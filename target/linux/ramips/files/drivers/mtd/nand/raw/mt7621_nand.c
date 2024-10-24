@@ -20,6 +20,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/mtk_bmt.h>
 #include <linux/platform_device.h>
+#include <linux/version.h>
 #include <asm/addrspace.h>
 
 /* NFI core registers */
@@ -1312,7 +1313,11 @@ static int mt7621_nfc_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int mt7621_nfc_remove(struct platform_device *pdev)
+#else
+static void mt7621_nfc_remove(struct platform_device *pdev)
+#endif
 {
 	struct mt7621_nfc *nfc = platform_get_drvdata(pdev);
 	struct nand_chip *nand = &nfc->nand;
@@ -1322,7 +1327,9 @@ static int mt7621_nfc_remove(struct platform_device *pdev)
 	mtd_device_unregister(mtd);
 	nand_cleanup(nand);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id mt7621_nfc_id_table[] = {

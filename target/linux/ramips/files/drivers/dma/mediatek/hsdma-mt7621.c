@@ -17,6 +17,7 @@
 #include <linux/of_dma.h>
 #include <linux/reset.h>
 #include <linux/of_device.h>
+#include <linux/version.h>
 
 #include "../virt-dma.h"
 
@@ -733,7 +734,11 @@ err_uninit_hsdma:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int mtk_hsdma_remove(struct platform_device *pdev)
+#else
+static void mtk_hsdma_remove(struct platform_device *pdev)
+#endif
 {
 	struct mtk_hsdam_engine *hsdma = platform_get_drvdata(pdev);
 
@@ -742,7 +747,9 @@ static int mtk_hsdma_remove(struct platform_device *pdev)
 	of_dma_controller_free(pdev->dev.of_node);
 	dma_async_device_unregister(&hsdma->ddev);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static struct platform_driver mtk_hsdma_driver = {
