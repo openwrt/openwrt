@@ -72,6 +72,11 @@
 	};
 };
 
+&eth1 {
+	nvmem-cells = <&macaddr_mfcdata_6a 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &mdio0 {
 	status = "okay";
 
@@ -126,6 +131,12 @@
 					macaddr_mfcdata_51: macaddr@51 {
 						compatible = "mac-base";
 						reg = <0x51 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_mfcdata_6a: macaddr@6a {
+						compatible = "mac-base";
+						reg = <0x6a 0x11>;
 						#nvmem-cell-cells = <1>;
 					};
 				};
