@@ -30,6 +30,9 @@
 
 	phy-handle = <&phy0>;
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
+
+	nvmem-cells = <&macaddr_uboot_eth 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &mdio0 {
@@ -43,8 +46,7 @@
 &pcie0 {
 	status = "okay";
 
-	ath10k_0: wifi@0,0 {
-		compatible = "qcom,ath10k";
+	wifi0: wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 	};
 };
@@ -72,6 +74,16 @@
 				label = "u-boot-env";
 				reg = <0x030000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_eth: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -103,17 +115,13 @@
 				reg = <0xff0000 0x010000>;
 				read-only;
 
-				nvmem-layout {
+				nvmem: nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
 
 					calibration_art_1000: calibration@1000 {
 						reg = <0x1000 0x440>;
-					};
-
-					calibration_art_5000: calibration@5000 {
-						reg = <0x5000 0x844>;
 					};
 				};
 			};

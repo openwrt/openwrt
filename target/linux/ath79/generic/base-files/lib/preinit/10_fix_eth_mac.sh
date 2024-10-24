@@ -12,12 +12,6 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address $(mtd_get_mac_ascii bdcfg "lanmac")
 		ip link set dev eth1 address $(mtd_get_mac_ascii bdcfg "wanmac")
 		;;
-	engenius,epg5000|\
-	engenius,esr1200|\
-	engenius,esr1750|\
-	engenius,esr900)
-		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env ethaddr)
-		;;
 	enterasys,ws-ap3705i)
 		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
