@@ -56,10 +56,13 @@
 				read-only;
 			};
 
-			bdcfg: partition@40000 {
-				compatible = "u-boot,env";
+			partition@40000 {
 				label = "bdcfg";
 				reg = <0x040000 0x010000>;
+
+				bdcfg: nvmem-layout {
+					compatible = "u-boot,env";
+				};
 			};
 
 			partition@50000 {
