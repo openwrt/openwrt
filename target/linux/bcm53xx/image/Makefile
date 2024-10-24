@@ -424,8 +424,7 @@ define Device/meraki_mx6x
   KERNEL_IN_UBI := 1
   KERNEL_LOADADDR := 0x60008000
   DEVICE_PACKAGES := -oseama kmod-leds-pwm kmod-usb-ehci \
-	kmod-usb-ohci kmod-usb2 \
-	kmod-ledtrig-default-on kmod-ledtrig-netdev
+	kmod-usb-ohci kmod-usb2
   DEVICE_VENDOR := Cisco Meraki
   KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
