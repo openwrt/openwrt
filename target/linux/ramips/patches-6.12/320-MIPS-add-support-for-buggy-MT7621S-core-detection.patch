@@ -31,7 +31,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 
 --- a/arch/mips/include/asm/mips-cps.h
 +++ b/arch/mips/include/asm/mips-cps.h
-@@ -11,6 +11,8 @@
+@@ -12,6 +12,8 @@
  #include <linux/io.h>
  #include <linux/types.h>
  
@@ -40,7 +40,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  extern unsigned long __cps_access_bad_size(void)
  	__compiletime_error("Bad size for CPS accessor");
  
-@@ -162,12 +164,31 @@ static inline uint64_t mips_cps_cluster_
+@@ -163,12 +165,31 @@ static inline uint64_t mips_cps_cluster_
   */
  static inline unsigned int mips_cps_numcores(unsigned int cluster)
  {
