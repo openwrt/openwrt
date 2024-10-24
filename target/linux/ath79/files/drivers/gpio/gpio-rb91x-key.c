@@ -41,14 +41,9 @@ struct gpio_rb91x_key {
 	struct gpio_desc *gpio;
 };
 
-static inline struct gpio_rb91x_key *to_gpio_rb91x_key(struct gpio_chip *gc)
-{
-	return container_of(gc, struct gpio_rb91x_key, gc);
-}
-
 static int gpio_rb91x_key_get(struct gpio_chip *gc, unsigned offset)
 {
-	struct gpio_rb91x_key *drvdata = to_gpio_rb91x_key(gc);
+	struct gpio_rb91x_key *drvdata = gpiochip_get_data(gc);
 	struct gpio_desc *gpio = drvdata->gpio;
 	int val, bak_val;
 
@@ -97,7 +92,7 @@ static int gpio_rb91x_key_direction_input(struct gpio_chip *gc, unsigned offset)
 
 static void gpio_rb91x_key_set(struct gpio_chip *gc, unsigned offset, int value)
 {
-	struct gpio_rb91x_key *drvdata = to_gpio_rb91x_key(gc);
+	struct gpio_rb91x_key *drvdata = gpiochip_get_data(gc);
 	struct gpio_desc *gpio = drvdata->gpio;
 
 	mutex_lock(&drvdata->mutex);
