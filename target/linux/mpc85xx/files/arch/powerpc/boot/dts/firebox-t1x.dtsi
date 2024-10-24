@@ -48,6 +48,19 @@
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 			label = "green:failover";
 		};
+
+		led_wap_orange: wap_orange {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			label = "orange:wap";
+		};
+
+		led_wap_green: wap_green {
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			label = "green:wap";
+     linux,default-trigger = "phy0tpt";
+		};
 	};
 
 	buttons {
@@ -221,6 +234,26 @@
 	};
 
 	pci1: pcie@ffe0a000 {
-		status = "disabled";
+		reg = <0 0xffe0a000 0 0x1000>;
+		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
+			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0x80000000
+				  0x2000000 0x0 0x80000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+
+			ath9k: wifi@0,0 {
+				compatible = "pci168c,0033";
+				reg = <0x0000 0 0 0 0>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				nvmem-cells = <&macaddr_device_id_186c 0>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
 	};
 };
