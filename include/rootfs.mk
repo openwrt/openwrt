@@ -47,7 +47,7 @@ apk = \
   IPKG_INSTROOT=$(1) \
   $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
 	--root $(1) \
-	--keys-dir $(TOPDIR) \
+	--keys-dir $(if $(APK_KEYS),$(APK_KEYS),$(TOPDIR)) \
 	--no-cache \
 	--no-logfile \
 	--preserve-env
