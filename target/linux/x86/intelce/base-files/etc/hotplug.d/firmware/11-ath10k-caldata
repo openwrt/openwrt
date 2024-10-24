@@ -1,0 +1,45 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+find_nvram_mmc_part() {
+	local DEVNAME PARTNAME
+	local TMPMOUNT="$1"
+
+	for DEVNAME in /sys/block/mmcblk0/mmcblk*p*; do
+		PARTNAME="/dev/$(basename $DEVNAME)"
+		mount $PARTNAME $TMPMOUNT > /dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			# can't mount
+			continue
+		fi
+
+		if [ -f $TMPMOUNT/cal/calData_11ac.bin ]; then
+			# caldata found!
+			return 0
+		fi
+
+		# caldata not found
+		umount $TMPMOUNT 2>&1 > /dev/null
+	done
+	return 1
+}
+
+case "$FIRMWARE" in
+"ath10k/cal-pci-0000:03:00.0.bin")
+	TMP=$(mktemp -d)
+	if ! find_nvram_mmc_part $TMP; then
+		caldata_die "Can't find caldata files on any partition"
+	fi
+	TMPF=$(mktemp -t /tmp/calDatabin.XXXXXX)
+	cp $TMP/cal/calData_11ac.bin $TMPF || caldata_die "Can't copy caldata to temp file"
+	umount $TMP 2>&1 > /dev/null
+	caldata_sysfsload_from_file "$TMPF" 0x0 0x844
+	rm $TMPF 2>&1 > /dev/null
+	;;
+*)
+	exit 1
+	;;
+esac
