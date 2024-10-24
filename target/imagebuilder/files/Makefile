@@ -95,8 +95,9 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 	--lists-dir $(LISTS_DIR)
 
 APK:=$(call apk,$(TARGET_DIR)) \
-	--cache-dir $(DL_DIR) \
-	--allow-untrusted
+	--repositories-file $(TOPDIR)/repositories \
+	$(if $(CONFIG_SIGNATURE_CHECK),,--allow-untrusted) \
+	--cache-dir $(DL_DIR)
 
 
 include $(INCLUDE_DIR)/target.mk
@@ -177,7 +178,10 @@ ifeq ($(CONFIG_USE_APK),)
 	) >/dev/null 2>/dev/null
 	$(OPKG) update >&2 || true
 else
-	(cd $(PACKAGE_DIR); $(APK) mkndx --output packages.adb *.apk) >&2
+	$(APK) add --initdb
+	(cd $(PACKAGE_DIR); $(APK) mkndx \
+		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
+	$(APK) update >&2 || true
 endif
 
 package_reload:
@@ -220,7 +224,7 @@ ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
 	$(OPKG) install $(BUILD_PACKAGES)
 else
-	$(APK) add --initdb --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
+	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
 	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/kernel-*.apk $(PACKAGE_DIR)/kernel_*.apk))
 	$(APK) add --no-scripts $(BUILD_PACKAGES)
 endif
