@@ -9,7 +9,7 @@
  AC_CACHE_CHECK([whether gcc supports __attribute__((visibility()))],
  	ac_cv_visibility, [dnl
  save_CFLAGS="$CFLAGS"
-@@ -419,7 +421,10 @@ AS_HELP_STRING([--enable-install-elfh],[
+@@ -423,7 +425,10 @@ AS_HELP_STRING([--enable-install-elfh],[
  AM_CONDITIONAL(INSTALL_ELFH, test "$install_elfh" = yes)
  
  AM_CONDITIONAL(BUILD_STATIC, [dnl
@@ -64,7 +64,7 @@
  
  include_HEADERS = dwarf.h
  pkginclude_HEADERS = libdw.h known-dwarf.h
-@@ -121,11 +123,13 @@ libdw.so: $(srcdir)/libdw.map $(libdw_so
+@@ -120,11 +122,13 @@ libdw.so: $(srcdir)/libdw.map $(libdw_so
  	@$(textrel_check)
  	$(AM_V_at)ln -fs $@ $@.$(VERSION)
  
@@ -78,7 +78,7 @@
  
  uninstall: uninstall-am
  	rm -f $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
-@@ -148,6 +152,10 @@ libdw_a_LIBADD += $(addprefix ../backend
+@@ -147,6 +151,10 @@ libdw_a_LIBADD += $(addprefix ../backend
  libcpu_objects = $(shell $(AR) t ../libcpu/libcpu.a)
  libdw_a_LIBADD += $(addprefix ../libcpu/,$(libcpu_objects))
  
@@ -132,7 +132,7 @@
  
  libdebuginfod_a_SOURCES = debuginfod-client.c
  libdebuginfod_pic_a_SOURCES = debuginfod-client.c
-@@ -111,12 +113,16 @@ $(LIBDEBUGINFOD_SONAME): $(srcdir)/libde
+@@ -111,12 +113,17 @@ $(LIBDEBUGINFOD_SONAME): $(srcdir)/libde
  libdebuginfod.so: $(LIBDEBUGINFOD_SONAME)
  	ln -fs $< $@
  
@@ -146,9 +146,10 @@
 +else
 +libdebuginfod_a_LIBADD = $(foreach dep,$(wildcard $(libdebuginfod_so_LDLIBS:.so=.a)) $(LIBS:.so=.a),$(if $(findstring a,$(suffix $(dep))),$(addprefix $(dir $(dep)),$(shell cat $(basename $(dep)).manifest)),$(dep)))
 +endif
- 
++
  uninstall: uninstall-am
  	rm -f $(DESTDIR)$(libdir)/libdebuginfod-$(PACKAGE_VERSION).so
+ 	rm -f $(DESTDIR)$(libdir)/$(LIBDEBUGINFOD_SONAME)
 --- a/tests/Makefile.am
 +++ b/tests/Makefile.am
 @@ -50,7 +50,7 @@ check_PROGRAMS = arextract arsymtest new
@@ -158,9 +159,9 @@
 -		  buildid deleted deleted-lib.so aggregate_size peel_type \
 +		  buildid aggregate_size peel_type \
  		  vdsosyms \
- 		  getsrc_die strptr newdata elfstrtab dwfl-proc-attach \
- 		  elfshphehdr elfstrmerge dwelfgnucompressed elfgetchdr \
-@@ -180,7 +180,7 @@ TESTS = run-arextract.sh run-arsymtest.s
+ 		  getsrc_die strptr newdata newzdata \
+ 		  elfstrtab dwfl-proc-attach \
+@@ -181,7 +181,7 @@ TESTS = run-arextract.sh run-arsymtest.s
  	run-readelf-addr.sh run-readelf-str.sh \
  	run-readelf-multi-noline.sh \
  	run-readelf-types.sh \
@@ -168,10 +169,10 @@
 +	run-readelf-dwz-multi.sh run-allfcts-multi.sh \
  	run-linkmap-cut.sh run-aggregate-size.sh run-peel-type.sh \
  	vdsosyms run-readelf-A.sh \
- 	run-getsrc-die.sh run-strptr.sh newdata elfstrtab dwfl-proc-attach \
-@@ -284,6 +284,11 @@ funcretval_test__11_SOURCES = funcretval
- TESTS += run-funcretval++11.sh
- endif
+ 	run-getsrc-die.sh run-strptr.sh newdata newzdata \
+@@ -298,6 +298,11 @@ check_PROGRAMS += funcretval_test_struct
+ funcretval_test_struct_SOURCES = funcretval_test_struct.c
+ TESTS += run-funcretval-struct-native.sh
  
 +if BUILD_SHARED
 +check_PROGRAMS += deleted deleted-lib.so
