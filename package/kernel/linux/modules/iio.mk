@@ -46,6 +46,23 @@ endef
 $(eval $(call KernelPackage,iio-kfifo-buf))
 
 
+define KernelPackage/industrialio-hw-consumer
+  TITLE:=Provides a bonding way to an other device in hardware
+  KCONFIG:=CONFIG_IIO_BUFFER_HW_CONSUMER
+  FILES:=$(LINUX_DIR)/drivers/iio/buffer/industrialio-hw-consumer.ko
+  AUTOLOAD:=$(call AutoLoad,55,industrialio-hw-consumer)
+  $(call AddDepends/iio,+kmod-iio-kfifo-buf)
+endef
+
+define KernelPackage/industrialio-hw-consumer/description
+ Provides a way to bonding when an IIO device has a direct connection
+ to another device in hardware. In this case buffers for data transfers
+ are handled by hardware.
+endef
+
+$(eval $(call KernelPackage,industrialio-hw-consumer))
+
+
 define KernelPackage/industrialio-triggered-buffer
   TITLE:=Provides helper functions for setting up triggered buffers.
   DEPENDS:=+kmod-iio-kfifo-buf
