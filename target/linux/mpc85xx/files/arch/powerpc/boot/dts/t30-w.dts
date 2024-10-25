@@ -1,0 +1,453 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/include/ "fsl/p1020si-pre.dtsi"
+/ {
+	model = "watchguard,t30-w";
+	compatible = "watchguard,t30-w";
+	
+	aliases {
+		serial0 = &serial0;
+		serial1 = &serial1;
+		ethernet0 = &enet0;
+		pci0 = &pci0;
+		pci1 = &pci1;
+		led-boot = &attn_orange;
+		led-failsafe = &status_red;
+		led-running = &attn_orange;
+		led-upgrade = &status_red;
+	};
+		
+	memory {
+		device_type = "memory";
+	};
+	
+	cpus {
+		/delete-property/ PowerPC,P1020@1; /* P1011 have one core only */
+	};
+
+	lbc: localbus@ffe05000 {
+		reg = <0x0 0xffe05000 0x0 0x1000>;
+		compatible = "fsl,p1020-elbc","fsl,elbc","simple-bus";
+		interrupts = <0x13 0x02>;
+		interrupt-parent = <&mpic>;
+
+		/* NOR Flash */
+		ranges = <0x00 0x00 0x00 0xefc00000 0x100000>;
+		
+		flash@0 {
+			#address-cells = <0x01>;
+			#size-cells = <0x01>;
+			compatible = "cfi-flash";
+			reg = <0x00 0x00 0x400000>;
+			bank-width = <0x02>;
+			device-width = <0x01>;
+			
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				
+				partition@0 {
+					reg = <0x00 0x20000>;
+					label = "nor-cfg0";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+						macaddr_hwinfo_1830: macaddr@1830 {
+							compatible = "mac-base";
+							reg = <0x1830 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+						macaddr_hwinfo_1844: macaddr@1844 {
+							compatible = "mac-base";
+							reg = <0x1844 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+						macaddr_hwinfo_1858: macaddr@1858 {
+							compatible = "mac-base";
+							reg = <0x1858 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+						macaddr_hwinfo_186c: macaddr@186c {
+							compatible = "mac-base";
+							reg = <0x186c 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+						macaddr_hwinfo_1880: macaddr@1880 {
+							compatible = "mac-base";
+							reg = <0x1880 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+						macaddr_hwinfo_1894: macaddr@1894 {
+							compatible = "mac-base";
+							reg = <0x1894 0x11>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				partition@20000 {
+					reg = <0x20000 0x10000>;
+					label = "nor-cfg1";
+				};
+
+				partition@30000 {
+					reg = <0x30000 0x20000>;
+					label = "nor-mfg";
+				};
+
+				partition@50000 {
+					reg = <0x50000 0xc0000>;
+					label = "nor-bootopt";
+				};
+
+				partition@110000 {
+					reg = <0x110000 0xc0000>;
+					label = "nor-extra1";
+				};
+
+				partition@1D0000 {
+					reg = <0x1d0000 0xc0000>;
+					label = "nor-extra2";
+				};
+
+				partition@290000 {
+					reg = <0x290000 0xe0000>;
+					label = "nor-backup";
+				};
+
+				partition@370000 {
+					reg = <0x370000 0x10000>;
+					label = "nor-ubootenv";
+				};
+
+				partition@380000 {
+					reg = <0x380000 0x80000>;
+					label = "nor-uboot";
+				};
+			};
+		};
+	};
+
+	soc: soc@ffe00000 {
+		compatible = "fsl,p1020-immr","simple-bus";
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+		
+		i2c@3000 {
+			rtc@30 {
+				compatible = "seiko,s35390a";
+				reg = <0x30>;
+			};
+		};
+
+		i2c@3100 {
+			tpm@29 {
+				compatible = "tpm,tpm_i2c_atmel";
+				reg = <0x29>;
+			};
+		};
+		
+		sdhc@2e000 {
+			compatible = "fsl,p1020-esdhc","fsl,esdhc";
+			sdhci,auto-cmd12;
+			reg = <0x2e000 0x1000>;
+			interrupts = <0x48 0x2 0x0 0x0>;
+			interrupt-parent = <&mpic>;
+			fsl,sdhci-dma-broken;
+			fsl,sdhci-ahb2mag-irq-bypass;
+			fsl,sdhci-adjust-timeout;
+			clock-frequency = <0>;
+		};
+
+		spi@7000 {
+			cell-index = <0x00>;
+			#address-cells = <0x01>;
+			#size-cells = <0x00>;
+			compatible = "fsl,mpc8536-espi";
+			reg = <0x7000 0x1000>;
+			interrupts = <0x3b 0x02>;
+			interrupt-parent = <&mpic>;
+			fsl,espi-num-chipselects = <0x04>;
+
+			flash@0 {
+				#address-cells = <0x01>;
+				#size-cells = <0x01>;
+				compatible = "everspin,mr25h256","jedec,spi-nor";
+				reg = <0>; /* Chip select 0 */
+				spi-max-frequency = <40000000>;
+				m25p,fast-read;
+
+				partition@spi_mtd_0 {
+					label = "spi_mtd_0";
+					reg = <0x00 0x8000>;
+				};
+			};
+
+			legerity@1 {
+				compatible = "zarlink,le88266";
+				reg = <0x01>;
+				spi-max-frequency = <500000>;
+			};
+		};
+		
+		usb@22000 {
+			phy_type = "ulpi";
+			dr_mode = "host";
+		};
+
+		mdio@24000 {
+			compatible = "fsl,etsec2-mdio";
+			reg = <0x24000 0x1000 0xb0030 0x4>;
+			
+			switch0: tbi0: tbi-phy@16 {
+				compatible = "marvell,mv88e6085";
+				reg = <0x10>;
+				
+				mdio {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					switch0phy0: switch0phy0@0 {
+						reg = <0x00>;
+						interrupt-parent = <&switch0>;
+					};
+
+					switch0phy1: switch0phy1@1 {
+						reg = <0x01>;
+						interrupt-parent = <&switch0>;
+					};
+
+					switch0phy2: switch0phy2@2 {
+						reg = <0x02>;
+						interrupt-parent = <&switch0>;
+					};
+
+					switch0phy3: switch0phy3@3 {
+						reg = <0x03>;
+						interrupt-parent = <&switch0>;
+					};
+
+					switch0phy4: switch0phy4@4 {
+						reg = <0x04>;
+						interrupt-parent = <&switch0>;
+					};
+				};
+				
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					  
+					port@0 {
+						reg = <0x00>;
+						label = "wan";
+						phy-handle = <&switch0phy0>;
+						nvmem-cells = <&macaddr_hwinfo_1830 0>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					port@1 {
+						reg = <1>;
+						label = "lan1";
+						phy-handle = <&switch0phy1>;
+						nvmem-cells = <&macaddr_hwinfo_1844 0>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					port@2 {
+						reg = <2>;
+						label = "lan2";
+						phy-handle = <&switch0phy2>;
+						nvmem-cells = <&macaddr_hwinfo_1858 0>;
+						nvmem-cell-names = "mac-address";
+					};
+					  
+					port@3 {
+						reg = <3>;
+						label = "lan3";
+						phy-handle = <&switch0phy3>;
+						nvmem-cells = <&macaddr_hwinfo_186c 0>;
+						nvmem-cell-names = "mac-address";
+					};
+
+					port@4 {
+						reg = <4>;
+						label = "lan4";
+						phy-handle = <&switch0phy4>;
+						nvmem-cells = <&macaddr_hwinfo_1880 0>;
+						nvmem-cell-names = "mac-address";
+					};
+										
+					switch0port6: port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&enet0>;
+						phy-mode = "rgmii-id";
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+				};
+			};
+		};
+		
+		mdio@25000 {
+			compatible = "fsl,etsec2-tbi";
+			reg = <0x25000 0x1000 0xb1030 0x4>;
+			tbi1: tbi-phy@16 {
+				reg = <0x10>;
+			};
+		};
+		
+		mdio@26000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "fsl,etsec2-tbi";
+			reg = <0x26000 0x1000 0xb1030 0x4>;
+		};
+
+		enet0: ethernet@b0000 {
+			compatible = "fsl,etsec2";
+			phy-connection-type = "rgmii-id";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
+		enet1: ethernet@b1000 {
+			status = "disabled";
+		};
+
+		enet2: ethernet@b2000 {
+			status = "disabled";
+		};
+
+		gpio0: gpio@f000 {
+			compatible = "fsl,mpc8572-gpio", "fsl,pq3-gpio";
+			reg = <0xf000 0x1000>;
+			interrupts = <47 2>;
+			interrupt-parent = <&mpic>;
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		attn_orange: attn_orange {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "orange:attn";
+		};
+		
+		status_red: status_red {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "red:status";
+		};
+		
+		mode_green: mode_green {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "green:mode";
+		};
+		
+		wap_green: wap_green {
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "green:wap";
+			default-state = "keep";
+		};
+		
+		wap_orange: wap_orange {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "orange:wap";
+			default-state = "keep";
+		};
+		
+		failover_green: failover_green {
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			label = "green:failover";
+		};
+	};
+
+	//fsl-pci ffe09000.pcie: PCI host bridge to bus 0000:00
+	pci0: pcie@ffe09000 {
+		cell-index = <0x01>;
+		compatible = "fsl,mpc8548-pcie";
+		device_type = "pci";
+		#interrupt-cells = <0x01>;
+		#size-cells = <0x02>;
+		#address-cells = <0x03>;
+		reg = <0x00 0xffe09000 0x00 0x1000>;
+		bus-range = <0x00 0xff>;
+		ranges = <0x2000000 0x0 0xa0000000 0x0 0xa0000000
+					0x0 0x20000000>,
+				 <0x1000000 0x0 0x0        0x0 0xffc10000
+					0x0 0x10000>;
+		clock-frequency = <33333333>;
+		interrupt-parent = <&mpic>;
+		interrupts = <0x10 0x02>;
+		interrupt-map-mask = <0xf800 0x00 0x00 0x07>;
+		interrupt-map = <0x00 0x00 0x00 0x01 0x02 0x04 0x01 0x00 0x00 
+			0x00 0x02 0x02 0x05 0x01 0x00 0x00 0x00 0x03 0x02 0x06 0x01 
+			0x00 0x00 0x00 0x04 0x02 0x07 0x01>;
+
+		pcie@0 {
+			reg = <0x00 0x00 0x00 0x00 0x00>;
+			#size-cells = <0x02>;
+			#address-cells = <0x03>;
+			device_type = "pci";
+			ranges = <0x2000000 0x0 0xa0000000 0x2000000 0x0 0xa0000000
+						0x0 0x20000000>,
+					 <0x1000000 0x0 0x0        0x1000000 0x0 0x0
+						0x0 0x100000>;
+		};
+	};
+
+	//fsl-pci ffe0a000.pcie: PCI host bridge to bus 0001:02
+	pci1: pcie@ffe0a000 {
+		cell-index = <0x02>;
+		compatible = "fsl,mpc8548-pcie";
+		device_type = "pci";
+		#interrupt-cells = <0x01>;
+		#size-cells = <0x02>;
+		#address-cells = <0x03>;
+		reg = <0x00 0xffe0a000 0x00 0x1000>;
+		bus-range = <0x00 0xff>;
+		ranges = <0x2000000 0x0 0x80000000 0x0 0x80000000 
+					0x0 0x20000000>,
+				 <0x1000000 0x0 0x0        0x0 0xffc00000 
+					0x0 0x10000>;
+		clock-frequency = <33333333>;
+		interrupt-parent = <&mpic>;
+		interrupts = <0x10 0x02>;
+		interrupt-map-mask = <0xf800 0x00 0x00 0x07>;
+		interrupt-map = <0x00 0x00 0x00 0x01 0x02 0x00 0x01 0x00 0x00 
+			0x00 0x02 0x02 0x01 0x01 0x00 0x00 0x00 0x03 0x02 0x02 0x01 
+			0x00 0x00 0x00 0x04 0x02 0x03 0x01>;
+
+		pcie@0 {
+			reg = <0x00 0x00 0x00 0x00 0x00>;
+			#size-cells = <0x02>;
+			#address-cells = <0x03>;
+			device_type = "pci";
+			ranges = <0x2000000 0x0 0x80000000 0x2000000 0x0 0x80000000
+						0x0 0x20000000>,
+					 <0x1000000 0x0 0x0        0x1000000 0x0 0x0
+						0x0 0x100000>;
+			ath10k: wifi@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				nvmem-cells = <&macaddr_hwinfo_1894 0>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+/include/ "fsl/p1020si-post.dtsi"

@@ -84,6 +84,23 @@ define Device/watchguard_firebox-t10
 endef
 TARGET_DEVICES += watchguard_firebox-t10
 
+define Device/watchguard_t30-w
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := T30-W
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    kmod-usb2 kmod-usb-storage block-mount kmod-fs-vfat kmod-nls-cp437 \
+    kmod-nls-iso8859-1 kmod-loop losetup kmod-fs-ext4 e2fsprogs tune2fs
+  KERNEL_SIZE := 8192k
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-dtb-tar \
+    $(KDIR)/image-$$(DEVICE_DTS).dtb | append-metadata
+endef
+TARGET_DEVICES += watchguard_t30-w
+
 define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos
   DEVICE_MODEL := RED 15w
