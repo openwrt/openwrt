@@ -54,6 +54,7 @@ MESON_VARS+=VERSION=$(PKG_VERSION)
 MESON_HOST_ARGS += \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
+	-Durl_backend=wget \
 	-Dcrypto_backend=openssl \
 	-Dzstd=false
 
