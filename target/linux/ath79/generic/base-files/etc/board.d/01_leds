@@ -540,6 +540,9 @@ wd,mynet-wifi-rangeextender)
 xiaomi,aiot-ac2350)
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x02"
 	;;
+ditel,dt-acu100)
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth0"
+	;;
 yuncore,a770)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x10"
