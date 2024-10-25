@@ -368,7 +368,7 @@ TARGET_DEVICES += keenetic_kn-1613
 define Device/kroks_kndrt31r16
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kroks
-  DEVICE_MODEL := Rt-Cse5 UW DRSIM
+  DEVICE_MODEL := Rt-Cse SIM Injector DS
   DEVICE_ALT0_VENDOR := Kroks
   DEVICE_ALT0_MODEL := KNdRt31R16
   DEVICE_PACKAGES := kmod-usb2
@@ -379,7 +379,7 @@ TARGET_DEVICES += kroks_kndrt31r16
 define Device/kroks_kndrt31r19
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kroks
-  DEVICE_MODEL := Rt-Pot mXw DS RSIM
+  DEVICE_MODEL := Rt-Brd RSIM DS eQ-EP
   DEVICE_ALT0_VENDOR := Kroks
   DEVICE_ALT0_MODEL := KNdRt31R19
   DEVICE_PACKAGES := kmod-usb2 uqmi
