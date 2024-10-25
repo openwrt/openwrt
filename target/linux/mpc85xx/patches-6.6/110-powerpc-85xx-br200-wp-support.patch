@@ -27,31 +27,3 @@
  obj-$(CONFIG_HIVEAP_330) += hiveap-330.o
  obj-$(CONFIG_MPC8536_DS)  += mpc8536_ds.o
  obj8259-$(CONFIG_PPC_I8259)   += mpc85xx_8259.o
---- a/arch/powerpc/boot/Makefile
-+++ b/arch/powerpc/boot/Makefile
-@@ -182,6 +182,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
- src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
- src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
- src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
-+src-plat-$(CONFIG_BR200_WP) += simpleboot.c fixed-head.S
- src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
- src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
- src-plat-$(CONFIG_WS_AP3710I) += simpleboot.c fixed-head.S
-@@ -358,6 +359,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
- image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
- image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
- image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
-+image-$(CONFIG_BR200_WP)		+= simpleImage.br200-wp
- image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
- image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
- image-$(CONFIG_WS_AP3710I)		+= simpleImage.ws-ap3710i
---- a/arch/powerpc/boot/wrapper
-+++ b/arch/powerpc/boot/wrapper
-@@ -350,6 +350,7 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
-     binary=y
-     ;;
-+simpleboot-br200-wp|\
- simpleboot-hiveap-330|\
- simpleboot-tl-wdr4900-v1|\
- simpleboot-ws-ap3710i|\
