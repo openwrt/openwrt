@@ -152,7 +152,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
  
-@@ -929,6 +929,11 @@ struct ath11k_msi_config {
+@@ -934,6 +934,11 @@ struct ath11k_msi_config {
  	u16 hw_rev;
  };
  
@@ -164,7 +164,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  /* Master structure to hold the hw data which may be used in core module */
  struct ath11k_base {
  	enum ath11k_hw_rev hw_rev;
-@@ -1086,6 +1091,8 @@ struct ath11k_base {
+@@ -1091,6 +1096,8 @@ struct ath11k_base {
  		DECLARE_BITMAP(fw_features, ATH11K_FW_FEATURE_COUNT);
  	} fw;
  

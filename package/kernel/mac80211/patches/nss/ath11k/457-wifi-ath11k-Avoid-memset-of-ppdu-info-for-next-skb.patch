@@ -67,7 +67,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		ppdu_info->peer_id = HAL_INVALID_PEERID;
  		hal_status = ath11k_hal_rx_parse_mon_status(ab, ppdu_info, skb);
  
-@@ -6135,6 +6136,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6138,6 +6139,7 @@ int ath11k_dp_rx_process_mon_status(stru
  		if ((ppdu_info->peer_id == HAL_INVALID_PEERID ||
  		    hal_status != HAL_RX_MON_STATUS_PPDU_DONE)) {
  			dev_kfree_skb_any(skb);

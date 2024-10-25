@@ -33,14 +33,14 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -431,6 +431,7 @@ struct ath11k_vif {
+@@ -430,6 +430,7 @@ struct ath11k_vif {
  #ifdef CPTCFG_ATH11K_NSS_SUPPORT
  	struct arvif_nss nss;
  #endif
 +	struct list_head ap_vlan_arvifs;
- };
- 
- struct ath11k_vif_iter {
+ 	/* Must be last - ends in a flexible-array member.
+ 	 *
+ 	 * FIXME: Driver should not copy struct ieee80211_chanctx_conf,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
 @@ -4844,6 +4844,11 @@ static void ath11k_sta_rc_update_wk(stru

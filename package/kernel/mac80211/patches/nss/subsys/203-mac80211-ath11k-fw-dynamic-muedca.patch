@@ -31,7 +31,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -9701,4 +9701,15 @@ ssize_t wiphy_locked_debugfs_write(struc
+@@ -9766,4 +9766,15 @@ ssize_t wiphy_locked_debugfs_write(struc
  				   void *data);
  #endif
  
@@ -49,7 +49,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  #endif /* __NET_CFG80211_H */
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -7561,6 +7561,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
+@@ -7595,6 +7595,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
  			      int len);
  
  /**
@@ -91,18 +91,18 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	/* add new commands above here */
  
  	/* used to define NL80211_CMD_MAX below */
-@@ -2868,6 +2873,8 @@ enum nl80211_commands {
-  *	nested item, it contains attributes defined in
-  *	&enum nl80211_if_combination_attrs.
+@@ -2871,6 +2876,8 @@ enum nl80211_commands {
+  * @NL80211_ATTR_VIF_RADIO_MASK: Bitmask of allowed radios (u32).
+  *	A value of 0 means all radios.
   *
 + * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
 + *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3416,6 +3423,8 @@ enum nl80211_attrs {
- 	NL80211_ATTR_WIPHY_RADIOS,
- 	NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
+@@ -3421,6 +3428,8 @@ enum nl80211_attrs {
+ 
+ 	NL80211_ATTR_VIF_RADIO_MASK,
  
 +	NL80211_ATTR_HE_MUEDCA_PARAMS,
 +
@@ -111,7 +111,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -9341,3 +9341,15 @@ void ieee80211_disable_rssi_reports(stru
+@@ -9339,3 +9339,15 @@ void ieee80211_disable_rssi_reports(stru
  	_ieee80211_enable_rssi_reports(sdata, 0, 0);
  }
  EXPORT_SYMBOL(ieee80211_disable_rssi_reports);
@@ -166,7 +166,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	[NL80211_ATTR_BSS_DUMP_INCLUDE_USE_DATA] = { .type = NLA_FLAG },
  	[NL80211_ATTR_MLO_TTLM_DLINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
  	[NL80211_ATTR_MLO_TTLM_ULINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
-@@ -20396,6 +20397,42 @@ void cfg80211_schedule_channels_check(st
+@@ -20447,6 +20448,42 @@ void cfg80211_schedule_channels_check(st
  }
  EXPORT_SYMBOL(cfg80211_schedule_channels_check);
  
@@ -211,7 +211,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  int __init nl80211_init(void)
 --- a/net/wireless/trace.h
 +++ b/net/wireless/trace.h
-@@ -3975,6 +3975,46 @@ TRACE_EVENT(cfg80211_update_owe_info_eve
+@@ -3977,6 +3977,46 @@ TRACE_EVENT(cfg80211_update_owe_info_eve
  		  __entry->assoc_link_id, __entry->peer_mld_addr)
  );
  

@@ -29,7 +29,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  
  /* SMBIOS type containing Board Data File Name Extension */
  #define ATH11K_SMBIOS_BDF_EXT_TYPE 0xF8
-@@ -419,6 +421,17 @@ struct ath11k_vif_iter {
+@@ -425,6 +427,17 @@ struct ath11k_vif_iter {
  	struct ath11k_vif *arvif;
  };
  
@@ -47,7 +47,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  struct ath11k_rx_peer_stats {
  	u64 num_msdu;
  	u64 num_mpdu_fcs_ok;
-@@ -430,10 +443,6 @@ struct ath11k_rx_peer_stats {
+@@ -436,10 +449,6 @@ struct ath11k_rx_peer_stats {
  	u64 non_ampdu_msdu_count;
  	u64 stbc_count;
  	u64 beamformed_count;
@@ -58,7 +58,7 @@ Signed-off-by: Manikanta Pubbisetty <mpubbise@codeaurora.org>
  	u64 coding_count[HAL_RX_SU_MU_CODING_MAX];
  	u64 tid_count[IEEE80211_NUM_TIDS + 1];
  	u64 pream_cnt[HAL_RX_PREAMBLE_MAX];
-@@ -441,6 +450,8 @@ struct ath11k_rx_peer_stats {
+@@ -447,6 +456,8 @@ struct ath11k_rx_peer_stats {
  	u64 rx_duration;
  	u64 dcm_count;
  	u64 ru_alloc_cnt[HAL_RX_RU_ALLOC_TYPE_MAX];

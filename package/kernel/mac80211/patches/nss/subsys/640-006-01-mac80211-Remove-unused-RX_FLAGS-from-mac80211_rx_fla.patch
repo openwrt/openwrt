@@ -1,29 +1,6 @@
-From 11d0cce62afc157468e1d97ea80a2510091ea2c2 Mon Sep 17 00:00:00 2001
-From: P Praneesh <quic_ppranees@quicinc.com>
-Date: Fri, 1 Jul 2022 11:57:00 +0530
-Subject: [PATCH] mac80211: Remove unused RX_FLAGS from mac80211_rx_flags
-
-Remove unused RX_FLAG_AMPDU_DELIM_CRC_KNOWN flag from
-mac80211_rx_flags to provide space for new EHT flags.
-
-Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
----
- include/net/mac80211.h | 33 +++++++++++++++------------------
- net/mac80211/rx.c      |  7 +------
- 2 files changed, 16 insertions(+), 24 deletions(-)
-
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1482,8 +1482,6 @@ ieee80211_tx_info_clear_status(struct ie
-  * @RX_FLAG_AMPDU_IS_LAST: this subframe is the last subframe of the A-MPDU
-  * @RX_FLAG_AMPDU_DELIM_CRC_ERROR: A delimiter CRC error has been detected
-  *	on this subframe
-- * @RX_FLAG_AMPDU_DELIM_CRC_KNOWN: The delimiter CRC field is known (the CRC
-- *	is stored in the @ampdu_delimiter_crc field)
-  * @RX_FLAG_MIC_STRIPPED: The mic was stripped of this packet. Decryption was
-  *	done by the hardware
-  * @RX_FLAG_ONLY_MONITOR: Report frame only to monitor interfaces without
-@@ -1540,39 +1538,38 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1538,39 +1538,38 @@ ieee80211_tx_info_clear_status(struct ie
   *	hardware or driver)
   */
  enum mac80211_rx_flags {
@@ -42,7 +19,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
 -	RX_FLAG_AMPDU_LAST_KNOWN	= BIT(12),
 -	RX_FLAG_AMPDU_IS_LAST		= BIT(13),
 -	RX_FLAG_AMPDU_DELIM_CRC_ERROR	= BIT(14),
--	RX_FLAG_AMPDU_DELIM_CRC_KNOWN	= BIT(15),
+-	/* one free bit at 15 */
 -	RX_FLAG_MACTIME			= BIT(16) | BIT(17),
 -	RX_FLAG_MACTIME_PLCP_START	= 1 << 16,
 -	RX_FLAG_MACTIME_START		= 2 << 16,
@@ -95,25 +72,3 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
  };
  
  /**
---- a/net/mac80211/rx.c
-+++ b/net/mac80211/rx.c
-@@ -508,18 +508,13 @@ ieee80211_add_rx_radiotap_header(struct
- 			flags |= IEEE80211_RADIOTAP_AMPDU_IS_LAST;
- 		if (status->flag & RX_FLAG_AMPDU_DELIM_CRC_ERROR)
- 			flags |= IEEE80211_RADIOTAP_AMPDU_DELIM_CRC_ERR;
--		if (status->flag & RX_FLAG_AMPDU_DELIM_CRC_KNOWN)
--			flags |= IEEE80211_RADIOTAP_AMPDU_DELIM_CRC_KNOWN;
- 		if (status->flag & RX_FLAG_AMPDU_EOF_BIT_KNOWN)
- 			flags |= IEEE80211_RADIOTAP_AMPDU_EOF_KNOWN;
- 		if (status->flag & RX_FLAG_AMPDU_EOF_BIT)
- 			flags |= IEEE80211_RADIOTAP_AMPDU_EOF;
- 		put_unaligned_le16(flags, pos);
- 		pos += 2;
--		if (status->flag & RX_FLAG_AMPDU_DELIM_CRC_KNOWN)
--			*pos++ = status->ampdu_delimiter_crc;
--		else
--			*pos++ = 0;
-+		*pos++ = 0;
- 		*pos++ = 0;
- 	}
- 

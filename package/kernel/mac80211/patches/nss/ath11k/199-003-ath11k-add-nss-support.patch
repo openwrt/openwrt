@@ -164,17 +164,17 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
  
-@@ -426,6 +427,9 @@ struct ath11k_vif {
+@@ -425,6 +426,9 @@ struct ath11k_vif {
  
  	struct ath11k_reg_tpc_power_info reg_tpc_info;
  	struct ath11k_mgmt_frame_stats mgmt_stats;
 +#ifdef CPTCFG_ATH11K_NSS_SUPPORT
 +	struct arvif_nss nss;
 +#endif
- };
- 
- struct ath11k_vif_iter {
-@@ -579,6 +583,9 @@ struct ath11k_sta {
+ 	/* Must be last - ends in a flexible-array member.
+ 	 *
+ 	 * FIXME: Driver should not copy struct ieee80211_chanctx_conf,
+@@ -584,6 +588,9 @@ struct ath11k_sta {
  #endif
  
  	bool use_4addr_set;
@@ -184,7 +184,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	u16 tcl_metadata;
  
  	/* Protected with ar->data_lock */
-@@ -673,6 +680,9 @@ struct ath11k {
+@@ -678,6 +685,9 @@ struct ath11k {
  	struct ath11k_pdev *pdev;
  	struct ieee80211_hw *hw;
  	struct ath11k_pdev_wmi *wmi;
@@ -194,7 +194,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	struct ath11k_pdev_dp dp;
  	u8 mac_addr[ETH_ALEN];
  	struct ath11k_he ar_he;
-@@ -934,9 +944,11 @@ struct ath11k_base {
+@@ -939,9 +949,11 @@ struct ath11k_base {
  	struct ath11k_htc htc;
  
  	struct ath11k_dp dp;
@@ -443,7 +443,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	int num_buffs_reaped = 0;
  	u32 rx_buf_sz;
  	u16 log_type;
-@@ -5745,6 +5774,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -5748,6 +5777,7 @@ int ath11k_dp_rx_process_mon_status(stru
  			if (ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_SU) {
  				arsta = (struct ath11k_sta *)peer->sta->drv_priv;
  				ath11k_dp_rx_update_peer_su_stats(arsta, ppdu_info);

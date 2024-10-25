@@ -21,7 +21,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -5271,6 +5271,17 @@ void ieee80211_sta_pspoll(struct ieee802
+@@ -5289,6 +5289,17 @@ void ieee80211_sta_pspoll(struct ieee802
   */
  void ieee80211_sta_uapsd_trigger(struct ieee80211_sta *sta, u8 tid);
  
@@ -41,7 +41,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
   * This is enough for the radiotap header.
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2208,7 +2208,13 @@ static int ieee80211_change_station(stru
+@@ -2217,7 +2217,13 @@ static int ieee80211_change_station(stru
  
  			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
  			__ieee80211_check_fast_rx_iface(vlansdata);
@@ -58,7 +58,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
 --- a/net/mac80211/driver-ops.c
 +++ b/net/mac80211/driver-ops.c
-@@ -62,10 +62,9 @@ int drv_add_interface(struct ieee80211_l
+@@ -62,11 +62,10 @@ int drv_add_interface(struct ieee80211_l
  	might_sleep();
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -66,6 +66,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 -		    (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
 +	if (WARN_ON(sdata->vif.type == NL80211_IFTYPE_MONITOR &&
  		     !ieee80211_hw_check(&local->hw, WANT_MONITOR_VIF) &&
+ 		     !ieee80211_hw_check(&local->hw, NO_VIRTUAL_MONITOR) &&
 -		     !(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE))))
 +		     !(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE)))
  		return -EINVAL;
@@ -83,7 +84,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		break;
  	case NL80211_IFTYPE_MONITOR:
  		if (local->monitors == 0)
-@@ -975,6 +978,7 @@ static bool ieee80211_iftype_supports_hd
+@@ -977,6 +980,7 @@ static bool ieee80211_iftype_supports_hd
  	switch (iftype) {
  	/* P2P GO and client are mapped to AP/STATION types */
  	case NL80211_IFTYPE_AP:
@@ -91,7 +92,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	case NL80211_IFTYPE_STATION:
  		return true;
  	default:
-@@ -1029,7 +1033,8 @@ static void ieee80211_set_vif_encap_ops(
+@@ -1031,7 +1035,8 @@ static void ieee80211_set_vif_encap_ops(
  	struct ieee80211_sub_if_data *bss = sdata;
  	bool enabled;
  
@@ -101,8 +102,8 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		if (!sdata->bss)
  			return;
  
-@@ -1355,10 +1360,17 @@ int ieee80211_do_open(struct wireless_de
- 
+@@ -1365,10 +1370,17 @@ int ieee80211_do_open(struct wireless_de
+ 				(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE);
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP_VLAN:
 -		/* no need to tell driver, but set carrier and chanctx */
@@ -122,7 +123,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			netif_carrier_off(dev);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1683,6 +1683,12 @@ void ieee80211_sta_uapsd_trigger(struct
+@@ -1690,6 +1690,12 @@ void ieee80211_sta_uapsd_trigger(struct
  }
  EXPORT_SYMBOL(ieee80211_sta_uapsd_trigger);
  
@@ -137,7 +138,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4319,8 +4319,11 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4321,8 +4321,11 @@ void __ieee80211_subif_start_xmit(struct
  		sta = NULL;
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
@@ -151,7 +152,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
  		    !is_multicast_ether_addr(skb->data)) {
  			if (sta)
-@@ -4712,7 +4715,8 @@ static void ieee80211_8023_xmit(struct i
+@@ -4714,7 +4717,8 @@ static void ieee80211_8023_xmit(struct i
  
  	info->hw_queue = sdata->vif.hw_queue[queue];
  
@@ -173,29 +174,29 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	conf = rcu_dereference_protected(link->conf->chanctx_conf,
  					 lockdep_is_held(&local->hw.wiphy->mtx));
  	if (conf) {
-@@ -1873,7 +1876,8 @@ int ieee80211_reconfig(struct ieee80211_
- 	}
- 
- 	list_for_each_entry(sdata, &local->interfaces, list) {
+@@ -1876,7 +1879,8 @@ int ieee80211_reconfig(struct ieee80211_
+ 		if (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
+ 		    !ieee80211_hw_check(&local->hw, NO_VIRTUAL_MONITOR))
+ 			continue;
 -		if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 +		if ((sdata->vif.type != NL80211_IFTYPE_AP_VLAN ||
 +		    ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)) &&
- 		    sdata->vif.type != NL80211_IFTYPE_MONITOR &&
  		    ieee80211_sdata_running(sdata)) {
  			res = drv_add_interface(local, sdata);
-@@ -1888,7 +1892,8 @@ int ieee80211_reconfig(struct ieee80211_
- 	if (res) {
- 		list_for_each_entry_continue_reverse(sdata, &local->interfaces,
- 						     list)
+ 			if (WARN_ON(res))
+@@ -1893,7 +1897,8 @@ int ieee80211_reconfig(struct ieee80211_
+ 			if (sdata->vif.type == NL80211_IFTYPE_MONITOR &&
+ 			    !ieee80211_hw_check(&local->hw, NO_VIRTUAL_MONITOR))
+ 				continue;
 -			if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 +			if ((sdata->vif.type != NL80211_IFTYPE_AP_VLAN ||
 +			    ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)) &&
- 			    sdata->vif.type != NL80211_IFTYPE_MONITOR &&
  			    ieee80211_sdata_running(sdata))
  				drv_remove_interface(local, sdata);
+ 		}
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -5700,7 +5700,8 @@ static bool ieee80211_assoc_success(stru
+@@ -5698,7 +5698,8 @@ static bool ieee80211_assoc_success(stru
  	 * If we're using 4-addr mode, let the AP know that we're
  	 * doing so, so that it can create the STA VLAN on its side
  	 */
