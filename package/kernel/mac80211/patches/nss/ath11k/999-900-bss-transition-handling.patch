@@ -31,7 +31,7 @@
  	INIT_WORK(&ab->restart_work, ath11k_core_restart);
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -741,9 +741,22 @@ struct ath11k {
+@@ -746,9 +746,22 @@ struct ath11k {
  			iftype[NUM_NL80211_BANDS][NUM_NL80211_IFTYPES];
  	} mac;
  
@@ -54,7 +54,7 @@
  	u32 min_tx_power;
  	u32 max_tx_power;
  	u32 txpower_limit_2g;
-@@ -821,6 +834,9 @@ struct ath11k {
+@@ -826,6 +839,9 @@ struct ath11k {
  	struct work_struct wmi_mgmt_tx_work;
  	struct sk_buff_head wmi_mgmt_tx_queue;
  
@@ -64,7 +64,7 @@
  	struct ath11k_wow wow;
  	struct completion target_suspend;
  	bool target_suspend_ack;
-@@ -1024,19 +1040,7 @@ struct ath11k_base {
+@@ -1029,19 +1045,7 @@ struct ath11k_base {
  	struct ath11k_hal_reg_capabilities_ext hal_reg_cap[MAX_RADIOS];
  	unsigned long long free_vdev_map;
  
@@ -84,7 +84,7 @@
  	u8 mac_addr[ETH_ALEN];
  	int userpd_id;
  	int irq_num[ATH11K_IRQ_NUM_MAX];
-@@ -1413,4 +1417,36 @@ static inline const char *ath11k_bus_str
+@@ -1418,4 +1422,36 @@ static inline const char *ath11k_bus_str
  	return "unknown";
  }
  
@@ -515,10 +515,10 @@
  	if (peer && peer->sta)
  		pubsta = peer->sta;
  	spin_unlock_bh(&ar->ab->base_lock);
-@@ -3504,7 +3520,7 @@ try_again:
- 		if (unlikely(push_reason !=
- 			     HAL_REO_DEST_RING_PUSH_REASON_ROUTING_INSTRUCTION)) {
- 			dev_kfree_skb_any(msdu);
+@@ -3462,7 +3478,7 @@ try_again:
+ 		if (unlikely(push_reason ==
+ 		    HAL_REO_DEST_RING_PUSH_REASON_ERR_DETECTED)) {
+ 			ath11k_warn(ab,"Received invalid desc\n");
 -			ab->soc_stats.hal_reo_error[dp->reo_dst_ring[ring_id].ring_id]++;
 +			ab->soc_stats.hal_reo_error[ring_id]++;
  			continue;
@@ -569,7 +569,7 @@
  
  		if (test_bit(ATH11K_FLAG_MONITOR_STARTED, &ar->monitor_flags) &&
  		    pmon->mon_ppdu_status == DP_PPDU_STATUS_START &&
-@@ -6423,7 +6439,7 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -6426,7 +6442,7 @@ int ath11k_dp_rx_process_mon_status(stru
  		}
  		rcu_read_lock();
  		spin_lock_bh(&ab->base_lock);

@@ -69,7 +69,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -432,6 +451,11 @@ struct ath11k_vif {
+@@ -431,6 +450,11 @@ struct ath11k_vif {
  	struct arvif_nss nss;
  #endif
  	struct list_head ap_vlan_arvifs;
@@ -78,9 +78,9 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 +	/* VLAN keyidx map required for Dynamic VLAN */
 +	u16 *vlan_keyid_map;
 +	DECLARE_BITMAP(free_groupidx_map, ATH11K_GROUP_KEYS_NUM_MAX);
- };
- 
- struct ath11k_vif_iter {
+ 	/* Must be last - ends in a flexible-array member.
+ 	 *
+ 	 * FIXME: Driver should not copy struct ieee80211_chanctx_conf,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
 @@ -343,6 +343,10 @@ enum nl80211_he_gi ath11k_mac_he_gi_to_n

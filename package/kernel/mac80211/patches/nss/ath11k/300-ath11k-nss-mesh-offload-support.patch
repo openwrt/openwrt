@@ -1014,8 +1014,8 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +#endif
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
-@@ -1453,15 +1453,29 @@ struct htt_ppdu_stats_usr_cmn_array {
- 	struct htt_tx_ppdu_stats_info tx_ppdu_info[];
+@@ -1430,15 +1430,29 @@ struct htt_ppdu_stats_user_common {
+ 	u32 host_opaque_cookie;
  } __packed;
  
 +#define HTT_PPDU_STATS_CMPLTN_FLUSH_INFO_FLOW_TYPE GENMASK(7, 0)

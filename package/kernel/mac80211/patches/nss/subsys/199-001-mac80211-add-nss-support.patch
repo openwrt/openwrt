@@ -64,7 +64,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  /**
-@@ -1485,7 +1501,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1483,7 +1499,7 @@ ieee80211_tx_info_clear_status(struct ie
   * @RX_FLAG_AMPDU_EOF_BIT_KNOWN: The EOF value is known
   * @RX_FLAG_RADIOTAP_HE: HE radiotap data is present
   *	(&struct ieee80211_radiotap_he, mac80211 will fill in
@@ -73,7 +73,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	 - DATA3_DATA_MCS
   *	 - DATA3_DATA_DCM
   *	 - DATA3_CODING
-@@ -1493,7 +1509,7 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1491,7 +1507,7 @@ ieee80211_tx_info_clear_status(struct ie
   *	 - DATA5_DATA_BW_RU_ALLOC
   *	 - DATA6_NSTS
   *	 - DATA3_STBC
@@ -82,7 +82,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   *	from the RX info data, so leave those zeroed when building this data)
   * @RX_FLAG_RADIOTAP_HE_MU: HE MU radiotap data is present
   *	(&struct ieee80211_radiotap_he_mu)
-@@ -2128,6 +2144,16 @@ static inline bool lockdep_vif_wiphy_mut
+@@ -2127,6 +2143,16 @@ static inline bool lockdep_vif_wiphy_mut
  			      lockdep_vif_wiphy_mutex_held(vif))
  
  /**
@@ -99,7 +99,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * enum ieee80211_key_flags - key flags
   *
   * These flags are used for communication about keys between the driver
-@@ -2826,6 +2852,8 @@ struct ieee80211_txq {
+@@ -2830,6 +2856,8 @@ struct ieee80211_txq {
   *	implements MLO, so operation can continue on other links when one
   *	link is switching.
   *
@@ -108,7 +108,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2885,6 +2913,7 @@ enum ieee80211_hw_flags {
+@@ -2890,6 +2918,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_DISALLOW_PUNCTURING,
  	IEEE80211_HW_DISALLOW_PUNCTURING_5GHZ,
  	IEEE80211_HW_HANDLES_QUIET_CSA,
@@ -116,7 +116,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -3900,6 +3929,10 @@ struct ieee80211_prep_tx_info {
+@@ -3918,6 +3947,10 @@ struct ieee80211_prep_tx_info {
   *	non-MLO connections.
   *	The callback can sleep.
   *
@@ -127,7 +127,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * @prepare_multicast: Prepare for multicast filter configuration.
   *	This callback is optional, and its return value is passed
   *	to configure_filter(). This callback must be atomic.
-@@ -4462,7 +4495,9 @@ struct ieee80211_ops {
+@@ -4480,7 +4513,9 @@ struct ieee80211_ops {
  				  struct ieee80211_vif *vif,
  				  struct ieee80211_bss_conf *info,
  				  u64 changed);
@@ -138,7 +138,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	int (*start_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  			struct ieee80211_bss_conf *link_conf);
  	void (*stop_ap)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-@@ -4772,7 +4807,7 @@ struct ieee80211_ops {
+@@ -4790,7 +4825,7 @@ struct ieee80211_ops {
  	int (*reset_tid_config)(struct ieee80211_hw *hw,
  				struct ieee80211_vif *vif,
  				struct ieee80211_sta *sta, u8 tids);
@@ -149,7 +149,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  			      struct ieee80211_sta *sta, bool enabled);
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
-@@ -508,6 +508,7 @@ static const char *hw_flag_names[] = {
+@@ -509,6 +509,7 @@ static const char *hw_flag_names[] = {
  	FLAG(DISALLOW_PUNCTURING),
  	FLAG(DISALLOW_PUNCTURING_5GHZ),
  	FLAG(HANDLES_QUIET_CSA),
@@ -184,7 +184,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
   * the suspend->resume cycle. Since we can't check each caller
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -414,6 +414,17 @@ void ieee80211_link_info_change_notify(s
+@@ -416,6 +416,17 @@ void ieee80211_link_info_change_notify(s
  	drv_link_info_changed(local, sdata, link->conf, link->link_id, changed);
  }
  
@@ -202,7 +202,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  u64 ieee80211_reset_erp_info(struct ieee80211_sub_if_data *sdata)
  {
  	sdata->vif.bss_conf.use_cts_prot = false;
-@@ -852,12 +863,6 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -854,12 +865,6 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  			   NL80211_FEATURE_FULL_AP_CLIENT_STATE;
  	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_FILS_STA);
  	wiphy_ext_feature_set(wiphy,
@@ -215,7 +215,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  			      NL80211_EXT_FEATURE_SCAN_FREQ_KHZ);
  	wiphy_ext_feature_set(wiphy,
  			      NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE);
-@@ -1185,6 +1190,18 @@ int ieee80211_register_hw(struct ieee802
+@@ -1187,6 +1192,18 @@ int ieee80211_register_hw(struct ieee802
  			return -EINVAL;
  	}
  
@@ -272,7 +272,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		ac = skb_get_queue_mapping(skb);
  		tx->sta->deflink.tx_stats.bytes[ac] += skb->len;
  	}
-@@ -2876,7 +2888,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2877,7 +2889,9 @@ static struct sk_buff *ieee80211_build_h
  	if (unlikely(!multicast &&
  		     ((skb->sk &&
  		       skb_shinfo(skb)->tx_flags & SKBTX_WIFI_STATUS) ||
@@ -283,7 +283,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		info_id = ieee80211_store_ack_skb(local, skb, &info_flags,
  						  cookie);
  
-@@ -4665,7 +4679,8 @@ static void ieee80211_8023_xmit(struct i
+@@ -4667,7 +4681,8 @@ static void ieee80211_8023_xmit(struct i
  	}
  
  	if (unlikely(skb->sk &&
@@ -293,7 +293,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		info->status_data = ieee80211_store_ack_skb(local, skb,
  							    &info->flags, NULL);
  		if (info->status_data)
-@@ -4673,8 +4688,10 @@ static void ieee80211_8023_xmit(struct i
+@@ -4675,8 +4690,10 @@ static void ieee80211_8023_xmit(struct i
  	}
  
  	dev_sw_netstats_tx_add(dev, skbs, len);
@@ -320,7 +320,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  				gfp);
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2695,7 +2695,7 @@ static int ieee80211_change_bss(struct w
+@@ -2704,7 +2704,7 @@ static int ieee80211_change_bss(struct w
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_link_data *link;
  	struct ieee80211_supported_band *sband;
@@ -329,7 +329,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	link = ieee80211_link_or_deflink(sdata, params->link_id, true);
  	if (IS_ERR(link))
-@@ -2745,6 +2745,8 @@ static int ieee80211_change_bss(struct w
+@@ -2754,6 +2754,8 @@ static int ieee80211_change_bss(struct w
  			sdata->flags |= IEEE80211_SDATA_DONT_BRIDGE_PACKETS;
  		else
  			sdata->flags &= ~IEEE80211_SDATA_DONT_BRIDGE_PACKETS;
@@ -338,7 +338,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		ieee80211_check_fast_rx_iface(sdata);
  	}
  
-@@ -2773,6 +2775,8 @@ static int ieee80211_change_bss(struct w
+@@ -2782,6 +2784,8 @@ static int ieee80211_change_bss(struct w
  
  	ieee80211_link_info_change_notify(sdata, link, changed);
  
@@ -375,7 +375,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1860,6 +1860,8 @@ void ieee80211_vif_cfg_change_notify(str
+@@ -1859,6 +1859,8 @@ void ieee80211_vif_cfg_change_notify(str
  void ieee80211_link_info_change_notify(struct ieee80211_sub_if_data *sdata,
  				       struct ieee80211_link_data *link,
  				       u64 changed);
@@ -427,7 +427,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	TP_PROTO(struct ieee80211_local *local,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -984,7 +984,8 @@ static bool ieee80211_set_sdata_offload_
+@@ -986,7 +986,8 @@ static bool ieee80211_set_sdata_offload_
  		    local->hw.wiphy->frag_threshold != (u32)-1)
  			flags &= ~IEEE80211_OFFLOAD_ENCAP_ENABLED;
  

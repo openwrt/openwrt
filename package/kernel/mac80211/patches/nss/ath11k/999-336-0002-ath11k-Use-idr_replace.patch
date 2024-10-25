@@ -18,7 +18,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -704,6 +704,11 @@ struct ath11k_per_peer_tx_stats {
+@@ -709,6 +709,11 @@ struct ath11k_per_peer_tx_stats {
  #define ATH11K_FLUSH_TIMEOUT (5 * HZ)
  #define ATH11K_VDEV_DELETE_TIMEOUT_HZ (5 * HZ)
  
@@ -30,7 +30,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  struct ath11k {
  	struct ath11k_base *ab;
  	struct ath11k_pdev *pdev;
-@@ -853,6 +858,7 @@ struct ath11k {
+@@ -858,6 +863,7 @@ struct ath11k {
  	bool ps_state_enable;
  	bool ps_timekeeper_enable;
  	s8 max_allowed_tx_power;
@@ -248,7 +248,7 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  	}
  }
  
-@@ -6691,7 +6734,7 @@ next_entry:
+@@ -6694,7 +6737,7 @@ next_entry:
  		ath11k_dp_rxbufs_replenish(ar->ab, dp->mac_id,
  					   &dp->rxdma_mon_buf_ring,
  					   rx_bufs_used,

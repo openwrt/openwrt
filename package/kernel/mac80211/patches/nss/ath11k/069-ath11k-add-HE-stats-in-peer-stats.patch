@@ -23,7 +23,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  #include "fw.h"
  
  #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
-@@ -512,6 +513,8 @@ struct ath11k_htt_data_stats {
+@@ -518,6 +519,8 @@ struct ath11k_htt_data_stats {
  	u64 bw[ATH11K_COUNTER_TYPE_MAX][ATH11K_BW_NUM];
  	u64 nss[ATH11K_COUNTER_TYPE_MAX][ATH11K_NSS_NUM];
  	u64 gi[ATH11K_COUNTER_TYPE_MAX][ATH11K_GI_NUM];
@@ -32,7 +32,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  };
  
  struct ath11k_htt_tx_stats {
-@@ -519,6 +522,9 @@ struct ath11k_htt_tx_stats {
+@@ -525,6 +528,9 @@ struct ath11k_htt_tx_stats {
  	u64 tx_duration;
  	u64 ba_fails;
  	u64 ack_fails;
@@ -42,7 +42,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  };
  
  struct ath11k_per_ppdu_tx_stats {
-@@ -635,11 +641,16 @@ struct ath11k_per_peer_tx_stats {
+@@ -641,11 +647,16 @@ struct ath11k_per_peer_tx_stats {
  	u32 succ_bytes;
  	u32 retry_bytes;
  	u32 failed_bytes;
@@ -396,7 +396,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  #define HTT_PPDU_STATS_USER_RATE_RESP_FLAGS_LTF_SIZE_M		GENMASK(1, 0)
  #define HTT_PPDU_STATS_USER_RATE_RESP_FLAGS_STBC_M		BIT(2)
-@@ -1364,6 +1422,21 @@ struct htt_ppdu_stats_usr_cmpltn_ack_ba_
+@@ -1352,16 +1410,33 @@ struct htt_ppdu_stats_usr_cmpltn_ack_ba_
  	u32 success_bytes;
  } __packed;
  
@@ -404,7 +404,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
 +#define HTT_PPDU_STATS_USR_CMN_HDR_SW_PEERID	GENMASK(31, 16)
 +#define HTT_PPDU_STATS_USR_CMN_CTL_FRM_CTRL	GENMASK(15, 0)
 +
-+struct  htt_ppdu_stats_user_common {
++struct htt_ppdu_stats_user_common {
 +	u8 tid_num;
 +	u8 vdev_id;
 +	u16 sw_peer_id;
@@ -415,11 +415,6 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
 +	u32 host_opaque_cookie;
 +} __packed;
 +
- struct htt_ppdu_stats_usr_cmn_array {
- 	struct htt_tlv tlv_hdr;
- 	u32 num_ppdu_stats;
-@@ -1377,14 +1450,16 @@ struct htt_ppdu_stats_usr_cmn_array {
- 
  struct htt_ppdu_user_stats {
  	u16 peer_id;
 +	u16 delay_ba;
@@ -436,7 +431,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  #define HTT_PPDU_DESC_MAX_DEPTH	16
  
  struct htt_ppdu_stats {
-@@ -1393,7 +1468,7 @@ struct htt_ppdu_stats {
+@@ -1370,7 +1445,7 @@ struct htt_ppdu_stats {
  };
  
  struct htt_ppdu_stats_info {
