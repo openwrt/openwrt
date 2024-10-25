@@ -1,0 +1,44 @@
+From cec5a43a23d36dd7cfcaddb9aa40a90989017331 Mon Sep 17 00:00:00 2001
+From: Jianfeng Wang <jfwang@google.com>
+Date: Fri, 19 Jun 2020 17:33:45 +0000
+Subject: [PATCH 12/19] net-tcp_bbr: v2: record app-limited status of
+ TLP-repaired flight
+
+When sending a TLP retransmit, record whether the outstanding flight
+of data is application limited. This is important for congestion
+control modules that want to respond to losses repaired by TLP
+retransmits. This is important because the following scenarios convey
+very different information:
+ (1) a packet loss with a small number of packets in flight;
+ (2) a packet loss with the maximum amount of data in flight allowed
+     by the CC module;
+
+Effort: net-tcp_bbr
+Change-Id: Ic8ae567caa4e4bfd5fd82c3d4be12a5d9171655e
+---
+ include/linux/tcp.h   | 3 ++-
+ net/ipv4/tcp_output.c | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -258,7 +258,8 @@ struct tcp_sock {
+ 	u8	dup_ack_counter:2,
+ 		tlp_retrans:1,	/* TLP is a retransmission */
+ 		fast_ack_mode:2, /* which fast ack mode ? */
+-		unused:3;
++		tlp_orig_data_app_limited:1, /* app-limited before TLP rtx? */
++		unused:2;
+ 	u32	chrono_start;	/* Start time in jiffies of a TCP chrono */
+ 	u32	chrono_stat[3];	/* Time in jiffies for chrono_stat stats */
+ 	u8	chrono_type:2,	/* current chronograph type */
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -2938,6 +2938,7 @@ void tcp_send_loss_probe(struct sock *sk
+ 	if (WARN_ON(!skb || !tcp_skb_pcount(skb)))
+ 		goto rearm_timer;
+ 
++	tp->tlp_orig_data_app_limited = TCP_SKB_CB(skb)->tx.is_app_limited;
+ 	if (__tcp_retransmit_skb(sk, skb, 1))
+ 		goto rearm_timer;
+ 
