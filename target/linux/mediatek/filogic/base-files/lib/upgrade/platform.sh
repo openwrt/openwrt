@@ -80,6 +80,7 @@ platform_do_upgrade() {
 	openwrt,one|\
 	netcore,n60|\
 	qihoo,360t7|\
+	routerich,ax3000-ubootmod|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
