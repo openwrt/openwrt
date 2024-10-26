@@ -153,7 +153,6 @@ define Device/fsl_ls1043a-rdb
   DEVICE_PACKAGES += \
     ~layerscape-fman \
     ~trusted-firmware-a-ls1043a-rdb \
-    fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
@@ -178,7 +177,6 @@ define Device/fsl_ls1043a-rdb-sdboot
   DEVICE_PACKAGES += \
     ~layerscape-fman \
     ~trusted-firmware-a-ls1043a-rdb-sdboot \
-    fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
@@ -243,7 +241,6 @@ define Device/fsl_ls1046a-rdb
   DEVICE_PACKAGES += \
     ~layerscape-fman \
     ~trusted-firmware-a-ls1046a-rdb \
-    fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
@@ -268,7 +265,6 @@ define Device/fsl_ls1046a-rdb-sdboot
   DEVICE_PACKAGES += \
     ~layerscape-fman \
     ~trusted-firmware-a-ls1046a-rdb-sdboot \
-    fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
