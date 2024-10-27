@@ -1,0 +1,239 @@
+From 5e8228346d1e4bf6a260a57905dcb062a43c9819 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 23 Jun 2024 22:12:05 +0200
+Subject: [PATCH 05/11] led: implement LED activity API
+
+Implement LED activity API similar to BOOT LED API.
+
+Usual activity might be a file transfer with TFTP, a flash write...
+
+User of this API will call led_activity_on/off/blink() to signal these
+kind of activity.
+
+New Kconfig is implemented similar to BOOT LED, LED_ACTIVITY to
+enable support for it.
+
+It's introduced a new /options/u-boot property "activity-led" and
+"activity-led-period" to define the activity LED label and the
+default period when the activity LED is set to blink mode.
+
+If "activity-led-period" is not defined, the value of 250 (ms) is
+used by default.
+
+If CONFIG_LED_BLINK or CONFIG_LED_SW_BLINK is not enabled,
+led_boot_blink call will fallback to simple LED ON.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/led/Kconfig      | 13 +++++++
+ drivers/led/led-uclass.c | 81 +++++++++++++++++++++++++++++++++++++++-
+ include/led.h            | 51 +++++++++++++++++++++++++
+ 3 files changed, 143 insertions(+), 2 deletions(-)
+
+--- a/drivers/led/Kconfig
++++ b/drivers/led/Kconfig
+@@ -20,6 +20,19 @@ config LED_BOOT
+ 
+ 	  [1] dtschema/schemas/options/u-boot.yaml
+ 
++config LED_ACTIVITY
++	bool "Enable LED activity support"
++	help
++	  Enable LED activity support.
++
++	  LED activity is a specific LED assigned to signal activity operation
++	  like file trasnfer, flash write/erase...
++
++	  Defined in Device Tree /options/u-boot node. Refer here for the supported
++	  options [1].
++
++	  [1] dtschema/schemas/options/u-boot.yaml
++
+ config LED_BCM6328
+ 	bool "LED Support for BCM6328"
+ 	depends on LED && ARCH_BMIPS
+--- a/drivers/led/led-uclass.c
++++ b/drivers/led/led-uclass.c
+@@ -163,6 +163,75 @@ int led_boot_blink(void)
+ #endif
+ #endif
+ 
++#ifdef CONFIG_LED_ACTIVITY
++static int led_activity_get(struct udevice **devp, int *period_ms)
++{
++	struct led_uc_priv *priv;
++	struct uclass *uc;
++	int ret;
++
++	ret = uclass_get(UCLASS_LED, &uc);
++	if (ret)
++		return ret;
++
++	priv = uclass_get_priv(uc);
++	if (!priv->activity_led_label)
++		return -ENOENT;
++
++	if (period_ms)
++		*period_ms = priv->activity_led_period;
++
++	return led_get_by_label(priv->activity_led_label, devp);
++}
++
++int led_activity_on(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = led_activity_get(&dev, NULL);
++	if (ret)
++		return ret;
++
++	return led_set_state(dev, LEDST_ON);
++}
++
++int led_activity_off(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = led_activity_get(&dev, NULL);
++	if (ret)
++		return ret;
++
++	return led_set_state(dev, LEDST_OFF);
++}
++
++#if defined(CONFIG_LED_BLINK) || defined(CONFIG_LED_SW_BLINK)
++int led_activity_blink(void)
++{
++	struct udevice *dev;
++	int period_ms, ret;
++
++	ret = led_activity_get(&dev, &period_ms);
++	if (ret)
++		return ret;
++
++	ret = led_set_period(dev, period_ms);
++	if (ret) {
++		if (ret != -ENOSYS)
++			return ret;
++
++		/* fallback to ON with no set_period and no SW_BLINK */
++		return led_set_state(dev, LEDST_ON);
++	}
++
++	return led_set_state(dev, LEDST_BLINK);
++}
++#endif
++#endif
++
+ static int led_post_bind(struct udevice *dev)
+ {
+ 	struct led_uc_plat *uc_plat = dev_get_uclass_plat(dev);
+@@ -227,13 +296,21 @@ static int led_post_probe(struct udevice
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_LED_BOOT
++#if defined(CONFIG_LED_BOOT) || defined(CONFIG_LED_ACTIVITY)
+ static int led_init(struct uclass *uc)
+ {
+ 	struct led_uc_priv *priv = uclass_get_priv(uc);
+ 
++#ifdef CONFIG_LED_BOOT
+ 	priv->boot_led_label = ofnode_options_read_str("boot-led");
+ 	priv->boot_led_period = ofnode_options_read_int("boot-led-period", 250);
++#endif
++
++#ifdef CONFIG_LED_ACTIVITY
++	priv->activity_led_label = ofnode_options_read_str("activity-led");
++	priv->activity_led_period = ofnode_options_read_int("activity-led-period",
++							    250);
++#endif
+ 
+ 	return 0;
+ }
+@@ -245,7 +322,7 @@ UCLASS_DRIVER(led) = {
+ 	.per_device_plat_auto	= sizeof(struct led_uc_plat),
+ 	.post_bind	= led_post_bind,
+ 	.post_probe	= led_post_probe,
+-#ifdef CONFIG_LED_BOOT
++#if defined(CONFIG_LED_BOOT) || defined(CONFIG_LED_ACTIVITY)
+ 	.init		= led_init,
+ 	.priv_auto	= sizeof(struct led_uc_priv),
+ #endif
+--- a/include/led.h
++++ b/include/led.h
+@@ -54,14 +54,21 @@ struct led_uc_plat {
+  * struct led_uc_priv - Private data the uclass stores about each device
+  *
+  * @boot_led_label:	Boot LED label
++ * @activity_led_label:	Activity LED label
+  * @boot_led_dev:	Boot LED dev
++ * @activity_led_dev:	Activity LED dev
+  * @boot_led_period:	Boot LED blink period
++ * @activity_led_period: Activity LED blink period
+  */
+ struct led_uc_priv {
+ #ifdef CONFIG_LED_BOOT
+ 	const char *boot_led_label;
+ 	int boot_led_period;
+ #endif
++#ifdef CONFIG_LED_ACTIVITY
++	const char *activity_led_label;
++	int activity_led_period;
++#endif
+ };
+ 
+ struct led_ops {
+@@ -190,6 +197,50 @@ static inline int led_boot_blink(void)
+ {
+ 	return -ENOSYS;
+ }
++#endif
++
++#ifdef CONFIG_LED_ACTIVITY
++
++/**
++ * led_activity_on() - turn ON the designated LED for activity
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_activity_on(void);
++
++/**
++ * led_activity_off() - turn OFF the designated LED for activity
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_activity_off(void);
++
++#if defined(CONFIG_LED_BLINK) || defined(CONFIG_LED_SW_BLINK)
++/**
++ * led_activity_blink() - turn ON the designated LED for activity
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_activity_blink(void);
++#else
++/* If LED BLINK is not supported/enabled, fallback to LED ON */
++#define led_activity_blink led_activity_on
++#endif
++#else
++static inline int led_activity_on(void)
++{
++	return -ENOSYS;
++}
++
++static inline int led_activity_off(void)
++{
++	return -ENOSYS;
++}
++
++static inline int led_activity_blink(void)
++{
++	return -ENOSYS;
++}
+ #endif
+ 
+ #endif

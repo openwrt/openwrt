@@ -1,0 +1,63 @@
+From 91ea124d84b0db22d2bdac76c37960e97a038f3d Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 2 Jun 2024 18:11:15 +0200
+Subject: [PATCH 07/11] mtd: implement support for LED activity
+
+Implement support for LED activity. If the feature is enabled,
+make the defined ACTIVITY LED to signal mtd operations.
+
+LED activity is implemented HERE and not in the subsystem side to limit
+any performance degradation in case multiple call to MTD subsystem read/write
+are done.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ cmd/mtd.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/cmd/mtd.c
++++ b/cmd/mtd.c
+@@ -10,6 +10,7 @@
+ 
+ #include <command.h>
+ #include <console.h>
++#include <led.h>
+ #if CONFIG_IS_ENABLED(CMD_MTD_OTP)
+ #include <hexdump.h>
+ #endif
+@@ -558,6 +559,8 @@ static int do_mtd_io(struct cmd_tbl *cmd
+ 	while (mtd_block_isbad(mtd, off))
+ 		off += mtd->erasesize;
+ 
++	led_activity_blink();
++
+ 	/* Loop over the pages to do the actual read/write */
+ 	while (remaining) {
+ 		/* Skip the block if it is bad */
+@@ -585,6 +588,8 @@ static int do_mtd_io(struct cmd_tbl *cmd
+ 		io_op.oobbuf += io_op.oobretlen;
+ 	}
+ 
++	led_activity_off();
++
+ 	if (!ret && dump)
+ 		mtd_dump_device_buf(mtd, start_off, buf, len, woob);
+ 
+@@ -652,6 +657,8 @@ static int do_mtd_erase(struct cmd_tbl *
+ 	erase_op.addr = off;
+ 	erase_op.len = mtd->erasesize;
+ 
++	led_activity_blink();
++
+ 	while (len) {
+ 		if (!scrub) {
+ 			ret = mtd_block_isbad(mtd, erase_op.addr);
+@@ -680,6 +687,8 @@ static int do_mtd_erase(struct cmd_tbl *
+ 		erase_op.addr += mtd->erasesize;
+ 	}
+ 
++	led_activity_off();
++
+ 	if (ret && ret != -EIO)
+ 		ret = CMD_RET_FAILURE;
+ 	else

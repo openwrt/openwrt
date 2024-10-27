@@ -1,0 +1,116 @@
+From be828879abedba69df35bc0cf5e0f71ca67756ac Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 23 Jun 2024 21:59:30 +0200
+Subject: [PATCH 04/11] common: board_r: rework BOOT LED handling
+
+Rework BOOT LED handling. There is currently one legacy implementation
+for BOOT LED from Status Led API.
+
+This work on ancient implementation used by BOOTP by setting the LED
+to Blink on boot and to turn it OFF when the firmware was correctly
+received by network.
+
+Now that we new LED implementation have support for LED boot, rework
+this by also set the new BOOT LED to blink and also set it to ON before
+entering main loop to confirm successful boot.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+---
+ common/board_r.c     | 28 ++++++++++++++++++++--------
+ include/status_led.h | 13 +++++++++++++
+ 2 files changed, 33 insertions(+), 8 deletions(-)
+
+--- a/common/board_r.c
++++ b/common/board_r.c
+@@ -39,6 +39,7 @@
+ #include <initcall.h>
+ #include <kgdb.h>
+ #include <irq_func.h>
++#include <led.h>
+ #include <malloc.h>
+ #include <mapmem.h>
+ #include <miiphy.h>
+@@ -459,17 +460,28 @@ static int initr_malloc_bootparams(void)
+ }
+ #endif
+ 
+-#if defined(CONFIG_LED_STATUS)
+ static int initr_status_led(void)
+ {
+-#if defined(CONFIG_LED_STATUS_BOOT)
+-	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_BLINKING);
+-#else
+ 	status_led_init();
+-#endif
++
++	return 0;
++}
++
++static int initr_boot_led_blink(void)
++{
++	status_led_boot_blink();
++
++	led_boot_blink();
++
++	return 0;
++}
++
++static int initr_boot_led_on(void)
++{
++	led_boot_on();
++
+ 	return 0;
+ }
+-#endif
+ 
+ #ifdef CONFIG_CMD_NET
+ static int initr_net(void)
+@@ -713,9 +725,8 @@ static init_fnc_t init_sequence_r[] = {
+ #if defined(CONFIG_MICROBLAZE) || defined(CONFIG_M68K)
+ 	timer_init,		/* initialize timer */
+ #endif
+-#if defined(CONFIG_LED_STATUS)
+ 	initr_status_led,
+-#endif
++	initr_boot_led_blink,
+ 	/* PPC has a udelay(20) here dating from 2002. Why? */
+ #ifdef CONFIG_BOARD_LATE_INIT
+ 	board_late_init,
+@@ -738,6 +749,7 @@ static init_fnc_t init_sequence_r[] = {
+ #if defined(CFG_PRAM)
+ 	initr_mem,
+ #endif
++	initr_boot_led_on,
+ 	run_main_loop,
+ };
+ 
+--- a/include/status_led.h
++++ b/include/status_led.h
+@@ -39,6 +39,13 @@ void status_led_init(void);
+ void status_led_tick(unsigned long timestamp);
+ void status_led_set(int led, int state);
+ 
++static inline void status_led_boot_blink(void)
++{
++#ifdef CONFIG_LED_STATUS_BOOT_ENABLE
++	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_BLINKING);
++#endif
++}
++
+ /*****  MVS v1  **********************************************************/
+ #if (defined(CONFIG_MVS) && CONFIG_MVS < 2)
+ # define STATUS_LED_PAR		im_ioport.iop_pdpar
+@@ -72,6 +79,12 @@ void __led_blink(led_id_t mask, int freq
+ # include <asm/status_led.h>
+ #endif
+ 
++#else
++
++static inline void status_led_init(void) { }
++static inline void status_led_set(int led, int state) { }
++static inline void status_led_boot_blink(void) { }
++
+ #endif	/* CONFIG_LED_STATUS	*/
+ 
+ /*

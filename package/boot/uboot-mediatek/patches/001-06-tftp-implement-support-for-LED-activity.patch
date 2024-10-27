@@ -1,0 +1,66 @@
+From db8d0fb4923d1a5e4facba352488fd422fd3a2f8 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 2 Jun 2024 17:52:44 +0200
+Subject: [PATCH 06/11] tftp: implement support for LED activity
+
+Implement support for LED activity. If the feature is enabled,
+make the defined ACTIVITY LED to signal traffic.
+
+Also turn the ACTIVITY LED OFF if a CTRL-C is detected in the main
+net loop function.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+---
+ net/net.c  | 4 ++++
+ net/tftp.c | 5 +++++
+ 2 files changed, 9 insertions(+)
+
+--- a/net/net.c
++++ b/net/net.c
+@@ -87,6 +87,7 @@
+ #include <env_internal.h>
+ #include <errno.h>
+ #include <image.h>
++#include <led.h>
+ #include <log.h>
+ #include <net.h>
+ #include <net6.h>
+@@ -659,6 +660,9 @@ restart:
+ 			/* Invalidate the last protocol */
+ 			eth_set_last_protocol(BOOTP);
+ 
++			/* Turn off activity LED if triggered */
++			led_activity_off();
++
+ 			puts("\nAbort\n");
+ 			/* include a debug print as well incase the debug
+ 			   messages are directed to stderr */
+--- a/net/tftp.c
++++ b/net/tftp.c
+@@ -10,6 +10,7 @@
+ #include <efi_loader.h>
+ #include <env.h>
+ #include <image.h>
++#include <led.h>
+ #include <lmb.h>
+ #include <log.h>
+ #include <mapmem.h>
+@@ -192,6 +193,7 @@ static void new_transfer(void)
+ #ifdef CONFIG_CMD_TFTPPUT
+ 	tftp_put_final_block_sent = 0;
+ #endif
++	led_activity_blink();
+ }
+ 
+ #ifdef CONFIG_CMD_TFTPPUT
+@@ -301,6 +303,9 @@ static void tftp_complete(void)
+ 			time_start * 1000, "/s");
+ 	}
+ 	puts("\ndone\n");
++
++	led_activity_off();
++
+ 	if (!tftp_put_active)
+ 		efi_set_bootdev("Net", "", tftp_filename,
+ 				map_sysmem(tftp_load_addr, 0),

@@ -1,0 +1,109 @@
+From cb4e18350a434d2d8b71e15fcae3c35e6575c581 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 19 Sep 2024 21:15:57 +0200
+Subject: [PATCH 02/11] dm: core: implement ofnode_options helpers
+
+Implement ofnode_options helpers to read options in /options/u-boot to
+adapt to the new way to declare options as described in [1].
+
+[1] dtschema/schemas/options/u-boot.yaml
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Simon Glass <sjg@chromium.org>
+---
+ drivers/core/ofnode.c | 33 +++++++++++++++++++++++++++++++++
+ include/dm/ofnode.h   | 41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 74 insertions(+)
+
+--- a/drivers/core/ofnode.c
++++ b/drivers/core/ofnode.c
+@@ -1734,6 +1734,39 @@ const char *ofnode_conf_read_str(const c
+ 	return ofnode_read_string(node, prop_name);
+ }
+ 
++bool ofnode_options_read_bool(const char *prop_name)
++{
++	ofnode uboot;
++
++	uboot = ofnode_path("/options/u-boot");
++	if (!ofnode_valid(uboot))
++		return false;
++
++	return ofnode_read_bool(uboot, prop_name);
++}
++
++int ofnode_options_read_int(const char *prop_name, int default_val)
++{
++	ofnode uboot;
++
++	uboot = ofnode_path("/options/u-boot");
++	if (!ofnode_valid(uboot))
++		return default_val;
++
++	return ofnode_read_u32_default(uboot, prop_name, default_val);
++}
++
++const char *ofnode_options_read_str(const char *prop_name)
++{
++	ofnode uboot;
++
++	uboot = ofnode_path("/options/u-boot");
++	if (!ofnode_valid(uboot))
++		return NULL;
++
++	return ofnode_read_string(uboot, prop_name);
++}
++
+ int ofnode_read_bootscript_address(u64 *bootscr_address, u64 *bootscr_offset)
+ {
+ 	int ret;
+--- a/include/dm/ofnode.h
++++ b/include/dm/ofnode.h
+@@ -1588,6 +1588,47 @@ int ofnode_conf_read_int(const char *pro
+ const char *ofnode_conf_read_str(const char *prop_name);
+ 
+ /**
++ * ofnode_options_read_bool() - Read a boolean value from the U-Boot options
++ *
++ * This reads a property from the /options/u-boot/ node of the devicetree.
++ *
++ * This only works with the control FDT.
++ *
++ * See dtschema/schemas/options/u-boot.yaml in dt-schema project for bindings
++ *
++ * @prop_name:	property name to look up
++ * Return: true, if it exists, false if not
++ */
++bool ofnode_options_read_bool(const char *prop_name);
++
++/**
++ * ofnode_options_read_int() - Read an integer value from the U-Boot options
++ *
++ * This reads a property from the /options/u-boot/ node of the devicetree.
++ *
++ * See dtschema/schemas/options/u-boot.yaml in dt-schema project for bindings
++ *
++ * @prop_name: property name to look up
++ * @default_val: default value to return if the property is not found
++ * Return: integer value, if found, or @default_val if not
++ */
++int ofnode_options_read_int(const char *prop_name, int default_val);
++
++/**
++ * ofnode_options_read_str() - Read a string value from the U-Boot options
++ *
++ * This reads a property from the /options/u-boot/ node of the devicetree.
++ *
++ * This only works with the control FDT.
++ *
++ * See dtschema/schemas/options/u-boot.yaml in dt-schema project for bindings
++ *
++ * @prop_name: property name to look up
++ * Return: string value, if found, or NULL if not
++ */
++const char *ofnode_options_read_str(const char *prop_name);
++
++/**
+  * ofnode_read_bootscript_address() - Read bootscr-address or bootscr-ram-offset
+  *
+  * @bootscr_address: pointer to 64bit address where bootscr-address property value

@@ -909,7 +909,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -66,6 +66,7 @@
+@@ -67,6 +67,7 @@
  #include <asm-generic/gpio.h>
  #include <efi_loader.h>
  #include <relocate.h>
@@ -917,7 +917,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -396,6 +397,20 @@ static int initr_onenand(void)
+@@ -397,6 +398,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -938,7 +938,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -680,6 +695,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -692,6 +707,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_NMBM_MTD
  	initr_nmbm,
  #endif

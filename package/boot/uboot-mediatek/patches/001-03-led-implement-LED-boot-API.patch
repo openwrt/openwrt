@@ -1,0 +1,235 @@
+From 431ebb379cad737e1e6ac9224573a09be1111cf5 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 23 Jun 2024 19:37:15 +0200
+Subject: [PATCH 03/11] led: implement LED boot API
+
+Implement LED boot API to signal correct boot of the system.
+
+led_boot_on/off/blink() are introduced to turn ON, OFF and BLINK the
+designated boot LED.
+
+New Kconfig is introduced, CONFIG_LED_BOOT to enable the feature.
+This makes use of the /options/u-boot property "boot-led" to the
+define the boot LED.
+It's also introduced a new /options/u-boot property "boot-led-period"
+to define the default period when the LED is set to blink mode.
+
+If "boot-led-period" is not defined, the value of 250 (ms) is
+used by default.
+
+If CONFIG_LED_BLINK or CONFIG_LED_SW_BLINK is not enabled,
+led_boot_blink call will fallback to simple LED ON.
+
+To cache the data we repurpose the now unused led_uc_priv for storage of
+global LED uclass info.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/led/Kconfig      | 11 ++++++
+ drivers/led/led-uclass.c | 85 ++++++++++++++++++++++++++++++++++++++++
+ include/led.h            | 55 +++++++++++++++++++++++++-
+ 3 files changed, 149 insertions(+), 2 deletions(-)
+
+--- a/drivers/led/Kconfig
++++ b/drivers/led/Kconfig
+@@ -9,6 +9,17 @@ config LED
+ 	  can provide access to board-specific LEDs. Use of the device tree
+ 	  for configuration is encouraged.
+ 
++config LED_BOOT
++	bool "Enable LED boot support"
++	help
++	  Enable LED boot support.
++
++	  LED boot is a specific LED assigned to signal boot operation status.
++	  Defined in Device Tree /options/u-boot node. Refer here for the supported
++	  options [1].
++
++	  [1] dtschema/schemas/options/u-boot.yaml
++
+ config LED_BCM6328
+ 	bool "LED Support for BCM6328"
+ 	depends on LED && ARCH_BMIPS
+--- a/drivers/led/led-uclass.c
++++ b/drivers/led/led-uclass.c
+@@ -94,6 +94,75 @@ int led_set_period(struct udevice *dev,
+ 	return -ENOSYS;
+ }
+ 
++#ifdef CONFIG_LED_BOOT
++static int led_boot_get(struct udevice **devp, int *period_ms)
++{
++	struct led_uc_priv *priv;
++	struct uclass *uc;
++	int ret;
++
++	ret = uclass_get(UCLASS_LED, &uc);
++	if (ret)
++		return ret;
++
++	priv = uclass_get_priv(uc);
++	if (!priv->boot_led_label)
++		return -ENOENT;
++
++	if (period_ms)
++		*period_ms = priv->boot_led_period;
++
++	return led_get_by_label(priv->boot_led_label, devp);
++}
++
++int led_boot_on(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = led_boot_get(&dev, NULL);
++	if (ret)
++		return ret;
++
++	return led_set_state(dev, LEDST_ON);
++}
++
++int led_boot_off(void)
++{
++	struct udevice *dev;
++	int ret;
++
++	ret = led_boot_get(&dev, NULL);
++	if (ret)
++		return ret;
++
++	return led_set_state(dev, LEDST_OFF);
++}
++
++#if defined(CONFIG_LED_BLINK) || defined(CONFIG_LED_SW_BLINK)
++int led_boot_blink(void)
++{
++	struct udevice *dev;
++	int period_ms, ret;
++
++	ret = led_boot_get(&dev, &period_ms);
++	if (ret)
++		return ret;
++
++	ret = led_set_period(dev, period_ms);
++	if (ret) {
++		if (ret != -ENOSYS)
++			return ret;
++
++		/* fallback to ON with no set_period and no SW_BLINK */
++		return led_set_state(dev, LEDST_ON);
++	}
++
++	return led_set_state(dev, LEDST_BLINK);
++}
++#endif
++#endif
++
+ static int led_post_bind(struct udevice *dev)
+ {
+ 	struct led_uc_plat *uc_plat = dev_get_uclass_plat(dev);
+@@ -158,10 +227,26 @@ static int led_post_probe(struct udevice
+ 	return ret;
+ }
+ 
++#ifdef CONFIG_LED_BOOT
++static int led_init(struct uclass *uc)
++{
++	struct led_uc_priv *priv = uclass_get_priv(uc);
++
++	priv->boot_led_label = ofnode_options_read_str("boot-led");
++	priv->boot_led_period = ofnode_options_read_int("boot-led-period", 250);
++
++	return 0;
++}
++#endif
++
+ UCLASS_DRIVER(led) = {
+ 	.id		= UCLASS_LED,
+ 	.name		= "led",
+ 	.per_device_plat_auto	= sizeof(struct led_uc_plat),
+ 	.post_bind	= led_post_bind,
+ 	.post_probe	= led_post_probe,
++#ifdef CONFIG_LED_BOOT
++	.init		= led_init,
++	.priv_auto	= sizeof(struct led_uc_priv),
++#endif
+ };
+--- a/include/led.h
++++ b/include/led.h
+@@ -9,6 +9,7 @@
+ 
+ #include <stdbool.h>
+ #include <cyclic.h>
++#include <dm/ofnode.h>
+ 
+ struct udevice;
+ 
+@@ -52,10 +53,15 @@ struct led_uc_plat {
+ /**
+  * struct led_uc_priv - Private data the uclass stores about each device
+  *
+- * @period_ms:	Flash period in milliseconds
++ * @boot_led_label:	Boot LED label
++ * @boot_led_dev:	Boot LED dev
++ * @boot_led_period:	Boot LED blink period
+  */
+ struct led_uc_priv {
+-	int period_ms;
++#ifdef CONFIG_LED_BOOT
++	const char *boot_led_label;
++	int boot_led_period;
++#endif
+ };
+ 
+ struct led_ops {
+@@ -141,4 +147,49 @@ int led_sw_set_period(struct udevice *de
+ bool led_sw_is_blinking(struct udevice *dev);
+ bool led_sw_on_state_change(struct udevice *dev, enum led_state_t state);
+ 
++#ifdef CONFIG_LED_BOOT
++
++/**
++ * led_boot_on() - turn ON the designated LED for booting
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_boot_on(void);
++
++/**
++ * led_boot_off() - turn OFF the designated LED for booting
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_boot_off(void);
++
++#if defined(CONFIG_LED_BLINK) || defined(CONFIG_LED_SW_BLINK)
++/**
++ * led_boot_blink() - turn ON the designated LED for booting
++ *
++ * Return: 0 if OK, -ve on error
++ */
++int led_boot_blink(void);
++
++#else
++/* If LED BLINK is not supported/enabled, fallback to LED ON */
++#define led_boot_blink led_boot_on
++#endif
++#else
++static inline int led_boot_on(void)
++{
++	return -ENOSYS;
++}
++
++static inline int led_boot_off(void)
++{
++	return -ENOSYS;
++}
++
++static inline int led_boot_blink(void)
++{
++	return -ENOSYS;
++}
++#endif
++
+ #endif

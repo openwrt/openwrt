@@ -1,0 +1,43 @@
+From 5e1d4a8ca75cbb66e88ee2dc9d90f132ac3febe2 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 7 Aug 2024 13:33:10 +0200
+Subject: [PATCH 01/11] led: toggle LED on initial SW blink
+
+We currently init the LED OFF when SW blink is triggered when
+on_state_change() is called. This can be problematic for very short
+period as the ON/OFF blink might never trigger.
+
+Toggle the LED (ON if OFF, OFF if ON) on initial SW blink to handle this
+corner case and better display a LED blink from the user.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/led/led_sw_blink.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+--- a/drivers/led/led_sw_blink.c
++++ b/drivers/led/led_sw_blink.c
+@@ -103,8 +103,21 @@ bool led_sw_on_state_change(struct udevi
+ 		return false;
+ 
+ 	if (state == LEDST_BLINK) {
+-		/* start blinking on next led_sw_blink() call */
+-		sw_blink->state = LED_SW_BLINK_ST_OFF;
++		struct led_ops *ops = led_get_ops(dev);
++
++		/*
++		 * toggle LED initially and start blinking on next
++		 * led_sw_blink() call.
++		 */
++		switch (ops->get_state(dev)) {
++		case LEDST_ON:
++			ops->set_state(dev, LEDST_OFF);
++			sw_blink->state = LED_SW_BLINK_ST_OFF;
++		default:
++			ops->set_state(dev, LEDST_ON);
++			sw_blink->state = LED_SW_BLINK_ST_ON;
++		}
++
+ 		return true;
+ 	}
+ 
