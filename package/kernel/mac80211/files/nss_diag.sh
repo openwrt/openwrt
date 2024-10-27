@@ -1,14 +1,6 @@
 #!/bin/sh
 # shellcheck disable=3037,3060,2034,1091,2166
 
-blue=""
-red=""
-green=""
-yellow=""
-white=""
-reset=""
-bold=""
-
 # check if stdout is a terminal, then set colors.
 if [ -t 1 ]; then
   red="\033[31m"
@@ -63,17 +55,19 @@ echo -e "${bold}${red}  MAC80211${reset}: ${yellow}${mac80211_version}${reset}"
 echo -e "${bold}${red} ATH11K FW${reset}: ${green}${ath11k_fw}${reset}"
 
 # Display GRO Fragmentation status using BusyBox
-echo -ne "${bold}${red}  GRO FRAG${reset}: ${white}"
+echo -ne "${bold}${red} INTERFACE${reset}: ${white}"
 n=0
-for iface in /sys/class/net/*; do
+for iface in /sys/class/net/br-lan/device /sys/class/net/*/device; do
+  iface=${iface%/*}
   iface=${iface##*/}
-  [ "$iface" = "lo" -o "$iface" = "miireg" ] && continue
-  gro_status=$(ethtool -k "$iface" 2> /dev/null | awk '/rx-gro-list/{print $2}')
-  gro_status=${gro_status:-"N/A"}
-  color=$green
-  [ "$gro_status" = "on" ] && color=$red
-  [ $n -gt 0 ] && spacing="            "
-  printf "%s%-11s : %b%s%b\n" "$spacing" "$iface" "$color" "$gro_status" "$reset"
+  ethtool -k "$iface" | awk -v n=$n -v i="$iface" -v rst="${reset}" -v red="${red}" -v green="${green}" '
+    BEGIN { settings=""; if(n>0) spacing="            " }
+    /tx-checksumming|rx-gro-list/ {
+      color=green
+      if($2=="off") color=red
+      settings = settings $1 " " sprintf("%s%-3s%s", color,$2,rst) " ";
+    }
+  END { printf "%s%-11s%s\n", spacing, i, settings; }'
   n=$((n + 1))
 done
 
