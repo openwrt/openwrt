@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/dts/openwrt-one.dts
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,210 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 John Crispin <john@phrozen.org>
@@ -20,6 +20,13 @@
 +		stdout-path = &uart0;
 +		tick-timer = &timer0;
 +	};
++
++        options {
++                u-boot {
++                        boot-led = "white";
++                        activity-led = "green";
++                };
++        };
 +
 +	memory@40000000 {
 +		device_type = "memory";
@@ -206,7 +213,7 @@
 +};
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-nor_defconfig
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,131 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -292,8 +299,11 @@
 +CONFIG_CLK=y
 +CONFIG_GPIO_HOG=y
 +CONFIG_LED=y
++CONFIG_LED_ACTIVITY=y
 +CONFIG_LED_BLINK=y
++CONFIG_LED_BOOT=y
 +CONFIG_LED_GPIO=y
++CONFIG_LED_SW_BLINK=y
 +# CONFIG_MMC is not set
 +CONFIG_MTD=y
 +CONFIG_DM_MTD=y
@@ -337,7 +347,7 @@
 +CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-spi-nand_defconfig
-@@ -0,0 +1,129 @@
+@@ -0,0 +1,132 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -426,8 +436,11 @@
 +CONFIG_CLK=y
 +CONFIG_GPIO_HOG=y
 +CONFIG_LED=y
++CONFIG_LED_ACTIVITY=y
 +CONFIG_LED_BLINK=y
++CONFIG_LED_BOOT=y
 +CONFIG_LED_GPIO=y
++CONFIG_LED_SW_BLINK=y
 +# CONFIG_MMC is not set
 +CONFIG_MTD=y
 +CONFIG_DM_MTD=y
@@ -469,7 +482,7 @@
 +CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/openwrt-one-nor_env
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,45 @@
 +ethaddr_factory=mtd read factory 0x46000000 0x0 0x20000 && env readmem -b ethaddr 0x4600002a 0x6 ; setenv ethaddr_factory
 +bl2_mtd_write=mtd erase bl2-nor &&  mtd write bl2-nor $loadaddr 0x0 0x40000
 +bl2_tftp_write=tftpboot $loadaddr $bootfile_bl2_nor && run bl2_mtd_write
@@ -499,10 +512,8 @@
 +led_done=led green off ; led white on
 +led_loop_done=led white off ; led green on ; echo done ; while true ; do  sleep 1 ; done
 +led_loop_error=led white off ; led green off ; while true ; do led red on ; sleep 1 ; led red off ; sleep 1 ; done
-+led_boot=led green on ; led white on ; led red on
 +led_start=led green off ; led red off; led white on
 +loadaddr=0x46000000
-+preboot=run led_boot
 +recoverfile_bl2=openwrt-mediatek-filogic-openwrt_one-snand-preloader.bin
 +recoverfile_ubi=openwrt-mediatek-filogic-openwrt_one-factory.ubi
 +recovery_write_bl2=mtd erase bl2 && for offset in 0x0 0x40000 0x80000; do mtd write bl2 $loadaddr $offset 0x40000 ; done
@@ -519,7 +530,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/openwrt-one-spi-nand_env
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +ethaddr_factory=mtd read factory 0x46000000 0x0 0x20000 && env readmem -b ethaddr 0x4600002a 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.11.11
 +serverip=192.168.11.23
@@ -532,7 +543,7 @@
 +bootfile_bl2=openwrt-mediatek-filogic-openwrt_one-snand-preloader.bin
 +bootfile_fip=openwrt-mediatek-filogic-openwrt_one-snand-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-filogic-openwrt_one-squashfs-sysupgrade.itb
-+bootmenu_confirm_return=askenv - Press ENTER to return to menu ; run led_boot ; bootmenu 60
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
 +bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SPI-NAND][0m
@@ -559,11 +570,9 @@
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run ubi_write_fip && run reset_factory
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run snand_write_bl2
 +check_buttons=if button front ; then run boot_recovery ; run boot_tftp ; run led_loop_error ; else if button back ; then ; run usb_recover ; run led_loop_error ; fi ; fi
-+led_boot=led green on ; led white on ; led red on
 +led_done=led green on ; led white off ; led red off
 +led_loop_error=led white off ; led green off ; while true ; do led red on ; sleep 1 ; led red off ; sleep 1 ; done
 +led_start=led white on ; led green off ; led red off
-+preboot=run led_boot
 +reset_factory=mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000 ; ubi remove rootfs_data
 +snand_write_bl2=mtd erase bl2 && for offset in 0x0 0x40000 0x80000 0xc0000 ; do mtd write bl2 $loadaddr $offset 0x40000 ; done
 +ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x1f000 dynamic ; ubi check ubootenv2 || ubi create ubootenv2 0x1f000 dynamic
