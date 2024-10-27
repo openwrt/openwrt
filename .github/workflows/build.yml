@@ -1,0 +1,257 @@
+# 
+# <https://github.com/KFERMercer/OpenWrt-CI>
+#
+# Copyright (C) 2019 P3TERX
+#
+# Copyright (C) 2020 KFERMercer
+#
+name: OpenWrt-CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  build_openwrt:
+
+    name: Build OpenWrt Firmware
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Space cleanup and Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
+          sudo -E apt-mark hold grub-efi-amd64-signed
+          sudo -E apt update
+          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
+          sudo -E apt -y full-upgrade
+          sudo -E apt -y install ack antlr3 aria2 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip libpython3-dev qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+          sudo -E systemctl daemon-reload
+          sudo -E apt -y autoremove --purge
+          sudo -E apt clean
+          sudo -E timedatectl set-timezone "Asia/Shanghai"
+
+      - name: Checkout OpenWrt
+        uses: actions/checkout@v3
+
+      - name: Update feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Generate configuration file
+        run: |
+          rm -f ./.config*
+          touch ./.config
+          cat >> .config <<EOF
+          #
+          # ========================固件定制部分========================
+          #
+          CONFIG_TARGET_x86=y
+          CONFIG_TARGET_x86_64=y
+          CONFIG_TARGET_x86_64_DEVICE_generic=y
+          CONFIG_GNUTLS_ALPN=y
+          CONFIG_GNUTLS_ANON=y
+          CONFIG_GNUTLS_DTLS_SRTP=y
+          CONFIG_GNUTLS_HEARTBEAT=y
+          CONFIG_GNUTLS_OCSP=y
+          CONFIG_GNUTLS_PSK=y
+          CONFIG_IB=y
+          CONFIG_IB_STANDALONE=y
+          CONFIG_LIBCURL_COOKIES=y
+          CONFIG_LIBCURL_FILE=y
+          CONFIG_LIBCURL_FTP=y
+          CONFIG_LIBCURL_HTTP=y
+          CONFIG_LIBCURL_MBEDTLS=y
+          CONFIG_LIBCURL_NGHTTP2=y
+          CONFIG_LIBCURL_NO_SMB="!"
+          CONFIG_LIBCURL_PROXY=y
+          CONFIG_LIBCURL_UNIX_SOCKETS=y
+          CONFIG_LIBSODIUM_MINIMAL=y
+          CONFIG_OPENSSL_ENGINE=y
+          CONFIG_OPENSSL_OPTIMIZE_SPEED=y
+          CONFIG_OPENSSL_WITH_ASM=y
+          CONFIG_OPENSSL_WITH_CHACHA_POLY1305=y
+          CONFIG_OPENSSL_WITH_CMS=y
+          CONFIG_OPENSSL_WITH_DEPRECATED=y
+          CONFIG_OPENSSL_WITH_ERROR_MESSAGES=y
+          CONFIG_OPENSSL_WITH_IDEA=y
+          CONFIG_OPENSSL_WITH_MDC2=y
+          CONFIG_OPENSSL_WITH_PSK=y
+          CONFIG_OPENSSL_WITH_SEED=y
+          CONFIG_OPENSSL_WITH_SRP=y
+          CONFIG_OPENSSL_WITH_TLS13=y
+          CONFIG_OPENSSL_WITH_WHIRLPOOL=y
+          CONFIG_PACKAGE_attr=y
+          CONFIG_PACKAGE_avahi-dbus-daemon=y
+          CONFIG_PACKAGE_cgi-io=y
+          CONFIG_PACKAGE_coreutils=y
+          CONFIG_PACKAGE_coreutils-base64=y
+          CONFIG_PACKAGE_curl=y
+          CONFIG_PACKAGE_dbus=y
+          CONFIG_PACKAGE_dns2socks=y
+          CONFIG_PACKAGE_dns2tcp=y
+          CONFIG_PACKAGE_dnsmasq-full=y
+          CONFIG_PACKAGE_dnsmasq_full_auth=y
+          CONFIG_PACKAGE_dnsmasq_full_conntrack=y
+          CONFIG_PACKAGE_dnsmasq_full_dhcp=y
+          CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+          CONFIG_PACKAGE_dnsmasq_full_dnssec=y
+          CONFIG_PACKAGE_dnsmasq_full_ipset=y
+          CONFIG_PACKAGE_dnsmasq_full_nftset=y
+          CONFIG_PACKAGE_dnsmasq_full_noid=y
+          CONFIG_PACKAGE_dnsmasq_full_tftp=y
+          CONFIG_PACKAGE_ip-full=y
+          CONFIG_PACKAGE_ipset=y
+          CONFIG_PACKAGE_iptables-mod-tproxy=y
+          CONFIG_PACKAGE_iptables-nft=y
+          CONFIG_PACKAGE_kmod-ipt-core=y
+          CONFIG_PACKAGE_kmod-ipt-ipset=y
+          CONFIG_PACKAGE_kmod-ipt-nat=y
+          CONFIG_PACKAGE_kmod-ipt-tproxy=y
+          CONFIG_PACKAGE_kmod-nf-conntrack-netlink=y
+          CONFIG_PACKAGE_kmod-nf-ipt=y
+          CONFIG_PACKAGE_kmod-nf-tproxy=y
+          CONFIG_PACKAGE_kmod-nft-compat=y
+          CONFIG_PACKAGE_libatomic=y
+          CONFIG_PACKAGE_libattr=y
+          CONFIG_PACKAGE_libavahi-client=y
+          CONFIG_PACKAGE_libavahi-dbus-support=y
+          CONFIG_PACKAGE_libbpf=y
+          CONFIG_PACKAGE_libcap=y
+          CONFIG_PACKAGE_libcares=y
+          CONFIG_PACKAGE_libcurl=y
+          CONFIG_PACKAGE_libdaemon=y
+          CONFIG_PACKAGE_libdbus=y
+          CONFIG_PACKAGE_libelf=y
+          CONFIG_PACKAGE_libev=y
+          CONFIG_PACKAGE_libexpat=y
+          CONFIG_PACKAGE_libgmp=y
+          CONFIG_PACKAGE_libgnutls=y
+          CONFIG_PACKAGE_libipset=y
+          CONFIG_PACKAGE_libiptext=y
+          CONFIG_PACKAGE_libiptext-nft=y
+          CONFIG_PACKAGE_libiptext6=y
+          CONFIG_PACKAGE_liblua=y
+          CONFIG_PACKAGE_liblucihttp=y
+          CONFIG_PACKAGE_liblucihttp-lua=y
+          CONFIG_PACKAGE_liblucihttp-ucode=y
+          CONFIG_PACKAGE_libncurses=y
+          CONFIG_PACKAGE_libnetfilter-conntrack=y
+          CONFIG_PACKAGE_libnettle=y
+          CONFIG_PACKAGE_libnfnetlink=y
+          CONFIG_PACKAGE_libnghttp2=y
+          CONFIG_PACKAGE_libopenssl=y
+          CONFIG_PACKAGE_libpcre2=y
+          CONFIG_PACKAGE_libpopt=y
+          CONFIG_PACKAGE_libreadline=y
+          CONFIG_PACKAGE_libsodium=y
+          CONFIG_PACKAGE_libtasn1=y
+          CONFIG_PACKAGE_libtirpc=y
+          CONFIG_PACKAGE_libubus-lua=y
+          CONFIG_PACKAGE_libuci-lua=y
+          CONFIG_PACKAGE_libudns=y
+          CONFIG_PACKAGE_liburing=y
+          CONFIG_PACKAGE_libustream-mbedtls=m
+          CONFIG_PACKAGE_libustream-openssl=y
+          CONFIG_PACKAGE_libxtables=y
+          CONFIG_PACKAGE_lua=y
+          CONFIG_PACKAGE_lua-neturl=y
+          CONFIG_PACKAGE_luci-app-firewall=y
+          CONFIG_PACKAGE_luci-app-samba4=y
+          CONFIG_PACKAGE_luci-app-shadowsocks-libev=m
+          CONFIG_PACKAGE_luci-app-ssr-plus=y
+          CONFIG_PACKAGE_luci-base=y
+          CONFIG_PACKAGE_luci-lib-base=y
+          CONFIG_PACKAGE_luci-lib-ip=y
+          CONFIG_PACKAGE_luci-lib-ipkg=y
+          CONFIG_PACKAGE_luci-lib-jsonc=y
+          CONFIG_PACKAGE_luci-lib-nixio=y
+          CONFIG_PACKAGE_luci-lua-runtime=y
+          CONFIG_PACKAGE_microsocks=y
+          CONFIG_PACKAGE_mosdns=y
+          CONFIG_PACKAGE_resolveip=y
+          CONFIG_PACKAGE_rpcd=y
+          CONFIG_PACKAGE_rpcd-mod-file=y
+          CONFIG_PACKAGE_rpcd-mod-luci=y
+          CONFIG_PACKAGE_rpcd-mod-ucode=y
+          CONFIG_PACKAGE_samba4-libs=y
+          CONFIG_PACKAGE_samba4-server=y
+          CONFIG_PACKAGE_shadowsocks-libev-config=y
+          CONFIG_PACKAGE_shadowsocks-libev-ss-server=y
+          CONFIG_PACKAGE_shadowsocks-rust-sslocal=y
+          CONFIG_PACKAGE_shadowsocksr-libev-ssr-check=y
+          CONFIG_PACKAGE_shadowsocksr-libev-ssr-local=y
+          CONFIG_PACKAGE_shadowsocksr-libev-ssr-redir=y
+          CONFIG_PACKAGE_shadowsocksr-libev-ssr-server=y
+          CONFIG_PACKAGE_simple-obfs-client=y
+          CONFIG_PACKAGE_tcping=y
+          CONFIG_PACKAGE_terminfo=y
+          CONFIG_PACKAGE_ucode-mod-html=y
+          CONFIG_PACKAGE_ucode-mod-lua=y
+          CONFIG_PACKAGE_ucode-mod-math=y
+          CONFIG_PACKAGE_wsdd2=y
+          CONFIG_PACKAGE_xray-core=y
+          CONFIG_PACKAGE_xtables-nft=y
+          CONFIG_PACKAGE_zlib=y
+          CONFIG_PCRE2_JIT_ENABLED=y
+          CONFIG_SAMBA4_SERVER_AVAHI=y
+          CONFIG_SAMBA4_SERVER_NETBIOS=y
+          CONFIG_SAMBA4_SERVER_VFS=y
+          CONFIG_SAMBA4_SERVER_WSDD2=y
+              # CONFIG_TARGET_ROOTFS_SQUASHFS is not set
+
+          #
+          # ========================固件定制部分结束========================
+          #
+          EOF
+          sed -i 's/^[ \t]*//g' ./.config
+          make defconfig
+
+      - name: Download packages
+        run: make download -j16
+
+      - name: Compile firmware
+        run: |
+          make -j$(nproc) || make -j1 V=s
+          echo "======================="
+          echo "Space usage:"
+          echo "======================="
+          df -h
+          echo "======================="
+          du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
+          du -h --max-depth=1 ./build_dir
+          du -h --max-depth=1 ./bin
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p ./artifact/package
+          mkdir -p ./artifact/buildinfo
+          rm -rf $(find ./bin/targets/ -type d -name "packages")
+          cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
+          cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
+
+      - name: Upload buildinfo
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenWrt_buildinfo
+          path: ./artifact/buildinfo/
+
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenWrt_package
+          path: ./artifact/package/
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenWrt_firmware
+          path: ./bin/targets/
