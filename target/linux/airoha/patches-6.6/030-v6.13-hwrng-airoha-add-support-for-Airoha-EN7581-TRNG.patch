@@ -1,7 +1,7 @@
-From 9dbd16ac89e00bd8640ecac3971b0943410b5cec Mon Sep 17 00:00:00 2001
+From 5c5db81bff81a0fcd9ad998543d4241cbfe4742f Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Sat, 6 Jul 2024 01:15:24 +0200
-Subject: [PATCH 2/2] hwrng: add support for Airoha EN7581 TRNG
+Date: Thu, 17 Oct 2024 14:44:38 +0200
+Subject: [PATCH 2/2] hwrng: airoha - add support for Airoha EN7581 TRNG
 
 Add support for Airoha TRNG. The Airoha SoC provide a True RNG module
 that can output 4 bytes of raw data at times.
@@ -17,6 +17,8 @@ mutually exclusive, running as TRNG doesn't permit to also run it as
 DRBG.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Martin Kaiser <martin@kaiser.cx>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 ---
  drivers/char/hw_random/Kconfig       |  13 ++
  drivers/char/hw_random/Makefile      |   1 +
@@ -65,13 +67,13 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/kernel.h>
 +#include <linux/module.h>
 +#include <linux/mod_devicetable.h>
-+#include <linux/err.h>
++#include <linux/bitfield.h>
++#include <linux/delay.h>
++#include <linux/hw_random.h>
++#include <linux/interrupt.h>
 +#include <linux/io.h>
 +#include <linux/iopoll.h>
-+#include <linux/interrupt.h>
-+#include <linux/hw_random.h>
 +#include <linux/platform_device.h>
-+#include <linux/delay.h>
 +
 +#define TRNG_IP_RDY			0x800
 +#define   CNT_TRANS			GENMASK(15, 8)
