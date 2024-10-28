@@ -48,6 +48,7 @@ ifneq ($(CONFIG_USE_APK),)
 	$(call FeedSourcesAppendAPK,$(PKG_BUILD_DIR)/repositories)
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories
   endif
+	echo "packages/packages.adb" >> $(PKG_BUILD_DIR)/repositories
 
 	$(INSTALL_DATA) ./files/README.apk.md $(PKG_BUILD_DIR)/packages/README.md
 else
