@@ -1,0 +1,25 @@
+From 8b497f1723b212b23081eb67daa7adee3a7c3ca6 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 3 Dec 2024 13:53:31 -0800
+Subject: [PATCH] usb: fsl-mph-dr-of: add regulator support
+
+Some devices have a GPIO that controls power to the USB bus. Add
+support for a vbus regulator to have the kernel control it automatically
+instead of having to rely on userspace.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/usb/host/fsl-mph-dr-of.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/usb/host/fsl-mph-dr-of.c
++++ b/drivers/usb/host/fsl-mph-dr-of.c
+@@ -318,7 +318,7 @@ int fsl_usb2_mpc5121_init(struct platfor
+ 		out_be32(pdata->regs + ISIPHYCTRL, PHYCTRL_PHYE | PHYCTRL_PXE);
+ 		out_be32(pdata->regs + USBGENCTRL, reg);
+ 	}
+-	return 0;
++	return devm_regulator_get_enable_optional(pdev->dev.parent, "vbus");
+ }
+ 
+ static void fsl_usb2_mpc5121_exit(struct platform_device *pdev)
