@@ -19,21 +19,26 @@ struct __attribute__ ((__packed__)) fw_header {
 };
 
 /* TODO: fixed path? */
-#define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
-#define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
-#define FIRMWARE_838X_8218b_1	"rtl838x_phy/rtl838x_8218b.fw"
+#define FIRMWARE_838X_8380_1			"rtl838x_phy/rtl838x_8380.fw"
+#define FIRMWARE_838X_8214FC_1			"rtl838x_phy/rtl838x_8214fc.fw"
+#define FIRMWARE_838X_8218b_1			"rtl838x_phy/rtl838x_8218b.fw"
 
-/* External RTL8218B and RTL8214FC IDs are identical */
-#define PHY_ID_RTL8214C		0x001cc942
-#define PHY_ID_RTL8214FC	0x001cc981
-#define PHY_ID_RTL8218B_E	0x001cc981
-#define PHY_ID_RTL8218D		0x001cc983
-#define PHY_ID_RTL8218B_I	0x001cca40
-#define PHY_ID_RTL8221B		0x001cc849
-#define PHY_ID_RTL8226		0x001cc838
-#define PHY_ID_RTL8390_GENERIC	0x001ccab0
-#define PHY_ID_RTL8393_I	0x001c8393
-#define PHY_ID_RTL9300_I	0x70d03106
+#define PHY_ID_RTL8214C				0x001cc942
+#define PHY_ID_RTL8218B_E			0x001cc980
+#define PHY_ID_RTL8214_OR_8218			0x001cc981
+#define PHY_ID_RTL8218D				0x001cc983
+#define PHY_ID_RTL8218B_I			0x001cca40
+#define PHY_ID_RTL8221B				0x001cc849
+#define PHY_ID_RTL8226				0x001cc838
+#define PHY_ID_RTL8390_GENERIC			0x001ccab0
+#define PHY_ID_RTL8393_I			0x001c8393
+#define PHY_ID_RTL9300_I			0x70d03106
+
+/* These PHYs share the same id (0x001cc981) */
+#define PHY_IS_NOT_RTL821X			0
+#define PHY_IS_RTL8214FC			1
+#define PHY_IS_RTL8214FB			2
+#define PHY_IS_RTL8218B_E			3
 
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS_MODE_SEL			(0x0028)
