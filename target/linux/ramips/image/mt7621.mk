@@ -94,18 +94,9 @@ endef
 define Build/dna-bootfs
 	mkdir -p $@.ubifs-dir/boot
 
-	# populate the boot fs with the dtb and with either initramfs kernel or
-	# the normal kernel
+	# populate the boot fs with the dtb and the kernel image
 	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.ubifs-dir/boot/dtb
-
-	$(if $(findstring with-initrd,$(word 1,$(1))),\
-		( \
-			$(CP) $@ $@.ubifs-dir/boot/uImage \
-		) , \
-		( \
-			$(CP) $(IMAGE_KERNEL) $@.ubifs-dir/boot/uImage \
-		) \
-	)
+	$(CP) $@ $@.ubifs-dir/boot/uImage
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
@@ -1060,17 +1051,16 @@ define Device/dna_valokuitu-plus-ex400
   IMAGE_SIZE := 117m
   PAGESIZE := 2048
   MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
-  		  --log-lebs=2 --space-fixup --squash-uids
+	--log-lebs=2 --space-fixup --squash-uids
   DEVICE_VENDOR := DNA
   DEVICE_MODEL := Valokuitu Plus EX400
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   IMAGES += factory.bin
   IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
-                       dna-bootfs with-initrd | dna-header | \
-                       append-md5sum-ascii-salted
-  IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
-  			  append-metadata
+	dna-bootfs | dna-header | append-md5sum-ascii-salted
+  IMAGE/sysupgrade.bin := append-kernel | dna-bootfs | \
+  	sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
