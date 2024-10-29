@@ -1187,9 +1187,11 @@ endif
 
 config KERNEL_NET_L3_MASTER_DEV
 	bool "L3 Master device support"
+	default y if !SMALL_FLASH
 	help
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
+  	  Increases the compressed kernel size by ~4kB (as of Linux 6.6).
 
 config KERNEL_XDP_SOCKETS
 	bool "XDP sockets support"
