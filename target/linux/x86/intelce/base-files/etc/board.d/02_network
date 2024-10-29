@@ -1,0 +1,17 @@
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+# If the Marvell switch is forcefully disabled, assume just eth0 as the lan inttf
+if grep -q "e1000.register_mv88e6172=0" /proc/cmdline; then
+    ucidef_set_interface_lan "eth0"
+else
+    ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+fi
+
+board_config_flush
+
+exit 0

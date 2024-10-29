@@ -1,0 +1,12 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+_ucidef_set_led_trigger "cpu" "cpu" "ce2600:orange:ds" activity
+_ucidef_set_led_trigger "power" "power" "ce2600:green:power" default-on
+_ucidef_set_led_trigger "mmc0" "mmc0" "ce2600:orange:us" mmc0
+
+board_config_flush
+
+exit 0

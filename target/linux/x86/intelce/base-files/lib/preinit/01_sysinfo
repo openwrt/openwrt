@@ -1,0 +1,27 @@
+sanitize_name_x86() {
+	sed -e '
+		y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;
+		s/[^a-z0-9_-]\+/-/g;
+		s/^-//;
+		s/-$//;
+	' "$@"
+}
+
+do_sysinfo_x86() {
+	local vendor product file bootcfg="/sys/kernel/debug/docsis/*/bootcfg"
+
+	vendor="Cisco/Technicolor"
+	product="CE2600"
+	
+	[ -f $bootcfg ] && product="$product (Board Type $(( 0x$(grep -rni "Board Type" $bootcfg | cut -f 2 -d 'x') )))"
+
+	[ -n "$vendor" -a -n "$product" ] || return
+
+	mkdir -p /tmp/sysinfo
+
+	echo "$vendor $product" > /tmp/sysinfo/model
+
+	sanitize_name_x86 /tmp/sysinfo/model > /tmp/sysinfo/board_name
+}
+
+boot_hook_add preinit_main do_sysinfo_x86
