@@ -1,11 +1,11 @@
 ---
 # **Configuring VLANs with OpenWRT on NSS-Enabled Devices**
-## **Important Note:** No VLAN Filtering for NSS Devices
+### **Important Note:** No VLAN Filtering for NSS Devices
 
 For **NSS setups**, you **cannot** enable VLAN filtering directly because **NSS handles VLAN internally** through the module `kmod-qca-nss-drv-vlan-mgr`.
 Enabling VLAN filtering via the standard method will interfere with the NSS. To check whether it's enabled, follow the steps below.
----
 
+---
 ### 1. **Check if VLAN Filtering is Enabled**
 Run the following command to check if VLAN filtering is active:
 ```vim
@@ -148,7 +148,7 @@ config interface 'iot'
 
 Here is an example of how to configure the WiFi interfaces for different networks in `/etc/config/wireless`:
 ```vim
-config wifi-iface 'default_radio0'
+config wifi-iface 'lan'
     option device 'radio0'
     option mode 'ap'
     option network 'lan'
@@ -162,7 +162,7 @@ config wifi-iface 'default_radio0'
 config wifi-iface 'guest'
     option device 'radio0'
     option mode 'ap'
-    option network 'br-guest'
+    option network 'guest'
     option ssid 'OpenWrt-Guest'
     option encryption 'psk2'
     option key '********'
@@ -173,7 +173,7 @@ config wifi-iface 'guest'
 config wifi-iface 'iot'
     option device 'radio0'
     option mode 'ap'
-    option network 'br-iot'
+    option network 'iot'
     option ssid 'OpenWrt-IoT'
     option encryption 'psk2'
     option key '********'
