@@ -1,0 +1,10 @@
+--- a/include/utmp.h
++++ b/include/utmp.h
+@@ -32,6 +32,7 @@ struct utmp *getutline(const struct utmp
+ struct utmp *pututline(const struct utmp *);
+ void         setutent(void);
+ 
++void logwtmp(const char *line, const char *name, const char *host);
+ void updwtmp(const char *, const struct utmp *);
+ int utmpname(const char *);
+ 
