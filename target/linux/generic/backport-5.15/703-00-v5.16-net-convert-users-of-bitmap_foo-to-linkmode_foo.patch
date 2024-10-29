@@ -289,7 +289,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1349,10 +1349,8 @@ void b53_phylink_validate(struct dsa_swi
+@@ -1353,10 +1353,8 @@ void b53_phylink_validate(struct dsa_swi
  		phylink_set(mask, 100baseT_Full);
  	}
  
@@ -877,7 +877,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ethtool_link_ksettings_add_link_mode(ks, supported, FEC_RS);
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1566,7 +1566,7 @@ static void axienet_validate(struct phyl
+@@ -1659,7 +1659,7 @@ static void axienet_validate(struct phyl
  			netdev_warn(ndev, "Cannot use PHY mode %s, supported: %s\n",
  				    phy_modes(state->interface),
  				    phy_modes(lp->phy_mode));
@@ -886,7 +886,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			return;
  		}
  	}
-@@ -1599,10 +1599,8 @@ static void axienet_validate(struct phyl
+@@ -1692,10 +1692,8 @@ static void axienet_validate(struct phyl
  		break;
  	}
  
