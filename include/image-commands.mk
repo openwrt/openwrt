@@ -666,23 +666,22 @@ define Build/tplink-v1-image
 endef
 
 define Build/tplink-v2-header
-	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
 		-c -H $(TPLINK_HWID) -W $(TPLINK_HWREV) -L $(KERNEL_LOADADDR) \
 		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR))  \
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
-		-k $@ -o $@.new $(1)
-	@mv $@.new $@
+		-k $@ -o $@.new $(1) \
+	&& mv $@.new $@ || rm -f $@
 endef
 
 define Build/tplink-v2-image
-	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
-		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new $(1)
-	cat $@.new >> $@
-	rm -rf $@.new
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new $(1) \
+	&& cat $@.new >> $@ && rm -rf $@.new || rm -f $@
 endef
 
 define Build/uImage
