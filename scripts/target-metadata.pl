@@ -146,7 +146,7 @@ sub merge_package_lists($$) {
 	my %pkgs;
 
 	foreach my $pkg (@$list1, @$list2) {
-		$pkgs{$pkg} = 1;
+		$pkgs{$pkg =~ s/^~//r} = 1;
 	}
 	foreach my $pkg (keys %pkgs) {
 		push @l, $pkg unless ($pkg =~ /^-/ or $pkgs{"-$pkg"});

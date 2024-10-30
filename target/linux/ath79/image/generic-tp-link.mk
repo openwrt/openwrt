@@ -683,7 +683,7 @@ define Device/tplink_tl-wdr6500-v2
   SOC := qca9561
   DEVICE_MODEL := TL-WDR6500
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 8000k
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma

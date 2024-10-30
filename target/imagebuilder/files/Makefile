@@ -83,9 +83,11 @@ help: FORCE
 
 
 # override variables from rules.mk
-PACKAGE_DIR:=$(TOPDIR)/packages
+BUILD_KEY_APK_SEC=$(TOPDIR)/keys/local-private-key.pem
+BUILD_KEY_APK_PUB=$(TOPDIR)/keys/local-public-key.pem
+export PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
-PACKAGE_DIR_ALL:=$(TOPDIR)/packages
+export PACKAGE_DIR_ALL:=$(TOPDIR)/packages
 
 export OPKG_KEYS:=$(TOPDIR)/keys
 OPKG:=$(call opkg,$(TARGET_DIR)) \
@@ -94,9 +96,11 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 	--cache $(DL_DIR) \
 	--lists-dir $(LISTS_DIR)
 
+export APK_KEYS:=$(TOPDIR)/keys
 APK:=$(call apk,$(TARGET_DIR)) \
-	--cache-dir $(DL_DIR) \
-	--allow-untrusted
+	--repositories-file $(TOPDIR)/repositories \
+	$(if $(CONFIG_SIGNATURE_CHECK),,--allow-untrusted) \
+	--cache-dir $(DL_DIR)
 
 
 include $(INCLUDE_DIR)/target.mk
@@ -177,7 +181,11 @@ ifeq ($(CONFIG_USE_APK),)
 	) >/dev/null 2>/dev/null
 	$(OPKG) update >&2 || true
 else
-	(cd $(PACKAGE_DIR); $(APK) mkndx --output packages.adb *.apk) >&2
+	$(APK) add --initdb
+	(cd $(PACKAGE_DIR); $(APK) mkndx \
+		$(if $(CONFIG_SIGNATURE_CHECK), --keys-dir $(APK_KEYS) --sign $(BUILD_KEY_APK_SEC)) \
+		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
+	$(APK) update >&2 || true
 endif
 
 package_reload:
@@ -220,7 +228,7 @@ ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
 	$(OPKG) install $(BUILD_PACKAGES)
 else
-	$(APK) add --initdb --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
+	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
 	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/kernel-*.apk $(PACKAGE_DIR)/kernel_*.apk))
 	$(APK) add --no-scripts $(BUILD_PACKAGES)
 endif
@@ -235,6 +243,13 @@ ifeq ($(CONFIG_USE_APK),)
 		$(if $(ADD_LOCAL_KEY), \
 			OPKG_KEYS=$(TARGET_DIR)/etc/opkg/keys/ \
 			$(SCRIPT_DIR)/opkg-key add $(BUILD_KEY).pub \
+		) \
+	)
+else
+	$(if $(CONFIG_SIGNATURE_CHECK), \
+		$(if $(ADD_LOCAL_KEY), \
+			mkdir -p $(TARGET_DIR)/etc/opkg/keys/; \
+			cp $(BUILD_KEY_APK_PUB) $(TARGET_DIR)/etc/apk/keys/; \
 		) \
 	)
 endif
@@ -284,8 +299,8 @@ ifneq ($(PROFILE),)
 endif
 
 _check_keys: FORCE
-ifeq ($(CONFIG_USE_APK),)
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
+ifeq ($(CONFIG_USE_APK),)
 	@if [ ! -s $(BUILD_KEY) -o ! -s $(BUILD_KEY).pub ]; then \
 		echo Generate local signing keys... >&2; \
 		$(STAGING_DIR_HOST)/bin/usign -G \
@@ -299,9 +314,15 @@ ifneq ($(CONFIG_SIGNATURE_CHECK),)
 			-p $(BUILD_KEY).pub \
 			-s $(BUILD_KEY); \
 	fi
-endif
 else
-	# TODO
+	@if [ ! -s $(BUILD_KEY_APK_SEC) -o ! -s $(BUILD_KEY_APK_PUB) ]; then \
+		echo Generate local signing keys... >&2; \
+		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
+		sed -i '1s/^/untrusted comment: Local build key\n/' $(BUILD_KEY_APK_SEC); \
+		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB); \
+		sed -i '1s/^/untrusted comment: Local build key\n/' $(BUILD_KEY_APK_PUB); \
+	fi
+endif
 endif
 
 image:

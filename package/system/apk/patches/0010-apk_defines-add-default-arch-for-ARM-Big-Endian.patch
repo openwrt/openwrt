@@ -1,0 +1,29 @@
+From ffcda7769279e75993110766555eea6d3c6baae7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 25 Oct 2024 01:09:41 +0200
+Subject: [PATCH] apk_defines: add default arch for ARM Big-Endian
+
+Add default arch for ARM Big-Endiang named armeb. One example of such
+target are devices based on the Intel XScale IXP4xx SoC.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ src/apk_defines.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/apk_defines.h b/src/apk_defines.h
+index c92dacd..06351df 100644
+--- a/src/apk_defines.h
++++ b/src/apk_defines.h
+@@ -126,6 +126,8 @@ static inline int IS_ERR(const void *ptr) { return (unsigned long)ptr >= (unsign
+ #define APK_DEFAULT_BASE_ARCH	"armhf"
+ #elif defined(__arm__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+ #define APK_DEFAULT_BASE_ARCH	"armel"
++#elif defined(__arm__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++#define APK_DEFAULT_BASE_ARCH	"armeb"
+ #elif defined(__aarch64__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+ #define APK_DEFAULT_BASE_ARCH	"aarch64"
+ #elif defined(__s390x__)
+-- 
+2.45.2
+

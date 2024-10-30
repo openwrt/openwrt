@@ -345,8 +345,16 @@ else
 	  --info "origin:$(SOURCE)" \
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
-	  --info "provides:$$(foreach prov,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), \
-		$(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))),$$(prov)=$(VERSION) )" \
+	  --info "provides:$$(foreach prov,\
+			$$(filter-out $(1)$$(ABIV_$(1)), \
+			$(PROVIDES)$$(if $$(ABIV_$(1)), \
+				$(1)=$(VERSION) $(foreach provide, \
+					$(PROVIDES), \
+					$(provide)$$(ABIV_$(1))=$(VERSION) \
+				) \
+			) \
+		), \
+		$$(prov) )" \
 	  --script "post-install:$$(ADIR_$(1))/post-install" \
 	  --script "pre-deinstall:$$(ADIR_$(1))/pre-deinstall" \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \

@@ -404,7 +404,7 @@ define Device/asus_rp-ac56
   DEVICE_MODEL := RP-AC56
   IMAGE_SIZE := 16000k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 \
-	kmod-i2c-ralink kmod-sound-mt7620 -uboot-envtools
+	kmod-sound-mt7620 -uboot-envtools
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \

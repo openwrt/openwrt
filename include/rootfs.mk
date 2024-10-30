@@ -47,12 +47,10 @@ apk = \
   IPKG_INSTROOT=$(1) \
   $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
 	--root $(1) \
-	--repositories-file /dev/zero \
-	--keys-dir $(TOPDIR) \
+	--keys-dir $(if $(APK_KEYS),$(APK_KEYS),$(TOPDIR)) \
 	--no-cache \
 	--no-logfile \
-	--preserve-env \
-	--repository file://$(PACKAGE_DIR_ALL)/packages.adb
+	--preserve-env
 
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 

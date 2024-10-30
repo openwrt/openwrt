@@ -5,9 +5,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2024-08-06
-PKG_SOURCE_VERSION:=54caa31be633efc5f655700b77af290124f71689
-PKG_MIRROR_HASH:=f3be762deac4f1469a4a2839691175e78019cb44295089befafa279a3390067c
+PKG_SOURCE_DATE:=2024-10-28
+PKG_SOURCE_VERSION:=a1ad8568a1378d71c1f6354c428ebb1baa46fa05
+PKG_MIRROR_HASH:=68747e1253776dc00286c01e408f4c4e1eb61acf56009b7ecb3de4d49b34e567
 
 PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
 
@@ -54,6 +54,7 @@ MESON_VARS+=VERSION=$(PKG_VERSION)
 MESON_HOST_ARGS += \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
+	-Durl_backend=wget \
 	-Dcrypto_backend=openssl \
 	-Dzstd=false
 

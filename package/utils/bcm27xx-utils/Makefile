@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bcm27xx-utils
-PKG_VERSION:=2024-04-24
+PKG_VERSION:=2024.04.24
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/raspberrypi/utils.git
 PKG_SOURCE_VERSION:=451b9881b72cb994c102724b5a7d9b93f97dc315
-PKG_MIRROR_HASH:=b453976171187e0ffe7cacfdcab36cec6b5d02db8b6d978cb9afbbcafcfcff9d
+PKG_MIRROR_HASH:=595ad8eadd9756132dee4b7d1b2466cb9fb8efa2015e6fbd4ab983e1a00afcf4
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=no-lto

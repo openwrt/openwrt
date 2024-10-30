@@ -280,7 +280,8 @@ endef
 
 define Image/Manifest
 	$(if $(CONFIG_USE_APK), \
-		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network | sort | sed 's/ / - /'  > \
+		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network \
+			--repositories-file /dev/zero | sort | sed 's/ / - /'  > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest, \
 		$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest \
@@ -325,7 +326,7 @@ ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
 endif
 
 mkfs_packages = $(filter-out @%,$(PACKAGES_$(call param_get,pkg,pkg=$(target_params))))
-mkfs_packages_add = $(foreach pkg,$(filter-out -%,$(mkfs_packages)),$(pkg)$(call GetABISuffix,$(pkg)))
+mkfs_packages_add = $(foreach pkg,$(filter-out -% ~%,$(mkfs_packages)),$(pkg)$(call GetABISuffix,$(pkg)))
 mkfs_packages_remove = $(foreach pkg,$(patsubst -%,%,$(filter -%,$(mkfs_packages))),$(pkg)$(call GetABISuffix,$(pkg)))
 mkfs_cur_target_dir = $(call mkfs_target_dir,pkg=$(target_params))
 
@@ -333,7 +334,9 @@ opkg_target = \
 	$(call opkg,$(mkfs_cur_target_dir)) \
 		-f $(mkfs_cur_target_dir).conf
 
-apk_target = $(call apk,$(mkfs_cur_target_dir)) --no-scripts
+apk_target = \
+	$(call apk,$(mkfs_cur_target_dir)) --no-scripts \
+		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
 
 target-dir-%: FORCE
