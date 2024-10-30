@@ -46,7 +46,7 @@ endef
 define Device/i2se_duckbill
   DEVICE_VENDOR := I2SE
   DEVICE_MODEL := Duckbill
-  DEVICE_PACKAGES := -dnsmasq -firewall4 -ppp -ip6tables -iptables -mtd \
+  DEVICE_PACKAGES := -dnsmasq -ppp -ip6tables -iptables -mtd \
 		     uboot-envtools kmod-leds-gpio -kmod-nf-nathelper
   SUPPORTED_DEVICES:=i2se,duckbill
   SOC:=imx28
