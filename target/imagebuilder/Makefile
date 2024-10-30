@@ -71,7 +71,7 @@ endif
 ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' -or -name 'kmod-*.$(PACKAGE_SUFFIX)' \) \
+		\( -name 'libc*.$(PACKAGE_SUFFIX)' -or -name 'kernel*.$(PACKAGE_SUFFIX)' -or -name 'kmod-*.$(PACKAGE_SUFFIX)' \) \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
   else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
@@ -79,7 +79,7 @@ ifeq ($(CONFIG_BUILDBOT),)
   endif
 else
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' \) \
+		\( -name 'libc*.$(PACKAGE_SUFFIX)' -or -name 'kernel*.$(PACKAGE_SUFFIX)' \) \
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
