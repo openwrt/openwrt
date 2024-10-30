@@ -316,12 +316,12 @@ define Build/elecom-product-header
 	$(eval product=$(word 1,$(1)))
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
 
-	( \
+	-( \
 		echo -n -e "ELECOM\x00\x00$(product)" | dd bs=40 count=1 conv=sync; \
 		echo -n "0.00" | dd bs=16 count=1 conv=sync; \
 		dd if=$(fw); \
-	) > $(fw).new
-	mv $(fw).new $(fw)
+	) > $(fw).new \
+	&& mv $(fw).new $(fw) || rm -f $(fw)
 endef
 
 define Build/elecom-wrc-gs-factory
@@ -351,10 +351,10 @@ define Build/elx-header
 		echo -ne "$$($(MKHASH) md5 $@ | fold -s2 | xargs -I {} echo \\x{} | tr -d '\n')" | \
 			dd bs=58 count=1 conv=sync; \
 	) > $(KDIR)/tmp/$(DEVICE_NAME).header
-	$(call Build/xor-image,-p $(xor_pattern) -x)
-	cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new
-	mv $@.new $@
-	rm -rf $(KDIR)/tmp/$(DEVICE_NAME).header
+	-$(call Build/xor-image,-p $(xor_pattern) -x) \
+	&& cat $(KDIR)/tmp/$(DEVICE_NAME).header $@ > $@.new \
+	&& mv $@.new $@ \
+	&& rm -rf $(KDIR)/tmp/$(DEVICE_NAME).header
 endef
 
 define Build/eva-image
@@ -614,8 +614,8 @@ define Build/seama-seal
 endef
 
 define Build/senao-header
-	$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new
-	mv $@.new $@
+	-$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new \
+	&& mv $@.new $@ || rm -f $@
 endef
 
 define Build/sysupgrade-tar
@@ -718,8 +718,8 @@ define Build/multiImage
 endef
 
 define Build/xor-image
-	$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor $(1)
-	mv $@.xor $@
+	-$(STAGING_DIR_HOST)/bin/xorimage -i $@ -o $@.xor $(1) \
+	&& mv $@.xor $@ || rm -f $@
 endef
 
 define Build/zip
