@@ -920,6 +920,26 @@ define Device/jdcloud_re-cp-03
 endef
 TARGET_DEVICES += jdcloud_re-cp-03
 
+define Device/keenetic_kn-3911
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3911
+  DEVICE_DTS := mt7981b-keenetic-kn-3911
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 108544k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d 0x803911 -v "KN-3911"
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += keenetic_kn-3911
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
