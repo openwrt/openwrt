@@ -333,7 +333,6 @@ static struct platform_driver sf_gpio_driver = {
 	.remove		= sf_gpio_remove,
 	.driver = {
 		.name		= "siflower_gpio",
-		.owner		= THIS_MODULE,
 		.of_match_table	= sf_gpio_ids,
 	},
 };

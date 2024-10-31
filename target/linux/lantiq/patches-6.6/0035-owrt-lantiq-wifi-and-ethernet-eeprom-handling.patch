@@ -36,7 +36,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_PCI) += ath5k_eep.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath5k_eep.c
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,135 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -149,7 +149,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static struct platform_driver ath5k_eeprom_driver = {
 +	.driver		= {
 +		.name		= "ath5k,eeprom",
-+		.owner	= THIS_MODULE,
 +		.of_match_table	= of_match_ptr(ath5k_eeprom_ids),
 +	},
 +};
