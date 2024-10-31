@@ -444,6 +444,6 @@ define Device/synology_ds213j
   DEVICE_PACKAGES := \
     kmod-rtc-s35390a kmod-hwmon-gpiofan kmod-hwmon-drivetemp \
     kmod-md-raid0 kmod-md-raid1 kmod-md-mod e2fsprogs mdadm \
-    -ppp -kmod-nft-offload -firewall4 -dnsmasq -odhcpd-ipv6only
+    -ppp -kmod-nft-offload -dnsmasq -odhcpd-ipv6only
 endef
 TARGET_DEVICES += synology_ds213j

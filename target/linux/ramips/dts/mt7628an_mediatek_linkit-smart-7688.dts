@@ -22,12 +22,6 @@
 		serial0 = &uart2;
 	};
 
-	bootstrap {
-		compatible = "mediatek,linkit";
-
-		status = "okay";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -141,6 +135,15 @@
 		compatible = "linux,spidev";
 		reg = <1>;
 		spi-max-frequency = <40000000>;
+	};
+};
+
+&gpio {
+	bootstrap {
+		gpio-hog;
+		line-name = "bootstrap";
+		output-low;
+		gpios = <11 GPIO_ACTIVE_LOW>;
 	};
 };
 

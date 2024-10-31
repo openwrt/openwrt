@@ -140,7 +140,7 @@ define Build/sign-dlink-ru
 endef
 
 define Build/trx
-	$(STAGING_DIR_HOST)/bin/trx $(1) \
+	-$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
 		-m $$(($(call exp_units,$(IMAGE_SIZE)))) \
 		-f $(IMAGE_KERNEL) \

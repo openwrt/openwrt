@@ -130,7 +130,7 @@ ifneq ($(CONFIG_USE_APK),)
 			--keys-dir $(TOPDIR) \
 			--sign $(BUILD_KEY_APK_SEC) \
 			--output packages.adb \
-			*.apk; \
+			$$(ls *.apk | grep -v 'kernel\|libc'); \
 	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \

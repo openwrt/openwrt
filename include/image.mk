@@ -542,6 +542,9 @@ define Device/Build/initramfs
 	$(call Kernel/CompileImage/Initramfs,$(KDIR)/target-dir-$$(ROOTFS_ID/$(1)),.$$(ROOTFS_ID/$(1)))
   endif
   $(1)-initramfs-images: $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
+
+  .IGNORE: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
+
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 

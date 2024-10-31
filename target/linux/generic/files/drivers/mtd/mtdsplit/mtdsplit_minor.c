@@ -34,7 +34,9 @@
 #define YAFFS_OBJECT_TYPE_FILE	0x1
 #define YAFFS_OBJECTID_ROOT	0x1
 #define YAFFS_SUM_UNUSED	0xFFFF
-#define YAFFS_NAME		"kernel"
+#define YAFFS_MAX_NAME_LENGTH	127
+#define YAFFS_NAME_KERNEL	"kernel"
+#define YAFFS_NAME_BOOTIMAGE	"bootimage"
 
 #define MINOR_NR_PARTS		2
 
@@ -46,7 +48,7 @@ struct minor_header {
 	int yaffs_type;
 	int yaffs_obj_id;
 	u16 yaffs_sum_unused;
-	char yaffs_name[sizeof(YAFFS_NAME)];
+	char yaffs_name[YAFFS_MAX_NAME_LENGTH];
 };
 
 static int mtdsplit_parse_minor(struct mtd_info *master,
@@ -61,29 +63,44 @@ static int mtdsplit_parse_minor(struct mtd_info *master,
 
 	hdr_len = sizeof(hdr);
 	err = mtd_read(master, 0, hdr_len, &retlen, (void *) &hdr);
-	if (err)
+	if (err) {
+		pr_err("MiNOR mtd_read error: %d\n", err);
 		return err;
+	}
 
-	if (retlen != hdr_len)
+	if (retlen != hdr_len) {
+		pr_err("MiNOR mtd_read too short\n");
 		return -EIO;
+	}
 
 	/* match header */
-	if (hdr.yaffs_type != YAFFS_OBJECT_TYPE_FILE)
-		return -EINVAL;
+	if (hdr.yaffs_type != YAFFS_OBJECT_TYPE_FILE) {
+		pr_info("MiNOR YAFFS first type not matched\n");
+		return 0;
+	}
 
-	if (hdr.yaffs_obj_id != YAFFS_OBJECTID_ROOT)
-		return -EINVAL;
+	if (hdr.yaffs_obj_id != YAFFS_OBJECTID_ROOT) {
+		pr_info("MiNOR YAFFS first objectid not matched\n");
+		return 0;
+	}
 
-	if (hdr.yaffs_sum_unused != YAFFS_SUM_UNUSED)
-		return -EINVAL;
+	if (hdr.yaffs_sum_unused != YAFFS_SUM_UNUSED) {
+		pr_info("MiNOR YAFFS first sum not matched\n");
+		return 0;
+	}
 
-	if (memcmp(hdr.yaffs_name, YAFFS_NAME, sizeof(YAFFS_NAME)))
-		return -EINVAL;
+	if ((memcmp(hdr.yaffs_name, YAFFS_NAME_KERNEL, sizeof(YAFFS_NAME_KERNEL))) &&
+	    (memcmp(hdr.yaffs_name, YAFFS_NAME_BOOTIMAGE, sizeof(YAFFS_NAME_BOOTIMAGE)))) {
+		pr_info("MiNOR YAFFS first name not matched\n");
+		return 0;
+	}
 
 	err = mtd_find_rootfs_from(master, master->erasesize, master->size,
 				   &rootfs_offset, NULL);
-	if (err)
-		return err;
+	if (err) {
+		pr_info("MiNOR mtd_find_rootfs_from error: %d\n", err);
+		return 0;
+	}
 
 	parts = kzalloc(MINOR_NR_PARTS * sizeof(*parts), GFP_KERNEL);
 	if (!parts)
