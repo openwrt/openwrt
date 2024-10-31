@@ -1,0 +1,75 @@
+From 702752cfae954648d6133bdff19283343b3339ef Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 29 Oct 2024 17:47:22 +0800
+Subject: [PATCH 3/3] bootmenu: add reprint check
+
+Record the last active menu item and check if it equals to the
+current selected item before reprint.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ cmd/bootmenu.c | 16 +++++++++++++++-
+ include/menu.h |  1 +
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+--- a/cmd/bootmenu.c
++++ b/cmd/bootmenu.c
+@@ -103,11 +103,13 @@ static char *bootmenu_choice_entry(void
+ 
+ 		switch (key) {
+ 		case BKEY_UP:
++			menu->last_active = menu->active;
+ 			if (menu->active > 0)
+ 				--menu->active;
+ 			/* no menu key selected, regenerate menu */
+ 			return NULL;
+ 		case BKEY_DOWN:
++			menu->last_active = menu->active;
+ 			if (menu->active < menu->count - 1)
+ 				++menu->active;
+ 			/* no menu key selected, regenerate menu */
+@@ -133,6 +135,17 @@ static char *bootmenu_choice_entry(void
+ 	return NULL;
+ }
+ 
++static bool bootmenu_need_reprint(void *data)
++{
++	struct bootmenu_data *menu = data;
++	bool need_reprint;
++
++	need_reprint = menu->last_active != menu->active;
++	menu->last_active = menu->active;
++
++	return need_reprint;
++}
++
+ static void bootmenu_destroy(struct bootmenu_data *menu)
+ {
+ 	struct bootmenu_entry *iter = menu->first;
+@@ -332,6 +345,7 @@ static struct bootmenu_data *bootmenu_cr
+ 
+ 	menu->delay = delay;
+ 	menu->active = 0;
++	menu->last_active = -1;
+ 	menu->first = NULL;
+ 
+ 	default_str = env_get("bootmenu_default");
+@@ -506,7 +520,7 @@ static enum bootmenu_ret bootmenu_show(i
+ 
+ 	menu = menu_create(NULL, bootmenu->delay, 1, menu_display_statusline,
+ 			   bootmenu_print_entry, bootmenu_choice_entry,
+-			   NULL, bootmenu);
++			   bootmenu_need_reprint, bootmenu);
+ 	if (!menu) {
+ 		bootmenu_destroy(bootmenu);
+ 		return BOOTMENU_RET_FAIL;
+--- a/include/menu.h
++++ b/include/menu.h
+@@ -40,6 +40,7 @@ int menu_show(int bootdelay);
+ struct bootmenu_data {
+ 	int delay;			/* delay for autoboot */
+ 	int active;			/* active menu entry */
++	int last_active;		/* last active menu entry */
+ 	int count;			/* total count of menu entries */
+ 	struct bootmenu_entry *first;	/* first menu entry */
+ };
