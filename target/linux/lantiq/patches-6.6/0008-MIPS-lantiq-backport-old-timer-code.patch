@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
-@@ -0,0 +1,887 @@
+@@ -0,0 +1,886 @@
 +#ifndef CONFIG_SOC_AMAZON_SE
 +
 +#include <linux/kernel.h>
@@ -1043,7 +1043,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.probe = gptu_probe,
 +	.driver = {
 +		.name = "gptu-xway",
-+		.owner = THIS_MODULE,
 +		.of_match_table = gptu_match,
 +	},
 +};

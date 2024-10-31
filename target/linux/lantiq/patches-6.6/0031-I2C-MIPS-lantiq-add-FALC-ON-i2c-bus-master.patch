@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_MESON)		+= i2c-meson.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.c
-@@ -0,0 +1,746 @@
+@@ -0,0 +1,745 @@
 +
 +/*
 + * Lantiq I2C bus adapter
@@ -782,7 +782,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.remove	= ltq_i2c_remove,
 +	.driver	= {
 +		.name	= DRV_NAME,
-+		.owner	= THIS_MODULE,
 +		.of_match_table = ltq_i2c_match,
 +	},
 +};

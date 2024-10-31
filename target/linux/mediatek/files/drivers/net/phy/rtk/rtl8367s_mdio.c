@@ -296,7 +296,6 @@ static struct platform_driver gsw_driver = {
 	.remove = rtk_gsw_remove,
 	.driver = {
 		.name = "rtk-gsw",
-		.owner = THIS_MODULE,
 		.of_match_table = rtk_gsw_match,
 	},
 };

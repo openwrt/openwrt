@@ -1894,7 +1894,6 @@ static struct platform_driver ltq_atm_driver = {
 	.remove = ltq_atm_remove,
 	.driver = {
 		.name = "atm",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_atm_match,
 	},
 };

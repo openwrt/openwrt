@@ -1525,7 +1525,6 @@ static struct platform_driver esw_driver = {
 	.remove = esw_remove,
 	.driver = {
 		.name = "rt3050-esw",
-		.owner = THIS_MODULE,
 		.of_match_table = ralink_esw_match,
 	},
 };

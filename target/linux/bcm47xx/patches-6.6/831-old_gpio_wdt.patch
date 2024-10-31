@@ -32,7 +32,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/old_gpio_wdt.c
-@@ -0,0 +1,301 @@
+@@ -0,0 +1,300 @@
 +/*
 + *      Driver for GPIO-controlled Hardware Watchdogs.
 + *
@@ -294,7 +294,6 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +	.probe = gpio_wdt_probe,
 +	.remove = gpio_wdt_remove,
 +	.driver.name = "gpio-wdt",
-+	.driver.owner = THIS_MODULE,
 +};
 +
 +static int __init gpio_wdt_init(void)
