@@ -90,6 +90,13 @@ mediatek_setup_interfaces()
 	dlink,aquila-pro-ai-m30-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
+	keenetic,kn-3911|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733a|\
+	yuncore,ax835)
+		ucidef_set_interfaces_lan_wan lan wan
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
@@ -101,12 +108,6 @@ mediatek_setup_interfaces()
 		;;
 	mercusys,mr90x-v1)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
-		;;
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632|\
-	smartrg,sdg-8733a|\
-	yuncore,ax835)
-		ucidef_set_interfaces_lan_wan lan wan
 		;;
 	tplink,tl-xdr6086|\
 	wavlink,wl-wn586x3)
