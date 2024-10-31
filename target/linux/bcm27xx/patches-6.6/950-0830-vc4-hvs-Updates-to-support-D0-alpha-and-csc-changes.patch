@@ -16,7 +16,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hvs.c
 +++ b/drivers/gpu/drm/vc4/vc4_hvs.c
-@@ -1933,6 +1933,17 @@ static int vc4_hvs_hw_init(struct vc4_hv
+@@ -1888,6 +1888,17 @@ static int vc4_hvs_hw_init(struct vc4_hv
  #define CFC1_N_MA_CSC_COEFF_C23(x)	(0xa03c + ((x) * 0x3000))
  #define CFC1_N_MA_CSC_COEFF_C24(x)	(0xa040 + ((x) * 0x3000))
  
@@ -34,7 +34,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  /* 4 S2.22 multiplication factors, and 1 S9.15 addititive element for each of 3
   * output components
   */
-@@ -2003,31 +2014,43 @@ static int vc6_hvs_hw_init(struct vc4_hv
+@@ -1958,31 +1969,43 @@ static int vc6_hvs_hw_init(struct vc4_hv
  	HVS_WRITE(SCALER6(PRI_MAP0), 0xffffffff);
  	HVS_WRITE(SCALER6(PRI_MAP1), 0xffffffff);
  
@@ -104,7 +104,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	return 0;
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1054,6 +1054,12 @@ static u32 vc4_hvs5_get_alpha_blend_mode
+@@ -1080,6 +1080,12 @@ static u32 vc4_hvs5_get_alpha_blend_mode
  
  	WARN_ON_ONCE(vc4->gen != VC4_GEN_5 && vc4->gen != VC4_GEN_6);
  
@@ -117,7 +117,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	if (!state->fb->format->has_alpha)
  		return VC4_SET_FIELD(SCALER5_CTL2_ALPHA_MODE_FIXED,
  				     SCALER5_CTL2_ALPHA_MODE);
-@@ -1569,14 +1575,13 @@ static int vc4_plane_mode_set(struct drm
+@@ -1595,14 +1601,13 @@ static int vc4_plane_mode_set(struct drm
  static u32 vc6_plane_get_csc_mode(struct vc4_plane_state *vc4_state)
  {
  	struct drm_plane_state *state = &vc4_state->base;
@@ -133,7 +133,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		/* CSC pre-loaded with:
  		 * 0 = BT601 limited range
  		 * 1 = BT709 limited range
-@@ -1590,8 +1595,15 @@ static u32 vc6_plane_get_csc_mode(struct
+@@ -1616,8 +1621,15 @@ static u32 vc6_plane_get_csc_mode(struct
  		if (color_range > DRM_COLOR_YCBCR_FULL_RANGE)
  			color_range = DRM_COLOR_YCBCR_LIMITED_RANGE;
  

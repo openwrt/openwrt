@@ -54,7 +54,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  
  	unsigned int irq;
  
-@@ -714,6 +715,12 @@ struct vc4_crtc_state {
+@@ -712,6 +713,12 @@ struct vc4_crtc_state {
  		writel(val, hvs->regs + (offset));					\
  	} while (0)
  
@@ -244,7 +244,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  
  out:
  	drm_dev_exit(idx);
-@@ -1227,8 +1286,8 @@ static void vc4_hvs_install_dlist(struct
+@@ -1221,8 +1280,8 @@ static void vc4_hvs_install_dlist(struct
  
  	if (vc4->gen >= VC4_GEN_6)
  		HVS_WRITE(SCALER6_DISPX_LPTRS(vc4_state->assigned_channel),
@@ -255,7 +255,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	else
  		HVS_WRITE(SCALER_DISPLISTX(vc4_state->assigned_channel),
  			  vc4_state->mm->mm_node.start);
-@@ -1427,11 +1486,11 @@ void vc4_hvs_atomic_flush(struct drm_crt
+@@ -1382,11 +1441,11 @@ void vc4_hvs_atomic_flush(struct drm_crt
  		if (enable_bg_fill)
  			HVS_WRITE(SCALER6_DISPX_CTRL1(channel),
  				  HVS_READ(SCALER6_DISPX_CTRL1(channel)) |
@@ -269,7 +269,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  	} else {
  		/* we can actually run with a lower core clock when background
  		 * fill is enabled on VC4_GEN_5 so leave it enabled always.
-@@ -1701,7 +1760,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
+@@ -1656,7 +1715,7 @@ struct vc4_hvs *__vc4_hvs_alloc(struct v
  		 * access a register. Use a plausible size then.
  		 */
  		if (!kunit_get_current_test())
@@ -278,7 +278,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		else
  			dlist_size = 4096;
  
-@@ -1935,14 +1994,17 @@ static int vc6_hvs_hw_init(struct vc4_hv
+@@ -1890,14 +1949,17 @@ static int vc6_hvs_hw_init(struct vc4_hv
  	const struct vc6_csc_coeff_entry *coeffs;
  	unsigned int i;
  
@@ -300,7 +300,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  
  	for (i = 0; i < 6; i++) {
  		coeffs = &csc_coeffs[i / 3][i % 3];
-@@ -2041,21 +2103,21 @@ static int vc4_hvs_cob_init(struct vc4_h
+@@ -1996,21 +2058,21 @@ static int vc4_hvs_cob_init(struct vc4_h
  		reg = 0;
  		top = 3840;
  
@@ -325,7 +325,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  			  VC4_SET_FIELD(top, SCALER6_DISPX_COB_TOP) |
  			  VC4_SET_FIELD(base, SCALER6_DISPX_COB_BASE));
  		break;
-@@ -2086,7 +2148,10 @@ static int vc4_hvs_bind(struct device *d
+@@ -2041,7 +2103,10 @@ static int vc4_hvs_bind(struct device *d
  
  	hvs->regset.base = hvs->regs;
  
@@ -337,7 +337,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		hvs->regset.regs = vc6_hvs_regs;
  		hvs->regset.nregs = ARRAY_SIZE(vc6_hvs_regs);
  	} else {
-@@ -2253,6 +2318,7 @@ static void vc4_hvs_dev_remove(struct pl
+@@ -2208,6 +2273,7 @@ static void vc4_hvs_dev_remove(struct pl
  static const struct of_device_id vc4_hvs_dt_match[] = {
  	{ .compatible = "brcm,bcm2711-hvs" },
  	{ .compatible = "brcm,bcm2712-hvs" },

@@ -16,7 +16,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1079,6 +1079,21 @@ static u32 vc4_hvs5_get_alpha_blend_mode
+@@ -1105,6 +1105,21 @@ static u32 vc4_hvs5_get_alpha_blend_mode
  	}
  }
  
@@ -38,7 +38,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  /* Writes out a full display list for an active plane to the plane's
   * private dlist state.
   */
-@@ -1824,7 +1839,7 @@ static int vc6_plane_mode_set(struct drm
+@@ -1850,7 +1865,7 @@ static int vc6_plane_mode_set(struct drm
  	vc4_dlist_write(vc4_state,
  			SCALER6_CTL0_VALID |
  			VC4_SET_FIELD(tiling, SCALER6_CTL0_ADDR_MODE) |

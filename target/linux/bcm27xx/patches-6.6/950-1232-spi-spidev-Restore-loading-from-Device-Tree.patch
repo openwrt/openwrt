@@ -1,7 +1,7 @@
-From 2f223e0e4931486fbc32df3c89bc16ff1ca434bf Mon Sep 17 00:00:00 2001
+From ba0f2212e0e100ee16bdde76b7efca6bb8ee9446 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Mon, 29 Nov 2021 12:14:49 +0000
-Subject: [PATCH 0320/1085] spi: spidev: Restore loading from Device Tree
+Subject: [PATCH 1232/1350] spi: spidev: Restore loading from Device Tree
 
 As happens occasionally, an upstream change has once again prevented
 spidev from being loaded via Device Tree. We now need "spidev" to be
@@ -15,11 +15,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -699,6 +699,7 @@ static const struct file_operations spid
- static struct class *spidev_class;
- 
- static const struct spi_device_id spidev_spi_ids[] = {
+@@ -711,6 +711,7 @@ static const struct spi_device_id spidev
+ 	{ .name = "spi-authenta" },
+ 	{ .name = "em3581" },
+ 	{ .name = "si3210" },
 +	{ .name = "spidev" },
- 	{ .name = "bh2228fv" },
- 	{ .name = "dh2228fv" },
- 	{ .name = "jg10309-01" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(spi, spidev_spi_ids);
