@@ -3237,6 +3237,15 @@ define Device/xiaomi_mi-router-4q
 endef
 TARGET_DEVICES += xiaomi_mi-router-4q
 
+define Device/ditel_dt-acu100
+  SOC := qca9531
+  DEVICE_VENDOR := Ditel
+  DEVICE_MODEL := DT-ACU100
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += ditel_dt-acu100
+
 define Device/yuncore_a770
   SOC := qca9531
   DEVICE_VENDOR := YunCore
