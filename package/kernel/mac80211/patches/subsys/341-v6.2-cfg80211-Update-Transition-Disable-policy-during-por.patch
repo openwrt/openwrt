@@ -97,7 +97,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void cfg80211_autodisconnect_wk(struct work_struct *work);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -18024,7 +18024,8 @@ void nl80211_send_roamed(struct cfg80211
+@@ -18022,7 +18022,8 @@ void nl80211_send_roamed(struct cfg80211
  }
  
  void nl80211_send_port_authorized(struct cfg80211_registered_device *rdev,
@@ -107,7 +107,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct sk_buff *msg;
  	void *hdr;
-@@ -18044,6 +18045,11 @@ void nl80211_send_port_authorized(struct
+@@ -18042,6 +18043,11 @@ void nl80211_send_port_authorized(struct
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, bssid))
  		goto nla_put_failure;
  
