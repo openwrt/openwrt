@@ -1,5 +1,3 @@
-diff --git a/drivers/net/pcs/pcs-mtk-usxgmii.c b/drivers/net/pcs/pcs-mtk-usxgmii.c
-index 9af9035..9caab92 100644
 --- a/drivers/net/pcs/pcs-mtk-usxgmii.c
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
 @@ -52,6 +52,12 @@
@@ -23,7 +21,7 @@ index 9af9035..9caab92 100644
  	unsigned int			neg_mode;
  	struct list_head		node;
  };
-@@ -155,6 +162,10 @@ static int mtk_usxgmii_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode
+@@ -155,6 +162,10 @@ static int mtk_usxgmii_pcs_config(struct
  
  	mtk_usxgmii_reset(mpcs);
  
@@ -34,7 +32,7 @@ index 9af9035..9caab92 100644
  	/* Setup USXGMII AN ctrl */
  	mtk_m32(mpcs, RG_PCS_AN_CTRL0,
  		USXGMII_AN_SYNC_CNT | USXGMII_AN_ENABLE,
-@@ -332,6 +343,7 @@ static const struct phylink_pcs_ops mtk_usxgmii_pcs_ops = {
+@@ -332,6 +343,7 @@ static const struct phylink_pcs_ops mtk_
  static int mtk_usxgmii_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
@@ -42,7 +40,7 @@ index 9af9035..9caab92 100644
  	struct mtk_usxgmii_pcs *mpcs;
  
  	mpcs = devm_kzalloc(dev, sizeof(*mpcs), GFP_KERNEL);
-@@ -342,6 +354,13 @@ static int mtk_usxgmii_probe(struct platform_device *pdev)
+@@ -342,6 +354,13 @@ static int mtk_usxgmii_probe(struct plat
  	if (IS_ERR(mpcs->base))
  		return PTR_ERR(mpcs->base);
  
