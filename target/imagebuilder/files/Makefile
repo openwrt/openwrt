@@ -185,7 +185,6 @@ else
 	(cd $(PACKAGE_DIR); $(APK) mkndx \
 		$(if $(CONFIG_SIGNATURE_CHECK), --keys-dir $(APK_KEYS) --sign $(BUILD_KEY_APK_SEC)) \
 		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
-	$(APK) update >&2 || true
 endif
 
 package_reload:
@@ -208,7 +207,6 @@ else
 		$(MAKE) package_index; \
 	else \
 		mkdir -p $(TARGET_DIR)/tmp; \
-		$(APK) update >&2 || true; \
 	fi
 endif
 
@@ -228,8 +226,6 @@ ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
 	$(OPKG) install $(BUILD_PACKAGES)
 else
-	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc-*.apk))
-	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/kernel-*.apk $(PACKAGE_DIR)/kernel-*.apk))
 	$(APK) add --no-scripts $(BUILD_PACKAGES)
 endif
 
