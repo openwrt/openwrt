@@ -1,10 +1,10 @@
-From 216df57950849f905c398904e7d6cbdf278b5717 Mon Sep 17 00:00:00 2001
+From 48a15bc46004025776880a091d47a22e03449acc Mon Sep 17 00:00:00 2001
 From: Jonathan Bell <jonathan@raspberrypi.com>
-Date: Mon, 5 Aug 2024 11:28:36 +0100
-Subject: [PATCH 1208/1215] DTS: bcm2712: enable SD slot CQE by default on Pi 5
+Date: Fri, 18 Oct 2024 14:06:01 +0100
+Subject: [PATCH 1335/1350] DTS: bcm2712; re-enable SD slot CQE by default on
+ Pi 5
 
-The corresponding driver implementation has seen sufficient testing,
-so enable by default. Retain the dtparam so it can be turned off for test.
+This reverts commit 1b92c9369569137d8f2b8bf82884a05999e1f73b.
 
 Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 ---
@@ -29,7 +29,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
                                  requests 50MHz
 --- a/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
-@@ -363,6 +363,7 @@ dpi_16bit_gpio2:        &rp1_dpi_16bit_g
+@@ -365,6 +365,7 @@ dpi_16bit_gpio2:        &rp1_dpi_16bit_g
  	sd-uhs-sdr50;
  	sd-uhs-ddr50;
  	sd-uhs-sdr104;

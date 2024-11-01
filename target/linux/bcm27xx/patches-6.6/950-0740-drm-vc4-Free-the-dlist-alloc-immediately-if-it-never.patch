@@ -23,7 +23,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -667,6 +667,7 @@ struct vc4_hvs_dlist_allocation {
+@@ -665,6 +665,7 @@ struct vc4_hvs_dlist_allocation {
  	struct drm_mm_node mm_node;
  	unsigned int channel;
  	u8 target_frame_count;
@@ -46,7 +46,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		spin_lock_irqsave(&hvs->mm_lock, flags);
  		vc4_hvs_free_dlist_entry_locked(hvs, alloc);
  		spin_unlock_irqrestore(&hvs->mm_lock, flags);
-@@ -1201,6 +1204,7 @@ static void vc4_hvs_install_dlist(struct
+@@ -1195,6 +1198,7 @@ static void vc4_hvs_install_dlist(struct
  		return;
  
  	WARN_ON(!vc4_state->mm);
