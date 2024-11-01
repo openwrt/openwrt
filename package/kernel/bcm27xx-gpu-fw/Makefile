@@ -4,7 +4,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=bcm27xx-gpu-fw
 PKG_VERSION:=2024.10.08
 PKG_VERSION_REAL:=1.$(subst .,,$(PKG_VERSION))
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=raspi-firmware_$(PKG_VERSION_REAL).orig.tar.xz
 PKG_SOURCE_URL:=https://github.com/raspberrypi/firmware/releases/download/$(PKG_VERSION_REAL)
@@ -30,6 +30,10 @@ define Package/bcm27xx-gpu-fw/description
 endef
 
 define Build/Compile
+	true
+endef
+
+define Package/bcm27xx-gpu-fw/install
 	true
 endef
 
