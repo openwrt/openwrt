@@ -472,6 +472,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
+	ditel,dt-acu100)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		;;
 	phicomm,k2t)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "5:lan:2" "4:wan"
