@@ -1678,6 +1678,24 @@ define Device/wavlink_wl-wn586x3
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3
 
+define Device/wavlink_wl-wn573hx3
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WN573HX3
+  DEVICE_ALT0_VENDOR := 7Links
+  DEVICE_ALT0_MODEL := WLR-1300
+  DEVICE_DTS := mt7981b-wavlink-wl-wn573hx3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGE_SIZE := 14336k
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-nor-rfb
+  IMAGES = WN573HX3-sysupgrade.bin
+  IMAGE/WN573HX3-sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += wavlink_wl-wn573hx3
+
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router AX3000T
