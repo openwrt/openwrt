@@ -35,16 +35,21 @@ setup_interface () {
 		proto_add_dns_server "$dns" "$lifetime"
 	done
 
-	for radomain in $RA_DOMAINS; do
+	for entry in $RA_DOMAINS; do
 		local duplicate=0
-		for domain in $DOMAINS; do
+		local radomain="${entry%%,*}"
+		for dentry in $DOMAINS; do
+			local domain="${dentry%%,*}"
 			[ "$radomain" = "$domain" ] && duplicate=1
 		done
-		[ "$duplicate" = 0 ] && DOMAINS="$DOMAINS $radomain"
+		[ "$duplicate" = 0 ] && DOMAINS="$DOMAINS $entry"
 	done
 
-	for domain in $DOMAINS; do
-		proto_add_dns_search "$domain"
+	for entry in $DOMAINS; do
+		local domain="${entry%%,*}"
+		entry="${entry#*,}"
+		local lifetime="${entry%%,*}"
+		proto_add_dns_search "$domain" "$lifetime"
 	done
 
 	for prefix in $PREFIXES; do
