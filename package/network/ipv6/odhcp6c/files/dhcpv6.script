@@ -18,16 +18,21 @@ setup_interface () {
 	proto_init_update "*" 1
 
 	# Merge RA-DNS
-	for radns in $RA_DNS; do
+	for entry in $RA_DNS; do
 		local duplicate=0
-		for dns in $RDNSS; do
+		local radns="${entry%%,*}"
+		for dentry in $RDNSS; do
+			local dns="${dentry%%,*}"
 			[ "$radns" = "$dns" ] && duplicate=1
 		done
-		[ "$duplicate" = 0 ] && RDNSS="$RDNSS $radns"
+		[ "$duplicate" = 0 ] && RDNSS="$RDNSS $entry"
 	done
 
-	for dns in $RDNSS; do
-		proto_add_dns_server "$dns"
+	for entry in $RDNSS; do
+		local dns="${entry%%,*}"
+		entry="${entry#*,}"
+		local lifetime="${entry%%,*}"
+		proto_add_dns_server "$dns" "$lifetime"
 	done
 
 	for radomain in $RA_DOMAINS; do
