@@ -87,7 +87,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,946 @@
+@@ -0,0 +1,948 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -989,7 +989,9 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	priv->ds->num_ports = QCA8K_IPQ4019_NUM_PORTS;
 +	priv->ds->priv = priv;
 +	priv->ds->ops = &qca8k_ipq4019_switch_ops;
-+	mutex_init(&priv->reg_mutex);
++	ret = devm_mutex_init(dev, &priv->reg_mutex);
++	if (ret)
++		return ret;
 +	platform_set_drvdata(pdev, priv);
 +
 +	return dsa_register_switch(priv->ds);

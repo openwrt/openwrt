@@ -21,6 +21,9 @@ mediatek_setup_interfaces()
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
+	arcadyan,mozart)
+		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
+		;;
 	asus,rt-ax59u|\
 	cetron,ct3003|\
 	confiabits,mt7981|\
