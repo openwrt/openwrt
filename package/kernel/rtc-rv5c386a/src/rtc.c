@@ -174,13 +174,13 @@ static int i2c_outb(int c)
 		if (sclhi() < 0) { /* timed out */
 			sdahi(); /* we don't want to block the net */
 			return -ETIMEDOUT;
-		};
+		}
 		scllo();
 	}
 	sdahi();
 	if (sclhi() < 0) {
 		return -ETIMEDOUT;
-	};
+	}
 	/* read ack: SDA should be pulled down by slave */
 	ack = getsda() == 0;	/* ack: sda is pulled low ->success.	 */
 	scllo();
@@ -204,7 +204,7 @@ static int i2c_inb(int ack)
 	for (i = 0; i < 8; i++) {
 		if (sclhi() < 0) {
 			return -ETIMEDOUT;
-		};
+		}
 		indata *= 2;
 		if (getsda())
 			indata |= 0x01;
