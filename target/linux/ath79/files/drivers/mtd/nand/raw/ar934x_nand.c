@@ -1379,10 +1379,8 @@ static int ar934x_nfc_probe(struct platform_device *pdev)
 	}
 
 	nfc->irq = platform_get_irq(pdev, 0);
-	if (nfc->irq < 0) {
-		dev_err(&pdev->dev, "no IRQ resource specified\n");
+	if (nfc->irq < 0)
 		return -EINVAL;
-	}
 
 	init_waitqueue_head(&nfc->irq_waitq);
 	ret = devm_request_irq(&pdev->dev, nfc->irq, ar934x_nfc_irq_handler,
