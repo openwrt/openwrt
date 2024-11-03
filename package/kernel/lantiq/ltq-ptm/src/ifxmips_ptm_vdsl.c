@@ -408,7 +408,7 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *dat
 	//  use bear channel 0 preemption gamma interface settings
         ((IFX_PTM_CFG_T *)data)->RxEthCrcPresent = 1;
         ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck   = RX_GAMMA_ITF_CFG(0)->rx_eth_fcs_ver_dis == 0 ? 1 : 0;
-        ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;;
+        ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;
         ((IFX_PTM_CFG_T *)data)->RxTcCrcLen      = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size == 0 ? 0 : (RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size * 16);
         ((IFX_PTM_CFG_T *)data)->TxEthCrcGen     = TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis == 0 ? 1 : 0;
         ((IFX_PTM_CFG_T *)data)->TxTcCrcGen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : 1;

@@ -119,7 +119,7 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 
     for (i = 0; i < 16; i++) {
         hashs->MR = in[i];
-    };
+    }
 
     //wait for processing
     while (hashs->controlr.BSY) {

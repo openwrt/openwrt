@@ -96,8 +96,8 @@ static inline int vr9_pp32_download_code(int pp32, u32 *code_src, unsigned int c
 	unsigned int clr, set;
 	volatile u32 *dest;
 
-	if ( code_src == 0 || ((unsigned long)code_src & 0x03) != 0
-			|| data_src == 0 || ((unsigned long)data_src & 0x03) != 0 )
+	if (!code_src || ((unsigned long)code_src & 0x03) != 0
+			|| !data_src || ((unsigned long)data_src & 0x03) != 0 )
 		return -1;
 
 	clr = pp32 ? 0xF0 : 0x0F;

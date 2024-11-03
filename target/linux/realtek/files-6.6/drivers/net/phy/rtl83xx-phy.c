@@ -529,7 +529,7 @@ static int rtl821x_write_page(struct phy_device *phydev, int page)
 
 static int rtl8226_read_status(struct phy_device *phydev)
 {
-	int ret = 0;
+	int ret;
 	u32 val;
 
 /* TODO: ret = genphy_read_status(phydev);
@@ -579,6 +579,7 @@ static int rtl8226_read_status(struct phy_device *phydev)
 	}
 
 out:
+	ret = 0;
 	return ret;
 }
 
@@ -1103,7 +1104,7 @@ static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 
 static int rtl8214fc_set_port(struct phy_device *phydev, int port)
 {
-	bool is_fibre = (port == PORT_FIBRE ? true : false);
+	bool is_fibre = (port == PORT_FIBRE);
 	int addr = phydev->mdio.addr;
 
 	pr_debug("%s port %d to %d\n", __func__, addr, port);
@@ -3035,13 +3036,13 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 static void rtl9300_serdes_patch(int sds_num)
 {
 	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
+		for (int i = 0; i < ARRAY_SIZE(rtl9300_a_sds_10gr_lane1); ++i) {
 			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
 					      rtl9300_a_sds_10gr_lane1[i].reg,
 					      rtl9300_a_sds_10gr_lane1[i].data);
 		}
 	} else {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
+		for (int i = 0; i < ARRAY_SIZE(rtl9300_a_sds_10gr_lane0); ++i) {
 			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
 					      rtl9300_a_sds_10gr_lane0[i].reg,
 					      rtl9300_a_sds_10gr_lane0[i].data);
@@ -3509,13 +3510,13 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		if (chiptype) {
 			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 1);
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_type1); ++i) {
 				rtl931x_write_sds_phy(asds, sds_config_10p3125g_type1[i].page - 0x4, sds_config_10p3125g_type1[i].reg, sds_config_10p3125g_type1[i].data);
 			}
 
 			evenSds = asds - (asds % 2);
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_cmu_type1); ++i) {
 				rtl931x_write_sds_phy(evenSds,
 				                      sds_config_10p3125g_cmu_type1[i].page - 0x4, sds_config_10p3125g_cmu_type1[i].reg, sds_config_10p3125g_cmu_type1[i].data);
 			}
