@@ -1,0 +1,63 @@
+From 72b4ba8417d33516b8489bac3c90dbbbf781a3d2 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 29 Oct 2024 17:47:10 +0800
+Subject: [PATCH 1/3] menu: fix the logic checking whether ESC key is pressed
+
+It's observed that the bootmenu on a serial console sometimes
+incorrectly quitted with superfluous characters filled to command
+line input:
+
+>  *** U-Boot Boot Menu ***
+>
+>      1. Startup system (Default)
+>      2. Upgrade firmware
+>      3. Upgrade ATF BL2
+>      4. Upgrade ATF FIP
+>      5. Load image
+>      0. U-Boot console
+>
+>
+>  Press UP/DOWN to move, ENTER to select, ESC to quit
+>MT7988> [B
+
+Analysis shows it was caused by the wrong logic of bootmenu_loop:
+
+At first the bootmenu_loop received the first ESC char correctly.
+
+However, during the second call to bootmenu_loop, there's no data
+in the UART Rx FIFO. Due to the low baudrate, the second char of
+the down array key sequence hasn't be fully received.
+
+But bootmenu_loop just did a mdelay(10), and then treated it as a
+single ESC key press event. It didn't even try tstc() again after
+the 10ms timeout.
+
+This patch fixes this issue by letting bootmenu_loop check tstc()
+twice.
+
+Tested-By: E Shattow <lucent@gmail.com>
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ common/menu.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/common/menu.c
++++ b/common/menu.c
+@@ -525,14 +525,15 @@ enum bootmenu_key bootmenu_loop(struct b
+ 				struct cli_ch_state *cch)
+ {
+ 	enum bootmenu_key key;
+-	int c;
++	int c, errchar = 0;
+ 
+ 	c = cli_ch_process(cch, 0);
+ 	if (!c) {
+ 		while (!c && !tstc()) {
+ 			schedule();
+ 			mdelay(10);
+-			c = cli_ch_process(cch, -ETIMEDOUT);
++			c = cli_ch_process(cch, errchar);
++			errchar = -ETIMEDOUT;
+ 		}
+ 		if (!c) {
+ 			c = getchar();
