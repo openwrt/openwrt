@@ -215,3 +215,74 @@ config interface 'dmz'
     option proto 'none'
     option device 'br-dmz'
 ```
+---
+
+## **Advanced VLAN Setup with trunk ports**
+Assuming other managed network devices need to be connected to your NSS-enabled router, you need to configure trunk ports. The setup in the example below consists of:
+
+- A **Primary Network** on VLAN 1.
+- An **IoT Network** on VLAN 10.
+- **LAN ports 1 and 2** set up as trunk ports for **VLAN 1 and 10**
+- **LAN port 3** untagged and bridged into the **Primary Network**
+- **LAN port 4** untagged and bridged into the **IoT Network**
+
+```vim
+config interface 'lan'
+        option device 'br-lan'
+        option proto 'static'
+        option ipaddr '192.168.1.1'
+        option netmask '255.255.255.0'
+        option ip6assign '60'
+
+config interface 'iot'
+        option proto 'static'
+        option device 'br-iot'
+        option ipaddr '192.168.10.1'
+        option netmask '255.255.255.0'
+
+config interface 'wan'
+        option device 'wan'
+        option proto 'dhcp'
+
+config interface 'wan6'
+        option device 'wan'
+        option proto 'dhcpv6'
+
+config device
+        option type '8021q'
+        option ifname 'lan1'
+        option vid '1'
+        option name 'lan1.1'
+
+config device
+        option type '8021q'
+        option ifname 'lan2'
+        option vid '1'
+        option name 'lan2.1'
+
+config device
+        option type '8021q'
+        option ifname 'lan1'
+        option vid '10'
+        option name 'lan1.10'
+
+config device
+        option type '8021q'
+        option ifname 'lan2'
+        option vid '10'
+        option name 'lan2.10'
+
+config device
+        option name 'br-lan'
+        option type 'bridge'
+        list ports 'lan1.1'
+        list ports 'lan2.1'
+        list ports 'lan3'
+
+config device
+        option type 'bridge'
+        option name 'br-iot'
+        list ports 'lan1.10'
+        list ports 'lan2.10'
+        list ports 'lan4'
+```
