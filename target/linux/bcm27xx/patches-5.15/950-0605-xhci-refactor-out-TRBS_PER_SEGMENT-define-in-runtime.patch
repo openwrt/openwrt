@@ -210,7 +210,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	 */
  	while (xhci_handle_event(xhci, ir) > 0) {
 -		if (event_loop++ < TRBS_PER_SEGMENT / 2)
-+		if (event_loop++ < xhci->event_ring->trbs_per_seg / 2)
++		if (event_loop++ < ir->event_ring->trbs_per_seg / 2)
  			continue;
  		xhci_update_erst_dequeue(xhci, ir, event_ring_deq);
  		event_ring_deq = ir->event_ring->dequeue;
@@ -248,7 +248,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	 * when the cycle bit is set to 1.
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1641,6 +1641,7 @@ struct xhci_ring {
+@@ -1385,6 +1385,7 @@ struct xhci_ring {
  	unsigned int		num_trbs_free;
  	unsigned int		num_trbs_free_temp;
  	unsigned int		bounce_buf_len;
