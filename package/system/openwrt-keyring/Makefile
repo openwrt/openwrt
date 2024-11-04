@@ -33,7 +33,7 @@ Build/Compile=
 ifneq ($(CONFIG_USE_APK),)
 define Package/openwrt-keyring/install
 	$(INSTALL_DIR) $(1)/etc/apk/keys/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/apk/*.pem $(1)/etc/apk/keys/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/apk/openwrt-snapshots.pem $(1)/etc/apk/keys/
 endef
 else
 define Package/openwrt-keyring/install
