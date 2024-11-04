@@ -534,3 +534,21 @@ cmdline_get_var() {
 }
 
 [ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh || true
+
+# Function to retry package installation
+retry_install_package() {
+	local package="$1"
+	local max_retries=3
+	local retry_delay=5
+	local attempt=1
+
+	while [ $attempt -le $max_retries ]; do
+		opkg install "$package" && return 0
+		echo "Retrying in $retry_delay seconds... (Attempt $attempt of $max_retries)"
+		sleep $retry_delay
+		attempt=$((attempt + 1))
+	done
+
+	echo "Failed to install package $package after $max_retries attempts"
+	return 1
+}
