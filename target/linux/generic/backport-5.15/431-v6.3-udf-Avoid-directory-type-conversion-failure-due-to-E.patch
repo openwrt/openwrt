@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jan Kara <jack@suse.cz>
+Date: Thu, 9 Feb 2023 10:33:09 +0100
+Subject: udf: Avoid directory type conversion failure due to ENOMEM
+
+commit df97f64dfa317a5485daf247b6c043a584ef95f9 upstream.
+
+When converting directory from in-ICB to normal format, the last
+iteration through the directory fixing up directory enteries can fail
+due to ENOMEM. We do not expect this iteration to fail since the
+directory is already verified to be correct and it is difficult to undo
+the conversion at this point. So just use GFP_NOFAIL to make sure the
+small allocation cannot fail.
+
+Reported-by: syzbot+111eaa994ff74f8d440f@syzkaller.appspotmail.com
+Fixes: 0aba4860b0d0 ("udf: Allocate name buffer in directory iterator on heap")
+Signed-off-by: Jan Kara <jack@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ fs/udf/directory.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/fs/udf/directory.c
++++ b/fs/udf/directory.c
+@@ -249,9 +249,12 @@ int udf_fiiter_init(struct udf_fileident
+ 	iter->elen = 0;
+ 	iter->epos.bh = NULL;
+ 	iter->name = NULL;
+-	iter->namebuf = kmalloc(UDF_NAME_LEN_CS0, GFP_KERNEL);
+-	if (!iter->namebuf)
+-		return -ENOMEM;
++	/*
++	 * When directory is verified, we don't expect directory iteration to
++	 * fail and it can be difficult to undo without corrupting filesystem.
++	 * So just do not allow memory allocation failures here.
++	 */
++	iter->namebuf = kmalloc(UDF_NAME_LEN_CS0, GFP_KERNEL | __GFP_NOFAIL);
+ 
+ 	if (iinfo->i_alloc_type == ICBTAG_FLAG_AD_IN_ICB) {
+ 		err = udf_copy_fi(iter);
