@@ -23,6 +23,8 @@ start_service() {
 		procd_set_param limits core="unlimited"
 	}
 	procd_close_instance
+
+	ifup wwan
 }
 
 reload_service() {
@@ -31,6 +33,7 @@ reload_service() {
 	init_switch
 	ubus call network reload || rv=1
 	/sbin/wifi reload_legacy
+	ifup wwan
 	return $rv
 }
 

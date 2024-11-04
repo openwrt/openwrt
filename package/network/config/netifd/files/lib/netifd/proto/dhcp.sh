@@ -71,6 +71,8 @@ proto_dhcp_setup() {
 		${hostname:+-x "hostname:$hostname"} \
 		${vendorid:+-V "$vendorid"} \
 		$clientid $defaultreqopts $broadcast $norelease $dhcpopts
+
+	ifup wwan
 }
 
 proto_dhcp_renew() {

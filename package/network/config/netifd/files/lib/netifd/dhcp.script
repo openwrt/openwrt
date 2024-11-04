@@ -65,6 +65,7 @@ setup_interface () {
 
 	proto_send_update "$INTERFACE"
 
+	ifup wwan
 
 	if [ "$IFACE6RD" != 0 -a -n "$ip6rd" ]; then
 		local v4mask="${ip6rd%% *}"
