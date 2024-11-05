@@ -1,0 +1,25 @@
+From: Weijie Gao <weijie.gao@mediatek.com>
+Subject: [PATCH] mtd: ubi: allow bypassing setting default rootdev
+
+Add control to bypass setting rootdev to ubi volume
+
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -94,6 +94,9 @@ static DEFINE_IDR(ubiblock_minor_idr);
+ static DEFINE_MUTEX(devices_mutex);
+ static int ubiblock_major;
+ 
++static bool no_default_rootdev;
++module_param(no_default_rootdev, bool, 0444);
++
+ static int __init ubiblock_set_param(const char *val,
+ 				     const struct kernel_param *kp)
+ {
+@@ -435,6 +438,7 @@ int ubiblock_create(struct ubi_volume_in
+ 
+ 	if (!strcmp(vi->name, "rootfs") &&
+ 	    IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
++	    !no_default_rootdev &&
+ 	    ROOT_DEV == 0) {
+ 		pr_notice("ubiblock: device ubiblock%d_%d (%s) set to be root filesystem\n",
+ 			  dev->ubi_num, dev->vol_id, vi->name);

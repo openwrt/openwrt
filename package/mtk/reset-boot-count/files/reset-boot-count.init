@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2024 All Rights Reserved.
+# Author: Weijie Gao <weijie.gao@mediatek.com>
+
+START=99
+boot() {
+	local enabled=$([ -f /sys/firmware/devicetree/base/mediatek,reset-boot-count ] && echo Y)
+
+	if [ x"${enabled}" = xY ]; then
+		modprobe reset-boot-count
+		echo 1 > /proc/reset_boot_count
+	fi
+}

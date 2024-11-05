@@ -18,7 +18,8 @@
 	chosen {
 		bootargs = "console=ttyS0,115200n1 loglevel=8  \
 			    earlycon=uart8250,mmio32,0x11000000 \
-			    pci=pcie_bus_perf";
+			    pci=pcie_bus_perf ubi.block=0,firmware root=/dev/fit0 \
+			    rootwait";
 	};
 
 	memory {

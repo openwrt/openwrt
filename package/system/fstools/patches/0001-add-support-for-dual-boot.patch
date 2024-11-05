@@ -1,0 +1,570 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -5,6 +5,10 @@ ADD_DEFINITIONS(-Os -ggdb -Wall -Werror
+ 
+ SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+ 
++ADD_LIBRARY(fstools-bootparam SHARED
++		boot_param.c)
++INSTALL(TARGETS fstools-bootparam LIBRARY DESTINATION lib)
++
+ ADD_LIBRARY(fstools SHARED
+ 		libfstools/common.c
+ 		libfstools/snapshot.c
+@@ -18,7 +22,7 @@ ADD_LIBRARY(fstools SHARED
+ 		libfstools/rootdisk.c
+ 		libfstools/partname.c
+ 		libfstools/find.c)
+-TARGET_LINK_LIBRARIES(fstools ubox)
++TARGET_LINK_LIBRARIES(fstools ubox fstools-bootparam)
+ INSTALL(TARGETS fstools LIBRARY DESTINATION lib)
+ 
+ ADD_LIBRARY(blkid-tiny SHARED
+@@ -80,9 +84,9 @@ INSTALL(TARGETS blockd RUNTIME DESTINATI
+ ADD_EXECUTABLE(block block.c probe.c probe-libblkid.c)
+ IF(DEFINED CMAKE_UBIFS_EXTROOT)
+ 	ADD_DEFINITIONS(-DUBIFS_EXTROOT)
+-	TARGET_LINK_LIBRARIES(block blkid-tiny dl uci ubox ubus blobmsg_json ubi-utils ${json})
++	TARGET_LINK_LIBRARIES(block blkid-tiny fstools-bootparam dl uci ubox ubus blobmsg_json ubi-utils ${json})
+ ELSE(DEFINED CMAKE_UBIFS_EXTROOT)
+-	TARGET_LINK_LIBRARIES(block blkid-tiny dl uci ubox ubus blobmsg_json ${json})
++	TARGET_LINK_LIBRARIES(block blkid-tiny fstools-bootparam dl uci ubox ubus blobmsg_json ${json})
+ ENDIF(DEFINED CMAKE_UBIFS_EXTROOT)
+ INSTALL(TARGETS block RUNTIME DESTINATION sbin)
+ 
+--- a/block.c
++++ b/block.c
+@@ -45,6 +45,7 @@
+ #include <libubus.h>
+ 
+ #include "probe.h"
++#include "boot_param.h"
+ 
+ #define AUTOFS_MOUNT_PATH       "/tmp/run/blockd/"
+ 
+@@ -87,6 +88,9 @@ static LIST_HEAD(devices);
+ static int anon_mount, anon_swap, auto_mount, auto_swap, check_fs;
+ static unsigned int delay_root;
+ 
++static char *hide_block_devs[3];
++static uint32_t num_hide_block_devs;
++
+ enum {
+ 	CFG_ANON_MOUNT,
+ 	CFG_ANON_SWAP,
+@@ -557,9 +561,12 @@ static struct probe_info* _probe_path(ch
+ 	return pr;
+ }
+ 
++static char* find_mount_point(char *block);
++
+ static int _cache_load(const char *path)
+ {
+ 	int gl_flags = GLOB_NOESCAPE | GLOB_MARK;
++	uint32_t i;
+ 	int j;
+ 	glob_t gl;
+ 
+@@ -568,8 +575,30 @@ static int _cache_load(const char *path)
+ 
+ 	for (j = 0; j < gl.gl_pathc; j++) {
+ 		struct probe_info *pr = _probe_path(gl.gl_pathv[j]);
+-		if (pr)
++		bool skip_curr = false;
++
++		if (pr) {
++			char *mp = find_mount_point(pr->dev);
++			if (mp) {
++				/* Skip blocks mounted as root or overlay */
++				if (!strcmp(mp, "/rom") ||
++				    !strcmp(mp, "/overlay"))
++					continue;
++			}
++
++			for (i = 0; i < num_hide_block_devs; i++) {
++				/* Skip blocks used for dual boot */
++				if (!strcmp(hide_block_devs[i], pr->dev)) {
++					skip_curr = true;
++					break;
++				}
++			}
++
++			if (skip_curr)
++				continue;
++
+ 			list_add_tail(&pr->list, &devices);
++		}
+ 	}
+ 
+ 	globfree(&gl);
+@@ -1376,6 +1405,15 @@ static int find_block_ubi(libubi_t libub
+ 	int dev_num;
+ 	int vol_id;
+ 	int err = -1;
++	char rootfs_data_dev[127];
++
++	if (!strcmp(name, "rootfs_data")) {
++		read_boot_param_string("boot-rootfs_data-part", rootfs_data_dev,
++				       sizeof(rootfs_data_dev));
++
++		if (rootfs_data_dev[0])
++			name = rootfs_data_dev;
++	}
+ 
+ 	err = find_ubi_vol(libubi, name, &dev_num, &vol_id);
+ 	if (!err)
+@@ -1936,6 +1974,26 @@ static int main_swapoff(int argc, char *
+ 	return 0;
+ }
+ 
++static bool add_hide_block_dev(char *path)
++{
++	if (num_hide_block_devs >= ARRAY_SIZE(hide_block_devs))
++		return false;
++
++	hide_block_devs[num_hide_block_devs++] = path;
++	return true;
++}
++
++static void hide_boot_param_dev(const char *name)
++{
++	char *path;
++
++	path = boot_param_get_dev(name);
++	if (path) {
++		if (!add_hide_block_dev(path))
++			free(path);
++	}
++}
++
+ int main(int argc, char **argv)
+ {
+ 	char *base = basename(*argv);
+@@ -1945,6 +2003,8 @@ int main(int argc, char **argv)
+ 	ulog_open(-1, -1, "block");
+ 	ulog_threshold(LOG_NOTICE);
+ 
++	hide_boot_param_dev("rootfs_data-part");
++
+ 	if (!strcmp(base, "swapon"))
+ 		return main_swapon(argc, argv);
+ 
+--- a/boot_param.c
++++ b/boot_param.c
+@@ -0,0 +1,244 @@
++/* SPDX-License-Identifier: BSD-3-Clause */
++/*
++ * Copyright (C) 2024 MediaTek Inc. All rights reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <stdio.h>
++#include <string.h>
++#include <dirent.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <glob.h>
++#include <dlfcn.h>
++
++#include <blkid/blkid.h>
++#include <libubox/ulog.h>
++#include "boot_param.h"
++
++#define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
++
++#define BOOT_PARAM_STR_MAX_LEN			256
++
++static struct {
++	bool loaded;
++	blkid_probe (*new_probe_from_filename)(const char *);
++	int (*do_safeprobe)(blkid_probe);
++	int (*probe_lookup_value)(blkid_probe, const char *, const char **, size_t *);
++	void (*free_probe)(blkid_probe);
++	int (*probe_enable_partitions)(blkid_probe, int);
++	int (*probe_set_partitions_flags)(blkid_probe, int);
++} libblkid = {};
++
++bool read_boot_param_bool(const char *name)
++{
++	char path[BOOT_PARAM_STR_MAX_LEN];
++	FILE *f;
++
++	snprintf(path, sizeof(path),
++		 "/sys/firmware/devicetree/base/mediatek,%s", name);
++
++	f = fopen(path, "rb");
++	if (!f)
++		return false;
++
++	fclose(f);
++
++	return true;
++}
++
++int read_boot_param_string(const char *name, char *val, size_t maxsize)
++{
++	char path[BOOT_PARAM_STR_MAX_LEN];
++	size_t len;
++	FILE *f;
++
++	snprintf(path, sizeof(path),
++		 "/sys/firmware/devicetree/base/mediatek,%s", name);
++
++	f = fopen(path, "rb");
++	if (!f) {
++		val[0] = 0;
++		return -1;
++	}
++
++	len = fread(val, 1, maxsize, f);
++	fclose(f);
++
++	while (len > 0) {
++		if (val[len - 1] != '\n' && val[len - 1] != '\r')
++			break;
++
++		len--;
++	}
++
++	if (len < maxsize)
++		val[len] = 0;
++
++	return len;
++}
++
++static bool load_libblkid(void)
++{
++	void *lib;
++
++	if (libblkid.loaded)
++		return true;
++
++	lib = dlopen("libblkid.so", RTLD_GLOBAL);
++
++	if (!lib)
++		lib = dlopen("libblkid.so.1", RTLD_GLOBAL);
++
++	if (!lib)
++		return false;
++
++	libblkid.new_probe_from_filename = dlsym(lib, "blkid_new_probe_from_filename");
++	if (!libblkid.new_probe_from_filename)
++		return false;
++
++	libblkid.do_safeprobe = dlsym(lib, "blkid_do_safeprobe");
++	if (!libblkid.do_safeprobe)
++		return false;
++
++	libblkid.probe_lookup_value = dlsym(lib, "blkid_probe_lookup_value");
++	if (!libblkid.probe_lookup_value)
++		return false;
++
++	libblkid.free_probe = dlsym(lib, "blkid_free_probe");
++	if (!libblkid.free_probe)
++		return false;
++
++	libblkid.probe_enable_partitions = dlsym(lib, "blkid_probe_enable_partitions");
++	if (!libblkid.probe_enable_partitions)
++		return false;
++
++	libblkid.probe_set_partitions_flags = dlsym(lib, "blkid_probe_set_partitions_flags");
++	if (!libblkid.probe_set_partitions_flags)
++		return false;
++
++	libblkid.loaded = true;
++	return true;
++}
++
++static char *lookup_block_dev(const char *path, const char *key, bool is_uuid)
++{
++	int gl_flags = GLOB_NOESCAPE | GLOB_MARK;
++	const char *type, *value;
++	char *result = NULL;
++	size_t len;
++	glob_t gl;
++	int i;
++
++	if (glob(path, gl_flags, NULL, &gl) < 0)
++		return NULL;
++
++	type = is_uuid ? "PART_ENTRY_UUID" : "PART_ENTRY_NAME";
++
++	for (i = 0; i < gl.gl_pathc; i++) {
++		blkid_probe pr = libblkid.new_probe_from_filename(gl.gl_pathv[i]);
++		if (!pr)
++			continue;
++
++		libblkid.probe_enable_partitions(pr, 1);
++		libblkid.probe_set_partitions_flags(pr, BLKID_PARTS_ENTRY_DETAILS);
++
++		if (libblkid.do_safeprobe(pr))
++			goto free_pr;
++
++		if (!libblkid.probe_lookup_value(pr, type, &value, &len)) {
++			if (!strcmp(value, key))
++				result = strdup(gl.gl_pathv[i]);
++		}
++
++	free_pr:
++		libblkid.free_probe(pr);
++
++		if (result)
++			break;
++	}
++
++	globfree(&gl);
++
++	return result;
++}
++
++static char *find_block_dev(const char *key, bool is_uuid)
++{
++	char *devpath = NULL;
++	int i;
++
++	static const char *block_pats[] = {
++		"/dev/loop*",
++		"/dev/mmcblk*",
++		"/dev/sd*",
++		"/dev/hd*",
++		"/dev/md*",
++		"/dev/nvme*",
++		"/dev/vd*",
++		"/dev/xvd*",
++		"/dev/dm-*",
++		"/dev/fit*",
++	};
++
++	if (!load_libblkid())
++		return NULL;
++
++	for (i = 0; i < ARRAY_SIZE(block_pats); i++) {
++		devpath = lookup_block_dev(block_pats[i], key, is_uuid);
++		if (devpath)
++			break;
++	}
++
++	return devpath;
++}
++
++char *blockdev_parse(const char *name)
++{
++	char *e, *part_dev_path;
++	struct stat st;
++
++	if (!name)
++		return NULL;
++
++	e = strchr(name, '=');
++	if (e) {
++		*e = 0;
++		e++;
++	}
++
++	if (!e) {
++		if (stat(name, &st))
++			return NULL;
++
++		if (!S_ISBLK(st.st_mode))
++			return NULL;
++
++		part_dev_path = strdup(name);
++	} else if (!strcmp(name, "PARTLABEL")) {
++		part_dev_path = find_block_dev(e, false);
++	} else if (!strcmp(name, "PARTUUID")) {
++		if (strlen(e) != 36)
++			return NULL;
++		part_dev_path = find_block_dev(e, true);
++	} else {
++		return NULL;
++	}
++
++	return part_dev_path;
++}
++
++char *boot_param_get_dev(const char *name)
++{
++	char partkey[BOOT_PARAM_STR_MAX_LEN];
++
++	read_boot_param_string(name, partkey, sizeof(partkey));
++
++	if (!partkey[0])
++		return NULL;
++
++	return blockdev_parse(partkey);
++}
+--- a/boot_param.h
++++ b/boot_param.h
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: BSD-3-Clause
++/*
++ * Copyright (C) 2024 MediaTek Inc. All rights reserved.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++#ifndef _BOOT_PARAM_H_
++#define _BOOT_PARAM_H_
++
++#include <stddef.h>
++#include <stdbool.h>
++
++bool read_boot_param_bool(const char *name);
++int read_boot_param_string(const char *name, char *val, size_t maxsize);
++
++char *blockdev_parse(const char *name);
++char *boot_param_get_dev(const char *name);
++
++#endif /* _BOOT_PARAM_H_ */
+--- a/libfstools/rootdisk.c
++++ b/libfstools/rootdisk.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include "common.h"
++#include "../boot_param.h"
+ 
+ #include <linux/loop.h>
+ 
+@@ -28,6 +29,7 @@ struct rootdev_volume {
+ 	struct volume v;
+ 	uint64_t offset;
+ 	char loop_name[32];
++	char *dev_path;
+ };
+ 
+ static const char *rootdev;
+@@ -93,6 +95,28 @@ static int get_squashfs(struct squashfs_
+ 	return 0;
+ }
+ 
++static struct volume *find_existed_rootfs_data(void)
++{
++	struct rootdev_volume *p;
++	char *rootfs_data_dev;
++
++	rootfs_data_dev = boot_param_get_dev("rootfs_data-part");
++
++	if (!rootfs_data_dev)
++		return NULL;
++
++	ULOG_NOTE("Using existed rootfs_data device %s\n", rootfs_data_dev);
++
++	p = calloc(1, sizeof(*p));
++	p->v.drv = &rootdisk_driver;
++	p->v.name = "rootfs_data";
++
++	p->offset = 0;
++	p->dev_path = rootfs_data_dev;
++
++	return &p->v;
++}
++
+ static struct volume *rootdisk_volume_find(char *name)
+ {
+ 	struct squashfs_super_block sb;
+@@ -101,6 +125,9 @@ static struct volume *rootdisk_volume_fi
+ 	if (strcmp(name, "rootfs_data") != 0)
+ 		return NULL;
+ 
++	if (read_boot_param_bool("no-split-fitrw"))
++		return find_existed_rootfs_data();
++
+ 	if (!rootdev)
+ 		rootdev = get_rootdev("/");
+ 	if (!rootdev)
+@@ -128,9 +155,14 @@ static struct volume *rootdisk_volume_fi
+ static int rootdisk_volume_identify(struct volume *v)
+ {
+ 	struct rootdev_volume *p = container_of(v, struct rootdev_volume, v);
++	const char *dev = rootdev;
+ 	FILE *f;
+ 	int ret = FS_NONE;
+-	f = fopen(rootdev, "r");
++
++	if (p->dev_path)
++		dev = p->dev_path;
++
++	f = fopen(dev, "r");
+ 	if (!f)
+ 		return ret;
+ 
+@@ -213,6 +245,15 @@ static int rootdisk_create_loop(struct r
+ static int rootdisk_volume_init(struct volume *v)
+ {
+ 	struct rootdev_volume *p = container_of(v, struct rootdev_volume, v);
++	const char *dev = rootdev;
++
++	if (p->dev_path) {
++		/* Do not create loop device with no-split-fitrw set */
++		v->type = BLOCKDEV;
++		v->blk = p->dev_path;
++		dev = p->dev_path;
++		goto do_format;
++	}
+ 
+ 	if (!p->loop_name[0] && rootdisk_create_loop(p) != 0) {
+ 		ULOG_ERR("unable to create loop device\n");
+@@ -222,7 +263,8 @@ static int rootdisk_volume_init(struct v
+ 	v->type = BLOCKDEV;
+ 	v->blk = p->loop_name;
+ 
+-	return block_volume_format(v, p->offset, rootdev);
++do_format:
++	return block_volume_format(v, p->offset, dev);
+ }
+ 
+ static struct driver rootdisk_driver = {
+--- a/libfstools/ubi.c
++++ b/libfstools/ubi.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include "common.h"
++#include "../boot_param.h"
+ 
+ /* fit for UBI_MAX_VOLUME_NAME and sysfs path lengths */
+ #define BUFLEN		128
+@@ -140,6 +141,15 @@ static struct volume *ubi_volume_find(ch
+ 	DIR *ubi_dir;
+ 	struct dirent *ubi_dirent;
+ 	unsigned int ubi_num;
++	char rootfs_data_dev[127];
++
++	if (!strcmp(name, "rootfs_data")) {
++		read_boot_param_string("boot-rootfs_data-part", rootfs_data_dev,
++				       sizeof(rootfs_data_dev));
++
++		if (rootfs_data_dev[0])
++			name = rootfs_data_dev;
++	}
+ 
+ 	if (find_filesystem("ubifs"))
+ 		return ret;
+--- a/mount_root.c
++++ b/mount_root.c
+@@ -23,6 +23,8 @@
+ #include "libfstools/libfstools.h"
+ #include "libfstools/volume.h"
+ 
++#include "boot_param.h"
++
+ /*
+  * Called in the early (PREINIT) stage, when we immediately need some writable
+  * filesystem.
+@@ -62,6 +64,12 @@ start(int argc, char *argv[3])
+ 	/* There isn't extroot, so just try to mount "rootfs_data" */
+ 	volume_init(data);
+ 	switch (volume_identify(data)) {
++	case -1:
++		/* Use ramoverlay if no "rootfs_data" device found with no-split-fitrw set */
++		if (!read_boot_param_bool("no-split-fitrw"))
++			break;
++
++		/* fall through */
+ 	case FS_NONE:
+ 		ULOG_WARN("no usable overlay filesystem found, using tmpfs overlay\n");
+ 		return ramoverlay();
