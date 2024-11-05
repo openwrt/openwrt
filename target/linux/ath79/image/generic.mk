@@ -2972,6 +2972,14 @@ define Device/sophos_ap15
 endef
 TARGET_DEVICES += sophos_ap15
 
+define Device/sophos_ap15c
+  SOC := qca9557
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP15C
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap15c
+
 define Device/sophos_ap55
   SOC := qca9558
   DEVICE_VENDOR := Sophos
