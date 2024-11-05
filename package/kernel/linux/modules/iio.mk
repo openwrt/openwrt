@@ -63,6 +63,21 @@ endef
 $(eval $(call KernelPackage,industrialio-hw-consumer))
 
 
+define KernelPackage/industrialio-buffer-cb
+  TITLE:=Provides callback buffer used for push in-kernel interfaces
+  KCONFIG:=CONFIG_IIO_BUFFER_CB
+  FILES:=$(LINUX_DIR)/drivers/iio/buffer/industrialio-buffer-cb.ko
+  AUTOLOAD:=$(call AutoLoad,55,industrialio-triggered-buffer-cb)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/industrialio-buffer-cb/description
+ Should be selected by any drivers that do in-kernel push usage.
+endef
+
+$(eval $(call KernelPackage,industrialio-buffer-cb))
+
+
 define KernelPackage/industrialio-triggered-buffer
   TITLE:=Provides helper functions for setting up triggered buffers.
   DEPENDS:=+kmod-iio-kfifo-buf
