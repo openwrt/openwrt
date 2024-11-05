@@ -84,7 +84,7 @@ define prepare_rootfs
 			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
 		fi; \
 		for script in $$IPKG_POSTINST_PATH; do \
-			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
+			PATH="$(TARGET_PATH_PKG)" IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
 			ret=$$?; \
 			if [ $$ret -ne 0 ]; then \
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
