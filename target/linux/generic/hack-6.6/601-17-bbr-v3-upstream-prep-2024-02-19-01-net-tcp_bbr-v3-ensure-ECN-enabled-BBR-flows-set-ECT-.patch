@@ -1,0 +1,58 @@
+From f17f10618636cc35a0b8c3ccee3023dc4c62b956 Mon Sep 17 00:00:00 2001
+From: Adithya Abraham Philip <abrahamphilip@google.com>
+Date: Fri, 11 Jun 2021 21:56:10 +0000
+Subject: [PATCH 17/19] net-tcp_bbr: v3: ensure ECN-enabled BBR flows set ECT
+ on retransmits
+
+Adds a new flag TCP_ECN_ECT_PERMANENT that is used by CCAs to
+indicate that retransmitted packets and pure ACKs must have the
+ECT bit set. This is necessary for BBR, which when using
+ECN expects ECT to be set even on retransmitted packets and ACKs.
+
+Previous to this addition of TCP_ECN_ECT_PERMANENT, CCAs which can use
+ECN but don't "need" it did not have a way to indicate that ECT should
+be set on retransmissions/ACKs.
+
+Signed-off-by: Adithya Abraham Philip <abrahamphilip@google.com>
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+Change-Id: I8b048eaab35e136fe6501ef6cd89fd9faa15e6d2
+---
+ include/net/tcp.h     | 1 +
+ net/ipv4/tcp_bbr.c    | 3 +++
+ net/ipv4/tcp_output.c | 3 ++-
+ 3 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -373,6 +373,7 @@ static inline void tcp_dec_quickack_mode
+ #define	TCP_ECN_DEMAND_CWR	4
+ #define	TCP_ECN_SEEN		8
+ #define	TCP_ECN_LOW		16
++#define	TCP_ECN_ECT_PERMANENT	32
+ 
+ enum tcp_tw_status {
+ 	TCP_TW_SUCCESS = 0,
+--- a/net/ipv4/tcp_bbr.c
++++ b/net/ipv4/tcp_bbr.c
+@@ -2151,6 +2151,9 @@ __bpf_kfunc static void bbr_init(struct
+ 	bbr->plb.pause_until = 0;
+ 
+ 	tp->fast_ack_mode = bbr_fast_ack_mode ? 1 : 0;
++
++	if (bbr_can_use_ecn(sk))
++		tp->ecn_flags |= TCP_ECN_ECT_PERMANENT;
+ }
+ 
+ /* BBR marks the current round trip as a loss round. */
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -388,7 +388,8 @@ static void tcp_ecn_send(struct sock *sk
+ 				th->cwr = 1;
+ 				skb_shinfo(skb)->gso_type |= SKB_GSO_TCP_ECN;
+ 			}
+-		} else if (!tcp_ca_needs_ecn(sk)) {
++		} else if (!(tp->ecn_flags & TCP_ECN_ECT_PERMANENT) &&
++			!tcp_ca_needs_ecn(sk)) {
+ 			/* ACK or retransmitted segment: clear ECT|CE */
+ 			INET_ECN_dontxmit(sk);
+ 		}
