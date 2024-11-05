@@ -1,0 +1,16 @@
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+openwrt,one)
+	ucidef_set_wireless_mac_count 2g 7
+	ucidef_set_wireless_mac_count 5g 7
+	;;
+esac
+
+board_config_flush
+
+exit 0
