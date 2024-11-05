@@ -26,6 +26,34 @@
 			vqmmc-supply = <&reg_3p3v>;
 			no-mmc;
 			status = "okay";
+
+			card@0 {
+				compatible = "mmc-card";
+				reg = <0>;
+
+				block {
+					compatible = "block-device";
+					partitions {
+						block-partition-env {
+							partname = "u-boot-env";
+							nvmem-layout {
+								compatible = "u-boot,env-layout";
+							};
+						};
+
+						sd_rootfs: block-partition-production {
+							partname = "firmware";
+						};
+					};
+				};
+			};
+		};
+	};
+
+	fragment@2 {
+		target-path = "/chosen";
+		__overlay__ {
+			rootdisk-sd = <&sd_rootfs>;
 		};
 	};
 };

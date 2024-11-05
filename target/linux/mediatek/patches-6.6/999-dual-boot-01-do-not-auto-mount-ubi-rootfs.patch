@@ -1,0 +1,33 @@
+From: Weijie Gao <weijie.gao@mediatek.com>
+Subject: [PATCH] init: do not mount ubi rootfs if dual boot is enabled
+
+Do not mount ubi rootfs if dual boot is enabled.
+UBIFS-type rootfs volume will be specified by U-Boot.
+
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -19,6 +19,7 @@
+ #include <linux/ramfs.h>
+ #include <linux/shmem_fs.h>
+ #include <linux/ktime.h>
++#include <linux/of.h>
+ 
+ #include <linux/nfs_fs.h>
+ #include <linux/nfs_fs_sb.h>
+@@ -252,9 +253,16 @@ out:
+ #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
+ static int __init mount_ubi_rootfs(void)
+ {
++	struct device_node *np;
+ 	int flags = MS_SILENT;
+ 	int err, tried = 0;
+ 
++	np = of_find_node_by_path("/");
++	if (np) {
++		if (of_property_read_bool(np, "mediatek,dual-boot"))
++			return -EINVAL;
++	}
++
+ 	while (tried < 2) {
+ 		err = do_mount_root("ubi0:rootfs", "ubifs", flags, \
+ 					root_mount_data);

@@ -1,0 +1,20 @@
+From: Weijie Gao <weijie.gao@mediatek.com>
+Subject: [PATCH] block: fitblk: allow bypassing creation of fitrw
+
+Add control to bypass creating fitrw
+
+--- a/drivers/block/fitblk.c
++++ b/drivers/block/fitblk.c
+@@ -579,6 +579,12 @@ static int parse_fit_on_dev(struct devic
+ 		 slot, (slot > 1)?"s":"", (slot > 1)?"[0...":"", slot - 1,
+ 		 (slot > 1)?"]":"");
+ 
++	np = of_find_node_by_path("/");
++	if (np) {
++		if (of_property_read_bool(np, "mediatek,no-split-fitrw"))
++			goto out_bootconf;
++	}
++
+ 	/* in case uImage.FIT is stored in a partition, map the remaining space */
+ 	if (!bdev->bd_read_only && bdev_is_partition(bdev) &&
+ 	    (imgmaxsect + MIN_FREE_SECT) < dsectors) {

@@ -31,14 +31,21 @@ PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
+#TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-ldl)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_UBIFS_EXTROOT),-DCMAKE_UBIFS_EXTROOT=y)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_OVL_MOUNT_FULL_ACCESS_TIME),-DCMAKE_OVL_MOUNT_FULL_ACCESS_TIME=y)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_OVL_MOUNT_COMPRESS_ZLIB),-DCMAKE_OVL_MOUNT_COMPRESS_ZLIB=y)
 
+define Package/libfstools-bootparam
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Boot parameter library for OpenWrt filesystem tools
+endef
+
 define Package/fstools
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubox +NAND_SUPPORT:ubi-utils
+  DEPENDS:=+ubox +NAND_SUPPORT:ubi-utils +libfstools-bootparam
   TITLE:=OpenWrt filesystem tools
   MENU:=1
 endef
@@ -82,7 +89,7 @@ define Package/block-mount
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=Block device mounting and checking
-  DEPENDS:=+ubox +libubox +libuci +libblobmsg-json +libjson-c
+  DEPENDS:=+ubox +libubox +libuci +libblobmsg-json +libjson-c +libfstools-bootparam
 endef
 
 define Package/blockd
@@ -90,6 +97,12 @@ define Package/blockd
   CATEGORY:=Base system
   TITLE:=Block device automounting
   DEPENDS:=+block-mount +fstools +libubus +kmod-fs-autofs4 +libblobmsg-json +libjson-c
+endef
+
+define Package/libfstools-bootparam/install
+	$(INSTALL_DIR) $(1)/lib
+
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools-bootparam.so $(1)/lib/
 endef
 
 define Package/fstools/install
@@ -135,6 +148,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libubi-utils.a $(1)/usr/lib/
 endef
 
+$(eval $(call BuildPackage,libfstools-bootparam))
 $(eval $(call BuildPackage,fstools))
 $(eval $(call BuildPackage,snapshot-tool))
 $(eval $(call BuildPackage,block-mount))

@@ -11,6 +11,26 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
+block_dev_path() {
+	local dev_path
+
+	case "$1" in
+	/dev/mmcblk*)
+		dev_path="$1"
+		;;
+	PARTLABEL=* | PARTUUID=*)
+		dev_path=$(blkid -t "$1" -o device)
+		[ -z "${dev_path}" -o $? -ne 0 ] && return 1
+		;;
+	*)
+		return 1;
+		;;
+	esac
+
+	echo "${dev_path}"
+	return 0
+}
+
 ubootenv_add_mmc_default() {
 	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
 	ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
@@ -33,6 +53,68 @@ ubootenv_add_ubi_default() {
 }
 
 case "$board" in
+mediatek,mt7981-rfb|\
+mediatek,mt7986a-rfb|\
+mediatek,mt7986b-rfb|\
+mediatek,mt7988a-rfb)
+	. /lib/upgrade/fit.sh
+
+	export_fitblk_bootdev
+	case "$CI_METHOD" in
+	ubi)
+		local env_ubi_vol=$(cat /sys/firmware/devicetree/base/mediatek,env-ubi-volume 2>/dev/null)
+		local env_ubi_vol2=$(cat /sys/firmware/devicetree/base/mediatek,env-ubi-volume-redund 2>/dev/null)
+		local env_size=$(cat /sys/firmware/devicetree/base/mediatek,env-size 2>/dev/null)
+
+		if [ x"${env_ubi_vol}" = x"ubootenv" -a x"${env_ubi_vol2}" = x"ubootenv2" ]; then
+			ubootenv_add_ubi_default
+			return
+		fi
+
+		. /lib/upgrade/nand.sh
+		local envubi=$(nand_find_ubi ubi)
+
+		if [ -n "${env_ubi_vol}" ]; then
+			local envdev=/dev/$(nand_find_volume $envubi "${env_ubi_vol}")
+			ubootenv_add_uci_config "$envdev" "0x0" "${env_size}" "${env_size}" "1"
+		fi
+
+		if [ -n "${env_ubi_vol2}" ]; then
+			local envdev2=/dev/$(nand_find_volume $envubi "${env_ubi_vol2}")
+			ubootenv_add_uci_config "$envdev2" "0x0" "${env_size}" "${env_size}" "1"
+		fi
+		;;
+	emmc)
+		local env_part=$(cat /sys/firmware/devicetree/base/mediatek,env-part 2>/dev/null)
+		local env_size=$(cat /sys/firmware/devicetree/base/mediatek,env-size 2>/dev/null)
+		local env_off=$(cat /sys/firmware/devicetree/base/mediatek,env-offset 2>/dev/null)
+		local env_redund_off=$(cat /sys/firmware/devicetree/base/mediatek,env-redund-offset 2>/dev/null)
+
+		if [ -n "${env_part}" -a -n "${env_size}" -a -n "${env_off}" ]; then
+			env_dev=$(block_dev_path "${env_part}")
+
+			ubootenv_add_uci_config "${env_dev}" "${env_off}" "${env_size}" "${env_size}" "1"
+
+			[ -n "${env_redund_off}" ] && \
+				ubootenv_add_uci_config "${env_dev}" "${env_redund_off}" "${env_size}" "${env_size}" "1"
+		fi
+		;;
+	default)
+		local env_part=$(cat /sys/firmware/devicetree/base/mediatek,env-part 2>/dev/null)
+		local env_size=$(cat /sys/firmware/devicetree/base/mediatek,env-size 2>/dev/null)
+		local env_redund_off=$(cat /sys/firmware/devicetree/base/mediatek,env-redund-offset 2>/dev/null)
+
+		if [ -n "${env_part}" -a -n "${env_size}" ]; then
+			local env_dev="/dev/mtd$(find_mtd_index "${env_part}")"
+
+			ubootenv_add_uci_config "${env_dev}" "0x0" "${env_size}" "${env_size}" "1"
+
+			[ -n "${env_redund_off}" ] && \
+				ubootenv_add_uci_config "${env_dev}" "${env_redund_off}" "${env_size}" "${env_size}" "1"
+		fi
+		;;
+	esac
+	;;
 abt,asr3000|\
 h3c,magic-nx30-pro|\
 jcg,q30-pro|\
