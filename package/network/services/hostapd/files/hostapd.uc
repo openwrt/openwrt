@@ -45,6 +45,7 @@ hostapd.data.bss_info_fields = {
 	wpa_pairwise: true,
 	auth_algs: true,
 	ieee80211w: true,
+	owe_transition_ifname: true,
 };
 
 function iface_remove(cfg)
