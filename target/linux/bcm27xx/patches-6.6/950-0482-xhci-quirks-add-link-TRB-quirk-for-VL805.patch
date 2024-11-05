@@ -52,7 +52,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	addr = xhci_trb_virt_to_dma(new_seg, new_deq);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1918,6 +1918,9 @@ struct xhci_hcd {
+@@ -1662,6 +1662,9 @@ struct xhci_hcd {
  #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
  

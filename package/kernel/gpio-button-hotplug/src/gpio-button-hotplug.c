@@ -302,7 +302,7 @@ struct gpio_keys_button_dev {
 
 	struct device *dev;
 	struct gpio_keys_platform_data *pdata;
-	struct gpio_keys_button_data data[0];
+	struct gpio_keys_button_data data[];
 };
 
 static void gpio_keys_polled_queue_work(struct gpio_keys_button_dev *bdev)

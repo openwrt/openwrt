@@ -1,0 +1,59 @@
+From 342672bbdf713654316a0ff73c7f2ecf7ea6693d Mon Sep 17 00:00:00 2001
+From: Michael Walle <mwalle@kernel.org>
+Date: Fri, 21 Jun 2024 14:09:29 +0200
+Subject: [PATCH] mtd: spi-nor: winbond: fix w25q128 regression
+
+Upstream commit d35df77707bf5ae1221b5ba1c8a88cf4fcdd4901
+
+("mtd: spi-nor: winbond: fix w25q128 regression")
+however the code has changed a lot after v6.6 so the patch did
+not apply to v6.6 or v6.1 which still has the problem.
+
+This patch fixes the issue in the way of the old API and has
+been tested on hardware. Please apply it for v6.1 and v6.6.
+
+Commit 83e824a4a595 ("mtd: spi-nor: Correct flags for Winbond w25q128")
+removed the flags for non-SFDP devices. It was assumed that it wasn't in
+use anymore. This wasn't true. Add the no_sfdp_flags as well as the size
+again.
+
+We add the additional flags for dual and quad read because they have
+been reported to work properly by Hartmut using both older and newer
+versions of this flash, the similar flashes with 64Mbit and 256Mbit
+already have these flags and because it will (luckily) trigger our
+legacy SFDP parsing, so newer versions with SFDP support will still get
+the parameters from the SFDP tables.
+
+Reported-by: Hartmut Birr <e9hack@gmail.com>
+Closes: https://lore.kernel.org/r/CALxbwRo_-9CaJmt7r7ELgu+vOcgk=xZcGHobnKf=oT2=u4d4aA@mail.gmail.com/
+Fixes: 83e824a4a595 ("mtd: spi-nor: Correct flags for Winbond w25q128")
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Michael Walle <mwalle@kernel.org>
+Acked-by: Tudor Ambarus <tudor.ambarus@linaro.org>
+Reviewed-by: Esben Haabendal <esben@geanix.com>
+Reviewed-by: Pratyush Yadav <pratyush@kernel.org>
+Signed-off-by: Pratyush Yadav <pratyush@kernel.org>
+Link: https://lore.kernel.org/r/20240621120929.2670185-1-mwalle@kernel.org
+[Backported to v6.6 - vastly different due to upstream changes]
+Reviewed-by: Tudor Ambarus <tudor.ambarus@linaro.org>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/mtd/spi-nor/winbond.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/spi-nor/winbond.c
++++ b/drivers/mtd/spi-nor/winbond.c
+@@ -120,9 +120,10 @@ static const struct flash_info winbond_n
+ 		NO_SFDP_FLAGS(SECT_4K) },
+ 	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16)
+ 		NO_SFDP_FLAGS(SECT_4K) },
+-	{ "w25q128", INFO(0xef4018, 0, 0, 0)
+-		PARSE_SFDP
+-		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB) },
++	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256)
++		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
++		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
++			      SPI_NOR_QUAD_READ) },
+ 	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ)
+ 		.fixups = &w25q256_fixups },

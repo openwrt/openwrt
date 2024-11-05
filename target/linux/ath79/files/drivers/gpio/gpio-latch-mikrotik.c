@@ -28,11 +28,6 @@ struct gpio_latch_chip {
 	struct gpio_desc *gpios[GPIO_LATCH_LINES];
 };
 
-static inline struct gpio_latch_chip *to_gpio_latch_chip(struct gpio_chip *gc)
-{
-	return container_of(gc, struct gpio_latch_chip, gc);
-}
-
 static void gpio_latch_lock(struct gpio_latch_chip *glc, bool enable)
 {
 	mutex_lock(&glc->mutex);
@@ -58,7 +53,7 @@ static void gpio_latch_unlock(struct gpio_latch_chip *glc, bool disable)
 static int
 gpio_latch_get(struct gpio_chip *gc, unsigned offset)
 {
-	struct gpio_latch_chip *glc = to_gpio_latch_chip(gc);
+	struct gpio_latch_chip *glc = gpiochip_get_data(gc);
 	int ret;
 
 	gpio_latch_lock(glc, false);
@@ -71,7 +66,7 @@ gpio_latch_get(struct gpio_chip *gc, unsigned offset)
 static void
 gpio_latch_set(struct gpio_chip *gc, unsigned offset, int value)
 {
-	struct gpio_latch_chip *glc = to_gpio_latch_chip(gc);
+	struct gpio_latch_chip *glc = gpiochip_get_data(gc);
 	bool enable_latch = false;
 	bool disable_latch = false;
 
@@ -88,7 +83,7 @@ gpio_latch_set(struct gpio_chip *gc, unsigned offset, int value)
 static int
 gpio_latch_direction_output(struct gpio_chip *gc, unsigned offset, int value)
 {
-	struct gpio_latch_chip *glc = to_gpio_latch_chip(gc);
+	struct gpio_latch_chip *glc = gpiochip_get_data(gc);
 	bool enable_latch = false;
 	bool disable_latch = false;
 	int ret;

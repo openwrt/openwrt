@@ -19,16 +19,6 @@
 		label-mac-device = &gmac1;
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-
-		gpio-usb-power {
-			gpio-export,name = "power:usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -64,6 +54,15 @@
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power:usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -129,6 +128,10 @@
 			};
 		};
 	};
+};
+
+&xhci {
+	vbus-supply = <&reg_power_usb>;
 };
 
 &pcie {

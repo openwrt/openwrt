@@ -263,7 +263,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /**
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1764,6 +1764,13 @@ struct xhci_hub {
+@@ -1508,6 +1508,13 @@ struct xhci_hub {
  	u8			min_rev;
  };
  
@@ -277,7 +277,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /* There is one xhci_hcd structure per controller */
  struct xhci_hcd {
  	struct usb_hcd *main_hcd;
-@@ -1917,6 +1924,8 @@ struct xhci_hcd {
+@@ -1661,6 +1668,8 @@ struct xhci_hcd {
  #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
  
@@ -286,7 +286,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
-@@ -1946,6 +1955,8 @@ struct xhci_hcd {
+@@ -1690,6 +1699,8 @@ struct xhci_hcd {
  	struct list_head	regset_list;
  
  	void			*dbc;

@@ -35,6 +35,7 @@
 		regulator-name = "led_vbus";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
+		enable-active-high;
 		regulator-always-on;
 		gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 	};
