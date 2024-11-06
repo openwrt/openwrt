@@ -12,6 +12,7 @@
 #  255 - A suitable download or checksum utility is missing
 
 [ -n "$1" ] || {
+	echo "$0 - Download and verify build artifacts"
 	echo "Usage: $0 <url>" >&2
 	exit 1
 }
@@ -21,7 +22,7 @@ finish() {
 		echo "Cleaning up."
 		rm -r "/tmp/verify.$$"
 	}
-	exit $1
+	exit "$1"
 }
 
 trap "finish 254" INT TERM
@@ -50,7 +51,8 @@ if which sha256sum >/dev/null; then
 	checksum() { sha256sum -c --ignore-missing "sha256sums"; }
 elif which shasum >/dev/null; then
 	checksum() {
-		local sum="$(shasum -a 256 "$image_file")";
+		local sum
+		sum="$(shasum -a 256 "$image_file")";
 		grep -xF "${sum%% *} *$image_file" "sha256sums";
 	}
 else
@@ -68,11 +70,14 @@ else
 	}
 fi
 
-mkdir -p "/tmp/verify.$$"
-cd "/tmp/verify.$$"
+tmpdir="$(mktemp -d)"
+cd "$tmpdir" || {
+	echo "Failed to create temporary directory!" >&2
+	finish 255
+}
 
 echo ""
-echo "1) Downloading image file"
+echo "1) Downloading artifact file"
 echo "========================="
 download "$image_file" "$image_url" || {
 	echo "Failed to download image file!" >&2
@@ -111,8 +116,8 @@ if [ -n "$missing_key" ]; then
 	echo ""                                                                  >&2
 
 	while true; do
-		printf "Keyserver to use? [$keyserver_url] > "
-		read url; case "${url:-$keyserver_url}" in
+		printf 'Keyserver to use? [%s] > ' "$keyserver_url"
+		read -r url; case "${url:-$keyserver_url}" in
 			hkp://*)
 				gpg --keyserver "${url:-$keyserver_url}" --recv-keys "$missing_key" || {
 					echo "Failed to download public key." >&2
@@ -148,7 +153,7 @@ cp "$image_file" "$destdir/$image_file" || {
 echo ""
 echo "Verification done!"
 echo "=================="
-echo "Firmware image placed in '$destdir/$image_file'."
+echo "Downloaded artifact placed in '$destdir/$image_file'."
 echo ""
 
 finish 0
