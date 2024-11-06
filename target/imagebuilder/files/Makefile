@@ -222,8 +222,8 @@ package_install: FORCE
 	@echo
 	@echo Installing packages...
 ifeq ($(CONFIG_USE_APK),)
-	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/libc_*.ipk $(PACKAGE_DIR)/libc_*.ipk))
-	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
+	$(OPKG) install $(wildcard $(PACKAGE_DIR)/libc_*.ipk)
+	$(OPKG) install $(wildcard $(PACKAGE_DIR)/kernel_*.ipk)
 	$(OPKG) install $(BUILD_PACKAGES)
 else
 	$(APK) add --no-scripts $(BUILD_PACKAGES)
