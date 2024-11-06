@@ -68,14 +68,13 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-
-		gpio_usb_power {
-			gpio-export,name = "tp-link:power:usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		};
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -85,6 +84,8 @@
 
 &usb_phy {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb>;
 };
 
 &spi {

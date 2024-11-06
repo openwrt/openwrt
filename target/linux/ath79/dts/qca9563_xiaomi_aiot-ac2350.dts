@@ -55,6 +55,16 @@
 		};
 	};
 
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		status = "disabled";
+	};
+
 	gpio-export {
 		compatible = "gpio-export";
 
@@ -63,13 +73,11 @@
 			gpio-export,output = <0>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
-
-		usb-reset {
-			gpio-export,name = "usb-reset";
-			gpio-export,output = <0>;
-			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		};
 	};
+};
+
+&usb_phy0 {
+	phy-supply = <&reg_power_usb>;
 };
 
 &spi {

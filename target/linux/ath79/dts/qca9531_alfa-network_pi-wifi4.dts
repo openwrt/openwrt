@@ -46,6 +46,15 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &eth0 {
@@ -57,12 +66,8 @@
 	compatible = "syscon", "simple-mfd";
 };
 
-&gpio_export {
-	usb-power {
-		gpio-export,name = "usb-power";
-		gpio-export,output = <1>;
-		gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
-	};
+&usb_phy {
+	phy-supply = <&reg_power_usb>;
 };
 
 &hub_port0 {

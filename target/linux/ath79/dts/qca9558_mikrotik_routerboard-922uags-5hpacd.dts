@@ -16,12 +16,12 @@
 		};
 	};
 
-	gpio-export {
-		gpio_usb_power {
-			gpio-export,name = "mikrotik:power:usb";
-			gpio-export,output = <0>;
-			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
-		};
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -54,6 +54,8 @@
 
 &usb_phy0 {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb>;
 };
 
 &usb1 {
