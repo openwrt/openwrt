@@ -72,9 +72,9 @@ ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
 	  \( \
-		-name 'base-files*.$(PACKAGE_SUFFIX)' -or \
-		-name 'libc*.$(PACKAGE_SUFFIX)' -or \
-		-name 'kernel*.$(PACKAGE_SUFFIX)' \) \
+		-name 'base-files-*.$(PACKAGE_SUFFIX)' -or \
+		-name 'libc-*.$(PACKAGE_SUFFIX)' -or \
+		-name 'kernel-*.$(PACKAGE_SUFFIX)' \) \
 	  -exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
   else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
@@ -83,9 +83,9 @@ ifeq ($(CONFIG_BUILDBOT),)
 else
 	$(FIND) $(call FeedPackageDir,libc) -type f \
 		\( \
-		  -name 'base-files*.$(PACKAGE_SUFFIX)' -or \
-		  -name 'libc*.$(PACKAGE_SUFFIX)' -or \
-		  -name 'kernel*.$(PACKAGE_SUFFIX)' \) \
+		  -name 'base-files-*.$(PACKAGE_SUFFIX)' -or \
+		  -name 'libc-*.$(PACKAGE_SUFFIX)' -or \
+		  -name 'kernel-*.$(PACKAGE_SUFFIX)' \) \
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
