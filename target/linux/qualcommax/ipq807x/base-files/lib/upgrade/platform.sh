@@ -189,9 +189,6 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	tplink,eap660hd-v1)
-		tplink_do_upgrade "$1"
-		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
 	xiaomi,ax9000)
@@ -216,6 +213,9 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		CI_DATAPART="rootfs_data"
 		emmc_do_upgrade "$1"
+		;;
+	tplink,eap660hd-v1)
+		tplink_do_upgrade "$1"
 		;;
 	yuncore,ax880)
 		active="$(fw_printenv -n active)"
