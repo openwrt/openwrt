@@ -229,30 +229,6 @@ define Build/belkin-header
 	mv $@.new $@
 endef
 
-define Build/ubnt-erx-factory-image
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
-		echo '21001:7' > $(1).compat; \
-		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
-		\
-		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
-		$(MKHASH) md5 $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) > $(1).md5; \
-		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp.md5/' $(1).md5; \
-		\
-		echo "dummy" > $(1).rootfs; \
-		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp/' $(1).rootfs; \
-		\
-		$(MKHASH) md5 $(1).rootfs > $(1).md5; \
-		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp.md5/' $(1).md5; \
-		\
-		echo '$(BOARD) $(VERSION_CODE) $(VERSION_NUMBER)' > $(1).version; \
-		$(TAR) -rf $(1) --transform='s/^.*/version.tmp/' $(1).version; \
-		\
-		$(CP) $(1) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(KERNEL_SIZE))" >&2; \
-	fi
-endef
-
 define Build/zytrx-header
 	$(eval board=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
@@ -2858,14 +2834,15 @@ define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Ubiquiti
-  IMAGE_SIZE := 256768k
+  IMAGE_SIZE := 259840k
   FILESYSTEMS := squashfs
-  KERNEL_SIZE := 3145728
-  KERNEL_INITRAMFS := $$(KERNEL) | \
-	ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
+  KERNEL_SIZE := 6144k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES += -wpad-basic-mbedtls -uboot-envtools
-  DEFAULT := n
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE :=  Partition table has been changed due to kernel size restrictions. \
+    Refer to the wiki page for instructions to migrate to the new layout: \
+    https://openwrt.org/toh/ubiquiti/edgerouter_x_er-x_ka
 endef
 
 define Device/ubnt_edgerouter-x
