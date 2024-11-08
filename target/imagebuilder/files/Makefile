@@ -181,7 +181,6 @@ ifeq ($(CONFIG_USE_APK),)
 	) >/dev/null 2>/dev/null
 	$(OPKG) update >&2 || true
 else
-	$(APK) add --initdb
 	(cd $(PACKAGE_DIR); $(APK) mkndx \
 		$(if $(CONFIG_SIGNATURE_CHECK), --keys-dir $(APK_KEYS) --sign $(BUILD_KEY_APK_SEC)) \
 		--allow-untrusted --output packages.adb *.apk) >/dev/null 2>/dev/null || true
@@ -200,6 +199,7 @@ ifeq ($(CONFIG_USE_APK),)
 		$(OPKG) update >&2 || true; \
 	fi
 else
+	$(APK) add --initdb
 	if [ -d "$(PACKAGE_DIR)" ] && ( \
 			[ ! -f "$(PACKAGE_DIR)/packages.adb" ] || \
 			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/packages.adb`" ] ); then \
