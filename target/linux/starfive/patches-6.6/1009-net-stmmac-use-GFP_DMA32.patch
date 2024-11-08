@@ -19,7 +19,7 @@ Signed-off-by: Matteo Croce <mcroce@microsoft.com>
  
  	if (priv->dma_cap.host_dma_width <= 32)
  		gfp |= GFP_DMA32;
-@@ -4673,7 +4673,7 @@ static inline void stmmac_rx_refill(stru
+@@ -4685,7 +4685,7 @@ static inline void stmmac_rx_refill(stru
  	struct stmmac_rx_queue *rx_q = &priv->dma_conf.rx_queue[queue];
  	int dirty = stmmac_rx_dirty(priv, queue);
  	unsigned int entry = rx_q->dirty_rx;

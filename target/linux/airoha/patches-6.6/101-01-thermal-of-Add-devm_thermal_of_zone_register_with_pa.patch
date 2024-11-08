@@ -181,7 +181,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
   * @dev: Device for which which resource was allocated.
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
-@@ -261,6 +261,10 @@ struct thermal_zone_params {
+@@ -263,6 +263,10 @@ struct thermal_zone_params {
  #ifdef CONFIG_THERMAL_OF
  struct thermal_zone_device *devm_thermal_of_zone_register(struct device *dev, int id, void *data,
  							  const struct thermal_zone_device_ops *ops);
@@ -192,7 +192,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  void devm_thermal_of_zone_unregister(struct device *dev, struct thermal_zone_device *tz);
  
-@@ -272,6 +276,15 @@ struct thermal_zone_device *devm_thermal
+@@ -274,6 +278,15 @@ struct thermal_zone_device *devm_thermal
  {
  	return ERR_PTR(-ENOTSUPP);
  }
