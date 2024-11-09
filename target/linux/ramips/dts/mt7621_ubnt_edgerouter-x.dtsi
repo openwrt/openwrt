@@ -29,33 +29,33 @@
 	ports {
 		port@0 {
 			status = "okay";
-			label = "eth0";
+			label = "wan";
 		};
 
 		port@1 {
 			status = "okay";
-			label = "eth1";
+			label = "lan1";
 			nvmem-cells = <&macaddr_factory_22 1>;
 			nvmem-cell-names = "mac-address";
 		};
 
 		port@2 {
 			status = "okay";
-			label = "eth2";
+			label = "lan2";
 			nvmem-cells = <&macaddr_factory_22 2>;
 			nvmem-cell-names = "mac-address";
 		};
 
 		port@3 {
 			status = "okay";
-			label = "eth3";
+			label = "lan3";
 			nvmem-cells = <&macaddr_factory_22 3>;
 			nvmem-cell-names = "mac-address";
 		};
 
 		port@4 {
 			status = "okay";
-			label = "eth4";
+			label = "lan4";
 			nvmem-cells = <&macaddr_factory_22 4>;
 			nvmem-cell-names = "mac-address";
 		};
