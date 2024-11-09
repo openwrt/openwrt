@@ -1,0 +1,33 @@
+name: Build single mediatek/filogic kernel
+
+on:
+  pull_request:
+    paths:
+      - 'include/**'
+      - 'scripts/download.pl'
+  push:
+    paths:
+      - 'include/**'
+      - 'scripts/download.pl'
+    branches-ignore:
+      - master
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-kernel:
+    name: Build single mediatek/filogic kernel
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    uses: openwrt/actions-shared-workflows/.github/workflows/label-kernel.yml@main
+    with:
+      target: mediatek
+      subtarget: filogic
