@@ -1,0 +1,20 @@
+--- a/src/conf-parse.y
++++ b/src/conf-parse.y
+@@ -30,6 +30,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <libgen.h>
+ 
+ extern int semanage_lex(void);                /* defined in conf-scan.c */
+ extern int semanage_lex_destroy(void);        /* defined in conf-scan.c */
+--- a/src/direct_api.c
++++ b/src/direct_api.c
+@@ -36,6 +36,7 @@
+ #include <sys/mman.h>
+ #include <sys/wait.h>
+ #include <limits.h>
++#include <libgen.h>
+ #include <errno.h>
+ #include <dirent.h>
+ 
