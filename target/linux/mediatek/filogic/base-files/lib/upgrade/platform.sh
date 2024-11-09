@@ -70,6 +70,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
 	cmcc,rax3000m|\
+	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
