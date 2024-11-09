@@ -364,6 +364,19 @@ define U-Boot/mt7981_rfb-emmc
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
 endef
 
+define U-Boot/mt7981_gatonetworks_gdsp
+  NAME:=GatoNetworks GDSP
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=gatonetworks_gdsp
+  UBOOT_CONFIG:=mt7981_gatonetworks_gdsp
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr3
+  FIP_COMPRESS:=1
+endef
+
 define U-Boot/mt7981_rfb-nor
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -797,6 +810,7 @@ UBOOT_TARGETS := \
 	mt7981_abt_asr3000 \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
+	mt7981_gatonetworks_gdsp \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
