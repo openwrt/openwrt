@@ -58,7 +58,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  		if (!error && num_points)
  			error = regmap_bulk_read(tsdata->regmap,
  						 tsdata->tdata_offset,
-@@ -1300,7 +1318,7 @@ static int edt_ft5x06_ts_probe(struct i2
+@@ -1318,7 +1336,7 @@ static int edt_ft5x06_ts_probe(struct i2
  	if (tsdata->reset_gpio) {
  		usleep_range(5000, 6000);
  		gpiod_set_value_cansleep(tsdata->reset_gpio, 0);
@@ -67,7 +67,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  	}
  
  	input = devm_input_allocate_device(&client->dev);
-@@ -1389,11 +1407,12 @@ static int edt_ft5x06_ts_probe(struct i2
+@@ -1407,11 +1425,12 @@ static int edt_ft5x06_ts_probe(struct i2
  			return error;
  		}
  	} else {
