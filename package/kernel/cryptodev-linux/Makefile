@@ -36,8 +36,9 @@ define KernelPackage/cryptodev
 endef
 
 define KernelPackage/cryptodev/description
-  This is a driver for that allows to use the Linux kernel supported
-  hardware ciphers by user-space applications.
+  This driver allows use of the Linux kernel supported hardware-based
+  cryptographic and hash accelerators by user-space applications,
+  via a "/dev/crypto" device.
 endef
 
 define Build/Configure
