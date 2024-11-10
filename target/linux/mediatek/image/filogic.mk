@@ -375,8 +375,8 @@ endif
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_COMPAT_VERSION := 1.2
-  DEVICE_COMPAT_MESSAGE := SPI-NAND flash layout changes require bootloader update
+  DEVICE_COMPAT_VERSION := 1.3
+  DEVICE_COMPAT_MESSAGE := First sfp port renamed from eth1 to sfp1
 endef
 TARGET_DEVICES += bananapi_bpi-r3
 
