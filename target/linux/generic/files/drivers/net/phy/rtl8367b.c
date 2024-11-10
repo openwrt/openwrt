@@ -1633,7 +1633,6 @@ MODULE_DEVICE_TABLE(of, rtl8367b_match);
 static struct platform_driver rtl8367b_driver = {
 	.driver = {
 		.name		= RTL8367B_DRIVER_NAME,
-		.owner		= THIS_MODULE,
 #ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(rtl8367b_match),
 #endif

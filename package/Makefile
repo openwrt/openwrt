@@ -98,7 +98,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(curdir)/merge-index
 ifneq ($(CONFIG_USE_APK),)
 	$(file >$(TMP_DIR)/apk_install_list,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
-	$(call apk,$(TARGET_DIR)) add --initdb --no-scripts --arch $(ARCH_PACKAGES) \
+	$(call apk,$(TARGET_DIR)) add --no-cache --initdb --no-scripts --arch $(ARCH_PACKAGES) \
 		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$$(cat $(TMP_DIR)/apk_install_list)
 else
@@ -130,7 +130,7 @@ ifneq ($(CONFIG_USE_APK),)
 			--keys-dir $(TOPDIR) \
 			--sign $(BUILD_KEY_APK_SEC) \
 			--output packages.adb \
-			$$(ls *.apk | grep -v 'kernel\|libc'); \
+			$$(ls *.apk | grep -v 'base-files-\|kernel-\|libc-'); \
 	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \

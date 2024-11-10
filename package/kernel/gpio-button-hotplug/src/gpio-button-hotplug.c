@@ -693,7 +693,6 @@ static struct platform_driver gpio_keys_driver = {
 	.remove	= gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys",
-		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(gpio_keys_of_match),
 	},
 };
@@ -703,7 +702,6 @@ static struct platform_driver gpio_keys_polled_driver = {
 	.remove	= gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys-polled",
-		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(gpio_keys_polled_of_match),
 	},
 };

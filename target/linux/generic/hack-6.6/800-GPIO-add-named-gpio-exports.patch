@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1129,3 +1131,74 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -1129,3 +1131,73 @@ void of_gpiochip_remove(struct gpio_chip
  {
  	of_node_put(dev_of_node(&chip->gpiodev->dev));
  }
@@ -81,7 +81,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static struct platform_driver gpio_export_driver = {
 +	.driver		= {
 +		.name		= "gpio-export",
-+		.owner	= THIS_MODULE,
 +		.of_match_table	= of_match_ptr(gpio_export_ids),
 +	},
 +	.probe		= of_gpio_export_probe,
