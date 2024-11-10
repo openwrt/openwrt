@@ -9,7 +9,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
 
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -46,7 +46,7 @@ EXTRA_LTLIBRARIES	=
+@@ -43,7 +43,7 @@ EXTRA_LTLIBRARIES	=
  # Using 'cd' in backquotes may print the directory name, use this instead:
  lt__cd		= CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
  
@@ -18,7 +18,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  rebuild = rebuild=:; revision=`$(lt__cd) $(srcdir) && $(git_version_gen) | $(SED) 's|-.*$$||'`
  
  
-@@ -306,7 +306,7 @@ libtool: $(ltmain_sh) $(config_status) $
+@@ -303,7 +303,7 @@ libtool: $(ltmain_sh) $(config_status) $
  	  if test 0 = '$(AM_DEFAULT_VERBOSITY)' && test 1 != '$(V)'; \
  	    then echo "  GEN     " $@; \
  	  else echo '$(SHELL) $(top_builddir)/config.status "$@"'; fi; \
