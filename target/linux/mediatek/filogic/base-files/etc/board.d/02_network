@@ -132,6 +132,10 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	acer,predator-w6)
+		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
+		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
+		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
