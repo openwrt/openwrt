@@ -152,7 +152,7 @@ TARGET_DEVICES += acelink_ew-7886cax
 
 define Device/acer_predator-w6
   DEVICE_VENDOR := Acer
-  DEVICE_MODEL := Predator W6
+  DEVICE_MODEL := Predator Connect W6
   DEVICE_DTS := mt7986a-acer-predator-w6
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
