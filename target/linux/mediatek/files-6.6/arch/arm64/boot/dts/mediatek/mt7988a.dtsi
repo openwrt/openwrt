@@ -1491,7 +1491,8 @@
 				 <&topckgen CLK_TOP_NETSYS_PAO_2X_SEL>,
 				 <&topckgen CLK_TOP_NETSYS_SYNC_250M_SEL>,
 				 <&topckgen CLK_TOP_NETSYS_PPEFB_250M_SEL>,
-				 <&topckgen CLK_TOP_NETSYS_WARP_SEL>;
+				 <&topckgen CLK_TOP_NETSYS_WARP_SEL>,
+				 <&topckgen CLK_TOP_MACSEC_SEL>;
 			clock-names = "xgp1", "xgp2", "xgp3", "fe", "gp2", "gp1",
 				      "gp3", "esw", "crypto",
 				      "ethwarp_wocpu2", "ethwarp_wocpu1",
@@ -1502,19 +1503,22 @@
 				      "top_netsys_500m_sel", "top_netsys_pao_2x_sel",
 				      "top_netsys_sync_250m_sel",
 				      "top_netsys_ppefb_250m_sel",
-				      "top_netsys_warp_sel";
+				      "top_netsys_warp_sel",
+				      "top_macsec_sel";
 			assigned-clocks = <&topckgen CLK_TOP_NETSYS_2X_SEL>,
 					  <&topckgen CLK_TOP_NETSYS_GSW_SEL>,
 					  <&topckgen CLK_TOP_USXGMII_SBUS_0_SEL>,
 					  <&topckgen CLK_TOP_USXGMII_SBUS_1_SEL>,
 					  <&topckgen CLK_TOP_SGM_0_SEL>,
-					  <&topckgen CLK_TOP_SGM_1_SEL>;
+					  <&topckgen CLK_TOP_SGM_1_SEL>,
+					  <&topckgen CLK_TOP_MACSEC_SEL>;
 			assigned-clock-parents = <&apmixedsys CLK_APMIXED_NET2PLL>,
 						 <&topckgen CLK_TOP_NET1PLL_D4>,
 						 <&topckgen CLK_TOP_NET1PLL_D8_D4>,
 						 <&topckgen CLK_TOP_NET1PLL_D8_D4>,
 						 <&apmixedsys CLK_APMIXED_SGMPLL>,
-						 <&apmixedsys CLK_APMIXED_SGMPLL>;
+						 <&apmixedsys CLK_APMIXED_SGMPLL>,
+						 <&topckgen CLK_TOP_NET2PLL_D2>;
 			mediatek,ethsys = <&ethsys>;
 			mediatek,infracfg = <&topmisc>;
 			mediatek,wed = <&wed0>, <&wed1>, <&wed2>;
