@@ -1158,6 +1158,14 @@ define Device/zbtlink_zbt-we1226
 endef
 TARGET_DEVICES += zbtlink_zbt-we1226
 
+define Device/zbtlink_zbt-we2426-b
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WE2426-B
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += zbtlink_zbt-we2426-b
+
 define Device/zyxel_keenetic-extra-ii
   IMAGE_SIZE := 29824k
   DEVICE_VENDOR := Zyxel

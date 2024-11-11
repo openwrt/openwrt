@@ -148,7 +148,8 @@ ramips_setup_interfaces()
 	netgear,r6020|\
 	netgear,r6080|\
 	netgear,r6120|\
-	wavlink,wl-wn531a3)
+	wavlink,wl-wn531a3|\
+	zbtlink,zbt-we2426-b)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
@@ -244,7 +245,8 @@ ramips_setup_macs()
 	hilink,hlk-7688a|\
 	wavlink,wl-wn531a3|\
 	wavlink,wl-wn577a2|\
-	wavlink,wl-wn578a2)
+	wavlink,wl-wn578a2|\
+	zbtlink,zbt-we2426-b)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
