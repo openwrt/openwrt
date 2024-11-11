@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
 PKG_VERSION:=15.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
@@ -37,7 +37,7 @@ $(call Package/gdb/Default)
 endef
 
 define Package/gdb/description
-GDB, the GNU Project debugger, allows you to see what is going on `inside'
+GDB, the GNU Project debugger, allows you to see what is going on 'inside'
 another program while it executes -- or what another program was doing at the
 moment it crashed.
 endef
