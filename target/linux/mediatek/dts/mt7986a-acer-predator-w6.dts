@@ -4,107 +4,143 @@
 #include "mt7986a-acer-w6-common.dtsi"
 
 / {
-	model = "Acer Predator W6";
+	model = "Acer Predator Connect W6";
 	compatible = "acer,predator-w6", "mediatek,mt7986a";
 
 	aliases {
 		serial0 = &uart0;
-		led-boot = &led_status;
-		led-failsafe = &led_status;
-		led-running = &led_status;
-		led-upgrade = &led_status;
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		led_status: led-0 {
-			label = "ant0:red";
+		led_status_red: led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
 			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		led-1 {
-			label = "ant0:green";
+		led_status_green: led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 		};
 
-		led-2 {
-			label = "ant0:blue";
+		led_status_blue: led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
 			gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-3 {
-			label = "ant1:red";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
 			gpios = <&pio 35 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-4 {
-			label = "ant1:green";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
 			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-5 {
-			label = "ant1:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
 			gpios = <&pio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-6 {
-			label = "ant2:red";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
 			gpios = <&pio 38 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-7 {
-			label = "ant2:green";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
 			gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-8 {
-			label = "ant2:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
 			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-9 {
-			label = "ant3:red";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
 			gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-10 {
-			label = "ant3:green";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
 			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-11 {
-			label = "ant3:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
 			gpios = <&pio 23 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-12 {
-			label = "ant4:red";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
 			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-13 {
-			label = "ant4:green";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
 			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-14 {
-			label = "ant4:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
 			gpios = <&pio 32 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-15 {
-			label = "ant5:red";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
 			gpios = <&pio 45 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-16 {
-			label = "ant5:green";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
 			gpios = <&pio 44 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-17 {
-			label = "ant5:blue";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
 			gpios = <&pio 43 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -151,7 +187,7 @@
 		reset-assert-us = <10000>;
 		reset-deassert-us = <10000>;
 		/* LED0: nc ; LED1: nc ; LED2: amber ; LED3: green */
-		mxl,led-config = <0x0 0x0 0x370 0x80>;
+		mxl,led-config = <0x0 0x0 0x370 0x380>;
 	};
 };
 
