@@ -34,6 +34,7 @@ endef
 
 ifeq ($(BUILD_VARIANT),rss)
   PKG_MAKE_FLAGS += ENABLE_RSS_SUPPORT=y
+  PKG_MAKE_FLAGS += ENABLE_MULTIPLE_TX_QUEUE=y
 endif
 
 define Build/Compile
