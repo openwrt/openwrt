@@ -90,45 +90,9 @@ else
   endif
 endif
 
-ifneq ($(DUMP),)
-  # Parse generic config that might be set before a .config is generated to modify the
-  # default package configuration
-  # Keep DYNAMIC_DEF_PKG_CONF in sync with toplevel.mk to reflect the same configs
-  DYNAMIC_DEF_PKG_CONF := CONFIG_USE_APK CONFIG_SELINUX CONFIG_SMALL_FLASH CONFIG_SECCOMP
-  $(foreach config, $(DYNAMIC_DEF_PKG_CONF), \
-    $(eval $(config) := $(shell grep "$(config)=y" $(TOPDIR)/.config 2>/dev/null)) \
-  )
-  # The config options that are enabled by default and where other default
-  # packages depends on needs to be set if they are missing in the .config.
-  ifeq ($(shell grep "CONFIG_SECCOMP" $(TOPDIR)/.config 2>/dev/null),)
-    ifeq ($(filter $(BOARD), uml),)
-    ifneq ($(filter $(ARCH), aarch64 arm armeb mips mipsel mips64 mips64el i386 powerpc x86_64),)
-      CONFIG_SECCOMP := y
-    endif
-    endif
-  endif
-endif
-
-ifneq ($(CONFIG_USE_APK),)
-DEFAULT_PACKAGES+=apk-mbedtls
-else
-DEFAULT_PACKAGES+=opkg
-endif
-
-ifneq ($(CONFIG_SELINUX),)
-DEFAULT_PACKAGES+=busybox-selinux procd-selinux
-else
-DEFAULT_PACKAGES+=busybox procd
-endif
-
 # include ujail on systems with enough storage
-ifeq ($(CONFIG_SMALL_FLASH),)
-DEFAULT_PACKAGES+=procd-ujail
-endif
-
-# include seccomp ld-preload hooks if kernel supports it
-ifneq ($(CONFIG_SECCOMP),)
-DEFAULT_PACKAGES+=procd-seccomp
+ifeq ($(filter small_flash,$(FEATURES)),)
+  DEFAULT_PACKAGES+=procd-ujail
 endif
 
 # Add device specific packages (here below to allow device type set from subtarget)

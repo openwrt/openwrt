@@ -56,6 +56,7 @@ define Package/busybox
   $(call Package/busybox/Default)
   CONFLICTS:=busybox-selinux
   VARIANT:=default
+  DEFAULT:=y if !SELINUX
 endef
 
 define Package/busybox-selinux
@@ -64,6 +65,7 @@ define Package/busybox-selinux
   DEPENDS += +libselinux
   VARIANT:=selinux
   PROVIDES:=busybox
+  DEFAULT:=y if SELINUX
 endef
 
 define Package/busybox/description
