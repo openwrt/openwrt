@@ -38,6 +38,155 @@
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	fan: gpio_fan {
+		compatible = "gpio-fan";
+		gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <0    0
+				      4500 1>;
+		#cooling-cells = <2>;
+	};
+
+	thermal-zones {
+		aqr-thermal {
+			polling-delay = <1000>;
+			polling-delay-passive = <0>;
+			thermal-sensors = <&aqr113c>;
+
+			trips {
+				aqr-thermal-low {
+					temperature = <10000>;
+					hysteresis = <5000>;
+					type = "cold";
+				};
+
+				aqr_thermal_active: aqr-thermal-active {
+					temperature = <80000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map1 {
+					trip = <&aqr_thermal_active>;
+					cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		tmp103-thermal {
+			polling-delay = <1000>;
+			polling-delay-passive = <0>;
+			thermal-sensors = <&tmp103>;
+
+			trips {
+				tmp103-thermal-low {
+					temperature = <10000>;
+					hysteresis = <5000>;
+					type = "cold";
+				};
+
+				tmp103_thermal_active: tmp103-thermal-active {
+					temperature = <80000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map1 {
+					trip = <&tmp103_thermal_active>;
+					cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+};
+
+&cpu0_thermal {
+	trips {
+		cpu0_active: cpu0-active {
+			temperature = <85000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map1 {
+			trip = <&cpu0_active>;
+			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu1_thermal {
+	trips {
+		cpu1_active: cpu1-active {
+			temperature = <85000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map1 {
+			trip = <&cpu1_active>;
+			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu2_thermal {
+	trips {
+		cpu2_active: cpu2-active {
+			temperature = <85000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map1 {
+			trip = <&cpu2_active>;
+			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cpu3_thermal {
+	trips {
+		cpu3_active: cpu3-active {
+			temperature = <85000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map1 {
+			trip = <&cpu3_active>;
+			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
+};
+
+&cluster_thermal {
+	trips {
+		cluster_active: cluster-active {
+			temperature = <85000>;
+			hysteresis = <5000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map1 {
+			trip = <&cluster_active>;
+			cooling-device = <&fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+		};
+	};
 };
 
 &tlmm {
@@ -309,6 +458,8 @@
 
 		nvmem-cells = <&aqr_fw>;
 		nvmem-cell-names = "firmware";
+
+		#thermal-sensor-cells = <0>;
 	};
 };
 
@@ -415,9 +566,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	tmp103@70 {
+	tmp103: tmp103@70 {
 		compatible = "ti,tmp103";
 		reg = <0x70>;
+
+		#thermal-sensor-cells = <0>;
 	};
 };
 
