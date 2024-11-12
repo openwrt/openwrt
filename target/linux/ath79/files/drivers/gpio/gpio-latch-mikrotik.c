@@ -168,7 +168,6 @@ static struct platform_driver gpio_latch_driver = {
 	.probe = gpio_latch_probe,
 	.driver = {
 		.name = GPIO_LATCH_DRIVER_NAME,
-		.owner = THIS_MODULE,
 		.of_match_table = gpio_latch_match,
 	},
 };

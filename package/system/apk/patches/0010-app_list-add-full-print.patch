@@ -1,0 +1,91 @@
+From f74ca42e0fa5bf131644a46d8259edd493bf072c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 23 Oct 2024 01:11:01 +0200
+Subject: [PATCH] app_list: add full print
+
+Add full print variant to dump info about each package.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ src/app_list.c | 42 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 41 insertions(+), 1 deletion(-)
+
+--- a/src/app_list.c
++++ b/src/app_list.c
+@@ -27,6 +27,7 @@ struct list_ctx {
+ 	unsigned int match_depends : 1;
+ 	unsigned int match_providers : 1;
+ 	unsigned int manifest : 1;
++	unsigned int full : 1;
+ 
+ 	struct apk_string_array *filters;
+ };
+@@ -118,6 +119,40 @@ static void print_manifest(const struct
+ 	printf("%s " BLOB_FMT "\n", pkg->name->name, BLOB_PRINTF(*pkg->version));
+ }
+ 
++static void print_full(const struct apk_package *pkg, const struct list_ctx *ctx)
++{
++	struct apk_dependency *d;
++
++	printf("Package: %s\n", pkg->name->name);
++	printf("Version: " BLOB_FMT "\n", BLOB_PRINTF(*pkg->version));
++	if (apk_array_len(pkg->depends)) {
++		int i = 0;
++
++		printf("Depends: ");
++		foreach_array_item(d, pkg->depends) {
++			i++;
++			printf("%s%s", d->name->name, i < apk_array_len(pkg->depends) ? ", ": "\n");
++		}
++	}
++	if (apk_array_len(pkg->provides)) {
++		int i = 0;
++
++		printf("Provides: ");
++		foreach_array_item(d, pkg->provides) {
++			i++;
++			printf("%s%s", d->name->name, i < apk_array_len(pkg->provides) ? ", ": "\n");
++		}
++	}
++	if (pkg->ipkg && ctx->installed)
++		printf("Status: install ok %s\n", pkg->marked ? "hold" : "installed");
++	if (pkg->description)
++		printf("Description: " BLOB_FMT "\n", BLOB_PRINTF(*pkg->description));
++	printf("License: " BLOB_FMT "\n", BLOB_PRINTF(*pkg->license));
++	printf("Installed-Size: %zu\n", pkg->installed_size);
++	printf("Size: %zu\n", pkg->size);
++	printf("\n");
++}
++
+ static void filter_package(const struct apk_database *db, const struct apk_package *pkg, const struct list_ctx *ctx, const struct apk_name *name)
+ {
+ 	if (ctx->match_origin && !origin_matches(ctx, pkg))
+@@ -138,7 +173,9 @@ static void filter_package(const struct
+ 	if (ctx->match_providers)
+ 		printf("<%s> ", name->name);
+ 
+-	if (ctx->manifest)
++	if (ctx->full)
++		print_full(pkg, ctx);
++	else if (ctx->manifest)
+ 		print_manifest(pkg, ctx);
+ 	else
+ 		print_package(db, pkg, ctx);
+@@ -178,6 +215,7 @@ static int print_result(struct apk_datab
+ 	OPT(OPT_LIST_depends,		APK_OPT_SH("d") "depends") \
+ 	OPT(OPT_LIST_installed,		APK_OPT_SH("I") "installed") \
+ 	OPT(OPT_LIST_manifest,		"manifest") \
++	OPT(OPT_LIST_full,		"full") \
+ 	OPT(OPT_LIST_origin,		APK_OPT_SH("o") "origin") \
+ 	OPT(OPT_LIST_orphaned,		APK_OPT_SH("O") "orphaned") \
+ 	OPT(OPT_LIST_providers,		APK_OPT_SH("P") "providers") \
+@@ -191,6 +229,8 @@ static int option_parse_applet(void *pct
+ 	struct list_ctx *ctx = pctx;
+ 
+ 	switch (opt) {
++	case OPT_LIST_full:
++		ctx->full = 1;
+ 	case OPT_LIST_available:
+ 		ctx->available = 1;
+ 		ctx->orphaned = 0;

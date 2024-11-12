@@ -71,6 +71,7 @@ menu "Global build settings"
 	config USE_APK
 		imply PACKAGE_apk-mbedtls
 		bool "Use APK instead of OPKG to build distribution (EXPERIMENTAL)"
+		default y
 
 	comment "General build options"
 
@@ -295,12 +296,22 @@ menu "Global build settings"
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
 		config PKG_CC_STACKPROTECTOR_NONE
 			bool "None"
+			help
+				No stack smashing protection.
 		config PKG_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
+			help
+				Protects functions with vulnerable objects.
+				This includes functions with buffers larger than 8 bytes or calls to alloca.
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
+			help
+				Like Regular, but also protects functions with
+				local arrays or references to local frame addresses.
 		config PKG_CC_STACKPROTECTOR_ALL
 			bool "All"
+			help
+				Protects all functions.
 	endchoice
 
 	choice
@@ -310,10 +321,18 @@ menu "Global build settings"
 		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
 		config KERNEL_CC_STACKPROTECTOR_NONE
 			bool "None"
+			help
+				No stack smashing protection.
 		config KERNEL_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
+			help
+				Protects functions with vulnerable objects.
+				This includes functions with buffers larger than 8 bytes or calls to alloca.
 		config KERNEL_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
+			help
+				Like Regular, but also protects functions with
+				local arrays or references to local frame addresses.
 	endchoice
 
 	config KERNEL_STACKPROTECTOR

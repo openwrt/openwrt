@@ -23,6 +23,7 @@ BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$
 BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host
 
 PACKAGE_SUFFIX:=$(if $(CONFIG_USE_APK),apk,ipk)
+PACKAGE_VERSION_SEPARATOR:=$(if $(CONFIG_USE_APK),-,_)
 
 all: compile
 
@@ -68,19 +69,16 @@ else
 	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
 endif
 
-ifeq ($(CONFIG_BUILDBOT),)
-  ifeq ($(CONFIG_IB_STANDALONE),)
+ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc*.$(PACKAGE_SUFFIX)' -or -name 'kernel*.$(PACKAGE_SUFFIX)' -or -name 'kmod-*.$(PACKAGE_SUFFIX)' \) \
-		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
-  else
+	  \( \
+		-name 'base-files$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'libc$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'kernel$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' \) \
+	  -exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
+else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages/ {} +
-  endif
-else
-	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc*.$(PACKAGE_SUFFIX)' -or -name 'kernel*.$(PACKAGE_SUFFIX)' \) \
-		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
 ifneq ($(CONFIG_SIGNATURE_CHECK),)

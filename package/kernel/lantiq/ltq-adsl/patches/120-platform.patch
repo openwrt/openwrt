@@ -36,7 +36,7 @@
  }
  
  #ifndef _lint
-@@ -1159,8 +1159,30 @@ module_param(debug_level, byte, 0);
+@@ -1159,8 +1159,29 @@ module_param(debug_level, byte, 0);
  MODULE_PARM_DESC(debug_level, "set to get more (1) or fewer (4) debug outputs");
  #endif /* #ifndef DSL_DEBUG_DISABLE*/
  
@@ -59,7 +59,6 @@
 +	.remove = __devexit_p(ltq_adsl_remove),
 +	.driver = {
 +		.name = "adsl",
-+		.owner = THIS_MODULE,
 +		.of_match_table = ltq_adsl_match,
 +	},
 +};

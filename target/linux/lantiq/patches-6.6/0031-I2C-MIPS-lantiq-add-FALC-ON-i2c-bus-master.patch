@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_MESON)		+= i2c-meson.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.c
-@@ -0,0 +1,746 @@
+@@ -0,0 +1,742 @@
 +
 +/*
 + * Lantiq I2C bus adapter
@@ -658,7 +658,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	init_completion(&priv->cmd_complete);
-+	mutex_init(&priv->mutex);
++	ret = devm_mutex_init(&pdev->dev, &priv->mutex);
++	if (ret)
++		return ret;
 +
 +	priv->membase = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(priv->membase))
@@ -719,7 +721,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	clk_activate(priv->clk_gate);
 +
 +	/* add our adapter to the i2c stack */
-+	ret = i2c_add_numbered_adapter(adap);
++	ret = devm_i2c_add_adapter(&pdev->dev, adap);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't register I2C adapter\n");
 +		goto out;
@@ -737,7 +739,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ret = ltq_i2c_hw_init(adap);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't configure adapter\n");
-+		i2c_del_adapter(adap);
 +		platform_set_drvdata(pdev, NULL);
 +		goto out;
 +	} else {
@@ -762,10 +763,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* power down the core */
 +	clk_deactivate(priv->clk_gate);
 +
-+	/* remove driver */
-+	i2c_del_adapter(&priv->adap);
-+	kfree(priv);
-+
 +	dev_dbg(&pdev->dev, "removed\n");
 +	platform_set_drvdata(pdev, NULL);
 +
@@ -782,7 +779,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.remove	= ltq_i2c_remove,
 +	.driver	= {
 +		.name	= DRV_NAME,
-+		.owner	= THIS_MODULE,
 +		.of_match_table = ltq_i2c_match,
 +	},
 +};

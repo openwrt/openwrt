@@ -182,7 +182,6 @@ static struct platform_driver gpio_rb91x_key_driver = {
 	.probe = gpio_rb91x_key_probe,
 	.driver = {
 		.name = GPIO_RB91X_KEY_DRIVER_NAME,
-		.owner = THIS_MODULE,
 		.of_match_table = gpio_rb91x_key_match,
 	},
 };
