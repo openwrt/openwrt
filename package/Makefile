@@ -131,6 +131,11 @@ ifneq ($(CONFIG_USE_APK),)
 			--sign $(BUILD_KEY_APK_SEC) \
 			--output packages.adb \
 			$$(ls *.apk | grep -v 'base-files-\|kernel-\|libc-'); \
+		echo -n '{"architecture": "$(ARCH_PACKAGES)", "packages":{' > index.json; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump packages.adb | \
+			awk '/- name: / {pkg = $$NF} ; / version: / {printf "\"%s\": \"%s\", ", pkg, $$NF}' | \
+			sed 's/, $$//' >> index.json; \
+		echo '}}' >> index.json; \
 	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
