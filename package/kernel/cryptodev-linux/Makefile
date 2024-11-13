@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/cryptodev
   SUBMENU:=Cryptographic API modules
   TITLE:=Driver for cryptographic acceleration
-  URL:=http://cryptodev-linux.org/
+  URL:=https://github.com/cryptodev-linux/cryptodev-linux
   DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash
   FILES:=$(PKG_BUILD_DIR)/cryptodev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,cryptodev)
@@ -36,8 +36,9 @@ define KernelPackage/cryptodev
 endef
 
 define KernelPackage/cryptodev/description
-  This is a driver for that allows to use the Linux kernel supported
-  hardware ciphers by user-space applications.
+  This driver allows use of the Linux kernel supported hardware-based
+  cryptographic and hash accelerators by user-space applications,
+  via a "/dev/crypto" device.
 endef
 
 define Build/Configure
