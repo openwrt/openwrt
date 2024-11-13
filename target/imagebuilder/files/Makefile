@@ -249,7 +249,7 @@ ifeq ($(CONFIG_USE_APK),)
 else
 	$(if $(CONFIG_SIGNATURE_CHECK), \
 		$(if $(ADD_LOCAL_KEY), \
-			mkdir -p $(TARGET_DIR)/etc/opkg/keys/; \
+			mkdir -p $(TARGET_DIR)/etc/apk/keys/; \
 			cp $(BUILD_KEY_APK_PUB) $(TARGET_DIR)/etc/apk/keys/; \
 		) \
 	)
