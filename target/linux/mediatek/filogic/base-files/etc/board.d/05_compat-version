@@ -11,6 +11,10 @@ case "$(board_name)" in
 	routerich,ax3000)
 		ucidef_set_compat_version "1.1"
 		;;
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-poe)
+		ucidef_set_compat_version "1.1"
+		;;
 esac
 
 board_config_flush
