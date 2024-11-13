@@ -105,6 +105,18 @@ define Package/libfstools-bootparam/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools-bootparam.so $(1)/lib/
 endef
 
+define Package/libfstools-bootparam/install
+	$(INSTALL_DIR) $(1)/lib
+
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools-bootparam.so $(1)/lib/
+endef
+
+define Package/libfstools-bootparam/install
+	$(INSTALL_DIR) $(1)/lib
+
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools-bootparam.so $(1)/lib/
+endef
+
 define Package/fstools/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/lib
 
