@@ -31,6 +31,46 @@ block_dev_path() {
 	return 0
 }
 
+block_dev_path() {
+	local dev_path
+
+	case "$1" in
+	/dev/mmcblk*)
+		dev_path="$1"
+		;;
+	PARTLABEL=* | PARTUUID=*)
+		dev_path=$(blkid -t "$1" -o device)
+		[ -z "${dev_path}" -o $? -ne 0 ] && return 1
+		;;
+	*)
+		return 1;
+		;;
+	esac
+
+	echo "${dev_path}"
+	return 0
+}
+
+block_dev_path() {
+	local dev_path
+
+	case "$1" in
+	/dev/mmcblk*)
+		dev_path="$1"
+		;;
+	PARTLABEL=* | PARTUUID=*)
+		dev_path=$(blkid -t "$1" -o device)
+		[ -z "${dev_path}" -o $? -ne 0 ] && return 1
+		;;
+	*)
+		return 1;
+		;;
+	esac
+
+	echo "${dev_path}"
+	return 0
+}
+
 ubootenv_add_mmc_default() {
 	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
 	ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
