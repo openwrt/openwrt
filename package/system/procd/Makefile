@@ -50,7 +50,6 @@ define Package/procd
   $(call Package/procd/Default)
   VARIANT:=default
   CONFLICTS:=procd-selinux
-  DEFAULT:=y if !SELINUX
 endef
 
 define Package/procd-selinux
@@ -59,7 +58,6 @@ define Package/procd-selinux
   TITLE += with SELinux support
   PROVIDES:=procd
   VARIANT:=selinux
-  DEFAULT:=y if SELINUX
 endef
 
 define Package/procd-ujail
@@ -75,7 +73,6 @@ define Package/procd-seccomp
   CATEGORY:=Base system
   DEPENDS:=@SECCOMP +libubox +libblobmsg-json
   TITLE:=OpenWrt process seccomp helper + utrace
-  DEFAULT:=y if SECCOMP
 endef
 
 define Package/uxc
