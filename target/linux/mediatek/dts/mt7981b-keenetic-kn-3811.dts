@@ -1,0 +1,368 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+
+#include "mt7981.dtsi"
+
+/ {
+	model = "Keenetic KN-3811";
+	compatible = "keenetic,kn-3811", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-running = &power_led;
+		led-upgrade = &power_led;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-fn {
+			label = "fn";
+			linux,code = <BTN_0>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		/* fn led reassigned to wlan 2.4 */
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		power_led: led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&firmware1 &storage1 &firmware2 &storage2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x600000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x600000 0x0>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_4 0>;
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+		label = "wan";
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_a 0>;
+	};
+};
+
+&mdio_bus {
+	switch: switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <0x1f>;
+		reset-gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&pio>;
+		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	/* Winbond W25N02KV (256M) */
+	spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* bl2 */
+			partition@0 {
+				label = "preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			/* fip */
+			partition@80000 {
+				label = "u-boot";
+				reg = <0x80000 0x200000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "u-config";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "rf-eeprom";
+				reg = <0x300000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					/* lan mac */
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					/* wan mac */
+					macaddr_factory_a: macaddr@a {
+						compatible = "mac-base";
+						reg = <0xa 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			firmware1: partition@500000 {
+				label = "firmware_1";
+				reg = <0x500000 0x3a00000>;
+			};
+
+			partition@3f00000 {
+				label = "config_1";
+				reg = <0x3f00000 0x80000>;
+				read-only;
+			};
+
+			partition@3f80000 {
+				label = "dump";
+				reg = <0x3f80000 0x80000>;
+				read-only;
+			};
+
+			storage1: partition@4000000 {
+				label = "storage_a";
+				reg = <0x4000000 0x3800000>;
+			};
+
+			partition@7800000 {
+				label = "u-state";
+				reg = <0x7800000 0x20000>;
+				read-only;
+			};
+
+			partition@7a80000 {
+				label = "u-config_res";
+				reg = <0x7a80000 0x80000>;
+				read-only;
+			};
+
+			partition@7b00000 {
+				label = "rf-eeprom_res";
+				reg = <0x7b00000 0x200000>;
+				read-only;
+			};
+
+			firmware2: partition@7d00000 {
+				label = "firmware_2";
+				reg = <0x7d00000 0x3a00000>;
+			};
+
+			partition@b700000 {
+				label = "config_2";
+				reg = <0xb700000 0x80000>;
+				read-only;
+			};
+
+			storage2: partition@b780000 {
+				label = "storage_b";
+				reg = <0xb780000 0x3880000>;
+			};
+		};
+	};
+};
+
+&wifi {
+	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
