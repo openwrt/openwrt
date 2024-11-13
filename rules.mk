@@ -20,6 +20,11 @@ endif
 export TMP_DIR:=$(TOPDIR)/tmp
 export TMPDIR:=$(TMP_DIR)
 
+##@
+# @brief Strip quotes `"` and pounds `#` from string.
+#
+# @param 1: String.
+##
 qstrip=$(strip $(subst ",,$(1)))
 #"))
 
@@ -27,8 +32,23 @@ empty:=
 space:= $(empty) $(empty)
 comma:=,
 pound:=\#
+##@
+# @brief Merge strings by removing spaces.
+#
+# @param 1: String.
+##
 merge=$(subst $(space),,$(1))
+##@
+# @brief Get hash sum of variable list.
+#
+# @param 1: List of variable names.
+##
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(MKHASH) md5)
+##@
+# @brief Strip last extension from file name.
+#
+# @param 1: File name.
+##
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
 paren_left = (
@@ -51,9 +71,18 @@ __tr_head = $(subst $(paren_left)subst,$(paren_left)subst$(space),$(__tr_head_st
 __tr_tail = $(subst $(space),,$(foreach cv,$(1),$(paren_right)))
 __tr_template = $(__tr_head)$$(1)$(__tr_tail)
 
+##@
+# @brief Convert string characters to upper.
+##
 $(eval toupper = $(call __tr_template,$(chars_lower),$(chars_upper)))
+##@
+# @brief Convert string characters to lower.
+##
 $(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
 
+##@
+# @brief Abbreviate version. Truncate to 8 characters.
+##
 version_abbrev = $(if $(if $(CHECK),,$(DUMP)),$(1),$(shell printf '%.8s' $(1)))
 
 _SINGLE=export MAKEFLAGS=$(space);
@@ -102,6 +131,13 @@ endif
 
 DEFAULT_SUBDIR_TARGETS:=clean download prepare compile update refresh prereq dist distcheck configure check check-depends
 
+##@
+# @brief Create default targets.
+#
+# Targets are created from @DEFAULT_SUBDIR_TARGETS and input argument lists.
+#
+# @param 1: Additional targets list.
+##
 define DefaultTargets
 $(foreach t,$(DEFAULT_SUBDIR_TARGETS) $(1),
   .$(t):
@@ -371,16 +407,28 @@ export BISON_PKGDATADIR:=$(STAGING_DIR_HOST)/share/bison
 export HOST_GNULIB_SRCDIR:=$(STAGING_DIR_HOST)/share/gnulib
 export M4:=$(STAGING_DIR_HOST)/bin/m4
 
+##@
+# @brief Slugify variable name and prepend suffix.
+##
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 endef
 
+##@
+# @brief Create and export variable, set to function result.
+#
+# @param 1: Function name. Used as variable name, prepended with `V_`.
+##
 define shexport
 export $(call shvar,$(1))=$$(call $(1))
 endef
 
+##@
+# @brief Support 64 bit tine in C code.
+#
 # Test support for 64-bit time with C code from largefile.m4 provided by GNU Gnulib
-# the value is 'y' when successful and '' otherwise
+# the value is `y` when successful and `` otherwise
+##
 define YEAR_2038
 $(shell \
   mkdir -p $(TMP_DIR); \
@@ -392,9 +440,12 @@ $(shell \
 )
 endef
 
-# Execute commands under flock
-# $(1) => The shell expression.
-# $(2) => The lock name. If not given, the global lock will be used.
+##@
+# @brief Execute commands under flock
+#
+# @param 1: The shell expression.
+# @param 2: The lock name. If not given, the global lock will be used.
+##
 ifneq ($(wildcard $(STAGING_DIR_HOST)/bin/flock),)
   define locked
 	SHELL= \
@@ -406,10 +457,14 @@ else
   locked=$(1)
 endif
 
-# Recursively copy paths into another directory, purge dangling
+
+##@
+# @brief Recursively copy paths into another directory, purge dangling
 # symlinks before.
-# $(1) => File glob expression
-# $(2) => Destination directory
+#
+# @param 1: File glob expression.
+# @param 1: Destination directory.
+##
 define file_copy
 	for src_dir in $(sort $(foreach d,$(wildcard $(1)),$(dir $(d)))); do \
 		( cd $$src_dir; find -type f -or -type d ) | \
@@ -424,19 +479,30 @@ define file_copy
 	$(CP) $(1) $(2)
 endef
 
-# Calculate sha256sum of any plain file within a given directory
-# $(1) => Input directory
-# $(2) => If set, recurse into subdirectories
+##@
+# @brief Calculate sha256sum of any plain file within a given directory.
+#
+# @param 1: Input directory.
+# @param 2: If set, recurse into subdirectories.
+##
 define sha256sums
 	(cd $(1); find . $(if $(2),,-maxdepth 1) -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
 		xargs -r $(MKHASH) -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
-# file extension
+##@
+# @brief Retrieve file extension.
+#
+# @param 1: File name.
+##
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
-# Count Git commits of a package
-# $(1) => if non-empty: count commits since last ": [uU]pdate to " or ": [bB]ump to " in commit message
+##@
+# @brief Count Git commits of a package.
+#
+# @param 1: if non-empty: count commits since last ": [uU]pdate to "
+#           or ": [bB]ump to " in commit message.
+##
 define commitcount
 $(shell \
   if git log -1 >/dev/null 2>/dev/null; then \
@@ -458,6 +524,11 @@ $(shell \
 )
 endef
 
+##@
+# @brief Get ABI version string, stripping `-`, `_` and `.`.
+#
+# @param 1: Version string.
+##
 abi_version_str = $(subst -,,$(subst _,,$(subst .,,$(1))))
 
 COMMITCOUNT = $(if $(DUMP),0,$(call commitcount))
