@@ -68,9 +68,6 @@ MESON_ARGS += \
 	$(MESON_COMMON_ARGS) \
 	-Dcrypto_backend=$(BUILD_VARIANT)
 
-HOST_LDFLAGS += \
-	-Wl,-rpath $(STAGING_DIR_HOST)/lib
-
 define Package/apk/default/install
 	$(INSTALL_DIR) $(1)/lib/apk/db
 
