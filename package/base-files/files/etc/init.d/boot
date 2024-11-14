@@ -24,6 +24,8 @@ boot() {
 	chmod 1777 /var/lock
 	mkdir -p /var/log
 	mkdir -p /var/run
+	ln -s /var/run /run
+	ln -s /var/lock /run/lock
 	mkdir -p /var/state
 	mkdir -p /var/tmp
 	mkdir -p /tmp/.uci
