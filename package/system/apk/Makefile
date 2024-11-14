@@ -55,6 +55,7 @@ MESON_VARS+=VERSION=$(PKG_VERSION)
 MESON_COMMON_ARGS = \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
+	-Dhelp=enabled \
 	-Dlua_version=5.1 \
 	-Durl_backend=wget \
 	-Dzstd=false
