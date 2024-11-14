@@ -138,6 +138,11 @@ _call_info: FORCE
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
 
+ifneq ($(CONFIG_USE_APK),)
+  DEFAULT_PACKAGES += apk-mbedtls
+else
+  DEFAULT_PACKAGES += opkg
+endif
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
@@ -244,7 +249,7 @@ ifeq ($(CONFIG_USE_APK),)
 else
 	$(if $(CONFIG_SIGNATURE_CHECK), \
 		$(if $(ADD_LOCAL_KEY), \
-			mkdir -p $(TARGET_DIR)/etc/opkg/keys/; \
+			mkdir -p $(TARGET_DIR)/etc/apk/keys/; \
 			cp $(BUILD_KEY_APK_PUB) $(TARGET_DIR)/etc/apk/keys/; \
 		) \
 	)
