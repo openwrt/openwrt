@@ -1,0 +1,406 @@
+From 57d0f608d925cb688b5c9b71512fca7d228f07f6 Mon Sep 17 00:00:00 2001
+From: Enrico Mioso <mrkiko.rs@gmail.com>
+Date: Wed, 23 Oct 2024 20:39:28 +0200
+Subject: [PATCH] add GatoNetworks GDSP
+
+Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
+---
+ arch/arm/dts/mt7981-gatonetworks_gdsp.dts  | 200 +++++++++++++++++++++
+ configs/mt7981_gatonetworks_gdsp_defconfig | 144 +++++++++++++++
+ gatonetworks_gdsp_env                      |  38 ++++
+ 3 files changed, 382 insertions(+)
+ create mode 100644 arch/arm/dts/mt7981-gatonetworks_gdsp.dts
+ create mode 100644 configs/mt7981_gatonetworks_gdsp_defconfig
+ create mode 100644 gatonetworks_gdsp_env
+
+--- /dev/null
++++ b/arch/arm/dts/mt7981-gatonetworks_gdsp.dts
+@@ -0,0 +1,200 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++#include "mt7981.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "GatoNetworks GDSP";
++	compatible = "gatonetworks,gdsp", "mediatek,mt7981";
++  chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++  };
++
++	memory {
++		device_type = "memory";
++		reg = <0x40000000 0x10000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		sim1 {
++			label = "sim1";
++			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++		};
++
++		sim2 {
++			label = "sim2";
++			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++		};
++
++		sg1 {
++			label = "sg1";
++			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++		};
++
++		sg2 {
++			label = "sg2";
++			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
++		};
++
++		sg3 {
++			label = "sg3";
++			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
++		};
++
++		sg4 {
++			label = "sg4";
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++		};
++
++		sg5 {
++			label = "sg5";
++			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++		};
++
++		sg6 {
++			label = "sg6";
++			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++		};
++	};
++	gpio-watchdog {
++		compatible = "linux,wdt-gpio";
++		gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
++		hw_algo = "toggle";
++		hw_margin_ms = <25000>;
++		always-running;
++		u-boot,autostart;
++	};
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "2500base-x";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <2500>;
++		full-duplex;
++	};
++};
++
++&spi2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi2_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@00000 {
++				label = "BL2";
++				reg = <0x00000 0x0040000>;
++				read-only;
++			};
++
++			partition@40000 {
++				label = "u-boot-env";
++				reg = <0x40000 0x0010000>;
++			};
++
++			partition@50000 {
++				label = "Factory";
++				reg = <0x50000 0x00B0000>;
++				read-only;
++			};
++
++			partition@100000 {
++				label = "FIP";
++				reg = <0x100000 0x0080000>;
++			};
++
++			partition@180000 {
++				label = "firmware";
++				reg = <0x180000 0x1E80000>;
++			};
++		};
++	};
++};
++
++&pinctrl {
++	uart1_pins: uart1-pins {
++		mux {
++			function = "uart";
++			groups = "uart1_0";
++		};
++	};
++
++	uart2_pins: uart2-pins {
++		mux {
++			function = "uart";
++			groups = "uart2_0_tx_rx";
++		};
++	};
++
++	spi2_flash_pins: spi2-pins {
++		mux {
++			function = "spi";
++			groups = "spi2", "spi2_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "okay";
++};
++
++&uart2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart2_pins>;
++	status = "okay";
++};
+--- /dev/null
++++ b/configs/mt7981_gatonetworks_gdsp_defconfig
+@@ -0,0 +1,144 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x0
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-gatonetworks_gdsp"
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_TARGET_MT7981=y
++CONFIG_WATCHDOG_TIMEOUT_MSECS=25000
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_SPI_BOOT=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_USE_PREBOOT=y
++CONFIG_DEFAULT_FDT_FILE="mt7981-gatonetworks_gdsp"
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=1049
++CONFIG_LOGLEVEL=7
++CONFIG_CONSOLE_MUX=y
++CONFIG_LOG=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="GDSP> "
++CONFIG_SYS_MAXARGS=16
++CONFIG_CMD_BDINFO_EXTRA=y
++CONFIG_CMD_CPU=y
++CONFIG_CMD_HISTORY=y
++CONFIG_CMD_LICENSE=y
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_BOOTEFI_BOOTMGR is not set
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_CALLBACK=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CRC32_VERIFY=y
++CONFIG_LOOPW=y
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_STRINGS=y
++# CONFIG_CMD_UNLZ4 is not set
++# CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_GPIO_READ=y
++CONFIG_CMD_PWM=y
++CONFIG_CMD_MTD=y
++# CONFIG_CMD_NAND_EXT is not set
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_CAT=y
++CONFIG_CMD_SETEXPR_FMT=y
++CONFIG_CMD_XXD=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_TFTPPUT=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_CACHE=y
++# CONFIG_CMD_EFICONFIG is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_UUID=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_FS_UUID=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_MTD_NAME="u-boot-env"
++CONFIG_ENV_SIZE_REDUND=0x0
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="gatonetworks_gdsp_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_VERSION_VARIABLE=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_NETCONSOLE=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_GPIO_HOG=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++# CONFIG_MMC is not set
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_UBI_SILENCE_MSG=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PHY=y
++CONFIG_PHY_MTK_TPHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_MTK=y
++CONFIG_USB_STORAGE=y
++CONFIG_WDT=y
++CONFIG_WDT_GPIO=y
++CONFIG_UBIFS_SILENCE_MSG=y
++CONFIG_HEXDUMP=y
++CONFIG_LMB_MAX_REGIONS=64
+--- /dev/null
++++ b/gatonetworks_gdsp_env
+@@ -0,0 +1,38 @@
++load_factory_data=if env exists factory_data_present ; then else mtd read Factory $loadaddr 0x0 0x1000 ; setenv factory_data_present 1 ; fi
++lan_mac_factory=run load_factory_data ; setexpr macoffs $loadaddr + 0x2a ; env readmem -b lan_mac $macoffs 0x6 ; setenv lan_mac_factory ; setenv macoffs
++wan_mac_factory=run load_factory_data ; setexpr macoffs $loadaddr + 0x24 ; env readmem -b wan_mac $macoffs 0x6 ; setenv wan_mac_factory ; setenv macoffs
++label_mac_factory=run load_factory_data ; setexpr macoffs $loadaddr + 0x4 ; env readmem -b label_mac $macoffs 0x6 ; setenv label_mac_factory ; setenv macoffs
++ethaddr_factory=setenv ethaddr $lan_mac ; setenv ethaddr_factory
++wifi_mac_factory=setenv wifi_mac $label_mac ; setenv wifi_mac_factory
++env_cleanup=setenv load_factory_data ; setenv factory_data_present ; setenv env_cleanup
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++loadaddr=0x46000000
++bootcmd=run boot_nor
++bootdelay=0
++bootfile=openwrt-mediatek-filogic-gatonetworks_gdsp-initramfs-kernel.bin
++bootfile_upg=openwrt-mediatek-filogic-gatonetworks_gdsp-squashfs-sysupgrade.bin
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )[0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot system from flash.=run boot_nor ; run bootmenu_confirm_return
++bootmenu_3=Load system via TFTP then write to flash.=run boot_tftp_sysupgrade ; run bootmenu_confirm_return
++bootmenu_4=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_5=Reboot.=reset
++boot_first=if button reset ; then run boot_tftp ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
++boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_tftp_forever
++boot_nor=mtd read firmware ${loadaddr} ; bootm $loadaddr
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
++boot_tftp_forever=while true ; do run boot_tftp ; sleep 1 ; done
++boot_tftp_sysupgrade=tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && run nor_write_production
++reset_factory=env default -a && saveenv && reset
++nor_pad_size=setexpr image_eb $filesize / 0x1000 ; setexpr tmp1 image_size % 0x1000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x1000
++nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0x1e80000 && mtd erase firmware 0x0 0x$image_eb && mtd write firmware $loadaddr 0x0 $filesize
++_init_env=setenv _init_env ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run lan_mac_factory ; run wan_mac_factory ; run label_mac_factory ; run env_cleanup ; run ethaddr_factory ; run wifi_mac_factory ; run _init_env ; run boot_first
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
