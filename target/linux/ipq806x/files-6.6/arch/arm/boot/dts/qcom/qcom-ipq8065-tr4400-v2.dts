@@ -204,8 +204,8 @@
 					};
 				};
 			};
-			stock_partition@1340000 {
-				label = "stock_rootfs";
+			partition@1340000 {
+				label = "extra";
 				reg = <0x1340000 0x4000000>;
 			};
 			partition@5340000 {
@@ -253,30 +253,10 @@
 				reg = <0x5f00000 0x0500000>;
 				read-only;
 			};
-			stock_partition@6400000 {
-				label = "stock_rootfs_1";
-				reg = <0x6400000 0x4000000>;
-			};
-			stock_partition@a400000 {
-				label = "stock_fw_env";
-				reg = <0xa400000 0x0100000>;
-			};
-			stock_partition@a500000 {
-				label = "stock_config";
-				reg = <0xa500000 0x0800000>;
-			};
-			stock_partition@ad00000 {
-				label = "stock_PKI";
-				reg = <0xad00000 0x0200000>;
-			};
-			stock_partition@af00000 {
-				label = "stock_scfgmgr";
-				reg = <0xaf00000 0x0100000>;
-			};
-
 			partition@6400000 {
 				label = "fw_env";
 				reg = <0x6400000 0x0100000>;
+				read-only;
 
 				nvmem-layout {
 					compatible = "fixed-layout";
@@ -303,10 +283,6 @@
 			partition@6500000 {
 				label = "ubi";
 				reg = <0x6500000 0x9b00000>;
-			};
-			partition@1340000 {
-				label = "extra";
-				reg = <0x1340000 0x4000000>;
 			};
 		};
 	};
