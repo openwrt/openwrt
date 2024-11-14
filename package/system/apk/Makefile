@@ -53,6 +53,7 @@ MESON_HOST_VARS+=VERSION=$(PKG_VERSION)
 MESON_VARS+=VERSION=$(PKG_VERSION)
 
 MESON_HOST_ARGS += \
+	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
 	-Durl_backend=wget \
