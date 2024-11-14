@@ -40,7 +40,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/thermal/thermal_of.c
 +++ b/drivers/thermal/thermal_of.c
-@@ -249,7 +249,7 @@ static void thermal_of_parameters_init(s
+@@ -245,7 +245,7 @@ static void thermal_of_parameters_init(s
  {
  	int coef[2];
  	int ncoef = ARRAY_SIZE(coef);
@@ -49,7 +49,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	tzp->no_hwmon = true;
  
-@@ -261,14 +261,11 @@ static void thermal_of_parameters_init(s
+@@ -257,14 +257,11 @@ static void thermal_of_parameters_init(s
  	 * thermal zone. Thus, we are considering only the first two
  	 * values as slope and offset.
  	 */
@@ -67,7 +67,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static struct device_node *thermal_of_zone_get_by_name(struct thermal_zone_device *tz)
-@@ -462,10 +459,15 @@ static void thermal_of_zone_unregister(s
+@@ -458,10 +455,15 @@ static void thermal_of_zone_unregister(s
   * zone properties and registers new thermal zone with those
   * properties.
   *
@@ -83,7 +83,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
   *
   * Return: a valid thermal zone structure pointer on success.
   * 	- EINVAL: if the device tree thermal description is malformed
-@@ -473,11 +475,11 @@ static void thermal_of_zone_unregister(s
+@@ -469,11 +471,11 @@ static void thermal_of_zone_unregister(s
   *	- Other negative errors are returned by the underlying called functions
   */
  static struct thermal_zone_device *thermal_of_zone_register(struct device_node *sensor, int id, void *data,
@@ -97,7 +97,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct thermal_zone_device_ops *of_ops;
  	struct device_node *np;
  	int delay, pdelay;
-@@ -509,7 +511,7 @@ static struct thermal_zone_device *therm
+@@ -508,7 +510,7 @@ static struct thermal_zone_device *therm
  		goto out_kfree_trips;
  	}
  
@@ -106,7 +106,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	of_ops->bind = thermal_of_bind;
  	of_ops->unbind = thermal_of_unbind;
-@@ -517,7 +519,7 @@ static struct thermal_zone_device *therm
+@@ -516,7 +518,7 @@ static struct thermal_zone_device *therm
  	mask = GENMASK_ULL((ntrips) - 1, 0);
  
  	tz = thermal_zone_device_register_with_trips(np->name, trips, ntrips,
@@ -115,7 +115,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  						     pdelay, delay);
  	if (IS_ERR(tz)) {
  		ret = PTR_ERR(tz);
-@@ -572,6 +574,7 @@ static int devm_thermal_of_zone_match(st
+@@ -571,6 +573,7 @@ static int devm_thermal_of_zone_match(st
  struct thermal_zone_device *devm_thermal_of_zone_register(struct device *dev, int sensor_id, void *data,
  							  const struct thermal_zone_device_ops *ops)
  {
@@ -123,7 +123,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct thermal_zone_device **ptr, *tzd;
  
  	ptr = devres_alloc(devm_thermal_of_zone_release, sizeof(*ptr),
-@@ -579,7 +582,7 @@ struct thermal_zone_device *devm_thermal
+@@ -578,7 +581,7 @@ struct thermal_zone_device *devm_thermal
  	if (!ptr)
  		return ERR_PTR(-ENOMEM);
  
@@ -132,7 +132,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (IS_ERR(tzd)) {
  		devres_free(ptr);
  		return tzd;
-@@ -593,6 +596,46 @@ struct thermal_zone_device *devm_thermal
+@@ -592,6 +595,46 @@ struct thermal_zone_device *devm_thermal
  EXPORT_SYMBOL_GPL(devm_thermal_of_zone_register);
  
  /**
