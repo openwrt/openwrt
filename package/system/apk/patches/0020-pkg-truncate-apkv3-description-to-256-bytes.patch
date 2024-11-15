@@ -1,0 +1,45 @@
+From 417a93ceae540444fdbd3f76d1dadf0e15621fdc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Timo=20Ter=C3=A4s?= <timo.teras@iki.fi>
+Date: Wed, 13 Nov 2024 09:40:21 +0200
+Subject: [PATCH] pkg: truncate apkv3 description to 256 bytes
+
+The code to read/write installeddb does not really handle long
+description well. Until the database is converted to apkv3 format,
+truncate the apkv3 descriptions to allow existing code to work.
+
+APKv3 index and packages still contain the original long description
+unmodified, so no package rebuild will be needed.
+
+fixes #11038
+
+Upstream-Status: Backport [https://gitlab.alpinelinux.org/alpine/apk-tools/-/commit/417a93ceae540444fdbd3f76d1dadf0e15621fdc]
+---
+ src/apk_blob.h | 5 +++++
+ src/package.c  | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/src/apk_blob.h
++++ b/src/apk_blob.h
+@@ -48,6 +48,11 @@ static inline apk_blob_t apk_blob_trim(a
+ 	return b;
+ }
+ 
++static inline apk_blob_t apk_blob_truncate(apk_blob_t blob, int maxlen)
++{
++	return APK_BLOB_PTR_LEN(blob.ptr, min(blob.len, maxlen));
++}
++
+ char *apk_blob_cstr(apk_blob_t str);
+ apk_blob_t apk_blob_dup(apk_blob_t blob);
+ int apk_blob_split(apk_blob_t blob, apk_blob_t split, apk_blob_t *l, apk_blob_t *r);
+--- a/src/package.c
++++ b/src/package.c
+@@ -577,7 +577,7 @@ void apk_pkgtmpl_from_adb(struct apk_dat
+ 
+ 	pkg->name = apk_db_get_name(db, adb_ro_blob(pkginfo, ADBI_PI_NAME));
+ 	pkg->version = apk_atomize_dup(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_VERSION));
+-	pkg->description = apk_atomize_dup0(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_DESCRIPTION));
++	pkg->description = apk_atomize_dup0(&db->atoms, apk_blob_truncate(adb_ro_blob(pkginfo, ADBI_PI_DESCRIPTION), 512));
+ 	pkg->url = apk_atomize_dup(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_URL));
+ 	pkg->license = apk_atomize_dup(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_LICENSE));
+ 	pkg->arch = apk_atomize_dup(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_ARCH));
