@@ -99,7 +99,7 @@ ifneq ($(CONFIG_USE_APK),)
 	$(file >$(TMP_DIR)/apk_install_list,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
 	$(call apk,$(TARGET_DIR)) add --no-cache --initdb --no-scripts --arch $(ARCH_PACKAGES) \
-		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
+		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$$(cat $(TMP_DIR)/apk_install_list)
 else
 	$(file >$(TMP_DIR)/opkg_install_list,\
