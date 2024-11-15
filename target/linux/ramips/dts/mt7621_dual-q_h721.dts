@@ -21,22 +21,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-
-		usb-30-power {
-			gpio-export,name = "usb-30-power";
-			gpio-export,output = <0>;
-			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-		};
-
-		usb-20-power {
-			gpio-export,name = "usb-20-power";
-			gpio-export,output = <0>;
-			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -91,6 +75,27 @@
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	reg_usb_vbus: regulator-usb {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&xhci {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_usb_vbus>;
 };
 
 &spi0 {
