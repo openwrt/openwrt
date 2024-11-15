@@ -24,7 +24,7 @@ Link: https://lore.kernel.org/r/20230320110312.20639-1-quic_ppranees@quicinc.com
 
 --- a/drivers/net/wireless/ath/ath11k/hal_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/hal_rx.c
-@@ -865,6 +865,12 @@ ath11k_hal_rx_populate_mu_user_info(void
+@@ -866,6 +866,12 @@ ath11k_hal_rx_populate_mu_user_info(void
  	ath11k_hal_rx_populate_byte_count(rx_tlv, ppdu_info, rx_user_status);
  }
  
@@ -37,7 +37,7 @@ Link: https://lore.kernel.org/r/20230320110312.20639-1-quic_ppranees@quicinc.com
  static enum hal_rx_mon_status
  ath11k_hal_rx_parse_mon_status_tlv(struct ath11k_base *ab,
  				   struct hal_rx_mon_ppdu_info *ppdu_info,
-@@ -1459,9 +1465,11 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
+@@ -1460,9 +1466,11 @@ ath11k_hal_rx_parse_mon_status_tlv(struc
  		break;
  	}
  	case HAL_RX_MPDU_START: {

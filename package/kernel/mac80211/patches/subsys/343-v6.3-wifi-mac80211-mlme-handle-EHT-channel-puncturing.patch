@@ -62,7 +62,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	bool mu_mimo_owner;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4197,7 +4197,7 @@ static int ieee80211_set_ap_chanwidth(st
+@@ -4199,7 +4199,7 @@ static int ieee80211_set_ap_chanwidth(st
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_link_data *link;
  	int ret;
@@ -84,7 +84,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct ieee80211_bss_conf *link_conf = link->conf;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2499,7 +2499,7 @@ int ieee80211_link_unreserve_chanctx(str
+@@ -2497,7 +2497,7 @@ int ieee80211_link_unreserve_chanctx(str
  int __must_check
  ieee80211_link_change_bandwidth(struct ieee80211_link_data *link,
  				const struct cfg80211_chan_def *chandef,
@@ -255,7 +255,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_sub_if_data *sdata = link->sdata;
  	struct ieee80211_local *local = sdata->local;
-@@ -4140,6 +4275,7 @@ static bool ieee80211_assoc_config_link(
+@@ -4141,6 +4276,7 @@ static bool ieee80211_assoc_config_link(
  							    link_sta);
  
  			bss_conf->eht_support = link_sta->pub->eht_cap.has_eht;
@@ -263,7 +263,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} else {
  			bss_conf->eht_support = false;
  		}
-@@ -5452,6 +5588,45 @@ static bool ieee80211_rx_our_beacon(cons
+@@ -5453,6 +5589,45 @@ static bool ieee80211_rx_our_beacon(cons
  	return ether_addr_equal(tx_bssid, bss->transmitted_bss->bssid);
  }
  
@@ -309,7 +309,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static void ieee80211_rx_mgmt_beacon(struct ieee80211_link_data *link,
  				     struct ieee80211_hdr *hdr, size_t len,
  				     struct ieee80211_rx_status *rx_status)
-@@ -5468,7 +5643,7 @@ static void ieee80211_rx_mgmt_beacon(str
+@@ -5469,7 +5644,7 @@ static void ieee80211_rx_mgmt_beacon(str
  	struct ieee80211_channel *chan;
  	struct link_sta_info *link_sta;
  	struct sta_info *sta;
@@ -318,7 +318,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	bool erp_valid;
  	u8 erp_value = 0;
  	u32 ncrc = 0;
-@@ -5761,6 +5936,21 @@ static void ieee80211_rx_mgmt_beacon(str
+@@ -5762,6 +5937,21 @@ static void ieee80211_rx_mgmt_beacon(str
  					       elems->pwr_constr_elem,
  					       elems->cisco_dtpc_elem);
  
@@ -340,7 +340,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	ieee80211_link_info_change_notify(sdata, link, changed);
  free:
  	kfree(elems);
-@@ -6862,9 +7052,12 @@ ieee80211_setup_assoc_link(struct ieee80
+@@ -6863,9 +7053,12 @@ ieee80211_setup_assoc_link(struct ieee80
  		ieee80211_apply_htcap_overrides(sdata, &sta_ht_cap);
  	}
  
@@ -353,7 +353,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		const struct element *elem;
  		u8 dtim_count = 0;
  
-@@ -6893,6 +7086,31 @@ ieee80211_setup_assoc_link(struct ieee80
+@@ -6894,6 +7087,31 @@ ieee80211_setup_assoc_link(struct ieee80
  			link->conf->ema_ap = true;
  		else
  			link->conf->ema_ap = false;

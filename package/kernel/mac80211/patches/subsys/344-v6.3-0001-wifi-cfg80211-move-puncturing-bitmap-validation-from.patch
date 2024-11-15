@@ -120,7 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			break;
  		link->u.mgd.conn_flags |=
  			ieee80211_chandef_downgrade(chandef);
-@@ -5613,8 +5552,8 @@ static bool ieee80211_config_puncturing(
+@@ -5614,8 +5553,8 @@ static bool ieee80211_config_puncturing(
  	    extracted == link->conf->eht_puncturing)
  		return true;
  
@@ -131,7 +131,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		link_info(link,
  			  "Got an invalid disable subchannel bitmap from AP %pM: bitmap = 0x%x, bw = 0x%x. disconnect\n",
  			  link->u.mgd.bssid,
-@@ -7102,8 +7041,8 @@ ieee80211_setup_assoc_link(struct ieee80
+@@ -7103,8 +7042,8 @@ ieee80211_setup_assoc_link(struct ieee80
  			u16 bitmap;
  
  			bitmap = get_unaligned_le16(disable_subchannel_bitmap);

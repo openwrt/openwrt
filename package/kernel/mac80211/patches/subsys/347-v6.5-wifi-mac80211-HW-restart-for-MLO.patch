@@ -17,7 +17,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -2497,21 +2497,55 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2500,21 +2500,55 @@ int ieee80211_reconfig(struct ieee80211_
  
  	/* Finally also reconfigure all the BSS information */
  	list_for_each_entry(sdata, &local->interfaces, list) {
@@ -77,7 +77,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}
  
  		switch (sdata->vif.type) {
-@@ -2531,42 +2565,42 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2534,42 +2568,42 @@ int ieee80211_reconfig(struct ieee80211_
  					    &sdata->deflink.tx_conf[i]);
  			break;
  		}
@@ -150,7 +150,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			break;
  		case NL80211_IFTYPE_OCB:
  			changed |= BSS_CHANGED_OCB;
-@@ -2601,6 +2635,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2604,6 +2638,7 @@ int ieee80211_reconfig(struct ieee80211_
  		case NL80211_IFTYPE_NAN:
  			res = ieee80211_reconfig_nan(sdata);
  			if (res < 0) {
@@ -158,7 +158,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				ieee80211_handle_reconfig_failure(local);
  				return res;
  			}
-@@ -2618,6 +2653,10 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2621,6 +2656,10 @@ int ieee80211_reconfig(struct ieee80211_
  			WARN_ON(1);
  			break;
  		}
