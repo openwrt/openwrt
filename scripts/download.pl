@@ -33,7 +33,7 @@ my $download_tool;
 $url_filename or $url_filename = $filename;
 
 sub cat {
-	open my $fh, '<', $_[0] or die "Can't open file $!";
+	open my $fh, '<', $1 or die "Can't open file $!";
 	read $fh, my $file_content, -s $fh;
 	return $file_content;
 }
