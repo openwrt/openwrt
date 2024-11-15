@@ -128,7 +128,7 @@
  }
  
 -static int ath11k_dbg_htt_ext_stats_parse(struct ath11k_base *ab,
-+static int ath11k_dbg_htt_ext_stats_parse(struct ath11k *ar,
++static int ath11k_dbg_htt_ext_stats_parse(struct ath11k_base *ab, struct ath11k *ar,
  					  u16 tag, u16 len, const void *tag_buf,
  					  void *user_data)
  {
@@ -137,7 +137,7 @@
  
  	len = FIELD_GET(HTT_T2H_EXT_STATS_INFO1_LENGTH, msg->info1);
 -	ret = ath11k_dp_htt_tlv_iter(ab, msg->data, len,
-+	ret = ath11k_dp_htt_tlv_iter(ar, msg->data, len,
++	ret = ath11k_dp_htt_tlv_iter(ab, ar, msg->data, len,
  				     ath11k_dbg_htt_ext_stats_parse,
  				     stats_req);
  	if (ret)
@@ -253,107 +253,46 @@
  }
  
 -static int ath11k_htt_tlv_ppdu_stats_parse(struct ath11k_base *ab,
-+static int ath11k_htt_tlv_ppdu_stats_parse(struct ath11k *ar,
++static int ath11k_htt_tlv_ppdu_stats_parse(struct ath11k_base *ab, struct ath11k *ar,
  					   u16 tag, u16 len, const void *ptr,
  					   void *data)
  {
-@@ -1441,7 +1441,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
- 	switch (tag) {
- 	case HTT_PPDU_STATS_TAG_COMMON:
- 		if (len < sizeof(struct htt_ppdu_stats_common)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
- 				    len, tag);
- 			return -EINVAL;
- 		}
-@@ -1470,7 +1470,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
- 		break;
- 	case HTT_PPDU_STATS_TAG_USR_RATE:
- 		if (len < sizeof(struct htt_ppdu_stats_user_rate)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
- 				    len, tag);
- 			return -EINVAL;
- 		}
-@@ -1489,7 +1489,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
- 		break;
- 	case HTT_PPDU_STATS_TAG_USR_COMPLTN_COMMON:
- 		if (len < sizeof(struct htt_ppdu_stats_usr_cmpltn_cmn)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
- 				    len, tag);
- 			return -EINVAL;
- 		}
-@@ -1510,7 +1510,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
- 	case HTT_PPDU_STATS_TAG_USR_COMPLTN_ACK_BA_STATUS:
- 		if (len <
- 		    sizeof(struct htt_ppdu_stats_usr_cmpltn_ack_ba_status)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
- 				    len, tag);
- 			return -EINVAL;
- 		}
-@@ -1533,7 +1533,7 @@ static int ath11k_htt_tlv_ppdu_stats_par
- 		break;
- 	case HTT_PPDU_STATS_TAG_USR_COMMON:
- 		if (len < sizeof(struct htt_ppdu_stats_user_common)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
- 				    len, tag);
- 			return -EINVAL;
- 		}
-@@ -1558,23 +1558,22 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1558,10 +1558,9 @@ static int ath11k_htt_tlv_ppdu_stats_par
  	return 0;
  }
  
 -static void ath11k_dp_ppdu_stats_flush_tlv_parse(struct ath11k_base *ab,
-+static void ath11k_dp_ppdu_stats_flush_tlv_parse(struct ath11k *ar,
++static void ath11k_dp_ppdu_stats_flush_tlv_parse(struct ath11k_base *ab, struct ath11k *ar,
  					  struct htt_ppdu_stats_cmpltn_flush *msg)
  {
 -	struct ath11k *ar;
  	struct ieee80211_sta *sta;
  	struct ath11k_sta *arsta;
  	struct ath11k_peer *peer = NULL;
- 	struct ieee80211_tx_status status;
- 	struct ieee80211_rate_status status_rate = { 0 };
- 
--	if (!ab->nss.mesh_nss_offload_enabled)
-+	if (!ar->ab->nss.mesh_nss_offload_enabled)
- 		return;
- 
+@@ -1574,7 +1573,7 @@ static void ath11k_dp_ppdu_stats_flush_t
  	rcu_read_lock();
  
--	spin_lock_bh(&ab->base_lock);
+ 	spin_lock_bh(&ab->base_lock);
 -	peer = ath11k_peer_find_by_id(ab, msg->sw_peer_id);
-+	spin_lock_bh(&ar->ab->base_lock);
 +	peer = ath11k_peer_find_by_id(ar, msg->sw_peer_id);
  	if (!peer)
  		goto exit;
  
-@@ -1599,22 +1598,22 @@ static void ath11k_dp_ppdu_stats_flush_t
- 	ieee80211s_update_metric_ppdu(ar->hw, &status);
- 
- exit:
--	spin_unlock_bh(&ab->base_lock);
-+	spin_unlock_bh(&ar->ab->base_lock);
+@@ -1603,7 +1602,7 @@ exit:
  	rcu_read_unlock();
  }
  
 -static int ath11k_htt_tlv_ppdu_soc_stats_parse(struct ath11k_base *ab,
-+static int ath11k_htt_tlv_ppdu_soc_stats_parse(struct ath11k *ar,
++static int ath11k_htt_tlv_ppdu_soc_stats_parse(struct ath11k_base *ab, struct ath11k *ar,
  					       u16 tag, u16 len, const void *ptr,
  					       void *data)
  {
- 	switch (tag) {
- 	case HTT_PPDU_STATS_TAG_USR_COMPLTN_FLUSH:
- 		if (len < sizeof(struct htt_ppdu_stats_cmpltn_flush)) {
--			ath11k_warn(ab, "Invalid len %d for the tag 0x%x\n",
-+			ath11k_warn(ar->ab, "Invalid len %d for the tag 0x%x\n",
+@@ -1614,7 +1613,7 @@ static int ath11k_htt_tlv_ppdu_soc_stats
  				    len, tag);
  			return -EINVAL;
  		}
 -		ath11k_dp_ppdu_stats_flush_tlv_parse(ab, (struct htt_ppdu_stats_cmpltn_flush *)ptr);
-+		ath11k_dp_ppdu_stats_flush_tlv_parse(ar, (struct htt_ppdu_stats_cmpltn_flush *)ptr);
++		ath11k_dp_ppdu_stats_flush_tlv_parse(ab, ar, (struct htt_ppdu_stats_cmpltn_flush *)ptr);
  		break;
  	default:
  		break;
@@ -372,8 +311,8 @@
  
 -int ath11k_dp_htt_tlv_iter(struct ath11k_base *ab, const void *ptr, size_t len,
 -			   int (*iter)(struct ath11k_base *ar, u16 tag, u16 len,
-+int ath11k_dp_htt_tlv_iter(struct ath11k *ar, const void *ptr, size_t len,
-+			   int (*iter)(struct ath11k *ar, u16 tag, u16 len,
++int ath11k_dp_htt_tlv_iter(struct ath11k_base *ab, struct ath11k *ar, const void *ptr, size_t len,
++			   int (*iter)(struct ath11k_base *ab, struct ath11k *ar, u16 tag, u16 len,
  				       const void *ptr, void *data),
  			   void *data)
  {
@@ -397,7 +336,7 @@
  		}
  
 -		ret = iter(ab, tlv_tag, tlv_len, ptr, ppdu_info);
-+		ret = iter(ar, tlv_tag, tlv_len, ptr, ppdu_info);
++		ret = iter(ab, ar, tlv_tag, tlv_len, ptr, ppdu_info);
  		if (ret == -ENOMEM)
  			return ret;
  
@@ -424,7 +363,7 @@
  
  	if (pdev_id == 0) {
 -		ret = ath11k_dp_htt_tlv_iter(ab, msg->data, len,
-+		ret = ath11k_dp_htt_tlv_iter(ar, msg->data, len,
++		ret = ath11k_dp_htt_tlv_iter(ab, ar, msg->data, len,
  					     ath11k_htt_tlv_ppdu_soc_stats_parse,
  					     NULL);
  		if (ret)
@@ -433,7 +372,7 @@
  
  	ppdu_info->ppdu_id = ppdu_id;
 -	ret = ath11k_dp_htt_tlv_iter(ab, msg->data, len,
-+	ret = ath11k_dp_htt_tlv_iter(ar, msg->data, len,
++	ret = ath11k_dp_htt_tlv_iter(ab, ar, msg->data, len,
  				     ath11k_htt_tlv_ppdu_stats_parse,
  				     (void *)ppdu_info);
  	if (ret) {
@@ -647,8 +586,8 @@
  			       u32 *buf_id);
 -int ath11k_dp_htt_tlv_iter(struct ath11k_base *ab, const void *ptr, size_t len,
 -			   int (*iter)(struct ath11k_base *ar, u16 tag, u16 len,
-+int ath11k_dp_htt_tlv_iter(struct ath11k *ar, const void *ptr, size_t len,
-+			   int (*iter)(struct ath11k *ar, u16 tag, u16 len,
++int ath11k_dp_htt_tlv_iter(struct ath11k_base *ab, struct ath11k *ar, const void *ptr, size_t len,
++			   int (*iter)(struct ath11k_base *ab, struct ath11k *ar, u16 tag, u16 len,
  				       const void *ptr, void *data),
  			   void *data);
  int ath11k_dp_rx_process_mon_rings(struct ath11k_base *ab, int mac_id,
