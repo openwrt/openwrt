@@ -336,6 +336,13 @@ else
 		exit 1; \
 	fi
 
+	cmd_provides=""
+	for f in $$(IDIR_$(1)){,/usr}{/bin,/sbin}/*; do \
+		if [ -f $$$$f ] && [ -x $$$$f ]; then \
+			cmd_provides="$$$${cmd_provides:+$$$$cmd_provides }cmd:$$$$(basename $$$$f)=$(VERSION)"; \
+		fi; \
+	done ; echo cmd_provides=$$$$cmd_provides; \
+	\
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
@@ -354,7 +361,7 @@ else
 				) \
 			) \
 		), \
-		$$(prov) )" \
+		$$(prov) ) $$$$cmd_provides" \
 	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100") \
 	  --script "post-install:$$(ADIR_$(1))/post-install" \
 	  --script "pre-deinstall:$$(ADIR_$(1))/pre-deinstall" \
