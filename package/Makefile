@@ -101,6 +101,7 @@ ifneq ($(CONFIG_USE_APK),)
 	$(call apk,$(TARGET_DIR)) add --no-cache --initdb --no-scripts --arch $(ARCH_PACKAGES) \
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$$(cat $(TMP_DIR)/apk_install_list)
+	rm -rf $(TARGET_DIR)/run
 else
 	$(file >$(TMP_DIR)/opkg_install_list,\
 	  $(call opkg_package_files,\
