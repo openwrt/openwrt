@@ -1,0 +1,190 @@
+From 409a9dc53682b9f02793584d17721ab3e1b9c86f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 26 Jun 2024 18:00:11 +0200
+Subject: [PATCH 04/18] leds: leds-lp55xx: Generalize
+ load_engine_and_select_page function
+
+Generalize load_engine_and_select_page by reworking the implementation
+and making it part of the generic load_engine function.
+
+Add a new option in device_config, pages_per_engine used to define pages
+assigned to each engine. With this option set, it's assumed LED chip
+supports pages and load_engine will correctly setup the write page.
+
+An equal amount of pages is assigned to each engine and they are
+assigned from page 0.
+
+Update any lp55xx based LED driver to define the option and use the new
+function.
+
+Suggested-by: Lee Jones <lee@kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20240626160027.19703-7-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-lp5523.c        | 22 +++++-----------------
+ drivers/leds/leds-lp55xx-common.c | 10 ++++++++++
+ drivers/leds/leds-lp55xx-common.h |  3 +++
+ drivers/leds/leds-lp8501.c        | 19 +++----------------
+ 4 files changed, 21 insertions(+), 33 deletions(-)
+
+--- a/drivers/leds/leds-lp5523.c
++++ b/drivers/leds/leds-lp5523.c
+@@ -30,6 +30,7 @@
+  * 0x40 engine 2 muxing info
+  * 0x50 engine 3 muxing info
+  */
++#define LP5523_PAGES_PER_ENGINE		1
+ #define LP5523_MAX_LEDS			9
+ 
+ /* Registers */
+@@ -159,20 +160,6 @@ static int lp5523_post_init_device(struc
+ 	return lp5523_init_program_engine(chip);
+ }
+ 
+-static void lp5523_load_engine_and_select_page(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-	static const u8 page_sel[] = {
+-		[LP55XX_ENGINE_1] = LP5523_PAGE_ENG1,
+-		[LP55XX_ENGINE_2] = LP5523_PAGE_ENG2,
+-		[LP55XX_ENGINE_3] = LP5523_PAGE_ENG3,
+-	};
+-
+-	lp55xx_load_engine(chip);
+-
+-	lp55xx_write(chip, LP5523_REG_PROG_PAGE_SEL, page_sel[idx]);
+-}
+-
+ static void lp5523_stop_engine(struct lp55xx_chip *chip)
+ {
+ 	enum lp55xx_engine_index idx = chip->engine_idx;
+@@ -272,7 +259,7 @@ static int lp5523_init_program_engine(st
+ 	/* write LED MUX address space for each engine */
+ 	for (i = LP55XX_ENGINE_1; i <= LP55XX_ENGINE_3; i++) {
+ 		chip->engine_idx = i;
+-		lp5523_load_engine_and_select_page(chip);
++		lp55xx_load_engine(chip);
+ 
+ 		for (j = 0; j < LP5523_PROGRAM_LENGTH; j++) {
+ 			ret = lp55xx_write(chip, LP5523_REG_PROG_MEM + j,
+@@ -362,7 +349,7 @@ static void lp5523_firmware_loaded(struc
+ 	 *  2) write firmware data into program memory
+ 	 */
+ 
+-	lp5523_load_engine_and_select_page(chip);
++	lp55xx_load_engine(chip);
+ 	lp5523_update_program_memory(chip, fw->data, fw->size);
+ }
+ 
+@@ -544,7 +531,7 @@ static ssize_t store_engine_load(struct
+ 	mutex_lock(&chip->lock);
+ 
+ 	chip->engine_idx = nr;
+-	lp5523_load_engine_and_select_page(chip);
++	lp55xx_load_engine(chip);
+ 	ret = lp5523_update_program_memory(chip, buf, len);
+ 
+ 	mutex_unlock(&chip->lock);
+@@ -865,6 +852,7 @@ static struct lp55xx_device_config lp552
+ 		.addr = LP5523_REG_ENABLE,
+ 		.val  = LP5523_ENABLE,
+ 	},
++	.pages_per_engine   = LP5523_PAGES_PER_ENGINE,
+ 	.max_channel  = LP5523_MAX_LEDS,
+ 	.post_init_device   = lp5523_post_init_device,
+ 	.brightness_fn      = lp5523_led_brightness,
+--- a/drivers/leds/leds-lp55xx-common.c
++++ b/drivers/leds/leds-lp55xx-common.c
+@@ -46,6 +46,11 @@
+ #define   LP55xx_MODE_ENGn_GET(n, mode, shift)        \
+ 	(((mode) >> LP55xx_MODE_ENGn_SHIFT(n, shift)) & LP55xx_MODE_ENG_MASK)
+ 
++/* Memory Page Selection */
++#define LP55xx_REG_PROG_PAGE_SEL	0x4f
++/* If supported, each ENGINE have an equal amount of pages offset from page 0 */
++#define LP55xx_PAGE_OFFSET(n, pages)	(((n) - 1) * (pages))
++
+ /* External clock rate */
+ #define LP55XX_CLK_32K			32768
+ 
+@@ -104,6 +109,11 @@ void lp55xx_load_engine(struct lp55xx_ch
+ 
+ 	lp55xx_update_bits(chip, cfg->reg_op_mode.addr, mask, val);
+ 	lp55xx_wait_opmode_done(chip);
++
++	/* Setup PAGE if supported (pages_per_engine not 0)*/
++	if (cfg->pages_per_engine)
++		lp55xx_write(chip, LP55xx_REG_PROG_PAGE_SEL,
++			     LP55xx_PAGE_OFFSET(idx, cfg->pages_per_engine));
+ }
+ EXPORT_SYMBOL_GPL(lp55xx_load_engine);
+ 
+--- a/drivers/leds/leds-lp55xx-common.h
++++ b/drivers/leds/leds-lp55xx-common.h
+@@ -99,6 +99,8 @@ struct lp55xx_reg {
+  *			 (if not supported 153 us sleep)
+  * @reset              : Chip specific reset command
+  * @enable             : Chip specific enable command
++ * @pages_per_engine   : Assigned pages for each engine
++ *                       (if not set chip doesn't support pages)
+  * @max_channel        : Maximum number of channels
+  * @post_init_device   : Chip specific initialization code
+  * @brightness_fn      : Brightness function
+@@ -113,6 +115,7 @@ struct lp55xx_device_config {
+ 	const struct lp55xx_reg engine_busy; /* addr, mask */
+ 	const struct lp55xx_reg reset;
+ 	const struct lp55xx_reg enable;
++	const int pages_per_engine;
+ 	const int max_channel;
+ 
+ 	/* define if the device has specific initialization process */
+--- a/drivers/leds/leds-lp8501.c
++++ b/drivers/leds/leds-lp8501.c
+@@ -21,6 +21,7 @@
+ #include "leds-lp55xx-common.h"
+ 
+ #define LP8501_PROGRAM_LENGTH		32
++#define LP8501_PAGES_PER_ENGINE		1
+ #define LP8501_MAX_LEDS			9
+ 
+ /* Registers */
+@@ -116,21 +117,6 @@ static int lp8501_post_init_device(struc
+ 				LP8501_PWR_CONFIG_M, chip->pdata->pwr_sel);
+ }
+ 
+-static void lp8501_load_engine(struct lp55xx_chip *chip)
+-{
+-	enum lp55xx_engine_index idx = chip->engine_idx;
+-
+-	static const u8 page_sel[] = {
+-		[LP55XX_ENGINE_1] = LP8501_PAGE_ENG1,
+-		[LP55XX_ENGINE_2] = LP8501_PAGE_ENG2,
+-		[LP55XX_ENGINE_3] = LP8501_PAGE_ENG3,
+-	};
+-
+-	lp55xx_load_engine(chip);
+-
+-	lp55xx_write(chip, LP8501_REG_PROG_PAGE_SEL, page_sel[idx]);
+-}
+-
+ static void lp8501_turn_off_channels(struct lp55xx_chip *chip)
+ {
+ 	int i;
+@@ -250,7 +236,7 @@ static void lp8501_firmware_loaded(struc
+ 	 *  2) write firmware data into program memory
+ 	 */
+ 
+-	lp8501_load_engine(chip);
++	lp55xx_load_engine(chip);
+ 	lp8501_update_program_memory(chip, fw->data, fw->size);
+ }
+ 
+@@ -284,6 +270,7 @@ static struct lp55xx_device_config lp850
+ 		.addr = LP8501_REG_ENABLE,
+ 		.val  = LP8501_ENABLE,
+ 	},
++	.pages_per_engine   = LP8501_PAGES_PER_ENGINE,
+ 	.max_channel  = LP8501_MAX_LEDS,
+ 	.post_init_device   = lp8501_post_init_device,
+ 	.brightness_fn      = lp8501_led_brightness,
