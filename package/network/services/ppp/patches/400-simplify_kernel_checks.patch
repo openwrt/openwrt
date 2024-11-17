@@ -10,7 +10,14 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -231,7 +231,7 @@ static int driver_is_old       = 0;
+@@ -224,14 +224,10 @@ static fd_set in_fds;		/* set of fds tha
+ static int max_in_fd;		/* highest fd set in in_fds */
+ 
+ static int has_proxy_arp       = 0;
+-static int driver_version      = 0;
+-static int driver_modification = 0;
+-static int driver_patch        = 0;
+-static int driver_is_old       = 0;
  static int restore_term        = 0;	/* 1 => we've munged the terminal */
  static struct termios inittermios;	/* Initial TTY termios */
  
@@ -19,17 +26,18 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -250,8 +250,8 @@ static int	looped;			/* 1 if using loop
+@@ -249,9 +245,8 @@ static int	dynaddr_set;		/* 1 if ip_dyna
+ static int	looped;			/* 1 if using loop */
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
- static struct utsname utsname;	/* for the kernel version */
+-static struct utsname utsname;	/* for the kernel version */
 -static int kernel_version;
  #define KVERSION(j,n,p)	((j)*1000000 + (n)*1000 + (p))
-+static const int kernel_version = KVERSION(2,6,37);
++static const int kernel_version = KVERSION(4,9,0);
  
  #define MAX_IFS		100
  
-@@ -1970,11 +1970,12 @@ int ccp_fatal_error (int unit)
+@@ -1970,11 +1965,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1996,6 +1997,7 @@ static char *path_to_procfs(const char *
+@@ -1996,6 +1992,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,35 +60,24 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2895,15 +2897,19 @@ int ppp_check_kernel_support(void)
-     int    my_version, my_modification, my_patch;
-     int osmaj, osmin, ospatch;
+@@ -2889,6 +2886,8 @@ ppp_registered(void)
  
+ int ppp_check_kernel_support(void)
+ {
++    return 1; /* OpenWrt support ppp device "/dev/ppp" by default */
 +#if 0
-     /* get the kernel version now, since we are called before sys_init */
-     uname(&utsname);
-     osmaj = osmin = ospatch = 0;
-     sscanf(utsname.release, "%d.%d.%d", &osmaj, &osmin, &ospatch);
-     kernel_version = KVERSION(osmaj, osmin, ospatch);
+     int s, ok, fd;
+     struct ifreq ifr;
+     int    size;
+@@ -3016,6 +3015,7 @@ int ppp_check_kernel_support(void)
+     }
+     close(s);
+     return ok;
 +#endif
+ }
  
-     fd = open("/dev/ppp", O_RDWR);
-     if (fd >= 0) {
-+#if 0
- 	new_style_driver = 1;
-+#endif
- 
- 	/* XXX should get from driver */
- 	driver_version = 2;
-@@ -2963,6 +2969,7 @@ int ppp_check_kernel_support(void)
- 
-     if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
- 	ok = 0;
-+	return ok;
- 
- /*
-  *  This is the PPP device. Validate the version of the driver at this
-@@ -3577,6 +3584,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+ #ifndef HAVE_LOGWTMP
+@@ -3577,6 +3577,7 @@ get_pty(int *master_fdp, int *slave_fdp,
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -3601,6 +3609,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+@@ -3601,6 +3602,7 @@ get_pty(int *master_fdp, int *slave_fdp,
  	    }
  	}
      }
@@ -96,23 +93,35 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      if (sfd < 0)
  	return 0;
+@@ -3716,6 +3718,7 @@ get_host_seed(void)
+ int
+ sys_check_options(void)
+ {
++#if 0
+     if (demand && driver_is_old) {
+ 	ppp_option_error("demand dialling is not supported by kernel driver "
+ 		     "version %d.%d.%d", driver_version, driver_modification,
+@@ -3726,6 +3729,7 @@ sys_check_options(void)
+ 	warn("Warning: multilink is not supported by the kernel driver");
+ 	multilink = 0;
+     }
++#endif
+     return 1;
+ }
+ 
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -179,14 +179,6 @@ static void disconnect_pppoatm(void)
- 
+@@ -180,10 +180,6 @@ static void disconnect_pppoatm(void)
  void plugin_init(void)
  {
--#ifdef linux
+ #ifdef linux
 -	extern int new_style_driver;	/* From sys-linux.c */
 -	if (!ppp_check_kernel_support() && !new_style_driver)
 -		fatal("Kernel doesn't support ppp_generic - "
 -		    "needed for PPPoATM");
--#else
--	fatal("No PPPoATM support on this OS");
--#endif
- 	ppp_add_options(pppoa_options);
- }
- 
+ #else
+ 	fatal("No PPPoATM support on this OS");
+ #endif
 --- a/pppd/plugins/pppoe/plugin.c
 +++ b/pppd/plugins/pppoe/plugin.c
 @@ -57,9 +57,6 @@ static char const RCSID[] =
@@ -138,17 +147,14 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      info("PPPoE plugin from pppd %s", PPPD_VERSION);
 --- a/pppd/plugins/pppol2tp/pppol2tp.c
 +++ b/pppd/plugins/pppol2tp/pppol2tp.c
-@@ -500,12 +500,7 @@ static void pppol2tp_cleanup(void)
- 
+@@ -501,10 +501,6 @@ static void pppol2tp_cleanup(void)
  void plugin_init(void)
  {
--#if defined(__linux__)
+ #if defined(__linux__)
 -	extern int new_style_driver;	/* From sys-linux.c */
 -	if (!ppp_check_kernel_support() && !new_style_driver)
 -		fatal("Kernel doesn't support ppp_generic - "
 -		    "needed for PPPoL2TP");
--#else
-+#if !defined(__linux__)
+ #else
  	fatal("No PPPoL2TP support on this OS");
  #endif
- 	ppp_add_options(pppol2tp_options);

@@ -14,7 +14,7 @@ PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
 PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=LICENSE
-PKG_INSTALL:=1
+PKG_INSTALL:=2
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 HOST_BUILD_DEPENDS:=lua/host
@@ -68,8 +68,12 @@ MESON_ARGS += \
 	$(MESON_COMMON_ARGS) \
 	-Dcrypto_backend=$(BUILD_VARIANT)
 
-HOST_LDFLAGS += \
-	-Wl,-rpath $(STAGING_DIR_HOST)/lib
+define Package/apk/conffiles
+/etc/apk/repositories.d/customfeeds.list
+endef
+
+Package/apk-mbedtls/conffiles = $(Package/apk/conffiles)
+Package/apk-openssl/conffiles = $(Package/apk/conffiles)
 
 define Package/apk/default/install
 	$(INSTALL_DIR) $(1)/lib/apk/db
@@ -79,6 +83,9 @@ define Package/apk/default/install
 
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libapk.so.* $(1)/usr/lib/
+
+	$(INSTALL_DIR) $(1)/etc/apk/repositories.d
+	$(INSTALL_DATA) ./files/customfeeds.list $(1)/etc/apk/repositories.d/customfeeds.list
 endef
 
 Package/apk-mbedtls/install = $(Package/apk/default/install)
