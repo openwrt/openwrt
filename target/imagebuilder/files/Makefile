@@ -26,6 +26,7 @@ include $(INCLUDE_DIR)/debug.mk
 include $(INCLUDE_DIR)/depends.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
+include $(INCLUDE_DIR)/default-packages.mk
 include $(INCLUDE_DIR)/version.mk
 export REVISION
 export SOURCE_DATE_EPOCH
