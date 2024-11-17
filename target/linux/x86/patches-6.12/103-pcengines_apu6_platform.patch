@@ -52,10 +52,10 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
 
 --- a/drivers/leds/leds-apu.c
 +++ b/drivers/leds/leds-apu.c
-@@ -183,7 +183,7 @@ static int __init apu_led_init(void)
+@@ -182,7 +182,7 @@ static int __init apu_led_init(void)
+ 	int err;
  
- 	if (!(dmi_match(DMI_SYS_VENDOR, "PC Engines") &&
- 	      (dmi_match(DMI_PRODUCT_NAME, "APU") || dmi_match(DMI_PRODUCT_NAME, "apu1")))) {
+ 	if (!dmi_check_system(apu_led_dmi_table)) {
 -		pr_err("No PC Engines APUv1 board detected. For APUv2,3 support, enable CONFIG_PCENGINES_APU2\n");
 +		pr_err("No PC Engines APUv1 board detected. For APUv2,3,4,5,6 support, enable CONFIG_PCENGINES_APU2\n");
  		return -ENODEV;
@@ -63,7 +63,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  
 --- a/drivers/platform/x86/Kconfig
 +++ b/drivers/platform/x86/Kconfig
-@@ -707,7 +707,7 @@ config XO1_RFKILL
+@@ -753,7 +753,7 @@ config XO1_RFKILL
  	  laptop.
  
  config PCENGINES_APU2
@@ -72,7 +72,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  	depends on INPUT && INPUT_KEYBOARD && GPIOLIB
  	depends on LEDS_CLASS
  	select GPIO_AMD_FCH
-@@ -715,7 +715,7 @@ config PCENGINES_APU2
+@@ -761,7 +761,7 @@ config PCENGINES_APU2
  	select LEDS_GPIO
  	help
  	  This driver provides support for the front button and LEDs on
