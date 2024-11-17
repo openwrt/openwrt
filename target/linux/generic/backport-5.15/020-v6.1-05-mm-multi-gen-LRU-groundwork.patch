@@ -612,7 +612,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	mem_cgroup_id_remove(memcg);
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -4821,6 +4821,27 @@ static inline void mm_account_fault(stru
+@@ -4832,6 +4832,27 @@ static inline void mm_account_fault(stru
  		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
  }
  
@@ -640,7 +640,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  /*
   * By the time we get here, we already hold the mm semaphore
   *
-@@ -4852,11 +4873,15 @@ vm_fault_t handle_mm_fault(struct vm_are
+@@ -4863,11 +4884,15 @@ vm_fault_t handle_mm_fault(struct vm_are
  	if (flags & FAULT_FLAG_USER)
  		mem_cgroup_enter_user_fault();
  
