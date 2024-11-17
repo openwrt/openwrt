@@ -209,7 +209,7 @@ static inline void huawei_ap_init(void)
 #if defined(CONFIG_BOARD_HUAWEI_AP5030DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (QCA955X_GPIO_OUTSEL_CLK_OBS5 << 24));
-#else if defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+#elif defined(CONFIG_BOARD_HUAWEI_AP6010DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (AR934X_GPIO_OUTSEL_CLK_OBS4 << 24));
 #endif
