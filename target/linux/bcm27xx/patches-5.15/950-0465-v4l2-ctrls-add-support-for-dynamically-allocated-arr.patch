@@ -191,7 +191,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  /* Validate controls. */
  static int validate_ctrls(struct v4l2_ext_controls *cs,
  			  struct v4l2_ctrl_helper *helpers,
-@@ -872,6 +922,9 @@ int __v4l2_ctrl_s_ctrl_compound(struct v
+@@ -877,6 +927,9 @@ int __v4l2_ctrl_s_ctrl_compound(struct v
  	/* It's a driver bug if this happens. */
  	if (WARN_ON(ctrl->type != type))
  		return -EINVAL;
