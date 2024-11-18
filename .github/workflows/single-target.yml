@@ -1,0 +1,37 @@
+name: Full build of armsr/armv8 target
+
+on:
+  pull_request:
+    paths:
+      - 'include/**'
+      - 'tools/libressl/**'
+      - 'package/base-files/**'
+      - 'package/system/apk/**'
+  push:
+    paths:
+      - 'include/**'
+      - 'tools/libressl/**'
+      - 'package/base-files/**'
+      - 'package/system/apk/**'
+    branches-ignore:
+      - master
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-kernel:
+    name: Full build of armsr/armv8 target
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    uses: openwrt/actions-shared-workflows/.github/workflows/label-target.yml@ynezz/single-kernel
+    with:
+      target: armsr
+      subtarget: armv8
