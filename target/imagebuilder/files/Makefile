@@ -104,6 +104,7 @@ APK:=$(call apk,$(TARGET_DIR)) \
 
 
 include $(INCLUDE_DIR)/target.mk
+include $(INCLUDE_DIR)/default-packages.mk
 -include .profiles.mk
 
 USER_PROFILE ?= $(firstword $(PROFILE_NAMES))
@@ -138,11 +139,6 @@ _call_info: FORCE
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
 
-ifneq ($(CONFIG_USE_APK),)
-  DEFAULT_PACKAGES += apk-mbedtls
-else
-  DEFAULT_PACKAGES += opkg
-endif
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
