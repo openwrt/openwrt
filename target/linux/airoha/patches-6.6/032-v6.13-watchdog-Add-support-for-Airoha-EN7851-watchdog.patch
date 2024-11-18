@@ -1,19 +1,18 @@
-From 4019d58ca5b249e4cf79169cc0c6a4ff5275c155 Mon Sep 17 00:00:00 2001
+From 3cf67f3769b8227ca75ca7102180a2e270ee01aa Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Fri, 5 Jul 2024 19:12:12 +0200
-Subject: [PATCH v2 2/2] watchdog: Add support for Airoha EN7851 watchdog
+Date: Fri, 11 Oct 2024 12:43:53 +0200
+Subject: [PATCH] watchdog: Add support for Airoha EN7851 watchdog
 
 Add support for Airoha EN7851 watchdog. This is a very basic watchdog
 with no pretimeout support, max timeout is 28 seconds and it ticks based
 on half the SoC BUS clock.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://lore.kernel.org/r/20241011104411.28659-2-ansuelsmth@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
 ---
-Changes v2:
-- Drop clock-frequency implementation
-- Add missing bitfield.h header
-- Attach BUS clock
-
  drivers/watchdog/Kconfig      |   8 ++
  drivers/watchdog/Makefile     |   1 +
  drivers/watchdog/airoha_wdt.c | 216 ++++++++++++++++++++++++++++++++++

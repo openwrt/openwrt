@@ -1,6 +1,6 @@
-From f849bcb746abeaafa63b4f02f1d8bb22703fc645 Mon Sep 17 00:00:00 2001
+From f72fc22038dd544fa4d39c06e8c81c09c0041ed4 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:48 +0200
+Date: Tue, 12 Nov 2024 01:08:51 +0100
 Subject: [PATCH 3/6] clk: en7523: introduce chip_scu regmap
 
 Introduce chip_scu regmap pointer since EN7581 SoC will access chip-scu
@@ -9,6 +9,8 @@ for EN7581 SoC. This patch does not introduce any backward incompatibility
 since the dts for EN7581 SoC is not upstream yet.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-4-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 81 ++++++++++++++++++++++++++++++----------
  1 file changed, 61 insertions(+), 20 deletions(-)

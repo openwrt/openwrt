@@ -1,6 +1,6 @@
-From 64e497f372dfca3e6be9fe05a0f9b874ea8604d2 Mon Sep 17 00:00:00 2001
+From c31d1cdd7bff1d2c13d435bb9d0c76bfaa332097 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:46 +0200
+Date: Tue, 12 Nov 2024 01:08:49 +0100
 Subject: [PATCH 1/6] clk: en7523: remove REG_PCIE*_{MEM,MEM_MASK}
  configuration
 
@@ -12,6 +12,8 @@ This patch does not introduce any backward incompatibility since the dts
 for EN7581 SoC is not upstream yet.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-2-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 18 ------------------
  1 file changed, 18 deletions(-)
