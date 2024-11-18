@@ -1,6 +1,6 @@
-From b9ea4918216ca0c2511446c531d3f8163ac1466d Mon Sep 17 00:00:00 2001
+From f98eded9e9ab048c88ff59c5523e703a6ced5523 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:49 +0200
+Date: Tue, 12 Nov 2024 01:08:52 +0100
 Subject: [PATCH 4/6] clk: en7523: fix estimation of fixed rate for EN7581
 
 Introduce en7581_base_clks array in order to define per-SoC fixed-rate
@@ -9,6 +9,8 @@ clocks
 
 Fixes: 66bc47326ce2 ("clk: en7523: Add EN7581 support")
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-5-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 105 ++++++++++++++++++++++++++++++++++++++-
  1 file changed, 103 insertions(+), 2 deletions(-)

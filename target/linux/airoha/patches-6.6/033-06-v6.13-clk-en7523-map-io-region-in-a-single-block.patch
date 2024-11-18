@@ -1,6 +1,6 @@
-From 665a59f4836c3d7813a9d8bfb9680d93adb4626e Mon Sep 17 00:00:00 2001
+From a9eaf305017a5ebe73ab34e85bd5414055a88f29 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:51 +0200
+Date: Tue, 12 Nov 2024 01:08:54 +0100
 Subject: [PATCH 6/6] clk: en7523: map io region in a single block
 
 Map all clock-controller memory region in a single block.
@@ -8,6 +8,8 @@ This patch does not introduce any backward incompatibility since the dts
 for EN7581 SoC is not upstream yet.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-7-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 32 +++++++++++++-------------------
  1 file changed, 13 insertions(+), 19 deletions(-)
