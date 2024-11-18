@@ -1,0 +1,24 @@
+From: Ben Greear <greearb@candelatech.com>
+Date: Thu, 10 Oct 2024 13:39:54 -0700
+Subject: [PATCH] mac80211: fix user-power when emulating chanctx
+
+ieee80211_calc_hw_conf_chan was ignoring the configured
+user_txpower.  If it is set, use it to potentially decrease
+txpower as requested.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+Link: https://patch.msgid.link/20241010203954.1219686-1-greearb@candelatech.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -167,6 +167,8 @@ static u32 ieee80211_calc_hw_conf_chan(s
+ 	}
+ 
+ 	power = ieee80211_chandef_max_power(&chandef);
++	if (local->user_power_level != IEEE80211_UNSET_POWER_LEVEL)
++		power = min(local->user_power_level, power);
+ 
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
