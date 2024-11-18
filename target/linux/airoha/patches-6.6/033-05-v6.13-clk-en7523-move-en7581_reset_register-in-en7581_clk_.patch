@@ -1,6 +1,6 @@
-From 2c5b1a5b68973947a6919d9c951f9b3e0d84f347 Mon Sep 17 00:00:00 2001
+From 82e6bf912d5846646892becea659b39d178d79e3 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:50 +0200
+Date: Tue, 12 Nov 2024 01:08:53 +0100
 Subject: [PATCH 5/6] clk: en7523: move en7581_reset_register() in
  en7581_clk_hw_init()
 
@@ -9,6 +9,8 @@ feature is supported just by EN7581 SoC.
 Get rid of reset struct in en_clk_soc_data data struct.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-6-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 93 ++++++++++++++--------------------------
  1 file changed, 33 insertions(+), 60 deletions(-)

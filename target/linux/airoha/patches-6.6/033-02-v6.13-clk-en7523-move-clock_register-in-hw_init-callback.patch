@@ -1,6 +1,6 @@
-From 0dd8a6df58a4a8cf1f341249e7358b3bb51f52ad Mon Sep 17 00:00:00 2001
+From b8bdfc666bc5f58caf46e67b615132fccbaca3d4 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 3 Sep 2024 23:39:47 +0200
+Date: Tue, 12 Nov 2024 01:08:50 +0100
 Subject: [PATCH 2/6] clk: en7523: move clock_register in hw_init callback
 
 Move en7523_register_clocks routine in hw_init callback.
@@ -11,6 +11,8 @@ EN7523 and EN7581 SoCs in order to access chip-scu IO region
 miscellaneous registers needed by multiple devices (clock, pinctrl ..).
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/r/20241112-clk-en7581-syscon-v2-3-8ada5e394ae4@kernel.org
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 82 ++++++++++++++++++++++++----------------
  1 file changed, 50 insertions(+), 32 deletions(-)
