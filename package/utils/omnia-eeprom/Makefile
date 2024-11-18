@@ -29,7 +29,7 @@ define Package/omnia-eeprom
   CATEGORY:=Utilities
   URL:=https://gitlab.nic.cz/turris/omnia-eeprom
   TITLE:=CZ.NIC Turris Omnia EEPROM accessing utility
-  DEPENDS:=@TARGET_mvebu_cortexa9_DEVICE_cznic_turris-omnia +kmod-eeprom-at24
+  DEPENDS:=@TARGET_mvebu_cortexa9 +kmod-eeprom-at24
 endef
 
 define Package/omnia-eeprom/description
