@@ -316,19 +316,19 @@ menu "Global build settings"
 
 	choice
 		prompt "Kernel space Stack-Smashing Protection"
-		default KERNEL_CC_STACKPROTECTOR_REGULAR
+		default KERNEL_STACKPROTECTOR_REGULAR
 		help
 		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
-		config KERNEL_CC_STACKPROTECTOR_NONE
+		config KERNEL_STACKPROTECTOR_NONE
 			bool "None"
 			help
 				No stack smashing protection.
-		config KERNEL_CC_STACKPROTECTOR_REGULAR
+		config KERNEL_STACKPROTECTOR_REGULAR
 			bool "Regular"
 			help
 				Protects functions with vulnerable objects.
 				This includes functions with buffers larger than 8 bytes or calls to alloca.
-		config KERNEL_CC_STACKPROTECTOR_STRONG
+		config KERNEL_STACKPROTECTOR_STRONG
 			bool "Strong"
 			help
 				Like Regular, but also protects functions with
@@ -337,11 +337,11 @@ menu "Global build settings"
 
 	config KERNEL_STACKPROTECTOR
 		bool
-		default KERNEL_CC_STACKPROTECTOR_REGULAR || KERNEL_CC_STACKPROTECTOR_STRONG
+		default KERNEL_STACKPROTECTOR_REGULAR || KERNEL_STACKPROTECTOR_STRONG
 
 	config KERNEL_STACKPROTECTOR_STRONG
 		bool
-		default KERNEL_CC_STACKPROTECTOR_STRONG
+		default KERNEL_STACKPROTECTOR_STRONG
 
 	choice
 		prompt "Enable buffer-overflows detection (FORTIFY_SOURCE)"
