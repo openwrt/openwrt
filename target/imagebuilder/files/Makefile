@@ -349,7 +349,7 @@ ifeq ($(PACKAGE),)
 endif
 	@$(MAKE) -s package_reload
 ifeq ($(CONFIG_USE_APK),)
-	@$(OPKG) list --depends $(PACKAGE)
+	@$(OPKG) whatdepends -A $(PACKAGE)
 else
 	@$(APK) list --depends $(PACKAGE)
 endif
@@ -363,7 +363,7 @@ endif
 ifeq ($(CONFIG_USE_APK),)
 	@$(OPKG) depends -A $(PACKAGE)
 else
-	@$(OPKG) whatdepends -A $(PACKAGE)
+	@$(APK) info --depends $(PACKAGE)
 endif
 
 .SILENT: help info image manifest package_whatdepends package_depends
