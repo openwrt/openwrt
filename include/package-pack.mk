@@ -344,7 +344,7 @@ else
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
 	  --info "description:$$(call description_escape,$$(strip $$(Package/$(1)/description)))" \
-	  --info "arch:$(PKGARCH)" \
+	  $(if $(findstring all,$(PKGARCH)),--info "arch:noarch",--info "arch:$(PKGARCH)") \
 	  --info "license:$(LICENSE)" \
 	  --info "origin:$(SOURCE)" \
 	  --info "url:$(URL)" \
