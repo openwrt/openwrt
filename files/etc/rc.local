@@ -6,4 +6,9 @@ mv /etc/ssh/moduli.safe /etc/ssh/moduli
 
 sed -i 's|^root:.*:/bin/ash$|root:x:0:0:root:/root:/bin/bash|' /etc/passwd
 
+service dropbear stop
+service dropbear disable
+
+service sshd restart
+
 exit 0
