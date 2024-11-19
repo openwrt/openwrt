@@ -363,7 +363,7 @@ endif
 ifeq ($(CONFIG_USE_APK),)
 	@$(OPKG) depends -A $(PACKAGE)
 else
-	@$(OPKG) whatdepends -A $(PACKAGE)
+	@$(APK) info --depends $(PACKAGE)
 endif
 
 .SILENT: help info image manifest package_whatdepends package_depends
