@@ -352,7 +352,7 @@ ifeq ($(PACKAGE),)
 endif
 	@$(MAKE) -s package_reload
 ifeq ($(CONFIG_USE_APK),)
-	@$(OPKG) list --depends $(PACKAGE)
+	@$(OPKG) whatdepends -A $(PACKAGE)
 else
 	@$(APK) list --depends $(PACKAGE)
 endif
