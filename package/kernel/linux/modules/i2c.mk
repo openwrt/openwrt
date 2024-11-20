@@ -289,7 +289,7 @@ I2C_PIIX4_MODULES:= \
 define KernelPackage/i2c-piix4
   $(call i2c_defaults,$(I2C_PIIX4_MODULES),59)
   TITLE:=Intel PIIX4 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +LINUX_6_12:kmod-i2c-smbus
 endef
 
 define KernelPackage/i2c-piix4/description
