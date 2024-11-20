@@ -442,6 +442,10 @@ define Device/zte_mf28x_common
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   KERNEL_SIZE := 4096k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
