@@ -100,10 +100,6 @@ CONFIG_TARGET_OPTIONS=y
 CONFIG_TARGET_OPTIMIZATION="-O2 -pipe -mcpu=cortex-a53+crc+crypto"
 CONFIG_USE_GC_SECTIONS=y
 
-# If your device supports USB and plan on installing packages via opkg
-# Use a USB device, as these devices have limited storage and you avoid wearing out the internal flash.
-# We update the PATH to include the USB device. '/opt' is a common mount point.
-CONFIG_TARGET_INIT_PATH="/usr/sbin:/usr/bin:/sbin:/bin:/opt/usr/bin:/opt/bin:/opt/sbin:/opt/usr/sbin"
 
 # Kernel Config
 CONFIG_COLLECT_KERNEL_DEBUG=y
@@ -151,7 +147,8 @@ CONFIG_ZSTD_OPTIMIZE_O3=y
 #####################################################################
 # Feeds Configuration
 #####################################################################
-# Prevent opkg from adding custom feeds to /etc/opkg/distfeeds.conf in the final image.
+# Prevent package manager from adding custom feeds as repositories in final image.
+# They don't exist upstream and will cause errors when trying to update
 CONFIG_FEED_nss_packages=n
 CONFIG_FEED_sqm_scripts_nss=n
 
@@ -169,8 +166,8 @@ CONFIG_PACKAGE_luci-ssl-openssl=y
 #####################################################################
 # - Firewall: Manage firewall rules via LUCI.
 CONFIG_PACKAGE_luci-app-firewall=y
-# - OPKG: Package manager for OpenWRT, manage installed packages via LUCI.
-CONFIG_PACKAGE_luci-app-opkg=y
+# - Package manager for OpenWRT, manage installed packages via LUCI.
+CONFIG_PACKAGE_luci-app-package-manager=y
 
 # - iperf3: CLI tool to measure network performance.
 #           This is essential to test WiFi speeds,
