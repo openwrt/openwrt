@@ -13,7 +13,8 @@ mvebu_setup_interfaces()
 
 	case "$board" in
 	ctera,c200-v2|\
-	synology,ds213j)
+	synology,ds213j|\
+	wd,cloud-mirror-gen2)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	cznic,turris-omnia)
@@ -93,6 +94,12 @@ mvebu_setup_macs()
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
+		;;
+	wd,cloud-mirror-gen2)
+		# mac address is on ubi "config" or ubi "reserve2" in text file.
+		# ubi "reserve2" /dev/mtd7 is twice small and only contains basic OEM factory info
+		label_mac=$(macaddr_canonicalize $(strings /dev/mtd7|grep -E '([0-9A-F]{2}[:])'))
+		lan_mac=$label_mac
 		;;
 	esac
 

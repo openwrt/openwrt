@@ -31,7 +31,8 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
-	buffalo,ls421de)
+	buffalo,ls421de|\
+	wd,cloud-mirror-gen2)
 		nand_do_upgrade "$1"
 		;;
 	ctera,c200-v2)
