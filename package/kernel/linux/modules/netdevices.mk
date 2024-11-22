@@ -513,7 +513,7 @@ $(eval $(call KernelPackage,phy-airoha-en8811h))
 define KernelPackage/phy-aquantia
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Aquantia Ethernet PHYs
-  DEPENDS:=+kmod-libphy +kmod-hwmon-core +kmod-lib-crc-ccitt
+  DEPENDS:=+kmod-libphy +kmod-hwmon-core +LINUX_6_6:kmod-lib-crc-ccitt +!LINUX_6_6:kmod-lib-crc-itu-t
   KCONFIG:=CONFIG_AQUANTIA_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/aquantia/aquantia.ko
   AUTOLOAD:=$(call AutoLoad,18,aquantia,1)
