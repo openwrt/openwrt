@@ -103,7 +103,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	dsa_switch_for_each_user_port(dp, ds) {
 +		/* Skip if assigned master is not the LAG */
-+		if (dsa_port_to_master(dp) != lag_dev)
++		if (dsa_port_to_conduit(dp) != lag_dev)
 +			continue;
 +
 +		ret = qca8k_port_change_master(ds, dp->index,
@@ -152,7 +152,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -	.port_lag_leave		= qca8k_port_lag_leave,
 +	.port_lag_join		= qca8xxx_port_lag_join,
 +	.port_lag_leave		= qca8xxx_port_lag_leave,
-+	.port_change_master	= qca8xxx_port_change_master,
++	.port_change_conduit	= qca8k_port_change_master,
  	.conduit_state_change	= qca8k_conduit_change,
  	.connect_tag_protocol	= qca8k_connect_tag_protocol,
  };
