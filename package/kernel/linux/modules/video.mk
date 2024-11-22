@@ -438,6 +438,49 @@ endef
 
 $(eval $(call KernelPackage,drm-amdgpu))
 
+define KernelPackage/drm-i915
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Intel i915 DRM support
+  DEPENDS:=@(TARGET_x86_64||TARGET_x86_generic||TARGET_x86_legacy) \
+	@DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
+	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +i915-firmware-dmc \
+	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
+	+kmod-drm-exec +kmod-drm-suballoc-helper
+  KCONFIG:=CONFIG_DRM_I915 \
+	CONFIG_DRM_I915_CAPTURE_ERROR=y \
+	CONFIG_DRM_I915_COMPRESS_ERROR=y \
+	CONFIG_DRM_I915_DEBUG=n \
+	CONFIG_DRM_I915_DEBUG_GUC=n \
+	CONFIG_DRM_I915_DEBUG_MMIO=n \
+	CONFIG_DRM_I915_DEBUG_RUNTIME_PM=n \
+	CONFIG_DRM_I915_DEBUG_VBLANK_EVADE=n \
+	CONFIG_DRM_I915_FENCE_TIMEOUT=10000 \
+	CONFIG_DRM_I915_FORCE_PROBE="" \
+	CONFIG_DRM_I915_HEARTBEAT_INTERVAL=2500 \
+	CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS=n \
+	CONFIG_DRM_I915_MAX_REQUEST_BUSYWAIT=8000 \
+	CONFIG_DRM_I915_PREEMPT_TIMEOUT=640 \
+	CONFIG_DRM_I915_PREEMPT_TIMEOUT_COMPUTE=7500 \
+	CONFIG_DRM_I915_REQUEST_TIMEOUT=20000 \
+	CONFIG_DRM_I915_SELFTEST=n \
+	CONFIG_DRM_I915_STOP_TIMEOUT=100 \
+	CONFIG_DRM_I915_SW_FENCE_CHECK_DAG=n \
+	CONFIG_DRM_I915_SW_FENCE_DEBUG_OBJECTS=n \
+	CONFIG_DRM_I915_TIMESLICE_DURATION=1 \
+	CONFIG_DRM_I915_USERFAULT_AUTOSUSPEND=250 \
+	CONFIG_DRM_I915_USERPTR=y \
+	CONFIG_DRM_I915_WERROR=n \
+	CONFIG_FB_INTEL=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/i915/i915.ko
+  AUTOLOAD:=$(call AutoProbe,i915)
+endef
+
+define KernelPackage/drm-i915/description
+  Direct Rendering Manager (DRM) support for Intel GPU
+endef
+
+$(eval $(call KernelPackage,drm-i915))
+
 
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)

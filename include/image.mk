@@ -21,6 +21,11 @@ include $(INCLUDE_DIR)/rootfs.mk
 override MAKE:=$(_SINGLE)$(SUBMAKE)
 override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
 
+##@
+# @brief Convert size with unit postfix to unitless expression in bytes.
+#
+# @param 1: Size with unit. Possible unit postfix are `g`, `m`, `k`.
+##
 exp_units = $(subst k, * 1024,$(subst m, * 1024k,$(subst g, * 1024m,$(1))))
 
 target_params = $(subst +,$(space),$*)
@@ -111,6 +116,12 @@ endef
 
 PROFILE_SANITIZED := $(call tolower,$(subst DEVICE_,,$(subst $(space),-,$(PROFILE))))
 
+##@
+# @brief Call function for each group of arguments.
+#
+# @param 1: List of lists of arguments. Lists are separated by `|`.
+# @param 2: Function to call for list of arguments.
+##
 define split_args
 $(foreach data, \
 	$(subst |,$(space),\
@@ -118,12 +129,24 @@ $(foreach data, \
 	$(call $(2),$(strip $(subst ^,$(space),$(data)))))
 endef
 
+##@
+# @brief Call build function with arguments.
+#
+# @param 1: Function to call. Function name is prepended with `Build/`.
+# @param 2...: Function arguments.
+##
 define build_cmd
 $(if $(Build/$(word 1,$(1))),,$(error Missing Build/$(word 1,$(1))))
 $(call Build/$(word 1,$(1)),$(wordlist 2,$(words $(1)),$(1)))
 
 endef
 
+##@
+# @brief Call build functions from the list.
+#
+# @param 1: List of build functions with arguments, separated by `|`.
+#           First word in each group is a build command without `Build/` prefix.
+##
 define concat_cmd
 $(call split_args,$(1),build_cmd)
 endef
@@ -163,6 +186,12 @@ DTC_WARN_FLAGS := \
 DTC_FLAGS += $(DTC_WARN_FLAGS)
 DTCO_FLAGS += $(DTC_WARN_FLAGS)
 
+##@
+# @brief Pad file to specified size.
+#
+# @param 1: File.
+# @param 2: Padding.
+##
 define Image/pad-to
 	dd if=$(1) of=$(1).new bs=$(2) conv=sync
 	mv $(1).new $(1)
@@ -281,7 +310,7 @@ endef
 define Image/Manifest
 	$(if $(CONFIG_USE_APK), \
 		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network \
-			--repositories-file /dev/zero | sort | sed 's/ / - /'  > \
+			--repositories-file /dev/null | sort | sed 's/ / - /'  > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest, \
 		$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest \
@@ -336,19 +365,17 @@ opkg_target = \
 
 apk_target = \
 	$(call apk,$(mkfs_cur_target_dir)) --no-scripts \
-		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb
+		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
 
 target-dir-%: FORCE
 ifneq ($(CONFIG_USE_APK),)
 	rm -rf $(mkfs_cur_target_dir)
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
-	mv $(mkfs_cur_target_dir)/etc/apk/repositories $(mkfs_cur_target_dir).repositories
 	$(if $(mkfs_packages_remove), \
 		$(apk_target) del $(mkfs_packages_remove))
 	$(if $(mkfs_packages_add), \
 		$(apk_target) add $(mkfs_packages_add))
-	mv $(mkfs_cur_target_dir).repositories $(mkfs_cur_target_dir)/etc/apk/repositories
 else
 	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
@@ -403,26 +430,53 @@ define Device/InitProfile
   DEVICE_DESCRIPTION = Build firmware images for $$(DEVICE_TITLE)
 endef
 
+##@
+# @brief Image configuration variables.
+#
+# @param 1: Device name.
+##
 define Device/Init
+  ##@ Device name.
   DEVICE_NAME := $(1)
+  ##@ Commands to build kernel.
+  # Commands with arguments are separated by `|`.
+  ##
   KERNEL:=
+  ##@ Commands to build initramfs.
+  # Commands with arguments are separated by `|`.
+  ##
   KERNEL_INITRAMFS = $$(KERNEL)
+  ##@ Kernel command line.
   CMDLINE:=
 
+  ##@ Images to build.
   IMAGES :=
+  ##@ Artifacts to build.
   ARTIFACTS :=
+  ##@ Device image prefix.
   DEVICE_IMG_PREFIX := $(IMG_PREFIX)-$(1)
+  ##@ Device image name.
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(1)-$$(2)
+  ##@ Factory image name.
   FACTORY_IMG_NAME :=
+  ##@ Maximum image size. Optional.
   IMAGE_SIZE :=
+  ##@ Maximum image size. Optional.
   NAND_SIZE :=
+  ##@ Kernel image prefix.
   KERNEL_PREFIX = $$(DEVICE_IMG_PREFIX)
+  ##@ Kernel image suffix.
   KERNEL_SUFFIX := -kernel.bin
+  ##@ Initramfs image suffix.
   KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX)
+  ##@ Kernel image name.
   KERNEL_IMAGE = $$(KERNEL_PREFIX)$$(KERNEL_SUFFIX)
+  ##@ Initramfs image prefix.
   KERNEL_INITRAMFS_PREFIX = $$(DEVICE_IMG_PREFIX)-initramfs
   KERNEL_INITRAMFS_IMAGE = $$(KERNEL_INITRAMFS_PREFIX)$$(KERNEL_INITRAMFS_SUFFIX)
+  ##@ Initramfs image name.
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
+  ##@ Kernel install flag.
   KERNEL_INSTALL :=
   KERNEL_NAME := vmlinux
   KERNEL_DEPENDS :=
