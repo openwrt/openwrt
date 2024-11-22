@@ -208,7 +208,7 @@ mac80211_hostapd_setup_base() {
 				dsss_cck_40:1
 
 			ht_cap_mask=0
-			for cap in $(iw phy "$phy" info | grep 'Capabilities:' | cut -d: -f2); do
+			for cap in $(iw phy "$phy" info | grep -E '^\s*Capabilities:' | cut -d: -f2); do
 				ht_cap_mask="$(($ht_cap_mask | $cap))"
 			done
 
