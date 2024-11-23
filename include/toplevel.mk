@@ -78,7 +78,7 @@ _ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
 # Config that will invalidate the .targetinfo as they will affect
 # DEFAULT_PACKAGES.
 # Keep DYNAMIC_DEF_PKG_CONF in sync with target.mk to reflect the same configs
-DYNAMIC_DEF_PKG_CONF := CONFIG_USE_APK CONFIG_SELINUX CONFIG_SMALL_FLASH CONFIG_SECCOMP
+DYNAMIC_DEF_PKG_CONF := CONFIG_USE_APK CONFIG_SELINUX CONFIG_SMALL_FLASH CONFIG_USE_SECCOMP
 check-dynamic-def-pkg: FORCE
 	@+DEF_PKG_CONFS=""; \
 	if [ -f $(TOPDIR)/.config ]; then \

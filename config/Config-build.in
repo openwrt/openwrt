@@ -423,7 +423,7 @@ menu "Global build settings"
 
 	endchoice
 
-	config SECCOMP
+	config USE_SECCOMP
 		bool "Enable SECCOMP"
 		select KERNEL_SECCOMP
 		select PACKAGE_procd-seccomp
