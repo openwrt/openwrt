@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apk
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
@@ -67,6 +67,8 @@ MESON_HOST_ARGS += \
 MESON_ARGS += \
 	$(MESON_COMMON_ARGS) \
 	-Dcrypto_backend=$(BUILD_VARIANT)
+
+TARGET_CFLAGS += -DCFGNEW_SUFFIX=\"-apk-new\"
 
 define Package/apk/conffiles
 /etc/apk/repositories.d/customfeeds.list
