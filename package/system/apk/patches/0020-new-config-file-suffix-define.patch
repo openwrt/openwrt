@@ -1,0 +1,55 @@
+--- a/src/apk_package.h
++++ b/src/apk_package.h
+@@ -122,6 +122,10 @@
+ 				APK_BLOB_IS_NULL(*(dep)->version) ? "" : apk_version_op_string((dep)->op), \
+ 				BLOB_PRINTF(*(dep)->version)
+ 
++#ifndef CFGNEW_SUFFIX
++#define CFGNEW_SUFFIX		".apk-new"
++#endif
++
+ extern const char *apk_script_types[];
+ 
+ static inline int apk_dep_conflict(const struct apk_dependency *dep) { return !!(dep->op & APK_VERSION_CONFLICT); }
+--- a/src/app_audit.c
++++ b/src/app_audit.c
+@@ -359,7 +359,7 @@
+ 				break;
+ 			}
+ 			if ((!dbf || reason == 'A') &&
+-			    apk_blob_ends_with(bent, APK_BLOB_STR(".apk-new")))
++			    apk_blob_ends_with(bent, APK_BLOB_STR(CFGNEW_SUFFIX)))
+ 				goto done;
+ 			break;
+ 		case MODE_SYSTEM:
+--- a/src/database.c
++++ b/src/database.c
+@@ -2924,7 +2924,7 @@
+ 					} else {
+ 						// All files differ. Use the package's file as .apk-new.
+ 						ctrl = APK_FS_CTRL_APKNEW;
+-						apk_msg(out, PKG_VER_FMT ": installing file to " DIR_FILE_FMT ".apk-new",
++						apk_msg(out, PKG_VER_FMT ": installing file to " DIR_FILE_FMT CFGNEW_SUFFIX,
+ 						    PKG_VER_PRINTF(ipkg->pkg),
+ 						    DIR_FILE_PRINTF(diri->dir, file));
+ 					}
+--- a/src/fs_fsys.c
++++ b/src/fs_fsys.c
+@@ -203,7 +203,7 @@
+ 		break;
+ 	case APK_FS_CTRL_APKNEW:
+ 		// rename tmpname -> realname.apk-new
+-		rc = apk_fmt(apknewname, sizeof apknewname, "%s%s", fn, ".apk-new");
++		rc = apk_fmt(apknewname, sizeof apknewname, "%s%s", fn, CFGNEW_SUFFIX);
+ 		if (rc < 0) break;
+ 		if (renameat(atfd, format_tmpname(&ac->dctx, d->pkgctx, dirname, apk_pathbuilder_get(&d->pb), tmpname),
+ 			     atfd, apknewname) < 0)
+@@ -221,7 +221,7 @@
+ 		break;
+ 	case APK_FS_CTRL_DELETE_APKNEW:
+ 		// remove apknew (which may or may not exist)
+-		rc = apk_fmt(apknewname, sizeof apknewname, "%s%s", fn, ".apk-new");
++		rc = apk_fmt(apknewname, sizeof apknewname, "%s%s", fn, CFGNEW_SUFFIX);
+ 		if (rc < 0) break;
+ 		unlinkat(atfd, apknewname, 0);
+ 		break;
