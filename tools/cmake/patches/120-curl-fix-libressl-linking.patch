@@ -20,18 +20,20 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 ---
 --- a/Utilities/cmcurl/CMakeLists.txt
 +++ b/Utilities/cmcurl/CMakeLists.txt
-@@ -648,6 +648,14 @@ if(CURL_USE_OPENSSL)
-   endif()
-   set(SSL_ENABLED ON)
+@@ -776,6 +776,16 @@
+   set(_ssl_enabled ON)
    set(USE_OPENSSL ON)
+ 
 +  check_library_exists("rt" clock_gettime "" HAVE_LIBRT)
 +  if(HAVE_LIBRT)
 +    list(APPEND OPENSSL_LIBRARIES rt)
 +  endif()
++
 +  check_library_exists("pthread" pthread_once "" HAVE_PTHREAD)
 +  if(HAVE_PTHREAD)
 +    list(APPEND OPENSSL_LIBRARIES pthread)
 +  endif()
++
    list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
    include_directories(${OPENSSL_INCLUDE_DIR})
- 
+   list(APPEND LIBCURL_PC_REQUIRES_PRIVATE "openssl")
