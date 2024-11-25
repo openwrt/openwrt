@@ -120,6 +120,38 @@ endef
 $(eval $(call KernelPackage,atl1e))
 
 
+define KernelPackage/libie
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet library
+  DEPENDS:=@LINUX_6_12
+  KCONFIG:=CONFIG_LIBIE
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie.ko
+endef
+
+define KernelPackage/libie/description
+ Intel Ethernet library
+endef
+
+$(eval $(call KernelPackage,libie))
+
+
+define KernelPackage/libeth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Common Intel Ethernet library
+  DEPENDS:=@LINUX_6_12
+  KCONFIG:=CONFIG_LIBETH
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libeth/libeth.ko
+endef
+
+define KernelPackage/libeth/description
+ Common Intel Ethernet library
+endef
+
+$(eval $(call KernelPackage,libeth))
+
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
@@ -1116,7 +1148,7 @@ $(eval $(call KernelPackage,ixgbevf))
 define KernelPackage/i40e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller XL710 Family support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +LINUX_6_12:kmod-libie
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_VXLAN=n \
     CONFIG_I40E_HWMON=y \
@@ -1135,7 +1167,7 @@ $(eval $(call KernelPackage,i40e))
 define KernelPackage/iavf
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +LINUX_6_12:kmod-libeth +LINUX_6_12:kmod-libie
   KCONFIG:= \
        CONFIG_I40EVF \
        CONFIG_IAVF
