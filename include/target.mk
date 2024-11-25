@@ -90,6 +90,11 @@ else
   endif
 endif
 
+# include ujail on systems with enough storage
+ifeq ($(filter small_flash,$(FEATURES)),)
+  DEFAULT_PACKAGES+=procd-ujail
+endif
+
 # Add device specific packages (here below to allow device type set from subtarget)
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
