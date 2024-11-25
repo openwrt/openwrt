@@ -95,10 +95,6 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_art_2: macaddr@2 {
-						reg = <0x2 0x6>;
-					};
-
 					cal_art_1000: calibration@1000 {
 						reg = <0x1000 0x440>;
 					};
@@ -153,6 +149,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_2>, <&cal_art_1000>;
-	nvmem-cell-names = "mac-address", "calibration";
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };
