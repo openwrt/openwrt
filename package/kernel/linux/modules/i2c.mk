@@ -150,7 +150,7 @@ I2C_I801_MODULES:= \
 define KernelPackage/i2c-i801
   $(call i2c_defaults,$(I2C_I801_MODULES),59)
   TITLE:=Intel I801 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus +LINUX_6_12:kmod-i2c-mux
 endef
 
 define KernelPackage/i2c-i801/description
