@@ -564,6 +564,7 @@ $(eval $(call KernelPackage,fs-nfsd))
 define KernelPackage/fs-ntfs
   SUBMENU:=$(FS_MENU)
   TITLE:=NTFS filesystem read-only (old driver) support
+  DEPENDS:=@!LINUX_6_12
   KCONFIG:=CONFIG_NTFS_FS
   FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.ko
   AUTOLOAD:=$(call AutoLoad,30,ntfs)
