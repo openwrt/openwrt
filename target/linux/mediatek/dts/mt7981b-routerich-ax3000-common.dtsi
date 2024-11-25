@@ -1,27 +1,115 @@
 // SPDX-License-Identifier: GPL-2.0-only OR MIT
 
-#include "mt7981b-routerich-ax3000-common.dtsi"
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7981.dtsi"
 
 / {
-	model = "Routerich AX3000";
-	compatible = "routerich,ax3000", "mediatek,mt7981";
-};
+	aliases {
+		label-mac-device = &wan;
 
-&spi {
-	mediatek,nmbm;
-	mediatek,bmt-max-ratio = <1>;
-	mediatek,bmt-max-reserved-blocks = <64>;
-};
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_blue;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
 
-&partitions {
-	partition@100000 {
-		label = "u-boot-env";
-		reg = <0x100000 0x80000>;
+		serial0 = &uart0;
 	};
 
-	partition@580000 {
-		label = "ubi";
-		reg = <0x580000 0x7000000>;
+	chosen: chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-0 {
+			label = "mesh";
+			linux,input-type = <EV_SW>;
+			linux,code = <BTN_0>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-1 {
+			label = "reset";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <50>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_blue: led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <24>;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-8 {
+			color = <LED_COLOR_ID_BLUE>;
+			/* LED_FUNCTION_MESH isn't implemented yet */
+			function = "mesh";
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x10000000>;
 	};
 };
 
@@ -62,7 +150,7 @@
 	status = "okay";
 
 	/* ESMT F50L1G41LB (128M) */
-	spi_nand@0 {
+	spi: spi_nand@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "spi-nand";
@@ -79,11 +167,7 @@
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-
-		partitions {
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -98,11 +182,6 @@
 				label = "BL2";
 				reg = <0x0 0x100000>;
 				read-only;
-			};
-
-			partition@100000 {
-				label = "u-boot-env";
-				reg = <0x100000 0x80000>;
 			};
 
 			partition@180000 {
@@ -131,11 +210,6 @@
 				label = "FIP";
 				reg = <0x380000 0x200000>;
 				read-only;
-			};
-
-			partition@580000 {
-				label = "ubi";
-				reg = <0x580000 0x7000000>;
 			};
 		};
 	};
