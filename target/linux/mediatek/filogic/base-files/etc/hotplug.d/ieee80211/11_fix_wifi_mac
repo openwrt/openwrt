@@ -136,6 +136,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	nradio,c8-668gl)
+		hw_mac_addr=$(mmc_get_mac_ascii bdinfo "fac_mac ")
+		[ "$PHYNBR" = "0" ] && echo "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
+		;;
 	openembed,som7981)
 		[ "$PHYNBR" = "1" ] && cat /sys/class/net/eth0/address > /sys${DEVPATH}/macaddress
 		;;
