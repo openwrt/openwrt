@@ -108,7 +108,7 @@ define Host/Configure/Meson
 endef
 
 define Host/Compile/Meson
-	+$(NINJA) -C $(MESON_HOST_BUILD_DIR) $(1)
+	+$(MESON_HOST_VARS) $(NINJA) -C $(MESON_HOST_BUILD_DIR) $(1)
 endef
 
 define Host/Install/Meson
@@ -135,7 +135,7 @@ define Build/Configure/Meson
 endef
 
 define Build/Compile/Meson
-	+$(NINJA) -C $(MESON_BUILD_DIR) $(1)
+	+$(MESON_VARS) $(NINJA) -C $(MESON_BUILD_DIR) $(1)
 endef
 
 define Build/Install/Meson
