@@ -69,11 +69,12 @@
 	ports {
 		port@5 {
 			reg = <5>;
-			label = "eth5";
+			openwrt,netdev-name = "eth5";
 			phy-handle = <&ephy7>;
 			phy-mode = "rgmii-rxid";
 			nvmem-cells = <&macaddr_factory_22 5>;
 			nvmem-cell-names = "mac-address";
+			/delete-property/ label;
 		};
 	};
 };
