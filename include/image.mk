@@ -373,7 +373,7 @@ ifneq ($(CONFIG_USE_APK),)
 	rm -rf $(mkfs_cur_target_dir)
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
 	$(if $(mkfs_packages_remove), \
-		$(apk_target) del $(mkfs_packages_remove))
+		-$(apk_target) del $(mkfs_packages_remove))
 	$(if $(mkfs_packages_add), \
 		$(apk_target) add $(mkfs_packages_add))
 else
