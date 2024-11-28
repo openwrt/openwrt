@@ -107,6 +107,17 @@ config BUSYBOX_CONFIG_LFS
 	programs that can benefit from large file support include dd, gzip,
 	cp, mount, tar.
 
+config BUSYBOX_CONFIG_TIME64
+	bool "Support 64bit wide time types"
+	default BUSYBOX_DEFAULT_TIME64
+	depends on BUSYBOX_CONFIG_LFS
+	help
+	Make times later than 2038 representable for several libc syscalls
+	(stat, clk_gettime etc.). Note this switch is specific to glibc
+	and has no effect on platforms that already use 64bit wide time types
+	(i.e. all 64bit archs and some selected 32bit archs (currently riscv
+	and x32)).
+
 config BUSYBOX_CONFIG_PAM
 	bool "Support PAM (Pluggable Authentication Modules)"
 	default BUSYBOX_DEFAULT_PAM
