@@ -1,0 +1,66 @@
+From 0e1a71d84585ec33b479c2cb8c8d65a4f6734dbe Mon Sep 17 00:00:00 2001
+From: Thomas Richard <thomas.richard@bootlin.com>
+Date: Wed, 4 Dec 2024 14:26:52 +0100
+Subject: [PATCH] Revert "feat(stm32mp1-fdts): remove RTC clock configuration"
+
+This reverts commit 703a581e2522bffe21b421c98994dc02aed2934c.
+---
+ fdts/stm32mp135f-dk.dts   | 2 ++
+ fdts/stm32mp157c-ed1.dts  | 2 ++
+ fdts/stm32mp15xx-dkx.dtsi | 2 ++
+ 3 files changed, 6 insertions(+)
+
+--- a/fdts/stm32mp135f-dk.dts
++++ b/fdts/stm32mp135f-dk.dts
+@@ -190,6 +190,7 @@
+ 		CLK_AXI_PLL2P
+ 		CLK_MLAHBS_PLL3
+ 		CLK_CKPER_HSE
++		CLK_RTC_LSE
+ 		CLK_SDMMC1_PLL4P
+ 		CLK_SDMMC2_PLL4P
+ 		CLK_STGEN_HSE
+@@ -211,6 +212,7 @@
+ 		DIV(DIV_APB4, 1)
+ 		DIV(DIV_APB5, 2)
+ 		DIV(DIV_APB6, 1)
++		DIV(DIV_RTC, 0)
+ 	>;
+ 
+ 	st,pll_vco {
+--- a/fdts/stm32mp157c-ed1.dts
++++ b/fdts/stm32mp157c-ed1.dts
+@@ -194,6 +194,7 @@
+ 		CLK_MPU_PLL1P
+ 		CLK_AXI_PLL2P
+ 		CLK_MCU_PLL3P
++		CLK_RTC_LSE
+ 		CLK_MCO1_DISABLED
+ 		CLK_MCO2_DISABLED
+ 		CLK_CKPER_HSE
+@@ -242,6 +243,7 @@
+ 		DIV(DIV_APB3, 1)
+ 		DIV(DIV_APB4, 1)
+ 		DIV(DIV_APB5, 2)
++		DIV(DIV_RTC, 23)
+ 		DIV(DIV_MCO1, 0)
+ 		DIV(DIV_MCO2, 0)
+ 	>;
+--- a/fdts/stm32mp15xx-dkx.dtsi
++++ b/fdts/stm32mp15xx-dkx.dtsi
+@@ -198,6 +198,7 @@
+ 		CLK_MPU_PLL1P
+ 		CLK_AXI_PLL2P
+ 		CLK_MCU_PLL3P
++		CLK_RTC_LSE
+ 		CLK_MCO1_DISABLED
+ 		CLK_MCO2_DISABLED
+ 		CLK_CKPER_HSE
+@@ -246,6 +247,7 @@
+ 		DIV(DIV_APB3, 1)
+ 		DIV(DIV_APB4, 1)
+ 		DIV(DIV_APB5, 2)
++		DIV(DIV_RTC, 23)
+ 		DIV(DIV_MCO1, 0)
+ 		DIV(DIV_MCO2, 0)
+ 	>;
