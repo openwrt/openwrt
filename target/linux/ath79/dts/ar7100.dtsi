@@ -54,7 +54,7 @@
 				compatible = "qca,ar7100-usb-phy";
 				reg = <0x18030000 0x10>;
 
-				reset-names = "usb-phy", "usb-host", "usb-ohci-dll";
+				reset-names = "phy", "usb-host", "usb-ohci-dll";
 				resets = <&rst 4>, <&rst 5>, <&rst 6>;
 
 				#phy-cells = <0>;
