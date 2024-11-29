@@ -41,6 +41,7 @@ endef
 TFA_TARGETS := stm32mp135f-dk
 
 TFA_MAKE_FLAGS += \
+		$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments") \
 		ARCH=aarch32 AARCH32_SP=optee \
 		BL32=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-tee-header_v2.bin \
 		BL32_EXTRA1=$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-tee-pager_v2.bin \

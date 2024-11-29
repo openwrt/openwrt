@@ -71,6 +71,9 @@ TFA_TARGETS:= \
 	rk3568-e25 \
 	rk3588
 
+TFA_MAKE_FLAGS+= \
+	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
+
 ifeq ($(BUILD_VARIANT),rk3308-rock-pi-s)
   TPL_FILE:=rk3308_ddr_589MHz_uart0_m0_v2.07.bin
   define Download/rk3308-tpl-rock-pi-s
