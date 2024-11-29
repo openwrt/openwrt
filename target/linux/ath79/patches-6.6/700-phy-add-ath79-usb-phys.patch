@@ -132,7 +132,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	if (IS_ERR(priv->rst_phy))
 +		return dev_err_probe(&pdev->dev, PTR_ERR(priv->rst_phy), "phy reset is missing");
 +
-+	priv->rst_host = devm_reset_control_get(&pdev->dev, "usb-host");
++	priv->rst_host = devm_reset_control_get(&pdev->dev, "host");
 +	if (IS_ERR(priv->rst_host))
 +		return dev_err_probe(&pdev->dev, PTR_ERR(priv->rst_host), "host reset is missing");
 +
