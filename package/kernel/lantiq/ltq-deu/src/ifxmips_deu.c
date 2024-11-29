@@ -196,7 +196,6 @@ static struct platform_driver ltq_deu_driver = {
 	.remove = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_deu_match,
 	},
 };

@@ -366,7 +366,6 @@ err:
 
 static struct platform_driver nct5104d_gpio_driver = {
 	.driver = {
-		.owner	= THIS_MODULE,
 		.name	= DRVNAME,
 	},
 	.probe		= nct5104d_gpio_probe,

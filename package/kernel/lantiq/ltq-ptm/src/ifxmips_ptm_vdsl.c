@@ -1138,7 +1138,6 @@ static struct platform_driver ltq_ptm_driver = {
 	.remove = ltq_ptm_remove,
 	.driver = {
 		.name = "ptm",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_ptm_match,
 	},
 };

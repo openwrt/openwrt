@@ -81,7 +81,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  swim_mod-y	:= swim.o swim_asm.o
 --- /dev/null
 +++ b/drivers/block/fitblk.c
-@@ -0,0 +1,659 @@
+@@ -0,0 +1,658 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * uImage.FIT virtual block device driver.
@@ -714,7 +714,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	.probe		= fitblk_probe,
 +	.driver		= {
 +		.name   = "fitblk",
-+		.owner   = THIS_MODULE,
 +	},
 +};
 +

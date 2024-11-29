@@ -23,7 +23,7 @@ Subject: SoC: add qualcomm syscon
 +obj-$(CONFIG_QCOM_TCSR)		+= qcom_tcsr.o
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_tcsr.c
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,95 @@
 +/*
 + * Copyright (c) 2014, The Linux foundation. All rights reserved.
 + *
@@ -109,7 +109,6 @@ Subject: SoC: add qualcomm syscon
 +static struct platform_driver tcsr_driver = {
 +	.driver = {
 +		.name		= "tcsr",
-+		.owner		= THIS_MODULE,
 +		.of_match_table	= tcsr_dt_match,
 +	},
 +	.probe = tcsr_probe,

@@ -364,6 +364,19 @@ define U-Boot/mt7981_rfb-emmc
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
 endef
 
+define U-Boot/mt7981_gatonetworks_gdsp
+  NAME:=GatoNetworks GDSP
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=gatonetworks_gdsp
+  UBOOT_CONFIG:=mt7981_gatonetworks_gdsp
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr3
+  FIP_COMPRESS:=1
+endef
+
 define U-Boot/mt7981_rfb-nor
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -398,6 +411,18 @@ define U-Boot/mt7981_rfb-snfi
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-snand-ddr3
+endef
+
+define U-Boot/mt7981_routerich_ax3000
+  NAME:=Routerich AX3000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=routerich_ax3000-ubootmod
+  UBOOT_CONFIG:=mt7981_routerich_ax3000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
 define U-Boot/mt7981_qihoo_360t7
@@ -797,6 +822,7 @@ UBOOT_TARGETS := \
 	mt7981_abt_asr3000 \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
+	mt7981_gatonetworks_gdsp \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
@@ -809,6 +835,7 @@ UBOOT_TARGETS := \
 	mt7981_rfb-nor \
 	mt7981_rfb-sd \
 	mt7981_rfb-snfi \
+	mt7981_routerich_ax3000 \
 	mt7981_qihoo_360t7 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \

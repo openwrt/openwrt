@@ -1657,7 +1657,6 @@ static struct platform_driver fe_driver = {
 	.remove = fe_remove,
 	.driver = {
 		.name = "mtk_soc_eth",
-		.owner = THIS_MODULE,
 		.of_match_table = of_fe_match,
 	},
 };

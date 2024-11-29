@@ -18,8 +18,12 @@ mediatek_setup_interfaces()
 	acelink,ew-7886cax)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
-	acer,predator-w6)
+	acer,predator-w6|\
+	acer,predator-w6d)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
+		;;
+	acer,vero-w6m)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
@@ -30,7 +34,8 @@ mediatek_setup_interfaces()
 	cudy,wr3000-v1|\
 	jcg,q30-pro|\
 	qihoo,360t7|\
-	routerich,ax3000)
+	routerich,ax3000|\
+	routerich,ax3000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	asus,tuf-ax4200|\
@@ -133,6 +138,12 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	acer,predator-w6|\
+	acer,predator-w6d|\
+	acer,vero-w6m)
+		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
+		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
+		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
