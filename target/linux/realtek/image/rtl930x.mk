@@ -14,4 +14,22 @@ define Device/zyxel_xgs1250-12
 	zyxel-vers | \
 	uImage gzip
 endef
+
+define Device/zyxel_xgs1210-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001210
+  ZYXEL_VERS := ABWE
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1210-12
+  IMAGE_SIZE := 13312k
+  KERNEL_INITRAMFS := \
+        kernel-bin | \
+        append-dtb | \
+        gzip | \
+        zyxel-vers | \
+        uImage gzip
+endef
+
+
 TARGET_DEVICES += zyxel_xgs1250-12
+TARGET_DEVICES += zyxel_xgs1210-12
