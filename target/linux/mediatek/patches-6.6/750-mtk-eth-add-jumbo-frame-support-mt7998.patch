@@ -1,0 +1,158 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -30,6 +30,7 @@
+ #define MTK_QDMA_PAGE_SIZE	2048
+ #define MTK_MAX_RX_LENGTH	1536
+ #define MTK_MAX_RX_LENGTH_2K	2048
++#define MTK_MAX_RX_LENGTH_9K	9216
+ #define MTK_TX_DMA_BUF_LEN	0x3fff
+ #define MTK_TX_DMA_BUF_LEN_V2	0xffff
+ #define MTK_QDMA_RING_SIZE	2048
+@@ -441,6 +442,7 @@
+ 
+ /* Mac control registers */
+ #define MTK_MAC_MCR(x)		(0x10100 + (x * 0x100))
++#define MAC_MCR_MAX_RX_JUMBO	FIELD_PREP(GENMASK(31, 28), 2)
+ #define MAC_MCR_MAX_RX_MASK	GENMASK(25, 24)
+ #define MAC_MCR_MAX_RX(_x)	(MAC_MCR_MAX_RX_MASK & ((_x) << 24))
+ #define MAC_MCR_MAX_RX_1518	0x0
+@@ -513,6 +515,10 @@
+ #define XMAC_MCR_FORCE_TX_FC	BIT(5)
+ #define XMAC_MCR_FORCE_RX_FC	BIT(4)
+ 
++/* XFI Mac Rx configuration registers */
++#define MTK_XMAC_RX_CFG2(x)	(MTK_XMAC_MCR(x) + 0xd0)
++#define MTK_XMAC_MAX_RX_MASK	GENMASK(13, 0)
++
+ /* XFI Mac logic reset registers */
+ #define MTK_XMAC_LOGIC_RST(x)	(MTK_XMAC_BASE(x) + 0x10)
+ #define XMAC_LOGIC_RST		BIT(0)
+@@ -875,6 +881,13 @@ enum mtk_gmac_id {
+ 	MTK_GMAC_ID_MAX
+ };
+ 
++/* GDM Type */
++enum mtk_gdm_type {
++	MTK_GDM_TYPE = 0,
++	MTK_XGDM_TYPE,
++	MTK_GDM_TYPE_MAX
++};
++
+ enum mtk_tx_buf_type {
+ 	MTK_TYPE_SKB,
+ 	MTK_TYPE_XDP_TX,
+@@ -1378,6 +1391,8 @@ struct mtk_mac {
+ 	int				id;
+ 	phy_interface_t			interface;
+ 	u8				ppe_idx;
++	unsigned int			mode;
++	unsigned int			type;
+ 	int				speed;
+ 	struct device_node		*of_node;
+ 	struct phylink			*phylink;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -34,6 +34,8 @@
+ #include "mtk_eth_soc.h"
+ #include "mtk_wed.h"
+ 
++bool is_mt7988_eth = false;
++
+ static int mtk_msg_level = -1;
+ module_param_named(msg_level, mtk_msg_level, int, 0);
+ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
+@@ -771,8 +773,11 @@ static int mtk_mac_finish(struct phylink
+ 	/* Setup gmac */
+ 	mcr_cur = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
+ 	mcr_new = mcr_cur;
++
++	if (is_mt7988_eth) {
+ 	mcr_new |= MAC_MCR_IPG_CFG | MAC_MCR_FORCE_MODE |
+ 		   MAC_MCR_BACKOFF_EN | MAC_MCR_BACKPR_EN | MAC_MCR_RX_FIFO_CLR_DIS;
++	}
+ 
+ 	/* Only update control register when needed! */
+ 	if (mcr_new != mcr_cur)
+@@ -877,6 +882,11 @@ static void mtk_gdm_mac_link_up(struct m
+ 		 MAC_MCR_FORCE_DPX | MAC_MCR_FORCE_TX_FC |
+ 		 MAC_MCR_FORCE_RX_FC);
+ 
++	if (is_mt7988_eth) 
++		mcr |= MAC_MCR_IPG_CFG | MAC_MCR_FORCE_MODE |
++			MAC_MCR_BACKOFF_EN | MAC_MCR_BACKPR_EN |
++			MAC_MCR_FORCE_LINK;
++
+ 	/* Configure speed */
+ 	mac->speed = speed;
+ 	switch (speed) {
+@@ -3869,6 +3879,7 @@ static void mtk_set_mcr_max_rx(struct mt
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
+ 		return;
+ 
++	if (mac->type == MTK_GDM_TYPE) {
+ 	mcr_cur = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
+ 	mcr_new = mcr_cur & ~MAC_MCR_MAX_RX_MASK;
+ 
+@@ -3878,11 +3889,27 @@ static void mtk_set_mcr_max_rx(struct mt
+ 		mcr_new |= MAC_MCR_MAX_RX(MAC_MCR_MAX_RX_1536);
+ 	else if (val <= 1552)
+ 		mcr_new |= MAC_MCR_MAX_RX(MAC_MCR_MAX_RX_1552);
+-	else
++			else {
+ 		mcr_new |= MAC_MCR_MAX_RX(MAC_MCR_MAX_RX_2048);
++				if (is_mt7988_eth) 
++					mcr_new |= MAC_MCR_MAX_RX_JUMBO;
++		}
+ 
+ 	if (mcr_new != mcr_cur)
+ 		mtk_w32(mac->hw, mcr_new, MTK_MAC_MCR(mac->id));
++	} else if (mac->type == MTK_XGDM_TYPE && mac->id != MTK_GMAC1_ID) {
++		mcr_cur = mtk_r32(mac->hw, MTK_XMAC_RX_CFG2(mac->id));
++		mcr_new = mcr_cur & ~MTK_XMAC_MAX_RX_MASK;
++
++		if (val < MTK_MAX_RX_LENGTH_9K)
++			mcr_new |= val;
++		else
++			if (is_mt7988_eth)
++				mcr_new |= MTK_MAX_RX_LENGTH_9K;
++
++		if (mcr_new != mcr_cur)
++			mtk_w32(mac->hw, mcr_new, MTK_XMAC_RX_CFG2(mac->id));
++	}
+ }
+ 
+ static void mtk_hw_reset(struct mtk_eth *eth)
+@@ -4922,11 +4949,17 @@ static int mtk_add_mac(struct mtk_eth *e
+ 
+ 	eth->netdev[id]->irq = eth->irq[0];
+ 	eth->netdev[id]->dev.of_node = np;
++	eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH - MTK_RX_ETH_HLEN;
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
+ 		eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH - MTK_RX_ETH_HLEN;
+-	else
++	else {
++		if (is_mt7988_eth) {
++			eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH_9K - MTK_RX_ETH_HLEN;
++		} else { 
+ 		eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH_2K - MTK_RX_ETH_HLEN;
++		}
++	}
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA)) {
+ 		mac->device_notifier.notifier_call = mtk_device_event;
+@@ -5032,6 +5065,14 @@ static int mtk_probe(struct platform_dev
+ 	struct mtk_eth *eth;
+ 	int err, i;
+ 
++	// Check for compatibility with "mediatek,mt7988-eth"
++	if (!of_device_is_compatible(pdev->dev.of_node, "mediatek,mt7988-eth")) {;
++		is_mt7988_eth = false;
++	} else {
++		dev_info(&pdev->dev, "Device compatible with mediatek,mt7988-eth - Jumbo frames capable\n");
++		is_mt7988_eth = true;
++	}
++
+ 	eth = devm_kzalloc(&pdev->dev, sizeof(*eth), GFP_KERNEL);
+ 	if (!eth)
+ 		return -ENOMEM;
