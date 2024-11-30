@@ -279,11 +279,19 @@ create_backup_archive() {
 			if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
 				# Format: pkg-name<TAB>{rom,overlay,unknown}
 				# rom is used for pkgs in /rom, even if updated later
-				tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
-					\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
-					\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
-					\( -exec echo {} unknown \; \) \
-					\) | sed -e 's,.*/,,;s/\.control /\t/')" || ret=1
+				if [ -d "/usr/lib/opkg/info" ]; then
+					tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
+						\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
+						\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
+						\( -exec echo {} unknown \; \) \
+						\) | sed -e 's,.*/,,;s/\.control /\t/')" || ret=1
+				elif [ -d "/lib/apk/packages" ]; then
+					tar_print_member "$INSTALLED_PACKAGES" "$(find /lib/apk/packages -name "*.list" \( \
+						\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
+						\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
+						\( -exec echo {} unknown \; \) \
+						\) | sed -e 's,.*/,,;s/\.list /\t/')" || ret=1
+				fi
 			fi
 		fi
 
