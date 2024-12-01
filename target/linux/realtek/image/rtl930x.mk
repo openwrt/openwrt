@@ -5,6 +5,19 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/hasivo_s1100w-8xgt-se
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100W-8XGT-SE
+  IMAGE_SIZE := 12288k
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+endef
+TARGET_DEVICES += hasivo_s1100w-8xgt-se
+
 define Device/tplink_tl-st1008f_v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
