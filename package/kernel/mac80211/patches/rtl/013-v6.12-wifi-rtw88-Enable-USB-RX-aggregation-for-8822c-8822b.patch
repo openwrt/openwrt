@@ -1,0 +1,168 @@
+From 002a5db9a52a0e7af0fa9a450d31049748435748 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Thu, 8 Aug 2024 01:23:06 +0300
+Subject: [PATCH] wifi: rtw88: Enable USB RX aggregation for 8822c/8822b/8821c
+
+Enable USB RX aggregation when there is at least 1 Mbps RX or TX
+traffic, otherwise disable it.
+
+USB RX aggregation improves the RX speed of RTL8811CU on certain ARM
+systems, like the NanoPi NEO Core2. Before: 28 Mbps, after: 231 Mbps.
+
+It also improves the RX speed of RTL8822CU on some x86_64 systems.
+Before: ~200 Mbps, after: ~300 Mbps.
+
+The official drivers for these chips use the same logic for SDIO, but
+for some reason the SDIO driver in rtw88 always enables RX aggregation,
+so this patch only toggles aggregation for USB devices.
+
+RTL8703B is likely not found in USB devices, and RTL8723DU doesn't like
+aggregation.
+
+Tested-by: Sascha Hauer <s.hauer@pengutronix.de>
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/b4c0d54c-6755-4b0f-9dd7-f9196fd74b68@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/hci.h  |  7 ++++
+ drivers/net/wireless/realtek/rtw88/main.c | 13 +++++---
+ drivers/net/wireless/realtek/rtw88/pci.c  |  1 +
+ drivers/net/wireless/realtek/rtw88/sdio.c |  1 +
+ drivers/net/wireless/realtek/rtw88/usb.c  | 40 +++++++++++++++++++++++
+ 5 files changed, 58 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/hci.h
++++ b/drivers/net/wireless/realtek/rtw88/hci.h
+@@ -18,6 +18,7 @@ struct rtw_hci_ops {
+ 	void (*deep_ps)(struct rtw_dev *rtwdev, bool enter);
+ 	void (*link_ps)(struct rtw_dev *rtwdev, bool enter);
+ 	void (*interface_cfg)(struct rtw_dev *rtwdev);
++	void (*dynamic_rx_agg)(struct rtw_dev *rtwdev, bool enable);
+ 
+ 	int (*write_data_rsvd_page)(struct rtw_dev *rtwdev, u8 *buf, u32 size);
+ 	int (*write_data_h2c)(struct rtw_dev *rtwdev, u8 *buf, u32 size);
+@@ -72,6 +73,12 @@ static inline void rtw_hci_interface_cfg
+ 	rtwdev->hci.ops->interface_cfg(rtwdev);
+ }
+ 
++static inline void rtw_hci_dynamic_rx_agg(struct rtw_dev *rtwdev, bool enable)
++{
++	if (rtwdev->hci.ops->dynamic_rx_agg)
++		rtwdev->hci.ops->dynamic_rx_agg(rtwdev, enable);
++}
++
+ static inline int
+ rtw_hci_write_data_rsvd_page(struct rtw_dev *rtwdev, u8 *buf, u32 size)
+ {
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -212,6 +212,7 @@ static void rtw_watch_dog_work(struct wo
+ 	struct rtw_traffic_stats *stats = &rtwdev->stats;
+ 	struct rtw_watch_dog_iter_data data = {};
+ 	bool busy_traffic = test_bit(RTW_FLAG_BUSY_TRAFFIC, rtwdev->flags);
++	u32 tx_unicast_mbps, rx_unicast_mbps;
+ 	bool ps_active;
+ 
+ 	mutex_lock(&rtwdev->mutex);
+@@ -236,10 +237,11 @@ static void rtw_watch_dog_work(struct wo
+ 	else
+ 		ps_active = false;
+ 
+-	ewma_tp_add(&stats->tx_ewma_tp,
+-		    (u32)(stats->tx_unicast >> RTW_TP_SHIFT));
+-	ewma_tp_add(&stats->rx_ewma_tp,
+-		    (u32)(stats->rx_unicast >> RTW_TP_SHIFT));
++	tx_unicast_mbps = stats->tx_unicast >> RTW_TP_SHIFT;
++	rx_unicast_mbps = stats->rx_unicast >> RTW_TP_SHIFT;
++
++	ewma_tp_add(&stats->tx_ewma_tp, tx_unicast_mbps);
++	ewma_tp_add(&stats->rx_ewma_tp, rx_unicast_mbps);
+ 	stats->tx_throughput = ewma_tp_read(&stats->tx_ewma_tp);
+ 	stats->rx_throughput = ewma_tp_read(&stats->rx_ewma_tp);
+ 
+@@ -259,6 +261,9 @@ static void rtw_watch_dog_work(struct wo
+ 
+ 	rtw_phy_dynamic_mechanism(rtwdev);
+ 
++	rtw_hci_dynamic_rx_agg(rtwdev,
++			       tx_unicast_mbps >= 1 || rx_unicast_mbps >= 1);
++
+ 	data.rtwdev = rtwdev;
+ 	/* rtw_iterate_vifs internally uses an atomic iterator which is needed
+ 	 * to avoid taking local->iflist_mtx mutex
+--- a/drivers/net/wireless/realtek/rtw88/pci.c
++++ b/drivers/net/wireless/realtek/rtw88/pci.c
+@@ -1601,6 +1601,7 @@ static struct rtw_hci_ops rtw_pci_ops =
+ 	.deep_ps = rtw_pci_deep_ps,
+ 	.link_ps = rtw_pci_link_ps,
+ 	.interface_cfg = rtw_pci_interface_cfg,
++	.dynamic_rx_agg = NULL,
+ 
+ 	.read8 = rtw_pci_read8,
+ 	.read16 = rtw_pci_read16,
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -1157,6 +1157,7 @@ static struct rtw_hci_ops rtw_sdio_ops =
+ 	.deep_ps = rtw_sdio_deep_ps,
+ 	.link_ps = rtw_sdio_link_ps,
+ 	.interface_cfg = rtw_sdio_interface_cfg,
++	.dynamic_rx_agg = NULL,
+ 
+ 	.read8 = rtw_sdio_read8,
+ 	.read16 = rtw_sdio_read16,
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -766,6 +766,45 @@ static void rtw_usb_interface_cfg(struct
+ 	rtw_usb_init_burst_pkt_len(rtwdev);
+ }
+ 
++static void rtw_usb_dynamic_rx_agg_v1(struct rtw_dev *rtwdev, bool enable)
++{
++	u8 size, timeout;
++	u16 val16;
++
++	rtw_write32_set(rtwdev, REG_RXDMA_AGG_PG_TH, BIT_EN_PRE_CALC);
++	rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
++	rtw_write8_clr(rtwdev, REG_RXDMA_AGG_PG_TH + 3, BIT(7));
++
++	if (enable) {
++		size = 0x5;
++		timeout = 0x20;
++	} else {
++		size = 0x0;
++		timeout = 0x1;
++	}
++	val16 = u16_encode_bits(size, BIT_RXDMA_AGG_PG_TH) |
++		u16_encode_bits(timeout, BIT_DMA_AGG_TO_V1);
++
++	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
++}
++
++static void rtw_usb_dynamic_rx_agg(struct rtw_dev *rtwdev, bool enable)
++{
++	switch (rtwdev->chip->id) {
++	case RTW_CHIP_TYPE_8822C:
++	case RTW_CHIP_TYPE_8822B:
++	case RTW_CHIP_TYPE_8821C:
++		rtw_usb_dynamic_rx_agg_v1(rtwdev, enable);
++		break;
++	case RTW_CHIP_TYPE_8723D:
++		/* Doesn't like aggregation. */
++		break;
++	case RTW_CHIP_TYPE_8703B:
++		/* Likely not found in USB devices. */
++		break;
++	}
++}
++
+ static struct rtw_hci_ops rtw_usb_ops = {
+ 	.tx_write = rtw_usb_tx_write,
+ 	.tx_kick_off = rtw_usb_tx_kick_off,
+@@ -775,6 +814,7 @@ static struct rtw_hci_ops rtw_usb_ops =
+ 	.deep_ps = rtw_usb_deep_ps,
+ 	.link_ps = rtw_usb_link_ps,
+ 	.interface_cfg = rtw_usb_interface_cfg,
++	.dynamic_rx_agg = rtw_usb_dynamic_rx_agg,
+ 
+ 	.write8  = rtw_usb_write8,
+ 	.write16 = rtw_usb_write16,
