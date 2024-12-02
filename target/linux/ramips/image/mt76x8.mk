@@ -365,6 +365,16 @@ define Device/keenetic_kn-1613
 endef
 TARGET_DEVICES += keenetic_kn-1613
 
+define Device/keenetic_kn-3211
+  IMAGE_SIZE := 31488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3211
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x803211 -v "KN-3211"
+endef
+TARGET_DEVICES += keenetic_kn-3211
+
 define Device/kroks_kndrt31r16
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kroks

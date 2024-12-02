@@ -134,6 +134,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
 		;;
+	keenetic,kn-3211)
+		ucidef_add_switch "switch0" \
+			"2:lan" "6@eth0"
+		;;
 	kroks,kndrt31r19)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
@@ -280,6 +284,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
 	keenetic,kn-1613|\
+	keenetic,kn-3211|\
 	zyxel,keenetic-extra-ii)
 		wan_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
 		;;
