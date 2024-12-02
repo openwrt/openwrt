@@ -1823,7 +1823,7 @@ define Device/hak5_wifi-pineapple-nano
   DEVICE_MODEL := WiFi Pineapple NANO
   TPLINK_HWID := 0x4e414e4f
   IMAGES := sysupgrade.bin
-  DEVICE_PACKAGES := kmod-ath9k-htc kmod-usb-chipidea2 kmod-usb-storage \
+  DEVICE_PACKAGES := kmod-ath9k-htc kmod-gpio-beeper kmod-usb-chipidea2 kmod-usb-storage \
 	-swconfig -uboot-envtools
   SUPPORTED_DEVICES += wifi-pineapple-nano
 endef
@@ -3212,7 +3212,7 @@ define Device/wallys_dr531
   SOC := qca9531
   DEVICE_VENDOR := Wallys
   DEVICE_MODEL := DR531
-  DEVICE_PACKAGES := kmod-usb2 rssileds
+  DEVICE_PACKAGES := kmod-gpio-beeper kmod-usb2 rssileds
   IMAGE_SIZE := 7808k
   SUPPORTED_DEVICES += dr531
 endef
