@@ -296,12 +296,12 @@
 	};
 
 	usbphy: usbphy {
-		compatible = "ralink,rt3050-usbphy";
+		compatible = "ralink,rt3352-usbphy";
 		#phy-cells = <0>;
 
 		ralink,sysctl = <&sysc>;
-		resets = <&sysc 22>;
-		reset-names = "host";
+		resets = <&sysc 22>, <&sysc 25>;
+		reset-names = "host", "device";
 	};
 
 	ethernet: ethernet@10100000 {
