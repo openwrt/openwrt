@@ -227,6 +227,7 @@
 				label = "Factory";
 				reg = <0x180000 0x0200000>;
 				read-only;
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -242,6 +243,7 @@
 				label = "bdinfo";
 				reg = <0x380000 0x0040000>;
 				read-only;
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -255,15 +257,15 @@
 				};
 			};
 
-			partition@3C0000 {
+			partition@3c0000 {
 				label = "FIP";
-				reg = <0x3C0000 0x0200000>;
+				reg = <0x3c0000 0x0200000>;
 				read-only;
 			};
 
-			partition@580000 {
+			partition@5c0000 {
 				label = "ubi";
-				reg = <0x5C0000 0x4000000>;
+				reg = <0x5c0000 0x4000000>;
 				compatible = "linux,ubi";
 			};
 		};
