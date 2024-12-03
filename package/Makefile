@@ -99,8 +99,9 @@ ifneq ($(CONFIG_USE_APK),)
 	$(file >$(TMP_DIR)/apk_install_list,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
 	$(call apk,$(TARGET_DIR)) add --no-cache --initdb --no-scripts --arch $(ARCH_PACKAGES) \
-		--repositories-file /dev/zero --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
+		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$$(cat $(TMP_DIR)/apk_install_list)
+	rm -rf $(TARGET_DIR)/run
 else
 	$(file >$(TMP_DIR)/opkg_install_list,\
 	  $(call opkg_package_files,\
@@ -130,7 +131,12 @@ ifneq ($(CONFIG_USE_APK),)
 			--keys-dir $(TOPDIR) \
 			--sign $(BUILD_KEY_APK_SEC) \
 			--output packages.adb \
-			$$(ls *.apk | grep -v 'base-files-\|kernel-\|libc-'); \
+			$$(ls *.apk | grep -vE '^(base-files-|kernel-|libc-)'); \
+		echo -n '{"architecture": "$(ARCH_PACKAGES)", "packages":{' > index.json; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump packages.adb | \
+			awk '/- name: / {pkg = $$NF} ; / version: / {printf "\"%s\": \"%s\", ", pkg, $$NF}' | \
+			sed 's/, $$//' >> index.json; \
+		echo '}}' >> index.json; \
 	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \

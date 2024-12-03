@@ -89,6 +89,7 @@ ath79_setup_interfaces()
 	tplink,cpe610-v1|\
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
+	tplink,cpe710-v2|\
 	tplink,eap225-outdoor-v1|\
 	tplink,eap225-outdoor-v3|\
 	tplink,eap225-v1|\
@@ -399,6 +400,10 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:2" "4:lan:1"
+		;;
+	kuwfi,n650)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:1" "3:lan:2"
 		;;
 	letv,lba-047-ch)
 		ucidef_set_interface_wan "eth0"
@@ -716,6 +721,9 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
+	elecom,wab-i1750-ps|\
+	elecom,wab-s1167-ps|\
+	elecom,wab-s600-ps|\
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)

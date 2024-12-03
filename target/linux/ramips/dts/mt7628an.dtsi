@@ -30,13 +30,6 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	mmc_clk: mmc-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <48000000>;
-		clock-accuracy = <100>;
-	};
-
 	mmc_reg_1v8: regulator-1v8 {
 		compatible = "regulator-fixed";
 
@@ -121,7 +114,7 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 7>;
+			clocks = <&sysc 9>;
 			clock-names = "i2c";
 
 			resets = <&sysc 16>;
@@ -140,7 +133,7 @@
 			compatible = "mediatek,mt7628-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysc 8>;
+			clocks = <&sysc 10>;
 
 			resets = <&sysc 17>;
 			reset-names = "i2s";
@@ -162,7 +155,7 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
-			clocks = <&sysc 9>;
+			clocks = <&sysc 11>;
 			clock-names = "spi";
 
 			resets = <&sysc 18>;
@@ -185,7 +178,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 11>;
+			clocks = <&sysc 13>;
 
 			resets = <&sysc 12>;
 
@@ -204,7 +197,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 12>;
+			clocks = <&sysc 14>;
 
 			resets = <&sysc 19>;
 
@@ -225,7 +218,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 13>;
+			clocks = <&sysc 15>;
 
 			resets = <&sysc 20>;
 
@@ -393,7 +386,7 @@
 		cap-mmc-highspeed;
 		cap-sd-highspeed;
 
-		clocks = <&mmc_clk>, <&mmc_clk>;
+		clocks = <&sysc 16>, <&sysc 16>;
 		clock-names = "source", "hclk";
 
 		disable-wp;
@@ -516,7 +509,7 @@
 		compatible = "mediatek,mt7628-wmac";
 		reg = <0x10300000 0x100000>;
 
-		clocks = <&sysc 14>;
+		clocks = <&sysc 17>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

@@ -55,8 +55,14 @@ else
 MESON_CPU:="$(CPU_TYPE)$(if $(CPU_SUBTYPE),+$(CPU_SUBTYPE))"
 endif
 
+ifeq ($(MESON_USE_STAGING_PYTHON),)
+PYTHON_BIN:=$(STAGING_DIR_HOST)/bin/$(PYTHON)
+else
+PYTHON_BIN:=$(STAGING_DIR_HOSTPKG)/bin/$(PYTHON)
+endif
+
 define Meson
-	$(2) $(STAGING_DIR_HOST)/bin/$(PYTHON) $(STAGING_DIR_HOST)/bin/meson.py $(1)
+	$(2) $(PYTHON_BIN) $(STAGING_DIR_HOST)/bin/meson.py $(1)
 endef
 
 define Meson/CreateNativeFile
@@ -65,7 +71,7 @@ define Meson/CreateNativeFile
 		-e "s|@CXX@|$(foreach BIN,$(HOSTCXX),'$(BIN)',)|" \
 		-e "s|@PKGCONFIG@|$(PKG_CONFIG)|" \
 		-e "s|@CMAKE@|$(STAGING_DIR_HOST)/bin/cmake|" \
-		-e "s|@PYTHON@|$(STAGING_DIR_HOST)/bin/python3|" \
+		-e "s|@PYTHON@|$(PYTHON_BIN)|" \
 		-e "s|@CFLAGS@|$(foreach FLAG,$(HOST_CFLAGS) $(HOST_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@CXXFLAGS@|$(foreach FLAG,$(HOST_CXXFLAGS) $(HOST_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@LDFLAGS@|$(foreach FLAG,$(HOST_LDFLAGS),'$(FLAG)',)|" \
@@ -84,7 +90,7 @@ define Meson/CreateCrossFile
 		-e "s|@NM@|$(TARGET_NM)|" \
 		-e "s|@PKGCONFIG@|$(PKG_CONFIG)|" \
 		-e "s|@CMAKE@|$(STAGING_DIR_HOST)/bin/cmake|" \
-		-e "s|@PYTHON@|$(STAGING_DIR_HOST)/bin/python3|" \
+		-e "s|@PYTHON@|$(PYTHON_BIN)|" \
 		-e "s|@CFLAGS@|$(foreach FLAG,$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@CXXFLAGS@|$(foreach FLAG,$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@LDFLAGS@|$(foreach FLAG,$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS),'$(FLAG)',)|" \
@@ -108,7 +114,7 @@ define Host/Configure/Meson
 endef
 
 define Host/Compile/Meson
-	+$(NINJA) -C $(MESON_HOST_BUILD_DIR) $(1)
+	+$(MESON_HOST_VARS) $(NINJA) -C $(MESON_HOST_BUILD_DIR) $(1)
 endef
 
 define Host/Install/Meson
@@ -124,7 +130,7 @@ define Build/Configure/Meson
 	$(call Meson/CreateCrossFile,$(PKG_BUILD_DIR)/openwrt-cross.txt)
 	$(call Meson, \
 		setup \
-		--buildtype plain \
+		--buildtype $(if $(CONFIG_DEBUG),debug,plain) \
 		--native-file $(PKG_BUILD_DIR)/openwrt-native.txt \
 		--cross-file $(PKG_BUILD_DIR)/openwrt-cross.txt \
 		-Ddefault_library=both \
@@ -135,7 +141,7 @@ define Build/Configure/Meson
 endef
 
 define Build/Compile/Meson
-	+$(NINJA) -C $(MESON_BUILD_DIR) $(1)
+	+$(MESON_VARS) $(NINJA) -C $(MESON_BUILD_DIR) $(1)
 endef
 
 define Build/Install/Meson

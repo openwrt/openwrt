@@ -36,9 +36,11 @@ case "$board" in
 abt,asr3000|\
 h3c,magic-nx30-pro|\
 jcg,q30-pro|\
+mercusys,mr90x-v1-ubi|\
 netcore,n60|\
 nokia,ea0326gmp|\
 qihoo,360t7|\
+routerich,ax3000-ubootmod|\
 tplink,tl-xdr4288|\
 tplink,tl-xdr6086|\
 tplink,tl-xdr6088|\
@@ -48,6 +50,16 @@ xiaomi,mi-router-wr30u-ubootmod|\
 xiaomi,redmi-router-ax6000-ubootmod|\
 zyxel,ex5601-t0-ubootmod)
 	ubootenv_add_ubi_default
+	;;
+acer,predator-w6|\
+acer,predator-w6d|\
+acer,vero-w6m|\
+glinet,gl-mt2500|\
+glinet,gl-mt6000|\
+glinet,gl-x3000|\
+glinet,gl-xe3000)
+	local envdev=$(find_mmc_part "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
 	;;
 asus,rt-ax59u)
 	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
@@ -86,12 +98,8 @@ zbtlink,zbt-z8103ax)
 dlink,aquila-pro-ai-m30-a1)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
 	;;
-glinet,gl-x3000|\
-glinet,gl-xe3000|\
-glinet,gl-mt2500|\
-glinet,gl-mt6000)
-	local envdev=$(find_mmc_part "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
+gatonetworks,gdsp)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"

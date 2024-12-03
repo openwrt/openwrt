@@ -369,6 +369,7 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 				      &op_class, &channel);
 
 	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "driver", hapd->driver->name);
 	blobmsg_add_string(&b, "status", hostapd_state_text(hapd->iface->state));
 	blobmsg_printf(&b, "bssid", MACSTR, MAC2STR(hapd->conf->bssid));
 
@@ -1657,6 +1658,85 @@ static int avl_compare_macaddr(const void *k1, const void *k2, void *ptr)
 	return memcmp(k1, k2, ETH_ALEN);
 }
 
+static int
+hostapd_wired_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
+			  struct ubus_request_data *req, const char *method,
+			  struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct hostap_sta_driver_data sta_driver_data;
+	struct sta_info *sta;
+	void *list, *c;
+	char mac_buf[20];
+	static const struct {
+		const char *name;
+		uint32_t flag;
+	} sta_flags[] = {
+		{ "authorized", WLAN_STA_AUTHORIZED },
+	};
+
+	blob_buf_init(&b, 0);
+	list = blobmsg_open_table(&b, "clients");
+	for (sta = hapd->sta_list; sta; sta = sta->next) {
+		void *r;
+		int i;
+
+		sprintf(mac_buf, MACSTR, MAC2STR(sta->addr));
+		c = blobmsg_open_table(&b, mac_buf);
+		for (i = 0; i < ARRAY_SIZE(sta_flags); i++)
+			blobmsg_add_u8(&b, sta_flags[i].name,
+				       !!(sta->flags & sta_flags[i].flag));
+
+		blobmsg_close_table(&b, c);
+	}
+	blobmsg_close_array(&b, list);
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}
+
+static int
+hostapd_wired_get_status(struct ubus_context *ctx, struct ubus_object *obj,
+			 struct ubus_request_data *req, const char *method,
+			 struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	char iface_name[17];
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_string(&b, "driver", hapd->driver->name);
+	blobmsg_add_string(&b, "status", hostapd_state_text(hapd->iface->state));
+
+	snprintf(iface_name, 17, "%s", hapd->iface->phy);
+	blobmsg_add_string(&b, "iface", iface_name);
+
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}
+
+static int
+hostapd_wired_del_clients(struct ubus_context *ctx, struct ubus_object *obj,
+			  struct ubus_request_data *req, const char *method,
+			  struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	hostapd_free_stas(hapd);
+
+	return 0;
+}
+
+static const struct ubus_method wired_methods[] = {
+	UBUS_METHOD_NOARG("reload", hostapd_bss_reload),
+	UBUS_METHOD_NOARG("get_clients", hostapd_wired_get_clients),
+	UBUS_METHOD_NOARG("del_clients", hostapd_wired_del_clients),
+	UBUS_METHOD_NOARG("get_status", hostapd_wired_get_status),
+};
+
+static struct ubus_object_type wired_object_type =
+	UBUS_OBJECT_TYPE("hostapd_wired", wired_methods);
+
 void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 {
 	struct ubus_object *obj = &hapd->ubus.obj;
@@ -1676,9 +1756,15 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 
 	avl_init(&hapd->ubus.banned, avl_compare_macaddr, false, NULL);
 	obj->name = name;
-	obj->type = &bss_object_type;
-	obj->methods = bss_object_type.methods;
-	obj->n_methods = bss_object_type.n_methods;
+	if (!strcmp(hapd->driver->name, "wired")) {
+		obj->type = &wired_object_type;
+		obj->methods = wired_object_type.methods;
+		obj->n_methods = wired_object_type.n_methods;
+	} else {
+		obj->type = &bss_object_type;
+		obj->methods = bss_object_type.methods;
+		obj->n_methods = bss_object_type.n_methods;
+	}
 	ret = ubus_add_object(ctx, obj);
 	hostapd_ubus_ref_inc();
 }
@@ -1876,6 +1962,13 @@ void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *
 	blobmsg_add_string(&b, "ifname", hapd->conf->iface);
 	if (auth_alg)
 		blobmsg_add_string(&b, "auth-alg", auth_alg);
+	if (sta->bandwidth[0] || sta->bandwidth[1]) {
+		void *r = blobmsg_open_array(&b, "rate-limit");
+
+		blobmsg_add_u32(&b, "", sta->bandwidth[0]);
+		blobmsg_add_u32(&b, "", sta->bandwidth[1]);
+		blobmsg_close_array(&b, r);
+	}
 
 	ubus_notify(ctx, &hapd->ubus.obj, "sta-authorized", b.head, -1);
 }
