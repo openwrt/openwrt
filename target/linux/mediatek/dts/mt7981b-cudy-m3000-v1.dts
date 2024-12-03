@@ -117,7 +117,6 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
-
 	status = "okay";
 
 	spi_nand: spi_nand@0 {
@@ -127,17 +126,17 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-
-			mediatek,nmbm;
-			mediatek,bmt-max-ratio = <1>;
-			mediatek,bmt-max-reserved-blocks = <64>;
 
 			partition@0 {
 				label = "BL2";
@@ -177,6 +176,7 @@
 			partition@3c0000 {
 				label = "FIP";
 				reg = <0x03c0000 0x0200000>;
+				read-only;
 			};
 
 			partition@5c0000 {
