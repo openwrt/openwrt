@@ -81,16 +81,18 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usbpower {
-			gpio-export,name = "usbpower";
-			gpio-export,output = <1>;
-			gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
-		};
+	reg_usb_power: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
+};
+
+&usbphy {
+	phy-supply = <&reg_usb_power>;
 };
 
 &spi0 {

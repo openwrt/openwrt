@@ -45,16 +45,18 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb-power {
-			gpio-export,name = "usb-power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
-		};
+	reg_usb_power: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
+};
+
+&usbphy {
+	phy-supply = <&reg_usb_power>;
 };
 
 &sdhci {
