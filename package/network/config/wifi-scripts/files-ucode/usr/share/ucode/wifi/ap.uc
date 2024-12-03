@@ -1,6 +1,7 @@
 'use strict';
 
 import * as libuci from 'uci';
+import { md5 } from 'digest';
 import * as fs from 'fs';
 
 import { append, append_raw, append_value, append_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
@@ -140,10 +141,10 @@ function iface_auth_type(config) {
 		config.vlan_possible = 1;
 
 		if (config.fils) {
-			set_default(config, 'erp_domain', substr(digest.md5(config.ssid), 0, 4));
+			set_default(config, 'erp_domain', substr(md5(config.ssid), 0, 4));
 			set_default(config, 'fils_realm', config.erp_domain);
 			set_default(config, 'erp_send_reauth_start', 1);
-			set_default(config, 'fils_cache_id', substr(digest.md5(config.fils_realm), 0, 4));
+			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm), 0, 4));
 		}
 
 		if (!config.eap_server) {
@@ -329,7 +330,7 @@ function iface_roaming(config) {
 	if (!config.ieee80211r || config.wpa < 2)
 		return;
 
-	set_default(config, 'mobility_domain', substr(digest.md5(config.ssid), 0, 4));
+	set_default(config, 'mobility_domain', substr(md5(config.ssid), 0, 4));
 	set_default(config, 'ft_psk_generate_local', config.auth_type == 'psk');
 	set_default(config, 'ft_iface', config.network_ifname);
 
@@ -338,7 +339,7 @@ function iface_roaming(config) {
 			if (!config.auth_secret && !config.key)
 				netifd.setup_failed('FT_KEY_CANT_BE_DERIVED');
 
-			let ft_key = digest.md5(`${mobility_domain}/${auth_secret ?? key}`);
+			let ft_key = md5(`${mobility_domain}/${auth_secret ?? key}`);
 
 			set_default(config, 'r0kh', 'ff:ff:ff:ff:ff:ff,*,' + ft_key);
 			set_default(config, 'r1kh', '00:00:00:00:00:00,00:00:00:00:00:00,' + ft_key);

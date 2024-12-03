@@ -333,7 +333,7 @@ function device_htmode_append(config) {
 		config.vht_capab += rx_stbc[min(config.rx_stbc, (vht_capab >> 8) & 7)];
 
 		if (vht_capab & 0x800 && config.su_beamformer)
-			config.vht_capab += '[SOUNDING-DIMENSION' + min(((vht_capab >> 16) & 3) + 1, config.beamformer_antennas) + ']';
+			config.vht_capab += '[SOUNDING-DIMENSION-' + min(((vht_capab >> 16) & 3) + 1, config.beamformer_antennas) + ']';
 		if (vht_capab & 0x1000 && config.su_beamformee)
 			config.vht_capab += '[BF-ANTENNA-' + min(((vht_capab >> 13) & 3) + 1, config.beamformer_antennas) + ']';
 

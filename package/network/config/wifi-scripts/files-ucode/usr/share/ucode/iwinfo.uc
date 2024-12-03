@@ -58,7 +58,7 @@ function get_hardware_id(iface) {
 	};
 
 	let path = `/sys/class/ieee80211/phy${iface.wiphy}/device/`;
-	if (stat(path) + 'vendor') {
+	if (stat(path + 'vendor')) {
 		let data = [];
 		for (let lookup in [ 'vendor', 'device', 'subsystem_vendor', 'subsystem_device' ])
 			push(data, trim(readfile(path + lookup), '\n'));
@@ -162,16 +162,11 @@ function format_band(freq) {
 }
 
 function format_frequency(freq) {
-	if (!freq)
-		return 'unknown';
-	freq = '' + freq;
-	return substr(freq, 0, 1) + '.' + substr(freq, 1);
+	return freq ? sprintf('%.03f', freq / 1000.0) : 'unknown';
 }
 
 function format_rate(rate) {
-	if (!rate)
-		return 'unknown';
-	return '' + (rate / 10) + '.' + (rate % 10);
+	return rate ? sprintf('%.01f', rate / 10.0) : 'unknown';
 }
 
 function format_mgmt_key(key) {
@@ -269,7 +264,7 @@ function dbm2mw(dbm) {
 	for (let k = 0; k < ip; k++)
 		res *= 10;
 	for (let k = 0; k < fp; k++)
-		res *= 1.25892541179;
+		res *= LOG10_MAGIC;
 	
 	return int(res);
 }
@@ -554,23 +549,23 @@ export function scan(dev) {
 
 			case 48:
 				cell.crypto = {
-					group: rsn_cipher[+ord(ie.data, 5)] ?? '',
+					group: rsn_cipher[ord(ie.data, 5)] ?? '',
 					pair: [],
 					key_mgmt: [],
 				};
 
 				let offset = 6;
-				let count = +ord(ie.data, offset);
+				let count = ord(ie.data, offset);
 				offset += 2;
 				
 				for (let i = 0; i < count; i++) {
-					let key = rsn_cipher[+ord(ie.data, offset + 3)];
+					let key = rsn_cipher[ord(ie.data, offset + 3)];
 					if (key)
 						push(cell.crypto.pair, key);
 					offset += 4;
 				}
 				
-				count = +ord(ie.data, offset);
+				count = ord(ie.data, offset);
 				offset += 2;
 
 				for (let i = 0; i < count; i++) {
