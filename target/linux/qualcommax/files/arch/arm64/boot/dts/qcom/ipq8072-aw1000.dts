@@ -57,12 +57,6 @@
 			gpio-export,output = <1>;
 			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
 		};
-
-		usb-vbus {
-			gpio-export,name = "usb_vbus";
-			gpio-export,output = <0>;
-			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	keys {
@@ -160,6 +154,15 @@
 			gpios = <&led_gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 9 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
 };
 
 &tlmm {
@@ -221,6 +224,8 @@
 
 &qusb_phy_1 {
 	status = "okay";
+
+	vdd-supply = <&usb_vbus>;
 };
 
 &ssphy_0 {
