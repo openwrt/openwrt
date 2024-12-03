@@ -54,6 +54,7 @@ define Device/dongshan_nezha_stu
   DEVICE_VENDOR := Dongshan
   DEVICE_MODEL := Nezha STU devkit
   DEVICE_DTS := allwinner/sun20i-d1-dongshan-nezha-stu
+  SUPPORTED_DEVICES += 100ask,dongshan-nezha-stu allwinner,sun20i-d1
   UBOOT := dongshan_nezha_stu
 endef
 TARGET_DEVICES += dongshan_nezha_stu
@@ -63,6 +64,10 @@ define Device/lichee_rv_dock
   DEVICE_VENDOR := Sipeed
   DEVICE_MODEL := LicheePi RV (dock)
   DEVICE_DTS := allwinner/sun20i-d1-lichee-rv-dock
+  SUPPORTED_DEVICES += \
+	sipeed,lichee-rv-dock \
+	sipeed,lichee-rv \
+	allwinner,sun20i-d1
   DEVICE_PACKAGES += kmod-rtl8723bs
   UBOOT := lichee_rv_dock
 endef
@@ -73,6 +78,7 @@ define Device/mangopi_mq_pro
   DEVICE_VENDOR := MangoPi
   DEVICE_MODEL := MQ Pro
   DEVICE_DTS := allwinner/sun20i-d1-mangopi-mq-pro
+  SUPPORTED_DEVICES += widora,mangopi-mq-pro allwinner,sun20i-d1
   DEVICE_PACKAGES += kmod-rtl8723bs
   UBOOT := mangopi_mq_pro
 endef
@@ -83,6 +89,7 @@ define Device/nezha
   DEVICE_VENDOR := Nezha
   DEVICE_MODEL := D1
   DEVICE_DTS := allwinner/sun20i-d1-nezha
+  SUPPORTED_DEVICES += allwinner,d1-nezha allwinner,sun20i-d1
   UBOOT := nezha
 endef
 TARGET_DEVICES += nezha
