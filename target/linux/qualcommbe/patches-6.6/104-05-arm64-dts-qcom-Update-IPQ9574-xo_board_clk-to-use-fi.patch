@@ -1,0 +1,52 @@
+From dcb1e63fbc695c3971d7207238a78f66355a2f9a Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Thu, 7 Nov 2024 17:50:26 +0800
+Subject: [PATCH 5/5] arm64: dts: qcom: Update IPQ9574 xo_board_clk to use
+ fixed factor clock
+
+xo_board_clk is fixed to 24 MHZ, which is routed from WiFi output clock
+48 MHZ (also being the reference clock of CMN PLL) divided 2 by analog
+block routing channel.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi | 7 ++++++-
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi            | 3 ++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
+index 78f6a2e053d5..9a8692377176 100644
+--- a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
+@@ -174,8 +174,13 @@ &ref_48mhz_clk {
+ 	clock-mult = <1>;
+ };
+ 
++/*
++ * The frequency of xo_board_clk is fixed to 24 MHZ, which is routed
++ * from WiFi output clock 48 MHZ divided by 2.
++ */
+ &xo_board_clk {
+-	clock-frequency = <24000000>;
++	clock-div = <2>;
++	clock-mult = <1>;
+ };
+ 
+ &xo_clk {
+diff --git a/arch/arm64/boot/dts/qcom/ipq9574.dtsi b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+index dc4965abff58..376b75976524 100644
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -34,7 +34,8 @@ sleep_clk: sleep-clk {
+ 		};
+ 
+ 		xo_board_clk: xo-board-clk {
+-			compatible = "fixed-clock";
++			compatible = "fixed-factor-clock";
++			clocks = <&ref_48mhz_clk>;
+ 			#clock-cells = <0>;
+ 		};
+ 
+-- 
+2.45.2
+
