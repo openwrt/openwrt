@@ -1,0 +1,19 @@
+From 49971b1c08877b06a487ca56352665a571d7962a Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 4 Dec 2024 10:42:12 +0000
+Subject: [PATCH 626/695] dt: Disabled vc4 by default on 2712
+
+---
+ arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcm2712-ds.dtsi
+@@ -471,6 +471,7 @@
+ 
+ 		vc4: gpu {
+ 			compatible = "brcm,bcm2712-vc6";
++			status = "disabled";
+ 		};
+ 
+ 		iommu2: iommu@5100 {
