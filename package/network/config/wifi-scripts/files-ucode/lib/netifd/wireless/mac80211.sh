@@ -210,6 +210,9 @@ function setup() {
 	}
 	data.phy_suffix = phy_suffix(data.config.radio, ":");
 	data.vif_phy_suffix = phy_suffix(data.config.radio, ".");
+	data.ifname_prefix = data.config.ifname_prefix;
+	if (!data.ifname_prefix)
+		data.ifname_prefix = data.phy + data.vif_phy_suffix + "-";
 	let active_ifnames = [];
 
 	log('Starting');
@@ -229,12 +232,12 @@ function setup() {
 		let mode_idx = idx[mode]++;
 
 		if (!v.config.ifname) 
-			v.config.ifname = data.phy + data.vif_phy_suffix + "-" + mode + mode_idx;
+			v.config.ifname = data.ifname_prefix + mode + mode_idx;
 		push(active_ifnames, v.config.ifname);
 
 		if (v.config.encryption == 'owe' && v.config.owe_transition) {
 			mode_idx = idx[mode]++;
-			v.config.owe_transition_ifname = data.phy + data.vif_phy_suffix + "-" + mode + mode_idx;
+			v.config.owe_transition_ifname = data.ifname_prefix + mode + mode_idx;
 			push(active_ifnames, v.config.ifname);
 		}
 

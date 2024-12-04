@@ -29,6 +29,7 @@ drv_mac80211_init_device_config() {
 	config_add_string path phy 'macaddr:macaddr'
 	config_add_string tx_burst
 	config_add_string distance
+	config_add_string ifname_prefix
 	config_add_int radio beacon_int chanbw frag rts
 	config_add_int rxantenna txantenna txpower min_tx_power
 	config_add_int num_global_macaddr multiple_bssid
@@ -660,9 +661,9 @@ mac80211_check_ap() {
 }
 
 mac80211_set_ifname() {
-	local phy="$1"
-	local prefix="$2"
-	eval "ifname=\"$phy-$prefix\${idx_$prefix:-0}\"; idx_$prefix=\$((\${idx_$prefix:-0 } + 1))"
+	local prefix="$1"
+	local type="$2"
+	eval "ifname=\"$prefix$type\${idx_$type:-0}\"; idx_$type=\$((\${idx_$type:-0 } + 1))"
 }
 
 mac80211_prepare_vif() {
@@ -679,7 +680,7 @@ mac80211_prepare_vif() {
 		monitor) prefix=mon;;
 		esac
 
-		mac80211_set_ifname "$phy$vif_phy_suffix" "$prefix"
+		mac80211_set_ifname "$ifname_prefix" "$prefix"
 	}
 
 	append active_ifnames "$ifname"
@@ -1105,7 +1106,8 @@ drv_mac80211_setup() {
 		txpower \
 		rxantenna txantenna \
 		frag rts beacon_int:100 htmode \
-		num_global_macaddr:1 multiple_bssid
+		num_global_macaddr:1 multiple_bssid \
+		ifname_prefix
 	json_get_values basic_rate_list basic_rate
 	json_get_values scan_list scan_list
 	json_select ..
@@ -1123,6 +1125,8 @@ drv_mac80211_setup() {
 		wireless_set_retry 0
 		return 1
 	}
+
+	set_default ifname_prefix "$phy$vif_phy_suffix-"
 
 	local wdev
 	local cwdev
