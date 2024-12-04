@@ -445,6 +445,11 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 		phylink_set(mask, 10000baseKR_Full);
 		phylink_set(mask, 10000baseSR_Full);
 		phylink_set(mask, 10000baseCR_Full);
+
+		phylink_set(mask, 10000baseLR_Full);
+		phylink_set(mask, 10000baseLRM_Full);
+		phylink_set(mask, 10000baseER_Full);
+
 	}
 	if (state->interface == PHY_INTERFACE_MODE_INTERNAL) {
 		phylink_set(mask, 1000baseX_Full);
@@ -874,6 +879,8 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	if (state->duplex == DUPLEX_FULL)
 		reg |= RTL930X_DUPLEX_MODE;
+	else
+		reg &= ~RTL930X_DUPLEX_MODE; /* Clear duplex bit otherwise */
 
 	if (priv->ports[port].phy_is_integrated)
 		reg &= ~RTL930X_FORCE_EN; /* Clear MAC_FORCE_EN to allow SDS-MAC link */
