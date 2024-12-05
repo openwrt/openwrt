@@ -139,6 +139,9 @@ zyxel,ex5601-t0)
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
 	;;
+tenbay,wr3000k)
+        ubootenv_add_uci_config "/dev/mtd1" "0" "0x20000" "0x20000" 1
+        ;;
 esac
 
 config_load ubootenv
