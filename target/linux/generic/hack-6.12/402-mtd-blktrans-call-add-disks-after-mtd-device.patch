@@ -25,7 +25,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/mtd_blkdevs.c
 +++ b/drivers/mtd/mtd_blkdevs.c
-@@ -386,19 +386,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
+@@ -379,19 +379,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
  	if (new->readonly)
  		set_disk_ro(gd, 1);
  
@@ -45,7 +45,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  out_free_tag_set:
  	blk_mq_free_tag_set(new->tag_set);
  out_kfree_tag_set:
-@@ -408,6 +397,35 @@ out_list_del:
+@@ -401,6 +390,35 @@ out_list_del:
  	return ret;
  }
  
@@ -83,7 +83,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	unsigned long flags;
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -33,6 +33,7 @@
+@@ -34,6 +34,7 @@
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -91,7 +91,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include "mtdcore.h"
  
-@@ -1127,6 +1128,8 @@ int mtd_device_parse_register(struct mtd
+@@ -1132,6 +1133,8 @@ int mtd_device_parse_register(struct mtd
  		register_reboot_notifier(&mtd->reboot_notifier);
  	}
  
