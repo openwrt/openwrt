@@ -1,0 +1,12 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1208,7 +1208,8 @@ u-boot.bin: u-boot-dtb.bin FORCE
+ 
+ else
+ u-boot.bin: u-boot-nodtb.bin FORCE
+-	$(call if_changed,copy)
++	$(call if_changed,copy) &&\
++	./tools/mkimage -A arm -T standalone  -C none -n "seconduboot"  -e 0x41e00000 -d ./u-boot.bin $(TMPDIR)/second-uboot.bin
+ endif
+ 
+ # we call Makefile in arch/arm/mach-imx which
