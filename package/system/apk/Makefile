@@ -27,7 +27,7 @@ define Package/apk/default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib
+  DEPENDS:=+zlib +wget
   URL:=$(PKG_SOURCE_URL)
   PROVIDES:=apk
 endef
