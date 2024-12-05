@@ -8,7 +8,7 @@
 
 / {
 	model = "Cudy TR3000 v1";
-	compatible = "cudy,tr3000-v1", "mediatek,mt7981-spim-snand-rfb";
+	compatible = "cudy,tr3000-v1", "mediatek,mt7981";
 
 	aliases {
 		label-mac-device = &gmac1;
@@ -59,11 +59,9 @@
 
 	usb_vbus: regulator-usb {
 		compatible = "regulator-fixed";
-
 		regulator-name = "usb-vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-
 		gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
