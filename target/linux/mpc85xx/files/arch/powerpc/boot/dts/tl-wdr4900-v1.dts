@@ -119,6 +119,8 @@
 			phy_type = "utmi";
 			dr_mode = "host";
 
+			vbus-supply = <&reg_power_usb>;
+
 			port@1 {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -425,16 +427,15 @@
 		};
 	};
 
-	gpio_export {
-			compatible = "gpio-export";
-			#size-cells = <0>;
-
-			usb-pwr {
-				gpio-export,name = "usb_pwr";
-				gpio-export,output = <1>;
-				gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-			};
-		};
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
 
 	buttons {
 		compatible = "gpio-keys";
