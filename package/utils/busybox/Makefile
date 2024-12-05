@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.37.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -143,6 +143,8 @@ define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
+	$(INSTALL_DIR) $(1)/etc/profile.d
+	$(INSTALL_BIN) ./files/busybox-history-file.sh $(1)/etc/profile.d
 ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOG)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_SYSLOGD_CFG),)
 	touch $(1)/etc/syslog.conf
 endif
