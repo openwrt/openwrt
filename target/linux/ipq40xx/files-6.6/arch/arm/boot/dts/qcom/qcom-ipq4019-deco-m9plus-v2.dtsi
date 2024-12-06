@@ -197,26 +197,11 @@
 				label = "0:ART";
 				reg = <0x000880000 0x00080000>;
 				read-only;
-								compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
 			};
 			partition@900000 {
 				label = "rootfs";
 				reg = <0x00900000 0x002d00000>;
 				read-only;
-								compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				macaddr_config_0: macaddr@0 {
-					reg = <0x8 0x6>;
-				};
 			};
 			partition@3600000 {
 				label = "rootfs_1";
@@ -233,6 +218,24 @@
 				reg = <0x06c00000 0x001100000>;
 				read-only;
 			};
+		};
+	};
+};
+&pcie0 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
 		};
 	};
 };
@@ -272,29 +275,21 @@
 &swport4 {
 	status = "okay";
 	label = "lan";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
 };
 &swport5 {
 	status = "okay";
 	label = "wan";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
-	mac-address-increment = <1>;
 };
 &wifi0 {
-	pinctrl-0 = <&wifi_pins>;
-	pinctrl-names = "default";
-	qcom,ath10k-calibration-variant = "TP-Link_Deco_M9Plus_v2.0";
 	status = "okay";
-	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0>;
-	mac-address-increment = <2>;
 };
+
 &wifi1 {
-	qcom,ath10k-calibration-variant = "TP-Link_Deco_M9Plus_v2.0";
 	status = "okay";
-	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_config_0>;
-	mac-address-increment = <3>;
+	ieee80211-freq-limit = <5170000 5330000>;
+};
+
+&wifi2 {
+	status = "okay";
+	ieee80211-freq-limit = <5490000 5835000>;
 };
