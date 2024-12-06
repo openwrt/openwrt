@@ -51,6 +51,7 @@ load_led() {
 	local delayon
 	local delayoff
 	local interval
+	local brightness
 
 	config_get sysfs $1 sysfs
 	config_get name $1 name "$sysfs"
@@ -67,6 +68,7 @@ load_led() {
 	config_get message $1 message ""
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
+	config_get brightness $1 brightness
 
 	[ "$2" ] && [ "$sysfs" != "$2" ] && return
 
@@ -105,7 +107,8 @@ load_led() {
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
 		[ $default = 1 ] &&
-			cat /sys/class/leds/${sysfs}/max_brightness > /sys/class/leds/${sysfs}/brightness
+			[ -z "$brightness" ] && brightness=$(cat /sys/class/leds/${sysfs}/max_brightness)
+			echo $brightness > /sys/class/leds/${sysfs}/brightness
 
 		led_color_set "$1" "$sysfs"
 
