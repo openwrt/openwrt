@@ -1,0 +1,13 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -6,6 +6,10 @@
+ #include <linux/of.h>
+ #include "mt76.h"
+ 
++#ifndef PP_FLAG_PAGE_FRAG
++#define PP_FLAG_PAGE_FRAG	BIT(2) /* for page frag feature */
++#endif
++
+ #define CHAN2G(_idx, _freq) {			\
+ 	.band = NL80211_BAND_2GHZ,		\
+ 	.center_freq = (_freq),			\
