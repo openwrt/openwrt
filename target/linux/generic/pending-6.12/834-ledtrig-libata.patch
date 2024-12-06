@@ -45,7 +45,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on ACPI
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
-@@ -685,6 +685,17 @@ static inline void ata_set_tf_cdl(struct
+@@ -672,6 +672,17 @@ static inline void ata_set_tf_cdl(struct
  	qc->flags |= ATA_QCFLAG_HAS_CDL | ATA_QCFLAG_RESULT_TF;
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /**
   *	ata_build_rw_tf - Build ATA taskfile for given read/write request
   *	@qc: Metadata associated with the taskfile to build
-@@ -4771,6 +4782,9 @@ void __ata_qc_complete(struct ata_queued
+@@ -4728,6 +4739,9 @@ void __ata_qc_complete(struct ata_queued
  		link->active_tag = ATA_TAG_POISON;
  		ap->nr_active_links--;
  	}
@@ -73,7 +73,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* clear exclusive status */
  	if (unlikely(qc->flags & ATA_QCFLAG_CLEAR_EXCL &&
-@@ -5494,6 +5508,9 @@ struct ata_port *ata_port_alloc(struct a
+@@ -5450,6 +5464,9 @@ struct ata_port *ata_port_alloc(struct a
  	ap->stats.unhandled_irq = 1;
  	ap->stats.idle_irq = 1;
  #endif
@@ -83,10 +83,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ata_sff_port_init(ap);
  
  	return ap;
-@@ -5507,6 +5524,12 @@ void ata_port_free(struct ata_port *ap)
+@@ -5464,6 +5481,12 @@ void ata_port_free(struct ata_port *ap)
  	kfree(ap->pmp_link);
  	kfree(ap->slave_link);
- 	kfree(ap->ncq_sense_buf);
+ 	ida_free(&ata_ida, ap->print_id);
 +#ifdef CONFIG_ATA_LEDS
 +	if (ap->ledtrig) {
 +		led_trigger_unregister(ap->ledtrig);
@@ -96,9 +96,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(ap);
  }
  EXPORT_SYMBOL_GPL(ata_port_free);
-@@ -5929,7 +5952,23 @@ int ata_host_register(struct ata_host *h
- 		host->ports[i]->print_id = atomic_inc_return(&ata_print_id);
- 		host->ports[i]->local_port_no = i + 1;
+@@ -5868,7 +5891,23 @@ int ata_host_register(struct ata_host *h
+ 		WARN_ON(1);
+ 		return -EINVAL;
  	}
 +#ifdef CONFIG_ATA_LEDS
 +	for (i = 0; i < host->n_ports; i++) {
@@ -132,16 +132,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * Define if arch has non-standard setup.  This is a _PCI_ standard
-@@ -875,6 +878,12 @@ struct ata_port {
- #ifdef CONFIG_ATA_ACPI
- 	struct ata_acpi_gtm	__acpi_init_gtm; /* use ata_acpi_init_gtm() */
+@@ -726,6 +729,10 @@ struct ata_device {
+ 	union acpi_object	*gtf_cache;
+ 	unsigned int		gtf_filter;
  #endif
-+
 +#ifdef CONFIG_ATA_LEDS
 +	struct led_trigger	*ledtrig;
 +	char			ledtrig_name[8];
 +#endif
-+
- 	/* owned by EH */
- 	u8			*ncq_sense_buf;
- 	u8			sector_buf[ATA_SECT_SIZE] ____cacheline_aligned;
+ #ifdef CONFIG_SATA_ZPODD
+ 	void			*zpodd;
+ #endif
