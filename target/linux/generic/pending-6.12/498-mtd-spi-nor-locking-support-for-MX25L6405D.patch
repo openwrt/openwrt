@@ -22,11 +22,11 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
 
 --- a/drivers/mtd/spi-nor/macronix.c
 +++ b/drivers/mtd/spi-nor/macronix.c
-@@ -48,6 +48,7 @@ static const struct flash_info macronix_
- 	{ "mx25l3255e",  INFO(0xc29e16, 0, 64 * 1024,  64)
- 		NO_SFDP_FLAGS(SECT_4K) },
- 	{ "mx25l6405d",  INFO(0xc22017, 0, 64 * 1024, 128)
-+		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_4BIT_BP)
- 		NO_SFDP_FLAGS(SECT_4K) },
- 	{ "mx25u2033e",  INFO(0xc22532, 0, 64 * 1024,   4)
- 		NO_SFDP_FLAGS(SECT_4K) },
+@@ -66,6 +66,7 @@ static const struct flash_info macronix_
+ 		.id = SNOR_ID(0xc2, 0x20, 0x17),
+ 		.name = "mx25l6405d",
+ 		.size = SZ_8M,
++		.flags = SPI_NOR_HAS_LOCK | SPI_NOR_4BIT_BP,
+ 		.no_sfdp_flags = SECT_4K,
+ 	}, {
+ 		.id = SNOR_ID(0xc2, 0x20, 0x18),
