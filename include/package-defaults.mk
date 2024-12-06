@@ -22,11 +22,7 @@ define Package/Default
   MAINTAINER:=$(PKG_MAINTAINER)
   SOURCE:=$(patsubst $(TOPDIR)/%,%,$(patsubst $(TOPDIR)/package/%,feeds/base/%,$(CURDIR)))
   ifneq ($(PKG_VERSION),)
-    ifneq ($(PKG_RELEASE),)
-      VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
-    else
-      VERSION:=$(PKG_VERSION)
-    endif
+    VERSION:=$(PKG_VERSION)$(if $(PKG_RELEASE),-r$(PKG_RELEASE))$(if $(PKG_SOURCE_VERSION),~$(shell echo $(PKG_SOURCE_VERSION) | cut -c1-7))
   else
     VERSION:=$(PKG_RELEASE)
   endif
