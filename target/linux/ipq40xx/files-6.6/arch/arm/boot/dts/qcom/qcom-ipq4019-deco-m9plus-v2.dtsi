@@ -84,6 +84,23 @@
 			bias-disable;
 		};
 	};
+	nand_pins: nand_pins {
+        pullups {
+            pins = "gpio52", "gpio53", "gpio58", "gpio59";
+            function = "qpic";
+            bias-pull-up;
+        };
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+			"gpio57", "gpio60", "gpio61",
+			"gpio62", "gpio63", "gpio64",
+			"gpio65", "gpio66", "gpio67",
+			"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+    };
 	wifi_pins: wifi_pinmux {
 		pinmux_1 {
 			pins = "gpio37";
@@ -125,71 +142,62 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
-&blsp1_spi1 {
-	pinctrl-0 = <&spi_0_pins>;
+&nand {
+	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
-	m25p80@0 {
-		#address-cells = <1>;
-		#size-cells = <0>;
+	nand@0 {
 		reg = <0>;
-		compatible = "jedec,spi-nor";
-		spi-max-frequency = <24000000>;
+		nand-ecc-mode = "hw";
 		partitions {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "fixed-partitions";
 			partition@0 {
 				label = "0:SBL1";
-				reg = <0x00000000 0x00030000>;
+				reg = <0x00000000 0x000100000>;
 				read-only;
 			};
-			partition@30000 {
-				label = "0:BOOTCONFIG";
-				reg = <0x00030000 0x00010000>;
-				read-only;
-			};
-			partition@40000 {
+			partition@100000 {
 				label = "0:MIBIB";
-				reg = <0x00040000 0x00010000>;
+				reg = <0x000100000 0x00100000>;
 				read-only;
 			};
-			partition@50000 {
-				label = "0:BOOTCONFIG1";
-				reg = <0x00050000 0x00010000>;
+			partition@200000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x000200000 0x000100000>;
 				read-only;
 			};
-			partition@60000 {
+			partition@300000 {
 				label = "0:QSEE";
-				reg = <0x00060000 0x00060000>;
+				reg = <0x000300000 0x000100000>;
 				read-only;
 			};
-			partition@c0000 {
+			partition@400000 {
 				label = "0:CDT";
-				reg = <0x000c0000 0x00010000>;
+				reg = <0x000400000 0x00080000>;
 				read-only;
 			};
-			partition@d0000 {
-				label = "0:DDRPARAMS";
-				reg = <0x000d0000 0x00010000>;
+			partition@480000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x00480000 0x00080000>;
 				read-only;
 			};
-			partition@e0000 {
+			partition@500000 {
 				label = "0:APPSBLENV";
-				reg = <0x000e0000 0x00010000>;
+				reg = <0x000500000 0x00180000>;
 				read-only;
 			};
-			partition@f0000 {
+			partition@680000 {
 				label = "0:APPSBL";
-				reg = <0x000f0000 0x00080000>;
+				reg = <0x000680000 0x00200000>;
 				read-only;
 			};
-			partition@170000 {
+			partition@880000 {
 				label = "0:ART";
-				reg = <0x00170000 0x00010000>;
+				reg = <0x000880000 0x00080000>;
 				read-only;
-				compatible = "nvmem-cells";
+								compatible = "nvmem-cells";
 				#address-cells = <1>;
 				#size-cells = <1>;
 				precal_art_1000: precal@1000 {
@@ -199,35 +207,31 @@
 					reg = <0x5000 0x2f20>;
 				};
 			};
-			partition@180000 {
-				label = "OPAQUE";
-				reg = <0x00180000 0x000c0000>;
+			partition@900000 {
+				label = "rootfs";
+				reg = <0x00900000 0x002d00000>;
 				read-only;
-				compatible = "nvmem-cells";
+								compatible = "nvmem-cells";
 				#address-cells = <1>;
 				#size-cells = <1>;
 				macaddr_config_0: macaddr@0 {
 					reg = <0x8 0x6>;
 				};
 			};
-			partition@240000 {
-				label = "0:HLOS";
-				reg = <0x00240000 0x00300000>;
+			partition@3600000 {
+				label = "rootfs_1";
+				reg = <0x03600000 0x002d00000>;
 				read-only;
 			};
-			partition@540000 {
-				label = "0:rootfs";
-				reg = <0x00540000 0x007d0000>;
+			partition@6300000 {
+				label = "factory_data";
+				reg = <0x06300000 0x00900000>;
 				read-only;
 			};
-			partition@d10000 {
-				label = "0:APPSBL_1";
-				reg = <0x00d10000 0x00080000>;
+			partition@6c00000 {
+				label = "runtime_data";
+				reg = <0x06c00000 0x001100000>;
 				read-only;
-			};
-			partition@d90000 {
-				label = "firmware";
-				reg = <0x00d90000 0x01040000>;
 			};
 		};
 	};
