@@ -83,6 +83,11 @@
 			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
 		};
 
+		4g {
+			label = "green:4g";
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		};
+
 		lan {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
@@ -96,8 +101,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			/* GPIO 14 - ACTIVE HIGH for hwrev 0 */
 		};
-
-		/* 4G LED - GPIO21 ACTIVE_HIGH for RUT240 */
 	};
 
 	reg_usb_vbus: reg_usb_vbus {
