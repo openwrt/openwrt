@@ -50,17 +50,6 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb2_power {
-			gpio-export,name = "usb2:power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -77,6 +66,15 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
+	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 
 	virtual_flash {
@@ -105,6 +103,8 @@
 
 &usb_phy0 {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb>;
 };
 
 &usb0 {

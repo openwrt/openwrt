@@ -12,17 +12,20 @@
 	gpio-export {
 		compatible = "gpio-export";
 
-		gpio_usb_power {
-			gpio-export,name = "rb951g-2hnd:power:usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
-		};
-		
 		buzzer {
 			gpio-export,name = "buzzer";
 			gpio-export,output = <1>;
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -61,4 +64,8 @@
 
 &eth1 {
 	status = "disabled";
+};
+
+&usb_phy {
+	phy-supply = <&reg_power_usb>;
 };
