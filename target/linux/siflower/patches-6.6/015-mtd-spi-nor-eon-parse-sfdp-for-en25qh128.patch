@@ -1,0 +1,69 @@
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Tue, 8 Oct 2024 15:42:09 +0800
+Subject: [PATCH 15/18] mtd: spi-nor: eon: parse sfdp for en25qh128
+
+EON EN25QH128 is QSPI capable and has a valid SFDP table. Parse it
+for full functionality.
+
+Ref: https://www.esmt.com.tw/upload/pdf/ESMT/datasheets/EN25QH128A%20(2T).pdf
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ drivers/mtd/spi-nor/eon.c | 35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/spi-nor/eon.c
++++ b/drivers/mtd/spi-nor/eon.c
+@@ -8,6 +8,37 @@
+ 
+ #include "core.h"
+ 
++static void
++eon_default_init(struct spi_nor *nor)
++{
++	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
++	nor->params->quad_enable = NULL;
++}
++
++static int
++eon_post_bfpt_fixups(struct spi_nor *nor,
++		     const struct sfdp_parameter_header *bfpt_header,
++		     const struct sfdp_bfpt *bfpt)
++{
++	/* EON BFPT reports 4-4-4 Fast Read support, however it requires a
++	 * vendor-specific opcode 0x38 (EQPI) which statefully turns every
++	 * operation into 4-4-4 mode, in which single input op won't work
++	 * any more.
++	 * For backward-compatibility, only use the stateless 1-4-4 mode.
++	 *
++	 * It also reports wrong wait states for quad reads (31 instead of 4).
++	 */
++	nor->params->hwcaps.mask &= ~SNOR_HWCAPS_READ_4_4_4;
++	nor->params->reads[SNOR_CMD_READ_1_4_4].num_wait_states = 4;
++
++	return 0;
++}
++
++static const struct spi_nor_fixups eon_fixups = {
++	.default_init	= eon_default_init,
++	.post_bfpt	= eon_post_bfpt_fixups,
++};
++
+ static const struct flash_info eon_nor_parts[] = {
+ 	/* EON -- en25xxx */
+ 	{ "en25f32",    INFO(0x1c3116, 0, 64 * 1024,   64)
+@@ -27,7 +58,8 @@ static const struct flash_info eon_nor_p
+ 	{ "en25qh32",   INFO(0x1c7016, 0, 64 * 1024,   64) },
+ 	{ "en25qh64",   INFO(0x1c7017, 0, 64 * 1024,  128)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ) },
+-	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256) },
++	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256)
++		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ) },
+ 	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512)
+ 		PARSE_SFDP },
+ 	{ "en25s64",	INFO(0x1c3817, 0, 64 * 1024,  128)
+@@ -38,4 +70,5 @@ const struct spi_nor_manufacturer spi_no
+ 	.name = "eon",
+ 	.parts = eon_nor_parts,
+ 	.nparts = ARRAY_SIZE(eon_nor_parts),
++	.fixups = &eon_fixups,
+ };
