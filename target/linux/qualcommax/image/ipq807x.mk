@@ -1,3 +1,5 @@
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+
 define Build/asus-fake-ramdisk
 	rm -rf $(KDIR)/tmp/fakerd
 	dd if=/dev/zero bs=32 count=1 > $(KDIR)/tmp/fakerd
