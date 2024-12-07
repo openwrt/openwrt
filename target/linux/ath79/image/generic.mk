@@ -3064,7 +3064,7 @@ define Device/teltonika_rut230-v1
   DEVICE_MODEL := RUT230
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-chipidea2 kmod-usb-acm \
-	kmod-usb-net-qmi-wwan uqmi -uboot-envtools
+	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi -uboot-envtools
   IMAGE_SIZE := 15552k
   TPLINK_HWID := 0x32200002
   TPLINK_HWREV := 0x1
