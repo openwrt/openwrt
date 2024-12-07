@@ -1,0 +1,25 @@
+From 7e989b0c1e33210c07340bf5228aa83ea52515b5 Mon Sep 17 00:00:00 2001
+From: Zong-Zhe Yang <kevin_yang@realtek.com>
+Date: Thu, 18 Jul 2024 15:06:15 +0800
+Subject: [PATCH] wifi: rtw88: select WANT_DEV_COREDUMP
+
+We have invoked device coredump when fw crash.
+Should select WANT_DEV_COREDUMP by ourselves.
+
+Signed-off-by: Zong-Zhe Yang <kevin_yang@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20240718070616.42217-1-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtw88/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/Kconfig
++++ b/drivers/net/wireless/realtek/rtw88/Kconfig
+@@ -14,6 +14,7 @@ if RTW88
+ config RTW88_CORE
+ 	tristate
+ 	depends on m
++	select BPAUTO_WANT_DEV_COREDUMP
+ 
+ config RTW88_PCI
+ 	tristate

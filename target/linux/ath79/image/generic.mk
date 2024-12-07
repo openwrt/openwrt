@@ -1963,6 +1963,25 @@ define Device/kuwfi_c910
 endef
 TARGET_DEVICES += kuwfi_c910
 
+define Device/kuwfi_n650
+  $(Device/loader-okli-uimage)
+  SOC := qca9563
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := N650
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  FACTORY_SIZE := 13632k
+  LOADER_FLASH_OFFS := 0x40000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 15040k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size | pad-to 13568k | \
+    append-loader-okli-uimage $(1) | pad-to 64k | check-size $$$$(FACTORY_SIZE)
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := append-loader-okli-uimage $(1) | pad-to 64k
+endef
+TARGET_DEVICES += kuwfi_n650
+
 define Device/letv_lba-047-ch
   $(Device/loader-okli-uimage)
   SOC := qca9531

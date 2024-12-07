@@ -1,0 +1,284 @@
+From 315c23a64e99552502dd4d18d6ddc073fad9a7c3 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Thu, 11 Jul 2024 01:11:33 +0300
+Subject: [PATCH] wifi: rtw88: usb: Support USB 3 with RTL8822CU/RTL8822BU
+
+The Realtek wifi 5 devices which support USB 3 are weird: when first
+plugged in, they pretend to be USB 2. The driver needs to send some
+commands to the device, which make it disappear and come back as a
+USB 3 device.
+
+Implement the required commands in rtw88.
+
+When a USB 3 device is plugged into a USB 2 port, rtw88 will try to
+switch it to USB 3 mode only once. The device will disappear and come
+back still in USB 2 mode, of course.
+
+Some people experience heavy interference in the 2.4 GHz band in
+USB 3 mode, so add a module parameter switch_usb_mode with the
+default value 1 to let people disable the switching.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/77906c62-5674-426f-bde1-1b2a12a0339d@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/debug.h    |  1 +
+ drivers/net/wireless/realtek/rtw88/main.h     |  2 +
+ drivers/net/wireless/realtek/rtw88/reg.h      | 11 +++
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822b.h |  4 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822c.h | 24 +++---
+ drivers/net/wireless/realtek/rtw88/usb.c      | 84 +++++++++++++++++++
+ 8 files changed, 116 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/debug.h
++++ b/drivers/net/wireless/realtek/rtw88/debug.h
+@@ -25,6 +25,7 @@ enum rtw_debug_mask {
+ 	RTW_DBG_HW_SCAN		= 0x00010000,
+ 	RTW_DBG_STATE		= 0x00020000,
+ 	RTW_DBG_SDIO		= 0x00040000,
++	RTW_DBG_USB		= 0x00080000,
+ 
+ 	RTW_DBG_UNEXP		= 0x80000000,
+ 	RTW_DBG_ALL		= 0xffffffff
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -1785,6 +1785,8 @@ struct rtw_efuse {
+ 	bool share_ant;
+ 	u8 bt_setting;
+ 
++	u8 usb_mode_switch;
++
+ 	struct {
+ 		u8 hci;
+ 		u8 bw;
+--- a/drivers/net/wireless/realtek/rtw88/reg.h
++++ b/drivers/net/wireless/realtek/rtw88/reg.h
+@@ -15,6 +15,7 @@
+ #define BIT_WLOCK_1C_B6		BIT(5)
+ #define REG_SYS_PW_CTRL		0x0004
+ #define BIT_PFM_WOWL		BIT(3)
++#define BIT_APFM_OFFMAC		BIT(9)
+ #define REG_SYS_CLK_CTRL	0x0008
+ #define BIT_CPU_CLK_EN		BIT(14)
+ 
+@@ -133,6 +134,14 @@
+ #define REG_PMC_DBG_CTRL1	0xa8
+ #define BITS_PMC_BT_IQK_STS	GENMASK(22, 21)
+ 
++#define REG_PAD_CTRL2		0x00C4
++#define BIT_RSM_EN_V1		BIT(16)
++#define BIT_NO_PDN_CHIPOFF_V1	BIT(17)
++#define BIT_MASK_USB23_SW_MODE_V1	GENMASK(19, 18)
++#define BIT_USB3_USB2_TRANSITION	BIT(20)
++#define BIT_USB_MODE_U2		1
++#define BIT_USB_MODE_U3		2
++
+ #define REG_EFUSE_ACCESS	0x00CF
+ #define EFUSE_ACCESS_ON		0x69
+ #define EFUSE_ACCESS_OFF	0x00
+@@ -568,6 +577,8 @@
+ #define BIT_WL_SECURITY_CLK	BIT(15)
+ #define BIT_DDMA_EN		BIT(8)
+ 
++#define REG_SW_MDIO		0x10C0
++
+ #define REG_H2C_PKT_READADDR	0x10D0
+ #define REG_H2C_PKT_WRITEADDR	0x10D4
+ #define REG_FW_DBG6		0x10F8
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -46,6 +46,7 @@ static int rtw8822b_read_efuse(struct rt
+ 
+ 	map = (struct rtw8822b_efuse *)log_map;
+ 
++	efuse->usb_mode_switch = u8_get_bits(map->usb_mode, BIT(7));
+ 	efuse->rfe_option = map->rfe_option;
+ 	efuse->rf_board_option = map->rf_board_option;
+ 	efuse->crystal_cap = map->xtal_k;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.h
+@@ -72,7 +72,9 @@ struct rtw8822bs_efuse {
+ 
+ struct rtw8822b_efuse {
+ 	__le16 rtl_id;
+-	u8 res0[0x0e];
++	u8 res0[4];
++	u8 usb_mode;
++	u8 res1[0x09];
+ 
+ 	/* power index for four RF paths */
+ 	struct rtw_txpwr_idx txpwr_idx_table[4];
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -49,6 +49,7 @@ static int rtw8822c_read_efuse(struct rt
+ 
+ 	map = (struct rtw8822c_efuse *)log_map;
+ 
++	efuse->usb_mode_switch = u8_get_bits(map->usb_mode, BIT(7));
+ 	efuse->rfe_option = map->rfe_option;
+ 	efuse->rf_board_option = map->rf_board_option;
+ 	efuse->crystal_cap = map->xtal_k & XCAP_MASK;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.h
+@@ -59,16 +59,18 @@ struct rtw8822ce_efuse {
+ 
+ struct rtw8822c_efuse {
+ 	__le16 rtl_id;
+-	u8 res0[0x0e];
++	u8 res0[4];
++	u8 usb_mode;
++	u8 res1[0x09];
+ 
+ 	/* power index for four RF paths */
+ 	struct rtw_txpwr_idx txpwr_idx_table[4];
+ 
+ 	u8 channel_plan;		/* 0xb8 */
+ 	u8 xtal_k;
+-	u8 res1;
++	u8 res2;
+ 	u8 iqk_lck;
+-	u8 res2[5];			/* 0xbc */
++	u8 res3[5];			/* 0xbc */
+ 	u8 rf_board_option;
+ 	u8 rf_feature_option;
+ 	u8 rf_bt_setting;
+@@ -80,21 +82,21 @@ struct rtw8822c_efuse {
+ 	u8 rf_antenna_option;		/* 0xc9 */
+ 	u8 rfe_option;
+ 	u8 country_code[2];
+-	u8 res3[3];
++	u8 res4[3];
+ 	u8 path_a_thermal;		/* 0xd0 */
+ 	u8 path_b_thermal;
+-	u8 res4[2];
++	u8 res5[2];
+ 	u8 rx_gain_gap_2g_ofdm;
+-	u8 res5;
+-	u8 rx_gain_gap_2g_cck;
+ 	u8 res6;
+-	u8 rx_gain_gap_5gl;
++	u8 rx_gain_gap_2g_cck;
+ 	u8 res7;
+-	u8 rx_gain_gap_5gm;
++	u8 rx_gain_gap_5gl;
+ 	u8 res8;
+-	u8 rx_gain_gap_5gh;
++	u8 rx_gain_gap_5gm;
+ 	u8 res9;
+-	u8 res10[0x42];
++	u8 rx_gain_gap_5gh;
++	u8 res10;
++	u8 res11[0x42];
+ 	union {
+ 		struct rtw8822ce_efuse e;
+ 		struct rtw8822cu_efuse u;
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -14,6 +14,11 @@
+ #include "ps.h"
+ #include "usb.h"
+ 
++static bool rtw_switch_usb_mode = true;
++module_param_named(switch_usb_mode, rtw_switch_usb_mode, bool, 0644);
++MODULE_PARM_DESC(switch_usb_mode,
++		 "Set to N to disable switching to USB 3 mode to avoid potential interference in the 2.4 GHz band (default: Y)");
++
+ #define RTW_USB_MAX_RXQ_LEN	512
+ 
+ struct rtw_usb_txcb {
+@@ -841,6 +846,77 @@ static void rtw_usb_intf_deinit(struct r
+ 	usb_set_intfdata(intf, NULL);
+ }
+ 
++static int rtw_usb_switch_mode_new(struct rtw_dev *rtwdev)
++{
++	enum usb_device_speed cur_speed;
++	u8 id = rtwdev->chip->id;
++	bool can_switch;
++	u32 pad_ctrl2;
++
++	if (rtw_read8(rtwdev, REG_SYS_CFG2 + 3) == 0x20)
++		cur_speed = USB_SPEED_SUPER;
++	else
++		cur_speed = USB_SPEED_HIGH;
++
++	if (cur_speed == USB_SPEED_SUPER)
++		return 0;
++
++	pad_ctrl2 = rtw_read32(rtwdev, REG_PAD_CTRL2);
++
++	can_switch = !!(pad_ctrl2 & (BIT_MASK_USB23_SW_MODE_V1 |
++				     BIT_USB3_USB2_TRANSITION));
++
++	if (!can_switch) {
++		rtw_dbg(rtwdev, RTW_DBG_USB,
++			"Switching to USB 3 mode unsupported by the chip\n");
++		return 0;
++	}
++
++	/* At this point cur_speed is USB_SPEED_HIGH. If we already tried
++	 * to switch don't try again - it's a USB 2 port.
++	 */
++	if (u32_get_bits(pad_ctrl2, BIT_MASK_USB23_SW_MODE_V1) == BIT_USB_MODE_U3)
++		return 0;
++
++	/* Enable IO wrapper timeout */
++	if (id == RTW_CHIP_TYPE_8822B || id == RTW_CHIP_TYPE_8821C)
++		rtw_write8_clr(rtwdev, REG_SW_MDIO + 3, BIT(0));
++
++	u32p_replace_bits(&pad_ctrl2, BIT_USB_MODE_U3, BIT_MASK_USB23_SW_MODE_V1);
++	pad_ctrl2 |= BIT_RSM_EN_V1;
++
++	rtw_write32(rtwdev, REG_PAD_CTRL2, pad_ctrl2);
++	rtw_write8(rtwdev, REG_PAD_CTRL2 + 1, 4);
++
++	rtw_write16_set(rtwdev, REG_SYS_PW_CTRL, BIT_APFM_OFFMAC);
++	usleep_range(1000, 1001);
++	rtw_write32_set(rtwdev, REG_PAD_CTRL2, BIT_NO_PDN_CHIPOFF_V1);
++
++	return 1;
++}
++
++static int rtw_usb_switch_mode(struct rtw_dev *rtwdev)
++{
++	u8 id = rtwdev->chip->id;
++
++	if (id != RTW_CHIP_TYPE_8822C && id != RTW_CHIP_TYPE_8822B)
++		return 0;
++
++	if (!rtwdev->efuse.usb_mode_switch) {
++		rtw_dbg(rtwdev, RTW_DBG_USB,
++			"Switching to USB 3 mode disabled by chip's efuse\n");
++		return 0;
++	}
++
++	if (!rtw_switch_usb_mode) {
++		rtw_dbg(rtwdev, RTW_DBG_USB,
++			"Switching to USB 3 mode disabled by module parameter\n");
++		return 0;
++	}
++
++	return rtw_usb_switch_mode_new(rtwdev);
++}
++
+ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
+ {
+ 	struct rtw_dev *rtwdev;
+@@ -896,6 +972,14 @@ int rtw_usb_probe(struct usb_interface *
+ 		goto err_destroy_rxwq;
+ 	}
+ 
++	ret = rtw_usb_switch_mode(rtwdev);
++	if (ret) {
++		/* Not a fail, but we do need to skip rtw_register_hw. */
++		rtw_dbg(rtwdev, RTW_DBG_USB, "switching to USB 3 mode\n");
++		ret = 0;
++		goto err_destroy_rxwq;
++	}
++
+ 	ret = rtw_register_hw(rtwdev, rtwdev->hw);
+ 	if (ret) {
+ 		rtw_err(rtwdev, "failed to register hw\n");

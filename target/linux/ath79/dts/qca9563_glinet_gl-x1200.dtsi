@@ -111,14 +111,6 @@
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
-
-					macaddr_art_1002: macaddr@1002 {
-						reg = <0x1002 0x6>;
-					};
-
-					macaddr_art_5006: macaddr@5006 {
-						reg = <0x5006 0x6>;
-					};
 				};
 			};
 
@@ -182,8 +174,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_art_5006>, <&calibration_ath10k>;
-		nvmem-cell-names = "mac-address", "pre-calibration";
+		nvmem-cells = <&calibration_ath10k>;
+		nvmem-cell-names = "pre-calibration";
 	};
 };
 
@@ -206,6 +198,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_1002>, <&calibration_ath9k>;
-	nvmem-cell-names = "mac-address", "calibration";
+	nvmem-cells = <&calibration_ath9k>;
+	nvmem-cell-names = "calibration";
 };

@@ -1,0 +1,39 @@
+From 47f754b3f838205f3b25c4839f74801d180995bf Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 22 Oct 2024 20:20:26 +0300
+Subject: [PATCH] wifi: rtw88: Report the signal strength only if it's known
+
+RTL8811CU doesn't report the signal strength for many (any?) data
+frames. When the signal strength is not known, set
+RX_FLAG_NO_SIGNAL_VAL in order to avoid reporting a signal
+strength of 0.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/f7e1e448-2c9b-498f-b8b1-a14dd967d7d3@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rx.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/rx.c
++++ b/drivers/net/wireless/realtek/rtw88/rx.c
+@@ -234,10 +234,14 @@ static void rtw_rx_fill_rx_status(struct
+ 	else
+ 		rx_status->bw = RATE_INFO_BW_20;
+ 
+-	rx_status->signal = pkt_stat->signal_power;
+-	for (path = 0; path < rtwdev->hal.rf_path_num; path++) {
+-		rx_status->chains |= BIT(path);
+-		rx_status->chain_signal[path] = pkt_stat->rx_power[path];
++	if (pkt_stat->phy_status) {
++		rx_status->signal = pkt_stat->signal_power;
++		for (path = 0; path < rtwdev->hal.rf_path_num; path++) {
++			rx_status->chains |= BIT(path);
++			rx_status->chain_signal[path] = pkt_stat->rx_power[path];
++		}
++	} else {
++		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
+ 	}
+ 
+ 	rtw_rx_addr_match(rtwdev, pkt_stat, hdr);

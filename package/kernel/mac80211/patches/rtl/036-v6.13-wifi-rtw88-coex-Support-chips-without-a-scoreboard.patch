@@ -1,0 +1,66 @@
+From b19840afc05121293ae59f017cb9924814eb5d77 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 23 Oct 2024 17:14:12 +0300
+Subject: [PATCH] wifi: rtw88: coex: Support chips without a scoreboard
+
+All the chips currently supported have a "scoreboard": the chip keeps
+track of certain things related to bluetooth, for example, whether
+bluetooth is active. The information can be read from register 0xaa.
+
+RTL8821AU doesn't have this. Implement bluetooth activity detection in
+rtw_coex_monitor_bt_enable() based on the bluetooth TX/RX counters.
+
+This is mostly important for RTL8811AU, the version of RTL8821AU without
+bluetooth. Without this change, the driver thinks bluetooth is active
+and the wifi speeds are low.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/5058f23d-2086-42cd-82ad-eef31a348467@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/coex.c | 18 ++++++++++++++++++
+ drivers/net/wireless/realtek/rtw88/main.h |  1 +
+ 2 files changed, 19 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/coex.c
++++ b/drivers/net/wireless/realtek/rtw88/coex.c
+@@ -494,11 +494,29 @@ static void rtw_coex_monitor_bt_enable(s
+ 	struct rtw_coex_stat *coex_stat = &coex->stat;
+ 	struct rtw_coex_dm *coex_dm = &coex->dm;
+ 	bool bt_disabled = false;
++	bool bt_active = true;
+ 	u16 score_board;
+ 
+ 	if (chip->scbd_support) {
+ 		score_board = rtw_coex_read_scbd(rtwdev);
+ 		bt_disabled = !(score_board & COEX_SCBD_ONOFF);
++	} else {
++		if (coex_stat->hi_pri_tx == 0 && coex_stat->hi_pri_rx == 0 &&
++		    coex_stat->lo_pri_tx == 0 && coex_stat->lo_pri_rx == 0)
++			bt_active = false;
++
++		if (coex_stat->hi_pri_tx == 0xffff && coex_stat->hi_pri_rx == 0xffff &&
++		    coex_stat->lo_pri_tx == 0xffff && coex_stat->lo_pri_rx == 0xffff)
++			bt_active = false;
++
++		if (bt_active) {
++			coex_stat->bt_disable_cnt = 0;
++			bt_disabled = false;
++		} else {
++			coex_stat->bt_disable_cnt++;
++			if (coex_stat->bt_disable_cnt >= 10)
++				bt_disabled = true;
++		}
+ 	}
+ 
+ 	if (coex_stat->bt_disabled != bt_disabled) {
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -1494,6 +1494,7 @@ struct rtw_coex_stat {
+ 	u8 bt_hid_slot;
+ 	u8 bt_a2dp_bitpool;
+ 	u8 bt_iqk_state;
++	u8 bt_disable_cnt;
+ 
+ 	u16 wl_beacon_interval;
+ 	u8 wl_noisy_level;

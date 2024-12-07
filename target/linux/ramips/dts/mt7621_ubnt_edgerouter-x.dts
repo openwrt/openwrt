@@ -7,7 +7,7 @@
 
 &gmac1 {
 	status = "okay";
-	label = "eth0";
+	openwrt,netdev-name = "eth0";
 	phy-handle = <&ethphy0>;
 
 	nvmem-cells = <&macaddr_factory_22 0>;

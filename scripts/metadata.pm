@@ -136,6 +136,7 @@ sub parse_target_metadata($) {
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
 		/^Default-Subtarget:\s*(.+)\s*$/ and $target->{def_subtarget} = $1;
 		/^Default-Packages:\s*(.+)\s*$/ and $target->{packages} = [ split(/\s+/, $1) ];
+		/^Target-Default-Profile:\s*(.+)\s*$/ and $target->{default_profile} = $1;
 		/^Target-Profile:\s*(.+)\s*$/ and do {
 			$profile = {
 				id => $1,

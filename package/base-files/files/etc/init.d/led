@@ -3,6 +3,10 @@
 
 START=96
 
+extra_command "turnon" "Put the LEDs into their default state"
+extra_command "turnoff" "Turn all LEDs off"
+extra_command "blink" "Blink all LEDs"
+
 led_color_set() {
 	local cfg="$1"
 	local sysfs="$2"
@@ -168,7 +172,31 @@ load_led() {
 	}
 }
 
+turnoff() {
+	for led in `ls /sys/class/leds/`; do
+		echo 0 > /sys/class/leds/$led/brightness
+	done
+}
+
+turnon() {
+	turnoff
+	. /etc/diag.sh
+	set_state done
+	start
+}
+
+blink() {
+	for led in `ls /sys/class/leds/`; do
+		echo 0 > /sys/class/leds/$led/brightness
+		echo timer > /sys/class/leds/$led/trigger
+	done
+}
+
 start() {
+	[ "$(uci -q get system.@system[-1].leds_off)" = '1' ] && {
+		turnoff
+		exit 0
+	}
 	[ -e /sys/class/leds/ ] && {
 		[ -s /var/run/led.state ] && {
 			local led trigger brightness color
