@@ -146,9 +146,12 @@
 			};
 
 			partition@f80000 {
-				compatible = "u-boot,env";
 				reg = <0xf80000 0x40000>;
 				label = "u-boot-env";
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
 			};
 
 			board_data: partition@fc0000 {
