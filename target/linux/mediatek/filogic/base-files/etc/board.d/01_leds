@@ -38,6 +38,14 @@ cudy,re3000-v1)
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+cudy,wr3000h-v1)
+	ucidef_set_led_netdev "lan1" "lan1" "white:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "white:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "white:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "lan4" "white:lan-4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
+	;;
 glinet,gl-x3000|\
 glinet,gl-xe3000)
 	ucidef_set_led_default "power" "POWER" "green:power" "1"
