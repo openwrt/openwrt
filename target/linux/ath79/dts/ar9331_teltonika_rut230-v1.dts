@@ -191,15 +191,6 @@
 	status = "okay";
 };
 
-&gpio {
-	modem-power {
-		gpio-hog;
-		output-low;
-		gpios = <18 GPIO_ACTIVE_HIGH>;
-		line-name = "modem-power";
-	};
-};
-
 &usb_phy {
 	status = "okay";
 };

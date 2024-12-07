@@ -48,6 +48,11 @@ dlink,dir-835-a1)
 librerouter,librerouter-v1)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "513" "0"
 	;;
+teltonika,rut230-v1)
+	ucidef_add_gpio_switch "DOUT" "DOUT" "524" "0"
+	ucidef_add_gpio_switch "modem_pwr" "Modem power" "531" "1"
+	ucidef_add_gpio_switch "modem_rst" "Modem reset" "530" "0"
+	;;
 teltonika,rut955)
 	ucidef_add_gpio_switch "sim_sel" "SIM select" "542" "1"
 	ucidef_add_gpio_switch "DOUT1" "DOUT1 (OC)" "543" "0"
