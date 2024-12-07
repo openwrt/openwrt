@@ -46,10 +46,14 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay auth username password allow_roaming allow_partner
-	local dhcp dhcpv6 pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner
-	json_get_vars dhcp dhcpv6 sourcefilter delegate pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
+	local allow_partner allow_roaming apn auth delay device password pincode username
+	json_get_vars allow_partner allow_roaming apn auth delay device password pincode username
+
+	local dhcp dhcpv6 pdptype
+	json_get_vars dhcp dhcpv6 pdptype
+
+	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
