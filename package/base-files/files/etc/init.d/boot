@@ -7,13 +7,11 @@ STOP=90
 uci_apply_defaults() {
 	. /lib/functions/system.sh
 
-	cd /etc/uci-defaults || return 0
-	files="$(ls)"
-	[ -z "$files" ] && return 0
-	for file in $files; do
-		( . "./$(basename $file)" ) && rm -f "$file"
+	ls /etc/uci-defaults/* | while read f; do
+		( . "$f" ) && rm -f "$f"
 	done
-	uci commit
+
+	[ $(uci changes|wc -l) -eq 0 ] || uci commit
 }
 
 boot() {
