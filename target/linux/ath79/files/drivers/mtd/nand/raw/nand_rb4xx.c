@@ -214,14 +214,20 @@ static int rb4xx_nand_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int rb4xx_nand_remove(struct platform_device *pdev)
+#else
+static void rb4xx_nand_remove(struct platform_device *pdev)
+#endif
 {
 	struct rb4xx_nand *nand = platform_get_drvdata(pdev);
 
 	mtd_device_unregister(nand_to_mtd(&nand->chip));
 	nand_cleanup(&nand->chip);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct platform_device_id rb4xx_nand_id_table[] = {
