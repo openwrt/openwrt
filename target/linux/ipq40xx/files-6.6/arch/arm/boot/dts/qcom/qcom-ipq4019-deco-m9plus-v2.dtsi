@@ -322,5 +322,8 @@
 
 &wifi2 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_config_0>;
+	mac-address-increment = <4>;
 	ieee80211-freq-limit = <5490000 5835000>;
 };
