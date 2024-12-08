@@ -352,6 +352,15 @@ define Trusted-Firmware-A/mt7986-spim-nand-ddr3
   DDR_TYPE:=ddr3
 endef
 
+define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr3
+  NAME:=MediaTek MT7986 (SPI-NAND via SPIM using UBI, DDR3)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7986
+  DDR_TYPE:=ddr3
+  USE_UBI:=1
+endef
+
 define Trusted-Firmware-A/mt7988-nor-ddr3
   NAME:=MediaTek MT7988 (SPI-NOR, DDR3)
   BOOT_DEVICE:=nor
@@ -531,6 +540,7 @@ TFA_TARGETS:= \
 	mt7986-sdmmc-ddr3 \
 	mt7986-snand-ddr3 \
 	mt7986-spim-nand-ddr3 \
+	mt7986-spim-nand-ubi-ddr3 \
 	mt7986-ram-ddr4 \
 	mt7986-emmc-ddr4 \
 	mt7986-nor-ddr4 \
@@ -570,6 +580,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7981,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x100000)) \
+	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7986,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x200000)) \
 	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 define Package/trusted-firmware-a-ram/install
