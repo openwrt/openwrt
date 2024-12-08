@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -5443,6 +5443,8 @@ struct wiphy_radio_freq_range {
+@@ -5445,6 +5445,8 @@ struct wiphy_radio_freq_range {
   * @iface_combinations: Valid interface combinations array, should not
   *	list single interface types.
   * @n_iface_combinations: number of entries in @iface_combinations array.
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  struct wiphy_radio {
  	const struct wiphy_radio_freq_range *freq_range;
-@@ -5450,6 +5452,8 @@ struct wiphy_radio {
+@@ -5452,6 +5454,8 @@ struct wiphy_radio {
  
  	const struct ieee80211_iface_combination *iface_combinations;
  	int n_iface_combinations;
