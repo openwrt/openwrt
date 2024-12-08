@@ -1,0 +1,12 @@
+## command to generate board file:
+- ../../../../qca-swiss-army-knife/tools/scripts/ath10k/ath10k-bdencoder -c board-2.json
+## How to get the input board files:
+- extract OEM firmware
+- get bootlog
+- grep for "9888" or "4019" and figure out what board files is ath10k_pci trying to read.
+- When you don't add a special board file the error message in the logs should tell you bmi_chip_id and bmi_board_id.
+- For 4019 there needs to be a variant string in the board*.json but for 9888 there is no need.
+-- How did I find this.. hit and trial.
+-- More details:
+--- https://forum.openwrt.org/t/r7500v2-ath10k-9980-netperf-observations-firmware-board-2-bin-files-and-other-wifi-issues/74153/3
+--- https://forum.openwrt.org/t/ipq4019-adding-support-for-tp-link-deco-m9-plus/216594/56?u=meshing
