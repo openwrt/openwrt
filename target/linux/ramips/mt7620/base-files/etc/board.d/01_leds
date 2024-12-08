@@ -49,6 +49,13 @@ comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "white:ethernet" eth0.1
 	ucidef_set_led_netdev "wifi_led" "wifi" "white:wifi" "wlan0"
 	;;
+dlink,dap-1620-a2)
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "rssilow" "red:indicator-1" "wlan1" "1" "40"
+	ucidef_set_led_rssi "rssimediumlow" "rssimediumlow" "green:indicator-1" "wlan1" "41" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "rssimediumhigh" "green:indicator-2" "wlan1" "61" "100"
+	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:indicator-3" "wlan1" "81" "100"
+	;;	
 dlink,dir-806a-b1)
 	ucidef_set_led_netdev "wifi_led" "2.4g" "green:wlan" "phy1-ap0"
 	;;
