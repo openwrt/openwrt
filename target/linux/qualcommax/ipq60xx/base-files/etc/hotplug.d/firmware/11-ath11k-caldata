@@ -15,7 +15,13 @@ case "$FIRMWARE" in
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x1000 0x10000
 		;;
-	linksys,mr7350|\
+	linksys,mr7350)
+		caldata_extract "0:art" 0x1000 0x10000
+		addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath11k_patch_mac $(macaddr_add $addr 2) 0
+		ath11k_patch_mac $(macaddr_add $addr 1) 1
+		ath11k_set_macflag
+		;;
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
 		;;
