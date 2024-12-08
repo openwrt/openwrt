@@ -1,0 +1,275 @@
+// SPDX-License-Identifier: (GL-2.0 OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7986a-rfb.dtsi"
+
+/ {
+	compatible = "tplink,ex820v", "mediatek,mt7986a-rfb-snand";
+	model = "TP-Link EX820v";
+
+	aliases {
+		serial0 = &uart0;
+
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_green;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x10000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+	 	led-0 {
+			label = "green:lan2";
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			label = "green:lan1";
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			label = "green:lan0";
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			label = "green:wan";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			label = "orange:status";
+			gpios = <&pio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_green: led-5 {
+			label = "green:status";
+			gpios = <&pio 17 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+	};
+};
+
+&crypto {
+	status = "okay";
+};
+
+&gmac1 {
+	phy-mode = "2500base-x";
+	label = "eth2";
+	phy = <&phy6>;
+};
+
+&phy6 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+};
+
+&phy5 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+};
+
+&mdio {
+	reset-delay-us = <1500000>;
+	reset-post-delay-us = <1000000>;
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan4";
+		};
+
+		port@5 {
+			reg = <5>;
+			label = "lan6";
+
+			phy-mode = "2500base-x";
+			phy = <&phy5>;
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
+&pio {
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>; /* bias-disable */
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <8>;
+			mediatek,pull-down-adv = <0>; /* bias-disable */
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	status = "okay";
+
+	spi_nand_flash: flash@0 {
+		compatible = "spi-nand";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+
+		spi-max-frequency = <20000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "boot";
+				reg = <0x0 0x200000>;
+				read-only;
+			};
+
+			ubenv: partition@200000 {
+				label = "u-boot-env";
+				reg = <0x200000 0x100000>;
+			};
+
+			misc_ro: partition@300000 {
+				label = "misc_ro";
+				reg = <0x300000 0x600000>;
+				// phandle = <0x20>;
+			};
+
+			misc_rw: partition@900000 {
+				label = "misc_rw";
+				reg = <0x900000 0x600000>;
+			};
+
+			partition@f00000 {
+				label = "ubi0";
+				reg = <0xf00000 0x2800000>;
+			};
+
+			partition@3700000 {
+				label = "ubi1";
+				reg = <0x3700000 0x2800000>;
+			};
+
+			partition@5f00000 {
+				label = "misc_rw_bak";
+				reg = <0x5f00000 0x600000>;
+			};
+
+			bflag: partition@6500000 {
+				label = "bflag";
+				reg = <0x6500000 0x600000>;
+			};
+
+			misc_isp: partition@6b00000 {
+				label = "misc_isp";
+				reg = <0x6b00000 0x600000>;
+			};
+
+			partition@w {
+				label = "whole";
+				reg = <0x00 0x7800000>;
+			};
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	
+	mediatek,mtd-eeprom = <&misc_ro 0>;
+};
