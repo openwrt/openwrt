@@ -249,6 +249,13 @@ tplink,ec220-g5-v2)
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
+trendnet,tha103ac)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "blue:rssilow" "wlan0" "31" "100"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "blue:rssimedlow" "wlan0" "41" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "blue:rssimedium" "wlan0" "51" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "blue:rssihigh" "wlan0" "71" "100"
+	;;
 wavlink,wl-wn535k1)
 	ucidef_set_led_switch "lan1" "lan1" "green:lan1" "switch0" "0x20"
 	ucidef_set_led_switch "lan2" "lan2" "green:lan2" "switch0" "0x04"

@@ -65,6 +65,7 @@ ramips_setup_interfaces()
 	sercomm,na930|\
 	tplink,re200-v1|\
 	tplink,re210-v1|\
+	trendnet,tha103ac|\
 	yukai,bocco|\
 	zbtlink,zbt-cpe102|\
 	zte,q7)
@@ -340,7 +341,8 @@ ramips_setup_macs()
 	asus,rt-ac54u)
 		lan_mac=$(mtd_get_mac_binary factory 0x22)
 		;;
-	dlink,dch-m225)
+	dlink,dch-m225|\
+	trendnet,tha103ac)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
 		;;
 	dlink,dir-510l|\

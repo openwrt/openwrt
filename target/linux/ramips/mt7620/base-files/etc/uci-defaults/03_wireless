@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# The TrendNet THA103AC has no ethernet port and to connect to it we need WiFi enabled and for clarity let's seperate 2 and 5 GHZ
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+	trendnet,tha103ac)
+		uci set wireless.radio0.disabled='0'
+		uci set wireless.default_radio0.ssid='OpenWrt5GHZ'
+		uci set wireless.radio1.disabled='0'
+		uci set wireless.default_radio1.ssid='OpenWrt2GHZ'
+		uci commit wireless
+		;;
+esac
+
+exit 0
