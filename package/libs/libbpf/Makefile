@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbpf
-PKG_VERSION:=1.4.6
+PKG_VERSION:=1.5.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/libbpf
-PKG_MIRROR_HASH:=0d0d70750c8e45baba19f8cc065771e5d842a90f3ad1637003cae6887dabf11e
+PKG_MIRROR_HASH:=7699fcfa89bf0f6e756c4555fbd3fdb8cbcfcc770e5944aebdd0e9244031f022
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
