@@ -368,16 +368,17 @@ endef
 TARGET_DEVICES += netgear_dm200
 
 define Device/zyxel_p-2812hnu-f1
-  $(Device/dsa-migration)
   $(Device/NAND)
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := kernel and ubi partitions had to be resized. \
+  Upgrade manually using initramfs, and change u-boot environment to load 5MiB for uImage.
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F1
   BOARD_NAME := P2812HNUF1
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 5120k
   SUPPORTED_DEVICES += P2812HNUF1
-  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_p-2812hnu-f1
 
