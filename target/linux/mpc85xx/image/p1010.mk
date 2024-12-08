@@ -77,12 +77,32 @@ TARGET_DEVICES += tplink_tl-wdr4900-v1
 define Device/watchguard_firebox-t10
   DEVICE_VENDOR := Watchguard
   DEVICE_MODEL := Firebox T10
+  DEVICE_ALT0_VENDOR := Watchguard
+  DEVICE_ALT0_MODEL := Firebox T10-W
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
   KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += watchguard_firebox-t10
+
+define Device/watchguard_firebox-t15
+  DEVICE_VENDOR := Watchguard
+  DEVICE_MODEL := Firebox T15
+  DEVICE_ALT0_VENDOR := Watchguard
+  DEVICE_ALT0_MODEL := Firebox T15-W
+  DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
+  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += watchguard_firebox-t15
 
 define Device/sophos_red-15w-rev1
   DEVICE_VENDOR := Sophos
