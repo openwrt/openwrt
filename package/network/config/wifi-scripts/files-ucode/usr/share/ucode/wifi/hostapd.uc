@@ -438,29 +438,25 @@ function device_extended_features(data, flag) {
 
 function device_capabilities(phy) {
 	let idx = +substr(phy, 3, 1);;
-	let phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { wiphy: idx, split_wiphy_dump: true });
-
-	for (let phy in phys) {
-		if (!phy || phy.wiphy != idx)
+	phy = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { wiphy: idx, split_wiphy_dump: true });
+	if (!phy)
+		return;
+	for (let band in phy.wiphy_bands) {
+		if (!band)
 			continue;
-		for (let band in phy.wiphy_bands) {
-			if (!band)
+		phy_capabilities.ht_capa = band.ht_capa ?? 0;
+		phy_capabilities.vht_capa = band.vht_capa ?? 0;
+		for (let iftype in band.iftype_data) {
+			if (!iftype.iftypes.ap)
 				continue;
-			phy_capabilities.ht_capa = band.ht_capa ?? 0;
-			phy_capabilities.vht_capa = band.vht_capa ?? 0;
-			for (let iftype in band.iftype_data) {
-				if (!iftype.iftypes.ap)
-					continue;
-				phy_capabilities.he_mac_cap = iftype.he_cap_mac;
-				phy_capabilities.he_phy_cap = iftype.he_cap_phy;
-			}
-			break;
+			phy_capabilities.he_mac_cap = iftype.he_cap_mac;
+			phy_capabilities.he_phy_cap = iftype.he_cap_phy;
 		}
-
-		phy_features.ftm_responder = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER);
-		phy_features.radar_background = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_RADAR_BACKGROUND);
 		break;
 	}
+
+	phy_features.ftm_responder = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER);
+	phy_features.radar_background = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_RADAR_BACKGROUND);
 }
 
 function generate(config) {
