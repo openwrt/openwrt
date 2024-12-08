@@ -21,14 +21,14 @@ define KernelPackage/ltq-deu-template
   TITLE:=deu driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_$(2) +kmod-crypto-manager +kmod-crypto-des
+  DEPENDS:=@$(2) +kmod-crypto-manager +kmod-crypto-des
   FILES:=$(PKG_BUILD_DIR)/ltq_deu_$(1).ko
   AUTOLOAD:=$(call AutoProbe,ltq_deu_$(1))
 endef
 
-KernelPackage/ltq-deu-danube=$(call KernelPackage/ltq-deu-template,danube,xway)
-KernelPackage/ltq-deu-ar9=$(call KernelPackage/ltq-deu-template,ar9,xway)
-KernelPackage/ltq-deu-vr9=$(call KernelPackage/ltq-deu-template,vr9,xrx200)
+KernelPackage/ltq-deu-danube=$(call KernelPackage/ltq-deu-template,danube,TARGET_lantiq_xway)
+KernelPackage/ltq-deu-ar9=$(call KernelPackage/ltq-deu-template,ar9,TARGET_lantiq_xway)
+KernelPackage/ltq-deu-vr9=$(call KernelPackage/ltq-deu-template,vr9,(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy))
 
 define Build/Configure
 endef

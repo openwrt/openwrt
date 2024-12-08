@@ -11,10 +11,6 @@ lantiq_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	alphanetworks,asl56026|\
-	arcadyan,vg3503j)
-		ucidef_set_interface_lan "lan1 lan2"
-		;;
 	arcadyan,arv7519rw22)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
@@ -46,14 +42,11 @@ lantiq_setup_interfaces()
 	avm,fritz7490|\
 	avm,fritz7490-micron|\
 	buffalo,wbmr-300hpd|\
-	tplink,tdw8970|\
-	tplink,tdw8980|\
 	tplink,vr200|\
 	tplink,vr200v)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	avm,fritz7412|\
-	netgear,dm200)
+	avm,fritz7412)
 		ucidef_set_interface_lan "lan"
 		;;
 	*)
@@ -95,14 +88,9 @@ lantiq_setup_macs()
 	local wan_mac=""
 
 	case "$board" in
-	alphanetworks,asl56026)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(mtd_get_mac_ascii u-boot-env wanmac)
-		;;
 	arcadyan,arv7519rw22)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 		;;
-	arcadyan,vg3503j|\
 	lantiq,easy80920-nand|\
 	lantiq,easy80920-nor|\
 	zyxel,p-2812hnu-f1|\
@@ -147,14 +135,6 @@ lantiq_setup_macs()
 	buffalo,wbmr-300hpd)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac="$lan_mac"
-		;;
-	netgear,dm200)
-		lan_mac=$(mtd_get_mac_binary ART 0x0)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	tplink,tdw8970|\
-	tplink,tdw8980)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
 		;;
 	tplink,vr200|\
 	tplink,vr200v)

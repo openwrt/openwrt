@@ -29,7 +29,7 @@ define Package/ltq-vdsl-vr9-app
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ltq-dsl-base +libubox +libubus
+  DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy) +libpthread +librt +ltq-dsl-base +libubox +libubus
   PROVIDES:=ltq-dsl-app
 endef
 
