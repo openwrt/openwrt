@@ -1,0 +1,14 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -613,7 +613,11 @@ int mt76_create_page_pool(struct mt76_de
+ {
+ 	struct page_pool_params pp_params = {
+ 		.order = 0,
++#if LINUX_VERSION_IS_LESS(6,12,0)
+ 		.flags = PP_FLAG_PAGE_FRAG,
++#else
++		.flags = 0,
++#endif
+ 		.nid = NUMA_NO_NODE,
+ 		.dev = dev->dma_dev,
+ 	};
