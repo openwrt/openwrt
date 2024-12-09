@@ -10,3 +10,86 @@
 -- More details:
 --- https://forum.openwrt.org/t/r7500v2-ath10k-9980-netperf-observations-firmware-board-2-bin-files-and-other-wifi-issues/74153/3
 --- https://forum.openwrt.org/t/ipq4019-adding-support-for-tp-link-deco-m9-plus/216594/56?u=meshing
+
+
+## printenv from bootloader
+```
+baudrate=115200
+ethact=eth0
+flash_type=2
+has_default_mac=1
+machid=8010006
+product_id=04D90200
+product_language=US
+product_name=M9Plus
+product_ver=2.0
+special_id=55530000
+stderr=serial
+stdin=serial
+stdout=serial
+tp_boot_idx=1
+vendor_name=TP-Link
+vendor_url=www.tp-link.com
+```
+
+cat /dev/mtd11 | strings 
+```
+vendor_name:TP-Link
+vendor_url:www.tp-link.com
+product_name:M9Plus
+product_type:HOMEWIFISYSTEM
+language:US
+product_ver:2.0.0
+product_id:04D90200
+special_id:55530000
+hw_id:525A14109F40E47021B5AE2A329BAE66
+oem_id:FBB6D4C1087810996D429AE2717869CE
+country:US
+key:AAAAB3NzaC1yc2EAAAADAQABAAAAQQCeYwFZQmXBDoZCYIlF94nsCgtZUBSjj5YrrAQeGYYXeDPuGn1p4ih5p+wZG14utsut15Fba55fk5RUWckdNdyDAAAAQAi/9nCcauul5kPfemXrnWp1SZg3BNTeV1D1UUrqZQ6BxoXvAyJ20seLyJSkVumnHy6i613qFcO3eo4EUG6/uHkAAAAhAOY20wkmRnlQpgKYjZPD9bFqWJ/3HseiZb17JIGih3EZAAAAIQCwIJjMpr6Pxl1d
+U/FGDSJEh3CEp2foUvUuvUmciXvh+w==
+gid:1ad4b09e-beb0-11e7-b722-50c7bf2a6709
+dev_id:8019CE198512CD1818C8B938D506C2F61C71531B
+v_id:81
+v_id:81
+vendor_name:TP-Link
+vendor_url:www.tp-link.com
+product_name:M9Plus
+product_type:HOMEWIFISYSTEM
+language:US
+product_ver:2.0.0
+product_id:04D90200
+special_id:55530000
+hw_id:525A14109F40E47021B5AE2A329BAE66
+oem_id:FBB6D4C1087810996D429AE2717869CE
+country:US
+key:AAAAB3NzaC1yc2EAAAADAQABAAAAQQCeYwFZQmXBDoZCYIlF94nsCgtZUBSjj5YrrAQeGYYXeDPuGn1p4ih5p+wZG14utsut15Fba55fk5RUWckdNdyDAAAAQAi/9nCcauul5kPfemXrnWp1SZg3BNTeV1D1UUrqZQ6BxoXvAyJ20seLyJSkVumnHy6i613qFcO3eo4EUG6/uHkAAAAhAOY20wkmRnlQpgKYjZPD9bFqWJ/3HseiZb17JIGih3EZAAAAIQCwIJjMpr6Pxl1d
+U/FGDSJEh3CEp2foUvUuvUmciXvh+w==
+gid:1ad4b09e-beb0-11e7-b722-50c7bf2a6709
+```
+OEM shell
+```
+/tmp # cat /tmp/sysinfo/board_name 
+ap-dk07.1-c1
+/tmp # cat /tmp/sysinfo/model
+Qualcomm Technologies, Inc. IPQ40xx/AP-DK07.1-C1
+/tmp # 
+```
+
+```
+/tmp # ubus call system board
+{
+	"kernel": "3.14.77",
+	"hostname": "M9Plus",
+	"system": "ARMv7 Processor rev 5 (v7l)",
+	"model": "Qualcomm Technologies, Inc. IPQ40xx\/AP-DK07.1-C1",
+	"release": {
+		"distribution": "OpenWrt",
+		"version": "Chaos Calmer",
+		"revision": "unknown",
+		"codename": "chaos_calmer",
+		"target": "ipq806x\/generic",
+		"description": "OpenWrt Chaos Calmer 15.05.1"
+	}
+}
+/tmp # 
+```

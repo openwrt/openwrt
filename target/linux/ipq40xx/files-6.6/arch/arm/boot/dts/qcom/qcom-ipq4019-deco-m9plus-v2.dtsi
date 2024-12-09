@@ -156,47 +156,47 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "fixed-partitions";
-			partition@0 {
+			partition@0 { //0
 				label = "0:SBL1";
 				reg = <0x00000000 0x000100000>;
 				read-only;
 			};
-			partition@100000 {
+			partition@100000 { //1
 				label = "0:MIBIB";
 				reg = <0x000100000 0x00100000>;
 				read-only;
 			};
-			partition@200000 {
+			partition@200000 { //2
 				label = "0:BOOTCONFIG";
 				reg = <0x000200000 0x000100000>;
 				read-only;
 			};
-			partition@300000 {
+			partition@300000 { //3
 				label = "0:QSEE";
 				reg = <0x000300000 0x000100000>;
 				read-only;
 			};
-			partition@400000 {
+			partition@400000 { //4
 				label = "0:CDT";
 				reg = <0x000400000 0x00080000>;
 				read-only;
 			};
-			partition@480000 {
+			partition@480000 { //5
 				label = "0:BOOTCONFIG1";
 				reg = <0x00480000 0x00080000>;
 				read-only;
 			};
-			partition@500000 {
+			partition@500000 { //6
 				label = "0:APPSBLENV";
 				reg = <0x000500000 0x00180000>;
 				read-only;
 			};
-			partition@680000 {
+			partition@680000 { //7
 				label = "0:APPSBL";
 				reg = <0x000680000 0x00200000>;
 				read-only;
 			};
-			partition@880000 {
+			partition@880000 { //8
 				label = "0:ART";
 				reg = <0x000880000 0x00080000>;
 				read-only;
@@ -210,31 +210,52 @@
 					reg = <0x5000 0x2f20>;
 				};
 			};
-			partition@900000 {
+			partition@900000 { //9
 				label = "rootfs";
 				reg = <0x00900000 0x002d00000>;
 				read-only;
 				compatible = "nvmem-cells";
 				#address-cells = <1>;
 				#size-cells = <1>;
-				macaddr_config_0: macaddr@0 {
-					reg = <0x8 0x6>;
-				};
+
 			};
-			partition@3600000 {
+			partition@3600000 { //10
 				label = "rootfs_1";
 				reg = <0x03600000 0x002d00000>;
 				read-only;
 			};
-			partition@6300000 {
+			partition@6300000 { //11
 				label = "factory_data";
 				reg = <0x06300000 0x00900000>;
 				read-only;
+				macaddr_config_0: macaddr@0 {
+					reg = <0x004c5830 0x6>;
+				};
 			};
-			partition@6c00000 {
+			partition@6c00000 { //12
 				label = "runtime_data";
 				reg = <0x06c00000 0x001100000>;
 				read-only;
+			};
+			partition@07d00000 { //13
+				label = "kernel";
+				reg = <0x07d00000 0x00345000>; 
+			};
+			partition@8045000 { //14
+				label = "ubi_rootfs";
+				reg = <0x08045000 0x0118f000>;
+			};
+			partition@91d4000 { //15
+				label = "rootfs_data";
+			    reg = <0x091d4000 0x015eb000>;
+			};
+			partition@a7c9000 { //16
+				label = "ubi_factory_data";
+				reg = <0x0a7c9000 0x005d0000>;
+			};
+			partition@adb9000 { //17
+				label = "ubi_runtime_data";
+				reg = <0x0adb9000 0x00d90000>;
 			};
 		};
 	};
