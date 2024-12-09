@@ -151,6 +151,8 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 
 	flash@0 {
