@@ -726,7 +726,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_ctm_commit(vc4, state);
  
  	if (!vc4->firmware_kms) {
--		if (vc4->is_vc5)
+-		if (vc4->vc4_gen == VC4_GEN_5)
 +		if (vc4->gen == VC4_GEN_5)
  			vc5_hvs_pv_muxing_commit(vc4, state);
  		else
@@ -735,7 +735,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	drm_atomic_helper_cleanup_planes(dev, state);
  
--	if (vc4->is_vc5 && !vc4->firmware_kms) {
+-	if ((vc4->vc4_gen == VC4_GEN_5) && !vc4->firmware_kms) {
 +	if (vc4->gen == VC4_GEN_5 && !vc4->firmware_kms) {
  		unsigned long core_rate = min_t(unsigned long,
  						hvs->max_core_rate,
