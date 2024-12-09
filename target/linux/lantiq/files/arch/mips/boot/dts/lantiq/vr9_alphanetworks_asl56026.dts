@@ -80,6 +80,11 @@
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
+&gswip {
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip_mdio {
 	phy11: ethernet-phy@11 {
 		reg = <0x11>;
@@ -123,8 +128,13 @@
 			};
 
 			partition@30000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x30000 0x10000>;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@40000 {

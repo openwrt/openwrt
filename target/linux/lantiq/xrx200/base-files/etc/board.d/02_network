@@ -96,19 +96,13 @@ lantiq_setup_macs()
 
 	case "$board" in
 	alphanetworks,asl56026)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanmac)
 		;;
 	arcadyan,arv7519rw22)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 		;;
-	arcadyan,vg3503j|\
-	lantiq,easy80920-nand|\
-	lantiq,easy80920-nor|\
-	zyxel,p-2812hnu-f1|\
-	zyxel,p-2812hnu-f3)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+	arcadyan,vg3503j)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1)
 		;;
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
@@ -140,21 +134,8 @@ lantiq_setup_macs()
 		lan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n maca -o)
 		wan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n macdsl -o)
 		;;
-	bt,homehub-v5a)
-		lan_mac=$(mtd_get_mac_binary_ubi caldata 0x110c)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	buffalo,wbmr-300hpd)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac="$lan_mac"
-		;;
 	netgear,dm200)
-		lan_mac=$(mtd_get_mac_binary ART 0x0)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	tplink,tdw8970|\
-	tplink,tdw8980)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary ART 0x0)" 1)
 		;;
 	tplink,vr200|\
 	tplink,vr200v)
