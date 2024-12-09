@@ -544,6 +544,8 @@ export function setup(data) {
 
 	if (data.config.num_global_macaddr)
 		append('\n#num_global_macaddr', data.config.num_global_macaddr);
+	if (data.config.macaddr_base)
+		append('\n#macaddr_base', data.config.macaddr_base);
 
 	for (let k, interface in data.interfaces) {
 		if (interface.config.mode != 'ap')
