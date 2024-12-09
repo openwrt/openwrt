@@ -18,17 +18,6 @@
 		led-upgrade = &led_power_green;
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb-power {
-			gpio-export,name = "usb-power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -95,6 +84,15 @@
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
+	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -229,6 +227,8 @@
 
 &usb_phy {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb>;
 };
 
 &wmac {

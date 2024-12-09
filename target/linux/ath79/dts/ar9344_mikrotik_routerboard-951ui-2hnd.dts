@@ -42,6 +42,15 @@
 		};
 	};
 
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
 	gpio-export {
 		compatible = "gpio-export";
 
@@ -49,12 +58,6 @@
 			gpio-export,name = "rb951ui2hnd:power:poe";
 			gpio-export,output = <1>;
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_usb_power {
-			gpio-export,name = "rb951ui2hnd:power:usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -67,6 +70,10 @@
 
 &eth1 {
 	compatible = "qca,ar9340-eth", "syscon";
+};
+
+&usb_phy {
+	phy-supply = <&reg_power_usb>;
 };
 
 &wmac {

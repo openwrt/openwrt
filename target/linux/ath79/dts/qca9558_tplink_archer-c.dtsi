@@ -59,20 +59,22 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
+	reg_power_usb1: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb1";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 
-		gpio_usb1_power {
-			gpio-export,name = "tp-link:power:usb1";
-			gpio-export,output = <1>;
-			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_usb2_power {
-			gpio-export,name = "tp-link:power:usb2";
-			gpio-export,output = <1>;
-			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
-		};
+	reg_power_usb2: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb2";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -82,6 +84,8 @@
 
 &usb_phy0 {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb1>;
 };
 
 &usb0 {
@@ -90,6 +94,8 @@
 
 &usb_phy1 {
 	status = "okay";
+
+	phy-supply = <&reg_power_usb2>;
 };
 
 &usb1 {
