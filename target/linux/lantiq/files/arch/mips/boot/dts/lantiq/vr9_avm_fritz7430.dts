@@ -173,8 +173,8 @@
 		#address-cells = <3>;
 		device_type = "pci";
 
-		wifi@168c,abcd {
-			compatible = "pci168c,abcd";
+		wifi@0,0 {
+			compatible = "pci168c,0030";
 			reg = <0 0 0 0 0>;
 			qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:01:00.0.bin */
 		};
