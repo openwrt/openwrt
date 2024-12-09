@@ -1,0 +1,37 @@
+From 00a264b290051753e189ec6eadbd0cad3067b77d Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Sun, 23 Jul 2023 23:25:34 -0400
+Subject: [PATCH 18/19] tcp: export TCPI_OPT_ECN_LOW in tcp_info tcpi_options
+ field
+
+Analogous to other important ECN information, export TCPI_OPT_ECN_LOW
+in tcp_info tcpi_options field.
+
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+Change-Id: I08d8d8c7e8780e6e37df54038ee50301ac5a0320
+---
+ include/uapi/linux/tcp.h | 1 +
+ net/ipv4/tcp.c           | 2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/include/uapi/linux/tcp.h
++++ b/include/uapi/linux/tcp.h
+@@ -170,6 +170,7 @@ enum tcp_fastopen_client_fail {
+ #define TCPI_OPT_ECN		8 /* ECN was negociated at TCP session init */
+ #define TCPI_OPT_ECN_SEEN	16 /* we received at least one packet with ECT */
+ #define TCPI_OPT_SYN_DATA	32 /* SYN-ACK acked data in SYN sent or rcvd */
++#define TCPI_OPT_ECN_LOW	64 /* Low-latency ECN configured at init */
+ 
+ /*
+  * Sender's congestion state indicating normal or abnormal situations
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -3791,6 +3791,8 @@ void tcp_get_info(struct sock *sk, struc
+ 		info->tcpi_options |= TCPI_OPT_ECN;
+ 	if (tp->ecn_flags & TCP_ECN_SEEN)
+ 		info->tcpi_options |= TCPI_OPT_ECN_SEEN;
++	if (tp->ecn_flags & TCP_ECN_LOW)
++		info->tcpi_options |= TCPI_OPT_ECN_LOW;
+ 	if (tp->syn_data_acked)
+ 		info->tcpi_options |= TCPI_OPT_SYN_DATA;
+ 
