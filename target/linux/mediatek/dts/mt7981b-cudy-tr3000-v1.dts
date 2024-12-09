@@ -81,7 +81,6 @@
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
 	status = "okay";
 
 	gmac0: mac@0 {
@@ -105,13 +104,13 @@
 
 &mdio_bus {
 	phy1: phy@1 {
-		reg = <1>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		phy-mode = "2500base-x";
-		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
-		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
+		reg = <1>;
 		reset-assert-us = <100000>;
 		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&pio>;
 		realtek,aldps-enable;
 	};
 };
