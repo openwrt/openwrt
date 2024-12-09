@@ -1,0 +1,236 @@
+/dts-v1/;
+#include "sf21h8898.dtsi"
+
+/ {
+	model = "Bananapi BPi-RV2";
+	compatible = "bananapi,bpi-rv2", "siflower,sf21h8898";
+
+	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
+		stdout-path = "serial1:115200n8";
+		rootdisk = <&ubi_rootdisk>;
+	};
+
+	memory@20000000 {
+		device_type = "memory";
+		reg = <0x0 0x20000000 0x0 0x20000000>;
+	};
+};
+
+&spi0_pins {
+	pinctrl-single,pins = <
+		SPI0_TXD	FUNC_MODE0
+		SPI0_RXD	FUNC_MODE0
+		SPI0_CLK	FUNC_MODE0
+		SPI0_HOLD	FUNC_MODE0
+		SPI0_WP		FUNC_MODE0
+	>;
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	cs-gpios = <&gpio 5 GPIO_ACTIVE_LOW>, <&gpio 20 GPIO_ACTIVE_LOW>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		m25p,fast-read;
+		spi-max-frequency = <35000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+
+	        partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "u-boot-env";
+				reg = <0xc0000 0x10000>;
+			};
+
+			factory: partition@d0000 {
+				label = "factory";
+				reg = <0xd0000 0x10000>;
+			};
+		};
+	};
+
+	flash@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <35000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+	        partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0>;
+
+				volumes {
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
+			};
+		};
+	};
+};
+
+&iomux {
+	rtc_int_gpio: rtc-int-pins {
+		pinctrl-single,pins = <PHY_INT GPIO_MODE>;
+		// disable internal bias as it's externally (and weakly) pulled up
+		pinctrl-single,bias-pullup = <0 SW_PU 0 SW_PU>;
+		pinctrl-single,bias-pulldown = <0 SW_PD 0 SW_PD>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	rtc: rtc@51 {
+		compatible = "analogtek,at8563", "nxp,pcf8563";
+		reg = <0x51>;
+		#clock-cells = <0>;
+		interrupts-extended = <&gpio 40 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&rtc_int_gpio>;
+	};
+};
+
+&xgmac0 {
+	status = "okay";
+	phy-handle = <&sfphy0>;
+};
+
+&xgmac1 {
+	status = "okay";
+	phy-handle = <&sfphy1>;
+};
+
+&xgmac2 {
+	status = "okay";
+	phy-handle = <&sfphy2>;
+};
+
+&xgmac3 {
+	status = "okay";
+	phy-handle = <&sfphy3>;
+};
+
+&xgmac4 {
+	status = "okay";
+	phy-handle = <&enphy>;
+};
+
+&xgmac5 {
+	status = "okay";
+	tx-internal-delay-ps = <2499>;
+	rx-internal-delay-ps = <1519>;
+	phy-mode = "rgmii-txid";
+	phy-handle = <&sfphy6>;
+};
+
+&mdio0 {
+	reset-gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <100000>;
+
+	sfphy0: ethernet-phy@1 {
+		compatible = "ethernet-phy-idadb4.0411";
+		reg = <0x1>;
+	};
+
+	sfphy1: ethernet-phy@2 {
+		compatible = "ethernet-phy-idadb4.0411";
+		reg = <0x2>;
+	};
+
+	sfphy2: ethernet-phy@3 {
+		compatible = "ethernet-phy-idadb4.0411";
+		reg = <0x3>;
+	};
+
+	sfphy3: ethernet-phy@4 {
+		compatible = "ethernet-phy-idadb4.0411";
+		reg = <0x4>;
+	};
+
+	sfphy6: ethernet-phy@6 {
+		compatible = "ethernet-phy-idadb4.0412";
+		reg = <0x6>;
+		reset-gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&mdio1 {
+	enphy: ethernet-phy@f {
+		compatible = "ethernet-phy-id03a2.a411";
+		reg = <0xf>;
+		reset-gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	reset-gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie1 {
+	reset-gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&dpns {
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&qsgmii_pcs {
+	status = "okay";
+};
+
+&sgmii_pcs {
+	status = "okay";
+};

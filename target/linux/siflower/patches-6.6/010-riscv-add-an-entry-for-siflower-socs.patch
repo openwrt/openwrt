@@ -1,0 +1,28 @@
+From: Chuanhong Guo <gch981213@gmail.com>
+Date: Sat, 14 Sep 2024 11:57:35 +0800
+Subject: [PATCH 10/18] riscv: add an entry for siflower socs
+
+Siflower RISC-V SoCs uses ARM PL011 for UART. Add an entry
+for it and select ARM_AMBA
+---
+ arch/riscv/Kconfig.socs | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -22,6 +22,15 @@ config SOC_SIFIVE
+ 	help
+ 	  This enables support for SiFive SoC platform hardware.
+ 
++config ARCH_SIFLOWER
++	def_bool SOC_SIFLOWER
++
++config SOC_SIFLOWER
++	bool "Siflower RISC-V SoCs"
++	select ARM_AMBA if TTY
++	help
++	  This enables support for Siflower RISC-V SoC platform hardware.
++
+ config ARCH_STARFIVE
+ 	def_bool SOC_STARFIVE
+ 
