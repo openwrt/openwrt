@@ -220,7 +220,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	struct vc4_hang_state *hang_state;
  
-@@ -963,6 +967,9 @@ extern struct platform_driver vc4_dsi_dr
+@@ -964,6 +968,9 @@ extern struct platform_driver vc4_dsi_dr
  /* vc4_fence.c */
  extern const struct dma_fence_ops vc4_fence_ops;
  
@@ -2317,7 +2317,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 -	else
 -		vc4_hvs_pv_muxing_commit(vc4, state);
 +	if (!vc4->firmware_kms) {
-+		if (vc4->is_vc5)
++		if (vc4->vc4_gen == VC4_GEN_5)
 +			vc5_hvs_pv_muxing_commit(vc4, state);
 +		else
 +			vc4_hvs_pv_muxing_commit(vc4, state);
@@ -2330,7 +2330,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	drm_atomic_helper_cleanup_planes(dev, state);
  
 -	if (vc4->is_vc5) {
-+	if (vc4->is_vc5 && !vc4->firmware_kms) {
++	if ((vc4->vc4_gen == VC4_GEN_5) && !vc4->firmware_kms) {
  		unsigned long core_rate = min_t(unsigned long,
  						hvs->max_core_rate,
  						new_hvs_state->core_clock_rate);
