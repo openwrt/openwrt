@@ -77,7 +77,6 @@
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
 	status = "okay";
 
 	gmac0: mac@0 {
@@ -105,12 +104,11 @@
 	rtl8221b_phy: ethernet-phy@1 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <1>;
-
-		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
-
-		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
 		reset-assert-us = <100000>;
 		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&pio>;
 	};
 };
 
