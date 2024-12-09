@@ -278,9 +278,12 @@
 
 			partition@e0000 {
 				label = "CFG1";
-				compatible = "u-boot,env-redundant-bool";
 				reg = <0xe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env-redundant-bool";
+				};
 			};
 
 			partition@f0000 {
@@ -331,9 +334,12 @@
 
 			partition@1fe0000 {
 				label = "CFG2";
-				compatible = "u-boot,env-redundant-bool";
 				reg = <0x1fe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env-redundant-bool";
+				};
 			};
 		};
 	};
