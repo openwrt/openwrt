@@ -43,6 +43,7 @@ mediatek_setup_interfaces()
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	netcore,n60|\
+	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
 	unielec,u7981-01*|\
 	zbtlink,zbt-z8102ax|\
@@ -163,6 +164,11 @@ mediatek_setup_macs()
 		;;
 	netgear,wax220)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
+		label_mac=$lan_mac
+		;;
+	nradio,c8-668gl)
+		lan_mac=$(mmc_get_mac_ascii bdinfo "fac_mac ")
+		wan_mac=$(macaddr_add "$lan_mac" 2)
 		label_mac=$lan_mac
 		;;
 	qihoo,360t7)
