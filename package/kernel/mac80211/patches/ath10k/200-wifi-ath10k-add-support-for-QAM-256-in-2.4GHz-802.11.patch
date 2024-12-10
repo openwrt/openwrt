@@ -1,0 +1,37 @@
+From 7658e786e6de189f218ba7ed5d8db953cc6cf980 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 14 Jun 2023 09:14:56 +0200
+Subject: [PATCH 3/4] wifi: ath10k: add support for QAM-256 in 2.4GHz 802.11n
+
+Ath10k supports non-standard QAM-256 in 2.4GHz in 802.11n. Permit for
+supported client to benefits from these extra bandwidth by enabling
+support for it.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/wireless/ath/ath10k/mac.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -2744,9 +2744,9 @@ static void ath10k_peer_assoc_h_phymode(
+ 		if (sta->deflink.vht_cap.vht_supported &&
+ 		    !ath10k_peer_assoc_h_vht_masked(vht_mcs_mask)) {
+ 			if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_40)
+-				phymode = MODE_11AC_VHT40;
++				phymode = MODE_11AC_VHT40_2G;
+ 			else
+-				phymode = MODE_11AC_VHT20;
++				phymode = MODE_11AC_VHT20_2G;
+ 		} else if (sta->deflink.ht_cap.ht_supported &&
+ 			   !ath10k_peer_assoc_h_ht_masked(ht_mcs_mask)) {
+ 			if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_40)
+@@ -4996,6 +4996,8 @@ static void ath10k_mac_setup_ht_vht_cap(
+ 	if (ar->phy_capability & WHAL_WLAN_11G_CAPABILITY) {
+ 		band = &ar->mac.sbands[NL80211_BAND_2GHZ];
+ 		band->ht_cap = ht_cap;
++		band->vht_cap = vht_cap;
++		band->vht_cap.vendor_qam256_supported = true;
+ 	}
+ 	if (ar->phy_capability & WHAL_WLAN_11A_CAPABILITY) {
+ 		band = &ar->mac.sbands[NL80211_BAND_5GHZ];

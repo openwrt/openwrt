@@ -1,0 +1,150 @@
+From 309d05fdf260697b1f15b26ebd4f71f0446dd605 Mon Sep 17 00:00:00 2001
+From: DENG Qingfang <dengqf6@mail2.sysu.edu.cn>
+Date: Mon, 23 Nov 2020 10:46:37 +0800
+Subject: [PATCH] mt76: allow VHT rate on 2.4GHz
+
+Allow chips that support 11ac to use 256QAM on 2.4GHz
+
+Signed-off-by: DENG Qingfang <dqfext@gmail.com>
+Signed-off-by: rany <ranygh@riseup.net>
+---
+ mac80211.c    | 12 +++++++-----
+ mt7615/init.c |  3 +++
+ mt7915/init.c | 14 ++++++++++++--
+ mt7921/init.c |  7 +++++++
+ mt7925/init.c |  7 +++++++
+ mt7996/init.c |  5 +++++
+ 6 files changed, 41 insertions(+), 7 deletions(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -293,7 +293,7 @@ static void mt76_init_stream_cap(struct
+ void mt76_set_stream_caps(struct mt76_phy *phy, bool vht)
+ {
+ 	if (phy->cap.has_2ghz)
+-		mt76_init_stream_cap(phy, &phy->sband_2g.sband, false);
++		mt76_init_stream_cap(phy, &phy->sband_2g.sband, vht);
+ 	if (phy->cap.has_5ghz)
+ 		mt76_init_stream_cap(phy, &phy->sband_5g.sband, vht);
+ 	if (phy->cap.has_6ghz)
+@@ -360,13 +360,15 @@ mt76_init_sband(struct mt76_phy *phy, st
+ 
+ static int
+ mt76_init_sband_2g(struct mt76_phy *phy, struct ieee80211_rate *rates,
+-		   int n_rates)
++		   int n_rates, bool vht)
+ {
+ 	phy->hw->wiphy->bands[NL80211_BAND_2GHZ] = &phy->sband_2g.sband;
+ 
++	vht = vht && phy->sband_2g.sband.vht_cap.vendor_qam256_supported;
++
+ 	return mt76_init_sband(phy, &phy->sband_2g, mt76_channels_2ghz,
+ 			       ARRAY_SIZE(mt76_channels_2ghz), rates,
+-			       n_rates, true, false);
++			       n_rates, true, vht);
+ }
+ 
+ static int
+@@ -524,7 +526,7 @@ int mt76_register_phy(struct mt76_phy *p
+ 		return ret;
+ 
+ 	if (phy->cap.has_2ghz) {
+-		ret = mt76_init_sband_2g(phy, rates, n_rates);
++		ret = mt76_init_sband_2g(phy, rates, n_rates, vht);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -710,7 +712,7 @@ int mt76_register_device(struct mt76_dev
+ 		return ret;
+ 
+ 	if (phy->cap.has_2ghz) {
+-		ret = mt76_init_sband_2g(phy, rates, n_rates);
++		ret = mt76_init_sband_2g(phy, rates, n_rates, vht);
+ 		if (ret)
+ 			return ret;
+ 	}
+--- a/mt7615/init.c
++++ b/mt7615/init.c
+@@ -412,6 +412,9 @@ mt7615_init_wiphy(struct ieee80211_hw *h
+ 		hw->max_tx_fragments = MT_HW_TXP_MAX_BUF_NUM;
+ 
+ 	phy->mt76->sband_2g.sband.ht_cap.cap |= IEEE80211_HT_CAP_LDPC_CODING;
++	phy->mt76->sband_2g.sband.vht_cap.cap |=
++			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
++	phy->mt76->sband_2g.sband.vht_cap.vendor_qam256_supported = true;
+ 	phy->mt76->sband_5g.sband.ht_cap.cap |= IEEE80211_HT_CAP_LDPC_CODING;
+ 	phy->mt76->sband_5g.sband.vht_cap.cap |=
+ 			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -411,12 +411,22 @@ mt7915_init_wiphy(struct mt7915_phy *phy
+ 		phy->mt76->sband_2g.sband.ht_cap.cap |=
+ 			IEEE80211_HT_CAP_LDPC_CODING |
+ 			IEEE80211_HT_CAP_MAX_AMSDU;
+-		if (is_mt7915(&dev->mt76))
++		if (is_mt7915(&dev->mt76)) {
+ 			phy->mt76->sband_2g.sband.ht_cap.ampdu_density =
+ 				IEEE80211_HT_MPDU_DENSITY_4;
+-		else
++
++			phy->mt76->sband_2g.sband.vht_cap.cap |=
++				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
++				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
++		} else {
+ 			phy->mt76->sband_2g.sband.ht_cap.ampdu_density =
+ 				IEEE80211_HT_MPDU_DENSITY_2;
++
++			phy->mt76->sband_2g.sband.vht_cap.cap |=
++				IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
++				IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
++		}
++		phy->mt76->sband_2g.sband.vht_cap.vendor_qam256_supported = true;
+ 	}
+ 
+ 	if (phy->mt76->cap.has_5ghz) {
+--- a/mt7921/init.c
++++ b/mt7921/init.c
+@@ -319,6 +319,13 @@ int mt7921_register_device(struct mt792x
+ 	dev->mphy.sband_5g.sband.ht_cap.cap |=
+ 			IEEE80211_HT_CAP_LDPC_CODING |
+ 			IEEE80211_HT_CAP_MAX_AMSDU;
++	dev->mphy.sband_2g.sband.vht_cap.cap |=
++			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
++			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK |
++			IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE |
++			IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE |
++			(3 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT);
++	dev->mphy.sband_2g.sband.vht_cap.vendor_qam256_supported = true;
+ 	dev->mphy.sband_5g.sband.vht_cap.cap |=
+ 			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
+ 			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK |
+--- a/mt7925/init.c
++++ b/mt7925/init.c
+@@ -277,6 +277,13 @@ int mt7925_register_device(struct mt792x
+ 			IEEE80211_HT_CAP_MAX_AMSDU;
+ 	dev->mphy.sband_2g.sband.ht_cap.ampdu_density =
+ 			IEEE80211_HT_MPDU_DENSITY_1;
++	dev->mphy.sband_2g.sband.vht_cap.cap |=
++			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
++			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK |
++			IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE |
++			IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE |
++			(3 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT);
++	dev->mphy.sband_2g.sband.vht_cap.vendor_qam256_supported = true;
+ 	dev->mphy.sband_5g.sband.vht_cap.cap |=
+ 			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
+ 			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK |
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -406,6 +406,11 @@ mt7996_init_wiphy(struct ieee80211_hw *h
+ 		phy->mt76->sband_2g.sband.ht_cap.cap |=
+ 			IEEE80211_HT_CAP_LDPC_CODING |
+ 			IEEE80211_HT_CAP_MAX_AMSDU;
++
++		phy->mt76->sband_2g.sband.vht_cap.cap |=
++			IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
++			IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK;
++		phy->mt76->sband_2g.sband.vht_cap.vendor_qam256_supported = true;
+ 		phy->mt76->sband_2g.sband.ht_cap.ampdu_density =
+ 			IEEE80211_HT_MPDU_DENSITY_2;
+ 	}
