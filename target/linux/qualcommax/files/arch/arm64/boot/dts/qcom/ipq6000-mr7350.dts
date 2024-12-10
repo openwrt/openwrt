@@ -123,11 +123,6 @@
 		gpio = <&tlmm 61 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
-
-	output-usb0-power {
-		compatible = "regulator-output";
-		vout-supply = <&reg_usb_vbus>;
-	};
 };
 
 &tlmm {
@@ -246,6 +241,8 @@
 
 &qusb_phy_0 {
 	status = "okay";
+
+	vdd-supply = <&reg_usb_vbus>;
 };
 
 &ssphy_0 {
