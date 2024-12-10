@@ -1368,6 +1368,27 @@ define Device/ruijie_rg-x60-pro
 endef
 TARGET_DEVICES += ruijie_rg-x60-pro
 
+define Device/tenbay_wr3000k
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := WR3000K
+  DEVICE_DTS := mt7981b-tenbay-wr3000k
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 49152k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  KERNEL = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+endef
+TARGET_DEVICES += tenbay_wr3000k
+
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE6000XD
