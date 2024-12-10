@@ -213,6 +213,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
 		;;
+	buffalo,wzr-450hp2)
+		ucidef_add_switch "switch0" \
+			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+		;;
 	buffalo,wzr-600dhp|\
 	buffalo,wzr-hp-ag300h|\
 	tplink,archer-c25-v1|\
