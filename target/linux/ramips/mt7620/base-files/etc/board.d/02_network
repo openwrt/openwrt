@@ -111,6 +111,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
+	dlink,dap-1620-a2)
+		ucidef_add_switch "switch0" \
+			"5:lan" "6@eth0"
+		;;	
 	dlink,dir-510l)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
