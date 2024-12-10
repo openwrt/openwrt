@@ -1,0 +1,48 @@
+From: Antonio Pastor <antonio.pastor@gmail.com>
+Date: Thu, 12 Dec 2024 21:48:38 -0500
+Subject: [PATCH] llc: llc_input: properly set transport_header offset to
+solve SNAP match issue
+
+With the introduction of DSA, network_header and transport_header offsets 
+in skb for 802.2+LLC packets are short by two bytes when pulled out of the 
+backlog.  This issue is caused by DSA as it appears after applying the commmit 
+that converts an architecture to DSA. 
+skb buffer is processed without issue through GRO (if active), netif_receive 
+and br_handle_frame as none of it relies on the offsets.
+Once skb processing reaches __netif_receive_skb_one_core, code resets
+network_header offset but assumes transport_header is accurate (if set),
+leaving it untouched.
+For 802.2+LLC+SNAP frames this causes an issue as llc_rcv assumes the offset 
+as correct and advances transport_header offset to denote the SNAP header 
+location. Once skb processing reaches snap_rcv for handling, SNAP header is 
+misaligned by two, failing match with registered handlers, and packet is 
+silently dropped.
+Patch modifies llc_rcv to reset transport_header offset and apply the LLC
+header size increment, instead of applying the increment on existing value. 
+This allows snap_rcv to match OUI:PID values properly and restores normal 
+behaviour.
+An additional benefit would be that any non SNAP 802.2+LLC processing will
+now receive an accurate transport_header offset, although this code and 
+802.2+LLC supported protocols are very mature so if no other issues have 
+been noticed already, odds are none will.
+Issue does not apply to for Ethernet II frames supporting IPv4/v6 traffic as
+that stack most probably resets transport_header before using it (if it does 
+at all). Regardless, this patch does not affect Ethernet II frame processing 
+as Ethernet II frames are never handled by llc_rcv().
+ 
+Signed-off-by: Antonio Pastor <antonio.pastor@gmail.com>
+---
+ net/llc/llc_input.c | 2 +-
+ 1 file changed, 1 insertions(+), 1 deletions(-)
+
+--- a/net/llc/llc_input.c
++++ b/net/llc/llc_input.c
+@@ -124,7 +124,7 @@ static inline int llc_fixup_skb(struct s
+ 	if (unlikely(!pskb_may_pull(skb, llc_len)))
+ 		return 0;
+ 
+-	skb->transport_header += llc_len;
++	skb_set_transport_header(skb, llc_len);
+ 	skb_pull(skb, llc_len);
+ 	if (skb->protocol == htons(ETH_P_802_2)) {
+ 		__be16 pdulen;
