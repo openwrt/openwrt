@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -3839,7 +3839,7 @@ static void rt2800_config_channel_rf7620
+ 
+ 	/* Default: XO=20MHz , SDM mode */
+ 	rfcsr = rt2800_rfcsr_read(rt2x00dev, 16);
+-	rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 0x80);
++	rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 4);
+ 	rt2800_rfcsr_write(rt2x00dev, 16, rfcsr);
+ 
+ 	rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
