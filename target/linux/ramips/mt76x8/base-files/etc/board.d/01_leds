@@ -67,6 +67,10 @@ mediatek,linkit-smart-7688)
 oraybox,x1)
 	ucidef_set_led_netdev "wifi" "wifi" "blue:status" "wlan0"
 	;;
+qding,qc202)
+	ucidef_set_led_netdev "ethernet" "ethernet" "ethernet" "eth0"
+	ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tpt"
+	;;
 rakwireless,rak633)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
 	;;
