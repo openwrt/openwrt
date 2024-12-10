@@ -49,43 +49,47 @@ define Device/FitImage
 	KERNEL_NAME := Image
 endef
 
-define Device/dongshan_nezha_stu
+define Device/100ask_dongshan-nezha-stu
   $(call Device/Default)
   DEVICE_VENDOR := Dongshan
   DEVICE_MODEL := Nezha STU devkit
   DEVICE_DTS := allwinner/sun20i-d1-dongshan-nezha-stu
+  SUPPORTED_DEVICES += dongshan_nezha_stu
   UBOOT := dongshan_nezha_stu
 endef
-TARGET_DEVICES += dongshan_nezha_stu
+TARGET_DEVICES += 100ask_dongshan-nezha-stu
 
-define Device/lichee_rv_dock
+define Device/sipeed_lichee-rv-dock
   $(call Device/Default)
   DEVICE_VENDOR := Sipeed
   DEVICE_MODEL := LicheePi RV (dock)
   DEVICE_DTS := allwinner/sun20i-d1-lichee-rv-dock
+  SUPPORTED_DEVICES += lichee_rv_dock
   DEVICE_PACKAGES += kmod-rtl8723bs
   UBOOT := lichee_rv_dock
 endef
-TARGET_DEVICES += lichee_rv_dock
+TARGET_DEVICES += sipeed_lichee-rv-dock
 
-define Device/mangopi_mq_pro
+define Device/widora_mangopi-mq-pro
   $(call Device/Default)
   DEVICE_VENDOR := MangoPi
   DEVICE_MODEL := MQ Pro
   DEVICE_DTS := allwinner/sun20i-d1-mangopi-mq-pro
+  SUPPORTED_DEVICES += mangopi_mq_pro
   DEVICE_PACKAGES += kmod-rtl8723bs
   UBOOT := mangopi_mq_pro
 endef
-TARGET_DEVICES += mangopi_mq_pro
+TARGET_DEVICES += widora_mangopi-mq-pro
 
-define Device/nezha
+define Device/allwinner_d1-nezha
   $(call Device/Default)
   DEVICE_VENDOR := Nezha
   DEVICE_MODEL := D1
   DEVICE_DTS := allwinner/sun20i-d1-nezha
+  SUPPORTED_DEVICES += nezha
   UBOOT := nezha
 endef
-TARGET_DEVICES += nezha
+TARGET_DEVICES += allwinner_d1-nezha
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
