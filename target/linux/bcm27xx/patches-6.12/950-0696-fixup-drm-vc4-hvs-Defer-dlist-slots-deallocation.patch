@@ -1,0 +1,20 @@
+From a34b91b0fe1ef48aef3a204095cc717e4da7fc9c Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 9 Dec 2024 11:11:29 +0000
+Subject: [PATCH 696/699] fixup! drm/vc4: hvs: Defer dlist slots deallocation
+
+---
+ drivers/gpu/drm/vc4/vc4_hvs.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hvs.c
++++ b/drivers/gpu/drm/vc4/vc4_hvs.c
+@@ -732,8 +732,6 @@ static bool vc4_hvs_check_channel_active
+ 	bool enabled = false;
+ 	int idx;
+ 
+-	WARN_ON_ONCE(vc4->gen > VC4_GEN_6_C);
+-
+ 	if (!drm_dev_enter(drm, &idx))
+ 		return 0;
+ 

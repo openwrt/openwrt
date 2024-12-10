@@ -1,0 +1,344 @@
+From f4d91d0fc7a5a575fdc53b72769303e3082cd96e Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 8 Mar 2023 15:28:19 +0000
+Subject: [PATCH 001/699] workflows: We all love checkpatch, so add it to the
+ CI workflows
+
+This is currently running on defaults, so the --strict desired
+for media drivers and similar won't be observed. That may be
+possible to add later.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+
+.github: Add Github Workflow for KUnit
+
+Now that we have some KUnit coverage, let's add a github actions file to
+run them on each push or pull request.
+
+Signed-off-by: Maxime Ripard <maxime@cerno.tech>
+
+.github/workflows: Add dtoverlaycheck workflow
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+
+.github/workflows: Create workflow to CI kernel builds
+
+Builds the bcmrpi, bcm2709, bcm2711, and bcm2835 32 bit kernels,
+and defconfig and bcm2711 64bit kernels, saving the artifacts for
+7 days.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+
+.github: Skip broken Generic DRM/KMS Unit Tests
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+.github/workflows: Set warnings-as-errors for builds
+
+To avoid code with build warnings being introduced into the tree, force
+CONFIG_WERROR=y in the build workflow.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+.github/workflows: Correct kernel builds artifacts
+
+Modify the kernel build workflow to create artifacts with the correct
+names and structure, both as an example of what we expect and in case
+anyone wants to use the output.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+.github/workflows: Switch to a matrix build
+
+Remove the per-build duplication by putting build parameters in a
+matrix.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+.github/workflows: Retain artifacts for 90 days
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+.github/workflows: Add a bcm2712 build configuration
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+
+Update kernel-build.yml to use node.js 20
+
+Upgrade the actions to v4 to get rid of the warning about migrating from node.js 16.
+
+Update kunit.yml to use node.js 20
+
+Bump actions/checkout to v4.
+
+Update dtoverlaycheck.yml to node.js 20
+
+.github/workflows: More jobs for kernel builds
+
+Using the "cores * 1.5" heuristic, configure the kernel builds for the
+4-core GitHub-hosted runners.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .github/workflows/checkpatch.yml     |  18 +++++
+ .github/workflows/ci_checkpatch.conf |   4 +
+ .github/workflows/dtoverlaycheck.yml |  48 ++++++++++++
+ .github/workflows/kernel-build.yml   | 108 +++++++++++++++++++++++++++
+ .github/workflows/kunit.yml          |  57 ++++++++++++++
+ 5 files changed, 235 insertions(+)
+ create mode 100644 .github/workflows/checkpatch.yml
+ create mode 100644 .github/workflows/ci_checkpatch.conf
+ create mode 100644 .github/workflows/dtoverlaycheck.yml
+ create mode 100644 .github/workflows/kernel-build.yml
+ create mode 100644 .github/workflows/kunit.yml
+
+--- /dev/null
++++ b/.github/workflows/checkpatch.yml
+@@ -0,0 +1,18 @@
++name: Advisory checkpatch review
++on: [pull_request]
++
++jobs:
++  review:
++    name: checkpatch review
++    runs-on: ubuntu-latest
++    steps:
++    - name: 'Calculate PR commits + 1'
++      run: echo "PR_FETCH_DEPTH=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> $GITHUB_ENV
++    - uses: actions/checkout@v4
++      with:
++        ref: ${{ github.event.pull_request.head.sha }}
++        fetch-depth: ${{ env.PR_FETCH_DEPTH }}
++    - name: Copy checkpatch.conf
++      run: cp ${{github.workspace}}/.github/workflows/ci_checkpatch.conf ${{github.workspace}}/.checkpatch.conf
++    - name: Run checkpatch review
++      uses: webispy/checkpatch-action@v9
+--- /dev/null
++++ b/.github/workflows/ci_checkpatch.conf
+@@ -0,0 +1,4 @@
++--no-tree
++--ignore FILE_PATH_CHANGES
++--ignore GIT_COMMIT_ID
++--ignore SPDX_LICENSE_TAG
+--- /dev/null
++++ b/.github/workflows/dtoverlaycheck.yml
+@@ -0,0 +1,48 @@
++name: Pi dtoverlay checks
++
++on:
++  pull_request:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  push:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  workflow_dispatch:
++
++env:
++  UTILS_DIR: "${{github.workspace}}/utils"
++
++jobs:
++  dtoverlaycheck:
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Install toolchain
++      run: |
++        sudo apt update
++        sudo apt-get install gcc-arm-linux-gnueabihf libfdt-dev device-tree-compiler
++      timeout-minutes: 10
++
++    - uses: actions/checkout@v4
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: overlaycheck
++      run: |
++        git clone https://github.com/raspberrypi/utils ${{env.UTILS_DIR}}
++        cd ${{env.UTILS_DIR}}
++        pwd
++        mkdir build
++        cd build
++        pwd
++        cmake ..
++        make -j4
++        sudo make install
++        cd ${{github.workspace}}
++        pwd
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- bcm2711_defconfig
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- dtbs
++        ${{env.UTILS_DIR}}/overlaycheck/overlaycheck
+--- /dev/null
++++ b/.github/workflows/kernel-build.yml
+@@ -0,0 +1,108 @@
++name: Pi kernel build tests
++
++on:
++  pull_request:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  push:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  workflow_dispatch:
++
++env:
++  NUM_JOBS: 6
++
++jobs:
++  build:
++    runs-on: ubuntu-latest
++    strategy:
++      matrix:
++        include:
++          - name: bcm2835
++            arch: arm
++            defconfig: bcm2835_defconfig
++            kernel: kernel
++
++          - name: arm64
++            arch: arm64
++            defconfig: defconfig
++            kernel: kernel8
++
++          - name: bcmrpi
++            arch: arm
++            defconfig: bcmrpi_defconfig
++            kernel: kernel
++
++          - name: bcm2709
++            arch: arm
++            defconfig: bcm2709_defconfig
++            kernel: kernel7
++
++          - name: bcm2711
++            arch: arm
++            defconfig: bcm2711_defconfig
++            kernel: kernel7l
++
++          - name: bcm2711_arm64
++            arch: arm64
++            defconfig: bcm2711_defconfig
++            kernel: kernel8
++
++          - name: bcm2712
++            arch: arm64
++            defconfig: bcm2712_defconfig
++            kernel: kernel_2712
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        if [[ "${{matrix.arch}}" == "arm64" ]]; then
++          sudo apt-get install gcc-aarch64-linux-gnu;
++        else
++          sudo apt-get install gcc-arm-linux-gnueabihf;
++        fi
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v4
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel ${{matrix.name}}
++      run: |
++        mkdir ${{github.workspace}}/build
++        export ARCH=${{matrix.arch}}
++        if [[ "$ARCH" == "arm64" ]]; then
++          export CROSS_COMPILE=aarch64-linux-gnu-
++          export DTS_SUBDIR=broadcom
++          export IMAGE=Image.gz
++        else
++          export CROSS_COMPILE=arm-linux-gnueabihf-
++          export DTS_SUBDIR=broadcom
++          export IMAGE=zImage
++        fi
++        make O=${{github.workspace}}/build ${{matrix.defconfig}}
++        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
++        make O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} $IMAGE modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot/overlays
++        make O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/dts/${DTS_SUBDIR}/*.dtb ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
++        cp ${{github.workspace}}/arch/${ARCH}/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/$IMAGE ${{github.workspace}}/install/boot/${{matrix.kernel}}.img
++
++    - name: Tar build
++      run: tar -cvf ${{matrix.name}}_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v4
++      with:
++        name: ${{matrix.name}}_build
++        path: ${{matrix.name}}_build.tar
++        retention-days: 90
+--- /dev/null
++++ b/.github/workflows/kunit.yml
+@@ -0,0 +1,57 @@
++name: KUnit Tests
++
++on:
++  pull_request:
++    branches: [ "rpi-*"]
++
++  push:
++    branches: [ "rpi-*"]
++
++jobs:
++  core:
++    name: Generic DRM/KMS Unit Tests
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Run Generic DRM Tests
++        run: |
++          echo Skipping ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/tests
++
++  vc4-arm:
++    name: VC4 Unit Tests on ARM
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Install Dependencies
++        run: |
++          sudo apt-get update
++          sudo apt-get install -y gcc-arm-linux-gnueabihf qemu-system-arm
++
++      - name: Run VC4 Tests
++        run: |
++          ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/vc4/tests \
++              --cross_compile=arm-linux-gnueabihf- --arch=arm
++
++  vc4-arm64:
++    name: VC4 Unit Tests on ARM64
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v4
++
++      - name: Install Dependencies
++        run: |
++          sudo apt-get update
++          sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm
++
++      - name: Run VC4 Tests
++        run: |
++          ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/vc4/tests \
++              --cross_compile=aarch64-linux-gnu- --arch=arm64
