@@ -522,6 +522,14 @@ define Device/oraybox_x1
 endef
 TARGET_DEVICES += oraybox_x1
 
+define Device/qding_qc202
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Qding
+  DEVICE_MODEL := QC202
+  DEVICE_PACKAGES := kmod-i2c-mt7628 kmod-rtc-ds1307 kmod-gpio-beeper kmod-spi-dev
+endef
+TARGET_DEVICES += qding_qc202
+
 define Device/rakwireless_rak633
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Rakwireless

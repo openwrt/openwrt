@@ -1,0 +1,162 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "qding,qc202", "mediatek,mt7628an-soc";
+	model = "Qding QC202";
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_white_1 {
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <1>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		status_white_2 {
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <2>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		indicator_red {
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+
+		indicator_green {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+
+		relay {
+			gpio-export,name = "relay";
+			gpio-export,output = <0>;
+			gpios = <&gpio 42 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "gpio";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x7b0000>;
+			};
+		};
+	};
+
+	spidev@1{
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "linux,spidev";
+		reg = <1>;
+		spi-max-frequency = <40000000>;
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&i2c {
+	status = "okay";
+
+	rfid@28 {
+		compatible = "mfrc522";
+		reg = <0x28>;
+	};
+
+	rtc@68 {
+		compatible = "dallas,ds1339";
+		reg = <0x68>;
+	};
+};
