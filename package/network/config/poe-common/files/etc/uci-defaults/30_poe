@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+[ -e /etc/config/poe ] && exit 0
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+CFG=/etc/board.json
+
+json_init
+json_load_file "${CFG}"
+
+json_is_a poe object || exit 0
+
+umask 055
+touch /etc/config/poe
+
+json_select poe
+	json_get_vars budget
+
+	uci add poe global
+	uci set poe.@global[-1].budget="$budget"
+
+	if json_is_a ports array; then
+		json_get_values ports ports
+		id='1'
+
+		for port in $ports; do
+			uci -q batch <<-EOF
+				add poe port
+				set poe.@port[-1].name='$port'
+				set poe.@port[-1].id='$id'
+				set poe.@port[-1].enable='1'
+			EOF
+			let id=id+1
+		done
+	fi
+json_select ..
+
+uci commit
+
+exit 0
