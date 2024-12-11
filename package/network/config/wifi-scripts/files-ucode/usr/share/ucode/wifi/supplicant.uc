@@ -182,8 +182,10 @@ export function generate(config_list, data, interface) {
 		return 1;
 	}
 
-	interface.config.country = data.config.country;
+	interface.config.country = data.config.country_code;
 	interface.config.beacon_int = data.config.beacon_int;
+
+	append_vars(interface.config, [ 'country', 'beacon_int' ]);
 
 	setup_sta(data.config, interface.config);
 
