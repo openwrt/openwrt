@@ -53,3 +53,40 @@ define KernelPackage/smi-bcm2835-dev/description
 endef
 
 $(eval $(call KernelPackage,smi-bcm2835-dev))
+
+
+define KernelPackage/pwm-pio-rp1
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RP1 PWM support
+  KCONFIG:=CONFIG_PWM_PIO_RP1
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-pio-rp1.ko
+  AUTOLOAD:=$(call AutoLoad,21,pwm-pio-rp1)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712
+endef
+
+define KernelPackage/pwm-pio-rp1/description
+  Enables precise control of PWM signals for tasks like motor control,
+  LED dimming, and audio signal generation. Leveraging PIO allows for
+  higher accuracy and flexibility in PWM signal generation compared
+  to traditional hardware timers.
+endef
+
+$(eval $(call KernelPackage,pwm-pio-rp1))
+
+
+define KernelPackage/ws2812-pio-rp1
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RP1 PIO-base WS2812 driver
+  KCONFIG:=CONFIG_WS2812_PIO_RP1
+  FILES:=$(LINUX_DIR)/drivers/misc/ws2812-pio-rp1.ko
+  AUTOLOAD:=$(call AutoLoad,21,ws2812-pio-rp1)
+  DEPENDS:=@TARGET_bcm27xx_bcm2712
+endef
+
+define KernelPackage/ws2812-pio-rp1/description
+  Driver for the WS2812 (NeoPixel) LEDs using the RP1 PIO hardware.
+  The driver creates a character device to which rgbw pixels may be
+  written. Single-byte writes to offset 0 set the brightness at runtime.
+endef
+
+$(eval $(call KernelPackage,ws2812-pio-rp1))
