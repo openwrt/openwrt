@@ -6,7 +6,7 @@ import * as fs from 'fs';
 export function parse_encryption(config) {
 	let encryption = split(config.encryption, '+', 2);
 
-	config.wpa_pairwise = (config.hwmode == 'ad') ? 'GCMP' : 'CCMP';
+	config.wpa_pairwise = (config.hw_mode == 'ad') ? 'GCMP' : 'CCMP';
 
 	switch(encryption[1]){
 	case 'tkip+aes':

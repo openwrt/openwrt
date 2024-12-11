@@ -17,8 +17,8 @@ let phy_capabilities = {};
 /* make sure old style UCI and hwmode and newer band properties are correctly resolved */
 function set_device_defaults(config) {
 	/* validate the hw mode */
-	if (config.hwmode in [ '11a', '11b', '11g', '11ad' ])
-		config.hw_mode = substr(config.hwmode, 2);
+	if (config.hw_mode in [ '11a', '11b', '11g', '11ad' ])
+		config.hw_mode = substr(config.hw_mode, 2);
 	else if (config.channel > 14)
 		config.hw_mode = 'a';
 	else
