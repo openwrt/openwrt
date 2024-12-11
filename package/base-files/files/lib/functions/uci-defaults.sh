@@ -642,8 +642,18 @@ ucidef_add_gpio_switch() {
 ucidef_set_hostname() {
 	local hostname="$1"
 
+	ucidef_set_system "hostname" "$hostname"
+}
+
+ucidef_set_system() {
 	json_select_object system
-		json_add_string hostname "$hostname"
+	while [ -n "$1" ]; do
+		local opt=$1; shift
+		local val=$1; shift
+
+		[ -n "$opt" -a -n "$val" ] || break
+			json_add_string "$opt" "$val"
+	done
 	json_select ..
 }
 
