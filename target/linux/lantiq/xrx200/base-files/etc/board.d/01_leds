@@ -64,9 +64,6 @@ buffalo,wbmr-300hpd)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x20"
 	ucidef_set_led_default "router" "router" "green:router" "1"
 	;;
-netgear,dm200)
-	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
-	;;
 esac
 
 board_config_flush
