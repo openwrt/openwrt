@@ -109,8 +109,6 @@ export function dump_network(file) {
 	if (file)
 		fs.writefile(file, config_data);
 
-	printf('%s\n', config_data);
-
 	return config_data;
 };
 
