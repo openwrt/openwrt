@@ -1322,6 +1322,16 @@ define Device/trendnet_tew-810dr
 endef
 TARGET_DEVICES += trendnet_tew-810dr
 
+define Device/trendnet_tha103ac
+  SOC := mt7620a
+  DEVICE_PACKAGES := kmod-mt76x0e rssileds
+  DEVICE_VENDOR := TRENDnet
+  DEVICE_MODEL := THA-103AC
+  IMAGE_SIZE := 7872k
+  SUPPORTED_DEVICES += mt7620a_mt7610e
+endef
+TARGET_DEVICES += trendnet_tha103ac
+
 define Device/vonets_var11n-300
   SOC := mt7620n
   IMAGE_SIZE := 3776k
