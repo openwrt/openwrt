@@ -1038,6 +1038,28 @@ endef
 $(eval $(call KernelPackage,keys-trusted))
 
 
+define KernelPackage/rp1
+  TITLE:=RP1 title
+  KCONFIG:= \
+           CONFIG_FIRMWARE_RP1 \
+           CONFIG_RP1_PIO \
+           CONFIG_COMMON_CLK_RP1_SDIO=y \
+           CONFIG_MBOX_RP1 \
+           CONFIG_PWM_PIO_RP1
+  FILES:= \
+           $(LINUX_DIR)/drivers/firmware/rp1.ko \
+           $(LINUX_DIR)/drivers/mailbox/rp1-mailbox.ko \
+           $(LINUX_DIR)/drivers/misc/rp1-pio.ko \
+           $(LINUX_DIR)/drivers/pwm/pwm-pio-rp1.ko
+  AUTOLOAD:=$(call AutoLoad,10,rp1)
+endef
+
+define KernelPackage/rp1/description
+  RP1 modules
+endef
+
+$(eval $(call KernelPackage,rp1))
+
 define KernelPackage/tpm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM Hardware Support
