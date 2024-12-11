@@ -1,0 +1,108 @@
+From a3a96f4abe4e8ae8b243ab5e490334f19fe64c7a Mon Sep 17 00:00:00 2001
+From: David Morley <morleyd@google.com>
+Date: Fri, 14 Jul 2023 11:07:56 -0400
+Subject: [PATCH 15/19] tcp: introduce per-route feature RTAX_FEATURE_ECN_LOW
+
+Define and implement a new per-route feature, RTAX_FEATURE_ECN_LOW.
+
+This feature indicates that the given destination network is a
+low-latency ECN environment, meaning both that ECN CE marks are
+applied by the network using a low-latency marking threshold and also
+that TCP endpoints provide precise per-data-segment ECN feedback in
+ACKs (where the ACK ECE flag echoes the received CE status of all
+newly-acknowledged data segments). This feature indication can be used
+by congestion control algorithms to decide how to interpret ECN
+signals over the given destination network.
+
+This feature is appropriate for datacenter-style ECN marking, such as
+the ECN marking approach expected by DCTCP or BBR congestion control
+modules.
+
+Signed-off-by: David Morley <morleyd@google.com>
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+Signed-off-by: Yuchung Cheng <ycheng@google.com>
+Tested-by: David Morley <morleyd@google.com>
+Change-Id: I6bc06e9c6cb426fbae7243fc71c9a8c18175f5d3
+---
+ include/net/tcp.h              | 10 ++++++++++
+ include/uapi/linux/rtnetlink.h |  4 +++-
+ net/ipv4/tcp_minisocks.c       |  2 ++
+ net/ipv4/tcp_output.c          |  6 ++++--
+ 4 files changed, 19 insertions(+), 3 deletions(-)
+
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -372,6 +372,7 @@ static inline void tcp_dec_quickack_mode
+ #define	TCP_ECN_QUEUE_CWR	2
+ #define	TCP_ECN_DEMAND_CWR	4
+ #define	TCP_ECN_SEEN		8
++#define	TCP_ECN_LOW		16
+ 
+ enum tcp_tw_status {
+ 	TCP_TW_SUCCESS = 0,
+@@ -724,6 +725,15 @@ static inline void tcp_fast_path_check(s
+ 		tcp_fast_path_on(tp);
+ }
+ 
++static inline void tcp_set_ecn_low_from_dst(struct sock *sk,
++					    const struct dst_entry *dst)
++{
++	struct tcp_sock *tp = tcp_sk(sk);
++
++	if (dst_feature(dst, RTAX_FEATURE_ECN_LOW))
++		tp->ecn_flags |= TCP_ECN_LOW;
++}
++
+ u32 tcp_delack_max(const struct sock *sk);
+ 
+ /* Compute the actual rto_min value */
+--- a/include/uapi/linux/rtnetlink.h
++++ b/include/uapi/linux/rtnetlink.h
+@@ -509,9 +509,11 @@ enum {
+ #define RTAX_FEATURE_SACK	(1 << 1)
+ #define RTAX_FEATURE_TIMESTAMP	(1 << 2)
+ #define RTAX_FEATURE_ALLFRAG	(1 << 3)
++#define RTAX_FEATURE_ECN_LOW	(1 << 4)
+ 
+ #define RTAX_FEATURE_MASK	(RTAX_FEATURE_ECN | RTAX_FEATURE_SACK | \
+-				 RTAX_FEATURE_TIMESTAMP | RTAX_FEATURE_ALLFRAG)
++				 RTAX_FEATURE_TIMESTAMP | RTAX_FEATURE_ALLFRAG \
++				 | RTAX_FEATURE_ECN_LOW)
+ 
+ struct rta_session {
+ 	__u8	proto;
+--- a/net/ipv4/tcp_minisocks.c
++++ b/net/ipv4/tcp_minisocks.c
+@@ -434,6 +434,8 @@ void tcp_ca_openreq_child(struct sock *s
+ 	u32 ca_key = dst_metric(dst, RTAX_CC_ALGO);
+ 	bool ca_got_dst = false;
+ 
++	tcp_set_ecn_low_from_dst(sk, dst);
++
+ 	if (ca_key != TCP_CA_UNSPEC) {
+ 		const struct tcp_congestion_ops *ca;
+ 
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -334,10 +334,9 @@ static void tcp_ecn_send_syn(struct sock
+ 	bool bpf_needs_ecn = tcp_bpf_ca_needs_ecn(sk);
+ 	bool use_ecn = READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_ecn) == 1 ||
+ 		tcp_ca_needs_ecn(sk) || bpf_needs_ecn;
++	const struct dst_entry *dst = __sk_dst_get(sk);
+ 
+ 	if (!use_ecn) {
+-		const struct dst_entry *dst = __sk_dst_get(sk);
+-
+ 		if (dst && dst_feature(dst, RTAX_FEATURE_ECN))
+ 			use_ecn = true;
+ 	}
+@@ -349,6 +348,9 @@ static void tcp_ecn_send_syn(struct sock
+ 		tp->ecn_flags = TCP_ECN_OK;
+ 		if (tcp_ca_needs_ecn(sk) || bpf_needs_ecn)
+ 			INET_ECN_xmit(sk);
++
++		if (dst)
++			tcp_set_ecn_low_from_dst(sk, dst);
+ 	}
+ }
+ 
