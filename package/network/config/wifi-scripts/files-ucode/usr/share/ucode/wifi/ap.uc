@@ -285,8 +285,8 @@ function iface_vlan(interface, config, vlans) {
 
 	if (!config.vlan_possible || !config.dynamic_vlan)
 		return;
-
-	config.vlan_no_bridge = !config.vlan_bridge;
+	
+	set_default(config, 'vlan_no_bridge', !config.vlan_bridge);
 
 	append_vars(config, [
 		'dynamic_vlan', 'vlan_naming', 'vlan_bridge', 'vlan_no_bridge',
