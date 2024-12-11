@@ -87,7 +87,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		if (!wiphy_ext_feature_isset(wiphy,
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -6198,9 +6198,6 @@ enum ieee80211_ap_reg_power {
+@@ -6200,9 +6200,6 @@ enum ieee80211_ap_reg_power {
   * @address: The address for this device, valid only if @netdev is %NULL
   * @is_running: true if this is a non-netdev device that has been started, e.g.
   *	the P2P Device.
@@ -97,7 +97,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @ps: powersave mode is enabled
   * @ps_timeout: dynamic powersave timeout
   * @ap_unexpected_nlportid: (private) netlink port ID of application
-@@ -6224,6 +6221,11 @@ enum ieee80211_ap_reg_power {
+@@ -6226,6 +6223,11 @@ enum ieee80211_ap_reg_power {
   *	unprotected beacon report
   * @links: array of %IEEE80211_MLD_MAX_NUM_LINKS elements containing @addr
   *	@ap and @client for each link
@@ -109,7 +109,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @valid_links: bitmap describing what elements of @links are valid
   */
  struct wireless_dev {
-@@ -6265,11 +6267,6 @@ struct wireless_dev {
+@@ -6267,11 +6269,6 @@ struct wireless_dev {
  	u32 owner_nlportid;
  	bool nl_owner_dead;
  
@@ -121,7 +121,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #ifdef CPTCFG_CFG80211_WEXT
  	/* wext data */
  	struct {
-@@ -6336,6 +6333,10 @@ struct wireless_dev {
+@@ -6338,6 +6335,10 @@ struct wireless_dev {
  				struct cfg80211_internal_bss *current_bss;
  			} client;
  		};
@@ -199,7 +199,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3462,7 +3462,7 @@ void ieee80211_dfs_cac_cancel(struct iee
+@@ -3464,7 +3464,7 @@ void ieee80211_dfs_cac_cancel(struct iee
  		wiphy_delayed_work_cancel(local->hw.wiphy,
  					  &sdata->deflink.dfs_cac_timer_work);
  
