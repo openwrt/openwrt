@@ -745,3 +745,16 @@ endef
 $(eval $(call KernelPackage,hwmon-adcxx))
 
 
+define KernelPackage/hwmon-rp1-adc
+  TITLE:=RP1 ADC driver
+  KCONFIG:=CONFIG_SENSORS_RP1_ADC
+  FILES:=$(LINUX_DIR)/drivers/hwmon/rp1-adc.ko
+  AUTOLOAD:=$(call AutoLoad,60,rp1_adc)
+  $(call AddDepends/hwmon,)
+endef
+
+define KernelPackage/hwmon-rp1-adc/description
+  RP1 ADC driver
+endef
+
+$(eval $(call KernelPackage,hwmon-rp1-adc))

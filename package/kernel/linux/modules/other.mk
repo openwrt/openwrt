@@ -584,6 +584,18 @@ endef
 $(eval $(call KernelPackage,mfd))
 
 
+define KernelPackage/rp1
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=RP1 wrapper
+  HIDDEN:=1
+  KCONFIG:=CONFIG_MFD_RP1
+  FILES:=$(LINUX_DIR)/drivers/mfd/rp1
+  AUTOLOAD:=$(call AutoLoad,10,rp1)
+endef
+
+$(eval $(call KernelPackage,rp1))
+
+
 define KernelPackage/mtdtests
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MTD subsystem tests
