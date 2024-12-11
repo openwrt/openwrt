@@ -1,0 +1,169 @@
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x790000>;
+			};
+
+			partition@7e0000 {
+				label = "board_data";
+				reg = <0x7e0000 0x10000>;
+				read-only;
+			};
+
+			partition@7f0000 {
+				label = "nvram";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "nd_sd", "rgmii2";
+		function = "gpio";
+	};
+};
+
+&pinctrl {
+	phy_reset_pins: phy-reset {
+		gpio {
+			groups = "spi refclk";
+			function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &mdio_pins &phy_reset_pins>;
+
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+
+	phy-reset-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+	phy-reset-duration = <30>;
+
+	port@5 {
+		status = "okay";
+		mediatek,fixed-link = <1000 1 1 1>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			status = "disabled";
+			reg = <0>;
+			phy-mode = "rgmii";
+		};
+
+		phy1: ethernet-phy@1 {
+			status = "disabled";
+			reg = <1>;
+			phy-mode = "rgmii";
+		};
+
+		phy2: ethernet-phy@2 {
+			status = "disabled";
+			reg = <2>;
+			phy-mode = "rgmii";
+		};
+
+		phy3: ethernet-phy@3 {
+			status = "disabled";
+			reg = <3>;
+			phy-mode = "rgmii";
+		};
+
+		phy4: ethernet-phy@4 {
+			status = "disabled";
+			reg = <4>;
+			phy-mode = "rgmii";
+		};
+	};
+};
+
+&gsw {
+	mediatek,ephy-base = /bits/ 8 <8>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <2>;
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
+};
+
