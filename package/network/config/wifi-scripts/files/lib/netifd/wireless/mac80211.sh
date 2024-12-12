@@ -1017,7 +1017,7 @@ mac80211_setup_vif() {
 			json_get_vars $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING
 			wireless_vif_parse_encryption
 			[ -z "$htmode" ] && htmode="NOHT";
-			if wpa_supplicant -vmesh; then
+			if [ -x /usr/sbin/wpa_supplicant ] && wpa_supplicant -vmesh; then
 				mac80211_setup_supplicant || failed=1
 			else
 				mac80211_setup_mesh
