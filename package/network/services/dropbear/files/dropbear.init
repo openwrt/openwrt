@@ -80,7 +80,20 @@ hk_config()
 # $1 - host key file name
 hk_config__keyfile() { hk_config keyfile "$1" ; }
 
-ktype_all='ed25519 ecdsa rsa'
+hk_enabled_ktypes() {
+	local ktypes ktype values value ret
+
+	ktypes=$($PROG --help 2>&1|awk '/\s+- /{print $2}')
+	values=$(uci get dropbear.@dropbear[-1].HostKeyTypes 2>/dev/null)
+	for ktype in $ktypes ; do
+		for value in $values ; do
+			[ $value = $ktype ] && ret="${ret}${ret:+ }${ktype}"
+		done
+	done
+	echo ${ret:=$ktypes}
+}
+
+ktype_all=$(hk_enabled_ktypes)
 
 hk_generate_as_needed()
 {
