@@ -713,3 +713,29 @@ define KernelPackage/pstore/description
 endef
 
 $(eval $(call KernelPackage,pstore))
+
+
+define KernelPackage/pstore-blk
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Pstore file system for block devices
+  DEFAULT:=m if ALL_KMODS
+  KCONFIG:= \
+  CONFIG_PSTORE_ZONE \
+  CONFIG_PSTORE_BLK \
+  CONFIG_PSTORE_BLK_BLKDEV="pstore" \
+  CONFIG_PSTORE_BLK_KMSG_SIZE=64 \
+  CONFIG_PSTORE_BLK_MAX_REASON=2 \
+  CONFIG_PSTORE_BLK_PMSG_SIZE=64 \
+  CONFIG_PSTORE_BLK_CONSOLE_SIZE=64 \
+  CONFIG_PSTORE_BLK_FTRACE_SIZE=64
+  FILES:= $(LINUX_DIR)/fs/pstore/pstore_blk.ko \
+  $(LINUX_DIR)/fs/pstore/pstore_zone.ko
+  AUTOLOAD:=$(call AutoLoad,30,pstore-blk)
+  DEPENDS:=+kmod-pstore
+endef
+
+define KernelPackage/pstore-blk/description
+ Kernel module for Log panic/oops to a block device labelled pstore
+endef
+
+$(eval $(call KernelPackage,pstore-blk))
