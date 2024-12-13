@@ -221,7 +221,7 @@ export function setup(config, data) {
 		config,
 		defer: true,
 		num_global_macaddr: data.config.num_global_macaddr,
-		macaddr_base: data.config.macaddr_base,
+		macaddr_base: data.config.macaddr_base ?? "",
 	});
 
 	if (ret)
@@ -236,6 +236,6 @@ export function start(data) {
 		phy: data.phy,
 		radio: data.config.radio,
 		num_global_macaddr: data.config.num_global_macaddr,
-		macaddr_base: data.config.macaddr_base,
+		macaddr_base: data.config.macaddr_base ?? "",
 	});
 };
