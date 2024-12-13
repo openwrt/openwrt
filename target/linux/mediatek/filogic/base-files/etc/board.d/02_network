@@ -93,7 +93,8 @@ mediatek_setup_interfaces()
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
-	dlink,aquila-pro-ai-m30-a1)
+	dlink,aquila-pro-ai-m30-a1|\
+	dlink,aquila-pro-ai-m60-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
 	keenetic,kn-3911|\

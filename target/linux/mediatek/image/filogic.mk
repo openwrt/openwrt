@@ -720,6 +720,20 @@ define Device/dlink_aquila-pro-ai-m30-a1
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1
 
+define Device/dlink_aquila-pro-ai-m60-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := AQUILA PRO AI M60
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := mt7986a-dlink-aquila-pro-ai-m60-a1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-gca230718 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  IMAGES += recovery.bin
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := sysupgrade-tar | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E8202001 \x30\x6C\x19\x0C \x00\x00\x2C\x00 \x00\x00\x20\x03 \x82\x6E
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1
+
 define Device/edgecore_eap111
   DEVICE_VENDOR := Edgecore
   DEVICE_MODEL := EAP111
