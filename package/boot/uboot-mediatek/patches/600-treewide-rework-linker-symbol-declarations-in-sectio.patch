@@ -1,0 +1,725 @@
+From 506df9dc5881b74ca6463b89e9edcd14732a7da5 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 3 Aug 2023 09:47:16 +0800
+Subject: [PATCH] treewide: rework linker symbol declarations in sections
+ header
+
+1. Convert all linker symbols to char[] type so that we can get the
+   corresponding address by calling array name 'var' or its address
+   '&var'. In this way, we can avoid some potential issues[1].
+2. Remove unused symbol '_TEXT_BASE'. It has been abandoned and has
+   not been referenced by any source code.
+3. Move '__data_end' to the arch x86's own sections header as it's
+   only used by x86 arch.
+4. Remove some duplicate declared linker symbols. Now we use the
+   standard header file to declare them.
+
+[1] This patch fixes the boot failure on MIPS target. Error log:
+SPL: Image overlaps SPL
+
+Fixes: 1b8a1be1a1f1 ("spl: spl_legacy: Fix spl_end address")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Reviewed-by: Tom Rini <trini@konsulko.com>
+---
+ arch/arc/include/asm/sections.h               |  5 +--
+ arch/arc/lib/relocate.c                       |  7 +---
+ arch/arm/include/asm/spl.h                    |  3 --
+ arch/microblaze/include/asm/processor.h       |  5 ---
+ arch/x86/include/asm/sections.h               |  2 ++
+ board/advantech/imx8qm_dmsse20_a1/spl.c       |  1 +
+ board/advantech/imx8qm_rom7720_a1/spl.c       |  1 +
+ board/aristainetos/aristainetos.c             |  2 +-
+ board/beacon/imx8mm/spl.c                     |  1 +
+ board/beacon/imx8mn/spl.c                     |  1 +
+ board/bosch/acc/acc.c                         |  1 +
+ board/bsh/imx8mn_smm_s2/spl.c                 |  1 +
+ board/cloos/imx8mm_phg/spl.c                  |  1 +
+ board/compulab/cl-som-imx7/spl.c              |  1 +
+ board/compulab/imx8mm-cl-iot-gate/spl.c       |  1 +
+ board/congatec/cgtqmx8/spl.c                  |  1 +
+ board/dhelectronics/dh_imx6/dh_imx6_spl.c     |  1 +
+ board/dhelectronics/dh_imx8mp/spl.c           |  1 +
+ board/engicam/imx8mm/spl.c                    |  1 +
+ board/freescale/imx8mm_evk/spl.c              |  1 +
+ board/freescale/imx8mn_evk/spl.c              |  1 +
+ board/freescale/imx8mq_evk/spl.c              |  1 +
+ board/freescale/imx8qm_mek/spl.c              |  1 +
+ board/freescale/imx8qxp_mek/spl.c             |  1 +
+ board/freescale/imx8ulp_evk/spl.c             |  1 +
+ board/freescale/imx93_evk/spl.c               |  1 +
+ board/freescale/ls1021aiot/ls1021aiot.c       |  1 +
+ board/freescale/ls1021aqds/ls1021aqds.c       |  1 +
+ board/freescale/ls1021atsn/ls1021atsn.c       |  1 +
+ board/freescale/ls1021atwr/ls1021atwr.c       |  1 +
+ board/freescale/mx6sabreauto/mx6sabreauto.c   |  1 +
+ board/freescale/mx6sabresd/mx6sabresd.c       |  1 +
+ board/freescale/mx6slevk/mx6slevk.c           |  1 +
+ .../mx6ul_14x14_evk/mx6ul_14x14_evk.c         |  1 +
+ board/gateworks/venice/spl.c                  |  1 +
+ board/k+p/kp_imx6q_tpc/kp_imx6q_tpc_spl.c     |  1 +
+ board/kontron/pitx_imx8m/spl.c                |  1 +
+ board/kontron/sl-mx6ul/spl.c                  |  1 +
+ board/kontron/sl-mx8mm/spl.c                  |  1 +
+ board/liebherr/display5/spl.c                 |  1 +
+ board/mntre/imx8mq_reform2/spl.c              |  1 +
+ board/phytec/pcm058/pcm058.c                  |  1 +
+ board/phytec/phycore_imx8mm/spl.c             |  1 +
+ board/ronetix/imx7-cm/spl.c                   |  1 +
+ board/ronetix/imx8mq-cm/spl.c                 |  1 +
+ board/siemens/capricorn/spl.c                 |  1 +
+ board/softing/vining_2000/vining_2000.c       |  1 +
+ board/solidrun/mx6cuboxi/mx6cuboxi.c          |  1 +
+ board/technexion/pico-imx6ul/spl.c            |  1 +
+ board/technexion/pico-imx7d/spl.c             |  1 +
+ board/technexion/pico-imx8mq/spl.c            |  1 +
+ board/toradex/apalis_imx6/apalis_imx6.c       |  1 +
+ board/toradex/colibri_imx6/colibri_imx6.c     |  1 +
+ board/toradex/verdin-imx8mm/spl.c             |  1 +
+ board/udoo/neo/neo.c                          |  1 +
+ board/variscite/dart_6ul/spl.c                |  1 +
+ board/variscite/imx8mn_var_som/spl.c          |  1 +
+ include/asm-generic/sections.h                | 34 ++++---------------
+ 58 files changed, 64 insertions(+), 45 deletions(-)
+
+--- a/arch/arc/include/asm/sections.h
++++ b/arch/arc/include/asm/sections.h
+@@ -8,7 +8,8 @@
+ 
+ #include <asm-generic/sections.h>
+ 
+-extern ulong __ivt_start;
+-extern ulong __ivt_end;
++extern char __ivt_start[];
++extern char __ivt_end[];
++extern char __text_end[];
+ 
+ #endif /* __ASM_ARC_SECTIONS_H */
+--- a/arch/arc/lib/relocate.c
++++ b/arch/arc/lib/relocate.c
+@@ -6,14 +6,9 @@
+ #include <common.h>
+ #include <elf.h>
+ #include <log.h>
+-#include <asm-generic/sections.h>
++#include <asm/sections.h>
+ #include <asm/global_data.h>
+ 
+-extern ulong __image_copy_start;
+-extern ulong __ivt_start;
+-extern ulong __ivt_end;
+-extern ulong __text_end;
+-
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int copy_uboot_to_ram(void)
+--- a/arch/arm/include/asm/spl.h
++++ b/arch/arm/include/asm/spl.h
+@@ -34,9 +34,6 @@ enum {
+ };
+ #endif
+ 
+-/* Linker symbols. */
+-extern char __bss_start[], __bss_end[];
+-
+ #ifndef CONFIG_DM
+ extern gd_t gdata;
+ #endif
+--- a/arch/microblaze/include/asm/processor.h
++++ b/arch/microblaze/include/asm/processor.h
+@@ -6,11 +6,6 @@
+ #ifndef __ASM_MICROBLAZE_PROCESSOR_H
+ #define __ASM_MICROBLAZE_PROCESSOR_H
+ 
+-/* References to section boundaries */
+-
+-extern char _end[];
+-extern char __text_start[];
+-
+ /* Microblaze board initialization function */
+ void board_init(void);
+ 
+--- a/arch/x86/include/asm/sections.h
++++ b/arch/x86/include/asm/sections.h
+@@ -8,4 +8,6 @@
+ 
+ #include <asm-generic/sections.h>
+ 
++extern char __data_end[];
++
+ #endif
+--- a/board/advantech/imx8qm_dmsse20_a1/spl.c
++++ b/board/advantech/imx8qm_dmsse20_a1/spl.c
+@@ -14,6 +14,7 @@
+ #include <firmware/imx/sci/sci.h>
+ #include <asm/arch/imx8-pins.h>
+ #include <asm/arch/iomux.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+--- a/board/advantech/imx8qm_rom7720_a1/spl.c
++++ b/board/advantech/imx8qm_rom7720_a1/spl.c
+@@ -17,6 +17,7 @@
+ #include <firmware/imx/sci/sci.h>
+ #include <asm/arch/imx8-pins.h>
+ #include <asm/arch/iomux.h>
++#include <asm/sections.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+--- a/board/aristainetos/aristainetos.c
++++ b/board/aristainetos/aristainetos.c
+@@ -27,6 +27,7 @@
+ #include <asm/arch/crm_regs.h>
+ #include <asm/io.h>
+ #include <asm/arch/sys_proto.h>
++#include <asm/sections.h>
+ #include <bmp_logo.h>
+ #include <dm/root.h>
+ #include <env.h>
+@@ -217,7 +218,6 @@ static void set_gpr_register(void)
+ 	       &iomuxc_regs->gpr[12]);
+ }
+ 
+-extern char __bss_start[], __bss_end[];
+ int board_early_init_f(void)
+ {
+ 	select_ldb_di_clock_source(MXC_PLL5_CLK);
+--- a/board/beacon/imx8mm/spl.c
++++ b/board/beacon/imx8mm/spl.c
+@@ -14,6 +14,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/beacon/imx8mn/spl.c
++++ b/board/beacon/imx8mn/spl.c
+@@ -20,6 +20,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <mmc.h>
+ #include <linux/delay.h>
+--- a/board/bosch/acc/acc.c
++++ b/board/bosch/acc/acc.c
+@@ -28,6 +28,7 @@
+ #include <asm/arch/mx6-pins.h>
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <usb.h>
+ #include <usb/ehci-ci.h>
+ #include <fuse.h>
+--- a/board/bsh/imx8mn_smm_s2/spl.c
++++ b/board/bsh/imx8mn_smm_s2/spl.c
+@@ -13,6 +13,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/gpio.h>
++#include <asm/sections.h>
+ #include <dm/device.h>
+ #include <dm/uclass.h>
+ 
+--- a/board/cloos/imx8mm_phg/spl.c
++++ b/board/cloos/imx8mm_phg/spl.c
+@@ -19,6 +19,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/compulab/cl-som-imx7/spl.c
++++ b/board/compulab/cl-som-imx7/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/arch-mx7/mx7-pins.h>
+ #include <asm/arch-mx7/clock.h>
+ #include <asm/arch-mx7/mx7-ddr.h>
++#include <asm/sections.h>
+ #include "common.h"
+ 
+ #ifdef CONFIG_FSL_ESDHC_IMX
+--- a/board/compulab/imx8mm-cl-iot-gate/spl.c
++++ b/board/compulab/imx8mm-cl-iot-gate/spl.c
+@@ -21,6 +21,7 @@
+ #include <asm/mach-imx/mxc_i2c.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/congatec/cgtqmx8/spl.c
++++ b/board/congatec/cgtqmx8/spl.c
+@@ -10,6 +10,7 @@
+ #include <init.h>
+ #include <log.h>
+ #include <spl.h>
++#include <asm/sections.h>
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+ #include <dm/uclass-internal.h>
+--- a/board/dhelectronics/dh_imx6/dh_imx6_spl.c
++++ b/board/dhelectronics/dh_imx6/dh_imx6_spl.c
+@@ -21,6 +21,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/mxc_i2c.h>
+ #include <asm/io.h>
++#include <asm/sections.h>
+ #include <asm/system.h>
+ #include <errno.h>
+ #include <fuse.h>
+--- a/board/dhelectronics/dh_imx8mp/spl.c
++++ b/board/dhelectronics/dh_imx8mp/spl.c
+@@ -15,6 +15,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/engicam/imx8mm/spl.c
++++ b/board/engicam/imx8mm/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+--- a/board/freescale/imx8mm_evk/spl.c
++++ b/board/freescale/imx8mm_evk/spl.c
+@@ -19,6 +19,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/freescale/imx8mn_evk/spl.c
++++ b/board/freescale/imx8mn_evk/spl.c
+@@ -20,6 +20,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/ddr.h>
++#include <asm/sections.h>
+ 
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+--- a/board/freescale/imx8mq_evk/spl.c
++++ b/board/freescale/imx8mq_evk/spl.c
+@@ -20,6 +20,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <fsl_sec.h>
+ #include <mmc.h>
+--- a/board/freescale/imx8qm_mek/spl.c
++++ b/board/freescale/imx8qm_mek/spl.c
+@@ -17,6 +17,7 @@
+ #include <dm/device-internal.h>
+ #include <dm/lists.h>
+ #include <asm/arch/sys_proto.h>
++#include <asm/sections.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+--- a/board/freescale/imx8qxp_mek/spl.c
++++ b/board/freescale/imx8qxp_mek/spl.c
+@@ -22,6 +22,7 @@
+ #include <asm/arch/imx8-pins.h>
+ #include <asm/arch/iomux.h>
+ #include <asm/arch/sys_proto.h>
++#include <asm/sections.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+--- a/board/freescale/imx8ulp_evk/spl.c
++++ b/board/freescale/imx8ulp_evk/spl.c
+@@ -20,6 +20,7 @@
+ #include <asm/arch/rdc.h>
+ #include <asm/arch/upower.h>
+ #include <asm/mach-imx/s400_api.h>
++#include <asm/sections.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+--- a/board/freescale/imx93_evk/spl.c
++++ b/board/freescale/imx93_evk/spl.c
+@@ -21,6 +21,7 @@
+ #include <asm/arch-mx7ulp/gpio.h>
+ #include <asm/mach-imx/syscounter.h>
+ #include <asm/mach-imx/s400_api.h>
++#include <asm/sections.h>
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+ #include <dm/uclass-internal.h>
+--- a/board/freescale/ls1021aiot/ls1021aiot.c
++++ b/board/freescale/ls1021aiot/ls1021aiot.c
+@@ -18,6 +18,7 @@
+ 
+ #include <asm/arch/ls102xa_devdis.h>
+ #include <asm/arch/ls102xa_soc.h>
++#include <asm/sections.h>
+ #include <fsl_csu.h>
+ #include <fsl_immap.h>
+ #include <netdev.h>
+--- a/board/freescale/ls1021aqds/ls1021aqds.c
++++ b/board/freescale/ls1021aqds/ls1021aqds.c
+@@ -16,6 +16,7 @@
+ #include <asm/arch/fsl_serdes.h>
+ #include <asm/arch/ls102xa_soc.h>
+ #include <asm/arch/ls102xa_devdis.h>
++#include <asm/sections.h>
+ #include <hwconfig.h>
+ #include <mmc.h>
+ #include <fsl_csu.h>
+--- a/board/freescale/ls1021atsn/ls1021atsn.c
++++ b/board/freescale/ls1021atsn/ls1021atsn.c
+@@ -12,6 +12,7 @@
+ #include <asm/arch/ls102xa_soc.h>
+ #include <asm/arch/fsl_serdes.h>
+ #include <asm/global_data.h>
++#include <asm/sections.h>
+ #include <linux/delay.h>
+ #include "../common/sleep.h"
+ #include <fsl_validate.h>
+--- a/board/freescale/ls1021atwr/ls1021atwr.c
++++ b/board/freescale/ls1021atwr/ls1021atwr.c
+@@ -18,6 +18,7 @@
+ #include <asm/arch/fsl_serdes.h>
+ #include <asm/arch/ls102xa_devdis.h>
+ #include <asm/arch/ls102xa_soc.h>
++#include <asm/sections.h>
+ #include <hwconfig.h>
+ #include <mmc.h>
+ #include <fsl_csu.h>
+--- a/board/freescale/mx6sabreauto/mx6sabreauto.c
++++ b/board/freescale/mx6sabreauto/mx6sabreauto.c
+@@ -15,6 +15,7 @@
+ #include <asm/arch/imx-regs.h>
+ #include <asm/arch/iomux.h>
+ #include <asm/arch/mx6-pins.h>
++#include <asm/sections.h>
+ #include <env.h>
+ #include <linux/errno.h>
+ #include <asm/gpio.h>
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -14,6 +14,7 @@
+ #include <asm/arch/mx6-pins.h>
+ #include <asm/global_data.h>
+ #include <asm/mach-imx/spi.h>
++#include <asm/sections.h>
+ #include <env.h>
+ #include <linux/errno.h>
+ #include <asm/gpio.h>
+--- a/board/freescale/mx6slevk/mx6slevk.c
++++ b/board/freescale/mx6slevk/mx6slevk.c
+@@ -19,6 +19,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/mxc_i2c.h>
+ #include <asm/io.h>
++#include <asm/sections.h>
+ #include <linux/sizes.h>
+ #include <common.h>
+ #include <fsl_esdhc_imx.h>
+--- a/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
++++ b/board/freescale/mx6ul_14x14_evk/mx6ul_14x14_evk.c
+@@ -18,6 +18,7 @@
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/mxc_i2c.h>
+ #include <asm/io.h>
++#include <asm/sections.h>
+ #include <common.h>
+ #include <env.h>
+ #include <fsl_esdhc_imx.h>
+--- a/board/gateworks/venice/spl.c
++++ b/board/gateworks/venice/spl.c
+@@ -19,6 +19,7 @@
+ #include <asm/mach-imx/mxc_i2c.h>
+ #include <asm/arch/ddr.h>
+ #include <asm-generic/gpio.h>
++#include <asm/sections.h>
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+ #include <dm/pinctrl.h>
+--- a/board/k+p/kp_imx6q_tpc/kp_imx6q_tpc_spl.c
++++ b/board/k+p/kp_imx6q_tpc/kp_imx6q_tpc_spl.c
+@@ -14,6 +14,7 @@
+ #include <asm/arch/mx6-ddr.h>
+ #include <asm/arch/sys_proto.h>
+ #include <asm/global_data.h>
++#include <asm/sections.h>
+ #include <asm/io.h>
+ #include <errno.h>
+ #include <spl.h>
+--- a/board/kontron/pitx_imx8m/spl.c
++++ b/board/kontron/pitx_imx8m/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <linux/delay.h>
+ #include <power/pmic.h>
+ #include <power/pfuze100_pmic.h>
+--- a/board/kontron/sl-mx6ul/spl.c
++++ b/board/kontron/sl-mx6ul/spl.c
+@@ -11,6 +11,7 @@
+ #include <asm/gpio.h>
+ #include <asm/io.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <init.h>
+ #include <linux/delay.h>
+--- a/board/kontron/sl-mx8mm/spl.c
++++ b/board/kontron/sl-mx8mm/spl.c
+@@ -12,6 +12,7 @@
+ #include <asm/gpio.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+ #include <dm/uclass-internal.h>
+--- a/board/liebherr/display5/spl.c
++++ b/board/liebherr/display5/spl.c
+@@ -25,6 +25,7 @@
+ #include "asm/arch/iomux.h"
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/gpio.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <netdev.h>
+ #include <bootcount.h>
+--- a/board/mntre/imx8mq_reform2/spl.c
++++ b/board/mntre/imx8mq_reform2/spl.c
+@@ -21,6 +21,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <mmc.h>
+ #include <linux/delay.h>
+--- a/board/phytec/pcm058/pcm058.c
++++ b/board/phytec/pcm058/pcm058.c
+@@ -17,6 +17,7 @@
+ #include <asm/global_data.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/arch/sys_proto.h>
++#include <asm/sections.h>
+ #include <dm.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+--- a/board/phytec/phycore_imx8mm/spl.c
++++ b/board/phytec/phycore_imx8mm/spl.c
+@@ -12,6 +12,7 @@
+ #include <asm/global_data.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <hang.h>
+ #include <init.h>
+ #include <log.h>
+--- a/board/ronetix/imx7-cm/spl.c
++++ b/board/ronetix/imx7-cm/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/arch-mx7/mx7-ddr.h>
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/gpio.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <spl.h>
+ 
+--- a/board/ronetix/imx8mq-cm/spl.c
++++ b/board/ronetix/imx8mq-cm/spl.c
+@@ -13,6 +13,7 @@
+ #include <asm/arch/clock.h>
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <linux/delay.h>
+ #include <spl.h>
+--- a/board/siemens/capricorn/spl.c
++++ b/board/siemens/capricorn/spl.c
+@@ -10,6 +10,7 @@
+ #include <spl.h>
+ #include <dm.h>
+ #include <asm/global_data.h>
++#include <asm/sections.h>
+ #include <dm/uclass.h>
+ #include <dm/device.h>
+ #include <dm/uclass-internal.h>
+--- a/board/softing/vining_2000/vining_2000.c
++++ b/board/softing/vining_2000/vining_2000.c
+@@ -19,6 +19,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/io.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <env.h>
+ #include <linux/bitops.h>
+ #include <linux/delay.h>
+--- a/board/solidrun/mx6cuboxi/mx6cuboxi.c
++++ b/board/solidrun/mx6cuboxi/mx6cuboxi.c
+@@ -32,6 +32,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/sata.h>
+ #include <asm/mach-imx/video.h>
++#include <asm/sections.h>
+ #include <mmc.h>
+ #include <fsl_esdhc_imx.h>
+ #include <malloc.h>
+--- a/board/technexion/pico-imx6ul/spl.c
++++ b/board/technexion/pico-imx6ul/spl.c
+@@ -14,6 +14,7 @@
+ #include <asm/gpio.h>
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/boot_mode.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <linux/libfdt.h>
+ #include <spl.h>
+--- a/board/technexion/pico-imx7d/spl.c
++++ b/board/technexion/pico-imx7d/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/arch-mx7/mx7-ddr.h>
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/gpio.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ #include <spl.h>
+ 
+--- a/board/technexion/pico-imx8mq/spl.c
++++ b/board/technexion/pico-imx8mq/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/mach-imx/gpio.h>
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/mxc_i2c.h>
++#include <asm/sections.h>
+ #include <linux/delay.h>
+ #include <errno.h>
+ #include <fsl_esdhc_imx.h>
+--- a/board/toradex/apalis_imx6/apalis_imx6.c
++++ b/board/toradex/apalis_imx6/apalis_imx6.c
+@@ -30,6 +30,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/sata.h>
+ #include <asm/mach-imx/video.h>
++#include <asm/sections.h>
+ #include <dm/device-internal.h>
+ #include <dm/platform_data/serial_mxc.h>
+ #include <dwc_ahsata.h>
+--- a/board/toradex/colibri_imx6/colibri_imx6.c
++++ b/board/toradex/colibri_imx6/colibri_imx6.c
+@@ -29,6 +29,7 @@
+ #include <asm/mach-imx/iomux-v3.h>
+ #include <asm/mach-imx/sata.h>
+ #include <asm/mach-imx/video.h>
++#include <asm/sections.h>
+ #include <cpu.h>
+ #include <dm/platform_data/serial_mxc.h>
+ #include <fsl_esdhc_imx.h>
+--- a/board/toradex/verdin-imx8mm/spl.c
++++ b/board/toradex/verdin-imx8mm/spl.c
+@@ -16,6 +16,7 @@
+ #include <asm/io.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <cpu_func.h>
+ #include <dm/device.h>
+ #include <dm/device-internal.h>
+--- a/board/udoo/neo/neo.c
++++ b/board/udoo/neo/neo.c
+@@ -17,6 +17,7 @@
+ #include <asm/global_data.h>
+ #include <asm/gpio.h>
+ #include <asm/mach-imx/iomux-v3.h>
++#include <asm/sections.h>
+ #include <dm.h>
+ #include <env.h>
+ #include <mmc.h>
+--- a/board/variscite/dart_6ul/spl.c
++++ b/board/variscite/dart_6ul/spl.c
+@@ -12,6 +12,7 @@
+ #include <asm/arch/mx6-ddr.h>
+ #include <asm/arch/mx6-pins.h>
+ #include <asm/arch/crm_regs.h>
++#include <asm/sections.h>
+ #include <fsl_esdhc_imx.h>
+ 
+ #define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
+--- a/board/variscite/imx8mn_var_som/spl.c
++++ b/board/variscite/imx8mn_var_som/spl.c
+@@ -13,6 +13,7 @@
+ #include <asm/arch/sys_proto.h>
+ #include <asm/mach-imx/boot_mode.h>
+ #include <asm/mach-imx/gpio.h>
++#include <asm/sections.h>
+ #include <dm/device.h>
+ #include <dm/uclass.h>
+ 
+--- a/include/asm-generic/sections.h
++++ b/include/asm-generic/sections.h
+@@ -61,8 +61,12 @@ static inline int arch_is_kernel_data(un
+ /* Start of U-Boot text region */
+ extern char __text_start[];
+ 
+-/* This marks the end of the text region which must be relocated */
+-extern char __image_copy_end[];
++/* This marks the text region which must be relocated */
++extern char __image_copy_start[], __image_copy_end[];
++
++extern char __bss_end[];
++extern char __rel_dyn_start[], __rel_dyn_end[];
++extern char _image_binary_end[];
+ 
+ /*
+  * This is the U-Boot entry point - prior to relocation it should be same
+@@ -70,30 +74,4 @@ extern char __image_copy_end[];
+  */
+ extern void _start(void);
+ 
+-/*
+- * ARM defines its symbols as char[]. Other arches define them as ulongs.
+- */
+-#ifdef CONFIG_ARM
+-
+-extern char __bss_start[];
+-extern char __bss_end[];
+-extern char __image_copy_start[];
+-extern char __image_copy_end[];
+-extern char _image_binary_end[];
+-extern char __rel_dyn_start[];
+-extern char __rel_dyn_end[];
+-
+-#else /* don't use offsets: */
+-
+-/* Exports from the Linker Script */
+-extern ulong __data_end;
+-extern ulong __rel_dyn_start;
+-extern ulong __rel_dyn_end;
+-extern ulong __bss_end;
+-extern ulong _image_binary_end;
+-
+-extern ulong _TEXT_BASE;	/* code start */
+-
+-#endif
+-
+ #endif /* _ASM_GENERIC_SECTIONS_H_ */
