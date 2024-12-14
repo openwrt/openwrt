@@ -106,9 +106,10 @@ load_led() {
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
-		[ $default = 1 ] &&
-			[ -z "$brightness" ] && brightness=$(cat /sys/class/leds/${sysfs}/max_brightness)
-			echo $brightness > /sys/class/leds/${sysfs}/brightness
+		[ "$default" = 1 ] && {
+			[ -z "$brightness" ] && brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
+			echo "$brightness" > /sys/class/leds/${sysfs}/brightness
+		}
 
 		led_color_set "$1" "$sysfs"
 
