@@ -63,7 +63,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	val >>= desc->div_shift;
  	val &= (1 << desc->div_bits) - 1;
  
-@@ -416,9 +409,12 @@ static void en7523_register_clocks(struc
+@@ -418,9 +411,12 @@ static void en7523_register_clocks(struc
  
  	for (i = 0; i < ARRAY_SIZE(en7523_base_clks); i++) {
  		const struct en_clk_desc *desc = &en7523_base_clks[i];

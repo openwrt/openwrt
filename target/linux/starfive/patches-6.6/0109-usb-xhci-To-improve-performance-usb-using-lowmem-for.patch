@@ -160,7 +160,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	}
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -3672,7 +3672,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3667,7 +3667,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  
  	full_len = urb->transfer_buffer_length;
  	/* If we have scatter/gather list, we use it. */
@@ -277,16 +277,16 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /* There is one xhci_hcd structure per controller */
  struct xhci_hcd {
  	struct usb_hcd *main_hcd;
-@@ -1661,6 +1668,8 @@ struct xhci_hcd {
- #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
+@@ -1662,6 +1669,8 @@ struct xhci_hcd {
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
+ #define XHCI_ETRON_HOST	BIT_ULL(49)
  
 +#define XHCI_LOCAL_BUFFER	BIT_ULL(63)
 +
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
-@@ -1690,6 +1699,8 @@ struct xhci_hcd {
+@@ -1691,6 +1700,8 @@ struct xhci_hcd {
  	struct list_head	regset_list;
  
  	void			*dbc;

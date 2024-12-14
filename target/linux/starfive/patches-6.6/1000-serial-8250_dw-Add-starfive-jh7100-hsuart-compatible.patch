@@ -15,11 +15,11 @@ Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
 
 --- a/drivers/tty/serial/8250/8250_dw.c
 +++ b/drivers/tty/serial/8250/8250_dw.c
-@@ -802,6 +802,7 @@ static const struct of_device_id dw8250_
- 	{ .compatible = "cavium,octeon-3860-uart", .data = &dw8250_octeon_3860_data },
+@@ -803,6 +803,7 @@ static const struct of_device_id dw8250_
  	{ .compatible = "marvell,armada-38x-uart", .data = &dw8250_armada_38x_data },
  	{ .compatible = "renesas,rzn1-uart", .data = &dw8250_renesas_rzn1_data },
-+	{ .compatible = "starfive,jh7100-hsuart", .data = &dw8250_starfive_jh7100_data },
- 	{ .compatible = "starfive,jh7100-uart", .data = &dw8250_starfive_jh7100_data },
+ 	{ .compatible = "sophgo,sg2044-uart", .data = &dw8250_skip_set_rate_data },
++	{ .compatible = "starfive,jh7100-hsuart", .data = &dw8250_skip_set_rate_data },
+ 	{ .compatible = "starfive,jh7100-uart", .data = &dw8250_skip_set_rate_data },
  	{ /* Sentinel */ }
  };
