@@ -1133,7 +1133,7 @@ define Device/tplink_deco-m9plus-v2
 	DEVICE_MODEL := Deco-M9Plus
 	DEVICE_VARIANT := v2
 	DEVICE_PACKAGES := ipq-wifi-tplink_deco-m9plus-v2
-	TPLINK_BOARD_ID := DECO-M9Plus
+	TPLINK_BOARD_ID := DECO-M9PLUS
 	IMAGE_SIZE := 16640k
 endef
 TARGET_DEVICES += tplink_deco-m9plus-v2
