@@ -81,10 +81,11 @@
 
 &eth0 { 
         status = "okay";
-        nvmem-cells = <&macaddr_art_0>;
-        nvmem-cell-names = "mac-address";
-        phy-mode = "sgmii";
-        phy-handle = <&phy0>;
+
+        wifi@0,0 {
+                compatible = "qcom,ath10k";
+                reg = <0x0000 0 0 0 0>;
+        };
 };
 
 &mdio0 {
@@ -141,7 +142,7 @@
 			partition@50000 {
                                 compatible = "denx,uimage";
                                 label = "firmware";
-                                reg = <0x050000 0xff0000>;
+                                reg = <0x050000 0xfa0000>;
                         };
 
                         partition@ff0000 {
@@ -181,7 +182,13 @@
 
 &wmac {
         status = "okay";
-
-        nvmem-cells = <&cal_art_1000>;
-        nvmem-cell-names = "calibration";
 };
+
+&eth0 {                         
+        status = "okay";
+        nvmem-cells = <&macaddr_art_0>;
+        nvmem-cell-names = "mac-address";
+        phy-mode = "sgmii";     
+	phy-handle = <&phy0>;
+};
+
