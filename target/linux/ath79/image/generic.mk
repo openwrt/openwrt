@@ -1994,6 +1994,17 @@ define Device/kuwfi_n650
 endef
 TARGET_DEVICES += kuwfi_n650
 
+define Device/kuwfi_wb5g08
+  SOC := qca9563
+  DEVICE_VENDOR := KuWfi
+  DEVICE_MODEL := WB 5G08
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+  DEVICE_PACKAGES := -uboot-envtools kmod-switch-ar8xx kmod-ath10k ath10k-board-qca9888 ath10k-firmware-qca9888 -ath9k -ath10k-firmware-qca9888-ct -ath10k-firmware-qca9888-ct-full-htt -ath10k-firmware-qca9888-ct-htt -kmod-ath10k-ct
+endef
+TARGET_DEVICES += kuwfi_wb5g08
+
 define Device/letv_lba-047-ch
   $(Device/loader-okli-uimage)
   SOC := qca9531
