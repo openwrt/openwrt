@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <dt-bindings/leds/rtl838x-leds.h>
 #include <linux/etherdevice.h>
 #include <linux/iopoll.h>
+#include <linux/leds.h>
 #include <net/nexthop.h>
 
 #include "rtl83xx.h"
@@ -1687,6 +1689,176 @@ void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
+static void rtl838x_led_analyze_portgroup_config(struct rtl838x_switch_priv *priv, struct fwnode_handle *port, struct fwnode_handle *port_leds, struct rtl838x_portgroup_led_config *portgroup_config) {
+	struct fwnode_handle *led;
+	u32 port_index = 0;
+
+	fwnode_property_read_u32(port, "reg", &port_index);
+	dev_dbg(priv->dev, "Analyzing led-config of port %d", port_index);
+
+	fwnode_for_each_child_node(port_leds, led) {
+		u32 led_index = 0;
+		u32 trigger = RTL838X_LEDS_TRIGGER_DISABLED;
+
+		fwnode_property_read_u32(led, "reg", &led_index);
+		if(led_index > 3) {
+			dev_warn(priv->dev, "Led %d of Port %d out of range for led configuration, ignoring", led_index, port_index);
+			goto next;
+		}
+
+		fwnode_property_read_u32(led, "realtek,port-led-trigger", &trigger);
+		dev_dbg(priv->dev, "Found led-config of led %d of port %d with port-led-trigger %08x", led_index, port_index, trigger);
+		portgroup_config->installed_leds_mask |= BIT(led_index);
+		portgroup_config->led_triggers[led_index] = trigger;
+
+next:
+		if(led) fwnode_handle_put(led);
+	}
+}
+
+static void rtl838x_led_analyze_config(struct rtl838x_switch_priv *priv, struct fwnode_handle *ports, struct rtl838x_led_config *led_config) {
+	struct fwnode_handle *port;
+	u32 port_index = 0;
+	bool low_ports_done = false, high_ports_done = false;
+
+	dev_dbg(priv->dev, "Analyzing led-config");
+
+	fwnode_for_each_child_node(ports, port) {
+		struct fwnode_handle *port_leds;
+		bool is_low_port;
+
+		fwnode_property_read_u32(port, "reg", &port_index);
+
+		if(port_index > 27) {
+			// port 28 is the cpu-port
+			dev_dbg(priv->dev, "Port %d out of range for led configuration, ignoring", port_index);
+			goto next;
+		}
+		is_low_port = (port_index < 24);
+
+		port_leds = fwnode_get_named_child_node(port, "leds");
+		if (!port_leds) {
+			dev_dbg(priv->dev, "No leds node for port %d, ignoring", port_index);
+			goto next;
+		}
+
+		led_config->enabled_ports_mask |= BIT(port_index);
+
+		// the leds are configured in two groups: low (port 0-23, copper) and high (ports 24-27, fiber/dual personality)
+		// for all ports in a group only one setting can be applied. We select the one from the device tree per group as
+		// representative and use its configuration. For the rtl838x devices it is expected that all ports in a group are
+		// configured the same way (same leds, same colors).
+		if(is_low_port) {
+			if(!low_ports_done) {
+				dev_dbg(priv->dev, "Analyzing led-config of port %d as representative of the low ports", port_index);
+				rtl838x_led_analyze_portgroup_config(priv, port, port_leds, &led_config->low_ports);
+			}
+			low_ports_done = true;
+		}
+		else {
+			if(!high_ports_done) {
+				dev_dbg(priv->dev, "Analyzing led-config of port %d as representative of the high ports", port_index);
+				rtl838x_led_analyze_portgroup_config(priv, port, port_leds, &led_config->high_ports);
+			}
+			high_ports_done = true;
+		}
+
+next:
+		if(port_leds) fwnode_handle_put(port_leds);
+		if(port) fwnode_handle_put(port);
+	}
+}
+
+// initializes the port-leds to a known state according to the device tree
+static void rtl838x_led_init(struct rtl838x_switch_priv *priv) {
+	struct fwnode_handle *global_port_leds_config, *ports;
+
+	// rtl838x suppoprts multiple ways to connect the leds to the SoC
+	// this value is loaded from the device tree.
+	u32 led_control_mode = RTL838X_LEDS_CONTROL_MODE_DISABLED;
+
+	// perform a single blink of all LEDs on startup
+	u32 power_on_blink = true;
+
+	// LED cotnrol registers of the rtl838x
+	// see https://svanheule.net/realtek/maple/feature/led
+	// this init routine calculates the correct values for these registers by
+	// looking at the device tree and finally sets them accordingly.
+	u32 led_mode_sel = 0x0, led_mode_ctrl = 0x0;
+	u32 led_glb_ctrl = 0x0, led_p_en_ctrl = 0x0;
+
+	// initial led modes
+	struct rtl838x_led_config led_config = {0};
+
+	// global leds configuration
+	global_port_leds_config = device_get_named_child_node(priv->dev, "port-leds");
+	if (!global_port_leds_config) {
+		dev_info(priv->dev, "No port-leds node in device-tree, not configuring port-leds");
+		goto out;
+	}
+
+	fwnode_property_read_u32(global_port_leds_config, "led-control-mode", &led_control_mode);
+	if(led_control_mode == RTL838X_LEDS_CONTROL_MODE_DISABLED) {
+		dev_info(priv->dev, "led_control_mode == DISABLED in device-tree, not configuring port-leds");
+		goto out;
+	}
+
+	ports = device_get_named_child_node(priv->dev, "ports");
+	if (!ports) {
+		dev_info(priv->dev, "No ports node in device-tree, not configuring port-leds");
+		goto out;
+	}
+
+	// analyze port-leds configuration
+	rtl838x_led_analyze_config(priv, ports, &led_config);
+
+	dev_dbg(priv->dev, "Analyzed configuraton in device-tree: "
+		"enabled_ports_mask=%08x "
+		"installed_leds_mask=%08x / %08x "
+		"led_triggers=[%d,%d,%d] / [%d,%d,%d]",
+		led_config.enabled_ports_mask,
+		led_config.low_ports.installed_leds_mask,
+		led_config.high_ports.installed_leds_mask,
+		led_config.low_ports.led_triggers[0], led_config.low_ports.led_triggers[1], led_config.low_ports.led_triggers[2],
+		led_config.high_ports.led_triggers[0], led_config.high_ports.led_triggers[1], led_config.high_ports.led_triggers[2]);
+
+	// calculate register values
+	led_glb_ctrl =
+		// using low_ports twice here is not an accident -- according to the docs the enabled-leds for the high ports
+		// should be the same as for the low ports, even if the high ports are not used, and in fact setting
+		// the high-port led-count to 0 results in a broken led configuration, even on a device without high ports.
+		(led_config.low_ports.installed_leds_mask << 3) |
+		(led_config.low_ports.installed_leds_mask << 0);
+
+	led_mode_sel = (power_on_blink << 2) | led_control_mode;
+
+	led_mode_ctrl =
+		(led_config.high_ports.led_triggers[2] << 25) |
+		(led_config.high_ports.led_triggers[1] << 20) |
+		(led_config.high_ports.led_triggers[0] << 15) |
+		(led_config.low_ports.led_triggers[2] << 10) |
+		(led_config.low_ports.led_triggers[1] <<  5) |
+		(led_config.low_ports.led_triggers[0] <<  0);
+
+	led_p_en_ctrl = led_config.enabled_ports_mask;
+
+	dev_dbg(priv->dev, "led_glb_ctrl=%08x/%08x led_mode_sel=%08x "
+		"led_p_en_ctrl=%08x led_mode_ctrl=%08x",
+		led_glb_ctrl, (u32)GENMASK(5, 0), led_mode_sel,
+		led_p_en_ctrl, led_mode_ctrl);
+
+	// write config registers in the right order
+	dev_info(priv->dev, "Configuring leds");
+	sw_w32_mask(GENMASK(5, 0), led_glb_ctrl, RTL838X_LED_GLB_CTRL);
+	sw_w32(led_mode_sel, RTL838X_LED_MODE_SEL);
+	sw_w32(led_mode_ctrl, RTL838X_LED_MODE_CTRL);
+	sw_w32(led_p_en_ctrl, RTL838X_LED_P_EN_CTRL);
+
+out:
+	if(ports) fwnode_handle_put(ports);
+	if(global_port_leds_config) fwnode_handle_put(global_port_leds_config);
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1772,6 +1944,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.l3_setup = rtl838x_l3_setup,
 	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
+	.led_init = rtl838x_led_init,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
