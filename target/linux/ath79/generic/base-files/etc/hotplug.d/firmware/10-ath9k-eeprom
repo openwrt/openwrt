@@ -83,11 +83,6 @@ case "$FIRMWARE" in
 	meraki,mr12)
 		caldata_extract "art" 0x11000 0xeb8
 		;;
-	netgear,wnr2200-8m|\
-	netgear,wnr2200-16m|\
-	tplink,tl-wr842n-v1)
-		caldata_extract "art" 0x1000 0x3e0
-		;;
 	ubnt,powerbridge-m|\
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
