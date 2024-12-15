@@ -1,6 +1,6 @@
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
-@@ -83,6 +83,16 @@ config WS_AP3825I
+@@ -83,6 +83,28 @@ config WS_AP3825I
  	  This board is a Concurrent Dual-Band wireless access point with a
  	  Freescale P1020 SoC.
  
@@ -9,8 +9,20 @@
 +	select DEFAULT_UIMAGE
 +	select ARCH_REQUIRE_GPIOLIB
 +	select GPIO_MPC8XXX
++ select PPC_ZIMAGE_LA3000000
 +	help
 +	  This option enables support for the Watchguard Firebox T10 board.
++	  This board is a VPN Gateway-Router with a
++	  Freescale P1010 SoC.
++
++config FIREBOX_T15
++	bool "Watchguard Firebox T15"
++	select DEFAULT_UIMAGE
++	select ARCH_REQUIRE_GPIOLIB
++	select GPIO_MPC8XXX
++ select PPC_ZIMAGE_LA3000000
++	help
++	  This option enables support for the Watchguard Firebox T15 board.
 +	  This board is a VPN Gateway-Router with a
 +	  Freescale P1010 SoC.
 +
@@ -19,11 +31,12 @@
  	select DEFAULT_UIMAGE
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
-@@ -27,6 +27,7 @@ obj-$(CONFIG_PPC_P2020)   += p2020.o $(o
+@@ -27,6 +27,8 @@ obj-$(CONFIG_PPC_P2020)   += p2020.o $(o
  obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
  obj-$(CONFIG_WS_AP3710I)  += ws-ap3710i.o
  obj-$(CONFIG_WS_AP3825I)  += ws-ap3825i.o
 +obj-$(CONFIG_FIREBOX_T10) += firebox_t10.o
++obj-$(CONFIG_FIREBOX_T15) += firebox_t15.o
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
