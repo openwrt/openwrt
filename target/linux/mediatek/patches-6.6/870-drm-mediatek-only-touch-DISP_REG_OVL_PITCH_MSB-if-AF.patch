@@ -1,0 +1,70 @@
+From patchwork Sun Dec 15 22:09:41 2024
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 13908995
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+Date: Sun, 15 Dec 2024 22:09:41 +0000
+From: Daniel Golle <daniel@makrotopia.org>
+To: Chun-Kuang Hu <chunkuang.hu@kernel.org>,
+	Philipp Zabel <p.zabel@pengutronix.de>,
+	David Airlie <airlied@gmail.com>, Simona Vetter <simona@ffwll.ch>,
+	Matthias Brugger <matthias.bgg@gmail.com>,
+	AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+	Justin Green <greenjustin@chromium.org>,
+	Frank Wunderlich <frank-w@public-files.de>,
+	John Crispin <john@phrozen.org>, dri-devel@lists.freedesktop.org,
+	linux-mediatek@lists.infradead.org, linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, stable@vger.kernel.org
+Subject: [PATCH] drm/mediatek: only touch DISP_REG_OVL_PITCH_MSB if AFBC is
+ supported
+Message-ID: 
+ <8c001c8e70d93d64d3ee6bf7dc5078d2783d4e32.1734300345.git.daniel@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20241215_140959_910539_20C140B3 
+X-CRM114-Status: UNSURE (   9.48  )
+X-CRM114-Notice: Please train this message.
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Touching DISP_REG_OVL_PITCH_MSB leads to video overlay on MT2701, MT7623N
+and probably other older SoCs being broken.
+
+Only touching it on hardware which actually supports AFBC like it was
+before commit c410fa9b07c3 ("drm/mediatek: Add AFBC support to Mediatek
+DRM driver") fixes it.
+
+Fixes: c410fa9b07c3 ("drm/mediatek: Add AFBC support to Mediatek DRM driver")
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/gpu/drm/mediatek/mtk_disp_ovl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
++++ b/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
+@@ -478,7 +478,7 @@ void mtk_ovl_layer_config(struct device
+ 				      &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_PITCH_MSB(idx));
+ 		mtk_ddp_write_relaxed(cmdq_pkt, hdr_pitch, &ovl->cmdq_reg, ovl->regs,
+ 				      DISP_REG_OVL_HDR_PITCH(ovl, idx));
+-	} else {
++	} else if (ovl->data->supports_afbc) {
+ 		mtk_ddp_write_relaxed(cmdq_pkt,
+ 				      overlay_pitch.split_pitch.msb,
+ 				      &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_PITCH_MSB(idx));
