@@ -1972,6 +1972,13 @@ define KernelPackage/mlxsw-spectrum/description
   Spectrum/Spectrum-2/Spectrum-3/Spectrum-4 Ethernet Switch ASICs.
 endef
 
+define KernelPackage/mlxsw-spectrum/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
+	$(INSTALL_DATA) \
+		./files/hotplug-mlxsw-spectrum-port-names.sh \
+		$(1)/etc/hotplug.d/net/10-mlxsw-spectrum-port-names
+endef
+
 $(eval $(call KernelPackage,mlxsw-spectrum))
 
 
