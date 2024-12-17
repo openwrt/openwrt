@@ -1,0 +1,189 @@
+From 82b521f4bb8cab09aa016acf2c1b55ffc736eb2e Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Mon, 9 Sep 2024 15:15:01 -0700
+Subject: [PATCH] arm64: dts: imx8mm-venice-*: add RTC aliases
+
+Add aliases for the RTCs on the Gateworks Venice boards and on the imx8m
+SoC. This ensures that the primary RTC is always the one on-board
+provided by the Gateworks System Controller (GSC) which is battery
+backed as opposed to the one in the IMX8M.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw700x.dtsi | 7 ++++++-
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts  | 4 +++-
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7902.dts  | 4 +++-
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7903.dts  | 4 +++-
+ arch/arm64/boot/dts/freescale/imx8mm-venice-gw7904.dts  | 7 ++++++-
+ arch/arm64/boot/dts/freescale/imx8mn-venice-gw7902.dts  | 4 +++-
+ arch/arm64/boot/dts/freescale/imx8mp-venice-gw702x.dtsi | 4 +++-
+ arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts  | 4 +++-
+ 8 files changed, 30 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw700x.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw700x.dtsi
+@@ -8,6 +8,11 @@
+ #include <dt-bindings/net/ti-dp83867.h>
+ 
+ / {
++	aliases {
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
++	};
++
+ 	memory@40000000 {
+ 		device_type = "memory";
+ 		reg = <0x0 0x40000000 0 0x80000000>;
+@@ -272,7 +277,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7901.dts
+@@ -22,6 +22,8 @@
+ 		ethernet2 = &lan2;
+ 		ethernet3 = &lan3;
+ 		ethernet4 = &lan4;
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 		usb0 = &usbotg1;
+ 		usb1 = &usbotg2;
+ 	};
+@@ -495,7 +497,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7902.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7902.dts
+@@ -19,6 +19,8 @@
+ 
+ 	aliases {
+ 		ethernet1 = &eth1;
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 		usb0 = &usbotg1;
+ 		usb1 = &usbotg2;
+ 	};
+@@ -562,7 +564,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7903.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7903.dts
+@@ -18,6 +18,8 @@
+ 
+ 	aliases {
+ 		ethernet0 = &fec1;
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 		usb0 = &usbotg1;
+ 	};
+ 
+@@ -392,7 +394,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7904.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw7904.dts
+@@ -16,6 +16,11 @@
+ 	model = "Gateworks Venice GW7904 i.MX8MM board";
+ 	compatible = "gateworks,imx8mm-gw7904", "fsl,imx8mm";
+ 
++	aliases {
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
++	};
++
+ 	chosen {
+ 		stdout-path = &uart2;
+ 	};
+@@ -436,7 +441,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mn-venice-gw7902.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mn-venice-gw7902.dts
+@@ -17,6 +17,8 @@
+ 	compatible = "gw,imx8mn-gw7902", "fsl,imx8mn";
+ 
+ 	aliases {
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 		usb0 = &usbotg1;
+ 	};
+ 
+@@ -560,7 +562,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw702x.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw702x.dtsi
+@@ -10,6 +10,8 @@
+ / {
+ 	aliases {
+ 		ethernet0 = &eqos;
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -260,7 +262,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
+@@ -24,6 +24,8 @@
+ 		ethernet4 = &lan3;
+ 		ethernet5 = &lan4;
+ 		ethernet6 = &lan5;
++		rtc0 = &gsc_rtc;
++		rtc1 = &snvs_rtc;
+ 	};
+ 
+ 	chosen {
+@@ -444,7 +446,7 @@
+ 		pagesize = <16>;
+ 	};
+ 
+-	rtc@68 {
++	gsc_rtc: rtc@68 {
+ 		compatible = "dallas,ds1672";
+ 		reg = <0x68>;
+ 	};
