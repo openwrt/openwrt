@@ -101,9 +101,11 @@ _procd_close_service() {
 	_procd_open_trigger
 	service_triggers
 	_procd_close_trigger
-	_procd_open_data
-	service_data
-	_procd_close_data
+	type service_data >/dev/null 2>&1 && {
+		_procd_open_data
+		service_data
+		_procd_close_data
+	}
 	_procd_ubus_call ${1:-set}
 }
 
