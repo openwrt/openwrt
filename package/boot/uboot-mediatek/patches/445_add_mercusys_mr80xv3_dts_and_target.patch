@@ -1,0 +1,326 @@
+--- /dev/null
++++ b/configs/mt7981_mercusys_mr80xv3_defconfig
+@@ -0,0 +1,187 @@
++CONFIG_ARM=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TARGET_MT7981=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-spim-nand-rfb"
++CONFIG_BOOTCMD="bootm 0x46000000"
++CONFIG_DEFAULT_FDT_FILE="mt7981-spim-nand-rfb"
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_DEBUG_UART=y
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_FIT=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++CONFIG_SYS_PROMPT="MT7981> "
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_BOOTP=y
++CONFIG_CMD_BUTTON=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_CPU=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_ECHO=y
++CONFIG_CMD_ENV_READMEM=y
++# CONFIG_CMD_EXT4 is not set
++# CONFIG_CMD_FAT is not set
++CONFIG_CMD_FDT=y
++# CONFIG_CMD_FS_GENERIC is not set
++# CONFIG_CMD_FS_UUID is not set
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_ITEST=y
++CONFIG_CMD_LED=y
++CONFIG_CMD_LICENSE=y
++CONFIG_CMD_LINK_LOCAL=y
++# CONFIG_CMD_MBR is not set
++CONFIG_CMD_MTD=y
++# CONFIG_CMD_PCI is not set
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_PXE=y
++# CONFIG_CMD_PWM is not set
++CONFIG_CMD_SMC=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_UBIFS=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_SETEXPR=y
++CONFIG_CMD_SLEEP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_SOURCE=y
++# CONFIG_CMD_USB is not set
++# CONFIG_CMD_FLASH is not set
++CONFIG_DISPLAY_CPUINFO=y
++CONFIG_DM_MTD=y
++# CONFIG_DM_USB is not set
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_PARTITION_UUIDS=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_DM_GPIO=y
++# CONFIG_DM_SCSI is not set
++# CONFIG_AHCI is not set
++CONFIG_PHY=y
++# CONFIG_PHY_MTK_TPHY is not set
++CONFIG_PHY_FIXED=y
++CONFIG_MTK_AHCI=y
++CONFIG_DM_ETH=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PCI=y
++CONFIG_MMC=y
++CONFIG_DM_MMC=y
++CONFIG_MTD=y
++# CONFIG_DM_PCI is not set
++CONFIG_PCIE_MEDIATEK=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_PRE_CON_BUF_ADDR=0x4007EF00
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPI_NAND=y
++CONFIG_MTK_SPI_NAND_MTD=y
++CONFIG_SYSRESET_WATCHDOG=y
++CONFIG_WDT_MTK=y
++CONFIG_LZO=y
++# CONFIG_ZSTD is not set
++CONFIG_HEXDUMP=y
++# CONFIG_RANDOM_UUID is not set
++CONFIG_REGEX=y
++# CONFIG_USB is not set
++# CONFIG_USB_HOST is not set
++# CONFIG_USB_XHCI_HCD is not set
++# CONFIG_USB_XHCI_MTK is not set
++# CONFIG_USB_STORAGE is not set
++CONFIG_OF_EMBED=y
++CONFIG_ENV_OVERWRITE=y
++# CONFIG_ENV_IS_IN_UBI is not set
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_MTD_NAME="u-boot-env"
++CONFIG_ENV_SIZE_REDUND=0x80000
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++# CONFIG_USE_DEFAULT_ENV_FILE is not set
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MTK_SPIM=y
++CONFIG_CMD_NAND=y
++CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_LMB_MAX_REGIONS=8
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
++CONFIG_ARM64_SUPPORT_AARCH32=y
++CONFIG_SYS_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_LEN=0x400000
++CONFIG_SYS_MEMTEST_START=0x40000000
++CONFIG_SYS_MEMTEST_END=0x41000000
++CONFIG_ENV_OFFSET=0x0
++CONFIG_MULTI_DTB_FIT_UNCOMPRESS_SZ=0x8000
++CONFIG_MTK_BROM_HEADER_INFO="media=snand;nandinfo=2k+64"
++# CONFIG_ENABLE_NAND_NMBM is not set
++CONFIG_MEDIATEK_BOOTMENU=y
++CONFIG_MEDIATEK_BOOTMENU_COUNTDOWN=y
++CONFIG_MEDIATEK_BOOTMENU_DELAY=1
++CONFIG_MT7981_BOOTMENU_UBI=y
++CONFIG_BOOTSTAGE_STASH_ADDR=0
++CONFIG_IDENT_STRING=""
++CONFIG_SYS_CLK_FREQ=0
++CONFIG_PSCI_RESET=y
++CONFIG_STACK_SIZE=0x1000000
++CONFIG_FIT_EXTERNAL_OFFSET=0x0
++CONFIG_ARCH_FIXUP_FDT_MEMORY=y
++CONFIG_BOOTSTAGE_STASH_SIZE=0x1000
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="ubi.mtd=ubi0 console=ttyS0,115200n1 loglevel=8 earlycon=uart8250,mmio32,0x11002000 init=/etc/preinit"
++CONFIG_MENU=y
++CONFIG_LOG_DEFAULT_LEVEL=6
++CONFIG_CMDLINE=y
++CONFIG_CMDLINE_EDITING=y
++CONFIG_CMD_BOOTM=y
++CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_NET_TFTP_VARS=y
++CONFIG_CMD_BLOCK_CACHE=y
++CONFIG_CMD_SLEEP=y
++CONFIG_MTDIDS_DEFAULT="spi-nand0=spi-nand0"
++CONFIG_MTDPARTS_DEFAULT="spi-nand0:2M(boot),1M(u-boot-env),50M(ubi0),50M(ubi1),8M(userconfig),8M(tp_data)"
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBIFS=y
++CONFIG_PARTITIONS=y
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ARP_TIMEOUT=5000
++CONFIG_NET_RETRY_COUNT=5
++CONFIG_BOOTDEV_ETH=y
++CONFIG_MTD=y
++CONFIG_MTD_NAND_CORE=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
++CONFIG_MTD_UBI_BEB_LIMIT=20
++CONFIG_POWER=y
++CONFIG_RESET_MEDIATEK=y
++CONFIG_LMB=y
++CONFIG_LMB_USE_MAX_REGIONS=y
++CONFIG_SUPPORT_SECOND_UBOOT=y
+--- /dev/null
++++ b/arch/arm/dts/mt7981-spim-nand-rfb.dts
+@@ -0,0 +1,133 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2022 MediaTek Inc.
++ * Author: Sam Shih <sam.shih@mediatek.com>
++ */
++
++/dts-v1/;
++#include "mt7981.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "mediatek mt7981";
++	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "sgmii";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <1000>;
++		full-duplex;
++	};
++};
++
++&pinctrl {
++	spi_flash_pins: spi0-pins-func-1 {
++		mux {
++			function = "flash";
++			groups = "spi0", "spi0_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++
++	spic_pins: spi1-pins-func-1 {
++		mux {
++			function = "spi";
++			groups = "spi1_1";
++		};
++	};
++
++	uart1_pins: spi1-pins-func-3 {
++		mux {
++			function = "uart";
++			groups = "uart1_2";
++		};
++	};
++
++	/* pin15 as pwm0 */
++	one_pwm_pins: one-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1";
++		};
++	};
++
++	/* pin15 as pwm0 and pin14 as pwm1 */
++	two_pwm_pins: two-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1", "pwm1_0";
++		};
++	};
++
++	/* pin15 as pwm0, pin14 as pwm1, pin7 as pwm2 */
++	three_pwm_pins: three-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1", "pwm1_0", "pwm2";
++		};
++	};
++};
++
++&spi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++	};
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&two_pwm_pins>;
++	status = "okay";
++};
++
++&watchdog {
++	status = "disabled";
++};
