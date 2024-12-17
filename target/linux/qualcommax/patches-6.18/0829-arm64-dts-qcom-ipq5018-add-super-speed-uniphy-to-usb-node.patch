@@ -1,0 +1,36 @@
+From cf4a1be22de6bd0f26e9326b4b613b2c94f17dc8 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 05 Aug 2026 12:20:18 +0400
+Subject: [PATCH v2 14/17] arm64: dts: qcom: ipq5018: Add Super-Speed UNIPHY to USB node
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260805-ipq5018-usb3-v2-14-eabd65f41443@outlook.com>
+
+Add the USB3 UNIPHY node to the USB controller node.
+
+In addition, switch to the pipe clock supplied by the USB3 UNIPHY
+instead of the UTMI clock and add a phandle to the TCSR register for
+USB3 mux selection to support USB3 mode.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -633,10 +633,10 @@
+ 
+ 			resets = <&gcc GCC_USB0_BCR>;
+ 
+-			phys = <&usbphy0>;
+-			phy-names = "usb2-phy";
++			phys = <&usbphy0>, <&usbphy1>;
++			phy-names = "usb2-phy", "usb3-phy";
+ 
+-			qcom,select-utmi-as-pipe-clk;
++			qcom,phy-usb-mux-sel = <&tcsr 0x10540>;
+ 
+ 			tx-fifo-resize;
+ 			snps,is-utmi-l1-suspend;

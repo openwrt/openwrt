@@ -1,0 +1,36 @@
+From 91c3f46da818b83dbe1137e1da570b804e7a7918 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 05 Aug 2026 12:20:14 +0400
+Subject: [PATCH v2 10/17] arm64: dts: qcom: ipq5018: Add clocks required for USB3 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260805-ipq5018-usb3-v2-10-eabd65f41443@outlook.com>
+
+Add aux and lfps clocks to USB controller node for Super-Speed support.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -612,11 +612,15 @@
+ 			clocks = <&gcc GCC_USB0_MASTER_CLK>,
+ 				 <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
+ 				 <&gcc GCC_USB0_SLEEP_CLK>,
+-				 <&gcc GCC_USB0_MOCK_UTMI_CLK>;
++				 <&gcc GCC_USB0_MOCK_UTMI_CLK>,
++				 <&gcc GCC_USB0_AUX_CLK>,
++				 <&gcc GCC_USB0_LFPS_CLK>;
+ 			clock-names = "core",
+ 				      "iface",
+ 				      "sleep",
+-				      "mock_utmi";
++				      "mock_utmi",
++				      "aux",
++				      "lfps";
+ 
+ 			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,

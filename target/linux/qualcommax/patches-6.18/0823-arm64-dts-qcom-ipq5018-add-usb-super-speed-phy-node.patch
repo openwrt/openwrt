@@ -1,0 +1,50 @@
+From 79b0558d6d719cd3782c71785c351e98d09794d4 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 05 Aug 2026 12:20:08 +0400
+Subject: [PATCH v2 04/17] arm64: dts: qcom: ipq5018: Add USB Super-Speed PHY node
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260805-ipq5018-usb3-v2-4-eabd65f41443@outlook.com>
+
+Add USB Super-Speed UNIPHY node and populate the USB DT clock on the GCC
+node for the GCC to gate the PIPE clock supplied by the USB3 PHY.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -189,6 +189,21 @@
+ 			status = "disabled";
+ 		};
+ 
++		usbphy1: phy@5d000 {
++			compatible = "qcom,ipq5018-uniphy-usb-ss-phy";
++			reg = <0x0005d000 0x800>;
++
++			clocks = <&gcc GCC_USB0_PHY_CFG_AHB_CLK>,
++				 <&gcc GCC_USB0_PIPE_CLK>;
++
++			resets = <&gcc GCC_USB0_PHY_BCR>;
++
++			#clock-cells = <0>;
++			#phy-cells = <0>;
++
++			status = "disabled";
++		};
++
+ 		pcie1_phy: phy@7e000 {
+ 			compatible = "qcom,ipq5018-uniphy-pcie-phy";
+ 			reg = <0x0007e000 0x800>;
+@@ -446,7 +461,7 @@
+ 				 <&sleep_clk>,
+ 				 <&pcie0_phy>,
+ 				 <&pcie1_phy>,
+-				 <0>,
++				 <&usbphy1>,
+ 				 <&gephy_rx_clk>,
+ 				 <&gephy_tx_clk>,
+ 				 <0>,
