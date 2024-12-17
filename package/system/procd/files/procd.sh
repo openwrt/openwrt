@@ -308,6 +308,36 @@ _procd_add_reload_interface_trigger() {
 	_procd_close_trigger
 }
 
+_procd_add_data_trigger() {
+	json_add_array
+	_procd_add_array_data "service.data.update"
+
+	json_add_array
+	_procd_add_array_data "if"
+
+	json_add_array
+	_procd_add_array_data "eq" "name" "$1"
+	shift
+	json_close_array
+
+	json_add_array
+	_procd_add_array_data "run_script" "$@"
+	json_close_array
+
+	json_close_array
+	_procd_add_timeout
+	json_close_array
+}
+
+_procd_add_reload_data_trigger() {
+	local script=$(readlink "$initscript")
+	local name=$(basename ${script:-$initscript})
+
+	_procd_open_trigger
+	_procd_add_data_trigger $1 /etc/init.d/$name reload
+	_procd_close_trigger
+}
+
 _procd_add_config_trigger() {
 	json_add_array
 	_procd_add_array_data "$1"
@@ -661,6 +691,7 @@ _procd_wrapper \
 	procd_add_interface_trigger \
 	procd_add_mount_trigger \
 	procd_add_reload_trigger \
+	procd_add_reload_data_trigger \
 	procd_add_reload_interface_trigger \
 	procd_add_action_mount_trigger \
 	procd_add_reload_mount_trigger \
