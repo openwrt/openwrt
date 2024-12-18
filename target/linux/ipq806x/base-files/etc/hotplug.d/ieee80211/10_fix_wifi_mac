@@ -12,9 +12,6 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
-	ubnt,unifi-ac-hd)
-		macaddr_add $(mtd_get_mac_binary EEPROM 0x6) $(($PHYNBR + 1)) > /sys${DEVPATH}/macaddress
-		;;
 	extreme,ap3935)
 		echo "##### PHYNBR=$PHYNBR DEVPATH=$DEVPATH"
 		[ "$PHYNBR" = "0" ] && echo $(mtd_get_mac_ascii CFG1 RADIOADDR0) > /sys${DEVPATH}/macaddress
