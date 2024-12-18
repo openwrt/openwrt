@@ -22,42 +22,47 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_22 0>;
 	nvmem-cell-names = "mac-address";
-	label = "dsa";
+	openwrt,netdev-name = "dsa";
 };
 
 &switch0 {
 	ports {
 		port@0 {
 			status = "okay";
-			label = "eth0";
+			openwrt,netdev-name = "eth0";
+			/delete-property/ label;
 		};
 
 		port@1 {
 			status = "okay";
-			label = "eth1";
+			openwrt,netdev-name = "eth1";
 			nvmem-cells = <&macaddr_factory_22 1>;
 			nvmem-cell-names = "mac-address";
+			/delete-property/ label;
 		};
 
 		port@2 {
 			status = "okay";
-			label = "eth2";
+			openwrt,netdev-name = "eth2";
 			nvmem-cells = <&macaddr_factory_22 2>;
 			nvmem-cell-names = "mac-address";
+			/delete-property/ label;
 		};
 
 		port@3 {
 			status = "okay";
-			label = "eth3";
+			openwrt,netdev-name = "eth3";
 			nvmem-cells = <&macaddr_factory_22 3>;
 			nvmem-cell-names = "mac-address";
+			/delete-property/ label;
 		};
 
 		port@4 {
 			status = "okay";
-			label = "eth4";
+			openwrt,netdev-name = "eth4";
 			nvmem-cells = <&macaddr_factory_22 4>;
 			nvmem-cell-names = "mac-address";
+			/delete-property/ label;
 		};
 	};
 };

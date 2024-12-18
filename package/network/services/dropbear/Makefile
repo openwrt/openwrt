@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2024.85
-PKG_RELEASE:=2
+PKG_VERSION:=2024.86
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=86b036c433a69d89ce51ebae335d65c47738ccf90d13e5eb0fea832e556da502
+PKG_HASH:=e78936dffc395f2e0db099321d6be659190966b99712b55c530dd0a1822e0a5e
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE

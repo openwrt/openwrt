@@ -51,7 +51,7 @@
 			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
-			clocks = <&sysc 5>;
+			clocks = <&sysc 7>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
@@ -61,7 +61,7 @@
 			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
-			clocks = <&sysc 6>;
+			clocks = <&sysc 8>;
 
 			resets = <&sysc 8>;
 			reset-names = "wdt";
@@ -171,7 +171,7 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 8>;
+			clocks = <&sysc 10>;
 
 			resets = <&sysc 16>;
 			reset-names = "i2c";
@@ -189,7 +189,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
 
-			clocks = <&sysc 10>;
+			clocks = <&sysc 12>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -207,7 +207,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb40 0x60>;
 
-			clocks = <&sysc 11>;
+			clocks = <&sysc 13>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -225,7 +225,7 @@
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clocks = <&sysc 12>;
+			clocks = <&sysc 14>;
 
 			resets = <&sysc 19>;
 
@@ -372,7 +372,7 @@
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
 
-		clocks = <&sysc 13>;
+		clocks = <&sysc 16>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

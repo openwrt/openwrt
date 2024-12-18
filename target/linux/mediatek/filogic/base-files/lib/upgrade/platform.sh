@@ -99,10 +99,12 @@ platform_do_upgrade() {
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	mediatek,mt7988a-rfb|\
+	mercusys,mr90x-v1-ubi|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
 	netcore,n60|\
 	qihoo,360t7|\
+	routerich,ax3000-ubootmod|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -114,7 +116,13 @@ platform_do_upgrade() {
 		fit_do_upgrade "$1"
 		;;
 	acer,predator-w6|\
+	acer,predator-w6d|\
+	acer,vero-w6m|\
 	arcadyan,mozart|\
+	glinet,gl-mt2500|\
+	glinet,gl-mt6000|\
+	glinet,gl-x3000|\
+	glinet,gl-xe3000|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
@@ -138,18 +146,16 @@ platform_do_upgrade() {
 	yuncore,ax835)
 		default_do_upgrade "$1"
 		;;
-	glinet,gl-mt2500|\
-	glinet,gl-mt6000|\
-	glinet,gl-x3000|\
-	glinet,gl-xe3000)
-		CI_KERNPART="kernel"
-		CI_ROOTPART="rootfs"
-		emmc_do_upgrade "$1"
-		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
+		;;
+	nradio,c8-668gl)
+		CI_DATAPART="rootfs_data"
+		CI_KERNPART="kernel_2nd"
+		CI_ROOTPART="rootfs_2nd"
+		emmc_do_upgrade "$1"
 		;;
 	ubnt,unifi-6-plus)
 		CI_KERNPART="kernel0"
@@ -208,6 +214,17 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	nradio,c8-668gl)
+		# tar magic `ustar`
+		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
+
+		[ "$magic" != "ustar" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+
+		return 0
+		;;
 	*)
 		nand_do_platform_check "$board" "$1"
 		return $?
@@ -231,12 +248,15 @@ platform_copy_config() {
 		fi
 		;;
 	acer,predator-w6|\
+	acer,predator-w6d|\
+	acer,vero-w6m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	jdcloud,re-cp-03|\
+	nradio,c8-668gl|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\

@@ -94,18 +94,9 @@ endef
 define Build/dna-bootfs
 	mkdir -p $@.ubifs-dir/boot
 
-	# populate the boot fs with the dtb and with either initramfs kernel or
-	# the normal kernel
+	# populate the boot fs with the dtb and the kernel image
 	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.ubifs-dir/boot/dtb
-
-	$(if $(findstring with-initrd,$(word 1,$(1))),\
-		( \
-			$(CP) $@ $@.ubifs-dir/boot/uImage \
-		) , \
-		( \
-			$(CP) $(IMAGE_KERNEL) $@.ubifs-dir/boot/uImage \
-		) \
-	)
+	$(CP) $@ $@.ubifs-dir/boot/uImage
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
@@ -479,6 +470,20 @@ define Device/asus_rt-ax54
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += asus_rt-ax54
+
+define Device/asus_4g-ax56
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := 4G-AX56
+  IMAGE_SIZE := 51200k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
+	kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += asus_4g-ax56
 
 define Device/beeline_smartbox-flash
   $(Device/nand)
@@ -1060,17 +1065,16 @@ define Device/dna_valokuitu-plus-ex400
   IMAGE_SIZE := 117m
   PAGESIZE := 2048
   MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
-  		  --log-lebs=2 --space-fixup --squash-uids
+	--log-lebs=2 --space-fixup --squash-uids
   DEVICE_VENDOR := DNA
   DEVICE_MODEL := Valokuitu Plus EX400
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   IMAGES += factory.bin
   IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
-                       dna-bootfs with-initrd | dna-header | \
-                       append-md5sum-ascii-salted
-  IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
-  			  append-metadata
+	dna-bootfs | dna-header | append-md5sum-ascii-salted
+  IMAGE/sysupgrade.bin := append-kernel | dna-bootfs | \
+  	sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef

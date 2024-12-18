@@ -53,7 +53,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1286,6 +1286,7 @@ static int spinand_init(struct spinand_d
+@@ -1287,6 +1287,7 @@ static int spinand_init(struct spinand_d
  	/* Propagate ECC information to mtd_info */
  	mtd->ecc_strength = nanddev_get_ecc_conf(nand)->strength;
  	mtd->ecc_step_size = nanddev_get_ecc_conf(nand)->step_size;

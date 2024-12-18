@@ -32,13 +32,6 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	mmc_clk: mmc-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <48000000>;
-		clock-accuracy = <100>;
-	};
-
 	mmc_reg_1v8: regulator-1v8 {
 		compatible = "regulator-fixed";
 
@@ -80,7 +73,7 @@
 			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
-			clocks = <&sysc 5>;
+			clocks = <&sysc 7>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
@@ -90,7 +83,7 @@
 			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
-			clocks = <&sysc 6>;
+			clocks = <&sysc 8>;
 
 			resets = <&sysc 8>;
 			reset-names = "wdt";
@@ -122,7 +115,7 @@
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
-			clocks = <&sysc 7>;
+			clocks = <&sysc 9>;
 
 			resets = <&sysc 12>;
 
@@ -216,7 +209,7 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 8>;
+			clocks = <&sysc 10>;
 
 			resets = <&sysc 16>;
 			reset-names = "i2c";
@@ -234,7 +227,7 @@
 			compatible = "mediatek,mt7620-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysc 9>;
+			clocks = <&sysc 11>;
 
 			resets = <&sysc 17>;
 			reset-names = "i2s";
@@ -256,7 +249,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
 
-			clocks = <&sysc 10>;
+			clocks = <&sysc 12>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -274,7 +267,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb40 0x60>;
 
-			clocks = <&sysc 11>;
+			clocks = <&sysc 13>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -292,7 +285,7 @@
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clocks = <&sysc 12>;
+			clocks = <&sysc 14>;
 
 			resets = <&sysc 19>;
 
@@ -539,7 +532,7 @@
 		cap-mmc-highspeed;
 		cap-sd-highspeed;
 
-		clocks = <&mmc_clk>, <&mmc_clk>;
+		clocks = <&sysc 15>, <&sysc 15>;
 		clock-names = "source", "hclk";
 
 		disable-wp;
@@ -645,7 +638,7 @@
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
 
-		clocks = <&sysc 13>;
+		clocks = <&sysc 16>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

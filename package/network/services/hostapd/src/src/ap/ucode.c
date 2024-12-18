@@ -817,12 +817,52 @@ out:
 	ucv_put(val);
 }
 
+static uc_value_t *
+uc_wpa_rkh_derive_key(uc_vm_t *vm, size_t nargs)
+{
+#ifdef CONFIG_IEEE80211R_AP
+	u8 oldkey[16];
+	char *oldkey_hex;
+	u8 key[SHA256_MAC_LEN];
+	size_t key_len = sizeof(key);
+	char key_hex[2 * ARRAY_SIZE(key) + 1];
+	uc_value_t *val = uc_fn_arg(0);
+	int i;
+
+	if (ucv_type(val) != UC_STRING)
+		return NULL;
+
+	oldkey_hex = ucv_string_get(val);
+
+	if (!hexstr2bin(oldkey_hex, key, key_len))
+		return ucv_string_new_length(oldkey_hex, 2 * ARRAY_SIZE(key));
+
+	if (hexstr2bin(oldkey_hex, oldkey, sizeof(oldkey))) {
+		wpa_printf(MSG_ERROR, "Invalid RxKH key: '%s'", oldkey_hex);
+		return NULL;
+	}
+
+	if (hmac_sha256_kdf(oldkey, sizeof(oldkey), "FT OLDKEY", NULL, 0, key, key_len) < 0) {
+		wpa_printf(MSG_ERROR, "Invalid RxKH key: '%s'", oldkey_hex);
+		return NULL;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(key); i++)
+		sprintf(key_hex + 2 * i, "%02x", key[i]);
+
+	return ucv_string_new_length(key_hex, 2 * ARRAY_SIZE(key));
+#else
+	return NULL;
+#endif
+}
+
 int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 {
 	static const uc_function_list_t global_fns[] = {
 		{ "printf",	uc_wpa_printf },
 		{ "getpid", uc_wpa_getpid },
 		{ "sha1", uc_wpa_sha1 },
+		{ "rkh_derive_key", uc_wpa_rkh_derive_key },
 		{ "freq_info", uc_wpa_freq_info },
 		{ "add_iface", uc_hostapd_add_iface },
 		{ "remove_iface", uc_hostapd_remove_iface },

@@ -87,7 +87,7 @@ config BUSYBOX_CONFIG_SHELL_ASH
 	depends on !BUSYBOX_CONFIG_NOMMU
 
 config BUSYBOX_CONFIG_ASH
-	bool "ash (78 kb)"
+	bool "ash (80 kb)"
 	default BUSYBOX_DEFAULT_ASH
 	depends on !BUSYBOX_CONFIG_NOMMU
 	select BUSYBOX_CONFIG_SHELL_ASH
@@ -201,11 +201,6 @@ config BUSYBOX_CONFIG_ASH_TEST
 	default BUSYBOX_DEFAULT_ASH_TEST
 	depends on BUSYBOX_CONFIG_SHELL_ASH
 
-config BUSYBOX_CONFIG_ASH_SLEEP
-	bool "sleep builtin"
-	default BUSYBOX_DEFAULT_ASH_SLEEP
-	depends on BUSYBOX_CONFIG_SHELL_ASH
-
 config BUSYBOX_CONFIG_ASH_HELP
 	bool "help builtin"
 	default BUSYBOX_DEFAULT_ASH_HELP
@@ -227,7 +222,7 @@ config BUSYBOX_CONFIG_ASH_CMDCMD
 
 endif # ash options
 config BUSYBOX_CONFIG_CTTYHACK
-	bool "cttyhack (2.4 kb)"
+	bool "cttyhack (2.7 kb)"
 	default BUSYBOX_DEFAULT_CTTYHACK
 	help
 	One common problem reported on the mailing list is the "can't
@@ -270,7 +265,7 @@ config BUSYBOX_CONFIG_CTTYHACK
 
 	# getty 115200 $(cttyhack)
 config BUSYBOX_CONFIG_HUSH
-	bool "hush (68 kb)"
+	bool "hush (70 kb)"
 	default BUSYBOX_DEFAULT_HUSH
 	select BUSYBOX_CONFIG_SHELL_HUSH
 	help

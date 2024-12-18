@@ -1,0 +1,34 @@
+From 7846f0b63562f4db45f712cc7dab091985baf07b Mon Sep 17 00:00:00 2001
+From: Mohammed Anees <pvmohammedanees2003@gmail.com>
+Date: Thu, 17 Oct 2024 13:36:38 +0530
+Subject: [PATCH] wifi: rtw88: Refactor looping in
+ rtw_phy_store_tx_power_by_rate
+
+The previous implementation included an unnecessary else
+condition paired with a continue statement. Since a check
+is already performed to determine if the band is either
+2G or 5G, the else condition will never be triggered.
+We can remove this check.
+
+Signed-off-by: Mohammed Anees <pvmohammedanees2003@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20241017080638.13074-1-pvmohammedanees2003@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/phy.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/phy.c
++++ b/drivers/net/wireless/realtek/rtw88/phy.c
+@@ -1470,10 +1470,8 @@ static void rtw_phy_store_tx_power_by_ra
+ 		rate = rates[i];
+ 		if (band == PHY_BAND_2G)
+ 			hal->tx_pwr_by_rate_offset_2g[rfpath][rate] = offset;
+-		else if (band == PHY_BAND_5G)
+-			hal->tx_pwr_by_rate_offset_5g[rfpath][rate] = offset;
+ 		else
+-			continue;
++			hal->tx_pwr_by_rate_offset_5g[rfpath][rate] = offset;
+ 	}
+ }
+ 

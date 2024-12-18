@@ -42,8 +42,8 @@ define Package/base-files
   DEPENDS:= \
 	+netifd +libc +jsonfilter +SIGNED_PACKAGES:usign +SIGNED_PACKAGES:openwrt-keyring \
 	+NAND_SUPPORT:ubi-utils +fstools +fwtool \
-	+SELINUX:procd-selinux +!SELINUX:procd +SECCOMP:procd-seccomp \
-	+SELINUX:busybox-selinux +!SELINUX:busybox +!SMALL_FLASH:procd-ujail
+	+SELINUX:procd-selinux +!SELINUX:procd +USE_SECCOMP:procd-seccomp \
+	+SELINUX:busybox-selinux +!SELINUX:busybox
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)~$(lastword $(subst -, ,$(REVISION)))

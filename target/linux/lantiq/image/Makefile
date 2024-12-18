@@ -162,6 +162,12 @@ include danube.mk
 include ar9.mk
 endif
 
+ifeq ($(SUBTARGET),xrx200_legacy)
+DEFAULT_SOC := vr9
+include tp-link_legacy.mk
+include vr9_legacy.mk
+endif
+
 ifeq ($(SUBTARGET),xrx200)
 DEFAULT_SOC := vr9
 include tp-link.mk

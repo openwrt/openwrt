@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7986a-acer-w6-common.dtsi"
+
+/ {
+	model = "Acer Predator Connect W6d";
+	compatible = "acer,predator-w6d", "mediatek,mt7986a";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_green: led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_blue: led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pio 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pio 33 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
+			gpios = <&pio 38 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
+			gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-8 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <2>;
+			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-9 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+			gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-10 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-11 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+			gpios = <&pio 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-12 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
+			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-13 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-14 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
+			gpios = <&pio 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-15 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pio 45 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-16 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pio 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-17 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pio 43 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&eth {
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+	};
+};
+
+&mdio {
+	phy6: phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <6>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+		/* LED0: nc ; LED1: nc ; LED2: amber ; LED3: green */
+		mxl,led-config = <0x0 0x0 0x370 0x380>;
+	};
+};
+
+&swport0 {
+	label = "game";
+};

@@ -58,7 +58,7 @@ gowin-solution-co-ltd-gw-mb-u01)
 		ucidef_set_network_device_path_port "sfp2" "$sfp_device/$sfp_port" "0"
 	fi
 
-	ucidef_set_interface_lan "eth1 eth2 eth3 eth4"
+	ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 poe" "sfp1 sfp2"
 	;;
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"

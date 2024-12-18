@@ -128,11 +128,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	if (IS_ERR(priv->io_base))
 +		return PTR_ERR(priv->io_base);
 +
-+	priv->rst_phy = devm_reset_control_get(&pdev->dev, "usb-phy");
++	priv->rst_phy = devm_reset_control_get(&pdev->dev, "phy");
 +	if (IS_ERR(priv->rst_phy))
 +		return dev_err_probe(&pdev->dev, PTR_ERR(priv->rst_phy), "phy reset is missing");
 +
-+	priv->rst_host = devm_reset_control_get(&pdev->dev, "usb-host");
++	priv->rst_host = devm_reset_control_get(&pdev->dev, "host");
 +	if (IS_ERR(priv->rst_host))
 +		return dev_err_probe(&pdev->dev, PTR_ERR(priv->rst_host), "host reset is missing");
 +
@@ -250,17 +250,17 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	if (!priv)
 +		return -ENOMEM;
 +
-+	priv->rst_phy = devm_reset_control_get(&pdev->dev, "usb-phy");
++	priv->rst_phy = devm_reset_control_get(&pdev->dev, "phy");
 +	if (IS_ERR(priv->rst_phy))
 +		return dev_err_probe(&pdev->dev, PTR_ERR(priv->rst_phy), "phy reset is missing");
 +
 +	priv->rst_phy_analog = devm_reset_control_get_optional(
-+		&pdev->dev, "usb-phy-analog");
++		&pdev->dev, "phy-analog");
 +	if (IS_ERR(priv->rst_phy_analog))
 +		return PTR_ERR(priv->rst_phy_analog);
 +
 +	priv->suspend_override = devm_reset_control_get_optional(
-+		&pdev->dev, "usb-suspend-override");
++		&pdev->dev, "suspend-override");
 +	if (IS_ERR(priv->suspend_override))
 +		return PTR_ERR(priv->suspend_override);
 +

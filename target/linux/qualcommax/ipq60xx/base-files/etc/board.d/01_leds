@@ -7,6 +7,18 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+linksys,mr7350)
+	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "90000.mdio-1:00:green:lan" "lan1" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan1-port-traffic" "LAN1-PORT-TRAFFIC" "90000.mdio-1:00:orange:lan" "lan1" "tx rx link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan2-port-link" "LAN2-PORT-LINK" "90000.mdio-1:01:green:lan" "lan2" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan2-port-traffic" "LAN2-PORT-TRAFFIC" "90000.mdio-1:01:orange:lan" "lan2" "tx rx link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan3-port-link" "LAN3-PORT-LINK" "90000.mdio-1:02:green:lan" "lan3" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan3-port-traffic" "LAN3-PORT-TRAFFIC" "90000.mdio-1:02:orange:lan" "lan3" "tx rx link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan4-port-link" "LAN4-PORT-LINK" "90000.mdio-1:03:green:lan" "lan4" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan4-port-traffic" "LAN4-PORT-TRAFFIC" "90000.mdio-1:03:orange:lan" "lan4" "tx rx link_10 link_100 link_1000"
+	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:04:green:wan" "wan" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "wan-port-traffic" "WAN-PORT-TRAFFIC" "90000.mdio-1:04:orange:wan" "wan" "tx rx link_10 link_100 link_1000"
+	;;
 yuncore,fap650)
 	ucidef_set_led_netdev "wlan5ghz" "WLAN 5GHz LED" "blue:wlan-5ghz" "wlan0" "tx rx"
 	ucidef_set_led_netdev "wlan2ghz" "WLAN 2.4GHz LED" "green:wlan-2ghz" "wlan1" "tx rx"

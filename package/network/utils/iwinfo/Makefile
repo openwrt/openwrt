@@ -18,6 +18,7 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_FLAGS:=no-lto
+PKG_CONFIG_DEPENDS:=CONFIG_WIFI_SCRIPTS_UCODE
 
 IWINFO_ABI_VERSION:=20230701
 
@@ -62,7 +63,7 @@ define Package/iwinfo
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Generalized Wireless Information utility
-  DEPENDS:=+libiwinfo
+  DEPENDS:=+libiwinfo @!WIFI_SCRIPTS_UCODE
 endef
 
 define Package/iwinfo/description

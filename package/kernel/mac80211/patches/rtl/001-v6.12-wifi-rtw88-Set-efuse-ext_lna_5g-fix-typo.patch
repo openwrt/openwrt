@@ -1,0 +1,30 @@
+From 8fbcaa308591b91e9037ab6a8d733873b749a70d Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 6 Jul 2024 01:40:58 +0300
+Subject: [PATCH] wifi: rtw88: Set efuse->ext_lna_5g - fix typo
+
+efuse->ext_lna_2g is set twice and efuse->ext_lna_5g is not set at all.
+Set each one once.
+
+Nothing uses these members right now. They will be used by the RTL8821AU
+and RTL8812AU drivers.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/8ccc9e13-0d45-417d-8f88-93a0ad294f77@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -2006,7 +2006,7 @@ static int rtw_chip_efuse_info_setup(str
+ 	efuse->ext_pa_2g = efuse->pa_type_2g & BIT(4) ? 1 : 0;
+ 	efuse->ext_lna_2g = efuse->lna_type_2g & BIT(3) ? 1 : 0;
+ 	efuse->ext_pa_5g = efuse->pa_type_5g & BIT(0) ? 1 : 0;
+-	efuse->ext_lna_2g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
++	efuse->ext_lna_5g = efuse->lna_type_5g & BIT(3) ? 1 : 0;
+ 
+ 	if (!is_valid_ether_addr(efuse->addr)) {
+ 		eth_random_addr(efuse->addr);

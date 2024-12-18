@@ -64,7 +64,7 @@
 				compatible ="qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
 				reg = <0x18030000 4>, <0x18030004 4>;
 
-				reset-names = "usb-phy-analog", "usb-phy", "usb-suspend-override";
+				reset-names = "phy-analog", "phy", "suspend-override";
 				resets = <&rst 11>, <&rst 4>, <&rst 3>;
 
 				#phy-cells = <0>;
@@ -76,7 +76,7 @@
 				compatible = "qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
 				reg = <0x18030010 4>, <0x18030014 4>;
 
-				reset-names = "usb-phy-analog", "usb-phy", "usb-suspend-override";
+				reset-names = "phy-analog", "phy", "suspend-override";
 				resets = <&rst2 11>, <&rst2 4>, <&rst2 3>;
 
 				#phy-cells = <0>;
@@ -273,12 +273,11 @@
 			interrupt-parent = <&intc3>;
 			interrupts = <1>;
 			resets = <&rst 5>;
-			reset-names = "usb-host";
 
 			has-transaction-translator;
 			caps-offset = <0x100>;
 
-			phy-names = "usb-phy0";
+			phy-names = "usb";
 			phys = <&usb_phy0>;
 
 			status = "disabled";
@@ -299,12 +298,11 @@
 			interrupt-parent = <&intc3>;
 			interrupts = <2>;
 			resets = <&rst2 5>;
-			reset-names = "usb-host";
 
 			has-transaction-translator;
 			caps-offset = <0x100>;
 
-			phy-names = "usb-phy1";
+			phy-names = "usb";
 			phys = <&usb_phy1>;
 
 			status = "disabled";

@@ -1,0 +1,272 @@
+From fbb5e1b3637a720c83c91a7b1476ab0429bfc747 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 23 Oct 2024 17:09:47 +0300
+Subject: [PATCH] wifi: rtw88: Let each driver control the power on/off process
+
+RTL8821AU and RTL8812AU have to do some things differently, so let
+them have full control.
+
+The other chips use the same functions as before.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/coex.c     |  3 +++
+ drivers/net/wireless/realtek/rtw88/mac.c      | 11 +++++++----
+ drivers/net/wireless/realtek/rtw88/mac.h      |  3 +++
+ drivers/net/wireless/realtek/rtw88/main.c     | 13 ++++++++-----
+ drivers/net/wireless/realtek/rtw88/main.h     |  5 +++++
+ drivers/net/wireless/realtek/rtw88/rtw8703b.c |  2 ++
+ drivers/net/wireless/realtek/rtw88/rtw8723d.c |  2 ++
+ drivers/net/wireless/realtek/rtw88/rtw8821c.c |  2 ++
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c |  2 ++
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c |  2 ++
+ 10 files changed, 36 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/coex.c
++++ b/drivers/net/wireless/realtek/rtw88/coex.c
+@@ -2753,16 +2753,19 @@ void rtw_coex_power_on_setting(struct rt
+ 	rtw_write8(rtwdev, 0xff1a, 0x0);
+ 	rtw_coex_set_gnt_debug(rtwdev);
+ }
++EXPORT_SYMBOL(rtw_coex_power_on_setting);
+ 
+ void rtw_coex_power_off_setting(struct rtw_dev *rtwdev)
+ {
+ 	rtw_write16(rtwdev, REG_WIFI_BT_INFO, BIT_BT_INT_EN);
+ }
++EXPORT_SYMBOL(rtw_coex_power_off_setting);
+ 
+ void rtw_coex_init_hw_config(struct rtw_dev *rtwdev, bool wifi_only)
+ {
+ 	__rtw_coex_init_hw_config(rtwdev, wifi_only);
+ }
++EXPORT_SYMBOL(rtw_coex_init_hw_config);
+ 
+ void rtw_coex_ips_notify(struct rtw_dev *rtwdev, u8 type)
+ {
+--- a/drivers/net/wireless/realtek/rtw88/mac.c
++++ b/drivers/net/wireless/realtek/rtw88/mac.c
+@@ -227,8 +227,8 @@ static int rtw_sub_pwr_seq_parser(struct
+ 	return 0;
+ }
+ 
+-static int rtw_pwr_seq_parser(struct rtw_dev *rtwdev,
+-			      const struct rtw_pwr_seq_cmd * const *cmd_seq)
++int rtw_pwr_seq_parser(struct rtw_dev *rtwdev,
++		       const struct rtw_pwr_seq_cmd * const *cmd_seq)
+ {
+ 	u8 cut_mask;
+ 	u8 intf_mask;
+@@ -267,6 +267,7 @@ static int rtw_pwr_seq_parser(struct rtw
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(rtw_pwr_seq_parser);
+ 
+ static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
+ {
+@@ -994,6 +995,7 @@ int rtw_download_firmware(struct rtw_dev
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(rtw_download_firmware);
+ 
+ static u32 get_priority_queues(struct rtw_dev *rtwdev, u32 queues)
+ {
+@@ -1127,7 +1129,7 @@ static int txdma_queue_mapping(struct rt
+ 	return 0;
+ }
+ 
+-static int set_trx_fifo_info(struct rtw_dev *rtwdev)
++int rtw_set_trx_fifo_info(struct rtw_dev *rtwdev)
+ {
+ 	const struct rtw_chip_info *chip = rtwdev->chip;
+ 	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
+@@ -1179,6 +1181,7 @@ static int set_trx_fifo_info(struct rtw_
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(rtw_set_trx_fifo_info);
+ 
+ static int __priority_queue_cfg(struct rtw_dev *rtwdev,
+ 				const struct rtw_page_table *pg_tbl,
+@@ -1256,7 +1259,7 @@ static int priority_queue_cfg(struct rtw
+ 	u16 pubq_num;
+ 	int ret;
+ 
+-	ret = set_trx_fifo_info(rtwdev);
++	ret = rtw_set_trx_fifo_info(rtwdev);
+ 	if (ret)
+ 		return ret;
+ 
+--- a/drivers/net/wireless/realtek/rtw88/mac.h
++++ b/drivers/net/wireless/realtek/rtw88/mac.h
+@@ -30,11 +30,14 @@
+ 
+ void rtw_set_channel_mac(struct rtw_dev *rtwdev, u8 channel, u8 bw,
+ 			 u8 primary_ch_idx);
++int rtw_pwr_seq_parser(struct rtw_dev *rtwdev,
++		       const struct rtw_pwr_seq_cmd * const *cmd_seq);
+ int rtw_mac_power_on(struct rtw_dev *rtwdev);
+ void rtw_mac_power_off(struct rtw_dev *rtwdev);
+ int rtw_download_firmware(struct rtw_dev *rtwdev, struct rtw_fw_state *fw);
+ int rtw_mac_init(struct rtw_dev *rtwdev);
+ void rtw_mac_flush_queues(struct rtw_dev *rtwdev, u32 queues, bool drop);
++int rtw_set_trx_fifo_info(struct rtw_dev *rtwdev);
+ int rtw_ddma_to_fw_fifo(struct rtw_dev *rtwdev, u32 ocp_src, u32 size);
+ 
+ static inline void rtw_mac_flush_all_queues(struct rtw_dev *rtwdev, bool drop)
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -1309,7 +1309,7 @@ void rtw_update_sta_info(struct rtw_dev
+ 	rtw_fw_send_ra_info(rtwdev, si, reset_ra_mask);
+ }
+ 
+-static int rtw_wait_firmware_completion(struct rtw_dev *rtwdev)
++int rtw_wait_firmware_completion(struct rtw_dev *rtwdev)
+ {
+ 	const struct rtw_chip_info *chip = rtwdev->chip;
+ 	struct rtw_fw_state *fw;
+@@ -1329,6 +1329,7 @@ static int rtw_wait_firmware_completion(
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL(rtw_wait_firmware_completion);
+ 
+ static enum rtw_lps_deep_mode rtw_update_lps_deep_mode(struct rtw_dev *rtwdev,
+ 						       struct rtw_fw_state *fw)
+@@ -1350,7 +1351,7 @@ static enum rtw_lps_deep_mode rtw_update
+ 	return LPS_DEEP_MODE_NONE;
+ }
+ 
+-static int rtw_power_on(struct rtw_dev *rtwdev)
++int rtw_power_on(struct rtw_dev *rtwdev)
+ {
+ 	const struct rtw_chip_info *chip = rtwdev->chip;
+ 	struct rtw_fw_state *fw = &rtwdev->fw;
+@@ -1413,6 +1414,7 @@ err_off:
+ err:
+ 	return ret;
+ }
++EXPORT_SYMBOL(rtw_power_on);
+ 
+ void rtw_core_fw_scan_notify(struct rtw_dev *rtwdev, bool start)
+ {
+@@ -1485,7 +1487,7 @@ int rtw_core_start(struct rtw_dev *rtwde
+ {
+ 	int ret;
+ 
+-	ret = rtw_power_on(rtwdev);
++	ret = rtwdev->chip->ops->power_on(rtwdev);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1505,12 +1507,13 @@ int rtw_core_start(struct rtw_dev *rtwde
+ 	return 0;
+ }
+ 
+-static void rtw_power_off(struct rtw_dev *rtwdev)
++void rtw_power_off(struct rtw_dev *rtwdev)
+ {
+ 	rtw_hci_stop(rtwdev);
+ 	rtw_coex_power_off_setting(rtwdev);
+ 	rtw_mac_power_off(rtwdev);
+ }
++EXPORT_SYMBOL(rtw_power_off);
+ 
+ void rtw_core_stop(struct rtw_dev *rtwdev)
+ {
+@@ -1535,7 +1538,7 @@ void rtw_core_stop(struct rtw_dev *rtwde
+ 
+ 	mutex_lock(&rtwdev->mutex);
+ 
+-	rtw_power_off(rtwdev);
++	rtwdev->chip->ops->power_off(rtwdev);
+ }
+ 
+ static void rtw_init_ht_cap(struct rtw_dev *rtwdev,
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -843,6 +843,8 @@ struct rtw_regd {
+ };
+ 
+ struct rtw_chip_ops {
++	int (*power_on)(struct rtw_dev *rtwdev);
++	void (*power_off)(struct rtw_dev *rtwdev);
+ 	int (*mac_init)(struct rtw_dev *rtwdev);
+ 	int (*dump_fw_crash)(struct rtw_dev *rtwdev);
+ 	void (*shutdown)(struct rtw_dev *rtwdev);
+@@ -2209,6 +2211,7 @@ void rtw_core_scan_start(struct rtw_dev
+ void rtw_core_scan_complete(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+ 			    bool hw_scan);
+ int rtw_core_start(struct rtw_dev *rtwdev);
++void rtw_power_off(struct rtw_dev *rtwdev);
+ void rtw_core_stop(struct rtw_dev *rtwdev);
+ int rtw_chip_info_setup(struct rtw_dev *rtwdev);
+ int rtw_core_init(struct rtw_dev *rtwdev);
+@@ -2223,6 +2226,8 @@ int rtw_sta_add(struct rtw_dev *rtwdev,
+ void rtw_sta_remove(struct rtw_dev *rtwdev, struct ieee80211_sta *sta,
+ 		    bool fw_exist);
+ void rtw_fw_recovery(struct rtw_dev *rtwdev);
++int rtw_wait_firmware_completion(struct rtw_dev *rtwdev);
++int rtw_power_on(struct rtw_dev *rtwdev);
+ void rtw_core_fw_scan_notify(struct rtw_dev *rtwdev, bool start);
+ int rtw_dump_fw(struct rtw_dev *rtwdev, const u32 ocp_src, u32 size,
+ 		u32 fwcd_item);
+--- a/drivers/net/wireless/realtek/rtw88/rtw8703b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8703b.c
+@@ -1888,6 +1888,8 @@ static const struct coex_tdma_para tdma_
+ };
+ 
+ static const struct rtw_chip_ops rtw8703b_ops = {
++	.power_on		= rtw_power_on,
++	.power_off		= rtw_power_off,
+ 	.mac_init		= rtw8723x_mac_init,
+ 	.dump_fw_crash		= NULL,
+ 	.shutdown		= NULL,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723d.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723d.c
+@@ -1390,6 +1390,8 @@ static void rtw8723d_pwr_track(struct rt
+ }
+ 
+ static const struct rtw_chip_ops rtw8723d_ops = {
++	.power_on		= rtw_power_on,
++	.power_off		= rtw_power_off,
+ 	.phy_set_param		= rtw8723d_phy_set_param,
+ 	.read_efuse		= rtw8723x_read_efuse,
+ 	.query_phy_status	= query_phy_status,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.c
+@@ -1643,6 +1643,8 @@ static const struct rtw_prioq_addrs prio
+ };
+ 
+ static const struct rtw_chip_ops rtw8821c_ops = {
++	.power_on		= rtw_power_on,
++	.power_off		= rtw_power_off,
+ 	.phy_set_param		= rtw8821c_phy_set_param,
+ 	.read_efuse		= rtw8821c_read_efuse,
+ 	.query_phy_status	= query_phy_status,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -2132,6 +2132,8 @@ static const struct rtw_prioq_addrs prio
+ };
+ 
+ static const struct rtw_chip_ops rtw8822b_ops = {
++	.power_on		= rtw_power_on,
++	.power_off		= rtw_power_off,
+ 	.phy_set_param		= rtw8822b_phy_set_param,
+ 	.read_efuse		= rtw8822b_read_efuse,
+ 	.query_phy_status	= query_phy_status,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -4947,6 +4947,8 @@ static const struct rtw_prioq_addrs prio
+ };
+ 
+ static const struct rtw_chip_ops rtw8822c_ops = {
++	.power_on		= rtw_power_on,
++	.power_off		= rtw_power_off,
+ 	.phy_set_param		= rtw8822c_phy_set_param,
+ 	.read_efuse		= rtw8822c_read_efuse,
+ 	.query_phy_status	= query_phy_status,

@@ -5,17 +5,6 @@ define Device/dsa-migration
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
-define Device/alphanetworks_asl56026
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Alpha
-  DEVICE_MODEL := ASL56026
-  DEVICE_ALT0_VENDOR := BT Openreach
-  DEVICE_ALT0_MODEL := ECI VDSL Modem V-2FUb/I
-  IMAGE_SIZE := 7488k
-  DEFAULT := n
-endef
-TARGET_DEVICES += alphanetworks_asl56026
-
 define Device/arcadyan_arv7519rw22
   $(Device/dsa-migration)
   DEVICE_VENDOR := Arcadyan
@@ -32,16 +21,6 @@ define Device/arcadyan_arv7519rw22
   DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv7519rw22
-
-define Device/arcadyan_vg3503j
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := BT Openreach
-  DEVICE_MODEL := ECI VDSL Modem V-2FUb/R
-  IMAGE_SIZE := 8000k
-  SUPPORTED_DEVICES += VG3503J
-  DEFAULT := n
-endef
-TARGET_DEVICES += arcadyan_vg3503j
 
 define Device/arcadyan_vgv7510kw22-brn
   $(Device/dsa-migration)
@@ -351,33 +330,18 @@ define Device/lantiq_easy80920-nor
 endef
 TARGET_DEVICES += lantiq_easy80920-nor
 
-define Device/netgear_dm200
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := DM200
-  IMAGES := sysupgrade.bin factory.img
-  IMAGE/sysupgrade.bin := append-kernel | \
-	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	pad-offset 64k 64 | append-uImage-fakehdr filesystem | \
-	append-rootfs | pad-rootfs | check-size | append-metadata
-  IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
-  IMAGE_SIZE := 7872k
-  NETGEAR_BOARD_ID := DM200
-  NETGEAR_HW_ID := 29765233+8+0+64+0+0
-endef
-TARGET_DEVICES += netgear_dm200
-
 define Device/zyxel_p-2812hnu-f1
-  $(Device/dsa-migration)
   $(Device/NAND)
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := kernel and ubi partitions had to be resized. \
+  Upgrade manually using initramfs, and change u-boot environment to load 5MiB for uImage.
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := P-2812HNU
   DEVICE_VARIANT := F1
   BOARD_NAME := P2812HNUF1
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 5120k
   SUPPORTED_DEVICES += P2812HNUF1
-  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_p-2812hnu-f1
 

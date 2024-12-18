@@ -13,6 +13,28 @@ V4L2_USB_DIR=usb
 V4L2_MEM2MEM_DIR=platform
 
 #
+# Media
+#
+define KernelPackage/media-controller
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Media Controller API
+  KCONFIG:= \
+	CONFIG_MEDIA_SUPPORT \
+	CONFIG_MEDIA_CONTROLLER=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/mc/mc.ko
+  AUTOLOAD:=$(call AutoProbe,mc)
+endef
+
+define KernelPackage/media-controller/description
+ Kernel modules for media controller API used to query media devices
+ internal topology and configure it dynamically.
+endef
+
+$(eval $(call KernelPackage,media-controller))
+
+
+#
 # Video Display
 #
 
@@ -601,9 +623,8 @@ $(eval $(call KernelPackage,drm-radeon))
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core
+  DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core +kmod-media-controller
   KCONFIG:= \
-	CONFIG_MEDIA_SUPPORT \
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
 	CONFIG_VIDEO_DEV \
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
@@ -659,6 +680,25 @@ endef
 
 $(eval $(call KernelPackage,video-videobuf2))
 
+define KernelPackage/video-async
+  TITLE:=V4L2 ASYNC support
+  KCONFIG:=CONFIG_V4L2_ASYNC
+  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-async.ko
+  $(call AddDepends/video)
+  AUTOLOAD:=$(call AutoProbe,v4l2-async)
+endef
+
+$(eval $(call KernelPackage,video-async))
+
+define KernelPackage/video-fwnode
+  TITLE:=V4L2 FWNODE support
+  KCONFIG:=CONFIG_V4L2_FWNODE
+  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-fwnode.ko
+  $(call AddDepends/video,+kmod-video-async)
+  AUTOLOAD:=$(call AutoProbe,v4l2-fwnode)
+endef
+
+$(eval $(call KernelPackage,video-fwnode))
 
 define KernelPackage/video-cpia2
   TITLE:=CPIA2 video driver

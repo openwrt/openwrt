@@ -54,7 +54,7 @@
 				compatible = "qca,ar7100-usb-phy";
 				reg = <0x18030000 0x10>;
 
-				reset-names = "usb-phy", "usb-host", "usb-ohci-dll";
+				reset-names = "phy", "host", "usb-ohci-dll";
 				resets = <&rst 4>, <&rst 5>, <&rst 6>;
 
 				#phy-cells = <0>;
@@ -147,7 +147,7 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <3>;
 
-		phy-names = "usb-phy";
+		phy-names = "usb";
 		phys = <&usb_phy>;
 
 		has-synopsys-hc-bug;
@@ -170,7 +170,7 @@
 		interrupt-parent = <&miscintc>;
 		interrupts = <6>;
 
-		phy-names = "usb-phy";
+		phy-names = "usb";
 		phys = <&usb_phy>;
 
 		status = "disabled";

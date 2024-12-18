@@ -97,7 +97,7 @@ HOST_MAKE_FLAGS += \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	check_feat=0 \
 	feature-clang-bpf-co-re=0 \
-	feature-libbfd=1 \
+	feature-libbfd=0 \
 	feature-llvm=0 \
 	feature-libcap=0 \
 	feature-disassembler-four-args=1 \

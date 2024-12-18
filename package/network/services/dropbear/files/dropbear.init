@@ -8,7 +8,6 @@ STOP=50
 USE_PROCD=1
 PROG=/usr/sbin/dropbear
 NAME=dropbear
-PIDCOUNT=0
 
 extra_command "killclients" "Kill ${NAME} processes except servers and yourself"
 
@@ -298,8 +297,7 @@ dropbear_instance()
 		break
 	done
 
-	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
-	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
+	local pid_file="/var/run/${NAME}.${1}.pid"
 
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"

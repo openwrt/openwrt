@@ -18,8 +18,12 @@ mediatek_setup_interfaces()
 	acelink,ew-7886cax)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
-	acer,predator-w6)
+	acer,predator-w6|\
+	acer,predator-w6d)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
+		;;
+	acer,vero-w6m)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
@@ -29,14 +33,17 @@ mediatek_setup_interfaces()
 	confiabits,mt7981|\
 	cudy,wr3000-v1|\
 	jcg,q30-pro|\
+	keenetic,kn-3811|\
 	qihoo,360t7|\
-	routerich,ax3000)
+	routerich,ax3000|\
+	routerich,ax3000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	asus,tuf-ax4200|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	netcore,n60|\
+	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
 	unielec,u7981-01*|\
 	zbtlink,zbt-z8102ax|\
@@ -85,6 +92,13 @@ mediatek_setup_interfaces()
 	dlink,aquila-pro-ai-m30-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
+	keenetic,kn-3911|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733a|\
+	yuncore,ax835)
+		ucidef_set_interfaces_lan_wan lan wan
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
@@ -94,14 +108,9 @@ mediatek_setup_interfaces()
 	mediatek,mt7988a-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 eth2" eth1
 		;;
-	mercusys,mr90x-v1)
+	mercusys,mr90x-v1|\
+	mercusys,mr90x-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
-		;;
-	smartrg,sdg-8622|\
-	smartrg,sdg-8632|\
-	smartrg,sdg-8733a|\
-	yuncore,ax835)
-		ucidef_set_interfaces_lan_wan lan wan
 		;;
 	tplink,tl-xdr6086|\
 	wavlink,wl-wn586x3)
@@ -132,6 +141,12 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	acer,predator-w6|\
+	acer,predator-w6d|\
+	acer,vero-w6m)
+		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
+		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
+		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
@@ -149,6 +164,11 @@ mediatek_setup_macs()
 		;;
 	netgear,wax220)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
+		label_mac=$lan_mac
+		;;
+	nradio,c8-668gl)
+		lan_mac=$(mmc_get_mac_ascii bdinfo "fac_mac ")
+		wan_mac=$(macaddr_add "$lan_mac" 2)
 		label_mac=$lan_mac
 		;;
 	qihoo,360t7)

@@ -132,7 +132,8 @@ define Device/checkpoint_l-50
   DEVICE_VENDOR := Check Point
   DEVICE_MODEL := L-50
   DEVICE_PACKAGES := kmod-ath9k kmod-gpio-button-hotplug kmod-mvsdio \
-	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic-mbedtls
+	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic-mbedtls \
+	kmod-dsa-mv88e6xxx
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += checkpoint_l-50
@@ -193,7 +194,8 @@ define Device/endian_4i-edge-200
   DEVICE_MODEL := 4i Edge 200
   DEVICE_ALT0_VENDOR := Endian
   DEVICE_ALT0_MODEL := UTM Mini Firewall
-  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-mbedtls kmod-rtc-mv
+  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-mbedtls kmod-rtc-mv \
+	kmod-dsa-mv88e6xxx
   KERNEL_SIZE := 4096k
   IMAGES := sysupgrade.bin
 endef
@@ -273,7 +275,7 @@ define Device/linksys
   $(Device/kernel-size-migration-linksys)
   DEVICE_VENDOR := Linksys
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic-mbedtls kmod-gpio-button-hotplug \
-	kmod-rtc-mv
+	kmod-rtc-mv kmod-dsa-mv88e6xxx
   KERNEL_IN_UBI :=
   KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5

@@ -335,7 +335,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean ieee80211r pmk_r1_push ft_psk_generate_local ft_over_ds
 	config_add_int r0_key_lifetime reassociation_deadline
-	config_add_string mobility_domain r1_key_holder
+	config_add_string mobility_domain r1_key_holder rxkh_file
 	config_add_array r0kh r1kh
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
@@ -428,7 +428,34 @@ hostapd_set_psk() {
 	local ifname="$1"
 
 	rm -f /var/run/hostapd-${ifname}.psk
+	case "$auth_type" in
+		psk|psk-sae) ;;
+		*) return ;;
+	esac
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+hostapd_set_sae_file() {
+	local ifname="$1"
+	local vlan="$2"
+	local vlan_id=""
+
+	json_get_vars mac vid key
+	set_default mac "ff:ff:ff:ff:ff:ff"
+	[ -n "$mac" ] && mac="|mac=$mac"
+	[ -n "$vid" ] && vlan_id="|vlanid=$vid"
+	printf '%s%s%s\n' "${key}" "${mac}" "${vlan_id}" >> /var/run/hostapd-${ifname}.sae
+}
+
+hostapd_set_sae() {
+	local ifname="$1"
+
+	rm -f /var/run/hostapd-${ifname}.sae
+	case "$auth_type" in
+		sae|psk-sae) ;;
+		*) return ;;
+	esac
+	for_each_station hostapd_set_sae_file ${ifname}
 }
 
 append_iw_roaming_consortium() {
@@ -565,7 +592,7 @@ hostapd_set_bss_options() {
 
 	wireless_vif_parse_encryption
 
-	local bss_conf bss_md5sum ft_key
+	local bss_conf bss_md5sum ft_key rxkhs
 	local wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wpa_key_mgmt
 
 	json_get_vars \
@@ -686,7 +713,7 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk|sae|psk-sae)
-			json_get_vars key wpa_psk_file
+			json_get_vars key wpa_psk_file sae_password_file
 			if [ "$ppsk" -ne 0 ]; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -697,14 +724,19 @@ hostapd_set_bss_options() {
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
-			elif [ -n "$key" ] || [ -z "$wpa_psk_file" ]; then
+			elif [ -n "$key" ]; then
 				wireless_setup_vif_failed INVALID_WPA_PSK
 				return 1
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
-			[ -n "$wpa_psk_file" ] && {
+			[ -n "$wpa_psk_file" ] && [ "$auth_type" = "psk" -o "$auth_type" = "psk-sae" ] && {
 				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
+			}
+			[ -z "$sae_password_file" ] && set_default sae_password_file /var/run/hostapd-$ifname.sae
+			[ -n "$sae_password_file" ] && [ "$auth_type" = "sae" -o "$auth_type" = "psk-sae" ] && {
+				[ -e "$sae_password_file" ] || touch "$sae_password_file"
+				append bss_conf "sae_password_file=$sae_password_file" "$N"
 			}
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
@@ -949,7 +981,7 @@ hostapd_set_bss_options() {
 			append bss_conf "reassociation_deadline=$reassociation_deadline" "$N"
 
 			if [ "$ft_psk_generate_local" -eq "0" ]; then
-				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push
+				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push rxkh_file
 				json_get_values r0kh r0kh
 				json_get_values r1kh r1kh
 
@@ -971,12 +1003,20 @@ hostapd_set_bss_options() {
 				append bss_conf "r0_key_lifetime=$r0_key_lifetime" "$N"
 				append bss_conf "pmk_r1_push=$pmk_r1_push" "$N"
 
-				for kh in $r0kh; do
-					append bss_conf "r0kh=${kh//,/ }" "$N"
-				done
-				for kh in $r1kh; do
-					append bss_conf "r1kh=${kh//,/ }" "$N"
-				done
+				if [ -z "$rxkh_file" ]; then
+					set_default rxkh_file /var/run/hostapd-$ifname.rxkh
+					[ -e "$rxkh_file" ] && rm -f "$rxkh_file"
+					touch "$rxkh_file"
+
+					for kh in $r0kh; do
+						append rxkhs "r0kh=${kh//,/ }" "$N"
+					done
+					for kh in $r1kh; do
+						append rxkhs "r1kh=${kh//,/ }" "$N"
+					done
+					echo "$rxkhs" > "$rxkh_file"
+				fi
+				append bss_conf "rxkh_file=$rxkh_file" "$N"
 			fi
 		fi
 
