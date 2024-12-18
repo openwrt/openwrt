@@ -17,40 +17,30 @@
 #include <linux/mutex.h>
 #include <linux/version.h>
 
-#define GCA230718_MAX_LEDS                                      (4u)
+#define GCA230718_MAX_LEDS (4u)
 
-#define GCA230718_OPMODE_DISABLED                               (0x00u)
-#define GCA230718_OPMODE_NO_TOGGLE                              (0x01u)
-#define GCA230718_OPMODE_TOGGLE_RAMP_CONTROL_DISABLED           (0x02u)
-#define GCA230718_OPMODE_TOGGLE_RAMP_CONTROL_ENSABLED           (0x03u)
+#define GCA230718_OPMODE_DISABLED (0x00u)
+#define GCA230718_OPMODE_NO_TOGGLE (0x01u)
+#define GCA230718_OPMODE_TOGGLE_RAMP_CONTROL_DISABLED (0x02u)
+#define GCA230718_OPMODE_TOGGLE_RAMP_CONTROL_ENSABLED (0x03u)
 
-#define GCA230718_1ST_SEQUENCE_BYTE_1                           (0x02u)
-#define GCA230718_2ND_SEQUENCE_BYTE_1                           (0x01u)
-#define GCA230718_3RD_SEQUENCE_BYTE_1                           (0x03u)
+#define GCA230718_1ST_SEQUENCE_BYTE_1 (0x02u)
+#define GCA230718_2ND_SEQUENCE_BYTE_1 (0x01u)
+#define GCA230718_3RD_SEQUENCE_BYTE_1 (0x03u)
 
-struct gca230718_led
-{
+struct gca230718_led {
 	enum led_brightness brightness;
 	struct i2c_client *client;
 	struct led_classdev ledClassDev;
 };
 
-struct gca230718_private
-{
+struct gca230718_private {
 	struct mutex lock;
 	struct gca230718_led leds[GCA230718_MAX_LEDS];
 };
 
-static void gca230718_init_private_led_data(struct gca230718_private* data)
-{
-	u8 ledIndex;
-	for (ledIndex = 0; ledIndex < GCA230718_MAX_LEDS; ledIndex++)
-	{
-		data->leds[ledIndex].client = NULL;
-	}
-}
-
-static void gca230718_send_sequence(struct i2c_client *client, u8 byte0, struct gca230718_private* gca230718_privateData)
+static void gca230718_send_sequence(struct i2c_client *client, u8 byte0,
+				    struct gca230718_private *priv)
 {
 	int status = 0;
 	u8 ledIndex;
@@ -64,142 +54,119 @@ static void gca230718_send_sequence(struct i2c_client *client, u8 byte0, struct 
 	controlCommand[1] = byte0;
 	controlCommand[2] = GCA230718_OPMODE_NO_TOGGLE;
 	/* Byte 3-6 are set below to the brighness value of the individual LEDs */
-	controlCommand[7] = 0x01; /* Frequency, doesn't care as long as GCA230718_OPMODE_NO_TOGGLE is used above */
+	controlCommand[7] =
+		0x01; /* Frequency, doesn't care as long as GCA230718_OPMODE_NO_TOGGLE is used above */
 	/* Byte 8-11 are set below to the brighness value of the individual LEDs */
 	controlCommand[12] = 0x87;
 
-	for (ledIndex = 0; ledIndex < GCA230718_MAX_LEDS; ledIndex++)
-	{
-		controlCommand[3 + ledIndex] = gca230718_privateData->leds[ledIndex].brightness;
-		controlCommand[8 + ledIndex] = gca230718_privateData->leds[ledIndex].brightness;
+	for (ledIndex = 0; ledIndex < GCA230718_MAX_LEDS; ledIndex++) {
+		controlCommand[3 + ledIndex] = priv->leds[ledIndex].brightness;
+		controlCommand[8 + ledIndex] = priv->leds[ledIndex].brightness;
 	}
 
-	mutex_lock(&(gca230718_privateData->lock));
+	mutex_lock(&(priv->lock));
 
-	if ((status = i2c_smbus_write_i2c_block_data(client, resetCommandRegister, sizeof(resetCommand), resetCommand)) != 0)
-	{
-		pr_info("Error %i during call of i2c_smbus_write_i2c_block_data for reset command\n", status);
-	}
-	else if ((status = i2c_smbus_write_i2c_block_data(client, controlCommandRegister, sizeof(controlCommand), controlCommand)) != 0)
-	{
-		pr_info("Error %i during call of i2c_smbus_write_i2c_block_data for control command\n", status);
+	if ((status = i2c_smbus_write_i2c_block_data(
+		     client, resetCommandRegister, sizeof(resetCommand),
+		     resetCommand)) != 0) {
+		pr_info("Error %i during call of i2c_smbus_write_i2c_block_data for reset command\n",
+			status);
+	} else if ((status = i2c_smbus_write_i2c_block_data(
+			    client, controlCommandRegister,
+			    sizeof(controlCommand), controlCommand)) != 0) {
+		pr_info("Error %i during call of i2c_smbus_write_i2c_block_data for control command\n",
+			status);
 	}
 
-	mutex_unlock(&(gca230718_privateData->lock));
+	mutex_unlock(&(priv->lock));
 }
 
-static int gca230718_set_brightness(struct led_classdev *led_cdev, enum led_brightness value)
+static int gca230718_set_brightness(struct led_classdev *led_cdev,
+				    enum led_brightness value)
 {
-	struct gca230718_led* led;
-	struct i2c_client* client;
+	struct gca230718_led *led;
+	struct i2c_client *client;
 
 	led = container_of(led_cdev, struct gca230718_led, ledClassDev);
 	client = led->client;
 
-	if (client != NULL)
-	{
-		struct gca230718_private* gca230718_privateData;
+	if (client) {
+		struct gca230718_private *priv;
 
 		led->brightness = value;
-		gca230718_privateData = i2c_get_clientdata(client);
+		priv = i2c_get_clientdata(client);
 
-		gca230718_send_sequence(client, GCA230718_2ND_SEQUENCE_BYTE_1, gca230718_privateData);
+		gca230718_send_sequence(client, GCA230718_2ND_SEQUENCE_BYTE_1,
+					priv);
 	}
 
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0)
 static int gca230718_probe(struct i2c_client *client)
-#else
-static int gca230718_probe(struct i2c_client *client, const struct i2c_device_id *id)
-#endif
 {
-	int status = 0;
-	struct gca230718_private* gca230718_privateData;
+	struct gca230718_private *priv;
+	int err;
 
 	pr_info("Enter gca230718_probe for device address %u\n", client->addr);
-	gca230718_privateData = devm_kzalloc(&(client->dev), sizeof(struct gca230718_private), GFP_KERNEL);
-
-	if (gca230718_privateData == NULL)
-	{
+	priv = devm_kzalloc(&client->dev, sizeof(struct gca230718_private),
+			    GFP_KERNEL);
+	if (!priv) {
 		pr_info("Error during allocating memory for private data\n");
-		status = -ENOMEM;
+		return -ENOMEM;
 	}
-	else
-	{
-		struct device_node* ledNode;
-		mutex_init(&gca230718_privateData->lock);
-		gca230718_init_private_led_data(gca230718_privateData);
-		i2c_set_clientdata(client, gca230718_privateData);
 
-		for_each_child_of_node(client->dev.of_node, ledNode)
-		{
-			u32 regValue = 0;
-			if (of_property_read_u32(ledNode, "reg", &regValue) != 0)
-			{
-				pr_info("Missing entry \"reg\" in node %s\n", ledNode->name); 
-			}
-			else if (regValue >= GCA230718_MAX_LEDS)
-			{
-				pr_info("Invalid entry \"reg\" in node %s (%u)\n", ledNode->name, regValue);
-			}
-			else
-			{
-				struct led_classdev* ledClassDev = &(gca230718_privateData->leds[regValue].ledClassDev);
-				struct led_init_data init_data = {};
+	err = devm_mutex_init(&client->dev, &priv->lock);
+	if (err)
+		return err;
 
-				gca230718_privateData->leds[regValue].client = client;
-				init_data.fwnode = of_fwnode_handle(ledNode);
+	i2c_set_clientdata(client, priv);
 
-				pr_info("Creating LED for node %s: reg=%u\n", ledNode->name, regValue); 
+	struct device_node *ledNode;
+	for_each_child_of_node(client->dev.of_node, ledNode) {
+		u32 regValue = 0;
+		if (of_property_read_u32(ledNode, "reg", &regValue))
+			pr_info("Missing entry \"reg\" in node %s\n",
+				ledNode->name);
+		else if (regValue >= GCA230718_MAX_LEDS)
+			pr_info("Invalid entry \"reg\" in node %s (%u)\n",
+				ledNode->name, regValue);
+		else {
+			struct led_classdev *ledClassDev =
+				&(priv->leds[regValue].ledClassDev);
+			struct led_init_data init_data = {};
 
-				ledClassDev->name = of_get_property(ledNode, "label", NULL);
-				if (ledClassDev->name == NULL)
-				{
-					ledClassDev->name = ledNode->name;
-				}
+			priv->leds[regValue].client = client;
+			init_data.fwnode = of_fwnode_handle(ledNode);
 
-				ledClassDev->brightness = LED_OFF;
-				ledClassDev->max_brightness = LED_FULL;
-				ledClassDev->brightness_set_blocking = gca230718_set_brightness;
-	
-				if (devm_led_classdev_register_ext(&(client->dev), ledClassDev, &init_data) != 0)
-				{
-					pr_info("Error during call of devm_led_classdev_register_ext");
-				}
-			}
+			pr_info("Creating LED for node %s: reg=%u\n",
+				ledNode->name, regValue);
+
+			ledClassDev->name =
+				of_get_property(ledNode, "label", NULL);
+			if (!ledClassDev->name)
+				ledClassDev->name = ledNode->name;
+
+			ledClassDev->brightness = LED_OFF;
+			ledClassDev->max_brightness = LED_FULL;
+			ledClassDev->brightness_set_blocking =
+				gca230718_set_brightness;
+
+			if (devm_led_classdev_register_ext(
+				    &client->dev, ledClassDev, &init_data))
+				pr_info("Error during call of devm_led_classdev_register_ext");
 		}
 	}
 
-	if (status == 0)
-	{
-		/* 
-		Send full initialization sequence.
-		Afterwards only GCA230718_2ND_SEQUENCE_BYTE_1 must be send to upddate the brightness values.
-		*/
-		gca230718_send_sequence(client, GCA230718_1ST_SEQUENCE_BYTE_1, gca230718_privateData);
-		gca230718_send_sequence(client, GCA230718_2ND_SEQUENCE_BYTE_1, gca230718_privateData);
-		gca230718_send_sequence(client, GCA230718_3RD_SEQUENCE_BYTE_1, gca230718_privateData);
-	}
+	/*
+	Send full initialization sequence.
+	Afterwards only GCA230718_2ND_SEQUENCE_BYTE_1 must be send to upddate the brightness values.
+	*/
+	gca230718_send_sequence(client, GCA230718_1ST_SEQUENCE_BYTE_1, priv);
+	gca230718_send_sequence(client, GCA230718_2ND_SEQUENCE_BYTE_1, priv);
+	gca230718_send_sequence(client, GCA230718_3RD_SEQUENCE_BYTE_1, priv);
 
-	return status;
-}
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,18,0)
-static void gca230718_remove(struct i2c_client *client)
-#else
-static int gca230718_remove(struct i2c_client *client)
-#endif
-{
-	struct gca230718_private* gca230718_privateData;
-	gca230718_privateData = i2c_get_clientdata(client);
-	mutex_destroy(&gca230718_privateData->lock);
-	gca230718_init_private_led_data(gca230718_privateData);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
 	return 0;
-#endif
 }
 
 static const struct i2c_device_id gca230718_i2c_ids[] = {
@@ -216,7 +183,6 @@ MODULE_DEVICE_TABLE(of, gca230718_dt_ids);
 
 static struct i2c_driver gca230718_driver = {
 	.probe		= gca230718_probe,
-	.remove		= gca230718_remove,
 	.id_table	= gca230718_i2c_ids,
 	.driver = {
 		.name		= KBUILD_MODNAME,
