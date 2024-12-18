@@ -353,24 +353,27 @@
 			};
 
 			partition@510000 {
-				compatible = "u-boot,env";
 				label = "0:APPSBLENV";
 				reg = <0x510000 0x10000>;
 
-				ethaddr: ethaddr {
-					#nvmem-cell-cells = <0>;
-				};
+				nvmem-layout {
+					compatible = "u-boot,env";
 
-				eth1addr: eth1addr {
-					#nvmem-cell-cells = <0>;
-				};
+					ethaddr: ethaddr {
+						#nvmem-cell-cells = <0>;
+					};
 
-				eth2addr: eth2addr {
-					#nvmem-cell-cells = <0>;
-				};
+					eth1addr: eth1addr {
+						#nvmem-cell-cells = <0>;
+					};
 
-				eth5addr: eth5addr {
-					#nvmem-cell-cells = <0>;
+					eth2addr: eth2addr {
+						#nvmem-cell-cells = <0>;
+					};
+
+					eth5addr: eth5addr {
+						#nvmem-cell-cells = <0>;
+					};
 				};
 			};
 
