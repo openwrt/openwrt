@@ -76,6 +76,9 @@ ipq40xx_setup_interfaces()
 	devolo,magic-2-wifi-next)
 		ucidef_set_interface_lan "lan1 lan2 ghn"
 		;;
+	extreme-networks,ws-ap3915i)
+	    ucidef_set_label_macaddr "$(mtd_get_mac_ascii CFG1 ethaddr)"
+		;;
 	extreme-networks,ws-ap391x)
 		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2 sw-eth3 sw-eth5" "sw-eth4"
 		;;
