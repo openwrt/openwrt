@@ -20,7 +20,7 @@ PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 PKG_CPE_ID:=cpe:/a:libbpf_project:libbpf
 
-PKG_BUILD_FLAGS:=no-mips16 no-gc-sections no-lto
+PKG_BUILD_FLAGS:=no-mips16 no-gc-sections
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
@@ -40,6 +40,9 @@ endef
 define Package/libbpf/description
   libbpf is a library for loading eBPF programs and reading and manipulating eBPF objects from user-space.
 endef
+
+TARGET_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
 
 MAKE_FLAGS += \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
