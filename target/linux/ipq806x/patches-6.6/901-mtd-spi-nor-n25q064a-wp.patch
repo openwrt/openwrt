@@ -1,0 +1,29 @@
+From 1e019e728800d4033b4b3b1b5570f5da5ed309f2 Mon Sep 17 00:00:00 2001
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Thu, 15 Dec 2022 01:49:20 -0800
+Subject: [PATCH] mtd: spi-nor: micron-st: Add n25q064a WP support
+
+These flash chips are used on Google / TP-Link / ASUS OnHub devices, and
+OnHub devices are write-protected by default (same as any other
+ChromeOS/Chromebook system).
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+Submitted upstream at:
+  https://lore.kernel.org/linux-mtd/20240726185825.142733-1-computersforpeace@gmail.com/
+  https://patchwork.ozlabs.org/project/linux-mtd/patch/20240726185825.142733-1-computersforpeace@gmail.com/
+
+ drivers/mtd/spi-nor/micron-st.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/mtd/spi-nor/micron-st.c
++++ b/drivers/mtd/spi-nor/micron-st.c
+@@ -183,6 +183,8 @@ static const struct flash_info st_nor_pa
+ 	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_QUAD_READ) },
+ 	{ "n25q064a",    INFO(0x20bb17, 0, 64 * 1024,  128)
++		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB | SPI_NOR_4BIT_BP |
++		      SPI_NOR_BP3_SR_BIT6)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_QUAD_READ) },
+ 	{ "n25q128a11",  INFO(0x20bb18, 0, 64 * 1024,  256)
+ 		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB | SPI_NOR_4BIT_BP |
