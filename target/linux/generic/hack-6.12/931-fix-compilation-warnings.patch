@@ -1,0 +1,34 @@
+--- a/include/linux/irq.h
++++ b/include/linux/irq.h
+@@ -1267,6 +1267,9 @@ static inline u32 irq_reg_readl(struct i
+ 		return readl(gc->reg_base + reg_offset);
+ }
+ 
++int get_c0_perfcount_int(void);
++unsigned int get_c0_compare_int(void);
++
+ struct irq_matrix;
+ struct irq_matrix *irq_alloc_matrix(unsigned int matrix_bits,
+ 				    unsigned int alloc_start,
+--- a/arch/mips/include/asm/switch_to.h
++++ b/arch/mips/include/asm/switch_to.h
+@@ -111,7 +111,7 @@ do {									\
+ 	__mips_mt_fpaff_switch_to(prev);				\
+ 	lose_fpu_inatomic(1, prev);					\
+ 	if (tsk_used_math(next))					\
+-		__sanitize_fcr31(next);					\
++		{ __sanitize_fcr31(next); }				\
+ 	if (cpu_has_dsp) {						\
+ 		__save_dsp(prev);					\
+ 		__restore_dsp(next);					\
+--- a/include/linux/cpumask.h
++++ b/include/linux/cpumask.h
+@@ -836,7 +836,7 @@ void cpumask_shift_left(struct cpumask *
+ static __always_inline
+ void cpumask_copy(struct cpumask *dstp, const struct cpumask *srcp)
+ {
+-	bitmap_copy(cpumask_bits(dstp), cpumask_bits(srcp), large_cpumask_bits);
++	bitmap_copy(cpumask_bits(dstp), cpumask_bits(srcp), MIN(large_cpumask_bits, sizeof(cpumask_var_t) * BITS_PER_BYTE));
+ }
+ 
+ /**
