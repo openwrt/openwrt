@@ -428,7 +428,34 @@ hostapd_set_psk() {
 	local ifname="$1"
 
 	rm -f /var/run/hostapd-${ifname}.psk
+	case "$auth_type" in
+		psk|psk-sae) ;;
+		*) return ;;
+	esac
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+hostapd_set_sae_file() {
+	local ifname="$1"
+	local vlan="$2"
+	local vlan_id=""
+
+	json_get_vars mac vid key
+	set_default mac "ff:ff:ff:ff:ff:ff"
+	[ -n "$mac" ] && mac="|mac=$mac"
+	[ -n "$vid" ] && vlan_id="|vlanid=$vid"
+	printf '%s%s%s\n' "${key}" "${mac}" "${vlan_id}" >> /var/run/hostapd-${ifname}.sae
+}
+
+hostapd_set_sae() {
+	local ifname="$1"
+
+	rm -f /var/run/hostapd-${ifname}.sae
+	case "$auth_type" in
+		sae|psk-sae) ;;
+		*) return ;;
+	esac
+	for_each_station hostapd_set_sae_file ${ifname}
 }
 
 append_iw_roaming_consortium() {
@@ -686,7 +713,7 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk|sae|psk-sae)
-			json_get_vars key wpa_psk_file
+			json_get_vars key wpa_psk_file sae_password_file
 			if [ "$ppsk" -ne 0 ]; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -697,14 +724,19 @@ hostapd_set_bss_options() {
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
-			elif [ -n "$key" ] || [ -z "$wpa_psk_file" ]; then
+			elif [ -n "$key" ]; then
 				wireless_setup_vif_failed INVALID_WPA_PSK
 				return 1
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
-			[ -n "$wpa_psk_file" ] && {
+			[ -n "$wpa_psk_file" ] && [ "$auth_type" = "psk" -o "$auth_type" = "psk-sae" ] && {
 				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
+			}
+			[ -z "$sae_password_file" ] && set_default sae_password_file /var/run/hostapd-$ifname.sae
+			[ -n "$sae_password_file" ] && [ "$auth_type" = "sae" -o "$auth_type" = "psk-sae" ] && {
+				[ -e "$sae_password_file" ] || touch "$sae_password_file"
+				append bss_conf "sae_password_file=$sae_password_file" "$N"
 			}
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
