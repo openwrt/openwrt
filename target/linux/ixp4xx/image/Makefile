@@ -124,6 +124,21 @@ define Device/linksys_nslu2
 endef
 TARGET_DEVICES += linksys_nslu2
 
+define Device/netgear_wg302v1
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WG302 v1
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-phy-amd kmod-ath5k \
+		wpad-basic-mbedtls kmod-input-gpio-keys-polled
+	# Only 32 MB of RAM and small flash so not building by default
+	DEFAULT := n
+	DEVICE_DTS := intel-ixp42x-netgear-wg302v1
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += netgear_wg302v1
+
 define Device/usrobotics_usr8200
 	DEVICE_VENDOR := USRobotics
 	DEVICE_MODEL := USR8200
