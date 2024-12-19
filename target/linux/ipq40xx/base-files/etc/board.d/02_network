@@ -202,6 +202,9 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+	extreme-networks,ws-ap3915i)
+		label_mac="$(mtd_get_mac_ascii CFG1 ethaddr)"
+		;;
 	ezviz,cs-w3-wd1200g-eup)
 		label_mac=$(mtd_get_mac_binary "ART" 0x6)
 		;;
