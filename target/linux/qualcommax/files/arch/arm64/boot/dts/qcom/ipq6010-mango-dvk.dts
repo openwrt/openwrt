@@ -267,11 +267,12 @@
 	};
 };
 
-&sdhc_1 {
+&sdhc {
 	pinctrl-0 = <&sd_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 
+	bus-width = <4>;
 	vqmmc-supply = <&ipq6018_l2>;
 	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
 };
