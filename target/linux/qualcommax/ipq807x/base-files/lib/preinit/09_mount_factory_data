@@ -7,6 +7,7 @@ preinit_mount_factory_data() {
 	. /lib/functions/system.sh
 
 	case $(board_name) in
+	tplink,eap620hd-v1|\
 	tplink,eap660hd-v1)
 		mtd_path=$(find_mtd_chardev "factory_data")
 		ubiattach --dev-path="$mtd_path" --devn=1
