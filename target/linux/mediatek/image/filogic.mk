@@ -1537,6 +1537,23 @@ endif
 endef
 TARGET_DEVICES += xiaomi_redmi-router-ax6000-ubootmod
 
+define Device/xiaomi_redmi-router-ax6000-ubootlayout
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Redmi Router AX6000 (uboot layout)
+  DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000-ubootlayout
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.ubi
+  ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel
+endif
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += xiaomi_redmi-router-ax6000-ubootlayout
+
 define Device/yuncore_ax835
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := AX835
