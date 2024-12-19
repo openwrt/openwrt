@@ -36,7 +36,7 @@ $(eval $(call SetupHostCommand,gcc, \
 	$(CC) -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	gcc -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	gcc-8 -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
-	gcc --version | grep -E 'Apple.(LLVM|clang)' ))
+	clang -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)' ))
 
 $(eval $(call TestHostCommand,working-gcc, \
 	Please reinstall the GNU C Compiler (8 or later) - \
@@ -49,7 +49,7 @@ $(eval $(call SetupHostCommand,g++, \
 	$(CXX) -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	g++ -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	g++-8 -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
-	g++ --version | grep -E 'Apple.(LLVM|clang)' ))
+	clang++ -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)' ))
 
 $(eval $(call TestHostCommand,working-g++, \
 	Please reinstall the GNU C++ Compiler (8 or later) - \
