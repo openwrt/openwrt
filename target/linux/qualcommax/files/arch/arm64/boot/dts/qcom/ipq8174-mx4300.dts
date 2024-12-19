@@ -1,38 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
-/* Copyright (c) 2023, Mohammad Sayful Islam <Sayf.mohammad01@gmail.com> */
+
+/dts-v1/;
 
 #include "ipq8174-mx4x00.dtsi"
 
 / {
-	aliases {
-		ethernet3 = &dp4;
-		ethernet4 = &dp5;
+	model = "Linksys MX4300";
+	compatible = "linksys,mx4300", "qcom,ipq8074";
+
+	chosen {
+		/*
+		In the kernel command line, replace the first occurence of bootargs-find-X with bootargs-replace-X.
+		If bootargs-exact-match-X is set to "y", then replacement happens only if the kernel command line
+		is identical to bootargs-find-X.
+		*/
+		bootargs-find-1 = "ubi.mtd=22,2048";
+		bootargs-replace-1 = "ubi.mtd=22,4096";
+
+		bootargs-find-2 = "ubi.mtd=24,2048";
+		bootargs-replace-2 = "ubi.mtd=24,4096";
 	};
-};
-
-&tlmm {
-	iot_pins: iot-state {
-		recovery-pins {
-			pins = "gpio22";
-			function = "gpio";
-			input;
-		};
-
-		reset-pins {
-			pins = "gpio21";
-			function = "gpio";
-			bias-pull-up;
-		};
-	};
-};
-
-&blsp1_uart3 {
-	status = "okay";
-
-	pinctrl-0 = <&hsuart_pins &iot_pins>;
-	pinctrl-names = "default";
-
-	/* Silicon Labs EFR32MG21 IoT */
 };
 
 &qpic_nand {
@@ -54,8 +41,12 @@
 
 	nand@0 {
 		reg = <0>;
-		nand-ecc-strength = <4>;
-		nand-ecc-step-size = <512>;
+		/*
+		 * Some devices use Micron NAND with with 8 bit ECC 
+		 * other AMD/Spansion NAND with 4 bit ECC
+		 *nand-ecc-strength = <4>;
+		 *nand-ecc-step-size = <512>;
+		 */
 		nand-bus-width = <8>;
 
 		partitions {
@@ -172,61 +163,79 @@
 
 			partition@1000000 {
 				label = "u_env";
-				reg = <0x1000000 0x40000>;
+				reg = <0x1000000 0x100000>;
 			};
 
-			partition@1040000 {
+			partition@1100000 {
 				label = "s_env";
-				reg = <0x1040000 0x20000>;
+				reg = <0x1100000 0x100000>;
 			};
 
-			partition@1060000 {
+			partition@1200000 {
 				label = "devinfo";
-				reg = <0x1060000 0x20000>;
+				reg = <0x1200000 0x40000>;
 				read-only;
 			};
 
-			partition@1080000 {
+			partition@1240000 {
 				label = "kernel";
-				reg = <0x1080000 0x9600000>;
+				reg = <0x1240000 0xaf40000>;
 			};
 
-			partition@1680000 {
+			partition@1a40000 {
 				label = "rootfs";
-				reg = <0x1680000 0x9000000>;
+				reg = <0x1a40000 0xa740000>;
 			};
 
-			partition@a680000 {
+			partition@c180000 {
 				label = "alt_kernel";
-				reg = <0xa680000 0x9600000>;
+				reg = <0xc180000 0xaf40000>;
 			};
 
-			partition@ac80000 {
+			partition@c980000 {
 				label = "alt_rootfs";
-				reg = <0xac80000 0x9000000>;
+				reg = <0xc980000 0xa740000>;
 			};
 
-			partition@13c80000 {
+			partition@170c0000 {
 				label = "sysdiag";
-				reg = <0x13c80000 0x200000>;
+				reg = <0x170c0000 0x400000>;
 				read-only;
 			};
 
-			partition@13e80000 {
+			partition@174c0000 {
 				label = "0:ethphyfw";
-				reg = <0x13e80000 0x80000>;
+				reg = <0x174c0000 0x80000>;
 				read-only;
 			};
 
-			partition@13f00000 {
+			partition@17540000 {
 				label = "syscfg";
-				reg = <0x13f00000 0xb800000>;
+				reg = <0x17540000 0x79c0000>;
 				read-only;
 			};
 
-			partition@1f700000 {
+			partition@1ef00000 {
+				label = "secured_store";
+				reg = <0x1ef00000 0x400000>;
+				read-only;
+			};
+
+			partition@1f300000 {
 				label = "0:wififw";
-				reg = <0x1f700000 0x900000>;
+				reg = <0x1f300000 0x1900000>;
+				read-only;
+			};
+
+			partition@20c00000 {
+				label = "app2_data";
+				reg = <0x20c00000 0x16180000>;
+				read-only;
+			};
+
+			partition@36d80000 {
+				label = "app2";
+				reg = <0x36d80000 0x9280000>;
 				read-only;
 			};
 		};
@@ -242,7 +251,7 @@
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
-	label = "lan1";
+	label = "lan3";
 };
 
 &dp4 {
@@ -254,5 +263,11 @@
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
-	label = "lan3";
+	label = "lan1";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Linksys-MX4200v1";
 };
