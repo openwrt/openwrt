@@ -759,6 +759,20 @@ define Device/buffalo_wzr-hp-g450h
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g450h
 
+define Device/buffalo_wzr-450hp2
+  $(Device/buffalo_common)
+  SOC := qca9558
+  DEVICE_MODEL := WZR-450HP2/WZR-450HP2D
+  DEVICE_PACKAGES := kmod-ag71xx kmod-dsa-qca8k kmod-phy-qca83xx \
+	-kmod-ag71xx-legacy -kmod-switch-ip17xx -kmod-switch-ar8xxx -kmod-swconfig -swconfig
+  BUFFALO_PRODUCT := WZR-450HP2
+  IMAGE_SIZE := 15936k
+  SUPPORTED_DEVICES += wzr-450hp2
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+TARGET_DEVICES += buffalo_wzr-450hp2
+
 define Device/comfast_cf-e110n-v2
   SOC := qca9533
   DEVICE_VENDOR := COMFAST
