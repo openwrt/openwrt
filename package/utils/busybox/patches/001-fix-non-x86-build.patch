@@ -1,7 +1,5 @@
-Index: busybox-1.37.0/libbb/hash_md5_sha.c
-===================================================================
---- busybox-1.37.0.orig/libbb/hash_md5_sha.c
-+++ busybox-1.37.0/libbb/hash_md5_sha.c
+--- a/libbb/hash_md5_sha.c
++++ b/libbb/hash_md5_sha.c
 @@ -1313,7 +1313,9 @@ unsigned FAST_FUNC sha1_end(sha1_ctx_t *
  	hash_size = 8;
  	if (ctx->process_block == sha1_process_block64
