@@ -1501,7 +1501,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		 */
 		priv->version = RTL8390_VERSION_A;
 		priv->ds->num_lag_ids = 16;
-		sw_w32(1, RTL930X_ST_CTRL);
+		sw_w32(0, RTL930X_ST_CTRL);
 		priv->l2_bucket_size = 8;
 		priv->n_pie_blocks = 16;
 		priv->port_ignore = 0x3f;
@@ -1521,7 +1521,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		 */
 		priv->version = RTL8390_VERSION_A;
 		priv->ds->num_lag_ids = 16;
-		sw_w32(1, RTL931x_ST_CTRL);
+		sw_w32(0, RTL931x_ST_CTRL);
 		priv->l2_bucket_size = 8;
 		priv->n_pie_blocks = 16;
 		priv->port_ignore = 0x3f;
