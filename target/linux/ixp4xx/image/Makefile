@@ -136,6 +136,7 @@ define Device/netgear_wg302v1
 	IMAGES := kernel.bin rootfs.bin
 	IMAGE/kernel.bin := append-kernel
 	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | append-metadata
 endef
 TARGET_DEVICES += netgear_wg302v1
 
