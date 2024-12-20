@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
 PKG_VERSION:=3.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
@@ -17,8 +17,6 @@ PKG_LICENSE:=libselinux-1.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_CPE_ID:=cpe:/a:selinuxproject:libselinux
-
-PKG_BUILD_FLAGS:=no-lto
 
 HOST_BUILD_DEPENDS:=libsepol/host musl-fts/host pcre2/host
 
@@ -118,6 +116,9 @@ ifeq ($(CONFIG_USE_MUSL),y)
 MAKE_FLAGS += FTS_LDLIBS=-lfts
 TARGET_CFLAGS += -D_LARGEFILE64_SOURCE
 endif
+
+TARGET_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
 
 MAKE_FLAGS += \
 	SHLIBDIR=/usr/lib \
