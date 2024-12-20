@@ -10,6 +10,7 @@ hostapd.data.pending_config = {};
 hostapd.data.file_fields = {
 	vlan_file: true,
 	wpa_psk_file: true,
+	sae_password_file: true,
 	accept_mac_file: true,
 	deny_mac_file: true,
 	eap_user_file: true,
@@ -364,6 +365,7 @@ function bss_remove_file_fields(config)
 	for (let key in config.hash)
 		new_cfg.hash[key] = config.hash[key];
 	delete new_cfg.hash.wpa_psk_file;
+	delete new_cfg.hash.sae_password_file;
 	delete new_cfg.hash.vlan_file;
 
 	return new_cfg;
