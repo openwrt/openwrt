@@ -26,6 +26,7 @@
 		led-failsafe = &led_user;
 		led-running = &led_user;
 		led-upgrade = &led_user;
+		label-mac-device = &p1;
 	};
 
 	usb3_vbus: regulator-usb3-vbus0 {
@@ -322,7 +323,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@9 {
+			p1: port@9 {
 				reg = <9>;
 				label = "p1";
 				phy-mode = "sgmii";
