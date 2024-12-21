@@ -802,6 +802,7 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
+  DEPENDS:=+LINUX_6_12:kmod-lib-lzo
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
@@ -1042,7 +1043,10 @@ define KernelPackage/tpm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM Hardware Support
   DEPENDS:= +kmod-random-core +kmod-asn1-decoder \
-	  +kmod-asn1-encoder +kmod-oid-registry
+	  +kmod-asn1-encoder +kmod-oid-registry \
+	  +LINUX_6_12:kmod-crypto-ecdh \
+	  +LINUX_6_12:kmod-crypto-kpp \
+	  +LINUX_6_12:kmod-crypto-lib-aescfb
   KCONFIG:= CONFIG_TCG_TPM
   FILES:= $(LINUX_DIR)/drivers/char/tpm/tpm.ko
   AUTOLOAD:=$(call AutoLoad,10,tpm,1)
