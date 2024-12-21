@@ -21,12 +21,13 @@ cambiumnetworks,xe3-4)
 	;;
 glinet,gl-ax1800|\
 glinet,gl-axt1800|\
+linksys,mr7350|\
+linksys,mr7500)
+	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
+	;;
 netgear,wax214|\
 tplink,eap610-outdoor)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x20000"
-	;;
-linksys,mr7350)
-	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
 	;;
 yuncore,fap650)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x10000"
