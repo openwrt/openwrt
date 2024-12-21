@@ -1,0 +1,544 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Copyright 2024 Weikai Kong (priv at pppig236.com)
+
+/dts-v1/;
+
+#include "ipq6018-512m.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Linksys MR7500";
+	compatible = "linksys,mr7500", "qcom,ipq6018";
+	
+	aliases {
+		serial0 = &blsp1_uart3;
+		serial1 = &blsp1_uart2;
+
+		led-boot = &led_system_blue;
+		led-running = &led_system_blue;
+		led-failsafe = &led_system_red;
+		led-upgrade = &led_system_green;
+
+		label-mac-device = &dp5_syn;
+	};
+	
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_0";
+	};
+	
+	extcon_usb {
+		pinctrl-0 = <&extcon_usb_pins>;
+		pinctrl-names = "default";
+		id-gpio = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+	
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+		
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+		};
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+		};
+	};
+	
+	leds {
+		compatible = "pwm-leds";
+		
+		usb {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+			pwms = <&pwm 1 650000>;
+			max-brightness = <255>;
+			trigger-sources = <&usb3_port1>, <&usb3_port2>;
+			linux,default-trigger = "usbport";
+		};
+		
+		led_system_red: red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+			pwms = <&pwm 2 1250000>;
+			max-brightness = <255>;
+			panic-indicator;
+		};
+		
+		led_system_green: green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			pwms = <&pwm 3 1250000>;
+			max-brightness = <255>;
+		};
+		
+		led_system_blue: blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			pwms = <&pwm 0 1250000>;
+			max-brightness = <255>;
+		};
+	};
+	
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 25 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&tlmm {
+	pwm_pins: pwm_pinmux {
+		/*LED_B*/
+		mux_0 {
+			pins = "gpio29";
+			function = "pwm03";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		
+		/*LED_USB*/
+		mux_1 {
+			pins = "gpio30";
+			function = "pwm13";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+		
+		/*LED_R*/
+		mux_2 {
+			pins = "gpio31";
+			function = "pwm23";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+		
+		/*LED_G*/
+		mux_3 {
+			pins = "gpio32";
+			function = "pwm33";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+	
+	extcon_usb_pins: extcon_usb_pins {
+		pins = "gpio26";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-pull-down;
+	};
+	
+	button_pins: button_pins {
+		wps_button {
+			pins = "gpio37";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		reset_button {
+			pins = "gpio56";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	mdio_pins: mdio_pinmux {
+		mux_0 {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		mux_1 {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	hsuart_pins: hsuart_pins {
+		pins = "gpio71", "gpio72", "gpio69", "gpio70";
+		function = "blsp1_uart";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	btcoex_pins: btcoex_pins {
+		mux_0 {
+			pins = "gpio51";
+			function = "pta1_1";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		mux_1 {
+			pins = "gpio53";
+			function = "pta1_0";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		mux_2 {
+			pins = "gpio52";
+			function = "pta1_2";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+	};
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+	#pwm-cells = <2>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	status = "okay";
+	
+	ethernet-phy-package {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "qsgmii";
+		
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_ORANGE>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+				
+				led@1 {
+					reg = <1>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+			};
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_ORANGE>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+				
+				led@1 {
+					reg = <1>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+			};
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_ORANGE>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+				
+				led@1 {
+					reg = <1>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+			};
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_ORANGE>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+				
+				led@1 {
+					reg = <1>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+					default-state = "keep";
+				};
+			};
+		};
+	};
+
+	aqr114c: ethernet-phy@8 {
+		reg = <8>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_HIGH>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		firmware-name = "marvell/AQR114C.cld";
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_ORANGE>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+			
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+		};
+	};
+};
+
+&dp1 {
+	status = "okay";
+	label = "lan1";
+	phy-handle = <&qca8075_0>;
+	phy-mode = "qsgmii";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp2 {
+	status = "okay";
+	label = "lan2";
+	phy-handle = <&qca8075_1>;
+	phy-mode = "qsgmii";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp3 {
+	status = "okay";
+	label = "lan3";
+	phy-handle = <&qca8075_2>;
+	phy-mode = "qsgmii";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp4 {
+	status = "okay";
+	label = "lan4";
+	phy-handle = <&qca8075_3>;
+	phy-mode = "qsgmii";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp5_syn {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&aqr114c>;
+	phy-mode = "usxgmii";
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&edma {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+	switch_lan_bmp = <( ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 )>;
+	switch_wan_bmp = <ESS_PORT5>;
+	switch_mac_mode = <MAC_MODE_QSGMII>;
+	switch_mac_mode1 = <MAC_MODE_USXGMII>;
+	
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <0>;
+		};
+		port@2 {
+			port_id = <2>;
+			phy_address = <1>;
+		};
+		port@3 {
+			port_id = <3>;
+			phy_address = <2>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+		port@5 {
+			port_id = <5>;
+			phy_address = <8>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			ethernet-phy-ieee802.3-c45;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&hsuart_pins &btcoex_pins>;
+	pinctrl-names = "default";
+	dmas = <&blsp_dma 2>, <&blsp_dma 3>;
+	dma-names = "tx", "rx";
+	status = "okay";
+	bluetooth { // doesn't work
+		compatible = "csr,8811";
+		enable-gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition-0-devinfo {
+				label = "devinfo";
+				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&dwc_0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	
+	usb3_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+	
+	usb3_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+	vdd-supply = <&reg_usb_vbus>;
+};
+
+&usb3 {
+	status = "okay";
+	vbus-supply = <&reg_usb_vbus>;
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+		
+		wifi@1,0 {
+			status = "okay";
+			/* ath11k has no DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+			qcom,ath11k-calibration-variant = "Linksys-MR7500";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Linksys-MR7500";
+	qcom,ath11k-fw-memory-mode = <1>;
+};
