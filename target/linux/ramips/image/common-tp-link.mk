@@ -53,6 +53,18 @@ define Device/tplink-v1-okli
 	append-metadata
 endef
 
+define Device/tplink-v2-lzma-custom
+  DEVICE_VENDOR := TP-Link
+  TPLINK_FLASHLAYOUT :=
+  TPLINK_HWID :=
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x0
+  TPLINK_HVERSION := 3
+  KERNEL := kernel-bin | append-dtb | lzma -d22
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | check-size | append-metadata
+endef
+
 define Device/tplink-v2
   DEVICE_VENDOR := TP-Link
   TPLINK_FLASHLAYOUT :=
