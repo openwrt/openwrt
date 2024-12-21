@@ -19,7 +19,8 @@ case "$board" in
 cambiumnetworks,xe3-4)
 	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
 	;;
-linksys,mr7350)
+linksys,mr7350|\
+linksys,mr7500)
 	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
 	;;
 netgear,wax214|\
