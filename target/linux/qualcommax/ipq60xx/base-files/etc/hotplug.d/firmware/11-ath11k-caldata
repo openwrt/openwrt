@@ -23,12 +23,14 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
 		ath11k_set_macflag
 		;;
-	linksys,mr7350)
+	linksys,mr7350|\
+	linksys,mr7500)
 		caldata_extract "0:art" 0x1000 0x10000
 		addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath11k_patch_mac $(macaddr_add $addr 2) 0
 		ath11k_patch_mac $(macaddr_add $addr 1) 1
 		ath11k_set_macflag
+		ath11k_remove_regdomain
 		;;
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
@@ -56,6 +58,13 @@ case "$FIRMWARE" in
 	case "$board" in
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x26800 0x20000
+		;;
+	linksys,mr7500)
+		caldata_extract "0:art" 0x26800 0x20000
+		addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath11k_patch_mac $(macaddr_add $addr 3) 0
+		ath11k_set_macflag
+		ath11k_remove_regdomain
 		;;
 	esac
 	;;
