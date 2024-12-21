@@ -49,7 +49,7 @@
 					#size-cells = <1>;
 
 					cal_urlader_985: cal@985 {
-						reg = <0x985 0x440>;
+						reg = <0x985 0x3d8>;
 					};
 
 					macaddr_urlader_a91: macaddr@a91 {
@@ -94,7 +94,7 @@
 };
 
 &wifi {
-	/delete-property/ qca,no-eeprom;
+	compatible = "pci168c,002e";
 	nvmem-cells = <&cal_urlader_985>;
 	nvmem-cell-names = "calibration";
 };
