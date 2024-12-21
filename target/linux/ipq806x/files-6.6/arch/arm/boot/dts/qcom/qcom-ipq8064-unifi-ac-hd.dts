@@ -190,7 +190,9 @@
 						};
 
 						macaddr_eeprom_6: macaddr@6 {
+							compatible = "mac-base";
 							reg = <0x6 0x6>;
+							#nvmem-cell-cells = <1>;
 						};
 					};
 				};
@@ -262,7 +264,7 @@
 	phy-mode = "sgmii";
 	qcom,id = <1>;
 
-	nvmem-cells = <&macaddr_eeprom_6>;
+	nvmem-cells = <&macaddr_eeprom_6 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -280,10 +282,24 @@
 
 &pcie0 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_eeprom_6 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &pcie1 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_eeprom_6 2>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &tcsr {
