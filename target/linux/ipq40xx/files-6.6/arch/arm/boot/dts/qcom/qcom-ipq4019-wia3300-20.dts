@@ -68,6 +68,11 @@
 		};
 	};
 
+	output-usb-power {
+		compatible = "regulator-output";
+		vout-supply = <&reg_usb>;
+	};
+
 	reg_usb: regulator-usb {
 		compatible = "regulator-fixed";
 
@@ -414,8 +419,6 @@
 
 &usb2_hs_phy {
 	status = "okay";
-
-	phy-supply = <&reg_usb>;
 };
 
 &watchdog {
