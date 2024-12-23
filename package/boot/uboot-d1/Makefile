@@ -30,7 +30,7 @@ define U-Boot/dongshan_nezha_stu
   OPENSBI:=generic
   DEPENDS:=+opensbi_generic
   UBOOT_DTS:=sun20i-d1-dongshan-nezha-stu.dtb
-  BUILD_DEVICES:=dongshan_nezha_stu
+  BUILD_DEVICES:=100ask_dongshan-nezha-stu
 endef
 
 define U-Boot/lichee_rv_dock
@@ -38,7 +38,7 @@ define U-Boot/lichee_rv_dock
   OPENSBI:=generic
   DEPENDS:=+opensbi_generic
   UBOOT_DTS:=sun20i-d1-lichee-rv-dock.dtb
-  BUILD_DEVICES:=lichee_rv_dock
+  BUILD_DEVICES:=sipeed_lichee-rv-dock
 endef
 
 define U-Boot/mangopi_mq_pro
@@ -46,7 +46,7 @@ define U-Boot/mangopi_mq_pro
   OPENSBI:=generic
   DEPENDS:=+opensbi_generic
   UBOOT_DTS:=sun20i-d1-mangopi-mq-pro.dtb
-  BUILD_DEVICES:=mangopi_mq_pro
+  BUILD_DEVICES:=widora_mangopi-mq-pro
 endef
 
 define U-Boot/nezha
@@ -54,7 +54,7 @@ define U-Boot/nezha
   OPENSBI:=generic
   DEPENDS:=+opensbi_generic
   UBOOT_DTS:=sun20i-d1-nezha.dtb
-  BUILD_DEVICES:=nezha
+  BUILD_DEVICES:=allwinner_d1-nezha
 endef
 
 UBOOT_TARGETS := \
@@ -74,7 +74,7 @@ endef
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(DTS_DIR)/$(UBOOT_DTS) $(STAGING_DIR_IMAGE)/$(UBOOT_DTS)
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-$(UBOOT_IMAGE)
 	mkimage -C none -A riscv -T script -d uEnv-$(UENV).txt \
 		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
 endef
