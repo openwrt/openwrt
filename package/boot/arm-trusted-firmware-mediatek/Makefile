@@ -569,6 +569,7 @@ TFA_TARGETS:= \
 	mt7988-spim-nand-ubi-comb
 
 TFA_MAKE_FLAGS += \
+	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments") \
 	BOOT_DEVICE=$(BOOT_DEVICE) \
 	USE_MKIMAGE=1 MKIMAGE=$(STAGING_DIR_HOST)/bin/mkimage \
 	$(if $(findstring ddr4,$(DDR_TYPE)),DRAM_USE_DDR4=1) \

@@ -82,6 +82,9 @@
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
 	phy-handle = <&phy17>;
 
+	nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+	nvmem-cell-names = "mac-address";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -94,6 +97,9 @@
 	pll-data = <0x03000101 0x00000101 0x00001616>;
 	phy-handle = <&phy1>;
 
+	nvmem-cells = <&macaddr_uboot_ethaddr 3>;
+	nvmem-cell-names = "mac-address";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -103,8 +109,8 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>;
-	nvmem-cell-names = "calibration";
+	nvmem-cells = <&cal_art_1000>, <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
 
 &usb_phy0 {
