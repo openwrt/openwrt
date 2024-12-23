@@ -94,15 +94,12 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb {
-			gpio-export,name = "usb";
-			gpio-export,output = <0>;
-			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-		};
+	reg_usb_power: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_power";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -129,4 +126,6 @@
 
 &otg {
 	status = "okay";
+
+	vbus-supply = <&reg_usb_power>;
 };
