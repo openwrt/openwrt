@@ -1,0 +1,58 @@
+--- a/drivers/mtd/nand/qpic_common.c
++++ b/drivers/mtd/nand/qpic_common.c
+@@ -82,7 +82,15 @@ void qcom_clear_bam_transaction(struct q
+ 	if (!nandc->props->supports_bam)
+ 		return;
+ 
+-	memset(&bam_txn->bam_ce_pos, 0, sizeof(u32) * 8);
++	//memset(&bam_txn->bam_ce_pos, 0, sizeof(u32) * 8);
++	bam_txn->bam_ce_pos = 0x0;
++	bam_txn->bam_ce_start = 0x0;
++	bam_txn->cmd_sgl_pos = 0x0;
++	bam_txn->cmd_sgl_start = 0x0;
++	bam_txn->tx_sgl_pos = 0x0;
++	bam_txn->tx_sgl_start = 0x0;
++	bam_txn->rx_sgl_pos = 0x0;
++	bam_txn->rx_sgl_start = 0x0;
+ 	bam_txn->last_data_desc = NULL;
+ 
+ 	sg_init_table(bam_txn->cmd_sgl, nandc->max_cwperpage *
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -1586,7 +1586,7 @@ err_dis_core_clk:
+ 	return ret;
+ }
+ 
+-static void qcom_spi_remove(struct platform_device *pdev)
++static int qcom_spi_remove(struct platform_device *pdev)
+ {
+ 	struct spi_controller *ctlr = platform_get_drvdata(pdev);
+ 	struct qcom_nand_controller *snandc = spi_controller_get_devdata(ctlr);
+@@ -1602,6 +1602,7 @@ static void qcom_spi_remove(struct platf
+ 
+ 	dma_unmap_resource(&pdev->dev, snandc->base_dma, resource_size(res),
+ 			   DMA_BIDIRECTIONAL, 0);
++	return 0;
+ }
+ 
+ static const struct qcom_nandc_props ipq9574_snandc_props = {
+--- a/drivers/mtd/mtd_blkdevs.c
++++ b/drivers/mtd/mtd_blkdevs.c
+@@ -481,7 +481,7 @@ static void blktrans_notify_add(struct m
+ {
+ 	struct mtd_blktrans_ops *tr;
+ 
+-	if (mtd->type == MTD_ABSENT || mtd->type == MTD_UBIVOLUME)
++	if (mtd->type == MTD_ABSENT)
+ 		return;
+ 
+ 	list_for_each_entry(tr, &blktrans_majors, list)
+@@ -521,7 +521,7 @@ int register_mtd_blktrans(struct mtd_blk
+ 	mutex_lock(&mtd_table_mutex);
+ 	list_add(&tr->list, &blktrans_majors);
+ 	mtd_for_each_device(mtd)
+-		if (mtd->type != MTD_ABSENT && mtd->type != MTD_UBIVOLUME)
++		if (mtd->type != MTD_ABSENT)
+ 			tr->add_mtd(tr, mtd);
+ 	mutex_unlock(&mtd_table_mutex);
+ 	return 0;
