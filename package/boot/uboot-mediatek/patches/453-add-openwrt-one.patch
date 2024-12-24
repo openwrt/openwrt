@@ -520,7 +520,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/openwrt-one-spi-nand_env
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +ethaddr_factory=mtd read factory 0x46000000 0x0 0x20000 && env readmem -b ethaddr 0x4600002a 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.11.11
 +serverip=192.168.11.23
@@ -562,6 +562,7 @@
 +check_buttons=if button front ; then run boot_recovery ; run boot_tftp ; run led_loop_error ; else if button back ; then ; run usb_recover ; run led_loop_error ; fi ; fi
 +led_boot=led green on ; led white on ; led red on
 +led_done=led green on ; led white off ; led red off
++led_loop_done=led white off ; led green on ; echo done ; while true ; do  sleep 1 ; done
 +led_loop_error=led white off ; led green off ; while true ; do led red on ; sleep 1 ; led red off ; sleep 1 ; done
 +led_start=led white on ; led green off ; led red off
 +preboot=run led_boot
