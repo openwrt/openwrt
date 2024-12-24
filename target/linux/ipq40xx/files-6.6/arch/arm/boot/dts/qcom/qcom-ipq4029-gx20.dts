@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Device Tree Source for Meraki MR33 (Stinkbug)
+
+#include "qcom-ipq4029-wired-qca-common.dtsi"
+
+/ {
+	model = "Meraki Go GX20 Router";
+	compatible = "meraki,gx20";
+};
+
+/* GX20 does not have WiFi radios */
+&wifi0 {
+	status = "disabled";
+};
+
+&wifi1 {
+	status = "disabled";
+};
