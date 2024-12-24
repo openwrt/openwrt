@@ -44,6 +44,14 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;
+	linksys,mx4300)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 2
+		ath11k_remove_regdomain
+		;;
 	netgear,rax120v2)
 		caldata_extract "0:art" 0x1000 0x20000
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0xc) 0
