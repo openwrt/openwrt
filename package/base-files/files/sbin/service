@@ -1,0 +1,52 @@
+#!/bin/sh
+
+rc_d() {
+	local $(grep -oE '^(START|STOP)=[0-9][0-9]' /etc/init.d/"$1")
+	[ -n "$START$STOP" ] && {
+		[ -z "$START" ] || [ -L "/etc/rc.d/S$START$1" ]
+	} && {
+		[ -z "$STOP" ] || [ -L "/etc/rc.d/K$STOP$1" ]
+	} 
+}
+
+proc_d() {
+	[ "$(ubus call service list "{'verbose':true,'name':'$1'}" \
+		| jsonfilter -e '@[*].instances[*].running' | uniq )" = "true" ]
+}
+
+sys_v() { 
+	[ -n "${sysv+x}" ] || sysv="$(grep -l '^\s*running\s*()' /etc/init.d/*)"
+ 	[ "${sysv/$1}" != "$sysv" ] && /etc/init.d/"$1" running
+}
+
+main() {
+	local boot status service="$1"
+	shift
+
+	if [ -f "/etc/init.d/$service" ]; then
+		/etc/init.d/"$service" "$@"
+		exit $?
+	fi
+
+	if [ -n "$service" ]; then
+		echo "Service \"$service\" not found:"
+		exit 1
+	fi
+
+	echo "Usage: ${0##*/} <service> [command]"
+	ls /etc/init.d | while read service; do
+		
+		if rc_d "$service"; then
+			boot="enabled"; else boot="disabled"
+		fi
+
+		if proc_d "$service" || sys_v "$service"; then
+			status="running"; else status="stopped"
+		fi
+
+		printf "%-30s\\t%10s\\t%10s\\n" \
+			"/etc/init.d/$service" "$boot" "$status"
+	done
+}
+
+main "$@"
