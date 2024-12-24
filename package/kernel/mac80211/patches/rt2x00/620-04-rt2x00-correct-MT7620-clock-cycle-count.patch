@@ -1,0 +1,24 @@
+From e78074e8821ebc8f036ff2f81305e951a6c5a140 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 22 Dec 2024 17:06:59 +0800
+Subject: [PATCH 4/6] rt2x00: correct MT7620 clock cycle count
+
+MT7620 uses a default fixed value 33 in mtk proprietary driver.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -6305,7 +6305,8 @@ static int rt2800_init_registers(struct
+ 		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
+ 		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, 125);
+ 		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
+-	} else if (rt2x00_is_soc(rt2x00dev)) {
++	} else if (rt2x00_is_soc(rt2x00dev) &&
++		   !rt2x00_rt(rt2x00dev, RT6352)) {
+ 		struct clk *clk = clk_get_sys("bus", NULL);
+ 		int rate;
+ 
