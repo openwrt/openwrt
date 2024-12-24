@@ -1,0 +1,134 @@
+From ae12f004ae3be28ef04fc145f768c12a3d1adf11 Mon Sep 17 00:00:00 2001
+From: Kyle Hendry <kylehendrydev@gmail.com>
+Date: Sat, 7 Dec 2024 14:33:35 -0800
+Subject: [PATCH] pinctrl: bcm63268: add gpio function
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There is no guarantee that the bootloader will leave the pin configuration
+in a known default state, so pinctrl needs to be explicitly set in some
+cases. This patch adds a gpio function for drivers that need it, i.e.
+gpio-leds.
+
+Signed-off-by: Kyle Hendry <kylehendrydev@gmail.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/pinctrl/bcm/pinctrl-bcm63268.c | 71 +++++++++++++++++++++++++-
+ 1 file changed, 70 insertions(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/bcm/pinctrl-bcm63268.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm63268.c
+@@ -34,6 +34,7 @@
+ #define  BCM63268_BASEMODE_VDSL_PHY_3	BIT(9) /* GPIOs 26/27 */
+ 
+ enum bcm63268_pinctrl_reg {
++	BCM63268_NONE,
+ 	BCM63268_LEDCTRL,
+ 	BCM63268_MODE,
+ 	BCM63268_CTRL,
+@@ -242,6 +243,61 @@ static struct pingroup bcm63268_groups[]
+ 	BCM_PIN_GROUP(vdsl_phy3_grp),
+ };
+ 
++static const char * const gpio_groups[] = {
++	"gpio0",
++	"gpio1",
++	"gpio2",
++	"gpio3",
++	"gpio4",
++	"gpio5",
++	"gpio6",
++	"gpio7",
++	"gpio8",
++	"gpio9",
++	"gpio10",
++	"gpio11",
++	"gpio12",
++	"gpio13",
++	"gpio14",
++	"gpio15",
++	"gpio16",
++	"gpio17",
++	"gpio18",
++	"gpio19",
++	"gpio20",
++	"gpio21",
++	"gpio22",
++	"gpio23",
++	"gpio24",
++	"gpio25",
++	"gpio26",
++	"gpio27",
++	"gpio28",
++	"gpio29",
++	"gpio30",
++	"gpio31",
++	"gpio32",
++	"gpio33",
++	"gpio34",
++	"gpio35",
++	"gpio36",
++	"gpio37",
++	"gpio38",
++	"gpio39",
++	"gpio40",
++	"gpio41",
++	"gpio42",
++	"gpio43",
++	"gpio44",
++	"gpio45",
++	"gpio46",
++	"gpio47",
++	"gpio48",
++	"gpio49",
++	"gpio50",
++	"gpio51",
++};
++
+ static const char * const led_groups[] = {
+ 	"gpio0",
+ 	"gpio1",
+@@ -394,6 +450,14 @@ static const char * const vdsl_phy_overr
+ 	"vdsl_phy_override_3_grp",
+ };
+ 
++#define BCM63268_GPIO_FUN(n)				\
++	{						\
++		.name = #n,				\
++		.groups = n##_groups,			\
++		.num_groups = ARRAY_SIZE(n##_groups),	\
++		.reg = BCM63268_NONE,			\
++	}
++
+ #define BCM63268_LED_FUN(n)				\
+ 	{						\
+ 		.name = #n,				\
+@@ -428,6 +492,7 @@ static const char * const vdsl_phy_overr
+ 	}
+ 
+ static const struct bcm63268_function bcm63268_funcs[] = {
++	BCM63268_GPIO_FUN(gpio),
+ 	BCM63268_LED_FUN(led),
+ 	BCM63268_MODE_FUN(serial_led_clk),
+ 	BCM63268_MODE_FUN(serial_led_data),
+@@ -542,6 +607,9 @@ static int bcm63268_pinctrl_set_mux(stru
+ 		bcm63268_set_gpio(pc, pg->pins[i]);
+ 
+ 	switch (f->reg) {
++	case BCM63268_NONE:
++		reg = 0;
++		break;
+ 	case BCM63268_LEDCTRL:
+ 		reg = BCM63268_LED_REG;
+ 		mask = BIT(pg->pins[0]);
+@@ -567,7 +635,8 @@ static int bcm63268_pinctrl_set_mux(stru
+ 		return -EINVAL;
+ 	}
+ 
+-	regmap_update_bits(pc->regs, reg, mask, val);
++	if (reg)
++		regmap_update_bits(pc->regs, reg, mask, val);
+ 
+ 	return 0;
+ }
