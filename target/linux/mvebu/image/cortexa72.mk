@@ -84,6 +84,14 @@ define Device/mikrotik_rb5009ug
 endef
 TARGET_DEVICES += mikrotik_rb5009ug
 
+define Device/mikrotik_rb5009upr
+  $(call Device/mikrotik_rb5009)
+  DEVICE_DTS := armada-7040-rb5009upr
+  DEVICE_MODEL := RB5009UPr+S+IN
+  SUPPORTED_DEVICES += mikrotik,rb5009upr
+endef
+TARGET_DEVICES += mikrotik_rb5009upr
+
 define Device/marvell_clearfog-gt-8k
   $(call Device/Default-arm64)
   DEVICE_VENDOR := SolidRun
