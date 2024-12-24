@@ -125,7 +125,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				   GFP_KERNEL);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3460,7 +3460,7 @@ void ieee80211_dfs_cac_cancel(struct iee
+@@ -3462,7 +3462,7 @@ void ieee80211_dfs_cac_cancel(struct iee
  
  	list_for_each_entry(sdata, &local->interfaces, list) {
  		wiphy_delayed_work_cancel(local->hw.wiphy,
