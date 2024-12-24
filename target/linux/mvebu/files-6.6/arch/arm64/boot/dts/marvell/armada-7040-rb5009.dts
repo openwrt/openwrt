@@ -165,9 +165,12 @@
 
 			/* Empty space on NOR repurposed for U-Boot environment */
 			partition@fe0000 {
-				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0xfe0000 0x20000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
 			};
 		};
 	};
