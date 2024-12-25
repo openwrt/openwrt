@@ -1,0 +1,91 @@
+From a56662b417852a8895ad5851c4a91dc6a7a0fa8d Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 22 Dec 2024 17:06:59 +0800
+Subject: [PATCH 1/3] rt2x00: fix clock init for rt2800 SoC
+
+It seems that the rt2800 SoC built-in WMAC requires correct system
+bus clock to work properly. However, the clk_get_sys() no longer
+work with the newly introduced rt2800 clock driver. Hence rt2x00
+driver always uses a dafault value 125 MHz to initialize US_CYC_CNT
+register. This patch allows us to specify the "bus" and "xtal"
+clock source from the device tree.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 19 ++-----------------
+ drivers/net/wireless/ralink/rt2x00/rt2x00.h   |  3 ++-
+ .../net/wireless/ralink/rt2x00/rt2x00soc.c    | 16 +++++++++++++---
+ 3 files changed, 17 insertions(+), 21 deletions(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -2439,7 +2439,7 @@ static void rt2800_config_lna_gain(struc
+ 
+ static inline bool rt2800_clk_is_20mhz(struct rt2x00_dev *rt2x00dev)
+ {
+-	return clk_get_rate(rt2x00dev->clk) == 20000000;
++	return clk_get_rate(rt2x00dev->xtal_clk) == 20000000;
+ }
+ 
+ #define FREQ_OFFSET_BOUND	0x5f
+@@ -6271,22 +6271,7 @@ static int rt2800_init_registers(struct
+ 		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, 125);
+ 		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
+ 	} else if (rt2x00_is_soc(rt2x00dev)) {
+-		struct clk *clk = clk_get_sys("bus", NULL);
+-		int rate;
+-
+-		if (IS_ERR(clk)) {
+-			clk = clk_get_sys("cpu", NULL);
+-
+-			if (IS_ERR(clk)) {
+-				rate = 125;
+-			} else {
+-				rate = clk_get_rate(clk) / 3000000;
+-				clk_put(clk);
+-			}
+-		} else {
+-			rate = clk_get_rate(clk) / 1000000;
+-			clk_put(clk);
+-		}
++		int rate = clk_get_rate(rt2x00dev->bus_clk) / 1000000;
+ 
+ 		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
+ 		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, rate);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -1016,7 +1016,8 @@ struct rt2x00_dev {
+ 	unsigned int num_proto_errs;
+ 
+ 	/* Clock for System On Chip devices. */
+-	struct clk *clk;
++	struct clk *bus_clk;
++	struct clk *xtal_clk;
+ };
+ 
+ struct rt2x00_bar_list_entry {
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
+@@ -82,9 +82,19 @@ int rt2x00soc_probe(struct platform_devi
+ 	rt2x00dev->irq = platform_get_irq(pdev, 0);
+ 	rt2x00dev->name = pdev->dev.driver->name;
+ 
+-	rt2x00dev->clk = clk_get(&pdev->dev, NULL);
+-	if (IS_ERR(rt2x00dev->clk))
+-		rt2x00dev->clk = NULL;
++	rt2x00dev->bus_clk = devm_clk_get(rt2x00dev->dev, "bus");
++	if (IS_ERR(rt2x00dev->bus_clk)) {
++		retval = PTR_ERR(rt2x00dev->bus_clk);
++		rt2x00_probe_err("Failed to get BUS clock\n");
++		goto exit_free_device;
++	}
++
++	rt2x00dev->xtal_clk = devm_clk_get(rt2x00dev->dev, "xtal");
++	if (IS_ERR(rt2x00dev->xtal_clk)) {
++		retval = PTR_ERR(rt2x00dev->xtal_clk);
++		rt2x00_probe_err("Failed to get XTAL clock\n");
++		goto exit_free_device;
++	}
+ 
+ 	set_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags);
+ 	rt2x00_set_chip_intf(rt2x00dev, RT2X00_CHIP_INTF_SOC);
