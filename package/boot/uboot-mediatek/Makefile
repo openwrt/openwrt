@@ -352,6 +352,18 @@ define U-Boot/mt7981_rfb-spim-nand
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_wavlink_wl_wn586x3b
+  NAME:=WAVLINK WL-WN586X3 Rev B
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=wavlink_wl-wn586x3b
+  UBOOT_CONFIG:=mt7981_wavlink_wl_wn586x3b
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_rfb-emmc
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -842,6 +854,7 @@ UBOOT_TARGETS := \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \
 	mt7981_openwrt_one-nor \
+	mt7981_wavlink_wl_wn586x3b \
 	mt7981_rfb-spim-nand \
 	mt7981_rfb-emmc \
 	mt7981_rfb-nor \
