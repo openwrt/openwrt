@@ -1,0 +1,60 @@
+From 2585ada646e4dcf152ab813a24d667e6903105f4 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 22 Dec 2024 17:06:59 +0800
+Subject: [PATCH 4/4] rt2x00: fix register operation on RXIQ calibration
+
+In rt2800_rxiq_calibration(), some variables are overwritten
+before being used. Based on the values of the relevant registers
+in other functions, I believe the correct operation should be
+bit mask writing.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -8846,7 +8846,7 @@ static void rt2800_rxiq_calibration(stru
+ 		rt2x00_warn(rt2x00dev, "Timeout waiting for MAC status in RXIQ calibration\n");
+ 
+ 	bbpval = bbp4 & (~0x18);
+-	bbpval = bbp4 | 0x00;
++	bbpval = bbpval | 0x00;
+ 	rt2800_bbp_write(rt2x00dev, 4, bbpval);
+ 
+ 	bbpval = rt2800_bbp_read(rt2x00dev, 21);
+@@ -8928,13 +8928,13 @@ static void rt2800_rxiq_calibration(stru
+ 	for (ch_idx = 0; ch_idx < 2; ch_idx = ch_idx + 1) {
+ 		if (ch_idx == 0) {
+ 			rfval = rfb0r1 & (~0x3);
+-			rfval = rfb0r1 | 0x1;
++			rfval = rfval | 0x1;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 1, rfval);
+ 			rfval = rfb0r2 & (~0x33);
+-			rfval = rfb0r2 | 0x11;
++			rfval = rfval | 0x11;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 2, rfval);
+ 			rfval = rfb0r42 & (~0x50);
+-			rfval = rfb0r42 | 0x10;
++			rfval = rfval | 0x10;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 42, rfval);
+ 
+ 			rt2800_register_write(rt2x00dev, RF_CONTROL0, 0x00001006);
+@@ -8947,13 +8947,13 @@ static void rt2800_rxiq_calibration(stru
+ 			rt2800_bbp_dcoc_write(rt2x00dev, 1, 0x00);
+ 		} else {
+ 			rfval = rfb0r1 & (~0x3);
+-			rfval = rfb0r1 | 0x2;
++			rfval = rfval | 0x2;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 1, rfval);
+ 			rfval = rfb0r2 & (~0x33);
+-			rfval = rfb0r2 | 0x22;
++			rfval = rfval | 0x22;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 2, rfval);
+ 			rfval = rfb0r42 & (~0x50);
+-			rfval = rfb0r42 | 0x40;
++			rfval = rfval | 0x40;
+ 			rt2800_rfcsr_write_bank(rt2x00dev, 0, 42, rfval);
+ 
+ 			rt2800_register_write(rt2x00dev, RF_CONTROL0, 0x00002006);
