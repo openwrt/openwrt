@@ -20,7 +20,7 @@
  
 -	/* Default: XO=20MHz , SDM mode */
 -	rfcsr = rt2800_rfcsr_read(rt2x00dev, 16);
--	rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 0x80);
+-	rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 4);
 -	rt2800_rfcsr_write(rt2x00dev, 16, rfcsr);
 -
 -	rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
@@ -29,7 +29,7 @@
 +	if (rt2800_hw_get_chipver(rt2x00dev) > 1) {
 +		/* Default: XO=20MHz , SDM mode */
 +		rfcsr = rt2800_rfcsr_read(rt2x00dev, 16);
-+		rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 0x80);
++		rt2x00_set_field8(&rfcsr, RFCSR16_SDM_MODE_MT7620, 4);
 +		rt2800_rfcsr_write(rt2x00dev, 16, rfcsr);
 +
 +		rfcsr = rt2800_rfcsr_read(rt2x00dev, 21);
@@ -131,7 +131,7 @@
  		      0x15 : 0x1a;
  		rt2800_bbp_glrt_write(rt2x00dev, 141, bbp);
  
-@@ -6045,18 +6057,33 @@ static int rt2800_init_registers(struct
+@@ -6061,18 +6073,34 @@ static int rt2800_init_registers(struct
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  	} else if (rt2x00_rt(rt2x00dev, RT6352)) {
@@ -162,7 +162,8 @@
 +			rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000401);
 +			rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x000C0001);
 +			rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
-+			rt2800_register_write(rt2x00dev, TX_ALC_VGA3, 0x00000000);
++			rt2800_register_write(rt2x00dev, TX_PIN_CFG, 0x00150f0f);
++			rt2800_register_write(rt2x00dev, TX_ALC_VGA3, 0x06060606);
 +			rt2800_register_write(rt2x00dev, TX0_BB_GAIN_ATTEN, 0x0);
 +			rt2800_register_write(rt2x00dev, TX1_BB_GAIN_ATTEN, 0x0);
 +			rt2800_register_write(rt2x00dev, TX0_RF_GAIN_ATTEN,
@@ -177,7 +178,7 @@
  		reg = rt2800_register_read(rt2x00dev, TX_ALC_CFG_1);
  		rt2x00_set_field32(&reg, TX_ALC_CFG_1_ROS_BUSY_EN, 0);
  		rt2800_register_write(rt2x00dev, TX_ALC_CFG_1, reg);
-@@ -7169,14 +7196,16 @@ static void rt2800_init_bbp_6352(struct
+@@ -7185,14 +7213,16 @@ static void rt2800_init_bbp_6352(struct
  	rt2800_bbp_write(rt2x00dev, 188, 0x00);
  	rt2800_bbp_write(rt2x00dev, 189, 0x00);
  
@@ -202,7 +203,7 @@
  
  	/* BBP for G band GLRT function (BBP_128 ~ BBP_221) */
  	rt2800_bbp_glrt_write(rt2x00dev, 0, 0x00);
-@@ -10406,6 +10435,9 @@ static void rt2800_restore_rf_bbp_rt6352
+@@ -10422,6 +10452,9 @@ static void rt2800_restore_rf_bbp_rt6352
  		rt2800_register_write(rt2x00dev, RF_BYPASS3, 0x0);
  	}
  
@@ -212,7 +213,7 @@
  	if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x16);
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x23);
-@@ -10483,6 +10515,9 @@ static void rt2800_calibration_rt6352(st
+@@ -10503,6 +10536,9 @@ static void rt2800_calibration_rt6352_st
  		rt2800_register_write(rt2x00dev, RF_BYPASS3, reg);
  	}
  
@@ -222,7 +223,7 @@
  	if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 14, 0x66);
  		rt2800_rfcsr_write_chanreg(rt2x00dev, 17, 0x20);
-@@ -10573,31 +10608,36 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10593,31 +10629,36 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write(rt2x00dev, 42, 0x5B);
  	rt2800_rfcsr_write(rt2x00dev, 43, 0x00);
  
@@ -284,7 +285,7 @@
  
  	/* Initialize RF channel register to default value */
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 0, 0x03);
-@@ -10663,63 +10703,71 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10683,63 +10724,71 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_bank(rt2x00dev, 6, 45, 0xC5);
  
@@ -411,7 +412,7 @@
  
  	/* Initialize RF DC calibration register to default value */
  	rt2800_rfcsr_write_dccal(rt2x00dev, 0, 0x47);
-@@ -10782,12 +10830,17 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10802,12 +10851,17 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 62, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 63, 0x00);
  
@@ -431,6 +432,6 @@
 +		rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
 +		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
 +	}
+ }
  
- 	/* Do calibration and init PA/LNA */
- 	rt2800_calibration_rt6352(rt2x00dev);
+ static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
