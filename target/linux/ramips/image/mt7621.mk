@@ -1787,6 +1787,22 @@ define Device/jdcloud_re-cp-02
 endef
 TARGET_DEVICES += jdcloud_re-cp-02
 
+define Device/keenetic_kn-1910
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 24903680
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1910
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 \
+	kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d 0x801910 -v "KN-1910"
+endef
+TARGET_DEVICES += keenetic_kn-1910
+
 define Device/keenetic_kn-3010
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
