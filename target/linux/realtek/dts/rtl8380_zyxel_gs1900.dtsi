@@ -40,17 +40,34 @@
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
 
-	gpio1: rtl8231-gpio {
-		compatible = "realtek,rtl8231-gpio";
-		#gpio-cells = <2>;
+&mdio_aux {
+	status = "okay";
+
+	// Reset GPIO is <&gpio0 1 GPIO_ACTIVE_LOW>
+	// Don't specify the reset info so the mdio subsystem doesn't reset the bus
+	//reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	//reset-delay-us = <1000>;
+	//reset-post-delay-us = <10000>;
+
+	gpio1: expander@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0x0>;
+
 		gpio-controller;
-		indirect-access-bus-id = <0>;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
 
 		poe_enable {
 			gpio-hog;
 			gpios = <13 GPIO_ACTIVE_HIGH>;
 			output-high;
+		};
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
 		};
 	};
 };
