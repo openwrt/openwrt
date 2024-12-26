@@ -1,0 +1,149 @@
+From 35040d1f349f2346832ca1ebb408924dbefc1cfc Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 14 Jun 2023 07:15:48 +0200
+Subject: [PATCH 1/4] mac80211: introduce support for vendor QAM-256 in 2.4GHz
+ 802.11n
+
+Some vendor supports non-standard QAM-256 in 2.4GHz 802.11n mode.
+The implementation works by comunicating vht capabilities to the client
+in 2.4GHz 802.11n, the supported client will take this info and
+benefits from the additional rates of it.
+
+Each driver needs to enable support for this by enabling the
+vendor_qam256_supported in the 2G sband struct and add the required
+capabilities for vht_cap.
+
+This feature is supported by various vendor with all kind of marketing
+name, but all of them have in common the use of vht capabilities in
+2.4GHz 802.11n.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/net/cfg80211.h |  2 ++
+ net/mac80211/mlme.c    | 14 ++++++++----
+ net/mac80211/util.c    | 10 +++++---
+ net/mac80211/vht.c     | 52 +++++++++++++++++++++++++++---------------
+ 4 files changed, 51 insertions(+), 27 deletions(-)
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -357,11 +357,13 @@ struct ieee80211_sta_ht_cap {
+  * to describe 802.11ac VHT capabilities for an STA.
+  *
+  * @vht_supported: is VHT supported by the STA
++ * @qam256_supported: is QAM256 supported by the STA
+  * @cap: VHT capabilities map as described in 802.11ac spec
+  * @vht_mcs: Supported VHT MCS rates
+  */
+ struct ieee80211_sta_vht_cap {
+ 	bool vht_supported;
++	bool vendor_qam256_supported;
+ 	u32 cap; /* use IEEE80211_VHT_CAP_ */
+ 	struct ieee80211_vht_mcs_info vht_mcs;
+ };
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -5271,6 +5271,8 @@ ieee80211_determine_our_sta_mode(struct
+ 	if (sband->band != NL80211_BAND_2GHZ) {
+ 		conn->mode = IEEE80211_CONN_MODE_VHT;
+ 		conn->bw_limit = IEEE80211_CONN_BW_LIMIT_160;
++	} else if (sband->vht_cap.vendor_qam256_supported) {
++		conn->mode = IEEE80211_CONN_MODE_VHT;
+ 	}
+ 
+ 	if (is_5ghz &&
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -1319,7 +1319,9 @@ static int ieee80211_put_preq_ies_band(s
+ 		break;
+ 	}
+ 
+-	if (sband->vht_cap.vht_supported && have_80mhz) {
++	if (sband->vht_cap.vht_supported &&
++	    (have_80mhz ||
++	     sband->vht_cap.vendor_qam256_supported)) {
+ 		u8 *pos;
+ 
+ 		if (skb_tailroom(skb) < 2 + sizeof(struct ieee80211_vht_cap))
+--- a/net/mac80211/vht.c
++++ b/net/mac80211/vht.c
+@@ -122,7 +122,7 @@ ieee80211_vht_cap_ie_to_sta_vht_cap(stru
+ 	struct ieee80211_sta_vht_cap *vht_cap = &link_sta->pub->vht_cap;
+ 	struct ieee80211_sta_vht_cap own_cap;
+ 	u32 cap_info, i;
+-	bool have_80mhz;
++	bool can_vht;
+ 	u32 mpdu_len;
+ 
+ 	memset(vht_cap, 0, sizeof(*vht_cap));
+@@ -134,17 +134,21 @@ ieee80211_vht_cap_ie_to_sta_vht_cap(stru
+ 		return;
+ 
+ 	/* Allow VHT if at least one channel on the sband supports 80 MHz */
+-	have_80mhz = false;
++	can_vht = false;
+ 	for (i = 0; i < sband->n_channels; i++) {
+ 		if (sband->channels[i].flags & (IEEE80211_CHAN_DISABLED |
+ 						IEEE80211_CHAN_NO_80MHZ))
+ 			continue;
+ 
+-		have_80mhz = true;
++		can_vht = true;
+ 		break;
+ 	}
+ 
+-	if (!have_80mhz)
++	/* Some Vendor supports non-standard QAM-256 on 2.4GHz 802.11n */
++	if (sband->vht_cap.vendor_qam256_supported)
++		can_vht = true;
++
++	if (!can_vht)
+ 		return;
+ 
+ 	/*
+@@ -359,23 +363,23 @@ _ieee80211_sta_cap_rx_bw(struct link_sta
+ 	struct ieee80211_sta_vht_cap *vht_cap = &link_sta->pub->vht_cap;
+ 	struct ieee80211_sta_he_cap *he_cap = &link_sta->pub->he_cap;
+ 	struct ieee80211_sta_eht_cap *eht_cap = &link_sta->pub->eht_cap;
++	enum nl80211_band band;
+ 	u32 cap_width;
+ 
++	if (chandef) {
++		band = chandef->chan->band;
++	} else {
++		struct ieee80211_bss_conf *link_conf;
++
++		rcu_read_lock();
++		link_conf = rcu_dereference(sdata->vif.link_conf[link_id]);
++		band = link_conf->chanreq.oper.chan->band;
++		rcu_read_unlock();
++	}
++
+ 	if (he_cap->has_he) {
+-		enum nl80211_band band;
+ 		u8 info;
+ 
+-		if (chandef) {
+-			band = chandef->chan->band;
+-		} else {
+-			struct ieee80211_bss_conf *link_conf;
+-
+-			rcu_read_lock();
+-			link_conf = rcu_dereference(sdata->vif.link_conf[link_id]);
+-			band = link_conf->chanreq.oper.chan->band;
+-			rcu_read_unlock();
+-		}
+-
+ 		if (eht_cap->has_eht && band == NL80211_BAND_6GHZ) {
+ 			info = eht_cap->eht_cap_elem.phy_cap_info[0];
+ 
+@@ -401,7 +405,8 @@ _ieee80211_sta_cap_rx_bw(struct link_sta
+ 		return IEEE80211_STA_RX_BW_20;
+ 	}
+ 
+-	if (!vht_cap->vht_supported)
++	if (!vht_cap->vht_supported || (band == NL80211_BAND_2GHZ &&
++				       vht_cap->vendor_qam256_supported))
+ 		return link_sta->pub->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40 ?
+ 				IEEE80211_STA_RX_BW_40 :
+ 				IEEE80211_STA_RX_BW_20;

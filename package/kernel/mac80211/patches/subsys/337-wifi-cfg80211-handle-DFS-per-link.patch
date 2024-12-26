@@ -102,7 +102,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		pr_warn("%s: unhandled radar event %u\n",
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -4841,9 +4841,9 @@ struct cfg80211_ops {
+@@ -4843,9 +4843,9 @@ struct cfg80211_ops {
  	int	(*start_radar_detection)(struct wiphy *wiphy,
  					 struct net_device *dev,
  					 struct cfg80211_chan_def *chandef,
@@ -114,7 +114,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	int	(*update_ft_ies)(struct wiphy *wiphy, struct net_device *dev,
  				 struct cfg80211_update_ft_ies_params *ftie);
  	int	(*crit_proto_start)(struct wiphy *wiphy,
-@@ -8745,6 +8745,7 @@ void cfg80211_sta_opmode_change_notify(s
+@@ -8747,6 +8747,7 @@ void cfg80211_sta_opmode_change_notify(s
   * @chandef: chandef for the current channel
   * @event: type of event
   * @gfp: context flags
@@ -122,7 +122,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   *
   * This function is called when a Channel availability check (CAC) is finished
   * or aborted. This must be called to notify the completion of a CAC process,
-@@ -8752,7 +8753,8 @@ void cfg80211_sta_opmode_change_notify(s
+@@ -8754,7 +8755,8 @@ void cfg80211_sta_opmode_change_notify(s
   */
  void cfg80211_cac_event(struct net_device *netdev,
  			const struct cfg80211_chan_def *chandef,
@@ -185,7 +185,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3468,7 +3468,7 @@ void ieee80211_dfs_cac_cancel(struct iee
+@@ -3470,7 +3470,7 @@ void ieee80211_dfs_cac_cancel(struct iee
  			cfg80211_cac_event(sdata->dev,
  					   &chandef,
  					   NL80211_RADAR_CAC_ABORTED,
