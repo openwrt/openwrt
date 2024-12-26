@@ -19,7 +19,7 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
 
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
-@@ -788,6 +788,32 @@ static void rtw_usb_dynamic_rx_agg_v1(st
+@@ -789,6 +789,32 @@ static void rtw_usb_dynamic_rx_agg_v1(st
  	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
  }
  
@@ -52,7 +52,7 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
  static void rtw_usb_dynamic_rx_agg(struct rtw_dev *rtwdev, bool enable)
  {
  	switch (rtwdev->chip->id) {
-@@ -796,6 +822,10 @@ static void rtw_usb_dynamic_rx_agg(struc
+@@ -797,6 +823,10 @@ static void rtw_usb_dynamic_rx_agg(struc
  	case RTW_CHIP_TYPE_8821C:
  		rtw_usb_dynamic_rx_agg_v1(rtwdev, enable);
  		break;

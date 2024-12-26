@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/chan.c
 +++ b/net/mac80211/chan.c
-@@ -1167,7 +1167,7 @@ ieee80211_replace_chanctx(struct ieee802
+@@ -1169,7 +1169,7 @@ ieee80211_replace_chanctx(struct ieee802
  static bool
  ieee80211_find_available_radio(struct ieee80211_local *local,
  			       const struct ieee80211_chan_req *chanreq,
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct wiphy *wiphy = local->hw.wiphy;
  	const struct wiphy_radio *radio;
-@@ -1178,6 +1178,9 @@ ieee80211_find_available_radio(struct ie
+@@ -1180,6 +1180,9 @@ ieee80211_find_available_radio(struct ie
  		return true;
  
  	for (i = 0; i < wiphy->n_radio; i++) {
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		radio = &wiphy->radio[i];
  		if (!cfg80211_radio_chandef_valid(radio, &chanreq->oper))
  			continue;
-@@ -1211,7 +1214,9 @@ int ieee80211_link_reserve_chanctx(struc
+@@ -1213,7 +1216,9 @@ int ieee80211_link_reserve_chanctx(struc
  	new_ctx = ieee80211_find_reservation_chanctx(local, chanreq, mode);
  	if (!new_ctx) {
  		if (ieee80211_can_create_new_chanctx(local, -1) &&
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			new_ctx = ieee80211_new_chanctx(local, chanreq, mode,
  							false, radio_idx);
  		else
-@@ -1881,7 +1886,9 @@ int _ieee80211_link_use_channel(struct i
+@@ -1883,7 +1888,9 @@ int _ieee80211_link_use_channel(struct i
  	/* Note: context is now reserved */
  	if (ctx)
  		reserved = true;

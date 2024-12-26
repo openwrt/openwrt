@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/scan.c
 +++ b/net/mac80211/scan.c
-@@ -1178,14 +1178,14 @@ int ieee80211_request_ibss_scan(struct i
+@@ -1176,14 +1176,14 @@ int ieee80211_request_ibss_scan(struct i
  				unsigned int n_channels)
  {
  	struct ieee80211_local *local = sdata->local;
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* fill internal scan request */
  	if (!channels) {
-@@ -1202,7 +1202,9 @@ int ieee80211_request_ibss_scan(struct i
+@@ -1200,7 +1200,9 @@ int ieee80211_request_ibss_scan(struct i
  				    &local->hw.wiphy->bands[band]->channels[i];
  
  				if (tmp_ch->flags & (IEEE80211_CHAN_NO_IR |
@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					continue;
  
  				local->int_scan_req->channels[n_ch] = tmp_ch;
-@@ -1211,21 +1213,23 @@ int ieee80211_request_ibss_scan(struct i
+@@ -1209,21 +1211,23 @@ int ieee80211_request_ibss_scan(struct i
  		}
  
  		if (WARN_ON_ONCE(n_ch == 0))
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		local->int_scan_req->n_channels = n_ch;
  	}
-@@ -1235,9 +1239,7 @@ int ieee80211_request_ibss_scan(struct i
+@@ -1233,9 +1237,7 @@ int ieee80211_request_ibss_scan(struct i
  	memcpy(local->int_scan_req->ssids[0].ssid, ssid, IEEE80211_MAX_SSID_LEN);
  	local->int_scan_req->ssids[0].ssid_len = ssid_len;
  
