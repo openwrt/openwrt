@@ -1,0 +1,26 @@
+From f21b15dfe254b51f80c552750eb20b1dc752507a Mon Sep 17 00:00:00 2001
+From: Sander Vanheule <sander@svanheule.net>
+Date: Mon, 30 Dec 2024 17:59:24 +0100
+Subject: [PATCH] gpio: regmap: Use generic request/free ops
+
+Set the gpiochip request and free ops to the generic implementations.
+This way a user can provide a gpio-ranges property defined for a pinmux,
+allowing pins to automatically be muxed to their GPIO function when
+requested.
+
+Signed-off-by: Sander Vanheule <sander@svanheule.net>
+---
+ drivers/gpio/gpio-regmap.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/gpio/gpio-regmap.c
++++ b/drivers/gpio/gpio-regmap.c
+@@ -270,6 +270,8 @@ struct gpio_regmap *gpio_regmap_register
+ 	chip->label = config->label ?: dev_name(config->parent);
+ 	chip->can_sleep = regmap_might_sleep(config->regmap);
+ 
++	chip->request = gpiochip_generic_request;
++	chip->free = gpiochip_generic_free;
+ 	chip->get = gpio_regmap_get;
+ 	if (gpio->reg_set_base && gpio->reg_clr_base)
+ 		chip->set = gpio_regmap_set_with_clear;
