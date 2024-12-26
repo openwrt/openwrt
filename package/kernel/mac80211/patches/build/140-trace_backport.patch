@@ -1,6 +1,6 @@
 --- a/drivers/bus/mhi/host/trace.h
 +++ b/drivers/bus/mhi/host/trace.h
-@@ -103,7 +103,7 @@ TRACE_EVENT(mhi_gen_tre,
+@@ -104,7 +104,7 @@ TRACE_EVENT(mhi_gen_tre,
  	),
  
  	TP_fast_assign(
@@ -8,8 +8,8 @@
 +		__assign_str(name, mhi_cntrl->mhi_dev->name);
  		__entry->ch_num = mhi_chan->chan;
  		__entry->wp = mhi_tre;
- 		__entry->tre_ptr = mhi_tre->ptr;
-@@ -131,7 +131,7 @@ TRACE_EVENT(mhi_intvec_states,
+ 		__entry->tre_ptr = le64_to_cpu(mhi_tre->ptr);
+@@ -132,7 +132,7 @@ TRACE_EVENT(mhi_intvec_states,
  	),
  
  	TP_fast_assign(
@@ -18,7 +18,7 @@
  		__entry->local_ee = mhi_cntrl->ee;
  		__entry->state = mhi_cntrl->dev_state;
  		__entry->dev_ee = dev_ee;
-@@ -158,7 +158,7 @@ TRACE_EVENT(mhi_tryset_pm_state,
+@@ -159,7 +159,7 @@ TRACE_EVENT(mhi_tryset_pm_state,
  	),
  
  	TP_fast_assign(
@@ -27,16 +27,16 @@
  		if (pm_state)
  			pm_state = __fls(pm_state);
  		__entry->pm_state = pm_state;
-@@ -184,7 +184,7 @@ DECLARE_EVENT_CLASS(mhi_process_event_ri
+@@ -185,7 +185,7 @@ DECLARE_EVENT_CLASS(mhi_process_event_ri
  	),
  
  	TP_fast_assign(
 -		__assign_str(name);
 +		__assign_str(name, mhi_cntrl->mhi_dev->name);
  		__entry->rp = rp;
- 		__entry->ptr = rp->ptr;
- 		__entry->dword0 = rp->dword[0];
-@@ -226,7 +226,7 @@ DECLARE_EVENT_CLASS(mhi_update_channel_s
+ 		__entry->ptr = le64_to_cpu(rp->ptr);
+ 		__entry->dword0 = le32_to_cpu(rp->dword[0]);
+@@ -227,7 +227,7 @@ DECLARE_EVENT_CLASS(mhi_update_channel_s
  	),
  
  	TP_fast_assign(
@@ -45,7 +45,7 @@
  		__entry->ch_num = mhi_chan->chan;
  		__entry->state = state;
  		__entry->reason = reason;
-@@ -265,7 +265,7 @@ TRACE_EVENT(mhi_pm_st_transition,
+@@ -266,7 +266,7 @@ TRACE_EVENT(mhi_pm_st_transition,
  	),
  
  	TP_fast_assign(

@@ -85,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct ieee80211_ops *ops;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -952,6 +952,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -954,6 +954,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  	spin_lock_init(&local->rx_path_lock);
  	spin_lock_init(&local->queue_stop_reason_lock);
  

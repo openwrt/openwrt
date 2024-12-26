@@ -23,15 +23,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -6227,6 +6227,7 @@ enum ieee80211_ap_reg_power {
+@@ -6271,6 +6271,7 @@ enum ieee80211_ap_reg_power {
   *	entered.
-  * @links[].cac_time_ms: CAC time in ms
+  * @links.cac_time_ms: CAC time in ms
   * @valid_links: bitmap describing what elements of @links are valid
 + * @radio_mask: Bitmask of radios that this interface is allowed to operate on.
   */
  struct wireless_dev {
  	struct wiphy *wiphy;
-@@ -6339,6 +6340,8 @@ struct wireless_dev {
+@@ -6383,6 +6384,8 @@ struct wireless_dev {
  		unsigned int cac_time_ms;
  	} links[IEEE80211_MLD_MAX_NUM_LINKS];
  	u16 valid_links;
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  static inline const u8 *wdev_address(struct wireless_dev *wdev)
-@@ -6525,6 +6528,17 @@ bool cfg80211_radio_chandef_valid(const
+@@ -6569,6 +6572,17 @@ bool cfg80211_radio_chandef_valid(const
  				  const struct cfg80211_chan_def *chandef);
  
  /**
@@ -246,7 +246,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			continue;
  
  		for (i = 0; i < rdev_req->n_channels; i++) {
-@@ -3490,9 +3491,12 @@ int cfg80211_wext_siwscan(struct net_dev
+@@ -3519,9 +3520,12 @@ int cfg80211_wext_siwscan(struct net_dev
  			continue;
  
  		for (j = 0; j < wiphy->bands[band]->n_channels; j++) {
@@ -298,7 +298,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +EXPORT_SYMBOL(cfg80211_wdev_channel_allowed);
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -1415,6 +1415,8 @@ void cfg80211_init_wdev(struct wireless_
+@@ -1424,6 +1424,8 @@ void cfg80211_init_wdev(struct wireless_
  	/* allow mac80211 to determine the timeout */
  	wdev->ps_timeout = -1;
  
