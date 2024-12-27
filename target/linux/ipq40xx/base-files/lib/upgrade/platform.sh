@@ -125,6 +125,8 @@ platform_do_upgrade() {
 	p2w,r619ac-64m |\
 	p2w,r619ac-128m |\
 	qxwlan,e2600ac-c2 |\
+	alibaba,ap4220 |\
+	alibaba,ap4220-48m|\
 	wallys,dr40x9)
 		nand_do_upgrade "$1"
 		;;
