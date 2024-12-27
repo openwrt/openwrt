@@ -1,8 +1,8 @@
 From 7735dd0736322cff23aff95490bae1d69937a9bf Mon Sep 17 00:00:00 2001
 From: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
 Date: Tue, 10 Dec 2024 13:23:09 +0000
-Subject: [PATCH 1456/1482] drm: rp1: rp1-dpi: Add interlaced modes and PIO
- program to fix VSYNC
+Subject: [PATCH] drm: rp1: rp1-dpi: Add interlaced modes and PIO program to
+ fix VSYNC
 
 Implement interlaced modes by wobbling the base pointer and VFP width
 for every field. This results in correct pixels but incorrect VSYNC.

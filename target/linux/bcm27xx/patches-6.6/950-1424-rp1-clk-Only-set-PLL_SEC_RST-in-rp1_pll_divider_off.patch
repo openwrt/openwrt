@@ -1,8 +1,7 @@
 From 33c225f622d596034a9261316666089a92aa6834 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.com>
 Date: Mon, 25 Nov 2024 12:30:06 +0000
-Subject: [PATCH 1424/1482] rp1: clk: Only set PLL_SEC_RST in
- rp1_pll_divider_off
+Subject: [PATCH] rp1: clk: Only set PLL_SEC_RST in rp1_pll_divider_off
 
 Rather than clearing all the bits in rp1_pll_divider_off
 and setting PLL_SEC_RST, retain the status of all the other

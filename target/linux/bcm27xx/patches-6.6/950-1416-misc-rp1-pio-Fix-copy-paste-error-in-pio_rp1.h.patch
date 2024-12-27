@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/include/linux/pio_rp1.h
 +++ b/include/linux/pio_rp1.h
-@@ -318,7 +318,7 @@ static inline int pio_sm_unclaim(struct
+@@ -320,7 +320,7 @@ static inline int pio_sm_unclaim(struct
  	if (bad_params_if(client, sm >= NUM_PIO_STATE_MACHINES))
  		return -EINVAL;
  

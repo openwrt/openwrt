@@ -1,7 +1,7 @@
 From 4a8f2b39157825fefc505fe4b94f3a9ce101e170 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Thu, 12 Dec 2024 23:23:39 +0000
-Subject: [PATCH 1478/1482] overlays: Add ws2812-pio overlay
+Subject: [PATCH] overlays: Add ws2812-pio overlay
 
 Add an overlay to enable a WS2812 LED driver on a given GPIO.
 
@@ -15,7 +15,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
-@@ -337,7 +337,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
+@@ -342,7 +342,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
  	waveshare-can-fd-hat-mode-a.dtbo \
  	waveshare-can-fd-hat-mode-b.dtbo \
  	wittypi.dtbo \
@@ -27,7 +27,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  targets += $(dtbo-y)
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -5487,6 +5487,28 @@ Params: alsaname                Changes
+@@ -5599,6 +5599,28 @@ Params: alsaname                Changes
          compatible              Changes the codec compatibility
  
  

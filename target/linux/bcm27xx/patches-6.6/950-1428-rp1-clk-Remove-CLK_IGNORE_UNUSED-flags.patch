@@ -1,7 +1,7 @@
 From 9049e4df2c54b5e620f855f66db3a18c9f2e181f Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.com>
 Date: Fri, 8 Nov 2024 17:37:08 +0000
-Subject: [PATCH 1428/1482] rp1: clk: Remove CLK_IGNORE_UNUSED flags
+Subject: [PATCH] rp1: clk: Remove CLK_IGNORE_UNUSED flags
 
 There should be no issue in disabling the RP1 clocks as long as
 the kernel knows about all consumers.

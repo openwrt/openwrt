@@ -1,7 +1,7 @@
 From b4472d09b1ffdafd8132803ffbec62596e559fd8 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Mon, 18 Nov 2024 09:10:52 +0000
-Subject: [PATCH 1394/1482] misc: rp1-pio: Add compat_ioctl method
+Subject: [PATCH] misc: rp1-pio: Add compat_ioctl method
 
 Provide a compat_ioctl method, to support running a 64-bit kernel with
 a 32-bit userland.
@@ -13,7 +13,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/misc/rp1-pio.c
 +++ b/drivers/misc/rp1-pio.c
-@@ -1023,11 +1023,75 @@ static long rp1_pio_ioctl(struct file *f
+@@ -996,11 +996,75 @@ static long rp1_pio_ioctl(struct file *f
  	return ret;
  }
  

@@ -1,8 +1,7 @@
 From 80533a952218696c0ef1b346bab50dc401e6b74c Mon Sep 17 00:00:00 2001
 From: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
 Date: Thu, 12 Dec 2024 11:58:12 +0000
-Subject: [PATCH 1463/1482] drm: rp1: rp1-dpi: Fix optional dependency on
- RP1_PIO
+Subject: [PATCH] drm: rp1: rp1-dpi: Fix optional dependency on RP1_PIO
 
 Add optional dependency to Kconfig, and conditionally compile
 PIO-dependent code. Add a mode validation function to reject
