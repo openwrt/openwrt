@@ -1069,7 +1069,7 @@ define KernelPackage/nfnetlink-cttimeout
   FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_cttimeout.ko
   KCONFIG:=CONFIG_NF_CT_NETLINK_TIMEOUT
   AUTOLOAD:=$(call AutoProbe,nfnetlink_cttimeout)
-  $(call AddDepends/nfnetlink,+kmod-nf-conntrack +kmod-nf-conntrack-timeout @KERNEL_NF_CONNTRACK_TIMEOUT)
+  $(call AddDepends/nfnetlink,+kmod-nf-conntrack @KERNEL_NF_CONNTRACK_TIMEOUT)
 endef
 
 define KernelPackage/nfnetlink-cttimeout/description
