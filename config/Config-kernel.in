@@ -1239,6 +1239,13 @@ config KERNEL_MPTCP_IPV6
 	default KERNEL_MPTCP
 endif
 
+config KERNEL_NF_CONNTRACK_TIMEOUT
+	bool "Per-connection connection tracking timeout"
+	default y if !SMALL_FLASH
+	help
+	   Select this option to enable support for per-connection conntrack timeouts.
+	   Increases the (uncompressed) size of nf_conntrack.ko by ~8kB.
+
 #
 # NFS related symbols
 #

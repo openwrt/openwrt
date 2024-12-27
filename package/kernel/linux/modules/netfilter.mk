@@ -1048,6 +1048,40 @@ endef
 $(eval $(call KernelPackage,nfnetlink-queue))
 
 
+define KernelPackage/nfnetlink-cthelper
+  TITLE:=Netfilter User space conntrack helpers
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_cthelper.ko
+  KCONFIG:=CONFIG_NF_CT_NETLINK_HELPER
+  AUTOLOAD:=$(call AutoProbe,nfnetlink_cthelper)
+  $(call AddDepends/nfnetlink,+kmod-nfnetlink-queue +kmod-nf-conntrack-netlink)
+endef
+
+define KernelPackage/nfnetlink-cthelper/description
+ Kernel modules support for a netlink-based connection tracking
+ userspace helpers interface
+endef
+
+$(eval $(call KernelPackage,nfnetlink-cthelper))
+
+
+define KernelPackage/nfnetlink-cttimeout
+  TITLE:=Netfilter conntrack expectation timeout
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_cttimeout.ko
+  KCONFIG:=CONFIG_NF_CT_NETLINK_TIMEOUT
+  AUTOLOAD:=$(call AutoProbe,nfnetlink_cttimeout)
+  $(call AddDepends/nfnetlink,+kmod-nf-conntrack @KERNEL_NF_CONNTRACK_TIMEOUT)
+endef
+
+define KernelPackage/nfnetlink-cttimeout/description
+ Kernel modules support for a netlink-based connection tracking
+ userspace timeout interface
+
+ Requires CONFIG_NF_CONNTRACK_TIMEOUT (only enabled for non-small flash devices)
+endef
+
+$(eval $(call KernelPackage,nfnetlink-cttimeout))
+
+
 define KernelPackage/nf-conntrack-netlink
   TITLE:=Connection tracking netlink interface
   FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko

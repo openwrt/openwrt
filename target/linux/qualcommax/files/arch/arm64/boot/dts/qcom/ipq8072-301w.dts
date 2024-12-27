@@ -339,12 +339,14 @@
 				label = "0:ethphyfw1";
 				reg = <0x3b0000 0x80000>;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				aqr0_fw: firmware@0 {
-					reg = <0x0 0x5fc02>;
+					aqr0_fw: firmware@0 {
+						reg = <0x0 0x5fc02>;
+					};
 				};
 			};
 
@@ -352,12 +354,14 @@
 				label = "0:ethphyfw2";
 				reg = <0x430000 0x80000>;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				aqr1_fw: firmware@0 {
-					reg = <0x0 0x5fc02>;
+					aqr1_fw: firmware@0 {
+						reg = <0x0 0x5fc02>;
+					};
 				};
 			};
 

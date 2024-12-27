@@ -128,6 +128,16 @@
 				reg = <0x7f0000 0x10000>;
 				label = "art";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x3d8>;
+					};
+				};
 			};
 		};
 	};
@@ -141,9 +151,8 @@
 		reg = <0x0000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_uboot_1fc00 0>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
