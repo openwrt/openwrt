@@ -519,6 +519,23 @@ endef
 $(eval $(call KernelPackage,usb-dwc3))
 
 
+define KernelPackage/usb-dwc3-octeon
+  TITLE:=DWC3 Cavium Octeon USB driver
+  DEPENDS:=@TARGET_octeon +kmod-usb-dwc3
+  KCONFIG:= CONFIG_USB_DWC3_OCTEON
+  FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-octeon.ko
+  AUTOLOAD:=$(call AutoProbe,dwc3-octeon,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc3-octeon/description
+  This driver adds support for Cavium Octeon platforms with DesignWare
+  Core USB3 IP.
+endef
+
+$(eval $(call KernelPackage,usb-dwc3-octeon))
+
+
 define KernelPackage/usb-dwc3-qcom
   TITLE:=DWC3 Qualcomm USB driver
   DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax) +kmod-usb-dwc3
