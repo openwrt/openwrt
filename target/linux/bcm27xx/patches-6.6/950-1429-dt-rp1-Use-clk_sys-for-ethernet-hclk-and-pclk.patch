@@ -1,7 +1,7 @@
 From 542d0f7f2e9f90fc0f02f8cb141f7c3fbf46081b Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.com>
 Date: Mon, 11 Nov 2024 17:11:18 +0000
-Subject: [PATCH 1429/1482] dt: rp1: Use clk_sys for ethernet hclk and pclk
+Subject: [PATCH] dt: rp1: Use clk_sys for ethernet hclk and pclk
 
 hclk and pclk of the MAC are connected to clk_sys, so define
 them as being connected accordingly, rather than having fake
@@ -14,7 +14,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/arch/arm64/boot/dts/broadcom/rp1.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/rp1.dtsi
-@@ -974,7 +974,8 @@
+@@ -982,7 +982,8 @@
  			#address-cells = <1>;
  			#size-cells = <0>;
  			interrupts = <RP1_INT_ETH IRQ_TYPE_LEVEL_HIGH>;
@@ -24,7 +24,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  				  &rp1_clocks RP1_CLK_ETH_TSU
  				  &rp1_clocks RP1_CLK_ETH>;
  			clock-names = "pclk", "hclk", "tsu_clk", "tx_clk";
-@@ -1195,18 +1196,6 @@
+@@ -1230,18 +1231,6 @@
  		clock-output-names = "xosc";
  		clock-frequency = <50000000>;
  	};

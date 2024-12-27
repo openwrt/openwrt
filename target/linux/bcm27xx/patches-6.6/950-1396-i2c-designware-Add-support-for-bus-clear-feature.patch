@@ -1,7 +1,7 @@
-From 24cb07b0c0724a22e474d12e7c2d5b834bf3b076 Mon Sep 17 00:00:00 2001
+From 0e4968617aad7d0f88e0a630499202eaae407a19 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Tue, 26 Mar 2024 15:57:46 +0000
-Subject: [PATCH 0998/1085] i2c: designware: Add support for bus clear feature
+Subject: [PATCH] i2c: designware: Add support for bus clear feature
 
 Newer versions of the DesignWare I2C block support the detection of
 stuck signals, and a mechanism to recover from them. Add the required
@@ -108,7 +108,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  						 DW_IC_TX_ABRT_10ADDR1_NOACK | \
 --- a/drivers/i2c/busses/i2c-designware-master.c
 +++ b/drivers/i2c/busses/i2c-designware-master.c
-@@ -212,6 +212,7 @@ static int i2c_dw_set_timings_master(str
+@@ -215,6 +215,7 @@ static int i2c_dw_set_timings_master(str
   */
  static int i2c_dw_init_master(struct dw_i2c_dev *dev)
  {
@@ -116,7 +116,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret;
  
  	ret = i2c_dw_acquire_lock(dev);
-@@ -235,6 +236,17 @@ static int i2c_dw_init_master(struct dw_
+@@ -238,6 +239,17 @@ static int i2c_dw_init_master(struct dw_
  		regmap_write(dev->map, DW_IC_HS_SCL_LCNT, dev->hs_lcnt);
  	}
  
@@ -134,7 +134,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Write SDA hold time if supported */
  	if (dev->sda_hold_time)
  		regmap_write(dev->map, DW_IC_SDA_HOLD, dev->sda_hold_time);
-@@ -1071,6 +1083,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1074,6 +1086,7 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	struct i2c_adapter *adap = &dev->adapter;
  	unsigned long irq_flags;
  	unsigned int ic_con;
@@ -142,7 +142,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret;
  
  	init_completion(&dev->cmd_complete);
-@@ -1106,7 +1119,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
+@@ -1109,7 +1122,11 @@ int i2c_dw_probe_master(struct dw_i2c_de
  	if (ret)
  		return ret;
  

@@ -1,7 +1,7 @@
-From fc5ed9d9bf0411523220bab60304da6d23257a64 Mon Sep 17 00:00:00 2001
+From a1e4b72997dc3ef423b6f510bfead470475750d4 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Thu, 1 Nov 2018 17:31:37 +0000
-Subject: [PATCH 0297/1085] staging: vchiq_arm: Add 36-bit address support
+Subject: [PATCH] staging: vchiq_arm: Add 36-bit address support
 
 Conditional on a new compatible string, change the pagelist encoding
 such that the top 24 bits are the pfn, leaving 8 bits for run length
