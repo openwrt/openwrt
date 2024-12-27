@@ -44,6 +44,15 @@
 		phy-mode = #m ; \
 	};
 
+#define SWITCH_PORT_SDS(n, s, m, sds1, sds2, portstart, portend) \
+	port@##n { \
+		reg = <##n>; \
+		label = SWITCH_PORT_LABEL(s) ; \
+		phy-handle = <&phy##n>; \
+		phy-mode = #m ; \
+		phys = <&serdes0 sds1 sds2 portstart portend>; \
+	};
+
 #define SWITCH_SFP_PORT(n, s, m) \
 	port##n: port@##n { \
 		reg = <##n>; \
@@ -274,6 +283,13 @@
 			speed = <1000>;
 			full-duplex;
 		};
+	};
+
+	serdes0: serdes@1b00e780 {
+		compatible = "realtek,rtl8380-serdes", "realtek,otto-serdes";
+		reg = <0x1b00e780 0x1200>;
+		controlled-ports = <0x0000>;
+		#phy-cells = <4>;
 	};
 
 	sram0: sram@9f000000 {
