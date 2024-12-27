@@ -128,7 +128,7 @@ define Device/usrobotics_usr8200
 	DEVICE_VENDOR := USRobotics
 	DEVICE_MODEL := USR8200
 	# USB2 is compiled in and needs no package
-	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-r7301 kmod-firewire kmod-firewire-ohci
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-r7301 kmod-firewire kmod-firewire-ohci kmod-dsa-mv88e6060
 	DEVICE_DTS := intel-ixp42x-usrobotics-usr8200
 	KERNEL := kernel-bin | append-dtb
 	IMAGES := kernel.bin rootfs.bin
