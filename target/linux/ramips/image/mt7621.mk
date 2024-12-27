@@ -294,11 +294,11 @@ TARGET_DEVICES += alfa-network_quad-e4g
 
 define Device/ampedwireless_ally_common
   $(Device/nand)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Amped Wireless
   DEVICE_PACKAGES := kmod-mt7615-firmware
   IMAGE_SIZE := 32768k
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'flashable-initramfs' |\
-	edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
+  KERNEL_INITRAMFS := $$(KERNEL) | edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
 endef
 
 define Device/ampedwireless_ally-r1900k
