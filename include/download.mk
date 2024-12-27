@@ -238,7 +238,7 @@ define DownloadMethod/rawgit
 	[ \! -d $(SUBDIR) ] && \
 	git clone $(OPTS) $(URL) $(SUBDIR) && \
 	(cd $(SUBDIR) && git checkout $(SOURCE_VERSION)) && \
-	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
+	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --no-show-signature --format='@%ct'` && \
 	echo "Generating formal git archive (apply .gitattributes rules)" && \
 	(cd $(SUBDIR) && git config core.abbrev 8 && \
 	git archive --format=tar HEAD --output=../$(SUBDIR).tar.git) && \
