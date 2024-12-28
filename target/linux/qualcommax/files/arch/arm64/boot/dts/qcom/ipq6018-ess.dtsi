@@ -504,4 +504,15 @@
 		phy-mode = "psgmii";
 		status = "disabled";
 	};
+
+	dp5_syn: dp5-syn {
+		device_type = "network";
+		compatible = "qcom,nss-dp";
+		qcom,id = <5>;
+		reg = <0x0 0x3a003000 0x0 0x3fff>;
+		qcom,mactype = <1>;
+		local-mac-address = [000000000000];
+		phy-mode = "usxgmii";
+		status = "disabled";
+	};
 };
