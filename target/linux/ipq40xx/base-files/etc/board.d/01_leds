@@ -116,6 +116,12 @@ zyxel,wre6606)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
 	;;
+alibaba,ap4220 |\
+alibaba,ap4220-48m)
+	ucidef_set_led_timer "power" "POWER" "green:status" "1000" "1000"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
+	;;
 esac
 
 board_config_flush

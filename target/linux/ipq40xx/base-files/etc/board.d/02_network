@@ -107,6 +107,8 @@ ipq40xx_setup_interfaces()
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
 		;;
+	alibaba,ap4220|\
+	alibaba,ap4220-48m|\
 	plasmacloud,pa1200|\
 	plasmacloud,pa2200)
 		ucidef_set_interfaces_lan_wan "ethernet1" "ethernet2"
