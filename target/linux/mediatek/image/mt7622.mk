@@ -123,7 +123,7 @@ define Device/buffalo_wsr
 	buffalo-enc $$(DEVICE_MODEL) $$(BUFFALO_TAG_VERSION) -l | \
 	buffalo-tag-dhp $$(DEVICE_MODEL) JP JP | buffalo-enc-tag -l | buffalo-dhp-image
   IMAGE/factory-uboot.bin := append-ubi | \
-	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $$$$@ $(KDIR)/ubi_mark
+	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $$$$@ $(KDIR)/ubi_mark | append-metadata
   IMAGE/sysupgrade.bin := \
 	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $(KDIR)/tmp/$$(DEVICE_NAME).null | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
