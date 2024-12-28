@@ -15,7 +15,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -454,6 +454,17 @@ config PWM_PCA9685
+@@ -465,6 +465,17 @@ config PWM_PCA9685
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-pca9685.
  
@@ -35,7 +35,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	depends on ARCH_PXA || ARCH_MMP || COMPILE_TEST
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
+@@ -42,6 +42,7 @@ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
  obj-$(CONFIG_PWM_NTXEC)		+= pwm-ntxec.o
  obj-$(CONFIG_PWM_OMAP_DMTIMER)	+= pwm-omap-dmtimer.o
  obj-$(CONFIG_PWM_PCA9685)	+= pwm-pca9685.o

@@ -13,7 +13,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/include/linux/pio_rp1.h
 +++ b/include/linux/pio_rp1.h
-@@ -245,7 +245,7 @@ static inline bool pio_can_add_program_a
+@@ -247,7 +247,7 @@ static inline bool pio_can_add_program_a
  	return !rp1_pio_can_add_program(client, &args);
  }
  
@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  {
  	struct rp1_pio_add_program_args args;
  	int offset;
-@@ -365,7 +365,7 @@ static inline int pio_sm_set_config(stru
+@@ -367,7 +367,7 @@ static inline int pio_sm_set_config(stru
  	return rp1_pio_sm_set_config(client, &args);
  }
  
@@ -31,7 +31,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  {
  	struct rp1_pio_sm_exec_args args = { .sm = sm, .instr = instr, .blocking = false };
  
-@@ -375,7 +375,7 @@ int pio_sm_exec(struct rp1_pio_client *c
+@@ -377,7 +377,7 @@ int pio_sm_exec(struct rp1_pio_client *c
  	return rp1_pio_sm_exec(client, &args);
  }
  

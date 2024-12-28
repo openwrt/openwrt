@@ -1,7 +1,7 @@
 From 5c07ba20630a629399eaa6583457aca93ff74606 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Mon, 9 Dec 2024 09:58:29 +0000
-Subject: [PATCH 1474/1482] misc: rp1-pio: Convert floats to 24.8 fixed point
+Subject: [PATCH] misc: rp1-pio: Convert floats to 24.8 fixed point
 
 Floating point arithmetic is not supported in the kernel, so use fixed
 point instead.

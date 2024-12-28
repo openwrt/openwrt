@@ -1,8 +1,7 @@
 From eb836a6a299322a8e2b9627cccd23c7a76d068ba Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dave.stevenson@raspberrypi.com>
 Date: Fri, 8 Nov 2024 17:36:13 +0000
-Subject: [PATCH 1425/1482] rp1: clk: Rationalise the use of the
- CLK_IS_CRITICAL flag
+Subject: [PATCH] rp1: clk: Rationalise the use of the CLK_IS_CRITICAL flag
 
 The clock setup had been copied from clk-bcm2835 which had to cope
 with the firmware having configured clocks, so there were flags

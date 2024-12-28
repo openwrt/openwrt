@@ -10,10 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_VERSION:=2.12
 PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/ARM-software/arm-trusted-firmware.git
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=51b2022baa25df7fd8f2e6d2709c9351c14b17447cda64759a8a1d432f9d1c11
+PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
 PKG_MAINTAINER:=Thomas Richard <thomas.richard@bootlin.com>
 
 include $(INCLUDE_DIR)/kernel.mk
