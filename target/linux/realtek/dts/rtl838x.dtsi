@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <dt-bindings/clock/rtl83xx-clk.h>
+#include <dt-bindings/leds/rtl838x-leds.h>
+#include <dt-bindings/leds/common.h>
 
 /dts-v1/;
 
@@ -55,6 +57,23 @@
 			full-duplex; \
 		}; \
 	};
+
+#define SWITCH_PORT_LED(p, l, n, c) \
+	&port##p { \
+		leds { \
+			#address-cells = <1>; \
+			#size-cells = <0>; \
+			\
+			led@##l { \
+				reg = <##l>; \
+				color = <##c>; \
+				function = LED_FUNCTION_LAN; \
+				linux,default-trigger = "realtek-switchport"; \
+				realtek,port-led-trigger = <##n>; \
+			}; \
+		}; \
+	};
+
 
 / {
 	#address-cells = <1>;

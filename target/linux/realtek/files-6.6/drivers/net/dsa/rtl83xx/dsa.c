@@ -254,6 +254,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	pr_debug("Please wait until PHY is settled\n");
 	msleep(1000);
 	priv->r->pie_init(priv);
+	priv->r->led_init(priv);
 
 	return 0;
 }
