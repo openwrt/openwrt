@@ -1,0 +1,90 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-006
+
+Bug-Reported-by:	Tom de Vries <tdevries@suse.de>
+Bug-Reference-ID:
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2022-09/msg00001.html
+
+Bug-Description:
+
+This is a variant of the same issue as the one fixed by patch 5. In this
+case, the signal arrives and is pending before readline calls rl_getc().
+When this happens, the pending signal will be handled by the loop, but may
+alter or destroy some state that the callback uses. Readline needs to treat
+this case the same way it would if a signal interrupts pselect/select, so
+compound operations like searches and reading numeric arguments get cleaned
+up properly.
+
+
+--- a/input.c
++++ b/input.c
+@@ -804,7 +804,7 @@ rl_read_key (void)
+ int
+ rl_getc (FILE *stream)
+ {
+-  int result;
++  int result, ostate, osig;
+   unsigned char c;
+   int fd;
+ #if defined (HAVE_PSELECT) || defined (HAVE_SELECT)
+@@ -815,8 +815,22 @@ rl_getc (FILE *stream)
+   fd = fileno (stream);
+   while (1)
+     {
++      osig = _rl_caught_signal;
++      ostate = rl_readline_state;
++
+       RL_CHECK_SIGNALS ();
+ 
++#if defined (READLINE_CALLBACKS)
++      /* Do signal handling post-processing here, but just in callback mode
++	 for right now because the signal cleanup can change some of the
++	 callback state, and we need to either let the application have a
++	 chance to react or abort some current operation that gets cleaned
++	 up by rl_callback_sigcleanup(). If not, we'll just run through the
++	 loop again. */
++      if (osig != 0 && (ostate & RL_STATE_CALLBACK))
++	goto postproc_signal;
++#endif
++
+       /* We know at this point that _rl_caught_signal == 0 */
+ 
+ #if defined (__MINGW32__)
+@@ -880,6 +894,9 @@ rl_getc (FILE *stream)
+ /* fprintf(stderr, "rl_getc: result = %d errno = %d\n", result, errno); */
+ 
+ handle_error:
++      osig = _rl_caught_signal;
++      ostate = rl_readline_state;
++
+       /* If the error that we received was EINTR, then try again,
+ 	 this is simply an interrupted system call to read ().  We allow
+ 	 the read to be interrupted if we caught SIGHUP, SIGTERM, or any
+@@ -920,8 +937,17 @@ handle_error:
+         RL_CHECK_SIGNALS ();
+ #endif  /* SIGALRM */
+ 
++postproc_signal:
++      /* POSIX says read(2)/pselect(2)/select(2) don't return EINTR for any
++	 reason other than being interrupted by a signal, so we can safely
++	 call the application's signal event hook. */
+       if (rl_signal_event_hook)
+ 	(*rl_signal_event_hook) ();
++#if defined (READLINE_CALLBACKS)
++      else if (osig == SIGINT && (ostate & RL_STATE_CALLBACK) && (ostate & (RL_STATE_ISEARCH|RL_STATE_NSEARCH|RL_STATE_NUMERICARG)))
++        /* just these cases for now */
++        _rl_abort_internal ();
++#endif
+     }
+ }
+ 
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-5
++6
