@@ -1,14 +1,22 @@
 . /lib/functions.sh
 
-kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"\(kernel\|linux\)".*/\1/p' /proc/mtd)
+# don't modify FW data when booting with initramfs image
+fstype="$(/bin/mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }')"
+[ "$fstype" = "tmpfs" ] && \
+	exit 0
+
+fixup_trx_crc() {
+	local trx_magic="$1"
+	local kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"\(kernel\|linux\)".*/\1/p' /proc/mtd)
+
+	mtd -M $trx_magic ${kernel_size:+-c 0x$kernel_size} fixtrx firmware
+}
 
 case "$(board_name)" in
 buffalo,wsr-2533dhp2)
-	mtd -M 0x44485032 ${kernel_size:+-c 0x$kernel_size} fixtrx firmware && exit 0
-	exit 1
+	fixup_trx_crc 0x44485032
 	;;
 buffalo,wsr-3200ax4s)
-	mtd -M 0x44485033 ${kernel_size:+-c 0x$kernel_size} fixtrx firmware && exit 0
-	exit 1
+	fixup_trx_crc 0x44485033
 	;;
 esac
