@@ -113,7 +113,9 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_calibrate_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &spi {
@@ -136,9 +138,13 @@
 			};
 
 			partition@80000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env0";
 				reg = <0x80000 0x10000>;
 				read-only;
+
+				macaddr_uboot_ethaddr: ethaddr {
+				};
 			};
 
 			partition@90000 {
@@ -157,6 +163,20 @@
 				label = "calibrate";
 				reg = <0x120000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_calibrate_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_calibrate_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
+				};
 			};
 
 			partition@130000 {
@@ -196,7 +216,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_calibrate_5000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -217,6 +238,9 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr>;
+	nvmem-cell-names = "mac-address";
 
 	gmac-config {
 		device = <&gmac>;
