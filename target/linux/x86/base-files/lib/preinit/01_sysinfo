@@ -16,7 +16,9 @@ do_sysinfo_x86() {
 		empty | \
 		System\ manufacturer | \
 		To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\. | \
+		System\ manufacturer | \
 		Default\ [sS]tring)
+			vendor=" "
 			continue
 			;;
 		esac
@@ -29,7 +31,9 @@ do_sysinfo_x86() {
 		?*:empty | \
 		?*:System\ Product\ Name | \
 		?*:To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\. | \
+		?*:System\ manufacturer | \
 		?*:Default\ [sS]tring)
+			product=" "
 			continue
 			;;
 		"PC Engines:APU")
