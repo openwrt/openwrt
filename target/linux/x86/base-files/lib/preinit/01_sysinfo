@@ -15,7 +15,10 @@ do_sysinfo_x86() {
 		case "$vendor" in
 		empty | \
 		System\ manufacturer | \
-		To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
+		To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\. | \
+		System\ manufacturer | \
+		Default\ [sS]tring)
+			vendor=" "
 			continue
 			;;
 		esac
@@ -27,7 +30,10 @@ do_sysinfo_x86() {
 		case "$vendor:$product" in
 		?*:empty | \
 		?*:System\ Product\ Name | \
-		?*:To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
+		?*:To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\. | \
+		?*:System\ manufacturer | \
+		?*:Default\ [sS]tring)
+			product=" "
 			continue
 			;;
 		"PC Engines:APU")
