@@ -1269,6 +1269,34 @@ define Device/zte_mf287plus
 endef
 TARGET_DEVICES += zte_mf287plus
 
+define Device/alibaba_ap4220
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Alibaba
+	DEVICE_MODEL := AP4220
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 131072k
+	DEVICE_PACKAGES += ipq-wifi-alibaba_ap4220
+	FILESYSTEMS := squashfs
+endef
+TARGET_DEVICES += alibaba_ap4220
+
+define Device/alibaba_ap4220-48m
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Alibaba
+	DEVICE_MODEL := AP4220-48m
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 49152k
+	DEVICE_PACKAGES += ipq-wifi-alibaba_ap4220
+	FILESYSTEMS := squashfs
+endef
+TARGET_DEVICES += alibaba_ap4220-48m
+
 define Device/zte_mf287
 	$(call Device/zte_mf287_common)
 	DEVICE_PACKAGES += ipq-wifi-zte_mf287
