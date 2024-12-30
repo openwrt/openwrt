@@ -1,0 +1,25 @@
+From ddc3fe731e36a668897a3524e782e88b51e58109 Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marco.nelissen@gmail.com>
+Date: Tue, 31 Dec 2024 13:16:33 -0800
+Subject: [PATCH] filemap: avoid truncating 64-bit offset to 32 bits
+
+on 32-bit kernels, folio_seek_hole_data() was inadvertently truncating a
+64-bit value to 32 bits, leading to a possible infinite loop when writing
+to an xfs filesystem.
+
+Signed-off-by: Marco Nelissen <marco.nelissen@gmail.com>
+---
+ mm/filemap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -3004,7 +3004,7 @@ static inline loff_t folio_seek_hole_dat
+ 		if (ops->is_partially_uptodate(folio, offset, bsz) ==
+ 							seek_data)
+ 			break;
+-		start = (start + bsz) & ~(bsz - 1);
++		start = (start + bsz) & ~((u64)bsz - 1);
+ 		offset += bsz;
+ 	} while (offset < folio_size(folio));
+ unlock:

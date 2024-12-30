@@ -1,0 +1,31 @@
+From 5df9e5318c4e5bc752216e537462fdf441444946 Mon Sep 17 00:00:00 2001
+From: Marco Nelissen <marco.nelissen@gmail.com>
+Date: Wed, 8 Jan 2025 20:11:50 -0800
+Subject: [PATCH] iomap: avoid avoid truncating 64-bit offset to 32 bits
+
+commit c13094b894de289514d84b8db56d1f2931a0bade upstream.
+
+on 32-bit kernels, iomap_write_delalloc_scan() was inadvertently using a
+32-bit position due to folio_next_index() returning an unsigned long.
+This could lead to an infinite loop when writing to an xfs filesystem.
+
+Signed-off-by: Marco Nelissen <marco.nelissen@gmail.com>
+Link: https://lore.kernel.org/r/20250109041253.2494374-1-marco.nelissen@gmail.com
+Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Christian Brauner <brauner@kernel.org>
+---
+ fs/iomap/buffered-io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/fs/iomap/buffered-io.c
++++ b/fs/iomap/buffered-io.c
+@@ -1138,7 +1138,7 @@ static void iomap_write_delalloc_scan(st
+ 				start_byte, end_byte, iomap, punch);
+ 
+ 		/* move offset to start of next folio in range */
+-		start_byte = folio_next_index(folio) << PAGE_SHIFT;
++		start_byte = folio_pos(folio) + folio_size(folio);
+ 		folio_unlock(folio);
+ 		folio_put(folio);
+ 	}
