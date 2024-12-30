@@ -17,34 +17,6 @@ define Device/lantiqTpLink
 	check-size | append-metadata
 endef
 
-define Device/tplink_tdw8970
-  $(Device/dsa-migration)
-  $(Device/lantiqTpLink)
-  DEVICE_MODEL := TD-W8970
-  DEVICE_VARIANT := v1
-  TPLINK_FLASHLAYOUT := 8Mltq
-  TPLINK_HWID := 0x89700001
-  TPLINK_HWREV := 1
-  IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES:= kmod-ath9k wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += TDW8970
-endef
-TARGET_DEVICES += tplink_tdw8970
-
-define Device/tplink_tdw8980
-  $(Device/dsa-migration)
-  $(Device/lantiqTpLink)
-  DEVICE_MODEL := TD-W8980
-  DEVICE_VARIANT := v1
-  TPLINK_FLASHLAYOUT := 8Mltq
-  TPLINK_HWID := 0x89800001
-  TPLINK_HWREV := 14
-  IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += TDW8980
-endef
-TARGET_DEVICES += tplink_tdw8980
-
 define Device/tplink_vr200
   $(Device/dsa-migration)
   $(Device/lantiqTpLink)

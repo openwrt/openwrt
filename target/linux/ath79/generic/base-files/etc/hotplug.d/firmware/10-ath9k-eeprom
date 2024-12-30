@@ -58,11 +58,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env mac_addr)
 		;;
-	tplink,deco-s4-v2)
-		caldata_extract "art" 0x1000 0x440
-		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
-		ath9k_patch_mac $(macaddr_add $base_mac 1)
-		;;
 	*)
 		caldata_die "board $board is not supported yet"
 		;;
@@ -87,11 +82,6 @@ case "$FIRMWARE" in
 		;;
 	meraki,mr12)
 		caldata_extract "art" 0x11000 0xeb8
-		;;
-	netgear,wnr2200-8m|\
-	netgear,wnr2200-16m|\
-	tplink,tl-wr842n-v1)
-		caldata_extract "art" 0x1000 0x3e0
 		;;
 	ubnt,powerbridge-m|\
 	ubnt,rocket-m)

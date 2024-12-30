@@ -36,7 +36,8 @@ mediatek_setup_interfaces()
 	keenetic,kn-3811|\
 	qihoo,360t7|\
 	routerich,ax3000|\
-	routerich,ax3000-ubootmod)
+	routerich,ax3000-ubootmod|\
+	tenbay,wr3000k)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	asus,tuf-ax4200|\
@@ -59,20 +60,23 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
 	bananapi,bpi-r3)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
 	bananapi,bpi-r3-mini|\
 	edgecore,eap111)
 		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
-	bananapi,bpi-r4|\
+	bananapi,bpi-r4)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
+		;;
 	bananapi,bpi-r4-poe)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth1" "wan eth2"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan sfp-wan"
 		;;
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
 	cudy,ap3000outdoor-v1|\
+	cudy,ap3000-v1|\
 	cudy,re3000-v1|\
 	netgear,wax220|\
 	ubnt,unifi-6-plus|\
@@ -89,7 +93,8 @@ mediatek_setup_interfaces()
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
-	dlink,aquila-pro-ai-m30-a1)
+	dlink,aquila-pro-ai-m30-a1|\
+	dlink,aquila-pro-ai-m60-a1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
 	keenetic,kn-3911|\

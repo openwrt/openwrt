@@ -82,7 +82,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		int delta = sum_truesize - gso_skb->truesize;
 --- a/net/ipv6/udp.c
 +++ b/net/ipv6/udp.c
-@@ -1261,8 +1261,7 @@ static int udp_v6_send_skb(struct sk_buf
+@@ -1258,8 +1258,7 @@ static int udp_v6_send_skb(struct sk_buf
  			kfree_skb(skb);
  			return -EINVAL;
  		}

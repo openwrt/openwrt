@@ -33,6 +33,7 @@ TFA_TARGETS:= \
 	bcm4908
 
 TFA_MAKE_FLAGS += \
+	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments") \
 	BRCM_CHIP=$(BRCM_CHIP)
 
 define Package/trusted-firmware-a/install

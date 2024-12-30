@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apk
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
@@ -60,7 +60,8 @@ MESON_COMMON_ARGS = \
 	-Dlua_version=5.1 \
 	-Ddefault_library=static \
 	-Durl_backend=wget \
-	-Dzstd=false
+	-Dzstd=false \
+	-Dtests=disabled
 
 MESON_HOST_ARGS += \
 	$(MESON_COMMON_ARGS) \

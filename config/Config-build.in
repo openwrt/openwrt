@@ -426,7 +426,7 @@ menu "Global build settings"
 	config USE_SECCOMP
 		bool "Enable SECCOMP"
 		select KERNEL_SECCOMP
-		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || powerpc || x86_64)
+		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || loongarch64 || powerpc || x86_64)
 		depends on !TARGET_uml
 		default y
 		help

@@ -1,0 +1,309 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 17 Jul 2024 15:43:52 +0200
+Subject: [PATCH] wifi: cfg80211: add option for vif allowed radios
+
+This allows users to prevent a vif from affecting radios other than the
+configured ones. This can be useful in cases where e.g. an AP is running
+on one radio, and triggering a scan on another radio should not disturb it.
+
+Changing the allowed radios list for a vif is supported, but only while
+it is down.
+
+While it is possible to achieve the same by always explicitly specifying
+a frequency list for scan requests and ensuring that the wrong channel/band
+is never accidentally set on an unrelated interface, this change makes
+multi-radio wiphy setups a lot easier to deal with for CLI users.
+
+By itself, this patch only enforces the radio mask for scanning requests
+and remain-on-channel. Follow-up changes build on this to limit configured
+frequencies.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -6271,6 +6271,7 @@ enum ieee80211_ap_reg_power {
+  *	entered.
+  * @links.cac_time_ms: CAC time in ms
+  * @valid_links: bitmap describing what elements of @links are valid
++ * @radio_mask: Bitmask of radios that this interface is allowed to operate on.
+  */
+ struct wireless_dev {
+ 	struct wiphy *wiphy;
+@@ -6383,6 +6384,8 @@ struct wireless_dev {
+ 		unsigned int cac_time_ms;
+ 	} links[IEEE80211_MLD_MAX_NUM_LINKS];
+ 	u16 valid_links;
++
++	u32 radio_mask;
+ };
+ 
+ static inline const u8 *wdev_address(struct wireless_dev *wdev)
+@@ -6569,6 +6572,17 @@ bool cfg80211_radio_chandef_valid(const
+ 				  const struct cfg80211_chan_def *chandef);
+ 
+ /**
++ * cfg80211_wdev_channel_allowed - Check if the wdev may use the channel
++ *
++ * @wdev: the wireless device
++ * @chan: channel to check
++ *
++ * Return: whether or not the wdev may use the channel
++ */
++bool cfg80211_wdev_channel_allowed(struct wireless_dev *wdev,
++				   struct ieee80211_channel *chan);
++
++/**
+  * ieee80211_get_response_rate - get basic rate for a given rate
+  *
+  * @sband: the band to look for rates in
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2868,6 +2868,9 @@ enum nl80211_commands {
+  *	nested item, it contains attributes defined in
+  *	&enum nl80211_if_combination_attrs.
+  *
++ * @NL80211_ATTR_VIF_RADIO_MASK: Bitmask of allowed radios (u32).
++ *	A value of 0 means all radios.
++ *
+  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
+  * @NL80211_ATTR_MAX: highest attribute number currently defined
+  * @__NL80211_ATTR_AFTER_LAST: internal use
+@@ -3416,6 +3419,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_WIPHY_RADIOS,
+ 	NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
+ 
++	NL80211_ATTR_VIF_RADIO_MASK,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -829,6 +829,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_MLO_TTLM_DLINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
+ 	[NL80211_ATTR_MLO_TTLM_ULINK] = NLA_POLICY_EXACT_LEN(sizeof(u16) * 8),
+ 	[NL80211_ATTR_ASSOC_SPP_AMSDU] = { .type = NLA_FLAG },
++	[NL80211_ATTR_VIF_RADIO_MASK] = { .type = NLA_U32 },
+ };
+ 
+ /* policy for the key attributes */
+@@ -3996,7 +3997,8 @@ static int nl80211_send_iface(struct sk_
+ 	    nla_put_u32(msg, NL80211_ATTR_GENERATION,
+ 			rdev->devlist_generation ^
+ 			(cfg80211_rdev_list_generation << 2)) ||
+-	    nla_put_u8(msg, NL80211_ATTR_4ADDR, wdev->use_4addr))
++	    nla_put_u8(msg, NL80211_ATTR_4ADDR, wdev->use_4addr) ||
++	    nla_put_u32(msg, NL80211_ATTR_VIF_RADIO_MASK, wdev->radio_mask))
+ 		goto nla_put_failure;
+ 
+ 	if (rdev->ops->get_channel && !wdev->valid_links) {
+@@ -4312,6 +4314,29 @@ static int nl80211_valid_4addr(struct cf
+ 	return -EOPNOTSUPP;
+ }
+ 
++static int nl80211_parse_vif_radio_mask(struct genl_info *info,
++					u32 *radio_mask)
++{
++	struct cfg80211_registered_device *rdev = info->user_ptr[0];
++	struct nlattr *attr = info->attrs[NL80211_ATTR_VIF_RADIO_MASK];
++	u32 mask, allowed;
++
++	if (!attr) {
++		*radio_mask = 0;
++		return 0;
++	}
++
++	allowed = BIT(rdev->wiphy.n_radio) - 1;
++	mask = nla_get_u32(attr);
++	if (mask & ~allowed)
++		return -EINVAL;
++	if (!mask)
++		mask = allowed;
++	*radio_mask = mask;
++
++	return 1;
++}
++
+ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+@@ -4319,6 +4344,8 @@ static int nl80211_set_interface(struct
+ 	int err;
+ 	enum nl80211_iftype otype, ntype;
+ 	struct net_device *dev = info->user_ptr[1];
++	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	u32 radio_mask = 0;
+ 	bool change = false;
+ 
+ 	memset(&params, 0, sizeof(params));
+@@ -4332,8 +4359,6 @@ static int nl80211_set_interface(struct
+ 	}
+ 
+ 	if (info->attrs[NL80211_ATTR_MESH_ID]) {
+-		struct wireless_dev *wdev = dev->ieee80211_ptr;
+-
+ 		if (ntype != NL80211_IFTYPE_MESH_POINT)
+ 			return -EINVAL;
+ 		if (otype != NL80211_IFTYPE_MESH_POINT)
+@@ -4364,6 +4389,12 @@ static int nl80211_set_interface(struct
+ 	if (err > 0)
+ 		change = true;
+ 
++	err = nl80211_parse_vif_radio_mask(info, &radio_mask);
++	if (err < 0)
++		return err;
++	if (err && netif_running(dev))
++		return -EBUSY;
++
+ 	if (change)
+ 		err = cfg80211_change_iface(rdev, dev, ntype, &params);
+ 	else
+@@ -4372,11 +4403,11 @@ static int nl80211_set_interface(struct
+ 	if (!err && params.use_4addr != -1)
+ 		dev->ieee80211_ptr->use_4addr = params.use_4addr;
+ 
+-	if (change && !err) {
+-		struct wireless_dev *wdev = dev->ieee80211_ptr;
++	if (radio_mask)
++		wdev->radio_mask = radio_mask;
+ 
++	if (change && !err)
+ 		nl80211_notify_iface(rdev, wdev, NL80211_CMD_SET_INTERFACE);
+-	}
+ 
+ 	return err;
+ }
+@@ -4387,6 +4418,7 @@ static int _nl80211_new_interface(struct
+ 	struct vif_params params;
+ 	struct wireless_dev *wdev;
+ 	struct sk_buff *msg;
++	u32 radio_mask;
+ 	int err;
+ 	enum nl80211_iftype type = NL80211_IFTYPE_UNSPECIFIED;
+ 
+@@ -4424,6 +4456,10 @@ static int _nl80211_new_interface(struct
+ 	if (err < 0)
+ 		return err;
+ 
++	err = nl80211_parse_vif_radio_mask(info, &radio_mask);
++	if (err < 0)
++		return err;
++
+ 	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
+ 	if (!msg)
+ 		return -ENOMEM;
+@@ -4465,6 +4501,9 @@ static int _nl80211_new_interface(struct
+ 		break;
+ 	}
+ 
++	if (radio_mask)
++		wdev->radio_mask = radio_mask;
++
+ 	if (nl80211_send_iface(msg, info->snd_portid, info->snd_seq, 0,
+ 			       rdev, wdev, NL80211_CMD_NEW_INTERFACE) < 0) {
+ 		nlmsg_free(msg);
+@@ -9180,6 +9219,9 @@ static bool cfg80211_off_channel_oper_al
+ 
+ 	lockdep_assert_wiphy(wdev->wiphy);
+ 
++	if (!cfg80211_wdev_channel_allowed(wdev, chan))
++		return false;
++
+ 	if (!cfg80211_beaconing_iface_active(wdev))
+ 		return true;
+ 
+@@ -9392,7 +9434,8 @@ static int nl80211_trigger_scan(struct s
+ 			}
+ 
+ 			/* ignore disabled channels */
+-			if (chan->flags & IEEE80211_CHAN_DISABLED)
++			if (chan->flags & IEEE80211_CHAN_DISABLED ||
++			    !cfg80211_wdev_channel_allowed(wdev, chan))
+ 				continue;
+ 
+ 			request->channels[i] = chan;
+@@ -9412,7 +9455,8 @@ static int nl80211_trigger_scan(struct s
+ 
+ 				chan = &wiphy->bands[band]->channels[j];
+ 
+-				if (chan->flags & IEEE80211_CHAN_DISABLED)
++				if (chan->flags & IEEE80211_CHAN_DISABLED ||
++				    !cfg80211_wdev_channel_allowed(wdev, chan))
+ 					continue;
+ 
+ 				request->channels[i] = chan;
+--- a/net/wireless/scan.c
++++ b/net/wireless/scan.c
+@@ -956,7 +956,8 @@ static int cfg80211_scan_6ghz(struct cfg
+ 		struct ieee80211_channel *chan =
+ 			ieee80211_get_channel(&rdev->wiphy, ap->center_freq);
+ 
+-		if (!chan || chan->flags & IEEE80211_CHAN_DISABLED)
++		if (!chan || chan->flags & IEEE80211_CHAN_DISABLED ||
++		    !cfg80211_wdev_channel_allowed(rdev_req->wdev, chan))
+ 			continue;
+ 
+ 		for (i = 0; i < rdev_req->n_channels; i++) {
+@@ -3519,9 +3520,12 @@ int cfg80211_wext_siwscan(struct net_dev
+ 			continue;
+ 
+ 		for (j = 0; j < wiphy->bands[band]->n_channels; j++) {
++			struct ieee80211_channel *chan;
++
+ 			/* ignore disabled channels */
+-			if (wiphy->bands[band]->channels[j].flags &
+-						IEEE80211_CHAN_DISABLED)
++			chan = &wiphy->bands[band]->channels[j];
++			if (chan->flags & IEEE80211_CHAN_DISABLED ||
++			    !cfg80211_wdev_channel_allowed(creq->wdev, chan))
+ 				continue;
+ 
+ 			/* If we have a wireless request structure and the
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -2923,3 +2923,32 @@ bool cfg80211_radio_chandef_valid(const
+ 	return true;
+ }
+ EXPORT_SYMBOL(cfg80211_radio_chandef_valid);
++
++bool cfg80211_wdev_channel_allowed(struct wireless_dev *wdev,
++				   struct ieee80211_channel *chan)
++{
++	struct wiphy *wiphy = wdev->wiphy;
++	const struct wiphy_radio *radio;
++	struct cfg80211_chan_def chandef;
++	u32 radio_mask;
++	int i;
++
++	radio_mask = wdev->radio_mask;
++	if (!wiphy->n_radio || radio_mask == BIT(wiphy->n_radio) - 1)
++		return true;
++
++	cfg80211_chandef_create(&chandef, chan, NL80211_CHAN_HT20);
++	for (i = 0; i < wiphy->n_radio; i++) {
++		if (!(radio_mask & BIT(i)))
++			continue;
++
++		radio = &wiphy->radio[i];
++		if (!cfg80211_radio_chandef_valid(radio, &chandef))
++			continue;
++
++		return true;
++	}
++
++	return false;
++}
++EXPORT_SYMBOL(cfg80211_wdev_channel_allowed);
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -1424,6 +1424,8 @@ void cfg80211_init_wdev(struct wireless_
+ 	/* allow mac80211 to determine the timeout */
+ 	wdev->ps_timeout = -1;
+ 
++	wdev->radio_mask = BIT(wdev->wiphy->n_radio) - 1;
++
+ 	if ((wdev->iftype == NL80211_IFTYPE_STATION ||
+ 	     wdev->iftype == NL80211_IFTYPE_P2P_CLIENT ||
+ 	     wdev->iftype == NL80211_IFTYPE_ADHOC) && !wdev->use_4addr)

@@ -375,8 +375,8 @@ endif
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_COMPAT_VERSION := 1.2
-  DEVICE_COMPAT_MESSAGE := SPI-NAND flash layout changes require bootloader update
+  DEVICE_COMPAT_VERSION := 1.3
+  DEVICE_COMPAT_MESSAGE := First sfp port renamed from eth1 to sfp1
 endef
 TARGET_DEVICES += bananapi_bpi-r3
 
@@ -433,6 +433,8 @@ define Device/bananapi_bpi-r4-common
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7996-firmware kmod-mt7996-233-firmware \
 		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs mt7988-wo-firmware
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := The non-switch ports were renamed to match the board/case labels
   IMAGES := sysupgrade.itb
   KERNEL_LOADADDR := 0x46000000
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -592,6 +594,23 @@ define Device/cudy_ap3000outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap3000outdoor-v1
 
+define Device/cudy_ap3000-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-ap3000-v1
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += R49
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += cudy_ap3000-v1
+
 define Device/cudy_m3000-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := M3000
@@ -700,6 +719,20 @@ define Device/dlink_aquila-pro-ai-m30-a1
   IMAGE/recovery.bin := sysupgrade-tar | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E6110001 \x6A\x28\xEE\x0B \x00\x00\x2C\x00 \x00\x00\x20\x03 \x61\x6E
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1
+
+define Device/dlink_aquila-pro-ai-m60-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := AQUILA PRO AI M60
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := mt7986a-dlink-aquila-pro-ai-m60-a1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-gca230718 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  IMAGES += recovery.bin
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := sysupgrade-tar | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E8202001 \x30\x6C\x19\x0C \x00\x00\x2C\x00 \x00\x00\x20\x03 \x82\x6E
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m60-a1
 
 define Device/edgecore_eap111
   DEVICE_VENDOR := Edgecore
@@ -1213,7 +1246,10 @@ define Device/openembed_som7981
   DEVICE_MODEL := SOM7981
   DEVICE_DTS := mt7981b-openembed-som7981
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-crypto-hw-atmel kmod-eeprom-at24 kmod-gpio-beeper kmod-rtc-pcf8563 \
+	kmod-usb-net-cdc-mbim kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	kmod-usb3 uqmi
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -1345,6 +1381,27 @@ define Device/ruijie_rg-x60-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += ruijie_rg-x60-pro
+
+define Device/tenbay_wr3000k
+  DEVICE_VENDOR := Tenbay
+  DEVICE_MODEL := WR3000K
+  DEVICE_DTS := mt7981b-tenbay-wr3000k
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 49152k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  KERNEL = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+endef
+TARGET_DEVICES += tenbay_wr3000k
 
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link

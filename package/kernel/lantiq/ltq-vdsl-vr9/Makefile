@@ -29,7 +29,7 @@ define KernelPackage/ltq-vdsl-vr9
   TITLE:=vdsl driver
   SECTION:=sys
   SUBMENU:=Network Devices
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-vdsl-vr9-mei
+  DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy) +kmod-ltq-vdsl-vr9-mei
   FILES:=$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko
   AUTOLOAD:=$(call AutoLoad,51,drv_dsl_cpe_api)
 endef

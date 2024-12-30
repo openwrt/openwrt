@@ -60,6 +60,7 @@ ipq807x_setup_interfaces()
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
 		;;
+	tplink,eap620hd-v1|\
 	tplink,eap660hd-v1)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
@@ -92,6 +93,7 @@ ipq807x_setup_macs()
 			lan_mac=$(macaddr_add $label_mac 1)
 			wan_mac=$label_mac
 		;;
+		tplink,eap620hd-v1|\
 		tplink,eap660hd-v1)
 			label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 			lan_mac=$label_mac

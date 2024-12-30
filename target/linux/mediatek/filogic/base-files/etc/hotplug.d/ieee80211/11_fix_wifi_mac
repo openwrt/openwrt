@@ -73,14 +73,11 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
-	cudy,tr3000-v1|\
-	cudy,re3000-v1)
-		addr=$(mtd_get_mac_binary bdinfo 0xde00)
-		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 1) > /sys${DEVPATH}/macaddress
-		;;
 	cudy,ap3000outdoor-v1|\
+	cudy,ap3000-v1|\
 	cudy,m3000-v1|\
+	cudy,re3000-v1|\
+	cudy,tr3000-v1|\
 	cudy,wr3000s-v1|\
 	cudy,wr3000-v1)
 		addr=$(mtd_get_mac_binary bdinfo 0xde00)
@@ -140,9 +137,6 @@ case "$board" in
 		hw_mac_addr=$(mmc_get_mac_ascii bdinfo "fac_mac ")
 		[ "$PHYNBR" = "0" ] && echo "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
-		;;
-	openembed,som7981)
-		[ "$PHYNBR" = "1" ] && cat /sys/class/net/eth0/address > /sys${DEVPATH}/macaddress
 		;;
 	qihoo,360t7)
 		addr=$(mtd_get_mac_ascii factory lanMac)

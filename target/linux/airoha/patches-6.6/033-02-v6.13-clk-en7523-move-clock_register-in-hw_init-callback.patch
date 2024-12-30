@@ -51,7 +51,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  				   void __iomem *base, void __iomem *np_base)
  {
 @@ -449,6 +436,49 @@ static void en7523_register_clocks(struc
- 	clk_data->num = EN7523_NUM_CLOCKS;
+ 	clk_data->hws[EN7523_CLK_PCIE] = hw;
  }
  
 +static int en7523_clk_hw_init(struct platform_device *pdev,

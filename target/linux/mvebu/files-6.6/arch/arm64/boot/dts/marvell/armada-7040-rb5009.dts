@@ -26,6 +26,7 @@
 		led-failsafe = &led_user;
 		led-running = &led_user;
 		led-upgrade = &led_user;
+		label-mac-device = &p1;
 	};
 
 	usb3_vbus: regulator-usb3-vbus0 {
@@ -164,9 +165,12 @@
 
 			/* Empty space on NOR repurposed for U-Boot environment */
 			partition@fe0000 {
-				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0xfe0000 0x20000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
 			};
 		};
 	};
@@ -322,7 +326,7 @@
 				nvmem-cell-names = "mac-address";
 			};
 
-			port@9 {
+			p1: port@9 {
 				reg = <9>;
 				label = "p1";
 				phy-mode = "sgmii";

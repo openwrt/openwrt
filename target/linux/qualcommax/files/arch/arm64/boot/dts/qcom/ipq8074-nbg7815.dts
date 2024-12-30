@@ -212,12 +212,15 @@
 			};
 
 			partition@600000 {
-				compatible = "u-boot,env";
 				label = "0:appsblenv";
 				reg = <0x600000 0x10000>;
 
-				macaddr_lan: ethaddr {
-					#nvmem-cell-cells = <1>;
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_lan: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 

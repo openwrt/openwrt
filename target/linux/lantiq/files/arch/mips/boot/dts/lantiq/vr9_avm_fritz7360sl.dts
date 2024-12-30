@@ -49,6 +49,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_urlader_985: cal@985 {
+						reg = <0x985 0x3d8>;
+					};
+
 					macaddr_urlader_a91: macaddr@a91 {
 						compatible = "mac-base";
 						reg = <0xa91 0x6>;
@@ -88,4 +92,10 @@
 
 &phy1 {
 	reset-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+};
+
+&wifi {
+	compatible = "pci168c,002e";
+	nvmem-cells = <&cal_urlader_985>;
+	nvmem-cell-names = "calibration";
 };

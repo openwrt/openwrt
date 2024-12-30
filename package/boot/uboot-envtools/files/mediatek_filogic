@@ -96,7 +96,8 @@ zbtlink,zbt-z8102ax|\
 zbtlink,zbt-z8103ax)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-dlink,aquila-pro-ai-m30-a1)
+dlink,aquila-pro-ai-m30-a1|\
+dlink,aquila-pro-ai-m60-a1)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
 	;;
 gatonetworks,gdsp)
@@ -107,6 +108,7 @@ glinet,gl-mt3000)
 	;;
 mercusys,mr90x-v1|\
 routerich,ax3000|\
+tenbay,wr3000k|\
 tplink,re6000xd)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
