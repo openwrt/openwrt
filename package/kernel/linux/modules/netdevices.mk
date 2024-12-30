@@ -970,7 +970,7 @@ $(eval $(call KernelPackage,8139cp))
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mii +r8169-firmware +kmod-phy-realtek +kmod-mdio-devres +kmod-hwmon-core
   KCONFIG:= \
     CONFIG_R8169 \
     CONFIG_R8169_LEDS=y
