@@ -642,8 +642,7 @@ define Device/glinet_gl-s1300
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := kmod-fs-ext4 kmod-mmc kmod-spi-dev
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += glinet_gl-s1300
+TARGET_DEVICES += glinet_gl-s1300
 
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
