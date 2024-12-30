@@ -1,0 +1,49 @@
+From 294473dd74cc3fe3aa7b46b993e3141e287ac192 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 1 Nov 2024 09:06:16 +0000
+Subject: [PATCH] configs: Enable RP1 PIO support
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm64/configs/bcm2711_defconfig | 3 +++
+ arch/arm64/configs/bcm2712_defconfig | 3 +++
+ 2 files changed, 6 insertions(+)
+
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -482,6 +482,8 @@ CONFIG_ATA_OVER_ETH=m
+ CONFIG_BLK_DEV_RBD=m
+ CONFIG_BLK_DEV_NVME=y
+ CONFIG_NVME_HWMON=y
++CONFIG_RP1_PIO=m
++CONFIG_SRAM=y
+ CONFIG_EEPROM_AT24=m
+ CONFIG_EEPROM_AT25=m
+ CONFIG_TI_ST=m
+@@ -1484,6 +1486,7 @@ CONFIG_COMMON_CLK_RP1_SDIO=y
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
++CONFIG_MBOX_RP1=m
+ CONFIG_BCM2712_IOMMU=y
+ CONFIG_RASPBERRYPI_POWER=y
+ CONFIG_IIO=m
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -485,6 +485,8 @@ CONFIG_ATA_OVER_ETH=m
+ CONFIG_BLK_DEV_RBD=m
+ CONFIG_BLK_DEV_NVME=y
+ CONFIG_NVME_HWMON=y
++CONFIG_RP1_PIO=m
++CONFIG_SRAM=y
+ CONFIG_EEPROM_AT24=m
+ CONFIG_EEPROM_AT25=m
+ CONFIG_TI_ST=m
+@@ -1487,6 +1489,7 @@ CONFIG_COMMON_CLK_RP1_SDIO=y
+ CONFIG_CLK_RASPBERRYPI=y
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
++CONFIG_MBOX_RP1=m
+ CONFIG_BCM2712_IOMMU=y
+ CONFIG_RASPBERRYPI_POWER=y
+ CONFIG_IIO=m

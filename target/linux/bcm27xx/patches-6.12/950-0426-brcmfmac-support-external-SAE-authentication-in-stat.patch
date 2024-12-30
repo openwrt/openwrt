@@ -1,0 +1,592 @@
+From b92622c6f9c4a2da9bf7610675dc3260b83d62bc Mon Sep 17 00:00:00 2001
+From: Chung-Hsien Hsu <stanley.hsu@cypress.com>
+Date: Fri, 9 Apr 2021 02:48:51 -0500
+Subject: [PATCH] brcmfmac: support external SAE authentication in station mode
+
+Firmware has SME functionality but would like the userspace to handle
+SAE authentication. This patch adds support for such an external SAE
+authentication mechanism in station mode.
+
+Signed-off-by: Chung-Hsien Hsu <chung-hsien.hsu@infineon.com>
+Signed-off-by: Chi-hsien Lin <chi-hsien.lin@infineon.com>
+---
+ .../broadcom/brcm80211/brcmfmac/cfg80211.c    | 255 +++++++++++++++++-
+ .../broadcom/brcm80211/brcmfmac/cfg80211.h    |  18 ++
+ .../broadcom/brcm80211/brcmfmac/common.c      |   6 +-
+ .../broadcom/brcm80211/brcmfmac/feature.c     |   1 +
+ .../broadcom/brcm80211/brcmfmac/feature.h     |   2 +
+ .../broadcom/brcm80211/brcmfmac/fweh.c        |  19 ++
+ .../broadcom/brcm80211/brcmfmac/fweh.h        |  12 +-
+ .../broadcom/brcm80211/brcmfmac/fwil_types.h  |  45 ++++
+ 8 files changed, 340 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -90,6 +90,9 @@
+ 
+ #define BRCMF_PS_MAX_TIMEOUT_MS		2000
+ 
++#define MGMT_AUTH_FRAME_DWELL_TIME	4000
++#define MGMT_AUTH_FRAME_WAIT_TIME	(MGMT_AUTH_FRAME_DWELL_TIME + 100)
++
+ /* Dump obss definitions */
+ #define ACS_MSRMNT_DELAY		80
+ #define CHAN_NOISE_DUMMY		(-80)
+@@ -1945,14 +1948,18 @@ static s32 brcmf_set_wpa_version(struct
+ 	s32 val = 0;
+ 	s32 err = 0;
+ 
+-	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1)
++	if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_1) {
+ 		val = WPA_AUTH_PSK | WPA_AUTH_UNSPECIFIED;
+-	else if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2)
+-		val = WPA2_AUTH_PSK | WPA2_AUTH_UNSPECIFIED;
+-	else if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3)
++	} else if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_2) {
++		if (sme->crypto.akm_suites[0] == WLAN_AKM_SUITE_SAE)
++			val = WPA3_AUTH_SAE_PSK;
++		else
++			val = WPA2_AUTH_PSK | WPA2_AUTH_UNSPECIFIED;
++	} else if (sme->crypto.wpa_versions & NL80211_WPA_VERSION_3) {
+ 		val = WPA3_AUTH_SAE_PSK;
+-	else
++	} else {
+ 		val = WPA_AUTH_DISABLED;
++	}
+ 	brcmf_dbg(CONN, "setting wpa_auth to 0x%0x\n", val);
+ 	err = brcmf_fil_bsscfg_int_set(ifp, "wpa_auth", val);
+ 	if (err) {
+@@ -2218,7 +2225,7 @@ brcmf_set_key_mgmt(struct net_device *nd
+ 	brcmf_fil_bsscfg_int_set(netdev_priv(ndev), "mfp", mfp);
+ 
+ skip_mfp_config:
+-	brcmf_dbg(CONN, "setting wpa_auth to %d\n", val);
++	brcmf_dbg(CONN, "setting wpa_auth to 0x%0x\n", val);
+ 	err = brcmf_fil_bsscfg_int_set(netdev_priv(ndev), "wpa_auth", val);
+ 	if (err) {
+ 		bphy_err(drvr, "could not set wpa_auth (%d)\n", err);
+@@ -5526,9 +5533,12 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wip
+ 	s32 ie_len;
+ 	struct brcmf_fil_action_frame_le *action_frame;
+ 	struct brcmf_fil_af_params_le *af_params;
+-	bool ack;
++	bool ack = false;
+ 	s32 chan_nr;
+ 	u32 freq;
++	struct brcmf_mf_params_le *mf_params;
++	u32 mf_params_len;
++	s32 timeout;
+ 
+ 	brcmf_dbg(TRACE, "Enter\n");
+ 
+@@ -5609,6 +5619,71 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wip
+ 		cfg80211_mgmt_tx_status(wdev, *cookie, buf, len, ack,
+ 					GFP_KERNEL);
+ 		kfree(af_params);
++	} else if (ieee80211_is_auth(mgmt->frame_control)) {
++		reinit_completion(&vif->mgmt_tx);
++		clear_bit(BRCMF_MGMT_TX_ACK, &vif->mgmt_tx_status);
++		clear_bit(BRCMF_MGMT_TX_NOACK, &vif->mgmt_tx_status);
++		clear_bit(BRCMF_MGMT_TX_OFF_CHAN_COMPLETED,
++			  &vif->mgmt_tx_status);
++
++		mf_params_len = offsetof(struct brcmf_mf_params_le, data) +
++				(len - DOT11_MGMT_HDR_LEN);
++		mf_params = kzalloc(mf_params_len, GFP_KERNEL);
++		if (!mf_params) {
++			err = -ENOMEM;
++			goto exit;
++		}
++
++		mf_params->dwell_time = cpu_to_le32(MGMT_AUTH_FRAME_DWELL_TIME);
++		mf_params->len = cpu_to_le16(len - DOT11_MGMT_HDR_LEN);
++		mf_params->frame_control = mgmt->frame_control;
++
++		if (chan)
++			freq = chan->center_freq;
++		else
++			brcmf_fil_cmd_int_get(vif->ifp, BRCMF_C_GET_CHANNEL,
++					      &freq);
++		chan_nr = ieee80211_frequency_to_channel(freq);
++		mf_params->channel = cpu_to_le32(chan_nr);
++		memcpy(&mf_params->da[0], &mgmt->da[0], ETH_ALEN);
++		memcpy(&mf_params->bssid[0], &mgmt->bssid[0], ETH_ALEN);
++		mf_params->packet_id = cpu_to_le32(*cookie);
++		memcpy(mf_params->data, &buf[DOT11_MGMT_HDR_LEN],
++		       le16_to_cpu(mf_params->len));
++
++		brcmf_dbg(TRACE, "Auth frame, cookie=%d, fc=%04x, len=%d, channel=%d\n",
++			  le32_to_cpu(mf_params->packet_id),
++			  le16_to_cpu(mf_params->frame_control),
++			  le16_to_cpu(mf_params->len),
++			  le32_to_cpu(mf_params->channel));
++
++		vif->mgmt_tx_id = le32_to_cpu(mf_params->packet_id);
++		set_bit(BRCMF_MGMT_TX_SEND_FRAME, &vif->mgmt_tx_status);
++
++		err = brcmf_fil_bsscfg_data_set(vif->ifp, "mgmt_frame",
++						mf_params, mf_params_len);
++		if (err) {
++			bphy_err(drvr, "Failed to send Auth frame: err=%d\n",
++				 err);
++			goto tx_status;
++		}
++
++		timeout =
++			wait_for_completion_timeout(&vif->mgmt_tx,
++						    MGMT_AUTH_FRAME_WAIT_TIME);
++		if (test_bit(BRCMF_MGMT_TX_ACK, &vif->mgmt_tx_status)) {
++			brcmf_dbg(TRACE, "TX Auth frame operation is success\n");
++			ack = true;
++		} else {
++			bphy_err(drvr, "TX Auth frame operation is failed: status=%ld)\n",
++				 vif->mgmt_tx_status);
++		}
++
++tx_status:
++		cfg80211_mgmt_tx_status(wdev, *cookie, buf, len, ack,
++					GFP_KERNEL);
++		kfree(mf_params);
++
+ 	} else {
+ 		brcmf_dbg(TRACE, "Unhandled, fc=%04x!!\n", mgmt->frame_control);
+ 		brcmf_dbg_hex_dump(true, buf, len, "payload, len=%zu\n", len);
+@@ -5932,6 +6007,40 @@ static int brcmf_cfg80211_del_pmk(struct
+ 	return brcmf_set_pmk(ifp, NULL, 0);
+ }
+ 
++static int
++brcmf_cfg80211_external_auth(struct wiphy *wiphy, struct net_device *dev,
++			     struct cfg80211_external_auth_params *params)
++{
++	struct brcmf_if *ifp;
++	struct brcmf_pub *drvr;
++	struct brcmf_auth_req_status_le auth_status;
++	int ret = 0;
++
++	brcmf_dbg(TRACE, "Enter\n");
++
++	ifp = netdev_priv(dev);
++	drvr = ifp->drvr;
++	if (params->status == WLAN_STATUS_SUCCESS) {
++		auth_status.flags = cpu_to_le16(BRCMF_EXTAUTH_SUCCESS);
++	} else {
++		bphy_err(drvr, "External authentication failed: status=%d\n",
++			 params->status);
++		auth_status.flags = cpu_to_le16(BRCMF_EXTAUTH_FAIL);
++	}
++
++	memcpy(auth_status.peer_mac, params->bssid, ETH_ALEN);
++	auth_status.ssid_len = cpu_to_le32(min_t(u8, params->ssid.ssid_len,
++						 IEEE80211_MAX_SSID_LEN));
++	memcpy(auth_status.ssid, params->ssid.ssid, auth_status.ssid_len);
++
++	ret = brcmf_fil_iovar_data_set(ifp, "auth_status", &auth_status,
++				       sizeof(auth_status));
++	if (ret < 0)
++		bphy_err(drvr, "auth_status iovar failed: ret=%d\n", ret);
++
++	return ret;
++}
++
+ static struct cfg80211_ops brcmf_cfg80211_ops = {
+ 	.add_virtual_intf = brcmf_cfg80211_add_iface,
+ 	.del_virtual_intf = brcmf_cfg80211_del_iface,
+@@ -5979,6 +6088,7 @@ static struct cfg80211_ops brcmf_cfg8021
+ 	.update_connect_params = brcmf_cfg80211_update_conn_params,
+ 	.set_pmk = brcmf_cfg80211_set_pmk,
+ 	.del_pmk = brcmf_cfg80211_del_pmk,
++	.external_auth = brcmf_cfg80211_external_auth,
+ };
+ 
+ struct cfg80211_ops *brcmf_cfg80211_get_ops(struct brcmf_mp_device *settings)
+@@ -6025,6 +6135,7 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
+ 		vif->mbss = mbss;
+ 	}
+ 
++	init_completion(&vif->mgmt_tx);
+ 	list_add_tail(&vif->list, &cfg->vif_list);
+ 	return vif;
+ }
+@@ -6716,6 +6827,122 @@ static s32 brcmf_notify_vif_event(struct
+ 	return -EINVAL;
+ }
+ 
++static s32
++brcmf_notify_ext_auth_request(struct brcmf_if *ifp,
++			      const struct brcmf_event_msg *e, void *data)
++{
++	struct brcmf_pub *drvr = ifp->drvr;
++	struct cfg80211_external_auth_params params;
++	struct brcmf_auth_req_status_le *auth_req =
++		(struct brcmf_auth_req_status_le *)data;
++	s32 err = 0;
++
++	brcmf_dbg(INFO, "Enter: event %s (%d) received\n",
++		  brcmf_fweh_event_name(e->event_code), e->event_code);
++
++	if (e->datalen < sizeof(*auth_req)) {
++		bphy_err(drvr, "Event %s (%d) data too small. Ignore\n",
++			 brcmf_fweh_event_name(e->event_code), e->event_code);
++		return -EINVAL;
++	}
++
++	memset(&params, 0, sizeof(params));
++	params.action = NL80211_EXTERNAL_AUTH_START;
++	params.key_mgmt_suite = ntohl(WLAN_AKM_SUITE_SAE);
++	params.status = WLAN_STATUS_SUCCESS;
++	params.ssid.ssid_len = min_t(u32, 32, le32_to_cpu(auth_req->ssid_len));
++	memcpy(params.ssid.ssid, auth_req->ssid, params.ssid.ssid_len);
++	memcpy(params.bssid, auth_req->peer_mac, ETH_ALEN);
++
++	err = cfg80211_external_auth_request(ifp->ndev, &params, GFP_ATOMIC);
++	if (err)
++		bphy_err(drvr, "Ext Auth request to supplicant failed (%d)\n",
++			 err);
++
++	return err;
++}
++
++static s32
++brcmf_notify_auth_frame_rx(struct brcmf_if *ifp,
++			   const struct brcmf_event_msg *e, void *data)
++{
++	struct brcmf_pub *drvr = ifp->drvr;
++	struct brcmf_cfg80211_info *cfg = drvr->config;
++	struct wireless_dev *wdev;
++	u32 mgmt_frame_len = e->datalen - sizeof(struct brcmf_rx_mgmt_data);
++	struct brcmf_rx_mgmt_data *rxframe = (struct brcmf_rx_mgmt_data *)data;
++	u8 *frame = (u8 *)(rxframe + 1);
++	struct brcmu_chan ch;
++	struct ieee80211_mgmt *mgmt_frame;
++	s32 freq;
++
++	brcmf_dbg(INFO, "Enter: event %s (%d) received\n",
++		  brcmf_fweh_event_name(e->event_code), e->event_code);
++
++	if (e->datalen < sizeof(*rxframe)) {
++		bphy_err(drvr, "Event %s (%d) data too small. Ignore\n",
++			 brcmf_fweh_event_name(e->event_code), e->event_code);
++		return -EINVAL;
++	}
++
++	wdev = &ifp->vif->wdev;
++	WARN_ON(!wdev);
++
++	ch.chspec = be16_to_cpu(rxframe->chanspec);
++	cfg->d11inf.decchspec(&ch);
++
++	mgmt_frame = kzalloc(mgmt_frame_len, GFP_KERNEL);
++	if (!mgmt_frame)
++		return -ENOMEM;
++
++	mgmt_frame->frame_control = cpu_to_le16(IEEE80211_STYPE_AUTH);
++	memcpy(mgmt_frame->da, ifp->mac_addr, ETH_ALEN);
++	memcpy(mgmt_frame->sa, e->addr, ETH_ALEN);
++	brcmf_fil_cmd_data_get(ifp, BRCMF_C_GET_BSSID, mgmt_frame->bssid,
++			       ETH_ALEN);
++	frame += offsetof(struct ieee80211_mgmt, u);
++	memcpy(&mgmt_frame->u, frame,
++	       mgmt_frame_len - offsetof(struct ieee80211_mgmt, u));
++
++	freq = ieee80211_channel_to_frequency(ch.control_ch_num,
++					      ch.band == BRCMU_CHAN_BAND_2G ?
++					      NL80211_BAND_2GHZ :
++					      NL80211_BAND_5GHZ);
++
++	cfg80211_rx_mgmt(wdev, freq, 0, (u8 *)mgmt_frame, mgmt_frame_len,
++			 NL80211_RXMGMT_FLAG_EXTERNAL_AUTH);
++	kfree(mgmt_frame);
++	return 0;
++}
++
++static s32
++brcmf_notify_mgmt_tx_status(struct brcmf_if *ifp,
++			    const struct brcmf_event_msg *e, void *data)
++{
++	struct brcmf_cfg80211_vif *vif = ifp->vif;
++	u32 *packet_id = (u32 *)data;
++
++	brcmf_dbg(INFO, "Enter: event %s (%d), status=%d\n",
++		  brcmf_fweh_event_name(e->event_code), e->event_code,
++		  e->status);
++
++	if (!test_bit(BRCMF_MGMT_TX_SEND_FRAME, &vif->mgmt_tx_status) ||
++	    (*packet_id != vif->mgmt_tx_id))
++		return 0;
++
++	if (e->event_code == BRCMF_E_MGMT_FRAME_TXSTATUS) {
++		if (e->status == BRCMF_E_STATUS_SUCCESS)
++			set_bit(BRCMF_MGMT_TX_ACK, &vif->mgmt_tx_status);
++		else
++			set_bit(BRCMF_MGMT_TX_NOACK, &vif->mgmt_tx_status);
++	} else {
++		set_bit(BRCMF_MGMT_TX_OFF_CHAN_COMPLETED, &vif->mgmt_tx_status);
++	}
++
++	complete(&vif->mgmt_tx);
++	return 0;
++}
++
+ static void brcmf_init_conf(struct brcmf_cfg80211_conf *conf)
+ {
+ 	conf->frag_threshold = (u32)-1;
+@@ -6760,7 +6987,16 @@ static void brcmf_register_event_handler
+ 			    brcmf_p2p_notify_action_tx_complete);
+ 	brcmf_fweh_register(cfg->pub, BRCMF_E_PSK_SUP,
+ 			    brcmf_notify_connect_status);
+-	brcmf_fweh_register(cfg->pub, BRCMF_E_RSSI, brcmf_notify_rssi);
++	brcmf_fweh_register(cfg->pub, BRCMF_E_RSSI,
++				brcmf_notify_rssi);
++	brcmf_fweh_register(cfg->pub, BRCMF_E_EXT_AUTH_REQ,
++			    brcmf_notify_ext_auth_request);
++	brcmf_fweh_register(cfg->pub, BRCMF_E_EXT_AUTH_FRAME_RX,
++			    brcmf_notify_auth_frame_rx);
++	brcmf_fweh_register(cfg->pub, BRCMF_E_MGMT_FRAME_TXSTATUS,
++			    brcmf_notify_mgmt_tx_status);
++	brcmf_fweh_register(cfg->pub, BRCMF_E_MGMT_FRAME_OFF_CHAN_COMPLETE,
++			    brcmf_notify_mgmt_tx_status);
+ }
+ 
+ static void brcmf_deinit_priv_mem(struct brcmf_cfg80211_info *cfg)
+@@ -7347,6 +7583,7 @@ brcmf_txrx_stypes[NUM_NL80211_IFTYPES] =
+ 	[NL80211_IFTYPE_STATION] = {
+ 		.tx = 0xffff,
+ 		.rx = BIT(IEEE80211_STYPE_ACTION >> 4) |
++		      BIT(IEEE80211_STYPE_AUTH >> 4) |
+ 		      BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
+ 	},
+ 	[NL80211_IFTYPE_P2P_CLIENT] = {
+@@ -7652,6 +7889,8 @@ static int brcmf_setup_wiphy(struct wiph
+ 			wiphy_ext_feature_set(wiphy,
+ 					      NL80211_EXT_FEATURE_SAE_OFFLOAD_AP);
+ 	}
++	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT))
++		wiphy->features |= NL80211_FEATURE_SAE;
+ 	wiphy->mgmt_stypes = brcmf_txrx_stypes;
+ 	wiphy->max_remain_on_channel_duration = 5000;
+ 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_PNO)) {
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
+@@ -179,6 +179,21 @@ enum brcmf_vif_status {
+ };
+ 
+ /**
++ * enum brcmf_mgmt_tx_status - mgmt frame tx status
++ *
++ * @BRCMF_MGMT_TX_ACK: mgmt frame acked
++ * @BRCMF_MGMT_TX_NOACK: mgmt frame not acked
++ * @BRCMF_MGMT_TX_OFF_CHAN_COMPLETED: off-channel complete
++ * @BRCMF_MGMT_TX_SEND_FRAME: mgmt frame tx is in progres
++ */
++enum brcmf_mgmt_tx_status {
++	BRCMF_MGMT_TX_ACK,
++	BRCMF_MGMT_TX_NOACK,
++	BRCMF_MGMT_TX_OFF_CHAN_COMPLETED,
++	BRCMF_MGMT_TX_SEND_FRAME
++};
++
++/**
+  * struct vif_saved_ie - holds saved IEs for a virtual interface.
+  *
+  * @probe_req_ie: IE info for probe request.
+@@ -224,6 +239,9 @@ struct brcmf_cfg80211_vif {
+ 	unsigned long sme_state;
+ 	struct vif_saved_ie saved_ie;
+ 	struct list_head list;
++	struct completion mgmt_tx;
++	unsigned long mgmt_tx_status;
++	u32 mgmt_tx_id;
+ 	u16 mgmt_rx_reg;
+ 	bool mbss;
+ 	int is_11d;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -440,7 +440,7 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
+ 	/* Enable event_msg_ext specific to 43012 chip */
+ 	if (bus->chip == CY_CC_43012_CHIP_ID) {
+ 		/* Program event_msg_ext to support event larger than 128 */
+-		msglen = (roundup(BRCMF_E_LAST, NBBY) / NBBY) +
++		msglen = (roundup(fweh->num_event_codes, NBBY) / NBBY) +
+ 				  EVENTMSGS_EXT_STRUCT_SIZE;
+ 		/* Allocate buffer for eventmask_msg */
+ 		eventmask_msg = kzalloc(msglen, GFP_KERNEL);
+@@ -451,7 +451,7 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
+ 
+ 		/* Read the current programmed event_msgs_ext */
+ 		eventmask_msg->ver = EVENTMSGS_VER;
+-		eventmask_msg->len = roundup(BRCMF_E_LAST, NBBY) / NBBY;
++		eventmask_msg->len = roundup(fweh->num_event_codes, NBBY) / NBBY;
+ 		err = brcmf_fil_iovar_data_get(ifp, "event_msgs_ext",
+ 					       eventmask_msg,
+ 					       msglen);
+@@ -463,7 +463,7 @@ int brcmf_c_preinit_dcmds(struct brcmf_i
+ 		/* Write updated Event mask */
+ 		eventmask_msg->ver = EVENTMSGS_VER;
+ 		eventmask_msg->command = EVENTMSGS_SET_MASK;
+-		eventmask_msg->len = (roundup(BRCMF_E_LAST, NBBY) / NBBY);
++		eventmask_msg->len = (roundup(fweh->num_event_codes, NBBY) / NBBY);
+ 
+ 		err = brcmf_fil_iovar_data_set(ifp, "event_msgs_ext",
+ 					       eventmask_msg, msglen);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
+@@ -44,6 +44,7 @@ static const struct brcmf_feat_fwcap brc
+ 	{ BRCMF_FEAT_DOT11H, "802.11h" },
+ 	{ BRCMF_FEAT_SAE, "sae" },
+ 	{ BRCMF_FEAT_FWAUTH, "idauth" },
++	{ BRCMF_FEAT_SAE_EXT, "sae_ext " },
+ };
+ 
+ #ifdef DEBUG
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
+@@ -30,6 +30,7 @@
+  * SAE: simultaneous authentication of equals
+  * FWAUTH: Firmware authenticator
+  * DUMP_OBSS: Firmware has capable to dump obss info to support ACS
++ * SAE_EXT: SAE be handled by userspace supplicant
+  * SCAN_V2: Version 2 scan params
+  */
+ #define BRCMF_FEAT_LIST \
+@@ -55,6 +56,7 @@
+ 	BRCMF_FEAT_DEF(SAE) \
+ 	BRCMF_FEAT_DEF(FWAUTH) \
+ 	BRCMF_FEAT_DEF(DUMP_OBSS) \
++	BRCMF_FEAT_DEF(SAE_EXT) \
+ 	BRCMF_FEAT_DEF(SCAN_V2) \
+ 	BRCMF_FEAT_DEF(PMKID_V2) \
+ 	BRCMF_FEAT_DEF(PMKID_V3)
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
+@@ -432,6 +432,8 @@ int brcmf_fweh_activate_events(struct br
+ {
+ 	struct brcmf_fweh_info *fweh = ifp->drvr->fweh;
+ 	enum brcmf_fweh_event_code code;
++	struct eventmsgs_ext *eventmask_msg;
++	u32 msglen;
+ 	int i, err;
+ 
+ 	memset(fweh->event_mask, 0, fweh->event_mask_len);
+@@ -444,15 +446,32 @@ int brcmf_fweh_activate_events(struct br
+ 		}
+ 	}
+ 
++	msglen = EVENTMSGS_EXT_STRUCT_SIZE + fweh->event_mask_len;
++	eventmask_msg = kzalloc(msglen, GFP_KERNEL);
++	if (!eventmask_msg)
++		return -ENOMEM;
++
+ 	/* want to handle IF event as well */
+ 	brcmf_dbg(EVENT, "enable event IF\n");
+ 	setbit(fweh->event_mask, BRCMF_E_IF);
+ 
++	eventmask_msg->ver = EVENTMSGS_VER;
++	eventmask_msg->command = EVENTMSGS_SET_MASK;
++	eventmask_msg->len = fweh->event_mask_len;
++	memcpy(eventmask_msg->mask, fweh->event_mask, fweh->event_mask_len);
++
++	err = brcmf_fil_iovar_data_set(ifp, "event_msgs_ext", eventmask_msg,
++				       msglen);
++	if (!err)
++		goto end;
++
+ 	err = brcmf_fil_iovar_data_set(ifp, "event_msgs", fweh->event_mask,
+ 				       fweh->event_mask_len);
+ 	if (err)
+ 		bphy_err(fweh->drvr, "Set event_msgs error (%d)\n", err);
+ 
++end:
++	kfree(eventmask_msg);
+ 	return err;
+ }
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
+@@ -95,7 +95,11 @@ struct brcmf_cfg80211_info;
+ 	BRCMF_ENUM_DEF(ACTION_FRAME_RX, 75) \
+ 	BRCMF_ENUM_DEF(TDLS_PEER_EVENT, 92) \
+ 	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127) \
+-	BRCMF_ENUM_DEF(ULP, 146)
++	BRCMF_ENUM_DEF(ULP, 146) \
++	BRCMF_ENUM_DEF(EXT_AUTH_REQ, 187) \
++	BRCMF_ENUM_DEF(EXT_AUTH_FRAME_RX, 188) \
++	BRCMF_ENUM_DEF(MGMT_FRAME_TXSTATUS, 189) \
++	BRCMF_ENUM_DEF(MGMT_FRAME_OFF_CHAN_COMPLETE, 190)
+ 
+ #define BRCMF_ENUM_DEF(id, val) \
+ 	BRCMF_E_##id = (val),
+@@ -103,12 +107,6 @@ struct brcmf_cfg80211_info;
+ /* firmware event codes sent by the dongle */
+ enum brcmf_fweh_event_code {
+ 	BRCMF_FWEH_EVENT_ENUM_DEFLIST
+-
+-	/* this determines event mask length which must match
+-	 * minimum length check in device firmware so it is
+-	 * hard-coded here.
+-	 */
+-	BRCMF_E_LAST
+ };
+ #undef BRCMF_ENUM_DEF
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil_types.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil_types.h
+@@ -178,6 +178,11 @@
+ #define BRCMF_PMKSA_VER_3		3
+ #define BRCMF_PMKSA_NO_EXPIRY		0xffffffff
+ 
++#define BRCMF_EXTAUTH_START	1
++#define BRCMF_EXTAUTH_ABORT	2
++#define BRCMF_EXTAUTH_FAIL	3
++#define BRCMF_EXTAUTH_SUCCESS	4
++
+ /* MAX_CHUNK_LEN is the maximum length for data passing to firmware in each
+  * ioctl. It is relatively small because firmware has small maximum size input
+  * playload restriction for ioctls.
+@@ -598,6 +603,46 @@ struct brcmf_wsec_sae_pwd_le {
+ 	u8 key[BRCMF_WSEC_MAX_SAE_PASSWORD_LEN];
+ };
+ 
++/**
++ * struct brcmf_auth_req_status_le - external auth request and status update
++ *
++ * @flags: flags for external auth status
++ * @peer_mac: peer MAC address
++ * @ssid_len: length of ssid
++ * @ssid: ssid characters
++ */
++struct brcmf_auth_req_status_le {
++	__le16 flags;
++	u8 peer_mac[ETH_ALEN];
++	__le32 ssid_len;
++	u8 ssid[IEEE80211_MAX_SSID_LEN];
++};
++
++/**
++ * struct brcmf_mf_params_le - management frame parameters for mgmt_frame iovar
++ *
++ * @version: version of the iovar
++ * @dwell_time: dwell duration in ms
++ * @len: length of frame data
++ * @frame_control: frame control
++ * @channel: channel
++ * @da: peer MAC address
++ * @bssid: BSS network identifier
++ * @packet_id: packet identifier
++ * @data: frame data
++ */
++struct brcmf_mf_params_le {
++	__le32 version;
++	__le32 dwell_time;
++	__le16 len;
++	__le16 frame_control;
++	__le16 channel;
++	u8 da[ETH_ALEN];
++	u8 bssid[ETH_ALEN];
++	__le32 packet_id;
++	u8 data[1];
++};
++
+ /* Used to get specific STA parameters */
+ struct brcmf_scb_val_le {
+ 	__le32 val;

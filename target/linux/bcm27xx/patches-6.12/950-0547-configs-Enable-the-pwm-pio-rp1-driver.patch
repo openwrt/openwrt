@@ -1,0 +1,33 @@
+From 93bc622a592f290fb413f1a8835a81eed9a90060 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Thu, 7 Nov 2024 11:50:11 +0000
+Subject: [PATCH] configs: Enable the pwm-pio-rp1 driver
+
+Enable building of the pwm-pio-rp1 driver, which is Pi 5-specific.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -1526,6 +1526,7 @@ CONFIG_PWM_BCM2835=m
+ CONFIG_PWM_BRCMSTB=y
+ CONFIG_PWM_GPIO=m
+ CONFIG_PWM_PCA9685=m
++CONFIG_PWM_PIO_RP1=m
+ CONFIG_PWM_RASPBERRYPI_POE=m
+ CONFIG_PWM_RP1=y
+ CONFIG_BCM2712_MIP=y
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -1529,6 +1529,7 @@ CONFIG_PWM_BCM2835=m
+ CONFIG_PWM_BRCMSTB=y
+ CONFIG_PWM_GPIO=m
+ CONFIG_PWM_PCA9685=m
++CONFIG_PWM_PIO_RP1=m
+ CONFIG_PWM_RASPBERRYPI_POE=m
+ CONFIG_PWM_RP1=y
+ CONFIG_BCM2712_MIP=y

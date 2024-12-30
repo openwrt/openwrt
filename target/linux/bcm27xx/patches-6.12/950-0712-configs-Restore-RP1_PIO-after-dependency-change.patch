@@ -1,0 +1,34 @@
+From f828bb7b17bb984db0966ccdb69175139cfc9f94 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Thu, 19 Dec 2024 15:14:13 +0000
+Subject: [PATCH] configs: Restore RP1_PIO after dependency change
+
+Having changed a Kconfig "select" to a "depends on", RP1_PIO must be
+explicitly enabled.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -463,6 +463,7 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_BRCMSTB_GISB_ARB is not set
+ CONFIG_RASPBERRYPI_FIRMWARE=y
++CONFIG_FIRMWARE_RP1=m
+ # CONFIG_EFI_VARS_PSTORE is not set
+ CONFIG_MTD=m
+ CONFIG_MTD_BLOCK=m
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -466,6 +466,7 @@ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_BRCMSTB_GISB_ARB is not set
+ CONFIG_RASPBERRYPI_FIRMWARE=y
++CONFIG_FIRMWARE_RP1=m
+ # CONFIG_EFI_VARS_PSTORE is not set
+ CONFIG_MTD=m
+ CONFIG_MTD_BLOCK=m

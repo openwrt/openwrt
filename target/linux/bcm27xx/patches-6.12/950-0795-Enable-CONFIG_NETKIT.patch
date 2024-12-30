@@ -1,0 +1,74 @@
+From 293c69c3fb4064e846960a8b4960335f2194fc9a Mon Sep 17 00:00:00 2001
+From: Ethan Shold <sholdee@gmail.com>
+Date: Thu, 30 Jan 2025 20:43:01 -0600
+Subject: [PATCH] Enable CONFIG_NETKIT
+
+---
+ arch/arm/configs/bcm2709_defconfig   | 1 +
+ arch/arm/configs/bcm2711_defconfig   | 1 +
+ arch/arm/configs/bcmrpi_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ arch/arm64/configs/bcmrpi3_defconfig | 1 +
+ 6 files changed, 6 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -488,6 +488,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_ENC28J60=m
+ CONFIG_QCA7000_SPI=m
+--- a/arch/arm/configs/bcm2711_defconfig
++++ b/arch/arm/configs/bcm2711_defconfig
+@@ -499,6 +499,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_BCMGENET=y
+ CONFIG_IGB=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -482,6 +482,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_ENC28J60=m
+ CONFIG_QCA7000_SPI=m
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -529,6 +529,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_VSOCKMON=m
+ CONFIG_BCMGENET=y
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -532,6 +532,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_VSOCKMON=m
+ CONFIG_BCMGENET=y
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -495,6 +495,7 @@ CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
++CONFIG_NETKIT=y
+ CONFIG_NET_VRF=m
+ CONFIG_VSOCKMON=m
+ CONFIG_ENC28J60=m

@@ -1,0 +1,40 @@
+From 6669a4fa40d4c1ae1575a7277be94b24f0c19fb9 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 5 Feb 2024 15:25:30 +0000
+Subject: [PATCH] brcmfmac: Only match complete feature names
+
+The firmware advertises its features as a string of words separated by
+spaces. Ensure that feature names are only matched in their entirety.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .../wireless/broadcom/brcm80211/brcmfmac/feature.c    | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
+@@ -44,7 +44,7 @@ static const struct brcmf_feat_fwcap brc
+ 	{ BRCMF_FEAT_DOT11H, "802.11h" },
+ 	{ BRCMF_FEAT_SAE, "sae" },
+ 	{ BRCMF_FEAT_FWAUTH, "idauth" },
+-	{ BRCMF_FEAT_SAE_EXT, "sae_ext " },
++	{ BRCMF_FEAT_SAE_EXT, "sae_ext" },
+ };
+ 
+ #ifdef DEBUG
+@@ -241,7 +241,14 @@ static void brcmf_feat_firmware_capabili
+ 	brcmf_dbg(INFO, "[ %s]\n", caps);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(brcmf_fwcap_map); i++) {
+-		if (strnstr(caps, brcmf_fwcap_map[i].fwcap_id, sizeof(caps))) {
++		const char *match = strnstr(caps, brcmf_fwcap_map[i].fwcap_id, sizeof(caps));
++		if (match) {
++			char endc;
++			if (match != caps && match[-1] != ' ')
++				continue;
++			endc = match[strlen(brcmf_fwcap_map[i].fwcap_id)];
++			if (endc != '\0' && endc != ' ')
++				continue;
+ 			id = brcmf_fwcap_map[i].feature;
+ 			brcmf_dbg(INFO, "enabling feature: %s\n",
+ 				  brcmf_feat_names[id]);

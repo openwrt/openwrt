@@ -1,0 +1,64 @@
+From d4c73ba29ab82e342d991ba23db0a955477bf3a5 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Thu, 2 Jan 2025 11:21:24 +0000
+Subject: [PATCH] defconfigs: Add IMX415 to all Pi defconfigs
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ arch/arm/configs/bcm2709_defconfig   | 1 +
+ arch/arm/configs/bcm2711_defconfig   | 1 +
+ arch/arm/configs/bcmrpi_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ 5 files changed, 5 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -931,6 +931,7 @@ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX258=m
+ CONFIG_VIDEO_IMX290=m
+ CONFIG_VIDEO_IMX296=m
++CONFIG_VIDEO_IMX415=m
+ CONFIG_VIDEO_IMX477=m
+ CONFIG_VIDEO_IMX500=m
+ CONFIG_VIDEO_IMX519=m
+--- a/arch/arm/configs/bcm2711_defconfig
++++ b/arch/arm/configs/bcm2711_defconfig
+@@ -956,6 +956,7 @@ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX258=m
+ CONFIG_VIDEO_IMX290=m
+ CONFIG_VIDEO_IMX296=m
++CONFIG_VIDEO_IMX415=m
+ CONFIG_VIDEO_IMX477=m
+ CONFIG_VIDEO_IMX500=m
+ CONFIG_VIDEO_IMX519=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -924,6 +924,7 @@ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX258=m
+ CONFIG_VIDEO_IMX290=m
+ CONFIG_VIDEO_IMX296=m
++CONFIG_VIDEO_IMX415=m
+ CONFIG_VIDEO_IMX477=m
+ CONFIG_VIDEO_IMX500=m
+ CONFIG_VIDEO_IMX519=m
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -1005,6 +1005,7 @@ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX258=m
+ CONFIG_VIDEO_IMX290=m
+ CONFIG_VIDEO_IMX296=m
++CONFIG_VIDEO_IMX415=m
+ CONFIG_VIDEO_IMX477=m
+ CONFIG_VIDEO_IMX500=m
+ CONFIG_VIDEO_IMX519=m
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -1007,6 +1007,7 @@ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX258=m
+ CONFIG_VIDEO_IMX290=m
+ CONFIG_VIDEO_IMX296=m
++CONFIG_VIDEO_IMX415=m
+ CONFIG_VIDEO_IMX477=m
+ CONFIG_VIDEO_IMX500=m
+ CONFIG_VIDEO_IMX519=m

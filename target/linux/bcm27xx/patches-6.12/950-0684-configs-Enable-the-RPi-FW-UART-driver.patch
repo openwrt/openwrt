@@ -1,0 +1,67 @@
+From 8a5ce530d21dab3e458b65d61928fcecf9bd8992 Mon Sep 17 00:00:00 2001
+From: Tim Gover <tim.gover@raspberrypi.com>
+Date: Fri, 1 Nov 2024 19:44:37 +0000
+Subject: [PATCH] configs: Enable the RPi FW UART driver
+
+Enable the RPi firmware driver for Raspberry Pi4 and
+earlier models.
+
+Signed-off-by: Tim Gover <tim.gover@raspberrypi.com>
+---
+ arch/arm/configs/bcm2709_defconfig   | 1 +
+ arch/arm/configs/bcm2711_defconfig   | 1 +
+ arch/arm/configs/bcmrpi_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcmrpi3_defconfig | 1 +
+ 5 files changed, 5 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -667,6 +667,7 @@ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_RPI_FW=m
+ CONFIG_SERIAL_DEV_BUS=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+--- a/arch/arm/configs/bcm2711_defconfig
++++ b/arch/arm/configs/bcm2711_defconfig
+@@ -686,6 +686,7 @@ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_RPI_FW=m
+ CONFIG_SERIAL_DEV_BUS=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -661,6 +661,7 @@ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_RPI_FW=m
+ CONFIG_SERIAL_DEV_BUS=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -716,6 +716,7 @@ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_RPI_FW=m
+ CONFIG_SERIAL_DEV_BUS=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -671,6 +671,7 @@ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_RPI_FW=m
+ CONFIG_SERIAL_DEV_BUS=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y

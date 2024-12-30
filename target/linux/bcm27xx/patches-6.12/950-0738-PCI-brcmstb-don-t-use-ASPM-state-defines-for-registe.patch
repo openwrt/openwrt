@@ -1,0 +1,38 @@
+From a1a63e9628db5e0ffc0600a4bbd4e404bfb890d0 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Tue, 7 Jan 2025 12:02:55 +0000
+Subject: [PATCH] PCI: brcmstb: don't use ASPM state defines for register bits
+
+In commit b478e162f227 ("PCI/ASPM: Consolidate link state defines")
+PCIE_LINK_STATE_L1 and PCIE_LINK_STATE_L0s grew some bits for more
+granular control of ASPM.
+
+This broke the aspm-no-l0s override, instead disabling link ASPM
+completely if this DT property was specified.
+
+Just open-code the link capability register field bits.
+
+Fixes: caab002d5069 ("PCI: brcmstb: Disable L0s component of ASPM if requested")
+Fixes: 0693b4207fd7 ("PCI: brcmstb: Split post-link up initialization to brcm_pcie_start_link()")
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ drivers/pci/controller/pcie-brcmstb.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -1539,10 +1539,11 @@ static int brcm_pcie_setup(struct brcm_p
+ 	tmp &= ~PCIE_MISC_RC_BAR3_CONFIG_LO_SIZE_MASK;
+ 	writel(tmp, base + PCIE_MISC_RC_BAR3_CONFIG_LO);
+ 
+-	/* Don't advertise L0s capability if 'aspm-no-l0s' */
+-	aspm_support = PCIE_LINK_STATE_L1;
++	/* Always advertise L1 capability */
++	aspm_support = BIT(1);
++	/* Advertise L0s capability unless 'aspm-no-l0s' is set */
+ 	if (!of_property_read_bool(pcie->np, "aspm-no-l0s"))
+-		aspm_support |= PCIE_LINK_STATE_L0S;
++		aspm_support |= BIT(0);
+ 	tmp = readl(base + PCIE_RC_CFG_PRIV1_LINK_CAPABILITY);
+ 	u32p_replace_bits(&tmp, aspm_support,
+ 		PCIE_RC_CFG_PRIV1_LINK_CAPABILITY_ASPM_SUPPORT_MASK);

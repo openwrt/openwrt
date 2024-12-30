@@ -1,0 +1,79 @@
+From 8a951707aa8f28ae3040ee659e9ce6ee57be6064 Mon Sep 17 00:00:00 2001
+From: Michael Heimpold <mhei@heimpold.de>
+Date: Sun, 17 Nov 2024 15:32:57 +0100
+Subject: [PATCH] configs: enable driver for Vertexcom MSE102X
+
+This is a SPI to powerline chipset with host-side Ethernet interface.
+Is is usually used in e-mobility environments, e.g. on
+Electrical Vehicle Supply Equipment (EVSE) side.
+
+Signed-off-by: Michael Heimpold <mhei@heimpold.de>
+---
+ arch/arm/configs/bcm2709_defconfig   | 1 +
+ arch/arm/configs/bcm2711_defconfig   | 1 +
+ arch/arm/configs/bcmrpi_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ arch/arm64/configs/bcmrpi3_defconfig | 1 +
+ 6 files changed, 6 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -492,6 +492,7 @@ CONFIG_NET_VRF=m
+ CONFIG_ENC28J60=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_CAN_VCAN=m
+--- a/arch/arm/configs/bcm2711_defconfig
++++ b/arch/arm/configs/bcm2711_defconfig
+@@ -510,6 +510,7 @@ CONFIG_LAN743X=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
+ CONFIG_R8169=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_MICREL_PHY=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -486,6 +486,7 @@ CONFIG_NET_VRF=m
+ CONFIG_ENC28J60=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_CAN_VCAN=m
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -540,6 +540,7 @@ CONFIG_LAN743X=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
+ CONFIG_R8169=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_MICREL_PHY=y
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -543,6 +543,7 @@ CONFIG_LAN743X=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
+ CONFIG_R8169=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_MICREL_PHY=y
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -500,6 +500,7 @@ CONFIG_VSOCKMON=m
+ CONFIG_ENC28J60=m
+ CONFIG_QCA7000_SPI=m
+ CONFIG_QCA7000_UART=m
++CONFIG_MSE102X=m
+ CONFIG_WIZNET_W5100=m
+ CONFIG_WIZNET_W5100_SPI=m
+ CONFIG_CAN_VCAN=m

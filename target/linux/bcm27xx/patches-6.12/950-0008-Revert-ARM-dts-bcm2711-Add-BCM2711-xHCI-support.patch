@@ -1,0 +1,52 @@
+From f32c3cb2ea07c533d6cc8b4828df92ff3892db3a Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 31 Jan 2024 19:47:39 +0000
+Subject: [PATCH] Revert "ARM: dts: bcm2711: Add BCM2711 xHCI support"
+
+This reverts commit 522c35e08b53f157ad3e51848caa861b258001e4.
+---
+ arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi |  5 -----
+ arch/arm/boot/dts/broadcom/bcm2711.dtsi     | 14 --------------
+ 2 files changed, 19 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi
+@@ -1,7 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0
+ #include "bcm2835-rpi.dtsi"
+ 
+-#include <dt-bindings/power/raspberrypi-power.h>
+ #include <dt-bindings/reset/raspberrypi,firmware-reset.h>
+ 
+ / {
+@@ -101,7 +100,3 @@
+ &vchiq {
+ 	interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
+ };
+-
+-&xhci {
+-	power-domains = <&power RPI_POWER_DOMAIN_USB>;
+-};
+--- a/arch/arm/boot/dts/broadcom/bcm2711.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm2711.dtsi
+@@ -604,20 +604,6 @@
+ 			};
+ 		};
+ 
+-		xhci: usb@7e9c0000 {
+-			compatible = "brcm,bcm2711-xhci", "brcm,xhci-brcm-v2";
+-			reg = <0x0 0x7e9c0000 0x100000>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL_HIGH>;
+-			/* DWC2 and this IP block share the same USB PHY,
+-			 * enabling both at the same time results in lockups.
+-			 * So keep this node disabled and let the bootloader
+-			 * decide which interface should be enabled.
+-			 */
+-			status = "disabled";
+-		};
+-
+ 		v3d: gpu@7ec00000 {
+ 			compatible = "brcm,2711-v3d";
+ 			reg = <0x0 0x7ec00000 0x4000>,

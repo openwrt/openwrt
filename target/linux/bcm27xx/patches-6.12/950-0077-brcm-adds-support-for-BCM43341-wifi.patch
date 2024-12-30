@@ -1,0 +1,102 @@
+From f7e36c6220b2217ef61bc06ec940a96d38805d6b Mon Sep 17 00:00:00 2001
+From: Cheong2K <cheong@redbear.cc>
+Date: Fri, 26 Feb 2016 18:20:10 +0800
+Subject: [PATCH] brcm: adds support for BCM43341 wifi
+
+brcmfmac: Disable power management
+
+Disable wireless power saving in the brcmfmac WLAN driver. This is a
+temporary measure until the connectivity loss resulting from power
+saving is resolved.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+
+brcmfmac: Use original country code as a fallback
+
+Commit 73345fd212980d2e28a5c6d83801c903bd773680:
+
+    brcmfmac: Configure country code using device specific settings
+
+prevents region codes from working on devices that lack a region code
+translation table. In the event of an absent table, preserve the old
+behaviour of using the provided code as-is.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+
+brcmfmac: Plug memory leak in brcmf_fill_bss_param
+
+See: https://github.com/raspberrypi/linux/issues/1471
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+
+brcmfmac: do not use internal roaming engine by default
+
+Some evidence of curing disconnects with this disabled, so make it a default.
+Can be overridden with module parameter roamoff=0
+See: http://projectable.me/optimize-my-pi-wi-fi/
+
+brcmfmac: Change stop_ap sequence
+
+Patch from Broadcom/Cypress to resolve a customer error
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+
+Revert "brcmfmac: Disable power management"
+
+Shortly after the release of the Pi 3B, a loss of SSH connectivity
+over WiFi was traced to the power management handling, so power
+management was disabled. And so it has remained ever since.
+
+Enabling power management saves 55mA (~270mW) on a Pi 4B, so is very
+much worth the minimal effort of reverting this patch, which was
+squashed and rebased many times since then to the commit hash is
+meaningless.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c   | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c     | 3 ++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3299,7 +3299,7 @@ brcmf_cfg80211_set_power_mgmt(struct wip
+ 		brcmf_dbg(INFO, "Do not enable power save for P2P clients\n");
+ 		pm = PM_OFF;
+ 	}
+-	brcmf_dbg(INFO, "power save %s\n", (pm ? "enabled" : "disabled"));
++	brcmf_err("power save %s\n", (pm ? "enabled" : "disabled"));
+ 
+ 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, pm);
+ 	if (err) {
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -59,7 +59,7 @@ static int brcmf_fcmode;
+ module_param_named(fcmode, brcmf_fcmode, int, 0);
+ MODULE_PARM_DESC(fcmode, "Mode of firmware signalled flow control");
+ 
+-static int brcmf_roamoff;
++static int brcmf_roamoff = 1;
+ module_param_named(roamoff, brcmf_roamoff, int, 0400);
+ MODULE_PARM_DESC(roamoff, "Do not use internal roaming engine");
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -609,6 +609,7 @@ BRCMF_FW_DEF(4329, "brcmfmac4329-sdio");
+ BRCMF_FW_DEF(4330, "brcmfmac4330-sdio");
+ BRCMF_FW_DEF(4334, "brcmfmac4334-sdio");
+ BRCMF_FW_DEF(43340, "brcmfmac43340-sdio");
++BRCMF_FW_DEF(43341, "brcmfmac43341-sdio");
+ BRCMF_FW_DEF(4335, "brcmfmac4335-sdio");
+ BRCMF_FW_DEF(43362, "brcmfmac43362-sdio");
+ BRCMF_FW_DEF(4339, "brcmfmac4339-sdio");
+@@ -641,7 +642,7 @@ static const struct brcmf_firmware_mappi
+ 	BRCMF_FW_ENTRY(BRCM_CC_4330_CHIP_ID, 0xFFFFFFFF, 4330),
+ 	BRCMF_FW_ENTRY(BRCM_CC_4334_CHIP_ID, 0xFFFFFFFF, 4334),
+ 	BRCMF_FW_ENTRY(BRCM_CC_43340_CHIP_ID, 0xFFFFFFFF, 43340),
+-	BRCMF_FW_ENTRY(BRCM_CC_43341_CHIP_ID, 0xFFFFFFFF, 43340),
++	BRCMF_FW_ENTRY(BRCM_CC_43341_CHIP_ID, 0xFFFFFFFF, 43341),
+ 	BRCMF_FW_ENTRY(BRCM_CC_4335_CHIP_ID, 0xFFFFFFFF, 4335),
+ 	BRCMF_FW_ENTRY(BRCM_CC_43362_CHIP_ID, 0xFFFFFFFE, 43362),
+ 	BRCMF_FW_ENTRY(BRCM_CC_4339_CHIP_ID, 0xFFFFFFFF, 4339),

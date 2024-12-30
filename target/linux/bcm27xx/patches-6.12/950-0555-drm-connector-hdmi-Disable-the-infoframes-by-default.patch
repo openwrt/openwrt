@@ -1,0 +1,54 @@
+From 75e31a25ab606972f167b7ca2ccf3ca97c4ab277 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Thu, 21 Nov 2024 18:33:11 +0000
+Subject: [PATCH] drm/connector: hdmi: Disable the infoframes by default
+
+If an infoframe was ever enabled, duplicate_state would
+memcpy the infoframe including the "set" flag. The
+infoframe functions then never cleared it, so once set
+it was always set. This was most obvious with the HDR
+infoframe as it resulted in bad colour rendering.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ drivers/gpu/drm/display/drm_hdmi_state_helper.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/gpu/drm/display/drm_hdmi_state_helper.c
++++ b/drivers/gpu/drm/display/drm_hdmi_state_helper.c
+@@ -347,6 +347,8 @@ static int hdmi_generate_avi_infoframe(c
+ 		is_limited_range ? HDMI_QUANTIZATION_RANGE_LIMITED : HDMI_QUANTIZATION_RANGE_FULL;
+ 	int ret;
+ 
++	infoframe->set = false;
++
+ 	ret = drm_hdmi_avi_infoframe_from_display_mode(frame, connector, mode);
+ 	if (ret)
+ 		return ret;
+@@ -376,6 +378,8 @@ static int hdmi_generate_spd_infoframe(c
+ 		&infoframe->data.spd;
+ 	int ret;
+ 
++	infoframe->set = false;
++
+ 	ret = hdmi_spd_infoframe_init(frame,
+ 				      connector->hdmi.vendor,
+ 				      connector->hdmi.product);
+@@ -398,6 +402,8 @@ static int hdmi_generate_hdr_infoframe(c
+ 		&infoframe->data.drm;
+ 	int ret;
+ 
++	infoframe->set = false;
++
+ 	if (connector->max_bpc < 10)
+ 		return 0;
+ 
+@@ -425,6 +431,8 @@ static int hdmi_generate_hdmi_vendor_inf
+ 		&infoframe->data.vendor.hdmi;
+ 	int ret;
+ 
++	infoframe->set = false;
++
+ 	if (!info->has_hdmi_infoframe)
+ 		return 0;
+ 

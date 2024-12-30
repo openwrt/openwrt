@@ -1,0 +1,50 @@
+From fec3af4f0fee8d86bec7894cfebce6e9843223e4 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Wed, 20 Nov 2024 19:17:04 +0000
+Subject: [PATCH] media: i2c: imx290: Register 0x3011 varies between imx327 and
+ imx290
+
+Commit f2055c1d62d6dfd25a31d1d1923883f21305aea5 upstream.
+
+Reviewing the datasheets, register 0x3011 is meant to be 0x02 on imx327
+and 0x00 on imx290.
+
+Move it out of the common registers, and set it appropriately in the
+sensor specific sections. (Included for imx290 to be explicit, rather
+than relying on the default value).
+
+Fixes: 2d41947ec2c0 ("media: i2c: imx290: Add support for imx327 variant")
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/i2c/imx290.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/media/i2c/imx290.c
++++ b/drivers/media/i2c/imx290.c
+@@ -270,7 +270,6 @@ static const struct cci_reg_sequence imx
+ 	{ IMX290_WINWV, 1097 },
+ 	{ IMX290_XSOUTSEL, IMX290_XSOUTSEL_XVSOUTSEL_VSYNC |
+ 			   IMX290_XSOUTSEL_XHSOUTSEL_HSYNC },
+-	{ CCI_REG8(0x3011), 0x02 },
+ 	{ CCI_REG8(0x3012), 0x64 },
+ 	{ CCI_REG8(0x3013), 0x00 },
+ };
+@@ -278,6 +277,7 @@ static const struct cci_reg_sequence imx
+ static const struct cci_reg_sequence imx290_global_init_settings_290[] = {
+ 	{ CCI_REG8(0x300f), 0x00 },
+ 	{ CCI_REG8(0x3010), 0x21 },
++	{ CCI_REG8(0x3011), 0x00 },
+ 	{ CCI_REG8(0x3016), 0x09 },
+ 	{ CCI_REG8(0x3070), 0x02 },
+ 	{ CCI_REG8(0x3071), 0x11 },
+@@ -331,6 +331,7 @@ static const struct cci_reg_sequence xcl
+ };
+ 
+ static const struct cci_reg_sequence imx290_global_init_settings_327[] = {
++	{ CCI_REG8(0x3011), 0x02 },
+ 	{ CCI_REG8(0x309e), 0x4A },
+ 	{ CCI_REG8(0x309f), 0x4A },
+ 	{ CCI_REG8(0x313b), 0x61 },

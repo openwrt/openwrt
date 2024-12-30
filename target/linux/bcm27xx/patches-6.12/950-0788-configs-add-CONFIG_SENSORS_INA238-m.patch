@@ -1,0 +1,74 @@
+From 52053502e4306bf0a4cd62aa052696da27684ad0 Mon Sep 17 00:00:00 2001
+From: James Sarrett <jsarrett@gmail.com>
+Date: Sun, 26 Jan 2025 11:38:54 -0800
+Subject: [PATCH] configs: add CONFIG_SENSORS_INA238=m
+
+---
+ arch/arm/configs/bcm2709_defconfig   | 1 +
+ arch/arm/configs/bcm2711_defconfig   | 1 +
+ arch/arm/configs/bcmrpi_defconfig    | 1 +
+ arch/arm64/configs/bcm2711_defconfig | 1 +
+ arch/arm64/configs/bcm2712_defconfig | 1 +
+ arch/arm64/configs/bcmrpi3_defconfig | 1 +
+ 6 files changed, 6 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -748,6 +748,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_BCM2835_THERMAL=y
+ CONFIG_WATCHDOG=y
+--- a/arch/arm/configs/bcm2711_defconfig
++++ b/arch/arm/configs/bcm2711_defconfig
+@@ -770,6 +770,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_BCM2711_THERMAL=y
+ CONFIG_WATCHDOG=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -741,6 +741,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_BCM2835_THERMAL=y
+ CONFIG_WATCHDOG=y
+--- a/arch/arm64/configs/bcm2711_defconfig
++++ b/arch/arm64/configs/bcm2711_defconfig
+@@ -808,6 +808,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_SENSORS_RP1_ADC=m
+ CONFIG_BCM2711_THERMAL=y
+--- a/arch/arm64/configs/bcm2712_defconfig
++++ b/arch/arm64/configs/bcm2712_defconfig
+@@ -810,6 +810,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_SENSORS_RP1_ADC=m
+ CONFIG_BCM2711_THERMAL=y
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -749,6 +749,7 @@ CONFIG_SENSORS_SHT4x=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_SENSORS_EMC2305=m
+ CONFIG_SENSORS_INA2XX=m
++CONFIG_SENSORS_INA238=m
+ CONFIG_SENSORS_TMP102=m
+ CONFIG_BCM2835_THERMAL=y
+ CONFIG_WATCHDOG=y

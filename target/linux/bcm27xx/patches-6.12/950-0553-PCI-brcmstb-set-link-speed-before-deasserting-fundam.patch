@@ -1,0 +1,41 @@
+From 9b5d1d59c8007e5e40450a0a122bb1372295ae40 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.com>
+Date: Fri, 22 Nov 2024 11:56:30 +0000
+Subject: [PATCH] PCI: brcmstb: set link speed before deasserting fundamental
+ reset
+
+If autonomous speed negotiation is unreliable then brcm_pcie_set_gen()
+can be used to override/limit this behaviour. However, setting the limit
+after the linkup poll means the link can temporarily enter a bad speed
+which may result in link failure. Move the speed setup to just prior to
+releasing perst_n.
+
+Fixes: 0693b4207fd7 ("PCI: brcmstb: Split post-link up initialization to brcm_pcie_start_link()")
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+---
+ drivers/pci/controller/pcie-brcmstb.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/pci/controller/pcie-brcmstb.c
++++ b/drivers/pci/controller/pcie-brcmstb.c
+@@ -1715,6 +1715,9 @@ static int brcm_pcie_start_link(struct b
+ 	u16 tmp16;
+ 	int ret, i;
+ 
++	if (pcie->gen)
++		brcm_pcie_set_gen(pcie, pcie->gen);
++
+ 	/* Unassert the fundamental reset */
+ 	if (pcie->tperst_clk_ms) {
+ 		/*
+@@ -1759,9 +1762,6 @@ static int brcm_pcie_start_link(struct b
+ 
+ 	brcm_config_clkreq(pcie);
+ 
+-	if (pcie->gen)
+-		brcm_pcie_set_gen(pcie, pcie->gen);
+-
+ 	if (pcie->ssc) {
+ 		ret = brcm_pcie_set_ssc(pcie);
+ 		if (ret == 0)

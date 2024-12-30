@@ -1,0 +1,49 @@
+From c5c0c15c650c60322d844006f9875158bb523d69 Mon Sep 17 00:00:00 2001
+From: Christian Gmeiner <cgmeiner@igalia.com>
+Date: Mon, 18 Nov 2024 23:19:47 +0100
+Subject: [PATCH] drm/v3d: Stop active perfmon if it is being destroyed
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Commit 21f1435b1e6b012a07c42f36b206d2b66fc8f13b upstream
+
+If the active performance monitor (`v3d->active_perfmon`) is being
+destroyed, stop it first. Currently, the active perfmon is not
+stopped during destruction, leaving the `v3d->active_perfmon` pointer
+stale. This can lead to undefined behavior and instability.
+
+This patch ensures that the active perfmon is stopped before being
+destroyed, aligning with the behavior introduced in commit
+7d1fd3638ee3 ("drm/v3d: Stop the active perfmon before being destroyed").
+
+Cc: stable@vger.kernel.org # v5.15+
+Fixes: 26a4dc29b74a ("drm/v3d: Expose performance counters to userspace")
+Signed-off-by: Christian Gmeiner <cgmeiner@igalia.com>
+Signed-off-by: Maíra Canal <mcanal@igalia.com>
+Link: https://patchwork.freedesktop.org/patch/msgid/20241118221948.1758130-1-christian.gmeiner@gmail.com
+---
+ drivers/gpu/drm/v3d/v3d_perfmon.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/gpu/drm/v3d/v3d_perfmon.c
++++ b/drivers/gpu/drm/v3d/v3d_perfmon.c
+@@ -384,6 +384,7 @@ int v3d_perfmon_destroy_ioctl(struct drm
+ {
+ 	struct v3d_file_priv *v3d_priv = file_priv->driver_priv;
+ 	struct drm_v3d_perfmon_destroy *req = data;
++	struct v3d_dev *v3d = v3d_priv->v3d;
+ 	struct v3d_perfmon *perfmon;
+ 
+ 	mutex_lock(&v3d_priv->perfmon.lock);
+@@ -393,6 +394,10 @@ int v3d_perfmon_destroy_ioctl(struct drm
+ 	if (!perfmon)
+ 		return -EINVAL;
+ 
++	/* If the active perfmon is being destroyed, stop it first */
++	if (perfmon == v3d->active_perfmon)
++		v3d_perfmon_stop(v3d, perfmon, false);
++
+ 	v3d_perfmon_put(perfmon);
+ 
+ 	return 0;
