@@ -16,7 +16,7 @@ let wireless_status = ubus.call('network.wireless', 'status');
 
 function find_phy(wiphy) {
 	for (let k,  phy in phys)
-		if (phy.wiphy == wiphy)
+		if (phy && phy.wiphy == wiphy)
 			return phy;
 	return null;
 }
