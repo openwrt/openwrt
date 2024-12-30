@@ -6,6 +6,7 @@
 #include "ipq6018-512m.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
 #include "ipq6018-ess.dtsi"
+#include "ipq6018-nss.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
@@ -549,3 +550,5 @@
 	qcom,ath11k-calibration-variant = "Linksys-MR7500";
 	qcom,ath11k-fw-memory-mode = <1>;
 };
+
+#include "ipq6018-mr7500-nss.dtsi"
