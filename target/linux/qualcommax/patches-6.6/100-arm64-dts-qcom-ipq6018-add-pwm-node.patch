@@ -1,0 +1,25 @@
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -435,8 +435,21 @@
+ 		};
+ 
+ 		tcsr: syscon@1937000 {
+-			compatible = "qcom,tcsr-ipq6018", "syscon";
++			compatible = "qcom,tcsr-ipq6018", "syscon", "simple-mfd";
+ 			reg = <0x0 0x01937000 0x0 0x21000>;
++			ranges = <0x0 0x0 0x01937000 0x21000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pwm: pwm@a010 {
++				compatible = "qcom,ipq6018-pwm";
++				reg = <0xa010 0x20>;
++				clocks = <&gcc GCC_ADSS_PWM_CLK>;
++				assigned-clocks = <&gcc GCC_ADSS_PWM_CLK>;
++				assigned-clock-rates = <100000000>;
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
+ 		};
+ 
+ 		usb2: usb@70f8800 {
