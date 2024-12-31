@@ -73,6 +73,8 @@
 	};
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &status;
 		led-failsafe = &status;
 		led-upgrade = &status;

@@ -11,6 +11,8 @@
 	compatible = "dlink,dap-2610";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_red;
 		led-failsafe = &led_red;
 		led-running = &led_green;

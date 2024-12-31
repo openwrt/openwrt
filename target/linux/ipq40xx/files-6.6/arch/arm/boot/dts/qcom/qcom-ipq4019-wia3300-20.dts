@@ -11,6 +11,8 @@
 	model = "SKSpruce WIA3300-20";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		label-mac-device = &gmac;
 		led-boot = &led_status_red;
 		led-failsafe = &led_status_lime;

@@ -13,6 +13,8 @@
 	compatible = "zte,mf282plus";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_internal;
 		led-failsafe = &led_internal;
 		led-running = &led_internal;
