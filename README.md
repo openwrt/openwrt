@@ -1,14 +1,11 @@
 # NSS Fork for IPQ807x
 | Branch                                                                                  | mac80211 Version | Notes                                                                 |
 |-----------------------------------------------------------------------------------------|------------------|----------------------------------------------------------------------|
-| [qualcommax-6.x-nss-wifi](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-wifi)             |6.11|Current with upstream|
-| [qualcommax-6.x-nss-mx4300](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-mx4300)         |6.11|Current with upstream. [Supports Linksys MX4300](https://github.com/openwrt/openwrt/pull/16070) |
-| [qualcommax-6.x-nss-wifi-6.9](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-wifi-6.9)     |6.9.9|Current with upstream, except older mac80211|
-| [qualcommax-6.x-nss-mx4300-6.9](https://github.com/qosmio/openwrt-ipq/tree/qualcommax-6.x-nss-mx4300-6.11) |6.9.9|Current with upstream, except older mac80211. [Supports Linksys MX4300](https://github.com/openwrt/openwrt/pull/16070) |
+| [main-nss](https://github.com/qosmio/openwrt-ipq/tree/main-nss)                 |6.12.6|Current with upstream `main` (unstable)|
+| [24.10-nss](https://github.com/qosmio/openwrt-ipq/tree/24.10-nss)               |6.11.2|Current with upstream `openwrt-24.10` (next stable release)|
+| [24.10-nss-mx4300](https://github.com/qosmio/openwrt-ipq/tree/24.10-nss-mx4300) |6.11.2|Current with upstream `openwrt-24.10` [supports Linksys MX4300](https://github.com/openwrt/openwrt/pull/16070)|
 
-NOTE: The 6.9 branches are meant for folks having issues with the current 6.11.2 version of backports/mac80211. These are mostly just meant as a workaround for the time being. I don't plan on supporting these branches longterm.
-
-The MX4300 branches will soon be merged in once the PR for MX4300 is approved upstream.
+UPDATE: As of [2024-12-31 support for MX4300 has been merged](https://github.com/openwrt/openwrt/pull/16070) upstream in `main` branch and `main-nss-mx4300` is no longer needed.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -95,7 +92,7 @@ Supported devices include, but are not limited to:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/qosmio/openwrt-ipq -b qualcommax-6.x-nss-wifi-6.11
+   git clone https://github.com/qosmio/openwrt-ipq -b 24.10-nss
    cd openwrt-ipq
    ```
 2. Update feeds:
