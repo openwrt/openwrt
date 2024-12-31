@@ -9,6 +9,11 @@
 	model = "Wallystech DR40X9";
 	compatible = "wallys,dr40x9";
 
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+	};
+
 	chosen {
 		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
 	};

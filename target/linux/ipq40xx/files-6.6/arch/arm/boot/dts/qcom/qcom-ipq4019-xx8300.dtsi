@@ -26,6 +26,11 @@
 	};
 
 
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+	};
+
 	soc {
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
