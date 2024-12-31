@@ -47,9 +47,6 @@ struct ath9k_platform_data {
 
 	bool use_eeprom;
 
-	int num_leds;
-	const struct gpio_led *leds;
-
 	unsigned num_btns;
 	const struct gpio_keys_button *btns;
 	unsigned btn_poll_interval;
