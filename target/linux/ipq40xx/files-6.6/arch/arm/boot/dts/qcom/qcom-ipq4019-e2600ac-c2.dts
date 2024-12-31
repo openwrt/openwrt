@@ -11,6 +11,11 @@
 / {
 	model = "Qxwlan E2600AC c2";
 	compatible = "qxwlan,e2600ac-c2";
+
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+	};
 };
 
 &blsp1_spi1 {

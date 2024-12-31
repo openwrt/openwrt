@@ -9,6 +9,11 @@
 	model = "devolo Magic 2 WiFi next";
 	compatible = "devolo,magic-2-wifi-next";
 
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+	};
+
 	memory {
 		device_type = "memory";
 		reg = <0x80000000 0x10000000>;

@@ -11,6 +11,8 @@
 	compatible = "pakedge,wr-1";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		label-mac-device = &gmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;

@@ -11,6 +11,8 @@
 	compatible = "glinet,gl-a1300", "qcom,ipq4019";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_run;
 		led-failsafe = &led_run;
 		led-running = &led_run;
