@@ -15,6 +15,8 @@
 		led-failsafe = &led_red0;
 		led-running = &led_blue0;
 		led-upgrade = &led_red0;
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		ethernet1 = &swport4;
 	};
 

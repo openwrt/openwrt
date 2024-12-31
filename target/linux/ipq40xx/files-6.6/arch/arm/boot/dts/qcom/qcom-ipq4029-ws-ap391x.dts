@@ -10,6 +10,8 @@
 	compatible = "extreme-networks,ws-ap391x";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_system_green;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_green;
