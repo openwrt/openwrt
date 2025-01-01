@@ -96,6 +96,9 @@ hpe,1920-8g-poe-65w)
 hpe,1920-8g-poe-180w)
 	ucidef_set_poe 180 "$(filter_port_list_reverse "$lan_list" "lan9 lan10")"
 	;;
+hpe,1920-24g-poe-180w)
+	ucidef_set_poe 180 "$(filter_port_list_reverse "$lan_list" "lan25 lan26 lan27 lan28")"
+	;;
 hpe,1920-24g-poe-370w)
 	ucidef_set_poe 370 "$(filter_port_list_reverse "$lan_list" "lan25 lan26 lan27 lan28")"
 	;;

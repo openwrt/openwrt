@@ -7,6 +7,7 @@ board=$(board_name)
 
 case "$board" in
 hpe,1920-8g-poe-180w|\
+hpe,1920-24g-poe-180w|\
 hpe,1920-24g-poe-370w)
 	ucidef_add_gpio_switch "fan_ctrl" "Fan control" "456" "0"
 	;;

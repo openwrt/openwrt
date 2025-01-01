@@ -144,6 +144,15 @@ define Device/hpe_1920-24g
 endef
 TARGET_DEVICES += hpe_1920-24g
 
+define Device/hpe_1920-24g-poe-180w
+  $(Device/hpe_1920)
+  SOC := rtl8382
+  DEVICE_MODEL := 1920-24G-PoE+ 180W (JG925A)
+  DEVICE_PACKAGES += realtek-poe
+  H3C_DEVICE_ID := 0x00010028
+endef
+TARGET_DEVICES += hpe_1920-24g-poe-180w
+
 define Device/hpe_1920-24g-poe-370w
   $(Device/hpe_1920)
   SOC := rtl8382
