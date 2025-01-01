@@ -233,6 +233,23 @@ endef
 $(eval $(call KernelPackage,leds-pwm))
 
 
+define KernelPackage/leds-st1202
+  SUBMENU:=LED modules
+  TITLE:=LED support for ST LED1202 I2C chips
+  DEPENDS:=+kmod-i2c-core +kmod-ledtrig-pattern
+  KCONFIG:=CONFIG_LEDS_ST1202
+  FILES:= $(LINUX_DIR)/drivers/leds/leds-st1202.ko
+  AUTOLOAD:=$(call AutoProbe,leds-st1202)
+endef
+
+define KernelPackage/leds-st1202/description
+  This option enables support for LEDs connected to LED1202
+  LED driver chips accessed via the I2C bus.
+endef
+
+$(eval $(call KernelPackage,leds-st1202))
+
+
 define KernelPackage/leds-tlc591xx
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED driver for TLC59108 and TLC59116 controllers
