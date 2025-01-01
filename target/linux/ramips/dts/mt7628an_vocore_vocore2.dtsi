@@ -68,11 +68,34 @@
 	};
 };
 
+&pinctrl {
+	ephy-digital;
+
+	sdxc_iot_mode: sdxc_iot_mode {
+		esd {
+			groups = "esd";
+			function = "iot";
+		};
+
+		sdxc {
+			groups = "sdmode";
+			function = "sdxc";
+		};
+	};
+};
+
 &state_default {
 	gpio {
 		groups = "wled_an", "refclk", "wdt";
 		function = "gpio";
 	};
+};
+
+&sdhci {
+	status = "okay";
+
+	pinctrl-0 = <&sdxc_iot_mode>;
+	pinctrl-1 = <&sdxc_iot_mode>;
 };
 
 &wmac {
