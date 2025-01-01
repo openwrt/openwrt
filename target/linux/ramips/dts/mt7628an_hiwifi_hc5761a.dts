@@ -44,9 +44,25 @@
 	};
 };
 
+&pinctrl {
+	ephy-analog;
+
+	sdxc_router_mode: sdxc_router_mode {
+		groups = "esd", "gpio", "i2c", "sdmode", "uart1";
+		function = "gpio";
+	};
+};
+
+&sdhci {
+	status = "okay";
+
+	pinctrl-0 = <&sdxc_router_mode>;
+	pinctrl-1 = <&sdxc_router_mode>;
+};
+
 &state_default {
 	gpio {
-		groups = "i2c", "refclk", "wdt", "p2led_an", "p3led_an", "wled_an";
+		groups = "i2s", "refclk", "wdt", "p2led_an", "p3led_an", "wled_an";
 		function = "gpio";
 	};
 };

@@ -289,6 +289,7 @@ define Device/hiwifi_hc5661a
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5661A
+  DEVICE_PACKAGES := kmod-mmc-mtk
   SUPPORTED_DEVICES += hc5661a
 endef
 TARGET_DEVICES += hiwifi_hc5661a
@@ -297,7 +298,7 @@ define Device/hiwifi_hc5761a
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5761A
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci
+  DEVICE_PACKAGES := kmod-mmc-mtk kmod-mt76x0e kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += hiwifi_hc5761a
 
