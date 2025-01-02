@@ -207,6 +207,16 @@ define Device/comfast_cf-wr800n
 endef
 TARGET_DEVICES += comfast_cf-wr800n
 
+define Device/devolo_acr
+  SOC := mt7620a
+  IMAGE_SIZE := 7744k
+  DEVICE_VENDOR := DEVOLO
+  DEVICE_MODEL := ACR
+	DEVICE_PACKAGES := kmod-mt76x2 kmod-libphy kmod-phylink kmod-phy-realtek
+  SUPPORTED_DEVICES += devolo-acr
+endef
+TARGET_DEVICES += devolo_acr
+
 define Device/dlink_dch-m225
   $(Device/seama)
   SOC := mt7620a
