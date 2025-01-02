@@ -1514,6 +1514,34 @@ define Device/wavlink_wl-wn586x3
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3
 
+define Device/wavlink_wl-wn586x3b
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WN586X3B
+  DEVICE_DTS := mt7981b-wavlink-wl-wn586x3b
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGES := sysupgrade.itb factory.bin initramfs-kernel.bin
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+#ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  #ARTIFACTS := initramfs-factory.ubi factory.ubi
+  ARTIFACTS := factory.ubi
+  #ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel
+  ARTIFACT/factory.ubi		 := ubinize-image fit squashfs-sysupgrade.itb
+#endif
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += wavlink_wl-wn586x3b
+
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router AX3000T
