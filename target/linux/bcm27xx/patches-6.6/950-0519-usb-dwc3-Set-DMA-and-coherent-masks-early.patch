@@ -68,7 +68,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	select SOC_BRCMSTB if ARCH_BRCMSTB
 --- a/drivers/phy/broadcom/phy-brcm-usb-init-synopsys.c
 +++ b/drivers/phy/broadcom/phy-brcm-usb-init-synopsys.c
-@@ -335,6 +335,36 @@ static void usb_init_common_7216(struct
+@@ -341,6 +341,36 @@ static void usb_init_common_7216(struct
  	usb_init_common(params);
  }
  
@@ -105,7 +105,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void usb_init_xhci(struct brcm_usb_init_params *params)
  {
  	pr_debug("%s\n", __func__);
-@@ -380,6 +410,18 @@ static void usb_uninit_common_7211b0(str
+@@ -386,6 +416,18 @@ static void usb_uninit_common_7211b0(str
  
  }
  
@@ -124,7 +124,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void usb_uninit_xhci(struct brcm_usb_init_params *params)
  {
  
-@@ -434,6 +476,16 @@ static const struct brcm_usb_init_ops bc
+@@ -440,6 +482,16 @@ static const struct brcm_usb_init_ops bc
  	.set_dual_select = usb_set_dual_select,
  };
  
@@ -141,7 +141,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  void brcm_usb_dvr_init_7216(struct brcm_usb_init_params *params)
  {
  
-@@ -451,3 +503,10 @@ void brcm_usb_dvr_init_7211b0(struct brc
+@@ -457,3 +509,10 @@ void brcm_usb_dvr_init_7211b0(struct brc
  	params->family_name = "7211";
  	params->ops = &bcm7211b0_ops;
  }

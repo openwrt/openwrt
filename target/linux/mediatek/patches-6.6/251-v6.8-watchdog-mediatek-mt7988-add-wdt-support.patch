@@ -18,7 +18,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
 
 --- a/drivers/watchdog/mtk_wdt.c
 +++ b/drivers/watchdog/mtk_wdt.c
-@@ -58,9 +58,13 @@
+@@ -59,9 +59,13 @@
  #define WDT_SWSYSRST		0x18U
  #define WDT_SWSYS_RST_KEY	0x88000000
  
@@ -32,7 +32,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  static bool nowayout = WATCHDOG_NOWAYOUT;
  static unsigned int timeout;
  
-@@ -71,10 +75,12 @@ struct mtk_wdt_dev {
+@@ -72,10 +76,12 @@ struct mtk_wdt_dev {
  	struct reset_controller_dev rcdev;
  	bool disable_wdt_extrst;
  	bool reset_by_toprgu;
@@ -45,7 +45,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  };
  
  static const struct mtk_wdt_data mt2712_data = {
-@@ -89,6 +95,11 @@ static const struct mtk_wdt_data mt7986_
+@@ -94,6 +100,11 @@ static const struct mtk_wdt_data mt7986_
  	.toprgu_sw_rst_num = MT7986_TOPRGU_SW_RST_NUM,
  };
  
@@ -57,7 +57,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  static const struct mtk_wdt_data mt8183_data = {
  	.toprgu_sw_rst_num = MT8183_TOPRGU_SW_RST_NUM,
  };
-@@ -109,6 +120,28 @@ static const struct mtk_wdt_data mt8195_
+@@ -114,6 +125,28 @@ static const struct mtk_wdt_data mt8195_
  	.toprgu_sw_rst_num = MT8195_TOPRGU_SW_RST_NUM,
  };
  
@@ -86,7 +86,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  static int toprgu_reset_update(struct reset_controller_dev *rcdev,
  			       unsigned long id, bool assert)
  {
-@@ -119,6 +152,9 @@ static int toprgu_reset_update(struct re
+@@ -124,6 +157,9 @@ static int toprgu_reset_update(struct re
  
  	spin_lock_irqsave(&data->lock, flags);
  
@@ -96,7 +96,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  	tmp = readl(data->wdt_base + WDT_SWSYSRST);
  	if (assert)
  		tmp |= BIT(id);
-@@ -127,6 +163,9 @@ static int toprgu_reset_update(struct re
+@@ -132,6 +168,9 @@ static int toprgu_reset_update(struct re
  	tmp |= WDT_SWSYS_RST_KEY;
  	writel(tmp, data->wdt_base + WDT_SWSYSRST);
  
@@ -106,7 +106,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  	spin_unlock_irqrestore(&data->lock, flags);
  
  	return 0;
-@@ -412,6 +451,8 @@ static int mtk_wdt_probe(struct platform
+@@ -417,6 +456,8 @@ static int mtk_wdt_probe(struct platform
  						       wdt_data->toprgu_sw_rst_num);
  		if (err)
  			return err;
@@ -115,8 +115,8 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  	}
  
  	mtk_wdt->disable_wdt_extrst =
-@@ -450,6 +491,7 @@ static const struct of_device_id mtk_wdt
- 	{ .compatible = "mediatek,mt6589-wdt" },
+@@ -456,6 +497,7 @@ static const struct of_device_id mtk_wdt
+ 	{ .compatible = "mediatek,mt6735-wdt", .data = &mt6735_data },
  	{ .compatible = "mediatek,mt6795-wdt", .data = &mt6795_data },
  	{ .compatible = "mediatek,mt7986-wdt", .data = &mt7986_data },
 +	{ .compatible = "mediatek,mt7988-wdt", .data = &mt7988_data },
