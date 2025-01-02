@@ -212,9 +212,13 @@ platform_do_upgrade() {
 		;;
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
-	linksys,mx4300|\
+	linksys,mx4300)
+		remove_oem_ubi_volume squashfs
+		linksys_mx_do_upgrade "$1"
+		;;
 	linksys,mx5300|\
 	linksys,mx8500)
+		remove_oem_ubi_volume ubifs
 		linksys_mx_do_upgrade "$1"
 		;;
 	prpl,haze|\
