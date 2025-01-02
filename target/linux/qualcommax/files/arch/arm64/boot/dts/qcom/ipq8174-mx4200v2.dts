@@ -10,6 +10,32 @@
 	compatible = "linksys,mx4200v2", "qcom,ipq8074";
 };
 
+&blsp1_i2c2 {
+
+	led-controller@58 {
+		compatible = "st,led1202";
+		reg = <0x58>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_system_green: led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+		led_system_red: led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+		led_system_blue: led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+};
+
 &wifi {
 	status = "okay";
 
