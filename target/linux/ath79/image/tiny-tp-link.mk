@@ -481,6 +481,7 @@ define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)
   SOC := ar9132
   DEVICE_MODEL := TL-WR941ND
+  DEVICE_PACKAGES := kmod-dsa-mv88e6060
   DEVICE_VARIANT := v2/v3
   DEVICE_ALT0_VENDOR := TP-Link
   DEVICE_ALT0_MODEL := TL-WR941N
