@@ -1,0 +1,29 @@
+From 573c3953ea29ab7473d807246f043045b97493b7 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Wed, 6 Mar 2024 21:28:40 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add 1.5GHz CPU Frequency
+
+The IPQ6005 and some IPQ6000 SoCs (with PMIC) have CPU
+frequencies up to 1.5GHz, so add this frequency.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -140,6 +140,13 @@
+ 			clock-latency-ns = <200000>;
+ 		};
+ 
++		opp-1512000000 {
++			opp-hz = /bits/ 64 <1512000000>;
++			opp-microvolt = <937500>;
++			opp-supported-hw = <0x2>;
++			clock-latency-ns = <200000>;
++		};
++
+ 		opp-1608000000 {
+ 			opp-hz = /bits/ 64 <1608000000>;
+ 			opp-microvolt = <987500>;
