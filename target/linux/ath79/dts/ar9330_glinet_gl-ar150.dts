@@ -62,16 +62,26 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &usb {
-	dr_mode = "host";
 	status = "okay";
+
+	dr_mode = "host";
+	vbus-supply = <&reg_power_usb>;
 };
 
 &usb_phy {
 	status = "okay";
-	gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 };
 
 &spi {
