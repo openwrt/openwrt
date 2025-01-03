@@ -10,7 +10,7 @@
  	CPUHP_LUSTRE_CFS_DEAD,
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1065,6 +1065,10 @@ struct sk_buff {
+@@ -1059,6 +1059,10 @@ struct sk_buff {
  	/* only useable after checking ->active_extensions != 0 */
  	struct skb_ext		*extensions;
  #endif
@@ -21,7 +21,7 @@
  };
  
  /* if you move pkt_type around you also must adapt those constants */
-@@ -1250,7 +1254,7 @@ static inline void kfree_skb_list(struct sk_buff *segs)
+@@ -1244,7 +1248,7 @@ static inline void kfree_skb_list(struct
  	kfree_skb_list_reason(segs, SKB_DROP_REASON_NOT_SPECIFIED);
  }
  
@@ -30,7 +30,7 @@
  void consume_skb(struct sk_buff *skb);
  #else
  static inline void consume_skb(struct sk_buff *skb)
-@@ -1262,6 +1266,9 @@ static inline void consume_skb(struct sk_buff *skb)
+@@ -1256,6 +1260,9 @@ static inline void consume_skb(struct sk
  void __consume_stateless_skb(struct sk_buff *skb);
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_cache;
@@ -79,7 +79,7 @@
 +obj-$(CONFIG_SKB_RECYCLER) += skbuff_recycle.o
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6016,10 +6016,16 @@ static int process_backlog(struct napi_struct *napi, int quota)
+@@ -6051,10 +6051,16 @@ static int process_backlog(struct napi_s
  
  	napi->weight = READ_ONCE(dev_rx_weight);
  	while (again) {
@@ -131,7 +131,7 @@
  
  struct kmem_cache *skbuff_cache __ro_after_init;
  static struct kmem_cache *skbuff_fclone_cache __ro_after_init;
-@@ -551,21 +576,20 @@ static void *kmalloc_reserve(unsigned int *size, gfp_t flags, int node,
+@@ -551,21 +576,20 @@ static void *kmalloc_reserve(unsigned in
  			     bool *pfmemalloc)
  {
  	bool ret_pfmemalloc = false;
@@ -160,7 +160,7 @@
  		goto out;
  	}
  
-@@ -648,10 +671,12 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
+@@ -648,10 +672,12 @@ struct sk_buff *__alloc_skb(unsigned int
  	 * aligned memory blocks, unless SLUB/SLAB debug is enabled.
  	 * Both skb->head and skb_shared_info are cache line aligned.
  	 */
@@ -174,7 +174,7 @@
  	 * Put skb_shared_info exactly at the end of allocated zone,
  	 * to allow max possible filling before reallocation.
  	 */
-@@ -686,7 +711,7 @@ EXPORT_SYMBOL(__alloc_skb);
+@@ -686,7 +712,7 @@ EXPORT_SYMBOL(__alloc_skb);
  /**
   *	__netdev_alloc_skb - allocate an skbuff for rx on a specific device
   *	@dev: network device to receive on
@@ -183,7 +183,7 @@
   *	@gfp_mask: get_free_pages mask, passed to alloc_skb
   *
   *	Allocate a new &sk_buff and assign it a usage count of one. The
-@@ -696,29 +721,53 @@ EXPORT_SYMBOL(__alloc_skb);
+@@ -696,29 +722,53 @@ EXPORT_SYMBOL(__alloc_skb);
   *
   *	%NULL is returned if there is no free memory.
   */
@@ -242,7 +242,7 @@
  
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
-@@ -747,6 +796,7 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
+@@ -747,6 +797,7 @@ struct sk_buff *__netdev_alloc_skb(struc
  	if (pfmemalloc)
  		skb->pfmemalloc = 1;
  	skb->head_frag = 1;
@@ -250,7 +250,7 @@
  
  skb_success:
  	skb_reserve(skb, NET_SKB_PAD);
-@@ -817,7 +867,8 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
+@@ -817,7 +868,8 @@ struct sk_buff *__napi_alloc_skb(struct
  		data = page_frag_alloc_1k(&nc->page_small, gfp_mask);
  		pfmemalloc = NAPI_SMALL_PAGE_PFMEMALLOC(nc->page_small);
  	} else {
@@ -260,7 +260,7 @@
  
  		data = page_frag_alloc(&nc->page, len, gfp_mask);
  		pfmemalloc = nc->page.pfmemalloc;
-@@ -975,7 +1026,7 @@ static void skb_free_head(struct sk_buff *skb, bool napi_safe)
+@@ -975,7 +1027,7 @@ static void skb_free_head(struct sk_buff
  	}
  }
  
@@ -269,7 +269,7 @@
  			     bool napi_safe)
  {
  	struct skb_shared_info *shinfo = skb_shinfo(skb);
-@@ -1018,7 +1069,7 @@ static void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason,
+@@ -1018,7 +1070,7 @@ exit:
  /*
   *	Free an skbuff by memory without cleaning the state.
   */
@@ -278,7 +278,7 @@
  {
  	struct sk_buff_fclones *fclones;
  
-@@ -1282,7 +1333,6 @@ void skb_tx_error(struct sk_buff *skb)
+@@ -1282,7 +1334,6 @@ void skb_tx_error(struct sk_buff *skb)
  }
  EXPORT_SYMBOL(skb_tx_error);
  
@@ -286,7 +286,7 @@
  /**
   *	consume_skb - free an skbuff
   *	@skb: buffer to free
-@@ -1291,13 +1341,48 @@ EXPORT_SYMBOL(skb_tx_error);
+@@ -1291,13 +1342,48 @@ EXPORT_SYMBOL(skb_tx_error);
   *	Functions identically to kfree_skb, but kfree_skb assumes that the frame
   *	is being dropped after a failure and notes that
   */
@@ -300,7 +300,7 @@
 +	/*Tian: Not sure if we need to continue using this since
 +	 * since unref does the work in 5.4
 +	 */
-+
+ 
 +	/*
 +	if (likely(atomic_read(&skb->users) == 1))
 +		smp_rmb();
@@ -336,7 +336,7 @@
  }
  EXPORT_SYMBOL(consume_skb);
  #endif
-@@ -2107,6 +2192,8 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
+@@ -2113,6 +2199,8 @@ int pskb_expand_head(struct sk_buff *skb
  	if (skb_pfmemalloc(skb))
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -345,7 +345,7 @@
  	data = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);
  	if (!data)
  		goto nodata;
-@@ -4854,6 +4941,10 @@ static void skb_extensions_init(void) {}
+@@ -4865,6 +4953,10 @@ static void skb_extensions_init(void) {}
  
  void __init skb_init(void)
  {
@@ -356,7 +356,7 @@
  	skbuff_cache = kmem_cache_create_usercopy("skbuff_head_cache",
  					      sizeof(struct sk_buff),
  					      0,
-@@ -4879,6 +4970,7 @@ void __init skb_init(void)
+@@ -4890,6 +4982,7 @@ void __init skb_init(void)
  						SKB_SMALL_HEAD_HEADROOM,
  						NULL);
  	skb_extensions_init();
@@ -364,7 +364,7 @@
  }
  
  static int
-@@ -6382,6 +6474,8 @@ static int pskb_carve_inside_header(struct sk_buff *skb, const u32 off,
+@@ -6393,6 +6486,8 @@ static int pskb_carve_inside_header(stru
  	if (skb_pfmemalloc(skb))
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -373,7 +373,7 @@
  	data = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);
  	if (!data)
  		return -ENOMEM;
-@@ -6498,6 +6592,8 @@ static int pskb_carve_inside_nonlinear(struct sk_buff *skb, const u32 off,
+@@ -6509,6 +6604,8 @@ static int pskb_carve_inside_nonlinear(s
  	if (skb_pfmemalloc(skb))
  		gfp_mask |= __GFP_MEMALLOC;
  

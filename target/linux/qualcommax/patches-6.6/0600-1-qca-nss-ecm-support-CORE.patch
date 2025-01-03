@@ -81,7 +81,7 @@
  		     __be16 vlan_proto, u16 vlan_id)
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2936,6 +2936,10 @@ enum netdev_cmd {
+@@ -2933,6 +2933,10 @@ enum netdev_cmd {
  	NETDEV_OFFLOAD_XSTATS_REPORT_USED,
  	NETDEV_OFFLOAD_XSTATS_REPORT_DELTA,
  	NETDEV_XDP_FEAT_CHANGE,
@@ -94,7 +94,7 @@
  
 --- a/include/net/ip6_route.h
 +++ b/include/net/ip6_route.h
-@@ -207,6 +207,11 @@ void rt6_multipath_rebalance(struct fib6
+@@ -215,6 +215,11 @@ void rt6_multipath_rebalance(struct fib6
  void rt6_uncached_list_add(struct rt6_info *rt);
  void rt6_uncached_list_del(struct rt6_info *rt);
  
@@ -156,7 +156,7 @@
  void fib_del_ifaddr(struct in_ifaddr *, struct in_ifaddr *);
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -2266,4 +2266,6 @@ void br_do_suppress_nd(struct sk_buff *s
+@@ -2268,4 +2268,6 @@ void br_do_suppress_nd(struct sk_buff *s
  		       u16 vid, struct net_bridge_port *p, struct nd_msg *msg);
  struct nd_msg *br_is_nd_neigh_msg(struct sk_buff *skb, struct nd_msg *m);
  bool br_is_neigh_suppress_enabled(const struct net_bridge_port *p, u16 vid);
@@ -610,7 +610,7 @@
  	return 0;
  
  out_remove_new_fa:
-@@ -1775,6 +1781,9 @@ int fib_table_delete(struct net *net, st
+@@ -1776,6 +1782,9 @@ int fib_table_delete(struct net *net, st
  	if (fa_to_delete->fa_state & FA_S_ACCESSED)
  		rt_cache_flush(cfg->fc_nlinfo.nl_net);
  
@@ -620,7 +620,7 @@
  	fib_release_info(fa_to_delete->fa_info);
  	alias_free_mem_rcu(fa_to_delete);
  	return 0;
-@@ -2407,6 +2416,20 @@ void __init fib_trie_init(void)
+@@ -2408,6 +2417,20 @@ void __init fib_trie_init(void)
  					   0, SLAB_PANIC | SLAB_ACCOUNT, NULL);
  }
  
@@ -643,7 +643,7 @@
  	struct fib_table *tb;
 --- a/net/ipv6/ndisc.c
 +++ b/net/ipv6/ndisc.c
-@@ -666,6 +666,7 @@ void ndisc_send_ns(struct net_device *de
+@@ -668,6 +668,7 @@ void ndisc_send_ns(struct net_device *de
  	if (skb)
  		ndisc_send_skb(skb, daddr, saddr);
  }
@@ -653,7 +653,7 @@
  		   const struct in6_addr *daddr)
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -197,6 +197,9 @@ static void rt6_uncached_list_flush_dev(
+@@ -198,6 +198,9 @@ static void rt6_uncached_list_flush_dev(
  	}
  }
  
@@ -663,7 +663,7 @@
  static inline const void *choose_neigh_daddr(const struct in6_addr *p,
  					     struct sk_buff *skb,
  					     const void *daddr)
-@@ -3864,6 +3867,10 @@ int ip6_route_add(struct fib6_config *cf
+@@ -3868,6 +3871,10 @@ int ip6_route_add(struct fib6_config *cf
  		return PTR_ERR(rt);
  
  	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
@@ -674,7 +674,7 @@
  	fib6_info_release(rt);
  
  	return err;
-@@ -3885,6 +3892,9 @@ static int __ip6_del_rt(struct fib6_info
+@@ -3889,6 +3896,9 @@ static int __ip6_del_rt(struct fib6_info
  	err = fib6_del(rt, info);
  	spin_unlock_bh(&table->tb6_lock);
  
@@ -684,7 +684,7 @@
  out:
  	fib6_info_release(rt);
  	return err;
-@@ -6329,6 +6339,20 @@ static int ip6_route_dev_notify(struct n
+@@ -6336,6 +6346,20 @@ static int ip6_route_dev_notify(struct n
  	return NOTIFY_OK;
  }
  
@@ -707,7 +707,7 @@
   */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1673,6 +1673,7 @@ const char *netdev_cmd_to_name(enum netd
+@@ -1699,6 +1699,7 @@ const char *netdev_cmd_to_name(enum netd
  	N(PRE_CHANGEADDR) N(OFFLOAD_XSTATS_ENABLE) N(OFFLOAD_XSTATS_DISABLE)
  	N(OFFLOAD_XSTATS_REPORT_USED) N(OFFLOAD_XSTATS_REPORT_DELTA)
  	N(XDP_FEAT_CHANGE)
@@ -842,7 +842,7 @@
  
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -633,6 +633,7 @@ enum nf_ct_sysctl_index {
+@@ -630,6 +630,7 @@ enum nf_ct_sysctl_index {
  #endif
  	NF_SYSCTL_CT_PROTO_TCP_LOOSE,
  	NF_SYSCTL_CT_PROTO_TCP_LIBERAL,
@@ -850,7 +850,7 @@
  	NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST,
  	NF_SYSCTL_CT_PROTO_TCP_MAX_RETRANS,
  	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP,
-@@ -840,6 +841,14 @@ static struct ctl_table nf_ct_sysctl_tab
+@@ -834,6 +835,14 @@ static struct ctl_table nf_ct_sysctl_tab
  		.extra1 	= SYSCTL_ZERO,
  		.extra2 	= SYSCTL_ONE,
  	},
@@ -865,7 +865,7 @@
  	[NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST] = {
  		.procname	= "nf_conntrack_tcp_ignore_invalid_rst",
  		.maxlen		= sizeof(u8),
-@@ -1050,6 +1059,7 @@ static void nf_conntrack_standalone_init
+@@ -1035,6 +1044,7 @@ static void nf_conntrack_standalone_init
  
  	XASSIGN(LOOSE, &tn->tcp_loose);
  	XASSIGN(LIBERAL, &tn->tcp_be_liberal);
