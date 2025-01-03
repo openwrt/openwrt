@@ -40,6 +40,12 @@
 			label = "green:port5";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
+
+		wlan {
+			label = "green:wlan";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
 	};
 
 	gpio-export {
@@ -67,8 +73,4 @@
 
 &eth1 {
 	compatible = "qca,ar9340-eth", "syscon";
-};
-
-&wmac {
-	qca,led-pin = /bits/ 8 <11>;
 };
