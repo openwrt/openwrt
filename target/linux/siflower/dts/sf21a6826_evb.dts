@@ -1,0 +1,75 @@
+/dts-v1/;
+#include "sf21a6826.dtsi"
+
+/ {
+	model = "siflower sf21a6826 evaluation board";
+	compatible = "siflower,sf21a6826-evb", "siflower,sf21a6826";
+
+	chosen {
+		bootargs = "earlycon root=/dev/fit0 rootwait";
+		rootdisk = <&rootdisk>;
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory@20000000 {
+		device_type = "memory";
+		reg = <0x0 0x20000000 0x0 0x20000000>;
+	};
+
+	usb_vbus: regulator@0 {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 38 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <35000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0x90000>;
+				read-only;
+			};
+
+			factory: partition@90000 {
+				label = "factory";
+				reg = <0x90000 0x10000>;
+			};
+
+			rootdisk: partition@a0000 {
+				label = "firmware";
+				reg = <0xa0000 0>;
+				compatible = "denx,fit";
+			};
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};
