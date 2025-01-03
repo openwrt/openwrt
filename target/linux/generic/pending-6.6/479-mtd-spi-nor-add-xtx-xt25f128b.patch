@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/Makefile
 +++ b/drivers/mtd/spi-nor/Makefile
-@@ -17,6 +17,7 @@ spi-nor-objs			+= sst.o
+@@ -18,6 +18,7 @@ spi-nor-objs			+= sst.o
  spi-nor-objs			+= winbond.o
  spi-nor-objs			+= xilinx.o
  spi-nor-objs			+= xmc.o
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +};
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -2017,6 +2017,7 @@ static const struct spi_nor_manufacturer
+@@ -2018,6 +2018,7 @@ static const struct spi_nor_manufacturer
  	&spi_nor_winbond,
  	&spi_nor_xilinx,
  	&spi_nor_xmc,
@@ -71,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct flash_info spi_nor_generic_flash = {
 --- a/drivers/mtd/spi-nor/core.h
 +++ b/drivers/mtd/spi-nor/core.h
-@@ -647,6 +647,7 @@ extern const struct spi_nor_manufacturer
+@@ -648,6 +648,7 @@ extern const struct spi_nor_manufacturer
  extern const struct spi_nor_manufacturer spi_nor_winbond;
  extern const struct spi_nor_manufacturer spi_nor_xilinx;
  extern const struct spi_nor_manufacturer spi_nor_xmc;
