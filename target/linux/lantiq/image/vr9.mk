@@ -177,7 +177,7 @@ define Device/avm_fritz5490
   DEVICE_VARIANT := Other NAND
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-usb3 fritz-tffs \
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx kmod-usb3 fritz-tffs \
 	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
 	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
 	-ltq-vdsl-vr9-app -kmod-owl-loader \
@@ -195,7 +195,7 @@ define Device/avm_fritz5490-micron
   DEVICE_VARIANT := Micron NAND
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-usb3 fritz-tffs \
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-phy-qca83xx kmod-usb3 fritz-tffs \
 	-ltq-vdsl-vr9-vectoring-fw-installer -kmod-ltq-vdsl-vr9-mei \
 	-kmod-ltq-vdsl-vr9 -kmod-ltq-atm-vr9 -kmod-ltq-ptm-vr9 \
 	-ltq-vdsl-vr9-app -kmod-owl-loader \
