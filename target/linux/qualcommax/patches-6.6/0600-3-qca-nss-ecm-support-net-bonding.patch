@@ -8,7 +8,7 @@
  
  static const struct flow_dissector_key flow_keys_bonding_keys[] = {
  	{
-@@ -5872,6 +5873,11 @@ static void bond_destructor(struct net_d
+@@ -5926,6 +5927,11 @@ static void bond_destructor(struct net_d
  	if (bond->wq)
  		destroy_workqueue(bond->wq);
  
@@ -20,7 +20,7 @@
  	free_percpu(bond->rr_tx_counter);
  }
  
-@@ -6421,6 +6427,13 @@ int bond_create(struct net *net, const c
+@@ -6479,6 +6485,13 @@ int bond_create(struct net *net, const c
  
  	bond_work_init_all(bond);
  
@@ -37,7 +37,7 @@
 --- a/include/net/bonding.h
 +++ b/include/net/bonding.h
 @@ -261,6 +261,7 @@ struct bonding {
- 	spinlock_t ipsec_lock;
+ 	struct mutex ipsec_lock;
  #endif /* CONFIG_XFRM_OFFLOAD */
  	struct bpf_prog *xdp_prog;
 +	u32 id;/* QCA NSS ECM bonding support */

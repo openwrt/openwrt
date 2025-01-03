@@ -47,7 +47,7 @@
  int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb);
  rx_handler_func_t *br_get_rx_handler(const struct net_device *dev);
  
-@@ -2269,4 +2270,14 @@ struct nd_msg *br_is_nd_neigh_msg(struct
+@@ -2270,4 +2271,14 @@ struct nd_msg *br_is_nd_neigh_msg(struct
  bool br_is_neigh_suppress_enabled(const struct net_bridge_port *p, u16 vid);
  #define __br_get(__hook, __default, __args ...) \
  		(__hook ? (__hook(__args)) : (__default)) /* QCA NSS ECM support */
@@ -64,7 +64,7 @@
  #endif
 --- a/net/bridge/br_netlink.c
 +++ b/net/bridge/br_netlink.c
-@@ -656,6 +656,7 @@ void br_info_notify(int event, const str
+@@ -657,6 +657,7 @@ void br_info_notify(int event, const str
  		kfree_skb(skb);
  		goto errout;
  	}
@@ -89,7 +89,7 @@
  MODULE_LICENSE("GPL");
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -83,6 +83,13 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+@@ -89,6 +89,13 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
  	if (is_broadcast_ether_addr(dest)) {
  		br_flood(br, skb, BR_PKT_BROADCAST, false, true, vid);
  	} else if (is_multicast_ether_addr(dest)) {
@@ -308,7 +308,7 @@
  
  #ifdef CONFIG_IP_MROUTE_MULTIPLE_TABLES
  #define ipmr_for_each_table(mrt, net)					\
-@@ -223,6 +229,80 @@ static int ipmr_rule_fill(struct fib_rul
+@@ -233,6 +239,80 @@ static int ipmr_rule_fill(struct fib_rul
  	return 0;
  }
  
@@ -389,7 +389,7 @@
  static const struct fib_rules_ops __net_initconst ipmr_rules_ops_template = {
  	.family		= RTNL_FAMILY_IPMR,
  	.rule_size	= sizeof(struct ipmr_rule),
-@@ -236,6 +316,156 @@ static const struct fib_rules_ops __net_
+@@ -246,6 +326,156 @@ static const struct fib_rules_ops __net_
  	.owner		= THIS_MODULE,
  };
  
@@ -546,7 +546,7 @@
  static int __net_init ipmr_rules_init(struct net *net)
  {
  	struct fib_rules_ops *ops;
-@@ -1191,6 +1421,10 @@ static int ipmr_mfc_delete(struct mr_tab
+@@ -1203,6 +1433,10 @@ static int ipmr_mfc_delete(struct mr_tab
  	call_ipmr_mfc_entry_notifiers(net, FIB_EVENT_ENTRY_DEL, c, mrt->id);
  	mroute_netlink_event(mrt, c, RTM_DELROUTE);
  	mr_cache_put(&c->_c);
@@ -557,7 +557,7 @@
  
  	return 0;
  }
-@@ -1221,6 +1455,10 @@ static int ipmr_mfc_add(struct net *net,
+@@ -1233,6 +1467,10 @@ static int ipmr_mfc_add(struct net *net,
  		call_ipmr_mfc_entry_notifiers(net, FIB_EVENT_ENTRY_REPLACE, c,
  					      mrt->id);
  		mroute_netlink_event(mrt, c, RTM_NEWROUTE);
@@ -594,7 +594,7 @@
  
  #ifdef CONFIG_IPV6_MROUTE_MULTIPLE_TABLES
  #define ip6mr_for_each_table(mrt, net) \
-@@ -375,6 +385,84 @@ static struct mfc6_cache_cmp_arg ip6mr_m
+@@ -387,6 +397,84 @@ static struct mfc6_cache_cmp_arg ip6mr_m
  	.mf6c_mcastgrp = IN6ADDR_ANY_INIT,
  };
  
@@ -679,7 +679,7 @@
  static struct mr_table_ops ip6mr_mr_table_ops = {
  	.rht_params = &ip6mr_rht_params,
  	.cmparg_any = &ip6mr_mr_table_ops_cmparg_any,
-@@ -697,6 +785,151 @@ static int call_ip6mr_mfc_entry_notifier
+@@ -711,6 +799,151 @@ static int call_ip6mr_mfc_entry_notifier
  				     &mfc->_c, tb_id, &net->ipv6.ipmr_seq);
  }
  
@@ -831,7 +831,7 @@
  /* Delete a VIF entry */
  static int mif6_delete(struct mr_table *mrt, int vifi, int notify,
  		       struct list_head *head)
-@@ -1221,6 +1454,7 @@ static int ip6mr_mfc_delete(struct mr_ta
+@@ -1235,6 +1468,7 @@ static int ip6mr_mfc_delete(struct mr_ta
  			    int parent)
  {
  	struct mfc6_cache *c;
@@ -839,7 +839,7 @@
  
  	/* The entries are added/deleted only under RTNL */
  	rcu_read_lock();
-@@ -1229,6 +1463,11 @@ static int ip6mr_mfc_delete(struct mr_ta
+@@ -1243,6 +1477,11 @@ static int ip6mr_mfc_delete(struct mr_ta
  	rcu_read_unlock();
  	if (!c)
  		return -ENOENT;
@@ -851,7 +851,7 @@
  	rhltable_remove(&mrt->mfc_hash, &c->_c.mnode, ip6mr_rht_params);
  	list_del_rcu(&c->_c.list);
  
-@@ -1236,6 +1475,11 @@ static int ip6mr_mfc_delete(struct mr_ta
+@@ -1250,6 +1489,11 @@ static int ip6mr_mfc_delete(struct mr_ta
  				       FIB_EVENT_ENTRY_DEL, c, mrt->id);
  	mr6_netlink_event(mrt, c, RTM_DELROUTE);
  	mr_cache_put(&c->_c);
@@ -863,7 +863,7 @@
  	return 0;
  }
  
-@@ -1457,6 +1701,10 @@ static int ip6mr_mfc_add(struct net *net
+@@ -1471,6 +1715,10 @@ static int ip6mr_mfc_add(struct net *net
  		call_ip6mr_mfc_entry_notifiers(net, FIB_EVENT_ENTRY_REPLACE,
  					       c, mrt->id);
  		mr6_netlink_event(mrt, c, RTM_NEWROUTE);
