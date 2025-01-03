@@ -373,7 +373,38 @@ define U-Boot/bananapi_p2_zero
 endef
 
 
+define U-Boot/mangopi_mqdual_t113
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=MangoPi MQDual (T113)
+  BUILD_DEVICES:=widora_mangopi-mqdual-t113
+endef
+
+define U-Boot/myir_myd_t113x
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=MYIR MYD-T113X
+  BUILD_DEVICES:=myir_myd-yt113x
+  UENV:=t113.ttyS5
+endef
+
+define U-Boot/myir_myd_t113x-spi
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=MYIR MYD-T113X SPI
+  BUILD_DEVICES:=myir_myd-yt113x-spi
+  UENV:=t113.ttyS5
+endef
+
+define U-Boot/rongpin_rp_t113
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Rongpin RP-T113
+  BUILD_DEVICES:=rongpin_rp-t113
+  UENV:=t113.ttyS3
+endef
+
 UBOOT_TARGETS := \
+	mangopi_mqdual_t113 \
+	myir_myd_t113x \
+	myir_myd_t113x-spi \
+	rongpin_rp_t113 \
 	a64-olinuxino \
 	a64-olinuxino-emmc \
 	A10-OLinuXino-Lime \
