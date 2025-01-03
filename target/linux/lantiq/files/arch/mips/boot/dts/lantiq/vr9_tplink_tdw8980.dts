@@ -29,13 +29,13 @@
 };
 
 &boardconfig {
-	cal_boardconfig_21000: calibration@21000 {
-		reg = <0x21000 0x3d8>;
+	boardconfig_cal: calibration@12000 {
+		reg = <0x12000 0x3d8>;
 	};
 };
 
 &ath9k {
 	compatible = "pci168c,002e";
-	nvmem-cells = <&macaddr_ath9k_cal_f100 2>, <&cal_boardconfig_21000>;
+	nvmem-cells = <&boardconfig_macaddr 2>, <&boardconfig_cal>;
 	nvmem-cell-names = "mac-address", "calibration";
 };
