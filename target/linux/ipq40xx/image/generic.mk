@@ -1129,12 +1129,15 @@ define Device/tplink-zImage
 	TPLINK_BOARD_ID :=
 endef
 define Device/tplink_deco-m9plus-v2
-	$(call Device/tplink-zImage)
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	SOC := qcom-ipq4019
 	DEVICE_MODEL := Deco-M9Plus
 	DEVICE_VARIANT := v2
 	DEVICE_PACKAGES := ipq-wifi-tplink_deco-m9plus-v2
 	TPLINK_BOARD_ID := DECO-M9PLUS
-	IMAGE_SIZE := 16640k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
 endef
 TARGET_DEVICES += tplink_deco-m9plus-v2
 
