@@ -2210,12 +2210,6 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	struct msdc_hw *hw;
 	int ret;
 
-	//FIXME: this should be done by pinconf and not by the sd driver
-	if ((ralink_soc == MT762X_SOC_MT7688 ||
-	     ralink_soc == MT762X_SOC_MT7628AN) &&
-	    (!(rt_sysc_r32(0x60) & BIT(15))))
-		rt_sysc_m32(0xf << 17, 0xf << 17, 0x3c);
-
 	hw = &msdc0_hw;
 
 	if (of_property_read_bool(pdev->dev.of_node, "mtk,wp-en"))
