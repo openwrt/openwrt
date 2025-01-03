@@ -1,23 +1,24 @@
-From 52d14545d2fc276b1bf9ccf48d4612fab6edfb6a Mon Sep 17 00:00:00 2001
-From: David Bauer <mail@david-bauer.net>
-Date: Thu, 6 May 2021 17:49:55 +0200
-Subject: [PATCH] mtd: spi-nor: Add support for BoHong bh25q128as
 
-Add MTD support for the BoHong bh25q128as SPI NOR chip.
+Date: Fri, 27 September 2024 13:21:53 +0200
+Subject: [PATCH] mtd: spi-nor: Add support for Boya by25q128as
+
+Add MTD support for the Boya by25q128as SPI NOR chip.
 The chip has 16MB of total capacity, divided into a total of 256
 sectors, each 64KB sized. The chip also supports 4KB sectors.
-Additionally, it supports dual and quad read modes.
 
-Functionality was verified on an Tenbay WR1800K / MTK MT7621 board.
+SFDP data:
+53464450000101ff00000109300000ff68000103600000ffffffffffffff
+ffffffffffffffffffffffffffffffffffffe520f1ffffffff0744eb086b
+083b42bbeeffffffffff00ffffff44eb0c200f5210d800ffffffffffffff
+ffffffffffff003600279ef97764fcebffff
 
-Signed-off-by: David Bauer <mail@david-bauer.net>
 ---
  drivers/mtd/spi-nor/Makefile |  1 +
- drivers/mtd/spi-nor/bohong.c | 21 +++++++++++++++++++++
+ drivers/mtd/spi-nor/boya.c   | 31 +++++++++++++++++++++++++++++++
  drivers/mtd/spi-nor/core.c   |  1 +
  drivers/mtd/spi-nor/core.h   |  1 +
- 4 files changed, 24 insertions(+)
- create mode 100644 drivers/mtd/spi-nor/bohong.c
+ 4 files changed, 34 insertions(+)
+ create mode 100644 drivers/mtd/spi-nor/boya.c
 
 --- a/drivers/mtd/spi-nor/Makefile
 +++ b/drivers/mtd/spi-nor/Makefile
@@ -25,13 +26,13 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
  spi-nor-objs			:= core.o sfdp.o swp.o otp.o sysfs.o
  spi-nor-objs			+= atmel.o
-+spi-nor-objs			+= bohong.o
++spi-nor-objs			+= boya.o
  spi-nor-objs			+= catalyst.o
  spi-nor-objs			+= eon.o
  spi-nor-objs			+= esmt.o
 --- /dev/null
-+++ b/drivers/mtd/spi-nor/bohong.c
-@@ -0,0 +1,21 @@
++++ b/drivers/mtd/spi-nor/boya.c
+@@ -0,0 +1,31 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2005, Intec Automation Inc.
@@ -42,16 +43,26 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +
 +#include "core.h"
 +
-+static const struct flash_info bohong_parts[] = {
-+	/* BoHong Microelectronics */
-+	{ "bh25q128as", INFO(0x684018, 0, 64 * 1024, 256)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++static void by25q128as_default_init_fixups(struct spi_nor *nor)
++{
++	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
++}
++
++static struct spi_nor_fixups by25q128as_fixups = {
++	.default_init = by25q128as_default_init_fixups,
 +};
 +
-+const struct spi_nor_manufacturer spi_nor_bohong = {
-+	.name = "bohong",
-+	.parts = bohong_parts,
-+	.nparts = ARRAY_SIZE(bohong_parts),
++static const struct flash_info boya_nor_parts[] = {
++	/* Boya Microelectronics */
++	{ "by25q128as", INFO(0x684018, 0, 64 * 1024, 256)
++		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
++			.fixups = &by25q128as_fixups },
++};
++
++const struct spi_nor_manufacturer spi_nor_boya = {
++	.name = "boya",
++	.parts = boya_nor_parts,
++	.nparts = ARRAY_SIZE(boya_nor_parts),
 +};
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
@@ -59,7 +70,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
  static const struct spi_nor_manufacturer *manufacturers[] = {
  	&spi_nor_atmel,
-+	&spi_nor_bohong,
++	&spi_nor_boya,
  	&spi_nor_catalyst,
  	&spi_nor_eon,
  	&spi_nor_esmt,
@@ -69,7 +80,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
  /* Manufacturer drivers. */
  extern const struct spi_nor_manufacturer spi_nor_atmel;
-+extern const struct spi_nor_manufacturer spi_nor_bohong;
++extern const struct spi_nor_manufacturer spi_nor_boya;
  extern const struct spi_nor_manufacturer spi_nor_catalyst;
  extern const struct spi_nor_manufacturer spi_nor_eon;
  extern const struct spi_nor_manufacturer spi_nor_esmt;
