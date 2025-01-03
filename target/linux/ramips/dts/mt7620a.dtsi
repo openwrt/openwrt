@@ -638,7 +638,8 @@
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
 
-		clocks = <&sysc 16>;
+		clocks = <&sysc 4>, <&sysc 16>;
+		clock-names = "bus", "xtal";
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
