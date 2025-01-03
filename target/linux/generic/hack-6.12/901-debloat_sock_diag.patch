@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -129,6 +129,9 @@ source "net/mptcp/Kconfig"
+@@ -132,6 +132,9 @@ source "net/mptcp/Kconfig"
  
  endif # if INET
  
@@ -41,8 +41,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 +obj-$(CONFIG_SOCK_DIAG) += sock_diag.o
  obj-y += net-sysfs.o
- obj-$(CONFIG_PAGE_POOL) += page_pool.o
- obj-$(CONFIG_PROC_FS) += net-procfs.o
+ obj-y += hotdata.o
+ obj-y += netdev_rx_queue.o
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -118,6 +118,7 @@
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include <linux/uaccess.h>
  
-@@ -150,6 +151,7 @@
+@@ -152,6 +153,7 @@
  
  static DEFINE_MUTEX(proto_list_mutex);
  static LIST_HEAD(proto_list);
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static void sock_def_write_space_wfree(struct sock *sk);
  static void sock_def_write_space(struct sock *sk);
-@@ -590,6 +592,21 @@ discard_and_relse:
+@@ -587,6 +589,21 @@ discard_and_relse:
  }
  EXPORT_SYMBOL(__sk_receive_skb);
  
@@ -83,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  INDIRECT_CALLABLE_DECLARE(struct dst_entry *ip6_dst_check(struct dst_entry *,
  							  u32));
  INDIRECT_CALLABLE_DECLARE(struct dst_entry *ipv4_dst_check(struct dst_entry *,
-@@ -2239,9 +2256,11 @@ static void __sk_free(struct sock *sk)
+@@ -2318,9 +2335,11 @@ static void __sk_free(struct sock *sk)
  	if (likely(sk->sk_net_refcnt))
  		sock_inuse_add(sock_net(sk), -1);
  
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	  Support for PF_PACKET sockets monitoring interface used by the ss tool.
 --- a/net/unix/Kconfig
 +++ b/net/unix/Kconfig
-@@ -29,6 +29,7 @@ config	AF_UNIX_OOB
+@@ -24,6 +24,7 @@ config	AF_UNIX_OOB
  config UNIX_DIAG
  	tristate "UNIX: socket monitoring interface"
  	depends on UNIX

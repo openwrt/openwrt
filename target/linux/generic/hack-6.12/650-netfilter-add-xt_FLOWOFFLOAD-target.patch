@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -163,6 +163,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIF
+@@ -168,6 +168,7 @@ obj-$(CONFIG_NETFILTER_XT_TARGET_CLASSIF
  obj-$(CONFIG_NETFILTER_XT_TARGET_CONNSECMARK) += xt_CONNSECMARK.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_CT) += xt_CT.o
  obj-$(CONFIG_NETFILTER_XT_TARGET_DSCP) += xt_DSCP.o
@@ -798,7 +798,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -293,6 +293,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -294,6 +294,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  
