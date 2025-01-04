@@ -1,0 +1,22 @@
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 20 Oct 2021 13:21:45 +0200
+Subject: [PATCH] arm: dts: ipq4019: add ethernet controller DT alias
+
+Add an alias for the IPQESS controller so that the MAC can be set
+properly.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 48 +++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq4019.dtsi
+@@ -38,6 +38,7 @@
+ 		spi1 = &blsp1_spi2;
+ 		i2c0 = &blsp1_i2c3;
+ 		i2c1 = &blsp1_i2c4;
++		ethernet0 = &gmac;
+ 	};
+ 
+ 	cpus {
