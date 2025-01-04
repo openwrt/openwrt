@@ -1129,7 +1129,7 @@ define Device/tplink-zImage
 	TPLINK_BOARD_ID :=
 endef
 define Device/tplink_deco-m9plus-v2
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	$(call Device/UbiFit)
 	SOC := qcom-ipq4019
 	DEVICE_MODEL := Deco-M9Plus
