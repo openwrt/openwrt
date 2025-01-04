@@ -65,7 +65,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		tp->tx_lpi_timer = timer_val;
  		RTL_W16(tp, EEE_TXIDLE_TIMER_8125, timer_val);
  		break;
-@@ -2295,6 +2295,9 @@ static enum mac_version rtl8169_get_mac_
+@@ -2294,6 +2294,9 @@ static enum mac_version rtl8169_get_mac_
  		{ 0x7cf, 0x64a,	RTL_GIGA_MAC_VER_66 },
  		{ 0x7cf, 0x649,	RTL_GIGA_MAC_VER_65 },
  
@@ -75,7 +75,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* 8125B family. */
  		{ 0x7cf, 0x641,	RTL_GIGA_MAC_VER_63 },
  
-@@ -2562,9 +2565,7 @@ static void rtl_init_rxcfg(struct rtl816
+@@ -2561,9 +2564,7 @@ static void rtl_init_rxcfg(struct rtl816
  	case RTL_GIGA_MAC_VER_61:
  		RTL_W32(tp, RxConfig, RX_FETCH_DFLT_8125 | RX_DMA_BURST);
  		break;
@@ -86,7 +86,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		RTL_W32(tp, RxConfig, RX_FETCH_DFLT_8125 | RX_DMA_BURST |
  			RX_PAUSE_SLOT_ON);
  		break;
-@@ -3876,6 +3877,12 @@ static void rtl_hw_start_8125b(struct rt
+@@ -3875,6 +3876,12 @@ static void rtl_hw_start_8125b(struct rt
  	rtl_hw_start_8125_common(tp);
  }
  
@@ -99,7 +99,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void rtl_hw_start_8126a(struct rtl8169_private *tp)
  {
  	rtl_set_def_aspm_entry_latency(tp);
-@@ -3924,6 +3931,7 @@ static void rtl_hw_config(struct rtl8169
+@@ -3923,6 +3930,7 @@ static void rtl_hw_config(struct rtl8169
  		[RTL_GIGA_MAC_VER_53] = rtl_hw_start_8117,
  		[RTL_GIGA_MAC_VER_61] = rtl_hw_start_8125a_2,
  		[RTL_GIGA_MAC_VER_63] = rtl_hw_start_8125b,
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		[RTL_GIGA_MAC_VER_65] = rtl_hw_start_8126a,
  		[RTL_GIGA_MAC_VER_66] = rtl_hw_start_8126a,
  	};
-@@ -3941,6 +3949,7 @@ static void rtl_hw_start_8125(struct rtl
+@@ -3940,6 +3948,7 @@ static void rtl_hw_start_8125(struct rtl
  	/* disable interrupt coalescing */
  	switch (tp->mac_version) {
  	case RTL_GIGA_MAC_VER_61:
