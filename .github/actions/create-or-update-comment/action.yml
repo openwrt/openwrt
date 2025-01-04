@@ -1,0 +1,49 @@
+name: Create or Update Comment
+description: |
+  Creates a new comment or updates an existing comment on a GitHub issue.
+  It looks for a comment containing the marker to identify existing comments.
+
+inputs:
+  marker:
+    description: A unique string to identify the comment.
+    required: false
+    default: ${{ github.workflow }}
+  repository:
+    description: The repository to comment on.
+    required: false
+    default: ${{ github.repository }}
+  issue_number:
+    description: The number of the issue to comment on.
+    required: false
+    default: ${{ github.event.issue.number }}
+  token:
+    description: The GitHub token to use for authentication.
+    required: true
+  comment_body:
+    description: The body of the comment to create or update.
+    required: true
+  working-directory:
+    description: The working directory to run the action in.
+    required: false
+    default: ${{ github.workspace }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        comment="<!-- ${{ inputs.marker }} -->
+        ${{ inputs.comment_body }}"
+
+        existing_comment=$(gh api repos/${{ inputs.repository }}/issues/${{ inputs.issue_number }}/comments \
+          --jq '.[] | select(.body | contains("<!-- ${{ inputs.marker }} -->")) | .id')
+
+        if [[ -n "$existing_comment" ]]; then
+          gh api --method PATCH repos/${{ inputs.repository }}/issues/comments/$existing_comment \
+            -f body="$comment"
+        else
+          gh issue comment ${{ inputs.issue_number }} --body "$comment"
+        fi
