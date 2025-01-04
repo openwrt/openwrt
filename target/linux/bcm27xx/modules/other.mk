@@ -139,20 +139,3 @@ define KernelPackage/rp1-mailbox/description
 endef
 
 $(eval $(call KernelPackage,rp1-mailbox))
-
-
-define KernelPackage/rp1-pio
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=RP1 PIO driver
-  KCONFIG:=CONFIG_RP1_PIO
-  FILES:=$(LINUX_DIR)/drivers/misc/rp1-pio.ko
-  AUTOLOAD:=$(call AutoLoad,21,rp1-pio)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-rp1
-endef
-
-define KernelPackage/rp1-pio/description
-  Driver for the RP1 PIO.
-endef
-
-$(eval $(call KernelPackage,rp1-pio))
-
