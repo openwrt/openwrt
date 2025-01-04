@@ -12,6 +12,8 @@
 	compatible = "sony,ncp-hg100-cellular";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_cloud_green;
 		led-failsafe = &led_cloud_red;
 		led-running = &led_cloud_green;

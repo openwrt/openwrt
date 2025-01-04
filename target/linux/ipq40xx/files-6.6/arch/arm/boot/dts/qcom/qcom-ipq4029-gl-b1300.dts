@@ -25,6 +25,8 @@
 	compatible = "glinet,gl-b1300";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &power;
 		led-failsafe = &power;
 		led-running = &power;

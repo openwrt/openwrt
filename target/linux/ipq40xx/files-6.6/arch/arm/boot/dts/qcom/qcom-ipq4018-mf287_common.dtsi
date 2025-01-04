@@ -11,6 +11,8 @@
 
 / {
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-running = &led_status;

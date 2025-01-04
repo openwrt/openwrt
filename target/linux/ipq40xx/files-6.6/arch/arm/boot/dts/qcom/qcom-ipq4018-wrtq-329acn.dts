@@ -9,6 +9,11 @@
 	model = "Luma Home WRTQ-329ACN";
 	compatible = "luma,wrtq-329acn";
 
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+	};
+
 	i2c-gpio {
 		compatible = "i2c-gpio";
 		sda-gpios = <&tlmm 1 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;

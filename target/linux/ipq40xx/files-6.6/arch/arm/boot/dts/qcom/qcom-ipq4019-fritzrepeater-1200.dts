@@ -11,6 +11,8 @@
 	compatible = "avm,fritzrepeater-1200";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		led-boot = &power_green;
 		led-failsafe = &power_red;
 		led-running = &power_green;
