@@ -102,15 +102,6 @@
 			/* GPIO 14 - ACTIVE HIGH for hwrev 0 */
 		};
 	};
-
-	reg_usb_vbus: reg_usb_vbus {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
 };
 
 &eth0 {
@@ -197,7 +188,6 @@
 
 &usb {
 	dr_mode = "host";
-	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
