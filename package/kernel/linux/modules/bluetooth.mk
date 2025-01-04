@@ -10,7 +10,7 @@ BLUETOOTH_MENU:=Bluetooth Support
 define KernelPackage/bluetooth
   SUBMENU:=$(BLUETOOTH_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +kmod-crypto-ecdh
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-ecb +kmod-lib-crc16 +kmod-hid +kmod-crypto-cmac +kmod-regmap-core +kmod-crypto-ecdh
   KCONFIG:= \
 	CONFIG_BT \
 	CONFIG_BT_BREDR=y \
@@ -18,28 +18,14 @@ define KernelPackage/bluetooth
 	CONFIG_BT_LE=y \
 	CONFIG_BT_RFCOMM \
 	CONFIG_BT_BNEP \
-	CONFIG_BT_HCIBTUSB \
-	CONFIG_BT_HCIBTUSB_BCM=n \
-	CONFIG_BT_HCIBTUSB_MTK=y \
-	CONFIG_BT_HCIBTUSB_RTL=y \
-	CONFIG_BT_HCIUART \
-	CONFIG_BT_HCIUART_BCM=n \
-	CONFIG_BT_HCIUART_INTEL=n \
-	CONFIG_BT_HCIUART_H4 \
-	CONFIG_BT_HCIUART_NOKIA=n \
 	CONFIG_BT_HIDP
   $(call AddDepends/rfkill)
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.ko \
 	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.ko \
 	$(LINUX_DIR)/net/bluetooth/bnep/bnep.ko \
-	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
-	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btintel.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btmtk.ko
-  AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
+	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko
+  AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp)
 endef
 
 define KernelPackage/bluetooth/description
@@ -48,10 +34,57 @@ endef
 
 $(eval $(call KernelPackage,bluetooth))
 
+
+define KernelPackage/hci-uart
+  SUBMENU:=$(BLUETOOTH_MENU)
+  TITLE:=Bluetooth HCI UART support
+  DEPENDS:=+kmod-bluetooth
+  KCONFIG:= \
+	CONFIG_BT_HCIUART \
+	CONFIG_BT_HCIUART_BCM=n \
+	CONFIG_BT_HCIUART_INTEL=n \
+	CONFIG_BT_HCIUART_H4 \
+	CONFIG_BT_HCIUART_NOKIA=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko
+  AUTOLOAD:=$(call AutoProbe,hci_uart)
+endef
+
+define KernelPackage/hci-uart/description
+ Kernel support for Bluetooth HCI UART devices
+endef
+
+$(eval $(call KernelPackage,hci-uart))
+
+
+define KernelPackage/btusb
+  SUBMENU:=$(BLUETOOTH_MENU)
+  TITLE:=Bluetooth HCI USB support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-bluetooth
+  KCONFIG:= \
+	CONFIG_BT_HCIBTUSB \
+	CONFIG_BT_HCIBTUSB_BCM=n \
+	CONFIG_BT_HCIBTUSB_MTK=y \
+	CONFIG_BT_HCIBTUSB_RTL=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btintel.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btmtk.ko
+  AUTOLOAD:=$(call AutoProbe,btusb)
+endef
+
+define KernelPackage/btusb/description
+ Kernel support for USB Bluetooth HCI USB devices
+endef
+
+$(eval $(call KernelPackage,btusb))
+
+
 define KernelPackage/ath3k
   SUBMENU:=$(BLUETOOTH_MENU)
   TITLE:=ATH3K Kernel Module support
-  DEPENDS:=+kmod-bluetooth +ar3k-firmware
+  DEPENDS:=+kmod-hci-uart +kmod-btusb +ar3k-firmware
   KCONFIG:= \
 	CONFIG_BT_ATH3K \
 	CONFIG_BT_HCIUART_ATH3K=y
