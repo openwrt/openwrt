@@ -24,7 +24,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/phy.h>
  #include <linux/if_vlan.h>
  #include <linux/in.h>
-@@ -5373,6 +5374,43 @@ static bool rtl_aspm_is_safe(struct rtl8
+@@ -5371,6 +5372,43 @@ static bool rtl_aspm_is_safe(struct rtl8
  	return false;
  }
  
@@ -68,7 +68,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
  {
  	struct rtl8169_private *tp;
-@@ -5547,6 +5585,12 @@ static int rtl_init_one(struct pci_dev *
+@@ -5545,6 +5583,12 @@ static int rtl_init_one(struct pci_dev *
  	if (rc)
  		return rc;
  
