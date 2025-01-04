@@ -175,7 +175,7 @@ define KernelPackage/drm-rp1-dpi
     CONFIG_DRM_TTM_HELPER=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/rp1/rp1-dpi/drm-rp1-dpi.ko
   AUTOLOAD:=$(call AutoLoad,67,drm-rp1-dpi)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4 +kmod-rp1-pio
 endef
 
 define KernelPackage/drm-rp1-dpi/description
