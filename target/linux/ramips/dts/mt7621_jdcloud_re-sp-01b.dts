@@ -85,25 +85,13 @@
 				read-only;
 			};
 
-			config: partition@30000 {
+			partition@30000 {
 				label = "config";
 				reg = <0x30000 0x10000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_config_4429: macaddr@4429 {
-						compatible = "mac-base";
-						reg = <0x4429 0xC>;
-						#nvmem-cell-cells = <1>;
-					};
-				};
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
@@ -144,18 +132,10 @@
 	};
 };
 
-&gmac0 {
-	nvmem-cells = <&macaddr_config_4429 0>;
-	nvmem-cell-names = "mac-address";
-};
-
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy0>;
-
-	nvmem-cells = <&macaddr_config_4429 0x400000>;
-	nvmem-cell-names = "mac-address";
 };
 
 &ethphy0 {
@@ -183,16 +163,16 @@
 &pcie0 {
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_4429 0>;
-		nvmem-cell-names = "eeprom", "mac-address";
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &pcie1 {
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_config_4429 0x800000>;
-		nvmem-cell-names = "eeprom", "mac-address";
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
