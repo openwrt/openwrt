@@ -114,7 +114,7 @@
 					#size-cells = <1>;
 
 					eeprom_factory_0: eeprom@0 {
-						reg = <0x0 0x4da8>;
+						reg = <0x0 0x400>;
 					};
 
 					eeprom_factory_8000: eeprom@8000 {
@@ -185,7 +185,6 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_4429 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
 
