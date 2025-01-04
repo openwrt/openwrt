@@ -1,6 +1,6 @@
 --- a/pppd/demand.c
 +++ b/pppd/demand.c
-@@ -40,6 +40,8 @@
+@@ -34,6 +34,8 @@
  #include <errno.h>
  #include <fcntl.h>
  #include <netdb.h>
@@ -9,7 +9,7 @@
  #include <sys/param.h>
  #include <sys/types.h>
  #include <sys/wait.h>
-@@ -47,6 +49,8 @@
+@@ -41,6 +43,8 @@
  #include <sys/resource.h>
  #include <sys/stat.h>
  #include <sys/socket.h>
@@ -18,7 +18,7 @@
  #ifdef PPP_WITH_FILTER
  #include <pcap-bpf.h>
  #endif
-@@ -223,6 +227,14 @@ loop_chars(unsigned char *p, int n)
+@@ -217,6 +221,14 @@ loop_chars(unsigned char *p, int n)
      int c, rv;
  
      rv = 0;
@@ -33,7 +33,7 @@
      for (; n > 0; --n) {
  	c = *p++;
  	if (c == PPP_FLAG) {
-@@ -299,16 +311,100 @@ loop_frame(unsigned char *frame, int len
+@@ -293,16 +305,100 @@ loop_frame(unsigned char *frame, int len
   * loopback, now that the real serial link is up.
   */
  void
@@ -159,7 +159,7 @@
      } else {
 --- a/pppd/pppd-private.h
 +++ b/pppd/pppd-private.h
-@@ -368,7 +368,7 @@ void demand_conf(void);	/* config interf
+@@ -370,7 +370,7 @@ void demand_conf(void);	/* config interf
  void demand_block(void);	/* set all NPs to queue up packets */
  void demand_unblock(void); /* set all NPs to pass packets */
  void demand_discard(void); /* set all NPs to discard packets */
