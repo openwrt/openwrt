@@ -32,5 +32,3 @@ define KernelPackage/hwmon-raspberrypi/description
 endef
 
 $(eval $(call KernelPackage,hwmon-raspberrypi))
-
-
