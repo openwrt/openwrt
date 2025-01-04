@@ -1,0 +1,127 @@
+From da57e63c91ce11a640b1d38412be8c0d8655b8d9 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 4 Jan 2025 14:24:46 -0800
+Subject: [PATCH] ath9k: use devm for irq and ioremap resource
+
+Avoids having to manually free. Both of these get called and removed in
+probe only and are safe to convert.
+
+devm_platform_ioremap_resource is different as it also calls
+devm_request_memory_region, which requires non overlapping memory
+regions. Luckily, that seems to be the case.
+
+Tested on a TP-Link Archer C7v2.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ath/ath9k/ahb.c | 22 ++++++----------------
+ drivers/net/wireless/ath/ath9k/pci.c |  9 +++------
+ 2 files changed, 9 insertions(+), 22 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -74,7 +74,6 @@ static int ath_ahb_probe(struct platform
+ 	void __iomem *mem;
+ 	struct ath_softc *sc;
+ 	struct ieee80211_hw *hw;
+-	struct resource *res;
+ 	const struct platform_device_id *id = platform_get_device_id(pdev);
+ 	int irq;
+ 	int ret = 0;
+@@ -86,16 +85,10 @@ static int ath_ahb_probe(struct platform
+ 		return -EINVAL;
+ 	}
+ 
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (res == NULL) {
+-		dev_err(&pdev->dev, "no memory resource found\n");
+-		return -ENXIO;
+-	}
+-
+-	mem = devm_ioremap(&pdev->dev, res->start, resource_size(res));
+-	if (mem == NULL) {
++	mem = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(mem)) {
+ 		dev_err(&pdev->dev, "ioremap failed\n");
+-		return -ENOMEM;
++		return PTR_ERR(mem);
+ 	}
+ 
+ 	irq = platform_get_irq(pdev, 0);
+@@ -118,16 +111,16 @@ static int ath_ahb_probe(struct platform
+ 	sc->mem = mem;
+ 	sc->irq = irq;
+ 
+-	ret = request_irq(irq, ath_isr, IRQF_SHARED, "ath9k", sc);
++	ret = devm_request_irq(&pdev->dev, irq, ath_isr, IRQF_SHARED, "ath9k", sc);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq failed\n");
+-		goto err_free_hw;
++		return ret;
+ 	}
+ 
+ 	ret = ath9k_init_device(id->driver_data, sc, &ath_ahb_bus_ops);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "failed to initialize device\n");
+-		goto err_irq;
++		goto err_free_hw;
+ 	}
+ 
+ 	ah = sc->sc_ah;
+@@ -137,8 +130,6 @@ static int ath_ahb_probe(struct platform
+ 
+ 	return 0;
+ 
+- err_irq:
+-	free_irq(irq, sc);
+  err_free_hw:
+ 	ieee80211_free_hw(hw);
+ 	return ret;
+@@ -152,7 +143,6 @@ static void ath_ahb_remove(struct platfo
+ 		struct ath_softc *sc = hw->priv;
+ 
+ 		ath9k_deinit_device(sc);
+-		free_irq(sc->irq, sc);
+ 		ieee80211_free_hw(sc->hw);
+ 	}
+ }
+--- a/drivers/net/wireless/ath/ath9k/pci.c
++++ b/drivers/net/wireless/ath/ath9k/pci.c
+@@ -965,9 +965,9 @@ static int ath_pci_probe(struct pci_dev
+ 	}
+ 
+ 	if (!msi_enabled)
+-		ret = request_irq(pdev->irq, ath_isr, IRQF_SHARED, "ath9k", sc);
++		ret = devm_request_irq(&pdev->dev, pdev->irq, ath_isr, IRQF_SHARED, "ath9k", sc);
+ 	else
+-		ret = request_irq(pdev->irq, ath_isr, 0, "ath9k", sc);
++		ret = devm_request_irq(&pdev->dev, pdev->irq, ath_isr, 0, "ath9k", sc);
+ 
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq failed\n");
+@@ -979,7 +979,7 @@ static int ath_pci_probe(struct pci_dev
+ 	ret = ath9k_init_device(id->device, sc, &ath_pci_bus_ops);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "Failed to initialize device\n");
+-		goto err_init;
++		goto err_irq;
+ 	}
+ 
+ 	sc->sc_ah->msi_enabled = msi_enabled;
+@@ -991,8 +991,6 @@ static int ath_pci_probe(struct pci_dev
+ 
+ 	return 0;
+ 
+-err_init:
+-	free_irq(sc->irq, sc);
+ err_irq:
+ 	ieee80211_free_hw(hw);
+ 	return ret;
+@@ -1006,7 +1004,6 @@ static void ath_pci_remove(struct pci_de
+ 	if (!is_ath9k_unloaded)
+ 		sc->sc_ah->ah_flags |= AH_UNPLUGGED;
+ 	ath9k_deinit_device(sc);
+-	free_irq(sc->irq, sc);
+ 	ieee80211_free_hw(sc->hw);
+ }
+ 
