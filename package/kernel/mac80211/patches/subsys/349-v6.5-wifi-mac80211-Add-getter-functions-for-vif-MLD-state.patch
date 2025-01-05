@@ -33,7 +33,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1936,6 +1936,27 @@ struct ieee80211_vif {
+@@ -1937,6 +1937,27 @@ struct ieee80211_vif {
  	u8 drv_priv[] __aligned(sizeof(void *));
  };
  
@@ -132,7 +132,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	chanctx_conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -542,7 +542,7 @@ static void ieee80211_do_stop(struct iee
+@@ -543,7 +543,7 @@ static void ieee80211_do_stop(struct iee
  	cancel_work_sync(&sdata->recalc_smps);
  
  	sdata_lock(sdata);
@@ -141,7 +141,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	     "destroying interface with valid links 0x%04x\n",
  	     sdata->vif.valid_links);
  
-@@ -1855,7 +1855,7 @@ static int ieee80211_runtime_change_ifty
+@@ -1870,7 +1870,7 @@ static int ieee80211_runtime_change_ifty
  		return -EBUSY;
  
  	/* for now, don't support changing while links exist */
@@ -456,7 +456,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			chanctx_conf =
  				rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
  			if (unlikely(!chanctx_conf)) {
-@@ -6008,7 +6008,7 @@ void __ieee80211_tx_skb_tid_band(struct
+@@ -6010,7 +6010,7 @@ void __ieee80211_tx_skb_tid_band(struct
  	BUILD_BUG_ON(!FIELD_FIT(IEEE80211_TX_CTRL_MLO_LINK,
  				IEEE80211_LINK_UNSPECIFIED));
  
@@ -465,7 +465,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		link = 0;
  	} else if (link_id >= 0) {
  		link = link_id;
-@@ -6054,7 +6054,7 @@ void ieee80211_tx_skb_tid(struct ieee802
+@@ -6056,7 +6056,7 @@ void ieee80211_tx_skb_tid(struct ieee802
  	enum nl80211_band band;
  
  	rcu_read_lock();
@@ -476,7 +476,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1701,7 +1701,7 @@ void ieee80211_send_auth(struct ieee8021
+@@ -1703,7 +1703,7 @@ void ieee80211_send_auth(struct ieee8021
  	struct ieee80211_local *local = sdata->local;
  	struct sk_buff *skb;
  	struct ieee80211_mgmt *mgmt;
@@ -485,7 +485,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct {
  		u8 id;
  		u8 len;
-@@ -2546,7 +2546,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2548,7 +2548,7 @@ int ieee80211_reconfig(struct ieee80211_
  			continue;
  
  		sdata_lock(sdata);
@@ -494,7 +494,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			struct ieee80211_bss_conf *old[IEEE80211_MLD_MAX_NUM_LINKS] = {
  				[0] = &sdata->vif.bss_conf,
  			};
-@@ -2566,7 +2566,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2568,7 +2568,7 @@ int ieee80211_reconfig(struct ieee80211_
  		for (link_id = 0;
  		     link_id < ARRAY_SIZE(sdata->vif.link_conf);
  		     link_id++) {
@@ -503,7 +503,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			    !(sdata->vif.active_links & BIT(link_id)))
  				continue;
  
-@@ -2598,12 +2598,12 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2600,12 +2600,12 @@ int ieee80211_reconfig(struct ieee80211_
  		if (sdata->vif.bss_conf.mu_mimo_owner)
  			changed |= BSS_CHANGED_MU_GROUPS;
  
@@ -518,7 +518,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				changed |= BSS_CHANGED_ASSOC |
  					   BSS_CHANGED_ARP_FILTER |
  					   BSS_CHANGED_PS;
-@@ -2641,7 +2641,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2643,7 +2643,7 @@ int ieee80211_reconfig(struct ieee80211_
  		case NL80211_IFTYPE_AP:
  			changed |= BSS_CHANGED_P2P_PS;
  
@@ -527,7 +527,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				ieee80211_vif_cfg_change_notify(sdata,
  								BSS_CHANGED_SSID);
  			else
-@@ -2655,7 +2655,7 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -2657,7 +2657,7 @@ int ieee80211_reconfig(struct ieee80211_
  			if (sdata->vif.type == NL80211_IFTYPE_AP) {
  				changed |= BSS_CHANGED_AP_PROBE_RESP;
  
