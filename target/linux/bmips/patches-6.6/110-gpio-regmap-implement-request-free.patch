@@ -1,0 +1,53 @@
+From c8ca9b26ef85b27f9f0044aa111a89bf937dd724 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sun, 5 Jan 2025 09:52:24 +0100
+Subject: [PATCH] gpio-regmap: implement request/free
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Request and free GPIO to pinctrl driver.
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/gpio/gpio-regmap.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/drivers/gpio/gpio-regmap.c
++++ b/drivers/gpio/gpio-regmap.c
+@@ -10,6 +10,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/pinctrl/consumer.h>
+ #include <linux/regmap.h>
+ #include <linux/slab.h>
+ #include <linux/types.h>
+@@ -189,6 +190,17 @@ static int gpio_regmap_direction_output(
+ 	return gpio_regmap_set_direction(chip, offset, true);
+ }
+ 
++static int gpio_regmap_gpio_request(struct gpio_chip *chip,
++				    unsigned int offset)
++{
++	return pinctrl_gpio_request(chip->base + offset);
++}
++
++static void gpio_regmap_gpio_free(struct gpio_chip *chip, unsigned int offset)
++{
++	pinctrl_gpio_free(chip->base + offset);
++}
++
+ void *gpio_regmap_get_drvdata(struct gpio_regmap *gpio)
+ {
+ 	return gpio->driver_data;
+@@ -274,6 +286,9 @@ struct gpio_regmap *gpio_regmap_register
+ 		chip->direction_output = gpio_regmap_direction_output;
+ 	}
+ 
++	chip->request = gpio_regmap_gpio_request;
++	chip->free = gpio_regmap_gpio_free;
++
+ 	ret = gpiochip_add_data(chip, gpio);
+ 	if (ret < 0)
+ 		goto err_free_gpio;
