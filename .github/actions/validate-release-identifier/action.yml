@@ -53,7 +53,8 @@ runs:
 
         # Verify tag exists
         git_ref="v${{ inputs.identifier }}"
-        if ! git show-ref --tags "$git_ref" --quiet; then
+        tag_list=$(git ls-remote --refs --tags origin 'refs/tags/v*' | sed 's/.*refs\/tags\///')
+        if ! echo "$tag_list" | grep -q "^$git_ref\$"; then
           echo "::notice::Tag '$git_ref' not found"
           echo "valid=false" >> $GITHUB_OUTPUT
           echo "error=Release tag not found" >> $GITHUB_OUTPUT

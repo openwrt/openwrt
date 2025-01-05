@@ -39,14 +39,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: actions
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            .github/
-          sparse-checkout-cone-mode: true
-
-      # Workaround for https://github.com/actions/checkout/issues/1781
-      # Otherwise it would be done in the previous step using fetch-tags: true
-      - name: Fetch tags
-        run: git fetch --tags origin
+            /.github/
 
       - name: Parse issue form
         uses: Ansuel/github-issue-parser@v3
