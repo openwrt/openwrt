@@ -40,9 +40,9 @@ file_verify()
 		[ "$(stat_owner "$1")" = "${uid}" ] || return 2
 	}
 	# checking file permissions
-	[ "$(stat_perm "$1")" = "-rw-------" ] || {
-		chmod 0600 "$1"
-		[ "$(stat_perm "$1")" = "-rw-------" ] || return 3
+	[ "$(stat_perm "$1")" = "-r--------" ] || {
+		chmod 0400 "$1"
+		[ "$(stat_perm "$1")" = "-r--------" ] || return 3
 	}
 	# file is host key or not?
 	# if $2 is empty string - file is "host key"
