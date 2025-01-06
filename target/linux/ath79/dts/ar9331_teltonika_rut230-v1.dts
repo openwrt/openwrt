@@ -36,6 +36,7 @@
 
 		sim-tray {
 			label = "sim-tray";
+			linux,input-type = <EV_SW>;
 			linux,code = <BTN_1>;
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
