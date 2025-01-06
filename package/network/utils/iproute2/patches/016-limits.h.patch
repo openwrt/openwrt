@@ -1,0 +1,26 @@
+From f982f30e166a02e09097de05129449031ba51f76 Mon Sep 17 00:00:00 2001
+From: Stephen Hemminger <stephen@networkplumber.org>
+Date: Thu, 12 Dec 2024 11:29:44 -0800
+Subject: [PATCH] cg_map: use limits.h
+
+Prefer limits.h from system headers over linux/limits.h
+Fixes build with musl.
+
+Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
+---
+ lib/cg_map.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/lib/cg_map.c
++++ b/lib/cg_map.c
+@@ -9,8 +9,9 @@
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdbool.h>
++#include <limits.h>
++
+ #include <linux/types.h>
+-#include <linux/limits.h>
+ #include <ftw.h>
+ 
+ #include "cg_map.h"

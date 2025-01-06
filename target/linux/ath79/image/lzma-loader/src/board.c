@@ -51,9 +51,12 @@ static void tlwr1043nd_init(void)
 static inline void tlwr1043nd_init(void) {}
 #endif
 
-#ifdef CONFIG_BOARD_MERAKI_MR18
+#if defined(CONFIG_BOARD_MERAKI_MR18) || \
+    defined(CONFIG_BOARD_NEC_WG1400HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP2)
 
-static int mr18_extract_sgmii_res_cal(void)
+static int extract_qca955x_sgmii_res_cal(void)
 {
 	unsigned int base;
 	unsigned int reversed_sgmii_value;
@@ -138,7 +141,7 @@ static void qca955x_device_reset_clear(unsigned int mask)
 	WRITEREG(reg, t & ~mask);
 }
 
-static void mr18_setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
+static void setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
 {
 	unsigned int ethbase, pllbase, t;
 
@@ -166,16 +169,18 @@ static void mr18_setup_qca955x_eth_serdes_cal(unsigned int sgmii_value)
 		QCA955X_SGMII_SERDES_LOCK_DETECT_STATUS))
 		;
 }
+#endif
 
+#ifdef CONFIG_BOARD_MERAKI_MR18
 static inline void mr18_init(void)
 {
 	int res;
 
 	printf("Meraki MR18\n");
 
-	res = mr18_extract_sgmii_res_cal();
+	res = extract_qca955x_sgmii_res_cal();
 	if (res >= 0)
-		mr18_setup_qca955x_eth_serdes_cal(res);
+		setup_qca955x_eth_serdes_cal(res);
 
 }
 #else
@@ -204,7 +209,7 @@ static inline void huawei_ap_init(void)
 #if defined(CONFIG_BOARD_HUAWEI_AP5030DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (QCA955X_GPIO_OUTSEL_CLK_OBS5 << 24));
-#else if defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+#elif defined(CONFIG_BOARD_HUAWEI_AP6010DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (AR934X_GPIO_OUTSEL_CLK_OBS4 << 24));
 #endif
@@ -213,26 +218,16 @@ static inline void huawei_ap_init(void)
 static inline void huawei_ap_init(void) {}
 #endif
 
-#if defined(CONFIG_BOARD_NEC_WG600HP) || \
+#if defined(CONFIG_BOARD_NEC_WG1400HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP) || \
+    defined(CONFIG_BOARD_NEC_WG1800HP2) || \
+    defined(CONFIG_BOARD_NEC_WG600HP) || \
     defined(CONFIG_BOARD_NEC_WR8750N) || \
     defined(CONFIG_BOARD_NEC_WR9500N)
-
-#define AR934X_PLL_SWITCH_CLK_CTRL_REG			0x24
-#define AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL	BIT(0)
-
-static inline void nec_aterm_init(void)
+static inline void nec_aterm_reset_common(void)
 {
-	unsigned int reg, val;
+	unsigned int reg = KSEG1ADDR(AR71XX_RESET_BASE);
 
-	printf("NEC Aterm series (AR9344)\n");
-
-	/* set REFCLK=40MHz to switch PLL */
-	reg = KSEG1ADDR(AR71XX_PLL_BASE);
-	val = READREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG);
-	val &= ~AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL;
-	WRITEREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG, val);
-
-	reg = KSEG1ADDR(AR71XX_RESET_BASE);
 #ifndef LOADADDR
 	/*
 	 * This is for initramfs-factory image.
@@ -262,6 +257,29 @@ static inline void nec_aterm_init(void)
 	 * booting from stock bootloader
 	 */
 	WRITEREG(reg + AR71XX_RESET_REG_WDOG, 0xffffffff);
+}
+#endif
+
+#if defined(CONFIG_BOARD_NEC_WG600HP) || \
+    defined(CONFIG_BOARD_NEC_WR8750N) || \
+    defined(CONFIG_BOARD_NEC_WR9500N)
+
+#define AR934X_PLL_SWITCH_CLK_CTRL_REG			0x24
+#define AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL	BIT(0)
+
+static inline void nec_aterm_init(void)
+{
+	unsigned int reg, val;
+
+	printf("NEC Aterm series (AR9344)\n");
+
+	/* set REFCLK=40MHz to switch PLL */
+	reg = KSEG1ADDR(AR71XX_PLL_BASE);
+	val = READREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG);
+	val &= ~AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL;
+	WRITEREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG, val);
+
+	nec_aterm_reset_common();
 
 	/*
 	 * deassert some RESET bits not handled by drivers
@@ -270,10 +288,60 @@ static inline void nec_aterm_init(void)
 	 * - ETH_SWITCH(_ANALOG): eth0
 	 * - RTC                : wmac
 	 */
+	reg = KSEG1ADDR(AR71XX_RESET_BASE);
 	val = READREG(reg + AR934X_RESET_REG_RESET_MODULE);
 	val &= ~(AR934X_RESET_ETH_SWITCH | AR934X_RESET_ETH_SWITCH_ANALOG |
 		 AR934X_RESET_RTC);
 	WRITEREG(reg + AR934X_RESET_REG_RESET_MODULE, val);
+}
+#elif defined(CONFIG_BOARD_NEC_WG1400HP) || \
+      defined(CONFIG_BOARD_NEC_WG1800HP) || \
+      defined(CONFIG_BOARD_NEC_WG1800HP2)
+
+#define QCA955X_GMAC_MR_AN_CONTROL_PHY_RESET_MASK	BIT(15)
+#define QCA955X_GMAC_MR_AN_CONTROL_FULL_DUPLEX_MASK	BIT(8)
+#define QCA955X_GMAC_MR_AN_CONTROL_SPEED_SEL1_MASK	BIT(6)
+
+#define QCA955X_GMAC_SGMII_CONFIG_SPEED_SHIFT		6
+  #define QCA955X_GMAC_SGMII_CONFIG_SPEED_1000M		0x2
+#define QCA955X_GMAC_SGMII_CONFIG_FORCE_SPEED_MASK	BIT(5)
+#define QCA955X_GMAC_SGMII_CONFIG_MODE_CTRL_SHIFT	0
+  #define QCA955X_GMAC_SGMII_CONFIG_MODE_SGMII		0x2
+
+static inline void nec_aterm_init(void)
+{
+	unsigned int reg, val;
+	int ret;
+
+	printf("NEC Aterm series (QCA9558)\n");
+
+	nec_aterm_reset_common();
+
+	printf("\nCalibrating SGMII\n");
+	ret = extract_qca955x_sgmii_res_cal();
+	if (ret >= 0)
+		setup_qca955x_eth_serdes_cal(ret);
+
+	/* set SGMII force mode to make eth1 working */
+	printf("\nConfiguring SGMII force mode\n");
+	reg = KSEG1ADDR(QCA955X_GMAC_BASE);
+	WRITEREG(reg + QCA955X_GMAC_REG_SGMII_CONFIG,
+		 QCA955X_GMAC_SGMII_CONFIG_SPEED_1000M
+			<< QCA955X_GMAC_SGMII_CONFIG_SPEED_SHIFT |
+		 QCA955X_GMAC_SGMII_CONFIG_FORCE_SPEED_MASK |
+		 QCA955X_GMAC_SGMII_CONFIG_MODE_SGMII
+			<< QCA955X_GMAC_SGMII_CONFIG_MODE_CTRL_SHIFT);
+	printf("  SGMII_CONFIG : 0x%08x\n",
+	       READREG(reg + QCA955X_GMAC_REG_SGMII_CONFIG));
+	val = QCA955X_GMAC_MR_AN_CONTROL_FULL_DUPLEX_MASK |
+	      QCA955X_GMAC_MR_AN_CONTROL_SPEED_SEL1_MASK;
+	WRITEREG(reg + QCA955X_GMAC_REG_MR_AN_CONTROL,
+		 val | QCA955X_GMAC_MR_AN_CONTROL_PHY_RESET_MASK);
+	printf("  MR_AN_CONTROL: 0x%08x\n",
+	       READREG(reg + QCA955X_GMAC_REG_MR_AN_CONTROL));
+	WRITEREG(reg + QCA955X_GMAC_REG_MR_AN_CONTROL, val);
+	printf("  MR_AN_CONTROL: 0x%08x\n",
+	       READREG(reg + QCA955X_GMAC_REG_MR_AN_CONTROL));
 }
 #else
 static inline void nec_aterm_init(void) {}

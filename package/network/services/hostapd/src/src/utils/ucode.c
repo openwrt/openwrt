@@ -3,6 +3,7 @@
 #include "utils/eloop.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
+#include "crypto/sha256.h"
 #include "common/ieee802_11_common.h"
 #include <linux/netlink.h>
 #include <linux/genetlink.h>

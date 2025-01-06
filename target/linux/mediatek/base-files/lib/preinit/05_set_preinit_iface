@@ -2,7 +2,8 @@ set_preinit_iface() {
 	case $(board_name) in
 	cudy,m3000-v1|\
 	cudy,tr3000-v1|\
-	glinet,gl-mt3000)
+	glinet,gl-mt3000|\
+	openembed,som7981)
 		ip link set eth1 up
 		ifname=eth1
 		;;
@@ -13,6 +14,7 @@ set_preinit_iface() {
 		ip link set eth0 up
 		ifname=eth0
 		;;
+	smartrg,sdg-841-t6|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
 	smartrg,sdg-8733a)

@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_gemtek_wvrtm-1xxacn.dtsi"
+
+/ {
+	compatible = "gemtek,wvrtm-130acn", "mediatek,mt7621-soc";
+	model = "Gemtek WVRTM-130ACN";
+};
+
+&eeprom_factory_0 {
+	reg = <0x0 0x4da8>;
+};
+
+&macaddr_factory_4 {
+	compatible = "mac-base";
+	#nvmem-cell-cells = <1>;
+};
+
+&keys {
+	button-2 {
+		label = "power";
+		gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_POWER>;
+	};				
+};
+
+&leds {
+	led-7 {
+		gpios = <&gpio_hc595 7 GPIO_ACTIVE_HIGH>;
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		#address-cells = <2>;
+		#size-cells = <0>;
+		
+		band@0 {
+			/* 2.4 GHz */
+			reg = <0>;
+			nvmem-cells = <&macaddr_factory_4 (-1)>;
+			nvmem-cell-names = "mac-address";
+			/* led_pin 0 */
+		};
+
+		band@1 {
+			/* 5 GHz */
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_4 0>;
+			nvmem-cell-names = "mac-address";
+			/* led_pin 2 */
+		};
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
+
+&ports {
+	port@0 {
+		status = "okay";
+		label = "lan1";
+	};
+
+	port@1 {
+		status = "okay";
+		label = "lan2";
+	};
+
+	port@2 {
+		status = "okay";
+		label = "lan3";
+	};
+
+	port@3 {
+		status = "okay";
+		label = "lan4";
+	};
+};

@@ -25,7 +25,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1108,6 +1108,12 @@ static int vc4_plane_mode_set(struct drm
+@@ -1134,6 +1134,12 @@ static int vc4_plane_mode_set(struct drm
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
@@ -38,7 +38,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	/* SCL1 is used for Cb/Cr scaling of planar formats.  For RGB
  	 * and 4:4:4, scl1 should be set to scl0 so both channels of
  	 * the scaler do the same thing.  For YUV, the Y plane needs
-@@ -1623,6 +1629,12 @@ static int vc6_plane_mode_set(struct drm
+@@ -1649,6 +1655,12 @@ static int vc6_plane_mode_set(struct drm
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
@@ -51,7 +51,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	/* SCL1 is used for Cb/Cr scaling of planar formats.  For RGB
  	 * and 4:4:4, scl1 should be set to scl0 so both channels of
  	 * the scaler do the same thing.  For YUV, the Y plane needs
-@@ -1994,6 +2006,9 @@ int vc4_plane_atomic_check(struct drm_pl
+@@ -2020,6 +2032,9 @@ int vc4_plane_atomic_check(struct drm_pl
  	if (ret)
  		return ret;
  

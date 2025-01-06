@@ -1,0 +1,20 @@
+{
+	"$id": "https://openwrt.org/wifi.station.json",
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"description": "OpenWrt WiFi Station Schema",
+	"type": "object",
+	"properties": {
+		"mac": {
+			"description": "The stations MAC",
+			"type": "string"
+		},
+		"key": {
+			"description": "The passphrase that shall be used",
+			"type": "string"
+		},
+		"vid": {
+			"description": "The VLAN Id used by the station",
+			"type": "string"
+		}
+	}
+}

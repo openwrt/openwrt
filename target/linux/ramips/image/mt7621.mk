@@ -94,18 +94,9 @@ endef
 define Build/dna-bootfs
 	mkdir -p $@.ubifs-dir/boot
 
-	# populate the boot fs with the dtb and with either initramfs kernel or
-	# the normal kernel
+	# populate the boot fs with the dtb and the kernel image
 	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.ubifs-dir/boot/dtb
-
-	$(if $(findstring with-initrd,$(word 1,$(1))),\
-		( \
-			$(CP) $@ $@.ubifs-dir/boot/uImage \
-		) , \
-		( \
-			$(CP) $(IMAGE_KERNEL) $@.ubifs-dir/boot/uImage \
-		) \
-	)
+	$(CP) $@ $@.ubifs-dir/boot/uImage
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
@@ -180,10 +171,6 @@ define Build/iodata-mstc-header2
 	mv $@.new $@
 endef
 
-define Build/kernel-initramfs-bin
-	$(CP) $(KDIR)/vmlinux-initramfs $@
-endef
-
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	$(eval magic=$(if $(word 2,$(1)),$(word 2,$(1)),ZNET))
@@ -231,30 +218,6 @@ define Build/belkin-header
 		cat $@; \
 	) > $@.new
 	mv $@.new $@
-endef
-
-define Build/ubnt-erx-factory-image
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
-		echo '21001:7' > $(1).compat; \
-		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
-		\
-		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
-		$(MKHASH) md5 $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) > $(1).md5; \
-		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp.md5/' $(1).md5; \
-		\
-		echo "dummy" > $(1).rootfs; \
-		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp/' $(1).rootfs; \
-		\
-		$(MKHASH) md5 $(1).rootfs > $(1).md5; \
-		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp.md5/' $(1).md5; \
-		\
-		echo '$(BOARD) $(VERSION_CODE) $(VERSION_NUMBER)' > $(1).version; \
-		$(TAR) -rf $(1) --transform='s/^.*/version.tmp/' $(1).version; \
-		\
-		$(CP) $(1) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(KERNEL_SIZE))" >&2; \
-	fi
 endef
 
 define Build/zytrx-header
@@ -331,11 +294,11 @@ TARGET_DEVICES += alfa-network_quad-e4g
 
 define Device/ampedwireless_ally_common
   $(Device/nand)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Amped Wireless
   DEVICE_PACKAGES := kmod-mt7615-firmware
   IMAGE_SIZE := 32768k
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'flashable-initramfs' |\
-	edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
+  KERNEL_INITRAMFS := $$(KERNEL) | edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
 endef
 
 define Device/ampedwireless_ally-r1900k
@@ -404,7 +367,7 @@ define Device/asus_rp-ac56
   DEVICE_MODEL := RP-AC56
   IMAGE_SIZE := 16000k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 \
-	kmod-i2c-ralink kmod-sound-mt7620 -uboot-envtools
+	kmod-sound-mt7620 -uboot-envtools
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
@@ -507,6 +470,20 @@ define Device/asus_rt-ax54
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += asus_rt-ax54
+
+define Device/asus_4g-ax56
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := 4G-AX56
+  IMAGE_SIZE := 51200k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-serial-option \
+	kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += asus_4g-ax56
 
 define Device/beeline_smartbox-flash
   $(Device/nand)
@@ -1088,17 +1065,16 @@ define Device/dna_valokuitu-plus-ex400
   IMAGE_SIZE := 117m
   PAGESIZE := 2048
   MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
-  		  --log-lebs=2 --space-fixup --squash-uids
+	--log-lebs=2 --space-fixup --squash-uids
   DEVICE_VENDOR := DNA
   DEVICE_MODEL := Valokuitu Plus EX400
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGES := factory.bin sysupgrade.bin
-  IMAGE/factory.bin := kernel-initramfs-bin | lzma | uImage lzma | \
-                       dna-bootfs with-initrd | dna-header | \
-                       append-md5sum-ascii-salted
-  IMAGE/sysupgrade.bin := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
-  			  append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
+	dna-bootfs | dna-header | append-md5sum-ascii-salted
+  IMAGE/sysupgrade.bin := append-kernel | dna-bootfs | \
+  	sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
@@ -1381,6 +1357,29 @@ define Device/gehua_ghl-r-001
 	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += gehua_ghl-r-001
+
+define Device/gemtek_wvrtm-1xxacn
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 122368k
+  DEVICE_VENDOR := Gemtek
+  DEVICE_PACKAGES := kmod-gpio-nxp-74hc164 kmod-spi-gpio \
+  kmod-usb3 -uboot-envtools 
+endef
+
+define Device/gemtek_wvrtm-127acn
+  $(Device/gemtek_wvrtm-1xxacn)
+  DEVICE_MODEL := WVRTM-127ACN
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2
+endef
+TARGET_DEVICES += gemtek_wvrtm-127acn
+
+define Device/gemtek_wvrtm-130acn
+  $(Device/gemtek_wvrtm-1xxacn)
+  DEVICE_MODEL := WVRTM-130ACN
+  DEVICE_PACKAGES += kmod-mt7615-firmware
+endef
+TARGET_DEVICES += gemtek_wvrtm-130acn
 
 define Device/glinet_gl-mt1300
   $(Device/dsa-migration)
@@ -2839,14 +2838,15 @@ define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Ubiquiti
-  IMAGE_SIZE := 256768k
+  IMAGE_SIZE := 259840k
   FILESYSTEMS := squashfs
-  KERNEL_SIZE := 3145728
-  KERNEL_INITRAMFS := $$(KERNEL) | \
-	ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
+  KERNEL_SIZE := 6144k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES += -wpad-basic-mbedtls -uboot-envtools
-  DEFAULT := n
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE :=  Partition table has been changed due to kernel size restrictions. \
+    Refer to the wiki page for instructions to migrate to the new layout: \
+    https://openwrt.org/toh/ubiquiti/edgerouter_x_er-x_ka
 endef
 
 define Device/ubnt_edgerouter-x

@@ -1,0 +1,560 @@
+From bbb6f9be7f99464d5ab7e2f321fa728d33eeec9a Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 20 Sep 2024 22:27:30 +0300
+Subject: [PATCH] wifi: rtw88: Parse the RX descriptor with a single function
+
+rtw8703b_query_rx_desc(), rtw8723d_query_rx_desc(),
+rtw8821c_query_rx_desc(), rtw8822b_query_rx_desc(), and
+rtw8822c_query_rx_desc() are almost identical, so replace them all with
+a single function, rtw_rx_query_rx_desc().
+
+Also, access the RX descriptor using a struct with __le32 members and
+le32_get_bits().
+
+Tested with RTL8811CU, RTL8811AU, and RTL8812AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Tested-by: Ping-Ke Shih <pkshih@realtek.com> # RTL8723DE and RTL8822CE
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h     |  5 +-
+ drivers/net/wireless/realtek/rtw88/pci.c      |  2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8703b.c | 56 +--------------
+ drivers/net/wireless/realtek/rtw88/rtw8723d.c | 43 +-----------
+ drivers/net/wireless/realtek/rtw88/rtw8821c.c | 43 +-----------
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c | 43 +-----------
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c | 44 +-----------
+ drivers/net/wireless/realtek/rtw88/rx.c       | 70 +++++++++++++++++--
+ drivers/net/wireless/realtek/rtw88/rx.h       | 64 ++++++++---------
+ drivers/net/wireless/realtek/rtw88/sdio.c     |  3 +-
+ drivers/net/wireless/realtek/rtw88/usb.c      |  4 +-
+ 11 files changed, 106 insertions(+), 271 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -848,9 +848,8 @@ struct rtw_chip_ops {
+ 	void (*phy_set_param)(struct rtw_dev *rtwdev);
+ 	void (*set_channel)(struct rtw_dev *rtwdev, u8 channel,
+ 			    u8 bandwidth, u8 primary_chan_idx);
+-	void (*query_rx_desc)(struct rtw_dev *rtwdev, u8 *rx_desc,
+-			      struct rtw_rx_pkt_stat *pkt_stat,
+-			      struct ieee80211_rx_status *rx_status);
++	void (*query_phy_status)(struct rtw_dev *rtwdev, u8 *phy_status,
++				 struct rtw_rx_pkt_stat *pkt_stat);
+ 	u32 (*read_rf)(struct rtw_dev *rtwdev, enum rtw_rf_path rf_path,
+ 		       u32 addr, u32 mask);
+ 	bool (*write_rf)(struct rtw_dev *rtwdev, enum rtw_rf_path rf_path,
+--- a/drivers/net/wireless/realtek/rtw88/pci.c
++++ b/drivers/net/wireless/realtek/rtw88/pci.c
+@@ -1065,7 +1065,7 @@ static u32 rtw_pci_rx_napi(struct rtw_de
+ 		dma_sync_single_for_cpu(rtwdev->dev, dma, RTK_PCI_RX_BUF_SIZE,
+ 					DMA_FROM_DEVICE);
+ 		rx_desc = skb->data;
+-		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat, &rx_status);
++		rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat, &rx_status);
+ 
+ 		/* offset from rx_desc to payload */
+ 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+--- a/drivers/net/wireless/realtek/rtw88/rtw8703b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8703b.c
+@@ -29,9 +29,6 @@
+ #define TBTT_PROHIBIT_HOLD_TIME 0x80
+ #define TBTT_PROHIBIT_HOLD_TIME_STOP_BCN 0x64
+ 
+-/* raw pkt_stat->drv_info_sz is in unit of 8-bytes */
+-#define RX_DRV_INFO_SZ_UNIT_8703B 8
+-
+ #define TRANS_SEQ_END			\
+ 	0xFFFF,				\
+ 	RTW_PWR_CUT_ALL_MSK,		\
+@@ -1032,57 +1029,6 @@ static void query_phy_status(struct rtw_
+ 		query_phy_status_ofdm(rtwdev, phy_status, pkt_stat);
+ }
+ 
+-static void rtw8703b_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
+-				   struct rtw_rx_pkt_stat *pkt_stat,
+-				   struct ieee80211_rx_status *rx_status)
+-{
+-	struct ieee80211_hdr *hdr;
+-	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
+-	u8 *phy_status = NULL;
+-
+-	memset(pkt_stat, 0, sizeof(*pkt_stat));
+-
+-	pkt_stat->phy_status = GET_RX_DESC_PHYST(rx_desc);
+-	pkt_stat->icv_err = GET_RX_DESC_ICV_ERR(rx_desc);
+-	pkt_stat->crc_err = GET_RX_DESC_CRC32(rx_desc);
+-	pkt_stat->decrypted = !GET_RX_DESC_SWDEC(rx_desc) &&
+-			      GET_RX_DESC_ENC_TYPE(rx_desc) != RX_DESC_ENC_NONE;
+-	pkt_stat->is_c2h = GET_RX_DESC_C2H(rx_desc);
+-	pkt_stat->pkt_len = GET_RX_DESC_PKT_LEN(rx_desc);
+-	pkt_stat->drv_info_sz = GET_RX_DESC_DRV_INFO_SIZE(rx_desc);
+-	pkt_stat->shift = GET_RX_DESC_SHIFT(rx_desc);
+-	pkt_stat->rate = GET_RX_DESC_RX_RATE(rx_desc);
+-	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
+-	pkt_stat->ppdu_cnt = 0;
+-	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+-
+-	pkt_stat->drv_info_sz *= RX_DRV_INFO_SZ_UNIT_8703B;
+-
+-	if (pkt_stat->is_c2h)
+-		return;
+-
+-	hdr = (struct ieee80211_hdr *)(rx_desc + desc_sz + pkt_stat->shift +
+-				       pkt_stat->drv_info_sz);
+-
+-	pkt_stat->bw = GET_RX_DESC_BW(rx_desc);
+-
+-	if (pkt_stat->phy_status) {
+-		phy_status = rx_desc + desc_sz + pkt_stat->shift;
+-		query_phy_status(rtwdev, phy_status, pkt_stat);
+-	}
+-
+-	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status, phy_status);
+-
+-	/* Rtl8723cs driver checks for size < 14 or size > 8192 and
+-	 * simply drops the packet. Maybe this should go into
+-	 * rtw_rx_fill_rx_status()?
+-	 */
+-	if (pkt_stat->pkt_len == 0) {
+-		rx_status->flag |= RX_FLAG_NO_PSDU;
+-		rtw_dbg(rtwdev, RTW_DBG_RX, "zero length packet");
+-	}
+-}
+-
+ #define ADDA_ON_VAL_8703B 0x03c00014
+ 
+ static
+@@ -1948,7 +1894,7 @@ static const struct rtw_chip_ops rtw8703
+ 	.read_efuse		= rtw8703b_read_efuse,
+ 	.phy_set_param		= rtw8703b_phy_set_param,
+ 	.set_channel		= rtw8703b_set_channel,
+-	.query_rx_desc		= rtw8703b_query_rx_desc,
++	.query_phy_status	= query_phy_status,
+ 	.read_rf		= rtw_phy_read_rf_sipi,
+ 	.write_rf		= rtw_phy_write_rf_reg_sipi,
+ 	.set_tx_power_index	= rtw8723x_set_tx_power_index,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723d.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723d.c
+@@ -227,47 +227,6 @@ static void query_phy_status(struct rtw_
+ 	}
+ }
+ 
+-static void rtw8723d_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
+-				   struct rtw_rx_pkt_stat *pkt_stat,
+-				   struct ieee80211_rx_status *rx_status)
+-{
+-	struct ieee80211_hdr *hdr;
+-	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
+-	u8 *phy_status = NULL;
+-
+-	memset(pkt_stat, 0, sizeof(*pkt_stat));
+-
+-	pkt_stat->phy_status = GET_RX_DESC_PHYST(rx_desc);
+-	pkt_stat->icv_err = GET_RX_DESC_ICV_ERR(rx_desc);
+-	pkt_stat->crc_err = GET_RX_DESC_CRC32(rx_desc);
+-	pkt_stat->decrypted = !GET_RX_DESC_SWDEC(rx_desc) &&
+-			      GET_RX_DESC_ENC_TYPE(rx_desc) != RX_DESC_ENC_NONE;
+-	pkt_stat->is_c2h = GET_RX_DESC_C2H(rx_desc);
+-	pkt_stat->pkt_len = GET_RX_DESC_PKT_LEN(rx_desc);
+-	pkt_stat->drv_info_sz = GET_RX_DESC_DRV_INFO_SIZE(rx_desc);
+-	pkt_stat->shift = GET_RX_DESC_SHIFT(rx_desc);
+-	pkt_stat->rate = GET_RX_DESC_RX_RATE(rx_desc);
+-	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
+-	pkt_stat->ppdu_cnt = 0;
+-	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+-
+-	/* drv_info_sz is in unit of 8-bytes */
+-	pkt_stat->drv_info_sz *= 8;
+-
+-	/* c2h cmd pkt's rx/phy status is not interested */
+-	if (pkt_stat->is_c2h)
+-		return;
+-
+-	hdr = (struct ieee80211_hdr *)(rx_desc + desc_sz + pkt_stat->shift +
+-				       pkt_stat->drv_info_sz);
+-	if (pkt_stat->phy_status) {
+-		phy_status = rx_desc + desc_sz + pkt_stat->shift;
+-		query_phy_status(rtwdev, phy_status, pkt_stat);
+-	}
+-
+-	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status, phy_status);
+-}
+-
+ static bool rtw8723d_check_spur_ov_thres(struct rtw_dev *rtwdev,
+ 					 u8 channel, u32 thres)
+ {
+@@ -1433,7 +1392,7 @@ static void rtw8723d_pwr_track(struct rt
+ static const struct rtw_chip_ops rtw8723d_ops = {
+ 	.phy_set_param		= rtw8723d_phy_set_param,
+ 	.read_efuse		= rtw8723x_read_efuse,
+-	.query_rx_desc		= rtw8723d_query_rx_desc,
++	.query_phy_status	= query_phy_status,
+ 	.set_channel		= rtw8723d_set_channel,
+ 	.mac_init		= rtw8723x_mac_init,
+ 	.shutdown		= rtw8723d_shutdown,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.c
+@@ -679,47 +679,6 @@ static void query_phy_status(struct rtw_
+ 	}
+ }
+ 
+-static void rtw8821c_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
+-				   struct rtw_rx_pkt_stat *pkt_stat,
+-				   struct ieee80211_rx_status *rx_status)
+-{
+-	struct ieee80211_hdr *hdr;
+-	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
+-	u8 *phy_status = NULL;
+-
+-	memset(pkt_stat, 0, sizeof(*pkt_stat));
+-
+-	pkt_stat->phy_status = GET_RX_DESC_PHYST(rx_desc);
+-	pkt_stat->icv_err = GET_RX_DESC_ICV_ERR(rx_desc);
+-	pkt_stat->crc_err = GET_RX_DESC_CRC32(rx_desc);
+-	pkt_stat->decrypted = !GET_RX_DESC_SWDEC(rx_desc) &&
+-			      GET_RX_DESC_ENC_TYPE(rx_desc) != RX_DESC_ENC_NONE;
+-	pkt_stat->is_c2h = GET_RX_DESC_C2H(rx_desc);
+-	pkt_stat->pkt_len = GET_RX_DESC_PKT_LEN(rx_desc);
+-	pkt_stat->drv_info_sz = GET_RX_DESC_DRV_INFO_SIZE(rx_desc);
+-	pkt_stat->shift = GET_RX_DESC_SHIFT(rx_desc);
+-	pkt_stat->rate = GET_RX_DESC_RX_RATE(rx_desc);
+-	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
+-	pkt_stat->ppdu_cnt = GET_RX_DESC_PPDU_CNT(rx_desc);
+-	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+-
+-	/* drv_info_sz is in unit of 8-bytes */
+-	pkt_stat->drv_info_sz *= 8;
+-
+-	/* c2h cmd pkt's rx/phy status is not interested */
+-	if (pkt_stat->is_c2h)
+-		return;
+-
+-	hdr = (struct ieee80211_hdr *)(rx_desc + desc_sz + pkt_stat->shift +
+-				       pkt_stat->drv_info_sz);
+-	if (pkt_stat->phy_status) {
+-		phy_status = rx_desc + desc_sz + pkt_stat->shift;
+-		query_phy_status(rtwdev, phy_status, pkt_stat);
+-	}
+-
+-	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status, phy_status);
+-}
+-
+ static void
+ rtw8821c_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path, u8 rs)
+ {
+@@ -1686,7 +1645,7 @@ static const struct rtw_prioq_addrs prio
+ static const struct rtw_chip_ops rtw8821c_ops = {
+ 	.phy_set_param		= rtw8821c_phy_set_param,
+ 	.read_efuse		= rtw8821c_read_efuse,
+-	.query_rx_desc		= rtw8821c_query_rx_desc,
++	.query_phy_status	= query_phy_status,
+ 	.set_channel		= rtw8821c_set_channel,
+ 	.mac_init		= rtw8821c_mac_init,
+ 	.read_rf		= rtw_phy_read_rf,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -934,47 +934,6 @@ static void query_phy_status(struct rtw_
+ 	}
+ }
+ 
+-static void rtw8822b_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
+-				   struct rtw_rx_pkt_stat *pkt_stat,
+-				   struct ieee80211_rx_status *rx_status)
+-{
+-	struct ieee80211_hdr *hdr;
+-	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
+-	u8 *phy_status = NULL;
+-
+-	memset(pkt_stat, 0, sizeof(*pkt_stat));
+-
+-	pkt_stat->phy_status = GET_RX_DESC_PHYST(rx_desc);
+-	pkt_stat->icv_err = GET_RX_DESC_ICV_ERR(rx_desc);
+-	pkt_stat->crc_err = GET_RX_DESC_CRC32(rx_desc);
+-	pkt_stat->decrypted = !GET_RX_DESC_SWDEC(rx_desc) &&
+-			      GET_RX_DESC_ENC_TYPE(rx_desc) != RX_DESC_ENC_NONE;
+-	pkt_stat->is_c2h = GET_RX_DESC_C2H(rx_desc);
+-	pkt_stat->pkt_len = GET_RX_DESC_PKT_LEN(rx_desc);
+-	pkt_stat->drv_info_sz = GET_RX_DESC_DRV_INFO_SIZE(rx_desc);
+-	pkt_stat->shift = GET_RX_DESC_SHIFT(rx_desc);
+-	pkt_stat->rate = GET_RX_DESC_RX_RATE(rx_desc);
+-	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
+-	pkt_stat->ppdu_cnt = GET_RX_DESC_PPDU_CNT(rx_desc);
+-	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+-
+-	/* drv_info_sz is in unit of 8-bytes */
+-	pkt_stat->drv_info_sz *= 8;
+-
+-	/* c2h cmd pkt's rx/phy status is not interested */
+-	if (pkt_stat->is_c2h)
+-		return;
+-
+-	hdr = (struct ieee80211_hdr *)(rx_desc + desc_sz + pkt_stat->shift +
+-				       pkt_stat->drv_info_sz);
+-	if (pkt_stat->phy_status) {
+-		phy_status = rx_desc + desc_sz + pkt_stat->shift;
+-		query_phy_status(rtwdev, phy_status, pkt_stat);
+-	}
+-
+-	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status, phy_status);
+-}
+-
+ static void
+ rtw8822b_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path, u8 rs)
+ {
+@@ -2175,7 +2134,7 @@ static const struct rtw_prioq_addrs prio
+ static const struct rtw_chip_ops rtw8822b_ops = {
+ 	.phy_set_param		= rtw8822b_phy_set_param,
+ 	.read_efuse		= rtw8822b_read_efuse,
+-	.query_rx_desc		= rtw8822b_query_rx_desc,
++	.query_phy_status	= query_phy_status,
+ 	.set_channel		= rtw8822b_set_channel,
+ 	.mac_init		= rtw8822b_mac_init,
+ 	.read_rf		= rtw_phy_read_rf,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -2690,48 +2690,6 @@ static void query_phy_status(struct rtw_
+ 	}
+ }
+ 
+-static void rtw8822c_query_rx_desc(struct rtw_dev *rtwdev, u8 *rx_desc,
+-				   struct rtw_rx_pkt_stat *pkt_stat,
+-				   struct ieee80211_rx_status *rx_status)
+-{
+-	struct ieee80211_hdr *hdr;
+-	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
+-	u8 *phy_status = NULL;
+-
+-	memset(pkt_stat, 0, sizeof(*pkt_stat));
+-
+-	pkt_stat->phy_status = GET_RX_DESC_PHYST(rx_desc);
+-	pkt_stat->icv_err = GET_RX_DESC_ICV_ERR(rx_desc);
+-	pkt_stat->crc_err = GET_RX_DESC_CRC32(rx_desc);
+-	pkt_stat->decrypted = !GET_RX_DESC_SWDEC(rx_desc) &&
+-			      GET_RX_DESC_ENC_TYPE(rx_desc) != RX_DESC_ENC_NONE;
+-	pkt_stat->is_c2h = GET_RX_DESC_C2H(rx_desc);
+-	pkt_stat->pkt_len = GET_RX_DESC_PKT_LEN(rx_desc);
+-	pkt_stat->drv_info_sz = GET_RX_DESC_DRV_INFO_SIZE(rx_desc);
+-	pkt_stat->shift = GET_RX_DESC_SHIFT(rx_desc);
+-	pkt_stat->rate = GET_RX_DESC_RX_RATE(rx_desc);
+-	pkt_stat->cam_id = GET_RX_DESC_MACID(rx_desc);
+-	pkt_stat->ppdu_cnt = GET_RX_DESC_PPDU_CNT(rx_desc);
+-	pkt_stat->tsf_low = GET_RX_DESC_TSFL(rx_desc);
+-
+-	/* drv_info_sz is in unit of 8-bytes */
+-	pkt_stat->drv_info_sz *= 8;
+-
+-	/* c2h cmd pkt's rx/phy status is not interested */
+-	if (pkt_stat->is_c2h)
+-		return;
+-
+-	hdr = (struct ieee80211_hdr *)(rx_desc + desc_sz + pkt_stat->shift +
+-				       pkt_stat->drv_info_sz);
+-	pkt_stat->hdr = hdr;
+-	if (pkt_stat->phy_status) {
+-		phy_status = rx_desc + desc_sz + pkt_stat->shift;
+-		query_phy_status(rtwdev, phy_status, pkt_stat);
+-	}
+-
+-	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status, phy_status);
+-}
+-
+ static void
+ rtw8822c_set_write_tx_power_ref(struct rtw_dev *rtwdev, u8 *tx_pwr_ref_cck,
+ 				u8 *tx_pwr_ref_ofdm)
+@@ -4991,7 +4949,7 @@ static const struct rtw_prioq_addrs prio
+ static const struct rtw_chip_ops rtw8822c_ops = {
+ 	.phy_set_param		= rtw8822c_phy_set_param,
+ 	.read_efuse		= rtw8822c_read_efuse,
+-	.query_rx_desc		= rtw8822c_query_rx_desc,
++	.query_phy_status	= query_phy_status,
+ 	.set_channel		= rtw8822c_set_channel,
+ 	.mac_init		= rtw8822c_mac_init,
+ 	.dump_fw_crash		= rtw8822c_dump_fw_crash,
+--- a/drivers/net/wireless/realtek/rtw88/rx.c
++++ b/drivers/net/wireless/realtek/rtw88/rx.c
+@@ -187,11 +187,10 @@ fill_rx_status:
+ }
+ EXPORT_SYMBOL(rtw_update_rx_freq_from_ie);
+ 
+-void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
+-			   struct rtw_rx_pkt_stat *pkt_stat,
+-			   struct ieee80211_hdr *hdr,
+-			   struct ieee80211_rx_status *rx_status,
+-			   u8 *phy_status)
++static void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
++				  struct rtw_rx_pkt_stat *pkt_stat,
++				  struct ieee80211_hdr *hdr,
++				  struct ieee80211_rx_status *rx_status)
+ {
+ 	struct ieee80211_hw *hw = rtwdev->hw;
+ 	u8 path;
+@@ -242,5 +241,64 @@ void rtw_rx_fill_rx_status(struct rtw_de
+ 	}
+ 
+ 	rtw_rx_addr_match(rtwdev, pkt_stat, hdr);
++
++	/* Rtl8723cs driver checks for size < 14 or size > 8192 and
++	 * simply drops the packet.
++	 */
++	if (rtwdev->chip->id == RTW_CHIP_TYPE_8703B && pkt_stat->pkt_len == 0) {
++		rx_status->flag |= RX_FLAG_NO_PSDU;
++		rtw_dbg(rtwdev, RTW_DBG_RX, "zero length packet");
++	}
++}
++
++void rtw_rx_query_rx_desc(struct rtw_dev *rtwdev, void *rx_desc8,
++			  struct rtw_rx_pkt_stat *pkt_stat,
++			  struct ieee80211_rx_status *rx_status)
++{
++	u32 desc_sz = rtwdev->chip->rx_pkt_desc_sz;
++	struct rtw_rx_desc *rx_desc = rx_desc8;
++	struct ieee80211_hdr *hdr;
++	u32 enc_type, swdec;
++	void *phy_status;
++
++	memset(pkt_stat, 0, sizeof(*pkt_stat));
++
++	pkt_stat->pkt_len = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_PKT_LEN);
++	pkt_stat->crc_err = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_CRC32);
++	pkt_stat->icv_err = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_ICV_ERR);
++	pkt_stat->drv_info_sz = le32_get_bits(rx_desc->w0,
++					      RTW_RX_DESC_W0_DRV_INFO_SIZE);
++	enc_type = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_ENC_TYPE);
++	pkt_stat->shift = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_SHIFT);
++	pkt_stat->phy_status = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_PHYST);
++	swdec = le32_get_bits(rx_desc->w0, RTW_RX_DESC_W0_SWDEC);
++	pkt_stat->decrypted = !swdec && enc_type != RX_DESC_ENC_NONE;
++
++	pkt_stat->cam_id = le32_get_bits(rx_desc->w1, RTW_RX_DESC_W1_MACID);
++
++	pkt_stat->is_c2h = le32_get_bits(rx_desc->w2, RTW_RX_DESC_W2_C2H);
++	pkt_stat->ppdu_cnt = le32_get_bits(rx_desc->w2, RTW_RX_DESC_W2_PPDU_CNT);
++
++	pkt_stat->rate = le32_get_bits(rx_desc->w3, RTW_RX_DESC_W3_RX_RATE);
++
++	pkt_stat->bw = le32_get_bits(rx_desc->w4, RTW_RX_DESC_W4_BW);
++
++	pkt_stat->tsf_low = le32_get_bits(rx_desc->w5, RTW_RX_DESC_W5_TSFL);
++
++	/* drv_info_sz is in unit of 8-bytes */
++	pkt_stat->drv_info_sz *= 8;
++
++	/* c2h cmd pkt's rx/phy status is not interested */
++	if (pkt_stat->is_c2h)
++		return;
++
++	phy_status = rx_desc8 + desc_sz + pkt_stat->shift;
++	hdr = phy_status + pkt_stat->drv_info_sz;
++	pkt_stat->hdr = hdr;
++
++	if (pkt_stat->phy_status)
++		rtwdev->chip->ops->query_phy_status(rtwdev, phy_status, pkt_stat);
++
++	rtw_rx_fill_rx_status(rtwdev, pkt_stat, hdr, rx_status);
+ }
+-EXPORT_SYMBOL(rtw_rx_fill_rx_status);
++EXPORT_SYMBOL(rtw_rx_query_rx_desc);
+--- a/drivers/net/wireless/realtek/rtw88/rx.h
++++ b/drivers/net/wireless/realtek/rtw88/rx.h
+@@ -14,42 +14,40 @@ enum rtw_rx_desc_enc {
+ 	RX_DESC_ENC_WEP104	= 5,
+ };
+ 
+-#define GET_RX_DESC_PHYST(rxdesc)                                              \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), BIT(26))
+-#define GET_RX_DESC_ICV_ERR(rxdesc)                                            \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), BIT(15))
+-#define GET_RX_DESC_CRC32(rxdesc)                                              \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), BIT(14))
+-#define GET_RX_DESC_SWDEC(rxdesc)                                              \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), BIT(27))
+-#define GET_RX_DESC_C2H(rxdesc)                                                \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x02), BIT(28))
+-#define GET_RX_DESC_PKT_LEN(rxdesc)                                            \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), GENMASK(13, 0))
+-#define GET_RX_DESC_DRV_INFO_SIZE(rxdesc)                                      \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), GENMASK(19, 16))
+-#define GET_RX_DESC_SHIFT(rxdesc)                                              \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), GENMASK(25, 24))
+-#define GET_RX_DESC_ENC_TYPE(rxdesc)                                           \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x00), GENMASK(22, 20))
+-#define GET_RX_DESC_RX_RATE(rxdesc)                                            \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x03), GENMASK(6, 0))
+-#define GET_RX_DESC_MACID(rxdesc)                                              \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x01), GENMASK(6, 0))
+-#define GET_RX_DESC_PPDU_CNT(rxdesc)                                           \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x02), GENMASK(30, 29))
+-#define GET_RX_DESC_TSFL(rxdesc)                                               \
+-	le32_get_bits(*((__le32 *)(rxdesc) + 0x05), GENMASK(31, 0))
+-#define GET_RX_DESC_BW(rxdesc)                                                 \
+-	(le32_get_bits(*((__le32 *)(rxdesc) + 0x04), GENMASK(5, 4)))
++struct rtw_rx_desc {
++	__le32 w0;
++	__le32 w1;
++	__le32 w2;
++	__le32 w3;
++	__le32 w4;
++	__le32 w5;
++} __packed;
++
++#define RTW_RX_DESC_W0_PKT_LEN		GENMASK(13, 0)
++#define RTW_RX_DESC_W0_CRC32		BIT(14)
++#define RTW_RX_DESC_W0_ICV_ERR		BIT(15)
++#define RTW_RX_DESC_W0_DRV_INFO_SIZE	GENMASK(19, 16)
++#define RTW_RX_DESC_W0_ENC_TYPE		GENMASK(22, 20)
++#define RTW_RX_DESC_W0_SHIFT		GENMASK(25, 24)
++#define RTW_RX_DESC_W0_PHYST		BIT(26)
++#define RTW_RX_DESC_W0_SWDEC		BIT(27)
++
++#define RTW_RX_DESC_W1_MACID		GENMASK(6, 0)
++
++#define RTW_RX_DESC_W2_C2H		BIT(28)
++#define RTW_RX_DESC_W2_PPDU_CNT		GENMASK(30, 29)
++
++#define RTW_RX_DESC_W3_RX_RATE		GENMASK(6, 0)
++
++#define RTW_RX_DESC_W4_BW		GENMASK(5, 4)
++
++#define RTW_RX_DESC_W5_TSFL		GENMASK(31, 0)
+ 
+ void rtw_rx_stats(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
+ 		  struct sk_buff *skb);
+-void rtw_rx_fill_rx_status(struct rtw_dev *rtwdev,
+-			   struct rtw_rx_pkt_stat *pkt_stat,
+-			   struct ieee80211_hdr *hdr,
+-			   struct ieee80211_rx_status *rx_status,
+-			   u8 *phy_status);
++void rtw_rx_query_rx_desc(struct rtw_dev *rtwdev, void *rx_desc8,
++			  struct rtw_rx_pkt_stat *pkt_stat,
++			  struct ieee80211_rx_status *rx_status);
+ void rtw_update_rx_freq_from_ie(struct rtw_dev *rtwdev, struct sk_buff *skb,
+ 				struct ieee80211_rx_status *rx_status,
+ 				struct rtw_rx_pkt_stat *pkt_stat);
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -981,8 +981,7 @@ static void rtw_sdio_rxfifo_recv(struct
+ 
+ 	while (true) {
+ 		rx_desc = skb->data;
+-		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
+-					 &rx_status);
++		rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat, &rx_status);
+ 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+ 			     pkt_stat.shift;
+ 
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -571,8 +571,8 @@ static void rtw_usb_rx_handler(struct wo
+ 
+ 		do {
+ 			rx_desc = skb->data;
+-			chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
+-						 &rx_status);
++			rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat,
++					     &rx_status);
+ 			pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+ 				     pkt_stat.shift;
+ 

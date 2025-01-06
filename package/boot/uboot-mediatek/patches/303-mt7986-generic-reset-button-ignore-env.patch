@@ -1,8 +1,8 @@
 --- a/board/mediatek/mt7986/mt7986_rfb.c
 +++ b/board/mediatek/mt7986/mt7986_rfb.c
-@@ -6,9 +6,16 @@
+@@ -5,9 +5,16 @@
+  */
  
- #include <common.h>
  #include <config.h>
 +#include <dm.h>
 +#include <button.h>
@@ -17,7 +17,7 @@
  
  #include <mtd.h>
  #include <linux/mtd/mtd.h>
-@@ -24,7 +31,22 @@ int board_init(void)
+@@ -23,7 +30,22 @@ int board_init(void)
  
  int board_late_init(void)
  {

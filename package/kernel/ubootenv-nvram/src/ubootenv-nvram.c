@@ -146,7 +146,6 @@ static struct platform_driver ubootenv_driver = {
 	.remove = ubootenv_remove,
 	.driver = {
 		.name           = NAME,
-		.owner          = THIS_MODULE,
 		.of_match_table = of_ubootenv_match,
 	},
 };

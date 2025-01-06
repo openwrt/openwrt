@@ -662,7 +662,7 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	u32 v;
 	int err = 0;
 
-	if (port > 63 || page > 4095 || reg > 31)
+	if (port > 63 || page > 8191 || reg > 31)
 		return -ENOTSUPP;
 
 	/* Take bug on RTL839x Rev <= C into account */
@@ -698,7 +698,7 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	int err = 0;
 
 	val &= 0xffff;
-	if (port > 63 || page > 4095 || reg > 31)
+	if (port > 63 || page > 8191 || reg > 31)
 		return -ENOTSUPP;
 
 	/* Take bug on RTL839x Rev <= C into account */

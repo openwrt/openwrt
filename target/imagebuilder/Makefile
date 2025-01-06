@@ -23,6 +23,7 @@ BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$
 BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host
 
 PACKAGE_SUFFIX:=$(if $(CONFIG_USE_APK),apk,ipk)
+PACKAGE_VERSION_SEPARATOR:=$(if $(CONFIG_USE_APK),-,_)
 
 all: compile
 
@@ -48,6 +49,7 @@ ifneq ($(CONFIG_USE_APK),)
 	$(call FeedSourcesAppendAPK,$(PKG_BUILD_DIR)/repositories)
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories
   endif
+	echo "packages/packages.adb" >> $(PKG_BUILD_DIR)/repositories
 
 	$(INSTALL_DATA) ./files/README.apk.md $(PKG_BUILD_DIR)/packages/README.md
 else
@@ -67,28 +69,28 @@ else
 	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
 endif
 
-ifeq ($(CONFIG_BUILDBOT),)
-  ifeq ($(CONFIG_IB_STANDALONE),)
+ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' -or -name 'kmod-*.$(PACKAGE_SUFFIX)' \) \
-		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
-  else
+	  \( \
+		-name 'base-files$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'libc$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' -or \
+		-name 'kernel$(PACKAGE_VERSION_SEPARATOR)*.$(PACKAGE_SUFFIX)' \) \
+	  -exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
+else
 	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages/ {} +
-  endif
-else
-	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' \) \
-		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
-ifneq ($(CONFIG_USE_APK),y)
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
+ifneq ($(CONFIG_USE_APK),y)
 	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
 	echo 'option check_signature'                                  >> $(PKG_BUILD_DIR)/repositories.conf
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
 	$(CP) -L $(STAGING_DIR_ROOT)/etc/opkg/keys/ $(PKG_BUILD_DIR)/
 	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
+else
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
+	$(CP) -L $(STAGING_DIR_ROOT)/etc/apk/keys/ $(PKG_BUILD_DIR)/
 endif
 endif
 
@@ -114,6 +116,7 @@ endif
 	rm -f $(IB_KDIR)/vmlinux.debug
 	# remove any file for initramfs and Per Device Rootfs initramfs files
 	rm -f $(IB_KDIR)/vmlinux-initramfs*
+	rm -f $(IB_KDIR)/vmlinuz-initramfs*
 	rm -f $(IB_KDIR)/Image-initramfs*
 	if [ -x $(LINUX_DIR)/scripts/dtc/dtc ]; then \
 		$(INSTALL_DIR) $(IB_LDIR)/scripts/dtc; \

@@ -1,19 +1,26 @@
-From bd30f19a006fb52bac80c6463c49dd2f4159f4ac Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 28 Jul 2013 16:26:41 +0200
-Subject: [PATCH 06/53] MIPS: ralink: add cpu frequency scaling
+Subject: [PATCH 2/2] MIPS: ralink: add cpu frequency scaling
 
 This feature will break udelay() and cause the delay loop to have longer delays
 when the frequency is scaled causing a performance hit.
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/ralink/cevt-rt3352.c |   38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ drivers/clocksource/timer-ralink.c | 117 ++++++++++++++++++++++-------
+ 1 file changed, 89 insertions(+), 28 deletions(-)
 
---- a/arch/mips/ralink/cevt-rt3352.c
-+++ b/arch/mips/ralink/cevt-rt3352.c
-@@ -29,6 +29,10 @@
+--- a/drivers/clocksource/timer-ralink.c
++++ b/drivers/clocksource/timer-ralink.c
+@@ -5,6 +5,7 @@
+  * Copyright (C) 2013 by John Crispin <john@phrozen.org>
+  */
+ 
++#include <asm/mach-ralink/ralink_regs.h>
+ #include <linux/clockchips.h>
+ #include <linux/clocksource.h>
+ #include <linux/interrupt.h>
+@@ -26,6 +27,10 @@
  /* enable the counter */
  #define CFG_CNT_EN		0x1
  
@@ -24,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  struct systick_device {
  	void __iomem *membase;
  	struct clock_event_device dev;
-@@ -36,21 +40,53 @@ struct systick_device {
+@@ -33,21 +38,53 @@ struct systick_device {
  	int freq_scale;
  };
  
@@ -64,7 +71,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
  static int systick_next_event(unsigned long delta,
- 				struct clock_event_device *evt)
+ 			      struct clock_event_device *evt)
  {
  	struct systick_device *sdev;
 -	u32 count;
@@ -83,18 +90,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
  
  static void systick_event_handler(struct clock_event_device *dev)
-@@ -60,20 +96,25 @@ static void systick_event_handler(struct
+@@ -57,20 +94,25 @@ static void systick_event_handler(struct
  
  static irqreturn_t systick_interrupt(int irq, void *dev_id)
  {
--	struct clock_event_device *dev = (struct clock_event_device *) dev_id;
+-	struct clock_event_device *dev = (struct clock_event_device *)dev_id;
 +	int ret = 0;
 +	struct clock_event_device *cdev;
 +	struct systick_device *sdev;
  
 -	dev->event_handler(dev);
 +	if (read_c0_cause() & STATUSF_IP7) {
-+		cdev = (struct clock_event_device *) dev_id;
++		cdev = (struct clock_event_device *)dev_id;
 +		sdev = container_of(cdev, struct systick_device, dev);
 +
 +		/* Clear Count/Compare Interrupt */
@@ -117,7 +124,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		.features		= CLOCK_EVT_FEAT_ONESHOT,
  		.set_next_event		= systick_next_event,
  		.set_state_shutdown	= systick_shutdown,
-@@ -91,7 +132,13 @@ static int systick_shutdown(struct clock
+@@ -88,7 +130,13 @@ static int systick_shutdown(struct clock
  	if (sdev->irq_requested)
  		free_irq(systick.dev.irq, &systick.dev);
  	sdev->irq_requested = 0;
@@ -132,7 +139,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
-@@ -116,33 +163,46 @@ static int systick_set_oneshot(struct cl
+@@ -113,33 +161,46 @@ static int systick_set_oneshot(struct cl
  	return 0;
  }
  

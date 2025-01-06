@@ -70,7 +70,7 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
 +/delete-node/ &spi0;
 --- a/arch/mips/mach-ath79/Kconfig
 +++ b/arch/mips/mach-ath79/Kconfig
-@@ -58,6 +58,10 @@ config TARGET_AP152
+@@ -67,6 +67,10 @@ config TARGET_AP152
  	bool "AP152 Reference Board"
  	select SOC_QCA956X
  
@@ -81,7 +81,7 @@ Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
  config BOARD_TPLINK_WDR4300
  	bool "TP-Link WDR4300 Board"
  	select SOC_AR934X
-@@ -67,6 +71,7 @@ endchoice
+@@ -76,6 +80,7 @@ endchoice
  source "board/qca/ap121/Kconfig"
  source "board/qca/ap143/Kconfig"
  source "board/qca/ap152/Kconfig"

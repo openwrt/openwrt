@@ -107,7 +107,8 @@ define Device/cznic_turris-omnia
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
     wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     kmod-mt7915-firmware partx-utils kmod-i2c-mux-pca954x kmod-leds-turris-omnia \
-    kmod-turris-omnia-mcu kmod-gpio-button-hotplug omnia-mcu-firmware omnia-mcutool
+    kmod-turris-omnia-mcu kmod-gpio-button-hotplug omnia-eeprom omnia-mcu-firmware \
+    omnia-mcutool
   IMAGES := sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   SUPPORTED_DEVICES += armada-385-turris-omnia
@@ -444,6 +445,6 @@ define Device/synology_ds213j
   DEVICE_PACKAGES := \
     kmod-rtc-s35390a kmod-hwmon-gpiofan kmod-hwmon-drivetemp \
     kmod-md-raid0 kmod-md-raid1 kmod-md-mod e2fsprogs mdadm \
-    -ppp -kmod-nft-offload -firewall4 -dnsmasq -odhcpd-ipv6only
+    -ppp -kmod-nft-offload -dnsmasq -odhcpd-ipv6only
 endef
 TARGET_DEVICES += synology_ds213j

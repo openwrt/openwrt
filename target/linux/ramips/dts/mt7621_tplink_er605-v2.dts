@@ -30,13 +30,13 @@
 
 		led_usb: usb {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_USB;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

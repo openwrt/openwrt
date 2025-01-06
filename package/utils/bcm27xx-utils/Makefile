@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bcm27xx-utils
-PKG_VERSION:=2024-04-24
+PKG_VERSION:=2024.12.19
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/raspberrypi/utils.git
-PKG_SOURCE_VERSION:=451b9881b72cb994c102724b5a7d9b93f97dc315
-PKG_MIRROR_HASH:=b453976171187e0ffe7cacfdcab36cec6b5d02db8b6d978cb9afbbcafcfcff9d
+PKG_SOURCE_VERSION:=0c02957911da1c661be201236c4f2a2be1778b3e
+PKG_MIRROR_HASH:=8bc87c929726a13d3d3e16157033d13f78a1f85d548db131c45c3a4cbdd1e402
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=no-lto
@@ -45,6 +45,8 @@ define Package/bcm27xx-utils/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/eepdump $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/eepflash.sh $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/eepmake $(1)/usr/bin
+
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/kdtc $(1)/usr/bin
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/otpset $(1)/usr/bin
 

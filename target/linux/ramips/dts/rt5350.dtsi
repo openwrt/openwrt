@@ -111,6 +111,8 @@
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -127,6 +129,8 @@
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 
 			gpio-controller;
 			#gpio-cells = <2>;

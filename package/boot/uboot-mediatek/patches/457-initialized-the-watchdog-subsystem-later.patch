@@ -1,0 +1,54 @@
+From 9c1ad8a18ac1a20aee7a617964bcae3e90dac700 Mon Sep 17 00:00:00 2001
+From: Enrico Mioso <mrkiko.rs@gmail.com>
+Date: Wed, 23 Oct 2024 17:46:35 +0200
+Subject: [PATCH] uboot-mediatek: initialized the watchdog subsystem later
+
+Initialize the watchdog subsystem later during initialization, to allow for
+the gpio-wdt driver to work.
+
+Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
+---
+ common/board_r.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- a/common/board_r.c
++++ b/common/board_r.c
+@@ -663,19 +663,13 @@ static init_fnc_t init_sequence_r[] = {
+ 	serial_initialize,
+ 	initr_announce,
+ 	dm_announce,
+-#if CONFIG_IS_ENABLED(WDT)
+-	initr_watchdog,
+-#endif
+-	INIT_FUNC_WATCHDOG_RESET
+ 	arch_initr_trap,
+ #if defined(CONFIG_BOARD_EARLY_INIT_R)
+ 	board_early_init_r,
+ #endif
+-	INIT_FUNC_WATCHDOG_RESET
+ #ifdef CONFIG_POST
+ 	post_output_backlog,
+ #endif
+-	INIT_FUNC_WATCHDOG_RESET
+ #if defined(CONFIG_PCI_INIT_R) && defined(CONFIG_SYS_EARLY_PCI_INIT)
+ 	/*
+ 	 * Do early PCI configuration _before_ the flash gets initialised,
+@@ -690,7 +684,6 @@ static init_fnc_t init_sequence_r[] = {
+ #ifdef CONFIG_MTD_NOR_FLASH
+ 	initr_flash,
+ #endif
+-	INIT_FUNC_WATCHDOG_RESET
+ #if defined(CONFIG_PPC) || defined(CONFIG_M68K) || defined(CONFIG_X86)
+ 	/* initialize higher level parts of CPU like time base and timers */
+ 	cpu_init_r,
+@@ -719,6 +712,10 @@ static init_fnc_t init_sequence_r[] = {
+ #ifdef CONFIG_PVBLOCK
+ 	initr_pvblock,
+ #endif
++#if CONFIG_IS_ENABLED(WDT)
++	initr_watchdog,
++#endif
++	INIT_FUNC_WATCHDOG_RESET
+ 	initr_env,
+ #ifdef CONFIG_SYS_MALLOC_BOOTPARAMS
+ 	initr_malloc_bootparams,

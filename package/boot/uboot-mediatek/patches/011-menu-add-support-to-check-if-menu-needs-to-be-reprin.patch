@@ -1,0 +1,112 @@
+From f1cbdd3330f0055dfbff0ef7d86276c4cc3cff2a Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 29 Oct 2024 17:47:16 +0800
+Subject: [PATCH 2/3] menu: add support to check if menu needs to be reprinted
+
+This patch adds a new callback named need_reprint for menu.
+The need_reprint will be called before printing the menu. If the
+callback exists and returns FALSE, menu printing will be canceled.
+
+This is very useful if the menu was not changed. It can save time
+for serial-based menu to handle more input data.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ boot/pxe_utils.c |  2 +-
+ cmd/bootmenu.c   |  2 +-
+ cmd/eficonfig.c  |  2 +-
+ common/menu.c    | 11 +++++++++++
+ include/menu.h   |  1 +
+ 5 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/boot/pxe_utils.c
++++ b/boot/pxe_utils.c
+@@ -1449,7 +1449,7 @@ static struct menu *pxe_menu_to_menu(str
+ 	 * Create a menu and add items for all the labels.
+ 	 */
+ 	m = menu_create(cfg->title, DIV_ROUND_UP(cfg->timeout, 10),
+-			cfg->prompt, NULL, label_print, NULL, NULL);
++			cfg->prompt, NULL, label_print, NULL, NULL, NULL);
+ 	if (!m)
+ 		return NULL;
+ 
+--- a/cmd/bootmenu.c
++++ b/cmd/bootmenu.c
+@@ -506,7 +506,7 @@ static enum bootmenu_ret bootmenu_show(i
+ 
+ 	menu = menu_create(NULL, bootmenu->delay, 1, menu_display_statusline,
+ 			   bootmenu_print_entry, bootmenu_choice_entry,
+-			   bootmenu);
++			   NULL, bootmenu);
+ 	if (!menu) {
+ 		bootmenu_destroy(bootmenu);
+ 		return BOOTMENU_RET_FAIL;
+--- a/cmd/eficonfig.c
++++ b/cmd/eficonfig.c
+@@ -443,7 +443,7 @@ efi_status_t eficonfig_process_common(st
+ 		efi_menu->menu_desc = menu_desc;
+ 
+ 	menu = menu_create(NULL, 0, 1, display_statusline, item_data_print,
+-			   item_choice, efi_menu);
++			   item_choice, NULL, efi_menu);
+ 	if (!menu)
+ 		return EFI_INVALID_PARAMETER;
+ 
+--- a/common/menu.c
++++ b/common/menu.c
+@@ -43,6 +43,7 @@ struct menu {
+ 	void (*display_statusline)(struct menu *);
+ 	void (*item_data_print)(void *);
+ 	char *(*item_choice)(void *);
++	bool (*need_reprint)(void *);
+ 	void *item_choice_data;
+ 	struct list_head items;
+ 	int item_cnt;
+@@ -117,6 +118,11 @@ static inline void *menu_item_destroy(st
+  */
+ static inline void menu_display(struct menu *m)
+ {
++	if (m->need_reprint) {
++		if (!m->need_reprint(m->item_choice_data))
++			return;
++	}
++
+ 	if (m->title) {
+ 		puts(m->title);
+ 		putc('\n');
+@@ -362,6 +368,9 @@ int menu_item_add(struct menu *m, char *
+  * item. Returns a key string corresponding to the chosen item or NULL if
+  * no item has been selected.
+  *
++ * need_reprint - If not NULL, will be called before printing the menu.
++ * Returning FALSE means the menu does not need reprint.
++ *
+  * item_choice_data - Will be passed as the argument to the item_choice function
+  *
+  * Returns a pointer to the menu if successful, or NULL if there is
+@@ -371,6 +380,7 @@ struct menu *menu_create(char *title, in
+ 				void (*display_statusline)(struct menu *),
+ 				void (*item_data_print)(void *),
+ 				char *(*item_choice)(void *),
++				bool (*need_reprint)(void *),
+ 				void *item_choice_data)
+ {
+ 	struct menu *m;
+@@ -386,6 +396,7 @@ struct menu *menu_create(char *title, in
+ 	m->display_statusline = display_statusline;
+ 	m->item_data_print = item_data_print;
+ 	m->item_choice = item_choice;
++	m->need_reprint = need_reprint;
+ 	m->item_choice_data = item_choice_data;
+ 	m->item_cnt = 0;
+ 
+--- a/include/menu.h
++++ b/include/menu.h
+@@ -13,6 +13,7 @@ struct menu *menu_create(char *title, in
+ 				void (*display_statusline)(struct menu *),
+ 				void (*item_data_print)(void *),
+ 				char *(*item_choice)(void *),
++				bool (*need_reprint)(void *),
+ 				void *item_choice_data);
+ int menu_default_set(struct menu *m, char *item_key);
+ int menu_get_choice(struct menu *m, void **choice);

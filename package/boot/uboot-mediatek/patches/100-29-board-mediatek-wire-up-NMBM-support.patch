@@ -12,7 +12,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 
 --- a/board/mediatek/mt7622/mt7622_rfb.c
 +++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -10,6 +10,11 @@
+@@ -9,6 +9,11 @@
  #include <init.h>
  #include <asm/global_data.h>
  
@@ -24,7 +24,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
  DECLARE_GLOBAL_DATA_PTR;
  
  int board_init(void)
-@@ -23,3 +28,36 @@ int board_late_init(void)
+@@ -22,3 +27,36 @@ int board_late_init(void)
  	env_relocate();
  	return 0;
  }
@@ -64,7 +64,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 --- a/board/mediatek/mt7629/mt7629_rfb.c
 +++ b/board/mediatek/mt7629/mt7629_rfb.c
 @@ -6,6 +6,11 @@
- #include <common.h>
+ #include <config.h>
  #include <asm/global_data.h>
  
 +#include <mtd.h>
@@ -114,11 +114,10 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 +}
 --- a/board/mediatek/mt7981/mt7981_rfb.c
 +++ b/board/mediatek/mt7981/mt7981_rfb.c
-@@ -4,7 +4,58 @@
+@@ -4,7 +4,57 @@
   * Author: Sam Shih <sam.shih@mediatek.com>
   */
  
-+#include <common.h>
 +#include <config.h>
 +#include <env.h>
 +#include <init.h>
@@ -175,11 +174,10 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 +}
 --- a/board/mediatek/mt7986/mt7986_rfb.c
 +++ b/board/mediatek/mt7986/mt7986_rfb.c
-@@ -4,7 +4,60 @@
+@@ -4,7 +4,59 @@
   * Author: Sam Shih <sam.shih@mediatek.com>
   */
  
-+#include <common.h>
 +#include <config.h>
 +#include <env.h>
 +#include <init.h>

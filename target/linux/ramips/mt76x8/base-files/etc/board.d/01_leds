@@ -58,7 +58,8 @@ hiwifi,hc5661a|\
 hiwifi,hc5761a)
 	ucidef_set_led_switch "internet" "internet" "blue:internet" "switch0" "0x10"
 	;;
-keenetic,kn-1613)
+keenetic,kn-1613|\
+keenetic,kn-1713)
 	ucidef_set_led_switch "internet" "internet" "green:internet" "switch0" "0x01"
 	;;
 mediatek,linkit-smart-7688)
@@ -185,6 +186,13 @@ zbtlink,zbt-we1226)
 	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x01"
 	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x02"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x10"
+	;;
+zbtlink,zbt-we2426-b)
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
+	ucidef_set_led_switch "lan1" "lan1" "green:lan-1" "switch0" "0x01"
+	ucidef_set_led_switch "lan2" "lan2" "green:lan-2" "switch0" "0x02"
+	ucidef_set_led_switch "lan3" "lan3" "green:lan-3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "lan4" "green:lan-4" "switch0" "0x08"
 	;;
 zyxel,keenetic-extra-ii)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"

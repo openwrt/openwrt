@@ -195,7 +195,7 @@ struct rtl838x_eth_priv {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
-	u8 smi_bus[MAX_PORTS];
+	int smi_bus[MAX_PORTS];
 	u8 smi_addr[MAX_PORTS];
 	u32 sds_id[MAX_PORTS];
 	bool smi_bus_isc45[MAX_SMI_BUSSES];
@@ -2008,8 +2008,9 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
 		int pos;
 
-		if (priv->smi_bus[i] > 3)
+		if (priv->smi_bus[i] < 0)
 			continue;
+
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
 			    RTL930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
@@ -2114,8 +2115,11 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
 	/* Mapping of port to phy-addresses on an SMI bus */
 	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
-	for (int i = 0; i < 56; i++) {
+	for (int i = 0; i < RTL931X_CPU_PORT; i++) {
 		u32 pos;
+
+		if (priv->smi_bus[i] < 0)
+			continue;
 
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
@@ -2282,30 +2286,35 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
-			smi_addr[0] = 0;
-			smi_addr[1] = pn;
+		if (pn >= MAX_PORTS) {
+			pr_err("%s: illegal port number %d\n", __func__, pn);
+			return -ENODEV;
 		}
 
 		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
 			priv->sds_id[pn] = -1;
-		else {
+		else
 			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
-		}
 
-		if (pn < MAX_PORTS) {
+		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
+			priv->smi_bus[pn] = 0;
+			priv->smi_addr[pn] = pn;
+		} else {
 			priv->smi_bus[pn] = smi_addr[0];
 			priv->smi_addr[pn] = smi_addr[1];
-		} else {
-			pr_err("%s: illegal port number %d\n", __func__, pn);
 		}
 
-		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[smi_addr[0]] = true;
-
-		if (of_property_read_bool(dn, "phy-is-integrated")) {
-			priv->phy_is_internal[pn] = true;
+		if (priv->smi_bus[pn] >= MAX_SMI_BUSSES) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
+			return -ENODEV;
 		}
+
+		priv->phy_is_internal[pn] = of_property_read_bool(dn, "phy-is-integrated");
+
+		if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0)
+			priv->smi_bus[pn]= -1;
+		else if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
+			priv->smi_bus_isc45[priv->smi_bus[pn]] = true;
 	}
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
@@ -2326,24 +2335,12 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	}
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
-	ret = of_mdiobus_register(priv->mii_bus, mii_np);
+	ret = devm_of_mdiobus_register(&priv->pdev->dev, priv->mii_bus, mii_np);
 
 err_put_node:
 	of_node_put(mii_np);
 
 	return ret;
-}
-
-static int rtl838x_mdio_remove(struct rtl838x_eth_priv *priv)
-{
-	pr_debug("%s called\n", __func__);
-	if (!priv->mii_bus)
-		return 0;
-
-	mdiobus_unregister(priv->mii_bus);
-	mdiobus_free(priv->mii_bus);
-
-	return 0;
 }
 
 static netdev_features_t rtl838x_fix_features(struct net_device *dev,
@@ -2489,11 +2486,9 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
 
-	dev = alloc_etherdev_mqs(sizeof(struct rtl838x_eth_priv), TXRINGS, rxrings);
-	if (!dev) {
-		err = -ENOMEM;
-		goto err_free;
-	}
+	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rtl838x_eth_priv), TXRINGS, rxrings);
+	if (!dev)
+		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	priv = netdev_priv(dev);
 
@@ -2504,16 +2499,14 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 			resource_size(res), res->name);
 		if (!mem) {
 			dev_err(&pdev->dev, "cannot request memory space\n");
-			err = -ENXIO;
-			goto err_free;
+			return -ENXIO;
 		}
 
 		dev->mem_start = mem->start;
 		dev->mem_end   = mem->end;
 	} else {
 		dev_err(&pdev->dev, "cannot request IO resource\n");
-		err = -ENXIO;
-		goto err_free;
+		return -ENXIO;
 	}
 
 	/* Allocate buffer memory */
@@ -2522,8 +2515,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	                                    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
-		err = -ENOMEM;
-		goto err_free;
+		return -ENOMEM;
 	}
 
 	/* Allocate ring-buffer space at the end of the allocated memory */
@@ -2581,7 +2573,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->irq = platform_get_irq(pdev, 0);
 	if (dev->irq < 0) {
 		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
-		goto err_free;
+		return err;
 	}
 
 	err = devm_request_irq(&pdev->dev, dev->irq, priv->r->net_irq,
@@ -2589,7 +2581,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	if (err) {
 		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
 			   __func__, err);
-		goto err_free;
+		return err;
 	}
 
 	rtl8380_init_mac(priv);
@@ -2628,11 +2620,11 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	err = rtl838x_mdio_init(priv);
 	if (err)
-		goto err_free;
+		return err;
 
-	err = register_netdev(dev);
+	err = devm_register_netdev(&pdev->dev, dev);
 	if (err)
-		goto err_free;
+		return err;
 
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
@@ -2646,8 +2638,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	err = of_get_phy_mode(dn, &phy_mode);
 	if (err < 0) {
 		dev_err(&pdev->dev, "incorrect phy-mode\n");
-		err = -EINVAL;
-		goto err_free;
+		return -EINVAL;
 	}
 
 	priv->pcs.ops = &rtl838x_pcs_ops;
@@ -2658,19 +2649,11 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
 				 phy_mode, &rtl838x_phylink_ops);
 
-	if (IS_ERR(phylink)) {
-		err = PTR_ERR(phylink);
-		goto err_free;
-	}
+	if (IS_ERR(phylink))
+		return PTR_ERR(phylink);
 	priv->phylink = phylink;
 
 	return 0;
-
-err_free:
-	pr_err("Error setting up netdev, freeing it again.\n");
-	free_netdev(dev);
-
-	return err;
 }
 
 static int rtl838x_eth_remove(struct platform_device *pdev)
@@ -2680,16 +2663,12 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 
 	if (dev) {
 		pr_info("Removing platform driver for rtl838x-eth\n");
-		rtl838x_mdio_remove(priv);
 		rtl838x_hw_stop(priv);
 
 		netif_tx_stop_all_queues(dev);
 
 		for (int i = 0; i < priv->rxrings; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
-
-		unregister_netdev(dev);
-		free_netdev(dev);
 	}
 
 	return 0;

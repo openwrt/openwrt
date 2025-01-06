@@ -1,0 +1,44 @@
+From 8b9c12757f919157752646faf3821abf2b7d2a64 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Fri, 22 Nov 2024 15:30:05 +0800
+Subject: [PATCH] arm64: dts: rockchip: add reset-names for combphy on rk3568
+
+The reset-names of combphy are missing, add it.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Fixes: fd3ac6e80497 ("dt-bindings: phy: rockchip: rk3588 has two reset lines")
+Link: https://lore.kernel.org/r/20241122073006.99309-1-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi      | 1 +
+ arch/arm64/boot/dts/rockchip/rk356x-base.dtsi | 2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+@@ -223,6 +223,7 @@
+ 		assigned-clocks = <&pmucru CLK_PCIEPHY0_REF>;
+ 		assigned-clock-rates = <100000000>;
+ 		resets = <&cru SRST_PIPEPHY0>;
++		reset-names = "phy";
+ 		rockchip,pipe-grf = <&pipegrf>;
+ 		rockchip,pipe-phy-grf = <&pipe_phy_grf0>;
+ 		#phy-cells = <1>;
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -1747,6 +1747,7 @@
+ 		assigned-clocks = <&pmucru CLK_PCIEPHY1_REF>;
+ 		assigned-clock-rates = <100000000>;
+ 		resets = <&cru SRST_PIPEPHY1>;
++		reset-names = "phy";
+ 		rockchip,pipe-grf = <&pipegrf>;
+ 		rockchip,pipe-phy-grf = <&pipe_phy_grf1>;
+ 		#phy-cells = <1>;
+@@ -1763,6 +1764,7 @@
+ 		assigned-clocks = <&pmucru CLK_PCIEPHY2_REF>;
+ 		assigned-clock-rates = <100000000>;
+ 		resets = <&cru SRST_PIPEPHY2>;
++		reset-names = "phy";
+ 		rockchip,pipe-grf = <&pipegrf>;
+ 		rockchip,pipe-phy-grf = <&pipe_phy_grf2>;
+ 		#phy-cells = <1>;

@@ -3,6 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nu801
+PKG_FLAGS:=nonshared
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git

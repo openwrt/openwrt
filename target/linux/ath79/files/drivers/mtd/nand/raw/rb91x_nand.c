@@ -356,7 +356,6 @@ static struct platform_driver rb91x_nand_driver = {
 	.remove	= rb91x_nand_remove,
 	.driver	= {
 		.name	= "rb91x-nand",
-		.owner	= THIS_MODULE,
 		.of_match_table = rb91x_nand_match,
 	},
 };

@@ -12,9 +12,10 @@
 	compatible = "openembed,som7981", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &wlan2g_led;
-		led-failsafe = &wlan2g_led;
-		led-upgrade = &wlan2g_led;
+		led-boot = &act_led;
+		led-failsafe = &act_led;
+		led-running = &act_led;
+		led-upgrade = &act_led;
 		serial0 = &uart0;
 	};
 
@@ -26,6 +27,11 @@
 		reg = <0 0x40000000 0 0x40000000>;
 	};
 
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -34,12 +40,6 @@
 			linux,code = <KEY_RESTART>;
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 		};
-
-		button-wps {
-			label = "wps";
-			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	gpio-leds {
@@ -47,28 +47,27 @@
 
 		led-0 {
 			function = LED_FUNCTION_LAN;
-			color = <LED_COLOR_ID_AMBER>;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led-1 {
 			function = LED_FUNCTION_LAN;
-			color = <LED_COLOR_ID_GREEN>;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g_led: led-2 {
-			function = LED_FUNCTION_WLAN_2GHZ;
-			color = <LED_COLOR_ID_RED>;
+		led-2 {
+			function = LED_FUNCTION_PANIC;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			panic-indicator;
 		};
 
-		led-3 {
-			function = LED_FUNCTION_WLAN_5GHZ;
+		act_led: led-3 {
+			function = LED_FUNCTION_ACTIVITY;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
@@ -97,14 +96,38 @@
 	};
 };
 
+&i2c0 {
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	eeprom@50 {
+		compatible = "atmel,24c64";
+		reg = <0x50>;
+		page-size = <32>;
+	};
+
+	rtc@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		#clock-cells = <0>;
+	};
+
+	crypto@60 {
+		compatible = "atmel,atecc508a";
+		reg = <0x60>;
+	};
+};
+
 &mdio_bus {
 	phy0: ethernet-phy@5 {
 		reg = <5>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		phy-mode = "2500base-x";
 		reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
-		reset-assert-us = <10000>;
-		reset-deassert-us = <50000>;
+		reset-assert-us = <15000>;
+		reset-deassert-us = <68000>;
 		realtek,aldps-enable;
 	};
 };
@@ -141,7 +164,6 @@
 			};
 
 			partition@180000 {
-				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x180000 0x100000>;
 				read-only;
@@ -184,6 +206,13 @@
 };
 
 &pio {
+	i2c0_pins: i2c0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
 	spi0_flash_pins: spi0-pins {
 		mux {
 			function = "spi";
@@ -202,9 +231,42 @@
 			mediatek,pull-down-adv = <0>;
 		};
 	};
+
+	uart1_pins: uart1-pins {
+		mux {
+			function = "uart";
+			groups = "uart1_3";
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2_0_tx_rx";
+		};
+	};
+
+	wwan_rst_h: wwan-rst-h {
+		pins = "GPIO_WPS";
+		drive-strength = <8>;
+		mediatek,pull-down-adv = <0>;
+		output-low;
+	};
 };
 
 &uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
 	status = "okay";
 };
 
@@ -220,8 +282,16 @@
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_a 0>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &xhci {
+	pinctrl-names = "default";
+	pinctrl-0 = <&wwan_rst_h>;
 	status = "okay";
 };

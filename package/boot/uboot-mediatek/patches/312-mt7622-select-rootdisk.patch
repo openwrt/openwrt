@@ -1,6 +1,6 @@
 --- a/board/mediatek/mt7622/mt7622_rfb.c
 +++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -11,7 +11,9 @@
+@@ -10,7 +10,9 @@
  #include <env.h>
  #include <init.h>
  #include <asm/global_data.h>
@@ -10,7 +10,7 @@
  
  #ifndef CONFIG_RESET_BUTTON_LABEL
  #define CONFIG_RESET_BUTTON_LABEL "reset"
-@@ -22,10 +24,43 @@
+@@ -21,10 +23,43 @@
  #include <nmbm/nmbm.h>
  #include <nmbm/nmbm-mtd.h>
  
@@ -54,7 +54,7 @@
  	return 0;
  }
  
-@@ -83,3 +118,84 @@ int board_nmbm_init(void)
+@@ -82,3 +117,84 @@ int board_nmbm_init(void)
  
  	return 0;
  }

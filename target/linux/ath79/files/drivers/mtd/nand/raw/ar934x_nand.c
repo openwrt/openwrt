@@ -1359,7 +1359,6 @@ static const struct nand_controller_ops ar934x_nfc_controller_ops = {
 static int ar934x_nfc_probe(struct platform_device *pdev)
 {
 	struct ar934x_nfc *nfc;
-	struct resource *res;
 	struct mtd_info *mtd;
 	struct nand_chip *nand;
 	int ret;
@@ -1367,19 +1366,13 @@ static int ar934x_nfc_probe(struct platform_device *pdev)
 	pdev->dev.dma_mask = &ar934x_nfc_dma_mask;
 	pdev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!res) {
-		dev_err(&pdev->dev, "failed to get I/O memory\n");
-		return -EINVAL;
-	}
-
 	nfc = devm_kzalloc(&pdev->dev, sizeof(struct ar934x_nfc), GFP_KERNEL);
 	if (!nfc) {
 		dev_err(&pdev->dev, "failed to allocate driver data\n");
 		return -ENOMEM;
 	}
 
-	nfc->base = devm_ioremap_resource(&pdev->dev, res);
+	nfc->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(nfc->base)) {
 		dev_err(&pdev->dev, "failed to remap I/O memory\n");
 		return PTR_ERR(nfc->base);
@@ -1485,7 +1478,6 @@ static struct platform_driver ar934x_nfc_driver = {
 	.remove		= ar934x_nfc_remove,
 	.driver = {
 		.name	= AR934X_NFC_DRIVER_NAME,
-		.owner	= THIS_MODULE,
 		.of_match_table = ar934x_nfc_match,
 	},
 };

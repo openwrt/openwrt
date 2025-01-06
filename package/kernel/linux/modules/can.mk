@@ -245,6 +245,25 @@ endef
 $(eval $(call KernelPackage,can-usb-esd))
 
 
+define KernelPackage/can-usb-gs
+  TITLE:=Geschwister Schneider UG interfaces
+  KCONFIG:=CONFIG_CAN_GS_USB
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/usb/gs_usb.ko
+  AUTOLOAD:=$(call AutoProbe,gs_usb)
+  $(call AddDepends/can,+kmod-usb-core)
+endef
+
+define KernelPackage/can-usb-gsr/description
+  This driver supports the Geschwister Schneider and
+  bytewerk.org candleLight compatible
+  (https://github.com/candle-usb/candleLight_fw) USB/CAN
+  interfaces.
+endef
+
+$(eval $(call KernelPackage,can-usb-gs))
+
+
 define KernelPackage/can-usb-kvaser
   TITLE:=Kvaser CAN/USB interface
   KCONFIG:=CONFIG_CAN_KVASER_USB

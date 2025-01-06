@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
-@@ -0,0 +1,887 @@
+@@ -0,0 +1,888 @@
 +#ifndef CONFIG_SOC_AMAZON_SE
 +
 +#include <linux/kernel.h>
@@ -989,7 +989,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ltq_w32(0xfff, LQ_GPTU_IRNCR);
 +
 +	memset(&timer_dev, 0, sizeof(timer_dev));
-+	mutex_init(&timer_dev.gptu_mutex);
++	ret = devm_mutex_init(&pdev->dev, &timer_dev.gptu_mutex);
++	if (ret)
++		return ret;
 +
 +	lq_enable_gptu();
 +	timer_dev.number_of_timers = GPTU_ID_CFG * 2;
@@ -1043,7 +1045,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.probe = gptu_probe,
 +	.driver = {
 +		.name = "gptu-xway",
-+		.owner = THIS_MODULE,
 +		.of_match_table = gptu_match,
 +	},
 +};

@@ -98,10 +98,9 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
 
-		nvmem-cells = <&macaddr_oemdata_1d 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_oemdata_1d 1>, <&cal_oemdata_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -161,7 +160,7 @@
 				reg = <0x100000 0xe00000>;
 			};
 
-			oemdata: partition@fe0000 {
+			partition@fe0000 {
 				label = "oemdata";
 				reg = <0xfe0000 0x010000>;
 				read-only;
@@ -175,6 +174,14 @@
 						compatible = "mac-base";
 						reg = <0x1d 0x6>;
 						#nvmem-cell-cells = <1>;
+					};
+
+					cal_oemdata_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_oemdata_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
 					};
 				};
 			};
@@ -190,9 +197,8 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
-	nvmem-cells = <&macaddr_oemdata_1d 0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_oemdata_1d 0>, <&cal_oemdata_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &mdio0 {

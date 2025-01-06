@@ -14,8 +14,7 @@
 / {
 	aliases {
 		serial0 = &uart0;
-		ethernet0 = &gmac0;
-		ethernet1 = &gmac1;
+		label-mac-device = &gmac1;
 		led-boot = &led_status_green;
 		led-failsafe = &led_status_red;
 		led-running = &led_status_white;
@@ -188,16 +187,17 @@
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
-
+		nvmem-cells = <&macaddr 1>;
+		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 	};
 
 	gmac1: mac@1 {
-		label = "wan";
-
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
-
+		label = "wan";
+		nvmem-cells = <&macaddr 0>;
+		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 	};
 
@@ -254,6 +254,47 @@
 	no-sd;
 	no-sdio;
 	status = "okay";
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+
+						eeprom_factory_a0000: eeprom@a0000 {
+							reg = <0xa0000 0x1000>;
+						};
+					};
+				};
+
+				block-partition-mfginfo {
+					partname = "mfginfo";
+
+					nvmem-layout {
+						compatible = "adtran,mfginfo";
+
+						macaddr: mfg-mac {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+			};
+		};
+	};
 };
 
 &pcie {
@@ -266,6 +307,9 @@
 
 		radio0: mt7915@0,0 {
 			reg = <0x0000 0 0 0 0>;
+
+			nvmem-cells = <&eeprom_factory_a0000>, <&macaddr 4>;
+			nvmem-cell-names = "eeprom", "mac-address";
 		};
 	};
 };
@@ -275,9 +319,28 @@
 };
 
 &wifi {
-	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	pinctrl-names = "default";
 	pinctrl-0 = <&wf_2g_5g_pins>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	status = "okay";
+
+	band@0 {
+		/* 2.4 GHz */
+		reg = <0>;
+		nvmem-cells = <&macaddr 2>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		/* lower 5 GHz */
+		reg = <1>;
+		nvmem-cells = <&macaddr 3>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &pio {

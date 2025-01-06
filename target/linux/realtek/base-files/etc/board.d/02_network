@@ -36,6 +36,8 @@ hpe,1920-8g-poe-65w|\
 hpe,1920-8g-poe-180w|\
 hpe,1920-16g|\
 hpe,1920-24g|\
+hpe,1920-24g-poe-180w|\
+hpe,1920-24g-poe-370w|\
 hpe,1920-48g|\
 hpe,1920-48g-poe)
 	label_mac=$(mtd_get_mac_binary factory 0x68)
@@ -94,6 +96,12 @@ hpe,1920-8g-poe-65w)
 	;;
 hpe,1920-8g-poe-180w)
 	ucidef_set_poe 180 "$(filter_port_list_reverse "$lan_list" "lan9 lan10")"
+	;;
+hpe,1920-24g-poe-180w)
+	ucidef_set_poe 180 "$(filter_port_list_reverse "$lan_list" "lan25 lan26 lan27 lan28")"
+	;;
+hpe,1920-24g-poe-370w)
+	ucidef_set_poe 370 "$(filter_port_list_reverse "$lan_list" "lan25 lan26 lan27 lan28")"
 	;;
 hpe,1920-48g-poe)
 	ucidef_set_poe 370 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23

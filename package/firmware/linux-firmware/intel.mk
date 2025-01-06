@@ -173,7 +173,7 @@ $(eval $(call BuildPackage,iwlwifi-firmware-iwl9260))
 Package/iwlwifi-firmware-ax101 = $(call Package/firmware-default,Intel AX101 firmware)
 define Package/iwlwifi-firmware-ax101/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-hr-b0-83.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-hr-b0-89.ucode $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax101))
 
@@ -194,15 +194,23 @@ $(eval $(call BuildPackage,iwlwifi-firmware-ax201))
 Package/iwlwifi-firmware-ax210 = $(call Package/firmware-default,Intel AX210 firmware)
 define Package/iwlwifi-firmware-ax210/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-83.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-89.ucode $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0.pnvm $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax210))
 
+Package/iwlwifi-firmware-ax411 = $(call Package/firmware-default,Intel AX411 firmware)
+define Package/iwlwifi-firmware-ax411/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-gf4-a0-89.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-gf4-a0.pnvm $(1)/lib/firmware
+endef
+$(eval $(call BuildPackage,iwlwifi-firmware-ax411))
+
 Package/iwlwifi-firmware-be200 = $(call Package/firmware-default,Intel BE200 firmware)
 define Package/iwlwifi-firmware-be200/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-gl-c0-fm-c0-83.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-gl-c0-fm-c0-92.ucode $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-gl-c0-fm-c0.pnvm $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-be200))
@@ -216,29 +224,49 @@ define Package/e100-firmware/install
 endef
 $(eval $(call BuildPackage,e100-firmware))
 
-Package/intel-igpu-firmware-dmc = $(call Package/firmware-default,Intel iGPU DMC Display MC firmware)
-define Package/intel-igpu-firmware-dmc/install
-	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_dmc_*.bin* \
-		$(1)/lib/firmware/i915/
+i915_deps:=+i915-firmware-dmc +i915-firmware-guc +i915-firmware-huc +i915-firmware-gsc
+Package/i915-firmware = $(call Package/firmware-default,Intel I915 firmware \(meta package\),$(i915_deps),LICENSE.i915)
+define Package/i915-firmware/install
+	true
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-dmc))
+$(eval $(call BuildPackage,i915-firmware))
 
-Package/intel-igpu-firmware-guc = $(call Package/firmware-default,Intel iGPU GUC Graphics MC firmware)
-define Package/intel-igpu-firmware-guc/install
+Package/i915-firmware-dmc = $(call Package/firmware-default,Intel I915 DMC firmware,,LICENSE.i915)
+define Package/i915-firmware-dmc/install
 	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_guc_*.bin* \
-		$(1)/lib/firmware/i915/
+	for f in $(PKG_BUILD_DIR)/i915/*_dmc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = dmc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-guc))
+$(eval $(call BuildPackage,i915-firmware-dmc))
 
-Package/intel-igpu-firmware-huc = $(call Package/firmware-default,Intel iGPU HUC H.265 MC firmware)
-define Package/intel-igpu-firmware-huc/install
+Package/i915-firmware-guc = $(call Package/firmware-default,Intel I915 GUC firmware,,LICENSE.i915)
+define Package/i915-firmware-guc/install
 	$(INSTALL_DIR) $(1)/lib/firmware/i915
-	$(CP) \
-		$(PKG_BUILD_DIR)/i915/*_huc_*.bin* \
-		$(1)/lib/firmware/i915/
+	for f in $(PKG_BUILD_DIR)/i915/*_guc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = guc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
 endef
-$(eval $(call BuildPackage,intel-igpu-firmware-huc))
+$(eval $(call BuildPackage,i915-firmware-guc))
+
+Package/i915-firmware-huc = $(call Package/firmware-default,Intel I915 HUC firmware,,LICENSE.i915)
+define Package/i915-firmware-huc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	for f in $(PKG_BUILD_DIR)/i915/*_huc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = huc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
+endef
+$(eval $(call BuildPackage,i915-firmware-huc))
+
+Package/i915-firmware-gsc = $(call Package/firmware-default,Intel I915 GSC firmware,,LICENSE.i915)
+define Package/i915-firmware-gsc/install
+	$(INSTALL_DIR) $(1)/lib/firmware/i915
+	for f in $(PKG_BUILD_DIR)/i915/*_gsc*.bin; do                        \
+	  t=`echo $$$${f##*/} | cut -d_ -f2 | cut -d. -f1`;                  \
+	  if [ "$$$$t" = gsc ]; then $(CP) $$$$f $(1)/lib/firmware/i915/; fi \
+	done
+endef
+$(eval $(call BuildPackage,i915-firmware-gsc))

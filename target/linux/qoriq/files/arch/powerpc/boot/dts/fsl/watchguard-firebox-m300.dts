@@ -115,6 +115,42 @@
 			reg = <0x10000 0x20000>;
 			label = "wg_cfg0";
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfg_186c: macaddr@186c {
+					compatible = "mac-base";
+					reg = <0x186c 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_cfg_1880: macaddr@1880 {
+					compatible = "mac-base";
+					reg = <0x1880 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_cfg_1894: macaddr@1894 {
+					compatible = "mac-base";
+					reg = <0x1894 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_cfg_18a8: macaddr@18a8 {
+					compatible = "mac-base";
+					reg = <0x18a8 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_cfg_18bc: macaddr@18bc {
+					compatible = "mac-base";
+					reg = <0x18bc 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@30000 {
@@ -237,30 +273,45 @@
 				reg = <0>;
 				label = "sweth3";
 				phy-handle = <&switch0phy0>;
+
+				nvmem-cells = <&macaddr_cfg_186c 0>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			port@1 {
 				reg = <1>;
 				label = "sweth4";
 				phy-handle = <&switch0phy1>;
+
+				nvmem-cells = <&macaddr_cfg_1880 0>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			port@2 {
 				reg = <2>;
 				label = "sweth5";
 				phy-handle = <&switch0phy2>;
+
+				nvmem-cells = <&macaddr_cfg_1894 0>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			port@3 {
 				reg = <3>;
 				label = "sweth6";
 				phy-handle = <&switch0phy3>;
+
+				nvmem-cells = <&macaddr_cfg_18a8 0>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			port@4 {
 				reg = <4>;
 				label = "sweth7";
 				phy-handle = <&switch0phy4>;
+
+				nvmem-cells = <&macaddr_cfg_18bc 0>;
+				nvmem-cell-names = "mac-address";
 			};
 
 			// OEM bootlog suggests multiple ports are attached to switch

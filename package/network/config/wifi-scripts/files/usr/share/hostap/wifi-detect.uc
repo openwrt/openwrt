@@ -73,6 +73,15 @@ function freq_to_channel(freq) {
 	return 0;
 }
 
+function freq_range_match(ranges, freq) {
+	freq *= 1000;
+	for (let range in ranges) {
+		if (freq >= range[0] && freq <= range[1])
+			return true;
+	}
+	return false;
+}
+
 function wiphy_detect() {
 	let phys = nl.request(nl.const.NL80211_CMD_GET_WIPHY, nl.const.NLM_F_DUMP, { split_wiphy_dump: true });
 	if (!phys)
@@ -88,7 +97,26 @@ function wiphy_detect() {
 			antenna_rx: phy.wiphy_antenna_avail_rx,
 			antenna_tx: phy.wiphy_antenna_avail_tx,
 			bands: {},
+			radios: []
 		};
+
+		for (let radio in phy.radios) {
+			// S1G is not supported yet
+			radio.freq_ranges = filter(radio.freq_ranges,
+				(range) => range.end > 2000000
+			);
+
+			if (!length(radio.freq_ranges))
+				continue;
+
+			push(info.radios, {
+				index: radio.index,
+				freq_ranges: map(radio.freq_ranges,
+					(range) => [ range.start, range.end ]
+				),
+				bands: {}
+			});
+		}
 
 		let bands = info.bands;
 		for (let band in phy.wiphy_bands) {
@@ -159,6 +187,25 @@ function wiphy_detect() {
 
 			if (eht_phy_cap && he_phy_cap & 2)
 				push(modes, "EHT40");
+
+			for (let radio in info.radios) {
+				let freq_match = filter(band.freqs,
+					(freq) => freq_range_match(radio.freq_ranges, freq.freq)
+				);
+				if (!length(freq_match))
+					continue;
+
+				let radio_band = {};
+				radio.bands[band_name] = radio_band;
+
+				freq_match = filter(freq_match,
+					(freq) => !freq.disabled
+				);
+
+				let freq = freq_match[0];
+				if (freq)
+					radio_band.default_channel = freq_to_channel(freq.freq);
+			}
 
 			for (let freq in band.freqs) {
 				if (freq.disabled)

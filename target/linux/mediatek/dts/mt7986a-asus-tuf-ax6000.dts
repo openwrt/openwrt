@@ -70,6 +70,16 @@
 			label = "blue:cover";
 			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
 		};
+
+		cover-red {
+			label = "red:cover";
+			gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		cover-green {
+			label = "green:cover";
+			gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	reg_3p3v: regulator-3p3v {

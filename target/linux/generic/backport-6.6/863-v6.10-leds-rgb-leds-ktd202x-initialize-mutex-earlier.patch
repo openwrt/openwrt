@@ -1,0 +1,62 @@
+From e1b08c6f5b92d408a9fcc1030a340caeb9852250 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 31 May 2024 13:41:21 +0200
+Subject: leds: rgb: leds-ktd202x: Initialize mutex earlier
+
+The mutex must be initialized before the LED class device is registered
+otherwise there is a race where it may get used before it is initialized:
+
+ DEBUG_LOCKS_WARN_ON(lock->magic != lock)
+ WARNING: CPU: 2 PID: 2045 at kernel/locking/mutex.c:587 __mutex_lock
+ ...
+ RIP: 0010:__mutex_lock+0x7db/0xc10
+ ...
+ set_brightness_delayed_set_brightness.part.0+0x17/0x60
+ set_brightness_delayed+0xf1/0x100
+ process_one_work+0x222/0x5a0
+
+Move the mutex_init() call earlier to avoid this race condition and
+switch to devm_mutex_init() to avoid the need to add error-exit
+cleanup to probe() if probe() fails later on.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Reviewed-by: Andy Shevchenko <andy@kernel.org>
+Link: https://lore.kernel.org/r/20240531114124.45346-4-hdegoede@redhat.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/rgb/leds-ktd202x.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+(limited to 'drivers/leds/rgb')
+
+--- a/drivers/leds/rgb/leds-ktd202x.c
++++ b/drivers/leds/rgb/leds-ktd202x.c
+@@ -556,6 +556,10 @@ static int ktd202x_probe(struct i2c_clie
+ 		return ret;
+ 	}
+ 
++	ret = devm_mutex_init(dev, &chip->mutex);
++	if (ret)
++		return ret;
++
+ 	chip->num_leds = (unsigned long)i2c_get_match_data(client);
+ 
+ 	chip->regulators[0].supply = "vin";
+@@ -584,8 +588,6 @@ static int ktd202x_probe(struct i2c_clie
+ 		return ret;
+ 	}
+ 
+-	mutex_init(&chip->mutex);
+-
+ 	return 0;
+ }
+ 
+@@ -594,8 +596,6 @@ static void ktd202x_remove(struct i2c_cl
+ 	struct ktd202x *chip = i2c_get_clientdata(client);
+ 
+ 	ktd202x_chip_disable(chip);
+-
+-	mutex_destroy(&chip->mutex);
+ }
+ 
+ static void ktd202x_shutdown(struct i2c_client *client)

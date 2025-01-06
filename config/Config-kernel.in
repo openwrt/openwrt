@@ -333,6 +333,25 @@ if KERNEL_TASKSTATS
 
 endif
 
+config KERNEL_PSI
+	bool "Compile the kernel with pressure stall information tracking"
+	help
+	  Collect metrics that indicate how overcommitted the CPU, memory,
+	  and IO capacity are in the system.
+
+	  If you say Y here, the kernel will create /proc/pressure/ with the
+	  pressure statistics files cpu, memory, and io. These will indicate
+	  the share of walltime in which some or all tasks in the system are
+	  delayed due to contention of the respective resource.
+
+	  In kernels with cgroup support, cgroups (cgroup2 only) will
+	  have cpu.pressure, memory.pressure, and io.pressure files,
+	  which aggregate pressure stalls for the grouped tasks only.
+
+	  For more details see Documentation/accounting/psi.rst.
+
+	  Say N if unsure.
+
 config KERNEL_KALLSYMS
 	bool "Compile the kernel with symbol table information"
 	default y if !SMALL_FLASH
@@ -1187,9 +1206,11 @@ endif
 
 config KERNEL_NET_L3_MASTER_DEV
 	bool "L3 Master device support"
+	default y if !SMALL_FLASH
 	help
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
+  	  Increases the compressed kernel size by ~4kB (as of Linux 6.6).
 
 config KERNEL_XDP_SOCKETS
 	bool "XDP sockets support"
@@ -1203,6 +1224,27 @@ config KERNEL_PAGE_POOL
 config KERNEL_PAGE_POOL_STATS
 	bool "Page pool stats support"
 	depends on KERNEL_PAGE_POOL
+
+config KERNEL_MPTCP
+	bool "Multi-Path TCP support"
+	default y if !SMALL_FLASH
+	help
+	   Select this option to enable support for Multi-Path TCP.
+	   Increases the compressed kernel size by ~214kB (as of Linux 6.6).
+
+if KERNEL_IPV6
+config KERNEL_MPTCP_IPV6
+	bool "IPv6 support for Multipath TCP"
+	depends on KERNEL_MPTCP
+	default KERNEL_MPTCP
+endif
+
+config KERNEL_NF_CONNTRACK_TIMEOUT
+	bool "Per-connection connection tracking timeout"
+	default y if !SMALL_FLASH
+	help
+	   Select this option to enable support for per-connection conntrack timeouts.
+	   Increases the (uncompressed) size of nf_conntrack.ko by ~8kB.
 
 #
 # NFS related symbols

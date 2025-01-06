@@ -163,6 +163,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_ath9k_cal_985: calibration@985 {
+						reg = <0x985 0x3d8>;
+					};
+
 					macaddr_ath9k_cal_a91: macaddr@a91 {
 						compatible = "mac-base";
 						reg = <0xa91 0x6>;
@@ -206,9 +210,10 @@
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@0,0 {
-		compatible = "pci0,0";
+		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&cal_ath9k_cal_985>;
+		nvmem-cell-names = "calibration";
 	};
 };
 

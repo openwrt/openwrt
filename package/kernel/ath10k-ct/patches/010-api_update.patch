@@ -1,5 +1,5 @@
---- a/ath10k-6.9/mac.c
-+++ b/ath10k-6.9/mac.c
+--- a/ath10k-6.10/mac.c
++++ b/ath10k-6.10/mac.c
 @@ -1675,7 +1675,7 @@ static void ath10k_recalc_radar_detectio
  		 * by indicating that radar was detected.
  		 */
@@ -18,8 +18,8 @@
  {
  	struct ath10k *ar = hw->priv;
  	u32 opt;
---- a/ath10k-6.9/debug.c
-+++ b/ath10k-6.9/debug.c
+--- a/ath10k-6.10/debug.c
++++ b/ath10k-6.10/debug.c
 @@ -3319,7 +3319,7 @@ static ssize_t ath10k_write_simulate_rad
  	if (!arvif->is_started)
  		return -EINVAL;
@@ -29,8 +29,8 @@
  
  	return count;
  }
---- a/ath10k-6.9/wmi.c
-+++ b/ath10k-6.9/wmi.c
+--- a/ath10k-6.10/wmi.c
++++ b/ath10k-6.10/wmi.c
 @@ -4402,7 +4402,7 @@ static void ath10k_radar_detected(struct
  	if (ar->dfs_block_radar_events)
  		ath10k_info(ar, "DFS Radar detected, but ignored as requested\n");

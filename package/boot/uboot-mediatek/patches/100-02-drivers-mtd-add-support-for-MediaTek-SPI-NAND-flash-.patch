@@ -38,7 +38,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -238,6 +238,8 @@ config SYS_MAX_FLASH_BANKS_DETECT
+@@ -246,6 +246,8 @@ config SYS_MAX_FLASH_BANKS_DETECT
  	 to reduce the effective number of flash bank, between 0 and
  	 CONFIG_SYS_MAX_FLASH_BANKS
  
@@ -49,7 +49,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config SYS_NAND_MAX_OOBFREE
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -39,3 +39,5 @@ obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPOR
+@@ -40,3 +40,5 @@ obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPOR
  obj-$(CONFIG_SPL_UBI) += ubispl/
  
  endif
@@ -1313,7 +1313,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
 +
-+#include <common.h>
++#include <config.h>
 +#include <dm.h>
 +#include <malloc.h>
 +#include <mapmem.h>
@@ -1896,7 +1896,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#ifndef _MTK_SNAND_OS_H_
 +#define _MTK_SNAND_OS_H_
 +
-+#include <common.h>
++#include <config.h>
 +#include <cpu_func.h>
 +#include <errno.h>
 +#include <div64.h>

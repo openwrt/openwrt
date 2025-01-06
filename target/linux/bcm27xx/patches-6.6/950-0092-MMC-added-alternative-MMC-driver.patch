@@ -285,7 +285,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      unsigned int part_type);
  static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
-@@ -3016,6 +3023,8 @@ static int mmc_blk_probe(struct mmc_card
+@@ -3066,6 +3073,8 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md;
  	int ret = 0;
@@ -294,7 +294,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -3023,7 +3032,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -3073,7 +3082,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -312,7 +312,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	card->complete_wq = alloc_workqueue("mmc_complete",
  					WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
-@@ -3038,6 +3056,17 @@ static int mmc_blk_probe(struct mmc_card
+@@ -3088,6 +3106,17 @@ static int mmc_blk_probe(struct mmc_card
  		goto out_free;
  	}
  
@@ -344,7 +344,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  }
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -134,6 +134,14 @@ static const struct mmc_fixup __maybe_un
+@@ -143,6 +143,14 @@ static const struct mmc_fixup __maybe_un
  	MMC_FIXUP(CID_NAME_ANY, CID_MANFID_SANDISK_SD, 0x5344, add_quirk_sd,
  		  MMC_QUIRK_BROKEN_SD_DISCARD),
  
@@ -2013,10 +2013,10 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		sdhci_dumpregs(host);
 --- a/include/linux/mmc/card.h
 +++ b/include/linux/mmc/card.h
-@@ -296,6 +296,7 @@ struct mmc_card {
- #define MMC_QUIRK_BROKEN_SD_DISCARD	(1<<14)	/* Disable broken SD discard support */
+@@ -297,6 +297,7 @@ struct mmc_card {
  #define MMC_QUIRK_BROKEN_SD_CACHE	(1<<15)	/* Disable broken SD cache support */
  #define MMC_QUIRK_BROKEN_CACHE_FLUSH	(1<<16)	/* Don't flush cache until the write has occurred */
+ #define MMC_QUIRK_BROKEN_SD_POWEROFF_NOTIFY	(1<<17) /* Disable broken SD poweroff notify support */
 +#define MMC_QUIRK_ERASE_BROKEN	(1<<31)		/* Skip erase */
  
  	bool			written_flag;	/* Indicates eMMC has been written since power on */

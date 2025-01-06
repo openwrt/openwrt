@@ -6,7 +6,6 @@
 RAMFS_COPY_BIN='fw_printenv fw_setenv seq strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
-PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
@@ -72,6 +71,10 @@ platform_do_upgrade() {
 			reboot -f
 			;;
 		esac
+		default_do_upgrade "$1"
+		;;
+	iptime,nas1dual)
+		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
 	linksys,wrt1200ac|\

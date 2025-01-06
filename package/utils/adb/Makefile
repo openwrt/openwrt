@@ -2,16 +2,14 @@ include $(TOPDIR)/rules.mk
 #Based on adb package from AUR https://aur.archlinux.org/packages/adb/ , reused Makefile
 
 PKG_NAME:=adb
-PKG_VERSION:=android.5.0.2_r1
+PKG_SOURCE_VERSION:=6fe92d1a3fb17545d82d020a3c995f32e6b71f9d
+PKG_VERSION:=5.0.2~$(call version_abbrev,$(PKG_SOURCE_VERSION))
 PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://android.googlesource.com/platform/system/core
-PKG_SOURCE_VERSION:=6fe92d1a3fb17545d82d020a3c995f32e6b71f9d
-PKG_MIRROR_HASH:=a9b4b86602dfc0d4fc9e1d0f78dc83e648a931fb04f5a4be9b1f0054a8cebf7e
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_SOURCE_VERSION)
-PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.xz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
+PKG_MIRROR_HASH:=2ff96b4342cd05f475083207a4927635548c6693771c12a24cfa99f175fdb10a
+
 PKG_MAINTAINER:=Henryk Heisig <hyniu@o2.pl>
 PKG_CPE_ID:=cpe:/a:google:android_debug_bridge
 

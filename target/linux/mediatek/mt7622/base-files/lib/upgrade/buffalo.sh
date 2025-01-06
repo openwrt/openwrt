@@ -34,19 +34,29 @@
 #
 # The mtd partitions "firmware" and "Kernel2" on NAND flash are os-image
 # partitions. These partitions are called as "Image1/Image2" in U-Boot
-# on WSR-2533DHP2, and they are checked conditions when booting.
+# on WSR devices, and they are checked conditions when booting.
 # "Image1" is always used for booting.
 #
 # == U-Boot Behaviors ==
 # - "Image1"/"Image2" images are good, images are different or
 #   "Image2" image is broken
-#   -> writes os-image to "Image2" from "Image1"
+#   -> copy os-image to "Image2" from "Image1"
 #
 # - "Image1" image is broken
-#   -> writes os-image to "Image1" from "Image2"
+#   -> copy os-image to "Image1" from "Image2"
 #
 # - "Image1"/"Image2" images are broken
 #   -> fall to U-Boot command line
+
+# TRX magic numbers of each model
+case "$(board_name)" in
+buffalo,wsr-2533dhp2)
+	BUFFALO_TRX_MAGIC="44485032" # "DHP2"
+	;;
+buffalo,wsr-3200ax4s)
+	BUFFALO_TRX_MAGIC="44485033" # "DHP3"
+	;;
+esac
 
 buffalo_check_image() {
 	local board="$1"
@@ -56,7 +66,7 @@ buffalo_check_image() {
 
 	# return error state if TRX + UBI formatted image specified
 	# to notify about configurations
-	if [ "$magic" = "44485032" -o "$magic" = "44485033" ]; then
+	if [ "$magic" = "$BUFFALO_TRX_MAGIC" ]; then
 		echo "Your configurations won't be saved if factory-uboot.bin image specified."
 		echo "But if you want to upgrade, please execute sysupgrade with \"-F\" option."
 		return 1
@@ -122,5 +132,14 @@ buffalo_upgrade_ubinized() {
 	if [ $? -ne 0 ]; then
 		echo "Failed to write the specified image."
 		exit 1
+	fi
+}
+
+buffalo_do_upgrade() {
+	if [ "$(get_magic_long "$1")" = "$BUFFALO_TRX_MAGIC" ]; then
+		buffalo_upgrade_ubinized "$1"
+	else
+		CI_KERNPART="firmware"
+		nand_do_upgrade "$1"
 	fi
 }

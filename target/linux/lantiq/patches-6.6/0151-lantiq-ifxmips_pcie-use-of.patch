@@ -293,7 +293,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
              register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
              /* XXX, clear error status */
-@@ -1083,6 +1185,30 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1083,6 +1185,29 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }
@@ -308,7 +308,6 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
 +        .probe = ifx_pcie_bios_probe,
 +        .driver = {
 +                .name = "pcie-xrx200",
-+                .owner = THIS_MODULE,
 +                .of_match_table = ifxmips_pcie_match,
 +        },
 +};

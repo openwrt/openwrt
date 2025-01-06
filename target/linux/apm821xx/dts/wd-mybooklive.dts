@@ -48,11 +48,14 @@
 					#size-cells = <1>;
 
 					partition@0 {
-						compatible = "u-boot,env-redundant-bool";
 						reg = <0x00000000 0x00001000>;
 						label = "u-boot-env-1";
 
-						ethaddr {
+						nvmem-layout {
+							compatible = "u-boot,env-redundant-bool";
+
+							ethaddr {
+							};
 						};
 					};
 
@@ -60,10 +63,12 @@
  * Causes the following warning: * sysfs: cannot create duplicate filename '/bus/nvmem/devices/u-boot-env0'
  *
  *					partition@1000 {
- *						compatible = "u-boot,env-redundant-bool";
  *						reg = <0x00001000 0x00001000>;
  *						label = "u-boot-env-2";
  *
+ *						nvmem-layout {
+ *							compatible = "u-boot,env-redundant-bool";
+ *						};
  *					};
  */
 				};

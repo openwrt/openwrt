@@ -87,6 +87,11 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
 			ngpios = <24>;
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
@@ -99,6 +104,11 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 
 			ngpios = <16>;
 			ralink,register-map = [ 00 04 08 0c
@@ -114,6 +124,11 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 
 			ngpios = <32>;
 			ralink,register-map = [ 00 04 08 0c

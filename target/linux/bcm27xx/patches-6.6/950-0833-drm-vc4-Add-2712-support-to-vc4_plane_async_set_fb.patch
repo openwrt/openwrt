@@ -17,7 +17,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1877,7 +1877,7 @@ static int vc6_plane_mode_set(struct drm
+@@ -1903,7 +1903,7 @@ static int vc6_plane_mode_set(struct drm
  				 * The UPM buffer will be allocated in
  				 * vc6_plane_allocate_upm().
  				 */
@@ -26,7 +26,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  					      SCALER6_PTR0_UPPER_ADDR));
  
  		/* Pointer Word 1 */
-@@ -2079,7 +2079,8 @@ void vc4_plane_async_set_fb(struct drm_p
+@@ -2105,7 +2105,8 @@ void vc4_plane_async_set_fb(struct drm_p
  {
  	struct vc4_plane_state *vc4_state = to_vc4_plane_state(plane->state);
  	struct drm_gem_dma_object *bo = drm_fb_dma_get_gem_obj(fb, 0);
@@ -36,7 +36,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	int idx;
  
  	if (!drm_dev_enter(plane->dev, &idx))
-@@ -2089,19 +2090,38 @@ void vc4_plane_async_set_fb(struct drm_p
+@@ -2115,19 +2116,38 @@ void vc4_plane_async_set_fb(struct drm_p
  	 * because this is only called on the primary plane.
  	 */
  	WARN_ON_ONCE(plane->state->crtc_x < 0 || plane->state->crtc_y < 0);

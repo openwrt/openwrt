@@ -1,0 +1,63 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 15 Nov 2024 12:28:43 +0100
+Subject: [PATCH] wifi: mac80211: fix vif addr when switching from monitor
+ to station
+
+Since adding support for opting out of virtual monitor support, a zero vif
+addr was used to indicate passive vs active monitor to the driver.
+This would break the vif->addr when changing the netdev mac address before
+switching the interface from monitor to sta mode.
+Fix the regression by adding a separate flag to indicate whether vif->addr
+is valid.
+
+Reported-by: syzbot+9ea265d998de25ac6a46@syzkaller.appspotmail.com
+Fixes: 9d40f7e32774 ("wifi: mac80211: add flag to opt out of virtual monitor support")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1972,6 +1972,8 @@ enum ieee80211_neg_ttlm_res {
+  * @neg_ttlm: negotiated TID to link mapping info.
+  *	see &struct ieee80211_neg_ttlm.
+  * @addr: address of this interface
++ * @addr_valid: indicates if the address is actively used. Set to false for
++ *	passive monitor interfaces, true in all other cases.
+  * @p2p: indicates whether this AP or STA interface is a p2p
+  *	interface, i.e. a GO or p2p-sta respectively
+  * @netdev_features: tx netdev features supported by the hardware for this
+@@ -2011,6 +2013,7 @@ struct ieee80211_vif {
+ 	u16 valid_links, active_links, dormant_links, suspended_links;
+ 	struct ieee80211_neg_ttlm neg_ttlm;
+ 	u8 addr[ETH_ALEN] __aligned(2);
++	bool addr_valid;
+ 	bool p2p;
+ 
+ 	u8 cab_queue;
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -279,13 +279,8 @@ static int _ieee80211_change_mac(struct
+ 	ret = eth_mac_addr(sdata->dev, sa);
+ 
+ 	if (ret == 0) {
+-		if (check_dup) {
+-			memcpy(sdata->vif.addr, sa->sa_data, ETH_ALEN);
+-			ether_addr_copy(sdata->vif.bss_conf.addr, sdata->vif.addr);
+-		} else {
+-			memset(sdata->vif.addr, 0, ETH_ALEN);
+-			memset(sdata->vif.bss_conf.addr, 0, ETH_ALEN);
+-		}
++		memcpy(sdata->vif.addr, sa->sa_data, ETH_ALEN);
++		ether_addr_copy(sdata->vif.bss_conf.addr, sdata->vif.addr);
+ 	}
+ 
+ 	/* Regardless of eth_mac_addr() return we still want to add the
+@@ -1324,6 +1319,8 @@ int ieee80211_do_open(struct wireless_de
+ 		}
+ 	}
+ 
++	sdata->vif.addr_valid = sdata->vif.type != NL80211_IFTYPE_MONITOR ||
++				(sdata->u.mntr.flags & MONITOR_FLAG_ACTIVE);
+ 	switch (sdata->vif.type) {
+ 	case NL80211_IFTYPE_AP_VLAN:
+ 		/* no need to tell driver, but set carrier and chanctx */

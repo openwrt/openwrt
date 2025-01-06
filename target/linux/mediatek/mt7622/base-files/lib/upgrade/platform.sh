@@ -16,16 +16,7 @@ platform_do_upgrade() {
 		;;
 	buffalo,wsr-2533dhp2|\
 	buffalo,wsr-3200ax4s)
-		local magic="$(get_magic_long "$1")"
-
-		# use "mtd write" if the magic is "DHP2 (0x44485032)"
-		# or "DHP3 (0x44485033)"
-		if [ "$magic" = "44485032" -o "$magic" = "44485033" ]; then
-			buffalo_upgrade_ubinized "$1"
-		else
-			CI_KERNPART="firmware"
-			nand_do_upgrade "$1"
-		fi
+		buffalo_do_upgrade "$1"
 		;;
 	dlink,eagle-pro-ai-m32-a1|\
 	dlink,eagle-pro-ai-r32-a1|\
@@ -42,6 +33,11 @@ platform_do_upgrade() {
 			PART_NAME=firmware1
 		fi
 		default_do_upgrade "$1"
+		;;
+	smartrg,sdg-841-t6)
+		CI_KERNPART="boot"
+		CI_ROOTPART="res1"
+		emmc_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"
@@ -67,6 +63,7 @@ platform_check_image() {
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
+	smartrg,sdg-841-t6|\
 	totolink,a8000ru)
 		nand_do_platform_check "$board" "$1"
 		return $?
@@ -89,6 +86,9 @@ platform_copy_config() {
 		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
 		fi
+		;;
+	smartrg,sdg-841-t6)
+		emmc_copy_config
 		;;
 	esac
 }

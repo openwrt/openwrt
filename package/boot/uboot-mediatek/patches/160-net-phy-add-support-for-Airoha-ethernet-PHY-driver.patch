@@ -58,7 +58,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -77,6 +77,37 @@ config PHY_ADIN
+@@ -83,6 +83,37 @@ config PHY_ADIN
  	help
  		Add support for configuring RGMII on Analog Devices ADIN PHYs.
  
@@ -122,7 +122,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +/* INCLUDE FILE DECLARATIONS
 + */
-+#include <common.h>
++#include <config.h>
 +#include <phy.h>
 +#include <errno.h>
 +#include <version.h>
@@ -1028,7 +1028,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +/* INCLUDE FILE DECLARATIONS
 +*/
-+#include <common.h>
++#include <config.h>
 +#include <eth_phy.h>
 +#include <phy.h>
 +#include <errno.h>
@@ -1421,7 +1421,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +        }
 +
 +#ifdef CONFIG_PHY_AIROHA_FW_IN_UBI
-+        ret = ubi_volume_read("en8811h-fw", firmware_buf, EN8811H_MD32_DM_SIZE + EN8811H_MD32_DSP_SIZE);
++        ret = ubi_volume_read("en8811h-fw", firmware_buf, 0, EN8811H_MD32_DM_SIZE + EN8811H_MD32_DSP_SIZE);
 +        if (ret) {
 +            printf("[Airoha] read firmware from UBI failed.\n");
 +            free(firmware_buf);
@@ -1909,7 +1909,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 --- a/drivers/net/eth-phy-uclass.c
 +++ b/drivers/net/eth-phy-uclass.c
-@@ -155,7 +155,7 @@ static int eth_phy_of_to_plat(struct ude
+@@ -154,7 +154,7 @@ static int eth_phy_of_to_plat(struct ude
  	return 0;
  }
  

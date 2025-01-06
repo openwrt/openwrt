@@ -17,6 +17,17 @@ platform_check_image() {
 	ubnt,routerstation-pro)
 		platform_check_image_redboot_fis "$1"
 		;;
+	nec,wg1400hp|\
+	nec,wg1800hp|\
+	nec,wg1800hp2)
+		local uboot_mtd=$(find_mtd_part "bootloader")
+
+		# check "U-Boot <year>.<month>" string in the "bootloader" partition
+		if ! grep -q "U-Boot [0-9]\{4\}\.[0-9]\{2\}" $uboot_mtd; then
+			v "The bootloader doesn't seem to be replaced to U-Boot!"
+			return 1
+		fi
+		;;
 	*)
 		return 0
 		;;

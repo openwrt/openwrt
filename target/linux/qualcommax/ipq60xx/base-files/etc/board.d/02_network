@@ -20,6 +20,10 @@ ipq60xx_setup_interfaces()
 	netgear,wax214)
 		ucidef_set_interfaces_lan_wan "lan"
 		;;
+	qihoo,360v6)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	linksys,mr7350|\
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -29,9 +33,35 @@ ipq60xx_setup_interfaces()
 	esac
 }
 
+ipq60xx_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+
+	case $board in
+	linksys,mr7350)
+		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		lan_mac=$label_mac
+		wan_mac=$label_mac
+		;;
+	qihoo,360v6)
+		lan_mac=$(mtd_get_mac_ascii factory lanMac)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$lan_mac
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+}
+
 board_config_update
 board=$(board_name)
 ipq60xx_setup_interfaces $board
+ipq60xx_setup_macs $board
 board_config_flush
 
 exit 0

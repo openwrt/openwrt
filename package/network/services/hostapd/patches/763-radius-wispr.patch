@@ -1,0 +1,105 @@
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -2035,6 +2035,25 @@ static int ieee802_1x_update_vlan(struct
+ }
+ #endif /* CONFIG_NO_VLAN */
+ 
++static int ieee802_1x_update_wispr(struct hostapd_data *hapd,
++				   struct sta_info *sta,
++				   struct radius_msg *msg)
++{
++	memset(sta->bandwidth, 0, sizeof(sta->bandwidth));
++
++	if (radius_msg_get_wispr(msg, sta->bandwidth))
++		return 0;
++
++	if (!sta->bandwidth[0] && !sta->bandwidth[1])
++		return 0;
++
++	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X,
++		       HOSTAPD_LEVEL_INFO,
++		       "received wispr bandwidth from RADIUS server %d/%d",
++		       sta->bandwidth[0], sta->bandwidth[1]);
++
++	return 0;
++}
+ 
+ /**
+  * ieee802_1x_receive_auth - Process RADIUS frames from Authentication Server
+@@ -2151,6 +2170,7 @@ ieee802_1x_receive_auth(struct radius_ms
+ 		ieee802_1x_check_hs20(hapd, sta, msg,
+ 				      session_timeout_set ?
+ 				      (int) session_timeout : -1);
++		ieee802_1x_update_wispr(hapd, sta, msg);
+ 		break;
+ 	case RADIUS_CODE_ACCESS_REJECT:
+ 		sm->eap_if->aaaFail = true;
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -95,6 +95,7 @@ struct sta_info {
+ 	u8 supported_rates[WLAN_SUPP_RATES_MAX];
+ 	int supported_rates_len;
+ 	u8 qosinfo; /* Valid when WLAN_STA_WMM is set */
++	u32 bandwidth[2];
+ 
+ #ifdef CONFIG_MESH
+ 	enum mesh_plink_state plink_state;
+--- a/src/radius/radius.c
++++ b/src/radius/radius.c
+@@ -1339,6 +1339,35 @@ radius_msg_get_cisco_keys(struct radius_
+ 	return keys;
+ }
+ 
++#define RADIUS_VENDOR_ID_WISPR	14122
++#define RADIUS_WISPR_AV_BW_UP	7
++#define RADIUS_WISPR_AV_BW_DOWN	8
++
++int
++radius_msg_get_wispr(struct radius_msg *msg, u32 *bandwidth)
++{
++	int i;
++
++	if (msg == NULL || bandwidth == NULL)
++		return 1;
++
++	for (i = 0; i < 2; i++) {
++		size_t keylen;
++		u8 *key;
++
++		key = radius_msg_get_vendor_attr(msg, RADIUS_VENDOR_ID_WISPR,
++						 RADIUS_WISPR_AV_BW_UP + i, &keylen);
++		if (!key)
++			continue;
++
++		if (keylen == 4)
++			bandwidth[i] = ntohl(*((u32 *)key));
++		os_free(key);
++	}
++
++	return 0;
++}
++
+ 
+ int radius_msg_add_mppe_keys(struct radius_msg *msg,
+ 			     const u8 *req_authenticator,
+--- a/src/radius/radius.h
++++ b/src/radius/radius.h
+@@ -233,6 +233,10 @@ enum {
+ 	RADIUS_VENDOR_ATTR_WFA_HS20_T_C_URL = 10,
+ };
+ 
++#define RADIUS_VENDOR_ID_WISPR	14122
++#define RADIUS_WISPR_AV_BW_UP	7
++#define RADIUS_WISPR_AV_BW_DOWN	8
++
+ #ifdef _MSC_VER
+ #pragma pack(pop)
+ #endif /* _MSC_VER */
+@@ -306,6 +310,7 @@ radius_msg_get_ms_keys(struct radius_msg
+ struct radius_ms_mppe_keys *
+ radius_msg_get_cisco_keys(struct radius_msg *msg, struct radius_msg *sent_msg,
+ 			  const u8 *secret, size_t secret_len);
++int radius_msg_get_wispr(struct radius_msg *msg, u32 *bandwidth);
+ int radius_msg_add_mppe_keys(struct radius_msg *msg,
+ 			     const u8 *req_authenticator,
+ 			     const u8 *secret, size_t secret_len,

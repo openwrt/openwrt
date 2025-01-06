@@ -33,7 +33,7 @@ endef
 KernelPackage/ltq-atm-danube=$(call KernelPackage/ltq-atm-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
 KernelPackage/ltq-atm-ar9=$(call KernelPackage/ltq-atm-template,ar9,TARGET_lantiq_xway)
 KernelPackage/ltq-atm-ase=$(call KernelPackage/ltq-atm-template,ase,TARGET_lantiq_ase)
-KernelPackage/ltq-atm-vr9=$(call KernelPackage/ltq-atm-template,vr9,TARGET_lantiq_xrx200)
+KernelPackage/ltq-atm-vr9=$(call KernelPackage/ltq-atm-template,vr9,(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy))
 
 define Build/Configure
 endef

@@ -167,11 +167,15 @@
 				#size-cells = <1>;
 
 				partition@0 {
-					compatible = "u-boot,env";
 					label = "env-data";
 					reg = <0x0 0x40000>;
 
-					macaddr_ubootenv_ethaddr: ethaddr {};
+					nvmem-layout {
+						compatible = "u-boot,env";
+
+						macaddr_ubootenv_ethaddr: ethaddr {
+						};
+					};
 				};
 			};
 		};

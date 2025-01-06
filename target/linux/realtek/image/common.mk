@@ -57,13 +57,17 @@ define Device/hpe_1920
 endef
 
 define Device/zyxel_gs1900
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Dual firmware paritition merged due to size constraints. \
+	Upgrade requires a new factory install. Regular sysupgrade is not possible.
   DEVICE_VENDOR := Zyxel
-  IMAGE_SIZE := 6976k
+  IMAGE_SIZE := 13952k
   UIMAGE_MAGIC := 0x83800000
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
 	libdeflate-gzip | \
 	zyxel-vers | \
-	uImage gzip
+	uImage gzip | \
+	check-size 6976k
 endef

@@ -62,6 +62,8 @@
 
 &gmac1 {
 	label = "lan";
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
 	phy-mode = "internal";
 	phy-connection-type = "internal";
 	phy = <&int_2p5g_phy>;
@@ -69,6 +71,8 @@
 
 &gmac2 {
 	label = "wan";
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
 	phy-mode = "usxgmii";
 	phy-connection-type = "usxgmii";
 	phy = <&phy8>;

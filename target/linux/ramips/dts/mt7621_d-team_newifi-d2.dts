@@ -80,15 +80,14 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		power_usb3 {
-			gpio-export,name = "power_usb3";
-			gpio-export,output = <1>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		};
+	reg_power_usb3: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb3";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
 	};
 };
 
@@ -153,6 +152,10 @@
 			};
 		};
 	};
+};
+
+&xhci {
+	vbus-supply = <&reg_power_usb3>;
 };
 
 &pcie {

@@ -314,6 +314,17 @@ endef
 $(eval $(call KernelPackage,sound-soc-spdif))
 
 
+define KernelPackage/sound-soc-dmic
+  TITLE:=Generic Digital Microphone CODEC
+  KCONFIG:=CONFIG_SND_SOC_DMIC
+  FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-dmic.ko
+  AUTOLOAD:=$(call AutoProbe,snd-soc-dmic)
+  $(call AddDepends/sound,+kmod-sound-soc-core)
+endef
+
+$(eval $(call KernelPackage,sound-soc-dmic))
+
+
 define KernelPackage/pcspkr
   DEPENDS:=@TARGET_x86 +kmod-input-core
   TITLE:=PC speaker support

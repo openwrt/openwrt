@@ -1,0 +1,65 @@
+From 2b38362bd3b8e0a3691f0a8e82444a54f702e384 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 8 Nov 2024 01:43:50 +0200
+Subject: [PATCH 4/6] wifi: rtw88: usb: Enable RX aggregation for 8821au/8812au
+
+USB RX aggregation improves the RX speed on certain ARM systems, like
+the NanoPi NEO Core2. With RTL8811AU, before: 30 Mbps, after: 224 Mbps.
+
+The out-of-tree driver uses aggregation size of 7 in USB 3 mode, but
+that doesn't work here. rtw88 advertises support for receiving AMSDU
+in AMPDU, so the AP sends larger frames, up to ~5100 bytes. With a size
+of 7 RTL8812AU frequently tries to aggregate more frames than will fit
+in 32768 bytes. Use a size of 6 instead.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 30 ++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -789,6 +789,32 @@ static void rtw_usb_dynamic_rx_agg_v1(st
+ 	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
+ }
+ 
++static void rtw_usb_dynamic_rx_agg_v2(struct rtw_dev *rtwdev, bool enable)
++{
++	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
++	u8 size, timeout;
++	u16 val16;
++
++	if (rtwusb->udev->speed == USB_SPEED_SUPER) {
++		size = 0x6;
++		timeout = 0x1a;
++	} else {
++		size = 0x5;
++		timeout = 0x20;
++	}
++
++	if (!enable) {
++		size = 0x0;
++		timeout = 0x1;
++	}
++
++	val16 = u16_encode_bits(size, BIT_RXDMA_AGG_PG_TH) |
++		u16_encode_bits(timeout, BIT_DMA_AGG_TO_V1);
++
++	rtw_write16(rtwdev, REG_RXDMA_AGG_PG_TH, val16);
++	rtw_write8_set(rtwdev, REG_TXDMA_PQ_MAP, BIT_RXDMA_AGG_EN);
++}
++
+ static void rtw_usb_dynamic_rx_agg(struct rtw_dev *rtwdev, bool enable)
+ {
+ 	switch (rtwdev->chip->id) {
+@@ -797,6 +823,10 @@ static void rtw_usb_dynamic_rx_agg(struc
+ 	case RTW_CHIP_TYPE_8821C:
+ 		rtw_usb_dynamic_rx_agg_v1(rtwdev, enable);
+ 		break;
++	case RTW_CHIP_TYPE_8821A:
++	case RTW_CHIP_TYPE_8812A:
++		rtw_usb_dynamic_rx_agg_v2(rtwdev, enable);
++		break;
+ 	case RTW_CHIP_TYPE_8723D:
+ 		/* Doesn't like aggregation. */
+ 		break;

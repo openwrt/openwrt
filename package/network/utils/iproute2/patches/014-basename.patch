@@ -1,0 +1,29 @@
+From fa3949b792e275f75d7d6200dc2036ef7fff8816 Mon Sep 17 00:00:00 2001
+From: Stephen Hemminger <stephen@networkplumber.org>
+Date: Thu, 12 Dec 2024 11:21:56 -0800
+Subject: [PATCH] rdma: add missing header for basename
+
+The function basename prototype is in libgen.h
+Fixes build on musl
+
+Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
+---
+ rdma/rdma.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/rdma/rdma.h
++++ b/rdma/rdma.h
+@@ -10,11 +10,12 @@
+ #include <string.h>
+ #include <errno.h>
+ #include <getopt.h>
++#include <time.h>
++#include <libgen.h>
+ #include <netinet/in.h>
+ #include <libmnl/libmnl.h>
+ #include <rdma/rdma_netlink.h>
+ #include <rdma/rdma_user_cm.h>
+-#include <time.h>
+ #include <net/if_arp.h>
+ 
+ #include "list.h"

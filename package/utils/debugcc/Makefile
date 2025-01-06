@@ -11,6 +11,7 @@ PKG_MIRROR_HASH:=4cd7a770a05db28f496a60eb9fe015a4af677bba05053b4d4be21adcf95e52e
 
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=LICENSE
+PKG_FLAGS:=nonshared
 
 PKG_MAINTAINER:=Christian Marangi <ansuelsmth@gmail.com>
 

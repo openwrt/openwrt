@@ -15,8 +15,7 @@
 / {
 	aliases {
 		serial0 = &uart0;
-		ethernet0 = &gmac0;
-		ethernet1 = &gmac1;
+		label-mac-device = &gmac1;
 		led-boot = &led_sys_green;
 		led-failsafe = &led_sys_blue;
 		led-running = &led_sys_white;
@@ -250,21 +249,30 @@
 };
 
 &gmac0 {
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
+
 	status = "okay";
 };
 
 &gmac1 {
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
 	label = "wan";
-	status = "okay";
 	phy-mode = "usxgmii";
+
+	status = "okay";
 };
 
 &gmac2 {
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
 	label = "lan1";
-	status = "okay";
 	phy-mode = "usxgmii";
 	phy-connection-type = "usxgmii";
 	phy = <&phy8>;
+
+	status = "okay";
 };
 
 &gsw_phy0 {
@@ -433,7 +441,7 @@
 				reg = <2>;
 				function = LED_FUNCTION_WAN;
 				color = <LED_COLOR_ID_WHITE>;
-				active-low;
+				active-high;
 			};
 		};
 	};
@@ -467,7 +475,7 @@
 				reg = <2>;
 				function = LED_FUNCTION_LAN;
 				color = <LED_COLOR_ID_WHITE>;
-				active-low;
+				active-high;
 			};
 		};
 	};
@@ -513,6 +521,18 @@
 						};
 					};
 				};
+
+				block-partition-mfginfo {
+					partname = "mfginfo";
+
+					nvmem-layout {
+						compatible = "adtran,mfginfo";
+
+						macaddr: mfg-mac {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
 			};
 		};
 	};
@@ -532,6 +552,27 @@
 			nvmem-cells = <&eeprom_factory_0>;
 			nvmem-cell-names = "eeprom";
 			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr 4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr 10>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&macaddr 6>;
+				nvmem-cell-names = "mac-address";
+			};
 		};
 	};
 };

@@ -41,14 +41,9 @@ struct gpio_rb91x_key {
 	struct gpio_desc *gpio;
 };
 
-static inline struct gpio_rb91x_key *to_gpio_rb91x_key(struct gpio_chip *gc)
-{
-	return container_of(gc, struct gpio_rb91x_key, gc);
-}
-
 static int gpio_rb91x_key_get(struct gpio_chip *gc, unsigned offset)
 {
-	struct gpio_rb91x_key *drvdata = to_gpio_rb91x_key(gc);
+	struct gpio_rb91x_key *drvdata = gpiochip_get_data(gc);
 	struct gpio_desc *gpio = drvdata->gpio;
 	int val, bak_val;
 
@@ -97,7 +92,7 @@ static int gpio_rb91x_key_direction_input(struct gpio_chip *gc, unsigned offset)
 
 static void gpio_rb91x_key_set(struct gpio_chip *gc, unsigned offset, int value)
 {
-	struct gpio_rb91x_key *drvdata = to_gpio_rb91x_key(gc);
+	struct gpio_rb91x_key *drvdata = gpiochip_get_data(gc);
 	struct gpio_desc *gpio = drvdata->gpio;
 
 	mutex_lock(&drvdata->mutex);
@@ -144,13 +139,19 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	struct gpio_rb91x_key *drvdata;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
+	int err;
 
 	drvdata = devm_kzalloc(dev, sizeof(*drvdata), GFP_KERNEL);
 	if (!drvdata)
 		return -ENOMEM;
 
-	mutex_init(&drvdata->mutex);
-	mutex_init(&drvdata->poll_mutex);
+	err = devm_mutex_init(dev, &drvdata->mutex);
+	if (err)
+		return err;
+
+	err = devm_mutex_init(dev, &drvdata->poll_mutex);
+	if (err)
+		return err;
 
 	drvdata->gpio = devm_gpiod_get(dev, NULL, GPIOD_OUT_LOW);
 	if (IS_ERR(drvdata->gpio))
@@ -167,8 +168,6 @@ static int gpio_rb91x_key_probe(struct platform_device *pdev)
 	gc->direction_output = gpio_rb91x_key_direction_output;
 	gc->direction_input = gpio_rb91x_key_direction_input;
 
-	platform_set_drvdata(pdev, drvdata);
-
 	return devm_gpiochip_add_data(dev, gc, drvdata);
 }
 
@@ -183,7 +182,6 @@ static struct platform_driver gpio_rb91x_key_driver = {
 	.probe = gpio_rb91x_key_probe,
 	.driver = {
 		.name = GPIO_RB91X_KEY_DRIVER_NAME,
-		.owner = THIS_MODULE,
 		.of_match_table = gpio_rb91x_key_match,
 	},
 };

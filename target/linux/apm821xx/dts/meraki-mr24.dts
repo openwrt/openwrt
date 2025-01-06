@@ -17,6 +17,7 @@
 	compatible = "meraki,mr24", "meraki,ikarem", "apm,bluestone";
 
 	aliases {
+		/delete-property/ ethernet0;
 		serial0 = &UART1;
 	};
 
@@ -64,9 +65,12 @@
 				 * around for bad block management
 				 */
 				label = "u-boot-env";
-				compatible = "u-boot,env";
 				reg = <0x00150000 0x00010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+				};
 			};
 
 			partition@160000 {
@@ -92,7 +96,7 @@
 
 				volumes {
 					ubi-volume-board-config {
-						volume = "board-config";
+						volname = "board-config";
 
 						nvmem-layout {
 							compatible = "fixed-layout";

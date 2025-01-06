@@ -80,6 +80,7 @@ ramips_setup_interfaces()
 	beeline,smartbox-giga|\
 	elecom,wmc-x1800gst|\
 	elecom,wrc-x1800gs|\
+	gemtek,wvrtm-127acn|\
 	glinet,gl-mt1300|\
 	iodata,wn-deax1800gr|\
 	iptime,a3002mesh|\
@@ -299,10 +300,6 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
 		label_mac=$lan_mac
 		;;
-	mikrotik,ltap-2hnd)
-		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
-		lan_mac=$label_mac
-		;;
 	tplink,er605-v2)
 		CI_UBIPART="firmware"
 		label_mac=$(mtd_get_mac_uci_config_ubi "tddp")
@@ -313,14 +310,6 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/class/net/eth0/address")
 		wwan_mac=$(macaddr_add $label_mac 1)
 		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
-		;;
-	mikrotik,routerboard-750gr3|\
-	mikrotik,routerboard-760igs|\
-	mikrotik,routerboard-m11g|\
-	mikrotik,routerboard-m33g)
-		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
-		wan_mac=$label_mac
-		lan_mac=$(macaddr_add $label_mac 1)
 		;;
 	ruijie,rg-ew1200g-pro-v1.1)
 		lan_mac=$(mtd_get_mac_ascii product_info ethaddr)

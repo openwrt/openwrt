@@ -18,7 +18,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/input/touchscreen/edt-ft5x06.c
 +++ b/drivers/input/touchscreen/edt-ft5x06.c
-@@ -1420,6 +1420,10 @@ static void edt_ft5x06_ts_remove(struct
+@@ -1438,6 +1438,10 @@ static void edt_ft5x06_ts_remove(struct
  {
  	struct edt_ft5x06_ts_data *tsdata = i2c_get_clientdata(client);
  
@@ -27,5 +27,5 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +		cancel_work_sync(&tsdata->work_i2c_poll);
 +	}
  	edt_ft5x06_ts_teardown_debugfs(tsdata);
- 	regmap_exit(tsdata->regmap);
  }
+ 

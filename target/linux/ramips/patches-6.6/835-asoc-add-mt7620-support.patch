@@ -5,7 +5,6 @@ Subject: [PATCH 48/53] asoc: add mt7620 support
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/ralink/of.c            |    2 +
  sound/soc/Kconfig                |    1 +
  sound/soc/Makefile               |    1 +
  sound/soc/ralink/Kconfig         |   15 ++
@@ -60,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,968 @@
+@@ -0,0 +1,941 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -869,20 +868,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	const struct of_device_id *match;
 +	struct device_node *np = pdev->dev.of_node;
-+	struct ralink_i2s *i2s;
++	struct device *dev = &pdev->dev;
 +	struct resource *res;
++	struct ralink_i2s *i2s;
 +	int irq, ret;
 +	u32 dma_req;
 +	struct rt_i2s_data *data;
 +
-+	i2s = devm_kzalloc(&pdev->dev, sizeof(*i2s), GFP_KERNEL);
++	i2s = devm_kzalloc(dev, sizeof(*i2s), GFP_KERNEL);
 +	if (!i2s)
 +		return -ENOMEM;
 +
-+	platform_set_drvdata(pdev, i2s);
-+	i2s->dev = &pdev->dev;
++	i2s->dev = dev;
 +
-+	match = of_match_device(ralink_i2s_match_table, &pdev->dev);
++	match = of_match_device(ralink_i2s_match_table, dev);
 +	if (!match)
 +		return -EINVAL;
 +	data = (struct rt_i2s_data *)match->data;
@@ -892,68 +891,49 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		data->refclk_setup();
 +
 +	if (of_property_read_u32(np, "txdma-req", &dma_req)) {
-+		dev_err(&pdev->dev, "no txdma-req define\n");
++		dev_err(dev, "no txdma-req define\n");
 +		return -EINVAL;
 +	}
 +	i2s->txdma_req = (u16)dma_req;
 +	if (!(i2s->flags & RALINK_FLAGS_TXONLY)) {
 +		if (of_property_read_u32(np, "rxdma-req", &dma_req)) {
-+			dev_err(&pdev->dev, "no rxdma-req define\n");
++			dev_err(dev, "no rxdma-req define\n");
 +			return -EINVAL;
 +		}
 +		i2s->rxdma_req = (u16)dma_req;
 +	}
 +
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	i2s->regs = devm_ioremap_resource(&pdev->dev, res);
++	i2s->regs = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
 +	if (IS_ERR(i2s->regs))
 +		return PTR_ERR(i2s->regs);
 +
-+	i2s->regmap = devm_regmap_init_mmio(&pdev->dev, i2s->regs,
++	i2s->regmap = devm_regmap_init_mmio(dev, i2s->regs,
 +			&ralink_i2s_regmap_config);
-+	if (IS_ERR(i2s->regmap)) {
-+		dev_err(&pdev->dev, "regmap init failed\n");
-+		return PTR_ERR(i2s->regmap);
-+	}
++	if (IS_ERR(i2s->regmap))
++		return dev_err_probe(dev, PTR_ERR(i2s->regmap), "regmap init failed");
 +
 +        irq = platform_get_irq(pdev, 0);
 +        if (irq < 0) {
-+                dev_err(&pdev->dev, "failed to get irq\n");
++                dev_err(dev, "failed to get irq\n");
 +                return -EINVAL;
 +        }
 +
 +#if (RALINK_I2S_INT_EN)
-+	ret = devm_request_irq(&pdev->dev, irq, ralink_i2s_irq,
-+			0, dev_name(&pdev->dev), i2s);
-+	if (ret) {
-+		dev_err(&pdev->dev, "failed to request irq\n");
-+		return ret;
-+	}
++	ret = devm_request_irq(dev, irq, ralink_i2s_irq,
++			0, dev_name(dev), i2s);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to request irq");
 +#endif
 +
-+	i2s->clk = devm_clk_get(&pdev->dev, NULL);
-+	if (IS_ERR(i2s->clk)) {
-+		dev_err(&pdev->dev, "no clock defined\n");
-+		return PTR_ERR(i2s->clk);
-+	}
-+
-+	ret = clk_prepare_enable(i2s->clk);
-+	if (ret)
-+		return ret;
++	i2s->clk = devm_clk_get_enabled(dev, NULL);
++	if (IS_ERR(i2s->clk))
++		return dev_err_probe(dev, PTR_ERR(i2s->clk), "no clock defined");
 +
 +	ralink_i2s_init_dma_data(i2s, res);
 +
-+	ret = device_reset(&pdev->dev);
-+	if (ret) {
-+		dev_err(&pdev->dev, "failed to reset device\n");
-+		goto err_clk_disable;
-+	}
-+
-+	ret = ralink_i2s_debugfs_create(i2s);
-+	if (ret) {
-+		dev_err(&pdev->dev, "create debugfs failed\n");
-+		goto err_clk_disable;
-+	}
++	ret = device_reset(dev);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to reset device\n");
 +
 +	/* enable 24bits support */
 +	if (i2s->flags & RALINK_FLAGS_24BIT) {
@@ -981,28 +961,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		memset(&ralink_i2s_dai.capture, sizeof(ralink_i2s_dai.capture),
 +				0);
 +
-+	ret = devm_snd_soc_register_component(&pdev->dev, &ralink_i2s_component,
++	ret = devm_snd_soc_register_component(dev, &ralink_i2s_component,
 +			&ralink_i2s_dai, 1);
 +	if (ret)
-+		goto err_debugfs;
++		return ret;
 +
-+	ret = devm_snd_dmaengine_pcm_register(&pdev->dev,
++	ret = devm_snd_dmaengine_pcm_register(dev,
 +			&ralink_dmaengine_pcm_config,
 +			SND_DMAENGINE_PCM_FLAG_COMPAT);
 +	if (ret)
-+		goto err_debugfs;
++		return ret;
 +
 +	dev_info(i2s->dev, "mclk %luMHz\n", clk_get_rate(i2s->clk) / 1000000);
 +
-+	return 0;
-+
-+err_debugfs:
-+	ralink_i2s_debugfs_remove(i2s);
-+
-+err_clk_disable:
-+	clk_disable_unprepare(i2s->clk);
-+
-+	return ret;
++	platform_set_drvdata(pdev, i2s);
++	return ralink_i2s_debugfs_create(i2s);
 +}
 +
 +static int ralink_i2s_remove(struct platform_device *pdev)
@@ -1010,7 +983,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct ralink_i2s *i2s = platform_get_drvdata(pdev);
 +
 +	ralink_i2s_debugfs_remove(i2s);
-+	clk_disable_unprepare(i2s->clk);
 +
 +	return 0;
 +}

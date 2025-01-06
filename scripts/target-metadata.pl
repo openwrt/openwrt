@@ -146,7 +146,7 @@ sub merge_package_lists($$) {
 	my %pkgs;
 
 	foreach my $pkg (@$list1, @$list2) {
-		$pkgs{$pkg} = 1;
+		$pkgs{$pkg =~ s/^~//r} = 1;
 	}
 	foreach my $pkg (keys %pkgs) {
 		push @l, $pkg unless ($pkg =~ /^-/ or $pkgs{"-$pkg"});
@@ -179,7 +179,7 @@ EOF
 	print <<EOF;
 choice
 	prompt "Target System"
-	default TARGET_ath79
+	default TARGET_mediatek
 	reset if !DEVEL
 	
 EOF
@@ -219,6 +219,14 @@ choice
 EOF
 	foreach my $target (@target) {
 		my $profile = $target->{profiles}->[0];
+		foreach my $p (@{$target->{profiles}}) {
+			last unless $target->{default_profile};
+			my $name = $p->{id};
+			$name =~ s/^DEVICE_//;
+			next unless $name eq $target->{default_profile};
+			$profile = $p;
+			last;
+		}
 		$profile or next;
 		print <<EOF;
 	default TARGET_$target->{conf}_$profile->{id} if TARGET_$target->{conf} && !BUILDBOT

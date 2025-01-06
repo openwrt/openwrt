@@ -374,7 +374,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		/* Check for the integrated SerDes of the RTL8380M first */
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
 		    && priv->id == 0x8380 && pn >= 24) {
-			pr_debug("----> FÓUND A SERDES\n");
+			pr_debug("----> FOUND A SERDES\n");
 			priv->ports[pn].phy = PHY_RTL838X_SDS;
 			continue;
 		}
@@ -1492,7 +1492,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->ds->needs_standalone_vlan_filtering = true;
 	priv->dev = dev;
 
-	mutex_init(&priv->reg_mutex);
+	err = devm_mutex_init(dev, &priv->reg_mutex);
+	if (err)
+		return err;
 
 	priv->family_id = soc_info.family;
 	priv->id = soc_info.id;

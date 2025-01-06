@@ -16,7 +16,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1114,7 +1114,7 @@ static int vc4_plane_mode_set(struct drm
+@@ -1140,7 +1140,7 @@ static int vc4_plane_mode_set(struct drm
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
@@ -25,7 +25,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		/* 0 source size probably means the plane is offscreen */
  		vc4_state->dlist_initialized = 1;
  		return 0;
-@@ -1641,8 +1641,10 @@ static int vc6_plane_mode_set(struct drm
+@@ -1667,8 +1667,10 @@ static int vc6_plane_mode_set(struct drm
  	width = vc4_state->src_w[0] >> 16;
  	height = vc4_state->src_h[0] >> 16;
  
@@ -38,7 +38,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		vc4_state->dlist_initialized = 1;
  		return 0;
  	}
-@@ -2018,7 +2020,8 @@ int vc4_plane_atomic_check(struct drm_pl
+@@ -2044,7 +2046,8 @@ int vc4_plane_atomic_check(struct drm_pl
  	if (ret)
  		return ret;
  

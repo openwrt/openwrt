@@ -2,13 +2,13 @@
 
 menuconfig COMMON_CLK_REALTEK
 	bool "Support for Realtek's clock controllers"
-	depends on RTL83XX
+	depends on MACH_REALTEK_RTL
 
 if COMMON_CLK_REALTEK
 
 config COMMON_CLK_RTL83XX
 	bool "Clock driver for Realtek RTL83XX"
-	depends on RTL83XX
+	depends on MACH_REALTEK_RTL
 	select SRAM
 	help
 	  This driver adds support for the Realtek RTL83xx series basic clocks.

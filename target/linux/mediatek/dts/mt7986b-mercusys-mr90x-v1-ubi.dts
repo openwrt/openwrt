@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: (GL-2.0 OR MIT)
+
+#include "mt7986b-mercusys-mr90x-v1-common.dtsi"
+
+/ {
+	compatible = "mercusys,mr90x-v1-ubi", "mediatek,mt7986b";
+	model = "MERCUSYS MR90X v1 (UBI)";
+};
+
+&aliases {
+	label-mac-device = &gmac0;
+};
+
+&chosen {
+	bootargs-append = " root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_fit>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_8000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_8000 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&partitions {
+	partition@0 {
+		label = "boot";
+		reg = <0x0 0x200000>;
+		read-only;
+
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bl2";
+			reg = <0x0 0x100000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x1000>;
+				};
+
+				macaddr_factory_8000: macaddr@8000 {
+					compatible = "mac-base";
+					reg = <0x8000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+	};
+
+	partition@200000 {
+		compatible = "linux,ubi";
+		reg = <0x200000 0x7e00000>;
+		label = "ubi";
+
+		volumes {
+			ubi_fit: ubi-volume-fit {
+				volname = "fit";
+			};
+
+			ubi_ubootenv: ubi-volume-ubootenv {
+				volname = "ubootenv";
+			};
+
+			ubi_ubootenv2: ubi-volume-ubootenv2 {
+				volname = "ubootenv2";
+			};
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&ubi_ubootenv {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};
+
+&ubi_ubootenv2 {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_8000 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_8000 (-1)>;
+		nvmem-cell-names = "mac-address";
+	};
+};

@@ -29,7 +29,6 @@ define Package/omnia-mcu-firmware
   CATEGORY:=Firmware
   URL:=https://gitlab.nic.cz/turris/hw/$(PKG_DISTNAME)/-/releases
   TITLE:=CZ.NIC Turris Omnia MCU firmware
-  DEPENDS:=@TARGET_mvebu_cortexa9_DEVICE_cznic_turris-omnia
 endef
 
 define Package/omnia-mcu-firmware/description

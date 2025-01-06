@@ -200,15 +200,11 @@
 		#address-cells = <3>;
 		device_type = "pci";
 
-		ath9k: wifi@168c,002e {
-			compatible = "pci168c,002e";
+		ath9k: wifi@0,0 {
 			reg = <0 0 0 0 0>;
 			#gpio-cells = <2>;
 			gpio-controller;
-			qca,no-eeprom;
 			ieee80211-freq-limit = <2402000 2482000>;
-			nvmem-cells = <&macaddr_ath9k_cal_f100 2>;
-			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -244,12 +240,12 @@
 				read-only;
 			};
 
-			ath9k_cal: partition@7d0000 {
+			partition@7d0000 {
 				reg = <0x7d0000 0x30000>;
 				label = "boardconfig";
 				read-only;
 
-				nvmem-layout {
+				boardconfig: nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;

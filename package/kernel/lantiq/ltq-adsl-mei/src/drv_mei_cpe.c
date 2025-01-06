@@ -2807,7 +2807,6 @@ static struct platform_driver ltq_mei_driver = {
 	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_mei_match,
 	},
 };

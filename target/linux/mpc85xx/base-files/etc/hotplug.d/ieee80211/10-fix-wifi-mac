@@ -20,11 +20,6 @@ enterasys,ws-ap3710i|\
 extreme-networks,ws-ap3825i)
 	mtd_get_mac_ascii cfg2 RADIOADDR${PHYNBR} > /sys${DEVPATH}/macaddress
 	;;
-hpe,msm460)
-	wifi_mac=$(mtd_get_mac_binary colubris-bid 0x1f9bd)
-	[ "$PHYNBR" -eq 0 ] && echo "$wifi_mac" > /sys${DEVPATH}/macaddress
-	[ "$PHYNBR" -eq 1 ] && echo "$(macaddr_add $wifi_mac 16)" > /sys${DEVPATH}/macaddress
-	;;
 ocedo,panda)
 	mtd_get_mac_ascii uboot-env0 wmac$(($PHYNBR + 1)) > /sys${DEVPATH}/macaddress
 	;;

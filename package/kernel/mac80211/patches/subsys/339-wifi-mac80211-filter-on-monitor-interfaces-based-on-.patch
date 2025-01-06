@@ -1,0 +1,29 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 2 Oct 2024 12:35:13 +0200
+Subject: [PATCH] wifi: mac80211: filter on monitor interfaces based on
+ configured channel
+
+When a monitor interface has an assigned channel (only happens with the
+NO_VIRTUAL_MONITOR feature), only pass packets received on that channel.
+This is useful for monitoring on multiple channels at the same time using
+multiple monitor interfaces.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -837,6 +837,13 @@ ieee80211_rx_monitor(struct ieee80211_lo
+ 	ieee80211_handle_mu_mimo_mon(monitor_sdata, origskb, rtap_space);
+ 
+ 	list_for_each_entry_rcu(sdata, &local->mon_list, u.mntr.list) {
++		struct cfg80211_chan_def *chandef;
++
++		chandef = &sdata->vif.bss_conf.chanreq.oper;
++		if (chandef->chan &&
++		    chandef->chan->center_freq != status->freq)
++			continue;
++
+ 		if (!prev_sdata) {
+ 			prev_sdata = sdata;
+ 			continue;
