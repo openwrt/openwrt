@@ -466,7 +466,7 @@ killclients()
 	while [ "${pid}" -ne 0 ]
 	 do
 		# get parent process id
-		pid=$(cut -d ' ' -f 4 "/proc/${pid}/stat")
+		pid=$(grep '^PPid:' "/proc/${pid}/status" | cut -f 2)
 		[ "${pid}" -eq 0 ] && break
 
 		# check if client connection
