@@ -21,10 +21,6 @@ on:
     types: [opened, edited]
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: ./actions
-
 jobs:
   validate:
     if: >-
@@ -38,7 +34,6 @@ jobs:
       - name: Checkout current version of the repository
         uses: actions/checkout@v4
         with:
-          path: actions
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /.github/
@@ -47,49 +42,54 @@ jobs:
         uses: Ansuel/github-issue-parser@v3
         id: issue-parser
         with:
-          template-path: ./actions/.github/ISSUE_TEMPLATE/bug-report.yml
+          template-path: ./.github/ISSUE_TEMPLATE/bug-report.yml
 
       - name: Validate release identifier
-        uses: ./actions/.github/actions/validate-release-identifier
+        uses: ./.github/actions/validate-release-identifier
         id: validate-release
         with:
           identifier: ${{ steps.issue-parser.outputs.issueparser_release }}
-          working-directory: ./actions
 
-      - name: Checkout release referenced in the issue
+      - name: Checkout full commit history for revision validation
         if: steps.validate-release.outputs.valid == 'true'
-        uses: actions/checkout@v4
-        with:
-          path: source
-          fetch-depth: 0
-          show-progress: false
-          ref: ${{ steps.validate-release.outputs.git_ref }}
+        run: |
+          git fetch --unshallow
 
       - name: Validate revision identifier
         if: steps.validate-release.outputs.valid == 'true'
-        uses: ./actions/.github/actions/validate-revision-identifier
+        uses: ./.github/actions/validate-revision-identifier
         id: validate-revision
         with:
           identifier: ${{ steps.issue-parser.outputs.issueparser_revision }}
-          working-directory: ./source
+
+      - name: Checkout actual revision for further validation
+        if: steps.validate-revision.outputs.valid == 'true'
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            Makefile
+            rules.mk
+            include/
+            target/
+            package/base-files/
+            scripts/
 
       - name: Validate target & subtarget
         if: steps.validate-release.outputs.valid == 'true'
-        uses: ./actions/.github/actions/validate-target-subtarget-identifier
+        uses: ./.github/actions/validate-target-subtarget-identifier
         id: validate-target-subtarget
         with:
           identifier: ${{ steps.issue-parser.outputs.issueparser_target }}
-          working-directory: ./source
 
       - name: Validate device name
         if: steps.validate-target-subtarget.outputs.valid == 'true'
-        uses: ./actions/.github/actions/validate-device-name
+        uses: ./.github/actions/validate-device-name
         id: validate-device
         with:
           device: ${{ steps.issue-parser.outputs.issueparser_device }}
           target: ${{ steps.validate-target-subtarget.outputs.target }}
           subtarget: ${{ steps.validate-target-subtarget.outputs.subtarget }}
-          working-directory: ./source
 
       - name: Process validation results
         id: process-results
@@ -157,11 +157,10 @@ jobs:
           echo "has_errors=$has_errors" >> $GITHUB_OUTPUT
 
       - name: Create or update comment
-        uses: ./actions/.github/actions/create-or-update-comment
+        uses: ./.github/actions/create-or-update-comment
         with:
           comment_body: ${{ steps.process-results.outputs.message }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: ./actions
 
       - name: Update issue labels
         env:

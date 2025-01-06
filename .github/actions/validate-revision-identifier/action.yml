@@ -44,11 +44,6 @@ runs:
         revision=${BASH_REMATCH[1]}
         hash=${BASH_REMATCH[2]}
 
-        if ! git show-ref --tags reboot --quiet; then
-          echo "::error::reboot tag not found in repository"
-          exit 1
-        fi
-
         if ! git rev-parse --quiet --verify "$hash"; then
           echo "::notice::Hash '$hash' not found"
           echo "valid=false" >> $GITHUB_OUTPUT

@@ -38,7 +38,7 @@ runs:
         if [[ "${{ inputs.identifier }}" == "snapshot" ]]; then
           echo "::notice::Found SNAPSHOT release"
           echo "valid=true" >> $GITHUB_OUTPUT
-          echo "git_ref=main" >> $GITHUB_OUTPUT
+          echo "git_ref=refs/heads/main" >> $GITHUB_OUTPUT
           exit 0
         fi
         shopt -u nocasematch
@@ -63,4 +63,4 @@ runs:
 
         echo "::notice::Release validated successfully"
         echo "valid=true" >> $GITHUB_OUTPUT
-        echo "git_ref=$git_ref" >> $GITHUB_OUTPUT
+        echo "git_ref=refs/tags/$git_ref" >> $GITHUB_OUTPUT
