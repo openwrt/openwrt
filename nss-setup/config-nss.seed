@@ -33,7 +33,8 @@
 # Target platform
 #####################################################################
 CONFIG_TARGET_qualcommax=y
-CONFIG_TARGET_qualcommax_ipq807x=y
+CONFIG_TARGET_qualcommax_ipq60xx=y
+# CONFIG_TARGET_qualcommax_ipq807x is not set
 
 #####################################################################
 # Target device
@@ -69,6 +70,7 @@ CONFIG_TARGET_qualcommax_ipq807x=y
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_zbtlink_zbt-z800ax is not set
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_zte_mf269 is not set
 # CONFIG_TARGET_qualcommax_ipq807x_DEVICE_zyxel_nbg7815 is not set
+CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_linksys_mr7500=y
 
 #####################################################################
 # NSS Offloading
@@ -87,19 +89,25 @@ CONFIG_PACKAGE_kmod-qca-mcs=y
 # NSS SQM Traffic Shaping
 CONFIG_PACKAGE_sqm-scripts-nss=y
 
+CONFIG_NSS_MEM_PROFILE_MEDIUM=y
+CONFIG_ATH11K_MEM_PROFILE_512=y
+CONFIG_IPQ_MEM_PROFILE_512=y
+CONFIG_KERNEL_IPQ_MEM_PROFILE=512
+
 #####################################################################
 # Compiler Optimization
 #####################################################################
 CONFIG_BUILD_PATENTED=y
 # Use ccache to speed up subsequent builds
 CONFIG_CCACHE=y
+CONFIG_CCACHE_DIR="/src/.cache"
 CONFIG_DEVEL=y
+CONFIG_DOWNLOAD_TOOL_CUSTOM="aria2c"
 CONFIG_EXPERIMENTAL=y
 CONFIG_TOOLCHAINOPTS=y
 CONFIG_TARGET_OPTIONS=y
 CONFIG_TARGET_OPTIMIZATION="-O2 -pipe -mcpu=cortex-a53+crc+crypto"
 CONFIG_USE_GC_SECTIONS=y
-
 
 # Kernel Config
 CONFIG_COLLECT_KERNEL_DEBUG=y
@@ -116,6 +124,19 @@ CONFIG_ATH11K_DEBUGFS_HTT_STATS=n
 CONFIG_ATH11K_DEBUGFS_STA=n
 # Disables thermal throttling support for ath11k.
 CONFIG_ATH11K_THERMAL=n
+
+# need nss fw
+CONFIG_PACKAGE_nss-firmware-default=y
+CONFIG_PACKAGE_nss-firmware-ipq60xx=y
+
+CONFIG_PACKAGE_ath11k-firmware-ipq6018=y
+#CONFIG_PACKAGE_ath11k-extfw-ipq6018-212-01460=y
+#CONFIG_PACKAGE_ath11k-extfw-ipq9074-212-01460=y
+# CONFIG_PACKAGE_ath11k-firmware-ipq6018 is not set
+# CONFIG_PACKAGE_ath11k-firmware-ipq8074 is not set
+# CONFIG_PACKAGE_ath11k-firmware-qca2066 is not set
+# CONFIG_PACKAGE_ath11k-firmware-qca6390 is not set
+CONFIG_PACKAGE_ath11k-firmware-qcn9074=y
 
 #####################################################################
 # SSL Configuration
@@ -175,6 +196,9 @@ CONFIG_PACKAGE_luci-app-package-manager=y
 #           without knowing the network conditions.
 CONFIG_PACKAGE_iperf3=y
 
+# AQR
+CONFIG_PACKAGE_kmod-phy-aquantia=y
+
 # --- Optional Packages --- #
 
 #### EVERYTHING BELOW THIS SECTION IS OPTIONAL!!
@@ -194,9 +218,51 @@ CONFIG_PACKAGE_luci-app-acme=y
 # - Watchcat: Automate reboots on connection loss.
 CONFIG_PACKAGE_luci-app-watchcat=y
 # - WireGuard: VPN support. Will also select the kernel module.
-CONFIG_PACKAGE_luci-proto-wireguard=y
+#CONFIG_PACKAGE_luci-proto-wireguard=y
 # - NLBWMon: Network usage monitoring to track bandwidth by host.
-CONFIG_PACKAGE_luci-app-nlbwmon=y
+#CONFIG_PACKAGE_luci-app-nlbwmon=y
+# - Argon Theme
+CONFIG_PACKAGE_luci-theme-argon=y
+CONFIG_PACKAGE_luci-app-argon-config=y
+# - Net Speedtest
+CONFIG_PACKAGE_luci-app-netspeedtest=y
+# - NFT QoS
+CONFIG_PACKAGE_luci-app-nft-qos=y
+# - DAWN
+CONFIG_PACKAGE_luci-app-dawn=y
+# - IRQ Balancer
+CONFIG_PACKAGE_luci-app-irqbalance=y
+# Adv reboot
+CONFIG_PACKAGE_luci-app-advanced-reboot=y
+# ssh + sftp
+#
+# SSH
+#
+# CONFIG_PACKAGE_autossh is not set
+# CONFIG_PACKAGE_mosh-client is not set
+# CONFIG_PACKAGE_mosh-full is not set
+# CONFIG_PACKAGE_mosh-server is not set
+# CONFIG_PACKAGE_openssh-client is not set
+# CONFIG_PACKAGE_openssh-client-utils is not set
+CONFIG_PACKAGE_openssh-keygen=y
+# CONFIG_PACKAGE_openssh-moduli is not set
+# CONFIG_PACKAGE_openssh-server is not set
+CONFIG_PACKAGE_openssh-server-pam=y
+# CONFIG_PACKAGE_openssh-sftp-avahi-service is not set
+# CONFIG_PACKAGE_openssh-sftp-client is not set
+CONFIG_PACKAGE_openssh-sftp-server=y
+# CONFIG_PACKAGE_sshtunnel is not set
+# CONFIG_PACKAGE_tmate is not set
+# end of SSH
+
+# tree
+CONFIG_PACKAGE_tree=y
+# use local forks for some
+CONFIG_SRC_TREE_OVERRIDE=y
+# vim
+CONFIG_PACKAGE_vim-fuller=y
+
+
 
 #####################################################################
 # Kernel Modules

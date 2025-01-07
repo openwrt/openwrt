@@ -370,7 +370,8 @@ define KernelPackage/ath11k/config
 
        config ATH11K_NSS_SUPPORT
                bool "Enable NSS WiFi offload"
-               select ATH11K_MEM_PROFILE_512M if (TARGET_qualcommax_ipq807x_DEVICE_edimax_cax1800 || \
+               select ATH11K_MEM_PROFILE_512M if (TARGET_qualcommax_ipq6018_DEVICE_linksys_mr7500 || \
+	         TARGET_qualcommax_ipq807x_DEVICE_edimax_cax1800 || \
                	 TARGET_qualcommax_ipq807x_DEVICE_compex_wpq873 || \
                	 TARGET_qualcommax_ipq807x_DEVICE_linksys_mx4200v1 || \
                	 TARGET_qualcommax_ipq807x_DEVICE_redmi_ax6 || \
