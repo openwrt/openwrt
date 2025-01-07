@@ -27,6 +27,7 @@
 		regulator-max-microvolt = <5000000>;
 		gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
+		regulator-always-on;
 	};
 
 	leds {
@@ -44,17 +45,18 @@
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 
-		fn {
-			function = LED_FUNCTION_USB;
+		wifi2 {
+			function = LED_FUNCTION_WLAN_2GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
-		wifi {
-			function = LED_FUNCTION_WLAN;
+		wifi5 {
+			function = LED_FUNCTION_WLAN_5GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt","phy1tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -93,7 +95,7 @@
 			partition@0 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x0 0x1CC0000>;
+				reg = <0x0 0x1cc0000>;
 			};
 		};
 	};
@@ -160,21 +162,21 @@
 				reg = <0x50000 0xe60000>;
 			};
 
-			partition@EB0000 {
+			partition@eb0000 {
 				label = "config_1";
-				reg = <0xEB0000 0x40000>;
+				reg = <0xeb0000 0x40000>;
 				read-only;
 			};
 
-			partition@EF0000 {
+			partition@ef0000 {
 				label = "storage";
-				reg = <0xEF0000 0x100000>;
+				reg = <0xef0000 0x100000>;
 				read-only;
 			};
 
-			partition@FF0000 {
+			partition@ff0000 {
 				label = "dump";
-				reg = <0xFF0000 0x10000>;
+				reg = <0xff0000 0x10000>;
 				read-only;
 			};
 
@@ -198,12 +200,12 @@
 
 			firmware2: partition@1050000 {
 				label = "firmware_2";
-				reg = <0x1050000 0xE60000>;
+				reg = <0x1050000 0xe60000>;
 			};
 			
-			partition@1EB0000 {
+			partition@1eb0000 {
 				label = "Config_2";
-				reg = <0x1EB0000 0x40000>;
+				reg = <0x1eb0000 0x40000>;
 				read-only;
 			};
 		};
