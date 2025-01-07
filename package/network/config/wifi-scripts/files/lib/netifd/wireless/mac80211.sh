@@ -844,13 +844,19 @@ mac80211_setup_adhoc() {
 
 mac80211_setup_mesh() {
 	json_get_vars ssid mesh_id mcast_rate
+	json_get_values iface_basic_rate_list basic_rate
 
 	mcval=
 	[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
 	[ -n "$mesh_id" ] && ssid="$mesh_id"
 
+	br_list="$basic_rate_list"
+	if [ -n "$iface_basic_rate_list" ]; then
+		br_list="$iface_basic_rate_list"
+	fi
+
 	brstr=
-	for br in $basic_rate_list; do
+	for br in $br_list; do
 		wpa_supplicant_add_rate brstr "$br"
 	done
 
