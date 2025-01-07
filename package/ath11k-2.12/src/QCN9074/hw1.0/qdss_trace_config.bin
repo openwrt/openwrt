@@ -1,0 +1,200 @@
+//This comment and parser will ignore
+//Tracer scenario(or commands) always
+//starts with start keyword
+//Below commands to enable Event traces on UMAC,MAC0,MAC1
+seq_start;
+seq_type:mem_req;
+//memory size always given in KB. beow example reserves 3 buffers segments of 16 KB.
+sink:etr_ddr,0x1,0x400;
+seq_end;
+//Below commands to enable Event traces on UMAC,MAC0,MAC1
+seq_start;
+seq_type:mac_event_trace;
+sink:etr_ddr;
+subsys_cfg_start:mac0;
+swevt:0x0, 0xFFFFFFFF,0xFFFFFFFF,0x0,0x0;
+hwsch:0x1, 0xEFFFF7, 0x18660107, 0x00000000, 0x00000000;
+rxdma:0x2, 0x3F37FE7F, 0x00017F04, 0x00000000, 0x00000000;
+crypto:0x3, 0xF7DB3770, 0x00000000, 0x00000000, 0x00000000;
+txpcu:0x4, 0xD6C7F4E7, 0x200801D2, 0x00000000, 0x00000000;
+rxole:0x5, 0x3F80E61F, 0xFFC00000, 0x00000000, 0x00000000;
+txole:0x6, 0x601F0EB4, 0x6FF0F000, 0x00000000, 0x00000000;
+mxi:0x7, 0x00122234, 0x00000000, 0x00000000, 0x00000000;
+txdma:0x8, 0x39800064, 0x00000084, 0x00000000, 0x00000000;
+sfm:0x9, 0xC03C0F03, 0xE, 0x00000000, 0x00000000;
+rxpcu:0xa, 0x20002217, 0xF8008000, 0x00000000, 0x00000000;
+subsys_cfg_end:mac0;
+//subsys_cfg_start:mac1;
+//swevt:0x0, 0xFFFFFFFF,0xFFFFFFFF,0x0,0x0;
+//hwsch:0x8, 0xEFFF1, 0x1036052C, 0x00000000, 0x00000000;
+//rxdma:0x9, 0x00003400, 0x00008000, 0x00000000, 0x00000000;
+//crypto:0xa, 0xf79B3770, 0x00000000, 0x00000000, 0x00000000;
+//txpcu:0xb, 0xD6C7B447, 0x000000D2, 0x00000000, 0x00000000;
+//txdma:0xc, 0x00001734, 0x00000084, 0x00000000, 0x00000000;
+//txole:0xd, 0x7C0FFE26, 0x00000000, 0x00000000, 0x00000000;
+//pdg:0xe, 0x00C00002, 0x00000000, 0x00000000, 0x00000000;
+//subsys_cfg_end:mac1;
+//UMAC - uncomment lines "subsys_cfg_start:umac;" and "subsys_cfg_end:umac;".
+subsys_cfg_start:umac;
+tqm:0xb, 0xCDE14600, 0x80C00000, 0x00000000, 0x00000000;
+tcl:oxc, 0x80300034, 0xFFE00000, 0x00000000, 0x00000000;
+tcl_1:0xd, 0x00000000,0x00000000,0x0001FFF8, 0x00000000;
+subsys_cfg_end:umac;
+swap:0xFFFFFFFF;
+trigger_start:trc;
+wfi:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+ts0:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+ts1:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+ts2:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+ts3:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+ts4:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+trigger_end:trc;
+memw:0xFFFFFFFF,0xFFFFFFFF;
+seq_end;
+// Below commands to enable obo trace on the mac0
+//seq_start;
+//seq_type:mac_obo_trace;
+//sink:etb_wcss;
+//subsys_cfg_start:mac0;
+//hwsch:0x1,0xABCDABCD;
+//subsys_cfg_end:mac0;
+//swap:0xABCDABCD;
+//trigger_start:trc;
+//wfi:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//ts0:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//ts1:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//ts2:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//ts3:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//ts4:0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF;
+//trigger_end:trc;
+//memw:0xFFFFFFFF,0xFFFFFFFF;
+//seq_end;
+// Below commands to enable TLV trace on the mac0
+//seq_start;
+//seq_type:mac_tlv_trace;
+//sink:etb_wcss;
+//subsys_cfg_start:mac0;
+//tlv_port:pdg_txdma_tlv;
+//subsys_cfg_end:mac0;
+//seq_end;
+// Below commands to enable q6 etm
+//seq_start;
+//seq_type:q6_etm_trace;
+//sink:etr_ddr;
+//seq_end;
+//Use below probe id to enable umac noc traces
+//probe_id_0 -> umac_noc_m_wmac0_tenureprb
+//probe_id_1 -> umac_noc_s_snoc_pcie_tenureprb
+//probe_id_2 -> umac_noc_s_snoc_tenureprb
+// Below commands to enable umac noc traces
+//seq_start;
+//seq_type:noc_trace;
+//noc_id:umacnoc;
+//sink:etr_ddr;
+//sync_out_period:0x1f;
+//sub_seq_start:probe_id_0;
+//main_ctrl:0x126;
+//dumpthr:0xFA0;
+//filter_addr_min_lo:0x0;
+//filter_addr_min_hi:0x0;
+//filter_addr_max_lo:0xFFFFFFFF;
+//filter_addr_max_hi:0x0F;        
+//filter_opcode:0x2;
+//bin:0x1C;
+//sub_seq_end;
+//sub_seq_start:probe_id_1;
+//main_ctrl:0x126;
+//dumpthr:0xFA0;
+//filter_addr_min_lo:0x0;
+//filter_addr_min_hi:0x0;
+//filter_addr_max_lo:0xFFFFFFFF;
+//filter_addr_max_hi:0x0F;        
+//filter_opcode:0x2;
+//bin:0x1C;
+//sub_seq_end;
+//sub_seq_start:probe_id_2;
+//main_ctrl:0x126;
+//dumpthr:0xFA0;
+//filter_addr_min_lo:0x0;
+//filter_addr_min_hi:0x0;
+//filter_addr_max_lo:0xFFFFFFFF;
+//filter_addr_max_hi:0x0F;        
+//filter_opcode:0x2;
+//bin:0x1C;
+//sub_seq_end;
+//seq_end;
+//Use below probe id to enable umac noc traces
+//probe_id_0 -> snoc_m_wcss_mac1_tenure_probe
+//probe_id_1 -> snoc_s_pcie_tenure_probe
+//Below commands to enable snoc traces
+//seq_start;
+//seq_type:noc_trace;
+//noc_id:snoc;
+//sink:etr_ddr;
+//sync_out_period:0x1f;
+//sub_seq_start:probe_id_0;
+//main_ctrl:0x126;
+//dumpthr:0xFA0;
+//filter_addr_min_lo:0x0;
+//filter_addr_min_hi:0x0;
+//filter_addr_max_lo:0xFFFFFFFF;
+//filter_addr_max_hi:0x0F;        
+//filter_opcode:0x2;
+//bin:0x1C;
+//sub_seq_end;
+//sub_seq_start:probe_id_1;
+//main_ctrl:0x126;
+//dumpthr:0xFA0;
+//filter_addr_min_lo:0x0;
+//filter_addr_min_hi:0x0;
+//filter_addr_max_lo:0xFFFFFFFF;
+//filter_addr_max_hi:0x0F;        
+//filter_opcode:0x2;
+//bin:0x1C;
+//sub_seq_end;
+//seq_end;
+// Below commands to enable tlv traces
+//seq_start;
+//seq_type:phy_tlv_trace;
+//sink:etr_ddr;
+//seq_end;
+//PHY evnt enable
+//seq_start;
+//seq_type:phy_event_trace;
+//sink:etr_ddr;
+//subsys_cfg_start:phya;
+//wsi:0x1,0x00000000,0x00000000;
+//rfcntl:0x2,0x00000000,0x00000000;
+//tpc:0x3,0x00000000,0x00000000;
+//cal:0x4,0x00000000,0x00000000;
+//impcorr:0x5,0x00000000,0x00000000;
+//mpi:0x6,0x0000001E,0x00000000;
+//fft:0x7,0x00000000,0x00000000;
+//txtd:0x8,0x00000000,0x00000000;
+//pmi:0x9,0x0000001E,0x00000000;
+//rxtd:0xa,0x00000003,0x0000000E;
+//pcss:0xc,0x000000FF,0x000000FF;
+//txfd:0xd,0x00000000,0x00000000;
+//robe:0xe,0x00000000,0x00000000;
+//phynoc:0xf,0x00000000,0x00000000;
+//eos:0x0,0x00000000,0x00000000;
+//subsys_cfg_end:phya;
+//subsys_cfg_start:phya1;
+//wsi:0x1,0x00000000,0x00000000;
+//rfcntl:0x2,0x00000000,0x00000000;
+//tpc:0x3,0x00000000,0x00000000;
+//cal:0x4,0x00000000,0x00000000;
+//impcorr:0x5,0x00000000,0x00000000;
+//mpi:0x6,0x0000001E,0x00000000;
+//fft:0x7,0x00000000,0x00000000;
+//txtd:0x8,0x00000000,0x00000000;
+//pmi:0x9,0x0000001E,0x00000000;
+//rxtd:0xa,0x00000003,0x0000000E;
+//pcss:0xc,0x000000FF,0x000000FF;
+//txfd:0xd,0x00000000,0x00000000;
+//robe:0xe,0x00000000,0x00000000;
+//phynoc:0xf,0x00000000,0x00000000;
+//eos:0x0,0x00000000,0x00000000;
+//subsys_cfg_end:phya1;
+//seq_end;
+
