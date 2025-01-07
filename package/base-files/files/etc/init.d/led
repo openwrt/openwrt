@@ -128,6 +128,11 @@ load_led() {
 			return 1
 		}
 		case "$trigger" in
+		"gpio")
+			echo $gpio > /sys/class/leds/${sysfs}/gpio
+			echo $inverted > /sys/class/leds/${sysfs}/inverted
+			;;
+
 		"heartbeat")
 			echo "${inverted}" > "/sys/class/leds/${sysfs}/invert"
 			;;
@@ -141,21 +146,6 @@ load_led() {
 				done
 				echo $interval > /sys/class/leds/${sysfs}/interval 2>/dev/null
 			}
-			;;
-
-		"timer"|"oneshot")
-			[ -n "$delayon" ] && \
-				echo $delayon > /sys/class/leds/${sysfs}/delay_on
-			[ -n "$delayoff" ] && \
-				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
-			;;
-
-		"usbport")
-			local p
-
-			for p in $ports; do
-				echo 1 > /sys/class/leds/${sysfs}/ports/$p
-			done
 			;;
 
 		"pattern")
@@ -179,11 +169,6 @@ load_led() {
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
 			;;
 
-		"gpio")
-			echo $gpio > /sys/class/leds/${sysfs}/gpio
-			echo $inverted > /sys/class/leds/${sysfs}/inverted
-			;;
-
 		switch[0-9]*)
 			local port_mask speed_mask
 
@@ -195,6 +180,21 @@ load_led() {
 				echo $speed_mask > /sys/class/leds/${sysfs}/speed_mask
 			[ -n "$mode" ] && \
 				echo "$mode" > /sys/class/leds/${sysfs}/mode
+			;;
+
+		"timer"|"oneshot")
+			[ -n "$delayon" ] && \
+				echo $delayon > /sys/class/leds/${sysfs}/delay_on
+			[ -n "$delayoff" ] && \
+				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+			;;
+
+		"usbport")
+			local p
+
+			for p in $ports; do
+				echo 1 > /sys/class/leds/${sysfs}/ports/$p
+			done
 			;;
 		esac
 	}
