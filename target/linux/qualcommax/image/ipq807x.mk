@@ -167,7 +167,6 @@ define Device/linksys_mx
 	SOC := ipq8072
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
-	DEVICE_PACKAGES := kmod-leds-pca963x
 endef
 
 define Device/linksys_mx4x00
@@ -180,13 +179,15 @@ define Device/linksys_mx4200v1
 	$(call Device/linksys_mx4x00)
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
-	DEVICE_PACKAGES += kmod-bluetooth
+	DEVICE_PACKAGES += kmod-bluetooth kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
 define Device/linksys_mx4200v2
-	$(call Device/linksys_mx4200v1)
+	$(call Device/linksys_mx4x00)
+	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v2
+	DEVICE_PACKAGES += kmod-bluetooth kmod-leds-st1202
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
@@ -198,6 +199,7 @@ define Device/linksys_mx4300
 	KERNEL_SIZE := 8192k
 	IMAGE_SIZE := 171264k
 	NAND_SIZE := 1024m
+	DEVICE_PACKAGES += kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx4300
 
@@ -205,7 +207,7 @@ define Device/linksys_mx5300
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX5300
 	DEVICE_PACKAGES += kmod-rtc-ds1307 ipq-wifi-linksys_mx5300 \
-		kmod-ath10k-ct ath10k-firmware-qca9984-ct
+		kmod-ath10k-ct ath10k-firmware-qca9984-ct kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx5300
 
@@ -213,7 +215,7 @@ define Device/linksys_mx8500
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX8500
 	DEVICE_PACKAGES += ipq-wifi-linksys_mx8500 kmod-ath11k-pci \
-		ath11k-firmware-qcn9074 kmod-bluetooth
+		ath11k-firmware-qcn9074 kmod-bluetooth kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mx8500
 

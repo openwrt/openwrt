@@ -23,6 +23,11 @@ dynalink,dl-wrx36)
 edgecore,eap102)
 	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
 	;;
+linksys,mx4200v2)
+	ucidef_set_led_pattern "red" "red" "red:status" 0 "hw_pattern" "225 1000" "" "-1" "255"
+	ucidef_set_led_pattern "green" "green" "green:status" 0 "hw_pattern" "225 1000" "" "-1" "255"
+	ucidef_set_led_pattern "blue" "blue" "blue:status" 1 "hw_pattern" "225 1000" "" "-1" "255"
+	;;
 netgear,rax120v2)
 	ucidef_set_led_netdev "aqr" "AQR" "white:aqr" "lan5"
 	;;
