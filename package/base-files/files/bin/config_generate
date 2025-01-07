@@ -465,6 +465,19 @@ generate_led() {
 			EOF
 		;;
 
+		pattern)
+			local pattern patternon patternoff repeat brightness
+			json_get_vars pattern patternon patternoff repeat brightness
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='$type'
+				set system.$cfg.pattern='$pattern'
+				set system.$cfg.patternon='$patternon'
+				set system.$cfg.patternoff='$patternoff'
+				set system.$cfg.repeat='$repeat'
+				set system.$cfg.brightness='$brightness'
+			EOF
+		;;
+
 		portstate)
 			local port_state
 			json_get_vars port_state
