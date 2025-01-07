@@ -51,7 +51,7 @@ define Build/arcadyan-trx
 	rm $@.hsqs $@.tail
 endef
 
-define Build/dna-header
+define Build/inteno-y3-header
 	BC='$(STAGING_DIR_HOST)/bin/bc' ;\
 	ubifsofs="1024" ;\
 	ubifs="$$(stat -c%s $@)" ;\
@@ -91,7 +91,7 @@ define Build/dna-header
 	mv $@.tmp $@
 endef
 
-define Build/dna-bootfs
+define Build/inteno-bootfs
 	mkdir -p $@.ubifs-dir/boot
 
 	# populate the boot fs with the dtb and the kernel image
@@ -1058,23 +1058,11 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+# Branded version of Genexis / Inteno EX400 (difference is one LED)
 define Device/dna_valokuitu-plus-ex400
-  $(Device/dsa-migration)
-  IMAGE_SIZE := 117m
-  PAGESIZE := 2048
-  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
-	--log-lebs=2 --space-fixup --squash-uids
+  $(Device/genexis_pulse-ex400/common)
   DEVICE_VENDOR := DNA
   DEVICE_MODEL := Valokuitu Plus EX400
-  KERNEL := kernel-bin | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
-	dna-bootfs | dna-header | append-md5sum-ascii-salted
-  IMAGE/sysupgrade.bin := append-kernel | dna-bootfs | \
-  	sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
-  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += dna_valokuitu-plus-ex400
 
@@ -1378,6 +1366,33 @@ define Device/gemtek_wvrtm-130acn
   DEVICE_PACKAGES += kmod-mt7615-firmware
 endef
 TARGET_DEVICES += gemtek_wvrtm-130acn
+
+# Common definitions shared between genexis_pulse-ex400 and dna_valokuitu-plus-ex400
+define Device/genexis_pulse-ex400/common
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 117m
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
+    --log-lebs=2 --space-fixup --squash-uids
+  KERNEL := kernel-bin | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
+	inteno-bootfs | inteno-y3-header | append-md5sum-ascii-salted
+  IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | \
+    sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+endef
+
+define Device/genexis_pulse-ex400
+  $(Device/genexis_pulse-ex400/common)
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Pulse EX400
+  DEVICE_ALT0_VENDOR := Inteno
+  DEVICE_ALT0_MODEL := Pulse EX400
+endef
+TARGET_DEVICES += genexis_pulse-ex400
 
 define Device/glinet_gl-mt1300
   $(Device/dsa-migration)
