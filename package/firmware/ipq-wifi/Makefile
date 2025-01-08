@@ -45,6 +45,7 @@ ALLWIFIBOARDS:= \
 	linksys_mx5300 \
 	linksys_mx5500 \
 	linksys_mx8500 \
+	linksys_spnmx56 \
 	linksys_whw03 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
@@ -184,6 +185,7 @@ $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5500,Linksys MX5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
+$(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))

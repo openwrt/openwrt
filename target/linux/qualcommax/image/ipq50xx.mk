@@ -29,3 +29,13 @@ define Device/linksys_mx5500
 		ipq-wifi-linksys_mx5500
 endef
 TARGET_DEVICES += linksys_mx5500
+
+define Device/linksys_spnmx56
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := SPNMX56
+	DEVICE_DTS_CONFIG := config@mp03.1
+	DEVICE_PACKAGES := kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-linksys_spnmx56
+endef
+TARGET_DEVICES += linksys_spnmx56
