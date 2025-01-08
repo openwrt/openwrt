@@ -1,6 +1,6 @@
 --- a/cmd/Kconfig
 +++ b/cmd/Kconfig
-@@ -683,6 +683,12 @@ config CMD_ENV_EXISTS
+@@ -692,6 +692,12 @@ config CMD_ENV_EXISTS
  	  Check if a variable is defined in the environment for use in
  	  shell scripting.
  
@@ -15,7 +15,7 @@
  	help
 --- a/cmd/nvedit.c
 +++ b/cmd/nvedit.c
-@@ -273,6 +273,60 @@ int do_env_ask(struct cmd_tbl *cmdtp, in
+@@ -273,6 +273,60 @@ static int do_env_ask(struct cmd_tbl *cm
  }
  #endif
  

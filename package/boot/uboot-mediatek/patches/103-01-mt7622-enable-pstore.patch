@@ -10,20 +10,20 @@
 +	};
 +
 +	reserved-memory {
-+		#address-cells = <2>;
-+		#size-cells = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
 +		ranges;
 +
 +		/* 64 KiB reserved for ramoops/pstore */
 +		ramoops@42ff0000 {
 +			compatible = "ramoops";
-+			reg = <0 0x42ff0000 0 0x10000>;
++			reg = <0x42ff0000 0x10000>;
 +			record-size = <0x1000>;
 +		};
 +
 +		/* 192 KiB reserved for ARM Trusted Firmware (BL31) */
 +		secmon_reserved: secmon@43000000 {
-+			reg = <0 0x43000000 0 0x30000>;
++			reg = <0x43000000 0x30000>;
 +			no-map;
 +		};
 +	};

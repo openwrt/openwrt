@@ -13,7 +13,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -663,19 +663,13 @@ static init_fnc_t init_sequence_r[] = {
+@@ -682,19 +682,13 @@ static init_fnc_t init_sequence_r[] = {
  	serial_initialize,
  	initr_announce,
  	dm_announce,
@@ -33,7 +33,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
  #if defined(CONFIG_PCI_INIT_R) && defined(CONFIG_SYS_EARLY_PCI_INIT)
  	/*
  	 * Do early PCI configuration _before_ the flash gets initialised,
-@@ -690,7 +684,6 @@ static init_fnc_t init_sequence_r[] = {
+@@ -709,7 +703,6 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_MTD_NOR_FLASH
  	initr_flash,
  #endif
@@ -41,7 +41,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
  #if defined(CONFIG_PPC) || defined(CONFIG_M68K) || defined(CONFIG_X86)
  	/* initialize higher level parts of CPU like time base and timers */
  	cpu_init_r,
-@@ -719,6 +712,10 @@ static init_fnc_t init_sequence_r[] = {
+@@ -738,6 +731,10 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_PVBLOCK
  	initr_pvblock,
  #endif
