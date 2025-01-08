@@ -687,6 +687,18 @@ define Device/comfast_cf-ew72-v2
 endef
 TARGET_DEVICES += comfast_cf-ew72-v2
 
+define Device/confiabits_mt7621-v1
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Confiabits
+  DEVICE_MODEL := MT7621
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+endef
+TARGET_DEVICES += confiabits_mt7621-v1
+
 define Device/cudy_m1800
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy

@@ -58,6 +58,10 @@ wifire,s1500-nbn)
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
+confiabits,mt7621-v1|\
+netis,n6)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	;;
 cudy,wr2100)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
@@ -188,9 +192,6 @@ netgear,r7450)
 	;;
 netgear,wax202)
 	ucidef_set_led_netdev "internet" "Internet" "green:net" "wan"
-	;;
-netis,n6)
-	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
 oraybox,x3a)
 	ucidef_set_led_netdev "wan" "wan link" "red:status" "wan"
