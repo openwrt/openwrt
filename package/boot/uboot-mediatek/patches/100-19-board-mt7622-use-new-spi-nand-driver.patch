@@ -30,7 +30,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  };
 --- a/arch/arm/dts/mt7622.dtsi
 +++ b/arch/arm/dts/mt7622.dtsi
-@@ -77,6 +77,22 @@
+@@ -53,6 +53,22 @@
  		#size-cells = <0>;
  	};
  
@@ -55,7 +55,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  		reg = <0x11014000 0x1000>;
 --- a/configs/mt7622_rfb_defconfig
 +++ b/configs/mt7622_rfb_defconfig
-@@ -22,6 +22,7 @@ CONFIG_SYS_PROMPT="MT7622> "
+@@ -20,6 +20,7 @@ CONFIG_SYS_PROMPT="MT7622> "
  CONFIG_SYS_MAXARGS=8
  CONFIG_CMD_BOOTMENU=y
  CONFIG_CMD_MMC=y
@@ -63,7 +63,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  CONFIG_CMD_PCI=y
  CONFIG_CMD_SF_TEST=y
  CONFIG_CMD_PING=y
-@@ -42,6 +43,9 @@ CONFIG_CLK=y
+@@ -37,6 +38,9 @@ CONFIG_CLK=y
  CONFIG_MMC_HS200_SUPPORT=y
  CONFIG_MMC_MTK=y
  CONFIG_MTD=y

@@ -12,7 +12,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/sf.c
 +++ b/cmd/sf.c
-@@ -413,6 +413,14 @@ static int do_spi_protect(int argc, char
+@@ -421,6 +421,14 @@ static int do_spi_protect(int argc, char
  	return ret == 0 ? 0 : 1;
  }
  
@@ -27,7 +27,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  enum {
  	STAGE_ERASE,
  	STAGE_CHECK,
-@@ -607,6 +615,8 @@ static int do_spi_flash(struct cmd_tbl *
+@@ -615,6 +623,8 @@ static int do_spi_flash(struct cmd_tbl *
  		ret = do_spi_flash_erase(argc, argv);
  	else if (IS_ENABLED(CONFIG_SPI_FLASH_LOCK) && strcmp(cmd, "protect") == 0)
  		ret = do_spi_protect(argc, argv);
@@ -36,11 +36,14 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	else if (IS_ENABLED(CONFIG_CMD_SF_TEST) && !strcmp(cmd, "test"))
  		ret = do_spi_flash_test(argc, argv);
  	else
-@@ -637,6 +647,7 @@ U_BOOT_LONGHELP(sf,
- #ifdef CONFIG_CMD_SF_TEST
- 	"\nsf test offset len		- run a very basic destructive test"
+@@ -643,8 +653,9 @@ U_BOOT_LONGHELP(sf,
+ 	"					  at address 'sector'"
  #endif
-+	"sf uuid				- read uuid from flash"
+ #ifdef CONFIG_CMD_SF_TEST
+-	"\nsf test offset len		- run a very basic destructive test"
++	"\nsf test offset len			- run a very basic destructive test"
+ #endif
++	"\nsf uuid					- read uuid from flash"
  	);
  
  U_BOOT_CMD(

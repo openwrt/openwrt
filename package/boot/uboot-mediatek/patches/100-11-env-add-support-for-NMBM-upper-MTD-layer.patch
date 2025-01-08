@@ -60,13 +60,13 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	default 0xF0000 if ARCH_SUNXI
 --- a/env/Makefile
 +++ b/env/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_FAT) +
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_EXT4) += ext4.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_MTD) += mtd.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_NAND) += nand.o
-+obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_NMBM) += nmbm.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_SPI_FLASH) += sf.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_FLASH) += flash.o
+@@ -26,6 +26,7 @@ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_FAT) +=
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_EXT4) += ext4.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_MTD) += mtd.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_NAND) += nand.o
++obj-$(CONFIG_$(PHASE_)ENV_IS_IN_NMBM) += nmbm.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_SPI_FLASH) += sf.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_FLASH) += flash.o
  
 --- a/env/env.c
 +++ b/env/env.c
@@ -240,7 +240,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +};
 --- a/include/env_internal.h
 +++ b/include/env_internal.h
-@@ -109,6 +109,7 @@ enum env_location {
+@@ -110,6 +110,7 @@ enum env_location {
  	ENVL_MMC,
  	ENVL_MTD,
  	ENVL_NAND,

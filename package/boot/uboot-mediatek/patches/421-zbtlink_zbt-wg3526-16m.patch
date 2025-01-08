@@ -16,10 +16,10 @@
 +CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
 +CONFIG_SPL_BSS_START_ADDR=0x80140000
 +CONFIG_SPL_BSS_MAX_SIZE=0x80000
++CONFIG_SYS_LOAD_ADDR=0x83000000
 +CONFIG_SPL=y
 +CONFIG_DEBUG_UART_BASE=0xbe000c00
 +CONFIG_DEBUG_UART_CLOCK=50000000
-+CONFIG_SYS_LOAD_ADDR=0x83000000
 +CONFIG_ARCH_MTMIPS=y
 +CONFIG_SOC_MT7621=y
 +CONFIG_SYS_MIPS_TIMER_FREQ=440000000
@@ -171,7 +171,7 @@
 +
 +		reset {
 +			label = "reset";
-+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -180,7 +180,7 @@
 +
 +		led_status: status {
 +			label = "green:status";
-+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
++			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};

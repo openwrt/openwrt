@@ -15,7 +15,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/Kconfig
 +++ b/cmd/Kconfig
-@@ -1465,6 +1465,12 @@ config CMD_NAND_TORTURE
+@@ -1492,6 +1492,12 @@ config CMD_NAND_TORTURE
  
  endif # CMD_NAND
  
@@ -35,9 +35,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  obj-$(CONFIG_CMD_MUX) += mux.o
  obj-$(CONFIG_CMD_NAND) += nand.o
 +obj-$(CONFIG_CMD_NMBM) += nmbm.o
- obj-$(CONFIG_CMD_NET) += net.o
- obj-$(CONFIG_ENV_SUPPORT) += nvedit.o
- obj-$(CONFIG_CMD_NVEDIT_EFI) += nvedit_efi.o
+ ifdef CONFIG_NET
+ obj-$(CONFIG_CMD_NET) += net.o net-common.o
+ else ifdef CONFIG_NET_LWIP
 --- /dev/null
 +++ b/cmd/nmbm.c
 @@ -0,0 +1,327 @@
