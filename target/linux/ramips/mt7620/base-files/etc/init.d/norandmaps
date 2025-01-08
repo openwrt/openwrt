@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+# FIXME!
+# Disable randmaps to workaround the random kernel oops
+boot() {
+	echo 0 > /proc/sys/kernel/randomize_va_space
+}
