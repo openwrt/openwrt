@@ -505,6 +505,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth1" "4:lan:1" "3:lan:2" "2:lan:3" "1:lan:4"
 		;;
+	ruckus,r500)
+		ucidef_add_switch "switch0" \
+			"6u@eth0" "5:lan:1" "3:lan:2" "0@eth1"
+		;;
 	teltonika,rut955|\
 	teltonika,rut955-h7v3c0)
 		ucidef_set_interface_wan "eth1"
@@ -813,6 +817,7 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x0)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
 		;;
+	ruckus,r500|\
 	ruckus,zf7025|\
 	ruckus,zf7321|\
 	ruckus,zf7341|\

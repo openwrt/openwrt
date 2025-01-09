@@ -1,0 +1,331 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "ruckus,r500", "qca,qca9557";
+	model = "Ruckus R500";
+
+	aliases {
+		led-boot = &power_green;
+		led-failsafe = &power_red;
+		led-running = &power_green;
+		led-upgrade = &power_red;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins &clks_disable_pins &enable_gpio_4>;
+
+		power_green: led-0 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		power_red: led-1 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			panic-indicator;
+		};
+
+		// DIR (Zone Director) LED - Indicates Zone director connection status
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "dir";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		// AIR (Signal/Air Quality) LED - Indicates uplink status and the quality of the wireless signal to the uplink AP
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "air";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1assoc";
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+	};
+
+	beamforming-2g-spi {
+		compatible = "spi-gpio";
+		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming-2g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	beamforming-5g-spi {
+		/*
+		 * ath10k driver doesn't expose GPIOs as of now,
+		 * so let's disable it for now. The shift register
+		 * for antenna pattern control is correctly initialized
+		 * for omnidirectional pattern correctly despite that,
+		 * there is just no possibility to control that from OpenWrt yet.
+		 */
+		status = "disabled";
+		compatible = "spi-gpio";
+		mosi-gpios = <&ath10k 15 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&ath10k 14 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming-5g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		scl-gpios = <&gpio 19 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&gpio 20 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		tpm@20 {
+			compatible = "infineon,slb9645tt", "tcg,tpm-tis-i2c";
+			reg = <0x20>;
+			crc-checksum;
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ruckus-himem@fff0000 {
+			/* Ruckus Himem area used to control
+			 * redundant boot image selection
+			 */
+			compatible = "nvmem-rmem";
+			reg = <0xfff0000 0x10000>;
+			no-map;
+		};
+	};
+};
+
+&pinmux {
+	clks_disable_pins: pinmux_clks_disable_pins {
+		pinctrl-single,bits = <0x40 0x0 0x80>;
+	};
+
+	enable_gpio_4: pinctrl_enable_gpio_4 {
+		pinctrl-single,bits = <0x4 0x0 0xff>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0000000 0x100000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@100000 {
+				compatible = "u-boot,env";
+				reg = <0x0100000 0x40000>;
+				label = "u-boot-env";
+			};
+
+			board_data: partition@140000 {
+				reg = <0x0140000 0x80000>;
+				label = "board-data";
+				read-only;
+			};
+
+			partition@1c0000 {
+				reg = <0x01c0000 0x3e40000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+		    0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+		    0x0c 0x07600000 /* PORT6 PAD MODE CTRL */
+		    0x7c 0x0000007e /* PORT0_STATUS */
+		    0x94 0x0000007e /* PORT6 STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_board_data_66>;
+	nvmem-cell-names = "mac-address";
+	pll-data = <0x96000000 0x00000101 0x00001616>;
+
+	phy-handle = <&phy0>;
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_board_data_6c>;
+	nvmem-cell-names = "mac-address";
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	ath10k: wifi@0,0 {
+		compatible = "pci168c,003c";
+		reg = <0x0000 0 0 0 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		nvmem-cells = <&macaddr_board_data_76>, <&cal_board_data_45000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_board_data_60>, <&cal_board_data_41000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&board_data {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_board_data_60: macaddr@60 {
+			reg = <0x60 0x6>;
+		};
+
+		macaddr_board_data_66: macaddr@66 {
+			reg = <0x66 0x6>;
+		};
+
+		macaddr_board_data_6c: macaddr@6c {
+			reg = <0x6c 0x6>;
+		};
+
+		macaddr_board_data_76: macaddr@76 {
+			reg = <0x76 0x6>;
+		};
+
+		cal_board_data_41000: cal@41000 {
+			reg = <0x41000 0x440>;
+		};
+
+		cal_board_data_45000: cal@45000 {
+			reg = <0x45000 0x844>;
+		};
+	};
+};

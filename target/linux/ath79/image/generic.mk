@@ -2941,6 +2941,17 @@ define Device/ruckus_zf7372
 endef
 TARGET_DEVICES += ruckus_zf7372
 
+define Device/ruckus_r500
+  $(Device/ruckus_common)
+  SOC := qca9557
+  DEVICE_MODEL := R500
+  IMAGE_SIZE := 63744k
+  BLOCKSIZE := 256k
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+		     kmod-i2c-gpio kmod-tpm-i2c-infineon
+endef
+TARGET_DEVICES += ruckus_r500
+
 define Device/samsung_wam250
   SOC := ar9344
   DEVICE_VENDOR := Samsung
