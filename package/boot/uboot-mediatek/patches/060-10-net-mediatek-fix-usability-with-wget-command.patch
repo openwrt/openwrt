@@ -1,0 +1,37 @@
+From c949686e558e00cbb8c38f7c060701006d70cea8 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 17 Dec 2024 16:40:03 +0800
+Subject: [PATCH 10/10] net: mediatek: fix usability with wget command
+
+The wget command currently cannot work correctly with mtk_eth driver.
+This patch fixed this by increase DMA ring size and invalidate ring data
+after use.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/mtk_eth.c
++++ b/drivers/net/mtk_eth.c
+@@ -29,8 +29,8 @@
+ 
+ #include "mtk_eth.h"
+ 
+-#define NUM_TX_DESC		24
+-#define NUM_RX_DESC		24
++#define NUM_TX_DESC		32
++#define NUM_RX_DESC		32
+ #define TX_TOTAL_BUF_SIZE	(NUM_TX_DESC * PKTSIZE_ALIGN)
+ #define RX_TOTAL_BUF_SIZE	(NUM_RX_DESC * PKTSIZE_ALIGN)
+ #define TOTAL_PKT_BUF_SIZE	(TX_TOTAL_BUF_SIZE + RX_TOTAL_BUF_SIZE)
+@@ -1897,6 +1897,9 @@ static int mtk_eth_free_pkt(struct udevi
+ 
+ 	rxd = priv->rx_ring_noc + idx * priv->soc->rxd_size;
+ 
++	invalidate_dcache_range((ulong)rxd->rxd1,
++				(ulong)rxd->rxd1 + PKTSIZE_ALIGN);
++
+ 	if (MTK_HAS_CAPS(priv->soc->caps, MTK_NETSYS_V2) ||
+ 	    MTK_HAS_CAPS(priv->soc->caps, MTK_NETSYS_V3))
+ 		rxd->rxd2 = PDMA_V2_RXD2_PLEN0_SET(PKTSIZE_ALIGN);

@@ -1,0 +1,63 @@
+From fe106f2093733b8bd61946372945dfea552b4755 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 10 Jan 2025 16:41:20 +0800
+Subject: [PATCH 2/3] net: mediatek: add support for MediaTek MT7987 SoC
+
+This patch adds support for MediaTek MT7987.
+
+MT7987 features MediaTek NETSYS v3, similar to MT7988, features three GMACs
+which support 2.5Gb HSGMII. One 2.5Gb PHY is also embedded an can be
+connected to a dedicated GMAC.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth/Kconfig   |  4 ++--
+ drivers/net/mtk_eth/mtk_eth.c | 10 ++++++++++
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/mtk_eth/Kconfig
++++ b/drivers/net/mtk_eth/Kconfig
+@@ -16,7 +16,7 @@ config MTK_ETH_SGMII
+ 
+ config MTK_ETH_XGMII
+ 	bool
+-	default y if TARGET_MT7988
++	default y if TARGET_MT7987 || TARGET_MT7988
+ 
+ config MTK_ETH_SWITCH_MT7530
+ 	bool "Support for MediaTek MT7530 ethernet switch"
+@@ -25,7 +25,7 @@ config MTK_ETH_SWITCH_MT7530
+ config MTK_ETH_SWITCH_MT7531
+ 	bool "Support for MediaTek MT7531 ethernet switch"
+ 	default y if TARGET_MT7622 || TARGET_MT7629 || TARGET_MT7981 || \
+-		     TARGET_MT7986
++		     TARGET_MT7986 || TARGET_MT7987
+ 
+ config MTK_ETH_SWITCH_MT7988
+ 	bool "Support for MediaTek MT7988 built-in ethernet switch"
+--- a/drivers/net/mtk_eth/mtk_eth.c
++++ b/drivers/net/mtk_eth/mtk_eth.c
+@@ -1477,6 +1477,15 @@ static const struct mtk_soc_data mt7988_
+ 	.rxd_size = sizeof(struct mtk_rx_dma_v2),
+ };
+ 
++static const struct mtk_soc_data mt7987_data = {
++	.caps = MT7987_CAPS,
++	.ana_rgc3 = 0x128,
++	.gdma_count = 3,
++	.pdma_base = PDMA_V3_BASE,
++	.txd_size = sizeof(struct mtk_tx_dma_v2),
++	.rxd_size = sizeof(struct mtk_rx_dma_v2),
++};
++
+ static const struct mtk_soc_data mt7986_data = {
+ 	.caps = MT7986_CAPS,
+ 	.ana_rgc3 = 0x128,
+@@ -1531,6 +1540,7 @@ static const struct mtk_soc_data mt7621_
+ 
+ static const struct udevice_id mtk_eth_ids[] = {
+ 	{ .compatible = "mediatek,mt7988-eth", .data = (ulong)&mt7988_data },
++	{ .compatible = "mediatek,mt7987-eth", .data = (ulong)&mt7987_data },
+ 	{ .compatible = "mediatek,mt7986-eth", .data = (ulong)&mt7986_data },
+ 	{ .compatible = "mediatek,mt7981-eth", .data = (ulong)&mt7981_data },
+ 	{ .compatible = "mediatek,mt7629-eth", .data = (ulong)&mt7629_data },
