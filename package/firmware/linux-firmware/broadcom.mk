@@ -152,6 +152,9 @@ define Package/brcmfmac-nvram-43455-sdio/install
 	$(LN) \
 		brcmfmac43455-sdio.AW-CM256SM.txt \
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.pine64,quartz64-b.txt
+	$(LN) \
+		brcmfmac43455-sdio.AW-CM256SM.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.radxa,rock-4c-plus.txt
 endef
 $(eval $(call BuildPackage,brcmfmac-nvram-43455-sdio))
 
