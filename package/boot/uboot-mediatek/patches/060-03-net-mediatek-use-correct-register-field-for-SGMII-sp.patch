@@ -1,0 +1,64 @@
+From 0d4d8e6f47ef22ea6b3041b4c0cb27b4ed4bf188 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 17 Dec 2024 16:39:23 +0800
+Subject: [PATCH 03/10] net: mediatek: use correct register field for SGMII
+ speed selection
+
+The register field for SGMII speed selection is a 2-bit field with
+value 0 for 1Gbps and 1 for 2.5Gbps (2/3 are reserved).
+So it's necessary to set both bits instead of just setting/clearing
+only the lower bit.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth.c | 12 ++++++------
+ drivers/net/mtk_eth.h |  3 ++-
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/mtk_eth.c
++++ b/drivers/net/mtk_eth.c
+@@ -835,8 +835,8 @@ static int mt7531_port_sgmii_init(struct
+ 	}
+ 
+ 	/* Set SGMII GEN2 speed(2.5G) */
+-	mt753x_reg_rmw(priv, MT7531_PHYA_CTRL_SIGNAL3(port),
+-		       SGMSYS_SPEED_2500, SGMSYS_SPEED_2500);
++	mt753x_reg_rmw(priv, MT7531_PHYA_CTRL_SIGNAL3(port), SGMSYS_SPEED_MASK,
++		       FIELD_PREP(SGMSYS_SPEED_MASK, SGMSYS_SPEED_2500));
+ 
+ 	/* Disable SGMII AN */
+ 	mt753x_reg_rmw(priv, MT7531_PCS_CONTROL_1(port),
+@@ -1281,8 +1281,7 @@ static int mtk_phy_probe(struct udevice
+ static void mtk_sgmii_an_init(struct mtk_eth_priv *priv)
+ {
+ 	/* Set SGMII GEN1 speed(1G) */
+-	clrsetbits_le32(priv->sgmii_base + priv->soc->ana_rgc3,
+-			SGMSYS_SPEED_2500, 0);
++	clrbits_le32(priv->sgmii_base + priv->soc->ana_rgc3, SGMSYS_SPEED_MASK);
+ 
+ 	/* Enable SGMII AN */
+ 	setbits_le32(priv->sgmii_base + SGMSYS_PCS_CONTROL_1,
+@@ -1305,8 +1304,9 @@ static void mtk_sgmii_an_init(struct mtk
+ static void mtk_sgmii_force_init(struct mtk_eth_priv *priv)
+ {
+ 	/* Set SGMII GEN2 speed(2.5G) */
+-	setbits_le32(priv->sgmii_base + priv->soc->ana_rgc3,
+-		     SGMSYS_SPEED_2500);
++	clrsetbits_le32(priv->sgmii_base + priv->soc->ana_rgc3,
++			SGMSYS_SPEED_MASK,
++			FIELD_PREP(SGMSYS_SPEED_MASK, SGMSYS_SPEED_2500));
+ 
+ 	/* Disable SGMII AN */
+ 	clrsetbits_le32(priv->sgmii_base + SGMSYS_PCS_CONTROL_1,
+--- a/drivers/net/mtk_eth.h
++++ b/drivers/net/mtk_eth.h
+@@ -108,7 +108,8 @@ enum mkt_eth_capabilities {
+ 
+ #define SGMSYS_GEN2_SPEED		0x2028
+ #define SGMSYS_GEN2_SPEED_V2		0x128
+-#define SGMSYS_SPEED_2500		BIT(2)
++#define SGMSYS_SPEED_MASK		GENMASK(3, 2)
++#define SGMSYS_SPEED_2500		1
+ 
+ /* USXGMII subsystem config registers */
+ /* Register to control USXGMII XFI PLL digital */
