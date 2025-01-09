@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
 PKG_VERSION:=1.0.18
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/lldpd/lldpd/releases/download/$(PKG_VERSION)/
@@ -90,6 +90,8 @@ endif
 ifneq ($(CONFIG_LLDPD_WITH_LLDPMED),y)
 	sed -i -e 's/CONFIG_LLDPD_WITH_LLDPMED=y/CONFIG_LLDPD_WITH_LLDPMED=n/g' $(1)/etc/init.d/lldpd
 	sed -i -e '/agentxsocket/d' $(1)/etc/config/lldpd
+	sed -i -e '/lldp_class/d' $(1)/etc/config/lldpd
+	sed -i -e '/lldp_location/d' $(1)/etc/config/lldpd
 endif
 endef
 
