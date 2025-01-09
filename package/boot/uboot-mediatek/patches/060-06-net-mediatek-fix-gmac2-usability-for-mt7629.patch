@@ -1,0 +1,73 @@
+From d8d7e566545f836dd49611cafbf44eef56434e08 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 17 Dec 2024 16:39:46 +0800
+Subject: [PATCH 06/10] net: mediatek: fix gmac2 usability for mt7629
+
+MT7629 need extra setting for gmac2 to work. So additional
+capability is added for mt7629 to handle this case.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth.c | 6 ++++++
+ drivers/net/mtk_eth.h | 7 +++++++
+ 2 files changed, 13 insertions(+)
+
+--- a/drivers/net/mtk_eth.c
++++ b/drivers/net/mtk_eth.c
+@@ -1437,6 +1437,11 @@ static void mtk_mac_init(struct mtk_eth_
+ 	int i, sgmii_sel_mask = 0, ge_mode = 0;
+ 	u32 mcr;
+ 
++	if (MTK_HAS_CAPS(priv->soc->caps, MTK_ETH_PATH_MT7629_GMAC2)) {
++		mtk_infra_rmw(priv, MT7629_INFRA_MISC2_REG,
++			      INFRA_MISC2_BONDING_OPTION, priv->gmac_id);
++	}
++
+ 	switch (priv->phy_interface) {
+ 	case PHY_INTERFACE_MODE_RGMII_RXID:
+ 	case PHY_INTERFACE_MODE_RGMII:
+@@ -2101,6 +2106,7 @@ static const struct mtk_soc_data mt7981_
+ };
+ 
+ static const struct mtk_soc_data mt7629_data = {
++	.caps = MT7629_CAPS,
+ 	.ana_rgc3 = 0x128,
+ 	.gdma_count = 2,
+ 	.pdma_base = PDMA_V1_BASE,
+--- a/drivers/net/mtk_eth.h
++++ b/drivers/net/mtk_eth.h
+@@ -24,6 +24,7 @@ enum mkt_eth_capabilities {
+ 	MTK_ETH_PATH_GMAC1_TRGMII_BIT,
+ 	MTK_ETH_PATH_GMAC2_SGMII_BIT,
+ 	MTK_ETH_PATH_MT7622_SGMII_BIT,
++	MTK_ETH_PATH_MT7629_GMAC2_BIT,
+ };
+ 
+ #define MTK_TRGMII			BIT(MTK_TRGMII_BIT)
+@@ -38,6 +39,7 @@ enum mkt_eth_capabilities {
+ 
+ #define MTK_ETH_PATH_GMAC2_SGMII	BIT(MTK_ETH_PATH_GMAC2_SGMII_BIT)
+ #define MTK_ETH_PATH_MT7622_SGMII	BIT(MTK_ETH_PATH_MT7622_SGMII_BIT)
++#define MTK_ETH_PATH_MT7629_GMAC2	BIT(MTK_ETH_PATH_MT7629_GMAC2_BIT)
+ 
+ #define MTK_GMAC1_TRGMII	(MTK_ETH_PATH_GMAC1_TRGMII | MTK_TRGMII)
+ 
+@@ -51,6 +53,8 @@ enum mkt_eth_capabilities {
+ 
+ #define MT7623_CAPS  (MTK_GMAC1_TRGMII)
+ 
++#define MT7629_CAPS  (MTK_ETH_PATH_MT7629_GMAC2 | MTK_INFRA)
++
+ #define MT7981_CAPS  (MTK_GMAC2_U3_QPHY | MTK_NETSYS_V2)
+ 
+ #define MT7986_CAPS  (MTK_NETSYS_V2)
+@@ -88,6 +92,9 @@ enum mkt_eth_capabilities {
+ #define QPHY_SEL_MASK			0x3
+ #define SGMII_QPHY_SEL			0x2
+ 
++#define MT7629_INFRA_MISC2_REG		0x70c
++#define INFRA_MISC2_BONDING_OPTION	GENMASK(15, 0)
++
+ /* SYSCFG1_GE_MODE: GE Modes */
+ #define GE_MODE_RGMII			0
+ #define GE_MODE_MII			1
