@@ -157,7 +157,11 @@ my %update_method = (
 	'src-git' => {
 		'init'          => "git clone --depth 1 '%s' '%s'",
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
-		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
+		'init_commit'   => "mkdir '%s' && cd '%s' && git init -q && git remote add origin '%s' \\
+					&& (git fetch --depth 1 origin '%s' && git reset --hard FETCH_HEAD) \\
+					|| (cd ../../ && git clone '%s' '%s' && cd '%s' && git remote set-url origin ../../'%s' \\
+						&& git fetch --depth 1 origin '%s' && git reset --hard FETCH_HEAD \\
+						&& git remote set-url origin '%s' && rm -rf ../../'%s')",
 		'update'	=> "git pull --ff-only",
 		'update_rebase'	=> "git pull --rebase=merges",
 		'update_stash'	=> "git pull --rebase=merges --autostash",
@@ -219,7 +223,12 @@ sub update_feed_via($$$$$$$) {
 		if ($m->{'init_branch'} and $branch) {
 			system(sprintf($m->{'init_branch'}, $branch, $base_branch, $safepath)) == 0 or return 1;
 		} elsif ($m->{'init_commit'} and $commit) {
-			system(sprintf($m->{'init_commit'}, $base_commit, $safepath, $safepath, $commit, $commit)) == 0 or return 1;
+			if ($type eq 'src-git') {
+				my $localrepo = $safepath.".local";
+				system(sprintf($m->{'init_commit'}, $safepath, $safepath, $base_commit, $commit, $base_commit, $localrepo, $safepath, $localrepo, $commit, $base_commit, $localrepo)) == 0 or return 1;
+			} else {
+				system(sprintf($m->{'init_commit'}, $base_commit, $safepath, $safepath, $commit, $commit)) == 0 or return 1;
+			}
 		} else {
 			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
 		}
