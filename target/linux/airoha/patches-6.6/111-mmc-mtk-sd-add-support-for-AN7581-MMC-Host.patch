@@ -1,0 +1,138 @@
+From f38f16925e1aa7cc71f63d3d52997b1c98cd7781 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 11 Dec 2024 11:27:10 +0100
+Subject: [PATCH 4/4] mmc: mtk-sd: add support for AN7581 MMC Host
+
+Add support for AN7581 MMC Host. The MMC Host controller is based on
+mt7622 with the difference of not having regulator supply and state_uhs
+pins and hclk clock.
+
+Some minor fixes are applied to check if the state_uhs pins are defined
+and make hclk optional for the new airoha compatible.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/mmc/host/mtk-sd.c | 55 ++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 9 deletions(-)
+
+--- a/drivers/mmc/host/mtk-sd.c
++++ b/drivers/mmc/host/mtk-sd.c
+@@ -615,6 +615,19 @@ static const struct mtk_mmc_compatible m
+ 	.stop_clk_fix = true,
+ };
+ 
++static const struct mtk_mmc_compatible an7581_compat = {
++	.clk_div_bits = 12,
++	.recheck_sdio_irq = true,
++	.hs400_tune = false,
++	.pad_tune_reg = MSDC_PAD_TUNE0,
++	.async_fifo = true,
++	.data_tune = true,
++	.busy_check = true,
++	.stop_clk_fix = true,
++	.enhance_rx = true,
++	.support_64g = false,
++};
++
+ static const struct of_device_id msdc_of_ids[] = {
+ 	{ .compatible = "mediatek,mt2701-mmc", .data = &mt2701_compat},
+ 	{ .compatible = "mediatek,mt2712-mmc", .data = &mt2712_compat},
+@@ -627,7 +640,7 @@ static const struct of_device_id msdc_of
+ 	{ .compatible = "mediatek,mt8173-mmc", .data = &mt8173_compat},
+ 	{ .compatible = "mediatek,mt8183-mmc", .data = &mt8183_compat},
+ 	{ .compatible = "mediatek,mt8516-mmc", .data = &mt8516_compat},
+-
++	{ .compatible = "airoha,an7581-mmc", .data = &an7581_compat},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, msdc_of_ids);
+@@ -1479,6 +1492,10 @@ static int msdc_ops_switch_volt(struct m
+ 	struct msdc_host *host = mmc_priv(mmc);
+ 	int ret;
+ 
++	/* Skip setting supply if not supported */
++	if (!mmc->supply.vqmmc)
++		return 0;
++
+ 	if (!IS_ERR(mmc->supply.vqmmc)) {
+ 		if (ios->signal_voltage != MMC_SIGNAL_VOLTAGE_330 &&
+ 		    ios->signal_voltage != MMC_SIGNAL_VOLTAGE_180) {
+@@ -1578,7 +1595,9 @@ static void msdc_enable_sdio_irq(struct
+ 				dev_dbg(host->dev, "SDIO eint irq: %d!\n", host->eint_irq);
+ 			}
+ 
+-			pinctrl_select_state(host->pinctrl, host->pins_uhs);
++			/* Skip setting uhs pins if not supported */
++			if (host->pins_uhs)
++				pinctrl_select_state(host->pinctrl, host->pins_uhs);
+ 		} else {
+ 			dev_pm_clear_wake_irq(host->dev);
+ 		}
+@@ -1886,6 +1905,10 @@ static void msdc_ops_set_ios(struct mmc_
+ 
+ 	msdc_set_buswidth(host, ios->bus_width);
+ 
++	/* Skip regulator if not supported */
++	if (!mmc->supply.vmmc)
++		goto skip_regulator;
++
+ 	/* Suspend/Resume will do power off/on */
+ 	switch (ios->power_mode) {
+ 	case MMC_POWER_UP:
+@@ -1921,6 +1944,7 @@ static void msdc_ops_set_ios(struct mmc_
+ 		break;
+ 	}
+ 
++skip_regulator:
+ 	if (host->mclk != ios->clock || host->timing != ios->timing)
+ 		msdc_set_mclk(host, ios->timing, ios->clock);
+ }
+@@ -2617,9 +2641,12 @@ static int msdc_of_clock_parse(struct pl
+ 	if (IS_ERR(host->src_clk))
+ 		return PTR_ERR(host->src_clk);
+ 
+-	host->h_clk = devm_clk_get(&pdev->dev, "hclk");
+-	if (IS_ERR(host->h_clk))
+-		return PTR_ERR(host->h_clk);
++	/* AN7581 SoC doesn't have hclk */
++	if (!device_is_compatible(&pdev->dev, "airoha,an7581-mmc")) {
++		host->h_clk = devm_clk_get(&pdev->dev, "hclk");
++		if (IS_ERR(host->h_clk))
++			return PTR_ERR(host->h_clk);
++	}
+ 
+ 	host->bus_clk = devm_clk_get_optional(&pdev->dev, "bus_clk");
+ 	if (IS_ERR(host->bus_clk))
+@@ -2740,11 +2767,14 @@ static int msdc_drv_probe(struct platfor
+ 		goto host_free;
+ 	}
+ 
+-	host->pins_uhs = pinctrl_lookup_state(host->pinctrl, "state_uhs");
+-	if (IS_ERR(host->pins_uhs)) {
+-		ret = PTR_ERR(host->pins_uhs);
+-		dev_err(&pdev->dev, "Cannot find pinctrl uhs!\n");
+-		goto host_free;
++	/* AN7581 doesn't have state_uhs pins */
++	if (!device_is_compatible(&pdev->dev, "airoha,an7581-mmc")) {
++		host->pins_uhs = pinctrl_lookup_state(host->pinctrl, "state_uhs");
++		if (IS_ERR(host->pins_uhs)) {
++			ret = PTR_ERR(host->pins_uhs);
++			dev_err(&pdev->dev, "Cannot find pinctrl uhs!\n");
++			goto host_free;
++		}
+ 	}
+ 
+ 	/* Support for SDIO eint irq ? */
+@@ -2825,6 +2855,12 @@ static int msdc_drv_probe(struct platfor
+ 		dev_err(&pdev->dev, "Cannot ungate clocks!\n");
+ 		goto release_mem;
+ 	}
++
++	/* AN7581 without regulator require tune to OCR values */
++	if (device_is_compatible(&pdev->dev, "airoha,an7581-mmc") &&
++	    !mmc->ocr_avail)
++		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
++
+ 	msdc_init_hw(host);
+ 
+ 	if (mmc->caps2 & MMC_CAP2_CQE) {
