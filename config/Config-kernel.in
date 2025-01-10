@@ -1488,3 +1488,64 @@ config KERNEL_WERROR
 	  and unusual warnings, or you have some architecture with problems,
 	  you may need to disable this config option in order to
 	  successfully build the kernel.
+
+config PAGESIZE
+	bool
+
+choice
+	prompt "Page size (translation granule) configuration"
+	depends on TARGET_bcm27xx_bcm2712
+	default KERNEL_ARM64_4K_PAGES
+
+	config KERNEL_ARM64_4K_PAGES
+		bool "4KB"
+		select KERNEL_ARM64_VA_BITS_48
+		help
+			This feature enables 4KB pages support.
+
+	config KERNEL_ARM64_16K_PAGES
+		bool "16KB"
+		select KERNEL_ARM64_VA_BITS_47
+		help
+			This feature enables 16KB pages support allowing only two
+			levels of page tables and faster TLB look-up. AArch32
+			emulation requires applications compiled with 16K (or a
+			multiple of 16K) aligned segments.
+
+	config KERNEL_ARM64_64K_PAGES
+		bool "64KB"
+		select KERNEL_ARM64_VA_BITS_48
+		help
+			This feature enables 64KB pages support allowing only two
+			levels of page tables and faster TLB look-up. AArch32
+			emulation requires applications compiled with 64K aligned
+			segments.
+endchoice
+
+config KERNEL_ARM64_PA_BITS_52
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_36
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_39
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_42
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_52
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_48
+	def_bool y if (KERNEL_ARM64_4K_PAGES || KERNEL_ARM64_64K_PAGES)
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS_47
+	def_bool y if KERNEL_ARM64_16K_PAGES
+	def_bool n
+
+config KERNEL_ARM64_VA_BITS
+	int
+	default 48 if KERNEL_ARM64_VA_BITS_48
+	default 47 if KERNEL_ARM64_VA_BITS_47
