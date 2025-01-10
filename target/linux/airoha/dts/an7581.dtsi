@@ -78,7 +78,10 @@
 			reg = <0x0>;
 			operating-points-v2 = <&cpu_opp_table>;
 			enable-method = "psci";
-			clock-frequency = <80000000>;
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "cpu_pd";
 			next-level-cache = <&l2>;
 			#cooling-cells = <2>;
 		};
@@ -89,7 +92,10 @@
 			reg = <0x1>;
 			operating-points-v2 = <&cpu_opp_table>;
 			enable-method = "psci";
-			clock-frequency = <80000000>;
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "cpu_pd";
 			next-level-cache = <&l2>;
 			#cooling-cells = <2>;
 		};
@@ -100,7 +106,10 @@
 			reg = <0x2>;
 			operating-points-v2 = <&cpu_opp_table>;
 			enable-method = "psci";
-			clock-frequency = <80000000>;
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "cpu_pd";
 			next-level-cache = <&l2>;
 			#cooling-cells = <2>;
 		};
@@ -111,7 +120,10 @@
 			reg = <0x3>;
 			operating-points-v2 = <&cpu_opp_table>;
 			enable-method = "psci";
-			clock-frequency = <80000000>;
+			clocks = <&cpufreq>;
+			clock-names = "cpu";
+			power-domains = <&cpufreq>;
+			power-domain-names = "cpu_pd";
 			next-level-cache = <&l2>;
 			#cooling-cells = <2>;
 		};
@@ -125,68 +137,156 @@
 		};
 	};
 
+	cpufreq: cpufreq {
+		compatible = "airoha,en7581-cpufreq";
+
+		operating-points-v2 = <&cpu_smcc_opp_table>;
+
+		#power-domain-cells = <0>;
+		#clock-cells = <0>;
+	};
+
 	cpu_opp_table: opp-table {
 		compatible = "operating-points-v2";
 		opp-shared;
 
 		opp-500000000 {
 			opp-hz = /bits/ 64 <500000000>;
+			required-opps = <&smcc_opp0>;
 		};
 
 		opp-550000000 {
 			opp-hz = /bits/ 64 <550000000>;
+			required-opps = <&smcc_opp1>;
 		};
 
 		opp-600000000 {
 			opp-hz = /bits/ 64 <600000000>;
+			required-opps = <&smcc_opp2>;
 		};
 
 		opp-650000000 {
 			opp-hz = /bits/ 64 <650000000>;
+			required-opps = <&smcc_opp3>;
 		};
 
 		opp-7000000000 {
 			opp-hz = /bits/ 64 <700000000>;
+			required-opps = <&smcc_opp4>;
 		};
 
 		opp-7500000000 {
 			opp-hz = /bits/ 64 <750000000>;
+			required-opps = <&smcc_opp5>;
 		};
 
 		opp-8000000000 {
 			opp-hz = /bits/ 64 <800000000>;
+			required-opps = <&smcc_opp6>;
 		};
 
 		opp-8500000000 {
 			opp-hz = /bits/ 64 <850000000>;
+			required-opps = <&smcc_opp7>;
 		};
 
 		opp-9000000000 {
 			opp-hz = /bits/ 64 <900000000>;
+			required-opps = <&smcc_opp8>;
 		};
 
 		opp-9500000000 {
 			opp-hz = /bits/ 64 <950000000>;
+			required-opps = <&smcc_opp9>;
 		};
 
 		opp-10000000000 {
 			opp-hz = /bits/ 64 <1000000000>;
+			required-opps = <&smcc_opp10>;
 		};
 
 		opp-10500000000 {
 			opp-hz = /bits/ 64 <1050000000>;
+			required-opps = <&smcc_opp11>;
 		};
 
 		opp-11000000000 {
 			opp-hz = /bits/ 64 <1100000000>;
+			required-opps = <&smcc_opp12>;
 		};
 
 		opp-11500000000 {
 			opp-hz = /bits/ 64 <1150000000>;
+			required-opps = <&smcc_opp13>;
 		};
 
 		opp-12000000000 {
 			opp-hz = /bits/ 64 <1200000000>;
+			required-opps = <&smcc_opp14>;
+		};
+	};
+
+	cpu_smcc_opp_table: opp-table-cpu-smcc {
+		compatible = "operating-points-v2";
+
+		smcc_opp0: opp0 {
+			opp-level = <0>;
+		};
+
+		smcc_opp1: opp1 {
+			opp-level = <1>;
+		};
+
+		smcc_opp2: opp2 {
+			opp-level = <2>;
+		};
+
+		smcc_opp3: opp3 {
+			opp-level = <3>;
+		};
+
+		smcc_opp4: opp4 {
+			opp-level = <4>;
+		};
+
+		smcc_opp5: opp5 {
+			opp-level = <5>;
+		};
+
+		smcc_opp6: opp6 {
+			opp-level = <6>;
+		};
+
+		smcc_opp7: opp7 {
+			opp-level = <7>;
+		};
+
+		smcc_opp8: opp8 {
+			opp-level = <8>;
+		};
+
+		smcc_opp9: opp9 {
+			opp-level = <9>;
+		};
+
+		smcc_opp10: opp10 {
+			opp-level = <10>;
+		};
+
+		smcc_opp11: opp11 {
+			opp-level = <11>;
+		};
+
+		smcc_opp12: opp12 {
+			opp-level = <12>;
+		};
+
+		smcc_opp13: opp13 {
+			opp-level = <13>;
+		};
+
+		smcc_opp14: opp14 {
+			opp-level = <14>;
 		};
 	};
 
@@ -431,16 +531,16 @@
 				spi-max-frequency = <50000000>;
 				spi-tx-bus-width = <1>;
 				spi-rx-bus-width = <2>;
-				airoha,bmt;
 			};
 		};
 
 		mmc0: mmc@1fa0e000 {
-			compatible = "mediatek,mt7622-mmc";
+			compatible = "airoha,an7581-mmc";
 			reg = <0x0 0x1fa0e000 0x0 0x1000>,
 			      <0x0 0x1fa0c000 0x0 0x60>;
 			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
-			bus-width = <4>;
+			clocks = <&scuclk EN7581_CLK_EMMC>;
+			clock-names = "source";			bus-width = <4>;
 			max-frequency = <52000000>;
 			disable-wp;
 			cap-mmc-highspeed;
@@ -587,7 +687,7 @@
 				status = "disabled";
 
 				fixed-link {
-					speed = <1000>;
+					speed = <10000>;
 					full-duplex;
 					pause;
 				};
@@ -648,7 +748,7 @@
 					phy-mode = "internal";
 
 					fixed-link {
-						speed = <1000>;
+						speed = <10000>;
 						full-duplex;
 						pause;
 					};
