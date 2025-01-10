@@ -629,6 +629,9 @@ config KERNEL_DEBUG_GPIO
 	bool "Compile the kernel with gpio debugging"
 	select KERNEL_DEBUG_KERNEL
 
+config KERNEL_CHECKPOINT_RESTORE
+  bool
+
 config KERNEL_COREDUMP
 	bool
 
