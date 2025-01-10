@@ -26,15 +26,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	const struct clk_ops pcie_ops;
  	int (*hw_init)(struct platform_device *pdev,
  		       struct clk_hw_onecell_data *clk_data);
-@@ -525,8 +526,6 @@ static void en7523_register_clocks(struc
+@@ -504,8 +505,6 @@ static void en7523_register_clocks(struc
+ 	u32 rate;
+ 	int i;
  
- 	hw = en7523_register_pcie_clk(dev, np_base);
- 	clk_data->hws[EN7523_CLK_PCIE] = hw;
--
 -	clk_data->num = EN7523_NUM_CLOCKS;
- }
- 
- static int en7523_clk_hw_init(struct platform_device *pdev,
+-
+ 	for (i = 0; i < ARRAY_SIZE(en7523_base_clks); i++) {
+ 		const struct en_clk_desc *desc = &en7523_base_clks[i];
+ 		u32 reg = desc->div_reg ? desc->div_reg : desc->base_reg;
 @@ -587,8 +586,6 @@ static void en7581_register_clocks(struc
  
  	hw = en7523_register_pcie_clk(dev, base);
