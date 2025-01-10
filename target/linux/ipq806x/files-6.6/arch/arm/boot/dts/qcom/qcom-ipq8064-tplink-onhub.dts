@@ -14,6 +14,27 @@
 };
 
 &qcom_pinmux {
+	gpio-line-names = "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  /* RECOVERY_SW_L is crossystem ABI. */
+			  "RECOVERY_SW_L", /* 16 */
+			  /* AP_FLASH_WP_L is crossystem ABI. */
+			  "AP_FLASH_WP_L" /* 17 */;
+
 	i2c7_pins: i2c7_pinmux {
 		mux {
 			pins = "gpio8", "gpio9";

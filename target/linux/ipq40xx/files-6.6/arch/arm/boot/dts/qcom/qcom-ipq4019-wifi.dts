@@ -14,6 +14,8 @@
 	compatible = "google,wifi", "google,gale-v2", "qcom,ipq4019";
 
 	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
 		label-mac-device = &gmac0;
 		led-boot = &led0_blue;
 		led-failsafe = &led0_red;
@@ -72,6 +74,67 @@
 };
 
 &tlmm {
+	gpio-line-names = "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  /* AP_FLASH_WP_L is crossystem ABI. */
+			  "AP_FLASH_WP_L" /* 53 */,
+			  "",
+			  "",
+			  "",
+			  /* RECOVERY_SW_L is crossystem ABI. */
+			  "RECOVERY_SW_L" /* 57 */;
+
 	fw_pinmux: fw_pinmux {
 		wp {
 			pins = "gpio53";

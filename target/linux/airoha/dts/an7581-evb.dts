@@ -150,35 +150,40 @@
 
 &spi_nand {
 	partitions {
-		compatible = "airoha,fixed-partitions";
+		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		bootloader@0 {
 			label = "bootloader";
 			reg = <0x00000000 0x00080000>;
+			read-only;
 		};
 
-		tclinux@80000 {
-			label = "tclinux";
-			compatible = "denx,fit";
-			reg = <0x00080000 0x02800000>;
-		};
-
-		tclinux_slave@2880000 {
-			label = "tclinux_slave";
-			reg = <0x02880000 0x02800000>;
-		};
-
-		rootfs_data@5080000 {
-			label = "rootfs_data";
-			reg = <0x5080000 0x00800000>;
-		};
-
-		art@ffffffff {
-			compatible = "airoha,dynamic-art";
+		art@200000 {
 			label = "art";
-			reg = <0xffffffff 0x00300000>;
+			reg = <0x00200000 0x00400000>;
+		};
+
+		tclinux@600000 {
+			label = "tclinux";
+			reg = <0x00600000 0x03200000>;
+		};
+
+		tclinux_slave@3800000 {
+			label = "tclinux_alt";
+			reg = <0x03800000 0x03200000>;
+		};
+
+		rootfs_data@6a00000 {
+			label = "rootfs_data";
+			reg = <0x06a00000 0x01400000>;
+		};
+
+		reserved_bmt@7e00000 {
+			label = "reserved_bmt";
+			reg = <0x07e00000 0x00200000>;
+			read-only;
 		};
 	};
 };

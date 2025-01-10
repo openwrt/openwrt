@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				    unsigned char name_assign_type,
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10353,25 +10353,12 @@ err_free_name:
+@@ -10355,25 +10355,12 @@ err_free_name:
  }
  EXPORT_SYMBOL(register_netdevice);
  
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* make sure we BUG if trying to hit standard
  	 * register/unregister code path
  	 */
-@@ -10391,12 +10378,32 @@ int init_dummy_netdev(struct net_device
+@@ -10393,12 +10380,32 @@ int init_dummy_netdev(struct net_device
  	 * because users of this 'device' dont need to change
  	 * its refcount.
  	 */
@@ -113,7 +113,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /**
   *	register_netdev	- register a network device
   *	@dev: device to register
-@@ -10990,6 +10997,19 @@ void free_netdev(struct net_device *dev)
+@@ -10992,6 +10999,19 @@ void free_netdev(struct net_device *dev)
  EXPORT_SYMBOL(free_netdev);
  
  /**

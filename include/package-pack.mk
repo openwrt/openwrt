@@ -302,7 +302,7 @@ else
 		echo 'export pkgname="$(1)"'; \
 		echo "add_group_and_user"; \
 		echo "default_postinst"; \
-		[ ! -f $$(ADIR_$(1))/postinst-pkg ] || cat "$$(ADIR_$(1))/postinst-pkg"; \
+		[ ! -f $$(ADIR_$(1))/postinst-pkg ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/postinst-pkg"; \
 	) > $$(ADIR_$(1))/post-install;
 
 	( \
@@ -312,8 +312,10 @@ else
 		echo 'export root="$$$${IPKG_INSTROOT}"'; \
 		echo 'export pkgname="$(1)"'; \
 		echo "default_prerm"; \
-		[ ! -f $$(ADIR_$(1))/prerm-pkg ] || cat "$$(ADIR_$(1))/prerm-pkg"; \
+		[ ! -f $$(ADIR_$(1))/prerm-pkg ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/prerm-pkg"; \
 	) > $$(ADIR_$(1))/pre-deinstall;
+
+	[ ! -f $$(ADIR_$(1))/postrm ] || sed -zi 's/^\s*#!/#!/' "$$(ADIR_$(1))/postrm";
 
 	if [ -n "$(USERID)" ]; then echo $(USERID) > $$(IDIR_$(1))/lib/apk/packages/$(1).rusers; fi;
 	if [ -n "$(ALTERNATIVES)" ]; then echo $(ALTERNATIVES) > $$(IDIR_$(1))/lib/apk/packages/$(1).alternatives; fi;

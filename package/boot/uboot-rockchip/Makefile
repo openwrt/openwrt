@@ -138,7 +138,7 @@ endef
 
 define U-Boot/rock-pi-4-rk3399
   $(U-Boot/rk3399/Default)
-  NAME:=Rock Pi 4
+  NAME:=ROCK Pi 4
   BUILD_DEVICES:= \
     radxa_rock-pi-4a
 endef

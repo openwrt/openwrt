@@ -12,9 +12,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/include/linux/spinlock.h
 +++ b/include/linux/spinlock.h
-@@ -515,6 +515,10 @@ DEFINE_LOCK_GUARD_1(raw_spinlock_irq, ra
- 		    raw_spin_lock_irq(_T->lock),
- 		    raw_spin_unlock_irq(_T->lock))
+@@ -519,6 +519,10 @@ DEFINE_LOCK_GUARD_1(raw_spinlock_irq, ra
+ 
+ DEFINE_LOCK_GUARD_1_COND(raw_spinlock_irq, _try, raw_spin_trylock_irq(_T->lock))
  
 +DEFINE_LOCK_GUARD_1(raw_spinlock_bh, raw_spinlock_t,
 +		    raw_spin_lock_bh(_T->lock),
@@ -23,9 +23,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  DEFINE_LOCK_GUARD_1(raw_spinlock_irqsave, raw_spinlock_t,
  		    raw_spin_lock_irqsave(_T->lock, _T->flags),
  		    raw_spin_unlock_irqrestore(_T->lock, _T->flags),
-@@ -528,6 +532,10 @@ DEFINE_LOCK_GUARD_1(spinlock_irq, spinlo
- 		    spin_lock_irq(_T->lock),
- 		    spin_unlock_irq(_T->lock))
+@@ -540,6 +544,10 @@ DEFINE_LOCK_GUARD_1(spinlock_irq, spinlo
+ DEFINE_LOCK_GUARD_1_COND(spinlock_irq, _try,
+ 			 spin_trylock_irq(_T->lock))
  
 +DEFINE_LOCK_GUARD_1(spinlock_bh, spinlock_t,
 +		    spin_lock_bh(_T->lock),
