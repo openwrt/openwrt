@@ -1649,3 +1649,21 @@ define KernelPackage/qrtr-mhi/description
 endef
 
 $(eval $(call KernelPackage,qrtr-mhi))
+
+define KernelPackage/unix-diag
+  TITLE:=UNIX socket monitoring interface
+  KCONFIG:=CONFIG_UNIX_DIAG
+  FILES:= $(LINUX_DIR)/net/unix/unix_diag.ko
+  AUTOLOAD:=$(call AutoProbe,unix_diag)
+endef
+
+$(eval $(call KernelPackage,unix-diag))
+
+define KernelPackage/packet-diag
+  TITLE:=Packet sockets monitoring interface
+  KCONFIG:=CONFIG_PACKET_DIAG
+  FILES:= $(LINUX_DIR)/net/packet/af_packet_diag.ko
+  AUTOLOAD:=$(call AutoProbe,af_packet_diag)
+endef
+
+$(eval $(call KernelPackage,packet-diag))
