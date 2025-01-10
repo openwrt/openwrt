@@ -68,11 +68,11 @@ define Build/inteno-y3-header
 	echo "version 5" >> $@.tmp ;\
 	echo "integrity MD5SUM" >> $@.tmp ;\
 	echo "board EX400" >> $@.tmp ;\
-	echo "chip 7621" >> $@.tmp ;\
-	echo "arch all mipsel_1004kc" >> $@.tmp ;\
+	echo "chip $(SOC:mt%=%)" >> $@.tmp ;\
+	echo "arch all $(CONFIG_TARGET_ARCH_PACKAGES)" >> $@.tmp ;\
 	echo "model EX400" >> $@.tmp ;\
-	echo "release EX400-X-DNA-4.3.6.100-R-210518_0935" >> $@.tmp ;\
-	echo "customer DNA" >> $@.tmp ;\
+	echo "release $(DEVICE_IMG_PREFIX)" >> $@.tmp ;\
+	echo "customer $(if $(CONFIG_VERSION_DIST),$(CONFIG_VERSION_DIST),OpenWrt)" >> $@.tmp ;\
 	echo "ubifsofs $${ubifsofs}" >> $@.tmp ;\
 	echo "ubifs $${ubifs}" >> $@.tmp ;\
 	echo "pkginfoofs $${pkginfoofs}" >> $@.tmp ;\
