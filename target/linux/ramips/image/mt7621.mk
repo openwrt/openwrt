@@ -67,12 +67,12 @@ define Build/inteno-y3-header
 	echo "IntenoIopY" > $@.tmp ;\
 	echo "version 5" >> $@.tmp ;\
 	echo "integrity MD5SUM" >> $@.tmp ;\
-	echo "board EX400" >> $@.tmp ;\
-	echo "chip 7621" >> $@.tmp ;\
-	echo "arch all mipsel_1004kc" >> $@.tmp ;\
-	echo "model EX400" >> $@.tmp ;\
-	echo "release EX400-X-DNA-4.3.6.100-R-210518_0935" >> $@.tmp ;\
-	echo "customer DNA" >> $@.tmp ;\
+	echo "board $(word 1,$(1))" >> $@.tmp ;\
+	echo "chip $(patsubst mt%,%,$(SOC:bcm%=%))" >> $@.tmp ;\
+	echo "arch all $(CONFIG_TARGET_ARCH_PACKAGES)" >> $@.tmp ;\
+	echo "model $(word 1,$(1))" >> $@.tmp ;\
+	echo "release $(DEVICE_IMG_PREFIX)" >> $@.tmp ;\
+	echo "customer $(if $(CONFIG_VERSION_DIST),$(CONFIG_VERSION_DIST),OpenWrt)" >> $@.tmp ;\
 	echo "ubifsofs $${ubifsofs}" >> $@.tmp ;\
 	echo "ubifs $${ubifs}" >> $@.tmp ;\
 	echo "pkginfoofs $${pkginfoofs}" >> $@.tmp ;\
@@ -1378,7 +1378,7 @@ define Device/genexis_pulse-ex400/common
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   IMAGES += factory.bin
   IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
-	inteno-bootfs | inteno-y3-header | append-md5sum-ascii-salted
+	inteno-bootfs | inteno-y3-header EX400 | append-md5sum-ascii-salted
   IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | \
     sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
