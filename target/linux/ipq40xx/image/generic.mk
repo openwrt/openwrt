@@ -1138,6 +1138,8 @@ define Device/tplink_deco-m9plus-v2
 	TPLINK_BOARD_ID := DECO-M9PLUS
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	DEVICE_DTS_DELIMITER := @
 endef
 TARGET_DEVICES += tplink_deco-m9plus-v2
 

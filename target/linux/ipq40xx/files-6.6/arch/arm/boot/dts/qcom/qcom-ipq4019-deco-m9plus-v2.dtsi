@@ -45,6 +45,9 @@
 			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
 		};
 	};
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
 };
 &tlmm {
 	serial_0_pins: serial_0_pinmux {
@@ -145,6 +148,7 @@
 &qpic_bam {
 	status = "okay";
 };
+
 &nand {
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
@@ -222,7 +226,6 @@
 			partition@3600000 { //10
 				label = "rootfs_1";
 				reg = <0x03600000 0x002d00000>;
-				read-only;
 			};
 			partition@6300000 { //11
 				label = "factory_data";

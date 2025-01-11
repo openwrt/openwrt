@@ -53,7 +53,7 @@ Package/ath10k-board-qca9888 = $(call Package/firmware-default,ath10k qca9888 bo
 define Package/ath10k-board-qca9888/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/ath10k/QCA9888/hw2.0/board-2.bin \
+		$(TOPDIR)/package/firmware/ath10k-ct-firmware/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 endef
 $(eval $(call BuildPackage,ath10k-board-qca9888))
