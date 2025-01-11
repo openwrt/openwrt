@@ -13,13 +13,13 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/mtd/Makefile            |    1 +
  drivers/mtd/nmbm/Kconfig        |   29 +
  drivers/mtd/nmbm/Makefile       |    5 +
- drivers/mtd/nmbm/nmbm-core.c    | 2936 +++++++++++++++++++++++++++++++
+ drivers/mtd/nmbm/nmbm-core.c    | 3040 +++++++++++++++++++++++++++++++
  drivers/mtd/nmbm/nmbm-debug.h   |   37 +
  drivers/mtd/nmbm/nmbm-debug.inl |   39 +
  drivers/mtd/nmbm/nmbm-private.h |  137 ++
- include/nmbm/nmbm-os.h          |   66 +
- include/nmbm/nmbm.h             |  102 ++
- 10 files changed, 3354 insertions(+)
+ include/nmbm/nmbm-os.h          |   68 +
+ include/nmbm/nmbm.h             |  105 ++
+ 10 files changed, 3463 insertions(+)
  create mode 100644 drivers/mtd/nmbm/Kconfig
  create mode 100644 drivers/mtd/nmbm/Makefile
  create mode 100644 drivers/mtd/nmbm/nmbm-core.c
@@ -31,15 +31,15 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -282,6 +282,8 @@ source "drivers/mtd/ubi/Kconfig"
- 
- source "drivers/mtd/nvmxip/Kconfig"
+@@ -276,6 +276,8 @@ config SYS_NAND_MAX_CHIPS
+ 	help
+ 	  The maximum number of NAND chips per device to be supported.
  
 +source "drivers/mtd/nmbm/Kconfig"
 +
- endif
+ source "drivers/mtd/spi/Kconfig"
  
- endmenu
+ source "drivers/mtd/ubi/Kconfig"
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -42,3 +42,4 @@ obj-$(CONFIG_SPL_UBI) += ubispl/
@@ -89,10 +89,10 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +obj-$(CONFIG_NMBM) += nmbm-core.o
 --- /dev/null
 +++ b/drivers/mtd/nmbm/nmbm-core.c
-@@ -0,0 +1,2936 @@
+@@ -0,0 +1,3040 @@
 +// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 +/*
-+ * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
++ * Copyright (C) 2021 MediaTek Inc. All Rights Reserved.
 + *
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
@@ -344,6 +344,37 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	}
 +
 +	nlog_err(ni, "Page write failed at address 0x%08llx\n", addr);
++
++	return false;
++}
++
++/*
++ * nmbm_panic_write_phys_page - Panic write page with retry
++ * @ni: NMBM instance structure
++ * @addr: linear address where the data will be written to
++ * @data: the main data to be written
++ *
++ * Write a page for at most NMBM_TRY_COUNT times.
++ */
++static bool nmbm_panic_write_phys_page(struct nmbm_instance *ni, uint64_t addr,
++				       const void *data)
++{
++	int tries, ret;
++
++	if (ni->lower.flags & NMBM_F_READ_ONLY) {
++		nlog_err(ni, "%s called with NMBM_F_READ_ONLY set\n", addr);
++		return false;
++	}
++
++	for (tries = 0; tries < NMBM_TRY_COUNT; tries++) {
++		ret = ni->lower.panic_write_page(ni->lower.arg, addr, data);
++		if (!ret)
++			return true;
++
++		nmbm_reset_chip(ni);
++	}
++
++	nlog_err(ni, "Panic page write failed at address 0x%08llx\n", addr);
 +
 +	return false;
 +}
@@ -752,7 +783,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	addr = ba2addr(ni, ba);
 +
 +	for (off = 0; off < ni->lower.erasesize; off += ni->lower.writesize) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		ret = nmbm_read_phys_page(ni, addr + off, ni->page_cache, NULL,
 +					  NMBM_MODE_PLACE_OOB);
@@ -791,7 +822,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	bool success;
 +
 +	while (ba < limit) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		if (nmbm_get_block_state(ni, ba) != BLOCK_ST_GOOD)
 +			goto next_block;
@@ -842,7 +873,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	addr = ba2addr(ni, ba);
 +
 +	for (off = 0; off < ni->lower.erasesize; off += ni->lower.writesize) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		/* Prepare page data. fill 0xff to unused region */
 +		memcpy(ni->page_cache, data, size);
@@ -886,7 +917,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	bool success;
 +
 +	while (ba > limit) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		if (nmbm_get_block_state(ni, ba) != BLOCK_ST_GOOD)
 +			goto next_block;
@@ -941,7 +972,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	int ret;
 +
 +	while (sizeremain) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		leading = off & ni->writesize_mask;
 +		chunksize = ni->lower.writesize - leading;
@@ -991,7 +1022,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	int ret;
 +
 +	while (sizeremain) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		leading = off & ni->writesize_mask;
 +		chunksize = ni->lower.writesize - leading;
@@ -1047,7 +1078,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	bool success;
 +
 +	while (sizeremain && ba < limit) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		chunksize = sizeremain;
 +		if (chunksize > ni->lower.erasesize)
@@ -1309,7 +1340,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +	/* Try to write new info table next to the existing table */
 +	while (write_ba >= ni->mapping_blocks_ba) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		success = nmbm_write_info_table(ni, write_ba,
 +						ni->mapping_blocks_top_ba,
@@ -1428,7 +1459,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +	/* Try to write temporary info table into spare unmapped blocks */
 +	while (write_ba >= ni->mapping_blocks_ba) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		success = nmbm_write_info_table(ni, write_ba,
 +						ni->mapping_blocks_top_ba,
@@ -1514,7 +1545,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +	/* Write new backup info table. */
 +	while (write_ba >= main_table_end_ba) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		success = nmbm_write_info_table(ni, write_ba,
 +						ni->mapping_blocks_top_ba,
@@ -1903,7 +1934,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	int ret;
 +
 +	while (sizeremain && ba < limit) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		if (nmbm_get_block_state(ni, ba) != BLOCK_ST_GOOD)
 +			goto next_block;
@@ -1996,7 +2027,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	bool success;
 +
 +	while (ba < limit - size2blk(ni, ni->info_table_size)) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		success = nmbm_try_load_info_table(ni, ba, table_end_ba,
 +						   write_count,
@@ -2208,7 +2239,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		limit = block_count - ni->lower.max_reserved_blocks;
 +
 +	while (ba >= limit) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		ba--;
 +		addr = ba2addr(ni, ba);
@@ -2222,7 +2253,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		 */
 +		for (off = 0; off < ni->lower.erasesize;
 +		     off += ni->lower.writesize) {
-+			schedule();
++			WATCHDOG_RESET();
 +
 +			ret = nmbn_read_data(ni, addr + off, &sig,
 +					     sizeof(sig));
@@ -2281,7 +2312,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		return false;
 +	}
 +
-+	if (!nld->oobsize || !is_power_of_2(nld->oobsize)) {
++	if (!nld->oobsize) {
 +		nmbm_log_lower(nld, NMBM_LOG_ERR,
 +			       "Page spare size %u is not valid\n", nld->oobsize);
 +		return false;
@@ -2594,7 +2625,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	end_ba = addr2ba(ni, addr + size - 1);
 +
 +	while (start_ba <= end_ba) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		ret = nmbm_erase_logic_block(ni, start_ba);
 +		if (ret) {
@@ -2726,7 +2757,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	}
 +
 +	while (sizeremain) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		leading = off & ni->writesize_mask;
 +		chunksize = ni->lower.writesize - leading;
@@ -2822,6 +2853,53 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +}
 +
 +/*
++ * nmbm_panic_write_logic_page - Panic write page based on logic address
++ * @ni: NMBM instance structure
++ * @addr: logic linear address
++ * @data: buffer contains main data. optional.
++ */
++static int nmbm_panic_write_logic_page(struct nmbm_instance *ni, uint64_t addr,
++				       const void *data)
++{
++	uint32_t lb, pb, offset;
++	uint64_t paddr;
++	bool success;
++
++	/* Extract block address and in-block offset */
++	lb = addr2ba(ni, addr);
++	offset = addr & ni->erasesize_mask;
++
++	/* Map logic block to physical block */
++	pb = ni->block_mapping[lb];
++
++	/* Whether the logic block is good (has valid mapping) */
++	if ((int32_t)pb < 0) {
++		nlog_debug(ni, "Logic block %u is a bad block\n", lb);
++		return -EIO;
++	}
++
++	/* Fail if physical block is marked bad */
++	if (nmbm_get_block_state(ni, pb) == BLOCK_ST_BAD)
++		return -EIO;
++
++	/* Assemble new address */
++	paddr = ba2addr(ni, pb) + offset;
++
++	success = nmbm_panic_write_phys_page(ni, paddr, data);
++	if (success)
++		return 0;
++
++	/*
++	 * Do not remap bad block here. Just mark this block in state table.
++	 * Remap this block on erasing.
++	 */
++	nmbm_set_block_state(ni, pb, BLOCK_ST_NEED_REMAP);
++	nmbm_update_info_table(ni);
++
++	return -EIO;
++}
++
++/*
 + * nmbm_write_single_page - Write one page based on logic address
 + * @ni: NMBM instance structure
 + * @addr: logic linear address
@@ -2848,6 +2926,32 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	}
 +
 +	return nmbm_write_logic_page(ni, addr, data, oob, mode);
++}
++
++/*
++ * nmbm_panic_write_single_page - Panic write one page based on logic address
++ * @ni: NMBM instance structure
++ * @addr: logic linear address
++ * @data: buffer contains main data. optional.
++ */
++int nmbm_panic_write_single_page(struct nmbm_instance *ni, uint64_t addr,
++				 const void *data)
++{
++	if (!ni)
++		return -EINVAL;
++
++	/* Sanity check */
++	if (ni->protected || (ni->lower.flags & NMBM_F_READ_ONLY)) {
++		nlog_debug(ni, "Device is forced read-only\n");
++		return -EROFS;
++	}
++
++	if (addr >= ba2addr(ni, ni->data_block_count)) {
++		nlog_err(ni, "Address 0x%llx is invalid\n", addr);
++		return -EINVAL;
++	}
++
++	return nmbm_panic_write_logic_page(ni, addr, data);
 +}
 +
 +/*
@@ -2893,7 +2997,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	}
 +
 +	while (sizeremain) {
-+		schedule();
++		WATCHDOG_RESET();
 +
 +		leading = off & ni->writesize_mask;
 +		chunksize = ni->lower.writesize - leading;
@@ -3250,7 +3354,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#endif /* _NMBM_PRIVATE_H_ */
 --- /dev/null
 +++ b/include/nmbm/nmbm-os.h
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,68 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -3265,7 +3369,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +#include <div64.h>
 +#include <stdbool.h>
-+#include <watchdog.h>
++#include <cyclic.h>
 +#include <u-boot/crc.h>
 +#include <linux/errno.h>
 +#include <linux/log2.h>
@@ -3316,10 +3420,12 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#define NMBM_DEFAULT_LOG_LEVEL		1
 +#endif
 +
++#define WATCHDOG_RESET			schedule
++
 +#endif /* _NMBM_OS_H_ */
 --- /dev/null
 +++ b/include/nmbm/nmbm.h
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,105 @@
 +/* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -3374,6 +3480,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	 */
 +	int (*read_page)(void *arg, uint64_t addr, void *buf, void *oob, enum nmbm_oob_mode mode);
 +	int (*write_page)(void *arg, uint64_t addr, const void *buf, const void *oob, enum nmbm_oob_mode mode);
++	int (*panic_write_page)(void *arg, uint64_t addr, const void *buf);
 +	int (*erase_block)(void *arg, uint64_t addr);
 +
 +	int (*is_bad_block)(void *arg, uint64_t addr);
@@ -3410,6 +3517,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +int nmbm_write_single_page(struct nmbm_instance *ni, uint64_t addr,
 +			   const void *data, const void *oob,
 +			   enum nmbm_oob_mode mode);
++int nmbm_panic_write_single_page(struct nmbm_instance *ni, uint64_t addr,
++				 const void *data);
 +int nmbm_write_range(struct nmbm_instance *ni, uint64_t addr, size_t size,
 +		     const void *data, enum nmbm_oob_mode mode,
 +		     size_t *retlen);
