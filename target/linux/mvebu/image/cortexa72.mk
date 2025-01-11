@@ -15,6 +15,7 @@ define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := MOCHAbin
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   SOC := armada-7040
 endef
 TARGET_DEVICES += globalscale_mochabin
@@ -74,7 +75,7 @@ define Device/mikrotik_rb5009
   DEVICE_MODEL := RB5009
   SOC := armada-7040
   KERNEL_LOADADDR := 0x22000000
-  DEVICE_PACKAGES += kmod-i2c-gpio yafut
+  DEVICE_PACKAGES += kmod-i2c-gpio yafut kmod-dsa-mv88e6xxx
 endef
 TARGET_DEVICES += mikrotik_rb5009
 
@@ -112,7 +113,7 @@ define Device/solidrun_clearfog-pro
   SOC := cn9130
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := ClearFog Pro
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-dsa-mv88e6xxx
   BOOT_SCRIPT := clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro

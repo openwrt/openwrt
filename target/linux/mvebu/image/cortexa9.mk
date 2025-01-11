@@ -108,7 +108,7 @@ define Device/cznic_turris-omnia
     wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     kmod-mt7915-firmware partx-utils kmod-i2c-mux-pca954x kmod-leds-turris-omnia \
     kmod-turris-omnia-mcu kmod-gpio-button-hotplug omnia-eeprom omnia-mcu-firmware \
-    omnia-mcutool
+    omnia-mcutool kmod-dsa-mv88e6xxx
   IMAGES := sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   SUPPORTED_DEVICES += armada-385-turris-omnia
@@ -123,7 +123,7 @@ define Device/fortinet
   KERNEL_SIZE := 6144k
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
     sysupgrade-tar rootfs=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-hwmon-nct7802
+  DEVICE_PACKAGES := kmod-hwmon-nct7802 kmod-dsa-mv88e6xxx
 endef
 
 define Device/fortinet_fg-30e
@@ -202,7 +202,7 @@ define Device/iij_sa-w2
   IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
     append-rootfs | pad-rootfs | check-size | append-metadata
   DEVICE_PACKAGES := kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
-    wpad-basic-mbedtls
+    wpad-basic-mbedtls kmod-dsa-mv88e6xxx
 endef
 TARGET_DEVICES += iij_sa-w2
 
@@ -251,7 +251,7 @@ define Device/linksys_wrt1200ac
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Caiman
   DEVICE_DTS := armada-385-linksys-caiman
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
   SUPPORTED_DEVICES += armada-385-linksys-caiman linksys,caiman
 endef
 TARGET_DEVICES += linksys_wrt1200ac
@@ -267,7 +267,7 @@ define Device/linksys_wrt1900acs
   DEVICE_ALT1_VENDOR := Linksys
   DEVICE_ALT1_MODEL := Shelby
   DEVICE_DTS := armada-385-linksys-shelby
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
   SUPPORTED_DEVICES += armada-385-linksys-shelby linksys,shelby
 endef
 TARGET_DEVICES += linksys_wrt1900acs
@@ -280,7 +280,7 @@ define Device/linksys_wrt1900ac-v1
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Mamba
   DEVICE_DTS := armada-xp-linksys-mamba
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
   KERNEL_SIZE := 4096k
   SUPPORTED_DEVICES += armada-xp-linksys-mamba linksys,mamba
 endef
@@ -294,7 +294,7 @@ define Device/linksys_wrt1900ac-v2
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Cobra
   DEVICE_DTS := armada-385-linksys-cobra
-  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864 kmod-dsa-mv88e6xxx
   SUPPORTED_DEVICES += armada-385-linksys-cobra linksys,cobra
 endef
 TARGET_DEVICES += linksys_wrt1900ac-v2
@@ -306,7 +306,8 @@ define Device/linksys_wrt3200acm
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Rango
   DEVICE_DTS := armada-385-linksys-rango
-  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
+  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964 \
+	kmod-dsa-mv88e6xxx
   SUPPORTED_DEVICES += armada-385-linksys-rango linksys,rango
 endef
 TARGET_DEVICES += linksys_wrt3200acm
@@ -339,6 +340,7 @@ define Device/marvell_a370-rd
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 370 RD (RD-88F6710-A1)
   DEVICE_DTS := armada-370-rd
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   SUPPORTED_DEVICES += armada-370-rd
 endef
 TARGET_DEVICES += marvell_a370-rd
