@@ -5,6 +5,25 @@ START=99
 
 boot() {
 	case $(board_name) in
+	xiaomi,mi-router-ax3000t)
+		[ $(fw_printenv -n flag_boot_rootfs) -eq 0 ] && \
+		[ $(fw_printenv -n flag_last_success) -eq 1 ] && \
+		[ $(fw_printenv -n flag_boot_success) -eq 1 ] && \
+		[ $(fw_printenv -n flag_try_sys1_failed) -gt 7 ] && \
+		[ $(fw_printenv -n flag_try_sys2_failed) -eq 8 ] && \
+		logger "bootcount: env vars don't requre adjustment" && \
+			return 0
+		# This is necessary at least for the RD23 model
+		fw_setenv -s - <<-EOF
+			flag_boot_rootfs 0
+			flag_boot_success 1
+			flag_last_success 0
+			flag_ota_reboot 0
+			flag_try_sys1_failed 0
+			flag_try_sys2_failed 0
+		EOF
+		logger "bootcount: env vars were adjusted"
+		;;
 	zyxel,ex5700-telenor)
 		fw_setenv uboot_bootcount 0
 		;;
