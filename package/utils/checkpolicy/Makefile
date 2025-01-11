@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=checkpolicy
-PKG_VERSION:=3.5
+PKG_VERSION:=3.7
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=7aa48ab2222a0b9881111d6d7f70c3014d3d9338827d9e02df105a68c0df5dbc
+PKG_HASH:=fd3e1925477d49946d1116938661af44c1f86f0d681466fd9f02eaa06002a07f
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=libselinux
 HOST_BUILD_DEPENDS:=libselinux/host
