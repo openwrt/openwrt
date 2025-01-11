@@ -292,6 +292,11 @@ define Device/bt_homehub-v5a
   DEVICE_VENDOR := British Telecom (BT)
   DEVICE_MODEL := Home Hub 5
   DEVICE_VARIANT := Type A
+  DEVICE_ALT0_VENDOR := British Telecom (BT)
+  DEVICE_ALT0_MODEL := Business Hub 5
+  DEVICE_ALT0_VARIANT := Type A
+  DEVICE_ALT1_VENDOR := Plusnet
+  DEVICE_ALT1_MODEL := Hub One
   BOARD_NAME := BTHOMEHUBV5A
   DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader \
 	kmod-ath10k-ct ath10k-firmware-qca988x-ct wpad-basic-mbedtls kmod-usb-dwc2
