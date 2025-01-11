@@ -7,7 +7,7 @@ define Device/watchguard_firebox-m300
   DEVICE_DTS_DIR := $(DTS_DIR)/fsl
   DEVICE_PACKAGES := \
 	kmod-gpio-button-hotplug kmod-hwmon-w83793 kmod-leds-gpio kmod-ptp-qoriq \
-	kmod-rtc-rs5c372a kmod-tpm-i2c-atmel
+	kmod-rtc-rs5c372a kmod-tpm-i2c-atmel kmod-dsa-mv88e6xxx
   KERNEL := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_SUFFIX := -fit-uImage.itb
   IMAGES := sdcard.img.gz sysupgrade.img.gz
