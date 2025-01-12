@@ -38,7 +38,17 @@ do_sysinfo_x86() {
 			local product_version
 			product_version="$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)"
 			case "$product_version" in
-			105*|115*|125*|135*|85*|86*)
+			105*|106*|115*|116*|125*|135*|85*|86*)
+				product="${product}-${product_version}"
+				break
+				;;
+			esac
+			;;
+		"Sophos:UTM")
+			local product_version
+			product_version="$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)"
+			case "$product_version" in
+			110*|120*)
 				product="${product}-${product_version}"
 				break
 				;;
