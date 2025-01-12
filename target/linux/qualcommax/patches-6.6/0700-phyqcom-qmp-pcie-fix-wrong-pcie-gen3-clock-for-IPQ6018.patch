@@ -1,0 +1,12 @@
+Index: linux-6.6.69/drivers/phy/qualcomm/phy-qcom-qmp-pcie.c
+===================================================================
+--- linux-6.6.69.orig/drivers/phy/qualcomm/phy-qcom-qmp-pcie.c
++++ linux-6.6.69/drivers/phy/qualcomm/phy-qcom-qmp-pcie.c
+@@ -2464,6 +2464,7 @@ static const struct qmp_phy_cfg ipq6018_
+ 
+ 	.pwrdn_ctrl		= SW_PWRDN | REFCLK_DRV_DSBL,
+ 	.phy_status		= PHYSTATUS,
++	.pipe_clock_rate	= 250000000,
+ };
+ 
+ static const struct qmp_phy_cfg sdm845_qmp_pciephy_cfg = {
