@@ -375,12 +375,13 @@ define Device/bcm33xx-hcs
   #     A lot faster, the OpenWrt image is also smaller. 
   # Option 2: Use OpenWrt's LZMA loader, packed in the image.
   #     Being slow on BCM3380 for unknown reasons.
+  KERNEL_INITRAMFS_COMMON := kernel-bin | append-dtb
 ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | aeolus-initramfs-lzma
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | aeolus-initramfs-lzma
 else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma bin | hcs-initramfs
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | lzma | loader-lzma bin | hcs-initramfs
 else
-  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON)
 endif
 
   IMAGES :=
