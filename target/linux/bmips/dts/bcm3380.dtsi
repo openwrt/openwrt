@@ -93,9 +93,9 @@
 			#clock-cells = <1>;
 		};
 
-		pll_cntl: syscon@14e00094 {
+		pll_cntl: syscon@14e00010 {
 			compatible = "syscon", "simple-mfd";
-			reg = <0x14e00094 0x4>;
+			reg = <0x14e00010 0x4>;
 			native-endian;
 
 			syscon-reboot {
