@@ -194,7 +194,7 @@ define Device/itian_sq201
 	DEVICE_VENDOR := ITian
 	DEVICE_MODEL := Square One SQ201
 	DEVICE_DTS := gemini-sq201
-	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci
+	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += itian_sq201
 
@@ -211,6 +211,7 @@ define Device/storlink_sl93512r
 	DEVICE_VENDOR := StorLink
 	DEVICE_MODEL := SL93512r
 	DEVICE_DTS := gemini-sl93512r
+	DEVICE_PACKAGES += kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += storlink_sl93512r
 
