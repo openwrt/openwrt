@@ -9,7 +9,7 @@
  #define REG_BCM6318_SOB		((void __iomem *)CKSEG1ADDR(0x10000900))
  #define BCM6318_FREQ_SHIFT	23
  #define BCM6318_FREQ_MASK	(0x3 << BCM6318_FREQ_SHIFT)
-@@ -161,6 +163,43 @@ static void bcm63xx_fixup_cpu1(void)
+@@ -161,6 +163,51 @@ static void bcm63xx_fixup_cpu1(void)
  	cpumask_set_cpu(1, &bmips_booted_mask);
  }
  
@@ -48,12 +48,20 @@
 +	* in the CP0 CMT Interrupt Register($22, 1).
 +	*/
 +	write_c0_brcm_cmt_intr(read_c0_brcm_cmt_intr() | (1 << 29) | (1 << 31));
++
++	/*
++	* Configure the LSSPI mode:
++	* &GpioSpimasterControl = 0xb4e00188
++	* GpioSpimasterControl.SpimModeOverride (bit 19) = 1
++	* GpioSpimasterControl.HsSpimEn (bit 16) = 0
++	*/
++	*(unsigned long*)0xb4e00188 = (*(unsigned long*)0xb4e00188 | 1 << 19) & ~(1 << 16);
 +}
 +
  static void bcm6328_quirks(void)
  {
  	/* Check CPU1 status in OTP (it is usually disabled) */
-@@ -193,6 +232,7 @@ static void bcm6368_quirks(void)
+@@ -193,6 +240,7 @@ static void bcm6368_quirks(void)
  
  static const struct bmips_quirk bmips_quirk_list[] = {
  	{ "brcm,bcm3368",		&bcm6358_quirks			},
@@ -61,7 +69,7 @@
  	{ "brcm,bcm3384-viper",		&bcm3384_viper_quirks		},
  	{ "brcm,bcm33843-viper",	&bcm3384_viper_quirks		},
  	{ "brcm,bcm6328",		&bcm6328_quirks			},
-@@ -228,6 +268,11 @@ const char *get_system_type(void)
+@@ -228,6 +276,11 @@ const char *get_system_type(void)
  	return "Generic BMIPS kernel";
  }
  
@@ -73,7 +81,7 @@
  static u32 bcm6318_cpufreq(void)
  {
  	u32 val = __raw_readl(REG_BCM6318_SOB);
-@@ -351,6 +396,7 @@ static u32 bcm63268_cpufreq(void)
+@@ -351,6 +404,7 @@ static u32 bcm63268_cpufreq(void)
  }
  
  static const struct bmips_cpufreq bmips_cpufreq_list[] = {
@@ -81,7 +89,7 @@
  	{ "brcm,bcm6318", &bcm6318_cpufreq },
  	{ "brcm,bcm6328", &bcm6328_cpufreq },
  	{ "brcm,bcm6358", &bcm6358_cpufreq },
-@@ -427,6 +473,11 @@ static phys_addr_t _bcm6358_memsize(void
+@@ -427,6 +481,11 @@ static phys_addr_t _bcm6358_memsize(void
  	return bmips_dram_size(cols, rows, is_32b, 2);
  }
  
@@ -93,7 +101,7 @@
  static phys_addr_t bcm6318_memsize(void)
  {
  	return _bcm6318_memsize(BCM6318_SDRAM_ADDR);
-@@ -458,6 +509,7 @@ static phys_addr_t bcm63268_memsize(void
+@@ -458,6 +517,7 @@ static phys_addr_t bcm63268_memsize(void
  }
  
  static const struct bmips_memsize bmips_memsize_list[] = {
