@@ -130,7 +130,7 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	tplink,deco-m9plus-v2)
-		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_set_interfaces_lan_wan "lan1" "wan"
 		ucidef_add_switch "switch0" "1" "1"
 		;;
 	netgear,lbr20)
