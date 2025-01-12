@@ -36,6 +36,7 @@
 
 		sim-tray {
 			label = "sim-tray";
+			linux,input-type = <EV_SW>;
 			linux,code = <BTN_1>;
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
@@ -68,7 +69,7 @@
 		};
 
 		signal-strength-4 {
-			label = "green:signal-strength4";
+			label = "green:signal-strength-4";
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -80,6 +81,11 @@
 		3g {
 			label = "green:3g";
 			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		4g {
+			label = "green:4g";
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan {
@@ -95,17 +101,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			/* GPIO 14 - ACTIVE HIGH for hwrev 0 */
 		};
-
-		/* 4G LED - GPIO21 ACTIVE_HIGH for RUT240 */
-	};
-
-	reg_usb_vbus: reg_usb_vbus {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
 	};
 };
 
@@ -193,17 +188,7 @@
 
 &usb {
 	dr_mode = "host";
-	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
-};
-
-&gpio {
-	modem-power {
-		gpio-hog;
-		output-low;
-		gpios = <18 GPIO_ACTIVE_HIGH>;
-		line-name = "modem-power";
-	};
 };
 
 &usb_phy {
