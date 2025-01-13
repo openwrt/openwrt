@@ -211,5 +211,15 @@
 
 			status = "disabled";
 		};
+
+		ethernet_gmii: ethernet@12110000 {
+			compatible = "brcm,unimac";
+			reg = <0x12110000 0x1000>;
+
+			fixed-link {
+				speed = <1000>;
+				duplex-full;
+			};
+		};
 	};
 };

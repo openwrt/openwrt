@@ -1,0 +1,15 @@
+--- a/arch/mips/bmips/setup.c
++++ b/arch/mips/bmips/setup.c
+@@ -206,6 +206,12 @@ static void bcm3380_quirks(void)
+ 	* GpioSpimasterControl.HsSpimEn (bit 16) = 0
+ 	*/
+ 	*(unsigned long*)0xb4e00188 = (*(unsigned long*)0xb4e00188 | 1 << 19) & ~(1 << 16);
++
++	// TODO: Remove this once we implement pinctrl properly.
++	// Repurpose a GPIO (15?) as SPI chip-select 3.
++	unsigned int __iomem* GpioPinMuxSel = (unsigned int __iomem*) 0xb4e00180;
++	*GpioPinMuxSel &= ~0x000000C0;	// PmSelectGpio1514 = 2b00
++	*GpioPinMuxSel |= 0x00000080;	// PmSelectGpio1514 = 2b10
+ }
+ 
+ static void bcm6328_quirks(void)
