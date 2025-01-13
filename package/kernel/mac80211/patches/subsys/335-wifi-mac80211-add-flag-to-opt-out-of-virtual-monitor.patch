@@ -306,7 +306,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				continue;
  			break;
  		case NL80211_IFTYPE_AP_VLAN:
-@@ -1856,8 +1857,10 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -1859,8 +1860,10 @@ int ieee80211_reconfig(struct ieee80211_
  	}
  
  	list_for_each_entry(sdata, &local->interfaces, list) {
@@ -318,7 +318,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		    ieee80211_sdata_running(sdata)) {
  			res = drv_add_interface(local, sdata);
  			if (WARN_ON(res))
-@@ -1870,11 +1873,14 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -1873,11 +1876,14 @@ int ieee80211_reconfig(struct ieee80211_
  	 */
  	if (res) {
  		list_for_each_entry_continue_reverse(sdata, &local->interfaces,

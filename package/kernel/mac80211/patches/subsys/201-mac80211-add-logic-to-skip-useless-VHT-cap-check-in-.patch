@@ -1,0 +1,32 @@
+From 793bfa410bd16c273beb390818ab44886c680a22 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 14 Jun 2023 10:20:31 +0200
+Subject: [PATCH 2/4] mac80211: add logic to skip useless VHT cap check in
+ ieee80211_sta_cap_rx_bw
+
+Add logic to skip useless VHT cap check in ieee80211_sta_cap_rx_bw in
+the case where HT doesn't indicate support for 40MHz.
+
+If the STA doesn't indicate support for 40MHz then it doesn't make sense
+to check additional support for 80MHz, 80+80MHz or 160MHz
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ net/mac80211/vht.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/net/mac80211/vht.c
++++ b/net/mac80211/vht.c
+@@ -442,6 +442,12 @@ ieee80211_sta_cap_chan_bw(struct link_st
+ 				NL80211_CHAN_WIDTH_40 : NL80211_CHAN_WIDTH_20;
+ 	}
+ 
++	/* Skip checking VHT cap and set to 20MHz if HT cap doesn't indicate
++	 * support for 40MHz.
++	 */
++	if (!(link_sta->pub->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40))
++		return NL80211_CHAN_WIDTH_20;
++
+ 	cap_width = vht_cap->cap & IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
+ 
+ 	if (cap_width == IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ)
