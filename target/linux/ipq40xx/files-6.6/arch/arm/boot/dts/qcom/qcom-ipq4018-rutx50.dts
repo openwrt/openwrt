@@ -103,11 +103,13 @@
 			led-10 {
 				label = "green:wifi2g";
 				gpios = <&shift_io 12 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy0tpt";
 			};
 
 			led-11 {
 				label = "green:wifi5g";
 				gpios = <&shift_io 13 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy1tpt";
 			};
 		};
 
