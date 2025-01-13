@@ -453,7 +453,7 @@ define Device/wd_cloud-mirror-gen2
   $(Device/NAND-128K)
   DEVICE_VENDOR := Western Digital
   DEVICE_MODEL := MyCloud Mirror Gen 2 (BWVZ/Grand Teton)
-  DEVICE_PACKAGES += -uboot-envtools coreutils-stty mkf2fs e2fsprogs \
+  DEVICE_PACKAGES += -uboot-envtools mkf2fs e2fsprogs \
 	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
 	-odhcpd-ipv6only 
   DEVICE_DTS := armada-385-wd_cloud-mirror-gen2
