@@ -13,6 +13,10 @@
 
 &lsspi {
 	status = "okay";
+	
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_lsspi_cs3>;
+
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <1000000>;
