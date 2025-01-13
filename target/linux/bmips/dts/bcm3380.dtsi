@@ -160,7 +160,37 @@
 			timeout-sec = <30>;
 		};
 
-		// Remove GPIO and pinctrl for now
+		gpio_cntl: syscon@14e00100 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			// TODO: add documentation like this:
+			// https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/mfd/brcm%2Cbcm63268-gpio-sysctl.yaml
+			compatible = "brcm,bcm3380-gpio-sysctl",
+				     "syscon", "simple-mfd";
+			reg = <0x14e00100 0x88>;
+			ranges = <0 0x14e00100 0x88>;
+			native-endian;
+
+			gpio: gpio@0 {
+				compatible = "brcm,bcm3380-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
+
+				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 52>;
+				#gpio-cells = <2>;
+			};
+
+			pinctrl: pinctrl@80 {
+				compatible = "brcm,bcm3380-pinctrl";
+				reg = <0x80 0x8>;
+
+				pinctrl_lsspi_cs3: lsspi_cs3-pins {
+					function = "lsspi_cs3";
+					pins = "gpio15";
+				};
+			};
+		};
 
 		uart0: serial@14e00200 {
 			compatible = "brcm,bcm6345-uart";
