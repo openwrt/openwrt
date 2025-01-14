@@ -1,0 +1,39 @@
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
+@@ -124,7 +124,11 @@ exit_free_device:
+ }
+ EXPORT_SYMBOL_GPL(rt2x00soc_probe);
+ 
++#if LINUX_VERSION_IS_LESS(6,12,0)
+ int rt2x00soc_remove(struct platform_device *pdev)
++#else
++void rt2x00soc_remove(struct platform_device *pdev)
++#endif
+ {
+ 	struct ieee80211_hw *hw = platform_get_drvdata(pdev);
+ 	struct rt2x00_dev *rt2x00dev = hw->priv;
+@@ -135,8 +139,10 @@ int rt2x00soc_remove(struct platform_dev
+ 	rt2x00lib_remove_dev(rt2x00dev);
+ 	rt2x00soc_free_reg(rt2x00dev);
+ 	ieee80211_free_hw(hw);
++#if LINUX_VERSION_IS_LESS(6,12,0)
+ 
+ 	return 0;
++#endif
+ }
+ EXPORT_SYMBOL_GPL(rt2x00soc_remove);
+ 
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.h
+@@ -17,7 +17,11 @@
+  * SoC driver handlers.
+  */
+ int rt2x00soc_probe(struct platform_device *pdev, const struct rt2x00_ops *ops);
++#if LINUX_VERSION_IS_LESS(6,12,0)
+ int rt2x00soc_remove(struct platform_device *pdev);
++#else
++void rt2x00soc_remove(struct platform_device *pdev);
++#endif
+ #ifdef CONFIG_PM
+ int rt2x00soc_suspend(struct platform_device *pdev, pm_message_t state);
+ int rt2x00soc_resume(struct platform_device *pdev);

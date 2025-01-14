@@ -27,11 +27,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -305,6 +305,24 @@ static void rt2800_rf_write(struct rt2x0
+@@ -305,6 +305,28 @@ static void rt2800_rf_write(struct rt2x0
  	mutex_unlock(&rt2x00dev->csr_mutex);
  }
  
++#if LINUX_VERSION_IS_LESS(6,12,0)
 +void rt6352_enable_pa_pin(struct rt2x00_dev *rt2x00dev, int enable)
++#else
++static void rt6352_enable_pa_pin(struct rt2x00_dev *rt2x00dev, int enable)
++#endif
 +{
 +	if (!rt2x00dev->pinctrl)
 +		return;
@@ -52,7 +56,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
  	[EEPROM_CHIP_ID]		= 0x0000,
  	[EEPROM_VERSION]		= 0x0001,
-@@ -10428,8 +10446,10 @@ static void rt2800_restore_rf_bbp_rt6352
+@@ -10428,8 +10450,10 @@ static void rt2800_restore_rf_bbp_rt6352
  static void rt2800_calibration_rt6352_stage1(struct rt2x00_dev *rt2x00dev)
  {
  	if (rt2x00_has_cap_external_pa(rt2x00dev) ||
@@ -64,7 +68,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rt2800_r_calibration(rt2x00dev);
  }
-@@ -10453,6 +10473,8 @@ static void rt2800_calibration_rt6352_st
+@@ -10453,6 +10477,8 @@ static void rt2800_calibration_rt6352_st
  	    !rt2x00_has_cap_external_lna_bg(rt2x00dev))
  		return;
  

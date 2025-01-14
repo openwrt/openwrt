@@ -1,0 +1,13 @@
+--- a/backport-include/asm/unaligned.h
++++ b/backport-include/asm/unaligned.h
+@@ -1,6 +1,10 @@
+ #ifndef __BACKPORT_ASM_GENERIC_UNALIGNED_H
+ #define __BACKPORT_ASM_GENERIC_UNALIGNED_H
++#if LINUX_VERSION_IS_LESS(6,12,0)
+ #include_next <asm/unaligned.h>
++#else
++#include_next <linux/unaligned.h>
++#endif
+ 
+ #if LINUX_VERSION_IS_LESS(5,7,0)
+ static inline u32 __get_unaligned_be24(const u8 *p)
