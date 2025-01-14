@@ -448,3 +448,20 @@ define Device/synology_ds213j
     -ppp -kmod-nft-offload -dnsmasq -odhcpd-ipv6only
 endef
 TARGET_DEVICES += synology_ds213j
+
+define Device/wd_cloud-mirror-gen2
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := MyCloud Mirror Gen 2 (BWVZ/Grand Teton)
+  DEVICE_PACKAGES += -uboot-envtools mkf2fs e2fsprogs \
+	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
+	-odhcpd-ipv6only 
+  DEVICE_DTS := armada-385-wd_cloud-mirror-gen2
+  KERNEL_SIZE := 5120k
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES += image-cfs-factory.bin uImage-factory.bin
+  IMAGE/image-cfs-factory.bin := append-ubi
+  IMAGE/uImage-factory.bin := append-kernel
+endef
+TARGET_DEVICES += wd_cloud-mirror-gen2
