@@ -18,6 +18,7 @@
 		label-mac-device = &gmac0;
 	};
 
+//LEDs and Keys from extracted dts, not in use now
 	leds {
 		compatible = "gpio-leds";
 
@@ -86,16 +87,6 @@
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
-
-//&pcie0 {
-//	wifi0: wifi@0,0 {
-//		reg = <0x0000 0 0 0 0>;
-//		nvmem-cells = <&eeprom_factory_8000>;
-//		nvmem-cell-names = "eeprom";
-//		ieee80211-freq-limit = <5000000 6000000>;
-//	};
-//};
-
 
 &switch0 {
 	ports {
