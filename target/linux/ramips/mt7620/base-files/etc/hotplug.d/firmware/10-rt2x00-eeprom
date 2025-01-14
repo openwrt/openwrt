@@ -41,6 +41,8 @@ case "$FIRMWARE" in
 		caldata_extract "factory" 0x0 0x200
 		caldata_patch_mac $wifi_mac 0x4
 		;;
+	hongdian,h8922)
+		;;
 	*)
 		caldata_die "Please define mtd-eeprom in $board DTS file!"
 		;;
