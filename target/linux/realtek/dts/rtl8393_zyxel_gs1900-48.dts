@@ -43,10 +43,11 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
-		mode {
+		reset {
 			label = "reset";
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <100>;
 		};
 	};
 

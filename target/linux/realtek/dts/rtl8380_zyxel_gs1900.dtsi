@@ -26,6 +26,7 @@
 			label = "reset";
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+			debounce-interval = <100>;
 		};
 	};
 
