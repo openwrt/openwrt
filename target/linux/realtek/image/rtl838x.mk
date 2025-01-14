@@ -120,9 +120,10 @@ TARGET_DEVICES += hpe_1920-8g-poe-65w
 
 define Device/hpe_1920-8g-poe-180w
   $(Device/hpe_1920)
+  $(Device/hwmon-fan-migration)
   SOC := rtl8380
   DEVICE_MODEL := 1920-8G-PoE+ 180W (JG922A)
-  DEVICE_PACKAGES += realtek-poe
+  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
   H3C_DEVICE_ID := 0x00010025
   SUPPORTED_DEVICES += hpe,1920-8g-poe
 endef
