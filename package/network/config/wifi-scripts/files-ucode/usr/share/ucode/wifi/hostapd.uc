@@ -493,7 +493,7 @@ function generate(config) {
 	if (!phy_features.radar_background || config.band != '5g')
 		delete config.enable_background_radar;
 	else
-		set_default(config, 'enable_background_radar', phy_features.radar_background);
+		set_default(config, 'enable_background_radar', false);
 
 	append_vars(config, [ 'acs_chan_bias', 'acs_exclude_dfs', 'enable_background_radar' ]);
 
