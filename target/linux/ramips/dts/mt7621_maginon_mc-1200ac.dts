@@ -16,30 +16,41 @@
 	aliases {
 //	    	label-mac-device = &wifi0;
 		label-mac-device = &gmac0;
+		led-running = &winstar_status_led;
+		led-boot = &winstar_blue_led;
+		led-failsafe = &winstar_red_led;
+		led-upgrade = &winstar_red_led;
 	};
 
-//LEDs and Keys from extracted dts, not in use now
 	leds {
 		compatible = "gpio-leds";
 
-		blue_led {
-			label = "winstar_blue_led";
-			gpios = <0x10 0x10 0x01>;
+		winstar_blue_led: blue_led {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
 		};
 
-		red_led {
-			label = "winstar_red_led";
-			gpios = <0x10 0x11 0x01>;
+		winstar_red_led: red_led {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
 		};
 
-		wifi_led {
-			label = "winstar_wifi_led";
-			gpios = <0x10 0x03 0x01>;
+		winstar_wifi_led: wifi_led {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "WiFi LED";
 		};
 
-		status_led {
-			label = "winstar_status_led";
-			gpios = <0x10 0x04 0x01>;
+		winstar_status_led: status_led {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
 		};
 	};
 	
