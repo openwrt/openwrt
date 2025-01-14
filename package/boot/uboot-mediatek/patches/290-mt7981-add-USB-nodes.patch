@@ -18,7 +18,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  #include <dt-bindings/clock/mt7981-clk.h>
  #include <dt-bindings/reset/mt7629-reset.h>
  #include <dt-bindings/pinctrl/mt65xx.h>
-@@ -342,4 +343,50 @@
+@@ -340,4 +341,50 @@
  		status = "disabled";
  	};
  
@@ -31,11 +31,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL_HIGH>;
 +		phys = <&u2port0 PHY_TYPE_USB2>,
 +		       <&u3port0 PHY_TYPE_USB3>;
-+		clocks = <&infracfg_ao CK_INFRA_IUSB_SYS_CK>,
-+			 <&infracfg_ao CK_INFRA_IUSB_CK>,
-+			 <&infracfg_ao CK_INFRA_IUSB_133_CK>,
-+			 <&infracfg_ao CK_INFRA_IUSB_66M_CK>,
-+			 <&topckgen CK_TOP_U2U3_XHCI_SEL>;
++		clocks = <&infracfg CLK_INFRA_IUSB_SYS_CK>,
++			 <&infracfg CLK_INFRA_IUSB_CK>,
++			 <&infracfg CLK_INFRA_IUSB_133_CK>,
++			 <&infracfg CLK_INFRA_IUSB_66M_CK>,
++			 <&topckgen CLK_TOP_U2U3_XHCI_SEL>;
 +		clock-names = "sys_ck",
 +			      "ref_ck",
 +			      "mcu_ck",
@@ -54,7 +54,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +
 +		u2port0: usb-phy@11e10000 {
 +			reg = <0x11e10000 0x700>;
-+			clocks = <&topckgen CK_TOP_USB_FRMCNT_SEL>;
++			clocks = <&topckgen CLK_TOP_USB_FRMCNT_SEL>;
 +			clock-names = "ref";
 +			#phy-cells = <1>;
 +			status = "okay";
@@ -62,7 +62,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +
 +		u3port0: usb-phy@11e10700 {
 +			reg = <0x11e10700 0x900>;
-+			clocks = <&topckgen CK_TOP_USB3_PHY_SEL>;
++			clocks = <&topckgen CLK_TOP_USB3_PHY_SEL>;
 +			clock-names = "ref";
 +			#phy-cells = <1>;
 +			status = "okay";
