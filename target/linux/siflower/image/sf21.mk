@@ -18,3 +18,22 @@ define Device/NAND
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.bin = append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
 endef
+
+define Device/bananapi_bpi-rv2
+  DEVICE_VENDOR := Bananapi
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-phy-sf21-usb kmod-phy-airoha-en8811h kmod-rtc-pcf8563
+endef
+
+define Device/bananapi_bpi-rv2-nand
+  DEVICE_MODEL := BPi-RV2 (Booting from NAND)
+  DEVICE_DTS := sf21h8898_bananapi_bpi-rv2-nand
+  $(call Device/bananapi_bpi-rv2)
+endef
+TARGET_DEVICES += bananapi_bpi-rv2-nand
+
+define Device/bananapi_bpi-rv2-nor
+  DEVICE_MODEL := BPi-RV2 (Booting from NOR)
+  DEVICE_DTS := sf21h8898_bananapi_bpi-rv2-nor
+  $(call Device/bananapi_bpi-rv2)
+endef
+TARGET_DEVICES += bananapi_bpi-rv2-nor

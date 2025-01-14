@@ -5,6 +5,9 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	bananapi,bpi-rv2-nand)
+		fit_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
