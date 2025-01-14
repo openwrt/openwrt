@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=murata-nvram
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2024-09-28
@@ -43,6 +43,12 @@ define Package/murata-nvram-43430-sdio/install
 	$(LN) \
 		cyfmac43430-sdio.1DX.stm32.txt \
 		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.st,stm32mp135f-dk.txt
+	$(LN) \
+		cyfmac43430-sdio.1DX.stm32.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.st,stm32mp157c-dk2.txt
+	$(LN) \
+		cyfmac43430-sdio.1DX.stm32.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.st,stm32mp157c-dk2-scmi.txt
 endef
 
 $(eval $(call BuildPackage,murata-nvram-43430-sdio))
