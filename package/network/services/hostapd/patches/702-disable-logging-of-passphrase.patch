@@ -1,0 +1,69 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3324,6 +3324,36 @@ static int ifname_in_use(struct hapd_int
+ }
+ 
+ 
++char*
++hostapd_remove_passphrase(const char *fname, const char *key)
++{
++	char *start, *end;
++	size_t key_len = os_strlen(key);
++	size_t fname_len = os_strlen(fname);
++
++	char *result = os_malloc(fname_len + 1);
++	if (!result) {
++		return NULL;
++	}
++	os_memcpy(result, fname, fname_len + 1);
++
++	start = os_strstr(result, key);
++	if (start) {
++		char * key_start = start;
++		start += key_len;
++		if (*start == '=') {
++			start++;
++			end = os_strchr(start, '\n');
++			if (end)
++				os_memmove(key_start, end + 1, os_strlen(end + 1) + 1);
++			else
++				*key_start = '\0';
++		}
++	}
++	return result;
++}
++
++
+ /**
+  * hostapd_interface_init_bss - Read configuration file and init BSS data
+  *
+@@ -3343,6 +3373,7 @@ hostapd_interface_init_bss(struct hapd_i
+ 	struct hostapd_data *hapd;
+ 	int k;
+ 	size_t i, bss_idx;
++	char *tmp_config_fname;
+ 
+ 	if (!phy || !*phy)
+ 		return NULL;
+@@ -3354,8 +3385,10 @@ hostapd_interface_init_bss(struct hapd_i
+ 		}
+ 	}
+ 
++	tmp_config_fname = hostapd_remove_passphrase(config_fname, "wpa_passphrase");
++
+ 	wpa_printf(MSG_INFO, "Configuration file: %s (phy %s)%s",
+-		   config_fname, phy, iface ? "" : " --> new PHY");
++		   tmp_config_fname, phy, iface ? "" : " --> new PHY");
+ 	if (iface) {
+ 		struct hostapd_config *conf;
+ 		struct hostapd_bss_config **tmp_conf;
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -791,6 +791,7 @@ void hostapd_interface_free(struct hosta
+ struct hostapd_iface * hostapd_alloc_iface(void);
+ struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
+ 				    const char *config_file);
++char *hostapd_remove_passphrase(const char *fname, const char *key);
+ struct hostapd_iface *
+ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
+ 			   const char *config_fname, int debug);
