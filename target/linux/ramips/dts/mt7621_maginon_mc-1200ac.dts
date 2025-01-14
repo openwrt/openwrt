@@ -16,27 +16,27 @@
 	aliases {
 //	    	label-mac-device = &wifi0;
 		label-mac-device = &gmac0;
-		led-running = &winstar_status_led;
-		led-boot = &winstar_blue_led;
-		led-failsafe = &winstar_red_led;
-		led-upgrade = &winstar_red_led;
+		led-running = &top_blue_led;
+		led-boot = &top_red_led;
+		led-failsafe = &top_red_led;
+		led-upgrade = &top_red_led;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		winstar_blue_led: blue_led {
+		top_blue_led: blue_led {
+			label = "top_blue_led";
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
 		};
 
-		winstar_red_led: red_led {
+		top_red_led: red_led {
+			label = "top_red_led";
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
 		};
 
 		winstar_wifi_led: wifi_led {
