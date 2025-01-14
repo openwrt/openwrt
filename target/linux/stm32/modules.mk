@@ -5,6 +5,7 @@
 define KernelPackage/phy-stm32-usbphyc
   TITLE:=STM32 USB HS PHY Controller driver
   DEPENDS:=@TARGET_stm32
+  SUBMENU:=$(USB_MENU)
   KCONFIG:=CONFIG_PHY_STM32_USBPHYC
   FILES:=$(LINUX_DIR)/drivers/phy/st/phy-stm32-usbphyc.ko
   AUTOLOAD:=$(call AutoProbe,phy-stm32-usbphyc,)
@@ -118,6 +119,7 @@ $(eval $(call KernelPackage,sound-soc-stm32-dfsdm))
 define KernelPackage/stm32-timers
   TITLE:=STM32 Timers
   DEPENDS:=@TARGET_stm32 +kmod-mfd
+  SUBMENU:=$(OTHER_MENU)
   KCONFIG:=CONFIG_MFD_STM32_TIMERS
   FILES:=$(LINUX_DIR)/drivers/mfd/stm32-timers.ko
   AUTOLOAD:=$(call AutoProbe,stm32-timers)
