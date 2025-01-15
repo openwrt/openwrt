@@ -39,49 +39,40 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
 
-		winstar_wifi_led: wifi_led {
-			function = LED_FUNCTION_POWER;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
-			label = "WiFi LED";
-		};
-
-		winstar_status_led: status_led {
-			function = LED_FUNCTION_POWER;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
-			label = "Status LED";
-		};
-	};
+//in Orignal dts, but not in Hardware available
+//		winstar_wifi_led: wifi_led {
+//			function = LED_FUNCTION_POWER;
+//			color = <LED_COLOR_ID_BLUE>;
+//			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+//			label = "WiFi LED";
+//		};
+//
+//		winstar_status_led: status_led {
+//			function = LED_FUNCTION_POWER;
+//			color = <LED_COLOR_ID_BLUE>;
+//			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+//			label = "Status LED";
+//		};
+//	};
 	
+
 	keys {
-		compatible = "gpio-keys-polled";
-		#address-cells = <0x01>;
-		#size-cells = <0x00>;
-		poll-interval = <0x14>;
+		compatible = "gpio-keys";
 
 		reset {
-			label = "reset";
-			gpios = <0x10 0x12 0x01>;
-			linux,code = <0x198>;
+			label = "Reset Button";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
-
-		pair {
-			label = "pair";
-			gpios = <0x10 0x0d 0x01>;
-			linux,code = <0x211>;
-		};
-
-		turbo {
-			label = "turbo";
-			gpios = <0x10 0x0f 0x01>;
-			linux,code = <0xa9>;
-		};
-
 		touch {
-			label = "touch";
-			gpios = <0x10 0x0e 0x01>;
-			linux,code = <0xab>;
+			label = "Reset Button";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+		pair {
+			label = "Reset Button";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
 		};
 	};
 };
