@@ -20,6 +20,7 @@ CONF_IMAGE=
 CONF_BACKUP_LIST=0
 CONF_BACKUP=
 CONF_RESTORE=
+USE_CURR_PART=0
 NEED_IMAGE=
 HELP=0
 TEST=0
@@ -50,6 +51,7 @@ while [ -n "$1" ]; do
 		-r|--restore-backup) CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-l|--list-backup) CONF_BACKUP_LIST=1;;
 		-f) CONF_IMAGE="$2"; shift;;
+		-s) USE_CURR_PART=1;;
 		-F|--force) export FORCE=1;;
 		-T|--test) TEST=1;;
 		-h|--help) HELP=1; break;;
@@ -79,6 +81,7 @@ upgrade-option:
 	-p           do not attempt to restore the partition table after flash.
 	-k           include in backup a list of current installed packages at
 	             $INSTALLED_PACKAGES
+	-s           stay on current partition (for dual firmware devices)
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -424,6 +427,7 @@ else
 	json_add_string command "$COMMAND"
 	json_add_object options
 	json_add_int save_partitions "$SAVE_PARTITIONS"
+	[ $USE_CURR_PART -eq 1 ] && json_add_boolean use_curr_part 1
 	json_close_object
 
 	ubus call system sysupgrade "$(json_dump)"
