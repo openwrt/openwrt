@@ -87,7 +87,7 @@ function set_netdev_cpu(dev, cpu) {
 
 function task_device_match(name, device)
 {
-	let napi_match = match(name, /napi\/([^-+])-\d+/);
+	let napi_match = match(name, /napi\/([^-]*)-\d+/);
 	if (!napi_match)
 		napi_match = match(name, /mt76-tx (phy\d+)/);
 	if (napi_match &&
