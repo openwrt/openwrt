@@ -20,6 +20,6 @@ reload_service() {
 	if [ -e "/usr/libexec/platform/packet-steering.sh" ]; then
 		/usr/libexec/platform/packet-steering.sh "$packet_steering"
 	else
-		/usr/libexec/network/packet-steering.uc $opts "$packet_steering"
+		/usr/libexec/network/packet-steering.uc $opts "${packet_steering:-0}"
 	fi
 }
