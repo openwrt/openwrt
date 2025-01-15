@@ -62,6 +62,12 @@ menuconfig DEVEL
 		  Compile all host host tools even if not needed. This is needed to prepare a
 		  universal precompiled host tools archive to use in another buildroot.
 
+	config EXTERNAL_TOOLS
+		bool "Use external tools" if DEVEL
+		help
+		  If enabled, the buildroot will compile using prebuilt tools instead of
+		  compiling them.
+
 	config BUILD_SUFFIX
 		string "Build suffix to append to the target BUILD_DIR variable" if DEVEL
 		default ""

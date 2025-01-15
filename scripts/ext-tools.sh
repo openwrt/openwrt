@@ -36,6 +36,9 @@ install_prebuilt_tools() {
 
 	refresh_prebuilt_tools
 
+	echo "CONFIG_DEVEL=y" >> .config
+	echo "CONFIG_EXTERNAL_TOOLS=y" >> .config && make defconfig
+
 	return 0
 }
 
