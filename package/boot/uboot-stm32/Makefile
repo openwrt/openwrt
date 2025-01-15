@@ -28,13 +28,33 @@ define U-Boot/stm32mp13
   UBOOT_CONFIG:=stm32mp13
 endef
 
+define U-Boot/stm32mp15
+  BUILD_SUBTARGET:=stm32mp1
+  UBOOT_CONFIG:=stm32mp15
+endef
+
 define U-Boot/stm32mp135f-dk
   $(call U-Boot/stm32mp13)
   NAME:=STM32MP135F-DK
   DEVICE_TREE:=stm32mp135f-dk
 endef
 
-UBOOT_TARGETS := stm32mp135f-dk
+define U-Boot/stm32mp157c-dk2
+  $(call U-Boot/stm32mp15)
+  NAME:=STM32MP157C-DK2
+  DEVICE_TREE:=stm32mp157c-dk2
+endef
+
+define U-Boot/stm32mp157c-dk2-scmi
+  $(call U-Boot/stm32mp15)
+  NAME:=STM32MP157C-DK2 (SCMI)
+  DEVICE_TREE:=stm32mp157c-dk2-scmi
+endef
+
+UBOOT_TARGETS := \
+		 stm32mp135f-dk \
+		 stm32mp157c-dk2 \
+		 stm32mp157c-dk2-scmi
 
 UBOOT_MAKE_FLAGS += DEVICE_TREE=$(DEVICE_TREE)
 
