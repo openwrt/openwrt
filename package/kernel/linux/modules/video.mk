@@ -1394,6 +1394,106 @@ endef
 
 $(eval $(call KernelPackage,video-pxp))
 
+define KernelPackage/video-imx-common
+  TITLE:=i.MX V4L2 media core driver
+  DEPENDS:=@TARGET_imx +kmod-video-dma-contig +kmod-video-fwnode
+  KCONFIG:=CONFIG_VIDEO_IMX_MEDIA
+  FILES:=$(LINUX_DIR)/drivers/media/platform/nxp/imx-media-common.ko
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx-common/decription
+ Say yes here to enable support for video4linux media controller
+ driver for the i.MX5/6 SOC.
+endef
+
+$(eval $(call KernelPackage,video-imx-common))
+
+define KernelPackage/video-imx-mipi-csis
+  TITLE:=i.MX7 CSI interface
+  DEPENDS:=@TARGET_imx +kmod-video-imx-common
+  KCONFIG:=CONFIG_VIDEO_IMX_MIPI_CSIS
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/platform/nxp/imx-mipi-csis.ko
+  AUTOLOAD:=$(call AutoProbe,imx-mipi-csis)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx-mipi-csis/description
+ Enable support for NXP MIPI CSI-2 CSIS receiver found on i.MX7
+ and i.MX8 models
+endef
+
+$(eval $(call KernelPackage,video-imx-mipi-csis))
+
+define KernelPackage/video-imx7-csi
+  TITLE:=i.MX7 CSI interface
+  DEPENDS:=@TARGET_imx +kmod-video-imx-common
+  KCONFIG:=CONFIG_VIDEO_IMX7_CSI
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/platform/nxp/imx7-media-csi.ko
+  AUTOLOAD:=$(call AutoProbe,imx7-media-csi)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx7-csi/description
+ Enable support for video4linux camera sensor interface driver
+ for i.MX6UL/L or i.MX7.
+endef
+
+$(eval $(call KernelPackage,video-imx7-csi))
+
+define KernelPackage/video-imx8mq-csi2
+  TITLE:=i.MX7 CSI interface
+  DEPENDS:=@TARGET_imx +kmod-video-imx-common
+  KCONFIG:=CONFIG_VIDEO_IMX8MP_CSI2
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/platform/nxp/imx8mq-mipi-csi2.ko
+  AUTOLOAD:=$(call AutoProbe,imx8mq-mipi-csi2)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-imx8mq-csi2/description
+ Enable support for video4linux camera sensor interface driver
+ for i.MX8M and P series.
+endef
+
+$(eval $(call KernelPackage,video-imx8mq-csi2))
+
+define KernelPackage/video-mux
+  TITLE:=Video Multiplexer
+  DEPENDS:=+kmod-video-async +kmod-mux-core
+  KCONFIG:=CONFIG_VIDEO_MUX
+  FILES:=$(LINUX_DIR)/drivers/media/platform/video-mux.ko
+  AUTOLOAD:=$(call AutoProbe,video-mux)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-mux/description
+ This driver provides support for N:1 video bus multiplexers.
+endef
+
+$(eval $(call KernelPackage,video-mux))
+
+define KernelPackage/video-ov5645
+  TITLE:=OmniVision OV5645 sensor support
+  DEPENDS:=+kmod-video-fwnode
+  KCONFIG:= \
+	CONFIG_MEDIA_CAMERA_SUPPORT=y \
+	CONFIG_VIDEO_CAMERA_SENSOR=y \
+	CONFIG_VIDEO_OV5645
+  FILES:=$(LINUX_DIR)/drivers/media/i2c/ov5645.ko
+  AUTOLOAD:=$(call AutoProbe,ov5645)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-ov5645/description
+ This is a Video4Linux2 sensor driver for the OmniVision
+ OV5645 camera.
+endef
+
+$(eval $(call KernelPackage,video-ov5645))
+
 define KernelPackage/video-tw686x
   TITLE:=TW686x support
   DEPENDS:=@PCIE_SUPPORT +kmod-video-dma-contig +kmod-video-dma-sg +kmod-sound-core
