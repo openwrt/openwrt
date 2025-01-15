@@ -16,6 +16,11 @@
 		led-upgrade = &led_system;
 	};
 
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+	};
+
 	gpio-export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
@@ -23,11 +28,6 @@
 		microsd-detect {
 			gpio-export,name = "microsd-detect";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-		};
-
-		usb-alarm {
-			gpio-export,name = "usb-alarm";
-			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 	};
 
