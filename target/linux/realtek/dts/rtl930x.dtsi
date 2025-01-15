@@ -143,6 +143,81 @@
 
 	};
 
+	pinmux_ext_gpio_glb: pinmux@1b00c600 {
+		compatible = "pinctrl-single";
+		reg = <0x1b00c600 0x4>;
+		pinctrl-0 = <&pmx_enable_extgpio_mdio>;
+		pinctrl-names = "default";
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		status = "disabled";
+
+		pmx_enable_extgpio_mdio: enable-extgpio-mdio {
+			pinctrl-single,bits = <0x0 0x100 0x100>;
+		};
+
+		pmx_enable_extgpio0_direct: enable-extgpio0-direct {
+			pinctrl-single,bits = <0x0 0x2 0x2>, /* EN */
+					      <0x0 0x8 0x8>; /* ACC_MODE */
+		};
+
+		pmx_enable_extgpio1_direct: enable-extgpio1-direct {
+			pinctrl-single,bits = <0x0 0x1 0x1>, /* EN */
+					      <0x0 0x4 0x4>; /* ACC_MODE */
+		};
+	};
+
+	/*
+	 * 0-31: primary RTL8231 0-31
+	 */
+	gpio1: gpio@1b00c614 {
+		compatible = "realtek,rtl930x-extgpio";
+		reg = <0x1b00c614 0x4>, <0x1b00c608 0x4>;
+		reg-names = "dat", "dirout";
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <32>;
+		pinctrl-0 = <&pmx_enable_extgpio0_direct>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+	};
+
+	/*
+	 * 0-4 : primary RTL8231 32-36
+	 * 5-31: secondary RTL8231 0-26
+	 */
+	gpio2: gpio@1b00c618 {
+		compatible = "realtek,rtl930x-extgpio";
+		reg = <0x1b00c618 0x4>, <0x1b00c60c 0x4>;
+		reg-names = "dat", "dirout";
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <32>;
+		pinctrl-0 = <&pmx_enable_extgpio1_direct>;
+		pinctrl-names = "default";
+
+		status = "disabled";
+	};
+
+	/*
+	 * 0-9: secondary RTL8231 27-36
+	 */
+	gpio3: gpio@1b00c61c {
+		compatible = "realtek,rtl930x-extgpio";
+		reg = <0x1b00c61c 0x4>, <0x1b00c610 0x4>;
+		reg-names = "dat", "dirout";
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <10>;
+
+		status = "disabled";
+	};
+
 	pinmux_led: pinmux@1b00cc00 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00cc00 0x4>;

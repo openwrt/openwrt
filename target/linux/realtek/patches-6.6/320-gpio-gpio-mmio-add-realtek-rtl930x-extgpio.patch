@@ -1,0 +1,23 @@
+From eb0c14f6f1edfcd2bf783f8a9a8060d33e06ec9d Mon Sep 17 00:00:00 2001
+From: INAGAKI Hiroshi <musashino.open@gmail.com>
+Date: Sun, 26 May 2024 00:43:34 +0900
+Subject: [PATCH] gpio: gpio-mmio: add compatible for external gpio on RTL930x
+
+Add "compatible" string to gpio-mmio driver to use this driver for the
+external RTL8231 GPIO contoller on Realtek RTL930x platform.
+
+Signed-off-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+---
+ drivers/gpio/gpio-mmio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -691,6 +691,7 @@ static const struct of_device_id bgpio_o
+ 	{ .compatible = "brcm,bcm6345-gpio" },
+ 	{ .compatible = "wd,mbl-gpio" },
+ 	{ .compatible = "ni,169445-nand-gpio" },
++	{ .compatible = "realtek,rtl930x-extgpio" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, bgpio_of_match);
