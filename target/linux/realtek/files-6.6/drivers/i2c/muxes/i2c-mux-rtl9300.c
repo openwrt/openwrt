@@ -245,6 +245,7 @@ static int rtl9300_i2c_mux_probe(struct platform_device *pdev)
 		channels[chan].sda_num = pin - mux_data->sda0_pin;
 		if (channels[chan].sda_num < 0 || channels[chan].sda_num >= mux_data->sda_pins) {
 			dev_warn(dev, "SDA pin %d not supported\n", pin);
+			of_node_put(node);
 			return -EINVAL;
 		}
 		pr_info("%s channel %d sda_num %d\n", __func__, chan, channels[chan].sda_num);

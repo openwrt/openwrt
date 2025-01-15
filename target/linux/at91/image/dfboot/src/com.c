@@ -273,7 +273,7 @@ static int number(int num, int base, int size,
     putc(tmp[i]);
 
   while (size-- > 0)
-    putc(' ');;
+    putc(' ');
 
   return 1;
 }
