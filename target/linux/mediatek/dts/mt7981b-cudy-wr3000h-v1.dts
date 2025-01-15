@@ -39,17 +39,6 @@
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		phyreset {
-			gpio-export,name = "phyreset";
-			gpio-export,output = <1>;
-			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -132,7 +121,6 @@
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
 	status = "okay";
 
 	gmac0: mac@0 {
@@ -141,7 +129,6 @@
 		phy-mode = "2500base-x";
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_bdinfo_de00 0>;
-		label = "lan";
 
 		fixed-link {
 			speed = <2500>;
@@ -159,7 +146,6 @@
 		nvmem-cells = <&macaddr_bdinfo_de00 1>;
 		label = "wan";
 	};
-
 };
 
 &mdio_bus {
@@ -172,12 +158,14 @@
 		interrupt-parent = <&pio>;
 		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	};
-	phy6: ethernet-phy@6 {
-		compatible = "ethernet-phy-ieee802.3-c22"; // [RTL8221B-VB-CG 2.5Gbps PHY (C22)]
-		reg = <6>;
-		phy-mode = "2500base-x";
-	};
 
+	phy6: ethernet-phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <6>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &spi0 {
