@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bzip2
 PKG_VERSION:=1.0.8
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://sourceware.org/pub/bzip2
@@ -55,8 +55,8 @@ define Package/bzip2/description
 	data compressor. This package provides the binary.
 endef
 
-TARGET_CFLAGS += \
-	$(FPIC)
+TARGET_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += --prefix=/usr
 
@@ -88,8 +88,8 @@ define Package/bzip2/install
 	$(LN) ../usr/bin/bzip2 $(1)/bin/bzip2
 endef
 
-HOST_CFLAGS += \
-	$(FPIC)
+HOST_CFLAGS += $(FPIC)
+HOST_LDFLAGS += $(FPIC)
 
 HOST_MAKE_FLAGS+= \
 	CFLAGS="$(HOST_CFLAGS)" \
