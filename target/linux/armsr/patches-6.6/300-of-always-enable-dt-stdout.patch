@@ -1,0 +1,35 @@
+From 3d6e8243405f7d3bb02290721395e4840f4b439e Mon Sep 17 00:00:00 2001
+From: Mathew McBride <matt@traverse.com.au>
+Date: Mon, 25 Nov 2024 10:55:38 +1100
+Subject: [PATCH] of: use device tree "stdout" regardless of console= settings
+
+(OpenWrt only, not intended for upstream)
+On device-tree systems, A console= parameter on the command line
+will override the device tree "stdout" parameter, which causes
+a problem on non-graphical systems as ttyX will be a dummy console
+which is not usable.
+
+Futhermore, non-activation of the serial consoles will mean they
+will not carry over baud rate settings from the system firmware.
+On a "universal" Arm target, such a behaviour is not desirable.
+
+This change will mirror existing behaviour on ACPI where the
+SPCR (the "stdout" equivalent) console will be activated regardless
+of the supplied console parameters.
+
+Signed-off-by: Mathew McBride <matt@traverse.com.au>
+---
+ drivers/of/base.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1866,7 +1866,7 @@ EXPORT_SYMBOL_GPL(of_alias_get_highest_i
+  */
+ bool of_console_check(struct device_node *dn, char *name, int index)
+ {
+-	if (!dn || dn != of_stdout || console_set_on_cmdline)
++	if (!dn || dn != of_stdout)
+ 		return false;
+ 
+ 	/*
