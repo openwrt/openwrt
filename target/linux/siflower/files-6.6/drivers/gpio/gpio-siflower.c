@@ -255,7 +255,10 @@ static int sf_gpio_probe(struct platform_device *pdev)
 	u32 ngpios, ngroups;
 	int ret, i;
 
-	ngpios = (unsigned int) device_get_match_data(dev);
+	ret = of_property_read_u32(pdev->dev.of_node, "ngpios", &ngpios);
+	if (ret)
+		return ret;
+
 	ngroups = DIV_ROUND_UP(ngpios, GPIOS_PER_GROUP);
 	priv = devm_kzalloc(dev, struct_size(priv, irq, ngroups), GFP_KERNEL);
 	if (!priv)
@@ -323,7 +326,7 @@ static int sf_gpio_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id sf_gpio_ids[] = {
-	{ .compatible = "siflower,sf19a2890-gpio", .data = (void *)49 },
+	{ .compatible = "siflower,sf19a2890-gpio" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, sf_gpio_ids);
@@ -333,6 +336,7 @@ static struct platform_driver sf_gpio_driver = {
 	.remove		= sf_gpio_remove,
 	.driver = {
 		.name		= "siflower_gpio",
+		.owner		= THIS_MODULE,
 		.of_match_table	= sf_gpio_ids,
 	},
 };
