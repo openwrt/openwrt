@@ -1804,11 +1804,10 @@ define Device/keenetic_kn-1910
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  IMAGE_SIZE := 24903680
+  IMAGE_SIZE := 20368588
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1910
-  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
 	append-ubi | check-size | zyimage -d 0x801910 -v "KN-1910"
