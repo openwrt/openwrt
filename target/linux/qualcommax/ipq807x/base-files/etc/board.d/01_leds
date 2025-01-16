@@ -16,7 +16,8 @@ asus,rt-ax89x)
 	ucidef_set_led_netdev "sfp" "SFP" "white:sfp" "10g-sfp"
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
 	;;
-dynalink,dl-wrx36)
+dynalink,dl-wrx36|\
+spectrum,sax1v1k)
 	ucidef_set_led_netdev "wan-port-link-green" "WAN-PORT-LINK-GREEN" "90000.mdio-1:1c:green:wan" "wan" "link_2500"
 	ucidef_set_led_netdev "wan-port-link-yellow" "WAN-PORT-LINK-YELLOW" "90000.mdio-1:1c:yellow:wan" "wan" "tx rx link_10 link_100 link_1000"
 	;;
