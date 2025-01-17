@@ -690,6 +690,18 @@ define U-Boot/mt7988_arcadyan_mozart
   DEPENDS:=+trusted-firmware-a-mt7988-emmc-comb
 endef
 
+define U-Boot/mt7988_asus_zenwifi-bt8
+  NAME:=Asus ZenWiFi BT8
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=asus_zenwifi-bt8-ubootmod
+  UBOOT_CONFIG:=mt7988a_asus_zenwifi-bt8
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-ddr4
+endef
+
 define U-Boot/mt7988_bananapi_bpi-r4-emmc
   NAME:=BananaPi BPi-R4
   BUILD_SUBTARGET:=filogic
@@ -882,6 +894,7 @@ UBOOT_TARGETS := \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \
 	mt7988_arcadyan_mozart \
+	mt7988_asus_zenwifi-bt8 \
 	mt7988_bananapi_bpi-r4-emmc \
 	mt7988_bananapi_bpi-r4-sdmmc \
 	mt7988_bananapi_bpi-r4-snand \
