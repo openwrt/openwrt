@@ -25,7 +25,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
 +			uart->probe = up->probe;
  
  		if (uart->port.type != PORT_8250_CIR) {
- 			if (serial8250_isa_config != NULL)
+ 			if (uart_console_registered(&uart->port))
 --- a/drivers/tty/serial/8250/8250_dw.c
 +++ b/drivers/tty/serial/8250/8250_dw.c
 @@ -612,6 +612,9 @@ static int dw8250_probe(struct platform_
