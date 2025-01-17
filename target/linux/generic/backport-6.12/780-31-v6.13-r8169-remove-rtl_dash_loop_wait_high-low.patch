@@ -15,7 +15,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -1347,40 +1347,19 @@ static void rtl8168ep_stop_cmac(struct r
+@@ -1346,40 +1346,19 @@ static void rtl8168ep_stop_cmac(struct r
  	RTL_W8(tp, IBCR0, RTL_R8(tp, IBCR0) & ~0x01);
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  }
  
  static void rtl8168_driver_start(struct rtl8169_private *tp)
-@@ -1394,7 +1373,8 @@ static void rtl8168_driver_start(struct
+@@ -1393,7 +1372,8 @@ static void rtl8168_driver_start(struct
  static void rtl8168dp_driver_stop(struct rtl8169_private *tp)
  {
  	r8168dp_oob_notify(tp, OOB_CMD_DRIVER_STOP);
@@ -70,7 +70,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  }
  
  static void rtl8168ep_driver_stop(struct rtl8169_private *tp)
-@@ -1402,7 +1382,8 @@ static void rtl8168ep_driver_stop(struct
+@@ -1401,7 +1381,8 @@ static void rtl8168ep_driver_stop(struct
  	rtl8168ep_stop_cmac(tp);
  	r8168ep_ocp_write(tp, 0x01, 0x180, OOB_CMD_DRIVER_STOP);
  	r8168ep_ocp_write(tp, 0x01, 0x30, r8168ep_ocp_read(tp, 0x30) | 0x01);

@@ -17,7 +17,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -1563,6 +1563,9 @@ static void __rtl8169_set_wol(struct rtl
+@@ -1562,6 +1562,9 @@ static void __rtl8169_set_wol(struct rtl
  	}
  
  	r8169_mod_reg8_cond(tp, Config3, LinkUp, wolopts & WAKE_PHY);
