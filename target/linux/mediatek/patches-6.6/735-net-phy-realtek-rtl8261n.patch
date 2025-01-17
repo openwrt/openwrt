@@ -1,8 +1,8 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -399,6 +399,8 @@ config REALTEK_PHY
- 	help
- 	  Supports the Realtek 821x PHY.
+@@ -396,6 +396,8 @@ config QSEMI_PHY
+ 
+ source "drivers/net/phy/realtek/Kconfig"
  
 +source "drivers/net/phy/rtl8261n/Kconfig"
 +
@@ -14,7 +14,7 @@
 @@ -100,6 +100,7 @@ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja
  obj-y				+= qcom/
  obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
- obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek/
 +obj-y				+= rtl8261n/
  obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
  obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
