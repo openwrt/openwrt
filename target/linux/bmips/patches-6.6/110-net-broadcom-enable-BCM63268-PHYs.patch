@@ -1,0 +1,87 @@
+--- a/drivers/net/dsa/b53/b53_mmap.c
++++ b/drivers/net/dsa/b53/b53_mmap.c
+@@ -23,6 +23,8 @@
+ #include <linux/io.h>
+ #include <linux/platform_device.h>
+ #include <linux/platform_data/b53.h>
++#include <linux/regmap.h>
++#include <linux/mfd/syscon.h>
+ 
+ #include "b53_priv.h"
+ 
+@@ -30,6 +32,47 @@ struct b53_mmap_priv {
+ 	void __iomem *regs;
+ };
+ 
++#define BCM63268_EPHY_CTRL			0x3C
++#define BCM63268_EPHY_RESET			BIT(0)
++
++#define BCM63268_GPHY_CTRL			0x54
++#define BCM63268_GPHY_IDDQ_BIAS		BIT(0)
++#define BCM63268_GPHY_LOW_PWR		BIT(3)
++#define BCM63268_EEE_PCS_100BASE_TX	BIT(9)
++#define BCM63268_EEE_PCS_1000BASE_T	BIT(10)
++#define BCM63268_EEE_100BASE_TX		BIT(12)
++#define BCM63268_EEE_1000BASE_T		BIT(13)
++#define BCM63268_LPI_FEATURE_EN_S	16
++#define BCM63268_LPI_FEATURE_EN_MASK (3 << BCM63268_LPI_FEATURE_EN_S)
++
++#define BCM63268_FIRST_GPHY 3 //PHY 0-2 are FE
++
++static void bcm63268_enable_phy(struct regmap *ctrlreg, int port)
++{
++	u32 bits; 
++
++	if(port <  BCM63268_FIRST_GPHY) {
++		bits = BCM63268_EPHY_RESET << port;
++		/*Reset PHY*/
++		regmap_update_bits(ctrlreg, BCM63268_EPHY_CTRL, bits, 0);
++		msleep(1);
++
++		regmap_update_bits(ctrlreg, BCM63268_EPHY_CTRL, bits, bits);
++		msleep(1);
++	}
++	else if(port == BCM63268_FIRST_GPHY) {
++		/*Disable low power mode*/
++		bits = BCM63268_GPHY_IDDQ_BIAS | BCM63268_GPHY_LOW_PWR;
++		regmap_update_bits(ctrlreg, BCM63268_GPHY_CTRL, bits, 0);
++
++		/*Enable EEE*/
++		bits = BCM63268_EEE_PCS_100BASE_TX | BCM63268_EEE_PCS_1000BASE_T
++			| BCM63268_EEE_100BASE_TX | BCM63268_EEE_1000BASE_T |
++			BCM63268_LPI_FEATURE_EN_MASK;
++		regmap_update_bits(ctrlreg, BCM63268_GPHY_CTRL, bits, bits);
++	}
++}
++
+ static int b53_mmap_read8(struct b53_device *dev, u8 page, u8 reg, u8 *val)
+ {
+ 	struct b53_mmap_priv *priv = dev->priv;
+@@ -252,6 +295,7 @@ static int b53_mmap_probe_of(struct plat
+ 	struct device *dev = &pdev->dev;
+ 	struct b53_platform_data *pdata;
+ 	void __iomem *mem;
++	struct regmap *ctrlreg;
+ 
+ 	mem = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(mem))
+@@ -266,6 +310,8 @@ static int b53_mmap_probe_of(struct plat
+ 	pdata->chip_id = (u32)(unsigned long)device_get_match_data(dev);
+ 	pdata->big_endian = of_property_read_bool(np, "big-endian");
+ 
++	ctrlreg = syscon_regmap_lookup_by_phandle(np, "bcm,syscon");
++
+ 	of_ports = of_get_child_by_name(np, "ports");
+ 	if (!of_ports) {
+ 		dev_err(dev, "no ports child node found\n");
+@@ -278,6 +324,10 @@ static int b53_mmap_probe_of(struct plat
+ 		if (of_property_read_u32(of_port, "reg", &reg))
+ 			continue;
+ 
++		if((pdata->chip_id == BCM63268_DEVICE_ID) &&
++			!IS_ERR(ctrlreg))
++			bcm63268_enable_phy(ctrlreg, reg);
++
+ 		if (reg < B53_N_PORTS)
+ 			pdata->enabled_ports |= BIT(reg);
+ 	}
