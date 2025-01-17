@@ -103,7 +103,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +	if (err)
 +		return err;
 +
-+	err = regmap_read_poll_timeout(ctrl->map, ctrl->cmd_reg, run, (run != cmd), 3, 100);
++	err = regmap_read_poll_timeout_atomic(ctrl->map, ctrl->cmd_reg, run, (run != cmd), 3, 100);
 +
 +	if ((run & ~mask_volatile) != (cmd & ~mask_volatile)) {
 +		dev_err(ctrl->dev, "Command modified. Is offloading still active?");
