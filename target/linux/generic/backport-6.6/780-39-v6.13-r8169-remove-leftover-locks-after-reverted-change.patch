@@ -15,7 +15,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -663,13 +663,9 @@ struct rtl8169_private {
+@@ -662,13 +662,9 @@ struct rtl8169_private {
  		struct work_struct work;
  	} wk;
  
@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	unsigned supports_gmii:1;
  	unsigned aspm_manageable:1;
  	unsigned dash_enabled:1;
-@@ -723,22 +719,12 @@ static inline struct device *tp_to_dev(s
+@@ -722,22 +718,12 @@ static inline struct device *tp_to_dev(s
  
  static void rtl_lock_config_regs(struct rtl8169_private *tp)
  {
@@ -54,7 +54,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static void rtl_pci_commit(struct rtl8169_private *tp)
-@@ -749,24 +735,18 @@ static void rtl_pci_commit(struct rtl816
+@@ -748,24 +734,18 @@ static void rtl_pci_commit(struct rtl816
  
  static void rtl_mod_config2(struct rtl8169_private *tp, u8 clear, u8 set)
  {
@@ -79,7 +79,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static bool rtl_is_8125(struct rtl8169_private *tp)
-@@ -1572,7 +1552,6 @@ static void __rtl8169_set_wol(struct rtl
+@@ -1571,7 +1551,6 @@ static void __rtl8169_set_wol(struct rtl
  		{ WAKE_MAGIC, Config3, MagicPacket }
  	};
  	unsigned int i, tmp = ARRAY_SIZE(cfg);
@@ -87,7 +87,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u8 options;
  
  	rtl_unlock_config_regs(tp);
-@@ -1591,14 +1570,12 @@ static void __rtl8169_set_wol(struct rtl
+@@ -1590,14 +1569,12 @@ static void __rtl8169_set_wol(struct rtl
  			r8168_mac_ocp_modify(tp, 0xc0b6, BIT(0), 0);
  	}
  
@@ -102,7 +102,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	switch (tp->mac_version) {
  	case RTL_GIGA_MAC_VER_02 ... RTL_GIGA_MAC_VER_06:
-@@ -5498,8 +5475,6 @@ static int rtl_init_one(struct pci_dev *
+@@ -5460,8 +5437,6 @@ static int rtl_init_one(struct pci_dev *
  	tp->supports_gmii = ent->driver_data == RTL_CFG_NO_GBIT ? 0 : 1;
  	tp->ocp_base = OCP_STD_PHY_BASE;
  
