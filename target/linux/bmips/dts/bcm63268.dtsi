@@ -288,6 +288,12 @@
 					pins = "dsl_gpio9";
 				};
 			};
+
+			ephy_rst: reset-controller@3c {
+				compatible = "brcm,bcm6345-reset";
+				reg = <0x3c 0x4>;
+				#reset-cells = <1>;
+			};
 		};
 
 		uart0: serial@10000180 {
@@ -481,8 +487,7 @@
 				 <&timer_clk BCM63268_TCLK_GPHY1>;
 
 			resets = <&periph_rst BCM63268_RST_ENETSW>,
-				 <&periph_rst BCM63268_RST_EPHY>,
-				 <&periph_rst BCM63268_RST_GPHY>;
+				 <&periph_rst BCM63268_RST_EPHY>;
 
 			power-domains = <&periph_pwr BCM63268_POWER_DOMAIN_ROBOSW>;
 
@@ -532,6 +537,8 @@
 			reg = <0x10700000 0x8000>;
 			big-endian;
 
+			brcm,gpio-ctrl = <&gpio_cntl>;
+
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -564,21 +571,41 @@
 				phy1: ethernet-phy@1 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <1>;
+
+					resets = <&ephy_rst 0>;
+					reset-names = "phy";
+					reset-assert-us = <2000>;
+					reset-deassert-us = <2000>;
 				};
 
 				phy2: ethernet-phy@2 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <2>;
+
+					resets = <&ephy_rst 1>;
+					reset-names = "phy";
+					reset-assert-us = <2000>;
+					reset-deassert-us = <2000>;
 				};
 
 				phy3: ethernet-phy@3 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <3>;
+
+					resets = <&ephy_rst 2>;
+					reset-names = "phy";
+					reset-assert-us = <2000>;
+					reset-deassert-us = <2000>;
 				};
 
 				phy4: ethernet-phy@4 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <4>;
+
+					resets = <&periph_rst BCM63268_RST_GPHY>;
+					reset-names = "phy";
+					reset-assert-us = <2000>;
+					reset-deassert-us = <2000>;
 				};
 			};
 
