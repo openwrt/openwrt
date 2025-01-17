@@ -16,7 +16,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -749,6 +749,20 @@ static void rtl_mod_config5(struct rtl81
+@@ -748,6 +748,20 @@ static void rtl_mod_config5(struct rtl81
  	RTL_W8(tp, Config5, (val & ~clear) | set);
  }
  
@@ -37,7 +37,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static bool rtl_is_8125(struct rtl8169_private *tp)
  {
  	return tp->mac_version >= RTL_GIGA_MAC_VER_61;
-@@ -1539,58 +1553,37 @@ static void rtl8169_get_wol(struct net_d
+@@ -1538,58 +1552,37 @@ static void rtl8169_get_wol(struct net_d
  
  static void __rtl8169_set_wol(struct rtl8169_private *tp, u32 wolopts)
  {

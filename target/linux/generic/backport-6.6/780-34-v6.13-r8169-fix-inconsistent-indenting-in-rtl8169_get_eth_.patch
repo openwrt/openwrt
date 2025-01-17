@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -2227,7 +2227,7 @@ static void rtl8169_get_eth_mac_stats(st
+@@ -2226,7 +2226,7 @@ static void rtl8169_get_eth_mac_stats(st
  		le64_to_cpu(tp->counters->tx_broadcast64);
  	mac_stats->MulticastFramesReceivedOK =
  		le64_to_cpu(tp->counters->rx_multicast64);

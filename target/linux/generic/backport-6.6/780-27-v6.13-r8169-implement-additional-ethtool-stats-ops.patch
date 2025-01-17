@@ -16,7 +16,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -2162,6 +2162,19 @@ static void rtl8169_get_ringparam(struct
+@@ -2161,6 +2161,19 @@ static void rtl8169_get_ringparam(struct
  	data->tx_pending = NUM_TX_DESC;
  }
  
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void rtl8169_get_pauseparam(struct net_device *dev,
  				   struct ethtool_pauseparam *data)
  {
-@@ -2188,6 +2201,69 @@ static int rtl8169_set_pauseparam(struct
+@@ -2187,6 +2200,69 @@ static int rtl8169_set_pauseparam(struct
  	return 0;
  }
  
@@ -106,7 +106,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct ethtool_ops rtl8169_ethtool_ops = {
  	.supported_coalesce_params = ETHTOOL_COALESCE_USECS |
  				     ETHTOOL_COALESCE_MAX_FRAMES,
-@@ -2209,8 +2285,11 @@ static const struct ethtool_ops rtl8169_
+@@ -2208,8 +2284,11 @@ static const struct ethtool_ops rtl8169_
  	.get_link_ksettings	= phy_ethtool_get_link_ksettings,
  	.set_link_ksettings	= phy_ethtool_set_link_ksettings,
  	.get_ringparam		= rtl8169_get_ringparam,
@@ -118,7 +118,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  static enum mac_version rtl8169_get_mac_version(u16 xid, bool gmii)
-@@ -3895,6 +3974,9 @@ static void rtl_hw_start_8125(struct rtl
+@@ -3894,6 +3973,9 @@ static void rtl_hw_start_8125(struct rtl
  		break;
  	}
  
