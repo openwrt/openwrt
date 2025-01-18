@@ -2,7 +2,7 @@
 # Copyright (c) 2023
 #
 
-name: G-DOCK
+name: Zyxel EX5700 (Telenor)
 on:
   schedule:
     - cron: '0 0 * * *'
@@ -23,10 +23,10 @@ on:
 permissions:
   contents: write
 env:
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_URL: https://github.com/openwrt/openwrt.git
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: .config-gdock
+  CONFIG_FILE: .config-ex5700
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: false
@@ -70,11 +70,9 @@ jobs:
           cd openwrt
           $GITHUB_WORKSPACE/$DIY_P1_SH
            git fetch origin --tags
-           git describe --tags $(git rev-list --tags --max-count=1) > immortalwrt_version
+           git describe --tags $(git rev-list --tags --max-count=1) > openwrt_version
            git checkout -f $(git describe --tags $(git rev-list --tags --max-count=1))
-           echo 'src-git 3Ginfo https://github.com/4IceG/luci-app-3ginfo-lite.git' >>feeds.conf.default
-           echo 'src-git Modem https://github.com/4IceG/luci-app-modemband.git' >>feeds.conf.default
-           echo 'src-git SMS https://github.com/4IceG/luci-app-sms-tool.git' >>feeds.conf.default
+          
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
       - name: Install feeds
@@ -83,7 +81,7 @@ jobs:
         run: |
           [ -e files ] && mv files openwrt/files
           [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-          #sed -i 's/CONFIG_VERSION_NUMBER\s*=.*/CONFIG_VERSION_NUMBER=$immortalwrt_version/g' openwrt/.config
+          #sed -i 's/CONFIG_VERSION_NUMBER\s*=.*/CONFIG_VERSION_NUMBER=$openwrt_version/g' openwrt/.config
           chmod +x $DIY_P2_SH && sed -i -e 's/\r$//' $GITHUB_WORKSPACE/$DIY_P2_SH
           mkdir -p openwrt/files/etc/uci-defaults
           mv $custom_99 openwrt/files/etc/uci-defaults/99-custom
