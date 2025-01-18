@@ -72,7 +72,12 @@ jobs:
            git fetch origin --tags
            git describe --tags $(git rev-list --tags --max-count=1) > openwrt_version
            git checkout -f $(git describe --tags $(git rev-list --tags --max-count=1))
-          
+          echo "src-git mtk_openwrt_feed https://git01.mediatek.com/openwrt/feeds/mtk-openwrt-feeds" >> feeds.conf.default
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          cp -af ./feeds/mtk_openwrt_feed/master/files/* .
+          for file in $(find ./feeds/mtk_openwrt_feed/master/patches-base -name "*.patch" | sort); do patch -f -p1 -i ${file}; done
+
       - name: Update feeds
         run: cd openwrt && ./scripts/feeds update -a
       - name: Install feeds
