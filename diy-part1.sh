@@ -24,3 +24,8 @@
  #echo 'src-git SMS https://github.com/4IceG/luci-app-sms-tool.git' >>feeds.conf.default
  #echo 'src-git atinout https://github.com/4IceG/luci-app-atinout-mod.git' >>feeds.conf.default
 sed -i '$a src-git modem https://github.com/kiddin9/kwrt-packages.git' feeds.conf.default
+echo "src-git mtk_openwrt_feed https://git01.mediatek.com/openwrt/feeds/mtk-openwrt-feeds" >> feeds.conf.default
+./scripts/feeds update -a
+./scripts/feeds install -a
+cp -af ./feeds/mtk_openwrt_feed/master/files/* .
+for file in $(find ./feeds/mtk_openwrt_feed/master/patches-base -name "*.patch" | sort); do patch -f -p1 -i ${file}; done
