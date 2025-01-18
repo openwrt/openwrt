@@ -86,8 +86,7 @@ jobs:
           chmod +x $DIY_P2_SH && sed -i -e 's/\r$//' $GITHUB_WORKSPACE/$DIY_P2_SH
           mkdir -p openwrt/files/etc/uci-defaults
           mv $custom_99 openwrt/files/etc/uci-defaults/99-custom
-          cp -af ./feeds/mtk_openwrt_feed/master/files/* .
-          for file in $(find ./feeds/mtk_openwrt_feed/master/patches-base -name "*.patch" | sort); do patch -f -p1 -i ${file}; done
+          
           cd openwrt
           $GITHUB_WORKSPACE/$DIY_P2_SH
       - name: SSH connection to Actions
