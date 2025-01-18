@@ -92,12 +92,23 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
 
-	gpio1: rtl8231-gpio {
-		compatible = "realtek,rtl8231-gpio";
-		#gpio-cells = <2>;
+&mdio_aux {
+	status = "okay";
+
+	gpio1: expander@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0>;
+
 		gpio-controller;
-		indirect-access-bus-id = <0>;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
 	};
 };
 
