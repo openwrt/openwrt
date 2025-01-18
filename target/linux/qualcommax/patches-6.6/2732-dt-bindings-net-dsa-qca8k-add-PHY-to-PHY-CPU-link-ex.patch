@@ -1,0 +1,41 @@
+From 376b9c5b53ad19251d9b62b40810d644768e6dda Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sat, 18 Jan 2025 16:39:01 +0800
+Subject: [PATCH 2/2] dt-bindings: net: dsa: qca8k: add PHY-to-PHY CPU link
+ example
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ Documentation/devicetree/bindings/net/dsa/qca8k.yaml | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/dsa/qca8k.yaml b/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
+index df64eebebe18..fa14e3fa2a3c 100644
+--- a/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
++++ b/Documentation/devicetree/bindings/net/dsa/qca8k.yaml
+@@ -184,8 +184,10 @@ examples:
+                 };
+ 
+                 port@4 {
++                    /* PHY-to-PHY CPU link */
+                     reg = <4>;
+-                    label = "lan4";
++                    ethernet = <&gmac2>;
++                    phy-mode = "gmii";
+                     phy-handle = <&external_phy_port4>;
+                 };
+ 
+@@ -265,8 +267,9 @@ examples:
+                 };
+ 
+                 port@4 {
++                    /* PHY-to-PHY CPU link */
+                     reg = <4>;
+-                    label = "lan4";
++                    ethernet = <&gmac2>;
+                     phy-mode = "internal";
+                     phy-handle = <&internal_phy_port4>;
+                 };
+-- 
+2.40.1
+
