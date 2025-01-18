@@ -1,0 +1,61 @@
+From 544c9394065fdbb733349bcd1464087d6e12d28e Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Wed, 15 Jan 2025 20:47:03 +0100
+Subject: [PATCH 07/12] dsa: Use str_enable_disable-like helpers
+
+Replace ternary (condition ? "enable" : "disable") syntax with helpers
+from string_choices.h because:
+1. Simple function call with one argument is easier to read.  Ternary
+   operator has three arguments and with wrapping might lead to quite
+   long code.
+2. Is slightly shorter thus also easier to read.
+3. It brings uniformity in the text - same string.
+4. Allows deduping by the linker, which results in a smaller binary
+   file.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8366rb.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8366rb.c
++++ b/drivers/net/dsa/realtek/rtl8366rb.c
+@@ -21,6 +21,7 @@
+ #include <linux/irqchip/chained_irq.h>
+ #include <linux/of_irq.h>
+ #include <linux/regmap.h>
++#include <linux/string_choices.h>
+ 
+ #include "realtek.h"
+ #include "realtek-smi.h"
+@@ -1276,7 +1277,7 @@ static int rtl8366rb_vlan_filtering(stru
+ 	rb = priv->chip_data;
+ 
+ 	dev_dbg(priv->dev, "port %d: %s VLAN filtering\n", port,
+-		vlan_filtering ? "enable" : "disable");
++		str_enable_disable(vlan_filtering));
+ 
+ 	/* If the port is not in the member set, the frame will be dropped */
+ 	ret = regmap_update_bits(priv->map, RTL8366RB_VLAN_INGRESS_CTRL2_REG,
+@@ -1638,7 +1639,7 @@ static bool rtl8366rb_is_vlan_valid(stru
+ 
+ static int rtl8366rb_enable_vlan(struct realtek_priv *priv, bool enable)
+ {
+-	dev_dbg(priv->dev, "%s VLAN\n", enable ? "enable" : "disable");
++	dev_dbg(priv->dev, "%s VLAN\n", str_enable_disable(enable));
+ 	return regmap_update_bits(priv->map,
+ 				  RTL8366RB_SGCR, RTL8366RB_SGCR_EN_VLAN,
+ 				  enable ? RTL8366RB_SGCR_EN_VLAN : 0);
+@@ -1646,7 +1647,7 @@ static int rtl8366rb_enable_vlan(struct
+ 
+ static int rtl8366rb_enable_vlan4k(struct realtek_priv *priv, bool enable)
+ {
+-	dev_dbg(priv->dev, "%s VLAN 4k\n", enable ? "enable" : "disable");
++	dev_dbg(priv->dev, "%s VLAN 4k\n", str_enable_disable(enable));
+ 	return regmap_update_bits(priv->map, RTL8366RB_SGCR,
+ 				  RTL8366RB_SGCR_EN_VLAN_4KTB,
+ 				  enable ? RTL8366RB_SGCR_EN_VLAN_4KTB : 0);

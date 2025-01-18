@@ -1,0 +1,32 @@
+From 517c29247557bf4a28065cb758a59ad545fe925d Mon Sep 17 00:00:00 2001
+From: Vasileios Amoiridis <vassilisamir@gmail.com>
+Date: Wed, 4 Sep 2024 17:10:16 +0200
+Subject: [PATCH 03/12] net: dsa: realtek: rtl8365mb: Make use of
+ irq_get_trigger_type()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Convert irqd_get_trigger_type(irq_get_irq_data(irq)) cases to the more
+simple irq_get_trigger_type(irq).
+
+Signed-off-by: Vasileios Amoiridis <vassilisamir@gmail.com>
+Reviewed-by: Alvin Šipraga <alsi@bang-olufsen.dk>
+Link: https://patch.msgid.link/20240904151018.71967-2-vassilisamir@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -1735,7 +1735,7 @@ static int rtl8365mb_irq_setup(struct re
+ 	}
+ 
+ 	/* Configure chip interrupt signal polarity */
+-	irq_trig = irqd_get_trigger_type(irq_get_irq_data(irq));
++	irq_trig = irq_get_trigger_type(irq);
+ 	switch (irq_trig) {
+ 	case IRQF_TRIGGER_RISING:
+ 	case IRQF_TRIGGER_HIGH:
