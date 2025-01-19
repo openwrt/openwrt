@@ -1722,7 +1722,6 @@ define KernelPackage/mlxsw-spectrum
   KCONFIG:= \
   CONFIG_MLXSW_SPECTRUM \
   CONFIG_MLXSW_SPECTRUM_DCB=y \
-  CONFIG_NET_SWITCHDEV=y \
   CONFIG_DCB=y
   AUTOLOAD:=$(call AutoProbe,mlxsw_spectrum)
 endef
