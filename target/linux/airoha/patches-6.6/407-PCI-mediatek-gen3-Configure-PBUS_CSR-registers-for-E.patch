@@ -1,11 +1,9 @@
-From 2285d3b428c7d8f1c4fda2fb995e7e46a05350e0 Mon Sep 17 00:00:00 2001
-Message-ID: <2285d3b428c7d8f1c4fda2fb995e7e46a05350e0.1736324542.git.lorenzo@kernel.org>
-In-Reply-To: <0c0ae72f5c84c5a29495337b254ac3cc2d5c16bb.1736324541.git.lorenzo@kernel.org>
-References: <0c0ae72f5c84c5a29495337b254ac3cc2d5c16bb.1736324541.git.lorenzo@kernel.org>
+From ca4217f3117dceb2d01e179d02031a8758404624 Mon Sep 17 00:00:00 2001
+Message-ID: <ca4217f3117dceb2d01e179d02031a8758404624.1736961235.git.lorenzo@kernel.org>
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Tue, 3 Sep 2024 23:14:02 +0200
-Subject: [PATCH 2/2] PCI: mediatek-gen3: configure PBUS_CSR registers for
- EN7581 SoC
+Subject: [PATCH] PCI: mediatek-gen3: Configure PBUS_CSR registers for EN7581
+ SoC
 
 Configure PBus base address and address mask in order to allow the hw
 detecting if a given address is on PCIE0, PCIE1 or PCIE2.
@@ -33,9 +31,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  #include <linux/reset.h>
  
  #include "../pci.h"
-@@ -120,6 +122,13 @@
+@@ -122,6 +124,13 @@
  
- #define MAX_NUM_PHY_RESETS		3
+ #define PCIE_MTK_RESET_TIME_US		10
  
 +#define PCIE_EN7581_PBUS_ADDR(_n)	(0x00 + ((_n) << 3))
 +#define PCIE_EN7581_PBUS_ADDR_MASK(_n)	(0x04 + ((_n) << 3))
@@ -47,7 +45,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  /* Time in ms needed to complete PCIe reset on EN7581 SoC */
  #define PCIE_EN7581_RESET_TIME_MS	100
  
-@@ -871,7 +880,8 @@ static int mtk_pcie_parse_port(struct mt
+@@ -893,7 +902,8 @@ static int mtk_pcie_parse_port(struct mt
  static int mtk_pcie_en7581_power_up(struct mtk_gen3_pcie *pcie)
  {
  	struct device *dev = pcie->dev;
@@ -57,9 +55,9 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	u32 val;
  
  	/*
-@@ -880,6 +890,23 @@ static int mtk_pcie_en7581_power_up(stru
- 	 */
- 	mdelay(PCIE_EN7581_RESET_TIME_MS);
+@@ -907,6 +917,23 @@ static int mtk_pcie_en7581_power_up(stru
+ 	/* Wait for the time needed to complete the reset lines assert. */
+ 	msleep(PCIE_EN7581_RESET_TIME_MS);
  
 +	map = syscon_regmap_lookup_by_compatible("airoha,en7581-pbus-csr");
 +	if (IS_ERR(map))
@@ -78,6 +76,6 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	regmap_write(map, PCIE_EN7581_PBUS_ADDR_MASK(slot),
 +		     PCIE_EN7581_PBUS_BASE_ADDR_MASK);
 +
- 	err = phy_init(pcie->phy);
- 	if (err) {
- 		dev_err(dev, "failed to initialize PHY\n");
+ 	/*
+ 	 * Unlike the other MediaTek Gen3 controllers, the Airoha EN7581
+ 	 * requires PHY initialization and power-on before PHY reset deassert.

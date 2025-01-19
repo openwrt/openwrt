@@ -64,7 +64,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	spin_unlock_irqrestore(&ath79_reset->lock, flags);
  
  	return 0;
-@@ -79,8 +90,27 @@ static int ath79_reset_restart_handler(s
+@@ -79,8 +90,28 @@ static int ath79_reset_restart_handler(s
  {
  	struct ath79_reset *ath79_reset =
  		container_of(nb, struct ath79_reset, restart_nb);
@@ -81,19 +81,20 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +		 * full chip reset. See page 111 of the AR9344 datasheet.
 +		 */
 +		__ath79_reset_update_unlocked(ath79_reset, ETH_SWITCH_RESET, true);
-+		mdelay(10);
++		mdelay(1);
 +		__ath79_reset_update_unlocked(ath79_reset, ETH_SWITCH_ARESET, true);
++		mdelay(1);
++		__ath79_reset_update_unlocked(ath79_reset, FULL_CHIP_RESET, true);
 +		mdelay(10);
++	} else {
++		__ath79_reset_update_unlocked(ath79_reset, FULL_CHIP_RESET, true);
 +	}
-+
-+	__ath79_reset_update_unlocked(ath79_reset, FULL_CHIP_RESET, true);
-+	mdelay(10);
 +
 +	spin_unlock_irqrestore(&ath79_reset->lock, flags);
  
  	return NOTIFY_DONE;
  }
-@@ -95,6 +125,8 @@ static int ath79_reset_probe(struct plat
+@@ -95,6 +126,8 @@ static int ath79_reset_probe(struct plat
  	if (!ath79_reset)
  		return -ENOMEM;
  
