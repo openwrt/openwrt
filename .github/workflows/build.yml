@@ -1,0 +1,30 @@
+name: Build OpenWRT Firmware
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: sudo apt-get update && sudo apt-get install -y build-essential libncurses5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3
+
+    - name: Download OpenWRT Image Builder
+      run: |
+        wget https://downloads.openwrt.org/releases/22.03.0/targets/x86/64/openwrt-imagebuilder-22.03.0-x86-64.Linux-x86_64.tar.xz
+        tar -xf openwrt-imagebuilder-*.tar.xz
+        cd openwrt-imagebuilder-*
+        make image PROFILE=generic PACKAGES="luci"
+
+    - name: Upload Firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: OpenWRT-Firmware
+        path: openwrt-imagebuilder-*/bin/targets/x86/64/*.bin
