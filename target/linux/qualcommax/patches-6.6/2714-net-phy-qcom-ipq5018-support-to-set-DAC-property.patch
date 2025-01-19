@@ -1,0 +1,66 @@
+From aae4413854c01fa6c1904b4d0e19057de458de9f Mon Sep 17 00:00:00 2001
+From: hzy <hzyitc@outlook.com>
+Date: Sat, 18 Jan 2025 16:48:44 +0800
+Subject: [PATCH 1/1] net: phy: qcom: ipq5018: support to set DAC property
+
+---
+ drivers/net/phy/qcom/ipq5018.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/drivers/net/phy/qcom/ipq5018.c b/drivers/net/phy/qcom/ipq5018.c
+index 497ad28fe63f..1131c0ec8931 100644
+--- a/drivers/net/phy/qcom/ipq5018.c
++++ b/drivers/net/phy/qcom/ipq5018.c
+@@ -13,6 +13,10 @@
+ #define IPQ5018_PHY_FIFO_CONTROL	0x19
+ #define  IPQ5018_PHY_FIFO_RESET		GENMASK(1, 0)
+ 
++#define IPQ5018_PHY_MDAC		0x8100
++
++#define IPQ5018_PHY_EDAC		0x4380
++
+ struct ipq5018_phy {
+ 	int num_clks;
+ 	struct clk_bulk_data *clks;
+@@ -106,6 +110,30 @@ static int ipq5018_soft_reset(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static int ipq5018_config_init(struct phy_device *phydev)
++{
++	struct device_node *np = phydev->mdio.dev.of_node;
++	u32 mdac, edac;
++	int ret;
++
++	if (!of_property_read_u32(np, "qcom,mdac", &mdac)) {
++		ret = phy_write_mmd(phydev, MDIO_MMD_PMAPMD,
++				    IPQ5018_PHY_MDAC, mdac);
++		if (ret)
++			return ret;
++	}
++
++	if (!of_property_read_u32(np, "qcom,edac", &edac)) {
++		ret = at803x_debug_reg_write(phydev, IPQ5018_PHY_EDAC,
++					     edac);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++
++}
++
+ static int ipq5018_cable_test_start(struct phy_device *phydev)
+ {
+ 	/* we do all the (time consuming) work later */
+@@ -119,6 +147,7 @@ static struct phy_driver ipq5018_internal_phy_driver[] = {
+ 		.flags		= PHY_IS_INTERNAL | PHY_POLL_CABLE_TEST,
+ 		.probe		= ipq5018_probe,
+ 		.soft_reset	= ipq5018_soft_reset,
++		.config_init	= ipq5018_config_init,
+ 		.read_status	= at803x_read_status,
+ 		.config_intr	= at803x_config_intr,
+ 		.handle_interrupt = at803x_handle_interrupt,
+-- 
+2.40.1
+
