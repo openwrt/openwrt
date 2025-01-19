@@ -1,0 +1,83 @@
+From 6839fed062b7898665983368c88269a6fb1fc10f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Fri, 5 Jul 2024 08:48:47 +0100
+Subject: [PATCH] nvmem: core: remove global nvmem_cells_group
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+nvmem_cells_groups is a global variable that is also mutated.
+This is complicated and error-prone.
+
+Instead use a normal stack variable.
+
+Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-11-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 26 ++++++++++----------------
+ 1 file changed, 10 insertions(+), 16 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -357,11 +357,6 @@ static const struct attribute_group nvme
+ 	.is_bin_visible = nvmem_bin_attr_is_visible,
+ };
+ 
+-/* Cell attributes will be dynamically allocated */
+-static struct attribute_group nvmem_cells_group = {
+-	.name		= "cells",
+-};
+-
+ static const struct attribute_group *nvmem_dev_groups[] = {
+ 	&nvmem_bin_group,
+ 	NULL,
+@@ -423,23 +418,24 @@ static void nvmem_sysfs_remove_compat(st
+ 
+ static int nvmem_populate_sysfs_cells(struct nvmem_device *nvmem)
+ {
+-	struct bin_attribute **cells_attrs, *attrs;
++	struct attribute_group group = {
++		.name	= "cells",
++	};
+ 	struct nvmem_cell_entry *entry;
++	struct bin_attribute *attrs;
+ 	unsigned int ncells = 0, i = 0;
+ 	int ret = 0;
+ 
+ 	mutex_lock(&nvmem_mutex);
+ 
+-	if (list_empty(&nvmem->cells) || nvmem->sysfs_cells_populated) {
+-		nvmem_cells_group.bin_attrs = NULL;
++	if (list_empty(&nvmem->cells) || nvmem->sysfs_cells_populated)
+ 		goto unlock_mutex;
+-	}
+ 
+ 	/* Allocate an array of attributes with a sentinel */
+ 	ncells = list_count_nodes(&nvmem->cells);
+-	cells_attrs = devm_kcalloc(&nvmem->dev, ncells + 1,
+-				   sizeof(struct bin_attribute *), GFP_KERNEL);
+-	if (!cells_attrs) {
++	group.bin_attrs = devm_kcalloc(&nvmem->dev, ncells + 1,
++				       sizeof(struct bin_attribute *), GFP_KERNEL);
++	if (!group.bin_attrs) {
+ 		ret = -ENOMEM;
+ 		goto unlock_mutex;
+ 	}
+@@ -465,13 +461,11 @@ static int nvmem_populate_sysfs_cells(st
+ 			goto unlock_mutex;
+ 		}
+ 
+-		cells_attrs[i] = &attrs[i];
++		group.bin_attrs[i] = &attrs[i];
+ 		i++;
+ 	}
+ 
+-	nvmem_cells_group.bin_attrs = cells_attrs;
+-
+-	ret = device_add_group(&nvmem->dev, &nvmem_cells_group);
++	ret = device_add_group(&nvmem->dev, &group);
+ 	if (ret)
+ 		goto unlock_mutex;
+ 
