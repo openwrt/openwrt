@@ -143,6 +143,35 @@
 
 	};
 
+	switchcore@1b000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1b000000 0x10000>;
+
+		mdio_aux: mdio-aux {
+			compatible = "realtek,rtl9300-aux-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pinmux_gpio_mdio_en>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
+	};
+
+	pinmux@1b00c600 {
+		compatible = "pinctrl-single";
+		reg = <0x1b00c600 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		pinmux_gpio_mdio_en: gpio-mdio-en {
+			pinctrl-single,bits = <0x0 0x100 0x100>;
+		};
+	};
+
 	pinmux_led: pinmux@1b00cc00 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00cc00 0x4>;
