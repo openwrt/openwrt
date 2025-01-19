@@ -1148,7 +1148,8 @@ define KernelPackage/ixgbe
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
-    CONFIG_IXGBE_DCA=n
+    CONFIG_IXGBE_DCA=n \
+    CONFIG_IXGBE_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,ixgbe)
 endef
@@ -1186,7 +1187,8 @@ define KernelPackage/i40e
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_VXLAN=n \
     CONFIG_I40E_HWMON=y \
-    CONFIG_I40E_DCA=n
+    CONFIG_I40E_DCA=n \
+    CONFIG_I40E_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
   AUTOLOAD:=$(call AutoProbe,i40e)
 endef
@@ -1600,7 +1602,7 @@ define KernelPackage/bnxt-en
 	  CONFIG_BNXT \
 	  CONFIG_BNXT_SRIOV=y \
 	  CONFIG_BNXT_FLOWER_OFFLOAD=y \
-	  CONFIG_BNXT_DCB=n \
+	  CONFIG_BNXT_DCB=y \
 	  CONFIG_BNXT_HWMON=y
   AUTOLOAD:=$(call AutoProbe,bnxt_en)
 endef
@@ -1642,7 +1644,7 @@ define KernelPackage/mlx4-core
 	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_core.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_en.ko
   KCONFIG:= CONFIG_MLX4_EN \
-	CONFIG_MLX4_EN_DCB=n \
+	CONFIG_MLX4_EN_DCB=y \
 	CONFIG_MLX4_CORE=y \
 	CONFIG_MLX4_CORE_GEN2=y \
 	CONFIG_MLX4_DEBUG=n
@@ -1662,7 +1664,7 @@ define KernelPackage/mlx5-core
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.ko
   KCONFIG:= CONFIG_MLX5_CORE \
 	CONFIG_MLX5_CORE_EN=y \
-	CONFIG_MLX5_CORE_EN_DCB=n \
+	CONFIG_MLX5_CORE_EN_DCB=y \
 	CONFIG_MLX5_CORE_IPOIB=n \
 	CONFIG_MLX5_EN_ARFS=n \
 	CONFIG_MLX5_EN_IPSEC=n \
@@ -1781,8 +1783,7 @@ define KernelPackage/mlxsw-spectrum
   KCONFIG:= \
   CONFIG_MLXSW_SPECTRUM \
   CONFIG_MLXSW_SPECTRUM_DCB=y \
-  CONFIG_NET_SWITCHDEV=y \
-  CONFIG_DCB=y
+  CONFIG_NET_SWITCHDEV=y
   AUTOLOAD:=$(call AutoProbe,mlxsw_spectrum)
 endef
 
@@ -1817,7 +1818,8 @@ define KernelPackage/qlcnic
   KCONFIG:= \
 	CONFIG_QLCNIC \
 	CONFIG_QLCNIC_HWMON=y \
-	CONFIG_QLCNIC_SRIOV=y
+	CONFIG_QLCNIC_SRIOV=y \
+	CONFIG_QLCNIC_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef
