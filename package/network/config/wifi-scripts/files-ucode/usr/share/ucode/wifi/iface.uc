@@ -71,12 +71,22 @@ export function parse_encryption(config) {
 		config.auth_type = 'eap2';
 		break;
 
+	case 'psk-mixed':
+		config.auth_type = "psk";
+		break;
+
+	case 'psk3':
+		config.auth_type = 'sae';
+		break;
+
+	case 'psk3-mixed':
 	case 'sae-mixed':
 		config.auth_type = 'psk-sae';
 		break;
 
 	case 'wpa':
 	case 'wpa2':
+	case 'wpa-mixed':
 		config.auth_type = 'eap';
 		break;
 	}

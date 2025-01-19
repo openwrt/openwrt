@@ -67,6 +67,7 @@
 		wlan2g_blue {
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 			label = "blue:wlan2g";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		lan_green {
@@ -84,6 +85,7 @@
 		wlan5g_blue {
 			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
 			label = "blue:wlan5g";
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
