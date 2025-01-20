@@ -20,6 +20,7 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>
+#include <linux/version.h>
 
 /* TODO: Bigger frames may work but we do not trust that they are safe on all
  * platforms so more research is needed, a max frame size of 2048 has been
@@ -1100,7 +1101,11 @@ out_disable_clk:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int bcm6368_enetsw_remove(struct platform_device *pdev)
+#else
+static void bcm6368_enetsw_remove(struct platform_device *pdev)
+#endif
 {
 	struct device *dev = &pdev->dev;
 	struct net_device *ndev = platform_get_drvdata(pdev);
@@ -1119,7 +1124,9 @@ static int bcm6368_enetsw_remove(struct platform_device *pdev)
 	for (i = 0; i < priv->num_clocks; i++)
 		clk_disable_unprepare(priv->clock[i]);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id bcm6368_enetsw_of_match[] = {

@@ -59,12 +59,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
 +++ b/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
-@@ -478,7 +478,7 @@ void mtk_ovl_layer_config(struct device
+@@ -420,7 +420,7 @@ static void mtk_ovl_afbc_layer_config(st
  				      &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_PITCH_MSB(idx));
  		mtk_ddp_write_relaxed(cmdq_pkt, hdr_pitch, &ovl->cmdq_reg, ovl->regs,
  				      DISP_REG_OVL_HDR_PITCH(ovl, idx));
 -	} else {
 +	} else if (ovl->data->supports_afbc) {
- 		mtk_ddp_write_relaxed(cmdq_pkt,
- 				      overlay_pitch.split_pitch.msb,
+ 		mtk_ddp_write_relaxed(cmdq_pkt, pitch_msb,
  				      &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_PITCH_MSB(idx));
+ 	}

@@ -57,7 +57,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define DWC3_GUCTL1_PARKMODE_DISABLE_SS		BIT(17)
  #define DWC3_GUCTL1_PARKMODE_DISABLE_HS		BIT(16)
  #define DWC3_GUCTL1_PARKMODE_DISABLE_FSLS	BIT(15)
-@@ -1122,6 +1124,8 @@ struct dwc3_scratchpad_array {
+@@ -1123,6 +1125,8 @@ struct dwc3_scratchpad_array {
   *			generation after resume from suspend.
   * @ulpi_ext_vbus_drv: Set to confiure the upli chip to drives CPEN pin
   *			VBUS with an external supply.
@@ -66,7 +66,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
   * @parkmode_disable_ss_quirk: If set, disable park mode feature for all
   *			Superspeed instances.
   * @parkmode_disable_hs_quirk: If set, disable park mode feature for all
-@@ -1352,6 +1356,8 @@ struct dwc3 {
+@@ -1353,6 +1357,8 @@ struct dwc3 {
  	unsigned		dis_tx_ipgap_linecheck_quirk:1;
  	unsigned		resume_hs_terminations:1;
  	unsigned		ulpi_ext_vbus_drv:1;

@@ -71,7 +71,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1002,6 +1002,8 @@ struct dwc3_scratchpad_array {
+@@ -1003,6 +1003,8 @@ struct dwc3_scratchpad_array {
   * @bus_clk: clock for accessing the registers
   * @ref_clk: reference clock
   * @susp_clk: clock used when the SS phy is in low power (S3) state
@@ -80,7 +80,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * @reset: reset control
   * @regs: base address for our registers
   * @regs_size: address space size
-@@ -1174,6 +1176,8 @@ struct dwc3 {
+@@ -1175,6 +1177,8 @@ struct dwc3 {
  	struct clk		*bus_clk;
  	struct clk		*ref_clk;
  	struct clk		*susp_clk;
