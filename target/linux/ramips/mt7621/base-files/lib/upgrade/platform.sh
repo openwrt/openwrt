@@ -187,6 +187,7 @@ platform_do_upgrade() {
 		echo "Upgrading tplink,er605-v2"
 		CI_UBIPART="firmware"
 		CI_KERNPART="kernel"
+		tplink_er605_v2_update_extra_para
 		nand_do_upgrade "$1"
 		;;
 	ubnt,edgerouter-x|\
