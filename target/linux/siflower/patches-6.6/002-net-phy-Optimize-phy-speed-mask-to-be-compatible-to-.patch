@@ -1,0 +1,49 @@
+From: Frank Sae <Frank.Sae@motor-comm.com>
+Date: Sun, 1 Sep 2024 01:35:25 -0700
+Subject: [PATCH 02/20] net: phy: Optimize phy speed mask to be compatible to
+ yt8821
+
+yt8521 and yt8531s as Gigabit transceiver use bit15:14(bit9 reserved
+default 0) as phy speed mask, yt8821 as 2.5G transceiver uses bit9 bit15:14
+as phy speed mask.
+
+Be compatible to yt8821, reform phy speed mask and phy speed macro.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Frank Sae <Frank.Sae@motor-comm.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+(cherry picked from commit 8d878c87b5c45ae64b0aecd4aac71e210d19173f)
+---
+ drivers/net/phy/motorcomm.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -47,12 +47,10 @@
+ 
+ /* Specific Status Register */
+ #define YTPHY_SPECIFIC_STATUS_REG		0x11
+-#define YTPHY_SSR_SPEED_MODE_OFFSET		14
+-
+-#define YTPHY_SSR_SPEED_MODE_MASK		(BIT(15) | BIT(14))
+-#define YTPHY_SSR_SPEED_10M			0x0
+-#define YTPHY_SSR_SPEED_100M			0x1
+-#define YTPHY_SSR_SPEED_1000M			0x2
++#define YTPHY_SSR_SPEED_MASK			((0x3 << 14) | BIT(9))
++#define YTPHY_SSR_SPEED_10M			((0x0 << 14))
++#define YTPHY_SSR_SPEED_100M			((0x1 << 14))
++#define YTPHY_SSR_SPEED_1000M			((0x2 << 14))
+ #define YTPHY_SSR_DUPLEX_OFFSET			13
+ #define YTPHY_SSR_DUPLEX			BIT(13)
+ #define YTPHY_SSR_PAGE_RECEIVED			BIT(12)
+@@ -1188,8 +1186,7 @@ static int yt8521_adjust_status(struct p
+ 	else
+ 		duplex = DUPLEX_FULL;	/* for fiber, it always DUPLEX_FULL */
+ 
+-	speed_mode = (status & YTPHY_SSR_SPEED_MODE_MASK) >>
+-		     YTPHY_SSR_SPEED_MODE_OFFSET;
++	speed_mode = status & YTPHY_SSR_SPEED_MASK;
+ 
+ 	switch (speed_mode) {
+ 	case YTPHY_SSR_SPEED_10M:

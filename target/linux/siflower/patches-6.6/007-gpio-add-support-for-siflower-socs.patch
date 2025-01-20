@@ -1,8 +1,13 @@
-From 1d37455eacb1d0c262ae6aaecadf27964cbf97d8 Mon Sep 17 00:00:00 2001
 From: Chuanhong Guo <gch981213@gmail.com>
 Date: Tue, 20 Aug 2024 08:33:57 +0800
-Subject: [PATCH 4/9] gpio: add support for siflower socs
+Subject: [PATCH 07/20] gpio: add support for siflower socs
 
+Add support for the GPIO controller on Siflower SoCs.
+This controller is found on Siflower SF19A2890 (MIPS) and SF21A6826
+(RISC-V)
+
+Signed-off-by: Qingfang Deng <qingfang.deng@siflower.com.cn>
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 ---
  drivers/gpio/Kconfig  | 8 ++++++++
  drivers/gpio/Makefile | 1 +
@@ -17,7 +22,7 @@ Subject: [PATCH 4/9] gpio: add support for siflower socs
 +config GPIO_SIFLOWER
 +	tristate "SiFlower GPIO support"
 +	depends on OF_GPIO
-+	depends on MACH_SIFLOWER_MIPS || COMPILE_TEST
++	depends on MACH_SIFLOWER_MIPS || RISCV || COMPILE_TEST
 +	select GPIOLIB_IRQCHIP
 +	help
 +	  GPIO controller driver for SiFlower SoCs.
