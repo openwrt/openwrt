@@ -313,10 +313,9 @@ define Device/meraki_mr18
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | meraki-header MR18
-# Initramfs-build fails due to size issues
-# KERNEL_INITRAMFS := $$(KERNEL)
-  KERNEL_INITRAMFS :=
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   SUPPORTED_DEVICES += mr18
 endef
