@@ -26,6 +26,11 @@ ubootenv_add_mmc() {
 }
 
 case "$board" in
+arcadyan,aw1000)
+	idx="$(find_mtd_index 0:appsblenv)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x40000" "1"
+	;;
 dynalink,dl-wrx36|\
 netgear,rax120v2|\
 netgear,sxr80|\
