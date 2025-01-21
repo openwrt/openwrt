@@ -11,7 +11,6 @@ PKG_ABI_VERSION:=$(call abi_version_str,$(PKG_VERSION))
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
-PKG_BUILD_DEPENDS:=bpf-headers
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -85,7 +84,7 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
-	BPF_TARGET="$(BPF_ARCH)-linux-gnu" \
+	BPF_TARGET="$(BPF_TARGET)" \
 	LLC="$(LLVM_LLC)" \
 	BPF_LDFLAGS="-march=$(BPF_TARGET) -mcpu=v3" \
 	BPFTOOL=""
@@ -100,7 +99,11 @@ MAKE_VARS += \
 
 define Build/Configure
 	$(call Build/Configure/Default)
-	echo "BPF_CFLAGS += $(BPF_CFLAGS) -Wno-error -fno-stack-protector" >> $(PKG_BUILD_DIR)/config.mk
+	echo "BPF_CFLAGS += -nostdinc \
+		-isystem $(TOOLCHAIN_ROOT_DIR)/lib/gcc/*/*/include \
+		$(patsubst %,-isystem%,$(TOOLCHAIN_INC_DIRS)) \
+		-I$(STAGING_DIR)/usr/include -fno-stack-protector" \
+	>> $(PKG_BUILD_DIR)/config.mk
 endef
 
 define Build/InstallDev
