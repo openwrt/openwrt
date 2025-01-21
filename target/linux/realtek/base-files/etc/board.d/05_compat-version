@@ -8,6 +8,11 @@
 board_config_update
 
 case "$(board_name)" in
+	hpe,1920-8g-poe-180w | \
+	hpe,1920-24g-poe-180w | \
+	hpe,1920-24g-poe-370w)
+		ucidef_set_compat_version "1.1"
+	;;
 	zyxel,gs1900-8 | \
 	zyxel,gs1900-8hp-v1 | \
 	zyxel,gs1900-8hp-v2 | \

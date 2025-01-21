@@ -258,6 +258,22 @@
 
 	};
 
+	switchcore@1b000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1b000000 0x20000>;
+
+		mdio_aux: mdio-aux {
+			compatible = "realtek,rtl8390-aux-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&mdio_aux_mdx>;
+		};
+	};
+
 	pinmux@1b000004 {
 		compatible = "pinctrl-single";
 		reg = <0x1b000004 0x4>;
@@ -289,6 +305,11 @@
 		/* enable GPIO 0 */
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x4000>;
+		};
+
+		/* enable AUX MDC/MDIO */
+		mdio_aux_mdx: aux-mdx-pins {
+			pinctrl-single,bits = <0x0 0x100000 0x1c0000>;
 		};
 	};
 
