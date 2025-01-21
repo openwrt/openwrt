@@ -643,6 +643,17 @@ define Device/hootoo_ht-tm05
 endef
 TARGET_DEVICES += hootoo_ht-tm05
 
+define Device/hongdian_h8922
+  SOC := mt7620a
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Hongdian
+  DEVICE_MODEL := H8922
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi uboot-envtools
+  IMAGES += rootfs.bin
+  IMAGE/rootfs.bin := append-rootfs | check-size 10560k
+endef
+TARGET_DEVICES += hongdian_h8922
+
 define Device/iodata_wn-ac1167gr
   SOC := mt7620a
   DEVICE_VENDOR := I-O DATA
