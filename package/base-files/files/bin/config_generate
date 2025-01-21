@@ -423,23 +423,25 @@ generate_led() {
 			EOF
 		;;
 
-		usb)
-			local device
-			json_get_vars device
+		pattern)
+			local pattern patternon patternoff repeat brightness
+			json_get_vars pattern patternon patternoff repeat brightness
 			uci -q batch <<-EOF
-				set system.$cfg.trigger='usbdev'
-				set system.$cfg.interval='50'
-				set system.$cfg.dev='$device'
+				set system.$cfg.trigger='$type'
+				set system.$cfg.pattern='$pattern'
+				set system.$cfg.patternon='$patternon'
+				set system.$cfg.patternoff='$patternoff'
+				set system.$cfg.repeat='$repeat'
+				set system.$cfg.brightness='$brightness'
 			EOF
 		;;
 
-		usbport)
-			local ports port
-			json_get_values ports ports
-			uci set system.$cfg.trigger='usbport'
-			for port in $ports; do
-				uci add_list system.$cfg.port=$port
-			done
+		portstate)
+			local port_state
+			json_get_vars port_state
+			uci -q batch <<-EOF
+				set system.$cfg.port_state='$port_state'
+			EOF
 		;;
 
 		rssi)
@@ -465,14 +467,6 @@ generate_led() {
 			EOF
 		;;
 
-		portstate)
-			local port_state
-			json_get_vars port_state
-			uci -q batch <<-EOF
-				set system.$cfg.port_state='$port_state'
-			EOF
-		;;
-
 		timer|oneshot)
 			local delayon delayoff
 			json_get_vars delayon delayoff
@@ -481,6 +475,25 @@ generate_led() {
 				set system.$cfg.delayon='$delayon'
 				set system.$cfg.delayoff='$delayoff'
 			EOF
+		;;
+
+		usb)
+			local device
+			json_get_vars device
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='usbdev'
+				set system.$cfg.interval='50'
+				set system.$cfg.dev='$device'
+			EOF
+		;;
+
+		usbport)
+			local ports port
+			json_get_values ports ports
+			uci set system.$cfg.trigger='usbport'
+			for port in $ports; do
+				uci add_list system.$cfg.port=$port
+			done
 		;;
 	esac
 

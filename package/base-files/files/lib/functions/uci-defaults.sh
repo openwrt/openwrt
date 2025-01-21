@@ -485,6 +485,29 @@ ucidef_set_led_oneshot() {
 	_ucidef_set_led_timer $1 $2 $3 "oneshot" $4 $5
 }
 
+ucidef_set_led_pattern() {
+	local default="${4:-0}"
+	local pattern="$5"
+	local patternon="$6"
+	local patternoff="$7"
+	local repeat="$8"
+	local brightness="$9"
+
+	_ucidef_set_led_common "$1" "$2" "$3"
+	
+	json_add_string type pattern
+	json_add_string trigger pattern
+	json_add_int default "$default"
+	json_add_string pattern "$pattern"
+	json_add_string patternon "$patternon"
+	json_add_string patternoff "$patternoff"
+	json_add_string repeat "$repeat"
+	json_add_string brightness "$brightness"
+	json_select ..
+
+	json_select ..
+}
+
 ucidef_set_led_portstate() {
 	local port_state="$4"
 
