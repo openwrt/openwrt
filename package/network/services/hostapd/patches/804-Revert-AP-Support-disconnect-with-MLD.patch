@@ -1,0 +1,144 @@
+From fb085406d41a338e2a2a08c9783cbf8704b5ba36 Mon Sep 17 00:00:00 2001
+From: Rany Hany <rany_hany@riseup.net>
+Date: Tue, 7 Jan 2025 22:33:59 +0200
+Subject: [PATCH] Revert "AP: Support disconnect with MLD"
+
+Commit 01677c47f ("AP: Support disconnect with MLD") appears to
+be causing a SIGSEGV in some cases for EAP APs when a client
+disconnects from the AP. As the core dump doesn't appear to be
+useful and the solution isn't immediately obvious, we revert
+the upstream commit until a better solution could be found.
+
+Credit to e9hack[1] for identifying the commit causing this
+issue. The full discussion can be found in this PR[2].
+
+[1]: https://github.com/e9hack
+[2]: https://github.com/openwrt/openwrt/pull/17423
+
+Signed-off-by: Rany Hany <rany_hany@riseup.net>
+---
+ src/ap/sta_info.c | 62 ++++++++++++++++++-----------------------------
+ 1 file changed, 23 insertions(+), 39 deletions(-)
+
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1055,31 +1055,9 @@ static void ap_sta_handle_deauthenticate
+ }
+ 
+ 
+-static void ap_sta_handle_disconnect(struct hostapd_data *hapd,
+-				     struct sta_info *sta, u16 reason)
+-{
+-	wpa_printf(MSG_DEBUG, "%s: disconnect STA " MACSTR,
+-		   hapd->conf->iface, MAC2STR(sta->addr));
+-
+-	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
+-	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
+-	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
+-	sta->timeout_next = STA_REMOVE;
+-
+-	ap_sta_disconnect_common(hapd, sta, AP_MAX_INACTIVITY_AFTER_DEAUTH);
+-	ap_sta_deauthenticate_common(hapd, sta, reason);
+-}
+-
+-
+-enum ap_sta_disconnect_op {
+-	AP_STA_DEAUTHENTICATE,
+-	AP_STA_DISASSOCIATE,
+-	AP_STA_DISCONNECT
+-};
+-
+ static bool ap_sta_ml_disconnect(struct hostapd_data *hapd,
+ 				 struct sta_info *sta, u16 reason,
+-				 enum ap_sta_disconnect_op op)
++				 bool disassoc)
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	struct hostapd_data *assoc_hapd, *tmp_hapd;
+@@ -1128,30 +1106,25 @@ static bool ap_sta_ml_disconnect(struct
+ 				    tmp_sta->aid != assoc_sta->aid)
+ 					continue;
+ 
+-				if (op == AP_STA_DISASSOCIATE)
++				if (disassoc)
+ 					ap_sta_handle_disassociate(tmp_hapd,
+ 								   tmp_sta,
+ 								   reason);
+-				else if (op == AP_STA_DEAUTHENTICATE)
++				else
+ 					ap_sta_handle_deauthenticate(tmp_hapd,
+ 								     tmp_sta,
+ 								     reason);
+-				else
+-					ap_sta_handle_disconnect(tmp_hapd,
+-								 tmp_sta,
+-								 reason);
++
+ 				break;
+ 			}
+ 		}
+ 	}
+ 
+ 	/* Disconnect the station on which the association was performed. */
+-	if (op == AP_STA_DISASSOCIATE)
++	if (disassoc)
+ 		ap_sta_handle_disassociate(assoc_hapd, assoc_sta, reason);
+-	else if (op == AP_STA_DEAUTHENTICATE)
+-		ap_sta_handle_deauthenticate(assoc_hapd, assoc_sta, reason);
+ 	else
+-		ap_sta_handle_disconnect(assoc_hapd, assoc_sta, reason);
++		ap_sta_handle_deauthenticate(assoc_hapd, assoc_sta, reason);
+ 
+ 	return true;
+ #else /* CONFIG_IEEE80211BE */
+@@ -1163,7 +1136,7 @@ static bool ap_sta_ml_disconnect(struct
+ void ap_sta_disassociate(struct hostapd_data *hapd, struct sta_info *sta,
+ 			 u16 reason)
+ {
+-	if (ap_sta_ml_disconnect(hapd, sta, reason, AP_STA_DISASSOCIATE))
++	if (ap_sta_ml_disconnect(hapd, sta, reason, true))
+ 		return;
+ 
+ 	ap_sta_handle_disassociate(hapd, sta, reason);
+@@ -1181,7 +1154,7 @@ void ap_sta_deauthenticate(struct hostap
+ 		return;
+ 	}
+ 
+-	if (ap_sta_ml_disconnect(hapd, sta, reason, AP_STA_DEAUTHENTICATE))
++	if (ap_sta_ml_disconnect(hapd, sta, reason, false))
+ 		return;
+ 
+ 	ap_sta_handle_deauthenticate(hapd, sta, reason);
+@@ -1716,6 +1689,20 @@ void ap_sta_disconnect(struct hostapd_da
+ 
+ 	if (sta == NULL)
+ 		return;
++	ap_sta_set_authorized(hapd, sta, 0);
++	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
++	hostapd_set_sta_flags(hapd, sta);
++	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
++	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
++	wpa_printf(MSG_DEBUG, "%s: %s: reschedule ap_handle_timer timeout "
++		   "for " MACSTR " (%d seconds - "
++		   "AP_MAX_INACTIVITY_AFTER_DEAUTH)",
++		   hapd->conf->iface, __func__, MAC2STR(sta->addr),
++		   AP_MAX_INACTIVITY_AFTER_DEAUTH);
++	eloop_cancel_timeout(ap_handle_timer, hapd, sta);
++	eloop_register_timeout(AP_MAX_INACTIVITY_AFTER_DEAUTH, 0,
++			       ap_handle_timer, hapd, sta);
++	sta->timeout_next = STA_REMOVE;
+ 
+ 	if (hapd->iface->current_mode &&
+ 	    hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211AD) {
+@@ -1725,10 +1712,7 @@ void ap_sta_disconnect(struct hostapd_da
+ 		return;
+ 	}
+ 
+-	if (ap_sta_ml_disconnect(hapd, sta, reason, AP_STA_DISCONNECT))
+-		return;
+-
+-	ap_sta_handle_disconnect(hapd, sta, reason);
++	ap_sta_deauthenticate_common(hapd, sta, reason);
+ }
+ 
+ 

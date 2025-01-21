@@ -85,7 +85,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  	char *buf;
 --- a/src/utils/wpa_debug.h
 +++ b/src/utils/wpa_debug.h
-@@ -51,6 +51,17 @@ void wpa_debug_close_file(void);
+@@ -52,6 +52,17 @@ void wpa_debug_close_file(void);
  void wpa_debug_setup_stdout(void);
  void wpa_debug_stop_log(void);
  
@@ -103,7 +103,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  /**
   * wpa_debug_printf_timestamp - Print timestamp for debug output
   *
-@@ -71,9 +82,15 @@ void wpa_debug_print_timestamp(void);
+@@ -72,9 +83,15 @@ void wpa_debug_print_timestamp(void);
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -120,7 +120,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  /**
   * wpa_hexdump - conditional hex dump
   * @level: priority level (MSG_*) of the message
-@@ -85,7 +102,13 @@ PRINTF_FORMAT(2, 3);
+@@ -86,7 +103,13 @@ PRINTF_FORMAT(2, 3);
   * output may be directed to stdout, stderr, and/or syslog based on
   * configuration. The contents of buf is printed out has hex dump.
   */
@@ -135,7 +135,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  static inline void wpa_hexdump_buf(int level, const char *title,
  				   const struct wpabuf *buf)
-@@ -107,7 +130,13 @@ static inline void wpa_hexdump_buf(int l
+@@ -108,7 +131,13 @@ static inline void wpa_hexdump_buf(int l
   * like wpa_hexdump(), but by default, does not include secret keys (passwords,
   * etc.) in debug output.
   */
@@ -150,7 +150,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  static inline void wpa_hexdump_buf_key(int level, const char *title,
  				       const struct wpabuf *buf)
-@@ -129,8 +158,14 @@ static inline void wpa_hexdump_buf_key(i
+@@ -130,8 +159,14 @@ static inline void wpa_hexdump_buf_key(i
   * the hex numbers and ASCII characters (for printable range) are shown. 16
   * bytes per line will be shown.
   */
@@ -167,7 +167,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  /**
   * wpa_hexdump_ascii_key - conditional hex dump, hide keys
-@@ -146,8 +181,14 @@ void wpa_hexdump_ascii(int level, const
+@@ -147,8 +182,14 @@ void wpa_hexdump_ascii(int level, const
   * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
   * default, does not include secret keys (passwords, etc.) in debug output.
   */
@@ -184,7 +184,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  /*
   * wpa_dbg() behaves like wpa_msg(), but it can be removed from build to reduce
-@@ -184,7 +225,12 @@ void wpa_hexdump_ascii_key(int level, co
+@@ -185,7 +226,12 @@ void wpa_hexdump_ascii_key(int level, co
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -198,7 +198,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  /**
   * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
-@@ -198,8 +244,13 @@ void wpa_msg(void *ctx, int level, const
+@@ -199,8 +245,13 @@ void wpa_msg(void *ctx, int level, const
   * attached ctrl_iface monitors. In other words, it can be used for frequent
   * events that do not need to be sent to syslog.
   */
