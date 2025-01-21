@@ -74,6 +74,7 @@ platform_do_upgrade() {
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-114m-ubootmod|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\

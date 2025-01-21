@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-h3c-magic-nx30-pro.dtsi"
+
+/ {
+	model = "H3C Magic NX30 Pro (114M UBI layout)";
+	compatible = "h3c,magic-nx30-pro-114m-ubootmod", "mediatek,mt7981";
+
+};
+&partitions {
+
+	/* ubi is the result of squashing
+	 * consecutive stock partitions:
+	 * - ubi
+	 * - pdt_data
+	 * - pdt_data_1
+	 * - exp
+	 * - plugin
+	 * note that on-flash MAC ADDRESS WILL BE LOST
+	 */
+	partition@580000 {
+		label = "ubi";
+		reg = <0x0580000 0x7280000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
