@@ -45,11 +45,9 @@
 &mdio_aux {
 	status = "okay";
 
-	// Reset GPIO is <&gpio0 1 GPIO_ACTIVE_LOW>
-	// Don't specify the reset info so the mdio subsystem doesn't reset the bus
-	//reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
-	//reset-delay-us = <1000>;
-	//reset-post-delay-us = <10000>;
+	reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <1000>;
+	reset-post-delay-us = <10000>;
 
 	gpio1: expander@0 {
 		compatible = "realtek,rtl8231";
