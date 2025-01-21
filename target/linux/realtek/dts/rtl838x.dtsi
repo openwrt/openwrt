@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <dt-bindings/clock/rtl83xx-clk.h>
+#include <dt-bindings/gpio/gpio.h>
 
 /dts-v1/;
 
@@ -120,6 +121,7 @@
 	aliases {
 		serial0 = &uart0;
 		serial1 = &uart1;
+		mdio-gpio1 = &mdio_gpio;
 	};
 
 	chosen {
@@ -132,6 +134,22 @@
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
 		interrupt-controller;
+	};
+
+	/*
+	 * Provided for devices with RTL838xM SoC with revision A silicon.
+	 * Newer SoCs can use the &mdio_aux bus instead.
+	 */
+	mdio_gpio: mdio {
+		compatible = "virtual,mdio-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>,
+			<&gpio0 3 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&mdio_aux_gpio>;
+
+		status = "disabled";
 	};
 
 	soc: soc {
