@@ -89,14 +89,14 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	depends on ENV_IS_IN_UBI
 --- a/env/Makefile
 +++ b/env/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_$(SPL_TPL_)ENV_IS_NOWHERE)
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_MMC) += mmc.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_FAT) += fat.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_EXT4) += ext4.o
-+obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_MTD) += mtd.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_NAND) += nand.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_SPI_FLASH) += sf.o
- obj-$(CONFIG_$(SPL_TPL_)ENV_IS_IN_FLASH) += flash.o
+@@ -24,6 +24,7 @@ obj-$(CONFIG_$(PHASE_)ENV_IS_NOWHERE) +=
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_MMC) += mmc.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_FAT) += fat.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_EXT4) += ext4.o
++obj-$(CONFIG_$(PHASE_)ENV_IS_IN_MTD) += mtd.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_NAND) += nand.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_SPI_FLASH) += sf.o
+ obj-$(CONFIG_$(PHASE_)ENV_IS_IN_FLASH) += flash.o
 --- a/env/env.c
 +++ b/env/env.c
 @@ -46,6 +46,9 @@ static enum env_location env_locations[]
@@ -370,7 +370,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +};
 --- a/include/env_internal.h
 +++ b/include/env_internal.h
-@@ -107,6 +107,7 @@ enum env_location {
+@@ -108,6 +108,7 @@ enum env_location {
  	ENVL_FAT,
  	ENVL_FLASH,
  	ENVL_MMC,
