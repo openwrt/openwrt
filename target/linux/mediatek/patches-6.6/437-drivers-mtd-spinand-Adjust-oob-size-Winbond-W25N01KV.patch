@@ -1,0 +1,36 @@
+From 2c116666421bab97d3529ff5ac94a9ca35dba6f4 Mon Sep 17 00:00:00 2001
+From: Mikhail Zhilkin <csharper2005@gmail.com>
+Date: Tue, 21 Jan 2025 16:23:46 +0000
+Subject: [PATCH] mediatek: kernel: Winbond W25N01KV: fix nmbm by adjusting oob
+ size
+
+This hack patch fixes:
+1. Non-working nmbm on Xiaomi AX3000t with Winbond W25N01KV spi-nand:
+   '''
+   [    0.786783] NMBM configuration mismatch
+   '''
+2. Mismatch between U-Boot OOB size (64 bytes, in stock Xiaomi and OpenWrt
+   U-Boot both) and OpenWrt firmware OOB size (currently - 96 bytes).
+
+Reason:
+1. OOB size for the chip in upstream kernel is 96 bytes;
+2. All known U-Boot versions and stock firmware use 64 bytes only.
+
+Fixes: openwrt#16972
+Fixes: openwrt@81481c8 ("generic: 6.6: add Winbond W25N01KV support")
+Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
+---
+ drivers/mtd/nand/spi/winbond.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/nand/spi/winbond.c
++++ b/drivers/mtd/nand/spi/winbond.c
+@@ -182,7 +182,7 @@ static const struct spinand_info winbond
+ 		     SPINAND_ECCINFO(&w25m02gv_ooblayout, NULL)),
+ 	SPINAND_INFO("W25N01KV",
+ 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0xae, 0x21),
+-		     NAND_MEMORG(1, 2048, 96, 64, 1024, 20, 1, 1, 1),
++		     NAND_MEMORG(1, 2048, 64, 64, 1024, 20, 1, 1, 1),
+ 		     NAND_ECCREQ(4, 512),
+ 		     SPINAND_INFO_OP_VARIANTS(&read_cache_variants,
+ 					      &write_cache_variants,
