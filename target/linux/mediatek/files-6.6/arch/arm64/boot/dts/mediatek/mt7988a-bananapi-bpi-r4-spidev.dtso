@@ -5,11 +5,15 @@
 
 / {
         compatible = "bananapi,bpi-r4", "mediatek,mt7988a";
-        status = "okay";
 
         fragment@0 {
                 target-path = "/soc/spi@11008000";
                 __overlay__ {
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&spi1_pins>;
+                status = "okay";
+
                 spidev@0 {
                         compatible = "linux,spidev";
                         reg = <0>;
