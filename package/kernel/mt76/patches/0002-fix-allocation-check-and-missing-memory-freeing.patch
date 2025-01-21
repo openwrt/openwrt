@@ -1,0 +1,28 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sun, 19 Jan 2025 12:37:01 +0100
+Subject: [PATCH] mt76: fix allocation check and missing memory freeing
+
+Fixed allocation checking and freeing buffer memory
+inside mt76_eeprom_changes() function.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+
+--- a/tools/eeprom.c
++++ b/tools/eeprom.c
+@@ -220,10 +220,14 @@ mt76_eeprom_changes(void)
+ 	}
+ 
+ 	buf = malloc(EEPROM_PART_SIZE);
++	if (!buf)
++		return EXIT_FAILURE;
+ 	fseek(f, mtd_offset, SEEK_SET);
+ 	ret = fread(buf, 1, EEPROM_PART_SIZE, f);
+-	if (ret != EEPROM_PART_SIZE)
++	if (ret != EEPROM_PART_SIZE) {
++		free(buf);
+ 		return EXIT_FAILURE;
++	}
+ 	for (i = 0; i < EEPROM_PART_SIZE; i++) {
+ 		if (buf[i] == eeprom_data[i])
+ 			continue;
