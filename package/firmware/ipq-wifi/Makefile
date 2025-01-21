@@ -5,10 +5,10 @@ PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
+PKG_SOURCE_URL=https://github.com/Leo-PL/firmware_qca-wireless.git
 PKG_SOURCE_DATE:=2025-01-15
-PKG_SOURCE_VERSION:=6e1801a4992fe72a98a2219f2dcd038194785971
-PKG_MIRROR_HASH:=569cf6894e21712ed6a5553b4fad0bbdeed14e0cc4b9292f5f86343f7897fc7e
+PKG_SOURCE_VERSION:=dc8fce7576226d098fe5aa07a4b76e097169cccd
+PKG_MIRROR_HASH:=fff1b70afefba5ef5c9e7f487262e886beba52ef84558516babaf82adb3d5992
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -67,6 +67,8 @@ ALLWIFIBOARDS:= \
 	yuncore_fap650 \
 	zbtlink_zbt-z800ax \
 	zte_mf269 \
+	zte_mf286ar\
+	zte_mf286c \
 	zte_mf287 \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -77,7 +79,7 @@ define Package/ipq-wifi-default
   SUBMENU:=ath10k Board-Specific Overrides
   SECTION:=firmware
   CATEGORY:=Firmware
-  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax)
+  DEPENDS:=@(TARGET_ath79||TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax)
   TITLE:=Custom Board
 endef
 
@@ -199,6 +201,8 @@ $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))
 $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
+$(eval $(call generate-ipq-wifi-package,zte_mf286ar,ZTE MF286A/R))
+$(eval $(call generate-ipq-wifi-package,zte_mf286c,ZTE MF286C))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
