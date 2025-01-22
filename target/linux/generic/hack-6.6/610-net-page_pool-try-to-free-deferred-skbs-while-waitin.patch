@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/core/page_pool.c
 +++ b/net/core/page_pool.c
-@@ -862,12 +862,23 @@ static void page_pool_release_retry(stru
+@@ -873,12 +873,23 @@ static void page_pool_release_retry(stru
  {
  	struct delayed_work *dwq = to_delayed_work(wq);
  	struct page_pool *pool = container_of(dwq, typeof(*pool), release_dw);
