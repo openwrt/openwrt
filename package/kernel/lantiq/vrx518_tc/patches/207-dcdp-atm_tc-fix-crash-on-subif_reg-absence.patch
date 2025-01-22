@@ -23,7 +23,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
 ---
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -1232,8 +1232,9 @@ static void ppe_close(struct atm_vcc *vc
+@@ -1158,8 +1158,9 @@ static void ppe_close(struct atm_vcc *vc
  		validate_oam_htu_entry(priv, 0);
  	spin_unlock_bh(&priv->atm_lock);
  
@@ -35,7 +35,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  				
  	memset(conn, 0, sizeof(*conn));
  
-@@ -2791,24 +2792,26 @@ static void mpoa_setup_sync(struct atm_p
+@@ -2710,24 +2711,26 @@ static void mpoa_setup_sync(struct atm_p
  	struct wtx_queue_config_t tx_qcfg;
  	struct uni_cell_header *cell_header;
  	struct atm_vcc *vcc;
