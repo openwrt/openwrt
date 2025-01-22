@@ -262,7 +262,11 @@ $(eval $(call KernelPackage,fs-ext4))
 define KernelPackage/fs-f2fs
   SUBMENU:=$(FS_MENU)
   TITLE:=F2FS filesystem support
-  DEPENDS:= +kmod-crypto-hash +kmod-crypto-crc32 +kmod-nls-base
+  DEPENDS:= +kmod-crypto-hash +kmod-crypto-crc32 +kmod-nls-base \
+	+KERNEL_F2FS_FS_LZO:kmod-lib-lzo \
+	+KERNEL_F2FS_FS_LZ4:kmod-lib-lz4 \
+	+KERNEL_F2FS_FS_LZ4HC:kmod-lib-lz4hc \
+	+KERNEL_F2FS_FS_ZSTD:kmod-lib-zstd
   KCONFIG:=CONFIG_F2FS_FS
   FILES:=$(LINUX_DIR)/fs/f2fs/f2fs.ko
   AUTOLOAD:=$(call AutoLoad,30,f2fs,1)
@@ -270,6 +274,37 @@ endef
 
 define KernelPackage/fs-f2fs/description
  Kernel module for F2FS filesystem support
+endef
+
+define KernelPackage/fs-f2fs/config
+  if PACKAGE_kmod-fs-f2fs
+    config KERNEL_F2FS_FS_COMPRESSION
+            bool "F2FS compression feature"
+            help
+              Enable transparent compression for f2fs regular files. Select at
+              least one of the back-ends below, then mount with e.g.
+              compress_algorithm=zstd:3,compress_chksum
+
+    config KERNEL_F2FS_FS_LZO
+            bool "LZO compression support"
+            depends on KERNEL_F2FS_FS_COMPRESSION
+
+    config KERNEL_F2FS_FS_LZORLE
+            bool "LZO-RLE compression support"
+            depends on KERNEL_F2FS_FS_LZO
+
+    config KERNEL_F2FS_FS_LZ4
+            bool "LZ4 compression support"
+            depends on KERNEL_F2FS_FS_COMPRESSION
+
+    config KERNEL_F2FS_FS_LZ4HC
+            bool "LZ4HC compression support"
+            depends on KERNEL_F2FS_FS_LZ4
+
+    config KERNEL_F2FS_FS_ZSTD
+            bool "ZSTD compression support"
+            depends on KERNEL_F2FS_FS_COMPRESSION
+  endif
 endef
 
 $(eval $(call KernelPackage,fs-f2fs))
