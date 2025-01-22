@@ -360,17 +360,25 @@ define Device/zyxel_gs1900-16
 endef
 TARGET_DEVICES += zyxel_gs1900-16
 
-define Device/zyxel_gs1900-8
+define Device/zyxel_gs1900-8-v1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
   DEVICE_VARIANT := v1
-  DEVICE_ALT0_VENDOR := Zyxel
-  DEVICE_ALT0_MODEL := GS1900-8
-  DEVICE_ALT0_VARIANT := v2
   ZYXEL_VERS := AAHH
+  SUPPORTED_DEVICES += zyxel,gs1900-8
 endef
-TARGET_DEVICES += zyxel_gs1900-8
+TARGET_DEVICES += zyxel_gs1900-8-v1
+
+define Device/zyxel_gs1900-8-v2
+  $(Device/zyxel_gs1900)
+  SOC := rtl8380
+  DEVICE_MODEL := GS1900-8
+  DEVICE_VARIANT := v2
+  ZYXEL_VERS := AAHH
+  SUPPORTED_DEVICES += zyxel,gs1900-8
+endef
+TARGET_DEVICES += zyxel_gs1900-8-v2
 
 define Device/zyxel_gs1900-8hp-v1
   $(Device/zyxel_gs1900)
