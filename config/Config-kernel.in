@@ -333,6 +333,41 @@ if KERNEL_TASKSTATS
 
 endif
 
+
+config KERNEL_F2FS_FS_COMPRESSION
+	bool "F2FS compression feature"
+	depends on PACKAGE_kmod-fs-f2fs
+	help
+	  Enable to build back-end compression for f2fs
+	  Be sure to select at least one of the following back-ends:
+	  LZO, LZO-RLE, LZ4, LZ4HC, or ZSTD.
+
+	config KERNEL_F2FS_FS_LZO
+	bool "LZO compression support"
+	select PACKAGE_kmod-lib-lzo
+	depends on KERNEL_F2FS_FS_COMPRESSION
+
+	config KERNEL_F2FS_FS_LZORLE
+	bool "LZO-RLE compression support"
+	select PACKAGE_kmod-lib-lzorle
+	depends on KERNEL_F2FS_FS_COMPRESSION
+
+	config KERNEL_F2FS_FS_LZ4
+	bool "LZ4 compression support"
+	select PACKAGE_kmod-lib-lz4
+	depends on KERNEL_F2FS_FS_COMPRESSION
+
+	config KERNEL_F2FS_FS_LZ4HC
+	bool "LZ4HC compression support"
+	select PACKAGE_kmod-lib-lz4hc
+	depends on KERNEL_F2FS_FS_COMPRESSION
+
+	config KERNEL_F2FS_FS_ZSTD
+	bool "ZSTD compression support"
+	select PACKAGE_kmod-lib-zstd
+	depends on KERNEL_F2FS_FS_COMPRESSION
+
+
 config KERNEL_PSI
 	bool "Compile the kernel with pressure stall information tracking"
 	help
