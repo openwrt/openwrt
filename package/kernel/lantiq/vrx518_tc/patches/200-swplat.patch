@@ -855,12 +855,12 @@ This replaces it by a basic working implementation.
 -			continue;
 +
 +		// this seems to be a pointer to a DS PKT buffer
-+		phyaddr = desc->data_ptr + desc->byte_off;
++		phyaddr = desc->data_ptr;
 +		ptr = plat_mem_virt(phyaddr);
-+
 +		len = desc->data_len;
 +
-+		dma_sync_single_range_for_cpu(pdev, phyaddr, 0, len, DMA_FROM_DEVICE);
++		dma_sync_single_for_cpu(pdev, phyaddr, desc->byte_off + len,
++					DMA_FROM_DEVICE);
 +
 +		skb = netdev_alloc_skb(g_plat_priv->netdev, len);
 +		if (unlikely(!skb)) {
@@ -871,7 +871,7 @@ This replaces it by a basic working implementation.
 -		ring_idx_inc(rxout, idx);
 +
 +		dst = skb_put(skb, len);
-+		memcpy(dst, ptr, len);
++		memcpy(dst, ptr + desc->byte_off, len);
 +
 +		priv->tc_ops.recv(g_plat_priv->netdev, skb);
 +
