@@ -166,7 +166,7 @@
  
 -	return (skb->DW0 >> 3) & 0xF;
 +// 	return (skb->DW0 >> 3) & 0xF;
-+	return 1;
++	return 0;	/* We use only one connection for now, so return the first connection id */
  }
  
  static int atm_get_qid_by_vcc(struct net_device *dev, struct sk_buff *skb,
