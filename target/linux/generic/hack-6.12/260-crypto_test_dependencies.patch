@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -148,15 +148,15 @@ config CRYPTO_MANAGER
+@@ -149,15 +149,15 @@ config CRYPTO_MANAGER
  	  cbc(aes).
  
  config CRYPTO_MANAGER2
@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	tristate "Userspace cryptographic algorithm configuration"
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -204,6 +204,10 @@ static int cryptomgr_schedule_test(struc
+@@ -203,6 +203,10 @@ static int cryptomgr_schedule_test(struc
  	memcpy(param->alg, alg->cra_name, sizeof(param->alg));
  	param->type = alg->cra_flags;
  

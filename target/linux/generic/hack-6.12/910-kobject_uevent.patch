@@ -9,9 +9,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  lib/kobject_uevent.c    | 37 +++++++++++++++++++++++++++++++++++++
  2 files changed, 42 insertions(+)
 
+--- a/include/linux/kobject.h
++++ b/include/linux/kobject.h
+@@ -219,4 +219,6 @@ int kobject_synth_uevent(struct kobject
+ __printf(2, 3)
+ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...);
+ 
++u64 uevent_next_seqnum(void);
++
+ #endif /* _KOBJECT_H_ */
 --- a/lib/kobject_uevent.c
 +++ b/lib/kobject_uevent.c
-@@ -179,6 +179,18 @@ out:
+@@ -178,6 +178,18 @@ out:
  	return r;
  }
  
@@ -20,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u64 seq;
 +
 +	mutex_lock(&uevent_sock_mutex);
-+	seq = ++uevent_seqnum;
++	seq = atomic64_inc_return(&uevent_seqnum);
 +	mutex_unlock(&uevent_sock_mutex);
 +
 +	return seq;
