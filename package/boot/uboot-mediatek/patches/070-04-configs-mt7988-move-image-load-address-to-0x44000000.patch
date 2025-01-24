@@ -1,0 +1,24 @@
+From c7a3761ddfce2bd56ad319a254d5269cb26fa18f Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 17 Jan 2025 17:17:44 +0800
+Subject: [PATCH 04/15] configs: mt7988: move image load address to 0x44000000
+
+This patch sets mt7988 image load address to 0x44000000 to support loading
+larger images.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ configs/mt7988_rfb_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/configs/mt7988_rfb_defconfig
++++ b/configs/mt7988_rfb_defconfig
+@@ -7,7 +7,7 @@ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+ CONFIG_DEFAULT_DEVICE_TREE="mt7988-rfb"
+ CONFIG_TARGET_MT7988=y
+-CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_SYS_LOAD_ADDR=0x44000000
+ CONFIG_DEBUG_UART_BASE=0x11000000
+ CONFIG_DEBUG_UART_CLOCK=40000000
+ CONFIG_DEBUG_UART=y

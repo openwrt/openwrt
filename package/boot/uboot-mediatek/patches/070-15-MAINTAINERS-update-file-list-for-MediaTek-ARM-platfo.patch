@@ -1,0 +1,36 @@
+From 8707ea0360046522d0784135b6c9a7c564f9515c Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 17 Jan 2025 17:18:59 +0800
+Subject: [PATCH 15/15] MAINTAINERS: update file list for MediaTek ARM platform
+
+Add driver files for MediaTek ARM platform
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ MAINTAINERS | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -412,9 +412,13 @@ F:	drivers/mmc/mtk-sd.c
+ F:	drivers/phy/phy-mtk-*
+ F:	drivers/pinctrl/mediatek/
+ F:	drivers/power/domain/mtk-power-domain.c
++F:	drivers/pci/pcie_mediatek_gen3.c
++F:	drivers/pci/pcie_mediatek.c
++F:	drivers/pwm/pwm-mtk.c
+ F:	drivers/ram/mediatek/
+ F:	drivers/spi/mtk_snfi_spi.c
+ F:	drivers/spi/mtk_spim.c
++F:	drivers/spi/mtk_snor.c
+ F:	drivers/timer/mtk_timer.c
+ F:	drivers/usb/host/xhci-mtk.c
+ F:	drivers/usb/mtu3/
+@@ -422,6 +426,7 @@ F:	drivers/watchdog/mtk_wdt.c
+ F:	drivers/net/mtk_eth.c
+ F:	drivers/net/mtk_eth.h
+ F:	drivers/reset/reset-mediatek.c
++F:	drivers/serial/serial_mtk.c
+ F:	include/dt-bindings/clock/mediatek,*
+ F:	include/dt-bindings/power/mediatek,*
+ F:	tools/mtk_image.c

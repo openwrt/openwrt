@@ -1,0 +1,48 @@
+From b033dfb21df8ae876ec69d84bc8c5fafd7aa8ced Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 17 Jan 2025 17:16:38 +0800
+Subject: [PATCH 02/15] clk: mediatek: fix uninitialized fields issue in
+ INFRA_MUX struct
+
+This patch adds missing initialization of fields in INFRA_MUX struct
+which caused uart broken after any other infra mux being enabled by
+'clk_prepare_enable'
+
+Signed-off-by: Sam Shih <sam.shih@mediatek.com>
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/clk/mediatek/clk-mt7981.c | 1 +
+ drivers/clk/mediatek/clk-mt7986.c | 1 +
+ drivers/clk/mediatek/clk-mt7988.c | 1 +
+ 3 files changed, 3 insertions(+)
+
+--- a/drivers/clk/mediatek/clk-mt7981.c
++++ b/drivers/clk/mediatek/clk-mt7981.c
+@@ -359,6 +359,7 @@ static const struct mtk_parent infra_pci
+ 		.id = _id, .mux_reg = (_reg) + 0x8,                            \
+ 		.mux_set_reg = (_reg) + 0x0, .mux_clr_reg = (_reg) + 0x4,      \
+ 		.mux_shift = _shift, .mux_mask = BIT(_width) - 1,              \
++		.gate_shift = -1, .upd_shift = -1,			       \
+ 		.parent_flags = _parents, .num_parents = ARRAY_SIZE(_parents), \
+ 		.flags = CLK_MUX_SETCLR_UPD | CLK_PARENT_MIXED,                \
+ 	}
+--- a/drivers/clk/mediatek/clk-mt7986.c
++++ b/drivers/clk/mediatek/clk-mt7986.c
+@@ -366,6 +366,7 @@ static const struct mtk_parent infra_pci
+ 		.id = _id, .mux_reg = (_reg) + 0x8,                            \
+ 		.mux_set_reg = (_reg) + 0x0, .mux_clr_reg = (_reg) + 0x4,      \
+ 		.mux_shift = _shift, .mux_mask = BIT(_width) - 1,              \
++		.gate_shift = -1, .upd_shift = -1,			       \
+ 		.parent_flags = _parents, .num_parents = ARRAY_SIZE(_parents), \
+ 		.flags = CLK_MUX_SETCLR_UPD | CLK_PARENT_MIXED,                \
+ 	}
+--- a/drivers/clk/mediatek/clk-mt7988.c
++++ b/drivers/clk/mediatek/clk-mt7988.c
+@@ -485,6 +485,7 @@ static const int infra_pcie_gfmux_tl_ck_
+ 		.id = _id, .mux_reg = _reg + 0x8, .mux_set_reg = _reg + 0x0,   \
+ 		.mux_clr_reg = _reg + 0x4, .mux_shift = _shift,                \
+ 		.mux_mask = BIT(_width) - 1, .parent = _parents,               \
++		.gate_shift = -1, .upd_shift = -1,			       \
+ 		.num_parents = ARRAY_SIZE(_parents),                           \
+ 		.flags = CLK_MUX_SETCLR_UPD | CLK_PARENT_TOPCKGEN,             \
+ 	}

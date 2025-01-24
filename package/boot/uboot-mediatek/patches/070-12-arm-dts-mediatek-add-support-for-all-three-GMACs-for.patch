@@ -1,0 +1,103 @@
+From 64cf3dd0ef520a81a27359d83d58b64939e2aa06 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 17 Jan 2025 17:18:27 +0800
+Subject: [PATCH 12/15] arm: dts: mediatek: add support for all three GMACs for
+ mt7988
+
+This patch add all three GMACs nodes for mt7988. Each GMAC can be
+configured to connect to different ethernet switches/PHYs.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ arch/arm/dts/mt7988-rfb.dts    |  3 +--
+ arch/arm/dts/mt7988-sd-rfb.dts |  3 +--
+ arch/arm/dts/mt7988.dtsi       | 42 ++++++++++++++++++++++++++++++++--
+ 3 files changed, 42 insertions(+), 6 deletions(-)
+
+--- a/arch/arm/dts/mt7988-rfb.dts
++++ b/arch/arm/dts/mt7988-rfb.dts
+@@ -50,9 +50,8 @@
+ 	status = "okay";
+ };
+ 
+-&eth {
++&eth0 {
+ 	status = "okay";
+-	mediatek,gmac-id = <0>;
+ 	phy-mode = "usxgmii";
+ 	mediatek,switch = "mt7988";
+ 
+--- a/arch/arm/dts/mt7988-sd-rfb.dts
++++ b/arch/arm/dts/mt7988-sd-rfb.dts
+@@ -41,9 +41,8 @@
+ 	status = "okay";
+ };
+ 
+-&eth {
++&eth0 {
+ 	status = "okay";
+-	mediatek,gmac-id = <0>;
+ 	phy-mode = "usxgmii";
+ 	mediatek,switch = "mt7988";
+ 
+--- a/arch/arm/dts/mt7988.dtsi
++++ b/arch/arm/dts/mt7988.dtsi
+@@ -587,11 +587,11 @@
+ 		#reset-cells = <1>;
+ 	};
+ 
+-	eth: ethernet@15100000 {
++	eth0: ethernet@15110100 {
+ 		compatible = "mediatek,mt7988-eth", "syscon";
+ 		reg = <0 0x15100000 0 0x20000>;
++		mediatek,gmac-id = <0>;
+ 		mediatek,ethsys = <&ethdma>;
+-		mediatek,sgmiisys = <&sgmiisys0>;
+ 		mediatek,usxgmiisys = <&usxgmiisys0>;
+ 		mediatek,xfi_pextp = <&xfi_pextp0>;
+ 		mediatek,xfi_pll = <&xfi_pll>;
+@@ -602,6 +602,44 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		mediatek,mcm;
++		status = "disabled";
++	};
++
++	eth1: ethernet@15110200 {
++		compatible = "mediatek,mt7988-eth", "syscon";
++		reg = <0 0x15100000 0 0x20000>;
++		mediatek,gmac-id = <1>;
++		mediatek,ethsys = <&ethdma>;
++		mediatek,sgmiisys = <&sgmiisys1>;
++		mediatek,usxgmiisys = <&usxgmiisys1>;
++		mediatek,xfi_pextp = <&xfi_pextp1>;
++		mediatek,xfi_pll = <&xfi_pll>;
++		mediatek,infracfg = <&topmisc>;
++		mediatek,toprgu = <&watchdog>;
++		resets = <&ethdma ETHDMA_FE_RST>;
++		reset-names = "fe";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		mediatek,mcm;
++		status = "disabled";
++	};
++
++	eth2: ethernet@15110300 {
++		compatible = "mediatek,mt7988-eth", "syscon";
++		reg = <0 0x15100000 0 0x20000>;
++		mediatek,gmac-id = <2>;
++		mediatek,ethsys = <&ethdma>;
++		mediatek,sgmiisys = <&sgmiisys0>;
++		mediatek,usxgmiisys = <&usxgmiisys0>;
++		mediatek,xfi_pextp = <&xfi_pextp0>;
++		mediatek,xfi_pll = <&xfi_pll>;
++		mediatek,infracfg = <&topmisc>;
++		mediatek,toprgu = <&watchdog>;
++		resets = <&ethdma ETHDMA_FE_RST>;
++		reset-names = "fe";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		mediatek,mcm;
+ 		status = "disabled";
+ 	};
+ };

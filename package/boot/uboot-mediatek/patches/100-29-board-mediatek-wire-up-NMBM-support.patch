@@ -12,7 +12,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 
 --- a/board/mediatek/mt7622/mt7622_rfb.c
 +++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -9,6 +9,11 @@
+@@ -9,9 +9,47 @@
  #include <init.h>
  #include <asm/global_data.h>
  
@@ -24,8 +24,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
  DECLARE_GLOBAL_DATA_PTR;
  
  int board_init(void)
-@@ -22,3 +27,36 @@ int board_late_init(void)
- 	env_relocate();
+ {
  	return 0;
  }
 +
