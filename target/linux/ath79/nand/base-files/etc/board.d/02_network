@@ -44,6 +44,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
+	meraki,z1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
+		;;
 	netgear,pgzng1)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
@@ -105,6 +109,10 @@ ath79_setup_macs()
 		;;
 	meraki,mr18)
 		lan_mac=$(mtd_get_mac_binary_ubi board-config 102)
+		;;
+	meraki,z1)
+		lan_mac=$(mtd_get_mac_binary_ubi board-config 102)
+		wan_mac=$(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 1)
 		;;
 	netgear,wndr3700-v4|\
 	netgear,wndr4300|\

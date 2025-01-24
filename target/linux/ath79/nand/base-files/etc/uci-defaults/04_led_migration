@@ -4,6 +4,9 @@
 board=$(board_name)
 
 case "$board" in
+meraki,z1)
+	migrate_leds ":tricolor0=:tricolor"
+	;;
 esac
 
 remove_devicename_leds
