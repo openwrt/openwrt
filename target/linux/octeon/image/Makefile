@@ -79,18 +79,21 @@ ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0)ro,512k(boot1)ro,64k(eepr
 define Device/ubnt_edgerouter-lite
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := EdgeRouter Lite
-  BOARD_NAME := erlite
+  DEVICE_DTS := cn5020_ubnt_edgerouter-lite
+  KERNEL := kernel-bin | patch-cmdline | append-dtb-to-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
   CMDLINE := $(ERLITE_CMDLINE)
-  SUPPORTED_DEVICES += erlite
+  SUPPORTED_DEVICES += erlite ubnt,erlite
 endef
 TARGET_DEVICES += ubnt_edgerouter-lite
 
 define Device/ubnt_unifi-usg
-  $(Device/ubnt_edgerouter-lite)
+  DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Security Gateway
   BOARD_NAME := ubnt,usg
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio
   DEVICE_DTS := cn5020_ubnt_usg
+  CMDLINE := $(ERLITE_CMDLINE)
   KERNEL += | append-dtb-to-elf
   SUPPORTED_DEVICES += ubnt,usg
 endef
