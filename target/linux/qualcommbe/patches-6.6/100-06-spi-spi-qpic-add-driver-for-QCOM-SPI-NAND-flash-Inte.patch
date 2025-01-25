@@ -1,8 +1,18 @@
-From dc12953941ed3b8bc9eb8d47f8c7e74f54b47049 Mon Sep 17 00:00:00 2001
 From: Md Sadre Alam <quic_mdalam@quicinc.com>
-Date: Mon, 19 Aug 2024 11:05:18 +0530
-Subject: [PATCH v10 6/8] spi: spi-qpic: add driver for QCOM SPI NAND flash
- Interface
+To: <broonie@kernel.org>, <robh@kernel.org>, <krzk+dt@kernel.org>,
+	<conor+dt@kernel.org>, <andersson@kernel.org>,
+	<konradybcio@kernel.org>, <miquel.raynal@bootlin.com>,
+	<richard@nod.at>, <vigneshr@ti.com>,
+	<manivannan.sadhasivam@linaro.org>,
+	<linux-arm-msm@vger.kernel.org>, <linux-spi@vger.kernel.org>,
+	<devicetree@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+	<linux-mtd@lists.infradead.org>
+Cc: <quic_srichara@quicinc.com>, <quic_varada@quicinc.com>,
+	<quic_mdalam@quicinc.com>
+Subject: [PATCH v14 6/8] spi: spi-qpic: add driver for QCOM SPI NAND flash Interface
+Date: Wed, 20 Nov 2024 14:45:04 +0530	[thread overview]
+Message-ID: <20241120091507.1404368-7-quic_mdalam@quicinc.com> (raw)
+In-Reply-To: <20241120091507.1404368-1-quic_mdalam@quicinc.com>
 
 This driver implements support for the SPI-NAND mode of QCOM NAND Flash
 Interface as a SPI-MEM controller with pipelined ECC capability.
@@ -13,6 +23,31 @@ Co-developed-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 Signed-off-by: Md Sadre Alam <quic_mdalam@quicinc.com>
 ---
+
+Change in [v14]
+
+* No Change 
+
+Change in [v13]
+
+* Changed return type of qcom_spi_cmd_mapping() from u32 to
+  int to fix the kernel test bot warning
+* Changed type of variable cmd in qcom_spi_write_page() from u32
+  to int
+* Removed unused variable s_op from qcom_spi_write_page()
+* Updated return value variable type from u32 to int in
+  qcom_spi_send_cmdaddr() 
+
+Change in [v12]
+
+* Added obj-$(CONFIG_SPI_QPIC_SNAND) += qpic_common.o in Makefile
+  to build qpic_common.c based on CONFIG_SPI_QPIC_SNAND
+
+Change in [v11]
+
+* Fixed build error reported by kernel test bot
+* Changed "depends on MTD" to "select MTD" in
+  drivers/spi/Kconfig file
 
 Change in [v10]
 
@@ -166,39 +201,42 @@ Change in [v1]
 
 * Added RFC patch for design review
 
- drivers/mtd/nand/Makefile            |    5 +-
+ drivers/mtd/nand/Makefile            |    4 +
  drivers/spi/Kconfig                  |    9 +
  drivers/spi/Makefile                 |    1 +
- drivers/spi/spi-qpic-snand.c         | 1634 ++++++++++++++++++++++++++
+ drivers/spi/spi-qpic-snand.c         | 1633 ++++++++++++++++++++++++++
  include/linux/mtd/nand-qpic-common.h |    7 +
- 5 files changed, 1655 insertions(+), 1 deletion(-)
+ 5 files changed, 1654 insertions(+)
  create mode 100644 drivers/spi/spi-qpic-snand.c
 
+diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
+index da1586a36574..db516a45f0c5 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -7,8 +7,11 @@ obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bm
- 
- ifeq ($(CONFIG_MTD_NAND_QCOM),y)
- obj-y	+= qpic_common.o
-+else
+@@ -3,7 +3,11 @@
+ obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
+ obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o
+ obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o
 +ifeq ($(CONFIG_SPI_QPIC_SNAND),y)
-+obj-y   += qpic_common.o
++obj-$(CONFIG_SPI_QPIC_SNAND) += qpic_common.o
++else
+ obj-$(CONFIG_MTD_NAND_QCOM) += qpic_common.o
 +endif
- endif
--
  obj-y	+= onenand/
  obj-y	+= raw/
  obj-y	+= spi/
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index f51f9466e518..1aaf93964429 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -870,6 +870,15 @@ config SPI_QCOM_QSPI
+@@ -920,6 +920,15 @@ config SPI_QCOM_QSPI
  	help
  	  QSPI(Quad SPI) driver for Qualcomm QSPI controller.
  
 +config SPI_QPIC_SNAND
 +	bool "QPIC SNAND controller"
 +	depends on ARCH_QCOM || COMPILE_TEST
-+	depends on MTD
++	select MTD
 +	help
 +	  QPIC_SNAND (QPIC SPI NAND) driver for Qualcomm QPIC controller.
 +	  QPIC controller supports both parallel nand and serial nand.
@@ -207,9 +245,11 @@ Change in [v1]
  config SPI_QUP
  	tristate "Qualcomm SPI controller with QUP interface"
  	depends on ARCH_QCOM || COMPILE_TEST
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index aea5e54de195..3309b7bb2445 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -110,6 +110,7 @@ obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-
+@@ -115,6 +115,7 @@ obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
  obj-$(CONFIG_SPI_QCOM_GENI)		+= spi-geni-qcom.o
  obj-$(CONFIG_SPI_QCOM_QSPI)		+= spi-qcom-qspi.o
@@ -217,9 +257,12 @@ Change in [v1]
  obj-$(CONFIG_SPI_QUP)			+= spi-qup.o
  obj-$(CONFIG_SPI_ROCKCHIP)		+= spi-rockchip.o
  obj-$(CONFIG_SPI_ROCKCHIP_SFC)		+= spi-rockchip-sfc.o
+diff --git a/drivers/spi/spi-qpic-snand.c b/drivers/spi/spi-qpic-snand.c
+new file mode 100644
+index 000000000000..1ba562a9369e
 --- /dev/null
 +++ b/drivers/spi/spi-qpic-snand.c
-@@ -0,0 +1,1634 @@
+@@ -0,0 +1,1633 @@
 +/*
 + * SPDX-License-Identifier: GPL-2.0
 + *
@@ -1422,9 +1465,9 @@ Change in [v1]
 +	return 0;
 +}
 +
-+static u32 qcom_spi_cmd_mapping(struct qcom_nand_controller *snandc, u32 opcode)
++static int qcom_spi_cmd_mapping(struct qcom_nand_controller *snandc, u32 opcode)
 +{
-+	u32 cmd = 0x0;
++	int cmd = 0x0;
 +
 +	switch (opcode) {
 +	case SPINAND_RESET:
@@ -1475,14 +1518,11 @@ Change in [v1]
 +static int qcom_spi_write_page(struct qcom_nand_controller *snandc,
 +			       const struct spi_mem_op *op)
 +{
-+	struct qpic_snand_op s_op = {};
-+	u32 cmd;
++	int cmd;
 +
 +	cmd = qcom_spi_cmd_mapping(snandc, op->cmd.opcode);
 +	if (cmd < 0)
 +		return cmd;
-+
-+	s_op.cmd_reg = cmd;
 +
 +	if (op->cmd.opcode == SPINAND_PROGRAM_LOAD)
 +		snandc->qspi->data_buf = (u8 *)op->data.buf.out;
@@ -1497,9 +1537,11 @@ Change in [v1]
 +	u32 cmd;
 +	int ret, opcode;
 +
-+	cmd = qcom_spi_cmd_mapping(snandc, op->cmd.opcode);
-+	if (cmd < 0)
-+		return cmd;
++	ret = qcom_spi_cmd_mapping(snandc, op->cmd.opcode);
++	if (ret < 0)
++		return ret;
++
++	cmd = ret;
 +
 +	s_op.cmd_reg = cmd;
 +	s_op.addr1_reg = op->addr.val;
@@ -1833,7 +1875,7 @@ Change in [v1]
 +
 +static const struct of_device_id qcom_snandc_of_match[] = {
 +	{
-+		.compatible = "qcom,spi-qpic-snand",
++		.compatible = "qcom,ipq9574-snand",
 +		.data = &ipq9574_snandc_props,
 +	},
 +	{}
@@ -1854,6 +1896,8 @@ Change in [v1]
 +MODULE_AUTHOR("Md Sadre Alam <quic_mdalam@quicinc.com>");
 +MODULE_LICENSE("GPL");
 +
+diff --git a/include/linux/mtd/nand-qpic-common.h b/include/linux/mtd/nand-qpic-common.h
+index e79c79775eb8..7dba89654d6c 100644
 --- a/include/linux/mtd/nand-qpic-common.h
 +++ b/include/linux/mtd/nand-qpic-common.h
 @@ -322,6 +322,10 @@ struct nandc_regs {
@@ -1891,3 +1935,5 @@ Change in [v1]
  	struct list_head host_list;
  
  	union {
+-- 
+2.34.1

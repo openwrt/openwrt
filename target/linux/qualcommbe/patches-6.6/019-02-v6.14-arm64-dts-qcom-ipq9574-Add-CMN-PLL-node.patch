@@ -1,7 +1,7 @@
-From ed97b7b7c657baf9c9d8e9dfebd9f7703c870593 Mon Sep 17 00:00:00 2001
+From 758aa2d7e3c0acfe9c952a1cbe6416ec6130c2a1 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
-Date: Thu, 7 Nov 2024 17:50:25 +0800
-Subject: [PATCH 4/5] arm64: dts: qcom: Add CMN PLL node for IPQ9574 SoC
+Date: Fri, 3 Jan 2025 15:31:37 +0800
+Subject: [PATCH 2/3] arm64: dts: qcom: ipq9574: Add CMN PLL node
 
 The CMN PLL clock controller allows selection of an input clock rate
 from a defined set of input clock rates. It in-turn supplies fixed
@@ -20,13 +20,16 @@ automatically configured by hardware (1 for 48 MHZ, 2 for 96 MHZ), to
 ensure output clock to CMN PLL is 48 MHZ.
 
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20250103-qcom_ipq_cmnpll-v8-4-c89fb4d4849d@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
- .../boot/dts/qcom/ipq9574-rdp-common.dtsi     | 16 +++++++++++-
+ .../boot/dts/qcom/ipq9574-rdp-common.dtsi     | 17 +++++++++++-
  arch/arm64/boot/dts/qcom/ipq9574.dtsi         | 26 ++++++++++++++++++-
- 2 files changed, 40 insertions(+), 2 deletions(-)
+ 2 files changed, 41 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
-index 91e104b0f865..78f6a2e053d5 100644
+index 91e104b0f865..bb1ff79360d3 100644
 --- a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
 @@ -3,7 +3,7 @@
@@ -38,14 +41,15 @@ index 91e104b0f865..78f6a2e053d5 100644
   */
  
  /dts-v1/;
-@@ -164,6 +164,20 @@ &usb3 {
+@@ -164,6 +164,21 @@ &usb3 {
  	status = "okay";
  };
  
 +/*
-+ * The bootstrap pins for the board select the XO clock frequency,
-+ * which automatically enables the right dividers to ensure the
-+ * reference clock output from WiFi is 48 MHZ.
++ * The bootstrap pins for the board select the XO clock frequency
++ * (48 MHZ or 96 MHZ used for different RDP type board). This setting
++ * automatically enables the right dividers, to ensure the reference
++ * clock output from WiFi to the CMN PLL is 48 MHZ.
 + */
 +&ref_48mhz_clk {
 +	clock-div = <1>;
@@ -60,7 +64,7 @@ index 91e104b0f865..78f6a2e053d5 100644
 +	clock-frequency = <48000000>;
 +};
 diff --git a/arch/arm64/boot/dts/qcom/ipq9574.dtsi b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
-index c113fff22f73..dc4965abff58 100644
+index 00ee3290c181..c543c3492e93 100644
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 @@ -3,10 +3,11 @@
@@ -76,7 +80,7 @@ index c113fff22f73..dc4965abff58 100644
  #include <dt-bindings/clock/qcom,ipq9574-gcc.h>
  #include <dt-bindings/interconnect/qcom,ipq9574.h>
  #include <dt-bindings/interrupt-controller/arm-gic.h>
-@@ -21,6 +22,12 @@ / {
+@@ -19,6 +20,12 @@ / {
  	#size-cells = <2>;
  
  	clocks {
@@ -89,7 +93,7 @@ index c113fff22f73..dc4965abff58 100644
  		sleep_clk: sleep-clk {
  			compatible = "fixed-clock";
  			#clock-cells = <0>;
-@@ -30,6 +37,11 @@ xo_board_clk: xo-board-clk {
+@@ -28,6 +35,11 @@ xo_board_clk: xo-board-clk {
  			compatible = "fixed-clock";
  			#clock-cells = <0>;
  		};
@@ -101,7 +105,7 @@ index c113fff22f73..dc4965abff58 100644
  	};
  
  	cpus {
-@@ -245,6 +257,18 @@ mdio: mdio@90000 {
+@@ -335,6 +347,18 @@ pcie1_phy: phy@fc000 {
  			status = "disabled";
  		};
  
@@ -121,5 +125,5 @@ index c113fff22f73..dc4965abff58 100644
  			compatible = "qcom,ipq9574-qfprom", "qcom,qfprom";
  			reg = <0x000a4000 0x5a1>;
 -- 
-2.45.2
+2.47.1
 

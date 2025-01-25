@@ -1,7 +1,7 @@
-From be826ce36477e94539f5d2dfe292126dbb39b3a4 Mon Sep 17 00:00:00 2001
+From c0f1cbf795095c21b92a46fa1dc47a7b787ce538 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
-Date: Thu, 7 Nov 2024 17:50:22 +0800
-Subject: [PATCH 1/5] dt-bindings: clock: qcom: Add CMN PLL clock controller
+Date: Fri, 3 Jan 2025 15:31:34 +0800
+Subject: [PATCH 1/3] dt-bindings: clock: qcom: Add CMN PLL clock controller
  for IPQ SoC
 
 The CMN PLL controller provides clocks to networking hardware blocks
@@ -14,21 +14,23 @@ connected switch or PHY device. The CMN PLL block also outputs fixed
 rate clocks to GCC, such as 24 MHZ as XO clock and 32 KHZ as sleep
 clock supplied to GCC.
 
-Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20250103-qcom_ipq_cmnpll-v8-1-c89fb4d4849d@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
- .../bindings/clock/qcom,ipq9574-cmn-pll.yaml  | 85 +++++++++++++++++++
- include/dt-bindings/clock/qcom,ipq-cmn-pll.h  | 22 +++++
- 2 files changed, 107 insertions(+)
+ .../bindings/clock/qcom,ipq9574-cmn-pll.yaml  | 77 +++++++++++++++++++
+ include/dt-bindings/clock/qcom,ipq-cmn-pll.h  | 22 ++++++
+ 2 files changed, 99 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml
  create mode 100644 include/dt-bindings/clock/qcom,ipq-cmn-pll.h
 
 diff --git a/Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml b/Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml
 new file mode 100644
-index 000000000000..db8a3ee56067
+index 000000000000..f869b3739be8
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,77 @@
 +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
 +%YAML 1.2
 +---
@@ -80,20 +82,12 @@ index 000000000000..db8a3ee56067
 +  "#clock-cells":
 +    const: 1
 +
-+  assigned-clocks:
-+    maxItems: 1
-+
-+  assigned-clock-rates-u64:
-+    maxItems: 1
-+
 +required:
 +  - compatible
 +  - reg
 +  - clocks
 +  - clock-names
 +  - "#clock-cells"
-+  - assigned-clocks
-+  - assigned-clock-rates-u64
 +
 +additionalProperties: false
 +
@@ -143,5 +137,5 @@ index 000000000000..936e92b3b62c
 +#define ETH_25MHZ_CLK			9
 +#endif
 -- 
-2.45.2
+2.47.1
 
