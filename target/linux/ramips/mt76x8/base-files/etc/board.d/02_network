@@ -109,6 +109,7 @@ ramips_setup_interfaces()
 		;;
 	duzun,dm06|\
 	glinet,gl-mt300n-v2|\
+	hongdian,h7920-v40|\
 	teltonika,rut200|\
 	teltonika,rut241)
 		ucidef_add_switch "switch0" \
@@ -299,6 +300,7 @@ ramips_setup_macs()
 	totolink,a3)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
 		;;
+	hongdian,h7920-v40|\
 	jotale,js76x8-8m|\
 	jotale,js76x8-16m|\
 	jotale,js76x8-32m|\
