@@ -1004,9 +1004,6 @@ wpa_supplicant_start() {
 }
 
 mac80211_setup_supplicant() {
-	local enable=$1
-	local add_sp=0
-
 	wpa_supplicant_prepare_interface "$ifname" nl80211 || return 1
 
 	if [ "$mode" = "sta" ]; then
@@ -1147,10 +1144,6 @@ drv_mac80211_setup() {
 	}
 
 	set_default ifname_prefix "$phy$vif_phy_suffix-"
-
-	local wdev
-	local cwdev
-	local found
 
 	# convert channel to frequency
 	[ "$auto_channel" -gt 0 ] || freq="$(get_freq "$phy" "$channel" "$band")"
