@@ -75,7 +75,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="tplink_tl-xdr4288_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/tplink_tl-xdr4288_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -205,7 +205,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="tplink_tl-xdr6086_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/tplink_tl-xdr6086_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -335,7 +335,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="tplink_tl-xdr6088_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/tplink_tl-xdr6088_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -588,7 +588,7 @@
 +	status = "disabled";
 +};
 --- /dev/null
-+++ b/tplink_tl-xdr4288_env
++++ b/defenvs/tplink_tl-xdr4288_env
 @@ -0,0 +1,57 @@
 +ethaddr_factory=mtd read config 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008001c 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
@@ -648,7 +648,7 @@
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
-+++ b/tplink_tl-xdr6086_env
++++ b/defenvs/tplink_tl-xdr6086_env
 @@ -0,0 +1,57 @@
 +ethaddr_factory=mtd read config 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008001c 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
@@ -708,7 +708,7 @@
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
-+++ b/tplink_tl-xdr6088_env
++++ b/defenvs/tplink_tl-xdr6088_env
 @@ -0,0 +1,57 @@
 +ethaddr_factory=mtd read config 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008001c 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1

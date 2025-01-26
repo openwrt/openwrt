@@ -65,7 +65,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="abt_asr3000_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/abt_asr3000_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -287,7 +287,7 @@
 +	status = "disabled";
 +};
 --- /dev/null
-+++ b/abt_asr3000_env
++++ b/defenvs/abt_asr3000_env
 @@ -0,0 +1,55 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254

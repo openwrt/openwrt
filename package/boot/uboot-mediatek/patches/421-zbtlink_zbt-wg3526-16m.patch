@@ -68,7 +68,7 @@
 +CONFIG_ENV_SIZE_REDUND=0x10000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="zbtlink_zbt-wg3526-16m_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/zbtlink_zbt-wg3526-16m_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -99,7 +99,7 @@
 +# CONFIG_GZIP is not set
 +CONFIG_SPL_LZMA=y
 --- /dev/null
-+++ b/zbtlink_zbt-wg3526-16m_env
++++ b/defenvs/zbtlink_zbt-wg3526-16m_env
 @@ -0,0 +1,36 @@
 +ethaddr_factory=mtd read factory $loadaddr 0x0 0x10000 ; setexpr macoffs $loadaddr + 0xe000 ; env readmem -b ethaddr $macoffs 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
