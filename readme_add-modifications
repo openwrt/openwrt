@@ -49,11 +49,11 @@ gpio_export {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
 ########################################
-⒉创建目录和文件files/etc/uci-defaults/mi3g 
-增加了第1次启动脚本mi3g:
+⒉创建目录和文件files/etc/uci-defaults/mi3g.ssh
+增加了第1次启动脚本mi3g.ssh:
 
 
-#r3g 24.10主分支_master https://github.com/sxf2314/openwrt.git
+#r3g 分支openwrt-24.10 https://github.com/sxf2314/openwrt
 #开WiFi 5g WiFi信道设置为国家_俄罗斯（俄罗斯没有任何限制）
 uci set wireless.radio0.disabled='0'
 uci set wireless.radio1.disabled='0'
