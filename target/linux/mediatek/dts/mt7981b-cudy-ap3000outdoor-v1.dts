@@ -8,7 +8,7 @@
 
 / {
 	model = "Cudy AP3000 Outdoor v1";
-	compatible = "cudy,ap3000outdoor-v1", "mediatek,mt7981-spim-snand-rfb";
+	compatible = "cudy,ap3000outdoor-v1", "mediatek,mt7981";
 
 	aliases {
 		label-mac-device = &wifi;
@@ -42,18 +42,19 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_green: led@0 {
+		led_status_green: led-0 {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 10 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_status_red: led_1 {
+		led_status_red: led-1 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
@@ -89,7 +90,6 @@
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
 	status = "okay";
 
 	gmac1: mac@1 {
@@ -148,6 +148,7 @@
 				label = "Factory";
 				reg = <0x180000 0x0200000>;
 				read-only;
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -163,6 +164,7 @@
 				label = "bdinfo";
 				reg = <0x380000 0x0040000>;
 				read-only;
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -174,24 +176,22 @@
 						#nvmem-cell-cells = <1>;
 					};
 				};
-
 			};
 
-			partition@3C0000 {
+			partition@3c0000 {
 				label = "FIP";
-				reg = <0x3C0000 0x0200000>;
+				reg = <0x3c0000 0x0200000>;
 				read-only;
 			};
 
-			partition@580000 {
+			partition@5c0000 {
 				label = "ubi";
-				reg = <0x5C0000 0x4000000>;
+				reg = <0x5c0000 0x4000000>;
 				compatible = "linux,ubi";
 			};
 		};
 	};
 };
-
 
 &pio {
 	spi0_flash_pins: spi0-pins {

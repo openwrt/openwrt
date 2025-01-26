@@ -3,7 +3,7 @@ This replaces it by a basic working implementation.
 
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -603,7 +603,11 @@ static void atm_aca_init(struct atm_priv
+@@ -545,7 +545,11 @@ static void atm_aca_init(struct atm_priv
  	cfg = &priv->tc_priv->cfg;
  
  	txin = &param.aca_txin;
@@ -15,7 +15,7 @@ This replaces it by a basic working implementation.
  	txin->hd_size_in_dw = cfg->txin.soc_desc_dwsz;
  	txin->pd_desc_base = SB_XBAR_ADDR(__ACA_TX_IN_PD_LIST_BASE);
  	txin->pd_desc_num = __ACA_TX_IN_PD_LIST_NUM;
-@@ -625,7 +629,11 @@ static void atm_aca_init(struct atm_priv
+@@ -567,7 +571,11 @@ static void atm_aca_init(struct atm_priv
  		txin->soc_cmlt_cnt_addr);
  
  	txout = &param.aca_txout;
@@ -27,7 +27,7 @@ This replaces it by a basic working implementation.
  	txout->hd_size_in_dw = cfg->txout.soc_desc_dwsz;
  	txout->pd_desc_base = SB_XBAR_ADDR(__ACA_TX_OUT_PD_LIST_BASE);
  	txout->pd_desc_num = __ACA_TX_OUT_PD_LIST_NUM;
-@@ -647,7 +655,11 @@ static void atm_aca_init(struct atm_priv
+@@ -589,7 +597,11 @@ static void atm_aca_init(struct atm_priv
  		txout->soc_cmlt_cnt_addr);
  
  	rxout = &param.aca_rxout;
@@ -39,7 +39,7 @@ This replaces it by a basic working implementation.
  	rxout->hd_size_in_dw = cfg->rxout.soc_desc_dwsz;
  	rxout->pd_desc_base = SB_XBAR_ADDR(__ACA_RX_OUT_PD_LIST_BASE);
  	rxout->pd_desc_num = __ACA_RX_OUT_PD_LIST_NUM;
-@@ -669,7 +681,11 @@ static void atm_aca_init(struct atm_priv
+@@ -611,7 +623,11 @@ static void atm_aca_init(struct atm_priv
  		rxout->soc_cmlt_cnt_addr);
  
  	rxin = &param.aca_rxin;
@@ -51,7 +51,7 @@ This replaces it by a basic working implementation.
  	rxin->hd_size_in_dw = cfg->rxin.soc_desc_dwsz;
  	rxin->pd_desc_base = SB_XBAR_ADDR(__RX_IN_PD_DES_LIST_BASE);
  	rxin->pd_desc_num = __ACA_RX_IN_PD_LIST_NUM;
-@@ -1261,7 +1277,7 @@ static int ppe_ioctl(struct atm_dev *dev
+@@ -1180,7 +1196,7 @@ static int ppe_ioctl(struct atm_dev *dev
  static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
  {
  	int ret, qid, mpoa_pt, mpoa_type, vid;
@@ -60,7 +60,7 @@ This replaces it by a basic working implementation.
  	struct atm_priv *priv;
  
  	if (!vcc) {
-@@ -1327,12 +1343,14 @@ static int ppe_send(struct atm_vcc *vcc,
+@@ -1246,12 +1262,14 @@ static int ppe_send(struct atm_vcc *vcc,
  	tc_dbg(priv->tc_priv, MSG_TX, "vid: 0x%x, qid: 0x%x\n",
  			vid, qid);
  
@@ -855,12 +855,12 @@ This replaces it by a basic working implementation.
 -			continue;
 +
 +		// this seems to be a pointer to a DS PKT buffer
-+		phyaddr = desc->data_ptr + desc->byte_off;
++		phyaddr = desc->data_ptr;
 +		ptr = plat_mem_virt(phyaddr);
-+
 +		len = desc->data_len;
 +
-+		dma_sync_single_range_for_cpu(pdev, phyaddr, 0, len, DMA_FROM_DEVICE);
++		dma_sync_single_for_cpu(pdev, phyaddr, desc->byte_off + len,
++					DMA_FROM_DEVICE);
 +
 +		skb = netdev_alloc_skb(g_plat_priv->netdev, len);
 +		if (unlikely(!skb)) {
@@ -871,7 +871,7 @@ This replaces it by a basic working implementation.
 -		ring_idx_inc(rxout, idx);
 +
 +		dst = skb_put(skb, len);
-+		memcpy(dst, ptr, len);
++		memcpy(dst, ptr + desc->byte_off, len);
 +
 +		priv->tc_ops.recv(g_plat_priv->netdev, skb);
 +

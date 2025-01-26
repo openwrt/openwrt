@@ -1,0 +1,75 @@
+From: Sergey Ryazanov <ryazanov.s.a@gmail.com>
+Date: Fri, 10 Jan 2025 00:57:27 +0000
+Subject: [PATCH] vrx518_tc: atm_tc: fix crash on subif_reg absence
+
+VRX518 (sw_plat) platform does not provid the subif_reg/subif_unreg ops
+in the same time ATM TC layer unconditionally calls them, what leads to
+the kernel crash on the atm_hook_mpoa_setup hook invocation from the ATM
+stack:
+
+  vrx518_tc:mpoa_setup_sync : sync: conn: 0, vpi: 0, vci: 35, mpoa_type: 0, mpoa_mode: 0
+  Unable to handle kernel NULL pointer dereference at virtual address 00000000
+
+Subif registration is optional and PTM TC do this only when the
+corresponding ops are defined. Do the same for ATM TC and call
+subif_reg/subif_unreg only if they are not NULL.
+
+While at it, move subif related data preparation under the 'if' block
+in order to group and isolate that aux code.
+
+Run tested with FRITZ!Box 7530.
+
+Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
+---
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -1158,8 +1158,9 @@ static void ppe_close(struct atm_vcc *vc
+ 		validate_oam_htu_entry(priv, 0);
+ 	spin_unlock_bh(&priv->atm_lock);
+ 
+-	priv->tc_priv->tc_ops.subif_unreg(dev, (!dev) ? dev_name : dev->name,
+-					priv->conn[cid].subif_id, 0);
++	if (priv->tc_priv->tc_ops.subif_unreg)
++		priv->tc_priv->tc_ops.subif_unreg(dev, (!dev) ? dev_name : dev->name,
++						  priv->conn[cid].subif_id, 0);
+ 				
+ 	memset(conn, 0, sizeof(*conn));
+ 
+@@ -2710,24 +2711,26 @@ static void mpoa_setup_sync(struct atm_p
+ 	struct wtx_queue_config_t tx_qcfg;
+ 	struct uni_cell_header *cell_header;
+ 	struct atm_vcc *vcc;
+-	struct net_device *dev;
+-	char dev_name[32];
+ 
+ 	tc_dbg(priv->tc_priv, MSG_INIT,
+ 		"sync: conn: %d, vpi: %d, vci: %d, mpoa_type: %d, mpoa_mode: %d\n",
+ 		conn, priv->conn[conn].vcc->vpi, priv->conn[conn].vcc->vci,
+ 		priv->conn[conn].mpoa_type, priv->conn[conn].mpoa_mode);
+ 
+-	dev = priv->conn[conn].dev;
++	if (priv->tc_priv->tc_ops.subif_reg) {
++		struct net_device *dev;
++		char dev_name[32];
++
++		dev = priv->conn[conn].dev;
++		if (!dev)
++			sprintf(dev_name, "atm_%d%d",
++				priv->conn[conn].vcc->vpi, priv->conn[conn].vcc->vci);
+ 
+-	if (!dev)
+-		sprintf(dev_name, "atm_%d%d",
+-			priv->conn[conn].vcc->vpi, priv->conn[conn].vcc->vci);
+-
+-	priv->tc_priv->tc_ops.subif_reg(dev, (!dev) ? dev_name : dev->name,
+-				&priv->conn[conn].subif_id, 0);
+-	tc_dbg(priv->tc_priv, MSG_INIT,
+-		"conn[%d]subif_id[%x]", conn, priv->conn[conn].subif_id);
++		priv->tc_priv->tc_ops.subif_reg(dev, !dev ? dev_name : dev->name,
++						&priv->conn[conn].subif_id, 0);
++		tc_dbg(priv->tc_priv, MSG_INIT,
++		       "conn[%d]subif_id[%x]", conn, priv->conn[conn].subif_id);
++	}
+ 	vcc = priv->conn[conn].vcc;
+ 
+ 	/*  set htu entry   */
