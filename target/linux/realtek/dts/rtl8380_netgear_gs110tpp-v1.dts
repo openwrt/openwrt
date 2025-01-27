@@ -37,6 +37,15 @@
 	};
 };
 
+&gpio1 {
+	poe-enable {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "poe-enable";
+	};
+};
+
 &firmware {
 	openwrt,ih-magic = <0x4e474520>;
 };
