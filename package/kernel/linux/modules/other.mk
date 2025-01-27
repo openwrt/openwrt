@@ -714,10 +714,7 @@ define KernelPackage/zram/config
   if PACKAGE_kmod-zram
     if !LINUX_6_6
         config KERNEL_ZRAM_BACKEND_LZO
-                bool "lzo and lzo-rle compression support" if KERNEL_ZRAM_BACKEND_LZ4 || \
-                    KERNEL_ZRAM_BACKEND_LZ4HC || KERNEL_ZRAM_BACKEND_ZSTD
-                default !KERNEL_ZRAM_BACKEND_LZ4 && \
-                    !KERNEL_ZRAM_BACKEND_LZ4HC && !KERNEL_ZRAM_BACKEND_ZSTD
+                bool "lzo and lzo-rle compression support"
 
         config KERNEL_ZRAM_BACKEND_LZ4
                 bool "lz4 compression support"
@@ -727,6 +724,12 @@ define KernelPackage/zram/config
 
         config KERNEL_ZRAM_BACKEND_ZSTD
                 bool "zstd compression support"
+
+        config KERNEL_ZRAM_BACKEND_FORCE_LZO
+                def_bool !KERNEL_ZRAM_BACKEND_LZ4 && \
+                         !KERNEL_ZRAM_BACKEND_LZ4HC && \
+                         !KERNEL_ZRAM_BACKEND_ZSTD
+                select KERNEL_ZRAM_BACKEND_LZO
 
     endif
     choice
