@@ -1,0 +1,98 @@
+From 8ce27433f8b2e17c557cb55e4f16941d309deeac Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 17 Jan 2025 17:49:29 +0000
+Subject: [PATCH] Handle DS queries to auth zones.
+Origin: upstream, v2.91test8
+
+When dnsmasq is configured to act as an authoritative server and has
+an authoritative zone configured, and recieves a query for
+that zone _as_forwarder_ it answers the query directly rather
+than forwarding it. This doesn't affect the answer, but it
+saves dnsmasq forwarding the query to the recusor upstream,
+whch then bounces it back to dnsmasq in auth mode. The
+exception should be when the query is for the root of zone, for a DS
+RR. The answer to that has to come from the parent, via the
+recursor, and will typically be a proof-of-nonexistence since
+dnsmasq doesn't support signed zones. This patch suppresses
+local answers and forces forwarding to the upstream recursor
+for such queries. It stops breakage when a DNSSEC validating
+client makes queries to dnsmasq acting as forwarder for a zone
+for which it is authoritative.
+
+[ukleinek: drop changes to CHANGELOG to prevent conflicts]
+---
+ src/forward.c | 52 +++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 38 insertions(+), 14 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -1744,15 +1744,27 @@ void receive_query(struct listener *list
+ #endif
+ 
+ #ifdef HAVE_AUTH
+-      /* find queries for zones we're authoritative for, and answer them directly */
++      /* Find queries for zones we're authoritative for, and answer them directly.
++	 The exception to this is DS queries for the zone route. They
++	 have to come from the parent zone. Since dnsmasq's auth server
++	 can't do DNSSEC, the zone will be unsigned, and anything using
++	 dnsmasq as a forwarder and doing validation will be expecting to
++	 see the proof of non-existence from the parent. */
+       if (!auth_dns && !option_bool(OPT_LOCALISE))
+ 	for (zone = daemon->auth_zones; zone; zone = zone->next)
+-	  if (in_zone(zone, daemon->namebuff, NULL))
+-	    {
+-	      auth_dns = 1;
+-	      local_auth = 1;
+-	      break;
+-	    }
++	  {
++	    char *cut;
++	    
++	    if (in_zone(zone, daemon->namebuff, &cut))
++	      {
++		if (type != T_DS || cut)
++		  {
++		    auth_dns = 1;
++		    local_auth = 1;
++		  }
++		break;
++	      }
++	  }
+ #endif
+       
+ #ifdef HAVE_LOOP
+@@ -2268,15 +2280,27 @@ unsigned char *tcp_request(int confd, ti
+ 				   &peer_addr, auth_dns ? "auth" : "query", qtype);
+ 	      
+ #ifdef HAVE_AUTH
+-	      /* find queries for zones we're authoritative for, and answer them directly */
++	      /* Find queries for zones we're authoritative for, and answer them directly.
++		 The exception to this is DS queries for the zone route. They
++		 have to come from the parent zone. Since dnsmasq's auth server
++		 can't do DNSSEC, the zone will be unsigned, and anything using
++		 dnsmasq as a forwarder and doing validation will be expecting to
++		 see the proof of non-existence from the parent. */
+ 	      if (!auth_dns && !option_bool(OPT_LOCALISE))
+ 		for (zone = daemon->auth_zones; zone; zone = zone->next)
+-		  if (in_zone(zone, daemon->namebuff, NULL))
+-		    {
+-		      auth_dns = 1;
+-		      local_auth = 1;
+-		      break;
+-		    }
++		  {
++		    char *cut;
++		    
++		    if (in_zone(zone, daemon->namebuff, &cut))
++		      {
++			if (qtype != T_DS || cut)
++			  {
++			    auth_dns = 1;
++			    local_auth = 1;
++			  }
++			break;
++		      }
++		  }
+ #endif
+ 	    }
+ 	}
