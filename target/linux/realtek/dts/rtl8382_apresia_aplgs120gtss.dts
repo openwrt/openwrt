@@ -48,6 +48,9 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
+		pinctrl-names = "default";
+		pinctrl-0 = <&reset_key_debounce>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio1 33 GPIO_ACTIVE_LOW>;
@@ -141,6 +144,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		gpio-ranges = <&gpio1 0 0 37>;
+
+		reset_key_debounce: reset-key-pins {
+			pins = "gpio33";
+			input-debounce = <100000>;
+		};
 
 		led-controller {
 			compatible = "realtek,rtl8231-leds";
