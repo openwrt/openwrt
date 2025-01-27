@@ -1,7 +1,7 @@
-From fa27cb99b297a1a9c0a5824afe5a670e424fff61 Mon Sep 17 00:00:00 2001
+From 84cf9e541cccb8cb698518a9897942e8c78f1d83 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Wed, 16 Oct 2024 18:00:57 +0200
-Subject: [PATCH v9 2/2] cpufreq: airoha: Add EN7581 CPUFreq SMCCC driver
+Date: Thu, 9 Jan 2025 14:12:58 +0100
+Subject: [PATCH] cpufreq: airoha: Add EN7581 CPUFreq SMCCC driver
 
 Add simple CPU Freq driver for Airoha EN7581 SoC that control CPU
 frequency scaling with SMC APIs and register a generic "cpufreq-dt"
@@ -14,29 +14,8 @@ Add SoC compatible to cpufreq-dt-plat block list as a dedicated cpufreq
 driver is needed with OPP v2 nodes declared in DTS.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 ---
-Changes v9:
-- Fix compile error targetting wrong branch (remove_new change and new PM OPs)
-Changes v8:
-- Split in dedicated PM domain driver
-Changes v7:
-- No changes
-Changes v6:
-- Improve Kconfig depends logic
-- Select PM (PM_GENERIC_DOMAINS depends on it)
-- Drop (int) cast for 
-Changes v5:
-- Rename cpu_pd to perf for power domain name
-- Use remove instead of remove_new
-Changes v4:
-- Rework to clk-only + PM set_performance_state implementation
-Changes v3:
-- Adapt to new cpufreq-dt APIs
-- Register cpufreq-dt instead of custom freq driver
-Changes v2:
-- Fix kernel bot error with missing slab.h and bitfield.h header
-- Limit COMPILE_TEST to ARM64 due to smcc 1.2
-
  drivers/cpufreq/Kconfig.arm          |   8 ++
  drivers/cpufreq/Makefile             |   1 +
  drivers/cpufreq/airoha-cpufreq.c     | 152 +++++++++++++++++++++++++++
@@ -104,11 +83,15 @@ Changes v2:
 +}
 +
 +static const char * const airoha_cpufreq_clk_names[] = { "cpu", NULL };
-+static const char * const airoha_cpufreq_genpd_names[] = { "cpu_pd", NULL };
++static const char * const airoha_cpufreq_pd_names[] = { "perf", NULL };
 +
 +static int airoha_cpufreq_probe(struct platform_device *pdev)
 +{
-+	struct dev_pm_opp_config config = { };
++	struct dev_pm_opp_config config = {
++		.clk_names = airoha_cpufreq_clk_names,
++		.config_clks = airoha_cpufreq_config_clks_nop,
++		.genpd_names = airoha_cpufreq_pd_names,
++	};
 +	struct platform_device *cpufreq_dt;
 +	struct airoha_cpufreq_priv *priv;
 +	struct device *dev = &pdev->dev;
@@ -125,18 +108,14 @@ Changes v2:
 +	if (!priv)
 +		return -ENOMEM;
 +
-+	config.clk_names = airoha_cpufreq_clk_names;
-+	config.config_clks = airoha_cpufreq_config_clks_nop;
-+	config.genpd_names = airoha_cpufreq_genpd_names;
-+	config.virt_devs = &virt_devs;
-+
++	/* Set OPP table conf with NOP config_clks */
 +	priv->opp_token = dev_pm_opp_set_config(cpu_dev, &config);
 +	if (priv->opp_token < 0)
 +		return dev_err_probe(dev, priv->opp_token, "Failed to set OPP config\n");
 +
 +	/* Set Attached PM for OPP ACTIVE */
 +	if (virt_devs) {
-+		const char * const *name = airoha_cpufreq_genpd_names;
++		const char * const *name = airoha_cpufreq_pd_names;
 +		int i, j;
 +
 +		for (i = 0; *name; i++, name++) {
@@ -177,7 +156,7 @@ Changes v2:
 +static void airoha_cpufreq_remove(struct platform_device *pdev)
 +{
 +	struct airoha_cpufreq_priv *priv = platform_get_drvdata(pdev);
-+	const char * const *name = airoha_cpufreq_genpd_names;
++	const char * const *name = airoha_cpufreq_pd_names;
 +	int i;
 +
 +	platform_device_unregister(priv->cpufreq_dt);
