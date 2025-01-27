@@ -1,12 +1,14 @@
-From 4fc22765b3888cf6575015b904718bfd36d1f49c Mon Sep 17 00:00:00 2001
+From bfe257f9780d8f77045a7da6ec959ee0659d2f98 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Wed, 11 Dec 2024 12:22:38 +0100
+Date: Tue, 14 Jan 2025 00:10:05 +0100
 Subject: [PATCH 4/4] clk: en7523: Add clock for eMMC for EN7581
 
 Add clock for eMMC for EN7581. This is used to give info of the current
 eMMC source clock and to switch it from 200MHz or 150MHz.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20250113231030.6735-5-ansuelsmth@gmail.com
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
