@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+  URL:=https://github.com/horms/kexec-tools
 endef
 
 define Package/kexec-tools
