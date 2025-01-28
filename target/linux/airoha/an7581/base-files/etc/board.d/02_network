@@ -1,0 +1,25 @@
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+airoha_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+		gemtek,w1700k)
+			#ucidef_set_interfaces_lan_wan "lan1 lan2 10g-lan2" 10g-wan
+			ucidef_set_interface_lan "lan1 lan2"
+		;;
+		*)
+			echo "Unsupported hardware. Network interfaces not initialized."
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+airoha_setup_interfaces $board
+board_config_flush
+
+exit 0
