@@ -42,3 +42,21 @@ define Device/airoha_an7581-evb-emmc
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc
+
+define Device/gemtek_w1700k
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := W1700K
+  DEVICE_ALT0_VENDOR := CenturyLink
+  DEVICE_ALT0_MODEL := W1700K
+  DEVICE_ALT1_VENDOR := Lumen
+  DEVICE_ALT1_MODEL := W1700K
+  DEVICE_ALT2_VENDOR := Quantum Fiber
+  DEVICE_ALT2_MODEL := W1700K
+  DEVICE_PACKAGES := kmod-i2c-an7581 kmod-hwmon-nct7802 \
+		    kmod-mt7996-firmware kmod-phy-rtl8261n \
+		    wpad-basic-mbedtls
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SOC := an7581
+endef
+TARGET_DEVICES += gemtek_w1700k
