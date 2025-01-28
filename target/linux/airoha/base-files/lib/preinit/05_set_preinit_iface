@@ -1,0 +1,12 @@
+set_preinit_iface()
+{
+	local board=$(board_name)
+	case "$board" in
+	*)
+		ip link set eth0 up
+		ifname=lan1
+		;;
+	esac	
+}
+
+boot_hook_add preinit_main set_preinit_iface
