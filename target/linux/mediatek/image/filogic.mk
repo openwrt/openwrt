@@ -1455,6 +1455,32 @@ define Device/tenbay_wr3000k
 endef
 TARGET_DEVICES += tenbay_wr3000k
 
+define Device/tplink_archer-ax80-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := Archer AX80V1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  DEVICE_DTS := mt7986a-tplink-archer-ax80-v1
+  SUPPORTED_DEVICES += mediatek,mt7986a-snand-rfb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBOOTENV_IN_UBI := 1
+  KERNEL_IN_UBI := 1
+  IMAGE_SIZE := 51200k
+  IMAGES += second-uboot.bin factory.bin webui-factory.bin
+  IMAGE/second-uboot.bin := uboot-bin tplink_archer-ax80 | mkimage-arm-standalone
+  UBINIZE_PARTS := uboot=$(BIN_DIR)/$$(DEVICE_IMG_PREFIX)-squashfs-second-uboot.bin 
+  IMAGE/factory.bin := append-ubi | pad-to 128k
+  IMAGE/webui-factory.bin := append-ubi | pad-to 128k | tplink-mkimage-ubi
+    TPLINK_DEVICE := Archer AX80
+    TPLINK_IDS := 55530000,43410000,52550000
+    TPLINK_VERSION := 1.0.0
+    TPLINK_FWVER := 1.1.3
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_archer-ax80-v1
+
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE6000XD
