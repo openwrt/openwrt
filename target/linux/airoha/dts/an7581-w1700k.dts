@@ -1,0 +1,401 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+/* Bootloader installs ATF here */
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7581.dtsi"
+
+/ {
+	model = "Gemtek W1700K";
+	compatible = "gemtek,w1700k", "airoha,an7581";
+	/* drop "airoha,en7581" as cpufreq doesn't work */
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_blue;
+		led-upgrade = &led_status_blue;
+		led-running = &led_status_green;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x0 0x80200000 0x0 0x7fe00000>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x80000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-restart {
+			label = "Reset";
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 29 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: led-3 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&en7581_pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&en7581_pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&en7581_pinctrl 28 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie2_rst_pins: pcie2-rst-pins {
+		conf {
+			pins = "pcie_reset2";
+			drive-open-drain = <1>;
+		};
+	};
+
+	/* W1700K does not use the built-in LED controller. Instead, it uses GPIO.
+	 * The driver fails to probe without gswpX_led0_pins defined, so put a dummy
+	 * here.
+	 */
+
+	gswp1_led0_pins: gswp1-led0-pins {
+		mux {
+			function = "phy1_led0";
+			pins = "gpio33";
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			function = "phy2_led0";
+			pins = "gpio34";
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2";
+		};
+	};
+
+	hsuart_pins: hsuart-pins {
+		mux {
+			function = "uart";
+			groups = "hsuart";
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00200000>;
+			read-only;
+		};
+
+		partition@200000 {
+			label = "uenv";
+			reg = <0x00200000 0x00200000>;
+		};
+
+		partition@400000 {
+			label = "dsd";
+			reg = <0x00400000 0x00200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "ascii-eq-delim-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				lan_mac: lan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+
+				wan_mac: wan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+
+			nvmem-layout@5000 {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_5000: eeprom@5000 {
+					reg = <0x5000 0x1e00>;
+				};
+			};
+		};
+
+		partition@600000 {
+			label = "kernel";
+			reg = <0x00600000 0x01000000>;
+		};
+
+		partition@1600000 {
+			label = "rootfs";
+			reg = <0x01600000 0x1e800000>;
+			compatible = "linux,ubi";
+		};
+
+		/* reserved for bad block table */
+		reserved_bmt@1fe00000 {
+			label = "reserved_bmt";
+			reg = <0x1fe00000 0x00200000>;
+			read-only;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	hwmon@2e {
+		compatible = "nuvoton,nct7802";
+		reg = <0x2e>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7996@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_5000>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5895000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&lan_mac 1>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&lan_mac 2>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&lan_mac 3>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&pcie2 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2_rst_pins>;
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-handle = <&phy8>;
+	phy-mode = "usxgmii";
+
+	nvmem-cells = <&wan_mac 0>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "wan";
+};
+
+&gdm4 {
+	status = "okay";
+
+	phy-handle = <&phy5>;
+	phy-mode = "usxgmii";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "lan2";
+};
+
+&switch {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	mdio {
+		phy5: ethernet-phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+			reset-gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <40000>;
+			reset-deassert-us = <150000>;
+			interrupt-parent = <&en7581_pinctrl>;
+			interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
+			realtek,pnswap-tx;
+			realtek,pnswap-rx;
+		};
+
+		phy8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <8>;
+			reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <40000>;
+			reset-deassert-us = <150000>;
+			interrupt-parent = <&en7581_pinctrl>;
+			interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+			realtek,pnswap-tx;
+			realtek,pnswap-rx;
+		};
+	};
+};
+
+&gsw_phy1 {
+	status = "okay";
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp1_led0_pins>;
+};
+
+&gsw_port1 {
+	status = "okay";
+	label = "lan3";
+};
+
+&gsw_phy2 {
+	status = "okay";
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gswp2_led0_pins>;
+};
+
+&gsw_port2 {
+	status = "okay";
+	label = "lan4";
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+};
+
+&hsuart3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&hsuart_pins>;
+};
