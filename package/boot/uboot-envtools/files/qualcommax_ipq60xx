@@ -29,6 +29,7 @@ tplink,eap610-outdoor)
 	idx="$(find_mtd_index 0:appsblenv)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000"
+	;;
 yuncore,fap650)
 	idx="$(find_mtd_index 0:appsblenv)"
 	[ -n "$idx" ] && \
