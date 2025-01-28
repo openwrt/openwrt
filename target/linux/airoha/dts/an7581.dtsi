@@ -491,7 +491,7 @@
 		};
 
 		scuclk: clock-controller@1fa20000 {
-			compatible = "airoha,en7581-scu";
+			compatible = "airoha,en7581-scu", "syscon";
 			reg = <0x0 0x1fb00000 0x0 0x970>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
