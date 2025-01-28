@@ -1,0 +1,88 @@
+⒈"mt7621_xiaomi_nand_128m.dtsi" Add modifications:
+#增加了usbpower控制
+
+gpio_export {
+	compatible = "gpio-export";
+	#size-cells = <0>;
+
+	usb3power {
+		gpio-export,name = "usb3power";
+		gpio-export,output = <1>;
+		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+	};
+
+};
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+#原来的:
+	reg_usb_vbus: regulator {
+			compatible = "regulator-fixed";
+			regulator-name = "usb_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+	};
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+#修改后:
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usb3power {
+		gpio-export,name = "usb3power";
+		gpio-export,output = <1>;
+		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+	reg_usb_vbus: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+########################################
+⒉创建目录和文件files/etc/uci-defaults/mi3g.ssh
+增加了第1次启动脚本mi3g.ssh:
+
+
+#r3g 分支openwrt-24.10 https://github.com/sxf2314/openwrt
+#开WiFi 5g WiFi信道设置为国家_俄罗斯（俄罗斯没有任何限制）
+uci set wireless.radio0.disabled='0'
+uci set wireless.radio1.disabled='0'
+uci set wireless.radio1.channel='64'
+uci set wireless.radio1.country='RU'
+uci commit wireless
+
+#设置 usnwan usbwan6 并且不要请求ipv6的前缀_手机卡网络提供的都是无状态的.
+#所以请求前缀指示增ipv6加局域网.意义不大(局域网已经有ipv4了,增加ipv6一大堆地址太难看了).
+#在这个版本的openwrt  手机的Usb共享 不是usb0 而是eth1
+uci set network.usbwan=interface
+uci set network.usbwan.proto='dhcp'
+uci set network.usbwan.device='eth1'
+uci set network.usbwan6=interface
+uci set network.usbwan6.proto='dhcpv6'
+uci set network.usbwan6.device='eth1'
+uci set network.usbwan6.reqaddress='try'
+uci set network.usbwan6.reqprefix='no'
+uci commit network
+                  
+#设置usbwan usbwan6 加入防火墙 并开启硬件加速
+uci add_list firewall.cfg03dc81.network='wan'
+uci add_list firewall.cfg03dc81.network='wan6'
+uci add_list firewall.cfg03dc81.network='usbwan'
+uci add_list firewall.cfg03dc81.network='usbwan6'
+uci set firewall.cfg01e63d.flow_offloading='1'
+uci set firewall.cfg01e63d.flow_offloading_hw='1'
+uci commit firewall
+
+echo "All done!"
+##################################━━━━━━━━━━━━━━━━━━━━━━━━
+			time:2025.01.26	
