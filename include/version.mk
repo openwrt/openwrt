@@ -18,6 +18,7 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_VERSION_MANUFACTURER_URL \
 	CONFIG_VERSION_PRODUCT \
 	CONFIG_VERSION_SUPPORT_URL \
+	CONFIG_VERSION_FIRMWARE_URL \
 	CONFIG_VERSION_HWREV \
 
 sanitize = $(call tolower,$(subst _,-,$(subst $(space),-,$(1))))
@@ -49,6 +50,9 @@ VERSION_HOME_URL:=$(if $(VERSION_HOME_URL),$(VERSION_HOME_URL),https://openwrt.o
 
 VERSION_SUPPORT_URL:=$(call qstrip,$(CONFIG_VERSION_SUPPORT_URL))
 VERSION_SUPPORT_URL:=$(if $(VERSION_SUPPORT_URL),$(VERSION_SUPPORT_URL),https://forum.openwrt.org/)
+
+VERSION_FIRMWARE_URL:=$(call qstrip,$(CONFIG_VERSION_FIRMWARE_URL))
+VERSION_FIRMWARE_URL:=$(if $(VERSION_FIRMWARE_URL),$(VERSION_FIRMWARE_URL),https://downloads.openwrt.org/)
 
 VERSION_PRODUCT:=$(call qstrip,$(CONFIG_VERSION_PRODUCT))
 VERSION_PRODUCT:=$(if $(VERSION_PRODUCT),$(VERSION_PRODUCT),Generic)
@@ -103,7 +107,7 @@ VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%b,$(call sed_escape,$(VERSION_BUG_URL)),g' \
 	-e 's,%u,$(call sed_escape,$(VERSION_HOME_URL)),g' \
 	-e 's,%s,$(call sed_escape,$(VERSION_SUPPORT_URL)),g' \
+	-e 's,%f,$(call sed_escape,$(VERSION_FIRMWARE_URL)),g' \
 	-e 's,%P,$(call sed_escape,$(VERSION_PRODUCT)),g' \
 	-e 's,%h,$(call sed_escape,$(VERSION_HWREV)),g' \
 	-e 's,%B,$(call sed_escape,$(SOURCE_DATE_EPOCH)),g'
-
