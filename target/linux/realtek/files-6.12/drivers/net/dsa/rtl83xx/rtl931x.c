@@ -179,9 +179,9 @@ static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
-inline static int rtl931x_trk_mbr_ctr(int group)
+inline static int rtldsa_931x_trk_mbr_ctr(int group)
 {
-	return RTL931X_TRK_MBR_CTRL + (group << 2);
+	return RTL931X_TRK_MBR_CTRL + (group << 3);
 }
 
 static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
@@ -1675,7 +1675,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_port_keep_tag_set = rtl931x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
-	.trk_mbr_ctr = rtl931x_trk_mbr_ctr,
+	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
