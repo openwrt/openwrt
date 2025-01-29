@@ -190,6 +190,13 @@ define Device/radxa_rock-4c-plus
 endef
 TARGET_DEVICES += radxa_rock-4c-plus
 
+define Device/radxa_rock-4se
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 4SE
+  SOC := rk3399
+endef
+TARGET_DEVICES += radxa_rock-4se
+
 define Device/radxa_rock-5a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5A
