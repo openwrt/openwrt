@@ -247,7 +247,6 @@ include /lib/upgrade
 
 create_backup_archive() {
 	local conf_tar="$1"
-	local disabled
 	local err
 
 	[ "$(rootfs_type)" = "tmpfs" ] && {
@@ -268,13 +267,14 @@ create_backup_archive() {
 		local ret=0
 
 		if [ $ret -eq 0 ]; then
+			local service_actions=
 			for service in /etc/init.d/*; do
-				if ! $service enabled; then
-				disabled="$disabled$service disable\n"
-				fi
+				local action=
+				"${service}" enabled && action=enable || action=disable
+				service_actions="${service_actions}\"${service}\" ${action}\n"
 			done
-			disabled="$disabled\nexit 0"
-			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" || ret=1
+			service_actions="${service_actions}\nexit 0"
+			tar_print_member "/etc/uci-defaults/10_services" "$(echo -e ${service_actions})" || ret=1
 		fi
 
 		# Part of archive with installed packages info

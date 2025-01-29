@@ -1,11 +1,13 @@
 #!/bin/sh /etc/rc.common
 START=80
+DEFAULT_ENABLE=0
 
 check_relay() {
 	local cfg="$1"
 
+	# Migration
 	config_get_bool enabled "$cfg" enabled 1
-	[ "$enabled" -gt 0 ] || return
+	[ "$enabled" -gt 0 ] || { disable; return 1; }
 
 	config_get dev1 "$cfg" dev1
 	config_get dev2 "$cfg" dev2

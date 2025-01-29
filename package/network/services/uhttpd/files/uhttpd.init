@@ -112,10 +112,11 @@ start_instance()
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
 	local listen http https interpreter indexes path handler httpdconf haveauth
-	local enabled
 
+	# Migration
+	local enabled
 	config_get_bool enabled "$cfg" 'enabled' 1
-	[ $enabled -gt 0 ] || return
+	[ $enabled -gt 0 ] || { disable; return 1; }
 
 	procd_open_instance
 	procd_set_param respawn

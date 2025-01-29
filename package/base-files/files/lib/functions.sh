@@ -390,12 +390,12 @@ default_postinst() {
 	local shell="$(command -v bash)"
 	for i in $(grep -s "^/etc/init.d/" "$filelist"); do
 		if [ -n "$root" ]; then
-			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
+			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" _postinst
 		else
 			if [ "$PKG_UPGRADE" != "1" ]; then
-				"$i" enable
+				"$i" _postinst
 			fi
-			"$i" start
+			"$i" enabled && "$i" start
 		fi
 	done
 

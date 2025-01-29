@@ -53,6 +53,10 @@ enable() {
 	return $err
 }
 
+_postinst() {
+	[ "${DEFAULT_ENABLE:-1}" -ne 0 ] && enable || disable
+}
+
 enabled() {
 	name="$(basename "${initscript}")"
 	name="${name##[SK][0-9][0-9]}"
@@ -68,7 +72,7 @@ depends() {
 }
 
 ALL_HELP=""
-ALL_COMMANDS="boot shutdown depends"
+ALL_COMMANDS="boot shutdown depends _postinst"
 extra_command() {
 	local cmd="$1"
 	local help="$2"
