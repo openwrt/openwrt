@@ -45,7 +45,7 @@ is stopped on exit.
     {
 +      memset(&sPowerManagementStateForcedTrigger, 0x0,
 +         sizeof(DSL_G997_PowerManagementStateForcedTrigger_t));
-+      sPowerManagementStateForcedTrigger.data.nPowerManagementState = DSL_G997_PMSF_LX_TO_L3;
++      sPowerManagementStateForcedTrigger.data.nPowerManagementState = DSL_G997_PMSF_LX_TO_L3_NO_RETRY;
 +
 +      nRet = (DSL_Error_t)DSL_CPE_Ioctl(
 +         DSL_CPE_GetGlobalContext()->fd[nDevice],
