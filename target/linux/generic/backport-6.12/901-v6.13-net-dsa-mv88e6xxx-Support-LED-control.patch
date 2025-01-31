@@ -127,7 +127,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  #include <linux/netdevice.h>
  #include <linux/gpio/consumer.h>
  #include <linux/phylink.h>
-@@ -3235,14 +3236,43 @@ static int mv88e6xxx_setup_upstream_port
+@@ -3371,14 +3372,43 @@ static int mv88e6xxx_setup_upstream_port
  static int mv88e6xxx_setup_port(struct mv88e6xxx_chip *chip, int port)
  {
  	struct device_node *phy_handle = NULL;
@@ -173,7 +173,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  	err = mv88e6xxx_port_setup_mac(chip, port, LINK_UNFORCED,
  				       SPEED_UNFORCED, DUPLEX_UNFORCED,
-@@ -4461,6 +4491,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4597,6 +4627,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -181,7 +181,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -4563,6 +4594,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4699,6 +4730,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -189,7 +189,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -4838,6 +4870,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4974,6 +5006,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -197,7 +197,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -5260,6 +5293,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -5396,6 +5429,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -237,7 +237,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	/* MacAuth Bypass control flag */
  	bool mab;
  };
-@@ -563,6 +571,9 @@ struct mv88e6xxx_ops {
+@@ -574,6 +582,9 @@ struct mv88e6xxx_ops {
  			      phy_interface_t mode);
  	int (*port_get_cmode)(struct mv88e6xxx_chip *chip, int port, u8 *cmode);
  
@@ -973,8 +973,8 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +	dp = dsa_to_port(p->chip->ds, p->port);
 +	if (!dp)
 +		return NULL;
-+	if (dp->slave)
-+		return &dp->slave->dev;
++	if (dp->user)
++		return &dp->user->dev;
 +	return NULL;
 +}
 +
