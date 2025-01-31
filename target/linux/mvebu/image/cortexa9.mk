@@ -319,7 +319,8 @@ define Device/linksys_wrt32x
   DEVICE_ALT0_VENDOR := Linksys
   DEVICE_ALT0_MODEL := Venom
   DEVICE_DTS := armada-385-linksys-venom
-  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
+  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964 \
+	kmod-dsa-mv88e6xxx
   KERNEL_SIZE := 6144k
   KERNEL := kernel-bin | append-dtb
   SUPPORTED_DEVICES += armada-385-linksys-venom linksys,venom
