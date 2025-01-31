@@ -48,7 +48,7 @@ define Package/busybox/Default
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
+  DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter +(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_MOUNT_NFS)||(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_INETD_RPC):libtirpc
   USERID:=ntp=123:ntp=123
 endef
 
@@ -102,6 +102,13 @@ LDLIBS += $(call BUSYBOX_IF_ENABLED,PAM,pam pam_misc pthread)
 
 ifeq ($(CONFIG_USE_GLIBC),y)
   LDLIBS += $(call BUSYBOX_IF_ENABLED,NSLOOKUP,resolv)
+endif
+
+ifneq ($(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_MOUNT_NFS)$(CONFIG_BUSYBOX_$(BUSYBOX_SYM)_FEATURE_INETD_RPC),)
+ifndef CONFIG_USE_MUSL
+  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/tirpc
+  LDLIBS += tirpc
+endif
 endif
 
 ifeq ($(BUILD_VARIANT),selinux)
