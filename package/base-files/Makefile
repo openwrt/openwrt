@@ -256,6 +256,7 @@ ifneq ($(CONFIG_USE_APK),)
 
 	rm -f $(1)/etc/uci-defaults/13_fix-group-user
 	rm -f $(1)/sbin/pkg_check
+	echo $(PKG_RELEASE)~$(lastword $(subst -, ,$(REVISION))) >$(TMP_DIR)/base-files.version
 else
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \

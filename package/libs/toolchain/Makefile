@@ -578,6 +578,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libc/install
+    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
     $(call Package/$(LIBC)/install,$1)
   endef
 
@@ -697,6 +698,7 @@ else
   endef
 
   define Package/libc/install
+	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/lib/ ; \
