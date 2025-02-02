@@ -58,7 +58,7 @@
  # Some non-GNU m4's don't reject the --help option, so give them /dev/null.
  fatal "need GNU m4 1.4 or later: $m4"
    if system "$m4 --help </dev/null 2>&1 | grep reload-state >/dev/null";
-@@ -272,6 +276,12 @@ sub load_configuration ($)
+@@ -322,6 +326,12 @@ sub load_configuration ($)
  
        my @words = shellwords ($_);
        my $type = shift @words;
@@ -88,7 +88,7 @@
    unshift @INC, $pkgdatadir;
  
    $buildauxdir = $ENV{'autom4te_buildauxdir'} || $pkgdatadir . '/build-aux';
-@@ -117,9 +120,9 @@ Written by David J. MacKenzie and Akim D
+@@ -116,9 +119,9 @@ Written by David J. MacKenzie and Akim D
  ";
  
  # Lib files.
@@ -175,21 +175,3 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
---- a/bin/autoconf.as
-+++ b/bin/autoconf.as
-@@ -89,8 +89,13 @@ exit_missing_arg='
- # restore font-lock: '
- 
- # Variables.
--: ${AUTOM4TE='@bindir@/@autom4te-name@'}
--: ${trailer_m4='@pkgdatadir@/autoconf/trailer.m4'}
-+if test -n "$STAGING_DIR_HOST"; then
-+	: ${AUTOM4TE="$STAGING_DIR_HOST/bin/@autom4te-name@"}
-+	: ${trailer_m4="$STAGING_DIR_HOST/share/autoconf/autoconf/trailer.m4"}
-+else
-+	: ${AUTOM4TE='@bindir@/@autom4te-name@'}
-+	: ${trailer_m4='@pkgdatadir@/autoconf/trailer.m4'}
-+fi
- autom4te_options=
- outfile=
- verbose=false
