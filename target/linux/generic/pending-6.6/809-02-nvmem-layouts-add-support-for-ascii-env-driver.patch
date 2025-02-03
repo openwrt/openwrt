@@ -18,8 +18,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
  drivers/nvmem/layouts/Kconfig     |  13 +++
  drivers/nvmem/layouts/Makefile    |   1 +
- drivers/nvmem/layouts/ascii-env.c | 131 ++++++++++++++++++++++++++++++
- 3 files changed, 145 insertions(+)
+ drivers/nvmem/layouts/ascii-env.c | 140 ++++++++++++++++++++++++++++++
+ 3 files changed, 154 insertions(+)
  create mode 100644 drivers/nvmem/layouts/ascii-env.c
 
 --- a/drivers/nvmem/layouts/Kconfig
@@ -53,7 +53,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +obj-$(CONFIG_NVMEM_LAYOUT_ASCII_ENV) += ascii-env.o
 --- /dev/null
 +++ b/drivers/nvmem/layouts/ascii-env.c
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,148 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (C) 2024 Christian Marangi <ansuelsmth@gmail.com>
@@ -64,6 +64,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/nvmem-provider.h>
 +#include <linux/of.h>
 +#include <linux/slab.h>
++
++struct ascii_env_match_data {
++	const char delim;
++};
 +
 +/*
 + * Parse a buffer as an ASCII text with name delimiter value and each pattern separated
@@ -86,7 +90,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	 */
 +	for (var = data; var < data + data_len && *var;
 +	     var = value + strlen(value) + 1) {
-+		   struct nvmem_cell_info info = {};
++		struct nvmem_cell_info info = {};
++		struct device_node *child;
++		const char *label;
 +
 +		eq = strchr(var, delim);
 +		if (!eq)
@@ -106,6 +112,13 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		info.offset = value - data;
 +		info.bytes = strlen(value);
 +		info.np = of_get_child_by_name(dev->of_node, info.name);
++		for_each_child_of_node(dev->of_node, child) {
++			if (!of_property_read_string(child, "label", &label) &&
++			    !strncmp(info.name, label, info.bytes))
++			    	info.np = child;
++			else if (of_node_name_eq(child, info.name))
++				info.np = child;
++		}
 +
 +		nvmem_layout_parse_mac_base(&info);
 +
@@ -118,15 +131,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +static int ascii_env_add_cells(struct nvmem_layout *layout)
 +{
 +	struct nvmem_device *nvmem = layout->nvmem;
++	const struct ascii_env_match_data *data;
 +	struct device *dev = &layout->dev;
 +	size_t dev_size;
 +	uint8_t *buf;
-+	char delim;
 +	int bytes;
 +	int ret;
 +
 +	/* Get the delimiter for name value pattern */
-+	delim = device_get_match_data(dev);
++	data = device_get_match_data(dev);
 +
 +	dev_size = nvmem_dev_size(nvmem);
 +
@@ -146,7 +159,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	}
 +
 +	buf[dev_size - 1] = '\0';
-+	ret = ascii_env_parse_cells(dev, nvmem, buf, dev_size, delim);
++	ret = ascii_env_parse_cells(dev, nvmem, buf, dev_size, data->delim);
 +
 +err_kfree:
 +	kfree(buf);
@@ -166,8 +179,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	nvmem_layout_unregister(layout);
 +}
 +
++static const struct ascii_env_match_data ascii_env_eq = {
++	.delim = '=',
++};
++
 +static const struct of_device_id ascii_env_of_match_table[] = {
-+	{ .compatible = "ascii-eq-delim-env", .data = (void *)'=', },
++	{ .compatible = "ascii-eq-delim-env", .data = &ascii_env_eq, },
 +	{},
 +};
 +
