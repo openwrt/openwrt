@@ -55,7 +55,7 @@
 +	* GpioSpimasterControl.SpimModeOverride (bit 19) = 1
 +	* GpioSpimasterControl.HsSpimEn (bit 16) = 0
 +	*/
-+	*(unsigned long*)0xb4e00188 = (*(unsigned long*)0xb4e00188 | 1 << 19) & ~(1 << 16);
++	*(unsigned int*)0xb4e00188 = (*(unsigned int*)0xb4e00188 | 1 << 19) & ~(1 << 16);
 +}
 +
  static void bcm6328_quirks(void)
