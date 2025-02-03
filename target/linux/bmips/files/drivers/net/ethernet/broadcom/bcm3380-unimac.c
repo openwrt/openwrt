@@ -23,6 +23,36 @@ typedef uint32_t uint32;
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
 	printk(KERN_INFO "%s: " fmt, __func__, ##__VA_ARGS__)
+
+static char nibble_to_hex(unsigned char nibble) {
+	return (nibble < 10) ? ('0' + nibble) : ('A' + (nibble - 10));
+}
+
+static void vDumpMemory(const void* ptr, size_t length) {
+	const unsigned char* data = (const unsigned char*)ptr;
+	char line_buffer[80];
+
+	for (size_t i = 0; i < length; i += 16) {
+		size_t buffer_i = 0;
+
+		// Print up to 16 bytes in hex format
+		for (size_t j = 0; j < 16; j++) {
+			if (i + j < length) {
+				char val = data[i + j];
+				line_buffer[buffer_i++] = nibble_to_hex((val & 0xF0)>>4);
+				line_buffer[buffer_i++] = nibble_to_hex(val & 0x0F);
+				line_buffer[buffer_i++] = ' ';
+			} else {
+				line_buffer[buffer_i++] = ' ';
+				line_buffer[buffer_i++] = ' ';
+				line_buffer[buffer_i++] = ' ';
+			}
+		}
+		line_buffer[buffer_i] = '\0';
+
+		printk("%08x: %s\n", ((uint32_t)ptr) + i, line_buffer);
+	}
+}
 #else
 #define UNIMAC_DBG(fmt, ...) \
 	do { } while (0)
@@ -267,7 +297,7 @@ static void vUnimacInit(volatile Unimac *g_pxUnimacSelected) {
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
 	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
 	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = 0x15801240;
+	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = 0x15801240; //Should refer to MSP_BLOCK_SMISB.Ioproc.In.IncomingMessageFifo.InMsgData
 	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = 0x15801240;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
@@ -278,48 +308,42 @@ static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
 	UNIMAC_DBG("Enabled Rx and Tx\n");
 }
 
-uint32 uiEthPoll(void*pxRxBuf, uint32_t *uiLength)
-{
-  uint32 InMsgData; // $s0
-  uint32 v6; // $s1
+/**
+ * Return the length of the frame copied to pxRxBuf.
+ * Return 0 if there is no pending frame.
+ * Return negative on error.
+ */
+int32_t uiEthPoll(void* pxRxBuf) {
+	uint32_t uiMsgSts = IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
+	if ( (uiMsgSts & 0x80000000) != 0 )
+	{
+		uint32_t uiRead1 = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
+		uiMsgSts = IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
 
-  if ( IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32 & 0x80000000 )
-  {
-    InMsgData = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
-    if ( IOPROC_SMISB.In.IncomingMessageFifo.InMsgData >> 26 )
-    {
-      printk(
-        "Error: Received an unexpected message: %08x, %08x\n",
-        IOPROC_SMISB.In.IncomingMessageFifo.InMsgData,
-        IOPROC_SMISB.In.IncomingMessageFifo.InMsgData);
-      return 0;
-    }
-    else
-    {
-      if ( IOPROC_SMISB.In.IncomingMessageFifo.InMsgData & 0x383 )
-      {
-        printk(
-          "Error: LAN RX status = %x, token = %08x\n",
-          IOPROC_SMISB.In.IncomingMessageFifo.InMsgData & 0x7FFF,
-          IOPROC_SMISB.In.IncomingMessageFifo.InMsgData);
-        *uiLength = 0;
-        v6 = InMsgData & 0xFFF;
-      }
-      else
-      {
-        v6 = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData & 0xFFF;
-        // memcpy(
-        //   pxRxBuf,
-        //   (const void *)(((uint16_t)(IOPROC_SMISB.In.IncomingMessageFifo.InMsgData >> 12) << 11)
-        //                + g_uiUnimacDmaBuffer),
-        //   IOPROC_SMISB.In.IncomingMessageFifo.InMsgData & 0xFFF);
-        *uiLength = 0x8000;
-      }
-      FpmBlock.FpmPool.Pool1AllocDealloc.Reg32 = InMsgData;
-      return v6;
-    }
-  }
-  return 0;
+		if ( (uiMsgSts & 0x80000000) != 0 ) {
+			uint32_t uiRead2 = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
+			if ( uiRead1 >> 26 ) {
+				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiRead2);
+				return -1;
+			} else {
+				uint32_t length = uiRead2 & 0xFFF;
+				if ( (uiRead1 & 0x383) != 0 ) {
+					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiRead2);
+					// *uiLength = 0;
+				} else {
+					memcpy(pxRxBuf, (const void *)((((uiRead2 >> 12) << 11) & 0xFFFF) + g_uiUnimacDmaBuffer), length);
+					// *uiLength = 0x8000; // This was returned in the stock bootloader
+				}
+				FpmBlock.FpmPool.Pool1AllocDealloc.Reg32 = uiRead2;
+				return length;
+			}
+		} else {
+			UNIMAC_DBG("Error: The incoming message fifo had an incomplete message: %08x\n", uiRead1);
+			return -2;
+		}
+	}
+
+	return 0; // No message
 }
 
 static const char *UnimacCoreFields1[] = {
@@ -368,37 +392,6 @@ static void dumpUnimac1(void) {
 	printk("Mbdma.Globalctl=0x%08X\n", g_pxUnimacSelected->Mbdma.Globalctl.Reg32);
 }
 
-static char nibble_to_hex(unsigned char nibble) {
-	return (nibble < 10) ? ('0' + nibble) : ('A' + (nibble - 10));
-}
-
-static void vDumpMemory(const void* ptr, size_t length) {
-	const unsigned char* data = (const unsigned char*)ptr;
-	char line_buffer[80];
-
-	for (size_t i = 0; i < length; i += 16) {
-		size_t buffer_i = 0;
-
-		// Print up to 16 bytes in hex format
-		for (size_t j = 0; j < 16; j++) {
-			if (i + j < length) {
-				char val = data[i + j];
-				line_buffer[buffer_i++] = nibble_to_hex((val & 0xF0)>>4);
-				line_buffer[buffer_i++] = nibble_to_hex(val & 0x0F);
-				line_buffer[buffer_i++] = ' ';
-			} else {
-				line_buffer[buffer_i++] = ' ';
-				line_buffer[buffer_i++] = ' ';
-				line_buffer[buffer_i++] = ' ';
-			}
-		}
-		line_buffer[buffer_i] = '\0';
-
-		printk("%08x: %s\n", ((uint32_t)ptr) + i, line_buffer);
-	}
-}
-
-
 static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 	vFpmInit();
 	UNIMAC_DBG("Fpm ready, g_uiUnimacDmaBuffer = 0x%08X\n", g_uiUnimacDmaBuffer);
@@ -411,16 +404,20 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 	while (!bLinkUp(g_pxUnimacSelected))
 		mdelay(1000u);
 	UNIMAC_DBG("bLinkUp!!!!!!!\n");
+	UNIMAC_DBG("&IOPROC_SMISB.In.IncomingMessageFifo.InMsgData = 0x%08X\n", (uint32_t)(&(IOPROC_SMISB.In.IncomingMessageFifo.InMsgData)));
 	dumpUnimac1();
 
-	uint32_t uiLength = 0;
-	uint32_t retVal = 0;
+	int32_t pollResult = 0;
+	void* buffer = kzalloc(0x1000, GFP_KERNEL);
 	do {
-		uiEthPoll(NULL, &uiLength);
-		UNIMAC_DBG("uiEthPoll=0x%08X, len=0x%08X\n", retVal, uiLength);
-		vDumpMemory((void*)g_uiUnimacDmaBuffer, 64);
-		mdelay(1000u);
-	} while(!retVal);
+		pollResult = uiEthPoll(buffer);
+		if (pollResult > 0) {
+			uint32_t uiLength = pollResult;
+			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
+			vDumpMemory(buffer, uiLength);
+		}
+		mdelay(100u);
+	} while(1+1);
 }
 
 /* Probe function - called when device is discovered */
