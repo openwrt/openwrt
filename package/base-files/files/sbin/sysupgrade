@@ -201,12 +201,17 @@ build_list_of_backup_overlay_files() {
 
 		# do not backup files from packages, except those listed
 		# in conffiles and keep.d
-		{
+		if [ -f /usr/lib/opkg/status ]; then
 			find /usr/lib/opkg/info -type f -name "*.list" -exec cat {} \;
 			find /usr/lib/opkg/info -type f -name "*.control" -exec sed \
 				-ne '/^Alternatives/{s/^Alternatives: //;s/, /\n/g;p}' {} \; |
 				cut -f2 -d:
-		} |  grep -v -x -F -f $conffiles |
+		elif [ -d /lib/apk/packages ]; then
+			find /lib/apk/packages -type f -name "*.list" -exec cat {} \;
+			find /lib/apk/packages -type f -name "*.alternatives" -exec cat {} \; |
+				tr ' ' '\n' |
+				cut -f2 -d:
+		fi |  grep -v -x -F -f $conffiles |
 		     grep -v -x -F -f $keepfiles | sort -u > "$packagesfiles"
 		rm -f "$keepfiles" "$conffiles"
 	fi
