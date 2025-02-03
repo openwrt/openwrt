@@ -458,6 +458,7 @@ define Device/zte_mf281
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286c \
 	kmod-usb-acm comgt-ncm
 endef
 TARGET_DEVICES += zte_mf281
