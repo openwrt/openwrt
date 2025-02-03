@@ -125,8 +125,11 @@ platform_do_upgrade() {
 	p2w,r619ac-64m |\
 	p2w,r619ac-128m |\
 	qxwlan,e2600ac-c2 |\
-	tplink,deco-m9plus-v2 |\
 	wallys,dr40x9)
+		nand_do_upgrade "$1"
+		;;
+	tplink,deco-m9plus-v2)
+		CI_UBIPART="rootfs_1"
 		nand_do_upgrade "$1"
 		;;
 	glinet,gl-b2200)

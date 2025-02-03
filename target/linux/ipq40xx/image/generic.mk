@@ -1130,7 +1130,6 @@ define Device/tplink-zImage
 endef
 define Device/tplink_deco-m9plus-v2
 	$(call Device/FitzImage)
-	$(call Device/UbiFit)
 	SOC := qcom-ipq4019
 	DEVICE_MODEL := Deco-M9Plus
 	DEVICE_VARIANT := v2
@@ -1138,8 +1137,13 @@ define Device/tplink_deco-m9plus-v2
 	TPLINK_BOARD_ID := DECO-M9PLUS
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	IMAGE_SIZE := 47185920
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
 	DEVICE_DTS_DELIMITER := @
+	KERNEL_IN_UBI := 1
+	IMAGES := factory.ubi sysupgrade.bin
+	IMAGE/factory.ubi := append-ubi | check-size 
+	IMAGE/sysupgrade.bin := append-ubi | check-size | append-metadata
 endef
 TARGET_DEVICES += tplink_deco-m9plus-v2
 

@@ -46,7 +46,7 @@
 		};
 	};
 	chosen {
-		bootargs-append = " root=/dev/ubiblock0_1";
+		bootargs-append = " ubi.mtd=rootfs_1 root=/dev/ubiblock0_1 rootfstype=squashfs";
 	};
 };
 &tlmm {
@@ -238,26 +238,6 @@
 				label = "runtime_data";
 				reg = <0x06c00000 0x001100000>;
 				read-only;
-			};
-			partition@07d00000 { //13
-				label = "kernel";
-				reg = <0x07d00000 0x00345000>; 
-			};
-			partition@8045000 { //14
-				label = "ubi_rootfs";
-				reg = <0x08045000 0x0118f000>;
-			};
-			partition@91d4000 { //15
-				label = "rootfs_data";
-			    reg = <0x091d4000 0x015eb000>;
-			};
-			partition@a7c9000 { //16
-				label = "ubi_factory_data";
-				reg = <0x0a7c9000 0x005d0000>;
-			};
-			partition@adb9000 { //17
-				label = "ubi_runtime_data";
-				reg = <0x0adb9000 0x00d90000>;
 			};
 		};
 	};
