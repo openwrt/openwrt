@@ -19,6 +19,16 @@
 
 #include "pinctrl-bcm63xx.h"
 
+#define BCM3380_PINCTRL_DBG 1
+
+#if BCM3380_PINCTRL_DBG
+#define PINCTRL_DBG(fmt, ...) \
+	printk(KERN_DEBUG "%s: " fmt, __func__, ##__VA_ARGS__)
+#else
+#define PINCTRL_DBG(fmt, ...) \
+	do { } while (0)
+#endif
+
 #define BCM3380_NUM_GPIOS		52
 #define BCM3380_NUM_LEDS		24
 
@@ -326,14 +336,14 @@ static int bcm3380_pinctrl_get_group_pins(struct pinctrl_dev *pctldev,
 
 static int bcm3380_pinctrl_get_func_count(struct pinctrl_dev *pctldev)
 {
-	printk("QwQ: bcm3380_pinctrl_get_func_count\n");
+	PINCTRL_DBG("QwQ: bcm3380_pinctrl_get_func_count\n");
 	return ARRAY_SIZE(bcm3380_funcs);
 }
 
 static const char *bcm3380_pinctrl_get_func_name(struct pinctrl_dev *pctldev,
 						  unsigned selector)
 {
-	printk("QwQ: bcm3380_pinctrl_get_func_name %d = %s\n", selector, bcm3380_funcs[selector].name);
+	PINCTRL_DBG("QwQ: %d = %s\n", selector, bcm3380_funcs[selector].name);
 	return bcm3380_funcs[selector].name;
 }
 
@@ -342,7 +352,7 @@ static int bcm3380_pinctrl_get_groups(struct pinctrl_dev *pctldev,
 				       const char * const **groups,
 				       unsigned * const num_groups)
 {
-	printk("QwQ: bcm3380_pinctrl_get_groups\n");
+	PINCTRL_DBG("QwQ: bcm3380_pinctrl_get_groups\n");
 	*groups = bcm3380_funcs[selector].groups;
 	*num_groups = bcm3380_funcs[selector].num_groups;
 
@@ -355,7 +365,7 @@ static void bcm3380_set_gpio(struct bcm63xx_pinctrl *pc, unsigned pin)
 	unsigned int basemode = (unsigned long) desc->drv_data;
 	unsigned int mask = BIT(bcm63xx_bank_pin(pin));
 
-	printk("QwQ: bcm3380_set_gpio pin = %d\n", pin);
+	PINCTRL_DBG("QwQ: bcm3380_set_gpio pin = %d\n", pin);
 	if (1)
 		return;
 
@@ -388,13 +398,13 @@ static int bcm3380_pinctrl_set_mux(struct pinctrl_dev *pctldev,
 	unsigned int val, mask;
 
 	unsigned int __iomem* GpioPinMuxSel = (unsigned int __iomem*) 0xb4e00180;
-	printk("QwQ: bcm3380_pinctrl_set_mux pin = %d\n", selector);
-	printk("0x%08X\n", *GpioPinMuxSel);
+	PINCTRL_DBG("QwQ: bcm3380_pinctrl_set_mux pin = %d\n", selector);
+	PINCTRL_DBG("0x%08X\n", *GpioPinMuxSel);
 	// Repurpose a GPIO (15?) as SPI chip-select 3.
 	//*GpioPinMuxSel &= ~0x000000C0;	// PmSelectGpio1514 = 2b00
 	//*GpioPinMuxSel |= 0x00000080;	// PmSelectGpio1514 = 2b10
 	regmap_update_bits(pc->regs, BCM3380_MUXSEL_LO_REG, 0xC0, 0x80);
-	printk("0x%08X\n", *GpioPinMuxSel);
+	PINCTRL_DBG("0x%08X\n", *GpioPinMuxSel);
 	if (1)
 		return 0;
 
@@ -471,7 +481,7 @@ static const struct bcm63xx_pinctrl_soc bcm3380_soc = {
 
 static int bcm3380_pinctrl_probe(struct platform_device *pdev)
 {
-	printk("QwQ: bcm3380_pinctrl_probe\n");
+	PINCTRL_DBG("QwQ: bcm3380_pinctrl_probe\n");
 	return bcm63xx_pinctrl_probe(pdev, &bcm3380_soc, NULL);
 }
 
