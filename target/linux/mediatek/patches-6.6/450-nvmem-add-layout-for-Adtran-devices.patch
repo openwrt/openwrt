@@ -46,10 +46,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	select CRC8
 --- a/drivers/nvmem/layouts/Makefile
 +++ b/drivers/nvmem/layouts/Makefile
-@@ -6,3 +6,4 @@
- obj-$(CONFIG_NVMEM_LAYOUT_SL28_VPD) += sl28vpd.o
+@@ -7,3 +7,4 @@ obj-$(CONFIG_NVMEM_LAYOUT_SL28_VPD) += s
  obj-$(CONFIG_NVMEM_LAYOUT_ONIE_TLV) += onie-tlv.o
  obj-$(CONFIG_NVMEM_LAYOUT_U_BOOT_ENV) += u-boot-env.o
+ obj-$(CONFIG_NVMEM_LAYOUT_ASCII_ENV) += ascii-env.o
 +obj-$(CONFIG_NVMEM_LAYOUT_ADTRAN) += adtran.o
 --- /dev/null
 +++ b/drivers/nvmem/layouts/adtran.c
