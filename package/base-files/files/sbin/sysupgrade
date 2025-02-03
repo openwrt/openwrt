@@ -217,10 +217,14 @@ build_list_of_backup_overlay_files() {
 	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
 		-e 's,^\.,,' \
 		-e '\,^/etc/board.json$,d' \
+		-e '\,^/etc/luci-uploads/.placeholder,d' \
 		-e '\,/[^/]*-opkg$,d' \
 		-e '\,^/etc/urandom.seed$,d' \
+		-e '\,^/etc/apk/world$,d' \
 		-e "\,^$INSTALLED_PACKAGES$,d" \
 		-e '\,^/usr/lib/opkg/.*,d' \
+		-e '\,^/lib/apk/.*,d' \
+		-e '\,^/run,d' \
 	) | grep -v -x -F -f $packagesfiles > "$file"
 
 	rm -f "$packagesfiles"
