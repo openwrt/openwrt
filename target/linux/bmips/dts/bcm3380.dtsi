@@ -243,8 +243,25 @@
 		};
 
 		ethernet_gmii: ethernet@12110000 {
-			compatible = "brcm,unimac";
-			reg = <0x12110000 0x1000>;
+			compatible = "brcm,bcm3380-unimac";
+			reg = <0x12110000 0x80000>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_UNI_IRQ2>; // Not sure about this!
+
+			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
+				 <&periph_clk0 BCM3380_CLK0_FPM>,
+				 <&periph_clk0 BCM3380_CLK0_MSP>,
+				 <&periph_clk0 BCM3380_CLK0_UNIMAC0>,
+				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
+				 <&periph_clk1 BCM3380_CLK1_GPHY>;
+			clock-names = "unimac1", "fpm", "msp", "unimac0", "gphypll", "gphy";
+
+			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
+				 <&periph_rst0 BCM3380_RST0_FPM>,
+				 <&periph_rst0 BCM3380_RST0_MSP>,
+				 <&periph_rst0 BCM3380_RST0_UNIMAC0>,
+				 <&periph_rst0 BCM3380_RST0_GPHY>;
 
 			fixed-link {
 				speed = <1000>;
