@@ -81,12 +81,12 @@ ipq806x_setup_macs()
 		linksys,ea7500-v1)
 			hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 			ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
-			ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+			ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 1)"
 		;;
 		linksys,ea8500)
 			hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 			ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
-			ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+			ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 1)"
 		;;
 		linksys,e8350-v1 |\
 		zyxel,nbg6817)
@@ -98,7 +98,7 @@ ipq806x_setup_macs()
 			hw_mac_addr=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 			ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
 			hw_mac_addr=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
-			ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+			ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 1)"
 		;;
 	esac
 }

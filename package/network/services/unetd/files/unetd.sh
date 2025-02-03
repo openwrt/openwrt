@@ -82,11 +82,10 @@ proto_unet_setup() {
 
 proto_unet_teardown() {
 	local config="$1"
-	local iface="$2"
 
 	local device
 	json_get_vars device
-	device="${device:-$iface}"
+	device="${device:-$config}"
 
 	json_init
 	json_add_string name "$device"

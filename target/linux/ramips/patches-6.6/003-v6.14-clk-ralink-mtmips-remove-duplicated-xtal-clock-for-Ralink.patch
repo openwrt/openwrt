@@ -1,0 +1,28 @@
+From 830d8062d25581cf0beaa334486eea06834044da Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Wed, 8 Jan 2025 10:36:36 +0100
+Subject: [PATCH] clk: ralink: mtmips: remove duplicated 'xtal' clock for
+ Ralink SoC RT3883
+
+Ralink SoC RT3883 has already 'xtal' defined as a base clock so there is no
+need to redefine it again in fixed clocks section. Hence, remove the duplicate
+one from there.
+
+Fixes: d34db686a3d7 ("clk: ralink: mtmips: fix clocks probe order in oldest ralink SoCs")
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Link: https://lore.kernel.org/r/20250108093636.265033-1-sergio.paracuellos@gmail.com
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/ralink/clk-mtmips.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/clk/ralink/clk-mtmips.c
++++ b/drivers/clk/ralink/clk-mtmips.c
+@@ -266,7 +266,6 @@ err_clk_unreg:
+ 	}
+ 
+ static struct mtmips_clk_fixed rt3883_fixed_clocks[] = {
+-	CLK_FIXED("xtal", NULL, 40000000),
+ 	CLK_FIXED("periph", "xtal", 40000000)
+ };
+ 

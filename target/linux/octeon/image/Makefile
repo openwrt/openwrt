@@ -92,6 +92,7 @@ define Device/ubnt_unifi-usg
   DEVICE_PACKAGES += kmod-gpio-button-hotplug kmod-leds-gpio
   DEVICE_DTS := cn5020_ubnt_usg
   KERNEL += | append-dtb-to-elf
+  SUPPORTED_DEVICES += ubnt,usg
 endef
 TARGET_DEVICES += ubnt_unifi-usg
 

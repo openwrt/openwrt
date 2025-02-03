@@ -89,9 +89,6 @@ endef
 TARGET_DEVICES += netgear_wndap660
 
 define Device/netgear_wndr4700
-  DEVICE_COMPAT_VERSION := 3.0
-  DEVICE_COMPAT_MESSAGE := Network swconfig configuration cannot be upgraded to DSA. \
-       Upgrade via sysupgrade mechanism is not possible.
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := Centria N900 WNDR4700
   DEVICE_ALT0_VENDOR := NETGEAR
@@ -123,8 +120,9 @@ define Device/netgear_wndr4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += wndr4700
-  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_VERSION := 3.0
   DEVICE_COMPAT_MESSAGE := kernel and ubi partitions had to be resized. \
+       Network swconfig configuration cannot be upgraded to DSA. \
        Upgrade via sysupgrade mechanism is not possible.
 endef
 TARGET_DEVICES += netgear_wndr4700

@@ -1,6 +1,6 @@
-From 04cd09990fdc3106d9fc4c47dda100e521d62a43 Mon Sep 17 00:00:00 2001
+From e4a9748e7103c47e575459db2b6a77d14f34da2b Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Wed, 18 Dec 2024 10:03:45 +0100
+Date: Tue, 14 Jan 2025 00:10:02 +0100
 Subject: [PATCH 1/4] clk: en7523: Rework clock handling for different clock
  numbers
 
@@ -12,6 +12,8 @@ clocks number in match_data and alloca clk_data based on the compatible
 match_data.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20250113231030.6735-2-ansuelsmth@gmail.com
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 ---
  drivers/clk/clk-en7523.c | 14 ++++++++------
  1 file changed, 8 insertions(+), 6 deletions(-)
@@ -44,7 +46,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
-@@ -702,21 +699,24 @@ static int en7523_clk_probe(struct platf
+@@ -702,13 +699,15 @@ static int en7523_clk_probe(struct platf
  	struct clk_hw_onecell_data *clk_data;
  	int r;
  
@@ -58,12 +60,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return -ENOMEM;
  
 -	soc_data = device_get_match_data(&pdev->dev);
++	clk_data->num = soc_data->num_clocks;
  	r = soc_data->hw_init(pdev, clk_data);
  	if (r)
  		return r;
- 
-+	clk_data->num = soc_data->num_clocks;
- 	return of_clk_add_hw_provider(node, of_clk_hw_onecell_get, clk_data);
+@@ -717,6 +716,7 @@ static int en7523_clk_probe(struct platf
  }
  
  static const struct en_clk_soc_data en7523_data = {

@@ -100,8 +100,9 @@
 };
 
 &mmc0 {
-	pinctrl-names = "default";
+	pinctrl-names = "default", "state_uhs";
 	pinctrl-0 = <&mmc_pins>;
+	pinctrl-1 = <&mmc_pins>;
 	status = "okay";
 
 	#address-cells = <1>;

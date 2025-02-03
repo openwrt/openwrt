@@ -68,6 +68,8 @@
 	status = "okay";
 
 	led-controller@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
 		compatible = "sercomm,msp430-leds";
 		reg = <1>;
 		spi-max-frequency = <500000>;
