@@ -1,0 +1,98 @@
+From 995a6e0d3fdd1e4fb38465f224db8a4c7b1e279d Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 3 Feb 2025 00:10:18 +0100
+Subject: [PATCH 1/2] nvmem: core: generalize "mac-base" cells handling
+
+Generalize support of "mac-base" nvmem cells and provide a GPL symbol to
+permit also other NVMEM layout driver to parse mac-base cells.
+
+It's VERY COMMON for some specially formatted NVMEM to expose a mac
+address in ASCII format or HEX format hence prevent code duplication by
+exposing a common helper.
+
+Such helper will change the nvmem_info_cell and apply the correct post
+process function to correctly parse the mac address.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/nvmem/core.c           | 41 +++++++++++++++++++---------------
+ include/linux/nvmem-provider.h |  4 ++++
+ 2 files changed, 27 insertions(+), 18 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -855,6 +855,27 @@ static int nvmem_mac_base_hex_read(void
+ 	return 0;
+ }
+ 
++void nvmem_layout_parse_mac_base(struct nvmem_cell_info *info)
++{
++	if (!of_device_is_compatible(info->np, "mac-base"))
++		return;
++
++	if (info->bytes == ETH_ALEN) {
++		info->raw_len = info->bytes;
++		info->bytes = ETH_ALEN;
++		info->read_post_process = nvmem_mac_base_raw_read;
++	} else if (info->bytes == 2 * ETH_ALEN) {
++		info->raw_len = info->bytes;
++		info->bytes = ETH_ALEN;
++		info->read_post_process = nvmem_mac_base_hex_read;
++	} else if (info->bytes == 3 * ETH_ALEN - 1) {
++		info->raw_len = info->bytes;
++		info->bytes = ETH_ALEN;
++		info->read_post_process = nvmem_mac_base_ascii_read;
++	}
++}
++EXPORT_SYMBOL_GPL(nvmem_layout_parse_mac_base);
++
+ static int nvmem_add_cells_from_dt(struct nvmem_device *nvmem, struct device_node *np)
+ {
+ 	struct device *dev = &nvmem->dev;
+@@ -894,24 +915,8 @@ static int nvmem_add_cells_from_dt(struc
+ 		if (nvmem->fixup_dt_cell_info)
+ 			nvmem->fixup_dt_cell_info(nvmem, &info);
+ 
+-		if (of_device_is_compatible(np, "fixed-layout")) {
+-			if (of_device_is_compatible(child, "mac-base")) {
+-				if (info.bytes == ETH_ALEN) {
+-					info.raw_len = info.bytes;
+-					info.bytes = ETH_ALEN;
+-					info.read_post_process = nvmem_mac_base_raw_read;
+-				} else if (info.bytes == 2 * ETH_ALEN) {
+-					info.raw_len = info.bytes;
+-					info.bytes = ETH_ALEN;
+-					info.read_post_process = nvmem_mac_base_hex_read;
+-				} else if (info.bytes == 3 * ETH_ALEN - 1) {
+-					info.raw_len = info.bytes;
+-					info.bytes = ETH_ALEN;
+-					info.read_post_process = nvmem_mac_base_ascii_read;
+-				}
+-
+-			}
+-		}
++		if (of_device_is_compatible(np, "fixed-layout"))
++			nvmem_layout_parse_mac_base(&info);
+ 
+ 		ret = nvmem_add_one_cell(nvmem, &info);
+ 		kfree(info.name);
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -242,6 +242,8 @@ static inline void nvmem_layout_unregist
+ 
+ #if IS_ENABLED(CONFIG_NVMEM) && IS_ENABLED(CONFIG_OF)
+ 
++void nvmem_layout_parse_mac_base(struct nvmem_cell_info *info);
++
+ /**
+  * of_nvmem_layout_get_container() - Get OF node of layout container
+  *
+@@ -254,6 +256,8 @@ struct device_node *of_nvmem_layout_get_
+ 
+ #else  /* CONFIG_NVMEM && CONFIG_OF */
+ 
++static inline void nvmem_layout_parse_mac_base(void) {}
++
+ static inline struct device_node *of_nvmem_layout_get_container(struct nvmem_device *nvmem)
+ {
+ 	return NULL;
