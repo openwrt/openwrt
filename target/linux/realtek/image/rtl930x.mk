@@ -34,3 +34,12 @@ define Device/zyxel_xgs1250-12
 	uImage gzip
 endef
 TARGET_DEVICES += zyxel_xgs1250-12
+
+define Device/tp-link_tl-st1008f_v2.0
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93030000
+  DEVICE_VENDOR := TP-LINK
+  DEVICE_MODEL := TL-ST1008F v2.0
+  IMAGE_SIZE := 31808k
+endef
+TARGET_DEVICES += tp-link_tl-st1008f_v2.0
