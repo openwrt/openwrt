@@ -407,6 +407,7 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 {
 	struct device_node *np;
 	int ret = 0;
+	u32 overridden_oobsize = 0;
 
 	if (bmtd.mtd)
 		return -ENOSPC;
@@ -430,6 +431,14 @@ int mtk_bmt_attach(struct mtd_info *mtd)
 
 	bmtd.mtd = mtd;
 	mtk_bmt_replace_ops(mtd);
+
+	if (!of_property_read_u32(np, "mediatek,bmt-mtd-overridden-oobsize",
+				  &overridden_oobsize))
+		if (overridden_oobsize < bmtd.mtd->oobsize) {
+			bmtd.mtd->oobsize = overridden_oobsize;
+			pr_info("NMBM: mtd OOB size has been overridden to %luB\n",
+				(long unsigned int)bmtd.mtd->oobsize);
+		}
 
 	bmtd.blk_size = mtd->erasesize;
 	bmtd.blk_shift = ffs(bmtd.blk_size) - 1;
