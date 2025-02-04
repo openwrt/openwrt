@@ -9,6 +9,11 @@
 #include <linux/io.h>
 #include <linux/reset.h>
 
+#include <linux/types.h>
+#include <linux/ip.h>
+#include <net/checksum.h>  // For csum_partial and csum_fold
+#include <linux/icmp.h>
+
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -23,40 +28,32 @@ typedef uint32_t uint32;
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
 	printk(KERN_INFO "%s: " fmt, __func__, ##__VA_ARGS__)
-
-static char nibble_to_hex(unsigned char nibble) {
-	return (nibble < 10) ? ('0' + nibble) : ('A' + (nibble - 10));
-}
-
 static void vDumpMemory(const void* ptr, size_t length) {
-	const unsigned char* data = (const unsigned char*)ptr;
-	char line_buffer[80];
-
-	for (size_t i = 0; i < length; i += 16) {
-		size_t buffer_i = 0;
-
-		// Print up to 16 bytes in hex format
-		for (size_t j = 0; j < 16; j++) {
-			if (i + j < length) {
-				char val = data[i + j];
-				line_buffer[buffer_i++] = nibble_to_hex((val & 0xF0)>>4);
-				line_buffer[buffer_i++] = nibble_to_hex(val & 0x0F);
-				line_buffer[buffer_i++] = ' ';
-			} else {
-				line_buffer[buffer_i++] = ' ';
-				line_buffer[buffer_i++] = ' ';
-				line_buffer[buffer_i++] = ' ';
-			}
-		}
-		line_buffer[buffer_i] = '\0';
-
-		printk("%08x: %s\n", ((uint32_t)ptr) + i, line_buffer);
-	}
+	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_NONE, 16, 1, ptr, length, false);
 }
 #else
 #define UNIMAC_DBG(fmt, ...) \
 	do { } while (0)
 #endif
+
+int verify_ip_checksum(struct iphdr *ip_header) {
+    // Save the original checksum
+    __sum16 original_checksum = ip_header->check;
+	UNIMAC_DBG("original_checksum: 0x%04X\n", original_checksum);
+
+    // Set the checksum field to zero before calculation
+    ip_header->check = 0;
+
+    // Calculate the checksum
+    __sum16 calculated_checksum = ip_fast_csum((u8 *)ip_header, ip_header->ihl);
+	UNIMAC_DBG("calculated_checksum: 0x%04X\n", calculated_checksum);
+
+    // Restore the original checksum
+    ip_header->check = original_checksum;
+
+    // Check if the calculated checksum matches the original
+    return (calculated_checksum == original_checksum);
+}
 
 /* Private driver data structure */
 struct bcm3380_priv {
@@ -346,51 +343,30 @@ int32_t uiEthPoll(void* pxRxBuf) {
 	return 0; // No message
 }
 
-static const char *UnimacCoreFields1[] = {
-    "uint8 Pad0[0x4]",
-    "UnimacCoreUnimacHdBkpCntl UnimacHdBkpCntl",
-    "UnimacCoreUnimacCmd UnimacCmd",
-    "uint32 UnimacMac0",
-    "UnimacCoreUnimacMac1 UnimacMac1",
-    "UnimacCoreUnimacFrmLen UnimacFrmLen",
-    "UnimacCoreUnimacPauseQuant UnimacPauseQunat",
-    "uint32 Pad1.0",
-    "uint32 Pad1.1",
-    "uint32 Pad1.2",
-    "uint32 Pad1.3",
-    "uint32 Pad1.4",
-    "uint32 Pad1.5",
-    "uint32 Pad1.6",
-    "uint32 Pad1.7",
-    "uint32 Pad1.8",
-    "UnimacCoreUnimacSfdOffset UnimacSfdOffset",
-    "UnimacCoreUnimacMode UnimacMode",
-    "UnimacCoreUnimacFrmTag0 UnimacFrmTag0",
-    "UnimacCoreUnimacFrmTag1 UnimacFrmTag1",
-    "uint32 Pad2.0",
-    "uint32 Pad2.1",
-    "uint32 Pad2.2",
-    "UnimacCoreUnimacTxIpgLen UnimacTxIpgLen"
+struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
+	uint16_t ausDstMac[3];
+	uint16_t ausSrcMac[3];
+	uint16_t usType;
 };
 
-static void dumpUnimac1(void) {
-	volatile Unimac* g_pxUnimacSelected = (volatile Unimac __iomem*)0xb2110000;
-	printk("MIPS_SMISB_CTRL=0x%08X\n", __raw_readl((void __iomem *)MIPS_SMISB_CTRL));
+struct __attribute__((packed)) EthernetPacket { // sizeof=0x2A
+	struct EthernetHeader xEth;
+	union {
+		struct {
+			struct iphdr header;
+		} ipv4;
+	} payload;
+};
 
-	uint32_t __iomem* base = (uint32_t __iomem*)0xb2110800;
-	for (uint32_t i=0; i<sizeof(UnimacCoreFields1) / sizeof(UnimacCoreFields1[0]); i++)
-		printk("UnimacCore.%s (0x%08X)=0x%08X\n", UnimacCoreFields1[i], (uint32_t)(&(base[i])), base[i]);
-
-	printk("&UnimacCore.UnimacCmd=0x%08X\n", (uint32_t)(&g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32));
-	printk("UnimacCore.UnimacCmd=0x%08X\n", g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32);
-	printk("UnimacCore.UnimacFrmLen=0x%08X\n", g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32);
-	printk("UnimacCore.UnimacMac0=0x%08X\n", g_pxUnimacSelected->UnimacCore.UnimacMac0);
-	printk("UnimacCore.UnimacMac1=0x%08X\n", g_pxUnimacSelected->UnimacCore.UnimacMac1.Reg32);
-	printk("Mbdma.Bufferbase=0x%08X\n", g_pxUnimacSelected->Mbdma.Bufferbase);
-	printk("Mbdma.Buffersize.Reg32=0x%08X\n", g_pxUnimacSelected->Mbdma.Buffersize.Reg32);
-	printk("Mbdma.Tokenaddress=0x%08X\n", g_pxUnimacSelected->Mbdma.Tokenaddress);
-	printk("Mbdma.Globalctl=0x%08X\n", g_pxUnimacSelected->Mbdma.Globalctl.Reg32);
-}
+enum NetworkConstants { // 4 bytes
+	UDP_HEADER_LEN      = 0x8,
+	UDP_PROTOCOL_IPV4   = 0x11,
+	TCP_HEADER_LEN      = 0x14,
+	ETHERNET_HEADER_LEN = 0xE,
+	ETHERNET_IPV4       = 0x800,
+	ETHERNET_ARP        = 0x806,
+	ARP_HEADER_LEN      = 0x1C,
+};
 
 static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 	vFpmInit();
@@ -405,7 +381,6 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 		mdelay(1000u);
 	UNIMAC_DBG("bLinkUp!!!!!!!\n");
 	UNIMAC_DBG("&IOPROC_SMISB.In.IncomingMessageFifo.InMsgData = 0x%08X\n", (uint32_t)(&(IOPROC_SMISB.In.IncomingMessageFifo.InMsgData)));
-	dumpUnimac1();
 
 	int32_t pollResult = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
@@ -415,6 +390,63 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 			uint32_t uiLength = pollResult;
 			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
 			vDumpMemory(buffer, uiLength);
+
+			uint32_t fcs = crc32_le(~0, buffer, uiLength - 4);
+			fcs ^= ~0;
+			UNIMAC_DBG("FCS = 0x%08X", fcs); // Need to swap endianess
+
+			struct EthernetPacket* packet = (struct EthernetPacket*) buffer;
+			UNIMAC_DBG("DstMac: %04X %04X %04X\n", packet->xEth.ausDstMac[0], packet->xEth.ausDstMac[1], packet->xEth.ausDstMac[2]);
+			UNIMAC_DBG("SrcMac: %04X %04X %04X\n", packet->xEth.ausSrcMac[0], packet->xEth.ausSrcMac[1], packet->xEth.ausSrcMac[2]);
+			UNIMAC_DBG("Type: 0x%04X\n", packet->xEth.usType);
+			if (ETHERNET_IPV4 == packet->xEth.usType) {
+				struct iphdr* header = &packet->payload.ipv4.header;
+				int headerLen = 4 * header->ihl;
+				UNIMAC_DBG("IPv4 headerLen = %d\n", headerLen);
+				UNIMAC_DBG("IPv4 tot_len = %d\n", header->tot_len);
+				UNIMAC_DBG("IPv4 protocol = %d\n", header->protocol);
+				UNIMAC_DBG("IPv4 ucChecksum = 0x%04X\n", header->check);
+				UNIMAC_DBG("IPv4 uiSrcIp = %08X\n", header->saddr);
+				UNIMAC_DBG("IPv4 uiDstIp = %08X\n", header->daddr);
+				if (!verify_ip_checksum((struct iphdr*)header)) {
+					UNIMAC_DBG("Bad IPv4 header checksum\n");
+					continue;
+				}
+
+				struct icmphdr* icmp = (struct icmphdr*)(header+1);
+				UNIMAC_DBG("Received ICMP type = %d\n", icmp->type);
+				if (icmp->type != 8) {
+					continue;
+				}
+
+				uint32_t icmp_len = header->tot_len - headerLen;
+				UNIMAC_DBG("icmp_len = 0x%04X\n", icmp_len);
+				UNIMAC_DBG("pingCheckSum = 0x%04X\n", icmp->checksum);
+
+				// Generate echo reply and calc checksum
+				icmp->type = 0;
+				icmp->checksum = 0;
+				icmp->checksum = csum_fold(csum_partial(icmp, icmp_len, 0));
+				UNIMAC_DBG("New pong checksum 0x%04X\n", icmp->checksum);
+
+				// Swap IP and calc checksum
+				uint32_t temp_ip = header->saddr;
+				header->saddr = header->daddr;
+				header->daddr = temp_ip;
+				header->check = 0;
+				header->check = ip_fast_csum((u8 *)header, header->ihl);
+				UNIMAC_DBG("New IPv4 header checksum 0x%04X\n", header->check);
+
+				// Swap Mac
+				uint16_t mac[3];
+				memcpy(mac, packet->xEth.ausDstMac, 6);
+				memcpy(packet->xEth.ausDstMac, packet->xEth.ausSrcMac, 6);
+				memcpy(packet->xEth.ausSrcMac, mac, 6);
+
+				UNIMAC_DBG("Txlen = 0x%08X\n", header->tot_len + ETHERNET_HEADER_LEN);
+
+				vDumpMemory(buffer, uiLength);
+			}
 		}
 		mdelay(100u);
 	} while(1+1);
