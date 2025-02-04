@@ -343,6 +343,88 @@ int32_t uiEthPoll(void* pxRxBuf) {
 	return 0; // No message
 }
 
+char byte_83F8A818 = 0;
+uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
+	UNIMAC_DBG("TransmitBurst\n");
+    volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
+    
+    // Enable peripheral if flag not set
+    if (byte_83F8A818 == 0) {
+		byte_83F8A818 = 1;
+        *((volatile uint32_t*)0xFF400034) |= 0x1;
+    }
+
+    // Validate burst size (1-16 elements)
+    if (burstSize < 1 || burstSize > 16) {
+        printk("Error: Invalid burst size (%d) specified", burstSize);
+        return 0;
+    }
+
+    // Find available TX slot (8 possible slots)
+    uint32_t status = *pTxStatus;
+    int32_t slot = -1;
+    for (int i = 0; i < 8; i++) {
+        if ((status & 0x1) == 0) { // Check if slot is free
+            slot = i;
+            break;
+        }
+        status >>= 4; // Next slot status in next nibble
+    }
+
+    if (slot == -1) {
+        printk("Error: TransmitBurst() unable to find available TX slot");
+        return 0;
+    }
+
+    // Calculate hardware register base for this slot
+    uint32_t regBase = 0xFF500000 + (slot * 0x84);
+
+    // Write burst parameters to hardware registers
+    for (int i = 0; i < burstSize; i++) {
+        volatile uint32_t* pReg = (volatile uint32_t*)(regBase + i*4);
+        *pReg = tx_params[i]; // Write parameter to register
+    }
+
+    // Configure burst control registers
+    volatile uint32_t* pBurstCtrl = (volatile uint32_t*)(regBase + 0x40);
+    pBurstCtrl[0] = Lantxmsgfifo01;  // Set UniMAC register address?
+    pBurstCtrl[1] = burstSize;       // Set burst size
+    pBurstCtrl[2] = 2;               // Start transmission command?
+
+    return 1; // Success
+}
+
+static uint32_t vEthernetTx(volatile Unimac *g_pxUnimacSelected, size_t uiLengthIn, const void *buffer) {
+	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
+
+	if ( (IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32 & 0x1Fu) < 2 ) {
+		UNIMAC_DBG("Error: TX FIFO has insufficient space for a TX message.\n");
+		return 0;
+	}
+
+	uint32_t token = FpmBlock.FpmPool.Pool1AllocDealloc.Reg32;
+	if ( (token & 0x80000000) == 0 ) {
+		UNIMAC_DBG("Error: Got an invalid token from the FPM!\n");
+		return 0;
+	}
+
+	// Calculate DMA destination address using the token and global DMA buffer
+	uint32_t dma_dest = g_uiUnimacDmaBuffer + (((token >> 12) & 0xFFFF) << 11);
+
+	// Copy the Ethernet packet data to the DMA buffer
+	memcpy((void*)dma_dest, buffer, clamped_length);
+
+	// Update the token with the clamped length's lower 12 bits
+	uint32_t adjusted_token = ((uint32_t)token & 0xFFFFF000) | (clamped_length & 0xFFF);
+
+	// Prepare parameters for DMA transmission
+	uint32_t tx_params[2];
+	tx_params[0] = 0x4208000; // Control/command value for the DMA engine?
+	tx_params[1] = adjusted_token;
+
+	return TransmitBurst(tx_params, 2, (uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01 & 0x1FFFFFFF) > 0;
+}
+
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
 	uint16_t ausDstMac[3];
 	uint16_t ausSrcMac[3];
@@ -446,9 +528,9 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 				UNIMAC_DBG("Txlen = 0x%08X\n", header->tot_len + ETHERNET_HEADER_LEN);
 
 				vDumpMemory(buffer, uiLength);
+				vEthernetTx(g_pxUnimacSelected, uiLength, buffer);
 			}
 		}
-		mdelay(100u);
 	} while(1+1);
 }
 
