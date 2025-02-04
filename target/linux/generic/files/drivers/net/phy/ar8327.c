@@ -326,8 +326,7 @@ ar8327_led_set_brightness(struct led_classdev *led_cdev,
 	u8 pattern;
 	bool active;
 
-	active = (brightness != LED_OFF);
-	active ^= aled->active_low;
+	active = (brightness != LED_OFF) != aled->active_low;
 
 	pattern = (active) ? AR8327_LED_PATTERN_ON :
 			     AR8327_LED_PATTERN_OFF;
@@ -501,7 +500,8 @@ ar8327_leds_init(struct ar8xxx_priv *priv)
 		if (aled->enable_hw_mode)
 			aled->pattern = AR8327_LED_PATTERN_RULE;
 		else
-			aled->pattern = AR8327_LED_PATTERN_OFF;
+			aled->pattern = aled->active_low ?
+				AR8327_LED_PATTERN_ON : AR8327_LED_PATTERN_OFF;
 
 		ar8327_set_led_pattern(priv, aled->led_num, aled->pattern);
 	}
