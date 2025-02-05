@@ -1,0 +1,20 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 05 Feb 2025 17:11:37 +0400
+Subject: [PATCH]: net: phy: qcom: qca807x fix condition for DAC_DSP_BIAS_CURRENT
+
+While setting the DAC value, the wrong boolean value is evaluated to set
+the DSP bias current. So let's correct the conditional statement and use
+the right boolean value read from the DTS set in the priv.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+--- a/drivers/net/phy/qcom/qca807x.c
++++ b/drivers/net/phy/qcom/qca807x.c
+@@ -782,7 +782,7 @@ static int qca807x_config_init(struct ph
+ 	control_dac &= ~QCA807X_CONTROL_DAC_MASK;
+ 	if (!priv->dac_full_amplitude)
+ 		control_dac |= QCA807X_CONTROL_DAC_DSP_AMPLITUDE;
+-	if (!priv->dac_full_amplitude)
++	if (!priv->dac_full_bias_current)
+ 		control_dac |= QCA807X_CONTROL_DAC_DSP_BIAS_CURRENT;
+ 	if (!priv->dac_disable_bias_current_tweak)
+ 		control_dac |= QCA807X_CONTROL_DAC_BIAS_CURRENT_TWEAK;
