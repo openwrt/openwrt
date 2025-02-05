@@ -1077,10 +1077,10 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
 		*data_m = pr->tcp_info_m;
 		break;
 	case TEMPLATE_FIELD_RANGE_CHK:
-		pr_info("TEMPLATE_FIELD_RANGE_CHK: not configured\n");
+		pr_debug("TEMPLATE_FIELD_RANGE_CHK: not configured\n");
 		break;
 	default:
-		pr_info("%s: unknown field %d\n", __func__, field_type);
+		pr_debug("%s: unknown field %d\n", __func__, field_type);
 		return -1;
 	}
 

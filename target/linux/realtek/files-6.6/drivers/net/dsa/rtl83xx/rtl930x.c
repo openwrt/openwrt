@@ -1680,7 +1680,7 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data_m = pr->tcp_info_m;
 			break;
 		case TEMPLATE_FIELD_RANGE_CHK:
-			pr_warn("Warning: TEMPLATE_FIELD_RANGE_CHK: not configured\n");
+			pr_debug("TEMPLATE_FIELD_RANGE_CHK: not configured\n");
 			break;
 		default:
 			pr_info("%s: unknown field %d\n", __func__, field_type);
