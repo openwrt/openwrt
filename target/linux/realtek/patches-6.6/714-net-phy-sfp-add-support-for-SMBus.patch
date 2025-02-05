@@ -107,21 +107,20 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  static void sfp_i2c_mdiobus_destroy(struct sfp *sfp)
  {
  	mdiobus_unregister(sfp->i2c_mii);
-@@ -1871,8 +1948,15 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1875,9 +1952,15 @@ static void sfp_sm_fault(struct sfp *sfp
  
  static int sfp_sm_add_mdio_bus(struct sfp *sfp)
  {
 -	if (sfp->mdio_protocol != MDIO_I2C_NONE)
--		return sfp_i2c_mdiobus_create(sfp);
-+	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_I2C)) {
-+		if (sfp->mdio_protocol != MDIO_I2C_NONE)
-+			return sfp_i2c_mdiobus_create(sfp);
-+
++	if (sfp->mdio_protocol == MDIO_I2C_NONE)
 +		return 0;
-+	}
 +
++	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_I2C))
+ 		return sfp_i2c_mdiobus_create(sfp);
+ 
 +	if (i2c_check_functionality(sfp->i2c, I2C_FUNC_SMBUS_BYTE_DATA))
 +		return sfp_sm_mdiobus_create(sfp);
- 
++
  	return 0;
  }
+ 
