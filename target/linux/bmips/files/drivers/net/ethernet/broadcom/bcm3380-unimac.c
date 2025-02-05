@@ -8,6 +8,8 @@
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/reset.h>
+#include <linux/mii.h>
+#include "unimac.h"
 
 #include <linux/types.h>
 #include <linux/ip.h>
@@ -36,6 +38,14 @@ static void vDumpMemory(const void* ptr, size_t length) {
 	do { } while (0)
 #endif
 
+typedef int BOOL;
+#define FpmBlock (*((volatile Fpm*)0xB2010000))
+#define dword_B2017000 (((volatile uint32_t*)0xB2017000))
+#define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
+
+
+#define MIPS_SMISB_CTRL 0xFF400030
+
 int verify_ip_checksum(struct iphdr *ip_header) {
     // Save the original checksum
     __sum16 original_checksum = ip_header->check;
@@ -56,38 +66,26 @@ int verify_ip_checksum(struct iphdr *ip_header) {
 }
 
 /* Private driver data structure */
-struct bcm3380_priv {
+struct bcm3380_unimac {
 	struct net_device *ndev;
 	void __iomem *base;
 	int irq;
-	/* Add other hardware-specific members:
-	 * - DMA descriptors
-	 * - TX/RX rings
-	 * - Spinlocks
-	 * - PHY information
-	 */
+
+	// The working memory of FPM, must be word-aligned
+	void* puiFpmMem;
+	uint32_t uiFpmMemNoCache; // g_uiUnimacDmaBuffer
+
+	int uiLinkModeIndex; // dword_83F8A814
+	int u5PhyPrtAddr;
 
 	struct clk **clock;
 	unsigned int num_clocks;
 
 	struct reset_control **reset;
 	unsigned int num_resets;
+
+	struct napi_struct napi;
 };
-
-/* Network device operations */
-static const struct net_device_ops bcm3380_netdev_ops = {
-
-};
-
-typedef int BOOL;
-#define FpmBlock (*((volatile Fpm*)0xB2010000))
-#define dword_B2017000 (((volatile uint32_t*)0xB2017000))
-#define MIPS_SMISB_CTRL 0xFF400030
-#define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
-//#define IntCtrl (*((IntControlRegs __iomem*)0xb4e00000))
-static uint32_t g_uiUnimacDmaBuffer = 0;
-static int dword_83F8A814 = 0;
-static int g_bOnUnimac0 = 0; // We are on Unimac1
 
 static void sub_83F821F4(int a1)
 {
@@ -164,7 +162,43 @@ static void sub_83F821F4(int a1)
   }
 }
 
-static void vFpmInit(void) {
+static int unimac_set_mac_address(struct net_device *ndev, void *p) {
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct sockaddr *addr = p;
+
+	if (!is_valid_ether_addr(addr->sa_data))
+		return -EADDRNOTAVAIL;
+
+	eth_hw_addr_set(ndev, addr->sa_data);
+
+	uint32_t uiMacHi = addr->sa_data[0];
+	uiMacHi <<= 8;
+	uiMacHi |= addr->sa_data[1];
+	uiMacHi <<= 8;
+	uiMacHi |= addr->sa_data[2];
+	uiMacHi <<= 8;
+	uiMacHi |= addr->sa_data[3];
+
+	uint16_t uiMacLo = addr->sa_data[4];
+	uiMacLo <<= 8;
+	uiMacLo |= addr->sa_data[5];
+
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
+	g_pxUnimacSelected->UnimacCore.UnimacMac0 = uiMacHi;
+	g_pxUnimacSelected->UnimacCore.UnimacMac1.Reg32 = uiMacLo;
+
+	return 0;
+}
+
+static int unimac_open(struct net_device *ndev) {
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct sockaddr addr;
+
+	unimac->uiLinkModeIndex = 0;
+	unimac->u5PhyPrtAddr = 0;
+
+	/* Initialize FPM Start*/
+	unimac->puiFpmMem = kzalloc(0x80000, GFP_KERNEL);// Align to 4-byte
 	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x%08X;\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;         // Set InitMem
 	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;\n");
@@ -172,20 +206,19 @@ static void vFpmInit(void) {
 	UNIMAC_DBG("while ( (FpmBlock.FpmCtrl.FpmCtl.Reg32 & 0x10) != 0 );\n");
 
 	FpmBlock.FpmCtrl.Pool1Cfg1.Reg32 = 0x6000000; // FpBufSize=3h6
-	uint32_t AlignedMemory = (uint32_t) kzalloc(0x80000, GFP_KERNEL);// Align to 4-byte
-	UNIMAC_DBG("AlignedMemory = 0x%08X\n", AlignedMemory);
-	g_uiUnimacDmaBuffer = AlignedMemory | 0xA0000000;
-	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = AlignedMemory & 0x1FFFFFFF;// 4 byte aligned address
+	unimac->uiFpmMemNoCache = ((uint32_t)unimac->puiFpmMem) | 0xA0000000;
+	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = unimac->uiFpmMemNoCache & 0x1FFFFFFF;// 4 byte aligned address
 	sub_83F821F4(0x100);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10000;      // Set Pool1Enable
 
 	UNIMAC_DBG("FpmCtrl.Pool1Cfg1 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg1.Reg32);
 	UNIMAC_DBG("FpmCtrl.Pool1Cfg2 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg2.Reg32);
 	UNIMAC_DBG("FpmCtrl.FpmCtl    = 0x%08X\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
-}
+	dev_info(&ndev->dev, "Fpm ready with working memory @ 0x%08X\n", unimac->uiFpmMemNoCache);
+	/* Initialize FPM End*/
 
-static void MspInit(void) {
-	writel_be(0x18000007, (void __iomem *)MIPS_SMISB_CTRL);; // MIPS_SMISB_CTRL
+	/* Initialize MSP Start*/
+	writel_be(0x18000007, (void __iomem *)MIPS_SMISB_CTRL);
 	mdelay(10u);
 
 	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 = 6;
@@ -197,7 +230,64 @@ static void MspInit(void) {
 	UNIMAC_DBG("IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
 	for (int i = 0; i<4; i++)
 		UNIMAC_DBG("IOPROC_SMISB.Msgid.MessageId[i] = 0x%08X\n", IOPROC_SMISB.Msgid.MessageId.MsgId[i].Bits.MsgWdSzId);
+	UNIMAC_DBG("MspInit\n");
+	/* Initialize MSP End*/
+
+	/* Initialize Unimac Start*/
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 0x2000u;// SwReset
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x2000u;
+	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
+	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
+	unimac_set_mac_address(ndev, &addr);
+	g_pxUnimacSelected->Mbdma.Bufferbase = unimac->uiFpmMemNoCache & 0x1FFFFFFF;
+	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = 6;
+	g_pxUnimacSelected->Mbdma.Tokenaddress = 0x12010200; // Should refer to FpmPool.Pool1AllocDealloc
+	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
+	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
+	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
+	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = 0x15801240; //Should refer to MSP_BLOCK_SMISB.Ioproc.In.IncomingMessageFifo.InMsgData
+	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
+	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = 0x15801240;
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
+	/* Initialize Unimac End*/
+
+	// napi_enable(&unimac->napi);
+
+	// netif_carrier_on(ndev);
+	// netif_start_queue(ndev);
+	return 0;
 }
+
+static int unimac_stop(struct net_device *ndev) {
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+
+	netif_stop_queue(ndev);
+	napi_disable(&unimac->napi);
+
+	return 0;
+}
+
+static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *ndev) {
+	// struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	netdev_tx_t ret;
+	ret = NETDEV_TX_OK;
+
+	return ret;
+}
+
+static void unimac_set_multicast_list(struct net_device *ndev) {
+
+}
+
+/* Network device operations */
+static const struct net_device_ops bcm3380_netdev_ops = {
+	.ndo_open = unimac_open,
+	.ndo_stop = unimac_stop,
+	.ndo_start_xmit = unimac_start_xmit,
+	.ndo_set_mac_address = unimac_set_mac_address,
+	.ndo_set_rx_mode = unimac_set_multicast_list,
+};
 
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
 	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | 0x28000000;// Set StartBusy, OpCode=2b10
@@ -215,89 +305,63 @@ static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAdd
 	UNIMAC_DBG("[u5PhyPrtAddr=%d, ui5RegDecAddr=%d]<--0x%04X\n", u5PhyPrtAddr, u5RegDecAddr, usDataAddr);
 }
 
-struct LinkStat // sizeof=0x8
-{                                       // XREF: BL_CODE:qwq/r
-	uint8_t EthSpeed;
-	uint8_t HdEna; // Half-Duplex
-	uint8_t b;
-	uint8_t c;
-	const char *c_acString;
+struct UnimacLinkMode {
+	uint8_t ucEthSpeed; // 0=10M, 1=100M, 2=1G
+	uint8_t bHdEna; // 1 = Half-Duplex
+	const char *c_acName;
 };
 
-struct LinkStat g_LinkStats[8] = {
-	{0, 1, 0, 0, "incomplete"},
-	{0, 1, 0, 0, "10M half"},
-	{0, 0, 0, 0, "10M full"},
-	{1, 1, 0, 0, "100M half"},
-	{1, 0, 0, 0, "100M T4"},
-	{1, 0, 0, 0, "100M full"},
-	{2, 1, 0, 0, "1G half"},
-	{2, 0, 0, 0, "1G full"},
+static struct UnimacLinkMode g_axUnimacLinkModes[8] = {
+	{CMD_SPEED_10, 1, "incomplete"},
+	{CMD_SPEED_10, 1, "10M half"},
+	{CMD_SPEED_10, 0, "10M full"},
+	{CMD_SPEED_100, 1, "100M half"},
+	{CMD_SPEED_100, 0, "100M T4"},
+	{CMD_SPEED_100, 0, "100M full"},
+	{CMD_SPEED_1000, 1, "1G half"},
+	{CMD_SPEED_1000, 0, "1G full"},
 };
 
-BOOL bLinkUp(volatile Unimac *g_pxUnimacSelected) {
-  int v0; // $v1
-  struct LinkStat *v2; // $v0
-  int HdEna; // $s0
-  int EthSpeed; // $s2
-  uint32_t uiUnimacCmd; // $s1 MAPDST
+BOOL bLinkUp(struct bcm3380_unimac *unimac) {
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
 
-  if (usMdioRead(g_pxUnimacSelected, g_bOnUnimac0, 1) & 0x20)
-  {
-    v0 = (usMdioRead(g_pxUnimacSelected, g_bOnUnimac0, 25) >> 8) & 7;
-    if ( v0 != dword_83F8A814 )
-    {
-      uiUnimacCmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
-      dword_83F8A814 = v0;
-      v2 = &g_LinkStats[v0];
-      HdEna = v2->HdEna;
-      EthSpeed = v2->EthSpeed;
-      UNIMAC_DBG("Link up: %s\n", v2->c_acString);
-      if ( HdEna )
-        uiUnimacCmd |= 0x400u;
-      else
-        uiUnimacCmd &= ~0x400u;
-      g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = (uiUnimacCmd & 0xFFFFFFF3) | (4 * EthSpeed);
-    }
-    //PeriphBlockCached.Led.LedMode0.Reg32 = 0x300;// Led4Mode = 2b11
-    return 1;
-  }
-  else
-  {
-    //PeriphBlockCached.Led.LedMode0.Reg32 = 0;
-    return 0;
-  }
+	// Check AUTO_NEGOTIATION_COMPLETE in the status register
+	if (usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, MII_BMSR) & BMSR_ANEGCOMPLETE) {
+		uint32_t uiLinkModeIndex = (usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 25) >> 8) & 7;
+		if ( uiLinkModeIndex != unimac->uiLinkModeIndex ) {
+			unimac->uiLinkModeIndex = uiLinkModeIndex;
+			struct UnimacLinkMode* pxLinkMode = &g_axUnimacLinkModes[uiLinkModeIndex];
+			UNIMAC_DBG("Link up: %s\n", pxLinkMode->c_acName);
+
+			// Update link speed and duplex mode
+			uint32_t uiUnimacCmd = g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32;
+			if ( pxLinkMode->bHdEna )
+				uiUnimacCmd |= CMD_HD_EN;
+			else
+				uiUnimacCmd &= ~CMD_HD_EN;
+
+			uiUnimacCmd &= ~(CMD_SPEED_MASK << CMD_SPEED_SHIFT);
+			uiUnimacCmd |= (pxLinkMode->ucEthSpeed << CMD_SPEED_SHIFT);
+			g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 = uiUnimacCmd;
+		}
+		//PeriphBlockCached.Led.LedMode0.Reg32 = 0x300;// Led4Mode = 2b11
+		return 1;
+	}
+
+	//PeriphBlockCached.Led.LedMode0.Reg32 = 0;
+	return 0;
 }
 
-static void vWaitForLinkUp(volatile Unimac *g_pxUnimacSelected) {
-	if ( !bLinkUp(g_pxUnimacSelected) ) {
+static void vWaitForLinkUp(struct bcm3380_unimac *unimac) {
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
+	if ( !bLinkUp(unimac) ) {
 		UNIMAC_DBG("!bLinkUp\n");
-		uint16_t v0 = usMdioRead(g_pxUnimacSelected, g_bOnUnimac0, 4);
-		vMdioWrite(g_pxUnimacSelected, g_bOnUnimac0, 4u, v0 | 0xE0);
-		v0 = usMdioRead(g_pxUnimacSelected, g_bOnUnimac0, 0);
-		vMdioWrite(g_pxUnimacSelected, g_bOnUnimac0, 0, v0 | 0x200);
+		uint16_t v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
+		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
+		v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
+		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
 		UNIMAC_DBG("Waiting for link up...\n");
 	}
-}
-
-static void vUnimacInit(volatile Unimac *g_pxUnimacSelected) {
-	uint16_t macAddr[4] = {0x0000, 0x0010, 0x18FF, 0xFFFF};
-
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 0x2000u;// SwReset
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x2000u;
-	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
-	g_pxUnimacSelected->UnimacCore.UnimacMac0 = (((uint32_t)macAddr[1]) << 16) | ((uint32_t)macAddr[2]);
-	g_pxUnimacSelected->UnimacCore.UnimacMac1.Reg32 = ((uint32_t)macAddr[3]);
-	g_pxUnimacSelected->Mbdma.Bufferbase = g_uiUnimacDmaBuffer & 0x1FFFFFFF;
-	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = 6;
-	g_pxUnimacSelected->Mbdma.Tokenaddress = 0x12010200;
-	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
-	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
-	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = 0x15801240; //Should refer to MSP_BLOCK_SMISB.Ioproc.In.IncomingMessageFifo.InMsgData
-	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = 0x15801240;
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
 }
 
 static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
@@ -310,7 +374,7 @@ static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
  * Return 0 if there is no pending frame.
  * Return negative on error.
  */
-int32_t uiEthPoll(void* pxRxBuf) {
+int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
 	uint32_t uiMsgSts = IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
 	if ( (uiMsgSts & 0x80000000) != 0 )
 	{
@@ -328,7 +392,7 @@ int32_t uiEthPoll(void* pxRxBuf) {
 					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiRead2);
 					// *uiLength = 0;
 				} else {
-					memcpy(pxRxBuf, (const void *)((((uiRead2 >> 12) << 11) & 0xFFFF) + g_uiUnimacDmaBuffer), length);
+					memcpy(pxRxBuf, (const void *)((((uiRead2 >> 12) << 11) & 0xFFFF) + unimac->uiFpmMemNoCache), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
 				FpmBlock.FpmPool.Pool1AllocDealloc.Reg32 = uiRead2;
@@ -394,7 +458,7 @@ uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxms
     return 1; // Success
 }
 
-static uint32_t vEthernetTx(volatile Unimac *g_pxUnimacSelected, size_t uiLengthIn, const void *buffer) {
+static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer) {
 	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
 
 	if ( (IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32 & 0x1Fu) < 2 ) {
@@ -409,7 +473,7 @@ static uint32_t vEthernetTx(volatile Unimac *g_pxUnimacSelected, size_t uiLength
 	}
 
 	// Calculate DMA destination address using the token and global DMA buffer
-	uint32_t dma_dest = g_uiUnimacDmaBuffer + (((token >> 12) & 0xFFFF) << 11);
+	uint32_t dma_dest = unimac->uiFpmMemNoCache + (((token >> 12) & 0xFFFF) << 11);
 
 	// Copy the Ethernet packet data to the DMA buffer
 	memcpy((void*)dma_dest, buffer, clamped_length);
@@ -422,6 +486,7 @@ static uint32_t vEthernetTx(volatile Unimac *g_pxUnimacSelected, size_t uiLength
 	tx_params[0] = 0x4208000; // Control/command value for the DMA engine?
 	tx_params[1] = adjusted_token;
 
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
 	return TransmitBurst(tx_params, 2, (uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01 & 0x1FFFFFFF) > 0;
 }
 
@@ -450,16 +515,11 @@ enum NetworkConstants { // 4 bytes
 	ARP_HEADER_LEN      = 0x1C,
 };
 
-static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
-	vFpmInit();
-	UNIMAC_DBG("Fpm ready, g_uiUnimacDmaBuffer = 0x%08X\n", g_uiUnimacDmaBuffer);
-	MspInit();
-	UNIMAC_DBG("MspInit\n");
-	vUnimacInit(g_pxUnimacSelected);
-	UNIMAC_DBG("vUnimacInit\n");
-	vWaitForLinkUp(g_pxUnimacSelected);
-	vUnimacEnableRxTx(g_pxUnimacSelected);
-	while (!bLinkUp(g_pxUnimacSelected))
+static void vUnimacDemo(struct bcm3380_unimac *unimac) {
+	unimac_open(unimac->ndev);
+	vWaitForLinkUp(unimac);
+	vUnimacEnableRxTx((volatile Unimac *)unimac->base);
+	while (!bLinkUp(unimac))
 		mdelay(1000u);
 	UNIMAC_DBG("bLinkUp!!!!!!!\n");
 	UNIMAC_DBG("&IOPROC_SMISB.In.IncomingMessageFifo.InMsgData = 0x%08X\n", (uint32_t)(&(IOPROC_SMISB.In.IncomingMessageFifo.InMsgData)));
@@ -467,7 +527,7 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 	int32_t pollResult = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
 	do {
-		pollResult = uiEthPoll(buffer);
+		pollResult = uiEthPoll(buffer, unimac);
 		if (pollResult > 0) {
 			uint32_t uiLength = pollResult;
 			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
@@ -528,10 +588,14 @@ static void vUnimacDemo(volatile Unimac *g_pxUnimacSelected) {
 				UNIMAC_DBG("Txlen = 0x%08X\n", header->tot_len + ETHERNET_HEADER_LEN);
 
 				vDumpMemory(buffer, uiLength);
-				vEthernetTx(g_pxUnimacSelected, uiLength, buffer);
+				vEthernetTx(unimac, uiLength, buffer);
 			}
 		}
 	} while(1+1);
+}
+
+static int unimac_poll(struct napi_struct *napi, int budget) {
+	return 0;
 }
 
 /* Probe function - called when device is discovered */
@@ -540,7 +604,7 @@ static int bcm3380_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->of_node;
 	struct net_device *ndev;
-	struct bcm3380_priv *priv;
+	struct bcm3380_unimac *priv;
 	struct resource *res;
 	int err;
 
@@ -623,17 +687,23 @@ static int bcm3380_probe(struct platform_device *pdev)
 	}
 	UNIMAC_DBG("IRQ: %d\n", priv->irq);
 
-	vUnimacDemo((volatile Unimac*) (priv->base));
+	/* Get MAC address from device tree */
+	uint8_t aucDtsMac[6];
+	of_get_mac_address(pdev->dev.of_node, aucDtsMac);
+	if (is_valid_ether_addr(aucDtsMac)) {
+		dev_addr_set(ndev, aucDtsMac);
+		dev_info(dev, "Using MAC from DTS: %pM\n", aucDtsMac);
+	} else {
+		eth_hw_addr_random(ndev);
+		dev_info(dev, "Using random MAC address\n");
+	}
+	vUnimacDemo(priv);
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
-	// ndev->ethtool_ops = &bcm3380_ethtool_ops; /* If implementing ethtool */
+	netif_napi_add(ndev, &priv->napi, unimac_poll);
 
-	/* Get MAC address from device tree */
-	//if (of_get_mac_address(pdev->dev.of_node, ndev->dev_addr)) {
-	//	eth_hw_addr_random(ndev);
-	//	dev_info(&pdev->dev, "Using random MAC address\n");
-	//}
+	// ndev->ethtool_ops = &bcm3380_ethtool_ops; /* If implementing ethtool */
 
 	/* Register network device */
 	//err = register_netdev(ndev);
