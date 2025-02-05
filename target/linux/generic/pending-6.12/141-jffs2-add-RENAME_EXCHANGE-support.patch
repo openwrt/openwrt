@@ -6,7 +6,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/jffs2/dir.c
 +++ b/fs/jffs2/dir.c
-@@ -791,18 +791,31 @@ static int jffs2_rename (struct mnt_idma
+@@ -794,18 +794,31 @@ static int jffs2_rename (struct mnt_idma
  	int ret;
  	struct jffs2_sb_info *c = JFFS2_SB_INFO(old_dir_i->i_sb);
  	struct jffs2_inode_info *victim_f = NULL;
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		victim_f = JFFS2_INODE_INFO(d_inode(new_dentry));
  		if (d_is_dir(new_dentry)) {
  			struct jffs2_full_dirent *fd;
-@@ -837,7 +850,7 @@ static int jffs2_rename (struct mnt_idma
+@@ -840,7 +853,7 @@ static int jffs2_rename (struct mnt_idma
  	if (ret)
  		return ret;
  
@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		/* There was a victim. Kill it off nicely */
  		if (d_is_dir(new_dentry))
  			clear_nlink(d_inode(new_dentry));
-@@ -863,6 +876,12 @@ static int jffs2_rename (struct mnt_idma
+@@ -866,6 +879,12 @@ static int jffs2_rename (struct mnt_idma
  	if (flags & RENAME_WHITEOUT)
  		/* Replace with whiteout */
  		ret = jffs2_whiteout(idmap, old_dir_i, old_dentry);
@@ -62,7 +62,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	else
  		/* Unlink the original */
  		ret = jffs2_do_unlink(c, JFFS2_INODE_INFO(old_dir_i),
-@@ -895,7 +914,7 @@ static int jffs2_rename (struct mnt_idma
+@@ -898,7 +917,7 @@ static int jffs2_rename (struct mnt_idma
  		return ret;
  	}
  
@@ -70,4 +70,4 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (d_is_dir(old_dentry) && !(flags & RENAME_EXCHANGE))
  		drop_nlink(old_dir_i);
  
- 	old_dir_i->i_mtime = inode_set_ctime_to_ts(old_dir_i, ITIME(now));
+ 	inode_set_mtime_to_ts(old_dir_i,

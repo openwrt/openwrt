@@ -34,9 +34,9 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int __init nf_flow_table_module_init(void)
  {
  	int ret;
-@@ -670,8 +687,14 @@ static int __init nf_flow_table_module_i
+@@ -674,9 +691,14 @@ static int __init nf_flow_table_module_i
  	if (ret)
- 		goto out_offload;
+ 		goto out_bpf;
  
 +	ret = register_netdevice_notifier(&flow_offload_netdev_notifier);
 +	if (ret)
@@ -44,12 +44,12 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +
  	return 0;
  
+ out_bpf:
 +out_offload_init:
-+	nf_flow_table_offload_exit();
+ 	nf_flow_table_offload_exit();
  out_offload:
  	unregister_pernet_subsys(&nf_flow_table_net_ops);
- 	return ret;
-@@ -679,6 +702,7 @@ out_offload:
+@@ -685,6 +707,7 @@ out_offload:
  
  static void __exit nf_flow_table_module_exit(void)
  {
@@ -59,7 +59,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
 --- a/net/netfilter/nft_flow_offload.c
 +++ b/net/netfilter/nft_flow_offload.c
-@@ -480,47 +480,14 @@ static struct nft_expr_type nft_flow_off
+@@ -481,47 +481,14 @@ static struct nft_expr_type nft_flow_off
  	.owner		= THIS_MODULE,
  };
  

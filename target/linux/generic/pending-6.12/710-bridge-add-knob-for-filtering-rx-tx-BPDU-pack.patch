@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/include/uapi/linux/if_link.h
 +++ b/include/uapi/linux/if_link.h
-@@ -571,6 +571,7 @@ enum {
+@@ -1094,6 +1094,7 @@ enum {
  	IFLA_BRPORT_MCAST_MAX_GROUPS,
  	IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
  	IFLA_BRPORT_BACKUP_NHID,
@@ -152,7 +152,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	    (!(p->flags & BR_PORT_LOCKED) || !(p->flags & BR_LEARNING))) {
 --- a/net/core/rtnetlink.c
 +++ b/net/core/rtnetlink.c
-@@ -61,7 +61,7 @@
+@@ -62,7 +62,7 @@
  #include "dev.h"
  
  #define RTNL_MAX_TYPE		50
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  struct rtnl_link {
  	rtnl_doit_func		doit;
-@@ -4978,7 +4978,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
+@@ -5009,7 +5009,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
  	    brport_nla_put_flag(skb, flags, mask,
  				IFLA_BRPORT_MCAST_FLOOD, BR_MCAST_FLOOD) ||
  	    brport_nla_put_flag(skb, flags, mask,
