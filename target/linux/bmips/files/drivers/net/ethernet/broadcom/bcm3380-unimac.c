@@ -9,6 +9,7 @@
 #include <linux/io.h>
 #include <linux/reset.h>
 #include <linux/mii.h>
+#include <linux/if_ether.h>
 #include "unimac.h"
 
 #include <linux/types.h>
@@ -687,6 +688,23 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 }
 #endif // #if BCM3380_UNIMAC_TEST
 
+void print_skb_metadata(const struct sk_buff *skb) {
+	if (!skb)
+		return;
+
+	struct ethhdr *pxEthernetHeader = eth_hdr(skb);
+
+    printk(KERN_INFO "SKB Metadata:\n");
+    printk(KERN_INFO "  Packet Length: %u\n", skb->len);
+    printk(KERN_INFO "  Data Length: %u\n", skb->data_len);
+    printk(KERN_INFO "  dstMac : %pM\n", pxEthernetHeader->h_dest);
+    printk(KERN_INFO "  srcMac : %pM\n", pxEthernetHeader->h_source);
+    printk(KERN_INFO "  Network Header: %p\n", skb_network_header(skb));
+    printk(KERN_INFO "  Transport Header: %p\n", skb_transport_header(skb));
+    printk(KERN_INFO "  Device: %s\n", skb->dev ? skb->dev->name : "NULL");
+    printk(KERN_INFO "  Protocol: 0x%04x\n", ntohs(skb->protocol));
+}
+
 struct CreateSkbContext {
 	struct sk_buff *skb;
 	struct napi_struct* napi;
@@ -695,14 +713,15 @@ struct CreateSkbContext {
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
 
-	// uiLength -= 4; // Exclude FCS
+	uiLength -= 4; // Exclude FCS
 	context->skb = napi_alloc_skb(context->napi, uiLength);
 	if (context->skb) {
-		memcpy(skb_put(context->skb, uiLength), pBuffer, uiLength);
+		memcpy(context->skb->data, pBuffer, uiLength);
+		print_skb_metadata(context->skb);
 		return uiLength;
 	}
 
-	return 0;
+	return -114514;
 }
 
 static int unimac_poll(struct napi_struct *napi, int budget) {
@@ -720,9 +739,12 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 			break;
 		} else if (outcome < 0) {
 			UNIMAC_DBG("Rx Err %d!!!\n", outcome);
+			ndev->stats.rx_dropped++;
 		}
 		struct sk_buff *skb = context.skb;
 		size_t length = outcome;
+		skb_put(skb, length);
+		skb->protocol = eth_type_trans(skb, ndev);
 		UNIMAC_DBG("Received %d bytes\n", length);
 		vDumpMemory(skb->data, length);
 
