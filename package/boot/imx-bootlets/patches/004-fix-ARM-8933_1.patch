@@ -1,0 +1,11 @@
+--- a/linux_prep/core/cmdlines.S
++++ b/linux_prep/core/cmdlines.S
+@@ -14,7 +14,7 @@
+ #define CMDLINES_FILE "output-target/command_lines_stripped.txt"
+ #endif
+ 
+-	.section .cmdlines, #alloc
++	.section .cmdlines, "a"
+ 	.globl	cmdlines_start
+ cmdlines_start:
+ 	.incbin	CMDLINES_FILE
