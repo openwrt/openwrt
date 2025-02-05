@@ -86,8 +86,10 @@ struct bcm3380_unimac {
 
 	// FPM
 	uint32_t __iomem* puiPoolxAllocDealloc; // fpm_pool.h FpmPoolPoolAlloc
-#define FPM_IS_TOKEN_VALID(puiPoolxAllocDealloc) ((puiPoolxAllocDealloc & 0x80000000) ? 1 : 0)
-#define FPM_GET_TOKEN_INDEX(puiPoolxAllocDealloc) ((puiPoolxAllocDealloc >> 12) & 0x3FFFF)
+#define FPM_TOKEN_SIZE_MASK (0xFFF)
+#define FPM_GET_TOKEN_SIZE(token) ((token) & FPM_TOKEN_SIZE_MASK)
+#define FPM_IS_TOKEN_VALID(token) (((token) & 0x80000000) ? 1 : 0)
+#define FPM_GET_TOKEN_INDEX(token) (((token) >> 12) & 0x3FFFF)
 
 	// MSP IOPROC
 	uint32_t __iomem* puiInMsgSts; // ioproc.h IoprocIoprocInMsgSts
@@ -95,6 +97,8 @@ struct bcm3380_unimac {
 	uint32_t __iomem* puiInMsgData;
 	uint32_t __iomem* puiOgMsgSts; // ioproc.h IoprocIoprocOgMsgSts
 #define IOPROC_OG_GET_FIFO_VACANCY(puiOgMsgSts) (puiOgMsgSts & 0x1F)
+
+	uint32_t uiLanTxMsgFifo;
 
 	struct clk **clock;
 	unsigned int num_clocks;
@@ -263,6 +267,7 @@ static int unimac_open(struct net_device *ndev) {
 
 	/* Initialize Unimac Start*/
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
+	unimac->uiLanTxMsgFifo = LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01);
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 0x2000u;// SwReset
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x2000u;
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
@@ -273,10 +278,15 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->Mbdma.Tokenaddress = LtoP(unimac->puiPoolxAllocDealloc);
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
 	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
+
+	// Rx channel
 	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = uiInMsgDataPhysicalAddr;
+
+	// Tx channel
 	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
 	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = uiInMsgDataPhysicalAddr;
+
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
 	/* Initialize Unimac End*/
 
@@ -407,20 +417,20 @@ int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
 
 		uiMsgSts = readl_be(unimac->puiInMsgSts);
 		if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
-			uint32_t uiRead2 = readl_be(unimac->puiInMsgData);
+			uint32_t uiToken = readl_be(unimac->puiInMsgData);
 			if ( uiRead1 >> 26 ) {
-				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiRead2);
+				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiToken);
 				return -1;
 			} else {
-				uint32_t length = uiRead2 & 0xFFF;
+				uint32_t length = FPM_GET_TOKEN_SIZE(uiToken);
 				if ( (uiRead1 & 0x383) != 0 ) {
-					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiRead2);
+					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiToken);
 					// *uiLength = 0;
 				} else {
-					memcpy(pxRxBuf, (const void *)((((uiRead2 >> 12) << 11) & 0xFFFF) + unimac->uiFpmMemNoCache), length);
+					memcpy(pxRxBuf, (const void *)((((uiToken >> 12) << 11) & 0xFFFF) + unimac->uiFpmMemNoCache), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
-				writel_be(uiRead2, unimac->puiPoolxAllocDealloc);
+				writel_be(uiToken, unimac->puiPoolxAllocDealloc);
 				return length;
 			}
 		} else {
@@ -504,15 +514,14 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	memcpy((void*)dma_dest, buffer, clamped_length);
 
 	// Update the token with the clamped length's lower 12 bits
-	uint32_t adjusted_token = ((uint32_t)token & 0xFFFFF000) | (clamped_length & 0xFFF);
+	uint32_t adjusted_token = (token & ~FPM_TOKEN_SIZE_MASK) | (clamped_length & FPM_TOKEN_SIZE_MASK);
 
 	// Prepare parameters for DMA transmission
 	uint32_t tx_params[2];
 	tx_params[0] = 0x4208000; // Control/command value for the DMA engine?
 	tx_params[1] = adjusted_token;
 
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
-	return TransmitBurst(tx_params, 2, LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01)) > 0;
+	return TransmitBurst(tx_params, 2, unimac->uiLanTxMsgFifo) > 0;
 }
 
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
