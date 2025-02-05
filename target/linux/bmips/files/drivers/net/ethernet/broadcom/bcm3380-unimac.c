@@ -16,6 +16,9 @@
 #include <net/checksum.h>  // For csum_partial and csum_fold
 #include <linux/icmp.h>
 
+#include <linux/timer.h>
+#include <linux/jiffies.h>
+
 typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
@@ -26,13 +29,12 @@ typedef uint32_t uint32;
 #include <bcm3380/IntControl.h>
 
 #define BCM3380_UNIMAC_DBG 1
+#define BCM3380_UNIMAC_TEST 0
 
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
 	printk(KERN_INFO "%s: " fmt, __func__, ##__VA_ARGS__)
-static void vDumpMemory(const void* ptr, size_t length) {
-	print_hex_dump(KERN_INFO, "", DUMP_PREFIX_NONE, 16, 1, ptr, length, false);
-}
+#define vDumpMemory(ptr, length) print_hex_dump(KERN_INFO, "", DUMP_PREFIX_NONE, 16, 1, ptr, length, false)
 #else
 #define UNIMAC_DBG(fmt, ...) \
 	do { } while (0)
@@ -47,29 +49,12 @@ typedef int BOOL;
 
 #define MIPS_SMISB_CTRL 0xFF400030
 
+#define POLL_INTERVAL (msecs_to_jiffies(100)) // Poll every 100 milliseconds
+
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
 #define LtoP( logicalAddr ) ( ((uint32_t)(logicalAddr)) & 0x1FFFFFFF )
 #define PtoL( x ) ( LtoP(x) | 0xa0000000 )
-
-int verify_ip_checksum(struct iphdr *ip_header) {
-    // Save the original checksum
-    __sum16 original_checksum = ip_header->check;
-	UNIMAC_DBG("original_checksum: 0x%04X\n", original_checksum);
-
-    // Set the checksum field to zero before calculation
-    ip_header->check = 0;
-
-    // Calculate the checksum
-    __sum16 calculated_checksum = ip_fast_csum((u8 *)ip_header, ip_header->ihl);
-	UNIMAC_DBG("calculated_checksum: 0x%04X\n", calculated_checksum);
-
-    // Restore the original checksum
-    ip_header->check = original_checksum;
-
-    // Check if the calculated checksum matches the original
-    return (calculated_checksum == original_checksum);
-}
 
 /* Private driver data structure */
 struct bcm3380_unimac {
@@ -100,6 +85,8 @@ struct bcm3380_unimac {
 
 	uint32_t uiLanTxMsgFifo;
 
+	struct timer_list poll_timer;
+
 	struct clk **clock;
 	unsigned int num_clocks;
 
@@ -108,6 +95,11 @@ struct bcm3380_unimac {
 
 	struct napi_struct napi;
 };
+
+static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer);
+BOOL bLinkUp(struct bcm3380_unimac *unimac);
+static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr);
+static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr);
 
 static void sub_83F821F4(int a1)
 {
@@ -125,63 +117,73 @@ static void sub_83F821F4(int a1)
   v1 = a1;
   if ( (uint8_t)a1 )
   {
-    v1 = (a1 + 255) & 0xFFFFFF00;
-    UNIMAC_DBG("Error: FPM token limit must be a multiple of 256.  Rounding up to %d\n", v1);
+	v1 = (a1 + 255) & 0xFFFFFF00;
+	UNIMAC_DBG("Error: FPM token limit must be a multiple of 256.  Rounding up to %d\n", v1);
   }
   v2 = 0;
   if ( v1 <= 0x3FFFFFF )
   {
-    v3 = 0;
-    do
-    {
-      v10[v3] = -1;
-      v3 = ++v2;
-    }
-    while ( v2 < 10 );
-    v4 = 0;
-    if ( v1 >> 8 > 0 )
-    {
-      v5 = 0;
-      do
-      {
-        v10[v5 + 1] &= ~(1 << (v4++ & 0x1F));
-        v5 = v4 >> 5;
-      }
-      while ( v4 < v1 >> 8 );
-    }
-    v6 = 0;
-    v7 = 0;
-    do
-    {
-      if ( v10[v7 + 1] != -1 )
-        v10[0] &= ~(1 << (v6 & 7));
-      v7 = ++v6;
-    }
-    while ( v6 < 8 );
+	v3 = 0;
+	do
+	{
+	  v10[v3] = -1;
+	  v3 = ++v2;
+	}
+	while ( v2 < 10 );
+	v4 = 0;
+	if ( v1 >> 8 > 0 )
+	{
+	  v5 = 0;
+	  do
+	  {
+		v10[v5 + 1] &= ~(1 << (v4++ & 0x1F));
+		v5 = v4 >> 5;
+	  }
+	  while ( v4 < v1 >> 8 );
+	}
+	v6 = 0;
+	v7 = 0;
+	do
+	{
+	  if ( v10[v7 + 1] != -1 )
+		v10[0] &= ~(1 << (v6 & 7));
+	  v7 = ++v6;
+	}
+	while ( v6 < 8 );
 
 
 
-    dword_B2017000[0] = v10[0];
-    v8 = 1;
-    v9 = 1;
-    do
-    {
-      dword_B2017000[v9 + 1] = v10[v9];
-      v9 = ++v8;
-    }
-    while ( v8 < 9 );
+	dword_B2017000[0] = v10[0];
+	v8 = 1;
+	v9 = 1;
+	do
+	{
+	  dword_B2017000[v9 + 1] = v10[v9];
+	  v9 = ++v8;
+	}
+	while ( v8 < 9 );
 
 	for (int i=0; i<12; i++)
 		UNIMAC_DBG("v10[%d] = 0x%08X, dword_B2017000[%d] = 0x%08X\n", i, v10[i], i, dword_B2017000[i]);
 
-    FpmBlock.FpmCtrl.MemData1 = v1;
-    FpmBlock.FpmCtrl.MemCtl.Reg32 = 0xB0000000; // Set MemWr, MemSel=2b11
-    mdelay(10u);
+	FpmBlock.FpmCtrl.MemData1 = v1;
+	FpmBlock.FpmCtrl.MemCtl.Reg32 = 0xB0000000; // Set MemWr, MemSel=2b11
+	mdelay(10u);
   }
   else
   {
-    UNIMAC_DBG("Error: FPM token limit must be less than 64K.\n");
+	UNIMAC_DBG("Error: FPM token limit must be less than 64K.\n");
   }
+}
+
+// Timer callback function
+static void poll_timer_callback(struct timer_list *t) {
+	struct bcm3380_unimac *unimac = from_timer(unimac, t, poll_timer);
+
+	// Schedule NAPI poll
+	napi_schedule(&unimac->napi);
+	// Rearm the timer
+	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
 }
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
@@ -290,32 +292,83 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
 	/* Initialize Unimac End*/
 
-	// napi_enable(&unimac->napi);
+	if ( !bLinkUp(unimac) ) {
+		UNIMAC_DBG("!bLinkUp\n");
+		uint16_t v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
+		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
+		v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
+		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
+		UNIMAC_DBG("Waiting for link up...\n");
+	}
 
-	// netif_carrier_on(ndev);
-	// netif_start_queue(ndev);
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 3u;// Enable Rx and Tx
+	UNIMAC_DBG("Enabled Rx and Tx\n");
+
+	while (!bLinkUp(unimac))
+		mdelay(1000u);
+	UNIMAC_DBG("bLinkUp!!!!!!!\n");
+
+#if !BCM3380_UNIMAC_TEST
+	napi_enable(&unimac->napi);
+
+	timer_setup(&unimac->poll_timer, poll_timer_callback, 0);
+	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
+
+	netif_carrier_on(ndev);
+	netif_start_queue(ndev);
+#endif // #if BCM3380_UNIMAC_TEST
 	return 0;
 }
 
 static int unimac_stop(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 
+	UNIMAC_DBG("Linux wants to stop Unimac\n");
+
 	netif_stop_queue(ndev);
 	napi_disable(&unimac->napi);
+	del_timer_sync(&unimac->poll_timer);
+
+	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *) unimac->base;
+	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
+	FpmBlock.FpmCtrl.FpmCtl.Reg32 &= ~0x10000;      // Clear Pool1Enable
+
+	kfree(unimac->puiFpmMem);
+	netdev_reset_queue(ndev);
 
 	return 0;
 }
 
 static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *ndev) {
-	// struct bcm3380_unimac *unimac = netdev_priv(ndev);
-	netdev_tx_t ret;
-	ret = NETDEV_TX_OK;
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	size_t length = skb->len;
+	int ret;
 
-	return ret;
-}
+	// Ensure the packet length is within the allowed MTU
+	if (length > ndev->mtu) {
+		UNIMAC_DBG("length(%d) > ndev->mtu(%d)\n", length, ndev->mtu);
+		dev_kfree_skb(skb);
+		ndev->stats.tx_dropped++;
+		return NETDEV_TX_OK;
+	}
 
-static void unimac_set_multicast_list(struct net_device *ndev) {
+	UNIMAC_DBG("Linux wants to send %d bytes\n", length);
+	vDumpMemory(skb->data, length > 16 ? 16 : length);
+	// Transmit the packet using vEthernetTx
+	ret = vEthernetTx(unimac, length, skb->data);
 
+	if (ret == 1) {
+		// Transmission successful
+		ndev->stats.tx_packets++;
+		ndev->stats.tx_bytes += length;
+		dev_kfree_skb(skb);
+		return NETDEV_TX_OK;
+	} else {
+		// Transmission failed
+		UNIMAC_DBG("Transmission failed\n");
+		ndev->stats.tx_errors++;
+		return NETDEV_TX_BUSY;
+	}
 }
 
 /* Network device operations */
@@ -324,7 +377,6 @@ static const struct net_device_ops bcm3380_netdev_ops = {
 	.ndo_stop = unimac_stop,
 	.ndo_start_xmit = unimac_start_xmit,
 	.ndo_set_mac_address = unimac_set_mac_address,
-	.ndo_set_rx_mode = unimac_set_multicast_list,
 };
 
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
@@ -388,23 +440,6 @@ BOOL bLinkUp(struct bcm3380_unimac *unimac) {
 	return 0;
 }
 
-static void vWaitForLinkUp(struct bcm3380_unimac *unimac) {
-	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
-	if ( !bLinkUp(unimac) ) {
-		UNIMAC_DBG("!bLinkUp\n");
-		uint16_t v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4);
-		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 4u, v0 | 0xE0);
-		v0 = usMdioRead(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0);
-		vMdioWrite(g_pxUnimacSelected, unimac->u5PhyPrtAddr, 0, v0 | 0x200);
-		UNIMAC_DBG("Waiting for link up...\n");
-	}
-}
-
-static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
-	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 |= 3u;// Enable Rx and Tx
-	UNIMAC_DBG("Enabled Rx and Tx\n");
-}
-
 /**
  * Return the length of the frame.
  * Return 0 if there is no pending frame.
@@ -447,52 +482,52 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 char byte_83F8A818 = 0;
 uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
 	UNIMAC_DBG("TransmitBurst\n");
-    volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
-    
-    // Enable peripheral if flag not set
-    if (byte_83F8A818 == 0) {
+	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
+	
+	// Enable peripheral if flag not set
+	if (byte_83F8A818 == 0) {
 		byte_83F8A818 = 1;
-        *((volatile uint32_t*)0xFF400034) |= 0x1;
-    }
+		*((volatile uint32_t*)0xFF400034) |= 0x1;
+	}
 
-    // Validate burst size (1-16 elements)
-    if (burstSize < 1 || burstSize > 16) {
-        printk("Error: Invalid burst size (%d) specified", burstSize);
-        return 0;
-    }
+	// Validate burst size (1-16 elements)
+	if (burstSize < 1 || burstSize > 16) {
+		printk("Error: Invalid burst size (%d) specified", burstSize);
+		return 0;
+	}
 
-    // Find available TX slot (8 possible slots)
-    uint32_t status = *pTxStatus;
-    int32_t slot = -1;
-    for (int i = 0; i < 8; i++) {
-        if ((status & 0x1) == 0) { // Check if slot is free
-            slot = i;
-            break;
-        }
-        status >>= 4; // Next slot status in next nibble
-    }
+	// Find available TX slot (8 possible slots)
+	uint32_t status = *pTxStatus;
+	int32_t slot = -1;
+	for (int i = 0; i < 8; i++) {
+		if ((status & 0x1) == 0) { // Check if slot is free
+			slot = i;
+			break;
+		}
+		status >>= 4; // Next slot status in next nibble
+	}
 
-    if (slot == -1) {
-        printk("Error: TransmitBurst() unable to find available TX slot");
-        return 0;
-    }
+	if (slot == -1) {
+		printk("Error: TransmitBurst() unable to find available TX slot");
+		return 0;
+	}
 
-    // Calculate hardware register base for this slot
-    uint32_t regBase = 0xFF500000 + (slot * 0x84);
+	// Calculate hardware register base for this slot
+	uint32_t regBase = 0xFF500000 + (slot * 0x84);
 
-    // Write burst parameters to hardware registers
-    for (int i = 0; i < burstSize; i++) {
-        volatile uint32_t* pReg = (volatile uint32_t*)(regBase + i*4);
-        *pReg = tx_params[i]; // Write parameter to register
-    }
+	// Write burst parameters to hardware registers
+	for (int i = 0; i < burstSize; i++) {
+		volatile uint32_t* pReg = (volatile uint32_t*)(regBase + i*4);
+		*pReg = tx_params[i]; // Write parameter to register
+	}
 
-    // Configure burst control registers
-    volatile uint32_t* pBurstCtrl = (volatile uint32_t*)(regBase + 0x40);
-    pBurstCtrl[0] = Lantxmsgfifo01;  // Set UniMAC register address?
-    pBurstCtrl[1] = burstSize;       // Set burst size
-    pBurstCtrl[2] = 2;               // Start transmission command?
+	// Configure burst control registers
+	volatile uint32_t* pBurstCtrl = (volatile uint32_t*)(regBase + 0x40);
+	pBurstCtrl[0] = Lantxmsgfifo01;  // Set UniMAC register address?
+	pBurstCtrl[1] = burstSize;       // Set burst size
+	pBurstCtrl[2] = 2;               // Start transmission command?
 
-    return 1; // Success
+	return 1; // Success
 }
 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer) {
@@ -526,6 +561,8 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	return TransmitBurst(tx_params, 2, unimac->uiLanTxMsgFifo) > 0;
 }
 
+#if BCM3380_UNIMAC_TEST
+
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
 	uint16_t ausDstMac[3];
 	uint16_t ausSrcMac[3];
@@ -551,6 +588,25 @@ enum NetworkConstants { // 4 bytes
 	ARP_HEADER_LEN      = 0x1C,
 };
 
+static int verify_ip_checksum(struct iphdr *ip_header) {
+	// Save the original checksum
+	__sum16 original_checksum = ip_header->check;
+	UNIMAC_DBG("original_checksum: 0x%04X\n", original_checksum);
+
+	// Set the checksum field to zero before calculation
+	ip_header->check = 0;
+
+	// Calculate the checksum
+	__sum16 calculated_checksum = ip_fast_csum((u8 *)ip_header, ip_header->ihl);
+	UNIMAC_DBG("calculated_checksum: 0x%04X\n", calculated_checksum);
+
+	// Restore the original checksum
+	ip_header->check = original_checksum;
+
+	// Check if the calculated checksum matches the original
+	return (calculated_checksum == original_checksum);
+}
+
 static int32_t vUnimacDemoRx(void* arg, const void* pBuffer, size_t uiLength) {
 	memcpy(arg, pBuffer, uiLength);
 	return uiLength;
@@ -558,11 +614,6 @@ static int32_t vUnimacDemoRx(void* arg, const void* pBuffer, size_t uiLength) {
 
 static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	unimac_open(unimac->ndev);
-	vWaitForLinkUp(unimac);
-	vUnimacEnableRxTx((volatile Unimac *)unimac->base);
-	while (!bLinkUp(unimac))
-		mdelay(1000u);
-	UNIMAC_DBG("bLinkUp!!!!!!!\n");
 
 	int32_t pollResult = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
@@ -634,13 +685,20 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 		}
 	} while(1+1);
 }
+#endif // #if BCM3380_UNIMAC_TEST
+
+struct CreateSkbContext {
+	struct sk_buff *skb;
+	struct napi_struct* napi;
+};
 
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
-	struct sk_buff **skb = (struct sk_buff **)arg;
+	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
 
-	*skb = alloc_skb(uiLength - 4, GFP_KERNEL);
-	if (*skb) {
-		memcpy(skb_put(*skb, uiLength), pBuffer, uiLength);
+	// uiLength -= 4; // Exclude FCS
+	context->skb = napi_alloc_skb(context->napi, uiLength);
+	if (context->skb) {
+		memcpy(skb_put(context->skb, uiLength), pBuffer, uiLength);
 		return uiLength;
 	}
 
@@ -653,12 +711,23 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 	int work_done = 0;
 
 	do {
-		struct sk_buff *skb = NULL;
-		int32_t outcome = uiEthPoll(unimac, vCreateSkb, &skb);
+		struct CreateSkbContext context = {
+			.skb = NULL,
+			.napi = napi,
+		};
+		int32_t outcome = uiEthPoll(unimac, vCreateSkb, &context);
 		if (outcome == 0) {
 			break;
+		} else if (outcome < 0) {
+			UNIMAC_DBG("Rx Err %d!!!\n", outcome);
 		}
+		struct sk_buff *skb = context.skb;
+		size_t length = outcome;
+		UNIMAC_DBG("Received %d bytes\n", length);
+		vDumpMemory(skb->data, length);
 
+		ndev->stats.rx_packets++;
+		ndev->stats.rx_bytes += length;
 		work_done++;
 		netif_receive_skb(skb);
 	} while (--budget > 0);
@@ -770,7 +839,10 @@ static int bcm3380_probe(struct platform_device *pdev)
 		eth_hw_addr_random(ndev);
 		dev_info(dev, "Using random MAC address\n");
 	}
+
+#if BCM3380_UNIMAC_TEST
 	vUnimacDemo(priv);
+#endif
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
@@ -779,9 +851,12 @@ static int bcm3380_probe(struct platform_device *pdev)
 	// ndev->ethtool_ops = &bcm3380_ethtool_ops; /* If implementing ethtool */
 
 	/* Register network device */
-	//err = register_netdev(ndev);
-	//if (err)
-	//	goto err_free_netdev;
+	err = devm_register_netdev(dev, ndev);
+
+	if (err)
+		goto err_free_netdev;
+
+	netif_carrier_off(ndev);
 
 	return 0;
 
