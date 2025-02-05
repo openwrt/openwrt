@@ -406,11 +406,11 @@ static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
 }
 
 /**
- * Return the length of the frame copied to pxRxBuf.
+ * Return the length of the frame.
  * Return 0 if there is no pending frame.
  * Return negative on error.
  */
-int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
+int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void*, const void*, size_t), void* arg) {
 	uint32_t uiMsgSts = readl_be(unimac->puiInMsgSts);
 	if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
 		uint32_t uiRead1 = readl_be(unimac->puiInMsgData);
@@ -422,12 +422,14 @@ int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
 				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiToken);
 				return -1;
 			} else {
-				uint32_t length = FPM_GET_TOKEN_SIZE(uiToken);
+				int32_t length = FPM_GET_TOKEN_SIZE(uiToken);
 				if ( (uiRead1 & 0x383) != 0 ) {
+					length = -3;
 					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiToken);
 					// *uiLength = 0;
 				} else {
-					memcpy(pxRxBuf, (const void *)((((uiToken >> 12) << 11) & 0xFFFF) + unimac->uiFpmMemNoCache), length);
+					uint32_t uiFifoChunkOffset = (((uiToken >> 12) << 11) & 0xFFFF);
+					length = pfOnPacketReady(arg, (const void *)(unimac->uiFpmMemNoCache + uiFifoChunkOffset), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
 				writel_be(uiToken, unimac->puiPoolxAllocDealloc);
@@ -549,6 +551,11 @@ enum NetworkConstants { // 4 bytes
 	ARP_HEADER_LEN      = 0x1C,
 };
 
+static int32_t vUnimacDemoRx(void* arg, const void* pBuffer, size_t uiLength) {
+	memcpy(arg, pBuffer, uiLength);
+	return uiLength;
+}
+
 static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	unimac_open(unimac->ndev);
 	vWaitForLinkUp(unimac);
@@ -560,9 +567,10 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	int32_t pollResult = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
 	do {
-		pollResult = uiEthPoll(buffer, unimac);
+		pollResult = uiEthPoll(unimac, vUnimacDemoRx, buffer);
 		if (pollResult > 0) {
 			uint32_t uiLength = pollResult;
+
 			UNIMAC_DBG("Ethernet Rx Good, len = 0x%08X\n", uiLength);
 			vDumpMemory(buffer, uiLength);
 
@@ -627,8 +635,40 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	} while(1+1);
 }
 
-static int unimac_poll(struct napi_struct *napi, int budget) {
+static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
+	struct sk_buff **skb = (struct sk_buff **)arg;
+
+	*skb = alloc_skb(uiLength - 4, GFP_KERNEL);
+	if (*skb) {
+		memcpy(skb_put(*skb, uiLength), pBuffer, uiLength);
+		return uiLength;
+	}
+
 	return 0;
+}
+
+static int unimac_poll(struct napi_struct *napi, int budget) {
+	struct net_device *ndev = napi->dev;
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	int work_done = 0;
+
+	do {
+		struct sk_buff *skb = NULL;
+		int32_t outcome = uiEthPoll(unimac, vCreateSkb, &skb);
+		if (outcome == 0) {
+			break;
+		}
+
+		work_done++;
+		netif_receive_skb(skb);
+	} while (--budget > 0);
+
+	if (work_done < budget) {
+		// All packets processed; complete NAPI polling
+		napi_complete_done(napi, work_done);
+	}
+
+	return work_done;
 }
 
 /* Probe function - called when device is discovered */
