@@ -1,0 +1,49 @@
+From 75bd07aef47e1a984229e6ec702e8b9aee0226e4 Mon Sep 17 00:00:00 2001
+From: Kate Hsuan <hpa@redhat.com>
+Date: Fri, 31 May 2024 13:41:20 +0200
+Subject: leds: rgb: leds-ktd202x: I2C ID tables for KTD2026 and 2027
+
+Add an i2c_device_id id_table to match manually instantiated
+(non device-tree / ACPI instantiated) KTD202x controllers as
+found on some x86 boards.
+
+This table shows the maximum support LED channel for KTD2026
+(three LEDs) and KTD-2027 (4 LEDs).
+
+Link: https://www.kinet-ic.com/uploads/KTD2026-7-04h.pdf
+Signed-off-by: Kate Hsuan <hpa@redhat.com>
+Reviewed-by: Hans de Goede <hdegoede@redhat.com>
+Reviewed-by: Andy Shevchenko <andy@kernel.org>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Link: https://lore.kernel.org/r/20240531114124.45346-3-hdegoede@redhat.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/rgb/leds-ktd202x.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+(limited to 'drivers/leds/rgb')
+
+--- a/drivers/leds/rgb/leds-ktd202x.c
++++ b/drivers/leds/rgb/leds-ktd202x.c
+@@ -606,6 +606,13 @@ static void ktd202x_shutdown(struct i2c_
+ 	regmap_write(chip->regmap, KTD202X_REG_RESET_CONTROL, KTD202X_RSTR_RESET);
+ }
+ 
++static const struct i2c_device_id ktd202x_id[] = {
++	{"ktd2026", KTD2026_NUM_LEDS},
++	{"ktd2027", KTD2027_NUM_LEDS},
++	{}
++};
++MODULE_DEVICE_TABLE(i2c, ktd202x_id);
++
+ static const struct of_device_id ktd202x_match_table[] = {
+ 	{ .compatible = "kinetic,ktd2026", .data = (void *)KTD2026_NUM_LEDS },
+ 	{ .compatible = "kinetic,ktd2027", .data = (void *)KTD2027_NUM_LEDS },
+@@ -621,6 +628,7 @@ static struct i2c_driver ktd202x_driver
+ 	.probe = ktd202x_probe,
+ 	.remove = ktd202x_remove,
+ 	.shutdown = ktd202x_shutdown,
++	.id_table = ktd202x_id,
+ };
+ module_i2c_driver(ktd202x_driver);
+ 

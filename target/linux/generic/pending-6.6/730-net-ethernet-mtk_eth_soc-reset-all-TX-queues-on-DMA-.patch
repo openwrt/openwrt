@@ -1,0 +1,49 @@
+From 7d41a5a8e9c91cc6bb011dd953570738583dd091 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 18 Sep 2024 02:01:01 +0100
+Subject: [PATCH] net: ethernet: mtk_eth_soc: reset all TX queues on DMA free
+
+The purpose of resetting the TX queue is to reset the
+byte and packet count as well as to clear the software
+flow control XOFF bit.
+
+MediaTek developers pointed out that netdev_reset_queue would only
+resets queue 0 of the network device.
+Queues that are not reset may cause unexpected issues.
+
+Packets may stop being sent after reset and "transmit timeout" log may
+be displayed.
+
+Import fix from MediaTek's SDK to resolve this issue.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -3135,11 +3135,19 @@ static int mtk_dma_init(struct mtk_eth *
+ static void mtk_dma_free(struct mtk_eth *eth)
+ {
+ 	const struct mtk_soc_data *soc = eth->soc;
+-	int i;
++	int i, j, txqs = 1;
++
++	if (MTK_HAS_CAPS(eth->soc->caps, MTK_QDMA))
++		txqs = MTK_QDMA_NUM_QUEUES;
++
++	for (i = 0; i < MTK_MAX_DEVS; i++) {
++		if (!eth->netdev[i])
++			continue;
++
++		for (j = 0; j < txqs; j++)
++			netdev_tx_reset_queue(netdev_get_tx_queue(eth->netdev[i], j));
++	}
+ 
+-	for (i = 0; i < MTK_MAX_DEVS; i++)
+-		if (eth->netdev[i])
+-			netdev_reset_queue(eth->netdev[i]);
+ 	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && eth->scratch_ring) {
+ 		dma_free_coherent(eth->dma_dev,
+ 				  MTK_QDMA_RING_SIZE * soc->tx.desc_size,

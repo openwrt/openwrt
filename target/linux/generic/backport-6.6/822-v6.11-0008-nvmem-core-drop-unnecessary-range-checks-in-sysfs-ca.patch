@@ -1,0 +1,61 @@
+From 588773802c386d38f9c4e91acd47369e89d95a30 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Fri, 5 Jul 2024 08:48:48 +0100
+Subject: [PATCH] nvmem: core: drop unnecessary range checks in sysfs callbacks
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The same checks have already been done in sysfs_kf_bin_write() and
+sysfs_kf_bin_read() just before the callbacks are invoked.
+
+Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-12-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -203,19 +203,12 @@ static ssize_t bin_attr_nvmem_read(struc
+ 		dev = kobj_to_dev(kobj);
+ 	nvmem = to_nvmem_device(dev);
+ 
+-	/* Stop the user from reading */
+-	if (pos >= nvmem->size)
+-		return 0;
+-
+ 	if (!IS_ALIGNED(pos, nvmem->stride))
+ 		return -EINVAL;
+ 
+ 	if (count < nvmem->word_size)
+ 		return -EINVAL;
+ 
+-	if (pos + count > nvmem->size)
+-		count = nvmem->size - pos;
+-
+ 	count = round_down(count, nvmem->word_size);
+ 
+ 	if (!nvmem->reg_read)
+@@ -243,19 +236,12 @@ static ssize_t bin_attr_nvmem_write(stru
+ 		dev = kobj_to_dev(kobj);
+ 	nvmem = to_nvmem_device(dev);
+ 
+-	/* Stop the user from writing */
+-	if (pos >= nvmem->size)
+-		return -EFBIG;
+-
+ 	if (!IS_ALIGNED(pos, nvmem->stride))
+ 		return -EINVAL;
+ 
+ 	if (count < nvmem->word_size)
+ 		return -EINVAL;
+ 
+-	if (pos + count > nvmem->size)
+-		count = nvmem->size - pos;
+-
+ 	count = round_down(count, nvmem->word_size);
+ 
+ 	if (!nvmem->reg_write)
