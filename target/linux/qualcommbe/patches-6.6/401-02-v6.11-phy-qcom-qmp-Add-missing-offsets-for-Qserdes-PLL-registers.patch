@@ -1,0 +1,44 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v4 2/4] phy: qcom-qmp: Add missing offsets for Qserdes PLL registers.
+From: devi priya <quic_devipriy@quicinc.com>
+Date: Thu, 16 May 2024 08:54:34 +0530
+Message-Id: <20240516032436.2681828-3-quic_devipriy@quicinc.com>
+To: vkoul@kernel.org, kishon@kernel.org, robh@kernel.org, krzk+dt@kernel.org, conor+dt@kernel.org, dmitry.baryshkov@linaro.org, neil.armstrong@linaro.org, quic_msarkar@quicinc.com, quic_qianyu@quicinc.com, abel.vesa@linaro.org, quic_cang@quicinc.com, linux-arm-msm@vger.kernel.org, linux-phy@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: quic_devipriy@quicinc.com
+In-Reply-To: <20240516032436.2681828-1-quic_devipriy@quicinc.com>
+References: <20240516032436.2681828-1-quic_devipriy@quicinc.com>
+List-Id: <devicetree.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add missing register offsets for Qserdes PLL.
+
+Reviewed-by: Abel Vesa <abel.vesa@linaro.org>
+Signed-off-by: devi priya <quic_devipriy@quicinc.com>
+---
+ Changes in V4:
+	- Picked up the R-b tag
+
+ drivers/phy/qualcomm/phy-qcom-qmp-qserdes-pll.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/phy/qualcomm/phy-qcom-qmp-qserdes-pll.h b/drivers/phy/qualcomm/phy-qcom-qmp-qserdes-pll.h
+index ad326e301a3a..231e59364e31 100644
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-qserdes-pll.h
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-qserdes-pll.h
+@@ -8,6 +8,9 @@
+ 
+ /* QMP V2 PHY for PCIE gen3 ports - QSERDES PLL registers */
+ #define QSERDES_PLL_BG_TIMER				0x00c
++#define QSERDES_PLL_SSC_EN_CENTER			0x010
++#define QSERDES_PLL_SSC_ADJ_PER1			0x014
++#define QSERDES_PLL_SSC_ADJ_PER2			0x018
+ #define QSERDES_PLL_SSC_PER1				0x01c
+ #define QSERDES_PLL_SSC_PER2				0x020
+ #define QSERDES_PLL_SSC_STEP_SIZE1_MODE0		0x024
+
+-- 
+2.34.1
+
+
