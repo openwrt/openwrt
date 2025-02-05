@@ -41,10 +41,16 @@ static void vDumpMemory(const void* ptr, size_t length) {
 typedef int BOOL;
 #define FpmBlock (*((volatile Fpm*)0xB2010000))
 #define dword_B2017000 (((volatile uint32_t*)0xB2017000))
+#define UNCACHED_SMISB (*((volatile IoprocBlockIoProc*)0xB5800000))
 #define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
 
 
 #define MIPS_SMISB_CTRL 0xFF400030
+
+// macro to convert logical data addresses to physical
+// DMA hardware must see physical address
+#define LtoP( logicalAddr ) ( ((uint32_t)(logicalAddr)) & 0x1FFFFFFF )
+#define PtoL( x ) ( LtoP(x) | 0xa0000000 )
 
 int verify_ip_checksum(struct iphdr *ip_header) {
     // Save the original checksum
@@ -77,6 +83,18 @@ struct bcm3380_unimac {
 
 	int uiLinkModeIndex; // dword_83F8A814
 	int u5PhyPrtAddr;
+
+	// FPM
+	uint32_t __iomem* puiPoolxAllocDealloc; // fpm_pool.h FpmPoolPoolAlloc
+#define FPM_IS_TOKEN_VALID(puiPoolxAllocDealloc) ((puiPoolxAllocDealloc & 0x80000000) ? 1 : 0)
+#define FPM_GET_TOKEN_INDEX(puiPoolxAllocDealloc) ((puiPoolxAllocDealloc >> 12) & 0x3FFFF)
+
+	// MSP IOPROC
+	uint32_t __iomem* puiInMsgSts; // ioproc.h IoprocIoprocInMsgSts
+#define IOPROC_IN_FIFO_NOT_EMPTY(puiInMsgSts) ((puiInMsgSts & 0x80000000) ? 1 : 0)
+	uint32_t __iomem* puiInMsgData;
+	uint32_t __iomem* puiOgMsgSts; // ioproc.h IoprocIoprocOgMsgSts
+#define IOPROC_OG_GET_FIFO_VACANCY(puiOgMsgSts) (puiOgMsgSts & 0x1F)
 
 	struct clk **clock;
 	unsigned int num_clocks;
@@ -196,9 +214,17 @@ static int unimac_open(struct net_device *ndev) {
 
 	unimac->uiLinkModeIndex = 0;
 	unimac->u5PhyPrtAddr = 0;
+	unimac->puiPoolxAllocDealloc = (uint32_t __iomem*) &FpmBlock.FpmPool.Pool1AllocDealloc.Reg32;
+	unimac->puiInMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
+	unimac->puiInMsgData = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
+	unimac->puiOgMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32;
+	uint32_t uiInMsgDataPhysicalAddr = ((uint32_t)unimac->puiInMsgData) -
+		((uint32_t)&IOPROC_SMISB) + LtoP((uint32_t)&UNCACHED_SMISB);
 
 	/* Initialize FPM Start*/
 	unimac->puiFpmMem = kzalloc(0x80000, GFP_KERNEL);// Align to 4-byte
+	unimac->uiFpmMemNoCache = ((uint32_t)unimac->puiFpmMem) | 0xA0000000;
+
 	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x%08X;\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;         // Set InitMem
 	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;\n");
@@ -206,8 +232,10 @@ static int unimac_open(struct net_device *ndev) {
 	UNIMAC_DBG("while ( (FpmBlock.FpmCtrl.FpmCtl.Reg32 & 0x10) != 0 );\n");
 
 	FpmBlock.FpmCtrl.Pool1Cfg1.Reg32 = 0x6000000; // FpBufSize=3h6
-	unimac->uiFpmMemNoCache = ((uint32_t)unimac->puiFpmMem) | 0xA0000000;
-	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = unimac->uiFpmMemNoCache & 0x1FFFFFFF;// 4 byte aligned address
+
+	// Set pool base address, must aligned to 4-byte boundaries
+	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = LtoP(unimac->uiFpmMemNoCache);
+
 	sub_83F821F4(0x100);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10000;      // Set Pool1Enable
 
@@ -240,15 +268,15 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	g_pxUnimacSelected->Mbdma.Bufferbase = unimac->uiFpmMemNoCache & 0x1FFFFFFF;
+	g_pxUnimacSelected->Mbdma.Bufferbase = LtoP(unimac->uiFpmMemNoCache);
 	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = 6;
-	g_pxUnimacSelected->Mbdma.Tokenaddress = 0x12010200; // Should refer to FpmPool.Pool1AllocDealloc
+	g_pxUnimacSelected->Mbdma.Tokenaddress = LtoP(unimac->puiPoolxAllocDealloc);
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
 	g_pxUnimacSelected->Mbdma.Tokencachectl.Reg32 = 0x90309010;// AllocEnable=1b1, AllocMaxBurst=5h10, AllocThresh=8h30, FreeEnable=1, FreeMaxBurst=5h10, FreeThresh=5h10
 	g_pxUnimacSelected->Mbdma.Chancontrol00.Reg32 = 0x1000000;// MaxBurst=9h10
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = 0x15801240; //Should refer to MSP_BLOCK_SMISB.Ioproc.In.IncomingMessageFifo.InMsgData
+	g_pxUnimacSelected->Mbdma.Lanmsgaddress0 = uiInMsgDataPhysicalAddr;
 	g_pxUnimacSelected->Mbdma.Chancontrol01.Reg32 = 0x1000301;// MaxBurst=9h10, MsgId=6b3; MaxReqs=4h01
-	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = 0x15801240;
+	g_pxUnimacSelected->Mbdma.Lanmsgaddress1 = uiInMsgDataPhysicalAddr;
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~0x1000010u;// Clear PromisEn and NoLgthCheck
 	/* Initialize Unimac End*/
 
@@ -291,7 +319,6 @@ static const struct net_device_ops bcm3380_netdev_ops = {
 
 static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr, int u5RegDecAddr) {
 	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | 0x28000000;// Set StartBusy, OpCode=2b10
-	UNIMAC_DBG("UnimacInterface.MdioCmd = 0x%08X\n", g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32);
 	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// while (MdioBusy);
 	uint16_t val = g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32;
 	UNIMAC_DBG("[u5PhyPrtAddr=%d, ui5RegDecAddr=%d]-->0x%04X\n", u5PhyPrtAddr, u5RegDecAddr, val);
@@ -300,7 +327,6 @@ static uint16_t usMdioRead(volatile Unimac *g_pxUnimacSelected, int u5PhyPrtAddr
 
 static void vMdioWrite(volatile Unimac *g_pxUnimacSelected, uint32_t u5PhyPrtAddr, uint32_t u5RegDecAddr, uint16_t usDataAddr) {
 	g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32 = (u5PhyPrtAddr << 21) | (u5RegDecAddr << 16) | usDataAddr | 0x24000000;// Set StartBusy, opcode=2b01
-	UNIMAC_DBG("UnimacInterface.MdioCmd = 0x%08X\n", g_pxUnimacSelected->UnimacInterface.MdioCmd.Reg32);
 	while ( (g_pxUnimacSelected->UnimacInterface.MdioCfg.Reg32 & 0x100) != 0 );// MdioBusy
 	UNIMAC_DBG("[u5PhyPrtAddr=%d, ui5RegDecAddr=%d]<--0x%04X\n", u5PhyPrtAddr, u5RegDecAddr, usDataAddr);
 }
@@ -375,14 +401,13 @@ static void vUnimacEnableRxTx(volatile Unimac *g_pxUnimacSelected) {
  * Return negative on error.
  */
 int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
-	uint32_t uiMsgSts = IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
-	if ( (uiMsgSts & 0x80000000) != 0 )
-	{
-		uint32_t uiRead1 = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
-		uiMsgSts = IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32;
+	uint32_t uiMsgSts = readl_be(unimac->puiInMsgSts);
+	if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
+		uint32_t uiRead1 = readl_be(unimac->puiInMsgData);
 
-		if ( (uiMsgSts & 0x80000000) != 0 ) {
-			uint32_t uiRead2 = IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
+		uiMsgSts = readl_be(unimac->puiInMsgSts);
+		if (IOPROC_IN_FIFO_NOT_EMPTY(uiMsgSts)) {
+			uint32_t uiRead2 = readl_be(unimac->puiInMsgData);
 			if ( uiRead1 >> 26 ) {
 				UNIMAC_DBG("Error: Received an unexpected message: %08x, %08x\n", uiRead1, uiRead2);
 				return -1;
@@ -395,7 +420,7 @@ int32_t uiEthPoll(void* pxRxBuf, struct bcm3380_unimac *unimac) {
 					memcpy(pxRxBuf, (const void *)((((uiRead2 >> 12) << 11) & 0xFFFF) + unimac->uiFpmMemNoCache), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
-				FpmBlock.FpmPool.Pool1AllocDealloc.Reg32 = uiRead2;
+				writel_be(uiRead2, unimac->puiPoolxAllocDealloc);
 				return length;
 			}
 		} else {
@@ -461,13 +486,13 @@ uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxms
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer) {
 	size_t clamped_length = (uiLengthIn < 64) ? 64 : uiLengthIn;
 
-	if ( (IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32 & 0x1Fu) < 2 ) {
+	if (IOPROC_OG_GET_FIFO_VACANCY(readl_be(unimac->puiOgMsgSts)) < 2) {
 		UNIMAC_DBG("Error: TX FIFO has insufficient space for a TX message.\n");
 		return 0;
 	}
 
-	uint32_t token = FpmBlock.FpmPool.Pool1AllocDealloc.Reg32;
-	if ( (token & 0x80000000) == 0 ) {
+	uint32_t token = readl_be(unimac->puiPoolxAllocDealloc);
+	if (!FPM_IS_TOKEN_VALID(token)) {
 		UNIMAC_DBG("Error: Got an invalid token from the FPM!\n");
 		return 0;
 	}
@@ -487,7 +512,7 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	tx_params[1] = adjusted_token;
 
 	volatile Unimac *g_pxUnimacSelected = (volatile Unimac *)unimac->base;
-	return TransmitBurst(tx_params, 2, (uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01 & 0x1FFFFFFF) > 0;
+	return TransmitBurst(tx_params, 2, LtoP((uint32_t)&g_pxUnimacSelected->Mbdma.Lantxmsgfifo01)) > 0;
 }
 
 struct __attribute__((packed)) EthernetHeader {// sizeof=0xE
@@ -522,7 +547,6 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	while (!bLinkUp(unimac))
 		mdelay(1000u);
 	UNIMAC_DBG("bLinkUp!!!!!!!\n");
-	UNIMAC_DBG("&IOPROC_SMISB.In.IncomingMessageFifo.InMsgData = 0x%08X\n", (uint32_t)(&(IOPROC_SMISB.In.IncomingMessageFifo.InMsgData)));
 
 	int32_t pollResult = 0;
 	void* buffer = kzalloc(0x1000, GFP_KERNEL);
