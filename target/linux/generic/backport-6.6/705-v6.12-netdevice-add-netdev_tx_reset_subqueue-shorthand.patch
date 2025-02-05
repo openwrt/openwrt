@@ -1,0 +1,45 @@
+From 3dc95a3edd0a86b4a59670b3fafcc64c7d83e2e7 Mon Sep 17 00:00:00 2001
+From: Alexander Lobakin <aleksander.lobakin@intel.com>
+Date: Wed, 4 Sep 2024 17:47:45 +0200
+Subject: [PATCH] netdevice: add netdev_tx_reset_subqueue() shorthand
+
+Add a shorthand similar to other net*_subqueue() helpers for resetting
+the queue by its index w/o obtaining &netdev_tx_queue beforehand
+manually.
+
+Reviewed-by: Przemek Kitszel <przemyslaw.kitszel@intel.com>
+Signed-off-by: Alexander Lobakin <aleksander.lobakin@intel.com>
+Signed-off-by: Tony Nguyen <anthony.l.nguyen@intel.com>
+---
+ include/linux/netdevice.h | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -3616,6 +3616,17 @@ static inline void netdev_tx_reset_queue
+ }
+ 
+ /**
++ * netdev_tx_reset_subqueue - reset the BQL stats and state of a netdev queue
++ * @dev: network device
++ * @qid: stack index of the queue to reset
++ */
++static inline void netdev_tx_reset_subqueue(const struct net_device *dev,
++					    u32 qid)
++{
++	netdev_tx_reset_queue(netdev_get_tx_queue(dev, qid));
++}
++
++/**
+  * 	netdev_reset_queue - reset the packets and bytes count of a network device
+  * 	@dev_queue: network device
+  *
+@@ -3624,7 +3635,7 @@ static inline void netdev_tx_reset_queue
+  */
+ static inline void netdev_reset_queue(struct net_device *dev_queue)
+ {
+-	netdev_tx_reset_queue(netdev_get_tx_queue(dev_queue, 0));
++	netdev_tx_reset_subqueue(dev_queue, 0);
+ }
+ 
+ /**
