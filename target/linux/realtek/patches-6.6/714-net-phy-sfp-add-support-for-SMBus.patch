@@ -86,7 +86,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +	struct mii_bus *sm_mii;
 +	int ret;
 +
-+	sm_mii = mdio_smbus_alloc(sfp->dev, sfp->i2c);
++	sm_mii = mdio_smbus_alloc(sfp->dev, sfp->i2c, sfp->mdio_protocol);
 +	if (IS_ERR(sm_mii))
 +		return PTR_ERR(sm_mii);
 +
