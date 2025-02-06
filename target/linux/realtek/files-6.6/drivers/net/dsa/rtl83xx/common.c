@@ -339,6 +339,22 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
+
+		/* Major cleanup is needed...
+		 *
+		 * We use virtual "phys" as containers for mac
+		 * properties like the SERDES channel, even for simple
+		 * SFP slots.  "pseudo-phy-handle" is a hack to
+		 * support this construct and still allow pluggable
+		 * phys.
+		 *
+		 * The SERDES map is most likely static by port number
+		 * for each SoC.  No need to put that into the device
+		 * tree in the first place.
+		 */
+		if (!phy_node)
+			phy_node = of_parse_phandle(dn, "pseudo-phy-handle", 0);
+
 		if (!phy_node) {
 			if (pn != priv->cpu_port)
 				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
