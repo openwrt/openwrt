@@ -652,6 +652,9 @@ static int32_t vUnimacDemoRx(void* arg, const void* pBuffer, size_t uiLength) {
 	return uiLength;
 }
 
+static uint32_t rx_i = 0;
+static uint32_t rx_len = 0;
+
 static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 	unimac_open(unimac->ndev);
 
@@ -673,9 +676,11 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 			UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs, fcs_rx);
 
 			if (fcs != fcs_rx) {
-				UNIMAC_DBG("FCS mismatch!!!!\n");
+				UNIMAC_DBG("FCS mismatch!!!! rx_i = %d, rx_len = 0x%08X\n", rx_i, rx_len);
 				while(1);
 			}
+			rx_i++;
+			rx_len += uiLength;
 
 			struct EthernetPacket* packet = (struct EthernetPacket*) buffer;
 			UNIMAC_DBG("DstMac: %04X %04X %04X\n", packet->xEth.ausDstMac[0], packet->xEth.ausDstMac[1], packet->xEth.ausDstMac[2]);
