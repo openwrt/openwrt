@@ -48,7 +48,11 @@
 // MAC1 ---SGMII---> QCA8337 SerDes
 &dp2 {
 	status = "okay";
+
 	phy-mode = "sgmii";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;

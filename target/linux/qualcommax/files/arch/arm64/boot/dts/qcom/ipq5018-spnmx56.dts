@@ -53,6 +53,9 @@
 // MAC0 -> GE Phy
 &dp1 {
 	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 // MAC1 ---SGMII---> QCA8081
@@ -61,6 +64,8 @@
 
 	label = "wan";
 	phy-handle = <&qca8081>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &mdio0 {
