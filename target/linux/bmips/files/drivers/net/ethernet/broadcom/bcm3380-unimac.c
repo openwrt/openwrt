@@ -30,7 +30,7 @@ typedef uint32_t uint32;
 #include <bcm3380/IntControl.h>
 
 #define BCM3380_UNIMAC_DBG 1
-#define BCM3380_UNIMAC_TEST 0
+#define BCM3380_UNIMAC_TEST 1
 
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
@@ -177,6 +177,7 @@ static void sub_83F821F4(int a1)
   }
 }
 
+#if !BCM3380_UNIMAC_TEST
 // Timer callback function
 static void poll_timer_callback(struct timer_list *t) {
 	struct bcm3380_unimac *unimac = from_timer(unimac, t, poll_timer);
@@ -186,6 +187,7 @@ static void poll_timer_callback(struct timer_list *t) {
 	// Rearm the timer
 	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
 }
+#endif // #if !BCM3380_UNIMAC_TEST
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
