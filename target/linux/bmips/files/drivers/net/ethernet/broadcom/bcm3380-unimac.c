@@ -86,6 +86,7 @@ struct bcm3380_unimac {
 
 	uint32_t uiLanTxMsgFifo;
 
+	spinlock_t fifo_lock;
 	struct timer_list poll_timer;
 
 	struct clk **clock;
@@ -96,6 +97,8 @@ struct bcm3380_unimac {
 
 	struct napi_struct napi;
 };
+
+char byte_83F8A818 = 0;
 
 static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, const void *buffer);
 BOOL bLinkUp(struct bcm3380_unimac *unimac);
@@ -221,6 +224,20 @@ static int unimac_open(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
 	struct sockaddr addr;
 
+	for (int i = 0; i < unimac->num_clocks; i++) {
+		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
+			if (clk_prepare_enable(unimac->clock[i]))
+				dev_err(&ndev->dev, "error enabling Unimac clock %d\n", i);
+		}
+	}
+
+	for (int i = 0; i < unimac->num_resets; i++) {
+		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
+			if (reset_control_reset(unimac->reset[i]))
+				dev_err(&ndev->dev, "error reset Unimac reset %d\n", i);
+		}
+	}
+
 	unimac->uiLinkModeIndex = 0;
 	unimac->u5PhyPrtAddr = 0;
 	unimac->puiPoolxAllocDealloc = (uint32_t __iomem*) &FpmBlock.FpmPool.Pool1AllocDealloc.Reg32;
@@ -336,6 +353,22 @@ static int unimac_stop(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacCmd.Reg32 &= ~3;// Disable Rx and Tx
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 &= ~0x10000;      // Clear Pool1Enable
 
+	for (int i = 0; i < unimac->num_resets; i++) {
+		if (!IS_ERR_OR_NULL(unimac->reset[i])) {
+			if (reset_control_assert(unimac->reset[i]))
+				dev_err(&ndev->dev, "error asserting Unimac reset %d\n", i);
+		}
+	}
+
+	for (int i = 0; i < unimac->num_clocks; i++) {
+		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
+			clk_disable_unprepare(unimac->clock[i]);
+		}
+	}
+
+	byte_83F8A818 = 0;
+	*((volatile uint32_t*)0xFF400034) &= ~0x1;
+
 	kfree(unimac->puiFpmMem);
 	netdev_reset_queue(ndev);
 
@@ -357,8 +390,13 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 
 	UNIMAC_DBG("Linux wants to send %d bytes\n", length);
 	vDumpMemory(skb->data, length > 16 ? 16 : length);
+
+	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
-	ret = vEthernetTx(unimac, length, skb->data);
+	ret = 1;
+	if (1+1>3)
+		ret = vEthernetTx(unimac, length, skb->data);
+	spin_unlock(&unimac->fifo_lock);
 
 	if (ret == 1) {
 		// Transmission successful
@@ -482,7 +520,6 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 	return 0; // No message
 }
 
-char byte_83F8A818 = 0;
 uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
 	UNIMAC_DBG("TransmitBurst\n");
 	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
@@ -630,7 +667,15 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 
 			uint32_t fcs = crc32_le(~0, buffer, uiLength - 4);
 			fcs ^= ~0;
+			fcs = __swab32(fcs);
 			UNIMAC_DBG("FCS = 0x%08X", fcs); // Need to swap endianess
+			uint32_t fcs_rx = *((uint32_t*)((uint32_t)buffer + uiLength - 4));
+			UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs, fcs_rx);
+
+			if (fcs != fcs_rx) {
+				UNIMAC_DBG("FCS mismatch!!!!\n");
+				while(1);
+			}
 
 			struct EthernetPacket* packet = (struct EthernetPacket*) buffer;
 			UNIMAC_DBG("DstMac: %04X %04X %04X\n", packet->xEth.ausDstMac[0], packet->xEth.ausDstMac[1], packet->xEth.ausDstMac[2]);
@@ -690,23 +735,6 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 }
 #endif // #if BCM3380_UNIMAC_TEST
 
-void print_skb_metadata(const struct sk_buff *skb) {
-	if (!skb)
-		return;
-
-	struct ethhdr *pxEthernetHeader = eth_hdr(skb);
-
-    printk(KERN_INFO "SKB Metadata:\n");
-    printk(KERN_INFO "  Packet Length: %u\n", skb->len);
-    printk(KERN_INFO "  Data Length: %u\n", skb->data_len);
-    printk(KERN_INFO "  dstMac : %pM\n", pxEthernetHeader->h_dest);
-    printk(KERN_INFO "  srcMac : %pM\n", pxEthernetHeader->h_source);
-    printk(KERN_INFO "  Network Header: %p\n", skb_network_header(skb));
-    printk(KERN_INFO "  Transport Header: %p\n", skb_transport_header(skb));
-    printk(KERN_INFO "  Device: %s\n", skb->dev ? skb->dev->name : "NULL");
-    printk(KERN_INFO "  Protocol: 0x%04x\n", ntohs(skb->protocol));
-}
-
 struct CreateSkbContext {
 	struct sk_buff *skb;
 	struct napi_struct* napi;
@@ -715,15 +743,34 @@ struct CreateSkbContext {
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
 
-	uiLength -= 4; // Exclude FCS
-	context->skb = napi_alloc_skb(context->napi, uiLength);
-	if (context->skb) {
-		memcpy(context->skb->data, pBuffer, uiLength);
-		print_skb_metadata(context->skb);
-		return uiLength;
+	void* buffer = kzalloc(0x1000, GFP_KERNEL);
+	memcpy(buffer, pBuffer, uiLength);
+	uint32_t fcs_calc = crc32_le(~0, buffer, uiLength-4);
+	fcs_calc ^= ~0;
+	fcs_calc = __swab32(fcs_calc);
+	uint32_t fcs_rx = *((uint32_t*)((uint32_t)buffer + uiLength - 4));
+	UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs_calc, fcs_rx);
+
+	UNIMAC_DBG("Got %d bytes\n", uiLength);
+	vDumpMemory(buffer, uiLength);
+	if (fcs_calc != fcs_rx) {
+		UNIMAC_DBG("FCS mismatch!!!!\n");
+		while(1);
 	}
 
-	return -114514;
+	context->skb = napi_alloc_skb(context->napi, uiLength-4);
+	if (!context->skb) {
+		return -114514;
+	}
+
+	void *data = skb_put_data(context->skb, buffer, uiLength-4);
+	kfree(buffer);
+	if (!data) {
+		kfree_skb(context->skb);
+		return -114514;
+	}
+
+	return uiLength-4;
 }
 
 static int unimac_poll(struct napi_struct *napi, int budget) {
@@ -736,7 +783,9 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 			.skb = NULL,
 			.napi = napi,
 		};
+		spin_lock(&unimac->fifo_lock);
 		int32_t outcome = uiEthPoll(unimac, vCreateSkb, &context);
+		spin_unlock(&unimac->fifo_lock);
 		if (outcome == 0) {
 			break;
 		} else if (outcome < 0) {
@@ -745,10 +794,9 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		}
 		struct sk_buff *skb = context.skb;
 		size_t length = outcome;
-		skb_put(skb, length);
 		skb->protocol = eth_type_trans(skb, ndev);
 		UNIMAC_DBG("Received %d bytes\n", length);
-		vDumpMemory(skb->data, length);
+		vDumpMemory(skb_mac_header(skb), length);
 
 		ndev->stats.rx_packets++;
 		ndev->stats.rx_bytes += length;
@@ -867,6 +915,8 @@ static int bcm3380_probe(struct platform_device *pdev)
 #if BCM3380_UNIMAC_TEST
 	vUnimacDemo(priv);
 #endif
+
+	spin_lock_init(&priv->fifo_lock);
 
 	/* Set up network device */
 	ndev->netdev_ops = &bcm3380_netdev_ops;
