@@ -1,0 +1,71 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -851,7 +851,7 @@ void ath11k_dp_tx_completion_handler(str
+ 	struct dp_tx_ring *tx_ring = &dp->tx_ring[ring_id];
+ 	int valid_entries;
+ 	enum hal_wbm_rel_src_module buf_rel_source;
+-	u32 *desc;
++	struct hal_wbm_release_ring *desc;
+ 	u32 msdu_id, desc_id;
+ 	u8 mac_id;
+ 	struct hal_wbm_release_ring *tx_status;
+@@ -869,8 +869,9 @@ void ath11k_dp_tx_completion_handler(str
+ 
+ 	ath11k_hal_srng_dst_invalidate_entry(ab, status_ring, valid_entries);
+ 
+-	while ((desc = ath11k_hal_srng_dst_get_next_cache_entry(ab, status_ring))) {
+-		if (!ath11k_dp_tx_completion_valid((struct hal_wbm_release_ring *)desc))
++	while ((desc = (struct hal_wbm_release_ring *)
++				ath11k_hal_srng_dst_get_next_cache_entry(ab, status_ring))) {
++		if (!ath11k_dp_tx_completion_valid(desc))
+ 			continue;
+ 
+ 		memcpy(&tx_ring->tx_status[count],
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3546,7 +3546,7 @@ static bool ath11k_mac_supports_station_
+ 
+ static void ath11k_mac_op_nss_bss_info_changed(struct ieee80211_hw *hw,
+ 					   struct ieee80211_vif *vif,
+-					   u32 changed)
++					   u64 changed)
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+@@ -6842,7 +6842,7 @@ static int ath11k_mac_setup_vdev_create_
+ 	return 0;
+ }
+ 
+-static int ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
++static void ath11k_mac_op_update_vif_offload(struct ieee80211_hw *hw,
+ 					     struct ieee80211_vif *vif)
+ {
+ 	struct ath11k *ar = hw->priv;
+@@ -6852,7 +6852,7 @@ static int ath11k_mac_op_update_vif_offl
+ 	int ret;
+ 
+ 	if (ab->nss.enabled && vif->type == NL80211_IFTYPE_AP_VLAN)
+-		return 0;
++		return;
+ 
+ 	param_id = WMI_VDEV_PARAM_TX_ENCAP_TYPE;
+ 	if (ath11k_frame_mode != ATH11K_HW_TXRX_ETHERNET ||
+@@ -6891,8 +6891,6 @@ static int ath11k_mac_op_update_vif_offl
+ 			    arvif->vdev_id, ret);
+ 		vif->offload_flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
+ 	}
+-
+-	return ret;
+ }
+ 
+ static bool ath11k_mac_vif_ap_active_any(struct ath11k_base *ab)
+@@ -7223,8 +7221,7 @@ static int ath11k_mac_op_add_interface(s
+ 		goto err_vdev_del;
+ 	}
+ 
+-	if (ath11k_mac_op_update_vif_offload(hw, vif))
+-		goto err_vdev_del;
++	ath11k_mac_op_update_vif_offload(hw, vif);
+ 
+ 	if (vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
+ 		param_value = ATH11K_HW_TXRX_ETHERNET;
