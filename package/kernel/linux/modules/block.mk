@@ -267,6 +267,17 @@ endef
 $(eval $(call KernelPackage,dm-raid))
 
 
+define KernelPackage/dm-bufio
+  TITLE:=Buffed I/O for device mapper
+  DEPENDS:=+kmod-dm
+  KCONFIG:=CONFIG_DM_BUFIO
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/md/dm-bufio.ko
+endef
+
+$(eval $(call KernelPackage,dm-bufio))
+
+
 define KernelPackage/iscsi-initiator
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=iSCSI Initiator over TCP/IP
