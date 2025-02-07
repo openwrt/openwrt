@@ -8,6 +8,7 @@ define Device/qcom_rdp433
 	SOC := ipq9574
 	KERNEL_INSTALL := 1
 	KERNEL_SIZE := 6096k
+	DEVICE_PACKAGES += ath12k-firmware-qcn9274
 	IMAGE_SIZE := 25344k
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
