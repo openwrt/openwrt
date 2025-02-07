@@ -278,6 +278,22 @@ endef
 $(eval $(call KernelPackage,dm-bufio))
 
 
+define KernelPackage/dm-integrity
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=LVM2 integrity support
+  DEPENDS:=+kmod-async_xor +kmod-dm-bufio
+  KCONFIG:=CONFIG_DM_INTEGRITY
+  FILES:=$(LINUX_DIR)/drivers/md/dm-integrity.ko
+  AUTOLOAD:=$(call AutoLoad,32,dm-integrity)
+endef
+
+define KernelPackage/dm-integrity/description
+ Kernel module necessary for LVM2 integrity support
+endef
+
+$(eval $(call KernelPackage,dm-integrity))
+
+
 define KernelPackage/iscsi-initiator
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=iSCSI Initiator over TCP/IP
