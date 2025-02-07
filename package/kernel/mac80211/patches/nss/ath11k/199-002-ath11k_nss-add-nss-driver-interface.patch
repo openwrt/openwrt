@@ -2760,15 +2760,15 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +#endif
 --- a/drivers/net/wireless/ath/ath11k/hif.h
 +++ b/drivers/net/wireless/ath/ath11k/hif.h
-@@ -31,6 +31,7 @@ struct ath11k_hif_ops {
- 	void (*ce_irq_enable)(struct ath11k_base *ab);
+@@ -32,6 +32,7 @@ struct ath11k_hif_ops {
  	void (*ce_irq_disable)(struct ath11k_base *ab);
  	void (*get_ce_msi_idx)(struct ath11k_base *ab, u32 ce_id, u32 *msi_idx);
+ 	void (*config_static_window)(struct ath11k_base *ab);
 +	u32 (*get_window_offset)(struct ath11k_base *ab, u32 offset);
  };
  
  static inline void ath11k_hif_ce_irq_enable(struct ath11k_base *ab)
-@@ -137,6 +138,14 @@ static inline void ath11k_get_msi_addres
+@@ -138,6 +139,14 @@ static inline void ath11k_get_msi_addres
  	ab->hif.ops->get_msi_address(ab, msi_addr_lo, msi_addr_hi);
  }
  
@@ -3026,11 +3026,3 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  struct ath11k_soc_dp_stats {
-@@ -982,6 +984,7 @@ struct ath11k_base {
- 	struct list_head peers;
- 	wait_queue_head_t peer_mapping_wq;
- 	u8 mac_addr[ETH_ALEN];
-+	int userpd_id;
- 	int irq_num[ATH11K_IRQ_NUM_MAX];
- 	struct ath11k_ext_irq_grp ext_irq_grp[ATH11K_EXT_IRQ_GRP_NUM_MAX];
- 	struct ath11k_targ_cap target_caps;
