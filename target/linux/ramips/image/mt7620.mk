@@ -1632,3 +1632,27 @@ define Device/zyxel_keenetic-viva
   SUPPORTED_DEVICES += kng_rc
 endef
 TARGET_DEVICES += zyxel_keenetic-viva
+
+define Device/zyxel_lte3302
+  $(Device/amit_jboot)
+  SOC := mt7620n
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := LTE3302-M432
+  DLINK_ROM_ID := ZXL6E2431001
+  DLINK_FAMILY_MEMBER := 0x6E24
+  DLINK_FIRMWARE_SIZE := 0xFB0000
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zyxel_lte3302
+
+define Device/zyxel_lte3302-dt
+  $(Device/zyxel_lte3302)
+  DEVICE_DTS := mt7620n_zyxel_lte3302
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := LTE3302-M432
+  DEVICE_VARIANT := Deutsche Telekom
+  DLINK_ROM_ID := ZXL6E2431002
+  SUPPORTED_DEVICES := zyxel,lte3302
+endef
+TARGET_DEVICES += zyxel_lte3302-dt
