@@ -125,8 +125,8 @@ caldata_valid() {
 caldata_patch_data() {
 	local data=$1
 	local data_count=$((${#1} / 2))
-	local data_offset=$(($2))
-	local chksum_offset=$(($3))
+	[ -n "$2" ] && local data_offset=$(($2))
+	[ -n "$3" ] && local chksum_offset=$(($3))
 	local target=$4
 	local fw_data
 	local fw_chksum
