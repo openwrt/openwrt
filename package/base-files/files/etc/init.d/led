@@ -52,6 +52,10 @@ load_led() {
 	local delayoff
 	local interval
 	local brightness
+	local pattern
+	local patternon
+	local patternoff
+	local repeat
 
 	config_get sysfs $1 sysfs
 	config_get name $1 name "$sysfs"
@@ -69,6 +73,10 @@ load_led() {
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
 	config_get brightness $1 brightness
+	config_get pattern $1 pattern
+	config_get patternon $1 patternon ""
+	config_get patternoff $1 patternoff ""
+	config_get repeat $1 repeat "-1"
 
 	[ "$2" ] && [ "$sysfs" != "$2" ] && return
 
@@ -120,6 +128,11 @@ load_led() {
 			return 1
 		}
 		case "$trigger" in
+		"gpio")
+			echo $gpio > /sys/class/leds/${sysfs}/gpio
+			echo $inverted > /sys/class/leds/${sysfs}/inverted
+			;;
+
 		"heartbeat")
 			echo "${inverted}" > "/sys/class/leds/${sysfs}/invert"
 			;;
@@ -135,29 +148,25 @@ load_led() {
 			}
 			;;
 
-		"timer"|"oneshot")
-			[ -n "$delayon" ] && \
-				echo $delayon > /sys/class/leds/${sysfs}/delay_on
-			[ -n "$delayoff" ] && \
-				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
-			;;
-
-		"usbport")
-			local p
-
-			for p in $ports; do
-				echo 1 > /sys/class/leds/${sysfs}/ports/$p
-			done
+		"pattern")
+			# brightness needs setting again because pattern is echoed to trigger after
+			# brightness is set, which resets it to 0 on the pattern trigger
+			[ -z "$brightness" ] && brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
+			echo "$brightness" > /sys/class/leds/${sysfs}/brightness
+			[ -n "$pattern" ] && {
+				[ "$default" = 0 ] && \
+					echo $patternoff > /sys/class/leds/${sysfs}/${pattern}
+				[ "$default" = 1 ] && {
+					echo $patternon > /sys/class/leds/${sysfs}/${pattern}
+					sleep 1s # quick hack to overcome latency/work queue issue under investigation
+					echo $repeat > /sys/class/leds/${sysfs}/repeat
+				}
+			}
 			;;
 
 		"port_state")
 			[ -n "$port_state" ] && \
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
-			;;
-
-		"gpio")
-			echo $gpio > /sys/class/leds/${sysfs}/gpio
-			echo $inverted > /sys/class/leds/${sysfs}/inverted
 			;;
 
 		switch[0-9]*)
@@ -171,6 +180,21 @@ load_led() {
 				echo $speed_mask > /sys/class/leds/${sysfs}/speed_mask
 			[ -n "$mode" ] && \
 				echo "$mode" > /sys/class/leds/${sysfs}/mode
+			;;
+
+		"timer"|"oneshot")
+			[ -n "$delayon" ] && \
+				echo $delayon > /sys/class/leds/${sysfs}/delay_on
+			[ -n "$delayoff" ] && \
+				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+			;;
+
+		"usbport")
+			local p
+
+			for p in $ports; do
+				echo 1 > /sys/class/leds/${sysfs}/ports/$p
+			done
 			;;
 		esac
 	}
