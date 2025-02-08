@@ -167,6 +167,10 @@
 };
 
 &wmac {
+	pinctrl-names = "default", "pa_gpio";
+	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
+
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 };
