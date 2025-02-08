@@ -30,7 +30,7 @@ typedef uint32_t uint32;
 #include <bcm3380/IntControl.h>
 
 #define BCM3380_UNIMAC_DBG 1
-#define BCM3380_UNIMAC_TEST 1
+#define BCM3380_UNIMAC_TEST 0
 
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
@@ -393,9 +393,7 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 
 	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
-	ret = 1;
-	if (1+1>3)
-		ret = vEthernetTx(unimac, length, skb->data);
+	ret = vEthernetTx(unimac, length, skb->data);
 	spin_unlock(&unimac->fifo_lock);
 
 	if (ret == 1) {
@@ -504,7 +502,9 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 					UNIMAC_DBG("Error: LAN RX status = %x, token = %08x\n", uiRead1 & 0x7FFF, uiToken);
 					// *uiLength = 0;
 				} else {
-					uint32_t uiFifoChunkOffset = (((uiToken >> 12) << 11) & 0xFFFF);
+					uint32_t uiFifoChunkOffset = uiToken >> 12;
+					uiFifoChunkOffset &= 0xFFFF;
+					uiFifoChunkOffset <<= 11;
 					length = pfOnPacketReady(arg, (const void *)(unimac->uiFpmMemNoCache + uiFifoChunkOffset), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
@@ -677,6 +677,7 @@ static void vUnimacDemo(struct bcm3380_unimac *unimac) {
 
 			if (fcs != fcs_rx) {
 				UNIMAC_DBG("FCS mismatch!!!! rx_i = %d, rx_len = 0x%08X\n", rx_i, rx_len);
+				UNIMAC_DBG("InMsgData = 0x%08X\n", readl_be(unimac->puiInMsgData));
 				while(1);
 			}
 			rx_i++;
