@@ -35,6 +35,23 @@ start_service() {
 	procd_set_param command "$PROG"
 	[ -f /etc/seccomp/umdns.json ] && procd_set_param seccomp /etc/seccomp/umdns.json
 	procd_set_param respawn
+
+	procd_open_data
+	json_add_array firewall
+
+	for n in $network; do
+		json_add_object ""
+		json_add_string type rule
+		json_add_string proto udp
+		json_add_string src "$n"
+		json_add_int dest_port 5353
+		json_add_string target ACCEPT
+		json_close_object
+	done
+
+	json_close_array
+	procd_close_data
+
 	procd_open_trigger
 	procd_add_config_trigger "config.change" "umdns" /etc/init.d/umdns reload
 	for n in $network; do
