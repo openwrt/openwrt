@@ -31,6 +31,7 @@ typedef uint32_t uint32;
 
 #define BCM3380_UNIMAC_DBG 1
 #define BCM3380_UNIMAC_TEST 0
+#define BCM3380_UNIMAC_DUMP_TRAFFIC 0
 
 #if BCM3380_UNIMAC_DBG
 #define UNIMAC_DBG(fmt, ...) \
@@ -50,7 +51,7 @@ typedef int BOOL;
 
 #define MIPS_SMISB_CTRL 0xFF400030
 
-#define POLL_INTERVAL (msecs_to_jiffies(100)) // Poll every 100 milliseconds
+#define POLL_INTERVAL (msecs_to_jiffies(1)) // Poll every 1 milliseconds
 
 // macro to convert logical data addresses to physical
 // DMA hardware must see physical address
@@ -388,8 +389,10 @@ static netdev_tx_t unimac_start_xmit(struct sk_buff *skb, struct net_device *nde
 		return NETDEV_TX_OK;
 	}
 
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
 	UNIMAC_DBG("Linux wants to send %d bytes\n", length);
 	vDumpMemory(skb->data, length > 16 ? 16 : length);
+#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
 
 	spin_lock(&unimac->fifo_lock);
 	// Transmit the packet using vEthernetTx
@@ -521,7 +524,6 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 }
 
 uint32_t TransmitBurst(uint32_t *tx_params, uint32_t burstSize, uint32_t Lantxmsgfifo01) {
-	UNIMAC_DBG("TransmitBurst\n");
 	volatile uint32_t* pTxStatus = (volatile uint32_t*)(0xFF500000 + 0x3E8);
 	
 	// Enable peripheral if flag not set
@@ -766,10 +768,12 @@ static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	uint32_t fcs_calc = crc32_le(~0, data, uiLength-4);
 	fcs_calc ^= ~0;
 	fcs_calc = __swab32(fcs_calc);
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
 	UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs_calc, fcs_rx);
 
 	UNIMAC_DBG("Got %d bytes\n", uiLength);
 	vDumpMemory(data, uiLength - 4);
+#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
 	if (fcs_calc != fcs_rx) {
 		UNIMAC_DBG("FCS mismatch!!!!\n");
 		while(1);
@@ -800,8 +804,10 @@ static int unimac_poll(struct napi_struct *napi, int budget) {
 		struct sk_buff *skb = context.skb;
 		size_t length = outcome;
 		skb->protocol = eth_type_trans(skb, ndev);
+#if BCM3380_UNIMAC_DUMP_TRAFFIC
 		UNIMAC_DBG("Received %d bytes\n", length);
 		vDumpMemory(skb_mac_header(skb), length);
+#endif // #if BCM3380_UNIMAC_DUMP_TRAFFIC
 
 		ndev->stats.rx_packets++;
 		ndev->stats.rx_bytes += length;
