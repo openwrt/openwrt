@@ -749,31 +749,30 @@ struct CreateSkbContext {
 static int32_t vCreateSkb(void* arg, const void* pBuffer, size_t uiLength) {
 	struct CreateSkbContext *context = (struct CreateSkbContext *)arg;
 
-	void* buffer = kzalloc(0x1000, GFP_KERNEL);
-	memcpy(buffer, pBuffer, uiLength);
-	uint32_t fcs_calc = crc32_le(~0, buffer, uiLength-4);
-	fcs_calc ^= ~0;
-	fcs_calc = __swab32(fcs_calc);
-	uint32_t fcs_rx = *((uint32_t*)((uint32_t)buffer + uiLength - 4));
-	UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs_calc, fcs_rx);
-
-	UNIMAC_DBG("Got %d bytes\n", uiLength);
-	vDumpMemory(buffer, uiLength);
-	if (fcs_calc != fcs_rx) {
-		UNIMAC_DBG("FCS mismatch!!!!\n");
-		while(1);
-	}
-
 	context->skb = napi_alloc_skb(context->napi, uiLength-4);
 	if (!context->skb) {
 		return -114514;
 	}
 
-	void *data = skb_put_data(context->skb, buffer, uiLength-4);
-	kfree(buffer);
+	void *data = skb_put_data(context->skb, pBuffer, uiLength-4);
+	uint32_t fcs_rx;
+	memcpy(&fcs_rx, (const void*)(((uint32_t)pBuffer) + uiLength-4), 4);
+
 	if (!data) {
 		kfree_skb(context->skb);
 		return -114514;
+	}
+
+	uint32_t fcs_calc = crc32_le(~0, data, uiLength-4);
+	fcs_calc ^= ~0;
+	fcs_calc = __swab32(fcs_calc);
+	UNIMAC_DBG("FCS_CALC = 0x%08X, FCS_RX = 0x%08X\n", fcs_calc, fcs_rx);
+
+	UNIMAC_DBG("Got %d bytes\n", uiLength);
+	vDumpMemory(data, uiLength - 4);
+	if (fcs_calc != fcs_rx) {
+		UNIMAC_DBG("FCS mismatch!!!!\n");
+		while(1);
 	}
 
 	return uiLength-4;
