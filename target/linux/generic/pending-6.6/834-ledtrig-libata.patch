@@ -73,7 +73,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* clear exclusive status */
  	if (unlikely(qc->flags & ATA_QCFLAG_CLEAR_EXCL &&
-@@ -5494,6 +5508,9 @@ struct ata_port *ata_port_alloc(struct a
+@@ -5502,6 +5516,9 @@ struct ata_port *ata_port_alloc(struct a
  	ap->stats.unhandled_irq = 1;
  	ap->stats.idle_irq = 1;
  #endif
@@ -83,7 +83,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ata_sff_port_init(ap);
  
  	return ap;
-@@ -5507,6 +5524,12 @@ void ata_port_free(struct ata_port *ap)
+@@ -5515,6 +5532,12 @@ void ata_port_free(struct ata_port *ap)
  	kfree(ap->pmp_link);
  	kfree(ap->slave_link);
  	kfree(ap->ncq_sense_buf);
@@ -96,7 +96,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	kfree(ap);
  }
  EXPORT_SYMBOL_GPL(ata_port_free);
-@@ -5929,7 +5952,23 @@ int ata_host_register(struct ata_host *h
+@@ -5937,7 +5960,23 @@ int ata_host_register(struct ata_host *h
  		host->ports[i]->print_id = atomic_inc_return(&ata_print_id);
  		host->ports[i]->local_port_no = i + 1;
  	}
