@@ -18,7 +18,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10668,6 +10668,8 @@ struct rtnl_link_stats64 *dev_get_stats(
+@@ -10672,6 +10672,8 @@ struct rtnl_link_stats64 *dev_get_stats(
  		ops->ndo_get_stats64(dev, storage);
  	} else if (ops->ndo_get_stats) {
  		netdev_stats_to_stats64(storage, ops->ndo_get_stats(dev));
