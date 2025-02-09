@@ -350,7 +350,7 @@ SVN-Revision: 35130
  	list_for_each_entry(p, head, list) {
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -622,48 +622,53 @@ static void tcp_options_write(struct tcp
+@@ -625,48 +625,53 @@ static void tcp_options_write(struct tcp
  	u16 options = opts->options;	/* mungable copy */
  
  	if (unlikely(OPTION_MD5 & options)) {
@@ -427,7 +427,7 @@ SVN-Revision: 35130
  	}
  
  	if (unlikely(opts->num_sack_blocks)) {
-@@ -671,16 +676,17 @@ static void tcp_options_write(struct tcp
+@@ -674,16 +679,17 @@ static void tcp_options_write(struct tcp
  			tp->duplicate_sack : tp->selective_acks;
  		int this_sack;
  
@@ -451,7 +451,7 @@ SVN-Revision: 35130
  		}
  
  		tp->rx_opt.dsack = 0;
-@@ -693,13 +699,14 @@ static void tcp_options_write(struct tcp
+@@ -696,13 +702,14 @@ static void tcp_options_write(struct tcp
  
  		if (foc->exp) {
  			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;

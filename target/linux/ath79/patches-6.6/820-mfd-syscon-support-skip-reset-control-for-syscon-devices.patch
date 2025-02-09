@@ -16,16 +16,16 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/mfd/syscon.c
 +++ b/drivers/mfd/syscon.c
-@@ -52,7 +52,7 @@ static struct syscon *of_syscon_register
+@@ -53,7 +53,7 @@ static struct syscon *of_syscon_register
  	int ret;
  	struct regmap_config syscon_config = syscon_regmap_config;
  	struct resource res;
 -	struct reset_control *reset;
 +	struct reset_control *reset = NULL;
  
- 	syscon = kzalloc(sizeof(*syscon), GFP_KERNEL);
- 	if (!syscon)
-@@ -134,7 +134,8 @@ static struct syscon *of_syscon_register
+ 	WARN_ON(!mutex_is_locked(&syscon_list_lock));
+ 
+@@ -133,7 +133,8 @@ static struct syscon *of_syscon_register
  				goto err_attach_clk;
  		}
  
