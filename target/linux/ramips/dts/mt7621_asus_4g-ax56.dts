@@ -31,6 +31,71 @@
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		};
+
+		wlan2g {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wan_white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		modem_yellow {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_MOBILE;
+			gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi_1 {
+			label = "white:rssi-1";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi_2 {
+			label = "white:rssi-2";
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi_3 {
+			label = "white:rssi-3";
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	keys {
@@ -46,6 +111,22 @@
 			label = "wps";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		modem_reboot {
+			gpio-export,name = "reboot:modem";
+			gpio-export,output = <1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_reset {
+			gpio-export,name = "reset:modem";
+			gpio-export,output = <1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
