@@ -214,13 +214,33 @@
 		phy5: phy@5 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <5>;
-			mxl,led-config = <0x03f0 0x0 0x0 0x0>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_LAN;
+				};
+			};
 		};
 
 		phy6: phy@6 {
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <6>;
-			mxl,led-config = <0x00f0 0x0 0x0 0x0>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				led@0 {
+					reg = <0>;
+					color = <LED_COLOR_ID_GREEN>;
+					function = LED_FUNCTION_WAN;
+				};
+			};
 		};
 
 		switch@1f {
