@@ -56,7 +56,7 @@ Change in [v1]
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts
 +++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts
-@@ -121,6 +121,49 @@
+@@ -59,4 +59,47 @@
  			bias-pull-down;
  		};
  	};
@@ -104,11 +104,9 @@ Change in [v1]
 +		nand-ecc-step-size = <512>;
 +	};
  };
- 
- &usb_0_dwc3 {
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
-@@ -300,6 +300,33 @@
+@@ -355,6 +355,33 @@
  			reg = <0x01937000 0x21000>;
  		};
  
