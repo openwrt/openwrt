@@ -1,0 +1,24 @@
+#
+# EcoNet EN75xx
+#
+#cflags-$(CONFIG_ECONET_EN75)	+= -DDEBUG=1 -Wno-error
+
+# We use ZBOOT, so the "real" load address is 0x80020000, specified
+# in config-6.6 CONFIG_ZBOOT_LOAD_ADDRESS. Below is where the kernel
+# will be decompressed to and run from. The largest kernel we can
+# support is 7.5MB (this bootloader limitation is why we're using ZBOOT
+# in the first place). ZBOOT doesn't know the size of the FDT so it
+# presumes 1MB, then it uses 4MB for heap and a little extra for stack
+# and statics, so we leave it with 16MB of space, -128k just for a
+# round number.
+#
+# CAUTION: Memory above 0x80002000 is ours, but loading ZBOOT below
+# 0x80007000 causes weird bugs, perhaps related to
+# not-yet-fully-initialized SRAM.
+#
+# We load at 0x80020000 because some bootloader configurations
+# hard-code that address, others hard-code 0x80002000 and others read
+# the TRX. By loading at 0x80020000, types 1 and 3 are supported
+# automatically and type 2 is supported by prepending a nop sled.
+#
+load-$(CONFIG_ECONET_EN75)	+= 0xffffffff81000000

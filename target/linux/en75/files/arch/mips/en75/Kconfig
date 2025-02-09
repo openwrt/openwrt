@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-2.0
+if ECONET_EN75
+
+choice
+	prompt "EcoNet SoC selection"
+	default SOC_EN751221
+	help
+	  Select EcoNet MIPS SoC type. EcoNet EN75xx are big endian MIPS
+	  processors used in XPON (fiber), DSL, and SIM (4g) applications.
+	  They have SPI, PCI, USB, GPIO, and Ethernet, with optional XPON,
+	  SIM, DSL, and VoIP DSP cores.
+	  Do not confuse these with EN7523 or EN7581 ARM processors which
+	  are in the Airoha section.
+
+	# Required kernel config parameters:
+	# CONFIG_MIPS_RAW_APPENDED_DTB=y
+	# CONFIG_ZBOOT_LOAD_ADDRESS=0x80020000
+
+	config SOC_EN751221
+		bool "EN751221 family"
+		select SMP
+		select SMP_UP
+		select SYS_SUPPORTS_SMP
+		select COMMON_CLK
+		select IRQ_MIPS_CPU
+		select EN751221_INTC
+		select EN75_TIMER_HPT
+		select SPI
+		select SPI_MEM
+		select SPI_MASTER
+		select SPI_AIROHA_EN7523
+		select MTD_SPI_NAND
+		select MTD_NAND_MTK_BMT
+		select MTD_UBI
+		select MTD_UBI_BLOCK
+		select UBIFS_FS
+		select UBIFS_FS_LZO
+		select UBIFS_FS_ZLIB
+		select UBIFS_FS_ZSTD
+		select UBIFS_ATIME_SUPPORT
+		select UBIFS_FS_XATTR
+		select UBIFS_FS_SECURITY
+		select UBIFS_FS_AUTHENTICATION
+		select SYS_SUPPORTS_ZBOOT_UART16550
+		select DEBUG_ZBOOT
+		select SERIAL_OF_PLATFORM
+		help
+		  The EN751221 family includes EN7512, RN7513, EN7521, EN7526.
+		  They are based on single core MIPS 34Kc processors.
+endchoice
+
+endif

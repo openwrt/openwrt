@@ -1,0 +1,24 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=95
+boot() {
+	# en75: We don't have writable rootfs space without wiping vender OS
+	#       data which sacrifices dual-boot capability. We will allow
+	#       DTS files to specify a UBIFS partition within-which to add an
+	#       /openwrt directory and use that. For now we are skipping
+	#       mount_root done and using memory FS only.
+	#mount_root done
+
+	rm -f /sysupgrade.tgz && sync
+	rm -f /tmp/sysupgrade.tar && sync
+
+	# process user commands
+	[ -f /etc/rc.local ] && {
+		sh /etc/rc.local
+	}
+
+	# set leds to normal state
+	. /etc/diag.sh
+	set_state done
+}

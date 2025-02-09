@@ -1,0 +1,11 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -355,7 +355,7 @@ config SPI_DLN2
+ 
+ config SPI_AIROHA_EN7523
+ 	bool "Airoha EN7523 SPI controller support"
+-	depends on ARCH_AIROHA
++	depends on ARCH_AIROHA || ECONET_EN75
+ 	help
+ 	  This enables SPI controller support for the Airoha EN7523 SoC.
+ 
