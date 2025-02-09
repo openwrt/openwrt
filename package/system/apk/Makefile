@@ -61,6 +61,7 @@ MESON_COMMON_ARGS = \
 	-Ddefault_library=static \
 	-Durl_backend=wget \
 	-Dzstd=false \
+	-Dpython=disabled \
 	-Dtests=disabled
 
 MESON_HOST_ARGS += \
