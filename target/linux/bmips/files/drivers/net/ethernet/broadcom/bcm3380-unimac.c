@@ -1,4 +1,5 @@
 #include <linux/clk.h>
+#include <linux/dma-mapping.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/netdevice.h>
@@ -45,7 +46,7 @@ typedef uint32_t uint32;
 typedef int BOOL;
 #define FpmBlock (*((volatile Fpm*)0xB2010000))
 #define dword_B2017000 (((volatile uint32_t*)0xB2017000))
-#define UNCACHED_SMISB (*((volatile IoprocBlockIoProc*)0xB5800000))
+#define IOPROC_UNCACHED (*((volatile IoprocBlockIoProc*)0xB5800000))
 #define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
 
 
@@ -65,8 +66,9 @@ struct bcm3380_unimac {
 	int irq;
 
 	// The working memory of FPM, must be word-aligned
-	void* puiFpmMem;
-	uint32_t uiFpmMemNoCache; // g_uiUnimacDmaBuffer
+	void* pFpmMem; // The address seen by CPU
+	dma_addr_t pFpmMemPhysical; // The physical address, g_uiUnimacDmaBuffer
+	size_t uiFpmMemSize; // Size of memory @ pFpmMem and pFpmMemPhysical
 
 	int uiLinkModeIndex; // dword_83F8A814
 	int u5PhyPrtAddr;
@@ -223,7 +225,9 @@ static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 
 static int unimac_open(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct device *dev = ndev->dev.parent;
 	struct sockaddr addr;
+	int ret;
 
 	for (int i = 0; i < unimac->num_clocks; i++) {
 		if (!IS_ERR_OR_NULL(unimac->clock[i])) {
@@ -246,11 +250,16 @@ static int unimac_open(struct net_device *ndev) {
 	unimac->puiInMsgData = (uint32_t __iomem*) &IOPROC_SMISB.In.IncomingMessageFifo.InMsgData;
 	unimac->puiOgMsgSts = (uint32_t __iomem*) &IOPROC_SMISB.Og.OutgoingMessageFifo.OgMsgSts.Reg32;
 	uint32_t uiInMsgDataPhysicalAddr = ((uint32_t)unimac->puiInMsgData) -
-		((uint32_t)&IOPROC_SMISB) + LtoP((uint32_t)&UNCACHED_SMISB);
+		((uint32_t)&IOPROC_SMISB) + LtoP((uint32_t)&IOPROC_UNCACHED);
 
 	/* Initialize FPM Start*/
-	unimac->puiFpmMem = kzalloc(0x80000, GFP_KERNEL);// Align to 4-byte
-	unimac->uiFpmMemNoCache = ((uint32_t)unimac->puiFpmMem) | 0xA0000000;
+	unimac->uiFpmMemSize = 0x80000;
+	unimac->pFpmMem = dma_alloc_coherent(dev, unimac->uiFpmMemSize, &unimac->pFpmMemPhysical, GFP_KERNEL);
+	if (!unimac->pFpmMem) {
+		dev_err(dev, "cannot allocate memory for FPM\n");
+		ret = -ENOMEM;
+		goto free_fpm_mem;
+	}
 
 	UNIMAC_DBG("FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x%08X;\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10;         // Set InitMem
@@ -261,7 +270,7 @@ static int unimac_open(struct net_device *ndev) {
 	FpmBlock.FpmCtrl.Pool1Cfg1.Reg32 = 0x6000000; // FpBufSize=3h6
 
 	// Set pool base address, must aligned to 4-byte boundaries
-	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = LtoP(unimac->uiFpmMemNoCache);
+	FpmBlock.FpmCtrl.Pool1Cfg2.Reg32 = (uint32_t) unimac->pFpmMemPhysical;
 
 	sub_83F821F4(0x100);
 	FpmBlock.FpmCtrl.FpmCtl.Reg32 = 0x10000;      // Set Pool1Enable
@@ -269,7 +278,8 @@ static int unimac_open(struct net_device *ndev) {
 	UNIMAC_DBG("FpmCtrl.Pool1Cfg1 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg1.Reg32);
 	UNIMAC_DBG("FpmCtrl.Pool1Cfg2 = 0x%08X\n", FpmBlock.FpmCtrl.Pool1Cfg2.Reg32);
 	UNIMAC_DBG("FpmCtrl.FpmCtl    = 0x%08X\n", FpmBlock.FpmCtrl.FpmCtl.Reg32);
-	dev_info(&ndev->dev, "Fpm ready with working memory @ 0x%08X\n", unimac->uiFpmMemNoCache);
+	dev_info(dev, "Fpm ready with working memory @ 0x%08X\n", (uint32_t) unimac->pFpmMemPhysical);
+	dev_info(dev, "CPU: @ 0x%08X\n", (uint32_t) unimac->pFpmMem);
 	/* Initialize FPM End*/
 
 	/* Initialize MSP Start*/
@@ -296,7 +306,7 @@ static int unimac_open(struct net_device *ndev) {
 	g_pxUnimacSelected->UnimacCore.UnimacFrmLen.Reg32 = 2048;// FrameLength = 2048
 	memcpy(addr.sa_data, ndev->dev_addr, ETH_ALEN);
 	unimac_set_mac_address(ndev, &addr);
-	g_pxUnimacSelected->Mbdma.Bufferbase = LtoP(unimac->uiFpmMemNoCache);
+	g_pxUnimacSelected->Mbdma.Bufferbase = unimac->pFpmMemPhysical;
 	g_pxUnimacSelected->Mbdma.Buffersize.Reg32 = 6;
 	g_pxUnimacSelected->Mbdma.Tokenaddress = LtoP(unimac->puiPoolxAllocDealloc);
 	g_pxUnimacSelected->Mbdma.Globalctl.Reg32 = 0x40000081;// LanTxMsgId2w=6d1, LanTxMsgId3w=6d2, AllocLimit=8h40
@@ -338,11 +348,19 @@ static int unimac_open(struct net_device *ndev) {
 	netif_carrier_on(ndev);
 	netif_start_queue(ndev);
 #endif // #if BCM3380_UNIMAC_TEST
+
 	return 0;
+
+// Handling error and free resources
+free_fpm_mem:
+	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
+
+	return ret;
 }
 
 static int unimac_stop(struct net_device *ndev) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	struct device *dev = ndev->dev.parent;
 
 	UNIMAC_DBG("Linux wants to stop Unimac\n");
 
@@ -370,7 +388,8 @@ static int unimac_stop(struct net_device *ndev) {
 	byte_83F8A818 = 0;
 	*((volatile uint32_t*)0xFF400034) &= ~0x1;
 
-	kfree(unimac->puiFpmMem);
+	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
+
 	netdev_reset_queue(ndev);
 
 	return 0;
@@ -508,7 +527,7 @@ int32_t uiEthPoll(struct bcm3380_unimac *unimac, int32_t (*pfOnPacketReady)(void
 					uint32_t uiFifoChunkOffset = uiToken >> 12;
 					uiFifoChunkOffset &= 0xFFFF;
 					uiFifoChunkOffset <<= 11;
-					length = pfOnPacketReady(arg, (const void *)(unimac->uiFpmMemNoCache + uiFifoChunkOffset), length);
+					length = pfOnPacketReady(arg, (const void *)((uint32_t)unimac->pFpmMem + uiFifoChunkOffset), length);
 					// *uiLength = 0x8000; // This was returned in the stock bootloader
 				}
 				writel_be(uiToken, unimac->puiPoolxAllocDealloc);
@@ -587,7 +606,7 @@ static uint32_t vEthernetTx(struct bcm3380_unimac *unimac, size_t uiLengthIn, co
 	}
 
 	// Calculate DMA destination address using the token and global DMA buffer
-	uint32_t dma_dest = unimac->uiFpmMemNoCache + (((token >> 12) & 0xFFFF) << 11);
+	uint32_t dma_dest = (uint32_t)unimac->pFpmMem + (((token >> 12) & 0xFFFF) << 11);
 
 	// Copy the Ethernet packet data to the DMA buffer
 	memcpy((void*)dma_dest, buffer, clamped_length);
