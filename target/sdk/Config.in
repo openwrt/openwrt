@@ -10,6 +10,7 @@ config SDK
 config SDK_LLVM_BPF
 	bool "Build the LLVM-BPF toolchain tarball"
 	depends on BPF_TOOLCHAIN_BUILD_LLVM
+	select NEED_BPF_TOOLCHAIN
 	default BUILDBOT
 	help
 	  This is a tarball of the precompiled LLVM toolchain suitable
