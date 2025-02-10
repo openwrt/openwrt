@@ -18,7 +18,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1122,6 +1122,8 @@ struct hostapd_config {
+@@ -1125,6 +1125,8 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
@@ -29,7 +29,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	int no_pri_sec_switch;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -573,7 +573,8 @@ static int ieee80211n_check_40mhz(struct
+@@ -567,7 +567,8 @@ static int ieee80211n_check_40mhz(struct
  	int ret;
  
  	/* Check that HT40 is used and PRI / SEC switch is allowed */

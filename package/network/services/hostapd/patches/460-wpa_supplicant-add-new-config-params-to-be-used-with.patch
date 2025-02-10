@@ -14,7 +14,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1004,6 +1004,9 @@ struct wpa_driver_associate_params {
+@@ -1012,6 +1012,9 @@ struct wpa_driver_associate_params {
  	 * responsible for selecting with which BSS to associate. */
  	const u8 *bssid;
  
@@ -34,7 +34,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -2421,6 +2422,97 @@ static char * wpa_config_write_mac_value
+@@ -2449,6 +2450,97 @@ static char * wpa_config_write_mac_value
  #endif /* NO_CONFIG_WRITE */
  
  
@@ -132,7 +132,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -2713,6 +2805,8 @@ static const struct parse_data ssid_fiel
+@@ -2744,6 +2836,8 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -143,7 +143,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	{ INT_RANGE(macsec_integ_only, 0, 1) },
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -879,6 +879,9 @@ struct wpa_ssid {
+@@ -907,6 +907,9 @@ struct wpa_ssid {
  	 */
  	void *parent_cred;
  
@@ -155,7 +155,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	 * macsec_policy - Determines the policy for MACsec secure session
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -4435,6 +4435,12 @@ static void wpas_start_assoc_cb(struct w
+@@ -4635,6 +4635,12 @@ static void wpas_start_assoc_cb(struct w
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;

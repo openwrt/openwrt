@@ -21,7 +21,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -757,6 +757,40 @@ endif
+@@ -759,6 +759,40 @@ endif
  CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONFIG_TLS_DEFAULT_CIPHERS)\"
  endif
  
@@ -62,7 +62,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifeq ($(CONFIG_TLS), gnutls)
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
-@@ -936,9 +970,11 @@ endif
+@@ -938,9 +972,11 @@ endif
  
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -74,7 +74,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef NEED_AES_EAX
  AESOBJS += ../src/crypto/aes-eax.o
  NEED_AES_CTR=y
-@@ -948,38 +984,48 @@ AESOBJS += ../src/crypto/aes-siv.o
+@@ -950,38 +986,48 @@ AESOBJS += ../src/crypto/aes-siv.o
  NEED_AES_CTR=y
  endif
  ifdef NEED_AES_CTR
@@ -123,7 +123,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef NEED_AES_DEC
  ifdef CONFIG_INTERNAL_AES
  AESOBJS += ../src/crypto/aes-internal-dec.o
-@@ -994,12 +1040,16 @@ ifneq ($(CONFIG_TLS), openssl)
+@@ -996,12 +1042,16 @@ ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), gnutls)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -140,7 +140,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_INTERNAL_SHA1
  SHA1OBJS += ../src/crypto/sha1-internal.o
  ifdef NEED_FIPS186_2_PRF
-@@ -1008,16 +1058,22 @@ endif
+@@ -1010,16 +1060,22 @@ endif
  endif
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -163,7 +163,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  ifdef NEED_SHA1
  OBJS += $(SHA1OBJS)
-@@ -1027,11 +1083,13 @@ ifneq ($(CONFIG_TLS), openssl)
+@@ -1029,11 +1085,13 @@ ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), gnutls)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -177,7 +177,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  ifdef NEED_MD5
  ifdef CONFIG_INTERNAL_MD5
-@@ -1070,56 +1128,81 @@ ifneq ($(CONFIG_TLS), openssl)
+@@ -1083,56 +1141,81 @@ ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), gnutls)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -259,7 +259,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  ifdef CONFIG_INTERNAL_SHA384
  CFLAGS += -DCONFIG_INTERNAL_SHA384
-@@ -1164,11 +1247,13 @@ HOBJS += $(SHA1OBJS)
+@@ -1177,11 +1260,13 @@ HOBJS += $(SHA1OBJS)
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -273,7 +273,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  ifdef CONFIG_RADIUS_SERVER
  CFLAGS += -DRADIUS_SERVER
-@@ -1342,7 +1427,9 @@ NOBJS += ../src/utils/trace.o
+@@ -1355,7 +1440,9 @@ NOBJS += ../src/utils/trace.o
  endif
  
  HOBJS += hlr_auc_gw.o ../src/utils/common.o ../src/utils/wpa_debug.o ../src/utils/os_$(CONFIG_OS).o ../src/utils/wpabuf.o ../src/crypto/milenage.o
@@ -283,11 +283,13 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_INTERNAL_AES
  HOBJS += ../src/crypto/aes-internal.o
  HOBJS += ../src/crypto/aes-internal-enc.o
-@@ -1365,13 +1452,17 @@ SOBJS += ../src/common/sae.o
+@@ -1378,18 +1465,24 @@ SOBJS += ../src/common/sae.o
  SOBJS += ../src/common/sae_pk.o
  SOBJS += ../src/common/dragonfly.o
  SOBJS += $(AESOBJS)
 +ifneq ($(CONFIG_TLS), mbedtls)
+ SOBJS += ../src/crypto/sha384.o
+ SOBJS += ../src/crypto/sha512.o
  SOBJS += ../src/crypto/sha256-prf.o
  SOBJS += ../src/crypto/sha384-prf.o
  SOBJS += ../src/crypto/sha512-prf.o
@@ -298,9 +300,14 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  SOBJS += ../src/crypto/sha384-kdf.o
  SOBJS += ../src/crypto/sha512-kdf.o
 +endif
+ SOBJS += ../src/common/wpa_common.o
+ SOBJS += ../src/crypto/random.o
++ifneq ($(CONFIG_TLS), mbedtls)
+ SOBJS += ../src/crypto/sha1-prf.o
++endif
+ SOBJS += ../src/utils/eloop.o
  
  _OBJS_VAR := NOBJS
- include ../src/objs.mk
 --- a/hostapd/defconfig
 +++ b/hostapd/defconfig
 @@ -6,9 +6,21 @@
@@ -7765,7 +7772,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CONFIG_SIM_SIMULATOR=y
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1230,6 +1230,29 @@ endif
+@@ -1232,6 +1232,29 @@ endif
  CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONFIG_TLS_DEFAULT_CIPHERS)\"
  endif
  
@@ -7795,7 +7802,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifeq ($(CONFIG_TLS), gnutls)
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
-@@ -1422,9 +1445,11 @@ endif
+@@ -1424,9 +1447,11 @@ endif
  
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -7807,7 +7814,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_OPENSSL_INTERNAL_AES_WRAP
  # Seems to be needed at least with BoringSSL
  NEED_INTERNAL_AES_WRAP=y
-@@ -1438,9 +1463,11 @@ endif
+@@ -1440,9 +1465,11 @@ endif
  
  ifdef NEED_INTERNAL_AES_WRAP
  ifneq ($(CONFIG_TLS), linux)
@@ -7819,7 +7826,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef NEED_AES_EAX
  AESOBJS += ../src/crypto/aes-eax.o
  NEED_AES_CTR=y
-@@ -1450,35 +1477,45 @@ AESOBJS += ../src/crypto/aes-siv.o
+@@ -1452,35 +1479,45 @@ AESOBJS += ../src/crypto/aes-siv.o
  NEED_AES_CTR=y
  endif
  ifdef NEED_AES_CTR
@@ -7865,7 +7872,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef NEED_AES_ENC
  ifdef CONFIG_INTERNAL_AES
  AESOBJS += ../src/crypto/aes-internal-enc.o
-@@ -1493,12 +1530,16 @@ ifneq ($(CONFIG_TLS), openssl)
+@@ -1495,12 +1532,16 @@ ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), gnutls)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -7882,7 +7889,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_INTERNAL_SHA1
  SHA1OBJS += ../src/crypto/sha1-internal.o
  ifdef NEED_FIPS186_2_PRF
-@@ -1510,29 +1551,37 @@ CFLAGS += -DCONFIG_NO_PBKDF2
+@@ -1512,29 +1553,37 @@ CFLAGS += -DCONFIG_NO_PBKDF2
  else
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -7920,7 +7927,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef NEED_MD5
  ifdef CONFIG_INTERNAL_MD5
  MD5OBJS += ../src/crypto/md5-internal.o
-@@ -1587,12 +1636,17 @@ ifneq ($(CONFIG_TLS), openssl)
+@@ -1589,12 +1638,17 @@ ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), linux)
  ifneq ($(CONFIG_TLS), gnutls)
  ifneq ($(CONFIG_TLS), wolfssl)
@@ -7938,7 +7945,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef CONFIG_INTERNAL_SHA256
  SHA256OBJS += ../src/crypto/sha256-internal.o
  endif
-@@ -1605,50 +1659,68 @@ CFLAGS += -DCONFIG_INTERNAL_SHA512
+@@ -1607,50 +1661,68 @@ CFLAGS += -DCONFIG_INTERNAL_SHA512
  SHA256OBJS += ../src/crypto/sha512-internal.o
  endif
  ifdef NEED_TLS_PRF_SHA256
@@ -8007,7 +8014,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  ifdef NEED_ASN1
  OBJS += ../src/tls/asn1.o
-@@ -1823,10 +1895,12 @@ ifdef CONFIG_FIPS
+@@ -1825,10 +1897,12 @@ ifdef CONFIG_FIPS
  CFLAGS += -DCONFIG_FIPS
  ifneq ($(CONFIG_TLS), openssl)
  ifneq ($(CONFIG_TLS), wolfssl)

@@ -4,7 +4,7 @@ Subject: [PATCH] nl80211_del_beacon_bss.patch
 
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -6253,8 +6253,7 @@ static void nl80211_teardown_ap(struct i
+@@ -6381,8 +6381,7 @@ static void nl80211_teardown_ap(struct i
  		nl80211_mgmt_unsubscribe(bss, "AP teardown");
  
  	nl80211_put_wiphy_data_ap(bss);
