@@ -22,7 +22,7 @@ instead rely entirely on netifd handling this properly
  	} else if (os_strcmp(buf, "vlan_bridge") == 0) {
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -390,8 +390,6 @@ int hostapd_set_wds_sta(struct hostapd_d
+@@ -394,8 +394,6 @@ int hostapd_set_wds_sta(struct hostapd_d
  		return -1;
  	if (hapd->conf->wds_bridge[0])
  		bridge = hapd->conf->wds_bridge;

@@ -8,7 +8,7 @@ full device, e.g. in order to deal with hardware/driver limitations
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3090,6 +3090,14 @@ static int hostapd_config_fill(struct ho
+@@ -3088,6 +3088,14 @@ static int hostapd_config_fill(struct ho
  				   line, bss->max_num_sta, MAX_STA_COUNT);
  			return 1;
  		}
@@ -25,7 +25,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  	} else if (os_strcmp(buf, "extended_key_id") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1086,6 +1086,8 @@ struct hostapd_config {
+@@ -1089,6 +1089,8 @@ struct hostapd_config {
  	unsigned int track_sta_max_num;
  	unsigned int track_sta_max_age;
  
@@ -36,7 +36,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			  * ' ' (ascii 32): all environments
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1634,7 +1634,7 @@ void handle_probe_req(struct hostapd_dat
+@@ -1653,7 +1653,7 @@ void handle_probe_req(struct hostapd_dat
  	if (hapd->conf->no_probe_resp_if_max_sta &&
  	    is_multicast_ether_addr(mgmt->da) &&
  	    is_multicast_ether_addr(mgmt->bssid) &&
@@ -47,7 +47,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			   " since no room for additional STA",
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -247,6 +247,29 @@ static int hostapd_iface_conf_changed(st
+@@ -251,6 +251,29 @@ static int hostapd_iface_conf_changed(st
  	return 0;
  }
  
@@ -79,7 +79,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -826,6 +826,7 @@ void hostapd_periodic_iface(struct hosta
+@@ -828,6 +828,7 @@ void hostapd_periodic_iface(struct hosta
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
  void hostapd_owe_update_trans(struct hostapd_iface *iface);;
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);

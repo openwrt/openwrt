@@ -20,7 +20,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -4055,6 +4055,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -4075,6 +4075,8 @@ int hostapd_remove_iface(struct hapd_int
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
  			   int reassoc)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	if (hapd->tkip_countermeasures) {
  		hostapd_drv_sta_deauth(hapd, sta->addr,
  				       WLAN_REASON_MICHAEL_MIC_FAILURE);
-@@ -4062,10 +4064,16 @@ void hostapd_new_assoc_sta(struct hostap
+@@ -4082,10 +4084,16 @@ void hostapd_new_assoc_sta(struct hostap
  	}
  
  #ifdef CONFIG_IEEE80211BE
@@ -48,10 +48,10 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
 +		hostapd_prune_associations(hapd, sta->addr, mld_assoc_link_id);
  
  	ap_sta_clear_disconnect_timeouts(hapd, sta);
- 	sta->post_csa_sa_query = 0;
+ 	ap_sta_clear_assoc_timeout(hapd, sta);
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1485,9 +1485,6 @@ bool ap_sta_set_authorized_flag(struct h
+@@ -1552,9 +1552,6 @@ bool ap_sta_set_authorized_flag(struct h
  				mld_assoc_link_id = -2;
  		}
  #endif /* CONFIG_IEEE80211BE */

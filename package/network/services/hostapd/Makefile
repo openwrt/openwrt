@@ -5,13 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2024-09-15
-PKG_SOURCE_VERSION:=5ace39b0a4cdbe18ddbc4e18f80ee3876233c20b
-PKG_MIRROR_HASH:=43187d1ddd923970ef3821a0fe267880c2483f6f1a5acd0dd2d7906661ab1372
+PKG_SOURCE_DATE:=2025-02-09
+PKG_SOURCE_VERSION:=c8c7d56a3d3c4ca79bcbb6a87f372ce4bc2e9f11
+PKG_MIRROR_HASH:=fafdef456a545bd1de0cbd7b68b520e5be7e70ad1aab7ef051b1fc5ccaaa012a
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -158,7 +158,7 @@ define Package/hostapd/Default
   CATEGORY:=Network
   SUBMENU:=WirelessAPD
   TITLE:=IEEE 802.1x Authenticator
-  URL:=http://hostap.epitest.fi/
+  URL:=https://w1.fi/hostapd/
   DEPENDS:=$(DRV_DEPENDS) +hostapd-common $(CORE_DEPENDS)
   EXTRA_DEPENDS:=hostapd-common (=$(PKG_VERSION)-r$(PKG_RELEASE))
   USERID:=network=101:network=101
@@ -267,7 +267,7 @@ define Package/wpad/Default
   DEPENDS:=$(DRV_DEPENDS) +hostapd-common $(CORE_DEPENDS)
   EXTRA_DEPENDS:=hostapd-common (=$(PKG_VERSION)-r$(PKG_RELEASE))
   USERID:=network=101:network=101
-  URL:=http://hostap.epitest.fi/
+  URL:=https://w1.fi/
   PROVIDES:=hostapd wpa-supplicant
   CONFLICTS:=$(HOSTAPD_PROVIDERS) $(SUPPLICANT_PROVIDERS)
   HOSTAPD_PROVIDERS+=$(1)
@@ -408,7 +408,7 @@ define Package/wpa-supplicant/Default
   CATEGORY:=Network
   SUBMENU:=WirelessAPD
   TITLE:=WPA Supplicant
-  URL:=http://hostap.epitest.fi/wpa_supplicant/
+  URL:=https://w1.fi/wpa_supplicant/
   DEPENDS:=$(DRV_DEPENDS) +hostapd-common $(CORE_DEPENDS)
   EXTRA_DEPENDS:=hostapd-common (=$(PKG_VERSION)-r$(PKG_RELEASE))
   USERID:=network=101:network=101
@@ -506,7 +506,7 @@ define Package/hostapd-utils
   CATEGORY:=Network
   SUBMENU:=WirelessAPD
   TITLE:=IEEE 802.1x Authenticator (utils)
-  URL:=http://hostap.epitest.fi/
+  URL:=https://w1.fi/hostapd/
   DEPENDS:=@$(subst $(space),||,$(foreach pkg,$(HOSTAPD_PROVIDERS),PACKAGE_$(pkg)))
   VARIANT:=*
 endef
