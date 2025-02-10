@@ -166,6 +166,15 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	aliyun,ap8220)
+		active="$(fw_printenv -n active)"
+		if [ "$active" -eq "1" ]; then
+			CI_UBIPART="rootfs1"
+		else
+			CI_UBIPART="rootfs2"
+		fi
+		nand_do_upgrade "$1"
+		;;
 	arcadyan,aw1000|\
 	cmcc,rm2-6|\
 	compex,wpq873|\

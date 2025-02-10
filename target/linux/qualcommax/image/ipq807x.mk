@@ -33,6 +33,19 @@ define Build/wax6xx-netgear-tar
 	rm -rf $@.tmp
 endef
 
+define Device/aliyun_ap8220
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Aliyun
+	DEVICE_MODEL := AP8220
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-aliyun_ap8220
+endef
+TARGET_DEVICES += aliyun_ap8220
+
 define Device/arcadyan_aw1000
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
