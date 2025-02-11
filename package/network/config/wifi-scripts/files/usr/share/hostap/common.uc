@@ -213,9 +213,12 @@ const phy_proto = {
 		if (!base_mask)
 			return null;
 
+		if (base_mask == "00:00:00:00:00:00")
+			base_mask = "ff:ff:ff:ff:ff:ff";
+
 		if (data.macaddr_base)
 			base_addr = data.macaddr_base;
-		else if (base_mask == "00:00:00:00:00:00" &&
+		else if (base_mask == "ff:ff:ff:ff:ff:ff" &&
 		    (radio_idx > 0 || idx >= num_global)) {
 			let addrs = split(phy_sysfs_file(phy, "addresses"), "\n");
 
@@ -227,8 +230,6 @@ const phy_proto = {
 			} else {
 				if (idx < length(addrs))
 					return addrs[idx];
-
-				base_mask = "ff:ff:ff:ff:ff:ff";
 			}
 		}
 
