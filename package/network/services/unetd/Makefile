@@ -80,6 +80,7 @@ endef
 
 define Package/unetd/install
 	$(INSTALL_DIR) \
+		$(1)/usr/share/ucode/cli/modules \
 		$(1)/etc/unetd \
 		$(1)/lib/bpf \
 		$(1)/etc/init.d \
@@ -92,6 +93,7 @@ define Package/unetd/install
 		$(PKG_INSTALL_DIR)/usr/sbin/unet-tool \
 		$(1)/usr/sbin/
 	$(if $(CONFIG_UNETD_VXLAN_SUPPORT),$(INSTALL_DATA) $(PKG_BUILD_DIR)/mss-bpf.o $(1)/lib/bpf/mss.o)
+	$(INSTALL_DATA) ./files/unet.uc $(1)/usr/share/ucode/cli/modules
 	$(INSTALL_BIN) ./files/unetd.init $(1)/etc/init.d/unetd
 	$(INSTALL_BIN) ./files/unetd.sh $(1)/lib/netifd/proto
 endef
