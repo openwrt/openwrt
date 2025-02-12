@@ -1,14 +1,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireless-regdb
-PKG_VERSION:=2024.10.07
 PKG_RELEASE:=1
 PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=LICENSE
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/software/network/wireless-regdb/
-PKG_HASH:=f76f2bd79a653e9f9dd50548d99d03a4a4eb157da056dfd5892f403ec28fb3d5
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=https://git.kernel.org/pub/scm/linux/kernel/git/wens/wireless-regdb.git
+PKG_SOURCE_DATE:=2025-02-12
+PKG_SOURCE_VERSION:=f9f6b306a830505218753c86bbf21083c9b4b8ad
+PKG_MIRROR_HASH:=be073d4afd116560d689ccb96beb0339195a939c9eb8d13d3bdb03ec6f1bcd7b
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
