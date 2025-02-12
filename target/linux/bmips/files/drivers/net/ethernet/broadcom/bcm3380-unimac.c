@@ -48,7 +48,7 @@ typedef int BOOL;
 #define dword_B2017000 (((volatile uint32_t*)0xB2017000))
 #define IOPROC_UNCACHED (*((volatile IoprocBlockIoProc*)0xB5800000))
 #define IOPROC_SMISB (*((volatile IoprocBlockIoProc*)0xB8800000))
-
+#define INT_CTRL (*((volatile IntControlRegs*)0xB4E00000))
 
 #define MIPS_SMISB_CTRL 0xFF400030
 
@@ -192,8 +192,43 @@ static void poll_timer_callback(struct timer_list *t) {
 	napi_schedule(&unimac->napi);
 	// Rearm the timer
 	mod_timer(&unimac->poll_timer, jiffies + POLL_INTERVAL);
+
+	// struct net_device *ndev = unimac->napi.dev;
+	// struct device *dev = ndev->dev.parent;
+	// dev_info(dev, "&INT_CTRL.Iopirqmask0 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqmask0.Reg32);
+	// dev_info(dev, "INT_CTRL.Iopirqmask0 = 0x%08X\n", INT_CTRL.Iopirqmask0.Reg32);
+	// dev_info(dev, "INT_CTRL.Iopirqstatus0 = 0x%08X\n", INT_CTRL.Iopirqstatus0.Reg32);
+	// dev_info(dev, "&INT_CTRL.Iopirqmask1 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqmask1.Reg32);
+	// dev_info(dev, "INT_CTRL.Iopirqmask1 = 0x%08X\n", INT_CTRL.Iopirqmask1.Reg32);
+	// dev_info(dev, "INT_CTRL.Iopirqstatus1 = 0x%08X\n", INT_CTRL.Iopirqstatus1.Reg32);
+	// dev_info(dev, "INT_CTRL.IopirqSense = 0x%08X\n", INT_CTRL.IopirqSense.Reg32);
+	// dev_info(dev, "INT_CTRL.PeriphIrqSense = 0x%08X\n", INT_CTRL.PeriphIrqSense.Reg32);
+
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keMask = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keMask.Reg32);
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus.Reg32);
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsMask = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsMask.Reg32);
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus.Reg32);
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpMsk = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpMsk.Reg32);
+	// dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
+
+	// dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
+	dev_info(dev, "IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgSts.Reg32);
 }
 #endif // #if !BCM3380_UNIMAC_TEST
+
+static irqreturn_t unimac_isr_msp(int irq, void *dev_id) {
+	struct net_device *ndev = dev_id;
+	struct device *dev = ndev->dev.parent;
+	struct bcm3380_unimac *unimac = netdev_priv(ndev);
+	dev_info(dev, "unimac_isr_msp InMsgSts = 0x%08X\n", readl_be(unimac->puiInMsgSts));
+	dev_info(dev, "INT_CTRL.Iopirqstatus0 = 0x%08X\n", INT_CTRL.Iopirqstatus0.Reg32);
+	dev_info(dev, "INT_CTRL.Iopirqstatus1 = 0x%08X\n", INT_CTRL.Iopirqstatus1.Reg32);
+	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus.Reg32);
+	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus.Reg32);
+	dev_info(dev, "IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", IOPROC_SMISB.Cntrl.Control.L2IrqGpSts.Reg32);
+
+	return IRQ_HANDLED;
+}
 
 static int unimac_set_mac_address(struct net_device *ndev, void *p) {
 	struct bcm3380_unimac *unimac = netdev_priv(ndev);
@@ -252,6 +287,17 @@ static int unimac_open(struct net_device *ndev) {
 	uint32_t uiInMsgDataPhysicalAddr = ((uint32_t)unimac->puiInMsgData) -
 		((uint32_t)&IOPROC_SMISB) + LtoP((uint32_t)&IOPROC_UNCACHED);
 
+	ret = request_irq(unimac->irq, unimac_isr_msp, 0, ndev->name, ndev);
+	if (ret)
+		goto freeirq;
+	// INT_CTRL.IopirqSense.Reg32 = 8;
+	dev_info(dev, "&InMsgSts = 0x%08X\n", (uint32_t)unimac->puiInMsgSts);
+	dev_info(dev, "&INT_CTRL.Iopirqstatus0 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqstatus0.Reg32);
+	dev_info(dev, "&INT_CTRL.Iopirqstatus1 = 0x%08X\n", (uint32_t)&INT_CTRL.Iopirqstatus1.Reg32);
+	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1Irq4keStatus);
+	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L1IrqMipsStatus);
+	dev_info(dev, "&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts = 0x%08X\n", (uint32_t)&IOPROC_SMISB.Cntrl.Control.L2IrqGpSts);
+
 	/* Initialize FPM Start*/
 	unimac->uiFpmMemSize = 0x80000;
 	unimac->pFpmMem = dma_alloc_coherent(dev, unimac->uiFpmMemSize, &unimac->pFpmMemPhysical, GFP_KERNEL);
@@ -286,11 +332,13 @@ static int unimac_open(struct net_device *ndev) {
 	writel_be(0x18000007, (void __iomem *)MIPS_SMISB_CTRL);
 	mdelay(10u);
 
-	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 = 6;
+	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 = 6; // LowWmWords, low water mark
 	IOPROC_SMISB.Msgid.MessageId.MsgId[0].Reg32 = 1;
 	IOPROC_SMISB.Msgid.MessageId.MsgId[1].Reg32 = 1;
 	IOPROC_SMISB.Msgid.MessageId.MsgId[2].Reg32 = 2;
 	IOPROC_SMISB.Msgid.MessageId.MsgId[3].Reg32 = 1;
+	IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32 |= 1<<15; // NotEmptyIrqSts
+	IOPROC_SMISB.Cntrl.Control.L1Irq4keMask.Reg32 |= 0x04; // InFifoIrqMask
 
 	UNIMAC_DBG("IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl = 0x%08X\n", IOPROC_SMISB.In.IncomingMessageFifo.InMsgCtl.Reg32);
 	for (int i = 0; i<4; i++)
@@ -355,6 +403,9 @@ static int unimac_open(struct net_device *ndev) {
 free_fpm_mem:
 	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
 
+freeirq:
+	free_irq(unimac->irq, ndev);
+
 	return ret;
 }
 
@@ -389,6 +440,8 @@ static int unimac_stop(struct net_device *ndev) {
 	*((volatile uint32_t*)0xFF400034) &= ~0x1;
 
 	dma_free_coherent(dev, unimac->uiFpmMemSize, unimac->pFpmMem, unimac->pFpmMemPhysical);
+
+	free_irq(unimac->irq, ndev);
 
 	netdev_reset_queue(ndev);
 

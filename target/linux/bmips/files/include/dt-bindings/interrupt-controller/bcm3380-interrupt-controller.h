@@ -39,9 +39,11 @@
 #define BCM3380_IRQ_RESERVED_30         30
 #define BCM3380_IRQ_EXT_IRQ             31
 
-#define BCM3380_IRQ_MEP_IRQ             (2 + 32)
-#define BCM3380_IRQ_MSP_IRQ             (3 + 32)
-#define BCM3380_IRQ_MSP_SW_IRQ          (5 + 32)
+#define BCM3380_IRQ_IOP_UTP             0
+#define BCM3380_IRQ_IOP_DTP             1
+#define BCM3380_IRQ_IOP_MEP             2
+#define BCM3380_IRQ_IOP_MSP             3
+#define BCM3380_IRQ_IOP_FAP             4
 
 // These might not be necessary
 #define INTERRUPT_ID_LAST   BCM3380_IRQ_MSP_SW_IRQ

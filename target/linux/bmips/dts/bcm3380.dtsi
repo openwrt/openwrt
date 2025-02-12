@@ -117,7 +117,7 @@
 			#reset-cells = <1>;
 		};
 
-		// Not in U-Boot DTS
+		// Peripheral interrupts
 		periph_intc: interrupt-controller@14e00048 {
 			#address-cells = <1>;
 			compatible = "brcm,bcm6345-l1-intc";
@@ -129,6 +129,20 @@
 
 			interrupt-parent = <&cpu_intc>;
 			interrupts = <3>, <4>;
+		};
+
+		// IO processor (IOP) interrupts
+		iop_intc: interrupt-controller@14e00058 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00050 0x08>,
+				  <0x14e00058 0x08>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>, <6>;
 		};
 
 		// Not in U-Boot DTS
@@ -246,8 +260,8 @@
 			compatible = "brcm,bcm3380-unimac";
 			reg = <0x12110000 0x80000>;
 
-			interrupt-parent = <&periph_intc>;
-			interrupts = <BCM3380_IRQ_UNI_IRQ2>; // Not sure about this!
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3380_IRQ_IOP_MSP>;
 
 			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
 				 <&periph_clk0 BCM3380_CLK0_FPM>,
