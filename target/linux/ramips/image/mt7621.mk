@@ -1804,7 +1804,7 @@ define Device/keenetic_kn-1910
   $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  IMAGE_SIZE := 20368588
+  IMAGE_SIZE := 29097984
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1910
   DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3

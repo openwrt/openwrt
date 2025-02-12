@@ -356,7 +356,7 @@ endef
 TARGET_DEVICES += jotale_js76x8-32m
 
 define Device/keenetic_kn-1613
-  IMAGE_SIZE := 31488k
+  IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1613
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
@@ -368,7 +368,7 @@ TARGET_DEVICES += keenetic_kn-1613
 
 define Device/keenetic_kn-1711
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 10551296
+  IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1711
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb2
@@ -380,7 +380,7 @@ TARGET_DEVICES += keenetic_kn-1711
 
 define Device/keenetic_kn-1713
   BLOCKSIZE := 64k
-  IMAGE_SIZE := 10551296
+  IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1713
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb2

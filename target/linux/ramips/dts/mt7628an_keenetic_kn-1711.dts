@@ -45,14 +45,14 @@
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi2 {
+		fn {
 			function = LED_FUNCTION_WLAN_2GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wifi5 {
+		wifi {
 			function = LED_FUNCTION_WLAN_5GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
@@ -95,7 +95,7 @@
 			partition@0 {
 				compatible = "denx,uimage";
 				label = "firmware";
-				reg = <0x0 0x1CC0000>;
+				reg = <0x0 0x1cc0000>;
 			};
 		};
 	};
@@ -203,7 +203,7 @@
 				reg = <0x1050000 0xe60000>;
 			};
 			
-			partition@1EB0000 {
+			partition@1eb0000 {
 				label = "Config_2";
 				reg = <0x1eb0000 0x40000>;
 				read-only;
