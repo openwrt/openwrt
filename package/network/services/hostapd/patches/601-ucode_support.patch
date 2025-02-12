@@ -816,7 +816,7 @@ as adding/removing interfaces.
  	if (vlan_id)
  		*vlan_id = 0;
  	if (psk_len)
-@@ -446,13 +447,16 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -446,13 +447,18 @@ static const u8 * hostapd_wpa_auth_get_p
  	 * returned psk which should not be returned again.
  	 * logic list (all hostapd_get_psk; all sta->psk)
  	 */
@@ -830,16 +830,23 @@ as adding/removing interfaces.
  			*vlan_id = 0;
  		psk = sta->psk->psk;
 -		for (pos = sta->psk; pos; pos = pos->next) {
++		if (vlan_id)
++			sta->psk_idx = psk_idx;
 +		for (pos = sta->psk; pos; pos = pos->next, psk_idx++) {
  			if (pos->is_passphrase) {
  				if (pbkdf2_sha1(pos->passphrase,
  						hapd->conf->ssid.ssid,
-@@ -469,6 +473,8 @@ static const u8 * hostapd_wpa_auth_get_p
+@@ -466,9 +472,13 @@ static const u8 * hostapd_wpa_auth_get_p
+ 			}
+ 			if (pos->psk == prev_psk) {
+ 				psk = pos->next ? pos->next->psk : NULL;
++				if (vlan_id)
++					sta->psk_idx = psk_idx + 1;
  				break;
  			}
  		}
-+		if (psk)
-+			sta->psk_idx = psk_idx;
++		if (vlan_id && !psk)
++			sta->psk_idx = 0;
  	}
  	return psk;
  }
