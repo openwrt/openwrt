@@ -71,6 +71,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56)
