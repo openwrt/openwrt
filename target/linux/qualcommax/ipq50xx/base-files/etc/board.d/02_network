@@ -7,6 +7,9 @@ ipq50xx_setup_interfaces()
 {
 	local board="$1"
 	case $board in
+		linksys,mr5500)
+			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+			;;
 		linksys,mx2000|\
 		linksys,mx5500)
 			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
@@ -22,6 +25,7 @@ ipq50xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+		linksys,mr5500|\
 		linksys,mx2000|\
 		linksys,mx5500)
 			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
