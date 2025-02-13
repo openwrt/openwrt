@@ -44,11 +44,24 @@ define Package/uci
   TITLE:=Utility for the Unified Configuration Interface (UCI)
 endef
 
-define Package/libuci-lua
+define Package/libuci-lua/default
   SECTION=libs
   CATEGORY=Libraries
   DEPENDS:=+libuci +liblua
+endef
+
+define Package/libuci-lua
+  $(Package/libuci-lua/default)
+  DEPENDS+=+liblua
   TITLE:=Lua plugin for UCI
+  VARIANT:=lua-51
+endef
+
+define Package/libuci-lua53
+  $(Package/libuci-lua/default)
+  DEPENDS+=+liblua5.3
+  TITLE:=Lua5.3 plugin for UCI
+  VARIANT:=lua-53
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
@@ -59,6 +72,10 @@ CMAKE_OPTIONS += \
 	-DABIVERSION=$(PKG_ABI_VERSION) \
 	$(if $(DEBUG),-DUCI_DEBUG=ON)
 
+ifeq ($(BUILD_VARIANT),lua-53)
+  CMAKE_OPTIONS += -DLUA_CFLAGS="-I$(STAGING_DIR)/usr/include/lua5.3"
+endif
+
 define Package/libuci/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(PKG_BUILD_DIR)/libuci.so.* $(1)/lib/
@@ -67,6 +84,11 @@ endef
 define Package/libuci-lua/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua
 	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/
+endef
+
+define Package/libuci-lua53/install
+	$(INSTALL_DIR) $(1)/usr/local/lib/lua/5.3
+	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/local/lib/lua/5.3
 endef
 
 define Package/uci/install
@@ -86,4 +108,5 @@ endef
 
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
+$(eval $(call BuildPackage,libuci-lua53))
 $(eval $(call BuildPackage,uci))
