@@ -1,0 +1,57 @@
+			   READLINE PATCH REPORT
+			   =====================
+
+Readline-Release: 8.2
+Patch-ID: readline82-009
+
+Bug-Reported-by:	Stefan H. Holek <stefan@epy.co.at>
+Bug-Reference-ID:	<50F8DA45-B7F3-4DE1-AB94-19AE42649CDC@epy.co.at>
+Bug-Reference-URL:	https://lists.gnu.org/archive/html/bug-readline/2022-10/msg00021.html
+
+Bug-Description:
+
+Fix issue where the directory name portion of the word to be completed (the
+part that is passed to opendir()) requires both tilde expansion and dequoting.
+Readline only performed tilde expansion in this case, so filename completion
+would fail.
+
+
+--- a/complete.c
++++ b/complete.c
+@@ -2526,7 +2526,8 @@ rl_filename_completion_function (const c
+ 	  temp = tilde_expand (dirname);
+ 	  xfree (dirname);
+ 	  dirname = temp;
+-	  tilde_dirname = 1;
++	  if (*dirname != '~')
++	    tilde_dirname = 1;	/* indicate successful tilde expansion */
+ 	}
+ 
+       /* We have saved the possibly-dequoted version of the directory name
+@@ -2545,11 +2546,16 @@ rl_filename_completion_function (const c
+ 	  xfree (users_dirname);
+ 	  users_dirname = savestring (dirname);
+ 	}
+-      else if (tilde_dirname == 0 && rl_completion_found_quote && rl_filename_dequoting_function)
++      else if (rl_completion_found_quote && rl_filename_dequoting_function)
+ 	{
+-	  /* delete single and double quotes */
++	  /* We already ran users_dirname through the dequoting function.
++	     If tilde_dirname == 1, we successfully performed tilde expansion
++	     on dirname. Now we need to reconcile those results. We either
++	     just copy the already-dequoted users_dirname or tilde expand it
++	     if we tilde-expanded dirname. */
++	  temp = tilde_dirname ? tilde_expand (users_dirname) : savestring (users_dirname);
+ 	  xfree (dirname);
+-	  dirname = savestring (users_dirname);
++	  dirname = temp;
+ 	}
+       directory = opendir (dirname);
+ 
+--- a/patchlevel
++++ b/patchlevel
+@@ -1,3 +1,3 @@
+ # Do not edit -- exists only for use by patch
+ 
+-8
++9
