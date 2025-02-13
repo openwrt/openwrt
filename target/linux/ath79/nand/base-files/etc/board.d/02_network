@@ -103,9 +103,6 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_binary art 0x0)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	meraki,mr18)
-		lan_mac=$(mtd_get_mac_binary_ubi board-config 102)
-		;;
 	netgear,wndr3700-v4|\
 	netgear,wndr4300|\
 	netgear,wndr4300sw|\
