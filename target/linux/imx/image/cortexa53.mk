@@ -46,6 +46,21 @@ define Device/gateworks_venice
   FILESYSTEMS := squashfs ext4
   DEVICE_VENDOR := Gateworks
   DEVICE_MODEL := i.MX8M Venice
+  SUPPORTED_DEVICES := \
+	gw,imx8mm-gw71xx-0x \
+	gw,imx8mm-gw72xx-0x \
+	gw,imx8mp-gw72xx-2x \
+	gw,imx8mm-gw73xx-0x \
+	gw,imx8mp-gw73xx-2x \
+	gw,imx8mm-gw7901 \
+	gw,imx8mm-gw7902 \
+	gw,imx8mn-gw7902 \
+	gw,imx8mm-gw7903 \
+	gateworks,imx8mp-gw71xx-2x \
+	gateworks,imx8mp-gw74xx \
+	gateworks,imx8mm-gw7904 \
+	gateworks,imx8mm-gw7905-0x \
+	gateworks,imx8mp-gw7905-2x
   BOOT_SCRIPT := gateworks_venice
   PARTITION_OFFSET := 16M
   DEVICE_DTS := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*-venice*.dts)))
