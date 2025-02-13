@@ -1,0 +1,47 @@
+. /lib/functions.sh
+
+board=$(board_name)
+
+board_get_serial() {
+    case "$board" in
+    fortinet,fap-221-b|\
+    fortinet,fap-221-c)
+        echo $(dd if=$(find_mtd_part "u-boot") bs=1 skip=$((0x3ff90)) count=16)
+        ;;
+    *)
+        ;;
+    esac
+}
+
+board_preconfigure() {
+
+    # Load the relevant configuration files
+    config_load system
+    config_load dumbap
+
+
+    # Check if we've already completed this configuration once.
+    DUMBAP_PRECONFIG=$(uci -q get dumbap.preconfig)
+
+    # If we don't find the identifier, preconfigure the device as a dumb AP.
+    if [ "$DUMBAP_PRECONFIG" != "1" ]
+    then
+        # Set hostname to serial number, to avoid potential DNS conflicts if main
+        # router is already called openwrt.
+        serial=$(board_get_serial)
+        if [ "" != $serial ]
+        then
+            uci set system.@system[0].hostname=$serial
+            uci commit system
+        fi
+
+        # Configure an identifier so we don't repeat on upgrade.
+        uci import dumbap < /dev/null
+        uci set dumbap.preconfig='1'
+        uci commit dumbap
+    fi
+}
+
+board_preconfigure
+
+exit 0
