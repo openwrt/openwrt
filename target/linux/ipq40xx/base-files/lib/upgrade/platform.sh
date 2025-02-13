@@ -128,6 +128,10 @@ platform_do_upgrade() {
 	wallys,dr40x9)
 		nand_do_upgrade "$1"
 		;;
+	tplink,deco-m9plus-v2)
+		CI_UBIPART="rootfs_1"
+		nand_do_upgrade "$1"
+		;;
 	glinet,gl-b2200)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"

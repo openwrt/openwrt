@@ -2,6 +2,7 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Build/netgear-fit-padding
 	./netgear-fit-padding.py $@ $@.new
@@ -1115,6 +1116,36 @@ define Device/sony_ncp-hg100-cellular
 	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 uqmi
 endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
+
+define Device/tplink-zImage
+	DEVICE_VENDOR := TP-Link
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
+	KERNEL_SUFFIX := -zImage.itb
+	KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
+	KERNEL_NAME := zImage
+	SOC := qcom-ipq4019
+	TPLINK_BOARD_ID :=
+endef
+define Device/tplink_deco-m9plus-v2
+	$(call Device/FitzImage)
+	SOC := qcom-ipq4019
+	DEVICE_MODEL := Deco-M9Plus
+	DEVICE_VARIANT := v2
+	DEVICE_PACKAGES := ipq-wifi-tplink_deco-m9plus-v2
+	TPLINK_BOARD_ID := DECO-M9PLUS
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 47185920
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	DEVICE_DTS_DELIMITER := @
+	KERNEL_IN_UBI := 1
+	IMAGES := factory.ubi sysupgrade.bin
+	IMAGE/factory.ubi := append-ubi | check-size 
+	IMAGE/sysupgrade.bin := append-ubi | check-size | append-metadata
+endef
+TARGET_DEVICES += tplink_deco-m9plus-v2
 
 define Device/teltonika_rutx10
 	$(call Device/FitImage)

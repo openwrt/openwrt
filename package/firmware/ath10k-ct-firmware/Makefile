@@ -599,6 +599,9 @@ define Package/ath10k-firmware-qca9888-ct/install
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA9888) \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/firmware-5.bin
+	$(INSTALL_DATA) \
+		./board-2.bin \
+		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 endef
 define Package/ath10k-firmware-qca9888-ct-full-htt/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
