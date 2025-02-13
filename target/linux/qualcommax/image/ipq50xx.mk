@@ -11,6 +11,17 @@ define Device/linksys_ipq50xx_mx_base
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
 endef
 
+define Device/linksys_mr5500
+	$(call Device/linksys_ipq50xx_mx_base)
+	DEVICE_MODEL := MR5500
+	DEVICE_DTS_CONFIG := config@mp03.1
+	DEVICE_PACKAGES := kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 \
+		ipq-wifi-linksys_mr5500 \
+		kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr5500
+
 define Device/linksys_mx2000
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := MX2000
