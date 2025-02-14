@@ -75,7 +75,7 @@ platform_do_upgrade() {
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56)
-		remove_oem_ubi_volume rootfs
+		remove_oem_ubi_volume squashfs
 		linksys_mx_do_upgrade "$1"
 		;;
 	*)
