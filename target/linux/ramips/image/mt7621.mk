@@ -1963,6 +1963,8 @@ define Device/mercusys_mr70x-v1
   $(Device/tplink-safeloader)
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR70X
+  DEVICE_ALT0_VENDOR := MERCUSYS
+  DEVICE_ALT0_MODEL := MR1800X
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
   TPLINK_BOARD_ID := MR70X
