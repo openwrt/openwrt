@@ -49,6 +49,7 @@ image:
 	make image PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make image FILES="<path>" # include extra files from <path>
 	make image BIN_DIR="<path>" # alternative output directory for the images
+	make image DTS_DIR="<path>" # alternative directory to look for device tree files
 	make image EXTRA_IMAGE_NAME="<string>" # Add this to the output image filename (sanitized)
 	make image DISABLED_SERVICES="<svc1> [<svc2> [<svc3> ..]]" # Which services in /etc/init.d/ should be disabled
 	make image ADD_LOCAL_KEY=1 # store locally generated signing key in built images
@@ -262,9 +263,11 @@ build_image: FORCE
 	if [ -d "target/linux/feeds/$(BOARD)" ]; then \
 		$(NO_TRACE_MAKE) -C target/linux/feeds/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
+			$(if $(DTS_DIR),DTS_DIR="$(DTS_DIR)"); \
 	else \
 		$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 			$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)"); \
+			$(if $(DTS_DIR),DTS_DIR="$(DTS_DIR)"); \
 	fi
 
 $(BIN_DIR)/profiles.json: FORCE
@@ -334,6 +337,7 @@ image:
 		$(if $(FILES),USER_FILES="$(FILES)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
 		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)") \
+		$(if $(DTS_DIR),DTS_DIR="$(DTS_DIR)") \
 		$(if $(DISABLED_SERVICES),DISABLED_SERVICES="$(DISABLED_SERVICES)") \
 		$(if $(ROOTFS_PARTSIZE),CONFIG_TARGET_ROOTFS_PARTSIZE="$(ROOTFS_PARTSIZE)"))
 
