@@ -115,19 +115,6 @@
 };
 
 &mdio {
-	reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
-	reset-delay-us = <50000>;
-	reset-post-delay-us = <20000>;
-
-	phy5: phy@5 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <5>;
-	};
-
-	phy6: phy@6 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <6>;
-	};
 
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
