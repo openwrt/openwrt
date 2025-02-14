@@ -1,0 +1,741 @@
+#!/usr/bin/env ucode
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2025 Felix Fietkau <nbd@nbd.name>
+'use strict';
+import * as datamodel from "cli.datamodel";
+import { bold, color_fg } from "cli.color";
+import * as uline from "uline";
+import { basename, stdin } from "fs";
+
+let history = [];
+let history_edit;
+let history_idx = -1;
+let cur_line;
+let interactive;
+let script_mode;
+
+let el;
+let model = datamodel.new({
+	getpass: uline.getpass,
+	poll_key: (timeout) => el.poll_key(timeout),
+	status_msg: (msg) => {
+		el.hide_prompt();
+		warn(msg + "\n");
+		el.refresh_prompt();
+	},
+});
+let uloop = model.uloop;
+model.add_modules();
+let ctx = model.context();
+let parser = uline.arg_parser({
+	line_separator: ";"
+});
+let base_prompt = [ "cli" ];
+
+model.add_nodes({
+	Root: {
+		exit: {
+			help: "Exit the CLI",
+			call: function(ctx) {
+				el.close();
+				uloop.end();
+				interactive = false;
+			}
+		}
+	}
+});
+
+model.init();
+
+function update_prompt() {
+	el.set_state({
+		prompt: bold(join(" ", [ ...base_prompt, ...ctx.prompt ]) + "> "),
+	});
+}
+
+let cur_completion, tab_arg, tab_arg_len, tab_prefix, tab_suffix, tab_prefix_len, tab_quote, tab_ctx;
+
+function max_len(list, len)
+{
+	for (let entry in list)
+		if (length(entry) > len)
+			len = length(entry);
+	return len + 3;
+}
+
+function sort_completion(data)
+{
+	let categories = {};
+	for (let entry in data) {
+		let cat = entry.category ?? " ";
+		categories[cat] ??= [];
+		push(categories[cat], entry);
+	}
+	return categories;
+}
+
+function val_str(val)
+{
+	if (type(val) == "array")
+		return join(", ", val);
+	return val;
+}
+
+function helptext_list_str(cur, str)
+{
+	let data = cur.value;
+	let categories = sort_completion(data);
+	let cat_len = max_len(keys(categories));
+	let has_categories = length(categories) > 1 || !categories[" "];
+	let len = max_len(map(data, (v) => v.name), 10);
+
+	if (has_categories || str == null)
+		str = "";
+
+	for (let cat, cdata in categories) {
+		if (has_categories && cat != " ") {
+			if (length(str) > 0)
+				str += "\n";
+			str += `${cat}:\n`;
+		}
+
+		for (let val in cdata) {
+			let name = val.name;
+			let help = val.help ?? "";
+			let extra = [];
+			if (val.multiple)
+				push(extra, "multiple");
+			if (val.required)
+				push(extra, "required");
+			if (val.default)
+				push(extra, "default: " + val_str(val.default));
+			if (length(extra) > 0)
+				help += " (" + join(", ", extra) + ")";
+			if (length(help) > 0)
+				name += ":";
+			str += sprintf("  %-" + len + "s %s\n", name, help);
+		}
+	}
+
+	return str;
+}
+
+function helptext(cur) {
+	if (!cur) {
+		el.set_hint(`\n  No help information available\n`);
+		return true;
+	}
+
+	let str = `${cur.help}: `;
+	let data = cur.value;
+	if (type(data) != "array") {
+		str += `<${cur.type}>\n`;
+	} else if (length(data) > 0) {
+		str += "\n";
+		str = helptext_list_str(cur, str);
+	} else {
+		str += " (no match)\n";
+	}
+	el.set_hint(str);
+	return true;
+}
+
+function completion_ctx(arg_info)
+{
+	let cur_ctx = ctx;
+	for (let args in arg_info.args) {
+		let sel = cur_ctx.select(args, true);
+		if (!length(args))
+			cur_ctx = sel;
+		if (type(sel) != "object" || sel.errors)
+			return;
+	}
+
+	return cur_ctx;
+}
+
+function completion_replace_arg(val, incomplete, skip_space)
+{
+	let ref = substr(tab_prefix, -tab_prefix_len);
+	val = parser.escape(val, ref);
+
+	if (incomplete) {
+		let last = substr(val, -1);
+		if (last == '"' || last == "'")
+			val = substr(val, 0, -1);
+	} else if (!skip_space) {
+		val += " ";
+	}
+
+	let line = tab_prefix;
+	if (tab_prefix_len)
+		line = substr(tab_prefix, 0, -tab_prefix_len);
+	line += val;
+	let pos = length(line);
+	line += tab_suffix;
+	el.set_state({ line, pos });
+}
+
+function completion_check_prefix(data)
+{
+	let prefix = data[0].name;
+	let prefix_len = length(prefix);
+
+	for (let entry in data) {
+		entry = entry.name;
+		if (prefix_len > length(entry))
+			prefix_len = length(entry);
+	}
+	prefix = substr(prefix, 0, prefix_len);
+
+	for (let entry in data) {
+		entry = substr(entry.name, 0, prefix_len);
+		while (entry != prefix) {
+			prefix_len--;
+			prefix = substr(prefix, 0, prefix_len);
+			entry = substr(entry, 0, prefix_len);
+		}
+	}
+
+	completion_replace_arg(prefix, true);
+}
+
+function completion(count) {
+	if (count < 2) {
+		let line_data = el.get_line();
+		let line = line_data.line;
+		let pos = line_data.pos;
+		tab_suffix = substr(line, pos);
+		if (length(tab_suffix) > 0 &&
+			substr(tab_suffix, 0, 1) != " ") {
+			let idx = index(tab_suffix, " ");
+			if (idx < 0 || !idx)
+				pos += length(tab_suffix);
+			else
+				pos += idx;
+
+			tab_suffix = substr(line, pos);
+		}
+		tab_prefix = substr(line, 0, pos);
+
+		let arg_info = parser.parse(tab_prefix);
+		let is_open = arg_info.missing != null;
+		if (arg_info.missing == "\\\"")
+			tab_quote = "\"";
+		else
+			tab_quote = arg_info.missing ?? "";
+		let args = pop(arg_info.args);
+		let arg_pos = pop(arg_info.pos);
+
+		if (!is_open && substr(tab_prefix, -1) == " ")
+			push(args, "");
+		let tab_arg_pos = arg_pos[length(args) - 1];
+		tab_arg = args[length(args) - 1];
+		if (tab_arg_pos)
+			tab_prefix_len = tab_arg_pos[1] - tab_arg_pos[0];
+		else
+			tab_prefix_len = 0;
+
+		tab_ctx = completion_ctx(arg_info);
+		if (!tab_ctx)
+			return;
+
+		cur_completion = tab_ctx.complete([...args]);
+	}
+
+	if (!tab_ctx)
+		return;
+
+	if (count < 0 || (cur_completion && cur_completion.force_helptext))
+		return helptext(cur_completion);
+
+	let cur = cur_completion;
+	if (!cur || !cur.value) {
+		if (!tab_prefix_len) {
+			el.set_hint("");
+			return;
+		}
+
+		cur = {
+			value: [{
+				name: tab_arg,
+			}]
+		};
+	}
+
+	let data = cur.value;
+	if (length(data) == 0) {
+		el.set_hint(`  (no match)`);
+		return;
+	}
+
+	if (length(data) == 1) {
+		completion_replace_arg(data[0].name, data[0].incomplete);
+		el.set_hint("");
+		el.reset_key_input();
+		return;
+	}
+
+	if (count == 1)
+		completion_check_prefix(data);
+
+	if (count > 1) {
+		let idx = (count - 2) % length(data);
+		completion_replace_arg(data[idx].name, false, true);
+	}
+
+	let win = el.get_window();
+	let str = "";
+	let x = 0;
+
+	let categories = sort_completion(data);
+	let cat_len = max_len(keys(categories));
+	let len = max_len(map(data, (v) => v.name));
+	let has_categories = length(categories) > 1 || !categories[" "];
+
+	for (let cat, cdata in categories) {
+		let cat_start = cat != " ";
+		if (cat_start)
+			cat += ": ";
+
+		if (x) {
+			str += "\n";
+			x = 0;
+		}
+		for (let entry in cdata) {
+			let add;
+
+			if (!x && has_categories)
+				add = sprintf("  %-"+cat_len+"s", cat);
+			else
+				add = "    ";
+			cat = "";
+
+			add += sprintf("%-"+len+"s", entry.name);
+			str += add;
+			x += length(add);
+
+			if (x + length(add) < win.x)
+				continue;
+
+			str += "\n";
+			x = 0;
+		}
+	}
+	el.set_hint(str);
+}
+
+function format_entry(val)
+{
+	if (type(val) == "bool")
+		val = val ? "yes" : "no";
+	return val;
+}
+
+function format_multiline(prefix, val)
+{
+	let prefix2 = replace(prefix, /./g, " ");
+	let prefix_len = length(prefix);
+	let win = el.get_window();
+	let x = 0;
+
+	if (type(val) != "array")
+		val = [ val ];
+
+	for (let cur in val) {
+		cur = format_entry(cur);
+		let cur_lines = split(cur, "\n");
+		if (length(cur_lines) > 1) {
+			if (x) {
+				warn(',\n');
+				x = 0;
+			}
+
+			cur = join("\n" + prefix2, cur_lines);
+			warn(cur);
+			x = win.x;
+			prefix = null;
+			continue;
+		}
+
+		if (x && (x + length(cur) > win.x - 3)) {
+			warn(',\n');
+			x = 0;
+		}
+
+		if (!x) {
+			warn(prefix ?? prefix2);
+			prefix = null;
+			x = prefix_len;
+		} else {
+			warn(', ');
+			x += 2;
+		}
+
+		warn(cur);
+		x += length(cur);
+	}
+	warn('\n');
+}
+
+function format_table(table)
+{
+	let data = table;
+
+	let len = max_len(map(data, (v) => v[0]), 8);
+	for (let line in data) {
+		let name = line[0];
+		let val = line[1];
+		let prefix = sprintf("    %-" + len + "s ", name + ":");
+		format_multiline(prefix, val);
+	}
+}
+
+function convert_table(val)
+{
+	if (type(val) == "array")
+		return val;
+
+	let data = [];
+	for (let name in sort(keys(val)))
+		push(data, [ name, val[name] ]);
+
+	return data;
+}
+
+function convert_multi_table(val)
+{
+	if (type(val) != "array") {
+		let data = [];
+		for (let name in sort(keys(val)))
+			push(data, [ val[name], name ]);
+		val = data;
+	}
+
+	for (let line in val)
+		line[0] = convert_table(line[0]);
+
+	return val;
+}
+
+function format_result(res)
+{
+	if (!res) {
+		warn(color_fg("red", "Unknown command") + "\n");
+		return;
+	}
+	if (!res.ok) {
+		for (let err in res.errors) {
+			warn(color_fg("red", "Error: "+ err.msg) + "\n");
+		}
+		if (!length(res.errors))
+			warn(color_fg("red", "Failed") + "\n");
+		return;
+	}
+
+	if (res.status_msg)
+		warn(color_fg("green", res.status_msg) + "\n");
+
+	if (res.name)
+		warn(res.name + ": ");
+
+	let data = res.data;
+	switch (res.type) {
+	case "multi_table":
+		data = convert_multi_table(data);
+		warn("\n");
+		for (let table in data) {
+			if (table[1])
+				warn("\n" + table[1] + ":\n");
+			format_table(table[0]);
+			warn("\n");
+		}
+		break;
+	case "table":
+		data = convert_table(data);
+		warn("\n");
+		format_table(data);
+		break;
+	case "list":
+		warn("\n");
+		for (let entry in data)
+			warn("  - " + entry + "\n");
+		break;
+	case "string":
+		warn(res.data + "\n");
+		break;
+	case "json":
+		warn(sprintf("%.J\n", res.data));
+		break;
+	}
+}
+
+function line_history_reset()
+{
+	history_idx = -1;
+	history_edit = null;
+	cur_line = null;
+}
+
+function line_history(dir)
+{
+	let min_idx = cur_line == null ? 0 : -1;
+	let new_idx = history_idx + dir;
+
+	if (new_idx < min_idx || new_idx >= length(history))
+		return;
+
+	let line = el.get_line().line;
+	let cur_history = history_edit ?? history;
+	if (history_idx == -1)
+		cur_line = line;
+	else if (cur_history[history_idx] != line) {
+		history_edit ??= [ ...history ];
+		history_edit[history_idx] = line;
+		cur_history = history_edit;
+	}
+
+	history_idx = new_idx;
+	if (history_idx < 0)
+		line = cur_line;
+	else
+		line = cur_history[history_idx];
+	let pos = length(line);
+	el.set_state({ line, pos });
+
+}
+let rev_search, rev_search_results, rev_search_index;
+
+function reverse_search_update(line)
+{
+	if (line) {
+		rev_search = line;
+		rev_search_results = filter(history, (l) => index(l, line) >= 0);
+		rev_search_index = 0;
+	}
+
+	let prompt = "reverse-search: ";
+	if (line && !length(rev_search_results))
+		prompt = "failing " + prompt;
+
+	el.set_state({
+		line2_prompt: prompt,
+	});
+
+	if (line && length(rev_search_results)) {
+		line = rev_search_results[0];
+		let pos = length(line);
+		el.set_state({ line, pos });
+	}
+}
+
+function reverse_search_reset() {
+	if (rev_search == null)
+		return;
+	rev_search = null;
+	rev_search_results = null;
+	rev_search_index = 0;
+	el.set_state({
+		line2_prompt: null
+	});
+}
+
+function reverse_search()
+{
+	if (rev_search == null) {
+		reverse_search_update("");
+		return;
+	}
+
+	if (!length(rev_search_results))
+		return;
+
+	rev_search_index = (rev_search_index + 1) % length(rev_search_results);
+	let line = rev_search_results[rev_search_index];
+	let pos = length(line);
+	el.set_state({ line, pos });
+}
+
+function line_cb(line)
+{
+	reverse_search_reset();
+	line_history_reset();
+	unshift(history, line);
+
+	let arg_info = parser.parse(line);
+	if (!arg_info)
+		return;
+	for (let cmd in arg_info.args) {
+		let orig_cmd = [ ...cmd ];
+
+		// convenience hack
+		if (cmd[0] == "cd" && cmd[1] == "..") {
+			shift(cmd);
+			cmd[0] = "up";
+		} else if (cmd[0] == "ls") {
+			let compl = ctx.complete([""]);
+			if (!compl)
+				continue;
+
+			warn(helptext_list_str(compl));
+			continue;
+		}
+
+		let cur_ctx = ctx.select(cmd);
+		if (type(cur_ctx) != "object" || cur_ctx.errors) {
+			format_result(cur_ctx);
+			break;
+		}
+
+		if (!length(cmd)) {
+			ctx = cur_ctx;
+			update_prompt();
+			continue;
+		}
+
+		try {
+			let res = cur_ctx.call(cmd);
+			format_result(res);
+			if (res && res.ctx) {
+				ctx = res.ctx;
+				update_prompt();
+			}
+		} catch (e) {
+			model.exception(e);
+		}
+	}
+}
+
+const cb = {
+	eof: () => { warn(`\n`); uloop.end(); },
+	line_check: (line) => parser.check(line) == null,
+	line2_cursor: () => {
+		reverse_search_reset();
+		return false;
+	},
+	line2_update: reverse_search_update,
+	key_input: (c, count) => {
+		try {
+			switch(c) {
+			case "?":
+				if (parser.check(el.get_line().line) != null)
+					return false;
+				completion(-1);
+				return true;
+			case "\t":
+				reverse_search_reset();
+				completion(count);
+				return true;
+			case '\x03':
+				if (count < 2) {
+					el.set_state({ line: "", pos: 0 });
+				} else if (ctx.prev) {
+					warn(`\n`);
+					let cur_ctx = ctx.select([ "main" ]);
+					if (cur_ctx && !cur_ctx.errors)
+						ctx = cur_ctx;
+					update_prompt();
+				} else {
+					warn(`\n`);
+					el.poll_stop();
+					uloop.end();
+				}
+				return true;
+			case "\x12":
+				reverse_search();
+				return true;
+			}
+		} catch (e) {
+			warn(`${e}\n${e.stacktrace[0].context}`);
+		}
+	},
+	cursor_up: () => {
+		try {
+			line_history(1);
+		} catch (e) {
+			el.set_hint(`${e}\n${e.stacktrace[0].context}`);
+		}
+	},
+	cursor_down: () => {
+		try {
+			line_history(-1);
+		} catch (e) {
+			el.set_hint(`${e}\n${e.stacktrace[0].context}`);
+		}
+	},
+};
+el = uline.new({
+	utf8: true,
+	cb,
+	key_input_list: [ "?", "\t", "\x03", "\x12" ]
+});
+
+while (length(ARGV) > 0) {
+	let cmd = ARGV[0];
+	if (substr(cmd, 0, 1) != "-")
+		break;
+
+	shift(ARGV);
+	switch (cmd) {
+	case '-i':
+		interactive = true;
+		break;
+	case '-s':
+		script_mode = true;
+		break;
+	}
+}
+
+if (SCRIPT_NAME != "cli") {
+	let cur_ctx = ctx.select([ basename(SCRIPT_NAME) ]);
+	if (cur_ctx && cur_ctx != ctx && !cur_ctx.errors) {
+		ctx = cur_ctx;
+		delete ctx.prev;
+		ctx.node.exit = model.node.Root.exit;
+		base_prompt = [];
+	}
+}
+
+while (length(ARGV) > 0) {
+	let cmd = ARGV;
+	let idx = index(ARGV, ":");
+	if (idx >= 0) {
+		cmd = slice(ARGV, 0, idx);
+		ARGV = slice(ARGV, idx + 1);
+	} else {
+		ARGV = [];
+	}
+	interactive ??= false;
+
+	let orig_cmd = [ ...cmd ];
+	let cur_ctx = ctx.select(cmd);
+	if (type(cur_ctx) != "object" || cur_ctx.errors) {
+		format_result(cur_ctx);
+		break;
+	}
+
+	if (!length(cmd)) {
+		ctx = cur_ctx;
+		continue;
+	}
+
+	let res = cur_ctx.call(cmd);
+	format_result(res);
+}
+
+if (script_mode) {
+	el.close();
+	while (!stdin.error()) {
+		let line = stdin.read("line");
+		line_cb(line);
+	}
+	exit(0);
+}
+
+if (interactive != false) {
+	warn("Welcome to the OpenWrt CLI. Press '?' for help on commands/arguments\n");
+	update_prompt();
+	el.set_uloop(line_cb);
+	uloop.run();
+	exit(0);
+}

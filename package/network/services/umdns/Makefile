@@ -37,7 +37,12 @@ define Package/umdns/conffiles
 endef
 
 define Package/umdns/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
+	$(INSTALL_DIR) \
+		$(1)/usr/sbin \
+		$(1)/etc/init.d \
+		$(1)/etc/config \
+		$(1)/usr/share/ucode/cli/modules
+	$(INSTALL_DATA) ./files/mdns.uc $(1)/usr/share/ucode/cli/modules
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/umdns $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/umdns.init $(1)/etc/init.d/umdns
 	$(INSTALL_CONF) ./files/umdns.config $(1)/etc/config/umdns
