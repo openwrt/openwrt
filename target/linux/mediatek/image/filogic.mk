@@ -1729,7 +1729,6 @@ define Device/zyxel_ex5601-t0-stock
   DEVICE_DTS := mt7986a-zyxel-ex5601-t0-stock
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-usb3
-  SUPPORTED_DEVICES := mediatek,mt7986a-rfb-snand
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 256k
   PAGESIZE := 4096
