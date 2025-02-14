@@ -274,7 +274,6 @@ platform_pre_upgrade() {
 		;;
 	arcadyan,wg620443)
 		if [ "$(rootfs_type)" = "tmpfs" ]; then
-			echo -e "/dev/mtd1\t0x0\t0x20000\t0x20000" > /etc/fw_env.config
 			fw_setenv bootargs console=ttyS0,115200n1 ubi.mtd=4 init=/sbin/init loglevel=8 earlycon=uart8250,mmio32,0x11002000
 			ubidetach -m 4 | true
 			ubiformat /dev/mtd4
