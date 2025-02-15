@@ -314,6 +314,18 @@ define Device/ampedwireless_ally-00x19k
 endef
 TARGET_DEVICES += ampedwireless_ally-00x19k
 
+define Device/arcadyan_we410443
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WE410443
+  IMAGE_SIZE := 32128k
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none | arcadyan-trx 0x746f435d
+  DEVICE_PACKAGES := kmod-mt7615-firmware -uboot-envtools
+endef
+TARGET_DEVICES += arcadyan_we410443
+
 define Device/arcadyan_we420223-99
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
