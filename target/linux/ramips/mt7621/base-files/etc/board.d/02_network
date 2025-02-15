@@ -37,6 +37,7 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "swp0 swp1"
 		;;
 	ampedwireless,ally-00x19k|\
+	arcadyan,we410443|\
 	asus,rp-ac56|\
 	asus,rp-ac87|\
 	dlink,dap-1620-b1|\
@@ -212,6 +213,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
 		label_mac=$lan_mac
+		;;
+	arcadyan,we410443)
+		label_mac=$(mtd_get_mac_ascii config mac)
+		lan_mac=$label_mac
 		;;
 	arcadyan,we420223-99)
 		label_mac=$(mtd_get_mac_ascii board_data mac)
