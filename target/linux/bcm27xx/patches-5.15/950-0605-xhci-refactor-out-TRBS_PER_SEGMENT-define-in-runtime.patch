@@ -156,7 +156,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -90,15 +90,16 @@ static bool trb_is_link(union xhci_trb *
+@@ -91,15 +91,16 @@ static bool trb_is_link(union xhci_trb *
  	return TRB_TYPE_LINK_LE32(trb->link.control);
  }
  
@@ -176,7 +176,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
  
  static bool link_trb_toggles_cycle(union xhci_trb *trb)
-@@ -161,7 +162,8 @@ void inc_deq(struct xhci_hcd *xhci, stru
+@@ -162,7 +163,8 @@ void inc_deq(struct xhci_hcd *xhci, stru
  
  	/* event ring doesn't have link trbs, check for last trb */
  	if (ring->type == TYPE_EVENT) {
@@ -186,7 +186,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			ring->dequeue++;
  			goto out;
  		}
-@@ -174,7 +176,8 @@ void inc_deq(struct xhci_hcd *xhci, stru
+@@ -175,7 +177,8 @@ void inc_deq(struct xhci_hcd *xhci, stru
  
  	/* All other rings have link trbs */
  	if (!trb_is_link(ring->dequeue)) {
@@ -196,7 +196,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			xhci_warn(xhci, "Missing link TRB at end of segment\n");
  		} else {
  			ring->dequeue++;
-@@ -225,7 +228,7 @@ static void inc_enq(struct xhci_hcd *xhc
+@@ -226,7 +229,7 @@ static void inc_enq(struct xhci_hcd *xhc
  	if (!trb_is_link(ring->enqueue))
  		ring->num_trbs_free--;
  
@@ -205,7 +205,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		xhci_err(xhci, "Tried to move enqueue past ring segment\n");
  		return;
  	}
-@@ -3274,7 +3277,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
+@@ -3314,7 +3317,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
  	 * that clears the EHB.
  	 */
  	while (xhci_handle_event(xhci, ir) > 0) {
@@ -214,7 +214,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			continue;
  		xhci_update_erst_dequeue(xhci, ir, event_ring_deq);
  		event_ring_deq = ir->event_ring->dequeue;
-@@ -3416,7 +3419,8 @@ static int prepare_ring(struct xhci_hcd
+@@ -3456,7 +3459,8 @@ static int prepare_ring(struct xhci_hcd
  		}
  	}
  
@@ -226,7 +226,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -898,8 +898,8 @@ static void xhci_clear_command_ring(stru
+@@ -899,8 +899,8 @@ static void xhci_clear_command_ring(stru
  	seg = ring->deq_seg;
  	do {
  		memset(seg->trbs, 0,
@@ -237,7 +237,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			cpu_to_le32(~TRB_CYCLE);
  		seg = seg->next;
  	} while (seg != ring->deq_seg);
-@@ -910,7 +910,7 @@ static void xhci_clear_command_ring(stru
+@@ -911,7 +911,7 @@ static void xhci_clear_command_ring(stru
  	ring->enq_seg = ring->deq_seg;
  	ring->enqueue = ring->dequeue;
  
@@ -248,7 +248,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	 * when the cycle bit is set to 1.
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1385,6 +1385,7 @@ struct xhci_ring {
+@@ -1386,6 +1386,7 @@ struct xhci_ring {
  	unsigned int		num_trbs_free;
  	unsigned int		num_trbs_free_temp;
  	unsigned int		bounce_buf_len;

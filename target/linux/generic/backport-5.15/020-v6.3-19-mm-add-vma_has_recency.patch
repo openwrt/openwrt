@@ -182,7 +182,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -3486,7 +3486,10 @@ static int should_skip_vma(unsigned long
+@@ -3493,7 +3493,10 @@ static int should_skip_vma(unsigned long
  	if (is_vm_hugetlb_page(vma))
  		return true;
  

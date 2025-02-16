@@ -36,7 +36,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		pdev->device == PCI_DEVICE_ID_ASMEDIA_1042_XHCI) {
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -664,6 +664,15 @@ static int xhci_move_dequeue_past_td(str
+@@ -665,6 +665,15 @@ static int xhci_move_dequeue_past_td(str
  	} while (!cycle_found || !td_last_trb_found);
  
  deq_found:
@@ -54,7 +54,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	addr = xhci_trb_virt_to_dma(new_seg, new_deq);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1664,6 +1664,7 @@ struct xhci_hcd {
+@@ -1665,6 +1665,7 @@ struct xhci_hcd {
  #define XHCI_ZHAOXIN_HOST	BIT_ULL(46)
  #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
