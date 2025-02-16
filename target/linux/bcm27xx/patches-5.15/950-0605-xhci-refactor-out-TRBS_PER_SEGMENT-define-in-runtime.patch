@@ -205,7 +205,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		xhci_err(xhci, "Tried to move enqueue past ring segment\n");
  		return;
  	}
-@@ -3266,7 +3269,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
+@@ -3274,7 +3277,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
  	 * that clears the EHB.
  	 */
  	while (xhci_handle_event(xhci, ir) > 0) {
@@ -214,7 +214,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			continue;
  		xhci_update_erst_dequeue(xhci, ir, event_ring_deq);
  		event_ring_deq = ir->event_ring->dequeue;
-@@ -3408,7 +3411,8 @@ static int prepare_ring(struct xhci_hcd
+@@ -3416,7 +3419,8 @@ static int prepare_ring(struct xhci_hcd
  		}
  	}
  
