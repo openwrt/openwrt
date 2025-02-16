@@ -162,8 +162,8 @@ generate_network() {
 		static)
 			local ipad
 			case "$1" in
-				lan) ipad=${ipaddr:-"192.168.1.1"} ;;
-				*) ipad=${ipaddr:-"192.168.$((addr_offset++)).1"} ;;
+				lan) ipad=${ipaddr:-"10.0.0.1"} ;;
+				*) ipad=${ipaddr:-"10.0.$((addr_offset++)).1"} ;;
 			esac
 
 			netm=${netmask:-"255.255.255.0"}
@@ -173,7 +173,7 @@ generate_network() {
 				set network.$1.ipaddr='$ipad'
 				set network.$1.netmask='$netm'
 			EOF
-			[ -e /proc/sys/net/ipv6 ] && uci set network.$1.ip6assign='60'
+			[ -e /proc/sys/net/ipv6 ] && uci set network.$1.ip6assign='64'
 		;;
 
 		dhcp)
@@ -311,7 +311,7 @@ generate_static_system() {
 	uci -q batch <<-EOF
 		delete system.@system[0]
 		add system system
-		set system.@system[-1].hostname='OpenWrt'
+		set system.@system[-1].hostname='iWrt'
 		set system.@system[-1].timezone='UTC'
 		set system.@system[-1].ttylogin='0'
 		set system.@system[-1].log_size='128'
