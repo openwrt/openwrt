@@ -877,7 +877,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ethtool_link_ksettings_add_link_mode(ks, supported, FEC_RS);
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1661,7 +1661,7 @@ static void axienet_validate(struct phyl
+@@ -1667,7 +1667,7 @@ static void axienet_validate(struct phyl
  			netdev_warn(ndev, "Cannot use PHY mode %s, supported: %s\n",
  				    phy_modes(state->interface),
  				    phy_modes(lp->phy_mode));
@@ -886,7 +886,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			return;
  		}
  	}
-@@ -1694,10 +1694,8 @@ static void axienet_validate(struct phyl
+@@ -1700,10 +1700,8 @@ static void axienet_validate(struct phyl
  		break;
  	}
  
