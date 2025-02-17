@@ -48,7 +48,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	clk_disable_unprepare(dwc->susp_clk);
  	clk_disable_unprepare(dwc->ref_clk);
  	clk_disable_unprepare(dwc->bus_clk);
-@@ -1884,6 +1898,20 @@ static int dwc3_get_clocks(struct dwc3 *
+@@ -1875,6 +1889,20 @@ static int dwc3_get_clocks(struct dwc3 *
  		}
  	}
  

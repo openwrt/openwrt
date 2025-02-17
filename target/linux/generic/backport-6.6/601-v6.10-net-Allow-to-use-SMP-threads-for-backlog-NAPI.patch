@@ -250,7 +250,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	return 0;
  }
  
-@@ -11299,7 +11340,7 @@ static int dev_cpu_dead(unsigned int old
+@@ -11303,7 +11344,7 @@ static int dev_cpu_dead(unsigned int old
  
  		list_del_init(&napi->poll_list);
  		if (napi->poll == process_backlog)
@@ -259,7 +259,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		else
  			____napi_schedule(sd, napi);
  	}
-@@ -11307,12 +11348,14 @@ static int dev_cpu_dead(unsigned int old
+@@ -11311,12 +11352,14 @@ static int dev_cpu_dead(unsigned int old
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();
  
@@ -278,7 +278,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* Process offline CPU's input_pkt_queue */
  	while ((skb = __skb_dequeue(&oldsd->process_queue))) {
-@@ -11575,6 +11618,38 @@ static struct pernet_operations __net_in
+@@ -11579,6 +11622,38 @@ static struct pernet_operations __net_in
   *
   */
  
@@ -317,7 +317,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  /*
   *       This is called single threaded during boot, so no need
   *       to take the rtnl semaphore.
-@@ -11625,7 +11700,10 @@ static int __init net_dev_init(void)
+@@ -11629,7 +11704,10 @@ static int __init net_dev_init(void)
  		init_gro_hash(&sd->backlog);
  		sd->backlog.poll = process_backlog;
  		sd->backlog.weight = weight_p;

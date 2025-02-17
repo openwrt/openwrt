@@ -26,7 +26,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		if (DWC3_VER_IS_WITHIN(DWC3, 290A, ANY) &&
  		    (dwc->maximum_speed == USB_SPEED_HIGH ||
  		     dwc->maximum_speed == USB_SPEED_FULL))
-@@ -1670,6 +1673,8 @@ static void dwc3_get_properties(struct d
+@@ -1661,6 +1664,8 @@ static void dwc3_get_properties(struct d
  				"snps,parkmode-disable-ss-quirk");
  	dwc->parkmode_disable_hs_quirk = device_property_read_bool(dev,
  				"snps,parkmode-disable-hs-quirk");

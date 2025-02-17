@@ -42,7 +42,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	{ CLK_PERIPH("10300000.wmac", "xtal") }
  };
  
-@@ -272,8 +274,13 @@ static struct mtmips_clk_fixed rt3352_fi
+@@ -271,8 +273,13 @@ static struct mtmips_clk_fixed rt3352_fi
  	CLK_FIXED("periph", "xtal", 40000000)
  };
  
@@ -57,7 +57,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	CLK_FIXED("periph", "xtal", 40000000)
  };
  
-@@ -328,6 +335,15 @@ static struct mtmips_clk_factor rt305x_f
+@@ -327,6 +334,15 @@ static struct mtmips_clk_factor rt305x_f
  	CLK_FACTOR("bus", "cpu", 1, 3)
  };
  
@@ -73,7 +73,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static int mtmips_register_factor_clocks(struct clk_hw_onecell_data *clk_data,
  					 struct mtmips_clk_priv *priv)
  {
-@@ -811,10 +827,10 @@ static const struct mtmips_clk_data rt53
+@@ -810,10 +826,10 @@ static const struct mtmips_clk_data rt53
  static const struct mtmips_clk_data mt7620_clk_data = {
  	.clk_base = mt7620_clks_base,
  	.num_clk_base = ARRAY_SIZE(mt7620_clks_base),
@@ -88,7 +88,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	.clk_periph = mt7620_pherip_clks,
  	.num_clk_periph = ARRAY_SIZE(mt7620_pherip_clks),
  };
-@@ -824,8 +840,8 @@ static const struct mtmips_clk_data mt76
+@@ -823,8 +839,8 @@ static const struct mtmips_clk_data mt76
  	.num_clk_base = ARRAY_SIZE(mt76x8_clks_base),
  	.clk_fixed = mt76x8_fixed_clocks,
  	.num_clk_fixed = ARRAY_SIZE(mt76x8_fixed_clocks),
