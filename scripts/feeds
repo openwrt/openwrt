@@ -160,7 +160,7 @@ my %update_method = (
 		'init_commit'   => "git clone --depth 1 '%s' '%s' && cd '%s' && git fetch --depth=1 origin '%s' && git -c advice.detachedHead=false checkout '%s' && cd -",
 		'update'	=> "git pull --ff-only",
 		'update_force'	=> "git pull --ff-only || (git reset --hard HEAD; git pull --ff-only; exit 1)",
-		'post_update'	=> "git submodule update --init --recursive",
+		'post_update'	=> "git submodule update --init --recursive --depth 1",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse --short HEAD | tr -d '\n'"},
 	'src-git-full' => {
