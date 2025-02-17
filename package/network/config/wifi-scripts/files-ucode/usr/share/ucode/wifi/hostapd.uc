@@ -242,7 +242,7 @@ function device_htmode_append(config) {
 				[ 29, 15 ], [ 61, 47 ], [ 93, 79 ], [ 125, 111 ],
 				[ 157, 143 ], [ 189, 175 ], [ 221, 207 ]];
 		for (let k, v in vht_oper_centr_freq_seg0_idx_map)
-			if (v[0] <= config.channel) {
+			if (config.channel >= (v[0] - 28) && config.channel <= v[0]) {
 				config.vht_oper_centr_freq_seg0_idx = v[1];
 				break;
 			}
