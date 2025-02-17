@@ -329,7 +329,7 @@ function device_htmode_append(config) {
 			config.vht_capab += '[RX-ANTENNA-PATTERN]';
 		if (vht_capab & 0x20000000 && config.tx_antenna_pattern)
 			config.vht_capab += '[TX-ANTENNA-PATTERN]';
-		let rx_stbc = [ '', '[RX-STBC1]', '[RX-STBC12]', '[RX-STBC123]', '[RX-STBC-1234]' ];
+		let rx_stbc = [ '', '[RX-STBC-1]', '[RX-STBC-12]', '[RX-STBC-123]', '[RX-STBC-1234]' ];
 		config.vht_capab += rx_stbc[min(config.rx_stbc, (vht_capab >> 8) & 7)];
 
 		if (vht_capab & 0x800 && config.su_beamformer)
