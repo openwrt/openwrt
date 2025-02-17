@@ -309,8 +309,7 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	drvdata->chip.legacy.read_buf = rb91x_nand_read_buf;
 
 	drvdata->chip.legacy.chip_delay = 25;
-	drvdata->chip.ecc.engine_type      = NAND_ECC_ENGINE_TYPE_SOFT;
-	drvdata->chip.ecc.algo             = NAND_ECC_ALGO_HAMMING;
+	drvdata->chip.ecc.engine_type      = NAND_ECC_ENGINE_TYPE_ON_DIE;
 	drvdata->chip.options = NAND_NO_SUBPAGE_WRITE;
 
 	r = nand_scan(&drvdata->chip, 1);
