@@ -227,7 +227,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		/* 48k words of 2x12-bit pixels */
  		drm_mm_init(&hvs->lbm_mm, 0, 48 * 1024);
  	else
-@@ -1019,7 +1019,7 @@ static int vc4_hvs_bind(struct device *d
+@@ -1030,7 +1030,7 @@ static int vc4_hvs_bind(struct device *d
  			     NULL);
  	vc4_debugfs_add_file(drm, "hvs_dlists", vc4_hvs_debugfs_dlist,
  			     NULL);

@@ -723,7 +723,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		local_lock(&lru_pvecs.lock);
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -2821,6 +2821,81 @@ static bool can_age_anon_pages(struct pg
+@@ -2828,6 +2828,81 @@ static bool can_age_anon_pages(struct pg
  	return can_demote(pgdat->node_id, sc);
  }
  
