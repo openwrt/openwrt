@@ -1,3 +1,69 @@
+From 3471bba1b33a8b54cb0be9d30b7aac4fb2766365 Mon Sep 17 00:00:00 2001
+From: Baochen Qiang <quic_bqiang@quicinc.com>
+Date: Tue, 5 Mar 2024 10:13:18 +0800
+Subject: [PATCH] bus: mhi: host: Add mhi_power_down_keep_dev() API to support
+ system suspend/hibernation
+
+Currently, ath11k fails to resume from system suspend/hibernation on some
+the x86 host machines with below error message:
+
+```
+ath11k_pci 0000:06:00.0: timeout while waiting for restart complete
+```
+
+This happens because, ath11k powers down the MHI stack during suspend and
+that leads to destruction of the struct device associated with the MHI
+channels. And during resume, ath11k calls calling mhi_sync_power_up() to
+power up the MHI subsystem and that eventually calls the driver framework's
+device_add() API from mhi_create_devices(). But the PM framework blocks the
+struct device creation during device_add() and this leads to probe deferral
+as below:
+
+```
+mhi mhi0_IPCR: Driver qcom_mhi_qrtr force probe deferral
+```
+
+The reason for deferring device creation during resume is explained in
+dpm_prepare():
+
+        /*
+         * It is unsafe if probing of devices will happen during suspend or
+         * hibernation and system behavior will be unpredictable in this
+         * case. So, let's prohibit device's probing here and defer their
+         * probes instead. The normal behavior will be restored in
+         * dpm_complete().
+         */
+
+Due to the device probe deferral, qcom_mhi_qrtr_probe() API is not getting
+called during resume and thus MHI channels are not prepared. So this blocks
+the QMI messages from being transferred between ath11k and firmware,
+resulting in a firmware initialization failure.
+
+After consulting with Rafael, it was decided to not destroy the struct
+device for the MHI channels during system suspend/hibernation because the
+device is bound to appear again during resume.
+
+So to achieve this, a new API called mhi_power_down_keep_dev() is
+introduced for MHI controllers to keep the struct device when required.
+This API is similar to the existing mhi_power_down() API, except that it
+keeps the struct device associated with MHI channels instead of destroying
+them.
+
+Tested-on: WCN6855 hw2.0 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3.6510.30
+
+Signed-off-by: Baochen Qiang <quic_bqiang@quicinc.com>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Reviewed-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Link: https://lore.kernel.org/r/20240305021320.3367-2-quic_bqiang@quicinc.com
+[mani: reworded the commit message and subject]
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+---
+ drivers/bus/mhi/host/init.c     |  1 +
+ drivers/bus/mhi/host/internal.h |  1 +
+ drivers/bus/mhi/host/pm.c       | 42 ++++++++++++++++++++++++++++-----
+ include/linux/mhi.h             | 18 +++++++++++++-
+ 4 files changed, 55 insertions(+), 7 deletions(-)
+
 --- a/drivers/bus/mhi/host/init.c
 +++ b/drivers/bus/mhi/host/init.c
 @@ -43,6 +43,7 @@ const char * const dev_state_tran_str[DE
