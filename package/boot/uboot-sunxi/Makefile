@@ -113,6 +113,7 @@ endef
 define U-Boot/Hummingbird_A31
   BUILD_SUBTARGET:=cortexa7
   NAME:=Hummingbird A31 board
+  BUILD_DEVICES:=merrii_hummingbird
 endef
 
 define U-Boot/Marsboard_A10
