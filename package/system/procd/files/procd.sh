@@ -650,6 +650,29 @@ procd_add_mdns() {
 	procd_close_data
 }
 
+_procd_open_firewall() {
+	procd_open_data
+	json_add_array firewall
+}
+
+_procd_add_firewall() {
+	local _src="$1"
+	local _proto="$2"
+	local _port="$3"
+	json_add_object ""
+	json_add_string type rule
+	json_add_string proto "$_proto"
+	json_add_string src "$_src"
+	json_add_int dest_port "$_port"
+	json_add_string target ACCEPT
+	json_close_object
+}
+
+_procd_close_firewall() {
+	json_close_array
+	procd_close_data
+}
+
 uci_validate_section()
 {
 	local _package="$1"
@@ -705,6 +728,9 @@ _procd_wrapper \
 	procd_add_jail \
 	procd_add_jail_mount \
 	procd_add_jail_mount_rw \
+	procd_open_firewall \
+	procd_add_firewall \
+	procd_close_firewall \
 	procd_set_param \
 	procd_append_param \
 	procd_add_validation \
