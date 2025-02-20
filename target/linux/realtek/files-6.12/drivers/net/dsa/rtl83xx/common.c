@@ -1330,7 +1330,7 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 
 		pr_debug("%s: updating neighbour on port %d, mac %016llx\n",
 			__func__, port, net_work->mac);
-		schedule_work(&net_work->work);
+		queue_work(priv->wq, &net_work->work);
 		if (err)
 			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
 		break;
@@ -1452,7 +1452,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 		break;
 	}
 
-	schedule_work(&fib_work->work);
+	queue_work(priv->wq, &fib_work->work);
 
 	return NOTIFY_DONE;
 }
@@ -1486,6 +1486,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->ds->ops = &rtl83xx_switch_ops;
 	priv->ds->needs_standalone_vlan_filtering = true;
 	priv->dev = dev;
+	dev_set_drvdata(dev, priv);
 
 	err = devm_mutex_init(dev, &priv->reg_mutex);
 	if (err)
@@ -1583,10 +1584,16 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	priv->wq = create_singlethread_workqueue("rtl83xx");
+	if (!priv->wq) {
+		dev_err(dev, "Error creating workqueue: %d\n", err);
+		return -ENOMEM;
+	}
+
 	err = dsa_register_switch(priv->ds);
 	if (err) {
 		dev_err(dev, "Error registering switch: %d\n", err);
-		return err;
+		goto err_register_switch;
 	}
 
 	/* dsa_to_port returns dsa_port from the port list in
@@ -1694,13 +1701,37 @@ err_register_fib_nb:
 err_register_ne_nb:
 	unregister_netdevice_notifier(&priv->nb);
 err_register_nb:
+	dsa_switch_shutdown(priv->ds);
+err_register_switch:
+	destroy_workqueue(priv->wq);
+
 	return err;
 }
 
 static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
+	struct rtl838x_switch_priv *priv = platform_get_drvdata(pdev);
+
+	if (!priv)
+		return;
+
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	/* unregister notifiers which will create workqueue entries with
+	 * references to the switch structures. Also stop self-arming delayed
+	 * work items to avoid them still accessing the DSA structures
+	 * when they are getting shut down.
+	 */
+	unregister_fib_notifier(&init_net, &priv->fib_nb);
+	unregister_netevent_notifier(&priv->ne_nb);
+	cancel_delayed_work_sync(&priv->counters_work);
+
+	dsa_switch_shutdown(priv->ds);
+
+	destroy_workqueue(priv->wq);
+
+	dev_set_drvdata(&pdev->dev, NULL);
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {

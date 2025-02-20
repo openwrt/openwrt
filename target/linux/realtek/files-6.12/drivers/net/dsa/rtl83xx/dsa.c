@@ -1236,7 +1236,8 @@ static void rtldsa_poll_counters(struct work_struct *work)
 		spin_unlock(&counters->lock);
 	}
 
-	schedule_delayed_work(&priv->counters_work, RTLDSA_COUNTERS_POLL_INTERVAL);
+	queue_delayed_work(priv->wq, &priv->counters_work,
+			   RTLDSA_COUNTERS_POLL_INTERVAL);
 }
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
@@ -1254,7 +1255,8 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 	}
 
 	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
-	schedule_delayed_work(&priv->counters_work, RTLDSA_COUNTERS_POLL_INTERVAL);
+	queue_delayed_work(priv->wq, &priv->counters_work,
+			   RTLDSA_COUNTERS_POLL_INTERVAL);
 }
 
 static void rtldsa_get_strings(struct dsa_switch *ds,
