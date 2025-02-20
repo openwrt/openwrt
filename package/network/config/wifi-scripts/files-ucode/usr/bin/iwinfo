@@ -47,7 +47,7 @@ function print_info(list) {
 		printf(`${padding}Mode: ${bss.mode}  Channel: ${bss.channel} (${bss.freq} GHz)  HT Mode: ${bss.htmode}\n`);
 		printf(`${padding}Center Channel 1: ${bss.center_freq1} 2: ${bss.center_freq2}\n`);
 		printf(`${padding}Tx-Power: ${bss.txpower} dBm  Link Quality: ${bss.quality}/70\n`);
-		printf(`${padding}Signal: ${bss.signal}  Noise: ${bss.noise}\n`);
+		printf(`${padding}Signal: ${bss.signal} dBm  Noise: ${bss.noise} dBm\n`);
 		printf(`${padding}Bit Rate: ${bss.bitrate == 'unknown' ? 'unknown' : bss.bitrate + ' MBit/s'}\n`);
 		printf(`${padding}Encryption: ${bss.encryption}\n`);
 		printf(`${padding}Type: nl80211  HW Mode(s): 802.11${bss.hwmode}\n`);
