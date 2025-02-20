@@ -322,4 +322,30 @@ menu "Target Images"
 		  across reboots. When enabled, /var/run will still be linked
 		  to /tmp/run.
 
+	choice
+		prompt "BCM33xx image packer"
+		depends on TARGET_bmips_bcm3380
+		default BCM33XX_PACKER_AEOLUS
+		help
+		  Select the image packer.
+		  The stock bootloader expects a valid HCS header on the image, otherwise it won't boot.
+
+		config BCM33XX_PACKER_RAW
+			bool "Without packing"
+			help
+			  The initramfs image will be raw, uncompressed, without any header.
+
+		config BCM33XX_PACKER_HCS
+			bool "hcsmakeimage"
+			help
+			  Use hcsmakeimage to prepend the HCS header.
+			  The initramfs kernel image will be LZMA compressed.
+			  A LZMA decompressor will be embedded in the image.
+
+		config BCM33XX_PACKER_AEOLUS
+			bool "Broadcom's aeolus ProgramStore"
+			help
+			  Use Broadcom's aeolus ProgramStore to prepend the HCS header and compress the
+			  initramfs kernel image. The generated image boots faster and is smaller.
+	endchoice
 endmenu
