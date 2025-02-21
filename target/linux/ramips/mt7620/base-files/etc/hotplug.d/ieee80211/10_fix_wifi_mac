@@ -23,4 +23,9 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && [ -n "$label_mac" ] && \
 		macaddr_unsetbit "$label_mac" 6 > /sys${DEVPATH}/macaddress
 		;;
+	zyxel,lte3302)
+		base_mac=$(jboot_config_read -m -i $(find_mtd_part "config") -o 0xE000)
+		wifi_mac=$(macaddr_add "$base_mac" 1)
+		echo -n "$wifi_mac" > /sys${DEVPATH}/macaddress
+		;;
 esac
