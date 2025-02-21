@@ -1,0 +1,16 @@
+--- a/drivers/net/phy/bcm63xx.c
++++ b/drivers/net/phy/bcm63xx.c
+@@ -134,7 +134,12 @@ static int bcm63268_gphy_probe(struct ph
+ 	struct device *dev = &mdio->dev;
+ 	struct bcm_gphy_priv *priv;
+ 	struct regmap *regmap;
+-	int err;
++	int err, phy_id;
++
++	/*Remove once DT dependencies are figured out*/
++	phy_id = mdiobus_read(phydev->mdio.bus, phydev->mdio.addr, MII_PHYSID1);
++	if(!phy_id)
++		return -EPROBE_DEFER;
+ 
+ 	err = devm_phy_package_join(dev, phydev, 0, 0);
+ 	if (err)

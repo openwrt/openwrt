@@ -1,0 +1,158 @@
+diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
+index 41c15a2c2037..0f2956ba472d 100644
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -156,10 +156,10 @@ config BCM54140_PHY
+ 
+ config BCM63XX_PHY
+ 	tristate "Broadcom 63xx SOCs internal PHY"
+-	depends on BCM63XX || COMPILE_TEST
++	depends on BCM63XX || BMIPS_GENERIC || COMPILE_TEST
+ 	select BCM_NET_PHYLIB
+ 	help
+-	  Currently supports the 6348 and 6358 PHYs.
++	  Currently supports the 6348, 6358 and 63268 PHYs.
+ 
+ config BCM7XXX_PHY
+ 	tristate "Broadcom 7xxx SOCs internal PHYs"
+diff --git a/drivers/net/phy/bcm63xx.c b/drivers/net/phy/bcm63xx.c
+index b46a736a3130..613c3da315ac 100644
+--- a/drivers/net/phy/bcm63xx.c
++++ b/drivers/net/phy/bcm63xx.c
+@@ -3,8 +3,11 @@
+  *	Driver for Broadcom 63xx SOCs integrated PHYs
+  */
+ #include "bcm-phy-lib.h"
++#include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+ #include <linux/phy.h>
++#include <linux/regmap.h>
++
+ 
+ #define MII_BCM63XX_IR		0x1a	/* interrupt register */
+ #define MII_BCM63XX_IR_EN	0x4000	/* global interrupt enable */
+@@ -13,10 +16,19 @@
+ #define MII_BCM63XX_IR_LINK	0x0200	/* link changed */
+ #define MII_BCM63XX_IR_GMASK	0x0100	/* global interrupt mask */
+ 
++#define PHY_ID_BCM63268_GPHY	0x03625f50
++
++#define GPHY_CTRL_IDDQ_BIAS	BIT(0)
++#define GPHY_CTRL_LOW_PWR	BIT(3)
++
+ MODULE_DESCRIPTION("Broadcom 63xx internal PHY driver");
+ MODULE_AUTHOR("Maxime Bizon <mbizon@freebox.fr>");
+ MODULE_LICENSE("GPL");
+ 
++struct bcm_gphy_priv {
++		struct regmap *gphy_ctrl;
++};
++
+ static int bcm63xx_config_intr(struct phy_device *phydev)
+ {
+ 	int reg, err;
+@@ -69,6 +81,80 @@ static int bcm63xx_config_init(struct phy_device *phydev)
+ 	return phy_write(phydev, MII_BCM63XX_IR, reg);
+ }
+ 
++int bcm63268_gphy_set(struct phy_device *phydev, bool enable)
++{
++	struct bcm_gphy_priv *priv = phydev->priv;
++	u32 pwr_bits;
++	int ret;
++
++	pwr_bits = GPHY_CTRL_IDDQ_BIAS | GPHY_CTRL_LOW_PWR;
++
++	if (enable)
++		ret = regmap_update_bits(priv->gphy_ctrl, 0, pwr_bits, 0);
++	else
++		ret = regmap_update_bits(priv->gphy_ctrl, 0, pwr_bits, pwr_bits);
++
++	return ret;
++}
++
++int bcm63268_gphy_resume(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = bcm63268_gphy_set(phydev, true);
++	if (ret)
++		return ret;
++
++	ret = genphy_resume(phydev);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++int bcm63268_gphy_suspend(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = genphy_suspend(phydev);
++	if (ret)
++		return ret;
++
++	ret = bcm63268_gphy_set(phydev, false);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static int bcm63268_gphy_probe(struct phy_device *phydev)
++{
++	struct device_node *np = dev_of_node(&phydev->mdio.bus->dev);
++	struct mdio_device *mdio = &phydev->mdio;
++	struct device *dev = &mdio->dev;
++	struct bcm_gphy_priv *priv;
++	struct regmap *regmap;
++	int err;
++
++	err = devm_phy_package_join(dev, phydev, 0, 0);
++	if (err)
++		return err;
++
++	priv = devm_kzalloc(dev, sizeof(struct bcm_gphy_priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	phydev->priv = priv;
++
++	regmap = syscon_regmap_lookup_by_phandle(np, "brcm,gphy-ctrl");
++	if (IS_ERR(regmap))
++		return PTR_ERR(regmap);
++
++	priv->gphy_ctrl = regmap;
++
++	return 0;
++}
++
+ static struct phy_driver bcm63xx_driver[] = {
+ {
+ 	.phy_id		= 0x00406000,
+@@ -89,6 +175,15 @@ static struct phy_driver bcm63xx_driver[] = {
+ 	.config_init	= bcm63xx_config_init,
+ 	.config_intr	= bcm63xx_config_intr,
+ 	.handle_interrupt = bcm_phy_handle_interrupt,
++}, {
++	.phy_id         = PHY_ID_BCM63268_GPHY,
++	.phy_id_mask    = 0xfffffff0,
++	.name           = "Broadcom BCM63268 GPHY",
++	/* PHY_BASIC_FEATURES */
++	.flags          = PHY_IS_INTERNAL,
++	.probe          = bcm63268_gphy_probe,
++	.resume			= bcm63268_gphy_resume,
++	.suspend		= bcm63268_gphy_suspend,
+ } };
+ 
+ module_phy_driver(bcm63xx_driver);
+@@ -96,6 +191,7 @@ module_phy_driver(bcm63xx_driver);
+ static const struct mdio_device_id __maybe_unused bcm63xx_tbl[] = {
+ 	{ 0x00406000, 0xfffffc00 },
+ 	{ 0x002bdc00, 0xfffffc00 },
++	{ PHY_ID_MATCH_EXACT(PHY_ID_BCM63268_GPHY) },
+ 	{ }
+ };
+ 

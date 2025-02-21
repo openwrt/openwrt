@@ -174,7 +174,6 @@
 				gpio-ranges = <&pinctrl 0 0 52>;
 				#gpio-cells = <2>;
 			};
-
 			pinctrl: pinctrl@10 {
 				compatible = "brcm,bcm63268-pinctrl";
 				reg = <0x10 0x4>, <0x18 0x8>, <0x38 0x4>;
@@ -287,6 +286,15 @@
 					function = "dsl_gpio9";
 					pins = "dsl_gpio9";
 				};
+			};
+			ephy_rst: ephy_rst@3C {
+				compatible = "brcm,bcm6345-reset";
+				reg = <0x3C 0x4>;
+				#reset-cells = <1>;
+			};
+			gphy_ctrl: gphy_ctrl@54 {
+				compatible = "syscon";
+				reg = <0x54 0x4>;
 			};
 		};
 
@@ -482,7 +490,10 @@
 
 			resets = <&periph_rst BCM63268_RST_ENETSW>,
 				 <&periph_rst BCM63268_RST_EPHY>,
-				 <&periph_rst BCM63268_RST_GPHY>;
+				 <&periph_rst BCM63268_RST_GPHY>,
+				 <&ephy_rst 0>,
+				 <&ephy_rst 1>,
+				 <&ephy_rst 2>;
 
 			power-domains = <&periph_pwr BCM63268_POWER_DOMAIN_ROBOSW>;
 
@@ -529,7 +540,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "brcm,bcm63268-switch";
-			reg = <0x10700000 0x8000>;
+			reg = <0x10700000 0x8000>,
+				<0x10000114 0x4>;
 			big-endian;
 
 			ports {
@@ -561,6 +573,8 @@
 				#size-cells = <0>;
 				reg = <0>;
 
+				brcm,gphy-ctrl = <&gphy_ctrl>;
+
 				phy1: ethernet-phy@1 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <1>;
@@ -577,7 +591,7 @@
 				};
 
 				phy4: ethernet-phy@4 {
-					compatible = "ethernet-phy-ieee802.3-c22";
+					compatible = "ethernet-phy-id0362.5f50";
 					reg = <4>;
 				};
 			};
@@ -588,5 +602,6 @@
 				reg = <1>;
 			};
 		};
+
 	};
 };
