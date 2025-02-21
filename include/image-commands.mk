@@ -252,6 +252,14 @@ define Build/buffalo-trx
 	mv $@.new $@
 endef
 
+define Build/nand-factory
+	$(TOPDIR)/scripts/mkits-glinet-ipq-image.sh \
+	$(KDIR_TMP) $(DEVICE_IMG_PREFIX)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f \
+	$(KDIR_TMP)/$(DEVICE_IMG_PREFIX).its \
+	$(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-nand-factory.$(1)
+endef
+
 define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(call exp_units,$(if $(1),$(1),$(IMAGE_SIZE)))))"; \
