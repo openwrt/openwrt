@@ -36,7 +36,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -3300,6 +3300,7 @@ static inline void dev_xmit_recursion_de
+@@ -3306,6 +3306,7 @@ static inline void dev_xmit_recursion_de
  	__this_cpu_dec(softnet_data.xmit.recursion);
  }
  
