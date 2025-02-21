@@ -44,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/block/Kconfig
 +++ b/block/Kconfig
-@@ -208,6 +208,12 @@ config BLK_INLINE_ENCRYPTION_FALLBACK
+@@ -209,6 +209,12 @@ config BLK_INLINE_ENCRYPTION_FALLBACK
  	  by falling back to the kernel crypto API when inline
  	  encryption hardware is not present.
  
@@ -59,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  config BLK_MQ_PCI
 --- a/block/Makefile
 +++ b/block/Makefile
-@@ -40,3 +40,4 @@ obj-$(CONFIG_BLK_INLINE_ENCRYPTION)	+= b
+@@ -38,3 +38,4 @@ obj-$(CONFIG_BLK_INLINE_ENCRYPTION)	+= b
  					   blk-crypto-sysfs.o
  obj-$(CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK)	+= blk-crypto-fallback.o
  obj-$(CONFIG_BLOCK_HOLDER_DEPRECATED)	+= holder.o
@@ -156,7 +156,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +device_initcall(blk_notifications_init);
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -1567,4 +1567,15 @@ struct io_comp_batch {
+@@ -1690,4 +1690,15 @@ static inline bool bdev_can_atomic_write
  
  #define DEFINE_IO_COMP_BATCH(name)	struct io_comp_batch name = { }
  
