@@ -19,11 +19,11 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/base/core.c
 +++ b/drivers/base/core.c
-@@ -1658,7 +1658,7 @@ static void device_links_purge(struct de
+@@ -1653,7 +1653,7 @@ static void device_links_purge(struct de
  #define FW_DEVLINK_FLAGS_RPM		(FW_DEVLINK_FLAGS_ON | \
  					 DL_FLAG_PM_RUNTIME)
  
--static u32 fw_devlink_flags = FW_DEVLINK_FLAGS_ON;
+-static u32 fw_devlink_flags = FW_DEVLINK_FLAGS_RPM;
 +static u32 fw_devlink_flags = FW_DEVLINK_FLAGS_PERMISSIVE;
  static int __init fw_devlink_setup(char *arg)
  {
