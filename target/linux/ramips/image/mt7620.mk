@@ -207,6 +207,16 @@ define Device/comfast_cf-wr800n
 endef
 TARGET_DEVICES += comfast_cf-wr800n
 
+define Device/devolo_rac
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := devolo
+  DEVICE_MODEL := rac
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt76x2e kmod-phy-realtek
+  SUPPORTED_DEVICES += devolo-rac
+endef
+TARGET_DEVICES += devolo_rac
+
 define Device/dlink_dch-m225
   $(Device/seama)
   SOC := mt7620a
