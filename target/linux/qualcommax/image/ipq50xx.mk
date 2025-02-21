@@ -1,3 +1,24 @@
+ define Device/glinet_gl-b3000
+ $(call Device/FitImage)
+ $(call Device/UbiFit)
+  SOC := ipq5018
+  KERNEL_LOADADDR := 0x41080000
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-B3000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  NAND_SIZE := 128m
+  USE_DTS_DESC := 1
+  DEVICE_DTS_CONFIG := config@mp03.5-c1
+  DEVICE_DTS_DESC := "GL.iNet B3000, Inc. IPQ5018/AP-MP03.5-C1"
+  SUPPORTED_DEVICES += b3000
+  IMAGES := sysupgrade.bin factory.img
+  IMAGE/sysupgrade.bin := append-ubi | append-metadata
+  IMAGE/factory.img := append-ubi | gl-factory img | append-metadata
+ DEVICE_PACKAGES := ath11k-firmware-qcn6122 ipq-wifi-glinet_gl-b3000
+endef
+TARGET_DEVICES += glinet_gl-b3000
+
 define Device/linksys_ipq50xx_mx_base
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Linksys
