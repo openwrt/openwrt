@@ -390,7 +390,8 @@ define Build/fit
 		$(if $(DEVICE_DTS_LOADADDR),-s $(DEVICE_DTS_LOADADDR)) \
 		$(if $(DEVICE_DTS_OVERLAY),$(foreach dtso,$(DEVICE_DTS_OVERLAY), -O $(dtso):$(KERNEL_BUILD_DIR)/image-$(dtso).dtbo)) \
 		-c $(if $(DEVICE_DTS_CONFIG),$(DEVICE_DTS_CONFIG),"config-1") \
-		-A $(LINUX_KARCH) -v $(LINUX_VERSION), gen-cpio$(if $(TARGET_PER_DEVICE_ROOTFS),.$(ROOTFS_ID/$(DEVICE_NAME))))
+		-A $(LINUX_KARCH) -v $(LINUX_VERSION) $(if $(USE_DTS_DESC),-u $(DEVICE_DTS_DESC)), \
+		gen-cpio$(if $(TARGET_PER_DEVICE_ROOTFS),.$(ROOTFS_ID/$(DEVICE_NAME))))
 	$(call locked,PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage $(if $(findstring external,$(word 3,$(1))),\
 		-E -B 0x1000 $(if $(findstring static,$(word 3,$(1))),-p 0x1000)) -f $@.its $@.new)
 	@mv $@.new $@
@@ -492,6 +493,14 @@ endef
 define Build/lzma-no-dict
 	$(STAGING_DIR_HOST)/bin/lzma e $@ $(1) $@.new
 	@mv $@.new $@
+endef
+
+define Build/gl-factory
+	$(TOPDIR)/scripts/mkits-glinet-ipq-image.sh \
+	$(KDIR_TMP) $(DEVICE_IMG_PREFIX) \
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f \
+  	$(KDIR_TMP)/$(DEVICE_IMG_PREFIX).its \
+	$(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.$(1)
 endef
 
 define Build/moxa-encode-fw
