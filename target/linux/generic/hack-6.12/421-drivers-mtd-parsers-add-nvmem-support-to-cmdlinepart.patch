@@ -25,9 +25,9 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  #include <linux/err.h>
 +#include <linux/of.h>
  
- /* debug macro */
- #if 0
-@@ -323,6 +324,68 @@ static int mtdpart_setup_real(char *s)
+ /* special size referring to all the remaining space in a partition */
+ #define SIZE_REMAINING ULLONG_MAX
+@@ -315,6 +316,68 @@ static int mtdpart_setup_real(char *s)
  	return 0;
  }
  
@@ -96,7 +96,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  /*
   * Main function to be called from the MTD mapping driver/device to
   * obtain the partitioning information. At this point the command line
-@@ -338,6 +401,7 @@ static int parse_cmdline_partitions(stru
+@@ -330,6 +393,7 @@ static int parse_cmdline_partitions(stru
  	int i, err;
  	struct cmdline_mtd_partition *part;
  	const char *mtd_id = master->name;
@@ -104,7 +104,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  
  	/* parse command line */
  	if (!cmdline_parsed) {
-@@ -382,6 +446,13 @@ static int parse_cmdline_partitions(stru
+@@ -374,6 +438,13 @@ static int parse_cmdline_partitions(stru
  				sizeof(*part->parts) * (part->num_parts - i));
  			i--;
  		}
