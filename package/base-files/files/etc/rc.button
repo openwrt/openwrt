@@ -1,0 +1,49 @@
+#!/usr/bin/ucode
+
+import { ulog_open, ulog, ULOG_SYSLOG, LOG_DAEMON, LOG_INFO } from 'log';
+import * as uloop from 'uloop';
+import * as libuci from 'uci';
+import { access } from 'fs';
+
+let action = getenv('ACTION');
+let button = getenv('BUTTON');
+let seen = getenv('SEEN');
+
+if (!action || !button)
+	exit(-1);
+
+let script = `/etc/rc.button.d/${button}`;
+let uci = libuci.cursor();
+let override = false;
+let timeout = 0;
+
+uci.foreach("system", "button", function(d) {
+	if (d.button != button)
+		return;
+	if (d.script) {
+		timeout = d.timeout;
+		script = d.script;
+		override = true;
+	}
+});
+
+let _script = split(script, ' ')[0];
+if (!access(_script, 'x')) {
+	ulog(LOG_INFO, `${_script} is not executable`);
+	exit(-1);
+}
+
+ulog_open(ULOG_SYSLOG | ULOG_STDIO, LOG_DAEMON, 'rc.button');
+ulog(LOG_INFO, `${button} was ${action} ${ action == 'released' ? "after " + seen + " seconds" : ''}${override ? ", overriding via UCI config with " + script : ""}\n`);
+
+uloop.init();
+uloop.process(split(script, ' '), [], {}, () => {
+	uloop.end();
+});
+if (timeout)
+	uloop.timeout(timeout, () => {
+		uloop.end();
+	});
+uloop.run();
+uloop.done();
+
