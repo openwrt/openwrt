@@ -700,9 +700,7 @@ define KernelPackage/pstore
   SUBMENU:=$(FS_MENU)
   TITLE:=Pstore file system
   DEFAULT:=m if ALL_KMODS
-  KCONFIG:= \
-	CONFIG_PSTORE \
-	CONFIG_PSTORE_COMPRESS=y
+  KCONFIG:=CONFIG_PSTORE
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
   DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
