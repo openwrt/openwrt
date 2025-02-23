@@ -205,6 +205,13 @@ define U-Boot/bpi-r2-pro-rk3568
     sinovoip_bpi-r2-pro
 endef
 
+define U-Boot/linkstar-h68k-1432v1-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=Seeed Linkstar H68k-1432v1
+  BUILD_DEVICES:= \
+    seeed_linkstar-h68k-1432v1
+endef
+
 define U-Boot/nanopi-r5c-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=NanoPi R5C
@@ -320,6 +327,7 @@ UBOOT_TARGETS := \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \
+  linkstar-h68k-1432v1-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
   nanopc-t6-rk3588 \
