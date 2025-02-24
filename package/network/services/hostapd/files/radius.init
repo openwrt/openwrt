@@ -12,6 +12,7 @@ radius_start() {
 
 	[ "$disabled" -gt 0 ] && return
 
+	config_get_bool ipv6 "$cfg" ipv6 1
 	config_get ca "$cfg" ca_cert
 	config_get key "$cfg" key
 	config_get cert "$cfg" cert
@@ -28,6 +29,7 @@ radius_start() {
 		-s "$clients" -u "$users" \
 		-p "$auth_port" -P "$acct_port" \
 		-i "$identity"
+	[ "$ipv6" -gt 0 ] && procd_append_param command -6
 	procd_close_instance
 }
 
