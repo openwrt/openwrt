@@ -880,7 +880,14 @@ void uline_set_hint(struct uline_state *s, const char *str, size_t len)
 		pos_add_string(s, &s->cursor_pos, str, len);
 	}
 
-	set_cursor(s, prev_pos);
+	if (s->cursor_pos.y >= s->rows) {
+		if (s->cursor_pos.x > 0)
+			vt100_next_line(s->output);
+		s->cursor_pos = (struct pos){};
+		s->full_update = true;
+	} else {
+		set_cursor(s, prev_pos);
+	}
 	fflush(s->output);
 }
 
