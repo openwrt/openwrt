@@ -311,7 +311,10 @@ function completion(count) {
 				add = "    ";
 			cat = "";
 
-			add += sprintf("%-"+len+"s", entry.name);
+			let name = entry.name;
+			if (entry.incomplete)
+				name += "...";
+			add += sprintf("%-"+len+"s", name);
 			str += add;
 			x += length(add);
 
