@@ -11,7 +11,7 @@
  # We need at least this version for CLONE support.
 --- a/bin/aclocal.in
 +++ b/bin/aclocal.in
-@@ -23,10 +23,12 @@ use 5.006;
+@@ -23,9 +23,11 @@ use 5.006;
  use strict;
  use warnings FATAL => 'all';
  
@@ -20,23 +20,21 @@
  BEGIN
  {
 -  unshift (@INC, '@datadir@/@PACKAGE@-@APIVERSION@')
--    unless $ENV{AUTOMAKE_UNINSTALLED};
 +  unshift (@INC, ($ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . '/share/@PACKAGE@-@APIVERSION@' : '@datadir@/@PACKAGE@-@APIVERSION@'))
-+     unless $ENV{AUTOMAKE_UNINSTALLED};
+     unless $ENV{AUTOMAKE_UNINSTALLED};
  }
  
- use File::Basename;
 @@ -65,8 +67,8 @@ $perl_threads = 0;
- # --aclocal-path option/ACLOCAL_PATH environment variable, and reset
- # with the '--system-acdir' option.
+ # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
+ # option.
  my @user_includes = ();
 -my @automake_includes = ('@datadir@/aclocal-' . $APIVERSION);
 -my @system_includes = ('@datadir@/aclocal');
 +my @automake_includes = ($ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . "/share/aclocal-$APIVERSION" : "@datadir@/aclocal-$APIVERSION");
 +my @system_includes = ($ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . '/share/aclocal' : '@datadir@/aclocal');
- my $aclocal_path = '';
  
  # Whether we should copy M4 file in $user_includes[0].
+ my $install = 0;
 --- a/bin/automake.in
 +++ b/bin/automake.in
 @@ -26,9 +26,11 @@ use 5.006;
