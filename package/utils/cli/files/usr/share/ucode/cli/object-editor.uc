@@ -306,34 +306,42 @@ export function new(info, node)
 
 export function object_destroy_call(ctx, argv, named)
 {
-	let type_name = argv[0];
-	if (!type_name)
-		return ctx.invalid_argument();
-
+	let type_info, type_name;
 	let info = this.object_info;
-	let type_info = info.types[type_name];
+	if (info.types) {
+		type_name = shift(argv);
+		if (!type_name)
+			return ctx.invalid_argument();
+
+		type_info = info.types[type_name];
+	} else {
+		type_info = info.type;
+		type_name = type_info.name;
+	}
 	if (!type_info)
 		return ctx.invalid_argument();
 
 	let obj_name = type_info.object ?? type_name;
 
-	let name = argv[1];
-	if (type_info.delete)
-		return call(type_info.delete, info, ctx.model.scope, ctx, type, name);
+	let name = shift(argv);
+	if (type_info.delete) {
+		if (!call(type_info.delete, info, ctx.model.scope, ctx, type, name))
+			return;
+	} else {
+		let obj = ctx.data.object_edit[obj_name];
+		if (!obj)
+			return ctx.unknown_error();
 
-	let obj = ctx.data.object_edit[obj_name];
-	if (!obj)
-		return ctx.unknown_error();
+		if (!obj[name])
+			return ctx.not_found();
 
-	if (!obj[name])
-		return ctx.not_found();
-
-	delete obj[name];
+		delete obj[name];
+	}
 
 	if (info.change_cb)
 		call(info.change_cb, info, ctx.model.scope, ctx, argv);
 
-	return ctx.ok(`Deleted ${argv[0]} '${name}'`);
+	return ctx.ok(`Deleted ${type_name} '${name}'`);
 };
 
 const create_edit_param = {
@@ -361,34 +369,38 @@ export function object_create_params(node)
 
 export function object_create_call(ctx, argv, named)
 {
-	let type_name = argv[0];
-	if (!type_name)
-		return ctx.invalid_argument();
-
+	let type_info, type_name;
 	let info = this.object_info;
-	let type_info = info.types[type_name];
+	if (info.types) {
+		type_name = shift(argv);
+		if (!type_name)
+			return ctx.invalid_argument();
+
+		type_info = info.types[type_name];
+	} else {
+		type_info = info.type;
+		type_name = type_info.name;
+	}
 	if (!type_info)
 		return ctx.invalid_argument();
 
 	let obj_name = type_info.object ?? type_name;
 
-	let name = argv[1];
+	let name = shift(argv);
 	let obj, data;
 	if (type_info.add) {
-		data = call(type_info.add, info, ctx.model.scope, ctx, type, name);
+		data = call(type_info.add, info, ctx.model.scope, ctx, type_name, name, named);
 		if (!data)
 			return;
 	} else {
 		data = {};
 	}
 
-	ctx.data.object_edit[obj_name] ??= {};
-	obj = ctx.data.object_edit[obj_name];
-
 	let entry = type_info.node.set;
 	if (entry) {
 		ctx.apply_defaults();
 		let subctx = ctx.clone();
+		subctx.data.name = name;
 		subctx.data.edit = data;
 
 		try {
@@ -404,10 +416,17 @@ export function object_create_call(ctx, argv, named)
 		}
 	}
 
-	obj[name] = data;
+	if (type_info.insert) {
+		if (!call(type_info.insert, info, ctx.model.scope, ctx, type_name, name, data, named))
+			return;
+	} else {
+		ctx.data.object_edit[obj_name] ??= {};
+		obj = ctx.data.object_edit[obj_name];
+		obj[name] = data;
+	}
 
 	if (named.edit)
-		ctx.select(type_name, name);
+		ctx.select(info.type ? "edit" : type_name, name);
 
 	return ctx.ok(`Added ${type_name} '${name}'`);
 };
@@ -415,11 +434,19 @@ export function object_create_call(ctx, argv, named)
 function object_lookup(ctx, entry, type_name)
 {
 	let info = entry.object_info;
-	let type_info = info.types[type_name];
+	let type_info = info.types ? info.types[type_name] : info.type;
 	if (!type_info)
-		return [];
+		return {};
 
-	let obj_name = type_info.object ?? type_name;
+	if (type_info.get_object) {
+		let objs = call(type_info.get_object, info, ctx.model.scope, ctx, type_name);
+		if (type(objs) != "object")
+			objs = {};
+
+		return objs;
+	}
+
+	let obj_name = type_info.object ?? (info.types ? type_name : type_info.name);
 
 	return ctx.data.object_edit[obj_name];
 }
@@ -435,18 +462,65 @@ function object_values(ctx, entry, type_name)
 
 export function object_list_call(ctx, argv, named)
 {
-	return ctx.list(argv[0] + " list", object_values(ctx, this, argv[0]));
+	let info = this.object_info;
+	let type_name = info.types ? argv[0] : info.type.name;
+	return ctx.list(type_name + " list", object_values(ctx, this, type_name));
+};
+
+function object_show_call_single(ctx, entry, type_info, type_name, name)
+{
+	let obj = object_lookup(ctx, entry, type_name);
+	if (!obj)
+		return;
+
+	entry = obj[name];
+	if (!entry)
+		return;
+
+	let callctx = ctx.clone();
+	callctx.data.name = name;
+	callctx.data.edit = entry;
+
+	call(type_info.node.show.call, type_info.node.show, ctx.model.scope, callctx, [], {});
+	if (callctx.result.ok)
+		return callctx.result.data;
+}
+
+export function object_show_call(ctx, argv, named)
+{
+	let info = this.object_info;
+	let type_name = info.type.name;
+
+	if (argv[0]) {
+		let data = object_show_call_single(ctx, this, info.type, type_name, argv[0]);
+		if (!data)
+			return;
+		return ctx.table("Values", data);
+	}
+
+	let ret = {};
+	for (let name in object_values(ctx, this, type_name)) {
+		let data = object_show_call_single(ctx, this, info.type, type_name, name);
+		if (!data)
+			continue;
+		ret[type_name + " " + name] = data;
+	}
+
+	return ctx.multi_table(type_name + " list", ret);
 };
 
 export function edit_create_destroy(info, node)
 {
-	let type_arg = {
-		name: "type",
-		help: "Type",
-		type: "enum",
-		required: true,
-		value: keys(info.types),
-	};
+	let type_arg = [];
+	if (info.types)
+		type_arg = [{
+			name: "type",
+			help: "Type",
+			type: "enum",
+			required: true,
+			value: keys(info.types),
+		}];
+
 	let name_arg = {
 		name: "name",
 		help: "Name",
@@ -460,31 +534,41 @@ export function edit_create_destroy(info, node)
 			return object_values(ctx, this, argv[0]);
 		}
 	};
+	let show_name_arg = {
+		...delete_name_arg,
+		required: false,
+	};
 
 	let create_params = {};
-	for (let name, val in info.types)
-		create_params[name] = object_create_params(val.node);
+	if (info.types) {
+		for (let name, val in info.types)
+			create_params[name] = object_create_params(val.node);
+	} else {
+		create_params = object_create_params(info.type.node);
+	}
 
-	let types_info = " (" + join(", ", keys(info.types)) + ")";
+	let types_info = info.types ? "(" + join(", ", keys(info.types)) + ")" : info.type.name;
 	let cmds = {
 		destroy: {
 			object_info: info,
-			help: "Delete object" + types_info,
-			args: [ type_arg, delete_name_arg ],
+			help: "Delete " + types_info,
+			args: [ ...type_arg, delete_name_arg ],
 			call: object_destroy_call,
 		},
 		list: {
 			object_info: info,
-			help: "List objects" + types_info,
-			args: [ type_arg ],
+			help: "List " + types_info,
+			args: [ ...type_arg ],
 			call: object_list_call,
 		},
 		create: {
 			object_info: info,
-			help: "Create object" + types_info,
-			args: [ type_arg, name_arg ],
+			help: "Create " + types_info,
+			args: [ ...type_arg, name_arg ],
 			type_params: create_params,
 			named_args: function(ctx, argv) {
+				if (!this.object_info.types)
+					return this.type_params;
 				if (!argv[0])
 					return;
 				return this.type_params[argv[0]];
@@ -493,8 +577,22 @@ export function edit_create_destroy(info, node)
 		},
 	};
 
-	for (let name, val in info.types) {
-		cmds[name] = {
+
+	let info_types = info.types;
+	if (!info_types) {
+		info_types = {};
+		info_types[info.type.name] = info.type;
+		cmds.show = {
+			object_info: info,
+			help: "Show " + types_info,
+			args: [ show_name_arg ],
+			call: object_show_call,
+		};
+	}
+
+	for (let name, val in info_types) {
+		let cmd_name = info.types ? name : "edit";
+		cmds[cmd_name] = {
 			object_name: name,
 			object_info: info,
 			help: "Edit " + name,
@@ -527,8 +625,6 @@ export function edit_create_destroy(info, node)
 					return;
 				}
 
-				let info = this.object_info;
-				let type_info = info.types[this.object_name];
 				return ctx.set(`${this.object_name} "${name}"`, {
 					name,
 					edit: entry,
