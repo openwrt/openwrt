@@ -60,7 +60,7 @@ $(eval $(call KernelPackage,hci-uart))
 define KernelPackage/btusb
   SUBMENU:=$(BLUETOOTH_MENU)
   TITLE:=Bluetooth HCI USB support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-bluetooth
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-bluetooth +kmod-btmtk
   KCONFIG:= \
 	CONFIG_BT_HCIBTUSB \
 	CONFIG_BT_HCIBTUSB_BCM=n \
@@ -69,8 +69,7 @@ define KernelPackage/btusb
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btintel.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btmtk.ko
+	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko
   AUTOLOAD:=$(call AutoProbe,btusb)
 endef
 
@@ -79,6 +78,18 @@ define KernelPackage/btusb/description
 endef
 
 $(eval $(call KernelPackage,btusb))
+
+
+define KernelPackage/btmtk
+  SUBMENU:=$(BLUETOOTH_MENU)
+  TITLE:=MTK Bluetooth support
+  HIDDEN:=1
+  DEPENDS:=+kmod-bluetooth
+  KCONFIG:=CONFIG_BT_MTK
+  FILES:=$(LINUX_DIR)/drivers/bluetooth/btmtk.ko
+endef
+
+$(eval $(call KernelPackage,btmtk))
 
 
 define KernelPackage/ath3k
