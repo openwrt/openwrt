@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
+	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
