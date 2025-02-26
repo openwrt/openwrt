@@ -1,0 +1,47 @@
+From: Sricharan R <quic_srichara@quicinc.com>
+To: <bhelgaas@google.com>, <lpieralisi@kernel.org>, <kw@linux.com>,
+	<robh@kernel.org>, <krzk+dt@kernel.org>, <conor+dt@kernel.org>,
+	<andersson@kernel.org>, <konrad.dybcio@linaro.org>,
+	<manivannan.sadhasivam@linaro.org>,
+	<linux-arm-msm@vger.kernel.org>, <linux-pci@vger.kernel.org>,
+	<devicetree@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Cc: <quic_srichara@quicinc.com>
+Subject: [PATCH V7 4/4] PCI: qcom: Add support for IPQ9574
+Date: Thu, 1 Aug 2024 11:18:03 +0530	[thread overview]
+Message-ID: <20240801054803.3015572-5-quic_srichara@quicinc.com> (raw)
+In-Reply-To: <20240801054803.3015572-1-quic_srichara@quicinc.com>
+
+From: devi priya <quic_devipriy@quicinc.com>
+
+The IPQ9574 platform has four Gen3 PCIe controllers:
+two single-lane and two dual-lane based on SNPS core 5.70a.
+
+QCOM IP rev is 1.27.0 and Synopsys IP rev is 5.80a.
+Reuse all the members of 'ops_2_9_0'.
+
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Reviewed-by: Manivannan Sadhasivam <mani@kernel.org>
+Co-developed-by: Anusha Rao <quic_anusha@quicinc.com>
+Signed-off-by: Anusha Rao <quic_anusha@quicinc.com>
+Signed-off-by: devi priya <quic_devipriy@quicinc.com>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+---
+ [V7] Rebased on top of [1] to avoid DBI/ATU mirroring. With that dropped
+      the need for separate ops.
+ [1] https://lore.kernel.org/linux-arm-msm/a01404d2-2f4d-4fb8-af9d-3db66d39acf7@quicinc.com/
+
+ drivers/pci/controller/dwc/pcie-qcom.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/pci/controller/dwc/pcie-qcom.c b/drivers/pci/controller/dwc/pcie-qcom.c
+index 6976efb8e2f0..e9371f945900 100644
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -1662,6 +1662,7 @@ static const struct of_device_id qcom_pc
+ 	{ .compatible = "qcom,pcie-sm8450-pcie0", .data = &cfg_1_9_0 },
+ 	{ .compatible = "qcom,pcie-sm8450-pcie1", .data = &cfg_1_9_0 },
+ 	{ .compatible = "qcom,pcie-sm8550", .data = &cfg_1_9_0 },
++	{ .compatible = "qcom,pcie-ipq9574", .data = &cfg_2_9_0 },
+ 	{ }
+ };
+ 
