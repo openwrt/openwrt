@@ -64,12 +64,22 @@ platform_do_upgrade() {
 		dd if=/dev/mtd5 bs=1024 count=52224 >> /tmp/backup_firmware.bin
 		mtd -e firmware2 write /tmp/backup_firmware.bin firmware2
 		;;
+	arcadyan,wg630223)
+		dd if=/dev/mtd12 of=/tmp/mtd12.bin bs=1024
+		local boot_sect=`dd if=/tmp/mtd12.bin bs=1 skip=8 count=2 2>/dev/null | hexdump -v -e '1/1 "%02x"'`
+		if [ "$boot_sect" == "0100" ]; then
+			echo 'Switching boot partition to "firmware" ...'
+			printf '\x00\x00' | dd of=/tmp/mtd12.bin bs=1 seek=8 count=2 conv=notrunc
+			mtd write /tmp/mtd12.bin /dev/mtd12
+		fi
+		;;
 	esac
 
 	case "$board" in
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
 	arcadyan,we420223-99|\
+	arcadyan,wg630223|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	asus,rt-ax53u|\

@@ -78,6 +78,7 @@ ramips_setup_interfaces()
 		;;
 	asiarf,ap7621-nv1|\
 	beeline,smartbox-flash|\
+	arcadayan,wg630223|\
 	beeline,smartbox-giga|\
 	elecom,wmc-x1800gst|\
 	elecom,wrc-x1800gs|\
@@ -197,6 +198,12 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+
+	arcadyan,wg630223)
+		label_mac=$(mtd_get_mac_encrypted_arcadyan "board_data" "42583038694070636D5964652324252A")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$lan_mac" 3)
+		;;
 	alfa-network,ax1800rm|\
 	jcg,y2|\
 	wavlink,wl-wn531a6|\
