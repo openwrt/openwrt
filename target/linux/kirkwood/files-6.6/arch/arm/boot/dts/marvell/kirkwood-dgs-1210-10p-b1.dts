@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Device Tree file for D-Link DGS-1210-10P (B1)
+ *
+ * Copyright (C) 2025, Linus Lüssing <linus.luessing@c0d3.blue>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ */
+
+/dts-v1/;
+
+#include "kirkwood.dtsi"
+#include "kirkwood-98dx4122.dtsi"
+
+/ {
+	model = "D-Link DGS-1210-10P (B1)";
+	compatible = "d-link,dgs-1210-10p-b1", "marvell,kirkwood-98DX4122", "marvell,kirkwood";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlyprintk";
+		stdout-path = "serial0:115200n8";
+	};
+
+	ocp@f1000000 {
+		serial@12000 {
+			status = "okay";
+		};
+
+                core_clk: core-clocks@10030 {
+                        compatible = "marvell,mv98dx3053b0-core-clock";
+                        reg = <0x10030 0x4>;
+                        #clock-cells = <1>;
+                };
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <20000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000000 0x00080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x00080000 0x00080000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "kernel";
+				reg = <0x00100000 0x00200000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "rootfs";
+				reg = <0x00300000 0x00900000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "jffs2";
+				reg = <0x00c00000 0x00400000>;
+				read-only;
+			};
+		};
+	};
+};
