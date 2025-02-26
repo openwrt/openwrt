@@ -245,6 +245,18 @@ endef
 $(eval $(call KernelPackage,stm32-timer-trigger))
 
 
+define KernelPackage/stm32-thermal
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Thermal framework support on STMicroelectronics STM32 series of SoCs
+  KCONFIG:=CONFIG_STM32_THERMAL
+  DEPENDS:=@TARGET_stm32_stm32mp1 +kmod-thermal
+  FILES:=$(LINUX_DIR)/drivers/thermal/st/stm_thermal.ko
+  AUTOLOAD:=$(call AutoProbe,stm_thermal)
+endef
+
+$(eval $(call KernelPackage,stm32-thermal))
+
+
 define KernelPackage/st-thermal
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Thermal sensors on STMicroelectronics STi series of SoCs
