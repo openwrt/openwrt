@@ -24,7 +24,7 @@ define Device/mikrotik_cap-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := cAP ac
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers -kmod-usb-dwc3-qcom -kmod-usb-dwc3 -kmod-usb3
 endef
 TARGET_DEVICES += mikrotik_cap-ac
 
@@ -59,7 +59,7 @@ define Device/mikrotik_lhgg-60ad
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := Wireless Wire Dish LHGG-60ad
 	DEVICE_DTS := qcom-ipq4019-lhgg-60ad
-	DEVICE_PACKAGES += -kmod-ath10k-ct -ath10k-firmware-qca4019-ct kmod-wil6210
+	DEVICE_PACKAGES += -kmod-ath10k-ct -ath10k-firmware-qca4019-ct kmod-wil6210 -kmod-usb-dwc3-qcom -kmod-usb-dwc3 -kmod-usb3
 endef
 TARGET_DEVICES += mikrotik_lhgg-60ad
 
@@ -67,7 +67,7 @@ define Device/mikrotik_sxtsq-5-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := SXTsq 5 ac (RBSXTsqG-5acD)
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := rssileds
+	DEVICE_PACKAGES := rssileds -kmod-usb-dwc3-qcom -kmod-usb-dwc3 -kmod-usb3
 endef
 TARGET_DEVICES += mikrotik_sxtsq-5-ac
 
@@ -75,7 +75,7 @@ define Device/mikrotik_wap-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := wAP ac
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers -kmod-usb-dwc3-qcom -kmod-usb-dwc3 -kmod-usb3
 endef
 TARGET_DEVICES += mikrotik_wap-ac
 
