@@ -1,0 +1,42 @@
+From 6188f233161c6a5b2d1c396a221dfafc77dc9eec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <linux@weissschuh.net>
+Date: Fri, 5 Jul 2024 08:48:46 +0100
+Subject: [PATCH] nvmem: core: add single sysfs group
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The sysfs core provides a function to easily register a single group.
+Use it and remove the now unnecessary nvmem_cells_groups array.
+
+Signed-off-by: Thomas Weißschuh <linux@weissschuh.net>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240705074852.423202-10-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -367,11 +367,6 @@ static const struct attribute_group *nvm
+ 	NULL,
+ };
+ 
+-static const struct attribute_group *nvmem_cells_groups[] = {
+-	&nvmem_cells_group,
+-	NULL,
+-};
+-
+ static struct bin_attribute bin_attr_nvmem_eeprom_compat = {
+ 	.attr	= {
+ 		.name	= "eeprom",
+@@ -476,7 +471,7 @@ static int nvmem_populate_sysfs_cells(st
+ 
+ 	nvmem_cells_group.bin_attrs = cells_attrs;
+ 
+-	ret = device_add_groups(&nvmem->dev, nvmem_cells_groups);
++	ret = device_add_group(&nvmem->dev, &nvmem_cells_group);
+ 	if (ret)
+ 		goto unlock_mutex;
+ 

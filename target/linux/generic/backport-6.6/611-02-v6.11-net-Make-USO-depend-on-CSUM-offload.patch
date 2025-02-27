@@ -1,0 +1,69 @@
+From: Jakub Sitnicki <jakub@cloudflare.com>
+Date: Thu, 8 Aug 2024 11:56:21 +0200
+Subject: [PATCH] net: Make USO depend on CSUM offload
+
+UDP segmentation offload inherently depends on checksum offload. It should
+not be possible to disable checksum offload while leaving USO enabled.
+Enforce this dependency in code.
+
+There is a single tx-udp-segmentation feature flag to indicate support for
+both IPv4/6, hence the devices wishing to support USO must offer checksum
+offload for both IP versions.
+
+Fixes: 10154dbded6d ("udp: Allow GSO transmit from devices with no checksum offload")
+Suggested-by: Willem de Bruijn <willemdebruijn.kernel@gmail.com>
+Signed-off-by: Jakub Sitnicki <jakub@cloudflare.com>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Link: https://patch.msgid.link/20240808-udp-gso-egress-from-tunnel-v4-1-f5c5b4149ab9@cloudflare.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -9796,6 +9796,15 @@ static void netdev_sync_lower_features(s
+ 	}
+ }
+ 
++static bool netdev_has_ip_or_hw_csum(netdev_features_t features)
++{
++	netdev_features_t ip_csum_mask = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
++	bool ip_csum = (features & ip_csum_mask) == ip_csum_mask;
++	bool hw_csum = features & NETIF_F_HW_CSUM;
++
++	return ip_csum || hw_csum;
++}
++
+ static netdev_features_t netdev_fix_features(struct net_device *dev,
+ 	netdev_features_t features)
+ {
+@@ -9877,15 +9886,9 @@ static netdev_features_t netdev_fix_feat
+ 		features &= ~NETIF_F_LRO;
+ 	}
+ 
+-	if (features & NETIF_F_HW_TLS_TX) {
+-		bool ip_csum = (features & (NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM)) ==
+-			(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+-		bool hw_csum = features & NETIF_F_HW_CSUM;
+-
+-		if (!ip_csum && !hw_csum) {
+-			netdev_dbg(dev, "Dropping TLS TX HW offload feature since no CSUM feature.\n");
+-			features &= ~NETIF_F_HW_TLS_TX;
+-		}
++	if ((features & NETIF_F_HW_TLS_TX) && !netdev_has_ip_or_hw_csum(features)) {
++		netdev_dbg(dev, "Dropping TLS TX HW offload feature since no CSUM feature.\n");
++		features &= ~NETIF_F_HW_TLS_TX;
+ 	}
+ 
+ 	if ((features & NETIF_F_HW_TLS_RX) && !(features & NETIF_F_RXCSUM)) {
+@@ -9893,6 +9896,11 @@ static netdev_features_t netdev_fix_feat
+ 		features &= ~NETIF_F_HW_TLS_RX;
+ 	}
+ 
++	if ((features & NETIF_F_GSO_UDP_L4) && !netdev_has_ip_or_hw_csum(features)) {
++		netdev_dbg(dev, "Dropping USO feature since no CSUM feature.\n");
++		features &= ~NETIF_F_GSO_UDP_L4;
++	}
++
+ 	return features;
+ }
+ 
