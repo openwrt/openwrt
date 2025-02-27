@@ -1,0 +1,3924 @@
+Refresh instructions:
+After preparing with quilt and pushing to this patch:
+
+# "HEAD" can be replaced with any full commit hash in these lines
+wget https://git.savannah.gnu.org/cgit/coreutils.git/snapshot/coreutils-HEAD.tar.gz
+tar -xzf coreutils-HEAD.tar.gz
+cd coreutils-HEAD/gl
+for file in $(find -type f); do cp $file ../../$file; (cd ../..; quilt add $file; cd -); cd -; done
+# any custom adjustments if needed...
+quilt refresh
+cp patches/*.patch ../../../tools/gnulib/patches
+
+Status:
+manually reverted coreutils commit 26ba820157bf3a6c5eee8cd57fff472d045c3d8c
+
+--- /dev/null
++++ b/lib/buffer-lcm.c
+@@ -0,0 +1,59 @@
++/* buffer-lcm.c - compute a good buffer size for dealing with two files
++
++   Copyright (C) 2002-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++#include "buffer-lcm.h"
++
++/* Return a buffer size suitable for doing I/O with files whose block
++   sizes are A and B.  However, never return a value greater than
++   LCM_MAX.  */
++
++size_t
++buffer_lcm (size_t a, size_t b, size_t lcm_max)
++{
++  size_t size;
++
++  /* Use reasonable values if buffer sizes are zero.  */
++  if (!a)
++    size = b ? b : 8 * 1024;
++  else
++    {
++      if (b)
++        {
++          /* Return lcm (A, B) if it is in range; otherwise, fall back
++             on A.  */
++
++          size_t lcm, m, n, q, r;
++
++          /* N = gcd (A, B).  */
++          for (m = a, n = b;  (r = m % n) != 0;  m = n, n = r)
++            continue;
++
++          /* LCM = lcm (A, B), if in range.  */
++          q = a / n;
++          lcm = q * b;
++          if (lcm <= lcm_max && lcm / b == q)
++            return lcm;
++        }
++
++      size = a;
++    }
++
++  return size <= lcm_max ? size : lcm_max;
++}
+--- /dev/null
++++ b/lib/buffer-lcm.h
+@@ -0,0 +1,2 @@
++#include <stddef.h>
++size_t buffer_lcm (size_t, size_t, size_t) _GL_ATTRIBUTE_CONST;
+--- /dev/null
++++ b/lib/cl-strtod.c
+@@ -0,0 +1,76 @@
++/* Convert string to double in the current locale, falling back on the C locale.
++
++   Copyright 2019-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "cl-strtod.h"
++
++#include <c-strtod.h>
++
++#include <errno.h>
++#include <stdlib.h>
++
++#if LONG
++# define CL_STRTOD cl_strtold
++# define DOUBLE long double
++# define C_STRTOD c_strtold
++# define STRTOD strtold
++#else
++# define CL_STRTOD cl_strtod
++# define DOUBLE double
++# define C_STRTOD c_strtod
++# define STRTOD strtod
++#endif
++
++/* This function acts like strtod or strtold, except that it falls
++   back on the C locale if the initial prefix is not parsable in
++   the current locale.  If the prefix is parsable in both locales,
++   it uses the longer parse, breaking ties in favor of the current locale.
++
++   Parse the initial prefix of NPTR as a floating-point number in the
++   current locale or in the C locale (preferring the locale that
++   yields the longer parse, or the current locale if there is a tie).
++   If ENDPTR is non-null, set *ENDPTR to the first unused byte, or to
++   NPTR if the prefix cannot be parsed.
++
++   If successful, return a number without changing errno.
++   If the prefix cannot be parsed, return 0 and possibly set errno to EINVAL.
++   If the number overflows, return an extreme value and set errno to ERANGE.
++   If the number underflows, return a value close to 0 and set errno to ERANGE.
++   If there is some other error, return 0 and set errno.  */
++
++DOUBLE
++CL_STRTOD (char const *nptr, char **restrict endptr)
++{
++  char *end;
++  DOUBLE d = STRTOD (nptr, &end);
++  if (*end)
++    {
++      int strtod_errno = errno;
++      char *c_end;
++      DOUBLE c = C_STRTOD (nptr, &c_end);
++      if (end < c_end)
++        d = c, end = c_end;
++      else
++        errno = strtod_errno;
++    }
++  if (endptr)
++    *endptr = end;
++  return d;
++}
+--- /dev/null
++++ b/lib/cl-strtod.h
+@@ -0,0 +1,4 @@
++double cl_strtod (char const *, char **restrict)
++  _GL_ATTRIBUTE_NONNULL ((1));
++long double cl_strtold (char const *, char **restrict)
++  _GL_ATTRIBUTE_NONNULL ((1));
+--- /dev/null
++++ b/lib/cl-strtold.c
+@@ -0,0 +1,2 @@
++#define LONG 1
++#include "cl-strtod.c"
+--- /dev/null
++++ b/lib/fadvise.c
+@@ -0,0 +1,37 @@
++/* Declare an access pattern hint for files.
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++#include "fadvise.h"
++
++#include <stdio.h>
++#include <fcntl.h>
++#include "ignore-value.h"
++
++void
++fdadvise (int fd, off_t offset, off_t len, fadvice_t advice)
++{
++#if HAVE_POSIX_FADVISE
++  ignore_value (posix_fadvise (fd, offset, len, advice));
++#endif
++}
++
++void
++fadvise (FILE *fp, fadvice_t advice)
++{
++  if (fp)
++    fdadvise (fileno (fp), 0, 0, advice);
++}
+--- /dev/null
++++ b/lib/fadvise.h
+@@ -0,0 +1,71 @@
++/* Declare an access pattern hint for files.
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <stdio.h>
++#include <fcntl.h>
++#include <sys/types.h>
++
++/* There are a few hints one can provide, which have the
++   following characteristics on Linux 2.6.31 at least.
++
++   POSIX_FADV_SEQUENTIAL
++     Doubles the size of read ahead done for file
++   POSIX_FADV_WILLNEED
++     _synchronously_ prepopulate the buffer cache with the file
++   POSIX_FADV_NOREUSE
++     Could lower priority of data in buffer caches,
++     but currently does nothing.
++   POSIX_FADV_DONTNEED
++     Drop the file from cache.
++     Note this is automatically done when files are unlinked.
++
++   We use this enum "type" both to make it explicit that
++   these options are mutually exclusive, and to discourage
++   the passing of the possibly undefined POSIX_FADV_... values.
++   Note we could #undef the POSIX_FADV_ values, but that would
++   preclude using the posix_fadvise() function with its standard
++   constants. Using posix_fadvise() might be required if the return
++   value is needed, but it must be guarded by appropriate #ifdefs.  */
++
++#if HAVE_POSIX_FADVISE
++typedef enum {
++  FADVISE_NORMAL =     POSIX_FADV_NORMAL,
++  FADVISE_SEQUENTIAL = POSIX_FADV_SEQUENTIAL,
++  FADVISE_NOREUSE =    POSIX_FADV_NOREUSE,
++  FADVISE_DONTNEED =   POSIX_FADV_DONTNEED,
++  FADVISE_WILLNEED =   POSIX_FADV_WILLNEED,
++  FADVISE_RANDOM =     POSIX_FADV_RANDOM
++} fadvice_t;
++#else
++typedef enum {
++  FADVISE_NORMAL,
++  FADVISE_SEQUENTIAL,
++  FADVISE_NOREUSE,
++  FADVISE_DONTNEED,
++  FADVISE_WILLNEED,
++  FADVISE_RANDOM
++} fadvice_t;
++#endif
++
++/* We ignore any errors as these hints are only advisory.
++   There is the chance one can pass invalid ADVICE, which will
++   not be indicated, but given the simplicity of the interface
++   this is unlikely.  Also not returning errors allows the
++   unconditional passing of descriptors to non standard files,
++   which will just be ignored if unsupported.  */
++
++void fdadvise (int fd, off_t offset, off_t len, fadvice_t advice);
++void fadvise (FILE *fp, fadvice_t advice);
+--- /dev/null
++++ b/lib/fd-reopen.c
+@@ -0,0 +1,46 @@
++/* Invoke open, but return either a desired file descriptor or -1.
++
++   Copyright (C) 2005-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "fd-reopen.h"
++
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++/* Open a file to a particular file descriptor.  This is like standard
++   'open', except it always returns DESIRED_FD if successful.  */
++
++int
++fd_reopen (int desired_fd, char const *file, int flags, mode_t mode)
++{
++  int fd = open (file, flags, mode);
++
++  if (fd == desired_fd || fd < 0)
++    return fd;
++  else
++    {
++      int fd2 = dup2 (fd, desired_fd);
++      int saved_errno = errno;
++      close (fd);
++      errno = saved_errno;
++      return fd2;
++    }
++}
+--- /dev/null
++++ b/lib/fd-reopen.h
+@@ -0,0 +1,22 @@
++/* Invoke open, but return either a desired file descriptor or -1.
++
++   Copyright (C) 2005-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <sys/types.h>
++
++int fd_reopen (int, char const *, int, mode_t) _GL_ATTRIBUTE_NONNULL ();
+--- /dev/null
++++ b/lib/heap.c
+@@ -0,0 +1,151 @@
++/* Barebones heap implementation supporting only insert and pop.
++
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Full implementation: GDSL (http://gna.org/projects/gdsl/) by Nicolas
++   Darnis <ndarnis@free.fr>. */
++
++#include <config.h>
++
++#include "heap.h"
++#include "stdlib--.h"
++#include "xalloc.h"
++
++static int heap_default_compare (void const *, void const *);
++static size_t heapify_down (void **, size_t, size_t,
++                            int (*) (void const *, void const *));
++static void heapify_up (void **, size_t,
++                        int (*) (void const *, void const *));
++
++struct heap
++{
++  void **array;     /* array[0] is not used */
++  size_t capacity;  /* Array size */
++  size_t count;     /* Used as index to last element. Also is num of items. */
++  int (*compare) (void const *, void const *);
++};
++
++/* Allocate memory for the heap. */
++
++struct heap *
++heap_alloc (int (*compare) (void const *, void const *), size_t n_reserve)
++{
++  struct heap *heap = xmalloc (sizeof *heap);
++
++  if (n_reserve == 0)
++    n_reserve = 1;
++
++  heap->array = xnmalloc (n_reserve, sizeof *(heap->array));
++
++  heap->array[0] = nullptr;
++  heap->capacity = n_reserve;
++  heap->count = 0;
++  heap->compare = compare ? compare : heap_default_compare;
++
++  return heap;
++}
++
++
++static int
++heap_default_compare (void const *a, void const *b)
++{
++  return 0;
++}
++
++
++void
++heap_free (struct heap *heap)
++{
++  free (heap->array);
++  free (heap);
++}
++
++/* Insert element into heap. */
++
++int
++heap_insert (struct heap *heap, void *item)
++{
++  if (heap->capacity - 1 <= heap->count)
++    heap->array = x2nrealloc (heap->array, &heap->capacity,
++                              sizeof *(heap->array));
++
++  heap->array[++heap->count] = item;
++  heapify_up (heap->array, heap->count, heap->compare);
++
++  return 0;
++}
++
++/* Pop top element off heap. */
++
++void *
++heap_remove_top (struct heap *heap)
++{
++  void *top;
++
++  if (heap->count == 0)
++    return nullptr;
++
++  top = heap->array[1];
++  heap->array[1] = heap->array[heap->count--];
++  heapify_down (heap->array, heap->count, 1, heap->compare);
++
++  return top;
++}
++
++/* Move element down into appropriate position in heap. */
++
++static size_t
++heapify_down (void **array, size_t count, size_t initial,
++              int (*compare) (void const *, void const *))
++{
++  void *element = array[initial];
++
++  size_t parent = initial;
++  while (parent <= count / 2)
++    {
++      size_t child = 2 * parent;
++
++      if (child < count && compare (array[child], array[child + 1]) < 0)
++        child++;
++
++      if (compare (array[child], element) <= 0)
++        break;
++
++      array[parent] = array[child];
++      parent = child;
++    }
++
++  array[parent] = element;
++  return parent;
++}
++
++/* Move element up into appropriate position in heap. */
++
++static void
++heapify_up (void **array, size_t count,
++            int (*compare) (void const *, void const *))
++{
++  size_t k = count;
++  void *new_element = array[k];
++
++  while (k != 1 && compare (array[k / 2], new_element) <= 0)
++    {
++      array[k] = array[k / 2];
++      k /= 2;
++    }
++
++  array[k] = new_element;
++}
+--- /dev/null
++++ b/lib/heap.h
+@@ -0,0 +1,32 @@
++/* Barebones heap implementation supporting only insert and pop.
++
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Full implementation: GDSL (http://gna.org/projects/gdsl/) by Nicolas
++   Darnis <ndarnis@free.fr>. Adapted by Gene Auyeung. */
++
++#include <stddef.h>
++
++struct heap;
++
++void heap_free (struct heap *) _GL_ATTRIBUTE_NONNULL ();
++
++struct heap *heap_alloc (int (*) (void const *, void const *), size_t)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC (heap_free, 1)
++  _GL_ATTRIBUTE_RETURNS_NONNULL;
++
++int heap_insert (struct heap *heap, void *item) _GL_ATTRIBUTE_NONNULL ();
++void *heap_remove_top (struct heap *heap) _GL_ATTRIBUTE_NONNULL ();
+--- /dev/null
++++ b/lib/randint.c
+@@ -0,0 +1,216 @@
++/* Generate random integers.
++
++   Copyright (C) 2006-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "randint.h"
++
++#include <errno.h>
++#include <limits.h>
++#include <stdlib.h>
++#include <string.h>
++
++
++#if TEST
++# include <inttypes.h>
++# include <stdio.h>
++
++int
++main (int argc, char **argv)
++{
++  randint i;
++  randint n = strtoumax (argv[1], nullptr, 10);
++  randint choices = strtoumax (argv[2], nullptr, 10);
++  char const *name = argv[3];
++  struct randint_source *ints = randint_all_new (name, SIZE_MAX);
++
++  for (i = 0; i < n; i++)
++    printf ("%ju\n", randint_choose (ints, choices));
++
++  return (randint_all_free (ints) == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++#endif
++
++
++#include "xalloc.h"
++
++/* A source of random data for generating random integers.  */
++struct randint_source
++{
++  /* The source of random bytes.  */
++  struct randread_source *source;
++
++  /* RANDNUM is a buffered random integer, whose information has not
++     yet been delivered to the caller.  It is uniformly distributed in
++     the range 0 <= RANDNUM <= RANDMAX.  If RANDMAX is zero, then
++     RANDNUM must be zero (and in some sense it is not really
++     "random").  */
++  randint randnum;
++  randint randmax;
++};
++
++/* Create a new randint_source from SOURCE.  */
++
++struct randint_source *
++randint_new (struct randread_source *source)
++{
++  struct randint_source *s = xmalloc (sizeof *s);
++  s->source = source;
++  s->randnum = s->randmax = 0;
++  return s;
++}
++
++/* Create a new randint_source by creating a randread_source from
++   NAME and ESTIMATED_BYTES.  Return nullptr (setting errno) if
++   unsuccessful.  */
++
++struct randint_source *
++randint_all_new (char const *name, size_t bytes_bound)
++{
++  struct randread_source *source = randread_new (name, bytes_bound);
++  return (source ? randint_new (source) : nullptr);
++}
++
++/* Return the random data source of *S.  */
++
++struct randread_source *
++randint_get_source (struct randint_source const *s)
++{
++  return s->source;
++}
++
++/* HUGE_BYTES is true on hosts hosts where randint and unsigned char
++   have the same width and where shifting by the word size therefore
++   has undefined behavior.  */
++enum { HUGE_BYTES = RANDINT_MAX == UCHAR_MAX };
++
++/* Return X shifted left by CHAR_BIT bits.  */
++static inline randint shift_left (randint x)
++{
++  return HUGE_BYTES ? 0 : x << CHAR_BIT;
++}
++
++
++/* Consume random data from *S to generate a random number in the range
++   0 .. GENMAX.  */
++
++randint
++randint_genmax (struct randint_source *s, randint genmax)
++{
++  struct randread_source *source = s->source;
++  randint randnum = s->randnum;
++  randint randmax = s->randmax;
++  randint choices = genmax + 1;
++
++  while (1)
++    {
++      if (randmax < genmax)
++        {
++          /* Calculate how many input bytes will be needed, and read
++             the bytes.  */
++
++          size_t i = 0;
++          randint rmax = randmax;
++          unsigned char buf[sizeof randnum];
++
++          do
++            {
++              rmax = shift_left (rmax) + UCHAR_MAX;
++              i++;
++            }
++          while (rmax < genmax);
++
++          randread (source, buf, i);
++
++          /* Increase RANDMAX by appending random bytes to RANDNUM and
++             UCHAR_MAX to RANDMAX until RANDMAX is no less than
++             GENMAX.  This may lose up to CHAR_BIT bits of information
++             if (HUGE_BYTES ? 0 : RANDINT_MAX >> CHAR_BIT) < GENMAX,
++             but it is not worth the programming hassle of saving
++             these bits since GENMAX is rarely that large in practice.  */
++
++          i = 0;
++
++          do
++            {
++              randnum = shift_left (randnum) + buf[i];
++              randmax = shift_left (randmax) + UCHAR_MAX;
++              i++;
++            }
++          while (randmax < genmax);
++        }
++
++      if (randmax == genmax)
++        {
++          s->randnum = s->randmax = 0;
++          return randnum;
++        }
++      else
++        {
++          /* GENMAX < RANDMAX, so attempt to generate a random number
++             by taking RANDNUM modulo GENMAX+1.  This will choose
++             fairly so long as RANDNUM falls within an integral
++             multiple of GENMAX+1; otherwise, LAST_USABLE_CHOICE < RANDNUM,
++             so discard this attempt and try again.
++
++             Since GENMAX cannot be RANDINT_MAX, CHOICES cannot be
++             zero and there is no need to worry about dividing by
++             zero.  */
++
++          randint excess_choices = randmax - genmax;
++          randint unusable_choices = excess_choices % choices;
++          randint last_usable_choice = randmax - unusable_choices;
++          randint reduced_randnum = randnum % choices;
++
++          if (randnum <= last_usable_choice)
++            {
++              s->randnum = randnum / choices;
++              s->randmax = excess_choices / choices;
++              return reduced_randnum;
++            }
++
++          /* Retry, but retain the randomness from the fact that RANDNUM fell
++             into the range LAST_USABLE_CHOICE+1 .. RANDMAX.  */
++          randnum = reduced_randnum;
++          randmax = unusable_choices - 1;
++        }
++    }
++}
++
++/* Clear *S so that it no longer contains undelivered random data.  */
++
++void
++randint_free (struct randint_source *s)
++{
++  explicit_bzero (s, sizeof *s);
++  free (s);
++}
++
++/* Likewise, but also clear the underlying randread object.  Return
++   0 if successful, -1 (setting errno) otherwise.  */
++
++int
++randint_all_free (struct randint_source *s)
++{
++  int r = randread_free (s->source);
++  int e = errno;
++  randint_free (s);
++  errno = e;
++  return r;
++}
+--- /dev/null
++++ b/lib/randint.h
+@@ -0,0 +1,55 @@
++/* Generate random integers.
++
++   Copyright (C) 2006-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#ifndef RANDINT_H
++
++# define RANDINT_H 1
++
++# include <stdint.h>
++
++# include "randread.h"
++
++/* An unsigned integer type, used for random integers, and its maximum
++   value.  */
++typedef uintmax_t randint;
++# define RANDINT_MAX UINTMAX_MAX
++
++struct randint_source;
++
++void randint_free (struct randint_source *) _GL_ATTRIBUTE_NONNULL ();
++int randint_all_free (struct randint_source *) _GL_ATTRIBUTE_NONNULL ();
++struct randint_source *randint_new (struct randread_source *)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC (randint_free, 1)
++  _GL_ATTRIBUTE_NONNULL () _GL_ATTRIBUTE_RETURNS_NONNULL;
++struct randint_source *randint_all_new (char const *, size_t)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC (randint_all_free, 1);
++struct randread_source *randint_get_source (struct randint_source const *)
++  _GL_ATTRIBUTE_NONNULL () _GL_ATTRIBUTE_PURE;
++randint randint_genmax (struct randint_source *, randint genmax)
++  _GL_ATTRIBUTE_NONNULL ();
++
++/* Consume random data from *S to generate a random number in the range
++   0 .. CHOICES-1.  CHOICES must be nonzero.  */
++static inline randint
++randint_choose (struct randint_source *s, randint choices)
++{
++  return randint_genmax (s, choices - 1);
++}
++
++#endif
+--- /dev/null
++++ b/lib/rand-isaac.c
+@@ -0,0 +1,273 @@
++/* Bob Jenkins's cryptographic random number generators, ISAAC and ISAAC64.
++
++   Copyright (C) 1999-2024 Free Software Foundation, Inc.
++   Copyright (C) 1997, 1998, 1999 Colin Plumb.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++   Written by Colin Plumb and Paul Eggert.  */
++
++/*
++ * --------------------------------------------------------------------
++ * We need a source of random numbers for some data.
++ * Cryptographically secure is desirable, but it's not life-or-death
++ * so I can be a little bit experimental in the choice of RNGs here.
++ *
++ * This generator is based somewhat on RC4, but has analysis
++ * <https://burtleburtle.net/bob/rand/isaacafa.html>
++ * pointing to it actually being better.  I like it because it's nice
++ * and fast, and because the author did good work analyzing it.
++ * --------------------------------------------------------------------
++ */
++#include <config.h>
++
++#include "rand-isaac.h"
++
++#include <limits.h>
++#include <string.h>
++
++/* If the platform supports unaligned access,
++   then don't have -fsanitize=undefined warn about it.  */
++#undef ATTRIBUTE_NO_WARN_SANITIZE_UNDEFINED
++#if !(_STRING_ARCH_unaligned || _STRING_INLINE_unaligned) \
++    || __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
++# define ATTRIBUTE_NO_WARN_SANITIZE_UNDEFINED /* empty */
++#else
++# define ATTRIBUTE_NO_WARN_SANITIZE_UNDEFINED \
++  __attribute__ ((__no_sanitize_undefined__))
++#endif
++
++/* A if 32-bit ISAAC, B if 64-bit.  This is a macro, not an inline
++   function, to prevent undefined behavior if the unused argument
++   shifts by more than a word width.  */
++#define IF32(a, b) (ISAAC_BITS == 32 ? (a) : (b))
++
++/* Discard bits outside the desired range.  On typical machines, any
++   decent compiler should optimize this function call away to nothing.
++   But machines with pad bits in integers may need to do more work.  */
++static inline isaac_word
++just (isaac_word a)
++{
++  isaac_word desired_bits = ((isaac_word) 1 << 1 << (ISAAC_BITS - 1)) - 1;
++  return a & desired_bits;
++}
++
++/* The index operation.  */
++static inline isaac_word
++ind (isaac_word const *m, isaac_word x)
++{
++  if (sizeof *m * CHAR_BIT == ISAAC_BITS)
++    {
++      /* The typical case, where words are exactly the right size.
++         Optimize this to a mask, an addition, and an indirect
++         load.  */
++      void const *void_m = m;
++      char const *base_p = void_m;
++      void const *word_p = base_p + (x & ((ISAAC_WORDS - 1) * sizeof *m));
++      isaac_word const *p = word_p;
++      return *p;
++    }
++  else
++    {
++      /* Atypical machines need more work.  */
++      return m[(x / (ISAAC_BITS / CHAR_BIT)) & (ISAAC_WORDS - 1)];
++    }
++}
++
++/* Use and update *S to generate random data to fill RESULT.  */
++void ATTRIBUTE_NO_WARN_SANITIZE_UNDEFINED
++isaac_refill (struct isaac_state *s, isaac_word result[ISAAC_WORDS])
++{
++  /* Caches of S->a and S->b.  */
++  isaac_word a = s->a;
++  isaac_word b = s->b + (++s->c);
++
++  /* Pointers into state array and into result.  */
++  isaac_word *m = s->m;
++  isaac_word *r = result;
++
++  enum { HALF = ISAAC_WORDS / 2 };
++
++  /* The central step.  S->m is the whole state array, while M is a
++     pointer to the current word.  OFF is the offset from M to the
++     word ISAAC_WORDS/2 words away in the SM array, i.e., +/-
++     ISAAC_WORDS/2.  A and B are state variables, and R the result.
++     This updates A, B, M[I], and R[I].  */
++  #define ISAAC_STEP(i, off, mix)                             \
++    {                                                         \
++      isaac_word x, y;                                        \
++      a = (IF32 (a, 0) ^ (mix)) + m[off + (i)];               \
++      x = m[i];                                               \
++      m[i] = y = ind (s->m, x) + a + b;                       \
++      r[i] = b = just (ind (s->m, y >> ISAAC_WORDS_LOG) + x); \
++    }
++
++  do
++    {
++      ISAAC_STEP (0, HALF, IF32 (      a  << 13, ~ (a ^ (a << 21))));
++      ISAAC_STEP (1, HALF, IF32 (just (a) >>  6, a ^ (just (a) >>  5)));
++      ISAAC_STEP (2, HALF, IF32 (      a  <<  2, a ^ (      a  << 12)));
++      ISAAC_STEP (3, HALF, IF32 (just (a) >> 16, a ^ (just (a) >> 33)));
++      r += 4;
++    }
++  while ((m += 4) < s->m + HALF);
++
++  do
++    {
++      ISAAC_STEP (0, -HALF, IF32 (      a  << 13, ~ (a ^ (a << 21))));
++      ISAAC_STEP (1, -HALF, IF32 (just (a) >>  6, a ^ (just (a) >>  5)));
++      ISAAC_STEP (2, -HALF, IF32 (      a  <<  2, a ^ (      a  << 12)));
++      ISAAC_STEP (3, -HALF, IF32 (just (a) >> 16, a ^ (just (a) >> 33)));
++      r += 4;
++    }
++  while ((m += 4) < s->m + ISAAC_WORDS);
++
++  s->a = a;
++  s->b = b;
++}
++
++/*
++ * The basic seed-scrambling step for initialization, based on Bob
++ * Jenkins' 256-bit hash.
++ */
++#if ISAAC_BITS == 32
++ #define mix(a, b, c, d, e, f, g, h)       \
++    {                                      \
++              a ^=       b  << 11; d += a; \
++      b += c; b ^= just (c) >>  2; e += b; \
++      c += d; c ^=       d  <<  8; f += c; \
++      d += e; d ^= just (e) >> 16; g += d; \
++      e += f; e ^=       f  << 10; h += e; \
++      f += g; f ^= just (g) >>  4; a += f; \
++      g += h; g ^=       h  <<  8; b += g; \
++      h += a; h ^= just (a) >>  9; c += h; \
++      a += b;                              \
++    }
++#else
++ #define mix(a, b, c, d, e, f, g, h)       \
++    {                                      \
++      a -= e; f ^= just (h) >>  9; h += a; \
++      b -= f; g ^=       a  <<  9; a += b; \
++      c -= g; h ^= just (b) >> 23; b += c; \
++      d -= h; a ^=       c  << 15; c += d; \
++      e -= a; b ^= just (d) >> 14; d += e; \
++      f -= b; c ^=       e  << 20; e += f; \
++      g -= c; d ^= just (f) >> 17; f += g; \
++      h -= d; e ^=       g  << 14; g += h; \
++    }
++#endif
++
++
++/* The basic ISAAC initialization pass.  */
++#define ISAAC_MIX(s, a, b, c, d, e, f, g, h, seed) \
++  {                                                \
++    int i;                                         \
++                                                   \
++    for (i = 0; i < ISAAC_WORDS; i += 8)           \
++      {                                            \
++        a += seed[i];                              \
++        b += seed[i + 1];                          \
++        c += seed[i + 2];                          \
++        d += seed[i + 3];                          \
++        e += seed[i + 4];                          \
++        f += seed[i + 5];                          \
++        g += seed[i + 6];                          \
++        h += seed[i + 7];                          \
++        mix (a, b, c, d, e, f, g, h);              \
++        s->m[i] = a;                               \
++        s->m[i + 1] = b;                           \
++        s->m[i + 2] = c;                           \
++        s->m[i + 3] = d;                           \
++        s->m[i + 4] = e;                           \
++        s->m[i + 5] = f;                           \
++        s->m[i + 6] = g;                           \
++        s->m[i + 7] = h;                           \
++      }                                            \
++  }
++
++#if 0 /* Provided for reference only; not used in this code */
++/*
++ * Initialize the ISAAC RNG with the given seed material.
++ * Its size MUST be a multiple of ISAAC_BYTES, and may be
++ * stored in the s->m array.
++ *
++ * This is a generalization of the original ISAAC initialization code
++ * to support larger seed sizes.  For seed sizes of 0 and ISAAC_BYTES,
++ * it is identical.
++ */
++static void
++isaac_init (struct isaac_state *s, isaac_word const *seed, size_t seedsize)
++{
++  isaac_word a, b, c, d, e, f, g, h;
++
++  a = b = c = d = e = f = g = h =          /* the golden ratio */
++    IF32 (UINT32_C (0x9e3779b9), UINT64_C (0x9e3779b97f4a7c13));
++  for (int i = 0; i < 4; i++)              /* scramble it */
++    mix (a, b, c, d, e, f, g, h);
++  s->a = s->b = s->c = 0;
++
++  if (seedsize)
++    {
++      /* First pass (as in reference ISAAC code) */
++      ISAAC_MIX (s, a, b, c, d, e, f, g, h, seed);
++      /* Second and subsequent passes (extension to ISAAC) */
++      while (seedsize -= ISAAC_BYTES)
++        {
++          seed += ISAAC_WORDS;
++          for (i = 0; i < ISAAC_WORDS; i++)
++            s->m[i] += seed[i];
++          ISAAC_MIX (s, a, b, c, d, e, f, g, h, s->m);
++        }
++    }
++  else
++    {
++      /* The no seed case (as in reference ISAAC code) */
++      for (i = 0; i < ISAAC_WORDS; i++)
++        s->m[i] = 0;
++    }
++
++  /* Final pass */
++  ISAAC_MIX (s, a, b, c, d, e, f, g, h, s->m);
++}
++#endif
++
++/* Initialize *S to a somewhat-random value, derived from a seed
++   stored in S->m.  */
++void
++isaac_seed (struct isaac_state *s)
++{
++  isaac_word a = IF32 (UINT32_C (0x1367df5a), UINT64_C (0x647c4677a2884b7c));
++  isaac_word b = IF32 (UINT32_C (0x95d90059), UINT64_C (0xb9f8b322c73ac862));
++  isaac_word c = IF32 (UINT32_C (0xc3163e4b), UINT64_C (0x8c0ea5053d4712a0));
++  isaac_word d = IF32 (UINT32_C (0x0f421ad8), UINT64_C (0xb29b2e824a595524));
++  isaac_word e = IF32 (UINT32_C (0xd92a4a78), UINT64_C (0x82f053db8355e0ce));
++  isaac_word f = IF32 (UINT32_C (0xa51a3c49), UINT64_C (0x48fe4a0fa5a09315));
++  isaac_word g = IF32 (UINT32_C (0xc4efea1b), UINT64_C (0xae985bf2cbfc89ed));
++  isaac_word h = IF32 (UINT32_C (0x30609119), UINT64_C (0x98f5704f6c44c0ab));
++
++#if 0
++  /* The initialization of a through h is a precomputed form of: */
++  a = b = c = d = e = f = g = h =          /* the golden ratio */
++    IF32 (UINT32_C (0x9e3779b9), UINT64_C (0x9e3779b97f4a7c13));
++  for (int i = 0; i < 4; i++)              /* scramble it */
++    mix (a, b, c, d, e, f, g, h);
++#endif
++
++  /* Mix S->m so that every part of the seed affects every part of the
++     state.  */
++  ISAAC_MIX (s, a, b, c, d, e, f, g, h, s->m);
++  ISAAC_MIX (s, a, b, c, d, e, f, g, h, s->m);
++
++  s->a = s->b = s->c = 0;
++}
+--- /dev/null
++++ b/lib/rand-isaac.h
+@@ -0,0 +1,66 @@
++/* Bob Jenkins's cryptographic random number generators, ISAAC and ISAAC64.
++
++   Copyright (C) 1999-2024 Free Software Foundation, Inc.
++   Copyright (C) 1997, 1998, 1999 Colin Plumb.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++   Written by Colin Plumb and Paul Eggert.  */
++
++#ifndef _GL_RAND_ISAAC_H
++#define _GL_RAND_ISAAC_H
++
++#include <stddef.h>
++#include <stdint.h>
++
++/* Log base 2 of the number of useful bits in an ISAAC word.  It must
++   be either 5 or 6.  By default, this uses a value that should be
++   faster for this architecture.  */
++#ifndef ISAAC_BITS_LOG
++ #if SIZE_MAX >> 31 >> 31 < 3 /* SIZE_MAX < 2**64 - 1 */
++  #define ISAAC_BITS_LOG 5
++ #else
++  #define ISAAC_BITS_LOG 6
++ #endif
++#endif
++
++/* The number of bits in an ISAAC word.  */
++#define ISAAC_BITS (1 << ISAAC_BITS_LOG)
++
++#if ISAAC_BITS == 32
++  typedef uint_least32_t isaac_word;
++#else
++  typedef uint_least64_t isaac_word;
++#endif
++
++/* Size of the state tables to use.  ISAAC_WORDS_LOG should be at least 3,
++   and smaller values give less security.  */
++#define ISAAC_WORDS_LOG 8
++#define ISAAC_WORDS (1 << ISAAC_WORDS_LOG)
++#define ISAAC_BYTES (ISAAC_WORDS * sizeof (isaac_word))
++
++/* State variables for the random number generator.  The M member
++   should be seeded with nonce data before calling isaac_seed.  The
++   other members are private.  */
++struct isaac_state
++  {
++    isaac_word m[ISAAC_WORDS];	/* Main state array */
++    isaac_word a, b, c;		/* Extra variables */
++  };
++
++void isaac_seed (struct isaac_state *) _GL_ATTRIBUTE_NONNULL ();
++void isaac_refill (struct isaac_state *, isaac_word[ISAAC_WORDS])
++  _GL_ATTRIBUTE_NONNULL ();
++
++#endif
+--- /dev/null
++++ b/lib/randperm.c
+@@ -0,0 +1,245 @@
++/* Generate random permutations.
++
++   Copyright (C) 2006-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "randperm.h"
++
++#include <limits.h>
++#include <stdckdint.h>
++#include <stdint.h>
++#include <stdlib.h>
++
++#include "attribute.h"
++#include "count-leading-zeros.h"
++#include "hash.h"
++#include "xalloc.h"
++
++/* Return the floor of the log base 2 of N.  If N is zero, return -1.  */
++
++ATTRIBUTE_CONST static int
++floor_lg (size_t n)
++{
++  static_assert (SIZE_WIDTH <= ULLONG_WIDTH);
++  return (n == 0 ? -1
++          : SIZE_WIDTH <= UINT_WIDTH
++          ? UINT_WIDTH - 1 - count_leading_zeros (n)
++          : SIZE_WIDTH <= ULONG_WIDTH
++          ? ULONG_WIDTH - 1 - count_leading_zeros_l (n)
++          : ULLONG_WIDTH - 1 - count_leading_zeros_ll (n));
++}
++
++/* Return an upper bound on the number of random bytes needed to
++   generate the first H elements of a random permutation of N
++   elements.  H must not exceed N.  */
++
++size_t
++randperm_bound (size_t h, size_t n)
++{
++  /* Upper bound on number of bits needed to generate the first number
++     of the permutation.  */
++  unsigned int lg_n = floor_lg (n) + 1;
++
++  /* Upper bound on number of bits needed to generate the first H elements.  */
++  uintmax_t ar;
++  if (ckd_mul (&ar, lg_n, h))
++    return SIZE_MAX;
++
++  /* Convert the bit count to a byte count.  */
++  size_t bound = ar / CHAR_BIT + (ar % CHAR_BIT != 0);
++
++  return bound;
++}
++
++/* Swap elements I and J in array V.  */
++
++static void
++swap (size_t *v, size_t i, size_t j)
++{
++  size_t t = v[i];
++  v[i] = v[j];
++  v[j] = t;
++}
++
++/* Structures and functions for a sparse_map abstract data type that's
++   used to effectively swap elements I and J in array V like swap(),
++   but in a more memory efficient manner (when the number of permutations
++   performed is significantly less than the size of the input).  */
++
++struct sparse_ent_
++{
++   size_t index;
++   size_t val;
++};
++
++static size_t
++sparse_hash_ (void const *x, size_t table_size)
++{
++  struct sparse_ent_ const *ent = x;
++  return ent->index % table_size;
++}
++
++static bool
++sparse_cmp_ (void const *x, void const *y)
++{
++  struct sparse_ent_ const *ent1 = x;
++  struct sparse_ent_ const *ent2 = y;
++  return ent1->index == ent2->index;
++}
++
++typedef Hash_table sparse_map;
++
++/* Initialize the structure for the sparse map,
++   when a best guess as to the number of entries
++   specified with SIZE_HINT.  */
++
++static sparse_map *
++sparse_new (size_t size_hint)
++{
++  return hash_initialize (size_hint, nullptr, sparse_hash_, sparse_cmp_, free);
++}
++
++/* Swap the values for I and J.  If a value is not already present
++   then assume it's equal to the index.  Update the value for
++   index I in array V.  */
++
++static void
++sparse_swap (sparse_map *sv, size_t *v, size_t i, size_t j)
++{
++  struct sparse_ent_ *v1 = hash_remove (sv, &(struct sparse_ent_) {i,0});
++  struct sparse_ent_ *v2 = hash_remove (sv, &(struct sparse_ent_) {j,0});
++
++  /* FIXME: reduce the frequency of these mallocs.  */
++  if (!v1)
++    {
++      v1 = xmalloc (sizeof *v1);
++      v1->index = v1->val = i;
++    }
++  if (!v2)
++    {
++      v2 = xmalloc (sizeof *v2);
++      v2->index = v2->val = j;
++    }
++
++  size_t t = v1->val;
++  v1->val = v2->val;
++  v2->val = t;
++  if (!hash_insert (sv, v1))
++    xalloc_die ();
++  if (!hash_insert (sv, v2))
++    xalloc_die ();
++
++  v[i] = v1->val;
++}
++
++static void
++sparse_free (sparse_map *sv)
++{
++  hash_free (sv);
++}
++
++
++/* From R, allocate and return a malloc'd array of the first H elements
++   of a random permutation of N elements.  H must not exceed N.
++   Return nullptr if H is zero.  */
++
++size_t *
++randperm_new (struct randint_source *r, size_t h, size_t n)
++{
++  size_t *v;
++
++  switch (h)
++    {
++    case 0:
++      v = nullptr;
++      break;
++
++    case 1:
++      v = xmalloc (sizeof *v);
++      v[0] = randint_choose (r, n);
++      break;
++
++    default:
++      {
++        /* The algorithm is essentially the same in both
++           the sparse and non sparse case.  In the sparse case we use
++           a hash to implement sparse storage for the set of n numbers
++           we're shuffling.  When to use the sparse method was
++           determined with the help of this script:
++
++           #!/bin/sh
++           for n in $(seq 2 32); do
++             for h in $(seq 2 32); do
++               test $h -gt $n && continue
++               for s in o n; do
++                 test $s = o && shuf=shuf || shuf=./shuf
++                 num=$(env time -f "$s:${h},${n} = %e,%M" \
++                       $shuf -i0-$((2**$n-2)) -n$((2**$h-2)) | wc -l)
++                 test $num = $((2**$h-2)) || echo "$s:${h},${n} = failed" >&2
++               done
++             done
++           done
++
++           This showed that if sparseness = n/h, then:
++
++           sparseness = 128 => .125 mem used, and about same speed
++           sparseness =  64 => .25  mem used, but 1.5 times slower
++           sparseness =  32 => .5   mem used, but 2 times slower
++
++           Also the memory usage was only significant when n > 128Ki
++        */
++        bool sparse = (n >= (128 * 1024)) && (n / h >= 32);
++
++        size_t i;
++        sparse_map *sv;
++
++        if (sparse)
++          {
++            sv = sparse_new (h * 2);
++            if (sv == nullptr)
++              xalloc_die ();
++            v = xnmalloc (h, sizeof *v);
++          }
++        else
++          {
++            sv = nullptr; /* To placate GCC's -Wuninitialized.  */
++            v = xnmalloc (n, sizeof *v);
++            for (i = 0; i < n; i++)
++              v[i] = i;
++          }
++
++        for (i = 0; i < h; i++)
++          {
++            size_t j = i + randint_choose (r, n - i);
++            if (sparse)
++              sparse_swap (sv, v, i, j);
++            else
++              swap (v, i, j);
++          }
++
++        if (sparse)
++          sparse_free (sv);
++        else
++          v = xnrealloc (v, h, sizeof *v);
++      }
++      break;
++    }
++
++  return v;
++}
+--- /dev/null
++++ b/lib/randperm.h
+@@ -0,0 +1,6 @@
++#include "randint.h"
++#include <stddef.h>
++#include <stdlib.h>
++size_t randperm_bound (size_t, size_t) _GL_ATTRIBUTE_CONST;
++size_t *randperm_new (struct randint_source *, size_t, size_t)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
+--- /dev/null
++++ b/lib/randread.c
+@@ -0,0 +1,329 @@
++/* Generate buffers of random data.
++
++   Copyright (C) 2006-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++/* FIXME: Improve performance by adding support for the RDRAND machine
++   instruction if available (e.g., Ivy Bridge processors).  */
++
++#include <config.h>
++
++#include "randread.h"
++
++#include <errno.h>
++#include <error.h>
++#include <exitfail.h>
++#include <fcntl.h>
++#include <quote.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/random.h>
++
++#include "gettext.h"
++#define _(msgid) gettext (msgid)
++
++#include "assure.h"
++#include "minmax.h"
++#include "rand-isaac.h"
++#include "stdio-safer.h"
++#include "unlocked-io.h"
++#include "xalloc.h"
++
++#if _STRING_ARCH_unaligned || _STRING_INLINE_unaligned
++# define POINTER_IS_ALIGNED(ptr, type) true
++#else
++# define POINTER_IS_ALIGNED(ptr, type) ((size_t) (ptr) % alignof (type) == 0)
++#endif
++
++/* The maximum buffer size used for reads of random data.  Using the
++   value 2 * ISAAC_BYTES makes this the largest power of two that
++   would not otherwise cause struct randread_source to grow.  */
++#define RANDREAD_BUFFER_SIZE (2 * ISAAC_BYTES)
++
++/* A source of random data for generating random buffers.  */
++struct randread_source
++{
++  /* Stream to read random bytes from.  If null, the current
++     implementation uses an internal PRNG (ISAAC).  */
++  FILE *source;
++
++  /* Function to call, and its argument, if there is an input error or
++     end of file when reading from the stream; errno is nonzero if
++     there was an error.  If this function returns, it should fix the
++     problem before returning.  The default handler assumes that
++     handler_arg is the file name of the source.  */
++  void (*handler) (void const *);
++  void const *handler_arg;
++
++  /* The buffer for SOURCE.  It's kept here to simplify storage
++     allocation and to make it easier to clear out buffered random
++     data.  */
++  union
++  {
++    /* The stream buffer, if SOURCE is not null.  */
++    char c[RANDREAD_BUFFER_SIZE];
++
++    /* The buffered ISAAC pseudorandom buffer, if SOURCE is null.  */
++    struct isaac
++    {
++      /* The number of bytes that are buffered at the end of data.b.  */
++      size_t buffered;
++
++      /* State of the ISAAC generator.  */
++      struct isaac_state state;
++
++      /* Up to a buffer's worth of pseudorandom data.  */
++      union
++      {
++        isaac_word w[ISAAC_WORDS];
++        unsigned char b[ISAAC_BYTES];
++      } data;
++    } isaac;
++  } buf;
++};
++
++
++/* The default error handler.  */
++
++static void
++randread_error (void const *file_name)
++{
++  affirm (exit_failure);
++  error (exit_failure, errno,
++         errno == 0 ? _("%s: end of file") : _("%s: read error"),
++         quote (file_name));
++}
++
++/* Simply return a new randread_source object with the default error
++   handler.  */
++
++static struct randread_source *
++simple_new (FILE *source, void const *handler_arg)
++{
++  struct randread_source *s = xmalloc (sizeof *s);
++  s->source = source;
++  s->handler = randread_error;
++  s->handler_arg = handler_arg;
++  return s;
++}
++
++/* Put a nonce value into BUFFER, with size BUFSIZE.
++   Return true on success, false (setting errno) on failure.  */
++
++static bool
++get_nonce (void *buffer, size_t bufsize)
++{
++  char *buf = buffer, *buflim = buf + bufsize;
++  while (buf < buflim)
++    {
++#if defined __sun
++# define MAX_GETRANDOM 1024
++#else
++# define MAX_GETRANDOM SIZE_MAX
++#endif
++      size_t max_bytes = MIN (buflim - buf, MAX_GETRANDOM);
++      ssize_t nbytes = getrandom (buf, max_bytes, 0);
++      if (0 <= nbytes)
++        buf += nbytes;
++      else if (errno != EINTR)
++        return false;
++    }
++  return true;
++}
++
++/* Body of randread_free, broken out to pacify gcc -Wmismatched-dealloc.  */
++
++static int
++randread_free_body (struct randread_source *s)
++{
++  FILE *source = s->source;
++  explicit_bzero (s, sizeof *s);
++  free (s);
++  return source ? fclose (source) : 0;
++}
++
++/* Create and initialize a random data source from NAME, or use a
++   reasonable default source if NAME is null.  BYTES_BOUND is an upper
++   bound on the number of bytes that will be needed.  If zero, it is a
++   hard bound; otherwise it is just an estimate.
++
++   If NAME is not null, NAME is saved for use as the argument of the
++   default handler.  Unless a non-default handler is used, NAME's
++   lifetime should be at least that of the returned value.
++
++   Return nullptr (setting errno) on failure.  */
++
++struct randread_source *
++randread_new (char const *name, size_t bytes_bound)
++{
++  if (bytes_bound == 0)
++    return simple_new (nullptr, nullptr);
++  else
++    {
++      FILE *source = nullptr;
++      struct randread_source *s;
++
++      if (name)
++        if (! (source = fopen_safer (name, "rb")))
++          return nullptr;
++
++      s = simple_new (source, name);
++
++      if (source)
++        setvbuf (source, s->buf.c, _IOFBF, MIN (sizeof s->buf.c, bytes_bound));
++      else
++        {
++          /* Fill the ISAAC buffer.  Although it is tempting to read at
++             most BYTES_BOUND bytes, this is incorrect for two reasons.
++             First, BYTES_BOUND is just an estimate.
++             Second, even if the estimate is correct
++             ISAAC64 poorly randomizes when BYTES_BOUND is small
++             and just the first few bytes of s->buf.isaac.state.m
++             are random while the other bytes are all zero.  See:
++             Aumasson J-P. On the pseudo-random generator ISAAC.
++             Cryptology ePrint Archive. 2006;438.
++             <https://eprint.iacr.org/2006/438>.  */
++          s->buf.isaac.buffered = 0;
++          if (! get_nonce (s->buf.isaac.state.m,
++                           sizeof s->buf.isaac.state.m))
++            {
++              int e = errno;
++              randread_free_body (s);
++              errno = e;
++              return nullptr;
++            }
++          isaac_seed (&s->buf.isaac.state);
++        }
++
++      return s;
++    }
++}
++
++
++/* Set S's handler and its argument.  HANDLER (HANDLER_ARG) is called
++   when there is a read error or end of file from the random data
++   source; errno is nonzero if there was an error.  If HANDLER
++   returns, it should fix the problem before returning.  The default
++   handler assumes that handler_arg is the file name of the source; it
++   does not return.  */
++
++void
++randread_set_handler (struct randread_source *s, void (*handler) (void const *))
++{
++  s->handler = handler;
++}
++
++void
++randread_set_handler_arg (struct randread_source *s, void const *handler_arg)
++{
++  s->handler_arg = handler_arg;
++}
++
++
++/* Place SIZE random bytes into the buffer beginning at P, using
++   the stream in S.  */
++
++static void
++readsource (struct randread_source *s, unsigned char *p, size_t size)
++{
++  while (true)
++    {
++      size_t inbytes = fread (p, sizeof *p, size, s->source);
++      int fread_errno = errno;
++      p += inbytes;
++      size -= inbytes;
++      if (size == 0)
++        break;
++      errno = (ferror (s->source) ? fread_errno : 0);
++      s->handler (s->handler_arg);
++    }
++}
++
++
++/* Place SIZE pseudorandom bytes into the buffer beginning at P, using
++   the buffered ISAAC generator in ISAAC.  */
++
++static void
++readisaac (struct isaac *isaac, void *p, size_t size)
++{
++  size_t inbytes = isaac->buffered;
++
++  while (true)
++    {
++      char *char_p = p;
++
++      if (size <= inbytes)
++        {
++          memcpy (p, isaac->data.b + ISAAC_BYTES - inbytes, size);
++          isaac->buffered = inbytes - size;
++          return;
++        }
++
++      memcpy (p, isaac->data.b + ISAAC_BYTES - inbytes, inbytes);
++      p = char_p + inbytes;
++      size -= inbytes;
++
++      /* If P is aligned, write to *P directly to avoid the overhead
++         of copying from the buffer.  */
++      if (POINTER_IS_ALIGNED (p, isaac_word))
++        {
++          isaac_word *wp = p;
++          while (ISAAC_BYTES <= size)
++            {
++              isaac_refill (&isaac->state, wp);
++              wp += ISAAC_WORDS;
++              size -= ISAAC_BYTES;
++              if (size == 0)
++                {
++                  isaac->buffered = 0;
++                  return;
++                }
++            }
++          p = wp;
++        }
++
++      isaac_refill (&isaac->state, isaac->data.w);
++      inbytes = ISAAC_BYTES;
++    }
++}
++
++
++/* Consume random data from *S to generate a random buffer BUF of size
++   SIZE.  */
++
++void
++randread (struct randread_source *s, void *buf, size_t size)
++{
++  if (s->source)
++    readsource (s, buf, size);
++  else
++    readisaac (&s->buf.isaac, buf, size);
++}
++
++
++/* Clear *S so that it no longer contains undelivered random data, and
++   deallocate any system resources associated with *S.  Return 0 if
++   successful, a negative number (setting errno) if not (this is rare,
++   but can occur in theory if there is an input error).  */
++
++int
++randread_free (struct randread_source *s)
++{
++  return randread_free_body (s);
++}
+--- /dev/null
++++ b/lib/randread.h
+@@ -0,0 +1,37 @@
++/* Generate buffers of random data.
++
++   Copyright (C) 2006-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#ifndef RANDREAD_H
++# define RANDREAD_H 1
++
++# include <stddef.h>
++
++struct randread_source;
++
++int randread_free (struct randread_source *) _GL_ATTRIBUTE_NONNULL ();
++struct randread_source *randread_new (char const *, size_t)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC (randread_free, 1);
++void randread (struct randread_source *, void *, size_t)
++  _GL_ATTRIBUTE_NONNULL ();
++void randread_set_handler (struct randread_source *, void (*) (void const *))
++  _GL_ATTRIBUTE_NONNULL ();
++void randread_set_handler_arg (struct randread_source *, void const *)
++  _GL_ATTRIBUTE_NONNULL ((1));
++
++#endif
+--- /dev/null
++++ b/lib/root-dev-ino.c
+@@ -0,0 +1,37 @@
++/* root-dev-ino.c -- get the device and inode numbers for '/'.
++   Copyright (C) 2003-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Jim Meyering. */
++
++#include <config.h>
++
++#include "root-dev-ino.h"
++
++#include <stdlib.h>
++
++/* Call lstat to get the device and inode numbers for '/'.
++   Upon failure, return nullptr.  Otherwise, set the members of
++   *ROOT_D_I accordingly and return ROOT_D_I.  */
++struct dev_ino *
++get_root_dev_ino (struct dev_ino *root_d_i)
++{
++  struct stat statbuf;
++  if (lstat ("/", &statbuf))
++    return nullptr;
++  root_d_i->st_ino = statbuf.st_ino;
++  root_d_i->st_dev = statbuf.st_dev;
++  return root_d_i;
++}
+--- /dev/null
++++ b/lib/root-dev-ino.h
+@@ -0,0 +1,47 @@
++/* Root device and inode number checking.
++
++   Copyright (C) 2003-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#ifndef ROOT_DEV_INO_H
++# define ROOT_DEV_INO_H 1
++
++# include "dev-ino.h"
++# include "same-inode.h"
++
++struct dev_ino *
++get_root_dev_ino (struct dev_ino *root_d_i) _GL_ATTRIBUTE_NONNULL ();
++
++/* These macros are common to the programs that support the
++   --preserve-root and --no-preserve-root options.  */
++
++# define ROOT_DEV_INO_CHECK(Root_dev_ino, Dir_statbuf) \
++    (Root_dev_ino && PSAME_INODE (Dir_statbuf, Root_dev_ino))
++
++# define ROOT_DEV_INO_WARN(Dirname)					\
++  do									\
++    {									\
++      if (STREQ (Dirname, "/"))						\
++        error (0, 0, _("it is dangerous to operate recursively on %s"),	\
++               quoteaf (Dirname));					\
++      else								\
++        error (0, 0,							\
++               _("it is dangerous to operate recursively on %s (same as %s)"), \
++               quoteaf_n (0, Dirname), quoteaf_n (1, "/"));		\
++      error (0, 0, _("use --no-preserve-root to override this failsafe")); \
++    }									\
++  while (0)
++
++#endif
+--- /dev/null
++++ b/lib/skipchars.c
+@@ -0,0 +1,3 @@
++#include <config.h>
++#define SKIPCHARS_INLINE _GL_EXTERN_INLINE
++#include <skipchars.h>
+--- /dev/null
++++ b/lib/skipchars.h
+@@ -0,0 +1,56 @@
++/* Skipping sequences of characters satisfying a predicate
++
++   Copyright 2023-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include "mcel.h"
++
++_GL_INLINE_HEADER_BEGIN
++#ifndef SKIPCHARS_INLINE
++# define SKIPCHARS_INLINE _GL_INLINE
++#endif
++
++/* Return the address just past the leading sequence of possibly
++   multi-byte characters or encoding errors G in STR that satisfy
++   PREDICATE (G) if OK is true, or that do not satisfy the predicate
++   call if OK is false.  */
++
++SKIPCHARS_INLINE char *
++skip_str_matching (char const *str, bool (*predicate) (mcel_t), bool ok)
++{
++  char const *s = str;
++  for (mcel_t g; *s && predicate (g = mcel_scanz (s)) == ok;
++       s += g.len)
++    continue;
++  return (char *) s;
++}
++
++/* Return the address just past the leading sequence of possibly
++   multi-byte characters or encoding errors G in BUF (which ends at LIM)
++   that satisfy PREDICATE (G) if OK is true, or that do not satisfy
++   the predicate call if OK is false.  */
++
++SKIPCHARS_INLINE char *
++skip_buf_matching (char const *buf, char const *lim,
++                   bool (*predicate) (mcel_t), bool ok)
++{
++  char const *s = buf;
++  for (mcel_t g; s < lim && predicate (g = mcel_scan (s, lim)) == ok;
++       s += g.len)
++    continue;
++  return (char *) s;
++}
++
++_GL_INLINE_HEADER_END
+--- /dev/null
++++ b/lib/smack.h
+@@ -0,0 +1,44 @@
++/* Include and determine availability of smack routines
++   Copyright (C) 2013-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Here we replace or wrap the most common smack functions used by coreutils.
++   Others will need to be protected by HAVE_SMACK.  */
++
++#ifdef HAVE_SMACK
++# include <sys/smack.h>
++#else
++static inline ssize_t
++smack_new_label_from_self (char **label)
++{
++  return -1;
++}
++
++static inline int
++smack_set_label_for_self (char const *label)
++{
++  return -1;
++}
++#endif
++
++static inline bool
++is_smack_enabled (void)
++{
++#ifdef HAVE_SMACK
++  return smack_smackfs_path () != nullptr;
++#else
++  return false;
++#endif
++}
+--- /dev/null
++++ b/lib/strintcmp.c
+@@ -0,0 +1,34 @@
++/* Compare integer strings.
++
++   Copyright (C) 2005-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "strnumcmp-in.h"
++
++#include <limits.h>
++
++/* Compare strings A and B as integers without explicitly converting
++   them to machine numbers, to avoid overflow problems and perhaps
++   improve performance.  */
++
++int
++strintcmp (char const *a, char const *b)
++{
++  return numcompare (a, b, CHAR_MAX + 1, CHAR_MAX + 1);
++}
+--- /dev/null
++++ b/lib/strnumcmp.c
+@@ -0,0 +1,31 @@
++/* Compare numeric strings.
++
++   Copyright (C) 2005-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "strnumcmp-in.h"
++
++/* Externally-visible name for numcompare.  */
++
++int
++strnumcmp (char const *a, char const *b,
++           int decimal_point, int thousands_sep)
++{
++  return numcompare (a, b, decimal_point, thousands_sep);
++}
+--- /dev/null
++++ b/lib/strnumcmp.h
+@@ -0,0 +1,4 @@
++int strintcmp (char const *, char const *)
++  _GL_ATTRIBUTE_NONNULL () _GL_ATTRIBUTE_PURE;
++int strnumcmp (char const *, char const *, int, int)
++  _GL_ATTRIBUTE_NONNULL () _GL_ATTRIBUTE_PURE;
+--- /dev/null
++++ b/lib/strnumcmp-in.h
+@@ -0,0 +1,244 @@
++/* Compare numeric strings.  This is an internal include file.
++
++   Copyright (C) 1988-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Mike Haertel.  */
++
++#ifndef STRNUMCMP_IN_H
++# define STRNUMCMP_IN_H 1
++
++# include "strnumcmp.h"
++
++# include <stddef.h>
++
++# define NEGATION_SIGN   '-'
++# define NUMERIC_ZERO    '0'
++
++/* ISDIGIT differs from isdigit, as follows:
++   - Its arg may be any int or unsigned int; it need not be an unsigned char
++     or EOF.
++   - It's typically faster.
++   POSIX says that only '0' through '9' are digits.  Prefer ISDIGIT to
++   isdigit unless it's important to use the locale's definition
++   of 'digit' even when the host does not conform to POSIX.  */
++# define ISDIGIT(c) ((unsigned int) (c) - '0' <= 9)
++
++
++/* Compare strings A and B containing decimal fractions < 1.
++   DECIMAL_POINT is the decimal point.  Each string
++   should begin with a decimal point followed immediately by the digits
++   of the fraction.  Strings not of this form are treated as zero.  */
++
++/* The goal here, is to take two numbers a and b... compare these
++   in parallel.  Instead of converting each, and then comparing the
++   outcome.  Most likely stopping the comparison before the conversion
++   is complete.  The algorithm used, in the old "sort" utility:
++
++   Algorithm: fraccompare
++   Action   : compare two decimal fractions
++   accepts  : char *a, char *b
++   returns  : -1 if a<b, 0 if a=b, 1 if a>b.
++   implement:
++
++   if *a == decimal_point AND *b == decimal_point
++     find first character different in a and b.
++     if both are digits, return the difference *a - *b.
++     if *a is a digit
++       skip past zeros
++       if digit return 1, else 0
++     if *b is a digit
++       skip past zeros
++       if digit return -1, else 0
++   if *a is a decimal_point
++     skip past decimal_point and zeros
++     if digit return 1, else 0
++   if *b is a decimal_point
++     skip past decimal_point and zeros
++     if digit return -1, else 0
++   return 0 */
++
++static inline int _GL_ATTRIBUTE_PURE
++fraccompare (char const *a, char const *b, char decimal_point)
++{
++  if (*a == decimal_point && *b == decimal_point)
++    {
++      while (*++a == *++b)
++        if (! ISDIGIT (*a))
++          return 0;
++      if (ISDIGIT (*a) && ISDIGIT (*b))
++        return *a - *b;
++      if (ISDIGIT (*a))
++        goto a_trailing_nonzero;
++      if (ISDIGIT (*b))
++        goto b_trailing_nonzero;
++      return 0;
++    }
++  else if (*a++ == decimal_point)
++    {
++    a_trailing_nonzero:
++      while (*a == NUMERIC_ZERO)
++        a++;
++      return ISDIGIT (*a);
++    }
++  else if (*b++ == decimal_point)
++    {
++    b_trailing_nonzero:
++      while (*b == NUMERIC_ZERO)
++        b++;
++      return - ISDIGIT (*b);
++    }
++  return 0;
++}
++
++/* Compare strings A and B as numbers without explicitly converting
++   them to machine numbers, to avoid overflow problems and perhaps
++   improve performance.  DECIMAL_POINT is the decimal point and
++   THOUSANDS_SEP the thousands separator.  A DECIMAL_POINT outside
++   'char' range causes comparisons to act as if there is no decimal point
++   character, and likewise for THOUSANDS_SEP.  */
++
++static inline int _GL_ATTRIBUTE_PURE
++numcompare (char const *a, char const *b,
++            int decimal_point, int thousands_sep)
++{
++  char tmpa = *a;
++  char tmpb = *b;
++  int tmp;
++  size_t log_a;
++  size_t log_b;
++
++  if (tmpa == NEGATION_SIGN)
++    {
++      do
++        tmpa = *++a;
++      while (tmpa == NUMERIC_ZERO || tmpa == thousands_sep);
++      if (tmpb != NEGATION_SIGN)
++        {
++          if (tmpa == decimal_point)
++            do
++              tmpa = *++a;
++            while (tmpa == NUMERIC_ZERO);
++          if (ISDIGIT (tmpa))
++            return -1;
++          while (tmpb == NUMERIC_ZERO || tmpb == thousands_sep)
++            tmpb = *++b;
++          if (tmpb == decimal_point)
++            do
++              tmpb = *++b;
++            while (tmpb == NUMERIC_ZERO);
++          return - ISDIGIT (tmpb);
++        }
++      do
++        tmpb = *++b;
++      while (tmpb == NUMERIC_ZERO || tmpb == thousands_sep);
++
++      while (tmpa == tmpb && ISDIGIT (tmpa))
++        {
++          do
++            tmpa = *++a;
++          while (tmpa == thousands_sep);
++          do
++            tmpb = *++b;
++          while (tmpb == thousands_sep);
++        }
++
++      if ((tmpa == decimal_point && !ISDIGIT (tmpb))
++          || (tmpb == decimal_point && !ISDIGIT (tmpa)))
++        return fraccompare (b, a, decimal_point);
++
++      tmp = tmpb - tmpa;
++
++      for (log_a = 0; ISDIGIT (tmpa); ++log_a)
++        do
++          tmpa = *++a;
++        while (tmpa == thousands_sep);
++
++      for (log_b = 0; ISDIGIT (tmpb); ++log_b)
++        do
++          tmpb = *++b;
++        while (tmpb == thousands_sep);
++
++      if (log_a != log_b)
++        return log_a < log_b ? 1 : -1;
++
++      if (!log_a)
++        return 0;
++
++      return tmp;
++    }
++  else if (tmpb == NEGATION_SIGN)
++    {
++      do
++        tmpb = *++b;
++      while (tmpb == NUMERIC_ZERO || tmpb == thousands_sep);
++      if (tmpb == decimal_point)
++        do
++          tmpb = *++b;
++        while (tmpb == NUMERIC_ZERO);
++      if (ISDIGIT (tmpb))
++        return 1;
++      while (tmpa == NUMERIC_ZERO || tmpa == thousands_sep)
++        tmpa = *++a;
++      if (tmpa == decimal_point)
++        do
++          tmpa = *++a;
++        while (tmpa == NUMERIC_ZERO);
++      return ISDIGIT (tmpa);
++    }
++  else
++    {
++      while (tmpa == NUMERIC_ZERO || tmpa == thousands_sep)
++        tmpa = *++a;
++      while (tmpb == NUMERIC_ZERO || tmpb == thousands_sep)
++        tmpb = *++b;
++
++      while (tmpa == tmpb && ISDIGIT (tmpa))
++        {
++          do
++            tmpa = *++a;
++          while (tmpa == thousands_sep);
++          do
++            tmpb = *++b;
++          while (tmpb == thousands_sep);
++        }
++
++      if ((tmpa == decimal_point && !ISDIGIT (tmpb))
++          || (tmpb == decimal_point && !ISDIGIT (tmpa)))
++        return fraccompare (a, b, decimal_point);
++
++      tmp = tmpa - tmpb;
++
++      for (log_a = 0; ISDIGIT (tmpa); ++log_a)
++        do
++          tmpa = *++a;
++        while (tmpa == thousands_sep);
++
++      for (log_b = 0; ISDIGIT (tmpb); ++log_b)
++        do
++          tmpb = *++b;
++        while (tmpb == thousands_sep);
++
++      if (log_a != log_b)
++        return log_a < log_b ? -1 : 1;
++
++      if (!log_a)
++        return 0;
++
++      return tmp;
++    }
++}
++
++#endif
+--- /dev/null
++++ b/lib/targetdir.c
+@@ -0,0 +1,118 @@
++/* Target directory operands for coreutils
++
++   Copyright 2004-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++#define TARGETDIR_INLINE _GL_EXTERN_INLINE
++#include <targetdir.h>
++
++#include <attribute.h>
++
++#include <errno.h>
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
++#ifdef O_PATH
++enum { O_PATHSEARCH = O_PATH };
++#else
++enum { O_PATHSEARCH = O_SEARCH };
++#endif
++
++/* Must F designate the working directory?  */
++
++ATTRIBUTE_PURE static bool
++must_be_working_directory (char const *f)
++{
++  /* Return true for ".", "./.", ".///./", etc.  */
++  while (*f++ == '.')
++    {
++      if (*f != '/')
++        return !*f;
++      while (*++f == '/')
++        continue;
++      if (!*f)
++        return true;
++    }
++  return false;
++}
++
++/* Return a file descriptor open to FILE, for use in openat.
++   As an optimization, return AT_FDCWD if FILE must be the working directory.
++   As a side effect, possibly set *ST to the file's status.
++   Fail and set errno if FILE is not a directory.
++   On failure return -2 if AT_FDCWD is -1, -1 otherwise.  */
++
++int
++target_directory_operand (char const *file, struct stat *st)
++{
++  if (must_be_working_directory (file))
++    return AT_FDCWD;
++
++  int fd = -1;
++  int try_to_open = 1;
++  int stat_result;
++
++  /* On old systems without O_DIRECTORY, like Solaris 10, check with
++     stat first lest we try to open a fifo for example and hang.  */
++  if (!O_DIRECTORY)
++    {
++      stat_result = stat (file, st);
++      if (stat_result == 0)
++        {
++          try_to_open = S_ISDIR (st->st_mode);
++          errno = ENOTDIR;
++        }
++      else
++        {
++          /* On EOVERFLOW failure, give up on checking, as there is no
++             easy way to check.  This should be rare.  */
++          try_to_open = errno == EOVERFLOW;
++        }
++    }
++
++  if (try_to_open)
++    {
++      fd = open (file, O_PATHSEARCH | O_DIRECTORY);
++
++      /* On platforms lacking O_PATH, using O_SEARCH | O_DIRECTORY to
++         open an overly-protected non-directory can fail with either
++         EACCES or ENOTDIR.  Prefer ENOTDIR as it makes for better
++         diagnostics.  */
++      if (O_PATHSEARCH == O_SEARCH && fd < 0 && errno == EACCES)
++        errno = (((O_DIRECTORY ? stat (file, st) : stat_result) == 0
++                  && !S_ISDIR (st->st_mode))
++                 ? ENOTDIR : EACCES);
++    }
++
++  if (!O_DIRECTORY && 0 <= fd)
++    {
++      /* On old systems like Solaris 10 double check type,
++         to ensure we've opened a directory.  */
++      int err;
++      if (fstat (fd, st) == 0
++          ? !S_ISDIR (st->st_mode) && (err = ENOTDIR, true)
++          : (err = errno) != EOVERFLOW)
++        {
++          close (fd);
++          errno = err;
++          fd = -1;
++        }
++    }
++
++  return fd - (AT_FDCWD == -1 && fd < 0);
++}
+--- /dev/null
++++ b/lib/targetdir.h
+@@ -0,0 +1,43 @@
++/* Target directory operands for coreutils
++
++   Copyright 2022-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <fcntl.h>
++#include <sys/stat.h>
++
++#ifndef _GL_INLINE_HEADER_BEGIN
++# error "Please include config.h first."
++#endif
++_GL_INLINE_HEADER_BEGIN
++#ifndef TARGETDIR_INLINE
++# define TARGETDIR_INLINE _GL_INLINE
++#endif
++
++/* Return a file descriptor open to FILE, for use in openat.
++   As an optimization, return AT_FDCWD if FILE must be the working directory.
++   As a side effect, possibly set *ST to the file's status.
++   Fail and set errno if FILE is not a directory.
++   On failure return -2 if AT_FDCWD is -1, -1 otherwise.  */
++extern int target_directory_operand (char const *file, struct stat *st);
++
++/* Return true if FD represents success for target_directory_operand.  */
++TARGETDIR_INLINE _GL_ATTRIBUTE_PURE bool
++target_dirfd_valid (int fd)
++{
++  return fd != -1 - (AT_FDCWD == -1);
++}
++
++_GL_INLINE_HEADER_END
+--- /dev/null
++++ b/lib/xdectoimax.c
+@@ -0,0 +1,5 @@
++#define __xdectoint xdectoimax
++#define __xnumtoint xnumtoimax
++#define __xdectoint_t intmax_t
++#define __xstrtol xstrtoimax
++#include "xdectoint.c"
+--- /dev/null
++++ b/lib/xdectoint.c
+@@ -0,0 +1,96 @@
++/* Convert decimal strings with bounds checking and exit on error.
++
++   Copyright (C) 2014-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++#include "xdectoint.h"
++
++#include <errno.h>
++#include <inttypes.h>
++#include <stdlib.h>
++
++#include <error.h>
++#include <quote.h>
++#include <xstrtol.h>
++
++/* Parse numeric string N_STR of base BASE, and return the value.
++   The value is between MIN and MAX.
++   Strings can have multiplicative SUFFIXES if specified.
++   On a parse error or out-of-range number, diagnose with N_STR and ERR, and
++   exit with status ERR_EXIT if nonzero, EXIT_FAILURE otherwise.
++   However, if FLAGS & XTOINT_MIN_QUIET, do not diagnose or exit
++   for too-low numbers; return MIN and set errno instead.
++   Similarly for XTOINT_MAX_QUIET and too-high numbers and MAX.
++   The errno value and diagnostic for out-of-range values depend on
++   whether FLAGS & XTOINT_MIN_RANGE and FLAGS & XTOINT_MAX_RANGE are set.  */
++
++__xdectoint_t
++__xnumtoint (char const *n_str, int base, __xdectoint_t min, __xdectoint_t max,
++             char const *suffixes, char const *err, int err_exit,
++             int flags)
++{
++  __xdectoint_t tnum, r;
++  strtol_error s_err = __xstrtol (n_str, nullptr, base, &tnum, suffixes);
++
++  /* Errno value to report if there is an overflow.  */
++  int overflow_errno;
++
++  if (s_err != LONGINT_INVALID)
++    {
++      if (tnum < min)
++        {
++          r = min;
++          overflow_errno = flags & XTOINT_MIN_RANGE ? ERANGE : EOVERFLOW;
++          if (s_err == LONGINT_OK)
++            s_err = LONGINT_OVERFLOW;
++        }
++      else if (max < tnum)
++        {
++          r = max;
++          overflow_errno = flags & XTOINT_MAX_RANGE ? ERANGE : EOVERFLOW;
++          if (s_err == LONGINT_OK)
++            s_err = LONGINT_OVERFLOW;
++        }
++      else
++        {
++          r = tnum;
++          overflow_errno = EOVERFLOW;
++        }
++    }
++
++  int e = s_err == LONGINT_OVERFLOW ? overflow_errno : 0;
++
++  if (! (s_err == LONGINT_OK
++         || (s_err == LONGINT_OVERFLOW
++             && flags & (tnum < 0 ? XTOINT_MIN_QUIET : XTOINT_MAX_QUIET))))
++    error (err_exit ? err_exit : EXIT_FAILURE, e, "%s: %s", err, quote (n_str));
++
++  errno = e;
++  return r;
++}
++
++/* Parse decimal string N_STR, and return the value.
++   Exit on parse error or if MIN or MAX are exceeded.
++   Strings can have multiplicative SUFFIXES if specified.
++   ERR is printed along with N_STR on error.  */
++
++__xdectoint_t
++__xdectoint (char const *n_str, __xdectoint_t min, __xdectoint_t max,
++             char const *suffixes, char const *err, int err_exit)
++{
++  return __xnumtoint (n_str, 10, min, max, suffixes, err, err_exit, 0);
++}
+--- /dev/null
++++ b/lib/xdectoint.h
+@@ -0,0 +1,57 @@
++/* Convert decimal strings with bounds checking and exit on error.
++
++   Copyright (C) 2014-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#ifndef XDECTOINT_H_
++# define XDECTOINT_H_ 1
++
++# include <inttypes.h>
++
++/* Flags for xnumtoimax and xnumtoumax.  They can be ORed togethar.  */
++enum
++  {
++    /* If the number is less than MIN, do not diagnose the problem;
++       instead, return MIN and set errno to EOVERFLOW or ERANGE.  */
++    XTOINT_MIN_QUIET = 1 << 0,
++
++    /* Likewise for the MAX argument.  */
++    XTOINT_MAX_QUIET = 1 << 1,
++
++    /* The MIN argument is imposed by the caller, not by the type of
++       the result.  This causes the function to use ERANGE rather
++       than EOVERFLOW behavior when issuing diagnostics or setting errno.  */
++    XTOINT_MIN_RANGE = 1 << 2,
++
++    /* Likewise for the MAX argument.  */
++    XTOINT_MAX_RANGE = 1 << 3
++  };
++
++# define _DECLARE_XDECTOINT(name, type) \
++  type name (char const *n_str, type min, type max, \
++             char const *suffixes, char const *err, int err_exit) \
++    _GL_ATTRIBUTE_NONNULL ((1, 5));
++# define _DECLARE_XNUMTOINT(name, type) \
++  type name (char const *n_str, int base, type min, type max, \
++             char const *suffixes, char const *err, int err_exit, int flags) \
++    _GL_ATTRIBUTE_NONNULL ((1, 6));
++
++_DECLARE_XDECTOINT (xdectoimax, intmax_t)
++_DECLARE_XDECTOINT (xdectoumax, uintmax_t)
++
++_DECLARE_XNUMTOINT (xnumtoimax, intmax_t)
++_DECLARE_XNUMTOINT (xnumtoumax, uintmax_t)
++
++#endif  /* not XDECTOINT_H_ */
+--- /dev/null
++++ b/lib/xdectoumax.c
+@@ -0,0 +1,5 @@
++#define __xdectoint xdectoumax
++#define __xnumtoint xnumtoumax
++#define __xdectoint_t uintmax_t
++#define __xstrtol xstrtoumax
++#include "xdectoint.c"
+--- /dev/null
++++ b/lib/xfts.c
+@@ -0,0 +1,64 @@
++/* xfts.c -- a wrapper for fts_open
++
++   Copyright (C) 2003-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Jim Meyering.  */
++
++#include <config.h>
++
++#include <stdlib.h>
++#include <errno.h>
++
++#include "assure.h"
++#include "xalloc.h"
++#include "xfts.h"
++
++/* Fail with a proper diagnostic if fts_open fails.  */
++
++FTS *
++xfts_open (char * const *argv, int options,
++           int (*compar) (const FTSENT **, const FTSENT **))
++{
++  FTS *fts = fts_open (argv, options | FTS_CWDFD, compar);
++  if (fts == nullptr)
++    {
++      /* This can fail in two ways: out of memory or with errno==EINVAL,
++         which indicates it was called with invalid bit_flags.  */
++      affirm (errno != EINVAL);
++      xalloc_die ();
++    }
++
++  return fts;
++}
++
++/* When fts_read returns FTS_DC to indicate a directory cycle,
++   it may or may not indicate a real problem.  When a program like
++   chgrp performs a recursive traversal that requires traversing
++   symbolic links, it is *not* a problem.  However, when invoked
++   with "-P -R", it deserves a warning.  The fts_options member
++   records the options that control this aspect of fts's behavior,
++   so test that.  */
++bool
++cycle_warning_required (FTS const *fts, FTSENT const *ent)
++{
++#define ISSET(Fts,Opt) ((Fts)->fts_options & (Opt))
++  /* When dereferencing no symlinks, or when dereferencing only
++     those listed on the command line and we're not processing
++     a command-line argument, then a cycle is a serious problem. */
++  return ((ISSET (fts, FTS_PHYSICAL) && !ISSET (fts, FTS_COMFOLLOW))
++          || (ISSET (fts, FTS_PHYSICAL) && ISSET (fts, FTS_COMFOLLOW)
++              && ent->fts_level != FTS_ROOTLEVEL));
++}
+--- /dev/null
++++ b/lib/xfts.h
+@@ -0,0 +1,11 @@
++#include "fts_.h"
++
++FTS *
++xfts_open (char * const *, int options,
++           int (*) (const FTSENT **, const FTSENT **))
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC (fts_close, 1)
++  _GL_ATTRIBUTE_NONNULL ((1)) _GL_ATTRIBUTE_RETURNS_NONNULL;
++
++bool
++cycle_warning_required (FTS const *fts, FTSENT const *ent)
++  _GL_ATTRIBUTE_NONNULL () _GL_ATTRIBUTE_PURE;
+--- /dev/null
++++ b/modules/buffer-lcm
+@@ -0,0 +1,23 @@
++Description:
++Compute a good buffer size for dealing with two files.
++
++Files:
++lib/buffer-lcm.c
++lib/buffer-lcm.h
++
++Depends-on:
++stddef
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += buffer-lcm.c buffer-lcm.h
++
++Include:
++"buffer-lcm.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/cl-strtod
+@@ -0,0 +1,24 @@
++Description:
++Convert string to double in current or C locale.
++
++Files:
++lib/cl-strtod.c
++lib/cl-strtod.h
++
++Depends-on:
++c-strtod
++
++configure.ac:
++AC_REQUIRE([AC_C_RESTRICT])
++
++Makefile.am:
++lib_SOURCES += cl-strtod.c
++
++Include:
++"cl-strtod.h"
++
++License:
++GPL
++
++Maintainer:
++all
+--- /dev/null
++++ b/modules/cl-strtold
+@@ -0,0 +1,25 @@
++Description:
++Convert string to long double in current or C locale.
++
++Files:
++lib/cl-strtod.c
++lib/cl-strtod.h
++lib/cl-strtold.c
++
++Depends-on:
++c-strtold
++
++configure.ac:
++AC_REQUIRE([AC_C_RESTRICT])
++
++Makefile.am:
++lib_SOURCES += cl-strtold.c
++
++Include:
++"cl-strtod.h"
++
++License:
++GPL
++
++Maintainer:
++all
+--- /dev/null
++++ b/modules/fadvise
+@@ -0,0 +1,24 @@
++Description:
++Declare an access pattern hint for files.
++
++Files:
++lib/fadvise.c
++lib/fadvise.h
++
++Depends-on:
++ignore-value
++
++configure.ac:
++AC_CHECK_FUNCS_ONCE([posix_fadvise])
++
++Makefile.am:
++lib_SOURCES += fadvise.c fadvise.h
++
++Include:
++"fadvise.h"
++
++License:
++LGPL
++
++Maintainer:
++Pádraig Brady
+--- /dev/null
++++ b/modules/fadvise-tests
+@@ -0,0 +1,10 @@
++Files:
++tests/test-fadvise.c
++
++Depends-on:
++
++configure.ac:
++
++Makefile.am:
++TESTS += test-fadvise
++check_PROGRAMS += test-fadvise
+--- /dev/null
++++ b/modules/fd-reopen
+@@ -0,0 +1,23 @@
++Description:
++Open a file to a particular file descriptor.
++
++Files:
++lib/fd-reopen.c
++lib/fd-reopen.h
++
++Depends-on:
++fcntl-h
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += fd-reopen.c fd-reopen.h
++
++Include:
++"fd-reopen.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/heap
+@@ -0,0 +1,24 @@
++Description:
++Binary heap with minimal number of methods. Used in sort.
++
++Files:
++lib/heap.c
++lib/heap.h
++
++Depends-on:
++stdlib-safer
++xalloc
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += heap.c heap.h
++
++Include:
++"heap.h"
++
++License:
++GPL
++
++Maintainer:
++Gene Auyeung
+--- /dev/null
++++ b/modules/link-tests.diff
+@@ -0,0 +1,9 @@
++diff --git a/modules/link-tests b/modules/link-tests
++index 5b1978e..039e97f 100644
++--- a/modules/link-tests
+++++ b/modules/link-tests
++@@ -15,3 +15,4 @@ configure.ac:
++ Makefile.am:
++ TESTS += test-link
++ check_PROGRAMS += test-link
+++test_link_LDADD = $(LDADD) @LIBINTL@
+--- /dev/null
++++ b/modules/randint
+@@ -0,0 +1,24 @@
++Description:
++Generate random integers.
++
++Files:
++lib/randint.c
++lib/randint.h
++
++Depends-on:
++inline
++randread
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += randint.c randint.h
++
++Include:
++"randint.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/randperm
+@@ -0,0 +1,28 @@
++Description:
++Generate random permutations.
++
++Files:
++lib/randperm.c
++lib/randperm.h
++
++Depends-on:
++assert-h
++count-leading-zeros
++randint
++stdint
++xalloc
++hash
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += randperm.c randperm.h
++
++Include:
++"randperm.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/randread
+@@ -0,0 +1,36 @@
++Description:
++Generate buffers of random data.
++
++Files:
++lib/rand-isaac.c
++lib/rand-isaac.h
++lib/randread.c
++lib/randread.h
++
++Depends-on:
++alignasof
++error
++exitfail
++inline
++fopen-safer
++getrandom
++quote
++minmax
++stdbool
++stdint
++unlocked-io
++xalloc
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += randread.c randread.h rand-isaac.c rand-isaac.h
++
++Include:
++"randread.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/randread-tests
+@@ -0,0 +1,11 @@
++Files:
++tests/test-rand-isaac.c
++tests/macros.h
++
++Depends-on:
++
++configure.ac:
++
++Makefile.am:
++TESTS += test-rand-isaac
++check_PROGRAMS += test-rand-isaac
+--- /dev/null
++++ b/modules/rename-tests.diff
+@@ -0,0 +1,9 @@
++diff --git a/modules/rename-tests b/modules/rename-tests
++index b3cd973..898d18b 100644
++--- a/modules/rename-tests
+++++ b/modules/rename-tests
++@@ -20,3 +20,4 @@ configure.ac:
++ Makefile.am:
++ TESTS += test-rename
++ check_PROGRAMS += test-rename
+++test_rename_LDADD = $(LDADD) @LIBINTL@
+--- /dev/null
++++ b/modules/root-dev-ino
+@@ -0,0 +1,25 @@
++Description:
++Root device and inode number checking.
++
++Files:
++lib/root-dev-ino.h
++lib/root-dev-ino.c
++
++Depends-on:
++dev-ino
++lstat
++same-inode
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += root-dev-ino.c root-dev-ino.h
++
++Include:
++"root-dev-ino.h"
++
++License:
++GPL
++
++Maintainer:
++Jim Meyering
+--- /dev/null
++++ b/modules/skipchars
+@@ -0,0 +1,24 @@
++Description:
++Skip sequences of multi-byte characters or encoding errors
++
++Files:
++lib/skipchars.c
++lib/skipchars.h
++
++Depends-on:
++extern-inline
++mcel
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += skipchars.c
++
++Include:
++"skipchars.h"
++
++License:
++GPL
++
++Maintainer:
++all
+--- /dev/null
++++ b/modules/smack
+@@ -0,0 +1,42 @@
++Description:
++Include and determine the availability of smack routines
++
++Files:
++lib/smack.h
++
++Depends-on:
++
++configure.ac:
++# Check whether libsmack is available
++LIB_SMACK=
++AC_ARG_ENABLE([libsmack],
++  AS_HELP_STRING([--disable-libsmack], [disable libsmack support]))
++if test "X$enable_libsmack" != "Xno"; then
++  AC_CHECK_LIB([smack], [smack_new_label_from_self],
++    [AC_CHECK_LIB([smack], [smack_new_label_from_path],
++      [AC_CHECK_HEADER([sys/smack.h],
++        [LIB_SMACK=-lsmack
++         AC_DEFINE([HAVE_SMACK], [1], [libsmack usability])]
++      )])])
++  if test "X$LIB_SMACK" = "X"; then
++    if test "X$enable_libsmack" = "Xyes"; then
++      AC_MSG_ERROR([libsmack library was not found or not usable])
++    fi
++  fi
++else
++  AC_MSG_WARN([libsmack support disabled by user])
++fi
++AC_SUBST([LIB_SMACK])
++
++
++Makefile.am:
++lib_SOURCES += smack.h
++
++Include:
++"smack.h"
++
++License:
++LGPL
++
++Maintainer:
++Pádraig Brady
+--- /dev/null
++++ b/modules/strnumcmp
+@@ -0,0 +1,26 @@
++Description:
++Compare numeric strings.
++
++Files:
++lib/strintcmp.c
++lib/strnumcmp.c
++lib/strnumcmp.h
++lib/strnumcmp-in.h
++
++Depends-on:
++inline
++stddef
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += strintcmp.c strnumcmp.c strnumcmp.h
++
++Include:
++"strnumcmp.h"
++
++License:
++GPL
++
++Maintainer:
++Paul Eggert
+--- /dev/null
++++ b/modules/targetdir
+@@ -0,0 +1,25 @@
++Description:
++Target directory operands
++
++Files:
++lib/targetdir.c
++lib/targetdir.h
++
++Depends-on:
++attribute
++fcntl-h
++stdbool
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += targetdir.c targetdir.h
++
++Include:
++"targetdir.h"
++
++License:
++GPL
++
++Maintainer:
++all
+--- /dev/null
++++ b/modules/xdectoint
+@@ -0,0 +1,31 @@
++Description:
++Convert decimal string to '[u]intmax_t', with bounds checking and exit on error
++
++Files:
++lib/xdectoint.h
++lib/xdectoint.c
++lib/xdectoimax.c
++lib/xdectoumax.c
++
++Depends-on:
++error
++errno
++quote
++stdbool
++verify
++xstrtoimax
++xstrtoumax
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += xdectoimax.c xdectoumax.c
++
++Include:
++"xdectoint.h"
++
++License:
++GPL
++
++Maintainer:
++all
+--- /dev/null
++++ b/modules/xfts
+@@ -0,0 +1,23 @@
++Description:
++a wrapper for fts_open
++
++Files:
++lib/xfts.c
++lib/xfts.h
++
++Depends-on:
++stddef
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += xfts.c xfts.h
++
++Include:
++"xfts.h"
++
++License:
++GPL
++
++Maintainer:
++Jim Meyering
+--- /dev/null
++++ b/tests/test-fadvise.c
+@@ -0,0 +1,50 @@
++/* Test that fadvise works as advertised.
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Pádraig Brady.  */
++
++#include <config.h>
++#include <stdio.h>
++
++#include "fadvise.h"
++
++/* We ignore any errors as these hints are only advisory.
++ * There is the chance one can pass invalid ADVICE, which will
++ * not be indicated, but given the simplicity of the interface
++ * this is unlikely.  Also not returning errors allows the
++ * unconditional passing of descriptors to non standard files,
++ * which will just be ignored if unsupported.  */
++
++int
++main (void)
++{
++  /* Valid.  */
++  fadvise (stdin, FADVISE_SEQUENTIAL);
++  fdadvise (fileno (stdin), 0, 0, FADVISE_RANDOM);
++
++  /* Ignored.  */
++  fadvise (nullptr, FADVISE_RANDOM);
++
++  /* Invalid.  */
++  fdadvise (42, 0, 0, FADVISE_RANDOM);
++  /* Unfortunately C enums are not types.
++     One could hack type safety by wrapping in a struct,
++     but it's probably not worth the complexity in this case.  */
++  fadvise (stdin, FADVISE_SEQUENTIAL + FADVISE_RANDOM);
++  fadvise (stdin, 4242);
++
++  return 0;
++}
+--- /dev/null
++++ b/tests/test-rand-isaac.c
+@@ -0,0 +1,591 @@
++/* Test the ISAAC or ISAAC64 pseudorandom number generator.
++
++   Copyright (C) 2010-2024 Free Software Foundation, Inc.
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Paul Eggert.  */
++
++#include <config.h>
++
++#include "rand-isaac.h"
++
++#include <fcntl.h>
++#include <stdint.h>
++#include <string.h>
++
++#include "macros.h"
++
++/* This expected output was generated by running the programs in
++   <https://burtleburtle.net/bob/rand/isaacafa.html>, as last modified
++   on 2010-01-22. The 32-bit numbers were output by rand.c, and the
++   64-bit by isaac64.c, both on x86, as those programs are not
++   portable to 64-bit platforms.  */
++
++static isaac_word const expected[2][ISAAC_WORDS] =
++  {
++   #if ISAAC_BITS == 32
++    {
++      UINT32_C (0xf650e4c8), UINT32_C (0xe448e96d),
++      UINT32_C (0x98db2fb4), UINT32_C (0xf5fad54f),
++      UINT32_C (0x433f1afb), UINT32_C (0xedec154a),
++      UINT32_C (0xd8370487), UINT32_C (0x46ca4f9a),
++      UINT32_C (0x5de3743e), UINT32_C (0x88381097),
++      UINT32_C (0xf1d444eb), UINT32_C (0x823cedb6),
++      UINT32_C (0x6a83e1e0), UINT32_C (0x4a5f6355),
++      UINT32_C (0xc7442433), UINT32_C (0x25890e2e),
++      UINT32_C (0x7452e319), UINT32_C (0x57161df6),
++      UINT32_C (0x38a824f3), UINT32_C (0x002ed713),
++      UINT32_C (0x29f55449), UINT32_C (0x51c08d83),
++      UINT32_C (0xd78cb99e), UINT32_C (0xa0cc74f3),
++      UINT32_C (0x8f651659), UINT32_C (0xcbc8b7c2),
++      UINT32_C (0xf5f71c69), UINT32_C (0x12ad6419),
++      UINT32_C (0xe5792e1b), UINT32_C (0x860536b8),
++      UINT32_C (0x09b3ce98), UINT32_C (0xd45d6d81),
++      UINT32_C (0xf3b26129), UINT32_C (0x17e38f85),
++      UINT32_C (0x29cf72ce), UINT32_C (0x349947b0),
++      UINT32_C (0xc998f9ff), UINT32_C (0xb5e13dae),
++      UINT32_C (0x32ae2a2b), UINT32_C (0xf7cf814c),
++      UINT32_C (0x8ebfa303), UINT32_C (0xcf22e064),
++      UINT32_C (0x0b923200), UINT32_C (0xeca4d58a),
++      UINT32_C (0xef53cec4), UINT32_C (0xd0f7b37d),
++      UINT32_C (0x9c411a2a), UINT32_C (0xffdf8a80),
++      UINT32_C (0xb40e27bc), UINT32_C (0xb4d2f976),
++      UINT32_C (0x44b89b08), UINT32_C (0xf37c71d5),
++      UINT32_C (0x1a70e7e9), UINT32_C (0x0bdb9c30),
++      UINT32_C (0x60dc5207), UINT32_C (0xb3c3f24b),
++      UINT32_C (0xd7386806), UINT32_C (0x229749b5),
++      UINT32_C (0x4e232cd0), UINT32_C (0x91dabc65),
++      UINT32_C (0xa70e1101), UINT32_C (0x8b87437e),
++      UINT32_C (0x5781414f), UINT32_C (0xcdbc62e2),
++      UINT32_C (0x8107c9ff), UINT32_C (0x69d2e4ae),
++      UINT32_C (0x3b18e752), UINT32_C (0xb143b688),
++      UINT32_C (0x6f4e0772), UINT32_C (0x95138769),
++      UINT32_C (0x943c3c74), UINT32_C (0xafc17a97),
++      UINT32_C (0x0fd43963), UINT32_C (0x6a529b0b),
++      UINT32_C (0xd8c58a6a), UINT32_C (0xa8bcc22d),
++      UINT32_C (0x2db35dfe), UINT32_C (0xa7a2f402),
++      UINT32_C (0x6cb167db), UINT32_C (0x538e1f4e),
++      UINT32_C (0x7275e277), UINT32_C (0x1d3b8e97),
++      UINT32_C (0xecc5dc91), UINT32_C (0x15e3a5b9),
++      UINT32_C (0x03696614), UINT32_C (0x30ab93ec),
++      UINT32_C (0xac9fe69d), UINT32_C (0x7bc76811),
++      UINT32_C (0x60eda8da), UINT32_C (0x28833522),
++      UINT32_C (0xd5295ebc), UINT32_C (0x5adb60e7),
++      UINT32_C (0xf7e1cdd0), UINT32_C (0x97166d14),
++      UINT32_C (0xb67ec13a), UINT32_C (0x210f3925),
++      UINT32_C (0x64af0fef), UINT32_C (0x0d028684),
++      UINT32_C (0x3aea3dec), UINT32_C (0xb058bafb),
++      UINT32_C (0xb8b0ccfc), UINT32_C (0xf2b5cc05),
++      UINT32_C (0xe3a662d9), UINT32_C (0x814bc24c),
++      UINT32_C (0x2364a1aa), UINT32_C (0x37c0ed05),
++      UINT32_C (0x2b36505c), UINT32_C (0x451e7ec8),
++      UINT32_C (0x5d2a542f), UINT32_C (0xe43d0fbb),
++      UINT32_C (0x91c8d925), UINT32_C (0x60d4d5f8),
++      UINT32_C (0x12a0594b), UINT32_C (0x9e8a51da),
++      UINT32_C (0xcd49ebdb), UINT32_C (0x1b0dcdc1),
++      UINT32_C (0xcd57c7f7), UINT32_C (0xe6344451),
++      UINT32_C (0x7ded386f), UINT32_C (0x2f36fa86),
++      UINT32_C (0xa6d12101), UINT32_C (0x33bc405d),
++      UINT32_C (0xb388d96c), UINT32_C (0xdb6dbe96),
++      UINT32_C (0xfe29661c), UINT32_C (0x13edc0cb),
++      UINT32_C (0xcb0eee4a), UINT32_C (0x70cc94ae),
++      UINT32_C (0xde11ed34), UINT32_C (0x0606cf9f),
++      UINT32_C (0x3a6ce389), UINT32_C (0x23d74f4e),
++      UINT32_C (0xa37f63ff), UINT32_C (0x917bdec2),
++      UINT32_C (0xd73f72d4), UINT32_C (0x0e7e0e67),
++      UINT32_C (0x3d77d9a2), UINT32_C (0x13add922),
++      UINT32_C (0x8891b3db), UINT32_C (0x01a9bd70),
++      UINT32_C (0x56a001e3), UINT32_C (0xd51f093d),
++      UINT32_C (0xcc033ce3), UINT32_C (0x5ad0d3b0),
++      UINT32_C (0x34105a8c), UINT32_C (0x6a123f57),
++      UINT32_C (0xbd2e5024), UINT32_C (0x7364944b),
++      UINT32_C (0xe89b1a3b), UINT32_C (0x21835c4d),
++      UINT32_C (0x9f39e2d9), UINT32_C (0xd405ded8),
++      UINT32_C (0x294d37e5), UINT32_C (0xbccaaeed),
++      UINT32_C (0x35a124b5), UINT32_C (0x6708a2bc),
++      UINT32_C (0xb00960ba), UINT32_C (0x2a98121a),
++      UINT32_C (0x4d8fae82), UINT32_C (0x0bb3263f),
++      UINT32_C (0x12595a19), UINT32_C (0x6a107589),
++      UINT32_C (0x0809e494), UINT32_C (0x21c171ec),
++      UINT32_C (0x884d6825), UINT32_C (0x14c8009b),
++      UINT32_C (0xb0b84e7b), UINT32_C (0x03fb88f4),
++      UINT32_C (0x28e7cb78), UINT32_C (0x9388b13b),
++      UINT32_C (0xdd2dc1d5), UINT32_C (0x848f520a),
++      UINT32_C (0x07c28cd1), UINT32_C (0x68a39358),
++      UINT32_C (0x72c9137d), UINT32_C (0x127dd430),
++      UINT32_C (0xc613f157), UINT32_C (0x8c2f0d55),
++      UINT32_C (0xf7d3f39f), UINT32_C (0x309bfb78),
++      UINT32_C (0x8406b137), UINT32_C (0x46c0a6f5),
++      UINT32_C (0x3718d597), UINT32_C (0x08607f04),
++      UINT32_C (0x76904b6d), UINT32_C (0x04db4e13),
++      UINT32_C (0xcd7411a7), UINT32_C (0xb510ce0e),
++      UINT32_C (0xbfc7f7cc), UINT32_C (0xb83f957a),
++      UINT32_C (0xfdfef62d), UINT32_C (0xc35e4580),
++      UINT32_C (0x3ff1e524), UINT32_C (0x4112d96c),
++      UINT32_C (0x02c9b944), UINT32_C (0xd5990dfb),
++      UINT32_C (0xe7e26581), UINT32_C (0x0d9c7e7e),
++      UINT32_C (0x826dfa89), UINT32_C (0x66f1e0ab),
++      UINT32_C (0x30bcc764), UINT32_C (0xeadebeac),
++      UINT32_C (0xed35e5ee), UINT32_C (0x0c571a7d),
++      UINT32_C (0xe4f3a26a), UINT32_C (0xf7f58f7b),
++      UINT32_C (0xadf6bc23), UINT32_C (0x5d023e65),
++      UINT32_C (0x1ed3ff4e), UINT32_C (0xec46b0b6),
++      UINT32_C (0xd2a93b51), UINT32_C (0xe75b41c9),
++      UINT32_C (0x7e315aeb), UINT32_C (0x61119a5a),
++      UINT32_C (0x53245b79), UINT32_C (0x33f6d7b1),
++      UINT32_C (0xcae8deba), UINT32_C (0x50fc8194),
++      UINT32_C (0xafa92a6d), UINT32_C (0xc87c8006),
++      UINT32_C (0x4188bfcd), UINT32_C (0x8bace62e),
++      UINT32_C (0x78ffa568), UINT32_C (0x5597ec0f),
++      UINT32_C (0xb4415f7d), UINT32_C (0x08294766),
++      UINT32_C (0xad567643), UINT32_C (0x09c36f90),
++      UINT32_C (0x3dde9f39), UINT32_C (0x4a0a283c),
++      UINT32_C (0x18080c8e), UINT32_C (0x080c79ec),
++      UINT32_C (0x79ae4c10), UINT32_C (0xcb9e1563),
++      UINT32_C (0x7cdd662f), UINT32_C (0x62d31911),
++      UINT32_C (0xa4ca0cf1), UINT32_C (0x5cf824cd),
++      UINT32_C (0x3b708f99), UINT32_C (0x1e16614c),
++      UINT32_C (0xb6b9d766), UINT32_C (0x5de87abb),
++      UINT32_C (0x7229ea81), UINT32_C (0xd5b2d750),
++      UINT32_C (0x56e6cd21), UINT32_C (0xfe1e42d5),
++      UINT32_C (0x96da2655), UINT32_C (0xc2b9aa36),
++      UINT32_C (0xb8f6fd4a), UINT32_C (0x6a158d10),
++      UINT32_C (0x01913fd3), UINT32_C (0xaf7d1fb8),
++      UINT32_C (0x0b5e435f), UINT32_C (0x90c10757),
++      UINT32_C (0x6554abda), UINT32_C (0x7a68710f)
++    },
++    {
++      UINT32_C (0x82ac484f), UINT32_C (0xd7e1c7be),
++      UINT32_C (0x95c85eaa), UINT32_C (0x94a302f4),
++      UINT32_C (0x4d3cfbda), UINT32_C (0x786b2908),
++      UINT32_C (0x1010b275), UINT32_C (0x82d53d12),
++      UINT32_C (0x21e2a51c), UINT32_C (0x3d1e9150),
++      UINT32_C (0xb059261d), UINT32_C (0xd0638e1a),
++      UINT32_C (0x31860f05), UINT32_C (0x81f2864d),
++      UINT32_C (0xff4cfc35), UINT32_C (0x0451516d),
++      UINT32_C (0xbd086f26), UINT32_C (0xbc5654c1),
++      UINT32_C (0x65dfa427), UINT32_C (0xa82427f5),
++      UINT32_C (0x582e3014), UINT32_C (0xb8d2486d),
++      UINT32_C (0xc79a1749), UINT32_C (0x9a1d7745),
++      UINT32_C (0x8766bb54), UINT32_C (0x1e04a7f7),
++      UINT32_C (0x3d3dff8a), UINT32_C (0xd5ec6bf4),
++      UINT32_C (0xdbef7d9f), UINT32_C (0x36ec0ea3),
++      UINT32_C (0x1feb2e4f), UINT32_C (0x15cfcc5c),
++      UINT32_C (0xd8c423fb), UINT32_C (0xd0ef3cc9),
++      UINT32_C (0xeb244925), UINT32_C (0xba5590c8),
++      UINT32_C (0xa5f48ac4), UINT32_C (0x33c5321c),
++      UINT32_C (0x613b67b2), UINT32_C (0x479c3a22),
++      UINT32_C (0xe21339cc), UINT32_C (0x10d210aa),
++      UINT32_C (0x931dd7e2), UINT32_C (0xef05ee06),
++      UINT32_C (0xb82f2703), UINT32_C (0xa385cb2c),
++      UINT32_C (0x5d67133c), UINT32_C (0x877eb7b4),
++      UINT32_C (0x1e3437f7), UINT32_C (0x5afb43ae),
++      UINT32_C (0x53c078f3), UINT32_C (0x94d90481),
++      UINT32_C (0x1d964589), UINT32_C (0x08063a85),
++      UINT32_C (0xe1322228), UINT32_C (0x1956b1e5),
++      UINT32_C (0x31860f13), UINT32_C (0x2e7b022f),
++      UINT32_C (0x21182ca3), UINT32_C (0x96f703ac),
++      UINT32_C (0x46819e2e), UINT32_C (0x0d28fe52),
++      UINT32_C (0x3724d4dc), UINT32_C (0xa0eabe6b),
++      UINT32_C (0xc66699fd), UINT32_C (0xc6112fdd),
++      UINT32_C (0x19c1e69c), UINT32_C (0x04d3658a),
++      UINT32_C (0x4b55dd99), UINT32_C (0x31907d62),
++      UINT32_C (0xf854b522), UINT32_C (0x4d678f26),
++      UINT32_C (0x22ae0582), UINT32_C (0xeafed133),
++      UINT32_C (0xe4a51d21), UINT32_C (0x84bd6dd6),
++      UINT32_C (0xc1a51375), UINT32_C (0x3f28ee63),
++      UINT32_C (0xfb737b1a), UINT32_C (0x70a1660e),
++      UINT32_C (0x8a8dfaa3), UINT32_C (0x1be79937),
++      UINT32_C (0xf7476978), UINT32_C (0x513c1764),
++      UINT32_C (0x531ac6bf), UINT32_C (0x12c06908),
++      UINT32_C (0x001cdb95), UINT32_C (0x1a4b6a53),
++      UINT32_C (0xd067fce5), UINT32_C (0x12b2cfb6),
++      UINT32_C (0x9ddb477f), UINT32_C (0x740e0066),
++      UINT32_C (0x39ddf25a), UINT32_C (0xcc8bfa2d),
++      UINT32_C (0xf1b20eaf), UINT32_C (0x64f2632c),
++      UINT32_C (0x9783cdee), UINT32_C (0x63bfd4d8),
++      UINT32_C (0x0084cfe5), UINT32_C (0x75f4e9e2),
++      UINT32_C (0x19b48fd0), UINT32_C (0x6c48ddd8),
++      UINT32_C (0x7a36af93), UINT32_C (0x71865c4c),
++      UINT32_C (0x9ce0199d), UINT32_C (0x867027d7),
++      UINT32_C (0x2cb7b77f), UINT32_C (0x84ef01da),
++      UINT32_C (0x72f5972f), UINT32_C (0x040f7074),
++      UINT32_C (0xdf9afa29), UINT32_C (0xc921f94e),
++      UINT32_C (0x75c08a36), UINT32_C (0x18c1ef9a),
++      UINT32_C (0xd649a428), UINT32_C (0xc5b71937),
++      UINT32_C (0x8a30738a), UINT32_C (0xd97cd348),
++      UINT32_C (0x858129a6), UINT32_C (0x239e3b0a),
++      UINT32_C (0xbbb8abc4), UINT32_C (0x80fac4c2),
++      UINT32_C (0xecfcf20b), UINT32_C (0xd9d711f9),
++      UINT32_C (0xe2a4ef71), UINT32_C (0xb5fe87c0),
++      UINT32_C (0xbe8b06b2), UINT32_C (0xaafef5a7),
++      UINT32_C (0x9c15db3b), UINT32_C (0x0aeb8165),
++      UINT32_C (0x4389a84a), UINT32_C (0x253b1d7a),
++      UINT32_C (0x19047c79), UINT32_C (0x7cdc78a2),
++      UINT32_C (0xd20adf03), UINT32_C (0x56f55a71),
++      UINT32_C (0x3e730fa8), UINT32_C (0xfd8650d8),
++      UINT32_C (0x959e234e), UINT32_C (0xb7546681),
++      UINT32_C (0xdad1b22a), UINT32_C (0x142a6e85),
++      UINT32_C (0x8ef4bce6), UINT32_C (0x68235b9d),
++      UINT32_C (0x85a13f85), UINT32_C (0x74096ae7),
++      UINT32_C (0xa949bea2), UINT32_C (0x29322d0d),
++      UINT32_C (0xd5683858), UINT32_C (0x82846526),
++      UINT32_C (0x403dae08), UINT32_C (0x6dd1943a),
++      UINT32_C (0xe1279bff), UINT32_C (0x9e7e4f04),
++      UINT32_C (0x1c3a4524), UINT32_C (0x484525e4),
++      UINT32_C (0x81d4cc5f), UINT32_C (0xe24124c0),
++      UINT32_C (0x037464c0), UINT32_C (0xbf1bd691),
++      UINT32_C (0x26ceb003), UINT32_C (0x275ead3a),
++      UINT32_C (0xc5bde908), UINT32_C (0x26414ff3),
++      UINT32_C (0xa30519ad), UINT32_C (0xd7b43abe),
++      UINT32_C (0x2ce5d3d5), UINT32_C (0x88412761),
++      UINT32_C (0x97ca2070), UINT32_C (0xe5fbb9c7),
++      UINT32_C (0x276df0b4), UINT32_C (0x308f751f),
++      UINT32_C (0x37a97df6), UINT32_C (0xc9cd808c),
++      UINT32_C (0xfe4cb380), UINT32_C (0x3d469303),
++      UINT32_C (0xaee19096), UINT32_C (0xc0d5d42a),
++      UINT32_C (0x4e823ad3), UINT32_C (0xf5f9cc3b),
++      UINT32_C (0x4286619c), UINT32_C (0x9ca45e1c),
++      UINT32_C (0x66c97340), UINT32_C (0x891aec49),
++      UINT32_C (0x45bae606), UINT32_C (0xc798f047),
++      UINT32_C (0x52649d6c), UINT32_C (0xce86fdfc),
++      UINT32_C (0x80c6e402), UINT32_C (0xd6ec2f2b),
++      UINT32_C (0x27c82282), UINT32_C (0x1fe26ce0),
++      UINT32_C (0x92f57ea7), UINT32_C (0xde462f4d),
++      UINT32_C (0x07497cae), UINT32_C (0x5a48755c),
++      UINT32_C (0x721502dd), UINT32_C (0x6cbe7935),
++      UINT32_C (0x836d8003), UINT32_C (0x9ead7f70),
++      UINT32_C (0x9ab3a42f), UINT32_C (0x4c8652d6),
++      UINT32_C (0x32e39273), UINT32_C (0xe8fa3860),
++      UINT32_C (0x1da4f25a), UINT32_C (0x0cd6ef81),
++      UINT32_C (0x02503f7d), UINT32_C (0x8854a0a1),
++      UINT32_C (0x9a30c4e8), UINT32_C (0x88157153),
++      UINT32_C (0x05efe294), UINT32_C (0x57c4c925),
++      UINT32_C (0x2887d96f), UINT32_C (0xc1a71e3c),
++      UINT32_C (0xe9f84163), UINT32_C (0x2d0985de),
++      UINT32_C (0xd21e796c), UINT32_C (0x6fb5ce56),
++      UINT32_C (0x02614abf), UINT32_C (0xc3c7be2c),
++      UINT32_C (0xb54fed6f), UINT32_C (0xa617a083),
++      UINT32_C (0xc3142d8f), UINT32_C (0x6079e4ce),
++      UINT32_C (0xceffc147), UINT32_C (0x1d0cb81b),
++      UINT32_C (0xdc153e5f), UINT32_C (0xe36ef5bb),
++      UINT32_C (0xd531161a), UINT32_C (0x165b1015),
++      UINT32_C (0x7aa114ed), UINT32_C (0x3f7579b3),
++      UINT32_C (0xf7f395f1), UINT32_C (0xbc6172c7),
++      UINT32_C (0xa86f875e), UINT32_C (0x0e6c51b3),
++      UINT32_C (0xcdfec2af), UINT32_C (0x73c0e762),
++      UINT32_C (0x824c2009), UINT32_C (0xc5a87748),
++      UINT32_C (0x94d40125), UINT32_C (0x8aba3ffb),
++      UINT32_C (0xd32be060), UINT32_C (0x8c17eff0),
++      UINT32_C (0x21e2547e), UINT32_C (0x07cffad9),
++      UINT32_C (0x05340e15), UINT32_C (0xf3310c92),
++      UINT32_C (0x9d8d1908), UINT32_C (0x86ba527f),
++      UINT32_C (0xf943f672), UINT32_C (0xef73fbf0),
++      UINT32_C (0x46d95ca5), UINT32_C (0xc54cd95b),
++      UINT32_C (0x9d855e89), UINT32_C (0x4bb5af29)
++    }
++   #else
++    {
++      UINT64_C (0x12a8f216af9418c2), UINT64_C (0xd4490ad526f14431),
++      UINT64_C (0xb49c3b3995091a36), UINT64_C (0x5b45e522e4b1b4ef),
++      UINT64_C (0xa1e9300cd8520548), UINT64_C (0x49787fef17af9924),
++      UINT64_C (0x03219a39ee587a30), UINT64_C (0xebe9ea2adf4321c7),
++      UINT64_C (0x804456af10f5fb53), UINT64_C (0xd74bbe77e6116ac7),
++      UINT64_C (0x7c0828dd624ec390), UINT64_C (0x14a195640116f336),
++      UINT64_C (0x2eab8ca63ce802d7), UINT64_C (0xc6e57a78fbd986e0),
++      UINT64_C (0x58efc10b06a2068d), UINT64_C (0xabeeddb2dde06ff1),
++      UINT64_C (0x0b090a7560a968e3), UINT64_C (0x2cf9c8ca052f6e9f),
++      UINT64_C (0x116d0016cb948f09), UINT64_C (0xa59e0bd101731a28),
++      UINT64_C (0x63767572ae3d6174), UINT64_C (0xab4f6451cc1d45ec),
++      UINT64_C (0xc2a1e7b5b459aeb5), UINT64_C (0x2472f6207c2d0484),
++      UINT64_C (0xe699ed85b0dfb40d), UINT64_C (0xd4347f66ec8941c3),
++      UINT64_C (0xf4d14597e660f855), UINT64_C (0x8b889d624d44885d),
++      UINT64_C (0x258e5a80c7204c4b), UINT64_C (0xaf0c317d32adaa8a),
++      UINT64_C (0x9c4cd6257c5a3603), UINT64_C (0xeb3593803173e0ce),
++      UINT64_C (0x36f60e2ba4fa6800), UINT64_C (0x38b6525c21a42b0e),
++      UINT64_C (0xf4f5d05c10cab243), UINT64_C (0xcf3f4688801eb9aa),
++      UINT64_C (0x1ddc0325259b27de), UINT64_C (0xb9571fa04dc089c8),
++      UINT64_C (0xd7504dfa8816edbb), UINT64_C (0x1fe2cca76517db90),
++      UINT64_C (0x261e4e4c0a333a9d), UINT64_C (0x219b97e26ffc81bd),
++      UINT64_C (0x66b4835d9eafea22), UINT64_C (0x4cc317fb9cddd023),
++      UINT64_C (0x50b704cab602c329), UINT64_C (0xedb454e7badc0805),
++      UINT64_C (0x9e17e49642a3e4c1), UINT64_C (0x66c1a2a1a60cd889),
++      UINT64_C (0x7983eed3740847d5), UINT64_C (0x298af231c85bafab),
++      UINT64_C (0x2680b122baa28d97), UINT64_C (0x734de8181f6ec39a),
++      UINT64_C (0x53898e4c3910da55), UINT64_C (0x1761f93a44d5aefe),
++      UINT64_C (0xe4dbf0634473f5d2), UINT64_C (0x4ed0fe7e9dc91335),
++      UINT64_C (0xd18d8549d140caea), UINT64_C (0x1cfc8bed0d681639),
++      UINT64_C (0xca1e3785a9e724e5), UINT64_C (0xb67c1fa481680af8),
++      UINT64_C (0xdfea21ea9e7557e3), UINT64_C (0xd6b6d0ecc617c699),
++      UINT64_C (0xfa7e393983325753), UINT64_C (0xa09e8c8c35ab96de),
++      UINT64_C (0x8fe88b57305e2ab6), UINT64_C (0x89039d79d6fc5c5c),
++      UINT64_C (0x9bfb227ebdf4c5ce), UINT64_C (0x7f7cc39420a3a545),
++      UINT64_C (0x3f6c6af859d80055), UINT64_C (0xc8763c5b08d1908c),
++      UINT64_C (0x469356c504ec9f9d), UINT64_C (0x26e6db8ffdf5adfe),
++      UINT64_C (0x3a938fee32d29981), UINT64_C (0x2c5e9deb57ef4743),
++      UINT64_C (0x1e99b96e70a9be8b), UINT64_C (0x764dbeae7fa4f3a6),
++      UINT64_C (0xaac40a2703d9bea0), UINT64_C (0x1a8c1e992b941148),
++      UINT64_C (0x73aa8a564fb7ac9e), UINT64_C (0x604d51b25fbf70e2),
++      UINT64_C (0xdd69a0d8ab3b546d), UINT64_C (0x65ca5b96b7552210),
++      UINT64_C (0x2fd7e4b9e72cd38c), UINT64_C (0x51d2b1ab2ddfb636),
++      UINT64_C (0x9d1d84fcce371425), UINT64_C (0xa44cfe79ae538bbe),
++      UINT64_C (0xde68a2355b93cae6), UINT64_C (0x9fc10d0f989993e0),
++      UINT64_C (0x94ebc8abcfb56dae), UINT64_C (0xd7a023a73260b45c),
++      UINT64_C (0x72c8834a5957b511), UINT64_C (0x8f8419a348f296bf),
++      UINT64_C (0x1e152328f3318dea), UINT64_C (0x4838d65f6ef6748f),
++      UINT64_C (0xd6bf7baee43cac40), UINT64_C (0x13328503df48229f),
++      UINT64_C (0x7440fb816508c4fe), UINT64_C (0x9d266d6a1cc0542c),
++      UINT64_C (0x4dda48153c94938a), UINT64_C (0x74c04bf1790c0efe),
++      UINT64_C (0xe1925c71285279f5), UINT64_C (0x8a8e849eb32781a5),
++      UINT64_C (0x073973751f12dd5e), UINT64_C (0xa319ce15b0b4db31),
++      UINT64_C (0x6dd856d94d259236), UINT64_C (0x67378d8eccef96cb),
++      UINT64_C (0x9fc477de4ed681da), UINT64_C (0xf3b8b6675a6507ff),
++      UINT64_C (0xc3a9dc228caac9e9), UINT64_C (0xc37b45b3f8d6f2ba),
++      UINT64_C (0xb559eb1d04e5e932), UINT64_C (0x1b0cab936e65c744),
++      UINT64_C (0xaf08da9177dda93d), UINT64_C (0xac12fb171817eee7),
++      UINT64_C (0x1fff7ac80904bf45), UINT64_C (0xa9119b60369ffebd),
++      UINT64_C (0xbfced1b0048eac50), UINT64_C (0xb67b7896167b4c84),
++      UINT64_C (0x9b3cdb65f82ca382), UINT64_C (0xdbc27ab5447822bf),
++      UINT64_C (0x10dcd78e3851a492), UINT64_C (0xb438c2b67f98e5e9),
++      UINT64_C (0x43954b3252dc25e5), UINT64_C (0xab9090168dd05f34),
++      UINT64_C (0xce68341f79893389), UINT64_C (0x36833336d068f707),
++      UINT64_C (0xdcdd7d20903d0c25), UINT64_C (0xda3a361b1c5157b1),
++      UINT64_C (0x7f9d1a2e1ebe1327), UINT64_C (0x5d0a12f27ad310d1),
++      UINT64_C (0x3bc36e078f7515d7), UINT64_C (0x4da8979a0041e8a9),
++      UINT64_C (0x950113646d1d6e03), UINT64_C (0x7b4a38e32537df62),
++      UINT64_C (0x8a1b083821f40cb4), UINT64_C (0x3d5774a11d31ab39),
++      UINT64_C (0x7a76956c3eafb413), UINT64_C (0x7f5126dbba5e0ca7),
++      UINT64_C (0x12153635b2c0cf57), UINT64_C (0x7b3f0195fc6f290f),
++      UINT64_C (0x5544f7d774b14aef), UINT64_C (0x56c074a581ea17fe),
++      UINT64_C (0xe7f28ecd2d49eecd), UINT64_C (0xe479ee5b9930578c),
++      UINT64_C (0x9ff38fed72e9052f), UINT64_C (0x9f65789a6509a440),
++      UINT64_C (0x0981dcd296a8736d), UINT64_C (0x5873888850659ae7),
++      UINT64_C (0xc678b6d860284a1c), UINT64_C (0x63e22c147b9c3403),
++      UINT64_C (0x92fae24291f2b3f1), UINT64_C (0x829626e3892d95d7),
++      UINT64_C (0xcffe1939438e9b24), UINT64_C (0x79999cdff70902cb),
++      UINT64_C (0x8547eddfb81ccb94), UINT64_C (0x7b77497b32503b12),
++      UINT64_C (0x97fcaacbf030bc24), UINT64_C (0x6ced1983376fa72b),
++      UINT64_C (0x7e75d99d94a70f4d), UINT64_C (0xd2733c4335c6a72f),
++      UINT64_C (0xdbc0d2b6ab90a559), UINT64_C (0x94628d38d0c20584),
++      UINT64_C (0x64972d68dee33360), UINT64_C (0xb9c11d5b1e43a07e),
++      UINT64_C (0x2de0966daf2f8b1c), UINT64_C (0x2e18bc1ad9704a68),
++      UINT64_C (0xd4dba84729af48ad), UINT64_C (0xb7a0b174cff6f36e),
++      UINT64_C (0xe94c39a54a98307f), UINT64_C (0xaa70b5b4f89695a2),
++      UINT64_C (0x3bdbb92c43b17f26), UINT64_C (0xcccb7005c6b9c28d),
++      UINT64_C (0x18a6a990c8b35ebd), UINT64_C (0xfc7c95d827357afa),
++      UINT64_C (0x1fca8a92fd719f85), UINT64_C (0x1dd01aafcd53486a),
++      UINT64_C (0x49353fea39ba63b1), UINT64_C (0xf85b2b4fbcde44b7),
++      UINT64_C (0xbe7444e39328a0ac), UINT64_C (0x3e2b8bcbf016d66d),
++      UINT64_C (0x964e915cd5e2b207), UINT64_C (0x1725cabfcb045b00),
++      UINT64_C (0x7fbf21ec8a1f45ec), UINT64_C (0x11317ba87905e790),
++      UINT64_C (0x2fe4b17170e59750), UINT64_C (0xe8d9ecbe2cf3d73f),
++      UINT64_C (0xb57d2e985e1419c7), UINT64_C (0x0572b974f03ce0bb),
++      UINT64_C (0xa8d7e4dab780a08d), UINT64_C (0x4715ed43e8a45c0a),
++      UINT64_C (0xc330de426430f69d), UINT64_C (0x23b70edb1955c4bf),
++      UINT64_C (0x098954d51fff6580), UINT64_C (0x8107fccf064fcf56),
++      UINT64_C (0x852f54934da55cc9), UINT64_C (0x09c7e552bc76492f),
++      UINT64_C (0xe9f6760e32cd8021), UINT64_C (0xa3bc941d0a5061cb),
++      UINT64_C (0xba89142e007503b8), UINT64_C (0xdc842b7e2819e230),
++      UINT64_C (0xbbe83f4ecc2bdecb), UINT64_C (0xcd454f8f19c5126a),
++      UINT64_C (0xc62c58f97dd949bf), UINT64_C (0x693501d628297551),
++      UINT64_C (0xb9ab4ce57f2d34f3), UINT64_C (0x9255abb50d532280),
++      UINT64_C (0xebfafa33d7254b59), UINT64_C (0xe9f6082b05542e4e),
++      UINT64_C (0x35dd37d5871448af), UINT64_C (0xb03031a8b4516e84),
++      UINT64_C (0xb3f256d8aca0b0b9), UINT64_C (0x0fd22063edc29fca),
++      UINT64_C (0xd9a11fbb3d9808e4), UINT64_C (0x3a9bf55ba91f81ca),
++      UINT64_C (0xc8c93882f9475f5f), UINT64_C (0x947ae053ee56e63c),
++      UINT64_C (0xc7d9f16864a76e94), UINT64_C (0x7bd94e1d8e17debc),
++      UINT64_C (0xd873db391292ed4f), UINT64_C (0x30f5611484119414),
++      UINT64_C (0x565c31f7de89ea27), UINT64_C (0xd0e4366228b03343),
++      UINT64_C (0x325928ee6e6f8794), UINT64_C (0x6f423357e7c6a9f9),
++      UINT64_C (0x99170a5dc3115544), UINT64_C (0x59b97885e2f2ea28),
++      UINT64_C (0xbc4097b116c524d2), UINT64_C (0x7a13f18bbedc4ff5),
++      UINT64_C (0x071582401c38434d), UINT64_C (0xb422061193d6f6a7),
++      UINT64_C (0xb4b81b3fa97511e2), UINT64_C (0x65d34954daf3cebd),
++      UINT64_C (0xb344c470397bba52), UINT64_C (0xbac7a9a18531294b),
++      UINT64_C (0xecb53939887e8175), UINT64_C (0x565601c0364e3228),
++      UINT64_C (0xef1955914b609f93), UINT64_C (0x16f50edf91e513af),
++      UINT64_C (0x56963b0dca418fc0), UINT64_C (0xd60f6dcedc314222),
++      UINT64_C (0x364f6ffa464ee52e), UINT64_C (0x6c3b8e3e336139d3),
++      UINT64_C (0xf943aee7febf21b8), UINT64_C (0x088e049589c432e0),
++      UINT64_C (0xd49503536abca345), UINT64_C (0x3a6c27934e31188a),
++      UINT64_C (0x957baf61700cff4e), UINT64_C (0x37624ae5a48fa6e9),
++      UINT64_C (0x501f65edb3034d07), UINT64_C (0x907f30421d78c5de),
++      UINT64_C (0x1a804aadb9cfa741), UINT64_C (0x0ce2a38c344a6eed),
++      UINT64_C (0xd363eff5f0977996), UINT64_C (0x2cd16e2abd791e33),
++      UINT64_C (0x58627e1a149bba21), UINT64_C (0x7f9b6af1ebf78baf)
++    },
++    {
++      UINT64_C (0xd20d8c88c8ffe65f), UINT64_C (0x917f1dd5f8886c61),
++      UINT64_C (0x56986e2ef3ed091b), UINT64_C (0x5fa7867caf35e149),
++      UINT64_C (0x81a1549fd6573da5), UINT64_C (0x96fbf83a12884624),
++      UINT64_C (0xe728e8c83c334074), UINT64_C (0xf1bcc3d275afe51a),
++      UINT64_C (0x71f1ce2490d20b07), UINT64_C (0xe6c42178c4bbb92e),
++      UINT64_C (0x0a9c32d5eae45305), UINT64_C (0x0c335248857fa9e7),
++      UINT64_C (0x142de49fff7a7c3d), UINT64_C (0x64a53dc924fe7ac9),
++      UINT64_C (0x9f6a419d382595f4), UINT64_C (0x150f361dab9dec26),
++      UINT64_C (0xc61bb3a141e50e8c), UINT64_C (0x2785338347f2ba08),
++      UINT64_C (0x7ca9723fbb2e8988), UINT64_C (0xce2f8642ca0712dc),
++      UINT64_C (0x59300222b4561e00), UINT64_C (0xc2b5a03f71471a6f),
++      UINT64_C (0xd5f9e858292504d5), UINT64_C (0x65fa4f227a2b6d79),
++      UINT64_C (0x93cbe0b699c2585d), UINT64_C (0x1d95b0a5fcf90bc6),
++      UINT64_C (0x17efee45b0dee640), UINT64_C (0x9e4c1269baa4bf37),
++      UINT64_C (0xd79476a84ee20d06), UINT64_C (0x0a56a5f0bfe39272),
++      UINT64_C (0x7eba726d8c94094b), UINT64_C (0x5e5637885f29bc2b),
++      UINT64_C (0xd586bd01c5c217f6), UINT64_C (0x233003b5a6cfe6ad),
++      UINT64_C (0x24c0e332b70019b0), UINT64_C (0x9da058c67844f20c),
++      UINT64_C (0xe4d9429322cd065a), UINT64_C (0x1fab64ea29a2ddf7),
++      UINT64_C (0x8af38731c02ba980), UINT64_C (0x7dc7785b8efdfc80),
++      UINT64_C (0x486289ddcc3d6780), UINT64_C (0x222bbfae61725606),
++      UINT64_C (0x2bc60a63a6f3b3f2), UINT64_C (0x177e00f9fc32f791),
++      UINT64_C (0x522e23f3925e319e), UINT64_C (0x9c2ed44081ce5fbd),
++      UINT64_C (0x964781ce734b3c84), UINT64_C (0xf05d129681949a4c),
++      UINT64_C (0x046e3ecaaf453ce9), UINT64_C (0x962aceefa82e1c84),
++      UINT64_C (0xf5b4b0b0d2deeeb4), UINT64_C (0x1af3dbe25d8f45da),
++      UINT64_C (0xf9f4892ed96bd438), UINT64_C (0xc4c118bfe78feaae),
++      UINT64_C (0x07a69afdcc42261a), UINT64_C (0xf8549e1a3aa5e00d),
++      UINT64_C (0x2102ae466ebb1148), UINT64_C (0xe87fbb46217a360e),
++      UINT64_C (0x310cb380db6f7503), UINT64_C (0xb5fdfc5d3132c498),
++      UINT64_C (0xdaf8e9829fe96b5f), UINT64_C (0xcac09afbddd2cdb4),
++      UINT64_C (0xb862225b055b6960), UINT64_C (0x55b6344cf97aafae),
++      UINT64_C (0xff577222c14f0a3a), UINT64_C (0x4e4b705b92903ba4),
++      UINT64_C (0x730499af921549ff), UINT64_C (0x13ae978d09fe5557),
++      UINT64_C (0xd9e92aa246bf719e), UINT64_C (0x7a4c10ec2158c4a6),
++      UINT64_C (0x49cad48cebf4a71e), UINT64_C (0xcf05daf5ac8d77b0),
++      UINT64_C (0xabbdcdd7ed5c0860), UINT64_C (0x9853eab63b5e0b35),
++      UINT64_C (0x352787baa0d7c22f), UINT64_C (0xc7f6aa2de59aea61),
++      UINT64_C (0x03727073c2e134b1), UINT64_C (0x5a0f544dd2b1fb18),
++      UINT64_C (0x74f85198b05a2e7d), UINT64_C (0x963ef2c96b33be31),
++      UINT64_C (0x4659d2b743848a2c), UINT64_C (0x19ebb029435dcb0f),
++      UINT64_C (0x4e9d2827355fc492), UINT64_C (0xccec0a73b49c9921),
++      UINT64_C (0x46c9feb55d120902), UINT64_C (0x8d2636b81555a786),
++      UINT64_C (0x30c05b1ba332f41c), UINT64_C (0xf6f7fd1431714200),
++      UINT64_C (0x1a4ff12616eefc89), UINT64_C (0x990a98fd5071d263),
++      UINT64_C (0x84547ddc3e203c94), UINT64_C (0x07a3aec79624c7da),
++      UINT64_C (0x8a328a1cedfe552c), UINT64_C (0xd1e649de1e7f268b),
++      UINT64_C (0x2d8d5432157064c8), UINT64_C (0x4ae7d6a36eb5dbcb),
++      UINT64_C (0x57e3306d881edb4f), UINT64_C (0x0a804d18b7097475),
++      UINT64_C (0xe74733427b72f0c1), UINT64_C (0x24b33c9d7ed25117),
++      UINT64_C (0xe805a1e290cf2456), UINT64_C (0x3b544ebe544c19f9),
++      UINT64_C (0x3e666e6f69ae2c15), UINT64_C (0xfb152fe3ff26da89),
++      UINT64_C (0xb49b52e587a1ee60), UINT64_C (0xac042e70f8b383f2),
++      UINT64_C (0x89c350c893ae7dc1), UINT64_C (0xb592bf39b0364963),
++      UINT64_C (0x190e714fada5156e), UINT64_C (0xec8177f83f900978),
++      UINT64_C (0x91b534f885818a06), UINT64_C (0x81536d601170fc20),
++      UINT64_C (0xd4c718bc4ae8ae5f), UINT64_C (0x9eedeca8e272b933),
++      UINT64_C (0x10e8b35af3eeab37), UINT64_C (0x0e09b88e1914f7af),
++      UINT64_C (0x3fa9ddfb67e2f199), UINT64_C (0xb10bb459132d0a26),
++      UINT64_C (0x2c046f22062dc67d), UINT64_C (0x5e90277e7cb39e2d),
++      UINT64_C (0xd6b04d3b7651dd7e), UINT64_C (0xe34a1d250e7a8d6b),
++      UINT64_C (0x53c065c6c8e63528), UINT64_C (0x1bdea12e35f6a8c9),
++      UINT64_C (0x21874b8b4d2dbc4f), UINT64_C (0x3a88a0fbbcb05c63),
++      UINT64_C (0x43ed7f5a0fae657d), UINT64_C (0x230e343dfba08d33),
++      UINT64_C (0xb5b4071dbfc73a66), UINT64_C (0x8f9887e6078735a1),
++      UINT64_C (0x08de8a1c7797da9b), UINT64_C (0xfcb6be43a9f2fe9b),
++      UINT64_C (0x049a7f41061a9e60), UINT64_C (0x9f91508bffcfc14a),
++      UINT64_C (0xe3273522064480ca), UINT64_C (0xcd04f3ff001a4778),
++      UINT64_C (0x6bfa9aae5ec05779), UINT64_C (0x371f77e76bb8417e),
++      UINT64_C (0x3550c2321fd6109c), UINT64_C (0xfb4a3d794a9a80d2),
++      UINT64_C (0xf43c732873f24c13), UINT64_C (0xaa9119ff184cccf4),
++      UINT64_C (0xb69e38a8965c6b65), UINT64_C (0x1f2b1d1f15f6dc9c),
++      UINT64_C (0x67fef95d92607890), UINT64_C (0x31865ced6120f37d),
++      UINT64_C (0x3a6853c7e70757a7), UINT64_C (0x32ab0edb696703d3),
++      UINT64_C (0xee97f453f06791ed), UINT64_C (0x6dc93d9526a50e68),
++      UINT64_C (0x78edefd694af1eed), UINT64_C (0x9c1169fa2777b874),
++      UINT64_C (0x50065e535a213cf6), UINT64_C (0xde0c89a556b9ae70),
++      UINT64_C (0xd1e0ccd25bb9c169), UINT64_C (0x6b17b224bad6bf27),
++      UINT64_C (0x6b02e63195ad0cf8), UINT64_C (0x455a4b4cfe30e3f5),
++      UINT64_C (0x9338e69c052b8e7b), UINT64_C (0x5092ef950a16da0b),
++      UINT64_C (0x7c45d833aff07862), UINT64_C (0xa5b1cfdba0ab4067),
++      UINT64_C (0x6ad047c430a12104), UINT64_C (0x6c47bec883a7de39),
++      UINT64_C (0x944f6de09134dfb6), UINT64_C (0x9aeba33ac6ecc6b0),
++      UINT64_C (0x52e762596bf68235), UINT64_C (0x22af003ab672e811),
++      UINT64_C (0xb5635c95ff7296e2), UINT64_C (0xed2df21216235097),
++      UINT64_C (0x4a29c6465a314cd1), UINT64_C (0xd83cc2687a19255f),
++      UINT64_C (0x506c11b9d90e8b1d), UINT64_C (0x57277707199b8175),
++      UINT64_C (0xcaf21ecd4377b28c), UINT64_C (0xc0c0f5a60ef4cdcf),
++      UINT64_C (0x93b633abfa3469f8), UINT64_C (0xe846963877671a17),
++      UINT64_C (0x59ac2c7873f910a3), UINT64_C (0x660d3257380841ee),
++      UINT64_C (0xd813f2fab7f5c5ca), UINT64_C (0x4112cf68649a260e),
++      UINT64_C (0x443f64ec5a371195), UINT64_C (0xb0774d261cc609db),
++      UINT64_C (0x720bf5f26f4d2eaa), UINT64_C (0x1c2559e30f0946be),
++      UINT64_C (0xe328e230e3e2b3fb), UINT64_C (0x087e79e5a57d1d13),
++      UINT64_C (0x08dd9bdfd96b9f63), UINT64_C (0x64d0e29eea8838b3),
++      UINT64_C (0xddf957bc36d8b9ca), UINT64_C (0x6ffe73e81b637fb3),
++      UINT64_C (0x1a4e4822eb4d7a59), UINT64_C (0x5d94337fbfaf7f5b),
++      UINT64_C (0xd30c088ba61ea5ef), UINT64_C (0x9d765e419fb69f6d),
++      UINT64_C (0x9e21f4f903b33fd9), UINT64_C (0xb4d8f77bc3e56167),
++      UINT64_C (0x733ea705fae4fa77), UINT64_C (0xa4ec0132764ca04b),
++      UINT64_C (0x7976033a39f7d952), UINT64_C (0x106f72fe81e2c590),
++      UINT64_C (0x8c90fd9b083f4558), UINT64_C (0xfd080d236da814ba),
++      UINT64_C (0x7b64978555326f9f), UINT64_C (0x60e8ed72c0dff5d1),
++      UINT64_C (0xb063e962e045f54d), UINT64_C (0x959f587d507a8359),
++      UINT64_C (0x758f450c88572e0b), UINT64_C (0x1b6baca2ae4e125b),
++      UINT64_C (0x61cf4f94c97df93d), UINT64_C (0x2738259634305c14),
++      UINT64_C (0xd39bb9c3a48db6cf), UINT64_C (0x8215e577001332c8),
++      UINT64_C (0xa1082c0466df6c0a), UINT64_C (0xef02cdd06ffdb432),
++      UINT64_C (0xfc87614baf287e07), UINT64_C (0x240ab57a8b888b20),
++      UINT64_C (0xbf8d5108e27e0d48), UINT64_C (0x61bdd1307c66e300),
++      UINT64_C (0xb925a6cd0421aff3), UINT64_C (0x3e003e616a6591e9),
++      UINT64_C (0x94c3251f06f90cf3), UINT64_C (0xbf84470805e69b5f),
++      UINT64_C (0x98f076a4f7a2322e), UINT64_C (0x70cb6af7c2d5bcf0),
++      UINT64_C (0xb64be8d8b25396c1), UINT64_C (0xa9aa4d20db084e9b),
++      UINT64_C (0x2e6d02c36017f67f), UINT64_C (0xefed53d75fd64e6b),
++      UINT64_C (0xd9f1f30ccd97fb09), UINT64_C (0xa2ebee47e2fbfce1),
++      UINT64_C (0xb8d91274b9e9d4fb), UINT64_C (0x1db956e450275779),
++      UINT64_C (0x4fc8e9560f91b123), UINT64_C (0x63573ff03e224774),
++      UINT64_C (0x0647dfedcd894a29), UINT64_C (0x7884d9bc6cb569d8),
++      UINT64_C (0x7fba195410e5ca30), UINT64_C (0x106c09b972d2e822),
++      UINT64_C (0x241260ed4ad1e87d), UINT64_C (0x64c8e531bff53b55),
++      UINT64_C (0xca672b91e9e4fa16), UINT64_C (0x3871700761b3f743),
++      UINT64_C (0xf95cffa23af5f6f4), UINT64_C (0x8d14dedb30be846e),
++      UINT64_C (0x3b097adaf088f94e), UINT64_C (0x21e0bd5026c619bf),
++      UINT64_C (0x1bda0492e7e4586e), UINT64_C (0xd23c8e176d113600),
++      UINT64_C (0x252f59cf0d9f04bb), UINT64_C (0xb3598080ce64a656),
++      UINT64_C (0x993e1de72d36d310), UINT64_C (0xa2853b80f17f58ee),
++      UINT64_C (0x1877b51e57a764d5), UINT64_C (0x001f837cc7350524)
++    }
++   #endif
++  };
++
++int
++main (int argc, char **argv)
++{
++  unsigned int i;
++  isaac_word r[ISAAC_WORDS];
++  int iterations;
++
++  /* Seed with zeros, and discard the first buffer of output,
++     as that's what the standard programs do.  */
++  static struct isaac_state s;
++  isaac_seed (&s);
++  isaac_refill (&s, r);
++
++  for (i = 0; i < sizeof expected / sizeof expected[0]; i++)
++    {
++      isaac_refill (&s, r);
++      ASSERT (memcmp (r, expected[i], sizeof r) == 0);
++    }
++
++  /* If invoked with a positive argument, run a benchmark;
++     if with a negative, run a do-nothing benchmark.  */
++  for (iterations = argc <= 1 ? 0 : strtol (argv[1], nullptr, 10);
++       iterations != 0;
++       iterations += (iterations < 0 ? 1 : -1))
++    if (0 <= iterations)
++      isaac_refill (&s, r);
++
++  return 0;
++}
