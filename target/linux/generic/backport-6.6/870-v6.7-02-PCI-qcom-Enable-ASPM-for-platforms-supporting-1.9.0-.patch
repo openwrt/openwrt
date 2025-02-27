@@ -1,0 +1,102 @@
+From 9f4f3dfad8cf08208fbb78b1b9cbf957c12618b9 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Date: Tue, 10 Oct 2023 21:29:14 +0530
+Subject: [PATCH] PCI: qcom: Enable ASPM for platforms supporting 1.9.0 ops
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ASPM is supported by Qcom host controllers/bridges on most of the recent
+platforms and so the devices tested so far. But for enabling ASPM by
+default (without using Kconfig, kernel command-line or sysfs), BIOS has
+to enable ASPM on both host bridge and downstream devices during boot.
+
+Unfortunately, none of the BIOS available on Qcom platforms enables
+ASPM. Due to this, the platforms making use of Qcom SoCs draw high power
+during runtime.
+
+To fix this power draw issue, users have to enable ASPM using Kconfig,
+kernel command-line, sysfs or the BIOS has to start enabling ASPM.
+
+The latter may happen in the future, but that won't address the issue on
+current platforms. Also, asking users to enable a feature to get the power
+management right would provide an unpleasant out-of-the-box experience.
+
+So the apt solution is to enable ASPM in the controller driver itself. And
+this is being accomplished by calling pci_enable_link_state() in the newly
+introduced host_post_init() callback for all the devices connected to the
+bus. This function enables all supported link low power states for both
+host bridge and the downstream devices.
+
+Due to limited testing, ASPM is only enabled for platforms making use of
+ops_1_9_0 callbacks.
+
+[kwilczynski: commit log]
+Link: https://lore.kernel.org/linux-pci/20231010155914.9516-3-manivannan.sadhasivam@linaro.org
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
+---
+ drivers/pci/controller/dwc/pcie-qcom.c | 28 ++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -222,6 +222,7 @@ struct qcom_pcie_ops {
+ 	int (*get_resources)(struct qcom_pcie *pcie);
+ 	int (*init)(struct qcom_pcie *pcie);
+ 	int (*post_init)(struct qcom_pcie *pcie);
++	void (*host_post_init)(struct qcom_pcie *pcie);
+ 	void (*deinit)(struct qcom_pcie *pcie);
+ 	void (*ltssm_enable)(struct qcom_pcie *pcie);
+ 	int (*config_sid)(struct qcom_pcie *pcie);
+@@ -966,6 +967,22 @@ static int qcom_pcie_post_init_2_7_0(str
+ 	return 0;
+ }
+ 
++static int qcom_pcie_enable_aspm(struct pci_dev *pdev, void *userdata)
++{
++	/* Downstream devices need to be in D0 state before enabling PCI PM substates */
++	pci_set_power_state(pdev, PCI_D0);
++	pci_enable_link_state(pdev, PCIE_LINK_STATE_ALL);
++
++	return 0;
++}
++
++static void qcom_pcie_host_post_init_2_7_0(struct qcom_pcie *pcie)
++{
++	struct dw_pcie_rp *pp = &pcie->pci->pp;
++
++	pci_walk_bus(pp->bridge->bus, qcom_pcie_enable_aspm, NULL);
++}
++
+ static void qcom_pcie_deinit_2_7_0(struct qcom_pcie *pcie)
+ {
+ 	struct qcom_pcie_resources_2_7_0 *res = &pcie->res.v2_7_0;
+@@ -1224,9 +1241,19 @@ static void qcom_pcie_host_deinit(struct
+ 	pcie->cfg->ops->deinit(pcie);
+ }
+ 
++static void qcom_pcie_host_post_init(struct dw_pcie_rp *pp)
++{
++	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
++	struct qcom_pcie *pcie = to_qcom_pcie(pci);
++
++	if (pcie->cfg->ops->host_post_init)
++		pcie->cfg->ops->host_post_init(pcie);
++}
++
+ static const struct dw_pcie_host_ops qcom_pcie_dw_ops = {
+ 	.host_init	= qcom_pcie_host_init,
+ 	.host_deinit	= qcom_pcie_host_deinit,
++	.host_post_init	= qcom_pcie_host_post_init,
+ };
+ 
+ /* Qcom IP rev.: 2.1.0	Synopsys IP rev.: 4.01a */
+@@ -1288,6 +1315,7 @@ static const struct qcom_pcie_ops ops_1_
+ 	.get_resources = qcom_pcie_get_resources_2_7_0,
+ 	.init = qcom_pcie_init_2_7_0,
+ 	.post_init = qcom_pcie_post_init_2_7_0,
++	.host_post_init = qcom_pcie_host_post_init_2_7_0,
+ 	.deinit = qcom_pcie_deinit_2_7_0,
+ 	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
+ 	.config_sid = qcom_pcie_config_sid_1_9_0,
