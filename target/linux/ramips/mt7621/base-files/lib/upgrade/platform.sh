@@ -45,6 +45,15 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	arcadyan,wg630223)
+		dd if=/dev/mtd12 of=/tmp/mtd12.bin bs=1024
+		local boot_sect=`dd if=/tmp/mtd12.bin bs=1 skip=8 count=2 2>/dev/null | hexdump -v -e '1/1 "%02x"'`
+		if [ "$boot_sect" == "0100" ]; then
+			echo 'Switching boot partition to "firmware" ...'
+			printf '\x00\x00' | dd of=/tmp/mtd12.bin bs=1 seek=8 count=2 conv=notrunc
+			mtd write /tmp/mtd12.bin /dev/mtd12
+		fi
+		;;
 	iptime,ax2004m)
 		if [ "$(fw_printenv -n boot_from 2>/dev/null)" != "firmware1" ]; then
 			fw_setenv boot_from firmware1 || exit 1
@@ -70,6 +79,7 @@ platform_do_upgrade() {
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
 	arcadyan,we420223-99|\
+	arcadyan,wg630223|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	asus,rt-ax53u|\
@@ -84,7 +94,7 @@ platform_do_upgrade() {
 	dlink,covr-x1860-a1|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
-        dlink,dir-2055-a1|\
+	dlink,dir-2055-a1|\
 	dlink,dir-2150-a1|\
 	dlink,dir-2150-r1|\
 	dlink,dir-2640-a1|\

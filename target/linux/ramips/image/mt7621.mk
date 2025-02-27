@@ -3555,3 +3555,25 @@ define Device/zyxel_wsm20
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
 endef
 TARGET_DEVICES += zyxel_wsm20
+
+define Device/arcadyan_wg630223
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WG630223
+  IMAGE_SIZE := 24576k
+  KERNEL_SIZE := 4352k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb \
+           | arcadyan-trx 0x30524448 | pad-to $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+                     fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS += initramfs-factory.trx
+  ARTIFACT/initramfs-factory.trx := append-image-stage initramfs-kernel.bin | arcadyan-trx 0x30524448
+endif
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915-firmware uencrypt-mbedtls
+endef
+TARGET_DEVICES += arcadyan_wg630223
