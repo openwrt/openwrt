@@ -43,11 +43,6 @@ case "$FIRMWARE" in
 	asrock,g10)
 		caldata_extract "0:art" 0x1000 0x2f20
 		;;
-	linksys,ea7500-v1 |\
-	linksys,ea8500)
-		caldata_extract "art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
-		;;
 	meraki,mr42)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x1000 0x2f20
@@ -77,11 +72,6 @@ case "$FIRMWARE" in
 		;;
 	edgecore,ecw5410)
 		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	linksys,ea7500-v1 |\
-	linksys,ea8500)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
 		;;
 	meraki,mr42 |\
 	meraki,mr52)
