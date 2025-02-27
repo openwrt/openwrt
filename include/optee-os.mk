@@ -85,7 +85,7 @@ endef
 
 define Build/Compile/Optee-os
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		PATH=$(LINUX_DIR)/scripts/dtc/:$(PATH) \
+		PATH=$(LINUX_DIR)/scripts/dtc/:$(STAGING_DIR_HOST)/bin:$(PATH) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		CROSS_COMPILE_core="$(TARGET_CROSS)" \
 		CROSS_COMPILE_ta_arm64="$(TARGET_CROSS)" \
