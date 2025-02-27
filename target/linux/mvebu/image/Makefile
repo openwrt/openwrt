@@ -14,7 +14,7 @@ KERNEL_LOADADDR := 0x00008000
 define Build/boot-scr
 	rm -f $@-boot.scr
 	sed \
-		-e 's#@ROOT@#$(IMG_PART_SIGNATURE)#g' \
+		-e 's#@ROOT@#$(if $(1),$(1),$(IMG_PART_SIGNATURE))#g' \
 		-e 's#@DTB@#$(firstword $(DEVICE_DTS))#g' \
 		$(BOOT_SCRIPT).bootscript > $@-new.bootscript
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $@-new.bootscript $@-boot.scr
