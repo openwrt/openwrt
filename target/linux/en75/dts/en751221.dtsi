@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+
+/ {
+	compatible = "econet,en751221";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpu_clock: cpu_clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <900000000>;  // 900 MHz
+	};
+
+	hpt_clock: hpt_clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;  // 200 MHz
+	};
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "mips,mips24KEc";
+			reg = <0>;
+			clocks = <&cpu_clock>;
+		};
+	};
+
+	cpuintc: cpuintc {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	spi_ctrl: spi_controller@1fa10000 {
+		compatible = "airoha,en7523-spi";
+		reg = <0x1fa10000 0x140>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-rx-bus-width = <2>;
+		spi-tx-bus-width = <2>;
+
+		nand: nand@0 {
+			compatible = "spi-nand";
+			reg = <0>;
+			nand-ecc-engine = <&nand>;
+		};
+	};
+
+	intc: intc@1fb40000 {
+		compatible = "econet,en751221-intc";
+		reg = <0x1fb40000 0x100>;
+		interrupt-parent = <&cpuintc>;
+		interrupts = <2>;
+
+	interrupt-controller;
+	#interrupt-cells = <1>;
+		econet,shadow-interrupts = <
+			 3  8
+			 4  9
+			13 14
+			30 31
+		>;
+	};
+
+	uart: serial@1fbf0000 {
+		compatible = "ns16550";
+		reg = <0x1fbf0000 0x30>;
+		reg-io-width = <4>;
+		reg-shift = <2>;
+		interrupt-parent = <&intc>;
+		interrupts = <1>;
+		clock-frequency = <1843200>;
+		status = "disabled";
+	};
+
+	timer_hpt: timer_hpt@1fbf0400 {
+		compatible = "econet,en75-timer-hpt";
+		reg = <0x1fbf0400 0x100>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <31>;
+		clocks = <&hpt_clock>;
+	};
+};
