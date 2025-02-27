@@ -40,6 +40,7 @@
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
 #include <linux/of.h>
+#include <linux/version.h>
 
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
@@ -1965,14 +1966,16 @@ static irqreturn_t msdc_irq(int irq, void *dev_id)
 		} else if ((intsts & MSDC_INT_RSPCRCERR) || (intsts & MSDC_INT_ACMDCRCERR)) {
 			if (intsts & MSDC_INT_ACMDCRCERR)
 				IRQ_MSG("XXX CMD<%d> MSDC_INT_ACMDCRCERR", cmd->opcode);
-			else
+			else {
 				IRQ_MSG("XXX CMD<%d> MSDC_INT_RSPCRCERR", cmd->opcode);
+			}
 			cmd->error = -EIO;
 		} else if ((intsts & MSDC_INT_CMDTMO) || (intsts & MSDC_INT_ACMDTMO)) {
 			if (intsts & MSDC_INT_ACMDTMO)
 				IRQ_MSG("XXX CMD<%d> MSDC_INT_ACMDTMO", cmd->opcode);
-			else
+			else {
 				IRQ_MSG("XXX CMD<%d> MSDC_INT_CMDTMO", cmd->opcode);
+			}
 			cmd->error = -ETIMEDOUT;
 			msdc_reset_hw(host);
 			msdc_clr_fifo();
@@ -2346,7 +2349,11 @@ host_free:
 }
 
 /* 4 device share one driver, using "drvdata" to show difference */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 static int msdc_drv_remove(struct platform_device *pdev)
+#else
+static void msdc_drv_remove(struct platform_device *pdev)
+#endif
 {
 	struct mmc_host *mmc;
 	struct msdc_host *host;
@@ -2372,7 +2379,9 @@ static int msdc_drv_remove(struct platform_device *pdev)
 
 	mmc_free_host(host->mmc);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0)
 	return 0;
+#endif
 }
 
 /* Fix me: Power Flow */
