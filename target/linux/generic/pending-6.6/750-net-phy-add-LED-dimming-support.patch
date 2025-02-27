@@ -1,0 +1,50 @@
+From dd46e90fa1ada857f33e9bcc83a9c9344615e313 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sat, 22 Feb 2025 12:38:41 +0100
+Subject: [PATCH 1/2] net: phy: add LED dimming support
+
+Some PHYs support LED dimming. The use case is a router that dims LEDs
+at night. PHYs from different manufacturers support a different number of
+brightness levels, so it was necessary to extend the API with the
+led_max_brightness() function. If this function is omitted, a default
+value is used, assuming that only two levels are supported.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Reviewed-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/phy/phy_device.c | 7 ++++++-
+ include/linux/phy.h          | 7 +++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -3264,7 +3264,12 @@ static int of_phy_led(struct phy_device
+ 
+ 	cdev->hw_control_get_device = phy_led_hw_control_get_device;
+ #endif
+-	cdev->max_brightness = 1;
++	if (phydev->drv->led_max_brightness)
++		cdev->max_brightness =
++			phydev->drv->led_max_brightness(phydev, index);
++	else
++		cdev->max_brightness = 1;
++
+ 	init_data.devicename = dev_name(&phydev->mdio.dev);
+ 	init_data.fwnode = of_fwnode_handle(led);
+ 	init_data.devname_mandatory = true;
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -1122,6 +1122,13 @@ struct phy_driver {
+ 				  u8 index, enum led_brightness value);
+ 
+ 	/**
++	 * &led_max_brightness: Maximum number of brightness levels
++	 * supported by hardware. When only two levels are supported
++	 * i.e. LED_ON and LED_OFF the function can be omitted.
++	 */
++	int (*led_max_brightness)(struct phy_device *dev, u8 index);
++
++	/**
+ 	 * @led_blink_set: Set a PHY LED blinking.  Index indicates
+ 	 * which of the PHYs led should be configured to blink. Delays
+ 	 * are in milliseconds and if both are zero then a sensible
