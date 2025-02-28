@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_genexis_pulse-ex400-common.dtsi"
+
+/ {
+	compatible = "genexis,pulse-ex400", "mediatek,mt7621-soc";
+	model = "Genexis/Inteno Pulse EX400";
+
+	aliases {
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+};
+
+&leds {
+	led_wps_green: led-2 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WPS;
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+};
