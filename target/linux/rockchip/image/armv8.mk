@@ -262,7 +262,7 @@ define Device/seeed_linkstar-h68k-1432v1
   SOC := rk3568
   UBOOT_DEVICE_NAME := linkstar-h68k-1432v1-rk3568
   SUPPORTED_DEVICES := seeed, linkstar,rk3568-linkstar-h68k-1432v1
-  DEVICE_PACKAGES := kmod-ata-ahci-dwc
+  DEVICE_PACKAGES := kmod-ata-ahci-dwc kmod-mt76 kmod-mt7921-firmware kmod-mt7921 kmod-mt7921e kmod-mt7921s kmod-mt7921u
 endef
 TARGET_DEVICES += seeed_linkstar-h68k-1432v1
 
