@@ -635,7 +635,8 @@
 		},
 		"short_gi_80": {
 			"description": "Short GI for 80 MHz",
-			"type": "boolean"
+			"type": "boolean",
+			"default": true
 		},
 		"spectrum_mgmt_required": {
 			"description": "Set Spectrum Management subfield in the Capability Information field",
@@ -712,7 +713,8 @@
 			"description": "Indicates the maximum length of A-MPDU pre-EOF padding that the STA can recv",
 			"type": "number",
 			"minimum": 0,
-			"maximum": 7
+			"maximum": 7,
+			"default": 7
 		},
 		"vht_max_mpdu": {
 			"description": "Maximum MPDU length",

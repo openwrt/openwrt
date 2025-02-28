@@ -642,8 +642,7 @@ define Device/glinet_gl-s1300
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := kmod-fs-ext4 kmod-mmc kmod-spi-dev
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += glinet_gl-s1300
+TARGET_DEVICES += glinet_gl-s1300
 
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
@@ -740,7 +739,7 @@ define Device/linksys_whw03
 	IMAGE_SIZE := 131072k
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | linksys-image type=WHW03
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-bluetooth \
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-hci-uart \
 		kmod-fs-ext4 e2fsprogs kmod-fs-f2fs mkf2fs losetup ipq-wifi-linksys_whw03
 endef
 TARGET_DEVICES += linksys_whw03
@@ -759,7 +758,7 @@ define Device/linksys_whw03v2
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW03v2
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-bluetooth
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-hci-uart
 endef
 TARGET_DEVICES += linksys_whw03v2
 
@@ -1128,7 +1127,7 @@ define Device/teltonika_rutx10
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
 	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
-	DEVICE_PACKAGES := kmod-bluetooth
+	DEVICE_PACKAGES := kmod-btusb
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += teltonika_rutx10

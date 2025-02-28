@@ -122,7 +122,7 @@ function run_hook(name, ...args)
 		return;
 
 	for (let hook in hooks)
-		call(hook, this, {}, ...args);
+		call(hook, this, this.scope, ...args);
 }
 
 function init()

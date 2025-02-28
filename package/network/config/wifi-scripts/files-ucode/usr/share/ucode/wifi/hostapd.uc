@@ -242,7 +242,7 @@ function device_htmode_append(config) {
 				[ 29, 15 ], [ 61, 47 ], [ 93, 79 ], [ 125, 111 ],
 				[ 157, 143 ], [ 189, 175 ], [ 221, 207 ]];
 		for (let k, v in vht_oper_centr_freq_seg0_idx_map)
-			if (v[0] <= config.channel) {
+			if (config.channel >= (v[0] - 28) && config.channel <= v[0]) {
 				config.vht_oper_centr_freq_seg0_idx = v[1];
 				break;
 			}
@@ -329,7 +329,7 @@ function device_htmode_append(config) {
 			config.vht_capab += '[RX-ANTENNA-PATTERN]';
 		if (vht_capab & 0x20000000 && config.tx_antenna_pattern)
 			config.vht_capab += '[TX-ANTENNA-PATTERN]';
-		let rx_stbc = [ '', '[RX-STBC1]', '[RX-STBC12]', '[RX-STBC123]', '[RX-STBC-1234]' ];
+		let rx_stbc = [ '', '[RX-STBC-1]', '[RX-STBC-12]', '[RX-STBC-123]', '[RX-STBC-1234]' ];
 		config.vht_capab += rx_stbc[min(config.rx_stbc, (vht_capab >> 8) & 7)];
 
 		if (vht_capab & 0x800 && config.su_beamformer)
@@ -338,15 +338,15 @@ function device_htmode_append(config) {
 			config.vht_capab += '[BF-ANTENNA-' + min(((vht_capab >> 13) & 3) + 1, config.beamformer_antennas) + ']';
 
 		/* supported Channel widths */
-		if (vht_capab & 0xc == 8 && config.vht160 <= 2)
+		if ((vht_capab & 0xc) == 8 && config.vht160 <= 2)
 			config.vht_capab += '[VHT160-80PLUS80]';
-		else if (vht_capab & 0xc == 4 && config.vht160 <= 1)
+		else if ((vht_capab & 0xc) == 4 && config.vht160 <= 2)
 			config.vht_capab += '[VHT160]';
 
 		/* maximum MPDU length */
-		if (vht_capab & 3 > 1 && config.vht_max_mpdu > 11454)
+		if ((vht_capab & 3) > 1 && config.vht_max_mpdu >= 11454)
 			config.vht_capab += '[MAX-MPDU-11454]';
-		else if (vht_capab & 3 && config.vht_max_mpdu > 7991)
+		else if ((vht_capab & 3) && config.vht_max_mpdu >= 7991)
 			config.vht_capab += '[MAX-MPDU-7991]';
 
 		/* maximum A-MPDU length exponent */

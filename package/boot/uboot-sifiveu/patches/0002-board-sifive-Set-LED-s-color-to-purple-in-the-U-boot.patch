@@ -1,13 +1,16 @@
-From 7ead6d662a2f9d8498af6650ea38418c64b52048 Mon Sep 17 00:00:00 2001
+From 0dfab8fab80107aa4ad7d41a8ff47e5ff59632f9 Mon Sep 17 00:00:00 2001
 From: Vincent Chen <vincent.chen@sifive.com>
 Date: Mon, 24 Jan 2022 02:42:02 -0800
-Subject: [PATCH 3/8] board: sifive: Set LED's color to purple in the U-boot
+Subject: [PATCH 2/5] board: sifive: Set LED's color to purple in the U-boot
  stage
 
 Set LED's color to purple in the U-boot stage. Because there are still
 some functions to be executed before board_early_init_f(), it means
 the LED's is not changed to purple instantly when entering the U-boot
 stage.
+
+Upstream-Status: Pending
+Signed-off-by: Vincent Chen <vincent.chen@sifive.com>
 ---
  board/sifive/unmatched/pwm.c       | 7 +++++++
  board/sifive/unmatched/unmatched.c | 6 ++++++
@@ -52,7 +55,7 @@ stage.
  	/* enable all cache ways */
 --- a/configs/sifive_unmatched_defconfig
 +++ b/configs/sifive_unmatched_defconfig
-@@ -62,3 +62,4 @@ CONFIG_DM_SCSI=y
+@@ -63,3 +63,4 @@ CONFIG_DM_SCSI=y
  CONFIG_USB=y
  CONFIG_USB_XHCI_HCD=y
  CONFIG_USB_XHCI_PCI=y

@@ -1,19 +1,42 @@
-From 725595e667cc4423347c255da8ca4c5b3aa0980a Mon Sep 17 00:00:00 2001
+From 2ba4e6d78e0a63e5d491f9b01b498899e58cb58d Mon Sep 17 00:00:00 2001
 From: Vincent Chen <vincent.chen@sifive.com>
 Date: Mon, 15 Nov 2021 03:31:04 -0800
-Subject: [PATCH 2/8] board: sifive: spl: Initialized the PWM setting in the
+Subject: [PATCH 1/5] board: sifive: spl: Initialized the PWM setting in the
  SPL stage
 
 LEDs and multiple fans can be controlled by SPL. This patch ensures
 that all fans have been enabled in the SPL stage. In addition, the
 LED's color will be set to yellow.
+
+Upstream-Status: Pending
+Signed-off-by: Vincent Chen <vincent.chen@sifive.com>
 ---
- board/sifive/unmatched/Makefile |  1 +
- board/sifive/unmatched/pwm.c    | 57 +++++++++++++++++++++++++++++++++
- board/sifive/unmatched/spl.c    |  2 ++
- 3 files changed, 60 insertions(+)
+ arch/riscv/include/asm/arch-fu740/eeprom.h | 15 ++++++
+ board/sifive/unmatched/Makefile            |  1 +
+ board/sifive/unmatched/pwm.c               | 57 ++++++++++++++++++++++
+ board/sifive/unmatched/spl.c               |  2 +
+ 4 files changed, 75 insertions(+)
+ create mode 100644 arch/riscv/include/asm/arch-fu740/eeprom.h
  create mode 100644 board/sifive/unmatched/pwm.c
 
+--- /dev/null
++++ b/arch/riscv/include/asm/arch-fu740/eeprom.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2021 SiFive, Inc.
++ *
++ * Zong Li <zong.li@sifve.com>
++ */
++
++#ifndef _ASM_RISCV_EEPROM_H
++#define _ASM_RISCV_EEPROM_H
++
++#define PCB_REVISION_REV3	0x3
++
++u8 get_pcb_revision_from_eeprom(void);
++
++#endif /* _ASM_RISCV_EEPROM_H */
 --- a/board/sifive/unmatched/Makefile
 +++ b/board/sifive/unmatched/Makefile
 @@ -9,3 +9,4 @@ obj-y += spl.o

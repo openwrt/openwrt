@@ -8,8 +8,6 @@
 / {
 
 	aliases {
-		ethernet0 = &dp1;
-		ethernet1 = &dp2;
 		led-boot = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_blue;
@@ -209,6 +207,18 @@
 				label = "devinfo";
 				reg = <0x00680000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@6c0000 {

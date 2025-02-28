@@ -20,7 +20,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	struct apk_string_array *filters;
  };
-@@ -118,6 +119,40 @@ static void print_manifest(const struct
+@@ -105,6 +106,40 @@ static void print_manifest(const struct
  	printf("%s " BLOB_FMT "\n", pkg->name->name, BLOB_PRINTF(*pkg->version));
  }
  
@@ -60,11 +60,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
  static void filter_package(const struct apk_database *db, const struct apk_package *pkg, const struct list_ctx *ctx, const struct apk_name *name)
  {
- 	if (ctx->match_origin && !origin_matches(ctx, pkg))
-@@ -138,7 +173,9 @@ static void filter_package(const struct
- 	if (ctx->match_providers)
- 		printf("<%s> ", name->name);
+ 	if (ctx->match_origin && !origin_matches(ctx, pkg)) return;
+@@ -114,7 +149,9 @@ static void filter_package(const struct
+ 	if (ctx->upgradable && !is_upgradable(db, pkg)) return;
  
+ 	if (ctx->match_providers) printf("<%s> ", name->name);
 -	if (ctx->manifest)
 +	if (ctx->full)
 +		print_full(pkg, ctx);
@@ -72,7 +72,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		print_manifest(pkg, ctx);
  	else
  		print_package(db, pkg, ctx);
-@@ -178,6 +215,7 @@ static int print_result(struct apk_datab
+@@ -154,6 +191,7 @@ static int print_result(struct apk_datab
  	OPT(OPT_LIST_depends,		APK_OPT_SH("d") "depends") \
  	OPT(OPT_LIST_installed,		APK_OPT_SH("I") "installed") \
  	OPT(OPT_LIST_manifest,		"manifest") \
@@ -80,12 +80,13 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	OPT(OPT_LIST_origin,		APK_OPT_SH("o") "origin") \
  	OPT(OPT_LIST_orphaned,		APK_OPT_SH("O") "orphaned") \
  	OPT(OPT_LIST_providers,		APK_OPT_SH("P") "providers") \
-@@ -191,6 +229,8 @@ static int option_parse_applet(void *pct
+@@ -167,6 +205,9 @@ static int list_parse_option(void *pctx,
  	struct list_ctx *ctx = pctx;
  
  	switch (opt) {
 +	case OPT_LIST_full:
 +		ctx->full = 1;
++		break;
  	case OPT_LIST_available:
  		ctx->available = 1;
  		ctx->orphaned = 0;
