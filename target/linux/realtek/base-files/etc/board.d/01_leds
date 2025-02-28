@@ -6,6 +6,9 @@ board=$(board_name)
 board_config_update
 
 case $board in
+	hpe,1920-48g-poe)
+		ucidef_set_led_default "mode" "MODE" "green:mode" "1"
+	;;
 esac
 
 board_config_flush
