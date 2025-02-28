@@ -181,19 +181,19 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_config_8>;
 	nvmem-cell-names = "mac-address";
-	label = "dsa";
+	openwrt,netdev-name = "dsa";
 };
 
 &switch0 {
 	ports {
 		port@0 {
 			status = "okay";
-			label = "eth0";
+			openwrt,netdev-name = "eth0";
 		};
 
 		port@1 {
 			status = "okay";
-			label = "eth1";
+			openwrt,netdev-name = "eth1";
 		};
 	};
 };
