@@ -1,0 +1,169 @@
+From fb9c67f565adbba787d1186043965ecbbd52d7bb Mon Sep 17 00:00:00 2001
+From: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
+Date: Sat, 23 Nov 2024 10:38:58 +0530
+Subject: [PATCH 1/3] arm64: dts: qcom: ipq9574: Add WiFi nodes for RDP433
+
+The RDP433 is a Qualcomm Reference Design Platform based on the
+IPQ9574. It has three QCN9274 WiFi devices connected to PCIe1, PCIe2,
+and PCIe3. These devices are also connected among themselves via
+WSI connection. This WSI connection is essential to exchange control
+information among these devices
+
+The WSI connection in RDP433 is represented below:
+
+          +-------+        +-------+        +-------+
+          | pcie1 |        | pcie2 |        | pcie3 |
+          |       |        |       |        |       |
+   +----->|  wsi  |------->|  wsi  |------->|  wsi  |-----+
+   |      | grp 0 |        | grp 0 |        | grp 0 |     |
+   |      +-------+        +-------+        +-------+     |
+   +------------------------------------------------------+
+
+Based on the above, the wifi node properties for QCN9274 at pcie2 are
+(considering QCN9274 at pcie2 is WSI controller):
+
+ - qcom,wsi-controller
+ - ports:
+    tx-port (port@0): endpoint at pcie3 RX port.
+    rx-port (port@1): endpoint at pcie1 TX port.
+
+Hence, add WiFi nodes with WSI properties for all three QCN9274
+devices connected to RDP433.
+
+Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts | 103 ++++++++++++++++++++
+ 1 file changed, 103 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts b/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts
+index d50de26387ff..0a4b175cd005 100644
+--- a/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts
++++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts
+@@ -67,6 +67,40 @@ &pcie1 {
+ 	perst-gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+ 	wake-gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	pcie@0 {
++		device_type = "pci";
++		reg = <0x0 0x0 0x0 0x0 0x0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0 {
++			compatible = "pci17cb,1109";
++			reg = <0x0 0x0 0x0 0x0 0x0>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					wifi1_wsi_tx: endpoint {
++						remote-endpoint = <&wifi2_wsi_rx>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++
++					wifi1_wsi_rx: endpoint {
++						remote-endpoint = <&wifi3_wsi_tx>;
++					};
++				};
++			};
++		};
++	};
+ };
+ 
+ &pcie2_phy {
+@@ -80,6 +114,42 @@ &pcie2 {
+ 	perst-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+ 	wake-gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	pcie@0 {
++		device_type = "pci";
++		reg = <0x0 0x0 0x0 0x0 0x0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0 {
++			compatible = "pci17cb,1109";
++			reg = <0x0 0x0 0x0 0x0 0x0>;
++
++			qcom,wsi-controller;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					wifi2_wsi_tx: endpoint {
++						remote-endpoint = <&wifi3_wsi_rx>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++
++					wifi2_wsi_rx: endpoint {
++						remote-endpoint = <&wifi1_wsi_tx>;
++					};
++				};
++			};
++		};
++	};
+ };
+ 
+ &pcie3_phy {
+@@ -93,6 +163,39 @@ &pcie3 {
+ 	perst-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+ 	wake-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	pcie@0 {
++		device_type = "pci";
++		reg = <0x0 0x0 0x0 0x0 0x0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		wifi@0 {
++			compatible = "pci17cb,1109";
++			reg = <0x0 0x0 0x0 0x0 0x0>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++
++					wifi3_wsi_tx: endpoint {
++						remote-endpoint = <&wifi1_wsi_rx>;
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					wifi3_wsi_rx: endpoint {
++						remote-endpoint = <&wifi2_wsi_tx>;
++					};
++				};
++			};
++		};
++	};
+ };
+ 
+ &pcs0 {
+-- 
+2.34.1
+

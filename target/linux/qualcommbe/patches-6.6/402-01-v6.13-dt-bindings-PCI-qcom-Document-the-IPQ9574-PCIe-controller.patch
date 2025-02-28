@@ -1,0 +1,115 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v7 1/4] dt-bindings: PCI: qcom: Document the IPQ9574 PCIe controller
+From: Sricharan R <quic_srichara@quicinc.com>
+Date: Thu, 01 Aug 2024 11:18:00 +0530
+Message-Id: <20240801054803.3015572-2-quic_srichara@quicinc.com>
+To: <bhelgaas@google.com>, <lpieralisi@kernel.org>, <kw@linux.com>, <robh@kernel.org>, <krzk+dt@kernel.org>, <conor+dt@kernel.org>, <andersson@kernel.org>, <konrad.dybcio@linaro.org>, <manivannan.sadhasivam@linaro.org>, <linux-arm-msm@vger.kernel.org>, <linux-pci@vger.kernel.org>, <devicetree@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Cc: <quic_srichara@quicinc.com>
+In-Reply-To: <20240801054803.3015572-1-quic_srichara@quicinc.com>
+References: <20240801054803.3015572-1-quic_srichara@quicinc.com>
+List-Id: <linux-arm-msm.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+From: devi priya <quic_devipriy@quicinc.com>
+
+Document the PCIe controller on IPQ9574 platform.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: devi priya <quic_devipriy@quicinc.com>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+---
+ [V7] Picked up review tags
+
+ .../devicetree/bindings/pci/qcom,pcie.yaml    | 50 +++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/pci/qcom,pcie.yaml b/Documentation/devicetree/bindings/pci/qcom,pcie.yaml
+index f867746b1ae5..2d61fb9f206d 100644
+--- a/Documentation/devicetree/bindings/pci/qcom,pcie.yaml
++++ b/Documentation/devicetree/bindings/pci/qcom,pcie.yaml
+@@ -26,6 +26,7 @@ properties:
+           - qcom,pcie-ipq8064-v2
+           - qcom,pcie-ipq8074
+           - qcom,pcie-ipq8074-gen3
++          - qcom,pcie-ipq9574
+           - qcom,pcie-msm8996
+           - qcom,pcie-qcs404
+           - qcom,pcie-sdm845
+@@ -161,6 +162,7 @@ allOf:
+             enum:
+               - qcom,pcie-ipq6018
+               - qcom,pcie-ipq8074-gen3
++              - qcom,pcie-ipq9574
+     then:
+       properties:
+         reg:
+@@ -397,6 +399,53 @@ allOf:
+             - const: axi_m_sticky # AXI Master Sticky reset
+             - const: axi_s_sticky # AXI Slave Sticky reset
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - qcom,pcie-ipq9574
++    then:
++      properties:
++        clocks:
++          minItems: 6
++          maxItems: 6
++        clock-names:
++          items:
++            - const: axi_m # AXI Master clock
++            - const: axi_s # AXI Slave clock
++            - const: axi_bridge
++            - const: rchng
++            - const: ahb
++            - const: aux
++
++        resets:
++          minItems: 8
++          maxItems: 8
++        reset-names:
++          items:
++            - const: pipe # PIPE reset
++            - const: sticky # Core Sticky reset
++            - const: axi_s_sticky # AXI Slave Sticky reset
++            - const: axi_s # AXI Slave reset
++            - const: axi_m_sticky # AXI Master Sticky reset
++            - const: axi_m # AXI Master reset
++            - const: aux # AUX Reset
++            - const: ahb # AHB Reset
++
++        interrupts:
++          minItems: 8
++        interrupt-names:
++          items:
++            - const: msi0
++            - const: msi1
++            - const: msi2
++            - const: msi3
++            - const: msi4
++            - const: msi5
++            - const: msi6
++            - const: msi7
++
+   - if:
+       properties:
+         compatible:
+@@ -507,6 +556,7 @@ allOf:
+                 - qcom,pcie-ipq8064v2
+                 - qcom,pcie-ipq8074
+                 - qcom,pcie-ipq8074-gen3
++                - qcom,pcie-ipq9574
+                 - qcom,pcie-qcs404
+     then:
+       required:
+
+-- 
+2.34.1
+
+

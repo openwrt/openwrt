@@ -1,0 +1,49 @@
+From 6d8f198ae5d2b4ae6489fc255af6a5a16585fa7a Mon Sep 17 00:00:00 2001
+From: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
+Date: Tue, 21 May 2024 15:05:31 +0530
+Subject: [PATCH] WAR-for-board-id-in-non-OTP-fused-WKK (QCN9274)
+
+Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
+Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
+---
+ drivers/net/wireless/ath/ath12k/qmi.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath12k/qmi.c b/drivers/net/wireless/ath/ath12k/qmi.c
+index f273cb93dedb..501dc8df8177 100644
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -11,6 +11,8 @@
+ #include "debug.h"
+ #include <linux/of.h>
+ #include <linux/firmware.h>
++#include <linux/pci.h>
++#include "pci.h"
+ 
+ #define SLEEP_CLOCK_SELECT_INTERNAL_BIT	0x02
+ #define HOST_CSTATE_BIT			0x04
+@@ -2437,6 +2439,7 @@ static int ath12k_qmi_request_target_cap(struct ath12k_base *ab)
+ {
+ 	struct qmi_wlanfw_cap_req_msg_v01 req = {};
+ 	struct qmi_wlanfw_cap_resp_msg_v01 resp = {};
++	struct ath12k_pci *ar_pci = (struct ath12k_pci *)ab->drv_priv;
+ 	struct qmi_txn txn;
+ 	unsigned int board_id = ATH12K_BOARD_ID_DEFAULT;
+ 	int ret = 0;
+@@ -2482,6 +2485,13 @@ static int ath12k_qmi_request_target_cap(struct ath12k_base *ab)
+ 	else
+ 		ab->qmi.target.board_id = board_id;
+ 
++	if (pci_domain_nr(ar_pci->pdev->bus) == 1)
++		ab->qmi.target.board_id = 0x01;
++	else if (pci_domain_nr(ar_pci->pdev->bus) == 3)
++		ab->qmi.target.board_id = 0x02;
++	else if (pci_domain_nr(ar_pci->pdev->bus) == 2)
++		ab->qmi.target.board_id = 0x04;
++
+ 	if (resp.soc_info_valid)
+ 		ab->qmi.target.soc_id = resp.soc_info.soc_id;
+ 
+-- 
+2.34.1
+
