@@ -153,7 +153,7 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 
 function network_create_uci(model, name, iface)
 {
-	let cur = uci.cursor();
+	let cur = uci.cursor(null, null, "");
 	cur.set("network", name, "interface");
 	for (let key, val in iface)
 		cur.set("network", name, key, val);
@@ -360,7 +360,7 @@ function network_create(ctx, argv, named) {
 
 function network_delete(ctx, argv) {
 	let name = argv[0];
-	let cur = uci.cursor();
+	let cur = uci.cursor(null, null, "");
 	if (!cur.delete("network", name))
 		return ctx.command_failed("Command failed");
 
@@ -378,7 +378,7 @@ function network_iface_save(ctx)
 	if (!netdata.iface_changed)
 		return;
 
-	let cur = uci.cursor();
+	let cur = uci.cursor(null, null, "");
 	let iface_orig = cur.get_all("network", network);
 	for (let name, val in netdata.iface) {
 		if (iface_orig[name] == val)
