@@ -33,8 +33,8 @@ rockchip_setup_interfaces()
 		ucidef_set_interfaces_lan_wan 'eth0 eth2' 'eth1'
 		;;
 	seeed,rk3568-linkstar-h68k-1432v1)
-		ucidef_set_interfaces_lan_wan 'eth1 eth2 eth3' 'eth0'
-#		ucidef_set_interface_wan 'eth0'
+		ucidef_set_interfaces_lan 'eth1 eth2 eth3' 
+		ucidef_set_interface_wan 'eth0'
 		;;
 	sinovoip,rk3568-bpi-r2pro)
 		ucidef_set_interfaces_lan_wan 'lan0 lan1 lan2 lan3' 'eth0'
