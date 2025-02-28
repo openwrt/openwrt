@@ -8,7 +8,7 @@ as adding/removing interfaces.
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -5223,7 +5223,12 @@ struct hostapd_config * hostapd_config_r
+@@ -5223,7 +5223,16 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  
@@ -16,23 +16,31 @@ as adding/removing interfaces.
 +	if (!strncmp(fname, "data:", 5)) {
 +		f = fmemopen((void *)(fname + 5), strlen(fname + 5), "r");
 +		fname = "<inline>";
++		wpa_printf(MSG_INFO, "Configuration file: %s",
++			fname);
 +	} else {
 +		f = fopen(fname, "r");
++		wpa_printf(MSG_INFO, "Configuration file: %s",
++			fname);
 +	}
  	if (f == NULL) {
  		wpa_printf(MSG_ERROR, "Could not open configuration file '%s' "
  			   "for reading.", fname);
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -390,8 +390,13 @@ struct wpa_config * wpa_config_read(cons
+@@ -390,8 +390,17 @@ struct wpa_config * wpa_config_read(cons
  	while (identity_tail && identity_tail->next)
  		identity_tail = identity_tail->next;
  
 +	if (!strncmp(name, "data:", 5)) {
 +		f = fmemopen((void *)(name + 5), strlen(name + 5), "r");
 +		name = "<inline>";
++		wpa_printf(MSG_INFO, "Configuration file: %s",
++			name);
 +	} else {
 +		f = fopen(name, "r");
++		wpa_printf(MSG_INFO, "Configuration file: %s",
++			name);
 +	}
  	wpa_printf(MSG_DEBUG, "Reading configuration file '%s'", name);
 -	f = fopen(name, "r");
