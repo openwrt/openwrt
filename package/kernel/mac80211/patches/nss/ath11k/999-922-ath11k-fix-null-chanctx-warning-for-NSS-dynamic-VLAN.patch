@@ -1,0 +1,36 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
+@@ -275,6 +275,7 @@ tcl_ring_sel:
+ 
+ 	ti.data_len = skb->len - ti.pkt_offset;
+ 	skb_cb->pkt_offset = ti.pkt_offset;
++	skb_cb->paddr = ti.paddr;
+ 	skb_cb->vif = arvif->vif;
+ 	skb_cb->ar = ar;
+ 
+@@ -283,11 +284,9 @@ tcl_ring_sel:
+ 		atomic_inc(&ab->soc_stats.tx_err.misc_fail);
+ 		ath11k_warn(ab, "failed to DMA map data Tx buffer\n");
+ 		ret = -ENOMEM;
+-		goto fail_remove_idr;
++		goto fail_pull_skb;
+ 	}
+ 
+-	skb_cb->paddr = ti.paddr;
+-
+ 	if (ring_id == DP_TCL_NUM_RING_MAX)
+ 		hal_ring_id = dp->tcl_cmd_ring.ring_id;
+ 	else
+@@ -343,10 +342,11 @@ tcl_ring_sel:
+ fail_unmap_dma:
+ 	dma_unmap_single(ab->dev, ti.paddr, ti.data_len, DMA_TO_DEVICE);
+ 
+-fail_remove_idr:
++fail_pull_skb:
+ 	if (ti.pkt_offset)
+ 		skb_pull(skb, ti.pkt_offset);
+ 
++fail_remove_idr:
+ 	spin_lock_bh(&tx_ring->tx_idr_lock);
+ 	tx_ring->idr_pool[idr].id = -1;
+ 	clear_bit(idr, tx_ring->idrs);

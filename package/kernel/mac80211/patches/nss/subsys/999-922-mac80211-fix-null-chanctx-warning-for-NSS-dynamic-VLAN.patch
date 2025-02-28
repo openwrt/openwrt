@@ -1,0 +1,21 @@
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -6323,13 +6323,17 @@ void ieee80211_tx_skb_tid(struct ieee802
+ {
+ 	struct ieee80211_chanctx_conf *chanctx_conf;
+ 	enum nl80211_band band;
++	struct ieee80211_local *local = sdata->local;
+ 
+ 	rcu_read_lock();
+ 	if (!ieee80211_vif_is_mld(&sdata->vif)) {
+ 		WARN_ON(link_id >= 0);
+ 		chanctx_conf =
+ 			rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
+-		if (WARN_ON(!chanctx_conf)) {
++		if (!chanctx_conf) {
++			if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)) {
++				WARN_ON(1);
++			}
+ 			rcu_read_unlock();
+ 			kfree_skb(skb);
+ 			return;
