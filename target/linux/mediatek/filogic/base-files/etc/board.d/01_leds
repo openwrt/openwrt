@@ -109,6 +109,28 @@ routerich,ax3000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;
+smartrg,sdg-8612)
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-0" "lan4" "link_1000"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-1" "lan4" "link_2500"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-0" "eth1" "link_1000"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-1" "eth1" "link_2500"
+	;;
+smartrg,sdg-8614)
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-0" "lan4" "link_1000"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-1" "lan4" "link_2500"
+	;;
+smartrg,sdg-8622|\
+smartrg,sdg-8632)
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:amber:lan" "lan" "link_10 link_100"
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:green:lan-0" "lan" "link_1000"
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:green:lan-1" "lan" "link_2500"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-0" "eth1" "link_1000"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-1" "eth1" "link_2500"
+	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8734)
 	ucidef_set_led_netdev "lan-1-green" "LAN1" "mdio-bus:08:green:lan" "lan1" "link_2500 link_5000"
