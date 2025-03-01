@@ -2705,6 +2705,8 @@ TARGET_DEVICES += tplink_be450
 define Device/tplink_eap683-lr
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := EAP683-LR
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := EAP683-UR
   DEVICE_DTS := mt7986a-tplink-eap683-lr
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
