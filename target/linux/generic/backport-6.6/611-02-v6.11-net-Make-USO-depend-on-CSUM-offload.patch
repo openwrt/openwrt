@@ -20,7 +20,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -9765,6 +9765,15 @@ static void netdev_sync_lower_features(s
+@@ -9796,6 +9796,15 @@ static void netdev_sync_lower_features(s
  	}
  }
  
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static netdev_features_t netdev_fix_features(struct net_device *dev,
  	netdev_features_t features)
  {
-@@ -9846,15 +9855,9 @@ static netdev_features_t netdev_fix_feat
+@@ -9877,15 +9886,9 @@ static netdev_features_t netdev_fix_feat
  		features &= ~NETIF_F_LRO;
  	}
  
@@ -55,7 +55,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	if ((features & NETIF_F_HW_TLS_RX) && !(features & NETIF_F_RXCSUM)) {
-@@ -9862,6 +9865,11 @@ static netdev_features_t netdev_fix_feat
+@@ -9893,6 +9896,11 @@ static netdev_features_t netdev_fix_feat
  		features &= ~NETIF_F_HW_TLS_RX;
  	}
  
