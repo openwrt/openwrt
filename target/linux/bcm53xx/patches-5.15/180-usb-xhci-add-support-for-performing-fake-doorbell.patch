@@ -40,7 +40,7 @@ it on BCM4708 family.
  /* called during probe() after chip reset completes */
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -158,6 +158,49 @@ int xhci_start(struct xhci_hcd *xhci)
+@@ -159,6 +159,49 @@ int xhci_start(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -90,7 +90,7 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -635,6 +678,16 @@ static int xhci_run_finished(struct xhci
+@@ -636,6 +679,16 @@ static int xhci_run_finished(struct xhci
  		spin_unlock_irqrestore(&xhci->lock, flags);
  		return -ENODEV;
  	}
@@ -109,7 +109,7 @@ it on BCM4708 family.
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1663,6 +1663,7 @@ struct xhci_hcd {
+@@ -1664,6 +1664,7 @@ struct xhci_hcd {
  #define XHCI_ZHAOXIN_HOST	BIT_ULL(46)
  #define XHCI_WRITE_64_HI_LO	BIT_ULL(47)
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)

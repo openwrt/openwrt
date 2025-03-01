@@ -28,7 +28,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  };
  
  struct mtk_wdt_data {
-@@ -256,6 +257,8 @@ static int mtk_wdt_start(struct watchdog
+@@ -262,6 +263,8 @@ static int mtk_wdt_start(struct watchdog
  		reg |= (WDT_MODE_IRQ_EN | WDT_MODE_DUAL_EN);
  	else
  		reg &= ~(WDT_MODE_IRQ_EN | WDT_MODE_DUAL_EN);
@@ -37,7 +37,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  	reg |= (WDT_MODE_EN | WDT_MODE_KEY);
  	iowrite32(reg, wdt_base + WDT_MODE);
  
-@@ -381,6 +384,10 @@ static int mtk_wdt_probe(struct platform
+@@ -387,6 +390,10 @@ static int mtk_wdt_probe(struct platform
  		if (err)
  			return err;
  	}
