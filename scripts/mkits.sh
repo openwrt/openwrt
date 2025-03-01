@@ -36,6 +36,7 @@ usage() {
 	printf "\n\t-o ==> create output file 'its_file'"
 	printf "\n\t-O ==> create config with dt overlay 'name:dtb'"
 	printf "\n\t-s ==> set FDT load address to 'addr' (hex)"
+	printf "\n\t-u ==> set custom kernel description in main DTS ( uboot NAND mode )"
 	printf "\n\t\t(can be specified more than once)\n"
 	exit 1
 }
@@ -48,8 +49,10 @@ HASH=sha1
 LOADABLES=
 DTOVERLAY=
 DTADDR=
+UBDESC=""
+DTS_DESC=""
 
-while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:H:" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:u:H:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -68,6 +71,7 @@ do
 		O ) DTOVERLAY="$DTOVERLAY ${OPTARG}";;
 		r ) ROOTFS=$OPTARG;;
 		s ) FDTADDR=$OPTARG;;
+		u ) UBDESC=$OPTARG;;
 		H ) HASH=$OPTARG;;
 		v ) VERSION=$OPTARG;;
 		* ) echo "Invalid option passed to '$0' (options:$*)"
@@ -83,6 +87,16 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 fi
 
 ARCH_UPPER=$(echo "$ARCH" | tr '[:lower:]' '[:upper:]')
+
+if [ -n "${UBDESC}" ]; then
+	DTS_DESC_NODE="
+			description = \"${UBDESC}\";
+"
+else
+	DTS_DESC_NODE="
+			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
+"
+fi
 
 if [ -n "${COMPATIBLE}" ]; then
 	COMPATIBLE_PROP="compatible = \"${COMPATIBLE}\";"
@@ -201,7 +215,7 @@ DATA="/dts-v1/;
 
 	images {
 		kernel${REFERENCE_CHAR}1 {
-			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
+			${DTS_DESC_NODE}
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
 			arch = \"${ARCH}\";
