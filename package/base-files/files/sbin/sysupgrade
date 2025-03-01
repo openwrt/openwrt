@@ -23,6 +23,7 @@ CONF_BACKUP=
 CONF_RESTORE=
 USE_CURR_PART=0
 NEED_IMAGE=
+ROOTFS_DATA_MAX=
 HELP=0
 TEST=0
 
@@ -54,6 +55,7 @@ while [ -n "$1" ]; do
 		-l|--list-backup) CONF_BACKUP_LIST=1;;
 		-f) CONF_IMAGE="$2"; shift;;
 		-s) USE_CURR_PART=1;;
+                -m|--rootfs-data-max) ROOTFS_DATA_MAX="$2"; shift;;
 		-F|--force) export FORCE=1;;
 		-T|--test) TEST=1;;
 		-h|--help) HELP=1; break;;
@@ -86,6 +88,7 @@ upgrade-option:
 	-s           stay on current partition (for dual firmware devices)
 	-P           create provisioning partition to keep sensitive data across
 	             factory resets.
+	-m           set maximum size of rootfs_data volumes on NAND (used by uvol)
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -434,7 +437,7 @@ else
 	json_add_int save_partitions "$SAVE_PARTITIONS"
 	json_add_int add_provisioning "$ADD_PROVISIONING"
 	[ $USE_CURR_PART -eq 1 ] && json_add_boolean use_curr_part 1
+	[ -n "$ROOTFS_DATA_MAX" ] && json_add_int rootfs_data_max "$ROOTFS_DATA_MAX"
 	json_close_object
-
 	ubus call system sysupgrade "$(json_dump)"
 fi

@@ -181,7 +181,8 @@ nand_detach_ubi() {
 nand_upgrade_prepare_ubi() {
 	local rootfs_length="$1"
 	local rootfs_type="$2"
-	local rootfs_data_max="$(fw_printenv -n rootfs_data_max 2> /dev/null)"
+	local rootfs_data_max="$UPGRADE_OPT_ROOTFS_DATA_MAX"
+	[ -z "$rootfs_data_max" ] && rootfs_data_max="$(fw_printenv -n rootfs_data_max 2> /dev/null)"
 	[ -n "$rootfs_data_max" ] && rootfs_data_max=$((rootfs_data_max))
 
 	local kernel_length="$3"
