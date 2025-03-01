@@ -106,6 +106,7 @@ struct ar8327_led_info {
 	bool active_low;
 	enum ar8327_led_num led_num;
 	enum ar8327_led_mode mode;
+	struct fwnode_handle *fwnode;
 };
 
 #define AR8327_LED_INFO(_led, _mode, _name) {	\
