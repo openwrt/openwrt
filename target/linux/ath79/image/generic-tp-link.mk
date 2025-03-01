@@ -554,28 +554,6 @@ define Device/tplink_re355-v1
 endef
 TARGET_DEVICES += tplink_re355-v1
 
-define Device/tplink_re450-v1
-  $(Device/tplink_rex5x-v1)
-  DEVICE_MODEL := RE450
-  DEVICE_VARIANT := v1
-  TPLINK_BOARD_ID := RE450
-  SUPPORTED_DEVICES += re450
-endef
-TARGET_DEVICES += tplink_re450-v1
-
-define Device/tplink_re450-v2
-  $(Device/tplink-safeloader)
-  SOC := qca9563
-  IMAGE_SIZE := 6016k
-  DEVICE_MODEL := RE450
-  DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
-  TPLINK_BOARD_ID := RE450-V2
-  LOADER_TYPE := elf
-  DEFAULT := n
-endef
-TARGET_DEVICES += tplink_re450-v2
-
 define Device/tplink_re450-v3
   $(Device/tplink-safeloader)
   SOC := qca9563
