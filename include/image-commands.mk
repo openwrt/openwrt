@@ -494,6 +494,26 @@ define Build/lzma-no-dict
 	@mv $@.new $@
 endef
 
+define Build/gl-factory
+	$(eval GL_NAME := $(subst $(comma),_,$(word 1,$(SUPPORTED_DEVICES))))
+	$(eval GL_INCLUDE := $(STAGING_DIR)/usr/include/glinet-uboot-scr)
+	$(eval GL_SCRIPT := $(GL_INCLUDE)/$(GL_NAME).scr)
+	$(eval GL_IMGK := $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.img)
+	$(eval GL_ITS := $(KDIR_TMP)/$(GL_NAME).its)
+	$(if $(wildcard $(GL_INCLUDE)/*),$(CP) $(GL_INCLUDE)/* $(KDIR_TMP)/) \
+
+	$(TOPDIR)/scripts/mkits-glinet.sh \
+		$(if $(wildcard $(GL_SCRIPT)),-s $(GL_SCRIPT)) \
+		-f $(GL_IMGK) \
+		-o $(GL_ITS)
+
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f \
+		$(GL_ITS) \
+		$(GL_IMGK) \
+
+	$(RM) $(GL_ITS) $(GL_SCRIPT)
+endef
+
 define Build/moxa-encode-fw
 	$(TOPDIR)/scripts/moxa-encode-fw.py \
 		--input $@ \
