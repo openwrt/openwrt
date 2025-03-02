@@ -11,7 +11,16 @@ abt,asr3000)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0"
 	;;
+acer,predator-w6|\
+acer,predator-w6d)
+	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 link_1000 tx rx"
+	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:green:wan" "eth1" "link_2500 tx rx"
+	;;
 asus,tuf-ax4200)
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
+	;;
+asus,tuf-ax6000)
+	ucidef_set_led_netdev "lan5" "LAN5" "mdio-bus:05:white:lan" "lan5" "link tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
 	;;
 confiabits,mt7981)
@@ -149,6 +158,10 @@ zyxel,ex5601-t0-ubootmod)
 	ucidef_set_led_netdev "internet" "INTERNET" "green:inet" "eth1" "link tx rx"
 	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "green:wifi24g" "phy0-ap0" "link tx rx"
 	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "green:wifi5g" "phy1-ap0" "link tx rx"
+	;;
+zyxel,nwa50ax-pro)
+	ucidef_set_led_netdev "uplink" "UPLINK" "mdio-bus:05:amber:wan" "eth0" "link_10 link_100 link_2500 tx rx"
+	ucidef_set_led_netdev "uplink" "UPLINK" "mdio-bus:05:green:wan" "eth0" "link_1000 link_2500 tx rx"
 	;;
 esac
 
