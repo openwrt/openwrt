@@ -74,17 +74,47 @@
 &gswip_mdio {
 	phy11: ethernet-phy@11 {
 		reg = <0x11>;
-		lantiq,led1h = <0x70>;
-		lantiq,led1l = <0x00>;
-		lantiq,led2h = <0x00>;
-		lantiq,led2l = <0x03>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led-1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+
+			};
+
+			led-2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+
+			};
+		};
 	};
 	phy13: ethernet-phy@13 {
 		reg = <0x13>;
-		lantiq,led1h = <0x70>;
-		lantiq,led1l = <0x00>;
-		lantiq,led2h = <0x00>;
-		lantiq,led2l = <0x03>;
+	
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led-1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+
+			};
+
+			led-2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+
+			};
+		};
 	};
 };
 
