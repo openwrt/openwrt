@@ -1,0 +1,68 @@
+From def1f90be9f79c0c021ed6c04d02c6d4a308c5a0 Mon Sep 17 00:00:00 2001
+From: Scott Mercer <TheRootEd24@gmail.com>
+Date: Thu, 6 Mar 2025 08:18:54 -0500
+Subject: [PATCH] ipq50xx: packages: dumpimage: fix compile patch
+
+This patch is to fix compilation for uboot-tool V2025.01 in openwrt.
+
+* same "compile for enviroment patch" to makefile, that is used
+  in uboot-envtools.
+
+* remove mkeficapsule from build to avoid gnulib dependencies
+
+* disable bmp_logo from build to allow compilation
+
+Signed-off-by: Scott Mercer <TheRootEd24@gmail.com>
+---
+ tools/Makefile | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/tools/Makefile b/tools/Makefile
+index ee08a9675df8..15d92a1f9422 100644
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -22,6 +22,26 @@
+ #    That's as long as the features of those tools aren't modified.
+ #
+ 
++override HOSTCC = $(CC)
++
++ifneq ($(TARGET_CFLAGS),)
++KBUILD_HOSTCFLAGS = $(TARGET_CFLAGS)
++endif
++ifneq ($(TARGET_LDFLAGS),)
++KBUILD_HOSTLDFLAGS = $(TARGET_LDFLAGS)
++endif
++
++# Compile for a hosted environment on the target
++HOST_EXTRACFLAGS  = -I$(srctree)/tools \
++		$(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
++		-idirafter $(srctree)/tools/env \
++		-DUSE_HOSTCC \
++		-DTEXT_BASE=$(TEXT_BASE)
++
++ifeq ($(MTD_VERSION),old)
++HOST_EXTRACFLAGS += -DMTD_OLD
++endif
++
+ # Enable all the config-independent tools
+ ifneq ($(HOST_TOOLS_ALL),)
+ CONFIG_ARCH_KIRKWOOD = y
+@@ -252,7 +272,7 @@ mkeficapsule-objs := generated/lib/uuid.o \
+ 	generated/lib/sha1.o \
+ 	$(LIBFDT_OBJS) \
+ 	mkeficapsule.o
+-hostprogs-$(CONFIG_TOOLS_MKEFICAPSULE) += mkeficapsule
++hostprogs-$(CONFIG_TOOLS_MKEFICAPSULE) +=
+ 
+ mkfwumdata-objs := mkfwumdata.o generated/lib/crc32.o
+ HOSTLDLIBS_mkfwumdata += -luuid
+@@ -316,7 +336,7 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/compiler.h \
+ 		-D__KERNEL_STRICT_NAMES \
+ 		-D_GNU_SOURCE
+ 
+-__build:	$(LOGO-y)
++__build:	$(LOGO-n)
+ 
+ $(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
+ 	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
