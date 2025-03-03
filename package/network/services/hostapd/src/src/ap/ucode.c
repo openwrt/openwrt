@@ -60,6 +60,8 @@ hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *if_bss, u
 		ucv_object_add(bss, hapd->conf->iface, ucv_get(val));
 	}
 	ucv_object_add(if_bss, iface->phy, ucv_get(list));
+
+	ucv_put(list);
 }
 
 static void
@@ -80,6 +82,11 @@ hostapd_ucode_update_interfaces(void)
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ucv_get(ifs));
 	ucv_object_add(ucv_prototype_get(global), "interface_bss", ucv_get(if_bss));
 	ucv_object_add(ucv_prototype_get(global), "bss", ucv_get(bss));
+
+	ucv_put(ifs);
+	ucv_put(if_bss);
+	ucv_put(bss);
+
 	ucv_gc(vm);
 }
 
