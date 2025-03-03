@@ -20,7 +20,7 @@ wpas_ucode_iface_get_uval(struct wpa_supplicant *wpa_s)
 	uc_value_t *val;
 
 	if (wpa_s->ucode.idx)
-		return wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+		return ucv_get(wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx));
 
 	val = uc_resource_new(iface_type, wpa_s);
 	wpa_s->ucode.idx = wpa_ucode_registry_add(iface_registry, val);
@@ -36,7 +36,7 @@ wpas_ucode_update_interfaces(void)
 	int i;
 
 	for (wpa_s = wpa_global->ifaces; wpa_s; wpa_s = wpa_s->next)
-		ucv_object_add(ifs, wpa_s->ifname, ucv_get(wpas_ucode_iface_get_uval(wpa_s)));
+		ucv_object_add(ifs, wpa_s->ifname, wpas_ucode_iface_get_uval(wpa_s));
 
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ifs);
 	ucv_gc(vm);
@@ -50,7 +50,7 @@ void wpas_ucode_add_bss(struct wpa_supplicant *wpa_s)
 		return;
 
 	uc_value_push(ucv_string_new(wpa_s->ifname));
-	uc_value_push(ucv_get(wpas_ucode_iface_get_uval(wpa_s)));
+	uc_value_push(wpas_ucode_iface_get_uval(wpa_s));
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
 }
