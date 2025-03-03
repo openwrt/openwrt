@@ -425,7 +425,7 @@ uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_t
 
 	uc_vm_registry_set(&vm, "hostap.global", global);
 	proto = ucv_prototype_get(global);
-	ucv_object_add(proto, "data", ucv_get(ucv_object_new(&vm)));
+	ucv_object_add(proto, "data", ucv_object_new(&vm));
 
 #define ADD_CONST(x) ucv_object_add(proto, #x, ucv_int64_new(x))
 	ADD_CONST(MSG_EXCESSIVE);
