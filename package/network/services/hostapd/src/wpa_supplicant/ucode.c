@@ -38,7 +38,7 @@ wpas_ucode_update_interfaces(void)
 	for (wpa_s = wpa_global->ifaces; wpa_s; wpa_s = wpa_s->next)
 		ucv_object_add(ifs, wpa_s->ifname, ucv_get(wpas_ucode_iface_get_uval(wpa_s)));
 
-	ucv_object_add(ucv_prototype_get(global), "interfaces", ucv_get(ifs));
+	ucv_object_add(ucv_prototype_get(global), "interfaces", ifs);
 	ucv_gc(vm);
 }
 
