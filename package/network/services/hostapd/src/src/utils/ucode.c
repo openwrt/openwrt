@@ -171,7 +171,7 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	ucv_object_add(ret, "op_class", ucv_int64_new(op_class));
 	ucv_object_add(ret, "channel", ucv_int64_new(channel));
 	ucv_object_add(ret, "hw_mode", ucv_int64_new(hw_mode));
-	ucv_object_add(ret, "hw_mode_str", ucv_get(ucv_string_new(modestr)));
+	ucv_object_add(ret, "hw_mode_str", ucv_string_new(modestr));
 	ucv_object_add(ret, "sec_channel", ucv_int64_new(sec_channel));
 	ucv_object_add(ret, "frequency", ucv_int64_new(freq_val));
 

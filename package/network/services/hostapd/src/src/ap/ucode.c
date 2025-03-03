@@ -56,7 +56,7 @@ hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *if_bss, u
 		struct hostapd_data *hapd = iface->bss[i];
 		uc_value_t *val = hostapd_ucode_bss_get_uval(hapd);
 
-		ucv_array_set(list, i, ucv_get(ucv_string_new(hapd->conf->iface)));
+		ucv_array_set(list, i, ucv_string_new(hapd->conf->iface));
 		ucv_object_add(bss, hapd->conf->iface, ucv_get(val));
 	}
 	ucv_object_add(if_bss, iface->phy, ucv_get(list));
@@ -721,11 +721,10 @@ int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 	if (wpa_ucode_call_prepare("sta_auth"))
 		return 0;
 
-	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface)));
+	uc_value_push(ucv_string_new(hapd->conf->iface));
 
 	snprintf(addr, sizeof(addr), MACSTR, MAC2STR(sta->addr));
-	val = ucv_string_new(addr);
-	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new(addr));
 
 	val = wpa_ucode_call(2);
 
@@ -787,16 +786,15 @@ void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta
 	if (wpa_ucode_call_prepare("sta_connected"))
 		return;
 
-	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface)));
+	uc_value_push(ucv_string_new(hapd->conf->iface));
 
 	snprintf(addr, sizeof(addr), MACSTR, MAC2STR(sta->addr));
-	val = ucv_string_new(addr);
-	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new(addr));
 
 	val = ucv_object_new(vm);
 	if (sta->psk_idx)
 		ucv_object_add(val, "psk_idx", ucv_int64_new(sta->psk_idx - 1));
-	uc_value_push(ucv_get(val));
+	uc_value_push(val);
 
 	val = wpa_ucode_call(3);
 	if (ucv_type(val) != UC_OBJECT)
@@ -889,8 +887,8 @@ void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
 		return;
 
 	val = hostapd_ucode_bss_get_uval(hapd);
-	uc_value_push(ucv_get(ucv_string_new(hapd->iface->phy)));
-	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface)));
+	uc_value_push(ucv_string_new(hapd->iface->phy));
+	uc_value_push(ucv_string_new(hapd->conf->iface));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(3));
 	ucv_gc(vm);
@@ -923,9 +921,9 @@ void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname)
 		return;
 
 	val = hostapd_ucode_bss_get_uval(hapd);
-	uc_value_push(ucv_get(ucv_string_new(hapd->conf->iface))); // BSS ifname
+	uc_value_push(ucv_string_new(hapd->conf->iface)); // BSS ifname
 	uc_value_push(ucv_get(val));
-	uc_value_push(ucv_get(ucv_string_new(ifname))); // APuP peer ifname
+	uc_value_push(ucv_string_new(ifname)); // APuP peer ifname
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
 }
