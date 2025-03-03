@@ -70,6 +70,7 @@ void wpas_ucode_free_bss(struct wpa_supplicant *wpa_s)
 	uc_value_push(ucv_string_new(wpa_s->ifname));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(2));
+	ucv_put(val);
 	ucv_gc(vm);
 }
 
