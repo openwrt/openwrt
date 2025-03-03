@@ -876,7 +876,7 @@ void hostapd_ucode_free(void)
 
 void hostapd_ucode_free_iface(struct hostapd_iface *iface)
 {
-	wpa_ucode_registry_remove(iface_registry, iface->ucode.idx);
+	ucv_put(wpa_ucode_registry_remove(iface_registry, iface->ucode.idx));
 }
 
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
@@ -910,6 +910,8 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 	uc_value_push(ucv_string_new(hapd->conf->iface));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(2));
+
+	ucv_put(val);
 	ucv_gc(vm);
 }
 

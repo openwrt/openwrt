@@ -470,6 +470,7 @@ uc_value_t *wpa_ucode_registry_remove(uc_value_t *reg, int idx)
 	if (!val)
 		return NULL;
 
+	ucv_get(val);
 	ucv_array_set(reg, idx - 1, NULL);
 	dataptr = ucv_resource_dataptr(val, NULL);
 	if (dataptr)
