@@ -23,7 +23,7 @@ hostapd_ucode_bss_get_uval(struct hostapd_data *hapd)
 	uc_value_t *val;
 
 	if (hapd->ucode.idx)
-		return wpa_ucode_registry_get(bss_registry, hapd->ucode.idx);
+		return ucv_get(wpa_ucode_registry_get(bss_registry, hapd->ucode.idx));
 
 	val = uc_resource_new(bss_type, hapd);
 	hapd->ucode.idx = wpa_ucode_registry_add(bss_registry, val);
@@ -37,7 +37,7 @@ hostapd_ucode_iface_get_uval(struct hostapd_iface *hapd)
 	uc_value_t *val;
 
 	if (hapd->ucode.idx)
-		return wpa_ucode_registry_get(iface_registry, hapd->ucode.idx);
+		return ucv_get(wpa_ucode_registry_get(iface_registry, hapd->ucode.idx));
 
 	val = uc_resource_new(iface_type, hapd);
 	hapd->ucode.idx = wpa_ucode_registry_add(iface_registry, val);
@@ -54,10 +54,9 @@ hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *if_bss, u
 	list = ucv_array_new(vm);
 	for (i = 0; iface->bss && i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
-		uc_value_t *val = hostapd_ucode_bss_get_uval(hapd);
 
 		ucv_array_set(list, i, ucv_string_new(hapd->conf->iface));
-		ucv_object_add(bss, hapd->conf->iface, ucv_get(val));
+		ucv_object_add(bss, hapd->conf->iface, hostapd_ucode_bss_get_uval(hapd));
 	}
 	ucv_object_add(if_bss, iface->phy, list);
 }
@@ -73,7 +72,7 @@ hostapd_ucode_update_interfaces(void)
 	for (i = 0; i < interfaces->count; i++) {
 		struct hostapd_iface *iface = interfaces->iface[i];
 
-		ucv_object_add(ifs, iface->phy, ucv_get(hostapd_ucode_iface_get_uval(iface)));
+		ucv_object_add(ifs, iface->phy, hostapd_ucode_iface_get_uval(iface));
 		hostapd_ucode_update_bss_list(iface, if_bss, bss);
 	}
 
@@ -892,6 +891,7 @@ void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
 	uc_value_push(ucv_string_new(hapd->conf->iface));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(3));
+	ucv_put(val);
 	ucv_gc(vm);
 }
 
@@ -926,6 +926,7 @@ void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname)
 	uc_value_push(ucv_get(val));
 	uc_value_push(ucv_string_new(ifname)); // APuP peer ifname
 	ucv_put(wpa_ucode_call(2));
+	ucv_put(val);
 	ucv_gc(vm);
 }
 #endif // def CONFIG_APUP
