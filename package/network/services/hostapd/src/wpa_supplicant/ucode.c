@@ -49,7 +49,7 @@ void wpas_ucode_add_bss(struct wpa_supplicant *wpa_s)
 	if (wpa_ucode_call_prepare("iface_add"))
 		return;
 
-	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
+	uc_value_push(ucv_string_new(wpa_s->ifname));
 	uc_value_push(ucv_get(wpas_ucode_iface_get_uval(wpa_s)));
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
@@ -67,7 +67,7 @@ void wpas_ucode_free_bss(struct wpa_supplicant *wpa_s)
 	if (wpa_ucode_call_prepare("iface_remove"))
 		return;
 
-	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
+	uc_value_push(ucv_string_new(wpa_s->ifname));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(2));
 	ucv_gc(vm);
@@ -86,9 +86,9 @@ void wpas_ucode_update_state(struct wpa_supplicant *wpa_s)
 		return;
 
 	state = wpa_supplicant_state_txt(wpa_s->wpa_state);
-	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
+	uc_value_push(ucv_string_new(wpa_s->ifname));
 	uc_value_push(ucv_get(val));
-	uc_value_push(ucv_get(ucv_string_new(state)));
+	uc_value_push(ucv_string_new(state));
 	ucv_put(wpa_ucode_call(3));
 	ucv_gc(vm);
 }
@@ -108,9 +108,9 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	if (wpa_ucode_call_prepare("event"))
 		return;
 
-	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
+	uc_value_push(ucv_string_new(wpa_s->ifname));
 	uc_value_push(ucv_get(val));
-	uc_value_push(ucv_get(ucv_string_new(event_to_string(event))));
+	uc_value_push(ucv_string_new(event_to_string(event)));
 	val = ucv_object_new(vm);
 	uc_value_push(ucv_get(val));
 
@@ -212,15 +212,14 @@ uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 {
 	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
 	struct wpa_bss *bss;
-	uc_value_t *ret, *val;
+	uc_value_t *ret;
 
 	if (!wpa_s)
 		return NULL;
 
 	ret = ucv_object_new(vm);
 
-	val = ucv_string_new(wpa_supplicant_state_txt(wpa_s->wpa_state));
-	ucv_object_add(ret, "state", ucv_get(val));
+	ucv_object_add(ret, "state", ucv_string_new(wpa_supplicant_state_txt(wpa_s->wpa_state)));
 
 	bss = wpa_s->current_bss;
 	if (bss) {
