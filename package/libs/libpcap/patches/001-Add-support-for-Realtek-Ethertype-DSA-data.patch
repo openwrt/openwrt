@@ -1,0 +1,28 @@
+From fcb2cbc3a306afcf7785a60a74dbea431e609d76 Mon Sep 17 00:00:00 2001
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Thu, 6 Jan 2022 15:51:54 -0300
+Subject: [PATCH 1/2] Add support for Realtek (Ethertype) DSA data
+
+Realtek switchtag rtl4a (4 bytes long, protocol 0xA) and rtl8_4 (8 bytes
+long, protocol 0x04) are Ethertype DSA tags, inserted in the Ethernet
+header similar to an 802.1Q tag. Both shares the same Ethertype 0x8899
+as other Realtek proprietary protocols.
+
+Realtek switchtag rtl8_4t is identical to rtl8_4 but positioned before
+the CRC, at the end of the Ethernet frame.
+---
+ pcap-linux.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/pcap-linux.c
++++ b/pcap-linux.c
+@@ -5281,6 +5281,9 @@ static struct dsa_proto {
+ 	{ "brcm-prepend", DLT_DSA_TAG_BRCM_PREPEND },
+ 	{ "dsa", DLT_DSA_TAG_DSA },
+ 	{ "edsa", DLT_DSA_TAG_EDSA },
++	{ "rtl4a", DLT_EN10MB },
++	{ "rtl8_4", DLT_EN10MB },
++	{ "rtl8_4t", DLT_EN10MB },
+ };
+ 
+ static int
