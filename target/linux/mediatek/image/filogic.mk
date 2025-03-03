@@ -387,6 +387,20 @@ $(call Device/adtran_smartrg)
 endef
 TARGET_DEVICES += smartrg_sdg-8734
 
+define Device/smartrg_sdg-9000
+$(call Device/adtran_smartrg)
+  DEVICE_MODEL := SDG-9000
+  DEVICE_DTS := mt7988a-smartrg-sdg-9000
+  DEVICE_DTS_OVERLAY := mt7988a-smartrg-sdg-9000-wan-phy mt7988a-smartrg-sdg-9000-wan-sfp
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x47f00000
+  DEVICE_PACKAGES += -wpad-basic-mbedtls kmod-backlight-pwm kmod-gpio-pca953x kmod-hwmon-pwmfan \
+		     kmod-phy-aquantia kmod-dsa-mxl862xx kmod-input-touchscreen-hynitron-cst816x \
+		     kmod-pse-si3474 kmod-sfp kmod-usb3 input-support video-support \
+		     mipi-dbi-ph240240t004-zar
+endef
+TARGET_DEVICES += smartrg_sdg-9000
+
 define Device/airpi_ap3000m
   DEVICE_VENDOR := Airpi
   DEVICE_MODEL := AP3000M

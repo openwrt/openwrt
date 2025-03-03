@@ -1,0 +1,1048 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2024 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+#include "mt7988-smartrg-base.dtsi"
+
+#include <dt-bindings/thermal/thermal.h>
+
+/ {
+	model = "SmartRG SDG-9000";
+	compatible = "smartrg,sdg-9000", "mediatek,mt7988a";
+
+	aliases {
+		label-mac-device = &gmac2;
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_blue;
+		led-running = &led_sys_white;
+		led-upgrade = &led_sys_red;
+	};
+
+	reg_pse: regulator-vpvr-pse {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-vpvr-pse";
+		regulator-min-microvolt = <54000000>;
+		regulator-max-microvolt = <54000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm0_fan_pins>;
+		pwms = <&pwm 0 40000 0>;
+		label = "mainboard";
+
+		/**
+		 * set fan speed
+		 *
+		 * 0 = off
+		 * 77 = 30% duty cycle
+		 * 102 = 40% duty cycle
+		 * 128 - 50% duty cycle
+		 * 152 - 60% duty cycle
+		 * 255 = 100% duty cycle
+		 */
+		cooling-levels = <77 102 128 152>;
+
+		interrupt-parent = <&pio>;
+		interrupts = <51 IRQ_TYPE_EDGE_FALLING>;
+		pulses-per-revolution = <2>;
+
+		status = "okay";
+	};
+
+	fan2: pwm-fan2 {
+		compatible = "pwm-fan";
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm1_fan_pins>;
+		pwms = <&pwm 1 40000 0>;
+		label = "psu";
+
+		cooling-levels = <77 102 128 152>;
+
+		interrupt-parent = <&pio>;
+		interrupts = <50 IRQ_TYPE_EDGE_FALLING>;
+		pulses-per-revolution = <2>;
+
+		status = "okay";
+	};
+
+	backlight: backlight-lcd0 {
+		compatible = "pwm-backlight";
+		pwms = <&pwm 2 50000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm2_backlight_pins>;
+
+		status = "okay";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		/* gpio-export,output is the raw pin level; the active-low
+		 * flag only inverts the sysfs value. 1 keeps the reset released.
+		 */
+		pse0_reset {
+			gpio-export,name = "pse0-reset";
+			gpio-export,output = <1>;
+			gpios = <&pio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		pse1_reset {
+			gpio-export,name = "pse1-reset";
+			gpio-export,output = <1>;
+			gpios = <&pio 61 GPIO_ACTIVE_LOW>;
+		};
+
+		watchdog_enable {
+			gpio-export,name = "watchdog-enable";
+			gpio-export,output = <1>;
+			gpios = <&pio 60 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&pio 62 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <25000>;
+		always-running;
+	};
+
+	leds: gpio-leds {
+		compatible = "gpio-leds";
+
+		mgmt_amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = "mgmt";
+			gpios = <&pio 65 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:03:100Mbps";
+		};
+
+		mgmt_green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "mgmt";
+			gpios = <&pio 64 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:03:1Gbps";
+		};
+	};
+
+	lan-leds {
+		compatible = "gpio-leds";
+
+		lan1_white {
+			gpios = <&swled_gpio0 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+		};
+
+		lan1_blue {
+			gpios = <&swled_gpio0 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			linux,default-trigger = "pse-1-0026:port0:delivering";
+		};
+
+		lan1_green {
+			gpios = <&swled_gpio0 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+		};
+
+		lan1_red {
+			gpios = <&swled_gpio0 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			linux,default-trigger = "pse-1-0026:port0:fault";
+		};
+
+		lan2_white {
+			gpios = <&swled_gpio0 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+		};
+
+		lan2_blue {
+			gpios = <&swled_gpio0 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			linux,default-trigger = "pse-1-0026:port1:delivering";
+		};
+
+		lan2_green {
+			gpios = <&swled_gpio0 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+		};
+
+		lan2_red {
+			gpios = <&swled_gpio0 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			linux,default-trigger = "pse-1-0026:port1:fault";
+		};
+
+		lan3_white {
+			gpios = <&swled_gpio0 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+		};
+
+		lan3_blue {
+			gpios = <&swled_gpio0 9 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			linux,default-trigger = "pse-1-0026:port2:delivering";
+		};
+
+		lan3_green {
+			gpios = <&swled_gpio0 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+		};
+
+		lan3_red {
+			gpios = <&swled_gpio0 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			linux,default-trigger = "pse-1-0026:port2:fault";
+		};
+
+		lan4_white {
+			gpios = <&swled_gpio0 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		lan4_blue {
+			gpios = <&swled_gpio0 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			linux,default-trigger = "pse-1-0026:port3:delivering";
+		};
+
+		lan4_green {
+			gpios = <&swled_gpio0 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		lan4_red {
+			gpios = <&swled_gpio0 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			linux,default-trigger = "pse-1-0026:port3:fault";
+		};
+
+		lan5_white {
+			gpios = <&swled_gpio1 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <5>;
+		};
+
+		lan5_blue {
+			gpios = <&swled_gpio1 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <5>;
+			linux,default-trigger = "pse-1-0036:port4:delivering";
+		};
+
+		lan5_green {
+			gpios = <&swled_gpio1 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <5>;
+		};
+
+		lan5_red {
+			gpios = <&swled_gpio1 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <5>;
+			linux,default-trigger = "pse-1-0036:port4:fault";
+		};
+
+		lan6_white {
+			gpios = <&swled_gpio1 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <6>;
+		};
+
+		lan6_blue {
+			gpios = <&swled_gpio1 5 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <6>;
+			linux,default-trigger = "pse-1-0036:port5:delivering";
+		};
+
+		lan6_green {
+			gpios = <&swled_gpio1 6 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <6>;
+		};
+
+		lan6_red {
+			gpios = <&swled_gpio1 7 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <6>;
+			linux,default-trigger = "pse-1-0036:port5:fault";
+		};
+
+		lan7_white {
+			gpios = <&swled_gpio1 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <7>;
+		};
+
+		lan7_blue {
+			gpios = <&swled_gpio1 9 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <7>;
+			linux,default-trigger = "pse-1-0036:port6:delivering";
+		};
+
+		lan7_green {
+			gpios = <&swled_gpio1 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <7>;
+		};
+
+		lan7_red {
+			gpios = <&swled_gpio1 11 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <7>;
+			linux,default-trigger = "pse-1-0036:port6:fault";
+		};
+
+		lan8_white {
+			gpios = <&swled_gpio1 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <8>;
+		};
+
+		lan8_blue {
+			gpios = <&swled_gpio1 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <8>;
+			linux,default-trigger = "pse-1-0036:port7:delivering";
+		};
+
+		lan8_green {
+			gpios = <&swled_gpio1 14 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <8>;
+		};
+
+		lan8_red {
+			gpios = <&swled_gpio1 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <8>;
+			linux,default-trigger = "pse-1-0036:port7:fault";
+		};
+	};
+
+	sfp1: sfp1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		los-gpios = <&pio 81 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 82 GPIO_ACTIVE_LOW>;
+		rate-select0-gpios = <&pio 83 GPIO_ACTIVE_HIGH>;
+		rate-select1-gpios = <&pio 80 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <4000>;
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			thermal-sensors = <&lvts 0>;
+			SDG_2FAN_THERMAL_MAP(cpu_thermal, &fan, &fan2,
+					     125000, 120000,
+					     110000, 80000,
+					     60000, 40000);
+		};
+
+		aqr_lan_thermal: aqr-lan-thermal {
+			thermal-sensors = <&phy0>;
+			SDG_2FAN_THERMAL_MAP(aqr_lan_thermal, &fan, &fan2,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
+
+		aqr_wan_thermal: aqr-wan-thermal {
+			thermal-sensors = <&phy8>;
+			SDG_2FAN_THERMAL_MAP(aqr_wan_thermal, &fan, &fan2,
+					     108000, 104000,
+					     100000, 90000,
+					     80000, 40000);
+		};
+
+		mxl_thermal: mxl-thermal {
+			thermal-sensors = <&swphy0>;
+			SDG_2FAN_THERMAL_MAP(mxl_thermal, &fan, &fan2,
+					     110000, 105000,
+					     100000, 80000,
+					     60000, 40000);
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "dsa0";
+
+	status = "okay";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr 0x1>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "dsa1";
+	phy-mode = "10gbase-r";
+
+	status = "okay";
+
+	fixed-link {
+		speed = <10000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr 0x0>;
+	nvmem-cell-names = "mac-address";
+	openwrt,netdev-name = "wan";
+
+	status = "disabled";
+};
+
+&gsw_phy0 {
+	status = "disabled";
+};
+
+&gsw_phy1 {
+	status = "disabled";
+};
+
+&gsw_phy2 {
+	status = "disabled";
+};
+
+&i2c1 {
+	ethernet-pse@26 {
+		compatible = "skyworks,si3474";
+		reg-names = "main", "secondary";
+		reg = <0x26>, <0x27>;
+		interrupt-parent = <&pio>;
+		interrupts = <22 IRQ_TYPE_LEVEL_LOW>;
+		channels {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			phys0_0: channel@0 {
+				reg = <0>;
+			};
+			phys0_1: channel@1 {
+				reg = <1>;
+			};
+			phys0_2: channel@2 {
+				reg = <2>;
+			};
+			phys0_3: channel@3 {
+				reg = <3>;
+			};
+			phys0_4: channel@4 {
+				reg = <4>;
+			};
+			phys0_5: channel@5 {
+				reg = <5>;
+			};
+			phys0_6: channel@6 {
+				reg = <6>;
+			};
+			phys0_7: channel@7 {
+				reg = <7>;
+			};
+		};
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pse_pi0: pse-pi@0 {
+				reg = <0>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys0_4>, <&phys0_5>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi1: pse-pi@1 {
+				reg = <1>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys0_6>, <&phys0_7>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi2: pse-pi@2 {
+				reg = <2>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys0_0>, <&phys0_1>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi3: pse-pi@3 {
+				reg = <3>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys0_2>, <&phys0_3>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+		};
+	};
+	ethernet-pse@36 {
+		compatible = "skyworks,si3474";
+		reg-names = "main", "secondary";
+		reg = <0x36>, <0x37>;
+		interrupt-parent = <&pio>;
+		interrupts = <23 IRQ_TYPE_LEVEL_LOW>;
+		channels {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			phys1_0: channel@0 {
+				reg = <0>;
+			};
+			phys1_1: channel@1 {
+				reg = <1>;
+			};
+			phys1_2: channel@2 {
+				reg = <2>;
+			};
+			phys1_3: channel@3 {
+				reg = <3>;
+			};
+			phys1_4: channel@4 {
+				reg = <4>;
+			};
+			phys1_5: channel@5 {
+				reg = <5>;
+			};
+			phys1_6: channel@6 {
+				reg = <6>;
+			};
+			phys1_7: channel@7 {
+				reg = <7>;
+			};
+		};
+		pse-pis {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pse_pi4: pse-pi@4 {
+				reg = <4>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys1_0>, <&phys1_1>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi5: pse-pi@5 {
+				reg = <5>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys1_2>, <&phys1_3>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi6: pse-pi@6 {
+				reg = <6>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys1_4>, <&phys1_5>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+			pse_pi7: pse-pi@7 {
+				reg = <7>;
+				#pse-cells = <0>;
+				pairset-names = "alternative-a", "alternative-b";
+				pairsets = <&phys1_6>, <&phys1_7>;
+				polarity-supported = "MDI-X", "S";
+				vpwr-supply = <&reg_pse>;
+			};
+		};
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_1_pins>;
+	status = "okay";
+
+	cst816s: cst816s@15 {
+		compatible = "hynitron,cst816s";
+		reg = <0x15>;
+		interrupt-parent = <&pio>;
+		interrupts = <34 IRQ_TYPE_EDGE_RISING>;
+		reset-gpios = <&pio 33 GPIO_ACTIVE_LOW>;
+		linux,keycodes = <BTN_RIGHT>, <BTN_LEFT>,
+				 <BTN_FORWARD>, <BTN_BACK>,
+				 <BTN_TOOL_TRIPLETAP>;
+		touchscreen-size-x = <240>;
+		touchscreen-size-y = <240>;
+		touchscreen-swapped-x-y;
+		touchscreen-inverted-y;
+		panel = <&tft_panel>;
+	};
+
+	swled_gpio0: tca9535@20 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "ti,tca9535";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&pio>;
+		interrupts = <54 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	swled_gpio1: tca9535@22 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "ti,tca9535";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupt-parent = <&pio>;
+		interrupts = <32 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	system-leds@30 {
+		compatible = "srg,sysled";
+		reg = <0x30>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_sys_red: led-system-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			reg = <1>;
+		};
+
+		led_sys_green: led-system-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			reg = <2>;
+		};
+
+		led_sys_blue: led-system-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			reg = <3>;
+		};
+
+		led_sys_white: led-system-white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			reg = <4>;
+		};
+	};
+};
+
+&mdio_bus {
+	clock-frequency = <12500000>;
+
+	phy0: ethernet-phy@0 {
+		/* CUX3410 - LAN */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+		#thermal-sensor-cells = <0>;
+
+		reset-gpios = <&pio 68 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <1000000>;
+
+		marvell,mdi-cfg-order = <0>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_WHITE>;
+			};
+
+			led@1 {
+				reg = <1>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_ORANGE>;
+			};
+
+			led@2 {
+				reg = <2>;
+				function = LED_FUNCTION_LAN;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+		};
+	};
+
+	phy8: ethernet-phy@8 {
+		/* CUX3410 - WAN */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		#thermal-sensor-cells = <0>;
+
+		reset-gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <1000000>;
+
+		marvell,mdi-cfg-order = <0>;
+	};
+
+	switch@10 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "maxlinear,mxl86282";
+		reg = <16>;
+		dsa,member = <1 0>;
+
+		status = "okay";
+
+		firmware-version = <1 0 85>;
+		firmware-name = "maxlinear/mxl862xxc.bin";
+
+		reset-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&swphy0>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&swphy1>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&swphy2>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-handle = <&swphy3>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan5";
+				phy-handle = <&swphy4>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "lan6";
+				phy-handle = <&swphy5>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@7 {
+				reg = <7>;
+				label = "lan7";
+				phy-handle = <&swphy6>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@8 {
+				reg = <8>;
+				label = "lan8";
+				phy-handle = <&swphy7>;
+				phy-mode = "internal";
+				status = "okay";
+			};
+
+			port@9 {
+				reg = <9>;
+				label = "cpu";
+				phy-mode = "10gbase-r";
+				ethernet = <&gmac1>;
+				dsa-tag-protocol = "mxl862xx-8021q";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+				};
+			};
+
+			port@13 {
+				reg = <13>;
+				label = "lan9";
+				phy-handle = <&phy0>;
+				phy-mode = "usxgmii";
+				managed = "in-band-status";
+				status = "okay";
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			swphy0: swphy@0 {
+				reg = <0>;
+				#thermal-sensor-cells = <0>;
+				pses = <&pse_pi0>;
+			};
+			swphy1: swphy@1 {
+				reg = <1>;
+				pses = <&pse_pi1>;
+			};
+			swphy2: swphy@2 {
+				reg = <2>;
+				pses = <&pse_pi2>;
+			};
+			swphy3: swphy@3 {
+				reg = <3>;
+				pses = <&pse_pi3>;
+			};
+			swphy4: swphy@4 {
+				reg = <4>;
+				pses = <&pse_pi4>;
+			};
+			swphy5: swphy@5 {
+				reg = <5>;
+				pses = <&pse_pi5>;
+			};
+			swphy6: swphy@6 {
+				reg = <6>;
+				pses = <&pse_pi6>;
+			};
+			swphy7: swphy@7 {
+				reg = <7>;
+				pses = <&pse_pi7>;
+			};
+		};
+	};
+};
+
+&emmc_block {
+	partitions {
+		block-partition-mfginfo {
+			partname = "mfginfo";
+
+			nvmem-layout {
+				compatible = "adtran,mfginfo";
+
+				macaddr: mfg-mac {
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+	};
+};
+
+&pio {
+	i2c2_1_pins: i2c2-pins-g1 {
+		mux {
+			function = "i2c";
+			groups = "i2c2_1";
+		};
+	};
+
+	mux_oe: mux-oe-hog {
+		gpio-hog;
+		gpios = <52 GPIO_ACTIVE_LOW>;
+		line-name = "mux-oe";
+		output-high;
+	};
+
+	fan_enable: fan-enable-hog {
+		gpio-hog;
+		gpios = <59 GPIO_ACTIVE_HIGH>;
+		line-name = "fan-enable";
+		output-high;
+	};
+
+	/**
+	 * The hack to release PSE2 driver from reset
+	 * for units older than PVT2.
+	 */
+	pse2_reset_pvt: pse2-reset-pvt-hog {
+		gpio-hog;
+		gpios = <26 GPIO_ACTIVE_HIGH>;
+		line-name = "pse2-reset-pvt";
+		output-high;
+	};
+
+	pwm0_fan_pins: pwm0-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm0";
+		};
+	};
+
+	pwm1_fan_pins: pwm1-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm1";
+		};
+	};
+
+	pwm2_backlight_pins: pwm2-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm2_0";
+		};
+
+		conf {
+			groups = "pwm2_0";
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
+		};
+	};
+};
+
+&pwm {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+
+	tft_panel: display@0 {
+		compatible = "ph240240t004-zar", "panel-mipi-dbi-spi";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <1>;
+		spi-rx-buswidth = <0>;
+		spi-cpha;
+		spi-cpol;
+
+		dc-gpios = <&pio 69 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&pio 70 GPIO_ACTIVE_HIGH>;
+		backlight = <&backlight>;
+		write-only;
+
+		width-mm = <23>;
+		height-mm = <23>;
+
+		panel-timing {
+			hactive = <240>;
+			vactive = <240>;
+			hback-porch = <80>;
+			vback-porch = <0>;
+			clock-frequency = <0>;
+			hfront-porch = <0>;
+			hsync-len = <0>;
+			vfront-porch = <0>;
+			vsync-len = <0>;
+		};
+	};
+};
+
+&ssusb0 {
+	status = "okay";
+};
+
+&ssusb1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		port@0 {
+			status = "disabled";
+		};
+
+		port@1 {
+			status = "disabled";
+		};
+
+		port@2 {
+			status = "disabled";
+		};
+
+		port@3 {
+			label = "aux";
+		};
+	};
+};
+
+&tphy {
+	status = "okay";
+};
+
+&xsphy {
+	status = "okay";
+};
