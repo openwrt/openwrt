@@ -9,3 +9,21 @@
  	help
  	  This enables SPI controller support for the Airoha EN7523 SoC.
  
+--- a/drivers/spi/spi-en7523.c
++++ b/drivers/spi/spi-en7523.c
+@@ -82,10 +82,11 @@ static void opfifo_write(u32 cmd, u32 le
+ 
+ static void set_cs(int state)
+ {
+-	if (state)
+-		opfifo_write(OP_CSH, 1);
+-	else
+-		opfifo_write(OP_CSL, 1);
++	u32 cmd = state ? OP_CSH : OP_CSL;
++
++	/* EN751221 drops writes if we don't send this twice. */
++	opfifo_write(cmd, 1);
++	opfifo_write(cmd, 1);
+ }
+ 
+ static void manual_begin_cmd(void)
