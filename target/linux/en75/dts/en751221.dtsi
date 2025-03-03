@@ -58,8 +58,8 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <2>;
 
-	interrupt-controller;
-	#interrupt-cells = <1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
 		econet,shadow-interrupts = <
 			 3  8
 			 4  9
@@ -76,7 +76,6 @@
 		interrupt-parent = <&intc>;
 		interrupts = <1>;
 		clock-frequency = <1843200>;
-		status = "disabled";
 	};
 
 	timer_hpt: timer_hpt@1fbf0400 {

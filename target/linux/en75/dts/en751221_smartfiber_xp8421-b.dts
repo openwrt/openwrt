@@ -21,14 +21,6 @@
 	};
 };
 
-&cpu_clock {
-	clock-frequency = <900000000>; // 900mhz
-};
-
-&uart {
-	status = "okay";
-};
-
 &nand {
 	status = "okay";
 	econet,bmt;
@@ -68,13 +60,11 @@
 		partition@1480000 {
 			label = "tclinux_alt";
 			reg = <0x1480000 0x1400000>;
-			read-only;
 		};
 
 		partition@2880000 {
 			label = "openjdk";
 			reg = <0x2880000 0x2000000>;
-			read-only;
 		};
 
 		partition@4880000 {
@@ -85,14 +75,11 @@
 		partition@d980000 {
 			label = "unknown";
 			reg = <0xd980000 0x4c0000>;
-			read-only;
 		};
 
 		partition@de40000 {
 			label = "reservearea";
 			reg = <0xde40000 0x1c0000>;
-			read-only;
 		};
-
 	};
 };
