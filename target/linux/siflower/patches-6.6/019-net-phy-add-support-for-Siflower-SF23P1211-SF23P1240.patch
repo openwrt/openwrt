@@ -11,7 +11,7 @@ Signed-off-by: haoming.chen <haoming.chen@siflower.com.cn>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -482,3 +482,8 @@ endif # PHYLIB
+@@ -484,3 +484,8 @@ endif # PHYLIB
  config MICREL_KS8995MA
  	tristate "Micrel KS8995MA 5-ports 10/100 managed Ethernet switch"
  	depends on SPI
@@ -22,7 +22,7 @@ Signed-off-by: haoming.chen <haoming.chen@siflower.com.cn>
 +	  Currently supports the SF1211F, SF1240 gigabit PHY.
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -107,3 +107,4 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
+@@ -108,3 +108,4 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o
  obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
  obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
