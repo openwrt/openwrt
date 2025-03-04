@@ -84,9 +84,9 @@ change-id: 20250107-airoha-ets-fix-chan-e35ccac76d64
 
 Best regards,
 
---- a/drivers/net/ethernet/mediatek/airoha_eth.c
-+++ b/drivers/net/ethernet/mediatek/airoha_eth.c
-@@ -2846,11 +2846,14 @@ static int airoha_qdma_get_tx_ets_stats(
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2064,11 +2064,14 @@ static int airoha_qdma_get_tx_ets_stats(
  static int airoha_tc_setup_qdisc_ets(struct airoha_gdm_port *port,
  				     struct tc_ets_qopt_offload *opt)
  {

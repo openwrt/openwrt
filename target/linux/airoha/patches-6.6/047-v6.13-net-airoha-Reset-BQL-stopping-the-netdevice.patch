@@ -14,11 +14,9 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  drivers/net/ethernet/mediatek/airoha_eth.c | 10 +++++++++-
  1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/airoha_eth.c b/drivers/net/ethernet/mediatek/airoha_eth.c
-index 21d6eed8aece..f463a505f5ba 100644
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ b/drivers/net/ethernet/mediatek/airoha_eth.c
-@@ -2342,7 +2342,7 @@ static int airoha_dev_stop(struct net_device *dev)
+@@ -2469,7 +2469,7 @@ static int airoha_dev_stop(struct net_de
  {
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_qdma *qdma = port->qdma;
@@ -27,7 +25,7 @@ index 21d6eed8aece..f463a505f5ba 100644
  
  	netif_tx_disable(dev);
  	err = airoha_set_gdm_ports(qdma->eth, false);
-@@ -2353,6 +2353,14 @@ static int airoha_dev_stop(struct net_device *dev)
+@@ -2480,6 +2480,14 @@ static int airoha_dev_stop(struct net_de
  			  GLOBAL_CFG_TX_DMA_EN_MASK |
  			  GLOBAL_CFG_RX_DMA_EN_MASK);
  
@@ -42,6 +40,3 @@ index 21d6eed8aece..f463a505f5ba 100644
  	return 0;
  }
  
--- 
-2.48.1
-
