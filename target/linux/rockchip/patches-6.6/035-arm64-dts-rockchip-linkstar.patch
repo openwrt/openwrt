@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,770 @@
+@@ -0,0 +1,756 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 23 Feb 2025
 +// Device Tree Info
@@ -539,20 +539,6 @@
 +
 +
 +
-+/*
-+he rtl8221 supports multiple SERDES modes:
-+- SGMII
-+- 2500base-x
-+- HiSGMII
-+
-+Further it supports rate adaption on SERDES links to allow
-+slow ethernet speeds (10/100/1000mbit) to work on 2500base-x/HiSGMII
-+links without reducing the SERDES speed.
-+
-+When operating without rate adapters the SERDES link will follow the
-+ethernet speed.
-+
-+*/
 +
 +
 +&mdio0 {
