@@ -366,6 +366,18 @@ define Device/jotale_js76x8-32m
 endef
 TARGET_DEVICES += jotale_js76x8-32m
 
+define Device/keenetic_kn-1221
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 29440k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1221
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size 14720k | zyimage -d 0x801221 -v "KN-1221"
+endef
+TARGET_DEVICES += keenetic_kn-1221
+
 define Device/keenetic_kn-1613
   IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
