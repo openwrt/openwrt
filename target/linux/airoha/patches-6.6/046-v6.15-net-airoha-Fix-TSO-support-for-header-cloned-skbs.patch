@@ -22,11 +22,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/ethernet/mediatek/airoha_eth.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/airoha_eth.c b/drivers/net/ethernet/mediatek/airoha_eth.c
-index 09f448f29124..aa5f220ddbcf 100644
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ b/drivers/net/ethernet/mediatek/airoha_eth.c
-@@ -2556,11 +2556,10 @@ static u16 airoha_dev_select_queue(struct net_device *dev, struct sk_buff *skb,
+@@ -2549,11 +2549,10 @@ static u16 airoha_dev_select_queue(struc
  static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
  				   struct net_device *dev)
  {
@@ -39,7 +37,7 @@ index 09f448f29124..aa5f220ddbcf 100644
  	struct netdev_queue *txq;
  	struct airoha_queue *q;
  	void *data = skb->data;
-@@ -2583,8 +2582,9 @@ static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+@@ -2576,8 +2575,9 @@ static netdev_tx_t airoha_dev_xmit(struc
  		if (skb_cow_head(skb, 0))
  			goto error;
  
@@ -51,7 +49,7 @@ index 09f448f29124..aa5f220ddbcf 100644
  
  			tcp_hdr(skb)->check = (__force __sum16)csum;
  			msg0 |= FIELD_PREP(QDMA_ETH_TXMSG_TSO_MASK, 1);
-@@ -2613,7 +2613,7 @@ static netdev_tx_t airoha_dev_xmit(struct sk_buff *skb,
+@@ -2606,7 +2606,7 @@ static netdev_tx_t airoha_dev_xmit(struc
  	for (i = 0; i < nr_frags; i++) {
  		struct airoha_qdma_desc *desc = &q->desc[index];
  		struct airoha_queue_entry *e = &q->entry[index];
@@ -60,6 +58,3 @@ index 09f448f29124..aa5f220ddbcf 100644
  		dma_addr_t addr;
  		u32 val;
  
--- 
-2.48.1
-
