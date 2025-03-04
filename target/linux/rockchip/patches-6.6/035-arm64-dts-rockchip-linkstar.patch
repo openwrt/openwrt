@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,768 @@
+@@ -0,0 +1,770 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 23 Feb 2025
 +// Device Tree Info
@@ -553,8 +553,10 @@
 +ethernet speed.
 +
 +*/
++
++
 +&mdio0 {
-+	hisgmii_phy0: ethernet-phy@0 {
++	2500basex_phy0: ethernet-phy@0 {
 +		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
 +		max-speed = 25000;
@@ -562,7 +564,7 @@
 +};
 +
 +&mdio1 {
-+	hisgmii_phy1: ethernet-phy@0 {
++	2500basex_phy1: ethernet-phy@0 {
 +		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
 +		max-speed = 25000;
