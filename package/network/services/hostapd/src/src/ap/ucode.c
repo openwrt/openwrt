@@ -362,6 +362,8 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 
 	hapd->driver = iface->bss[0]->driver;
 	hapd->drv_priv = iface->bss[0]->drv_priv;
+	os_strlcpy(hapd->ctrl_sock_iface, hapd->conf->iface,
+		   sizeof(hapd->ctrl_sock_iface));
 	if (interfaces->ctrl_iface_init &&
 	    interfaces->ctrl_iface_init(hapd) < 0)
 		goto free_hapd;
