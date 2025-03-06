@@ -175,6 +175,26 @@
 
 		partitions {
 			compatible = "qcom,smem-part";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition-0-devinfo {
+				label = "devinfo";
+				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
 		};
 	};
 };
@@ -368,30 +388,40 @@
 	status = "okay";
 	phy-handle = <&qca8075_0>;
 	label = "lan1";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp2 {
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "lan2";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan3";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan4";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "wan";
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi {
