@@ -529,13 +529,14 @@
 
 &pcie0 {
 	status = "okay";
+
 	bridge@0,0 {
 		reg = <0x00000000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 		
-		wifi {
+		wifi@1,0 {
 			status = "okay";
 			/* ath11k has no DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
