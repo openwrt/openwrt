@@ -1614,7 +1614,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		                  IRQF_SHARED, "rtl839x-link-state", priv->ds);
 		break;
 	case RTL9300_FAMILY_ID:
-		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
+		err = request_irq(priv->link_state_irq, rtldsa_930x_switch_irq,
 				  IRQF_SHARED, "rtl930x-link-state", priv->ds);
 		break;
 	case RTL9310_FAMILY_ID:
