@@ -13,9 +13,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1820,6 +1820,15 @@ config DEBUG_RSEQ
- 
- 	  If unsure, say N.
+@@ -1879,6 +1879,15 @@ config ARCH_HAS_MEMBARRIER_CALLBACKS
+ config ARCH_HAS_MEMBARRIER_SYNC_CORE
+ 	bool
  
 +config MANGLE_BOOTARGS
 +	bool "Rename offending bootargs"
@@ -31,7 +31,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	help
 --- a/init/main.c
 +++ b/init/main.c
-@@ -608,6 +608,29 @@ static inline void setup_nr_cpu_ids(void
+@@ -621,6 +621,29 @@ static inline void setup_nr_cpu_ids(void
  static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  #endif
  
@@ -61,10 +61,10 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  /*
   * We need to store the untouched command line for future reference.
   * We also need to store the touched command line since the parameter
-@@ -897,6 +920,7 @@ void start_kernel(void)
- 	pr_notice("%s", linux_banner);
+@@ -927,6 +950,7 @@ void start_kernel(void)
+ 	jump_label_init();
+ 	static_call_init();
  	early_security_init();
- 	setup_arch(&command_line);
 +	mangle_bootargs(command_line);
  	setup_boot_config();
  	setup_command_line(command_line);
