@@ -1,0 +1,97 @@
+Subject: [PATCH V15 4/4] arm64: dts: qcom: ipq6018: add pwm node
+Date: Thu, 5 Oct 2023 21:35:50 +0530
+
+Describe the PWM block on IPQ6018.
+
+The PWM is in the TCSR area. Make &tcsr "simple-mfd" compatible, and add
+&pwm as child of &tcsr.
+
+Add also ipq6018 specific compatible string.
+
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Co-developed-by: Baruch Siach <baruch.siach@siklu.com>
+Signed-off-by: Baruch Siach <baruch.siach@siklu.com>
+Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
+---
+v15:
+
+  Fixed the indentation of pwm node
+
+v14:
+
+  Moved ranges just after reg as suggested by Krzysztof
+
+  Picked up the R-b tag
+
+v13:
+
+  No change
+
+v12: 
+
+  No change
+
+v11:
+
+  No change
+
+v10:
+
+  No change
+
+v9:
+
+  Add 'ranges' property (Rob)
+
+v8:
+
+  Add size cell to 'reg' (Rob)
+
+v7:
+
+  Use 'reg' instead of 'offset' (Rob)
+
+  Add qcom,tcsr-ipq6018 (Rob)
+
+  Drop clock-names (Bjorn)
+
+v6:
+
+  Make the PWM node child of TCSR (Rob Herring)
+
+  Add assigned-clocks/assigned-clock-rates (Uwe Kleine-König)
+
+v5: Use qcom,pwm-regs for TCSR phandle instead of direct regs
+
+v3: s/qcom,pwm-ipq6018/qcom,ipq6018-pwm/ (Rob Herring)
+
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+Index: arch/arm64/boot/dts/qcom/ipq6018.dtsi
+===================================================================
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -435,8 +435,21 @@
+ 		};
+ 
+ 		tcsr: syscon@1937000 {
+-			compatible = "qcom,tcsr-ipq6018", "syscon";
++			compatible = "qcom,tcsr-ipq6018", "syscon", "simple-mfd";
+ 			reg = <0x0 0x01937000 0x0 0x21000>;
++			ranges = <0x0 0x0 0x01937000 0x21000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pwm: pwm@a010 {
++				compatible = "qcom,ipq6018-pwm";
++				reg = <0xa010 0x20>;
++				clocks = <&gcc GCC_ADSS_PWM_CLK>;
++				assigned-clocks = <&gcc GCC_ADSS_PWM_CLK>;
++				assigned-clock-rates = <100000000>;
++				#pwm-cells = <2>;
++				status = "disabled";
++			};
+ 		};
+ 
+ 		usb2: usb@70f8800 {
