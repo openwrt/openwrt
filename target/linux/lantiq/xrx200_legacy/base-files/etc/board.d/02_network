@@ -57,7 +57,7 @@ lantiq_setup_macs()
 		;;
 	tplink,tdw8970|\
 	tplink,tdw8980)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0xf100)" 1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x100)" 1)
 		;;
 	esac
 
