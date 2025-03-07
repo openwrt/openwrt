@@ -1024,13 +1024,23 @@ const host_editor = {
 
 const UnetHostEdit = editor.new(host_editor);
 
-function is_vxlan_service(ctx, argv, named, spec)
+function has_service_type(ctx, named, name)
 {
 	let type = named.type;
 	if (ctx.data.edit)
 		type ??= ctx.data.edit.type;
 
-	return type == "vxlan";
+	return type == name;
+}
+
+function is_vxlan_service(ctx, argv, named, spec)
+{
+	return has_service_type(ctx, named, "vxlan");
+}
+
+function is_unetmsg_service(ctx, argv, named, spec)
+{
+	return has_service_type(ctx, named, "unetmsg");
 }
 
 function get_config_object(ctx, spec, obj, argv)
@@ -1104,6 +1114,16 @@ const service_editor = {
 			args: {
 				type: "enum",
 				value: (ctx) => keys(ctx.data.netdata.json.hosts)
+			}
+		},
+		"unetmsg-allowed": {
+			help: "Allowed topics for this unetmsg service group",
+			attribute: "allowed",
+			available: is_unetmsg_service,
+			get_object: get_config_object,
+			multiple: true,
+			args: {
+				type: "string"
 			}
 		},
 	}
