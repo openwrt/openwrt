@@ -94,7 +94,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static void mtk_hw_reset(struct mtk_eth *eth)
  {
  	u32 val;
-@@ -4357,6 +4410,8 @@ static void mtk_pending_work(struct work
+@@ -4358,6 +4411,8 @@ static void mtk_pending_work(struct work
  	rtnl_lock();
  	set_bit(MTK_RESETTING, &eth->state);
  

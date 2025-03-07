@@ -42,7 +42,15 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  	mcr |= MAC_MCR_TX_EN | MAC_MCR_RX_EN | MAC_MCR_FORCE_LINK;
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
-@@ -4476,6 +4489,55 @@ static int mtk_set_pauseparam(struct net
+@@ -3956,6 +3969,7 @@ static int mtk_hw_init(struct mtk_eth *e
+ 			continue;
+ 
+ 		mtk_w32(eth, MAC_MCR_FORCE_LINK_DOWN, MTK_MAC_MCR(i));
++		mtk_w32(eth, FIELD_PREP(MAC_EEE_LPI_TXIDLE_THD, 1), MTK_MAC_EEECR(i));
+ 		mtk_set_mcr_max_rx(netdev_priv(dev),
+ 				   dev->mtu + MTK_RX_ETH_HLEN);
+ 	}
+@@ -4476,6 +4490,55 @@ static int mtk_set_pauseparam(struct net
  	return phylink_ethtool_set_pauseparam(mac->phylink, pause);
  }
  
@@ -82,7 +90,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
 +	reg |= FIELD_PREP(MAC_EEE_WAKEUP_TIME_1000, 17) |
 +	       FIELD_PREP(MAC_EEE_WAKEUP_TIME_100, 36);
 +
-+	if (!eee->tx_lpi_enabled)
++	if (!txidle_thd_ms)
 +		/* Force LPI Mode without a delay */
 +		reg |= MAC_EEE_LPI_MODE;
 +
@@ -98,7 +106,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  static u16 mtk_select_queue(struct net_device *dev, struct sk_buff *skb,
  			    struct net_device *sb_dev)
  {
-@@ -4508,6 +4570,8 @@ static const struct ethtool_ops mtk_etht
+@@ -4508,6 +4571,8 @@ static const struct ethtool_ops mtk_etht
  	.set_pauseparam		= mtk_set_pauseparam,
  	.get_rxnfc		= mtk_get_rxnfc,
  	.set_rxnfc		= mtk_set_rxnfc,
