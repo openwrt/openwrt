@@ -44,7 +44,7 @@ Signed-off-by: Dominique Martinet <dominique.martinet@atmark-techno.com>
  static void intr_complete (struct urb *urb)
  {
  	struct usbnet	*dev = urb->context;
-@@ -1766,13 +1777,10 @@ usbnet_probe (struct usb_interface *udev
+@@ -1762,13 +1773,10 @@ usbnet_probe (struct usb_interface *udev
  		if (status < 0)
  			goto out1;
  
