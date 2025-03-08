@@ -23,34 +23,23 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  		 MAC_MCR_FORCE_DPX | MAC_MCR_FORCE_TX_FC |
  		 MAC_MCR_FORCE_RX_FC);
  
-@@ -811,6 +812,18 @@ static void mtk_mac_link_up(struct phyli
+@@ -811,6 +812,15 @@ static void mtk_mac_link_up(struct phyli
  	if (rx_pause)
  		mcr |= MAC_MCR_FORCE_RX_FC;
  
-+	if (mode == MLO_AN_PHY && phy && phy_init_eee(phy, false) >= 0) {
-+		switch (speed) {
-+		case SPEED_2500:
-+		case SPEED_1000:
-+			mcr |= MAC_MCR_EEE1G;
-+			break;
-+		case SPEED_100:
-+			mcr |= MAC_MCR_EEE100M;
-+			break;
-+		}
++	if (mode == MLO_AN_PHY && phy && mac->tx_lpi_enabled && phy_init_eee(phy, false) >= 0) {
++		mcr |= MAC_MCR_EEE100M | MAC_MCR_EEE1G;
++		mtk_w32(mac->hw,
++			FIELD_PREP(MAC_EEE_WAKEUP_TIME_1000, 17) |
++			FIELD_PREP(MAC_EEE_WAKEUP_TIME_100, 36) |
++			FIELD_PREP(MAC_EEE_LPI_TXIDLE_THD, mac->txidle_thd_ms),
++			MTK_MAC_EEECR(mac->id));
 +	}
 +
  	mcr |= MAC_MCR_TX_EN | MAC_MCR_RX_EN | MAC_MCR_FORCE_LINK;
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
-@@ -3956,6 +3969,7 @@ static int mtk_hw_init(struct mtk_eth *e
- 			continue;
- 
- 		mtk_w32(eth, MAC_MCR_FORCE_LINK_DOWN, MTK_MAC_MCR(i));
-+		mtk_w32(eth, FIELD_PREP(MAC_EEE_LPI_TXIDLE_THD, 1), MTK_MAC_EEECR(i));
- 		mtk_set_mcr_max_rx(netdev_priv(dev),
- 				   dev->mtu + MTK_RX_ETH_HLEN);
- 	}
-@@ -4476,6 +4490,55 @@ static int mtk_set_pauseparam(struct net
+@@ -4476,6 +4486,61 @@ static int mtk_set_pauseparam(struct net
  	return phylink_ethtool_set_pauseparam(mac->phylink, pause);
  }
  
@@ -65,7 +54,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
 +		return ret;
 +
 +	reg = mtk_r32(mac->hw, MTK_MAC_EEECR(mac->id));
-+	eee->tx_lpi_enabled = !(reg & MAC_EEE_LPI_MODE);
++	eee->tx_lpi_enabled = mac->tx_lpi_enabled;
 +	eee->tx_lpi_timer = FIELD_GET(MAC_EEE_LPI_TXIDLE_THD, reg) * 1000;
 +
 +	return 0;
@@ -98,7 +87,13 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
 +	if (ret)
 +		return ret;
 +
++	mac->tx_lpi_enabled = eee->tx_lpi_enabled;
++	mac->txidle_thd_ms = txidle_thd_ms;
 +	mtk_w32(mac->hw, reg, MTK_MAC_EEECR(mac->id));
++	if (eee->eee_enabled && eee->eee_active && eee->tx_lpi_enabled)
++		mtk_m32(mac->hw, 0, MAC_MCR_EEE100M | MAC_MCR_EEE1G, MTK_MAC_MCR(mac->id));
++	else
++		mtk_m32(mac->hw, MAC_MCR_EEE100M | MAC_MCR_EEE1G, 0, MTK_MAC_MCR(mac->id));
 +
 +	return 0;
 +}
@@ -106,7 +101,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  static u16 mtk_select_queue(struct net_device *dev, struct sk_buff *skb,
  			    struct net_device *sb_dev)
  {
-@@ -4508,6 +4571,8 @@ static const struct ethtool_ops mtk_etht
+@@ -4508,6 +4573,8 @@ static const struct ethtool_ops mtk_etht
  	.set_pauseparam		= mtk_set_pauseparam,
  	.get_rxnfc		= mtk_get_rxnfc,
  	.set_rxnfc		= mtk_set_rxnfc,
@@ -115,6 +110,15 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  };
  
  static const struct net_device_ops mtk_netdev_ops = {
+@@ -4568,6 +4635,8 @@ static int mtk_add_mac(struct mtk_eth *e
+ 	}
+ 	mac = netdev_priv(eth->netdev[id]);
+ 	eth->mac[id] = mac;
++	mac->tx_lpi_enabled = true;
++	mac->txidle_thd_ms = 1;
+ 	mac->id = id;
+ 	mac->hw = eth;
+ 	mac->of_node = np;
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -453,6 +453,8 @@
@@ -142,3 +146,12 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  /* Mac status registers */
  #define MTK_MAC_MSR(x)		(0x10108 + (x * 0x100))
  #define MAC_MSR_EEE1G		BIT(7)
+@@ -1321,6 +1332,8 @@ struct mtk_mac {
+ 	int				id;
+ 	phy_interface_t			interface;
+ 	u8				ppe_idx;
++	bool				tx_lpi_enabled;
++	u8				txidle_thd_ms;
+ 	int				speed;
+ 	struct device_node		*of_node;
+ 	struct phylink			*phylink;

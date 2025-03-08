@@ -426,7 +426,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	u32 mcr;
  
  	mcr = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
-@@ -829,9 +916,63 @@ static void mtk_mac_link_up(struct phyli
+@@ -826,9 +913,63 @@ static void mtk_mac_link_up(struct phyli
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
  
@@ -490,7 +490,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.mac_finish = mtk_mac_finish,
  	.mac_link_down = mtk_mac_link_down,
  	.mac_link_up = mtk_mac_link_up,
-@@ -3430,6 +3571,9 @@ static int mtk_open(struct net_device *d
+@@ -3427,6 +3568,9 @@ static int mtk_open(struct net_device *d
  
  	ppe_num = eth->soc->ppe_num;
  
@@ -500,7 +500,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
  		netdev_err(dev, "%s: could not attach PHY: %d\n", __func__,
-@@ -3580,6 +3724,9 @@ static int mtk_stop(struct net_device *d
+@@ -3577,6 +3721,9 @@ static int mtk_stop(struct net_device *d
  	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
  		mtk_ppe_stop(eth->ppe[i]);
  
@@ -510,7 +510,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -4645,6 +4792,7 @@ static const struct net_device_ops mtk_n
+@@ -4647,6 +4794,7 @@ static const struct net_device_ops mtk_n
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
  {
  	const __be32 *_id = of_get_property(np, "reg", NULL);
@@ -518,7 +518,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phy_interface_t phy_mode;
  	struct phylink *phylink;
  	struct mtk_mac *mac;
-@@ -4681,16 +4829,41 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4685,16 +4833,41 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->id = id;
  	mac->hw = eth;
  	mac->of_node = np;
@@ -568,7 +568,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	memset(mac->hwlro_ip, 0, sizeof(mac->hwlro_ip));
-@@ -4773,8 +4946,21 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4777,8 +4950,21 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -590,7 +590,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4825,6 +5011,26 @@ free_netdev:
+@@ -4829,6 +5015,26 @@ free_netdev:
  	return err;
  }
  
@@ -617,7 +617,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev)
  {
  	struct net_device *dev, *tmp;
-@@ -4971,7 +5177,8 @@ static int mtk_probe(struct platform_dev
+@@ -4975,7 +5181,8 @@ static int mtk_probe(struct platform_dev
  			regmap_write(cci, 0, 3);
  	}
  
@@ -627,7 +627,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		err = mtk_sgmii_init(eth);
  
  		if (err)
-@@ -5082,6 +5289,24 @@ static int mtk_probe(struct platform_dev
+@@ -5086,6 +5293,24 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -652,7 +652,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SHARED_INT)) {
  		err = devm_request_irq(eth->dev, eth->irq[0],
  				       mtk_handle_irq, 0,
-@@ -5185,6 +5410,11 @@ static int mtk_remove(struct platform_de
+@@ -5189,6 +5414,11 @@ static int mtk_remove(struct platform_de
  		mtk_stop(eth->netdev[i]);
  		mac = netdev_priv(eth->netdev[i]);
  		phylink_disconnect_phy(mac->phylink);
@@ -893,7 +893,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct mtk_tx_dma_desc_info {
  	dma_addr_t	addr;
-@@ -1336,6 +1393,9 @@ struct mtk_mac {
+@@ -1338,6 +1395,9 @@ struct mtk_mac {
  	struct device_node		*of_node;
  	struct phylink			*phylink;
  	struct phylink_config		phylink_config;
@@ -903,7 +903,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mtk_eth			*hw;
  	struct mtk_hw_stats		*hw_stats;
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
-@@ -1459,6 +1519,19 @@ static inline u32 mtk_get_ib2_multicast_
+@@ -1461,6 +1521,19 @@ static inline u32 mtk_get_ib2_multicast_
  	return MTK_FOE_IB2_MULTICAST;
  }
  
@@ -923,7 +923,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* read the hardware status register */
  void mtk_stats_update_mac(struct mtk_mac *mac);
  
-@@ -1467,8 +1540,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
+@@ -1469,8 +1542,10 @@ u32 mtk_r32(struct mtk_eth *eth, unsigne
  u32 mtk_m32(struct mtk_eth *eth, u32 mask, u32 set, unsigned int reg);
  
  int mtk_gmac_sgmii_path_setup(struct mtk_eth *eth, int mac_id);
