@@ -1,0 +1,108 @@
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -11,6 +11,7 @@ platform-$(CONFIG_BMIPS_GENERIC)	+= bmip
+ platform-$(CONFIG_CAVIUM_OCTEON_SOC)	+= cavium-octeon/
+ platform-$(CONFIG_MIPS_COBALT)		+= cobalt/
+ platform-$(CONFIG_MACH_DECSTATION)	+= dec/
++platform-$(CONFIG_ECONET_EN75)		+= en75/
+ platform-$(CONFIG_MIPS_GENERIC)		+= generic/
+ platform-$(CONFIG_MACH_JAZZ)		+= jazz/
+ platform-$(CONFIG_LANTIQ)		+= lantiq/
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -401,6 +401,19 @@ config MACH_DECSTATION
+ 
+ 	  otherwise choose R3000.
+ 
++config ECONET_EN75
++	bool "EcoNet EN75xx MIPS machines"
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select CPU_BIG_ENDIAN
++	select SYS_HAS_CPU_MIPS32_R2
++	select SYS_SUPPORTS_MIPS16
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select USE_OF
++	select BOOT_RAW
++	select SYS_HAS_EARLY_PRINTK
++	select EARLY_PRINTK_8250
++	select USE_GENERIC_EARLY_PRINTK_8250
++
+ config MACH_JAZZ
+ 	bool "Jazz family of machines"
+ 	select ARC_MEMORY
+@@ -976,6 +989,7 @@ source "arch/mips/ath79/Kconfig"
+ source "arch/mips/bcm47xx/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/bmips/Kconfig"
++source "arch/mips/en75/Kconfig"
+ source "arch/mips/generic/Kconfig"
+ source "arch/mips/ingenic/Kconfig"
+ source "arch/mips/jazz/Kconfig"
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -149,6 +149,14 @@ config DW_APB_ICTL
+ 	select GENERIC_IRQ_CHIP
+ 	select IRQ_DOMAIN_HIERARCHY
+ 
++config EN751221_INTC
++	bool
++	select GENERIC_IRQ_CHIP
++	select IRQ_DOMAIN
++	help
++	  Support for the EcoNet EN751221 family of SoCs based
++	  on the MIPS 34Kc core.
++
+ config FARADAY_FTINTC010
+ 	bool
+ 	select IRQ_DOMAIN
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_ARCH_BCM2835)		+= irq-bcm28
+ obj-$(CONFIG_ARCH_ACTIONS)		+= irq-owl-sirq.o
+ obj-$(CONFIG_DAVINCI_CP_INTC)		+= irq-davinci-cp-intc.o
+ obj-$(CONFIG_EXYNOS_IRQ_COMBINER)	+= exynos-combiner.o
++obj-$(CONFIG_EN751221_INTC)		+= irq-en751221.o
+ obj-$(CONFIG_FARADAY_FTINTC010)		+= irq-ftintc010.o
+ obj-$(CONFIG_ARCH_HIP04)		+= irq-hip04.o
+ obj-$(CONFIG_ARCH_LPC32XX)		+= irq-lpc32xx.o
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -465,6 +465,14 @@ config VF_PIT_TIMER
+ config SYS_SUPPORTS_SH_CMT
+ 	bool
+ 
++config EN75_TIMER_HPT
++	bool "EcoNet EN75xx High Performance Timer"
++	depends on HAS_IOMEM
++	select TIMER_OF
++	select CLKSRC_MMIO
++	help
++	  Support for timer on EcoNet EN75xx MIPS based SoCs.
++
+ config MTK_TIMER
+ 	bool "Mediatek timer driver" if COMPILE_TEST
+ 	depends on HAS_IOMEM
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -50,6 +50,7 @@ obj-$(CONFIG_CLKSRC_SAMSUNG_PWM)	+= sams
+ obj-$(CONFIG_FSL_FTM_TIMER)	+= timer-fsl-ftm.o
+ obj-$(CONFIG_VF_PIT_TIMER)	+= timer-vf-pit.o
+ obj-$(CONFIG_CLKSRC_QCOM)	+= timer-qcom.o
++obj-$(CONFIG_EN75_TIMER_HPT)	+= timer-en75-hpt.o
+ obj-$(CONFIG_MTK_TIMER)		+= timer-mediatek.o
+ obj-$(CONFIG_MTK_CPUX_TIMER)	+= timer-mediatek-cpux.o
+ obj-$(CONFIG_CLKSRC_PISTACHIO)	+= timer-pistachio.o
+--- a/arch/mips/boot/compressed/uart-16550.c
++++ b/arch/mips/boot/compressed/uart-16550.c
+@@ -23,6 +23,11 @@
+ #define PORT(offset) (CKSEG1ADDR(INGENIC_UART_BASE_ADDR) + (4 * offset))
+ #endif
+ 
++#ifdef CONFIG_ECONET_EN75
++#define EN75_UART_BASE	0x1fbf0003
++#define PORT(offset) (CKSEG1ADDR(EN75_UART_BASE) + (4 * offset))
++#endif
++
+ #ifndef IOTYPE
+ #define IOTYPE char
+ #endif
