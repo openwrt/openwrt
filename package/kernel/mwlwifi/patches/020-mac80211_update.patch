@@ -13,7 +13,7 @@
  
 --- a/debugfs.c
 +++ b/debugfs.c
-@@ -498,9 +498,9 @@ static ssize_t mwl_debugfs_vif_read(stru
+@@ -550,9 +550,9 @@ static ssize_t mwl_debugfs_vif_read(stru
  		switch (vif->type) {
  		case NL80211_IFTYPE_AP:
  			len += scnprintf(p + len, size - len, "type: ap\n");
@@ -26,7 +26,7 @@
  			len += scnprintf(p + len, size - len,
  					 "ssid: %s\n", ssid);
  			len += scnprintf(p + len, size - len,
-@@ -522,8 +522,8 @@ static ssize_t mwl_debugfs_vif_read(stru
+@@ -574,8 +574,8 @@ static ssize_t mwl_debugfs_vif_read(stru
  					 "type: unknown\n");
  			break;
  		}
@@ -37,7 +37,7 @@
  			len += scnprintf(p + len, size - len,
  					 "channel: %d: width: %d\n",
  					 chan_def->chan->hw_value,
-@@ -596,18 +596,18 @@ static ssize_t mwl_debugfs_sta_read(stru
+@@ -648,18 +648,18 @@ static ssize_t mwl_debugfs_sta_read(stru
  			sta_info->wds ? "true" : "false",
  			sta_info->ba_hist.enable ? "enable" : "disable",
  			sta_info->is_amsdu_allowed ? sta_info->amsdu_ctrl.cap : 0 ,
@@ -68,7 +68,7 @@
  			sta->tdls,
  			sta->tdls_initiator,
  			sta->wme,
-@@ -1158,7 +1158,7 @@ static ssize_t mwl_debugfs_dfs_radar_wri
+@@ -1210,7 +1210,7 @@ static ssize_t mwl_debugfs_dfs_radar_wri
  	struct mwl_priv *priv = (struct mwl_priv *)file->private_data;
  
  	wiphy_info(priv->hw->wiphy, "simulate radar detected\n");
@@ -127,7 +127,7 @@
  			a_band = true;
  		else
  			return -EINVAL;
-@@ -2090,7 +2094,7 @@ int mwl_fwcmd_set_beacon(struct ieee8021
+@@ -2092,7 +2096,7 @@ int mwl_fwcmd_set_beacon(struct ieee8021
  	if (mwl_fwcmd_set_wsc_ie(hw, b_inf->ie_wsc_len, b_inf->ie_wsc_ptr))
  		goto err;
  
@@ -136,7 +136,7 @@
  		goto err;
  
  	if (b_inf->cap_info & WLAN_CAPABILITY_SPECTRUM_MGMT)
-@@ -2152,38 +2156,38 @@ int mwl_fwcmd_set_new_stn_add(struct iee
+@@ -2154,38 +2158,38 @@ int mwl_fwcmd_set_new_stn_add(struct iee
  	ether_addr_copy(pcmd->mac_addr, sta->addr);
  
  	if (hw->conf.chandef.chan->band == NL80211_BAND_2GHZ)
@@ -189,7 +189,7 @@
  	}
  
  	pcmd->is_qos_sta = sta->wme;
-@@ -2239,38 +2243,38 @@ int mwl_fwcmd_set_new_stn_add_sc4(struct
+@@ -2241,38 +2245,38 @@ int mwl_fwcmd_set_new_stn_add_sc4(struct
  	ether_addr_copy(pcmd->mac_addr, sta->addr);
  
  	if (hw->conf.chandef.chan->band == NL80211_BAND_2GHZ)
@@ -242,7 +242,7 @@
  	}
  
  	pcmd->is_qos_sta = sta->wme;
-@@ -2787,9 +2791,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
+@@ -2789,9 +2793,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
  	pcmd->ba_info.create_params.flags = cpu_to_le32(ba_flags);
  	pcmd->ba_info.create_params.queue_id = stream->idx;
  	pcmd->ba_info.create_params.param_info =
@@ -254,7 +254,7 @@
  		 IEEE80211_HT_AMPDU_PARM_DENSITY);
  	if (direction == BA_FLAG_DIRECTION_UP) {
  		pcmd->ba_info.create_params.reset_seq_no = 0;
-@@ -2799,9 +2803,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
+@@ -2801,9 +2805,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
  		pcmd->ba_info.create_params.current_seq = cpu_to_le16(0);
  	}
  	if (priv->chip_type == MWL8964 &&
@@ -268,16 +268,16 @@
  	}
 --- a/hif/pcie/8864/tx.c
 +++ b/hif/pcie/8864/tx.c
-@@ -490,7 +490,7 @@ static void pcie_non_pfu_tx_done(struct
- 				} else
- 					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
- 				skb_pull(done_skb, sizeof(*dma_data) - hdrlen);
--				ieee80211_tx_status(priv->hw, done_skb);
-+				ieee80211_tx_status_skb(priv->hw, done_skb);
- 				dev_kfree_skb_any(done_skb);
- 				done_skb = NULL;
- 			}
-@@ -743,7 +743,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
+@@ -478,7 +478,7 @@ static void pcie_non_pfu_tx_done(struct
+ 			} else
+ 				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+ 			skb_pull(done_skb, sizeof(*dma_data) - hdrlen);
+-			ieee80211_tx_status(priv->hw, done_skb);
++			ieee80211_tx_status_skb(priv->hw, done_skb);
+ next:
+ 			tx_hndl = tx_hndl->pnext;
+ 			tx_desc = tx_hndl->pdesc;
+@@ -730,7 +730,7 @@ void pcie_8864_tx_xmit(struct ieee80211_
  	index = SYSADPT_TX_WMM_QUEUES - index - 1;
  	txpriority = index;
  
@@ -286,7 +286,7 @@
  	  !(xmitcontrol & EAGLE_TXD_XMITCTRL_USE_MC_RATE) &&
  	    ieee80211_is_data_qos(wh->frame_control)) {
  		tid = qos & 0xf;
-@@ -925,4 +925,4 @@ void pcie_8864_tx_del_sta_amsdu_pkts(str
+@@ -912,4 +912,4 @@ void pcie_8864_tx_del_sta_amsdu_pkts(str
  		}
  	}
  	spin_unlock_bh(&sta_info->amsdu_lock);
@@ -313,7 +313,7 @@
  
  bypass_ack:
  		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
-@@ -596,13 +596,13 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
+@@ -593,13 +593,13 @@ void pcie_tx_xmit_ndp(struct ieee80211_h
  			ack_skb = skb_copy(skb, GFP_ATOMIC);
  			ack_info = IEEE80211_SKB_CB(ack_skb);
  			pcie_tx_prepare_info(priv, 0, ack_info);
@@ -340,16 +340,16 @@
  		   pcie_priv->txbd_ring_size);
  
  	for (num = 0; num < PCIE_MAX_TXRX_BD; num++) {
-@@ -444,7 +444,7 @@ static void pcie_pfu_tx_done(struct mwl_
- 				} else
- 					memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
- 				skb_pull(done_skb, sizeof(*pfu_dma) - hdrlen);
--				ieee80211_tx_status(priv->hw, done_skb);
-+				ieee80211_tx_status_skb(priv->hw, done_skb);
- 			}
+@@ -431,7 +431,7 @@ static void pcie_pfu_tx_done(struct mwl_
+ 			} else
+ 				memmove(dma_data->data - hdrlen, &dma_data->wh, hdrlen);
+ 			skb_pull(done_skb, sizeof(*pfu_dma) - hdrlen);
+-			ieee80211_tx_status(priv->hw, done_skb);
++			ieee80211_tx_status_skb(priv->hw, done_skb);
  		}
  next:
-@@ -694,7 +694,7 @@ void pcie_8997_tx_xmit(struct ieee80211_
+ 		memset(data_buf, 0, sizeof(*data_buf));
+@@ -682,7 +682,7 @@ void pcie_8997_tx_xmit(struct ieee80211_
  	index = SYSADPT_TX_WMM_QUEUES - index - 1;
  	txpriority = index;
  
@@ -358,7 +358,7 @@
  	  !(xmitcontrol & EAGLE_TXD_XMITCTRL_USE_MC_RATE) &&
  	    ieee80211_is_data_qos(wh->frame_control)) {
  		tid = qos & 0xf;
-@@ -875,4 +875,4 @@ void pcie_8997_tx_del_sta_amsdu_pkts(str
+@@ -863,4 +863,4 @@ void pcie_8997_tx_del_sta_amsdu_pkts(str
  		}
  	}
  	spin_unlock_bh(&sta_info->amsdu_lock);
@@ -376,7 +376,7 @@
  {
  	mwl_fwcmd_radio_disable(hw);
  
-@@ -368,15 +368,15 @@ static void mwl_mac80211_bss_info_change
+@@ -390,15 +390,15 @@ static void mwl_mac80211_bss_info_change
  		}
  	}
  
@@ -395,7 +395,7 @@
  {
  	struct mwl_priv *priv = hw->priv;
  	struct mwl_vif *mwl_vif;
-@@ -426,8 +426,8 @@ static void mwl_mac80211_bss_info_change
+@@ -448,8 +448,8 @@ static void mwl_mac80211_bss_info_change
  	if (changed & (BSS_CHANGED_BEACON_INT | BSS_CHANGED_BEACON)) {
  		struct sk_buff *skb;
  
@@ -406,7 +406,7 @@
  		    (!info->hidden_ssid)) {
  			if (mwl_vif->broadcast_ssid != true) {
  				mwl_fwcmd_broadcast_ssid_enable(hw, vif, true);
-@@ -441,7 +441,7 @@ static void mwl_mac80211_bss_info_change
+@@ -463,7 +463,7 @@ static void mwl_mac80211_bss_info_change
  		}
  
  		if (!mwl_vif->set_beacon) {
@@ -415,7 +415,7 @@
  
  			if (skb) {
  				mwl_fwcmd_set_beacon(hw, vif, skb->data, skb->len);
-@@ -458,7 +458,7 @@ static void mwl_mac80211_bss_info_change
+@@ -480,7 +480,7 @@ static void mwl_mac80211_bss_info_change
  static void mwl_mac80211_bss_info_changed(struct ieee80211_hw *hw,
  					  struct ieee80211_vif *vif,
  					  struct ieee80211_bss_conf *info,
@@ -424,7 +424,7 @@
  {
  	switch (vif->type) {
  	case NL80211_IFTYPE_AP:
-@@ -583,10 +583,10 @@ static int mwl_mac80211_sta_add(struct i
+@@ -605,10 +605,10 @@ static int mwl_mac80211_sta_add(struct i
  	if (vif->type == NL80211_IFTYPE_MESH_POINT)
  		sta_info->is_mesh_node = true;
  
@@ -437,7 +437,7 @@
  			sta_info->amsdu_ctrl.cap = MWL_AMSDU_SIZE_8K;
  			sta_info->amsdu_ctrl.amsdu_allow_size = SYSADPT_AMSDU_8K_MAX_SIZE;
  		}
-@@ -670,7 +670,7 @@ static int mwl_mac80211_sta_remove(struc
+@@ -692,7 +692,7 @@ static int mwl_mac80211_sta_remove(struc
  
  static int mwl_mac80211_conf_tx(struct ieee80211_hw *hw,
  				struct ieee80211_vif *vif,
@@ -446,7 +446,7 @@
  				const struct ieee80211_tx_queue_params *params)
  {
  	struct mwl_priv *priv = hw->priv;
-@@ -934,4 +934,9 @@ const struct ieee80211_ops mwl_mac80211_
+@@ -956,4 +956,9 @@ const struct ieee80211_ops mwl_mac80211_
  	.pre_channel_switch = mwl_mac80211_chnl_switch,
  	.sw_scan_start      = mwl_mac80211_sw_scan_start,
  	.sw_scan_complete   = mwl_mac80211_sw_scan_complete,
@@ -502,16 +502,7 @@
  	case TX_RATE_FORMAT_LEGACY:
 --- a/hif/pcie/pcie.c
 +++ b/hif/pcie/pcie.c
-@@ -546,7 +546,7 @@ static irqreturn_t pcie_isr_8864(struct
- 
- 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
- 			wiphy_info(hw->wiphy, "radar detected by firmware\n");
--			ieee80211_radar_detected(hw);
-+			ieee80211_radar_detected(hw, NULL);
- 		}
- 
- 		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH) ieee80211_queue_work(hw, &priv->chnl_switch_handle);
-@@ -593,7 +593,7 @@ static irqreturn_t pcie_isr_8997(struct
+@@ -533,7 +533,7 @@ static irqreturn_t pcie_isr_8864(struct
  
  		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
  			wiphy_info(hw->wiphy, "radar detected by firmware\n");
@@ -520,7 +511,16 @@
  		}
  
  		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH)
-@@ -1071,7 +1071,7 @@ static irqreturn_t pcie_isr_ndp(struct i
+@@ -575,7 +575,7 @@ static irqreturn_t pcie_isr_8997(struct
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_RADAR_DETECT) {
+ 			wiphy_info(hw->wiphy, "radar detected by firmware\n");
+-			ieee80211_radar_detected(hw);
++			ieee80211_radar_detected(hw, NULL);
+ 		}
+ 
+ 		if (int_status & MACREG_A2HRIC_BIT_CHAN_SWITCH)
+@@ -1053,7 +1053,7 @@ static irqreturn_t pcie_isr_ndp(struct i
  
  		if (int_status & MACREG_A2HRIC_NEWDP_DFS) {
  			wiphy_info(hw->wiphy, "radar detected by firmware\n");
