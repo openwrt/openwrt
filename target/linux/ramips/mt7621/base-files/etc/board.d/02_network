@@ -77,6 +77,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	asiarf,ap7621-nv1|\
+	arcadayan,wg630223|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	elecom,wmc-x1800gst|\
@@ -220,7 +221,12 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_ascii board_data mac)
 		lan_mac=$label_mac
 		ucidef_set_network_device_mac eth0 $(macaddr_add "$label_mac" 3)
-	;;
+		;;
+	arcadyan,wg630223)
+		label_mac=$(mtd_get_mac_encrypted_arcadyan "board_data" "42583038694070636D5964652324252A")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$lan_mac" 3)
+		;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
