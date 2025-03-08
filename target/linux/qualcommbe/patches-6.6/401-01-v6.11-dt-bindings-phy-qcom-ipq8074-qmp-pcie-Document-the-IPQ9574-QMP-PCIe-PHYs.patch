@@ -1,0 +1,43 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v4 1/4] dt-bindings: phy: qcom,ipq8074-qmp-pcie: Document the IPQ9574 QMP PCIe PHYs
+From: devi priya <quic_devipriy@quicinc.com>
+Date: Thu, 16 May 2024 08:54:33 +0530
+Message-Id: <20240516032436.2681828-2-quic_devipriy@quicinc.com>
+To: vkoul@kernel.org, kishon@kernel.org, robh@kernel.org, krzk+dt@kernel.org, conor+dt@kernel.org, dmitry.baryshkov@linaro.org, neil.armstrong@linaro.org, quic_msarkar@quicinc.com, quic_qianyu@quicinc.com, abel.vesa@linaro.org, quic_cang@quicinc.com, linux-arm-msm@vger.kernel.org, linux-phy@lists.infradead.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: quic_devipriy@quicinc.com
+In-Reply-To: <20240516032436.2681828-1-quic_devipriy@quicinc.com>
+References: <20240516032436.2681828-1-quic_devipriy@quicinc.com>
+List-Id: <devicetree.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Document the QMP PCIe PHYs on IPQ9574 platform.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: devi priya <quic_devipriy@quicinc.com>
+---
+ Changes in V4:
+	- Picked up the Acked-by tag
+
+ .../devicetree/bindings/phy/qcom,ipq8074-qmp-pcie-phy.yaml      | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/phy/qcom,ipq8074-qmp-pcie-phy.yaml b/Documentation/devicetree/bindings/phy/qcom,ipq8074-qmp-pcie-phy.yaml
+index 634cec5d57ea..58ce2d91d28c 100644
+--- a/Documentation/devicetree/bindings/phy/qcom,ipq8074-qmp-pcie-phy.yaml
++++ b/Documentation/devicetree/bindings/phy/qcom,ipq8074-qmp-pcie-phy.yaml
+@@ -19,6 +19,8 @@ properties:
+       - qcom,ipq6018-qmp-pcie-phy
+       - qcom,ipq8074-qmp-gen3-pcie-phy
+       - qcom,ipq8074-qmp-pcie-phy
++      - qcom,ipq9574-qmp-gen3x1-pcie-phy
++      - qcom,ipq9574-qmp-gen3x2-pcie-phy
+ 
+   reg:
+     items:
+
+-- 
+2.34.1
+
+
