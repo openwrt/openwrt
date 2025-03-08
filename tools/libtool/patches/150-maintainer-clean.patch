@@ -1,0 +1,59 @@
+From a1fe29d73b5b2cb34053aa85d31c522c48a7785a Mon Sep 17 00:00:00 2001
+From d0a2405f867a751bdf74666ef737e8307e443229 Mon Sep 17 00:00:00 2001
+From e4198afeebbb75855ad9e06671970b45aa1a3353 Mon Sep 17 00:00:00 2001
+From 7292b13945ddd2e2af37d31ec398561e81729305 Mon Sep 17 00:00:00 2001
+From: Ileana Dumitrescu <ileanadumitrescu95@gmail.com>
+Date: Wed, 9 Oct 2024 20:02:28 +0300
+Subject: Fix errors in distclean and maintainer-clean
+
+The variable, LT_ARGZ_H, can be empty, which causes distclean and
+maintainer-clean to error as a directory is attempted to be removed
+instead of a file.
+
+When running maintainer-clean for gnulib-tests, the .version file is
+missing, which is needed by config.status, so the command will error.
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -111,7 +111,7 @@ AB_INIT([$autobuild_mode])
+ 
+ 
+ dnl Make sure config.status is regenerated when the version timestamp changes
+-AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/.version'])
++AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(dotversion)'])
+ 
+ 
+ ## ------------------------------- ##
+--- a/libltdl/ltdl.mk
++++ b/libltdl/ltdl.mk
+@@ -134,7 +134,9 @@ EXTRA_DIST	       += libltdl/COPYING.LIB
+ ## Gnulib Makefile.am snippets ##
+ ## --------------------------- ##
+ 
++if LTARGZH_EXISTS
+ BUILT_SOURCES	+= libltdl/libltdl/$(LT_ARGZ_H)
++endif
+ EXTRA_DIST	+= libltdl/libltdl/lt__argz_.h \
+ 		   libltdl/lt__argz.c
+ 
+--- a/m4/ltdl.m4
++++ b/m4/ltdl.m4
+@@ -8,7 +8,7 @@
+ # unlimited permission to copy and/or distribute it, with or without
+ # modifications, as long as this notice is preserved.
+ 
+-# serial 21 LTDL_INIT
++# serial 24 LTDL_INIT
+ 
+ # LT_CONFIG_LTDL_DIR(DIRECTORY, [LTDL-MODE])
+ # ------------------------------------------
+@@ -435,7 +435,8 @@ esac
+ 
+ m4_ifdef([AM_CONDITIONAL],
+ [AM_CONDITIONAL(INSTALL_LTDL, test no != "${enable_ltdl_install-no}")
+- AM_CONDITIONAL(CONVENIENCE_LTDL, test no != "${enable_ltdl_convenience-no}")])
++ AM_CONDITIONAL(CONVENIENCE_LTDL, test no != "${enable_ltdl_convenience-no}")
++ AM_CONDITIONAL(LTARGZH_EXISTS, test -n "$LT_ARGZ_H")])
+ ])# _LT_ENABLE_INSTALL
+ 
+ 
