@@ -226,6 +226,14 @@ append_interface_name() {
 	xappend "--interface-name=$1,$2"
 }
 
+append_filter_rr() {
+	xappend "--filter-rr=$1"
+}
+
+append_cache_rr() {
+	xappend "--cache-rr=$1"
+}
+
 filter_dnsmasq() {
 	local cfg="$1" func="$2" match_cfg="$3" found_cfg
 
@@ -1000,8 +1008,8 @@ dnsmasq_start()
 	# deprecate or remove filter-X in favor of filter-rr?
 	append_bool "$cfg" filter_aaaa "--filter-AAAA"
 	append_bool "$cfg" filter_a "--filter-A"
-	append_parm "$cfg" filter_rr "--filter-rr"
-	append_parm "$cfg" cache_rr "--cache-rr"
+	config_list_foreach "$cfg" filter_rr append_filter_rr
+	config_list_foreach "$cfg" cache_rr append_cache_rr
 
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
