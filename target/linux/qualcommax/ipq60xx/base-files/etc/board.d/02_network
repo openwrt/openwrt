@@ -27,6 +27,7 @@ ipq60xx_setup_interfaces()
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	linksys,mr7350|\
+	linksys,mr7500|\
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
