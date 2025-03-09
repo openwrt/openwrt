@@ -38,15 +38,15 @@ define Package/intel-microcode
 endef
 
 define Build/Compile
-	IUCODE_TOOL=$(STAGING_DIR)/../host/bin/iucode_tool $(MAKE) -C $(PKG_BUILD_DIR)
+	IUCODE_TOOL=$(STAGING_DIR)/../host/bin/iucode_tool $(MAKE) all -C $(PKG_BUILD_DIR)
 	mkdir $(PKG_BUILD_DIR)/intel-ucode-ipkg
 	$(STAGING_DIR)/../host/bin/iucode_tool -q \
-		--write-firmware=$(PKG_BUILD_DIR)/intel-ucode-ipkg $(PKG_BUILD_DIR)/$(MICROCODE).bin
+		--write-earlyfw=$(PKG_BUILD_DIR)/intel-ucode.img $(PKG_BUILD_DIR)/intel-ucode{,-with-caveats}/
 endef
 
 define Package/intel-microcode/install
-	$(INSTALL_DIR) $(1)/lib/firmware/intel-ucode
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/intel-ucode-ipkg/* $(1)/lib/firmware/intel-ucode
+	$(INSTALL_DIR) $(1)/boot
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/intel-ucode.img $(1)/boot/intel-ucode.img
 endef
 
 $(eval $(call BuildPackage,intel-microcode))
