@@ -1,0 +1,103 @@
+From db1dcbe5f752d423421f77d54d246398b196f670 Mon Sep 17 00:00:00 2001
+From: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Date: Thu, 29 Aug 2024 14:26:55 +0200
+Subject: [PATCH] arm64: dts: rockchip: add NanoPC-T6 LTS
+
+In the LTS (2310) version the miniPCIe slot got removed and USB 2.0
+setup has changed. There are two external accessible ports and two ports
+on the internal header.
+
+There is an on-board USB hub which provides:
+- one external connector (bottom one)
+- two internal ports on pin header
+- one port for m.2 E connector
+
+The top USB 2.0 connector comes directly from the SoC.
+
+Signed-off-by: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Link: https://lore.kernel.org/r/20240829-friendlyelec-nanopc-t6-lts-v6-4-edff247e8c02@linaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../dts/rockchip/rk3588-nanopc-t6-lts.dts     | 60 +++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6-lts.dts
+
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 2a2d0c71280686..60dce56892d0c2 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -134,6 +134,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-evb1-v10.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-friendlyelec-cm3588-nas.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-jaguar.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-nanopc-t6.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-nanopc-t6-lts.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ok3588-c.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-orangepi-5-plus.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-quartzpro64.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6-lts.dts b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6-lts.dts
+new file mode 100644
+index 00000000000000..2d92bbb4027d3a
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6-lts.dts
+@@ -0,0 +1,60 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
++ * Copyright (c) 2023 Thomas McKahan
++ * Copyright (c) 2024 Linaro Ltd.
++ *
++ */
++
++/dts-v1/;
++
++#include "rk3588-nanopc-t6.dtsi"
++
++/ {
++	model = "FriendlyElec NanoPC-T6 LTS";
++	compatible = "friendlyarm,nanopc-t6-lts", "rockchip,rk3588";
++
++	/* provide power for on-board USB 2.0 hub */
++	vcc5v0_usb20_host: vcc5v0-usb20-host-regulator {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
++		pinctrl-0 = <&usb20_host_pwren>;
++		pinctrl-names = "default";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-max-microvolt = <5000000>;
++		regulator-min-microvolt = <5000000>;
++		regulator-name = "vcc5v0_usb20_host";
++		vin-supply = <&vcc5v0_sys>;
++	};
++};
++
++&pinctrl {
++	usb {
++		usb20_host_pwren: usb20-host-pwren {
++			rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&u2phy1 {
++	status = "okay";
++};
++
++&u2phy1_otg {
++	status = "okay";
++};
++
++&u2phy2_host {
++	phy-supply = <&vcc5v0_usb20_host>;
++};
++
++&usbdp_phy1 {
++	status = "okay";
++};
++
++&usb_host1_xhci {
++	dr_mode = "host";
++	status = "okay";
++};
