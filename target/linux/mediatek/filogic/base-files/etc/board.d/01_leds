@@ -6,6 +6,9 @@ board=$(board_name)
 board_config_update
 
 case $board in
+7links,wlr-1300)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
+	;;
 abt,asr3000)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
