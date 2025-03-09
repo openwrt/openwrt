@@ -1,0 +1,24 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"mediatek/mt7915_eeprom_dbdc.bin")
+	case $board in
+	tplink,deco-x20-v3)
+		if [ -e /tmp/ubi_factory_data ]; then
+			mkdir -p /lib/firmware/mediatek
+			cp /tmp/ubi_factory_data/MT7915_EEPROM.bin /lib/firmware/$FIRMWARE
+			chmod 644 /lib/firmware/$FIRMWARE
+		fi
+		;;
+	*)
+		caldata_die "board $board is not supported yet"
+		;;
+	esac
+	;;
+esac
