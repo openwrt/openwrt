@@ -26,7 +26,9 @@ define Device/tplink_tdw8970
   TPLINK_HWID := 0x89700001
   TPLINK_HWREV := 1
   IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES:= kmod-ath9k wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES:= kmod-ath9k wpad-basic-mbedtls kmod-usb-dwc2 \
+  	kmod-usb-ledtrig-usbport xrx200-rev1.1-phy11g-firmware \
+	xrx200-rev1.2-phy11g-firmware
   SUPPORTED_DEVICES += TDW8970
 endef
 TARGET_DEVICES += tplink_tdw8970
@@ -46,7 +48,9 @@ define Device/tplink_tdw8980
   TPLINK_HWID := 0x89800001
   TPLINK_HWREV := 14
   IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-basic-mbedtls kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 kmod-usb-ledtrig-usbport xrx200-rev1.1-phy11g-firmware \
+	xrx200-rev1.2-phy11g-firmware
   SUPPORTED_DEVICES += TDW8980
 endef
 TARGET_DEVICES += tplink_tdw8980
