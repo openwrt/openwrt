@@ -164,3 +164,27 @@ define Device/zyxel_xgs1250-12-b1
   DEVICE_VARIANT := B1
 endef
 TARGET_DEVICES += zyxel_xgs1250-12-b1
+
+define Device/zyxel_xmg1915-10e
+  SOC := rtl9302
+  ZYXEL_VERS := ABWE
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XMG1915-10E
+  FLASH_ADDR := 0xb5290000
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := \
+    rt-loader-standalone | \
+    zynsig
+  KERNEL := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    uImage lzma
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    rt-loader-non-uImage
+  IMAGE_SIZE := 13760k
+endef
+TARGET_DEVICES += zyxel_xmg1915-10e
