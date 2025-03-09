@@ -19,12 +19,6 @@ PKG_CPE_ID:=cpe:/a:intel:microcode
 
 PKG_BUILD_DEPENDS:=iucode-tool/host
 
-ifdef CONFIG_TARGET_x86_64
-	MICROCODE:="intel-microcode-64"
-else
-	MICROCODE:="intel-microcode"
-endif
-
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -38,15 +32,14 @@ define Package/intel-microcode
 endef
 
 define Build/Compile
-	IUCODE_TOOL=$(STAGING_DIR)/../host/bin/iucode_tool $(MAKE) -C $(PKG_BUILD_DIR)
-	mkdir $(PKG_BUILD_DIR)/intel-ucode-ipkg
+	IUCODE_TOOL=$(STAGING_DIR)/../host/bin/iucode_tool $(MAKE) all -C $(PKG_BUILD_DIR)
 	$(STAGING_DIR)/../host/bin/iucode_tool -q \
-		--write-firmware=$(PKG_BUILD_DIR)/intel-ucode-ipkg $(PKG_BUILD_DIR)/$(MICROCODE).bin
+		--write-earlyfw=$(PKG_BUILD_DIR)/intel-ucode.img $(PKG_BUILD_DIR)/intel-ucode{,-with-caveats}/
 endef
 
 define Package/intel-microcode/install
-	$(INSTALL_DIR) $(1)/lib/firmware/intel-ucode
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/intel-ucode-ipkg/* $(1)/lib/firmware/intel-ucode
+	$(INSTALL_DIR) $(1)/boot
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/intel-ucode.img $(1)/boot/intel-ucode.img
 endef
 
 $(eval $(call BuildPackage,intel-microcode))
