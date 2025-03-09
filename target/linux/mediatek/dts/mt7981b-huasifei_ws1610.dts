@@ -105,16 +105,15 @@
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
 	status = "okay";
 
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		phy-handle = <&phy0>;
-		nvmem-cells = <&macaddr 0>;
-		nvmem-cell-names = "mac-address";
+		phy-handle = <&phy1>;
+	        nvmem-cells = <&eeprom_factory>;
+	        nvmem-cell-names = "eeprom";
 	};
 
 	gmac1: mac@1 {
@@ -122,36 +121,22 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		nvmem-cells = <&macaddr 1>;
-		nvmem-cell-names = "mac-address";
+	        nvmem-cells = <&eeprom_factory>;
+	        nvmem-cell-names = "eeprom";
 	};
 };
 
 &mdio_bus {
-	reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
-	reset-delay-us = <600>;
-	reset-post-delay-us = <20000>;
-
-	phy0: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-id03a2.9461";
-		phy-mode = "2500base-x";
+	phy1: phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&pio>;
+		realtek,aldps-enable;
 	};
-};
-
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_pins>;
-
-	status = "okay";
-};
-
-&fan {
-	pwms = <&pwm 0 40000 0>;
-	fan-supply = <&fan_5v>;
-	interrupt-parent = <&pio>;
-	interrupts = <29 IRQ_TYPE_EDGE_RISING>;
-	status = "okay";
 };
 
 &spi0 {
@@ -237,29 +222,63 @@
 	};
 };
 
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
 &pio {
 	spi0_flash_pins: spi0-pins {
 		mux {
 			function = "spi";
 			groups = "spi0", "spi0_wp_hold";
 		};
-	};
 
-	pwm_pins: pwm0-pins {
-		mux {
-			function = "pwm";
-			groups = "pwm0_1";
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
 		};
 	};
 };
 
-&usb_phy {
-	status = "okay";
-};
-
-&pcie {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pcie_pins>;
+&uart0 {
 	status = "okay";
 };
 
@@ -268,19 +287,13 @@
 };
 
 &wifi {
-	nvmem-cells = <&eeprom_factory_0>;
-	nvmem-cell-names = "eeprom";
 	status = "okay";
-
-	band@1 {
-		reg = <1>;
-		nvmem-cells = <&macaddr_factory_a 0>;
-		nvmem-cell-names = "mac-address";
-	};
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
 };
 
-&xhci {
+&pcie {
 	pinctrl-names = "default";
-	pinctrl-0 = <&wwan_rst_h>;
+	pinctrl-0 = <&pcie_pins>;
 	status = "okay";
 };
