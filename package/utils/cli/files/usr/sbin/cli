@@ -40,6 +40,7 @@ model.add_nodes({
 				el.close();
 				uloop.end();
 				interactive = false;
+				return ctx.ok();
 			}
 		}
 	}
