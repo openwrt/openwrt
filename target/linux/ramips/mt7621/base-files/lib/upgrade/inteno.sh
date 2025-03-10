@@ -16,11 +16,16 @@
 . /lib/functions.sh
 . /lib/upgrade/nand.sh
 
-dna_do_upgrade () {
-	tar -xaf $1
+inteno_do_upgrade () {
+	local tar_file=$1
+	local cmd=cat
+	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
+	local board_dir="$(tar tf "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
+	board_dir="${board_dir%/}"
+	tar -xaf "$tar_file"
 
 	# get the size of the new bootfs
-	local _bootfs_size=$(wc -c < ./sysupgrade-dna_valokuitu-plus-ex400/kernel)
+	local _bootfs_size=$(wc -c < "$board_dir/kernel")
 	[ -n "$_bootfs_size" -a "$_bootfs_size" -gt "0" ] || nand_do_upgrade_failed
 
 	# remove existing rootfses and recreate rootfs_0
@@ -32,7 +37,7 @@ dna_do_upgrade () {
 
 	# update the rootfs_0 contents
 	local _kern_ubivol=$( nand_find_volume "ubi0" "rootfs_0" )
-	ubiupdatevol /dev/${_kern_ubivol} sysupgrade-dna_valokuitu-plus-ex400/kernel
+	ubiupdatevol "/dev/$_kern_ubivol" "$board_dir/kernel"
 
 	fw_setenv root_vol rootfs_0
 	fw_setenv boot_cnt_primary 0
