@@ -7,6 +7,9 @@ ipq50xx_setup_interfaces()
 {
 	local board="$1"
 	case $board in
+	glinet,gl-b3000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
 	linksys,mr5500)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -18,9 +21,24 @@ ipq50xx_setup_interfaces()
 	esac
 }
 
+ipq50xx_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+
+	case "$board" in
+	glinet,gl-b3000)
+		lan_mac=$(macaddr_add $(get_mac_label_dt) 2)
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+}
+
 board_config_update
 board=$(board_name)
 ipq50xx_setup_interfaces $board
+ipq50xx_setup_macs $board
 board_config_flush
 
 exit 0
