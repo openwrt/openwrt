@@ -125,7 +125,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +}
 --- /dev/null
 +++ b/configs/ravpower-rp-wd009-ram_defconfig
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +CONFIG_MIPS=y
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_DEFAULT_DEVICE_TREE="ravpower-rp-wd009"
@@ -181,6 +181,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +CONFIG_MT7628_ETH=y
 +CONFIG_PHY=y
 +CONFIG_BAUDRATE=57600
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_SPI=y
 +CONFIG_MT7621_SPI=y
 +CONFIG_SYSRESET_SYSCON=y
