@@ -31,7 +31,7 @@ An advanced user may require additional or specific package. (Toolchain, SDK, ..
 
 ## Development
 
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case
+To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case
 sensitive filesystem required). Cygwin is unsupported because of the lack of a
 case sensitive file system.
 
