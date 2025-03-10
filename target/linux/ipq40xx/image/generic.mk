@@ -178,8 +178,7 @@ define Device/alibaba_ap4220
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES += ipq-wifi-alibaba_ap4220 -ath10k-board-qca4019
-	FILESYSTEMS := squashfs
+	DEVICE_PACKAGES += ipq-wifi-alibaba_ap4220
 endef
 TARGET_DEVICES += alibaba_ap4220
 
