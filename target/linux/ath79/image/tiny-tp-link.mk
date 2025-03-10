@@ -9,7 +9,6 @@ define Device/tplink_re450-v1
   DEVICE_VENDOR := TP-Link
   TPLINK_BOARD_ID := RE450
   SUPPORTED_DEVICES += re450
-  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_re450-v1
 
