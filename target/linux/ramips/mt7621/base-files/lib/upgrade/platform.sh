@@ -196,6 +196,7 @@ platform_do_upgrade() {
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,lte5398-m904|\
+	zyxel,lte7490-m904|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0
