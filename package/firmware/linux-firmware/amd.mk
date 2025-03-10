@@ -4,6 +4,12 @@ define Package/amd64-microcode/install
 	$(CP) \
 		$(PKG_BUILD_DIR)/amd-ucode/*.bin \
 		$(1)/lib/firmware/amd-ucode
+	$(INSTALL_DIR) $(1)/boot
+	mkdir -p $(PKG_BUILD_DIR)/kernel/x86/microcode
+	cat $(PKG_BUILD_DIR)/amd-ucode/microcode_amd*.bin \
+		> $(PKG_BUILD_DIR)/kernel/x86/microcode/AuthenticAMD.bin
+	( cd $(PKG_BUILD_DIR) ; echo "kernel/x86/microcode/AuthenticAMD.bin" | \
+		cpio -o -H newc --reproducible > $(1)/boot/amd-ucode.img )
 endef
 
 $(eval $(call BuildPackage,amd64-microcode))
