@@ -12,6 +12,7 @@ mount_ubi_part() {
 
 preinit_mount_cfg_part() {
 	case $(board_name) in
+	mercusys,mr80x-v3|\
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		mount_ubi_part "tp_data"
