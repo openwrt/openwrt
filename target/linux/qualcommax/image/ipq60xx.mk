@@ -24,23 +24,37 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
-define Device/linksys_mr7350
+define Device/linksys_mr
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
-	DEVICE_MODEL := MR7350
-	SOC := ipq6000
-	NAND_SIZE := 256m
-	KERNEL_SIZE := 8192k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGE_SIZE := 75776k
+	KERNEL_SIZE := 8192k
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
-		append-ubi | linksys-image type=MR7350
-	DEVICE_PACKAGES := ipq-wifi-linksys_mr7350 \
-		kmod-leds-pca963x kmod-usb-ledtrig-usbport
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
+	DEVICE_PACKAGE := kmod-usb-ledtrig-usbport
+endef
+
+define Device/linksys_mr7350
+	$(call Device/linksys_mr)
+	DEVICE_MODEL := MR7350
+	NAND_SIZE := 256m
+	IMAGE_SIZE := 75776k
+	SOC := ipq6000
+	DEVICE_PACKAGES += ipq-wifi-linksys_mr7350 kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mr7350
+
+define Device/linksys_mr7500
+	$(call Device/linksys_mr)
+	DEVICE_MODEL := MR7500
+	SOC := ipq6018
+	NAND_SIZE := 512m
+	IMAGE_SIZE := 147456k
+	DEVICE_PACKAGES := ipq-wifi-linksys_mr7500 \
+		ath11k-firmware-qcn9074 kmod-ath11k-pci
+endef
+TARGET_DEVICES += linksys_mr7500
 
 define Device/netgear_wax214
 	$(call Device/FitImage)
