@@ -55,6 +55,11 @@
 			default-state = "keep";
 		};
 
+		fon {
+			label = "green:fon";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+		};
+		
 		led_power_red: power_red {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
