@@ -125,6 +125,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
+	7links,wlr-1300|\
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	yuncore,ax835)
