@@ -49,6 +49,9 @@ glinet,gl-xe3000)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wifi2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wifi5g" "phy1-ap0"
 	;;
+huasifei,wh3000)
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr90x-v1|\
 mercusys,mr90x-v1-ubi)
 	ucidef_set_led_netdev "lan-0" "lan-0" "green:lan-0" "lan0" "link tx rx"
