@@ -139,6 +139,14 @@ define Trusted-Firmware-A/mt7622-sdmmc-2ddr
   DDR3_FLYBY:=1
 endef
 
+define Trusted-Firmware-A/mt7981-nor-ddr4
+  NAME:=MediaTek MT7981 (SPI-NOR, DDR4)
+  BOOT_DEVICE:=nor
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+endef
+
 define Trusted-Firmware-A/mt7981-ram-ddr4
   NAME:=MediaTek MT7981 (RAM, DDR4)
   BOOT_DEVICE:=ram
@@ -184,14 +192,6 @@ define Trusted-Firmware-A/mt7981-ram-ddr3
   RAM_BOOT_UART_DL:=1
   HIDDEN:=
   DEFAULT:=TARGET_mediatek_filogic
-endef
-
-define Trusted-Firmware-A/mt7981-nor-ddr4
-  NAME:=MediaTek MT7981 (SPI-NOR, DDR4)
-  BOOT_DEVICE:=nor
-  BUILD_SUBTARGET:=filogic
-  PLAT:=mt7981
-  DDR_TYPE:=ddr4
 endef
 
 define Trusted-Firmware-A/mt7981-emmc-ddr3
@@ -244,6 +244,15 @@ define Trusted-Firmware-A/mt7981-spim-nand-ddr3-1866mhz
   DDR3_FREQ_1866:=1
 endef
 
+define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
+  NAME:=MediaTek MT7981 (SPI-NAND via SPIM, DDR4)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+  USE_UBI:=1
+endef
+
 define Trusted-Firmware-A/mt7981-cudy-tr3000-v1
   NAME:=Cudy TR3000 v1 (SPI-NAND via SPIM, DDR3)
   BOOT_DEVICE:=spim-nand
@@ -263,15 +272,6 @@ define Trusted-Firmware-A/mt7986-ram-ddr4
   RAM_BOOT_UART_DL:=1
   HIDDEN:=
   DEFAULT:=TARGET_mediatek_filogic
-endef
-
-define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
-  NAME:=MediaTek MT7981 (SPI-NAND via SPIM, DDR4)
-  BOOT_DEVICE:=spim-nand
-  BUILD_SUBTARGET:=filogic
-  PLAT:=mt7981
-  DDR_TYPE:=ddr4
-  USE_UBI:=1
 endef
 
 define Trusted-Firmware-A/mt7986-nor-ddr4
