@@ -241,6 +241,7 @@ function remove_params(orig_params)
 		delete val.allow_empty;
 		val.args = {
 			type: "enum",
+			get_object: val.get_object,
 			attribute: val.attribute ?? name,
 			value: param_values,
 			force_helptext: true,
