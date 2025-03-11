@@ -419,6 +419,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
 		;;
+	longdata,aps256)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "2:lan:1" "5:wan"
+		;;
 	meraki,mr12)
 		ucidef_set_interface_lan "eth0"
 		ucidef_add_switch "switch0" \
