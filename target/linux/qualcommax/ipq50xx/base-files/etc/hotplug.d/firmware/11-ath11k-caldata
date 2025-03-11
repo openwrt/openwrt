@@ -9,6 +9,7 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath11k/IPQ5018/hw1.0/cal-ahb-c000000.wifi.bin")
 	case "$board" in
+	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56)
@@ -33,6 +34,7 @@ case "$FIRMWARE" in
 	;;
 "ath11k/QCN9074/hw1.0/cal-pci-0001:01:00.0.bin")
 	case "$board" in
+	linksys,mr5500|\
 	linksys,mx5500|\
 	linksys,spnmx56)
 		caldata_extract "0:ART" 0x26800 0x20000

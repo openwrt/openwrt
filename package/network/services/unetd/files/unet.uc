@@ -151,7 +151,7 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 	return true;
 }
 
-function network_create_uci(name, iface)
+function network_create_uci(model, name, iface)
 {
 	let cur = uci.cursor();
 	cur.set("network", name, "interface");
@@ -344,7 +344,7 @@ function network_create(ctx, argv, named) {
 	if (!network_sign_data(ctx, named.network, network, pw_file))
 		return;
 
-	network_create_uci(named.network, {
+	network_create_uci(ctx.model, named.network, {
 		proto: "unet",
 		metric: named.metric,
 		zone: named.zone,
@@ -580,7 +580,7 @@ function network_join_peer_update(model, ctx, msg)
 	if (joinreq.connect)
 		iface.connect = joinreq.connect;
 
-	network_create_uci(name, iface);
+	network_create_uci(model, name, iface);
 
 	model.status_msg("Configuration added for interface " + name);
 

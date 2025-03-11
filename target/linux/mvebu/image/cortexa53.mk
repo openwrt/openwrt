@@ -13,6 +13,7 @@ define Device/globalscale_espressobin
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := ESPRESSObin
   DEVICE_VARIANT := Non-eMMC
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := Non-eMMC
@@ -26,6 +27,7 @@ define Device/globalscale_espressobin-emmc
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := ESPRESSObin
   DEVICE_VARIANT := eMMC
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := eMMC
@@ -50,6 +52,7 @@ define Device/globalscale_espressobin-v7
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := ESPRESSObin
   DEVICE_VARIANT := V7 Non-eMMC
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := V7 Non-eMMC
@@ -63,6 +66,7 @@ define Device/globalscale_espressobin-v7-emmc
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := ESPRESSObin
   DEVICE_VARIANT := V7 eMMC
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   DEVICE_ALT0_VENDOR := Marvell
   DEVICE_ALT0_MODEL := Armada 3700 Community Board
   DEVICE_ALT0_VARIANT := V7 eMMC
