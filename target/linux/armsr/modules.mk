@@ -128,7 +128,8 @@ define KernelPackage/fsl-dpaa2-net
     +kmod-fsl-pcs-lynx +kmod-fsl-mc-dpio
   KCONFIG:= \
     CONFIG_FSL_MC_UAPI_SUPPORT=y \
-    CONFIG_FSL_DPAA2_ETH
+    CONFIG_FSL_DPAA2_ETH \
+    CONFIG_FSL_DPAA2_ETH_DCB=y
   FILES:= \
   $(LINUX_DIR)/drivers/net/ethernet/freescale/dpaa2/fsl-dpaa2-eth.ko
   AUTOLOAD=$(call AutoLoad,35,fsl-dpaa2-eth)
