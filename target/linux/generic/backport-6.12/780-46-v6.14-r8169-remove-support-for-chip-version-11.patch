@@ -38,7 +38,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	[RTL_GIGA_MAC_VER_14] = {"RTL8401"				},
  	[RTL_GIGA_MAC_VER_17] = {"RTL8168b/8111b"			},
  	[RTL_GIGA_MAC_VER_18] = {"RTL8168cp/8111cp"			},
-@@ -2336,7 +2335,7 @@ static enum mac_version rtl8169_get_mac_
+@@ -2335,7 +2334,7 @@ static enum mac_version rtl8169_get_mac_
  
  		/* 8168B family. */
  		{ 0x7c8, 0x380,	RTL_GIGA_MAC_VER_17 },
@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		 * { 0x7c8, 0x300,	RTL_GIGA_MAC_VER_11 },
  		 */
  
-@@ -3806,7 +3805,6 @@ static void rtl_hw_config(struct rtl8169
+@@ -3805,7 +3804,6 @@ static void rtl_hw_config(struct rtl8169
  		[RTL_GIGA_MAC_VER_08] = rtl_hw_start_8102e_3,
  		[RTL_GIGA_MAC_VER_09] = rtl_hw_start_8102e_2,
  		[RTL_GIGA_MAC_VER_10] = NULL,
@@ -55,7 +55,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		[RTL_GIGA_MAC_VER_14] = rtl_hw_start_8401,
  		[RTL_GIGA_MAC_VER_17] = rtl_hw_start_8168b,
  		[RTL_GIGA_MAC_VER_18] = rtl_hw_start_8168cp_1,
-@@ -4682,12 +4680,6 @@ static irqreturn_t rtl8169_interrupt(int
+@@ -4681,12 +4679,6 @@ static irqreturn_t rtl8169_interrupt(int
  	if (status & LinkChg)
  		phy_mac_interrupt(tp->phydev);
  
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	rtl_irq_disable(tp);
  	napi_schedule(&tp->napi);
  out:
-@@ -5107,9 +5099,6 @@ static void rtl_set_irq_mask(struct rtl8
+@@ -5106,9 +5098,6 @@ static void rtl_set_irq_mask(struct rtl8
  
  	if (tp->mac_version <= RTL_GIGA_MAC_VER_06)
  		tp->irq_mask |= SYSErr | RxFIFOOver;
@@ -78,7 +78,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int rtl_alloc_irq(struct rtl8169_private *tp)
-@@ -5304,7 +5293,6 @@ static int rtl_jumbo_max(struct rtl8169_
+@@ -5302,7 +5291,6 @@ static int rtl_jumbo_max(struct rtl8169_
  	case RTL_GIGA_MAC_VER_02 ... RTL_GIGA_MAC_VER_06:
  		return JUMBO_7K;
  	/* RTL8168b */
