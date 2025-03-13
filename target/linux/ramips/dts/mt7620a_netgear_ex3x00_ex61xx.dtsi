@@ -47,6 +47,7 @@
 		router_green {
 			label = "green:router";
 			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		router_red {
@@ -57,6 +58,7 @@
 		device_green {
 			label = "green:device";
 			gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		device_red {
