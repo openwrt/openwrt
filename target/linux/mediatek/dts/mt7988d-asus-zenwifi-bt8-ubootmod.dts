@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+#include "mt7988d-asus-zenwifi-bt8.dtsi"
+
+/ {
+	model = "ASUS ZenWiFi BT8 (U-Boot mod)";
+	compatible = "asus,zenwifi-bt8-ubootmod", "mediatek,mt7988a";
+
+	chosen {
+		rootdisk = <&ubi_fit_volume>;
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x200000>;
+				label = "bl2";
+				read-only;
+			};
+
+			partition@200000 {
+				reg = <0x200000 0x7e00000>;
+				compatible = "linux,ubi";
+				label = "UBI_DEV";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "factory";
+					};
+
+					ubi_fit_volume: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	ASUS_BT8_NVMEM_LAYOUT;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_a>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mt7996_wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+
+	band@0 {
+		/* 2.4 GHz */
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_fffee>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		/* 5 GHz */
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_ffff4>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@2 {
+		/* 6 GHz */
+		reg = <2>;
+		nvmem-cells = <&macaddr_factory_ffffa>;
+		nvmem-cell-names = "mac-address";
+	};
+};
