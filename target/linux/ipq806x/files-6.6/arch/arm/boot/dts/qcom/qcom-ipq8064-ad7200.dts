@@ -72,6 +72,7 @@
 		wlan5g {
 			label = "blue:wlan5g";
 			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		usb3 {
@@ -82,6 +83,7 @@
 		wlan2g {
 			label = "blue:wlan2g";
 			gpios = <&qcom_pinmux 17 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy2tpt";
 		};
 
 		wan_orange {
