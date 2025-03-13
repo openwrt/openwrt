@@ -90,10 +90,10 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* Allow 3 retries for everything but isoc, set CErr = 3 */
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -485,6 +485,7 @@ static void xhci_pci_quirks(struct devic
+@@ -487,6 +487,7 @@ static void xhci_pci_quirks(struct devic
+ 		xhci->quirks |= XHCI_TRB_OVERFETCH;
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
  		xhci->quirks |= XHCI_AVOID_DQ_ON_LINK;
- 		xhci->quirks |= XHCI_ZHAOXIN_TRB_FETCH;
 +		xhci->quirks |= XHCI_VLI_SS_BULK_OUT_BUG;
  	}
  
