@@ -118,6 +118,7 @@
 		client_green {
 			label = "green:client";
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		client_red {
@@ -128,6 +129,7 @@
 		router_green {
 			label = "green:router";
 			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		router_red {
