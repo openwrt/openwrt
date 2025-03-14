@@ -11,7 +11,7 @@ define KernelPackage/switch-rtl8373
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Realtek RTL8373 switch support
-  DEPENDS:=
+  DEPENDS:=+kmod-i2c-gpio
   FILES:= $(PKG_BUILD_DIR)/rtl8373.ko
   AUTOLOAD:=$(call AutoProbe,rtl8373)
 endef
