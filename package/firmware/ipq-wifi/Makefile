@@ -50,6 +50,13 @@ ALLWIFIBOARDS:= \
 	linksys_whw03 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
+	linksys_mx5300 \
+	linksys_mx5500 \
+	linksys_mx8500 \
+	linksys_spnmx56 \
+	linksys_whw03 \
+	netgear_lbr20 \
+	netgear_rax120v2 \
 	netgear_sxk80 \
 	netgear_wax214 \
 	netgear_wax218 \
@@ -72,6 +79,8 @@ ALLWIFIBOARDS:= \
 	yuncore_fap650 \
 	zbtlink_zbt-z800ax \
 	zte_mf269 \
+	zte_mf289d \
+	zte_mf289f \
 	zte_mf287 \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -107,6 +116,7 @@ define ipq-wifi-install-one
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA9984/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCA99X0 .qca99x0),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA99X0/hw2.0),\
+  $(if $(filter $(suffix $(1)),.IPQ8074 .ipq8074 .ipq8174),\
   $(if $(filter $(suffix $(1)),.IPQ5018 .ipq5018),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ5018/hw1.0),\
   $(if $(filter $(suffix $(1)),.IPQ6018 .ipq6018),\
@@ -143,7 +153,7 @@ Do not install it for any other device!
   endef
 
   define Package/ipq-wifi-$(1)/install-overlay
-    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*),\
+    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*) $$$$(wildcard files/board-$(1).*),\
       $$$$(call ipq-wifi-install-one,$$$$(IPQ_WIFI_BOARD_FILE),$$(1)))
   endef
 
@@ -191,6 +201,13 @@ $(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
+$(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
+$(eval $(call generate-ipq-wifi-package,linksys_mx5500,Linksys MX5500))
+$(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
+$(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
+$(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
+$(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
+$(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
@@ -213,6 +230,8 @@ $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))
 $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
+$(eval $(call generate-ipq-wifi-package,zte_mf289d,ZTE MF289D))
+$(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
