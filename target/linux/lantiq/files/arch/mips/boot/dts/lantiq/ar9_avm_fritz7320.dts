@@ -209,7 +209,7 @@
 	req-mask = <0xf>;
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@0,0 {
+	wifi@e,0 {
 		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
 		nvmem-cells = <&cal_ath9k_cal_985>;
