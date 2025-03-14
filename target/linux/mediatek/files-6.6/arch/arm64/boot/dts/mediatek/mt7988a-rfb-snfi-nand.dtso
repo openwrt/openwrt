@@ -13,6 +13,8 @@
 	fragment@0 {
 		target = <&snand>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "okay";
 
 			flash@0 {
