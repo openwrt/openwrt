@@ -10,3 +10,13 @@
 &eth0 {
 	pll-data = <0x5a000000 0x00000101 0x00001616>;
 };
+
+&usb0 {
+	/delete-node/ port@1;
+
+	/* NEC uPD720114 */
+	hub@1 {
+		compatible = "usb0409,005a";
+		reg = <1>;
+	};
+};

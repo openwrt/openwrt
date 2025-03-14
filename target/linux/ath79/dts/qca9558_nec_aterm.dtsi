@@ -26,7 +26,7 @@
 		label-mac-device = &eth0;
 	};
 
-	i2c {
+	i2c: i2c {
 		compatible = "i2c-gpio";
 
 		pinctrl-names = "default";
@@ -51,7 +51,7 @@
 		};
 	};
 
-	keys {
+	keys: keys {
 		compatible = "gpio-keys";
 		pinctrl-names = "default";
 		pinctrl-0 = <&jtag_disable_pins>;
@@ -240,7 +240,7 @@
 				reg = <0x030000 0x010000>;
 				read-only;
 
-				nvmem-layout {
+				nvmem_art: nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
@@ -327,7 +327,7 @@
 &pcie0 {
 	status = "okay";
 
-	wifi@0,0 {
+	wifi: wifi@0,0 {
 		compatible = "pci168c,003c";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&cal_art_5000>, <&macaddr_config_12>;
@@ -349,16 +349,6 @@
 
 &usb0 {
 	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	/delete-node/ port@1;
-
-	/* NEC uPD720114 */
-	hub@1 {
-		compatible = "usb0409,005a";
-		reg = <1>;
-	};
 };
 
 &wmac {
