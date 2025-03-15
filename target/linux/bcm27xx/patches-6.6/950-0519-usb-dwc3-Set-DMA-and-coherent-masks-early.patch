@@ -212,7 +212,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	},
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1208,6 +1208,24 @@ static void dwc3_config_threshold(struct
+@@ -1223,6 +1223,24 @@ static void dwc3_config_threshold(struct
  	}
  }
  
@@ -237,7 +237,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /**
   * dwc3_core_init - Low-level initialization of DWC3 Core
   * @dwc: Pointer to our controller context structure
-@@ -1273,6 +1291,8 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -1288,6 +1306,8 @@ static int dwc3_core_init(struct dwc3 *d
  
  	dwc3_set_incr_burst_type(dwc);
  
@@ -246,7 +246,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	ret = dwc3_phy_power_on(dwc);
  	if (ret)
  		goto err_exit_phy;
-@@ -1362,6 +1382,24 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -1377,6 +1397,24 @@ static int dwc3_core_init(struct dwc3 *d
  
  	dwc3_config_threshold(dwc);
  
@@ -271,7 +271,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	return 0;
  
  err_power_off_phy:
-@@ -1505,6 +1543,7 @@ static void dwc3_get_properties(struct d
+@@ -1520,6 +1558,7 @@ static void dwc3_get_properties(struct d
  	u8			tx_thr_num_pkt_prd = 0;
  	u8			tx_max_burst_prd = 0;
  	u8			tx_fifo_resize_max_num;
@@ -279,7 +279,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	/* default to highest possible threshold */
  	lpm_nyet_threshold = 0xf;
-@@ -1525,6 +1564,9 @@ static void dwc3_get_properties(struct d
+@@ -1540,6 +1579,9 @@ static void dwc3_get_properties(struct d
  	 */
  	tx_fifo_resize_max_num = 6;
  
@@ -289,7 +289,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->maximum_speed = usb_get_maximum_speed(dev);
  	dwc->max_ssp_rate = usb_get_maximum_ssp_rate(dev);
  	dwc->dr_mode = usb_get_dr_mode(dev);
-@@ -1639,6 +1681,9 @@ static void dwc3_get_properties(struct d
+@@ -1654,6 +1696,9 @@ static void dwc3_get_properties(struct d
  	dwc->dis_split_quirk = device_property_read_bool(dev,
  				"snps,dis-split-quirk");
  
@@ -299,16 +299,16 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1656,6 +1701,8 @@ static void dwc3_get_properties(struct d
+@@ -1671,6 +1716,8 @@ static void dwc3_get_properties(struct d
  	dwc->tx_thr_num_pkt_prd = tx_thr_num_pkt_prd;
  	dwc->tx_max_burst_prd = tx_max_burst_prd;
  
 +	dwc->axi_pipe_limit = axi_pipe_limit;
 +
- 	dwc->imod_interval = 0;
- 
  	dwc->tx_fifo_resize_max_num = tx_fifo_resize_max_num;
-@@ -1952,6 +1999,12 @@ static int dwc3_probe(struct platform_de
+ }
+ 
+@@ -1963,6 +2010,12 @@ static int dwc3_probe(struct platform_de
  	if (IS_ERR(dwc->usb_psy))
  		return dev_err_probe(dev, PTR_ERR(dwc->usb_psy), "couldn't get usb power supply\n");
  

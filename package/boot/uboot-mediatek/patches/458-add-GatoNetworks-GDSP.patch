@@ -218,7 +218,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_gatonetworks_gdsp_defconfig
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,142 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -348,6 +348,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y

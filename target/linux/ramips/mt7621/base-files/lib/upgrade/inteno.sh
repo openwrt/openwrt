@@ -16,11 +16,9 @@
 . /lib/functions.sh
 . /lib/upgrade/nand.sh
 
-dna_do_upgrade () {
-	tar -xaf $1
-
+inteno_do_upgrade () {
 	# get the size of the new bootfs
-	local _bootfs_size=$(wc -c < ./sysupgrade-dna_valokuitu-plus-ex400/kernel)
+	local _bootfs_size=$(tar -tvf $1 | grep kernel | awk '{print $3}')
 	[ -n "$_bootfs_size" -a "$_bootfs_size" -gt "0" ] || nand_do_upgrade_failed
 
 	# remove existing rootfses and recreate rootfs_0
@@ -30,15 +28,11 @@ dna_do_upgrade () {
 	ubirmvol /dev/ubi0 --name=rootfs_data > /dev/null 2>&1
 	ubimkvol /dev/ubi0 --type=static --size=${_bootfs_size} --name=rootfs_0
 
-	# update the rootfs_0 contents
-	local _kern_ubivol=$( nand_find_volume "ubi0" "rootfs_0" )
-	ubiupdatevol /dev/${_kern_ubivol} sysupgrade-dna_valokuitu-plus-ex400/kernel
-
 	fw_setenv root_vol rootfs_0
 	fw_setenv boot_cnt_primary 0
 	fw_setenv boot_cnt_alt 0
 
 	# proceed to upgrade the default way
-	CI_KERNPART=none
+	CI_KERNPART=rootfs_0
 	nand_do_upgrade "$1"
 }

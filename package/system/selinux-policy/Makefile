@@ -8,8 +8,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=selinux-policy
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.defensec.nl/selinux-policy.git
-PKG_VERSION:=2.1
-PKG_MIRROR_HASH:=8ab9f734d2a81c8d396afb4f6783c67d31b76c0334bf8e564eb050f98356655b
+PKG_VERSION:=2.6
+PKG_MIRROR_HASH:=92e59cb86adcf0837fae53d75905cdd360f5f094b087c27d0abcb725d1b4b617
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_BUILD_DEPENDS:=secilc/host policycoreutils/host
 

@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-sdmmc_defconfig
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,129 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -120,6 +120,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -215,7 +216,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-emmc_defconfig
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,118 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -325,6 +326,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_USB=y
 +CONFIG_USB_XHCI_HCD=y
@@ -394,7 +396,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-snand_defconfig
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,109 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -495,6 +497,7 @@
 +CONFIG_DM_REGULATOR_GPIO=y
 +CONFIG_RAM=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y

@@ -81,7 +81,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -28,6 +28,70 @@ static void tcp_gso_tstamp(struct sk_buf
+@@ -31,6 +31,70 @@ static void tcp_gso_tstamp(struct sk_buf
  	}
  }
  
@@ -152,7 +152,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  static struct sk_buff *tcp4_gso_segment(struct sk_buff *skb,
  					netdev_features_t features)
  {
-@@ -37,6 +101,9 @@ static struct sk_buff *tcp4_gso_segment(
+@@ -40,6 +104,9 @@ static struct sk_buff *tcp4_gso_segment(
  	if (!pskb_may_pull(skb, sizeof(struct tcphdr)))
  		return ERR_PTR(-EINVAL);
  
@@ -162,7 +162,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	if (unlikely(skb->ip_summed != CHECKSUM_PARTIAL)) {
  		const struct iphdr *iph = ip_hdr(skb);
  		struct tcphdr *th = tcp_hdr(skb);
-@@ -181,61 +248,76 @@ out:
+@@ -184,61 +251,76 @@ out:
  	return segs;
  }
  
@@ -269,7 +269,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	flush = NAPI_GRO_CB(p)->flush;
  	flush |= (__force int)(flags & TCP_FLAG_CWR);
  	flush |= (__force int)((flags ^ tcp_flag_word(th2)) &
-@@ -272,6 +354,19 @@ found:
+@@ -275,6 +357,19 @@ found:
  	flush |= p->decrypted ^ skb->decrypted;
  #endif
  
@@ -289,7 +289,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	if (flush || skb_gro_receive(p, skb)) {
  		mss = 1;
  		goto out_check_final;
-@@ -293,7 +388,6 @@ out_check_final:
+@@ -296,7 +391,6 @@ out_check_final:
  	if (p && (!NAPI_GRO_CB(skb)->same_flow || flush))
  		pp = p;
  
@@ -297,7 +297,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	NAPI_GRO_CB(skb)->flush |= (flush != 0);
  
  	return pp;
-@@ -317,18 +411,58 @@ void tcp_gro_complete(struct sk_buff *sk
+@@ -320,18 +414,58 @@ void tcp_gro_complete(struct sk_buff *sk
  }
  EXPORT_SYMBOL(tcp_gro_complete);
  
@@ -361,7 +361,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  INDIRECT_CALLABLE_SCOPE int tcp4_gro_complete(struct sk_buff *skb, int thoff)
-@@ -336,6 +470,15 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+@@ -339,6 +473,15 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
  	const struct iphdr *iph = ip_hdr(skb);
  	struct tcphdr *th = tcp_hdr(skb);
  
@@ -379,7 +379,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4;
 --- a/net/ipv4/udp_offload.c
 +++ b/net/ipv4/udp_offload.c
-@@ -470,33 +470,6 @@ out:
+@@ -474,33 +474,6 @@ out:
  	return segs;
  }
  

@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -101,8 +101,14 @@ static struct sk_buff *tcp4_gso_segment(
+@@ -104,8 +104,14 @@ static struct sk_buff *tcp4_gso_segment(
  	if (!pskb_may_pull(skb, sizeof(struct tcphdr)))
  		return ERR_PTR(-EINVAL);
  

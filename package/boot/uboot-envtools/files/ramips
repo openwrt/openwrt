@@ -138,6 +138,7 @@ zyxel,lte3301-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x80000"
 	;;
 zyxel,lte5398-m904|\
+zyxel,lte7490-m904|\
 zyxel,nr7101)
 	idx="$(find_mtd_index Config)"
 	[ -n "$idx" ] && \
@@ -149,7 +150,8 @@ xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
 	;;
-dna,valokuitu-plus-ex400)
+dna,valokuitu-plus-ex400|\
+genexis,pulse-ex400)
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 	;;

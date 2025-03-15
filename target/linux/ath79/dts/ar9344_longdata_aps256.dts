@@ -1,0 +1,178 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "LONGDATA APS256";
+	compatible = "longdata,aps256", "qca,ar9344";
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+		label-mac-device = &wmac;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		wlan2g {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_system: system {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+  
+		internet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+		
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+		
+		lan2 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <33000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x020000 0xfd0000>;
+			};
+
+			partition@7f0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+
+				
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					macaddr_art_1002: macaddr@1002 {
+						compatible = "mac-base";
+						reg = <0x1002 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+};
+
+&gpio {
+	
+};
+
+&builtin_switch {
+	/delete-property/ qca,phy4-mii-enable; /* need to delete this to make all 5 FE ports work */
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&usb {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	hub_port: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_1002 0>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+		switch-only-mode = <1>;
+	};
+};
+

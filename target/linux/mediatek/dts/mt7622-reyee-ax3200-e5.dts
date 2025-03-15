@@ -35,43 +35,43 @@
 
 			partition@20000 {
 				label = "ATF";
-				reg = <0x20000 0x30000>;
+				reg = <0x20000 0x10000>;
 				read-only;
 			};
 
 			partition@30000 {
 				label = "u-boot";
-				reg = <0x30000 0x80000>;
+				reg = <0x30000 0x50000>;
 				read-only;
 			};
 
 			partition@80000 {
 				label = "u-boot-env";
-				reg = <0x80000 0x90000>;
+				reg = <0x80000 0x10000>;
 			};
 
 			factory: partition@90000 {
 				label = "Factory";
-				reg = <0x90000 0xd0000>;
+				reg = <0x90000 0x40000>;
 				read-only;
 			};
 
 			partition@d0000 {
 				label = "product_info";
-				reg = <0xd0000 0xe0000>;
+				reg = <0xd0000 0x10000>;
 				read-only;
 			};
 
 			partition@e0000 {
 				label = "kdump";
-				reg = <0xe0000 0xf0000>;
+				reg = <0xe0000 0x10000>;
 				read-only;
 			};
 
 			partition@f0000 {
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0xf0000 0x1000000>;
+				reg = <0xf0000 0xf10000>;
 			};
 		};
 	};

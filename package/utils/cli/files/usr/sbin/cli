@@ -345,6 +345,8 @@ function format_multiline(prefix, val)
 
 	if (type(val) != "array")
 		val = [ val ];
+	if (length(val) == 0)
+		val = [ "<none>" ];
 
 	for (let cur in val) {
 		cur = format_entry(cur);
