@@ -43,7 +43,7 @@
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_2e>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
 
 		led {
