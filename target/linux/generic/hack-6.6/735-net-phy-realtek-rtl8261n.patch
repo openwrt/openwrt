@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -396,6 +396,8 @@ config QSEMI_PHY
+@@ -406,6 +406,8 @@ config QSEMI_PHY
  
  source "drivers/net/phy/realtek/Kconfig"
  
@@ -18,4 +18,4 @@
 +obj-y				+= rtl8261n/
  obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
  obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o
- obj-$(CONFIG_RTL8367S_GSW)	+= rtk/
+ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
