@@ -29,8 +29,8 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  	u32 speed;
  	const struct stm32_ops *ops;
  	struct device *dev;
-@@ -374,6 +376,16 @@ static int stm32_dwmac_parse_data(struct
- 			dev_dbg(dev, "Warning sysconfig register mask not set\n");
+@@ -379,6 +381,16 @@ static int stm32_dwmac_parse_data(struct
+ 		}
  	}
  
 +	dwmac->regulator = devm_regulator_get_optional(dev, "phy");
@@ -46,7 +46,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  	return err;
  }
  
-@@ -439,6 +451,28 @@ static int stm32mp1_parse_data(struct st
+@@ -444,6 +456,28 @@ static int stm32mp1_parse_data(struct st
  	return err;
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  static int stm32_dwmac_probe(struct platform_device *pdev)
  {
  	struct plat_stmmacenet_data *plat_dat;
-@@ -480,12 +514,18 @@ static int stm32_dwmac_probe(struct plat
+@@ -485,12 +519,18 @@ static int stm32_dwmac_probe(struct plat
  	if (ret)
  		return ret;
  
@@ -95,7 +95,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  err_clk_disable:
  	stm32_dwmac_clk_disable(dwmac, false);
  
-@@ -506,6 +546,8 @@ static void stm32_dwmac_remove(struct pl
+@@ -511,6 +551,8 @@ static void stm32_dwmac_remove(struct pl
  		dev_pm_clear_wake_irq(&pdev->dev);
  		device_init_wakeup(&pdev->dev, false);
  	}
