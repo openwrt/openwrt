@@ -5,6 +5,7 @@
 	model = "HiWiFi HC5861";
 
 	aliases {
+		label-mac-device = &ethernet;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -95,8 +96,8 @@
 	wifi@0,0 {
 		compatible = "pci14c3,7662";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
