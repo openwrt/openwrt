@@ -1,0 +1,35 @@
+From f8d05679fb3faae478d604177b0c188b340371cd Mon Sep 17 00:00:00 2001
+From: Breno Leitao <leitao@debian.org>
+Date: Mon, 22 Apr 2024 05:38:55 -0700
+Subject: [PATCH] net: free_netdev: exit earlier if dummy
+
+For dummy devices, exit earlier at free_netdev() instead of executing
+the whole function. This is necessary, because dummy devices are
+special, and shouldn't have the second part of the function executed.
+
+Otherwise reg_state, which is NETREG_DUMMY, will be overwritten and
+there will be no way to identify that this is a dummy device. Also, this
+device do not need the final put_device(), since dummy devices are not
+registered (through register_netdevice()), where the device reference is
+increased (at netdev_register_kobject()/device_add()).
+
+Suggested-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Breno Leitao <leitao@debian.org>
+Reviewed-by: Ido Schimmel <idosch@nvidia.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/core/dev.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -11020,7 +11020,8 @@ void free_netdev(struct net_device *dev)
+ 	dev->xdp_bulkq = NULL;
+ 
+ 	/*  Compatibility with error handling in drivers */
+-	if (dev->reg_state == NETREG_UNINITIALIZED) {
++	if (dev->reg_state == NETREG_UNINITIALIZED ||
++	    dev->reg_state == NETREG_DUMMY) {
+ 		netdev_freemem(dev);
+ 		return;
+ 	}

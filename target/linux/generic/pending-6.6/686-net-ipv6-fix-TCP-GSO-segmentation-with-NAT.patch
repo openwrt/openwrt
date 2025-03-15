@@ -1,0 +1,54 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 24 Feb 2025 12:18:23 +0100
+Subject: [PATCH] net: ipv6: fix TCP GSO segmentation with NAT
+
+When updating the source/destination address, the TCP/UDP checksum needs to
+be updated as well.
+
+Fixes: bee88cd5bd83 ("net: add support for segmenting TCP fraglist GSO packets")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -112,24 +112,36 @@ static struct sk_buff *__tcpv6_gso_segme
+ 	struct sk_buff *seg;
+ 	struct tcphdr *th2;
+ 	struct ipv6hdr *iph2;
++	bool addr_equal;
+ 
+ 	seg = segs;
+ 	th = tcp_hdr(seg);
+ 	iph = ipv6_hdr(seg);
+ 	th2 = tcp_hdr(seg->next);
+ 	iph2 = ipv6_hdr(seg->next);
++	addr_equal = ipv6_addr_equal(&iph->saddr, &iph2->saddr) &&
++		     ipv6_addr_equal(&iph->daddr, &iph2->daddr);
+ 
+ 	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
+-	    ipv6_addr_equal(&iph->saddr, &iph2->saddr) &&
+-	    ipv6_addr_equal(&iph->daddr, &iph2->daddr))
++	    addr_equal)
+ 		return segs;
+ 
+ 	while ((seg = seg->next)) {
+ 		th2 = tcp_hdr(seg);
+ 		iph2 = ipv6_hdr(seg);
+ 
+-		iph2->saddr = iph->saddr;
+-		iph2->daddr = iph->daddr;
++		if (!addr_equal) {
++			inet_proto_csum_replace16(&th2->check, seg,
++						  iph2->saddr.s6_addr32,
++						  iph->saddr.s6_addr32,
++						  true);
++			inet_proto_csum_replace16(&th2->check, seg,
++						  iph2->daddr.s6_addr32,
++						  iph->daddr.s6_addr32,
++						  true);
++			iph2->saddr = iph->saddr;
++			iph2->daddr = iph->daddr;
++		}
+ 		__tcpv6_gso_segment_csum(seg, &th2->source, th->source);
+ 		__tcpv6_gso_segment_csum(seg, &th2->dest, th->dest);
+ 	}
