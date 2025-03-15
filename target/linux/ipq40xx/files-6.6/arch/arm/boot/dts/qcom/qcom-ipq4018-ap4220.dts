@@ -1,0 +1,369 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	compatible = "alibaba,ap4220", "qcom,ipq4019";
+	model = "Alibaba AP4220";
+
+	aliases {
+		label-mac-device = &gmac;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+		};
+
+		led-1 {
+			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+		};
+
+		led_status: led-2 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 5 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	reg_usb: regulator-usb {
+		compatible = "regulator-fixed";
+		enable-active-low;
+		gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
+
+		regulator-max-microvolt = <5000000>;
+		regulator-min-microvolt = <5000000>;
+		regulator-name = "reg_usb";
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	num-cs = <2>;
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 4 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "MIBIB";
+				reg = <0x40000 0x20000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "QSEE";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "CDT";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "DDRPARAMS";
+				reg = <0xd0000 0x10000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "APPSBLENV";
+				reg = <0xe0000 0x10000>;
+			};
+
+			partition@f0000 {
+				label = "APPSBL";
+				reg = <0xf0000 0x80000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "product_info";
+				reg = <0x180000 0x10000>;
+				read-only;
+			};
+
+			partition@190000 {
+				label = "mtdoops";
+				reg = <0x190000 0x20000>;
+			};
+
+			partition@1b0000 {
+				label = "priv_data1";
+				reg = <0x1b0000 0x10000>;
+				read-only;
+			};
+
+			partition@1c0000 {
+				label = "priv_data2";
+				reg = <0x1c0000 0x10000>;
+				read-only;
+			};
+
+			partition@1d0000 {
+				label = "priv_data3";
+				reg = <0x1d0000 0x200000>;
+				read-only;
+			};
+		};
+	};
+
+	spi-nand@1 {
+		status = "okay";
+
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs1";
+				reg = <0x0 0x3000000>;
+			};
+
+			partition@3000000 {
+				label = "rootfs2";
+				reg = <0x3000000 0x3000000>;
+			};
+
+			partition@6000000 {
+				label = "usrdata";
+				reg = <0x6000000 0x2000000>;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial0_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "okay";
+};
+
+&ethphy4 {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&prng {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mdc {
+			pins = "gpio52";
+			function = "mdc";
+			drive-strength = <4>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio53";
+			function = "mdio";
+			drive-strength = <4>;
+			bias-pull-up;
+		};
+	};
+
+	serial0_pins: serial0_pinmux {
+		blsp_uart0 {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	spi0_pins: spi0_pinmux {
+		blsp_spi0 {
+			pins = "gpio55", "gpio56", "gpio57";
+			function = "blsp_spi0";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		gpio {
+			pins = "gpio54", "gpio4";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+
+	phy-supply = <&reg_usb>;
+};
+
+&usb3_ss_phy {
+	status = "okay";
+
+	phy-supply = <&reg_usb>;
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Alibaba-AP4220";
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Alibaba-AP4220";
+};
