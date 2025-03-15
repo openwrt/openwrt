@@ -239,6 +239,8 @@
 };
 
 &mmc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	pinctrl-names = "default", "state_uhs";
 	pinctrl-0 = <&mmc0_pins_default>;
 	pinctrl-1 = <&mmc0_pins_uhs>;
@@ -304,6 +306,8 @@
 
 	slot0: pcie@0,0 {
 		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
 
 		radio0: mt7915@0,0 {
 			reg = <0x0000 0 0 0 0>;
@@ -504,6 +508,8 @@
 
 	system-leds {
 		compatible = "srg,sysled";
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0x30>;
 
 		led_status_red: led@1 {
