@@ -6,17 +6,27 @@
 	compatible = "hiwifi,hc5611", "mediatek,mt7628an-soc";
 	model = "HiWiFi HC5611";
 
+	aliases {
+		label-mac-device = &ethernet;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "green:system";
+		led_status: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
-		internet {
-			label = "red:internet";
+		led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};
