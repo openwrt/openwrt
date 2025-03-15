@@ -70,6 +70,12 @@ mercusys,mr90x-v1-ubi)
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
 	;;
+netcore,n60-pro)
+	ucidef_set_led_netdev "wanlink" "WANLINK" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "lan-1" "lan-1" "mdio-bus:05:blue:lan" "lan1" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1" "link"
+	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "blue:wifi5g" "phy0-ap0" "link tx rx"
+	;;
 nokia,ea0326gmp)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"
