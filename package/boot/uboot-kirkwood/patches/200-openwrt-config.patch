@@ -214,3 +214,23 @@
 +CONFIG_FIT_VERBOSE=y
  CONFIG_LZMA=y
 +CONFIG_LZO=y
+--- a/configs/dns325_defconfig
++++ b/configs/dns325_defconfig
+@@ -48,3 +48,8 @@ CONFIG_USB=y
+ CONFIG_DM_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_STORAGE=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
++CONFIG_LZMA=y
++CONFIG_LZO=y
+--- a/include/configs/dns325.h
++++ b/include/configs/dns325.h
+@@ -74,4 +74,6 @@
+ 	"ubi read 0x800000 kernel; " \
+ 	"bootm 0x800000"
+ 
++#include "openwrt-kirkwood-common.h"
++
+ #endif /* _CONFIG_DNS325_H */
