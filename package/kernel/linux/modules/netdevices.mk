@@ -1190,7 +1190,7 @@ define KernelPackage/i40e
     CONFIG_I40E_DCA=n \
     CONFIG_I40E_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
-  AUTOLOAD:=$(call AutoProbe,i40e)
+  AUTOLOAD:=$(call AutoLoad,36,i40e,1)
 endef
 
 define KernelPackage/i40e/description
@@ -1648,7 +1648,7 @@ define KernelPackage/mlx4-core
 	CONFIG_MLX4_CORE=y \
 	CONFIG_MLX4_CORE_GEN2=y \
 	CONFIG_MLX4_DEBUG=n
-  AUTOLOAD:=$(call AutoLoad,36,mlx4_core mlx4_en,1)
+  AUTOLOAD:=$(call AutoLoad,45,mlx4_core mlx4_en,1)
 endef
 
 define KernelPackage/mlx4-core/description
@@ -1679,7 +1679,7 @@ define KernelPackage/mlx5-core
 	CONFIG_MLX5_TC_CT=n \
 	CONFIG_MLX5_TLS=n \
 	CONFIG_MLX5_VFIO_PCI=n
-  AUTOLOAD:=$(call AutoLoad,36,mlx5_core,1)
+  AUTOLOAD:=$(call AutoLoad,45,mlx5_core,1)
 endef
 
 define KernelPackage/mlx5-core/description
