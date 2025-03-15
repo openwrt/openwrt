@@ -1,19 +1,54 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include "ipq6018-cpr-regulator.dtsi"
+#include "ipq6018-mp5496.dtsi"
 
-&CPU0 {
+&cpu0 {
 	cpu-supply = <&apc_vreg>;
 };
 
-&CPU1 {
+&cpu1 {
 	cpu-supply = <&apc_vreg>;
 };
 
-&CPU2 {
+&cpu2 {
 	cpu-supply = <&apc_vreg>;
 };
 
-&CPU3 {
+&cpu3 {
 	cpu-supply = <&apc_vreg>;
+};
+
+&cpu_opp_table {
+	opp-864000000 {
+		opp-microvolt = <1>;
+	};
+
+	opp-1056000000 {
+		opp-microvolt = <2>;
+	};
+
+	opp-1200000000 {
+		opp-microvolt = <3>;
+	};
+
+	opp-1320000000 {
+		opp-microvolt = <3>;
+	};
+
+	opp-1440000000 {
+		opp-microvolt = <4>;
+	};
+
+	opp-1512000000 {
+		opp-microvolt = <5>;
+	};
+
+	opp-1608000000 {
+		opp-microvolt = <5>;
+	};
+
+	opp-1800000000 {
+		opp-microvolt = <6>;
+	};
 };
