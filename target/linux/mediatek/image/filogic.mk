@@ -1864,3 +1864,24 @@ define Device/zyxel_nwa50ax-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_nwa50ax-pro
+
+define Device/arcadyan_wg620443
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WG620443
+  DEVICE_DTS := mt7986a-arcadyan-wg620443
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-ubootenv-nvram kmod-mt7986-firmware mt7986-wo-firmware uencrypt-mbedtls kmod-mt7915e
+  DEVICE_DTS_LOADADDR := 0x44000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 51200k
+  KERNEL_IN_UBI := 1
+  IMAGE += initramfs-kernel.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+    ARTIFACTS += initramfs-factory.bin
+    ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | sysupgrade-tar kernel=$$$$@ | append-metadata
+  endif
+endef
+TARGET_DEVICES += arcadyan_wg620443
