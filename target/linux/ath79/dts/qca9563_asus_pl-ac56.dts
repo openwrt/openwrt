@@ -51,11 +51,13 @@
 		wlan2g {
 			label = "green:wlan2g";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
 		};
 
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
 		};
 	};
 };

@@ -15,6 +15,7 @@
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		mobile {
