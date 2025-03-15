@@ -1,0 +1,63 @@
+From a8c8b8813567b47fde39f6489d240980e38e4fc7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Mon, 17 Apr 2023 18:38:05 +0200
+Subject: [PATCH] dsa: brcm: legacy: fixes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c |  4 ++++
+ net/dsa/tag_brcm.c               | 20 ++++++++++++++++++--
+ 2 files changed, 22 insertions(+), 2 deletions(-)
+
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -32,6 +32,10 @@
+ #define BRCM_LEG_MULTICAST	(1 << 5)
+ #define BRCM_LEG_EGRESS		(2 << 5)
+ #define BRCM_LEG_INGRESS	(3 << 5)
++#define BRCM_LEG_LEN_HI(x)	(((x) >> 8) & 0x7)
++
++/* 4th byte in the tag */
++#define BRCM_LEG_LEN_LO(x)	((x) & 0xff)
+ 
+ /* 6th byte in the tag */
+ #define BRCM_LEG_PORT_ID	(0xf)
+@@ -217,6 +221,8 @@ static struct sk_buff *brcm_leg_tag_xmit
+ 					 struct net_device *dev)
+ {
+ 	struct dsa_port *dp = dsa_slave_to_port(dev);
++	unsigned int skb_len;
++	__wsum skb_csum;
+ 	u8 *brcm_tag;
+ 
+ 	/* The Ethernet switch we are interfaced with needs packets to be at
+@@ -231,6 +237,9 @@ static struct sk_buff *brcm_leg_tag_xmit
+ 	if (__skb_put_padto(skb, ETH_ZLEN + BRCM_LEG_TAG_LEN, false))
+ 		return NULL;
+ 
++	skb_len = skb->len;
++	skb_csum = skb_checksum(skb, 0, skb->len, 0);
++
+ 	skb_push(skb, BRCM_LEG_TAG_LEN);
+ 
+ 	dsa_alloc_etype_header(skb, BRCM_LEG_TAG_LEN);
+@@ -242,11 +251,14 @@ static struct sk_buff *brcm_leg_tag_xmit
+ 	brcm_tag[1] = BRCM_LEG_TYPE_LO;
+ 
+ 	/* Broadcom tag value */
+-	brcm_tag[2] = BRCM_LEG_EGRESS;
+-	brcm_tag[3] = 0;
++	brcm_tag[2] = BRCM_LEG_EGRESS | BRCM_LEG_LEN_HI(skb_len);
++	brcm_tag[3] = BRCM_LEG_LEN_LO(skb_len);
+ 	brcm_tag[4] = 0;
+ 	brcm_tag[5] = dp->index & BRCM_LEG_PORT_ID;
+ 
++	/* Original FCS value */
++	skb_put_data(skb, &skb_csum, ETH_FCS_LEN);
++
+ 	return skb;
+ }
+ 
