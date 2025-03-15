@@ -1,50 +1,9 @@
-From fa846f5991de6c37db1f40e26a39f52c130f2bc7 Mon Sep 17 00:00:00 2001
-From: Jonathan Bell <jonathan@raspberrypi.com>
-Date: Mon, 13 Sep 2021 11:14:32 +0100
-Subject: [PATCH 0519/1085] usb: dwc3: Set DMA and coherent masks early
+From 1b1e75ae7d69816609a95ff2fb92729a2ff04d8e Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Mon, 10 Feb 2025 13:26:33 +0000
+Subject: [PATCH] Reapply "usb: dwc3: Set DMA and coherent masks early"
 
-dwc3 allocates scratch and event buffers in the top-level driver. Hack the
-probe function to set the DMA mask before trying to allocate these.
-
-I think the event buffers are only used in device mode, but the scratch
-buffers may be used if core hibernation is enabled.
-
-usb: dwc3: add support for new DT quirks
-
-Apply the optional axi-pipe-limit and dis-in-autoretry-quirk properties
-during driver probe.
-
-Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
-
-phy: phy-brcm-usb: Add 2712 support
-
-usb: dwc3: if the host controller instance number is present in DT, use it
-
-If two instances of a dwc3 host controller are specified in devicetree,
-then the probe order may be arbitrary which results in the device names
-swapping on a per-boot basis.
-
-If a "usb" alias with the instance number is specified, then use
-that to construct the device name instead of autogenerating one.
-
-Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
-
-rp1 dwc3 changes
-
-drivers: usb: dwc3: allow setting GTXTHRCFG on dwc_usb3.0 hardware
-
-Equivalent register fields exist in the SuperSpeed Host version of the
-hardware, so allow the use of TX thresholds if specified in devicetree.
-
-Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
-
-drivers: usb: dwc3: remove downstream quirk dis-in-autoretry
-
-Upstream have unilaterally disabled the feature.
-
-Partially reverts 6e9142a26ee0fdc3a5adc49ed6cedc0b16ec2ed1 (downstream)
-
-Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
+This reverts commit 09dfdf6129532e19b2cfd4992d1d09e7119ccd48.
 ---
  drivers/phy/broadcom/Kconfig                  |  2 +-
  .../phy/broadcom/phy-brcm-usb-init-synopsys.c | 59 +++++++++++++++++++
@@ -246,7 +205,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	ret = dwc3_phy_power_on(dwc);
  	if (ret)
  		goto err_exit_phy;
-@@ -1377,6 +1397,24 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -1386,6 +1406,24 @@ static int dwc3_core_init(struct dwc3 *d
  
  	dwc3_config_threshold(dwc);
  
@@ -271,7 +230,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	return 0;
  
  err_power_off_phy:
-@@ -1520,6 +1558,7 @@ static void dwc3_get_properties(struct d
+@@ -1529,6 +1567,7 @@ static void dwc3_get_properties(struct d
  	u8			tx_thr_num_pkt_prd = 0;
  	u8			tx_max_burst_prd = 0;
  	u8			tx_fifo_resize_max_num;
@@ -279,7 +238,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	/* default to highest possible threshold */
  	lpm_nyet_threshold = 0xf;
-@@ -1540,6 +1579,9 @@ static void dwc3_get_properties(struct d
+@@ -1549,6 +1588,9 @@ static void dwc3_get_properties(struct d
  	 */
  	tx_fifo_resize_max_num = 6;
  
@@ -289,7 +248,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->maximum_speed = usb_get_maximum_speed(dev);
  	dwc->max_ssp_rate = usb_get_maximum_ssp_rate(dev);
  	dwc->dr_mode = usb_get_dr_mode(dev);
-@@ -1654,6 +1696,9 @@ static void dwc3_get_properties(struct d
+@@ -1669,6 +1711,9 @@ static void dwc3_get_properties(struct d
  	dwc->dis_split_quirk = device_property_read_bool(dev,
  				"snps,dis-split-quirk");
  
@@ -299,7 +258,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1671,6 +1716,8 @@ static void dwc3_get_properties(struct d
+@@ -1686,6 +1731,8 @@ static void dwc3_get_properties(struct d
  	dwc->tx_thr_num_pkt_prd = tx_thr_num_pkt_prd;
  	dwc->tx_max_burst_prd = tx_max_burst_prd;
  
@@ -308,7 +267,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->tx_fifo_resize_max_num = tx_fifo_resize_max_num;
  }
  
-@@ -1963,6 +2010,12 @@ static int dwc3_probe(struct platform_de
+@@ -1978,6 +2025,12 @@ static int dwc3_probe(struct platform_de
  	if (IS_ERR(dwc->usb_psy))
  		return dev_err_probe(dev, PTR_ERR(dwc->usb_psy), "couldn't get usb power supply\n");
  
@@ -333,7 +292,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /* Global Debug LSP MUX Select */
  #define DWC3_GDBGLSPMUX_ENDBC		BIT(15)	/* Host only */
  #define DWC3_GDBGLSPMUX_HOSTSELECT(n)	((n) & 0x3fff)
-@@ -1067,6 +1070,7 @@ struct dwc3_scratchpad_array {
+@@ -1070,6 +1073,7 @@ struct dwc3_scratchpad_array {
   * @tx_max_burst_prd: max periodic ESS transmit burst size
   * @tx_fifo_resize_max_num: max number of fifos allocated during txfifo resize
   * @clear_stall_protocol: endpoint number that requires a delayed status phase
@@ -341,7 +300,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
   * @hsphy_interface: "utmi" or "ulpi"
   * @connected: true when we're connected to a host, false otherwise
   * @softconnect: true when gadget connect is called, false when disconnect runs
-@@ -1304,6 +1308,7 @@ struct dwc3 {
+@@ -1311,6 +1315,7 @@ struct dwc3 {
  	u8			tx_max_burst_prd;
  	u8			tx_fifo_resize_max_num;
  	u8			clear_stall_protocol;
