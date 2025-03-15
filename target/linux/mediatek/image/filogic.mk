@@ -109,6 +109,21 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
+define Device/7links_wlr-1300
+  DEVICE_VENDOR := 7Links
+  DEVICE_MODEL := WLR-1300
+  DEVICE_DTS := mt7981b-7links-wlr-1300
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGE_SIZE := 14336k
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-nor-rfb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += 7links_wlr-1300
+
 define Device/abt_asr3000
   DEVICE_VENDOR := ABT
   DEVICE_MODEL := ASR3000

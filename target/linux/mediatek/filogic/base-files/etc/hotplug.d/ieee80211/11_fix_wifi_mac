@@ -10,6 +10,10 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	7links,wlr-1300)
+		addr=$(mtd_get_mac_binary factory 0x04)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr -0x300000) > /sys${DEVPATH}/macaddress
+		;;
 	abt,asr3000)
 		# Originally, phy1 is phy0 mac with LA bit set. However, this would conflict
 		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
