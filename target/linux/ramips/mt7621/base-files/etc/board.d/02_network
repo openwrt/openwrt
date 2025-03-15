@@ -267,12 +267,6 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		wan_mac=$label_mac
 		;;
-	hiwifi,hc5962)
-		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac")
-		label_mac=$lan_mac
-		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
 	iodata,wnpr2600g)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
