@@ -26,8 +26,18 @@ Suggested-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Ilya Lipnitskiy <ilya.lipnitskiy@gmail.com>
 Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
- arch/mips/include/asm/mips-cps.h | 23 ++++++++++++++++++++++-
- 1 file changed, 22 insertions(+), 1 deletion(-)
+
+The proposed detection method was based on reading the LAUNCH_FREADY core flag.
+However, this method only works before the cores are launched.
+For this reason, the core number detection method has been changed to a simpler one.
+For mt6721s the 17th revision bit is zero, hence we know that it is this chip,
+so the number of cores is 1.
+
+Co-authored-by: Shiji Yang <yangshiji66@qq.com>
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ arch/mips/include/asm/mips-cps.h | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 --- a/arch/mips/include/asm/mips-cps.h
 +++ b/arch/mips/include/asm/mips-cps.h
@@ -35,41 +45,19 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  #include <linux/io.h>
  #include <linux/types.h>
  
-+#include <asm/mips-boards/launch.h>
++#include <asm/mach-ralink/mt7621.h>
 +
  extern unsigned long __cps_access_bad_size(void)
  	__compiletime_error("Bad size for CPS accessor");
  
-@@ -162,12 +164,31 @@ static inline uint64_t mips_cps_cluster_
-  */
- static inline unsigned int mips_cps_numcores(unsigned int cluster)
- {
-+	unsigned int ncores;
-+
+@@ -165,6 +167,10 @@ static inline unsigned int mips_cps_numc
  	if (!mips_cm_present())
  		return 0;
  
++	if (IS_ENABLED(CONFIG_SOC_MT7621) &&
++	    !FIELD_GET(0x20000, __raw_readl(MT7621_SYSC_BASE + SYSC_REG_CHIP_REV)))
++		return 1;
++ 
  	/* Add one before masking to handle 0xff indicating no cores */
--	return FIELD_GET(CM_GCR_CONFIG_PCORES,
-+	ncores = FIELD_GET(CM_GCR_CONFIG_PCORES,
+ 	return FIELD_GET(CM_GCR_CONFIG_PCORES,
  			 mips_cps_cluster_config(cluster) + 1);
-+
-+	if (IS_ENABLED(CONFIG_SOC_MT7621)) {
-+		struct cpulaunch *launch;
-+
-+		/*
-+		 * Ralink MT7621S SoC is single core, but the GCR_CONFIG method
-+		 * always reports 2 cores. Check the second core's LAUNCH_FREADY
-+		 * flag to detect if the second core is missing. This method
-+		 * only works before the core has been started.
-+		 */
-+		launch = (struct cpulaunch *)CKSEG0ADDR(CPULAUNCH);
-+		launch += 2; /* MT7621 has 2 VPEs per core */
-+		if (!(launch->flags & LAUNCH_FREADY))
-+			ncores = 1;
-+	}
-+
-+	return ncores;
- }
- 
- /**

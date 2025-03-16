@@ -17,7 +17,7 @@ load_ifaces() {
 	done
 }
 
-reload_service() {
+do_reload_service() {
 	json_init
 	json_add_array interfaces
 	for i in $(load_ifaces); do
@@ -66,7 +66,12 @@ start_service() {
 	procd_close_instance
 }
 
-service_started() {
+reload_service() {
+	rc_procd start_service
+	do_reload_service
+}
+
+service_running() {
 	ubus -t 10 wait_for umdns
-	[ $? = 0 ] && reload_service
+	[ $? = 0 ] && do_reload_service
 }

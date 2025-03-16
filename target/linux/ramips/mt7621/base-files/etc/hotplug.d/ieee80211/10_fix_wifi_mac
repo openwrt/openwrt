@@ -103,7 +103,7 @@ case "$board" in
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
 	hiwifi,hc5962)
-		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
+		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac")
 		[ "$PHYNBR" = "0" ] && [ -n "$label_mac" ] && \
 		echo -n "$label_mac" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && [ -n "$label_mac" ] && \
@@ -125,6 +125,11 @@ case "$board" in
 	jcg,q20)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress
+		;;
+	keenetic,kn-1910)
+		lan_mac_addr="$(mtd_get_mac_binary RF-EEPROM 0x4)"
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	keenetic,kn-3510)
 		[ "$PHYNBR" = "1" ] && \

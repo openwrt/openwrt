@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014-2015 OpenWrt.org
+# Copyright (C) 2014-2025 OpenWrt.org
 #
 
 . /lib/functions/uci-defaults.sh
@@ -8,6 +8,7 @@ board_config_update
 
 case "$(board_name)" in
 itus,shield-router|\
+ubnt,erlite|\
 ubnt,usg)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;

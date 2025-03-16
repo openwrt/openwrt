@@ -7,10 +7,10 @@
 #include "uline.h"
 #include "private.h"
 
-enum vt100_escape vt100_esc_decode(const char *str)
+enum vt100_escape vt100_esc_decode(const char *str, uint32_t *data)
 {
-	unsigned long code;
-	size_t idx;
+	unsigned long code, code2;
+	char *err;
 
 	switch (*(str++)) {
 	case 0:
@@ -45,23 +45,36 @@ enum vt100_escape vt100_esc_decode(const char *str)
 		case '0' ... '4':
 		case '6' ... '9':
 			str--;
-			idx = strspn(str, "0123456789");
-			if (!str[idx])
+			code = strtoul(str, &err, 10);
+			switch (*err) {
+			case 0:
 				return VT100_INCOMPLETE;
-			if (str[idx] != '~')
-				return VT100_UNKNOWN;
-			code = strtoul(str, NULL, 10);
-			switch (code) {
-			case 1:
-				return VT100_HOME;
-			case 3:
-				return VT100_DELETE;
-			case 4:
-				return VT100_END;
-			case 200:
-			case 201:
-				// paste start/end
-				return VT100_IGNORE;
+			case '~':
+				switch (code) {
+				case 1:
+					return VT100_HOME;
+				case 3:
+					return VT100_DELETE;
+				case 4:
+					return VT100_END;
+				case 200:
+				case 201:
+					// paste start/end
+					return VT100_IGNORE;
+				default:
+					return VT100_UNKNOWN;
+				}
+			case ';':
+				code2 = strtoul(err + 1, &err, 10);
+				switch (*err) {
+				case 0:
+					return VT100_INCOMPLETE;
+				case 'R':
+					*data = (code2 << 16) | (code & 0xffff);
+					return VT100_CURSOR_POS;
+				default:
+					return VT100_UNKNOWN;
+				}
 			default:
 				return VT100_UNKNOWN;
 			}

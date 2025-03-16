@@ -157,8 +157,9 @@ platform_do_upgrade() {
 	buffalo,wsr-2533dhpls)
 		buffalo_do_upgrade "$1"
 		;;
-	dna,valokuitu-plus-ex400)
-		dna_do_upgrade "$1"
+	dna,valokuitu-plus-ex400|\
+	genexis,pulse-ex400)
+		inteno_do_upgrade "$1"
 		;;
 	elecom,wrc-x1800gs)
 		[ "$(fw_printenv -n bootmenu_delay)" != "0" ] || \
@@ -195,6 +196,7 @@ platform_do_upgrade() {
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,lte5398-m904|\
+	zyxel,lte7490-m904|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0

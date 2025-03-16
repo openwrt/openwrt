@@ -52,6 +52,7 @@ enum vt100_escape {
 	VT100_CURSOR_WORD_LEFT,
 	VT100_CURSOR_RIGHT,
 	VT100_CURSOR_WORD_RIGHT,
+	VT100_CURSOR_POS,
 	VT100_HOME,
 	VT100_END,
 	VT100_INSERT,
@@ -63,7 +64,7 @@ enum vt100_escape {
 };
 
 ssize_t utf8_nsyms(const char *str, size_t len);
-enum vt100_escape vt100_esc_decode(const char *str);
+enum vt100_escape vt100_esc_decode(const char *str, uint32_t *data);
 
 // helpers:
 void __vt100_csi_num(FILE *out, int num, char code);
@@ -189,6 +190,17 @@ static inline void vt100_ding(FILE *out)
 {
 	fputc(7, out);
 	fflush(out);
+}
+
+static inline void vt100_request_window_size(FILE *out)
+{
+	fputs(
+	      "\e7"             /* save cursor position */
+	      "\e[r"            /* reset margins */
+	      "\e[999;999H"     /* move cursor to bottom right */
+	      "\e[6n"           /* report cursor position */
+	      "\e8",            /* restore cursor position */
+	      out);
 }
 
 #endif

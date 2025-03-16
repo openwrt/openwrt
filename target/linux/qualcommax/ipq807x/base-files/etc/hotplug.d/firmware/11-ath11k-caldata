@@ -9,6 +9,13 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath11k/IPQ8074/hw2.0/cal-ahb-c000000.wifi.bin")
 	case "$board" in
+	aliyun,ap8220)
+		caldata_extract "0:art" 0x1000 0x20000
+		addr=$(mtd_get_mac_text product_info 0x4b)
+		ath11k_patch_mac $addr 0
+		ath11k_patch_mac $(macaddr_add $addr 8) 1
+		ath11k_set_macflag
+		;;
 	asus,rt-ax89x)
 		CI_UBIPART="UBI_DEV"
 		caldata_extract_ubi "Factory" 0x1000 0x20000

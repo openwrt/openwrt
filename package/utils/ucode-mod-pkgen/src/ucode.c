@@ -269,7 +269,7 @@ uc_cert_info(uc_vm_t *vm, size_t nargs)
 		uc_value_t *info = ucv_object_new(vm);
 		int len;
 
-		ucv_array_push(ret, ucv_get(info));
+		ucv_array_push(ret, info);
 		ucv_object_add(info, "version", ucv_int64_new(cur->version));
 
 		uc_cert_info_add_name(info, "issuer", &cur->issuer);

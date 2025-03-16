@@ -151,7 +151,7 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 	return true;
 }
 
-function network_create_uci(name, iface)
+function network_create_uci(model, name, iface)
 {
 	let cur = uci.cursor();
 	cur.set("network", name, "interface");
@@ -344,7 +344,7 @@ function network_create(ctx, argv, named) {
 	if (!network_sign_data(ctx, named.network, network, pw_file))
 		return;
 
-	network_create_uci(named.network, {
+	network_create_uci(ctx.model, named.network, {
 		proto: "unet",
 		metric: named.metric,
 		zone: named.zone,
@@ -580,7 +580,7 @@ function network_join_peer_update(model, ctx, msg)
 	if (joinreq.connect)
 		iface.connect = joinreq.connect;
 
-	network_create_uci(name, iface);
+	network_create_uci(model, name, iface);
 
 	model.status_msg("Configuration added for interface " + name);
 
@@ -937,6 +937,12 @@ function is_vxlan_service(ctx, argv, named, spec)
 	return type == "vxlan";
 }
 
+function get_config_object(ctx, spec, obj, argv)
+{
+	obj.config ??= {};
+	return obj.config;
+}
+
 const service_editor = {
 	change_cb: function(ctx, argv) {
 		ctx.data.netdata.changed = true;
@@ -964,6 +970,7 @@ const service_editor = {
 			help: "VXLAN ID",
 			attribute: "id",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 0,
@@ -974,6 +981,7 @@ const service_editor = {
 			help: "VXLAN port",
 			attribute: "port",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 1,
@@ -984,6 +992,7 @@ const service_editor = {
 			help: "VXLAN tunnel MTU",
 			attribute: "mtu",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 1280,
@@ -994,6 +1003,7 @@ const service_editor = {
 			help: "Member allowed to receive broad-/multicast and unknown unicast",
 			attribute: "forward_ports",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			multiple: true,
 			args: {
 				type: "enum",

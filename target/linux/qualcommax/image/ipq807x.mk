@@ -33,6 +33,19 @@ define Build/wax6xx-netgear-tar
 	rm -rf $@.tmp
 endef
 
+define Device/aliyun_ap8220
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Aliyun
+	DEVICE_MODEL := AP8220
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES := ipq-wifi-aliyun_ap8220
+endef
+TARGET_DEVICES += aliyun_ap8220
+
 define Device/arcadyan_aw1000
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -195,7 +208,7 @@ define Device/linksys_mx4200v1
 	$(call Device/linksys_mx4x00)
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
-	DEVICE_PACKAGES += kmod-bluetooth
+	DEVICE_PACKAGES += kmod-hci-uart
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
@@ -228,7 +241,7 @@ define Device/linksys_mx8500
 	$(call Device/linksys_mx)
 	DEVICE_MODEL := MX8500
 	DEVICE_PACKAGES += ipq-wifi-linksys_mx8500 kmod-ath11k-pci \
-		ath11k-firmware-qcn9074 kmod-bluetooth
+		ath11k-firmware-qcn9074 kmod-hci-uart
 endef
 TARGET_DEVICES += linksys_mx8500
 
@@ -494,6 +507,6 @@ define Device/zyxel_nbg7815
 	DEVICE_DTS_CONFIG := config@nbg7815
 	SOC := ipq8074
 	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci \
-		kmod-bluetooth kmod-hwmon-tmp103
+		kmod-hci-uart kmod-hwmon-tmp103
 endef
 TARGET_DEVICES += zyxel_nbg7815

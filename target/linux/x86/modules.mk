@@ -6,7 +6,9 @@ define KernelPackage/amd-xgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AMD Ethernet on SoC support
   DEPENDS:=@PCI_SUPPORT @TARGET_x86_64 +kmod-lib-crc32c +kmod-ptp +kmod-libphy +kmod-mdio-devres
-  KCONFIG:=CONFIG_AMD_XGBE
+  KCONFIG:= \
+	CONFIG_AMD_XGBE \
+	CONFIG_AMD_XGBE_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amd/xgbe/amd-xgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,amd-xgbe)
 endef

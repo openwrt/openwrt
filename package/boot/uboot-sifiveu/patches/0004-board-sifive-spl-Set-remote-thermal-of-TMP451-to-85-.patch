@@ -1,0 +1,67 @@
+From 877afdf63129caa64d70d4a1252eec44778cfa0e Mon Sep 17 00:00:00 2001
+From: Vincent Chen <vincent.chen@sifive.com>
+Date: Mon, 24 Jan 2022 02:57:40 -0800
+Subject: [PATCH 4/5] board: sifive: spl: Set remote thermal of TMP451 to 85
+ deg C
+
+ for the unmatched board
+
+For TMP451 on the unmatched board, the default value of the remote
+thermal threshold is 108 deg C. This commit initilizes it to 85 deg C at SPL.
+
+Upstream-Status: Pending
+Signed-off-by: Vincent Chen <vincent.chen@sifive.com>
+Signed-off-by: Thomas Perrot <thomas.perrot@bootlin.com>
+---
+ board/sifive/unmatched/spl.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/board/sifive/unmatched/spl.c
++++ b/board/sifive/unmatched/spl.c
+@@ -10,6 +10,8 @@
+ #include <spl.h>
+ #include <misc.h>
+ #include <log.h>
++#include <config.h>
++#include <i2c.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <asm/gpio.h>
+@@ -26,6 +28,24 @@
+ #define MODE_SELECT_SD		0xb
+ #define MODE_SELECT_MASK	GENMASK(3, 0)
+ 
++#define TMP451_REMOTE_THERM_LIMIT_REG_OFFSET	0x19
++#define TMP451_REMOTE_THERM_LIMIT_INIT_VALUE	0x55
++
++static inline int init_tmp451_remote_therm_limit(void)
++{
++	struct udevice *dev;
++	unsigned char r_therm_limit = TMP451_REMOTE_THERM_LIMIT_INIT_VALUE;
++	int ret;
++
++	ret = i2c_get_chip_for_busnum(0, 0x4c, 0x1, &dev);
++
++	if (!ret)
++		ret = dm_i2c_write(dev, TMP451_REMOTE_THERM_LIMIT_REG_OFFSET,
++				   &r_therm_limit,
++				   sizeof(unsigned char));
++	return ret;
++}
++
+ static inline int spl_reset_device_by_gpio(const char *label, int pin, int low_width)
+ {
+ 	int ret;
+@@ -92,6 +112,12 @@ int spl_board_init_f(void)
+ 
+ 	pwm_device_init();
+ 
++	ret = init_tmp451_remote_therm_limit();
++	if (ret) {
++		debug("TMP451 remote THERM limit init failed: %d\n", ret);
++		goto end;
++	}
++
+ 	ret = spl_gemgxl_init();
+ 	if (ret) {
+ 		debug("Gigabit ethernet PHY (VSC8541) init failed: %d\n", ret);

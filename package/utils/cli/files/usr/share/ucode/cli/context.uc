@@ -355,7 +355,36 @@ function complete_arg_list(e, ctx, arg_info, args, base_args, named_args)
 	for (let i = 0; i <= cur_idx; i++)
 		val = shift(args);
 
-	return complete_param(e, ctx, cur, val, base_args, named_args);
+	let ret = complete_param(e, ctx, cur, val, base_args, named_args);
+	if (!cur.prefix_separator)
+		return ret;
+
+	let prefix_len = length(val);
+	let vals = [];
+	let match_prefix;
+	for (let cur_val in ret.value) {
+		let cur_str = cur_val.name;
+		let cur_suffix = substr(cur_str, prefix_len);
+		let idx = index(cur_suffix, cur.prefix_separator);
+		if (idx < 0) {
+			push(vals, cur_val);
+			continue;
+		}
+
+		let cur_prefix = substr(cur_str, 0, prefix_len + idx + 1);
+		if (cur_prefix == match_prefix)
+			continue;
+
+		match_prefix = cur_prefix;
+		push(vals, {
+			...cur_val,
+			name: cur_prefix,
+			incomplete: true
+		});
+	}
+	ret.value = vals;
+
+	return ret;
 }
 
 function handle_empty_param(entry, spec, name, argv, named_args)

@@ -48,7 +48,9 @@
 // MAC1 ---SGMII---> QCA8337 SerDes
 &dp2 {
 	status = "okay";
-	phy-mode = "sgmii";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
@@ -57,13 +59,6 @@
 };
 
 &mdio0 {
-	status = "okay";
-};
-
-/* IPQ5018 GE Phy -> Not connected 
- * needs to be enabled for QSDK to identify the IPQ5018 dummy switch
- */
-&ge_phy {
 	status = "okay";
 };
 
@@ -182,7 +177,7 @@
 
 	memory-region = <&q6_mem_regions>;
 	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
-					"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
 
 	// IPQ5018
 	q6_wcss_pd1: pd-1 {
