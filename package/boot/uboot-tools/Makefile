@@ -35,6 +35,26 @@ define Package/uboot-tools/description
 	to work with the U-Boot bootloader,
 endef
 
+define Package/dumpimage
+	SECTION:=utils
+	CATEGORY:=Utilities
+	SUBMENU:=Boot Loaders
+	DEPENDS := +libopenssl
+	TITLE:=dumpimage lists and extracts data from U-Boot images.
+	URL:=http://www.denx.de/wiki/U-Boot
+endef
+
+define Package/dumpimage/description
+	dumpimage lists and extracts data from U-Boot images.
+	If -l is specified, dumpimage lists the components in
+	image.Otherwise, dumpimage extracts the component at
+	position to outfile.
+endef
+
+define Package/dumpimage/prepare
+	$(CP) ./dumpimage/patches ./patches
+endef
+
 define Package/uboot-envtools
 	SECTION:=utils
 	CATEGORY:=Utilities
@@ -62,15 +82,22 @@ endef
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) tools-only_defconfig
 	$(MAKE) -C $(PKG_BUILD_DIR) syncconfig
+	$(SED) 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
 endef
 
 MAKE_FLAGS += \
-	ARCH="sandbox" \
+	ARCH="sandbox" cross_tools \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 	TARGET_LDFLAGS="$(TARGET_LDFLAGS)"
 
 define Build/Compile
 	$(call Build/Compile/Default,envtools)
+	$(call Build/Compile/Default,cross_tools)
+endef
+
+define Package/dumpimage/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/dumpimage $(1)/usr/bin
 endef
 
 define Package/uboot-envtools/install
@@ -95,4 +122,5 @@ define Package/uboot-envtools/install
 	)
 endef
 
+$(eval $(call BuildPackage,dumpimage))
 $(eval $(call BuildPackage,uboot-envtools))
