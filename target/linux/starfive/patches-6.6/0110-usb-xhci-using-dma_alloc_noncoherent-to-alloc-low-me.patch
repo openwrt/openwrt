@@ -71,7 +71,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  
  	INIT_LIST_HEAD(&xhci->cmd_list);
  
-@@ -2495,9 +2496,11 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+@@ -2496,9 +2497,11 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
  
  	if (xhci->quirks & XHCI_LOCAL_BUFFER) {
