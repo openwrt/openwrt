@@ -1,0 +1,72 @@
+#
+# Copyright (C) 2021 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+ubootenv_add_mmc_default() {
+	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
+	ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
+}
+
+ubootenv_add_ubi_default() {
+	. /lib/upgrade/nand.sh
+	local envubi=$(nand_find_ubi ubi)
+	local envdev=/dev/$(nand_find_volume $envubi ubootenv)
+	local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+}
+
+board=$(board_name)
+
+case "$board" in
+dlink,eagle-pro-ai-m32-a1|\
+dlink,eagle-pro-ai-r32-a1)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
+	;;
+bananapi,bpi-r64|\
+linksys,e8450-ubi)
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	case "$CI_METHOD" in
+	emmc)
+		bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+		ubootenv_add_mmc_default "${bootdev#/dev/}"
+		;;
+	ubi)
+		ubootenv_add_ubi_default
+		;;
+	esac
+	;;
+buffalo,wsr-2533dhp2)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x20000"
+	;;
+ruijie,rg-ew3200gx-pro)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x20000" "0x20000"
+	;;
+ubnt,unifi-6-lr-v1-ubootmod|\
+ubnt,unifi-6-lr-v2-ubootmod|\
+ubnt,unifi-6-lr-v3-ubootmod)
+	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index "u-boot-env")" "0x0" "0x4000" "0x1000"
+	;;
+ubnt,unifi-6-lr-v2|\
+ubnt,unifi-6-lr-v3)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x1000" "1"
+	;;
+xiaomi,redmi-router-ax6s)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x40000"
+	ubootenv_add_uci_sys_config "/dev/mtd4" "0x0" "0x10000" "0x40000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
