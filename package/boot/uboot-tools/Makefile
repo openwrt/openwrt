@@ -35,19 +35,92 @@ define Package/uboot-tools/description
 	to work with the U-Boot bootloader,
 endef
 
+define Package/dumpimage
+	SECTION:=utils
+	CATEGORY:=Utilities
+	SUBMENU:=Boot Loaders
+	DEPENDS := +libopenssl
+	TITLE:=dumpimage lists and extracts data from U-Boot images.
+	URL:=http://www.denx.de/wiki/U-Boot
+endef
+
+define Package/dumpimage/description
+	dumpimage lists and extracts data from U-Boot images.
+	If -l is specified, dumpimage lists the components in
+	image.Otherwise, dumpimage extracts the component at
+	position to outfile.
+endef
+
+define Package/dumpimage/prepare
+	$(CP) ./dumpimage/patches ./patches
+endef
+
+define Package/uboot-envtools
+	SECTION:=utils
+	CATEGORY:=Utilities
+	SUBMENU:=Boot Loaders
+	PKG_FLAGS+=nonshared
+	TITLE:=read/modify U-Boot bootloader environment
+	URL:=http://www.denx.de/wiki/U-Boot
+endef
+
+define Package/uboot-envtools/description
+	This package includes tools to read and modify U-Boot
+	bootloader environment.
+endef
+
+define Package/uboot-envtools/conffiles
+	/etc/config/ubootenv
+	/etc/fw_env.config
+	/etc/fw_sys.config
+endef
+
+define Package/uboot-envtools/prepare
+	$(CP) ./uboot-envtools/patches ./patches
+endef
+
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) tools-only_defconfig
 	$(MAKE) -C $(PKG_BUILD_DIR) syncconfig
+	$(SED) 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
 endef
 
 MAKE_FLAGS += \
-	ARCH="sandbox" \
+	ARCH="sandbox" cross_tools \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 	TARGET_LDFLAGS="$(TARGET_LDFLAGS)"
 
 define Build/Compile
+	$(call Build/Compile/Default,envtools)
+	$(call Build/Compile/Default,cross_tools)
 endef
 
+define Package/dumpimage/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/dumpimage $(1)/usr/bin
+endef
 
+define Package/uboot-envtools/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/env/fw_printenv $(1)/usr/sbin
+	$(LN) fw_printenv $(1)/usr/sbin/fw_setenv
+	$(INSTALL_BIN) ./uboot-envtools/files/fw_printsys $(1)/usr/sbin
+	$(INSTALL_BIN) ./uboot-envtools/files/fw_setsys $(1)/usr/sbin
+	$(INSTALL_BIN) ./uboot-envtools/files/fw_loadenv $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/board.d
+	$(INSTALL_DATA) ./uboot-envtools/files/fw_defaults $(1)/etc/board.d/05_fw_defaults
+	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_DATA) ./uboot-envtools/files/uboot-envtools.sh $(1)/lib
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(if $(wildcard ./uboot-envtools/files/$(BOARD)_$(SUBTARGET)), \
+		$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD)_$(SUBTARGET) \
+		$(1)/etc/uci-defaults/30_uboot-envtools, \
+		$(if $(wildcard ./uboot-envtools/files/$(BOARD)), \
+			$(INSTALL_DATA) ./uboot-envtools/files/$(BOARD) \
+			$(1)/etc/uci-defaults/30_uboot-envtools \
+		) \
+	)
+endef
 
-
+$(eval $(call BuildPackage,dumpimage))
+$(eval $(call BuildPackage,uboot-envtools))
