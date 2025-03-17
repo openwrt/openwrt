@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
-@@ -520,14 +534,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+@@ -522,14 +536,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
  		mtk_ppe_cache_clear(ppe);
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  	entry->hash = 0xffff;
  
-@@ -552,11 +558,14 @@ static int __mtk_foe_entry_idle_time(str
+@@ -554,11 +560,14 @@ static int __mtk_foe_entry_idle_time(str
  }
  
  static bool
@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int len;
  
  	if (hash == 0xffff)
-@@ -567,18 +576,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+@@ -569,18 +578,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
  	memcpy(&foe, hwe, len);
  
  	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
@@ -156,7 +156,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_flow_entry *cur;
  	struct hlist_node *tmp;
  	int idle;
-@@ -587,7 +613,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -589,7 +615,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	hlist_for_each_entry_safe(cur, tmp, &entry->l2_flows, l2_list) {
  		int cur_idle;
  
@@ -167,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			__mtk_foe_entry_clear(ppe, entry, false);
  			continue;
  		}
-@@ -602,10 +630,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -604,10 +632,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	}
  }
  
@@ -197,7 +197,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_eth *eth = ppe->eth;
  	u16 timestamp = mtk_eth_timestamp(eth);
  	struct mtk_foe_entry *hwe;
-@@ -636,6 +683,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
+@@ -638,6 +685,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  
  	dma_wmb();
  
@@ -210,7 +210,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_ppe_cache_clear(ppe);
  }
  
-@@ -800,21 +853,6 @@ out:
+@@ -802,21 +855,6 @@ out:
  	spin_unlock_bh(&ppe_lock);
  }
  
@@ -232,7 +232,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int mtk_ppe_prepare_reset(struct mtk_ppe *ppe)
  {
  	if (!ppe)
-@@ -842,32 +880,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
+@@ -844,32 +882,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
  	return mtk_ppe_wait_busy(ppe);
  }
  
@@ -284,7 +284,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash);
  
-@@ -396,9 +399,8 @@ int mtk_foe_entry_set_queue(struct mtk_e
+@@ -397,9 +400,8 @@ int mtk_foe_entry_set_queue(struct mtk_e
  			    unsigned int queue);
  int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
@@ -309,7 +309,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		seq_printf(m, "%05x %s %7s", i,
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -501,24 +501,21 @@ static int
+@@ -516,24 +516,21 @@ static int
  mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
  {
  	struct mtk_flow_entry *entry;
