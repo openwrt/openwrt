@@ -3,10 +3,10 @@ name: Build OpenWrt
 on:
   push:
     branches:
-      - main
+      - NewifiD2_Aria2_Ksmbd
   pull_request:
     branches:
-      - main
+      - NewifiD2_Aria2_Ksmbd
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/openwrt/openwrt.git OpenWrt
           cd OpenWrt
-          cp ../.config ./
+          # cp ../.config ./
 
       - name: Install Feeds
         run: |
@@ -39,7 +39,7 @@ jobs:
       - name: Build OpenWrt
         run: |
           cd OpenWrt
-          make defconfig
+          # make defconfig
           make -j$(nproc) download
           make -j$(nproc) V=s
 
