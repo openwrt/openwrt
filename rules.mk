@@ -315,11 +315,11 @@ PATCH:=patch
 PYTHON:=python3
 
 ifeq ($(HOST_OS),Darwin)
-  TRUE:=/usr/bin/env gtrue
-  FALSE:=/usr/bin/env gfalse
+  TRUE:=gtrue
+  FALSE:=gfalse
 else
-  TRUE:=/usr/bin/env true
-  FALSE:=/usr/bin/env false
+  TRUE:=true
+  FALSE:=false
 endif
 
 INSTALL_BIN:=install -m0755
