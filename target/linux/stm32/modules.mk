@@ -216,13 +216,14 @@ define KernelPackage/stm32-hash
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Support for STM32 hash accelerators
   DEPENDS:=@TARGET_stm32 \
+	   +kmod-crypto-engine \
 	   +kmod-crypto-md5 \
 	   +kmod-crypto-sha1 \
 	   +kmod-crypto-sha256 \
 	   +kmod-crypto-sha3 \
 	   +kmod-crypto-rsa
   KCONFIG:=CONFIG_CRYPTO_DEV_STM32_HASH \
-	   CONFIG_CRYPTO_ENGINE=y \
+	   CONFIG_CRYPTO_ENGINE=y
   FILES:=$(LINUX_DIR)/drivers/crypto/stm32/stm32-hash.ko
   AUTOLOAD:=$(call AutoProbe,stm32-hash)
 endef
