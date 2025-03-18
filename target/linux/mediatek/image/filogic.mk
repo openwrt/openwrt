@@ -30,6 +30,16 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/uboot-bin
+	cat $(STAGING_DIR_IMAGE)/mt7986_$1-u-boot.bin >> $@
+endef
+
+define Build/mkimage-arm-standalone
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -T standalone -C none -n "seconduboot" \
+		-e 0x41e00000 -d $@ $(KDIR)/second-uboot.bin
+	cp $(KDIR)/second-uboot.bin $@
+endef
+
 define Build/mt798x-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
