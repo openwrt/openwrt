@@ -249,7 +249,7 @@ define U-Boot/rk3588/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3588
   ATF:=rk3588_bl31.elf
-  TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+  TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.18.bin
 endef
 
 define U-Boot/nanopc-t6-rk3588

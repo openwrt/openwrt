@@ -71,11 +71,11 @@ ifeq ($(BUILD_VARIANT),rk3399)
 endif
 
 ifeq ($(BUILD_VARIANT),rk3588)
-  TPL_FILE:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+  TPL_FILE:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.18.bin
   define Download/rk3588-tpl
     FILE:=$(TPL_FILE)
-    URL:=https://github.com/rockchip-linux/rkbin/raw/a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0/bin/rk35/
-    HASH:=5aa6271195e422a2c30a8e801baa64e4a10cbc6a5f1963f9a29e6dc85096c7bf
+    URL:=https://github.com/rockchip-linux/rkbin/raw/f43a462e7a1429a9d407ae52b4745033034a6cf9/bin/rk35
+    HASH:=d89d40a8183b099589bfcffc5cc2ce9d874eb5b1d19b78bdad2cfcf45b9cb68f
   endef
 
   define Build/Prepare
