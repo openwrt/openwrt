@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.10
+PKG_VERSION:=2.12
 PKG_RELEASE:=1
 
-PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
+PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -36,9 +36,6 @@ endef
 TFA_TARGETS:= \
 	rk3328 \
 	rk3399
-
-TFA_MAKE_FLAGS+= \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
 
 ifeq ($(BUILD_VARIANT),rk3399)
   M0_GCC_NAME:=gcc-arm
