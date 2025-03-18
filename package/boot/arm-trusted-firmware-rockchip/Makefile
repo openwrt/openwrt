@@ -33,9 +33,15 @@ define Trusted-Firmware-A/rk3399
   PLAT:=rk3399
 endef
 
+define Trusted-Firmware-A/rk3588
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3588
+endef
+
 TFA_TARGETS:= \
 	rk3328 \
-	rk3399
+	rk3399 \
+	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
   M0_GCC_NAME:=gcc-arm
@@ -62,6 +68,22 @@ ifeq ($(BUILD_VARIANT),rk3399)
 
   TFA_MAKE_FLAGS+= \
     M0_CROSS_COMPILE=$(PKG_BUILD_DIR)/$(M0_GCC_NAME)-$(M0_GCC_RELEASE)-$(M0_GCC_VERSION)/bin/arm-none-eabi-
+endif
+
+ifeq ($(BUILD_VARIANT),rk3588)
+  TPL_FILE:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+  define Download/rk3588-tpl
+    FILE:=$(TPL_FILE)
+    URL:=https://github.com/rockchip-linux/rkbin/raw/a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0/bin/rk35/
+    HASH:=5aa6271195e422a2c30a8e801baa64e4a10cbc6a5f1963f9a29e6dc85096c7bf
+  endef
+
+  define Build/Prepare
+	$(eval $(call Download,rk3588-tpl))
+	$(call Build/Prepare/Default)
+
+	$(CP) $(DL_DIR)/$(TPL_FILE) $(STAGING_DIR_IMAGE)/
+  endef
 endif
 
 define Package/trusted-firmware-a/install
