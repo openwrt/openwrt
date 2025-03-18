@@ -262,6 +262,25 @@ endef
 $(eval $(call KernelPackage,input-touchscreen-edt-ft5x06))
 
 
+define KernelPackage/input-touchscreen-hynitron-cst816x
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Hynitron CST816X touchscreen
+  DEPENDS:=@!LINUX_6_12 +kmod-i2c-core +kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_TOUCHSCREEN=y \
+	CONFIG_TOUCHSCREEN_HYNITRON_CST816X
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/hynitron-cst816x.ko
+  AUTOLOAD:=$(call AutoProbe,hynitron-cst816x)
+endef
+
+define KernelPackage/input-touchscreen-hynitron-cst816x/description
+  Kernel module for Hynitron CST816X touchscreen controller
+  used for 240×240 1.28-inch Round LCD Display Module.
+endef
+
+$(eval $(call KernelPackage,input-touchscreen-hynitron-cst816x))
+
+
 define KernelPackage/keyboard-imx
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=IMX keypad support
