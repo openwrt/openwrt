@@ -30,6 +30,13 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/tplink-2nd-uboot
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -T standalone \
+	-C none -n "seconduboot" \
+	-e 0x41e00000 \
+	-d $(STAGING_DIR_IMAGE)/$1-u-boot.bin $(KDIR)/second-uboot.bin
+endef
+
 define Build/mt798x-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
