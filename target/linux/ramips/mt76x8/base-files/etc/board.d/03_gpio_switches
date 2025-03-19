@@ -15,6 +15,17 @@ teltonika,rut241)
 	ucidef_add_gpio_switch "modem_power" "Modem power" "modem_power" "1"
 	ucidef_add_gpio_switch "modem_reset" "Modem reset" "modem_reset" "0"
 	;;
+teltonika,rut956)
+	ucidef_add_gpio_switch "digital_output" "Digital output 1" "digital_output1" "0"
+	ucidef_add_gpio_switch "digital_output" "Digital output 2" "digital_output2" "0"
+	ucidef_add_gpio_switch "rs485_rx_enable" "RS485 RX enable" "rs485_rx_enable" "1"
+	ucidef_add_gpio_switch "rs485_tx_enable" "RS485 TX enable" "rs485_tx_enable" "1"
+	ucidef_add_gpio_switch "modem_power" "Modem power button" "modem_power" "1"
+	ucidef_add_gpio_switch "modem_reset" "Modem reset" "modem_reset" "0"
+	ucidef_add_gpio_switch "sim_sel" "SIM select" "sim_sel" "0"
+	ucidef_add_gpio_switch "esim_sel" "SIM select" "esim_sel" "0"
+	ucidef_add_gpio_switch "relay" "Relay" "relay" "0"
+	;;
 esac
 
 board_config_flush

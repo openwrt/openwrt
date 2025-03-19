@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_teltonika_rut9xx.dtsi"
+
+/ {
+	gpio-export {
+		gpio_dcd {
+			gpio-export,name = "dcd";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_din2 {
+			gpio-export,name = "digital_input2";
+			gpio-export,input = <0>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_output2 {
+			gpio-export,name = "digital_output2";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_adcin {
+			gpio-export,name = "adc_input";
+			gpio-export,input = <0>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_relay {
+			gpio-export,name = "relay";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_rs485_rx_en {
+			gpio-export,name = "rs485_rx_enable";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_rs485_tx_en {
+			gpio-export,name = "rs485_tx_enable";
+			gpio-export,output = <0>;
+			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_isolated_input {
+			gpio-export,name = "isolated_input";
+			gpio-export,input = <0>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+	hwmon@4d {
+		compatible = "mcp3221";
+		reg = <0x4d>;
+		reference-voltage-microvolt = <3300000>;
+	};
+
+	hwmon@48 {
+		compatible = "ti,tla2021";
+		reg = <0x48>;
+	};
+};
+
+&uart1 {
+	linux,rs485-enabled-at-boot-time;
+	rs485-rts-delay = <0 0>;
+	rs485-rx-during-tx;
+	status = "okay";
+};

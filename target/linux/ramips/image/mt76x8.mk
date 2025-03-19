@@ -29,19 +29,21 @@ define Build/ravpower-wd009-factory
 endef
 
 define Build/append-teltonika-metadata
-  $(eval model_id=$(1))
+  $(eval model_id=$(word 1,$(1)))
+  $(eval hw_mods=$(subst $(space),$(comma),$(wordlist 2,$(words $(1)),$(1))))
+
 	echo \
 		'{ \
 			"metadata_version": "1.1", \
 			"compat_version": "1.0", \
-			"version": "", \
+			"version": "OpenWrt", \
 			"device_code": [".*"], \
 			"hwver": [".*"], \
 			"batch": [".*"], \
 			"serial": [".*"], \
 			"supported_devices":["teltonika,$(model_id)"], \
 			"hw_support": { }, \
-			"hw_mods": { } \
+			"hw_mods": { $(hw_mods) } \
 		}' | fwtool -I - $@
 endef
 
@@ -635,6 +637,20 @@ define Device/tama_w06
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += tama_w06
+
+define Device/teltonika_rut956
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT956
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-i2c-mt7628 \
+		kmod-hwmon-mcp3021 kmod-scsi-core kmod-usb-storage kmod-usb-acm
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut9m \
+  "mod1":"2c7c_6005" "mod2":"TLA2021" "mod3":"CH343" "mod4":"esim" "mod5":"ala440"
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut956
 
 define Device/totolink_a3
   IMAGE_SIZE := 7936k
