@@ -1,0 +1,406 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7981b.dtsi"
+
+/ {
+	model = "TP-Link FR365 v1";
+	compatible = "tplink,fr365-v1", "mediatek,mt7981";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x20000000>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: led_status {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb: led_usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_sfp: led_sfp {
+			label = "green:sfp";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan: led_wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		led_port2_act: led_port2_act {
+			label = "green:port2_act";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_port2_linespeed: led_port2_linespeed {
+			label = "green:port2_linespeed";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	sfp1: sfp-1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		maximum-power-milliwatt = <3000>;
+		tx-disable-gpios = <&pio 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+		label = "port2";
+	};
+};
+
+&mdio_bus {
+	switch: switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&pio>;
+		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		compatible = "spi-nand";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x0000000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x0100000 0x0080000>;
+			};
+
+			partition@180000 {
+				label = "Factory";
+				reg = <0x0180000 0x0200000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "fip";
+				reg = <0x0380000 0x0200000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "ubi";
+				reg = <0x0580000 0x2400000>;
+				compatible = "linux,ubi";
+
+				volumes {
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "kernel";
+					};
+				};
+			};
+
+			partition@2980000 {
+				label = "ubi.b";
+				reg = <0x2980000 0x2400000>;
+
+				volumes {
+					ubi_rootdisk_2: ubi-volume-fit {
+						volname = "kernel";
+					};
+				};
+			};
+
+			partition@4d80000 {
+				label = "support-list";
+				reg = <0x4d80000 0x0020000>;
+				read-only;
+			};
+
+			partition@4da0000 {
+				label = "user-config";
+				reg = <0x4da0000 0x0a00000>;
+				read-only;
+			};
+
+			partition@57a0000 {
+				label = "partition-table";
+				reg = <0x57a0000 0x0020000>;
+				read-only;
+			};
+
+			partition@57c0000 {
+				label = "device-info";
+				reg = <0x57c0000 0x0020000>;
+				read-only;
+			};
+
+			partition@57e0000 {
+				label = "device-info.b";
+				reg = <0x57e0000 0x0020000>;
+				read-only;
+			};
+
+			partition@5800000 {
+				label = "tddp";
+				reg = <0x5800000 0x0020000>;
+				read-only;
+			};
+
+			partition@5820000 {
+				label = "tddp.b";
+				reg = <0x5820000 0x0020000>;
+				read-only;
+			};
+
+			partition@5840000 {
+				label = "extra-para-ubi";
+				reg = <0x5840000 0x0200000>;
+			};
+
+			partition@5a40000 {
+				label = "firmware-info";
+				reg = <0x5a40000 0x0020000>;
+				read-only;
+			};
+
+			partition@5a60000 {
+				label = "firmware-info.b";
+				reg = <0x5a60000 0x0020000>;
+				read-only;
+			};
+
+			partition@5a80000 {
+				label = "log";
+				reg = <0x5a80000 0x0200000>;
+				read-only;
+			};
+
+			partition@5c80000 {
+				label = "log.b";
+				reg = <0x5c80000 0x0200000>;
+				read-only;
+			};
+
+			partition@5e80000 {
+				label = "wlan";
+				reg = <0x5e80000 0x0500000>;
+				read-only;
+			};
+
+			partition@6380000 {
+				label = "wlan.b";
+				reg = <0x6380000 0x0500000>;
+				read-only;
+			};
+
+			partition@6880000 {
+				label = "database";
+				reg = <0x6880000 0x1100000>;
+				read-only;
+			};
+
+			partition@7980000 {
+				label = "log_recovery";
+				reg = <0x7980000 0x0080000>;
+				read-only;
+			};
+
+			partition@7a00000 {
+				label = "panic-oops";
+				reg = <0x7a00000 0x0080000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "port3";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "port4";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "port5";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "port6";
+		};
+
+		port@5 {
+			reg = <5>;
+			label = "port1";
+			phy-mode = "2500base-x";
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&pio {
+	i2c0_pins: i2c0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>; /* bias-disable */
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>; /* bias-disable */
+		};
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+	mediatek,u3p-dis-msk = <0x01>;
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
