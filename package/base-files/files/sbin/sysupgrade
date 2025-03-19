@@ -11,6 +11,7 @@ INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 COMMAND=/lib/upgrade/do_stage2
 
 # File-local globals
+ADD_PROVISIONING=0
 SAVE_OVERLAY=0
 SAVE_OVERLAY_PATH=
 SAVE_PARTITIONS=1
@@ -45,6 +46,7 @@ while [ -n "$1" ]; do
 		-c) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
 		-o) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
 		-p) SAVE_PARTITIONS=0;;
+		-P) ADD_PROVISIONING=1;;
 		-k) SAVE_INSTALLED_PKGS=1;;
 		-u) SKIP_UNCHANGED=1;;
 		-b|--create-backup) CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
@@ -68,7 +70,7 @@ done
 print_help() {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
-       $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
+       $0 [-q] [-i] [-c] [-u] [-o] [-k] [-P] <backup-command> <file>
 
 upgrade-option:
 	-f <config>  restore configuration from .tar.gz (file or url)
@@ -82,6 +84,8 @@ upgrade-option:
 	-k           include in backup a list of current installed packages at
 	             $INSTALLED_PACKAGES
 	-s           stay on current partition (for dual firmware devices)
+	-P           create provisioning partition to keep sensitive data across
+	             factory resets.
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -427,6 +431,7 @@ else
 	json_add_string command "$COMMAND"
 	json_add_object options
 	json_add_int save_partitions "$SAVE_PARTITIONS"
+	json_add_int add_provisioning "$ADD_PROVISIONING"
 	[ $USE_CURR_PART -eq 1 ] && json_add_boolean use_curr_part 1
 	json_close_object
 
