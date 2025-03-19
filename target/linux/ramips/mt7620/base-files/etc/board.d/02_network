@@ -247,7 +247,7 @@ ramips_setup_interfaces()
 	tplink,archer-mr200)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
-		ucidef_set_interface_wan "usb0"
+		ucidef_set_interface_wan "eth1"
 		;;
 	tplink,ec220-g5-v2)
 		ucidef_add_switch "switch0"
