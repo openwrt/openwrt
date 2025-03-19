@@ -13,6 +13,9 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7981_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,fr365-v1)
+		ln -sf /tmp/wlan/radio /lib/firmware/$FIRMWARE
+		;;
 	ubnt,unifi-6-plus)
 		caldata_extract_mmc "factory" 0x0 0x1000
 		;;
