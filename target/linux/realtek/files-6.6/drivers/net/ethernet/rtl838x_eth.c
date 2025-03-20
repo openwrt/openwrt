@@ -2287,6 +2287,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			continue;
 
 		if (pn >= MAX_PORTS) {
+			of_node_put(dn);
 			pr_err("%s: illegal port number %d\n", __func__, pn);
 			return -ENODEV;
 		}
@@ -2305,6 +2306,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		}
 
 		if (priv->smi_bus[pn] >= MAX_SMI_BUSSES) {
+			of_node_put(dn);
 			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
 			return -ENODEV;
 		}
@@ -2333,6 +2335,8 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
 		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
+
+	of_node_put(dn);
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
 	ret = devm_of_mdiobus_register(&priv->pdev->dev, priv->mii_bus, mii_np);
@@ -2571,10 +2575,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
-	if (dev->irq < 0) {
-		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
-		return err;
-	}
+	if (dev->irq < 0)
+		return -ENODEV;
 
 	err = devm_request_irq(&pdev->dev, dev->irq, priv->r->net_irq,
 			       IRQF_SHARED, dev->name, dev);

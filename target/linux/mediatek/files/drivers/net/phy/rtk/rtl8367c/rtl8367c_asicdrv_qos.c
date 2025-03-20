@@ -233,7 +233,7 @@ ret_t rtl8367c_setAsicPriorityDecision(rtk_uint32 index, rtk_uint32 prisrc, rtk_
             break;
         default:
             break;
-    };
+    }
 
     return RT_ERR_OK;
 
@@ -278,7 +278,7 @@ ret_t rtl8367c_getAsicPriorityDecision(rtk_uint32 index, rtk_uint32 prisrc, rtk_
             break;
         default:
             break;
-    };
+    }
 
     return RT_ERR_OK;
 
