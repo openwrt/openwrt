@@ -164,6 +164,9 @@ mikrotik,routerboard-m11g)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssi3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssiveryhigh" "RSSIVERYHIGH" "green:rssi4" "wlan0" "80" "100"
 	;;
+mofinetwork,mofi5500-5gxelte)
+	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
+	;;
 mtc,wr1201)
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "br-lan"
 	;;
