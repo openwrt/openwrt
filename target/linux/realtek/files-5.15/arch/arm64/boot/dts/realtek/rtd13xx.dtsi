@@ -1,0 +1,289 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Realtek RTD13xx SoC family
+ *
+ * Copyright (c) 2019-2020 Realtek Semiconductor Corp.
+ */
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	reserved_memory: reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		protected_mem: protected_mem@40000 {
+			reg = <0x00040000 0x00c00000>;
+			no-map;
+		};
+
+		metadata: metadata@c40000 {
+			compatible = "metadata";
+			reg = <0x00c40000 0x003c4000>;
+		};
+
+		rpc_comm: comm@4080000 {
+			compatible = "comm";
+			reg = <0x04080000 0x1000>;
+		};
+
+		rpc_ringbuf: ringbuf@40ff000 {
+			compatible = "ringbuf";
+			reg = <0x040ff000 0x4000>;
+		};
+
+		audio_heap: audio_heap@4200000 {
+			compatible = "audio_heap";
+			reg = <0x04200000 0xc00000>;
+		};
+
+		audio_fw_mem: audio_fw_mem@10000000 {
+			reg = <0x10000000 0x14000>;
+			no-map;
+		};
+
+		tee: tee@10100000 {
+			reg = <0x10100000 0x04100000>;
+			no-map;
+		};
+	};
+
+	clocks {
+		osc27m: osc {
+			compatible = "fixed-clock";
+			clock-frequency = <27000000>;
+			clock-output-names = "osc27m";
+			#clock-cells = <0>;
+		};
+
+		clk432m: clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&osc27m>;
+			clock-div = <1>;
+			clock-mult = <16>;
+			clock-output-names = "clk432m";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x0>;
+			enable-method = "psci";
+			next-level-cache = <&l2>;
+		};
+
+		cpu1: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+			enable-method = "psci";
+			next-level-cache = <&l2>;
+		};
+
+		cpu2: cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+			enable-method = "psci";
+			next-level-cache = <&l2>;
+		};
+
+		cpu3: cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+			enable-method = "psci";
+			next-level-cache = <&l2>;
+		};
+
+		l2: l2-cache {
+			compatible = "cache";
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	arm_pmu: pmu {
+		compatible = "arm,armv8-pmuv3";
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
+	};
+
+	psci: psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
+	firmware {
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+		};
+	};
+
+	soc@0 {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00000000 0x00000000 0x0002e000>, /* boot ROM */
+			 <0x00030000 0x00030000 0x00030000>, /* PCIE IO*/
+			 <0xff100000 0xff100000 0x00200000>, /* GIC */
+			 <0xC0000000 0xC0000000 0x00100000>,
+			 <0xC1000000 0xC1000000 0x00100000>,
+			 <0x98000000 0x98000000 0x00200000>; /* rbus */
+
+		rbus: rbus@98000000 {
+			compatible = "simple-bus";
+			reg = <0x98000000 0x200000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x00000000 0x98000000 0x200000>,
+				 <0xC0000000 0xC0000000 0x00100000>,
+				 <0xC1000000 0xC1000000 0x00100000>,
+				 <0x10030000 0x00030000 0x00030000>; /* PCIE IO*/
+
+			crt: syscon@0 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x0 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 0x1000>;
+			};
+
+			iso: syscon@7000 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x7000 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x7000 0x1000>;
+			};
+
+			sb2: syscon@1a000 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x1a000 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x1a000 0x1000>;
+			};
+
+			misc: syscon@1b000 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x1b000 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x1b000 0x1000>;
+			};
+
+			sbx: syscon@1c000 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x1c000 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x1c000 0x1000>;
+			};
+
+			cbus_wrapper: syscon@37500 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x37500 0x10>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x37500 0x10>;
+			};
+		};
+
+		gic: interrupt-controller@ff100000 {
+			compatible = "arm,gic-v3";
+			#address-cells = <1>;
+			reg = <0xff100000 0x10000>,
+			      <0xff140000 0x80000>;
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+	};
+};
+
+&iso {
+	iso_irq_mux: iso_irq_mux {
+		compatible = "realtek,rtd13xx-iso-irq-mux";
+		syscon = <&iso>;
+		interrupts-extended = <&gic GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
+				      <&gic GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	uart0: serial@800 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x800 0x400>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		clock-frequency = <432000000>;
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+};
+
+&misc {
+	misc_irq_mux: misc_irq_mux {
+		compatible = "realtek,rtd13xx-misc-irq-mux";
+		syscon = <&misc>;
+		interrupts-extended =
+					<&gic GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
+					<&gic GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>,
+					<&gic GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>,
+					<&gic GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	uart1: serial@200 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x200 0x400>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		interrupts-extended = <&misc_irq_mux 3>;
+		status = "disabled";
+	};
+
+	uart2: serial@400 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x400 0x400>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		interrupts-extended = <&misc_irq_mux 8>;
+		status = "disabled";
+	};
+};
