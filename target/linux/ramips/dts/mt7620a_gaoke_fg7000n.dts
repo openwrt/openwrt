@@ -1,0 +1,228 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "gaoke,fg7000n", "ralink,mt7620a-soc";
+	model = "Gaoke FG7000N";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_na1;
+		led-failsafe = &led_na2;
+		led-running = &led_na1;
+		led-upgrade = &led_na2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		usb {
+			label = "green:usb";
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&ohci_port1>, <&ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+
+		hidden {
+			label = "green:hidden";
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led_na1: na1 {
+			label = "green:na1";
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led_na2: na2 {
+			label = "green:na2";
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		net {
+			label = "green:net";
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+
+		vpn {
+			label = "green:vpn";
+			gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+		};
+
+		3g {
+			label = "green:3g";
+			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			label = "green:wlan";
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				label = "config";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x60000 0x1FA0000>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+
+	port@5 {
+		status = "okay";
+
+		phy-mode = "rgmii";
+		mediatek,fixed-link = <1000 1 1 1>;
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		ethernet-phy@0 {
+			reg = <0>;
+			phy-mode = "rgmii";
+
+			qca,ar8327-initvals = <
+				0x04 0x06600000 // PORT0_PAD_CTRL
+				0x0c 0x00000080 // PORT6_PAD_CTRL
+				0x7c 0x0000007e // PORT0_STATUS
+				0x80 0x00001280 // PORT1_STATUS
+				0x84 0x00001280 // PORT2_STATUS
+				0x88 0x00001280 // PORT3_STATUS
+				0x8c 0x00001280 // PORT4_STATUS
+				0x90 0x00001280 // PORT5_STATUS
+				0x94 0x0000037e // PORT6_STATUS
+				0xe0 0xc70167de // SGMII_CTRL
+			>;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+};
+
+&gsw {
+	mediatek,ephy-base = /bits/ 8 <8>;
+};
+
+&wmac {
+	pinctrl-names = "default", "pa_gpio";
+	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};

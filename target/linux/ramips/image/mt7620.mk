@@ -522,6 +522,16 @@ define Device/fon_fon2601
 endef
 TARGET_DEVICES += fon_fon2601
 
+define Device/gaoke_fg7000n
+  SOC := mt7620a
+  IMAGE_SIZE := 32384k
+  DEVICE_VENDOR := Gaoke
+  DEVICE_MODEL := FG7000N
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci uboot-envtools
+  SUPPORTED_DEVICES += fg7000n
+endef
+TARGET_DEVICES += gaoke_fg7000n
+
 define Device/glinet_gl-mt300a
   SOC := mt7620a
   IMAGE_SIZE := 15872k
