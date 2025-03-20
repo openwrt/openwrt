@@ -131,6 +131,13 @@ menu "Target Images"
 			help
 			  Create an ext4 filesystem with a journal.
 
+		config TARGET_EXT4_CONFIG
+			string "Path to EXT4 config"
+			depends on TARGET_ROOTFS_EXT4FS
+			default ""
+			help
+				Path to config file for make_ext4.
+
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		depends on USES_JFFS2
