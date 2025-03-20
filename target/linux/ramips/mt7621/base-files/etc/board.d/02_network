@@ -235,11 +235,6 @@ ramips_setup_macs()
 		lan_mac=$wan_mac
 		label_mac=$wan_mac
 		;;
-	comfast,cf-e390ax)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		label_mac=$lan_mac
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
 	dlink,covr-x1860-a1)
 		label_mac=$(mtd_get_mac_ascii config2 factory_mac)
 		wan_mac=$(macaddr_add "$label_mac" 3)
@@ -251,7 +246,6 @@ ramips_setup_macs()
 		;;
 	edimax,ra21s|\
 	edimax,rg21s)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	elecom,wrc-2533ghbk2-t|\
@@ -259,13 +253,6 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
-		;;
-	h3c,tx1800-plus|\
-	h3c,tx1801-plus|\
-	h3c,tx1806)
-		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		lan_mac=$(macaddr_add "$label_mac" 1)
-		wan_mac=$label_mac
 		;;
 	hiwifi,hc5962)
 		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac")
@@ -276,10 +263,6 @@ ramips_setup_macs()
 	iodata,wnpr2600g)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
-		;;
-	iptime,t5004)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\
