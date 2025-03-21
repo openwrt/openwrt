@@ -21,7 +21,7 @@
 +               return 0;
 +
 +       if (replace) {
-+               strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
++               strscpy(arcs_cmdline, p, sizeof(arcs_cmdline));
 +       } else {
 +               strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
 +               strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
