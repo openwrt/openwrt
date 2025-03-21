@@ -37,12 +37,12 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 +	if (ret == 0)
 +		return 0;
 +
- 	/* Make sure that another flush isn't already running when we
- 	 * start this one.
- 	 */
-@@ -61,6 +71,9 @@ static int v3d_mmu_flush_all(struct v3d_
+ 	V3D_WRITE(V3D_MMUC_CONTROL, V3D_MMUC_CONTROL_FLUSH |
+ 		  V3D_MMUC_CONTROL_ENABLE);
+ 
+@@ -52,6 +62,9 @@ static int v3d_mmu_flush_all(struct v3d_
  	if (ret)
- 		dev_err(v3d->drm.dev, "MMUC flush wait idle failed\n");
+ 		dev_err(v3d->drm.dev, "MMU TLB clear wait idle failed\n");
  
 +	pm_runtime_mark_last_busy(v3d->dev);
 +	pm_runtime_put_autosuspend(v3d->dev);

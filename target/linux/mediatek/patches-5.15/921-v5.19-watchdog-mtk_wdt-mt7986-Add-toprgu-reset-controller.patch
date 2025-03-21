@@ -39,7 +39,7 @@ Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
  static const struct mtk_wdt_data mt8183_data = {
  	.toprgu_sw_rst_num = MT8183_TOPRGU_SW_RST_NUM,
  };
-@@ -418,6 +423,7 @@ static int mtk_wdt_resume(struct device
+@@ -424,6 +429,7 @@ static int mtk_wdt_resume(struct device
  static const struct of_device_id mtk_wdt_dt_ids[] = {
  	{ .compatible = "mediatek,mt2712-wdt", .data = &mt2712_data },
  	{ .compatible = "mediatek,mt6589-wdt" },

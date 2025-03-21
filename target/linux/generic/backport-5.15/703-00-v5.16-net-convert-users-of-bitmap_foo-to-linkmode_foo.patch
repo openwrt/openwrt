@@ -394,7 +394,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
 --- a/drivers/net/dsa/microchip/ksz8795.c
 +++ b/drivers/net/dsa/microchip/ksz8795.c
-@@ -1542,15 +1542,13 @@ static void ksz8_validate(struct dsa_swi
+@@ -1550,15 +1550,13 @@ static void ksz8_validate(struct dsa_swi
  	phylink_set(mask, 100baseT_Half);
  	phylink_set(mask, 100baseT_Full);
  
@@ -747,7 +747,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void mvpp2_xlg_config(struct mvpp2_port *port, unsigned int mode,
 --- a/drivers/net/ethernet/marvell/octeontx2/nic/otx2_ethtool.c
 +++ b/drivers/net/ethernet/marvell/octeontx2/nic/otx2_ethtool.c
-@@ -1172,9 +1172,8 @@ static int otx2_set_link_ksettings(struc
+@@ -1182,9 +1182,8 @@ static int otx2_set_link_ksettings(struc
  	otx2_get_link_ksettings(netdev, &cur_ks);
  
  	/* Check requested modes against supported modes by hardware */
@@ -877,7 +877,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ethtool_link_ksettings_add_link_mode(ks, supported, FEC_RS);
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1661,7 +1661,7 @@ static void axienet_validate(struct phyl
+@@ -1667,7 +1667,7 @@ static void axienet_validate(struct phyl
  			netdev_warn(ndev, "Cannot use PHY mode %s, supported: %s\n",
  				    phy_modes(state->interface),
  				    phy_modes(lp->phy_mode));
@@ -886,7 +886,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			return;
  		}
  	}
-@@ -1694,10 +1694,8 @@ static void axienet_validate(struct phyl
+@@ -1700,10 +1700,8 @@ static void axienet_validate(struct phyl
  		break;
  	}
  
