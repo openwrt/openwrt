@@ -510,6 +510,20 @@ define Device/qcom_ipq8064-db149
 endef
 TARGET_DEVICES += qcom_ipq8064-db149
 
+define Device/qxwlan_e5200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	$(Device/dsa-migration)
+	DEVICE_VENDOR := Qxwlan
+	DEVICE_MODEL := E5200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := qcom-ipq8065
+	DEVICE_DTS := qcom-ipq8065-e5200
+	DEVICE_DTS_CONFIG := config@v3.0-ap148
+endef
+TARGET_DEVICES += qxwlan_e5200
+
 define Device/tplink_ad7200
 	$(call Device/TpSafeImage)
 	$(Device/dsa-migration)
