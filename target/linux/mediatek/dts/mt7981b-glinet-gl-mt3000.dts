@@ -40,12 +40,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_lightblue: led@0 {
+		led_lightblue: led-0 {
 			label = "blue:run";
 			gpios = <&pio 31 GPIO_ACTIVE_LOW>;
 		};
 
-		led_white: led@1 {
+		led_white: led-1 {
 			label = "white:system";
 			gpios = <&pio 30 GPIO_ACTIVE_LOW>;
 		};
