@@ -1,0 +1,167 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/phy/realtek,otto-serdes.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek Otto SerDes controller
+
+maintainers:
+  - Markus Stockhausen <markus.stockhausen@gmx.de>
+
+description: |
+  The MIPS based Realtek Switch SoCs of the Realtek RTL838x, RTL839x, RTL930x and
+  RTL931x series have multiple SerDes built in. They are linked to different single,
+  quad or octa PHYs like the RTL8218B, RTL8218D or RTL8214FC and are the integral
+  part of the up-to-52-port switch architecture.
+  Although these SerDes controllers have common basics they behave differently on
+  the SoC families and rely on heavy register magic. To keep the driver clean it can
+  load patch sequences from devictree and execute them during the controller actions
+  like phy_init(), ...
+  The driver exposes the SerDes registers different from the hardware but instead
+  gives a consistent view and programming interface. So the RTL838x series has 6 ports
+  and 4 pages, the RTL839x has 14 ports and 12 pages, the RTL930x has 12 ports and
+  64 pages and the RTL931x has 14 ports and 192 pages.
+
+properties:
+  $nodename:
+    pattern: "^serdes@[0-9a-f]+$"
+
+  compatible:
+    items:
+      - enum:
+          - realtek,rtl8380-serdes
+          - realtek,rtl8390-serdes
+          - realtek,rtl9300-serdes
+          - realtek,rtl9310-serdes
+
+  reg:
+    items:
+      - description: |
+        The primary serdes register memory location. Other SerDes control and
+        management registers are distributed all over the I/O memory space and
+        are identified by the driver automatically.
+
+  controlled-ports:
+    description: |
+      A bit mask defining the ports that are actively controlled by the driver. In
+      case a bit is not set the driver will only process read operations on the
+      SerDes. If not set the driver will run all ports in read only mode.
+
+  "#phy-cells":
+    const: 4
+    description: |
+      The first number defines the SerDes to use. The second number a linked
+      SerDes. E.g. if a octa 1G PHY is attached to two QSGMII SerDes. The third
+      number is the first switch port this SerDes is working for, the fourth number
+      is the last switch port the SerDes is working for.
+
+  cmd-setup:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers during driver setup.
+
+  cmd-init:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_init().
+
+  cmd-power-on:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_power_on().
+
+  cmd-pre-set-mode:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_set_mode() and before the driver
+      actually sets the mode.
+
+  cmd-post-set-mode:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_set_mode() and after the driver
+      has set the mode.
+
+  cmd-pre-reset:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_reset() and before the driver
+      actually resets the SerDes.
+
+  cmd-post-reset:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_reset() and after the driver
+      has reset the SerDes.
+
+  cmd-pre-power-off:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_power_off() and before the
+      driver actually powers off the SerDes.
+
+  cmd-post-power-off:
+    description: |
+      A field of 16 bit values that contain a patch/command sequence to run on the
+      SerDes registers when a controller calls phy_power_off() and after the driver
+      has powered off the SerDes.
+
+reguired:
+  - compatible
+  - reg
+  - port-count
+  - page-count
+  - "#phy-cells"
+
+additionalProperties:
+  false
+
+examples:
+  - |
+    serdes: serdes@1b00e780 {
+      compatible = "realtek,rtl8380-serdes", "realtek,otto-serdes";
+      reg = <0x1b00e780 0x1200>;
+      controlled-ports = <0x003f>;
+      #phy-cells = <2>;
+    };
+  - |
+    serdes: serdes@1b00a000 {
+      compatible = "realtek,rtl8390-serdes", "realtek,otto-serdes";
+      reg = <0x1b00a000 0x1c00>;
+      controlled-ports = <0x3fff>;
+      #phy-cells = <2>;
+    };
+  - |
+    serdes: serdes@1b0003b0 {
+      compatible = "realtek,rtl9300-serdes", "realtek,otto-serdes";
+      reg = <0x1b0003b0 0x8>;
+      controlled-ports = <0x0fff>;
+      #phy-cells = <2>;
+    };
+  - |
+    serdes: serdes@1b005638 {
+      compatible = "realtek,rtl9310-serdes", "realtek,otto-serdes";
+      reg = <0x1b005638 0x8>;
+      controlled-ports = <0x3fff>;
+      #phy-cells = <2>;
+    };
+  - |
+    #define _MASK_ 1
+    #define _WAIT_ 2
+    serdes: serdes@1b00a000 {
+      compatible = "realtek,rtl8390-serdes", "realtek,otto-serdes";
+      reg = <0x1b00a000 0x1c00>;
+      controlled-ports = <0x3fff>;
+      #phy-cells = <2>;
+      cmd-setup = /bits/ 16 <
+        /*
+         * set clock edge bit 14 during driver setup for ports 10-11 on page 0,
+         * register 7. Wait 128 ms. Afterwards set whole register 0 on page 10
+         * of ports 8, 9, 12, 13 to 0x5800.
+         */
+        _MASK_ 0x0c00 0x00 0x07 0x4000 0x4000
+        _WAIT_ 0x0c00 0x00 0x00 0x0080 0x0000
+        _MASK_ 0x3300 0x0a 0x00 0x5800 0xffff
+      >;
+    };
