@@ -1,0 +1,53 @@
+--- a/libfstools/overlay.c	2025-03-21 09:42:39.244816883 +0800
++++ b/libfstools/overlay.c	2025-03-21 09:50:55.427032151 +0800
+@@ -79,9 +79,9 @@
+ 	glob_t gl;
+ 	int j;
+ 
+-	if (dirlen + sizeof("/*") > globdirlen) {
++	if (dirlen + sizeof("/..*") > globdirlen) {
+ 		/* Alloc extra 256 B to avoid too many reallocs */
+-		size_t len = dirlen + sizeof("/*") + 256;
++		size_t len = dirlen + sizeof("/..*") + 256;
+ 		char *tmp;
+ 
+ 		tmp = realloc(globdir, len);
+@@ -94,11 +94,21 @@
+ 	sprintf(globdir, "%s/*", dir);
+ 
+ 	/* Include GLOB_MARK as callbacks expect a trailing slash */
+-	if (!glob(globdir, GLOB_NOESCAPE | GLOB_MARK | GLOB_ONLYDIR, NULL, &gl))
++	/* match routing folder*/
++	int ret = glob(globdir, GLOB_NOESCAPE | GLOB_MARK | GLOB_ONLYDIR, NULL, &gl);
++
++	/* match hide folder*/
++	if (ret == 0 || ret == GLOB_NOMATCH) {
++		sprintf(globdir, "%s/.*", dir);
++		ret = glob(globdir, GLOB_NOESCAPE|GLOB_MARK|GLOB_ONLYDIR|GLOB_APPEND, NULL, &gl);
++	}
++
++	if (!ret)
+ 		for (j = 0; j < gl.gl_pathc; j++) {
+ 			char *dir = gl.gl_pathv[j];
+ 			int len = strlen(gl.gl_pathv[j]);
+ 			int err;
++			char *base = NULL;
+ 
+ 			/* Quick way of skipping files */
+ 			if (dir[len - 1] != '/')
+@@ -107,6 +117,15 @@
+ 			/* lstat needs path without a trailing slash */
+ 			if (len > 1)
+ 				dir[len - 1] = '\0';
++
++			base = strrchr(dir, '/');
++			base = base ? (base + 1) : dir;
++			/* skip . and .. */
++			if (strcmp(base, ".") == 0 || strcmp(base, "..") == 0) {
++				if (len > 1) dir[len-1] = '/';
++				continue;
++			}
++
+ 			err = lstat(gl.gl_pathv[j], &s);
+ 			if (len > 1)
+ 				dir[len - 1] = '/';
