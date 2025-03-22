@@ -207,6 +207,16 @@ define Device/comfast_cf-wr800n
 endef
 TARGET_DEVICES += comfast_cf-wr800n
 
+define Device/dlink_dap-1620-a2
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1620
+  IMAGE_SIZE := 7872k
+  DEVICE_VARIANT := A2
+  SOC := mt7620a
+  DEVICE_PACKAGES := kmod-mt76x2 rssileds
+endef
+TARGET_DEVICES += dlink_dap-1620-a2
+
 define Device/dlink_dch-m225
   $(Device/seama)
   SOC := mt7620a
