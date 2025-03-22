@@ -1,0 +1,15 @@
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+	tuoshi,lt22m)
+        ucidef_add_gpio_switch "modem_enabled" "LTE modem enabled" "modem_enabled" "1"
+    ;;
+esac
+
+board_config_flush
+
+exit 0
