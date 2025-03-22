@@ -117,6 +117,44 @@ mtd_get_mac_encrypted_arcadyan() {
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_mac_encrypted_arcadyan_mt7986() {
+       local iv="$3"
+       local key="$2"
+       local mtdname="$1"
+       local part
+       local size
+
+       part=$(find_mtd_part "$mtdname")
+       if [ -z "$part" ]; then
+	       echo "mtd_get_mac_encrypted_arcadyan: partition $mtdname not found!" >&2
+	       return
+       fi
+       tempConf=$(mktemp)
+
+       # Config decryption and getting mac. Trying uencrypt and openssl utils.
+       size=$((0x$(dd if=$part skip=$((0x6800+4)) bs=1 count=4 2>/dev/null | hexdump -v -e '1/4 "%08x"')))
+       if [[ -f  "/usr/bin/uencrypt" ]]; then
+	       dd if=$part bs=1 count=$size skip=$((0x6800+8)) 2>/dev/null | \
+		       uencrypt -d -n -k $key -i $iv > $tempConf
+       elif [[ -f  "/usr/bin/openssl" ]]; then
+	       dd if=$part bs=1 count=$size skip=$((0x6800+8)) 2>/dev/null | \
+		       openssl aes-128-cbc -d -nopad -K $key -iv $iv > $tempConf
+       else
+	       echo "mtd_get_mac_encrypted_arcadyan: Neither uencrypt nor openssl was found!" >&2
+	       return
+       fi
+
+       tempExtractedConf=$(mktemp -d)
+       tar xzf $tempConf -C $tempExtractedConf
+       mac_dirty=$(cat $tempExtractedConf/.glbcfg | grep ARC_SYS_BASEMAC | cut -c 17-)
+
+       rm -rf $tempExtractedConf
+       rm $tempConf
+
+       # "canonicalize" mac
+       [ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
 mtd_get_mac_encrypted_deco() {
 	local mtdname="$1"
 
