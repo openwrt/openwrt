@@ -42,8 +42,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	tristate "SKCIPHER"
  	select CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI
- 
-@@ -91,7 +91,7 @@ config CRYPTO_SKCIPHER2
+ 	select CRYPTO_ECB
+@@ -92,7 +92,7 @@ config CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_HASH
@@ -52,7 +52,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_HASH2
  	select CRYPTO_ALGAPI
  
-@@ -100,7 +100,7 @@ config CRYPTO_HASH2
+@@ -101,7 +101,7 @@ config CRYPTO_HASH2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_RNG
@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -460,16 +460,16 @@ config BCH_CONST_T
+@@ -457,16 +457,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -135,8 +135,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config SND_SEQ_DEVICE
  	tristate
-@@ -40,7 +40,7 @@ config SND_UMP_LEGACY_RAWMIDI
- 	  The device contains 16 substreams corresponding to UMP groups.
+@@ -57,7 +57,7 @@ config SND_CORE_TEST
+ 
  
  config SND_COMPRESS_OFFLOAD
 -	tristate
@@ -146,7 +146,16 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -467,7 +467,7 @@ config NET_DEVLINK
+@@ -68,7 +68,7 @@ config SKB_EXTENSIONS
+ 
+ config NET_DEVMEM
+ 	def_bool y
+-	depends on DMA_SHARED_BUFFER
++	select DMA_SHARED_BUFFER
+ 	depends on GENERIC_ALLOCATOR
+ 	depends on PAGE_POOL
+ 
+@@ -484,7 +484,7 @@ config NET_DEVLINK
  	default n
  
  config PAGE_POOL

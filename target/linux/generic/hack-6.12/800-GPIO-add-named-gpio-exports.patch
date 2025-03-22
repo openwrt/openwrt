@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1129,3 +1131,73 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -1187,3 +1189,73 @@ void of_gpiochip_remove(struct gpio_chip
  {
  	of_node_put(dev_of_node(&chip->gpiodev->dev));
  }
@@ -91,7 +91,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -644,7 +644,10 @@ static inline struct gpio_desc *acpi_get
+@@ -628,7 +628,10 @@ static inline int devm_acpi_dev_add_driv
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -102,7 +102,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
  void gpiod_unexport(struct gpio_desc *desc);
-@@ -653,11 +656,25 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -637,11 +640,25 @@ void gpiod_unexport(struct gpio_desc *de
  
  #include <asm/errno.h>
  
@@ -130,25 +130,25 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  				    struct gpio_desc *desc)
 --- a/drivers/gpio/gpiolib-sysfs.c
 +++ b/drivers/gpio/gpiolib-sysfs.c
-@@ -558,7 +558,7 @@ static struct class gpio_class = {
-  *
-  * Returns zero on success, else an error.
+@@ -571,7 +571,7 @@ static struct class gpio_class = {
+  * Returns:
+  * 0 on success, or negative errno on failure.
   */
 -int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
 +int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name)
  {
- 	struct gpio_chip	*chip;
- 	struct gpio_device	*gdev;
-@@ -620,6 +620,8 @@ int gpiod_export(struct gpio_desc *desc,
+ 	const char *ioname = NULL;
+ 	struct gpio_device *gdev;
+@@ -629,6 +629,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
- 	if (chip->names && chip->names[offset])
- 		ioname = chip->names[offset];
+ 	if (guard.gc->names && guard.gc->names[offset])
+ 		ioname = guard.gc->names[offset];
 +	if (name)
 +		ioname = name;
  
  	dev = device_create_with_groups(&gpio_class, &gdev->dev,
  					MKDEV(0, 0), data, gpio_groups,
-@@ -641,8 +643,21 @@ err_unlock:
+@@ -650,8 +652,21 @@ err_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
