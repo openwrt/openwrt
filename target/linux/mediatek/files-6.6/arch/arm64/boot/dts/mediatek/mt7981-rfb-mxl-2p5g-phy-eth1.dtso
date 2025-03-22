@@ -18,6 +18,8 @@
 	fragment@1 {
 		target = <&mdio_bus>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 			reset-delay-us = <600>;
 			reset-post-delay-us = <20000>;

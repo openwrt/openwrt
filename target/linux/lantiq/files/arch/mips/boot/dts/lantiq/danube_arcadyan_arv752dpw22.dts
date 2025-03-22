@@ -251,7 +251,7 @@
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 	req-mask = <0x3>;
 
-	wifi@1814,3592 {
+	wifi@e,0 {
 		compatible = "pci1814,3592";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
@@ -260,7 +260,7 @@
 		nvmem-cell-names = "mac-address";
 	};
 
-	usb@0f,0 {
+	usb@f,0 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "pci1106,3038";
@@ -272,7 +272,7 @@
 		};
 	};
 
-	usb@0f,2 {
+	usb@f,2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "pci1106,3038";
