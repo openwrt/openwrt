@@ -1827,6 +1827,16 @@ define Device/jdcloud_re-cp-02
 endef
 TARGET_DEVICES += jdcloud_re-cp-02
 
+define Device/jdcloud_re-sp-01b
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 27328k
+  DEVICE_VENDOR := JDCloud
+  DEVICE_MODEL := RE-SP-01B
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware \
+	kmod-sdhci-mt7620 kmod-usb3
+endef
+TARGET_DEVICES += jdcloud_re-sp-01b
+
 define Device/keenetic_kn-1910
   $(Device/nand)
   $(Device/uimage-lzma-loader)
