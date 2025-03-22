@@ -24,6 +24,8 @@ mediatek_setup_interfaces()
 		;;
 	acer,vero-w6m)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
+	asus,rt-ax52)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
@@ -157,6 +159,7 @@ mediatek_setup_macs()
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4)
+	asus,rt-ax52)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		;;
 	h3c,magic-nx30-pro)

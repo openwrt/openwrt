@@ -9,6 +9,10 @@ board=$(board_name)
 case "$FIRMWARE" in
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
+	asus,rt-ax52)
+		CI_UBIPART="UBI_DEV"
+		caldata_extract_ubi "Factory" 0x0 0x1000
+		;;
 	ubnt,unifi-6-plus)
 		caldata_extract_mmc "factory" 0x0 0x1000
 		;;
