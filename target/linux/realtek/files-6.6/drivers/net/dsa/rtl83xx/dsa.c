@@ -798,10 +798,6 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int sds_num;
-	u32 reg;
-
-	pr_info("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
-		port, mode, phy_modes(state->interface), state->speed, state->link);
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->cpu_port)
@@ -817,48 +813,6 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	     state->interface == PHY_INTERFACE_MODE_SGMII ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
 		rtl9300_serdes_setup(port, sds_num, state->interface);
-
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-	reg &= ~(0xf << 3);
-
-	switch (state->speed) {
-	case SPEED_10000:
-		reg |= 4 << 3;
-		break;
-	case SPEED_5000:
-		reg |= 6 << 3;
-		break;
-	case SPEED_2500:
-		reg |= 5 << 3;
-		break;
-	case SPEED_1000:
-		reg |= 2 << 3;
-		break;
-	case SPEED_100:
-		reg |= 1 << 3;
-		break;
-	default:
-		/* Also covers 10M */
-		break;
-	}
-
-	if (state->link)
-		reg |= RTL930X_FORCE_LINK_EN;
-
-	if (priv->lagmembers & BIT_ULL(port))
-		reg |= RTL930X_DUPLEX_MODE | RTL930X_FORCE_LINK_EN;
-
-	if (state->duplex == DUPLEX_FULL)
-		reg |= RTL930X_DUPLEX_MODE;
-	else
-		reg &= ~RTL930X_DUPLEX_MODE; /* Clear duplex bit otherwise */
-
-	if (priv->ports[port].phy_is_integrated)
-		reg &= ~RTL930X_FORCE_EN; /* Clear MAC_FORCE_EN to allow SDS-MAC link */
-	else
-		reg |= RTL930X_FORCE_EN;
-
-	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
@@ -964,11 +918,49 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 				   int speed, int duplex,
 				   bool tx_pause, bool rx_pause)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
+	u32 mcr, spdsel;
+
+	if (speed == SPEED_10000)
+		spdsel = RTL_SPEED_10000;
+	else if (speed == SPEED_5000)
+		spdsel = RTL_SPEED_5000;
+	else if (speed == SPEED_2500)
+		spdsel = RTL_SPEED_2500;
+	else if (speed == SPEED_1000)
+		spdsel = RTL_SPEED_1000;
+	else if (speed == SPEED_100)
+		spdsel = RTL_SPEED_100;
+	else
+		spdsel = RTL_SPEED_10;
+
+	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
+
+	if (priv->family_id == RTL9300_FAMILY_ID) {
+		mcr &= ~RTL930X_RX_PAUSE_EN;
+		mcr &= ~RTL930X_TX_PAUSE_EN;
+		mcr &= ~RTL930X_DUPLEX_MODE;
+		mcr &= ~RTL930X_SPEED_MASK;
+		mcr |= RTL930X_FORCE_LINK_EN;
+		mcr |= spdsel << RTL930X_SPEED_SHIFT;
+
+		if (tx_pause)
+			mcr |= RTL930X_TX_PAUSE_EN;
+		if (rx_pause)
+			mcr |= RTL930X_RX_PAUSE_EN;
+		if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+			mcr |= RTL930X_DUPLEX_MODE;
+		if (dsa_port_is_cpu(dp) || !priv->ports[port].phy_is_integrated)
+			mcr |= RTL930X_FORCE_EN;
+	}
+
+	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
+		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
-	/* TODO: Set speed/duplex/pauses */
 }
 
 static void rtl83xx_get_strings(struct dsa_switch *ds,
