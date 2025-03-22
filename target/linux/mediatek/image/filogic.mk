@@ -1257,6 +1257,31 @@ define Device/netgear_wax220
 endef
 TARGET_DEVICES += netgear_wax220
 
+define Device/netis_nx31
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := NX31
+  DEVICE_DTS := mt7981b-netis-nx31
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot netis_nx31
+endef
+TARGET_DEVICES += netis_nx31
+
 define Device/nokia_ea0326gmp
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := EA0326GMP
