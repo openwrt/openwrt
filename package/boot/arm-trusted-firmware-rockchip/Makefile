@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.10
+PKG_VERSION:=2.12
 PKG_RELEASE:=1
 
-PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
+PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -33,12 +33,15 @@ define Trusted-Firmware-A/rk3399
   PLAT:=rk3399
 endef
 
+define Trusted-Firmware-A/rk3588
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3588
+endef
+
 TFA_TARGETS:= \
 	rk3328 \
-	rk3399
-
-TFA_MAKE_FLAGS+= \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
+	rk3399 \
+	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
   M0_GCC_NAME:=gcc-arm
@@ -65,6 +68,22 @@ ifeq ($(BUILD_VARIANT),rk3399)
 
   TFA_MAKE_FLAGS+= \
     M0_CROSS_COMPILE=$(PKG_BUILD_DIR)/$(M0_GCC_NAME)-$(M0_GCC_RELEASE)-$(M0_GCC_VERSION)/bin/arm-none-eabi-
+endif
+
+ifeq ($(BUILD_VARIANT),rk3588)
+  TPL_FILE:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.18.bin
+  define Download/rk3588-tpl
+    FILE:=$(TPL_FILE)
+    URL:=https://github.com/rockchip-linux/rkbin/raw/f43a462e7a1429a9d407ae52b4745033034a6cf9/bin/rk35
+    HASH:=d89d40a8183b099589bfcffc5cc2ce9d874eb5b1d19b78bdad2cfcf45b9cb68f
+  endef
+
+  define Build/Prepare
+	$(eval $(call Download,rk3588-tpl))
+	$(call Build/Prepare/Default)
+
+	$(CP) $(DL_DIR)/$(TPL_FILE) $(STAGING_DIR_IMAGE)/
+  endef
 endif
 
 define Package/trusted-firmware-a/install
