@@ -442,11 +442,6 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
 		;;
-	nec,wf1200cr)
-		ucidef_set_interface_wan "eth1"
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan"
-		;;
 	nec,wg1200cr|\
 	qxwlan,e1700ac-v2-8m|\
 	qxwlan,e1700ac-v2-16m|\
@@ -455,11 +450,17 @@ ath79_setup_interfaces()
 	ubnt,nanobeam-ac-gen2|\
 	ubnt,nanostation-ac|\
 	yuncore,a782|\
+	yuncore,wb5g08|\
 	yuncore,xd3200|\
 	yuncore,xd4200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
 		;;
+	nec,wf1200cr)
+                ucidef_set_interface_wan "eth1"
+                ucidef_add_switch "switch0" \
+                        "0@eth0" "1:lan"
+                ;;
 	nec,wg800hp|\
 	xiaomi,aiot-ac2350)
 		ucidef_add_switch "switch0" \
