@@ -67,6 +67,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	abt,asr3000|\
+	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
@@ -116,7 +117,8 @@ platform_do_upgrade() {
 		;;
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
-	asus,tuf-ax6000)
+	asus,tuf-ax6000|\
+	asus,zenwifi-bt8)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
@@ -190,6 +192,7 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
@@ -261,7 +264,8 @@ platform_pre_upgrade() {
 	case "$board" in
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
-	asus,tuf-ax6000)
+	asus,tuf-ax6000|\
+	asus,zenwifi-bt8)
 		asus_initial_setup
 		;;
 	xiaomi,mi-router-ax3000t|\
