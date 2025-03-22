@@ -1,0 +1,100 @@
+From ed237eddff36d56e95f12fa0ebded92a9ae77c68 Mon Sep 17 00:00:00 2001
+From: Lech Perczak <lech.perczak@gmail.com>
+Date: Wed, 11 May 2022 21:02:05 +0200
+Subject: [PATCH] ARM: dts: imx7d-pico-pi: add OV5645 camera support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add OV5645 camera device node and enable relevant components in the
+video capture data path, so output stream can be captured, and the
+camera itself can be controlled over I²C bus.
+
+This is roughly based on descriptions found in downstream kernel tree [1],
+adapted to match upstream bindings.
+
+The camera can probe successfully and establish an image path through
+MIPI-CSI and CSI peripherals, but so far I wasn't able to transfer the
+actual image, probably due to pixel format incompatibilities between
+the camera and CSI peripheral drivers - yet I'm hoping, that submitting
+this will eventually help getting full support.
+
+Link: https://github.com/technexion-android/kernel_imx/blob/ce8fd74abf518dac0a09e8dcb37f3496f6375124/arch/arm/boot/dts/imx7d-pico.dtsi#L874 [1]
+
+Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts | 57 +++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+
+--- a/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
+@@ -71,6 +71,32 @@
+ 		touchscreen-size-x = <800>;
+ 		touchscreen-size-y = <480>;
+ 	};
++
++	ov5645_mipi: camera@3c {
++		compatible = "ovti,ov5645";
++		reg = <0x3c>;
++
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_mipi_csi>;
++
++		clocks = <&clks IMX7D_CLKO1_ROOT_DIV>;
++		clock-names = "xclk";
++		clock-frequency = <24000000>;
++
++		enable-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
++
++		vdda-supply = <&reg_2p5v>;
++		vdddo-supply = <&reg_vref_1v8>;
++		vddd-supply = <&reg_vref_1v8>;
++
++		port {
++			ov5645_mipi_ep: endpoint {
++				remote-endpoint = <&mipi_sensor_ep>;
++				data-lanes = <1 2>;
++			};
++		};
++	};
+ };
+ 
+ &iomuxc {
+@@ -101,5 +127,36 @@
+ 			MX7D_PAD_EPDC_DATA13__GPIO2_IO13	0x14
+ 		>;
+ 	};
++};
++
++&iomuxc_lpsr {
++	pinctrl_mipi_csi: mipicsigrp-1 {
++		fsl,pins = <
++			MX7D_PAD_LPSR_GPIO1_IO04__GPIO1_IO4	0x15
++			MX7D_PAD_LPSR_GPIO1_IO05__GPIO1_IO5	0x15
++			MX7D_PAD_LPSR_GPIO1_IO02__CCM_CLKO1	0x7d
++		>;
++	};
++};
++
++&csi {
++	status = "okay";
++};
++
++&mipi_csi {
++	clock-frequency = <24000000>;
++	status = "okay";
++
++	ports {
++		port@0 {
++			mipi_sensor_ep: endpoint {
++				remote-endpoint = <&ov5645_mipi_ep>;
++				data-lanes = <1 2>;
++			};
++		};
++	};
++};
+ 
++&video_mux {
++	status = "okay";
+ };
