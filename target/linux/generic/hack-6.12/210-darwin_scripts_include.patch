@@ -3039,7 +3039,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  main(int argc, char **argv)
 --- a/scripts/mod/modpost.h
 +++ b/scripts/mod/modpost.h
-@@ -9,7 +9,11 @@
+@@ -10,7 +10,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>
  #include <unistd.h>
@@ -3050,4 +3050,4 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +#endif
  #include "../../include/linux/module_symbol.h"
  
- #include "list.h"
+ #include <list_types.h>
