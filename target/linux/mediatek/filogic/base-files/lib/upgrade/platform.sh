@@ -135,6 +135,12 @@ platform_do_upgrade() {
 		fw_setenv sw_tryactive 0
 		nand_do_upgrade "$1"
 		;;
+	mercusys,mr80x-v3)
+		mtd erase ubi0
+		mtd write "$1" ubi0
+		mtd erase ubi1
+		mtd write "$1" ubi1
+		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
@@ -210,6 +216,13 @@ platform_check_image() {
 			return 1
 		}
 
+		return 0
+		;;
+	mercusys,mr80x-v3)
+		[ "$magic" != "55424923" ] && {
+			echo "Invalid image type."
+			return 1
+		}
 		return 0
 		;;
 	*)
