@@ -712,6 +712,23 @@ define Device/linksys_ea8300
 endef
 TARGET_DEVICES += linksys_ea8300
 
+define Device/linksys_mr6350
+	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MR6350
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | linksys-image type=MR6350
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_mr6350 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += linksys_mr6350
+
 define Device/linksys_mr8300
 	$(call Device/FitzImage)
 	$(call Device/kernel-size-6350-8300)
