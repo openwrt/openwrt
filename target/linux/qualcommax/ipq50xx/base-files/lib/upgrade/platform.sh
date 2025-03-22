@@ -1,7 +1,7 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head'
+RAMFS_COPY_BIN='dumpimage fw_printenv fw_setenv head'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 remove_oem_ubi_volume() {
@@ -71,6 +71,9 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	glinet,gl-b3000)
+		glinet_do_upgrade "$1"
+		;;
 	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
