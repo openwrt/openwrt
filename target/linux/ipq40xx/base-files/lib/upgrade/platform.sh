@@ -69,21 +69,6 @@ askey_do_upgrade() {
 	nand_do_upgrade "$1"
 }
 
-zyxel_do_upgrade() {
-	local tar_file="$1"
-
-	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
-	board_dir=${board_dir%/}
-
-	tar Oxf $tar_file ${board_dir}/kernel | mtd write - kernel
-
-	if [ -n "$UPGRADE_BACKUP" ]; then
-		tar Oxf $tar_file ${board_dir}/root | mtd -j "$UPGRADE_BACKUP" write - rootfs
-	else
-		tar Oxf $tar_file ${board_dir}/root | mtd write - rootfs
-	fi
-}
-
 platform_do_upgrade_mikrotik_nand() {
 	local fw_mtd=$(find_mtd_part kernel)
 	fw_mtd="${fw_mtd/block/}"
@@ -227,7 +212,8 @@ platform_do_upgrade() {
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
-	zyxel,nbg6617)
+	zyxel,nbg6617 |\
+	zyxel,wsq50)
 		zyxel_do_upgrade "$1"
 		;;
 	*)
