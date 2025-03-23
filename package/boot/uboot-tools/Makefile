@@ -22,19 +22,6 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/uboot-tools
-	SECTION:=utils
-	CATEGORY:=Utilities
-	SUBMENU:=Boot Loaders
-	TITLE:=U-Boot bootloader Tools
-	URL:=http://www.denx.de/wiki/U-Boot
-endef
-
-define Package/uboot-tools/description
-	U-Boot tools are a collection of utilities designed
-	to work with the U-Boot bootloader,
-endef
-
 define Package/dumpimage
 	SECTION:=utils
 	CATEGORY:=Utilities
