@@ -59,8 +59,8 @@ define Package/uboot-envtools/conffiles
 endef
 
 define Build/Configure
-	$(MAKE) -C $(PKG_BUILD_DIR) tools-only_defconfig
-	$(MAKE) -C $(PKG_BUILD_DIR) syncconfig
+	$(call Build/Compile/Default,tools-only_defconfig)
+	$(call Build/Compile/Default,syncconfig)
 	$(SED) 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
 endef
 
@@ -71,8 +71,14 @@ MAKE_FLAGS += \
 	NO_PYTHON=1
 
 define Build/Compile
+
+ifneq ($(CONFIG_PACKAGE_uboot-envtools),)
 	$(call Build/Compile/Default,envtools)
+endif
+ifneq ($(CONFIG_PACKAGE_dumpimage),)
 	$(call Build/Compile/Default,cross_tools)
+endif
+
 endef
 
 define Package/dumpimage/install
