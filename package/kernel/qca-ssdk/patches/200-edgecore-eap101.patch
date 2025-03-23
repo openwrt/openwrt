@@ -1,0 +1,14 @@
+diff --git a/src/hsl/phy/hsl_phy.c b/src/hsl/phy/hsl_phy.c
+index 5866a522..41227581 100755
+--- a/src/hsl/phy/hsl_phy.c
++++ b/src/hsl/phy/hsl_phy.c
+@@ -608,6 +608,9 @@ hsl_port_phyid_get(a_uint32_t dev_id, fal_port_t port_id)
+ 		return INVALID_PHY_ID;
+ 	}
+ 
++	if (phy_id == MALIBU5PORT_PHY && of_machine_is_compatible("edgecore,eap101"))
++		phy_id = MALIBU2PORT_PHY;
++
+ 	return phy_id;
+ }
+ 
