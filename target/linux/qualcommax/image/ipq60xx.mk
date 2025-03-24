@@ -1,3 +1,5 @@
+DEVICE_VARS += TPLINK_SUPPORT_STRING
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
@@ -107,9 +109,9 @@ define Device/tplink_eap610-outdoor
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap610-outdoor
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
-	TPLINK_SUPPORT_STRING := SupportList: \
-		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0 \
-		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0 \
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0\r\n \
+		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0\r\n \
 		EAP610-Outdoor(TP-Link|CA|AX1800-D):1.0
 endef
 TARGET_DEVICES += tplink_eap610-outdoor
