@@ -1,3 +1,5 @@
+DEVICE_VARS += TPLINK_SUPPORT_STRING
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
