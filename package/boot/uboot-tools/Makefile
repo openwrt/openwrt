@@ -80,7 +80,8 @@ endef
 MAKE_FLAGS += \
 	ARCH="sandbox" \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
-	TARGET_LDFLAGS="$(TARGET_LDFLAGS)"
+	TARGET_LDFLAGS="$(TARGET_LDFLAGS)" \
+	NO_PYTHON=1
 
 define Build/Compile
 	$(call Build/Compile/Default,envtools)
