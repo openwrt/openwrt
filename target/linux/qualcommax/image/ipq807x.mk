@@ -400,6 +400,8 @@ define Device/tplink_eap620hd-v1
 	PAGESIZE := 2048
 	SOC := ipq8072
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap620hd-v1
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP620 HD(TP-Link|UN|AX1800-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap620hd-v1
