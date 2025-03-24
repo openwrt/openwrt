@@ -416,6 +416,8 @@ define Device/tplink_eap660hd-v1
 	PAGESIZE := 2048
 	SOC := ipq8072
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap660hd-v1
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP660 HD(TP-Link|UN|AX3600-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap660hd-v1
