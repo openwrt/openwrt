@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=1.0.18
-PKG_RELEASE:=2
+PKG_VERSION:=1.0.19
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/lldpd/lldpd/releases/download/$(PKG_VERSION)/
-PKG_HASH:=38cd319aa02ab61d9a2ad130e22f906795ccca9ac73a0a0d9dac19ca99a8a870
+PKG_HASH:=4de17fe5137b4d44a7bd57f8dfc80cffe2c8bb3691b4ae3012b5a6ea20d79ee0
 
 PKG_MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 PKG_LICENSE:=ISC
