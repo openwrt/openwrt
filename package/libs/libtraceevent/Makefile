@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libtraceevent
-PKG_VERSION:=1.8.2
+PKG_VERSION:=1.8.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git/snapshot/
-PKG_HASH:=919f0c024c7b5059eace52d854d4df00ae7e361a4033e1b4d6fe01d97064a1b9
+PKG_HASH:=dc456d4d2bf4b4cd4d0c737d3374a8093f9e5ca18c1d7fc2279a4bf41e613121
 
 PKG_MAINTAINER:=Nick Hainke <vincent@systemli.org>
 
