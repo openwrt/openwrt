@@ -1,34 +1,32 @@
 #!/bin/sh
 
+. /lib/functions.sh
+. /lib/functions/system.sh
+
 preinit_mount_factory_data() {
+	local part_name="$1"
 	local mtd_path
+	local ubi_num
 
-	. /lib/functions.sh
-	. /lib/functions/system.sh
-
-	case $(board_name) in
-	tplink,eap620hd-v1|\
-	tplink,eap660hd-v1)
-		mtd_path=$(find_mtd_chardev "factory_data")
-		ubiattach --dev-path="$mtd_path" --devn=1
-		mkdir /tmp/factory_data
-		mount -o ro,noatime -t ubifs ubi1:ubi_factory_data /tmp/factory_data
-		;;
-	esac
+		mtd_path=$(find_mtd_chardev "$part_name")
+		ubi_num=$(find_mtd_index "$part_name")
+		ubiattach --dev-path="$mtd_path" --devn=$ubi_num
+		mkdir /tmp/$part_name
+		mount -o ro,noatime -t ubifs ubi$ubi_num:ubi_$part_name /tmp/$part_name
 }
 
 preinit_mount_factory_partitions() {
 
 	case $(board_name) in
 	tplink,deco-x80-5g)
-
-		mkdir /tmp/factory_data
-		mkdir /tmp/runtime_data
-		mount -o ro,noatime -t ubifs ubi2:ubi_factory_data /tmp/factory_data
-		mount -o ro,noatime -t ubifs ubi3:ubi_runtime_data /tmp/runtime_data
+		preinit_mount_factory_data "factory_data"
+		preinit_mount_factory_data "runtime_data"
+		;;
+	tplink,eap620hd-v1|\
+	tplink,eap660hd-v1)
+		preinit_mount_factory_data "tp_data"
 		;;
 	esac
 }
 
-boot_hook_add preinit_main preinit_mount_factory_data
 boot_hook_add preinit_main preinit_mount_factory_partitions
