@@ -41,6 +41,7 @@
 		wifi {
 			label = "green:wifi";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led_power_green: power {

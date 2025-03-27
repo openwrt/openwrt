@@ -8,8 +8,6 @@ board_config_update
 case $board in
 abt,asr3000)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
-	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan-5ghz" "phy1-ap0"
 	;;
 acer,predator-w6|\
 acer,predator-w6d)
@@ -34,8 +32,6 @@ bananapi,bpi-r3-mini)
 	ucidef_set_led_netdev "lan2" "LAN" "mdio-bus:0e:yellow:lan" "eth0" "link_2500 link_100 tx rx"
 	ucidef_set_led_netdev "wan1" "WAN" "mdio-bus:0f:green:wan" "eth1" "link_2500 link_1000 tx rx"
 	ucidef_set_led_netdev "wan2" "WAN" "mdio-bus:0f:yellow:wan" "eth1" "link_2500 link_100 tx rx"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-1" "phy0-ap0"
-	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-2" "phy1-ap0"
 	;;
 bananapi,bpi-r4|\
 bananapi,bpi-r4-poe)
@@ -66,8 +62,6 @@ glinet,gl-xe3000)
 	ucidef_set_led_netdev "5g_2" "5G_2" "green:5g:led2" "wwan0"
 	ucidef_set_led_netdev "5g_3" "5G_3" "green:5g:led3" "wwan0"
 	ucidef_set_led_netdev "5g_4" "5G_4" "green:5g:led4" "wwan0"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wifi2g" "phy0-ap0"
-	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wifi5g" "phy1-ap0"
 	;;
 mercusys,mr90x-v1|\
 mercusys,mr90x-v1-ubi)
@@ -85,10 +79,8 @@ netgear,wax220)
 nokia,ea0326gmp)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"
-	ucidef_set_led_netdev "wlan" "WLAN" "green:wlan" "phy1-ap0" "link"
 	;;
 nradio,c8-668gl)
-	ucidef_set_led_netdev "wifi" "WIFI" "blue:wlan" "phy1-ap0" "link"
 	ucidef_set_led_netdev "5g" "5G" "blue:indicator-0" "eth1" "link"
 	;;
 openembed,som7981)
@@ -181,8 +173,6 @@ zyxel,ex5601-t0-ubootmod)
 	ucidef_set_led_netdev "wan" "2.5G-WAN" "mdio-bus:06:green:wan" "eth1" "link_2500"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
 	ucidef_set_led_netdev "internet" "INTERNET" "green:inet" "eth1" "link tx rx"
-	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "green:wifi24g" "phy0-ap0" "link tx rx"
-	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "green:wifi5g" "phy1-ap0" "link tx rx"
 	;;
 zyxel,nwa50ax-pro)
 	ucidef_set_led_netdev "uplink" "UPLINK" "mdio-bus:05:amber:wan" "eth0" "link_10 link_100 link_2500 tx rx"

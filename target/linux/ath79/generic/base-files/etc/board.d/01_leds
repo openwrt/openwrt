@@ -81,13 +81,9 @@ alfa-network,tube-2hq)
 	;;
 asus,pl-ac56)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3e"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan2g" "wlan1" "link"
-	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan5g" "wlan0" "link"
 	;;
 asus,rp-ac51)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2G" "wlan1" "link"
-	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5G" "wlan0" "link"
 	;;
 asus,rp-ac66)
 	ucidef_set_rssimon "wlan0" "200000" "1"
@@ -143,7 +139,6 @@ buffalo,wzr-hp-g300nh-s)
 comfast,cf-e110n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth1"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x02"
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan0" "1" "100"
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "red:rssimediumlow" "wlan0" "26" "100"
@@ -291,7 +286,6 @@ yuncore,xd3200)
 	;;
 hiwifi,hc6361)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
-	ucidef_set_led_wlan "wlan" "WLAN" "blue:wlan" "phy0tpt"
 	;;
 kuwfi,c910)
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
@@ -363,9 +357,6 @@ qca,ap143-16m)
 	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x04"
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x10"
-	;;
-qihoo,c301)
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
 ruckus,zf7025)
 	ucidef_set_led_netdev "lan" "LAN5" "green:lan5" "eth0"

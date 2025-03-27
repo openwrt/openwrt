@@ -75,6 +75,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
 		};
 
 		led-5 {
