@@ -1,0 +1,81 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH] wifi: ath12k: Fetch regdb.bin file from board-2.bin
+From: Aaradhana Sahu <quic_aarasahu@quicinc.com>
+Date: Thu, 16 Jan 2025 08:58:35 +0530
+Message-Id: <20250116032835.118397-1-quic_aarasahu@quicinc.com>
+To: <ath12k@lists.infradead.org>
+Cc: <linux-wireless@vger.kernel.org>, Aaradhana Sahu <quic_aarasahu@quicinc.com>
+List-Id: <linux-wireless.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Currently, ath12k_core_fetch_regdb() finds regdb.bin file through
+board id's but in board-2.bin file regdb.bin file is present with
+default board id because of which regdb.bin is not fetched.
+
+Add support to fetch regdb.bin file from board-2.bin through
+default board id.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.3.1-00173-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
+Reviewed-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+---
+ drivers/net/wireless/ath/ath12k/core.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath12k/core.c b/drivers/net/wireless/ath/ath12k/core.c
+index 0606116d6b9c..3eff1fbf8247 100644
+--- a/drivers/net/wireless/ath/ath12k/core.c
++++ b/drivers/net/wireless/ath/ath12k/core.c
+@@ -173,7 +173,7 @@ EXPORT_SYMBOL(ath12k_core_resume);
+ 
+ static int __ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
+ 					   size_t name_len, bool with_variant,
+-					   bool bus_type_mode)
++					   bool bus_type_mode, bool with_default)
+ {
+ 	/* strlen(',variant=') + strlen(ab->qmi.target.bdf_ext) */
+ 	char variant[9 + ATH12K_QMI_BDF_EXT_STR_LENGTH] = { 0 };
+@@ -204,7 +204,9 @@ static int __ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
+ 			  "bus=%s,qmi-chip-id=%d,qmi-board-id=%d%s",
+ 			  ath12k_bus_str(ab->hif.bus),
+ 			  ab->qmi.target.chip_id,
+-			  ab->qmi.target.board_id, variant);
++			  with_default ?
++			  ATH12K_BOARD_ID_DEFAULT : ab->qmi.target.board_id,
++			  variant);
+ 		break;
+ 	}
+ 
+@@ -216,19 +218,19 @@ static int __ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
+ static int ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
+ 					 size_t name_len)
+ {
+-	return __ath12k_core_create_board_name(ab, name, name_len, true, false);
++	return __ath12k_core_create_board_name(ab, name, name_len, true, false, false);
+ }
+ 
+ static int ath12k_core_create_fallback_board_name(struct ath12k_base *ab, char *name,
+ 						  size_t name_len)
+ {
+-	return __ath12k_core_create_board_name(ab, name, name_len, false, false);
++	return __ath12k_core_create_board_name(ab, name, name_len, false, false, true);
+ }
+ 
+ static int ath12k_core_create_bus_type_board_name(struct ath12k_base *ab, char *name,
+ 						  size_t name_len)
+ {
+-	return __ath12k_core_create_board_name(ab, name, name_len, false, true);
++	return __ath12k_core_create_board_name(ab, name, name_len, false, true, true);
+ }
+ 
+ const struct firmware *ath12k_core_firmware_request(struct ath12k_base *ab,
+
+base-commit: 6a5fe6aaedcfadf8e32dd703ec20b1460523c22d
+
+-- 
+2.34.1
+
+
