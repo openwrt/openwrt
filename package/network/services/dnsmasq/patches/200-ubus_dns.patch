@@ -1,16 +1,16 @@
 --- a/src/dnsmasq.c
 +++ b/src/dnsmasq.c
-@@ -2021,6 +2021,10 @@ static void check_dns_listeners(time_t n
- 		  daemon->pipe_to_parent = pipefd[1];
- 		}
- 
+@@ -2213,6 +2213,10 @@
+   status = tcp_from_udp(now, status, header, plen, class, daemon->namebuff, daemon->keyname, 
+ 			server, keycount, validatecount);
+   
 +#ifdef HAVE_UBUS
-+	      drop_ubus_listeners();
++  drop_ubus_listeners();
 +#endif
-+
- 	      /* start with no upstream connections. */
- 	      for (s = daemon->servers; s; s = s->next)
- 		 s->tcpfd = -1; 
++ 
+   /* close upstream connections. */
+   for (s = daemon->servers; s; s = s->next)
+     if (s->tcpfd != -1)
 --- a/src/dnsmasq.h
 +++ b/src/dnsmasq.h
 @@ -1670,14 +1670,26 @@ void emit_dbus_signal(int action, struct
