@@ -16,7 +16,7 @@
 
 	memory@40000000 {
 		device_type = "memory";
-		reg = <0x40000000 0x20000000>;
+		reg = <0 0x40000000 0 0x20000000>;
 	};
 
 	chosen {
@@ -53,19 +53,19 @@
 				reg = <0x0 0x1000>;
 			};
 
-			macaddr_factory_0004: macaddr@0004 {
+			macaddr_factory_0004: macaddr@4 {
 				compatible = "mac-base";
 				reg = <0x0004 0x6>;
 				#nvmem-cell-cells = <1>;
 			};
 
-			macaddr_factory_0024: macaddr@0024 {
+			macaddr_factory_0024: macaddr@24 {
 				compatible = "mac-base";
 				reg = <0x0024 0x6>;
 				#nvmem-cell-cells = <1>;
 			};
 
-			macaddr_factory_002a: macaddr@002a {
+			macaddr_factory_002a: macaddr@2a {
 				compatible = "mac-base";
 				reg = <0x002a 0x6>;
 				#nvmem-cell-cells = <1>;
