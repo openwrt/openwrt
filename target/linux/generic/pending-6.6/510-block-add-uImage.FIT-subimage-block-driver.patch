@@ -656,7 +656,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		add_fit_subimage_device(bdev, slot++, start_sect, nr_sects, true);
 +	}
 +
-+	if (!found || !slot)
++	if (!slot)
 +		goto out_bootconf;
 +
 +	dev_info(dev, "mapped %u uImage.FIT filesystem sub-image%s as /dev/fit%s%u%s\n",
@@ -675,7 +675,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	kfree(bootconf);
 +	kfree(fit);
 +out_blkdev:
-+	if (!found || ret)
++	if (!slot)
 +		blkdev_put(bdev, &_fitblk_claim_ptr);
 +
 +	return ret;
