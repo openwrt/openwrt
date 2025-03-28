@@ -156,7 +156,8 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-	h->cpu_tag[1] = h->cpu_tag[2] = 0;
+	h->cpu_tag[1] = 0x0200; /* Set FWD_TYPE to LOGICAL (2) */
+	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
 	h->cpu_tag[5] = 0;
@@ -171,7 +172,8 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-	h->cpu_tag[1] = h->cpu_tag[2] = 0;
+	h->cpu_tag[1] = 0x0200; /* Set FWD_TYPE to LOGICAL (2) */
+	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
 	if (dest_port >= 32) {
