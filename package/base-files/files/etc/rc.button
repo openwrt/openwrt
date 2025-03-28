@@ -7,7 +7,6 @@ import { access } from 'fs';
 
 let action = getenv('ACTION');
 let button = getenv('BUTTON');
-let seen = getenv('SEEN');
 
 if (!action || !button)
 	exit(-1);
@@ -19,11 +18,14 @@ let timeout = 0;
 
 uci.foreach("system", "button", function(d) {
 	if (d.button != button)
-		return;
+		continue;
+	if (d.disable)
+		exit(0);
 	if (d.script) {
 		timeout = d.timeout;
 		script = d.script;
 		override = true;
+		break;
 	}
 });
 
