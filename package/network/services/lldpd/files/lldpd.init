@@ -113,6 +113,23 @@ add_custom_tlv_callback()
 	echo "configure ${_ports:+ports $_ports }lldp custom-tlv $_tlv" >> "$LLDPD_CONF"
 }
 
+add_raw_config_callback()
+{
+	# syntax: configure [ports ethX [,…]] med power pse|pd source <source> priority <priority> value <value>
+	# syntax: configure [ports ethX [,…]] dot3 power pse|pd [supported] [enabled] [paircontrol] powerpairs <powerpairs> [class <class>] [type <type> source <source> priority <priority> requested <requested> allocated <allocated>]
+	# ex: configure ports lan3 med power pd source pse priority critical value 5000
+	# ex: configure dot3 power pse supported enabled powerpairs signal
+
+	local _ports
+	local _config_string # med|dot3 power pse|pd ...
+
+	# CSV of device ports
+	get_interface_csv _ports "$1" 'ports'
+	config_get _config_string "$1" 'config_string'
+
+	echo "configure ${_ports:+ports $_ports }${_config_string} " >> "$LLDPD_CONF"
+}
+
 write_lldpd_conf()
 {
 	local lldp_description
@@ -214,6 +231,9 @@ write_lldpd_conf()
 
 	# Custom TLV handling
 	config_foreach add_custom_tlv_callback 'custom-tlv'
+
+	# Raw config handling (e.g. Dot3/MED Power TLV)
+	config_foreach add_raw_config_callback 'raw-config'
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
