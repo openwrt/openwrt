@@ -65,7 +65,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /* SGMII */
  #define VSPEC1_SGMII_CTRL	0x08
  #define VSPEC1_SGMII_CTRL_ANEN	BIT(12)		/* Aneg enable */
-@@ -827,6 +850,156 @@ static int gpy115_loopback(struct phy_de
+@@ -835,6 +858,156 @@ static int gpy115_loopback(struct phy_de
  	return genphy_soft_reset(phydev);
  }
  
@@ -222,7 +222,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct phy_driver gpy_drivers[] = {
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY2xx),
-@@ -844,6 +1017,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -852,6 +1025,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -234,7 +234,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.phy_id		= PHY_ID_GPY115B,
-@@ -862,6 +1040,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -870,6 +1048,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy115_loopback,
@@ -246,7 +246,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY115C),
-@@ -879,6 +1062,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -887,6 +1070,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy115_loopback,
@@ -258,7 +258,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.phy_id		= PHY_ID_GPY211B,
-@@ -897,6 +1085,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -905,6 +1093,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -270,7 +270,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY211C),
-@@ -914,6 +1107,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -922,6 +1115,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -282,7 +282,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.phy_id		= PHY_ID_GPY212B,
-@@ -932,6 +1130,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -940,6 +1138,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -294,7 +294,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY212C),
-@@ -949,6 +1152,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -957,6 +1160,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -306,7 +306,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.phy_id		= PHY_ID_GPY215B,
-@@ -967,6 +1175,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -975,6 +1183,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
@@ -318,7 +318,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY215C),
-@@ -984,6 +1197,11 @@ static struct phy_driver gpy_drivers[] =
+@@ -992,6 +1205,11 @@ static struct phy_driver gpy_drivers[] =
  		.set_wol	= gpy_set_wol,
  		.get_wol	= gpy_get_wol,
  		.set_loopback	= gpy_loopback,
