@@ -147,6 +147,9 @@
 #define RTL_SPEED_10				0
 #define RTL_SPEED_100				1
 #define RTL_SPEED_1000				2
+#define RTL_SPEED_2500				5
+#define RTL_SPEED_5000				6
+#define RTL_SPEED_10000				4
 
 #define RTL83XX_FORCE_EN			(1 << 0)
 #define RTL83XX_FORCE_LINK_EN			(1 << 1)
@@ -169,6 +172,8 @@
 #define RTL930X_FORCE_EN			(1 << 0)
 #define RTL930X_FORCE_LINK_EN			(1 << 1)
 #define RTL930X_DUPLEX_MODE			(1 << 2)
+#define RTL930X_SPEED_SHIFT			(3)
+#define RTL930X_SPEED_MASK			(15 << RTL930X_SPEED_SHIFT)
 #define RTL930X_TX_PAUSE_EN			(1 << 7)
 #define RTL930X_RX_PAUSE_EN			(1 << 8)
 #define RTL930X_MAC_FORCE_FC_EN			(1 << 9)
