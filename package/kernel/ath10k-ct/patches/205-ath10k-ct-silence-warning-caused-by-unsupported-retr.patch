@@ -1,0 +1,34 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 28 Mar 2025 20:26:04 +0800
+Subject: [PATCH] ath10k-ct: silence warning caused by unsupported retry_limit
+ value
+
+Some retry_limit values are not supported by ath10k wave2 chips.
+We can just skip config it for these chips. And it's safe to
+return 0 in this case because the hardware is still working.
+
+Suggested-by: Ben Greear <greearb@candelatech.com>
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ath10k-6.14/mac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/ath10k-6.10/mac.c
++++ b/ath10k-6.10/mac.c
+@@ -5395,7 +5395,7 @@ static int ath10k_config_retry_limit(str
+ 		 */
+ 		ath10k_warn(ar, "Firmware lacks feature flag indicating a retry limit of > 2 is OK, requested limit: %d\n",
+ 			    limit);
+-		return -EINVAL;
++		goto skip_retry_limit;
+ 	}
+ 
+ 	list_for_each_entry(arvif, &ar->arvifs, list) {
+@@ -5406,6 +5406,7 @@ static int ath10k_config_retry_limit(str
+ 		}
+ 	}
+ 
++skip_retry_limit:
+ 	return ret;
+ }
+ 
