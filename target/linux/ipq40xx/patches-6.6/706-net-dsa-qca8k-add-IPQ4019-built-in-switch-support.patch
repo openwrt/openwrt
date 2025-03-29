@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,950 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -870,6 +870,8 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	.port_change_mtu	= qca8k_port_change_mtu,
 +	.port_max_mtu		= qca8k_port_max_mtu,
 +	.port_stp_state_set	= qca8k_port_stp_state_set,
++	.port_pre_bridge_flags	= qca8k_port_pre_bridge_flags,
++	.port_bridge_flags	= qca8k_port_bridge_flags,
 +	.port_bridge_join	= qca8k_port_bridge_join,
 +	.port_bridge_leave	= qca8k_port_bridge_leave,
 +	.port_fast_age		= qca8k_port_fast_age,
