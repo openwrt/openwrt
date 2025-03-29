@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk'
+RAMFS_COPY_BIN='fitblk fit_check_sign'
 
 asus_initial_setup()
 {
@@ -224,11 +224,8 @@ platform_check_image() {
 	xiaomi,redmi-router-ax6000-ubootmod|\
 	xiaomi,mi-router-wr30u-ubootmod|\
 	zyxel,ex5601-t0-ubootmod)
-		[ "$magic" != "d00dfeed" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
+		fit_check_image "$1"
+		return $?
 		;;
 	nradio,c8-668gl)
 		# tar magic `ustar`

@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk'
+RAMFS_COPY_BIN='fitblk fit_check_sign'
 
 # Legacy full system upgrade including preloader for MediaTek SoCs on eMMC or SD
 legacy_mtk_mmc_full_upgrade() {
