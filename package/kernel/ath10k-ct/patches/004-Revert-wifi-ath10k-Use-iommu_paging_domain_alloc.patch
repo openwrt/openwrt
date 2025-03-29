@@ -1,0 +1,28 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 28 Mar 2025 19:56:06 +0800
+Subject: [PATCH] Revert "wifi: ath10k: Use iommu_paging_domain_alloc()"
+
+IPQ4019 wireless can't start after upstream commit d5b7485588df[1].
+
+[1] https://github.com/torvalds/linux/commit/d5b7485588dffb39c5687e965623124ab7ebcd51
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ath10k-6.14/snoc.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/ath10k-6.14/snoc.c
++++ b/ath10k-6.14/snoc.c
+@@ -1635,10 +1635,10 @@ static int ath10k_fw_init(struct ath10k
+ 
+ 	ar_snoc->fw.dev = &pdev->dev;
+ 
+-	iommu_dom = iommu_paging_domain_alloc(ar_snoc->fw.dev);
+-	if (IS_ERR(iommu_dom)) {
++	iommu_dom = iommu_domain_alloc(&platform_bus_type);
++	if (!iommu_dom) {
+ 		ath10k_err(ar, "failed to allocate iommu domain\n");
+-		ret = PTR_ERR(iommu_dom);
++		ret = -ENOMEM;
+ 		goto err_unregister;
+ 	}
+ 
