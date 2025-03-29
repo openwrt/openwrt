@@ -37,6 +37,18 @@ define Package/dumpimage/description
 	position to outfile.
 endef
 
+define Package/fit-check-sign
+	SECTION:=utils
+	CATEGORY:=Utilities
+	SUBMENU:=Boot Loaders
+	TITLE:=verify uImage.FIT
+	URL:=http://www.denx.de/wiki/U-Boot
+endef
+
+define Package/fit-check-sign/description
+	fit_check_sign validates uImage.FIT hashes and signatures
+endef
+
 define Package/uboot-envtools
 	SECTION:=utils
 	CATEGORY:=Utilities
@@ -75,7 +87,7 @@ define Build/Compile
 ifneq ($(CONFIG_PACKAGE_uboot-envtools),)
 	$(call Build/Compile/Default,envtools)
 endif
-ifneq ($(CONFIG_PACKAGE_dumpimage),)
+ifneq ($(CONFIG_PACKAGE_dumpimage)$(CONFIG_PACKAGE_fit-check-sign),)
 	$(call Build/Compile/Default,cross_tools)
 endif
 
@@ -84,6 +96,11 @@ endef
 define Package/dumpimage/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/dumpimage $(1)/usr/bin
+endef
+
+define Package/fit-check-sign/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/fit_check_sign $(1)/usr/bin
 endef
 
 define Package/uboot-envtools/install
@@ -109,4 +126,5 @@ define Package/uboot-envtools/install
 endef
 
 $(eval $(call BuildPackage,dumpimage))
+$(eval $(call BuildPackage,fit-check-sign))
 $(eval $(call BuildPackage,uboot-envtools))
