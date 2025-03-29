@@ -11,13 +11,15 @@ Signed-off-by: Joe Mullally <jwmullally@gmail.com>
 
 --- a/drivers/mtd/spi-nor/xmc.c
 +++ b/drivers/mtd/spi-nor/xmc.c
-@@ -13,6 +13,9 @@ static const struct flash_info xmc_nor_p
- 	{ "XM25QH64A", INFO(0x207017, 0, 64 * 1024, 128)
- 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
- 			      SPI_NOR_QUAD_READ) },
-+	{ "XM25QH64C", INFO(0x204017, 0, 64 * 1024, 128)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
-+			      SPI_NOR_QUAD_READ) },
- 	{ "XM25QH128A", INFO(0x207018, 0, 64 * 1024, 256)
- 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
- 			      SPI_NOR_QUAD_READ) },
+@@ -15,6 +15,11 @@ static const struct flash_info xmc_nor_p
+ 		.size = SZ_8M,
+ 		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
+ 	}, {
++		.id = SNOR_ID(0x20, 0x40, 0x17),
++		.name = "XM25QH64C",
++		.size = SZ_8M,
++		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
++	}, {
+ 		.id = SNOR_ID(0x20, 0x70, 0x18),
+ 		.name = "XM25QH128A",
+ 		.size = SZ_16M,
