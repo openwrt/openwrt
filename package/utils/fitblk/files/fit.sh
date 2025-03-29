@@ -49,6 +49,8 @@ fit_do_upgrade() {
 	[ -e /dev/fit0 ] && fitblk /dev/fit0
 	[ -e /dev/fitrw ] && fitblk /dev/fitrw
 
+	/usr/bin/fit_check_sign -f "$1" 2>/dev/null 1>/dev/null || return 1
+
 	case "$CI_METHOD" in
 	emmc)
 		emmc_do_upgrade "$1"
@@ -60,4 +62,16 @@ fit_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	esac
+}
+
+fit_check_image() {
+	local magic="$(get_magic_long "$1")"
+	[ "$magic" != "d00dfeed" ] && {
+		echo "Invalid image type."
+		return 1
+	}
+
+	/usr/bin/fit_check_sign -f "$1" 2>/dev/null
+
+	return $?
 }
