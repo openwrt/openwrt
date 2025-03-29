@@ -1,0 +1,13 @@
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -83,8 +83,8 @@ HOSTCFLAGS_img2srec.o := -pedantic
+ hostprogs-y += mkenvimage
+ mkenvimage-objs := mkenvimage.o os_support.o generated/lib/crc32.o
+ 
+-hostprogs-y += dumpimage mkimage
+-hostprogs-$(CONFIG_TOOLS_LIBCRYPTO) += fit_info fit_check_sign
++hostprogs-y += dumpimage mkimage fit_check_sign
++hostprogs-$(CONFIG_TOOLS_LIBCRYPTO) += fit_info
+ hostprogs-$(CONFIG_TOOLS_LIBCRYPTO) += fdt_add_pubkey
+ 
+ ifneq ($(CONFIG_CMD_BOOTEFI_SELFTEST)$(CONFIG_FWU_MDATA_GPT_BLK),)
