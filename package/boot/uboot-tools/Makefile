@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2025.01
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -26,7 +26,6 @@ define Package/dumpimage
 	SECTION:=utils
 	CATEGORY:=Utilities
 	SUBMENU:=Boot Loaders
-	DEPENDS := +libopenssl
 	TITLE:=dumpimage lists and extracts data from U-Boot images.
 	URL:=http://www.denx.de/wiki/U-Boot
 endef
@@ -62,6 +61,7 @@ define Build/Configure
 	$(call Build/Compile/Default,tools-only_defconfig)
 	$(call Build/Compile/Default,syncconfig)
 	$(SED) 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
+	$(SED) 's/CONFIG_TOOLS_KWBIMAGE=y/# CONFIG_TOOLS_KWBIMAGE is not set/' $(PKG_BUILD_DIR)/.config
 endef
 
 MAKE_FLAGS += \
