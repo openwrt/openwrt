@@ -74,6 +74,9 @@ qnap,301w)
 spectrum,sax1v1k)
 	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x40000" "1"
 	;;
+tplink,deco-x80-5g)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
