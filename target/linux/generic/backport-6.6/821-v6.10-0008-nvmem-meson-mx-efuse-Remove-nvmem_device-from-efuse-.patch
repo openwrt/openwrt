@@ -1,0 +1,50 @@
+From 2a1ad6b75292d38aa2f6ded7335979e0632521da Mon Sep 17 00:00:00 2001
+From: Mukesh Ojha <quic_mojha@quicinc.com>
+Date: Tue, 30 Apr 2024 09:49:21 +0100
+Subject: [PATCH] nvmem: meson-mx-efuse: Remove nvmem_device from efuse struct
+
+nvmem_device is used at one place while registering nvmem
+device and it is not required to be present in efuse struct
+for just this purpose.
+
+Drop nvmem_device and manage with nvmem device stack variable.
+
+Signed-off-by: Mukesh Ojha <quic_mojha@quicinc.com>
+Reviewed-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240430084921.33387-12-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/meson-mx-efuse.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/meson-mx-efuse.c
++++ b/drivers/nvmem/meson-mx-efuse.c
+@@ -43,7 +43,6 @@ struct meson_mx_efuse_platform_data {
+ struct meson_mx_efuse {
+ 	void __iomem *base;
+ 	struct clk *core_clk;
+-	struct nvmem_device *nvmem;
+ 	struct nvmem_config config;
+ };
+ 
+@@ -193,6 +192,7 @@ static int meson_mx_efuse_probe(struct p
+ {
+ 	const struct meson_mx_efuse_platform_data *drvdata;
+ 	struct meson_mx_efuse *efuse;
++	struct nvmem_device *nvmem;
+ 
+ 	drvdata = of_device_get_match_data(&pdev->dev);
+ 	if (!drvdata)
+@@ -223,9 +223,9 @@ static int meson_mx_efuse_probe(struct p
+ 		return PTR_ERR(efuse->core_clk);
+ 	}
+ 
+-	efuse->nvmem = devm_nvmem_register(&pdev->dev, &efuse->config);
++	nvmem = devm_nvmem_register(&pdev->dev, &efuse->config);
+ 
+-	return PTR_ERR_OR_ZERO(efuse->nvmem);
++	return PTR_ERR_OR_ZERO(nvmem);
+ }
+ 
+ static struct platform_driver meson_mx_efuse_driver = {
