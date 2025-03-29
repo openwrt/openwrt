@@ -27,7 +27,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.port_mirror_add	= qca8k_port_mirror_add,
 --- a/drivers/net/dsa/qca/qca8k-common.c
 +++ b/drivers/net/dsa/qca/qca8k-common.c
-@@ -1215,6 +1215,42 @@ int qca8k_port_lag_leave(struct dsa_swit
+@@ -1235,6 +1235,42 @@ int qca8k_port_lag_leave(struct dsa_swit
  	return qca8k_lag_refresh_portmap(ds, port, lag, true);
  }
  
@@ -72,7 +72,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	u32 val;
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
-@@ -590,5 +590,11 @@ int qca8k_port_lag_join(struct dsa_switc
+@@ -591,5 +591,11 @@ int qca8k_port_lag_join(struct dsa_switc
  			struct netlink_ext_ack *extack);
  int qca8k_port_lag_leave(struct dsa_switch *ds, int port,
  			 struct dsa_lag lag);
