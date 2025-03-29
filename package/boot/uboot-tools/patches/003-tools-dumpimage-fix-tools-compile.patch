@@ -17,8 +17,6 @@ Signed-off-by: Scott Mercer <TheRootEd24@gmail.com>
  tools/Makefile | 38 ++++++++++++++++++++++++++------------
  1 file changed, 26 insertions(+), 12 deletions(-)
 
-diff --git a/tools/Makefile b/tools/Makefile
-index ee08a9675df8..a72b7909a066 100644
 --- a/tools/Makefile
 +++ b/tools/Makefile
 @@ -22,6 +22,26 @@
@@ -68,7 +66,7 @@ index ee08a9675df8..a72b7909a066 100644
  
  mkfwumdata-objs := mkfwumdata.o generated/lib/crc32.o
  HOSTLDLIBS_mkfwumdata += -luuid
-@@ -313,10 +328,9 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/compiler.h \
+@@ -313,10 +328,9 @@ HOST_EXTRACFLAGS += -include $(srctree)/
  		-I$(srctree)/scripts/dtc/libfdt \
  		-I$(srctree)/tools \
  		-DUSE_HOSTCC \
@@ -81,4 +79,3 @@ index ee08a9675df8..a72b7909a066 100644
  
  $(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
  	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
-
