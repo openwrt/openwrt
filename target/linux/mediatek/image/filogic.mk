@@ -293,6 +293,50 @@ define Device/asus_tuf-ax6000
 endef
 TARGET_DEVICES += asus_tuf-ax6000
 
+define Device/asus_zenwifi-bt8
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := ZenWiFi BT8
+  DEVICE_DTS := mt7988d-asus-zenwifi-bt8
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 mt7988-2p5g-phy-firmware kmod-mt7996-firmware mt7988-wo-firmware
+  KERNEL := kernel-bin | gzip | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_LOADADDR := 0x48080000
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := factory.bin
+  ARTIFACT/factory.bin := append-image initramfs-kernel.bin | uImage lzma
+endif
+endef
+TARGET_DEVICES += asus_zenwifi-bt8
+
+define Device/asus_zenwifi-bt8-ubootmod
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := ZenWiFi BT8
+  DEVICE_VARIANT := U-Boot mod
+  DEVICE_DTS := mt7988d-asus-zenwifi-bt8-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  DEVICE_PACKAGES := kmod-usb3 mt7988-2p5g-phy-firmware kmod-mt7996-firmware mt7988-wo-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7988-bl2 spim-nand-ubi-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot asus_zenwifi-bt8
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_LOADADDR := 0x46000000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += asus_zenwifi-bt8-ubootmod
+
+
 define Device/bananapi_bpi-r3
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R3
