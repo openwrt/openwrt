@@ -59,6 +59,13 @@ define Device/d-link_dgs-1210-20
 endef
 TARGET_DEVICES += d-link_dgs-1210-20
 
+define Device/d-link_dgs-1210-26
+  $(Device/d-link_dgs-1210)
+  SOC := rtl8382
+  DEVICE_MODEL := DGS-1210-26
+endef
+TARGET_DEVICES += d-link_dgs-1210-26
+
 define Device/d-link_dgs-1210-28
   $(Device/d-link_dgs-1210)
   SOC := rtl8382
