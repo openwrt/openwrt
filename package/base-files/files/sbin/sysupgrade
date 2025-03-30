@@ -384,8 +384,9 @@ json_load "$(/usr/libexec/validate_firmware_image "$IMAGE")" || {
 	exit 1
 }
 json_get_var valid "valid"
+json_get_var forceable "forceable"
 [ "$valid" -eq 0 ] && {
-	if [ $FORCE -eq 1 ]; then
+	if [ $FORCE -eq 1 ] && [ "$forceable" -eq 1 ]; then
 		echo "Image check failed but --force given - will update anyway!" >&2
 	else
 		echo "Image check failed." >&2

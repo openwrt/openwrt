@@ -56,7 +56,17 @@ json_init
 		# Call platform_check_image() here so it can add its test
 		# results and still mark image properly.
 		json_set_namespace $old_ns
-		platform_check_image "$1" >&2 || notify_firmware_invalid
+		platform_check_image "$1" >&2
+		case "$?" in
+		0)
+			;;
+		74)
+			notify_firmware_broken
+			;;
+		*)
+			notify_firmware_invalid
+			;;
+		esac
 		json_set_namespace validate_firmware_image old_ns
 	json_close_object
 	json_add_boolean valid "$VALID"
