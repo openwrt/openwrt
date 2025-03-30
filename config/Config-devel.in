@@ -98,6 +98,19 @@ menuconfig DEVEL
 	config EXTERNAL_KERNEL_TREE
 		string "Use external kernel tree" if DEVEL
 		default ""
+		help
+		  Enter an absolute full pathname to a local kernel source tree.
+		  If that is a checked-out working copy then the corresponding
+		  .git repository will not be touched.
+
+	config EXTERNAL_KERNEL_TREE_PATCH
+		bool "Patch external kernel tree" if DEVEL
+		depends on (EXTERNAL_KERNEL_TREE != "")
+		default y
+		help
+		  Set this true to apply OpenWrt patches to the unpatched
+		  external kernel tree.  If the external kernel tree is already
+		  patched then unset this option to prevent patching.
 
 	config KERNEL_GIT_CLONE_URI
 		string "Enter git repository to clone" if DEVEL
