@@ -20,17 +20,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  arch/arm64/boot/dts/broadcom/bcm2712.dtsi | 2 --
  2 files changed, 4 deletions(-)
 
---- a/arch/arm/boot/dts/broadcom/bcm2711.dtsi
-+++ b/arch/arm/boot/dts/broadcom/bcm2711.dtsi
-@@ -451,8 +451,6 @@
- 					  IRQ_TYPE_LEVEL_LOW)>,
- 			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) |
- 					  IRQ_TYPE_LEVEL_LOW)>;
--		/* This only applies to the ARMv7 stub */
--		arm,cpu-registers-not-fw-configured;
- 	};
- 
- 	cpus: cpus {
 --- a/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
 +++ b/arch/arm64/boot/dts/broadcom/bcm2712.dtsi
 @@ -741,8 +741,6 @@
