@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -80,9 +80,9 @@ static int mtk_ppe_mib_wait_busy(struct
+@@ -83,9 +83,9 @@ static int mtk_ppe_mib_wait_busy(struct
  	int ret;
  	u32 val;
  
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (ret)
  		dev_err(ppe->dev, "MIB table busy");
-@@ -90,17 +90,31 @@ static int mtk_ppe_mib_wait_busy(struct
+@@ -93,17 +93,31 @@ static int mtk_ppe_mib_wait_busy(struct
  	return ret;
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	cnt_r0 = readl(ppe->base + MTK_PPE_MIB_SER_R0);
  	cnt_r1 = readl(ppe->base + MTK_PPE_MIB_SER_R1);
-@@ -109,19 +123,19 @@ static int mtk_mib_entry_read(struct mtk
+@@ -112,19 +126,19 @@ static int mtk_mib_entry_read(struct mtk
  	if (mtk_is_netsys_v3_or_greater(ppe->eth)) {
  		/* 64 bit for each counter */
  		u32 cnt_r3 = readl(ppe->base + MTK_PPE_MIB_SER_R3);
@@ -298,7 +298,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c
-@@ -96,7 +96,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file
+@@ -97,7 +97,7 @@ mtk_ppe_debugfs_foe_show(struct seq_file
  		if (bind && state != MTK_FOE_STATE_BIND)
  			continue;
  
@@ -309,7 +309,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		seq_printf(m, "%05x %s %7s", i,
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -516,24 +516,21 @@ static int
+@@ -520,24 +520,21 @@ static int
  mtk_flow_offload_stats(struct mtk_eth *eth, struct flow_cls_offload *f)
  {
  	struct mtk_flow_entry *entry;

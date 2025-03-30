@@ -31,7 +31,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  extern void prom_free_prom_memory(void);
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -90,21 +90,27 @@ static struct resource bss_resource = {
+@@ -86,21 +86,27 @@ static struct resource bss_resource = {
  unsigned long __kaslr_offset __ro_after_init;
  EXPORT_SYMBOL(__kaslr_offset);
  
@@ -64,7 +64,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  
  	pr_debug("Memory: %lluMB of RAM detected at 0x%llx (min: %lluMB, max: %lluMB)\n",
-@@ -115,6 +121,7 @@ void __init detect_memory_region(phys_ad
+@@ -111,6 +117,7 @@ void __init detect_memory_region(phys_ad
  
  	memblock_add(start, size);
  }

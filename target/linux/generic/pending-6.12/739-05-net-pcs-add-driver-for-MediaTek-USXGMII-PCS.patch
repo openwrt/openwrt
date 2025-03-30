@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -13356,7 +13356,9 @@ M:	Daniel Golle <daniel@makrotopia.org>
+@@ -14419,7 +14419,9 @@ M:	Daniel Golle <daniel@makrotopia.org>
  L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/pcs/pcs-mtk-lynxi.c
@@ -51,14 +51,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -7,3 +7,4 @@ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
+@@ -8,3 +8,4 @@ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
  obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
  obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 +obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
-@@ -0,0 +1,456 @@
+@@ -0,0 +1,454 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2023 MediaTek Inc.
@@ -429,7 +429,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return 0;
 +}
 +
-+static int mtk_usxgmii_remove(struct platform_device *pdev)
++static void mtk_usxgmii_remove(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct mtk_usxgmii_pcs *cur, *tmp;
@@ -441,8 +441,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			break;
 +		}
 +	mutex_unlock(&instance_mutex);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id mtk_usxgmii_of_mtable[] = {

@@ -146,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		idle = cur_idle;
  		entry->data.ib1 &= ~ib1_ts_mask;
--		entry->data.ib1 |= hwe->ib1 & ib1_ts_mask;
+-		entry->data.ib1 |= ib1 & ib1_ts_mask;
 -	}
 -}
 -
