@@ -1,0 +1,139 @@
+From: Yunsheng Lin <linyunsheng@huawei.com>
+Date: Fri, 13 Oct 2023 14:48:21 +0800
+Subject: [PATCH] page_pool: fragment API support for 32-bit arch with 64-bit
+ DMA
+
+Currently page_pool_alloc_frag() is not supported in 32-bit
+arch with 64-bit DMA because of the overlap issue between
+pp_frag_count and dma_addr_upper in 'struct page' for those
+arches, which seems to be quite common, see [1], which means
+driver may need to handle it when using fragment API.
+
+It is assumed that the combination of the above arch with an
+address space >16TB does not exist, as all those arches have
+64b equivalent, it seems logical to use the 64b version for a
+system with a large address space. It is also assumed that dma
+address is page aligned when we are dma mapping a page aligned
+buffer, see [2].
+
+That means we're storing 12 bits of 0 at the lower end for a
+dma address, we can reuse those bits for the above arches to
+support 32b+12b, which is 16TB of memory.
+
+If we make a wrong assumption, a warning is emitted so that
+user can report to us.
+
+1. https://lore.kernel.org/all/20211117075652.58299-1-linyunsheng@huawei.com/
+2. https://lore.kernel.org/all/20230818145145.4b357c89@kernel.org/
+
+Tested-by: Alexander Lobakin <aleksander.lobakin@intel.com>
+Signed-off-by: Yunsheng Lin <linyunsheng@huawei.com>
+CC: Lorenzo Bianconi <lorenzo@kernel.org>
+CC: Alexander Duyck <alexander.duyck@gmail.com>
+CC: Liang Chen <liangchen.linux@gmail.com>
+CC: Guillaume Tucker <guillaume.tucker@collabora.com>
+CC: Matthew Wilcox <willy@infradead.org>
+CC: Linux-MM <linux-mm@kvack.org>
+Link: https://lore.kernel.org/r/20231013064827.61135-2-linyunsheng@huawei.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -125,18 +125,7 @@ struct page {
+ 			struct page_pool *pp;
+ 			unsigned long _pp_mapping_pad;
+ 			unsigned long dma_addr;
+-			union {
+-				/**
+-				 * dma_addr_upper: might require a 64-bit
+-				 * value on 32-bit architectures.
+-				 */
+-				unsigned long dma_addr_upper;
+-				/**
+-				 * For frag page support, not supported in
+-				 * 32-bit architectures with 64-bit DMA.
+-				 */
+-				atomic_long_t pp_frag_count;
+-			};
++			atomic_long_t pp_frag_count;
+ 		};
+ 		struct {	/* Tail pages of compound page */
+ 			unsigned long compound_head;	/* Bit zero is set */
+--- a/include/net/page_pool/helpers.h
++++ b/include/net/page_pool/helpers.h
+@@ -197,7 +197,7 @@ static inline void page_pool_recycle_dir
+ 	page_pool_put_full_page(pool, page, true);
+ }
+ 
+-#define PAGE_POOL_DMA_USE_PP_FRAG_COUNT	\
++#define PAGE_POOL_32BIT_ARCH_WITH_64BIT_DMA	\
+ 		(sizeof(dma_addr_t) > sizeof(unsigned long))
+ 
+ /**
+@@ -211,17 +211,25 @@ static inline dma_addr_t page_pool_get_d
+ {
+ 	dma_addr_t ret = page->dma_addr;
+ 
+-	if (PAGE_POOL_DMA_USE_PP_FRAG_COUNT)
+-		ret |= (dma_addr_t)page->dma_addr_upper << 16 << 16;
++	if (PAGE_POOL_32BIT_ARCH_WITH_64BIT_DMA)
++		ret <<= PAGE_SHIFT;
+ 
+ 	return ret;
+ }
+ 
+-static inline void page_pool_set_dma_addr(struct page *page, dma_addr_t addr)
++static inline bool page_pool_set_dma_addr(struct page *page, dma_addr_t addr)
+ {
++	if (PAGE_POOL_32BIT_ARCH_WITH_64BIT_DMA) {
++		page->dma_addr = addr >> PAGE_SHIFT;
++
++		/* We assume page alignment to shave off bottom bits,
++		 * if this "compression" doesn't work we need to drop.
++		 */
++		return addr != (dma_addr_t)page->dma_addr << PAGE_SHIFT;
++	}
++
+ 	page->dma_addr = addr;
+-	if (PAGE_POOL_DMA_USE_PP_FRAG_COUNT)
+-		page->dma_addr_upper = upper_32_bits(addr);
++	return false;
+ }
+ 
+ static inline bool page_pool_put(struct page_pool *pool)
+--- a/net/core/page_pool.c
++++ b/net/core/page_pool.c
+@@ -211,10 +211,6 @@ static int page_pool_init(struct page_po
+ 		 */
+ 	}
+ 
+-	if (PAGE_POOL_DMA_USE_PP_FRAG_COUNT &&
+-	    pool->p.flags & PP_FLAG_PAGE_FRAG)
+-		return -EINVAL;
+-
+ #ifdef CONFIG_PAGE_POOL_STATS
+ 	pool->recycle_stats = alloc_percpu(struct page_pool_recycle_stats);
+ 	if (!pool->recycle_stats)
+@@ -363,12 +359,20 @@ static bool page_pool_dma_map(struct pag
+ 	if (dma_mapping_error(pool->p.dev, dma))
+ 		return false;
+ 
+-	page_pool_set_dma_addr(page, dma);
++	if (page_pool_set_dma_addr(page, dma))
++		goto unmap_failed;
+ 
+ 	if (pool->p.flags & PP_FLAG_DMA_SYNC_DEV)
+ 		page_pool_dma_sync_for_device(pool, page, pool->p.max_len);
+ 
+ 	return true;
++
++unmap_failed:
++	WARN_ON_ONCE("unexpected DMA address, please report to netdev@");
++	dma_unmap_page_attrs(pool->p.dev, dma,
++			     PAGE_SIZE << pool->p.order, pool->p.dma_dir,
++			     DMA_ATTR_SKIP_CPU_SYNC | DMA_ATTR_WEAK_ORDERING);
++	return false;
+ }
+ 
+ static void page_pool_set_pp_info(struct page_pool *pool,

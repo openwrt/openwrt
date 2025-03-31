@@ -1,0 +1,42 @@
+From a78794562fcb2659c976388b1285eddda97e9954 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Date: Tue, 10 Oct 2023 21:29:13 +0530
+Subject: [PATCH] PCI: dwc: Add host_post_init() callback
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This callback can be used by the platform drivers to do configuration
+once all the devices are scanned. Like changing LNKCTL of all downstream
+devices to enable ASPM etc...
+
+Link: https://lore.kernel.org/linux-pci/20231010155914.9516-2-manivannan.sadhasivam@linaro.org
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
+---
+ drivers/pci/controller/dwc/pcie-designware-host.c | 3 +++
+ drivers/pci/controller/dwc/pcie-designware.h      | 1 +
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/pci/controller/dwc/pcie-designware-host.c
++++ b/drivers/pci/controller/dwc/pcie-designware-host.c
+@@ -502,6 +502,9 @@ int dw_pcie_host_init(struct dw_pcie_rp
+ 	if (ret)
+ 		goto err_stop_link;
+ 
++	if (pp->ops->host_post_init)
++		pp->ops->host_post_init(pp);
++
+ 	return 0;
+ 
+ err_stop_link:
+--- a/drivers/pci/controller/dwc/pcie-designware.h
++++ b/drivers/pci/controller/dwc/pcie-designware.h
+@@ -301,6 +301,7 @@ enum dw_pcie_ltssm {
+ struct dw_pcie_host_ops {
+ 	int (*host_init)(struct dw_pcie_rp *pp);
+ 	void (*host_deinit)(struct dw_pcie_rp *pp);
++	void (*host_post_init)(struct dw_pcie_rp *pp);
+ 	int (*msi_host_init)(struct dw_pcie_rp *pp);
+ 	void (*pme_turn_off)(struct dw_pcie_rp *pp);
+ };

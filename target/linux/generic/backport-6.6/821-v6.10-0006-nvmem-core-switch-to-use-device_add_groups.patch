@@ -1,0 +1,32 @@
+From 8d8fc146dd7a0d6a6b37695747a524310dfb9d57 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Tue, 30 Apr 2024 09:49:16 +0100
+Subject: [PATCH] nvmem: core: switch to use device_add_groups()
+
+devm_device_add_groups() is being removed from the kernel, so move the
+nvmem driver to use device_add_groups() instead.  The logic is
+identical, when the device is removed the driver core will properly
+clean up and remove the groups, and the memory used by the attribute
+groups will be freed because it was created with dev_* calls, so this is
+functionally identical overall.
+
+Cc: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Link: https://lore.kernel.org/r/20240430084921.33387-7-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -476,7 +476,7 @@ static int nvmem_populate_sysfs_cells(st
+ 
+ 	nvmem_cells_group.bin_attrs = cells_attrs;
+ 
+-	ret = devm_device_add_groups(&nvmem->dev, nvmem_cells_groups);
++	ret = device_add_groups(&nvmem->dev, nvmem_cells_groups);
+ 	if (ret)
+ 		goto unlock_mutex;
+ 

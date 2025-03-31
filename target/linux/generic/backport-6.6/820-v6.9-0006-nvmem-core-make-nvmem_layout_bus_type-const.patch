@@ -1,0 +1,33 @@
+From 8ec0faf2572216b4e25d6829cd41cf3ee2dab979 Mon Sep 17 00:00:00 2001
+From: "Ricardo B. Marliere" <ricardo@marliere.net>
+Date: Sat, 24 Feb 2024 11:45:15 +0000
+Subject: [PATCH] nvmem: core: make nvmem_layout_bus_type const
+
+Since commit d492cc2573a0 ("driver core: device.h: make struct bus_type
+a const *"), the driver core can properly handle constant struct
+bus_type, move the nvmem_layout_bus_type variable to be a constant
+structure as well, placing it into read-only memory which can not be
+modified at runtime.
+
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Suggested-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: "Ricardo B. Marliere" <ricardo@marliere.net>
+Reviewed-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240224114516.86365-11-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/layouts.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/layouts.c
++++ b/drivers/nvmem/layouts.c
+@@ -45,7 +45,7 @@ static void nvmem_layout_bus_remove(stru
+ 	return drv->remove(layout);
+ }
+ 
+-static struct bus_type nvmem_layout_bus_type = {
++static const struct bus_type nvmem_layout_bus_type = {
+ 	.name		= "nvmem-layout",
+ 	.match		= nvmem_layout_bus_match,
+ 	.probe		= nvmem_layout_bus_probe,
