@@ -1282,6 +1282,19 @@ define Device/zyxel_keenetic-extra-ii
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
 
+define Device/teltonika_rut200
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT200
+  DEVICE_VARIANT := v1-v4
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut2m
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut200
+
 define Device/teltonika_rut241
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT241
