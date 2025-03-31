@@ -1,8 +1,8 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,740 @@
+@@ -0,0 +1,748 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Draft 23 Feb 2025
++// Draft 31 March 2025
 +// Device Tree Info
 +// DTSI for Rockchip 3568-based
 +// Seeed Studios LinkStar H68k-1432-V1
@@ -14,8 +14,7 @@
 +// Derived from prior work by AmadeusGhost <amadeus@jmu.edu.cn>
 +
 +
-+
-+/dts-v1/; 
++/dts-v1/;
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/leds/common.h>
 +#include <dt-bindings/input/input.h>
@@ -33,6 +32,9 @@
 +	aliases {
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
++		ethernet2 = &mdio0;
++		ethernet3 = &mdio1;
++
 +		mmc0 = &sdmmc0;
 +		mmc1 = &sdhci;
 +
@@ -41,11 +43,13 @@
 +		led-running = &led_work;
 +		led-upgrade = &led_work;
 +	};
++
++
 +	chosen {
 +		stdout-path = "serial2:1500000n8";
 +	};
 +
-+#ifdef DTS_NO_LEGACY
++
 +	hdmi-con {
 +		compatible = "hdmi-connector";
 +		type = "a";
@@ -56,7 +60,7 @@
 +			};
 +		};
 +	};
-+#endif
++
 +
 +	keys {
 +		compatible = "gpio-keys";
@@ -168,6 +172,7 @@
 +	};
 +};
 +
++
 +&gmac0 {
 +	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
 +	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
@@ -216,6 +221,10 @@
 +	gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
 +};
 +
++&vcc3v3_pcie {
++	gpio = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
++};
++
 +
 +&combphy0 {
 +	status = "okay";
@@ -245,7 +254,7 @@
 +	cpu-supply = <&vdd_cpu>;
 +};
 +
-+#ifdef DTS_NO_LEGACY
++
 +&gpu {
 +	mali-supply = <&vdd_gpu>;
 +	status = "okay";
@@ -272,7 +281,7 @@
 +&hdmi_sound {
 +	status = "okay";
 +};
-+#endif
++
 +
 +&i2c0 {
 +	status = "okay";
@@ -515,11 +524,11 @@
 +	};
 +};
 +
-+#ifdef DTS_NO_LEGACY
++
 +&i2s0_8ch {
 +	status = "okay";
 +};
-+#endif
++
 +
 +&i2s1_8ch {
 +	rockchip,trcm-sync-tx-only;
@@ -722,7 +731,7 @@
 +	status = "okay";
 +};
 +
-+#ifdef DTS_NO_LEGACY
++
 +&vop {
 +	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
 +	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
@@ -739,5 +748,4 @@
 +		remote-endpoint = <&hdmi_in_vp0>;
 +	};
 +};
-+#endif
 +
