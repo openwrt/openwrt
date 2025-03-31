@@ -362,7 +362,7 @@ define KernelPackage/hwmon-lm92
   KCONFIG:=CONFIG_SENSORS_LM92
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm92.ko
   AUTOLOAD:=$(call AutoProbe,lm92)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_6_6:kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-lm92/description
