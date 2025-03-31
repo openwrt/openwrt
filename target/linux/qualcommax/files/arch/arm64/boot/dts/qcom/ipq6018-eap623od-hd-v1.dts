@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: MIT, GPL-2.0 or later
+/* Copyright (c) 2025, Yang Xiwen <forbidden405@outlook.com> */
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link EAP623-Outdoor HD V1.0";
+	compatible = "tplink,eap623od-hd-v1", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	phy_pins: phy-reset-pin {
+		pins = "gpio77";
+		function = "gpio";
+		bias-pull-up;
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	rtl8211f: ethernet-phy@4 {
+		compatible = "ethernet-phy-id001c.c916";
+		reg = <4>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&phy_pins>;
+		pinctrl-names = "default";
+
+		realtek,clkout-disable;
+		realtek,aldps-enable;
+	};
+};
+
+&switch {
+	status = "okay";
+	switch_lan_bmp = <ESS_PORT5>; /* lan port bitmap */
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>; /* mac mode for uniphy instance0*/
+
+	qcom,port_phyinfo {
+		port@5 {
+			port_id = <5>;
+			phy_address = <4>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&rtl8211f>;
+	phy-mode = "sgmii";
+	label = "lan";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "TPLink-EAP623-Outdoor-HD-v1";
+	status = "okay";
+};
