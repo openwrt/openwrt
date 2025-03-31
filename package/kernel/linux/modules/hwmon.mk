@@ -548,7 +548,7 @@ define KernelPackage/hwmon-sch5627
 	$(LINUX_DIR)/drivers/hwmon/sch5627.ko \
 	$(LINUX_DIR)/drivers/hwmon/sch56xx-common.ko
   AUTOLOAD:=$(call AutoProbe,sch5627)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_6_6:kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-sch5627/description
