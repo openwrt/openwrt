@@ -32,7 +32,8 @@ ipq60xx_setup_interfaces()
 		;;
 	netgear,wax610|\
 	netgear,wax610y|\
-	tplink,eap610-outdoor)
+	tplink,eap610-outdoor|\
+	tplink,eap623od-hd-v1)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
 	*)
@@ -54,7 +55,8 @@ ipq60xx_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$lan_mac
 		;;
-	tplink,eap610-outdoor)
+	tplink,eap610-outdoor|\
+	tplink,eap623od-hd-v1)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		lan_mac=$label_mac
 		;;
