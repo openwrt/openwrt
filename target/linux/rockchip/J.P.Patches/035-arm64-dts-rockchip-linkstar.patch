@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,695 @@
+@@ -0,0 +1,756 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 23 Feb 2025
 +// Device Tree Info
@@ -33,6 +33,8 @@
 +	aliases {
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
++		ethernet2 = &mdio0;
++		ethernet3 = &mdio1;
 +
 +		mmc0 = &sdmmc0;
 +		mmc1 = &sdhci;
@@ -58,6 +60,12 @@
 +	};
 +
 +
++	ir-receiver {
++		compatible = "gpio-ir-receiver";
++		gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&ir_receiver_pin>;
++	};
 +
 +
 +	keys {
@@ -528,23 +536,73 @@
 +	status = "okay";
 +};
 +
++
++
++
++
++
 +&mdio0 {
-+	rgmii_phy0: ethernet-phy@0 {
++	2500base-x_phy0: ethernet-phy@0 {
 +		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
++		max-speed = 25000;
 +	};
 +};
 +
 +&mdio1 {
-+	rgmii_phy1: ethernet-phy@0 {
++	2500base-x_phy1: ethernet-phy@0 {
 +		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
++		max-speed = 25000;
 +	};
 +};
 +
++&pcie2x1 {
++	reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie>;
++	status = "okay";
++};
 +
++&pcie30phy {
++	data-lanes = <1 2>;
++	status = "okay";
++};
 +
++&pcie3x1 {
++	num-lanes = <1>;
++	reset-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie>;
++	status = "okay";
 +
++	pcie@10 {
++		reg = <0x00100000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie-eth@10,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++		};
++	};
++};
++
++&pcie3x2 {
++	num-lanes = <1>;
++	reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie>;
++	status = "okay";
++
++	pcie@20 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie-eth@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++		};
++	};
++};
 +
 +&pinctrl {
 +	button {
@@ -602,6 +660,9 @@
 +	status = "okay";
 +};
 +
++&sata0 {
++	status = "okay";
++};
 +
 +&sdhci {
 +	bus-width = <8>;
