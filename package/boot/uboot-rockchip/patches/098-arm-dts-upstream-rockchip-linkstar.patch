@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,748 @@
+@@ -0,0 +1,750 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 31 March 2025
 +// Device Tree Info
@@ -42,6 +42,8 @@
 +		led-failsafe = &led_work;
 +		led-running = &led_work;
 +		led-upgrade = &led_work;
++
++		rtc0 = &rk809;
 +	};
 +
 +
