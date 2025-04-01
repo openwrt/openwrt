@@ -15,6 +15,7 @@ _C=0
 NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
+MTD_REGEX="mtd\([0-9]\+\):[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*"
 
 # xor multiple hex values of the same length
 xor() {
@@ -416,10 +417,23 @@ ipcalc() {
 }
 
 find_mtd_index() {
-	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
-	local INDEX="${PART##mtd}"
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|\1|p" '/proc/mtd'
+}
 
-	echo ${INDEX}
+find_mtd_size() {
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|0x\2|p" '/proc/mtd'
+}
+
+find_mtd_erasesize() {
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|0x\3|p" '/proc/mtd'
+}
+
+find_mtd_env() {
+	if [ "${1:?}" != "${1#'/dev/mtd'}" ]; then
+		sed -n "s|^mtd${1#${1%%[0-9]*}}:[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\".*\"$|${1:?} ${2:-0x0} 0x\1 0x\2|p" '/proc/mtd'
+	else
+		sed -n "s|^${MTD_REGEX}\"${1:?}\"$|/dev/mtd\1 ${2:-0x0} 0x\2 0x\3|p" '/proc/mtd'
+	fi
 }
 
 find_mtd_part() {
