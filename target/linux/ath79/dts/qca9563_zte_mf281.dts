@@ -158,6 +158,8 @@
 &wifi_ath10k {
 	nvmem-cells = <&macaddr_mac_0 1>, <&cal_caldata_5000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
+	/* Board file from stock firmware is shared with MF286C */
+	qcom,ath10k-calibration-variant = "ZTE-MF286C";
 };
 
 &pinmux {

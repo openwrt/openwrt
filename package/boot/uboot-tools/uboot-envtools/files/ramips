@@ -1,0 +1,167 @@
+#
+# Copyright (C) 2011-2012 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+alfa-network,ac1200rm|\
+alfa-network,awusfree1|\
+alfa-network,quad-e4g|\
+alfa-network,r36m-e4g|\
+alfa-network,tube-e4g|\
+engenius,epg600|\
+engenius,esr600h|\
+hongdian,h8922-v30|\
+linksys,re7000|\
+meig,slt866|\
+sitecom,wlr-4100-v1-002|\
+zyxel,keenetic-lite-iii-a)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x1000"
+	;;
+alfa-network,ax1800rm|\
+allnet,all0256n-4m|\
+allnet,all0256n-8m|\
+allnet,all5002|\
+yuncore,ax820)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+arcadyan,we420223-99|\
+dlink,dir-806a-b1)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x1000"
+	;;
+ampedwireless,ally-00x19k|\
+ampedwireless,ally-r1900k)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
+	;;
+beeline,smartbox-giga|\
+beeline,smartbox-turbo|\
+beeline,smartbox-turbo-plus|\
+etisalat,s3|\
+rostelecom,rt-fe-1a|\
+rostelecom,rt-sf-1)
+	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
+	;;
+beeline,smartbox-pro|\
+tplink,ec330-g5u-v1|\
+wifire,s1500-nbn)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+	;;
+buffalo,wsr-1166dhp|\
+buffalo,wsr-600dhp|\
+kroks,kndrt31r16|\
+kroks,kndrt31r19|\
+mediatek,linkit-smart-7688|\
+samknows,whitebox-v8|\
+xiaomi,mi-router-4c|\
+xiaomi,miwifi-nano|\
+zbtlink,zbt-wg2626|\
+zte,mf283plus)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	;;
+asus,rt-ax53u|\
+asus,rt-ax54|\
+asus,4g-ax56|\
+belkin,rt1800|\
+elecom,wrc-x1800gs|\
+h3c,tx1800-plus|\
+h3c,tx1801-plus|\
+h3c,tx1806|\
+iptime,ax2004m|\
+jcg,q20|\
+linksys,e7350|\
+netgear,eax12|\
+netgear,wax202|\
+netis,n6|\
+zyxel,wsm20)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
+haier,har-20s2u1|\
+sim,simax1800t)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd1" "0x40000" "0x40000" "0x20000"
+	;;
+hootoo,ht-tm05|\
+ravpower,rp-wd03)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x4000" "0x1000" "0x1000"
+	;;
+beeline,smartbox-flash|\
+iptime,t5004|\
+linksys,ea6350-v4|\
+linksys,ea7300-v1|\
+linksys,ea7300-v2|\
+linksys,ea7500-v2|\
+linksys,ea8100-v1|\
+linksys,ea8100-v2|\
+mts,wg430223|\
+ubnt,edgerouter-x|\
+ubnt,edgerouter-x-sfp)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	;;
+snr,snr-cpe-me1|\
+snr,snr-cpe-me2-sfp|\
+snr,cpe-w4n-mt)
+	idx="$(find_mtd_index uboot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
+	;;
+xiaomi,miwifi-mini)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	ubootenv_add_uci_sys_config "/dev/mtd9" "0x0" "0x4000" "0x10000"
+	;;
+xiaomi,mi-router-3g-v2|\
+xiaomi,mi-router-4a-gigabit|\
+xiaomi,miwifi-3c)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x4000" "0x10000"
+	;;
+xiaomi,mi-router-3g|\
+xiaomi,mi-router-3-pro|\
+xiaomi,mi-router-4|\
+xiaomi,mi-router-ac2100|\
+xiaomi,redmi-router-ac2100)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x4000" "0x20000"
+	;;
+zyxel,lte3301-plus)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x80000"
+	;;
+zyxel,lte5398-m904|\
+zyxel,lte7490-m904|\
+zyxel,nr7101)
+	idx="$(find_mtd_index Config)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x80000"
+	;;
+bolt,arion|\
+xiaomi,mi-router-cr6606|\
+xiaomi,mi-router-cr6608|\
+xiaomi,mi-router-cr6609)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
+	;;
+dna,valokuitu-plus-ex400|\
+genexis,pulse-ex400)
+	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
+	;;
+netgear,wax214v2)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd1" "0x20000" "0x8000" "0x20000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0

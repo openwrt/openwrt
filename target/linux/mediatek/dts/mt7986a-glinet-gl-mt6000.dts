@@ -56,12 +56,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_blue: led@0 {
+		led_blue: led-0 {
 			label = "blue:run";
 			gpios = <&pio 38 GPIO_ACTIVE_LOW>;
 		};
 
-		led_white: led@1 {
+		led_white: led-1 {
 			label = "white:system";
 			gpios = <&pio 37 GPIO_ACTIVE_LOW>;
 		};

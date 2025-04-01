@@ -1,4 +1,4 @@
-DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID TPLINK_SUPPORT_STRING
 
 define Build/asus-fake-ramdisk
 	rm -rf $(KDIR)/tmp/fakerd
@@ -28,7 +28,7 @@ define Build/wax6xx-netgear-tar
 	mv $@ $@.tmp/nand-ipq807x-apps.img
 	md5sum $@.tmp/nand-ipq807x-apps.img | cut -c 1-32 > $@.tmp/nand-ipq807x-apps.md5sum
 	echo $(DEVICE_MODEL) > $@.tmp/metadata.txt
-	echo $(DEVICE_MODEL)"_V9.9.9.9" > $@.tmp/version
+	echo $(DEVICE_MODEL)"_V99.9.9.9" > $@.tmp/version
 	tar -C $@.tmp/ -cf $@ .
 	rm -rf $@.tmp
 endef
@@ -326,6 +326,8 @@ define Device/netgear_wax620
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq8072
+	IMAGES += ui-factory.tar
+	IMAGE/ui-factory.tar := append-ubi | qsdk-ipq-factory-nand | pad-to 4096 | wax6xx-netgear-tar
 	DEVICE_PACKAGES := kmod-spi-gpio kmod-gpio-nxp-74hc164 \
 		ipq-wifi-netgear_wax620
 endef
@@ -341,7 +343,7 @@ define Device/netgear_wax630
 	PAGESIZE := 2048
 	SOC := ipq8074
 	IMAGES += ui-factory.tar
-	IMAGE/ui-factory.tar := append-ubi | wax6xx-netgear-tar
+	IMAGE/ui-factory.tar := append-ubi | qsdk-ipq-factory-nand | pad-to 4096 | wax6xx-netgear-tar
 	DEVICE_PACKAGES := kmod-spi-gpio ipq-wifi-netgear_wax630
 endef
 TARGET_DEVICES += netgear_wax630
@@ -400,6 +402,8 @@ define Device/tplink_eap620hd-v1
 	PAGESIZE := 2048
 	SOC := ipq8072
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap620hd-v1
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP620 HD(TP-Link|UN|AX1800-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap620hd-v1
@@ -414,6 +418,8 @@ define Device/tplink_eap660hd-v1
 	PAGESIZE := 2048
 	SOC := ipq8072
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap660hd-v1
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP660 HD(TP-Link|UN|AX3600-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap660hd-v1

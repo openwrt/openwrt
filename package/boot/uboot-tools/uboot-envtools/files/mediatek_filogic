@@ -1,0 +1,152 @@
+#
+# Copyright (C) 2021 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+ubootenv_add_mmc_default() {
+	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
+	ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
+	ubootenv_add_uci_config "$envdev" "0x40000" "0x40000" "0x40000" "1"
+}
+
+ubootenv_add_nor_default() {
+	local envdev="/dev/mtd$(find_mtd_index "u-boot-env")"
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
+	ubootenv_add_uci_config "$envdev" "0x20000" "0x20000" "0x20000" "1"
+}
+
+ubootenv_add_ubi_default() {
+	. /lib/upgrade/nand.sh
+	local envubi=$(nand_find_ubi ubi)
+	local envdev=/dev/$(nand_find_volume $envubi ubootenv)
+	local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+}
+
+case "$board" in
+abt,asr3000|\
+asus,zenwifi-bt8-ubootmod|\
+cmcc,a10-ubootmod|\
+h3c,magic-nx30-pro|\
+jcg,q30-pro|\
+mercusys,mr90x-v1-ubi|\
+netcore,n60|\
+nokia,ea0326gmp|\
+qihoo,360t7|\
+routerich,ax3000-ubootmod|\
+tplink,tl-xdr4288|\
+tplink,tl-xdr6086|\
+tplink,tl-xdr6088|\
+tplink,tl-xtr8488|\
+xiaomi,mi-router-ax3000t-ubootmod|\
+xiaomi,mi-router-wr30u-ubootmod|\
+xiaomi,redmi-router-ax6000-ubootmod|\
+zyxel,ex5601-t0-ubootmod)
+	ubootenv_add_ubi_default
+	;;
+acer,predator-w6|\
+acer,predator-w6d|\
+acer,vero-w6m|\
+glinet,gl-mt2500|\
+glinet,gl-mt6000|\
+glinet,gl-x3000|\
+glinet,gl-xe3000|\
+nradio,c8-668gl)
+	local envdev=$(find_mmc_part "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
+	;;
+asus,rt-ax59u)
+	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
+	;;
+bananapi,bpi-r3|\
+bananapi,bpi-r3-mini|\
+bananapi,bpi-r4|\
+bananapi,bpi-r4-poe|\
+cmcc,rax3000m|\
+jdcloud,re-cp-03)
+	. /lib/upgrade/fit.sh
+	export_fitblk_bootdev
+	case "$CI_METHOD" in
+	ubi)
+		ubootenv_add_ubi_default
+		;;
+	emmc)
+		bootdev=${EMMC_KERN_DEV%%p[0-9]*}
+		ubootenv_add_mmc_default "${bootdev#/dev/}"
+		;;
+	default)
+		ubootenv_add_nor_default
+		;;
+	esac
+	;;
+comfast,cf-e393ax)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
+	;;
+cetron,ct3003|\
+edgecore,eap111|\
+netgear,wax220|\
+zbtlink,zbt-z8102ax|\
+zbtlink,zbt-z8103ax)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
+dlink,aquila-pro-ai-m30-a1|\
+dlink,aquila-pro-ai-m60-a1)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
+	;;
+gatonetworks,gdsp)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+glinet,gl-mt3000)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
+	;;
+mercusys,mr90x-v1|\
+routerich,ax3000|\
+tenbay,wr3000k|\
+tplink,re6000xd)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
+	;;
+openembed,som7981)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
+	ubootenv_add_uci_sys_config "/dev/mtd3" "0x0" "0x100000" "0x100000"
+	;;
+openwrt,one)
+	ubootenv_add_ubi_default
+	;;
+smartrg,sdg-8733|\
+smartrg,sdg-8733a|\
+smartrg,sdg-8734)
+	local envdev=$(find_mmc_part "u-boot-env" "mmcblk0")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x8000" "0x8000"
+	;;
+ubnt,unifi-6-plus)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
+	;;
+xiaomi,mi-router-ax3000t|\
+xiaomi,mi-router-wr30u-stock|\
+xiaomi,redmi-router-ax6000-stock)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x20000"
+	;;
+zyxel,ex5601-t0)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x40000" "2"
+	;;
+zyxel,ex5700-telenor)
+	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0

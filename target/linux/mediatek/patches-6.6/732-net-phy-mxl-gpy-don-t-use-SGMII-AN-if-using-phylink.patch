@@ -14,7 +14,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -402,8 +402,11 @@ static bool gpy_2500basex_chk(struct phy
+@@ -372,8 +372,11 @@ static bool gpy_2500basex_chk(struct phy
  
  	phydev->speed = SPEED_2500;
  	phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
@@ -28,7 +28,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return true;
  }
  
-@@ -454,6 +457,14 @@ static int gpy_config_aneg(struct phy_de
+@@ -424,6 +427,14 @@ static int gpy_config_aneg(struct phy_de
  	u32 adv;
  	int ret;
  
@@ -43,7 +43,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (phydev->autoneg == AUTONEG_DISABLE) {
  		/* Configure half duplex with genphy_setup_forced,
  		 * because genphy_c45_pma_setup_forced does not support.
-@@ -576,6 +587,8 @@ static int gpy_update_interface(struct p
+@@ -546,6 +557,8 @@ static int gpy_update_interface(struct p
  	switch (phydev->speed) {
  	case SPEED_2500:
  		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
@@ -52,7 +52,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		ret = phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,
  				     VSPEC1_SGMII_CTRL_ANEN, 0);
  		if (ret < 0) {
-@@ -589,7 +602,7 @@ static int gpy_update_interface(struct p
+@@ -559,7 +572,7 @@ static int gpy_update_interface(struct p
  	case SPEED_100:
  	case SPEED_10:
  		phydev->interface = PHY_INTERFACE_MODE_SGMII;

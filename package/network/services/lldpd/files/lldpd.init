@@ -75,9 +75,9 @@ get_config_restart_hash() {
 	export -n "$var=$_hash"
 }
 
-get_config_cid_ifaces() {
+get_interface_csv() {
 	local _ifaces
-	config_get _ifaces 'config' "$2"
+	config_get _ifaces "$2" "$3"
 
 	local _iface _ifnames=""
 	# Set noglob to prevent '*' capturing diverse file names in the for ... in
@@ -98,6 +98,21 @@ get_config_cid_ifaces() {
 	export -n "${1}=$_ifnames"
 }
 
+add_custom_tlv_callback()
+{
+	# syntax: configure [ports ethX[,…]] lldp custom-tlv [add|replace] oui XX,XX,XX subtype XX oui-info XX[,XX,...]
+	# ex: configure ports br-lan,eth0 lldp custom-tlv replace oui 33,44,55 subtype 254 oui-info 55,55,55,55,55
+	# ex: configure lldp custom-tlv oui 33,44,44 subtype 232
+
+	local _ports
+	local _tlv
+	# CSV of device ports
+	get_interface_csv _ports "$1" 'ports'
+	config_get _tlv "$1" 'tlv'
+
+	echo "configure ${_ports:+ports $_ports }lldp custom-tlv $_tlv" >> "$LLDPD_CONF"
+}
+
 write_lldpd_conf()
 {
 	local lldp_description
@@ -109,7 +124,7 @@ write_lldpd_conf()
 	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
 
 	local ifnames
-	get_config_cid_ifaces ifnames "interface"
+	get_interface_csv ifnames 'config' "interface"
 
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
@@ -196,6 +211,9 @@ write_lldpd_conf()
 		echo "unconfigure lldp capabilities-advertisements" >> "$LLDPD_CONF"
 	[ "$lldp_mgmt_addr_advertisements" -gt 0 ] && echo "configure lldp management-addresses-advertisements" >> "$LLDPD_CONF" ||\
 		echo "unconfigure lldp management-addresses-advertisements" >> "$LLDPD_CONF"
+
+	# Custom TLV handling
+	config_foreach add_custom_tlv_callback 'custom-tlv'
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
@@ -335,7 +353,7 @@ start_service() {
 
     # ChassisID interfaces
 	local ifnames
-	get_config_cid_ifaces ifnames "cid_interface"
+	get_interface_csv ifnames 'config' "cid_interface"
 
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 

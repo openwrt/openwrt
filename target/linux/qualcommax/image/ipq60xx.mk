@@ -1,3 +1,5 @@
+DEVICE_VARS += TPLINK_SUPPORT_STRING
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
@@ -24,23 +26,66 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
-define Device/linksys_mr7350
+define Device/glinet_gl-common
 	$(call Device/FitImage)
-	DEVICE_VENDOR := Linksys
-	DEVICE_MODEL := MR7350
-	SOC := ipq6000
-	NAND_SIZE := 256m
-	KERNEL_SIZE := 8192k
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := GL.iNet
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGE_SIZE := 75776k
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	SOC := ipq6000
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
-		append-ubi | linksys-image type=MR7350
-	DEVICE_PACKAGES := ipq-wifi-linksys_mr7350 \
-		kmod-leds-pca963x kmod-usb-ledtrig-usbport
+	IMAGE/factory.bin := append-ubi | append-gl-metadata
+endef
+
+define Device/glinet_gl-ax1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AX1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ax1800
+	SUPPORTED_DEVICES += glinet,ax1800
+endef
+TARGET_DEVICES += glinet_gl-ax1800
+
+define Device/glinet_gl-axt1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AXT1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-axt1800 kmod-hwmon-pwmfan
+	SUPPORTED_DEVICES += glinet,axt1800
+endef
+TARGET_DEVICES += glinet_gl-axt1800
+
+define Device/linksys_mr
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Linksys
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 8192k
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
+	DEVICE_PACKAGE := kmod-usb-ledtrig-usbport
+endef
+
+define Device/linksys_mr7350
+	$(call Device/linksys_mr)
+	DEVICE_MODEL := MR7350
+	NAND_SIZE := 256m
+	IMAGE_SIZE := 75776k
+	SOC := ipq6000
+	DEVICE_PACKAGES += ipq-wifi-linksys_mr7350 kmod-leds-pca963x
 endef
 TARGET_DEVICES += linksys_mr7350
+
+define Device/linksys_mr7500
+	$(call Device/linksys_mr)
+	DEVICE_MODEL := MR7500
+	SOC := ipq6018
+	NAND_SIZE := 512m
+	IMAGE_SIZE := 147456k
+	DEVICE_PACKAGES += ipq-wifi-linksys_mr7500 \
+		ath11k-firmware-qcn9074 kmod-ath11k-pci \
+		kmod-leds-pwm kmod-phy-aquantia
+endef
+TARGET_DEVICES += linksys_mr7500
 
 define Device/netgear_wax214
 	$(call Device/FitImage)
@@ -79,9 +124,9 @@ define Device/tplink_eap610-outdoor
 	DEVICE_PACKAGES := ipq-wifi-tplink_eap610-outdoor
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
-	TPLINK_SUPPORT_STRING := SupportList: \
-		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0 \
-		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0 \
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0\r\n \
+		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0\r\n \
 		EAP610-Outdoor(TP-Link|CA|AX1800-D):1.0
 endef
 TARGET_DEVICES += tplink_eap610-outdoor

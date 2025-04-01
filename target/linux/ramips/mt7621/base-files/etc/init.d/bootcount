@@ -32,7 +32,8 @@ boot() {
 	samknows,whitebox-v8)
 		fw_setenv bootcount 0
 		;;
-	dna,valokuitu-plus-ex400)
+	dna,valokuitu-plus-ex400|\
+	genexis,pulse-ex400)
 		fw_setenv boot_cnt_primary 0
 		fw_setenv boot_cnt_alt 0
 		;;
@@ -42,6 +43,7 @@ boot() {
 		[ $(printf %d $(fw_printenv -n Image1Try)) -gt 0 ] && fw_setenv Image1Try 0
 		;;
 	zyxel,lte5398-m904|\
+	zyxel,lte7490-m904|\
 	zyxel,nr7101)
 		[ $(printf %d $(fw_printenv -n DebugFlag)) -gt 0 ] || fw_setenv DebugFlag 0x1
 		[ $(printf %d $(fw_printenv -n Image1Stable)) -gt 0 ] || fw_setenv Image1Stable 1

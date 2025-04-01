@@ -76,6 +76,9 @@ mercusys,mr90x-v1-ubi)
 	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
 	;;
+netcore,n60)
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
+	;;
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
 	;;
@@ -105,6 +108,28 @@ routerich,ax3000-ubootmod)
 	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+smartrg,sdg-8612)
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-0" "lan4" "link_1000"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-1" "lan4" "link_2500"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-0" "eth1" "link_1000"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-1" "eth1" "link_2500"
+	;;
+smartrg,sdg-8614)
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-0" "lan4" "link_1000"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-1" "lan4" "link_2500"
+	;;
+smartrg,sdg-8622|\
+smartrg,sdg-8632)
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:amber:lan" "lan" "link_10 link_100"
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:green:lan-0" "lan" "link_1000"
+	ucidef_set_led_netdev "lan" "LAN" "mdio-bus:05:green:lan-1" "lan" "link_2500"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-0" "eth1" "link_1000"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan-1" "eth1" "link_2500"
 	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8734)
@@ -162,6 +187,12 @@ zyxel,ex5601-t0-ubootmod)
 zyxel,nwa50ax-pro)
 	ucidef_set_led_netdev "uplink" "UPLINK" "mdio-bus:05:amber:wan" "eth0" "link_10 link_100 link_2500 tx rx"
 	ucidef_set_led_netdev "uplink" "UPLINK" "mdio-bus:05:green:wan" "eth0" "link_1000 link_2500 tx rx"
+	;;
+zyxel,ex5700-telenor)
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100 tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan" "lan4" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
 	;;
 esac
 

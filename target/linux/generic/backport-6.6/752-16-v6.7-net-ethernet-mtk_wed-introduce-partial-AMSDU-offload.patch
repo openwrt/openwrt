@@ -15,7 +15,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -439,7 +439,8 @@ int mtk_foe_entry_set_pppoe(struct mtk_e
+@@ -425,7 +425,8 @@ int mtk_foe_entry_set_pppoe(struct mtk_e
  }
  
  int mtk_foe_entry_set_wdma(struct mtk_eth *eth, struct mtk_foe_entry *entry,
@@ -25,7 +25,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	struct mtk_foe_mac_info *l2 = mtk_foe_entry_l2(eth, entry);
  	u32 *ib2 = mtk_foe_entry_ib2(eth, entry);
-@@ -451,6 +452,7 @@ int mtk_foe_entry_set_wdma(struct mtk_et
+@@ -437,6 +438,7 @@ int mtk_foe_entry_set_wdma(struct mtk_et
  			 MTK_FOE_IB2_WDMA_WINFO_V2;
  		l2->w3info = FIELD_PREP(MTK_FOE_WINFO_WCID_V3, wcid) |
  			     FIELD_PREP(MTK_FOE_WINFO_BSS_V3, bss);
@@ -65,7 +65,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  /* software-only entry type */
-@@ -394,7 +394,8 @@ int mtk_foe_entry_set_vlan(struct mtk_et
+@@ -392,7 +392,8 @@ int mtk_foe_entry_set_vlan(struct mtk_et
  int mtk_foe_entry_set_pppoe(struct mtk_eth *eth, struct mtk_foe_entry *entry,
  			    int sid);
  int mtk_foe_entry_set_wdma(struct mtk_eth *eth, struct mtk_foe_entry *entry,

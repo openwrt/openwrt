@@ -97,6 +97,9 @@ sophos-sg-135r3|sophos-xg-135r3| \
 sophos-sg-135wr3|sophos-xg-135wr3)
 	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth5 eth7 eth8" "eth6"
 	;;
+supermicro-sys-e302-9d)
+	ucidef_set_interface_lan "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7"
+	;;
 traverse-technologies-geos)
 	ucidef_set_interface_lan "eth0 eth1"
 	ucidef_add_atm_bridge "0" "35" "llc" "bridged"

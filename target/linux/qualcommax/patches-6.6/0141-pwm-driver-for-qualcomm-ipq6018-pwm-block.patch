@@ -12,6 +12,12 @@ Co-developed-by: Baruch Siach <baruch.siach@siklu.com>
 Signed-off-by: Baruch Siach <baruch.siach@siklu.com>
 Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 ---
+ drivers/pwm/Kconfig   |  12 ++
+ drivers/pwm/Makefile  |   1 +
+ drivers/pwm/pwm-ipq.c | 282 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 295 insertions(+)
+ create mode 100644 drivers/pwm/pwm-ipq.c
+
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -282,6 +282,18 @@ config PWM_INTEL_LGM
