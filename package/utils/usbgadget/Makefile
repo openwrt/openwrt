@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@USB_GADGET_SUPPORT +kmod-usb-gadget +kmod-usb-lib-composite
+  DEPENDS:=@USB_GADGET_SUPPORT +kmod-usb-gadget +kmod-fs-configfs +kmod-usb-lib-composite
   TITLE:=init script to create USB gadgets
 endef
 
