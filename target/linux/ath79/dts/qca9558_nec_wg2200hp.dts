@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9558_nec_aterm.dtsi"
+
+/ {
+	compatible = "nec,wg2200hp", "qca,qca9558";
+	model = "NEC Aterm WG2200HP";
+};
+
+&i2c {
+	/delete-node/ gpio@20;
+
+	/* Diodes PI4IOE5V9539LE */
+	gpio1: gpio@76 {
+		compatible = "nxp,pca9539";
+		reg = <0x76>;
+		reset-gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&keys {
+	/delete-node/ button-eco;
+};
+
+&nvmem_art {
+	precal_art_5000: pre-calibration@5000 {
+		reg = <0x5000 0x2f20>;
+	};
+};
+
+&phy0 {
+	qca,ar8327-initvals = <
+		0x04 0x80000080 /* PORT0_PAD_MODE_CTRL */
+		0x08 0x00000000 /* PORT5_PAD_MODE_CTRL */
+		0x0c 0x07600000 /* PORT6_PAD_MODE_CTRL */
+		0x10 0x812613a0 /* POWER_ON_STRAP */
+		0x50 0xcc36cc36 /* LED_CTRL0 */
+		0x54 0xca36ca36 /* LED_CTRL1 */
+		0x58 0xc936c936 /* LED_CTRL2 */
+		0x5c 0x03ffff00 /* LED_CTRL3 */
+		0x7c 0x0000007e /* PORT0_STATUS */
+		0x94 0x0000007e /* PORT6_STATUS */
+		0xe0 0xc74164de /* SGMII_CONTROL */
+	>;
+};
+
+&eth0 {
+	pll-data = <0x76000000 0x00000101 0x00001616>;
+};
+
+&wifi {
+	compatible = "pci168c,0046";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_config_12>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+};
