@@ -1,0 +1,112 @@
+* [PATCH 1/3] dt-bindings: nvmem: rockchip,otp: Add support for rk3562 and rk3568
+@ 2024-12-24  9:41 ` Kever Yang
+  0 siblings, 0 replies; 8+ messages in thread
+From: Kever Yang @ 2024-12-24  9:41 UTC (permalink / raw)
+  To: heiko
+  Cc: linux-rockchip, Kever Yang, devicetree, Conor Dooley, Rob Herring,
+	Srinivas Kandagatla, linux-kernel, Krzysztof Kozlowski,
+	linux-arm-kernel
+
+rk3562 and rk3568 has similar clocks which different than other SoCs.
+
+Signed-off-by: Kever Yang <kever.yang@rock-chips.com>
+---
+
+ .../bindings/nvmem/rockchip,otp.yaml          | 49 ++++++++++++++++---
+ 1 file changed, 42 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/nvmem/rockchip,otp.yaml b/Documentation/devicetree/bindings/nvmem/rockchip,otp.yaml
+index a44d44b32809..33d2905f6c16 100644
+--- a/Documentation/devicetree/bindings/nvmem/rockchip,otp.yaml
++++ b/Documentation/devicetree/bindings/nvmem/rockchip,otp.yaml
+@@ -14,6 +14,8 @@ properties:
+     enum:
+       - rockchip,px30-otp
+       - rockchip,rk3308-otp
++      - rockchip,rk3562-otp
++      - rockchip,rk3568-otp
+       - rockchip,rk3588-otp
+ 
+   reg:
+@@ -25,19 +27,15 @@ properties:
+ 
+   clock-names:
+     minItems: 3
+-    items:
+-      - const: otp
+-      - const: apb_pclk
+-      - const: phy
+-      - const: arb
++    maxItems: 4
+ 
+   resets:
+     minItems: 1
+-    maxItems: 3
++    maxItems: 4
+ 
+   reset-names:
+     minItems: 1
+-    maxItems: 3
++    maxItems: 4
+ 
+ required:
+   - compatible
+@@ -62,12 +60,43 @@ allOf:
+       properties:
+         clocks:
+           maxItems: 3
++        clock-names:
++          items:
++            - const: otp
++            - const: apb_pclk
++            - const: phy
+         resets:
+           maxItems: 1
+         reset-names:
+           items:
+             - const: phy
+ 
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - rockchip,rk3562-otp
++              - rockchip,rk3568-otp
++    then:
++      properties:
++        clocks:
++          minItems: 4
++        clock-names:
++          items:
++            - const: usr
++            - const: sbpi
++            - const: apb_pclk
++            - const: phy
++        resets:
++          minItems: 4
++        reset-names:
++          items:
++            - const: usr
++            - const: sbpi
++            - const: apb
++            - const: phy
++
+   - if:
+       properties:
+         compatible:
+@@ -78,6 +107,12 @@ allOf:
+       properties:
+         clocks:
+           minItems: 4
++        clock-names:
++          items:
++            - const: otp
++            - const: apb_pclk
++            - const: phy
++            - const: arb
+         resets:
+           minItems: 3
+         reset-names:
+-- 
+2.25.1
