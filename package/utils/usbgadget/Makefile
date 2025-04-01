@@ -16,6 +16,10 @@ define Package/$(PKG_NAME)
   TITLE:=init script to create USB gadgets
 endef
 
+define Package/$(PKG_NAME)/conffiles
+/etc/config/usbgadget
+endef
+
 define Build/Compile
 endef
 
