@@ -1,0 +1,30 @@
+From 76a51a14ba03f6d0277af06701705501d5e406f1 Mon Sep 17 00:00:00 2001
+From: Maksim Kiselev <bigunclemax@gmail.com>
+Date: Sat, 24 Jun 2023 16:16:24 +0300
+Subject: [PATCH 14/25] riscv: dts: allwinner: d1: Add QSPI pins node for
+ pinmux PC port
+
+Add pinmux node that describes pins on PC port which required for
+QSPI mode.
+
+Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
+---
+ arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+@@ -143,6 +143,13 @@
+ 				pins = "PB6", "PB7";
+ 				function = "uart3";
+ 			};
++
++			/omit-if-no-ref/
++			qspi0_pc_pins: qspi0-pc-pins {
++				pins = "PC2", "PC3", "PC4", "PC5", "PC6",
++				       "PC7";
++				function = "spi0";
++			};
+ 		};
+ 
+ 		ccu: clock-controller@2001000 {
