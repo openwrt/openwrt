@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-02-17
-PKG_SOURCE_VERSION:=dd3577ec9f2d9d3ef5e35602d3fe731cb259ff39
-PKG_MIRROR_HASH:=0da921982b33a831dd19e570974a22ad2b1f3324397b1203a8a38d7d044b073a
+PKG_SOURCE_DATE:=2025-04-01
+PKG_SOURCE_VERSION:=c220fac7fdb35628ba53ff53ed36cf883a401161
+PKG_MIRROR_HASH:=26338b4f165eb2e90273cd61ed26715b99e496ccf738167e22ff9213ca42c973
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -56,6 +56,8 @@ ALLWIFIBOARDS:= \
 	netgear_sxk80 \
 	netgear_wax214 \
 	netgear_wax218 \
+	netgear_wax610 \
+	netgear_wax610y \
 	netgear_wax620 \
 	netgear_wax630 \
 	prpl_haze \
@@ -171,7 +173,7 @@ endef
 # 2. Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 #
 # Board files should follow this name structure:
-#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
+#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq6018|ipq8074>
 
 $(eval $(call generate-ipq-wifi-package,8devices_mango,8devices Mango))
 $(eval $(call generate-ipq-wifi-package,aliyun_ap8220,Aliyun AP8220))
@@ -202,6 +204,8 @@ $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
+$(eval $(call generate-ipq-wifi-package,netgear_wax610,Netgear WAX610))
+$(eval $(call generate-ipq-wifi-package,netgear_wax610y,Netgear WAX610Y))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
 $(eval $(call generate-ipq-wifi-package,qihoo_360v6,Qihoo 360V6))
