@@ -1,0 +1,17 @@
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+hongdian,h7920-v40)
+	ucidef_add_gpio_switch "modem_enable" "Enable LTE Modem" "516" "1"
+	ucidef_add_gpio_switch "switch_serial_mode" "Switch RS232 to RS485" "518" "0"
+	;;
+esac
+
+board_config_flush
+
+exit 0
