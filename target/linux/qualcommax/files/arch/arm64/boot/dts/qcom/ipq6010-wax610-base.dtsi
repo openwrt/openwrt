@@ -1,0 +1,206 @@
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		serial0 = &blsp1_uart3;
+		ethernet0 = &dp5;
+		label-mac-device = &dp5;
+
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_orange;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_blue;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		/*
+		 * Netgear's U-Boot adds "ubi.mtd=rootfs root=mtd:ubi_rootfs"
+		 * That fails to create a UBI block device, so add it here.
+		*/
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system_orange: system-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
+			function-enumerator = <0>;
+			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_green: system-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			function-enumerator = <1>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_blue: system-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			function-enumerator = <2>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan_g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_lan_o {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_2g_b {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_2g_g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		led_5g_b {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_5g_g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <3>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <ESS_PORT5>;
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
+
+	qcom,port_phyinfo {
+		port@5 {
+			port_id = <5>;
+			phy_address = <24>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+
+	qca8081_24: ethernet-phy@24 {
+		reg = <24>;
+	};
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8081_24>;
+	label = "lan";
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,m3-dump-addr = <0x50100000>;
+};

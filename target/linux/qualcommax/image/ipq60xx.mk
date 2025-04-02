@@ -1,5 +1,15 @@
 DEVICE_VARS += TPLINK_SUPPORT_STRING
 
+define Build/wax610-netgear-tar
+	mkdir $@.tmp
+	mv $@ $@.tmp/nand-ipq6018-apps.img
+	md5sum $@.tmp/nand-ipq6018-apps.img | cut -c 1-32 > $@.tmp/nand-ipq6018-apps.md5sum
+	echo "WAX610" > $@.tmp/metadata.txt
+	echo "WAX610-610Y_V99.9.9.9" > $@.tmp/version
+ 	tar -C $@.tmp/ -cf $@ .
+	rm -rf $@.tmp
+endef
+
 define Device/8devices_mango-dvk
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := 8devices
@@ -99,6 +109,32 @@ define Device/netgear_wax214
 	DEVICE_PACKAGES := ipq-wifi-netgear_wax214
 endef
 TARGET_DEVICES += netgear_wax214
+
+define Device/netgear_wax610-common
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	SOC := ipq6010
+	KERNEL_IN_UBI := 1
+	IMAGES += ui-factory.tar
+	IMAGE/ui-factory.tar := append-ubi | qsdk-ipq-factory-nand | pad-to 4096 | wax610-netgear-tar
+endef
+
+define Device/netgear_wax610
+	$(Device/netgear_wax610-common)
+	DEVICE_MODEL := WAX610
+	DEVICE_PACKAGES := ipq-wifi-netgear_wax610
+endef
+TARGET_DEVICES += netgear_wax610
+
+define Device/netgear_wax610y
+	$(Device/netgear_wax610-common)
+	DEVICE_MODEL := WAX610Y
+	DEVICE_PACKAGES := ipq-wifi-netgear_wax610y
+endef
+TARGET_DEVICES += netgear_wax610y
 
 define Device/qihoo_360v6
 	$(call Device/FitImage)
