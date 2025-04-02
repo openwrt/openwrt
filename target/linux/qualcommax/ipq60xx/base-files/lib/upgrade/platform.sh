@@ -166,6 +166,18 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
+	jdcloud,re-ss-01)
+		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
+		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
+		if [ "$part_num" -eq "1" ]; then
+			CI_KERNPART="0:HLOS_1"
+			CI_ROOTPART="rootfs_1"
+		else
+			CI_KERNPART="0:HLOS"
+			CI_ROOTPART="rootfs"
+		fi
+		emmc_do_upgrade "$1"
+		;;
 	netgear,wax610|\
 	netgear,wax610y)
 		remove_oem_ubi_volume wifi_fw
