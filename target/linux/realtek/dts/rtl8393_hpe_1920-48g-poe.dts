@@ -16,6 +16,25 @@
 		alarm-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 		#cooling-cells = <2>;
 	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		mode_button {
+			label = "mode";
+			linux,code = <BTN_0>;
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		mode_led {
+			label = "green:mode";
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &uart1 {
