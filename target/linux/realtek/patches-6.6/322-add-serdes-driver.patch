@@ -1,0 +1,57 @@
+From 0414347ab5646232bb7256a6bcaa058c311910b4 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 23 Sep 2024 02:10:50 -0400
+Subject: [PATCH] realtek: Add SerDes driver for Realtek Otto platform
+
+The Realtek switch platforms contain several SerDes that need to be
+initialized and managed. Provide a driver for that.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+ drivers/phy/Kconfig          |  1 +
+ drivers/phy/Makefile         |  1 +
+ drivers/phy/realtek/Kconfig  | 11 +++++++++++
+ drivers/phy/realtek/Makefile |  2 ++
+ 4 files changed, 15 insertions(+)
+ create mode 100644 drivers/phy/realtek/Kconfig
+ create mode 100644 drivers/phy/realtek/Makefile
+
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -87,6 +87,7 @@ source "drivers/phy/motorola/Kconfig"
+ source "drivers/phy/mscc/Kconfig"
+ source "drivers/phy/qualcomm/Kconfig"
+ source "drivers/phy/ralink/Kconfig"
++source "drivers/phy/realtek/Kconfig"
+ source "drivers/phy/renesas/Kconfig"
+ source "drivers/phy/rockchip/Kconfig"
+ source "drivers/phy/samsung/Kconfig"
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -27,6 +27,7 @@ obj-y					+= allwinner/	\
+ 					   qualcomm/	\
+ 					   ralink/	\
+ 					   renesas/	\
++					   realtek/	\
+ 					   rockchip/	\
+ 					   samsung/	\
+ 					   socionext/	\
+--- /dev/null
++++ b/drivers/phy/realtek/Kconfig
+@@ -0,0 +1,11 @@
++# SPDX-License-Identifier: GPL-2.0
++#
++# Phy drivers for Realtek platforms
++#
++
++config PHY_REALTEK_OTTO_SERDES
++	tristate "SerDes driver for the Realtek Otto platform"
++	depends on OF && RTL83XX
++	select GENERIC_PHY
++	help
++	  Enable this for SerDes support in RTL83xx and RTL93xx switches.
+--- /dev/null
++++ b/drivers/phy/realtek/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++obj-$(CONFIG_PHY_REALTEK_OTTO_SERDES)	+= phy-rtl-otto-serdes.o
