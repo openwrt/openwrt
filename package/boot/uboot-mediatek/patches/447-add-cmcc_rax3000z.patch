@@ -1,5 +1,5 @@
 --- /dev/null
-+++ b/configs/mt7981_cmcc_rax3000m-emmc_defconfig
++++ b/configs/mt7981_cmcc_rax3000z-emmc_defconfig
 @@ -0,0 +1,123 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -10,7 +10,7 @@
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x40000
 +CONFIG_ENV_OFFSET=0x400000
-+CONFIG_DEFAULT_DEVICE_TREE="mt7981-cmcc-rax3000m-emmc"
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-cmcc-rax3000z-emmc"
 +CONFIG_OF_LIBFDT_OVERLAY=y
 +CONFIG_TARGET_MT7981=y
 +CONFIG_SYS_LOAD_ADDR=0x46000000
@@ -25,7 +25,7 @@
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981-cmcc-rax3000m-emmc.dtb"
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981-cmcc-rax3000z-emmc.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
@@ -73,7 +73,7 @@
 +CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/cmcc_rax3000m-emmc_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/cmcc_rax3000z-emmc_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -125,7 +125,7 @@
 +CONFIG_ZSTD=y
 +CONFIG_HEXDUMP=y
 --- /dev/null
-+++ b/configs/mt7981_cmcc_rax3000m-nand_defconfig
++++ b/configs/mt7981_cmcc_rax3000z-nand_defconfig
 @@ -0,0 +1,123 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
@@ -134,7 +134,7 @@
 +CONFIG_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
 +CONFIG_NR_DRAM_BANKS=1
-+CONFIG_DEFAULT_DEVICE_TREE="mt7981-cmcc-rax3000m-nand"
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-cmcc-rax3000z-nand"
 +CONFIG_OF_LIBFDT_OVERLAY=y
 +CONFIG_TARGET_MT7981=y
 +CONFIG_SYS_LOAD_ADDR=0x46000000
@@ -148,7 +148,7 @@
 +CONFIG_BOOTDELAY=30
 +CONFIG_AUTOBOOT_KEYED=y
 +CONFIG_AUTOBOOT_MENU_SHOW=y
-+CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981-cmcc-rax3000m-nand.dtb"
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981-cmcc-rax3000z-nand.dtb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
@@ -200,7 +200,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/cmcc_rax3000m-nand_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/cmcc_rax3000z-nand_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -251,7 +251,7 @@
 +CONFIG_ZSTD=y
 +CONFIG_HEXDUMP=y
 --- /dev/null
-+++ b/arch/arm/dts/mt7981-cmcc-rax3000m.dtsi
++++ b/arch/arm/dts/mt7981-cmcc-rax3000z.dtsi
 @@ -0,0 +1,85 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
@@ -267,7 +267,7 @@
 +/ {
 +	#address-cells = <1>;
 +	#size-cells = <1>;
-+	model = "CMCC RAX3000M";
++	model = "CMCC RAX3000Z";
 +	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
 +
 +	chosen {
@@ -339,12 +339,12 @@
 +	status = "disabled";
 +};
 --- /dev/null
-+++ b/arch/arm/dts/mt7981-cmcc-rax3000m-emmc.dts
++++ b/arch/arm/dts/mt7981-cmcc-rax3000z-emmc.dts
 @@ -0,0 +1,53 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +/dts-v1/;
-+#include "mt7981-cmcc-rax3000m.dtsi"
++#include "mt7981-cmcc-rax3000z.dtsi"
 +
 +/ {
 +	reg_3p3v: regulator-3p3v {
@@ -395,12 +395,12 @@
 +	};
 +};
 --- /dev/null
-+++ b/arch/arm/dts/mt7981-cmcc-rax3000m-nand.dts
++++ b/arch/arm/dts/mt7981-cmcc-rax3000z-nand.dts
 @@ -0,0 +1,77 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +/dts-v1/;
-+#include "mt7981-cmcc-rax3000m.dtsi"
++#include "mt7981-cmcc-rax3000z.dtsi"
 +
 +&pinctrl {
 +	spi_flash_pins: spi0-pins-func-1 {
@@ -475,7 +475,7 @@
 +	};
 +};
 --- /dev/null
-+++ b/defenvs/cmcc_rax3000m-emmc_env
++++ b/defenvs/cmcc_rax3000z-emmc_env
 @@ -0,0 +1,55 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
@@ -483,12 +483,12 @@
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
 +bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
-+bootconf=config-1#mt7981b-cmcc-rax3000m-emmc
++bootconf=config-1#mt7981b-cmcc-rax3000z-emmc
 +bootdelay=0
-+bootfile=openwrt-mediatek-filogic-cmcc_rax3000m-initramfs-recovery.itb
-+bootfile_bl2=openwrt-mediatek-filogic-cmcc_rax3000m-emmc-preloader.bin
-+bootfile_fip=openwrt-mediatek-filogic-cmcc_rax3000m-emmc-bl31-uboot.fip
-+bootfile_upg=openwrt-mediatek-filogic-cmcc_rax3000m-squashfs-sysupgrade.itb
++bootfile=openwrt-mediatek-filogic-cmcc_rax3000z-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-filogic-cmcc_rax3000z-emmc-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-cmcc_rax3000z-emmc-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-filogic-cmcc_rax3000z-squashfs-sysupgrade.itb
 +bootled_pwr=red:status
 +bootled_rec=blue:status
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
@@ -533,19 +533,19 @@
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
-+++ b/defenvs/cmcc_rax3000m-nand_env
++++ b/defenvs/cmcc_rax3000z-nand_env
 @@ -0,0 +1,56 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootconf=config-1#mt7981b-cmcc-rax3000m-nand
++bootconf=config-1#mt7981b-cmcc-rax3000z-nand
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
 +bootdelay=0
-+bootfile=openwrt-mediatek-filogic-cmcc_rax3000m-initramfs-recovery.itb
-+bootfile_bl2=openwrt-mediatek-filogic-cmcc_rax3000m-nand-preloader.bin
-+bootfile_fip=openwrt-mediatek-filogic-cmcc_rax3000m-nand-bl31-uboot.fip
-+bootfile_upg=openwrt-mediatek-filogic-cmcc_rax3000m-squashfs-sysupgrade.itb
++bootfile=openwrt-mediatek-filogic-cmcc_rax3000z-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-filogic-cmcc_rax3000z-nand-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-cmcc_rax3000z-nand-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-filogic-cmcc_rax3000z-squashfs-sysupgrade.itb
 +bootled_pwr=red:status
 +bootled_rec=blue:status
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
