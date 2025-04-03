@@ -39,7 +39,7 @@ define GadgetPreset
     SECTION:=utils
     CATEGORY:=Utilities
     TITLE+= $(2) gadget preset
-    DEPENDS+= $(3)
+    DEPENDS+= +usbgadget $(3)
   endef
 
   define Package/$(PKG_NAME)-$(1)/description
