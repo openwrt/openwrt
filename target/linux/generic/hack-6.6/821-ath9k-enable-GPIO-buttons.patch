@@ -1,0 +1,27 @@
+From 218f64d5e225fd1aea504919bc38f2707ad1b0c8 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Thu, 3 Apr 2025 14:53:17 +0200
+Subject: [PATCH] ath9k: enable GPIO buttons
+
+---
+ include/linux/ath9k_platform.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/linux/ath9k_platform.h b/include/linux/ath9k_platform.h
+index 57d81772f59c..e210108568a6 100644
+--- a/include/linux/ath9k_platform.h
++++ b/include/linux/ath9k_platform.h
+@@ -49,6 +49,10 @@ struct ath9k_platform_data {
+ 
+ 	int num_leds;
+ 	const struct gpio_led *leds;
++
++	unsigned num_btns;
++	const struct gpio_keys_button *btns;
++	unsigned btn_poll_interval;
+ };
+ 
+ #endif /* _LINUX_ATH9K_PLATFORM_H */
+-- 
+2.39.5
+
