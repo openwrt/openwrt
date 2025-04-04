@@ -201,4 +201,9 @@ define Build/Compile
 		CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(BINARIES_DIR)/at91bootstrap.bin $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-at91bootstrap.bin
+endef
+
 $(eval $(call BuildPackage/AT91Bootstrap))
