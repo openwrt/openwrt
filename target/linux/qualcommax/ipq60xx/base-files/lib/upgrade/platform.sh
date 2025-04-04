@@ -106,6 +106,11 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	alfa-network,ap120c-ax)
+		CI_UBIPART="rootfs_1"
+		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
+		nand_do_upgrade "$1"
+		;;
 	cambiumnetworks,xe3-4)
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
