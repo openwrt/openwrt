@@ -1,0 +1,31 @@
+Author: Tobias Schramm <tobias@t-sys.eu>
+Date:   Tue Feb 6 19:56:27 2024 +0100
+
+kernel: phy: aquantia: clamp temperatures set through hwmon interface
+
+The thermal zone code in Linux 5.15 will assume extreme temperatures
+(-INT_MAX and INT_MAX) as upper or lower tripping temperature bound if
+current zone temperature it not inbetween two trips.  
+When using an aquantia phy as a thermal sensor on a thermal zone providing
+extreme values as upper and lower bounds causes the aquantia hwmon
+ops to return -ERANGE. This then prevents the thermal zone from being
+updated correctly once actual trip points are exceeded.  
+Clamp values passed to aquantia hwmon to min/max supported by hardware
+instead of failing.
+
+Signed-off-by: Tobias Schramm <tobias@t-sys.eu>
+--- a/drivers/net/phy/aquantia/aquantia_hwmon.c
++++ b/drivers/net/phy/aquantia/aquantia_hwmon.c
+@@ -56,8 +56,10 @@ static int aqr_hwmon_set(struct phy_devi
+ {
+ 	int temp;
+ 
+-	if (value >= 128000 || value < -128000)
+-		return -ERANGE;
++	if (value >= 128000)
++		value = 127999;
++	else if (value < -128000)
++		value = -128000;
+ 
+ 	temp = value * 256 / 1000;
+ 
