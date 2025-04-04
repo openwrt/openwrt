@@ -1,0 +1,58 @@
+From e85d3e6fea05c8ae21a40809a3c6b7adc97411c7 Mon Sep 17 00:00:00 2001
+Message-ID: <e85d3e6fea05c8ae21a40809a3c6b7adc97411c7.1728674648.git.mschiffer@universe-factory.net>
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Thu, 20 Jun 2024 19:25:48 +0200
+Subject: [PATCH] net: dsa: qca8k: do not write port mask twice in bridge
+ join/leave
+
+qca8k_port_bridge_join() set QCA8K_PORT_LOOKUP_CTRL() for i == port twice,
+once in the loop handling all other port's masks, and finally at the end
+with the accumulated port_mask.
+
+The first time it would incorrectly set the port's own bit in the mask,
+only to correct the mistake a moment later. qca8k_port_bridge_leave() had
+the same issue, but here the regmap_clear_bits() was a no-op rather than
+setting an unintended value.
+
+Remove the duplicate assignment by skipping the whole loop iteration for
+i == port. The unintended bit setting doesn't seem to have any negative
+effects (even when not reverted right away), so the change is submitted
+as a simple cleanup rather than a fix.
+
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
+Reviewed-by: Wojciech Drewek <wojciech.drewek@intel.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/qca/qca8k-common.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -654,6 +654,8 @@ int qca8k_port_bridge_join(struct dsa_sw
+ 	port_mask = BIT(cpu_port);
+ 
+ 	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
++		if (i == port)
++			continue;
+ 		if (dsa_is_cpu_port(ds, i))
+ 			continue;
+ 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
+@@ -666,8 +668,7 @@ int qca8k_port_bridge_join(struct dsa_sw
+ 				      BIT(port));
+ 		if (ret)
+ 			return ret;
+-		if (i != port)
+-			port_mask |= BIT(i);
++		port_mask |= BIT(i);
+ 	}
+ 
+ 	/* Add all other ports to this ports portvlan mask */
+@@ -686,6 +687,8 @@ void qca8k_port_bridge_leave(struct dsa_
+ 	cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
+ 
+ 	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
++		if (i == port)
++			continue;
+ 		if (dsa_is_cpu_port(ds, i))
+ 			continue;
+ 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))

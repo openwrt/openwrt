@@ -67,27 +67,18 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -653,7 +653,7 @@ int qca8k_port_bridge_join(struct dsa_sw
- 	cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
- 	port_mask = BIT(cpu_port);
+@@ -624,7 +624,7 @@ static int qca8k_update_port_member(stru
+ 	u32 port_mask = BIT(dp->cpu_dp->index);
+ 	int i, ret;
  
 -	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
-+	for (i = 0; i < ds->num_ports; i++) {
- 		if (dsa_is_cpu_port(ds, i))
++	for (i = 0; i < priv->ds->num_ports; i++) {
+ 		if (i == port)
  			continue;
- 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
-@@ -685,7 +685,7 @@ void qca8k_port_bridge_leave(struct dsa_
- 
- 	cpu_port = dsa_to_port(ds, port)->cpu_dp->index;
- 
--	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
-+	for (i = 0; i < ds->num_ports; i++) {
- 		if (dsa_is_cpu_port(ds, i))
- 			continue;
- 		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
+ 		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,950 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -879,6 +870,8 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	.port_change_mtu	= qca8k_port_change_mtu,
 +	.port_max_mtu		= qca8k_port_max_mtu,
 +	.port_stp_state_set	= qca8k_port_stp_state_set,
++	.port_pre_bridge_flags	= qca8k_port_pre_bridge_flags,
++	.port_bridge_flags	= qca8k_port_bridge_flags,
 +	.port_bridge_join	= qca8k_port_bridge_join,
 +	.port_bridge_leave	= qca8k_port_bridge_leave,
 +	.port_fast_age		= qca8k_port_fast_age,
@@ -1119,7 +1112,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  enum {
  	QCA8K_PORT_SPEED_10M = 0,
  	QCA8K_PORT_SPEED_100M = 1,
-@@ -466,6 +518,10 @@ struct qca8k_priv {
+@@ -467,6 +519,10 @@ struct qca8k_priv {
  	struct qca8k_pcs pcs_port_6;
  	const struct qca8k_match_data *info;
  	struct qca8k_led ports_led[QCA8K_LED_COUNT];
