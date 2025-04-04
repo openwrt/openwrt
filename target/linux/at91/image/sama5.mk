@@ -16,7 +16,7 @@ define Build/at91-sdcard
 	::$(DEVICE_NAME)-fit.itb
 
   mcopy -i $@.boot \
-	$(BIN_DIR)/u-boot-$(DEVICE_DTS:at91-%=%)_mmc/u-boot.bin \
+	$(STAGING_DIR_IMAGE)/$(DEVICE_DTS:at91-%=%)_mmc-u-boot.bin \
 	::u-boot.bin
 
   $(if $(findstring sama5d4-xplained,$@), \
