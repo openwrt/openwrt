@@ -142,9 +142,10 @@ _call_info: FORCE
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
-BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
+# "~pkgname" in the package list means that "pkgname" needs to be dropped from the package list as its used for InstallDev step only
+BUILD_PACKAGES:=$(filter-out $(filter -% ~%,$(BUILD_PACKAGES)) $(patsubst -% %~,%,$(filter -% ~%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 BUILD_PACKAGES:=$(USER_PACKAGES) $(BUILD_PACKAGES)
-BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
+BUILD_PACKAGES:=$(filter-out $(filter -% ~%,$(BUILD_PACKAGES)) $(patsubst -% %~,%,$(filter -% ~%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 PACKAGES:=
 
 _call_image: staging_dir/host/.prereq-build
