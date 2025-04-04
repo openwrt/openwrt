@@ -1,0 +1,45 @@
+From f97897dde57d45b962a2636876cd84c9baed61c4 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 19 Mar 2025 10:19:41 +0400
+Subject: [PATCH] wifi: ath11k: support fetching mac address from nvmem
+
+Many embedded devices with ath11k wifi chips store their mac address in
+nvmem partitions. Currently, the ath11k driver supports getting the
+mac address from the 'mac-address', 'local-mac-address', and 'address'
+device tree properties only. As such, add support for obtaining the mac
+address from nvmem if defined in a 'mac-address' cell by replacing the
+call to device_get_mac_address by of_get_mac_address which does exactly
+the same as the former but tries to get it from nvmem if it is not set
+by above mentioned DT properties.
+
+Tested-on: IPQ5018, QCN6122, and QCN9074
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 1556392f7ad4..6cee616693b3 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -9,6 +9,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/bitfield.h>
+ #include <linux/inetdevice.h>
++#include <linux/of_net.h>
+ #include <net/if_inet6.h>
+ #include <net/ipv6.h>
+ 
+@@ -10324,7 +10325,7 @@ int ath11k_mac_register(struct ath11k_base *ab)
+ 	if (ret)
+ 		return ret;
+ 
+-	device_get_mac_address(ab->dev, mac_addr);
++	of_get_mac_address(ab->dev->of_node, mac_addr);
+ 
+ 	for (i = 0; i < ab->num_radios; i++) {
+ 		pdev = &ab->pdevs[i];
+-- 
+2.48.1
+
