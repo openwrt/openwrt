@@ -17,11 +17,32 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-#define MIB_DESC(_size, _offset, _name) {.size = _size, .offset = _offset, .name = _name}
-struct rtl83xx_mib_desc {
-	unsigned int size;
+enum mib_reg {
+	MIB_REG_INVALID = 0,
+	MIB_REG_STD,
+	MIB_REG_PRV
+};
+
+#define MIB_ITEM(_reg, _offset, _size) \
+		{.reg = _reg, .offset = _offset, .size = _size}
+
+#define MIB_LIST_ITEM(_name, _item) \
+		{.name = _name, .item = _item}
+
+struct rtldsa_mib_item {
+	enum mib_reg reg;
 	unsigned int offset;
+	unsigned int size;
+};
+
+struct rtldsa_mib_list_item {
 	const char *name;
+	struct rtldsa_mib_item item;
+};
+
+struct rtldsa_mib_desc {
+	size_t list_count;
+	const struct rtldsa_mib_list_item *list;
 };
 
 /* API for switch table access */

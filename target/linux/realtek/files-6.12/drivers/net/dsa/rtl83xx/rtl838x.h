@@ -34,6 +34,7 @@
 #define RTL838X_STAT_PORT_STD_MIB		(0x1200)
 #define RTL839X_STAT_PORT_STD_MIB		(0xC000)
 #define RTL930X_STAT_PORT_MIB_CNTR		(0x0664)
+#define RTL930X_STAT_PORT_PRVTE_CNTR		(0x2364)
 #define RTL838X_STAT_RST			(0x3100)
 #define RTL839X_STAT_RST			(0xF504)
 #define RTL930X_STAT_RST			(0x3240)
@@ -981,6 +982,7 @@ struct rtl838x_reg {
 	int stat_port_rst;
 	int stat_rst;
 	int stat_port_std_mib;
+	int stat_port_prv_mib;
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);
