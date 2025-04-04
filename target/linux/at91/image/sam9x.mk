@@ -20,7 +20,7 @@ define Build/at91-sdcard
 	::u-boot.bin
 
   mcopy -i $@.boot \
-	$(BIN_DIR)/at91bootstrap-$(if $(findstring sam9x60,$@),$(DEVICE_DTS:at91-%=%),at91sam9x5ek)sd_uboot/at91bootstrap.bin \
+	$(STAGING_DIR_IMAGE)/$(if $(findstring sam9x60,$@),$(DEVICE_DTS:at91-%=%),at91sam9x5ek)sd_uboot-at91bootstrap.bin \
 	::BOOT.bin
 
   $(CP) uboot-env.txt $@-uboot-env.txt
