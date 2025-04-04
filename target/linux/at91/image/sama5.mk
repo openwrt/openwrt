@@ -21,10 +21,10 @@ define Build/at91-sdcard
 
   $(if $(findstring sama5d4-xplained,$@), \
 	  mcopy -i $@.boot \
-              $(BIN_DIR)/at91bootstrap-$(DEVICE_DTS:at91-%=%)sd_uboot_secure/at91bootstrap.bin \
+              $(STAGING_DIR_IMAGE)/$(DEVICE_DTS:at91-%=%)sd_uboot_secure-at91bootstrap.bin \
               ::BOOT.bin,
           mcopy -i $@.boot \
-              $(BIN_DIR)/at91bootstrap-$(DEVICE_DTS:at91-%=%)sd_uboot/at91bootstrap.bin \
+              $(STAGING_DIR_IMAGE)/$(DEVICE_DTS:at91-%=%)sd_uboot-at91bootstrap.bin \
               ::BOOT.bin)
 
   $(CP) uboot-env.txt $@-uboot-env.txt
