@@ -68,12 +68,14 @@
 			function = LED_FUNCTION_WLAN_2GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led-4 {
 			function = LED_FUNCTION_WLAN_5GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
