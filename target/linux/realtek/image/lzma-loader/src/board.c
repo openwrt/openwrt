@@ -29,7 +29,7 @@
 #define UART_LSR_THRE		0x20
 #define UART_LSR_TEMT		0x20000000
 
-#if defined(SOC_RTL838X) || defined(SOC_RTL839X)
+#if defined(SOC_RTL838X) || defined(SOC_RTL839X) || defined(SOC_RTL930X) || defined(SOC_RTL931X)
 #define UART_BASE_ADDR		(0xb8002000)
 #else
 #error "Unsupported SOC..."

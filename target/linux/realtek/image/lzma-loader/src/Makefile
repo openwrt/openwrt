@@ -67,6 +67,14 @@ ifeq ($(strip $(SUBTARGET)),rtl839x)
 CFLAGS	+= -DSOC_RTL839X
 endif
 
+ifeq ($(strip $(SUBTARGET)),rtl930x)
+CFLAGS	+= -DSOC_RTL930X
+endif
+
+ifeq ($(strip $(SUBTARGET)),rtl931x)
+CFLAGS	+= -DSOC_RTL931X
+endif
+
 ifneq ($(strip $(LOADER_DATA)),)
 OBJECTS		+= data.o
 CFLAGS		+= -DLZMA_WRAPPER=1 -DLOADADDR=$(LOADADDR)
