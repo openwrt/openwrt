@@ -1,6 +1,12 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
+	fortinet,fg-30e|\
+	fortinet,fg-50e|\
+	fortinet,fg-51e|\
+	fortinet,fg-52e|\
+	fortinet,fwf-50e-2r|\
+	fortinet,fwf-51e|\
 	linksys,wrt1900ac-v1|\
         linksys,wrt32x)
 		uci set system.@system[0].compat_version="2.0"

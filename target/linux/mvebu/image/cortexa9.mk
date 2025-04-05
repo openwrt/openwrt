@@ -124,6 +124,9 @@ define Device/fortinet
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
     sysupgrade-tar rootfs=$$$$@ | append-metadata
   DEVICE_PACKAGES := kmod-hwmon-nct7802 kmod-dsa-mv88e6xxx
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (up to 24.10). \
+	Upgrade via sysupgrade mechanism is not possible, so new installation via initramfs image is required.
 endef
 
 define Device/fortinet_fg-30e

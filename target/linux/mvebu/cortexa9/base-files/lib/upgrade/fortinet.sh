@@ -121,22 +121,23 @@ fortinet_update_fwinfo() {
 fortinet_do_upgrade() {
 	local board_dir="$(tar tf "$1" | grep -m 1 '^sysupgrade-.*/$')"
 	local kern_mtd="$(find_mtd_part kernel)"
-	local root_mtd="$(find_mtd_part rootfs)"
+	local root_mtd="$(find_mtd_part rfs1)"
 	local kern_len kern_ofs root_len root_ofs
 	local imgname
 
 	board_dir="${board_dir%/}"
 
 	if [ -z "$kern_mtd" ] || [ -z "$root_mtd" ]; then
-		echo "ERROR: MTD device \"kernel\" or \"rootfs\" not found"
+		echo "ERROR: MTD device \"kernel\" or \"rfs1\" not found"
 		umount -a
 		reboot -f
 	fi
 	kern_ofs=$(cat /sys/class/mtd/${kern_mtd//\/dev\/mtdblock/mtd}/offset)
 	root_ofs=$(cat /sys/class/mtd/${root_mtd//\/dev\/mtdblock/mtd}/offset)
 
+	# Note: use the offset of "rfs1" instead of concatenated "rootfs"
 	if [ -z "$kern_ofs" ] || [ -z "$root_ofs" ]; then
-		echo "ERROR: failed to get offset of kernel or rootfs"
+		echo "ERROR: failed to get offset of kernel or rootfs (rfs1)"
 		umount -a
 		reboot -f
 	fi
