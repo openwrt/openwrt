@@ -30,6 +30,11 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/mkimage-arm-standalone
+	$(STAGING_DIR_HOST)/bin/mkimage -A arm -T standalone -C none -n "seconduboot" \
+		-e 0x41e00000 -d $(STAGING_DIR_IMAGE)/$1-u-boot.bin $(KDIR)/second-uboot.bin
+endef
+
 define Build/mt798x-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
@@ -1205,6 +1210,25 @@ define Device/mediatek_mt7988a-rfb
 				  gzip
 endef
 TARGET_DEVICES += mediatek_mt7988a-rfb
+
+define Device/mercusys_mr80x-v3
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_MODEL := MR80X
+  DEVICE_VARIANT := v3
+  DEVICE_DTS := mt7981b-mercusys-mr80x-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  UBINIZE_PARTS := uboot=$(KDIR)/second-uboot.bin=1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := mkimage-arm-standalone mt7981_mercusys_mr80x-v3 | \
+	append-ubi | pad-to 128K | check-size 50m
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += mercusys_mr80x-v3
 
 define Device/mercusys_mr90x-v1
   DEVICE_VENDOR := MERCUSYS
