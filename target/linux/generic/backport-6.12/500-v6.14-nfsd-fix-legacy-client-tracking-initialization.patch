@@ -1,0 +1,32 @@
+From de71d4e211eddb670b285a0ea477a299601ce1ca Mon Sep 17 00:00:00 2001
+From: Scott Mayhew <smayhew@redhat.com>
+Date: Tue, 10 Dec 2024 07:25:54 -0500
+Subject: [PATCH] nfsd: fix legacy client tracking initialization
+
+Get rid of the nfsd4_legacy_tracking_ops->init() call in
+check_for_legacy_methods().  That will be handled in the caller
+(nfsd4_client_tracking_init()).  Otherwise, we'll wind up calling
+nfsd4_legacy_tracking_ops->init() twice, and the second time we'll
+trigger the BUG_ON() in nfsd4_init_recdir().
+
+Fixes: 74fd48739d04 ("nfsd: new Kconfig option for legacy client tracking")
+Reported-by: Jur van der Burg <jur@avtware.com>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=219580
+Signed-off-by: Scott Mayhew <smayhew@redhat.com>
+Reviewed-by: Jeff Layton <jlayton@kernel.org>
+Tested-by: Salvatore Bonaccorso <carnil@debian.org>
+Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+---
+ fs/nfsd/nfs4recover.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/fs/nfsd/nfs4recover.c
++++ b/fs/nfsd/nfs4recover.c
+@@ -2052,7 +2052,6 @@ static inline int check_for_legacy_metho
+ 		path_put(&path);
+ 		if (status)
+ 			return -ENOTDIR;
+-		status = nn->client_tracking_ops->init(net);
+ 	}
+ 	return status;
+ }
