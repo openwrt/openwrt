@@ -3,9 +3,14 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-KERNEL_LOADADDR = 0x80100000
+KERNEL_LOADADDR := 0x80100000
+
+LOADER_LOADADDR := 0x80100000
+LOADER_PLATFORM := realtek
+LOADER_FLASH_START := 0xb4000000
 
 DEVICE_VARS += \
+	LZMA_TEXT_START \
 	BELKIN_HEADER \
 	BELKIN_MODEL \
         CAMEO_BOARD_MODEL \
@@ -18,6 +23,24 @@ DEVICE_VARS += \
         H3C_PRODUCT_ID \
 	LINKSYS_HEADER \
         ZYXEL_VERS
+
+define Build/loader-common
+	rm -rf $@.src
+	$(MAKE) -C lzma-loader \
+		PKG_BUILD_DIR="$@.src" \
+		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+		BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
+		LZMA_TEXT_START=$(LZMA_TEXT_START) \
+		LOADADDR=$(LOADER_LOADADDR) \
+		SUBTARGET=$(SUBTARGET) \
+		$(1) compile loader.$(LOADER_TYPE)
+	mv "$@.$(LOADER_TYPE)" "$@"
+	rm -rf $@.src
+endef
+
+define Build/loader-kernel
+	$(call Build/loader-common,LOADER_DATA="$@")
+endef
 
 define Build/zyxel-vers
        ( echo VERS;\
@@ -85,6 +108,7 @@ define Build/linksys-image
 endef
 
 define Device/Default
+  LZMA_TEXT_START := 0x82000000
   PROFILES = Default
   KERNEL := \
 	kernel-bin | \
@@ -106,6 +130,13 @@ define Device/Default
 	pad-rootfs | \
 	check-size | \
 	append-metadata
+endef
+
+define Device/uimage-lzma-loader
+	LOADER_TYPE := bin
+	KERNEL/lzma-loader := kernel-bin | append-dtb | lzma | loader-kernel
+	KERNEL := $$(KERNEL/lzma-loader) | uImage none
+	KERNEL_INITRAMFS := $$(KERNEL/lzma-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk
