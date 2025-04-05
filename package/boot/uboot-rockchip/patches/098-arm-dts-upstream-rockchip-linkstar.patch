@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,750 @@
+@@ -0,0 +1,751 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 31 March 2025
 +// Device Tree Info
@@ -539,14 +539,14 @@
 +
 +&mdio0 {
 +	rgmii_phy0: ethernet-phy@0 {
-+		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
++		compatible = "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
 +	};
 +};
 +
 +&mdio1 {
 +	rgmii_phy1: ethernet-phy@0 {
-+		compatible = "ethernet-phy-id001c.c916", "ethernet-phy-ieee802.3-c22";
++		compatible = "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
 +	};
 +};
@@ -572,6 +572,7 @@
 +		reg = <0x00100000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
++		bus-range = <0x0 0xe>;
 +
 +		rtl8125_1: pcie-eth@10,0 {
 +			compatible = "pci10ec,8125";
@@ -586,7 +587,7 @@
 +	vpcie3v3-supply = <&vcc3v3_pcie>;
 +	status = "okay";
 +
-+	pcie@0,1 {
++	pcie@0,0 {
 +		reg = <0x00200000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;

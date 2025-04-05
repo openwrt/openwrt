@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,750 @@
+@@ -0,0 +1,751 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 31 March 2025
 +// Device Tree Info
@@ -572,6 +572,7 @@
 +		reg = <0x00100000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
++		bus-range = <0x0 0xe>;
 +
 +		rtl8125_1: pcie-eth@10,0 {
 +			compatible = "pci10ec,8125";
