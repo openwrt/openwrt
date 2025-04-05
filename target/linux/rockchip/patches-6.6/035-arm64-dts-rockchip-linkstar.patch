@@ -32,8 +32,8 @@
 +	aliases {
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
-+		ethernet2 = &pcie@10,0;
-+		ethernet3 = &pcie@20,0;
++		ethernet2 = &rtl8125_1;
++		ethernet3 = &rtl8125_2;
 +
 +		mmc0 = &sdmmc0;
 +		mmc1 = &sdhci;
@@ -587,7 +587,7 @@
 +	vpcie3v3-supply = <&vcc3v3_pcie>;
 +	status = "okay";
 +
-+	pcie@10,0 {
++	pcie@0,0 {
 +		reg = <0x00100000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
@@ -606,7 +606,7 @@
 +	vpcie3v3-supply = <&vcc3v3_pcie>;
 +	status = "okay";
 +
-+	pcie@20,0 {
++	pcie@0,0 {
 +		reg = <0x00200000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
