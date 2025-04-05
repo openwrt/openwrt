@@ -46,53 +46,177 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, 0x8000, RTL838X_SMI_GLB_CTRL);
 }
 
-const struct rtl83xx_mib_desc rtl83xx_mib[] = {
-	MIB_DESC(2, 0xf8, "ifInOctets"),
-	MIB_DESC(2, 0xf0, "ifOutOctets"),
-	MIB_DESC(1, 0xec, "dot1dTpPortInDiscards"),
-	MIB_DESC(1, 0xe8, "ifInUcastPkts"),
-	MIB_DESC(1, 0xe4, "ifInMulticastPkts"),
-	MIB_DESC(1, 0xe0, "ifInBroadcastPkts"),
-	MIB_DESC(1, 0xdc, "ifOutUcastPkts"),
-	MIB_DESC(1, 0xd8, "ifOutMulticastPkts"),
-	MIB_DESC(1, 0xd4, "ifOutBroadcastPkts"),
-	MIB_DESC(1, 0xd0, "ifOutDiscards"),
-	MIB_DESC(1, 0xcc, ".3SingleCollisionFrames"),
-	MIB_DESC(1, 0xc8, ".3MultipleCollisionFrames"),
-	MIB_DESC(1, 0xc4, ".3DeferredTransmissions"),
-	MIB_DESC(1, 0xc0, ".3LateCollisions"),
-	MIB_DESC(1, 0xbc, ".3ExcessiveCollisions"),
-	MIB_DESC(1, 0xb8, ".3SymbolErrors"),
-	MIB_DESC(1, 0xb4, ".3ControlInUnknownOpcodes"),
-	MIB_DESC(1, 0xb0, ".3InPauseFrames"),
-	MIB_DESC(1, 0xac, ".3OutPauseFrames"),
-	MIB_DESC(1, 0xa8, "DropEvents"),
-	MIB_DESC(1, 0xa4, "tx_BroadcastPkts"),
-	MIB_DESC(1, 0xa0, "tx_MulticastPkts"),
-	MIB_DESC(1, 0x9c, "CRCAlignErrors"),
-	MIB_DESC(1, 0x98, "tx_UndersizePkts"),
-	MIB_DESC(1, 0x94, "rx_UndersizePkts"),
-	MIB_DESC(1, 0x90, "rx_UndersizedropPkts"),
-	MIB_DESC(1, 0x8c, "tx_OversizePkts"),
-	MIB_DESC(1, 0x88, "rx_OversizePkts"),
-	MIB_DESC(1, 0x84, "Fragments"),
-	MIB_DESC(1, 0x80, "Jabbers"),
-	MIB_DESC(1, 0x7c, "Collisions"),
-	MIB_DESC(1, 0x78, "tx_Pkts64Octets"),
-	MIB_DESC(1, 0x74, "rx_Pkts64Octets"),
-	MIB_DESC(1, 0x70, "tx_Pkts65to127Octets"),
-	MIB_DESC(1, 0x6c, "rx_Pkts65to127Octets"),
-	MIB_DESC(1, 0x68, "tx_Pkts128to255Octets"),
-	MIB_DESC(1, 0x64, "rx_Pkts128to255Octets"),
-	MIB_DESC(1, 0x60, "tx_Pkts256to511Octets"),
-	MIB_DESC(1, 0x5c, "rx_Pkts256to511Octets"),
-	MIB_DESC(1, 0x58, "tx_Pkts512to1023Octets"),
-	MIB_DESC(1, 0x54, "rx_Pkts512to1023Octets"),
-	MIB_DESC(1, 0x50, "tx_Pkts1024to1518Octets"),
-	MIB_DESC(1, 0x4c, "rx_StatsPkts1024to1518Octets"),
-	MIB_DESC(1, 0x48, "tx_Pkts1519toMaxOctets"),
-	MIB_DESC(1, 0x44, "rx_Pkts1519toMaxOctets"),
-	MIB_DESC(1, 0x40, "rxMacDiscards")
+const struct rtl83xx_mib_desc rtl838x_mib[] = {
+	MIB_DESC(MIB_REG_STD, 0xf8, 2, "ifInOctets"),
+	MIB_DESC(MIB_REG_STD, 0xf0, 2, "ifOutOctets"),
+	MIB_DESC(MIB_REG_STD, 0xec, 1, "dot1dTpPortInDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xe8, 1, "ifInUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe4, 1, "ifInMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe0, 1, "ifInBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xdc, 1, "ifOutUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd8, 1, "ifOutMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd4, 1, "ifOutBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd0, 1, "ifOutDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xcc, 1, ".3SingleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xc8, 1, ".3MultipleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xc4, 1, ".3DeferredTransmissions"),
+	MIB_DESC(MIB_REG_STD, 0xc0, 1, ".3LateCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xbc, 1, ".3ExcessiveCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xb8, 1, ".3SymbolErrors"),
+	MIB_DESC(MIB_REG_STD, 0xb4, 1, ".3ControlInUnknownOpcodes"),
+	MIB_DESC(MIB_REG_STD, 0xb0, 1, ".3InPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0xac, 1, ".3OutPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0xa8, 1, "DropEvents"),
+	MIB_DESC(MIB_REG_STD, 0xa4, 1, "tx_BroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xa0, 1, "tx_MulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0x9c, 1, "CRCAlignErrors"),
+	MIB_DESC(MIB_REG_STD, 0x98, 1, "tx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x94, 1, "rx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x90, 1, "rx_UndersizeDropPkts"),
+	MIB_DESC(MIB_REG_STD, 0x8c, 1, "tx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x88, 1, "rx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x84, 1, "Fragments"),
+	MIB_DESC(MIB_REG_STD, 0x80, 1, "Jabbers"),
+	MIB_DESC(MIB_REG_STD, 0x7c, 1, "Collisions"),
+	MIB_DESC(MIB_REG_STD, 0x78, 1, "tx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x74, 1, "rx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x70, 1, "tx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x6c, 1, "rx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x68, 1, "tx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x64, 1, "rx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x60, 1, "tx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x5c, 1, "rx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x58, 1, "tx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x54, 1, "rx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x50, 1, "tx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_STD, 0x4c, 1, "rx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_STD, 0x48, 1, "tx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_STD, 0x44, 1, "rx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_STD, 0x40, 1, "rx_MacDiscards")
+};
+
+const struct rtl83xx_mib_desc rtl839x_mib[] = {
+	MIB_DESC(MIB_REG_STD, 0xf8, 2, "ifInOctets"),
+	MIB_DESC(MIB_REG_STD, 0xf0, 2, "ifOutOctets"),
+	MIB_DESC(MIB_REG_STD, 0xec, 1, "ifInUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe8, 1, "ifInMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe4, 1, "ifInBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe0, 1, "ifOutUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xdc, 1, "ifOutMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd8, 1, "ifOutBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd4, 1, "ifOutDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xd0, 1, "dot1dTpPortInDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xcc, 1, ".3SingleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xc8, 1, ".3MultipleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xc4, 1, ".3DeferredTransmissions"),
+	MIB_DESC(MIB_REG_STD, 0xc0, 1, ".3LateCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xbc, 1, ".3ExcessiveCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xb8, 1, ".3SymbolErrors"),
+	MIB_DESC(MIB_REG_STD, 0xb4, 1, ".3ControlInUnknownOpcodes"),
+	MIB_DESC(MIB_REG_STD, 0xb0, 1, ".3InPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0xac, 1, ".3OutPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0xa8, 1, "DropEvents"),
+	MIB_DESC(MIB_REG_STD, 0xa4, 1, "tx_BroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xa0, 1, "tx_MulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0x9c, 1, "CRCAlignErrors"),
+	MIB_DESC(MIB_REG_STD, 0x98, 1, "tx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x94, 1, "rx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x90, 1, "rx_UndersizeDropPkts"),
+	MIB_DESC(MIB_REG_STD, 0x8c, 1, "tx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x88, 1, "rx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x84, 1, "Fragments"),
+	MIB_DESC(MIB_REG_STD, 0x80, 1, "Jabbers"),
+	MIB_DESC(MIB_REG_STD, 0x7c, 1, "Collisions"),
+	MIB_DESC(MIB_REG_STD, 0x78, 1, "tx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x74, 1, "rx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x70, 1, "tx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x6c, 1, "rx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x68, 1, "tx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x64, 1, "rx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x60, 1, "tx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x5c, 1, "rx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x58, 1, "tx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x54, 1, "rx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x50, 1, "tx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_STD, 0x4c, 1, "rx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_STD, 0x48, 1, "tx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_STD, 0x44, 1, "rx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_STD, 0x40, 1, "rx_LengthFieldError"),
+	MIB_DESC(MIB_REG_STD, 0x3c, 1, "rx_FalseCarrierTimes"),
+	MIB_DESC(MIB_REG_STD, 0x38, 1, "rx_UnderSizeOctets"),
+	MIB_DESC(MIB_REG_STD, 0x34, 1, "tx_Fragments"),
+	MIB_DESC(MIB_REG_STD, 0x30, 1, "tx_Jabbers"),
+	MIB_DESC(MIB_REG_STD, 0x2c, 1, "tx_CRCAlignErrors"),
+	MIB_DESC(MIB_REG_STD, 0x28, 1, "rx_FramingErrors"),
+	MIB_DESC(MIB_REG_STD, 0x24, 1, "rx_MacDiscards")
+};
+
+const struct rtl83xx_mib_desc rtl930x_mib[] = {
+	MIB_DESC(MIB_REG_STD, 0xf8, 2, "ifInOctets"),
+	MIB_DESC(MIB_REG_STD, 0xf0, 2, "ifOutOctets"),
+	MIB_DESC(MIB_REG_STD, 0xe8, 2, "ifInUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xe0, 2, "ifInMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd8, 2, "ifInBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xd0, 2, "ifOutUcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xc8, 2, "ifOutMulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xc0, 2, "ifOutBroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0xbc, 1, "ifOutDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xb8, 1, "dot1dTpPortInDiscards"),
+	MIB_DESC(MIB_REG_STD, 0xb4, 1, ".3SingleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xb0, 1, ".3MultipleCollisionFrames"),
+	MIB_DESC(MIB_REG_STD, 0xac, 1, ".3DeferredTransmissions"),
+	MIB_DESC(MIB_REG_STD, 0xa8, 1, ".3LateCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xa4, 1, ".3ExcessiveCollisions"),
+	MIB_DESC(MIB_REG_STD, 0xa0, 1, ".3SymbolErrors"),
+	MIB_DESC(MIB_REG_STD, 0x9c, 1, ".3ControlInUnknownOpcodes"),
+	MIB_DESC(MIB_REG_STD, 0x98, 1, ".3InPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0x94, 1, ".3OutPauseFrames"),
+	MIB_DESC(MIB_REG_STD, 0x90, 1, "DropEvents"),
+	MIB_DESC(MIB_REG_STD, 0x8c, 1, "tx_BroadcastPkts"),
+	MIB_DESC(MIB_REG_STD, 0x88, 1, "tx_MulticastPkts"),
+	MIB_DESC(MIB_REG_STD, 0x84, 1, "tx_CRCAlignErrors"),
+	MIB_DESC(MIB_REG_STD, 0x80, 1, "rx_CRCAlignErrors"),
+	MIB_DESC(MIB_REG_STD, 0x7c, 1, "tx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x78, 1, "rx_UndersizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x74, 1, "tx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x70, 1, "rx_OversizePkts"),
+	MIB_DESC(MIB_REG_STD, 0x6c, 1, "tx_Fragments"),
+	MIB_DESC(MIB_REG_STD, 0x68, 1, "rx_Fragments"),
+	MIB_DESC(MIB_REG_STD, 0x64, 1, "tx_Jabbers"),
+	MIB_DESC(MIB_REG_STD, 0x60, 1, "rx_Jabbers"),
+	MIB_DESC(MIB_REG_STD, 0x5c, 1, "tx_Collisions"),
+	MIB_DESC(MIB_REG_STD, 0x58, 1, "tx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x54, 1, "rx_Pkts64Octets"),
+	MIB_DESC(MIB_REG_STD, 0x50, 1, "tx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x4c, 1, "rx_Pkts65to127Octets"),
+	MIB_DESC(MIB_REG_STD, 0x48, 1, "tx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x44, 1, "rx_Pkts128to255Octets"),
+	MIB_DESC(MIB_REG_STD, 0x40, 1, "tx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x3c, 1, "rx_Pkts256to511Octets"),
+	MIB_DESC(MIB_REG_STD, 0x38, 1, "tx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x34, 1, "rx_Pkts512to1023Octets"),
+	MIB_DESC(MIB_REG_STD, 0x30, 1, "tx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_STD, 0x2c, 1, "rx_Pkts1024to1518Octets"),
+	MIB_DESC(MIB_REG_PRV, 0x7c, 1, "rx_UndersizeDropPkts"),
+	MIB_DESC(MIB_REG_PRV, 0x78, 1, "tx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_PRV, 0x74, 1, "rx_Pkts1519toMaxOctets"),
+	MIB_DESC(MIB_REG_PRV, 0x70, 1, "tx_PktsOverMaxOctets"),
+	MIB_DESC(MIB_REG_PRV, 0x6c, 1, "rx_PktsOverMaxOctets"),
+	MIB_DESC(MIB_REG_PRV, 0x68, 1, "tx_PktsFlexibleOctetsSet1"),
+	MIB_DESC(MIB_REG_PRV, 0x64, 1, "rx_PktsFlexibleOctetsSet1"),
+	MIB_DESC(MIB_REG_PRV, 0x60, 1, "tx_PktsFlexibleOctetsCRCSet1"),
+	MIB_DESC(MIB_REG_PRV, 0x5c, 1, "rx_PktsFlexibleOctetsCRCSet1"),
+	MIB_DESC(MIB_REG_PRV, 0x58, 1, "tx_PktsFlexibleOctetsSet0"),
+	MIB_DESC(MIB_REG_PRV, 0x54, 1, "rx_PktsFlexibleOctetsSet0"),
+	MIB_DESC(MIB_REG_PRV, 0x50, 1, "tx_PktsFlexibleOctetsCRCSet0"),
+	MIB_DESC(MIB_REG_PRV, 0x4c, 1, "rx_PktsFlexibleOctetsCRCSet0"),
+	MIB_DESC(MIB_REG_PRV, 0x48, 1, "LengthFieldError"),
+	MIB_DESC(MIB_REG_PRV, 0x44, 1, "FalseCarrierTimes"),
+	MIB_DESC(MIB_REG_PRV, 0x40, 1, "UndersizeOctets"),
+	MIB_DESC(MIB_REG_PRV, 0x3c, 1, "FramingErrors"),
+	MIB_DESC(MIB_REG_PRV, 0x38, 1, "ParserErrors"),
+	MIB_DESC(MIB_REG_PRV, 0x34, 1, "rx_MacDiscards"),
+	MIB_DESC(MIB_REG_PRV, 0x30, 1, "rx_MacIPGShortDrop")
 };
 
 
@@ -963,29 +1087,67 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
+static int rtl83xx_get_mib_list(struct dsa_switch *ds,
+				const struct rtl83xx_mib_desc **mib_list)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		*mib_list = rtl838x_mib;
+		return ARRAY_SIZE(rtl838x_mib);
+	case RTL8390_FAMILY_ID:
+		*mib_list = rtl839x_mib;
+		return ARRAY_SIZE(rtl839x_mib);
+	case RTL9300_FAMILY_ID:
+		*mib_list = rtl930x_mib;
+		return ARRAY_SIZE(rtl930x_mib);
+	default:
+		return 0;
+	}
+}
+
 static void rtl83xx_get_strings(struct dsa_switch *ds,
 				int port, u32 stringset, u8 *data)
 {
+	const struct rtl83xx_mib_desc *mib_list;
+	int mib_list_size;
+
 	if (stringset != ETH_SS_STATS)
 		return;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
-		ethtool_puts(&data, rtl83xx_mib[i].name);
+	mib_list_size = rtl83xx_get_mib_list(ds, &mib_list);
+
+	for (int i = 0; i < mib_list_size; i++)
+		ethtool_puts(&data, mib_list[i].name);
 }
 
 static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 				      uint64_t *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtl83xx_mib_desc *mib_list;
+	int mib_list_size;
 	const struct rtl83xx_mib_desc *mib;
+	int reg, reg_offset;
 	u64 h;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
-		mib = &rtl83xx_mib[i];
+	mib_list_size = rtl83xx_get_mib_list(ds, &mib_list);
 
-		data[i] = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib->offset);
+	for (int i = 0; i < mib_list_size; i++) {
+		mib = &mib_list[i];
+
+		if (mib->reg == MIB_REG_PRV) {
+			reg = priv->r->stat_port_prv_mib;
+			reg_offset = 128;
+		} else {
+			reg = priv->r->stat_port_std_mib;
+			reg_offset = 256;
+		}
+
+		data[i] = sw_r32(reg + (port + 1) * reg_offset - 4 - mib->offset);
 		if (mib->size == 2) {
-			h = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 248 - mib->offset);
+			h = sw_r32(reg + (port + 1) * reg_offset - 8 - mib->offset);
 			data[i] |= h << 32;
 		}
 	}
@@ -993,10 +1155,15 @@ static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 
 static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
 {
+	const struct rtl83xx_mib_desc *mib_list;
+	int mib_list_size;
+
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(rtl83xx_mib);
+	mib_list_size = rtl83xx_get_mib_list(ds, &mib_list);
+
+	return mib_list_size;
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
