@@ -197,7 +197,9 @@ define KernelPackage/fb-sys-fops
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer software sys ops support
   DEPENDS:=+kmod-fb
-  KCONFIG:=CONFIG_FB_SYS_FOPS
+  KCONFIG:= \
+	CONFIG_FB_SYS_FOPS@lt6.12 \
+	CONFIG_FB_SYSMEM_FOPS@ge6.12
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_sys_fops.ko
   AUTOLOAD:=$(call AutoLoad,07,fb_sys_fops)
 endef
