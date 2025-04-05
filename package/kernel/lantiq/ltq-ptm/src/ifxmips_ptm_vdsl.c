@@ -35,6 +35,7 @@
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
+#include <linux/of_net.h>
 
 #include "ifxmips_ptm_vdsl.h"
 #include <lantiq_soc.h>
@@ -69,7 +70,7 @@ unsigned long cgu_get_pp32_clock(void)
 	return rate;
 }
 
-static void ptm_setup(struct net_device *, int);
+static int ptm_setup(struct device_node* np, struct net_device *, int);
 static struct net_device_stats *ptm_get_stats(struct net_device *);
 static int ptm_open(struct net_device *);
 static int ptm_stop(struct net_device *);
@@ -144,9 +145,10 @@ unsigned int ifx_ptm_dbg_enable = DBG_ENABLE_MASK_ERR;
  * ####################################
  */
 
-static void ptm_setup(struct net_device *dev, int ndev)
+static int ptm_setup(struct device_node *np, struct net_device *dev, int ndev)
 {
     u8 addr[ETH_ALEN];
+    int err;
 
     netif_carrier_off(dev);
 
@@ -160,13 +162,20 @@ static void ptm_setup(struct net_device *dev, int ndev)
 #endif
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
-    addr[0] = 0x00;
-    addr[1] = 0x20;
-    addr[2] = 0xda;
-    addr[3] = 0x86;
-    addr[4] = 0x23;
-    addr[5] = 0x75 + ndev;
-    eth_hw_addr_set(dev, addr);
+    err = of_get_ethdev_address(np, dev);
+    if (err == -EPROBE_DEFER)
+        return err;
+    if (err) {
+        addr[0] = 0x00;
+        addr[1] = 0x20;
+        addr[2] = 0xda;
+        addr[3] = 0x86;
+        addr[4] = 0x23;
+        addr[5] = 0x75 + ndev;
+        eth_hw_addr_set(dev, addr);
+    }
+
+    return 0;
 }
 
 static struct net_device_stats *ptm_get_stats(struct net_device *dev)
@@ -986,6 +995,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     int i;
     char ver_str[256];
     struct port_cell_info port_cell = {0};
+    struct device_node *np = pdev->dev.of_node;
 
     ret = init_priv_data();
     if ( ret != 0 ) {
@@ -1006,7 +1016,9 @@ static int ltq_ptm_probe(struct platform_device *pdev)
         g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], NET_NAME_UNKNOWN, ether_setup);
         if ( g_net_dev[i] == NULL )
             goto ALLOC_NETDEV_FAIL;
-        ptm_setup(g_net_dev[i], i);
+        ret = ptm_setup(np, g_net_dev[i], i);
+        if (ret == -EPROBE_DEFER)
+            goto INIT_TABLES_FAIL;
     }
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
