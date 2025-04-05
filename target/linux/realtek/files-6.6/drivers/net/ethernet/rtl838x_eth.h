@@ -3,6 +3,10 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
+/* MDIO bus definitions */
+#define RTMDIO_MAX_PORTS			57
+#define RTMDIO_MAX_SMI_BUS			4
+
 /* Register definition */
 
 /* Per port MAC control */
@@ -409,11 +413,18 @@ struct p_hdr;
 struct dsa_tag;
 
 struct rtl838x_bus_priv {
-	struct rtl838x_eth_priv *eth_priv;
+	u16 id;
+	u16 family_id;
 	int extaddr;
 	int rawpage;
-	int page[64];
-	bool raw[64];
+	int page[RTMDIO_MAX_PORTS];
+	bool raw[RTMDIO_MAX_PORTS];
+	u32 sds_id[RTMDIO_MAX_PORTS];
+	bool phy_is_internal[RTMDIO_MAX_PORTS];
+	int smi_bus[RTMDIO_MAX_PORTS];
+	u8 smi_addr[RTMDIO_MAX_PORTS];
+	phy_interface_t interfaces[RTMDIO_MAX_PORTS];
+	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);

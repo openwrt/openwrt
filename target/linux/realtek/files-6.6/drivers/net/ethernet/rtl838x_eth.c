@@ -48,8 +48,6 @@ extern struct rtl83xx_soc_info soc_info;
 #define TX_PAD_EN_838X BIT(5)
 #define TX_DO		0x2
 #define WRAP		0x2
-#define MAX_PORTS	57
-#define MAX_SMI_BUSSES	4
 
 #define RING_BUFFER	1600
 
@@ -195,12 +193,6 @@ struct rtl838x_eth_priv {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
-	int smi_bus[MAX_PORTS];
-	u8 smi_addr[MAX_PORTS];
-	u32 sds_id[MAX_PORTS];
-	bool smi_bus_isc45[MAX_SMI_BUSSES];
-	bool phy_is_internal[MAX_PORTS];
-	phy_interface_t interfaces[MAX_PORTS];
 };
 
 extern int rtl838x_phy_init(struct rtl838x_eth_priv *priv);
@@ -1818,15 +1810,14 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 {
 	int err, val;
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
 
-	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380)
+	if (addr >= 24 && addr <= 27 && bus_priv->id == 0x8380)
 		return rtl838x_read_sds_phy(addr, regnum);
 
-	if (eth_priv->family_id == RTL8390_FAMILY_ID && eth_priv->phy_is_internal[addr])
+	if (bus_priv->family_id == RTL8390_FAMILY_ID && bus_priv->phy_is_internal[addr])
 		return rtl839x_read_sds_phy(addr, regnum);
 
 	if (regnum == RTMDIO_PAGE_SELECT && bus_priv->page[addr] != bus_priv->rawpage)
@@ -1843,7 +1834,6 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 {
 	int err, val;
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
@@ -1852,12 +1842,12 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 		return bus_priv->page[addr];
 
 	bus_priv->raw[addr] = (bus_priv->page[addr] == bus_priv->rawpage);
-	if (eth_priv->phy_is_internal[addr]) {
-		if (eth_priv->family_id == RTL9300_FAMILY_ID)
-			return rtl930x_read_sds_phy(eth_priv->sds_id[addr],
+	if (bus_priv->phy_is_internal[addr]) {
+		if (bus_priv->family_id == RTL9300_FAMILY_ID)
+			return rtl930x_read_sds_phy(bus_priv->sds_id[addr],
 						    bus_priv->page[addr], regnum);
 		else
-			return rtl931x_read_sds_phy(eth_priv->sds_id[addr],
+			return rtl931x_read_sds_phy(bus_priv->sds_id[addr],
 						    bus_priv->page[addr], regnum);
 	}
 
@@ -1885,7 +1875,6 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	int err, page, offset = 0;
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (regnum == RTMDIO_PORT_SELECT) {
 		bus_priv->extaddr = (s16)val;
@@ -1896,14 +1885,14 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 		addr = bus_priv->extaddr;
 	page = bus_priv->page[addr];
 
-	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380) {
+	if (addr >= 24 && addr <= 27 && bus_priv->id == 0x8380) {
 		if (addr == 26)
 			offset = 0x100;
 		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
 		return 0;
 	}
 
-	if (eth_priv->family_id == RTL8390_FAMILY_ID && eth_priv->phy_is_internal[addr])
+	if (bus_priv->family_id == RTL8390_FAMILY_ID && bus_priv->phy_is_internal[addr])
 		return rtl839x_write_sds_phy(addr, regnum, val);
 
 	if (regnum == RTMDIO_PAGE_SELECT)
@@ -1925,7 +1914,6 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	int err, page;
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (regnum == RTMDIO_PORT_SELECT) {
 		bus_priv->extaddr = (s16)val;
@@ -1941,12 +1929,12 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (!bus_priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == bus_priv->rawpage)) {
 		bus_priv->raw[addr] = (page == bus_priv->rawpage);
-		if (eth_priv->phy_is_internal[addr]) {
-			if (eth_priv->family_id == RTL9300_FAMILY_ID)
-				return rtl930x_write_sds_phy(eth_priv->sds_id[addr],
+		if (bus_priv->phy_is_internal[addr]) {
+			if (bus_priv->family_id == RTL9300_FAMILY_ID)
+				return rtl930x_write_sds_phy(bus_priv->sds_id[addr],
 							     page, regnum, val);
 			else
-				return rtl931x_write_sds_phy(eth_priv->sds_id[addr],
+				return rtl931x_write_sds_phy(bus_priv->sds_id[addr],
 							     page, regnum, val);
 		}
 
@@ -1994,7 +1982,6 @@ u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
 	u32 poll_ctrl = 0;
@@ -2008,16 +1995,16 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
 		int pos;
 
-		if (priv->smi_bus[i] < 0)
+		if (bus_priv->smi_bus[i] < 0)
 			continue;
 
 		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
+		sw_w32_mask(0x1f << pos, bus_priv->smi_addr[i] << pos,
 			    RTL930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
 
 		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		poll_sel[i / 16] |= bus_priv->smi_bus[i] << pos;
+		poll_ctrl |= BIT(20 + bus_priv->smi_bus[i]);
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -2029,7 +2016,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 
 	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
 	for (int i = 0; i < 4; i++)
-		if (priv->smi_bus_isc45[i])
+		if (bus_priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
 
 	pr_info("c45_mask: %08x\n", c45_mask);
@@ -2039,7 +2026,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
 	v = 0;
 	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
-		switch (priv->interfaces[i]) {
+		switch (bus_priv->interfaces[i]) {
 		case PHY_INTERFACE_MODE_10GBASER:
 			break;			/* Serdes: Value = 0 */
 		case PHY_INTERFACE_MODE_HSGMII:
@@ -2100,7 +2087,6 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtl838x_bus_priv *bus_priv = bus->priv;
-	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[4];
 	u32 poll_ctrl = 0;
@@ -2118,15 +2104,15 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	for (int i = 0; i < RTL931X_CPU_PORT; i++) {
 		u32 pos;
 
-		if (priv->smi_bus[i] < 0)
+		if (bus_priv->smi_bus[i] < 0)
 			continue;
 
 		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
+		sw_w32_mask(0x1f << pos, bus_priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
 		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
-		mdc_on[priv->smi_bus[i]] = true;
+		poll_sel[i / 16] |= bus_priv->smi_bus[i] << pos;
+		poll_ctrl |= BIT(20 + bus_priv->smi_bus[i]);
+		mdc_on[bus_priv->smi_bus[i]] = true;
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -2140,7 +2126,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 	for (int i = 0; i < 4; i++) {
 		/* bus is polled in c45 */
-		if (priv->smi_bus_isc45[i])
+		if (bus_priv->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 		/* Enable bus access via MDC */
 		if (mdc_on[i])
@@ -2223,8 +2209,10 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	}
 
 	bus_priv = priv->mii_bus->priv;
-	bus_priv->eth_priv = priv;
-	for (i=0; i < 64; i++) {
+
+	bus_priv->id = soc_info.id;
+	bus_priv->family_id = soc_info.family;
+	for (i=0; i < RTMDIO_MAX_PORTS; i++) {
 		bus_priv->page[i] = 0;
 		bus_priv->raw[i] = false;
 	}
@@ -2286,35 +2274,35 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		if (pn >= MAX_PORTS) {
+		if (pn >= RTMDIO_MAX_PORTS) {
 			pr_err("%s: illegal port number %d\n", __func__, pn);
 			return -ENODEV;
 		}
 
-		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
-			priv->sds_id[pn] = -1;
+		if (of_property_read_u32(dn, "sds", &bus_priv->sds_id[pn]))
+			bus_priv->sds_id[pn] = -1;
 		else
-			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
+			pr_info("set sds port %d to %d\n", pn, bus_priv->sds_id[pn]);
 
 		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
-			priv->smi_bus[pn] = 0;
-			priv->smi_addr[pn] = pn;
+			bus_priv->smi_bus[pn] = 0;
+			bus_priv->smi_addr[pn] = pn;
 		} else {
-			priv->smi_bus[pn] = smi_addr[0];
-			priv->smi_addr[pn] = smi_addr[1];
+			bus_priv->smi_bus[pn] = smi_addr[0];
+			bus_priv->smi_addr[pn] = smi_addr[1];
 		}
 
-		if (priv->smi_bus[pn] >= MAX_SMI_BUSSES) {
-			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
+		if (bus_priv->smi_bus[pn] >= RTMDIO_MAX_SMI_BUS) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, bus_priv->smi_bus[pn]);
 			return -ENODEV;
 		}
 
-		priv->phy_is_internal[pn] = of_property_read_bool(dn, "phy-is-integrated");
+		bus_priv->phy_is_internal[pn] = of_property_read_bool(dn, "phy-is-integrated");
 
-		if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0)
-			priv->smi_bus[pn]= -1;
+		if (bus_priv->phy_is_internal[pn] && bus_priv->sds_id[pn] >= 0)
+			bus_priv->smi_bus[pn]= -1;
 		else if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[priv->smi_bus[pn]] = true;
+			bus_priv->smi_bus_isc45[bus_priv->smi_bus[pn]] = true;
 	}
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
@@ -2329,9 +2317,9 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		pr_debug("%s Looking at port %d\n", __func__, pn);
 		if (pn > priv->cpu_port)
 			continue;
-		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
-			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
+		if (of_get_phy_mode(dn, &bus_priv->interfaces[pn]))
+			bus_priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
+		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(bus_priv->interfaces[pn]));
 	}
 
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
