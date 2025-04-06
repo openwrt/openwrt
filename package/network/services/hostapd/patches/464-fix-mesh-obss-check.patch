@@ -5,7 +5,7 @@ Subject: [PATCH] Fix issues with disabling obss scan when using fixed_freq on
 
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3421,6 +3421,10 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3403,6 +3403,10 @@ void ibss_mesh_setup_freq(struct wpa_sup
  
  	freq->freq = ssid->frequency;
  
