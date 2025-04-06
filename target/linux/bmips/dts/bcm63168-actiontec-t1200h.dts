@@ -1,0 +1,253 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm63268.dtsi"
+
+/ {
+	model = "Actiontec T1200H";
+	compatible = "actiontec,t1200h", "brcm,bcm63168", "brcm,bcm63268";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			label = "red:internet";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			label = "green:internet";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-9 {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led-20 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-22 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led-35 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led-39 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
+		led-43 {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		led-44 {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		led-46 {
+			label = "green:dsl";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
+
+		led-49 {
+			label = "red:dsl";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 49 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53125";
+		reg = <0x1e>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan4";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan3";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan1";
+			};
+
+			port@8 {
+				reg = <0x8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port6>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "cferom";
+				reg = <0x0 0x20000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
+			};
+
+			partition@20000 {
+				compatible = "brcm,wfi-split";
+				label = "wfi";
+				reg = <0x20000 0x7ac0000>;
+			};
+
+			partition@7b00000 {
+				label = "data";
+				reg = <0x7b00000 0x400000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		port@3 {
+			reg = <3>;
+			label = "wan";
+
+			phy-handle = <&phy4>;
+		};
+
+		switch0port6: port@6 {
+			reg = <6>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

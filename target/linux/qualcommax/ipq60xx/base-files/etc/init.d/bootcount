@@ -11,5 +11,9 @@ boot() {
 	yuncore,fap650)
 		fw_setenv owrt_bootcount 0
 	;;
+	netgear,wax610|\
+	netgear,wax610y)
+		fw_setenv boot_count 0
+	;;
 	esac
 }

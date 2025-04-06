@@ -35,6 +35,14 @@ case "$FIRMWARE" in
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
 		;;
+	netgear,wax610|\
+	netgear,wax610y)
+		caldata_extract "0:art" 0x1000 0x10000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -30) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_set_macflag
+		;;
 	qihoo,360v6)
 		caldata_extract "0:art" 0x1000 0x10000
 		label_mac=$(mtd_get_mac_ascii factory lanMac)
