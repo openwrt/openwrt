@@ -1,0 +1,46 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 28 Mar 2025 19:56:06 +0800
+Subject: [PATCH] ath10k-ct: make it compatible with the old LTS kernel
+
+Rollback some APIs to fix compilation errors.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ath10k-6.14/ahb.c | 2 +-
+ ath10k-6.14/mac.c | 5 ++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+--- a/ath10k-6.14/ahb.c
++++ b/ath10k-6.14/ahb.c
+@@ -842,7 +842,7 @@ static struct platform_driver ath10k_ahb
+ 		.of_match_table = ath10k_ahb_of_match,
+ 	},
+ 	.probe = ath10k_ahb_probe,
+-	.remove = ath10k_ahb_remove,
++	.remove_new = ath10k_ahb_remove,
+ };
+ 
+ int ath10k_ahb_init(void)
+--- a/ath10k-6.14/mac.c
++++ b/ath10k-6.14/mac.c
+@@ -9607,10 +9607,9 @@ exit:
+ 
+ static void ath10k_sta_rc_update(struct ieee80211_hw *hw,
+ 				 struct ieee80211_vif *vif,
+-				 struct ieee80211_link_sta *link_sta,
++				 struct ieee80211_sta *sta,
+ 				 u32 changed)
+ {
+-	struct ieee80211_sta *sta = link_sta->sta;
+ 	struct ath10k *ar = hw->priv;
+ 	struct ath10k_sta *arsta = (struct ath10k_sta *)sta->drv_priv;
+ 	struct ath10k_vif *arvif = (void *)vif->drv_priv;
+@@ -10603,7 +10602,7 @@ static const struct ieee80211_ops ath10k
+ 	.reconfig_complete		= ath10k_reconfig_complete,
+ 	.get_survey			= ath10k_get_survey,
+ 	.set_bitrate_mask		= ath10k_mac_op_set_bitrate_mask,
+-	.link_sta_rc_update		= ath10k_sta_rc_update,
++	.sta_rc_update			= ath10k_sta_rc_update,
+ 	.offset_tsf			= ath10k_offset_tsf,
+ 	.get_tsf			= ath10k_get_tsf,
+ 	.ampdu_action			= ath10k_ampdu_action,

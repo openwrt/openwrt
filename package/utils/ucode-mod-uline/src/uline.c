@@ -101,13 +101,16 @@ update_window_size(struct uline_state *s, bool init)
 #ifdef TIOCGWINSZ
 	struct winsize ws = {};
 
-	if (!ioctl(fileno(s->output), TIOCGWINSZ, &ws)) {
-		if (ws.ws_col)
-			cols = ws.ws_col;
-		if (ws.ws_row)
-			rows = ws.ws_row;
-	}
+	if (s->ioctl_winsize &&
+	    !ioctl(fileno(s->output), TIOCGWINSZ, &ws) &&
+	    ws.ws_col && ws.ws_row) {
+		cols = ws.ws_col;
+		rows = ws.ws_row;
+	} else
 #endif
+	{
+		s->ioctl_winsize = false;
+	}
 
 	s->sigwinch_count = sigwinch_count;
 	if (s->cols == cols && s->rows == rows)
@@ -534,7 +537,7 @@ move_word_right(struct uline_state *s, struct linebuf *line)
 }
 
 static bool
-process_esc(struct uline_state *s, enum vt100_escape esc)
+process_esc(struct uline_state *s, enum vt100_escape esc, uint32_t data)
 {
 	struct linebuf *line = &s->line;
 
@@ -552,6 +555,15 @@ process_esc(struct uline_state *s, enum vt100_escape esc)
 		return move_right(s, line);
 	case VT100_CURSOR_WORD_RIGHT:
 		return move_word_right(s, line);
+	case VT100_CURSOR_POS:
+		if (s->rows == (data & 0xffff) &&
+		    s->cols == data >> 16)
+			return false;
+		s->rows = data & 0xffff;
+		s->cols = data >> 16;
+	    s->full_update = true;
+		s->cb->event(s, EDITLINE_EV_WINDOW_CHANGED);
+		return true;
 	case VT100_HOME:
 		line->pos = 0;
 		return true;
@@ -682,9 +694,9 @@ process_ctrl(struct uline_state *s, char c)
 		linebuf_reset(line);
 		return true;
 	case KEY_SOH:
-		return process_esc(s, VT100_HOME);
+		return process_esc(s, VT100_HOME, 0);
 	case KEY_ENQ:
-		return process_esc(s, VT100_END);
+		return process_esc(s, VT100_END, 0);
 	case KEY_VT:
 		// TODO: kill
 		return false;
@@ -718,18 +730,19 @@ static void
 process_char(struct uline_state *s, char c)
 {
 	enum vt100_escape esc;
+	uint32_t data = 0;
 
 	check_key_repeat(s, c);
 	if (s->esc_idx >= 0) {
 		s->esc_seq[s->esc_idx++] = c;
 		s->esc_seq[s->esc_idx] = 0;
-		esc = vt100_esc_decode(s->esc_seq);
+		esc = vt100_esc_decode(s->esc_seq, &data);
 		if (esc == VT100_INCOMPLETE &&
 		    s->esc_idx < (int)sizeof(s->esc_seq) - 1)
 			return;
 
 		s->esc_idx = -1;
-		if (!process_esc(s, esc))
+		if (!process_esc(s, esc, data))
 			return;
 	} else if (s->cb->key_input &&
 	           !check_utf8(s, (unsigned char )c) &&
@@ -880,7 +893,14 @@ void uline_set_hint(struct uline_state *s, const char *str, size_t len)
 		pos_add_string(s, &s->cursor_pos, str, len);
 	}
 
-	set_cursor(s, prev_pos);
+	if (s->cursor_pos.y >= s->rows) {
+		if (s->cursor_pos.x > 0)
+			vt100_next_line(s->output);
+		s->cursor_pos = (struct pos){};
+		s->full_update = true;
+	} else {
+		set_cursor(s, prev_pos);
+	}
 	fflush(s->output);
 }
 
@@ -894,7 +914,7 @@ void uline_init(struct uline_state *s, const struct uline_cb *cb,
 	s->utf8 = utf8;
 	s->input = in_fd;
 	s->output = out_stream;
-	update_window_size(s, true);
+	s->ioctl_winsize = true;
 	reset_input_state(s);
 
 #ifdef USE_SYSTEM_WCHAR
@@ -908,6 +928,12 @@ void uline_init(struct uline_state *s, const struct uline_cb *cb,
 	if (!tcgetattr(s->input, &s->orig_termios)) {
 		s->has_termios = true;
 		termios_set_native_mode(s);
+	}
+
+	update_window_size(s, true);
+	if (!s->ioctl_winsize) {
+		vt100_request_window_size(s->output);
+		fflush(s->output);
 	}
 }
 

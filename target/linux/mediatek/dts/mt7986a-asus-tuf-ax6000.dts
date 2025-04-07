@@ -146,16 +146,33 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <5>;
 
-		mxl,led-drive-vdd;
-		mxl,led-config = <0x03f0 0x0 0x0 0x0>;
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				active-high;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_LAN;
+			};
+		};
 	};
 
 	phy6: phy@6 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <6>;
 
-		/* LED0: CONN (WAN white) */
-		mxl,led-config = <0x03f0 0x0 0x0 0x0>;
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_WHITE>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
 	};
 
 	switch: switch@1f {

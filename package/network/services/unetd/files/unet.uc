@@ -39,6 +39,7 @@ function network_get_string_file(str)
 	let f = mkstemp();
 	f.write(str);
 	f.flush();
+	f.seek();
 	return f;
 }
 
@@ -50,24 +51,52 @@ function network_get_file_string(f)
 	return str;
 }
 
-function __network_get_pubkey(pw_file, salt, rounds)
+function network_keygen(pw_file, args, config, out_file, extra_args)
 {
+	let rounds = config.rounds;
+	let salt = config.salt;
+	let out, output, xorkey;
+
+	if (!out_file) {
+		output = mkstemp();
+		out_file = "/dev/fd/" + output.fileno();
+	}
+
+	if (extra_args)
+		extra_args = '"' + extra_args + '"';
+	else
+		extra_args = "";
+	args += ` -s ${rounds},${salt} -o ${out_file}`;
+
+	if (config.xorkey) {
+		xorkey = network_get_string_file(config.xorkey);
+		args += " -x /dev/fd/" + xorkey.fileno();
+	}
+
 	pw_file.seek();
+	args += " <&" + pw_file.fileno() + " " + extra_args;
+	let rc = system("unet-tool " + args);
 
-	let pubkey_file = mkstemp();
-	if (system(`unet-tool -P -s ${rounds},${salt} <&${pw_file.fileno()} >&${pubkey_file.fileno()}`))
-		return ctx.command_failed("Failed to generate public key");
+	if (xorkey)
+		xorkey.close();
 
-	pubkey_file.seek();
-	let pubkey = trim(pubkey_file.read("all"));
-	pubkey_file.close();
+	if (output)
+		out = network_get_file_string(output);
+	else
+		out = true;
 
-	return pubkey;
+	if (rc != 0)
+		return;
+
+	return out;
 }
 
 function network_get_pubkey(pw_file, network)
 {
-	return __network_get_pubkey(pw_file, network.config.salt, network.config.rounds);
+	let key = network_keygen(pw_file, '-P', network.config);
+	if (!key)
+		return ctx.command_failed("Failed to generate public key");
+	return key;
 }
 
 function __network_fetch_password(ctx, named, confirm)
@@ -81,7 +110,7 @@ function __network_fetch_password(ctx, named, confirm)
 		return;
 	}
 
-	let pw = model.cb.getpass("Network config password: ");
+	let pw = model.cb.getpass((confirm ? "Set new" : "Network") + " config password: ");
 	if (length(pw) < 12) {
 		if (ctx.invalid_argument)
 			ctx.invalid_argument("Password must be at least 12 characters long");
@@ -115,6 +144,16 @@ function network_fetch_password(ctx, named, confirm)
 	return pw_file;
 }
 
+function network_generate_salt()
+{
+	let salt = readfile("/dev/urandom", 16);
+	if (length(salt) != 16)
+		return;
+	salt = map(split(salt, ""), (v) => ord(v));
+	salt = join("", map(salt, (v) => sprintf("%02x", v)));
+	return salt;
+}
+
 function network_sign_data(ctx, name, network, pw_file, upload)
 {
 	let rounds = network.config.rounds;
@@ -125,12 +164,11 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 	let bin_file = "/etc/unetd/" + name + ".bin";
 	if (upload)
 		bin_file += "." + time();
-	writefile(json_file, sprintf("%.J\n", network));
 
-	pw_file.seek();
-	let ret = system(`unet-tool -S -s ${rounds},${salt} -o "${bin_file}" "${json_file}" <&${pw_file.fileno()}`);
+	writefile(json_file, sprintf("%.J\n", network));
+	let ret = network_keygen(pw_file, '-S', network.config, bin_file, json_file);
 	unlink(json_file);
-	if (ret) {
+	if (!ret) {
 		if (ctx.command_failed)
 			ctx.command_failed("Failed to sign network configuration");
 		return false;
@@ -151,9 +189,10 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 	return true;
 }
 
-function network_create_uci(name, iface)
+function network_create_uci(model, name, iface)
 {
-	let cur = uci.cursor();
+	model.run_hook("unet_create", name, iface);
+	let cur = uci.cursor(null, null, "");
 	cur.set("network", name, "interface");
 	for (let key, val in iface)
 		cur.set("network", name, key, val);
@@ -300,17 +339,19 @@ function network_create(ctx, argv, named) {
 	if (!pw_file)
 		return;
 
-	let salt = readfile("/dev/urandom", 16);
-	if (length(salt) != 16)
+	let salt = network_generate_salt();
+	if (!salt)
 		return ctx.unknown_error();
 
-	salt = map(split(salt, ""), (v) => ord(v));
-	salt = join("", map(salt, (v) => sprintf("%02x", v)));
 	let rounds = 10000;
+
+	let xorkey_file = mkstemp();
+	system(`unet-tool -G >&${xorkey_file.fileno()}`);
+	let xorkey = network_get_file_string(xorkey_file);
 
 	let network = {
 		config: {
-			salt, rounds,
+			salt, rounds, xorkey,
 		},
 		hosts: {},
 	};
@@ -344,7 +385,7 @@ function network_create(ctx, argv, named) {
 	if (!network_sign_data(ctx, named.network, network, pw_file))
 		return;
 
-	network_create_uci(named.network, {
+	network_create_uci(ctx.model, named.network, {
 		proto: "unet",
 		metric: named.metric,
 		zone: named.zone,
@@ -360,7 +401,8 @@ function network_create(ctx, argv, named) {
 
 function network_delete(ctx, argv) {
 	let name = argv[0];
-	let cur = uci.cursor();
+	let cur = uci.cursor(null, null, "");
+	model.run_hook("unet_delete", name);
 	if (!cur.delete("network", name))
 		return ctx.command_failed("Command failed");
 
@@ -378,7 +420,8 @@ function network_iface_save(ctx)
 	if (!netdata.iface_changed)
 		return;
 
-	let cur = uci.cursor();
+	model.run_hook("unet_update", network, netdata.iface);
+	let cur = uci.cursor(null, null, "");
 	let iface_orig = cur.get_all("network", network);
 	for (let name, val in netdata.iface) {
 		if (iface_orig[name] == val)
@@ -580,7 +623,7 @@ function network_join_peer_update(model, ctx, msg)
 	if (joinreq.connect)
 		iface.connect = joinreq.connect;
 
-	network_create_uci(name, iface);
+	network_create_uci(model, name, iface);
 
 	model.status_msg("Configuration added for interface " + name);
 
@@ -699,6 +742,48 @@ function network_edit_exit_hook()
 	return true;
 }
 
+
+function network_set_password(ctx, argv, named)
+{
+	let netdata = ctx.data.netdata;
+	let network = netdata.json;
+
+	let pw_file = network_fetch_password(ctx, named);
+	if (!pw_file)
+		return;
+
+	let salt = network_generate_salt();
+	if (!salt)
+		return ctx.unknown_error();
+
+	let rounds = 10000;
+	let config = { ...network.config, salt };
+
+	let key = network_keygen(pw_file, '-G', network.config);
+	pw_file.close();
+
+	named.password = named["new-password"];
+	pw_file = network_fetch_password(ctx, named, true);
+	if (!pw_file)
+		return;
+
+	let key_file = network_get_string_file(key);
+	delete config.xorkey;
+	config.xorkey = network_keygen(pw_file, '-G -x /dev/fd/' + key_file.fileno(), config);
+	key_file.close();
+
+	if (!config.xorkey) {
+		delete named.password;
+		return ctx.unknown_error("Error generating key");
+	}
+
+	network.config = config;
+	netdata.changed = true;
+	netdata.password = named.password;
+
+	return ctx.ok();
+}
+
 function network_edit(ctx, argv) {
 	let network = argv[0];
 	if (!network) {
@@ -763,9 +848,20 @@ const network_status_args = [
 	}
 ];
 
-const network_sign_args = {
+const network_password_arg = {
 	password: {
 		help: "Network configuration password",
+		no_complete: true,
+		args: {
+			type: "string",
+			min: 12,
+		}
+	},
+};
+
+const network_new_password_arg = {
+	"new-password": {
+		help: "New network configuration password",
 		no_complete: true,
 		args: {
 			type: "string",
@@ -777,7 +873,7 @@ const network_sign_args = {
 const network_config_args = editor.object_create_params(UnetConfigEdit);
 
 const network_create_args = {
-	...network_sign_args,
+	...network_password_arg,
 	...network_config_args,
 	...network_local_args,
 	host: {
@@ -831,7 +927,7 @@ const network_join_args = {
 
 const network_invite_args = {
 	...network_enroll_args,
-	...network_sign_args,
+	...network_password_arg,
 };
 
 const host_editor = {
@@ -928,13 +1024,29 @@ const host_editor = {
 
 const UnetHostEdit = editor.new(host_editor);
 
-function is_vxlan_service(ctx, argv, named, spec)
+function has_service_type(ctx, named, name)
 {
 	let type = named.type;
 	if (ctx.data.edit)
 		type ??= ctx.data.edit.type;
 
-	return type == "vxlan";
+	return type == name;
+}
+
+function is_vxlan_service(ctx, argv, named, spec)
+{
+	return has_service_type(ctx, named, "vxlan");
+}
+
+function is_unetmsg_service(ctx, argv, named, spec)
+{
+	return has_service_type(ctx, named, "unetmsg");
+}
+
+function get_config_object(ctx, spec, obj, argv)
+{
+	obj.config ??= {};
+	return obj.config;
 }
 
 const service_editor = {
@@ -964,6 +1076,7 @@ const service_editor = {
 			help: "VXLAN ID",
 			attribute: "id",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 0,
@@ -974,6 +1087,7 @@ const service_editor = {
 			help: "VXLAN port",
 			attribute: "port",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 1,
@@ -984,6 +1098,7 @@ const service_editor = {
 			help: "VXLAN tunnel MTU",
 			attribute: "mtu",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			args: {
 				type: "int",
 				min: 1280,
@@ -994,10 +1109,21 @@ const service_editor = {
 			help: "Member allowed to receive broad-/multicast and unknown unicast",
 			attribute: "forward_ports",
 			available: is_vxlan_service,
+			get_object: get_config_object,
 			multiple: true,
 			args: {
 				type: "enum",
 				value: (ctx) => keys(ctx.data.netdata.json.hosts)
+			}
+		},
+		"unetmsg-allowed": {
+			help: "Allowed topics for this unetmsg service group",
+			attribute: "allowed",
+			available: is_unetmsg_service,
+			get_object: get_config_object,
+			multiple: true,
+			args: {
+				type: "string"
 			}
 		},
 	}
@@ -1068,6 +1194,14 @@ let UnetEdit = {
 			return ctx.json("Network data", ctx.data.netdata.json);
 		}
 	},
+	password: {
+		help: "Edit network password",
+		call: network_set_password,
+		named_args: {
+			...network_password_arg,
+			...network_new_password_arg
+		}
+	},
 	save: {
 		help: "Save network data to json file",
 		args: [
@@ -1124,7 +1258,7 @@ let UnetEdit = {
 	},
 	apply: {
 		help: "Apply changes",
-		named_args: network_sign_args,
+		named_args: network_password_arg,
 		call: function(ctx, argv, named) {
 			let netdata = ctx.data.netdata;
 

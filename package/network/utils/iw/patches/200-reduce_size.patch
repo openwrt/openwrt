@@ -212,7 +212,7 @@
  	if (len >= 4 && memcmp(data, wfa_oui, 3) == 0) {
  		if (data[3] < ARRAY_SIZE(wfa_printers) &&
  		    wfa_printers[data[3]].name &&
-@@ -2483,6 +2494,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2491,6 +2502,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" ESS");
  	if (capa & WLAN_CAPABILITY_IBSS)
  		printf(" IBSS");
@@ -220,7 +220,7 @@
  	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
  		printf(" CfPollable");
  	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
-@@ -2511,6 +2523,7 @@ static void print_capa_non_dmg(__u16 cap
+@@ -2519,6 +2531,7 @@ static void print_capa_non_dmg(__u16 cap
  		printf(" DelayedBACK");
  	if (capa & WLAN_CAPABILITY_IMM_BACK)
  		printf(" ImmediateBACK");
@@ -228,7 +228,7 @@
  }
  
  static int print_bss_handler(struct nl_msg *msg, void *arg)
-@@ -2601,8 +2614,10 @@ static int print_bss_handler(struct nl_m
+@@ -2609,8 +2622,10 @@ static int print_bss_handler(struct nl_m
  		else
  			printf("\tfreq: %d\n", freq);
  
@@ -239,7 +239,7 @@
  	}
  	if (bss[NL80211_BSS_BEACON_INTERVAL])
  		printf("\tbeacon interval: %d TUs\n",
-@@ -2796,6 +2811,7 @@ static int handle_stop_sched_scan(struct
+@@ -2804,6 +2819,7 @@ static int handle_stop_sched_scan(struct
  	return 0;
  }
  
@@ -247,7 +247,7 @@
  COMMAND(scan, sched_start,
  	SCHED_SCAN_OPTIONS,
  	NL80211_CMD_START_SCHED_SCAN, 0, CIB_NETDEV, handle_start_sched_scan,
-@@ -2806,3 +2822,4 @@ COMMAND(scan, sched_start,
+@@ -2814,3 +2830,4 @@ COMMAND(scan, sched_start,
  COMMAND(scan, sched_stop, "",
  	NL80211_CMD_STOP_SCHED_SCAN, 0, CIB_NETDEV, handle_stop_sched_scan,
  	"Stop an ongoing scheduled scan.");

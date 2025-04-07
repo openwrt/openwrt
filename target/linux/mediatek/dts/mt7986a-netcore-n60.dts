@@ -109,7 +109,17 @@
 	phy6: phy@6 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <6>;
-		mxl,led-config = <0x0 0x0 0x0 0x3f0>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
 	};
 
 	switch: switch@1f {

@@ -70,7 +70,7 @@
  CONFIG_USE_IPADDR=y
  CONFIG_IPADDR="192.168.1.1"
  CONFIG_USE_SERVERIP=y
-@@ -40,18 +73,31 @@ CONFIG_SERVERIP="192.168.1.2"
+@@ -40,23 +73,38 @@ CONFIG_SERVERIP="192.168.1.2"
  CONFIG_NET_RANDOM_ETHADDR=y
  CONFIG_REGMAP=y
  CONFIG_SYSCON=y
@@ -100,9 +100,10 @@
 +CONFIG_DM_REGULATOR_GPIO=y
 +CONFIG_SCSI=y
  CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
  CONFIG_MTK_SERIAL=y
  CONFIG_SYSRESET=y
-@@ -59,4 +105,5 @@ CONFIG_SYSRESET_WATCHDOG=y
+ CONFIG_SYSRESET_WATCHDOG=y
  CONFIG_TIMER=y
  CONFIG_MTK_TIMER=y
  CONFIG_WDT_MTK=y
@@ -187,13 +188,12 @@
  	leds {
  		compatible = "gpio-leds";
  
-@@ -109,6 +122,19 @@
+@@ -109,6 +122,18 @@
  		};
  	};
  
 +	key_pins_a: keys-alt {
 +		mux {
-+			function = "gpio";
 +			groups = "msdc3";
 +		};
 +

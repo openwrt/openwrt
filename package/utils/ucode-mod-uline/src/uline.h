@@ -82,12 +82,13 @@ struct uline_state {
 	unsigned int rows, cols;
 	struct pos cursor_pos;
 	struct pos end_pos;
+	bool ioctl_winsize;
 	bool full_update;
 	bool stop;
 
 	bool utf8;
 
-	char esc_seq[8];
+	char esc_seq[32];
 	int8_t esc_idx;
 	uint8_t utf8_cont;
 };

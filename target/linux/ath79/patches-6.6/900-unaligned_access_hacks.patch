@@ -751,7 +751,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4262,14 +4262,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4268,14 +4268,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -858,7 +858,7 @@ SVN-Revision: 35130
  
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -63,7 +63,7 @@ static struct sk_buff *__tcpv4_gso_segme
+@@ -66,7 +66,7 @@ static struct sk_buff *__tcpv4_gso_segme
  	th2 = tcp_hdr(seg->next);
  	iph2 = ip_hdr(seg->next);
  
@@ -867,7 +867,7 @@ SVN-Revision: 35130
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -264,7 +264,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -267,7 +267,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -876,7 +876,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -330,8 +330,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -333,8 +333,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)

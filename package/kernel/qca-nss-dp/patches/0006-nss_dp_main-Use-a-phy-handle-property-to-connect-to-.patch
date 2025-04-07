@@ -43,7 +43,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
 --- a/nss_dp_main.c
 +++ b/nss_dp_main.c
-@@ -436,7 +436,7 @@ static int nss_dp_open(struct net_device
+@@ -464,7 +464,7 @@ static int nss_dp_open(struct net_device
  
  	netif_start_queue(netdev);
  
@@ -52,7 +52,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		/* Notify data plane link is up */
  		if (dp_priv->data_plane_ops->link_state(dp_priv->dpc, 1)) {
  			netdev_dbg(netdev, "Data plane set link failed\n");
-@@ -633,6 +633,12 @@ static int32_t nss_dp_of_get_pdata(struc
+@@ -661,6 +661,12 @@ static int32_t nss_dp_of_get_pdata(struc
  		return -EFAULT;
  	}
  
@@ -65,7 +65,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (of_property_read_u32(np, "qcom,mactype", &hal_pdata->mactype)) {
  		pr_err("%s: error reading mactype\n", np->name);
  		return -EFAULT;
-@@ -653,18 +659,6 @@ static int32_t nss_dp_of_get_pdata(struc
+@@ -681,18 +687,6 @@ static int32_t nss_dp_of_get_pdata(struc
  		return -EFAULT;
  #endif
  
@@ -84,7 +84,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
  	maddr = (uint8_t *)of_get_mac_address(np);
  #if (LINUX_VERSION_CODE > KERNEL_VERSION(5, 4, 0))
-@@ -753,56 +747,6 @@ static int32_t nss_dp_of_get_pdata(struc
+@@ -781,56 +775,6 @@ static int32_t nss_dp_of_get_pdata(struc
  	return 0;
  }
  
@@ -141,7 +141,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #ifdef CONFIG_NET_SWITCHDEV
  /*
   * nss_dp_is_phy_dev()
-@@ -861,7 +805,6 @@ static int32_t nss_dp_probe(struct platf
+@@ -889,7 +833,6 @@ static int32_t nss_dp_probe(struct platf
  	struct device_node *np = pdev->dev.of_node;
  	struct nss_gmac_hal_platform_data gmac_hal_pdata;
  	int32_t ret = 0;
@@ -149,7 +149,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #if defined(NSS_DP_PPE_SUPPORT)
  	uint32_t vsi_id;
  	fal_port_t port_id;
-@@ -940,22 +883,16 @@ static int32_t nss_dp_probe(struct platf
+@@ -968,22 +911,16 @@ static int32_t nss_dp_probe(struct platf
  
  	dp_priv->drv_flags |= NSS_DP_PRIV_FLAG(INIT_DONE);
  

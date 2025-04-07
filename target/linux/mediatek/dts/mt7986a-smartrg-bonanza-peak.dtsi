@@ -220,8 +220,33 @@
 		compatible = "maxlinear,gpy211", "ethernet-phy-ieee802.3-c45";
 		reg = <5>;
 
-		mxl,led-drive-vdd;
-		mxl,led-config = <0x30 0x40 0x80 0x0>;
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				active-high;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+			};
+
+			led@1 {
+				reg = <1>;
+				active-high;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <0>;
+			};
+
+			led@2 {
+				reg = <2>;
+				active-high;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+			};
+		};
 	};
 
 	phy6: ethernet-phy@6 {
@@ -229,8 +254,33 @@
 		compatible = "maxlinear,gpy211", "ethernet-phy-ieee802.3-c45";
 		reg = <6>;
 
-		mxl,led-drive-vdd;
-		mxl,led-config = <0x30 0x40 0x80 0x0>;
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				active-high;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+			};
+
+			led@1 {
+				reg = <1>;
+				active-high;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				function-enumerator = <0>;
+			};
+
+			led@2 {
+				reg = <2>;
+				active-high;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				function-enumerator = <1>;
+			};
+		};
 	};
 };
 

@@ -1,0 +1,68 @@
+#!/usr/bin/env ucode
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright (C) 2025 Felix Fietkau <nbd@nbd.name>
+ */
+'use strict';
+import * as libubus from "ubus";
+import * as uloop from "uloop";
+import * as unetmsg_core from "unetmsg.unetmsgd";
+
+uloop.init();
+let ubus = libubus.connect();
+if (!ubus) {
+	warn(`Failed to connect to ubus\n`);
+	exit(1);
+}
+
+let core = unetmsg_core.init(ubus, true);
+
+function update_acl() {
+	let data = ubus.call(libubus.SYSTEM_OBJECT_ACL, "query");
+	core.acl_set(data.acl);
+}
+
+let obj = ubus.publish("unetmsg", {
+	channel: {
+		args: {},
+		call: function(req) {
+			if (!core.client.new(req))
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			return 0;
+		}
+	},
+	list: {
+		args: {
+			name: "",
+		},
+		call: function(req) {
+			let ret = [];
+			for (let name in core.publish)
+				if (req.args.name == null || wildcard(name, req.args.name))
+					push(ret, name);
+
+			return {
+				id: sort(ret),
+			};
+		},
+	},
+	request: {
+		args: {
+			name: "",
+			type: "",
+			data: {},
+		},
+		call: function(req) {
+			try {
+				core.handle_request(null, req, req.args, true);
+			} catch (e) {
+				core.exception(e);
+			}
+		}
+	}
+});
+
+ubus.subscriber("ubus.acl.sequence", () => update_acl());
+update_acl();
+uloop.run();

@@ -49,7 +49,7 @@ service_triggers() {
 	procd_add_reload_trigger udebug
 }
 
-service_started() {
+service_running() {
 	ubus -t 10 wait_for udebug
 	[ $? = 0 ] && reload_service
 }

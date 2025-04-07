@@ -40,6 +40,7 @@ model.add_nodes({
 				el.close();
 				uloop.end();
 				interactive = false;
+				return ctx.ok();
 			}
 		}
 	}
@@ -311,7 +312,10 @@ function completion(count) {
 				add = "    ";
 			cat = "";
 
-			add += sprintf("%-"+len+"s", entry.name);
+			let name = entry.name;
+			if (entry.incomplete)
+				name += "...";
+			add += sprintf("%-"+len+"s", name);
 			str += add;
 			x += length(add);
 
@@ -341,6 +345,8 @@ function format_multiline(prefix, val)
 
 	if (type(val) != "array")
 		val = [ val ];
+	if (length(val) == 0)
+		val = [ "<none>" ];
 
 	for (let cur in val) {
 		cur = format_entry(cur);

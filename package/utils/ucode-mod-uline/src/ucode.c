@@ -153,8 +153,7 @@ uc_uline_get_line(uc_vm_t *vm, size_t nargs)
 		uline_get_line2(&us->s, &line, &len);
 	else
 		uline_get_line(&us->s, &line, &len);
-	val = ucv_string_new_length(line, len);
-	ucv_object_add(state, "line", ucv_get(val));
+	ucv_object_add(state, "line", ucv_string_new_length(line, len));
 	ucv_object_add(state, "pos", ucv_int64_new(us->s.line.pos));
 
 	return state;
@@ -589,7 +588,7 @@ uc_uline_add_pos(uc_vm_t *vm, uc_value_t *list, ssize_t start, ssize_t end)
 	uc_value_t *val = ucv_array_new(vm);
 	ucv_array_push(val, ucv_int64_new(start));
 	ucv_array_push(val, ucv_int64_new(end));
-	ucv_array_push(list, ucv_get(val));
+	ucv_array_push(list, val);
 }
 
 static uc_value_t *
@@ -630,8 +629,8 @@ uc_uline_parse_args(uc_vm_t *vm, size_t nargs, bool check)
 		if (argp->line_sep) {
 			args = ucv_array_new(vm);
 			pos_args = ucv_array_new(vm);
-			ucv_array_push(args, ucv_get(list));
-			ucv_array_push(pos_args, ucv_get(pos_list));
+			ucv_array_push(args, list);
+			ucv_array_push(pos_args, pos_list);
 		} else {
 			args = list;
 			pos_args = pos_list;
@@ -692,10 +691,10 @@ uc_uline_parse_args(uc_vm_t *vm, size_t nargs, bool check)
 
 						buf = NULL;
 						list = ucv_array_new(vm);
-						ucv_array_push(args, ucv_get(list));
+						ucv_array_push(args, list);
 
 						pos_list = ucv_array_new(vm);
-						ucv_array_push(pos_args, ucv_get(pos_list));
+						ucv_array_push(pos_args, pos_list);
 					}
 				}
 				continue;
@@ -751,7 +750,7 @@ uc_uline_parse_args(uc_vm_t *vm, size_t nargs, bool check)
 	}
 
 	if (buf) {
-		ucv_array_push(list, ucv_get(ucv_stringbuf_finish(buf)));
+		ucv_array_push(list, ucv_stringbuf_finish(buf));
 		uc_uline_add_pos(vm, pos_list, start_idx, end_idx);
 	}
 
@@ -762,10 +761,10 @@ uc_uline_parse_args(uc_vm_t *vm, size_t nargs, bool check)
 		return missing;
 
 	ret = ucv_object_new(vm);
-	ucv_object_add(ret, "args", ucv_get(args));
-	ucv_object_add(ret, "pos", ucv_get(pos_args));
+	ucv_object_add(ret, "args", args);
+	ucv_object_add(ret, "pos", pos_args);
 	if (missing)
-		ucv_object_add(ret, "missing", ucv_get(missing));
+		ucv_object_add(ret, "missing", missing);
 
 	return ret;
 }

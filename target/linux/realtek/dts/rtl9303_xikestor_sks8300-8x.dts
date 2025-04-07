@@ -132,6 +132,7 @@
 		mod-def0-gpio = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp1: sfp-p2 {
@@ -141,6 +142,7 @@
 		mod-def0-gpio = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp2: sfp-p3 {
@@ -150,6 +152,7 @@
 		mod-def0-gpio = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp3: sfp-p4 {
@@ -159,6 +162,7 @@
 		mod-def0-gpio = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp4: sfp-p5 {
@@ -168,6 +172,7 @@
 		mod-def0-gpio = <&gpio1 13 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp5: sfp-p6 {
@@ -177,6 +182,7 @@
 		mod-def0-gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp6: sfp-p7 {
@@ -186,6 +192,7 @@
 		mod-def0-gpio = <&gpio1 25 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
+		#thermal-sensor-cells = <0>;
 	};
 
 	sfp7: sfp-p8 {
@@ -195,6 +202,7 @@
 		mod-def0-gpio = <&gpio1 28 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
+		#thermal-sensor-cells = <0>;
 	};
 };
 
@@ -343,7 +351,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
-			phy-handle = <&phy0>;
+			pseudo-phy-handle = <&phy0>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp0>;
 			managed = "in-band-status";
@@ -353,7 +361,7 @@
 		port@8 {
 			reg = <8>;
 			label = "lan2";
-			phy-handle = <&phy8>;
+			pseudo-phy-handle = <&phy8>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp1>;
 			managed = "in-band-status";
@@ -363,7 +371,7 @@
 		port@10 {
 			reg = <16>;
 			label = "lan3";
-			phy-handle = <&phy16>;
+			pseudo-phy-handle = <&phy16>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp2>;
 			managed = "in-band-status";
@@ -373,7 +381,7 @@
 		port@14 {
 			reg = <20>;
 			label = "lan4";
-			phy-handle = <&phy20>;
+			pseudo-phy-handle = <&phy20>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp3>;
 			managed = "in-band-status";
@@ -383,7 +391,7 @@
 		port@18 {
 			reg = <24>;
 			label = "lan5";
-			phy-handle = <&phy24>;
+			pseudo-phy-handle = <&phy24>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp4>;
 			managed = "in-band-status";
@@ -393,7 +401,7 @@
 		port@19 {
 			reg = <25>;
 			label = "lan6";
-			phy-handle = <&phy25>;
+			pseudo-phy-handle = <&phy25>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp5>;
 			managed = "in-band-status";
@@ -403,7 +411,7 @@
 		port@1a {
 			reg = <26>;
 			label = "lan7";
-			phy-handle = <&phy26>;
+			pseudo-phy-handle = <&phy26>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp6>;
 			managed = "in-band-status";
@@ -413,7 +421,7 @@
 		port@1b {
 			reg = <27>;
 			label = "lan8";
-			phy-handle = <&phy27>;
+			pseudo-phy-handle = <&phy27>;
 			phy-mode = "10gbase-r";
 			sfp = <&sfp7>;
 			managed = "in-band-status";
@@ -428,6 +436,21 @@
 			fixed-link {
 				speed = <10000>;
 				full-duplex;
+			};
+		};
+	};
+};
+
+&thermal_zones {
+	sfp-thermal {
+		polling-delay-passive = <10000>;
+		polling-delay = <10000>;
+		thermal-sensors = <&sfp0>, <&sfp1>, <&sfp2>, <&sfp3>, <&sfp4>, <&sfp5>, <&sfp6>, <&sfp7>;
+		trips {
+			sfp-crit {
+				temperature = <110000>;
+				hysteresis = <1000>;
+				type = "critical";
 			};
 		};
 	};

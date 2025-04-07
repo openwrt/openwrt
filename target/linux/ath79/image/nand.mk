@@ -458,6 +458,7 @@ define Device/zte_mf281
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286c \
 	kmod-usb-acm comgt-ncm
 endef
 TARGET_DEVICES += zte_mf281
@@ -474,6 +475,7 @@ define Device/zte_mf286
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286
   DEVICE_PACKAGES += ath10k-firmware-qca988x-ct ath10k-firmware-qca9888-ct \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286ar \
 	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += zte_mf286
@@ -482,9 +484,19 @@ define Device/zte_mf286a
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286A
   DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286ar \
 	kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += zte_mf286a
+
+define Device/zte_mf286c
+  $(Device/zte_mf28x_common)
+  DEVICE_MODEL := MF286C
+  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286c \
+	kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf286c
 
 define Device/zte_mf286r
   $(Device/zte_mf28x_common)

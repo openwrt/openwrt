@@ -33,17 +33,17 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_green: led@0 {
+		led_green: led-0 {
 			label = "green:system";
 			gpios = <&pio 4 GPIO_ACTIVE_HIGH>;
 		};
 
-		led@1 {
+		led-1 {
 			label = "blue:system";
 			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_red: led@2 {
+		led_red: led-2 {
 			label = "red:system";
 			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 		};
@@ -85,8 +85,22 @@
 		reg = <5>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 
-		/* LED0: Amber ; LED1: nc ; LED2: nc ; LED3: Green */
-		mxl,led-config = <0x3b0 0x0 0x0 0x3c0>;
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
 	};
 };
 

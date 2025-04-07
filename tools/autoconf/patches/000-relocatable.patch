@@ -1,3 +1,34 @@
+--- a/bin/autoconf.in
++++ b/bin/autoconf.in
+@@ -29,7 +29,10 @@ use warnings FATAL => 'all';
+ 
+ BEGIN
+ {
+-  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '@pkgdatadir@';
++  my $pkgdatadir = $ENV{'autom4te_perllibdir'} ||
++		($ENV{'STAGING_DIR_HOST'} ?
++			$ENV{'STAGING_DIR_HOST'} . '/share/autoconf' :
++			'@pkgdatadir@');
+   unshift @INC, $pkgdatadir;
+ 
+   # Override SHELL.  On DJGPP SHELL may not be set to a shell
+@@ -44,8 +47,14 @@ use Autom4te::Channels qw(msg);
+ use Autom4te::General;
+ 
+ # Lib files.
+-my $autom4te = $ENV{'AUTOM4TE'} || '@bindir@/@autom4te-name@';
+-my $trailer_m4 = $ENV{'trailer_m4'} || '@pkgdatadir@/autoconf/trailer.m4';
++my $autom4te = $ENV{'AUTOM4TE'} ||
++	($ENV{'STAGING_DIR_HOST'} ?
++		$ENV{'STAGING_DIR_HOST'} . '/bin/@autom4te-name@' :
++		'@bindir@/@autom4te-name@');
++my $trailer_m4 = $ENV{'trailer_m4'} ||
++	($ENV{'STAGING_DIR_HOST'} ?
++		$ENV{'STAGING_DIR_HOST'} . '/share/autoconf/autoconf/trailer.m4' :
++		'@pkgdatadir@/autoconf/trailer.m4');
+ 
+ # $HELP
+ # -----
 --- a/bin/autoheader.in
 +++ b/bin/autoheader.in
 @@ -30,9 +30,12 @@ use 5.006;

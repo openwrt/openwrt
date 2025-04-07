@@ -172,8 +172,23 @@
 		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <10000>;
 		reset-deassert-us = <10000>;
-		/* LED0: nc ; LED1: nc ; LED2: amber ; LED3: green */
-		mxl,led-config = <0x0 0x0 0x370 0x380>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
 	};
 };
 

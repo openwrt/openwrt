@@ -27,7 +27,7 @@ remove_oem_ubi_volume() {
 	fi
 }
 
-linksys_mx_do_upgrade() {
+linksys_mx_pre_upgrade() {
 	local setenv_script="/tmp/fw_env_upgrade"
 
 	CI_UBIPART="rootfs"
@@ -63,7 +63,6 @@ linksys_mx_do_upgrade() {
 			return 1
 		}
 	fi
-	nand_do_upgrade "$1"
 }
 
 platform_check_image() {
@@ -72,11 +71,13 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	linksys,mr5500|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56)
+		linksys_mx_pre_upgrade "$1"
 		remove_oem_ubi_volume squashfs
-		linksys_mx_do_upgrade "$1"
+		nand_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"

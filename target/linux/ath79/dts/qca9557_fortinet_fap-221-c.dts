@@ -1,0 +1,231 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "fortinet,fap-221-c", "qca,qca9557";
+	model = "Fortinet FAP-221-C";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,9600";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_gpio_2_3 &jtag_disable_pins>;
+
+		led_power: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wifi1_green {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wifi1_amber {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2_green {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi2_amber {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		warning_green {
+			function = "warning";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		warning_amber {
+			function = "warning";
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		lan_green {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+	
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x73714f4b>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&pinmux {
+	enable_gpio_2_3: pinmux_enable_gpio_2_3 {
+		pinctrl-single,bits = <0x00 0x0  0xffff0000>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_3ff80: mac-address@3ff80 {
+						compatible = "mac-base";
+						reg = <0x3ff80 0xc>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			fwconcat0: partition@40000 {
+				label = "fwconcat0";
+				reg = <0x0040000 0x1400000>;
+			};
+
+			partition@1440000 {
+				label = "loader";
+				reg = <0x1440000 0x0010000>;
+			};
+
+			fwconcat1: partition@145000 {
+				label = "fwconcat1";
+				reg = <0x1450000 0x03f0000>;
+			};
+
+			fwconcat2: partition@1840000 {
+				label = "reserved";
+				reg = <0x1840000 0x07b0000>;
+			};
+
+			art: partition@1ff0000 {
+				label = "art";
+				reg = <0x1ff0000 0x0010000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_3ff80 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy5>;
+	phy-mode = "rgmii-id";
+
+	pll-data = <0x82000000 0x80000101 0x80001313>;
+};
+
+&wmac {
+	status = "okay";
+	
+	nvmem-cells = <&calibration_wmac>, <&macaddr_uboot_3ff80 1>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0 0 0 0 0>;
+		nvmem-cells = <&calibration_pcie>, <&macaddr_uboot_3ff80 2>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};
+
+&art {
+	  nvmem-layout {
+		  compatible = "fixed-layout";
+		  #address-cells = <1>;
+		  #size-cells = <1>;
+
+		  calibration_wmac: calibration@1000 {
+			  reg = <0x1000 0x440>;
+		  };
+
+		  calibration_pcie: calibration@5000 {
+			  reg = <0x5000 0x844>;
+		  };
+	  };
+};
+

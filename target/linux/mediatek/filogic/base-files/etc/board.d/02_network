@@ -11,6 +11,7 @@ mediatek_setup_interfaces()
 	abt,asr3000|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
+	netis,nx31|\
 	nokia,ea0326gmp|\
 	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
@@ -29,7 +30,11 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
 	asus,rt-ax59u|\
+	asus,zenwifi-bt8|\
+	asus,zenwifi-bt8-ubootmod|\
 	cetron,ct3003|\
+	cmcc,a10-stock|\
+	cmcc,a10-ubootmod|\
 	confiabits,mt7981|\
 	cudy,wr3000-v1|\
 	jcg,q30-pro|\
@@ -63,7 +68,8 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
 	bananapi,bpi-r3-mini|\
-	edgecore,eap111)
+	edgecore,eap111|\
+	huasifei,wh3000)
 		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
 	bananapi,bpi-r4)

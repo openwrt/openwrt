@@ -157,12 +157,12 @@ my %update_method = (
 	'src-git' => {
 		'init'          => "git clone --depth 1 '%s' '%s'",
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
-		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
+		'init_commit'   => "git clone --depth 1 '%s' '%s' && cd '%s' && git fetch --depth=1 origin '%s' && git -c advice.detachedHead=false checkout '%s' && cd -",
 		'update'	=> "git pull --ff-only",
 		'update_rebase'	=> "git pull --rebase=merges",
 		'update_stash'	=> "git pull --rebase=merges --autostash",
 		'update_force'	=> "git pull --ff-only || (git reset --hard HEAD; git pull --ff-only; exit 1)",
-		'post_update'	=> "git submodule update --init --recursive",
+		'post_update'	=> "git submodule update --init --recursive --depth 1",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse HEAD | tr -d '\n'"},
 	'src-git-full' => {
