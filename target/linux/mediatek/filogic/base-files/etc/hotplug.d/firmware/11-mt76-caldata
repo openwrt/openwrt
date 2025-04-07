@@ -24,7 +24,8 @@ case "$FIRMWARE" in
 	;;
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
-	cmcc,rax3000m)
+	cmcc,rax3000m|\
+	huasifei,wh3000)
 		case "$(cmdline_get_var root)" in
 		/dev/mmc*)
 			caldata_extract_mmc "factory" 0x0 0x1000
