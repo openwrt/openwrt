@@ -133,7 +133,7 @@
 	pinctrl-0 = <&mmc0_pins_default>;
 	pinctrl-1 = <&mmc0_pins_uhs>;
 	bus-width = <8>;
-	max-frequency = <52000000>;
+	max-frequency = <26000000>;
 	cap-mmc-highspeed;
 	vmmc-supply = <&reg_3p3v>;
 	non-removable;
@@ -217,11 +217,37 @@
 			function = "flash";
 			groups = "emmc_8";
 		};
+		conf-cmd-dat {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO",
+				"SPI0_CS", "SPI0_HOLD", "SPI0_WP",
+				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
+			input-enable;
+			drive-strength = <MTK_DRIVE_12mA>;
+			mediatek,pull-up-adv = <1>;
+		};
+		conf-clk {
+			pins = "SPI1_CS";
+			drive-strength = <MTK_DRIVE_12mA>;
+			mediatek,pull-down-adv = <2>;
+		};
 	};
 	mmc0_pins_uhs: mmc0-pins-uhs {
 		mux {
 			function = "flash";
 			groups = "emmc_8";
+		};
+		conf-cmd-dat {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO",
+				"SPI0_CS", "SPI0_HOLD", "SPI0_WP",
+				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
+			input-enable;
+			drive-strength = <MTK_DRIVE_12mA>;
+			mediatek,pull-up-adv = <1>;
+		};
+		conf-clk {
+			pins = "SPI1_CS";
+			drive-strength = <MTK_DRIVE_12mA>;
+			mediatek,pull-down-adv = <2>;
 		};
 	};
 	pcie_pins: pcie-pins {
