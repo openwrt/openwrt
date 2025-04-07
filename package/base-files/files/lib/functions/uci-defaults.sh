@@ -771,6 +771,27 @@ ucidef_add_wlan() {
 	ucidef_wlan_idx="$((ucidef_wlan_idx + 1))"
 }
 
+ucidef_set_interface_netdev_range() {
+	local interface="$1"
+	local base_netdev="$2"
+	local start="$3"
+	local stop="$4"
+	local netdevs
+	local i
+
+	if [ "$stop" -ge "$start" ]; then
+		i="$start"
+		netdevs="$base_netdev$i"
+
+		while [ "$i" -lt "$stop" ]; do
+			i=$((i + 1))
+			netdevs="$netdevs $base_netdev$i"
+		done
+
+		ucidef_set_interface "$interface" device "$netdevs"
+	fi
+}
+
 board_config_update() {
 	json_init
 	[ -f ${CFG} ] && json_load "$(cat ${CFG})"
