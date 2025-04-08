@@ -85,6 +85,7 @@ platform_do_upgrade() {
 	nokia,ea0326gmp|\
 	openwrt,one|\
 	netcore,n60|\
+	netcore,n60-pro|\
 	qihoo,360t7|\
 	routerich,ax3000-ubootmod|\
 	tplink,tl-xdr4288|\
