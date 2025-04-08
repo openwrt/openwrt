@@ -307,9 +307,16 @@ inline u32 rtl930x_get_mac_link_sts(int port)
 	return link & BIT(port);
 }
 
-inline u32 rtl931x_get_mac_link_sts(int p)
+inline u32 rtldsa_931x_get_mac_link_sts(int port)
 {
-	return (sw_r32(RTL931X_MAC_LINK_STS + ((p >> 5) << 2)) & BIT(p % 32));
+	unsigned int reg = RTL931X_MAC_LINK_STS + (port / 32) * 4;
+	u32 mask = BIT(port % 32);
+	u32 link;
+
+	link = sw_r32(reg);
+	link = sw_r32(reg);
+
+	return (link & mask);
 }
 
 inline u32 rtl838x_get_mac_link_dup_sts(int port)
