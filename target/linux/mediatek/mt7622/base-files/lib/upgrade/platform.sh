@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk'
+RAMFS_COPY_BIN='fitblk fit_check_sign'
 
 platform_do_upgrade() {
 	local board=$(board_name)
