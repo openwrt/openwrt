@@ -167,6 +167,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
 	jdcloud,re-ss-01)
 		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
 		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
