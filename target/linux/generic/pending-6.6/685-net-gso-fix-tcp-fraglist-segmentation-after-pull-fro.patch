@@ -1,0 +1,74 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 26 Sep 2024 10:41:30 +0200
+Subject: [PATCH] net: gso: fix tcp fraglist segmentation after pull from
+ frag_list
+
+Detect tcp gso fraglist skbs with corrupted geometry (see below) and
+pass these to skb_segment instead of skb_segment_list, as the first
+can segment them correctly.
+
+Valid SKB_GSO_FRAGLIST skbs
+- consist of two or more segments
+- the head_skb holds the protocol headers plus first gso_size
+- one or more frag_list skbs hold exactly one segment
+- all but the last must be gso_size
+
+Optional datapath hooks such as NAT and BPF (bpf_skb_pull_data) can
+modify these skbs, breaking these invariants.
+
+In extreme cases they pull all data into skb linear. For TCP, this
+causes a NULL ptr deref in __tcpv4_gso_segment_list_csum at
+tcp_hdr(seg->next).
+
+Detect invalid geometry due to pull, by checking head_skb size.
+Don't just drop, as this may blackhole a destination. Convert to be
+able to pass to regular skb_segment.
+
+Approach and description based on a patch by Willem de Bruijn.
+
+Link: https://lore.kernel.org/netdev/20240428142913.18666-1-shiming.cheng@mediatek.com/
+Link: https://lore.kernel.org/netdev/20240922150450.3873767-1-willemdebruijn.kernel@gmail.com/
+Fixes: bee88cd5bd83 ("net: add support for segmenting TCP fraglist GSO packets")
+Cc: stable@vger.kernel.org
+Cc: Willem de Bruijn <willemb@google.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -104,8 +104,14 @@ static struct sk_buff *tcp4_gso_segment(
+ 	if (!pskb_may_pull(skb, sizeof(struct tcphdr)))
+ 		return ERR_PTR(-EINVAL);
+ 
+-	if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST)
+-		return __tcp4_gso_segment_list(skb, features);
++	if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) {
++		struct tcphdr *th = tcp_hdr(skb);
++
++		if (skb_pagelen(skb) - th->doff * 4 == skb_shinfo(skb)->gso_size)
++			return __tcp4_gso_segment_list(skb, features);
++
++		skb->ip_summed = CHECKSUM_NONE;
++	}
+ 
+ 	if (unlikely(skb->ip_summed != CHECKSUM_PARTIAL)) {
+ 		const struct iphdr *iph = ip_hdr(skb);
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -158,8 +158,14 @@ static struct sk_buff *tcp6_gso_segment(
+ 	if (!pskb_may_pull(skb, sizeof(*th)))
+ 		return ERR_PTR(-EINVAL);
+ 
+-	if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST)
+-		return __tcp6_gso_segment_list(skb, features);
++	if (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) {
++		struct tcphdr *th = tcp_hdr(skb);
++
++		if (skb_pagelen(skb) - th->doff * 4 == skb_shinfo(skb)->gso_size)
++			return __tcp6_gso_segment_list(skb, features);
++
++		skb->ip_summed = CHECKSUM_NONE;
++	}
+ 
+ 	if (unlikely(skb->ip_summed != CHECKSUM_PARTIAL)) {
+ 		const struct ipv6hdr *ipv6h = ipv6_hdr(skb);

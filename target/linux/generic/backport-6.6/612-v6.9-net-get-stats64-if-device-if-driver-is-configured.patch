@@ -1,0 +1,29 @@
+From: Breno Leitao <leitao@debian.org>
+Date: Wed, 28 Feb 2024 03:31:21 -0800
+Subject: [PATCH] net: get stats64 if device if driver is configured
+
+If the network driver is relying in the net core to do stats allocation,
+then we want to dev_get_tstats64() instead of netdev_stats_to_stats64(),
+since there are per-cpu stats that needs to be taken in consideration.
+
+This will also simplify the drivers in regard to statistics. Once the
+driver sets NETDEV_PCPU_STAT_TSTATS, it doesn't not need to allocate the
+stacks, neither it needs to set `.ndo_get_stats64 = dev_get_tstats64`
+for the generic stats collection function anymore.
+
+Signed-off-by: Breno Leitao <leitao@debian.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -10703,6 +10703,8 @@ struct rtnl_link_stats64 *dev_get_stats(
+ 		ops->ndo_get_stats64(dev, storage);
+ 	} else if (ops->ndo_get_stats) {
+ 		netdev_stats_to_stats64(storage, ops->ndo_get_stats(dev));
++	} else if (dev->pcpu_stat_type == NETDEV_PCPU_STAT_TSTATS) {
++		dev_get_tstats64(dev, storage);
+ 	} else {
+ 		netdev_stats_to_stats64(storage, &dev->stats);
+ 	}
