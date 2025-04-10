@@ -13,7 +13,7 @@ KERNEL_PATCHVER:=6.6
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
-	kmod-qca-nss-dp \
+	kmod-qca-nss-dp kmod-ath12k \
 	wpad-basic-mbedtls uboot-envtools \
 	e2fsprogs kmod-fs-ext4 losetup
 
