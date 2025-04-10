@@ -217,19 +217,17 @@ static int b53_mmap_probe(struct platform_device *pdev)
 	return b53_swconfig_switch_register(dev);
 }
 
-static int b53_mmap_remove(struct platform_device *pdev)
+static void b53_mmap_remove(struct platform_device *pdev)
 {
 	struct b53_device *dev = platform_get_drvdata(pdev);
 
 	if (dev)
 		b53_switch_remove(dev);
-
-	return 0;
 }
 
 static struct platform_driver b53_mmap_driver = {
 	.probe = b53_mmap_probe,
-	.remove = b53_mmap_remove,
+	.remove_new = b53_mmap_remove,
 	.driver = {
 		.name = "b53-switch",
 	},
