@@ -91,12 +91,12 @@ generate_static_network() {
 
 addr_offset=2
 generate_network() {
-	local ports device macaddr protocol type ipaddr netmask vlan
+	local ports device macaddr protocol type ipaddr netmask vlan force_link auto
 	local bridge=$2
 
 	json_select network
 		json_select "$1"
-			json_get_vars device macaddr metric protocol ipaddr netmask vlan
+			json_get_vars device macaddr metric protocol ipaddr netmask vlan force_link auto
 			json_get_values ports ports
 		json_select ..
 	json_select ..
@@ -174,6 +174,7 @@ generate_network() {
 				set network.$1.netmask='$netm'
 			EOF
 			[ -e /proc/sys/net/ipv6 ] && uci set network.$1.ip6assign='60'
+			[ -n "$force_link" ] && uci set network.$1.force_link="${force_link}"
 		;;
 
 		dhcp)
@@ -188,6 +189,7 @@ generate_network() {
 					set network.${1}6.device='$device'
 					set network.${1}6.proto='dhcpv6'
 				EOF
+				[ -n "$auto" ] && uci -q set network.${1}6.auto="${auto}"
 			}
 		;;
 
@@ -205,6 +207,7 @@ generate_network() {
 					set network.${1}6.device='@${1}'
 					set network.${1}6.proto='dhcpv6'
 				EOF
+				[ -n "$auto" ] && uci -q set network.${1}6.auto="${auto}"
 			}
 		;;
 
@@ -217,6 +220,8 @@ generate_network() {
 			EOF
 		;;
 	esac
+
+	[ -n "$auto" ] && uci -q set network.${1}.auto="${auto}"
 }
 
 generate_switch_vlans_ports() {
@@ -333,6 +338,41 @@ generate_static_system() {
 			local hostname
 			if json_get_var hostname hostname; then
 				uci -q set "system.@system[-1].hostname=$hostname"
+			fi
+
+			local conloglevel
+			if json_get_var conloglevel conloglevel; then
+				uci -q set "system.@system[-1].conloglevel=$conloglevel"
+			fi
+
+			local ttylogin
+			if json_get_var ttylogin ttylogin; then
+				uci -q set "system.@system[-1].ttylogin=$ttylogin"
+			fi
+
+			local zonename
+			if json_get_var zonename zonename; then
+				uci -q set "system.@system[-1].zonename=$zonename"
+			fi
+
+			local timezone
+			if json_get_var timezone timezone; then
+				uci -q set "system.@system[-1].timezone=$timezone"
+			fi
+
+			local cronloglevel
+			if json_get_var cronloglevel cronloglevel; then
+				uci -q set "system.@system[-1].cronloglevel=$cronloglevel"
+			fi
+
+			local log_size
+			if json_get_var log_size log_size; then
+				uci -q set "system.@system[-1].log_size=$log_size"
+			fi
+
+			local log_file
+			if json_get_var log_file log_file; then
+				uci -q set "system.@system[-1].log_file=$log_file"
 			fi
 
 			local compat_version
