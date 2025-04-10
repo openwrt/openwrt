@@ -1865,7 +1865,7 @@ INIT_PRIV_DATA_FAIL:
 	return ret;
 }
 
-static int ltq_atm_remove(struct platform_device *pdev)
+static void ltq_atm_remove(struct platform_device *pdev)
 {
 	int port_num;
 	struct ltq_atm_ops *ops = platform_get_drvdata(pdev);
@@ -1885,13 +1885,11 @@ static int ltq_atm_remove(struct platform_device *pdev)
 	ops->shutdown();
 
 	clear_priv_data();
-
-	return 0;
 }
 
 static struct platform_driver ltq_atm_driver = {
 	.probe = ltq_atm_probe,
-	.remove = ltq_atm_remove,
+	.remove_new = ltq_atm_remove,
 	.driver = {
 		.name = "atm",
 		.of_match_table = ltq_atm_match,
