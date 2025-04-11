@@ -53,6 +53,7 @@ mediatek_setup_interfaces()
 	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
 	unielec,u7981-01*|\
+	unielec,u7986-06*|\
 	zbtlink,zbt-z8102ax|\
 	zyxel,ex5601-t0-stock|\
 	zyxel,ex5601-t0-ubootmod)
@@ -192,6 +193,11 @@ mediatek_setup_macs()
 		label_mac=$(mtd_get_mac_ascii product_info ethaddr)
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
+		;;
+	unielec,u7986-06*)
+		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		lan_mac=$(macaddr_add "$wan_mac" -1)
+		label_mac=$lan_mac
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
