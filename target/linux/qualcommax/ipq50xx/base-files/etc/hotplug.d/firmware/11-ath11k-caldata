@@ -14,10 +14,7 @@ case "$FIRMWARE" in
 	linksys,mx5500|\
 	linksys,spnmx56)
 		caldata_extract "0:ART" 0x1000 0x20000
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
 		ath11k_remove_regdomain
-		ath11k_set_macflag
 		;;
 	esac
 	;;
@@ -25,10 +22,7 @@ case "$FIRMWARE" in
 	case "$board" in
 	linksys,mx2000)
 		caldata_extract "0:ART" 0x26800 0x20000
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
 		ath11k_remove_regdomain
-		ath11k_set_macflag
 		;;
 	esac
 	;;
@@ -38,10 +32,7 @@ case "$FIRMWARE" in
 	linksys,mx5500|\
 	linksys,spnmx56)
 		caldata_extract "0:ART" 0x26800 0x20000
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
 		ath11k_remove_regdomain
-		ath11k_set_macflag
 		;;
 	esac
 	;;

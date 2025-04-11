@@ -288,7 +288,7 @@
 };
 
 &usb_dwc {
-	address-cells = <1>;
+	#address-cells = <1>;
 	#size-cells = <0>;
 	dr_mode = "host";
 
@@ -321,6 +321,9 @@
 			reg = <0x00010000 0 0 0 0>;
 
 			qcom,ath11k-calibration-variant = "Linksys-MR5500";
+
+			nvmem-cells = <&hw_mac_addr 2>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -382,6 +385,9 @@
 	qcom,ath11k-calibration-variant = "Linksys-MR5500";
 	qcom,ath11k-fw-memory-mode = <2>;
 	qcom,bdf-addr = <0x4c400000>;
+
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 
 	status = "okay";
 };

@@ -241,6 +241,9 @@
 	qcom,ath11k-fw-memory-mode = <2>;
 	qcom,bdf-addr = <0x4c400000>;
 
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+
 	status = "okay";
 };
 
@@ -252,6 +255,9 @@
 	qcom,ath11k-fw-memory-mode = <2>;
 	qcom,bdf-addr = <0x4d100000>;
 	qcom,m3-dump-addr = <0x4df00000>;
+
+	nvmem-cells = <&hw_mac_addr 2>;
+	nvmem-cell-names = "mac-address";
 
 	status = "okay";
 };
