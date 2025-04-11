@@ -414,7 +414,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #ifndef arch_wants_old_prefaulted_pte
  static inline bool arch_wants_old_prefaulted_pte(void)
  {
-@@ -2819,7 +2807,7 @@ static inline int cow_user_page(struct p
+@@ -2821,7 +2809,7 @@ static inline int cow_user_page(struct p
  	 * On architectures with software "accessed" bits, we would
  	 * take a double page fault, so mark it accessed here.
  	 */

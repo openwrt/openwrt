@@ -858,7 +858,7 @@ SVN-Revision: 35130
  
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -226,7 +226,7 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -229,7 +229,7 @@ struct sk_buff *tcp_gro_receive(struct l
  
  		th2 = tcp_hdr(p);
  
@@ -867,7 +867,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -244,8 +244,8 @@ found:
+@@ -247,8 +247,8 @@ found:
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)

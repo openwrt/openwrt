@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -3225,6 +3225,18 @@ static const struct usb_device_id uvc_id
+@@ -3220,6 +3220,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_INFO_META(V4L2_META_FMT_D4XX) },
@@ -42,7 +42,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			break;
  		}
  
-@@ -272,6 +273,7 @@ int uvc_status_init(struct uvc_device *d
+@@ -273,6 +274,7 @@ int uvc_status_init(struct uvc_device *d
  	}
  
  	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
@@ -234,7 +234,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
-@@ -701,6 +703,7 @@ struct uvc_device {
+@@ -706,6 +708,7 @@ struct uvc_device {
  	u8 *status;
  	struct input_dev *input;
  	char input_phys[64];

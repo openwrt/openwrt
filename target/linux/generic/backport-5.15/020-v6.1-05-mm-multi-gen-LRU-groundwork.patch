@@ -538,7 +538,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	(1UL << PG_private | 1UL << PG_private_2)
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -907,6 +907,10 @@ struct task_struct {
+@@ -905,6 +905,10 @@ struct task_struct {
  #ifdef CONFIG_MEMCG
  	unsigned			in_user_fault:1;
  #endif
@@ -594,7 +594,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	VM_BUG_ON_PAGE(tail > 2 && page_tail->mapping != TAIL_MAPPING,
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -5199,6 +5199,7 @@ static void __mem_cgroup_free(struct mem
+@@ -5204,6 +5204,7 @@ static void __mem_cgroup_free(struct mem
  
  static void mem_cgroup_free(struct mem_cgroup *memcg)
  {
@@ -602,7 +602,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	memcg_wb_domain_exit(memcg);
  	__mem_cgroup_free(memcg);
  }
-@@ -5262,6 +5263,7 @@ static struct mem_cgroup *mem_cgroup_all
+@@ -5267,6 +5268,7 @@ static struct mem_cgroup *mem_cgroup_all
  	spin_lock(&memcg_idr_lock);
  	idr_replace(&mem_cgroup_idr, memcg, memcg->id.id);
  	spin_unlock(&memcg_idr_lock);
@@ -612,7 +612,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	mem_cgroup_id_remove(memcg);
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -4832,6 +4832,27 @@ static inline void mm_account_fault(stru
+@@ -4834,6 +4834,27 @@ static inline void mm_account_fault(stru
  		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
  }
  
@@ -640,7 +640,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  /*
   * By the time we get here, we already hold the mm semaphore
   *
-@@ -4863,11 +4884,15 @@ vm_fault_t handle_mm_fault(struct vm_are
+@@ -4865,11 +4886,15 @@ vm_fault_t handle_mm_fault(struct vm_are
  	if (flags & FAULT_FLAG_USER)
  		mem_cgroup_enter_user_fault();
  

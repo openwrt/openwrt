@@ -96,7 +96,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-3-kernel@kempniu.pl
  	ops.mode = MTD_OPS_AUTO_OOB;
 --- a/drivers/mtd/nand/onenand/onenand_base.c
 +++ b/drivers/mtd/nand/onenand/onenand_base.c
-@@ -2935,7 +2935,7 @@ static int do_otp_write(struct mtd_info
+@@ -2936,7 +2936,7 @@ static int do_otp_write(struct mtd_info
  	struct onenand_chip *this = mtd->priv;
  	unsigned char *pbuf = buf;
  	int ret;
@@ -105,7 +105,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-3-kernel@kempniu.pl
  
  	/* Force buffer page aligned */
  	if (len < mtd->writesize) {
-@@ -2977,7 +2977,7 @@ static int do_otp_lock(struct mtd_info *
+@@ -2978,7 +2978,7 @@ static int do_otp_lock(struct mtd_info *
  		size_t *retlen, u_char *buf)
  {
  	struct onenand_chip *this = mtd->priv;
