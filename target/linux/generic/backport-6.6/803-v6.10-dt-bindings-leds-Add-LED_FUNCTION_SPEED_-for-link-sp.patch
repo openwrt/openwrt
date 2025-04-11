@@ -1,8 +1,8 @@
-From e22afe910afcfb51b6ba6a0ae776939959727f54 Mon Sep 17 00:00:00 2001
+From 77b9f2d6fd9bf34ec810de6bdad42d7d0a47d31b Mon Sep 17 00:00:00 2001
 From: INAGAKI Hiroshi <musashino.open@gmail.com>
-Date: Wed, 20 Mar 2024 15:59:06 +0900
-Subject: [PATCH v2 2/2] dt-bindings: leds: add LED_FUNCTION_SPEED_* for link
- speed on LAN/WAN
+Date: Sat, 23 Mar 2024 16:36:10 +0900
+Subject: [PATCH] dt-bindings: leds: Add LED_FUNCTION_SPEED_* for link speed on
+ LAN/WAN
 
 Add LED_FUNCTION_SPEED_LAN and LED_FUNCTION_SPEED_WAN for LEDs that
 indicate link speed of ethernet ports on LAN/WAN. This is useful to
@@ -18,8 +18,10 @@ of the ethernet ports in addition to LEDs that indicate link status
 -  100 Mbps: amber:speed-(lan|wan)-N
 -   10 Mbps: (none, turned off)
 
-Reviewed-by: Rob Herring <robh@kernel.org>
 Signed-off-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Link: https://lore.kernel.org/r/20240323074326.1428-3-musashino.open@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
  include/dt-bindings/leds/common.h | 2 ++
  1 file changed, 2 insertions(+)

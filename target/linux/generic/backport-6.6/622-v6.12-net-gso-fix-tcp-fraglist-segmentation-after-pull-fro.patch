@@ -1,5 +1,6 @@
+From 17bd3bd82f9f79f3feba15476c2b2c95a9b11ff8 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 26 Sep 2024 10:41:30 +0200
+Date: Thu, 26 Sep 2024 10:53:14 +0200
 Subject: [PATCH] net: gso: fix tcp fraglist segmentation after pull from
  frag_list
 
@@ -30,9 +31,14 @@ Link: https://lore.kernel.org/netdev/20240428142913.18666-1-shiming.cheng@mediat
 Link: https://lore.kernel.org/netdev/20240922150450.3873767-1-willemdebruijn.kernel@gmail.com/
 Fixes: bee88cd5bd83 ("net: add support for segmenting TCP fraglist GSO packets")
 Cc: stable@vger.kernel.org
-Cc: Willem de Bruijn <willemb@google.com>
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Link: https://patch.msgid.link/20240926085315.51524-1-nbd@nbd.name
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
+ net/ipv4/tcp_offload.c   | 10 ++++++++--
+ net/ipv6/tcpv6_offload.c | 10 ++++++++--
+ 2 files changed, 16 insertions(+), 4 deletions(-)
 
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c

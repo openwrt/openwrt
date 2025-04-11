@@ -1,13 +1,15 @@
-From 3b5a603bf66236b956287909556fd7ad4904450c Mon Sep 17 00:00:00 2001
+From cb77d0ad460e2c97a00c02ed78afdf45476e5e5f Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Wed, 24 Jan 2024 19:38:01 +0100
-Subject: [PATCH 3/3] arm64: dts: qcom: ipq8074: add clock-frequency to MDIO
- node
+Date: Wed, 31 Jan 2024 03:27:29 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq8074: add clock-frequency to MDIO node
 
 Add clock-frequency to MDIO node to set the MDC rate to 6.25Mhz instead
 of using the default value of 390KHz from MDIO default divider.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Link: https://lore.kernel.org/r/20240131022731.2118-1-ansuelsmth@gmail.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
  arch/arm64/boot/dts/qcom/ipq8074.dtsi | 2 ++
  1 file changed, 2 insertions(+)

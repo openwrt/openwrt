@@ -10,7 +10,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -1570,6 +1570,10 @@ static void sfp_hwmon_probe(struct work_
+@@ -1571,6 +1571,10 @@ static void sfp_hwmon_probe(struct work_
  	struct sfp *sfp = container_of(work, struct sfp, hwmon_probe.work);
  	int err;
  
@@ -21,7 +21,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  	/* hwmon interface needs to access 16bit registers in atomic way to
  	 * guarantee coherency of the diagnostic monitoring data. If it is not
  	 * possible to guarantee coherency because EEPROM is broken in such way
-@@ -2430,6 +2434,13 @@ static void sfp_sm_module(struct sfp *sf
+@@ -2433,6 +2437,13 @@ static void sfp_sm_module(struct sfp *sf
  		return;
  	}
  

@@ -1,8 +1,7 @@
-From 38eb5b3370c29515d2ce92adac2d6eba96f276f5 Mon Sep 17 00:00:00 2001
+From 7d36c3573391dcf0da089298a4b5a25c39f7289d Mon Sep 17 00:00:00 2001
 From: INAGAKI Hiroshi <musashino.open@gmail.com>
-Date: Wed, 20 Mar 2024 15:32:18 +0900
-Subject: [PATCH v2 1/2] dt-bindings: leds: add LED_FUNCTION_MOBILE for mobile
- network
+Date: Sat, 23 Mar 2024 16:36:09 +0900
+Subject: [PATCH] dt-bindings: leds: Add LED_FUNCTION_MOBILE for mobile network
 
 Add LED_FUNCTION_MOBILE for LEDs that indicate status of mobile network
 connection. This is useful to distinguish those LEDs from LEDs that
@@ -21,6 +20,10 @@ port.
 
 Suggested-by: Hauke Mehrtens <hauke@hauke-m.de>
 Signed-off-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20240323074326.1428-2-musashino.open@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
  include/dt-bindings/leds/common.h | 1 +
  1 file changed, 1 insertion(+)
