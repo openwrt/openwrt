@@ -240,6 +240,8 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	mediatek,mtd-eeprom = <&factory 0x0>;
 	status = "okay";
 
@@ -273,7 +275,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@00000 {
+			partition@0 {
 				label = "BL2";
 				reg = <0x00000 0x0040000>;
 				read-only;
