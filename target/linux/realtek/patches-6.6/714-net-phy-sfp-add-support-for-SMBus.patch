@@ -107,7 +107,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  static void sfp_i2c_mdiobus_destroy(struct sfp *sfp)
  {
  	mdiobus_unregister(sfp->i2c_mii);
-@@ -1888,9 +1965,15 @@ static void sfp_sm_fault(struct sfp *sfp
+@@ -1889,9 +1966,15 @@ static void sfp_sm_fault(struct sfp *sfp
  
  static int sfp_sm_add_mdio_bus(struct sfp *sfp)
  {

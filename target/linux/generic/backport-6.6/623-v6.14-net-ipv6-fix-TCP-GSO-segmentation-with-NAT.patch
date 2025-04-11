@@ -1,0 +1,59 @@
+From daa624d3c2ddffdcbad140a9625a4064371db44f Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 11 Mar 2025 22:25:30 +0100
+Subject: [PATCH] net: ipv6: fix TCP GSO segmentation with NAT
+
+When updating the source/destination address, the TCP/UDP checksum needs to
+be updated as well.
+
+Fixes: bee88cd5bd83 ("net: add support for segmenting TCP fraglist GSO packets")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Link: https://patch.msgid.link/20250311212530.91519-1-nbd@nbd.name
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ net/ipv6/tcpv6_offload.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -93,14 +93,23 @@ INDIRECT_CALLABLE_SCOPE int tcp6_gro_com
+ }
+ 
+ static void __tcpv6_gso_segment_csum(struct sk_buff *seg,
++				     struct in6_addr *oldip,
++				     const struct in6_addr *newip,
+ 				     __be16 *oldport, __be16 newport)
+ {
+-	struct tcphdr *th;
++	struct tcphdr *th = tcp_hdr(seg);
++
++	if (!ipv6_addr_equal(oldip, newip)) {
++		inet_proto_csum_replace16(&th->check, seg,
++					  oldip->s6_addr32,
++					  newip->s6_addr32,
++					  true);
++		*oldip = *newip;
++	}
+ 
+ 	if (*oldport == newport)
+ 		return;
+ 
+-	th = tcp_hdr(seg);
+ 	inet_proto_csum_replace2(&th->check, seg, *oldport, newport, false);
+ 	*oldport = newport;
+ }
+@@ -128,10 +137,10 @@ static struct sk_buff *__tcpv6_gso_segme
+ 		th2 = tcp_hdr(seg);
+ 		iph2 = ipv6_hdr(seg);
+ 
+-		iph2->saddr = iph->saddr;
+-		iph2->daddr = iph->daddr;
+-		__tcpv6_gso_segment_csum(seg, &th2->source, th->source);
+-		__tcpv6_gso_segment_csum(seg, &th2->dest, th->dest);
++		__tcpv6_gso_segment_csum(seg, &iph2->saddr, &iph->saddr,
++					 &th2->source, th->source);
++		__tcpv6_gso_segment_csum(seg, &iph2->daddr, &iph->daddr,
++					 &th2->dest, th->dest);
+ 	}
+ 
+ 	return segs;

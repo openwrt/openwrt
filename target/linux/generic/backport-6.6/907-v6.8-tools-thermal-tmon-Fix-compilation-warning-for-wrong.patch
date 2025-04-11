@@ -1,6 +1,6 @@
-From a7a94ca21ac0f347f683d33c72b4aab57ce5eec3 Mon Sep 17 00:00:00 2001
+From 9da39ef332c417ce52732564c1c682a6e1209302 Mon Sep 17 00:00:00 2001
 From: Florian Eckert <fe@dev.tdt.de>
-Date: Mon, 20 Nov 2023 11:13:20 +0100
+Date: Mon, 4 Dec 2023 15:13:35 +0100
 Subject: [PATCH] tools/thermal/tmon: Fix compilation warning for wrong format
 
 The following warnings are shown during compilation:
@@ -34,6 +34,8 @@ argument 8 has type 'long unsigned int' [-Wformat=]
 To fix this, the correct string format must be used for printing.
 
 Signed-off-by: Florian Eckert <fe@dev.tdt.de>
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Link: https://lore.kernel.org/r/20231204141335.2798194-1-fe@dev.tdt.de
 ---
  tools/thermal/tmon/tui.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
