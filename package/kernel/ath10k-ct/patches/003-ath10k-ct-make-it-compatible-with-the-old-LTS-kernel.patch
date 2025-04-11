@@ -1,0 +1,22 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 28 Mar 2025 19:56:06 +0800
+Subject: [PATCH] ath10k-ct: make it compatible with the old LTS kernel
+
+Rollback some APIs to fix compilation errors.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ath10k-6.14/ahb.c | 2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/ath10k-6.14/ahb.c
++++ b/ath10k-6.14/ahb.c
+@@ -842,7 +842,7 @@ static struct platform_driver ath10k_ahb
+ 		.of_match_table = ath10k_ahb_of_match,
+ 	},
+ 	.probe = ath10k_ahb_probe,
+-	.remove = ath10k_ahb_remove,
++	.remove_new = ath10k_ahb_remove,
+ };
+ 
+ int ath10k_ahb_init(void)
