@@ -207,6 +207,15 @@ define Device/comfast_cf-wr800n
 endef
 TARGET_DEVICES += comfast_cf-wr800n
 
+define Device/devolo_rac
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := devolo
+  DEVICE_MODEL := WiFi Repeater ac
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += devolo_rac
+
 define Device/dlink_dch-m225
   $(Device/seama)
   SOC := mt7620a
