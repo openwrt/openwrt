@@ -5,7 +5,7 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
 
 --- a/wpa_supplicant/config.c
 +++ b/wpa_supplicant/config.c
-@@ -2668,6 +2668,7 @@ static const struct parse_data ssid_fiel
+@@ -2642,6 +2642,7 @@ static const struct parse_data ssid_fiel
  #else /* CONFIG_MESH */
  	{ INT_RANGE(mode, 0, 4) },
  #endif /* CONFIG_MESH */
@@ -15,17 +15,17 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  	{ STR(id_str) },
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -867,6 +867,7 @@ static void wpa_config_write_network(FIL
- #endif /* IEEE8021X_EAPOL */
+@@ -868,6 +868,7 @@ static void wpa_config_write_network(FIL
  	INT(mode);
+ #ifdef CONFIG_MESH
  	INT(no_auto_peer);
 +	INT(noscan);
  	INT_DEF(mesh_fwding, DEFAULT_MESH_FWDING);
+ #endif /* CONFIG_MESH */
  	INT(frequency);
- 	INT(enable_edmg);
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -1063,6 +1063,8 @@ struct wpa_ssid {
+@@ -1071,6 +1071,8 @@ struct wpa_ssid {
  	 */
  	int no_auto_peer;
  
@@ -47,7 +47,7 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  		/*
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -3044,7 +3044,7 @@ static bool ibss_mesh_can_use_vht(struct
+@@ -3026,7 +3026,7 @@ static bool ibss_mesh_can_use_vht(struct
  				  const struct wpa_ssid *ssid,
  				  struct hostapd_hw_modes *mode)
  {
@@ -56,7 +56,7 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  		return false;
  
  	if (!drv_supports_vht(wpa_s, ssid))
-@@ -3117,7 +3117,7 @@ static void ibss_mesh_select_40mhz(struc
+@@ -3099,7 +3099,7 @@ static void ibss_mesh_select_40mhz(struc
  	int i, res;
  	unsigned int j;
  	static const int ht40plus[] = {
@@ -65,7 +65,7 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  		149, 157, 165, 173, 184, 192
  	};
  	int ht40 = -1;
-@@ -3414,7 +3414,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3396,7 +3396,7 @@ void ibss_mesh_setup_freq(struct wpa_sup
  	int ieee80211_mode = wpas_mode_to_ieee80211_mode(ssid->mode);
  	enum hostapd_hw_mode hw_mode;
  	struct hostapd_hw_modes *mode = NULL;
@@ -74,7 +74,7 @@ Subject: [PATCH] Allow HT40 also on 2.4GHz if noscan option is set, which also
  	u8 channel;
  	bool is_6ghz, is_24ghz;
  	bool dfs_enabled = wpa_s->conf->country[0] && (wpa_s->drv_flags & WPA_DRIVER_FLAGS_RADAR);
-@@ -3458,6 +3458,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+@@ -3440,6 +3440,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
  		freq->he_enabled = ibss_mesh_can_use_he(wpa_s, ssid, mode,
  							ieee80211_mode);
  	freq->channel = channel;
