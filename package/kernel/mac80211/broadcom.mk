@@ -448,6 +448,7 @@ define KernelPackage/brcmfmac/config
 	config BRCMFMAC_USB
 		bool "Enable USB bus interface support"
 		depends on USB_SUPPORT
+		default n if TARGET_bcm53xx
 		default y
 		help
 		  Supported USB connected chipsets:
