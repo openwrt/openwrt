@@ -34,5 +34,5 @@ Acked-by: Arnd Bergmann <arnd@arndb.de>
 +	/* Temporarily move resources off the list */
 +	list_splice_init(&bridge->windows, &resources);
  	err = device_add(&bridge->dev);
- 	if (err) {
- 		put_device(&bridge->dev);
+ 	if (err)
+ 		goto free;

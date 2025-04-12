@@ -367,7 +367,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	i2cd->adapter.quirks = &gpu_i2c_quirks;
 --- a/drivers/i2c/busses/i2c-omap.c
 +++ b/drivers/i2c/busses/i2c-omap.c
-@@ -1488,7 +1488,7 @@ omap_i2c_probe(struct platform_device *p
+@@ -1476,7 +1476,7 @@ omap_i2c_probe(struct platform_device *p
  	i2c_set_adapdata(adap, omap);
  	adap->owner = THIS_MODULE;
  	adap->class = I2C_CLASS_DEPRECATED;
