@@ -75,7 +75,7 @@ BPF_CFLAGS := \
 	-O2 -emit-llvm -Xclang -disable-llvm-passes
 
 ifneq ($(CONFIG_HAS_BPF_TOOLCHAIN),)
-ifeq ($(DUMP)$(filter download refresh,$(MAKECMDGOALS)),)
+ifeq ($(DUMP)$(filter download refresh clean,$(MAKECMDGOALS)),)
   ifeq ($(LLVM_PATH), /invalid)
    $(error ERROR: invalid LLVM path)
   endif
