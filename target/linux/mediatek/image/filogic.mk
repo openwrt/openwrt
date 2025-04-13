@@ -1481,6 +1481,18 @@ define Device/routerich_ax3000-ubootmod
 endef
 TARGET_DEVICES += routerich_ax3000-ubootmod
 
+define Device/routerich_ax3000-v1
+  DEVICE_VENDOR := Routerich
+  DEVICE_MODEL := AX3000
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-routerich-ax3000-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware kmod-usb3 mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
+endef
+TARGET_DEVICES += routerich_ax3000-v1
+
 define Device/ruijie_rg-x60-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-X60 Pro

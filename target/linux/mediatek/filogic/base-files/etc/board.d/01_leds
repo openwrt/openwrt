@@ -98,6 +98,13 @@ routerich,ax3000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;
+routerich,ax3000-v1)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "eth1" "link"
+	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8734)
 	ucidef_set_led_netdev "lan-1-green" "LAN1" "mdio-bus:08:green:lan" "lan1" "link_2500 link_5000"
