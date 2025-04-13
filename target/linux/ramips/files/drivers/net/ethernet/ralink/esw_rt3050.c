@@ -1437,7 +1437,7 @@ static int esw_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int esw_remove(struct platform_device *pdev)
+static void esw_remove(struct platform_device *pdev)
 {
 	struct rt305x_esw *esw = platform_get_drvdata(pdev);
 
@@ -1445,8 +1445,6 @@ static int esw_remove(struct platform_device *pdev)
 		esw_w32(esw, ~0, RT305X_ESW_REG_IMR);
 		platform_set_drvdata(pdev, NULL);
 	}
-
-	return 0;
 }
 
 static const struct of_device_id ralink_esw_match[] = {
@@ -1522,7 +1520,7 @@ int rt3050_esw_init(struct fe_priv *priv)
 
 static struct platform_driver esw_driver = {
 	.probe = esw_probe,
-	.remove = esw_remove,
+	.remove_new = esw_remove,
 	.driver = {
 		.name = "rt3050-esw",
 		.of_match_table = ralink_esw_match,
