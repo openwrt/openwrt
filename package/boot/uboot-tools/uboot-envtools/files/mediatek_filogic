@@ -120,6 +120,9 @@ tplink,re6000xd)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
 	;;
+tplink,archer-ax80-v1)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000" "8"
+	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
 	ubootenv_add_uci_sys_config "/dev/mtd3" "0x0" "0x100000" "0x100000"
