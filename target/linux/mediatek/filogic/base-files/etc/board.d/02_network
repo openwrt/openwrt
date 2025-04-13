@@ -76,6 +76,9 @@ mediatek_setup_interfaces()
 	zyxel,nwa50ax-pro)
 		ucidef_set_interface_lan "eth0"
 		;;
+	huasifei,wh3000)
+		ucidef_set_interfaces_lan_wan eth0 eth1
+		;;
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
 	yuncore,ax835)
@@ -144,6 +147,11 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	huasifei,wh3000)
+		local wifi_mac=$(mmc_get_mac_binary factory 0x4)
+		lan_mac="$(macaddr_add $wifi_mac 2)"
+		wan_mac="$(macaddr_add $wifi_mac 3)"
 		;;
 	jdcloud,re-cp-03)
 		wan_mac=$(mmc_get_mac_binary factory 0x24)

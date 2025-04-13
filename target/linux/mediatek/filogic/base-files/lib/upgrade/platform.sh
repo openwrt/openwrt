@@ -116,6 +116,7 @@ platform_do_upgrade() {
 	yuncore,ax835)
 		default_do_upgrade "$1"
 		;;
+	huasifei,wh3000|\
 	glinet,gl-mt6000)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
@@ -219,6 +220,7 @@ platform_copy_config() {
 			;;
 		esac
 		;;
+	huasifei,wh3000|\
 	glinet,gl-mt6000|\
 	jdcloud,re-cp-03|\
 	ubnt,unifi-6-plus)

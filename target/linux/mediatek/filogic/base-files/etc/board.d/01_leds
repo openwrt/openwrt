@@ -18,6 +18,9 @@ cudy,re3000-v1)
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+huasifei,wh3000)
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1"
+	;;
 mercusys,mr90x-v1)
 	ucidef_set_led_netdev "lan0" "lan0" "green:lan0" "lan0" "link tx rx"
 	ucidef_set_led_netdev "lan1" "lan2" "green:lan1" "lan1" "link tx rx"
