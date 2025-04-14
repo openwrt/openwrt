@@ -28,6 +28,7 @@ platform_do_upgrade() {
 
 	case "$board" in
 	plasmacloud,esx28|\
+	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
 	plasmacloud,psx10|\
 	plasmacloud,psx28)

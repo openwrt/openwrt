@@ -30,6 +30,12 @@ define Device/plasmacloud-common
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
+define Device/plasmacloud_mcx3
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := MCX3
+endef
+TARGET_DEVICES += plasmacloud_mcx3
+
 define Device/plasmacloud_psx8
   $(Device/plasmacloud-common)
   DEVICE_MODEL := PSX8

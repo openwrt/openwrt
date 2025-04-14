@@ -4,6 +4,7 @@ set_boot_part() {
 	local board=$(board_name)
 
 	case "$board" in
+	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
 	plasmacloud,psx10)
 		if [ "$part_num" = "1" ]; then
@@ -70,6 +71,7 @@ platform_do_upgrade_dualboot_plasmacloud() {
 	# identify "inactive" slot id based on the expected partition id
 	# of the primary ("firmware1") slot
 	case "$(board_name)" in
+	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
 	plasmacloud,psx10)
 		primary_firmware_mtd=3
