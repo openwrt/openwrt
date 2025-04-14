@@ -1,13 +1,32 @@
+From 92ecd205bc5ab96b08295bf344c794da063a6f04 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Subject: mips: replace -mlong-calls with -mno-long-calls to make function calls faster in kernel modules to achieve this, try to
+Date: Mon, 14 Apr 2025 18:05:45 +0200
+Subject: [PATCH 2/2] mips: replace -mlong-calls with -mno-long-calls if
+ possible
+
+This is a really old patch ported from MikroTik. It needs a an
+additional patch to actually be implemented and both this and the old
+one are considered HACK as they bypass normal kernel linux to make it
+work.
+
+The original message quote:
+
+replace -mlong-calls with -mno-long-calls to make function
+calls faster in kernel modules to achieve this, try to load
+kernel modules to KSEG0 and if that doesn't work, use vmalloc
+and fix up relocations with a jump table based on code from a
+kernel patch by MikroTik.
+
+SVN-Revision: 16772
 
 lede-commit: 3b3d64743ba2a874df9d70cd19e242205b0a788c
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- arch/mips/Makefile             |   5 +
+ arch/mips/Makefile             |  10 ++
  arch/mips/include/asm/module.h |   5 +
- arch/mips/kernel/module.c      | 279 ++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 284 insertions(+), 5 deletions(-)
+ arch/mips/kernel/module.c      | 282 ++++++++++++++++++++++++++++++++-
+ 3 files changed, 293 insertions(+), 4 deletions(-)
 
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
@@ -46,11 +65,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
-@@ -32,23 +32,261 @@ struct mips_hi16 {
+@@ -19,6 +19,7 @@
+ #include <linux/kernel.h>
+ #include <linux/spinlock.h>
+ #include <linux/jump_label.h>
++#include <linux/vmalloc.h>
+ #include <asm/jump_label.h>
+ 
+ struct mips_hi16 {
+@@ -30,14 +31,256 @@ struct mips_hi16 {
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
--#ifdef MODULE_START
 +/*
 + * Get the potential max trampolines size required of the init and
 + * non-init sections. Only used if we cannot find enough contiguous
@@ -125,7 +151,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	return ret;
 +}
 +
-+#ifndef MODULE_START
++#ifndef MODULES_VADDR
 +static void *alloc_phys(unsigned long size)
 +{
 +	unsigned order;
@@ -166,30 +192,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	} while (free);
 +}
 +
-+
- void *module_alloc(unsigned long size)
- {
-+#ifdef MODULE_START
- 	return __vmalloc_node_range(size, 1, MODULE_START, MODULE_END,
- 				GFP_KERNEL, PAGE_KERNEL, 0, NUMA_NO_NODE,
- 				__builtin_return_address(0));
-+#else
++#ifndef MODULES_VADDR
++void *module_arch_mem_alloc(struct module_memory *mem,
++			    enum mod_mem_type type)
++{
 +	void *ptr;
 +
-+	if (size == 0)
-+		return NULL;
-+
-+	ptr = alloc_phys(size);
++	ptr = alloc_phys(mem->size);
 +
 +	/* If we failed to allocate physically contiguous memory,
 +	 * fall back to regular vmalloc. The module loader code will
 +	 * create jump tables to handle long jumps */
 +	if (!ptr)
-+		return vmalloc(size);
++		return vmalloc(mem->size);
 +
 +	return ptr;
++}
 +#endif
- }
 +
 +static inline bool is_phys_addr(void *ptr)
 +{
@@ -197,17 +216,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	return (KSEGX((unsigned long)ptr) == CKSEG0);
 +#else
 +	return (KSEGX(ptr) == KSEG0);
- #endif
++ #endif
 +}
 +
++#ifndef MODULES_VADDR
 +/* Free memory returned from module_alloc */
-+void module_memfree(void *module_region)
++void module_arch_mem_free(struct module_memory *mem)
 +{
-+	if (is_phys_addr(module_region))
-+		free_phys(module_region);
++	if (is_phys_addr(mem->base))
++		free_phys(mem->base);
 +	else
-+		vfree(module_region);
++		vfree(mem->base);
 +}
++#endif
 +
 +static void *__module_alloc(int size, bool phys)
 +{
@@ -266,7 +287,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	return 0;
 +}
- 
++
  static void apply_r_mips_32(u32 *location, u32 base, Elf_Addr v)
  {
  	*location = base + v;
@@ -309,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 relocation\n",
  		       me->name);
-@@ -56,13 +294,17 @@ static int apply_r_mips_26(struct module
+@@ -45,13 +288,17 @@ static int apply_r_mips_26(struct module
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -331,7 +352,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return 0;
  }
-@@ -442,9 +684,36 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -431,9 +678,36 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
