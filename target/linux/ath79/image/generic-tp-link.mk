@@ -173,8 +173,8 @@ define Device/tplink_archer-c7-v2
   SOC := qca9558
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-smallbuffers \
+	ath10k-firmware-qca988x
   TPLINK_HWID := 0xc7000002
   SUPPORTED_DEVICES += archer-c7
   IMAGES += factory-us.bin factory-eu.bin
@@ -189,8 +189,8 @@ define Device/tplink_archer-c7-v4
   IMAGE_SIZE := 15104k
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v4
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-smallbuffers \
+	ath10k-firmware-qca988x
   TPLINK_BOARD_ID := ARCHER-C7-V4
   SUPPORTED_DEVICES += archer-c7-v4
 endef
@@ -202,8 +202,8 @@ define Device/tplink_archer-c7-v5
   IMAGE_SIZE := 15360k
   DEVICE_MODEL := Archer C7
   DEVICE_VARIANT := v5
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
-	ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-smallbuffers \
+	ath10k-firmware-qca988x
   TPLINK_BOARD_ID := ARCHER-C7-V5
   SUPPORTED_DEVICES += archer-c7-v5
 endef
