@@ -1,0 +1,159 @@
+From 3a9ecda22db047b93ffe53574ca66b26c00a1a19 Mon Sep 17 00:00:00 2001
+From: Wenli Looi <wlooi@ucalgary.ca>
+Date: Mon, 18 Apr 2022 05:15:54 +0000
+Subject: [PATCH v3 08/11] wifi: ath9k: implement QCN550x rx
+
+The rx status for this device has 2 additional status values.
+
+Signed-off-by: Wenli Looi <wlooi@ucalgary.ca>
+---
+ drivers/net/wireless/ath/ath9k/ar9003_mac.c | 47 +++++++++++++--------
+ drivers/net/wireless/ath/ath9k/ar9003_mac.h |  6 +++
+ drivers/net/wireless/ath/ath9k/hw.c         |  4 +-
+ 3 files changed, 38 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_mac.c b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+index a8bc003077..3d512916a2 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -481,10 +481,21 @@ EXPORT_SYMBOL(ath9k_hw_addrxbuf_edma);
+ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 				 void *buf_addr)
+ {
+-	struct ar9003_rxs *rxsp = buf_addr;
++	const struct qcn5502_rxs *qcn5502_rxsp = NULL;
++	const struct ar9003_rxs *rxsp = NULL;
+ 	unsigned int phyerr;
++	u32 last_status;
+ 
+-	if ((rxsp->status11 & AR_RxDone) == 0)
++	if (AR_SREV_5502(ah)) {
++		qcn5502_rxsp = buf_addr;
++		rxsp = &qcn5502_rxsp->ar9003_rxs;
++		last_status = qcn5502_rxsp->status13;
++	} else {
++		rxsp = buf_addr;
++		last_status = rxsp->status11;
++	}
++
++	if ((last_status & AR_RxDone) == 0)
+ 		return -EINPROGRESS;
+ 
+ 	if (MS(rxsp->ds_info, AR_DescId) != 0x168c)
+@@ -510,17 +521,17 @@ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 	rxs->rs_rssi_ext[1] = MS(rxsp->status5, AR_RxRSSIAnt11);
+ 	rxs->rs_rssi_ext[2] = MS(rxsp->status5, AR_RxRSSIAnt12);
+ 
+-	if (rxsp->status11 & AR_RxKeyIdxValid)
+-		rxs->rs_keyix = MS(rxsp->status11, AR_KeyIdx);
++	if (last_status & AR_RxKeyIdxValid)
++		rxs->rs_keyix = MS(last_status, AR_KeyIdx);
+ 	else
+ 		rxs->rs_keyix = ATH9K_RXKEYIX_INVALID;
+ 
+ 	rxs->rs_rate = MS(rxsp->status1, AR_RxRate);
+ 	rxs->rs_more = (rxsp->status2 & AR_RxMore) ? 1 : 0;
+ 
+-	rxs->rs_firstaggr = (rxsp->status11 & AR_RxFirstAggr) ? 1 : 0;
+-	rxs->rs_isaggr = (rxsp->status11 & AR_RxAggr) ? 1 : 0;
+-	rxs->rs_moreaggr = (rxsp->status11 & AR_RxMoreAggr) ? 1 : 0;
++	rxs->rs_firstaggr = (last_status & AR_RxFirstAggr) ? 1 : 0;
++	rxs->rs_isaggr = (last_status & AR_RxAggr) ? 1 : 0;
++	rxs->rs_moreaggr = (last_status & AR_RxMoreAggr) ? 1 : 0;
+ 	rxs->rs_antenna = (MS(rxsp->status4, AR_RxAntenna) & 0x7);
+ 	rxs->enc_flags |= (rxsp->status4 & AR_GI) ? RX_ENC_FLAG_SHORT_GI : 0;
+ 	rxs->enc_flags |=
+@@ -533,16 +544,16 @@ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 	rxs->evm3 = rxsp->status9;
+ 	rxs->evm4 = (rxsp->status10 & 0xffff);
+ 
+-	if (rxsp->status11 & AR_PreDelimCRCErr)
++	if (last_status & AR_PreDelimCRCErr)
+ 		rxs->rs_flags |= ATH9K_RX_DELIM_CRC_PRE;
+ 
+-	if (rxsp->status11 & AR_PostDelimCRCErr)
++	if (last_status & AR_PostDelimCRCErr)
+ 		rxs->rs_flags |= ATH9K_RX_DELIM_CRC_POST;
+ 
+-	if (rxsp->status11 & AR_DecryptBusyErr)
++	if (last_status & AR_DecryptBusyErr)
+ 		rxs->rs_flags |= ATH9K_RX_DECRYPT_BUSY;
+ 
+-	if ((rxsp->status11 & AR_RxFrameOK) == 0) {
++	if ((last_status & AR_RxFrameOK) == 0) {
+ 		/*
+ 		 * AR_CRCErr will bet set to true if we're on the last
+ 		 * subframe and the AR_PostDelimCRCErr is caught.
+@@ -551,14 +562,14 @@ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 		 * possibly be reviewing the last subframe. AR_CRCErr
+ 		 * is the CRC of the actual data.
+ 		 */
+-		if (rxsp->status11 & AR_CRCErr)
++		if (last_status & AR_CRCErr)
+ 			rxs->rs_status |= ATH9K_RXERR_CRC;
+-		else if (rxsp->status11 & AR_DecryptCRCErr)
++		else if (last_status & AR_DecryptCRCErr)
+ 			rxs->rs_status |= ATH9K_RXERR_DECRYPT;
+-		else if (rxsp->status11 & AR_MichaelErr)
++		else if (last_status & AR_MichaelErr)
+ 			rxs->rs_status |= ATH9K_RXERR_MIC;
+-		if (rxsp->status11 & AR_PHYErr) {
+-			phyerr = MS(rxsp->status11, AR_PHYErrCode);
++		if (last_status & AR_PHYErr) {
++			phyerr = MS(last_status, AR_PHYErrCode);
+ 			/*
+ 			 * If we reach a point here where AR_PostDelimCRCErr is
+ 			 * true it implies we're *not* on the last subframe. In
+@@ -573,7 +584,7 @@ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 			 * delimiter for an A-MPDU subframe (0x4E = 'N' ASCII).
+ 			 */
+ 			if ((phyerr == ATH9K_PHYERR_OFDM_RESTART) &&
+-			    (rxsp->status11 & AR_PostDelimCRCErr)) {
++			    (last_status & AR_PostDelimCRCErr)) {
+ 				rxs->rs_phyerr = 0;
+ 			} else {
+ 				rxs->rs_status |= ATH9K_RXERR_PHY;
+@@ -582,7 +593,7 @@ int ath9k_hw_process_rxdesc_edma(struct ath_hw *ah, struct ath_rx_status *rxs,
+ 		}
+ 	}
+ 
+-	if (rxsp->status11 & AR_KeyMiss)
++	if (last_status & AR_KeyMiss)
+ 		rxs->rs_status |= ATH9K_RXERR_KEYMISS;
+ 
+ 	return 0;
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_mac.h b/drivers/net/wireless/ath/ath9k/ar9003_mac.h
+index cbf60b090b..ec8f3fac67 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.h
+@@ -67,6 +67,12 @@ struct ar9003_rxs {
+ 	u32 status11;
+ } __packed __aligned(4);
+ 
++struct qcn5502_rxs {
++	struct ar9003_rxs ar9003_rxs;
++	u32 status12;
++	u32 status13;
++} __packed __aligned(4);
++
+ /* Transmit Control Descriptor */
+ struct ar9003_txc {
+ 	u32 info;   /* descriptor information */
+diff --git a/drivers/net/wireless/ath/ath9k/hw.c b/drivers/net/wireless/ath/ath9k/hw.c
+index f572fca3e6..8d1dc77da0 100644
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -2622,7 +2622,9 @@ int ath9k_hw_fill_cap_info(struct ath_hw *ah)
+ 
+ 		pCap->rx_hp_qdepth = ATH9K_HW_RX_HP_QDEPTH;
+ 		pCap->rx_lp_qdepth = ATH9K_HW_RX_LP_QDEPTH;
+-		pCap->rx_status_len = sizeof(struct ar9003_rxs);
++		pCap->rx_status_len = AR_SREV_5502(ah) ?
++					      sizeof(struct qcn5502_rxs) :
++					      sizeof(struct ar9003_rxs);
+ 		pCap->tx_desc_len = sizeof(struct ar9003_txc);
+ 		pCap->txs_len = sizeof(struct ar9003_txs);
+ 	} else {
+-- 
+2.34.1
+
