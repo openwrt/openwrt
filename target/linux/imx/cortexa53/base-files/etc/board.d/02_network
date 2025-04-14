@@ -5,6 +5,14 @@ board=$(board_name)
 board_config_update
 
 case "$board" in
+gw,imx8mm-gw71xx-0x|\
+gateworks,imx8mp-gw71xx-2x|\
+gateworks,imx8mm-gw75xx-0x|\
+gateworks,imx8mp-gw75xx-2x|\
+gw,imx8mm-gw7903|\
+gateworks,imx8mm-gw7904)
+	ucidef_set_interface_wan 'eth0'
+	;;
 gw,imx8mm-gw72xx-0x|\
 gw,imx8mp-gw72xx-2x|\
 gw,imx8mm-gw73xx-0x|\
