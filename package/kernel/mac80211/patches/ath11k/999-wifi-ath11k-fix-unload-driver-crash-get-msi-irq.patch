@@ -1,0 +1,65 @@
+From: Balsam CHIHI <balsam.chihi@moment.tech>
+Date: Tue Apr 15 12:55:41 CEST 2025
+Subject: [PATCH] ath11k: Fix crash on driver unload with QCN9074 PCIe WiFi 6 modules on Layerscape LS1088A
+
+This patch addresses a crash issue that occurs when unloading the ath11k_pci driver with QCN9074 PCIe WiFi 6
+modules on the Layerscape LS1088A system. The crash is caused by the driver attempting to perform reset
+operations during unload, leading to a synchronous external abort and kernel panic, as indicated by the error log:
+
+[ 5615.902985] Internal error: synchronous external abort: 0000000096000210 [#1] SMP
+...
+[ 5616.056382] CPU: 7 PID: 12605 Comm: procd Tainted: G O 6.6.73 #0
+...
+[ 5616.069876] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[ 5616.076841] pc : ath11k_pci_get_msi_irq+0x18b4/0x1914 [ath11k_pci]
+[ 5616.083035] lr : ath11k_pcic_init_msi_config+0x98/0xc4 [ath11k]
+[ 5616.163712] Call trace:
+[ 5616.166153] ath11k_pci_get_msi_irq+0x18b4/0x1914 [ath11k_pci]
+[ 5616.171993] ath11k_pcic_init_msi_config+0x98/0xc4 [ath11k]
+[ 5616.177583] ath11k_pcic_read32+0x30/0xb4 [ath11k]
+[ 5616.182391] ath11k_pci_get_msi_irq+0x528/0x1914 [ath11k_pci]
+[ 5616.188143] ath11k_pci_get_msi_irq+0x147c/0x1914 [ath11k_pci]
+[ 5616.193983] ath11k_pci_get_msi_irq+0x1764/0x1914 [ath11k_pci]
+[ 5616.199822] pci_device_shutdown+0x34/0x44
+[ 5616.203923] device_shutdown+0x160/0x268
+[ 5616.207847] kernel_restart+0x40/0xc0
+[ 5616.211512] __do_sys_reboot+0x104/0x23c
+[ 5616.215436] __arm64_sys_reboot+0x24/0x30
+[ 5616.219447] do_el0_svc+0x6c/0xfc
+[ 5616.222761] el0_svc+0x28/0x9c
+[ 5616.225817] el0t_64_sync_handler+0x120/0x12c
+[ 5616.230174] el0t_64_sy
+[ 5616.233839] Code: f94e0a80 92404a73 91420273 8b130013 (b9400273)
+[ 5616.239932] ---[ end trace 0000000000000000 ]---
+[ 5616.244547] Kernel panic - not syncing: synchronous external abort: Fatal exception in interrupt
+[ 5616.253343] Kernel Offset: disabled
+[ 5616.256827] CPU features: 0x0,00000000,00020000,1000400b
+[ 5616.262138] Memory Limit: none
+[ 5616.265188] Rebooting in 3 seconds..
+[ 5620.268926] Unable to restart system
+[ 5620.272503] Reboot failed -- System halted
+
+The fix involves adding a conditional check for the power state before performing the reset operations in the ath11k_pci_sw_reset function. This ensures that the reset functions are only called when the power is on,
+preventing the crash during driver unload.
+
+Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
+---
+
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -366,9 +366,12 @@ static void ath11k_pci_sw_reset(struct a
+ 	}
+ 
+ 	ath11k_mhi_clear_vector(ab);
+-	ath11k_pci_clear_dbg_registers(ab);
+-	ath11k_pci_soc_global_reset(ab);
+-	ath11k_mhi_set_mhictrl_reset(ab);
++
++	if (power_on) {
++		ath11k_pci_clear_dbg_registers(ab);
++		ath11k_pci_soc_global_reset(ab);
++		ath11k_mhi_set_mhictrl_reset(ab);
++	}
+ }
+ 
+ static void ath11k_pci_init_qmi_ce_config(struct ath11k_base *ab)
