@@ -38,13 +38,16 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/hci-uart
   SUBMENU:=$(BLUETOOTH_MENU)
   TITLE:=Bluetooth HCI UART support
-  DEPENDS:=+kmod-bluetooth
+  DEPENDS:=+kmod-bluetooth +kmod-btrtl
   KCONFIG:= \
 	CONFIG_BT_HCIUART \
+	CONFIG_BT_HCIUART_3WIRE=y \
 	CONFIG_BT_HCIUART_BCM=n \
 	CONFIG_BT_HCIUART_INTEL=n \
 	CONFIG_BT_HCIUART_H4 \
-	CONFIG_BT_HCIUART_NOKIA=n
+	CONFIG_BT_HCIUART_NOKIA=n \
+	CONFIG_BT_HCIUART_RTL=y \
+	CONFIG_BT_HCIUART_SERDEV=y
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko
   AUTOLOAD:=$(call AutoProbe,hci_uart)
@@ -60,7 +63,7 @@ $(eval $(call KernelPackage,hci-uart))
 define KernelPackage/btusb
   SUBMENU:=$(BLUETOOTH_MENU)
   TITLE:=Bluetooth HCI USB support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-bluetooth +kmod-btmtk
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-bluetooth +kmod-btmtk +kmod-btrtl
   KCONFIG:= \
 	CONFIG_BT_HCIBTUSB \
 	CONFIG_BT_HCIBTUSB_BCM=n \
@@ -68,8 +71,7 @@ define KernelPackage/btusb
 	CONFIG_BT_HCIBTUSB_RTL=y
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btintel.ko \
-	$(LINUX_DIR)/drivers/bluetooth/btrtl.ko
+	$(LINUX_DIR)/drivers/bluetooth/btintel.ko
   AUTOLOAD:=$(call AutoProbe,btusb)
 endef
 
@@ -78,6 +80,18 @@ define KernelPackage/btusb/description
 endef
 
 $(eval $(call KernelPackage,btusb))
+
+
+define KernelPackage/btrtl
+  SUBMENU:=$(BLUETOOTH_MENU)
+  TITLE:=Realtek Bluetooth support
+  HIDDEN:=1
+  DEPENDS:=+kmod-bluetooth
+  KCONFIG:=CONFIG_BT_RTL
+  FILES:=$(LINUX_DIR)/drivers/bluetooth/btrtl.ko
+endef
+
+$(eval $(call KernelPackage,btrtl))
 
 
 define KernelPackage/btmtk
