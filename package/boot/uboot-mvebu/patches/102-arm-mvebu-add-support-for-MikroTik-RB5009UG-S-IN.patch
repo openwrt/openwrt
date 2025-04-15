@@ -29,8 +29,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  create mode 100644 board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
  create mode 100644 configs/mvebu_rb5009_defconfig
 
-diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 2d931c23fc..08d0189357 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
 @@ -165,6 +165,7 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
@@ -41,9 +39,6 @@ index 2d931c23fc..08d0189357 100644
  	armada-8040-clearfog-gt-8k.dtb		\
  	armada-8040-db.dtb			\
  	armada-8040-mcbin.dtb			\
-diff --git a/arch/arm/dts/armada-7040-rb5009.dts b/arch/arm/dts/armada-7040-rb5009.dts
-new file mode 100644
-index 0000000000..54574bf551
 --- /dev/null
 +++ b/arch/arm/dts/armada-7040-rb5009.dts
 @@ -0,0 +1,241 @@
@@ -288,8 +283,6 @@ index 0000000000..54574bf551
 +	status = "okay";
 +	phy-mode = "10gbase-r";
 +};
-diff --git a/arch/arm/mach-mvebu/arm64-common.c b/arch/arm/mach-mvebu/arm64-common.c
-index 63a12f7d77..1e9781ada9 100644
 --- a/arch/arm/mach-mvebu/arm64-common.c
 +++ b/arch/arm/mach-mvebu/arm64-common.c
 @@ -62,9 +62,13 @@ __weak int dram_init_banksize(void)
@@ -309,13 +302,10 @@ index 63a12f7d77..1e9781ada9 100644
  	}
  
  	if (IS_ENABLED(CONFIG_ARMADA_3700))
-diff --git a/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env b/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
-new file mode 100644
-index 0000000000..acdc785433
 --- /dev/null
 +++ b/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
 @@ -0,0 +1,52 @@
-+openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009-initramfs-uImage.itb
++openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009ug-initramfs-uImage.itb
 +boot_devices=ubi usb net
 +recovery_boot_devices=usb net
 +
@@ -367,9 +357,6 @@ index 0000000000..acdc785433
 +	dhcp;
 +	tftpboot ${loadaddr} ${openwrt_initramfs};
 +	bootm ${loadaddr};
-diff --git a/configs/mvebu_rb5009_defconfig b/configs/mvebu_rb5009_defconfig
-new file mode 100644
-index 0000000000..6f6035cab8
 --- /dev/null
 +++ b/configs/mvebu_rb5009_defconfig
 @@ -0,0 +1,96 @@
@@ -469,35 +456,3 @@ index 0000000000..6f6035cab8
 +CONFIG_USB_ETHER_RTL8152=y
 +# CONFIG_SHA256 is not set
 +# CONFIG_EFI_LOADER is not set
-
-base-commit: f919c3a889f0ec7d63a48b5d0ed064386b0980bd
-prerequisite-patch-id: 6b50204d7e2371480224c274f5c7c79a7764e99c
--- 
-2.39.5
-
-
-From 4d23360e318ef164dbb81db81a2c56d8ea18e928 Mon Sep 17 00:00:00 2001
-From: Przemek Rudy <prudy@protonmail.com>
-Date: Mon, 23 Dec 2024 17:45:51 +0100
-Subject: [PATCH 4/4] arm: mvebu: rename img from generic rb5009 to rb5009ug
-
-This prepares for further adaptation of different RB5009 models.
-
-Signed-off-by: Przemek Rudy <prudy@protonmail.com>
----
- board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env b/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
-index acdc785433..eac4358ff7 100644
---- a/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
-+++ b/board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
-@@ -1,4 +1,4 @@
--openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009-initramfs-uImage.itb
-+openwrt_initramfs=openwrt-mvebu-cortexa72-mikrotik_rb5009ug-initramfs-uImage.itb
- boot_devices=ubi usb net
- recovery_boot_devices=usb net
- 
--- 
-2.39.5
-
