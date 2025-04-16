@@ -119,7 +119,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -5518,12 +5518,24 @@ static __le16 ath12k_mac_setup_he_6ghz_c
+@@ -5519,12 +5519,24 @@ static __le16 ath12k_mac_setup_he_6ghz_c
  	return cpu_to_le16(bcap->he_6ghz_capa);
  }
  
@@ -145,7 +145,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	he_cap->has_he = true;
  	memcpy(he_cap_elem->mac_cap_info, band_cap->he_cap_info,
-@@ -5561,13 +5573,7 @@ static void ath12k_mac_copy_he_cap(struc
+@@ -5562,13 +5574,7 @@ static void ath12k_mac_copy_he_cap(struc
  		break;
  	}
  

@@ -34,7 +34,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		.name = "qca2066 hw2.1",
 --- a/drivers/net/wireless/ath/ath11k/dp.c
 +++ b/drivers/net/wireless/ath/ath11k/dp.c
-@@ -361,12 +361,66 @@ void ath11k_dp_stop_shadow_timers(struct
+@@ -348,12 +348,66 @@ void ath11k_dp_stop_shadow_timers(struct
  	ath11k_dp_shadow_stop_timer(ab, &ab->dp.reo_cmd_timer);
  }
  
@@ -101,7 +101,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_dp_srng_cleanup(ab, &dp->wbm_desc_rel_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_cmd_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_status_ring);
-@@ -388,6 +442,8 @@ static int ath11k_dp_srng_common_setup(s
+@@ -375,6 +429,8 @@ static int ath11k_dp_srng_common_setup(s
  	int i, ret;
  	u8 tcl_num, wbm_num;
  
@@ -112,7 +112,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  				   DP_WBM_RELEASE_RING_SIZE);
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
-@@ -44,6 +44,8 @@ struct dp_rx_tid {
+@@ -46,6 +46,8 @@ struct dp_rx_tid {
  #define DP_MON_PURGE_TIMEOUT_MS     100
  #define DP_MON_SERVICE_BUDGET       128
  
@@ -121,7 +121,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct dp_reo_cache_flush_elem {
  	struct list_head list;
  	struct dp_rx_tid data;
-@@ -286,6 +288,10 @@ struct ath11k_dp {
+@@ -288,6 +290,10 @@ struct ath11k_dp {
  	spinlock_t reo_cmd_lock;
  	struct ath11k_hp_update_timer reo_cmd_timer;
  	struct ath11k_hp_update_timer tx_ring_timer[DP_TCL_NUM_RING_MAX];
@@ -132,7 +132,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  /* HTT definitions */
-@@ -1689,5 +1695,6 @@ void ath11k_dp_shadow_init_timer(struct
+@@ -1691,5 +1697,6 @@ void ath11k_dp_shadow_init_timer(struct
  				 struct ath11k_hp_update_timer *update_timer,
  				 u32 interval, u32 ring_id);
  void ath11k_dp_stop_shadow_timers(struct ath11k_base *ab);
