@@ -133,7 +133,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		arg->peer_bw_rxnss_override = ATH12K_BW_NSS_MAP_ENABLE;
  
  		if (!rx_nss) {
-@@ -5635,6 +5637,12 @@ ath12k_create_vht_cap(struct ath12k *ar,
+@@ -5636,6 +5638,12 @@ ath12k_create_vht_cap(struct ath12k *ar,
  	vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(rxmcs_map);
  	vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(txmcs_map);
  
@@ -146,7 +146,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	return vht_cap;
  }
  
-@@ -5815,11 +5823,12 @@ static void ath12k_mac_set_hemcsmap(stru
+@@ -5816,11 +5824,12 @@ static void ath12k_mac_set_hemcsmap(stru
  				    struct ieee80211_sta_he_cap *he_cap)
  {
  	struct ieee80211_he_mcs_nss_supp *mcs_nss = &he_cap->he_mcs_nss_supp;
@@ -162,7 +162,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	for (i = 0; i < 8; i++) {
  		if (i < ar->num_tx_chains &&
  		    (ar->cfg_tx_chainmask >> cap->tx_chain_mask_shift) & BIT(i))
-@@ -5832,12 +5841,24 @@ static void ath12k_mac_set_hemcsmap(stru
+@@ -5833,12 +5842,24 @@ static void ath12k_mac_set_hemcsmap(stru
  			rxmcs_map |= IEEE80211_HE_MCS_SUPPORT_0_11 << (i * 2);
  		else
  			rxmcs_map |= IEEE80211_HE_MCS_NOT_SUPPORTED << (i * 2);

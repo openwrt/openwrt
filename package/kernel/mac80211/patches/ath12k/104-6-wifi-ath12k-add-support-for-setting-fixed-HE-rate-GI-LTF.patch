@@ -604,7 +604,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  			ath12k_peer_assoc_prepare(ar, arvif->vif, sta,
  						  &peer_arg, true);
  
-@@ -7058,10 +7317,13 @@ static int ath12k_mac_op_add_interface(s
+@@ -7059,10 +7318,13 @@ static int ath12k_mac_op_add_interface(s
  
  	for (i = 0; i < ARRAY_SIZE(arvif->bitrate_mask.control); i++) {
  		arvif->bitrate_mask.control[i].legacy = 0xffffffff;
@@ -618,7 +618,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	}
  
  	/* Allocate Default Queue now and reassign during actual vdev create */
-@@ -8222,19 +8484,40 @@ ath12k_mac_has_single_legacy_rate(struct
+@@ -8223,19 +8485,40 @@ ath12k_mac_has_single_legacy_rate(struct
  	if (ath12k_mac_bitrate_mask_num_vht_rates(ar, band, mask))
  		return false;
  
@@ -659,7 +659,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	int i;
  
  	/* No need to consider legacy here. Basic rates are always present
-@@ -8261,7 +8544,24 @@ ath12k_mac_bitrate_mask_get_single_nss(s
+@@ -8262,7 +8545,24 @@ ath12k_mac_bitrate_mask_get_single_nss(s
  			return false;
  	}
  
@@ -685,7 +685,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		return false;
  
  	if (ht_nss_mask == 0)
-@@ -8308,54 +8608,158 @@ ath12k_mac_get_single_legacy_rate(struct
+@@ -8309,54 +8609,158 @@ ath12k_mac_get_single_legacy_rate(struct
  	return 0;
  }
  
@@ -864,7 +864,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	return 0;
  }
  
-@@ -8384,6 +8788,31 @@ ath12k_mac_vht_mcs_range_present(struct
+@@ -8385,6 +8789,31 @@ ath12k_mac_vht_mcs_range_present(struct
  	return true;
  }
  
@@ -896,7 +896,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_mac_set_bitrate_mask_iter(void *data,
  					     struct ieee80211_sta *sta)
  {
-@@ -8423,6 +8852,54 @@ static void ath12k_mac_disable_peer_fixe
+@@ -8424,6 +8853,54 @@ static void ath12k_mac_disable_peer_fixe
  }
  
  static int
@@ -951,7 +951,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  ath12k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
  			       struct ieee80211_vif *vif,
  			       const struct cfg80211_bitrate_mask *mask)
-@@ -8433,13 +8910,17 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8434,13 +8911,17 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  	enum nl80211_band band;
  	const u8 *ht_mcs_mask;
  	const u16 *vht_mcs_mask;
@@ -970,7 +970,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	if (ath12k_mac_vif_chan(vif, &def))
  		return -EPERM;
-@@ -8447,6 +8928,7 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8448,6 +8929,7 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  	band = def.chan->band;
  	ht_mcs_mask = mask->control[band].ht_mcs;
  	vht_mcs_mask = mask->control[band].vht_mcs;
@@ -978,7 +978,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ldpc = !!(ar->ht_cap_info & WMI_HT_CAP_LDPC);
  
  	sgi = mask->control[band].gi;
-@@ -8455,6 +8937,9 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8456,6 +8938,9 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  		goto out;
  	}
  
@@ -988,7 +988,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	/* mac80211 doesn't support sending a fixed HT/VHT MCS alone, rather it
  	 * requires passing at least one of used basic rates along with them.
  	 * Fixed rate setting across different preambles(legacy, HT, VHT) is
-@@ -8474,15 +8959,27 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8475,15 +8960,27 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  		ieee80211_iterate_stations_mtx(hw,
  					       ath12k_mac_disable_peer_fixed_rate,
  					       arvif);
@@ -1020,7 +1020,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  		/* If multiple rates across different preambles are given
  		 * we can reconfigure this info with all peers using PEER_ASSOC
-@@ -8518,12 +9015,22 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8519,12 +9016,22 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  			goto out;
  		}
  
@@ -1045,7 +1045,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		arvif->bitrate_mask = *mask;
  		ieee80211_iterate_stations_mtx(hw,
  					       ath12k_mac_set_bitrate_mask_iter,
-@@ -8534,9 +9041,10 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -8535,9 +9042,10 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  
  	mutex_lock(&ar->conf_mutex);
  
