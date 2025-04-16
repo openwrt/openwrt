@@ -200,7 +200,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	}
  
  	if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_80)
-@@ -5805,8 +5779,6 @@ static void ath12k_mac_set_hemcsmap(stru
+@@ -5806,8 +5780,6 @@ static void ath12k_mac_set_hemcsmap(stru
  	mcs_nss->tx_mcs_80 = cpu_to_le16(txmcs_map & 0xffff);
  	mcs_nss->rx_mcs_160 = cpu_to_le16(rxmcs_map & 0xffff);
  	mcs_nss->tx_mcs_160 = cpu_to_le16(txmcs_map & 0xffff);
@@ -209,7 +209,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  }
  
  static void ath12k_mac_copy_he_cap(struct ath12k *ar,
-@@ -5828,6 +5800,7 @@ static void ath12k_mac_copy_he_cap(struc
+@@ -5829,6 +5801,7 @@ static void ath12k_mac_copy_he_cap(struc
  		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G |
  		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G |
  		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G;
@@ -217,7 +217,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	he_cap_elem->phy_cap_info[0] &=
  		~IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_80PLUS80_MHZ_IN_5G;
  	he_cap_elem->phy_cap_info[5] &=
-@@ -8494,10 +8467,6 @@ static __le16
+@@ -8495,10 +8468,6 @@ static __le16
  ath12k_mac_get_tx_mcs_map(const struct ieee80211_sta_he_cap *he_cap)
  {
  	if (he_cap->he_cap_elem.phy_cap_info[0] &

@@ -263,7 +263,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ath12k_peer_assoc_h_smps(sta, arg);
  
  	/* TODO: amsdu_disable req? */
-@@ -5551,10 +5612,8 @@ ath12k_create_vht_cap(struct ath12k *ar,
+@@ -5552,10 +5613,8 @@ ath12k_create_vht_cap(struct ath12k *ar,
  
  	ath12k_set_vht_txbf_cap(ar, &vht_cap.cap);
  
@@ -276,7 +276,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	rxmcs_map = 0;
  	txmcs_map = 0;
-@@ -9710,7 +9769,8 @@ static int ath12k_mac_setup_iface_combin
+@@ -9711,7 +9770,8 @@ static int ath12k_mac_setup_iface_combin
  	combinations[0].radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
  						BIT(NL80211_CHAN_WIDTH_20) |
  						BIT(NL80211_CHAN_WIDTH_40) |
@@ -286,7 +286,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	wiphy->iface_combinations = combinations;
  	wiphy->n_iface_combinations = 1;
-@@ -9926,6 +9986,9 @@ static int ath12k_mac_hw_register(struct
+@@ -9927,6 +9987,9 @@ static int ath12k_mac_hw_register(struct
  	ieee80211_hw_set(hw, SUPPORTS_TX_FRAG);
  	ieee80211_hw_set(hw, REPORTS_LOW_ACK);
  
