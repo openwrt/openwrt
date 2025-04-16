@@ -1129,11 +1129,14 @@ dnsmasq_start()
 	[ "$dnssec" -gt 0 ] && {
 		xappend "--conf-file=$TRUSTANCHORSFILE"
 		xappend "--dnssec"
-		[ -x /etc/init.d/sysntpd ] && {
-			if /etc/init.d/sysntpd enabled || [ "$(uci_get system.ntp.enabled)" = "1" ] ; then
-				[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
-			fi
-		}
+
+		[ ! -f "$TIMEVALIDFILE" ] && {
+			{ [ -x /etc/init.d/sysntpd ] && /etc/init.d/sysntpd enabled &&
+				[ "$(uci_get system.ntp.enabled)" = "1" ]; } ||
+			{ [ -x /etc/init.d/chronyd ] && /etc/init.d/chronyd enabled; } ||
+			{ [ -x /etc/init.d/ntpd ] && /etc/init.d/ntpd enabled; }
+		} && xappend "--dnssec-no-timecheck"
+
 		config_get_bool dnsseccheckunsigned "$cfg" dnsseccheckunsigned 1
 		[ "$dnsseccheckunsigned" -eq 0 ] && xappend "--dnssec-check-unsigned=no"
 	}
