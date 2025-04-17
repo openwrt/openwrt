@@ -71,7 +71,6 @@ endef
 
 define Build/Configure
 	$(call Build/Compile/Default,tools-only_defconfig)
-	$(call Build/Compile/Default,syncconfig)
 	$(SED) 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
 	$(SED) 's/CONFIG_TOOLS_KWBIMAGE=y/# CONFIG_TOOLS_KWBIMAGE is not set/' $(PKG_BUILD_DIR)/.config
 endef
