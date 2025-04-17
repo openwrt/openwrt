@@ -80,7 +80,8 @@ MAKE_FLAGS += \
 	ARCH="sandbox" \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 	TARGET_LDFLAGS="$(TARGET_LDFLAGS)" \
-	NO_PYTHON=1
+	NO_PYTHON=1 \
+	V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,)
 
 define Build/Compile
 
