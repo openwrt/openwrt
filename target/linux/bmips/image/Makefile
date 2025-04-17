@@ -71,6 +71,30 @@ define Build/relocate-kernel
 	@mv $@.relocate $@
 endef
 
+define Build/hcs-initramfs
+	# Use hcsmakeimage to prepend the compulsory HCS header and pack the firmware binary
+	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
+		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
+		--output_file=$@.hcs --ldaddress=$(KERNEL_LOADADDR) $(1)
+	mv $@.hcs $@
+endef
+
+define Build/aeolus-initramfs
+	# Use ProgramStore from Broadcom's aeolus utility to prepend the compulsory HCS
+	# header and pack the firmware binary
+	mv $@ $@.uncompressed
+	pushd $(dir $@) && \
+	$(STAGING_DIR_HOST)/bin/aeolus_ProgramStore -f $@.uncompressed -o $(notdir $@) \
+		-s $(HCS_MAGIC_BYTES) -v $(HCS_REV_MAJ).$(HCS_REV_MIN) \
+		-a $(KERNEL_LOADADDR) $(1) && \
+	popd
+endef
+
+define Build/aeolus-initramfs-lzma
+	# Let ProgramStore compresses the firmware image with LZMA
+	$(call Build/aeolus-initramfs, -c 4 $(1))
+endef
+
 ### Image scripts ###
 define rootfspad/jffs2-128k
 --align-rootfs
@@ -343,6 +367,29 @@ define Device/bcm63xx-nand
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES += nand-utils
 endef
+
+# BCM33xx HCS devices
+# For now, only generate ramdisks (unsupported bin images)
+define Device/bcm33xx-hcs
+  # Option 1: Let the stock bootloader unpacks the LZMA compressed OpenWrt image.
+  #     A lot faster, the OpenWrt image is also smaller. 
+  # Option 2: Use OpenWrt's LZMA loader, packed in the image.
+  #     Being slow on BCM3380 for unknown reasons.
+  KERNEL_INITRAMFS_COMMON := kernel-bin | append-dtb
+ifeq ($(CONFIG_BCM33XX_PACKER_AEOLUS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | aeolus-initramfs-lzma
+else ifeq ($(CONFIG_BCM33XX_PACKER_HCS),y)
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON) | lzma | loader-lzma bin | hcs-initramfs
+else
+  KERNEL_INITRAMFS := $$(KERNEL_INITRAMFS_COMMON)
+endif
+
+  IMAGES :=
+  HCS_MAGIC_BYTES :=
+  HCS_REV_MIN :=
+  HCS_REV_MAJ :=
+endef
+DEVICE_VARS += HCS_MAGIC_BYTES HCS_REV_MIN HCS_REV_MAJ
 
 define Device/bcm63xx-netgear
   $(Device/bcm63xx-cfe)
