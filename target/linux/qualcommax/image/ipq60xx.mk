@@ -149,6 +149,29 @@ define Device/qihoo_360v6
 endef
 TARGET_DEVICES += qihoo_360v6
 
+define Device/tplink_eap6XX-outdoor-base
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0\r\n \
+		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0\r\n \
+		EAP610-Outdoor(TP-Link|CA|AX1800-D):1.0
+		EAP625-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n \
+		EAP625-Outdoor HD(TP-Link|CA|AX1800-D):1.0\r\n \
+		EAP625-Outdoor HD(TP-Link|AU|AX1800-D):1.0\r\n \
+		EAP625-Outdoor HD(TP-Link|KR|AX1800-D):1.0\r\n \
+		EAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n \
+		EAP623-Outdoor HD(TP-Link|EG|AX1800-D):1.0\r\n \
+		EAP623-Outdoor HD(TP-Link|JP|AX1800-D):1.0\r\n \
+		EAP623-Outdoor HD(TP-Link|AU|AX1800-D):1.0\r\n \
+		EAP623-Outdoor HD(TP-Link|KR|AX1800-D):1.0
+endef 
+
 define Device/tplink_eap610-outdoor
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -182,6 +205,13 @@ define Device/tplink_eap623od-hd-v1
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap623od-hd-v1
+
+define Device/tplink_eap625-outdoor
+	$(Device/tplink_eap6XX-outdoor-base)
+	DEVICE_MODEL := EAP625-Outdoor
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap625-outdoor kmod-phy-realtek
+endef
+TARGET_DEVICES += tplink_eap625-outdoor
 
 define Device/yuncore_fap650
 	$(call Device/FitImage)

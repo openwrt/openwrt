@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6018-eap6XX-outdoor-base.dtsi"
+
+/ {
+	model = "TP-Link EAP625-Outdoor";
+	compatible = "tplink,eap625-outdoor", "qcom,ipq6018";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "TPLink-EAP625-Outdoor";
+	status = "okay";
+};
