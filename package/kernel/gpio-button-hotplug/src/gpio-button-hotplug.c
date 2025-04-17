@@ -674,7 +674,7 @@ static void gpio_keys_irq_close(struct gpio_keys_button_dev *bdev)
 	}
 }
 
-static int gpio_keys_remove(struct platform_device *pdev)
+static void gpio_keys_remove(struct platform_device *pdev)
 {
 	struct gpio_keys_button_dev *bdev = platform_get_drvdata(pdev);
 
@@ -684,13 +684,11 @@ static int gpio_keys_remove(struct platform_device *pdev)
 		gpio_keys_polled_close(bdev);
 	else
 		gpio_keys_irq_close(bdev);
-
-	return 0;
 }
 
 static struct platform_driver gpio_keys_driver = {
 	.probe	= gpio_keys_probe,
-	.remove	= gpio_keys_remove,
+	.remove_new = gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys",
 		.of_match_table = of_match_ptr(gpio_keys_of_match),
@@ -699,7 +697,7 @@ static struct platform_driver gpio_keys_driver = {
 
 static struct platform_driver gpio_keys_polled_driver = {
 	.probe	= gpio_keys_polled_probe,
-	.remove	= gpio_keys_remove,
+	.remove_new = gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys-polled",
 		.of_match_table = of_match_ptr(gpio_keys_polled_of_match),

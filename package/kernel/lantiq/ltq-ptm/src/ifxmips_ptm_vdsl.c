@@ -1079,7 +1079,7 @@ INIT_PRIV_DATA_FAIL:
     return ret;
 }
 
-static int ltq_ptm_remove(struct platform_device *pdev)
+static void ltq_ptm_remove(struct platform_device *pdev)
 {
     int i;
 	ifx_mei_atm_showtime_enter = NULL;
@@ -1103,8 +1103,6 @@ static int ltq_ptm_remove(struct platform_device *pdev)
     ifx_ptm_uninit_chip();
 
     clear_priv_data();
-
-    return 0;
 }
 
 #ifndef MODULE
@@ -1135,7 +1133,7 @@ static int __init queue_gamma_map_setup(char *line)
 #endif
 static struct platform_driver ltq_ptm_driver = {
 	.probe = ltq_ptm_probe,
-	.remove = ltq_ptm_remove,
+	.remove_new = ltq_ptm_remove,
 	.driver = {
 		.name = "ptm",
 		.of_match_table = ltq_ptm_match,

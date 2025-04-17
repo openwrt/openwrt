@@ -143,7 +143,7 @@ static int ltq_deu_probe(struct platform_device *pdev)
  *  \ingroup IFX_DEU_FUNCTIONS
  *  \brief remove the loaded crypto algorithms   
 */                                 
-static int ltq_deu_remove(struct platform_device *pdev)
+static void ltq_deu_remove(struct platform_device *pdev)
 {
 //#ifdef CONFIG_CRYPTO_DEV_PWR_SAVE_MODE
     #if defined(CONFIG_CRYPTO_DEV_DES)
@@ -168,8 +168,6 @@ static int ltq_deu_remove(struct platform_device *pdev)
     ifxdeu_fini_md5_hmac ();
     #endif
     printk("DEU has exited successfully\n");
-
-	return 0;
 }
 
 
@@ -193,7 +191,7 @@ MODULE_DEVICE_TABLE(of, ltq_deu_match);
 
 static struct platform_driver ltq_deu_driver = {
 	.probe = ltq_deu_probe,
-	.remove = ltq_deu_remove,
+	.remove_new = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
 		.of_match_table = ltq_deu_match,

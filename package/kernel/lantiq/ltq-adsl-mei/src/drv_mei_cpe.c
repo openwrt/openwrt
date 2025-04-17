@@ -2780,7 +2780,7 @@ static int ltq_mei_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int ltq_mei_remove(struct platform_device *pdev)
+static void ltq_mei_remove(struct platform_device *pdev)
 {
 	int i = 0;
 	int num;
@@ -2794,7 +2794,6 @@ static int ltq_mei_remove(struct platform_device *pdev)
 			IFX_MEI_ExitDevice (i);
 		}
 	}
-	return 0;
 }
 
 static const struct of_device_id ltq_mei_match[] = {
@@ -2804,7 +2803,7 @@ static const struct of_device_id ltq_mei_match[] = {
 
 static struct platform_driver ltq_mei_driver = {
 	.probe = ltq_mei_probe,
-	.remove = ltq_mei_remove,
+	.remove_new = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
 		.of_match_table = ltq_mei_match,

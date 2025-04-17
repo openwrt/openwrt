@@ -1199,19 +1199,17 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int adm6996_gpio_remove(struct platform_device *pdev)
+static void adm6996_gpio_remove(struct platform_device *pdev)
 {
 	struct adm6996_priv *priv = platform_get_drvdata(pdev);
 
 	if (priv && (priv->model == ADM6996M || priv->model == ADM6996L))
 		unregister_switch(&priv->dev);
-
-	return 0;
 }
 
 static struct platform_driver adm6996_gpio_driver = {
 	.probe = adm6996_gpio_probe,
-	.remove = adm6996_gpio_remove,
+	.remove_new = adm6996_gpio_remove,
 	.driver = {
 		.name = "adm6996_gpio",
 	},

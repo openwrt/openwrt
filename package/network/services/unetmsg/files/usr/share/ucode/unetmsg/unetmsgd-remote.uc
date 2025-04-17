@@ -99,7 +99,7 @@ function network_socket_handle_request(sock_data, req)
 			if (list[name])
 				return 0;
 
-			let allowed;
+			let allowed = net.peers[host].allowed == null;
 			for (let cur in net.peers[host].allowed) {
 				if (!wildcard(name, cur))
 					continue;

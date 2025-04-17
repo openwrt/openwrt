@@ -136,7 +136,7 @@ define Build/cfe-jffs2-cferam
 	# will have version 0 and let cferam be the second (version 1).
 	touch $@-cferam/1-openwrt
 	# Add cferam as the last file in the JFFS2 partition
-	cp $(KDIR)/bcm63xx-cfe/$(CFE_RAM_FILE) $@-cferam/$(CFE_RAM_JFFS2_NAME)
+	cp $(STAGING_DIR_IMAGE)/bcm63xx-cfe/$(CFE_RAM_FILE) $@-cferam/$(CFE_RAM_JFFS2_NAME)
 
 	# The JFFS2 partition creation should result in the following
 	# layout:

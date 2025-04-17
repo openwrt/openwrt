@@ -25,6 +25,8 @@ define Package/layerscape-fman
   CATEGORY:=Firmware
   TITLE:=NXP FMan ucode
   DEPENDS:=@TARGET_layerscape
+  DEFAULT:=y if TARGET_layerscape_armv8_64b
+  HIDDEN:=1
 endef
 
 define Build/Compile

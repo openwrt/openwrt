@@ -16,10 +16,10 @@
 
 	aliases {
 		serial0 = &blsp1_uart3;
-		led-boot = &led_system;
-		led-failsafe = &led_system;
-		led-running = &led_system;
-		led-upgrade = &led_system;
+		led-boot = &led_sys_green;
+		led-failsafe = &led_sys_yellow;
+		led-running = &led_sys_green;
+		led-upgrade = &led_sys_yellow;
 	};
 
 	chosen {
@@ -40,15 +40,15 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
+		led_sys_green: led-0 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan {
+		led_sys_yellow: led-1 {
 			color = <LED_COLOR_ID_YELLOW>;
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -86,15 +86,14 @@
 
 &mdio {
 	status = "okay";
-	pinctrl-0 = <&mdio_pins>;
+	reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+	pinctrl-0 = <&mdio_pins>, <&phy_pins>;
 	pinctrl-names = "default";
 
 	rtl8211f: ethernet-phy@4 {
-		compatible = "ethernet-phy-id001c.c916";
 		reg = <4>;
-		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
-		pinctrl-0 = <&phy_pins>;
-		pinctrl-names = "default";
 
 		realtek,clkout-disable;
 		realtek,aldps-enable;

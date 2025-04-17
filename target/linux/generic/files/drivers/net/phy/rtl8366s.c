@@ -1266,7 +1266,7 @@ static int rtl8366s_probe(struct platform_device *pdev)
 	return err;
 }
 
-static int rtl8366s_remove(struct platform_device *pdev)
+static void rtl8366s_remove(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
@@ -1276,8 +1276,6 @@ static int rtl8366s_remove(struct platform_device *pdev)
 		rtl8366_smi_cleanup(smi);
 		kfree(smi);
 	}
-
-	return 0;
 }
 
 #ifdef CONFIG_OF
@@ -1296,7 +1294,7 @@ static struct platform_driver rtl8366s_driver = {
 #endif
 	},
 	.probe		= rtl8366s_probe,
-	.remove		= rtl8366s_remove,
+	.remove_new	= rtl8366s_remove,
 };
 
 static int __init rtl8366s_module_init(void)
