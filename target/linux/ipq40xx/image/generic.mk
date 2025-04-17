@@ -170,6 +170,18 @@ define Device/alfa-network_ap120c-ac
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
 
+define Device/aliyun_ap4220
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Aliyun
+	DEVICE_MODEL := AP4220
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-aliyun_ap4220
+endef
+TARGET_DEVICES += aliyun_ap4220
+
 define Device/aruba_glenmorangie
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Aruba
