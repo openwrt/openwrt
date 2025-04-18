@@ -35,7 +35,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -414,6 +414,36 @@ void tcp_gro_complete(struct sk_buff *sk
+@@ -413,6 +413,36 @@ void tcp_gro_complete(struct sk_buff *sk
  }
  EXPORT_SYMBOL(tcp_gro_complete);
  
@@ -72,7 +72,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  INDIRECT_CALLABLE_SCOPE
  struct sk_buff *tcp4_gro_receive(struct list_head *head, struct sk_buff *skb)
  {
-@@ -429,6 +459,8 @@ struct sk_buff *tcp4_gro_receive(struct
+@@ -428,6 +458,8 @@ struct sk_buff *tcp4_gro_receive(struct
  	if (!th)
  		goto flush;
  

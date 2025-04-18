@@ -96,7 +96,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	len = skb_gro_len(skb);
  	flags = tcp_flag_word(th);
  
-@@ -385,7 +391,6 @@ out_check_final:
+@@ -384,7 +390,6 @@ out_check_final:
  	if (p && (!NAPI_GRO_CB(skb)->same_flow || flush))
  		pp = p;
  
@@ -104,7 +104,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	NAPI_GRO_CB(skb)->flush |= (flush != 0);
  
  	return pp;
-@@ -412,15 +417,23 @@ EXPORT_SYMBOL(tcp_gro_complete);
+@@ -411,15 +416,23 @@ EXPORT_SYMBOL(tcp_gro_complete);
  INDIRECT_CALLABLE_SCOPE
  struct sk_buff *tcp4_gro_receive(struct list_head *head, struct sk_buff *skb)
  {
