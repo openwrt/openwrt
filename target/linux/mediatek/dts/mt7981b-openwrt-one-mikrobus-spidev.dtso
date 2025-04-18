@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (C) 2025
+ * Author: Mark Birss <mark.birss@gmail.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+        compatible = "openwrt,one", "mediatek,mt7981";
+
+        fragment@0 {
+                target = <&spi1>;
+                __overlay__ {
+                        status = "okay";
+
+                        spidev@0 {
+                                compatible = "silabs,si3210";
+                                reg = <0>;
+                                #address-cells = <1>;
+                                #size-cells = <0>;
+                                spi-max-frequency = <52000000>;
+                        };
+                };
+        };
+};
