@@ -44,7 +44,6 @@ lantiq_setup_macs()
 
 	case "$board" in
 	alphanetworks,asl56026)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanmac)
 		;;
 	arcadyan,vg3503j)
