@@ -29,7 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1441,6 +1441,7 @@ static int spinand_remove(struct spi_mem
+@@ -1444,6 +1444,7 @@ static int spinand_remove(struct spi_mem
  
  static const struct spi_device_id spinand_ids[] = {
  	{ .name = "spi-nand" },
@@ -37,7 +37,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(spi, spinand_ids);
-@@ -1448,6 +1449,7 @@ MODULE_DEVICE_TABLE(spi, spinand_ids);
+@@ -1451,6 +1452,7 @@ MODULE_DEVICE_TABLE(spi, spinand_ids);
  #ifdef CONFIG_OF
  static const struct of_device_id spinand_of_ids[] = {
  	{ .compatible = "spi-nand" },
