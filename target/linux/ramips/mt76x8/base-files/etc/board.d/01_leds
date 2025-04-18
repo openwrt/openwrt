@@ -77,6 +77,11 @@ tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
+teltonika,rut200|\
+teltonika,rut241)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x02"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	;;
 tplink,archer-c20-v4|\
 tplink,archer-c20-v5|\
 tplink,tl-wr850n-v2)

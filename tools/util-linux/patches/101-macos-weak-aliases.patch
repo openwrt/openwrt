@@ -13,7 +13,7 @@ Fixes util-linux/util-linux#2873
 
 --- a/libuuid/src/uuid_time.c
 +++ b/libuuid/src/uuid_time.c
-@@ -85,6 +85,10 @@ time_t __uuid_time(const uuid_t uu, stru
+@@ -144,6 +144,10 @@ time_t __uuid_time(const uuid_t uu, stru
  }
  #if defined(__USE_TIME_BITS64) && defined(__GLIBC__)
  extern time_t uuid_time64(const uuid_t uu, struct timeval *ret_tv) __attribute__((weak, alias("__uuid_time")));

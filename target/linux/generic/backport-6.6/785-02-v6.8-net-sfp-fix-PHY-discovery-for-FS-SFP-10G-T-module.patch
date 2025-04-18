@@ -51,7 +51,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void sfp_fixup_halny_gsfp(struct sfp *sfp)
-@@ -2321,6 +2328,7 @@ static int sfp_sm_mod_probe(struct sfp *
+@@ -2318,6 +2325,7 @@ static int sfp_sm_mod_probe(struct sfp *
  		mask |= SFP_F_RS1;
  
  	sfp->module_t_start_up = T_START_UP;
@@ -59,7 +59,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	sfp->phy_t_retry = T_PHY_RETRY;
  
  	sfp->state_ignore_mask = 0;
-@@ -2557,9 +2565,10 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -2554,9 +2562,10 @@ static void sfp_sm_main(struct sfp *sfp,
  
  		/* We need to check the TX_FAULT state, which is not defined
  		 * while TX_DISABLE is asserted. The earliest we want to do
@@ -72,7 +72,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		break;
  
  	case SFP_S_WAIT:
-@@ -2573,8 +2582,8 @@ static void sfp_sm_main(struct sfp *sfp,
+@@ -2570,8 +2579,8 @@ static void sfp_sm_main(struct sfp *sfp,
  			 * deasserting.
  			 */
  			timeout = sfp->module_t_start_up;

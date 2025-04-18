@@ -284,7 +284,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		ath12k_control_beaconing(arvif, info);
  
  		if (arvif->is_up && vif->bss_conf.he_support &&
-@@ -5351,11 +5483,14 @@ static void ath12k_mac_copy_he_cap(struc
+@@ -5352,11 +5484,14 @@ static void ath12k_mac_copy_he_cap(struc
  
  	he_cap_elem->mac_cap_info[1] &=
  		IEEE80211_HE_MAC_CAP1_TF_MAC_PAD_DUR_MASK;
@@ -302,7 +302,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	he_cap_elem->phy_cap_info[5] |= num_tx_chains - 1;
  
  	switch (iftype) {
-@@ -6317,71 +6452,6 @@ static int ath12k_mac_setup_vdev_create_
+@@ -6318,71 +6453,6 @@ static int ath12k_mac_setup_vdev_create_
  	return 0;
  }
  
@@ -374,7 +374,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_mac_update_vif_offload(struct ath12k_vif *arvif)
  {
  	struct ieee80211_vif *vif = arvif->vif;
-@@ -7339,7 +7409,6 @@ ath12k_mac_vdev_start_restart(struct ath
+@@ -7340,7 +7410,6 @@ ath12k_mac_vdev_start_restart(struct ath
  	struct ath12k_base *ab = ar->ab;
  	struct wmi_vdev_start_req_arg arg = {};
  	const struct cfg80211_chan_def *chandef = &ctx->def;
@@ -382,7 +382,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	int ret;
  
  	lockdep_assert_held(&ar->conf_mutex);
-@@ -7395,14 +7464,6 @@ ath12k_mac_vdev_start_restart(struct ath
+@@ -7396,14 +7465,6 @@ ath12k_mac_vdev_start_restart(struct ath
  		spin_unlock_bh(&ab->base_lock);
  
  		/* TODO: Notify if secondary 80Mhz also needs radar detection */
