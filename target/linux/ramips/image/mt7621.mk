@@ -768,6 +768,16 @@ define Device/cudy_wr2100
 endef
 TARGET_DEVICES += cudy_wr2100
 
+define Device/cudy_r700
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := R700
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R29
+  DEVICE_PACKAGES := -uboot-envtools
+endef
+TARGET_DEVICES += cudy_r700
+
 define Device/cudy_x6-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 32256k
