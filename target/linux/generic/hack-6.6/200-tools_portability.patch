@@ -61,6 +61,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define __cold
  
  typedef __u16 __bitwise __le16;
+--- a/tools/lib/subcmd/exec-cmd.c
++++ b/tools/lib/subcmd/exec-cmd.c
+@@ -12,7 +12,10 @@
+ #include "subcmd-config.h"
+ 
+ #define MAX_ARGS	32
++
++#ifndef PATH_MAX
+ #define PATH_MAX	4096
++#endif
+ 
+ static const char *argv_exec_path;
+ static const char *argv0_path;
 --- a/tools/objtool/include/objtool/objtool.h
 +++ b/tools/objtool/include/objtool/objtool.h
 @@ -12,6 +12,7 @@
