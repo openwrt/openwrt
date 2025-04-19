@@ -1638,7 +1638,7 @@ static int fe_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int fe_remove(struct platform_device *pdev)
+static void fe_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct fe_priv *priv = netdev_priv(dev);
@@ -1648,13 +1648,11 @@ static int fe_remove(struct platform_device *pdev)
 	cancel_work_sync(&priv->pending_work);
 
 	platform_set_drvdata(pdev, NULL);
-
-	return 0;
 }
 
 static struct platform_driver fe_driver = {
 	.probe = fe_probe,
-	.remove = fe_remove,
+	.remove_new = fe_remove,
 	.driver = {
 		.name = "mtk_soc_eth",
 		.of_match_table = of_fe_match,

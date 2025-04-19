@@ -283,17 +283,15 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	
 }
 
-static int rtk_gsw_remove(struct platform_device *pdev)
+static void rtk_gsw_remove(struct platform_device *pdev)
 {
 	platform_set_drvdata(pdev, NULL);
 	gsw_debug_proc_exit();
-
-	return 0;
 }
 
 static struct platform_driver gsw_driver = {
 	.probe = rtk_gsw_probe,
-	.remove = rtk_gsw_remove,
+	.remove_new = rtk_gsw_remove,
 	.driver = {
 		.name = "rtk-gsw",
 		.of_match_table = rtk_gsw_match,

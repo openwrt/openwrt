@@ -1731,20 +1731,20 @@ err_phy_disconnect:
 	return err;
 }
 
-static int ag71xx_remove(struct platform_device *pdev)
+static void ag71xx_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct ag71xx *ag;
 
 	if (!dev)
-		return 0;
+		return;
 
 	ag = netdev_priv(dev);
 	ag71xx_debugfs_exit(ag);
 	ag71xx_phy_disconnect(ag);
 	unregister_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
-	return 0;
+
 }
 
 static const struct of_device_id ag71xx_match[] = {
@@ -1763,7 +1763,7 @@ static const struct of_device_id ag71xx_match[] = {
 
 static struct platform_driver ag71xx_driver = {
 	.probe		= ag71xx_probe,
-	.remove		= ag71xx_remove,
+	.remove_new	= ag71xx_remove,
 	.driver = {
 		.name	= AG71XX_DRV_NAME,
 		.of_match_table = ag71xx_match,

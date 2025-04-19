@@ -890,20 +890,18 @@ err_unregister:
 	return ret;
 }
 
-static int gdma_dma_remove(struct platform_device *pdev)
+static void gdma_dma_remove(struct platform_device *pdev)
 {
 	struct gdma_dma_dev *dma_dev = platform_get_drvdata(pdev);
 
 	tasklet_kill(&dma_dev->task);
 	of_dma_controller_free(pdev->dev.of_node);
 	dma_async_device_unregister(&dma_dev->ddev);
-
-	return 0;
 }
 
 static struct platform_driver gdma_dma_driver = {
 	.probe = gdma_dma_probe,
-	.remove = gdma_dma_remove,
+	.remove_new = gdma_dma_remove,
 	.driver = {
 		.name = "gdma-rt2880",
 		.of_match_table = gdma_of_match_table,

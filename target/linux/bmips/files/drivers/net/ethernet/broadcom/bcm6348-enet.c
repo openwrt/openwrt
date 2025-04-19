@@ -1675,7 +1675,7 @@ out_disable_clk:
 	return ret;
 }
 
-static int bcm6348_emac_remove(struct platform_device *pdev)
+static void bcm6348_emac_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct bcm6348_emac *emac = netdev_priv(ndev);
@@ -1688,8 +1688,6 @@ static int bcm6348_emac_remove(struct platform_device *pdev)
 
 	for (i = 0; i < emac->num_clocks; i++)
 		clk_disable_unprepare(emac->clock[i]);
-
-	return 0;
 }
 
 static const struct of_device_id bcm6348_emac_of_match[] = {
@@ -1706,7 +1704,7 @@ static struct platform_driver bcm6348_emac_driver = {
 		.of_match_table = of_match_ptr(bcm6348_emac_of_match),
 	},
 	.probe	= bcm6348_emac_probe,
-	.remove	= bcm6348_emac_remove,
+	.remove_new	= bcm6348_emac_remove,
 };
 
 int bcm6348_iudma_drivers_register(struct platform_device *pdev)
