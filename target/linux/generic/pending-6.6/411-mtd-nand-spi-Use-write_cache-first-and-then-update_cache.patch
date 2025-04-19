@@ -1,0 +1,100 @@
+From: Sky Huang <skylake.huang@mediatek.com>
+
+According to discussion with Miquel Raynal <miquel.raynal@bootlin.com>
+and Chuanhong Guo <gch981213@gmail.com> on FORESEE F35SQA002G patch,
+Chuanhong recommmends that we can use the following sequence in
+spinand_write_to_cache_op():
+
+x1 mode:
+02H(program data load) -> 84H(random program data load) -> 84H ...
+
+x4 mode:
+32H(program data load x4) -> 34H(random program data load x4) -> 34H ...
+
+02H or 32H commands will clear cache buffer on SPI-NAND and load
+data to it. For those SPI controllers which can't finish transmission
+in single step, 84H or 34H will be triggered for the rest data.
+
+We observe that some current SPI-NANDs, including FORESEE F35SQA001G and
+F35SQA002G, must use 02H or 32H to reset cache buffer in flash before
+using 84H or 34H. Or users may encounter program failure issue. This issue
+is not always reproducible, but it may occur and cause system instability.
+
+This sequence should work on all SPI-NANDs nowadays. I also check with
+Foresee that the sequence can solve the above program failure issue.
+
+On my test platform (MT7988), SPI driver is drivers/spi/spi-mt65xx.c.
+And I limit MTK_SPI_IPM_PACKET_SIZE to SZ_1K to simulate lightweight SPI
+controller which can only transmit 1024 bytes.
+
+The test step is the following:
+- mtd erase /dev/mtd2
+- dd if=/dev/zero bs=2048 count=1 | tr '\0' '\xA5' > output.bin
+- mtd write output.bin /dev/mtd2
+
+Before applying this patch, write operation uses only 34H(update_cache):
+[78.937720] OP code: 0x34, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xa5
+[78.945297] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xa5
+[78.954251] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xa5
+[78.962966] OP code: 0x10, addr val: 0x300
+[78.968816] OP code: 0x34, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xff
+[78.977233] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xff
+[78.985124] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xff
+[78.992527] OP code: 0x10, addr val: 0x301
+[78.996981] OP code: 0x34, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xff
+[79.004416] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xff
+[79.012031] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xff
+[79.019435] OP code: 0x10, addr val: 0x302
+...
+
+After applying this patch, write operation will use 32H and then 34H:
+[ 5380.911269] OP code: 0x32, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xa5
+[ 5380.918889] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xa5
+[ 5380.927836] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xa5
+[ 5380.936558] OP code: 0x10, addr val: 0x300
+[ 5380.942411] OP code: 0x32, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xff
+[ 5380.950831] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xff
+[ 5380.958722] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xff
+[ 5380.966129] OP code: 0x10, addr val: 0x301
+[ 5380.970376] OP code: 0x32, addr val: 0x0, data nbytes: 1020, data 1st byte: 0xff
+[ 5380.977810] OP code: 0x34, addr val: 0x3fc, data nbytes: 1020, data 1st byte: 0xff
+[ 5380.985424] OP code: 0x34, addr val: 0x7f8, data nbytes: 72, data 1st byte: 0xff
+[ 5380.992826] OP code: 0x10, addr val: 0x302
+...
+
+Signed-off-by: Sky Huang <skylake.huang@mediatek.com>
+---
+ drivers/mtd/nand/spi/core.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -471,7 +471,10 @@ static int spinand_write_to_cache_op(str
+ 		nbytes -= ret;
+ 		column += ret;
+ 		buf += ret;
++
++		wdesc->info.op_tmpl = *spinand->op_templates.update_cache;
+ 	}
++	wdesc->info.op_tmpl = *spinand->op_templates.write_cache;
+ 
+ 	return 0;
+ }
+@@ -865,7 +868,7 @@ static int spinand_create_dirmap(struct
+ 	/* The plane number is passed in MSB just above the column address */
+ 	info.offset = plane << fls(nand->memorg.pagesize);
+ 
+-	info.op_tmpl = *spinand->op_templates.update_cache;
++	info.op_tmpl = *spinand->op_templates.write_cache;
+ 	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
+ 					  spinand->spimem, &info);
+ 	if (IS_ERR(desc))
+@@ -888,7 +891,7 @@ static int spinand_create_dirmap(struct
+ 		return 0;
+ 	}
+ 
+-	info.op_tmpl = *spinand->op_templates.update_cache;
++	info.op_tmpl = *spinand->op_templates.write_cache;
+ 	info.op_tmpl.data.ecc = true;
+ 	desc = devm_spi_mem_dirmap_create(&spinand->spimem->spi->dev,
+ 					  spinand->spimem, &info);
