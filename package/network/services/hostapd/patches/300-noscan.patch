@@ -5,7 +5,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3747,6 +3747,10 @@ static int hostapd_config_fill(struct ho
+@@ -3518,6 +3518,10 @@ static int hostapd_config_fill(struct ho
  		if (bss->ocv && !bss->ieee80211w)
  			bss->ieee80211w = 1;
  #endif /* CONFIG_OCV */
@@ -18,7 +18,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1125,6 +1125,8 @@ struct hostapd_config {
+@@ -1105,6 +1105,8 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
