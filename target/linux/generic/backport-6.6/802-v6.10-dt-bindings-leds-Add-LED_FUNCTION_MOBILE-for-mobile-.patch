@@ -1,0 +1,40 @@
+From 7d36c3573391dcf0da089298a4b5a25c39f7289d Mon Sep 17 00:00:00 2001
+From: INAGAKI Hiroshi <musashino.open@gmail.com>
+Date: Sat, 23 Mar 2024 16:36:09 +0900
+Subject: [PATCH] dt-bindings: leds: Add LED_FUNCTION_MOBILE for mobile network
+
+Add LED_FUNCTION_MOBILE for LEDs that indicate status of mobile network
+connection. This is useful to distinguish those LEDs from LEDs that
+indicates status of wired "wan" connection.
+
+example (on stock fw):
+
+IIJ SA-W2 has "Mobile" LEDs that indicate status (no signal, too low,
+low, good) of mobile network connection via dongle connected to USB
+port.
+
+- no signal: (none, turned off)
+-   too low: green:mobile & red:mobile (amber, blink)
+-       low: green:mobile & red:mobile (amber, turned on)
+-      good: green:mobile (turned on)
+
+Suggested-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20240323074326.1428-2-musashino.open@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ include/dt-bindings/leds/common.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/dt-bindings/leds/common.h
++++ b/include/dt-bindings/leds/common.h
+@@ -90,6 +90,7 @@
+ #define LED_FUNCTION_INDICATOR "indicator"
+ #define LED_FUNCTION_LAN "lan"
+ #define LED_FUNCTION_MAIL "mail"
++#define LED_FUNCTION_MOBILE "mobile"
+ #define LED_FUNCTION_MTD "mtd"
+ #define LED_FUNCTION_PANIC "panic"
+ #define LED_FUNCTION_PROGRAMMING "programming"

@@ -1,0 +1,172 @@
+From ed0f941022515ff40473ea5335769a5dc2524a3f Mon Sep 17 00:00:00 2001
+From: Yuntao Liu <liuyuntao12@huawei.com>
+Date: Mon, 3 Jun 2024 16:37:50 +0100
+Subject: [PATCH] ARM: 9404/1: arm32: enable HAVE_LD_DEAD_CODE_DATA_ELIMINATION
+
+The current arm32 architecture does not yet support the
+HAVE_LD_DEAD_CODE_DATA_ELIMINATION feature. arm32 is widely used in
+embedded scenarios, and enabling this feature would be beneficial for
+reducing the size of the kernel image.
+
+In order to make this work, we keep the necessary tables by annotating
+them with KEEP, also it requires further changes to linker script to KEEP
+some tables and wildcard compiler generated sections into the right place.
+When using ld.lld for linking, KEEP is not recognized within the OVERLAY
+command, and Ard proposed a concise method to solve this problem.
+
+It boots normally with defconfig, vexpress_defconfig and tinyconfig.
+
+The size comparison of zImage is as follows:
+defconfig       vexpress_defconfig      tinyconfig
+5137712         5138024                 424192          no dce
+5032560         4997824                 298384          dce
+2.0%            2.7%                    29.7%           shrink
+
+When using smaller config file, there is a significant reduction in the
+size of the zImage.
+
+We also tested this patch on a commercially available single-board
+computer, and the comparison is as follows:
+a15eb_config
+2161384         no dce
+2092240         dce
+3.2%            shrink
+
+The zImage size has been reduced by approximately 3.2%, which is 70KB on
+2.1M.
+
+Signed-off-by: Yuntao Liu <liuyuntao12@huawei.com>
+Tested-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+---
+ arch/arm/Kconfig                       | 1 +
+ arch/arm/boot/compressed/vmlinux.lds.S | 2 +-
+ arch/arm/include/asm/vmlinux.lds.h     | 2 +-
+ arch/arm/kernel/entry-armv.S           | 3 +++
+ arch/arm/kernel/vmlinux-xip.lds.S      | 4 ++--
+ arch/arm/kernel/vmlinux.lds.S          | 6 +++---
+ drivers/firmware/efi/libstub/Makefile  | 4 ++++
+ 7 files changed, 15 insertions(+), 7 deletions(-)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -111,6 +111,7 @@ config ARM
+ 	select HAVE_KERNEL_XZ
+ 	select HAVE_KPROBES if !XIP_KERNEL && !CPU_ENDIAN_BE32 && !CPU_V7M
+ 	select HAVE_KRETPROBES if HAVE_KPROBES
++	select HAVE_LD_DEAD_CODE_DATA_ELIMINATION
+ 	select HAVE_MOD_ARCH_SPECIFIC
+ 	select HAVE_NMI
+ 	select HAVE_OPTPROBES if !THUMB2_KERNEL
+--- a/arch/arm/boot/compressed/vmlinux.lds.S
++++ b/arch/arm/boot/compressed/vmlinux.lds.S
+@@ -125,7 +125,7 @@ SECTIONS
+ 
+   . = BSS_START;
+   __bss_start = .;
+-  .bss			: { *(.bss) }
++  .bss			: { *(.bss .bss.*) }
+   _end = .;
+ 
+   . = ALIGN(8);		/* the stack must be 64-bit aligned */
+--- a/arch/arm/include/asm/vmlinux.lds.h
++++ b/arch/arm/include/asm/vmlinux.lds.h
+@@ -42,7 +42,7 @@
+ #define PROC_INFO							\
+ 		. = ALIGN(4);						\
+ 		__proc_info_begin = .;					\
+-		*(.proc.info.init)					\
++		KEEP(*(.proc.info.init))				\
+ 		__proc_info_end = .;
+ 
+ #define IDMAP_TEXT							\
+--- a/arch/arm/kernel/entry-armv.S
++++ b/arch/arm/kernel/entry-armv.S
+@@ -1073,6 +1073,7 @@ vector_addrexcptn:
+ 	.globl	vector_fiq
+ 
+ 	.section .vectors, "ax", %progbits
++	.reloc  .text, R_ARM_NONE, .
+ 	W(b)	vector_rst
+ 	W(b)	vector_und
+ ARM(	.reloc	., R_ARM_LDR_PC_G0, .L__vector_swi		)
+@@ -1086,6 +1087,7 @@ THUMB(	.reloc	., R_ARM_THM_PC12, .L__vec
+ 
+ #ifdef CONFIG_HARDEN_BRANCH_HISTORY
+ 	.section .vectors.bhb.loop8, "ax", %progbits
++	.reloc  .text, R_ARM_NONE, .
+ 	W(b)	vector_rst
+ 	W(b)	vector_bhb_loop8_und
+ ARM(	.reloc	., R_ARM_LDR_PC_G0, .L__vector_bhb_loop8_swi	)
+@@ -1098,6 +1100,7 @@ THUMB(	.reloc	., R_ARM_THM_PC12, .L__vec
+ 	W(b)	vector_bhb_loop8_fiq
+ 
+ 	.section .vectors.bhb.bpiall, "ax", %progbits
++	.reloc  .text, R_ARM_NONE, .
+ 	W(b)	vector_rst
+ 	W(b)	vector_bhb_bpiall_und
+ ARM(	.reloc	., R_ARM_LDR_PC_G0, .L__vector_bhb_bpiall_swi	)
+--- a/arch/arm/kernel/vmlinux-xip.lds.S
++++ b/arch/arm/kernel/vmlinux-xip.lds.S
+@@ -63,7 +63,7 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
+ 		__start___ex_table = .;
+-		ARM_MMU_KEEP(*(__ex_table))
++		ARM_MMU_KEEP(KEEP(*(__ex_table)))
+ 		__stop___ex_table = .;
+ 	}
+ 
+@@ -83,7 +83,7 @@ SECTIONS
+ 	}
+ 	.init.arch.info : {
+ 		__arch_info_begin = .;
+-		*(.arch.info.init)
++		KEEP(*(.arch.info.init))
+ 		__arch_info_end = .;
+ 	}
+ 	.init.tagtable : {
+--- a/arch/arm/kernel/vmlinux.lds.S
++++ b/arch/arm/kernel/vmlinux.lds.S
+@@ -74,7 +74,7 @@ SECTIONS
+ 	. = ALIGN(4);
+ 	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
+ 		__start___ex_table = .;
+-		ARM_MMU_KEEP(*(__ex_table))
++		ARM_MMU_KEEP(KEEP(*(__ex_table)))
+ 		__stop___ex_table = .;
+ 	}
+ 
+@@ -99,7 +99,7 @@ SECTIONS
+ 	}
+ 	.init.arch.info : {
+ 		__arch_info_begin = .;
+-		*(.arch.info.init)
++		KEEP(*(.arch.info.init))
+ 		__arch_info_end = .;
+ 	}
+ 	.init.tagtable : {
+@@ -116,7 +116,7 @@ SECTIONS
+ #endif
+ 	.init.pv_table : {
+ 		__pv_table_begin = .;
+-		*(.pv_table)
++		KEEP(*(.pv_table))
+ 		__pv_table_end = .;
+ 	}
+ 
+--- a/drivers/firmware/efi/libstub/Makefile
++++ b/drivers/firmware/efi/libstub/Makefile
+@@ -67,6 +67,10 @@ OBJECT_FILES_NON_STANDARD	:= y
+ # Prevents link failures: __sanitizer_cov_trace_pc() is not linked in.
+ KCOV_INSTRUMENT			:= n
+ 
++# The .data section would be renamed to .data.efistub, therefore, remove
++# `-fdata-sections` flag from KBUILD_CFLAGS_KERNEL
++KBUILD_CFLAGS_KERNEL := $(filter-out -fdata-sections, $(KBUILD_CFLAGS_KERNEL))
++
+ lib-y				:= efi-stub-helper.o gop.o secureboot.o tpm.o \
+ 				   file.o mem.o random.o randomalloc.o pci.o \
+ 				   skip_spaces.o lib-cmdline.o lib-ctype.o \

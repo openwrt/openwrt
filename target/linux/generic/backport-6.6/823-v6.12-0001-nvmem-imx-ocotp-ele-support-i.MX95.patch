@@ -1,0 +1,73 @@
+From c3f9b7b4e5f9de319d00784577cda42036ff243a Mon Sep 17 00:00:00 2001
+From: Peng Fan <peng.fan@nxp.com>
+Date: Mon, 2 Sep 2024 15:29:45 +0100
+Subject: [PATCH] nvmem: imx-ocotp-ele: support i.MX95
+
+i.MX95 OCOTP has same accessing method, so add an entry for i.MX95, but
+some fuse has ECC feature, so only read out the lower 16bits for ECC fuses.
+
+Signed-off-by: Peng Fan <peng.fan@nxp.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240902142952.71639-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/imx-ocotp-ele.c | 32 +++++++++++++++++++++++++++++---
+ 1 file changed, 29 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/imx-ocotp-ele.c
++++ b/drivers/nvmem/imx-ocotp-ele.c
+@@ -14,8 +14,9 @@
+ #include <linux/slab.h>
+ 
+ enum fuse_type {
+-	FUSE_FSB = 1,
+-	FUSE_ELE = 2,
++	FUSE_FSB = BIT(0),
++	FUSE_ELE = BIT(1),
++	FUSE_ECC = BIT(2),
+ 	FUSE_INVALID = -1
+ };
+ 
+@@ -95,7 +96,10 @@ static int imx_ocotp_reg_read(void *cont
+ 			continue;
+ 		}
+ 
+-		*buf++ = readl_relaxed(reg + (i << 2));
++		if (type & FUSE_ECC)
++			*buf++ = readl_relaxed(reg + (i << 2)) & GENMASK(15, 0);
++		else
++			*buf++ = readl_relaxed(reg + (i << 2));
+ 	}
+ 
+ 	memcpy(val, ((u8 *)p) + skipbytes, bytes);
+@@ -179,8 +183,30 @@ static const struct ocotp_devtype_data i
+ 	},
+ };
+ 
++static const struct ocotp_devtype_data imx95_ocotp_data = {
++	.reg_off = 0x8000,
++	.reg_read = imx_ocotp_reg_read,
++	.size = 2048,
++	.num_entry = 12,
++	.entry = {
++		{ 0, 1, FUSE_FSB | FUSE_ECC },
++		{ 7, 1, FUSE_FSB | FUSE_ECC },
++		{ 9, 3, FUSE_FSB | FUSE_ECC },
++		{ 12, 24, FUSE_FSB },
++		{ 36, 2, FUSE_FSB  | FUSE_ECC },
++		{ 38, 14, FUSE_FSB },
++		{ 63, 1, FUSE_ELE },
++		{ 128, 16, FUSE_ELE },
++		{ 188, 1, FUSE_ELE },
++		{ 317, 2, FUSE_FSB | FUSE_ECC },
++		{ 320, 7, FUSE_FSB },
++		{ 328, 184, FUSE_FSB }
++	},
++};
++
+ static const struct of_device_id imx_ele_ocotp_dt_ids[] = {
+ 	{ .compatible = "fsl,imx93-ocotp", .data = &imx93_ocotp_data, },
++	{ .compatible = "fsl,imx95-ocotp", .data = &imx95_ocotp_data, },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, imx_ele_ocotp_dt_ids);
