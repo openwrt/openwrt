@@ -1452,7 +1452,7 @@ err_free_buf:
 	return ret;
 }
 
-static int ar934x_nfc_remove(struct platform_device *pdev)
+static void ar934x_nfc_remove(struct platform_device *pdev)
 {
 	struct ar934x_nfc *nfc;
 
@@ -1462,8 +1462,6 @@ static int ar934x_nfc_remove(struct platform_device *pdev)
 		nand_cleanup(&nfc->nand_chip);
 		ar934x_nfc_free_buf(nfc);
 	}
-
-	return 0;
 }
 
 static const struct of_device_id ar934x_nfc_match[] = {
@@ -1475,7 +1473,7 @@ MODULE_DEVICE_TABLE(of, ar934x_nfc_match);
 
 static struct platform_driver ar934x_nfc_driver = {
 	.probe		= ar934x_nfc_probe,
-	.remove		= ar934x_nfc_remove,
+	.remove_new	= ar934x_nfc_remove,
 	.driver = {
 		.name	= AR934X_NFC_DRIVER_NAME,
 		.of_match_table = ar934x_nfc_match,
