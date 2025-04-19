@@ -1,0 +1,14 @@
+add_device() {
+	uci add dhcpsnoop device
+	uci set dhcpsnoop.@device[-1].name="$1"
+	uci set dhcpsnoop.@device[-1].disabled="$2"
+	uci set dhcpsnoop.@device[-1].ingress=1
+	uci set dhcpsnoop.@device[-1].egress=1
+}
+
+wan=$(cat /etc/board.json | jsonfilter -e '@.network.wan.device')
+[ -z "$wan" ] || add_device $wan 1
+
+lan=$(cat /etc/board.json | jsonfilter -e '@.network.lan.device')
+[ -z "$lan" ] && $(cat /etc/board.json | jsonfilter -e '@.network.lan.ports.*')
+[ -z "$wan" ] || add_device br-lan 0
