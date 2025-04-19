@@ -801,6 +801,13 @@ define Device/meraki_common
 	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
 endef
 
+define Device/meraki_mr30h
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR30H
+	DEVICE_DTS_CONFIG := config@2
+endef
+TARGET_DEVICES += meraki_mr30h
+
 define Device/meraki_mr33
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR33
@@ -813,6 +820,28 @@ define Device/meraki_mr74
 	DEVICE_DTS_CONFIG := config@3
 endef
 TARGET_DEVICES += meraki_mr74
+
+define Device/meraki_z3
+	$(call Device/meraki_common)
+	DEVICE_MODEL := Z3
+	DEVICE_DTS_CONFIG := config@1
+endef
+TARGET_DEVICES += meraki_z3
+
+define Device/meraki_z3c
+	$(call Device/meraki_common)
+	DEVICE_MODEL := Z3C
+	DEVICE_DTS_CONFIG := config@3
+endef
+TARGET_DEVICES += meraki_z3c
+
+define Device/meraki_gx20
+	$(call Device/meraki_common)
+	DEVICE_MODEL := GX20
+	DEVICE_DTS_CONFIG := config@2
+	DEVICE_PACKAGES := -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_gx20
 
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
