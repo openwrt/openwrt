@@ -135,6 +135,7 @@ define Device/pine64_rockpro64
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := RockPro64
   SOC := rk3399
+  SUPPORTED_DEVICES += pine64,rockpro64-v2.1
 endef
 TARGET_DEVICES += pine64_rockpro64
 
