@@ -18,7 +18,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +int spinand_cal_read(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen) {
 +	struct spinand_device *spinand = (struct spinand_device *)priv;
 +	struct device *dev = &spinand->spimem->spi->dev;
-+	struct spi_mem_op op = SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, buf, readlen);
++	struct spi_mem_op op = SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, buf, readlen);
 +	struct nand_pos pos;
 +	struct nand_page_io_req req;
 +	u8 status;

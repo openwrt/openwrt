@@ -1,0 +1,254 @@
+From 042087247835dad1ec5e39052abf022fd13c6326 Mon Sep 17 00:00:00 2001
+From: Miquel Raynal <miquel.raynal@bootlin.com>
+Date: Fri, 10 Jan 2025 15:45:23 +0100
+Subject: [PATCH] mtd: spinand: Create distinct fast and slow read from cache
+ variants
+
+So far, the SPINAND_PAGE_READ_FROM_CACHE_OP macro was taking a first
+argument, "fast", which was inducing the possibility to support higher
+bus frequencies than with the normal (slower) read from cache
+alternative. In practice, without frequency change on the bus, this was
+likely without effect, besides perhaps allowing another variant of the
+same command, that could run at the default highest speed. If we want to
+support this fully, we need to add a frequency parameter to the slowest
+command. But before we do that, let's drop the "fast" boolean from the
+macro and duplicate it, this will further help supporting having
+different frequencies allowed for each variant.
+
+The change is also of course propagated to all users. It has the nice
+effect to have all macros aligned on the same pattern.
+
+Reviewed-by: Tudor Ambarus <tudor.ambarus@linaro.org>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/nand/spi/alliancememory.c |  4 ++--
+ drivers/mtd/nand/spi/ato.c            |  4 ++--
+ drivers/mtd/nand/spi/esmt.c           |  4 ++--
+ drivers/mtd/nand/spi/foresee.c        |  4 ++--
+ drivers/mtd/nand/spi/gigadevice.c     | 16 ++++++++--------
+ drivers/mtd/nand/spi/macronix.c       |  4 ++--
+ drivers/mtd/nand/spi/micron.c         |  8 ++++----
+ drivers/mtd/nand/spi/paragon.c        |  4 ++--
+ drivers/mtd/nand/spi/toshiba.c        |  4 ++--
+ drivers/mtd/nand/spi/winbond.c        |  4 ++--
+ drivers/mtd/nand/spi/xtx.c            |  4 ++--
+ include/linux/mtd/spinand.h           | 20 ++++++++++++++++----
+ 12 files changed, 46 insertions(+), 34 deletions(-)
+
+--- a/drivers/mtd/nand/spi/alliancememory.c
++++ b/drivers/mtd/nand/spi/alliancememory.c
+@@ -21,8 +21,8 @@ static SPINAND_OP_VARIANTS(read_cache_va
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 			   SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/ato.c
++++ b/drivers/mtd/nand/spi/ato.c
+@@ -15,8 +15,8 @@
+ 
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/esmt.c
++++ b/drivers/mtd/nand/spi/esmt.c
+@@ -15,8 +15,8 @@
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 			   SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 			   SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-			   SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-			   SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++			   SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++			   SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 			   SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/foresee.c
++++ b/drivers/mtd/nand/spi/foresee.c
+@@ -14,8 +14,8 @@
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/gigadevice.c
++++ b/drivers/mtd/nand/spi/gigadevice.c
+@@ -28,32 +28,32 @@ static SPINAND_OP_VARIANTS(read_cache_va
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(read_cache_variants_f,
+ 		SPINAND_PAGE_READ_FROM_CACHE_QUADIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP_3A(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP_3A(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP_3A(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP_3A(false, 0, 0, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP_3A(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP_3A(0, 0, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(read_cache_variants_1gq5,
+ 		SPINAND_PAGE_READ_FROM_CACHE_QUADIO_OP(0, 2, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(read_cache_variants_2gq5,
+ 		SPINAND_PAGE_READ_FROM_CACHE_QUADIO_OP(0, 4, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 2, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/macronix.c
++++ b/drivers/mtd/nand/spi/macronix.c
+@@ -15,8 +15,8 @@
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/micron.c
++++ b/drivers/mtd/nand/spi/micron.c
+@@ -33,8 +33,8 @@ static SPINAND_OP_VARIANTS(quadio_read_c
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(x4_write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+@@ -48,8 +48,8 @@ static SPINAND_OP_VARIANTS(x4_update_cac
+ static SPINAND_OP_VARIANTS(x4_read_cache_variants,
+ 			   SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 			   SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-			   SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-			   SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++			   SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++			   SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(x1_write_cache_variants,
+ 			   SPINAND_PROG_LOAD(true, 0, NULL, 0));
+--- a/drivers/mtd/nand/spi/paragon.c
++++ b/drivers/mtd/nand/spi/paragon.c
+@@ -26,8 +26,8 @@ static SPINAND_OP_VARIANTS(read_cache_va
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/toshiba.c
++++ b/drivers/mtd/nand/spi/toshiba.c
+@@ -17,8 +17,8 @@
+ static SPINAND_OP_VARIANTS(read_cache_variants,
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_x4_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/winbond.c
++++ b/drivers/mtd/nand/spi/winbond.c
+@@ -20,8 +20,8 @@ static SPINAND_OP_VARIANTS(read_cache_va
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/drivers/mtd/nand/spi/xtx.c
++++ b/drivers/mtd/nand/spi/xtx.c
+@@ -20,8 +20,8 @@ static SPINAND_OP_VARIANTS(read_cache_va
+ 		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
+ 		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
+-		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
+ 
+ static SPINAND_OP_VARIANTS(write_cache_variants,
+ 		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -62,14 +62,26 @@
+ 		   SPI_MEM_OP_NO_DUMMY,					\
+ 		   SPI_MEM_OP_NO_DATA)
+ 
+-#define SPINAND_PAGE_READ_FROM_CACHE_OP(fast, addr, ndummy, buf, len)	\
+-	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
++#define SPINAND_PAGE_READ_FROM_CACHE_OP(addr, ndummy, buf, len) \
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),				\
+ 		   SPI_MEM_OP_ADDR(2, addr, 1),				\
+ 		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
+ 		   SPI_MEM_OP_DATA_IN(len, buf, 1))
+ 
+-#define SPINAND_PAGE_READ_FROM_CACHE_OP_3A(fast, addr, ndummy, buf, len) \
+-	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
++#define SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(addr, ndummy, buf, len) \
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x0b, 1),			\
++			 SPI_MEM_OP_ADDR(2, addr, 1),			\
++			 SPI_MEM_OP_DUMMY(ndummy, 1),			\
++			 SPI_MEM_OP_DATA_IN(len, buf, 1))
++
++#define SPINAND_PAGE_READ_FROM_CACHE_OP_3A(addr, ndummy, buf, len) \
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),				\
++		   SPI_MEM_OP_ADDR(3, addr, 1),				\
++		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
++		   SPI_MEM_OP_DATA_IN(len, buf, 1))
++
++#define SPINAND_PAGE_READ_FROM_CACHE_FAST_OP_3A(addr, ndummy, buf, len) \
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x0b, 1),				\
+ 		   SPI_MEM_OP_ADDR(3, addr, 1),				\
+ 		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
+ 		   SPI_MEM_OP_DATA_IN(len, buf, 1))

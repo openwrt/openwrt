@@ -74,8 +74,8 @@ Submitted-by: Daniel Danzberger <daniel@dd-wrt.com>
 +		SPINAND_PAGE_READ_FROM_CACHE_X4_OP(0, 1, NULL, 0),
 +		SPINAND_PAGE_READ_FROM_CACHE_DUALIO_OP(0, 1, NULL, 0),
 +		SPINAND_PAGE_READ_FROM_CACHE_X2_OP(0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_OP(true, 0, 1, NULL, 0),
-+		SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, NULL, 0));
++		SPINAND_PAGE_READ_FROM_CACHE_FAST_OP(0, 1, NULL, 0),
++		SPINAND_PAGE_READ_FROM_CACHE_OP(0, 1, NULL, 0));
 +
 +static SPINAND_OP_VARIANTS(write_cache_variants,
 +		SPINAND_PROG_LOAD_X4(true, 0, NULL, 0),
@@ -160,7 +160,7 @@ Submitted-by: Daniel Danzberger <daniel@dd-wrt.com>
 +};
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -263,6 +263,7 @@ struct spinand_manufacturer {
+@@ -275,6 +275,7 @@ struct spinand_manufacturer {
  extern const struct spinand_manufacturer alliancememory_spinand_manufacturer;
  extern const struct spinand_manufacturer ato_spinand_manufacturer;
  extern const struct spinand_manufacturer esmt_c8_spinand_manufacturer;
