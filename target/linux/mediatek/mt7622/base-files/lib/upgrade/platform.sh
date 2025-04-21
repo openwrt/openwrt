@@ -69,11 +69,8 @@ platform_check_image() {
 		return $?
 		;;
 	*)
-		[ "$magic" != "d00dfeed" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
+		fit_check_image "$1"
+		return $?
 		;;
 	esac
 
