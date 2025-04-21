@@ -123,10 +123,8 @@ platform_check_image() {
 	case "$(board_name)" in
 	bananapi,bpi-r2|\
 	unielec,u7623-02)
-		[ "$magic" != "d00dfeed" ] && {
-			echo "Invalid image type."
-			return 1
-		}
+		fit_check_image "$1"
+		return $?
 		;;
 	unielec,u7623-02-emmc-512m)
 		# Can always upgrade to the new-style full image
