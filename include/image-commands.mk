@@ -513,9 +513,9 @@ define Build/gl-qsdk-factory
 
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$(GL_ITS) \
+		$(BOOT_SCRIPT) \
 		$(GL_UBI) \
-		$(GL_IMGK) \
-		$(BOOT_SCRIPT)
+		$(GL_IMGK)
 
 	sed -i "s/rootfs_size/`wc -c $(GL_IMGK) | \
 	cut -d " " -f 1 | xargs printf "0x%x"`/g" $(BOOT_SCRIPT);
