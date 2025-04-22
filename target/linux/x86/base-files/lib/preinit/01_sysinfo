@@ -17,6 +17,7 @@ do_sysinfo_x86() {
 		Default\ [sS]tring | \
 		System\ manufacturer | \
 		To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
+			vendor="Unknown vendor"
 			continue
 			;;
 		esac
@@ -30,6 +31,7 @@ do_sysinfo_x86() {
 		?*:Default\ [sS]tring | \
 		?*:System\ Product\ Name | \
 		?*:To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
+			product="Unknown product"
 			continue
 			;;
 		"PC Engines:APU")
