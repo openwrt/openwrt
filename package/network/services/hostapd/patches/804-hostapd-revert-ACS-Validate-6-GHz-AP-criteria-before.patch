@@ -1,0 +1,56 @@
+From bc40770144e52d1103d1098dfe59da6108a6413b Mon Sep 17 00:00:00 2001
+From: Agustin Lorenzo <agustin.lorenzo@thinco.es>
+Date: Tue, 22 Apr 2025 22:13:58 +0200
+Subject: [PATCH] hostapd: revert "ACS: Validate 6 GHz AP criteria before ACS"
+
+By OpenWrt's design, hostapd runs in a single global instance for all radios supported by the device, rather than one instance per radio like hostapd usually does.
+
+This reverts commit 02a8d40c9ffb2987c291ea96cf7be7c012b359a3.
+---
+ src/ap/ap_config.c  | 2 +-
+ src/ap/ap_config.h  | 1 -
+ src/ap/ap_drv_ops.c | 6 ++----
+ 3 files changed, 3 insertions(+), 6 deletions(-)
+
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -1198,7 +1198,7 @@ static bool hostapd_sae_pk_password_with
+ #endif /* CONFIG_SAE_PK */
+ 
+ 
+-bool hostapd_config_check_bss_6g(struct hostapd_bss_config *bss)
++static bool hostapd_config_check_bss_6g(struct hostapd_bss_config *bss)
+ {
+ 	if (bss->wpa != WPA_PROTO_RSN) {
+ 		wpa_printf(MSG_ERROR,
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -1436,6 +1436,5 @@ int hostapd_add_acl_maclist(struct mac_a
+ 			    int vlan_id, const u8 *addr);
+ void hostapd_remove_acl_mac(struct mac_acl_entry **acl, int *num,
+ 			    const u8 *addr);
+-bool hostapd_config_check_bss_6g(struct hostapd_bss_config *bss);
+ 
+ #endif /* HOSTAPD_CONFIG_H */
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -1175,9 +1175,6 @@ void hostapd_get_hw_mode_any_channels(st
+ {
+ 	int i;
+ 	bool is_no_ir = false;
+-	bool allow_6g_acs = hostapd_config_check_bss_6g(hapd->conf) &&
+-		(hapd->iface->conf->ieee80211ax ||
+-		 hapd->iface->conf->ieee80211be);
+ 
+ 	for (i = 0; i < mode->num_channels; i++) {
+ 		struct hostapd_channel_data *chan = &mode->channels[i];
+@@ -1198,7 +1195,8 @@ void hostapd_get_hw_mode_any_channels(st
+ 		if (is_6ghz_freq(chan->freq) &&
+ 		    ((hapd->iface->conf->acs_exclude_6ghz_non_psc &&
+ 		      !is_6ghz_psc_frequency(chan->freq)) ||
+-		     !allow_6g_acs))
++		     (!hapd->iface->conf->ieee80211ax &&
++		      !hapd->iface->conf->ieee80211be)))
+ 			continue;
+ 		if ((!(chan->flag & HOSTAPD_CHAN_DISABLED) || allow_disabled) &&
+ 		    !(hapd->iface->conf->acs_exclude_dfs &&
