@@ -234,17 +234,17 @@
 +#ifdef CONFIG_OF
 +	dev_id = of_ath_ahb_probe(pdev);
 +#endif
- 	ret = devm_request_irq(&pdev->dev, irq, ath_isr, IRQF_SHARED, "ath9k", sc);
+ 	ret = request_irq(irq, ath_isr, IRQF_SHARED, "ath9k", sc);
  	if (ret) {
  		dev_err(&pdev->dev, "request_irq failed\n");
- 		return ret;
+ 		goto err_free_hw;
  	}
  
 -	ret = ath9k_init_device(id->driver_data, sc, &ath_ahb_bus_ops);
 +	ret = ath9k_init_device(dev_id, sc, &ath_ahb_bus_ops);
  	if (ret) {
  		dev_err(&pdev->dev, "failed to initialize device\n");
- 		goto err_free_hw;
+ 		goto err_irq;
  	}
 +#ifdef CONFIG_OF
 +	pdev->dev.platform_data = NULL;
@@ -252,7 +252,7 @@
  
  	ah = sc->sc_ah;
  	ath9k_hw_name(ah, hw_name, sizeof(hw_name));
-@@ -152,6 +363,9 @@ static struct platform_driver ath_ahb_dr
+@@ -155,6 +366,9 @@ static struct platform_driver ath_ahb_dr
  	.remove_new = ath_ahb_remove,
  	.driver		= {
  		.name	= "ath9k",
