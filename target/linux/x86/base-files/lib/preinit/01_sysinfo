@@ -14,6 +14,7 @@ do_sysinfo_x86() {
 		vendor="$(cat /sys/devices/virtual/dmi/id/$file 2>/dev/null)"
 		case "$vendor" in
 		empty | \
+		Default\ [sS]tring | \
 		System\ manufacturer | \
 		To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
 			continue
@@ -26,6 +27,7 @@ do_sysinfo_x86() {
 		product="$(cat /sys/devices/virtual/dmi/id/$file 2>/dev/null)"
 		case "$vendor:$product" in
 		?*:empty | \
+		?*:Default\ [sS]tring | \
 		?*:System\ Product\ Name | \
 		?*:To\ [bB]e\ [fF]illed\ [bB]y\ O\.E\.M\.)
 			continue
