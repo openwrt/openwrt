@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=r8101
 PKG_VERSION:=1.039.00
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://github.com/openwrt/rtl8101/releases/download/$(PKG_VERSION)
@@ -20,7 +20,7 @@ define KernelPackage/r8101
   TITLE:=Realtek RTL8101 PCI Fast Ethernet driver
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
   FILES:=$(PKG_BUILD_DIR)/src/r8101.ko
-  AUTOLOAD:=$(call AutoProbe,r8101)
+  AUTOLOAD:=$(call AutoProbe,r8101,1)
   PROVIDES:=kmod-r8169
 endef
 
