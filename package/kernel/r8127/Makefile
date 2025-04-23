@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=r8127
 PKG_VERSION:=11.014.00
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://github.com/openwrt/rtl8127/releases/download/$(PKG_VERSION)
@@ -20,7 +20,7 @@ define KernelPackage/r8127
   TITLE:=Realtek RTL8127 PCI 10 Gigabit Ethernet driver
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
   FILES:=$(PKG_BUILD_DIR)/src/r8127.ko
-  AUTOLOAD:=$(call AutoProbe,r8127)
+  AUTOLOAD:=$(call AutoProbe,r8127,1)
   PROVIDES:=kmod-r8169
   VARIANT:=regular
 endef
