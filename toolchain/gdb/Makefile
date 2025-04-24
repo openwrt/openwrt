@@ -56,6 +56,8 @@ else
   HOST_CONFIGURE_ARGS+= --without-python
 endif
 
+HOST_CFLAGS += -std=gnu17
+
 define Host/Install
 	mkdir -p $(TOOLCHAIN_DIR)/bin
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/gdb/gdb $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb
