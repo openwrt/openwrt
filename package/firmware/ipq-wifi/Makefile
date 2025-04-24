@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-04-22
-PKG_SOURCE_VERSION:=acf37292d2c1c27930b4d9ba58276b599706910d
-PKG_MIRROR_HASH:=1068b8ea938bfb0cd72bd48ef329e885a283e91f2ae864bfba9171c729e3d308
+PKG_SOURCE_DATE:=2025-05-13
+PKG_SOURCE_VERSION:=dae5a57ea2c28eea409c51cdcb1b57ecbb366a26
+PKG_MIRROR_HASH:=9a9a63cc41a8d992658149bf6a6dd2287d022cd8829a4c4a62a4a4449c88f31a
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -72,6 +72,7 @@ ALLWIFIBOARDS:= \
 	tplink_eap610-outdoor \
 	tplink_eap620hd-v1 \
 	tplink_eap623od-hd-v1 \
+	tplink_eap625-outdoor-hd-v1 \
 	tplink_eap660hd-v1 \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
@@ -224,6 +225,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
 $(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
 $(eval $(call generate-ipq-wifi-package,tplink_eap620hd-v1,TP-Link EAP620 HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap623od-hd-v1,TP-Link EAP623-Outdoor HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_eap625-outdoor-hd-v1,TP-Link EAP625-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
