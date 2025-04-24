@@ -1,0 +1,20 @@
+--- a/configure.py
++++ b/configure.py
+@@ -23,7 +23,7 @@ from __future__ import print_function
+ 
+ from optparse import OptionParser
+ import os
+-import pipes
++import shlex
+ import string
+ import subprocess
+ import sys
+@@ -264,7 +264,7 @@ n.variable('configure_args', ' '.join(co
+ env_keys = set(['CXX', 'AR', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS'])
+ configure_env = dict((k, os.environ[k]) for k in os.environ if k in env_keys)
+ if configure_env:
+-    config_str = ' '.join([k + '=' + pipes.quote(configure_env[k])
++    config_str = ' '.join([k + '=' + shlex.quote(configure_env[k])
+                            for k in configure_env])
+     n.variable('configure_env', config_str + '$ ')
+ n.newline()
