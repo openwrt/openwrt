@@ -51,7 +51,7 @@ define Package/udebug-cli
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenWrt debug service CLI
-  DEPENDS:=+udebugd +ucode-mod-udebug
+  DEPENDS:=+udebugd +ucode-mod-udebug +ucode-mod-uloop +ucode-mod-ubus
 endef
 
 define Package/libudebug/install
