@@ -118,8 +118,6 @@ platform_do_upgrade() {
 	linksys,e7350|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
-	linksys,ea7300-v2|\
-	linksys,ea7500-v2|\
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
 	mts,wg430223|\
@@ -202,6 +200,10 @@ platform_do_upgrade() {
 		CI_UBIPART="firmware"
 		CI_KERNPART="kernel"
 		nand_do_upgrade "$1"
+		;;
+	linksys,ea7300-v2|\
+	linksys,ea7500-v2)
+		platform_do_upgrade_linksys "$1"
 		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
