@@ -23,7 +23,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/phy/aquantia/aquantia.h
 +++ b/drivers/net/phy/aquantia/aquantia.h
-@@ -169,6 +169,7 @@ static const struct aqr107_hw_stat aqr10
+@@ -177,6 +177,7 @@ static const struct aqr107_hw_stat aqr10
  struct aqr107_priv {
  	u64 sgmii_stats[AQR107_SGMII_STAT_SZ];
  	unsigned long leds_active_low;
@@ -80,7 +80,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
 --- a/drivers/net/phy/aquantia/aquantia_main.c
 +++ b/drivers/net/phy/aquantia/aquantia_main.c
-@@ -529,7 +529,7 @@ static int aqr107_config_mdi(struct phy_
+@@ -517,7 +517,7 @@ static int aqr107_config_mdi(struct phy_
  static int aqr107_config_init(struct phy_device *phydev)
  {
  	struct aqr107_priv *priv = phydev->priv;
@@ -89,7 +89,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int ret;
  
  	/* Check that the PHY interface type is compatible */
-@@ -569,8 +569,14 @@ static int aqr107_config_init(struct phy
+@@ -548,8 +548,14 @@ static int aqr107_config_init(struct phy
  		return ret;
  
  	/* Restore LED polarity state after reset */
