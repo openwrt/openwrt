@@ -41,6 +41,37 @@ struct rtldsa_mib_list_item {
 };
 
 struct rtldsa_mib_desc {
+	struct rtldsa_mib_item symbol_errors;
+
+	struct rtldsa_mib_item if_in_octets;
+	struct rtldsa_mib_item if_out_octets;
+	struct rtldsa_mib_item if_in_ucast_pkts;
+	struct rtldsa_mib_item if_in_mcast_pkts;
+	struct rtldsa_mib_item if_in_bcast_pkts;
+	struct rtldsa_mib_item if_out_ucast_pkts;
+	struct rtldsa_mib_item if_out_mcast_pkts;
+	struct rtldsa_mib_item if_out_bcast_pkts;
+	struct rtldsa_mib_item single_collisions;
+	struct rtldsa_mib_item multiple_collisions;
+	struct rtldsa_mib_item deferred_transmissions;
+	struct rtldsa_mib_item late_collisions;
+	struct rtldsa_mib_item excessive_collisions;
+	struct rtldsa_mib_item crc_align_errors;
+
+	struct rtldsa_mib_item unsupported_opcodes;
+
+	struct rtldsa_mib_item rx_undersize_pkts;
+	struct rtldsa_mib_item rx_oversize_pkts;
+	struct rtldsa_mib_item rx_fragments;
+	struct rtldsa_mib_item rx_jabbers;
+
+	struct rtldsa_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct rtldsa_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
+
+	struct rtldsa_mib_item rx_pause_frames;
+	struct rtldsa_mib_item tx_pause_frames;
+
 	size_t list_count;
 	const struct rtldsa_mib_list_item *list;
 };
