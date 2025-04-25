@@ -1,0 +1,80 @@
+/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
+/dts-v1/;
+
+#include "mt7981b-netis-common.dtsi"
+
+/ {
+    compatible = "netis,nx30v2", "mediatek,mt7981";
+
+		aliases {
+			label-mac-device = &gmac0;
+			led-boot = &led_power;
+			led-failsafe = &led_power;
+			led-running = &led_power;
+			led-upgrade = &led_mesh;
+		};
+
+		leds{
+			compatible = "gpio-leds";
+
+			/*
+			offical definition of nx30v2 leds:
+			[power] [internet] [mesh] [wifi] [lan3/2/1] [wan]
+
+			redefine for openwrt:
+			[power]: led-boot, led-failsafe, led-running
+			[mesh]: led-upgrade
+			[internet]: unused
+			[wifi] and [lan3/2/1] are controlled by wifi and ethernet driver
+			*/
+
+			led_power: power {
+				label = "blue:power";
+				gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+				default-state = "on";
+				linux,default-trigger = "none";
+			};
+
+			led_internet: internet {
+				label = "blue:internet";
+				gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+				default-state = "off";
+				linux,default-trigger = "none";
+			};
+
+			led_mesh: mesh {
+				label = "blue:mesh";
+				gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+				default-state = "off";
+				linux,default-trigger = "none";
+			};
+
+			led_wan: wan {
+				label = "blue:wan";
+				gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+				linux,default-trigger = "netdev";
+			};
+		};
+	};
+
+&switch {
+	ports {
+		port@0 {
+			reg = <1>;
+			label = "lan1";
+			status = "ok";
+		};
+
+		port@1 {
+			reg = <2>;
+			label = "lan2";
+			status = "ok";
+		};
+
+		port@2 {
+			reg = <3>;
+			label = "lan3";
+			status = "ok";
+		};
+	};
+};
