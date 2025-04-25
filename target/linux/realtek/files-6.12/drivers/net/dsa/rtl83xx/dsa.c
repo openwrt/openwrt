@@ -79,6 +79,7 @@ const struct rtldsa_mib_desc rtldsa_838x_mib = {
 	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
 	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
 	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd0, 1),
 	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
 	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
 	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
@@ -121,6 +122,9 @@ const struct rtldsa_mib_desc rtldsa_838x_mib = {
 		{ 1519, 10000 }
 	},
 
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
 
@@ -159,6 +163,7 @@ const struct rtldsa_mib_desc rtldsa_839x_mib = {
 	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
 	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
 	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
 	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
 	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
 	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
@@ -200,6 +205,9 @@ const struct rtldsa_mib_desc rtldsa_839x_mib = {
 		{ 1024, 1518 },
 		{ 1519, 12288 }
 	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
 
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
@@ -249,6 +257,7 @@ const struct rtldsa_mib_desc rtldsa_930x_mib = {
 	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xd0, 2),
 	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc8, 2),
 	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc0, 2),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
 	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
 	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
 	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xac, 1),
@@ -293,6 +302,9 @@ const struct rtldsa_mib_desc rtldsa_930x_mib = {
 		{ 1519, 12288 },
 		{ 12289, 65535 }
 	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0x90, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x5c, 1),
 
 	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
 	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
@@ -1277,6 +1289,51 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 	}
 
 	*ranges = mib_desc->rmon_ranges;
+}
+
+static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
+			       struct rtnl_link_stats64 *s)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtldsa_mib_desc *mib_desc;
+	uint64_t val;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc) {
+		dev_get_tstats64(dsa_to_port(ds, port)->user, s);
+		return;
+	}
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->if_in_ucast_pkts, &s->rx_packets);
+	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_mcast_pkts, &s->multicast))
+		s->rx_packets += s->multicast;
+	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_bcast_pkts, &val))
+		s->rx_packets += val;
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_ucast_pkts, &s->tx_packets);
+	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_mcast_pkts, &val))
+		s->tx_packets += val;
+	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_bcast_pkts, &val))
+		s->tx_packets += val;
+
+	/* Ideally, we should subtract the FCS for each packet here */
+	rtldsa_read_mib_item(priv, port, &mib_desc->if_in_octets, &s->rx_bytes);
+	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_octets, &s->tx_bytes);
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->collisions, &s->collisions);
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->drop_events, &s->rx_dropped);
+	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_discards, &s->tx_dropped);
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->crc_align_errors, &s->rx_crc_errors);
+	s->rx_errors = s->rx_crc_errors;
+
+	rtldsa_read_mib_item(priv, port, &mib_desc->excessive_collisions, &s->tx_aborted_errors);
+	rtldsa_read_mib_item(priv, port, &mib_desc->late_collisions, &s->tx_window_errors);
+	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
 }
 
 static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
@@ -2501,6 +2558,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
 	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
 	.get_rmon_stats		= rtldsa_get_rmon_stats,
+	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
 	.port_enable		= rtl83xx_port_enable,
@@ -2563,6 +2621,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
 	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
 	.get_rmon_stats		= rtldsa_get_rmon_stats,
+	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
 	.port_enable		= rtl83xx_port_enable,

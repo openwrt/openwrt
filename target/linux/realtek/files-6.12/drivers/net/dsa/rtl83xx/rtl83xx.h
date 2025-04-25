@@ -51,6 +51,7 @@ struct rtldsa_mib_desc {
 	struct rtldsa_mib_item if_out_ucast_pkts;
 	struct rtldsa_mib_item if_out_mcast_pkts;
 	struct rtldsa_mib_item if_out_bcast_pkts;
+	struct rtldsa_mib_item if_out_discards;
 	struct rtldsa_mib_item single_collisions;
 	struct rtldsa_mib_item multiple_collisions;
 	struct rtldsa_mib_item deferred_transmissions;
@@ -68,6 +69,9 @@ struct rtldsa_mib_desc {
 	struct rtldsa_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
 	struct rtldsa_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
 	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
+
+	struct rtldsa_mib_item drop_events;
+	struct rtldsa_mib_item collisions;
 
 	struct rtldsa_mib_item rx_pause_frames;
 	struct rtldsa_mib_item tx_pause_frames;
