@@ -1,7 +1,7 @@
-From 163b07bda901b728f4f208a296c15b513f9d5b49 Mon Sep 17 00:00:00 2001
+From e05d84829cd692985ebabac8dbe93a98f0aa04a4 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Sun, 2 Jan 2022 15:10:34 +0100
-Subject: [PATCH 3/3] arm: mvebu: add support for MikroTik RB5009UG+S+IN
+Subject: [PATCH 2/2] arm: mvebu: add support for MikroTik RB5009UG+S+IN
 
 Specifications:
   - SoC: Marvell Armada 7040 (88F7040) - 4 cores, ARMv8, 1.4GHz, 64bit
@@ -23,8 +23,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  arch/arm/dts/armada-7040-rb5009.dts           | 241 ++++++++++++++++++
  arch/arm/mach-mvebu/arm64-common.c            |  10 +-
  .../mvebu_armada-8k/mikrotik-rb5009.env       |  52 ++++
- configs/mvebu_rb5009_defconfig                |  97 +++++++
- 5 files changed, 398 insertions(+), 3 deletions(-)
+ configs/mvebu_rb5009_defconfig                |  96 +++++++
+ 5 files changed, 397 insertions(+), 3 deletions(-)
  create mode 100644 arch/arm/dts/armada-7040-rb5009.dts
  create mode 100644 board/Marvell/mvebu_armada-8k/mikrotik-rb5009.env
  create mode 100644 configs/mvebu_rb5009_defconfig
@@ -359,7 +359,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	bootm ${loadaddr};
 --- /dev/null
 +++ b/configs/mvebu_rb5009_defconfig
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,96 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_CPU_INIT=y
 +CONFIG_ARCH_MVEBU=y
@@ -454,6 +454,5 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +CONFIG_USB_STORAGE=y
 +CONFIG_USB_HOST_ETHER=y
 +CONFIG_USB_ETHER_RTL8152=y
-+CONFIG_YAFFS2=y
 +# CONFIG_SHA256 is not set
 +# CONFIG_EFI_LOADER is not set
