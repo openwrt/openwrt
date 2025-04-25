@@ -151,6 +151,10 @@ netgear,eax17)
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
 	;;
+netis,nx30v2)
+	ucidef_set_led_netdev "wanlink" "WANLINK" "blue:wan" "eth1" "link"
+	ucidef_set_led_netdev "wanact" "WANACT" "blue:wan-online" "eth1" "tx rx"
+	;;
 netis,nx31)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;

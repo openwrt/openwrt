@@ -2140,6 +2140,37 @@ define Device/netgear_wax220
 endef
 TARGET_DEVICES += netgear_wax220
 
+define Device/netis_nx30v2
+  DEVICE_VENDOR := Netis
+  DEVICE_MODEL := NX30V2
+  DEVICE_ALT0_VENDOR := Netcore
+  DEVICE_ALT0_MODEL := POWER30AX
+  DEVICE_ALT1_VENDOR := Netcore
+  DEVICE_ALT1_MODEL := N30PRO
+  DEVICE_ALT2_VENDOR := GWBN
+  DEVICE_ALT2_MODEL := GW3001
+  DEVICE_ALT3_VENDOR := GLC
+  DEVICE_ALT3_MODEL := W7
+  DEVICE_DTS := mt7981b-netis-nx30v2
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := 117248k
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+  ARTIFACTS := spim-nand-preloader.bin spim-nand-bl31-uboot.fip
+  ARTIFACT/spim-nand-preloader.bin	:= mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/spim-nand-bl31-uboot.fip	:= mt7981-bl31-uboot netis_nx30v2
+endef
+TARGET_DEVICES += netis_nx30v2
+
 define Device/netis_nx31
   DEVICE_VENDOR := netis
   DEVICE_MODEL := NX31
