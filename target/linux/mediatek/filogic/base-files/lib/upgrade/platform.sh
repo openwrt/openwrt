@@ -101,6 +101,7 @@ platform_do_upgrade() {
 	openwrt,one|\
 	netcore,n60|\
 	netcore,n60-pro|\
+	netcore,nx30v2|\
 	qihoo,360t7|\
 	routerich,ax3000-ubootmod|\
 	snr,snr-cpe-ax2|\
