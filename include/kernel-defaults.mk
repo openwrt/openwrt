@@ -187,7 +187,7 @@ define Kernel/CompileImage/Initramfs
 	$(call locked,{ \
 		$(if $(2),$(call Kernel/PrepareConfigPerRootfs,$(LINUX_DIR)$(2));) \
 		$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2)); \
-		$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(if $(1),$(1),$(TARGET_DIR))/init; \
+		$(CP) $(GENERIC_OTHER_FILES_DIR)/init $(if $(1),$(1),$(TARGET_DIR))/init; \
 		$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(if $(1),$(1),$(TARGET_DIR)) $(if $(1),$(1),$(TARGET_DIR))/init;) \
 		rm -rf $(LINUX_DIR)$(2)/usr/initramfs_data.cpio*; \
 		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
