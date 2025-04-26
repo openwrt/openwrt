@@ -6339,7 +6339,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +{
 +	struct snd_soc_card *card = &snd_soc_audioinjector;
 +	int ret;
-+	
++
 +	card->dev = &pdev->dev;
 +
 +	if (pdev->dev.of_node) {
@@ -15487,7 +15487,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +#define ISABRECODEC_REG_10	0x10	/* 0x01 = above 192kHz, 0x00 = otherwise */
 +#define ISABRECODEC_REG_20	0x20	/* 0 - 100 (decimal value, 0 = min., 100 = max.) */
 +#define ISABRECODEC_REG_21	0x21	/* 0x00 = Mute OFF, 0x01 = Mute ON */
-+#define ISABRECODEC_REG_22	0x22	
++#define ISABRECODEC_REG_22	0x22
 +/*
 +   0x00 = brick wall,
 +   0x01 = corrected minimum phase fast,

@@ -911,8 +911,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  create mode 120000 arch/arm64/boot/dts/overlays
  create mode 100644 include/dt-bindings/gpio/gpio-fsm.h
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index efe38eb25301..a2a407fb5b28 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -39,3 +39,8 @@ subdir-y += unisoc
@@ -924,8 +922,6 @@ index efe38eb25301..a2a407fb5b28 100644
 +targets += $(dtb-y)
 +
 +subdir-y += overlays
-diff --git a/arch/arm/boot/dts/broadcom/Makefile b/arch/arm/boot/dts/broadcom/Makefile
-index 7099d9560033..4af351c7f7b2 100644
 --- a/arch/arm/boot/dts/broadcom/Makefile
 +++ b/arch/arm/boot/dts/broadcom/Makefile
 @@ -35,6 +35,41 @@ dtb-$(CONFIG_ARCH_BCM2835) += \
@@ -970,9 +966,7 @@ index 7099d9560033..4af351c7f7b2 100644
  dtb-$(CONFIG_ARCH_BCMBCA) += \
  	bcm947622.dtb \
  	bcm963138.dtb \
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-plus.dts
 new file mode 100644
-index 000000000000..b317e83b7efe
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-plus.dts
 @@ -0,0 +1,208 @@
@@ -1184,9 +1178,7 @@ index 000000000000..b317e83b7efe
 +		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-rev1.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-rev1.dts
 new file mode 100644
-index 000000000000..228fd470b619
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b-rev1.dts
 @@ -0,0 +1,220 @@
@@ -1410,9 +1402,7 @@ index 000000000000..228fd470b619
 +		i2c_vc_baudrate = <&i2c1>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-b.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b.dts
 new file mode 100644
-index 000000000000..1df74d5aa73c
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-b.dts
 @@ -0,0 +1,195 @@
@@ -1611,9 +1601,7 @@ index 000000000000..1df74d5aa73c
 +		act_led_trigger = <&led_act>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-bt.dtsi b/arch/arm/boot/dts/broadcom/bcm2708-rpi-bt.dtsi
 new file mode 100644
-index 000000000000..98555528adae
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-bt.dtsi
 @@ -0,0 +1,38 @@
@@ -1655,9 +1643,7 @@ index 000000000000..98555528adae
 +		krnbt_baudrate = <&bt>,"max-speed:0", <&minibt>,"max-speed:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dts
 new file mode 100644
-index 000000000000..6f7fea058aba
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dts
 @@ -0,0 +1,171 @@
@@ -1832,9 +1818,7 @@ index 000000000000..6f7fea058aba
 +&hdmi {
 +	hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dtsi b/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dtsi
 new file mode 100644
-index 000000000000..10fd4475dd5e
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-cm.dtsi
 @@ -0,0 +1,27 @@
@@ -1865,9 +1849,7 @@ index 000000000000..10fd4475dd5e
 +		cam1_reg_gpio = <&cam1_reg>,"gpio:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero-w.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero-w.dts
 new file mode 100644
-index 000000000000..4266caf1016c
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero-w.dts
 @@ -0,0 +1,254 @@
@@ -2125,9 +2107,7 @@ index 000000000000..4266caf1016c
 +		act_led_trigger = <&led_act>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero.dts b/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero.dts
 new file mode 100644
-index 000000000000..3069f58221ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi-zero.dts
 @@ -0,0 +1,189 @@
@@ -2320,9 +2300,7 @@ index 000000000000..3069f58221ff
 +		act_led_trigger = <&led_act>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708-rpi.dtsi b/arch/arm/boot/dts/broadcom/bcm2708-rpi.dtsi
 new file mode 100644
-index 000000000000..f774eda1ae55
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708-rpi.dtsi
 @@ -0,0 +1,40 @@
@@ -2366,9 +2344,7 @@ index 000000000000..f774eda1ae55
 +&i2c2 {
 +	status = "disabled";
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2708.dtsi b/arch/arm/boot/dts/broadcom/bcm2708.dtsi
 new file mode 100644
-index 000000000000..fdc7f2423bbe
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2708.dtsi
 @@ -0,0 +1,19 @@
@@ -2391,9 +2367,7 @@ index 000000000000..fdc7f2423bbe
 +&vc4 {
 +	status = "disabled";
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2709-rpi-2-b.dts b/arch/arm/boot/dts/broadcom/bcm2709-rpi-2-b.dts
 new file mode 100644
-index 000000000000..c3e1b1be0140
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2709-rpi-2-b.dts
 @@ -0,0 +1,202 @@
@@ -2599,9 +2573,7 @@ index 000000000000..c3e1b1be0140
 +		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2709-rpi-cm2.dts b/arch/arm/boot/dts/broadcom/bcm2709-rpi-cm2.dts
 new file mode 100644
-index 000000000000..78881c522eba
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2709-rpi-cm2.dts
 @@ -0,0 +1,220 @@
@@ -2825,9 +2797,7 @@ index 000000000000..78881c522eba
 +		cam1_reg_gpio = <&cam1_reg>,"gpio:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2709-rpi.dtsi b/arch/arm/boot/dts/broadcom/bcm2709-rpi.dtsi
 new file mode 100644
-index 000000000000..7335e7fbcb71
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2709-rpi.dtsi
 @@ -0,0 +1,8 @@
@@ -2839,9 +2809,7 @@ index 000000000000..7335e7fbcb71
 +
 +i2c_arm: &i2c1 {};
 +i2c_vc: &i2c0 {};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2709.dtsi b/arch/arm/boot/dts/broadcom/bcm2709.dtsi
 new file mode 100644
-index 000000000000..868f65f922ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2709.dtsi
 @@ -0,0 +1,29 @@
@@ -2874,9 +2842,7 @@ index 000000000000..868f65f922ff
 +&vc4 {
 +	status = "disabled";
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm270x-rpi.dtsi b/arch/arm/boot/dts/broadcom/bcm270x-rpi.dtsi
 new file mode 100644
-index 000000000000..be53604cb951
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm270x-rpi.dtsi
 @@ -0,0 +1,180 @@
@@ -3060,9 +3026,7 @@ index 000000000000..be53604cb951
 +};
 +
 +#endif
-diff --git a/arch/arm/boot/dts/broadcom/bcm270x.dtsi b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
 new file mode 100644
-index 000000000000..c318080eb883
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm270x.dtsi
 @@ -0,0 +1,294 @@
@@ -3360,9 +3324,7 @@ index 000000000000..c318080eb883
 +	dmas = <&dma 6>, <&dma 7>;
 +	dma-names = "tx", "rx";
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-2-b.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-2-b.dts
 new file mode 100644
-index 000000000000..3c89b4446aca
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-2-b.dts
 @@ -0,0 +1,202 @@
@@ -3568,9 +3530,7 @@ index 000000000000..3c89b4446aca
 +		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
 new file mode 100644
-index 000000000000..818804dc2f49
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
 @@ -0,0 +1,297 @@
@@ -3871,9 +3831,7 @@ index 000000000000..818804dc2f49
 +		eth_max_speed = <&eth_phy>,"max-speed:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b.dts
 new file mode 100644
-index 000000000000..14bb3be1fc87
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-3-b.dts
 @@ -0,0 +1,299 @@
@@ -4176,9 +4134,7 @@ index 000000000000..14bb3be1fc87
 +		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-cm3.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-cm3.dts
 new file mode 100644
-index 000000000000..5cb73424e3fa
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-cm3.dts
 @@ -0,0 +1,220 @@
@@ -4402,9 +4358,7 @@ index 000000000000..5cb73424e3fa
 +		cam1_reg_gpio = <&cam1_reg>,"gpio:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts
 new file mode 100644
-index 000000000000..8cf0f45d3950
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts
 @@ -0,0 +1,272 @@
@@ -4680,16 +4634,12 @@ index 000000000000..8cf0f45d3950
 +		act_led_trigger = <&led_act>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2.dts b/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2.dts
 new file mode 100644
-index 000000000000..daa12bd30d6b
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710-rpi-zero-2.dts
 @@ -0,0 +1 @@
 +#include "bcm2710-rpi-zero-2-w.dts"
-diff --git a/arch/arm/boot/dts/broadcom/bcm2710.dtsi b/arch/arm/boot/dts/broadcom/bcm2710.dtsi
 new file mode 100644
-index 000000000000..bdcdbb51fab8
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2710.dtsi
 @@ -0,0 +1,32 @@
@@ -4725,8 +4675,6 @@ index 000000000000..bdcdbb51fab8
 +&vc4 {
 +	status = "disabled";
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
-index d5f8823230db..e3ce216d0c22 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-4-b.dts
 @@ -1,10 +1,16 @@
@@ -4748,7 +4696,7 @@ index d5f8823230db..e3ce216d0c22 100644
  
  / {
  	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
-@@ -60,7 +66,7 @@ &expgpio {
+@@ -60,7 +66,7 @@
  			  "VDD_SD_IO_SEL",
  			  "CAM_GPIO",		/*  5 */
  			  "SD_PWR_ON",
@@ -4757,7 +4705,7 @@ index d5f8823230db..e3ce216d0c22 100644
  };
  
  &gpio {
-@@ -241,3 +247,168 @@ &vec {
+@@ -241,3 +247,168 @@
  &wifi_pwrseq {
  	reset-gpios = <&expgpio 1 GPIO_ACTIVE_LOW>;
  };
@@ -4926,11 +4874,9 @@ index d5f8823230db..e3ce216d0c22 100644
 +		eth_led1 = <&phy1>,"led-modes:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-400.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-400.dts
-index 5a2869a18bd5..de36357cd73f 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi-400.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-400.dts
-@@ -41,3 +41,44 @@ &led_pwr {
+@@ -41,3 +41,44 @@
  &pm {
  	/delete-property/ system-power-controller;
  };
@@ -4975,9 +4921,7 @@ index 5a2869a18bd5..de36357cd73f 100644
 +		pwr_led_trigger = <&led_pwr>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts
 new file mode 100644
-index 000000000000..3df663553f5a
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4.dts
 @@ -0,0 +1,443 @@
@@ -5424,9 +5368,7 @@ index 000000000000..3df663553f5a
 +				  <&cam1_reg>,"gpio:0=", <&gpio>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 new file mode 100644
-index 000000000000..c51ba974adca
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 @@ -0,0 +1,295 @@
@@ -5725,9 +5667,7 @@ index 000000000000..c51ba974adca
 +		cam1_reg_gpio = <&cam1_reg>,"gpio:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
 new file mode 100644
-index 000000000000..968db6362989
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi-ds.dtsi
 @@ -0,0 +1,534 @@
@@ -6265,11 +6205,9 @@ index 000000000000..968db6362989
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi b/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi
-index 98817a6675b9..7b9e946db985 100644
 --- a/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi
 +++ b/arch/arm/boot/dts/broadcom/bcm2711-rpi.dtsi
-@@ -15,6 +15,7 @@ aliases {
+@@ -15,6 +15,7 @@
  		ethernet0 = &genet;
  		pcie0 = &pcie0;
  		blconfig = &blconfig;
@@ -6277,10 +6215,13 @@ index 98817a6675b9..7b9e946db985 100644
  	};
  };
  
-@@ -67,6 +68,18 @@ blconfig: nvram@0 {
- 		no-map;
- 		status = "disabled";
- 	};
+@@ -64,6 +65,18 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		reg = <0x0 0x0 0x0>;
++		no-map;
++		status = "disabled";
++	};
 +	/*
 +	 * RPi4 will copy the binary public key blob (if present) from the bootloader
 +	 * into memory for use by the OS.
@@ -6290,15 +6231,10 @@ index 98817a6675b9..7b9e946db985 100644
 +		#address-cells = <1>;
 +		#size-cells = <1>;
 +		reg = <0x0 0x0 0x0>;
-+		no-map;
-+		status = "disabled";
-+	};
- };
- 
- &v3d {
-diff --git a/arch/arm/boot/dts/broadcom/bcm271x-rpi-bt.dtsi b/arch/arm/boot/dts/broadcom/bcm271x-rpi-bt.dtsi
+ 		no-map;
+ 		status = "disabled";
+ 	};
 new file mode 100644
-index 000000000000..400efdc5f03c
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm271x-rpi-bt.dtsi
 @@ -0,0 +1,38 @@
@@ -6340,9 +6276,7 @@ index 000000000000..400efdc5f03c
 +		krnbt_baudrate = <&bt>,"max-speed:0", <&minibt>,"max-speed:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi0-2lane.dtsi b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi0-2lane.dtsi
 new file mode 100644
-index 000000000000..6e4ce8622b47
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi0-2lane.dtsi
 @@ -0,0 +1,4 @@
@@ -6350,9 +6284,7 @@ index 000000000000..6e4ce8622b47
 +&csi0 {
 +	brcm,num-data-lanes = <2>;
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi
 new file mode 100644
-index 000000000000..6938f4daacdc
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-2lane.dtsi
 @@ -0,0 +1,4 @@
@@ -6360,9 +6292,7 @@ index 000000000000..6938f4daacdc
 +&csi1 {
 +	brcm,num-data-lanes = <2>;
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-4lane.dtsi b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-4lane.dtsi
 new file mode 100644
-index 000000000000..b37037437bee
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm283x-rpi-csi1-4lane.dtsi
 @@ -0,0 +1,4 @@
@@ -6370,9 +6300,7 @@ index 000000000000..b37037437bee
 +&csi1 {
 +	brcm,num-data-lanes = <4>;
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_28.dtsi b/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_28.dtsi
 new file mode 100644
-index 000000000000..38f0074bce3f
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_28.dtsi
 @@ -0,0 +1,4 @@
@@ -6380,9 +6308,7 @@ index 000000000000..38f0074bce3f
 +	pinctrl-0 = <&i2c0_gpio0>;
 +	pinctrl-1 = <&i2c0_gpio28>;
 +};
-diff --git a/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_44.dtsi b/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_44.dtsi
 new file mode 100644
-index 000000000000..119946d878db
 --- /dev/null
 +++ b/arch/arm/boot/dts/broadcom/bcm283x-rpi-i2c0mux_0_44.dtsi
 @@ -0,0 +1,4 @@
@@ -6390,9 +6316,7 @@ index 000000000000..119946d878db
 +	pinctrl-0 = <&i2c0_gpio0>;
 +	pinctrl-1 = <&i2c0_gpio44>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
 new file mode 100644
-index 000000000000..b4fbefe77316
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -0,0 +1,295 @@
@@ -6691,9 +6615,7 @@ index 000000000000..b4fbefe77316
 +
 +always-y	:= $(dtbo-y)
 +clean-files	:= *.dtbo
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
 new file mode 100644
-index 000000000000..1b6fe60d00e7
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -0,0 +1,4779 @@
@@ -11476,9 +11398,7 @@ index 000000000000..1b6fe60d00e7
 +Raspberry Pi. There is a more complete explanation here:
 +
 +http://www.raspberrypi.org/documentation/configuration/device-tree.md
-diff --git a/arch/arm/boot/dts/overlays/act-led-overlay.dts b/arch/arm/boot/dts/overlays/act-led-overlay.dts
 new file mode 100644
-index 000000000000..685e354923a0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/act-led-overlay.dts
 @@ -0,0 +1,28 @@
@@ -11510,9 +11430,7 @@ index 000000000000..685e354923a0
 +		activelow = <&frag0>,"gpios:8";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adafruit-st7735r-overlay.dts b/arch/arm/boot/dts/overlays/adafruit-st7735r-overlay.dts
 new file mode 100644
-index 000000000000..6e69bd7fa031
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adafruit-st7735r-overlay.dts
 @@ -0,0 +1,83 @@
@@ -11599,9 +11517,7 @@ index 000000000000..6e69bd7fa031
 +			  <&backlight_pins>,"brcm,pins:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adafruit18-overlay.dts b/arch/arm/boot/dts/overlays/adafruit18-overlay.dts
 new file mode 100644
-index 000000000000..e1ce94a8cd3e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adafruit18-overlay.dts
 @@ -0,0 +1,55 @@
@@ -11660,9 +11576,7 @@ index 000000000000..e1ce94a8cd3e
 +		led_pin   = <&af18>,"led-gpios:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adau1977-adc-overlay.dts b/arch/arm/boot/dts/overlays/adau1977-adc-overlay.dts
 new file mode 100644
-index 000000000000..298488e19156
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adau1977-adc-overlay.dts
 @@ -0,0 +1,40 @@
@@ -11672,15 +11586,15 @@ index 000000000000..298488e19156
 +
 +/ {
 +	compatible = "brcm,bcm2835";
-+    
++
 +	fragment@0 {
 +        	target = <&i2c>;
-+        	
++
 +		__overlay__ {
 +			#address-cells = <1>;
 +			#size-cells = <0>;
 +			status = "okay";
-+			
++
 +			adau1977: codec@11 {
 +                        	compatible = "adi,adau1977";
 +                        	reg = <0x11>;
@@ -11706,9 +11620,7 @@ index 000000000000..298488e19156
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adau7002-simple-overlay.dts b/arch/arm/boot/dts/overlays/adau7002-simple-overlay.dts
 new file mode 100644
-index 000000000000..5fed769d2526
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adau7002-simple-overlay.dts
 @@ -0,0 +1,52 @@
@@ -11764,9 +11676,7 @@ index 000000000000..5fed769d2526
 +        card-name = <&sound_overlay>,"simple-audio-card,name";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/ads1015-overlay.dts b/arch/arm/boot/dts/overlays/ads1015-overlay.dts
 new file mode 100644
-index 000000000000..dc1764613a8b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ads1015-overlay.dts
 @@ -0,0 +1,98 @@
@@ -11868,9 +11778,7 @@ index 000000000000..dc1764613a8b
 +   };
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/ads1115-overlay.dts b/arch/arm/boot/dts/overlays/ads1115-overlay.dts
 new file mode 100644
-index 000000000000..e44ced704ee2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ads1115-overlay.dts
 @@ -0,0 +1,103 @@
@@ -11977,9 +11885,7 @@ index 000000000000..e44ced704ee2
 +		chd_datarate =    <&channel_d>,"ti,datarate:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ads7846-overlay.dts b/arch/arm/boot/dts/overlays/ads7846-overlay.dts
 new file mode 100644
-index 000000000000..1c5c9b6bb6ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ads7846-overlay.dts
 @@ -0,0 +1,89 @@
@@ -12072,9 +11978,7 @@ index 000000000000..1c5c9b6bb6ff
 +		xohms =  <&ads7846>,"ti,x-plate-ohms;0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adv7282m-overlay.dts b/arch/arm/boot/dts/overlays/adv7282m-overlay.dts
 new file mode 100644
-index 000000000000..f7e97c4a13d8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adv7282m-overlay.dts
 @@ -0,0 +1,73 @@
@@ -12151,9 +12055,7 @@ index 000000000000..f7e97c4a13d8
 +		media-controller = <0>,"=4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/adv728x-m-overlay.dts b/arch/arm/boot/dts/overlays/adv728x-m-overlay.dts
 new file mode 100644
-index 000000000000..ea392e886984
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/adv728x-m-overlay.dts
 @@ -0,0 +1,37 @@
@@ -12194,9 +12096,7 @@ index 000000000000..ea392e886984
 +		adv7281ma = <0>, "+103";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/akkordion-iqdacplus-overlay.dts b/arch/arm/boot/dts/overlays/akkordion-iqdacplus-overlay.dts
 new file mode 100644
-index 000000000000..82f9b3734fb1
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/akkordion-iqdacplus-overlay.dts
 @@ -0,0 +1,49 @@
@@ -12249,9 +12149,7 @@ index 000000000000..82f9b3734fb1
 +		24db_digital_gain = <&frag2>,"iqaudio,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/allo-boss-dac-pcm512x-audio-overlay.dts b/arch/arm/boot/dts/overlays/allo-boss-dac-pcm512x-audio-overlay.dts
 new file mode 100644
-index 000000000000..873cb2fab52b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-boss-dac-pcm512x-audio-overlay.dts
 @@ -0,0 +1,59 @@
@@ -12314,9 +12212,7 @@ index 000000000000..873cb2fab52b
 +		slave = <&boss_dac>,"allo,slave?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/allo-boss2-dac-audio-overlay.dts b/arch/arm/boot/dts/overlays/allo-boss2-dac-audio-overlay.dts
 new file mode 100644
-index 000000000000..a6adfb495eb9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-boss2-dac-audio-overlay.dts
 @@ -0,0 +1,57 @@
@@ -12377,9 +12273,7 @@ index 000000000000..a6adfb495eb9
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/allo-digione-overlay.dts b/arch/arm/boot/dts/overlays/allo-digione-overlay.dts
 new file mode 100644
-index 000000000000..ea018ace34d4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-digione-overlay.dts
 @@ -0,0 +1,44 @@
@@ -12427,9 +12321,7 @@ index 000000000000..ea018ace34d4
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/allo-katana-dac-audio-overlay.dts b/arch/arm/boot/dts/overlays/allo-katana-dac-audio-overlay.dts
 new file mode 100644
-index 000000000000..a83fe48e2bfc
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-katana-dac-audio-overlay.dts
 @@ -0,0 +1,58 @@
@@ -12491,9 +12383,7 @@ index 000000000000..a83fe48e2bfc
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/allo-piano-dac-pcm512x-audio-overlay.dts b/arch/arm/boot/dts/overlays/allo-piano-dac-pcm512x-audio-overlay.dts
 new file mode 100644
-index 000000000000..bfc66da6295a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-piano-dac-pcm512x-audio-overlay.dts
 @@ -0,0 +1,54 @@
@@ -12551,9 +12441,7 @@ index 000000000000..bfc66da6295a
 +			<&piano_dac>,"allo,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/allo-piano-dac-plus-pcm512x-audio-overlay.dts b/arch/arm/boot/dts/overlays/allo-piano-dac-plus-pcm512x-audio-overlay.dts
 new file mode 100644
-index 000000000000..d47a35def4f7
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/allo-piano-dac-plus-pcm512x-audio-overlay.dts
 @@ -0,0 +1,57 @@
@@ -12614,9 +12502,7 @@ index 000000000000..d47a35def4f7
 +			<&piano_dac>,"allo,glb_mclk?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/anyspi-overlay.dts b/arch/arm/boot/dts/overlays/anyspi-overlay.dts
-new file mode 100755
-index 000000000000..87523dcca318
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/anyspi-overlay.dts
 @@ -0,0 +1,205 @@
@@ -12825,9 +12711,7 @@ index 000000000000..87523dcca318
 +		        <&anyspi_22>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/apds9960-overlay.dts b/arch/arm/boot/dts/overlays/apds9960-overlay.dts
 new file mode 100644
-index 000000000000..bb18cca1ac66
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/apds9960-overlay.dts
 @@ -0,0 +1,55 @@
@@ -12886,9 +12770,7 @@ index 000000000000..bb18cca1ac66
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/applepi-dac-overlay.dts b/arch/arm/boot/dts/overlays/applepi-dac-overlay.dts
 new file mode 100644
-index 000000000000..4769296ec9d6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/applepi-dac-overlay.dts
 @@ -0,0 +1,57 @@
@@ -12949,9 +12831,7 @@ index 000000000000..4769296ec9d6
 +   compile with:
 +   dtc -@ -H epapr -O dtb -o ApplePi-DAC.dtbo -W no-unit_address_vs_reg ApplePi-DAC.dts
 +*/
-diff --git a/arch/arm/boot/dts/overlays/arducam-64mp-overlay.dts b/arch/arm/boot/dts/overlays/arducam-64mp-overlay.dts
 new file mode 100644
-index 000000000000..a89d41628a5c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/arducam-64mp-overlay.dts
 @@ -0,0 +1,91 @@
@@ -13046,9 +12926,7 @@ index 000000000000..a89d41628a5c
 +&vcm_node {
 +	status = "okay";
 +};
-diff --git a/arch/arm/boot/dts/overlays/arducam-64mp.dtsi b/arch/arm/boot/dts/overlays/arducam-64mp.dtsi
 new file mode 100644
-index 000000000000..ed9f2e50c287
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/arducam-64mp.dtsi
 @@ -0,0 +1,34 @@
@@ -13086,9 +12964,7 @@ index 000000000000..ed9f2e50c287
 +	status = "disabled";
 +	VDD-supply = <&cam1_reg>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/arducam-pivariety-overlay.dts b/arch/arm/boot/dts/overlays/arducam-pivariety-overlay.dts
 new file mode 100644
-index 000000000000..7434e242dba6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/arducam-pivariety-overlay.dts
 @@ -0,0 +1,94 @@
@@ -13186,9 +13062,7 @@ index 000000000000..7434e242dba6
 +		       <&arducam_pivariety>, "VANA-supply:0=",<&cam0_reg>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/at86rf233-overlay.dts b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
 new file mode 100644
-index 000000000000..5a3f4571ee78
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
 @@ -0,0 +1,57 @@
@@ -13249,9 +13123,7 @@ index 000000000000..5a3f4571ee78
 +		trim      = <&lowpan0>, "xtal-trim.0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audioinjector-addons-overlay.dts b/arch/arm/boot/dts/overlays/audioinjector-addons-overlay.dts
 new file mode 100644
-index 000000000000..57a66eac8e9b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audioinjector-addons-overlay.dts
 @@ -0,0 +1,60 @@
@@ -13315,9 +13187,7 @@ index 000000000000..57a66eac8e9b
 +		non-stop-clocks = <&snd>, "non-stop-clocks?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audioinjector-bare-i2s-overlay.dts b/arch/arm/boot/dts/overlays/audioinjector-bare-i2s-overlay.dts
 new file mode 100644
-index 000000000000..7565ac4d1c28
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audioinjector-bare-i2s-overlay.dts
 @@ -0,0 +1,50 @@
@@ -13371,9 +13241,7 @@ index 000000000000..7565ac4d1c28
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audioinjector-isolated-soundcard-overlay.dts b/arch/arm/boot/dts/overlays/audioinjector-isolated-soundcard-overlay.dts
 new file mode 100644
-index 000000000000..63e05cf9665d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audioinjector-isolated-soundcard-overlay.dts
 @@ -0,0 +1,55 @@
@@ -13432,9 +13300,7 @@ index 000000000000..63e05cf9665d
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audioinjector-ultra-overlay.dts b/arch/arm/boot/dts/overlays/audioinjector-ultra-overlay.dts
 new file mode 100644
-index 000000000000..fb4a4678a17a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audioinjector-ultra-overlay.dts
 @@ -0,0 +1,71 @@
@@ -13509,9 +13375,7 @@ index 000000000000..fb4a4678a17a
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audioinjector-wm8731-audio-overlay.dts b/arch/arm/boot/dts/overlays/audioinjector-wm8731-audio-overlay.dts
 new file mode 100644
-index 000000000000..68f4427d86c3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audioinjector-wm8731-audio-overlay.dts
 @@ -0,0 +1,39 @@
@@ -13554,9 +13418,7 @@ index 000000000000..68f4427d86c3
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audiosense-pi-overlay.dts b/arch/arm/boot/dts/overlays/audiosense-pi-overlay.dts
 new file mode 100644
-index 000000000000..81af26374d92
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audiosense-pi-overlay.dts
 @@ -0,0 +1,82 @@
@@ -13642,9 +13504,7 @@ index 000000000000..81af26374d92
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/audremap-overlay.dts b/arch/arm/boot/dts/overlays/audremap-overlay.dts
 new file mode 100644
-index 000000000000..95027c5c8f9e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/audremap-overlay.dts
 @@ -0,0 +1,38 @@
@@ -13686,9 +13546,7 @@ index 000000000000..95027c5c8f9e
 +			     <&frag0>,"brcm,function:0=4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/balena-fin-overlay.dts b/arch/arm/boot/dts/overlays/balena-fin-overlay.dts
 new file mode 100644
-index 000000000000..8fc22587e69c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/balena-fin-overlay.dts
 @@ -0,0 +1,125 @@
@@ -13817,9 +13675,7 @@ index 000000000000..8fc22587e69c
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts b/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts
 new file mode 100644
-index 000000000000..f8fca791eac5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/camera-mux-2port-overlay.dts
 @@ -0,0 +1,505 @@
@@ -14328,9 +14184,7 @@ index 000000000000..f8fca791eac5
 +				       <&imx290_1>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts b/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts
 new file mode 100644
-index 000000000000..841ac2cdd9bc
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/camera-mux-4port-overlay.dts
 @@ -0,0 +1,876 @@
@@ -15210,9 +15064,7 @@ index 000000000000..841ac2cdd9bc
 +				       <&imx290_3>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/cap1106-overlay.dts b/arch/arm/boot/dts/overlays/cap1106-overlay.dts
 new file mode 100644
-index 000000000000..0a585e725f84
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/cap1106-overlay.dts
 @@ -0,0 +1,52 @@
@@ -15268,9 +15120,7 @@ index 000000000000..0a585e725f84
 +                          <&cap1106_pins>, "brcm,pins:0";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/chipdip-dac-overlay.dts b/arch/arm/boot/dts/overlays/chipdip-dac-overlay.dts
 new file mode 100644
-index 000000000000..09c7417b4707
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/chipdip-dac-overlay.dts
 @@ -0,0 +1,46 @@
@@ -15320,9 +15170,7 @@ index 000000000000..09c7417b4707
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/cirrus-wm5102-overlay.dts b/arch/arm/boot/dts/overlays/cirrus-wm5102-overlay.dts
 new file mode 100644
-index 000000000000..ed0c2745399f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/cirrus-wm5102-overlay.dts
 @@ -0,0 +1,172 @@
@@ -15498,9 +15346,7 @@ index 000000000000..ed0c2745399f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/cm-swap-i2c0-overlay.dts b/arch/arm/boot/dts/overlays/cm-swap-i2c0-overlay.dts
 new file mode 100644
-index 000000000000..6b7f599f7611
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/cm-swap-i2c0-overlay.dts
 @@ -0,0 +1,27 @@
@@ -15531,9 +15377,7 @@ index 000000000000..6b7f599f7611
 +		i2c10-gpio44 = <&i2c0mux_frag>, "pinctrl-1:0=",<&i2c0_gpio44>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/cma-overlay.dts b/arch/arm/boot/dts/overlays/cma-overlay.dts
 new file mode 100644
-index 000000000000..1d87c599f909
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/cma-overlay.dts
 @@ -0,0 +1,36 @@
@@ -15573,9 +15417,7 @@ index 000000000000..1d87c599f909
 +		cma-default = <0>,"-0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts b/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
 new file mode 100644
-index 000000000000..544036589b66
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/crystalfontz-cfa050_pi_m-overlay.dts
 @@ -0,0 +1,124 @@
@@ -15703,9 +15545,7 @@ index 000000000000..544036589b66
 +		captouch = <0>,"+3+4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/cutiepi-panel-overlay.dts b/arch/arm/boot/dts/overlays/cutiepi-panel-overlay.dts
 new file mode 100644
-index 000000000000..6f9694e81d6a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/cutiepi-panel-overlay.dts
 @@ -0,0 +1,117 @@
@@ -15814,21 +15654,19 @@ index 000000000000..6f9694e81d6a
 +            status = "okay";
 +
 +            gt9xx: gt9xx@5d {
-+                compatible = "goodix,gt9271"; 
++                compatible = "goodix,gt9271";
 +                reg = <0x5D>;
 +                pinctrl-names = "default";
 +                pinctrl-0 = <&goodix_pins>;
 +                interrupt-parent = <&gpio>;
 +                interrupts = <21 2>; // high-to-low edge triggered
-+                irq-gpios = <&gpio 21 0>; 
++                irq-gpios = <&gpio 21 0>;
 +                reset-gpios = <&gpio 26 0>;
 +            };
 +        };
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/dacberry400-overlay.dts b/arch/arm/boot/dts/overlays/dacberry400-overlay.dts
 new file mode 100644
-index 000000000000..4e03baadbd71
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dacberry400-overlay.dts
 @@ -0,0 +1,71 @@
@@ -15903,9 +15741,7 @@ index 000000000000..4e03baadbd71
 +};
 +
 +
-diff --git a/arch/arm/boot/dts/overlays/dht11-overlay.dts b/arch/arm/boot/dts/overlays/dht11-overlay.dts
 new file mode 100644
-index 000000000000..8b0fc6b7a3cb
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dht11-overlay.dts
 @@ -0,0 +1,48 @@
@@ -15957,9 +15793,7 @@ index 000000000000..8b0fc6b7a3cb
 +			<&iio>,"reg:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dionaudio-kiwi-overlay.dts b/arch/arm/boot/dts/overlays/dionaudio-kiwi-overlay.dts
 new file mode 100644
-index 000000000000..128ef54eb89f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dionaudio-kiwi-overlay.dts
 @@ -0,0 +1,39 @@
@@ -16002,9 +15836,7 @@ index 000000000000..128ef54eb89f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dionaudio-loco-overlay.dts b/arch/arm/boot/dts/overlays/dionaudio-loco-overlay.dts
 new file mode 100644
-index 000000000000..d863e5c167cc
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dionaudio-loco-overlay.dts
 @@ -0,0 +1,39 @@
@@ -16047,9 +15879,7 @@ index 000000000000..d863e5c167cc
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dionaudio-loco-v2-overlay.dts b/arch/arm/boot/dts/overlays/dionaudio-loco-v2-overlay.dts
 new file mode 100644
-index 000000000000..dfb8922a654b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dionaudio-loco-v2-overlay.dts
 @@ -0,0 +1,49 @@
@@ -16102,9 +15932,7 @@ index 000000000000..dfb8922a654b
 +		24db_digital_gain = <&frag0>,"dionaudio,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/disable-bt-overlay.dts b/arch/arm/boot/dts/overlays/disable-bt-overlay.dts
 new file mode 100644
-index 000000000000..f3a8af1375f0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/disable-bt-overlay.dts
 @@ -0,0 +1,59 @@
@@ -16167,9 +15995,7 @@ index 000000000000..f3a8af1375f0
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/disable-emmc2-overlay.dts b/arch/arm/boot/dts/overlays/disable-emmc2-overlay.dts
 new file mode 100644
-index 000000000000..8cd1d7fa4a90
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/disable-emmc2-overlay.dts
 @@ -0,0 +1,13 @@
@@ -16186,9 +16012,7 @@ index 000000000000..8cd1d7fa4a90
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/disable-wifi-overlay.dts b/arch/arm/boot/dts/overlays/disable-wifi-overlay.dts
 new file mode 100644
-index 000000000000..75e046463900
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/disable-wifi-overlay.dts
 @@ -0,0 +1,20 @@
@@ -16212,9 +16036,7 @@ index 000000000000..75e046463900
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dpi18-overlay.dts b/arch/arm/boot/dts/overlays/dpi18-overlay.dts
 new file mode 100644
-index 000000000000..4abe5be744db
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dpi18-overlay.dts
 @@ -0,0 +1,39 @@
@@ -16257,9 +16079,7 @@ index 000000000000..4abe5be744db
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dpi18cpadhi-overlay.dts b/arch/arm/boot/dts/overlays/dpi18cpadhi-overlay.dts
 new file mode 100644
-index 000000000000..50c88a1ed299
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dpi18cpadhi-overlay.dts
 @@ -0,0 +1,26 @@
@@ -16289,9 +16109,7 @@ index 000000000000..50c88a1ed299
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dpi24-overlay.dts b/arch/arm/boot/dts/overlays/dpi24-overlay.dts
 new file mode 100644
-index 000000000000..44335cc81277
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dpi24-overlay.dts
 @@ -0,0 +1,39 @@
@@ -16334,9 +16152,7 @@ index 000000000000..44335cc81277
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/draws-overlay.dts b/arch/arm/boot/dts/overlays/draws-overlay.dts
 new file mode 100644
-index 000000000000..d18187d7f343
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/draws-overlay.dts
 @@ -0,0 +1,208 @@
@@ -16548,9 +16364,7 @@ index 000000000000..d18187d7f343
 +        alsaname = <&snd>, "simple-audio-card,name";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/dwc-otg-overlay.dts b/arch/arm/boot/dts/overlays/dwc-otg-overlay.dts
 new file mode 100644
-index 000000000000..78c5e9f85048
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dwc-otg-overlay.dts
 @@ -0,0 +1,14 @@
@@ -16568,9 +16382,7 @@ index 000000000000..78c5e9f85048
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/dwc2-overlay.dts b/arch/arm/boot/dts/overlays/dwc2-overlay.dts
 new file mode 100644
-index 000000000000..0d83e344ad97
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/dwc2-overlay.dts
 @@ -0,0 +1,26 @@
@@ -16600,9 +16412,7 @@ index 000000000000..0d83e344ad97
 +		g-rx-fifo-size = <&dwc2_usb>,"g-rx-fifo-size:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/edt-ft5406-overlay.dts b/arch/arm/boot/dts/overlays/edt-ft5406-overlay.dts
 new file mode 100644
-index 000000000000..4b3fbf26a7f2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/edt-ft5406-overlay.dts
 @@ -0,0 +1,46 @@
@@ -16652,9 +16462,7 @@ index 000000000000..4b3fbf26a7f2
 +		addr = <&ft5406>,"reg:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/edt-ft5406.dtsi b/arch/arm/boot/dts/overlays/edt-ft5406.dtsi
 new file mode 100644
-index 000000000000..fee10d587de6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/edt-ft5406.dtsi
 @@ -0,0 +1,54 @@
@@ -16712,9 +16520,7 @@ index 000000000000..fee10d587de6
 +		swapxy = <&ft5406>,"touchscreen-swapped-x-y?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/enc28j60-overlay.dts b/arch/arm/boot/dts/overlays/enc28j60-overlay.dts
 new file mode 100644
-index 000000000000..7af5c2e607ea
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/enc28j60-overlay.dts
 @@ -0,0 +1,53 @@
@@ -16771,9 +16577,7 @@ index 000000000000..7af5c2e607ea
 +		speed   = <&eth1>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts b/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts
 new file mode 100644
-index 000000000000..17cb5b8fa485
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts
 @@ -0,0 +1,47 @@
@@ -16824,9 +16628,7 @@ index 000000000000..17cb5b8fa485
 +		speed   = <&eth1>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/exc3000-overlay.dts b/arch/arm/boot/dts/overlays/exc3000-overlay.dts
 new file mode 100644
-index 000000000000..6f087fb20661
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/exc3000-overlay.dts
 @@ -0,0 +1,48 @@
@@ -16878,9 +16680,7 @@ index 000000000000..6f087fb20661
 +		swapxy = <&exc3000>,"touchscreen-swapped-x-y?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/fbtft-overlay.dts b/arch/arm/boot/dts/overlays/fbtft-overlay.dts
 new file mode 100644
-index 000000000000..db45f8c53bcc
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/fbtft-overlay.dts
 @@ -0,0 +1,611 @@
@@ -17495,9 +17295,7 @@ index 000000000000..db45f8c53bcc
 +				<&display>, "led-gpios:8=0"; /* GPIO_ACTIVE_HIGH */
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/fe-pi-audio-overlay.dts b/arch/arm/boot/dts/overlays/fe-pi-audio-overlay.dts
 new file mode 100644
-index 000000000000..1ab71e653e20
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/fe-pi-audio-overlay.dts
 @@ -0,0 +1,70 @@
@@ -17571,9 +17369,7 @@ index 000000000000..1ab71e653e20
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/fsm-demo-overlay.dts b/arch/arm/boot/dts/overlays/fsm-demo-overlay.dts
 new file mode 100644
-index 000000000000..e9944f5cd258
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/fsm-demo-overlay.dts
 @@ -0,0 +1,104 @@
@@ -17681,9 +17477,7 @@ index 000000000000..e9944f5cd258
 +		fsm_debug = <&fsm_demo>,"debug:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gc9a01-overlay.dts b/arch/arm/boot/dts/overlays/gc9a01-overlay.dts
 new file mode 100644
-index 000000000000..3d31030c5564
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gc9a01-overlay.dts
 @@ -0,0 +1,151 @@
@@ -17838,9 +17632,7 @@ index 000000000000..3d31030c5564
 +        debug = <&gc9a01>,"debug:0";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/ghost-amp-overlay.dts b/arch/arm/boot/dts/overlays/ghost-amp-overlay.dts
 new file mode 100644
-index 000000000000..7509e00679c8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ghost-amp-overlay.dts
 @@ -0,0 +1,145 @@
@@ -17989,9 +17781,7 @@ index 000000000000..7509e00679c8
 +		fsm_debug = <&amp>,"debug:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/goodix-overlay.dts b/arch/arm/boot/dts/overlays/goodix-overlay.dts
 new file mode 100644
-index 000000000000..8571527de49a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/goodix-overlay.dts
 @@ -0,0 +1,46 @@
@@ -18041,9 +17831,7 @@ index 000000000000..8571527de49a
 +			<&gt9271>,"reset-gpios:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/googlevoicehat-soundcard-overlay.dts b/arch/arm/boot/dts/overlays/googlevoicehat-soundcard-overlay.dts
 new file mode 100644
-index 000000000000..e443be1f9a0e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/googlevoicehat-soundcard-overlay.dts
 @@ -0,0 +1,49 @@
@@ -18096,9 +17884,7 @@ index 000000000000..e443be1f9a0e
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-charger-overlay.dts b/arch/arm/boot/dts/overlays/gpio-charger-overlay.dts
 new file mode 100644
-index 000000000000..2868aa06dd6d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-charger-overlay.dts
 @@ -0,0 +1,42 @@
@@ -18144,15 +17930,13 @@ index 000000000000..2868aa06dd6d
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-fan-overlay.dts b/arch/arm/boot/dts/overlays/gpio-fan-overlay.dts
 new file mode 100644
-index 000000000000..17b77bb27931
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-fan-overlay.dts
 @@ -0,0 +1,89 @@
 +/*
 + * Overlay for the Raspberry Pi GPIO Fan @ BCM GPIO12.
-+ * References: 
++ * References:
 + *	- https://www.raspberrypi.org/forums/viewtopic.php?f=107&p=1367135#p1365084
 + *
 + * Optional parameters:
@@ -18239,9 +18023,7 @@ index 000000000000..17b77bb27931
 +		hyst = <&cpu_hot>,"hysteresis:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-hog-overlay.dts b/arch/arm/boot/dts/overlays/gpio-hog-overlay.dts
 new file mode 100644
-index 000000000000..c9e39046fed9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-hog-overlay.dts
 @@ -0,0 +1,27 @@
@@ -18272,9 +18054,7 @@ index 000000000000..c9e39046fed9
 +			     <&hog>,"output-low?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts b/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
 new file mode 100644
-index 000000000000..162b6ce07dc9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
 @@ -0,0 +1,49 @@
@@ -18327,9 +18107,7 @@ index 000000000000..162b6ce07dc9
 +                rc-map-name = <&gpio_ir>,"linux,rc-map-name";           // default rc map
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-ir-tx-overlay.dts b/arch/arm/boot/dts/overlays/gpio-ir-tx-overlay.dts
 new file mode 100644
-index 000000000000..3625431b7560
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-ir-tx-overlay.dts
 @@ -0,0 +1,36 @@
@@ -18369,9 +18147,7 @@ index 000000000000..3625431b7560
 +		invert = <&gpio_ir_tx>, "gpios:8";		// 1 = active low
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-key-overlay.dts b/arch/arm/boot/dts/overlays/gpio-key-overlay.dts
 new file mode 100644
-index 000000000000..2e7253d1d0ab
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-key-overlay.dts
 @@ -0,0 +1,48 @@
@@ -18423,9 +18199,7 @@ index 000000000000..2e7253d1d0ab
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-led-overlay.dts b/arch/arm/boot/dts/overlays/gpio-led-overlay.dts
-new file mode 100755
-index 000000000000..d8e9d53f1b61
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-led-overlay.dts
 @@ -0,0 +1,97 @@
@@ -18526,9 +18300,7 @@ index 000000000000..d8e9d53f1b61
 +
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/gpio-no-bank0-irq-overlay.dts b/arch/arm/boot/dts/overlays/gpio-no-bank0-irq-overlay.dts
-new file mode 100755
-index 000000000000..96cbe80820b7
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-no-bank0-irq-overlay.dts
 @@ -0,0 +1,14 @@
@@ -18546,9 +18318,7 @@ index 000000000000..96cbe80820b7
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-no-irq-overlay.dts b/arch/arm/boot/dts/overlays/gpio-no-irq-overlay.dts
 new file mode 100644
-index 000000000000..55f9bff3a8f6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-no-irq-overlay.dts
 @@ -0,0 +1,14 @@
@@ -18566,9 +18336,7 @@ index 000000000000..55f9bff3a8f6
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-poweroff-overlay.dts b/arch/arm/boot/dts/overlays/gpio-poweroff-overlay.dts
 new file mode 100644
-index 000000000000..8153f83f0427
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-poweroff-overlay.dts
 @@ -0,0 +1,39 @@
@@ -18611,9 +18379,7 @@ index 000000000000..8153f83f0427
 +		inactive_delay_ms = <&power_ctrl>,"inactive-delay-ms:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/gpio-shutdown-overlay.dts b/arch/arm/boot/dts/overlays/gpio-shutdown-overlay.dts
 new file mode 100644
-index 000000000000..da148064aedd
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/gpio-shutdown-overlay.dts
 @@ -0,0 +1,86 @@
@@ -18703,9 +18469,7 @@ index 000000000000..da148064aedd
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/hd44780-lcd-overlay.dts b/arch/arm/boot/dts/overlays/hd44780-lcd-overlay.dts
 new file mode 100644
-index 000000000000..ee726669ff51
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hd44780-lcd-overlay.dts
 @@ -0,0 +1,46 @@
@@ -18755,9 +18519,7 @@ index 000000000000..ee726669ff51
 +    };
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/hdmi-backlight-hwhack-gpio-overlay.dts b/arch/arm/boot/dts/overlays/hdmi-backlight-hwhack-gpio-overlay.dts
 new file mode 100644
-index 000000000000..50b9a2665c80
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hdmi-backlight-hwhack-gpio-overlay.dts
 @@ -0,0 +1,47 @@
@@ -18808,9 +18570,7 @@ index 000000000000..50b9a2665c80
 +		active_low = <&hdmi_backlight_hwhack_gpio>,"gpios:8";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
 new file mode 100644
-index 000000000000..142518ab348b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
 @@ -0,0 +1,39 @@
@@ -18853,9 +18613,7 @@ index 000000000000..142518ab348b
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-amp100-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-amp100-overlay.dts
 new file mode 100644
-index 000000000000..ebdef55d6110
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-amp100-overlay.dts
 @@ -0,0 +1,64 @@
@@ -18923,9 +18681,7 @@ index 000000000000..ebdef55d6110
 +		auto_mute = <&hifiberry_dacplus>,"hifiberry-dacplus,auto_mute?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-amp3-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-amp3-overlay.dts
 new file mode 100644
-index 000000000000..a01e263a133b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-amp3-overlay.dts
 @@ -0,0 +1,57 @@
@@ -18986,9 +18742,7 @@ index 000000000000..a01e263a133b
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
 new file mode 100644
-index 000000000000..ea8a6c8f36c0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
 @@ -0,0 +1,34 @@
@@ -19026,9 +18780,7 @@ index 000000000000..ea8a6c8f36c0
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
 new file mode 100644
-index 000000000000..ff19015ba656
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
 @@ -0,0 +1,65 @@
@@ -19097,9 +18849,7 @@ index 000000000000..ff19015ba656
 +		leds_off = <&hifiberry_dacplus>,"hifiberry-dacplus,leds_off?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dacplusadc-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dacplusadc-overlay.dts
 new file mode 100644
-index 000000000000..540563dec10f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dacplusadc-overlay.dts
 @@ -0,0 +1,72 @@
@@ -19175,9 +18925,7 @@ index 000000000000..540563dec10f
 +		leds_off = <&hifiberry_dacplusadc>,"hifiberry-dacplusadc,leds_off?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dacplusadcpro-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dacplusadcpro-overlay.dts
 new file mode 100644
-index 000000000000..561cd84bbb79
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dacplusadcpro-overlay.dts
 @@ -0,0 +1,70 @@
@@ -19251,9 +18999,7 @@ index 000000000000..561cd84bbb79
 +		leds_off = <&hifiberry_dacplusadcpro>,"hifiberry-dacplusadcpro,leds_off?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dacplusdsp-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dacplusdsp-overlay.dts
 new file mode 100644
-index 000000000000..63432e8b983f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dacplusdsp-overlay.dts
 @@ -0,0 +1,34 @@
@@ -19291,9 +19037,7 @@ index 000000000000..63432e8b983f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-dacplushd-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-dacplushd-overlay.dts
 new file mode 100644
-index 000000000000..b9165138c7ad
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-dacplushd-overlay.dts
 @@ -0,0 +1,94 @@
@@ -19391,9 +19135,7 @@ index 000000000000..b9165138c7ad
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
 new file mode 100644
-index 000000000000..a2309a50e8d8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
 @@ -0,0 +1,41 @@
@@ -19438,9 +19180,7 @@ index 000000000000..a2309a50e8d8
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hifiberry-digi-pro-overlay.dts b/arch/arm/boot/dts/overlays/hifiberry-digi-pro-overlay.dts
 new file mode 100644
-index 000000000000..83de602e76ba
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hifiberry-digi-pro-overlay.dts
 @@ -0,0 +1,43 @@
@@ -19487,9 +19227,7 @@ index 000000000000..83de602e76ba
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/highperi-overlay.dts b/arch/arm/boot/dts/overlays/highperi-overlay.dts
 new file mode 100644
-index 000000000000..46cb76c2d34f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/highperi-overlay.dts
 @@ -0,0 +1,63 @@
@@ -19556,9 +19294,7 @@ index 000000000000..46cb76c2d34f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hy28a-overlay.dts b/arch/arm/boot/dts/overlays/hy28a-overlay.dts
 new file mode 100644
-index 000000000000..5843a5e9c86a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hy28a-overlay.dts
 @@ -0,0 +1,93 @@
@@ -19655,9 +19391,7 @@ index 000000000000..5843a5e9c86a
 +				<&hy28a_pins>, "brcm,pins:8";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hy28b-2017-overlay.dts b/arch/arm/boot/dts/overlays/hy28b-2017-overlay.dts
 new file mode 100644
-index 000000000000..95bfb1eadc20
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hy28b-2017-overlay.dts
 @@ -0,0 +1,152 @@
@@ -19813,9 +19547,7 @@ index 000000000000..95bfb1eadc20
 +				<&hy28b_pins>, "brcm,pins:8";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/hy28b-overlay.dts b/arch/arm/boot/dts/overlays/hy28b-overlay.dts
 new file mode 100644
-index 000000000000..9edd0848d555
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/hy28b-overlay.dts
 @@ -0,0 +1,148 @@
@@ -19967,9 +19699,7 @@ index 000000000000..9edd0848d555
 +				<&hy28b_pins>, "brcm,pins:8";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i-sabre-q2m-overlay.dts b/arch/arm/boot/dts/overlays/i-sabre-q2m-overlay.dts
 new file mode 100644
-index 000000000000..0c4cff354674
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i-sabre-q2m-overlay.dts
 @@ -0,0 +1,39 @@
@@ -20012,9 +19742,7 @@ index 000000000000..0c4cff354674
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-bcm2708-overlay.dts b/arch/arm/boot/dts/overlays/i2c-bcm2708-overlay.dts
 new file mode 100644
-index 000000000000..8204b6b3aef8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-bcm2708-overlay.dts
 @@ -0,0 +1,13 @@
@@ -20031,9 +19759,7 @@ index 000000000000..8204b6b3aef8
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-fan-overlay.dts b/arch/arm/boot/dts/overlays/i2c-fan-overlay.dts
 new file mode 100644
-index 000000000000..f2f4a2aa797a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-fan-overlay.dts
 @@ -0,0 +1,108 @@
@@ -20145,9 +19871,7 @@ index 000000000000..f2f4a2aa797a
 +				<&map1>,"cooling-device:0=",<&emc2301>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts b/arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts
 new file mode 100644
-index 000000000000..63231b5d7c0c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts
 @@ -0,0 +1,47 @@
@@ -20198,9 +19922,7 @@ index 000000000000..63231b5d7c0c
 +		bus = <&i2c_gpio>, "reg:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts b/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
 new file mode 100644
-index 000000000000..993971fca67a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
 @@ -0,0 +1,173 @@
@@ -20377,9 +20099,7 @@ index 000000000000..993971fca67a
 +		       <&frag100>, "target-path=i2c6";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-pwm-pca9685a-overlay.dts b/arch/arm/boot/dts/overlays/i2c-pwm-pca9685a-overlay.dts
 new file mode 100644
-index 000000000000..b8dfbd56d121
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-pwm-pca9685a-overlay.dts
 @@ -0,0 +1,61 @@
@@ -20444,9 +20164,7 @@ index 000000000000..b8dfbd56d121
 +		       <&frag100>, "target-path=i2c6";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi b/arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi
 new file mode 100644
-index 000000000000..3bea8d62c075
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-rtc-common.dtsi
 @@ -0,0 +1,353 @@
@@ -20803,9 +20521,7 @@ index 000000000000..3bea8d62c075
 +				<&m41t62>,"wakeup-source?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-rtc-gpio-overlay.dts b/arch/arm/boot/dts/overlays/i2c-rtc-gpio-overlay.dts
 new file mode 100644
-index 000000000000..c83480c1c327
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-rtc-gpio-overlay.dts
 @@ -0,0 +1,31 @@
@@ -20840,9 +20556,7 @@ index 000000000000..c83480c1c327
 +		i2c_gpio_delay_us = <&i2cbus>,"i2c-gpio,delay-us:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
 new file mode 100644
-index 000000000000..cd31eac7e333
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
 @@ -0,0 +1,42 @@
@@ -20888,9 +20602,7 @@ index 000000000000..cd31eac7e333
 +		       <&frag100>, "target-path=i2c6";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
-new file mode 100755
-index 000000000000..5b65f869774c
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-sensor-common.dtsi
 @@ -0,0 +1,562 @@
@@ -21456,9 +21168,7 @@ index 000000000000..5b65f869774c
 +		reset_pin = <&bno055>,"reset-gpios:4", <0>,"+30";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts b/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
-new file mode 100755
-index 000000000000..f8a39659d83e
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
 @@ -0,0 +1,42 @@
@@ -21504,9 +21214,7 @@ index 000000000000..f8a39659d83e
 +		       <&frag100>, "target-path=i2c6";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c0-overlay.dts b/arch/arm/boot/dts/overlays/i2c0-overlay.dts
 new file mode 100644
-index 000000000000..46bf1bf2dc5c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c0-overlay.dts
 @@ -0,0 +1,83 @@
@@ -21593,9 +21301,7 @@ index 000000000000..46bf1bf2dc5c
 +		combine = <0>, "!5";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c1-overlay.dts b/arch/arm/boot/dts/overlays/i2c1-overlay.dts
 new file mode 100644
-index 000000000000..addaed73e665
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c1-overlay.dts
 @@ -0,0 +1,44 @@
@@ -21643,9 +21349,7 @@ index 000000000000..addaed73e665
 +		combine = <0>, "!3";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c3-overlay.dts b/arch/arm/boot/dts/overlays/i2c3-overlay.dts
 new file mode 100644
-index 000000000000..663d4f060ee8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c3-overlay.dts
 @@ -0,0 +1,34 @@
@@ -21683,9 +21387,7 @@ index 000000000000..663d4f060ee8
 +		baudrate = <&frag0>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c4-overlay.dts b/arch/arm/boot/dts/overlays/i2c4-overlay.dts
 new file mode 100644
-index 000000000000..495de00f7aa1
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c4-overlay.dts
 @@ -0,0 +1,34 @@
@@ -21723,9 +21425,7 @@ index 000000000000..495de00f7aa1
 +		baudrate = <&frag0>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c5-overlay.dts b/arch/arm/boot/dts/overlays/i2c5-overlay.dts
 new file mode 100644
-index 000000000000..d498ebc72de6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c5-overlay.dts
 @@ -0,0 +1,34 @@
@@ -21763,9 +21463,7 @@ index 000000000000..d498ebc72de6
 +		baudrate = <&frag0>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2c6-overlay.dts b/arch/arm/boot/dts/overlays/i2c6-overlay.dts
 new file mode 100644
-index 000000000000..4d26178a73ca
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2c6-overlay.dts
 @@ -0,0 +1,34 @@
@@ -21803,9 +21501,7 @@ index 000000000000..4d26178a73ca
 +		baudrate = <&frag0>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2s-dac-overlay.dts b/arch/arm/boot/dts/overlays/i2s-dac-overlay.dts
 new file mode 100644
-index 000000000000..07a915342702
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2s-dac-overlay.dts
 @@ -0,0 +1,34 @@
@@ -21843,9 +21539,7 @@ index 000000000000..07a915342702
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts b/arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts
 new file mode 100644
-index 000000000000..cf43094c6ff4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts
 @@ -0,0 +1,18 @@
@@ -21867,9 +21561,7 @@ index 000000000000..cf43094c6ff4
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts b/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts
 new file mode 100644
-index 000000000000..551aba591d26
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ilitek251x-overlay.dts
 @@ -0,0 +1,45 @@
@@ -21882,7 +21574,7 @@ index 000000000000..551aba591d26
 +
 + 	fragment@0 {
 +		target = <&gpio>;
-+		__overlay__ {		
++		__overlay__ {
 +			ili251x_pins: ili251x_pins {
 +				brcm,pins = <4>; // interrupt
 +				brcm,function = <0>; // in
@@ -21918,9 +21610,7 @@ index 000000000000..551aba591d26
 +		sizey = <&ili251x>,"touchscreen-size-y:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx219-overlay.dts b/arch/arm/boot/dts/overlays/imx219-overlay.dts
 new file mode 100644
-index 000000000000..aa97450ac994
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx219-overlay.dts
 @@ -0,0 +1,89 @@
@@ -22013,9 +21703,7 @@ index 000000000000..aa97450ac994
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx219.dtsi b/arch/arm/boot/dts/overlays/imx219.dtsi
 new file mode 100644
-index 000000000000..fa870f77ef07
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx219.dtsi
 @@ -0,0 +1,27 @@
@@ -22046,9 +21734,7 @@ index 000000000000..fa870f77ef07
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx258-overlay.dts b/arch/arm/boot/dts/overlays/imx258-overlay.dts
 new file mode 100644
-index 000000000000..7117682ab095
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx258-overlay.dts
 @@ -0,0 +1,131 @@
@@ -22183,9 +21869,7 @@ index 000000000000..7117682ab095
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx258.dtsi b/arch/arm/boot/dts/overlays/imx258.dtsi
 new file mode 100644
-index 000000000000..cca81e1aa8b3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx258.dtsi
 @@ -0,0 +1,27 @@
@@ -22216,9 +21900,7 @@ index 000000000000..cca81e1aa8b3
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx290-overlay.dts b/arch/arm/boot/dts/overlays/imx290-overlay.dts
 new file mode 100644
-index 000000000000..3de3c3910d90
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx290-overlay.dts
 @@ -0,0 +1,32 @@
@@ -22254,9 +21936,7 @@ index 000000000000..3de3c3910d90
 +		mono = <0>, "-101+102";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx290_327-overlay.dtsi b/arch/arm/boot/dts/overlays/imx290_327-overlay.dtsi
 new file mode 100644
-index 000000000000..d8141de672e2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx290_327-overlay.dtsi
 @@ -0,0 +1,112 @@
@@ -22372,9 +22052,7 @@ index 000000000000..d8141de672e2
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx290_327.dtsi b/arch/arm/boot/dts/overlays/imx290_327.dtsi
 new file mode 100644
-index 000000000000..14d1f0b95bb3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx290_327.dtsi
 @@ -0,0 +1,24 @@
@@ -22402,9 +22080,7 @@ index 000000000000..14d1f0b95bb3
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx296-overlay.dts b/arch/arm/boot/dts/overlays/imx296-overlay.dts
 new file mode 100644
-index 000000000000..44257b4c9391
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx296-overlay.dts
 @@ -0,0 +1,104 @@
@@ -22512,9 +22188,7 @@ index 000000000000..44257b4c9391
 +		clock-frequency = <&clk_over>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx327-overlay.dts b/arch/arm/boot/dts/overlays/imx327-overlay.dts
 new file mode 100644
-index 000000000000..0776954bdba2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx327-overlay.dts
 @@ -0,0 +1,33 @@
@@ -22551,9 +22225,7 @@ index 000000000000..0776954bdba2
 +		mono = <0>, "-101+102";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx378-overlay.dts b/arch/arm/boot/dts/overlays/imx378-overlay.dts
 new file mode 100644
-index 000000000000..6a999914056a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx378-overlay.dts
 @@ -0,0 +1,10 @@
@@ -22567,9 +22239,7 @@ index 000000000000..6a999914056a
 +&cam_node {
 +	compatible = "sony,imx378";
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx462-overlay.dts b/arch/arm/boot/dts/overlays/imx462-overlay.dts
 new file mode 100644
-index 000000000000..c4d7aabe2efe
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx462-overlay.dts
 @@ -0,0 +1,39 @@
@@ -22612,9 +22282,7 @@ index 000000000000..c4d7aabe2efe
 +		mono = <0>, "-101+102";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx477-overlay.dts b/arch/arm/boot/dts/overlays/imx477-overlay.dts
 new file mode 100644
-index 000000000000..f6482a990cfc
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx477-overlay.dts
 @@ -0,0 +1,10 @@
@@ -22628,9 +22296,7 @@ index 000000000000..f6482a990cfc
 +&cam_node {
 +	compatible = "sony,imx477";
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx477_378-overlay.dtsi b/arch/arm/boot/dts/overlays/imx477_378-overlay.dtsi
 new file mode 100644
-index 000000000000..7afc0a248569
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx477_378-overlay.dtsi
 @@ -0,0 +1,83 @@
@@ -22717,9 +22383,7 @@ index 000000000000..7afc0a248569
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx477_378.dtsi b/arch/arm/boot/dts/overlays/imx477_378.dtsi
 new file mode 100644
-index 000000000000..a0c154c2a11f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx477_378.dtsi
 @@ -0,0 +1,24 @@
@@ -22747,9 +22411,7 @@ index 000000000000..a0c154c2a11f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx519-overlay.dts b/arch/arm/boot/dts/overlays/imx519-overlay.dts
 new file mode 100644
-index 000000000000..d43623cfbe47
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx519-overlay.dts
 @@ -0,0 +1,93 @@
@@ -22846,9 +22508,7 @@ index 000000000000..d43623cfbe47
 +&vcm_node {
 +	status = "okay";
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx519.dtsi b/arch/arm/boot/dts/overlays/imx519.dtsi
 new file mode 100644
-index 000000000000..18cba1781ec4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx519.dtsi
 @@ -0,0 +1,34 @@
@@ -22886,9 +22546,7 @@ index 000000000000..18cba1781ec4
 +	status = "disabled";
 +	vdd-supply = <&cam1_reg>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx708-overlay.dts b/arch/arm/boot/dts/overlays/imx708-overlay.dts
 new file mode 100644
-index 000000000000..6efbe0943211
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx708-overlay.dts
 @@ -0,0 +1,105 @@
@@ -22997,9 +22655,7 @@ index 000000000000..6efbe0943211
 +&vcm_node {
 +	status = "okay";
 +};
-diff --git a/arch/arm/boot/dts/overlays/imx708.dtsi b/arch/arm/boot/dts/overlays/imx708.dtsi
 new file mode 100644
-index 000000000000..1558458d58ec
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/imx708.dtsi
 @@ -0,0 +1,35 @@
@@ -23038,9 +22694,7 @@ index 000000000000..1558458d58ec
 +	status = "disabled";
 +	VDD-supply = <&cam1_reg>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/iqaudio-codec-overlay.dts b/arch/arm/boot/dts/overlays/iqaudio-codec-overlay.dts
 new file mode 100644
-index 000000000000..9110f5d34298
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/iqaudio-codec-overlay.dts
 @@ -0,0 +1,42 @@
@@ -23086,9 +22740,7 @@ index 000000000000..9110f5d34298
 +	__overrides__ {
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts b/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
 new file mode 100644
-index 000000000000..24073cadd0ef
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
 @@ -0,0 +1,46 @@
@@ -23138,9 +22790,7 @@ index 000000000000..24073cadd0ef
 +		24db_digital_gain = <&frag2>,"iqaudio,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts b/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
 new file mode 100644
-index 000000000000..7c70b25e58d7
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
 @@ -0,0 +1,49 @@
@@ -23193,9 +22843,7 @@ index 000000000000..7c70b25e58d7
 +		unmute_amp = <&iqaudio_dac>,"iqaudio-dac,unmute-amp?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/iqaudio-digi-wm8804-audio-overlay.dts b/arch/arm/boot/dts/overlays/iqaudio-digi-wm8804-audio-overlay.dts
 new file mode 100644
-index 000000000000..ee54095c869b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/iqaudio-digi-wm8804-audio-overlay.dts
 @@ -0,0 +1,47 @@
@@ -23246,9 +22894,7 @@ index 000000000000..ee54095c869b
 +		dai_stream_name = <&wm8804_digi>,"wm8804-digi,dai-stream-name";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/iqs550-overlay.dts b/arch/arm/boot/dts/overlays/iqs550-overlay.dts
 new file mode 100644
-index 000000000000..c3956937055f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/iqs550-overlay.dts
 @@ -0,0 +1,59 @@
@@ -23311,9 +22957,7 @@ index 000000000000..c3956937055f
 +		swapxy = <&iqs550>,"touchscreen-swapped-x-y?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/irs1125-overlay.dts b/arch/arm/boot/dts/overlays/irs1125-overlay.dts
 new file mode 100644
-index 000000000000..8f8432c07a89
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/irs1125-overlay.dts
 @@ -0,0 +1,90 @@
@@ -23407,9 +23051,7 @@ index 000000000000..8f8432c07a89
 +		       <&irs1125>, "clocks:0=",<&cam0_clk>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/jedec-spi-nor-overlay.dts b/arch/arm/boot/dts/overlays/jedec-spi-nor-overlay.dts
 new file mode 100644
-index 000000000000..fb6d4bc91bf3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/jedec-spi-nor-overlay.dts
 @@ -0,0 +1,136 @@
@@ -23549,9 +23191,7 @@ index 000000000000..fb6d4bc91bf3
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/justboom-both-overlay.dts b/arch/arm/boot/dts/overlays/justboom-both-overlay.dts
 new file mode 100644
-index 000000000000..9c42670631c0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/justboom-both-overlay.dts
 @@ -0,0 +1,65 @@
@@ -23620,9 +23260,7 @@ index 000000000000..9c42670631c0
 +		24db_digital_gain = <&frag3>,"justboom,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/justboom-dac-overlay.dts b/arch/arm/boot/dts/overlays/justboom-dac-overlay.dts
 new file mode 100644
-index 000000000000..d00515dca419
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/justboom-dac-overlay.dts
 @@ -0,0 +1,46 @@
@@ -23672,9 +23310,7 @@ index 000000000000..d00515dca419
 +		24db_digital_gain = <&frag2>,"justboom,24db_digital_gain?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/justboom-digi-overlay.dts b/arch/arm/boot/dts/overlays/justboom-digi-overlay.dts
 new file mode 100644
-index 000000000000..e73336029c54
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/justboom-digi-overlay.dts
 @@ -0,0 +1,41 @@
@@ -23719,9 +23355,7 @@ index 000000000000..e73336029c54
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ltc294x-overlay.dts b/arch/arm/boot/dts/overlays/ltc294x-overlay.dts
 new file mode 100644
-index 000000000000..6d971f3649ca
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ltc294x-overlay.dts
 @@ -0,0 +1,86 @@
@@ -23743,7 +23377,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2941";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23759,7 +23393,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2942";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23775,7 +23409,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2943";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23791,7 +23425,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2944";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23811,9 +23445,7 @@ index 000000000000..6d971f3649ca
 +				 <&ltc2944>, "lltc,prescaler-exponent:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/max98357a-overlay.dts b/arch/arm/boot/dts/overlays/max98357a-overlay.dts
 new file mode 100644
-index 000000000000..9e2afb05b7cb
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/max98357a-overlay.dts
 @@ -0,0 +1,84 @@
@@ -23901,9 +23533,7 @@ index 000000000000..9e2afb05b7cb
 +		sdmode-pin = <&max98357a_dac>,"sdmode-gpios:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/maxtherm-overlay.dts b/arch/arm/boot/dts/overlays/maxtherm-overlay.dts
 new file mode 100644
-index 000000000000..9964e246c14f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/maxtherm-overlay.dts
 @@ -0,0 +1,186 @@
@@ -24093,9 +23723,7 @@ index 000000000000..9964e246c14f
 +		type_t    = <&max>,"thermocouple-type:0=",<THERMOCOUPLE_TYPE_T>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mbed-dac-overlay.dts b/arch/arm/boot/dts/overlays/mbed-dac-overlay.dts
 new file mode 100644
-index 000000000000..840dd9b31db4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mbed-dac-overlay.dts
 @@ -0,0 +1,64 @@
@@ -24163,9 +23791,7 @@ index 000000000000..840dd9b31db4
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp23017-overlay.dts b/arch/arm/boot/dts/overlays/mcp23017-overlay.dts
 new file mode 100644
-index 000000000000..c546d8ba7e6d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp23017-overlay.dts
 @@ -0,0 +1,69 @@
@@ -24238,9 +23864,7 @@ index 000000000000..c546d8ba7e6d
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/mcp23s17-overlay.dts b/arch/arm/boot/dts/overlays/mcp23s17-overlay.dts
 new file mode 100644
-index 000000000000..484d64b225fb
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp23s17-overlay.dts
 @@ -0,0 +1,732 @@
@@ -24976,9 +24600,7 @@ index 000000000000..484d64b225fb
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts b/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
-new file mode 100755
-index 000000000000..46f143d809cc
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
 @@ -0,0 +1,73 @@
@@ -25055,9 +24677,7 @@ index 000000000000..46f143d809cc
 +        interrupt = <&can0_pins>,"brcm,pins:0",<&can0>,"interrupts:0";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts b/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
 new file mode 100644
-index 000000000000..0a8dd576818e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
 @@ -0,0 +1,73 @@
@@ -25134,9 +24754,7 @@ index 000000000000..0a8dd576818e
 +        interrupt = <&can1_pins>,"brcm,pins:0",<&can1>,"interrupts:0";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp2515-overlay.dts b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
 new file mode 100644
-index 000000000000..cda1fb0b1199
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp2515-overlay.dts
 @@ -0,0 +1,156 @@
@@ -25296,9 +24914,7 @@ index 000000000000..cda1fb0b1199
 +			<&mcp2515>, "interrupts:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp251xfd-overlay.dts b/arch/arm/boot/dts/overlays/mcp251xfd-overlay.dts
 new file mode 100644
-index 000000000000..65c861bbd340
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp251xfd-overlay.dts
 @@ -0,0 +1,226 @@
@@ -25528,9 +25144,7 @@ index 000000000000..65c861bbd340
 +		xceiver_active_high = <&reg_mcp251xfd_xceiver>, "enable-active-high?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp3008-overlay.dts b/arch/arm/boot/dts/overlays/mcp3008-overlay.dts
-new file mode 100755
-index 000000000000..957fdb9310af
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp3008-overlay.dts
 @@ -0,0 +1,205 @@
@@ -25739,9 +25353,7 @@ index 000000000000..957fdb9310af
 +		spi2-2-speed = <&mcp3008_22>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp3202-overlay.dts b/arch/arm/boot/dts/overlays/mcp3202-overlay.dts
-new file mode 100755
-index 000000000000..8e4e9f60f285
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp3202-overlay.dts
 @@ -0,0 +1,205 @@
@@ -25950,9 +25562,7 @@ index 000000000000..8e4e9f60f285
 +		spi2-2-speed = <&mcp3202_22>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mcp342x-overlay.dts b/arch/arm/boot/dts/overlays/mcp342x-overlay.dts
 new file mode 100644
-index 000000000000..714eca5a4b5e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp342x-overlay.dts
 @@ -0,0 +1,164 @@
@@ -26120,9 +25730,7 @@ index 000000000000..714eca5a4b5e
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/media-center-overlay.dts b/arch/arm/boot/dts/overlays/media-center-overlay.dts
 new file mode 100644
-index 000000000000..4bc2eaa1f215
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/media-center-overlay.dts
 @@ -0,0 +1,86 @@
@@ -26212,9 +25820,7 @@ index 000000000000..4bc2eaa1f215
 +		            <&rpi_display_pins>,"brcm,pins:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/merus-amp-overlay.dts b/arch/arm/boot/dts/overlays/merus-amp-overlay.dts
 new file mode 100644
-index 000000000000..ec5c7c28f728
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/merus-amp-overlay.dts
 @@ -0,0 +1,59 @@
@@ -26277,9 +25883,7 @@ index 000000000000..ec5c7c28f728
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/midi-uart0-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart0-overlay.dts
 new file mode 100644
-index 000000000000..f7e44d29e101
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart0-overlay.dts
 @@ -0,0 +1,36 @@
@@ -26319,9 +25923,7 @@ index 000000000000..f7e44d29e101
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/midi-uart1-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart1-overlay.dts
 new file mode 100644
-index 000000000000..e0bc410acbff
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart1-overlay.dts
 @@ -0,0 +1,43 @@
@@ -26368,9 +25970,7 @@ index 000000000000..e0bc410acbff
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/midi-uart2-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart2-overlay.dts
 new file mode 100644
-index 000000000000..66f3092e9a74
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart2-overlay.dts
 @@ -0,0 +1,37 @@
@@ -26411,9 +26011,7 @@ index 000000000000..66f3092e9a74
 +        };
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/midi-uart3-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart3-overlay.dts
 new file mode 100644
-index 000000000000..55c6cb94f963
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart3-overlay.dts
 @@ -0,0 +1,38 @@
@@ -26455,9 +26053,7 @@ index 000000000000..55c6cb94f963
 +};
 +
 +
-diff --git a/arch/arm/boot/dts/overlays/midi-uart4-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart4-overlay.dts
 new file mode 100644
-index 000000000000..5819df1a6b2e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart4-overlay.dts
 @@ -0,0 +1,38 @@
@@ -26499,9 +26095,7 @@ index 000000000000..5819df1a6b2e
 +};
 +
 +
-diff --git a/arch/arm/boot/dts/overlays/midi-uart5-overlay.dts b/arch/arm/boot/dts/overlays/midi-uart5-overlay.dts
 new file mode 100644
-index 000000000000..a1d37f7103ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/midi-uart5-overlay.dts
 @@ -0,0 +1,38 @@
@@ -26543,9 +26137,7 @@ index 000000000000..a1d37f7103ff
 +};
 +
 +
-diff --git a/arch/arm/boot/dts/overlays/minipitft13-overlay.dts b/arch/arm/boot/dts/overlays/minipitft13-overlay.dts
 new file mode 100644
-index 000000000000..5e0941e8ba54
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/minipitft13-overlay.dts
 @@ -0,0 +1,70 @@
@@ -26619,9 +26211,7 @@ index 000000000000..5e0941e8ba54
 +                debug =   <&pitft>,"debug:0";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/miniuart-bt-overlay.dts b/arch/arm/boot/dts/overlays/miniuart-bt-overlay.dts
 new file mode 100644
-index 000000000000..757e5cd3c4e8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/miniuart-bt-overlay.dts
 @@ -0,0 +1,83 @@
@@ -26708,9 +26298,7 @@ index 000000000000..757e5cd3c4e8
 +		krnbt = <&minibt_frag>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mipi-dbi-spi-overlay.dts b/arch/arm/boot/dts/overlays/mipi-dbi-spi-overlay.dts
 new file mode 100644
-index 000000000000..040f76dffc6c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mipi-dbi-spi-overlay.dts
 @@ -0,0 +1,175 @@
@@ -26889,9 +26477,7 @@ index 000000000000..040f76dffc6c
 +		backlight-def-brightness = <&backlight_pwm>, "default-brightness-level:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mlx90640-overlay.dts b/arch/arm/boot/dts/overlays/mlx90640-overlay.dts
 new file mode 100644
-index 000000000000..a2655ed82585
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mlx90640-overlay.dts
 @@ -0,0 +1,22 @@
@@ -26917,9 +26503,7 @@ index 000000000000..a2655ed82585
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mmc-overlay.dts b/arch/arm/boot/dts/overlays/mmc-overlay.dts
 new file mode 100644
-index 000000000000..c1a2f691aa1e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mmc-overlay.dts
 @@ -0,0 +1,46 @@
@@ -26969,9 +26553,7 @@ index 000000000000..c1a2f691aa1e
 +		overclock_50     = <&frag0>,"brcm,overclock-50:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/mpu6050-overlay.dts b/arch/arm/boot/dts/overlays/mpu6050-overlay.dts
 new file mode 100644
-index 000000000000..1b4c06535687
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mpu6050-overlay.dts
 @@ -0,0 +1,29 @@
@@ -27004,9 +26586,7 @@ index 000000000000..1b4c06535687
 +                addr = <&mpu6050>,"reg:0";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/mz61581-overlay.dts b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
 new file mode 100644
-index 000000000000..6e00e8b2ddf2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
 @@ -0,0 +1,117 @@
@@ -27127,9 +26707,7 @@ index 000000000000..6e00e8b2ddf2
 +		xohms =   <&mz61581_ts>,"ti,x-plate-ohms;0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov2311-overlay.dts b/arch/arm/boot/dts/overlays/ov2311-overlay.dts
 new file mode 100644
-index 000000000000..aeefca50e8a2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov2311-overlay.dts
 @@ -0,0 +1,77 @@
@@ -27210,9 +26788,7 @@ index 000000000000..aeefca50e8a2
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov2311.dtsi b/arch/arm/boot/dts/overlays/ov2311.dtsi
 new file mode 100644
-index 000000000000..a1714d6941c3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov2311.dtsi
 @@ -0,0 +1,26 @@
@@ -27242,9 +26818,7 @@ index 000000000000..a1714d6941c3
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov5647-overlay.dts b/arch/arm/boot/dts/overlays/ov5647-overlay.dts
 new file mode 100644
-index 000000000000..3fcb0b8d9952
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov5647-overlay.dts
 @@ -0,0 +1,92 @@
@@ -27340,9 +26914,7 @@ index 000000000000..3fcb0b8d9952
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov5647.dtsi b/arch/arm/boot/dts/overlays/ov5647.dtsi
 new file mode 100644
-index 000000000000..6455a191a394
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov5647.dtsi
 @@ -0,0 +1,25 @@
@@ -27371,9 +26943,7 @@ index 000000000000..6455a191a394
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/ov7251-overlay.dts b/arch/arm/boot/dts/overlays/ov7251-overlay.dts
 new file mode 100644
-index 000000000000..9e490aa90fa0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov7251-overlay.dts
 @@ -0,0 +1,77 @@
@@ -27454,9 +27024,7 @@ index 000000000000..9e490aa90fa0
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov7251.dtsi b/arch/arm/boot/dts/overlays/ov7251.dtsi
 new file mode 100644
-index 000000000000..561fed1db837
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov7251.dtsi
 @@ -0,0 +1,28 @@
@@ -27488,9 +27056,7 @@ index 000000000000..561fed1db837
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov9281-overlay.dts b/arch/arm/boot/dts/overlays/ov9281-overlay.dts
 new file mode 100644
-index 000000000000..8a678d420c38
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov9281-overlay.dts
 @@ -0,0 +1,78 @@
@@ -27572,9 +27138,7 @@ index 000000000000..8a678d420c38
 +&cam_endpoint {
 +	remote-endpoint = <&csi_ep>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/ov9281.dtsi b/arch/arm/boot/dts/overlays/ov9281.dtsi
 new file mode 100644
-index 000000000000..7df43bc6ef39
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ov9281.dtsi
 @@ -0,0 +1,27 @@
@@ -27605,9 +27169,7 @@ index 000000000000..7df43bc6ef39
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/overlay_map.dts b/arch/arm/boot/dts/overlays/overlay_map.dts
 new file mode 100644
-index 000000000000..f1d1e0cf30d2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/overlay_map.dts
 @@ -0,0 +1,223 @@
@@ -27834,9 +27396,7 @@ index 000000000000..f1d1e0cf30d2
 +		bcm2711;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/papirus-overlay.dts b/arch/arm/boot/dts/overlays/papirus-overlay.dts
 new file mode 100644
-index 000000000000..67052b53a59c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/papirus-overlay.dts
 @@ -0,0 +1,84 @@
@@ -27924,9 +27484,7 @@ index 000000000000..67052b53a59c
 +		speed = <&repaper>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pca953x-overlay.dts b/arch/arm/boot/dts/overlays/pca953x-overlay.dts
 new file mode 100644
-index 000000000000..ab414e92e366
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pca953x-overlay.dts
 @@ -0,0 +1,240 @@
@@ -28170,9 +27728,7 @@ index 000000000000..ab414e92e366
 +		xra1202 = <0>, "+30";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pcf857x-overlay.dts b/arch/arm/boot/dts/overlays/pcf857x-overlay.dts
 new file mode 100644
-index 000000000000..68943e1c3320
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pcf857x-overlay.dts
 @@ -0,0 +1,32 @@
@@ -28208,9 +27764,7 @@ index 000000000000..68943e1c3320
 +		addr = <&pcf857x>,"reg:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pcie-32bit-dma-overlay.dts b/arch/arm/boot/dts/overlays/pcie-32bit-dma-overlay.dts
 new file mode 100644
-index 000000000000..955703563df7
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pcie-32bit-dma-overlay.dts
 @@ -0,0 +1,38 @@
@@ -28252,9 +27806,7 @@ index 000000000000..955703563df7
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/pibell-overlay.dts b/arch/arm/boot/dts/overlays/pibell-overlay.dts
 new file mode 100644
-index 000000000000..9333a9b09772
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pibell-overlay.dts
 @@ -0,0 +1,81 @@
@@ -28339,9 +27891,7 @@ index 000000000000..9333a9b09772
 +        alsaname = <&snd>, "simple-audio-card,name";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/pifacedigital-overlay.dts b/arch/arm/boot/dts/overlays/pifacedigital-overlay.dts
 new file mode 100644
-index 000000000000..532a858683d6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pifacedigital-overlay.dts
 @@ -0,0 +1,144 @@
@@ -28489,9 +28039,7 @@ index 000000000000..532a858683d6
 +		spi-present-mask = <&pfdigital>, "microchip,spi-present-mask:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pifi-40-overlay.dts b/arch/arm/boot/dts/overlays/pifi-40-overlay.dts
 new file mode 100644
-index 000000000000..51a20e54977f
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pifi-40-overlay.dts
 @@ -0,0 +1,50 @@
@@ -28545,9 +28093,7 @@ index 000000000000..51a20e54977f
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pifi-dac-hd-overlay.dts b/arch/arm/boot/dts/overlays/pifi-dac-hd-overlay.dts
 new file mode 100644
-index 000000000000..67f50db7861a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pifi-dac-hd-overlay.dts
 @@ -0,0 +1,49 @@
@@ -28600,9 +28146,7 @@ index 000000000000..67f50db7861a
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pifi-dac-zero-overlay.dts b/arch/arm/boot/dts/overlays/pifi-dac-zero-overlay.dts
 new file mode 100644
-index 000000000000..645ea74cb435
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pifi-dac-zero-overlay.dts
 @@ -0,0 +1,49 @@
@@ -28655,9 +28199,7 @@ index 000000000000..645ea74cb435
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pifi-mini-210-overlay.dts b/arch/arm/boot/dts/overlays/pifi-mini-210-overlay.dts
 new file mode 100644
-index 000000000000..963597d611b5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pifi-mini-210-overlay.dts
 @@ -0,0 +1,42 @@
@@ -28703,9 +28245,7 @@ index 000000000000..963597d611b5
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/piglow-overlay.dts b/arch/arm/boot/dts/overlays/piglow-overlay.dts
 new file mode 100644
-index 000000000000..075bceef158c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/piglow-overlay.dts
 @@ -0,0 +1,97 @@
@@ -28806,9 +28346,7 @@ index 000000000000..075bceef158c
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/piscreen-overlay.dts b/arch/arm/boot/dts/overlays/piscreen-overlay.dts
 new file mode 100644
-index 000000000000..80aef4c01ae1
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/piscreen-overlay.dts
 @@ -0,0 +1,106 @@
@@ -28918,9 +28456,7 @@ index 000000000000..80aef4c01ae1
 +				<&piscreen>,"reset-gpios:8=",<GPIO_ACTIVE_HIGH>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts b/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
 new file mode 100644
-index 000000000000..9d2b51101969
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
 @@ -0,0 +1,106 @@
@@ -29030,9 +28566,7 @@ index 000000000000..9d2b51101969
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/pisound-overlay.dts b/arch/arm/boot/dts/overlays/pisound-overlay.dts
 new file mode 100644
-index 000000000000..a140ffc1f720
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pisound-overlay.dts
 @@ -0,0 +1,116 @@
@@ -29152,9 +28686,7 @@ index 000000000000..a140ffc1f720
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pitft22-overlay.dts b/arch/arm/boot/dts/overlays/pitft22-overlay.dts
 new file mode 100644
-index 000000000000..4c44ab66bc1c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pitft22-overlay.dts
 @@ -0,0 +1,69 @@
@@ -29227,9 +28759,7 @@ index 000000000000..4c44ab66bc1c
 +                debug =   <&pitft>,"debug:0";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/pitft28-capacitive-overlay.dts b/arch/arm/boot/dts/overlays/pitft28-capacitive-overlay.dts
 new file mode 100644
-index 000000000000..33901ee1db7a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pitft28-capacitive-overlay.dts
 @@ -0,0 +1,91 @@
@@ -29324,9 +28854,7 @@ index 000000000000..33901ee1db7a
 +                touch-swapxy = <&ft6236>,"touchscreen-swapped-x-y?";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts b/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
 new file mode 100644
-index 000000000000..3834cc83dca8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
 @@ -0,0 +1,120 @@
@@ -29450,9 +28978,7 @@ index 000000000000..3834cc83dca8
 +		drm =     <&pitft>,"compatible=multi-inno,mi0283qt";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pitft35-resistive-overlay.dts b/arch/arm/boot/dts/overlays/pitft35-resistive-overlay.dts
 new file mode 100644
-index 000000000000..33537829ab21
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pitft35-resistive-overlay.dts
 @@ -0,0 +1,121 @@
@@ -29577,9 +29103,7 @@ index 000000000000..33537829ab21
 +			  <&pitft>,"backlight:0=",<&backlight>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts b/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
 new file mode 100644
-index 000000000000..a4f6b868aad8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
 @@ -0,0 +1,39 @@
@@ -29622,9 +29146,7 @@ index 000000000000..a4f6b868aad8
 +		pull = <&pps_pins>,"brcm,pull:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/proto-codec-overlay.dts b/arch/arm/boot/dts/overlays/proto-codec-overlay.dts
 new file mode 100644
-index 000000000000..9cda044a0f62
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/proto-codec-overlay.dts
 @@ -0,0 +1,39 @@
@@ -29667,9 +29189,7 @@ index 000000000000..9cda044a0f62
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts b/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
 new file mode 100644
-index 000000000000..4ddbbfa04065
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
 @@ -0,0 +1,49 @@
@@ -29722,9 +29242,7 @@ index 000000000000..4ddbbfa04065
 +		clock = <&frag1>,"assigned-clock-rates:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pwm-ir-tx-overlay.dts b/arch/arm/boot/dts/overlays/pwm-ir-tx-overlay.dts
 new file mode 100644
-index 000000000000..119caf746b3b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pwm-ir-tx-overlay.dts
 @@ -0,0 +1,40 @@
@@ -29768,9 +29286,7 @@ index 000000000000..119caf746b3b
 +		func = <&pwm0_pins>,"brcm,function:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pwm-overlay.dts b/arch/arm/boot/dts/overlays/pwm-overlay.dts
 new file mode 100644
-index 000000000000..92876ab3bc8c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pwm-overlay.dts
 @@ -0,0 +1,45 @@
@@ -29819,9 +29335,7 @@ index 000000000000..92876ab3bc8c
 +		clock = <&frag1>,"assigned-clock-rates:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/pwm1-overlay.dts b/arch/arm/boot/dts/overlays/pwm1-overlay.dts
 new file mode 100644
-index 000000000000..19b4db26cded
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pwm1-overlay.dts
 @@ -0,0 +1,60 @@
@@ -29885,9 +29399,7 @@ index 000000000000..19b4db26cded
 +		pull_off = <&pins>, "brcm,pull:0=", <BCM2835_PUD_OFF>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/qca7000-overlay.dts b/arch/arm/boot/dts/overlays/qca7000-overlay.dts
 new file mode 100644
-index 000000000000..f695f36024fa
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/qca7000-overlay.dts
 @@ -0,0 +1,55 @@
@@ -29946,9 +29458,7 @@ index 000000000000..f695f36024fa
 +		speed   = <&eth1>, "spi-max-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/qca7000-uart0-overlay.dts b/arch/arm/boot/dts/overlays/qca7000-uart0-overlay.dts
 new file mode 100644
-index 000000000000..f103916c9e1c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/qca7000-uart0-overlay.dts
 @@ -0,0 +1,46 @@
@@ -29998,9 +29508,7 @@ index 000000000000..f103916c9e1c
 +		baudrate = <&eth2>, "current-speed:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ramoops-overlay.dts b/arch/arm/boot/dts/overlays/ramoops-overlay.dts
 new file mode 100644
-index 000000000000..e5038658138d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ramoops-overlay.dts
 @@ -0,0 +1,25 @@
@@ -30029,9 +29537,7 @@ index 000000000000..e5038658138d
 +		console-size = <&ramoops>,"console-size:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ramoops-pi4-overlay.dts b/arch/arm/boot/dts/overlays/ramoops-pi4-overlay.dts
 new file mode 100644
-index 000000000000..4f3d30ef069a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ramoops-pi4-overlay.dts
 @@ -0,0 +1,25 @@
@@ -30060,9 +29566,7 @@ index 000000000000..4f3d30ef069a
 +		console-size = <&ramoops>,"console-size:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rotary-encoder-overlay.dts b/arch/arm/boot/dts/overlays/rotary-encoder-overlay.dts
 new file mode 100644
-index 000000000000..ea1d952734e9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rotary-encoder-overlay.dts
 @@ -0,0 +1,59 @@
@@ -30101,7 +29605,7 @@ index 000000000000..ea1d952734e9
 +			};
 +		};
 +
-+	};  
++	};
 +
 +	__overrides__ {
 +		pin_a =		    <&rotary>,"gpios:4",
@@ -30125,9 +29629,7 @@ index 000000000000..ea1d952734e9
 +		                    <&rotary_pins>,"brcm,pins:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-backlight-overlay.dts b/arch/arm/boot/dts/overlays/rpi-backlight-overlay.dts
 new file mode 100644
-index 000000000000..cac5e44c6ec5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-backlight-overlay.dts
 @@ -0,0 +1,21 @@
@@ -30152,9 +29654,7 @@ index 000000000000..cac5e44c6ec5
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-codeczero-overlay.dts b/arch/arm/boot/dts/overlays/rpi-codeczero-overlay.dts
 new file mode 100644
-index 000000000000..c3b0564b2fb2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-codeczero-overlay.dts
 @@ -0,0 +1,9 @@
@@ -30167,9 +29667,7 @@ index 000000000000..c3b0564b2fb2
 +	dai_name = "Raspberry Pi Codec Zero";
 +	dai_stream_name = "Raspberry Pi Codec Zero HiFi";
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-dacplus-overlay.dts b/arch/arm/boot/dts/overlays/rpi-dacplus-overlay.dts
 new file mode 100644
-index 000000000000..47557aa17f19
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-dacplus-overlay.dts
 @@ -0,0 +1,17 @@
@@ -30190,9 +29688,7 @@ index 000000000000..47557aa17f19
 +		/delete-property/ unmute_amp;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-dacpro-overlay.dts b/arch/arm/boot/dts/overlays/rpi-dacpro-overlay.dts
 new file mode 100644
-index 000000000000..412260c64edf
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-dacpro-overlay.dts
 @@ -0,0 +1,17 @@
@@ -30213,9 +29709,7 @@ index 000000000000..412260c64edf
 +		/delete-property/ unmute_amp;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-digiampplus-overlay.dts b/arch/arm/boot/dts/overlays/rpi-digiampplus-overlay.dts
 new file mode 100644
-index 000000000000..5e73d6c1bf42
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-digiampplus-overlay.dts
 @@ -0,0 +1,17 @@
@@ -30236,9 +29730,7 @@ index 000000000000..5e73d6c1bf42
 +			     <&iqaudio_dac>,"iqaudio-dac,auto-mute-amp!";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts b/arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts
 new file mode 100644
-index 000000000000..8483c4f4b2eb
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts
 @@ -0,0 +1,25 @@
@@ -30267,9 +29759,7 @@ index 000000000000..8483c4f4b2eb
 +		touchscreen-swapped-x-y = <&ts>,"touchscreen-swapped-x-y?";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-poe-overlay.dts b/arch/arm/boot/dts/overlays/rpi-poe-overlay.dts
 new file mode 100644
-index 000000000000..a4530c10dd42
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-poe-overlay.dts
 @@ -0,0 +1,154 @@
@@ -30427,9 +29917,7 @@ index 000000000000..a4530c10dd42
 +					<&fan>,"pwms:0=",<&poe_mfd_pwm>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-poe-plus-overlay.dts b/arch/arm/boot/dts/overlays/rpi-poe-plus-overlay.dts
 new file mode 100644
-index 000000000000..54deda2f18c3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-poe-plus-overlay.dts
 @@ -0,0 +1,49 @@
@@ -30482,9 +29970,7 @@ index 000000000000..54deda2f18c3
 +		      <&poe_mfd>,"status=okay",
 +		      <&fan>,"pwms:0=",<&poe_mfd_pwm>;
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-sense-overlay.dts b/arch/arm/boot/dts/overlays/rpi-sense-overlay.dts
 new file mode 100644
-index 000000000000..89d8d2ea6b2e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-sense-overlay.dts
 @@ -0,0 +1,47 @@
@@ -30535,9 +30021,7 @@ index 000000000000..89d8d2ea6b2e
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-sense-v2-overlay.dts b/arch/arm/boot/dts/overlays/rpi-sense-v2-overlay.dts
 new file mode 100644
-index 000000000000..1b86c032259b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-sense-v2-overlay.dts
 @@ -0,0 +1,47 @@
@@ -30588,9 +30072,7 @@ index 000000000000..1b86c032259b
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/rpi-tv-overlay.dts b/arch/arm/boot/dts/overlays/rpi-tv-overlay.dts
 new file mode 100644
-index 000000000000..3c97a545d820
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rpi-tv-overlay.dts
 @@ -0,0 +1,34 @@
@@ -30628,9 +30110,7 @@ index 000000000000..3c97a545d820
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/rra-digidac1-wm8741-audio-overlay.dts b/arch/arm/boot/dts/overlays/rra-digidac1-wm8741-audio-overlay.dts
 new file mode 100644
-index 000000000000..87e9a326eff1
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/rra-digidac1-wm8741-audio-overlay.dts
 @@ -0,0 +1,49 @@
@@ -30683,9 +30163,7 @@ index 000000000000..87e9a326eff1
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sainsmart18-overlay.dts b/arch/arm/boot/dts/overlays/sainsmart18-overlay.dts
 new file mode 100644
-index 000000000000..c51f1c030a55
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sainsmart18-overlay.dts
 @@ -0,0 +1,52 @@
@@ -30741,9 +30219,7 @@ index 000000000000..c51f1c030a55
 +		reset_pin = <&ss18>,"reset-gpios:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sc16is750-i2c-overlay.dts b/arch/arm/boot/dts/overlays/sc16is750-i2c-overlay.dts
 new file mode 100644
-index 000000000000..04d74d62897b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sc16is750-i2c-overlay.dts
 @@ -0,0 +1,43 @@
@@ -30790,9 +30266,7 @@ index 000000000000..04d74d62897b
 +		xtal = <&sc16is750_clk>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sc16is752-i2c-overlay.dts b/arch/arm/boot/dts/overlays/sc16is752-i2c-overlay.dts
 new file mode 100644
-index 000000000000..da05e981314c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sc16is752-i2c-overlay.dts
 @@ -0,0 +1,43 @@
@@ -30839,9 +30313,7 @@ index 000000000000..da05e981314c
 +		xtal = <&sc16is752_clk>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sc16is752-spi0-overlay.dts b/arch/arm/boot/dts/overlays/sc16is752-spi0-overlay.dts
 new file mode 100644
-index 000000000000..a49a04722b99
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sc16is752-spi0-overlay.dts
 @@ -0,0 +1,49 @@
@@ -30894,9 +30366,7 @@ index 000000000000..a49a04722b99
 +		xtal = <&sc16is752_clk>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sc16is752-spi1-overlay.dts b/arch/arm/boot/dts/overlays/sc16is752-spi1-overlay.dts
 new file mode 100644
-index 000000000000..730c6e8cd614
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sc16is752-spi1-overlay.dts
 @@ -0,0 +1,67 @@
@@ -30967,9 +30437,7 @@ index 000000000000..730c6e8cd614
 +		xtal = <&sc16is752_clk>,"clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sdhost-overlay.dts b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
 new file mode 100644
-index 000000000000..0b72b4eeac88
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
 @@ -0,0 +1,38 @@
@@ -31011,9 +30479,7 @@ index 000000000000..0b72b4eeac88
 +		debug            = <&frag0>,"brcm,debug?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sdio-overlay.dts b/arch/arm/boot/dts/overlays/sdio-overlay.dts
 new file mode 100644
-index 000000000000..873e49056379
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sdio-overlay.dts
 @@ -0,0 +1,77 @@
@@ -31094,9 +30560,7 @@ index 000000000000..873e49056379
 +		gpios_34_39 = <0>,"=5";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v1-overlay.dts b/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v1-overlay.dts
 new file mode 100644
-index 000000000000..210d027a073e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v1-overlay.dts
 @@ -0,0 +1,138 @@
@@ -31238,15 +30702,13 @@ index 000000000000..210d027a073e
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v2-overlay.dts b/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v2-overlay.dts
 new file mode 100644
-index 000000000000..e843d0b19745
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/seeed-can-fd-hat-v2-overlay.dts
 @@ -0,0 +1,117 @@
 +// redo: ovmerge -c mcp251xfd-overlay.dts,spi0-0,interrupt=25 mcp251xfd-overlay.dts,spi0-1,interrupt=24 i2c-rtc-overlay.dts,pcf85063
 +
-+// Device tree overlay for https://www.seeedstudio.com/CAN-BUS-FD-HAT-for-Raspberry-Pi-p-4742.html 
++// Device tree overlay for https://www.seeedstudio.com/CAN-BUS-FD-HAT-for-Raspberry-Pi-p-4742.html
 +
 +/dts-v1/;
 +/plugin/;
@@ -31361,9 +30823,7 @@ index 000000000000..e843d0b19745
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sh1106-spi-overlay.dts b/arch/arm/boot/dts/overlays/sh1106-spi-overlay.dts
 new file mode 100644
-index 000000000000..57a0cc9b1741
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sh1106-spi-overlay.dts
 @@ -0,0 +1,84 @@
@@ -31451,9 +30911,7 @@ index 000000000000..57a0cc9b1741
 +		height    = <&sh1106>,"sinowealth,height:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/si446x-spi0-overlay.dts b/arch/arm/boot/dts/overlays/si446x-spi0-overlay.dts
 new file mode 100644
-index 000000000000..90495f0941fb
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/si446x-spi0-overlay.dts
 @@ -0,0 +1,53 @@
@@ -31510,9 +30968,7 @@ index 000000000000..90495f0941fb
 +        speed   = <&uhf0>, "spi-max-frequency:0";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/smi-dev-overlay.dts b/arch/arm/boot/dts/overlays/smi-dev-overlay.dts
 new file mode 100644
-index 000000000000..bafab6c92506
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/smi-dev-overlay.dts
 @@ -0,0 +1,20 @@
@@ -31536,9 +30992,7 @@ index 000000000000..bafab6c92506
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/smi-nand-overlay.dts b/arch/arm/boot/dts/overlays/smi-nand-overlay.dts
 new file mode 100644
-index 000000000000..ae1e50329d66
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/smi-nand-overlay.dts
 @@ -0,0 +1,66 @@
@@ -31608,9 +31062,7 @@ index 000000000000..ae1e50329d66
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/smi-overlay.dts b/arch/arm/boot/dts/overlays/smi-overlay.dts
 new file mode 100644
-index 000000000000..bb8c7830df23
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/smi-overlay.dts
 @@ -0,0 +1,37 @@
@@ -31651,9 +31103,7 @@ index 000000000000..bb8c7830df23
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts b/arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts
 new file mode 100644
-index 000000000000..a132b8637c31
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts
 @@ -0,0 +1,31 @@
@@ -31688,9 +31138,7 @@ index 000000000000..a132b8637c31
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi-gpio40-45-overlay.dts b/arch/arm/boot/dts/overlays/spi-gpio40-45-overlay.dts
 new file mode 100644
-index 000000000000..9ebcaf1b5ea0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi-gpio40-45-overlay.dts
 @@ -0,0 +1,36 @@
@@ -31730,9 +31178,7 @@ index 000000000000..9ebcaf1b5ea0
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi-rtc-overlay.dts b/arch/arm/boot/dts/overlays/spi-rtc-overlay.dts
 new file mode 100644
-index 000000000000..df3286929c2e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi-rtc-overlay.dts
 @@ -0,0 +1,75 @@
@@ -31811,9 +31257,7 @@ index 000000000000..df3286929c2e
 +		pcf2123 = <0>,"+2";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi0-0cs-overlay.dts b/arch/arm/boot/dts/overlays/spi0-0cs-overlay.dts
 new file mode 100644
-index 000000000000..0d2acabf56a4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi0-0cs-overlay.dts
 @@ -0,0 +1,39 @@
@@ -31856,9 +31300,7 @@ index 000000000000..0d2acabf56a4
 +		no_miso = <0>,"=3";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi0-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi0-1cs-overlay.dts
 new file mode 100644
-index 000000000000..e6eb66e2076a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi0-1cs-overlay.dts
 @@ -0,0 +1,42 @@
@@ -31904,9 +31346,7 @@ index 000000000000..e6eb66e2076a
 +		no_miso = <0>,"=3";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi0-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi0-2cs-overlay.dts
 new file mode 100644
-index 000000000000..df6519537c3a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi0-2cs-overlay.dts
 @@ -0,0 +1,37 @@
@@ -31947,9 +31387,7 @@ index 000000000000..df6519537c3a
 +		no_miso = <0>,"=2";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts
 new file mode 100644
-index 000000000000..ea2794bc5fd5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts
 @@ -0,0 +1,57 @@
@@ -32010,9 +31448,7 @@ index 000000000000..ea2794bc5fd5
 +		cs0_spidev = <&spidev1_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts
 new file mode 100644
-index 000000000000..dab34ee79ae2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts
 @@ -0,0 +1,69 @@
@@ -32085,9 +31521,7 @@ index 000000000000..dab34ee79ae2
 +		cs1_spidev = <&spidev1_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts b/arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts
 new file mode 100644
-index 000000000000..bc7e7d04324b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts
 @@ -0,0 +1,81 @@
@@ -32172,9 +31606,7 @@ index 000000000000..bc7e7d04324b
 +		cs2_spidev = <&spidev1_2>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts
 new file mode 100644
-index 000000000000..2a29750462af
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts
 @@ -0,0 +1,57 @@
@@ -32235,9 +31667,7 @@ index 000000000000..2a29750462af
 +		cs0_spidev = <&spidev2_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts
 new file mode 100644
-index 000000000000..642678fc9ddd
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts
 @@ -0,0 +1,69 @@
@@ -32310,9 +31740,7 @@ index 000000000000..642678fc9ddd
 +		cs1_spidev = <&spidev2_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts b/arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts
 new file mode 100644
-index 000000000000..28d40c6c3c37
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts
 @@ -0,0 +1,81 @@
@@ -32397,9 +31825,7 @@ index 000000000000..28d40c6c3c37
 +		cs2_spidev = <&spidev2_2>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi3-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi3-1cs-overlay.dts
 new file mode 100644
-index 000000000000..7abea6d86fd0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi3-1cs-overlay.dts
 @@ -0,0 +1,42 @@
@@ -32445,9 +31871,7 @@ index 000000000000..7abea6d86fd0
 +		cs0_spidev = <&spidev3_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi3-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi3-2cs-overlay.dts
 new file mode 100644
-index 000000000000..2f474ac769f5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi3-2cs-overlay.dts
 @@ -0,0 +1,54 @@
@@ -32505,9 +31929,7 @@ index 000000000000..2f474ac769f5
 +		cs1_spidev = <&spidev3_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi4-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi4-1cs-overlay.dts
 new file mode 100644
-index 000000000000..66d89521124a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi4-1cs-overlay.dts
 @@ -0,0 +1,42 @@
@@ -32553,9 +31975,7 @@ index 000000000000..66d89521124a
 +		cs0_spidev = <&spidev4_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi4-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi4-2cs-overlay.dts
 new file mode 100644
-index 000000000000..83d8cb8b918c
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi4-2cs-overlay.dts
 @@ -0,0 +1,54 @@
@@ -32613,9 +32033,7 @@ index 000000000000..83d8cb8b918c
 +		cs1_spidev = <&spidev4_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi5-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi5-1cs-overlay.dts
 new file mode 100644
-index 000000000000..168b4825de34
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi5-1cs-overlay.dts
 @@ -0,0 +1,42 @@
@@ -32661,9 +32079,7 @@ index 000000000000..168b4825de34
 +		cs0_spidev = <&spidev5_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi5-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi5-2cs-overlay.dts
 new file mode 100644
-index 000000000000..c2a239a34b35
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi5-2cs-overlay.dts
 @@ -0,0 +1,54 @@
@@ -32721,9 +32137,7 @@ index 000000000000..c2a239a34b35
 +		cs1_spidev = <&spidev5_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi6-1cs-overlay.dts b/arch/arm/boot/dts/overlays/spi6-1cs-overlay.dts
 new file mode 100644
-index 000000000000..a784f8a17d23
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi6-1cs-overlay.dts
 @@ -0,0 +1,42 @@
@@ -32769,9 +32183,7 @@ index 000000000000..a784f8a17d23
 +		cs0_spidev = <&spidev6_0>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/spi6-2cs-overlay.dts b/arch/arm/boot/dts/overlays/spi6-2cs-overlay.dts
 new file mode 100644
-index 000000000000..8ef513814d2b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi6-2cs-overlay.dts
 @@ -0,0 +1,54 @@
@@ -32829,9 +32241,7 @@ index 000000000000..8ef513814d2b
 +		cs1_spidev = <&spidev6_1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ssd1306-overlay.dts b/arch/arm/boot/dts/overlays/ssd1306-overlay.dts
 new file mode 100644
-index 000000000000..84cf10e489d3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ssd1306-overlay.dts
 @@ -0,0 +1,36 @@
@@ -32871,9 +32281,7 @@ index 000000000000..84cf10e489d3
 +	inverted = <&ssd1306>,"solomon,com-invdir?";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/ssd1306-spi-overlay.dts b/arch/arm/boot/dts/overlays/ssd1306-spi-overlay.dts
 new file mode 100644
-index 000000000000..679749fc3065
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ssd1306-spi-overlay.dts
 @@ -0,0 +1,85 @@
@@ -32962,9 +32370,7 @@ index 000000000000..679749fc3065
 +		inverted = <&ssd1306>,"solomon,com-invdir?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/ssd1331-spi-overlay.dts b/arch/arm/boot/dts/overlays/ssd1331-spi-overlay.dts
 new file mode 100644
-index 000000000000..9fd5ebf2feda
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ssd1331-spi-overlay.dts
 @@ -0,0 +1,83 @@
@@ -33051,9 +32457,7 @@ index 000000000000..9fd5ebf2feda
 +                            <&ssd1331_pins>,"brcm,pins:0";
 +        };
 +};
-diff --git a/arch/arm/boot/dts/overlays/ssd1351-spi-overlay.dts b/arch/arm/boot/dts/overlays/ssd1351-spi-overlay.dts
 new file mode 100644
-index 000000000000..ffc872c60648
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ssd1351-spi-overlay.dts
 @@ -0,0 +1,83 @@
@@ -33140,9 +32544,7 @@ index 000000000000..ffc872c60648
 +		            <&ssd1351_pins>,"brcm,pins:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/superaudioboard-overlay.dts b/arch/arm/boot/dts/overlays/superaudioboard-overlay.dts
-new file mode 100755
-index 000000000000..bad61535981e
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/superaudioboard-overlay.dts
 @@ -0,0 +1,73 @@
@@ -33198,7 +32600,7 @@ index 000000000000..bad61535981e
 +			status = "okay";
 +		};
 +	};
-+    
++
 +	fragment@2 {
 +		target = <&i2c1>;
 +		__overlay__ {
@@ -33219,9 +32621,7 @@ index 000000000000..bad61535981e
 +		gpiopin = <&cs4271>,"reset-gpio:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/sx150x-overlay.dts b/arch/arm/boot/dts/overlays/sx150x-overlay.dts
 new file mode 100644
-index 000000000000..1d1069345da2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/sx150x-overlay.dts
 @@ -0,0 +1,1706 @@
@@ -34931,9 +34331,7 @@ index 000000000000..1d1069345da2
 +	};
 +};
 +
-diff --git a/arch/arm/boot/dts/overlays/tc358743-audio-overlay.dts b/arch/arm/boot/dts/overlays/tc358743-audio-overlay.dts
 new file mode 100644
-index 000000000000..047695bb0c71
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/tc358743-audio-overlay.dts
 @@ -0,0 +1,52 @@
@@ -34989,9 +34387,7 @@ index 000000000000..047695bb0c71
 +		card-name = <&sound_overlay>,"simple-audio-card,name";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/tc358743-overlay.dts b/arch/arm/boot/dts/overlays/tc358743-overlay.dts
 new file mode 100644
-index 000000000000..c3eebfd1f6ee
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/tc358743-overlay.dts
 @@ -0,0 +1,109 @@
@@ -35104,9 +34500,7 @@ index 000000000000..c3eebfd1f6ee
 +		       <&tc358743>, "clocks:0=",<&cam0_clk>;
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
 new file mode 100644
-index 000000000000..a102b09e3ab5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
 @@ -0,0 +1,222 @@
@@ -35332,9 +34726,7 @@ index 000000000000..a102b09e3ab5
 +		keypad =     <&keypad>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/tpm-slb9670-overlay.dts b/arch/arm/boot/dts/overlays/tpm-slb9670-overlay.dts
 new file mode 100644
-index 000000000000..e69188503ca3
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/tpm-slb9670-overlay.dts
 @@ -0,0 +1,44 @@
@@ -35382,9 +34774,7 @@ index 000000000000..e69188503ca3
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/tpm-slb9673-overlay.dts b/arch/arm/boot/dts/overlays/tpm-slb9673-overlay.dts
 new file mode 100644
-index 000000000000..cba8c25c30e5
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/tpm-slb9673-overlay.dts
 @@ -0,0 +1,50 @@
@@ -35438,9 +34828,7 @@ index 000000000000..cba8c25c30e5
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart0-overlay.dts b/arch/arm/boot/dts/overlays/uart0-overlay.dts
-new file mode 100755
-index 000000000000..6bf2e0fd5c61
+new file mode 100644
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart0-overlay.dts
 @@ -0,0 +1,32 @@
@@ -35476,9 +34864,7 @@ index 000000000000..6bf2e0fd5c61
 +		pin_func = <&uart0_pins>,"brcm,function:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart1-overlay.dts b/arch/arm/boot/dts/overlays/uart1-overlay.dts
 new file mode 100644
-index 000000000000..64163bf932b7
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart1-overlay.dts
 @@ -0,0 +1,38 @@
@@ -35520,9 +34906,7 @@ index 000000000000..64163bf932b7
 +		rxd1_pin = <&uart1_pins>,"brcm,pins:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart2-overlay.dts b/arch/arm/boot/dts/overlays/uart2-overlay.dts
 new file mode 100644
-index 000000000000..d98cb5795f6a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart2-overlay.dts
 @@ -0,0 +1,25 @@
@@ -35551,9 +34935,7 @@ index 000000000000..d98cb5795f6a
 +		ctsrts = <0>,"=1";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart3-overlay.dts b/arch/arm/boot/dts/overlays/uart3-overlay.dts
 new file mode 100644
-index 000000000000..5751d5b1a29e
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart3-overlay.dts
 @@ -0,0 +1,25 @@
@@ -35582,9 +34964,7 @@ index 000000000000..5751d5b1a29e
 +		ctsrts = <0>,"=1";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart4-overlay.dts b/arch/arm/boot/dts/overlays/uart4-overlay.dts
 new file mode 100644
-index 000000000000..99def557b779
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart4-overlay.dts
 @@ -0,0 +1,25 @@
@@ -35613,9 +34993,7 @@ index 000000000000..99def557b779
 +		ctsrts = <0>,"=1";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/uart5-overlay.dts b/arch/arm/boot/dts/overlays/uart5-overlay.dts
 new file mode 100644
-index 000000000000..649daea52e6b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/uart5-overlay.dts
 @@ -0,0 +1,25 @@
@@ -35644,9 +35022,7 @@ index 000000000000..649daea52e6b
 +		ctsrts = <0>,"=1";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/udrc-overlay.dts b/arch/arm/boot/dts/overlays/udrc-overlay.dts
 new file mode 100644
-index 000000000000..ae7c37996894
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/udrc-overlay.dts
 @@ -0,0 +1,128 @@
@@ -35778,9 +35154,7 @@ index 000000000000..ae7c37996894
 +        alsaname = <&snd>, "simple-audio-card,name";
 +    };
 +};
-diff --git a/arch/arm/boot/dts/overlays/ugreen-dabboard-overlay.dts b/arch/arm/boot/dts/overlays/ugreen-dabboard-overlay.dts
 new file mode 100644
-index 000000000000..fc8d9b118068
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/ugreen-dabboard-overlay.dts
 @@ -0,0 +1,49 @@
@@ -35833,9 +35207,7 @@ index 000000000000..fc8d9b118068
 +		card-name = <&sound_overlay>,"simple-audio-card,name";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/upstream-overlay.dts b/arch/arm/boot/dts/overlays/upstream-overlay.dts
 new file mode 100644
-index 000000000000..55a99736a33b
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/upstream-overlay.dts
 @@ -0,0 +1,101 @@
@@ -35940,9 +35312,7 @@ index 000000000000..55a99736a33b
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/upstream-pi4-overlay.dts b/arch/arm/boot/dts/overlays/upstream-pi4-overlay.dts
 new file mode 100644
-index 000000000000..1dc60ae6d967
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/upstream-pi4-overlay.dts
 @@ -0,0 +1,137 @@
@@ -36083,9 +35453,7 @@ index 000000000000..1dc60ae6d967
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts b/arch/arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts
 new file mode 100644
-index 000000000000..ca344492bed8
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts
 @@ -0,0 +1,40 @@
@@ -36129,9 +35497,7 @@ index 000000000000..ca344492bed8
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-fkms-v3d-pi4-overlay.dts b/arch/arm/boot/dts/overlays/vc4-fkms-v3d-pi4-overlay.dts
 new file mode 100644
-index 000000000000..0271d90d6a85
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-fkms-v3d-pi4-overlay.dts
 @@ -0,0 +1,44 @@
@@ -36179,9 +35545,7 @@ index 000000000000..0271d90d6a85
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-generic-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-generic-overlay.dts
 new file mode 100644
-index 000000000000..8b006fcd9e58
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-generic-overlay.dts
 @@ -0,0 +1,81 @@
@@ -36266,9 +35630,7 @@ index 000000000000..8b006fcd9e58
 +		bus-format = <&panel_generic>, "bus-format:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel.dtsi b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel.dtsi
 new file mode 100644
-index 000000000000..585402a3b9b4
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel.dtsi
 @@ -0,0 +1,94 @@
@@ -36366,9 +35728,7 @@ index 000000000000..585402a3b9b4
 +		rotate = <&panel>, "rotation:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts
 new file mode 100644
-index 000000000000..4cd9d6a55c48
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel2r-overlay.dts
 @@ -0,0 +1,114 @@
@@ -36486,9 +35846,7 @@ index 000000000000..4cd9d6a55c48
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4-overlay.dts
 new file mode 100644
-index 000000000000..eafc25ad79ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4-overlay.dts
 @@ -0,0 +1,57 @@
@@ -36549,9 +35907,7 @@ index 000000000000..eafc25ad79ff
 +					  <&ft6236_5d>,"touchscreen-swapped-x-y!";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4sq-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4sq-overlay.dts
 new file mode 100644
-index 000000000000..700046348ecf
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-hyperpixel4sq-overlay.dts
 @@ -0,0 +1,36 @@
@@ -36591,9 +35947,7 @@ index 000000000000..700046348ecf
 +		touchscreen-swapped-x-y = <&polytouch>,"touchscreen-swapped-x-y!";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi-panel-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dpi-panel-overlay.dts
 new file mode 100644
-index 000000000000..ee9e2e8fd246
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi-panel-overlay.dts
 @@ -0,0 +1,69 @@
@@ -36666,9 +36020,7 @@ index 000000000000..ee9e2e8fd246
 +		mzp280 = <0>, "+2+93";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dpi.dtsi b/arch/arm/boot/dts/overlays/vc4-kms-dpi.dtsi
 new file mode 100644
-index 000000000000..27bb76598701
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dpi.dtsi
 @@ -0,0 +1,111 @@
@@ -36783,9 +36135,7 @@ index 000000000000..27bb76598701
 +		rotate = <&panel>, "rotation:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-7inch-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-7inch-overlay.dts
 new file mode 100644
-index 000000000000..5e1700d0367a
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-7inch-overlay.dts
 @@ -0,0 +1,118 @@
@@ -36907,9 +36257,7 @@ index 000000000000..5e1700d0367a
 +		disable_touch = <0>, "-10-11-12";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-overlay.dts
 new file mode 100644
-index 000000000000..d7b8f6713804
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-overlay.dts
 @@ -0,0 +1,69 @@
@@ -36982,9 +36330,7 @@ index 000000000000..d7b8f6713804
 +			<&lt070me05000>,"dcdc-en-gpios:4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-v2-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-v2-overlay.dts
 new file mode 100644
-index 000000000000..5dcd0f2243e2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-lt070me05000-v2-overlay.dts
 @@ -0,0 +1,64 @@
@@ -37052,9 +36398,7 @@ index 000000000000..5dcd0f2243e2
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
 new file mode 100644
-index 000000000000..e80f66963db6
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-dsi-waveshare-panel-overlay.dts
 @@ -0,0 +1,123 @@
@@ -37181,9 +36525,7 @@ index 000000000000..e80f66963db6
 +		swapxy = <&touch>,"touchscreen-swapped-x-y?";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-kippah-7inch-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-kippah-7inch-overlay.dts
 new file mode 100644
-index 000000000000..4c1aa1c70158
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-kippah-7inch-overlay.dts
 @@ -0,0 +1,26 @@
@@ -37213,9 +36555,7 @@ index 000000000000..4c1aa1c70158
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
 new file mode 100644
-index 000000000000..26a5bd71945d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
 @@ -0,0 +1,124 @@
@@ -37343,9 +36683,7 @@ index 000000000000..26a5bd71945d
 +		nohdmi = <0>, "-1-7";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-v3d-pi4-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-v3d-pi4-overlay.dts
 new file mode 100644
-index 000000000000..c1e53e3ed575
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-pi4-overlay.dts
 @@ -0,0 +1,200 @@
@@ -37549,9 +36887,7 @@ index 000000000000..c1e53e3ed575
 +		nohdmi =    <0>, "-1-2-3-4-8-10";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vc4-kms-vga666-overlay.dts b/arch/arm/boot/dts/overlays/vc4-kms-vga666-overlay.dts
 new file mode 100644
-index 000000000000..6e787099e861
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vc4-kms-vga666-overlay.dts
 @@ -0,0 +1,100 @@
@@ -37655,9 +36991,7 @@ index 000000000000..6e787099e861
 +		ddc = <0>,"=2", <0>,"=3", <0>,"=4";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vga666-overlay.dts b/arch/arm/boot/dts/overlays/vga666-overlay.dts
 new file mode 100644
-index 000000000000..a4968d180a5d
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vga666-overlay.dts
 @@ -0,0 +1,30 @@
@@ -37691,9 +37025,7 @@ index 000000000000..a4968d180a5d
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/vl805-overlay.dts b/arch/arm/boot/dts/overlays/vl805-overlay.dts
 new file mode 100644
-index 000000000000..81adf34b29f2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/vl805-overlay.dts
 @@ -0,0 +1,18 @@
@@ -37715,9 +37047,7 @@ index 000000000000..81adf34b29f2
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts b/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
 new file mode 100644
-index 000000000000..f44e325bc1f2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
 @@ -0,0 +1,40 @@
@@ -37761,9 +37091,7 @@ index 000000000000..f44e325bc1f2
 +		pullup;		// Silently ignore unneeded parameter
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts b/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
 new file mode 100644
-index 000000000000..953c6a1aeab9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
 @@ -0,0 +1,42 @@
@@ -37809,9 +37137,7 @@ index 000000000000..953c6a1aeab9
 +		pullup;		// Silently ignore unneeded parameter
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/w5500-overlay.dts b/arch/arm/boot/dts/overlays/w5500-overlay.dts
 new file mode 100644
-index 000000000000..4d3e66296753
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/w5500-overlay.dts
 @@ -0,0 +1,63 @@
@@ -37878,9 +37204,7 @@ index 000000000000..4d3e66296753
 +			  <0>, "!0=1";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/watterott-display-overlay.dts b/arch/arm/boot/dts/overlays/watterott-display-overlay.dts
 new file mode 100644
-index 000000000000..c0e20afa3bf0
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/watterott-display-overlay.dts
 @@ -0,0 +1,150 @@
@@ -38034,9 +37358,7 @@ index 000000000000..c0e20afa3bf0
 +				<&rpi_display_pins>, "brcm,function:0=2"; /* Alt5 */
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-a-overlay.dts b/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-a-overlay.dts
 new file mode 100644
-index 000000000000..59388cc3b0b9
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-a-overlay.dts
 @@ -0,0 +1,140 @@
@@ -38180,9 +37502,7 @@ index 000000000000..59388cc3b0b9
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-b-overlay.dts b/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-b-overlay.dts
 new file mode 100644
-index 000000000000..b2504922c8de
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/waveshare-can-fd-hat-mode-b-overlay.dts
 @@ -0,0 +1,103 @@
@@ -38289,9 +37609,7 @@ index 000000000000..b2504922c8de
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/overlays/wittypi-overlay.dts b/arch/arm/boot/dts/overlays/wittypi-overlay.dts
 new file mode 100644
-index 000000000000..71ce806186de
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/wittypi-overlay.dts
 @@ -0,0 +1,44 @@
@@ -38339,9 +37657,7 @@ index 000000000000..71ce806186de
 +	};
 +
 +};
-diff --git a/arch/arm/boot/dts/overlays/wm8960-soundcard-overlay.dts b/arch/arm/boot/dts/overlays/wm8960-soundcard-overlay.dts
 new file mode 100644
-index 000000000000..289fa4dacdf1
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/wm8960-soundcard-overlay.dts
 @@ -0,0 +1,82 @@
@@ -38392,7 +37708,7 @@ index 000000000000..289fa4dacdf1
 +		slave_overlay: __overlay__ {
 +			compatible = "simple-audio-card";
 +			simple-audio-card,format = "i2s";
-+			simple-audio-card,name = "wm8960-soundcard"; 
++			simple-audio-card,name = "wm8960-soundcard";
 +			status = "okay";
 +
 +			simple-audio-card,widgets =
@@ -38427,8 +37743,6 @@ index 000000000000..289fa4dacdf1
 +		compatible = <&wm8960>,"compatible";
 +	};
 +};
-diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
-index 30dd6347a929..a30874eddeae 100644
 --- a/arch/arm64/boot/dts/Makefile
 +++ b/arch/arm64/boot/dts/Makefile
 @@ -33,3 +33,5 @@ subdir-y += tesla
@@ -38437,11 +37751,9 @@ index 30dd6347a929..a30874eddeae 100644
  subdir-y += xilinx
 +
 +subdir-y += overlays
-diff --git a/arch/arm64/boot/dts/broadcom/Makefile b/arch/arm64/boot/dts/broadcom/Makefile
-index 8b4591ddd27c..8973a7e8e756 100644
 --- a/arch/arm64/boot/dts/broadcom/Makefile
 +++ b/arch/arm64/boot/dts/broadcom/Makefile
-@@ -12,6 +12,20 @@ dtb-$(CONFIG_ARCH_BCM2835) += bcm2711-rpi-400.dtb \
+@@ -12,6 +12,20 @@ dtb-$(CONFIG_ARCH_BCM2835) += bcm2711-rp
  			      bcm2837-rpi-cm3-io3.dtb \
  			      bcm2837-rpi-zero-2-w.dtb
  
@@ -38462,73 +37774,53 @@ index 8b4591ddd27c..8973a7e8e756 100644
 +ifeq ($(CONFIG_ARCH_BCM2835),y)
 +	DTC_FLAGS += -@
 +endif
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-2-b.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-2-b.dts
 new file mode 100644
-index 000000000000..9b2c0120842a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-2-b.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-2-b.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
 new file mode 100644
-index 000000000000..bc869aeaee9b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b-plus.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-3-b-plus.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b.dts
 new file mode 100644
-index 000000000000..263fc8db863a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-3-b.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-3-b.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-cm3.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-cm3.dts
 new file mode 100644
-index 000000000000..6beee41b0077
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-cm3.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-cm3.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts
 new file mode 100644
-index 000000000000..65fa59a939b7
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2-w.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-zero-2-w.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2.dts b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2.dts
 new file mode 100644
-index 000000000000..65fa59a939b7
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2710-rpi-zero-2.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2710-rpi-zero-2-w.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4.dts b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4.dts
 new file mode 100644
-index 000000000000..3e25a0e1797f
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2711-rpi-cm4.dts"
-diff --git a/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4s.dts b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 new file mode 100644
-index 000000000000..c72d752e7400
 --- /dev/null
 +++ b/arch/arm64/boot/dts/broadcom/bcm2711-rpi-cm4s.dts
 @@ -0,0 +1 @@
 +#include "arm/broadcom/bcm2711-rpi-cm4s.dts"
-diff --git a/arch/arm64/boot/dts/overlays b/arch/arm64/boot/dts/overlays
 new file mode 120000
-index 000000000000..ded08646b6f6
 --- /dev/null
 +++ b/arch/arm64/boot/dts/overlays
 @@ -0,0 +1 @@
 +../../../arm/boot/dts/overlays
 \ No newline at end of file
-diff --git a/include/dt-bindings/gpio/gpio-fsm.h b/include/dt-bindings/gpio/gpio-fsm.h
 new file mode 100644
-index 000000000000..eb40cfdc71df
 --- /dev/null
 +++ b/include/dt-bindings/gpio/gpio-fsm.h
 @@ -0,0 +1,21 @@
@@ -38553,11 +37845,9 @@ index 000000000000..eb40cfdc71df
 +#define GF_SW(x)    GF_IO(GF_SOFT, (x))
 +
 +#endif
-diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
-index 4405d5b67578..9d8f14e3c732 100644
 --- a/scripts/Makefile.dtbinst
 +++ b/scripts/Makefile.dtbinst
-@@ -18,9 +18,10 @@ include $(srctree)/scripts/Kbuild.include
+@@ -18,9 +18,10 @@ include $(srctree)/scripts/Kbuild.includ
  include $(kbuild-file)
  
  dtbs    := $(addprefix $(dst)/, $(dtb-y) $(if $(CONFIG_OF_ALL_DTBS),$(dtb-)))
@@ -38577,8 +37867,6 @@ index 4405d5b67578..9d8f14e3c732 100644
 +	$(Q)$(MAKE) $(dtbinst)=$@ dst=$(if $(if $(subst $(obj)/overlays,,$@),$(CONFIG_ARCH_WANT_FLAT_DTB_INSTALL),),$(dst),$(patsubst $(obj)/%,$(dst)/%,$@))
  
  .PHONY: $(PHONY)
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 68d0134bdbf9..19988caea4a9 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
 @@ -346,6 +346,7 @@ DTC_FLAGS += -Wno-interrupt_provider \
@@ -38589,7 +37877,7 @@ index 68d0134bdbf9..19988caea4a9 100644
  	-Wno-avoid_unnecessary_addr_size \
  	-Wno-alias_paths \
  	-Wno-graph_child_address \
-@@ -421,6 +422,18 @@ $(obj)/%.dtb: $(src)/%.dts $(DTC) $(DT_TMP_SCHEMA) FORCE
+@@ -425,6 +426,18 @@ $(obj)/%.dtb: $(src)/%.dts $(DTC) $(DT_T
  $(obj)/%.dtbo: $(src)/%.dtso $(DTC) FORCE
  	$(call if_changed_dep,dtc)
  
@@ -38608,6 +37896,3 @@ index 68d0134bdbf9..19988caea4a9 100644
  dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
  
  # Bzip2
--- 
-2.39.2
-

@@ -582,7 +582,7 @@ both bcm2708_bsc_fifo_fill and ~drain are changed as well.
 +	clk_tout = 35/1000*baud; //35ms timeout as per SMBus specs.
 +	if (clk_tout > 0xffff)
 +		clk_tout = 0xffff;
-+	
++
 +	bi->cdiv = cdiv;
 +	bi->clk_tout = clk_tout;
 +

@@ -16,10 +16,10 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +++ b/arch/arm/boot/dts/overlays/adau1977-adc-overlay.dts
 @@ -6,7 +6,7 @@
  	compatible = "brcm,bcm2835";
-     
+ 
  	fragment@0 {
 -        	target = <&i2c>;
 +		target = <&i2c1>;
-         	
+ 
  		__overlay__ {
  			#address-cells = <1>;

@@ -77,17 +77,23 @@ See: https://github.com/raspberrypi/linux/pull/5650
  				reg = <0x20>;
  				gpio-controller;
  				#gpio-cells = <2>;
-@@ -40,30 +60,44 @@
+@@ -40,21 +60,24 @@
  		};
  	};
  
 -	fragment@3 {
 -		target = <&mcp23017>;
--		__dormant__ {
--			compatible = "microchip,mcp23008";
 +	frag100: fragment@100 {
 +		target = <&i2c1>;
 +		i2cbus: __overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@101 {
++		target = <&i2c0if>;
+ 		__dormant__ {
+-			compatible = "microchip,mcp23008";
 +			status = "okay";
  		};
  	};
@@ -100,22 +106,14 @@ See: https://github.com/raspberrypi/linux/pull/5650
 -			interrupts = <4 2>;
 -			interrupt-controller;
 -			microchip,irq-mirror;
--		};
-+	fragment@101 { 
-+		target = <&i2c0if>; 
-+		__dormant__ { 
-+			status = "okay"; 
-+		}; 
-+	};
-+
-+	fragment@102 { 
-+		target = <&i2c0mux>; 
-+		__dormant__ { 
-+			status = "okay"; 
-+		}; 
++	fragment@102 {
++		target = <&i2c0mux>;
++		__dormant__ {
++			status = "okay";
+ 		};
  	};
  
- 	__overrides__ {
+@@ -62,8 +85,19 @@
  		gpiopin = <&mcp23017_pins>,"brcm,pins:0",
  				<&mcp23017_irq>,"interrupts:0";
  		addr = <&mcp23017>,"reg:0", <&mcp23017_pins>,"reg:0";

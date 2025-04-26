@@ -225,7 +225,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    }
 +    /* If ready to read is bigger than the buffer size, read only buffer size bytes. */
 +    ready_to_read = min(ready_to_read, params->buffer_size);
-+    
++
 +    /* Point to the data that is read to be read by the host. */
 +    read_offset = sizeof(debug_buffer_header) + debug_buffer_header.host_offset;
 +    /* Check if the offset should cycle back to beginning. */
@@ -249,7 +249,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    read_offset += size_to_read;
 +    hailo_resource_write32(fw_logger_resource, offsetof(FW_DEBUG_BUFFER_HEADER_t, host_offset),
 +        (u32)(read_offset - sizeof(debug_buffer_header)));
-+    
++
 +    params->read_bytes = ready_to_read;
 +    return 0;
 +}
@@ -315,16 +315,16 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    firmware_header_t *firmware_header = NULL;
 +    u32 consumed_firmware_offset = *outer_consumed_firmware_offset;
 +    u32 expected_firmware_magic = 0;
-+ 
++
 +    firmware_header = (firmware_header_t *) (firmware_base_address + consumed_firmware_offset);
 +    CONSUME_FIRMWARE(sizeof(firmware_header_t), -EINVAL);
 +
 +    switch (board_type) {
 +    case HAILO_BOARD_TYPE_HAILO8:
-+        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO8; 
++        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO8;
 +        break;
 +    case HAILO_BOARD_TYPE_HAILO15:
-+        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO15; 
++        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO15;
 +        break;
 +    case HAILO_BOARD_TYPE_PLUTO:
 +        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_PLUTO;
@@ -909,7 +909,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    HAILO_VDMA_INTERRUPTS_DOMAIN_MAX_ENUM = INT_MAX,
 +};
 +
-+// We allow maximum 2 buffers per transfer since we may have an extra buffer 
++// We allow maximum 2 buffers per transfer since we may have an extra buffer
 +// to make sure each buffer is aligned to page size.
 +#define HAILO_MAX_BUFFERS_PER_SINGLE_TRANSFER (2)
 +
@@ -1444,7 +1444,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    // Raise the bit for the CPU that will handle the control
 +    fw_access_value = (command->cpu_id == HAILO_CPU_ID_CPU1) ? FW_ACCESS_CORE_CPU_CONTROL_MASK :
 +        FW_ACCESS_APP_CPU_CONTROL_MASK;
-+    
++
 +    // Raise ready flag to FW
 +    hailo_resource_write32(&resources->fw_access, fw_addresses->raise_ready_offset, (u32)fw_access_value);
 +    return 0;
@@ -1466,7 +1466,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    // Copy response buffer
 +    hailo_resource_read_buffer(&resources->fw_access, PCIE_REQUEST_SIZE_OFFSET + (size_t)response_header_size,
 +        command->buffer_len, &command->buffer);
-+    
++
 +    return 0;
 +}
 +
@@ -3483,7 +3483,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    }
 +
 +    reinit_completion(&current_waiting_thread->notification_completion);
-+    
++
 +    spin_lock_irqsave(&pBoard->notification_read_spinlock, irq_saved_flags);
 +    notification->buffer_len = pBoard->notification_cache.buffer_len;
 +    memcpy(notification->buffer, pBoard->notification_cache.buffer, notification->buffer_len);
@@ -3981,7 +3981,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    /* Double-check ASPM control.  If not disabled by the above, the
 +     * BIOS is preventing that from happening (or CONFIG_PCIEASPM is
 +     * not enabled); override by writing PCI config space directly.
-+     */                       
++     */
 +    err = pcie_capability_read_word(pdev, PCI_EXP_LNKCTL, &pdev_aspmc);
 +    if (err < 0) {
 +        hailo_err(board, "Couldn't read LNKCTL capability\n");
@@ -6253,7 +6253,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    }
 +
 +    for (num_allocated = 0; num_allocated < pages_count; num_allocated++) {
-+        // __GFP_DMA32 flag is used to limit system memory allocations to the lowest 4 GB of physical memory in order to guarantee DMA 
++        // __GFP_DMA32 flag is used to limit system memory allocations to the lowest 4 GB of physical memory in order to guarantee DMA
 +        // Operations will not have to use bounce buffers on certain architectures (e.g 32-bit DMA enabled architectures)
 +        kernel_address = (void*)__get_free_page(__GFP_DMA32);
 +        if (NULL == kernel_address) {
