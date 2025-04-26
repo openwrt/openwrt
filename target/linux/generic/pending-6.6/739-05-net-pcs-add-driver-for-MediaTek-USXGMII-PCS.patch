@@ -58,7 +58,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-usxgmii.c
-@@ -0,0 +1,456 @@
+@@ -0,0 +1,454 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2023 MediaTek Inc.
@@ -429,7 +429,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return 0;
 +}
 +
-+static int mtk_usxgmii_remove(struct platform_device *pdev)
++static void mtk_usxgmii_remove(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct mtk_usxgmii_pcs *cur, *tmp;
@@ -441,8 +441,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			break;
 +		}
 +	mutex_unlock(&instance_mutex);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id mtk_usxgmii_of_mtable[] = {
@@ -508,7 +506,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		.of_match_table		= mtk_usxgmii_of_mtable,
 +	},
 +	.probe = mtk_usxgmii_probe,
-+	.remove = mtk_usxgmii_remove,
++	.remove_new = mtk_usxgmii_remove,
 +};
 +module_platform_driver(mtk_usxgmii_driver);
 +
