@@ -59,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,941 @@
+@@ -0,0 +1,939 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -978,18 +978,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ralink_i2s_debugfs_create(i2s);
 +}
 +
-+static int ralink_i2s_remove(struct platform_device *pdev)
++static void ralink_i2s_remove(struct platform_device *pdev)
 +{
 +	struct ralink_i2s *i2s = platform_get_drvdata(pdev);
 +
 +	ralink_i2s_debugfs_remove(i2s);
-+
-+	return 0;
 +}
 +
 +static struct platform_driver ralink_i2s_driver = {
 +	.probe = ralink_i2s_probe,
-+	.remove = ralink_i2s_remove,
++	.remove_new = ralink_i2s_remove,
 +	.driver = {
 +		.name = DRV_NAME,
 +		.of_match_table = ralink_i2s_match_table,
