@@ -35,8 +35,6 @@
 		};
 	};
 
-
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -52,69 +50,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-/*
-gpio_export {
-	compatible = "gpio-export"; // Direct GPIO control for tilt
-        #gpio-cells = <0>; // Number of cells for GPIO specification
-
-        tilt_coil_1 {
-                gpio-export,name = "Tilt_coil1";
-		gpio-export,output = <1>;
-                gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        tilt_coil_2 {
-                gpio-export,name = "Tilt_coil2";
-		gpio-export,output = <1>;
-                gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        tilt_coil_3 {
-                gpio-export,name = "Tilt_coil3";
-		gpio-export,output = <1>;
-                gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        tilt_coil_4 {
-                gpio-export,name = "Tilt_coil4";
-		gpio-export,output = <1>;
-                gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        pan_coil_1 {
-                gpio-export,name = "Pan_coil1";
-		gpio-export,output = <1>;
-                gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-	pan_coil_2 {
-                gpio-export,name = "Pan_coil2";
-		gpio-export,output = <1>;
-                gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        pan_coil_3 {
-                gpio-export,name = "Pan_coil3";
-		gpio-export,output = <1>;
-                gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
-	        default-state = "off"; // Set to low by default
-        };
-
-        pan_coil_4 {
-                gpio-export,name = "Pan_coil4";
-		gpio-export,output = <1>;
-                gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		default-state = "off"; // Set to low by default
-        };
-};
-*/
-
 
 };
 
@@ -127,7 +62,6 @@ gpio_export {
 
 &sdhci {
         status = "okay";
-        //cd-inverted;
 };
 
 &ethernet {
