@@ -563,6 +563,7 @@ $(eval $(call KernelPackage,reed-solomon))
 define KernelPackage/serial-8250
   SUBMENU:=$(OTHER_MENU)
   TITLE:=8250 UARTs
+  DEPENDS:=@!TARGET_uml
   KCONFIG:= CONFIG_SERIAL_8250 \
 	CONFIG_SERIAL_8250_PCI \
 	CONFIG_SERIAL_8250_NR_UARTS=16 \
