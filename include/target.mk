@@ -155,7 +155,7 @@ ifeq ($(TARGET_BUILD),1)
   endif
 endif
 
-GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic
+GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD)/../linux/generic $(TOPDIR)/target/linux/generic))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
   include $(INCLUDE_DIR)/kernel-version.mk
