@@ -242,7 +242,6 @@ define Device/dlink_dcs-5030l
 endef
 TARGET_DEVICES += dlink_dcs-5030l
 
-
 define Device/duzun_dm06
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
