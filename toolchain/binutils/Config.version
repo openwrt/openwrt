@@ -9,8 +9,12 @@ config BINUTILS_VERSION_2_42
 config BINUTILS_VERSION_2_43
 	bool
 
+config BINUTILS_VERSION_2_44
+	bool
+
 config BINUTILS_VERSION
 	string
 	default "2.40"			if BINUTILS_VERSION_2_40
 	default "2.42"			if BINUTILS_VERSION_2_42
 	default "2.43.1"		if BINUTILS_VERSION_2_43
+	default "2.44"			if BINUTILS_VERSION_2_44
