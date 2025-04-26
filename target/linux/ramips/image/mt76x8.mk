@@ -405,6 +405,18 @@ define Device/keenetic_kn-1613
 endef
 TARGET_DEVICES += keenetic_kn-1613
 
+define Device/keenetic_kn-1710
+  IMAGE_SIZE := 14720k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1710
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+        kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+        check-size | zyimage -d 0x801710 -v "KN-1710"
+endef
+TARGET_DEVICES += keenetic_kn-1710
+
 define Device/keenetic_kn-1711
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15073280
