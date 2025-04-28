@@ -1443,6 +1443,39 @@ define Device/openembed_som7981
 endef
 TARGET_DEVICES += openembed_som7981
 
+define Device/openwrt_som7981
+  DEVICE_VENDOR := OpenWrt
+  DEVICE_MODEL := SOM7981
+  DEVICE_DTS := mt7981b-openwrt-som
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := e2fsprogs fitblk kmod-mt7915e kmod-usb3 \
+	kmod-mt7981-firmware mt7981-wo-firmware f2fsck mkf2fs
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS := sdcard.img.gz
+  ARTIFACT/sdcard.img.gz := mt798x-gpt sdmmc |\
+			    pad-to 17k | mt7981-bl2 sdmmc-ddr4 |\
+			    pad-to 6656k | mt7981-bl31-uboot openwrt-som7981 |\
+			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+			    pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 52m |\
+			) \
+			$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+			    pad-to 64M | append-image squashfs-sysupgrade.itb | check-size |\
+			) \
+			    gzip
+endef
+TARGET_DEVICES += openwrt_som7981
+
 define Device/openwrt_one
   DEVICE_VENDOR := OpenWrt
   DEVICE_MODEL := One
