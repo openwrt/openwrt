@@ -72,7 +72,7 @@ This reverts commit a027da58e8d8e95827f97222ca321cd0b2d377dd.
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)) || defined(COMPAT_KERNEL_RELEASE)
                                          , bool unicast, bool multicast
  #endif
-@@ -4033,11 +4018,7 @@ static int cfg80211_rtw_change_beacon(st
+@@ -4046,11 +4031,7 @@ static int cfg80211_rtw_change_beacon(st
  	return ret;
  }
  
