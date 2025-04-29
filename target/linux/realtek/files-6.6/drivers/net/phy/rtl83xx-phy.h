@@ -18,6 +18,30 @@ struct __attribute__ ((__packed__)) fw_header {
 	struct part parts[10];
 };
 
+#define RTPH_838X_ENABLE_RW_MASK		GENMASK(1, 0)
+#define RTPH_838X_FAMILY_ID			0x8380
+#define RTPH_838X_INT_RW_CTRL_REG       	0x0058
+#define RTPH_838X_MODEL_NAME_INFO_REG		0x00d4
+
+#define RTPH_839X_FAMILY_ID			0x8390
+#define RTPH_839X_MODEL_NAME_INFO_REG		0x0ff0
+
+#define RTPH_83XX_CHIP_RL_ID_MASK		GENMASK(20, 16)
+#define RTPH_83XX_CHIP_INFO_EN			0xa0000000
+
+#define RTPH_930X_FAMILY_ID			0x9300
+
+#define RTPH_931X_FAMILY_ID			0x9310
+
+#define RTPH_93XX_MODEL_NAME_INFO_REG		0x0004
+#define RTPH_93XX_CHIP_INFO_EN			0xa0000
+#define RTPH_93XX_CHIP_RL_ID_MASK		GENMASK(31, 28)
+
+#define RTPH_CHIP_ID_MASK			GENMASK(15, 0)
+#define RTPH_MODEL_ID_MASK			GENMASK(31, 16)
+#define RTPH_MODEL_VERSION_MASK			GENMASK(15, 11)
+#define RTPH_MODEL_FAMILY_MASK			GENMASK(15, 4)
+
 /* TODO: fixed path? */
 #define FIRMWARE_838X_8380_1			"rtl838x_phy/rtl838x_8380.fw"
 #define FIRMWARE_838X_8214FC_1			"rtl838x_phy/rtl838x_8214fc.fw"
