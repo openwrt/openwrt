@@ -1,0 +1,623 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2022, Robert Marko <robimarko@gmail.com>
+altered by Jonathan Brophy <professor_jonny@hotmail.com>
+to suit the Ubiquiti Amplifi Alien Router target */
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Ubiquiti Amplifi Alien Router";
+	compatible = "ubiquiti,afi-aln-r", "qcom,ipq8074";
+
+	aliases {
+		/* ethernet0 = &dp1; present in stock device but also using nvmem?
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+		ethernet4 = &dp5; */
+		label-mac-device = &dp5;
+		serial0 = &blsp1_uart5;
+		serial1 = &blsp1_uart3;
+		serial2 = &blsp1_uart1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = "ubi.mtd=ubi rootfstype=squashfs rootwait swiotlb=1 clk_ignore_unused";
+	};
+
+	lcm_boot0 {
+		compatible = "gpio-export";
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcm_pins>;
+
+		/* lcm mode setting:
+		   # set dfu mode
+		   echo 1 > /sys/class/gpio/gpio${GPIO_DFU}/value
+		   echo 0 > /sys/class/gpio/gpio${GPIO_NRST}/value
+		   echo 1 > /sys/class/gpio/gpio${GPIO_RST}/value
+		   sleep 1
+		   echo 1 > /sys/class/gpio/gpio${GPIO_NRST}/value
+		   echo 0 > /sys/class/gpio/gpio${GPIO_RST}/value
+
+		   # set run mode
+		   echo 0 > /sys/class/gpio/gpio${GPIO_NRST}/value
+		   echo 1 > /sys/class/gpio/gpio${GPIO_RST}/value
+		   echo 0 > /sys/class/gpio/gpio${GPIO_DFU}/value
+		   sleep 1
+		   echo 1 > /sys/class/gpio/gpio${GPIO_NRST}/value
+		   echo 0 > /sys/class/gpio/gpio${GPIO_RST}/value */
+
+		lcm_boot0 {
+			gpio-export,name = "GPIO_DFU"; /* boot0 pin on lcm module */
+			gpio-export,output = <0>;
+			gpios = <&tlmm 21 GPIO_ACTIVE_LOW>;
+		};
+
+		lcm_swnrst {
+			gpio-export,name = "GPIO_NRST"; /* nrst pin on lcm module */
+			gpio-export,output = <1>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		lcm_swrst {
+			gpio-export,name = "GPIO_RST"; /* lcm module reset */
+			gpio-export,output = <0>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset_button {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&tlmm {
+	btcoex_pins: btcoex_pins {
+		mux_0 {
+			pins = "gpio64";
+			function = "pta1_1";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+
+		mux_1 {
+			pins = "gpio65";
+			function = "pta1_2";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+
+		mux_2 {
+			pins = "gpio66";
+			function = "pta1_0";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+
+		mux_3 {
+			pins = "gpio54";
+			function = "pta2_0";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+
+		mux_4 {
+			pins = "gpio55";
+			function = "pta2_1";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+
+		mux_5 {
+			pins = "gpio56";
+			function = "pta2_2";
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+	};
+
+	button_pins: button-state {
+		pins = "gpio61";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	lcm_pins: lcm_ctrl_pins {
+		lcm_boot0 {
+			pins = "gpio21";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-down;
+			output-low;
+		};
+
+		lcm_swnrst {
+			pins = "gpio22";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+			output-high;
+		};
+
+		lcm_swrst {
+			pins = "gpio34";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-down;
+			output-low;
+		};
+	};
+
+	lcm_uart_pins: blsp1_spi1_pins {
+		mux {
+			pins = "gpio44\0gpio45";
+			function = "blsp1_uart";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	pwm_pins: pwm_pins { /* this is not required? pwm node disabled in oem */
+		mux {
+			pins = "gpio25";
+			function = "pwm02";
+			drive-strength = <8>;
+		};
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_i2c2 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lm63@4c {
+		compatible = "national,lm63";
+		reg = <0x4c>;
+		tachometer-en = <0x01>;
+		pwm-polarity = <0x00>;
+	};
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <0>;
+	status = "okay";
+
+	flash@0 { /* mx25u6435f 64mb spi_nor flash chip */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			SBL1@0 {
+				label = "0:SBL1";
+				reg = <0x00 0x50000>;
+				read-only;
+			};
+
+			MIBIB@50000 {
+				label = "0:MIBIB";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			BOOTCONFIG@60000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x60000 0x20000>;
+				read-only;
+			};
+
+			BOOTCONFIG1@80000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x80000 0x20000>;
+				read-only;
+			};
+
+			QSEE@a0000 {
+				label = "0:QSEE";
+				reg = <0xa0000 0x180000>;
+				read-only;
+			};
+
+			QSEE_1@220000 {
+				label = "0:QSEE_1";
+				reg = <0x220000 0x180000>;
+				read-only;
+			};
+
+			DEVCFG@3a0000 {
+				label = "0:DEVCFG";
+				reg = <0x3a0000 0x10000>;
+				read-only;
+			};
+
+			DEVCFG_1@3b0000 {
+				label = "0:DEVCFG_1";
+				reg = <0x3b0000 0x10000>;
+				read-only;
+			};
+
+			APDP@3c0000 {
+				label = "0:APDP";
+				reg = <0x3c0000 0x10000>;
+				read-only;
+			};
+
+			APDP_1@3d0000 {
+				label = "0:APDP_1";
+				reg = <0x3d0000 0x10000>;
+				read-only;
+			};
+
+			RPM@3e0000 {
+				label = "0:RPM";
+				reg = <0x3e0000 0x40000>;
+				read-only;
+			};
+
+			RPM_1@420000 {
+				label = "0:RPM_1";
+				reg = <0x420000 0x40000>;
+				read-only;
+			};
+
+			CDT@460000 {
+				label = "0:CDT";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			CDT_1@470000 {
+				label = "0:CDT_1";
+				reg = <0x470000 0x10000>;
+				read-only;
+			};
+
+			APPSBLENV@480000 {
+				label = "0:u-boot-env";
+				reg = <0x480000 0x10000>;
+			};
+
+			APPSBL@490000 {
+				label = "0:u-boot";
+				reg = <0x490000 0xa0000>;
+				    read-only;  /* Consider adding this */
+			};
+
+			APPSBL_1@530000 {
+				label = "0:u-boot2";
+				reg = <0x530000 0xa0000>;
+				    read-only;  /* Consider adding this */
+			};
+
+			ART@5d0000 {
+				label = "0:ART";
+				reg = <0x5d0000 0x40000>;
+				read-only;
+			};
+
+			eeprom@610000 {
+				label = "0:eeprom";
+				reg = <0x610000 0x10000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					label_mac: label_mac@8018 {
+						compatible = "mac-base";
+						reg = <0x8018 0x06>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					caldata_qca9984: caldata@9000 {
+						reg = <0x9000 0x2f20>;
+
+						/*	not present on eu model
+								edjucated guess of location */
+					};
+				};
+			};
+
+			reserved@620000 {
+				label = "0:reserved";
+				reg = <0x620000 0x70000>;
+				read-only;
+			};
+
+			prst@690000 {
+				label = "0:prst";
+				reg = <0x690000 0x10000>;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&lcm_uart_pins>;	/* change default pins for uart */
+	pinctrl-names = "default";
+	status = "okay";
+
+};
+
+&blsp1_uart3 {
+	status = "okay";
+	pinctrl-0 = <&hsuart_pins &btcoex_pins>;
+	pinctrl-names = "default";
+	dmas = <&blsp_dma 4>, <&blsp_dma 5>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	bluetooth {
+		compatible = "csr,8811";
+		//enable-gpios = <&tlmm XX GPIO_ACTIVE_HIGH>; gpio is unknown
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&pcie_qmp0 {
+	status = "okay";
+};
+
+&pcie_qmp1 {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {	/* w29n02gz 256mb nand flash chip */
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions"; /*smem is incorrect set as fixed partitions */
+			#address-cells = <0x01>;
+			#size-cells = <0x01>;
+
+			ubi@0 {
+				compatible = "linux,ubi";
+				label = "ubi";
+				reg = <0x00 0x010000000>;
+			};
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&ssphy_1 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay";
+};
+
+&usb_1 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>; /* and &tlmm 31 GPIO_ACTIVE_high? */
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		compatible = "qcom,qca8075-package";
+
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
+
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8075_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT1 |ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT4)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance */
+
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <0>;
+		};
+		port@2 {
+			port_id = <2>;
+			phy_address = <1>;
+		};
+		port@3 {
+			port_id = <3>;
+			phy_address = <2>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+		port@5 {
+			port_id = <5>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp1 {
+	status = "okay";
+	phy-handle = <&qca8075_0>;
+	label = "lan1";
+	nvmem-cells = <&label_mac 4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan2";
+	nvmem-cells = <&label_mac 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan3";
+	nvmem-cells = <&label_mac 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan4";
+	nvmem-cells = <&label_mac 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	label = "wan";
+	nvmem-cells = <&label_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie0 { 	/* extra PCIe WI-FI card is only fitted for US market model */
+	status = "okay";
+	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			status = "okay";
+
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&caldata_qca9984>;
+			nvmem-cell-names = "pre-calibration";
+
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+	perst-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>; /* overlaping gpio61, set as gpio62 as in other devices */
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "ubiquiti_afi-aln-r";
+	nvmem-cells = <&label_mac 4>;
+	nvmem-cell-names = "mac-address";
+};

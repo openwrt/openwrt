@@ -238,6 +238,11 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	ubiquiti,afi-aln-r)
+		CI_KERN_UBIPART="kernel"
+		CI_ROOT_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
 	xiaomi,ax9000)
