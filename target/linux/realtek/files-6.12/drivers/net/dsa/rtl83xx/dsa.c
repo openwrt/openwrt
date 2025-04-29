@@ -16,7 +16,17 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
+/* This interval needs to be short enough to prevent an undetected counter
+ * overflow. The octet counters don't need to be considered for this, because
+ * they are 64 bits on all platforms. Based on the possible packets per second
+ * at the highest supported speeds, an interval of a minute is probably a safe
+ * choice for the other counters.
+ */
+#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
+
 extern struct rtl83xx_soc_info soc_info;
+
+static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
 
 static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 {
@@ -264,6 +274,7 @@ const struct rtldsa_mib_desc rtldsa_930x_mib = {
 	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
 	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xa4, 1),
 	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+	.rx_pkts_over_max_octets = MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
 
 	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
 
@@ -446,6 +457,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		rtl839x_print_matrix();
 
 	rtl83xx_init_stats(priv);
+	rtldsa_init_counters(priv);
 
 	rtl83xx_vlan_setup(priv);
 
@@ -510,6 +522,7 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	rtl930x_print_matrix();
 
 	/* TODO: Initialize statistics */
+	rtldsa_init_counters(priv);
 
 	rtl83xx_vlan_setup(priv);
 
@@ -1097,6 +1110,158 @@ static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 	return true;
 }
 
+static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
+				  struct rtldsa_counter *counter,
+				  const struct rtldsa_mib_item *mib_item)
+{
+	uint64_t val;
+	uint32_t val32, diff;
+
+	if (!rtldsa_read_mib_item(priv, port, mib_item, &val))
+		return;
+
+	if (mib_item->size == 2) {
+		counter->val = val;
+	} else {
+		val32 = (uint32_t)val;
+		diff = val32 - counter->last;
+		counter->val += diff;
+		counter->last = val32;
+	}
+}
+
+static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int port)
+{
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	const struct rtldsa_mib_desc *mib_desc;
+	ktime_t now;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return;
+
+	/* Prevent unnecessary updates when the user accesses different stats quickly.
+	 * This compensates a bit for always updating all stats, even when just a
+	 * subset is actually requested.
+	 */
+	now = ktime_get();
+	if (ktime_before(now, ktime_add_ms(counters->last_update, 100)))
+		return;
+	counters->last_update = now;
+
+	rtldsa_update_counter(priv, port, &counters->symbol_errors,
+			      &mib_desc->symbol_errors);
+
+	rtldsa_update_counter(priv, port, &counters->if_in_octets,
+			      &mib_desc->if_in_octets);
+	rtldsa_update_counter(priv, port, &counters->if_out_octets,
+			      &mib_desc->if_out_octets);
+	rtldsa_update_counter(priv, port, &counters->if_in_ucast_pkts,
+			      &mib_desc->if_in_ucast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_in_mcast_pkts,
+			      &mib_desc->if_in_mcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_in_bcast_pkts,
+			      &mib_desc->if_in_bcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_ucast_pkts,
+			      &mib_desc->if_out_ucast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_mcast_pkts,
+			      &mib_desc->if_out_mcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_bcast_pkts,
+			      &mib_desc->if_out_bcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_discards,
+			      &mib_desc->if_out_discards);
+	rtldsa_update_counter(priv, port, &counters->single_collisions,
+			      &mib_desc->single_collisions);
+	rtldsa_update_counter(priv, port, &counters->multiple_collisions,
+			      &mib_desc->multiple_collisions);
+	rtldsa_update_counter(priv, port, &counters->deferred_transmissions,
+			      &mib_desc->deferred_transmissions);
+	rtldsa_update_counter(priv, port, &counters->late_collisions,
+			      &mib_desc->late_collisions);
+	rtldsa_update_counter(priv, port, &counters->excessive_collisions,
+			      &mib_desc->excessive_collisions);
+	rtldsa_update_counter(priv, port, &counters->crc_align_errors,
+			      &mib_desc->crc_align_errors);
+	rtldsa_update_counter(priv, port, &counters->rx_pkts_over_max_octets,
+			      &mib_desc->rx_pkts_over_max_octets);
+
+	rtldsa_update_counter(priv, port, &counters->unsupported_opcodes,
+			      &mib_desc->unsupported_opcodes);
+
+	rtldsa_update_counter(priv, port, &counters->rx_undersize_pkts,
+			      &mib_desc->rx_undersize_pkts);
+	rtldsa_update_counter(priv, port, &counters->rx_oversize_pkts,
+			      &mib_desc->rx_oversize_pkts);
+	rtldsa_update_counter(priv, port, &counters->rx_fragments,
+			      &mib_desc->rx_fragments);
+	rtldsa_update_counter(priv, port, &counters->rx_jabbers,
+			      &mib_desc->rx_jabbers);
+
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
+		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rtldsa_update_counter(priv, port, &counters->tx_pkts[i],
+				      &mib_desc->tx_pkts[i]);
+	}
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
+		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rtldsa_update_counter(priv, port, &counters->rx_pkts[i],
+				      &mib_desc->rx_pkts[i]);
+	}
+
+	rtldsa_update_counter(priv, port, &counters->drop_events,
+			      &mib_desc->drop_events);
+	rtldsa_update_counter(priv, port, &counters->collisions,
+			      &mib_desc->collisions);
+
+	rtldsa_update_counter(priv, port, &counters->rx_pause_frames,
+			      &mib_desc->rx_pause_frames);
+	rtldsa_update_counter(priv, port, &counters->tx_pause_frames,
+			      &mib_desc->tx_pause_frames);
+}
+
+static void rtldsa_poll_counters(struct work_struct *work)
+{
+	struct rtl838x_switch_priv *priv = container_of(to_delayed_work(work),
+							struct rtl838x_switch_priv,
+							counters_work);
+	struct rtldsa_counter_state *counters;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		counters = &priv->ports[i].counters;
+
+		spin_lock(&counters->lock);
+		rtldsa_update_port_counters(priv, i);
+		spin_unlock(&counters->lock);
+	}
+
+	schedule_delayed_work(&priv->counters_work, RTLDSA_COUNTERS_POLL_INTERVAL);
+}
+
+static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
+{
+	struct rtldsa_counter_state *counters;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		counters = &priv->ports[i].counters;
+
+		memset(counters, 0, sizeof(*counters));
+		spin_lock_init(&counters->lock);
+	}
+
+	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
+	schedule_delayed_work(&priv->counters_work, RTLDSA_COUNTERS_POLL_INTERVAL);
+}
+
 static void rtldsa_get_strings(struct dsa_switch *ds,
 			       int port, u32 stringset, u8 *data)
 {
@@ -1160,92 +1325,91 @@ static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
 				     struct ethtool_eth_phy_stats *phy_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
+	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->symbol_errors,
-			     &phy_stats->SymbolErrorDuringCarrier);
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	phy_stats->SymbolErrorDuringCarrier = counters->symbol_errors.val;
+
+	spin_unlock(&counters->lock);
 }
 
 static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 				     struct ethtool_eth_mac_stats *mac_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
+	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	/* Ideally, frame and octet counters should be calculated based on RFC3635.
-	 * However, this would cause inconsistent results due to some counters being
-	 * 32-bit only.
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	/* Frame and octet counters are calculated based on RFC3635, while also
+	 * taking into account that the behaviour of the hardware counters differs
+	 * in some places.
 	 */
 
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_ucast_pkts,
-				 &mac_stats->FramesReceivedOK)) {
-		if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_mcast_pkts,
-					 &mac_stats->MulticastFramesReceivedOK))
-			mac_stats->FramesReceivedOK += mac_stats->MulticastFramesReceivedOK;
-		if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_bcast_pkts,
-					 &mac_stats->BroadcastFramesReceivedOK))
-			mac_stats->FramesReceivedOK += mac_stats->BroadcastFramesReceivedOK;
-	}
+	mac_stats->FramesReceivedOK = counters->if_in_ucast_pkts.val +
+				      counters->if_in_mcast_pkts.val +
+				      counters->if_in_bcast_pkts.val +
+				      counters->rx_pause_frames.val +
+				      counters->rx_pkts_over_max_octets.val;
 
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_ucast_pkts,
-				 &mac_stats->FramesTransmittedOK)) {
-		if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_mcast_pkts,
-					 &mac_stats->MulticastFramesXmittedOK))
-			mac_stats->FramesTransmittedOK += mac_stats->MulticastFramesXmittedOK;
-		if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_bcast_pkts,
-					 &mac_stats->BroadcastFramesXmittedOK))
-			mac_stats->FramesTransmittedOK += mac_stats->BroadcastFramesXmittedOK;
-	}
+	mac_stats->FramesTransmittedOK = counters->if_out_ucast_pkts.val +
+					 counters->if_out_mcast_pkts.val +
+					 counters->if_out_bcast_pkts.val +
+					 counters->tx_pause_frames.val -
+					 counters->if_out_discards.val;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_in_octets,
-			     &mac_stats->OctetsReceivedOK);
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_octets,
-			     &mac_stats->OctetsTransmittedOK);
+	mac_stats->OctetsReceivedOK = counters->if_in_octets.val -
+				      18 * mac_stats->FramesReceivedOK;
+	mac_stats->OctetsTransmittedOK = counters->if_out_octets.val -
+				         18 * mac_stats->FramesTransmittedOK;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->single_collisions,
-			     &mac_stats->SingleCollisionFrames);
-	rtldsa_read_mib_item(priv, port, &mib_desc->multiple_collisions,
-			     &mac_stats->MultipleCollisionFrames);
-	rtldsa_read_mib_item(priv, port, &mib_desc->deferred_transmissions,
-			     &mac_stats->FramesWithDeferredXmissions);
-	rtldsa_read_mib_item(priv, port, &mib_desc->late_collisions,
-			     &mac_stats->LateCollisions);
-	rtldsa_read_mib_item(priv, port, &mib_desc->excessive_collisions,
-			     &mac_stats->FramesAbortedDueToXSColls);
+	mac_stats->SingleCollisionFrames = counters->single_collisions.val;
+	mac_stats->MultipleCollisionFrames = counters->multiple_collisions.val;
+	mac_stats->FramesWithDeferredXmissions = counters->deferred_transmissions.val;
+	mac_stats->LateCollisions = counters->late_collisions.val;
+	mac_stats->FramesAbortedDueToXSColls = counters->excessive_collisions.val;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->crc_align_errors,
-			     &mac_stats->FrameCheckSequenceErrors);
+	mac_stats->FrameCheckSequenceErrors = counters->crc_align_errors.val;
+
+	spin_unlock(&counters->lock);
 }
 
 static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 				      struct ethtool_eth_ctrl_stats *ctrl_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
+	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->unsupported_opcodes,
-			     &ctrl_stats->UnsupportedOpcodesReceived);
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	ctrl_stats->UnsupportedOpcodesReceived = counters->unsupported_opcodes.val;
+
+	spin_unlock(&counters->lock);
 }
 
 static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
@@ -1254,6 +1418,7 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
@@ -1262,21 +1427,20 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 	if (!mib_desc)
 		return;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->rx_undersize_pkts,
-			     &rmon_stats->undersize_pkts);
-	rtldsa_read_mib_item(priv, port, &mib_desc->rx_oversize_pkts,
-			     &rmon_stats->oversize_pkts);
-	rtldsa_read_mib_item(priv, port, &mib_desc->rx_fragments,
-			     &rmon_stats->fragments);
-	rtldsa_read_mib_item(priv, port, &mib_desc->rx_jabbers,
-			     &rmon_stats->jabbers);
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	rmon_stats->undersize_pkts = counters->rx_undersize_pkts.val;
+	rmon_stats->oversize_pkts = counters->rx_oversize_pkts.val;
+	rmon_stats->fragments = counters->rx_fragments.val;
+	rmon_stats->jabbers = counters->rx_jabbers.val;
 
 	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
 		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
 			break;
 
-		rtldsa_read_mib_item(priv, port, &mib_desc->rx_pkts[i],
-				     &rmon_stats->hist[i]);
+		rmon_stats->hist[i] = counters->rx_pkts[i].val;
 	}
 
 
@@ -1284,75 +1448,85 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
 			break;
 
-		rtldsa_read_mib_item(priv, port, &mib_desc->tx_pkts[i],
-				     &rmon_stats->hist_tx[i]);
+		rmon_stats->hist_tx[i] = counters->tx_pkts[i].val;
 	}
 
 	*ranges = mib_desc->rmon_ranges;
+
+	spin_unlock(&counters->lock);
 }
 
 static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
 			       struct rtnl_link_stats64 *s)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
-	uint64_t val;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc) {
+	if (!rtldsa_get_mib_desc(priv)) {
 		dev_get_tstats64(dsa_to_port(ds, port)->user, s);
 		return;
 	}
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_in_ucast_pkts, &s->rx_packets);
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_mcast_pkts, &s->multicast))
-		s->rx_packets += s->multicast;
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_in_bcast_pkts, &val))
-		s->rx_packets += val;
+	spin_lock(&counters->lock);
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_ucast_pkts, &s->tx_packets);
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_mcast_pkts, &val))
-		s->tx_packets += val;
-	if (rtldsa_read_mib_item(priv, port, &mib_desc->if_out_bcast_pkts, &val))
-		s->tx_packets += val;
+	rtldsa_update_port_counters(priv, port);
 
-	/* Ideally, we should subtract the FCS for each packet here */
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_in_octets, &s->rx_bytes);
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_octets, &s->tx_bytes);
+	s->rx_packets = counters->if_in_ucast_pkts.val +
+			counters->if_in_mcast_pkts.val +
+			counters->if_in_bcast_pkts.val +
+			counters->rx_pkts_over_max_octets.val;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->collisions, &s->collisions);
+	s->tx_packets = counters->if_out_ucast_pkts.val +
+			counters->if_out_mcast_pkts.val +
+			counters->if_out_bcast_pkts.val -
+			counters->if_out_discards.val;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->drop_events, &s->rx_dropped);
-	rtldsa_read_mib_item(priv, port, &mib_desc->if_out_discards, &s->tx_dropped);
+	/* Subtract FCS for each packet, and pause frames */
+	s->rx_bytes = counters->if_in_octets.val -
+		      4 * s->rx_packets -
+		      64 * counters->rx_pause_frames.val;
+	s->tx_bytes = counters->if_out_octets.val -
+		      4 * s->tx_packets -
+		      64 * counters->tx_pause_frames.val;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->crc_align_errors, &s->rx_crc_errors);
+	s->collisions = counters->collisions.val;
+
+	s->rx_dropped = counters->drop_events.val;
+	s->tx_dropped = counters->if_out_discards.val;
+
+	s->rx_crc_errors = counters->crc_align_errors.val;
 	s->rx_errors = s->rx_crc_errors;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->excessive_collisions, &s->tx_aborted_errors);
-	rtldsa_read_mib_item(priv, port, &mib_desc->late_collisions, &s->tx_window_errors);
+	s->tx_aborted_errors = counters->excessive_collisions.val;
+	s->tx_window_errors = counters->late_collisions.val;
 	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
+
+	spin_unlock(&counters->lock);
 }
 
 static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
 				   struct ethtool_pause_stats *pause_stats)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
+	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	rtldsa_read_mib_item(priv, port, &mib_desc->tx_pause_frames,
-			     &pause_stats->tx_pause_frames);
-	rtldsa_read_mib_item(priv, port, &mib_desc->rx_pause_frames,
-			     &pause_stats->rx_pause_frames);
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	pause_stats->tx_pause_frames = counters->tx_pause_frames.val;
+	pause_stats->rx_pause_frames = counters->rx_pause_frames.val;
+
+	spin_unlock(&counters->lock);
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
