@@ -31,9 +31,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/Makefile
 +++ b/drivers/mtd/spi-nor/Makefile
-@@ -17,6 +17,7 @@ spi-nor-objs			+= sst.o
+@@ -14,6 +14,7 @@ spi-nor-objs			+= spansion.o
+ spi-nor-objs			+= sst.o
  spi-nor-objs			+= winbond.o
- spi-nor-objs			+= xilinx.o
  spi-nor-objs			+= xmc.o
 +spi-nor-objs			+= xtx.o
  spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/xtx.c
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,20 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/mtd/spi-nor.h>
 +
@@ -49,9 +49,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +static const struct flash_info xtx_parts[] = {
 +	/* XTX Technology (Shenzhen) Limited */
-+	{ "xt25f128b", INFO(0x0B4018, 0, 64 * 1024, 256)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
-+			      SPI_NOR_QUAD_READ) },
++	{
++		.id = SNOR_ID(0x0B, 0x40, 0x18),
++		.name = "xt25f128b",
++		.size = SZ_16M,
++		.no_sfdp_flags = SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ,
++	},
 +};
 +
 +const struct spi_nor_manufacturer spi_nor_xtx = {
@@ -61,9 +64,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +};
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -2017,6 +2017,7 @@ static const struct spi_nor_manufacturer
+@@ -1979,6 +1979,7 @@ static const struct spi_nor_manufacturer
+ 	&spi_nor_sst,
  	&spi_nor_winbond,
- 	&spi_nor_xilinx,
  	&spi_nor_xmc,
 +	&spi_nor_xtx,
  };
@@ -71,9 +74,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct flash_info spi_nor_generic_flash = {
 --- a/drivers/mtd/spi-nor/core.h
 +++ b/drivers/mtd/spi-nor/core.h
-@@ -647,6 +647,7 @@ extern const struct spi_nor_manufacturer
+@@ -593,6 +593,7 @@ extern const struct spi_nor_manufacturer
+ extern const struct spi_nor_manufacturer spi_nor_sst;
  extern const struct spi_nor_manufacturer spi_nor_winbond;
- extern const struct spi_nor_manufacturer spi_nor_xilinx;
  extern const struct spi_nor_manufacturer spi_nor_xmc;
 +extern const struct spi_nor_manufacturer spi_nor_xtx;
  

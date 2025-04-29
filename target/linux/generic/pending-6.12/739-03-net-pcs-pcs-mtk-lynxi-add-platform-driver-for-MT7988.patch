@@ -206,7 +206,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  EXPORT_SYMBOL(mtk_pcs_lynxi_create);
  
-@@ -303,4 +368,142 @@ void mtk_pcs_lynxi_destroy(struct phylin
+@@ -303,5 +368,142 @@ void mtk_pcs_lynxi_destroy(struct phylin
  }
  EXPORT_SYMBOL(mtk_pcs_lynxi_destroy);
  
@@ -347,7 +347,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +module_platform_driver(mtk_pcs_lynxi_driver);
 +
 +MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
-+MODULE_DESCRIPTION("MediaTek LynxI HSGMII PCS");
+ MODULE_DESCRIPTION("MediaTek SGMII library for LynxI");
  MODULE_LICENSE("GPL");
 --- a/include/linux/pcs/pcs-mtk-lynxi.h
 +++ b/include/linux/pcs/pcs-mtk-lynxi.h

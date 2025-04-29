@@ -17,7 +17,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm/include/asm/vmlinux.lds.h
 +++ b/arch/arm/include/asm/vmlinux.lds.h
-@@ -48,7 +48,7 @@
+@@ -54,7 +54,7 @@
  #define IDMAP_TEXT							\
  		ALIGN_FUNCTION();					\
  		__idmap_text_start = .;					\
@@ -26,7 +26,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		__idmap_text_end = .;					\
  
  #define ARM_DISCARD							\
-@@ -108,12 +108,12 @@
+@@ -114,12 +114,12 @@
  	. = ALIGN(8);							\
  	.ARM.unwind_idx : {						\
  		__start_unwind_idx = .;					\
@@ -41,16 +41,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		__stop_unwind_tab = .;					\
  	}
  
-@@ -125,7 +125,7 @@
+@@ -131,7 +131,7 @@
  	__vectors_lma = .;						\
  	OVERLAY 0xffff0000 : NOCROSSREFS AT(__vectors_lma) {		\
  		.vectors {						\
--			*(.vectors)					\
+-			OVERLAY_KEEP(*(.vectors))			\
 +			KEEP(*(.vectors))				\
  		}							\
  		.vectors.bhb.loop8 {					\
- 			*(.vectors.bhb.loop8)				\
-@@ -143,7 +143,7 @@
+ 			OVERLAY_KEEP(*(.vectors.bhb.loop8))		\
+@@ -149,7 +149,7 @@
  									\
  	__stubs_lma = .;						\
  	.stubs ADDR(.vectors) + 0x1000 : AT(__stubs_lma) {		\
