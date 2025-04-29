@@ -1,0 +1,94 @@
+From: Jakub Sitnicki <jakub@cloudflare.com>
+Date: Wed, 26 Jun 2024 19:51:26 +0200
+Subject: [PATCH] udp: Allow GSO transmit from devices with no checksum offload
+
+Today sending a UDP GSO packet from a TUN device results in an EIO error:
+
+  import fcntl, os, struct
+  from socket import *
+
+  TUNSETIFF = 0x400454CA
+  IFF_TUN = 0x0001
+  IFF_NO_PI = 0x1000
+  UDP_SEGMENT = 103
+
+  tun_fd = os.open("/dev/net/tun", os.O_RDWR)
+  ifr = struct.pack("16sH", b"tun0", IFF_TUN | IFF_NO_PI)
+  fcntl.ioctl(tun_fd, TUNSETIFF, ifr)
+
+  os.system("ip addr add 192.0.2.1/24 dev tun0")
+  os.system("ip link set dev tun0 up")
+
+  s = socket(AF_INET, SOCK_DGRAM)
+  s.setsockopt(SOL_UDP, UDP_SEGMENT, 1200)
+  s.sendto(b"x" * 3000, ("192.0.2.2", 9)) # EIO
+
+This is due to a check in the udp stack if the egress device offers
+checksum offload. While TUN/TAP devices, by default, don't advertise this
+capability because it requires support from the TUN/TAP reader.
+
+However, the GSO stack has a software fallback for checksum calculation,
+which we can use. This way we don't force UDP_SEGMENT users to handle the
+EIO error and implement a segmentation fallback.
+
+Lift the restriction so that UDP_SEGMENT can be used with any egress
+device. We also need to adjust the UDP GSO code to match the GSO stack
+expectation about ip_summed field, as set in commit 8d63bee643f1 ("net:
+avoid skb_warn_bad_offload false positives on UFO"). Otherwise we will hit
+the bad offload check.
+
+Users should, however, expect a potential performance impact when
+batch-sending packets with UDP_SEGMENT without checksum offload on the
+egress device. In such case the packet payload is read twice: first during
+the sendmsg syscall when copying data from user memory, and then in the GSO
+stack for checksum computation. This double memory read can be less
+efficient than a regular sendmsg where the checksum is calculated during
+the initial data copy from user memory.
+
+Signed-off-by: Jakub Sitnicki <jakub@cloudflare.com>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Link: https://patch.msgid.link/20240626-linux-udpgso-v2-1-422dfcbd6b48@cloudflare.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -942,8 +942,7 @@ static int udp_send_skb(struct sk_buff *
+ 			kfree_skb(skb);
+ 			return -EINVAL;
+ 		}
+-		if (skb->ip_summed != CHECKSUM_PARTIAL || is_udplite ||
+-		    dst_xfrm(skb_dst(skb))) {
++		if (is_udplite || dst_xfrm(skb_dst(skb))) {
+ 			kfree_skb(skb);
+ 			return -EIO;
+ 		}
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -384,6 +384,14 @@ struct sk_buff *__udp_gso_segment(struct
+ 	else
+ 		uh->check = gso_make_checksum(seg, ~check) ? : CSUM_MANGLED_0;
+ 
++	/* On the TX path, CHECKSUM_NONE and CHECKSUM_UNNECESSARY have the same
++	 * meaning. However, check for bad offloads in the GSO stack expects the
++	 * latter, if the checksum was calculated in software. To vouch for the
++	 * segment skbs we actually need to set it on the gso_skb.
++	 */
++	if (gso_skb->ip_summed == CHECKSUM_NONE)
++		gso_skb->ip_summed = CHECKSUM_UNNECESSARY;
++
+ 	/* update refcount for the packet */
+ 	if (copy_dtor) {
+ 		int delta = sum_truesize - gso_skb->truesize;
+--- a/net/ipv6/udp.c
++++ b/net/ipv6/udp.c
+@@ -1258,8 +1258,7 @@ static int udp_v6_send_skb(struct sk_buf
+ 			kfree_skb(skb);
+ 			return -EINVAL;
+ 		}
+-		if (skb->ip_summed != CHECKSUM_PARTIAL || is_udplite ||
+-		    dst_xfrm(skb_dst(skb))) {
++		if (is_udplite || dst_xfrm(skb_dst(skb))) {
+ 			kfree_skb(skb);
+ 			return -EIO;
+ 		}

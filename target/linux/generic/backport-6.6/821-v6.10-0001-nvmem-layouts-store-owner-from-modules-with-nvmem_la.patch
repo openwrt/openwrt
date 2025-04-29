@@ -1,0 +1,61 @@
+From 6d0ca4a2a7e25f9ad07c1f335f20b4d9e048cdd5 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Tue, 30 Apr 2024 09:49:11 +0100
+Subject: [PATCH] nvmem: layouts: store owner from modules with
+ nvmem_layout_driver_register()
+
+Modules registering driver with nvmem_layout_driver_register() might
+forget to set .owner field.  The field is used by some of other kernel
+parts for reference counting (try_module_get()), so it is expected that
+drivers will set it.
+
+Solve the problem by moving this task away from the drivers to the core
+code, just like we did for platform_driver in
+commit 9447057eaff8 ("platform_device: use a macro instead of
+platform_driver_register").
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Michael Walle <mwalle@kernel.org>
+Reviewed-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240430084921.33387-2-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/layouts.c        | 6 ++++--
+ include/linux/nvmem-provider.h | 5 ++++-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+--- a/drivers/nvmem/layouts.c
++++ b/drivers/nvmem/layouts.c
+@@ -52,13 +52,15 @@ static const struct bus_type nvmem_layou
+ 	.remove		= nvmem_layout_bus_remove,
+ };
+ 
+-int nvmem_layout_driver_register(struct nvmem_layout_driver *drv)
++int __nvmem_layout_driver_register(struct nvmem_layout_driver *drv,
++				   struct module *owner)
+ {
+ 	drv->driver.bus = &nvmem_layout_bus_type;
++	drv->driver.owner = owner;
+ 
+ 	return driver_register(&drv->driver);
+ }
+-EXPORT_SYMBOL_GPL(nvmem_layout_driver_register);
++EXPORT_SYMBOL_GPL(__nvmem_layout_driver_register);
+ 
+ void nvmem_layout_driver_unregister(struct nvmem_layout_driver *drv)
+ {
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -199,7 +199,10 @@ int nvmem_add_one_cell(struct nvmem_devi
+ int nvmem_layout_register(struct nvmem_layout *layout);
+ void nvmem_layout_unregister(struct nvmem_layout *layout);
+ 
+-int nvmem_layout_driver_register(struct nvmem_layout_driver *drv);
++#define nvmem_layout_driver_register(drv) \
++	__nvmem_layout_driver_register(drv, THIS_MODULE)
++int __nvmem_layout_driver_register(struct nvmem_layout_driver *drv,
++				   struct module *owner);
+ void nvmem_layout_driver_unregister(struct nvmem_layout_driver *drv);
+ #define module_nvmem_layout_driver(__nvmem_layout_driver)		\
+ 	module_driver(__nvmem_layout_driver, nvmem_layout_driver_register, \
