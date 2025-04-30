@@ -9,7 +9,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/dma-buf/Makefile  | 10 +++++++---
  drivers/dma-buf/dma-buf.c |  4 +++-
  kernel/sched/core.c       |  1 +
- 4 files changed, 12 insertions(+), 5 deletions(-)
+ net/Kconfig               |  2 +-
+ 5 files changed, 13 insertions(+), 6 deletions(-)
 
 --- a/drivers/base/Kconfig
 +++ b/drivers/base/Kconfig
@@ -64,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +dma-shared-buffer-objs :=  $(dma-buf-objs-y)
 --- a/drivers/dma-buf/dma-buf.c
 +++ b/drivers/dma-buf/dma-buf.c
-@@ -1731,4 +1731,5 @@ static void __exit dma_buf_deinit(void)
+@@ -1743,4 +1743,5 @@ static void __exit dma_buf_deinit(void)
  	kern_unmount(dma_buf_mnt);
  	dma_buf_uninit_sysfs_statistics();
  }
@@ -73,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4486,6 +4486,7 @@ int wake_up_state(struct task_struct *p,
+@@ -4422,6 +4422,7 @@ int wake_up_state(struct task_struct *p,
  {
  	return try_to_wake_up(p, state, 0);
  }
@@ -91,3 +92,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  char *simple_dname(struct dentry *dentry, char *buffer, int buflen)
  {
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -74,7 +74,7 @@ config SKB_EXTENSIONS
+ 
+ config NET_DEVMEM
+ 	def_bool y
+-	depends on DMA_SHARED_BUFFER
++	depends on DMA_SHARED_BUFFER=y
+ 	depends on GENERIC_ALLOCATOR
+ 	depends on PAGE_POOL
+ 
