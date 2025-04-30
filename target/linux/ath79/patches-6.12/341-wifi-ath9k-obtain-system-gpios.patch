@@ -172,14 +172,14 @@ Best regards,
 
 --- a/drivers/gpio/gpio-ath79.c
 +++ b/drivers/gpio/gpio-ath79.c
-@@ -9,6 +9,7 @@
-  */
+@@ -10,6 +10,7 @@
  
+ #include <linux/device.h>
  #include <linux/gpio/driver.h>
 +#include <linux/gpio/machine.h> /* For WLAN GPIOs */
- #include <linux/platform_device.h>
- #include <linux/platform_data/gpio-ath79.h>
- #include <linux/of.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/mod_devicetable.h>
 @@ -222,6 +223,37 @@ static const struct of_device_id ath79_g
  };
  MODULE_DEVICE_TABLE(of, ath79_gpio_of_match);
@@ -217,8 +217,8 @@ Best regards,
 +
  static int ath79_gpio_probe(struct platform_device *pdev)
  {
- 	struct ath79_gpio_platform_data *pdata = dev_get_platdata(&pdev->dev);
-@@ -289,7 +321,11 @@ static int ath79_gpio_probe(struct platf
+ 	struct device *dev = &pdev->dev;
+@@ -280,7 +312,11 @@ static int ath79_gpio_probe(struct platf
  		girq->handler = handle_simple_irq;
  	}
  
