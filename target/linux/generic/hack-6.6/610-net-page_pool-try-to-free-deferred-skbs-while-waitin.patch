@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/core/page_pool.c
 +++ b/net/core/page_pool.c
-@@ -873,12 +873,23 @@ static void page_pool_release_retry(stru
+@@ -873,7 +873,7 @@ static void page_pool_release_retry(stru
  {
  	struct delayed_work *dwq = to_delayed_work(wq);
  	struct page_pool *pool = container_of(dwq, typeof(*pool), release_dw);
@@ -24,7 +24,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	int cpu, inflight;
  
  	inflight = page_pool_release(pool);
- 	if (!inflight)
+ 	/* In rare cases, a driver bug may cause inflight to go negative.
+@@ -885,6 +885,17 @@ static void page_pool_release_retry(stru
+ 	if (inflight <= 0)
  		return;
  
 +	/* Run NET_RX_SOFTIRQ in order to free pending skbs in softnet_data
