@@ -1019,41 +1019,47 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		clk_disable_unprepare(pcie->clk);
  		return ret;
  	}
-@@ -1599,6 +1970,33 @@ static int brcm_pcie_probe(struct platfo
- 			dev_err(pcie->dev, "probe of internal MSI failed");
- 			goto fail;
- 		}
-+	} else if (pci_msi_enabled() && msi_np != pcie->np) {
-+		/* Use RC_BAR1 for MIP access */
-+		u64 msi_pci_addr;
-+		u64 msi_phys_addr;
-+
-+		if (of_property_read_u64(msi_np, "brcm,msi-pci-addr", &msi_pci_addr)) {
-+			dev_err(pcie->dev, "Unable to find MSI PCI address\n");
-+			ret = -EINVAL;
-+			goto fail;
-+		}
-+
-+		if (of_property_read_u64(msi_np, "reg", &msi_phys_addr)) {
-+			dev_err(pcie->dev, "Unable to find MSI physical address\n");
-+			ret = -EINVAL;
-+			goto fail;
-+		}
-+
-+		writel(lower_32_bits(msi_pci_addr) | brcm_pcie_encode_ibar_size(0x1000),
-+		       pcie->base + PCIE_MISC_RC_BAR1_CONFIG_LO);
-+		writel(upper_32_bits(msi_pci_addr),
-+		       pcie->base + PCIE_MISC_RC_BAR1_CONFIG_HI);
-+
-+		writel(lower_32_bits(msi_phys_addr) |
-+		       PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_ACCESS_ENABLE_MASK,
-+		       pcie->base + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP);
-+		writel(upper_32_bits(msi_phys_addr),
-+		       pcie->base + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI);
- 	}
+@@ -1595,8 +1966,38 @@ static int brcm_pcie_probe(struct platfo
+ 	if (pci_msi_enabled()) {
+ 		struct device_node *msi_np = of_parse_phandle(pcie->np, "msi-parent", 0);
  
- 	bridge->ops = pcie->type == BCM7425 ? &brcm7425_pcie_ops : &brcm_pcie_ops;
-@@ -1615,6 +2013,8 @@ static int brcm_pcie_probe(struct platfo
+-		if (msi_np == pcie->np)
++		if (msi_np == pcie->np) {
+ 			ret = brcm_pcie_enable_msi(pcie);
++		} else {
++			/* Use RC_BAR1 for MIP access */
++			u64 msi_pci_addr;
++			u64 msi_phys_addr;
++
++			if (of_property_read_u64(msi_np, "brcm,msi-pci-addr", &msi_pci_addr)) {
++				dev_err(pcie->dev, "Unable to find MSI PCI address\n");
++				ret = -EINVAL;
++				of_node_put(msi_np);
++				goto fail;
++			}
++
++			if (of_property_read_u64(msi_np, "reg", &msi_phys_addr)) {
++				dev_err(pcie->dev, "Unable to find MSI physical address\n");
++				ret = -EINVAL;
++				of_node_put(msi_np);
++				goto fail;
++			}
++
++			writel(lower_32_bits(msi_pci_addr) | brcm_pcie_encode_ibar_size(0x1000),
++			       pcie->base + PCIE_MISC_RC_BAR1_CONFIG_LO);
++			writel(upper_32_bits(msi_pci_addr),
++			       pcie->base + PCIE_MISC_RC_BAR1_CONFIG_HI);
++
++			writel(lower_32_bits(msi_phys_addr) |
++			       PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_ACCESS_ENABLE_MASK,
++			       pcie->base + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP);
++			writel(upper_32_bits(msi_phys_addr),
++			       pcie->base + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI);
++		}
+ 
+ 		of_node_put(msi_np);
+ 
+@@ -1620,6 +2021,8 @@ static int brcm_pcie_probe(struct platfo
  		return ret;
  	}
  

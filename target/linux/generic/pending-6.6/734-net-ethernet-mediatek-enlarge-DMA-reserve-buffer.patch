@@ -34,7 +34,7 @@ Signed-off-by: Chad Monroe <chad@monroe.io>
 +			val &= ~MTK_RESV_BUF_MASK;
  			val |= MTK_MUTLI_CNT | MTK_RESV_BUF |
  			       MTK_WCOMP_EN | MTK_DMAD_WR_WDONE |
- 			       MTK_CHK_DDONE_EN | MTK_LEAKY_BUCKET_EN;
+ 			       MTK_CHK_DDONE_EN;
 -		else
 +		} else {
  			val |= MTK_RX_BT_32DWORDS;
