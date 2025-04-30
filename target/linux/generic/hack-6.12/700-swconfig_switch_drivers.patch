@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -66,6 +66,80 @@ config SFP
+@@ -77,6 +77,80 @@ config SFP
  	depends on HWMON || HWMON=n
  	select MDIO_I2C
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config AIR_EN8811H_PHY
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -26,6 +26,21 @@ libphy-$(CONFIG_LED_TRIGGER_PHY)	+= phy_
+@@ -27,6 +27,21 @@ libphy-$(CONFIG_OPEN_ALLIANCE_HELPERS) +
  obj-$(CONFIG_PHYLINK)		+= phylink.o
  obj-$(CONFIG_PHYLIB)		+= libphy.o
  
