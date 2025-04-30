@@ -1296,18 +1296,23 @@ const Unet = {
 			for (let name, host in status.peers) {
 				let cur = [];
 
-				data[`Host '${name}'`] = cur;
-				push(cur, [ "State", host.connected ? "connected" : "disconnected" ]);
-				if (!host.connected)
-					continue;
+				let key = name;
+				if (model.cb.opt_pretty_print) {
+					data[`Host '${name}'`] = cur;
+					push(cur, [ "State", host.connected ? "connected" : "disconnected" ]);
+					if (!host.connected)
+						continue;
 
-				if (host.endpoint)
-					push(cur, [ "IP address", host.endpoint ]);
+					if (host.endpoint)
+						push(cur, [ "IP address", host.endpoint ]);
 
-				push(cur, [ "Idle time", time_format(host.idle) ]);
-				push(cur, [ "Sent bytes", host.tx_bytes ]);
-				push(cur, [ "Received bytes", host.rx_bytes ]);
-				push(cur, [ "Last handshake", time_format(host.last_handshake_sec) + " ago" ]);
+					push(cur, [ "Idle time", time_format(host.idle) ]);
+					push(cur, [ "Sent bytes", host.tx_bytes ]);
+					push(cur, [ "Received bytes", host.rx_bytes ]);
+					push(cur, [ "Last handshake", time_format(host.last_handshake_sec) + " ago" ]);
+				} else {
+					data[name] = host;
+				}
 			}
 			return ctx.multi_table("Status of network " + name, data);
 		}
