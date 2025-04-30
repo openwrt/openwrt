@@ -141,7 +141,7 @@ uc_uline_get_line(uc_vm_t *vm, size_t nargs)
 {
 	struct uc_uline_state *us = uc_fn_thisval("uline.state");
 	uc_value_t *line2 = uc_fn_arg(0);
-	uc_value_t *state, *val;
+	uc_value_t *state;
 	const char *line;
 	size_t len;
 
