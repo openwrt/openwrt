@@ -161,6 +161,11 @@
 		};
 	};
 
+	switchcore@1b000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1b000000 0x10000>;
+	};
+
 	pinmux: pinmux@1b001358 {
 		compatible = "pinctrl-single";
 		reg = <0x1b001358 0x4>;
