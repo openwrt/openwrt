@@ -30,7 +30,7 @@
  	ath_update_survey_stats(sc);
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath9k/hsr.c
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,248 @@
 +/*
 + *
 + * The MIT License (MIT)
@@ -68,6 +68,7 @@
 +
 +#include "hw.h"
 +#include "ath9k.h"
++#include "hsr.h"
 +
 +#define HSR_GPIO_CSN 8
 +#define HSR_GPIO_CLK 6
@@ -280,7 +281,7 @@
 +}
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath9k/hsr.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,50 @@
 +/*
 + * The MIT License (MIT)
 + *
@@ -307,6 +308,8 @@
 +
 +#ifndef HSR_H
 +#define HSR_H
++
++ struct ath_hw;
 +
 +#ifdef CPTCFG_ATH9K_UBNTHSR
 +
