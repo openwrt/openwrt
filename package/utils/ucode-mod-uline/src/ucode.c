@@ -306,15 +306,16 @@ cb_prepare(struct uc_uline_state *us, const char *name)
 static uc_value_t *
 cb_call_ret(struct uc_uline_state *us, size_t args, ...)
 {
+	uc_vm_t *vm = us->vm;
 	va_list ap;
 
 	va_start(ap, args);
 	for (size_t i = 0; i < args; i++)
-		uc_vm_stack_push(us->vm, ucv_get(va_arg(ap, void *)));
+		uc_vm_stack_push(vm, ucv_get(va_arg(ap, void *)));
 	va_end(ap);
 
-	if (uc_vm_call(us->vm, true, args) == EXCEPTION_NONE)
-		return uc_vm_stack_pop(us->vm);
+	if (uc_vm_call(vm, true, args) == EXCEPTION_NONE)
+		return uc_vm_stack_pop(vm);
 
 	return NULL;
 }
@@ -369,21 +370,19 @@ static void uc_uline_poll_cb(struct uloop_fd *fd, unsigned int events)
 	struct uc_uline_state *us = container_of(fd, struct uc_uline_state, fd);
 	uc_value_t *val;
 
-	while (!uloop_cancelled && us->poll_cb) {
-		uline_poll(&us->s);
+	uline_poll(&us->s);
 
-		val = us->line;
-		if (!val)
-			break;
+	val = us->line;
+	if (!val)
+		return;
 
-		us->line = NULL;
-		if (!ucv_is_callable(us->poll_cb))
-			return;
+	us->line = NULL;
+	if (!ucv_is_callable(us->poll_cb))
+		return;
 
-		uc_vm_stack_push(us->vm, ucv_get(us->res));
-		uc_vm_stack_push(us->vm, ucv_get(us->poll_cb));
-		cb_call(us, 1, val);
-	}
+	uc_vm_stack_push(us->vm, ucv_get(us->res));
+	uc_vm_stack_push(us->vm, ucv_get(us->poll_cb));
+	cb_call(us, 1, val);
 }
 
 static bool
@@ -543,6 +542,7 @@ static void free_state(void *ptr)
 	if (!us)
 		return;
 
+	uloop_fd_delete(&us->fd);
 	registry = uc_vm_registry_get(us->vm, "uline.registry");
 	ucv_array_set(registry, us->registry_index, NULL);
 	uline_free(&us->s);
