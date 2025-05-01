@@ -1133,7 +1133,7 @@ MODULE_DEVICE_TABLE(of, bcm6368_enetsw_of_match);
 static struct platform_driver bcm6368_enetsw_driver = {
 	.driver = {
 		.name = "bcm6368-enetsw",
-		.of_match_table = of_match_ptr(bcm6368_enetsw_of_match),
+		.of_match_table = bcm6368_enetsw_of_match,
 	},
 	.probe	= bcm6368_enetsw_probe,
 	.remove_new	= bcm6368_enetsw_remove,
