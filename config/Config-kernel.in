@@ -741,6 +741,11 @@ config KERNEL_SLABINFO
 	select KERNEL_SLUB_DEBUG_ON
 	bool "Enable /proc slab debug info"
 
+config KERNEL_STACKDEPOT_MAX_FRAMES
+	int
+	default 64
+	depends on KERNEL_SLUB_DEBUG
+
 config KERNEL_PROC_PAGE_MONITOR
 	bool "Enable /proc page monitoring"
 
