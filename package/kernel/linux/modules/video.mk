@@ -129,7 +129,7 @@ define KernelPackage/fb
 	CONFIG_VT_HW_CONSOLE_BINDING=y
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
 	$(LINUX_DIR)/lib/fonts/font.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko
+	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko@lt6.8
   AUTOLOAD:=$(call AutoLoad,06,fb font)
 endef
 
