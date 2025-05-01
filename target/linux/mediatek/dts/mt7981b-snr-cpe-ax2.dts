@@ -49,13 +49,11 @@
 		compatible = "gpio-leds";
 
 		ledwanred: led-0 {			
-			label = "red:wan";
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 		};
 
-		ledgear: led-1 {
-			label = "red:gear";
+		ledgearred: led-1 {
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
@@ -74,7 +72,7 @@
 			linux,default-trigger = "phy1tpt";
 		};
 
-		ledgear: led-4 {
+		ledgearblue: led-4 {
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
