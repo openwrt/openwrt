@@ -1849,6 +1849,7 @@ ubus_event_cb(struct ubus_notify_request *req, int idx, int ret)
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
 {
 	struct ubus_banned_client *ban;
+	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	const char *types[HOSTAPD_UBUS_TYPE_MAX] = {
 		[HOSTAPD_UBUS_PROBE_REQ] = "probe",
 		[HOSTAPD_UBUS_AUTH_REQ] = "auth",
@@ -1864,6 +1865,10 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		addr = req->addr;
 
 	ban = avl_find_element(&hapd->ubus.banned, addr, ban, avl);
+	if (ban)
+		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+
+	ban = avl_find_element(&hapd->ubus.banned, bcast, ban, avl);
 	if (ban)
 		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 
