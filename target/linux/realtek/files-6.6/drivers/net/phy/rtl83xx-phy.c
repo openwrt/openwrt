@@ -3740,10 +3740,6 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	int addr = phydev->mdio.addr;
 	int ret = 0;
 
-	/* 839x has internal SerDes */
-	if (soc_info.id == 0x8393)
-		return -ENODEV;
-
 	/* All base addresses of the PHYs start at multiples of 8 */
 	devm_phy_package_join(dev, phydev, addr & (~7),
 				sizeof(struct rtl83xx_shared_private));
@@ -3752,7 +3748,8 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8214FC";
 		/* Configuration must be done while patching still possible */
-		ret = rtl8380_configure_rtl8214fc(phydev);
+		if (soc_info.family == RTL8380_FAMILY_ID)
+			ret = rtl8380_configure_rtl8214fc(phydev);
 		if (ret)
 			return ret;
 	}
