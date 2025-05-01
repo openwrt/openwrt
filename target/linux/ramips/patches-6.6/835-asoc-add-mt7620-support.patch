@@ -200,7 +200,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct snd_dmaengine_dai_dma_data capture_dma_data;
 +
 +	struct dentry *dbg_dir;
-+        struct dentry *dbg_stats;
++	struct dentry *dbg_stats;
 +	struct ralink_i2s_stats txstats;
 +	struct ralink_i2s_stats rxstats;
 +};
@@ -221,7 +221,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +static int ralink_i2s_set_sysclk(struct snd_soc_dai *dai,
-+                              int clk_id, unsigned int freq, int dir)
++			int clk_id, unsigned int freq, int dir)
 +{
 +	return 0;
 +}
@@ -677,7 +677,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#if IS_ENABLED(CONFIG_DEBUG_FS)
 +static int ralink_i2s_stats_show(struct seq_file *s, void *unused)
 +{
-+        struct ralink_i2s *i2s = s->private;
++	struct ralink_i2s *i2s = s->private;
 +
 +	seq_printf(s, "tx stats\n");
 +	seq_printf(s, "\tbelow threshold\t%u\n", i2s->txstats.belowthres);
@@ -698,30 +698,30 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int ralink_i2s_stats_open(struct inode *inode, struct file *file)
 +{
-+        return single_open(file, ralink_i2s_stats_show, inode->i_private);
++	return single_open(file, ralink_i2s_stats_show, inode->i_private);
 +}
 +
 +static const struct file_operations ralink_i2s_stats_ops = {
-+        .open = ralink_i2s_stats_open,
-+        .read = seq_read,
-+        .llseek = seq_lseek,
-+        .release = single_release,
++	.open = ralink_i2s_stats_open,
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
 +};
 +
 +static inline int ralink_i2s_debugfs_create(struct ralink_i2s *i2s)
 +{
-+        i2s->dbg_dir = debugfs_create_dir(dev_name(i2s->dev), NULL);
-+        if (!i2s->dbg_dir)
-+                return -ENOMEM;
++	i2s->dbg_dir = debugfs_create_dir(dev_name(i2s->dev), NULL);
++	if (!i2s->dbg_dir)
++		return -ENOMEM;
 +
-+        i2s->dbg_stats = debugfs_create_file("stats", S_IRUGO,
-+                        i2s->dbg_dir, i2s, &ralink_i2s_stats_ops);
-+        if (!i2s->dbg_stats) {
-+                debugfs_remove(i2s->dbg_dir);
-+                return -ENOMEM;
-+        }
++	i2s->dbg_stats = debugfs_create_file("stats", S_IRUGO,
++	i2s->dbg_dir, i2s, &ralink_i2s_stats_ops);
++	if (!i2s->dbg_stats) {
++		debugfs_remove(i2s->dbg_dir);
++		return -ENOMEM;
++	}
 +
-+        return 0;
++	return 0;
 +}
 +
 +static inline void ralink_i2s_debugfs_remove(struct ralink_i2s *i2s)
@@ -912,11 +912,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(i2s->regmap))
 +		return dev_err_probe(dev, PTR_ERR(i2s->regmap), "regmap init failed");
 +
-+        irq = platform_get_irq(pdev, 0);
-+        if (irq < 0) {
-+                dev_err(dev, "failed to get irq\n");
-+                return -EINVAL;
-+        }
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(dev, "failed to get irq\n");
++		return -EINVAL;
++	}
 +
 +#if (RALINK_I2S_INT_EN)
 +	ret = devm_request_irq(dev, irq, ralink_i2s_irq,
