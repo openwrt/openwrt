@@ -476,6 +476,7 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 			struct blob_attr *msg)
 {
 	struct blob_attr *tb[__DEL_CLIENT_MAX];
+	const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
 	struct sta_info *sta;
 	bool deauth = false;
@@ -496,15 +497,19 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[DEL_CLIENT_DEAUTH])
 		deauth = blobmsg_get_bool(tb[DEL_CLIENT_DEAUTH]);
 
+	if (deauth)
+		hostapd_drv_sta_deauth(hapd, addr, reason);
+	else
+		hostapd_drv_sta_disassoc(hapd, addr, reason);
+
 	sta = ap_get_sta(hapd, addr);
 	if (sta) {
-		if (deauth) {
-			hostapd_drv_sta_deauth(hapd, addr, reason);
+		if (deauth)
 			ap_sta_deauthenticate(hapd, sta, reason);
-		} else {
-			hostapd_drv_sta_disassoc(hapd, addr, reason);
+		else
 			ap_sta_disassociate(hapd, sta, reason);
-		}
+	} else if (memcmp(addr, bcast, ETH_ALEN) == 0) {
+		hostapd_free_stas(hapd);
 	}
 
 	if (tb[DEL_CLIENT_BAN_TIME])
