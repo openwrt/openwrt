@@ -59,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,939 @@
+@@ -0,0 +1,921 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -200,7 +200,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct snd_dmaengine_dai_dma_data capture_dma_data;
 +
 +	struct dentry *dbg_dir;
-+	struct dentry *dbg_stats;
 +	struct ralink_i2s_stats txstats;
 +	struct ralink_i2s_stats rxstats;
 +};
@@ -696,37 +695,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+static int ralink_i2s_stats_open(struct inode *inode, struct file *file)
-+{
-+	return single_open(file, ralink_i2s_stats_show, inode->i_private);
-+}
-+
-+static const struct file_operations ralink_i2s_stats_ops = {
-+	.open = ralink_i2s_stats_open,
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = single_release,
-+};
-+
 +static inline int ralink_i2s_debugfs_create(struct ralink_i2s *i2s)
 +{
 +	i2s->dbg_dir = debugfs_create_dir(dev_name(i2s->dev), NULL);
 +	if (!i2s->dbg_dir)
 +		return -ENOMEM;
 +
-+	i2s->dbg_stats = debugfs_create_file("stats", S_IRUGO,
-+	i2s->dbg_dir, i2s, &ralink_i2s_stats_ops);
-+	if (!i2s->dbg_stats) {
-+		debugfs_remove(i2s->dbg_dir);
-+		return -ENOMEM;
-+	}
++	debugfs_create_devm_seqfile(i2s->dev, "stats", i2s->dbg_dir,
++				    &ralink_i2s_stats_show);
 +
 +	return 0;
 +}
 +
 +static inline void ralink_i2s_debugfs_remove(struct ralink_i2s *i2s)
 +{
-+	debugfs_remove(i2s->dbg_stats);
 +	debugfs_remove(i2s->dbg_dir);
 +}
 +#else
