@@ -607,6 +607,10 @@ choice
 
 	config KERNEL_TRANSPARENT_HUGEPAGE_MADVISE
 		bool "madvise"
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_NEVER
+		bool "never"
+		depends on !LINUX_6_6
 endchoice
 
 config KERNEL_HUGETLBFS
