@@ -728,54 +728,6 @@ endef
 $(eval $(call KernelPackage,dsa-rtl8365mb))
 
 
-define KernelPackage/dsa-vsc73xx
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Vitesse VSC73XX DSA switch family support
-  DEPENDS:=+kmod-dsa +kmod-phy-vitesse +kmod-fixed-phy
-  KCONFIG:= \
-	CONFIG_NET_DSA_VITESSE_VSC73XX \
-	CONFIG_NET_DSA_TAG_VSC73XX_8021Q
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-core.ko \
-	$(LINUX_DIR)/net/dsa/tag_vsc73xx_8021q.ko
-endef
-
-define KernelPackage/dsa-vsc73xx/description
-  Kernel modules for Vitesse VSC73XX switches
-endef
-
-$(eval $(call KernelPackage,dsa-vsc73xx))
-
-define KernelPackage/dsa-vsc73xx-spi
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Vitesse VSC73XX SPI support
-  DEPENDS:=+kmod-dsa-vsc73xx
-  KCONFIG:= CONFIG_NET_DSA_VITESSE_VSC73XX_SPI
-  FILES:= $(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-spi.ko
-  AUTOLOAD:=$(call AutoProbe,vitesse-vsc73xx-spi)
-endef
-
-define KernelPackage/dsa-vsc73xx-spi/description
-  Kernel modules for Vitesse VSC73XX switches using SPI
-endef
-
-$(eval $(call KernelPackage,dsa-vsc73xx-spi))
-
-define KernelPackage/dsa-vsc73xx-platform
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Vitesse VSC73XX platform support
-  DEPENDS:=+kmod-dsa-vsc73xx
-  KCONFIG:= CONFIG_NET_DSA_VITESSE_VSC73XX_PLATFORM
-  FILES:= $(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-platform.ko
-  AUTOLOAD:=$(call AutoProbe,vitesse-vsc73xx-platform)
-endef
-
-define KernelPackage/dsa-vsc73xx-spi/description
-  Kernel modules for Vitesse VSC73XX switches using platform integration
-endef
-
-$(eval $(call KernelPackage,dsa-vsc73xx-platform))
-
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API
