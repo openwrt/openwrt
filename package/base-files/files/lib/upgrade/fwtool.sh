@@ -42,7 +42,9 @@ fwtool_check_image() {
 		v "Invalid image metadata"
 		return 1
 	}
-
+	# Step 1. check if oem_name file exist and is not empty
+	# If the above is true store the contents (b3000) in $oem value for later
+	[ -s /tmp/sysinfo/oem_name ] && oem="$(cat /tmp/sysinfo/oem_name)"
 	device="$(cat /tmp/sysinfo/board_name)"
 	devicecompat="$(uci -q get system.@system[0].compat_version)"
 	[ -n "$devicecompat" ] || devicecompat="1.0"
@@ -61,7 +63,16 @@ fwtool_check_image() {
 	json_get_keys dev_keys
 	for k in $dev_keys; do
 		json_get_var dev "$k"
-		if [ "$dev" = "$device" ]; then
+		# Step 2.
+		# lets start with the original case [ "$dev" = "$device" ]
+		# if the evaluated firmware is vanila openwrt, this evals as true -ie
+		# [ ("$dev" == "glinet.gl-b3000") == ("$device" == "glinet,gl-b3000") ]
+		# however if the firmware is oem then $dev = b3000 and the above check fails resulting 
+		# in the erroneous warnings.
+		# so we add the secondary check [ "$dev" = "$oem" ];
+		# If in Step 1 the oem_file was found and valid, the $oem == "b3000" so
+		# [ ("$dev" == "b3000) == ("$oem" == "b3000") ] so firmware is valid oem
+		if [ "$dev" = "$device" ] || [ "$dev" = "$oem" ]; then
 			# major compat version -> no sysupgrade
 			if [ "${devicecompat%.*}" != "${imagecompat%.*}" ]; then
 				v "The device is supported, but this image is incompatible for sysupgrade based on the image version ($devicecompat->$imagecompat)."
@@ -70,7 +81,16 @@ fwtool_check_image() {
 			fi
 
 			# minor compat version -> sysupgrade with -n required
-			if [ "${devicecompat#.*}" != "${imagecompat#.*}" ] && [ "$SAVE_CONFIG" = "1" ]; then
+			# Step 3.
+			# here we must check if $dev == $oem to use this native compatability check
+			# so we add the check for [ "$dev" = "$oem" ]
+			if (([ "${devicecompat#.*}" != "${imagecompat#.*}" ] || [ "$dev" = "$oem" ])) && [ "$SAVE_CONFIG" = "1" ]; then
+				# Step 4.
+				# here we have to gaurd against the default case, oem may exsist and default will pass 
+				# the original check [ "${devicecompat#.*}" != "${imagecompat#.*}" ] so we must
+				# explicitly check $dev == $oem, if it is we update(reuse) the $devicecompat and imagecompat
+				# variable to reflect the case - ( Openwrt -> OEM )
+				[ "$dev" = "$oem" ] && devicecompat="Openwrt " && imagecompat=" OEM"
 				[ "$IGNORE_MINOR_COMPAT" = 1 ] && return 0
 				v "The device is supported, but the config is incompatible to the new image ($devicecompat->$imagecompat). Please upgrade without keeping config (sysupgrade -n)."
 				[ -n "$compatmessage" ] && v "$compatmessage"

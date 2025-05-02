@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,950 @@
+@@ -0,0 +1,948 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -990,14 +990,14 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	return dsa_register_switch(priv->ds);
 +}
 +
-+static int
++static void
 +qca8k_ipq4019_remove(struct platform_device *pdev)
 +{
 +	struct qca8k_priv *priv = dev_get_drvdata(&pdev->dev);
 +	int i;
 +
 +	if (!priv)
-+		return 0;
++		return;
 +
 +	for (i = 0; i < QCA8K_IPQ4019_NUM_PORTS; i++)
 +		qca8k_port_set_status(priv, i, 0);
@@ -1005,8 +1005,6 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	dsa_unregister_switch(priv->ds);
 +
 +	platform_set_drvdata(pdev, NULL);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id qca8k_ipq4019_of_match[] = {
@@ -1016,7 +1014,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
 +static struct platform_driver qca8k_ipq4019_driver = {
 +	.probe = qca8k_ipq4019_probe,
-+	.remove = qca8k_ipq4019_remove,
++	.remove_new = qca8k_ipq4019_remove,
 +	.driver = {
 +		.name = "qca8k-ipq4019",
 +		.of_match_table = qca8k_ipq4019_of_match,

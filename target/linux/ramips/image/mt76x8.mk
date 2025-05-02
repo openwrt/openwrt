@@ -749,7 +749,8 @@ define Device/tplink_archer-mr200-v6
   TPLINK_HWID := 0x20000006
   TPLINK_HWREV := 0x6
   TPLINK_HWREVADD := 0x6
-  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb2 kmod-usb-serial-option uqmi
   KERNEL := kernel-bin | append-dtb | lzma -d22
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGES := sysupgrade.bin

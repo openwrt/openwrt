@@ -13,15 +13,14 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -210,6 +210,22 @@
- 			clocks = <&gcc GCC_MDIO1_AHB_CLK>;
+@@ -202,6 +202,21 @@
  			clock-names = "gcc_mdio_ahb_clk";
+ 
  			status = "disabled";
 +
 +			ge_phy: ethernet-phy@7 {
 +				compatible = "ethernet-phy-id004d.d0c0";
 +				reg = <7>;
-+
 +				clocks = <&gcc GCC_GEPHY_RX_CLK>,
 +					 <&gcc GCC_GEPHY_TX_CLK>;
 +
@@ -35,8 +34,8 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			};
  		};
  
- 		cmn_pll: clock-controller@9b000 {
-@@ -394,8 +410,8 @@
+ 		mdio1: mdio@90000 {
+@@ -398,8 +413,8 @@
  				 <&pcie0_phy>,
  				 <&pcie1_phy>,
  				 <0>,
