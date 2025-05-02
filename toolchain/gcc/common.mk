@@ -89,6 +89,13 @@ else
   GRAPHITE_CONFIGURE:= --without-isl --without-cloog
 endif
 
+## sane and common defaults for different libc implementations
+export lt_cv_prog_compiler_static_works=yes
+export lt_cv_prog_compiler_static_works_CXX=yes
+export lt_cv_sys_max_cmd_len=1572864
+
+GCC_CONFIGURE_VARS :=
+
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(HOST_SOURCE_DIR)/configure \
@@ -222,6 +229,7 @@ endif
 
 define Host/Configure
 	(cd $(GCC_BUILD_DIR) && rm -f config.cache; \
+		$(if $(strip $(GCC_CONFIGURE_VARS)),export $(GCC_CONFIGURE_VARS);) \
 		$(GCC_CONFIGURE) \
 	);
 endef
