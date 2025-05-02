@@ -2028,7 +2028,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
 
 	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++)
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
 
@@ -2130,7 +2130,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	}
 
 	/* Configure which SMI bus is behind which port number */
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
 		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
 	}
@@ -2138,7 +2138,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	/* Configure which SMI busses */
 	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
