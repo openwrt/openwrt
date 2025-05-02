@@ -106,7 +106,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		} else {
  			mt7530_port_disable(ds, i);
  
-@@ -2586,9 +2572,7 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2589,9 +2575,7 @@ mt7531_setup_common(struct dsa_switch *d
  		mt7530_set(priv, MT7531_DBG_CNT(i), MT7531_DIS_CLR);
  
  		if (dsa_is_cpu_port(ds, i)) {
@@ -117,7 +117,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		} else {
  			mt7530_port_disable(ds, i);
  
-@@ -2681,10 +2665,6 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2684,10 +2668,6 @@ mt7531_setup(struct dsa_switch *ds)
  	mt7530_rmw(priv, MT7531_GPIO_MODE0, MT7531_GPIO0_MASK,
  		   MT7531_GPIO0_INTERRUPT);
  
