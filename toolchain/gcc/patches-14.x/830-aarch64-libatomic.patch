@@ -1,0 +1,46 @@
+libatomic: Do not enforce march on aarch64
+
+Inspired by The Yocto Project [1]
+
+[1] https://github.com/yoctoproject/poky/blob/master/meta/recipes-devtools/gcc/gcc/0022-libatomic-Do-not-enforce-march-on-aarch64.patch
+
+ libatomic/Makefile.am  | 1 -
+ libatomic/Makefile.in  | 1 -
+ libatomic/configure.ac | 6 ------
+ 3 files changed, 8 deletions(-)
+
+--- a/libatomic/Makefile.am
++++ b/libatomic/Makefile.am
+@@ -130,7 +130,6 @@ libatomic_la_LIBADD = $(foreach s,$(SIZES),$(addsuffix _$(s)_.lo,$(SIZEOBJS)))
+ ## On a target-specific basis, include alternates to be selected by IFUNC.
+ if HAVE_IFUNC
+ if ARCH_AARCH64_LINUX
+-IFUNC_OPTIONS	     = -march=armv8-a+lse
+ libatomic_la_LIBADD += $(foreach s,$(SIZES),$(addsuffix _$(s)_1_.lo,$(SIZEOBJS)))
+ 
+ endif
+--- a/libatomic/Makefile.in
++++ b/libatomic/Makefile.in
+@@ -452,7 +452,6 @@ M_SRC = $(firstword $(filter %/$(M_FILE), $(all_c_files)))
+ libatomic_la_LIBADD = $(foreach s,$(SIZES),$(addsuffix \
+ 	_$(s)_.lo,$(SIZEOBJS))) $(am__append_1) $(am__append_2) \
+ 	$(am__append_3) $(am__append_4)
+-@ARCH_AARCH64_LINUX_TRUE@@HAVE_IFUNC_TRUE@IFUNC_OPTIONS = -march=armv8-a+lse
+ @ARCH_ARM_LINUX_TRUE@@HAVE_IFUNC_TRUE@IFUNC_OPTIONS = -march=armv7-a+fp -DHAVE_KERNEL64
+ @ARCH_I386_TRUE@@HAVE_IFUNC_TRUE@IFUNC_OPTIONS = -march=i586
+ @ARCH_X86_64_TRUE@@HAVE_IFUNC_TRUE@IFUNC_OPTIONS = -mcx16 -mcx16
+--- a/libatomic/configure.ac
++++ b/libatomic/configure.ac
+@@ -166,12 +166,6 @@ AC_MSG_CHECKING([for thread model used by GCC])
+ target_thread_file=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
+ AC_MSG_RESULT([$target_thread_file])
+ 
+-case "$target" in
+- *aarch64*)
+-    ACX_PROG_CC_WARNING_OPTS([-march=armv8-a+lse],[enable_aarch64_lse])
+-    ;;
+-esac
+-
+ AC_SUBST(SYSROOT_CFLAGS_FOR_TARGET)
+ 
+ # Get target configury.
