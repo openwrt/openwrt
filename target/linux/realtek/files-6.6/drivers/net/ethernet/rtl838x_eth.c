@@ -1711,8 +1711,8 @@ struct rtmdio_bus_priv {
 	struct rtl838x_eth_priv *eth_priv;
 	int extaddr;
 	int rawpage;
-	int page[64];
-	bool raw[64];
+	int page[RTMDIO_MAX_PORT];
+	bool raw[RTMDIO_MAX_PORT];
 	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
@@ -2236,7 +2236,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 
 	bus_priv = priv->mii_bus->priv;
 	bus_priv->eth_priv = priv;
-	for (i=0; i < 64; i++) {
+	for (i=0; i < RTMDIO_MAX_PORT; i++) {
 		bus_priv->page[i] = 0;
 		bus_priv->raw[i] = false;
 	}
