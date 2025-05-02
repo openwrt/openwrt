@@ -23,8 +23,8 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #include <dt-bindings/gpio/gpio.h>
  #include "rk3328.dtsi"
  
-@@ -16,6 +17,11 @@
- 	aliases {
+@@ -17,6 +18,11 @@
+ 		ethernet0 = &gmac2io;
  		ethernet1 = &rtl8153;
  		mmc0 = &sdmmc;
 +
@@ -35,7 +35,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	};
  
  	chosen {
-@@ -48,19 +54,22 @@
+@@ -49,19 +55,22 @@
  		pinctrl-names = "default";
  
  		lan_led: led-0 {
@@ -63,8 +63,8 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
 --- a/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
-@@ -13,6 +13,11 @@
- 	aliases {
+@@ -14,6 +14,11 @@
+ 		ethernet0 = &gmac2io;
  		mmc0 = &sdmmc;
  		mmc1 = &emmc;
 +
