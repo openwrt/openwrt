@@ -14,7 +14,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 
 --- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
-@@ -160,6 +160,20 @@
+@@ -159,6 +159,20 @@
  		vin-supply = <&vcc5v0_sys>;
  	};
  
@@ -35,7 +35,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  	vcc3v3_pcie2x1l0: vcc3v3-pcie2x1l0-regulator {
  		compatible = "regulator-fixed";
  		enable-active-high;
-@@ -577,6 +591,10 @@
+@@ -575,6 +589,10 @@
  			rockchip,pins = <1 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
  		};
  
@@ -46,7 +46,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  		usbc0_int: usbc0-int {
  			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
  		};
-@@ -976,6 +994,14 @@
+@@ -973,6 +991,14 @@
  	status = "okay";
  };
  
@@ -61,7 +61,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  &u2phy2_host {
  	status = "okay";
  };
-@@ -1015,6 +1041,11 @@
+@@ -1012,6 +1038,11 @@
  	};
  };
  
@@ -73,7 +73,7 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  &usb_host0_ehci {
  	status = "okay";
  };
-@@ -1035,6 +1066,11 @@
+@@ -1032,6 +1063,11 @@
  	};
  };
  
