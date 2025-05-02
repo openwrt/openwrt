@@ -1707,6 +1707,18 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
  * reimplemented. For now it should be sufficient.
  */
 
+struct rtmdio_bus_priv {
+	struct rtl838x_eth_priv *eth_priv;
+	int extaddr;
+	int rawpage;
+	int page[64];
+	bool raw[64];
+	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
+	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
+	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
+	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+};
+
 /*
  * Provide a generic read/write function so we can access arbitrary ports on the bus.
  * E.g. other ports of a PHY package on the bus. This basically resembles the kernel
@@ -1803,7 +1815,7 @@ int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnu
 static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
 {
 	int err, val;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
@@ -1817,7 +1829,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 {
 	int err, val;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (bus_priv->extaddr >= 0)
@@ -1842,7 +1854,7 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 {
 	int err, val;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (bus_priv->extaddr >= 0)
@@ -1870,7 +1882,7 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
 {
 	int err;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
@@ -1884,7 +1896,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	int err, page, offset = 0;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (regnum == RTMDIO_PORT_SELECT) {
@@ -1924,7 +1936,7 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	int err, page;
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *eth_priv = bus_priv->eth_priv;
 
 	if (regnum == RTMDIO_PORT_SELECT) {
@@ -1993,7 +2005,7 @@ u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6
 
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
@@ -2099,7 +2111,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
-	struct rtl838x_bus_priv *bus_priv = bus->priv;
+	struct rtmdio_bus_priv *bus_priv = bus->priv;
 	struct rtl838x_eth_priv *priv = bus_priv->eth_priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[4];
@@ -2199,7 +2211,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 {
 	struct device_node *mii_np, *dn;
-	struct rtl838x_bus_priv *bus_priv;
+	struct rtmdio_bus_priv *bus_priv;
 	u32 pn;
 	int i, ret;
 
