@@ -1819,6 +1819,9 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
+	
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
 
 	err = (*bus_priv->read_mmd_phy)(addr, devnum, regnum, &val);
 	pr_debug("rd_MMD(adr=%d, dev=%d, reg=%d) = %d, err = %d\n",
@@ -1834,6 +1837,9 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
+	
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
 
 	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380)
 		return rtl838x_read_sds_phy(addr, regnum);
@@ -1859,6 +1865,9 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
+
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
 
 	if (regnum == RTMDIO_PAGE_SELECT && bus_priv->page[addr] != bus_priv->rawpage)
 		return bus_priv->page[addr];
@@ -1887,6 +1896,9 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
 
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
+
 	err = (*bus_priv->write_mmd_phy)(addr, devnum, regnum, val);
 	pr_debug("wr_MMD(adr=%d, dev=%d, reg=%d, val=%d) err = %d\n",
 		 addr, devnum, regnum, val, err);
@@ -1906,6 +1918,10 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
+	
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
+	
 	page = bus_priv->page[addr];
 
 	if (addr >= 24 && addr <= 27 && eth_priv->id == 0x8380) {
@@ -1946,6 +1962,10 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (bus_priv->extaddr >= 0)
 		addr = bus_priv->extaddr;
+	
+	if (addr >= RTMDIO_MAX_PORT)
+		return -ENODEV;
+	
 	page = bus_priv->page[addr];
 
 	if (regnum == RTMDIO_PAGE_SELECT)
