@@ -113,7 +113,8 @@ platform_do_upgrade() {
 	smartrg,sdg-8632|\
 	smartrg,sdg-8733|\
 	smartrg,sdg-8733a|\
-	smartrg,sdg-8734)
+	smartrg,sdg-8734)|\
+	snr,snr-cpe-ax2)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
@@ -122,8 +123,7 @@ platform_do_upgrade() {
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax6000|\
-	asus,zenwifi-bt8|\
-	snr,snr-cpe-ax2)
+	asus,zenwifi-bt8)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
