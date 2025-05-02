@@ -48,10 +48,17 @@ extern struct rtl83xx_soc_info soc_info;
 #define TX_PAD_EN_838X BIT(5)
 #define TX_DO		0x2
 #define WRAP		0x2
-#define MAX_PORTS	57
-#define MAX_SMI_BUSSES	4
-
 #define RING_BUFFER	1600
+
+#define RTMDIO_MAX_PORT		57
+#define RTMDIO_MAX_SMI_BUS	4
+#define RTMDIO_PAGE_SELECT	0x1f
+#define RTMDIO_PORT_SELECT	0x2000
+
+#define RTMDIO_READ		BIT(0)
+#define RTMDIO_WRITE		BIT(1)
+#define RTMDIO_ABS		BIT(2)
+#define RTMDIO_PKG		BIT(3)
 
 struct p_hdr {
 	uint8_t		*buf;
@@ -195,12 +202,12 @@ struct rtl838x_eth_priv {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
-	int smi_bus[MAX_PORTS];
-	u8 smi_addr[MAX_PORTS];
-	u32 sds_id[MAX_PORTS];
-	bool smi_bus_isc45[MAX_SMI_BUSSES];
-	bool phy_is_internal[MAX_PORTS];
-	phy_interface_t interfaces[MAX_PORTS];
+	int smi_bus[RTMDIO_MAX_PORT];
+	u8 smi_addr[RTMDIO_MAX_PORT];
+	u32 sds_id[RTMDIO_MAX_PORT];
+	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
+	bool phy_is_internal[RTMDIO_MAX_PORT];
+	phy_interface_t interfaces[RTMDIO_MAX_PORT];
 };
 
 extern int rtl838x_phy_init(struct rtl838x_eth_priv *priv);
@@ -1700,13 +1707,6 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
  * reimplemented. For now it should be sufficient.
  */
 
-#define RTMDIO_PAGE_SELECT	0x1f
-#define RTMDIO_PORT_SELECT	0x2000
-#define RTMDIO_READ		0x1
-#define RTMDIO_WRITE		0x2
-#define RTMDIO_ABS		0x4
-#define RTMDIO_PKG		0x8
-
 /*
  * Provide a generic read/write function so we can access arbitrary ports on the bus.
  * E.g. other ports of a PHY package on the bus. This basically resembles the kernel
@@ -2286,7 +2286,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		if (pn >= MAX_PORTS) {
+		if (pn >= RTMDIO_MAX_PORT) {
 			pr_err("%s: illegal port number %d\n", __func__, pn);
 			return -ENODEV;
 		}
@@ -2304,7 +2304,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			priv->smi_addr[pn] = smi_addr[1];
 		}
 
-		if (priv->smi_bus[pn] >= MAX_SMI_BUSSES) {
+		if (priv->smi_bus[pn] >= RTMDIO_MAX_SMI_BUS) {
 			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
 			return -ENODEV;
 		}
