@@ -1,0 +1,53 @@
+From b70caff0f9592719b6c977e291c33192e959c9d4 Mon Sep 17 00:00:00 2001
+From: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Date: Thu, 29 Aug 2024 14:26:57 +0200
+Subject: [PATCH] arm64: dts: rockchip: add IR-receiver to NanoPC-T6
+
+FriendlyELEC NanoPC-T6 has IR receiver connected to PWM3_IR_M0 line
+which ends as GPIO0_D4.
+
+Signed-off-by: Marcin Juszkiewicz <marcin.juszkiewicz@linaro.org>
+Link: https://lore.kernel.org/r/20240829-friendlyelec-nanopc-t6-lts-v6-6-edff247e8c02@linaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -25,6 +25,13 @@
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+ 
++	ir-receiver {
++		compatible = "gpio-ir-receiver";
++		gpios = <&gpio0 RK_PD4 GPIO_ACTIVE_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&ir_receiver_pin>;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -228,7 +235,7 @@
+ 			  "HEADER_10", "HEADER_08", "HEADER_32", "",
+ 			  /* GPIO0 D0-D7 */
+ 			  "", "", "", "",
+-			  "", "", "", "";
++			  "IR receiver [PWM3_IR_M0]", "", "", "";
+ };
+ 
+ &gpio1 {
+@@ -492,6 +499,12 @@
+ 		};
+ 	};
+ 
++	ir-receiver {
++		ir_receiver_pin: ir-receiver-pin {
++			rockchip,pins = <0 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	pcie {
+ 		pcie2_0_rst: pcie2-0-rst {
+ 			rockchip,pins = <4 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;
