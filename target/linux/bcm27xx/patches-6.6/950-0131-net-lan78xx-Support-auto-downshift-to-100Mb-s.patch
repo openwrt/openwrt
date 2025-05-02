@@ -31,7 +31,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
 --- a/drivers/net/phy/microchip.c
 +++ b/drivers/net/phy/microchip.c
-@@ -233,6 +233,7 @@ static int lan88xx_probe(struct phy_devi
+@@ -192,6 +192,7 @@ static int lan88xx_probe(struct phy_devi
  	struct device *dev = &phydev->mdio.dev;
  	struct lan88xx_priv *priv;
  	u32 led_modes[4];
@@ -39,7 +39,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	int len;
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-@@ -262,6 +263,32 @@ static int lan88xx_probe(struct phy_devi
+@@ -221,6 +222,32 @@ static int lan88xx_probe(struct phy_devi
  		return -EINVAL;
  	}
  

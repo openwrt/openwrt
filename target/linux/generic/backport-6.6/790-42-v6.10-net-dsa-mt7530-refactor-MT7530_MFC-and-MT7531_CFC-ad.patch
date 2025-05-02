@@ -92,7 +92,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
  	mt7530_write(priv, MT753X_MIRROR_REG(priv->id), val);
  
  	val = mt7530_read(priv, MT7530_PCR_P(port));
-@@ -2533,7 +2519,7 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2536,7 +2522,7 @@ mt7531_setup_common(struct dsa_switch *d
  	mt7530_mib_reset(ds);
  
  	/* Disable flooding on all ports */
