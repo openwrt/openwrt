@@ -2656,7 +2656,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int rtl838x_eth_remove(struct platform_device *pdev)
+static void rtl838x_eth_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -2670,8 +2670,6 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 		for (int i = 0; i < priv->rxrings; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
 	}
-
-	return 0;
 }
 
 static const struct of_device_id rtl838x_eth_of_ids[] = {
@@ -2682,7 +2680,7 @@ MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
 
 static struct platform_driver rtl838x_eth_driver = {
 	.probe = rtl838x_eth_probe,
-	.remove = rtl838x_eth_remove,
+	.remove_new = rtl838x_eth_remove,
 	.driver = {
 		.name = "rtl838x-eth",
 		.pm = NULL,
