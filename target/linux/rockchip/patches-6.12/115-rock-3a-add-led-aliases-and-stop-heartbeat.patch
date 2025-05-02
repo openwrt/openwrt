@@ -1,9 +1,9 @@
 --- a/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
-@@ -15,6 +15,10 @@
- 		ethernet0 = &gmac1;
+@@ -16,6 +16,10 @@
  		mmc0 = &sdhci;
  		mmc1 = &sdmmc0;
+ 		mmc2 = &sdmmc2;
 +		led-boot = &led_blue;
 +		led-failsafe = &led_blue;
 +		led-running = &led_blue;
@@ -11,7 +11,7 @@
  	};
  
  	chosen: chosen {
-@@ -42,11 +46,11 @@
+@@ -43,11 +47,11 @@
  	leds {
  		compatible = "gpio-leds";
  
