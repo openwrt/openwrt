@@ -408,18 +408,6 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 struct p_hdr;
 struct dsa_tag;
 
-struct rtl838x_bus_priv {
-	struct rtl838x_eth_priv *eth_priv;
-	int extaddr;
-	int rawpage;
-	int page[64];
-	bool raw[64];
-	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
-	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
-	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
-	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
-};
-
 struct rtl838x_eth_reg {
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
