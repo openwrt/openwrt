@@ -1,0 +1,324 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+/dts-v1/;
+
+#include "ipq9574.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
+#include <dt-bindings/net/qcom,qca808x.h>
+#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
+
+/ {
+	model = "TP-Link Archer BE550";
+	compatible = "tplink,archer-be550-v1", "qcom,ipq9574";
+
+	aliases {
+		serial0 = &blsp1_uart2;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&pcsuniphy1 {
+	/* No uniphy1 for you! (ipq9554 doesn't have uniphy1) */
+	status = "disabled";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	phy-reset-gpio = <&tlmm 60 GPIO_ACTIVE_HIGH>;//,
+			 //<&tlmm 36 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	qca8k_nsscc: clock-controller@18 {
+		compatible = "qcom,qca8084-nsscc";
+		reg = <0x0d>;
+		/* TODO: Which one is the correct reset gpio? */
+		reset-gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+
+		clocks = <&xo_board_clk>, // <&pcs0_pll>,
+			 <&pcsuniphy0 0>, // <&qca8k_uniphy0_rx>,
+			 <&pcsuniphy0 1>, // <&qca8k_uniphy0_tx>,
+			 <&pcsuniphy2 0>, // <&qca8k_uniphy1_rx>,
+			 <&pcsuniphy2 1>, // <&qca8k_uniphy1_tx>,
+			 <&cmn_pll 3>, // <&qca8k_uniphy1_rx312p5m>,
+			 <&cmn_pll 3>; // <&qca8k_uniphy1_tx312p5m>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+		#power-domain-cells = <1>;
+	};
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8084-package";
+		reg = <0>;
+		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
+			 <&qca8k_nsscc NSS_CC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_CLK>,
+			 <&qca8k_nsscc NSS_CC_TLMM_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_CNOC_AHB_CLK>,
+			 <&qca8k_nsscc NSS_CC_MDIO_AHB_CLK>;
+		clock-names = "apb_bridge",
+			      "ahb",
+			      "sec_ctrl_ahb",
+			      "tlmm",
+			      "tlmm_ahb",
+			      "cnoc_ahb",
+			      "mdio_ahb";
+		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
+
+		/* TODO: UPdate driver to use string:
+		 * qcom,package-mode = "10g-qxgmii";
+		 */
+		qcom,package-mode = <QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED>;
+
+		qca8084_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <1>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
+		};
+		qca8084_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <2>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
+		};
+		qca8084_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <3>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
+		};
+		qca8084_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-id004d.d180";
+			reg = <4>;
+			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
+			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
+		};
+	};
+
+	qca8081_12: ethernet-phy@12 {
+		reg = <12>;
+	};
+};
+
+&tlmm {
+	qspi_nand_pins: qspi_nand_pins {
+		qspi_clock {
+			pins = "gpio5";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		qspi_cs {
+			pins = "gpio4";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		qspi_data {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qspi_nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: s1 {
+			regulator-min-microvolt = <725000>;
+			regulator-max-microvolt = <1075000>;
+		};
+	};
+};
+
+&qcom_ppe {
+	status = "okay";
+
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan1";
+			phy-handle = <&qca8084_0>;
+			pcs-handle = <&pcsuniphy0_ch0>;
+			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT1_RX_CLK>,
+				 <&nsscc NSS_CC_PORT1_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT1_MAC_ARES>,
+				 <&nsscc PORT1_RX_ARES>,
+				 <&nsscc PORT1_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@2 {
+			reg = <2>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan2";
+			phy-handle = <&qca8084_1>;
+			pcs-handle = <&pcsuniphy0_ch1>;
+			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT2_RX_CLK>,
+				 <&nsscc NSS_CC_PORT2_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT2_MAC_ARES>,
+				 <&nsscc PORT2_RX_ARES>,
+				 <&nsscc PORT2_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@3 {
+			reg = <3>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan3";
+			phy-handle = <&qca8084_2>;
+			pcs-handle = <&pcsuniphy0_ch2>;
+			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT3_RX_CLK>,
+				 <&nsscc NSS_CC_PORT3_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT3_MAC_ARES>,
+				 <&nsscc PORT3_RX_ARES>,
+				 <&nsscc PORT3_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@4 {
+			reg = <4>;
+			phy-mode = "qsgmii";
+			managed = "in-band-status";
+			label = "lan4";
+			phy-handle = <&qca8084_3>;
+			pcs-handle = <&pcsuniphy0_ch3>;
+			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT4_RX_CLK>,
+				 <&nsscc NSS_CC_PORT4_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT4_MAC_ARES>,
+				 <&nsscc PORT4_RX_ARES>,
+				 <&nsscc PORT4_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+
+		port@6 {
+			reg = <6>;
+			phy-mode = "usxgmii";
+			managed = "in-band-status";
+			label = "wan";
+			phy-handle = <&qca8081_12>;
+			pcs-handle = <&pcsuniphy2_ch0>;
+			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
+				 <&nsscc NSS_CC_PORT6_RX_CLK>,
+				 <&nsscc NSS_CC_PORT6_TX_CLK>;
+			clock-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+			resets = <&nsscc PORT6_MAC_ARES>,
+				 <&nsscc PORT6_RX_ARES>,
+				 <&nsscc PORT6_TX_ARES>;
+			reset-names = "port_mac",
+				      "port_rx",
+				      "port_tx";
+		};
+	};
+};
+
+&pcie2_phy {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+	perst-gpio = <&tlmm 29 GPIO_ACTIVE_LOW>;
+};
+
+&blsp1_uart2 {
+        pinctrl-0 = <&uart2_pins>;
+        pinctrl-names = "default";
+        status = "okay";
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+/*
+ * The clock tree follows:
+ *     xo_clk ->  ref_48mhz_clk -> xo_board_clk
+ *
+ * I have no ides what the original oscillator frequency is, but however we
+ * xo_clk and the multipliers, ref_48mhz_clk shoudl be 48 MHz.
+ */
+&xo_clk {
+	// clock-frequency = <48000000>;
+	clock-frequency = <24000000>;
+};
+
+&ref_48mhz_clk {
+	clock-div = <1>;
+	clock-mult = <2>;
+};
+
+&xo_board_clk {
+	clock-div = <2>;
+	clock-mult = <1>;
+};
