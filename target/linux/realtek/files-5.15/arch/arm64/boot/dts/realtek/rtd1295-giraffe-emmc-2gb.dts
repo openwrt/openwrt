@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2017-2019 Andreas Färber
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+#include "rtd1295.dtsi"
+
+/ {
+	compatible = "realtek,giraffe", "realtek,rtd1295";
+	model = "Realtek Giraffe EVB (2GB)";
+
+	memory@1f000 {
+		device_type = "memory";
+		reg = <0x1f000 0x7ffe1000>; /* boot ROM to 2 GiB */
+	};
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uioi init=/etc/init root=/dev/mmcblk0p1 rootfstype=squashfs rootwait loglevel=8";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
