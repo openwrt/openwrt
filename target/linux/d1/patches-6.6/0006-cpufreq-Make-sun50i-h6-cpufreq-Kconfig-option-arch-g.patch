@@ -1,0 +1,69 @@
+From e4a8ff817e133d84f8a82f78461e0592e5e9d9cc Mon Sep 17 00:00:00 2001
+From: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+Date: Mon, 18 Dec 2023 12:05:43 +0100
+Subject: [PATCH 06/14] cpufreq: Make sun50i h6 cpufreq Kconfig option arch
+ generic
+
+Move the Allwinner SUN50I cpufreq driver from Kconfig.arm to the
+main Kconfig file so it supports other architectures, like RISC-V
+in our case, and drop the 'ARM_' prefix.
+
+Signed-off-by: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+---
+ drivers/cpufreq/Kconfig     | 12 ++++++++++++
+ drivers/cpufreq/Kconfig.arm | 12 ------------
+ drivers/cpufreq/Makefile    |  2 +-
+ 3 files changed, 13 insertions(+), 13 deletions(-)
+
+--- a/drivers/cpufreq/Kconfig
++++ b/drivers/cpufreq/Kconfig
+@@ -312,5 +312,17 @@ config QORIQ_CPUFREQ
+ 	  This adds the CPUFreq driver support for Freescale QorIQ SoCs
+ 	  which are capable of changing the CPU's frequency dynamically.
+ 
++config ALLWINNER_SUN50I_CPUFREQ_NVMEM
++	tristate "Allwinner nvmem based SUN50I CPUFreq driver"
++	depends on ARCH_SUNXI
++	depends on NVMEM_SUNXI_SID
++	select PM_OPP
++	help
++	  This adds the nvmem based CPUFreq driver for Allwinner
++	  h6/D1 SoCs.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called sun50i-cpufreq-nvmem.
++
+ endif
+ endmenu
+--- a/drivers/cpufreq/Kconfig.arm
++++ b/drivers/cpufreq/Kconfig.arm
+@@ -29,18 +29,6 @@ config ACPI_CPPC_CPUFREQ_FIE
+ 
+ 	  If in doubt, say N.
+ 
+-config ARM_ALLWINNER_SUN50I_CPUFREQ_NVMEM
+-	tristate "Allwinner nvmem based SUN50I CPUFreq driver"
+-	depends on ARCH_SUNXI
+-	depends on NVMEM_SUNXI_SID
+-	select PM_OPP
+-	help
+-	  This adds the nvmem based CPUFreq driver for Allwinner
+-	  h6 SoC.
+-
+-	  To compile this driver as a module, choose M here: the
+-	  module will be called sun50i-cpufreq-nvmem.
+-
+ config ARM_APPLE_SOC_CPUFREQ
+ 	tristate "Apple Silicon SoC CPUFreq support"
+ 	depends on ARCH_APPLE || (COMPILE_TEST && 64BIT)
+--- a/drivers/cpufreq/Makefile
++++ b/drivers/cpufreq/Makefile
+@@ -78,7 +78,7 @@ obj-$(CONFIG_ARM_SCMI_CPUFREQ)		+= scmi-
+ obj-$(CONFIG_ARM_SCPI_CPUFREQ)		+= scpi-cpufreq.o
+ obj-$(CONFIG_ARM_SPEAR_CPUFREQ)		+= spear-cpufreq.o
+ obj-$(CONFIG_ARM_STI_CPUFREQ)		+= sti-cpufreq.o
+-obj-$(CONFIG_ARM_ALLWINNER_SUN50I_CPUFREQ_NVMEM) += sun50i-cpufreq-nvmem.o
++obj-$(CONFIG_ALLWINNER_SUN50I_CPUFREQ_NVMEM) += sun50i-cpufreq-nvmem.o
+ obj-$(CONFIG_ARM_TEGRA20_CPUFREQ)	+= tegra20-cpufreq.o
+ obj-$(CONFIG_ARM_TEGRA124_CPUFREQ)	+= tegra124-cpufreq.o
+ obj-$(CONFIG_ARM_TEGRA186_CPUFREQ)	+= tegra186-cpufreq.o
