@@ -2,10 +2,17 @@ if PACKAGE_libmbedtls
 
 comment "Option details in source code: include/mbedtls/mbedtls_config.h"
 
-comment "Ciphers - unselect old or less-used ciphers to reduce binary size"
+comment "SECTION: System support"
+comment "SECTION: Mbed TLS feature support"
+comment "SECTION: Mbed TLS modules"
+comment "SECTION: General configuration options"
+comment "SECTION: Module configuration options"
+
+
+comment "Ciphers - unselect to reduce binary size"
 
 config MBEDTLS_AES_C
-	bool "MBEDTLS_AES_C"
+	bool "AES block cipher"
 	default y
 
 config MBEDTLS_ARIA_C
@@ -13,35 +20,23 @@ config MBEDTLS_ARIA_C
 	default n
 
 config MBEDTLS_CAMELLIA_C
-	bool "MBEDTLS_CAMELLIA_C"
+	bool "Camellia block cipher"
 	default n
 
 config MBEDTLS_CCM_C
-	bool "MBEDTLS_CCM_C"
+	bool "CCM mode for 128-bit block cipher"
 	default n
 
-config MBEDTLS_CMAC_C
-	bool "MBEDTLS_CMAC_C (old but used by hostapd)"
-	default y
-
-config MBEDTLS_DES_C
-	bool "MBEDTLS_DES_C (old but used by hostapd)"
-	default y
-
 config MBEDTLS_GCM_C
-	bool "MBEDTLS_GCM_C"
-	default y
-
-config MBEDTLS_NIST_KW_C
-	bool "MBEDTLS_NIST_KW_C (old but used by hostapd)"
+	bool "Galois/Counter Mode"
 	default y
 
 config MBEDTLS_RIPEMD160_C
-	bool "MBEDTLS_RIPEMD160_C"
+	bool "RIPEMD-160 hash algorithm"
 	default n
 
 config MBEDTLS_RSA_NO_CRT
-	bool "MBEDTLS_RSA_NO_CRT"
+	bool "Disable CRT in RSA"
 	default y
 
 config MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -83,6 +78,20 @@ config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	bool "MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED"
 	default n
+
+comment "Ciphers - old"
+
+config MBEDTLS_CMAC_C
+	bool "CMAC mode for block ciphers (old but used by hostapd)"
+	default y
+
+config MBEDTLS_DES_C
+	bool "DES block cipher (old but used by hostapd)"
+	default y
+
+config MBEDTLS_NIST_KW_C
+	bool "NIST SP 800-38F KW and KWP mode (old but used by hostapd)"
+	default y
 
 comment "Curves - unselect old or less-used curves to reduce binary size"
 
@@ -185,6 +194,14 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 config MBEDTLS_DEPRECATED_WARNING
 	bool "MBEDTLS_DEPRECATED_WARNING"
 	default n
+  help
+		Mark deprecated functions and features so that they generate a warning if
+		used. Functionality deprecated in one version will usually be removed in the
+		next version. You can enable this to help you prepare the transition to a
+		new major version by making sure your code is not using this functionality.
+
+		This only works with GCC and Clang. With other compilers, you may want to
+		use MBEDTLS_DEPRECATED_REMOVED
 
 config MBEDTLS_SSL_PROTO_TLS1_2
 	bool "MBEDTLS_SSL_PROTO_TLS1_2"
