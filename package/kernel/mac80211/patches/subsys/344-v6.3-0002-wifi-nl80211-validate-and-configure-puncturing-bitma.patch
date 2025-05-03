@@ -152,7 +152,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &params->chandef,
  					   wdev->iftype)) {
  		err = -EINVAL;
-@@ -10107,6 +10131,14 @@ skip_beacons:
+@@ -10121,6 +10145,14 @@ skip_beacons:
  	if (info->attrs[NL80211_ATTR_CH_SWITCH_BLOCK_TX])
  		params.block_tx = true;
  
