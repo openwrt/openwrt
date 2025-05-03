@@ -322,4 +322,30 @@ menu "Target Images"
 		  across reboots. When enabled, /var/run will still be linked
 		  to /tmp/run.
 
+	config TARGET_ROOTFS_COMP_FW
+		bool
+
+	choice
+		prompt "Firmware Compression"
+		default TARGET_ROOTFS_COMP_FW_NONE
+		help
+		  Compress /lib/firmware/* recursively using selected method.
+		  When enabled, the required CONFIG_FW_LOADER_COMPRESS kernel
+		  options will also be enabled.
+
+		config TARGET_ROOTFS_COMP_FW_NONE
+			bool "none"
+
+		config TARGET_ROOTFS_COMP_FW_SMALLEST
+			bool "smallest"
+			select TARGET_ROOTFS_COMP_FW
+
+		config TARGET_ROOTFS_COMP_FW_XZ
+			bool "xz"
+			select TARGET_ROOTFS_COMP_FW
+
+		config TARGET_ROOTFS_COMP_FW_ZSTD
+			bool "zstd"
+			select TARGET_ROOTFS_COMP_FW
+	endchoice
 endmenu
