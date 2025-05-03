@@ -25,7 +25,6 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
     define Kernel/Prepare/Default
 	$(LINUX_CAT) $(DL_DIR)/$(LINUX_SOURCE) | $(TAR) -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	$(Kernel/Patch)
-	$(if $(QUILT),touch $(LINUX_DIR)/.quilt_used)
     endef
   else
     define Kernel/Prepare/Default
@@ -42,6 +41,9 @@ else
 	if [ -d $(LINUX_DIR)/user_headers ]; then \
 		rm -rf $(LINUX_DIR)/user_headers; \
 	fi
+    ifeq ($(CONFIG_EXTERNAL_KERNEL_TREE_PATCH),y)
+	$(Kernel/Patch)
+    endif
   endef
 endif
 
