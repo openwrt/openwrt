@@ -1,0 +1,23 @@
+From b294def636629cc4d9feff4ed610a0d0c68a58fd Mon Sep 17 00:00:00 2001
+From: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+Date: Mon, 18 Dec 2023 12:05:41 +0100
+Subject: [PATCH 04/14] cpufreq: sun50i: Add D1 support
+
+Add support for D1 based devices to the Allwinner H6 cpufreq
+driver
+
+Signed-off-by: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+---
+ drivers/cpufreq/sun50i-cpufreq-nvmem.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/cpufreq/sun50i-cpufreq-nvmem.c
++++ b/drivers/cpufreq/sun50i-cpufreq-nvmem.c
+@@ -160,6 +160,7 @@ static struct platform_driver sun50i_cpu
+ 
+ static const struct of_device_id sun50i_cpufreq_match_list[] = {
+ 	{ .compatible = "allwinner,sun50i-h6" },
++	{ .compatible = "allwinner,sun20i-d1" },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, sun50i_cpufreq_match_list);
