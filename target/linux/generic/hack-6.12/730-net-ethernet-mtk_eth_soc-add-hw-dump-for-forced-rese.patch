@@ -94,7 +94,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  static void mtk_hw_reset(struct mtk_eth *eth)
  {
  	u32 val;
-@@ -4363,6 +4416,8 @@ static void mtk_pending_work(struct work
+@@ -4379,6 +4432,8 @@ static void mtk_pending_work(struct work
  	rtnl_lock();
  	set_bit(MTK_RESETTING, &eth->state);
  
@@ -105,7 +105,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	/* Run again reset preliminary configuration in order to avoid any
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1183,6 +1183,7 @@ struct mtk_reg_map {
+@@ -1191,6 +1191,7 @@ struct mtk_reg_map {
  		u32	rx_ptr;		/* rx base pointer */
  		u32	rx_cnt_cfg;	/* rx max count configuration */
  		u32	qcrx_ptr;	/* rx cpu pointer */
