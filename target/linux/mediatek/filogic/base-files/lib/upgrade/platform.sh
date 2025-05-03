@@ -160,6 +160,12 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	xiangsi,hg3000-emmc)
+		emmc_do_upgrade "$1"
+		;;
+	xiangsi,hg3000-nand)
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,redmi-router-ax6000-stock)
@@ -189,6 +195,15 @@ platform_check_image() {
 	cmcc,rax3000m)
 		[ "$magic" != "d00dfeed" ] && {
 			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	xiangsi,hg3000-emmc|\
+	xiangsi,hg3000-nand)
+		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
+		[ "$magic" != "ustar" ] && {
+			log "Invalid image type."
 			return 1
 		}
 		return 0

@@ -124,6 +124,10 @@ mediatek_setup_interfaces()
 	tplink,re6000xd)
 		ucidef_set_interface_lan "lan1 lan2 eth1"
 		;;
+	xiangsi,hg3000-emmc|\
+	xiangsi,hg3000-nand)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
+		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-ax3000t-ubootmod|\
 	xiaomi,mi-router-wr30u-stock|\

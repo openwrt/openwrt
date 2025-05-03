@@ -121,6 +121,13 @@ wavlink,wl-wn586x3)
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
+xiangsi,hg3000-emmc|\
+xiangsi,hg3000-nand)
+	ucidef_set_led_netdev "wanact" "WANACT" "amber:gbe" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "amber:wlan" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan" "phy1-ap0"
+	;;
 xiaomi,mi-router-wr30u-stock|\
 xiaomi,mi-router-wr30u-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"

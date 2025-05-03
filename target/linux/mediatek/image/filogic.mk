@@ -1573,6 +1573,42 @@ define Device/wavlink_wl-wn586x3
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3
 
+define Device/xiangsi_hg3000ax-emmc
+  DEVICE_VENDOR := XIANGSI
+  DEVICE_MODEL := HG3000AX-EMMC
+  DEVICE_DTS := mt7981b-xiangsi-hg3000ax-emmc
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += xiangsi,hg3000-emmc
+  DEVICE_PACKAGES := mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 \
+    kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 \
+    kmod-nls-iso8859-1 kmod-mt7915e kmod-mt7981-firmware \
+    mt7981-wo-firmware kmod-rtc-pcf8563 kmod-usb3 kmod-nvme kmod-phy-airoha-en8811h
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += xiangsi_hg3000ax-emmc
+
+define Device/xiangsi_hg3000ax-nand
+  DEVICE_VENDOR := XIANGSI
+  DEVICE_MODEL := HG3000AX-NAND
+  DEVICE_DTS := mt7981b-xiangsi-hg3000ax-nand
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += xiangsi,hg3000-nand
+  DEVICE_PACKAGES := mkf2fs e2fsprogs blkid blockdev losetup kmod-fs-ext4 \
+    kmod-mmc kmod-fs-f2fs kmod-fs-vfat kmod-nls-cp437 \
+    kmod-nls-iso8859-1 kmod-mt7915e kmod-mt7981-firmware kmod-usb2 kmod-usb3\
+    mt7981-wo-firmware kmod-rtc-pcf8563 kmod-nvme kmod-phy-airoha-en8811h
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.ubi
+  ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel
+  endif
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += xiangsi_hg3000ax-nand
+
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router AX3000T
