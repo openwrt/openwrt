@@ -182,6 +182,11 @@ smartrg,sdg-8733a)
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
 	;;
+snr,snr-cpe-ax2)
+	ucidef_set_led_netdev "ledwanblue" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "led2g" "WLAN2G" "blue:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "led5g" "WLAN5G" "blue:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 tplink,re6000xd)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-0" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
