@@ -1,0 +1,47 @@
+From 196423a17b92ef241766691b42dac0136342bdb5 Mon Sep 17 00:00:00 2001
+From: Maxim Kiselev <bigunclemax@gmail.com>
+Date: Mon, 18 Dec 2023 00:06:24 +0300
+Subject: [PATCH 13/14] riscv: dts: allwinner: d1: Add thermal sensor
+
+This patch adds a thermal sensor controller node for the D1/T113s.
+Also it adds a THS calibration data cell to efuse node.
+
+Signed-off-by: Maxim Kiselev <bigunclemax@gmail.com>
+Reviewed-by: Andre Przywara <andre.przywara@arm.com>
+---
+ .../boot/dts/allwinner/sunxi-d1s-t113.dtsi      | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+@@ -166,6 +166,19 @@
+ 			#io-channel-cells = <1>;
+ 		};
+ 
++		ths: thermal-sensor@2009400 {
++			compatible = "allwinner,sun20i-d1-ths";
++			reg = <0x02009400 0x400>;
++			interrupts = <SOC_PERIPHERAL_IRQ(58) IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_THS>;
++			clock-names = "bus";
++			resets = <&ccu RST_BUS_THS>;
++			nvmem-cells = <&ths_calibration>;
++			nvmem-cell-names = "calibration";
++			status = "disabled";
++			#thermal-sensor-cells = <0>;
++		};
++
+ 		dmic: dmic@2031000 {
+ 			compatible = "allwinner,sun20i-d1-dmic",
+ 				     "allwinner,sun50i-h6-dmic";
+@@ -415,6 +428,10 @@
+ 			reg = <0x3006000 0x1000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++
++			ths_calibration: thermal-sensor-calibration@14 {
++				reg = <0x14 0x4>;
++			};
+ 		};
+ 
+ 		crypto: crypto@3040000 {
