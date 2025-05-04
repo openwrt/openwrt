@@ -138,7 +138,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static const struct rt6_info ip6_blk_hole_entry_template = {
  	.dst = {
  		.__refcnt	= ATOMIC_INIT(1),
-@@ -1036,6 +1050,7 @@ static const int fib6_prop[RTN_MAX + 1]
+@@ -1039,6 +1053,7 @@ static const int fib6_prop[RTN_MAX + 1]
  	[RTN_BLACKHOLE]	= -EINVAL,
  	[RTN_UNREACHABLE] = -EHOSTUNREACH,
  	[RTN_PROHIBIT]	= -EACCES,
@@ -146,7 +146,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	[RTN_THROW]	= -EAGAIN,
  	[RTN_NAT]	= -EINVAL,
  	[RTN_XRESOLVE]	= -EINVAL,
-@@ -1071,6 +1086,10 @@ static void ip6_rt_init_dst_reject(struc
+@@ -1074,6 +1089,10 @@ static void ip6_rt_init_dst_reject(struc
  		rt->dst.output = ip6_pkt_prohibit_out;
  		rt->dst.input = ip6_pkt_prohibit;
  		break;

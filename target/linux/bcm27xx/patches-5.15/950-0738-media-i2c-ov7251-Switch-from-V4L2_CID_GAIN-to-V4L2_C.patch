@@ -14,7 +14,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -752,7 +752,7 @@ static int ov7251_s_ctrl(struct v4l2_ctr
+@@ -754,7 +754,7 @@ static int ov7251_s_ctrl(struct v4l2_ctr
  	case V4L2_CID_EXPOSURE:
  		ret = ov7251_set_exposure(ov7251, ctrl->val);
  		break;
@@ -23,7 +23,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = ov7251_set_gain(ov7251, ctrl->val);
  		break;
  	case V4L2_CID_TEST_PATTERN:
-@@ -1346,8 +1346,8 @@ static int ov7251_probe(struct i2c_clien
+@@ -1348,8 +1348,8 @@ static int ov7251_probe(struct i2c_clien
  			  V4L2_CID_VFLIP, 0, 1, 1, 0);
  	ov7251->exposure = v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
  					     V4L2_CID_EXPOSURE, 1, 32, 1, 32);

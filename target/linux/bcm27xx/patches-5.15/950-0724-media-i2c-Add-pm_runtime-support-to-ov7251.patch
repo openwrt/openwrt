@@ -20,7 +20,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  #include <linux/regulator/consumer.h>
  #include <linux/slab.h>
  #include <linux/types.h>
-@@ -884,6 +885,24 @@ static void ov7251_set_power_off(struct
+@@ -886,6 +887,24 @@ static void ov7251_set_power_off(struct
  	ov7251_regulators_disable(ov7251);
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  static int ov7251_s_power(struct v4l2_subdev *sd, int on)
  {
  	struct ov7251 *ov7251 = to_ov7251(sd);
-@@ -985,7 +1004,7 @@ static int ov7251_s_ctrl(struct v4l2_ctr
+@@ -987,7 +1006,7 @@ static int ov7251_s_ctrl(struct v4l2_ctr
  
  	/* v4l2_ctrl_lock() locks our mutex */
  
@@ -54,7 +54,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  		return 0;
  
  	switch (ctrl->id) {
-@@ -1009,6 +1028,8 @@ static int ov7251_s_ctrl(struct v4l2_ctr
+@@ -1011,6 +1030,8 @@ static int ov7251_s_ctrl(struct v4l2_ctr
  		break;
  	}
  
@@ -63,7 +63,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	return ret;
  }
  
-@@ -1261,10 +1282,15 @@ static int ov7251_s_stream(struct v4l2_s
+@@ -1263,10 +1284,15 @@ static int ov7251_s_stream(struct v4l2_s
  	mutex_lock(&ov7251->lock);
  
  	if (enable) {
@@ -82,7 +82,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  
  		ret = ov7251_set_register_array(ov7251,
  					ov7251->current_mode->data,
-@@ -1273,23 +1299,29 @@ static int ov7251_s_stream(struct v4l2_s
+@@ -1275,23 +1301,29 @@ static int ov7251_s_stream(struct v4l2_s
  			dev_err(ov7251->dev, "could not set mode %dx%d\n",
  				ov7251->current_mode->width,
  				ov7251->current_mode->height);
@@ -115,7 +115,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	return ret;
  }
  
-@@ -1615,23 +1647,24 @@ static int ov7251_probe(struct i2c_clien
+@@ -1617,23 +1649,24 @@ static int ov7251_probe(struct i2c_clien
  		goto free_ctrl;
  	}
  
@@ -145,7 +145,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	}
  
  	ret = ov7251_read_reg(ov7251, OV7251_TIMING_FORMAT1,
-@@ -1639,7 +1672,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1641,7 +1674,7 @@ static int ov7251_probe(struct i2c_clien
  	if (ret < 0) {
  		dev_err(dev, "could not read vflip value\n");
  		ret = -ENODEV;
@@ -154,7 +154,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	}
  
  	ret = ov7251_read_reg(ov7251, OV7251_TIMING_FORMAT2,
-@@ -1647,10 +1680,12 @@ static int ov7251_probe(struct i2c_clien
+@@ -1649,10 +1682,12 @@ static int ov7251_probe(struct i2c_clien
  	if (ret < 0) {
  		dev_err(dev, "could not read hflip value\n");
  		ret = -ENODEV;
@@ -169,7 +169,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  
  	ret = v4l2_async_register_subdev(&ov7251->sd);
  	if (ret < 0) {
-@@ -1662,6 +1697,9 @@ static int ov7251_probe(struct i2c_clien
+@@ -1664,6 +1699,9 @@ static int ov7251_probe(struct i2c_clien
  
  	return 0;
  
@@ -179,7 +179,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  power_down:
  	ov7251_s_power(&ov7251->sd, false);
  free_entity:
-@@ -1683,9 +1721,18 @@ static int ov7251_remove(struct i2c_clie
+@@ -1685,9 +1723,18 @@ static int ov7251_remove(struct i2c_clie
  	v4l2_ctrl_handler_free(&ov7251->ctrls);
  	mutex_destroy(&ov7251->lock);
  
@@ -198,7 +198,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  static const struct of_device_id ov7251_of_match[] = {
  	{ .compatible = "ovti,ov7251" },
  	{ /* sentinel */ }
-@@ -1703,6 +1750,7 @@ static struct i2c_driver ov7251_i2c_driv
+@@ -1705,6 +1752,7 @@ static struct i2c_driver ov7251_i2c_driv
  		.of_match_table = ov7251_of_match,
  		.acpi_match_table = ov7251_acpi_match,
  		.name  = "ov7251",
