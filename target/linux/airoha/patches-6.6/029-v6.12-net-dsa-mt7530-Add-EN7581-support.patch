@@ -66,7 +66,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  		/* Disable forwarding by default on all ports */
  		mt7530_rmw(priv, MT7530_PCR_P(i), PCR_MATRIX_MASK,
-@@ -2550,8 +2553,10 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2553,8 +2556,10 @@ mt7531_setup_common(struct dsa_switch *d
  		/* Clear link settings and enable force mode to force link down
  		 * on all ports until they're enabled later.
  		 */

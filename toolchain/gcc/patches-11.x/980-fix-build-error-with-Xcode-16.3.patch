@@ -34,11 +34,9 @@ Signed-off-by: Georgi Valkov <gvalkov@gmail.com>
  zlib/zutil.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/zlib/zutil.h b/zlib/zutil.h
-index 4b596adf629..9ea8d840643 100644
 --- a/zlib/zutil.h
 +++ b/zlib/zutil.h
-@@ -130,7 +130,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+@@ -130,7 +130,7 @@ extern z_const char * const z_errmsg[10]
  #  endif
  #endif
  
@@ -47,6 +45,3 @@ index 4b596adf629..9ea8d840643 100644
  #  define OS_CODE  7
  #  ifndef Z_SOLO
  #    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
--- 
-2.49.0
-

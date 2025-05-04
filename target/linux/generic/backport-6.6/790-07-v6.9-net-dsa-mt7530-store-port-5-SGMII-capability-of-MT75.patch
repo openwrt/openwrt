@@ -100,7 +100,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	default:
  		return "unknown";
  	}
-@@ -2695,6 +2681,12 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2698,6 +2684,12 @@ mt7531_setup(struct dsa_switch *ds)
  		return -ENODEV;
  	}
  
@@ -113,7 +113,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	/* all MACs must be forced link-down before sw reset */
  	for (i = 0; i < MT7530_NUM_PORTS; i++)
  		mt7530_write(priv, MT7530_PMCR_P(i), MT7531_FORCE_LNK);
-@@ -2704,21 +2696,18 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2707,21 +2699,18 @@ mt7531_setup(struct dsa_switch *ds)
  		     SYS_CTRL_PHY_RST | SYS_CTRL_SW_RST |
  		     SYS_CTRL_REG_RST);
  

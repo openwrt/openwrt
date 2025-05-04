@@ -15,7 +15,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/sound/soc/dwc/dwc-i2s.c
 +++ b/sound/soc/dwc/dwc-i2s.c
-@@ -906,6 +906,27 @@ static int jh7110_i2srx_crg_init(struct
+@@ -905,6 +905,27 @@ static int jh7110_i2srx_crg_init(struct
  	return jh7110_i2s_crg_slave_init(dev);
  }
  
@@ -43,7 +43,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  static int jh7110_i2stx0_clk_cfg(struct i2s_clk_config_data *config)
  {
  	struct dw_i2s_dev *dev = container_of(config, struct dw_i2s_dev, config);
-@@ -1086,11 +1107,21 @@ static const struct i2s_platform_data jh
+@@ -1085,11 +1106,21 @@ static const struct i2s_platform_data jh
  	.i2s_pd_init = jh7110_i2srx_crg_init,
  };
  

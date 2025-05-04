@@ -70,11 +70,9 @@ Signed-off-by: Dimitry Andric <dimitry@andric.com>
  gcc/system.h | 39 ++++++++++++++++++---------------------
  1 file changed, 18 insertions(+), 21 deletions(-)
 
-diff --git a/gcc/system.h b/gcc/system.h
-index b0edab02885..ab29fc19776 100644
 --- a/gcc/system.h
 +++ b/gcc/system.h
-@@ -194,27 +194,8 @@ extern int fprintf_unlocked (FILE *, const char *, ...);
+@@ -194,27 +194,8 @@ extern int fprintf_unlocked (FILE *, con
  #undef fread_unlocked
  #undef fwrite_unlocked
  
@@ -134,6 +132,3 @@ index b0edab02885..ab29fc19776 100644
  /* Some of glibc's string inlines cause warnings.  Plus we'd rather
     rely on (and therefore test) GCC's string builtins.  */
  #define __NO_STRING_INLINES
--- 
-2.39.3
-

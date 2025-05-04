@@ -353,7 +353,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
  	if (mtk_is_netsys_v3_or_greater(eth)) {
-@@ -5037,11 +5037,15 @@ static const struct mtk_soc_data mt2701_
+@@ -5053,11 +5053,15 @@ static const struct mtk_soc_data mt2701_
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.version = 1,
@@ -374,7 +374,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5057,11 +5061,15 @@ static const struct mtk_soc_data mt7621_
+@@ -5073,11 +5077,15 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -395,7 +395,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5079,11 +5087,15 @@ static const struct mtk_soc_data mt7622_
+@@ -5095,11 +5103,15 @@ static const struct mtk_soc_data mt7622_
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -416,7 +416,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5100,11 +5112,15 @@ static const struct mtk_soc_data mt7623_
+@@ -5116,11 +5128,15 @@ static const struct mtk_soc_data mt7623_
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
@@ -437,7 +437,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5119,11 +5135,15 @@ static const struct mtk_soc_data mt7629_
+@@ -5135,11 +5151,15 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.has_accounting = true,
  	.version = 1,
@@ -458,7 +458,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5141,11 +5161,15 @@ static const struct mtk_soc_data mt7981_
+@@ -5157,11 +5177,15 @@ static const struct mtk_soc_data mt7981_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -479,7 +479,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5163,11 +5187,15 @@ static const struct mtk_soc_data mt7986_
+@@ -5179,11 +5203,15 @@ static const struct mtk_soc_data mt7986_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -500,7 +500,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5185,11 +5213,15 @@ static const struct mtk_soc_data mt7988_
+@@ -5201,11 +5229,15 @@ static const struct mtk_soc_data mt7988_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
@@ -521,7 +521,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5202,11 +5234,15 @@ static const struct mtk_soc_data rt5350_
+@@ -5218,11 +5250,15 @@ static const struct mtk_soc_data rt5350_
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,
  	.version = 1,
@@ -544,7 +544,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -327,8 +327,8 @@
+@@ -335,8 +335,8 @@
  /* QDMA descriptor txd3 */
  #define TX_DMA_OWNER_CPU	BIT(31)
  #define TX_DMA_LS0		BIT(30)
@@ -555,7 +555,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define TX_DMA_SWC		BIT(14)
  #define TX_DMA_PQID		GENMASK(3, 0)
  #define TX_DMA_ADDR64_MASK	GENMASK(3, 0)
-@@ -348,8 +348,8 @@
+@@ -356,8 +356,8 @@
  /* QDMA descriptor rxd2 */
  #define RX_DMA_DONE		BIT(31)
  #define RX_DMA_LSO		BIT(30)
@@ -566,7 +566,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define RX_DMA_VTAG		BIT(15)
  #define RX_DMA_ADDR64_MASK	GENMASK(3, 0)
  #if IS_ENABLED(CONFIG_64BIT)
-@@ -1153,10 +1153,9 @@ struct mtk_reg_map {
+@@ -1161,10 +1161,9 @@ struct mtk_reg_map {
   * @foe_entry_size		Foe table entry size.
   * @has_accounting		Bool indicating support for accounting of
   *				offloaded flows.
@@ -580,7 +580,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
   * @dma_max_len			Max DMA tx/rx buffer length.
   * @dma_len_offset		Tx/Rx DMA length field offset.
   */
-@@ -1174,13 +1173,17 @@ struct mtk_soc_data {
+@@ -1182,13 +1181,17 @@ struct mtk_soc_data {
  	bool		has_accounting;
  	bool		disable_pll_modes;
  	struct {

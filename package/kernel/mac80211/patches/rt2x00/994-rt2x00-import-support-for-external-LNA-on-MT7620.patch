@@ -31,7 +31,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	mutex_unlock(&rt2x00dev->csr_mutex);
  }
  
-+void rt6352_enable_pa_pin(struct rt2x00_dev *rt2x00dev, int enable)
++static void rt6352_enable_pa_pin(struct rt2x00_dev *rt2x00dev, int enable)
 +{
 +	if (!rt2x00dev->pinctrl)
 +		return;
