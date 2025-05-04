@@ -225,17 +225,6 @@ static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
 	phy_modify(phydev, 0, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
 }
 
-static void rtl8380_rtl8214fc_on_off(struct phy_device *phydev, bool on)
-{
-	/* fiber ports */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
-	phy_modify(phydev, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
-
-	/* copper ports */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
-}
-
 static void rtl8380_phy_reset(struct phy_device *phydev)
 {
 	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
@@ -1028,23 +1017,17 @@ static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 {
-	char *state = on ? "on" : "off";
+	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
+	int pdown = on ? 0 : BMCR_PDOWN;
 
-	if (port == PORT_FIBRE) {
-		pr_info("%s: Powering %s FIBRE (port %d)\n", __func__, state, phydev->mdio.addr);
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
-	} else {
-		pr_info("%s: Powering %s COPPER (port %d)\n", __func__, state, phydev->mdio.addr);
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	}
+	pr_info("%s: Powering %s %s (port %d)\n", __func__,
+		on ? "on" : "off",
+		port == PORT_FIBRE ? "FIBRE" : "COPPER",
+		phydev->mdio.addr);
 
-	if (on) {
-		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, 0);
-	} else {
-		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, 0, BMCR_PDOWN);
-	}
-
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, page);
+	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
+	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
 static int rtl8214fc_suspend(struct phy_device *phydev)
@@ -1463,9 +1446,10 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	val = phy_read_paged(phydev, RTL838X_PAGE_RAW, 28);
 
 	val = phy_read(phydev, 16);
-	if (val & BMCR_PDOWN)
-		rtl8380_rtl8214fc_on_off(phydev, true);
-	else
+	if (val & BMCR_PDOWN) {
+		rtl8214fc_power_set(phydev, PORT_MII, true);
+		rtl8214fc_power_set(phydev, PORT_FIBRE, true);
+	} else
 		rtl8380_phy_reset(phydev);
 
 	msleep(100);
