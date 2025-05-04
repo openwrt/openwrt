@@ -233,6 +233,15 @@ define Device/dlink_dap-1325-a1
 endef
 TARGET_DEVICES += dlink_dap-1325-a1
 
+define Device/dlink_dcs-5030l
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DCS-5030L
+  DEVICE_PACKAGES := kmod-mmc-mtk kmod-usb2 kmod-usb-ohci kmod-leds-gpio kmod-video-uvc
+  SUPPORTED_DEVICES += mt7628
+endef
+TARGET_DEVICES += dlink_dcs-5030l
+
 define Device/duzun_dm06
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := DuZun
