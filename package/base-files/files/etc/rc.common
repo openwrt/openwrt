@@ -67,6 +67,10 @@ depends() {
 	return 0
 }
 
+running() {
+	return 1
+}
+
 ALL_HELP=""
 ALL_COMMANDS="boot shutdown depends"
 extra_command() {
@@ -115,11 +119,11 @@ extra_command "reload" "Reload configuration files (or restart if service does n
 extra_command "enable" "Enable service autostart"
 extra_command "disable" "Disable service autostart"
 extra_command "enabled" "Check if service is started on boot"
+extra_command "running" "Check if service is running"
 
 . "$initscript"
 
 [ -n "$USE_PROCD" ] && {
-	extra_command "running" "Check if service is running"
 	extra_command "status" "Service status"
 	extra_command "trace" "Start with syscall trace"
 	extra_command "info" "Dump procd service info"
