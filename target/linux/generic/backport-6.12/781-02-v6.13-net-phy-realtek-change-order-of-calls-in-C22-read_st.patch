@@ -1,8 +1,7 @@
 From 68d5cd09e8919679ce13b85950debea4b2e98e04 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Thu, 10 Oct 2024 14:07:26 +0100
-Subject: [PATCH 4/5] net: phy: realtek: change order of calls in C22
- read_status()
+Subject: [PATCH] net: phy: realtek: change order of calls in C22 read_status()
 
 Always call rtlgen_read_status() first, so genphy_read_status() which
 is called by it clears bits in case auto-negotiation has not completed.
