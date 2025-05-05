@@ -40,6 +40,9 @@ function client_pubsub(kind, cl, names)
 		cl_list[name] = core.pubsub_add(kind, name, proto({
 			client: cl.id,
 		}, pubsub_proto));
+
+		if (kind == "publish")
+			core.handle_publish(cl_list[name], name);
 	}
 
 	return 0;
@@ -101,8 +104,11 @@ function client_disconnect(id)
 		return;
 
 	for (let kind in [ "publish", "subscribe" ])
-		for (let name, data in cl[kind])
+		for (let name, data in cl[kind]) {
+			if (kind == "publish")
+				core.handle_publish(data, name);
 			core.pubsub_del(kind, name, data);
+		}
 
 	delete clients[id];
 }
