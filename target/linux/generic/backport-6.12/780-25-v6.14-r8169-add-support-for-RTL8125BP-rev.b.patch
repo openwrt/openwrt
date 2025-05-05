@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	[RTL_GIGA_MAC_VER_70] = {"RTL8126A",		FIRMWARE_8126A_2},
  	[RTL_GIGA_MAC_VER_71] = {"RTL8126A",		FIRMWARE_8126A_3},
  };
-@@ -632,6 +634,7 @@ enum rtl_dash_type {
+@@ -631,6 +633,7 @@ enum rtl_dash_type {
  	RTL_DASH_NONE,
  	RTL_DASH_DP,
  	RTL_DASH_EP,
@@ -52,7 +52,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  struct rtl8169_private {
-@@ -709,6 +712,7 @@ MODULE_FIRMWARE(FIRMWARE_8125A_3);
+@@ -708,6 +711,7 @@ MODULE_FIRMWARE(FIRMWARE_8125A_3);
  MODULE_FIRMWARE(FIRMWARE_8125B_2);
  MODULE_FIRMWARE(FIRMWARE_8125D_1);
  MODULE_FIRMWARE(FIRMWARE_8125D_2);
@@ -60,7 +60,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  MODULE_FIRMWARE(FIRMWARE_8126A_2);
  MODULE_FIRMWARE(FIRMWARE_8126A_3);
  
-@@ -1361,10 +1365,19 @@ static void rtl8168ep_driver_start(struc
+@@ -1360,10 +1364,19 @@ static void rtl8168ep_driver_start(struc
  		rtl_loop_wait_high(tp, &rtl_ep_ocp_read_cond, 10000, 30);
  }
  
@@ -80,7 +80,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	else
  		rtl8168ep_driver_start(tp);
  }
-@@ -1385,10 +1398,19 @@ static void rtl8168ep_driver_stop(struct
+@@ -1384,10 +1397,19 @@ static void rtl8168ep_driver_stop(struct
  		rtl_loop_wait_low(tp, &rtl_ep_ocp_read_cond, 10000, 10);
  }
  
@@ -100,7 +100,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	else
  		rtl8168ep_driver_stop(tp);
  }
-@@ -1411,6 +1433,7 @@ static bool rtl_dash_is_enabled(struct r
+@@ -1410,6 +1432,7 @@ static bool rtl_dash_is_enabled(struct r
  	case RTL_DASH_DP:
  		return r8168dp_check_dash(tp);
  	case RTL_DASH_EP:
@@ -108,7 +108,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return r8168ep_check_dash(tp);
  	default:
  		return false;
-@@ -1425,6 +1448,8 @@ static enum rtl_dash_type rtl_get_dash_t
+@@ -1424,6 +1447,8 @@ static enum rtl_dash_type rtl_get_dash_t
  		return RTL_DASH_DP;
  	case RTL_GIGA_MAC_VER_51 ... RTL_GIGA_MAC_VER_53:
  		return RTL_DASH_EP;
@@ -117,7 +117,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	default:
  		return RTL_DASH_NONE;
  	}
-@@ -2261,6 +2286,9 @@ static enum mac_version rtl8169_get_mac_
+@@ -2260,6 +2285,9 @@ static enum mac_version rtl8169_get_mac_
  		{ 0x7cf, 0x64a,	RTL_GIGA_MAC_VER_71 },
  		{ 0x7cf, 0x649,	RTL_GIGA_MAC_VER_70 },
  
@@ -127,7 +127,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		/* 8125D family. */
  		{ 0x7cf, 0x689,	RTL_GIGA_MAC_VER_65 },
  		{ 0x7cf, 0x688,	RTL_GIGA_MAC_VER_64 },
-@@ -3844,6 +3872,7 @@ static void rtl_hw_config(struct rtl8169
+@@ -3841,6 +3869,7 @@ static void rtl_hw_config(struct rtl8169
  		[RTL_GIGA_MAC_VER_63] = rtl_hw_start_8125b,
  		[RTL_GIGA_MAC_VER_64] = rtl_hw_start_8125d,
  		[RTL_GIGA_MAC_VER_65] = rtl_hw_start_8125d,
@@ -135,7 +135,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		[RTL_GIGA_MAC_VER_70] = rtl_hw_start_8126a,
  		[RTL_GIGA_MAC_VER_71] = rtl_hw_start_8126a,
  	};
-@@ -3863,6 +3892,7 @@ static void rtl_hw_start_8125(struct rtl
+@@ -3860,6 +3889,7 @@ static void rtl_hw_start_8125(struct rtl
  	case RTL_GIGA_MAC_VER_61:
  	case RTL_GIGA_MAC_VER_64:
  	case RTL_GIGA_MAC_VER_65:

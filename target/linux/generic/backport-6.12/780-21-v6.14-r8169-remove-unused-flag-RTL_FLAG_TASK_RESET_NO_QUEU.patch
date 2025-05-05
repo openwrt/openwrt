@@ -16,15 +16,15 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/realtek/r8169_main.c
 +++ b/drivers/net/ethernet/realtek/r8169_main.c
-@@ -623,7 +623,6 @@ struct rtl8169_tc_offsets {
+@@ -622,7 +622,6 @@ struct rtl8169_tc_offsets {
+ 
  enum rtl_flag {
- 	RTL_FLAG_TASK_ENABLED = 0,
  	RTL_FLAG_TASK_RESET_PENDING,
 -	RTL_FLAG_TASK_RESET_NO_QUEUE_WAKE,
  	RTL_FLAG_TASK_TX_TIMEOUT,
  	RTL_FLAG_MAX
  };
-@@ -4728,8 +4727,6 @@ static void rtl_task(struct work_struct
+@@ -4722,8 +4721,6 @@ static void rtl_task(struct work_struct
  reset:
  		rtl_reset_work(tp);
  		netif_wake_queue(tp->dev);
