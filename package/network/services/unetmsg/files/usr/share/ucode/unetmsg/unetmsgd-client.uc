@@ -72,8 +72,11 @@ function client_request(cl, req)
 		return core.handle_message(handle, data, true);
 	case "request":
 		handle = cl.subscribe[name];
-	    if (!handle)
-			return libubus.STATUS_INVALID_ARGUMENT;
+		if (!handle &&
+		    !core.acl_check("subscribe", cl.acl, [ name ]))
+			return libubus.STATUS_PERMISSION_DENIED;
+
+		handle ??= { client: cl.id };
 		return core.handle_request(handle, req, data, true);
 	}
 }

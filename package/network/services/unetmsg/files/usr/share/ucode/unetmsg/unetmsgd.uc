@@ -111,6 +111,7 @@ function handle_request(handle, req, data, remote)
 
 	for (let cur in handles) {
 		if (!cur || !cur.get_channel) {
+			cb();
 			continue;
 		}
 		let chan = cur.get_channel();
