@@ -1,0 +1,224 @@
+From 3ec3e3c8488f09399b35d06f4f43a037bbf16746 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Sat, 9 Sep 2017 16:41:26 -0700
+Subject: [PATCH 1/2] net: dsa: Add support for FDB operations on 5325/5365
+
+BCM5325/5365 are part of a much older generation of switches which, due to
+their limited number of ports and VLAN entries (up to 256) allowed a single
+64-bit register to hold a full ARL entry. This requires a little bit of
+massaging when reading, writing and converting ARL entries in both directions.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 60 +++++++++++++++++++++-----------
+ drivers/net/dsa/b53/b53_priv.h   | 57 +++++++++++++++++++++---------
+ drivers/net/dsa/b53/b53_regs.h   |  1 +
+ 3 files changed, 81 insertions(+), 37 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1630,9 +1630,11 @@ static int b53_arl_read(struct b53_devic
+ 
+ 		b53_read64(dev, B53_ARLIO_PAGE,
+ 			   B53_ARLTBL_MAC_VID_ENTRY(i), &mac_vid);
+-		b53_read32(dev, B53_ARLIO_PAGE,
+-			   B53_ARLTBL_DATA_ENTRY(i), &fwd_entry);
+-		b53_arl_to_entry(ent, mac_vid, fwd_entry);
++
++		if (!is5325(dev) && !is5365(dev))
++			b53_read32(dev, B53_ARLIO_PAGE,
++				   B53_ARLTBL_DATA_ENTRY(i), &fwd_entry);
++		b53_arl_to_entry(dev, ent, mac_vid, fwd_entry);
+ 
+ 		if (!(fwd_entry & ARLTBL_VALID)) {
+ 			set_bit(i, free_bins);
+@@ -1665,7 +1667,8 @@ static int b53_arl_op(struct b53_device
+ 
+ 	/* Perform a read for the given MAC and VID */
+ 	b53_write48(dev, B53_ARLIO_PAGE, B53_MAC_ADDR_IDX, mac);
+-	b53_write16(dev, B53_ARLIO_PAGE, B53_VLAN_ID_IDX, vid);
++	if (!is5325(dev))
++		b53_write16(dev, B53_ARLIO_PAGE, B53_VLAN_ID_IDX, vid);
+ 
+ 	/* Issue a read operation for this MAC */
+ 	ret = b53_arl_rw_op(dev, 1);
+@@ -1716,12 +1719,14 @@ static int b53_arl_op(struct b53_device
+ 	ent.is_static = true;
+ 	ent.is_age = false;
+ 	memcpy(ent.mac, addr, ETH_ALEN);
+-	b53_arl_from_entry(&mac_vid, &fwd_entry, &ent);
++	b53_arl_from_entry(dev, &mac_vid, &fwd_entry, &ent);
+ 
+ 	b53_write64(dev, B53_ARLIO_PAGE,
+ 		    B53_ARLTBL_MAC_VID_ENTRY(idx), mac_vid);
+-	b53_write32(dev, B53_ARLIO_PAGE,
+-		    B53_ARLTBL_DATA_ENTRY(idx), fwd_entry);
++
++	if (!is5325(dev) && !is5365(dev))
++		b53_write32(dev, B53_ARLIO_PAGE,
++			    B53_ARLTBL_DATA_ENTRY(idx), fwd_entry);
+ 
+ 	return b53_arl_rw_op(dev, 0);
+ }
+@@ -1733,12 +1738,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
+ 	struct b53_device *priv = ds->priv;
+ 	int ret;
+ 
+-	/* 5325 and 5365 require some more massaging, but could
+-	 * be supported eventually
+-	 */
+-	if (is5325(priv) || is5365(priv))
+-		return -EOPNOTSUPP;
+-
+ 	mutex_lock(&priv->arl_mutex);
+ 	ret = b53_arl_op(priv, 0, port, addr, vid, true);
+ 	mutex_unlock(&priv->arl_mutex);
+@@ -1765,10 +1764,15 @@ EXPORT_SYMBOL(b53_fdb_del);
+ static int b53_arl_search_wait(struct b53_device *dev)
+ {
+ 	unsigned int timeout = 1000;
+-	u8 reg;
++	u8 reg, offset;
++
++	if (is5325(dev) || is5365(dev))
++		offset = B53_ARL_SRCH_CTL_25;
++	else
++		offset = B53_ARL_SRCH_CTL;
+ 
+ 	do {
+-		b53_read8(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_CTL, &reg);
++		b53_read8(dev, B53_ARLIO_PAGE, offset, &reg);
+ 		if (!(reg & ARL_SRCH_STDN))
+ 			return 0;
+ 
+@@ -1787,11 +1791,19 @@ static void b53_arl_search_rd(struct b53
+ 	u64 mac_vid;
+ 	u32 fwd_entry;
+ 
+-	b53_read64(dev, B53_ARLIO_PAGE,
+-		   B53_ARL_SRCH_RSTL_MACVID(idx), &mac_vid);
+-	b53_read32(dev, B53_ARLIO_PAGE,
+-		   B53_ARL_SRCH_RSTL(idx), &fwd_entry);
+-	b53_arl_to_entry(ent, mac_vid, fwd_entry);
++	if (is5325(dev))
++		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_0_MACVID_25,
++			   &mac_vid);
++	else if (is5365(dev))
++		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_0_MACVID_65,
++			   &mac_vid);
++	else {
++		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_MACVID(idx),
++			   &mac_vid);
++		b53_read32(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL(idx),
++			   &fwd_entry);
++	}
++	b53_arl_to_entry(dev, ent, mac_vid, fwd_entry);
+ }
+ 
+ static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
+@@ -1812,14 +1824,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+ 	struct b53_device *priv = ds->priv;
+ 	struct b53_arl_entry results[2];
+ 	unsigned int count = 0;
++	u8 offset;
+ 	int ret;
+ 	u8 reg;
+ 
+ 	mutex_lock(&priv->arl_mutex);
+ 
++	if (is5325(priv) || is5365(priv))
++		offset = B53_ARL_SRCH_CTL_25;
++	else
++		offset = B53_ARL_SRCH_CTL;
++
+ 	/* Start search operation */
+ 	reg = ARL_SRCH_STDN;
+-	b53_write8(priv, B53_ARLIO_PAGE, B53_ARL_SRCH_CTL, reg);
++	b53_write8(priv, offset, B53_ARL_SRCH_CTL, reg);
+ 
+ 	do {
+ 		ret = b53_arl_search_wait(priv);
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -282,30 +282,55 @@ struct b53_arl_entry {
+ 	u8 is_static:1;
+ };
+ 
+-static inline void b53_arl_to_entry(struct b53_arl_entry *ent,
++static inline void b53_arl_to_entry(struct b53_device *dev,
++				    struct b53_arl_entry *ent,
+ 				    u64 mac_vid, u32 fwd_entry)
+ {
+ 	memset(ent, 0, sizeof(*ent));
+-	ent->port = fwd_entry & ARLTBL_DATA_PORT_ID_MASK;
+-	ent->is_valid = !!(fwd_entry & ARLTBL_VALID);
+-	ent->is_age = !!(fwd_entry & ARLTBL_AGE);
+-	ent->is_static = !!(fwd_entry & ARLTBL_STATIC);
+-	u64_to_ether_addr(mac_vid, ent->mac);
+-	ent->vid = mac_vid >> ARLTBL_VID_S;
++	if (is5325(dev) || is5365(dev)) {
++		ent->port = (mac_vid >> ARLTBL_DATA_PORT_ID_S_25) &
++			    ARLTBL_DATA_PORT_ID_MASK_25;
++		ent->is_valid = !!(mac_vid & ARLTBL_VALID_25);
++		ent->is_age = !!(mac_vid & ARLTBL_AGE_25);
++		ent->is_static = !!(mac_vid & ARLTBL_STATIC_25);
++		u64_to_ether_addr(mac_vid, ent->mac);
++		ent->vid = mac_vid >> ARLTBL_VID_S_65;
++	} else {
++		ent->port = fwd_entry & ARLTBL_DATA_PORT_ID_MASK;
++		ent->is_valid = !!(fwd_entry & ARLTBL_VALID);
++		ent->is_age = !!(fwd_entry & ARLTBL_AGE);
++		ent->is_static = !!(fwd_entry & ARLTBL_STATIC);
++		u64_to_ether_addr(mac_vid, ent->mac);
++		ent->vid = mac_vid >> ARLTBL_VID_S;
++	}
+ }
+ 
+-static inline void b53_arl_from_entry(u64 *mac_vid, u32 *fwd_entry,
++static inline void b53_arl_from_entry(struct b53_device *dev,
++				      u64 *mac_vid, u32 *fwd_entry,
+ 				      const struct b53_arl_entry *ent)
+ {
+ 	*mac_vid = ether_addr_to_u64(ent->mac);
+-	*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK) << ARLTBL_VID_S;
+-	*fwd_entry = ent->port & ARLTBL_DATA_PORT_ID_MASK;
+-	if (ent->is_valid)
+-		*fwd_entry |= ARLTBL_VALID;
+-	if (ent->is_static)
+-		*fwd_entry |= ARLTBL_STATIC;
+-	if (ent->is_age)
+-		*fwd_entry |= ARLTBL_AGE;
++	if (is5325(dev) || is5365(dev)) {
++		*mac_vid |= (u64)(ent->port & ARLTBL_DATA_PORT_ID_MASK_25) <<
++				  ARLTBL_DATA_PORT_ID_S_25;
++		*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK_25) <<
++				  ARLTBL_VID_S_65;
++		if (ent->is_valid)
++			*mac_vid |= ARLTBL_VALID_25;
++		if (ent->is_static)
++			*mac_vid |= ARLTBL_STATIC_25;
++		if (ent->is_age)
++			*mac_vid |= ARLTBL_AGE_25;
++	} else {
++		*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK) << ARLTBL_VID_S;
++		*fwd_entry = ent->port & ARLTBL_DATA_PORT_ID_MASK;
++		if (ent->is_valid)
++			*fwd_entry |= ARLTBL_VALID;
++		if (ent->is_static)
++			*fwd_entry |= ARLTBL_STATIC;
++		if (ent->is_age)
++			*fwd_entry |= ARLTBL_AGE;
++	}
+ }
+ 
+ #ifdef CONFIG_BCM47XX
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -314,6 +314,7 @@
+ #define   ARLTBL_VID_MASK		0xfff
+ #define   ARLTBL_DATA_PORT_ID_S_25	48
+ #define   ARLTBL_DATA_PORT_ID_MASK_25	0xf
++#define   ARLTBL_VID_S_65		53
+ #define   ARLTBL_AGE_25			BIT(61)
+ #define   ARLTBL_STATIC_25		BIT(62)
+ #define   ARLTBL_VALID_25		BIT(63)
