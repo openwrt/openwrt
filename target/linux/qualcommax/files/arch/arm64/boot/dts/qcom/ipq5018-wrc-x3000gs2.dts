@@ -164,10 +164,6 @@
 		#size-cells = <1>;
 
 		nand-ecc-engine = <&qpic_nand>;
-
-		/* strength=8 breaks NAND I/O, use 4 instead */
-		nand-ecc-strength = <4>;
-		nand-ecc-step-size = <512>;
 		nand-bus-width = <8>;
 
 		partitions {
