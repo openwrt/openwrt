@@ -126,7 +126,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
 +	case NETDEV_CHANGEUPPER:
 +		info = ptr;
 +
-+		if (!dsa_slave_dev_check(info->upper_dev))
++		if (!dsa_user_dev_check(info->upper_dev))
 +			return NOTIFY_DONE;
 +
 +		if (info->linking)
