@@ -1,0 +1,2027 @@
+From 76e25c1f46456416ba5358be8a0677f1ab8196b6 Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Fri, 4 Nov 2022 18:41:48 +0100
+Subject: [PATCH] net: ipqess: introduce the Qualcomm IPQESS driver
+
+The Qualcomm IPQESS controller is a simple 1G Ethernet controller found
+on the IPQ4019 chip. This controller has some specificities, in that the
+IPQ4019 platform that includes that controller also has an internal
+switch, based on the QCA8K IP.
+
+It is connected to that switch through an internal link, and doesn't
+expose directly any external interface, hence it only supports the
+PHY_INTERFACE_MODE_INTERNAL for now.
+
+It has 16 RX and TX queues, with a very basic RSS fanout configured at
+init time.
+
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ MAINTAINERS                                   |    7 +
+ drivers/net/ethernet/qualcomm/Kconfig         |   11 +
+ drivers/net/ethernet/qualcomm/Makefile        |    2 +
+ drivers/net/ethernet/qualcomm/ipqess/Makefile |    8 +
+ drivers/net/ethernet/qualcomm/ipqess/ipqess.c | 1246 +++++++++++++++++
+ drivers/net/ethernet/qualcomm/ipqess/ipqess.h |  518 +++++++
+ .../ethernet/qualcomm/ipqess/ipqess_ethtool.c |  164 +++
+ 7 files changed, 1956 insertions(+)
+ create mode 100644 drivers/net/ethernet/qualcomm/ipqess/Makefile
+ create mode 100644 drivers/net/ethernet/qualcomm/ipqess/ipqess.c
+ create mode 100644 drivers/net/ethernet/qualcomm/ipqess/ipqess.h
+ create mode 100644 drivers/net/ethernet/qualcomm/ipqess/ipqess_ethtool.c
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -17718,6 +17718,13 @@ L:	netdev@vger.kernel.org
+ S:	Maintained
+ F:	drivers/net/ethernet/qualcomm/emac/
+ 
++QUALCOMM IPQESS ETHERNET DRIVER
++M:	Maxime Chevallier <maxime.chevallier@bootlin.com>
++L:	netdev@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
++F:	drivers/net/ethernet/qualcomm/ipqess/
++
+ QUALCOMM ETHQOS ETHERNET DRIVER
+ M:	Vinod Koul <vkoul@kernel.org>
+ R:	Bhupesh Sharma <bhupesh.sharma@linaro.org>
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -61,6 +61,17 @@ config QCOM_EMAC
+ 	  low power, Receive-Side Scaling (RSS), and IEEE 1588-2008
+ 	  Precision Clock Synchronization Protocol.
+ 
++config QCOM_IPQ4019_ESS_EDMA
++	tristate "Qualcomm Atheros IPQ4019 ESS EDMA support"
++	depends on (OF && ARCH_QCOM) || COMPILE_TEST
++	select PHYLINK
++	help
++	  This driver supports the Qualcomm Atheros IPQ40xx built-in
++	  ESS EDMA ethernet controller.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called ipqess.
++
+ source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
+ 
+ endif # NET_VENDOR_QUALCOMM
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -11,4 +11,6 @@ qcauart-objs := qca_uart.o
+ 
+ obj-y += emac/
+ 
++obj-$(CONFIG_QCOM_IPQ4019_ESS_EDMA) += ipqess/
++
+ obj-$(CONFIG_RMNET) += rmnet/
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ipqess/Makefile
+@@ -0,0 +1,8 @@
++# SPDX-License-Identifier: GPL-2.0-only
++#
++# Makefile for the IPQ ESS driver
++#
++
++obj-$(CONFIG_QCOM_IPQ4019_ESS_EDMA) += ipq_ess.o
++
++ipq_ess-objs := ipqess.o ipqess_ethtool.o
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
+@@ -0,0 +1,1248 @@
++// SPDX-License-Identifier: GPL-2.0 OR ISC
++/* Copyright (c) 2014 - 2017, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2017 - 2018, John Crispin <john@phrozen.org>
++ * Copyright (c) 2018 - 2019, Christian Lamparter <chunkeey@gmail.com>
++ * Copyright (c) 2020 - 2021, Gabor Juhos <j4g8y7@gmail.com>
++ * Copyright (c) 2021 - 2022, Maxime Chevallier <maxime.chevallier@bootlin.com>
++ *
++ */
++
++#include <linux/bitfield.h>
++#include <linux/clk.h>
++#include <linux/if_vlan.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_mdio.h>
++#include <linux/of_net.h>
++#include <linux/phylink.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++#include <linux/skbuff.h>
++#include <linux/vmalloc.h>
++#include <net/checksum.h>
++#include <net/ip6_checksum.h>
++
++#include "ipqess.h"
++
++#define IPQESS_RRD_SIZE		16
++#define IPQESS_NEXT_IDX(X, Y)  (((X) + 1) & ((Y) - 1))
++#define IPQESS_TX_DMA_BUF_LEN	0x3fff
++
++static void ipqess_w32(struct ipqess *ess, u32 reg, u32 val)
++{
++	writel(val, ess->hw_addr + reg);
++}
++
++static u32 ipqess_r32(struct ipqess *ess, u16 reg)
++{
++	return readl(ess->hw_addr + reg);
++}
++
++static void ipqess_m32(struct ipqess *ess, u32 mask, u32 val, u16 reg)
++{
++	u32 _val = ipqess_r32(ess, reg);
++
++	_val &= ~mask;
++	_val |= val;
++
++	ipqess_w32(ess, reg, _val);
++}
++
++void ipqess_update_hw_stats(struct ipqess *ess)
++{
++	u32 *p;
++	u32 stat;
++	int i;
++
++	lockdep_assert_held(&ess->stats_lock);
++
++	p = (u32 *)&ess->ipqess_stats;
++	for (i = 0; i < IPQESS_MAX_TX_QUEUE; i++) {
++		stat = ipqess_r32(ess, IPQESS_REG_TX_STAT_PKT_Q(i));
++		*p += stat;
++		p++;
++	}
++
++	for (i = 0; i < IPQESS_MAX_TX_QUEUE; i++) {
++		stat = ipqess_r32(ess, IPQESS_REG_TX_STAT_BYTE_Q(i));
++		*p += stat;
++		p++;
++	}
++
++	for (i = 0; i < IPQESS_MAX_RX_QUEUE; i++) {
++		stat = ipqess_r32(ess, IPQESS_REG_RX_STAT_PKT_Q(i));
++		*p += stat;
++		p++;
++	}
++
++	for (i = 0; i < IPQESS_MAX_RX_QUEUE; i++) {
++		stat = ipqess_r32(ess, IPQESS_REG_RX_STAT_BYTE_Q(i));
++		*p += stat;
++		p++;
++	}
++}
++
++static int ipqess_tx_ring_alloc(struct ipqess *ess)
++{
++	struct device *dev = &ess->pdev->dev;
++	int i;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		struct ipqess_tx_ring *tx_ring = &ess->tx_ring[i];
++		size_t size;
++		u32 idx;
++
++		tx_ring->ess = ess;
++		tx_ring->ring_id = i;
++		tx_ring->idx = i * 4;
++		tx_ring->count = IPQESS_TX_RING_SIZE;
++		tx_ring->nq = netdev_get_tx_queue(ess->netdev, i);
++
++		size = sizeof(struct ipqess_buf) * IPQESS_TX_RING_SIZE;
++		tx_ring->buf = devm_kzalloc(dev, size, GFP_KERNEL);
++		if (!tx_ring->buf)
++			return -ENOMEM;
++
++		size = sizeof(struct ipqess_tx_desc) * IPQESS_TX_RING_SIZE;
++		tx_ring->hw_desc = dmam_alloc_coherent(dev, size, &tx_ring->dma,
++						       GFP_KERNEL);
++		if (!tx_ring->hw_desc)
++			return -ENOMEM;
++
++		ipqess_w32(ess, IPQESS_REG_TPD_BASE_ADDR_Q(tx_ring->idx),
++			   (u32)tx_ring->dma);
++
++		idx = ipqess_r32(ess, IPQESS_REG_TPD_IDX_Q(tx_ring->idx));
++		idx >>= IPQESS_TPD_CONS_IDX_SHIFT; /* need u32 here */
++		idx &= 0xffff;
++		tx_ring->head = idx;
++		tx_ring->tail = idx;
++
++		ipqess_m32(ess, IPQESS_TPD_PROD_IDX_MASK << IPQESS_TPD_PROD_IDX_SHIFT,
++			   idx, IPQESS_REG_TPD_IDX_Q(tx_ring->idx));
++		ipqess_w32(ess, IPQESS_REG_TX_SW_CONS_IDX_Q(tx_ring->idx), idx);
++		ipqess_w32(ess, IPQESS_REG_TPD_RING_SIZE, IPQESS_TX_RING_SIZE);
++	}
++
++	return 0;
++}
++
++static int ipqess_tx_unmap_and_free(struct device *dev, struct ipqess_buf *buf)
++{
++	int len = 0;
++
++	if (buf->flags & IPQESS_DESC_SINGLE)
++		dma_unmap_single(dev, buf->dma,	buf->length, DMA_TO_DEVICE);
++	else if (buf->flags & IPQESS_DESC_PAGE)
++		dma_unmap_page(dev, buf->dma, buf->length, DMA_TO_DEVICE);
++
++	if (buf->flags & IPQESS_DESC_LAST) {
++		len = buf->skb->len;
++		dev_kfree_skb_any(buf->skb);
++	}
++
++	buf->flags = 0;
++
++	return len;
++}
++
++static void ipqess_tx_ring_free(struct ipqess *ess)
++{
++	int i;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		int j;
++
++		if (ess->tx_ring[i].hw_desc)
++			continue;
++
++		for (j = 0; j < IPQESS_TX_RING_SIZE; j++) {
++			struct ipqess_buf *buf = &ess->tx_ring[i].buf[j];
++
++			ipqess_tx_unmap_and_free(&ess->pdev->dev, buf);
++		}
++
++		ess->tx_ring[i].buf = NULL;
++	}
++}
++
++static int ipqess_rx_buf_prepare(struct ipqess_buf *buf,
++				 struct ipqess_rx_ring *rx_ring)
++{
++	memset(buf->skb->data, 0, sizeof(struct ipqess_rx_desc));
++
++	buf->dma = dma_map_single(rx_ring->ppdev, buf->skb->data,
++				  IPQESS_RX_HEAD_BUFF_SIZE, DMA_FROM_DEVICE);
++	if (dma_mapping_error(rx_ring->ppdev, buf->dma)) {
++		dev_kfree_skb_any(buf->skb);
++		buf->skb = NULL;
++		return -EFAULT;
++	}
++
++	buf->length = IPQESS_RX_HEAD_BUFF_SIZE;
++	rx_ring->hw_desc[rx_ring->head] = (struct ipqess_rx_desc *)buf->dma;
++	rx_ring->head = (rx_ring->head + 1) % IPQESS_RX_RING_SIZE;
++
++	ipqess_m32(rx_ring->ess, IPQESS_RFD_PROD_IDX_BITS,
++		   (rx_ring->head + IPQESS_RX_RING_SIZE - 1) % IPQESS_RX_RING_SIZE,
++		   IPQESS_REG_RFD_IDX_Q(rx_ring->idx));
++
++	return 0;
++}
++
++/* locking is handled by the caller */
++static int ipqess_rx_buf_alloc_napi(struct ipqess_rx_ring *rx_ring)
++{
++	struct ipqess_buf *buf = &rx_ring->buf[rx_ring->head];
++
++	buf->skb = napi_alloc_skb(&rx_ring->napi_rx, IPQESS_RX_HEAD_BUFF_SIZE);
++	if (!buf->skb)
++		return -ENOMEM;
++
++	return ipqess_rx_buf_prepare(buf, rx_ring);
++}
++
++static int ipqess_rx_buf_alloc(struct ipqess_rx_ring *rx_ring)
++{
++	struct ipqess_buf *buf = &rx_ring->buf[rx_ring->head];
++
++	buf->skb = netdev_alloc_skb_ip_align(rx_ring->ess->netdev,
++					     IPQESS_RX_HEAD_BUFF_SIZE);
++
++	if (!buf->skb)
++		return -ENOMEM;
++
++	return ipqess_rx_buf_prepare(buf, rx_ring);
++}
++
++static void ipqess_refill_work(struct work_struct *work)
++{
++	struct ipqess_rx_ring_refill *rx_refill = container_of(work,
++		struct ipqess_rx_ring_refill, refill_work);
++	struct ipqess_rx_ring *rx_ring = rx_refill->rx_ring;
++	int refill = 0;
++
++	/* don't let this loop by accident. */
++	while (atomic_dec_and_test(&rx_ring->refill_count)) {
++		napi_disable(&rx_ring->napi_rx);
++		if (ipqess_rx_buf_alloc(rx_ring)) {
++			refill++;
++			dev_dbg(rx_ring->ppdev,
++				"Not all buffers were reallocated");
++		}
++		napi_enable(&rx_ring->napi_rx);
++	}
++
++	if (atomic_add_return(refill, &rx_ring->refill_count))
++		schedule_work(&rx_refill->refill_work);
++}
++
++static int ipqess_rx_ring_alloc(struct ipqess *ess)
++{
++	int i;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		int j;
++
++		ess->rx_ring[i].ess = ess;
++		ess->rx_ring[i].ppdev = &ess->pdev->dev;
++		ess->rx_ring[i].ring_id = i;
++		ess->rx_ring[i].idx = i * 2;
++
++		ess->rx_ring[i].buf = devm_kzalloc(&ess->pdev->dev,
++						   sizeof(struct ipqess_buf) * IPQESS_RX_RING_SIZE,
++						   GFP_KERNEL);
++
++		if (!ess->rx_ring[i].buf)
++			return -ENOMEM;
++
++		ess->rx_ring[i].hw_desc =
++			dmam_alloc_coherent(&ess->pdev->dev,
++					    sizeof(struct ipqess_rx_desc) * IPQESS_RX_RING_SIZE,
++					    &ess->rx_ring[i].dma, GFP_KERNEL);
++
++		if (!ess->rx_ring[i].hw_desc)
++			return -ENOMEM;
++
++		for (j = 0; j < IPQESS_RX_RING_SIZE; j++)
++			if (ipqess_rx_buf_alloc(&ess->rx_ring[i]) < 0)
++				return -ENOMEM;
++
++		ess->rx_refill[i].rx_ring = &ess->rx_ring[i];
++		INIT_WORK(&ess->rx_refill[i].refill_work, ipqess_refill_work);
++
++		ipqess_w32(ess, IPQESS_REG_RFD_BASE_ADDR_Q(ess->rx_ring[i].idx),
++			   (u32)(ess->rx_ring[i].dma));
++	}
++
++	ipqess_w32(ess, IPQESS_REG_RX_DESC0,
++		   (IPQESS_RX_HEAD_BUFF_SIZE << IPQESS_RX_BUF_SIZE_SHIFT) |
++		   (IPQESS_RX_RING_SIZE << IPQESS_RFD_RING_SIZE_SHIFT));
++
++	return 0;
++}
++
++static void ipqess_rx_ring_free(struct ipqess *ess)
++{
++	int i;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		int j;
++
++		cancel_work_sync(&ess->rx_refill[i].refill_work);
++		atomic_set(&ess->rx_ring[i].refill_count, 0);
++
++		for (j = 0; j < IPQESS_RX_RING_SIZE; j++) {
++			dma_unmap_single(&ess->pdev->dev,
++					 ess->rx_ring[i].buf[j].dma,
++					 ess->rx_ring[i].buf[j].length,
++					 DMA_FROM_DEVICE);
++			dev_kfree_skb_any(ess->rx_ring[i].buf[j].skb);
++		}
++	}
++}
++
++static struct net_device_stats *ipqess_get_stats(struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++
++	spin_lock(&ess->stats_lock);
++	ipqess_update_hw_stats(ess);
++	spin_unlock(&ess->stats_lock);
++
++	return &ess->stats;
++}
++
++static int ipqess_rx_poll(struct ipqess_rx_ring *rx_ring, int budget)
++{
++	u32 length = 0, num_desc, tail, rx_ring_tail;
++	int done = 0;
++
++	rx_ring_tail = rx_ring->tail;
++
++	tail = ipqess_r32(rx_ring->ess, IPQESS_REG_RFD_IDX_Q(rx_ring->idx));
++	tail >>= IPQESS_RFD_CONS_IDX_SHIFT;
++	tail &= IPQESS_RFD_CONS_IDX_MASK;
++
++	while (done < budget) {
++		struct ipqess_rx_desc *rd;
++		struct sk_buff *skb;
++
++		if (rx_ring_tail == tail)
++			break;
++
++		dma_unmap_single(rx_ring->ppdev,
++				 rx_ring->buf[rx_ring_tail].dma,
++				 rx_ring->buf[rx_ring_tail].length,
++				 DMA_FROM_DEVICE);
++
++		skb = xchg(&rx_ring->buf[rx_ring_tail].skb, NULL);
++		rd = (struct ipqess_rx_desc *)skb->data;
++		rx_ring_tail = IPQESS_NEXT_IDX(rx_ring_tail, IPQESS_RX_RING_SIZE);
++
++		/* Check if RRD is valid */
++		if (!(rd->rrd7 & cpu_to_le16(IPQESS_RRD_DESC_VALID))) {
++			num_desc = 1;
++			dev_kfree_skb_any(skb);
++			goto skip;
++		}
++
++		num_desc = le16_to_cpu(rd->rrd1) & IPQESS_RRD_NUM_RFD_MASK;
++		length = le16_to_cpu(rd->rrd6) & IPQESS_RRD_PKT_SIZE_MASK;
++
++		skb_reserve(skb, IPQESS_RRD_SIZE);
++		if (num_desc > 1) {
++			struct sk_buff *skb_prev = NULL;
++			int size_remaining;
++			int i;
++
++			skb->data_len = 0;
++			skb->tail += (IPQESS_RX_HEAD_BUFF_SIZE - IPQESS_RRD_SIZE);
++			skb->len = length;
++			skb->truesize = length;
++			size_remaining = length - (IPQESS_RX_HEAD_BUFF_SIZE - IPQESS_RRD_SIZE);
++
++			for (i = 1; i < num_desc; i++) {
++				struct sk_buff *skb_temp = rx_ring->buf[rx_ring_tail].skb;
++
++				dma_unmap_single(rx_ring->ppdev,
++						 rx_ring->buf[rx_ring_tail].dma,
++						 rx_ring->buf[rx_ring_tail].length,
++						 DMA_FROM_DEVICE);
++
++				skb_put(skb_temp, min(size_remaining, IPQESS_RX_HEAD_BUFF_SIZE));
++				if (skb_prev)
++					skb_prev->next = rx_ring->buf[rx_ring_tail].skb;
++				else
++					skb_shinfo(skb)->frag_list = rx_ring->buf[rx_ring_tail].skb;
++				skb_prev = rx_ring->buf[rx_ring_tail].skb;
++				rx_ring->buf[rx_ring_tail].skb->next = NULL;
++
++				skb->data_len += rx_ring->buf[rx_ring_tail].skb->len;
++				size_remaining -= rx_ring->buf[rx_ring_tail].skb->len;
++
++				rx_ring_tail = IPQESS_NEXT_IDX(rx_ring_tail, IPQESS_RX_RING_SIZE);
++			}
++
++		} else {
++			skb_put(skb, length);
++		}
++
++		skb->dev = rx_ring->ess->netdev;
++		skb->protocol = eth_type_trans(skb, rx_ring->ess->netdev);
++		skb_record_rx_queue(skb, rx_ring->ring_id);
++
++		if (rd->rrd6 & cpu_to_le16(IPQESS_RRD_CSUM_FAIL_MASK))
++			skb_checksum_none_assert(skb);
++		else
++			skb->ip_summed = CHECKSUM_UNNECESSARY;
++
++		if (rd->rrd7 & cpu_to_le16(IPQESS_RRD_CVLAN))
++			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
++					       le16_to_cpu(rd->rrd4));
++		else if (rd->rrd1 & cpu_to_le16(IPQESS_RRD_SVLAN))
++			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021AD),
++					       le16_to_cpu(rd->rrd4));
++
++		napi_gro_receive(&rx_ring->napi_rx, skb);
++
++		rx_ring->ess->stats.rx_packets++;
++		rx_ring->ess->stats.rx_bytes += length;
++
++		done++;
++skip:
++
++		num_desc += atomic_xchg(&rx_ring->refill_count, 0);
++		while (num_desc) {
++			if (ipqess_rx_buf_alloc_napi(rx_ring)) {
++				num_desc = atomic_add_return(num_desc,
++							     &rx_ring->refill_count);
++				if (num_desc >= DIV_ROUND_UP(IPQESS_RX_RING_SIZE * 4, 7))
++					schedule_work(&rx_ring->ess->rx_refill[rx_ring->ring_id].refill_work);
++				break;
++			}
++			num_desc--;
++		}
++	}
++
++	ipqess_w32(rx_ring->ess, IPQESS_REG_RX_SW_CONS_IDX_Q(rx_ring->idx),
++		   rx_ring_tail);
++	rx_ring->tail = rx_ring_tail;
++
++	return done;
++}
++
++static int ipqess_tx_complete(struct ipqess_tx_ring *tx_ring, int budget)
++{
++	int total = 0, ret;
++	int done = 0;
++	u32 tail;
++
++	tail = ipqess_r32(tx_ring->ess, IPQESS_REG_TPD_IDX_Q(tx_ring->idx));
++	tail >>= IPQESS_TPD_CONS_IDX_SHIFT;
++	tail &= IPQESS_TPD_CONS_IDX_MASK;
++
++	do {
++		ret = ipqess_tx_unmap_and_free(&tx_ring->ess->pdev->dev,
++					       &tx_ring->buf[tx_ring->tail]);
++		tx_ring->tail = IPQESS_NEXT_IDX(tx_ring->tail, tx_ring->count);
++
++		total += ret;
++	} while ((++done < budget) && (tx_ring->tail != tail));
++
++	ipqess_w32(tx_ring->ess, IPQESS_REG_TX_SW_CONS_IDX_Q(tx_ring->idx),
++		   tx_ring->tail);
++
++	if (netif_tx_queue_stopped(tx_ring->nq)) {
++		netdev_dbg(tx_ring->ess->netdev, "waking up tx queue %d\n",
++			   tx_ring->idx);
++		netif_tx_wake_queue(tx_ring->nq);
++	}
++
++	netdev_tx_completed_queue(tx_ring->nq, done, total);
++
++	return done;
++}
++
++static int ipqess_tx_napi(struct napi_struct *napi, int budget)
++{
++	struct ipqess_tx_ring *tx_ring = container_of(napi, struct ipqess_tx_ring,
++						    napi_tx);
++	int work_done = 0;
++	u32 tx_status;
++
++	tx_status = ipqess_r32(tx_ring->ess, IPQESS_REG_TX_ISR);
++	tx_status &= BIT(tx_ring->idx);
++
++	work_done = ipqess_tx_complete(tx_ring, budget);
++
++	ipqess_w32(tx_ring->ess, IPQESS_REG_TX_ISR, tx_status);
++
++	if (likely(work_done < budget)) {
++		if (napi_complete_done(napi, work_done))
++			ipqess_w32(tx_ring->ess,
++				   IPQESS_REG_TX_INT_MASK_Q(tx_ring->idx), 0x1);
++	}
++
++	return work_done;
++}
++
++static int ipqess_rx_napi(struct napi_struct *napi, int budget)
++{
++	struct ipqess_rx_ring *rx_ring = container_of(napi, struct ipqess_rx_ring,
++						    napi_rx);
++	struct ipqess *ess = rx_ring->ess;
++	u32 rx_mask = BIT(rx_ring->idx);
++	int remaining_budget = budget;
++	int rx_done;
++	u32 status;
++
++	do {
++		ipqess_w32(ess, IPQESS_REG_RX_ISR, rx_mask);
++		rx_done = ipqess_rx_poll(rx_ring, remaining_budget);
++		remaining_budget -= rx_done;
++
++		status = ipqess_r32(ess, IPQESS_REG_RX_ISR);
++	} while (remaining_budget > 0 && (status & rx_mask));
++
++	if (remaining_budget <= 0)
++		return budget;
++
++	if (napi_complete_done(napi, budget - remaining_budget))
++		ipqess_w32(ess, IPQESS_REG_RX_INT_MASK_Q(rx_ring->idx), 0x1);
++
++	return budget - remaining_budget;
++}
++
++static irqreturn_t ipqess_interrupt_tx(int irq, void *priv)
++{
++	struct ipqess_tx_ring *tx_ring = (struct ipqess_tx_ring *)priv;
++
++	if (likely(napi_schedule_prep(&tx_ring->napi_tx))) {
++		__napi_schedule(&tx_ring->napi_tx);
++		ipqess_w32(tx_ring->ess, IPQESS_REG_TX_INT_MASK_Q(tx_ring->idx),
++			   0x0);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t ipqess_interrupt_rx(int irq, void *priv)
++{
++	struct ipqess_rx_ring *rx_ring = (struct ipqess_rx_ring *)priv;
++
++	if (likely(napi_schedule_prep(&rx_ring->napi_rx))) {
++		__napi_schedule(&rx_ring->napi_rx);
++		ipqess_w32(rx_ring->ess, IPQESS_REG_RX_INT_MASK_Q(rx_ring->idx),
++			   0x0);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void ipqess_irq_enable(struct ipqess *ess)
++{
++	int i;
++
++	ipqess_w32(ess, IPQESS_REG_RX_ISR, 0xff);
++	ipqess_w32(ess, IPQESS_REG_TX_ISR, 0xffff);
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		ipqess_w32(ess, IPQESS_REG_RX_INT_MASK_Q(ess->rx_ring[i].idx), 1);
++		ipqess_w32(ess, IPQESS_REG_TX_INT_MASK_Q(ess->tx_ring[i].idx), 1);
++	}
++}
++
++static void ipqess_irq_disable(struct ipqess *ess)
++{
++	int i;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		ipqess_w32(ess, IPQESS_REG_RX_INT_MASK_Q(ess->rx_ring[i].idx), 0);
++		ipqess_w32(ess, IPQESS_REG_TX_INT_MASK_Q(ess->tx_ring[i].idx), 0);
++	}
++}
++
++static int ipqess_init(struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	struct device_node *of_node = ess->pdev->dev.of_node;
++
++	return phylink_of_phy_connect(ess->phylink, of_node, 0);
++}
++
++static void ipqess_uninit(struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++
++	phylink_disconnect_phy(ess->phylink);
++}
++
++static int ipqess_open(struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	int i, err;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		int qid;
++
++		qid = ess->tx_ring[i].idx;
++		err = devm_request_irq(&netdev->dev, ess->tx_irq[qid],
++				       ipqess_interrupt_tx, 0,
++				       ess->tx_irq_names[qid],
++				       &ess->tx_ring[i]);
++		if (err)
++			return err;
++
++		qid = ess->rx_ring[i].idx;
++		err = devm_request_irq(&netdev->dev, ess->rx_irq[qid],
++				       ipqess_interrupt_rx, 0,
++				       ess->rx_irq_names[qid],
++				       &ess->rx_ring[i]);
++		if (err)
++			return err;
++
++		napi_enable(&ess->tx_ring[i].napi_tx);
++		napi_enable(&ess->rx_ring[i].napi_rx);
++	}
++
++	ipqess_irq_enable(ess);
++	phylink_start(ess->phylink);
++	netif_tx_start_all_queues(netdev);
++
++	return 0;
++}
++
++static int ipqess_stop(struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	int i;
++
++	netif_tx_stop_all_queues(netdev);
++	phylink_stop(ess->phylink);
++	ipqess_irq_disable(ess);
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		napi_disable(&ess->tx_ring[i].napi_tx);
++		napi_disable(&ess->rx_ring[i].napi_rx);
++	}
++
++	return 0;
++}
++
++static int ipqess_do_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++
++	return phylink_mii_ioctl(ess->phylink, ifr, cmd);
++}
++
++static u16 ipqess_tx_desc_available(struct ipqess_tx_ring *tx_ring)
++{
++	u16 count = 0;
++
++	if (tx_ring->tail <= tx_ring->head)
++		count = IPQESS_TX_RING_SIZE;
++
++	count += tx_ring->tail - tx_ring->head - 1;
++
++	return count;
++}
++
++static int ipqess_cal_txd_req(struct sk_buff *skb)
++{
++	int tpds;
++
++	/* one TPD for the header, and one for each fragments */
++	tpds = 1 + skb_shinfo(skb)->nr_frags;
++	if (skb_is_gso(skb) && skb_is_gso_v6(skb)) {
++		/* for LSOv2 one extra TPD is needed */
++		tpds++;
++	}
++
++	return tpds;
++}
++
++static struct ipqess_buf *ipqess_get_tx_buffer(struct ipqess_tx_ring *tx_ring,
++					       struct ipqess_tx_desc *desc)
++{
++	return &tx_ring->buf[desc - tx_ring->hw_desc];
++}
++
++static struct ipqess_tx_desc *ipqess_tx_desc_next(struct ipqess_tx_ring *tx_ring)
++{
++	struct ipqess_tx_desc *desc;
++
++	desc = &tx_ring->hw_desc[tx_ring->head];
++	tx_ring->head = IPQESS_NEXT_IDX(tx_ring->head, tx_ring->count);
++
++	return desc;
++}
++
++static void ipqess_rollback_tx(struct ipqess *eth,
++			       struct ipqess_tx_desc *first_desc, int ring_id)
++{
++	struct ipqess_tx_ring *tx_ring = &eth->tx_ring[ring_id];
++	struct ipqess_tx_desc *desc = NULL;
++	struct ipqess_buf *buf;
++	u16 start_index, index;
++
++	start_index = first_desc - tx_ring->hw_desc;
++
++	index = start_index;
++	while (index != tx_ring->head) {
++		desc = &tx_ring->hw_desc[index];
++		buf = &tx_ring->buf[index];
++		ipqess_tx_unmap_and_free(&eth->pdev->dev, buf);
++		memset(desc, 0, sizeof(*desc));
++		if (++index == tx_ring->count)
++			index = 0;
++	}
++	tx_ring->head = start_index;
++}
++
++static int ipqess_tx_map_and_fill(struct ipqess_tx_ring *tx_ring,
++				  struct sk_buff *skb)
++{
++	struct ipqess_tx_desc *desc = NULL, *first_desc = NULL;
++	u32 word1 = 0, word3 = 0, lso_word1 = 0, svlan_tag = 0;
++	struct platform_device *pdev = tx_ring->ess->pdev;
++	struct ipqess_buf *buf = NULL;
++	u16 len;
++	int i;
++
++	if (skb_is_gso(skb)) {
++		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4) {
++			lso_word1 |= IPQESS_TPD_IPV4_EN;
++			ip_hdr(skb)->check = 0;
++			tcp_hdr(skb)->check = ~csum_tcpudp_magic(ip_hdr(skb)->saddr,
++								 ip_hdr(skb)->daddr,
++								 0, IPPROTO_TCP, 0);
++		} else if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6) {
++			lso_word1 |= IPQESS_TPD_LSO_V2_EN;
++			ipv6_hdr(skb)->payload_len = 0;
++			tcp_hdr(skb)->check = ~csum_ipv6_magic(&ipv6_hdr(skb)->saddr,
++							       &ipv6_hdr(skb)->daddr,
++							       0, IPPROTO_TCP, 0);
++		}
++
++		lso_word1 |= IPQESS_TPD_LSO_EN |
++			     ((skb_shinfo(skb)->gso_size & IPQESS_TPD_MSS_MASK) <<
++							   IPQESS_TPD_MSS_SHIFT) |
++			     (skb_transport_offset(skb) << IPQESS_TPD_HDR_SHIFT);
++	} else if (likely(skb->ip_summed == CHECKSUM_PARTIAL)) {
++		u8 css, cso;
++
++		cso = skb_checksum_start_offset(skb);
++		css = cso + skb->csum_offset;
++
++		word1 |= (IPQESS_TPD_CUSTOM_CSUM_EN);
++		word1 |= (cso >> 1) << IPQESS_TPD_HDR_SHIFT;
++		word1 |= ((css >> 1) << IPQESS_TPD_CUSTOM_CSUM_SHIFT);
++	}
++
++	if (skb_vlan_tag_present(skb)) {
++		switch (skb->vlan_proto) {
++		case htons(ETH_P_8021Q):
++			word3 |= BIT(IPQESS_TX_INS_CVLAN);
++			word3 |= skb_vlan_tag_get(skb) << IPQESS_TX_CVLAN_TAG_SHIFT;
++			break;
++		case htons(ETH_P_8021AD):
++			word1 |= BIT(IPQESS_TX_INS_SVLAN);
++			svlan_tag = skb_vlan_tag_get(skb);
++			break;
++		default:
++			dev_err(&pdev->dev, "no ctag or stag present\n");
++			goto vlan_tag_error;
++		}
++	}
++
++	if (eth_type_vlan(skb->protocol))
++		word1 |= IPQESS_TPD_VLAN_TAGGED;
++
++	if (skb->protocol == htons(ETH_P_PPP_SES))
++		word1 |= IPQESS_TPD_PPPOE_EN;
++
++	len = skb_headlen(skb);
++
++	first_desc = ipqess_tx_desc_next(tx_ring);
++	desc = first_desc;
++	if (lso_word1 & IPQESS_TPD_LSO_V2_EN) {
++		desc->addr = cpu_to_le32(skb->len);
++		desc->word1 = cpu_to_le32(word1 | lso_word1);
++		desc->svlan_tag = cpu_to_le16(svlan_tag);
++		desc->word3 = cpu_to_le32(word3);
++		desc = ipqess_tx_desc_next(tx_ring);
++	}
++
++	buf = ipqess_get_tx_buffer(tx_ring, desc);
++	buf->length = len;
++	buf->dma = dma_map_single(&pdev->dev, skb->data, len, DMA_TO_DEVICE);
++
++	if (dma_mapping_error(&pdev->dev, buf->dma))
++		goto dma_error;
++
++	desc->addr = cpu_to_le32(buf->dma);
++	desc->len  = cpu_to_le16(len);
++
++	buf->flags |= IPQESS_DESC_SINGLE;
++	desc->word1 = cpu_to_le32(word1 | lso_word1);
++	desc->svlan_tag = cpu_to_le16(svlan_tag);
++	desc->word3 = cpu_to_le32(word3);
++
++	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
++		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
++
++		len = skb_frag_size(frag);
++		desc = ipqess_tx_desc_next(tx_ring);
++		buf = ipqess_get_tx_buffer(tx_ring, desc);
++		buf->length = len;
++		buf->flags |= IPQESS_DESC_PAGE;
++		buf->dma = skb_frag_dma_map(&pdev->dev, frag, 0, len,
++					    DMA_TO_DEVICE);
++
++		if (dma_mapping_error(&pdev->dev, buf->dma))
++			goto dma_error;
++
++		desc->addr = cpu_to_le32(buf->dma);
++		desc->len  = cpu_to_le16(len);
++		desc->svlan_tag = cpu_to_le16(svlan_tag);
++		desc->word1 = cpu_to_le32(word1 | lso_word1);
++		desc->word3 = cpu_to_le32(word3);
++	}
++	desc->word1 |= cpu_to_le32(1 << IPQESS_TPD_EOP_SHIFT);
++	buf->skb = skb;
++	buf->flags |= IPQESS_DESC_LAST;
++
++	return 0;
++
++dma_error:
++	ipqess_rollback_tx(tx_ring->ess, first_desc, tx_ring->ring_id);
++	dev_err(&pdev->dev, "TX DMA map failed\n");
++
++vlan_tag_error:
++	return -ENOMEM;
++}
++
++static void ipqess_kick_tx(struct ipqess_tx_ring *tx_ring)
++{
++	/* Ensure that all TPDs has been written completely */
++	dma_wmb();
++
++	/* update software producer index */
++	ipqess_w32(tx_ring->ess, IPQESS_REG_TPD_IDX_Q(tx_ring->idx),
++		   tx_ring->head);
++}
++
++static netdev_tx_t ipqess_xmit(struct sk_buff *skb, struct net_device *netdev)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	struct ipqess_tx_ring *tx_ring;
++	int avail;
++	int tx_num;
++	int ret;
++
++	tx_ring = &ess->tx_ring[skb_get_queue_mapping(skb)];
++	tx_num = ipqess_cal_txd_req(skb);
++	avail = ipqess_tx_desc_available(tx_ring);
++	if (avail < tx_num) {
++		netdev_dbg(netdev,
++			   "stopping tx queue %d, avail=%d req=%d im=%x\n",
++			   tx_ring->idx, avail, tx_num,
++			   ipqess_r32(tx_ring->ess,
++				      IPQESS_REG_TX_INT_MASK_Q(tx_ring->idx)));
++		netif_tx_stop_queue(tx_ring->nq);
++		ipqess_w32(tx_ring->ess, IPQESS_REG_TX_INT_MASK_Q(tx_ring->idx), 0x1);
++		ipqess_kick_tx(tx_ring);
++		return NETDEV_TX_BUSY;
++	}
++
++	ret = ipqess_tx_map_and_fill(tx_ring, skb);
++	if (ret) {
++		dev_kfree_skb_any(skb);
++		ess->stats.tx_errors++;
++		goto err_out;
++	}
++
++	ess->stats.tx_packets++;
++	ess->stats.tx_bytes += skb->len;
++	netdev_tx_sent_queue(tx_ring->nq, skb->len);
++
++	if (!netdev_xmit_more() || netif_xmit_stopped(tx_ring->nq))
++		ipqess_kick_tx(tx_ring);
++
++err_out:
++	return NETDEV_TX_OK;
++}
++
++static int ipqess_set_mac_address(struct net_device *netdev, void *p)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	const char *macaddr = netdev->dev_addr;
++	int ret = eth_mac_addr(netdev, p);
++
++	if (ret)
++		return ret;
++
++	ipqess_w32(ess, IPQESS_REG_MAC_CTRL1, (macaddr[0] << 8) | macaddr[1]);
++	ipqess_w32(ess, IPQESS_REG_MAC_CTRL0,
++		   (macaddr[2] << 24) | (macaddr[3] << 16) | (macaddr[4] << 8) |
++		    macaddr[5]);
++
++	return 0;
++}
++
++static void ipqess_tx_timeout(struct net_device *netdev, unsigned int txq_id)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	struct ipqess_tx_ring *tr = &ess->tx_ring[txq_id];
++
++	netdev_warn(netdev, "TX timeout on queue %d\n", tr->idx);
++}
++
++static const struct net_device_ops ipqess_axi_netdev_ops = {
++	.ndo_init		= ipqess_init,
++	.ndo_uninit		= ipqess_uninit,
++	.ndo_open		= ipqess_open,
++	.ndo_stop		= ipqess_stop,
++	.ndo_eth_ioctl		= ipqess_do_ioctl,
++	.ndo_start_xmit		= ipqess_xmit,
++	.ndo_get_stats		= ipqess_get_stats,
++	.ndo_set_mac_address	= ipqess_set_mac_address,
++	.ndo_tx_timeout		= ipqess_tx_timeout,
++};
++
++static void ipqess_hw_stop(struct ipqess *ess)
++{
++	int i;
++
++	/* disable all RX queue IRQs */
++	for (i = 0; i < IPQESS_MAX_RX_QUEUE; i++)
++		ipqess_w32(ess, IPQESS_REG_RX_INT_MASK_Q(i), 0);
++
++	/* disable all TX queue IRQs */
++	for (i = 0; i < IPQESS_MAX_TX_QUEUE; i++)
++		ipqess_w32(ess, IPQESS_REG_TX_INT_MASK_Q(i), 0);
++
++	/* disable all other IRQs */
++	ipqess_w32(ess, IPQESS_REG_MISC_IMR, 0);
++	ipqess_w32(ess, IPQESS_REG_WOL_IMR, 0);
++
++	/* clear the IRQ status registers */
++	ipqess_w32(ess, IPQESS_REG_RX_ISR, 0xff);
++	ipqess_w32(ess, IPQESS_REG_TX_ISR, 0xffff);
++	ipqess_w32(ess, IPQESS_REG_MISC_ISR, 0x1fff);
++	ipqess_w32(ess, IPQESS_REG_WOL_ISR, 0x1);
++	ipqess_w32(ess, IPQESS_REG_WOL_CTRL, 0);
++
++	/* disable RX and TX queues */
++	ipqess_m32(ess, IPQESS_RXQ_CTRL_EN_MASK, 0, IPQESS_REG_RXQ_CTRL);
++	ipqess_m32(ess, IPQESS_TXQ_CTRL_TXQ_EN, 0, IPQESS_REG_TXQ_CTRL);
++}
++
++static int ipqess_hw_init(struct ipqess *ess)
++{
++	int i, err;
++	u32 tmp;
++
++	ipqess_hw_stop(ess);
++
++	ipqess_m32(ess, BIT(IPQESS_INTR_SW_IDX_W_TYP_SHIFT),
++		   IPQESS_INTR_SW_IDX_W_TYPE << IPQESS_INTR_SW_IDX_W_TYP_SHIFT,
++		   IPQESS_REG_INTR_CTRL);
++
++	/* enable IRQ delay slot */
++	ipqess_w32(ess, IPQESS_REG_IRQ_MODRT_TIMER_INIT,
++		   (IPQESS_TX_IMT << IPQESS_IRQ_MODRT_TX_TIMER_SHIFT) |
++		   (IPQESS_RX_IMT << IPQESS_IRQ_MODRT_RX_TIMER_SHIFT));
++
++	/* Set Customer and Service VLAN TPIDs */
++	ipqess_w32(ess, IPQESS_REG_VLAN_CFG,
++		   (ETH_P_8021Q << IPQESS_VLAN_CFG_CVLAN_TPID_SHIFT) |
++		   (ETH_P_8021AD << IPQESS_VLAN_CFG_SVLAN_TPID_SHIFT));
++
++	/* Configure the TX Queue bursting */
++	ipqess_w32(ess, IPQESS_REG_TXQ_CTRL,
++		   (IPQESS_TPD_BURST << IPQESS_TXQ_NUM_TPD_BURST_SHIFT) |
++		   (IPQESS_TXF_BURST << IPQESS_TXQ_TXF_BURST_NUM_SHIFT) |
++		   IPQESS_TXQ_CTRL_TPD_BURST_EN);
++
++	/* Set RSS type */
++	ipqess_w32(ess, IPQESS_REG_RSS_TYPE,
++		   IPQESS_RSS_TYPE_IPV4TCP | IPQESS_RSS_TYPE_IPV6_TCP |
++		   IPQESS_RSS_TYPE_IPV4_UDP | IPQESS_RSS_TYPE_IPV6UDP |
++		   IPQESS_RSS_TYPE_IPV4 | IPQESS_RSS_TYPE_IPV6);
++
++	/* Set RFD ring burst and threshold */
++	ipqess_w32(ess, IPQESS_REG_RX_DESC1,
++		   (IPQESS_RFD_BURST << IPQESS_RXQ_RFD_BURST_NUM_SHIFT) |
++		   (IPQESS_RFD_THR << IPQESS_RXQ_RFD_PF_THRESH_SHIFT) |
++		   (IPQESS_RFD_LTHR << IPQESS_RXQ_RFD_LOW_THRESH_SHIFT));
++
++	/* Set Rx FIFO
++	 * - threshold to start to DMA data to host
++	 */
++	ipqess_w32(ess, IPQESS_REG_RXQ_CTRL,
++		   IPQESS_FIFO_THRESH_128_BYTE | IPQESS_RXQ_CTRL_RMV_VLAN);
++
++	err = ipqess_rx_ring_alloc(ess);
++	if (err)
++		return err;
++
++	err = ipqess_tx_ring_alloc(ess);
++	if (err)
++		goto err_rx_ring_free;
++
++	/* Load all of ring base addresses above into the dma engine */
++	ipqess_m32(ess, 0, BIT(IPQESS_LOAD_PTR_SHIFT), IPQESS_REG_TX_SRAM_PART);
++
++	/* Disable TX FIFO low watermark and high watermark */
++	ipqess_w32(ess, IPQESS_REG_TXF_WATER_MARK, 0);
++
++	/* Configure RSS indirection table.
++	 * 128 hash will be configured in the following
++	 * pattern: hash{0,1,2,3} = {Q0,Q2,Q4,Q6} respectively
++	 * and so on
++	 */
++	for (i = 0; i < IPQESS_NUM_IDT; i++)
++		ipqess_w32(ess, IPQESS_REG_RSS_IDT(i), IPQESS_RSS_IDT_VALUE);
++
++	/* Configure load balance mapping table.
++	 * 4 table entry will be configured according to the
++	 * following pattern: load_balance{0,1,2,3} = {Q0,Q1,Q3,Q4}
++	 * respectively.
++	 */
++	ipqess_w32(ess, IPQESS_REG_LB_RING, IPQESS_LB_REG_VALUE);
++
++	/* Configure Virtual queue for Tx rings */
++	ipqess_w32(ess, IPQESS_REG_VQ_CTRL0, IPQESS_VQ_REG_VALUE);
++	ipqess_w32(ess, IPQESS_REG_VQ_CTRL1, IPQESS_VQ_REG_VALUE);
++
++	/* Configure Max AXI Burst write size to 128 bytes*/
++	ipqess_w32(ess, IPQESS_REG_AXIW_CTRL_MAXWRSIZE,
++		   IPQESS_AXIW_MAXWRSIZE_VALUE);
++
++	/* Enable TX queues */
++	ipqess_m32(ess, 0, IPQESS_TXQ_CTRL_TXQ_EN, IPQESS_REG_TXQ_CTRL);
++
++	/* Enable RX queues */
++	tmp = 0;
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++)
++		tmp |= IPQESS_RXQ_CTRL_EN(ess->rx_ring[i].idx);
++
++	ipqess_m32(ess, IPQESS_RXQ_CTRL_EN_MASK, tmp, IPQESS_REG_RXQ_CTRL);
++
++	return 0;
++
++err_rx_ring_free:
++
++	ipqess_rx_ring_free(ess);
++	return err;
++}
++
++static void ipqess_mac_config(struct phylink_config *config, unsigned int mode,
++			      const struct phylink_link_state *state)
++{
++	/* Nothing to do, use fixed Internal mode */
++}
++
++static void ipqess_mac_link_down(struct phylink_config *config,
++				 unsigned int mode,
++				 phy_interface_t interface)
++{
++	/* Nothing to do, use fixed Internal mode */
++}
++
++static void ipqess_mac_link_up(struct phylink_config *config,
++			       struct phy_device *phy, unsigned int mode,
++			       phy_interface_t interface,
++			       int speed, int duplex,
++			       bool tx_pause, bool rx_pause)
++{
++	/* Nothing to do, use fixed Internal mode */
++}
++
++static struct phylink_mac_ops ipqess_phylink_mac_ops = {
++	.mac_config		= ipqess_mac_config,
++	.mac_link_up		= ipqess_mac_link_up,
++	.mac_link_down		= ipqess_mac_link_down,
++};
++
++static void ipqess_reset(struct ipqess *ess)
++{
++	reset_control_assert(ess->ess_rst);
++
++	mdelay(10);
++
++	reset_control_deassert(ess->ess_rst);
++
++	/* Waiting for all inner tables to be flushed and reinitialized.
++	 * This takes between 5 and 10 ms
++	 */
++
++	mdelay(10);
++}
++
++static int ipqess_axi_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct net_device *netdev;
++	phy_interface_t phy_mode;
++	struct ipqess *ess;
++	int i, err = 0;
++
++	netdev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(*ess),
++					 IPQESS_NETDEV_QUEUES,
++					 IPQESS_NETDEV_QUEUES);
++	if (!netdev)
++		return -ENOMEM;
++
++	ess = netdev_priv(netdev);
++	ess->netdev = netdev;
++	ess->pdev = pdev;
++	spin_lock_init(&ess->stats_lock);
++	SET_NETDEV_DEV(netdev, &pdev->dev);
++	platform_set_drvdata(pdev, netdev);
++
++	err = of_get_ethdev_address(np, netdev);
++	if (err) {
++		dev_dbg(&pdev->dev, "failed to get MAC address from DT: %d\n", err);
++		if (err == -EPROBE_DEFER)
++			return err;
++		eth_hw_addr_random(netdev);
++		dev_info(&pdev->dev, "using random MAC address %pM\n",
++			 netdev->dev_addr);
++	}
++
++	ess->hw_addr = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
++	if (IS_ERR(ess->hw_addr))
++		return PTR_ERR(ess->hw_addr);
++
++	err = of_get_phy_mode(np, &phy_mode);
++	if (err) {
++		dev_err(&pdev->dev, "incorrect phy-mode\n");
++		return err;
++	}
++
++	ess->ess_clk = devm_clk_get(&pdev->dev, NULL);
++	if (!IS_ERR(ess->ess_clk))
++		clk_prepare_enable(ess->ess_clk);
++
++	ess->ess_rst = devm_reset_control_get(&pdev->dev, NULL);
++	if (IS_ERR(ess->ess_rst))
++		goto err_clk;
++
++	ipqess_reset(ess);
++
++	ess->phylink_config.dev = &netdev->dev;
++	ess->phylink_config.type = PHYLINK_NETDEV;
++	ess->phylink_config.mac_capabilities = MAC_SYM_PAUSE | MAC_10 |
++					       MAC_100 | MAC_1000FD;
++
++	__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++		  ess->phylink_config.supported_interfaces);
++
++	ess->phylink = phylink_create(&ess->phylink_config,
++				      of_fwnode_handle(np), phy_mode,
++				      &ipqess_phylink_mac_ops);
++	if (IS_ERR(ess->phylink)) {
++		err = PTR_ERR(ess->phylink);
++		goto err_clk;
++	}
++
++	for (i = 0; i < IPQESS_MAX_TX_QUEUE; i++) {
++		ess->tx_irq[i] = platform_get_irq(pdev, i);
++		scnprintf(ess->tx_irq_names[i], sizeof(ess->tx_irq_names[i]),
++			  "%s:txq%d", pdev->name, i);
++	}
++
++	for (i = 0; i < IPQESS_MAX_RX_QUEUE; i++) {
++		ess->rx_irq[i] = platform_get_irq(pdev, i + IPQESS_MAX_TX_QUEUE);
++		scnprintf(ess->rx_irq_names[i], sizeof(ess->rx_irq_names[i]),
++			  "%s:rxq%d", pdev->name, i);
++	}
++
++	netdev->netdev_ops = &ipqess_axi_netdev_ops;
++	netdev->features = NETIF_F_HW_CSUM | NETIF_F_RXCSUM |
++			   NETIF_F_HW_VLAN_CTAG_RX |
++			   NETIF_F_HW_VLAN_CTAG_TX |
++			   NETIF_F_TSO | NETIF_F_GRO | NETIF_F_SG;
++	/* feature change is not supported yet */
++	netdev->hw_features = 0;
++	netdev->vlan_features = NETIF_F_HW_CSUM | NETIF_F_SG | NETIF_F_RXCSUM |
++				NETIF_F_TSO |
++				NETIF_F_GRO;
++	netdev->watchdog_timeo = 5 * HZ;
++	netdev->base_addr = (u32)ess->hw_addr;
++	netdev->max_mtu = 9000;
++	netdev->gso_max_segs = IPQESS_TX_RING_SIZE / 2;
++
++	ipqess_set_ethtool_ops(netdev);
++
++	err = ipqess_hw_init(ess);
++	if (err)
++		goto err_phylink;
++
++	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		netif_napi_add_tx(netdev, &ess->tx_ring[i].napi_tx, ipqess_tx_napi);
++		netif_napi_add(netdev, &ess->rx_ring[i].napi_rx, ipqess_rx_napi);
++	}
++
++	err = register_netdev(netdev);
++	if (err)
++		goto err_hw_stop;
++
++	return 0;
++
++err_hw_stop:
++	ipqess_hw_stop(ess);
++
++	ipqess_tx_ring_free(ess);
++	ipqess_rx_ring_free(ess);
++err_phylink:
++	phylink_destroy(ess->phylink);
++
++err_clk:
++	clk_disable_unprepare(ess->ess_clk);
++
++	return err;
++}
++
++static void ipqess_axi_remove(struct platform_device *pdev)
++{
++	const struct net_device *netdev = platform_get_drvdata(pdev);
++	struct ipqess *ess = netdev_priv(netdev);
++
++	unregister_netdev(ess->netdev);
++	ipqess_hw_stop(ess);
++
++	ipqess_tx_ring_free(ess);
++	ipqess_rx_ring_free(ess);
++
++	phylink_destroy(ess->phylink);
++	clk_disable_unprepare(ess->ess_clk);
++}
++
++static const struct of_device_id ipqess_of_mtable[] = {
++	{.compatible = "qcom,ipq4019-ess-edma" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, ipqess_of_mtable);
++
++static struct platform_driver ipqess_axi_driver = {
++	.driver = {
++		.name    = "ipqess-edma",
++		.of_match_table = ipqess_of_mtable,
++	},
++	.probe    = ipqess_axi_probe,
++	.remove_new   = ipqess_axi_remove,
++};
++
++module_platform_driver(ipqess_axi_driver);
++
++MODULE_AUTHOR("Qualcomm Atheros Inc");
++MODULE_AUTHOR("John Crispin <john@phrozen.org>");
++MODULE_AUTHOR("Christian Lamparter <chunkeey@gmail.com>");
++MODULE_AUTHOR("Gabor Juhos <j4g8y7@gmail.com>");
++MODULE_AUTHOR("Maxime Chevallier <maxime.chevallier@bootlin.com>");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.h
+@@ -0,0 +1,518 @@
++/* SPDX-License-Identifier: (GPL-2.0 OR ISC) */
++/* Copyright (c) 2014 - 2016, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2017 - 2018, John Crispin <john@phrozen.org>
++ * Copyright (c) 2018 - 2019, Christian Lamparter <chunkeey@gmail.com>
++ * Copyright (c) 2020 - 2021, Gabor Juhos <j4g8y7@gmail.com>
++ * Copyright (c) 2021 - 2022, Maxime Chevallier <maxime.chevallier@bootlin.com>
++ *
++ */
++
++#ifndef _IPQESS_H_
++#define _IPQESS_H_
++
++#define IPQESS_NETDEV_QUEUES	4
++
++#define IPQESS_TPD_EOP_SHIFT 31
++
++#define IPQESS_PORT_ID_SHIFT 12
++#define IPQESS_PORT_ID_MASK 0x7
++
++/* tpd word 3 bit 18-28 */
++#define IPQESS_TPD_PORT_BITMAP_SHIFT 18
++
++#define IPQESS_TPD_FROM_CPU_SHIFT 25
++
++#define IPQESS_RX_RING_SIZE 128
++#define IPQESS_RX_HEAD_BUFF_SIZE 1540
++#define IPQESS_TX_RING_SIZE 128
++#define IPQESS_MAX_RX_QUEUE 8
++#define IPQESS_MAX_TX_QUEUE 16
++
++/* Configurations */
++#define IPQESS_INTR_CLEAR_TYPE 0
++#define IPQESS_INTR_SW_IDX_W_TYPE 0
++#define IPQESS_FIFO_THRESH_TYPE 0
++#define IPQESS_RSS_TYPE 0
++#define IPQESS_RX_IMT 0x0020
++#define IPQESS_TX_IMT 0x0050
++#define IPQESS_TPD_BURST 5
++#define IPQESS_TXF_BURST 0x100
++#define IPQESS_RFD_BURST 8
++#define IPQESS_RFD_THR 16
++#define IPQESS_RFD_LTHR 0
++
++/* Flags used in transmit direction */
++#define IPQESS_DESC_LAST 0x1
++#define IPQESS_DESC_SINGLE 0x2
++#define IPQESS_DESC_PAGE 0x4
++
++struct ipqess_statistics {
++	u32 tx_q0_pkt;
++	u32 tx_q1_pkt;
++	u32 tx_q2_pkt;
++	u32 tx_q3_pkt;
++	u32 tx_q4_pkt;
++	u32 tx_q5_pkt;
++	u32 tx_q6_pkt;
++	u32 tx_q7_pkt;
++	u32 tx_q8_pkt;
++	u32 tx_q9_pkt;
++	u32 tx_q10_pkt;
++	u32 tx_q11_pkt;
++	u32 tx_q12_pkt;
++	u32 tx_q13_pkt;
++	u32 tx_q14_pkt;
++	u32 tx_q15_pkt;
++	u32 tx_q0_byte;
++	u32 tx_q1_byte;
++	u32 tx_q2_byte;
++	u32 tx_q3_byte;
++	u32 tx_q4_byte;
++	u32 tx_q5_byte;
++	u32 tx_q6_byte;
++	u32 tx_q7_byte;
++	u32 tx_q8_byte;
++	u32 tx_q9_byte;
++	u32 tx_q10_byte;
++	u32 tx_q11_byte;
++	u32 tx_q12_byte;
++	u32 tx_q13_byte;
++	u32 tx_q14_byte;
++	u32 tx_q15_byte;
++	u32 rx_q0_pkt;
++	u32 rx_q1_pkt;
++	u32 rx_q2_pkt;
++	u32 rx_q3_pkt;
++	u32 rx_q4_pkt;
++	u32 rx_q5_pkt;
++	u32 rx_q6_pkt;
++	u32 rx_q7_pkt;
++	u32 rx_q0_byte;
++	u32 rx_q1_byte;
++	u32 rx_q2_byte;
++	u32 rx_q3_byte;
++	u32 rx_q4_byte;
++	u32 rx_q5_byte;
++	u32 rx_q6_byte;
++	u32 rx_q7_byte;
++	u32 tx_desc_error;
++};
++
++struct ipqess_tx_desc {
++	__le16  len;
++	__le16  svlan_tag;
++	__le32  word1;
++	__le32  addr;
++	__le32  word3;
++} __aligned(16) __packed;
++
++struct ipqess_rx_desc {
++	__le16 rrd0;
++	__le16 rrd1;
++	__le16 rrd2;
++	__le16 rrd3;
++	__le16 rrd4;
++	__le16 rrd5;
++	__le16 rrd6;
++	__le16 rrd7;
++} __aligned(16) __packed;
++
++struct ipqess_buf {
++	struct sk_buff *skb;
++	dma_addr_t dma;
++	u32 flags;
++	u16 length;
++};
++
++struct ipqess_tx_ring {
++	struct napi_struct napi_tx;
++	u32 idx;
++	int ring_id;
++	struct ipqess *ess;
++	struct netdev_queue *nq;
++	struct ipqess_tx_desc *hw_desc;
++	struct ipqess_buf *buf;
++	dma_addr_t dma;
++	u16 count;
++	u16 head;
++	u16 tail;
++};
++
++struct ipqess_rx_ring {
++	struct napi_struct napi_rx;
++	u32 idx;
++	int ring_id;
++	struct ipqess *ess;
++	struct device *ppdev;
++	struct ipqess_rx_desc **hw_desc;
++	struct ipqess_buf *buf;
++	dma_addr_t dma;
++	u16 head;
++	u16 tail;
++	atomic_t refill_count;
++};
++
++struct ipqess_rx_ring_refill {
++	struct ipqess_rx_ring *rx_ring;
++	struct work_struct refill_work;
++};
++
++#define IPQESS_IRQ_NAME_LEN	32
++
++struct ipqess {
++	struct net_device *netdev;
++	void __iomem *hw_addr;
++
++	struct clk *ess_clk;
++	struct reset_control *ess_rst;
++
++	struct ipqess_rx_ring rx_ring[IPQESS_NETDEV_QUEUES];
++
++	struct platform_device *pdev;
++	struct phylink *phylink;
++	struct phylink_config phylink_config;
++	struct ipqess_tx_ring tx_ring[IPQESS_NETDEV_QUEUES];
++
++	struct ipqess_statistics ipqess_stats;
++
++	/* Protects stats */
++	spinlock_t stats_lock;
++	struct net_device_stats stats;
++
++	struct ipqess_rx_ring_refill rx_refill[IPQESS_NETDEV_QUEUES];
++	u32 tx_irq[IPQESS_MAX_TX_QUEUE];
++	char tx_irq_names[IPQESS_MAX_TX_QUEUE][IPQESS_IRQ_NAME_LEN];
++	u32 rx_irq[IPQESS_MAX_RX_QUEUE];
++	char rx_irq_names[IPQESS_MAX_TX_QUEUE][IPQESS_IRQ_NAME_LEN];
++};
++
++void ipqess_set_ethtool_ops(struct net_device *netdev);
++void ipqess_update_hw_stats(struct ipqess *ess);
++
++/* register definition */
++#define IPQESS_REG_MAS_CTRL 0x0
++#define IPQESS_REG_TIMEOUT_CTRL 0x004
++#define IPQESS_REG_DBG0 0x008
++#define IPQESS_REG_DBG1 0x00C
++#define IPQESS_REG_SW_CTRL0 0x100
++#define IPQESS_REG_SW_CTRL1 0x104
++
++/* Interrupt Status Register */
++#define IPQESS_REG_RX_ISR 0x200
++#define IPQESS_REG_TX_ISR 0x208
++#define IPQESS_REG_MISC_ISR 0x210
++#define IPQESS_REG_WOL_ISR 0x218
++
++#define IPQESS_MISC_ISR_RX_URG_Q(x) (1 << (x))
++
++#define IPQESS_MISC_ISR_AXIR_TIMEOUT 0x00000100
++#define IPQESS_MISC_ISR_AXIR_ERR 0x00000200
++#define IPQESS_MISC_ISR_TXF_DEAD 0x00000400
++#define IPQESS_MISC_ISR_AXIW_ERR 0x00000800
++#define IPQESS_MISC_ISR_AXIW_TIMEOUT 0x00001000
++
++#define IPQESS_WOL_ISR 0x00000001
++
++/* Interrupt Mask Register */
++#define IPQESS_REG_MISC_IMR 0x214
++#define IPQESS_REG_WOL_IMR 0x218
++
++#define IPQESS_RX_IMR_NORMAL_MASK 0x1
++#define IPQESS_TX_IMR_NORMAL_MASK 0x1
++#define IPQESS_MISC_IMR_NORMAL_MASK 0x80001FFF
++#define IPQESS_WOL_IMR_NORMAL_MASK 0x1
++
++/* Edma receive consumer index */
++#define IPQESS_REG_RX_SW_CONS_IDX_Q(x) (0x220 + ((x) << 2)) /* x is the queue id */
++
++/* Edma transmit consumer index */
++#define IPQESS_REG_TX_SW_CONS_IDX_Q(x) (0x240 + ((x) << 2)) /* x is the queue id */
++
++/* IRQ Moderator Initial Timer Register */
++#define IPQESS_REG_IRQ_MODRT_TIMER_INIT 0x280
++#define IPQESS_IRQ_MODRT_TIMER_MASK 0xFFFF
++#define IPQESS_IRQ_MODRT_RX_TIMER_SHIFT 0
++#define IPQESS_IRQ_MODRT_TX_TIMER_SHIFT 16
++
++/* Interrupt Control Register */
++#define IPQESS_REG_INTR_CTRL 0x284
++#define IPQESS_INTR_CLR_TYP_SHIFT 0
++#define IPQESS_INTR_SW_IDX_W_TYP_SHIFT 1
++#define IPQESS_INTR_CLEAR_TYPE_W1 0
++#define IPQESS_INTR_CLEAR_TYPE_R 1
++
++/* RX Interrupt Mask Register */
++#define IPQESS_REG_RX_INT_MASK_Q(x) (0x300 + ((x) << 2)) /* x = queue id */
++
++/* TX Interrupt mask register */
++#define IPQESS_REG_TX_INT_MASK_Q(x) (0x340 + ((x) << 2)) /* x = queue id */
++
++/* Load Ptr Register
++ * Software sets this bit after the initialization of the head and tail
++ */
++#define IPQESS_REG_TX_SRAM_PART 0x400
++#define IPQESS_LOAD_PTR_SHIFT 16
++
++/* TXQ Control Register */
++#define IPQESS_REG_TXQ_CTRL 0x404
++#define IPQESS_TXQ_CTRL_IP_OPTION_EN 0x10
++#define IPQESS_TXQ_CTRL_TXQ_EN 0x20
++#define IPQESS_TXQ_CTRL_ENH_MODE 0x40
++#define IPQESS_TXQ_CTRL_LS_8023_EN 0x80
++#define IPQESS_TXQ_CTRL_TPD_BURST_EN 0x100
++#define IPQESS_TXQ_CTRL_LSO_BREAK_EN 0x200
++#define IPQESS_TXQ_NUM_TPD_BURST_MASK 0xF
++#define IPQESS_TXQ_TXF_BURST_NUM_MASK 0xFFFF
++#define IPQESS_TXQ_NUM_TPD_BURST_SHIFT 0
++#define IPQESS_TXQ_TXF_BURST_NUM_SHIFT 16
++
++#define	IPQESS_REG_TXF_WATER_MARK 0x408 /* In 8-bytes */
++#define IPQESS_TXF_WATER_MARK_MASK 0x0FFF
++#define IPQESS_TXF_LOW_WATER_MARK_SHIFT 0
++#define IPQESS_TXF_HIGH_WATER_MARK_SHIFT 16
++#define IPQESS_TXQ_CTRL_BURST_MODE_EN 0x80000000
++
++/* WRR Control Register */
++#define IPQESS_REG_WRR_CTRL_Q0_Q3 0x40c
++#define IPQESS_REG_WRR_CTRL_Q4_Q7 0x410
++#define IPQESS_REG_WRR_CTRL_Q8_Q11 0x414
++#define IPQESS_REG_WRR_CTRL_Q12_Q15 0x418
++
++/* Weight round robin(WRR), it takes queue as input, and computes
++ * starting bits where we need to write the weight for a particular
++ * queue
++ */
++#define IPQESS_WRR_SHIFT(x) (((x) * 5) % 20)
++
++/* Tx Descriptor Control Register */
++#define IPQESS_REG_TPD_RING_SIZE 0x41C
++#define IPQESS_TPD_RING_SIZE_SHIFT 0
++#define IPQESS_TPD_RING_SIZE_MASK 0xFFFF
++
++/* Transmit descriptor base address */
++#define IPQESS_REG_TPD_BASE_ADDR_Q(x) (0x420 + ((x) << 2)) /* x = queue id */
++
++/* TPD Index Register */
++#define IPQESS_REG_TPD_IDX_Q(x) (0x460 + ((x) << 2)) /* x = queue id */
++
++#define IPQESS_TPD_PROD_IDX_BITS 0x0000FFFF
++#define IPQESS_TPD_CONS_IDX_BITS 0xFFFF0000
++#define IPQESS_TPD_PROD_IDX_MASK 0xFFFF
++#define IPQESS_TPD_CONS_IDX_MASK 0xFFFF
++#define IPQESS_TPD_PROD_IDX_SHIFT 0
++#define IPQESS_TPD_CONS_IDX_SHIFT 16
++
++/* TX Virtual Queue Mapping Control Register */
++#define IPQESS_REG_VQ_CTRL0 0x4A0
++#define IPQESS_REG_VQ_CTRL1 0x4A4
++
++/* Virtual QID shift, it takes queue as input, and computes
++ * Virtual QID position in virtual qid control register
++ */
++#define IPQESS_VQ_ID_SHIFT(i) (((i) * 3) % 24)
++
++/* Virtual Queue Default Value */
++#define IPQESS_VQ_REG_VALUE 0x240240
++
++/* Tx side Port Interface Control Register */
++#define IPQESS_REG_PORT_CTRL 0x4A8
++#define IPQESS_PAD_EN_SHIFT 15
++
++/* Tx side VLAN Configuration Register */
++#define IPQESS_REG_VLAN_CFG 0x4AC
++
++#define IPQESS_VLAN_CFG_SVLAN_TPID_SHIFT 0
++#define IPQESS_VLAN_CFG_SVLAN_TPID_MASK 0xffff
++#define IPQESS_VLAN_CFG_CVLAN_TPID_SHIFT 16
++#define IPQESS_VLAN_CFG_CVLAN_TPID_MASK 0xffff
++
++#define IPQESS_TX_CVLAN 16
++#define IPQESS_TX_INS_CVLAN 17
++#define IPQESS_TX_CVLAN_TAG_SHIFT 0
++
++#define IPQESS_TX_SVLAN 14
++#define IPQESS_TX_INS_SVLAN 15
++#define IPQESS_TX_SVLAN_TAG_SHIFT 16
++
++/* Tx Queue Packet Statistic Register */
++#define IPQESS_REG_TX_STAT_PKT_Q(x) (0x700 + ((x) << 3)) /* x = queue id */
++
++#define IPQESS_TX_STAT_PKT_MASK 0xFFFFFF
++
++/* Tx Queue Byte Statistic Register */
++#define IPQESS_REG_TX_STAT_BYTE_Q(x) (0x704 + ((x) << 3)) /* x = queue id */
++
++/* Load Balance Based Ring Offset Register */
++#define IPQESS_REG_LB_RING 0x800
++#define IPQESS_LB_RING_ENTRY_MASK 0xff
++#define IPQESS_LB_RING_ID_MASK 0x7
++#define IPQESS_LB_RING_PROFILE_ID_MASK 0x3
++#define IPQESS_LB_RING_ENTRY_BIT_OFFSET 8
++#define IPQESS_LB_RING_ID_OFFSET 0
++#define IPQESS_LB_RING_PROFILE_ID_OFFSET 3
++#define IPQESS_LB_REG_VALUE 0x6040200
++
++/* Load Balance Priority Mapping Register */
++#define IPQESS_REG_LB_PRI_START 0x804
++#define IPQESS_REG_LB_PRI_END 0x810
++#define IPQESS_LB_PRI_REG_INC 4
++#define IPQESS_LB_PRI_ENTRY_BIT_OFFSET 4
++#define IPQESS_LB_PRI_ENTRY_MASK 0xf
++
++/* RSS Priority Mapping Register */
++#define IPQESS_REG_RSS_PRI 0x820
++#define IPQESS_RSS_PRI_ENTRY_MASK 0xf
++#define IPQESS_RSS_RING_ID_MASK 0x7
++#define IPQESS_RSS_PRI_ENTRY_BIT_OFFSET 4
++
++/* RSS Indirection Register */
++#define IPQESS_REG_RSS_IDT(x) (0x840 + ((x) << 2)) /* x = No. of indirection table */
++#define IPQESS_NUM_IDT 16
++#define IPQESS_RSS_IDT_VALUE 0x64206420
++
++/* Default RSS Ring Register */
++#define IPQESS_REG_DEF_RSS 0x890
++#define IPQESS_DEF_RSS_MASK 0x7
++
++/* RSS Hash Function Type Register */
++#define IPQESS_REG_RSS_TYPE 0x894
++#define IPQESS_RSS_TYPE_NONE 0x01
++#define IPQESS_RSS_TYPE_IPV4TCP 0x02
++#define IPQESS_RSS_TYPE_IPV6_TCP 0x04
++#define IPQESS_RSS_TYPE_IPV4_UDP 0x08
++#define IPQESS_RSS_TYPE_IPV6UDP 0x10
++#define IPQESS_RSS_TYPE_IPV4 0x20
++#define IPQESS_RSS_TYPE_IPV6 0x40
++#define IPQESS_RSS_HASH_MODE_MASK 0x7f
++
++#define IPQESS_REG_RSS_HASH_VALUE 0x8C0
++
++#define IPQESS_REG_RSS_TYPE_RESULT 0x8C4
++
++#define IPQESS_HASH_TYPE_START 0
++#define IPQESS_HASH_TYPE_END 5
++#define IPQESS_HASH_TYPE_SHIFT 12
++
++#define IPQESS_RFS_FLOW_ENTRIES 1024
++#define IPQESS_RFS_FLOW_ENTRIES_MASK (IPQESS_RFS_FLOW_ENTRIES - 1)
++#define IPQESS_RFS_EXPIRE_COUNT_PER_CALL 128
++
++/* RFD Base Address Register */
++#define IPQESS_REG_RFD_BASE_ADDR_Q(x) (0x950 + ((x) << 2)) /* x = queue id */
++
++/* RFD Index Register */
++#define IPQESS_REG_RFD_IDX_Q(x) (0x9B0 + ((x) << 2)) /* x = queue id */
++
++#define IPQESS_RFD_PROD_IDX_BITS 0x00000FFF
++#define IPQESS_RFD_CONS_IDX_BITS 0x0FFF0000
++#define IPQESS_RFD_PROD_IDX_MASK 0xFFF
++#define IPQESS_RFD_CONS_IDX_MASK 0xFFF
++#define IPQESS_RFD_PROD_IDX_SHIFT 0
++#define IPQESS_RFD_CONS_IDX_SHIFT 16
++
++/* Rx Descriptor Control Register */
++#define IPQESS_REG_RX_DESC0 0xA10
++#define IPQESS_RFD_RING_SIZE_MASK 0xFFF
++#define IPQESS_RX_BUF_SIZE_MASK 0xFFFF
++#define IPQESS_RFD_RING_SIZE_SHIFT 0
++#define IPQESS_RX_BUF_SIZE_SHIFT 16
++
++#define IPQESS_REG_RX_DESC1 0xA14
++#define IPQESS_RXQ_RFD_BURST_NUM_MASK 0x3F
++#define IPQESS_RXQ_RFD_PF_THRESH_MASK 0x1F
++#define IPQESS_RXQ_RFD_LOW_THRESH_MASK 0xFFF
++#define IPQESS_RXQ_RFD_BURST_NUM_SHIFT 0
++#define IPQESS_RXQ_RFD_PF_THRESH_SHIFT 8
++#define IPQESS_RXQ_RFD_LOW_THRESH_SHIFT 16
++
++/* RXQ Control Register */
++#define IPQESS_REG_RXQ_CTRL 0xA18
++#define IPQESS_FIFO_THRESH_TYPE_SHIF 0
++#define IPQESS_FIFO_THRESH_128_BYTE 0x0
++#define IPQESS_FIFO_THRESH_64_BYTE 0x1
++#define IPQESS_RXQ_CTRL_RMV_VLAN 0x00000002
++#define IPQESS_RXQ_CTRL_EN_MASK			GENMASK(15, 8)
++#define IPQESS_RXQ_CTRL_EN(__qid)		BIT(8 + (__qid))
++
++/* AXI Burst Size Config */
++#define IPQESS_REG_AXIW_CTRL_MAXWRSIZE 0xA1C
++#define IPQESS_AXIW_MAXWRSIZE_VALUE 0x0
++
++/* Rx Statistics Register */
++#define IPQESS_REG_RX_STAT_BYTE_Q(x) (0xA30 + ((x) << 2)) /* x = queue id */
++#define IPQESS_REG_RX_STAT_PKT_Q(x) (0xA50 + ((x) << 2)) /* x = queue id */
++
++/* WoL Pattern Length Register */
++#define IPQESS_REG_WOL_PATTERN_LEN0 0xC00
++#define IPQESS_WOL_PT_LEN_MASK 0xFF
++#define IPQESS_WOL_PT0_LEN_SHIFT 0
++#define IPQESS_WOL_PT1_LEN_SHIFT 8
++#define IPQESS_WOL_PT2_LEN_SHIFT 16
++#define IPQESS_WOL_PT3_LEN_SHIFT 24
++
++#define IPQESS_REG_WOL_PATTERN_LEN1 0xC04
++#define IPQESS_WOL_PT4_LEN_SHIFT 0
++#define IPQESS_WOL_PT5_LEN_SHIFT 8
++#define IPQESS_WOL_PT6_LEN_SHIFT 16
++
++/* WoL Control Register */
++#define IPQESS_REG_WOL_CTRL 0xC08
++#define IPQESS_WOL_WK_EN 0x00000001
++#define IPQESS_WOL_MG_EN 0x00000002
++#define IPQESS_WOL_PT0_EN 0x00000004
++#define IPQESS_WOL_PT1_EN 0x00000008
++#define IPQESS_WOL_PT2_EN 0x00000010
++#define IPQESS_WOL_PT3_EN 0x00000020
++#define IPQESS_WOL_PT4_EN 0x00000040
++#define IPQESS_WOL_PT5_EN 0x00000080
++#define IPQESS_WOL_PT6_EN 0x00000100
++
++/* MAC Control Register */
++#define IPQESS_REG_MAC_CTRL0 0xC20
++#define IPQESS_REG_MAC_CTRL1 0xC24
++
++/* WoL Pattern Register */
++#define IPQESS_REG_WOL_PATTERN_START 0x5000
++#define IPQESS_PATTERN_PART_REG_OFFSET 0x40
++
++/* TX descriptor fields */
++#define IPQESS_TPD_HDR_SHIFT 0
++#define IPQESS_TPD_PPPOE_EN 0x00000100
++#define IPQESS_TPD_IP_CSUM_EN 0x00000200
++#define IPQESS_TPD_TCP_CSUM_EN 0x0000400
++#define IPQESS_TPD_UDP_CSUM_EN 0x00000800
++#define IPQESS_TPD_CUSTOM_CSUM_EN 0x00000C00
++#define IPQESS_TPD_LSO_EN 0x00001000
++#define IPQESS_TPD_LSO_V2_EN 0x00002000
++/* The VLAN_TAGGED bit is not used in the publicly available
++ * drivers. The definition has been stolen from the Atheros
++ * 'alx' driver (drivers/net/ethernet/atheros/alx/hw.h). It
++ * seems that it has the same meaning in regard to the EDMA
++ * hardware.
++ */
++#define IPQESS_TPD_VLAN_TAGGED 0x00004000
++#define IPQESS_TPD_IPV4_EN 0x00010000
++#define IPQESS_TPD_MSS_MASK 0x1FFF
++#define IPQESS_TPD_MSS_SHIFT 18
++#define IPQESS_TPD_CUSTOM_CSUM_SHIFT 18
++
++/* RRD descriptor fields */
++#define IPQESS_RRD_NUM_RFD_MASK 0x000F
++#define IPQESS_RRD_PKT_SIZE_MASK 0x3FFF
++#define IPQESS_RRD_SRC_PORT_NUM_MASK 0x4000
++#define IPQESS_RRD_SVLAN 0x8000
++#define IPQESS_RRD_FLOW_COOKIE_MASK 0x07FF
++
++#define IPQESS_RRD_PKT_SIZE_MASK 0x3FFF
++#define IPQESS_RRD_CSUM_FAIL_MASK 0xC000
++#define IPQESS_RRD_CVLAN 0x0001
++#define IPQESS_RRD_DESC_VALID 0x8000
++
++#define IPQESS_RRD_PRIORITY_SHIFT 4
++#define IPQESS_RRD_PRIORITY_MASK 0x7
++#define IPQESS_RRD_PORT_TYPE_SHIFT 7
++#define IPQESS_RRD_PORT_TYPE_MASK 0x1F
++
++#define IPQESS_RRD_PORT_ID_MASK 0x7000
++
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess_ethtool.c
+@@ -0,0 +1,164 @@
++// SPDX-License-Identifier: GPL-2.0 OR ISC
++/* Copyright (c) 2015 - 2016, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2017 - 2018, John Crispin <john@phrozen.org>
++ * Copyright (c) 2021 - 2022, Maxime Chevallier <maxime.chevallier@bootlin.com>
++ *
++ */
++
++#include <linux/ethtool.h>
++#include <linux/netdevice.h>
++#include <linux/string.h>
++#include <linux/phylink.h>
++
++#include "ipqess.h"
++
++struct ipqess_ethtool_stats {
++	u8 string[ETH_GSTRING_LEN];
++	u32 offset;
++};
++
++#define IPQESS_STAT(m)    offsetof(struct ipqess_statistics, m)
++#define DRVINFO_LEN	32
++
++static const struct ipqess_ethtool_stats ipqess_stats[] = {
++	{"tx_q0_pkt", IPQESS_STAT(tx_q0_pkt)},
++	{"tx_q1_pkt", IPQESS_STAT(tx_q1_pkt)},
++	{"tx_q2_pkt", IPQESS_STAT(tx_q2_pkt)},
++	{"tx_q3_pkt", IPQESS_STAT(tx_q3_pkt)},
++	{"tx_q4_pkt", IPQESS_STAT(tx_q4_pkt)},
++	{"tx_q5_pkt", IPQESS_STAT(tx_q5_pkt)},
++	{"tx_q6_pkt", IPQESS_STAT(tx_q6_pkt)},
++	{"tx_q7_pkt", IPQESS_STAT(tx_q7_pkt)},
++	{"tx_q8_pkt", IPQESS_STAT(tx_q8_pkt)},
++	{"tx_q9_pkt", IPQESS_STAT(tx_q9_pkt)},
++	{"tx_q10_pkt", IPQESS_STAT(tx_q10_pkt)},
++	{"tx_q11_pkt", IPQESS_STAT(tx_q11_pkt)},
++	{"tx_q12_pkt", IPQESS_STAT(tx_q12_pkt)},
++	{"tx_q13_pkt", IPQESS_STAT(tx_q13_pkt)},
++	{"tx_q14_pkt", IPQESS_STAT(tx_q14_pkt)},
++	{"tx_q15_pkt", IPQESS_STAT(tx_q15_pkt)},
++	{"tx_q0_byte", IPQESS_STAT(tx_q0_byte)},
++	{"tx_q1_byte", IPQESS_STAT(tx_q1_byte)},
++	{"tx_q2_byte", IPQESS_STAT(tx_q2_byte)},
++	{"tx_q3_byte", IPQESS_STAT(tx_q3_byte)},
++	{"tx_q4_byte", IPQESS_STAT(tx_q4_byte)},
++	{"tx_q5_byte", IPQESS_STAT(tx_q5_byte)},
++	{"tx_q6_byte", IPQESS_STAT(tx_q6_byte)},
++	{"tx_q7_byte", IPQESS_STAT(tx_q7_byte)},
++	{"tx_q8_byte", IPQESS_STAT(tx_q8_byte)},
++	{"tx_q9_byte", IPQESS_STAT(tx_q9_byte)},
++	{"tx_q10_byte", IPQESS_STAT(tx_q10_byte)},
++	{"tx_q11_byte", IPQESS_STAT(tx_q11_byte)},
++	{"tx_q12_byte", IPQESS_STAT(tx_q12_byte)},
++	{"tx_q13_byte", IPQESS_STAT(tx_q13_byte)},
++	{"tx_q14_byte", IPQESS_STAT(tx_q14_byte)},
++	{"tx_q15_byte", IPQESS_STAT(tx_q15_byte)},
++	{"rx_q0_pkt", IPQESS_STAT(rx_q0_pkt)},
++	{"rx_q1_pkt", IPQESS_STAT(rx_q1_pkt)},
++	{"rx_q2_pkt", IPQESS_STAT(rx_q2_pkt)},
++	{"rx_q3_pkt", IPQESS_STAT(rx_q3_pkt)},
++	{"rx_q4_pkt", IPQESS_STAT(rx_q4_pkt)},
++	{"rx_q5_pkt", IPQESS_STAT(rx_q5_pkt)},
++	{"rx_q6_pkt", IPQESS_STAT(rx_q6_pkt)},
++	{"rx_q7_pkt", IPQESS_STAT(rx_q7_pkt)},
++	{"rx_q0_byte", IPQESS_STAT(rx_q0_byte)},
++	{"rx_q1_byte", IPQESS_STAT(rx_q1_byte)},
++	{"rx_q2_byte", IPQESS_STAT(rx_q2_byte)},
++	{"rx_q3_byte", IPQESS_STAT(rx_q3_byte)},
++	{"rx_q4_byte", IPQESS_STAT(rx_q4_byte)},
++	{"rx_q5_byte", IPQESS_STAT(rx_q5_byte)},
++	{"rx_q6_byte", IPQESS_STAT(rx_q6_byte)},
++	{"rx_q7_byte", IPQESS_STAT(rx_q7_byte)},
++	{"tx_desc_error", IPQESS_STAT(tx_desc_error)},
++};
++
++static int ipqess_get_strset_count(struct net_device *netdev, int sset)
++{
++	switch (sset) {
++	case ETH_SS_STATS:
++		return ARRAY_SIZE(ipqess_stats);
++	default:
++		netdev_dbg(netdev, "%s: Unsupported string set", __func__);
++		return -EOPNOTSUPP;
++	}
++}
++
++static void ipqess_get_strings(struct net_device *netdev, u32 stringset,
++			       u8 *data)
++{
++	u8 *p = data;
++	u32 i;
++
++	switch (stringset) {
++	case ETH_SS_STATS:
++		for (i = 0; i < ARRAY_SIZE(ipqess_stats); i++)
++			ethtool_puts(&p, ipqess_stats[i].string);
++		break;
++	}
++}
++
++static void ipqess_get_ethtool_stats(struct net_device *netdev,
++				     struct ethtool_stats *stats,
++				     uint64_t *data)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++	u32 *essstats = (u32 *)&ess->ipqess_stats;
++	int i;
++
++	spin_lock(&ess->stats_lock);
++
++	ipqess_update_hw_stats(ess);
++
++	for (i = 0; i < ARRAY_SIZE(ipqess_stats); i++)
++		data[i] = *(u32 *)(essstats + (ipqess_stats[i].offset / sizeof(u32)));
++
++	spin_unlock(&ess->stats_lock);
++}
++
++static void ipqess_get_drvinfo(struct net_device *dev,
++			       struct ethtool_drvinfo *info)
++{
++	strscpy(info->driver, "qca_ipqess", DRVINFO_LEN);
++	strscpy(info->bus_info, "axi", ETHTOOL_BUSINFO_LEN);
++}
++
++static int ipqess_get_link_ksettings(struct net_device *netdev,
++				     struct ethtool_link_ksettings *cmd)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++
++	return phylink_ethtool_ksettings_get(ess->phylink, cmd);
++}
++
++static int ipqess_set_link_ksettings(struct net_device *netdev,
++				     const struct ethtool_link_ksettings *cmd)
++{
++	struct ipqess *ess = netdev_priv(netdev);
++
++	return phylink_ethtool_ksettings_set(ess->phylink, cmd);
++}
++
++static void ipqess_get_ringparam(struct net_device *netdev,
++				 struct ethtool_ringparam *ring,
++				 struct kernel_ethtool_ringparam *kernel_ering,
++				 struct netlink_ext_ack *extack)
++{
++	ring->tx_max_pending = IPQESS_TX_RING_SIZE;
++	ring->rx_max_pending = IPQESS_RX_RING_SIZE;
++}
++
++static const struct ethtool_ops ipqesstool_ops = {
++	.get_drvinfo = &ipqess_get_drvinfo,
++	.get_link = &ethtool_op_get_link,
++	.get_link_ksettings = &ipqess_get_link_ksettings,
++	.set_link_ksettings = &ipqess_set_link_ksettings,
++	.get_strings = &ipqess_get_strings,
++	.get_sset_count = &ipqess_get_strset_count,
++	.get_ethtool_stats = &ipqess_get_ethtool_stats,
++	.get_ringparam = ipqess_get_ringparam,
++};
++
++void ipqess_set_ethtool_ops(struct net_device *netdev)
++{
++	netdev->ethtool_ops = &ipqesstool_ops;
++}
