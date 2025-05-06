@@ -1,0 +1,229 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Copyright (c) 2022, Pawel Dembicki <paweldembicki@gmail.com>.
+// Copyright (c) 2022, Giammarco Marzano <stich86@gmail.com>.
+// Copyright (c) 2023, Andreas Böhler <dev@aboehler.at>
+
+#include "qcom-ipq4018-mf287_common.dtsi"
+
+/ {
+	model = "ZTE MF287";
+	compatible = "zte,mf287";
+};
+
+&gpio_modem_reset {
+	gpios = <&tlmm 5 GPIO_ACTIVE_HIGH>;
+};
+
+&key_reset {
+	gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+};
+
+&key_wps {
+	gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+};
+
+&led_status {
+	gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
+		   <&tlmm 59 GPIO_ACTIVE_HIGH>,
+		   <&tlmm 1 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x40000 0x20000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0xd0000 0x10000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0xe0000 0x10000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0xf0000 0xc0000>;
+				read-only;
+			};
+
+			partition@1b0000 {
+				label = "0:reserved1";
+				reg = <0x1b0000 0x50000>;
+				read-only;
+			};
+		};
+	};
+
+	spi-nand@1 { /* flash@1 ? */
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "fota-flag";
+				reg = <0x0 0x140000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "ART";
+				reg = <0x140000 0x140000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+
+			partition@280000 {
+				label = "mac";
+				reg = <0x280000 0x140000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mac_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@3c0000 {
+				label = "cfg-param";
+				reg = <0x3c0000 0x600000>;
+				read-only;
+			};
+
+			partition@9c0000 {
+				label = "oops";
+				reg = <0x9c0000 0x140000>;
+			};
+
+			partition@b00000 {
+				label = "web";
+				reg = <0xb00000 0x800000>;
+			};
+
+			partition@1300000 {
+				label = "rootfs";
+				reg = <0x1300000 0x2200000>;
+			};
+
+			partition@3500000 {
+				label = "data";
+				reg = <0x3500000 0x1900000>;
+			};
+
+			partition@4e00000 {
+				label = "fota";
+				reg = <0x4e00000 0x3200000>;
+			};
+		};
+	};
+
+	zigbee@2 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "silabs,em3581";
+		reg = <2>;
+		spi-max-frequency = <12000000>;
+	};
+};
+
+&tlmm {
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		pinmux_cs {
+			function = "gpio";
+			pins = "gpio54", "gpio59", "gpio1";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "zte,mf287";
+};
+
+&wifi1{
+	qcom,ath10k-calibration-variant = "zte,mf287";
+};
