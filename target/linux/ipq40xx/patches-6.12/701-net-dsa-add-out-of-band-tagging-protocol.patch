@@ -193,7 +193,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +				    struct net_device *dev)
 +{
 +	struct dsa_oob_tag_info *tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
-+	struct dsa_port *dp = dsa_slave_to_port(dev);
++	struct dsa_port *dp = dsa_user_to_port(dev);
 +
 +	tag_info->port = dp->index;
 +
@@ -208,7 +208,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	if (!tag_info)
 +		return NULL;
 +
-+	skb->dev = dsa_master_find_slave(dev, 0, tag_info->port);
++	skb->dev = dsa_conduit_find_user(dev, 0, tag_info->port);
 +	if (!skb->dev)
 +		return NULL;
 +
