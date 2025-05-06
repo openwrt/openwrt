@@ -10,18 +10,18 @@ is found.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
- drivers/firmware/qcom_scm.c | 3 ++-
+ drivers/firmware/qcom/qcom_scm.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/drivers/firmware/qcom_scm.c
-+++ b/drivers/firmware/qcom_scm.c
-@@ -1529,7 +1529,8 @@ static int qcom_scm_probe(struct platfor
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -2095,7 +2095,8 @@ err:
  static void qcom_scm_shutdown(struct platform_device *pdev)
  {
  	/* Clean shutdown, disable download mode to allow normal restart */
--	qcom_scm_set_download_mode(false);
+-	qcom_scm_set_download_mode(QCOM_DLOAD_NODUMP);
 +	if (download_mode)
-+		qcom_scm_set_download_mode(false);
++		qcom_scm_set_download_mode(QCOM_DLOAD_NODUMP);
  }
  
  static const struct of_device_id qcom_scm_dt_match[] = {

@@ -67,7 +67,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -624,7 +624,7 @@ static int qca8k_update_port_member(stru
+@@ -623,7 +623,7 @@ static int qca8k_update_port_member(stru
  	u32 port_mask = BIT(dp->cpu_dp->index);
  	int i, ret;
  
@@ -1111,7 +1111,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  enum {
  	QCA8K_PORT_SPEED_10M = 0,
  	QCA8K_PORT_SPEED_100M = 1,
-@@ -467,6 +519,10 @@ struct qca8k_priv {
+@@ -468,6 +520,10 @@ struct qca8k_priv {
  	struct qca8k_pcs pcs_port_6;
  	const struct qca8k_match_data *info;
  	struct qca8k_led ports_led[QCA8K_LED_COUNT];
