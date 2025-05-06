@@ -11,12 +11,12 @@ This fixes SMP support for Google WiFi.
 
 Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
- drivers/firmware/qcom_scm-legacy.c | 62 +++++++++++++++++++++++++-----
- drivers/firmware/qcom_scm.c        | 11 ++++++
+ drivers/firmware/qcom/qcom_scm-legacy.c | 62 +++++++++++++++++++++++++-----
+ drivers/firmware/qcom/qcom_scm.c        | 11 ++++++
  2 files changed, 63 insertions(+), 10 deletions(-)
 
---- a/drivers/firmware/qcom_scm-legacy.c
-+++ b/drivers/firmware/qcom_scm-legacy.c
+--- a/drivers/firmware/qcom/qcom_scm-legacy.c
++++ b/drivers/firmware/qcom/qcom_scm-legacy.c
 @@ -13,6 +13,9 @@
  #include <linux/arm-smccc.h>
  #include <linux/dma-mapping.h>
@@ -116,9 +116,9 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	kfree(cmd);
  	return ret;
  }
---- a/drivers/firmware/qcom_scm.c
-+++ b/drivers/firmware/qcom_scm.c
-@@ -315,6 +315,17 @@ static int qcom_scm_set_boot_addr(void *
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -391,6 +391,17 @@ static int qcom_scm_set_boot_addr(void *
  	desc.args[0] = flags;
  	desc.args[1] = virt_to_phys(entry);
  
