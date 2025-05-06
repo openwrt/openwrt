@@ -49,8 +49,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  };
  
 +
-+const struct freq_tbl *qcom_find_freq_close(const struct freq_tbl *f,
-+					     unsigned long rate)
++static const struct freq_tbl *
++qcom_find_freq_close(const struct freq_tbl *f, unsigned long rate)
 +{
 +	const struct freq_tbl *last = NULL;
 +
