@@ -18,9 +18,9 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
 
 --- a/drivers/pci/controller/dwc/pcie-qcom.c
 +++ b/drivers/pci/controller/dwc/pcie-qcom.c
-@@ -184,11 +184,24 @@ struct qcom_pcie_resources_2_3_3 {
+@@ -207,11 +207,24 @@ struct qcom_pcie_resources_2_3_3 {
+ };
  
- #define QCOM_PCIE_2_4_0_MAX_CLOCKS		4
  #define QCOM_PCIE_2_4_0_MAX_RESETS		12
 +/*
 + * This value is the manufacturer ID of Lantiq. The address where
@@ -34,7 +34,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
 +#define QCOM_PCIE_2_4_0_GRX500_VENDOR_ID	0x1bef
 +#define QCOM_PCIE_2_4_0_GRX500_DEVICE_ID	0x0030
  struct qcom_pcie_resources_2_4_0 {
- 	struct clk_bulk_data clks[QCOM_PCIE_2_4_0_MAX_CLOCKS];
+ 	struct clk_bulk_data *clks;
  	int num_clks;
  	struct reset_control_bulk_data resets[QCOM_PCIE_2_4_0_MAX_RESETS];
  	int num_resets;
@@ -42,8 +42,8 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
 +	dma_addr_t lantiq_hack_phys;
  };
  
- #define QCOM_PCIE_2_7_0_MAX_CLOCKS		15
-@@ -629,12 +642,65 @@ static int qcom_pcie_post_init_2_3_2(str
+ #define QCOM_PCIE_2_7_0_MAX_SUPPLIES		2
+@@ -711,12 +724,65 @@ static int qcom_pcie_post_init_2_3_2(str
  	return 0;
  }
  
@@ -109,8 +109,8 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
 +		      of_device_is_compatible(dev->of_node, "qcom,pcie-ipq4019-lantiq-hack");
  	int ret;
  
- 	res->clks[0].id = "aux";
-@@ -679,6 +745,17 @@ static void qcom_pcie_deinit_2_4_0(struc
+ 	res->num_clks = devm_clk_bulk_get_all(dev, &res->clks);
+@@ -755,6 +821,17 @@ static void qcom_pcie_deinit_2_4_0(struc
  	clk_bulk_disable_unprepare(res->num_clks, res->clks);
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  static int qcom_pcie_init_2_4_0(struct qcom_pcie *pcie)
  {
  	struct qcom_pcie_resources_2_4_0 *res = &pcie->res.v2_4_0;
-@@ -1292,6 +1369,16 @@ static const struct qcom_pcie_ops ops_2_
+@@ -1336,6 +1413,16 @@ static const struct qcom_pcie_ops ops_2_
  	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
  };
  
@@ -145,7 +145,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  /* Qcom IP rev.: 2.3.3	Synopsys IP rev.: 4.30a */
  static const struct qcom_pcie_ops ops_2_3_3 = {
  	.get_resources = qcom_pcie_get_resources_2_3_3,
-@@ -1354,6 +1441,10 @@ static const struct qcom_pcie_cfg cfg_2_
+@@ -1403,6 +1490,10 @@ static const struct qcom_pcie_cfg cfg_2_
  	.ops = &ops_2_4_0,
  };
  
@@ -156,7 +156,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  static const struct qcom_pcie_cfg cfg_2_7_0 = {
  	.ops = &ops_2_7_0,
  };
-@@ -1641,6 +1732,7 @@ static const struct of_device_id qcom_pc
+@@ -1827,6 +1918,7 @@ static const struct of_device_id qcom_pc
  	{ .compatible = "qcom,pcie-apq8064", .data = &cfg_2_1_0 },
  	{ .compatible = "qcom,pcie-apq8084", .data = &cfg_1_0_0 },
  	{ .compatible = "qcom,pcie-ipq4019", .data = &cfg_2_4_0 },
