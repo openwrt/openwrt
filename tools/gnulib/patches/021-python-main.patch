@@ -1,0 +1,15 @@
+--- /dev/null
++++ b/gnulib-tool-main.py
+@@ -0,0 +1,4 @@
++from pygnulib import main
++
++if __name__ == '__main__':
++    main.main_with_exception_handling()
+--- a/gnulib-tool.py
++++ b/gnulib-tool.py
+@@ -157,4 +157,4 @@ fi
+ profiler_args=
+ # For profiling, cf. <https://docs.python.org/3/library/profile.html>.
+ #profiler_args="-m cProfile -s tottime"
+-exec python3 $profiler_args "$gnulib_dir/.gnulib-tool.py" "$@"
++exec python3 $profiler_args "$gnulib_dir/gnulib-tool-main.py" "$@"
