@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
 PKG_CPE_ID:=cpe:/a:gnu:coreutils
-PKG_VERSION:=9.5
+PKG_VERSION:=9.6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/coreutils
-PKG_HASH:=767ae6a22950ec42f3ba5f7c1de79dd27800ee8e9b8642da5dedb5974a1741e5
+PKG_HASH:=2bec616375002c92c1ed5ead32a092b174fe44c14bc736d32e5961053b821d84
 
 HOST_BUILD_PARALLEL := 1
 
@@ -23,10 +23,20 @@ include $(INCLUDE_DIR)/host-build.mk
 export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 
 HOST_GNULIB_SKIP := \
-	lib/nstrftime.c \
-	lib/fprintftime.c \
+	lib/c++defs.h \
+	lib/realloc.c \
+	lib/reallocarray.c \
+	lib/savedir.c \
 	lib/fcntl.in.h \
-	lib/locale.in.h
+	lib/stdio.in.h \
+	lib/stdlib.in.h \
+	lib/se-selinux.in.h \
+	lib/iconv_open-aix.gperf \
+	lib/iconv_open-hpux.gperf \
+	lib/iconv_open-irix.gperf \
+	lib/iconv_open-osf.gperf \
+	lib/iconv_open-solaris.gperf \
+	lib/iconv_open-zos.gperf
 
 HOST_CONFIGURE_ARGS += \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(PKG_PROGRAMS)))

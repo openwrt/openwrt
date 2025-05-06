@@ -34,7 +34,7 @@
        if [ ! "$inst_ver" ]; then
          warn_ "Error: '$app' not found"
          ret=1
-@@ -1157,7 +1157,7 @@ autogen()
+@@ -1205,7 +1205,7 @@ autogen()
    # two just-pre-run programs.
  
    # Import from gettext.
@@ -45,7 +45,7 @@
  
 --- a/bootstrap.conf
 +++ b/bootstrap.conf
-@@ -349,11 +349,8 @@ gnulib_tool_option_extras="--tests-base=
+@@ -354,11 +354,8 @@ gnulib_tool_option_extras="--tests-base=
  buildreq="\
  autoconf   2.64
  automake   1.11.2
