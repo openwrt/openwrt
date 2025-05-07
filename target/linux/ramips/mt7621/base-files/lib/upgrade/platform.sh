@@ -226,6 +226,10 @@ platform_do_upgrade() {
 		zyxel_mstc_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
+	teltonika,rutm50)
+		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
