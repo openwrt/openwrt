@@ -638,6 +638,20 @@ define Device/tama_w06
 endef
 TARGET_DEVICES += tama_w06
 
+define Device/teltonika_rut901
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT901
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-i2c-mt7628 \
+   kmod-usb-net-cdc-ether
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut9m \
+  "mod1":"2c7c_6005" "mod2":"TLA2021" "mod3":"CH343" "mod4":"esim" "mod5":"ala440"
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut901
+
 define Device/teltonika_rut906
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT906
