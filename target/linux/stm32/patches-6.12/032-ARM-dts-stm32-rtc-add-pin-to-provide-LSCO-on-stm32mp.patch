@@ -15,17 +15,17 @@ Signed-off-by: Alexandre Torgue <alexandre.torgue@foss.st.com>
 
 --- a/arch/arm/boot/dts/st/stm32mp13-pinctrl.dtsi
 +++ b/arch/arm/boot/dts/st/stm32mp13-pinctrl.dtsi
-@@ -212,6 +212,13 @@
- 		};
+@@ -595,6 +595,13 @@
  	};
  
-+	/omit-if-no-ref/
+ 	/omit-if-no-ref/
 +	rtc_rsvd_pins_a: rtc-rsvd-0 {
 +		pins {
 +			pinmux = <STM32_PINMUX('I', 1, ANALOG)>; /* RTC_OUT2_RMP */
 +		};
 +	};
 +
- 	sdmmc1_b4_pins_a: sdmmc1-b4-0 {
++	/omit-if-no-ref/
+ 	sai1a_pins_a: sai1a-0 {
  		pins {
- 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
+ 			pinmux = <STM32_PINMUX('A', 4, AF12)>, /* SAI1_SCK_A */
