@@ -1,0 +1,79 @@
+From 59a7f3aa7c3045b92bfde6fd342017053d2d304c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ma=C3=ADra=20Canal?= <mcanal@igalia.com>
+Date: Sun, 27 Apr 2025 17:28:21 -0300
+Subject: [PATCH] drm/v3d: Add job to pending list if the reset was skipped
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When a CL/CSD job times out, we check if the GPU has made any progress
+since the last timeout. If so, instead of resetting the hardware, we skip
+the reset and let the timer get rearmed. This gives long-running jobs a
+chance to complete.
+
+However, when `timedout_job()` is called, the job in question is removed
+from the pending list, which means it won't be automatically freed through
+`free_job()`. Consequently, when we skip the reset and keep the job
+running, the job won't be freed when it finally completes.
+
+This situation leads to a memory leak, as exposed in [1].
+
+Similarly to commit 704d3d60fec4 ("drm/etnaviv: don't block scheduler when
+GPU is still active"), this patch ensures the job is put back on the
+pending list when extending the timeout.
+
+Cc: stable@vger.kernel.org # 6.0
+Link: https://gitlab.freedesktop.org/mesa/mesa/-/issues/12227 [1]
+Reported-by: Daivik Bhatia <dtgs1208@gmail.com>
+Signed-off-by: Maíra Canal <mcanal@igalia.com>
+---
+ drivers/gpu/drm/v3d/v3d_sched.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+--- a/drivers/gpu/drm/v3d/v3d_sched.c
++++ b/drivers/gpu/drm/v3d/v3d_sched.c
+@@ -744,11 +744,6 @@ v3d_gpu_reset_for_timeout(struct v3d_dev
+ 	return DRM_GPU_SCHED_STAT_NOMINAL;
+ }
+ 
+-/* If the current address or return address have changed, then the GPU
+- * has probably made progress and we should delay the reset.  This
+- * could fail if the GPU got in an infinite loop in the CL, but that
+- * is pretty unlikely outside of an i-g-t testcase.
+- */
+ static enum drm_gpu_sched_stat
+ v3d_cl_job_timedout(struct drm_sched_job *sched_job, enum v3d_queue q,
+ 		    u32 *timedout_ctca, u32 *timedout_ctra)
+@@ -758,9 +753,16 @@ v3d_cl_job_timedout(struct drm_sched_job
+ 	u32 ctca = V3D_CORE_READ(0, V3D_CLE_CTNCA(q));
+ 	u32 ctra = V3D_CORE_READ(0, V3D_CLE_CTNRA(q));
+ 
++	/* If the current address or return address have changed, then the GPU
++	 * has probably made progress and we should delay the reset. This
++	 * could fail if the GPU got in an infinite loop in the CL, but that
++	 * is pretty unlikely outside of an i-g-t testcase.
++	 */
+ 	if (*timedout_ctca != ctca || *timedout_ctra != ctra) {
+ 		*timedout_ctca = ctca;
+ 		*timedout_ctra = ctra;
++
++		list_add(&sched_job->list, &sched_job->sched->pending_list);
+ 		return DRM_GPU_SCHED_STAT_NOMINAL;
+ 	}
+ 
+@@ -800,11 +802,13 @@ v3d_csd_job_timedout(struct drm_sched_jo
+ 	struct v3d_dev *v3d = job->base.v3d;
+ 	u32 batches = V3D_CORE_READ(0, V3D_CSD_CURRENT_CFG4(v3d->ver));
+ 
+-	/* If we've made progress, skip reset and let the timer get
+-	 * rearmed.
++	/* If we've made progress, skip reset, add the job to the pending
++	 * list, and let the timer get rearmed.
+ 	 */
+ 	if (job->timedout_batches != batches) {
+ 		job->timedout_batches = batches;
++
++		list_add(&sched_job->list, &sched_job->sched->pending_list);
+ 		return DRM_GPU_SCHED_STAT_NOMINAL;
+ 	}
+ 
