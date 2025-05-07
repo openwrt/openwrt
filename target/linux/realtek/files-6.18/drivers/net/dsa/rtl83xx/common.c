@@ -1418,7 +1418,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
 		priv->r = &rtl838x_reg;
-		priv->ds->num_ports = 29;
+		priv->ds->num_ports = RTL838X_NUM_PORTS;
 		priv->fib_entries = 8192;
 		rtl8380_get_version(priv);
 		priv->ds->num_lag_ids = 8;
@@ -1436,7 +1436,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 2;
 		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
 		priv->r = &rtl839x_reg;
-		priv->ds->num_ports = 53;
+		priv->ds->num_ports = RTL839X_NUM_PORTS;
 		priv->fib_entries = 16384;
 		rtl8390_get_version(priv);
 		priv->ds->num_lag_ids = 16;
@@ -1454,7 +1454,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
 		priv->r = &rtl930x_reg;
-		priv->ds->num_ports = 29;
+		priv->ds->num_ports = RTL930X_NUM_PORTS;
 		priv->fib_entries = 16384;
 		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
 		 * be constructed. For now, just set it to a static 'A'
@@ -1476,7 +1476,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 2;
 		priv->irq_mask = GENMASK_ULL(priv->cpu_port - 1, 0);
 		priv->r = &rtl931x_reg;
-		priv->ds->num_ports = 57;
+		priv->ds->num_ports = RTL931X_NUM_PORTS;
 		priv->fib_entries = 16384;
 		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
 		 * be constructed. For now, just set it to a static 'A'
