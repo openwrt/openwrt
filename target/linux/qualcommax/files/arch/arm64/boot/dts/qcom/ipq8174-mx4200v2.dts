@@ -8,6 +8,30 @@
 / {
 	model = "Linksys MX4200v2";
 	compatible = "linksys,mx4200v2", "qcom,ipq8074";
+
+	aliases {
+		label-mac-device = &dp2;
+	};
+};
+
+&dp2 {
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp3 {
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp4 {
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp5 {
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi {
