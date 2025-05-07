@@ -161,14 +161,12 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id);
 void rtl8380_get_version(struct rtl838x_switch_priv *priv);
-void rtl838x_vlan_profile_dump(int index);
 void rtl838x_print_matrix(void);
 
 /* RTL839x-specific */
 u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl8390_get_version(struct rtl838x_switch_priv *priv);
-void rtl839x_vlan_profile_dump(int index);
 void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtl839x_print_matrix(void);
 
@@ -176,7 +174,6 @@ void rtl839x_print_matrix(void);
 u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
-void rtl930x_vlan_profile_dump(int index);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */
