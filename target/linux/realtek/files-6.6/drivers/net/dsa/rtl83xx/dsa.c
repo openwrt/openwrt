@@ -148,7 +148,7 @@ static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 
 	priv->r->vlan_profile_setup(0);
 	priv->r->vlan_profile_setup(1);
-	pr_info("UNKNOWN_MC_PMASK: %016llx\n", priv->r->read_mcast_pmask(UNKNOWN_MC_PMASK));
+	dev_info(priv->dev, "MC_PMASK_ALL_PORTS: %016llx\n", priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX));
 	priv->r->vlan_profile_dump(0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
@@ -1463,7 +1463,7 @@ static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	/* Let no one mess with our special VLAN 0 */
 	if (!vlan->vid) return 0;
 
-	if (vlan->vid > 4095) {
+	if (vlan->vid >= MAX_VLANS) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
 	}
@@ -1534,7 +1534,7 @@ static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
 	/* Let no one mess with our special VLAN 0 */
 	if (!vlan->vid) return 0;
 
-	if (vlan->vid > 4095) {
+	if (vlan->vid >= MAX_VLANS) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
 	}
