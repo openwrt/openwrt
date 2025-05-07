@@ -502,7 +502,7 @@ static void rtl838x_l2_learning_setup(void)
 	/* Set portmask for broadcast traffic and unknown unicast address flooding
 	 * to the reserved entry in the portmask table used also for
 	 * multicast flooding */
-	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL838X_L2_FLD_PMSK);
+	sw_w32(UNKNOWN_MC_PMASK << 9 | UNKNOWN_MC_PMASK, RTL838X_L2_FLD_PMSK);
 
 	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
 	 * and per vlan (bit 2) */
