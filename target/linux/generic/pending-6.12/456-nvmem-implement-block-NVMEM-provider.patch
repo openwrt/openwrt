@@ -1,7 +1,7 @@
-From 9703951cdfe868b130e64d6122420396c2807be8 Mon Sep 17 00:00:00 2001
+From 26ae98bf77fdbd60536fe5c2175e528469b9ac9a Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Thu, 30 May 2024 03:15:02 +0100
-Subject: [PATCH 5/9] nvmem: implement block NVMEM provider
+Date: Wed, 15 May 2024 18:18:37 +0300
+Subject: [PATCH 7/8] nvmem: implement block NVMEM provider
 
 On embedded devices using an eMMC it is common that one or more partitions
 on the eMMC are used to store MAC addresses and Wi-Fi calibration EEPROM
@@ -12,8 +12,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  drivers/nvmem/Kconfig  |  11 +++
  drivers/nvmem/Makefile |   2 +
- drivers/nvmem/block.c  | 197 +++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 210 insertions(+)
+ drivers/nvmem/block.c  | 198 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 211 insertions(+)
  create mode 100644 drivers/nvmem/block.c
 
 --- a/drivers/nvmem/Kconfig
@@ -49,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  obj-$(CONFIG_NVMEM_IMX_IIM)		+= nvmem-imx-iim.o
 --- /dev/null
 +++ b/drivers/nvmem/block.c
-@@ -0,0 +1,208 @@
+@@ -0,0 +1,198 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * block device NVMEM provider
@@ -71,43 +71,33 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +static DEFINE_MUTEX(devices_mutex);
 +
 +struct blk_nvmem {
-+	struct nvmem_device *nvmem;
-+	struct block_device *bdev;
-+	struct list_head list;
++	struct nvmem_device	*nvmem;
++	struct device		*dev;
++	struct list_head	list;
 +};
 +
 +static int blk_nvmem_reg_read(void *priv, unsigned int from,
 +			      void *val, size_t bytes)
 +{
++	blk_mode_t mode = BLK_OPEN_READ | BLK_OPEN_RESTRICT_WRITES;
 +	unsigned long offs = from & ~PAGE_MASK, to_read;
 +	pgoff_t f_index = from >> PAGE_SHIFT;
-+	struct address_space *mapping;
 +	struct blk_nvmem *bnv = priv;
 +	size_t bytes_left = bytes;
++	struct file *bdev_file;
 +	struct folio *folio;
 +	void *p;
-+	int ret;
++	int ret = 0;
 +
-+	if (!bnv->bdev)
++	bdev_file = bdev_file_open_by_dev(bnv->dev->devt, mode, priv, NULL);
++	if (!bdev_file)
 +		return -ENODEV;
 +
-+	if (!bnv->bdev->bd_disk)
-+		return -EINVAL;
-+
-+	if (!bnv->bdev->bd_disk->fops)
-+		return -EIO;
-+
-+	if (!bnv->bdev->bd_disk->fops->open)
-+		return -EIO;
-+
-+	ret = bnv->bdev->bd_disk->fops->open(bnv->bdev->bd_disk, BLK_OPEN_READ);
-+	if (ret)
-+		return ret;
-+
-+	mapping = bnv->bdev->bd_inode->i_mapping;
++	if (IS_ERR(bdev_file))
++		return PTR_ERR(bdev_file);
 +
 +	while (bytes_left) {
-+		folio = read_mapping_folio(mapping, f_index++, NULL);
++		folio = read_mapping_folio(bdev_file->f_mapping, f_index++, NULL);
 +		if (IS_ERR(folio)) {
 +			ret = PTR_ERR(folio);
 +			goto err_release_bdev;
@@ -122,15 +112,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +err_release_bdev:
-+	bnv->bdev->bd_disk->fops->release(bnv->bdev->bd_disk);
++	fput(bdev_file);
 +
 +	return ret;
 +}
 +
 +static int blk_nvmem_register(struct device *dev)
 +{
-+	struct device_node *np = dev_of_node(dev);
 +	struct block_device *bdev = dev_to_bdev(dev);
++	struct device_node *np = dev_of_node(dev);
 +	struct nvmem_config config = {};
 +	struct blk_nvmem *bnv;
 +
@@ -178,7 +168,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	config.ignore_wp = true;
 +	config.of_node = to_of_node(dev->fwnode);
 +
-+	bnv->bdev = bdev;
++	bnv->dev = &bdev->bd_device;
 +	bnv->nvmem = nvmem_register(&config);
 +	if (IS_ERR(bnv->nvmem)) {
 +		dev_err_probe(&bdev->bd_device, PTR_ERR(bnv->nvmem),
@@ -197,12 +187,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +static void blk_nvmem_unregister(struct device *dev)
 +{
-+	struct block_device *bdev = dev_to_bdev(dev);
 +	struct blk_nvmem *bnv_c, *bnv = NULL;
 +
 +	mutex_lock(&devices_mutex);
 +	list_for_each_entry(bnv_c, &nvmem_devices, list) {
-+		if (bnv_c->bdev == bdev) {
++		if (bnv_c->dev == dev) {
 +			bnv = bnv_c;
 +			break;
 +		}
@@ -226,6 +215,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	switch (code) {
 +	case BLK_DEVICE_ADD:
 +		return blk_nvmem_register(dev);
++		break;
 +	case BLK_DEVICE_REMOVE:
 +		blk_nvmem_unregister(dev);
 +		break;

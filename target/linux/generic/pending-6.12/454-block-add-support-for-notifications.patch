@@ -1,45 +1,18 @@
-From patchwork Tue Jul 30 19:26:42 2024
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
-X-Patchwork-Id: 13747817
-Date: Tue, 30 Jul 2024 20:26:42 +0100
+From 858df9db80c1568db255659baca7602504f823af Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-To: Rob Herring <robh@kernel.org>, Krzysztof Kozlowski <krzk+dt@kernel.org>,
- Conor Dooley <conor+dt@kernel.org>, Jens Axboe <axboe@kernel.dk>,
- Daniel Golle <daniel@makrotopia.org>, Christian Brauner <brauner@kernel.org>,
- Al Viro <viro@zeniv.linux.org.uk>, Li Lingfeng <lilingfeng3@huawei.com>,
- Ming Lei <ming.lei@redhat.com>, Christian Heusel <christian@heusel.eu>,
-	=?utf-8?b?UmFmYcWCIE1pxYJlY2tp?= <rafal@milecki.pl>,
- Felix Fietkau <nbd@nbd.name>, John Crispin <john@phrozen.org>,
- Chad Monroe <chad.monroe@adtran.com>, Yangyu Chen <cyy@cyyself.name>,
- Tianling Shen <cnsztl@immortalwrt.org>, Chuanhong Guo <gch981213@gmail.com>,
- Chen Minqiang <ptpt52@gmail.com>, devicetree@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-block@vger.kernel.org
-Subject: [PATCH v5 3/4] block: add support for notifications
-Message-ID: 
- <ca0022886e8f211a323a716653a1396a3bc91653.1722365899.git.daniel@makrotopia.org>
-References: <cover.1722365899.git.daniel@makrotopia.org>
-Precedence: bulk
-X-Mailing-List: linux-block@vger.kernel.org
-List-Id: <linux-block.vger.kernel.org>
-List-Subscribe: <mailto:linux-block+subscribe@vger.kernel.org>
-List-Unsubscribe: <mailto:linux-block+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Disposition: inline
-In-Reply-To: <cover.1722365899.git.daniel@makrotopia.org>
+Date: Wed, 15 May 2024 08:19:51 +0100
+Subject: [PATCH 5/8] block: add support for notifications
 
 Add notifier block to notify other subsystems about the addition or
 removal of block devices.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- block/Kconfig          |  6 +++
- block/Makefile         |  1 +
- block/blk-notify.c     | 87 ++++++++++++++++++++++++++++++++++++++++++
- include/linux/blkdev.h | 11 ++++++
- 4 files changed, 105 insertions(+)
+ block/Kconfig          |   6 +++
+ block/Makefile         |   1 +
+ block/blk-notify.c     | 107 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/blkdev.h |   8 +++
+ 4 files changed, 122 insertions(+)
  create mode 100644 block/blk-notify.c
 
 --- a/block/Kconfig
@@ -66,7 +39,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +obj-$(CONFIG_BLOCK_NOTIFIERS) += blk-notify.o
 --- /dev/null
 +++ b/block/blk-notify.c
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,107 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * Notifiers for addition and removal of block devices
@@ -77,6 +50,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include <linux/list.h>
 +#include <linux/mutex.h>
 +#include <linux/notifier.h>
++#include <linux/workqueue.h>
 +
 +#include "blk.h"
 +
@@ -88,6 +62,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +static RAW_NOTIFIER_HEAD(blk_notifier_list);
 +static DEFINE_MUTEX(blk_notifier_lock);
 +static LIST_HEAD(blk_devices);
++
++struct blk_notify_event {
++	struct delayed_work work;
++	struct device *dev;
++};
 +
 +void blk_register_notify(struct notifier_block *nb)
 +{
@@ -111,19 +90,33 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 +EXPORT_SYMBOL_GPL(blk_unregister_notify);
 +
++static void blk_notify_work(struct work_struct *work)
++{
++	struct blk_notify_event *ev =
++		container_of(work, struct blk_notify_event, work.work);
++
++	raw_notifier_call_chain(&blk_notifier_list, BLK_DEVICE_ADD, ev->dev);
++	kfree(ev);
++}
++
 +static int blk_call_notifier_add(struct device *dev)
 +{
 +	struct blk_device_list *new_blkdev;
++	struct blk_notify_event *ev;
 +
-+	new_blkdev = kmalloc(sizeof(*new_blkdev), GFP_KERNEL);
++	new_blkdev = kmalloc(sizeof (*new_blkdev), GFP_KERNEL);
 +	if (!new_blkdev)
 +		return -ENOMEM;
 +
++	ev = kmalloc(sizeof(*ev), GFP_KERNEL);
++	INIT_DEFERRABLE_WORK(&ev->work, blk_notify_work);
++	ev->dev = dev;
 +	new_blkdev->dev = dev;
 +	mutex_lock(&blk_notifier_lock);
 +	list_add_tail(&new_blkdev->list, &blk_devices);
-+	raw_notifier_call_chain(&blk_notifier_list, BLK_DEVICE_ADD, dev);
++	schedule_delayed_work(&ev->work, msecs_to_jiffies(500));
 +	mutex_unlock(&blk_notifier_lock);
++
 +	return 0;
 +}
 +
@@ -156,19 +149,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +device_initcall(blk_notifications_init);
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -1696,4 +1696,15 @@ static inline bool bdev_can_atomic_write
+@@ -1696,4 +1696,12 @@ static inline bool bdev_can_atomic_write
  
  #define DEFINE_IO_COMP_BATCH(name)	struct io_comp_batch name = { }
  
 +
++#ifdef CONFIG_BLOCK_NOTIFIERS
 +#define BLK_DEVICE_ADD		1
 +#define BLK_DEVICE_REMOVE	2
-+#if defined(CONFIG_BLOCK_NOTIFIERS)
-+void blk_register_notify(struct notifier_block *nb);
-+void blk_unregister_notify(struct notifier_block *nb);
-+#else
-+static inline void blk_register_notify(struct notifier_block *nb) { };
-+static inline void blk_unregister_notify(struct notifier_block *nb) { };
++extern void blk_register_notify(struct notifier_block *nb);
++extern void blk_unregister_notify(struct notifier_block *nb);
 +#endif
 +
  #endif /* _LINUX_BLKDEV_H */
