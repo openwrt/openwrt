@@ -360,6 +360,184 @@ static const struct file_operations l2_table_fops = {
 	.release = single_release,
 };
 
+static int rtldsa_pmsks_table_raw_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	u64 all_ports;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (int i = 0; i < MAX_MC_PMASKS; i += 4) {
+		seq_printf(m, "%04i: ", i);
+		for (int j = 0; j < 4; j++) {
+			bool is_set = test_bit(i + j, priv->mc_group_bm);
+			seq_printf(m, " %c0x%016llx%c", is_set ? ' ' : '(',
+				   priv->r->read_mcast_pmask(i + j),
+				   is_set ? ' ' : ')');
+		}
+		seq_printf(m, "\n");
+	}
+
+	all_ports = priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX);
+	seq_printf(m, "MC_PMASK_ALL_PORTS (%i): 0x%016llx\n",
+		   MC_PMASK_ALL_PORTS_IDX, all_ports);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtldsa_pmsks_table_raw_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtldsa_pmsks_table_raw_show, inode->i_private);
+}
+
+static const struct file_operations rtldsa_pmsks_table_raw_fops = {
+	.owner = THIS_MODULE,
+	.open = rtldsa_pmsks_table_raw_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static int rtldsa_pmsks_table_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	u64 ports;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (int i = 0; i < MC_PMASK_ALL_PORTS_IDX; i++) {
+		if (!test_bit(i, priv->mc_group_bm))
+			continue;
+
+		ports = priv->r->read_mcast_pmask(i);
+		seq_printf(m, "%04i:", i);
+		for (int j = 0; j < sizeof(ports)*8; j++)
+			if (ports & BIT_ULL(j))
+				seq_printf(m, " %i", j);
+		seq_printf(m, "\n");
+	}
+
+	ports = priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX);
+	seq_printf(m, "MC_PMASK_ALL_PORTS (%i):", MC_PMASK_ALL_PORTS_IDX);
+	for (int i = 0; i < sizeof(ports)*8; i++)
+		if (ports & BIT_ULL(i))
+			seq_printf(m, " %i", i);
+	seq_printf(m, "\n");
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtldsa_pmsks_table_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtldsa_pmsks_table_show, inode->i_private);
+}
+
+static const struct file_operations rtldsa_pmsks_table_fops = {
+	.owner = THIS_MODULE,
+	.open = rtldsa_pmsks_table_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static int rtldsa_vlan_profiles_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	struct rtldsa_vlan_profile profile;
+	int ret, profiles_max;
+
+	if (!priv->r->vlan_profile_get)
+		return -ENOTSUPP;
+
+	profiles_max = max(RTL838X_VLAN_PROFILE_MAX, RTL839X_VLAN_PROFILE_MAX);
+	profiles_max = max(profiles_max, RTL930X_VLAN_PROFILE_MAX);
+	profiles_max = max(profiles_max, RTL931X_VLAN_PROFILE_MAX);
+
+	mutex_lock(&priv->reg_mutex);
+
+	seq_printf(m,
+		   "prof-idx: L2 learn | UNKN L2MC FLD PMSK (IDX) | UNKN IPMC FLD PMSK (IDX) | UNKN IPv6MC FLD PMSK (IDX)\n");
+	for (int i = 0; i <= profiles_max; i++) {
+		ret = priv->r->vlan_profile_get(i, &profile);
+		if (ret < 0)
+			break;
+
+		if (profile.pmsk_is_idx)
+			seq_printf(m, "%i: %i %03i %03i %03i\n", i,
+				   profile.l2_learn,
+				   profile.unkn_mc_fld.pmsks_idx.l2,
+				   profile.unkn_mc_fld.pmsks_idx.ip,
+				   profile.unkn_mc_fld.pmsks_idx.ip6);
+		else
+			seq_printf(m, "%i: %i 0x%016llx 0x%016llx 0x%016llx\n", i,
+				   profile.l2_learn,
+				   profile.unkn_mc_fld.pmsks.l2,
+				   profile.unkn_mc_fld.pmsks.ip,
+				   profile.unkn_mc_fld.pmsks.ip6);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtldsa_vlan_profiles_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtldsa_vlan_profiles_show, inode->i_private);
+}
+
+static const struct file_operations rtldsa_vlan_profiles_fops = {
+	.owner = THIS_MODULE,
+	.open = rtldsa_vlan_profiles_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static int rtldsa_vlan_table_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	struct rtl838x_vlan_info info;
+
+	if (!priv->r->vlan_tables_read)
+		return -ENOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (int i = 0; i < MAX_VLANS; i++) {
+		priv->r->vlan_tables_read(i, &info);
+
+		if (!info.member_ports)
+			continue;
+
+		seq_printf(m, "%i: %i 0x%016llx 0x%016llx\n", i,
+			   info.profile_id,
+			   info.untagged_ports,
+			   info.member_ports);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtldsa_vlan_table_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, rtldsa_vlan_table_show, inode->i_private);
+}
+
+static const struct file_operations rtldsa_vlan_table_fops = {
+	.owner = THIS_MODULE,
+	.open = rtldsa_vlan_table_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
 static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
 			    loff_t *ppos)
 {
@@ -694,6 +872,18 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_file("drop_counters", 0400, rtl838x_dir, priv, &drop_counter_fops);
 
 	debugfs_create_file("l2_table", 0400, rtl838x_dir, priv, &l2_table_fops);
+
+	debugfs_create_file("port_masks_table_raw", 0400, rtl838x_dir, priv,
+			    &rtldsa_pmsks_table_raw_fops);
+
+	debugfs_create_file("port_masks_table", 0400, rtl838x_dir, priv,
+			    &rtldsa_pmsks_table_fops);
+
+	debugfs_create_file("vlan_profiles", 0400, rtl838x_dir, priv,
+			    &rtldsa_vlan_profiles_fops);
+
+	debugfs_create_file("vlan_table", 0400, rtl838x_dir, priv,
+			    &rtldsa_vlan_table_fops);
 
 	return;
 err:

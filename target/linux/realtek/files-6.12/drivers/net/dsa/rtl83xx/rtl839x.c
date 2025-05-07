@@ -519,6 +519,30 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+static int
+rtldsa_839x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+{
+	u32 p[2];
+
+	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
+	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
+
+	*profile = (struct rtldsa_vlan_profile) {
+		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks_idx = {
+			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 1,
+	};
+
+	return 0;
+}
+
 static void rtl839x_vlan_profile_setup(int profile)
 {
 	u32 p[2] = { 0, 0 };
@@ -626,22 +650,21 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-void rtl839x_vlan_profile_dump(int profile)
+static void
+rtldsa_839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 {
-	u32 p[2];
+	struct rtldsa_vlan_profile p;
 
-	if (profile < 0 || profile > RTL839X_VLAN_PROFILE_MAX)
+	if (rtldsa_839x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
-
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
-		 profile, RTL839X_VLAN_L2_LEARN_EN_R(p),
-		 RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		 RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		 RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
-	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
+	dev_dbg(priv->dev,
+		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
+		"VLAN profile %d: raw %08x, %08x\n", idx,
+		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
+		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
+		sw_r32(RTL839X_VLAN_PROFILE(idx)),
+		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
 }
 
 static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
@@ -1643,7 +1666,8 @@ const struct rtl838x_reg rtl839x_reg = {
 	.vlan_tables_read = rtl839x_vlan_tables_read,
 	.vlan_set_tagged = rtl839x_vlan_set_tagged,
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
-	.vlan_profile_dump = rtl839x_vlan_profile_dump,
+	.vlan_profile_get = rtldsa_839x_vlan_profile_get,
+	.vlan_profile_dump = rtldsa_839x_vlan_profile_dump,
 	.vlan_profile_setup = rtl839x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl839x_vlan_fwd_on_inner,
 	.vlan_port_keep_tag_set = rtl839x_vlan_port_keep_tag_set,
