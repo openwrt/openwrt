@@ -16,8 +16,8 @@ Signed-off-by: Alexandre Torgue <alexandre.torgue@foss.st.com>
 
 --- a/arch/arm/boot/dts/st/stm32mp135f-dk.dts
 +++ b/arch/arm/boot/dts/st/stm32mp135f-dk.dts
-@@ -67,6 +67,19 @@
- 			default-state = "off";
+@@ -121,6 +121,19 @@
+ 			};
  		};
  	};
 +
@@ -36,7 +36,7 @@ Signed-off-by: Alexandre Torgue <alexandre.torgue@foss.st.com>
  };
  
  &adc_1 {
-@@ -230,6 +243,30 @@
+@@ -392,6 +405,30 @@
  	status = "okay";
  };
  
@@ -67,7 +67,7 @@ Signed-off-by: Alexandre Torgue <alexandre.torgue@foss.st.com>
  &spi5 {
  	pinctrl-names = "default", "sleep";
  	pinctrl-0 = <&spi5_pins_a>;
-@@ -332,6 +369,14 @@
+@@ -498,6 +535,14 @@
  	pinctrl-2 = <&usart2_idle_pins_a>;
  	uart-has-rtscts;
  	status = "okay";
