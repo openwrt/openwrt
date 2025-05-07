@@ -310,17 +310,20 @@ void rtl930x_vlan_profile_dump(int profile)
 {
 	u32 p[5];
 
-	if (profile < 0 || profile > 7)
+	if (profile < 0 || profile > RTL930X_VLAN_PROFILE_MAX)
 		return;
 
 	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
 	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
-	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 8) & 0x1FFFFFFF;
-	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 12) & 0x1FFFFFFF;
-	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16) & 0x1FFFFFFF;
+	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 8);
+	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 12);
+	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16);
 
-	pr_debug("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0x, IPv4 %0x, IPv6: %0x",
-		 profile, p[0] & (3 << 21), p[2], p[3], p[4]);
+	pr_debug("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0lx, IPv4 %0lx, IPv6: %0lx",
+		 profile, RTL930X_VLAN_L2_LEARN_EN_R(p),
+		 RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+		 RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+		 RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
 	pr_debug("  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n",
 		 p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
 		 p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
@@ -359,9 +362,10 @@ static void rtl930x_vlan_profile_setup(int profile)
 
 	/* Enable routing of Ipv4/6 Unicast and IPv4/6 Multicast traffic */
 	p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12);
-	p[2] = 0x1fffffff; /* L2 unknown MC flooding portmask all ports, including the CPU-port */
-	p[3] = 0x1fffffff; /* IPv4 unknown MC flooding portmask */
-	p[4] = 0x1fffffff; /* IPv6 unknown MC flooding portmask */
+
+	p[2] = RTL930X_VLAN_L2_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
+	p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
+	p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
 	sw_w32(p[0], RTL930X_VLAN_PROFILE_SET(profile));
 	sw_w32(p[1], RTL930X_VLAN_PROFILE_SET(profile) + 4);
@@ -373,10 +377,10 @@ static void rtl930x_vlan_profile_setup(int profile)
 static void rtl930x_l2_learning_setup(void)
 {
 	/* Portmask for flooding broadcast traffic */
-	sw_w32(0x1fffffff, RTL930X_L2_BC_FLD_PMSK);
+	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_BC_FLD_PMSK);
 
 	/* Portmask for flooding unicast traffic with unknown destination */
-	sw_w32(0x1fffffff, RTL930X_L2_UNKN_UC_FLD_PMSK);
+	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_UNKN_UC_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);

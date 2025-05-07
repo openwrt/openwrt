@@ -521,17 +521,17 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 
 static void rtl839x_vlan_profile_setup(int profile)
 {
-	u32 p[2];
-	u32 pmask_id = UNKNOWN_MC_PMASK;
+	u32 p[2] = { 0, 0 };
 
-	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
-	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
-	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+	p[1] = RTL839X_VLAN_L2_LEARN_EN(1);
+	p[1] |= RTL839X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+		RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+	p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
 
-	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
+	rtl839x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL839X_MC_PMASK_ALL_PORTS);
 }
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
@@ -555,7 +555,9 @@ static void rtl839x_l2_learning_setup(void)
 	 * address flooding to the reserved entry in the portmask table used
 	 * also for multicast flooding
 	 */
-	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
+	sw_w32(RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+	       RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
+	       RTL839X_L2_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
@@ -628,15 +630,17 @@ void rtl839x_vlan_profile_dump(int profile)
 {
 	u32 p[2];
 
-	if (profile < 0 || profile > 7)
+	if (profile < 0 || profile > RTL839X_VLAN_PROFILE_MAX)
 		return;
 
 	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
 	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
 
 	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
-		 profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
-		 (p[0]) & 0xfff);
+		 profile, RTL839X_VLAN_L2_LEARN_EN_R(p),
+		 RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+		 RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+		 RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
 	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
 }
 
