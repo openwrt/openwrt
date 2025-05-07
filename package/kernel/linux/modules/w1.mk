@@ -97,6 +97,20 @@ endef
 $(eval $(call KernelPackage,w1-master-mxc))
 
 
+define KernelPackage/w1-master-uart
+  TITLE:=UART 1-wire bus master
+  KCONFIG:=CONFIG_W1_MASTER_UART
+  FILES:=$(W1_MASTERS_DIR)/w1-uart.ko
+  AUTOLOAD:=$(call AutoProbe,w1-uart)
+  $(call AddDepends/w1, @!LINUX_6_6)
+endef
+
+define KernelPackage/w1-master-uart/description
+  Kernel module for UART 1-wire bus master
+endef
+
+$(eval $(call KernelPackage,w1-master-uart))
+
 #
 # 1-wire slaves
 #
