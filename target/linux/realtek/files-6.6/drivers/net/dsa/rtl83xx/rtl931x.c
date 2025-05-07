@@ -136,27 +136,46 @@ inline int rtl931x_tbl_access_data_0(int i)
 	return RTL931X_TBL_ACCESS_DATA_0(i);
 }
 
-void rtl931x_vlan_profile_dump(int index)
+static int
+rtl931x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 {
 	u32 p[7];
 
-	if (index < 0 || index > RTL931X_VLAN_PROFILE_MAX)
+	if (idx < 0 || idx > RTL931X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx));
+	p[1] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 4);
+	p[2] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 8);
+	p[3] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 12);
+	p[4] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 16);
+	p[5] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 20);
+	p[6] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 24);
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL931X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks = {
+			.l2 = RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+	};
+
+	return 0;
+}
+
+static void rtl931x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtl83xx_vlan_profile p;
+
+	if (rtl931x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
-	p[1] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4);
-	p[2] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8);
-	p[3] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12);
-	p[4] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16);
-	p[5] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20);
-	p[6] = sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24);
-
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
-		IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
-		index, RTL931X_VLAN_L2_LEARN_EN_R(p),
-		RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
+	dev_dbg(priv->dev,
+		"VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
+		 IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
+		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
+		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6);
 }
 
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])

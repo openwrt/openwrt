@@ -148,8 +148,7 @@ static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 
 	priv->r->vlan_profile_setup(0);
 	priv->r->vlan_profile_setup(1);
-	dev_info(priv->dev, "MC_PMASK_ALL_PORTS: %016llx\n", priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX));
-	priv->r->vlan_profile_dump(0);
+	priv->r->vlan_profile_dump(priv, 0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
 	info.hash_uc_fid = false;	/* Do not build the L2 lookup hash with FID, but VID */
