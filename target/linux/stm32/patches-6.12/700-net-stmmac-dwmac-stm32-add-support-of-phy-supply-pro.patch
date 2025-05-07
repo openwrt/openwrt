@@ -21,7 +21,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  #include <linux/pm_wakeirq.h>
  #include <linux/regmap.h>
  #include <linux/slab.h>
-@@ -92,6 +93,7 @@ struct stm32_dwmac {
+@@ -103,6 +104,7 @@ struct stm32_dwmac {
  	u32 mode_reg;		 /* MAC glue-logic mode register */
  	u32 mode_mask;
  	struct regmap *regmap;
@@ -29,7 +29,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  	u32 speed;
  	const struct stm32_ops *ops;
  	struct device *dev;
-@@ -379,6 +381,16 @@ static int stm32_dwmac_parse_data(struct
+@@ -443,6 +445,16 @@ static int stm32_dwmac_parse_data(struct
  		}
  	}
  
@@ -46,7 +46,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  	return err;
  }
  
-@@ -444,6 +456,28 @@ static int stm32mp1_parse_data(struct st
+@@ -508,6 +520,28 @@ static int stm32mp1_parse_data(struct st
  	return err;
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  static int stm32_dwmac_probe(struct platform_device *pdev)
  {
  	struct plat_stmmacenet_data *plat_dat;
-@@ -485,12 +519,18 @@ static int stm32_dwmac_probe(struct plat
+@@ -549,12 +583,18 @@ static int stm32_dwmac_probe(struct plat
  	if (ret)
  		return ret;
  
@@ -95,7 +95,7 @@ Signed-off-by: Christophe Roullier <christophe.roullier@foss.st.com>
  err_clk_disable:
  	stm32_dwmac_clk_disable(dwmac, false);
  
-@@ -511,6 +551,8 @@ static void stm32_dwmac_remove(struct pl
+@@ -575,6 +615,8 @@ static void stm32_dwmac_remove(struct pl
  		dev_pm_clear_wake_irq(&pdev->dev);
  		device_init_wakeup(&pdev->dev, false);
  	}
