@@ -190,6 +190,21 @@ endef
 $(eval $(call KernelPackage,stm32-dcmi))
 
 
+define KernelPackage/stm32-dcmipp
+  TITLE:=STM32 Digital Camera Memory Interface Pixel Processor (DCMIPP) support
+  KCONFIG:=CONFIG_VIDEO_STM32_DCMIPP
+  FILES:=$(LINUX_DIR)/drivers/media/platform/st/stm32/stm32-dcmipp/stm32-dcmipp.ko
+  AUTOLOAD:=$(call AutoProbe,stm32-dcmipp)
+  $(call AddDepends/video,@TARGET_stm32 \
+	  @!LINUX_6_6 \
+	  +kmod-video-videobuf2 \
+	  +kmod-video-dma-contig \
+	  +kmod-video-fwnode)
+endef
+
+$(eval $(call KernelPackage,stm32-dcmipp))
+
+
 define KernelPackage/stm32-dfsdm-adc
   TITLE:=STM32 DFSDM ADC
   KCONFIG:=CONFIG_STM32_DFSDM_CORE \
