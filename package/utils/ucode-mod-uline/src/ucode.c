@@ -368,21 +368,25 @@ uc_uline_cb_event(struct uline_state *s, enum uline_event ev)
 static void uc_uline_poll_cb(struct uloop_fd *fd, unsigned int events)
 {
 	struct uc_uline_state *us = container_of(fd, struct uc_uline_state, fd);
+	uc_value_t *res = ucv_get(us->res);
 	uc_value_t *val;
 
-	uline_poll(&us->s);
+	while (!uloop_cancelled && ucv_resource_data(res, NULL) && us->poll_cb) {
+		uline_poll(&us->s);
 
-	val = us->line;
-	if (!val)
-		return;
+		val = us->line;
+		if (!val)
+			break;
 
-	us->line = NULL;
-	if (!ucv_is_callable(us->poll_cb))
-		return;
+		us->line = NULL;
+		if (!ucv_is_callable(us->poll_cb))
+			break;
 
-	uc_vm_stack_push(us->vm, ucv_get(us->res));
-	uc_vm_stack_push(us->vm, ucv_get(us->poll_cb));
-	cb_call(us, 1, val);
+		uc_vm_stack_push(us->vm, ucv_get(res));
+		uc_vm_stack_push(us->vm, ucv_get(us->poll_cb));
+		cb_call(us, 1, val);
+	}
+	ucv_put(res);
 }
 
 static bool
