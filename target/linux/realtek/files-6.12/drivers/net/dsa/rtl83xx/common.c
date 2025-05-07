@@ -1417,7 +1417,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
 		priv->r = &rtl838x_reg;
-		priv->ds->num_ports = 29;
+		priv->ds->num_ports = RTL838X_CPU_PORT + 1;
 		priv->fib_entries = 8192;
 		priv->ds->num_lag_ids = 8;
 		priv->l2_bucket_size = 4;
@@ -1433,7 +1433,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 2;
 		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
 		priv->r = &rtl839x_reg;
-		priv->ds->num_ports = 53;
+		priv->ds->num_ports = RTL839X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
 		priv->l2_bucket_size = 4;
@@ -1449,7 +1449,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
 		priv->r = &rtl930x_reg;
-		priv->ds->num_ports = 29;
+		priv->ds->num_ports = RTL930X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
 		sw_w32(0, RTL930X_ST_CTRL);
@@ -1466,7 +1466,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_width = 2;
 		priv->irq_mask = GENMASK_ULL(priv->cpu_port - 1, 0);
 		priv->r = &rtl931x_reg;
-		priv->ds->num_ports = 57;
+		priv->ds->num_ports = RTL931X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
 		sw_w32(0, RTL931x_ST_CTRL);
