@@ -173,6 +173,10 @@ config DROPBEAR_AGENTFORWARD
 		Also see DROPBEAR_DBCLIENT_AGENTFORWARD (agent forwarding in
 		dropbear client) if DROPBEAR_DBCLIENT is selected.
 
+config DROPBEAR_RSA_SHA1
+	bool "Enable support for RSA 2048bit SHA-1"
+	default n
+
 config DROPBEAR_MODERN_ONLY
 	bool "Use modern crypto only [BREAKS COMPATIBILITY]"
 	select DROPBEAR_ED25519
