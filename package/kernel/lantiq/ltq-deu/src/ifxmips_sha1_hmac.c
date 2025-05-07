@@ -32,7 +32,7 @@
   \brief SHA1-HMAC deu driver file
 */
 
-/*! 
+/*!
   \defgroup IFX_SHA1_HMAC_FUNCTIONS IFX_SHA1_HMAC_FUNCTIONS
   \ingroup IFX_DEU
   \brief ifx sha1 hmac functions
@@ -67,7 +67,7 @@
 #define SHA1_BLOCK_WORDS    16
 #define SHA1_HASH_WORDS     5
 #define SHA1_HMAC_BLOCK_SIZE    64
-#define SHA1_HMAC_DBN_TEMP_SIZE 1024 // size in dword, needed for dbn workaround 
+#define SHA1_HMAC_DBN_TEMP_SIZE 1024 // size in dword, needed for dbn workaround
 #define HASH_START   IFX_HASH_CON
 
 #define SHA1_HMAC_MAX_KEYLEN 64
@@ -99,10 +99,10 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
 
 /*! \fn static void sha1_hmac_transform(struct crypto_tfm *tfm, u32 const *in)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief save input block to context   
- *  \param tfm linux crypto algo transform  
- *  \param in 64-byte block of input  
-*/                                 
+ *  \brief save input block to context
+ *  \param tfm linux crypto algo transform
+ *  \param in 64-byte block of input
+*/
 static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
@@ -121,11 +121,11 @@ static int sha1_hmac_transform(struct shash_desc *desc, u32 const *in)
 
 /*! \fn int sha1_hmac_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief sets sha1 hmac key   
- *  \param tfm linux crypto algo transform  
- *  \param key input key  
- *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED  
-*/                                 
+ *  \brief sets sha1 hmac key
+ *  \param tfm linux crypto algo transform
+ *  \param key input key
+ *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED
+*/
 static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
 {
     struct sha1_hmac_ctx *sctx = crypto_shash_ctx(tfm);
@@ -157,16 +157,16 @@ static int sha1_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned in
 
 /*! \fn int sha1_hmac_setkey_hw(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief sets sha1 hmac key  into hw registers 
- *  \param tfm linux crypto algo transform  
- *  \param key input key  
- *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED  
-*/                                 
+ *  \brief sets sha1 hmac key  into hw registers
+ *  \param tfm linux crypto algo transform
+ *  \param key input key
+ *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED
+*/
 static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 {
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     int i, j;
-    u32 *in_key = (u32 *)key;        
+    u32 *in_key = (u32 *)key;
 
     j = 0;
 
@@ -175,7 +175,7 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
     {
          hash->KIDX = j;
          asm("sync");
-         hash->KEY = *((u32 *) in_key + j); 
+         hash->KEY = *((u32 *) in_key + j);
          j++;
     }
 
@@ -184,9 +184,9 @@ static int sha1_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 
 /*! \fn void sha1_hmac_init(struct crypto_tfm *tfm)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief initialize sha1 hmac context   
- *  \param tfm linux crypto algo transform  
-*/                                 
+ *  \brief initialize sha1 hmac context
+ *  \param tfm linux crypto algo transform
+*/
 static int sha1_hmac_init(struct shash_desc *desc)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
@@ -201,11 +201,11 @@ static int sha1_hmac_init(struct shash_desc *desc)
 
 /*! \fn static void sha1_hmac_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief on-the-fly sha1 hmac computation   
- *  \param tfm linux crypto algo transform  
- *  \param data input data  
- *  \param len size of input data 
-*/                                 
+ *  \brief on-the-fly sha1 hmac computation
+ *  \param tfm linux crypto algo transform
+ *  \param data input data
+ *  \param len size of input data
+*/
 static int sha1_hmac_update(struct shash_desc *desc, const u8 *data,
             unsigned int len)
 {
@@ -234,10 +234,10 @@ static int sha1_hmac_update(struct shash_desc *desc, const u8 *data,
 
 /*! \fn static int sha1_hmac_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief call sha1_hmac_final_impl with hash_final true   
- *  \param tfm linux crypto algo transform  
- *  \param out final sha1 hmac output value  
-*/                                 
+ *  \brief call sha1_hmac_final_impl with hash_final true
+ *  \param tfm linux crypto algo transform
+ *  \param out final sha1 hmac output value
+*/
 static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 {
     return sha1_hmac_final_impl(desc, out, true);
@@ -245,11 +245,11 @@ static int sha1_hmac_final(struct shash_desc *desc, u8 *out)
 
 /*! \fn static int sha1_hmac_final_impl(struct crypto_tfm *tfm, u8 *out, bool hash_final)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief ompute final or intermediate sha1 hmac value   
- *  \param tfm linux crypto algo transform  
- *  \param out final sha1 hmac output value  
- *  \param in finalize or intermediate processing  
-*/                                 
+ *  \brief ompute final or intermediate sha1 hmac value
+ *  \param tfm linux crypto algo transform
+ *  \param out final sha1 hmac output value
+ *  \param in finalize or intermediate processing
+*/
 static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
 {
     struct sha1_hmac_ctx *sctx =  crypto_shash_ctx(desc->tfm);
@@ -304,7 +304,7 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
     asm("sync");
 
     //for vr9 change, ENDI = 1
-    *IFX_HASH_CON = HASH_CON_VALUE; 
+    *IFX_HASH_CON = HASH_CON_VALUE;
 
     //wait for processing
     while (hashs->controlr.BSY) {
@@ -334,7 +334,7 @@ static int sha1_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_fina
         while (hashs->controlr.BSY) {
             // this will not take long
         }
-    
+
         in += 16;
     }
 
@@ -395,7 +395,7 @@ static void sha1_hmac_exit_tfm(struct crypto_tfm *tfm)
     kfree(sctx->desc);
 }
 
-/* 
+/*
  * \brief SHA1_HMAC function mappings
 */
 
@@ -421,8 +421,8 @@ static struct shash_alg ifxdeu_sha1_hmac_alg = {
 
 /*! \fn int ifxdeu_init_sha1_hmac (void)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief initialize sha1 hmac driver    
-*/                                 
+ *  \brief initialize sha1 hmac driver
+*/
 int ifxdeu_init_sha1_hmac (void)
 {
     int ret = -ENOSYS;
@@ -442,8 +442,8 @@ sha1_err:
 
 /*! \fn void ifxdeu_fini_sha1_hmac (void)
  *  \ingroup IFX_SHA1_HMAC_FUNCTIONS
- *  \brief unregister sha1 hmac driver    
-*/                                 
+ *  \brief unregister sha1 hmac driver
+*/
 void ifxdeu_fini_sha1_hmac (void)
 {
 

@@ -65,9 +65,9 @@
 
 #define INPUT_ENDIAN_SWAP(input)    input_swap(input)
 #define DEU_ENDIAN_SWAP(input)    endian_swap(input)
-#define DELAY_PERIOD    10 
+#define DELAY_PERIOD    10
 #define FIND_DEU_CHIP_VERSION    chip_version()
-#define CLC_START IFX_DEU_CLK 
+#define CLC_START IFX_DEU_CLK
 
 #define AES_INIT 0
 #define DES_INIT 1
@@ -79,7 +79,7 @@
 
 #define AES_START IFX_AES_CON
 #define DES_3DES_START  IFX_DES_CON
-				      
+
 #define WAIT_AES_DMA_READY()          \
     do { 			      \
         int i;			      \
@@ -126,7 +126,7 @@
     } while(0)
 
 /* DEU Common Structures for AR9*/
- 
+
 struct clc_controlr_t {
 	u32 Res:26;
 	u32 FSOE:1;
@@ -233,7 +233,7 @@ struct arc4_t {
 		u32 reserved3:1;
 		u32 ARS:1;
 		u32 SM:1;
-		u32 reserved4:4;						
+		u32 reserved4:4;
 
 	} controlr;
 	u32 K3R;		//104h
@@ -247,7 +247,7 @@ struct arc4_t {
 	u32 ID2R;		//11Ch
 	u32 ID1R;		//120h
 	u32 ID0R;		//124h
-	
+
 	u32 OD3R;		//128h
 	u32 OD2R;		//12Ch
 	u32 OD1R;		//130h
@@ -257,14 +257,14 @@ struct arc4_t {
 struct deu_hash_t {
 	struct hash_controlr {
 		u32 reserved1:5;
-		u32 KHS:1;		
+		u32 KHS:1;
 		u32 GO:1;
 		u32 INIT:1;
 		u32 reserved2:6;
 		u32 NDC:1;
 		u32 ENDI:1;
 		u32 reserved3:7;
-		u32 DGRY:1;		
+		u32 DGRY:1;
 		u32 BSY:1;
 		u32 reserved4:1;
 		u32 IRCL:1;

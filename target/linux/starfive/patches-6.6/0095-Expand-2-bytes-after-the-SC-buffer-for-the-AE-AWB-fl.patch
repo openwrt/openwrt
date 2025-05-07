@@ -62,11 +62,11 @@ Subject: [PATCH 095/116] Expand 2 bytes after the SC buffer for the AE/AWB
 +	reg_write(ispbase, 0xb8, ((u32)(setting->crop_config.v_start) << 16) | setting->crop_config.h_start);
 +
 +	// SC config1
-+	reg_write(ispbase, 0xbc, ((u32)(setting->awb_config.sel) << 30) | ((u32)(setting->awb_config.awb_ps_grb_ba) << 16) | 
++	reg_write(ispbase, 0xbc, ((u32)(setting->awb_config.sel) << 30) | ((u32)(setting->awb_config.awb_ps_grb_ba) << 16) |
 +		((u32)(setting->crop_config.sw_height) << 8) | setting->crop_config.sw_width);
 +
 +	// SC decimation config
-+	reg_write(ispbase, 0xd8, ((u32)(setting->crop_config.vkeep) << 24) | ((u32)(setting->crop_config.vperiod) << 16) | 
++	reg_write(ispbase, 0xd8, ((u32)(setting->crop_config.vkeep) << 24) | ((u32)(setting->crop_config.vperiod) << 16) |
 +		((u32)(setting->crop_config.hkeep) << 8) | setting->crop_config.hperiod);
 +
 +	// SC AWB pixel sum config
@@ -77,17 +77,8 @@ Subject: [PATCH 095/116] Expand 2 bytes after the SC buffer for the AE/AWB
 +	reg_write(ispbase, 0xd4, CREATE_REG_VALUE(u16, &setting->awb_config.ws_ps_config.awb_ps_grbl, 2, 0xffff, 16));
 +
  	// AF register
- 	reg_write(ispbase, 0xc0, 
+ 	reg_write(ispbase, 0xc0,
  		((u32)(setting->af_config.es_hor_thr & 0x1ff) << 16) |
-@@ -686,7 +721,7 @@ static int isp_set_ctrl_sc(struct stf_is
- 	FILL_ISP_REGS(u32, ispbase, reg_addr, weight_cfg, 6, 0xffffffff, 0);
- 
- 	reg_set_bit(ispbase, reg_info->en_reg, 1 << reg_info->en_nbit, setting->enabled ? 1 << reg_info->en_nbit : 0);
--	
-+
- 	return 0;
- }
- 
 --- a/drivers/media/platform/starfive/v4l2_driver/stf_isp.h
 +++ b/drivers/media/platform/starfive/v4l2_driver/stf_isp.h
 @@ -18,7 +18,7 @@

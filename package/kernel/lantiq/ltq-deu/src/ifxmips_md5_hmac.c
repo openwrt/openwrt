@@ -60,7 +60,7 @@
 #define MD5_HMAC_BLOCK_SIZE 64
 #define MD5_BLOCK_WORDS     16
 #define MD5_HASH_WORDS      4
-#define MD5_HMAC_DBN_TEMP_SIZE  1024 // size in dword, needed for dbn workaround 
+#define MD5_HMAC_DBN_TEMP_SIZE  1024 // size in dword, needed for dbn workaround
 #define HASH_START   IFX_HASH_CON
 
 //#define CRYPTO_DEBUG
@@ -91,10 +91,10 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
 
 /*! \fn static void md5_hmac_transform(struct crypto_tfm *tfm, u32 const *in)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief save input block to context   
- *  \param tfm linux crypto algo transform  
- *  \param in 64-byte block of input  
-*/                                 
+ *  \brief save input block to context
+ *  \param tfm linux crypto algo transform
+ *  \param in 64-byte block of input
+*/
 static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
@@ -111,12 +111,12 @@ static void md5_hmac_transform(struct shash_desc *desc, u32 const *in)
 
 /*! \fn int md5_hmac_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief sets md5 hmac key   
- *  \param tfm linux crypto algo transform  
- *  \param key input key  
- *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED  
-*/  
-static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen) 
+ *  \brief sets md5 hmac key
+ *  \param tfm linux crypto algo transform
+ *  \param key input key
+ *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED
+*/
+static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int keylen)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(tfm);
     int err;
@@ -146,25 +146,25 @@ static int md5_hmac_setkey(struct crypto_shash *tfm, const u8 *key, unsigned int
 
 /*! \fn int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief sets md5 hmac key into the hardware registers  
- *  \param key input key  
- *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED  
-*/  
+ *  \brief sets md5 hmac key into the hardware registers
+ *  \param key input key
+ *  \param keylen key length greater than 64 bytes IS NOT SUPPORTED
+*/
 static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 {
     volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
     int i, j;
-    u32 *in_key = (u32 *)key;        
+    u32 *in_key = (u32 *)key;
 
     //printk("\nsetkey keylen: %d\n key: ", keylen);
-    
+
     hash->KIDX |= 0x80000000; // reset all 16 words of the key to '0'
     j = 0;
     for (i = 0; i < keylen; i+=4)
     {
          hash->KIDX = j;
          asm("sync");
-         hash->KEY = *((u32 *) in_key + j); 
+         hash->KEY = *((u32 *) in_key + j);
          asm("sync");
          j++;
     }
@@ -174,14 +174,14 @@ static int md5_hmac_setkey_hw(const u8 *key, unsigned int keylen)
 
 /*! \fn void md5_hmac_init(struct crypto_tfm *tfm)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief initialize md5 hmac context   
- *  \param tfm linux crypto algo transform  
-*/                                 
+ *  \brief initialize md5 hmac context
+ *  \param tfm linux crypto algo transform
+*/
 static int md5_hmac_init(struct shash_desc *desc)
 {
 
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
-    
+
 
     mctx->dbn = 0; //dbn workaround
     mctx->started = 0;
@@ -189,21 +189,21 @@ static int md5_hmac_init(struct shash_desc *desc)
 
     return 0;
 }
-    
+
 /*! \fn void md5_hmac_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief on-the-fly md5 hmac computation   
- *  \param tfm linux crypto algo transform  
- *  \param data input data  
- *  \param len size of input data  
-*/                                 
+ *  \brief on-the-fly md5 hmac computation
+ *  \param tfm linux crypto algo transform
+ *  \param data input data
+ *  \param len size of input data
+*/
 static int md5_hmac_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
     const u32 avail = sizeof(mctx->block) - (mctx->byte_count & 0x3f);
 
     mctx->byte_count += len;
-    
+
     if (avail > len) {
         memcpy((char *)mctx->block + (sizeof(mctx->block) - avail),
                data, len);
@@ -225,15 +225,15 @@ static int md5_hmac_update(struct shash_desc *desc, const u8 *data, unsigned int
     }
 
     memcpy(mctx->block, data, len);
-    return 0;    
+    return 0;
 }
 
 /*! \fn static int md5_hmac_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief call md5_hmac_final_impl with hash_final true   
- *  \param tfm linux crypto algo transform  
- *  \param out final md5 hmac output value  
-*/                                 
+ *  \brief call md5_hmac_final_impl with hash_final true
+ *  \param tfm linux crypto algo transform
+ *  \param out final md5 hmac output value
+*/
 static int md5_hmac_final(struct shash_desc *desc, u8 *out)
 {
     return md5_hmac_final_impl(desc, out, true);
@@ -241,11 +241,11 @@ static int md5_hmac_final(struct shash_desc *desc, u8 *out)
 
 /*! \fn static int md5_hmac_final_impl(struct crypto_tfm *tfm, u8 *out, bool hash_final)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief compute final or intermediate md5 hmac value   
- *  \param tfm linux crypto algo transform  
- *  \param out final md5 hmac output value  
- *  \param in finalize or intermediate processing  
-*/                                 
+ *  \brief compute final or intermediate md5 hmac value
+ *  \param tfm linux crypto algo transform
+ *  \param out final md5 hmac output value
+ *  \param in finalize or intermediate processing
+*/
 static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final)
 {
     struct md5_hmac_ctx *mctx = crypto_shash_ctx(desc->tfm);
@@ -268,7 +268,7 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
         }
 
         memset(p, 0, padding);
-        mctx->block[14] = le32_to_cpu((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation 
+        mctx->block[14] = le32_to_cpu((mctx->byte_count + 64) << 3); // need to add 512 bit of the IPAD operation
         mctx->block[15] = 0x00000000;
 
         md5_hmac_transform(desc, mctx->block);
@@ -280,15 +280,15 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
 
     md5_hmac_setkey_hw(mctx->key, mctx->keylen);
 
-    //printk("\ndbn = %d\n", mctx->dbn); 
+    //printk("\ndbn = %d\n", mctx->dbn);
     if (hash_final) {
        hashs->DBN = mctx->dbn;
     } else {
        hashs->DBN = mctx->dbn + 5;
     }
     asm("sync");
-    
-    *IFX_HASH_CON = 0x0703002D; //khs, go, init, ndc, endi, kyue, hmen, md5 	
+
+    *IFX_HASH_CON = 0x0703002D; //khs, go, init, ndc, endi, kyue, hmen, md5
 
     //wait for processing
     while (hashs->controlr.BSY) {
@@ -317,7 +317,7 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
         while (hashs->controlr.BSY) {
            // this will not take long
         }
-    
+
         in += 16;
 }
 
@@ -374,7 +374,7 @@ static void md5_hmac_exit_tfm(struct crypto_tfm *tfm)
     kfree(mctx->desc);
 }
 
-/* 
+/*
  * \brief MD5_HMAC function mappings
 */
 static struct shash_alg ifxdeu_md5_hmac_alg = {
@@ -399,8 +399,8 @@ static struct shash_alg ifxdeu_md5_hmac_alg = {
 
 /*! \fn int ifxdeu_init_md5_hmac (void)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief initialize md5 hmac driver   
-*/                                 
+ *  \brief initialize md5 hmac driver
+*/
 int ifxdeu_init_md5_hmac (void)
 {
 
@@ -420,8 +420,8 @@ md5_hmac_err:
 
 /** \fn void ifxdeu_fini_md5_hmac (void)
  *  \ingroup IFX_MD5_HMAC_FUNCTIONS
- *  \brief unregister md5 hmac driver   
-*/                                 
+ *  \brief unregister md5 hmac driver
+*/
 void ifxdeu_fini_md5_hmac (void)
 {
     crypto_unregister_shash(&ifxdeu_md5_hmac_alg);

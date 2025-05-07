@@ -29,7 +29,7 @@
 /*!
   \file		ifxmips_md5.c
   \ingroup 	IFX_DEU
-  \brief 	MD5 encryption deu driver file 
+  \brief 	MD5 encryption deu driver file
 */
 
 /*!
@@ -83,10 +83,10 @@ extern int disable_deudma;
 
 /*! \fn static void md5_transform(u32 *hash, u32 const *in)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief main interface to md5 hardware   
- *  \param hash current hash value  
- *  \param in 64-byte block of input  
-*/                                 
+ *  \brief main interface to md5 hardware
+ *  \param hash current hash value
+ *  \param in 64-byte block of input
+*/
 static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
 {
     int i;
@@ -97,7 +97,7 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
 
     MD5_HASH_INIT;
 
-    if (mctx->started) { 
+    if (mctx->started) {
         hashs->D1R = *((u32 *) hash + 0);
         hashs->D2R = *((u32 *) hash + 1);
         hashs->D3R = *((u32 *) hash + 2);
@@ -126,9 +126,9 @@ static void md5_transform(struct md5_ctx *mctx, u32 *hash, u32 const *in)
 
 /*! \fn static inline void md5_transform_helper(struct md5_ctx *ctx)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief interfacing function for md5_transform()   
- *  \param ctx crypto context  
-*/                                 
+ *  \brief interfacing function for md5_transform()
+ *  \param ctx crypto context
+*/
 static inline void md5_transform_helper(struct md5_ctx *ctx)
 {
     //le32_to_cpu_array(ctx->block, sizeof(ctx->block) / sizeof(u32));
@@ -137,9 +137,9 @@ static inline void md5_transform_helper(struct md5_ctx *ctx)
 
 /*! \fn static void md5_init(struct crypto_tfm *tfm)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief initialize md5 hardware   
- *  \param tfm linux crypto algo transform  
-*/                                 
+ *  \brief initialize md5 hardware
+ *  \param tfm linux crypto algo transform
+*/
 static int md5_init(struct shash_desc *desc)
 {
     struct md5_ctx *mctx = shash_desc_ctx(desc);
@@ -152,11 +152,11 @@ static int md5_init(struct shash_desc *desc)
 
 /*! \fn static void md5_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief on-the-fly md5 computation   
- *  \param tfm linux crypto algo transform  
- *  \param data input data  
- *  \param len size of input data  
-*/                                 
+ *  \brief on-the-fly md5 computation
+ *  \param tfm linux crypto algo transform
+ *  \param data input data
+ *  \param len size of input data
+*/
 static int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 {
     struct md5_ctx *mctx = shash_desc_ctx(desc);
@@ -190,10 +190,10 @@ static int md5_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 
 /*! \fn static void md5_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief compute final md5 value   
- *  \param tfm linux crypto algo transform  
- *  \param out final md5 output value  
-*/                                 
+ *  \brief compute final md5 value
+ *  \param tfm linux crypto algo transform
+ *  \param out final md5 output value
+*/
 static int md5_final(struct shash_desc *desc, u8 *out)
 {
     struct md5_ctx *mctx = shash_desc_ctx(desc);
@@ -215,7 +215,7 @@ static int md5_final(struct shash_desc *desc, u8 *out)
     mctx->block[14] = le32_to_cpu(mctx->byte_count << 3);
     mctx->block[15] = le32_to_cpu(mctx->byte_count >> 29);
 
-    md5_transform(mctx, mctx->hash, mctx->block);                                                 
+    md5_transform(mctx, mctx->hash, mctx->block);
 
     memcpy(out, mctx->hash, MD5_DIGEST_SIZE);
 
@@ -246,8 +246,8 @@ static struct shash_alg ifxdeu_md5_alg = {
 
 /*! \fn int ifxdeu_init_md5 (void)
  *  \ingroup IFX_MD5_FUNCTIONS
- *  \brief initialize md5 driver   
-*/                                 
+ *  \brief initialize md5 driver
+*/
 int ifxdeu_init_md5 (void)
 {
     int ret = -ENOSYS;
@@ -266,9 +266,9 @@ md5_err:
 
 /*! \fn void ifxdeu_fini_md5 (void)
   * \ingroup IFX_MD5_FUNCTIONS
-  * \brief unregister md5 driver   
-*/                  
-               
+  * \brief unregister md5 driver
+*/
+
 void ifxdeu_fini_md5 (void)
 {
     crypto_unregister_shash(&ifxdeu_md5_alg);

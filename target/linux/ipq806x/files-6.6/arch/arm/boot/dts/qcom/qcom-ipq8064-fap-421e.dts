@@ -40,7 +40,7 @@
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
-		
+
 		reset {
 			label = "reset";
 			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_LOW>;
@@ -157,7 +157,7 @@
 			pins = "gpio6", "gpio7";
 		};
 	};
-	
+
 	usb_pwr_en_pins: usb_pwr_en_pins {
 		mux {
 			pins = "gpio22";

@@ -4,7 +4,7 @@
  	} else if (dev->dev->chip_id == 0x5354) {
  		/* Don't allow overtaking buttons GPIOs */
  		set &= 0x2; /* 0x2 is LED GPIO on BCM5354 */
-+	} else if (dev->dev->chip_id == BCMA_CHIP_ID_BCM4716 || 
++	} else if (dev->dev->chip_id == BCMA_CHIP_ID_BCM4716 ||
 +		   dev->dev->chip_id == BCMA_CHIP_ID_BCM47162 ||
 +		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5356 ||
 +		   dev->dev->chip_id == BCMA_CHIP_ID_BCM5357 ||

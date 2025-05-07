@@ -170,10 +170,10 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 +               goto err;
 +           }
 +           p->bf_len = size;
-+           p->bf_insns = (struct bpf_insn *) 
++           p->bf_insns = (struct bpf_insn *)
 +               malloc (size * sizeof (struct bpf_insn));
 +       }
-+    } 
++    }
 +    if (size != index)
 +    {
 +       ppp_option_error("error in precompiled active-filter,"

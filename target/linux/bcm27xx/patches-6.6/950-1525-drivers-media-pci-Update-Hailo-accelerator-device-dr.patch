@@ -393,7 +393,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
      BUG_ON(HAILO_PCIE_MAX_ATR_TABLE_INDEX < atr_index);
 -    offset = ATR0_PCIE_BRIDGE_OFFSET + (atr_index * 0x20);
 +    offset = ATR_PCIE_BRIDGE_OFFSET(atr_index);
-     
+ 
      hailo_resource_read_buffer(bridge_config, offset, sizeof(*atr), (void*)atr);
  }
 @@ -510,7 +544,7 @@ static void read_memory(struct hailo_pci
@@ -413,9 +413,9 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +void hailo_pcie_configure_ep_registers_for_dma_transaction(struct hailo_pcie_resources *resources)
 +{
 +    u32 reg_routing_mercury = 0;
-+    
++
 +    BUG_ON(compat[resources->board_type].fw_addresses.pcie_cfg_regs == 0);
-+    
++
 +    read_memory(resources, compat[resources->board_type].fw_addresses.pcie_cfg_regs, &reg_routing_mercury, sizeof(reg_routing_mercury));
 +    PCIE_CONFIG_PCIE_CFG_QM_ROUTING_MODE_SET(reg_routing_mercury);
 +    write_memory(resources, compat[resources->board_type].fw_addresses.pcie_cfg_regs, &reg_routing_mercury, sizeof(reg_routing_mercury));
@@ -445,7 +445,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -    const struct hailo_file_batch *files_batch = compat[resources->board_type].stages[stage].batch;
 +    const struct hailo_pcie_loading_stage *stage_info = hailo_pcie_get_loading_stage_info(resources->board_type, stage);
 +    const struct hailo_file_batch *files_batch = stage_info->batch;
-+    const u8 amount_of_files = stage_info->amount_of_files_in_stage;  
++    const u8 amount_of_files = stage_info->amount_of_files_in_stage;
      int file_index = 0;
      int err = 0;
  
@@ -798,7 +798,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
      u32 desc_depth_data_id = 0;
 +    u8 desc_depth = ceil_log2(desc_count);
  
-     if (((desc_dma_address & 0xFFFF) != 0) || 
+     if (((desc_dma_address & 0xFFFF) != 0) ||
           (desc_depth > DESCRIPTOR_LIST_MAX_DEPTH)) {
 @@ -798,22 +788,22 @@ int hailo_vdma_start_channel(u8 __iomem
      }
@@ -819,7 +819,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -    iowrite32(dma_address_h, host_regs + VDMA_CHANNEL__ADDRESS_H_OFFSET);
 +    iowrite32(dma_address_h, regs + VDMA_CHANNEL__ADDRESS_H_OFFSET);
  
-     desc_depth_data_id = (uint32_t)(desc_depth << VDMA_CHANNEL_DESC_DEPTH_SHIFT) | 
+     desc_depth_data_id = (uint32_t)(desc_depth << VDMA_CHANNEL_DESC_DEPTH_SHIFT) |
          (data_id << VDMA_CHANNEL_DATA_ID_SHIFT);
 -    iowrite32(desc_depth_data_id, host_regs);
 +    iowrite32(desc_depth_data_id, regs);
@@ -962,7 +962,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +    if (irq_source->sw_interrupts & HAILO_PCIE_SOC_CLOSE_IRQ) {
 +        hailo_info(board, "soc_irq_handler - HAILO_PCIE_SOC_CLOSE_IRQ\n");
-+        // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not. 
++        // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not.
 +        hailo_vdma_wakeup_interrupts(&board->vdma, &board->vdma.vdma_engines[DEFAULT_VDMA_ENGINE_INDEX],
 +            0xFFFFFFFF);
 +    }
@@ -1008,7 +1008,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
 -        if (irq_source.interrupt_bitmask & SOC_CLOSED_IRQ) {
 -            hailo_info(board, "hailo_irqhandler - SOC_CLOSED_IRQ\n");
--            // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not. 
+-            // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not.
 -            hailo_vdma_wakeup_interrupts(&board->vdma, &board->vdma.vdma_engines[DEFAULT_VDMA_ENGINE_INDEX],
 -                0xFFFFFFFF);
 -        }
@@ -1121,7 +1121,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +        hailo_dev_err(dev, "Failed to program host descriptors, error = %u\n", host_desc);
 +        return host_desc;
 +    }
-+    
++
 +    // checks that same amount of decsriptors were programmed on device side and host side
 +    if (host_desc != device_desc) {
 +        hailo_dev_err(dev, "Host and device descriptors should be the same\n");
@@ -1167,7 +1167,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +        struct hailo_pcie_boot_dma_channel_state *channel = &boot_dma_state->channels[boot_dma_state->curr_channel_index];
 +        bool is_last_desc_chunk_of_curr_channel = false;
 +        bool rais_interrupt_on_last_chunk = false;
-+        
++
 +        hailo_dbg(board, "desc_program_num = 0x%x, desc_page_size = 0x%x, on channel = %d\n",
 +            channel->desc_program_num, HAILO_PCI_OVER_VDMA_PAGE_SIZE, boot_dma_state->curr_channel_index);
 +
@@ -1182,7 +1182,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +        desc_num_left = (MAX_SG_DESCS_COUNT - 1) - channel->desc_program_num;
 +
 +        // prepare the transfer buffer to make sure all the fields are initialized
-+        transfer_buffer.sg_table = &channel->sg_table; 
++        transfer_buffer.sg_table = &channel->sg_table;
 +        transfer_buffer.size = min(remaining_size, (desc_num_left * HAILO_PCI_OVER_VDMA_PAGE_SIZE));
 +        // no need to check for overflow since the variables are constant and always desc_program_num <= max u16 (65536)
 +        // & the buffer max size is 256 Mb << 4G (max u32)
@@ -1219,7 +1219,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +        data_offset += transfer_buffer.size;
 +        channel->desc_program_num += desc_programmed;
 +    }
-+    
++
 +    hailo_notice(board, "File %s programed successfully\n", filename);
 +
 +    release_firmware(firmware);
@@ -1251,7 +1251,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    {
 +        filename = files_batch[file_index].filename;
 +        file_address = files_batch[file_index].address;
-+        
++
 +        if (NULL == filename) {
 +            hailo_err(board, "The amount of files wasn't specified for stage %d\n", stage);
 +            break;
@@ -1402,7 +1402,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 + * @param boot_dma_state - pointer to the boot dma state struct which includes all of the boot resources.
 + * @param engine - pointer to the vDMA engine struct.
 + * @return 0 on success, negative error code on failure. in case of failure descriptor lists are released,
-+ *  boot vDMA channels are stopped and memory is released. 
++ *  boot vDMA channels are stopped and memory is released.
 + */
 +static long pcie_vdme_allocate_boot_resources(u32 desc_page_size, struct hailo_pcie_board *board,
 +    struct hailo_pcie_boot_dma_state *boot_dma_state, struct hailo_vdma_engine *engine)
@@ -1410,12 +1410,12 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    long err = 0;
 +    uintptr_t device_handle = 0, host_handle = 0;
 +    u8 channel_index = 0;
-+    
-+    for (channel_index = 0; channel_index < HAILO_PCI_OVER_VDMA_NUM_CHANNELS; channel_index++) {    
++
++    for (channel_index = 0; channel_index < HAILO_PCI_OVER_VDMA_NUM_CHANNELS; channel_index++) {
 +        struct hailo_pcie_boot_dma_channel_state *channel = &boot_dma_state->channels[channel_index];
 +
 +        // create 2 descriptors list - 1 for the host & 1 for the device for each channel
-+        err = hailo_desc_list_create(&board->pDev->dev, MAX_SG_DESCS_COUNT, desc_page_size, host_handle, false, 
++        err = hailo_desc_list_create(&board->pDev->dev, MAX_SG_DESCS_COUNT, desc_page_size, host_handle, false,
 +            &channel->host_descriptors_buffer);
 +        if (err < 0) {
 +            hailo_err(board, "failed to allocate host descriptors list buffer\n");
@@ -1467,7 +1467,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +/**
 + * Write FW boot files over vDMA using multiple channels for timing optimizations.
-+ * 
++ *
 + * The function is divided into the following steps:
 + * 1) Allocate resources for the boot process.
 + * 2) Programs descriptors to point to the memory and start the vDMA.
@@ -1566,11 +1566,10 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +        hailo_dev_err(dev, "Timeout waiting for SOC FIRST_STAGE firmware file, boot status %u\n", boot_status);
          return -ETIMEDOUT;
      }
--    reinit_completion(fw_load_completion);
++
+     reinit_completion(fw_load_completion);
  
 -    err = hailo_pcie_write_firmware_batch(dev, resources, second_stage);
-+    reinit_completion(fw_load_completion);
-+    
 +    err = (int)pcie_write_firmware_batch_over_dma(board, second_stage, HAILO_PCI_OVER_VDMA_PAGE_SIZE);
      if (err < 0) {
 -        hailo_dev_err(dev, "Failed writing firmware files. err %d\n", err);
@@ -1778,7 +1777,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
          goto probe_release_pcie_resources;
      }
  
-+    // Initialize the boot channel bitmap to 1 since channel 0 is always used for boot 
++    // Initialize the boot channel bitmap to 1 since channel 0 is always used for boot
 +    // (we will always use at least 1 channel which is LSB in the bitmap)
 +    pBoard->fw_boot.boot_used_channel_bitmap = (1 << 0);
 +    memset(&pBoard->fw_boot.boot_dma_state, 0, sizeof(pBoard->fw_boot.boot_dma_state));
@@ -1880,7 +1879,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
      struct hailo_vdma_controller vdma;
  
 +    struct hailo_pcie_fw_boot fw_boot;
-+    
++
      struct hailo_memory_transfer_params memory_transfer_params;
      u32 desc_max_page_size;
      enum hailo_allocation_mode allocation_mode;
@@ -1933,7 +1932,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
      // configure and start input channel
 -    depth = ceil_log2(input_descriptors_buffer->desc_list.desc_count);
-     // DMA Direction is only to get channel index - so 
+     // DMA Direction is only to get channel index - so
 -    err = hailo_vdma_start_channel(input_channel->host_regs, input_descriptors_buffer->dma_address, depth,
 +    err = hailo_vdma_start_channel(input_channel->host_regs, input_descriptors_buffer->dma_address, input_descriptors_buffer->desc_list.desc_count,
          board->vdma.hw->ddr_data_id);
@@ -1941,10 +1940,10 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
          hailo_dev_err(&board->pDev->dev, "Error starting vdma input channel index %u\n", params.input_channel_index);
 @@ -149,9 +150,8 @@ long hailo_soc_connect_ioctl(struct hail
      hailo_set_bit(params.input_channel_index, &context->soc_used_channels_bitmap);
-     
+ 
      // configure and start output channel
 -    depth = ceil_log2(output_descriptors_buffer->desc_list.desc_count);
-     // DMA Direction is only to get channel index - so 
+     // DMA Direction is only to get channel index - so
 -    err = hailo_vdma_start_channel(output_channel->host_regs, output_descriptors_buffer->dma_address, depth,
 +    err = hailo_vdma_start_channel(output_channel->host_regs, output_descriptors_buffer->dma_address, output_descriptors_buffer->desc_list.desc_count,
          board->vdma.hw->ddr_data_id);
@@ -2051,12 +2050,10 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  struct hailo_vdma_buffer *hailo_vdma_buffer_map(struct device *dev,
      uintptr_t user_address, size_t size, enum dma_data_direction direction,
      enum hailo_dma_buffer_type buffer_type, struct hailo_vdma_low_memory_buffer *low_mem_driver_allocated_buffer)
-@@ -112,7 +151,8 @@ struct hailo_vdma_buffer *hailo_vdma_buf
-     struct sg_table sgt = {0};
+@@ -113,6 +152,7 @@ struct hailo_vdma_buffer *hailo_vdma_buf
      struct vm_area_struct *vma = NULL;
      bool is_mmio = false;
--    struct hailo_dmabuf_info dmabuf_info = {0}; 
-+    struct hailo_dmabuf_info dmabuf_info = {0};
+     struct hailo_dmabuf_info dmabuf_info = {0};
 +    bool created_dmabuf_fd_from_vma = false;
  
      mapped_buffer = kzalloc(sizeof(*mapped_buffer), GFP_KERNEL);

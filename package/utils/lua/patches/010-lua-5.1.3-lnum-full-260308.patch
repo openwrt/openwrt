@@ -102,7 +102,7 @@
  LUA_API lua_Integer lua_tointeger (lua_State *L, int idx) {
    TValue n;
 +    /* Lua 5.1 documented behaviour is to return nonzero for non-integer:
-+     * "If the number is not an integer, it is truncated in some non-specified way." 
++     * "If the number is not an integer, it is truncated in some non-specified way."
 +     * I would suggest to change this, to return 0 for anything that would
 +     * not fit in 'lua_Integer'.
 +     */
@@ -374,7 +374,7 @@
      if (s1 != s2) {  /* at least one valid digit? */
        while (isspace((unsigned char)(*s2))) s2++;  /* skip trailing spaces */
        if (*s2 == '\0') {  /* no invalid trailing characters? */
-+	  
++
 +		/* Push as number, there needs to be separate 'luaB_tointeger' for
 +		 * when the caller wants to preserve the bits (matters if unsigned
 +		 * values are used).
@@ -550,7 +550,7 @@
 +  /* real and imaginary parts don't mix. */
 +#ifdef LNUM_COMPLEX
 +  if (e1->k == VKNUM2) {
-+    if ((op != OP_UNM) && (e2->k != VKNUM2)) return 0; 
++    if ((op != OP_UNM) && (e2->k != VKNUM2)) return 0;
 +    vkres= VKNUM2; }
 +  else if (e2->k == VKNUM2) { return 0; }
 +#endif
@@ -581,7 +581,7 @@
      case OP_ADD: r = luai_numadd(v1, v2); break;
      case OP_SUB: r = luai_numsub(v1, v2); break;
 -    case OP_MUL: r = luai_nummul(v1, v2); break;
-+    case OP_MUL: 
++    case OP_MUL:
 +#ifdef LNUM_COMPLEX
 +        if (vkres==VKNUM2) return 0;    /* leave to runtime (could do here, but not worth it?) */
 +#endif
@@ -600,7 +600,7 @@
 +#endif
        r = luai_nummod(v1, v2); break;
 -    case OP_POW: r = luai_numpow(v1, v2); break;
-+    case OP_POW: 
++    case OP_POW:
 +#ifdef LNUM_COMPLEX
 +      if (vkres==VKNUM2) return 0;    /* leave to runtime */
 +#endif
@@ -945,7 +945,7 @@
 -  TK_NAME, TK_STRING, TK_EOS
 +  TK_NAME, TK_STRING, TK_EOS, TK_INT
 +#ifdef LNUM_COMPLEX
-+  , TK_NUMBER2   /* imaginary constants: Ni */ 
++  , TK_NUMBER2   /* imaginary constants: Ni */
 +#endif
  };
  
@@ -959,7 +959,7 @@
 -
 +/* SemInfo is a local data structure of 'llex.c', used for carrying a string
 + * or a number. A separate token (TK_*) will tell, how to interpret the data.
-+ */      
++ */
  typedef union {
    lua_Number r;
 +  lua_Integer i;
@@ -1002,7 +1002,7 @@
 + * don't intrude the code libs internal functions.
 + */
 +#ifdef LNUM_COMPLEX
-+# include "lnum.h"    
++# include "lnum.h"
 +#endif
  
  #undef PI
@@ -1159,7 +1159,7 @@
  
 -static int math_fmod (lua_State *L) {
 -  lua_pushnumber(L, fmod(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
-+static int math_fmod (lua_State *L) {  
++static int math_fmod (lua_State *L) {
 +  /* scalars only */
 +  lua_pushnumber(L, _LF(fmod) (luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
    return 1;
@@ -1189,7 +1189,7 @@
  static int math_pow (lua_State *L) {
 -  lua_pushnumber(L, pow(luaL_checknumber(L, 1), luaL_checknumber(L, 2)));
 +#ifdef LNUM_COMPLEX
-+  /* C99 'cpow' gives somewhat inaccurate results (i.e. (-1)^2 = -1+1.2246467991474e-16i). 
++  /* C99 'cpow' gives somewhat inaccurate results (i.e. (-1)^2 = -1+1.2246467991474e-16i).
 +  * 'luai_vectpow' smoothens such, reusing it is the reason we need to #include "lnum.h".
 +  */
 +  lua_pushcomplex(L, luai_vectpow(luaL_checkcomplex(L,1), luaL_checkcomplex(L,2)));
@@ -1212,7 +1212,7 @@
  static int math_log10 (lua_State *L) {
 -  lua_pushnumber(L, log10(luaL_checknumber(L, 1)));
 +#ifdef LNUM_COMPLEX
-+  /* Not in standard <complex.h> , but easy to calculate: log_a(x) = log_b(x) / log_b(a) 
++  /* Not in standard <complex.h> , but easy to calculate: log_a(x) = log_b(x) / log_b(a)
 +  */
 +  lua_pushcomplex(L, _LF(clog) (luaL_checkcomplex(L,1)) / _LF(log) (10));
 +#else
@@ -1306,7 +1306,7 @@
    return 0;
  }
  
-+/* 
++/*
 +* Lua 5.1 does not have acosh, asinh, atanh for scalars (not ANSI C)
 +*/
 +#if __STDC_VERSION__ >= 199901L
@@ -1336,7 +1336,7 @@
 +}
 +#endif
 +
-+/* 
++/*
 + * C99 complex functions, not covered above.
 +*/
 +#ifdef LNUM_COMPLEX
@@ -1432,7 +1432,7 @@
 +/*
 +* Note: Only 'strtod()' is part of ANSI C; others are C99 and
 +* may need '--std=c99' compiler setting (at least on Ubuntu 7.10).
-+* 
++*
 +* Visual C++ 2008 Express does not have 'strtof()', nor 'strtold()'.
 +* References to '_strtold()' exist but don't compile. It seems best
 +* to leave Windows users with DOUBLE only (or compile with MinGW).
@@ -1473,7 +1473,7 @@
 +  lua_Number n2= nvalue_img_fast(o);
 +  if (n2!=0) {   /* Postfix with +-Ni */
 +      int re0= (n == 0);
-+      char *s2= re0 ? s : strchr(s,'\0'); 
++      char *s2= re0 ? s : strchr(s,'\0');
 +      if ((!re0) && (n2>0)) *s2++= '+';
 +      lua_real2str( s2, n2 );
 +      strcat(s2,"i");
@@ -1501,7 +1501,7 @@
 +  return 0;
 +}
 +
-+/* 
++/*
 + * Lua 5.1.3 (using 'strtod()') allows 0x+hex but not 0+octal. This is good,
 + * and we should NOT use 'autobase' 0 with 'strtoul[l]()' for this reason.
 + *
@@ -1511,7 +1511,7 @@
 + *
 + * Full hex range (0 .. 0xff..ff) is stored as integers, not to lose any bits.
 + * Numerical value of 0xff..ff will be -1, if used in calculations.
-+ * 
++ *
 + * Returns: TK_INT for a valid integer, '*endptr_ref' updated
 + *          TK_NUMBER for seemingly numeric, to be parsed as floating point
 + *          0 for bad characters, not a number (or '0x' out of range)
@@ -1545,8 +1545,8 @@
 +int luaO_str2d (const char *s, lua_Number *res_n, lua_Integer *res_i) {
 +  char *endptr;
 +  int ret= TK_NUMBER;
-+  /* Check integers first, if caller is allowing. 
-+   * If 'res2'==NULL, they're only looking for floating point. 
++  /* Check integers first, if caller is allowing.
++   * If 'res2'==NULL, they're only looking for floating point.
 +   */
 +  if (res_i) {
 +    ret= luaO_str2i(s,res_i,&endptr);
@@ -1556,7 +1556,7 @@
 +    lua_assert(res_n);
 +    /* Note: Visual C++ 2008 Express 'strtod()' does not read in "0x..."
 +     *       numbers; it will read '0' and spit 'x' as endptr.
-+     *       This means hex constants not fitting in 'lua_Integer' won't 
++     *       This means hex constants not fitting in 'lua_Integer' won't
 +     *       be read in at all. What to do?
 +     */
 +    *res_n = lua_str2real(s, &endptr);
@@ -1565,7 +1565,7 @@
 +#if defined(_MSC_VER) && !defined(LNUM_FLOAT) && !defined(LNUM_INT64)
 +    if (*res_n==0 && *endptr=='x') {
 +      /* Hex constant too big for 'lua_Integer' but that could fit in 'lua_Number'
-+       * integer bits 
++       * integer bits
 +       */
 +      unsigned __int64 v= _strtoui64( s, &endptr, 16 );
 +      /* We just let > 64 bit values be clamped to _UI64_MAX (MSDN does not say 'errno'==ERANGE would be set) */
@@ -1615,7 +1615,7 @@
 +    *r= 0; return 1;
 +  }
 +
-+  /* Result can be LUA_INTEGER_MIN; if it is, calculating it using floating 
++  /* Result can be LUA_INTEGER_MIN; if it is, calculating it using floating
 +   * point will not cause accuracy loss.
 +   */
 +  if ( luai_nummul( cast_num(ib), cast_num(ic) ) == LUA_INTEGER_MIN ) {
@@ -1636,7 +1636,7 @@
 +    if (ib==LUA_INTEGER_MIN) { *r=1; return 1; }
 +    if (ib==0) { *r=0; return 1; }
 +
-+  /* LUA_INTEGER_MIN (-2^31|63)/N: calculate using float side (either the division 
++  /* LUA_INTEGER_MIN (-2^31|63)/N: calculate using float side (either the division
 +   *    causes non-integer results, or there is no accuracy loss in int->fp->int
 +   *    conversions (N=2,4,8,..,256 and N=2^30,2^29,..2^23).
 +   */
@@ -1644,7 +1644,7 @@
 +    lua_Number d= luai_numdiv( cast_num(LUA_INTEGER_MIN), cast_num(ic) );
 +    lua_Integer i; lua_number2integer(i,d);
 +    if (cast_num(i)==d) { *r= i; return 1; }
-+  
++
 +  } else {
 +    /* Note: We _can_ use ANSI C mod here, even on negative values, since
 +     *       we only test for == 0 (the sign would be implementation dependent).
@@ -1657,7 +1657,7 @@
 +
 +int try_modint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
 +  if (ic!=0) {
-+    /* ANSI C can be trusted when b%c==0, or when values are non-negative. 
++    /* ANSI C can be trusted when b%c==0, or when values are non-negative.
 +     * b - (floor(b/c) * c)
 +     *   -->
 +     * + +: b - (b/c) * c (b % c can be used)
@@ -1673,7 +1673,7 @@
 +    lua_Integer v= ib % ic;
 +    if ( v!=0 && (ib<0 || ic<0) ) {
 +      v= ib - ((ib/ic) - ((ib<=0 && ic<0) ? 0:1)) * ic;
-+    }      
++    }
 +    /* Result should always have same sign as 2nd argument. (PIL2) */
 +    lua_assert( (v<0) ? (ic<0) : (v>0) ? (ic>0) : 1 );
 +    *r= v;
@@ -1684,9 +1684,9 @@
 +
 +int try_powint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
 +
-+    /* In FLOAT/INT32 or FLOAT|DOUBLE/INT64 modes, calculating integer powers 
++    /* In FLOAT/INT32 or FLOAT|DOUBLE/INT64 modes, calculating integer powers
 +     * via FP realm may lose accuracy (i.e. 7^11 = 1977326743, which fits int32
-+     * but not 23-bit float mantissa). 
++     * but not 23-bit float mantissa).
 +     *
 +     * The current solution is dumb, but it works and uses little code. Use of
 +     * integer powers is not anticipated to be very frequent (apart from 2^x,
@@ -1710,7 +1710,7 @@
 +
 +int try_unmint( lua_Integer *r, lua_Integer ib ) {
 +  /* Negating LUA_INTEGER_MIN leaves the range. */
-+  if ( ib != LUA_INTEGER_MIN )  
++  if ( ib != LUA_INTEGER_MIN )
 +    { *r= -ib; return 1; }
 +  return 0;
 +}
@@ -1762,25 +1762,25 @@
 +  static inline lua_Complex luai_vectmul( lua_Complex a, lua_Complex b ) { return a*b; }
 +  static inline lua_Complex luai_vectdiv( lua_Complex a, lua_Complex b ) { return a/b; }
 +
-+/* 
++/*
 + * C99 does not provide modulus for complex numbers. It most likely is not
 + * meaningful at all.
 + */
 +
-+/* 
++/*
 + * Complex power
 + *
-+ * C99 'cpow' gives inaccurate results for many common cases s.a. (1i)^2 -> 
++ * C99 'cpow' gives inaccurate results for many common cases s.a. (1i)^2 ->
 + * -1+1.2246467991474e-16i (OS X 10.4, gcc 4.0.1 build 5367)
-+ * 
++ *
 + * [(a+bi)^(c+di)] = (r^c) * exp(-d*t) * cos(c*t + d*ln(r)) +
 + *                 = (r^c) * exp(-d*t) * sin(c*t + d*ln(r)) *i
 + * r = sqrt(a^2+b^2), t = arctan( b/a )
-+ * 
++ *
 + * Reference: <http://home.att.net/~srschmitt/complexnumbers.html>
 + * Could also be calculated using: x^y = exp(ln(x)*y)
 + *
-+ * Note: Defined here (and not in .c) so 'lmathlib.c' can share the 
++ * Note: Defined here (and not in .c) so 'lmathlib.c' can share the
 + *       implementation.
 + */
 +  static inline
@@ -1789,28 +1789,28 @@
 +# if 1
 +    lua_Number ar= _LF(creal)(a), ai= _LF(cimag)(a);
 +    lua_Number br= _LF(creal)(b), bi= _LF(cimag)(b);
-+    
++
 +    if (ai==0 && bi==0) {     /* a^c (real) */
 +        return luai_numpow( ar, br );
-+    } 
++    }
 +
 +    int br_int= (int)br;
-+    
-+    if ( ai!=0 && bi==0 && br_int==br && br_int!=0 && br_int!=INT_MIN ) { 
-+        /* (a+bi)^N, N = { +-1,+-2, ... +-INT_MAX } 
++
++    if ( ai!=0 && bi==0 && br_int==br && br_int!=0 && br_int!=INT_MIN ) {
++        /* (a+bi)^N, N = { +-1,+-2, ... +-INT_MAX }
 +        */
 +        lua_Number k= luai_numpow( _LF(sqrt) (ar*ar + ai*ai), br );
 +        lua_Number cos_z, sin_z;
 +
 +        /* Situation depends upon c (N) in the following manner:
-+         * 
++         *
 +         * N%4==0                                => cos(c*t)=1, sin(c*t)=0
 +         * (N*sign(b))%4==1 or (N*sign(b))%4==-3 => cos(c*t)=0, sin(c*t)=1
 +         * N%4==2 or N%4==-2                     => cos(c*t)=-1, sin(c*t)=0
 +         * (N*sign(b))%4==-1 or (N*sign(b))%4==3 => cos(c*t)=0, sin(c*t)=-1
 +         */
 +      int br_int_abs = br_int<0 ? -br_int:br_int;
-+      
++
 +      switch( (br_int_abs%4) * (br_int<0 ? -1:1) * (ai<0 ? -1:1) ) {
 +        case 0:             cos_z=1, sin_z=0; break;
 +        case 2: case -2:    cos_z=-1, sin_z=0; break;
@@ -1867,7 +1867,7 @@
 +/* LNUM_FLOAT not supported on Windows */
 +# error "Need C99 for 'float' (use '--std=c99' or similar)"
 +#endif
-+ 
++
 +/*
 +** Number mode identifier to accompany the version string.
 +*/
@@ -1900,7 +1900,7 @@
 +#ifdef LNUM_FLOAT
 +# define LUA_NUMBER         float
 +# define LUA_NUMBER_SCAN    "%f"
-+# define LUA_NUMBER_FMT     "%g"  
++# define LUA_NUMBER_FMT     "%g"
 +#elif (defined LNUM_DOUBLE)
 +# define LUA_NUMBER	        double
 +# define LUA_NUMBER_SCAN    "%lf"
@@ -1912,7 +1912,7 @@
 +#endif
 +
 +
-+/* 
++/*
 +** LUAI_MAXNUMBER2STR: size of a buffer fitting any number->string result.
 +**
 +**  double:  24 (sign, x.xxxxxxxxxxxxxxe+nnnn, and \0)
@@ -1963,7 +1963,7 @@
 +# endif
 +# define LUA_INTEGER_SCAN "%lld"
 +# define LUA_INTEGER_FMT "%lld"
-+# define LUA_INTEGER_MAX 0x7fffffffffffffffLL       /* 2^63-1 */ 
++# define LUA_INTEGER_MAX 0x7fffffffffffffffLL       /* 2^63-1 */
 +# define LUA_INTEGER_MIN (-LUA_INTEGER_MAX - 1LL)   /* -2^63 */
 +/* */
 +#elif defined(LNUM_INT16)
@@ -2020,8 +2020,8 @@
 +# define lua_number2int(i,d)        ((i)=(int)(d))
 +#endif
 +
-+/* Note: Some compilers (OS X gcc 4.0?) may choke on double->long long conversion 
-+ *       since it can lose precision. Others do require 'long long' there.  
++/* Note: Some compilers (OS X gcc 4.0?) may choke on double->long long conversion
++ *       since it can lose precision. Others do require 'long long' there.
 + */
 +#ifndef lua_number2integer
 +# define lua_number2integer(i,d)    ((i)=(lua_Integer)(d))
@@ -2088,7 +2088,7 @@
 +#endif
 +        /* Avoid doing accuracy losing cast, if possible. */
 +        lua_Integer tmp;
-+        if (tt_integer_valued(t2,&tmp)) 
++        if (tt_integer_valued(t2,&tmp))
 +          return ivalue(t1) == tmp;
 +        else
 +          return luai_numeq( cast_num(ivalue(t1)), nvalue_fast(t2) );
@@ -2197,15 +2197,15 @@
 +/* '_fast' variants are for cases where 'ttype(o)' is known to be LUA_TNUMBER.
 + */
 +#ifdef LNUM_COMPLEX
-+#  define nvalue_complex_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.n )   
++#  define nvalue_complex_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.n )
 +#  define nvalue_fast(o)     ( _LF(creal) ( nvalue_complex_fast(o) ) )
 +#  define nvalue_img_fast(o) ( _LF(cimag) ( nvalue_complex_fast(o) ) )
 +#  define nvalue_complex(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? (o)->value.i : (o)->value.n )
-+#  define nvalue_img(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? 0 : _LF(cimag)( (o)->value.n ) ) 
-+#  define nvalue(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? cast_num((o)->value.i) : _LF(creal)((o)->value.n) ) 
++#  define nvalue_img(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? 0 : _LF(cimag)( (o)->value.n ) )
++#  define nvalue(o) check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? cast_num((o)->value.i) : _LF(creal)((o)->value.n) )
 +#else
 +# define nvalue(o)	check_exp( ttisnumber(o), (ttype(o)==LUA_TINT) ? cast_num((o)->value.i) : (o)->value.n )
-+# define nvalue_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.n )   
++# define nvalue_fast(o) check_exp( ttype(o)==LUA_TNUMBER, (o)->value.n )
 +#endif
 +#define ivalue(o)	check_exp( ttype(o)==LUA_TINT, (o)->value.i )
 +
@@ -2510,7 +2510,7 @@
 +  unsigned int sum= *p;
 +  unsigned int m= sizeof(lua_Number)/sizeof(int);
 +  unsigned int i;
-+  /* OS X Intel has 'm'==4 and gives "Bus error" if the last integer of 
++  /* OS X Intel has 'm'==4 and gives "Bus error" if the last integer of
 +   * 'n' is read; the actual size of long double is only 80 bits = 10 bytes.
 +   * Linux x86 has 'm'==3, and does not require reduction.
 +   */
@@ -2535,7 +2535,7 @@
    switch (ttype(key)) {
      case LUA_TNUMBER:
 -      return hashnum(t, nvalue(key));
-+      if (tt_integer_valued(key,&i)) 
++      if (tt_integer_valued(key,&i))
 +        return hashint(t, i);
 +#ifdef LNUM_COMPLEX
 +      if (nvalue_img_fast(key)!=0 && luai_numeq(nvalue_fast(key),0))
@@ -2645,7 +2645,7 @@
 +      if (ttisint(gkey(n)) && (ivalue(gkey(n)) == key)) {
          return gval(n);  /* that's it */
 -      else n = gnext(n);
-+      } else { 
++      } else {
 +      n = gnext(n);
 +    }
      } while (n);
@@ -2907,7 +2907,7 @@
 +@@ LNUM_COMPLEX: Define for using 'a+bi' numbers
 +@@
 +@@ You can combine LNUM_xxx but only one of each group. I.e. '-DLNUM_FLOAT
-+@@ -DLNUM_INT32 -DLNUM_COMPLEX' gives float range complex numbers, with 
++@@ -DLNUM_INT32 -DLNUM_COMPLEX' gives float range complex numbers, with
 +@@ 32-bit scalar integer range optimized.
 +**
 +** These are kept in a separate configuration file mainly for ease of patching
@@ -3123,7 +3123,7 @@
   *h++=(char)sizeof(lua_Number);
 - *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
 +
-+ /* 
++ /*
 +  * Last byte of header (0/1 in unpatched Lua 5.1.3):
 +  *
 +  * 0: lua_Number is float or double, lua_Integer not used. (nonpatched only)
@@ -3164,7 +3164,7 @@
 +const TValue *luaV_tonumber ( const TValue *obj, TValue *n) {
 +  lua_Number d;
 +  lua_Integer i;
-+  
++
    if (ttisnumber(obj)) return obj;
 -  if (ttisstring(obj) && luaO_str2d(svalue(obj), &num)) {
 -    setnvalue(n, num);
@@ -3177,7 +3177,7 @@
 +    switch( luaO_str2d( svalue(obj), &d, &i ) ) {
 +        case TK_INT:
 +            setivalue(n,i); return n;
-+        case TK_NUMBER: 
++        case TK_NUMBER:
 +            setnvalue(n,d); return n;
 +#ifdef LNUM_COMPLEX
 +        case TK_NUMBER2:    /* "N.NNNi", != 0 */
@@ -3245,13 +3245,13 @@
 +     * in integer realm. Only otherwise cast 'l' to FP (which might change its
 +     * value).
 +     */
-+    if (tt_integer_valued(r,&tmp)) 
++    if (tt_integer_valued(r,&tmp))
 +        return ivalue(l) < tmp;
-+    else 
++    else
 +        return luai_numlt( cast_num(ivalue(l)), nvalue_fast(r) );
 +
 +  } else if (tl==LUA_TNUMBER) {  /* l:num, r:int */
-+    if (tt_integer_valued(l,&tmp)) 
++    if (tt_integer_valued(l,&tmp))
 +        return tmp < ivalue(r);
 +    else
 +        return luai_numlt( nvalue_fast(l), cast_num(ivalue(r)) );
@@ -3289,13 +3289,13 @@
 +    }
 +  }
 +  if (tl==LUA_TINT) {  /* l:int, r:num */
-+    if (tt_integer_valued(r,&tmp)) 
++    if (tt_integer_valued(r,&tmp))
 +        return ivalue(l) <= tmp;
 +    else
 +        return luai_numle( cast_num(ivalue(l)), nvalue_fast(r) );
 +
 +  } else if (tl==LUA_TNUMBER) {  /* l:num, r:int */
-+    if (tt_integer_valued(l,&tmp)) 
++    if (tt_integer_valued(l,&tmp))
 +        return tmp <= ivalue(r);
 +    else
 +        return luai_numle( nvalue_fast(l), cast_num(ivalue(r)) );
@@ -3439,7 +3439,7 @@
 +          case TM_SUB: r= bb - cc; break;
 +          case TM_MUL: r= bb * cc; break;
 +          case TM_DIV: r= bb / cc; break;
-+          case TM_MOD: 
++          case TM_MOD:
 +            luaG_runerror(L, "attempt to use %% on complex numbers");  /* no return */
 +          case TM_POW: r= luai_vectpow( bb, cc ); break;
 +          default: lua_assert(0); r=0;
@@ -3461,7 +3461,7 @@
 +      default: lua_assert(0);
 +    }
 +  }
-+  
++
 +  /* Either operand not a number */
 +  if (!call_binTM(L, rb, rc, ra, op))
 +    luaG_aritherror(L, rb, rc);
@@ -3645,7 +3645,7 @@
 +            setivalue(ra+3, idx);  /* ...and external index */
 +          }
 +        } else {
-+          /* non-integer looping (don't use 'nvalue_fast', some may be integer!) 
++          /* non-integer looping (don't use 'nvalue_fast', some may be integer!)
 +          */
 +          lua_Number step = nvalue(ra+2);
 +          lua_Number idx = luai_numadd(nvalue(ra), step); /* increment index */

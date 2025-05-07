@@ -11672,15 +11672,15 @@ index 000000000000..298488e19156
 +
 +/ {
 +	compatible = "brcm,bcm2835";
-+    
++
 +	fragment@0 {
 +        	target = <&i2c>;
-+        	
++
 +		__overlay__ {
 +			#address-cells = <1>;
 +			#size-cells = <0>;
 +			status = "okay";
-+			
++
 +			adau1977: codec@11 {
 +                        	compatible = "adi,adau1977";
 +                        	reg = <0x11>;
@@ -15814,13 +15814,13 @@ index 000000000000..6f9694e81d6a
 +            status = "okay";
 +
 +            gt9xx: gt9xx@5d {
-+                compatible = "goodix,gt9271"; 
++                compatible = "goodix,gt9271";
 +                reg = <0x5D>;
 +                pinctrl-names = "default";
 +                pinctrl-0 = <&goodix_pins>;
 +                interrupt-parent = <&gpio>;
 +                interrupts = <21 2>; // high-to-low edge triggered
-+                irq-gpios = <&gpio 21 0>; 
++                irq-gpios = <&gpio 21 0>;
 +                reset-gpios = <&gpio 26 0>;
 +            };
 +        };
@@ -18152,7 +18152,7 @@ index 000000000000..17b77bb27931
 @@ -0,0 +1,89 @@
 +/*
 + * Overlay for the Raspberry Pi GPIO Fan @ BCM GPIO12.
-+ * References: 
++ * References:
 + *	- https://www.raspberrypi.org/forums/viewtopic.php?f=107&p=1367135#p1365084
 + *
 + * Optional parameters:
@@ -21882,7 +21882,7 @@ index 000000000000..551aba591d26
 +
 + 	fragment@0 {
 +		target = <&gpio>;
-+		__overlay__ {		
++		__overlay__ {
 +			ili251x_pins: ili251x_pins {
 +				brcm,pins = <4>; // interrupt
 +				brcm,function = <0>; // in
@@ -23743,7 +23743,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2941";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23759,7 +23759,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2942";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23775,7 +23775,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2943";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -23791,7 +23791,7 @@ index 000000000000..6d971f3649ca
 +				compatible = "lltc,ltc2944";
 +				reg = <0x64>;
 +				lltc,resistor-sense = <50>;
-+				lltc,prescaler-exponent = <7>; 
++				lltc,prescaler-exponent = <7>;
 +			};
 +		};
 +	};
@@ -30101,7 +30101,7 @@ index 000000000000..ea1d952734e9
 +			};
 +		};
 +
-+	};  
++	};
 +
 +	__overrides__ {
 +		pin_a =		    <&rotary>,"gpios:4",
@@ -31246,7 +31246,7 @@ index 000000000000..e843d0b19745
 @@ -0,0 +1,117 @@
 +// redo: ovmerge -c mcp251xfd-overlay.dts,spi0-0,interrupt=25 mcp251xfd-overlay.dts,spi0-1,interrupt=24 i2c-rtc-overlay.dts,pcf85063
 +
-+// Device tree overlay for https://www.seeedstudio.com/CAN-BUS-FD-HAT-for-Raspberry-Pi-p-4742.html 
++// Device tree overlay for https://www.seeedstudio.com/CAN-BUS-FD-HAT-for-Raspberry-Pi-p-4742.html
 +
 +/dts-v1/;
 +/plugin/;
@@ -33198,7 +33198,7 @@ index 000000000000..bad61535981e
 +			status = "okay";
 +		};
 +	};
-+    
++
 +	fragment@2 {
 +		target = <&i2c1>;
 +		__overlay__ {
@@ -38392,7 +38392,7 @@ index 000000000000..289fa4dacdf1
 +		slave_overlay: __overlay__ {
 +			compatible = "simple-audio-card";
 +			simple-audio-card,format = "i2s";
-+			simple-audio-card,name = "wm8960-soundcard"; 
++			simple-audio-card,name = "wm8960-soundcard";
 +			status = "okay";
 +
 +			simple-audio-card,widgets =

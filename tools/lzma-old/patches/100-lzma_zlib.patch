@@ -134,22 +134,22 @@
 + *
 + * Copyright (c) 2005-2006 Oleg I. Vdovikin <oleg@cs.msu.su>
 + *
-+ * This library is free software; you can redistribute 
-+ * it and/or modify it under the terms of the GNU Lesser 
-+ * General Public License as published by the Free Software 
-+ * Foundation; either version 2.1 of the License, or 
++ * This library is free software; you can redistribute
++ * it and/or modify it under the terms of the GNU Lesser
++ * General Public License as published by the Free Software
++ * Foundation; either version 2.1 of the License, or
 + * (at your option) any later version.
 + *
-+ * This library is distributed in the hope that it will be 
-+ * useful, but WITHOUT ANY WARRANTY; without even the implied 
-+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
-+ * PURPOSE. See the GNU Lesser General Public License 
++ * This library is distributed in the hope that it will be
++ * useful, but WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
++ * PURPOSE. See the GNU Lesser General Public License
 + * for more details.
 + *
-+ * You should have received a copy of the GNU Lesser General 
-+ * Public License along with this library; if not, write to 
-+ * the Free Software Foundation, Inc., 59 Temple Place, 
-+ * Suite 330, Boston, MA 02111-1307 USA 
++ * You should have received a copy of the GNU Lesser General
++ * Public License along with this library; if not, write to
++ * the Free Software Foundation, Inc., 59 Temple Place,
++ * Suite 330, Boston, MA 02111-1307 USA
 + */
 +
 +/*
@@ -175,13 +175,13 @@
 +#define STG_E_SEEKERROR                  ((HRESULT)0x80030019L)
 +#define STG_E_MEDIUMFULL                 ((HRESULT)0x80030070L)
 +
-+class CInMemoryStream: 
++class CInMemoryStream:
 +  public IInStream,
 +  public IStreamGetSize,
 +  public CMyUnknownImp
 +{
 +public:
-+  CInMemoryStream(const Bytef *data, UInt64 size) : 
++  CInMemoryStream(const Bytef *data, UInt64 size) :
 +	  m_data(data), m_size(size), m_offset(0) {}
 +
 +  virtual ~CInMemoryStream() {}
@@ -190,7 +190,7 @@
 +
 +  STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize)
 +  {
-+	  if (size > m_size - m_offset) 
++	  if (size > m_size - m_offset)
 +		  size = m_size - m_offset;
 +
 +	  if (size) {
@@ -199,7 +199,7 @@
 +
 +	  m_offset += size;
 +
-+	  if (processedSize) 
++	  if (processedSize)
 +		  *processedSize = size;
 +
 +	  return S_OK;
@@ -215,7 +215,7 @@
 +	  UInt64 _offset;
 +
 +	  if (seekOrigin == STREAM_SEEK_SET) _offset = offset;
-+	  else if (seekOrigin == STREAM_SEEK_CUR) _offset = m_offset + offset; 
++	  else if (seekOrigin == STREAM_SEEK_CUR) _offset = m_offset + offset;
 +	  else if (seekOrigin == STREAM_SEEK_END) _offset = m_size;
 +	  else return STG_E_INVALIDFUNCTION;
 +
@@ -241,20 +241,20 @@
 +	UInt64 m_offset;
 +};
 +
-+class COutMemoryStream: 
++class COutMemoryStream:
 +  public IOutStream,
 +  public CMyUnknownImp
 +{
 +public:
-+  COutMemoryStream(Bytef *data, UInt64 maxsize) : 
++  COutMemoryStream(Bytef *data, UInt64 maxsize) :
 +	  m_data(data), m_size(0), m_maxsize(maxsize), m_offset(0) {}
 +  virtual ~COutMemoryStream() {}
-+  
++
 +  MY_UNKNOWN_IMP1(IOutStream)
 +
 +  STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize)
 +  {
-+	  if (size > m_maxsize - m_offset) 
++	  if (size > m_maxsize - m_offset)
 +		  size = m_maxsize - m_offset;
 +
 +	  if (size) {
@@ -266,12 +266,12 @@
 +	  if (m_offset > m_size)
 +		m_size = m_offset;
 +
-+	  if (processedSize) 
++	  if (processedSize)
 +		  *processedSize = size;
 +
 +	  return S_OK;
 +  }
-+  
++
 +  STDMETHOD(WritePart)(const void *data, UInt32 size, UInt32 *processedSize)
 +  {
 +	  return Write(data, size, processedSize);
@@ -282,7 +282,7 @@
 +	  UInt64 _offset;
 +
 +	  if (seekOrigin == STREAM_SEEK_SET) _offset = offset;
-+	  else if (seekOrigin == STREAM_SEEK_CUR) _offset = m_offset + offset; 
++	  else if (seekOrigin == STREAM_SEEK_CUR) _offset = m_offset + offset;
 +	  else if (seekOrigin == STREAM_SEEK_END) _offset = m_size;
 +	  else return STG_E_INVALIDFUNCTION;
 +
@@ -296,10 +296,10 @@
 +
 +	  return S_OK;
 +  }
-+  
++
 +  STDMETHOD(SetSize)(Int64 newSize)
 +  {
-+	  if ((UInt64)newSize > m_maxsize) 
++	  if ((UInt64)newSize > m_maxsize)
 +		  return STG_E_MEDIUMFULL;
 +
 +	  return S_OK;
@@ -317,15 +317,15 @@
 +{
 +	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-+	
++
 +	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
 +	CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-+	
-+	NCompress::NLZMA::CEncoder *encoderSpec = 
++
++	NCompress::NLZMA::CEncoder *encoderSpec =
 +		new NCompress::NLZMA::CEncoder;
 +	CMyComPtr<ICompressCoder> encoder = encoderSpec;
-+	
-+	PROPID propIDs[] = 
++
++	PROPID propIDs[] =
 +	{
 +		NCoderPropID::kDictionarySize,
 +		NCoderPropID::kPosStateBits,
@@ -337,7 +337,7 @@
 +		NCoderPropID::kEndMarker
 +	};
 +	const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
-+	
++
 +	PROPVARIANT properties[kNumProps];
 +	for (int p = 0; p < 6; p++)
 +		properties[p].vt = VT_UI4;
@@ -347,30 +347,30 @@
 +	properties[3].ulVal = UInt32(ZLIB_LP); // for normal files
 +	properties[4].ulVal = UInt32(2);
 +	properties[5].ulVal = UInt32(128);
-+	
++
 +	properties[6].vt = VT_BSTR;
 +	properties[6].bstrVal = (BSTR)(const wchar_t *)L"BT4";
-+	
++
 +	properties[7].vt = VT_BOOL;
 +	properties[7].boolVal = VARIANT_TRUE;
-+	
++
 +	if (encoderSpec->SetCoderProperties(propIDs, properties, kNumProps) != S_OK)
 +		return Z_MEM_ERROR; // should not happen
-+	
++
 +	HRESULT result = encoder->Code(inStream, outStream, 0, 0, 0);
 +	if (result == E_OUTOFMEMORY)
 +	{
 +		return Z_MEM_ERROR;
-+	}   
++	}
 +	else if (result != S_OK)
 +	{
 +		return Z_BUF_ERROR;	// should not happen
-+	}   
-+	
++	}
++
 +	UInt64 fileSize;
 +	outStreamSpec->Seek(0, STREAM_SEEK_END, &fileSize);
 +	*destLen = fileSize;
-+	
++
 +	return Z_OK;
 +}
 +
@@ -379,26 +379,26 @@
 +{
 +	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-+	
++
 +	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
 +	CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-+	
-+	NCompress::NLZMA::CDecoder *decoderSpec = 
++
++	NCompress::NLZMA::CDecoder *decoderSpec =
 +		new NCompress::NLZMA::CDecoder;
 +	CMyComPtr<ICompressCoder> decoder = decoderSpec;
-+	
-+	if (decoderSpec->SetDecoderPropertiesRaw(ZLIB_LC, 
++
++	if (decoderSpec->SetDecoderPropertiesRaw(ZLIB_LC,
 +		ZLIB_LP, ZLIB_PB, (1 << 23)) != S_OK) return Z_DATA_ERROR;
-+	
++
 +	UInt64 fileSize = *destLen;
-+	
++
 +	if (decoder->Code(inStream, outStream, 0, &fileSize, 0) != S_OK)
 +	{
 +		return Z_DATA_ERROR;
 +	}
-+	
++
 +	outStreamSpec->Seek(0, STREAM_SEEK_END, &fileSize);
 +	*destLen = fileSize;
-+	
++
 +	return Z_OK;
 +}

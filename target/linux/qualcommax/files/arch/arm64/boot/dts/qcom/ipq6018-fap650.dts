@@ -13,7 +13,7 @@
 / {
 	model = "Yuncore FAP650";
 	compatible = "yuncore,fap650", "qcom,ipq6018";
-	
+
 	aliases {
 		ethernet0 = &dp5;
 		ethernet1 = &dp4;
@@ -216,7 +216,7 @@
 
 &blsp1_spi1 {
 	status = "okay";
-	
+
 	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -321,7 +321,7 @@
 		nand-ecc-strength = <4>;
 		nand-ecc-step-size = <512>;
 		nand-bus-width = <8>;
-	
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;

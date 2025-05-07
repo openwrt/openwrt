@@ -13,15 +13,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/sound/soc/dwc/dwc-i2s.c
 +++ b/sound/soc/dwc/dwc-i2s.c
-@@ -21,7 +21,7 @@
- #include <linux/reset.h>
- #include <linux/slab.h>
- #include <linux/pm_runtime.h>
--#include <sound/designware_i2s.h>
-+#include <sound/designware_i2s.h> 
- #include <sound/pcm.h>
- #include <sound/pcm_params.h>
- #include <sound/soc.h>
 @@ -206,15 +206,10 @@ static void i2s_start(struct dw_i2s_dev
  	i2s_write_reg(dev->i2s_base, CER, 1);
  }
