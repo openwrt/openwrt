@@ -1,0 +1,38 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 21:20:22 +0800
+Subject: [PATCH 9/9] net: phy: psb6970: fix missing-prototypes warnings
+
+Fix the following build warnings:
+
+drivers/net/phy/psb6970.c:426:12: error: no previous prototype for 'psb6970_init' [-Werror=missing-prototypes]
+  426 | int __init psb6970_init(void)
+      |            ^~~~~~~~~~~~
+drivers/net/phy/psb6970.c:434:13: error: no previous prototype for 'psb6970_exit' [-Werror=missing-prototypes]
+  434 | void __exit psb6970_exit(void)
+      |             ^~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/phy/psb6970.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/phy/psb6970.c
++++ b/drivers/net/phy/psb6970.c
+@@ -423,7 +423,7 @@ static struct phy_driver psb6970_driver
+ 	.read_status = &psb6970_read_status,
+ };
+ 
+-int __init psb6970_init(void)
++static int __init psb6970_init(void)
+ {
+ 	phy_register_fixup_for_id(PHY_ANY_ID, psb6970_fixup);
+ 	return phy_driver_register(&psb6970_driver, THIS_MODULE);
+@@ -431,7 +431,7 @@ int __init psb6970_init(void)
+ 
+ module_init(psb6970_init);
+ 
+-void __exit psb6970_exit(void)
++static void __exit psb6970_exit(void)
+ {
+ 	phy_driver_unregister(&psb6970_driver);
+ }

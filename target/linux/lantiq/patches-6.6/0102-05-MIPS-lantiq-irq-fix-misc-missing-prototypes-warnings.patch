@@ -1,0 +1,40 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 19:53:12 +0800
+Subject: [PATCH 5/9] MIPS: lantiq: irq: fix misc missing-prototypes warnings
+
+Fix the following build warnings:
+
+arch/mips/lantiq/irq.c:340:12: error: no previous prototype for 'icu_of_init' [-Werror=missing-prototypes]
+  340 | int __init icu_of_init(struct device_node *node, struct device_node *parent)
+      |            ^~~~~~~~~~~
+arch/mips/lantiq/irq.c:418:5: error: no previous prototype for 'get_c0_perfcount_int' [-Werror=missing-prototypes]
+  418 | int get_c0_perfcount_int(void)
+      |     ^~~~~~~~~~~~~~~~~~~~
+arch/mips/lantiq/irq.c:424:14: error: no previous prototype for 'get_c0_compare_int' [-Werror=missing-prototypes]
+  424 | unsigned int get_c0_compare_int(void)
+      |              ^~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/irq.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -17,6 +17,7 @@
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq_cpu.h>
++#include <asm/time.h>
+ 
+ #include <lantiq_soc.h>
+ #include <irq.h>
+@@ -337,7 +338,7 @@ static const struct irq_domain_ops irq_d
+ 	.map = icu_map,
+ };
+ 
+-int __init icu_of_init(struct device_node *node, struct device_node *parent)
++static int __init icu_of_init(struct device_node *node, struct device_node *parent)
+ {
+ 	struct device_node *eiu_node;
+ 	struct resource res;
