@@ -11,6 +11,7 @@ mediatek_setup_interfaces()
 	abt,asr3000|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-114m-ubootmod|\
 	netis,nx31|\
 	nokia,ea0326gmp|\
 	mercusys,mr80x-v3|\
@@ -194,8 +195,7 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 2)
 		;;
-	h3c,magic-nx30-pro|\
-	h3c,magic-nx30-pro-114m-ubootmod)
+	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
