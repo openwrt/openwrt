@@ -1,0 +1,27 @@
+From 2caf57c67c6c3228b7a2ff1510e7671539ad31d3 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 22:29:34 +0800
+Subject: [PATCH 11/16] MIPS: lantiq: xway: gptu: mark gptu_init() as static
+
+Fix the following missing-prototypes warning:
+
+arch/mips/lantiq/xway/gptu.c:197:12: error: no previous prototype for 'gptu_init' [-Werror=missing-prototypes]
+  197 | int __init gptu_init(void)
+      |            ^~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/xway/gptu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/lantiq/xway/gptu.c
++++ b/arch/mips/lantiq/xway/gptu.c
+@@ -194,7 +194,7 @@ static struct platform_driver dma_driver
+ 	},
+ };
+ 
+-int __init gptu_init(void)
++static int __init gptu_init(void)
+ {
+ 	int ret = platform_driver_register(&dma_driver);
+ 
