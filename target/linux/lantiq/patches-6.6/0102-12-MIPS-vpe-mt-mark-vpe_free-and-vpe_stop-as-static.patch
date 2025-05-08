@@ -1,0 +1,52 @@
+From 6faade177216b41a8112e33c6e73377e78dd1f92 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 18:32:11 +0800
+Subject: [PATCH 12/16] MIPS: vpe-mt: mark vpe_free() and vpe_stop() as static
+
+These functions are only used in the current source file "vpe-mt.c".
+Do not export them and mark them as static to silence the missing
+prototypes warnings:
+
+arch/mips/kernel/vpe-mt.c:208:5: error: no previous prototype for 'vpe_stop' [-Werror=missing-prototypes]
+  208 | int vpe_stop(void *vpe)
+      |     ^~~~~~~~
+arch/mips/kernel/vpe-mt.c:229:5: error: no previous prototype for 'vpe_free' [-Werror=missing-prototypes]
+  229 | int vpe_free(void *vpe)
+      |     ^~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/kernel/vpe-mt.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/kernel/vpe-mt.c
++++ b/arch/mips/kernel/vpe-mt.c
+@@ -202,7 +202,7 @@ int vpe_start(void *vpe, unsigned long s
+ EXPORT_SYMBOL(vpe_start);
+ 
+ /* halt it for now */
+-int vpe_stop(void *vpe)
++static int vpe_stop(void *vpe)
+ {
+ 	struct vpe *v = vpe;
+ 	struct tc *t;
+@@ -220,10 +220,9 @@ int vpe_stop(void *vpe)
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(vpe_stop);
+ 
+ /* I've done with it thank you */
+-int vpe_free(void *vpe)
++static int vpe_free(void *vpe)
+ {
+ 	struct vpe *v = vpe;
+ 	struct tc *t;
+@@ -255,7 +254,6 @@ int vpe_free(void *vpe)
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(vpe_free);
+ 
+ static ssize_t store_kill(struct device *dev, struct device_attribute *attr,
+ 			  const char *buf, size_t len)

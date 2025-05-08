@@ -1,0 +1,35 @@
+From 7168ec1b06691295db6b335e5f5f6c86c7061213 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:29 +0200
+Subject: net: dsa: lantiq_gswip: Use dsa_is_cpu_port() in
+ gswip_port_change_mtu()
+
+Make the check for the CPU port in gswip_port_change_mtu() consistent
+with other areas of the driver by using dsa_is_cpu_port().
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-8-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1457,12 +1457,11 @@ static int gswip_port_max_mtu(struct dsa
+ static int gswip_port_change_mtu(struct dsa_switch *ds, int port, int new_mtu)
+ {
+ 	struct gswip_priv *priv = ds->priv;
+-	int cpu_port = priv->hw_info->cpu_port;
+ 
+ 	/* CPU port always has maximum mtu of user ports, so use it to set
+ 	 * switch frame size, including 8 byte special header.
+ 	 */
+-	if (port == cpu_port) {
++	if (dsa_is_cpu_port(ds, port)) {
+ 		new_mtu += 8;
+ 		gswip_switch_w(priv, VLAN_ETH_HLEN + new_mtu + ETH_FCS_LEN,
+ 			       GSWIP_MAC_FLEN);
