@@ -70,7 +70,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +static int ath5k_eep_load;
-+int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
++static int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np = NULL;
 +	int mac_offset;
@@ -174,7 +174,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +subsys_initcall(of_ath5k_eeprom_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/eth_mac.c
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
 + *
@@ -183,6 +183,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + *  by the Free Software Foundation.
 + */
 +
++#include <lantiq_soc.h>
 +#include <linux/init.h>
 +#include <linux/if_ether.h>
 +
