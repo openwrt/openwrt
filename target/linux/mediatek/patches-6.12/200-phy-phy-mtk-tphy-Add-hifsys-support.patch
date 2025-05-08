@@ -18,7 +18,7 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
  
  #include "phy-mtk-io.h"
  
-@@ -267,6 +269,9 @@
+@@ -271,6 +273,9 @@
  
  #define USER_BUF_LEN(count) min_t(size_t, 8, (count))
  
@@ -28,7 +28,7 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
  enum mtk_phy_version {
  	MTK_PHY_V1 = 1,
  	MTK_PHY_V2,
-@@ -334,6 +339,7 @@ struct mtk_tphy {
+@@ -339,6 +344,7 @@ struct mtk_tphy {
  	void __iomem *sif_base;	/* only shared sif */
  	const struct mtk_phy_pdata *pdata;
  	struct mtk_phy_instance **phys;
@@ -36,7 +36,7 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
  	int nphys;
  	int src_ref_clk; /* MHZ, reference clock for slew rate calibrate */
  	int src_coef; /* coefficient for slew rate calibrate */
-@@ -951,6 +957,10 @@ static void pcie_phy_instance_init(struc
+@@ -973,6 +979,10 @@ static void pcie_phy_instance_init(struc
  	if (tphy->pdata->version != MTK_PHY_V1)
  		return;
  
@@ -47,7 +47,7 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
  	mtk_phy_update_bits(phya + U3P_U3_PHYA_DA_REG0,
  			    P3A_RG_XTAL_EXT_PE1H | P3A_RG_XTAL_EXT_PE2H,
  			    FIELD_PREP(P3A_RG_XTAL_EXT_PE1H, 0x2) |
-@@ -1597,6 +1607,16 @@ static int mtk_tphy_probe(struct platfor
+@@ -1621,6 +1631,16 @@ static int mtk_tphy_probe(struct platfor
  					 &tphy->src_coef);
  	}
  
@@ -62,5 +62,5 @@ Subject: [PATCH] phy: phy-mtk-tphy: Add hifsys-support
 +	}
 +
  	port = 0;
- 	for_each_child_of_node(np, child_np) {
+ 	for_each_child_of_node_scoped(np, child_np) {
  		struct mtk_phy_instance *instance;

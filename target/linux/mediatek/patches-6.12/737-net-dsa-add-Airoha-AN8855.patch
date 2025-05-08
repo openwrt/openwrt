@@ -169,7 +169,7 @@ Christian Marangi (9):
 
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -41,6 +41,16 @@ config MFD_ALTERA_SYSMGR
+@@ -53,6 +53,16 @@ config MFD_ALTERA_SYSMGR
  	  using regmap_mmio accesses for ARM32 parts and SMC calls to
  	  EL3 for ARM64 parts.
  
@@ -188,14 +188,14 @@ Christian Marangi (9):
  	select MFD_CORE
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -7,6 +7,7 @@
- obj-$(CONFIG_MFD_88PM860X)	+= 88pm860x.o
- obj-$(CONFIG_MFD_88PM800)	+= 88pm800.o 88pm80x.o
+@@ -9,6 +9,7 @@ obj-$(CONFIG_MFD_88PM800)	+= 88pm800.o 8
  obj-$(CONFIG_MFD_88PM805)	+= 88pm805.o 88pm80x.o
-+obj-$(CONFIG_MFD_AIROHA_AN8855)	+= airoha-an8855.o
+ obj-$(CONFIG_MFD_88PM886_PMIC)	+= 88pm886.o
  obj-$(CONFIG_MFD_ACT8945A)	+= act8945a.o
++obj-$(CONFIG_MFD_AIROHA_AN8855)	+= airoha-an8855.o
  obj-$(CONFIG_MFD_SM501)		+= sm501.o
  obj-$(CONFIG_ARCH_BCM2835)	+= bcm2835-pm.o
+ obj-$(CONFIG_MFD_BCM590XX)	+= bcm590xx.o
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
 @@ -24,6 +24,15 @@ config NET_DSA_LOOP
@@ -254,7 +254,7 @@ Christian Marangi (9):
  obj-$(CONFIG_MDIO_BCM_UNIMAC)		+= mdio-bcm-unimac.o
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -147,6 +147,11 @@ config AIROHA_EN8801SC_PHY
+@@ -158,6 +158,11 @@ config AIROHA_EN8801SC_PHY
  	help
  	  Currently supports the Airoha EN8801SC PHY.
  
@@ -268,14 +268,14 @@ Christian Marangi (9):
  	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -50,6 +50,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+@@ -51,6 +51,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
  obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
  obj-$(CONFIG_AIROHA_EN8801SC_PHY)   += en8801sc.o
 +obj-$(CONFIG_AIR_AN8855_PHY)		+= air_an8855.o
  obj-$(CONFIG_AIR_EN8811H_PHY)   += air_en8811h.o
  obj-$(CONFIG_AMD_PHY)		+= amd.o
- obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia/
+ obj-$(CONFIG_AMCC_QT2025_PHY)	+= qt2025.o
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
 @@ -29,6 +29,17 @@ source "drivers/nvmem/layouts/Kconfig"
