@@ -97,3 +97,15 @@ Signed-off-by: Martin Schiller <ms@dev.tdt.de>
  	gpio_count = gpiod_count(&pdev->dev, NULL);
  	while (gpio_count > 0) {
  		gpio = devm_gpiod_get_index(&pdev->dev,
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -104,6 +104,9 @@ const u8* ltq_get_eth_mac(void);
+ 
+ /* VMMC */
+ extern unsigned int *ltq_get_cp1_base(void);
++extern unsigned int ltq_get_mps_ad0_irq(void);
++extern unsigned int ltq_get_mps_ad1_irq(void);
++extern unsigned int ltq_get_mps_vc_irq(int idx);
+ 
+ #endif /* CONFIG_SOC_TYPE_XWAY */
+ #endif /* _LTQ_XWAY_H__ */
