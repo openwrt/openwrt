@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
-@@ -0,0 +1,888 @@
+@@ -0,0 +1,889 @@
 +#ifndef CONFIG_SOC_AMAZON_SE
 +
 +#include <linux/kernel.h>
@@ -200,6 +200,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/unistd.h>
 +#include <linux/errno.h>
 +#include <linux/interrupt.h>
++#include <linux/platform_device.h>
 +#include <linux/sched.h>
 +#include <linux/sched/signal.h>
 +
@@ -346,7 +347,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +
-+unsigned int ltq_get_fpi_bus_clock(int fpi) {
++static unsigned int ltq_get_fpi_bus_clock(int fpi) {
 +	struct clk *clk = clk_get_fpi();
 +	return clk_get_rate(clk);
 +}
@@ -1049,7 +1050,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	},
 +};
 +
-+int __init lq_gptu_init(void)
++static int __init lq_gptu_init(void)
 +{
 +	int ret = platform_driver_register(&gptu_driver);
 +
@@ -1058,7 +1059,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +}
 +
-+void __exit lq_gptu_exit(void)
++static void __exit lq_gptu_exit(void)
 +{
 +	unsigned int i;
 +
