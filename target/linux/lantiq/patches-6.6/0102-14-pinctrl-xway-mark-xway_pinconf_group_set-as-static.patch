@@ -1,0 +1,34 @@
+From 7d8878668dfe011f33b92a0f9aa3e0d46c1b77ca Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 20:36:56 +0800
+Subject: [PATCH 14/16] pinctrl: xway: mark xway_pinconf_group_set() as static
+
+Fix the following missing-prototypes build warning:
+
+drivers/pinctrl/pinctrl-xway.c:1231:5: error: no previous prototype for 'xway_pinconf_group_set' [-Werror=missing-prototypes]
+ 1231 | int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pinctrl/pinctrl-xway.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -1228,10 +1228,11 @@ static int xway_pinconf_set(struct pinct
+ 	return 0;
+ }
+ 
+-int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
+-			unsigned selector,
+-			unsigned long *configs,
+-			unsigned num_configs)
++static int
++xway_pinconf_group_set(struct pinctrl_dev *pctldev,
++		       unsigned selector,
++		       unsigned long *configs,
++		       unsigned num_configs)
+ {
+ 	struct ltq_pinmux_info *info = pinctrl_dev_get_drvdata(pctldev);
+ 	int i, ret = 0;

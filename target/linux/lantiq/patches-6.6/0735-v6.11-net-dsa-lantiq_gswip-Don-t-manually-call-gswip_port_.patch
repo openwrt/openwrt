@@ -1,0 +1,29 @@
+From f5ebf9ab60940b00c36dfe64add41c80f3daff6a Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Tue, 11 Jun 2024 15:54:27 +0200
+Subject: net: dsa: lantiq_gswip: Don't manually call gswip_port_enable()
+
+We don't need to manually call gswip_port_enable() from within
+gswip_setup() for the CPU port. DSA does this automatically for us.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Martin Schiller <ms@dev.tdt.de>
+Link: https://lore.kernel.org/r/20240611135434.3180973-6-ms@dev.tdt.de
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -891,8 +891,6 @@ static int gswip_setup(struct dsa_switch
+ 
+ 	ds->mtu_enforcement_ingress = true;
+ 
+-	gswip_port_enable(ds, cpu_port, NULL);
+-
+ 	ds->configure_vlan_while_not_filtering = false;
+ 
+ 	return 0;
