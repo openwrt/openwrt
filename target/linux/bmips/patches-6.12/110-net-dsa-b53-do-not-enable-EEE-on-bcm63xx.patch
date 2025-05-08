@@ -1,0 +1,41 @@
+From 2ba8f6d6759ec0bb1eaf3840eb2201a5d4931126 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Mon, 19 May 2025 19:45:48 +0200
+Subject: [PATCH] net: dsa: b53: do not enable EEE on bcm63xx
+
+BCM63xx internal switches do not support EEE, but provide multiple RGMII
+ports where external PHYs may be connected. If one of these PHYs are EEE
+capable, we may try to enable EEE for the MACs, which then hangs the
+system on access of the (non-existent) EEE registers.
+
+Fix this by checking if the switch actually supports EEE before
+attempting to configure it.
+
+Fixes: 22256b0afb12 ("net: dsa: b53: Move EEE functions to b53")
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -2353,6 +2353,9 @@ int b53_eee_init(struct dsa_switch *ds,
+ {
+ 	int ret;
+ 
++	if (!b53_support_eee(ds, port))
++		return 0;
++
+ 	ret = phy_init_eee(phy, false);
+ 	if (ret)
+ 		return 0;
+@@ -2367,7 +2370,7 @@ bool b53_support_eee(struct dsa_switch *
+ {
+ 	struct b53_device *dev = ds->priv;
+ 
+-	return !is5325(dev) && !is5365(dev);
++	return !is5325(dev) && !is5365(dev) && !is63xx(dev);
+ }
+ EXPORT_SYMBOL(b53_support_eee);
+ 

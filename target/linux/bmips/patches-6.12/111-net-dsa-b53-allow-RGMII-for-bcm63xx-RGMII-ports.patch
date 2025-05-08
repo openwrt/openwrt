@@ -1,0 +1,34 @@
+From b1308c8642f6a75b4494370784fba86dd2f0b0e0 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Mon, 19 May 2025 19:45:50 +0200
+Subject: [PATCH] net: dsa: b53: allow RGMII for bcm63xx RGMII ports
+
+Add RGMII to supported interfaces for BCM63xx RGMII ports so they can be
+actually used in RGMII mode.
+
+Without this, phylink will fail to configure them:
+
+[    3.580000] b53-switch 10700000.switch GbE3 (uninitialized): validation of rgmii with support 0000000,00000000,00000000,000062ff and advertisement 0000000,00000000,00000000,000062ff failed: -EINVAL
+[    3.600000] b53-switch 10700000.switch GbE3 (uninitialized): failed to connect to PHY: -EINVAL
+[    3.610000] b53-switch 10700000.switch GbE3 (uninitialized): error -22 setting up PHY for tree 0, switch 0, port 4
+
+Fixes: ce3bf94871f7 ("net: dsa: b53: add support for BCM63xx RGMIIs")
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1462,6 +1462,10 @@ static void b53_phylink_get_caps(struct
+ 	__set_bit(PHY_INTERFACE_MODE_MII, config->supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_REVMII, config->supported_interfaces);
+ 
++	/* BCM63xx RGMII ports support RGMII */
++	if (is63xx(dev) && port >= B53_63XX_RGMII0)
++		phy_interface_set_rgmii(config->supported_interfaces);
++
+ 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
+ 		MAC_10 | MAC_100;
+ 
