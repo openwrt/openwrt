@@ -40,17 +40,17 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
  
  static map_word
  ltq_read16(struct map_info *map, unsigned long adr)
-@@ -106,11 +110,43 @@ ltq_copy_to(struct map_info *map, unsign
+@@ -105,12 +109,41 @@ ltq_copy_to(struct map_info *map, unsign
+ 	spin_unlock_irqrestore(&ebu_lock, flags);
  }
  
- static int
-+ltq_mtd_remove(struct platform_device *pdev)
++static void ltq_mtd_remove(struct platform_device *pdev)
 +{
 +	struct ltq_mtd *ltq_mtd = platform_get_drvdata(pdev);
 +	int i;
 +
 +	if (ltq_mtd == NULL)
-+		return 0;
++		return;
 +
 +	if (ltq_mtd->cmtd) {
 +		mtd_device_unregister(ltq_mtd->cmtd);
@@ -64,11 +64,9 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 +	}
 +
 +	kfree(ltq_mtd);
-+
-+	return 0;
 +}
 +
-+static int
+ static int
  ltq_mtd_probe(struct platform_device *pdev)
  {
  	struct ltq_mtd *ltq_mtd;
@@ -85,7 +83,7 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
  
  	ltq_mtd = devm_kzalloc(&pdev->dev, sizeof(struct ltq_mtd), GFP_KERNEL);
  	if (!ltq_mtd)
-@@ -118,68 +154,89 @@ ltq_mtd_probe(struct platform_device *pd
+@@ -118,68 +151,89 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  
