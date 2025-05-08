@@ -13,14 +13,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/sound/soc/mediatek/mt7986/mt7986-wm8960.c
 +++ b/sound/soc/mediatek/mt7986/mt7986-wm8960.c
-@@ -144,7 +144,9 @@ static int mt7986_wm8960_machine_probe(s
+@@ -144,7 +144,8 @@ static int mt7986_wm8960_machine_probe(s
  
  	ret = devm_snd_soc_register_card(&pdev->dev, card);
  	if (ret) {
--		dev_err(&pdev->dev, "%s snd_soc_register_card fail: %d\n", __func__, ret);
+-		dev_err_probe(&pdev->dev, ret, "%s snd_soc_register_card fail\n", __func__);
 +		if (ret != -EPROBE_DEFER)
-+			dev_err(&pdev->dev, "%s snd_soc_register_card fail: %d\n", __func__, ret);
-+
++			dev_err_probe(&pdev->dev, ret, "%s snd_soc_register_card fail\n", __func__);
  		goto err_of_node_put;
  	}
  

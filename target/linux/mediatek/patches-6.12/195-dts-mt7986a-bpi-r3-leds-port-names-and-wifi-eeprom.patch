@@ -11,7 +11,7 @@
  	};
  
  	chosen {
-@@ -419,27 +423,27 @@
+@@ -418,27 +422,27 @@
  
  		port@1 {
  			reg = <1>;
@@ -44,7 +44,7 @@
  			phy-mode = "2500base-x";
  			sfp = <&sfp2>;
  			managed = "in-band-status";
-@@ -490,9 +494,137 @@
+@@ -489,9 +493,137 @@
  
  &wifi {
  	status = "okay";
@@ -187,10 +187,10 @@
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-nor.dtso
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-nor.dtso
 @@ -55,6 +55,7 @@
- 					partition@c00000 {
- 						label = "fit";
- 						reg = <0xc00000 0x1400000>;
-+						compatible = "denx,fit";
- 					};
- 				};
+ 			partition@c00000 {
+ 				label = "fit";
+ 				reg = <0xc00000 0x1400000>;
++				compatible = "denx,fit";
  			};
+ 		};
+ 	};
