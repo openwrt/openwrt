@@ -153,15 +153,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +     ifx_pcie_rc_class_early_fixup);
 --- a/arch/mips/pci/fixup-lantiq.c
 +++ b/arch/mips/pci/fixup-lantiq.c
-@@ -6,12 +6,19 @@
+@@ -6,13 +6,24 @@
  
- #include <linux/of_irq.h>
  #include <linux/of_pci.h>
+ #include <linux/pci.h>
 +#include <linux/pci.h>
 +#include "ifxmips_pci_common.h"
- 
- int (*ltq_pci_plat_arch_init)(struct pci_dev *dev) = NULL;
- int (*ltq_pci_plat_dev_init)(struct pci_dev *dev) = NULL;
  
  int pcibios_plat_dev_init(struct pci_dev *dev)
  {
@@ -169,11 +166,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
 +		ifx_pcie_bios_plat_dev_init(dev);
 +#endif
-+
- 	if (ltq_pci_plat_arch_init)
- 		return ltq_pci_plat_arch_init(dev);
- 
-@@ -23,5 +30,10 @@ int pcibios_plat_dev_init(struct pci_dev
+ 	return 0;
+ }
  
  int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
@@ -4162,7 +4156,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* IFXMIPS_PCIE_VR9_H */
 --- a/arch/mips/pci/pci-legacy.c
 +++ b/arch/mips/pci/pci-legacy.c
-@@ -304,3 +304,30 @@ char *__init pcibios_setup(char *str)
+@@ -312,3 +312,30 @@ char *__init pcibios_setup(char *str)
  		return pcibios_plat_setup(str);
  	return str;
  }
@@ -5514,7 +5508,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/drivers/pci/pcie/Kconfig
 +++ b/drivers/pci/pcie/Kconfig
-@@ -55,6 +55,7 @@ config PCIEAER_INJECT
+@@ -64,6 +64,7 @@ config PCIEAER_CXL
  config PCIE_ECRC
  	bool "PCI Express ECRC settings control"
  	depends on PCIEAER
@@ -5524,7 +5518,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1602,6 +1602,8 @@ void pci_walk_bus_locked(struct pci_bus
+@@ -1629,6 +1629,8 @@ void pci_walk_bus_locked(struct pci_bus
  			 void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);
@@ -5535,7 +5529,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  					 unsigned long type);
 --- a/include/linux/pci_ids.h
 +++ b/include/linux/pci_ids.h
-@@ -1110,6 +1110,12 @@
+@@ -1111,6 +1111,12 @@
  #define PCI_DEVICE_ID_SGI_IOC3		0x0003
  #define PCI_DEVICE_ID_SGI_LITHIUM	0x1002
  
