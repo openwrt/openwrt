@@ -11,7 +11,7 @@
 	model = "MediaTek / Arcadyan - Mozart";
 
 	aliases {
-		serial0 = &uart0;
+		serial0 = &serial0;
 		led-boot = &led_status_blue;
 		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
@@ -57,27 +57,6 @@
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
-		};
-	};
-};
-
-&pio {
-	mdio0_pins: mdio0-pins {
-		mux {
-			function = "eth";
-			groups = "mdc_mdio0";
-		};
-
-		conf {
-			groups = "mdc_mdio0";
-			drive-strength = <MTK_DRIVE_10mA>;
-		};
-	};
-
-	spic_pins: spi1-pins {
-		mux {
-			function = "spi";
-			groups = "spi1";
 		};
 	};
 };
@@ -173,7 +152,7 @@
 	};
 };
 
-&uart1 {
+&serial1 {
 	status = "okay";
 };
 
@@ -189,7 +168,7 @@
 &spi1 {
 	pinctrl-names = "default";
 	/* pin shared with snfi */
-	pinctrl-0 = <&spic_pins>;
+	pinctrl-0 = <&spi1_pins>;
 	status = "disabled";
 };
 

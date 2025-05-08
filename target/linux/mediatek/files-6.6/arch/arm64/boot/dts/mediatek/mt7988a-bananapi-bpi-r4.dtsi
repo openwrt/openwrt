@@ -23,11 +23,11 @@
 		led-failsafe = &led_green;
 		led-running = &led_green;
 		led-upgrade = &led_green;
-		serial0 = &uart0;
+		serial0 = &serial0;
 	};
 
 	chosen {
-		stdout-path = &uart0;
+		stdout-path = &serial0;
 		bootargs = "console=ttyS0,115200n1 loglevel=8 pci=pcie_bus_perf ubi.block=0,fit root=/dev/fit0 rootwait";
 		rootdisk-spim-nand = <&ubi_rootfs>;
 	};
@@ -299,10 +299,113 @@
 };
 
 &pio {
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	i2c0_pins: i2c0-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	i2c2_1_pins: i2c2-pins-g1 {
+		mux {
+			function = "i2c";
+			groups = "i2c2_1";
+		};
+	};
+
+	gbe0_led0_pins: gbe0-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led0";
+		};
+	};
+
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "2p5gbe_led0";
+		};
+	};
+
+	mmc0_pins_emmc_51: mmc0-pins-emmc-51 {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+	};
+
+	mmc0_pins_sdcard: mmc0-pins-sdcard {
+		mux {
+			function = "flash";
+			groups = "sdcard";
+		};
+	};
+
 	pwm0_pins: pwm0-pins {
 		mux {
 			groups = "pwm0";
 			function = "pwm";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups =  "uart0";
+		};
+	};
+
+	uart1_2_lite_pins: uart1-2-lite-pins {
+		mux {
+			function = "uart";
+			groups =  "uart1_2_lite";
+		};
+	};
+
+	uart2_3_pins: uart2-3-pins {
+		mux {
+			function = "uart";
+			groups =  "uart2_3";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
 		};
 	};
 };
@@ -380,17 +483,19 @@
 	};
 };
 
-&uart0 {
+&serial0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
 	status = "okay";
 };
 
-&uart1 {
+&serial1 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_2_lite_pins>;
 };
 
-&uart2 {
+&serial2 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart2_3_pins>;
@@ -400,6 +505,6 @@
 	status = "okay";
 };
 
-&xphy {
+&xsphy {
 	status = "okay";
 };
