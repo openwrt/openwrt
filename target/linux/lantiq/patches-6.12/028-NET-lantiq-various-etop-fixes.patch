@@ -700,7 +700,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	unsigned long flags;
 +	int max;
  
- 	dev->mtu = new_mtu;
+ 	WRITE_ONCE(dev->mtu, new_mtu);
  
 +	max = ETH_HLEN + VLAN_HLEN + new_mtu + ETH_FCS_LEN;
 +
@@ -848,8 +848,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -735,31 +968,22 @@ ltq_etop_remove(struct platform_device *
- 	return 0;
+@@ -733,31 +966,22 @@ static void ltq_etop_remove(struct platf
+ 	}
  }
  
 +static const struct of_device_id ltq_etop_match[] = {
@@ -860,7 +860,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
  static struct platform_driver ltq_mii_driver = {
 +	.probe = ltq_etop_probe,
- 	.remove = ltq_etop_remove,
+ 	.remove_new = ltq_etop_remove,
  	.driver = {
  		.name = "ltq_etop",
 +		.of_match_table = ltq_etop_match,

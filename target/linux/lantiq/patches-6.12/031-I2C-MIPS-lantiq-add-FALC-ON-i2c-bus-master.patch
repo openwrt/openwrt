@@ -18,7 +18,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -819,6 +819,16 @@ config I2C_MICROCHIP_CORE
+@@ -857,6 +857,16 @@ config I2C_MICROCHIP_CORE
  	  This driver can also be built as a module. If so, the module will be
  	  called i2c-microchip-core.
  
@@ -37,9 +37,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on PPC
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -76,6 +76,7 @@ obj-$(CONFIG_I2C_IMX_LPI2C)	+= i2c-imx-l
- obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
+@@ -78,6 +78,7 @@ obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
  obj-$(CONFIG_I2C_JZ4780)	+= i2c-jz4780.o
+ obj-$(CONFIG_I2C_KEBA)		+= i2c-keba.o
  obj-$(CONFIG_I2C_KEMPLD)	+= i2c-kempld.o
 +obj-$(CONFIG_I2C_LANTIQ)	+= i2c-lantiq.o
  obj-$(CONFIG_I2C_LPC2K)		+= i2c-lpc2k.o
