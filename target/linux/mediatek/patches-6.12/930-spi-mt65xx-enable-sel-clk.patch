@@ -1,6 +1,6 @@
 --- a/drivers/spi/spi-mt65xx.c
 +++ b/drivers/spi/spi-mt65xx.c
-@@ -1228,8 +1228,15 @@ static int mtk_spi_probe(struct platform
+@@ -1237,8 +1237,15 @@ static int mtk_spi_probe(struct platform
  	if (ret < 0)
  		return dev_err_probe(dev, ret, "failed to enable hclk\n");
  
