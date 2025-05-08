@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:21:02 +0800
+Subject: [PATCH 6/6] spi: falcon: mark falcon_sflash_xfer() as static
+
+Fix the following missing-prototypes build warning:
+
+drivers/spi/spi-falcon.c:97:5: error: no previous prototype for 'falcon_sflash_xfer' [-Werror=missing-prototypes]
+   97 | int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
+      |     ^~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/spi/spi-falcon.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/spi-falcon.c
++++ b/drivers/spi/spi-falcon.c
+@@ -94,7 +94,7 @@ struct falcon_sflash {
+ 	struct spi_controller *host;
+ };
+ 
+-int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
++static int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
+ 		unsigned long flags)
+ {
+ 	struct device *dev = &spi->dev;
