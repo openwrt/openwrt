@@ -67,7 +67,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
-@@ -414,6 +414,8 @@ int __init vpe_module_init(void)
+@@ -383,6 +383,8 @@ int __init vpe_module_init(void)
  			}
  
  			v->ntcs = hw_tcs - aprp_cpu_index();
@@ -76,7 +76,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -517,3 +519,47 @@ void __exit vpe_module_exit(void)
+@@ -486,3 +488,47 @@ void __exit vpe_module_exit(void)
  			release_vpe(v);
  	}
  }
