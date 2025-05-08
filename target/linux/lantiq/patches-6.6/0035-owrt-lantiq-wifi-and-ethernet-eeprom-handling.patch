@@ -36,7 +36,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_PCI) += ath5k_eep.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath5k_eep.c
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,127 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -59,18 +59,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/mtd/mtd.h>
 +#include <lantiq_soc.h>
 +
-+extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
 +struct ath5k_platform_data ath5k_pdata;
 +static u8 athxk_eeprom_mac[6];
 +
-+static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
-+{
-+	dev->dev.platform_data = &ath5k_pdata;
-+	return 0;
-+}
-+
 +static int ath5k_eep_load;
-+int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
++static int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np = NULL;
 +	int mac_offset;
@@ -134,7 +127,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		athxk_eeprom_mac[5] += mac_inc;
 +
 +	ath5k_pdata.macaddr = athxk_eeprom_mac;
-+	ltq_pci_plat_dev_init = ath5k_pci_plat_dev_init;
 +
 +	dev_info(&pdev->dev, "loaded ath5k eeprom\n");
 +
@@ -174,7 +166,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +subsys_initcall(of_ath5k_eeprom_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/eth_mac.c
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
 + *
@@ -183,6 +175,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + *  by the Free Software Foundation.
 + */
 +
++#include <lantiq_soc.h>
 +#include <linux/init.h>
 +#include <linux/if_ether.h>
 +
