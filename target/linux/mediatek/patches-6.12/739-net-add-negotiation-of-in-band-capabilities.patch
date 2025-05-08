@@ -131,7 +131,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static unsigned int phylink_interface_signal_rate(phy_interface_t interface)
  {
  	switch (interface) {
-@@ -1053,6 +1073,15 @@ static void phylink_resolve_an_pause(str
+@@ -988,6 +1008,15 @@ static void phylink_resolve_an_pause(str
  	}
  }
  
@@ -147,7 +147,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static void phylink_pcs_pre_config(struct phylink_pcs *pcs,
  				   phy_interface_t interface)
  {
-@@ -1106,6 +1135,24 @@ static void phylink_pcs_link_up(struct p
+@@ -1041,6 +1070,24 @@ static void phylink_pcs_link_up(struct p
  		pcs->ops->pcs_link_up(pcs, neg_mode, interface, speed, duplex);
  }
  
@@ -172,7 +172,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static void phylink_pcs_poll_stop(struct phylink *pl)
  {
  	if (pl->cfg_link_an_mode == MLO_AN_INBAND)
-@@ -1132,13 +1179,13 @@ static void phylink_mac_config(struct ph
+@@ -1082,13 +1129,13 @@ static void phylink_mac_config(struct ph
  
  	phylink_dbg(pl,
  		    "%s: mode=%s/%s/%s adv=%*pb pause=%02x\n",
@@ -188,7 +188,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  }
  
  static void phylink_pcs_an_restart(struct phylink *pl)
-@@ -1146,13 +1193,14 @@ static void phylink_pcs_an_restart(struc
+@@ -1096,13 +1143,14 @@ static void phylink_pcs_an_restart(struc
  	if (pl->pcs && linkmode_test_bit(ETHTOOL_LINK_MODE_Autoneg_BIT,
  					 pl->link_config.advertising) &&
  	    phy_interface_mode_is_8023z(pl->link_config.interface) &&
@@ -205,7 +205,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   * @interface: interface mode to be used
   * @advertising: adertisement ethtool link mode mask
   *
-@@ -1169,11 +1217,21 @@ static void phylink_pcs_an_restart(struc
+@@ -1119,11 +1167,21 @@ static void phylink_pcs_an_restart(struc
   * Note: this is for cases where the PCS itself is involved in negotiation
   * (e.g. Clause 37, SGMII and similar) not Clause 73.
   */
@@ -231,7 +231,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
  	switch (interface) {
  	case PHY_INTERFACE_MODE_SGMII:
-@@ -1185,10 +1243,7 @@ static unsigned int phylink_pcs_neg_mode
+@@ -1136,10 +1194,7 @@ static unsigned int phylink_pcs_neg_mode
  		 * inband communication. Note: there exist PHYs that run
  		 * with SGMII but do not send the inband data.
  		 */
@@ -243,7 +243,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		break;
  
  	case PHY_INTERFACE_MODE_1000BASEX:
-@@ -1199,21 +1254,143 @@ static unsigned int phylink_pcs_neg_mode
+@@ -1150,21 +1205,143 @@ static unsigned int phylink_pcs_neg_mode
  		 * as well, but drivers may not support this, so may
  		 * need to override this.
  		 */
@@ -394,7 +394,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  }
  
  static void phylink_major_config(struct phylink *pl, bool restart,
-@@ -1225,11 +1402,9 @@ static void phylink_major_config(struct
+@@ -1176,11 +1353,9 @@ static void phylink_major_config(struct
  	unsigned int neg_mode;
  	int err;
  
@@ -409,7 +409,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
  	if (pl->using_mac_select_pcs) {
  		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
-@@ -1243,10 +1418,17 @@ static void phylink_major_config(struct
+@@ -1194,10 +1369,17 @@ static void phylink_major_config(struct
  		pcs_changed = pcs && pl->pcs != pcs;
  	}
  
@@ -428,7 +428,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  					       state->interface);
  		if (err < 0) {
  			phylink_err(pl, "mac_prepare failed: %pe\n",
-@@ -1280,7 +1462,7 @@ static void phylink_major_config(struct
+@@ -1231,7 +1413,7 @@ static void phylink_major_config(struct
  	if (pl->pcs_state == PCS_STATE_STARTING || pcs_changed)
  		phylink_pcs_enable(pl->pcs);
  
@@ -437,7 +437,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	if (pl->pcs && pl->pcs->neg_mode)
  		neg_mode = pl->pcs_neg_mode;
  
-@@ -1296,13 +1478,20 @@ static void phylink_major_config(struct
+@@ -1247,13 +1429,20 @@ static void phylink_major_config(struct
  		phylink_pcs_an_restart(pl);
  
  	if (pl->mac_ops->mac_finish) {
@@ -459,7 +459,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	if (pl->sfp_bus) {
  		rate_kbd = phylink_interface_signal_rate(state->interface);
  		if (rate_kbd)
-@@ -1327,17 +1516,16 @@ static int phylink_change_inband_advert(
+@@ -1278,17 +1467,16 @@ static int phylink_change_inband_advert(
  		return 0;
  
  	phylink_dbg(pl, "%s: mode=%s/%s adv=%*pb pause=%02x\n", __func__,
@@ -481,7 +481,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	if (pl->pcs->neg_mode)
  		neg_mode = pl->pcs_neg_mode;
  
-@@ -1402,7 +1590,7 @@ static void phylink_mac_initial_config(s
+@@ -1353,7 +1541,7 @@ static void phylink_mac_initial_config(s
  {
  	struct phylink_link_state link_state;
  
@@ -490,7 +490,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	case MLO_AN_PHY:
  		link_state = pl->phy_state;
  		break;
-@@ -1476,14 +1664,14 @@ static void phylink_link_up(struct phyli
+@@ -1427,14 +1615,14 @@ static void phylink_link_up(struct phyli
  
  	pl->cur_interface = link_state.interface;
  
@@ -507,7 +507,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  				 pl->cur_interface, speed, duplex,
  				 !!(link_state.pause & MLO_PAUSE_TX), rx_pause);
  
-@@ -1503,7 +1691,7 @@ static void phylink_link_down(struct phy
+@@ -1454,7 +1642,7 @@ static void phylink_link_down(struct phy
  
  	if (ndev)
  		netif_carrier_off(ndev);
@@ -516,7 +516,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  				   pl->cur_interface);
  	phylink_info(pl, "Link is Down\n");
  }
-@@ -1530,7 +1718,7 @@ static void phylink_resolve(struct work_
+@@ -1481,7 +1669,7 @@ static void phylink_resolve(struct work_
  		link_state.link = false;
  		retrigger = true;
  	} else {
@@ -525,7 +525,16 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		case MLO_AN_PHY:
  			link_state = pl->phy_state;
  			phylink_apply_manual_flow(pl, &link_state);
-@@ -1773,7 +1961,7 @@ struct phylink *phylink_create(struct ph
+@@ -1671,7 +1859,7 @@ int phylink_set_fixed_link(struct phylin
+ 	pl->link_config.an_complete = 1;
+ 
+ 	pl->cfg_link_an_mode = MLO_AN_FIXED;
+-	pl->cur_link_an_mode = pl->cfg_link_an_mode;
++	pl->req_link_an_mode = pl->cfg_link_an_mode;
+ 
+ 	return 0;
+ }
+@@ -1766,7 +1954,7 @@ struct phylink *phylink_create(struct ph
  		}
  	}
  
@@ -534,7 +543,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
  	ret = phylink_register_sfp(pl, fwnode);
  	if (ret < 0) {
-@@ -2236,7 +2424,7 @@ void phylink_start(struct phylink *pl)
+@@ -2242,7 +2430,7 @@ void phylink_start(struct phylink *pl)
  	ASSERT_RTNL();
  
  	phylink_info(pl, "configuring for %s/%s link mode\n",
@@ -543,7 +552,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		     phy_modes(pl->link_config.interface));
  
  	/* Always set the carrier off */
-@@ -2495,7 +2683,7 @@ int phylink_ethtool_ksettings_get(struct
+@@ -2501,7 +2689,7 @@ int phylink_ethtool_ksettings_get(struct
  
  	linkmode_copy(kset->link_modes.supported, pl->supported);
  
@@ -552,7 +561,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	case MLO_AN_FIXED:
  		/* We are using fixed settings. Report these as the
  		 * current link settings - and note that these also
-@@ -2526,6 +2714,26 @@ int phylink_ethtool_ksettings_get(struct
+@@ -2532,6 +2720,26 @@ int phylink_ethtool_ksettings_get(struct
  }
  EXPORT_SYMBOL_GPL(phylink_ethtool_ksettings_get);
  
@@ -579,7 +588,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  /**
   * phylink_ethtool_ksettings_set() - set the link settings
   * @pl: a pointer to a &struct phylink returned from phylink_create()
-@@ -2587,7 +2795,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -2593,7 +2801,7 @@ int phylink_ethtool_ksettings_set(struct
  		/* If we have a fixed link, refuse to change link parameters.
  		 * If the link parameters match, accept them but do nothing.
  		 */
@@ -588,7 +597,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  			if (s->speed != pl->link_config.speed ||
  			    s->duplex != pl->link_config.duplex)
  				return -EINVAL;
-@@ -2603,7 +2811,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -2609,7 +2817,7 @@ int phylink_ethtool_ksettings_set(struct
  		 * is our default case) but do not allow the advertisement to
  		 * be changed. If the advertisement matches, simply return.
  		 */
@@ -597,7 +606,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  			if (!linkmode_equal(config.advertising,
  					    pl->link_config.advertising))
  				return -EINVAL;
-@@ -2643,7 +2851,7 @@ int phylink_ethtool_ksettings_set(struct
+@@ -2649,7 +2857,7 @@ int phylink_ethtool_ksettings_set(struct
  		linkmode_copy(support, pl->supported);
  		if (phylink_validate(pl, support, &config)) {
  			phylink_err(pl, "validation of %s/%s with support %*pb failed\n",
@@ -606,7 +615,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  				    phy_modes(config.interface),
  				    __ETHTOOL_LINK_MODE_MASK_NBITS, support);
  			return -EINVAL;
-@@ -2661,6 +2869,13 @@ int phylink_ethtool_ksettings_set(struct
+@@ -2667,6 +2875,13 @@ int phylink_ethtool_ksettings_set(struct
  	    phylink_is_empty_linkmode(config.advertising))
  		return -EINVAL;
  
@@ -620,7 +629,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	mutex_lock(&pl->state_mutex);
  	pl->link_config.speed = config.speed;
  	pl->link_config.duplex = config.duplex;
-@@ -2743,7 +2958,7 @@ int phylink_ethtool_set_pauseparam(struc
+@@ -2749,7 +2964,7 @@ int phylink_ethtool_set_pauseparam(struc
  
  	ASSERT_RTNL();
  
@@ -629,7 +638,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		return -EOPNOTSUPP;
  
  	if (!phylink_test(pl->supported, Pause) &&
-@@ -3007,7 +3222,7 @@ static int phylink_mii_read(struct phyli
+@@ -3013,7 +3228,7 @@ static int phylink_mii_read(struct phyli
  	struct phylink_link_state state;
  	int val = 0xffff;
  
@@ -638,7 +647,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	case MLO_AN_FIXED:
  		if (phy_id == 0) {
  			phylink_get_fixed_state(pl, &state);
-@@ -3032,7 +3247,7 @@ static int phylink_mii_read(struct phyli
+@@ -3038,7 +3253,7 @@ static int phylink_mii_read(struct phyli
  static int phylink_mii_write(struct phylink *pl, unsigned int phy_id,
  			     unsigned int reg, unsigned int val)
  {
@@ -647,7 +656,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	case MLO_AN_FIXED:
  		break;
  
-@@ -3202,10 +3417,11 @@ static phy_interface_t phylink_choose_sf
+@@ -3208,10 +3423,11 @@ static phy_interface_t phylink_choose_sf
  	return interface;
  }
  
@@ -660,7 +669,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	bool changed = false;
  
  	phylink_dbg(pl, "requesting link mode %s/%s with support %*pb\n",
-@@ -3222,9 +3438,9 @@ static void phylink_sfp_set_config(struc
+@@ -3228,9 +3444,9 @@ static void phylink_sfp_set_config(struc
  		changed = true;
  	}
  
@@ -672,7 +681,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		pl->link_config.interface = state->interface;
  
  		changed = true;
-@@ -3239,8 +3455,7 @@ static void phylink_sfp_set_config(struc
+@@ -3245,8 +3461,7 @@ static void phylink_sfp_set_config(struc
  		phylink_mac_initial_config(pl, false);
  }
  
@@ -682,7 +691,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  {
  	__ETHTOOL_DECLARE_LINK_MODE_MASK(support1);
  	__ETHTOOL_DECLARE_LINK_MODE_MASK(support);
-@@ -3279,8 +3494,7 @@ static int phylink_sfp_config_phy(struct
+@@ -3285,8 +3500,7 @@ static int phylink_sfp_config_phy(struct
  	ret = phylink_validate(pl, support1, &config);
  	if (ret) {
  		phylink_err(pl,
@@ -692,7 +701,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  			    phy_modes(config.interface),
  			    __ETHTOOL_LINK_MODE_MASK_NBITS, support,
  			    ERR_PTR(ret));
-@@ -3289,7 +3503,7 @@ static int phylink_sfp_config_phy(struct
+@@ -3295,7 +3509,7 @@ static int phylink_sfp_config_phy(struct
  
  	pl->link_port = pl->sfp_port;
  
@@ -701,7 +710,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
  	return 0;
  }
-@@ -3345,6 +3559,12 @@ static int phylink_sfp_config_optical(st
+@@ -3351,6 +3565,12 @@ static int phylink_sfp_config_optical(st
  	phylink_dbg(pl, "optical SFP: chosen %s interface\n",
  		    phy_modes(interface));
  
@@ -714,7 +723,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	config.interface = interface;
  
  	/* Ignore errors if we're expecting a PHY to attach later */
-@@ -3358,7 +3578,7 @@ static int phylink_sfp_config_optical(st
+@@ -3364,7 +3584,7 @@ static int phylink_sfp_config_optical(st
  
  	pl->link_port = pl->sfp_port;
  
@@ -723,7 +732,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
  	return 0;
  }
-@@ -3429,20 +3649,10 @@ static void phylink_sfp_link_up(void *up
+@@ -3435,20 +3655,10 @@ static void phylink_sfp_link_up(void *up
  	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_LINK);
  }
  
@@ -744,7 +753,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	int ret;
  
  	/*
-@@ -3454,17 +3664,12 @@ static int phylink_sfp_connect_phy(void
+@@ -3460,17 +3670,12 @@ static int phylink_sfp_connect_phy(void
  	 */
  	phy_support_asym_pause(phy);
  
@@ -765,7 +774,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -973,6 +973,58 @@ static int phy_check_link_status(struct
+@@ -1049,6 +1049,58 @@ static int phy_check_link_status(struct
  }
  
  /**
@@ -826,7 +835,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   *
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -800,6 +800,24 @@ struct phy_tdr_config {
+@@ -819,6 +819,24 @@ struct phy_tdr_config {
  #define PHY_PAIR_ALL -1
  
  /**
@@ -851,7 +860,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   * struct phy_plca_cfg - Configuration of the PLCA (Physical Layer Collision
   * Avoidance) Reconciliation Sublayer.
   *
-@@ -939,6 +957,19 @@ struct phy_driver {
+@@ -958,6 +976,19 @@ struct phy_driver {
  	int (*get_features)(struct phy_device *phydev);
  
  	/**
@@ -871,8 +880,8 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	 * @get_rate_matching: Get the supported type of rate matching for a
  	 * particular phy interface. This is used by phy consumers to determine
  	 * whether to advertise lower-speed modes for that interface. It is
-@@ -1774,6 +1805,9 @@ void phy_stop(struct phy_device *phydev)
- int phy_config_aneg(struct phy_device *phydev);
+@@ -1842,6 +1873,9 @@ int phy_config_aneg(struct phy_device *p
+ int _phy_start_aneg(struct phy_device *phydev);
  int phy_start_aneg(struct phy_device *phydev);
  int phy_aneg_done(struct phy_device *phydev);
 +unsigned int phy_inband_caps(struct phy_device *phydev,
@@ -883,7 +892,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  bool phy_check_valid(int speed, int duplex, unsigned long *features);
 --- a/drivers/net/phy/bcm84881.c
 +++ b/drivers/net/phy/bcm84881.c
-@@ -223,11 +223,21 @@ static int bcm84881_read_status(struct p
+@@ -235,11 +235,21 @@ static int bcm84881_read_status(struct p
  	return genphy_c45_read_mdix(phydev);
  }
  
@@ -907,7 +916,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		.get_features	= bcm84881_get_features,
 --- a/drivers/net/phy/marvell.c
 +++ b/drivers/net/phy/marvell.c
-@@ -673,6 +673,48 @@ static int marvell_config_aneg_fiber(str
+@@ -716,6 +716,48 @@ static int marvell_config_aneg_fiber(str
  	return genphy_check_and_restart_aneg(phydev, changed);
  }
  
@@ -956,7 +965,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static int m88e1111_config_aneg(struct phy_device *phydev)
  {
  	int extsr = phy_read(phydev, MII_M1111_PHY_EXT_SR);
-@@ -3292,6 +3334,8 @@ static struct phy_driver marvell_drivers
+@@ -3667,6 +3709,8 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1112",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
@@ -965,16 +974,16 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		.config_init = m88e1112_config_init,
  		.config_aneg = marvell_config_aneg,
  		.config_intr = marvell_config_intr,
-@@ -3312,6 +3356,8 @@ static struct phy_driver marvell_drivers
- 		.name = "Marvell 88E1111",
+@@ -3688,6 +3732,8 @@ static struct phy_driver marvell_drivers
  		/* PHY_GBIT_FEATURES */
+ 		.flags = PHY_POLL_CABLE_TEST,
  		.probe = marvell_probe,
 +		.inband_caps = m88e1111_inband_caps,
 +		.config_inband = m88e1111_config_inband,
  		.config_init = m88e1111gbe_config_init,
  		.config_aneg = m88e1111_config_aneg,
  		.read_status = marvell_read_status,
-@@ -3333,6 +3379,8 @@ static struct phy_driver marvell_drivers
+@@ -3711,6 +3757,8 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1111 (Finisar)",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
@@ -985,7 +994,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		.read_status = marvell_read_status,
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
-@@ -432,6 +432,7 @@ struct phylink_pcs {
+@@ -419,6 +419,7 @@ struct phylink_pcs {
  /**
   * struct phylink_pcs_ops - MAC PCS operations structure.
   * @pcs_validate: validate the link configuration.
@@ -993,7 +1002,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   * @pcs_enable: enable the PCS.
   * @pcs_disable: disable the PCS.
   * @pcs_pre_config: pre-mac_config method (for errata)
-@@ -445,6 +446,8 @@ struct phylink_pcs {
+@@ -434,6 +435,8 @@ struct phylink_pcs {
  struct phylink_pcs_ops {
  	int (*pcs_validate)(struct phylink_pcs *pcs, unsigned long *supported,
  			    const struct phylink_link_state *state);
@@ -1002,7 +1011,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	int (*pcs_enable)(struct phylink_pcs *pcs);
  	void (*pcs_disable)(struct phylink_pcs *pcs);
  	void (*pcs_pre_config)(struct phylink_pcs *pcs,
-@@ -481,6 +484,20 @@ int pcs_validate(struct phylink_pcs *pcs
+@@ -471,6 +474,20 @@ int pcs_validate(struct phylink_pcs *pcs
  		 const struct phylink_link_state *state);
  
  /**
@@ -1025,7 +1034,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   */
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3959,20 +3959,27 @@ static struct mvneta_port *mvneta_pcs_to
+@@ -3960,20 +3960,27 @@ static struct mvneta_port *mvneta_pcs_to
  	return container_of(pcs, struct mvneta_port, phylink_pcs);
  }
  
@@ -1062,7 +1071,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  }
  
  static void mvneta_pcs_get_state(struct phylink_pcs *pcs,
-@@ -4070,7 +4077,7 @@ static void mvneta_pcs_an_restart(struct
+@@ -4071,7 +4078,7 @@ static void mvneta_pcs_an_restart(struct
  }
  
  static const struct phylink_pcs_ops mvneta_phylink_pcs_ops = {
@@ -1073,7 +1082,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	.pcs_an_restart = mvneta_pcs_an_restart,
 --- a/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
 +++ b/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
-@@ -6214,19 +6214,26 @@ static const struct phylink_pcs_ops mvpp
+@@ -6237,19 +6237,26 @@ static const struct phylink_pcs_ops mvpp
  	.pcs_config = mvpp2_xlg_pcs_config,
  };
  
@@ -1108,7 +1117,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  }
  
  static void mvpp2_gmac_pcs_get_state(struct phylink_pcs *pcs,
-@@ -6333,7 +6340,7 @@ static void mvpp2_gmac_pcs_an_restart(st
+@@ -6356,7 +6363,7 @@ static void mvpp2_gmac_pcs_an_restart(st
  }
  
  static const struct phylink_pcs_ops mvpp2_phylink_gmac_pcs_ops = {
@@ -1147,7 +1156,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static void lynx_pcs_get_state_usxgmii(struct mdio_device *pcs,
  				       struct phylink_link_state *state)
  {
-@@ -307,6 +328,7 @@ static void lynx_pcs_link_up(struct phyl
+@@ -306,6 +327,7 @@ static void lynx_pcs_link_up(struct phyl
  }
  
  static const struct phylink_pcs_ops lynx_pcs_phylink_ops = {
@@ -1189,7 +1198,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	.pcs_an_restart = mtk_pcs_lynxi_restart_an,
 --- a/drivers/net/pcs/pcs-xpcs.c
 +++ b/drivers/net/pcs/pcs-xpcs.c
-@@ -628,6 +628,33 @@ static int xpcs_validate(struct phylink_
+@@ -608,6 +608,33 @@ static int xpcs_validate(struct phylink_
  	return 0;
  }
  
@@ -1223,7 +1232,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  void xpcs_get_interfaces(struct dw_xpcs *xpcs, unsigned long *interfaces)
  {
  	int i, j;
-@@ -1331,6 +1358,7 @@ static const struct xpcs_id xpcs_id_list
+@@ -1365,6 +1392,7 @@ static const struct dw_xpcs_desc xpcs_de
  
  static const struct phylink_pcs_ops xpcs_phylink_ops = {
  	.pcs_validate = xpcs_validate,
