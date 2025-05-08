@@ -1,0 +1,423 @@
+From 972b5566683b369c286aa2545cd7c01cc9f0f59e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 10 May 2025 21:03:05 +0200
+Subject: [PATCH] nand: brcmnand: fix legacy controllers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Commit 3c8260ce7663 removed legacy interface, breaking < v5.0 controllers
+support.
+
+Fixes: 3c8260ce7663 ("mtd: rawnand: brcmnand: exec_op implementation")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 271 +++++++++++++++++++++--
+ 1 file changed, 258 insertions(+), 13 deletions(-)
+
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -205,6 +205,7 @@ enum {
+ 	BRCMNAND_HAS_PREFETCH			= BIT(1),
+ 	BRCMNAND_HAS_CACHE_MODE			= BIT(2),
+ 	BRCMNAND_HAS_WP				= BIT(3),
++	BRCMNAND_HAS_LL_OP			= BIT(4),
+ };
+ 
+ struct brcmnand_host;
+@@ -749,6 +750,10 @@ static int brcmnand_revision_init(struct
+ 	else
+ 		ctrl->max_oob = 16;
+ 
++	/* v5.0 and newer have low level ops support */
++	if (ctrl->nand_version >= 0x500)
++		ctrl->features |= BRCMNAND_HAS_LL_OP;
++
+ 	/* v6.0 and newer (except v6.1) have prefetch support */
+ 	if (ctrl->nand_version >= 0x0600 && ctrl->nand_version != 0x0601)
+ 		ctrl->features |= BRCMNAND_HAS_PREFETCH;
+@@ -1122,6 +1127,7 @@ static int bcmnand_ctrl_poll_status(stru
+ 				    unsigned long timeout_ms)
+ {
+ 	struct brcmnand_controller *ctrl = host->ctrl;
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	unsigned long limit;
+ 	u32 val;
+ 
+@@ -1130,7 +1136,7 @@ static int bcmnand_ctrl_poll_status(stru
+ 
+ 	limit = jiffies + msecs_to_jiffies(timeout_ms);
+ 	do {
+-		if (mask & INTFC_FLASH_STATUS)
++		if (has_ll_op && (mask & INTFC_FLASH_STATUS))
+ 			brcmnand_status(host);
+ 
+ 		val = brcmnand_read_reg(ctrl, BRCMNAND_INTFC_STATUS);
+@@ -1144,7 +1150,7 @@ static int bcmnand_ctrl_poll_status(stru
+ 	 * do a final check after time out in case the CPU was busy and the driver
+ 	 * did not get enough time to perform the polling to avoid false alarms
+ 	 */
+-	if (mask & INTFC_FLASH_STATUS)
++	if (has_ll_op && (mask & INTFC_FLASH_STATUS))
+ 		brcmnand_status(host);
+ 
+ 	val = brcmnand_read_reg(ctrl, BRCMNAND_INTFC_STATUS);
+@@ -1707,6 +1713,12 @@ static void brcmnand_send_cmd(struct brc
+ 			   cmd << brcmnand_cmd_shift(ctrl));
+ }
+ 
++static void brcmnand_cmd_ctrl(struct nand_chip *chip, int dat,
++			      unsigned int ctrl)
++{
++	/* intentionally left blank */
++}
++
+ static bool brcmstb_nand_wait_for_completion(struct nand_chip *chip)
+ {
+ 	struct brcmnand_host *host = nand_get_controller_data(chip);
+@@ -1826,6 +1838,190 @@ static int brcmnand_low_level_op(struct
+ 	return brcmnand_waitfunc(chip);
+ }
+ 
++static void brcmnand_cmdfunc(struct nand_chip *chip, unsigned command,
++			     int column, int page_addr)
++{
++	struct mtd_info *mtd = nand_to_mtd(chip);
++	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
++	u64 addr = (u64)page_addr << chip->page_shift;
++	int native_cmd = 0;
++
++	if (command == NAND_CMD_READID || command == NAND_CMD_PARAM ||
++			command == NAND_CMD_RNDOUT)
++		addr = (u64)column;
++	/* Avoid propagating a negative, don't-care address */
++	else if (page_addr < 0)
++		addr = 0;
++
++	dev_dbg(ctrl->dev, "cmd 0x%x addr 0x%llx\n", command,
++		(unsigned long long)addr);
++
++	host->last_cmd = command;
++	host->last_byte = 0;
++	host->last_addr = addr;
++
++	switch (command) {
++	case NAND_CMD_RESET:
++		native_cmd = CMD_FLASH_RESET;
++		break;
++	case NAND_CMD_STATUS:
++		native_cmd = CMD_STATUS_READ;
++		break;
++	case NAND_CMD_READID:
++		native_cmd = CMD_DEVICE_ID_READ;
++		break;
++	case NAND_CMD_READOOB:
++		native_cmd = CMD_SPARE_AREA_READ;
++		break;
++	case NAND_CMD_ERASE1:
++		native_cmd = CMD_BLOCK_ERASE;
++		brcmnand_wp(mtd, 0);
++		break;
++	case NAND_CMD_PARAM:
++		native_cmd = CMD_PARAMETER_READ;
++		break;
++	case NAND_CMD_SET_FEATURES:
++	case NAND_CMD_GET_FEATURES:
++		brcmnand_low_level_op(host, LL_OP_CMD, command, false);
++		brcmnand_low_level_op(host, LL_OP_ADDR, column, false);
++		break;
++	case NAND_CMD_RNDOUT:
++		native_cmd = CMD_PARAMETER_CHANGE_COL;
++		addr &= ~((u64)(FC_BYTES - 1));
++		/*
++		 * HW quirk: PARAMETER_CHANGE_COL requires SECTOR_SIZE_1K=0
++		 * NB: hwcfg.sector_size_1k may not be initialized yet
++		 */
++		if (brcmnand_get_sector_size_1k(host)) {
++			host->hwcfg.sector_size_1k =
++				brcmnand_get_sector_size_1k(host);
++			brcmnand_set_sector_size_1k(host, 0);
++		}
++		break;
++	}
++
++	if (!native_cmd)
++		return;
++
++	brcmnand_set_cmd_addr(mtd, addr);
++	brcmnand_send_cmd(host, native_cmd);
++	brcmnand_waitfunc(chip);
++
++	if (native_cmd == CMD_PARAMETER_READ ||
++			native_cmd == CMD_PARAMETER_CHANGE_COL) {
++		/* Copy flash cache word-wise */
++		u32 *flash_cache = (u32 *)ctrl->flash_cache;
++		int i;
++
++		brcmnand_soc_data_bus_prepare(ctrl->soc, true);
++
++		/*
++		 * Must cache the FLASH_CACHE now, since changes in
++		 * SECTOR_SIZE_1K may invalidate it
++		 */
++		for (i = 0; i < FC_WORDS; i++)
++			/*
++			 * Flash cache is big endian for parameter pages, at
++			 * least on STB SoCs
++			 */
++			flash_cache[i] = be32_to_cpu(brcmnand_read_fc(ctrl, i));
++
++		brcmnand_soc_data_bus_unprepare(ctrl->soc, true);
++
++		/* Cleanup from HW quirk: restore SECTOR_SIZE_1K */
++		if (host->hwcfg.sector_size_1k)
++			brcmnand_set_sector_size_1k(host,
++						    host->hwcfg.sector_size_1k);
++	}
++
++	/* Re-enable protection is necessary only after erase */
++	if (command == NAND_CMD_ERASE1)
++		brcmnand_wp(mtd, 1);
++}
++
++static uint8_t brcmnand_read_byte(struct nand_chip *chip)
++{
++	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
++	uint8_t ret = 0;
++	int addr, offs;
++
++	switch (host->last_cmd) {
++	case NAND_CMD_READID:
++		if (host->last_byte < 4)
++			ret = brcmnand_read_reg(ctrl, BRCMNAND_ID) >>
++				(24 - (host->last_byte << 3));
++		else if (host->last_byte < 8)
++			ret = brcmnand_read_reg(ctrl, BRCMNAND_ID_EXT) >>
++				(56 - (host->last_byte << 3));
++		break;
++
++	case NAND_CMD_READOOB:
++		ret = oob_reg_read(ctrl, host->last_byte);
++		break;
++
++	case NAND_CMD_STATUS:
++		ret = brcmnand_read_reg(ctrl, BRCMNAND_INTFC_STATUS) &
++					INTFC_FLASH_STATUS;
++		if (wp_on) /* hide WP status */
++			ret |= NAND_STATUS_WP;
++		break;
++
++	case NAND_CMD_PARAM:
++	case NAND_CMD_RNDOUT:
++		addr = host->last_addr + host->last_byte;
++		offs = addr & (FC_BYTES - 1);
++
++		/* At FC_BYTES boundary, switch to next column */
++		if (host->last_byte > 0 && offs == 0)
++			nand_change_read_column_op(chip, addr, NULL, 0, false);
++
++		ret = ctrl->flash_cache[offs];
++		break;
++	case NAND_CMD_GET_FEATURES:
++		if (host->last_byte >= ONFI_SUBFEATURE_PARAM_LEN) {
++			ret = 0;
++		} else {
++			bool last = host->last_byte ==
++				ONFI_SUBFEATURE_PARAM_LEN - 1;
++			brcmnand_low_level_op(host, LL_OP_RD, 0, last);
++			ret = brcmnand_read_reg(ctrl, BRCMNAND_LL_RDATA) & 0xff;
++		}
++	}
++
++	dev_dbg(ctrl->dev, "read byte = 0x%02x\n", ret);
++	host->last_byte++;
++
++	return ret;
++}
++
++static void brcmnand_read_buf(struct nand_chip *chip, uint8_t *buf, int len)
++{
++	int i;
++
++	for (i = 0; i < len; i++, buf++)
++		*buf = brcmnand_read_byte(chip);
++}
++
++static void brcmnand_write_buf(struct nand_chip *chip, const uint8_t *buf,
++			       int len)
++{
++	int i;
++	struct brcmnand_host *host = nand_get_controller_data(chip);
++
++	switch (host->last_cmd) {
++	case NAND_CMD_SET_FEATURES:
++		for (i = 0; i < len; i++)
++			brcmnand_low_level_op(host, LL_OP_WR, buf[i],
++						  (i + 1) == len);
++		break;
++	default:
++		BUG();
++		break;
++	}
++}
++
+ /*
+  *  Kick EDU engine
+  */
+@@ -2234,10 +2430,16 @@ static int brcmnand_read_page(struct nan
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	u8 *oob = oob_required ? (u8 *)chip->oob_poi : NULL;
+-	u64 addr = (u64)page << chip->page_shift;
+ 
+-	host->last_addr = addr;
++	if (has_ll_op) {
++		u64 addr = (u64)page << chip->page_shift;
++		host->last_addr = addr;
++	} else {
++		nand_read_page_op(chip, page, 0, NULL, 0);
++	}
+ 
+ 	return brcmnand_read(mtd, chip, host->last_addr,
+ 			mtd->writesize >> FC_SHIFT, (u32 *)buf, oob);
+@@ -2247,12 +2449,18 @@ static int brcmnand_read_page_raw(struct
+ 				  int oob_required, int page)
+ {
+ 	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	u8 *oob = oob_required ? (u8 *)chip->oob_poi : NULL;
+ 	int ret;
+-	u64 addr = (u64)page << chip->page_shift;
+ 
+-	host->last_addr = addr;
++	if (has_ll_op) {
++		u64 addr = (u64)page << chip->page_shift;
++		host->last_addr = addr;
++	} else {
++		nand_read_page_op(chip, page, 0, NULL, 0);
++	}
+ 
+ 	brcmnand_set_ecc_enabled(host, 0);
+ 	ret = brcmnand_read(mtd, chip, host->last_addr,
+@@ -2364,12 +2572,22 @@ static int brcmnand_write_page(struct na
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	void *oob = oob_required ? chip->oob_poi : NULL;
+-	u64 addr = (u64)page << chip->page_shift;
++	int ret;
+ 
+-	host->last_addr = addr;
++	if (has_ll_op) {
++		u64 addr = (u64)page << chip->page_shift;
++		host->last_addr = addr;
++	} else {
++		nand_prog_page_begin_op(chip, page, 0, NULL, 0);
++	}
++	ret = brcmnand_write(mtd, chip, host->last_addr, (const u32 *)buf, oob);
++	if (!has_ll_op)
++		ret = nand_prog_page_end_op(chip);
+ 
+-	return brcmnand_write(mtd, chip, host->last_addr, (const u32 *)buf, oob);
++	return ret;
+ }
+ 
+ static int brcmnand_write_page_raw(struct nand_chip *chip, const uint8_t *buf,
+@@ -2377,13 +2595,21 @@ static int brcmnand_write_page_raw(struc
+ {
+ 	struct mtd_info *mtd = nand_to_mtd(chip);
+ 	struct brcmnand_host *host = nand_get_controller_data(chip);
++	struct brcmnand_controller *ctrl = host->ctrl;
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	void *oob = oob_required ? chip->oob_poi : NULL;
+-	u64 addr = (u64)page << chip->page_shift;
+ 	int ret = 0;
+ 
+-	host->last_addr = addr;
++	if (has_ll_op) {
++		u64 addr = (u64)page << chip->page_shift;
++		host->last_addr = addr;
++	} else {
++		nand_prog_page_begin_op(chip, page, 0, NULL, 0);
++	}
+ 	brcmnand_set_ecc_enabled(host, 0);
+ 	ret = brcmnand_write(mtd, chip, host->last_addr, (const u32 *)buf, oob);
++	if (!has_ll_op)
++		ret = nand_prog_page_end_op(chip);
+ 	brcmnand_set_ecc_enabled(host, 1);
+ 
+ 	return ret;
+@@ -2863,6 +3089,10 @@ static int brcmnand_attach_chip(struct n
+ 	return ret;
+ }
+ 
++static const struct nand_controller_ops brcmnand_legacy_controller_ops = {
++	.attach_chip = brcmnand_attach_chip,
++};
++
+ static const struct nand_controller_ops brcmnand_controller_ops = {
+ 	.attach_chip = brcmnand_attach_chip,
+ 	.exec_op = brcmnand_exec_op,
+@@ -2872,6 +3102,7 @@ static int brcmnand_init_cs(struct brcmn
+ 			    const char * const *part_probe_types)
+ {
+ 	struct brcmnand_controller *ctrl = host->ctrl;
++	const bool has_ll_op = ctrl->features & BRCMNAND_HAS_LL_OP;
+ 	struct device *dev = ctrl->dev;
+ 	struct mtd_info *mtd;
+ 	struct nand_chip *chip;
+@@ -2890,6 +3121,15 @@ static int brcmnand_init_cs(struct brcmn
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->dev.parent = dev;
+ 
++	if (!has_ll_op) {
++		chip->legacy.cmd_ctrl = brcmnand_cmd_ctrl;
++		chip->legacy.cmdfunc = brcmnand_cmdfunc;
++		chip->legacy.waitfunc = brcmnand_waitfunc;
++		chip->legacy.read_byte = brcmnand_read_byte;
++		chip->legacy.read_buf = brcmnand_read_buf;
++		chip->legacy.write_buf = brcmnand_write_buf;
++	}
++
+ 	chip->ecc.engine_type = NAND_ECC_ENGINE_TYPE_ON_HOST;
+ 	chip->ecc.read_page = brcmnand_read_page;
+ 	chip->ecc.write_page = brcmnand_write_page;
+@@ -2901,7 +3141,8 @@ static int brcmnand_init_cs(struct brcmn
+ 	chip->ecc.write_oob = brcmnand_write_oob;
+ 
+ 	chip->controller = &ctrl->controller;
+-	ctrl->controller.controller_wp = 1;
++	if (has_ll_op)
++		ctrl->controller.controller_wp = 1;
+ 
+ 	/*
+ 	 * The bootloader might have configured 16bit mode but
+@@ -3114,7 +3355,7 @@ int brcmnand_probe(struct platform_devic
+ 	init_completion(&ctrl->dma_done);
+ 	init_completion(&ctrl->edu_done);
+ 	nand_controller_init(&ctrl->controller);
+-	ctrl->controller.ops = &brcmnand_controller_ops;
++	ctrl->controller.ops = &brcmnand_legacy_controller_ops;
+ 	INIT_LIST_HEAD(&ctrl->host_list);
+ 
+ 	/* NAND register range */
+@@ -3142,6 +3383,10 @@ int brcmnand_probe(struct platform_devic
+ 	if (ret)
+ 		goto err;
+ 
++	/* Enable low level ops */
++	if (ctrl->features & BRCMNAND_HAS_LL_OP)
++		ctrl->controller.ops = &brcmnand_controller_ops;
++
+ 	/*
+ 	 * Most chips have this cache at a fixed offset within 'nand' block.
+ 	 * Some must specify this region separately.
