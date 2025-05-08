@@ -1,0 +1,50 @@
+From 4282be709517fe9af4b37a9f53bba389ca4b64f1 Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@gmail.com>
+Date: Thu, 8 May 2025 19:51:32 +0200
+Subject: [PATCH] Revert "um: work around sched_yield not yielding in
+ time-travel mode"
+
+This reverts commit 887c5c12e80c8424bd471122d2e8b6b462e12874.
+---
+ arch/um/include/linux/time-internal.h |  2 --
+ arch/um/kernel/skas/syscall.c         | 11 -----------
+ 2 files changed, 13 deletions(-)
+
+diff --git a/arch/um/include/linux/time-internal.h b/arch/um/include/linux/time-internal.h
+index 138908b999d7..b22226634ff6 100644
+--- a/arch/um/include/linux/time-internal.h
++++ b/arch/um/include/linux/time-internal.h
+@@ -83,8 +83,6 @@ extern void time_travel_not_configured(void);
+ #define time_travel_del_event(...) time_travel_not_configured()
+ #endif /* CONFIG_UML_TIME_TRAVEL_SUPPORT */
+ 
+-extern unsigned long tt_extra_sched_jiffies;
+-
+ /*
+  * Without CONFIG_UML_TIME_TRAVEL_SUPPORT this is a linker error if used,
+  * which is intentional since we really shouldn't link it in that case.
+diff --git a/arch/um/kernel/skas/syscall.c b/arch/um/kernel/skas/syscall.c
+index a5beaea2967e..b09e85279d2b 100644
+--- a/arch/um/kernel/skas/syscall.c
++++ b/arch/um/kernel/skas/syscall.c
+@@ -31,17 +31,6 @@ void handle_syscall(struct uml_pt_regs *r)
+ 		goto out;
+ 
+ 	syscall = UPT_SYSCALL_NR(r);
+-
+-	/*
+-	 * If no time passes, then sched_yield may not actually yield, causing
+-	 * broken spinlock implementations in userspace (ASAN) to hang for long
+-	 * periods of time.
+-	 */
+-	if ((time_travel_mode == TT_MODE_INFCPU ||
+-	     time_travel_mode == TT_MODE_EXTERNAL) &&
+-	    syscall == __NR_sched_yield)
+-		tt_extra_sched_jiffies += 1;
+-
+ 	if (syscall >= 0 && syscall < __NR_syscalls) {
+ 		unsigned long ret = EXECUTE_SYSCALL(syscall, regs);
+ 
+-- 
+2.49.0
+
