@@ -686,6 +686,18 @@ define Build/sysupgrade-tar
 		$@
 endef
 
+define Build/tplink-mkimage-ubi
+	$(TOPDIR)/scripts/tplink-mkimage-ubi.py \
+		--create \
+		--device-name "$(TPLINK_DEVICE)" \
+		--device-ver "$(TPLINK_VERSION)" \
+		--special-ids "$(TPLINK_IDS)" \
+		--version "$(TPLINK_FWVER)" \
+		--rootfs "$@" \
+		"$(@).new"
+	@mv "$(@).new" "$@"
+endef
+
 define Build/tplink-image-2022
 	$(TOPDIR)/scripts/tplink-mkimage-2022.py  \
 		--create $@.new \
