@@ -429,7 +429,7 @@ $(eval $(call KernelPackage,fs-msdos))
 define KernelPackage/fs-netfs
   SUBMENU:=$(FS_MENU)
   TITLE:=Network Filesystems support
-  KCONFIG:=
+  KCONFIG:= \
 	CONFIG_NETFS_SUPPORT \
 	CONFIG_FSCACHE=y@ge6.12 \
 	CONFIG_FSCACHE_STATS=y@ge6.12
