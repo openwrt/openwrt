@@ -56,6 +56,7 @@
 		wlan2g {
 			label = "green:wlan2g";
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		usb {
