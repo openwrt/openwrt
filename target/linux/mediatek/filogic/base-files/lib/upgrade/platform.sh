@@ -131,6 +131,16 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
+	iptime,ax3000m)
+		if grep -q rootfs2 /proc/cmdline; then
+			CI_KERN_UBIPART=kernel2
+			CI_ROOT_UBIPART=rootfs2
+		else
+			CI_KERN_UBIPART=kernel
+			CI_ROOT_UBIPART=rootfs
+		fi
+		nand_do_upgrade "$1"
+		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	yuncore,ax835|\
@@ -238,6 +248,10 @@ platform_check_image() {
 		}
 
 		return 0
+		;;
+	iptime,ax3000m)
+		nand_do_platform_check "mt7981-AX3000" "$1"
+		return $?
 		;;
 	*)
 		nand_do_platform_check "$board" "$1"
