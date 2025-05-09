@@ -49,7 +49,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +obj-$(CONFIG_QCOM_APM)		+= apm.o
 --- /dev/null
 +++ b/drivers/power/qcom/apm.c
-@@ -0,0 +1,943 @@
+@@ -0,0 +1,941 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -952,7 +952,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	return ret;
 +}
 +
-+static int msm_apm_remove(struct platform_device *pdev)
++static void msm_apm_remove(struct platform_device *pdev)
 +{
 +	struct msm_apm_ctrl_dev *ctrl_dev;
 +
@@ -963,8 +963,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		mutex_unlock(&apm_ctrl_list_mutex);
 +		apm_debugfs_deinit(ctrl_dev);
 +	}
-+
-+	return 0;
 +}
 +
 +static struct platform_driver msm_apm_driver = {
