@@ -1,0 +1,26 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 9 May 2025 11:57:57 +0200
+Subject: [PATCH] ubus: fix double registry clear on disconnect
+
+Set c->registry_index to -1 in order to ensure that the resource free path
+does not clobber registry items of unrelated connections.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -2375,8 +2375,11 @@ uc_ubus_channel_disconnect_cb(struct ubu
+ 		c->ctx.sock.fd = -1;
+ 	}
+ 
+-	if (c->registry_index >= 0)
+-		connection_reg_clear(c->vm, c->registry_index);
++	if (c->registry_index >= 0) {
++		int idx = c->registry_index;
++		c->registry_index = -1;
++		connection_reg_clear(c->vm, idx);
++	}
+ }
+ 
+ static uc_value_t *
