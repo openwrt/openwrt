@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_MESON)		+= i2c-meson.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-lantiq.c
-@@ -0,0 +1,742 @@
+@@ -0,0 +1,741 @@
 +
 +/*
 + * Lantiq I2C bus adapter
@@ -646,8 +646,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	adap = &priv->adap;
 +	i2c_set_adapdata(adap, priv);
 +	adap->owner = THIS_MODULE;
-+	adap->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
-+	strlcpy(adap->name, DRV_NAME "-adapter", sizeof(adap->name));
++	adap->class = I2C_CLASS_HWMON;
++	strscpy(adap->name, DRV_NAME "-adapter", sizeof(adap->name));
 +	adap->algo = &ltq_i2c_algorithm;
 +	adap->dev.parent = &pdev->dev;
 +	adap->dev.of_node = pdev->dev.of_node;
@@ -753,7 +753,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +}
 +
-+static int ltq_i2c_remove(struct platform_device *pdev)
++static void ltq_i2c_remove(struct platform_device *pdev)
 +{
 +	struct ltq_i2c *priv = platform_get_drvdata(pdev);
 +
@@ -765,9 +765,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	dev_dbg(&pdev->dev, "removed\n");
 +	platform_set_drvdata(pdev, NULL);
-+
-+	return 0;
 +}
++
 +static const struct of_device_id ltq_i2c_match[] = {
 +	{ .compatible = "lantiq,lantiq-i2c" },
 +	{},
