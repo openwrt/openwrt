@@ -39,8 +39,8 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
 +	bool need_mem_protection;
  
  	struct qcom_rproc_glink glink_subdev;
- 	struct qcom_rproc_ssr ssr_subdev;
-@@ -152,6 +157,7 @@ struct wcss_data {
+ 	struct qcom_rproc_pdm pdm_subdev;
+@@ -153,6 +158,7 @@ struct wcss_data {
  	int ssctl_id;
  	const struct rproc_ops *ops;
  	bool requires_force_stop;
@@ -48,7 +48,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  };
  
  static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
-@@ -251,6 +257,15 @@ static int q6v5_wcss_start(struct rproc
+@@ -252,6 +258,15 @@ static int q6v5_wcss_start(struct rproc
  
  	qcom_q6v5_prepare(&wcss->q6v5);
  
@@ -64,7 +64,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	/* Release Q6 and WCSS reset */
  	ret = reset_control_deassert(wcss->wcss_reset);
  	if (ret) {
-@@ -285,6 +300,7 @@ static int q6v5_wcss_start(struct rproc
+@@ -286,6 +301,7 @@ static int q6v5_wcss_start(struct rproc
  	if (ret)
  		goto wcss_q6_reset;
  
@@ -72,7 +72,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	ret = qcom_q6v5_wait_for_start(&wcss->q6v5, 5 * HZ);
  	if (ret == -ETIMEDOUT)
  		dev_err(wcss->dev, "start timed out\n");
-@@ -718,6 +734,15 @@ static int q6v5_wcss_stop(struct rproc *
+@@ -719,6 +735,15 @@ static int q6v5_wcss_stop(struct rproc *
  	struct q6v5_wcss *wcss = rproc->priv;
  	int ret;
  
@@ -88,7 +88,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	/* WCSS powerdown */
  	if (wcss->requires_force_stop) {
  		ret = qcom_q6v5_request_stop(&wcss->q6v5, NULL);
-@@ -742,6 +767,7 @@ static int q6v5_wcss_stop(struct rproc *
+@@ -743,6 +768,7 @@ static int q6v5_wcss_stop(struct rproc *
  			return ret;
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	clk_disable_unprepare(wcss->prng_clk);
  	qcom_q6v5_unprepare(&wcss->q6v5);
  
-@@ -765,9 +791,15 @@ static int q6v5_wcss_load(struct rproc *
+@@ -766,9 +792,15 @@ static int q6v5_wcss_load(struct rproc *
  	struct q6v5_wcss *wcss = rproc->priv;
  	int ret;
  
@@ -115,17 +115,17 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	if (ret)
  		return ret;
  
-@@ -1035,6 +1067,9 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1036,6 +1068,9 @@ static int q6v5_wcss_probe(struct platfo
  	if (!desc)
  		return -EINVAL;
  
 +	if (desc->need_mem_protection && !qcom_scm_is_available())
 +		return -EPROBE_DEFER;
 +
- 	rproc = rproc_alloc(&pdev->dev, pdev->name, desc->ops,
- 			    desc->firmware_name, sizeof(*wcss));
+ 	rproc = devm_rproc_alloc(&pdev->dev, pdev->name, desc->ops,
+ 				 desc->firmware_name, sizeof(*wcss));
  	if (!rproc) {
-@@ -1048,6 +1083,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1049,6 +1084,7 @@ static int q6v5_wcss_probe(struct platfo
  
  	wcss->version = desc->version;
  	wcss->requires_force_stop = desc->requires_force_stop;
@@ -133,7 +133,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  
  	ret = q6v5_wcss_init_mmio(wcss, pdev);
  	if (ret)
-@@ -1117,6 +1153,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1114,6 +1150,7 @@ static const struct wcss_data wcss_ipq80
  	.wcss_q6_reset_required = true,
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,

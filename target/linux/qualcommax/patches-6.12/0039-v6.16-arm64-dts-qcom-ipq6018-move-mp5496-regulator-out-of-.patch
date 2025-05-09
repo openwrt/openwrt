@@ -103,7 +103,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  
 @@ -184,16 +180,6 @@
  			rpm_requests: rpm-requests {
- 				compatible = "qcom,rpm-ipq6018";
+ 				compatible = "qcom,rpm-ipq6018", "qcom,glink-smd-rpm";
  				qcom,glink-channels = "rpm_requests";
 -
 -				regulators {

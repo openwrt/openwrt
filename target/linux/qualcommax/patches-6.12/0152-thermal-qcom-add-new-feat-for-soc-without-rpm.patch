@@ -15,7 +15,7 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
 
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -974,7 +974,7 @@ int __init init_common(struct tsens_priv
+@@ -975,7 +975,7 @@ int __init init_common(struct tsens_priv
  	ret = regmap_field_read(priv->rf[TSENS_EN], &enabled);
  	if (ret)
  		goto err_put_device;

@@ -18,18 +18,19 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 
 --- a/drivers/remoteproc/qcom_q6v5_wcss.c
 +++ b/drivers/remoteproc/qcom_q6v5_wcss.c
-@@ -1142,8 +1142,8 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1143,9 +1143,9 @@ static int q6v5_wcss_probe(struct platfo
  	if (ret)
- 		goto free_rproc;
+ 		return ret;
  
 -	qcom_add_glink_subdev(rproc, &wcss->glink_subdev, "q6wcss");
--	qcom_add_ssr_subdev(rproc, &wcss->ssr_subdev, "q6wcss");
 +	qcom_add_glink_subdev(rproc, &wcss->glink_subdev, desc->ssr_name);
+ 	qcom_add_pdm_subdev(rproc, &wcss->pdm_subdev);
+-	qcom_add_ssr_subdev(rproc, &wcss->ssr_subdev, "q6wcss");
 +	qcom_add_ssr_subdev(rproc, &wcss->ssr_subdev, desc->ssr_name);
  
  	if (desc->ssctl_id)
  		wcss->sysmon = qcom_add_sysmon_subdev(rproc,
-@@ -1198,7 +1198,7 @@ static const struct wcss_data wcss_ipq60
+@@ -1195,7 +1195,7 @@ static const struct wcss_data wcss_ipq60
  	.aon_reset_required = true,
  	.wcss_q6_reset_required = true,
  	.bcr_reset_required = false,

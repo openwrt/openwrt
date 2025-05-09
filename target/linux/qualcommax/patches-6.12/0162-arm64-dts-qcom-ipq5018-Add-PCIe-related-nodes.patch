@@ -109,7 +109,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -260,6 +260,40 @@
+@@ -258,6 +258,40 @@
  			#thermal-sensor-cells = <1>;
  		};
  
@@ -150,7 +150,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		tlmm: pinctrl@1000000 {
  			compatible = "qcom,ipq5018-tlmm";
  			reg = <0x01000000 0x300000>;
-@@ -283,8 +317,8 @@
+@@ -281,8 +315,8 @@
  			reg = <0x01800000 0x80000>;
  			clocks = <&xo_board_clk>,
  				 <&sleep_clk>,
@@ -161,7 +161,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  				 <0>,
  				 <0>,
  				 <0>,
-@@ -501,6 +535,208 @@
+@@ -498,6 +532,208 @@
  				status = "disabled";
  			};
  		};

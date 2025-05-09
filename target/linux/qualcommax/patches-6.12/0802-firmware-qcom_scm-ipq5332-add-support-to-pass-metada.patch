@@ -10,13 +10,13 @@ size as well.
 
 Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
 ---
- drivers/firmware/qcom_scm.c | 8 ++++++++
- drivers/firmware/qcom_scm.h | 1 +
+ drivers/firmware/qcom//qcom_scm.c | 8 ++++++++
+ drivers/firmware/qcom//qcom_scm.h | 1 +
  2 files changed, 9 insertions(+)
 
---- a/drivers/firmware/qcom_scm.c
-+++ b/drivers/firmware/qcom_scm.c
-@@ -592,6 +592,14 @@ int qcom_scm_pas_mem_setup(u32 periphera
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -686,6 +686,14 @@ int qcom_scm_pas_mem_setup(u32 periphera
  	if (ret)
  		goto disable_clk;
  
@@ -31,9 +31,9 @@ Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
  	ret = qcom_scm_call(__scm->dev, &desc, &res);
  	qcom_scm_bw_disable();
  
---- a/drivers/firmware/qcom_scm.h
-+++ b/drivers/firmware/qcom_scm.h
-@@ -92,6 +92,7 @@ extern int scm_legacy_call(struct device
+--- a/drivers/firmware/qcom/qcom_scm.h
++++ b/drivers/firmware/qcom/qcom_scm.h
+@@ -96,6 +96,7 @@ struct qcom_tzmem_pool *qcom_scm_get_tzm
  
  #define QCOM_SCM_SVC_PIL		0x02
  #define QCOM_SCM_PIL_PAS_INIT_IMAGE	0x01

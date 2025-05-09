@@ -20,7 +20,7 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -282,6 +282,18 @@ config PWM_INTEL_LGM
+@@ -319,6 +319,18 @@ config PWM_INTEL_LGM
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-intel-lgm.
  
@@ -41,7 +41,7 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
  	depends on MFD_IQS62X || COMPILE_TEST
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_PWM_IMX1)		+= pwm-imx1.o
+@@ -27,6 +27,7 @@ obj-$(CONFIG_PWM_IMX1)		+= pwm-imx1.o
  obj-$(CONFIG_PWM_IMX27)		+= pwm-imx27.o
  obj-$(CONFIG_PWM_IMX_TPM)	+= pwm-imx-tpm.o
  obj-$(CONFIG_PWM_INTEL_LGM)	+= pwm-intel-lgm.o

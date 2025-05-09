@@ -14,7 +14,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/remoteproc/qcom_q6v5_wcss.c
 +++ b/drivers/remoteproc/qcom_q6v5_wcss.c
-@@ -161,6 +161,7 @@ struct wcss_data {
+@@ -162,6 +162,7 @@ struct wcss_data {
  	const struct rproc_ops *ops;
  	bool requires_force_stop;
  	bool need_mem_protection;
@@ -22,15 +22,15 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  };
  
  static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
-@@ -1149,6 +1150,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1151,6 +1152,7 @@ static int q6v5_wcss_probe(struct platfo
  						      desc->sysmon_name,
  						      desc->ssctl_id);
  
 +	rproc->auto_boot = desc->need_auto_boot;
  	ret = rproc_add(rproc);
  	if (ret)
- 		goto free_rproc;
-@@ -1185,6 +1187,7 @@ static const struct wcss_data wcss_ipq80
+ 		return ret;
+@@ -1182,6 +1184,7 @@ static const struct wcss_data wcss_ipq80
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,
  	.need_mem_protection = true,
@@ -38,7 +38,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  };
  
  static const struct wcss_data wcss_qcs404_res_init = {
-@@ -1201,6 +1204,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1198,6 +1201,7 @@ static const struct wcss_data wcss_qcs40
  	.ssctl_id = 0x12,
  	.ops = &q6v5_wcss_qcs404_ops,
  	.requires_force_stop = false,

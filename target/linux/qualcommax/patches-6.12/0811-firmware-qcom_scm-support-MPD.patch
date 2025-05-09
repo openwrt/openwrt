@@ -9,14 +9,26 @@ load PIL segments to support the MPD architecture.
 Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
- drivers/firmware/qcom_scm.c            | 79 ++++++++++++++++++++++++++
- drivers/firmware/qcom_scm.h            |  3 +
+ drivers/firmware/qcom//qcom_scm.c            | 79 ++++++++++++++++++++++++++
+ drivers/firmware/qcom//qcom_scm.h            |  3 +
  include/linux/firmware/qcom/qcom_scm.h |  3 +
  3 files changed, 85 insertions(+)
 
---- a/drivers/firmware/qcom_scm.c
-+++ b/drivers/firmware/qcom_scm.c
-@@ -713,6 +713,85 @@ bool qcom_scm_pas_supported(u32 peripher
+--- a/include/linux/firmware/qcom/qcom_scm.h
++++ b/include/linux/firmware/qcom/qcom_scm.h
+@@ -79,6 +79,9 @@ int qcom_scm_pas_mem_setup(u32 periphera
+ int qcom_scm_pas_auth_and_reset(u32 peripheral);
+ int qcom_scm_pas_shutdown(u32 peripheral);
+ bool qcom_scm_pas_supported(u32 peripheral);
++int qcom_scm_internal_wifi_powerup(u32 peripheral);
++int qcom_scm_internal_wifi_shutdown(u32 peripheral);
++int qcom_scm_pas_load_segment(u32 peripheral, int segment, dma_addr_t dma, int seg_cnt);
+ int qcom_scm_msa_lock(u32 peripheral);
+ int qcom_scm_msa_unlock(u32 peripheral);
+ 
+--- a/drivers/firmware/qcom/qcom_scm.c
++++ b/drivers/firmware/qcom/qcom_scm.c
+@@ -807,6 +807,85 @@ bool qcom_scm_pas_supported(u32 peripher
  EXPORT_SYMBOL_GPL(qcom_scm_pas_supported);
  
  /**
@@ -102,9 +114,9 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
   * qcom_scm_msa_lock() - Lock given peripheral firmware region as MSA
   *
   * @peripheral:	peripheral id
---- a/drivers/firmware/qcom_scm.h
-+++ b/drivers/firmware/qcom_scm.h
-@@ -98,6 +98,9 @@ extern int scm_legacy_call(struct device
+--- a/drivers/firmware/qcom/qcom_scm.h
++++ b/drivers/firmware/qcom/qcom_scm.h
+@@ -102,6 +102,9 @@ struct qcom_tzmem_pool *qcom_scm_get_tzm
  #define QCOM_SCM_PIL_PAS_SHUTDOWN	0x06
  #define QCOM_SCM_PIL_PAS_IS_SUPPORTED	0x07
  #define QCOM_SCM_PIL_PAS_MSS_RESET	0x0a
@@ -113,16 +125,4 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +#define QCOM_SCM_PIL_PAS_LOAD_SEG	0x19
  #define QCOM_SCM_MSA_LOCK		0x24
  #define QCOM_SCM_MSA_UNLOCK		0x25
- 
---- a/include/linux/firmware/qcom/qcom_scm.h
-+++ b/include/linux/firmware/qcom/qcom_scm.h
-@@ -81,6 +81,9 @@ extern int qcom_scm_pas_mem_setup(u32 pe
- extern int qcom_scm_pas_auth_and_reset(u32 peripheral);
- extern int qcom_scm_pas_shutdown(u32 peripheral);
- extern bool qcom_scm_pas_supported(u32 peripheral);
-+extern int qcom_scm_internal_wifi_powerup(u32 peripheral);
-+extern int qcom_scm_internal_wifi_shutdown(u32 peripheral);
-+extern int qcom_scm_pas_load_segment(u32 peripheral, int segment, dma_addr_t dma, int seg_cnt);
- extern int qcom_scm_msa_lock(u32 peripheral);
- extern int qcom_scm_msa_unlock(u32 peripheral);
  

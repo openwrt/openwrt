@@ -21,7 +21,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  	struct regulator *cx_supply;
  	struct qcom_sysmon *sysmon;
  
-@@ -259,6 +260,9 @@ static int q6v5_wcss_start(struct rproc
+@@ -260,6 +261,9 @@ static int q6v5_wcss_start(struct rproc
  		return ret;
  	}
  
@@ -31,7 +31,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  	qcom_q6v5_prepare(&wcss->q6v5);
  
  	if (wcss->need_mem_protection) {
-@@ -772,6 +776,8 @@ static int q6v5_wcss_stop(struct rproc *
+@@ -773,6 +777,8 @@ static int q6v5_wcss_stop(struct rproc *
  	}
  
  pas_done:
@@ -40,7 +40,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  	clk_disable_unprepare(wcss->prng_clk);
  	qcom_q6v5_unprepare(&wcss->q6v5);
  
-@@ -980,6 +986,12 @@ static int ipq_init_clock(struct q6v5_wc
+@@ -981,6 +987,12 @@ static int ipq_init_clock(struct q6v5_wc
  			dev_err(wcss->dev, "Failed to get prng clock\n");
  		return ret;
  	}

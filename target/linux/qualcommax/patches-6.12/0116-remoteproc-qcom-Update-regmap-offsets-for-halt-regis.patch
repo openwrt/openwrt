@@ -22,7 +22,7 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
  
  #define WCNSS_PAS_ID		6
  
-@@ -154,6 +154,7 @@ struct wcss_data {
+@@ -155,6 +155,7 @@ struct wcss_data {
  	u32 version;
  	bool aon_reset_required;
  	bool wcss_q6_reset_required;
@@ -30,7 +30,7 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
  	const char *ssr_name;
  	const char *sysmon_name;
  	int ssctl_id;
-@@ -875,10 +876,13 @@ static int q6v5_wcss_init_reset(struct q
+@@ -876,10 +877,13 @@ static int q6v5_wcss_init_reset(struct q
  		}
  	}
  
@@ -48,7 +48,7 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
  	}
  
  	return 0;
-@@ -928,9 +932,9 @@ static int q6v5_wcss_init_mmio(struct q6
+@@ -929,9 +933,9 @@ static int q6v5_wcss_init_mmio(struct q6
  		return -EINVAL;
  	}
  
@@ -61,7 +61,7 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
  
  	return 0;
  }
-@@ -1176,6 +1180,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1173,6 +1177,7 @@ static const struct wcss_data wcss_ipq80
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
  	.wcss_q6_reset_required = true,
@@ -69,7 +69,7 @@ Signed-off-by: Sricharan R <sricharan@codeaurora.org>
  	.ssr_name = "q6wcss",
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,
-@@ -1190,6 +1195,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1187,6 +1192,7 @@ static const struct wcss_data wcss_qcs40
  	.version = WCSS_QCS404,
  	.aon_reset_required = false,
  	.wcss_q6_reset_required = false,

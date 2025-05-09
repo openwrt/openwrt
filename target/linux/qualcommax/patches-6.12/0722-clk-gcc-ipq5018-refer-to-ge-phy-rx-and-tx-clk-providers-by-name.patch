@@ -16,7 +16,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/clk/qcom/gcc-ipq5018.c
 +++ b/drivers/clk/qcom/gcc-ipq5018.c
-@@ -335,8 +335,8 @@ static const struct parent_map gcc_xo_gp
+@@ -336,8 +336,8 @@ static const struct parent_map gcc_xo_gp
  
  static const struct clk_parent_data gcc_xo_gephy_gcc_rx_gephy_gcc_tx_ubi32_pll_gpll0[] = {
  	{ .index = DT_XO },
@@ -27,7 +27,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	{ .hw = &ubi32_pll.clkr.hw },
  	{ .hw = &gpll0.clkr.hw },
  };
-@@ -351,8 +351,8 @@ static const struct parent_map gcc_xo_ge
+@@ -352,8 +352,8 @@ static const struct parent_map gcc_xo_ge
  
  static const struct clk_parent_data gcc_xo_gephy_gcc_tx_gephy_gcc_rx_ubi32_pll_gpll0[] = {
  	{ .index = DT_XO },
@@ -38,7 +38,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	{ .hw = &ubi32_pll.clkr.hw },
  	{ .hw = &gpll0.clkr.hw },
  };
-@@ -367,8 +367,8 @@ static const struct parent_map gcc_xo_ge
+@@ -368,8 +368,8 @@ static const struct parent_map gcc_xo_ge
  
  static const struct clk_parent_data gcc_xo_uniphy_gcc_rx_uniphy_gcc_tx_ubi32_pll_gpll0[] = {
  	{ .index = DT_XO },
@@ -49,7 +49,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	{ .hw = &ubi32_pll.clkr.hw },
  	{ .hw = &gpll0.clkr.hw },
  };
-@@ -383,8 +383,8 @@ static const struct parent_map gcc_xo_un
+@@ -384,8 +384,8 @@ static const struct parent_map gcc_xo_un
  
  static const struct clk_parent_data gcc_xo_uniphy_gcc_tx_uniphy_gcc_rx_ubi32_pll_gpll0[] = {
  	{ .index = DT_XO },

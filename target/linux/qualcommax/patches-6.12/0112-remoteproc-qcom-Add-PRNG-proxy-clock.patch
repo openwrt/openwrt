@@ -43,7 +43,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	struct regulator *cx_supply;
  	struct qcom_sysmon *sysmon;
  
-@@ -151,6 +139,21 @@ struct q6v5_wcss {
+@@ -152,6 +140,21 @@ struct q6v5_wcss {
  	struct qcom_rproc_ssr ssr_subdev;
  };
  
@@ -65,7 +65,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
  {
  	int ret;
-@@ -240,6 +243,12 @@ static int q6v5_wcss_start(struct rproc
+@@ -241,6 +244,12 @@ static int q6v5_wcss_start(struct rproc
  	struct q6v5_wcss *wcss = rproc->priv;
  	int ret;
  
@@ -78,7 +78,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	qcom_q6v5_prepare(&wcss->q6v5);
  
  	/* Release Q6 and WCSS reset */
-@@ -733,6 +742,7 @@ static int q6v5_wcss_stop(struct rproc *
+@@ -734,6 +743,7 @@ static int q6v5_wcss_stop(struct rproc *
  			return ret;
  	}
  
@@ -86,7 +86,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	qcom_q6v5_unprepare(&wcss->q6v5);
  
  	return 0;
-@@ -899,7 +909,21 @@ static int q6v5_alloc_memory_region(stru
+@@ -900,7 +910,21 @@ static int q6v5_alloc_memory_region(stru
  	return 0;
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  {
  	int ret;
  
-@@ -989,7 +1013,7 @@ static int q6v5_wcss_init_clock(struct q
+@@ -990,7 +1014,7 @@ static int q6v5_wcss_init_clock(struct q
  	return 0;
  }
  
@@ -118,25 +118,25 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  {
  	wcss->cx_supply = devm_regulator_get(wcss->dev, "cx");
  	if (IS_ERR(wcss->cx_supply))
-@@ -1033,12 +1057,14 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1034,12 +1058,14 @@ static int q6v5_wcss_probe(struct platfo
  	if (ret)
- 		goto free_rproc;
+ 		return ret;
  
 -	if (wcss->version == WCSS_QCS404) {
 -		ret = q6v5_wcss_init_clock(wcss);
 +	if (desc->init_clock) {
 +		ret = desc->init_clock(wcss);
  		if (ret)
- 			goto free_rproc;
+ 			return ret;
 +	}
  
 -		ret = q6v5_wcss_init_regulator(wcss);
 +	if (desc->init_regulator) {
 +		ret = desc->init_regulator(wcss);
  		if (ret)
- 			goto free_rproc;
+ 			return ret;
  	}
-@@ -1084,6 +1110,7 @@ static void q6v5_wcss_remove(struct plat
+@@ -1081,6 +1107,7 @@ static void q6v5_wcss_remove(struct plat
  }
  
  static const struct wcss_data wcss_ipq8074_res_init = {
@@ -144,7 +144,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	.firmware_name = "IPQ8074/q6_fw.mdt",
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
-@@ -1093,6 +1120,8 @@ static const struct wcss_data wcss_ipq80
+@@ -1090,6 +1117,8 @@ static const struct wcss_data wcss_ipq80
  };
  
  static const struct wcss_data wcss_qcs404_res_init = {

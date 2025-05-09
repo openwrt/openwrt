@@ -54,7 +54,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			cache-size = <0x80000>;
 --- a/arch/arm64/boot/dts/qcom/ipq5332.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5332.dtsi
-@@ -30,47 +30,47 @@
+@@ -31,47 +31,47 @@
  		#address-cells = <1>;
  		#size-cells = <0>;
  
@@ -182,7 +182,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			compatible = "cache";
  			cache-level = <2>;
  			cache-unified;
-@@ -993,10 +993,10 @@
+@@ -1015,10 +1015,10 @@
  			cooling-maps {
  				map0 {
  					trip = <&cpu_alert>;
@@ -250,7 +250,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			cache-unified;
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
-@@ -33,12 +33,12 @@
+@@ -34,12 +34,12 @@
  		#address-cells = <1>;
  		#size-cells = <0>;
  
@@ -265,7 +265,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
  			operating-points-v2 = <&cpu_opp_table>;
-@@ -46,12 +46,12 @@
+@@ -47,12 +47,12 @@
  			#cooling-cells = <2>;
  		};
  
@@ -280,7 +280,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
  			operating-points-v2 = <&cpu_opp_table>;
-@@ -59,12 +59,12 @@
+@@ -60,12 +60,12 @@
  			#cooling-cells = <2>;
  		};
  
@@ -295,7 +295,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
  			operating-points-v2 = <&cpu_opp_table>;
-@@ -72,12 +72,12 @@
+@@ -73,12 +73,12 @@
  			#cooling-cells = <2>;
  		};
  
@@ -310,7 +310,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
  			clock-names = "cpu";
  			operating-points-v2 = <&cpu_opp_table>;
-@@ -85,7 +85,7 @@
+@@ -86,7 +86,7 @@
  			#cooling-cells = <2>;
  		};
  
@@ -319,7 +319,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  			compatible = "cache";
  			cache-level = <2>;
  			cache-unified;
-@@ -845,10 +845,10 @@
+@@ -863,10 +863,10 @@
  			cooling-maps {
  				map0 {
  					trip = <&cpu0_alert>;
@@ -334,7 +334,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  				};
  			};
  		};
-@@ -875,10 +875,10 @@
+@@ -891,10 +891,10 @@
  			cooling-maps {
  				map0 {
  					trip = <&cpu1_alert>;
@@ -349,7 +349,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  				};
  			};
  		};
-@@ -905,10 +905,10 @@
+@@ -919,10 +919,10 @@
  			cooling-maps {
  				map0 {
  					trip = <&cpu2_alert>;
@@ -364,7 +364,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  				};
  			};
  		};
-@@ -935,10 +935,10 @@
+@@ -947,10 +947,10 @@
  			cooling-maps {
  				map0 {
  					trip = <&cpu3_alert>;

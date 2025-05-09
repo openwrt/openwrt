@@ -15,7 +15,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -1176,6 +1176,7 @@
+@@ -1186,6 +1186,7 @@
  
  		wcss_smp2p_out: master-kernel {
  			qcom,entry-name = "master-kernel";
@@ -25,7 +25,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  
 --- a/drivers/soc/qcom/smp2p.c
 +++ b/drivers/soc/qcom/smp2p.c
-@@ -158,6 +158,8 @@ struct qcom_smp2p {
+@@ -159,6 +159,8 @@ struct qcom_smp2p {
  
  	struct list_head inbound;
  	struct list_head outbound;
@@ -33,8 +33,8 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 +	bool need_ssr_ack;
  };
  
- static void qcom_smp2p_kick(struct qcom_smp2p *smp2p)
-@@ -306,7 +308,7 @@ static irqreturn_t qcom_smp2p_intr(int i
+ #define CREATE_TRACE_POINTS
+@@ -316,7 +318,7 @@ static irqreturn_t qcom_smp2p_intr(int i
  		ack_restart = qcom_smp2p_check_ssr(smp2p);
  		qcom_smp2p_notify_in(smp2p);
  
@@ -43,7 +43,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  			qcom_smp2p_do_ssr_ack(smp2p);
  	}
  
-@@ -427,6 +429,7 @@ static int qcom_smp2p_outbound_entry(str
+@@ -447,6 +449,7 @@ static int qcom_smp2p_outbound_entry(str
  
  	/* Make the logical entry reference the physical value */
  	entry->value = &out->entries[out->valid_entries].value;

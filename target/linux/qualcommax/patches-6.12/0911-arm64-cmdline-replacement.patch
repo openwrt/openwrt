@@ -18,7 +18,7 @@ Signed-off-by: Qiyuan Zhang <zhang.github@outlook.com>
 
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1158,6 +1158,14 @@ int __init early_init_dt_scan_chosen(cha
+@@ -1021,6 +1021,14 @@ int __init early_init_dt_scan_chosen(cha
  	const void *rng_seed;
  	const void *fdt = initial_boot_params;
  
@@ -33,7 +33,7 @@ Signed-off-by: Qiyuan Zhang <zhang.github@outlook.com>
  	node = fdt_path_offset(fdt, "/chosen");
  	if (node < 0)
  		node = fdt_path_offset(fdt, "/chosen@0");
-@@ -1186,6 +1194,69 @@ int __init early_init_dt_scan_chosen(cha
+@@ -1049,6 +1057,69 @@ int __init early_init_dt_scan_chosen(cha
  	p = of_get_flat_dt_prop(node, "bootargs", &l);
  	if (p != NULL && l > 0)
  		strscpy(cmdline, p, min(l, COMMAND_LINE_SIZE));

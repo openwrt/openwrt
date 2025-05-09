@@ -95,7 +95,7 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
 +};
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -1101,6 +1101,9 @@ static SIMPLE_DEV_PM_OPS(tsens_pm_ops, t
+@@ -1102,6 +1102,9 @@ static SIMPLE_DEV_PM_OPS(tsens_pm_ops, t
  
  static const struct of_device_id tsens_table[] = {
  	{
@@ -107,7 +107,7 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
  	}, {
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
-@@ -645,7 +645,7 @@ extern struct tsens_plat_data data_8960;
+@@ -650,7 +650,7 @@ extern struct tsens_plat_data data_8960;
  extern struct tsens_plat_data data_8226, data_8909, data_8916, data_8939, data_8974, data_9607;
  
  /* TSENS v1 targets */
