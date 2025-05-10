@@ -18,7 +18,7 @@
  #include "drv_mps_vmmc_dbg.h"
  #include "drv_mps_vmmc_device.h"
  
-+const void (*ifx_bsp_basic_mps_decrypt)(unsigned int addr, int n) = NULL;
++void (*ifx_bsp_basic_mps_decrypt)(unsigned int addr, int n) = NULL;
 +
 +#define IFX_MPS_SRAM IFXMIPS_MPS_SRAM
 +
@@ -106,13 +106,13 @@
        pFWDwnld->length -= sizeof(IFX_uint32_t);
 +      switch(ltq_soc_type()) {
 +   	   case SOC_TYPE_AR9:
-+		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf0017c4;
++		   ifx_bsp_basic_mps_decrypt = (void (*)(unsigned int, int))0xbf0017c4;
 +		   break;
 +	   case SOC_TYPE_VR9:
-+		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf001ea4;
++		   ifx_bsp_basic_mps_decrypt = (void (*)(unsigned int, int))0xbf001ea4;
 +		   break;
 +	   case SOC_TYPE_VR9_2:
-+		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf001f38;
++		   ifx_bsp_basic_mps_decrypt = (void (*)(unsigned int, int))0xbf001f38;
 +		   break;
 +      }
 +      if (ifx_bsp_basic_mps_decrypt)
