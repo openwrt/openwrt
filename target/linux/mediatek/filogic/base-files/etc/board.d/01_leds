@@ -76,6 +76,9 @@ glinet,gl-xe3000)
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
 	;;
+iptime,ax3000sm)
+	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"
