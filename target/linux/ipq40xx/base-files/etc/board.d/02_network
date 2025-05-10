@@ -104,6 +104,9 @@ ipq40xx_setup_interfaces()
 	netgear,srs60)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	netgear,ex6200v2)                                               
+                ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"      
+                ;; 
 	openmesh,a42|\
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
