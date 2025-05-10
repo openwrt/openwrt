@@ -17,6 +17,10 @@ choice
 	config BINUTILS_USE_VERSION_2_43
 		bool "Binutils 2.43.1"
 		select BINUTILS_VERSION_2_43
+
+	config BINUTILS_USE_VERSION_2_44
+		bool "Binutils 2.44"
+		select BINUTILS_VERSION_2_44
 endchoice
 
 config EXTRA_BINUTILS_CONFIG_OPTIONS
