@@ -15,7 +15,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -786,6 +786,7 @@ static void mtk_mac_link_up(struct phyli
+@@ -782,6 +782,7 @@ static void mtk_mac_link_up(struct phyli
  
  	mcr = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
  	mcr &= ~(MAC_MCR_SPEED_100 | MAC_MCR_SPEED_1000 |
@@ -23,7 +23,7 @@ Signed-off-by: Qingfang Deng <dqfext@gmail.com>
  		 MAC_MCR_FORCE_DPX | MAC_MCR_FORCE_TX_FC |
  		 MAC_MCR_FORCE_RX_FC);
  
-@@ -811,6 +812,15 @@ static void mtk_mac_link_up(struct phyli
+@@ -807,6 +808,15 @@ static void mtk_mac_link_up(struct phyli
  	if (rx_pause)
  		mcr |= MAC_MCR_FORCE_RX_FC;
  
