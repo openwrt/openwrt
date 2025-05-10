@@ -618,6 +618,9 @@ extern DSL_DEV_MeiError_t DSL_BSP_Showtime(DSL_DEV_Device_t *, DSL_uint32_t, DSL
 extern int DSL_BSP_ATMLedCBRegister( int (*ifx_adsl_ledcallback)(void));
 extern DSL_DEV_MeiError_t DSL_BSP_MemoryDebugAccess(DSL_DEV_Device_t *, DSL_BSP_MemoryAccessType_t, DSL_uint32_t, DSL_uint32_t *, DSL_uint32_t);
 extern volatile DSL_DEV_Device_t *adsl_dev;
+extern int DSL_BSP_ATMLedCBUnregister (int (*ifx_adsl_ledcallback) (void));
+extern int ifx_mei_atm_led_blink(void);
+extern int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr);
 
 /**
  *    Dummy structure by now to show mechanism of extended data that will be

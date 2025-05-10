@@ -36,6 +36,7 @@
 #include <linux/init.h>
 #include <linux/ioctl.h>
 #include <linux/atmdev.h>
+#include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
 #include <linux/atm.h>
@@ -338,7 +339,8 @@ static int ppe_ioctl(struct atm_dev *dev, unsigned int cmd, void *arg)
 		break;
 
 	case PPE_ATM_MIB_VCC:   /*  VCC related MIB */
-		copy_from_user(&mib_vcc, arg, sizeof(mib_vcc));
+		if (copy_from_user(&mib_vcc, arg, sizeof(mib_vcc)))
+			return -EFAULT;
 		conn = find_vpivci(mib_vcc.vpi, mib_vcc.vci);
 		if (conn >= 0) {
 			mib_vcc.mib_vcc.aal5VccCrcErrors     = g_atm_priv_data.conn[conn].aal5_vcc_crc_err;
