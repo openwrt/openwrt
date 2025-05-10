@@ -255,4 +255,6 @@ struct deu_dma_t {
 	} controlr;
 };
 
+u32 input_swap(u32 input);
+
 #endif  /* IFXMIPS_DEU_DANUBE_H */
