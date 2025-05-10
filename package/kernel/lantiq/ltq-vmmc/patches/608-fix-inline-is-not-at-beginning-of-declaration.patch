@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 01:43:41 +0800
+Subject: [PATCH] fix 'inline' is not at beginning of declaration
+
+Fix build warning on 6.12 kernel:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/mps/drv_mps_vmmc_common.c:58:1: error: 'inline' is not at beginning of declaration [-Werror=old-style-declaration]
+   58 | static void inline bsp_mask_and_ack_irq(int x)
+      | ^~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/mps/drv_mps_vmmc_common.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/mps/drv_mps_vmmc_common.c
++++ b/src/mps/drv_mps_vmmc_common.c
+@@ -55,7 +55,7 @@
+ #  define bsp_mask_and_ack_irq      ltq_mask_and_ack_irq
+ #else
+ extern void ltq_mask_and_ack_irq(struct irq_data *d);
+-static void inline bsp_mask_and_ack_irq(int x)
++static inline void bsp_mask_and_ack_irq(int x)
+ {
+ 	struct irq_data d;
+ 	d.hwirq = x;
