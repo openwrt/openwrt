@@ -1,0 +1,23 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 6 May 2025 08:11:10 +0800
+Subject: [PATCH] ARM: dts: qcom: ipq4019: add reference label for qca807x phy
+ node
+
+Some of our local supported devices expect to disable it.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/arm/boot/dts/qcom/qcom-ipq4019.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq4019.dtsi
+@@ -731,7 +731,7 @@
+ 			reg = <0x90000 0x64>;
+ 			status = "disabled";
+ 
+-			ethernet-phy-package@0 {
++			qca807x: ethernet-phy-package@0 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "qcom,qca8075-package";

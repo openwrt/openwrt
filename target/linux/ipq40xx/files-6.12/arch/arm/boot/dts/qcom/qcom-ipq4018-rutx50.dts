@@ -1,0 +1,185 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4018-rutx.dtsi"
+
+/ {
+	model = "Teltonika RUTX50";
+	compatible = "teltonika,rutx50";
+
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+		led-boot = &led_rssi0;
+		led-failsafe = &led_rssi0;
+		led-running = &led_rssi0;
+		led-upgrade = &led_rssi0;
+		label-mac-device = &gmac;
+	};
+
+	soc {
+		gpio-export {
+			compatible = "gpio-export";
+			#size-cells = <0>;
+
+			gpio_modem_reset {
+				gpio-export,name = "modem_reset";
+				gpio-export,output = <0>;
+				gpios = <&shift_io 8 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_modem_power {
+				gpio-export,name = "modem_power";
+				gpio-export,output = <1>;
+				gpios = <&shift_io 9 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_out_1 {
+				gpio-export,name = "sim-select";
+				/* 0 = SIM1 ; 1 = SIM2 */
+				gpio-export,output = <0>;
+				gpios = <&shift_io 10 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_in_1 {
+				gpio-export,name = "sim-detect";
+				gpio-export,input = <0>;
+				gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+			};
+		};
+
+		leds {
+			compatible = "gpio-leds";
+
+			led-0 {
+				label = "green:sim1";
+				gpios = <&shift_io 14 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-1 {
+				label = "green:sim2";
+				gpios = <&shift_io 15 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-2 {
+				label = "green:eth";
+				gpios = <&shift_io 6 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-3 {
+				label = "green:wifi";
+				gpios = <&shift_io 7 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-4 {
+				label = "green:3g";
+				gpios = <&shift_io 5 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-5 {
+				label = "green:4g";
+				gpios = <&shift_io 4 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-6 {
+				label = "green:5g";
+				gpios = <&shift_io 3 GPIO_ACTIVE_HIGH>;
+			};
+
+			led_rssi0: led-7 {
+				label = "green:rssi0";
+				gpios = <&shift_io 0 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-8 {
+				label = "green:rssi1";
+				gpios = <&shift_io 1 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-9 {
+				label = "green:rssi2";
+				gpios = <&shift_io 2 GPIO_ACTIVE_HIGH>;
+			};
+
+			led-10 {
+				label = "green:wifi2g";
+				gpios = <&shift_io 12 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy0tpt";
+			};
+
+			led-11 {
+				label = "green:wifi5g";
+				gpios = <&shift_io 13 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy1tpt";
+			};
+		};
+
+		spi-gpio {
+			compatible = "spi-gpio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio-sck = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+			gpio-mosi = <&tlmm 3 GPIO_ACTIVE_HIGH>;
+			cs-gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+			num-chipselects = <1>;
+
+			shift_io: shift_io@0 {
+				compatible = "fairchild,74hc595";
+				reg = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				/* Attn: This is specific to RUTX50 in Teltonika GPL */
+				registers-number = <2>;
+				spi-max-frequency = <10000000>;
+			};
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Teltonika-RUTX10";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Teltonika-RUTX10";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "wan";
+};
