@@ -626,7 +626,8 @@ define KernelPackage/drm-radeon
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
 	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper
   KCONFIG:=CONFIG_DRM_RADEON
-  FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko@ge6.8
   AUTOLOAD:=$(call AutoProbe,radeon)
 endef
 
