@@ -13,7 +13,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -202,6 +202,22 @@
+@@ -202,6 +202,19 @@
  			clock-names = "gcc_mdio_ahb_clk";
  
  			status = "disabled";
@@ -25,10 +25,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +					 <&gcc GCC_GEPHY_TX_CLK>;
 +
 +				resets = <&gcc GCC_GEPHY_BCR>,
-+					 <&gcc GCC_GEPHY_MDC_SW_ARES>,
-+					 <&gcc GCC_GEPHY_DSP_HW_ARES>,
-+					 <&gcc GCC_GEPHY_RX_ARES>,
-+					 <&gcc GCC_GEPHY_TX_ARES>;
++					 <&gcc GCC_GEPHY_MISC_ARES>;
 +
 +				#clock-cells = <1>;
 +				qcom,eth-ldo-ready = <&tcsr 0x105c4>;
@@ -36,7 +33,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		};
  
  		mdio1: mdio@90000 {
-@@ -398,8 +414,8 @@
+@@ -398,8 +411,8 @@
  				 <&pcie0_phy>,
  				 <&pcie1_phy>,
  				 <0>,
