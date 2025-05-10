@@ -185,7 +185,7 @@ static void *g_xdata_addr = NULL;
 static u32 *mei_arc_swap_buff = NULL;	//  holding swap pages
 
 extern void ltq_mask_and_ack_irq(struct irq_data *d);
-static void inline MEI_MASK_AND_ACK_IRQ(int x)
+static inline void MEI_MASK_AND_ACK_IRQ(int x)
 {
 	struct irq_data d;
 	d.hwirq = x;
