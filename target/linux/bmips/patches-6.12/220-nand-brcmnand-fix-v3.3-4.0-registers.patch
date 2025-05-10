@@ -1,0 +1,42 @@
+From 2271777f98211bdafdd005f06040c485214e7303 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 10 May 2025 20:54:34 +0200
+Subject: [PATCH] nand: brcmnand: fix v3.3-4.0 registers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some v3.3-4.0 registers were wrong and need to be corrected.
+
+Fixes: 27c5b17cd1b1 ("mtd: nand: add NAND driver "library" for Broadcom STB NAND controller")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -384,9 +384,9 @@ static const u16 brcmnand_regs_v33[] = {
+ 	[BRCMNAND_INTFC_STATUS]		=  0x6c,
+ 	[BRCMNAND_CS_SELECT]		=  0x14,
+ 	[BRCMNAND_CS_XOR]		=  0x18,
+-	[BRCMNAND_LL_OP]		= 0x178,
++	[BRCMNAND_LL_OP]		=  0xec,
+ 	[BRCMNAND_CS0_BASE]		=  0x40,
+-	[BRCMNAND_CS1_BASE]		=  0xd0,
++	[BRCMNAND_CS1_BASE]		=  0xbc,
+ 	[BRCMNAND_CORR_THRESHOLD]	=  0x84,
+ 	[BRCMNAND_CORR_THRESHOLD_EXT]	=     0,
+ 	[BRCMNAND_UNCORR_COUNT]		=     0,
+@@ -398,9 +398,9 @@ static const u16 brcmnand_regs_v33[] = {
+ 	[BRCMNAND_SEMAPHORE]		=  0x58,
+ 	[BRCMNAND_ID]			=  0x60,
+ 	[BRCMNAND_ID_EXT]		=  0x64,
+-	[BRCMNAND_LL_RDATA]		= 0x17c,
++	[BRCMNAND_LL_RDATA]		=  0xf0,
+ 	[BRCMNAND_OOB_READ_BASE]	=  0x20,
+-	[BRCMNAND_OOB_READ_10_BASE]	= 0x130,
++	[BRCMNAND_OOB_READ_10_BASE]	=  0xdc,
+ 	[BRCMNAND_OOB_WRITE_BASE]	=  0x30,
+ 	[BRCMNAND_OOB_WRITE_10_BASE]	=     0,
+ 	[BRCMNAND_FC_BASE]		= 0x200,
