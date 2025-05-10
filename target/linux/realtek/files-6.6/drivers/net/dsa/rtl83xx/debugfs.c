@@ -390,6 +390,9 @@ static int pmsks_table_show(struct seq_file *m, void *v)
 			   o[3], priv->r->read_mcast_pmask(i + 3), c[3]);
 	}
 
+	seq_printf(m, "MC_PMASK_MIN_PORTS (%i): 0x%016llx\n",
+		   MC_PMASK_MIN_PORTS_IDX,
+		   priv->r->read_mcast_pmask(MC_PMASK_MIN_PORTS_IDX));
 	seq_printf(m, "MC_PMASK_ALL_PORTS (%i): 0x%016llx\n",
 		   MC_PMASK_ALL_PORTS_IDX,
 		   priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX));

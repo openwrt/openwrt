@@ -666,6 +666,7 @@ typedef enum {
 #define RTL930X_MC_PMASK_ALL_PORTS 0x1fffffff
 #define RTL931X_MC_PMASK_ALL_PORTS 0x01ffffffffffffff
 #define MC_PMASK_ALL_PORTS_IDX	((MAX_MC_PMASKS - 1))
+#define MC_PMASK_MIN_PORTS_IDX	((MAX_MC_PMASKS - 2))
 #define PIE_BLOCK_SIZE 128
 #define MAX_PIE_ENTRIES (18 * PIE_BLOCK_SIZE)
 #define N_FIXED_FIELDS 12
