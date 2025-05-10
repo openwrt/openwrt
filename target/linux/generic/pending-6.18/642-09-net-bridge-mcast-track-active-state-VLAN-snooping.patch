@@ -1,0 +1,47 @@
+From 32106d2e5597c9ef7a7df992016cf0845b0c06cf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sat, 13 Sep 2025 10:06:29 +0200
+Subject: [PATCH 09/16] net: bridge: mcast: track active state, VLAN snooping
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If VLAN aware multicast snooping is enabled then we need to perform a
+few extra checks to figure out if multicast snooping is actually enabled
+for a specific VLAN, as there is then an additional per VLAN multicast
+snooping toggle.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1142,6 +1142,26 @@ static void br_multicast_update_active(s
+ 	if (!br_opt_get(brmctx->br, BROPT_MULTICAST_ENABLED))
+ 		force_inactive = true;
+ 
++	if (br_opt_get(brmctx->br, BROPT_MCAST_VLAN_SNOOPING_ENABLED)) {
++		/* with per-vlan snooping enabled there is an extra per-vlan
++		 * toggle to enable/disable snooping which we must check
++		 */
++		if (br_multicast_ctx_vlan_global_disabled(brmctx))
++			force_inactive = true;
++
++		/* with per-vlan snooping enabled the non-vlan multicast
++		 * snooping context is inactive
++		 */
++		if (!br_multicast_ctx_is_vlan(brmctx))
++			force_inactive = true;
++	} else {
++		/* with per-vlan snooping disabled a vlan multicast
++		 * snooping context is inactive
++		 */
++		if (br_multicast_ctx_is_vlan(brmctx))
++			force_inactive = true;
++	}
++
+ 	br_ip4_multicast_update_active(brmctx, force_inactive);
+ 	br_ip6_multicast_update_active(brmctx, force_inactive);
+ 

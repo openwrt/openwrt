@@ -1,0 +1,114 @@
+From 03ca7794842bf3c6e78126746ee29423898791b5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Tue, 26 Aug 2025 00:03:39 +0200
+Subject: [PATCH 14/16] net: bridge: mcast: add inactive state assertions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+To avoid packetloss and as it is very hard from a user's perspective to
+debug multicast snooping related issues it is even more crucial to properly
+switch from an active to an inactive multicast snooping state than the
+other way around.
+
+Therefore adding a few kernel warnings if any of our assertions to be in
+an inactive state would fail.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 43 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 39 insertions(+), 4 deletions(-)
+
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1417,10 +1417,29 @@ static struct sk_buff *br_multicast_allo
+ 	return NULL;
+ }
+ 
++static void br_ip4_multicast_assert_inactive(struct net_bridge_mcast *brmctx)
++{
++	WARN_ON(br_multicast_snooping_active(brmctx, htons(ETH_P_IP), NULL));
++}
++
++static void br_ip6_multicast_assert_inactive(struct net_bridge_mcast *brmctx)
++{
++	WARN_ON(br_multicast_snooping_active(brmctx, htons(ETH_P_IPV6), NULL));
++}
++
++static void br_multicast_assert_inactive(struct net_bridge_mcast *brmctx)
++{
++	br_ip4_multicast_assert_inactive(brmctx);
++	br_ip6_multicast_assert_inactive(brmctx);
++}
++
+ static void br_multicast_toggle_enabled(struct net_bridge *br, bool on)
+ {
+ 	br_opt_toggle(br, BROPT_MULTICAST_ENABLED, on);
+ 	br_multicast_update_active(&br->multicast_ctx);
++
++	if (!on)
++		br_multicast_assert_inactive(&br->multicast_ctx);
+ }
+ 
+ struct net_bridge_mdb_entry *br_multicast_new_group(struct net_bridge *br,
+@@ -1890,9 +1909,7 @@ static void br_multicast_querier_expired
+ 					 struct bridge_mcast_own_query *query,
+ 					 struct timer_list *timer)
+ {
+-	spin_lock(&brmctx->br->multicast_lock);
+-	if (br_multicast_stopping(brmctx->br, timer) ||
+-	    br_multicast_ctx_vlan_global_disabled(brmctx) ||
++	if (br_multicast_ctx_vlan_global_disabled(brmctx) ||
+ 	    !br_opt_get(brmctx->br, BROPT_MULTICAST_ENABLED))
+ 		goto out;
+ 
+@@ -1903,7 +1920,6 @@ out:
+ 	 * if our own querier is disabled, too
+ 	 */
+ 	br_multicast_update_active(brmctx);
+-	spin_unlock(&brmctx->br->multicast_lock);
+ }
+ 
+ static void br_ip4_multicast_querier_expired(struct timer_list *t)
+@@ -1911,7 +1927,16 @@ static void br_ip4_multicast_querier_exp
+ 	struct net_bridge_mcast *brmctx = timer_container_of(brmctx, t,
+ 							     ip4_other_query.timer);
+ 
++	spin_lock(&brmctx->br->multicast_lock);
++	if (br_multicast_stopping(brmctx->br, t))
++		goto out;
++
+ 	br_multicast_querier_expired(brmctx, &brmctx->ip4_own_query, t);
++
++	if (!brmctx->multicast_querier)
++		br_ip4_multicast_assert_inactive(brmctx);
++out:
++	spin_unlock(&brmctx->br->multicast_lock);
+ }
+ 
+ #if IS_ENABLED(CONFIG_IPV6)
+@@ -1920,7 +1945,16 @@ static void br_ip6_multicast_querier_exp
+ 	struct net_bridge_mcast *brmctx = timer_container_of(brmctx, t,
+ 							     ip6_other_query.timer);
+ 
++	spin_lock(&brmctx->br->multicast_lock);
++	if (br_multicast_stopping(brmctx->br, t))
++		goto out;
++
+ 	br_multicast_querier_expired(brmctx, &brmctx->ip6_own_query, t);
++
++	if (!brmctx->multicast_querier)
++		br_ip6_multicast_assert_inactive(brmctx);
++out:
++	spin_unlock(&brmctx->br->multicast_lock);
+ }
+ #endif
+ 
+@@ -4498,6 +4532,7 @@ static void __br_multicast_stop(struct n
+ 
+ 	/* bridge interface is down, set multicast state to inactive */
+ 	br_multicast_update_active(brmctx);
++	br_multicast_assert_inactive(brmctx);
+ }
+ 
+ void br_multicast_update_vlan_mcast_ctx(struct net_bridge_vlan *v, u8 state)

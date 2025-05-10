@@ -471,8 +471,9 @@ static void rtldsa_vlan_profiles_setup(struct rtl838x_switch_priv *priv)
 }
 
 /* Initialize all VLANS */
-static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
+static void rtldsa_vlan_setup(struct dsa_switch *ds)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
 	struct rtl838x_vlan_info info;
 
 	pr_info("In %s\n", __func__);
@@ -576,7 +577,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	rtldsa_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
-	rtldsa_vlan_setup(priv);
+	rtldsa_vlan_setup(ds);
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
@@ -648,7 +649,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	/* TODO: Initialize statistics */
 	rtldsa_init_counters(priv);
 
-	rtldsa_vlan_setup(priv);
+	rtldsa_vlan_setup(ds);
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
@@ -1505,6 +1506,14 @@ static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gro
 static u64 rtldsa_mc_group_del_ports(struct rtl838x_switch_priv *priv,
 				     int mc_group, u64 portmask)
 {
+	/* Don't mess up our last two special port mask entries,
+	 * we use them for unsnoopable addresses, for instance.
+	 * "Fake" a now empty port mask though to allow/trigger the
+	 * deletion of the hash or cam entry.
+	 */
+	if (mc_group >= MAX_MC_GROUPS - 2)
+		return 0;
+
 	portmask = priv->r->read_mcast_pmask(mc_group) & ~portmask;
 
 	priv->r->write_mcast_pmask(mc_group, portmask);
@@ -2665,6 +2674,27 @@ static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 	return false;
 }
 
+static bool rtldsa_mdb_is_active(struct rtl838x_switch_priv *priv,
+				 const struct switchdev_obj_port_mdb *mdb)
+{
+	struct rtl838x_vlan_info info;
+
+	if (mdb->vid >= MAX_VLANS)
+		return false;
+
+	priv->r->vlan_tables_read(mdb->vid, &info);
+
+	if (ether_addr_is_ipv4_mcast(mdb->addr) &&
+	    !(info.profile_id & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4))
+		return false;
+
+	if (ether_addr_is_ipv6_mcast(mdb->addr) &&
+	    !(info.profile_id & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6))
+		return false;
+
+	return true;
+}
+
 static int rtldsa_port_mdb_add_checks(struct rtl838x_switch_priv *priv,
 				      int port,
 				      const struct switchdev_obj_port_mdb *mdb)
@@ -2699,6 +2729,9 @@ static int __rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
 	dev_dbg(priv->dev, "In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
 	lockdep_assert_held_once(&priv->reg_mutex);
+
+	if (!rtldsa_mdb_is_active(priv, mdb))
+		return 0;
 
 	err = rtldsa_mdb_add_ports(priv, mac, vid, -1, port);
 	if (err)
@@ -2824,7 +2857,190 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 
 	/* TODO: Re-enable with a newer kernel: err = -ENOENT; */
 
+	/* TODO/Note:
+	 * After switching from active to inactive we flush our entries
+	 * immediately. But the bridge layer does not flush its entries
+	 * and might send us notifications about timed out / deleted
+	 * entries later, leaving us here with an err = -ENOTSUPP,
+	 * because we had already deleted these entries here in the past.
+	 * As long as the bridge layer does not flush from its entries
+	 * before switching to inactive we therefore need to ignore
+	 * err = -ENOTSUPP here.
+	 */
+
 out:
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static void rtldsa_port_mdb_snoop_flush(struct rtl838x_switch_priv *priv,
+					bool ip6, short vid, u64 portmask)
+{
+	struct rtl838x_l2_entry e;
+	int bucket, index;
+
+	for (int i = 0; i < priv->fib_entries; i++) {
+		bucket = i >> 2;
+		index = i & 0x3;
+		priv->r->read_l2_entry_using_hash(bucket, index, &e);
+
+		if (!e.valid || e.type != L2_MULTICAST ||
+		    (vid >= 0 && e.vid != vid))
+			continue;
+
+		if ((!ip6 && !ether_addr_is_ipv4_mcast(e.mac)) ||
+		    (ip6 && !ether_addr_is_ipv6_mcast(e.mac)))
+			continue;
+
+		rtldsa_port_mdb_del_l2_hash_entry(priv, &e, i, portmask);
+	}
+
+	for (int i = 0; i < 64; i++) {
+		priv->r->read_cam(i, &e);
+
+		if (!e.valid || e.type != L2_MULTICAST ||
+		    (vid >= 0 && e.vid != vid))
+			continue;
+
+		if ((!ip6 && !ether_addr_is_ipv4_mcast(e.mac)) ||
+		    (ip6 && !ether_addr_is_ipv6_mcast(e.mac)))
+			continue;
+
+		rtldsa_port_mdb_del_l2_cam_entry(priv, &e, i, portmask);
+	}
+}
+
+static void
+rtldsa_port_mdb_snoop_flush_v4(struct rtl838x_switch_priv *priv, short vid,
+			       u64 portmask)
+{
+	rtldsa_port_mdb_snoop_flush(priv, false, vid, portmask);
+}
+
+static void
+rtldsa_port_mdb_snoop_flush_v6(struct rtl838x_switch_priv *priv, short vid,
+			       u64 portmask)
+{
+	rtldsa_port_mdb_snoop_flush(priv, true, vid, portmask);
+}
+
+static int
+rtldsa_port_replay_switchdev_objs(struct notifier_block *nb,
+				  unsigned long event, void *ptr)
+{
+	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
+	struct switchdev_notifier_port_obj_info *port_obj_info = ptr;
+	const struct switchdev_obj_port_mdb *mdb;
+	const struct dsa_db db = { 0 };
+	const struct dsa_port *dp;
+	int err;
+
+	if (event != SWITCHDEV_PORT_OBJ_ADD || !dev)
+		return 0;
+
+	switch (port_obj_info->obj->id) {
+	case SWITCHDEV_OBJ_ID_PORT_MDB:
+	case SWITCHDEV_OBJ_ID_HOST_MDB:
+		break;
+	default:
+		return 0;
+	}
+
+	dp = port_obj_info->info.ctx;
+	mdb = SWITCHDEV_OBJ_PORT_MDB(port_obj_info->obj);
+
+	err = rtldsa_port_mdb_add_checks(dp->ds->priv, dp->index, mdb);
+	if (err < 0)
+		return 0;
+
+	__rtldsa_port_mdb_add(dp->ds, dp->index, mdb, db);
+
+	return 0;
+}
+
+static struct notifier_block rtldsa_port_replay_switchdev_objs_nb = {
+	.notifier_call = rtldsa_port_replay_switchdev_objs,
+};
+
+static void rtldsa_port_mdb_snoop_replay(struct rtl838x_switch_priv *priv)
+{
+	struct net_device *dev = to_net_dev(priv->dev);
+	struct notifier_block *nb = &rtldsa_port_replay_switchdev_objs_nb;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		dev = priv->ports[i].dp->user;
+		if (!dev)
+			continue;
+
+		switchdev_bridge_port_replay(dev, dev, priv->ports[i].dp, NULL, nb, NULL);
+	}
+}
+
+static void
+rtldsa_port_mdb_update_entries(struct rtl838x_switch_priv *priv,
+			       const struct switchdev_mc_active mc_active)
+{
+	if (mc_active.ip4_changed && !mc_active.ip4)
+		rtldsa_port_mdb_snoop_flush_v4(priv, mc_active.vid, ~(0ULL));
+
+	if (mc_active.ip6_changed && !mc_active.ip6)
+		rtldsa_port_mdb_snoop_flush_v6(priv, mc_active.vid, ~(0ULL));
+
+	if ((mc_active.ip4_changed && mc_active.ip4) ||
+	    (mc_active.ip6_changed && mc_active.ip6))
+		rtldsa_port_mdb_snoop_replay(priv);
+}
+
+static void
+rtldsa_port_mdb_update_flooding(struct rtl838x_switch_priv *priv,
+				const struct switchdev_mc_active mc_active)
+{
+	int profile_id = 0;
+	struct rtl838x_vlan_info info;
+	int i;
+
+	if (mc_active.ip4)
+		profile_id |= RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4;
+	if (mc_active.ip6)
+		profile_id |= RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6;
+
+	/* bridge multicast vlan snooping disabled, all VIDs */
+	if (mc_active.vid < 0) {
+		for (i = 1; i < MAX_VLANS; i++) {
+			priv->r->vlan_tables_read(i, &info);
+
+			if (!info.member_ports)
+				continue;
+
+			info.profile_id = profile_id;
+			priv->r->vlan_set_tagged(i, &info);
+		}
+	/* bridge multicast vlan snooping enabled, specific VID */
+	} else {
+		priv->r->vlan_tables_read(mc_active.vid, &info);
+		info.profile_id = profile_id;
+		priv->r->vlan_set_tagged(mc_active.vid, &info);
+	}
+}
+
+static int rtldsa_port_mdb_active(struct dsa_switch *ds, int port,
+				  const struct switchdev_mc_active mc_active,
+				  struct netlink_ext_ack *extack, bool handled)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	if (mc_active.vid >= MAX_VLANS)
+		return -EINVAL;
+
+	if (handled)
+		return 0;
+
+	mutex_lock(&priv->reg_mutex);
+
+	rtldsa_port_mdb_update_flooding(priv, mc_active);
+	rtldsa_port_mdb_update_entries(priv, mc_active);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -3274,6 +3490,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
+	.port_mdb_active	= rtldsa_port_mdb_active,
 
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
@@ -3338,6 +3555,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	/* ToDo: test on rtl93xx
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
+	.port_mdb_active	= rtldsa_port_mdb_active,
 	*/
 
 	.port_mirror_add	= rtldsa_port_mirror_add,

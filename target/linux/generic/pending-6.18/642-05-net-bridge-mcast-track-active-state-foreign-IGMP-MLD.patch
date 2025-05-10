@@ -1,0 +1,35 @@
+From a2f735ee118fcf47821ee9e8caf4dc797902042f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sat, 9 Aug 2025 07:50:12 +0200
+Subject: [PATCH 05/16] net: bridge: mcast: track active state, foreign
+ IGMP/MLD querier disappearance
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This change ensures that the new multicast active state variable is unset
+again after a foreign IGMP/MLD querier has disappeared (default: 255
+seconds). If no new, other IGMP/MLD querier took over then we can't
+reliably receive IGMP/MLD reports anymore and in turn can't ensure the
+completeness of our MDB anymore either.
+
+No functional change for the fast/data path yet.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1825,6 +1825,10 @@ static void br_multicast_querier_expired
+ 	br_multicast_start_querier(brmctx, query);
+ 
+ out:
++	/* another IGMP/MLD querier disappeared, set multicast state to inactive
++	 * if our own querier is disabled, too
++	 */
++	br_multicast_update_active(brmctx);
+ 	spin_unlock(&brmctx->br->multicast_lock);
+ }
+ 

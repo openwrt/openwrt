@@ -1,0 +1,177 @@
+From ca1fdb74da7070f6f3fac37839cd04f9ddef4b76 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Thu, 7 Aug 2025 17:16:30 +0200
+Subject: [PATCH 13/16] net: bridge: mcast: use combined active state in
+ fast/data path
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+As the multicast active state variable is now always up to date and
+functionally equivalent to our manual, extensive checks in fast path
+we can just use this state variable in fast path, too. This allows to
+save some CPU cycles for every multicast packet in the fast/data path.
+
+Next to using brmctx->ip4_active / brmctx->ip6_active in fast path this
+mostly just moves some code around to not expose it via br_private.h
+anymore. While at it now also passing the ethernet protocol number
+directly, instead of a pointer into the ethernet header.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_device.c    |  2 +-
+ net/bridge/br_input.c     |  2 +-
+ net/bridge/br_multicast.c | 40 ++++++++++++++++++++++++++++++++++-----
+ net/bridge/br_private.h   | 38 ++++++++-----------------------------
+ 4 files changed, 45 insertions(+), 37 deletions(-)
+
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -102,7 +102,7 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 
+ 		mdst = br_mdb_entry_skb_get(brmctx, skb, vid);
+ 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
+-		    br_multicast_querier_exists(brmctx, eth_hdr(skb), mdst))
++		    br_multicast_snooping_active(brmctx, eth_hdr(skb)->h_proto, mdst))
+ 			br_multicast_flood(mdst, skb, brmctx, false, true);
+ 		else
+ 			br_flood(br, skb, BR_PKT_MULTICAST, false, true, vid);
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -187,7 +187,7 @@ int br_handle_frame_finish(struct net *n
+ 	case BR_PKT_MULTICAST:
+ 		mdst = br_mdb_entry_skb_get(brmctx, skb, vid);
+ 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
+-		    br_multicast_querier_exists(brmctx, eth_hdr(skb), mdst)) {
++		    br_multicast_snooping_active(brmctx, eth_hdr(skb)->h_proto, mdst)) {
+ 			if ((mdst && mdst->host_joined) ||
+ 			    br_multicast_is_router(brmctx, skb) ||
+ 			    br->dev->flags & IFF_ALLMULTI) {
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1069,6 +1069,26 @@ out:
+ 	return skb;
+ }
+ 
++static bool
++__br_multicast_querier_exists(struct net_bridge_mcast *brmctx,
++			      struct bridge_mcast_other_query *querier,
++			      bool is_ipv6)
++{
++	bool own_querier_enabled;
++
++	if (brmctx->multicast_querier) {
++		if (is_ipv6 && !br_opt_get(brmctx->br, BROPT_HAS_IPV6_ADDR))
++			own_querier_enabled = false;
++		else
++			own_querier_enabled = true;
++	} else {
++		own_querier_enabled = false;
++	}
++
++	return !timer_pending(&querier->delay_timer) &&
++	       (own_querier_enabled || timer_pending(&querier->timer));
++}
++
+ static bool br_ip4_multicast_querier_exists(struct net_bridge_mcast *brmctx)
+ {
+ 	return __br_multicast_querier_exists(brmctx, &brmctx->ip4_other_query, false);
+@@ -1081,6 +1101,20 @@ static bool br_ip6_multicast_querier_exi
+ }
+ #endif
+ 
++static bool br_multicast_querier_exists(struct net_bridge_mcast *brmctx, int proto)
++{
++	switch (proto) {
++	case (ETH_P_IP):
++		return br_ip4_multicast_querier_exists(brmctx);
++#if IS_ENABLED(CONFIG_IPV6)
++	case (ETH_P_IPV6):
++		return br_ip6_multicast_querier_exists(brmctx);
++#endif
++	default:
++		return false;
++	}
++}
++
+ static void br_ip4_multicast_update_active(struct net_bridge_mcast *brmctx,
+ 					   bool force_inactive)
+ {
+@@ -5113,7 +5147,6 @@ bool br_multicast_has_querier_anywhere(s
+ {
+ 	struct net_bridge *br;
+ 	struct net_bridge_port *port;
+-	struct ethhdr eth;
+ 	bool ret = false;
+ 
+ 	rcu_read_lock();
+@@ -5126,10 +5159,7 @@ bool br_multicast_has_querier_anywhere(s
+ 
+ 	br = port->br;
+ 
+-	memset(&eth, 0, sizeof(eth));
+-	eth.h_proto = htons(proto);
+-
+-	ret = br_multicast_querier_exists(&br->multicast_ctx, &eth, NULL);
++	ret = br_multicast_querier_exists(&br->multicast_ctx, proto);
+ 
+ unlock:
+ 	rcu_read_unlock();
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -1159,37 +1159,15 @@ br_multicast_is_router(struct net_bridge
+ }
+ 
+ static inline bool
+-__br_multicast_querier_exists(struct net_bridge_mcast *brmctx,
+-			      struct bridge_mcast_other_query *querier,
+-			      const bool is_ipv6)
+-{
+-	bool own_querier_enabled;
+-
+-	if (brmctx->multicast_querier) {
+-		if (is_ipv6 && !br_opt_get(brmctx->br, BROPT_HAS_IPV6_ADDR))
+-			own_querier_enabled = false;
+-		else
+-			own_querier_enabled = true;
+-	} else {
+-		own_querier_enabled = false;
+-	}
+-
+-	return !timer_pending(&querier->delay_timer) &&
+-	       (own_querier_enabled || timer_pending(&querier->timer));
+-}
+-
+-static inline bool br_multicast_querier_exists(struct net_bridge_mcast *brmctx,
+-					       struct ethhdr *eth,
+-					       const struct net_bridge_mdb_entry *mdb)
++br_multicast_snooping_active(struct net_bridge_mcast *brmctx, __be16 eth_proto,
++			     const struct net_bridge_mdb_entry *mdb)
+ {
+-	switch (eth->h_proto) {
++	switch (eth_proto) {
+ 	case (htons(ETH_P_IP)):
+-		return __br_multicast_querier_exists(brmctx,
+-			&brmctx->ip4_other_query, false);
++		return READ_ONCE(brmctx->ip4_active);
+ #if IS_ENABLED(CONFIG_IPV6)
+ 	case (htons(ETH_P_IPV6)):
+-		return __br_multicast_querier_exists(brmctx,
+-			&brmctx->ip6_other_query, true);
++		return READ_ONCE(brmctx->ip6_active);
+ #endif
+ 	default:
+ 		return !!mdb && br_group_is_l2(&mdb->addr);
+@@ -1448,9 +1426,9 @@ static inline bool br_multicast_is_route
+ 	return false;
+ }
+ 
+-static inline bool br_multicast_querier_exists(struct net_bridge_mcast *brmctx,
+-					       struct ethhdr *eth,
+-					       const struct net_bridge_mdb_entry *mdb)
++static inline bool
++br_multicast_snooping_active(struct net_bridge_mcast *brmctx, __be16 eth_proto,
++			     const struct net_bridge_mdb_entry *mdb)
+ {
+ 	return false;
+ }

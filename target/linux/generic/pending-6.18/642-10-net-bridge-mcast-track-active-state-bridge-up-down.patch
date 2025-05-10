@@ -1,0 +1,87 @@
+From 408f6c9e6a970ee538bab49b10474558c56b41e4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sat, 9 Aug 2025 07:50:47 +0200
+Subject: [PATCH 10/16] net: bridge: mcast: track active state, bridge up/down
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is mainly for switchdev and DSA later: To ensure that we switch
+to inactive before destroying a bridge interface. A switchdev/DSA driver
+might have allocated resources after we switched to an enabled multicast
+active state. This gives switchdev/DSA drivers a chance to free these
+resources again when we destroy the bridge (later).
+
+Putting it into the ndo_stop / bridge interface down part instead of the
+ndo_uninit / bridge destroy part though for a better semantic match. If
+the bridge interface is down / stopped then it is also inactive.
+
+No functional change for the fast/data path.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ include/uapi/linux/if_link.h |  8 ++++----
+ net/bridge/br_multicast.c    | 10 ++++++++++
+ 2 files changed, 14 insertions(+), 4 deletions(-)
+
+--- a/include/uapi/linux/if_link.h
++++ b/include/uapi/linux/if_link.h
+@@ -748,14 +748,14 @@ enum in6_addr_gen_mode {
+  * @IFLA_BR_MCAST_ACTIVE_V4
+  *   Bridge IPv4 mcast active state, read only.
+  *
+- *   1 if *IFLA_BR_MCAST_SNOOPING* is enabled and an IGMP querier is present,
+- *   0 otherwise.
++ *   1 if *IFLA_BR_MCAST_SNOOPING* is enabled, an IGMP querier is present
++ *   and the bridge interface is up, 0 otherwise.
+  *
+  * @IFLA_BR_MCAST_ACTIVE_V6
+  *   Bridge IPv6 mcast active state, read only.
+  *
+- *   1 if *IFLA_BR_MCAST_SNOOPING* is enabled and an MLD querier is present,
+- *   0 otherwise.
++ *   1 if *IFLA_BR_MCAST_SNOOPING* is enabled, an MLD querier is present
++ *   and the bridge interface is up, 0 otherwise.
+  */
+ enum {
+ 	IFLA_BR_UNSPEC,
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1123,6 +1123,7 @@ static void br_multicast_notify_active(s
+  *
+  * The multicast active state is set, per protocol family, if:
+  *
++ * - the bridge interface is up
+  * - multicast snooping is enabled
+  * - an IGMP/MLD querier is present
+  * - for own IPv6 MLD querier: an IPv6 address is configured on the bridge
+@@ -1139,6 +1140,9 @@ static void br_multicast_update_active(s
+ 
+ 	lockdep_assert_held_once(&brmctx->br->multicast_lock);
+ 
++	if (!netif_running(brmctx->br->dev))
++		force_inactive = true;
++
+ 	if (!br_opt_get(brmctx->br, BROPT_MULTICAST_ENABLED))
+ 		force_inactive = true;
+ 
+@@ -4411,6 +4415,9 @@ static void __br_multicast_open(struct n
+ #if IS_ENABLED(CONFIG_IPV6)
+ 	__br_multicast_open_query(brmctx->br, &brmctx->ip6_own_query);
+ #endif
++
++	/* bridge interface is up, maybe set multicast state to active */
++	br_multicast_update_active(brmctx);
+ }
+ 
+ void br_multicast_open(struct net_bridge *br)
+@@ -4451,6 +4458,9 @@ static void __br_multicast_stop(struct n
+ 	timer_shutdown(&brmctx->ip6_other_query.delay_timer);
+ 	timer_shutdown(&brmctx->ip6_own_query.timer);
+ #endif
++
++	/* bridge interface is down, set multicast state to inactive */
++	br_multicast_update_active(brmctx);
+ }
+ 
+ void br_multicast_update_vlan_mcast_ctx(struct net_bridge_vlan *v, u8 state)
