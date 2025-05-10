@@ -186,6 +186,15 @@ define Device/olimex_a20-olinuxino-micro
 endef
 TARGET_DEVICES += olimex_a20-olinuxino-micro
 
+define Device/roofull_beelink-x2
+  DEVICE_VENDOR := Roofull
+  DEVICE_MODEL := Beelink-X2
+  DEVICE_PACKAGES:=kmod-leds-gpio kmod-gpio-button-hotplug \
+	kmod-brcmfmac cypress-firmware-43430-sdio wpad-basic-mbedtls
+  SOC := sun8i-h3
+endef
+TARGET_DEVICES += roofull_beelink-x2
+
 define Device/sinovoip_bananapi-m2-plus
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2+
