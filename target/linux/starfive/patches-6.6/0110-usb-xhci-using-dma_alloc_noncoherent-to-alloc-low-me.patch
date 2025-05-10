@@ -16,7 +16,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
 
 --- a/drivers/usb/host/xhci-mem.c
 +++ b/drivers/usb/host/xhci-mem.c
-@@ -1891,7 +1891,8 @@ void xhci_mem_cleanup(struct xhci_hcd *x
+@@ -1932,7 +1932,8 @@ void xhci_mem_cleanup(struct xhci_hcd *x
  
  	if (xhci->lowmem_pool.pool) {
  		pool = &xhci->lowmem_pool;
@@ -26,7 +26,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  		gen_pool_destroy(pool->pool);
  		pool->pool = NULL;
  	}
-@@ -2320,15 +2321,15 @@ int xhci_setup_local_lowmem(struct xhci_
+@@ -2419,15 +2420,15 @@ int xhci_setup_local_lowmem(struct xhci_
  	if (!pool->pool) {
  		/* minimal alloc one page */
  		pool->pool = gen_pool_create(PAGE_SHIFT, dev_to_node(hcd->self.sysdev));
@@ -48,7 +48,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  		goto destroy_pool;
  	}
  
-@@ -2338,11 +2339,11 @@ int xhci_setup_local_lowmem(struct xhci_
+@@ -2437,11 +2438,11 @@ int xhci_setup_local_lowmem(struct xhci_
  	 * for it.
  	 */
  	err = gen_pool_add_virt(pool->pool, (unsigned long)buffer,
@@ -62,7 +62,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  		goto destroy_pool;
  	}
  
-@@ -2365,7 +2366,7 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+@@ -2465,7 +2466,7 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  	unsigned int	val, val2;
  	u64		val_64;
  	u32		page_size, temp;
@@ -71,7 +71,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  
  	INIT_LIST_HEAD(&xhci->cmd_list);
  
-@@ -2496,9 +2497,11 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+@@ -2599,9 +2600,11 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
  
  	if (xhci->quirks & XHCI_LOCAL_BUFFER) {

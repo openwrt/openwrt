@@ -50,7 +50,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  
  #include "xhci.h"
  #include "xhci-trace.h"
-@@ -1842,6 +1843,7 @@ xhci_free_interrupter(struct xhci_hcd *x
+@@ -1878,6 +1879,7 @@ EXPORT_SYMBOL_GPL(xhci_remove_secondary_
  void xhci_mem_cleanup(struct xhci_hcd *xhci)
  {
  	struct device	*dev = xhci_to_hcd(xhci)->self.sysdev;
@@ -58,7 +58,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	int i, j, num_ports;
  
  	cancel_delayed_work_sync(&xhci->cmd_timer);
-@@ -1887,6 +1889,13 @@ void xhci_mem_cleanup(struct xhci_hcd *x
+@@ -1928,6 +1930,13 @@ void xhci_mem_cleanup(struct xhci_hcd *x
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Freed medium stream array pool");
  
@@ -72,9 +72,9 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	if (xhci->dcbaa)
  		dma_free_coherent(dev, sizeof(*xhci->dcbaa),
  				xhci->dcbaa, xhci->dcbaa->dma);
-@@ -2300,6 +2309,55 @@ xhci_add_interrupter(struct xhci_hcd *xh
- 	return 0;
+@@ -2399,6 +2408,55 @@ xhci_create_secondary_interrupter(struct
  }
+ EXPORT_SYMBOL_GPL(xhci_create_secondary_interrupter);
  
 +int xhci_setup_local_lowmem(struct xhci_hcd *xhci, size_t size)
 +{
@@ -127,8 +127,8 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
 +
  int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
  {
- 	dma_addr_t	dma;
-@@ -2437,6 +2495,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+ 	struct xhci_interrupter *ir;
+@@ -2540,6 +2598,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  
  	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
  
@@ -181,7 +181,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  
  #include "xhci.h"
  #include "xhci-trace.h"
-@@ -1286,6 +1288,55 @@ static void xhci_unmap_temp_buf(struct u
+@@ -1312,6 +1314,55 @@ static void xhci_unmap_temp_buf(struct u
  	urb->transfer_buffer = NULL;
  }
  
@@ -237,7 +237,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /*
   * Bypass the DMA mapping if URB is suitable for Immediate Transfer (IDT),
   * we'll copy the actual data into the TRB address register. This is limited to
-@@ -1306,9 +1357,11 @@ static int xhci_map_urb_for_dma(struct u
+@@ -1332,9 +1383,11 @@ static int xhci_map_urb_for_dma(struct u
  		if (xhci_urb_temp_buffer_required(hcd, urb))
  			return xhci_map_temp_buffer(hcd, urb);
  	}
@@ -249,7 +249,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  static void xhci_unmap_urb_for_dma(struct usb_hcd *hcd, struct urb *urb)
  {
  	struct xhci_hcd *xhci;
-@@ -1321,8 +1374,10 @@ static void xhci_unmap_urb_for_dma(struc
+@@ -1347,8 +1400,10 @@ static void xhci_unmap_urb_for_dma(struc
  
  	if ((xhci->quirks & XHCI_SG_TRB_CACHE_SIZE_QUIRK) && unmap_temp_buf)
  		xhci_unmap_temp_buf(hcd, urb);
@@ -263,7 +263,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /**
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1509,6 +1509,13 @@ struct xhci_hub {
+@@ -1506,6 +1506,13 @@ struct xhci_hub {
  	u8			min_rev;
  };
  
@@ -277,7 +277,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  /* There is one xhci_hcd structure per controller */
  struct xhci_hcd {
  	struct usb_hcd *main_hcd;
-@@ -1663,6 +1670,8 @@ struct xhci_hcd {
+@@ -1660,6 +1667,8 @@ struct xhci_hcd {
  #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
  #define XHCI_ETRON_HOST	BIT_ULL(49)
  
@@ -286,7 +286,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	struct xhci_port	*hw_ports;
-@@ -1692,6 +1701,8 @@ struct xhci_hcd {
+@@ -1689,6 +1698,8 @@ struct xhci_hcd {
  	struct list_head	regset_list;
  
  	void			*dbc;
