@@ -5,6 +5,20 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/hasivo_s1100w-8xgt-se
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100W-8XGT-SE
+  DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-leds-gpio kmod-thermal
+  IMAGE_SIZE := 12288k
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	gzip | \
+	uImage gzip
+endef
+TARGET_DEVICES += hasivo_s1100w-8xgt-se
+
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
   DEVICE_VENDOR := XikeStor
