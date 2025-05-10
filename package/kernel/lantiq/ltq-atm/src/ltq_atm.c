@@ -36,6 +36,7 @@
 #include <linux/init.h>
 #include <linux/ioctl.h>
 #include <linux/atmdev.h>
+#include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
 #include <linux/atm.h>
