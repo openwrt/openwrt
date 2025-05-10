@@ -1,0 +1,29 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 08:22:25 +0800
+Subject: [PATCH] ignore missing-prototypes warning
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/Makefile.am | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -226,6 +226,8 @@ install-exec-hook: $(bin_PROGRAMS)
+ if KERNEL_2_6
+ drv_vmmc_OBJS = "$(subst .c,.o, $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES))"
+ 
++PKGFIX_CFLAGS = -Wno-error=missing-prototypes
++
+ drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA_DIST)
+ 	@echo "Making Linux 2.6.x kernel object"
+ 	@for f in $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES) ; do \
+@@ -238,7 +240,7 @@ drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA
+ 	@echo "# drv_vmmc: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
+ 	@echo "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
+ 	@echo "$(subst .ko,,$@)-y := $(drv_vmmc_OBJS)"	>> $(PWD)/Kbuild
+-	@echo "EXTRA_CFLAGS := -DHAVE_CONFIG_H $(drv_vmmc_CFLAGS) $(INCLUDES)"	>> $(PWD)/Kbuild
++	@echo "EXTRA_CFLAGS := -DHAVE_CONFIG_H $(drv_vmmc_CFLAGS) $(PKGFIX_CFLAGS) $(INCLUDES)" >> $(PWD)/Kbuild
+ 	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
+ 
+ clean-generic:
