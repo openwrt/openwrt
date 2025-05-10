@@ -1,0 +1,175 @@
+From a6ad3f11ead18d1812c7d3759991dc22b20d90da Mon Sep 17 00:00:00 2001
+From: Dylan Eskew <dylan.eskew@candelatech.com>
+Date: Wed, 19 Mar 2025 11:39:18 -0700
+Subject: [PATCH] iw: scan: add eht capability parsing
+
+Add ability to print out EHT capabilities from
+AP beacons.
+
+Signed-off-by: Dylan Eskew <dylan.eskew@candelatech.com>
+Link: https://patch.msgid.link/20250319183918.1215853-3-dylan.eskew@candelatech.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ ieee80211.h |  1 +
+ iw.h        |  2 +-
+ link.c      |  5 +++--
+ scan.c      | 34 +++++++++++++++++++++++++++-------
+ 4 files changed, 32 insertions(+), 10 deletions(-)
+
+--- a/ieee80211.h
++++ b/ieee80211.h
+@@ -99,6 +99,7 @@ enum elem_id {
+ enum elem_id_ext {
+ 	EID_EXT_HE_CAPABILITY		= 35,
+ 	EID_EXT_HE_OPERATION		= 36,
++	EID_EXT_EHT_CAPABILITY		= 108,
+ };
+ 
+ #define SUITE(oui, id)  (((oui) << 8) | (id))
+--- a/iw.h
++++ b/iw.h
+@@ -256,7 +256,7 @@ enum print_ie_type {
+ #define BIT(x) (1ULL<<(x))
+ 
+ void print_ies(unsigned char *ie, int ielen, bool unknown,
+-	       enum print_ie_type ptype);
++	       enum print_ie_type ptype, bool from_ap);
+ 
+ void parse_bitrate(struct nlattr *bitrate_attr, char *buf, int buflen);
+ void iw_hexdump(const char *prefix, const __u8 *data, size_t len);
+--- a/link.c
++++ b/link.c
+@@ -93,7 +93,7 @@ static int link_bss_handler(struct nl_ms
+ 			if (bss[NL80211_BSS_INFORMATION_ELEMENTS])
+ 				print_ies(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
+ 					  nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
+-					  false, PRINT_LINK_MLO_MLD);
++					  false, PRINT_LINK_MLO_MLD, false);
+ 		}
+ 	} else {
+ 		memcpy(result->sta_addr, nla_data(bss[NL80211_BSS_BSSID]), 6);
+@@ -121,7 +121,8 @@ static int link_bss_handler(struct nl_ms
+ 	if (bss[NL80211_BSS_INFORMATION_ELEMENTS])
+ 		print_ies(nla_data(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
+ 			  nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]),
+-			  false, result->mld ? PRINT_LINK_MLO_LINK : PRINT_LINK);
++			  false, result->mld ? PRINT_LINK_MLO_LINK : PRINT_LINK,
++			  false);
+ 
+ 	if (bss[NL80211_BSS_FREQUENCY_OFFSET])
+ 		freq_offset = nla_get_u32(bss[NL80211_BSS_FREQUENCY_OFFSET]);
+--- a/scan.c
++++ b/scan.c
+@@ -555,7 +555,9 @@ static void tab_on_first(bool *first)
+ }
+ 
+ struct ie_context {
++	bool from_ap;
+ 	bool is_vht_cap;
++	const uint8_t *he_cap;
+ };
+ 
+ static void print_ssid(const uint8_t type, uint8_t len, const uint8_t *data,
+@@ -2393,12 +2395,21 @@ static void print_he_oper(const uint8_t
+ 	print_he_operation(data, len);
+ }
+ 
++static void print_eht_capa(const uint8_t type, uint8_t len,
++			   const uint8_t *data, const struct ie_context *ctx)
++{
++	printf("\n");
++	print_eht_capability(data, len, ctx->he_cap, ctx->from_ap);
++}
++
+ static const struct ie_print ext_printers[] = {
+ 	[EID_EXT_HE_CAPABILITY] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
+ 	[EID_EXT_HE_OPERATION] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
++	[EID_EXT_EHT_CAPABILITY] = { "EHT capabilities", print_eht_capa, 13, 30, BIT(PRINT_SCAN), },
+ };
+ 
+ static void print_extension(unsigned char len, unsigned char *ie,
++			    const struct ie_context *ctx,
+ 			    bool unknown, enum print_ie_type ptype)
+ {
+ 	unsigned char tag;
+@@ -2411,7 +2422,7 @@ static void print_extension(unsigned cha
+ 	tag = ie[0];
+ 	if (tag < ARRAY_SIZE(ext_printers) && ext_printers[tag].name &&
+ 	    ext_printers[tag].flags & BIT(ptype)) {
+-		print_ie(&ext_printers[tag], tag, len - 1, ie + 1, NULL);
++		print_ie(&ext_printers[tag], tag, len - 1, ie + 1, ctx);
+ 		return;
+ 	}
+ 
+@@ -2426,7 +2437,7 @@ static void print_extension(unsigned cha
+ }
+ 
+ static void init_context(struct ie_context *ctx,
+-			 unsigned char *ie, int ielen)
++			 unsigned char *ie, int ielen, bool from_ap)
+ {
+ 	unsigned char *pos = ie;
+ 	int remaining = ielen;
+@@ -2436,11 +2447,20 @@ static void init_context(struct ie_conte
+ 	if (!ie || !ielen)
+ 		return;
+ 
++	ctx->from_ap = from_ap;
++
+ 	while (remaining >= 2 && remaining - 2 >= pos[1]) {
+ 		switch (pos[0]) {
+ 		case EID_VHT_CAPABILITY:
+ 			ctx->is_vht_cap = true;
+ 			break;
++		case EID_EXTENSION:
++			switch (pos[2]) {
++			case EID_EXT_HE_CAPABILITY:
++				ctx->he_cap = pos + 3;
++				break;
++			}
++			break;
+ 		}
+ 
+ 		remaining -= pos[1] + 2;
+@@ -2449,14 +2469,14 @@ static void init_context(struct ie_conte
+ }
+ 
+ void print_ies(unsigned char *ie, int ielen, bool unknown,
+-	       enum print_ie_type ptype)
++	       enum print_ie_type ptype, bool from_ap)
+ {
+ 	struct ie_context ctx;
+ 
+ 	if (!ie)
+ 		return;
+ 
+-	init_context(&ctx, ie, ielen);
++	init_context(&ctx, ie, ielen, from_ap);
+ 
+ 	while (ielen >= 2 && ielen - 2 >= ie[1]) {
+ 		if (ie[0] < ARRAY_SIZE(ieprinters) &&
+@@ -2468,7 +2488,7 @@ void print_ies(unsigned char *ie, int ie
+ 		} else if (ie[0] == 221 /* vendor */) {
+ 			print_vendor(ie[1], ie + 2, unknown, ptype);
+ 		} else if (ie[0] == 255 /* extension */) {
+-			print_extension(ie[1], ie + 2, unknown, ptype);
++			print_extension(ie[1], ie + 2, &ctx, unknown, ptype);
+ 		} else if (unknown) {
+ 			int i;
+ 
+@@ -2673,13 +2693,13 @@ static int print_bss_handler(struct nl_m
+ 			printf("\tInformation elements from Probe Response "
+ 			       "frame:\n");
+ 		print_ies(nla_data(ies), nla_len(ies),
+-			  params->unknown, params->type);
++			  params->unknown, params->type, true);
+ 	}
+ 	if (bss[NL80211_BSS_BEACON_IES] && show--) {
+ 		printf("\tInformation elements from Beacon frame:\n");
+ 		print_ies(nla_data(bss[NL80211_BSS_BEACON_IES]),
+ 			  nla_len(bss[NL80211_BSS_BEACON_IES]),
+-			  params->unknown, params->type);
++			  params->unknown, params->type, true);
+ 	}
+ 
+ 	return NL_SKIP;
