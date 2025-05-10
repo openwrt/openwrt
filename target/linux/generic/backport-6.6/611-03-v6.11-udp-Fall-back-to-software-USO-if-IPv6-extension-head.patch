@@ -71,7 +71,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/net/ipv4/udp_offload.c
 +++ b/net/ipv4/udp_offload.c
-@@ -283,6 +283,12 @@ struct sk_buff *__udp_gso_segment(struct
+@@ -342,6 +342,12 @@ struct sk_buff *__udp_gso_segment(struct
  		     !(skb_shinfo(gso_skb)->gso_type & SKB_GSO_FRAGLIST)))
  		return ERR_PTR(-EINVAL);
  
