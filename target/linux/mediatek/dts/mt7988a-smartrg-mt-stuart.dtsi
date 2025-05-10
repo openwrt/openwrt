@@ -14,7 +14,7 @@
 
 / {
 	aliases {
-		serial0 = &uart0;
+		serial0 = &serial0;
 		label-mac-device = &gmac1;
 		led-boot = &led_sys_green;
 		led-failsafe = &led_sys_blue;
@@ -23,7 +23,7 @@
 	};
 
 	chosen {
-		stdout-path = &uart0;
+		stdout-path = &serial0;
 		bootargs = "console=ttyS0,115200n1 loglevel=8 pci=pcie_bus_perf root=PARTLABEL=rootfs";
 	};
 
@@ -597,6 +597,81 @@
 		mediatek,pull-down-adv = <0>; /* bias-disable */
 	};
 
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	gbe1_led1_pins: gbe1-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led1";
+		};
+	};
+
+	gbe2_led1_pins: gbe2-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led1";
+		};
+	};
+
+	gbe3_led1_pins: gbe3-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led1";
+		};
+	};
+
+	i2c0_pins: i2c0-g0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	i2c1_pins: i2c1-g0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c1_0";
+		};
+	};
+
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	mmc0_pins_emmc_51: mmc0-emmc-51-pins {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+	};
+
 	pcie0_1_pins: pcie0-pins-g1 {
 		mux {
 			function = "pcie";
@@ -608,6 +683,13 @@
 		mux {
 			function = "pwm";
 			groups = "pwm0", "pwm1";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
 		};
 	};
 
@@ -637,6 +719,8 @@
 			groups = "uart2";
 		};
 	};
+
+
 };
 
 &pwm {
@@ -694,11 +778,11 @@
 	status = "okay";
 };
 
-&uart0 {
+&serial0 {
 	status = "okay";
 };
 
-&uart1 {
+&serial1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_pins>;
 	status = "okay";
@@ -706,7 +790,7 @@
 	/* Airoha AG3352 GPS */
 };
 
-&uart2 {
+&serial2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart2_pins>;
 	status = "okay";
@@ -718,6 +802,6 @@
 	status = "okay";
 };
 
-&xphy {
+&xsphy {
 	status = "okay";
 };
