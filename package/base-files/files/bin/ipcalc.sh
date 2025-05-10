@@ -133,8 +133,7 @@ _ip2str START "$start"
 _ip2str END "$end"
 
 if [ "$start" -le "$ipaddr" ] && [ "$ipaddr" -le "$end" ]; then
-    echo "error: address $IP inside range $START..$END" >&2
-    exit 1
+    echo "warning: address $IP inside range $START..$END" >&2
 fi
 
 echo "START=$START"
