@@ -14,7 +14,7 @@ We don't agree with upstream revert so undo it.
 
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -485,6 +485,7 @@ static void xhci_pci_quirks(struct devic
+@@ -476,6 +476,7 @@ static void xhci_pci_quirks(struct devic
  	if (pdev->vendor == PCI_VENDOR_ID_VIA && pdev->device == PCI_DEVICE_ID_VIA_VL805) {
  		xhci->quirks |= XHCI_LPM_SUPPORT;
  		xhci->quirks |= XHCI_TRB_OVERFETCH;
