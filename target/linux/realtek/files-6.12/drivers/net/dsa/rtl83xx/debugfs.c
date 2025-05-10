@@ -363,7 +363,7 @@ static const struct file_operations l2_table_fops = {
 static int rtldsa_pmsks_table_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
-	u64 all_ports;
+	u64 min_ports, all_ports;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -385,6 +385,17 @@ static int rtldsa_pmsks_table_show(struct seq_file *m, void *v)
 			   o[1], priv->r->read_mcast_pmask(i + 1), c[1],
 			   o[2], priv->r->read_mcast_pmask(i + 2), c[2],
 			   o[3], priv->r->read_mcast_pmask(i + 3), c[3]);
+	}
+
+	min_ports = priv->r->read_mcast_pmask(MC_PMASK_MIN_PORTS_IDX);
+	seq_printf(m, "MC_PMASK_MIN_PORTS (%i): 0x%016llx\n",
+		   MC_PMASK_MIN_PORTS_IDX, min_ports);
+	if (min_ports) {
+		seq_printf(m, "* mc-min-ports: ");
+		for (int i = 0; i < sizeof(min_ports)*8; i++)
+			if (min_ports & BIT_ULL(i))
+				seq_printf(m, " %i", i);
+		seq_printf(m, "\n");
 	}
 
 	all_ports = priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX);
