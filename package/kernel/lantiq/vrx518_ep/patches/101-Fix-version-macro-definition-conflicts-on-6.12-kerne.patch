@@ -1,0 +1,34 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 7 May 2025 19:16:16 +0800
+Subject: [PATCH] fix version macro definition conflicts on 6.12 kernel
+
+Add LANTIQ prefix to version variable names to fix:
+
+/home/db/owrt/build_dir/target-arm_cortex-a7+neon-vfpv4_musl_eabi/linux-ipq40xx_generic/vrx518_ep-2.1.0/ep.c:45:9: error: "MIN" redefined [-Werror]
+   45 | #define MIN     1
+      |         ^~~
+./include/linux/minmax.h:329:9: note: this is the location of the previous definition
+  329 | #define MIN(a,b) __cmp(min,a,b)
+      |         ^~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ep.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/ep.c
++++ b/ep.c
+@@ -42,10 +42,10 @@
+ 
+ #define DC_EP_DBG
+ 
+-#define MAJ	2
+-#define MIN	1
++#define LANTIQ_MAJ	2
++#define LANTIQ_MIN	1
+ #define BUILD	0
+-#define DRV_VERSION __stringify(MAJ) "." __stringify(MIN) "." \
++#define DRV_VERSION __stringify(LANTIQ_MAJ) "." __stringify(LANTIQ_MIN) "." \
+ 	__stringify(BUILD) "-k"
+ 
+ static bool pcie_switch_exist;
