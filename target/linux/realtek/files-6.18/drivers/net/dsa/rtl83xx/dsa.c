@@ -3,6 +3,7 @@
 #include <net/dsa.h>
 #include <linux/etherdevice.h>
 #include <linux/if_bridge.h>
+#include <linux/limits.h>
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 
 #include "rtl83xx.h"
@@ -455,6 +456,7 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 	 * see e.g. rtl9300_vlan_profile_setup
 	 */
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
+	priv->r->write_mcast_pmask(MC_PMASK_MIN_PORTS_IDX, 0x0);
 }
 
 static void rtldsa_vlan_profiles_setup(struct rtl838x_switch_priv *priv)
@@ -1478,10 +1480,10 @@ static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
 
 static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 {
-	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
+	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 2);
 	u64 portmask;
 
-	if (mc_group >= MAX_MC_GROUPS - 1)
+	if (mc_group >= MAX_MC_GROUPS - 2)
 		return -1;
 
 	set_bit(mc_group, priv->mc_group_bm);
@@ -2656,6 +2658,12 @@ rtldsa_mdb_add_ports(struct rtl838x_switch_priv *priv, u64 mac, u16 vid,
 	return rtldsa_mdb_add_ports_l2_cam(priv, seed, mac, vid, mc_pmask_idx, port);
 }
 
+static int
+rtldsa_mdb_add_all_ports(struct rtl838x_switch_priv *priv, u64 mac, u16 vid)
+{
+	return rtldsa_mdb_add_ports(priv, mac, vid, MC_PMASK_ALL_PORTS_IDX, -1);
+}
+
 static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 {
 	/*
@@ -2874,6 +2882,70 @@ out:
 	return 0;
 }
 
+static int rtldsa_mc_add_unsnoop_v4(struct rtl838x_switch_priv *priv, u16 vid)
+{
+	u8 addr[ETH_ALEN];
+	int i, ret;
+
+	memcpy(addr, ipv4_ll_mcast_addr_base, ETH_ALEN);
+
+	/* ToDo: use IP_MULTICAST instead of L2_MULTICAST entries */
+	for (i = 0; i <= U8_MAX; i++) {
+		ret = rtldsa_mdb_add_all_ports(priv, ether_addr_to_u64(addr), vid);
+		if (ret < 0)
+			break;
+
+		addr[5]++;
+	}
+
+	return ret;
+}
+
+static int rtldsa_mc_add_unsnoop_v6(struct rtl838x_switch_priv *priv, u16 vid)
+{
+	u64 addr = ether_addr_to_u64(ipv6_all_hosts_mcast_addr_base);
+
+	/* ToDo: (maybe) use IP6_MULTICAST instead of L2_MULTICAST entries */
+	return rtldsa_mdb_add_all_ports(priv, addr, vid);
+}
+
+static int __rtldsa_mc_add_unsnoop(struct rtl838x_switch_priv *priv,
+				   const struct switchdev_mc_active mc_active,
+				   u16 vid)
+{
+	if (mc_active.ip4_changed && mc_active.ip4)
+		rtldsa_mc_add_unsnoop_v4(priv, vid);
+
+	if (mc_active.ip6_changed && mc_active.ip6)
+		rtldsa_mc_add_unsnoop_v6(priv, vid);
+
+	return 0;
+}
+
+static int rtldsa_mc_add_unsnoop(struct rtl838x_switch_priv *priv,
+				 const struct switchdev_mc_active mc_active)
+{
+	struct rtl838x_vlan_info info;
+	int i;
+
+	/* bridge multicast vlan snooping disabled, all VIDs */
+	if (mc_active.vid < 0) {
+		for (i = 1; i < MAX_VLANS; i++) {
+			priv->r->vlan_tables_read(i, &info);
+
+			if (!info.member_ports)
+				continue;
+
+			__rtldsa_mc_add_unsnoop(priv, mc_active, i);
+		}
+	/* bridge multicast vlan snooping enabled, specific VID */
+	} else {
+		__rtldsa_mc_add_unsnoop(priv, mc_active, mc_active.vid);
+	}
+
+	return 0;
+}
+
 static void rtldsa_port_mdb_snoop_flush(struct rtl838x_switch_priv *priv,
 					bool ip6, short vid, u64 portmask)
 {
@@ -2986,6 +3058,8 @@ rtldsa_port_mdb_update_entries(struct rtl838x_switch_priv *priv,
 
 	if (mc_active.ip6_changed && !mc_active.ip6)
 		rtldsa_port_mdb_snoop_flush_v6(priv, mc_active.vid, ~(0ULL));
+
+	rtldsa_mc_add_unsnoop(priv, mc_active);
 
 	if ((mc_active.ip4_changed && mc_active.ip4) ||
 	    (mc_active.ip6_changed && mc_active.ip6))
