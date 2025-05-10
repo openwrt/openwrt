@@ -549,8 +549,6 @@ static void rtl839x_vlan_profile_setup(int profile)
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
-
-	rtl839x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL839X_MC_PMASK_ALL_PORTS);
 }
 
 u64 rtl839x_traffic_get(int source)

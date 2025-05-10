@@ -139,6 +139,26 @@ static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 	priv->ports[port].pvid = pvid;
 }
 
+static void rtl83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
+{
+	u64 portmask = 0;
+
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	if (priv->family_id == RTL8380_FAMILY_ID)
+		portmask = RTL838X_MC_PMASK_ALL_PORTS;
+	else if (priv->family_id == RTL8390_FAMILY_ID)
+		portmask = RTL839X_MC_PMASK_ALL_PORTS;
+	else
+		dev_err(priv->dev, "%s: unknown family_id %u\n", __func__,
+			priv->family_id);
+
+	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, portmask);
+}
+
 /* Initialize all VLANS */
 static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 {
@@ -244,6 +264,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	rtl83xx_init_stats(priv);
 
+	rtl83xx_mc_pmasks_setup(priv);
 	rtldsa_vlan_setup(priv);
 
 	rtl83xx_setup_bpdu_traps(priv);

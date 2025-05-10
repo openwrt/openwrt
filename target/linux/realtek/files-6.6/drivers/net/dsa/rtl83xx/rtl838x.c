@@ -512,13 +512,6 @@ static void rtl838x_vlan_profile_setup(int profile)
 		RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
-
-	/* RTL8380 and RTL8390 use an index into the portmask table to set the
-	 * unknown multicast portmask, setup a default at a safe location
-	 * On RTL93XX, the portmask is directly set in the profile,
-	 * see e.g. rtl9300_vlan_profile_setup
-	 */
-	rtl838x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL838X_MC_PMASK_ALL_PORTS);
 }
 
 static void rtl838x_l2_learning_setup(void)
