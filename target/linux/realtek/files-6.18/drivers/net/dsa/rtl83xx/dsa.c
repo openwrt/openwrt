@@ -1490,13 +1490,11 @@ static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gro
 	return portmask;
 }
 
-static u64 rtldsa_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
+static u64 rtldsa_mc_group_del_ports(struct rtl838x_switch_priv *priv,
+				     int mc_group, u64 portmask)
 {
-	u64 portmask = priv->r->read_mcast_pmask(mc_group);
+	portmask = priv->r->read_mcast_pmask(mc_group) & ~portmask;
 
-	pr_debug("%s: %d\n", __func__, port);
-
-	portmask &= ~BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 	if (!portmask)
 		clear_bit(mc_group, priv->mc_group_bm);
@@ -2478,6 +2476,165 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static int
+rtldsa_mdb_add_ports_l2_hash_update(struct rtl838x_switch_priv *priv,
+				    struct rtl838x_l2_entry *entry, u64 seed,
+				    u64 mac, u16 vid, int mc_pmask_idx,
+				    int port)
+{
+	dev_dbg(priv->dev, "Found an existing entry %016llx, mc_group %d\n",
+		ether_addr_to_u64(entry->mac), entry->mc_portmask_index);
+
+	if (mc_pmask_idx < 0) {
+		rtldsa_mc_group_add_port(priv, entry->mc_portmask_index, port);
+		return 0;
+	}
+
+	if (entry->mc_portmask_index == mc_pmask_idx)
+		return 0;
+
+	dev_warn(priv->dev, "Found entry %016llx with unexpected pmsk-id: %d\n",
+		 ether_addr_to_u64(entry->mac),
+		 entry->mc_portmask_index);
+
+	clear_bit(entry->mc_portmask_index, priv->mc_group_bm);
+	entry->mc_portmask_index = mc_pmask_idx;
+
+	return 0;
+}
+
+static int
+rtldsa_mdb_add_ports_l2_hash_create(struct rtl838x_switch_priv *priv,
+				    struct rtl838x_l2_entry *entry, u64 seed,
+				    u64 mac, u16 vid, int mc_pmask_idx,
+				    int port, int idx)
+{
+	dev_dbg(priv->dev, "New entry for seed %016llx\n", seed);
+
+	if (mc_pmask_idx < 0) {
+		/* ToDo: instead of always allocating a new multicast port mask,
+		 * we could safe some of these by first searching for an
+		 * existing, suitable multicast port mask entry. And if found
+		 * share it between multiple L2 multicast entries that use
+		 * the same set of ports.
+		 */
+		mc_pmask_idx = rtldsa_mc_group_alloc(priv, port);
+		if (mc_pmask_idx < 0)
+			return -ENOTSUPP;
+	}
+
+	rtldsa_setup_l2_mc_entry(entry, vid, mac, mc_pmask_idx);
+	priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, entry);
+
+	return 0;
+}
+
+static int
+rtldsa_mdb_add_ports_l2_hash(struct rtl838x_switch_priv *priv, u64 seed,
+			     u64 mac, u16 vid, int mc_pmask_idx, int port)
+{
+	struct rtl838x_l2_entry entry;
+	int idx;
+
+	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &entry);
+	if (idx < 0)
+		return -ENOTSUPP;
+
+	/* Found an existing or empty entry */
+	if (entry.valid)
+		return rtldsa_mdb_add_ports_l2_hash_update(priv, &entry, seed, mac,
+							   vid, mc_pmask_idx, port);
+
+	return rtldsa_mdb_add_ports_l2_hash_create(priv, &entry, seed, mac, vid,
+						   mc_pmask_idx, port, idx);
+}
+
+static int
+rtldsa_mdb_add_ports_l2_cam_update(struct rtl838x_switch_priv *priv,
+				   struct rtl838x_l2_entry *entry, u64 seed,
+				   u64 mac, u16 vid, int mc_pmask_idx,
+				   int port)
+{
+	dev_warn(priv->dev, "Found existing CAM entry %016llx, mc_group %d\n",
+		 ether_addr_to_u64(entry->mac), entry->mc_portmask_index);
+
+	if (mc_pmask_idx < 0) {
+		rtldsa_mc_group_add_port(priv, entry->mc_portmask_index, port);
+		return 0;
+	}
+
+	if (entry->mc_portmask_index == mc_pmask_idx)
+		return 0;
+
+	dev_warn(priv->dev, "Found entry %016llx with unexpected pmsk-id: %d\n",
+		 ether_addr_to_u64(entry->mac),
+		 entry->mc_portmask_index);
+
+	clear_bit(entry->mc_portmask_index, priv->mc_group_bm);
+	entry->mc_portmask_index = mc_pmask_idx;
+
+	return 0;
+}
+
+static int
+rtldsa_mdb_add_ports_l2_cam_create(struct rtl838x_switch_priv *priv,
+				   struct rtl838x_l2_entry *entry, u64 seed,
+				   u64 mac, u16 vid, int mc_pmask_idx,
+				   int port, int idx)
+{
+	dev_warn(priv->dev, "New entry\n");
+
+	if (mc_pmask_idx < 0) {
+		mc_pmask_idx = rtldsa_mc_group_alloc(priv, port);
+		if (mc_pmask_idx < 0)
+			return -ENOTSUPP;
+	}
+
+	rtldsa_setup_l2_mc_entry(entry, vid, mac, mc_pmask_idx);
+	priv->r->write_cam(idx, entry);
+
+	return 0;
+}
+
+static int
+rtldsa_mdb_add_ports_l2_cam(struct rtl838x_switch_priv *priv, u64 seed,
+			    u64 mac, u16 vid, int mc_pmask_idx, int port)
+{
+	struct rtl838x_l2_entry entry;
+	int idx;
+
+	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &entry);
+	if (idx < 0)
+		return -ENOTSUPP;
+
+	if (entry.valid)
+		return rtldsa_mdb_add_ports_l2_cam_update(priv, &entry, seed, mac,
+							  vid, mc_pmask_idx, port);
+
+	return rtldsa_mdb_add_ports_l2_cam_create(priv, &entry, seed, mac, vid,
+						  mc_pmask_idx, port, idx);
+}
+
+static int
+rtldsa_mdb_add_ports(struct rtl838x_switch_priv *priv, u64 mac, u16 vid,
+		     int mc_pmask_idx, int port)
+{
+	u64 seed = priv->r->l2_hash_seed(mac, vid);
+	int err;
+
+	if (mc_pmask_idx >= 0 && port >= 0) {
+		dev_err(priv->dev, "Both port mask index and specific port given.");
+		return -EINVAL;
+	}
+
+	err = rtldsa_mdb_add_ports_l2_hash(priv, seed, mac, vid, mc_pmask_idx, port);
+	if (!err)
+		return 0;
+
+	/* Hash buckets full, try CAM */
+	return rtldsa_mdb_add_ports_l2_cam(priv, seed, mac, vid, mc_pmask_idx, port);
+}
+
 static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 {
 	/*
@@ -2496,22 +2653,15 @@ static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 	return false;
 }
 
-static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
-					const struct switchdev_obj_port_mdb *mdb,
-					const struct dsa_db db)
+static int rtldsa_port_mdb_add_checks(struct rtl838x_switch_priv *priv,
+				      int port,
+				      const struct switchdev_obj_port_mdb *mdb)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
-	int vid = mdb->vid;
-	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int mc_group;
-
-	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
+	dev_dbg(priv->dev, "In %s port %d, mac %pM, vid: %d\n", __func__,
+		port, mdb->addr, mdb->vid);
 
 	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+		dev_dbg(priv->dev, "%s: %d is lag slave. ignore\n", __func__, port);
 		return -EINVAL;
 	}
 
@@ -2522,58 +2672,108 @@ static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
 		return -EADDRNOTAVAIL;
 	}
 
-	mutex_lock(&priv->reg_mutex);
+	return 0;
+}
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+static int __rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
+				 const struct switchdev_obj_port_mdb *mdb,
+				 const struct dsa_db db)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	u64 mac = ether_addr_to_u64(mdb->addr);
+	int vid = mdb->vid;
+	int err;
 
-	/* Found an existing or empty entry */
-	if (idx >= 0) {
-		if (e.valid) {
-			pr_debug("Found an existing entry %016llx, mc_group %d\n",
-				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
-		} else {
-			pr_debug("New entry for seed %016llx\n", seed);
-			mc_group = rtldsa_mc_group_alloc(priv, port);
-			if (mc_group < 0) {
-				err = -ENOTSUPP;
-				goto out;
-			}
-			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
-		}
-		goto out;
-	}
+	dev_dbg(priv->dev, "In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
-	/* Hash buckets full, try CAM */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
+	lockdep_assert_held_once(&priv->reg_mutex);
 
-	if (idx >= 0) {
-		if (e.valid) {
-			pr_debug("Found existing CAM entry %016llx, mc_group %d\n",
-				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
-		} else {
-			pr_debug("New entry\n");
-			mc_group = rtldsa_mc_group_alloc(priv, port);
-			if (mc_group < 0) {
-				err = -ENOTSUPP;
-				goto out;
-			}
-			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
-			priv->r->write_cam(idx, &e);
-		}
-		goto out;
-	}
-
-	err = -ENOTSUPP;
-
-out:
-	mutex_unlock(&priv->reg_mutex);
+	err = rtldsa_mdb_add_ports(priv, mac, vid, -1, port);
 	if (err)
 		dev_err(ds->dev, "failed to add MDB entry\n");
 
 	return err;
+}
+
+static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
+			       const struct switchdev_obj_port_mdb *mdb,
+			       const struct dsa_db db)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
+
+	err = rtldsa_port_mdb_add_checks(priv, port, mdb);
+
+	if (err == -EADDRNOTAVAIL)
+		return 0;
+	else if (err < 0)
+		return err;
+
+	mutex_lock(&priv->reg_mutex);
+	err = __rtldsa_port_mdb_add(ds, port, mdb, db);
+	mutex_unlock(&priv->reg_mutex);
+
+	return err;
+}
+
+static void
+rtldsa_port_mdb_del_l2_hash_entry(struct rtl838x_switch_priv *priv,
+				  struct rtl838x_l2_entry *e, int idx,
+				  u64 portmask)
+{
+	dev_dbg(priv->dev, "Found entry index %d, key %d and bucket %d\n",
+		idx, idx >> 2, idx & 3);
+
+	portmask = rtldsa_mc_group_del_ports(priv, e->mc_portmask_index, portmask);
+	if (portmask)
+		return;
+
+	e->valid = false;
+	priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, e);
+}
+
+static int
+rtldsa_port_mdb_del_l2_hash(struct rtl838x_switch_priv *priv, u64 seed, int port)
+{
+	struct rtl838x_l2_entry e;
+	int idx;
+
+	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	if (idx < 0)
+		return -ENOTSUPP;
+
+	rtldsa_port_mdb_del_l2_hash_entry(priv, &e, idx, BIT_ULL(port));
+	return 0;
+}
+
+static void
+rtldsa_port_mdb_del_l2_cam_entry(struct rtl838x_switch_priv *priv,
+				 struct rtl838x_l2_entry *e, int idx,
+				 u64 portmask)
+{
+	dev_dbg(priv->dev, "Found entry index %d, key %d and bucket %d\n",
+		idx, idx >> 2, idx & 3);
+
+	portmask = rtldsa_mc_group_del_ports(priv, e->mc_portmask_index, portmask);
+	if (portmask)
+		return;
+
+	e->valid = false;
+	priv->r->write_cam(idx, e);
+}
+
+static int
+rtldsa_port_mdb_del_l2_cam(struct rtl838x_switch_priv *priv, u64 seed, int port)
+{
+	struct rtl838x_l2_entry e;
+	int idx;
+
+	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	if (idx < 0)
+		return -ENOTSUPP;
+
+	rtldsa_port_mdb_del_l2_cam_entry(priv, &e, idx, BIT_ULL(port));
+	return 0;
 }
 
 static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
@@ -2582,13 +2782,12 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
-	struct rtl838x_l2_entry e;
-	int err = 0, idx;
 	int vid = mdb->vid;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	u64 portmask;
+	int err = 0;
 
-	pr_debug("In %s, port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
+	dev_dbg(priv->dev, "In %s, port %d, mac %llx, vid: %d\n", __func__,
+		port, mac, vid);
 
 	if (priv->lag_non_primary & BIT_ULL(port)) {
 		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
@@ -2604,35 +2803,19 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
-
-	if (idx >= 0) {
-		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
-		if (!portmask) {
-			e.valid = false;
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
-		}
+	err = rtldsa_port_mdb_del_l2_hash(priv, seed, port);
+	if (!err)
 		goto out;
-	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
+	err = rtldsa_port_mdb_del_l2_cam(priv, seed, port);
 
-	if (idx >= 0) {
-		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
-		if (!portmask) {
-			e.valid = false;
-			priv->r->write_cam(idx, &e);
-		}
-		goto out;
-	}
 	/* TODO: Re-enable with a newer kernel: err = -ENOENT; */
 
 out:
 	mutex_unlock(&priv->reg_mutex);
 
-	return err;
+	return 0;
 }
 
 static int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
