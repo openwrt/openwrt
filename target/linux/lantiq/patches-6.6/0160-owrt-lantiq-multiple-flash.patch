@@ -123,7 +123,7 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 +		printk(KERN_NOTICE "lantiq nor flash device: %.8llx at %.8llx\n",
 +		       (unsigned long long)resource_size(&pdev->resource[i]),
 +		       (unsigned long long)pdev->resource[i].start);
-+	
++
 +		if (!devm_request_mem_region(&pdev->dev,
 +			pdev->resource[i].start,
 +			resource_size(&pdev->resource[i]),

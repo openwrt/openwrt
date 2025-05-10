@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2018 Paweł Dembicki <paweldembicki@gmail.com> 
+ *  Copyright (C) 2018 Paweł Dembicki <paweldembicki@gmail.com>
  *
  *  Based on: mtdsplit_uimage.c
  *  Copyright (C) 2013 Gabor Juhos <juhosg@openwrt.org>

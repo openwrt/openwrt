@@ -99,7 +99,7 @@
 			function = LED_FUNCTION_INDICATOR;
 			color = <LED_COLOR_ID_GREEN>;
 			function-enumerator = <4>;
-		}; 
+		};
 
 		led_power: led-5 {
 			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
@@ -183,7 +183,7 @@
 			read-only;
 		};
 
-		partition@200000 {	
+		partition@200000 {
 			label = "factory";
 			reg = <0x200000 0x100000>;
 			read-only;
@@ -235,7 +235,7 @@
 			ubiconcat0: partition@400000 {
 				label = "ubiconcat0";
 				reg = <0x400000 0x1c00000>;
-			};			
+			};
 		};
 
 		ubiconcat1: partition@2800000 {

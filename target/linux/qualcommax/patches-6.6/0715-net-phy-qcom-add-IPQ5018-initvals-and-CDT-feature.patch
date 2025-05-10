@@ -66,7 +66,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +				  IPQ5018_PHY_MMD3_CDT_THRESH_CTRL7_VAL);
 +	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_MMD3_CDT_THRESH_CTRL9,
 +				  IPQ5018_PHY_MMD3_CDT_THRESH_CTRL9_VAL);
-+	phy_write_mmd(phydev, MDIO_MMD_PCS, 
++	phy_write_mmd(phydev, MDIO_MMD_PCS,
 +				  IPQ5018_PHY_MMD3_CDT_THRESH_CTRL13,
 +				  IPQ5018_PHY_MMD3_CDT_THRESH_CTRL13_VAL);
 +	phy_write_mmd(phydev, MDIO_MMD_PCS, IPQ5018_PHY_MMD3_CDT_THRESH_CTRL3,
@@ -82,7 +82,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	u16 val = 0;
  	int ret;
  
-+	/* set LDO efuse: first temporarily store ANA_DAC_FILTER value from 
++	/* set LDO efuse: first temporarily store ANA_DAC_FILTER value from
 +	   debug register as it will be reset once the ANA_LDO_EFUSE register
 +	   is written to */
 +	val = at803x_debug_reg_read(phydev, IPQ5018_PHY_DEBUG_ANA_DAC_FILTER);

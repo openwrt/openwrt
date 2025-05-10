@@ -50,7 +50,7 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  		  ;;
  		*)
 -		  path=-L$absdir/$objdir
-+                  # OE sets installed=no in staging. We need to look in $objdir and $absdir, 
++                  # OE sets installed=no in staging. We need to look in $objdir and $absdir,
 +                  # preferring $objdir. RP 31/04/2008
 +                  if test -f "$absdir/$objdir/$depdepl" ; then
 +		    depdepl="$absdir/$objdir/$depdepl"

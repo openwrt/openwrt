@@ -5,7 +5,7 @@
          return luai_numlt( nvalue_fast(l), cast_num(ivalue(r)) );
  
 -  } else if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
-+  } 
++  }
 +  if ((res = call_orderTM(L, l, r, TM_LT)) != -1)
      return res;
  
@@ -15,7 +15,7 @@
          return luai_numle( nvalue_fast(l), cast_num(ivalue(r)) );
  
 -  } else if ((res = call_orderTM(L, l, r, TM_LE)) != -1)  /* first try `le' */
-+  } 
++  }
 +  if ((res = call_orderTM(L, l, r, TM_LE)) != -1)  /* first try `le' */
      return res;
    else if ((res = call_orderTM(L, r, l, TM_LT)) != -1)  /* else try `lt' */

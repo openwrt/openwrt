@@ -8,7 +8,7 @@
  * intellectual property rights of others.
  *----------------------------------------------------------------------------
  * File Name           : com.c
- * Object              : 
+ * Object              :
  * Creation            : HIi   03/27/2003
  *
  *----------------------------------------------------------------------------
@@ -98,9 +98,9 @@ int at91_serial_getc()
 
 /*-----------------------------------------------------------------------------
  * Function Name       : AT91F_ReadLine()
- * Object              : 
- * Input Parameters    : 
- * Return value		: 
+ * Object              :
+ * Input Parameters    :
+ * Return value		:
  *-----------------------------------------------------------------------------
  */
 int AT91F_ReadLine (const char *const prompt, char *console_buffer)
@@ -144,14 +144,14 @@ int AT91F_ReadLine (const char *const prompt, char *console_buffer)
 			/*
 			 * Must be a normal character then
 			 */
-			if (n < (AT91C_CB_SIZE -2)) 
+			if (n < (AT91C_CB_SIZE -2))
 			{
 				++col;		/* echo input		*/
 				putc(c);
 				*p++ = c;
 				++n;
-			} 
-			else 
+			}
+			else
 			{			/* Buffer full		*/
 				putc('\a');
 			}
@@ -162,9 +162,9 @@ int AT91F_ReadLine (const char *const prompt, char *console_buffer)
 
 /*-----------------------------------------------------------------------------
  * Function Name       : AT91F_WaitKeyPressed()
- * Object              : 
- * Input Parameters    : 
- * Return value		: 
+ * Object              :
+ * Input Parameters    :
+ * Return value		:
  *-----------------------------------------------------------------------------
  */
 void AT91F_WaitKeyPressed(void)
@@ -244,7 +244,7 @@ static int number(int num, int base, int size,
       num = -num;
       size--;
     }
-  
+
   i = 0;
   if(num == 0)
     tmp[i++] = digits[0];
@@ -254,11 +254,11 @@ static int number(int num, int base, int size,
   if(i > precision)
     precision = i;
   size -= precision;
-  
+
   if(!(type&(ZEROPAD+LEFT)))
     while(size-->0)
       putc(' ');
-  
+
   if(sign)
     putc(sign);
 
@@ -268,7 +268,7 @@ static int number(int num, int base, int size,
 
   while (i < precision--)
     putc('0');
-  
+
   while (i-- > 0)
     putc(tmp[i]);
 
@@ -332,18 +332,18 @@ int hvfprintf(const char *fmt, va_list va)
 				case '%' :
 					putc(*fmt);
 					done = true;
-				default: 
+				default:
 					putc('%');
 					putc(*fmt);
 					done = true;
 					break;
-				} 
+				}
 			} while(!done);
 		} else if(*fmt == '\\') {
 			fmt++;
 			if(*fmt == 'r') {
 				putc('\r');
-			} else if(*fmt == 'n') { 
+			} else if(*fmt == 'n') {
 				putc('\n');
 			}
         	} else {
@@ -351,7 +351,7 @@ int hvfprintf(const char *fmt, va_list va)
         	}
 		fmt++;
 	} while(*fmt != 0);
-  
+
   return 0;
 }
 

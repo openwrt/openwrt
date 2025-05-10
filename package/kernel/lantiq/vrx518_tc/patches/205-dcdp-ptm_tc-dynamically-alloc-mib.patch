@@ -60,7 +60,7 @@
 +			ret = -ENOMEM;
 +			goto free_rx_mib;
 +		}
-+		
++
 +		ptm_us = kzalloc(sizeof(*ptm_us), GFP_KERNEL);
 +		if (!ptm_us) {
 +			ret = -ENOMEM;

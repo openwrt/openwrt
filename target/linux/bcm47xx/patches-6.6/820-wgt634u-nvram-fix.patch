@@ -19,7 +19,7 @@ out the configuration than the in kernel cfe config reader.
 + *
 + * Copyright 2001-2003, Broadcom Corporation
 + * Copyright 2006, Felix Fietkau <nbd@nbd.name>
-+ * 
++ *
 + * This program is free software; you can redistribute  it and/or modify it
 + * under  the terms of  the GNU General  Public License as published by the
 + * Free Software Foundation;  either version 2 of the  License, or (at your
@@ -55,9 +55,9 @@ out the configuration than the in kernel cfe config reader.
 + *
 + * If bit 0 (low bit) is set, the length is an 8-bit value.
 + * If bit 0 (low bit) is clear, the length is a 16-bit value
-+ * 
++ *
 + * Bit 7 set indicates "user" TLVs.  In this case, bit 0 still
-+ * indicates the size of the length field.  
++ * indicates the size of the length field.
 + *
 + * Flags are from the constants below:
 + *
@@ -74,11 +74,11 @@ out the configuration than the in kernel cfe config reader.
 + * The actual TLV types we support
 + */
 +
-+#define ENV_TLV_TYPE_END	0x00	
++#define ENV_TLV_TYPE_END	0x00
 +#define ENV_TLV_TYPE_ENV	ENV_CODE_SYS(0,ENV_LENGTH_8BITS)
 +
 +/*
-+ * Environment variable flags 
++ * Environment variable flags
 + */
 +
 +#define ENV_FLG_NORMAL		0x00	/* normal read/write */
@@ -91,14 +91,14 @@ out the configuration than the in kernel cfe config reader.
 +
 +/*  *********************************************************************
 +    *  _nvram_read(buffer,offset,length)
-+    *  
++    *
 +    *  Read data from the NVRAM device
-+    *  
-+    *  Input parameters: 
++    *
++    *  Input parameters:
 +    *  	   buffer - destination buffer
 +    *  	   offset - offset of data to read
 +    *  	   length - number of bytes to read
-+    *  	   
++    *
 +    *  Return value:
 +    *  	   number of bytes read, or <0 if error occured
 +    ********************************************************************* */
@@ -107,7 +107,7 @@ out the configuration than the in kernel cfe config reader.
 +{
 +    int i;
 +    if (offset > NVRAM_SIZE)
-+	return -1; 
++	return -1;
 +
 +    for ( i = 0; i < length; i++) {
 +	buffer[i] = ((volatile unsigned char*)nv_buf)[offset + i];
@@ -149,10 +149,10 @@ out the configuration than the in kernel cfe config reader.
 +    unsigned int rectype;
 +    int offset;
 +    int flg;
-+    
++
 +	if (!strcmp(name, "nvram_type"))
 +		return "cfe";
-+	
++
 +    size = NVRAM_SIZE;
 +    buffer = &_nvdata[0];
 +
@@ -163,7 +163,7 @@ out the configuration than the in kernel cfe config reader.
 +    if (_nvram_read(nv_buf, ptr,offset,1) != 1) {
 +	goto error;
 +    }
-+    
++
 +    while ((*ptr != ENV_TLV_TYPE_END)  && (size > 1)) {
 +
 +	/* Adjust pointer for TLV type */
@@ -171,9 +171,9 @@ out the configuration than the in kernel cfe config reader.
 +	offset++;
 +	size--;
 +
-+	/* 
++	/*
 +	 * Read the length.  It can be either 1 or 2 bytes
-+	 * depending on the code 
++	 * depending on the code
 +	 */
 +	if (rectype & ENV_LENGTH_8BITS) {
 +	    /* Read the record type and length - 8 bits */
@@ -208,7 +208,7 @@ out the configuration than the in kernel cfe config reader.
 +		    *envval++ = '\0';
 +		    memcpy(_valuestr,envval,(reclen-1)-(envval-ptr));
 +		    _valuestr[(reclen-1)-(envval-ptr)] = '\0';
-+#if 0			
++#if 0
 +		    printk(KERN_INFO "NVRAM:%s=%s\n", ptr, _valuestr);
 +#endif
 +		    if(!strcmp(ptr, name)){
@@ -218,16 +218,16 @@ out the configuration than the in kernel cfe config reader.
 +			return _valuestr;
 +		}
 +		break;
-+		
-+	    default: 
++
++	    default:
 +		/* Unknown TLV type, skip it. */
 +		break;
 +	    }
 +
 +	/*
-+	 * Advance to next TLV 
++	 * Advance to next TLV
 +	 */
-+		
++
 +	size -= (int)reclen;
 +	offset += reclen;
 +

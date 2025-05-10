@@ -5,7 +5,7 @@
  qgen_SOURCES = common.c common.h file.c file.h first.c ql_y.y ql_l.l qgen.c \
  		qgen.h second.c third.c
 -qgen_LDADD = -lfl
-+qgen_LDADD = 
++qgen_LDADD =
  
  COMPILE = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@
  LINK = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@ -o $@
@@ -27,7 +27,7 @@
  			$(top_builddir)/src/lib/libatm.la \
  			$(top_builddir)/src/saal/libsaal.a
 -atmsigd_LDADD = $(atmsigd_XTRAS) -lfl
-+atmsigd_LDADD = $(atmsigd_XTRAS) 
++atmsigd_LDADD = $(atmsigd_XTRAS)
  atmsigd_DEPENDENCIES = mess.c $(atmsigd_XTRAS)
  
  CLEANFILES = mess.c
@@ -38,7 +38,7 @@
  			$(top_builddir)/src/saal/libsaal.a
  
 -atmsigd_LDADD = $(atmsigd_XTRAS) -lfl
-+atmsigd_LDADD = $(atmsigd_XTRAS) 
++atmsigd_LDADD = $(atmsigd_XTRAS)
  atmsigd_DEPENDENCIES = mess.c $(atmsigd_XTRAS)
  CLEANFILES = mess.c
  sysconf_DATA = atmsigd.conf
@@ -63,7 +63,7 @@
  sw_debug_XTRAS = $(top_builddir)/src/switch/libsw.a \
  			$(top_builddir)/src/lib/libatm.la
 -sw_debug_LDADD = $(sw_debug_XTRAS) -lfl
-+sw_debug_LDADD = $(sw_debug_XTRAS) 
++sw_debug_LDADD = $(sw_debug_XTRAS)
  			
  sw_debug_DEPENDENCIES = $(sw_debug_XTRAS)
  
@@ -86,7 +86,7 @@
  sw_tcp_XTRAS = $(top_builddir)/src/switch/libsw.a \
  		$(top_builddir)/src/lib/libatm.la
 -sw_tcp_LDADD = $(sw_tcp_XTRAS) -lfl
-+sw_tcp_LDADD = $(sw_tcp_XTRAS) 
++sw_tcp_LDADD = $(sw_tcp_XTRAS)
  sw_tcp_DEPENDENCIES = $(sw_tcp_XTRAS)
  
  EXTRA_DIST = mkfiles README
@@ -97,7 +97,7 @@
  		$(top_builddir)/src/lib/libatm.la
  
 -sw_tcp_LDADD = $(sw_tcp_XTRAS) -lfl
-+sw_tcp_LDADD = $(sw_tcp_XTRAS) 
++sw_tcp_LDADD = $(sw_tcp_XTRAS)
  sw_tcp_DEPENDENCIES = $(sw_tcp_XTRAS)
  EXTRA_DIST = mkfiles README
  all: all-am

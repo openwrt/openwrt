@@ -81,7 +81,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +**
 +** FILE NAME    : ifxmips_fixup_pcie.c
 +** PROJECT      : IFX UEIP for VRX200
-+** MODULES      : PCIe 
++** MODULES      : PCIe
 +**
 +** DATE         : 02 Mar 2009
 +** AUTHOR       : Lei Chuanhua
@@ -100,7 +100,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +*******************************************************************************/
 +/*!
 + \file ifxmips_fixup_pcie.c
-+ \ingroup IFX_PCIE  
++ \ingroup IFX_PCIE
 + \brief PCIe Fixup functions source file
 +*/
 +#include <linux/pci.h>
@@ -118,11 +118,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +    IFX_PCIE_PRINT(PCIE_MSG_FIXUP, "%s dev %s: enter\n", __func__, pci_name(dev));
 +
-+    printk("%s: fixup host controller %s (%04x:%04x)\n", 
-+        __func__, pci_name(dev), dev->vendor, dev->device); 
++    printk("%s: fixup host controller %s (%04x:%04x)\n",
++        __func__, pci_name(dev), dev->vendor, dev->device);
 +
 +   /* Setup COMMAND register */
-+    reg = PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER /* | 
++    reg = PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER /* |
 +          PCI_COMMAND_INTX_DISABLE */| PCI_COMMAND_SERR;
 +    pci_write_config_word(dev, PCI_COMMAND, reg);
 +    IFX_PCIE_PRINT(PCIE_MSG_FIXUP, "%s dev %s: exit\n", __func__, pci_name(dev));
@@ -213,7 +213,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define IFXMIPS_PCI_COMMON_H
 +#include <linux/version.h>
 +/*!
-+ \defgroup IFX_PCI_COM  IFX PCI/PCIe common parts for OS integration  
++ \defgroup IFX_PCI_COM  IFX PCI/PCIe common parts for OS integration
 + \brief  PCI/PCIe common parts
 +*/
 +
@@ -379,8 +379,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    u32 reg;
 +    /*
-+     * BAR[0:1] readonly register 
-+     * RC contains only minimal BARs for packets mapped to this device 
++     * BAR[0:1] readonly register
++     * RC contains only minimal BARs for packets mapped to this device
 +     * Mem/IO filters defines a range of memory occupied by memory mapped IO devices that
 +     * reside on the downstream side fo the bridge.
 +     */
@@ -402,12 +402,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#else
 +    /* PCIe_PBML, same as MBML */
 +    IFX_REG_W32(IFX_REG_R32(PCIE_MBML(pcie_port)), PCIE_PMBL(pcie_port));
-+#endif 
++#endif
 +
 +    /* IO Address Range */
 +    reg = SM((PCIE_IO_PHY_PORT_TO_END(pcie_port) >> 12), PCIE_IOBLSECS_IO_LIMIT_ADDR)
 +        | SM((PCIE_IO_PHY_PORT_TO_BASE(pcie_port) >> 12), PCIE_IOBLSECS_IO_BASE_ADDR);
-+#ifdef IFX_PCIE_IO_32BIT    
++#ifdef IFX_PCIE_IO_32BIT
 +    reg |= PCIE_IOBLSECS_32BIT_IO_ADDR;
 +#endif /* IFX_PCIE_IO_32BIT */
 +    IFX_REG_W32(reg, PCIE_IOBLSECS(pcie_port));
@@ -438,8 +438,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    /* Set Maximum Read Request size for the device as a Requestor */
 +    reg = IFX_REG_R32(PCIE_DCTLSTS(pcie_port));
 +
-+    /* 
-+     * Request size can be larger than the MPS used, but the completions returned 
++    /*
++     * Request size can be larger than the MPS used, but the completions returned
 +     * for the read will be bounded by the MPS size.
 +     * In our system, Max request size depends on AHB burst size. It is 64 bytes.
 +     * but we set it as 128 as minimum one.
@@ -459,7 +459,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    u32 reg;
 +
 +    /*
-+     * XXX, Link capability register, bit 18 for EP CLKREQ# dynamic clock management for L1, L2/3 CPM 
++     * XXX, Link capability register, bit 18 for EP CLKREQ# dynamic clock management for L1, L2/3 CPM
 +     * L0s is reported during link training via TS1 order set by N_FTS
 +     */
 +    reg = IFX_REG_R32(PCIE_LCAP(pcie_port));
@@ -474,8 +474,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    reg &= ~PCIE_LCTLSTS_LINK_DISABLE;
 +
 +#ifdef CONFIG_PCIEASPM
-+    /*  
-+     * We use the same physical reference clock that the platform provides on the connector 
++    /*
++     * We use the same physical reference clock that the platform provides on the connector
 +     * It paved the way for ASPM to calculate the new exit Latency
 +     */
 +    reg |= PCIE_LCTLSTS_SLOT_CLK_CFG;
@@ -489,9 +489,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    reg &= ~PCIE_LCTLSTS_ASPM_ENABLE;
 +#endif /* CONFIG_PCIEASPM */
 +
-+    /* 
-+     * The maximum size of any completion with data packet is bounded by the MPS setting 
-+     * in  device control register 
++    /*
++     * The maximum size of any completion with data packet is bounded by the MPS setting
++     * in  device control register
 +     */
 +
 +    /* RCB may cause multiple split transactions, two options available, we use 64 byte RCB */
@@ -504,9 +504,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	u32 reg;
 +
-+	/* 
-+	* Forward ERR_COR, ERR_NONFATAL, ERR_FATAL to the backbone 
-+	* Poisoned write TLPs and completions indicating poisoned TLPs will set the PCIe_PCICMDSTS.MDPE 
++	/*
++	* Forward ERR_COR, ERR_NONFATAL, ERR_FATAL to the backbone
++	* Poisoned write TLPs and completions indicating poisoned TLPs will set the PCIe_PCICMDSTS.MDPE
 +	*/
 +	reg = IFX_REG_R32(PCIE_INTRBCTRL(pcie_port));
 +	reg |= PCIE_INTRBCTRL_SERR_ENABLE | PCIE_INTRBCTRL_PARITY_ERR_RESP_ENABLE;
@@ -694,7 +694,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +/*
-+ * The numbers below are directly from the PCIe spec table 3-4/5. 
++ * The numbers below are directly from the PCIe spec table 3-4/5.
 + */
 +static inline void pcie_replay_time_update(int pcie_port)
 +{
@@ -775,7 +775,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	/* Bus zero only has RC itself
-+	* XXX, check if EP will be integrated 
++	* XXX, check if EP will be integrated
 +	*/
 +	if ((bus == 0) && (dev != 0)) {
 +		return 0;
@@ -786,8 +786,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return 0;
 +	}
 +
-+	/* 
-+	 * PCIe is PtP link, one bus only supports only one device 
++	/*
++	 * PCIe is PtP link, one bus only supports only one device
 +	 * except bus zero and PCIe switch which is virtual bus device
 +	 * The following two conditions really depends on the system design
 +	 * and attached the device.
@@ -893,29 +893,29 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        goto out;
 +    }
 +
-+    /* 
-+     * If we are second controller, we have to cheat OS so that it assume 
++    /*
++     * If we are second controller, we have to cheat OS so that it assume
 +     * its bus number starts from 0 in host controller
 +     */
 +    bus_number = ifx_pcie_bus_nr_deduct(bus_number, pcie_port);
 +
-+    /* 
-+     * We need to force the bus number to be zero on the root 
-+     * bus. Linux numbers the 2nd root bus to start after all 
-+     * busses on root 0. 
-+     */ 
++    /*
++     * We need to force the bus number to be zero on the root
++     * bus. Linux numbers the 2nd root bus to start after all
++     * busses on root 0.
++     */
 +    if (bus->parent == NULL) {
-+        bus_number = 0; 
++        bus_number = 0;
 +    }
 +
-+    /* 
-+     * PCIe only has a single device connected to it. It is 
-+     * always device ID 0. Don't bother doing reads for other 
-+     * device IDs on the first segment. 
-+     */ 
++    /*
++     * PCIe only has a single device connected to it. It is
++     * always device ID 0. Don't bother doing reads for other
++     * device IDs on the first segment.
++     */
 +    if ((bus_number == 0) && (PCI_SLOT(devfn) != 0)) {
 +        ret = PCIBIOS_FUNC_NOT_SUPPORTED;
-+        goto out; 
++        goto out;
 +    }
 +
 +    if (pcie_valid_config(pcie_port, bus_number, PCI_SLOT(devfn)) == 0) {
@@ -986,19 +986,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		ret = PCIBIOS_BAD_REGISTER_NUMBER;
 +		goto out;
 +	}
-+	/* 
-+	* If we are second controller, we have to cheat OS so that it assume 
++	/*
++	* If we are second controller, we have to cheat OS so that it assume
 +	* its bus number starts from 0 in host controller
 +	*/
 +	bus_number = ifx_pcie_bus_nr_deduct(bus_number, pcie_port);
 +
-+	/* 
-+	* We need to force the bus number to be zero on the root 
-+	* bus. Linux numbers the 2nd root bus to start after all 
-+	* busses on root 0. 
-+	*/ 
++	/*
++	* We need to force the bus number to be zero on the root
++	* bus. Linux numbers the 2nd root bus to start after all
++	* busses on root 0.
++	*/
 +	if (bus->parent == NULL) {
-+		bus_number = 0; 
++		bus_number = 0;
 +	}
 +
 +	if (pcie_valid_config(pcie_port, bus_number, PCI_SLOT(devfn)) == 0) {
@@ -1009,7 +1009,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* XXX, some PCIe device may need some delay */
 +	PCIE_IRQ_LOCK(ifx_pcie_lock);
 +
-+	/* 
++	/*
 +	* To configure the correct bus topology using native way, we have to cheat Os so that
 +	* it can configure the PCIe hardware correctly.
 +	*/
@@ -1135,12 +1135,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    u16 config;
 +#ifdef IFX_PCIE_ERROR_INT
-+    u32 dconfig; 
++    u32 dconfig;
 +    int pos;
 +#endif
 +
-+    /* Enable reporting System errors and parity errors on all devices */ 
-+    /* Enable parity checking and error reporting */ 
++    /* Enable reporting System errors and parity errors on all devices */
++    /* Enable parity checking and error reporting */
 +    pci_read_config_word(dev, PCI_COMMAND, &config);
 +    config |= PCI_COMMAND_PARITY | PCI_COMMAND_SERR /*| PCI_COMMAND_INVALIDATE |
 +          PCI_COMMAND_FAST_BACK*/;
@@ -1168,7 +1168,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        pci_read_config_word(dev, pos + PCI_EXP_DEVSTA, &config);
 +        pci_write_config_word(dev, pos + PCI_EXP_DEVSTA, config);
 +
-+        /* Update Device Control */ 
++        /* Update Device Control */
 +        pci_read_config_word(dev, pos + PCI_EXP_DEVCTL, &config);
 +        /* Correctable Error Reporting */
 +        config |= PCI_EXP_DEVCTL_CERE;
@@ -1184,17 +1184,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    /* Find the Advanced Error Reporting capability */
 +    pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ERR);
 +    if (pos) {
-+        /* Clear Uncorrectable Error Status */ 
++        /* Clear Uncorrectable Error Status */
 +        pci_read_config_dword(dev, pos + PCI_ERR_UNCOR_STATUS, &dconfig);
 +        pci_write_config_dword(dev, pos + PCI_ERR_UNCOR_STATUS, dconfig);
 +        /* Enable reporting of all uncorrectable errors */
 +        /* Uncorrectable Error Mask - turned on bits disable errors */
 +        pci_write_config_dword(dev, pos + PCI_ERR_UNCOR_MASK, 0);
-+        /* 
-+        * Leave severity at HW default. This only controls if 
-+        * errors are reported as uncorrectable or 
-+        * correctable, not if the error is reported. 
-+        */ 
++        /*
++        * Leave severity at HW default. This only controls if
++        * errors are reported as uncorrectable or
++        * correctable, not if the error is reported.
++        */
 +        /* PCI_ERR_UNCOR_SEVER - Uncorrectable Error Severity */
 +        /* Clear Correctable Error Status */
 +        pci_read_config_dword(dev, pos + PCI_ERR_COR_STATUS, &dconfig);
@@ -1202,7 +1202,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        /* Enable reporting of all correctable errors */
 +        /* Correctable Error Mask - turned on bits disable errors */
 +        pci_write_config_dword(dev, pos + PCI_ERR_COR_MASK, 0);
-+        /* Advanced Error Capabilities */ 
++        /* Advanced Error Capabilities */
 +        pci_read_config_dword(dev, pos + PCI_ERR_CAP, &dconfig);
 +        /* ECRC Generation Enable */
 +        if (dconfig & PCI_ERR_CAP_ECRC_GENC) {
@@ -1219,7 +1219,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        pci_write_config_dword(dev, pos + PCI_ERR_ROOT_COMMAND,
 +              PCI_ERR_ROOT_CMD_COR_EN |
 +              PCI_ERR_ROOT_CMD_NONFATAL_EN |
-+              PCI_ERR_ROOT_CMD_FATAL_EN); 
++              PCI_ERR_ROOT_CMD_FATAL_EN);
 +        /* Clear the Root status register */
 +        pci_read_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, &dconfig);
 +        pci_write_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, dconfig);
@@ -1240,9 +1240,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	pcie_ep_gpio_rst_init(pcie_port);
 +
-+	/* 
-+	* XXX, PCIe elastic buffer bug will cause not to be detected. One more 
-+	* reset PCIe PHY will solve this issue 
++	/*
++	* XXX, PCIe elastic buffer bug will cause not to be detected. One more
++	* reset PCIe PHY will solve this issue
 +	*/
 +	for (i = 0; i < IFX_PCIE_PHY_LOOP_CNT; i++) {
 +		/* Disable PCIe PHY Analog part for sanity check */
@@ -1300,10 +1300,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    pcie_ahb_pmu_setup();
 +
 +    startup_port = IFX_PCIE_PORT0;
-+    
++
 +    for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
 +	if (pcie_rc_initialize(pcie_port) == 0) {
-+	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n", 
++	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n",
 +                 __func__, PCIE_CFG_PORT_TO_BASE(pcie_port));
 +            /* Otherwise, warning will pop up */
 +            io_map_base = ioremap(PCIE_IO_PHY_PORT_TO_BASE(pcie_port), PCIE_IO_SIZE);
@@ -1316,8 +1316,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +            register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
 +            /* XXX, clear error status */
 +
-+            IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: mem_resource 0x%p, io_resource 0x%p\n", 
-+                              __func__, &ifx_pcie_controller[pcie_port].pcic.mem_resource, 
++            IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: mem_resource 0x%p, io_resource 0x%p\n",
++                              __func__, &ifx_pcie_controller[pcie_port].pcic.mem_resource,
 +                              &ifx_pcie_controller[pcie_port].pcic.io_resource);
 +
 +        #ifdef IFX_PCIE_ERROR_INT
@@ -1368,8 +1368,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include "ifxmips_pcie_reg.h"
 +
 +/*!
-+ \defgroup IFX_PCIE  PCI Express bus driver module   
-+ \brief  PCI Express IP module support VRX200 
++ \defgroup IFX_PCIE  PCI Express bus driver module
++ \brief  PCI Express IP module support VRX200
 +*/
 +
 +/*!
@@ -1380,7 +1380,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +/*!
 + \file ifxmips_pcie.h
-+ \ingroup IFX_PCIE  
++ \ingroup IFX_PCIE
 + \brief header file for PCIe module common header file
 +*/
 +#define PCIE_IRQ_LOCK(lock) do {             \
@@ -1420,7 +1420,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        ifx_pcie_debug((_fmt), ##args);          \
 +} while (0)
 +
-+#define INLINE 
++#define INLINE
 +#else
 +#define IFX_PCIE_PRINT(_m, _fmt, args...)   \
 +    do {} while(0)
@@ -1429,7 +1429,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +struct ifx_pci_controller {
 +	struct pci_controller   pcic;
-+    
++
 +	/* RC specific, per host bus information */
 +	u32   port;  /* Port index, 0 -- 1st core, 1 -- 2nd core */
 +};
@@ -1504,14 +1504,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    ifx_ebu_led_enable();
 +    if (pcie_port == 0) {
-+        ifx_ebu_led_set_data(11, 1);        
++        ifx_ebu_led_set_data(11, 1);
 +    }
 +    else {
-+        ifx_ebu_led_set_data(12, 1);  
++        ifx_ebu_led_set_data(12, 1);
 +    }
 +}
 +
-+static inline void pcie_ahb_pmu_setup(void) 
++static inline void pcie_ahb_pmu_setup(void)
 +{
 +    /* XXX, moved to CGU to control AHBM */
 +}
@@ -1692,7 +1692,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        PCIE0_CTRL_PMU_SETUP(IFX_PMU_ENABLE);
 +    }
 +    else {
-+        PCIE1_CTRL_PMU_SETUP(IFX_PMU_ENABLE); 
++        PCIE1_CTRL_PMU_SETUP(IFX_PMU_ENABLE);
 +    }
 +}
 +
@@ -1716,7 +1716,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    if (pcie_port == IFX_PCIE_PORT1) { /* Port 1 must check if there are two cores enabled */
 +        if (pcibios_host_nr() > 1) {
 +            tbus_number -= pcibios_1st_host_bus_nr();
-+        }        
++        }
 +    }
 +#endif /* CONFIG_IFX_PCI */
 +    return tbus_number;
@@ -1808,7 +1808,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +/*!
 + \file ifxmips_pcie_msi.c
-+ \ingroup IFX_PCIE 
++ \ingroup IFX_PCIE
 + \brief PCIe MSI OS interface file
 +*/
 +
@@ -1860,15 +1860,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    const u32 msi_phy_base;
 +    const ifx_msi_irq_idx_t msi_irq_idx[IFX_MSI_IRQ_NUM];
 +    /*
-+     * Each bit in msi_free_irq_bitmask represents a MSI interrupt that is 
++     * Each bit in msi_free_irq_bitmask represents a MSI interrupt that is
 +     * in use.
 +     */
 +    u16 msi_free_irq_bitmask;
 +
 +    /*
-+     * Each bit in msi_multiple_irq_bitmask tells that the device using 
-+     * this bit in msi_free_irq_bitmask is also using the next bit. This 
-+     * is used so we can disable all of the MSI interrupts when a device 
++     * Each bit in msi_multiple_irq_bitmask tells that the device using
++     * this bit in msi_free_irq_bitmask is also using the next bit. This
++     * is used so we can disable all of the MSI interrupts when a device
 +     * uses multiple.
 +     */
 +    u16 msi_multiple_irq_bitmask;
@@ -1912,10 +1912,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* CONFIG_IFX_PCIE_2ND_CORE */
 +};
 +
-+/* 
-+ * This lock controls updates to msi_free_irq_bitmask, 
++/*
++ * This lock controls updates to msi_free_irq_bitmask,
 + * msi_multiple_irq_bitmask and pic register settting
-+ */ 
++ */
 +static DEFINE_SPINLOCK(ifx_pcie_msi_lock);
 +
 +void pcie_msi_pic_init(int pcie_port)
@@ -1925,22 +1925,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    spin_unlock(&ifx_pcie_msi_lock);
 +}
 +
-+/** 
++/**
 + * \fn int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
-+ * \brief Called when a driver request MSI interrupts instead of the 
-+ * legacy INT A-D. This routine will allocate multiple interrupts 
-+ * for MSI devices that support them. A device can override this by 
-+ * programming the MSI control bits [6:4] before calling 
-+ * pci_enable_msi(). 
-+ * 
-+ * \param[in] pdev   Device requesting MSI interrupts 
-+ * \param[in] desc   MSI descriptor 
-+ * 
++ * \brief Called when a driver request MSI interrupts instead of the
++ * legacy INT A-D. This routine will allocate multiple interrupts
++ * for MSI devices that support them. A device can override this by
++ * programming the MSI control bits [6:4] before calling
++ * pci_enable_msi().
++ *
++ * \param[in] pdev   Device requesting MSI interrupts
++ * \param[in] desc   MSI descriptor
++ *
 + * \return   -EINVAL Invalid pcie root port or invalid msi bit
 + * \return    0        OK
 + * \ingroup IFX_PCIE_MSI
 + */
-+int 
++int
 +arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 +{
 +    int  irq, pos;
@@ -1963,27 +1963,27 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +
 +    /*
-+     * Read the MSI config to figure out how many IRQs this device 
-+     * wants.  Most devices only want 1, which will give 
-+     * configured_private_bits and request_private_bits equal 0. 
++     * Read the MSI config to figure out how many IRQs this device
++     * wants.  Most devices only want 1, which will give
++     * configured_private_bits and request_private_bits equal 0.
 +     */
 +    pci_read_config_word(pdev, desc->msi_attrib.pos + PCI_MSI_FLAGS, &control);
 +
 +    /*
-+     * If the number of private bits has been configured then use 
-+     * that value instead of the requested number. This gives the 
-+     * driver the chance to override the number of interrupts 
-+     * before calling pci_enable_msi(). 
++     * If the number of private bits has been configured then use
++     * that value instead of the requested number. This gives the
++     * driver the chance to override the number of interrupts
++     * before calling pci_enable_msi().
 +     */
-+    configured_private_bits = (control & PCI_MSI_FLAGS_QSIZE) >> 4; 
++    configured_private_bits = (control & PCI_MSI_FLAGS_QSIZE) >> 4;
 +    if (configured_private_bits == 0) {
 +        /* Nothing is configured, so use the hardware requested size */
 +        request_private_bits = (control & PCI_MSI_FLAGS_QMASK) >> 1;
 +    }
 +    else {
 +        /*
-+         * Use the number of configured bits, assuming the 
-+         * driver wanted to override the hardware request 
++         * Use the number of configured bits, assuming the
++         * driver wanted to override the hardware request
 +         * value.
 +         */
 +        request_private_bits = configured_private_bits;
@@ -2007,21 +2007,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    search_mask = (1 << irq_step) - 1;
 +
 +    /*
-+     * We're going to search msi_free_irq_bitmask_lock for zero 
-+     * bits. This represents an MSI interrupt number that isn't in 
++     * We're going to search msi_free_irq_bitmask_lock for zero
++     * bits. This represents an MSI interrupt number that isn't in
 +     * use.
 +     */
 +    spin_lock(&ifx_pcie_msi_lock);
 +    for (pos = 0; pos < IFX_MSI_IRQ_NUM; pos += irq_step) {
 +        if ((msi_irqs[pcie_port].msi_free_irq_bitmask & (search_mask << pos)) == 0) {
-+            msi_irqs[pcie_port].msi_free_irq_bitmask |= search_mask << pos; 
++            msi_irqs[pcie_port].msi_free_irq_bitmask |= search_mask << pos;
 +            msi_irqs[pcie_port].msi_multiple_irq_bitmask |= (search_mask >> 1) << pos;
-+            break; 
++            break;
 +        }
 +    }
-+    spin_unlock(&ifx_pcie_msi_lock); 
++    spin_unlock(&ifx_pcie_msi_lock);
 +
-+    /* Make sure the search for available interrupts didn't fail */ 
++    /* Make sure the search for available interrupts didn't fail */
 +    if (pos >= IFX_MSI_IRQ_NUM) {
 +        if (request_private_bits) {
 +            IFX_PCIE_PRINT(PCIE_MSG_MSI, "%s: Unable to find %d free "
@@ -2033,17 +2033,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +            printk(KERN_ERR "%s: Unable to find a free MSI interrupt\n", __func__);
 +            return -EINVAL;
 +        }
-+    } 
++    }
 +    irq = msi_irqs[pcie_port].msi_irq_idx[pos].irq;
 +    irq_idx = msi_irqs[pcie_port].msi_irq_idx[pos].idx;
 +
 +    IFX_PCIE_PRINT(PCIE_MSG_MSI, "pos %d, irq %d irq_idx %d\n", pos, irq, irq_idx);
 +
 +    /*
-+     * Initialize MSI. This has to match the memory-write endianess from the device 
++     * Initialize MSI. This has to match the memory-write endianess from the device
 +     * Address bits [23:12]
 +     */
-+    spin_lock(&ifx_pcie_msi_lock); 
++    spin_lock(&ifx_pcie_msi_lock);
 +    msi_irqs[pcie_port].msi_pic_p->pic_table[pos] = SM(irq_idx, IFX_MSI_PIC_INT_LINE) |
 +                    SM((msi_irqs[pcie_port].msi_phy_base >> 12), IFX_MSI_PIC_MSG_ADDR) |
 +                    SM((1 << pos), IFX_MSI_PIC_MSG_DATA);
@@ -2087,27 +2087,27 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +#endif /* CONFIG_IFX_PCIE_2ND_CORE */
 +    else {
-+        printk(KERN_ERR "%s: Attempted to teardown illegal " 
++        printk(KERN_ERR "%s: Attempted to teardown illegal "
 +            "MSI interrupt (%d)\n", __func__, irq);
 +        ret = -EINVAL;
 +    }
 +    return ret;
 +}
 +
-+/** 
++/**
 + * \fn void arch_teardown_msi_irq(unsigned int irq)
-+ * \brief Called when a device no longer needs its MSI interrupts. All 
-+ * MSI interrupts for the device are freed. 
-+ * 
++ * \brief Called when a device no longer needs its MSI interrupts. All
++ * MSI interrupts for the device are freed.
++ *
 + * \param irq   The devices first irq number. There may be multple in sequence.
 + * \return none
 + * \ingroup IFX_PCIE_MSI
 + */
-+void 
++void
 +arch_teardown_msi_irq(unsigned int irq)
 +{
 +    int pos;
-+    int number_irqs; 
++    int number_irqs;
 +    u16 bitmask;
 +    int pcie_port;
 +
@@ -2119,11 +2119,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        return;
 +    }
 +
-+    /* Shift the mask to the correct bit location, not always correct 
++    /* Shift the mask to the correct bit location, not always correct
 +     * Probally, the first match will be chosen.
 +     */
 +    for (pos = 0; pos < IFX_MSI_IRQ_NUM; pos++) {
-+        if ((msi_irqs[pcie_port].msi_irq_idx[pos].irq == irq) 
++        if ((msi_irqs[pcie_port].msi_irq_idx[pos].irq == irq)
 +            && (msi_irqs[pcie_port].msi_free_irq_bitmask & ( 1 << pos))) {
 +            break;
 +        }
@@ -2136,14 +2136,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    /* Disable this entry */
 +    msi_irqs[pcie_port].msi_pic_p->pic_table[pos] |= IFX_MSI_PCI_INT_DISABLE;
 +    msi_irqs[pcie_port].msi_pic_p->pic_table[pos] &= ~(IFX_MSI_PIC_INT_LINE | IFX_MSI_PIC_MSG_ADDR | IFX_MSI_PIC_MSG_DATA);
-+    spin_unlock(&ifx_pcie_msi_lock); 
++    spin_unlock(&ifx_pcie_msi_lock);
 +    /*
 +     * Count the number of IRQs we need to free by looking at the
 +     * msi_multiple_irq_bitmask. Each bit set means that the next
 +     * IRQ is also owned by this device.
-+     */ 
-+    number_irqs = 0; 
-+    while (((pos + number_irqs) < IFX_MSI_IRQ_NUM) && 
++     */
++    number_irqs = 0;
++    while (((pos + number_irqs) < IFX_MSI_IRQ_NUM) &&
 +        (msi_irqs[pcie_port].msi_multiple_irq_bitmask & (1 << (pos + number_irqs)))) {
 +        number_irqs++;
 +    }
@@ -2196,7 +2196,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +*******************************************************************************/
 +/*!
 + \file ifxmips_pcie_phy.c
-+ \ingroup IFX_PCIE  
++ \ingroup IFX_PCIE
 + \brief PCIe PHY PLL register programming source file
 +*/
 +#include <linux/types.h>
@@ -2211,7 +2211,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define IFX_PCIE_PHY_REG_WRITE16(__addr, __data) \
 +    ((*(volatile u16 *) (__addr)) = (__data))
-+    
++
 +#define IFX_PCIE_PHY_REG_READ16(__addr)  \
 +    (*(volatile u16 *) (__addr))
 +
@@ -2232,7 +2232,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#ifdef IFX_PCI_PHY_REG_DUMP
 +static void
-+pcie_phy_reg_dump(int pcie_port) 
++pcie_phy_reg_dump(int pcie_port)
 +{
 +    printk("PLL REGFILE\n");
 +    printk("PCIE_PHY_PLL_CTRL1    0x%04x\n", IFX_PCIE_PHY_REG16(PCIE_PHY_PLL_CTRL1(pcie_port)));
@@ -2316,8 +2316,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +#ifdef CONFIG_IFX_PCIE_PHY_36MHZ_MODE
-+static void 
-+pcie_phy_36mhz_mode_setup(int pcie_port) 
++static void
++pcie_phy_36mhz_mode_setup(int pcie_port)
 +{
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 +#ifdef IFX_PCI_PHY_REG_DUMP
@@ -2360,8 +2360,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* CONFIG_IFX_PCIE_PHY_36MHZ_MODE */
 +
 +#ifdef CONFIG_IFX_PCIE_PHY_36MHZ_SSC_MODE
-+static void 
-+pcie_phy_36mhz_ssc_mode_setup(int pcie_port) 
++static void
++pcie_phy_36mhz_ssc_mode_setup(int pcie_port)
 +{
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 +#ifdef IFX_PCI_PHY_REG_DUMP
@@ -2435,14 +2435,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +    /* reduced CDR BW to avoid glitches */
 +    IFX_PCIE_PHY_REG(PCIE_PHY_RX1_CDR(pcie_port), 0x0235, 0xFFFF);
-+    
++
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d exit\n", __func__, pcie_port);
 +}
 +#endif /* CONFIG_IFX_PCIE_PHY_36MHZ_SSC_MODE */
 +
 +#ifdef CONFIG_IFX_PCIE_PHY_25MHZ_MODE
-+static void 
-+pcie_phy_25mhz_mode_setup(int pcie_port) 
++static void
++pcie_phy_25mhz_mode_setup(int pcie_port)
 +{
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 +#ifdef IFX_PCI_PHY_REG_DUMP
@@ -2452,7 +2452,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    /* en_const_sdm */
 +    IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL2(pcie_port), 0x0100, 0x0100);
 +
-+    /* pll_ensdm */    
++    /* pll_ensdm */
 +    IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL2(pcie_port), 0x0000, 0x0200);
 +
 +    /* en_ext_mmd_div_ratio*/
@@ -2472,14 +2472,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* CONFIG_IFX_PCIE_PHY_25MHZ_MODE */
 +
 +#ifdef CONFIG_IFX_PCIE_PHY_100MHZ_MODE
-+static void 
-+pcie_phy_100mhz_mode_setup(int pcie_port) 
++static void
++pcie_phy_100mhz_mode_setup(int pcie_port)
 +{
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "%s pcie_port %d enter\n", __func__, pcie_port);
 +#ifdef IFX_PCI_PHY_REG_DUMP
 +    IFX_PCIE_PRINT(PCIE_MSG_PHY, "Initial PHY register dump\n");
 +    pcie_phy_reg_dump(pcie_port);
-+#endif 
++#endif
 +    /* en_ext_mmd_div_ratio */
 +    IFX_PCIE_PHY_REG(PCIE_PHY_PLL_CTRL3(pcie_port), 0x0000, 0x0002);
 +
@@ -2532,8 +2532,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    return 0;
 +}
 +
-+static void 
-+pcie_phy_load_enable(int pcie_port, int slice) 
++static void
++pcie_phy_load_enable(int pcie_port, int slice)
 +{
 +    /* Set the load_en of tx/rx slice to '1' */
 +    switch (slice) {
@@ -2549,10 +2549,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +}
 +
-+static void 
-+pcie_phy_load_disable(int pcie_port, int slice) 
-+{ 
-+    /* set the load_en of tx/rx slice to '0' */ 
++static void
++pcie_phy_load_disable(int pcie_port, int slice)
++{
++    /* set the load_en of tx/rx slice to '0' */
 +    switch (slice) {
 +        case 1:
 +            IFX_PCIE_PHY_REG(PCIE_PHY_TX1_CTRL1(pcie_port), 0x0000, 0x0010);
@@ -2560,13 +2560,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        case 2:
 +            IFX_PCIE_PHY_REG(PCIE_PHY_TX2_CTRL1(pcie_port), 0x0000, 0x0010);
 +            break;
-+        case 3: 
++        case 3:
 +            IFX_PCIE_PHY_REG(PCIE_PHY_RX1_CTRL1(pcie_port), 0x0000, 0x0002);
 +            break;
 +    }
 +}
 +
-+static void 
++static void
 +pcie_phy_load_war(int pcie_port)
 +{
 +    int slice;
@@ -2578,7 +2578,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +}
 +
-+static void 
++static void
 +pcie_phy_tx2_modulation(int pcie_port)
 +{
 +    IFX_PCIE_PHY_REG(PCIE_PHY_TX2_MOD1(pcie_port), 0x1FFE, 0xFFFF);
@@ -2588,7 +2588,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    IFX_PCIE_PHY_REG(PCIE_PHY_TX2_MOD3(pcie_port), 0x0001, 0xFFFF);
 +}
 +
-+static void 
++static void
 +pcie_phy_tx1_modulation(int pcie_port)
 +{
 +    IFX_PCIE_PHY_REG(PCIE_PHY_TX1_MOD1(pcie_port), 0x1FFE, 0xFFFF);
@@ -2603,7 +2603,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    int i;
 +
-+#define PCIE_PHY_MODULATION_NUM 5 
++#define PCIE_PHY_MODULATION_NUM 5
 +    for (i = 0; i < PCIE_PHY_MODULATION_NUM; i++) {
 +        pcie_phy_tx2_modulation(pcie_port);
 +        pcie_phy_tx1_modulation(pcie_port);
@@ -2684,7 +2684,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +/*!
 + \file ifxmips_pcie_pm.c
-+ \ingroup IFX_PCIE    
++ \ingroup IFX_PCIE
 + \brief source file for PCIE Root Complex Driver Power Management
 +*/
 +
@@ -2707,7 +2707,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <asm/ifx/ifx_pmcu.h>
 +#include "ifxmips_pcie_pm.h"
 +
-+/** 
++/**
 + * \fn static IFX_PMCU_RETURN_t ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
 + * \brief the callback function to request pmcu state in the power management hardware-dependent module
 + *
@@ -2718,10 +2718,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + * \return IFX_PMCU_RETURN_DENIED  Not allowed to operate power state
 + * \ingroup IFX_PCIE_PM
 + */
-+static IFX_PMCU_RETURN_t 
++static IFX_PMCU_RETURN_t
 +ifx_pcie_pmcu_state_change(IFX_PMCU_STATE_t pmcuState)
 +{
-+    switch(pmcuState) 
++    switch(pmcuState)
 +    {
 +        case IFX_PMCU_STATE_D0:
 +            return IFX_PMCU_RETURN_SUCCESS;
@@ -2736,7 +2736,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +}
 +
-+/** 
++/**
 + * \fn static IFX_PMCU_RETURN_t ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
 + * \brief the callback function to get pmcu state in the power management hardware-dependent module
 +
@@ -2747,7 +2747,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + * \return IFX_PMCU_RETURN_DENIED  Not allowed to operate power state
 + * \ingroup IFX_PCIE_PM
 + */
-+static IFX_PMCU_RETURN_t 
++static IFX_PMCU_RETURN_t
 +ifx_pcie_pmcu_state_get(IFX_PMCU_STATE_t *pmcuState)
 +{
 +    return IFX_PMCU_RETURN_SUCCESS;
@@ -2756,7 +2756,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/**
 + * \fn IFX_PMCU_RETURN_t ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 + * \brief Apply all callbacks registered to be executed before a state change for pmcuModule
-+ * 
++ *
 + * \param   pmcuModule      Module
 + * \param   newState        New state
 + * \param   oldState        Old state
@@ -2764,7 +2764,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + * \return  IFX_PMCU_RETURN_ERROR   Failed to set power state.
 + * \ingroup IFX_PCIE_PM
 + */
-+static IFX_PMCU_RETURN_t 
++static IFX_PMCU_RETURN_t
 +ifx_pcie_pmcu_prechange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 +{
 +    return IFX_PMCU_RETURN_SUCCESS;
@@ -2773,7 +2773,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/**
 + * \fn IFX_PMCU_RETURN_t ifx_pcie_pmcu_postchange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 + * \brief Apply all callbacks registered to be executed before a state change for pmcuModule
-+ * 
++ *
 + * \param   pmcuModule      Module
 + * \param   newState        New state
 + * \param   oldState        Old state
@@ -2781,13 +2781,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + * \return IFX_PMCU_RETURN_ERROR   Failed to set power state.
 + * \ingroup IFX_PCIE_PM
 + */
-+static IFX_PMCU_RETURN_t 
++static IFX_PMCU_RETURN_t
 +ifx_pcie_pmcu_postchange(IFX_PMCU_MODULE_t pmcuModule, IFX_PMCU_STATE_t newState, IFX_PMCU_STATE_t oldState)
 +{
 +    return IFX_PMCU_RETURN_SUCCESS;
 +}
 +
-+/** 
++/**
 + * \fn static void ifx_pcie_pmcu_init(void)
 + * \brief Register with central PMCU module
 + * \return none
@@ -2808,10 +2808,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    pmcuRegister.ifx_pmcu_state_get = ifx_pcie_pmcu_state_get;
 +    pmcuRegister.pre = ifx_pcie_pmcu_prechange;
 +    pmcuRegister.post= ifx_pcie_pmcu_postchange;
-+    ifx_pmcu_register(&pmcuRegister); 
++    ifx_pmcu_register(&pmcuRegister);
 +}
 +
-+/** 
++/**
 + * \fn static void ifx_pcie_pmcu_exit(void)
 + * \brief Unregister with central PMCU module
 + *
@@ -2824,7 +2824,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    IFX_PMCU_REGISTER_t pmcuUnRegister;
 +
 +   /* XXX, hook driver context */
-+   
++
 +    pmcuUnRegister.pmcuModule = IFX_PMCU_MODULE_PCIE;
 +    pmcuUnRegister.pmcuModuleNr = 0;
 +    ifx_pmcu_unregister(&pmcuUnRegister);
@@ -2857,7 +2857,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +*******************************************************************************/
 +/*!
 + \file ifxmips_pcie_pm.h
-+ \ingroup IFX_PCIE 
++ \ingroup IFX_PCIE
 + \brief header file for PCIe Root Complex Driver Power Management
 +*/
 +
@@ -2897,7 +2897,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define IFXMIPS_PCIE_REG_H
 +/*!
 + \file ifxmips_pcie_reg.h
-+ \ingroup IFX_PCIE  
++ \ingroup IFX_PCIE
 + \brief header file for PCIe module register definition
 +*/
 +/* PCIe Address Mapping Base */
@@ -3120,7 +3120,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +/* AHB Control Register, fixed bus enumeration exception */
 +#define PCIE_AHB_CTRL(X)                     (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0x78)
-+#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001 
++#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001
 +
 +/* Interrupt Enalbe Register */
 +#define PCIE_IRNEN(X)                        (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0xF4)
@@ -3566,7 +3566,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_PVC2_VC_ARB_TAB_OFFSET         0xFF000000  /* VC arbitration table offset, not support */
 +#define PCIE_PVC2_VC_ARB_TAB_OFFSET_S       24
 +
-+/* Port VC Control and Status Register */     
++/* Port VC Control and Status Register */
 +#define PCIE_PVCCRSR(X)                     (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x14C)
 +#define PCIE_PVCCRSR_LOAD_VC_ARB_TAB         0x00000001  /* Load VC Arbitration Table */
 +#define PCIE_PVCCRSR_VC_ARB_SEL              0x0000000E  /* VC Arbitration Select */
@@ -3654,7 +3654,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/* Port Link Control Register */
 +#define PCIE_PLCR(X)                         (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x710)
 +#define PCIE_PLCR_OTHER_MSG_REQ              0x00000001  /* Other Message Request */
-+#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */  
++#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */
 +#define PCIE_PLCR_LOOPBACK_EN                0x00000004  /* Loopback Enable */
 +#define PCIE_PLCR_LTSSM_HOT_RST              0x00000008  /* Force LTSSM to the hot reset */
 +#define PCIE_PLCR_DLL_LINK_EN                0x00000020  /* Enable Link initialization */
@@ -3768,7 +3768,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_VC0_PRQCR_P_HDR_CREDITS_S           12
 +#define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE          0x00E00000 /* VC0 Posted TLP Queue Mode */
 +#define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE_S        20
-+#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */    
++#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */
 +#define PCIE_VC0_PRQCR_VC_STRICT_ORDER           0x80000000 /* VC0 Ordering for Receive Queues */
 +
 +/* VC0 Non-Posted Receive Queue Control */
@@ -3823,9 +3823,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/* PHY Control Register, all zeros in VR9 */
 +#define PCIE_PHYCR(X)                           (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x814)
 +
-+/* 
-+ * PCIe PDI PHY register definition, suppose all the following 
-+ * stuff is confidential. 
++/*
++ * PCIe PDI PHY register definition, suppose all the following
++ * stuff is confidential.
 + * XXX, detailed bit definition
 + */
 +#define	PCIE_PHY_PLL_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x22 << 1))
@@ -3839,7 +3839,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define	PCIE_PHY_PLL_A_CTRL2(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2A << 1))
 +#define	PCIE_PHY_PLL_A_CTRL3(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2B << 1))
 +#define	PCIE_PHY_PLL_STATUS(X)      (PCIE_PHY_PORT_TO_BASE(X) + (0x2C << 1))
-+ 
++
 +#define PCIE_PHY_TX1_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x30 << 1))
 +#define PCIE_PHY_TX1_CTRL2(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x31 << 1))
 +#define PCIE_PHY_TX1_CTRL3(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x32 << 1))
@@ -3947,7 +3947,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    ifx_gpio_open_drain_set(IFX_PCIE_GPIO_RESET, ifx_pcie_gpio_module_id);*/
 +}
 +
-+static inline void pcie_ahb_pmu_setup(void) 
++static inline void pcie_ahb_pmu_setup(void)
 +{
 +	/* Enable AHB bus master/slave */
 +	struct clk *clk;
@@ -3967,7 +3967,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    reg |= IFX_RCU_AHB_BE_PCIE_M;
 +    reg |= IFX_RCU_AHB_BE_PCIE_S;
 +    reg &= ~IFX_RCU_AHB_BE_XBAR_M;
-+#else 
++#else
 +    reg |= IFX_RCU_AHB_BE_PCIE_M;
 +    reg &= ~IFX_RCU_AHB_BE_PCIE_S;
 +    reg &= ~IFX_RCU_AHB_BE_XBAR_M;
@@ -4225,7 +4225,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/interrupt.h>
 +/*!
 + \file ifxmips_pcie_reg.h
-+ \ingroup IFX_PCIE  
++ \ingroup IFX_PCIE
 + \brief header file for PCIe module register definition
 +*/
 +/* PCIe Address Mapping Base */
@@ -4448,7 +4448,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +/* AHB Control Register, fixed bus enumeration exception */
 +#define PCIE_AHB_CTRL(X)                     (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0x78)
-+#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001 
++#define PCIE_AHB_CTRL_BUS_ERROR_SUPPRESS     0x00000001
 +
 +/* Interrupt Enalbe Register */
 +#define PCIE_IRNEN(X)                        (volatile u32*)(PCIE_APP_PORT_TO_BASE(X) + 0xF4)
@@ -4894,7 +4894,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_PVC2_VC_ARB_TAB_OFFSET         0xFF000000  /* VC arbitration table offset, not support */
 +#define PCIE_PVC2_VC_ARB_TAB_OFFSET_S       24
 +
-+/* Port VC Control and Status Register */     
++/* Port VC Control and Status Register */
 +#define PCIE_PVCCRSR(X)                     (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x14C)
 +#define PCIE_PVCCRSR_LOAD_VC_ARB_TAB         0x00000001  /* Load VC Arbitration Table */
 +#define PCIE_PVCCRSR_VC_ARB_SEL              0x0000000E  /* VC Arbitration Select */
@@ -4982,7 +4982,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/* Port Link Control Register */
 +#define PCIE_PLCR(X)                         (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x710)
 +#define PCIE_PLCR_OTHER_MSG_REQ              0x00000001  /* Other Message Request */
-+#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */  
++#define PCIE_PLCR_SCRAMBLE_DISABLE           0x00000002  /* Scramble Disable */
 +#define PCIE_PLCR_LOOPBACK_EN                0x00000004  /* Loopback Enable */
 +#define PCIE_PLCR_LTSSM_HOT_RST              0x00000008  /* Force LTSSM to the hot reset */
 +#define PCIE_PLCR_DLL_LINK_EN                0x00000020  /* Enable Link initialization */
@@ -5096,7 +5096,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCIE_VC0_PRQCR_P_HDR_CREDITS_S           12
 +#define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE          0x00E00000 /* VC0 Posted TLP Queue Mode */
 +#define PCIE_VC0_PRQCR_P_TLP_QUEUE_MODE_S        20
-+#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */    
++#define PCIE_VC0_PRQCR_TLP_RELAX_ORDER           0x40000000 /* TLP Type Ordering for VC0 */
 +#define PCIE_VC0_PRQCR_VC_STRICT_ORDER           0x80000000 /* VC0 Ordering for Receive Queues */
 +
 +/* VC0 Non-Posted Receive Queue Control */
@@ -5151,9 +5151,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +/* PHY Control Register, all zeros in VR9 */
 +#define PCIE_PHYCR(X)                           (volatile u32*)(PCIE_RC_PORT_TO_BASE(X) + 0x814)
 +
-+/* 
-+ * PCIe PDI PHY register definition, suppose all the following 
-+ * stuff is confidential. 
++/*
++ * PCIe PDI PHY register definition, suppose all the following
++ * stuff is confidential.
 + * XXX, detailed bit definition
 + */
 +#define	PCIE_PHY_PLL_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x22 << 1))
@@ -5167,7 +5167,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define	PCIE_PHY_PLL_A_CTRL2(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2A << 1))
 +#define	PCIE_PHY_PLL_A_CTRL3(X)     (PCIE_PHY_PORT_TO_BASE(X) + (0x2B << 1))
 +#define	PCIE_PHY_PLL_STATUS(X)      (PCIE_PHY_PORT_TO_BASE(X) + (0x2C << 1))
-+ 
++
 +#define PCIE_PHY_TX1_CTRL1(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x30 << 1))
 +#define PCIE_PHY_TX1_CTRL2(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x31 << 1))
 +#define PCIE_PHY_TX1_CTRL3(X)       (PCIE_PHY_PORT_TO_BASE(X) + (0x32 << 1))
@@ -5238,7 +5238,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }                                            \
 +} while (0)
 +
-+#define INLINE 
++#define INLINE
 +#else
 +#define IFX_PCIE_PRINT(_m, _fmt, args...)   \
 +    do {} while(0)
@@ -5247,7 +5247,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +struct ifx_pci_controller {
 +	struct pci_controller   pcic;
-+    
++
 +	/* RC specific, per host bus information */
 +	u32   port;  /* Port index, 0 -- 1st core, 1 -- 2nd core */
 +};
@@ -5325,7 +5325,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    reg |= IFX_RCU_AHB_BE_PCIE_M;
 +    reg |= IFX_RCU_AHB_BE_PCIE_S;
 +    reg &= ~IFX_RCU_AHB_BE_XBAR_M;
-+#else 
++#else
 +    reg |= IFX_RCU_AHB_BE_PCIE_M;
 +    reg &= ~IFX_RCU_AHB_BE_PCIE_S;
 +    reg &= ~IFX_RCU_AHB_BE_XBAR_M;

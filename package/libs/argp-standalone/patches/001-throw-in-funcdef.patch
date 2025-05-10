@@ -64,7 +64,7 @@ No __THROW in function implementation.
  
  int
 -__option_is_short (__const struct argp_option *__opt) __THROW
-+__option_is_short (__const struct argp_option *__opt) 
++__option_is_short (__const struct argp_option *__opt)
  {
    if (__opt->flags & OPTION_DOC)
      return 0;
@@ -73,7 +73,7 @@ No __THROW in function implementation.
  
  int
 -__option_is_end (__const struct argp_option *__opt) __THROW
-+__option_is_end (__const struct argp_option *__opt) 
++__option_is_end (__const struct argp_option *__opt)
  {
    return !__opt->key && !__opt->name && !__opt->doc && !__opt->group;
  }

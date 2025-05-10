@@ -136,7 +136,7 @@ struct aes_container {
     u32 nbytes;
 
     struct ablkcipher_request arequest;
- 
+
 };
 
 aes_priv_t *aes_queue;
@@ -149,7 +149,7 @@ void hexdump(unsigned char *buf, unsigned int len)
                         buf, len, false);
 }
 
-/*! \fn void lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, 
+/*! \fn void lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg,
                              size_t nbytes, int encdec, int mode)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief main interface to AES hardware
@@ -226,7 +226,7 @@ static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     AES_DMA_MISC_CONFIG();
 
     aes->controlr.E_D = !encdec;    //encryption
-    aes->controlr.O = mode; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR 
+    aes->controlr.O = mode; //0 ECB 1 CBC 2 OFB 3 CFB 4 CTR
 
     //aes->controlr.F = 128; //default; only for CFB and OFB modes; change only for customer-specific apps
     if (mode > 0) {
@@ -240,8 +240,8 @@ static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     /* Prepare Rx buf length used in dma psuedo interrupt */
     deu_priv->deu_rx_buf = (u32 *)out_arg;
     deu_priv->deu_rx_len = nbytes;
-   
-    /* memory alignment issue */ 
+
+    /* memory alignment issue */
     dword_mem_aligned_in = (u32 *) DEU_DWORD_REORDERING(in_arg, aes_buff_in, BUFFER_IN, nbytes);
 
     dma->controlr.ALGO = 1;   //AES
@@ -274,16 +274,16 @@ static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         *((u32 *) iv_arg + 2) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
         *((u32 *) iv_arg + 3) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
     }
-   
-    return -EINPROGRESS;	
+
+    return -EINPROGRESS;
 }
 
 /* \fn static int count_sgs(struct scatterlist *sl, unsigned int total_bytes)
  * \ingroup IFX_AES_FUNCTIONS
- * \brief Counts and return the number of scatterlists 
+ * \brief Counts and return the number of scatterlists
  * \param *sl Function pointer to the scatterlist
  * \param total_bytes The total number of bytes that needs to be encrypted/decrypted
- * \return The number of scatterlists 
+ * \return The number of scatterlists
 */
 
 static int count_sgs(struct scatterlist *sl, unsigned int total_bytes)
@@ -302,7 +302,7 @@ static int count_sgs(struct scatterlist *sl, unsigned int total_bytes)
 /* \fn void lq_sg_init(struct scatterlist *src,
  *                     struct scatterlist *dst)
  * \ingroup IFX_AES_FUNCTIONS
- * \brief Maps the scatterlists into a source/destination page. 
+ * \brief Maps the scatterlists into a source/destination page.
  * \param *src Pointer to the source scatterlist
  * \param *dst Pointer to the destination scatterlist
 */
@@ -322,12 +322,12 @@ static void lq_sg_init(struct aes_container *aes_con,struct scatterlist *src,
 }
 
 
-/* \fn static void lq_sg_complete(struct aes_container *aes_con) 
+/* \fn static void lq_sg_complete(struct aes_container *aes_con)
  * \ingroup IFX_AES_FUNCTIONS
  * \brief Free the used up memory after encryt/decrypt.
 */
 
-static void lq_sg_complete(struct aes_container *aes_con) 
+static void lq_sg_complete(struct aes_container *aes_con)
 {
     unsigned long queue_flag;
 
@@ -355,9 +355,9 @@ static inline struct aes_container *aes_container_cast (
  * \ingroup IFX_AES_FUNCTIONS
  * \brief Process next packet to be encrypt/decrypt
  * \param *aes_con  AES container structure
- * \param *areq Pointer to memory location where ablkcipher_request is located 
+ * \param *areq Pointer to memory location where ablkcipher_request is located
  * \param state The state of the current packet (part of scatterlist or new packet)
- * \return -EINVAL: error, -EINPROGRESS: Crypto still running, 1: no more scatterlist 
+ * \return -EINVAL: error, -EINPROGRESS: Crypto still running, 1: no more scatterlist
 */
 
 static int process_next_packet(struct aes_container *aes_con, struct ablkcipher_request *areq,
@@ -377,17 +377,17 @@ static int process_next_packet(struct aes_container *aes_con, struct ablkcipher_
     dir = aes_con->encdec;
     mode = aes_con->mode;
     iv = aes_con->iv;
- 
+
     if (state & PROCESS_SCATTER) {
         src = scatterwalk_sg_next(areq->src);
         dst = scatterwalk_sg_next(areq->dst);
- 
+
         if (!src || !dst) {
             spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
             return 1;
         }
     }
-    else if (state & PROCESS_NEW_PACKET) { 
+    else if (state & PROCESS_NEW_PACKET) {
         src = areq->src;
         dst = areq->dst;
     }
@@ -404,7 +404,7 @@ static int process_next_packet(struct aes_container *aes_con, struct ablkcipher_
 
     remain -= inc;
     aes_con->nbytes = inc;
- 
+
     if (state & PROCESS_SCATTER) {
         aes_con->src_buf += aes_con->nbytes;
         aes_con->dst_buf += aes_con->nbytes;
@@ -444,7 +444,7 @@ static int process_next_packet(struct aes_container *aes_con, struct ablkcipher_
  * \ingroup IFX_AES_FUNCTIONS
  * \brief tasklet to signal the dequeuing of the next packet to be processed
  * \param unsigned long data Not used
- * \return void 
+ * \return void
 */
 
 static void process_queue(unsigned long data)
@@ -467,17 +467,17 @@ static int aes_crypto_thread (void *data)
     struct ablkcipher_request *areq = NULL;
     int err;
     unsigned long queue_flag;
-    
+
     daemonize("lq_aes_thread");
     printk("AES Queue Manager Starting\n");
 
     while (1)
     {
-        DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT, 
+        DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT,
                        deu_dma_priv.aes_event_flags);
 
         spin_lock_irqsave(&aes_queue->lock, queue_flag);
-   
+
         /* wait to prevent starting a crypto session before
         * exiting the dma interrupt thread.
         */
@@ -513,15 +513,15 @@ static int aes_crypto_thread (void *data)
         if (aes_con->bytes_processed == 0) {
             goto aes_done;
         }
-       
+
         /* Process new packet or the next packet in a scatterlist */
         if (aes_con->flag & PROCESS_NEW_PACKET) {
            aes_con->flag = PROCESS_SCATTER;
            err = process_next_packet(aes_con, areq, PROCESS_NEW_PACKET);
         }
-        else 
+        else
             err = process_next_packet(aes_con, areq, PROCESS_SCATTER);
- 
+
         if (err == -EINVAL) {
             areq->base.complete(&areq->base, err);
             lq_sg_complete(aes_con);
@@ -529,31 +529,31 @@ static int aes_crypto_thread (void *data)
         }
         else if (err > 0) {
             printk("src/dst returned zero in func: %s\n", __func__);
-            goto aes_done; 
+            goto aes_done;
         }
-        
+
 	continue;
 
 aes_done:
         //printk("debug line - %d, func: %s, qlen: %d\n", __LINE__, __func__, aes_queue->list.qlen);
-        areq->base.complete(&areq->base, 0);    
+        areq->base.complete(&areq->base, 0);
         lq_sg_complete(aes_con);
 
         spin_lock_irqsave(&aes_queue->lock, queue_flag);
         if (aes_queue->list.qlen > 0) {
             spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
-            tasklet_schedule(&aes_queue->aes_task); 
+            tasklet_schedule(&aes_queue->aes_task);
         }
         else {
             aes_queue->hw_status = AES_IDLE;
             spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
         }
     } //while(1)
-    
-    return 0;
-} 
 
-/* \fn static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq, 
+    return 0;
+}
+
+/* \fn static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq,
                             u8 *iv, int dir, int mode)
  * \ingroup IFX_AES_FUNCTIONS
  * \brief starts the process of queuing DEU requests
@@ -565,18 +565,18 @@ aes_done:
  * \return 0 if success
 */
 
-static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq, 
+static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq,
                             u8 *iv, int dir, int mode)
 {
-    int err = -EINVAL; 
+    int err = -EINVAL;
     unsigned long queue_flag;
     struct scatterlist *src = areq->src;
     struct scatterlist *dst = areq->dst;
     struct aes_container *aes_con = NULL;
     u32 remain, inc, nbytes = areq->nbytes;
     u32 chunk_bytes = src->length;
-    
- 
+
+
     aes_con = (struct aes_container *)kmalloc(sizeof(struct aes_container),
     	                                       GFP_KERNEL);
 
@@ -600,15 +600,15 @@ static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq
     //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n",
     //        __LINE__, __func__, nbytes, chunk_bytes);
 
-    if (remain > DEU_MAX_PACKET_SIZE) 
+    if (remain > DEU_MAX_PACKET_SIZE)
        inc = DEU_MAX_PACKET_SIZE;
     else if (remain > chunk_bytes)
-       inc = chunk_bytes; 
+       inc = chunk_bytes;
     else
        inc = remain;
-         
+
     remain -= inc;
-    lq_sg_init(aes_con, src, dst);  
+    lq_sg_init(aes_con, src, dst);
 
     if (remain <= 0)
         aes_con->complete = 1;
@@ -619,7 +619,7 @@ static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq
     aes_con->iv = iv;
     aes_con->mode = mode;
     aes_con->encdec = dir;
- 
+
     spin_lock_irqsave(&aes_queue->lock, queue_flag);
 
     if (aes_queue->hw_status == AES_STARTED || aes_queue->hw_status == AES_BUSY ||
@@ -638,12 +638,12 @@ static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq
         spin_unlock_irqrestore(&aes_queue->lock, queue_flag);
         return -EINPROGRESS;
     }
-    else if (aes_queue->hw_status == AES_IDLE) 
+    else if (aes_queue->hw_status == AES_IDLE)
         aes_queue->hw_status = AES_STARTED;
 
     aes_con->flag = PROCESS_SCATTER;
     aes_con->bytes_processed -= aes_con->nbytes;
-    /* or enqueue the whole structure so as to get back the info 
+    /* or enqueue the whole structure so as to get back the info
      * at the moment that it's queued. nbytes might be different */
     err = ablkcipher_enqueue_request(&aes_queue->list, &aes_con->arequest);
 
@@ -671,7 +671,7 @@ static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq
 static int aes_setkey(struct crypto_ablkcipher *tfm, const u8 *in_key,
                       unsigned int keylen)
 {
-    struct aes_ctx *ctx = crypto_ablkcipher_ctx(tfm); 
+    struct aes_ctx *ctx = crypto_ablkcipher_ctx(tfm);
     unsigned long *flags = (unsigned long *) &tfm->base.crt_flags;
 
     DPRINTF(2, "set_key in %s\n", __FILE__);
@@ -790,7 +790,7 @@ static int ecb_aes_encrypt (struct ablkcipher_request *areq)
  * \brief Decrypt function for AES algo
  * \param *areq Pointer to ablkcipher request in memory
  * \return 0 is success, -EINPROGRESS if encryting, EINVAL if failure
-*/ 
+*/
 static int ecb_aes_decrypt(struct ablkcipher_request *areq)
 
 {
@@ -864,7 +864,7 @@ static int cfb_aes_decrypt(struct ablkcipher_request *areq)
 
     return lq_aes_queue_mgr(ctx, areq, areq->info, CRYPTO_DIR_DECRYPT, 3);
 }
-#endif	
+#endif
 
 /* \fn static int ctr_aes_encrypt(struct ablkcipher_request *areq)
  * \ingroup IFX_AES_FUNCTIONS
@@ -877,7 +877,7 @@ static int ctr_aes_encrypt (struct ablkcipher_request *areq)
 {
     struct crypto_ablkcipher *cipher = crypto_ablkcipher_reqtfm(areq);
     struct aes_ctx *ctx = crypto_ablkcipher_ctx(cipher);
-   
+
     return lq_aes_queue_mgr(ctx, areq, areq->info, CRYPTO_DIR_ENCRYPT, 4);
 
 }
@@ -998,7 +998,7 @@ static struct lq_aes_alg aes_drivers_alg[] = {
                                 .min_keysize = AES_MIN_KEY_SIZE,
                                 .max_keysize = AES_MAX_KEY_SIZE,
                                 .ivsize = AES_BLOCK_SIZE,
-             }      
+             }
           }
      },{
          .alg = {
@@ -1073,7 +1073,7 @@ static struct lq_aes_alg aes_drivers_alg[] = {
 
 int __init lqdeu_async_aes_init (void)
 {
-    int i, j, ret = -EINVAL; 
+    int i, j, ret = -EINVAL;
 
 #define IFX_DEU_DRV_VERSION  "2.0.0"
     printk(KERN_INFO "Lantiq Technologies DEU Driver version %s\n", IFX_DEU_DRV_VERSION);
@@ -1090,16 +1090,16 @@ int __init lqdeu_async_aes_init (void)
     CRTCL_SECT_INIT;
 
 
-    printk (KERN_NOTICE "Lantiq DEU AES initialized %s %s.\n", 
+    printk (KERN_NOTICE "Lantiq DEU AES initialized %s %s.\n",
            disable_multiblock ? "" : " (multiblock)", disable_deudma ? "" : " (DMA)");
-    
+
     return ret;
 
 aes_err:
-    
-    for (j = 0; j < i; j++) 
+
+    for (j = 0; j < i; j++)
         crypto_unregister_alg(&aes_drivers_alg[j].alg);
-    
+
     printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&aes_drivers_alg[i].alg.cra_driver_name);
     return ret;
 
@@ -1119,15 +1119,15 @@ ctr_rfc3686_aes_err:
 void __exit lqdeu_fini_async_aes (void)
 {
     int i;
-  
+
     for (i = 0; i < ARRAY_SIZE(aes_drivers_alg); i++)
         crypto_unregister_alg(&aes_drivers_alg[i].alg);
 
     aes_queue->hw_status = AES_COMPLETED;
 
     DEU_WAKEUP_EVENT(deu_dma_priv.deu_thread_wait, AES_ASYNC_EVENT,
-                                 deu_dma_priv.aes_event_flags);   
+                                 deu_dma_priv.aes_event_flags);
 
-    kfree(aes_queue); 
+    kfree(aes_queue);
 
 }

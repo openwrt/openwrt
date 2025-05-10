@@ -27,7 +27,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/pci/hailo/src/nnc.c             | 299 ++++++++++++++
  drivers/media/pci/hailo/src/nnc.h             |  22 +
  drivers/media/pci/hailo/src/pci_soc_ioctl.c   | 155 -------
- drivers/media/pci/hailo/src/pcie.c            | 166 +++-----
+ drivers/media/pci/hailo/src/pcie.c            | 164 +++-----
  drivers/media/pci/hailo/src/pcie.h            |  26 +-
  drivers/media/pci/hailo/src/soc.c             | 244 +++++++++++
  .../pci/hailo/src/{pci_soc_ioctl.h => soc.h}  |  13 +-
@@ -46,7 +46,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  drivers/media/pci/hailo/vdma/memory.h         |   2 +-
  drivers/media/pci/hailo/vdma/vdma.c           |  39 +-
  drivers/media/pci/hailo/vdma/vdma.h           |   5 +-
- 38 files changed, 1224 insertions(+), 889 deletions(-)
+ 38 files changed, 1223 insertions(+), 888 deletions(-)
  create mode 100644 drivers/media/pci/hailo/common/soc_structs.h
  create mode 100644 drivers/media/pci/hailo/src/nnc.c
  create mode 100644 drivers/media/pci/hailo/src/nnc.h
@@ -117,7 +117,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  {
      size_t ready_to_read = 0;
 @@ -100,4 +118,30 @@ long hailo_read_firmware_log(struct hail
-     
+ 
      params->read_bytes = ready_to_read;
      return 0;
 +}
@@ -1751,7 +1751,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +        if (irq_source.interrupt_bitmask & SOC_CLOSED_IRQ) {
 +            hailo_info(board, "hailo_irqhandler - SOC_CLOSED_IRQ\n");
-+            // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not. 
++            // always use bitmap=0xFFFFFFFF - it is ok to wake all interrupts since each handler will check if the stream was aborted or not.
 +            hailo_vdma_wakeup_interrupts(&board->vdma, &board->vdma.vdma_engines[DEFAULT_VDMA_ENGINE_INDEX],
 +                0xFFFFFFFF);
          }
@@ -1829,7 +1829,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -    }
 -
 -    reinit_completion(&current_waiting_thread->notification_completion);
--    
+-
 -    spin_lock_irqsave(&pBoard->notification_read_spinlock, irq_saved_flags);
 -    notification->buffer_len = pBoard->notification_cache.buffer_len;
 -    memcpy(notification->buffer, pBoard->notification_cache.buffer, notification->buffer_len);
@@ -2410,17 +2410,17 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -
 -    // configure and start input channel
 -    depth = ceil_log2(input_descriptors_buffer->desc_list.desc_count);
--    // DMA Direction is only to get channel index - so 
+-    // DMA Direction is only to get channel index - so
 -    err = hailo_vdma_start_channel(input_channel->host_regs, input_descriptors_buffer->dma_address, depth,
 -        board->vdma.hw->ddr_data_id);
 -    if (err < 0) {
 -        hailo_dev_err(&board->pDev->dev, "Error starting vdma input channel index %u\n", params.input_channel_index);
 -        return -EINVAL;
 -    }
--    
+-
 -    // configure and start output channel
 -    depth = ceil_log2(output_descriptors_buffer->desc_list.desc_count);
--    // DMA Direction is only to get channel index - so 
+-    // DMA Direction is only to get channel index - so
 -    err = hailo_vdma_start_channel(output_channel->host_regs, output_descriptors_buffer->dma_address, depth,
 -        board->vdma.hw->ddr_data_id);
 -    if (err < 0) {
@@ -2506,15 +2506,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  #define DEVICE_NODE_NAME "hailo"
  static int char_major = 0;
-@@ -206,7 +209,7 @@ static int hailo_pcie_disable_aspm(struc
-     /* Double-check ASPM control.  If not disabled by the above, the
-      * BIOS is preventing that from happening (or CONFIG_PCIEASPM is
-      * not enabled); override by writing PCI config space directly.
--     */                       
-+     */
-     err = pcie_capability_read_word(pdev, PCI_EXP_LNKCTL, &pdev_aspmc);
-     if (err < 0) {
-         hailo_err(board, "Couldn't read LNKCTL capability\n");
 @@ -288,101 +291,59 @@ static void hailo_pcie_remove_board(stru
      up(&g_hailo_add_board_mutex);
  }
@@ -2640,13 +2631,13 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
 -    hailo_trigger_firmware_boot(resources);
 -
-     if (!wait_for_firmware_completion(fw_load_completion)) {
-         boot_status = hailo_get_boot_status(resources);
-         hailo_dev_err(dev, "Timeout waiting for firmware file, boot status %u\n", boot_status);
-         return -ETIMEDOUT;
-     }
+-    if (!wait_for_firmware_completion(fw_load_completion)) {
+-        boot_status = hailo_get_boot_status(resources);
+-        hailo_dev_err(dev, "Timeout waiting for firmware file, boot status %u\n", boot_status);
+-        return -ETIMEDOUT;
+-    }
 -    reinit_completion(fw_load_completion);
- 
+-
 -    err = hailo_pcie_write_firmware_batch(dev, resources, SECOND_STAGE);
 -    if (err < 0) {
 -        hailo_dev_err(dev, "Failed writing firmware files. err %d\n", err);
@@ -2656,12 +2647,12 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -    // TODO: HRT-13838 - Remove, move address to compat, make write_memory static
 -    write_memory(resources, 0x84000000, (void*)&pcie_finished, sizeof(pcie_finished));
 -
--    if (!wait_for_firmware_completion(fw_load_completion)) {
--        boot_status = hailo_get_boot_status(resources);
--        hailo_dev_err(dev, "Timeout waiting for firmware file, boot status %u\n", boot_status);
--        return -ETIMEDOUT;
--    }
--
+     if (!wait_for_firmware_completion(fw_load_completion)) {
+         boot_status = hailo_get_boot_status(resources);
+         hailo_dev_err(dev, "Timeout waiting for firmware file, boot status %u\n", boot_status);
+         return -ETIMEDOUT;
+     }
+ 
 -    hailo_dev_notice(dev, "Firmware Batch loaded successfully\n");
 +    hailo_dev_notice(dev, "Firmware loaded successfully\n");
  
@@ -2953,7 +2944,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    }
 +
 +    hailo_pcie_soc_read_response(&board->pcie_resources, response);
-+    
++
 +    if (response->status < 0) {
 +        hailo_err(board, "soc control failed with status=%d\n", response->status);
 +        return response->status;
@@ -3029,7 +3020,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +    // configure and start input channel
 +    depth = ceil_log2(input_descriptors_buffer->desc_list.desc_count);
-+    // DMA Direction is only to get channel index - so 
++    // DMA Direction is only to get channel index - so
 +    err = hailo_vdma_start_channel(input_channel->host_regs, input_descriptors_buffer->dma_address, depth,
 +        board->vdma.hw->ddr_data_id);
 +    if (err < 0) {
@@ -3039,10 +3030,10 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +    // Store the input channels state in bitmap (open)
 +    hailo_set_bit(params.input_channel_index, &context->soc_used_channels_bitmap);
-+    
++
 +    // configure and start output channel
 +    depth = ceil_log2(output_descriptors_buffer->desc_list.desc_count);
-+    // DMA Direction is only to get channel index - so 
++    // DMA Direction is only to get channel index - so
 +    err = hailo_vdma_start_channel(output_channel->host_regs, output_descriptors_buffer->dma_address, depth,
 +        board->vdma.hw->ddr_data_id);
 +    if (err < 0) {
@@ -3087,7 +3078,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    return soc_control(board, &request, &response);
 +}
 +
-+long hailo_soc_close_ioctl(struct hailo_pcie_board *board, struct hailo_vdma_controller *controller, 
++long hailo_soc_close_ioctl(struct hailo_pcie_board *board, struct hailo_vdma_controller *controller,
 +    struct hailo_file_context *context, unsigned long arg)
 +{
 +    struct hailo_soc_close_params params;
@@ -3501,7 +3492,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -            hailo_vdma_engine_disable_channels(engine, channels_bitmap);
 +    for_each_vdma_engine(controller, engine, engine_index) {
 +        if (context->enabled_channels_bitmap[engine_index]) {
-+            hailo_dev_info(controller->dev, "Disabling channels for engine %zu, channels bitmap 0x%x\n", engine_index, 
++            hailo_dev_info(controller->dev, "Disabling channels for engine %zu, channels bitmap 0x%x\n", engine_index,
 +            context->enabled_channels_bitmap[engine_index]);
 +            hailo_vdma_engine_disable_channels(engine, context->enabled_channels_bitmap[engine_index]);
  
@@ -3519,7 +3510,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
      }
  }
  
-+void hailo_vdma_wakeup_interrupts(struct hailo_vdma_controller *controller, struct hailo_vdma_engine *engine, 
++void hailo_vdma_wakeup_interrupts(struct hailo_vdma_controller *controller, struct hailo_vdma_engine *engine,
 +    u32 channels_bitmap)
 +{
 +    unsigned long irq_saved_flags = 0;
@@ -3585,7 +3576,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  void hailo_vdma_file_context_finalize(struct hailo_vdma_file_context *context,
      struct hailo_vdma_controller *controller, struct file *filp);
  
-+void hailo_vdma_wakeup_interrupts(struct hailo_vdma_controller *controller, struct hailo_vdma_engine *engine, 
++void hailo_vdma_wakeup_interrupts(struct hailo_vdma_controller *controller, struct hailo_vdma_engine *engine,
 +    u32 channels_bitmap);
  void hailo_vdma_irq_handler(struct hailo_vdma_controller *controller, size_t engine_index,
      u32 channels_bitmap);
