@@ -1,0 +1,94 @@
+From 7d6b89e5255769d6823525363eb1785b1cc924e9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sun, 13 Apr 2025 18:30:38 +0200
+Subject: [PATCH] bridge: mcast: add mcast_active_v4 / mcast_active_v6 output
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add output for the mcast_active_v4 and mcast_active_v6 states. If their
+output is 1 then IGMP/MLD snooping is applied to multicast payload
+traffic of their according protocol family. This is the case when
+both multicast snooping is enabled and an IGMP/MLD querier is present.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ bridge/vlan.c                  | 10 ++++++++++
+ include/uapi/linux/if_bridge.h |  2 ++
+ include/uapi/linux/if_link.h   |  2 ++
+ ip/iplink_bridge.c             | 12 ++++++++++++
+ 4 files changed, 26 insertions(+)
+
+diff --git a/bridge/vlan.c b/bridge/vlan.c
+index ea4aff931a22..df01269b1954 100644
+--- a/bridge/vlan.c
++++ b/bridge/vlan.c
+@@ -955,6 +955,16 @@ static void print_vlan_global_opts(struct rtattr *a, int ifindex)
+ 		print_uint(PRINT_ANY, "msti", "msti %u ",
+ 			   rta_getattr_u16(vattr));
+ 	}
++	if (vtb[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4]) {
++		vattr = vtb[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4];
++		print_uint(PRINT_ANY, "mcast_active_v4", "mcast_active_v4 %u ",
++			   rta_getattr_u8(vattr));
++	}
++	if (vtb[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6]) {
++		vattr = vtb[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6];
++		print_uint(PRINT_ANY, "mcast_active_v6", "mcast_active_v6 %u ",
++			   rta_getattr_u8(vattr));
++	}
+ 	print_nl();
+ 	if (vtb[BRIDGE_VLANDB_GOPTS_MCAST_ROUTER_PORTS]) {
+ 		vattr = RTA_DATA(vtb[BRIDGE_VLANDB_GOPTS_MCAST_ROUTER_PORTS]);
+diff --git a/include/uapi/linux/if_bridge.h b/include/uapi/linux/if_bridge.h
+index c206cf6d9a1e..233248cf6446 100644
+--- a/include/uapi/linux/if_bridge.h
++++ b/include/uapi/linux/if_bridge.h
+@@ -584,6 +584,8 @@ enum {
+ 	BRIDGE_VLANDB_GOPTS_MCAST_ROUTER_PORTS,
+ 	BRIDGE_VLANDB_GOPTS_MCAST_QUERIER_STATE,
+ 	BRIDGE_VLANDB_GOPTS_MSTI,
++	BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4,
++	BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6,
+ 	__BRIDGE_VLANDB_GOPTS_MAX
+ };
+ #define BRIDGE_VLANDB_GOPTS_MAX (__BRIDGE_VLANDB_GOPTS_MAX - 1)
+diff --git a/include/uapi/linux/if_link.h b/include/uapi/linux/if_link.h
+index 79e97dd1fcdc..81a5ed0957e2 100644
+--- a/include/uapi/linux/if_link.h
++++ b/include/uapi/linux/if_link.h
+@@ -789,6 +789,8 @@ enum {
+ 	IFLA_BR_VLAN_STATS_PER_PORT,
+ 	IFLA_BR_MULTI_BOOLOPT,
+ 	IFLA_BR_MCAST_QUERIER_STATE,
++	IFLA_BR_MCAST_ACTIVE_V4,
++	IFLA_BR_MCAST_ACTIVE_V6,
+ 	IFLA_BR_FDB_N_LEARNED,
+ 	IFLA_BR_FDB_MAX_LEARNED,
+ 	__IFLA_BR_MAX,
+diff --git a/ip/iplink_bridge.c b/ip/iplink_bridge.c
+index 1fe89551bced..5470e0a09a3c 100644
+--- a/ip/iplink_bridge.c
++++ b/ip/iplink_bridge.c
+@@ -798,6 +798,18 @@ static void bridge_print_opt(struct link_util *lu, FILE *f, struct rtattr *tb[])
+ 			   "mcast_mld_version %u ",
+ 			   rta_getattr_u8(tb[IFLA_BR_MCAST_MLD_VERSION]));
+ 
++	if (tb[IFLA_BR_MCAST_ACTIVE_V4])
++		print_uint(PRINT_ANY,
++			   "mcast_active_v4",
++			   "mcast_active_v4 %u ",
++			   rta_getattr_u8(tb[IFLA_BR_MCAST_ACTIVE_V4]));
++
++	if (tb[IFLA_BR_MCAST_ACTIVE_V6])
++		print_uint(PRINT_ANY,
++			   "mcast_active_v6",
++			   "mcast_active_v6 %u ",
++			   rta_getattr_u8(tb[IFLA_BR_MCAST_ACTIVE_V6]));
++
+ 	if (tb[IFLA_BR_NF_CALL_IPTABLES])
+ 		print_uint(PRINT_ANY,
+ 			   "nf_call_iptables",
+-- 
+2.49.0
+

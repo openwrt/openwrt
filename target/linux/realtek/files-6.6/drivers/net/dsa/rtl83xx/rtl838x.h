@@ -62,6 +62,9 @@
 #define RTL838X_SDS5_EXT_REG6			(0xf18c)
 
 /* VLAN registers */
+#define RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4	BIT(0)
+#define RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6	BIT(1)
+
 #define RTL838X_VLAN_CTRL			(0x3A74)
 #define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
 #define RTL838X_VLAN_PROFILE_MAX		7
