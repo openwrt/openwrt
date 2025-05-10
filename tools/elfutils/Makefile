@@ -57,13 +57,13 @@ export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/.libs/$(PKG_GNULI
 export $(PKG_GNULIB_BASE)_exitfail=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-exitfail.o
 export $(PKG_GNULIB_BASE)_fallocate-posix=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-posix_fallocate.o
 export $(PKG_GNULIB_BASE)_obstack=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-obstack.o
-export $(PKG_GNULIB_BASE)_obstack-printf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/obstack_printf.o
-export $(PKG_GNULIB_BASE)_printf-args=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/printf-args.o
+export $(PKG_GNULIB_BASE)_obstack-printf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-obstack_printf.o
+export $(PKG_GNULIB_BASE)_printf-args=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-args.o
 export $(PKG_GNULIB_BASE)_printf-frexp=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexp.o
 export $(PKG_GNULIB_BASE)_printf-frexpl=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexpl.o
-export $(PKG_GNULIB_BASE)_printf-parse=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/printf-parse.o
+export $(PKG_GNULIB_BASE)_printf-parse=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-parse.o
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.o
-export $(PKG_GNULIB_BASE)_vasnprintf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/vasnprintf.o
+export $(PKG_GNULIB_BASE)_vasnprintf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-vasnprintf.o
 
 HOST_MAKE_FLAGS += \
 	am__CONFIG_DISTCLEAN_FILES= \
