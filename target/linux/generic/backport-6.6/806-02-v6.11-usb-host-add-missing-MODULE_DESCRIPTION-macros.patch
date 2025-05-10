@@ -1,0 +1,35 @@
+From 9fdce69f674e49be669e97919d24b1ab5d2c9684 Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <quic_jjohnson@quicinc.com>
+Date: Tue, 11 Jun 2024 17:53:37 -0700
+Subject: [PATCH] usb: host: add missing MODULE_DESCRIPTION() macros
+
+With ARCH=x86, make allmodconfig && make W=1 C=1 reports:
+WARNING: modpost: missing MODULE_DESCRIPTION() in drivers/usb/host/ohci-exynos.o
+WARNING: modpost: missing MODULE_DESCRIPTION() in drivers/usb/host/xhci-pci-renesas.o
+
+Add the missing invocations of the MODULE_DESCRIPTION() macro.
+
+Signed-off-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Link: https://lore.kernel.org/r/20240611-md-drivers-usb-host-v1-1-e2071a696ef8@quicinc.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/host/ohci-exynos.c      | 1 +
+ drivers/usb/host/xhci-pci-renesas.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/drivers/usb/host/ohci-exynos.c
++++ b/drivers/usb/host/ohci-exynos.c
+@@ -308,4 +308,5 @@ module_exit(ohci_exynos_cleanup);
+ 
+ MODULE_ALIAS("platform:exynos-ohci");
+ MODULE_AUTHOR("Jingoo Han <jg1.han@samsung.com>");
++MODULE_DESCRIPTION("OHCI support for Samsung S5P/Exynos SoC Series");
+ MODULE_LICENSE("GPL v2");
+--- a/drivers/usb/host/xhci-pci-renesas.c
++++ b/drivers/usb/host/xhci-pci-renesas.c
+@@ -627,4 +627,5 @@ exit:
+ }
+ EXPORT_SYMBOL_GPL(renesas_xhci_check_request_fw);
+ 
++MODULE_DESCRIPTION("Support for Renesas xHCI controller with firmware");
+ MODULE_LICENSE("GPL v2");

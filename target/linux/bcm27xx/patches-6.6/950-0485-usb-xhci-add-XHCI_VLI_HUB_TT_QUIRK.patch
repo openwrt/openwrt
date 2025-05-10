@@ -64,7 +64,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
  	struct pci_dev                  *pdev = to_pci_dev(dev);
-@@ -488,6 +500,8 @@ static void xhci_pci_quirks(struct devic
+@@ -479,6 +491,8 @@ static void xhci_pci_quirks(struct devic
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
  		xhci->quirks |= XHCI_AVOID_DQ_ON_LINK;
  		xhci->quirks |= XHCI_VLI_SS_BULK_OUT_BUG;
