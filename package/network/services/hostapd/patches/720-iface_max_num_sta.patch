@@ -8,7 +8,7 @@ full device, e.g. in order to deal with hardware/driver limitations
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3088,6 +3088,14 @@ static int hostapd_config_fill(struct ho
+@@ -2857,6 +2857,14 @@ static int hostapd_config_fill(struct ho
  				   line, bss->max_num_sta, MAX_STA_COUNT);
  			return 1;
  		}
@@ -25,7 +25,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  	} else if (os_strcmp(buf, "extended_key_id") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1089,6 +1089,8 @@ struct hostapd_config {
+@@ -1069,6 +1069,8 @@ struct hostapd_config {
  	unsigned int track_sta_max_num;
  	unsigned int track_sta_max_age;
  
@@ -36,7 +36,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			  * ' ' (ascii 32): all environments
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1653,7 +1653,7 @@ void handle_probe_req(struct hostapd_dat
+@@ -1630,7 +1630,7 @@ void handle_probe_req(struct hostapd_dat
  	if (hapd->conf->no_probe_resp_if_max_sta &&
  	    is_multicast_ether_addr(mgmt->da) &&
  	    is_multicast_ether_addr(mgmt->bssid) &&
