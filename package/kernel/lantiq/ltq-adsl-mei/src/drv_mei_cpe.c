@@ -1178,7 +1178,7 @@ DSL_BSP_AdslLedSet (DSL_DEV_Device_t * dev, DSL_DEV_LedId_t led_number, DSL_DEV_
 * \param       CMVMSG          The pointer to message buffer.
 * \ingroup     Internal
 */
-void
+static void
 makeCMV (u8 opcode, u8 group, u16 address, u16 index, int size, u16 * data, u16 *CMVMSG)
 {
         memset (CMVMSG, 0, MSG_LENGTH * 2);
@@ -2444,7 +2444,7 @@ IFX_MEI_IoctlCopyTo (int from_kernel, char *dest, char *from, int size)
 	return ret;
 }
 
-int
+static int
 IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev, int from_kernel, unsigned int command, unsigned long lon)
 {
 	int i = 0;
