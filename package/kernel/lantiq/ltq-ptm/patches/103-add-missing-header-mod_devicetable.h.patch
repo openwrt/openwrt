@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 02:36:31 +0800
+Subject: [PATCH] add missing header mod_devicetable.h
+
+Fix compilation error:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/ltq-ptm-vr9/ltq-ptm/ifxmips_ptm_vdsl.c:969:34: error: array type has incomplete element type 'struct of_device_id'
+  969 | static const struct of_device_id ltq_ptm_match[] = {
+      |                                  ^~~~~~~~~~~~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/ltq-ptm-vr9/ltq-ptm/ifxmips_ptm_vdsl.c:969:34: error: 'ltq_ptm_match' defined but not used [-Werror=unused-variable]
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ifxmips_ptm_vdsl.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/ifxmips_ptm_vdsl.c
++++ b/ifxmips_ptm_vdsl.c
+@@ -34,6 +34,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/netdevice.h>
+ #include <linux/platform_device.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/of_device.h>
+ 
+ #include "ifxmips_ptm_vdsl.h"
