@@ -1,0 +1,19 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Sat, 10 May 2025 14:42:37 +0400
+Subject: [PATCH] clk: qcom: cmn-pll: Remove IPQ9574 build dependency
+
+Add support for IPQ5018 and other IPQ SoCs by the removing dependency
+on the IPQ9574 platform.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+--- a/drivers/clk/qcom/Kconfig
++++ b/drivers/clk/qcom/Kconfig
+@@ -141,7 +141,6 @@ config IPQ_APSS_6018
+ 
+ config IPQ_CMN_PLL
+ 	tristate "IPQ CMN PLL Clock Controller"
+-	depends on IPQ_GCC_9574
+ 	help
+ 	  Support for CMN PLL clock controller on IPQ platform. The
+ 	  CMN PLL feeds the reference clocks to the Ethernet devices
