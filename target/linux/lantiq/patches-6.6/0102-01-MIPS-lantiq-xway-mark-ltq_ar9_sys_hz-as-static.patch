@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 18:08:35 +0800
+Subject: [PATCH 1/9] MIPS: lantiq: xway: mark ltq_ar9_sys_hz() as static
+
+Fix the following missing-prototypes warning:
+
+arch/mips/lantiq/xway/clk.c:77:15: error: no previous prototype for 'ltq_ar9_sys_hz' [-Werror=missing-prototypes]
+   77 | unsigned long ltq_ar9_sys_hz(void)
+      |               ^~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/xway/clk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/lantiq/xway/clk.c
++++ b/arch/mips/lantiq/xway/clk.c
+@@ -74,7 +74,7 @@ unsigned long ltq_danube_pp32_hz(void)
+ 	return clk;
+ }
+ 
+-unsigned long ltq_ar9_sys_hz(void)
++static unsigned long ltq_ar9_sys_hz(void)
+ {
+ 	if (((ltq_cgu_r32(CGU_SYS) >> 3) & 0x3) == 0x2)
+ 		return CLOCK_393M;

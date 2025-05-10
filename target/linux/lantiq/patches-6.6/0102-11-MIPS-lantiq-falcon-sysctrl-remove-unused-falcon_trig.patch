@@ -1,0 +1,30 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:15:36 +0800
+Subject: [PATCH 2/6] MIPS: lantiq: falcon: sysctrl: remove unused
+ falcon_trigger_hrst()
+
+This is a defined but unused function. Fix warning:
+
+arch/mips/lantiq/falcon/sysctrl.c:75:6: error: no previous prototype for 'falcon_trigger_hrst' [-Werror=missing-prototypes]
+   75 | void falcon_trigger_hrst(int level)
+      |      ^~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/falcon/sysctrl.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/arch/mips/lantiq/falcon/sysctrl.c
++++ b/arch/mips/lantiq/falcon/sysctrl.c
+@@ -72,11 +72,6 @@
+ static void __iomem *sysctl_membase[3], *status_membase;
+ void __iomem *ltq_sys1_membase, *ltq_ebu_membase;
+ 
+-void falcon_trigger_hrst(int level)
+-{
+-	sysctl_w32(SYSCTL_SYS1, level & 1, SYS1_HRSTOUTC);
+-}
+-
+ static inline void sysctl_wait(struct clk *clk,
+ 		unsigned int test, unsigned int reg)
+ {
