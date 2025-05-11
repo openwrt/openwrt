@@ -21,8 +21,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-silent-rules
 
 HOST_CONFIGURE_VARS += \
-	PERL="/usr/bin/env perl" \
-	am_cv_prog_PERL_ithreads=no
+	# temporary patch alternative for PERL="/usr/bin/env perl"
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR_HOST="" ./bootstrap)
