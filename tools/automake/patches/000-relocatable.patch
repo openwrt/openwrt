@@ -16,7 +16,7 @@
 +#!/usr/bin/env perl
  # aclocal - create aclocal.m4 by scanning configure.ac      -*- perl -*-
  # @configure_input@
- # Copyright (C) 1996-2021 Free Software Foundation, Inc.
+ # Copyright (C) 1996-2024 Free Software Foundation, Inc.
 @@ -23,9 +23,11 @@ use 5.006;
  use strict;
  use warnings FATAL => 'all';
@@ -31,16 +31,16 @@
  }
  
 @@ -65,8 +67,8 @@ $perl_threads = 0;
- # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
- # option.
+ # --aclocal-path option/ACLOCAL_PATH environment variable, and reset
+ # with the '--system-acdir' option.
  my @user_includes = ();
 -my @automake_includes = ('@datadir@/aclocal-' . $APIVERSION);
 -my @system_includes = ('@datadir@/aclocal');
 +my @automake_includes = ($ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . "/share/aclocal-$APIVERSION" : "@datadir@/aclocal-$APIVERSION");
 +my @system_includes = ($ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . '/share/aclocal' : '@datadir@/aclocal');
+ my $aclocal_path = '';
  
  # Whether we should copy M4 file in $user_includes[0].
- my $install = 0;
 --- a/bin/automake.in
 +++ b/bin/automake.in
 @@ -1,4 +1,4 @@
@@ -48,7 +48,7 @@
 +#!/usr/bin/env perl
  # automake - create Makefile.in from Makefile.am            -*- perl -*-
  # @configure_input@
- # Copyright (C) 1994-2021 Free Software Foundation, Inc.
+ # Copyright (C) 1994-2024 Free Software Foundation, Inc.
 @@ -26,9 +26,11 @@ use 5.006;
  use strict;
  use warnings FATAL => 'all';
