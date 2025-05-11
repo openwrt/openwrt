@@ -1311,10 +1311,11 @@ define Device/elecom_wrc-x1800gs
   $(Device/nand)
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X1800GS
-  KERNEL := kernel-bin | lzma | \
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	znet-header 4.04(XVF.1)b90 COMC 0x68 | elecom-product-header WRC-X1800GS
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  KERNEL_INITRAMFS := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 51456k
