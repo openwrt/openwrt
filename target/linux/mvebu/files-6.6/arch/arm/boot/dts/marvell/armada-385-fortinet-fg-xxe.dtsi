@@ -154,6 +154,22 @@
 		gpios = <&gpio1 21 GPIO_ACTIVE_LOW>;
 		regulator-always-on;
 	};
+
+	virtual-flash {
+		compatible = "mtd-concat";
+		devices = <&mtd_rfs1 &mtd_part1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x2a00000>;
+				label = "rootfs";
+			};
+		};
+	};
 };
 
 &i2c0 {
@@ -307,9 +323,9 @@
 				label = "kernel";
 			};
 
-			partition@800000 {
+			mtd_rfs1: partition@800000 {
 				reg = <0x800000 0x1800000>;
-				label = "rootfs";
+				label = "rfs1";
 			};
 
 			partition@2000000 {
@@ -324,10 +340,9 @@
 				read-only;
 			};
 
-			partition@3e00000 {
+			mtd_part1: partition@3e00000 {
 				reg = <0x3e00000 0x1200000>;
 				label = "part1";
-				read-only;
 			};
 
 			partition@5000000 {
