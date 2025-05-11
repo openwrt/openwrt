@@ -10,7 +10,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -676,10 +676,64 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -675,10 +675,64 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
@@ -77,7 +77,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  
  	sfp->i2c = i2c;
  	sfp->read = sfp_i2c_read;
-@@ -711,6 +765,29 @@ static int sfp_i2c_mdiobus_create(struct
+@@ -710,6 +764,29 @@ static int sfp_i2c_mdiobus_create(struct
  	return 0;
  }
  

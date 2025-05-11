@@ -1566,7 +1566,7 @@ INIT_PRIV_DATA_FAIL:
  *  Output:
  *   none
  */
-static int ltq_ptm_remove(struct platform_device *pdev)
+static void ltq_ptm_remove(struct platform_device *pdev)
 {
     int i;
 
@@ -1591,13 +1591,11 @@ static int ltq_ptm_remove(struct platform_device *pdev)
     ifx_ptm_uninit_chip();
 
     clear_priv_data();
-
-    return 0;
 }
 
 static struct platform_driver ltq_ptm_driver = {
        .probe = ltq_ptm_probe,
-       .remove = ltq_ptm_remove,
+       .remove_new = ltq_ptm_remove,
        .driver = {
                .name = "ptm",
                .of_match_table = ltq_ptm_match,

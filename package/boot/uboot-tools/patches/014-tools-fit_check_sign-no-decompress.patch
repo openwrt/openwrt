@@ -1,0 +1,40 @@
+--- a/boot/bootm.c
++++ b/boot/bootm.c
+@@ -1188,10 +1188,6 @@ static int bootm_host_load_image(const v
+ 	ulong data, len;
+ 	struct bootm_headers images;
+ 	int noffset;
+-	ulong load_end, buf_size;
+-	uint8_t image_type;
+-	uint8_t image_comp;
+-	void *load_buf;
+ 	int ret;
+ 
+ 	fit_uname_config = fdt_get_name(fit, cfg_noffset, NULL);
+@@ -1203,26 +1199,6 @@ static int bootm_host_load_image(const v
+ 		FIT_LOAD_IGNORED, &data, &len);
+ 	if (noffset < 0)
+ 		return noffset;
+-	if (fit_image_get_type(fit, noffset, &image_type)) {
+-		puts("Can't get image type!\n");
+-		return -EINVAL;
+-	}
+-
+-	if (fit_image_get_comp(fit, noffset, &image_comp))
+-		image_comp = IH_COMP_NONE;
+-
+-	/* Allow the image to expand by a factor of 4, should be safe */
+-	buf_size = (1 << 20) + len * 4;
+-	load_buf = malloc(buf_size);
+-	ret = image_decomp(image_comp, 0, data, image_type, load_buf,
+-			   (void *)data, len, buf_size, &load_end);
+-	free(load_buf);
+-
+-	if (ret) {
+-		ret = handle_decomp_error(image_comp, load_end - 0, buf_size, ret);
+-		if (ret != BOOTM_ERR_UNIMPLEMENTED)
+-			return ret;
+-	}
+ 
+ 	return 0;
+ }

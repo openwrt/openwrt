@@ -251,6 +251,24 @@ define Device/arcadyan_mozart
 endef
 TARGET_DEVICES += arcadyan_mozart
 
+define Device/asus_rt-ax52
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AX52
+  DEVICE_DTS := mt7981b-asus-rt-ax52
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb  with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ARTIFACTS := initramfs.trx
+  ARTIFACT/initramfs.trx := append-image-stage initramfs-kernel.bin | \
+	uImage none | asus-trx -v 3 -n $$(DEVICE_MODEL)
+endef
+TARGET_DEVICES += asus_rt-ax52
+
 define Device/asus_rt-ax59u
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AX59U
@@ -958,6 +976,21 @@ define Device/h3c_magic-nx30-pro
 endef
 TARGET_DEVICES += h3c_magic-nx30-pro
 
+define Device/huasifei_wh3000
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WH3000
+  DEVICE_DTS := mt7981b-huasifei-wh3000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-usb3 f2fsck mkf2fs
+  SUPPORTED_DEVICES += huasifei,wh3000-emmc
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += huasifei_wh3000
+
 define Device/jcg_q30-pro
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Q30 PRO
@@ -1206,6 +1239,20 @@ define Device/mediatek_mt7988a-rfb
 endef
 TARGET_DEVICES += mediatek_mt7988a-rfb
 
+define Device/mercusys_mr80x-v3
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_MODEL := MR80X
+  DEVICE_VARIANT := v3
+  DEVICE_DTS := mt7981b-mercusys-mr80x-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += mercusys_mr80x-v3
+
 define Device/mercusys_mr90x-v1
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR90X v1
@@ -1272,6 +1319,30 @@ define Device/netcore_n60
 endef
 TARGET_DEVICES += netcore_n60
 
+define Device/netcore_n60-pro
+  DEVICE_VENDOR := Netcore
+  DEVICE_MODEL := N60 Pro
+  DEVICE_DTS := mt7986a-netcore-n60-pro
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware kmod-usb3
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot netcore_n60-pro
+endef
+TARGET_DEVICES += netcore_n60-pro
+
 define Device/netgear_wax220
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WAX220
@@ -1289,6 +1360,31 @@ define Device/netgear_wax220
 	  pad-to 10M | check-size | netgear-encrypted-factory
 endef
 TARGET_DEVICES += netgear_wax220
+
+define Device/netis_nx31
+  DEVICE_VENDOR := netis
+  DEVICE_MODEL := NX31
+  DEVICE_DTS := mt7981b-netis-nx31
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot netis_nx31
+endef
+TARGET_DEVICES += netis_nx31
 
 define Device/nokia_ea0326gmp
   DEVICE_VENDOR := Nokia
@@ -1458,6 +1554,18 @@ define Device/routerich_ax3000-ubootmod
 endef
 TARGET_DEVICES += routerich_ax3000-ubootmod
 
+define Device/routerich_ax3000-v1
+  DEVICE_VENDOR := Routerich
+  DEVICE_MODEL := AX3000
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-routerich-ax3000-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware kmod-usb3 mt7981-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
+endef
+TARGET_DEVICES += routerich_ax3000-v1
+
 define Device/ruijie_rg-x60-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-X60 Pro
@@ -1599,6 +1707,24 @@ define Device/wavlink_wl-wn586x3
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3
+
+define Device/wavlink_wl-wn573hx3
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WN573HX3
+  DEVICE_ALT0_VENDOR := 7Links
+  DEVICE_ALT0_MODEL := WLR-1300
+  DEVICE_DTS := mt7981b-wavlink-wl-wn573hx3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGE_SIZE := 14336k
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-nor-rfb
+  IMAGES = WN573HX3-sysupgrade.bin
+  IMAGE/WN573HX3-sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += wavlink_wl-wn573hx3
 
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi

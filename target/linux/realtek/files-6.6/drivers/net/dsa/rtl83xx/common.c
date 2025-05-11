@@ -1718,12 +1718,10 @@ err_register_nb:
 	return err;
 }
 
-static int rtl83xx_sw_remove(struct platform_device *pdev)
+static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
-
-	return 0;
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
@@ -1736,7 +1734,7 @@ MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
 	.probe = rtl83xx_sw_probe,
-	.remove = rtl83xx_sw_remove,
+	.remove_new = rtl83xx_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,

@@ -768,6 +768,16 @@ define Device/cudy_wr2100
 endef
 TARGET_DEVICES += cudy_wr2100
 
+define Device/cudy_r700
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := R700
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R29
+  DEVICE_PACKAGES := -uboot-envtools
+endef
+TARGET_DEVICES += cudy_r700
+
 define Device/cudy_x6-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 32256k
@@ -1403,13 +1413,15 @@ define Device/genexis_pulse-ex400/common
     --log-lebs=2 --space-fixup --squash-uids
   KERNEL := kernel-bin | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   IMAGES += factory.bin
   IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
 	inteno-bootfs | inteno-y3-header EX400 | append-md5sum-ascii-salted
+endif
   IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | \
     sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 kmod-keyboard-sx951x kmod-button-hotplug
 endef
 
 define Device/genexis_pulse-ex400
@@ -2093,6 +2105,18 @@ define Device/mikrotik_routerboard-m33g
   SUPPORTED_DEVICES += mikrotik,rbm33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
+
+define Device/mofinetwork_mofi5500-5gxelte
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 27656k
+  DEVICE_VENDOR := MoFi Network
+  DEVICE_MODEL := MOFI5500-5GXeLTE
+  DEVICE_PACKAGES := kmod-usb3 kmod-mmc-mtk kmod-mt7615-firmware \
+	kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
+  SUPPORTED_DEVICES += mofi5500 # Needed in order to flash through Mofi stock firmware
+endef
+TARGET_DEVICES += mofinetwork_mofi5500-5gxelte
 
 define Device/mqmaker_witi
   $(Device/dsa-migration)

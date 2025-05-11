@@ -48,7 +48,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  obj-$(CONFIG_PWM_ATMEL_HLCDC_PWM)	+= pwm-atmel-hlcdc.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-airoha.c
-@@ -0,0 +1,400 @@
+@@ -0,0 +1,388 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright 2022 Markus Gothe <markus.gothe@genexis.eu>
@@ -414,18 +414,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	if (IS_ERR(pc->regmap))
 +		return PTR_ERR(pc->regmap);
 +
-+	platform_set_drvdata(pdev, pc);
-+
-+	return pwmchip_add(&pc->chip);
-+}
-+
-+static int airoha_pwm_remove(struct platform_device *pdev)
-+{
-+	struct airoha_pwm *pc = platform_get_drvdata(pdev);
-+
-+	pwmchip_remove(&pc->chip);
-+
-+	return 0;
++	return devm_pwmchip_add(&pdev->dev, &pc->chip);
 +}
 +
 +static const struct of_device_id airoha_pwm_of_match[] = {
@@ -440,7 +429,6 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +		.of_match_table = airoha_pwm_of_match,
 +	},
 +	.probe = airoha_pwm_probe,
-+	.remove = airoha_pwm_remove,
 +};
 +module_platform_driver(airoha_pwm_driver);
 +

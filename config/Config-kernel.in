@@ -567,7 +567,7 @@ config KERNEL_BPF_EVENTS
 
 config KERNEL_PROBE_EVENTS_BTF_ARGS
 	bool "Support BTF function arguments for probe events"
-	depends on KERNEL_DEBUG_INFO_BTF && KERNEL_KPROBE_EVENTS && LINUX_6_6
+	depends on KERNEL_DEBUG_INFO_BTF && KERNEL_KPROBE_EVENTS
 
 config KERNEL_BPF_KPROBE_OVERRIDE
 	bool
@@ -607,7 +607,18 @@ choice
 
 	config KERNEL_TRANSPARENT_HUGEPAGE_MADVISE
 		bool "madvise"
+
+	config KERNEL_TRANSPARENT_HUGEPAGE_NEVER
+		bool "never"
+		depends on !LINUX_6_6
 endchoice
+
+config KERNEL_ARM64_CONTPTE
+	bool "Compile the kernel with Contiguous PTE mappings for user memory"
+	depends on KERNEL_ARM64
+	depends on KERNEL_TRANSPARENT_HUGEPAGE
+	depends on !LINUX_6_6
+	default y
 
 config KERNEL_HUGETLBFS
 	bool
@@ -737,6 +748,11 @@ config KERNEL_SLABINFO
 	select KERNEL_SLUB_DEBUG_ON
 	bool "Enable /proc slab debug info"
 
+config KERNEL_STACKDEPOT_MAX_FRAMES
+	int
+	default 64
+	depends on KERNEL_SLUB_DEBUG
+
 config KERNEL_PROC_PAGE_MONITOR
 	bool "Enable /proc page monitoring"
 
@@ -861,6 +877,18 @@ if KERNEL_CGROUPS
 		  Memory Nodes and assigning tasks to run only within those sets.
 		  This is primarily useful on large SMP or NUMA systems.
 
+	config KERNEL_CPUSETS_V1
+		bool "Legacy cgroup v1 cpusets controller"
+		depends on KERNEL_CPUSETS
+		depends on !LINUX_6_6
+		default n
+		help
+		  Legacy cgroup v1 cpusets controller which has been deprecated by
+		  cgroup v2 implementation. The v1 is there for legacy applications
+		  which haven't migrated to the new cgroup v2 interface yet. If you
+		  do not have any such application then you are completely fine leaving
+		  this option disabled.
+
 	config KERNEL_PROC_PID_CPUSET
 		bool "Include legacy /proc/<pid>/cpuset file"
 		depends on KERNEL_CPUSETS
@@ -952,6 +980,22 @@ if KERNEL_CGROUPS
 		  Memory Controller, which are page-based, and can be swapped. Users of
 		  the kmem extension can use it to guarantee that no group of processes
 		  will ever exhaust kernel resources alone.
+	
+	config KERNEL_MEMCG_V1
+		bool "Legacy cgroup v1 memory controller"
+		default n
+		depends on KERNEL_MEMCG
+		depends on !LINUX_6_6
+		help
+		  Legacy cgroup v1 memory controller which has been deprecated by
+		  cgroup v2 implementation. The v1 is there for legacy applications
+		  which haven't migrated to the new cgroup v2 interface yet. If you
+		  do not have any such application then you are completely fine leaving
+		  this option disabled.
+
+		  Please note that feature set of the legacy memory controller is likely
+		  going to shrink due to deprecation process. New deployments with v1
+		  controller are highly discouraged.
 
 	config KERNEL_CGROUP_PERF
 		bool "Enable perf_event per-cpu per-container group (cgroup) monitoring"

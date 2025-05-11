@@ -200,7 +200,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	.probe = ar71xx_pci_probe,
  	.driver = {
  		.name = "ar71xx-pci",
-+		.of_match_table = of_match_ptr(ar71xx_pci_ids),
++		.of_match_table = ar71xx_pci_ids,
  	},
  };
  

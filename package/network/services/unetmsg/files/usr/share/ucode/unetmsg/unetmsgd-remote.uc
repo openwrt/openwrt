@@ -96,10 +96,12 @@ function network_socket_handle_request(sock_data, req)
 		if (!name)
 			return;
 		if (args.enabled) {
-			if (list[name])
+			if (list[name]) {
+				core.handle_publish(null, name);
 				return 0;
+			}
 
-			let allowed;
+			let allowed = net.peers[host].allowed == null;
 			for (let cur in net.peers[host].allowed) {
 				if (!wildcard(name, cur))
 					continue;
@@ -114,10 +116,12 @@ function network_socket_handle_request(sock_data, req)
 				network: sock_data.network,
 				name: host,
 			}, pubsub_proto);
+			core.handle_publish(null, name);
 			list[name] = true;
 		} else {
 			if (!list[name])
 				return 0;
+			core.handle_publish(null, name);
 			delete core["remote_" + msgtype][name][host];
 			delete list[name];
 		}
@@ -330,7 +334,7 @@ function network_open_channel(net, name, peer)
 		let net = networks[sock_data.network];
 		let cur_data = net.tx_channels[sock_data.name];
 		if (cur_data == sock_data)
-			delete net.rx_channels[sock_data.name];
+			delete net.tx_channels[sock_data.name];
 
 		network_tx_socket_close(sock_data);
 	};

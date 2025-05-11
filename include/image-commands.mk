@@ -502,6 +502,34 @@ define Build/kernel-bin
 	cp $< $@
 endef
 
+define Build/gl-qsdk-factory
+	$(eval GL_NAME := $(call param_get_default,type,$(1),$(DEVICE_NAME)))
+	$(eval GL_IMGK := $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.img)
+	$(eval GL_ITS := $(KDIR_TMP)/$(GL_NAME).its)
+	$(eval GL_UBI := "ubi")
+
+	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/
+	$(shell mv $(GL_IMGK) $(GL_IMGK).tmp)
+
+	sed -i "s/rootfs_size/`wc -c $(GL_IMGK) | \
+	cut -d " " -f 1 | xargs printf "0x%x"`/g" $(KDIR_TMP)/$(BOOT_SCRIPT);
+
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
+		$(GL_ITS) \
+		$(BOOT_SCRIPT) \
+		$(GL_UBI) \
+		$(GL_IMGK)
+
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f \
+		$(GL_ITS) \
+		$(GL_IMGK)
+
+	$(RM) \
+		$(GL_ITS) \
+		$(GL_IMGK).tmp \
+		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
+endef
+
 define Build/linksys-image
 	let \
 		size="$$(stat -c%s $@)" \

@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsemanage
-PKG_VERSION:=3.5
+PKG_VERSION:=3.8.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=f53534e50247538280ed0d76c6ce81d8fb3939bd64cadb89da10dba42e40dd9c
+PKG_HASH:=7b39127b219cc70bfd935a4af6b0f2ba83d4b35c916f253c7e942c23ab490f07
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=COPYING
@@ -48,7 +48,6 @@ endef #'
 HOST_MAKE_FLAGS += \
 	DESTDIR=$(STAGING_DIR_HOSTPKG) \
 	PREFIX=""
-
 
 define Build/Configure
 endef

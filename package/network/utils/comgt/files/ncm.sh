@@ -91,7 +91,7 @@ proto_ncm_setup() {
 
 	start=$(date +%s)
 	while true; do
-		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk -v RS='\r?\n' 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
 		[ "$manufacturer" = "error" ] && {
 			manufacturer=""
 		}

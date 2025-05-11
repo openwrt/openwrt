@@ -16,6 +16,9 @@ acer,predator-w6d)
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 link_1000 tx rx"
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:green:wan" "eth1" "link_2500 tx rx"
 	;;
+asus,rt-ax52)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	;;
 asus,tuf-ax4200)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
 	;;
@@ -44,7 +47,8 @@ bananapi,bpi-r4-poe)
 	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:02:green:lan" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:03:green:lan" "lan3" "link tx rx"
 	;;
-cudy,re3000-v1)
+cudy,re3000-v1|\
+wavlink,wl-wn573hx3)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
 	;;
 cudy,wr3000-v1)
@@ -69,6 +73,15 @@ glinet,gl-xe3000)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wifi2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wifi5g" "phy1-ap0"
 	;;
+huasifei,wh3000)
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
+	;;
+mercusys,mr80x-v3)
+	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan-3" "green:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	;;
 mercusys,mr90x-v1|\
 mercusys,mr90x-v1-ubi)
 	ucidef_set_led_netdev "lan-0" "lan-0" "green:lan-0" "lan0" "link tx rx"
@@ -79,8 +92,16 @@ mercusys,mr90x-v1-ubi)
 netcore,n60)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
 	;;
+netcore,n60-pro)
+	ucidef_set_led_netdev "lan1" "LAN1" "mdio-bus:05:green:lan" "lan1" "link tx rx"
+	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:06:green:wan" "eth1" "tx rx"
+	ucidef_set_led_netdev "wanlink" "WANLINK" "blue:wan" "eth1" "link"
+	;;
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
+	;;
+netis,nx31)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
 nokia,ea0326gmp)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
@@ -108,6 +129,13 @@ routerich,ax3000-ubootmod)
 	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+routerich,ax3000-v1)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "eth1" "link"
 	;;
 smartrg,sdg-8612)
 	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"

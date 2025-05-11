@@ -7,8 +7,12 @@ ipq50xx_setup_interfaces()
 {
 	local board="$1"
 	case $board in
+	elecom,wrc-x3000gs2|\
 	linksys,mr5500)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	glinet,gl-b3000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	linksys,mx2000|\
 	linksys,mx5500|\

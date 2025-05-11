@@ -15,15 +15,18 @@
 #
 
 usage() {
-	echo "Usage: `basename $0` output img0_name img0_file [[img1_name img1_file] ...]"
+	echo "Usage: `basename $0` output [[device].bootscript] img0_name img0_file [[img1_name img1_file] ...]"
 	exit 1
 }
 
 # We need at least 3 arguments
-[ "$#" -lt 3 ] && usage
+[ "$#" -lt 3 ] && usage || node_type="firmware"
 
 # Target output file
 OUTPUT="$1"; shift
+
+# check for bootscript
+[ "${1##*.}" = "bootscript" ] && has_script=true && node_type="script"
 
 # Create a default, fully populated DTS file
 echo "\
@@ -35,17 +38,30 @@ echo "\
 
 	images {" > ${OUTPUT}
 
-while [ -n "$1" -a -n "$2" ]; do
-	[ -f "$2" ] || usage
+while [ -n "$1" -a -n "$2" ] || [ $has_script ]; do
+	[ -f "$2" ] || [ $has_script ] && has_script= || usage
 
-	name="$1"; shift
-	file="$1"; shift
+	case "$node_type" in
+	script)
+		name="$node_type"
+		file="$1"; shift
+		desc="${file%.*} uboot ${file##*.}"
+		type="$node_type"
+		node_type="firmware"
+	;;
+	firmware)
+		name="$1"; shift
+		file="$1"; shift
+		desc="$name"
+		type="$node_type"
+	;;
+	esac
 
 	echo \
 "		${name} {
-			description = \"${name}\";
+			description = \"${desc}\";
 			data = /incbin/(\"${file}\");
-			type = \"Firmware\";
+			type = \"${type}\";
 			arch = \"ARM\";
 			compression = \"none\";
 			hash@1 {

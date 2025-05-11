@@ -200,7 +200,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
  	mtk_rx_irq_disable(eth, eth->soc->rx.irq_done_mask);
-@@ -4957,23 +4982,24 @@ static int mtk_probe(struct platform_dev
+@@ -4973,23 +4998,24 @@ static int mtk_probe(struct platform_dev
  	}
  
  	if (eth->soc->offload_version) {
@@ -233,7 +233,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
-@@ -5076,6 +5102,7 @@ static const struct mtk_soc_data mt7621_
+@@ -5092,6 +5118,7 @@ static const struct mtk_soc_data mt7621_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 1,
@@ -241,7 +241,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
-@@ -5104,6 +5131,7 @@ static const struct mtk_soc_data mt7622_
+@@ -5120,6 +5147,7 @@ static const struct mtk_soc_data mt7622_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 2,
@@ -249,7 +249,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
-@@ -5132,6 +5160,7 @@ static const struct mtk_soc_data mt7623_
+@@ -5148,6 +5176,7 @@ static const struct mtk_soc_data mt7623_
  	.required_pctl = true,
  	.version = 1,
  	.offload_version = 1,
@@ -257,7 +257,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
-@@ -5187,6 +5216,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5203,6 +5232,7 @@ static const struct mtk_soc_data mt7981_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -265,7 +265,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5216,6 +5246,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5232,6 +5262,7 @@ static const struct mtk_soc_data mt7986_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -273,7 +273,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5245,6 +5276,7 @@ static const struct mtk_soc_data mt7988_
+@@ -5261,6 +5292,7 @@ static const struct mtk_soc_data mt7988_
  	.required_pctl = false,
  	.version = 3,
  	.offload_version = 2,
@@ -283,7 +283,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1132,7 +1132,7 @@ struct mtk_reg_map {
+@@ -1140,7 +1140,7 @@ struct mtk_reg_map {
  		u32	tx_sch_rate;	/* tx scheduler rate control registers */
  	} qdma;
  	u32	gdm1_cnt;
@@ -292,7 +292,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u32	ppe_base;
  	u32	wdma_base[3];
  	u32	pse_iq_sta;
-@@ -1170,6 +1170,7 @@ struct mtk_soc_data {
+@@ -1178,6 +1178,7 @@ struct mtk_soc_data {
  	u8		offload_version;
  	u8		hash_offset;
  	u8		version;
@@ -300,7 +300,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	u16		foe_entry_size;
  	netdev_features_t hw_features;
  	bool		has_accounting;
-@@ -1294,7 +1295,7 @@ struct mtk_eth {
+@@ -1302,7 +1303,7 @@ struct mtk_eth {
  
  	struct metadata_dst		*dsa_meta[MTK_MAX_DSA_PORTS];
  
@@ -309,7 +309,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct rhashtable		flow_table;
  
  	struct bpf_prog			__rcu *prog;
-@@ -1319,6 +1320,7 @@ struct mtk_eth {
+@@ -1327,6 +1328,7 @@ struct mtk_eth {
  struct mtk_mac {
  	int				id;
  	phy_interface_t			interface;
@@ -317,7 +317,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	int				speed;
  	struct device_node		*of_node;
  	struct phylink			*phylink;
-@@ -1440,7 +1442,7 @@ int mtk_gmac_sgmii_path_setup(struct mtk
+@@ -1448,7 +1450,7 @@ int mtk_gmac_sgmii_path_setup(struct mtk
  int mtk_gmac_gephy_path_setup(struct mtk_eth *eth, int mac_id);
  int mtk_gmac_rgmii_path_setup(struct mtk_eth *eth, int mac_id);
  

@@ -2346,7 +2346,7 @@ host_free:
 }
 
 /* 4 device share one driver, using "drvdata" to show difference */
-static int msdc_drv_remove(struct platform_device *pdev)
+static void msdc_drv_remove(struct platform_device *pdev)
 {
 	struct mmc_host *mmc;
 	struct msdc_host *host;
@@ -2371,8 +2371,6 @@ static int msdc_drv_remove(struct platform_device *pdev)
 			  host->dma.bd,  host->dma.bd_addr);
 
 	mmc_free_host(host->mmc);
-
-	return 0;
 }
 
 /* Fix me: Power Flow */
@@ -2412,7 +2410,7 @@ MODULE_DEVICE_TABLE(of, mt7620_sdhci_match);
 
 static struct platform_driver mt_msdc_driver = {
 	.probe   = msdc_drv_probe,
-	.remove  = msdc_drv_remove,
+	.remove_new  = msdc_drv_remove,
 #ifdef CONFIG_PM
 	.suspend = msdc_drv_suspend,
 	.resume  = msdc_drv_resume,

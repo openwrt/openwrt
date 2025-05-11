@@ -11,7 +11,10 @@ mediatek_setup_interfaces()
 	abt,asr3000|\
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
+	netis,nx31|\
 	nokia,ea0326gmp|\
+	mercusys,mr80x-v3|\
+	routerich,ax3000-v1|\
 	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
@@ -28,6 +31,7 @@ mediatek_setup_interfaces()
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
+	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,zenwifi-bt8|\
 	asus,zenwifi-bt8-ubootmod|\
@@ -48,6 +52,7 @@ mediatek_setup_interfaces()
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	netcore,n60|\
+	netcore,n60-pro|\
 	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
 	unielec,u7981-01*|\
@@ -67,7 +72,8 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
 	bananapi,bpi-r3-mini|\
-	edgecore,eap111)
+	edgecore,eap111|\
+	huasifei,wh3000)
 		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
 	bananapi,bpi-r4)
@@ -84,6 +90,7 @@ mediatek_setup_interfaces()
 	cudy,re3000-v1|\
 	netgear,wax220|\
 	ubnt,unifi-6-plus|\
+	wavlink,wl-wn573hx3|\
 	zyxel,nwa50ax-pro)
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -165,6 +172,12 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	mercusys,mr80x-v3)
+		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
+		label_mac=$(macaddr_canonicalize "$mac_dirty")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)

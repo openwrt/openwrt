@@ -315,6 +315,18 @@ define U-Boot/mt7981_jcg_q30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_netis_nx31
+  NAME:=netis NX31
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_nx31
+  UBOOT_CONFIG:=mt7981_netis_nx31
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_nokia_ea0326gmp
   NAME:=Nokia EA0326GMP
   BUILD_SUBTARGET:=filogic
@@ -606,6 +618,18 @@ define U-Boot/mt7986_netcore_n60
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr3
 endef
 
+define U-Boot/mt7986_netcore_n60-pro
+  NAME:=Netcore N60 Pro
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netcore_n60-pro
+  UBOOT_CONFIG:=mt7986_netcore_n60-pro
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
+endef
+
 define U-Boot/mt7986_tplink_tl-xdr4288
   NAME:=TP-LINK TL-XDR4288
   BUILD_SUBTARGET:=filogic
@@ -864,6 +888,7 @@ UBOOT_TARGETS := \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
+	mt7981_netis_nx31 \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \
 	mt7981_openwrt_one-nor \
@@ -886,6 +911,7 @@ UBOOT_TARGETS := \
 	mt7986_jdcloud_re-cp-03 \
 	mt7986_mercusys_mr90x-v1 \
 	mt7986_netcore_n60 \
+	mt7986_netcore_n60-pro \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \

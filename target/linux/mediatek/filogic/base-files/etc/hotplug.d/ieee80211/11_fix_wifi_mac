@@ -37,6 +37,7 @@ case "$board" in
 			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
 			/sys${DEVPATH}/macaddress
 		;;
+	asus,rt-ax52|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
@@ -105,7 +106,8 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
 	jcg,q30-pro|\
-	netcore,n60)
+	netcore,n60|\
+	netcore,n60-pro)
 		# Originally, phy1 is phy0 mac with LA bit set. However, this would conflict
 		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(get_mac_label) > /sys${DEVPATH}/macaddress
@@ -118,6 +120,12 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
 		;;
+	mercusys,mr80x-v3)
+		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
+		label_mac=$(macaddr_canonicalize "$mac_dirty")
+		[ "$PHYNBR" = "0" ] && macaddr_add $label_mac -1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $label_mac -2 > /sys${DEVPATH}/macaddress
+		;;
 	mercusys,mr90x-v1|\
 	tplink,re6000xd)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
@@ -128,6 +136,14 @@ case "$board" in
 		hw_mac_addr=$(mtd_get_mac_ascii u-boot-env mac)
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	netis,nx31)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		addr=$(macaddr_unsetbit $(macaddr_setbit_la $addr) 25)
+		addr_2g=$(macaddr_unsetbit $(macaddr_unsetbit $addr 26) 27)
+		addr_5g=$(macaddr_setbit $(macaddr_setbit $addr 26) 27)
+		[ "$PHYNBR" = "0" ] && echo "$addr_2g" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo "$addr_5g" > /sys${DEVPATH}/macaddress
 		;;
 	nokia,ea0326gmp)
 		addr=$(cat /sys/class/net/eth0/address)
@@ -170,6 +186,10 @@ case "$board" in
 	zyxel,ex5601-t0-ubootmod)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
+	wavlink,wl-wn573hx3)
+		addr=$(mtd_get_mac_binary factory 0x04)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr -0x300000) > /sys${DEVPATH}/macaddress
 		;;
 	zyxel,nwa50ax-pro)
 		hw_mac_addr="$(mtd_get_mac_binary mrd 0x1fff8)"

@@ -32,7 +32,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/old_gpio_wdt.c
-@@ -0,0 +1,300 @@
+@@ -0,0 +1,299 @@
 +/*
 + *      Driver for GPIO-controlled Hardware Watchdogs.
 + *
@@ -277,7 +277,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +	return 0;
 +}
 +
-+static int gpio_wdt_remove(struct platform_device *pdev)
++static void gpio_wdt_remove(struct platform_device *pdev)
 +{
 +	/* FIXME: do we need to lock this test ? */
 +	if (gpio_wdt_device.queue) {
@@ -287,12 +287,11 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +
 +	gpio_free(gpio_wdt_device.gpio);
 +	misc_deregister(&gpio_wdt_misc);
-+	return 0;
 +}
 +
 +static struct platform_driver gpio_wdt_driver = {
 +	.probe = gpio_wdt_probe,
-+	.remove = gpio_wdt_remove,
++	.remove_new = gpio_wdt_remove,
 +	.driver.name = "gpio-wdt",
 +};
 +

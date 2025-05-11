@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN='fitblk'
+RAMFS_COPY_BIN='fitblk fit_check_sign'
 
 platform_do_upgrade() {
 	local board=$(board_name)
@@ -69,11 +69,8 @@ platform_check_image() {
 		return $?
 		;;
 	*)
-		[ "$magic" != "d00dfeed" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
+		fit_check_image "$1"
+		return $?
 		;;
 	esac
 

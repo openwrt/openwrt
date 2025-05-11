@@ -647,6 +647,8 @@ define Device/Build/initramfs
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 endef
 endif
@@ -781,6 +783,8 @@ define Device/Build/image
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 
 endef
@@ -835,6 +839,8 @@ define Device/Build/artifact
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 
 endef

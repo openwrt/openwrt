@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2.12
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_HASH:=b4c047493cac1152203e1ba121ae57267e4899b7bf56eb365e22a933342d31c9
 PKG_MAINTAINER:=Thomas Richard <thomas.richard@bootlin.com>
@@ -38,7 +38,20 @@ define Trusted-Firmware-A/stm32mp135f-dk
   DTB_FILE_NAME=stm32mp135f-dk.dtb
 endef
 
-TFA_TARGETS := stm32mp135f-dk
+define Trusted-Firmware-A/stm32mp157c-dk2
+  $(call Trusted-Firmware-A/stm32mp1)
+  NAME:=STM32MP157C-DK2
+  DTB_FILE_NAME=stm32mp157c-dk2.dtb
+endef
+
+define Trusted-Firmware-A/stm32mp157c-dk2-scmi
+  $(call Trusted-Firmware-A/stm32mp157c-dk2)
+  NAME:=STM32MP157C-DK2 (SCMI)
+endef
+
+TFA_TARGETS := stm32mp135f-dk \
+	       stm32mp157c-dk2 \
+	       stm32mp157c-dk2-scmi
 
 TFA_MAKE_FLAGS += \
 		ARCH=aarch32 AARCH32_SP=optee \
@@ -54,7 +67,7 @@ TFA_MAKE_FLAGS += \
 
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/tf-a-$(BUILD_VARIANT).stm32 \
+	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/tf-a-$(subst -scmi,,$(BUILD_VARIANT)).stm32 \
 		$(STAGING_DIR_IMAGE)/tf-a-$(BUILD_VARIANT).stm32
 	$(CP) $(PKG_BUILD_DIR)/build/$(PLAT)/release/fip.bin \
 		$(STAGING_DIR_IMAGE)/fip-$(BUILD_VARIANT).bin

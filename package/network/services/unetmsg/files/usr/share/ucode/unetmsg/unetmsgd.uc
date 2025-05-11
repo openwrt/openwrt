@@ -47,8 +47,8 @@ function new_handle(list, name, data)
 function pubsub_add(kind, name, data)
 {
 	let list = this[kind];
-	if (!length(list[name])) {
-		list[name] = {};
+	if (!length(list[name]) || kind == "publish") {
+		list[name] ??= {};
 		remote.pubsub_set(kind, name, true);
 	}
 	return new_handle(this[kind], name, data);
@@ -58,8 +58,8 @@ function pubsub_del(kind, name, data)
 {
 	let list = this[kind][name];
 	delete list[data._id];
-	if (!length(list))
-		remote.pubsub_set(kind, name, false);
+	if (!length(list) || kind == "publish")
+		remote.pubsub_set(kind, name, length(list) > 0);
 }
 
 function get_handles(handle, local, remote)
@@ -111,6 +111,7 @@ function handle_request(handle, req, data, remote)
 
 	for (let cur in handles) {
 		if (!cur || !cur.get_channel) {
+			cb();
 			continue;
 		}
 		let chan = cur.get_channel();
@@ -157,6 +158,27 @@ function handle_message(handle, data, remote)
 	return 0;
 }
 
+function handle_publish(handle, name)
+{
+	let local = this.subscribe[name];
+	let handles = get_handles(handle, local);
+
+	for (let cur in handles) {
+		if (!cur || !cur.get_channel)
+			continue;
+
+		let chan = cur.get_channel();
+		if (!chan)
+			continue;
+
+		chan.request({
+			method: "publish",
+			return: "ignore",
+			data: { name },
+		});
+	}
+}
+
 function add_acl(type, user, data)
 {
 	if (!data || !user)
@@ -198,6 +220,7 @@ const core_proto = {
 	pubsub_del,
 	handle_request,
 	handle_message,
+	handle_publish,
 	dbg: function(msg) {
 		if (this.debug_enabled)
 			warn(msg);

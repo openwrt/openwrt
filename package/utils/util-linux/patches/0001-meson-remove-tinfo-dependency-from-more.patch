@@ -1,0 +1,38 @@
+From 363e48da01956321fb9337c59d78865c97c711a2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Mon, 14 Apr 2025 23:19:06 +0200
+Subject: [PATCH] meson: remove tinfo dependency from 'more'
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The more utility does not need libtinfo and it is not
+specified in autotools either.
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ meson.build | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -1387,8 +1387,7 @@ exe = executable(
+   more_sources,
+   link_with : [lib_common],
+   include_directories : includes,
+-  dependencies : [lib_tinfo,
+-                  curses_libs,
++  dependencies : [curses_libs,
+ 		  lib_magic],
+   install : opt,
+   build_by_default : opt)
+@@ -1398,8 +1397,7 @@ exe2 = executable(
+   link_with : [lib_common],
+   include_directories : includes,
+   c_args : '-DTEST_PROGRAM',
+-  dependencies : [lib_tinfo,
+-                  curses_libs,
++  dependencies : [curses_libs,
+ 		  lib_magic],
+   build_by_default : opt and program_tests)
+ exes += exe

@@ -127,7 +127,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  #include <linux/netdevice.h>
  #include <linux/gpio/consumer.h>
  #include <linux/phylink.h>
-@@ -3265,14 +3266,43 @@ static int mv88e6xxx_setup_upstream_port
+@@ -3276,14 +3277,43 @@ static int mv88e6xxx_setup_upstream_port
  static int mv88e6xxx_setup_port(struct mv88e6xxx_chip *chip, int port)
  {
  	struct device_node *phy_handle = NULL;
@@ -173,7 +173,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  	err = mv88e6xxx_port_setup_mac(chip, port, LINK_UNFORCED,
  				       SPEED_UNFORCED, DUPLEX_UNFORCED,
-@@ -4491,6 +4521,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4517,6 +4547,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -181,7 +181,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -4593,6 +4624,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4619,6 +4650,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -189,7 +189,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -4868,6 +4900,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4894,6 +4926,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,
@@ -197,7 +197,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	.port_setup_message_port = mv88e6xxx_setup_message_port,
  	.stats_snapshot = mv88e6320_g1_stats_snapshot,
  	.stats_set_histogram = mv88e6095_g1_stats_set_histogram,
-@@ -5290,6 +5323,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -5324,6 +5357,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.port_disable_learn_limit = mv88e6xxx_port_disable_learn_limit,
  	.port_disable_pri_override = mv88e6xxx_port_disable_pri_override,
  	.port_get_cmode = mv88e6352_port_get_cmode,

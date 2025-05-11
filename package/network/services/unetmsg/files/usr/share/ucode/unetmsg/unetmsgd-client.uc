@@ -40,6 +40,9 @@ function client_pubsub(kind, cl, names)
 		cl_list[name] = core.pubsub_add(kind, name, proto({
 			client: cl.id,
 		}, pubsub_proto));
+
+		if (kind == "publish")
+			core.handle_publish(cl_list[name], name);
 	}
 
 	return 0;
@@ -72,8 +75,11 @@ function client_request(cl, req)
 		return core.handle_message(handle, data, true);
 	case "request":
 		handle = cl.subscribe[name];
-	    if (!handle)
-			return libubus.STATUS_INVALID_ARGUMENT;
+		if (!handle &&
+		    !core.acl_check("subscribe", cl.acl, [ name ]))
+			return libubus.STATUS_PERMISSION_DENIED;
+
+		handle ??= { client: cl.id };
 		return core.handle_request(handle, req, data, true);
 	}
 }
@@ -98,8 +104,11 @@ function client_disconnect(id)
 		return;
 
 	for (let kind in [ "publish", "subscribe" ])
-		for (let name, data in cl[kind])
+		for (let name, data in cl[kind]) {
+			if (kind == "publish")
+				core.handle_publish(data, name);
 			core.pubsub_del(kind, name, data);
+		}
 
 	delete clients[id];
 }

@@ -1,0 +1,38 @@
+From cd5038306e6815592fafbd06d406f45af2df3fcc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Mon, 14 Apr 2025 23:32:36 +0200
+Subject: [PATCH] meson: add feature for translated documentation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Translating the documentation is slow.
+Add a feature which can be used to disable this step.
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ meson_options.txt  | 2 ++
+ po-man/meson.build | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -25,6 +25,8 @@ option('sysvinit',    type : 'feature',
+ option('btrfs',       type : 'feature')
+ option('widechar',    type : 'feature',
+        description : 'compile with wide character support')
++option('translate-docs', type : 'feature',
++       description : 'translate documentation')
+ 
+ # enable building of various programs and features ("build-" prefix)
+ 
+--- a/po-man/meson.build
++++ b/po-man/meson.build
+@@ -1,6 +1,6 @@
+ po4a = find_program('po4a', required : false)
+ 
+-if not (asciidoctor.found() and po4a.found())
++if not get_option('translate-docs').require(asciidoctor.found()).require(po4a.found()).allowed()
+   subdir_done()
+ endif
+ 

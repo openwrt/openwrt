@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-04-01
-PKG_SOURCE_VERSION:=c220fac7fdb35628ba53ff53ed36cf883a401161
-PKG_MIRROR_HASH:=26338b4f165eb2e90273cd61ed26715b99e496ccf738167e22ff9213ca42c973
+PKG_SOURCE_DATE:=2025-04-22
+PKG_SOURCE_VERSION:=acf37292d2c1c27930b4d9ba58276b599706910d
+PKG_MIRROR_HASH:=1068b8ea938bfb0cd72bd48ef329e885a283e91f2ae864bfba9171c729e3d308
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -38,8 +38,10 @@ ALLWIFIBOARDS:= \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
 	edimax_cax1800 \
+	elecom_wrc-x3000gs2 \
 	glinet_gl-ax1800 \
 	glinet_gl-axt1800 \
+	glinet_gl-b3000 \
 	linksys_homewrk \
 	linksys_mr5500 \
 	linksys_mr7350 \
@@ -66,8 +68,10 @@ ALLWIFIBOARDS:= \
 	redmi_ax6 \
 	skspruce_wia3300-20 \
 	spectrum_sax1v1k \
+	tplink_deco-x80-5g \
 	tplink_eap610-outdoor \
 	tplink_eap620hd-v1 \
+	tplink_eap623od-hd-v1 \
 	tplink_eap660hd-v1 \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
@@ -186,8 +190,10 @@ $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
 $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
+$(eval $(call generate-ipq-wifi-package,elecom_wrc-x3000gs2,ELECOM WRC-X3000GS2))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-ax1800,GL.iNet GL-AX1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-axt1800,GL.iNet GL-AXT1800))
+$(eval $(call generate-ipq-wifi-package,glinet_gl-b3000,GL.iNet GL-B3000))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mr7350,Linksys MR7350))
@@ -214,8 +220,10 @@ $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
 $(eval $(call generate-ipq-wifi-package,skspruce_wia3300-20,SKSpruce WIA3300-20))
 $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
+$(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
 $(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
 $(eval $(call generate-ipq-wifi-package,tplink_eap620hd-v1,TP-Link EAP620 HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_eap623od-hd-v1,TP-Link EAP623-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))

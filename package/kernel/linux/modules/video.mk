@@ -63,7 +63,7 @@ $(eval $(call KernelPackage,acpi-video))
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
-	DEPENDS:=@DISPLAY_SUPPORT
+	DEPENDS:=@DISPLAY_SUPPORT +!LINUX_6_6:kmod-fb
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
@@ -129,7 +129,7 @@ define KernelPackage/fb
 	CONFIG_VT_HW_CONSOLE_BINDING=y
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
 	$(LINUX_DIR)/lib/fonts/font.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko
+	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko@lt6.8
   AUTOLOAD:=$(call AutoLoad,06,fb font)
 endef
 
@@ -138,8 +138,9 @@ define KernelPackage/fb/description
 endef
 
 define KernelPackage/fb/x86
-  FILES+=$(LINUX_DIR)/arch/x86/video/fbdev.ko
-  AUTOLOAD:=$(call AutoLoad,06,fbdev fb font)
+  FILES+=$(LINUX_DIR)/arch/x86/video/fbdev.ko@lt6.12 \
+	$(LINUX_DIR)/arch/x86/video/video-common.ko@ge6.12
+  AUTOLOAD:=$(call AutoLoad,06,fbdev@lt6.12 video-common@ge6.12 fb font)
 endef
 
 $(eval $(call KernelPackage,fb))
@@ -196,7 +197,9 @@ define KernelPackage/fb-sys-fops
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer software sys ops support
   DEPENDS:=+kmod-fb
-  KCONFIG:=CONFIG_FB_SYS_FOPS
+  KCONFIG:= \
+	CONFIG_FB_SYS_FOPS@lt6.12 \
+	CONFIG_FB_SYSMEM_FOPS@ge6.12
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_sys_fops.ko
   AUTOLOAD:=$(call AutoLoad,07,fb_sys_fops)
 endef
@@ -386,7 +389,7 @@ define KernelPackage/drm-ttm-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Helpers for ttm-based gem objects
   HIDDEN:=1
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-ttm
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-ttm +!LINUX_6_6:kmod-drm-kms-helper
   KCONFIG:=CONFIG_DRM_TTM_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_ttm_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_ttm_helper)
@@ -428,6 +431,23 @@ define KernelPackage/drm-suballoc-helper/description
 endef
 
 $(eval $(call KernelPackage,drm-suballoc-helper))
+
+define KernelPackage/drm-vram-helper
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=DRM helpers for VRAM memory management
+  DEPENDS:=@DISPLAY_SUPPORT \
+    +kmod-drm-kms-helper +kmod-drm-ttm-helper
+  KCONFIG:=CONFIG_DRM_VRAM_HELPER
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_vram_helper.ko
+  AUTOLOAD:=$(call AutoProbe,drm_vram_helper)
+endef
+
+define KernelPackage/drm-vram-helper/description
+  DRM helpers for VRAM memory management.
+endef
+
+$(eval $(call KernelPackage,drm-vram-helper))
 
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
