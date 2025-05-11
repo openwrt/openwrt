@@ -11,6 +11,12 @@
  # We need at least this version for CLONE support.
 --- a/bin/aclocal.in
 +++ b/bin/aclocal.in
+@@ -1,4 +1,4 @@
+-#!@PERL@
++#!/usr/bin/env perl
+ # aclocal - create aclocal.m4 by scanning configure.ac      -*- perl -*-
+ # @configure_input@
+ # Copyright (C) 1996-2021 Free Software Foundation, Inc.
 @@ -23,9 +23,11 @@ use 5.006;
  use strict;
  use warnings FATAL => 'all';
@@ -37,6 +43,12 @@
  my $install = 0;
 --- a/bin/automake.in
 +++ b/bin/automake.in
+@@ -1,4 +1,4 @@
+-#!@PERL@
++#!/usr/bin/env perl
+ # automake - create Makefile.in from Makefile.am            -*- perl -*-
+ # @configure_input@
+ # Copyright (C) 1994-2021 Free Software Foundation, Inc.
 @@ -26,9 +26,11 @@ use 5.006;
  use strict;
  use warnings FATAL => 'all';
