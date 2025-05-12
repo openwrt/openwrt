@@ -337,6 +337,10 @@ function network_open_channel(net, name, peer)
 			delete net.tx_channels[sock_data.name];
 
 		network_tx_socket_close(sock_data);
+		if (net.timer.remaining() > 0)
+			return;
+
+		net.timer.set(sock_data.auth ? 100 : 10000);
 	};
 
 	sock_data.socket = sock;
