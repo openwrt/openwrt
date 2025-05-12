@@ -536,7 +536,7 @@
 	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi@0,0 {
 			status = "okay";
 
 			/* ath11k has no DT compatible for PCI cards */
@@ -558,7 +558,7 @@
 	perst-gpio = <&tlmm 62 GPIO_ACTIVE_HIGH>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi@0,0 {
 			status = "okay";
 
 			compatible = "qcom,ath10k";
