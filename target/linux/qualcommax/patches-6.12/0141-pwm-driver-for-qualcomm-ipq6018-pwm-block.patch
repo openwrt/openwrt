@@ -51,7 +51,7 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
  obj-$(CONFIG_PWM_KEEMBAY)	+= pwm-keembay.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-ipq.c
-@@ -0,0 +1,280 @@
+@@ -0,0 +1,277 @@
 +// SPDX-License-Identifier: BSD-3-Clause OR GPL-2.0
 +/*
 + * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
@@ -96,14 +96,13 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +#define IPQ_PWM_REG1_ENABLE		BIT(31)
 +
 +struct ipq_pwm_chip {
-+	struct pwm_chip chip;
 +	struct clk *clk;
 +	void __iomem *mem;
 +};
 +
 +static struct ipq_pwm_chip *ipq_pwm_from_chip(struct pwm_chip *chip)
 +{
-+	return container_of(chip, struct ipq_pwm_chip, chip);
++	return pwmchip_get_drvdata(chip);
 +}
 +
 +static unsigned int ipq_pwm_reg_read(struct pwm_device *pwm, unsigned int reg)
@@ -264,18 +263,19 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +static const struct pwm_ops ipq_pwm_ops = {
 +	.apply = ipq_pwm_apply,
 +	.get_state = ipq_pwm_get_state,
-+	.owner = THIS_MODULE,
 +};
 +
 +static int ipq_pwm_probe(struct platform_device *pdev)
 +{
++	struct pwm_chip *chip;
 +	struct ipq_pwm_chip *pwm;
 +	struct device *dev = &pdev->dev;
 +	int ret;
 +
-+	pwm = devm_kzalloc(dev, sizeof(*pwm), GFP_KERNEL);
-+	if (!pwm)
-+		return -ENOMEM;
++	chip = devm_pwmchip_alloc(dev, 4, sizeof(*pwm));
++	if (IS_ERR(chip))
++		return PTR_ERR(chip);
++	pwm = ipq_pwm_from_chip(chip);
 +
 +	platform_set_drvdata(pdev, pwm);
 +
@@ -293,13 +293,11 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +	if (ret)
 +		return dev_err_probe(dev, ret, "clock enable failed");
 +
-+	pwm->chip.dev = dev;
-+	pwm->chip.ops = &ipq_pwm_ops;
-+	pwm->chip.npwm = 4;
++	chip->ops = &ipq_pwm_ops;
 +
-+	ret = pwmchip_add(&pwm->chip);
++	ret = devm_pwmchip_add(dev, chip);
 +	if (ret < 0) {
-+		dev_err_probe(dev, ret, "pwmchip_add() failed\n");
++		dev_err_probe(dev, ret, "devm_pwmchip_add() failed\n");
 +		clk_disable_unprepare(pwm->clk);
 +	}
 +
@@ -310,7 +308,6 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +{
 +	struct ipq_pwm_chip *pwm = platform_get_drvdata(pdev);
 +
-+	pwmchip_remove(&pwm->chip);
 +	clk_disable_unprepare(pwm->clk);
 +}
 +
@@ -326,7 +323,7 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +		.of_match_table = pwm_ipq_dt_match,
 +	},
 +	.probe = ipq_pwm_probe,
-+	.remove_new = ipq_pwm_remove,
++	.remove = ipq_pwm_remove,
 +};
 +
 +module_platform_driver(ipq_pwm_driver);
