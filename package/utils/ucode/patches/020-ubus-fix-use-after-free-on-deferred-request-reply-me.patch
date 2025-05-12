@@ -1,0 +1,27 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 12 May 2025 12:43:44 +0200
+Subject: [PATCH] ubus: fix use-after-free on deferred request reply() method
+
+Hold a reference to the defer resource as long as it is still needed
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -636,6 +636,7 @@ uc_ubus_call_user_cb(uc_ubus_deferred_t
+ 	uc_value_t *this, *func;
+ 
+ 	request_reg_get(defer->vm, defer->registry_index, &this, &func, NULL, NULL);
++	ucv_get(this);
+ 
+ 	if (ucv_is_callable(func)) {
+ 		uc_vm_stack_push(defer->vm, ucv_get(this));
+@@ -648,6 +649,7 @@ uc_ubus_call_user_cb(uc_ubus_deferred_t
+ 	}
+ 
+ 	request_reg_clear(defer->vm, defer->registry_index);
++	ucv_put(this);
+ }
+ 
+ static void
