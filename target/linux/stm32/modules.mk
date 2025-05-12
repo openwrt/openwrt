@@ -212,7 +212,11 @@ define KernelPackage/stm32-dfsdm-adc
   FILES:=$(LINUX_DIR)/drivers/iio/adc/stm32-dfsdm-core.ko \
 	 $(LINUX_DIR)/drivers/iio/adc/stm32-dfsdm-adc.ko
   AUTOLOAD:=$(call AutoProbe,stm32-dfsdm-core stm32-dfsdm-adc)
-  $(call AddDepends/iio,@TARGET_stm32 +kmod-stm32-timer-trigger +kmod-industrialio-triggered-buffer +kmod-industrialio-hw-consumer)
+  $(call AddDepends/iio,@TARGET_stm32 \
+	  +kmod-stm32-timer-trigger \
+	  +kmod-industrialio-triggered-buffer \
+	  +kmod-industrialio-hw-consumer \
+	  +!LINUX_6_6:kmod-industrialio-backend)
 endef
 
 $(eval $(call KernelPackage,stm32-dfsdm-adc))
