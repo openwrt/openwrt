@@ -237,6 +237,8 @@
 
 				nvmem-layout {
 					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
 					aqr_fw: aqr-fw@0 {
 						/* Skip the QCOM MBN Header of 40 bytes */
