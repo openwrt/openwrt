@@ -1,0 +1,35 @@
+From 52358c64937e982d3cdcf64be58f08f30d8e518c Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Date: Thu, 21 Mar 2024 16:46:36 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq6018: Add PCIe bridge node
+
+On Qcom SoCs, the PCIe host bridge is connected to a single PCIe bridge
+for each controller instance. Hence, add a node to represent the bridge.
+
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Link: https://lore.kernel.org/r/20240321-pcie-qcom-bridge-dts-v2-16-1eb790c53e43@linaro.org
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -911,6 +911,16 @@
+ 				      "axi_s_sticky";
+ 
+ 			status = "disabled";
++
++			pcie@0 {
++				device_type = "pci";
++				reg = <0x0 0x0 0x0 0x0 0x0>;
++				bus-range = <0x01 0xff>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++			};
+ 		};
+ 	};
+ 
