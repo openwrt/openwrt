@@ -191,8 +191,18 @@ function network_check_auth(sock_data, info)
 	sock_data.auth = true;
 	net.rx_channels[sock_data.name] = sock_data;
 	core.dbg(`Incoming connection from ${sock_data.name} established\n`);
-	if (!net.tx_channels[sock_data.name])
+
+	let chan = net.tx_channels[sock_data.name];
+	if (!chan) {
 		net.timer.set(100);
+		return;
+	}
+
+	chan.channel.request({
+		method: "ping",
+		data: {},
+		return: "ignore",
+	});
 }
 
 function network_accept(net, sock, addr)
