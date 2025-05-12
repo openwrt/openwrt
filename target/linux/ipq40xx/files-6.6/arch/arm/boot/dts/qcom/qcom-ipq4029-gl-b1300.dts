@@ -102,6 +102,7 @@
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };

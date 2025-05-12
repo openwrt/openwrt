@@ -26,11 +26,13 @@
 		wlan1 {
 			label = "blue:wifi";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wlan2 {
 			label = "blue:wifi5g";
 			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
