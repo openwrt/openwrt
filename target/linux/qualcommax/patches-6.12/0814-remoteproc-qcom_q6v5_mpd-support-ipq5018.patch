@@ -10,7 +10,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 
 --- a/drivers/remoteproc/qcom_q6v5_mpd.c
 +++ b/drivers/remoteproc/qcom_q6v5_mpd.c
-@@ -155,6 +155,8 @@ static int q6_wcss_spawn_pd(struct rproc
+@@ -156,6 +156,8 @@ static int q6_wcss_spawn_pd(struct rproc
  static int wcss_pd_start(struct rproc *rproc)
  {
  	struct userpd *upd = rproc->priv;
@@ -19,7 +19,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	u32 pasid = (upd->pd_asid << 8) | UPD_SWID;
  	int ret;
  
-@@ -170,6 +172,14 @@ static int wcss_pd_start(struct rproc *r
+@@ -171,6 +173,14 @@ static int wcss_pd_start(struct rproc *r
  			return ret;
  	}
  
@@ -34,7 +34,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	return ret;
  }
  
-@@ -179,6 +189,12 @@ static int q6_wcss_stop(struct rproc *rp
+@@ -180,6 +190,12 @@ static int q6_wcss_stop(struct rproc *rp
  	const struct wcss_data *desc = wcss->desc;
  	int ret;
  
@@ -47,7 +47,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	ret = qcom_scm_pas_shutdown(desc->pasid);
  	if (ret) {
  		dev_err(wcss->dev, "not able to shutdown\n");
-@@ -218,6 +234,7 @@ static int wcss_pd_stop(struct rproc *rp
+@@ -219,6 +235,7 @@ static int wcss_pd_stop(struct rproc *rp
  {
  	struct userpd *upd = rproc->priv;
  	struct rproc *rpd_rproc = dev_get_drvdata(upd->dev->parent);
@@ -55,7 +55,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	u32 pasid = (upd->pd_asid << 8) | UPD_SWID;
  	int ret;
  
-@@ -229,6 +246,14 @@ static int wcss_pd_stop(struct rproc *rp
+@@ -230,6 +247,14 @@ static int wcss_pd_stop(struct rproc *rp
  		}
  	}
  
@@ -70,7 +70,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	ret = qcom_scm_msa_unlock(pasid);
  	if (ret) {
  		dev_err(upd->dev, "failed to power down pd\n");
-@@ -430,15 +455,14 @@ static int wcss_pd_load(struct rproc *rp
+@@ -431,15 +456,14 @@ static int wcss_pd_load(struct rproc *rp
  	struct userpd *upd = rproc->priv;
  	struct rproc *rpd_rproc = dev_get_drvdata(upd->dev->parent);
  	struct q6_wcss *wcss = rpd_rproc->priv;
@@ -88,7 +88,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  			     wcss->mem_phys, wcss->mem_size,
  			     NULL);
  }
-@@ -775,6 +799,12 @@ static void q6_wcss_remove(struct platfo
+@@ -776,6 +800,12 @@ static void q6_wcss_remove(struct platfo
  	rproc_free(rproc);
  }
  
@@ -101,7 +101,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  static const struct wcss_data q6_ipq5332_res_init = {
  	.pasid = MPD_WCNSS_PAS_ID,
  	.share_upd_info_to_q6 = true,
-@@ -785,6 +815,7 @@ static const struct wcss_data q6_ipq9574
+@@ -786,6 +816,7 @@ static const struct wcss_data q6_ipq9574
  };
  
  static const struct of_device_id q6_wcss_of_match[] = {
