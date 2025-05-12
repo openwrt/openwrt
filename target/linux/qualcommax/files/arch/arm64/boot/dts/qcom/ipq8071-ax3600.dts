@@ -50,12 +50,7 @@
 
 	perst-gpio = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
+	pcie@0 {
 		wifi0: wifi@1,0 {
 			status = "okay";
 
