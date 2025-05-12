@@ -51,7 +51,7 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
  obj-$(CONFIG_PWM_KEEMBAY)	+= pwm-keembay.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-ipq.c
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,261 @@
 +// SPDX-License-Identifier: BSD-3-Clause OR GPL-2.0
 +/*
 + * Copyright (c) 2016-2017, 2020 The Linux Foundation. All rights reserved.
@@ -277,38 +277,23 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +		return PTR_ERR(chip);
 +	pwm = ipq_pwm_from_chip(chip);
 +
-+	platform_set_drvdata(pdev, pwm);
-+
 +	pwm->mem = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(pwm->mem))
 +		return dev_err_probe(dev, PTR_ERR(pwm->mem),
 +				"regs map failed");
 +
-+	pwm->clk = devm_clk_get(dev, NULL);
++	pwm->clk = devm_clk_get_enabled(dev, NULL);
 +	if (IS_ERR(pwm->clk))
 +		return dev_err_probe(dev, PTR_ERR(pwm->clk),
 +				"failed to get clock");
 +
-+	ret = clk_prepare_enable(pwm->clk);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "clock enable failed");
-+
 +	chip->ops = &ipq_pwm_ops;
 +
 +	ret = devm_pwmchip_add(dev, chip);
-+	if (ret < 0) {
++	if (ret < 0)
 +		dev_err_probe(dev, ret, "devm_pwmchip_add() failed\n");
-+		clk_disable_unprepare(pwm->clk);
-+	}
 +
 +	return ret;
-+}
-+
-+static void ipq_pwm_remove(struct platform_device *pdev)
-+{
-+	struct ipq_pwm_chip *pwm = platform_get_drvdata(pdev);
-+
-+	clk_disable_unprepare(pwm->clk);
 +}
 +
 +static const struct of_device_id pwm_ipq_dt_match[] = {
@@ -323,7 +308,6 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 +		.of_match_table = pwm_ipq_dt_match,
 +	},
 +	.probe = ipq_pwm_probe,
-+	.remove = ipq_pwm_remove,
 +};
 +
 +module_platform_driver(ipq_pwm_driver);
