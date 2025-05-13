@@ -538,7 +538,8 @@ rtl839x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 	return 0;
 }
 
-static void rtl839x_vlan_profile_setup(int profile)
+static void
+rtl839x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p[2] = { 0, 0 };
 

@@ -504,7 +504,8 @@ rtl838x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 	return 0;
 }
 
-static void rtl838x_vlan_profile_setup(int profile)
+static void
+rtl838x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
 		RTL838X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);

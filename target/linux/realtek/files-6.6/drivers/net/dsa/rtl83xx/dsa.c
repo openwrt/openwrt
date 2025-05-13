@@ -158,7 +158,7 @@ static void rtl83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 			priv->family_id);
 
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, portmask);
-	priv->r->write_mcast_pmask(MC_PMASK_MIN_PORTS_IDX, 0x0);
+	priv->r->write_mcast_pmask(MC_PMASK_MIN_PORTS_IDX, priv->mc_router_portmask);
 }
 
 /* Initialize all VLANS */
@@ -170,14 +170,14 @@ static void rtldsa_vlan_setup(struct dsa_switch *ds)
 	pr_info("In %s\n", __func__);
 
 	/* IGMP/MLD snooping disabled: */
-	priv->r->vlan_profile_setup(0);
+	priv->r->vlan_profile_setup(priv, 0);
 	/* IGMP snooping enabled, MLD snooping disabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4);
 	/* IGMP snooping disabled, MLD snooping enabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
 	/* IGMP/MLD snooping enabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4 |
-				    RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4 |
+					  RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
 
 	priv->r->vlan_profile_dump(priv, 0);
 
@@ -1055,7 +1055,7 @@ static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 		return -1;
 
 	set_bit(mc_group, priv->mc_group_bm);
-	portmask = BIT_ULL(port);
+	portmask = BIT_ULL(port) | priv->mc_router_portmask;
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return mc_group;
@@ -1067,7 +1067,7 @@ static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gro
 
 	pr_debug("%s: %d\n", __func__, port);
 
-	portmask |= BIT_ULL(port);
+	portmask |= BIT_ULL(port) | priv->mc_router_portmask;
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return portmask;
@@ -2414,6 +2414,72 @@ static int rtldsa_port_mdb_active(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static void rtldsa_mc_group_add_mrouter(struct rtl838x_switch_priv *priv, int port)
+{
+	u64 portmask = BIT_ULL(port);
+
+	if (portmask & priv->mc_router_portmask)
+		return;
+
+	priv->mc_router_portmask |= BIT_ULL(port);
+}
+
+static void rtldsa_mc_group_del_mrouter(struct rtl838x_switch_priv *priv, int port)
+{
+	u64 portmask = BIT_ULL(port);
+
+	if (!(portmask & priv->mc_router_portmask))
+		return;
+
+	priv->mc_router_portmask &= ~BIT_ULL(port);
+
+	rtldsa_port_mdb_snoop_flush_v4(priv, -1, portmask);
+	rtldsa_port_mdb_snoop_flush_v6(priv, -1, portmask);
+}
+
+static void
+rtldsa_port_mdb_update_unknown_ip_flood(struct rtl838x_switch_priv *priv)
+{
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+	case RTL8390_FAMILY_ID:
+		rtl83xx_mc_pmasks_setup(priv);
+		break;
+	case RTL9300_FAMILY_ID:
+	case RTL9310_FAMILY_ID:
+		priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4);
+		priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+		priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4 |
+						  RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+		break;
+	default:
+		dev_err(priv->dev, "%s: unknown family_id %u\n", __func__,
+			priv->family_id);
+		break;
+	}
+}
+
+static int
+rtldsa_port_mdb_set_mrouter(struct dsa_switch *ds, int port, bool mrouter,
+			    struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (mrouter)
+		rtldsa_mc_group_add_mrouter(priv, port);
+	else
+		rtldsa_mc_group_del_mrouter(priv, port);
+
+	rtldsa_port_mdb_snoop_replay(priv);
+	rtldsa_port_mdb_update_unknown_ip_flood(priv);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
 static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 				   struct dsa_mall_mirror_tc_entry *mirror,
 				   bool ingress, struct netlink_ext_ack *extack)
@@ -2750,6 +2816,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 	.port_mdb_active	= rtldsa_port_mdb_active,
+	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
 
 	.port_mirror_add	= rtl83xx_port_mirror_add,
 	.port_mirror_del	= rtl83xx_port_mirror_del,
@@ -2809,6 +2876,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 	.port_mdb_active	= rtldsa_port_mdb_active,
+	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
 
 	.port_lag_change	= rtldsa_port_lag_change,
 	.port_lag_join		= rtldsa_port_lag_join,

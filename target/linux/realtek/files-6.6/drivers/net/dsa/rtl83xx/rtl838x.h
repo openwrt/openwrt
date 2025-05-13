@@ -1087,7 +1087,7 @@ struct rtl838x_reg {
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtl83xx_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
-	void (*vlan_profile_setup)(int profile);
+	void (*vlan_profile_setup)(struct rtl838x_switch_priv *priv, int profile);
 	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
 	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
@@ -1189,6 +1189,7 @@ struct rtl838x_switch_priv {
 	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long int mc_group_bm[MAX_MC_GROUPS >> 5];
+	u64 mc_router_portmask;
 	int n_pie_blocks;
 	struct rhashtable tc_ht;
 	unsigned long int pie_use_bm[MAX_PIE_ENTRIES >> 5];
