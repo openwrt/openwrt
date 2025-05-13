@@ -133,6 +133,8 @@ inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
 
+void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv);
+void rtldsa_vlan_profiles_setup(struct rtl838x_switch_priv *priv);
 void rtldsa_83xx_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);

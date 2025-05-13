@@ -382,7 +382,8 @@ static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
 		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
 }
 
-static void rtl930x_vlan_profile_setup(int profile)
+static void
+rtl930x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p[5];
 
@@ -396,12 +397,12 @@ static void rtl930x_vlan_profile_setup(int profile)
 	p[2] = RTL930X_VLAN_L2_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
 	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4)
-		p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(0x0);
+		p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(priv->mc_router_portmask);
 	else
 		p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
 	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6)
-		p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(0x0);
+		p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(priv->mc_router_portmask);
 	else
 		p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
@@ -2717,6 +2718,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.l2_hash_key = rtl930x_l2_hash_key,
 	.read_mcast_pmask = rtl930x_read_mcast_pmask,
 	.write_mcast_pmask = rtl930x_write_mcast_pmask,
+	.update_mcast_unknown_ip_flood = rtldsa_vlan_profiles_setup,
 	.pie_init = rtl930x_pie_init,
 	.pie_rule_write = rtl930x_pie_rule_write,
 	.pie_rule_add = rtl930x_pie_rule_add,

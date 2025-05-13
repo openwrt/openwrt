@@ -448,7 +448,7 @@ static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 	priv->ports[port].pvid = pvid;
 }
 
-static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
+void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 {
 	/* RTL8380 and RTL8390 use an index into the portmask table to set the
 	 * unknown multicast portmask, setup a default at a safe location
@@ -456,20 +456,20 @@ static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
 	 * see e.g. rtl9300_vlan_profile_setup
 	 */
 	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
-	priv->r->write_mcast_pmask(MC_PMASK_MIN_PORTS_IDX, 0x0);
+	priv->r->write_mcast_pmask(MC_PMASK_MIN_PORTS_IDX, priv->mc_router_portmask);
 }
 
-static void rtldsa_vlan_profiles_setup(struct rtl838x_switch_priv *priv)
+void rtldsa_vlan_profiles_setup(struct rtl838x_switch_priv *priv)
 {
 	/* IGMP/MLD snooping disabled: */
-	priv->r->vlan_profile_setup(0);
+	priv->r->vlan_profile_setup(priv, 0);
 	/* IGMP snooping enabled, MLD snooping disabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4);
 	/* IGMP snooping disabled, MLD snooping enabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
 	/* IGMP/MLD snooping enabled: */
-	priv->r->vlan_profile_setup(RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4 |
-				    RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
+	priv->r->vlan_profile_setup(priv, RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4 |
+					  RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6);
 }
 
 /* Initialize all VLANS */
@@ -1487,7 +1487,7 @@ static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 		return -1;
 
 	set_bit(mc_group, priv->mc_group_bm);
-	portmask = BIT_ULL(port);
+	portmask = BIT_ULL(port) | priv->mc_router_portmask;
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return mc_group;
@@ -1499,7 +1499,7 @@ static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gro
 
 	pr_debug("%s: %d\n", __func__, port);
 
-	portmask |= BIT_ULL(port);
+	portmask |= BIT_ULL(port) | priv->mc_router_portmask;
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return portmask;
@@ -3120,6 +3120,50 @@ static int rtldsa_port_mdb_active(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static void rtldsa_mc_group_add_mrouter(struct rtl838x_switch_priv *priv, int port)
+{
+	u64 portmask = BIT_ULL(port);
+
+	if (portmask & priv->mc_router_portmask)
+		return;
+
+	priv->mc_router_portmask |= BIT_ULL(port);
+}
+
+static void rtldsa_mc_group_del_mrouter(struct rtl838x_switch_priv *priv, int port)
+{
+	u64 portmask = BIT_ULL(port);
+
+	if (!(portmask & priv->mc_router_portmask))
+		return;
+
+	priv->mc_router_portmask &= ~BIT_ULL(port);
+
+	rtldsa_port_mdb_snoop_flush_v4(priv, -1, portmask);
+	rtldsa_port_mdb_snoop_flush_v6(priv, -1, portmask);
+}
+
+static int
+rtldsa_port_mdb_set_mrouter(struct dsa_switch *ds, int port, bool mrouter,
+			    struct netlink_ext_ack *extack)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+
+	if (mrouter)
+		rtldsa_mc_group_add_mrouter(priv, port);
+	else
+		rtldsa_mc_group_del_mrouter(priv, port);
+
+	rtldsa_port_mdb_snoop_replay(priv);
+	priv->r->update_mcast_unknown_ip_flood(priv);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
 static int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
 				  struct dsa_mall_mirror_tc_entry *mirror,
 				  bool ingress, struct netlink_ext_ack *extack)
@@ -3565,6 +3609,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 	.port_mdb_active	= rtldsa_port_mdb_active,
+	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
 
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
@@ -3630,6 +3675,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_mdb_add		= rtldsa_port_mdb_add,
 	.port_mdb_del		= rtldsa_port_mdb_del,
 	.port_mdb_active	= rtldsa_port_mdb_active,
+	.port_mdb_set_mrouter	= rtldsa_port_mdb_set_mrouter,
 	*/
 
 	.port_mirror_add	= rtldsa_port_mirror_add,

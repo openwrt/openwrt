@@ -816,7 +816,8 @@ static void rtl931x_vlan_fwd_on_inner(int port, bool is_set)
 		sw_w32_mask(0, 0xf, RTL931X_VLAN_PORT_FWD + (port << 2));
 }
 
-static void rtl931x_vlan_profile_setup(int profile)
+static void
+rtl931x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p[7];
 
@@ -835,16 +836,16 @@ static void rtl931x_vlan_profile_setup(int profile)
 	p[2] = RTL931X_VLAN_L2_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
 
 	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4) {
-		p[3] = RTL931X_VLAN_IP4_UNKN_MC_FLD_H(0x0);
-		p[4] = RTL931X_VLAN_IP4_UNKN_MC_FLD_L(0x0);
+		p[3] = RTL931X_VLAN_IP4_UNKN_MC_FLD_H(priv->mc_router_portmask);
+		p[4] = RTL931X_VLAN_IP4_UNKN_MC_FLD_L(priv->mc_router_portmask);
 	} else {
 		p[3] = RTL931X_VLAN_IP4_UNKN_MC_FLD_H(RTL931X_MC_PMASK_ALL_PORTS);
 		p[4] = RTL931X_VLAN_IP4_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
 	}
 
 	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6) {
-		p[5] = RTL931X_VLAN_IP6_UNKN_MC_FLD_H(0x0);
-		p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(0x0);
+		p[5] = RTL931X_VLAN_IP6_UNKN_MC_FLD_H(priv->mc_router_portmask);
+		p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(priv->mc_router_portmask);
 	} else {
 		p[5] = RTL931X_VLAN_IP6_UNKN_MC_FLD_H(RTL931X_MC_PMASK_ALL_PORTS);
 		p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
@@ -1893,6 +1894,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_hash_seed = rtldsa_931x_l2_hash_seed,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
 	.write_mcast_pmask = rtl931x_write_mcast_pmask,
+	.update_mcast_unknown_ip_flood = rtldsa_vlan_profiles_setup,
 	.pie_init = rtl931x_pie_init,
 	.pie_rule_write = rtl931x_pie_rule_write,
 	.pie_rule_add = rtl931x_pie_rule_add,

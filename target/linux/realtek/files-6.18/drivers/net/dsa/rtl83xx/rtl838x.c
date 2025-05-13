@@ -513,7 +513,8 @@ rtl838x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 	return 0;
 }
 
-static void rtl838x_vlan_profile_setup(int profile)
+static void
+rtl838x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
 		RTL838X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
@@ -1776,6 +1777,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.l2_hash_key = rtl838x_l2_hash_key,
 	.read_mcast_pmask = rtl838x_read_mcast_pmask,
 	.write_mcast_pmask = rtl838x_write_mcast_pmask,
+	.update_mcast_unknown_ip_flood = rtldsa_83xx_mc_pmasks_setup,
 	.pie_init = rtl838x_pie_init,
 	.pie_rule_read = rtl838x_pie_rule_read,
 	.pie_rule_write = rtl838x_pie_rule_write,
