@@ -92,6 +92,7 @@ define Build/inteno-y3-header
 endef
 
 define Build/inteno-bootfs
+	rm -rf $@.ubifs-dir
 	mkdir -p $@.ubifs-dir/boot
 
 	# populate the boot fs with the dtb and the kernel image
@@ -100,7 +101,6 @@ define Build/inteno-bootfs
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
-	rm -rf $@.ubifs-dir
 	mv $@.new $@
 endef
 
