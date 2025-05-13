@@ -80,6 +80,12 @@
 		};
 	};
 
+	phy_reset_pin: phy-reset-pin {
+		pins = "gpio77";
+		function = "gpio";
+		bias-pull-up;
+	};
+
 	led_enable {
 		gpio-hog;
 		output-high;
@@ -100,7 +106,7 @@
 };
 
 &mdio {
-	pinctrl-0 = <&mdio_pins>;
+	pinctrl-0 = <&mdio_pins>, <&phy_reset_pin>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <10000>;
