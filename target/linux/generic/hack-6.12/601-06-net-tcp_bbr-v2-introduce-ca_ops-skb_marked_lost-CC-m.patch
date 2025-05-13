@@ -1,0 +1,63 @@
+From b3b376609b8e1e618ea62b690c84455d1b5f7c91 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Tue, 7 Aug 2018 21:52:06 -0400
+Subject: [PATCH 06/19] net-tcp_bbr: v2: introduce ca_ops->skb_marked_lost() CC
+ module callback API
+
+For connections experiencing reordering, RACK can mark packets lost
+long after we receive the SACKs/ACKs hinting that the packets were
+actually lost.
+
+This means that CC modules cannot easily learn the volume of inflight
+data at which packet loss happens by looking at the current inflight
+or even the packets in flight when the most recently SACKed packet was
+sent. To learn this, CC modules need to know how many packets were in
+flight at the time lost packets were sent. This new callback, combined
+with TCP_SKB_CB(skb)->tx.in_flight, allows them to learn this.
+
+This also provides a consistent callback that is invoked whether
+packets are marked lost upon ACK processing, using the RACK reordering
+timer, or at RTO time.
+
+Effort: net-tcp_bbr
+Origin-9xx-SHA1: afcbebe3374e4632ac6714d39e4dc8a8455956f4
+Change-Id: I54826ab53df636be537e5d3c618a46145d12d51a
+---
+ include/net/tcp.h    | 3 +++
+ net/ipv4/tcp_input.c | 5 +++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index ef670bed498e..8b8356707cc7 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1202,6 +1202,9 @@ struct tcp_congestion_ops {
+ 	/* override sysctl_tcp_min_tso_segs */
+ 	u32 (*min_tso_segs)(struct sock *sk);
+ 
++	/* react to a specific lost skb (optional) */
++	void (*skb_marked_lost)(struct sock *sk, const struct sk_buff *skb);
++
+ 	/* call when packets are delivered to update cwnd and pacing rate,
+ 	 * after all the ca_state processing. (optional)
+ 	 */
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index b74f96053271..795eea527da7 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -1126,7 +1126,12 @@ static void tcp_verify_retransmit_hint(struct tcp_sock *tp, struct sk_buff *skb)
+  */
+ static void tcp_notify_skb_loss_event(struct tcp_sock *tp, const struct sk_buff *skb)
+ {
++	struct sock *sk = (struct sock *)tp;
++	const struct tcp_congestion_ops *ca_ops = inet_csk(sk)->icsk_ca_ops;
++
+ 	tp->lost += tcp_skb_pcount(skb);
++	if (ca_ops->skb_marked_lost)
++		ca_ops->skb_marked_lost(sk, skb);
+ }
+ 
+ void tcp_mark_skb_lost(struct sock *sk, struct sk_buff *skb)
+-- 
+2.43.0
+
