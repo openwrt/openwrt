@@ -167,7 +167,7 @@ define Device/tplink_eap610-outdoor
 endef
 TARGET_DEVICES += tplink_eap610-outdoor
 
-define Device/tplink_eap623od-hd-v1
+define Device/tplink_eap623-outdoor-hd-v1
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := TP-Link
@@ -181,7 +181,7 @@ define Device/tplink_eap623od-hd-v1
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n
 endef
-TARGET_DEVICES += tplink_eap623od-hd-v1
+TARGET_DEVICES += tplink_eap623-outdoor-hd-v1
 
 define Device/tplink_eap625-outdoor-hd-v1
 	$(call Device/FitImage)
