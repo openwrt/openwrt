@@ -94,22 +94,18 @@
  /**************************/
  /*     Initialization     */
  /**************************/
-@@ -670,6 +750,8 @@ static int ath9k_of_init(struct ath_soft
+@@ -670,6 +750,7 @@ static int ath9k_of_init(struct ath_soft
  	struct ath_common *common = ath9k_hw_common(ah);
  	enum ath_bus_type bus_type = common->bus_ops->ath_bus_type;
  	char eeprom_name[100];
-+	u8 led_pin;
 +	u32 mask;
  	int ret;
  
  	if (!of_device_is_available(np))
-@@ -677,6 +759,49 @@ static int ath9k_of_init(struct ath_soft
+@@ -677,6 +758,46 @@ static int ath9k_of_init(struct ath_soft
  
  	ath_dbg(common, CONFIG, "parsing configuration from OF node\n");
  
-+	if (!of_property_read_u8(np, "qca,led-pin", &led_pin))
-+		ah->led_pin = led_pin;
-+
 +	if (!of_property_read_u32(np, "qca,gpio-mask", &mask))
 +		ah->caps.gpio_mask = mask;
 +
@@ -153,3 +149,21 @@
  	if (of_property_read_bool(np, "qca,no-eeprom")) {
  		/* ath9k-eeprom-<bus>-<id>.bin */
  		scnprintf(eeprom_name, sizeof(eeprom_name),
+@@ -693,6 +814,17 @@ static int ath9k_of_init(struct ath_soft
+ 
+ 	of_get_mac_address(np, common->macaddr);
+ 
++	np = of_get_child_by_name(np, "led");
++	if (np && of_device_is_available(np)) {
++		u32 led_pin;
++
++		if (!of_property_read_u32(np, "led-sources", &led_pin))
++			ah->led_pin = led_pin;
++
++		ah->config.led_active_high = !of_property_read_bool(np, "led-active-low");
++		of_node_put(np);
++	}
++
+ 	return 0;
+ }
+ 

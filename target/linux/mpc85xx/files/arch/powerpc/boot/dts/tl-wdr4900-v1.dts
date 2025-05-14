@@ -349,7 +349,6 @@
 				reg = <0x0000 0 0 0 0>;
 				#gpio-cells = <2>;
 				gpio-controller;
-				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_1000>, <&macaddr_uboot_4fc00 0>;
 				nvmem-cell-names = "calibration", "mac-address";
 			};
@@ -380,9 +379,13 @@
 				*/
 				device-id = <0x0030>;
 				class-code = <0x028000>;
-				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_5000>, <&macaddr_uboot_4fc00 (-1)>;
 				nvmem-cell-names = "calibration", "mac-address";
+
+				led {
+					led-sources = <0>;
+					led-active-low;
+				};
 			};
 		};
 	};
