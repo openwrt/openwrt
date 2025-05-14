@@ -69,6 +69,8 @@
 	pinctrl-0 = <&gphy0_led0_pins>, <&gphy0_led1_pins>, <&gphy0_led2_pins>,
 		    <&gphy1_led0_pins>, <&gphy1_led1_pins>, <&gphy1_led2_pins>;
 	pinctrl-names = "default";
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gswip_mdio {
@@ -155,8 +157,13 @@
 			};
 
 			partition@7f0000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x7f0000 0x10000>;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 		};
 	};
