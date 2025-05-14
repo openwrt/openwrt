@@ -108,7 +108,6 @@
 		reg = <0>;
 
 		phy-mode = "2500base-x";
-		phy-handle = <&phy5>;
 	};
 
 	gmac1: mac@1 {
@@ -125,11 +124,6 @@
 	reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <600>;
 	reset-post-delay-us = <20000>;
-
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-	};
 };
 
 &usb_phy {
