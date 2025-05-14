@@ -115,6 +115,8 @@
 
 	rtl8211f_4: ethernet-phy@4 {
 		reg = <4>;
+		realtek,clkout-disable;
+		realtek,aldps-enable;
 	};
 };
 
