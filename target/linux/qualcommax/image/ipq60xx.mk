@@ -149,17 +149,22 @@ define Device/qihoo_360v6
 endef
 TARGET_DEVICES += qihoo_360v6
 
-define Device/tplink_eap610-outdoor
+define Device/tplink_eap6xx-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := TP-Link
-	DEVICE_MODEL := EAP610-Outdoor
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap610-outdoor
+	DEVICE_PACKAGES := kmod-phy-realtek
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+endef
+
+define Device/tplink_eap610-outdoor
+	$(call Device/tplink_eap6xx-common)
+	DEVICE_MODEL := EAP610-Outdoor
+	DEVICE_PACKAGES += ipq-wifi-tplink_eap610-outdoor
 	TPLINK_SUPPORT_STRING := SupportList:\r\n \
 		EAP610-Outdoor(TP-Link|UN|AX1800-D):1.0\r\n \
 		EAP610-Outdoor(TP-Link|JP|AX1800-D):1.0\r\n \
@@ -168,32 +173,19 @@ endef
 TARGET_DEVICES += tplink_eap610-outdoor
 
 define Device/tplink_eap623-outdoor-hd-v1
-	$(call Device/FitImage)
-	$(call Device/UbiFit)
-	DEVICE_VENDOR := TP-Link
+	$(call Device/tplink_eap6xx-common)
 	DEVICE_MODEL := EAP623-Outdoor HD
 	DEVICE_VARIANT := v1
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap623-outdoor-hd-v1 kmod-phy-realtek
-	IMAGES += web-ui-factory.bin
-	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	DEVICE_PACKAGES += ipq-wifi-tplink_eap623-outdoor-hd-v1
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n
 endef
 TARGET_DEVICES += tplink_eap623-outdoor-hd-v1
 
 define Device/tplink_eap625-outdoor-hd-v1
-	$(call Device/FitImage)
-	$(call Device/UbiFit)
-	DEVICE_VENDOR := TP-Link
-	DEVICE_MODEL := EAP625-Outdoor HD v1 and v1.6
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap625-outdoor-hd-v1
-	IMAGES += web-ui-factory.bin
-	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	$(call Device/tplink_eap6xx-common)
+	DEVICE_MODEL := EAP625-Outdoor HD
+	DEVICE_VARIANT := v1
+	DEVICE_PACKAGES += ipq-wifi-tplink_eap625-outdoor-hd-v1
 	TPLINK_SUPPORT_STRING := SupportList:\r\n \
 		EAP625-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n \
 		EAP625-Outdoor HD(TP-Link|CA|AX1800-D):1.0\r\n \
