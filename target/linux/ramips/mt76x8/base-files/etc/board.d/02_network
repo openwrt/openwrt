@@ -285,10 +285,7 @@ ramips_setup_macs()
 	hiwifi,hc5661a|\
 	hiwifi,hc5761a|\
 	hiwifi,hc5861b)
-		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
-		label_mac=$lan_mac
-		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	iptime,a3|\
 	iptime,a604m|\
