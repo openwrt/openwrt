@@ -191,7 +191,7 @@ define Device/tplink_eap625-outdoor-hd-v1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap625-outdoor
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap625-outdoor-hd-v1
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\n \
