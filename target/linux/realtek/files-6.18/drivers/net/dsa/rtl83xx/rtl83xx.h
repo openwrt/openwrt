@@ -133,11 +133,11 @@ inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
 
-void rtl83xx_fast_age(struct dsa_switch *ds, int port);
+void rtldsa_83xx_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
+void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
@@ -204,8 +204,8 @@ void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 void rtl931x_print_matrix(void);
 
-extern const struct dsa_switch_ops rtl83xx_switch_ops;
-extern const struct dsa_switch_ops rtl93xx_switch_ops;
+extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
+extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
 extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
 

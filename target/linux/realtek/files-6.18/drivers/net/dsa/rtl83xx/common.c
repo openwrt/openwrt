@@ -1394,7 +1394,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	priv->ds->dev = dev;
 	priv->ds->priv = priv;
-	priv->ds->ops = &rtl83xx_switch_ops;
+	priv->ds->ops = &rtldsa_83xx_switch_ops;
 	priv->ds->needs_standalone_vlan_filtering = true;
 	priv->dev = dev;
 	dev_set_drvdata(dev, priv);
@@ -1411,7 +1411,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->id = soc_info.id;
 	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
-		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->ds->ops = &rtldsa_83xx_switch_ops;
 		priv->ds->phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops;
 		priv->cpu_port = RTL838X_CPU_PORT;
 		priv->port_mask = 0x1f;
@@ -1429,7 +1429,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 128;
 		break;
 	case RTL8390_FAMILY_ID:
-		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->ds->ops = &rtldsa_83xx_switch_ops;
 		priv->ds->phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops;
 		priv->cpu_port = RTL839X_CPU_PORT;
 		priv->port_mask = 0x3f;
@@ -1447,7 +1447,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
-		priv->ds->ops = &rtl93xx_switch_ops;
+		priv->ds->ops = &rtldsa_93xx_switch_ops;
 		priv->ds->phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops;
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->port_mask = 0x1f;
@@ -1469,7 +1469,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
-		priv->ds->ops = &rtl93xx_switch_ops;
+		priv->ds->ops = &rtldsa_93xx_switch_ops;
 		priv->ds->phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops;
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
