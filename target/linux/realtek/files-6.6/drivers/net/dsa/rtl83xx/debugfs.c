@@ -38,7 +38,7 @@
 #define RTL931X_STAT_PRVTE_DROP_COUNTERS	(0xd800)
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
+void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 void rtl83xx_fast_age(struct dsa_switch *ds, int port);
 u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
 u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
@@ -188,7 +188,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtl83xx_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+	rtldsa_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
 
 	return res;
 }

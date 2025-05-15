@@ -17,13 +17,6 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-#define MIB_DESC(_size, _offset, _name) {.size = _size, .offset = _offset, .name = _name}
-struct rtl83xx_mib_desc {
-	unsigned int size;
-	unsigned int offset;
-	const char *name;
-};
-
 /* API for switch table access */
 struct table_reg {
 	u16 addr;

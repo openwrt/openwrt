@@ -34,7 +34,7 @@ static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
+static void rtldsa_enable_phy_polling(struct rtl838x_switch_priv *priv)
 {
 	u64 v = 0;
 
@@ -55,7 +55,14 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, 0x8000, RTL838X_SMI_GLB_CTRL);
 }
 
-const struct rtl83xx_mib_desc rtl83xx_mib[] = {
+#define MIB_DESC(_size, _offset, _name) {.size = _size, .offset = _offset, .name = _name}
+struct rtldsa_mib_desc {
+	unsigned int size;
+	unsigned int offset;
+	const char *name;
+};
+
+const struct rtldsa_mib_desc rtldsa_mib[] = {
 	MIB_DESC(2, 0xf8, "ifInOctets"),
 	MIB_DESC(2, 0xf0, "ifOutOctets"),
 	MIB_DESC(1, 0xec, "dot1dTpPortInDiscards"),
@@ -108,9 +115,9 @@ const struct rtl83xx_mib_desc rtl83xx_mib[] = {
 /* DSA callbacks */
 
 
-static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds,
-						      int port,
-						      enum dsa_tag_protocol mprot)
+static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
+						     int port,
+						     enum dsa_tag_protocol mprot)
 {
 	/* The switch does not tag the frames, instead internally the header
 	 * structure for each packet is tagged accordingly.
@@ -118,7 +125,7 @@ static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds,
 	return DSA_TAG_PROTO_TRAILER;
 }
 
-static void rtl83xx_vlan_set_pvid(struct rtl838x_switch_priv *priv,
+static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 				  int port, int pvid)
 {
 	/* Set both inner and outer PVID of the port */
@@ -133,7 +140,7 @@ static void rtl83xx_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 }
 
 /* Initialize all VLANS */
-static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
+static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 {
 	struct rtl838x_vlan_info info;
 
@@ -167,7 +174,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	 * CPU port as ingress when VLAN filtering is enabled.
 	 */
 	for (int i = 0; i <= priv->cpu_port; i++) {
-		rtl83xx_vlan_set_pvid(priv, i, 0);
+		rtldsa_vlan_set_pvid(priv, i, 0);
 		info.tagged_ports |= BIT_ULL(i);
 	}
 	priv->r->vlan_set_tagged(0, &info);
@@ -189,8 +196,8 @@ static void rtl83xx_setup_lldp_traps(struct rtl838x_switch_priv *priv)
 		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
 }
 
-static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
-				   int port, bool enable)
+static void rtldsa_port_set_salrn(struct rtl838x_switch_priv *priv,
+				  int port, bool enable)
 {
 	int shift = SALRN_PORT_SHIFT(port);
 	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
@@ -238,7 +245,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	rtl83xx_init_stats(priv);
 
-	rtl83xx_vlan_setup(priv);
+	rtldsa_vlan_setup(priv);
 
 	rtl83xx_setup_bpdu_traps(priv);
 	rtl83xx_setup_lldp_traps(priv);
@@ -247,7 +254,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	priv->r->l2_learning_setup();
 
-	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	rtldsa_port_set_salrn(priv, priv->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
 	/* Make sure all frames sent to the switch's MAC are trapped to the CPU-port
@@ -259,7 +266,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		sw_w32(0x2, RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL);
 
 	/* Enable MAC Polling PHY again */
-	rtl83xx_enable_phy_polling(priv);
+	rtldsa_enable_phy_polling(priv);
 	pr_debug("Please wait until PHY is settled\n");
 	msleep(1000);
 	priv->r->pie_init(priv);
@@ -302,16 +309,16 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 
 	/* TODO: Initialize statistics */
 
-	rtl83xx_vlan_setup(priv);
+	rtldsa_vlan_setup(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();
 
-	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	rtldsa_port_set_salrn(priv, priv->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
 
-	rtl83xx_enable_phy_polling(priv);
+	rtldsa_enable_phy_polling(priv);
 
 	priv->r->pie_init(priv);
 
@@ -621,22 +628,22 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static int rtl83xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			      phy_interface_t interface,
-			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
+static int rtldsa_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			     phy_interface_t interface,
+			     const unsigned long *advertising,
+			     bool permit_pause_to_mac)
 {
 	return 0;
 }
 
-static void rtl83xx_pcs_an_restart(struct phylink_pcs *pcs)
+static void rtldsa_pcs_an_restart(struct phylink_pcs *pcs)
 {
 /* No restart functionality existed before we migrated to pcs */
 }
 
-static struct phylink_pcs *rtl83xx_phylink_mac_select_pcs(struct dsa_switch *ds,
-							  int port,
-							  phy_interface_t interface)
+static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
+							 int port,
+							 phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -680,8 +687,8 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
 }
 
-static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
-				     struct phylink_config *config)
+static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
+				    struct phylink_config *config)
 {
 /*
  * This capability check will need some love. Depending on the model and the port
@@ -972,25 +979,25 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
-static void rtl83xx_get_strings(struct dsa_switch *ds,
-				int port, u32 stringset, u8 *data)
+static void rtldsa_get_strings(struct dsa_switch *ds,
+			       int port, u32 stringset, u8 *data)
 {
 	if (stringset != ETH_SS_STATS)
 		return;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
-		ethtool_puts(&data, rtl83xx_mib[i].name);
+	for (int i = 0; i < ARRAY_SIZE(rtldsa_mib); i++)
+		ethtool_puts(&data, rtldsa_mib[i].name);
 }
 
-static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
-				      uint64_t *data)
+static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
+				     uint64_t *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtl83xx_mib_desc *mib;
+	const struct rtldsa_mib_desc *mib;
 	u64 h;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
-		mib = &rtl83xx_mib[i];
+	for (int i = 0; i < ARRAY_SIZE(rtldsa_mib); i++) {
+		mib = &rtldsa_mib[i];
 
 		data[i] = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib->offset);
 		if (mib->size == 2) {
@@ -1000,15 +1007,15 @@ static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 	}
 }
 
-static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
+static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
 {
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(rtl83xx_mib);
+	return ARRAY_SIZE(rtldsa_mib);
 }
 
-static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
+static int rtldsa_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 {
 	int mc_group = find_first_zero_bit(priv->mc_group_bm, MAX_MC_GROUPS - 1);
 	u64 portmask;
@@ -1023,7 +1030,7 @@ static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 	return mc_group;
 }
 
-static u64 rtl83xx_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
+static u64 rtldsa_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -1035,7 +1042,7 @@ static u64 rtl83xx_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
-static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
+static u64 rtldsa_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_group, int port)
 {
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
@@ -1049,8 +1056,8 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
-static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
-				struct phy_device *phydev)
+static int rtldsa_port_enable(struct dsa_switch *ds, int port,
+			      struct phy_device *phydev)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 v;
@@ -1089,7 +1096,7 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
+static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 v;
@@ -1111,8 +1118,8 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
+static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port,
+			      struct ethtool_eee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1165,7 +1172,7 @@ static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
+static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1174,10 +1181,10 @@ static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 	return 0;
 }
 
-static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
-				    struct dsa_bridge bridge,
-				    bool *tx_fwd_offload,
-				    struct netlink_ext_ack *extack)
+static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port,
+				   struct dsa_bridge bridge,
+				   bool *tx_fwd_offload,
+				   struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
@@ -1223,8 +1230,8 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
-				      struct dsa_bridge bridge)
+static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port,
+				     struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 port_bitmap = 0, v;
@@ -1263,7 +1270,7 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 {
 	u32 msti = 0;
 	u32 port_state[4];
@@ -1376,9 +1383,9 @@ void rtl930x_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
-				  bool vlan_filtering,
-				  struct netlink_ext_ack *extack)
+static int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
+				 bool vlan_filtering,
+				 struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1417,8 +1424,8 @@ static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
-				const struct switchdev_obj_port_vlan *vlan)
+static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
+			       const struct switchdev_obj_port_vlan *vlan)
 {
 	struct rtl838x_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1442,9 +1449,9 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
-			    const struct switchdev_obj_port_vlan *vlan,
-			    struct netlink_ext_ack *extack)
+static int rtldsa_vlan_add(struct dsa_switch *ds, int port,
+			   const struct switchdev_obj_port_vlan *vlan,
+			   struct netlink_ext_ack *extack)
 {
 	struct rtl838x_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1461,7 +1468,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 		return -ENOTSUPP;
 	}
 
-	err = rtl83xx_vlan_prepare(ds, port, vlan);
+	err = rtldsa_vlan_prepare(ds, port, vlan);
 	if (err)
 		return err;
 
@@ -1477,9 +1484,9 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	 */
 	if (port != priv->cpu_port) {
 		if (vlan->flags & BRIDGE_VLAN_INFO_PVID)
-			rtl83xx_vlan_set_pvid(priv, port, vlan->vid);
+			rtldsa_vlan_set_pvid(priv, port, vlan->vid);
 		else if (priv->ports[port].pvid == vlan->vid)
-			rtl83xx_vlan_set_pvid(priv, port, 0);
+			rtldsa_vlan_set_pvid(priv, port, 0);
 	}
 
 	/* Get port memberships of this vlan */
@@ -1514,8 +1521,8 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
-			    const struct switchdev_obj_port_vlan *vlan)
+static int rtldsa_vlan_del(struct dsa_switch *ds, int port,
+			   const struct switchdev_obj_port_vlan *vlan)
 {
 	struct rtl838x_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1537,7 +1544,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 	/* Reset to default if removing the current PVID */
 	if (vlan->vid == pvid) {
-		rtl83xx_vlan_set_pvid(priv, port, 0);
+		rtldsa_vlan_set_pvid(priv, port, 0);
 	}
 	/* Get port memberships of this vlan */
 	priv->r->vlan_tables_read(vlan->vid, &info);
@@ -1557,7 +1564,8 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int vid, u64 mac)
+static void rtldsa_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port,
+				     int vid, u64 mac)
 {
 	memset(e, 0, sizeof(*e));
 
@@ -1574,7 +1582,7 @@ static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int 
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static void rtl83xx_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
+static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
 {
 	memset(e, 0, sizeof(*e));
 
@@ -1594,7 +1602,7 @@ static void rtl83xx_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 m
  * when an empty slot was found and must exist is false, the index of the slot is returned
  * when no slots are available returns -1
  */
-static int rtl83xx_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
+static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 				     bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
@@ -1622,8 +1630,8 @@ static int rtl83xx_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed
  * when an empty slot was found the index of the slot is returned
  * when no slots are available returns -1
  */
-static int rtl83xx_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				     bool must_exist, struct rtl838x_l2_entry *e)
+static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
+				    bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
 	u64 entry;
@@ -1644,9 +1652,9 @@ static int rtl83xx_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	return idx;
 }
 
-static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
-				const unsigned char *addr, u16 vid,
-				const struct dsa_db db)
+static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
+			       const unsigned char *addr, u16 vid,
+			       const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -1661,20 +1669,20 @@ static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtl83xx_find_l2_hash_entry(priv, seed, false, &e);
+	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
-		rtl83xx_setup_l2_uc_entry(&e, port, vid, mac);
+		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
 		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
-		rtl83xx_setup_l2_uc_entry(&e, port, vid, mac);
+		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
 		priv->r->write_cam(idx, &e);
 		goto out;
 	}
@@ -1687,9 +1695,9 @@ out:
 	return err;
 }
 
-static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
-				const unsigned char *addr, u16 vid,
-				const struct dsa_db db)
+static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
+			       const unsigned char *addr, u16 vid,
+			       const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -1700,7 +1708,7 @@ static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
 	pr_debug("In %s, mac %llx, vid: %d\n", __func__, mac, vid);
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
+	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
@@ -1710,7 +1718,7 @@ static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
+	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		e.valid = false;
@@ -1725,8 +1733,8 @@ out:
 	return err;
 }
 
-static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
-				 dsa_fdb_dump_cb_t *cb, void *data)
+static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
+				dsa_fdb_dump_cb_t *cb, void *data)
 {
 	struct rtl838x_l2_entry e;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1761,7 +1769,7 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static bool rtl83xx_mac_is_unsnoop(const unsigned char *addr)
+static bool rtldsa_mac_is_unsnoop(const unsigned char *addr)
 {
 	/*
 	 * RFC4541, section 2.1.2.2 + section 3:
@@ -1779,9 +1787,9 @@ static bool rtl83xx_mac_is_unsnoop(const unsigned char *addr)
 	return false;
 }
 
-static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
-				const struct switchdev_obj_port_mdb *mdb,
-				const struct dsa_db db)
+static int rtldsa_port_mdb_add(struct dsa_switch *ds, int port,
+			       const struct switchdev_obj_port_mdb *mdb,
+			       const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -1801,7 +1809,7 @@ static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 		return -EINVAL;
 	}
 
-	if (rtl83xx_mac_is_unsnoop(mdb->addr)) {
+	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
 		dev_dbg(priv->dev,
 			"%s: %pM might belong to an unsnoopable IP. ignore\n",
 			__func__, mdb->addr);
@@ -1810,43 +1818,43 @@ static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtl83xx_find_l2_hash_entry(priv, seed, false, &e);
+	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
 		if (e.valid) {
 			pr_debug("Found an existing entry %016llx, mc_group %d\n",
 				ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtl83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
+			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
 		} else {
 			pr_debug("New entry for seed %016llx\n", seed);
-			mc_group = rtl83xx_mc_group_alloc(priv, port);
+			mc_group = rtldsa_mc_group_alloc(priv, port);
 			if (mc_group < 0) {
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		}
 		goto out;
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		if (e.valid) {
 			pr_debug("Found existing CAM entry %016llx, mc_group %d\n",
 				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
-			rtl83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
+			rtldsa_mc_group_add_port(priv, e.mc_portmask_index, port);
 		} else {
 			pr_debug("New entry\n");
-			mc_group = rtl83xx_mc_group_alloc(priv, port);
+			mc_group = rtldsa_mc_group_alloc(priv, port);
 			if (mc_group < 0) {
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
+			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_cam(idx, &e);
 		}
 		goto out;
@@ -1862,9 +1870,9 @@ out:
 	return err;
 }
 
-int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
-			 const struct switchdev_obj_port_mdb *mdb,
-			 const struct dsa_db db)
+static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
+			       const struct switchdev_obj_port_mdb *mdb,
+			       const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -1881,7 +1889,7 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 		return 0;
 	}
 
-	if (rtl83xx_mac_is_unsnoop(mdb->addr)) {
+	if (rtldsa_mac_is_unsnoop(mdb->addr)) {
 		dev_dbg(priv->dev,
 			"%s: %pM might belong to an unsnoopable IP. ignore\n",
 			__func__, mdb->addr);
@@ -1890,11 +1898,11 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
+	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
-		portmask = rtl83xx_mc_group_del_port(priv, e.mc_portmask_index, port);
+		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
 			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
@@ -1903,10 +1911,10 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
+	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
-		portmask = rtl83xx_mc_group_del_port(priv, e.mc_portmask_index, port);
+		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
 			priv->r->write_cam(idx, &e);
@@ -2017,7 +2025,9 @@ static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
+static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					struct switchdev_brport_flags flags,
+					struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	unsigned long features = 0;
@@ -2036,7 +2046,9 @@ static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct
 	return 0;
 }
 
-static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
+static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
+				    struct switchdev_brport_flags flags,
+				    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -2075,7 +2087,7 @@ static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
 	return true;
 }
 
-static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
+static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
 {
 	pr_debug("%s: %d\n", __func__, port);
 	/* Nothing to be done... */
@@ -2083,11 +2095,11 @@ static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
 	return 0;
 }
 
-static int rtl83xx_port_lag_join(struct dsa_switch *ds,
-				  int port,
-				  struct dsa_lag lag,
-				  struct netdev_lag_upper_info *info,
-				  struct netlink_ext_ack *extack)
+static int rtldsa_port_lag_join(struct dsa_switch *ds,
+				int port,
+				struct dsa_lag lag,
+				struct netdev_lag_upper_info *info,
+				struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int i, err = 0;
@@ -2129,8 +2141,8 @@ out:
 	return err;
 }
 
-static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
-				  struct dsa_lag lag)
+static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
+				 struct dsa_lag lag)
 {
 	int i, group = -1, err;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -2207,114 +2219,114 @@ int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 }
 
 const struct phylink_pcs_ops rtl83xx_pcs_ops = {
-	.pcs_an_restart		= rtl83xx_pcs_an_restart,
+	.pcs_an_restart		= rtldsa_pcs_an_restart,
 	.pcs_validate		= rtl83xx_pcs_validate,
 	.pcs_get_state		= rtl83xx_pcs_get_state,
-	.pcs_config		= rtl83xx_pcs_config,
+	.pcs_config		= rtldsa_pcs_config,
 };
 
 const struct dsa_switch_ops rtl83xx_switch_ops = {
-	.get_tag_protocol	= rtl83xx_get_tag_protocol,
+	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtl83xx_setup,
 
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
+	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
-	.get_strings		= rtl83xx_get_strings,
-	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
-	.get_sset_count		= rtl83xx_get_sset_count,
+	.get_strings		= rtldsa_get_strings,
+	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
+	.get_sset_count		= rtldsa_get_sset_count,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtl83xx_get_mac_eee,
-	.set_mac_eee		= rtl83xx_set_mac_eee,
+	.set_mac_eee		= rtldsa_set_mac_eee,
 
-	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
-	.port_stp_state_set	= rtl83xx_port_stp_state_set,
+	.set_ageing_time	= rtldsa_set_ageing_time,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.port_stp_state_set	= rtldsa_port_stp_state_set,
 	.port_fast_age		= rtl83xx_fast_age,
 
-	.port_vlan_filtering	= rtl83xx_vlan_filtering,
-	.port_vlan_add		= rtl83xx_vlan_add,
-	.port_vlan_del		= rtl83xx_vlan_del,
+	.port_vlan_filtering	= rtldsa_vlan_filtering,
+	.port_vlan_add		= rtldsa_vlan_add,
+	.port_vlan_del		= rtldsa_vlan_del,
 
-	.port_fdb_add		= rtl83xx_port_fdb_add,
-	.port_fdb_del		= rtl83xx_port_fdb_del,
-	.port_fdb_dump		= rtl83xx_port_fdb_dump,
+	.port_fdb_add		= rtldsa_port_fdb_add,
+	.port_fdb_del		= rtldsa_port_fdb_del,
+	.port_fdb_dump		= rtldsa_port_fdb_dump,
 
-	.port_mdb_add		= rtl83xx_port_mdb_add,
-	.port_mdb_del		= rtl83xx_port_mdb_del,
+	.port_mdb_add		= rtldsa_port_mdb_add,
+	.port_mdb_del		= rtldsa_port_mdb_del,
 
 	.port_mirror_add	= rtl83xx_port_mirror_add,
 	.port_mirror_del	= rtl83xx_port_mirror_del,
 
-	.port_lag_change	= rtl83xx_port_lag_change,
-	.port_lag_join		= rtl83xx_port_lag_join,
-	.port_lag_leave		= rtl83xx_port_lag_leave,
+	.port_lag_change	= rtldsa_port_lag_change,
+	.port_lag_join		= rtldsa_port_lag_join,
+	.port_lag_leave		= rtldsa_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
-	.port_bridge_flags	= rtl83xx_port_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
+	.port_bridge_flags	= rtldsa_port_bridge_flags,
 };
 
 const struct phylink_pcs_ops rtl93xx_pcs_ops = {
-	.pcs_an_restart		= rtl83xx_pcs_an_restart,
+	.pcs_an_restart		= rtldsa_pcs_an_restart,
 	.pcs_validate		= rtl93xx_pcs_validate,
 	.pcs_get_state		= rtl93xx_pcs_get_state,
-	.pcs_config		= rtl83xx_pcs_config,
+	.pcs_config		= rtldsa_pcs_config,
 };
 
 const struct dsa_switch_ops rtl930x_switch_ops = {
-	.get_tag_protocol	= rtl83xx_get_tag_protocol,
+	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
 	.phy_read		= dsa_phy_read,
 	.phy_write		= dsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
+	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
-	.get_strings		= rtl83xx_get_strings,
-	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
-	.get_sset_count		= rtl83xx_get_sset_count,
+	.get_strings		= rtldsa_get_strings,
+	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
+	.get_sset_count		= rtldsa_get_sset_count,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtl93xx_get_mac_eee,
-	.set_mac_eee		= rtl83xx_set_mac_eee,
+	.set_mac_eee		= rtldsa_set_mac_eee,
 
-	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
-	.port_stp_state_set	= rtl83xx_port_stp_state_set,
+	.set_ageing_time	= rtldsa_set_ageing_time,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
+	.port_stp_state_set	= rtldsa_port_stp_state_set,
 	.port_fast_age		= rtl930x_fast_age,
 
-	.port_vlan_filtering	= rtl83xx_vlan_filtering,
-	.port_vlan_add		= rtl83xx_vlan_add,
-	.port_vlan_del		= rtl83xx_vlan_del,
+	.port_vlan_filtering	= rtldsa_vlan_filtering,
+	.port_vlan_add		= rtldsa_vlan_add,
+	.port_vlan_del		= rtldsa_vlan_del,
 
-	.port_fdb_add		= rtl83xx_port_fdb_add,
-	.port_fdb_del		= rtl83xx_port_fdb_del,
-	.port_fdb_dump		= rtl83xx_port_fdb_dump,
+	.port_fdb_add		= rtldsa_port_fdb_add,
+	.port_fdb_del		= rtldsa_port_fdb_del,
+	.port_fdb_dump		= rtldsa_port_fdb_dump,
 
-	.port_mdb_add		= rtl83xx_port_mdb_add,
-	.port_mdb_del		= rtl83xx_port_mdb_del,
+	.port_mdb_add		= rtldsa_port_mdb_add,
+	.port_mdb_del		= rtldsa_port_mdb_del,
 
-	.port_lag_change	= rtl83xx_port_lag_change,
-	.port_lag_join		= rtl83xx_port_lag_join,
-	.port_lag_leave		= rtl83xx_port_lag_leave,
+	.port_lag_change	= rtldsa_port_lag_change,
+	.port_lag_join		= rtldsa_port_lag_join,
+	.port_lag_leave		= rtldsa_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
-	.port_bridge_flags	= rtl83xx_port_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
+	.port_bridge_flags	= rtldsa_port_bridge_flags,
 };
