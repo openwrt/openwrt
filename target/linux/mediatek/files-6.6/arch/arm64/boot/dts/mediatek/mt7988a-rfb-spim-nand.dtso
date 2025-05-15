@@ -13,6 +13,8 @@
 	fragment@0 {
 		target = <&spi0>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&spi0_flash_pins>;
 			status = "okay";
