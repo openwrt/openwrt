@@ -43,3 +43,17 @@
    grep '^[	 ]*AM_GNU_GETTEXT_VERSION(' configure.ac >/dev/null || \
        with_gettext=no
  
+--- a/bootstrap.conf
++++ b/bootstrap.conf
+@@ -349,11 +349,8 @@ gnulib_tool_option_extras="--tests-base=
+ buildreq="\
+ autoconf   2.64
+ automake   1.11.2
+-autopoint  0.19.2
+ bison      -
+-gettext    0.19.2
+ git        1.4.4
+-gperf      -
+ gzip       -
+ m4         -
+ makeinfo   6.1
