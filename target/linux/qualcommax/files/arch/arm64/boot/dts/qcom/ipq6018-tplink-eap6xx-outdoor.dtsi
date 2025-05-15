@@ -14,9 +14,9 @@
 	aliases {
 		serial0 = &blsp1_uart3;
 		led-boot = &led_sys_green;
-		led-failsafe = &led_sys_amber;
+		led-failsafe = &led_sys_yellow;
 		led-running = &led_sys_green;
-		led-upgrade = &led_sys_amber;
+		led-upgrade = &led_sys_yellow;
 	};
 
 	chosen {
@@ -37,9 +37,9 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_sys_amber: led-0 {
+		led_sys_yellow: led-0 {
 			function = "system";
-			color = <LED_COLOR_ID_AMBER>;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
 		};
 
