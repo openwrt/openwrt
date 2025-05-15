@@ -29,6 +29,16 @@ define Device/tplink_tl-st1008f_v2
 endef
 TARGET_DEVICES += tplink_tl-st1008f_v2
 
+define Device/vimin_vm-s100-0800ms
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Vimin
+  DEVICE_MODEL := VM-S100-0800MS
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += vimin_vm-s100-0800ms
+
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
   DEVICE_VENDOR := XikeStor
