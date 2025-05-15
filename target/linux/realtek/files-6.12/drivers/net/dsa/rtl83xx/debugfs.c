@@ -180,7 +180,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtl83xx_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+	rtldsa_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
 
 	return res;
 }
@@ -384,7 +384,7 @@ static ssize_t age_out_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtl83xx_fast_age(p->dp->ds, p->dp->index);
+	rtldsa_83xx_fast_age(p->dp->ds, p->dp->index);
 
 	return res;
 }
