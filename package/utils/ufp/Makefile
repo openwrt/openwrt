@@ -31,6 +31,13 @@ define Package/ufp/conffiles
 /etc/config/ufp
 endef
 
+define Build/Prepare
+	$(Build/Prepare/Default)
+	mkdir -p $(PKG_BUILD_DIR)/data
+	$(CP) ./data/* $(PKG_BUILD_DIR)/data
+	$(Build/Patch)
+endef
+
 define Host/Prepare
 	mkdir -p $(HOST_BUILD_DIR)
 	$(CP) ./src/* $(HOST_BUILD_DIR)/
@@ -43,7 +50,7 @@ CMAKE_HOST_OPTIONS += \
 define Package/ufp/install
 	$(INSTALL_DIR) $(1)/usr/lib/ucode $(1)/usr/share/ufp
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/ucode/uht.so $(1)/usr/lib/ucode/
-	$(UCODE) ./scripts/convert-devices.uc $(1)/usr/share/ufp/devices.bin ./data/*.json
+	$(UCODE) ./scripts/convert-devices.uc $(1)/usr/share/ufp/devices.bin $(PKG_BUILD_DIR)/data/*.json
 	$(CP) ./files/* $(1)/
 endef
 
