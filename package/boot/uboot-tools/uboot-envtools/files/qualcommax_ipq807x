@@ -7,24 +7,6 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
-ubootenv_add_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
-ubootenv_add_sys_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_sys_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
-ubootenv_add_mmc() {
-	local mmcpart="$(find_mmc_part "${1}")"
-	[ -n "$mmcpart" ] && \
-		ubootenv_add_uci_config "$mmcpart" "${2}" "${3}" "${4}" "${5}"
-}
-
 case "$board" in
 aliyun,ap8220|\
 compex,wpq873|\
