@@ -512,6 +512,27 @@ static int rtl838x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_
 	return 0;
 }
 
+static int rtl930x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_priv *priv,
+				   int port)
+{
+	struct dentry *port_dir;
+	//struct debugfs_regset32 *port_ctrl_regset;
+
+	port_dir = debugfs_create_dir(priv->ports[port].dp->name, parent);
+
+	debugfs_create_u32("id", 0444, port_dir, (u32 *)&priv->ports[port].dp->index);
+
+	debugfs_create_x32("PB_VLAN",0666,port_dir,(void *)(RTL838X_SW_BASE + RTL930X_VLAN_PORT_PB_VLAN + (port<<2))); //VLAN_PORT_PB_VLAN
+	debugfs_create_x32("FWD_CTRL",0666,port_dir,(void *)(RTL838X_SW_BASE + RTL930X_VLAN_PORT_FWD + (port<<2)));
+	debugfs_create_x32("TAG_STS_CTRL",0666,port_dir,(void *)(RTL838X_SW_BASE + 0xCE24 + (port<<2))); //VLAN_PORT_TAG_STS_CTRL
+
+	debugfs_create_x32("LED_SW_CTRL",0666,port_dir,(void *)(RTL838X_SW_BASE + 0xcc5c + (port<<2))); //LED_PORT_SW_CTRL
+
+	debugfs_create_x32("SFLOW_RATE_CTRL",0666,port_dir,(void *)(RTL838X_SW_BASE + 0xbea4 + (port<<2))); //SFLOW_PORT_RATE_CTRL
+
+	return 0;
+}
+
 static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv *priv)
 {
 	struct dentry *led_dir;
@@ -585,6 +606,26 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SW_P_CTRL(p)));
 		}
 	}
+	return 0;
+}
+
+static int rtl930x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv *priv)
+{
+	struct dentry *led_dir;
+	pr_info("%s called\n", __func__);
+	led_dir = debugfs_create_dir("LED", parent);
+	pr_info("%s create dir %p\n", __func__,led_dir);
+
+	debugfs_create_x32("SW_LED_LOAD",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc48)); //SW_LED_LOAD //Write 1 to this field to apply new settings for software controlled LEDs. Auto clears when finished.
+
+	debugfs_create_x32("LED_SW_EN_CTRL_1-8",  0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc4c)); //LED_PORT_SW_EN_CTRL
+	debugfs_create_x32("LED_SW_EN_CTRL_24-27",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc4c +12)); //LED_PORT_SW_EN_CTRL
+
+	debugfs_create_x64("LED_SET3_CTRL",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc0c));  //LED_SET3_1_CTRL
+	debugfs_create_x64("LED_SET2_CTRL",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc14));  //LED_SET2_1_CTRL
+	debugfs_create_x64("LED_SET1_CTRL",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc1c));  //LED_SET1_1_CTRL
+	debugfs_create_x64("LED_SET0_CTRL",0666,led_dir,(void *)(RTL838X_SW_BASE + 0xcc24));  //LED_SET0_1_CTRL
+
 	return 0;
 }
 
@@ -726,4 +767,19 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_file("drop_counters", 0400, dbg_dir, priv, &drop_counter_fops);
 
 	debugfs_create_file("l2_table", 0400, dbg_dir, priv, &l2_table_fops);
+
+	debugfs_create_x32("BPDU_CTRL_1-8",0666,dbg_dir,(void *)(RTL838X_SW_BASE + 0x9e7c)); //RMA_PORT_BPDU_CTRL
+	debugfs_create_x32("LLDP_CTRL_1-8",0666,dbg_dir,(void *)(RTL838X_SW_BASE + 0x9efc)); //RMA_PORT_LLDP_CTRL
+		
+	debugfs_create_x32("SFLOW_CTRL",0666,dbg_dir,(void *)(RTL838X_SW_BASE + 0xbea0)); //SFLOW_CTRL
+
+	rtl930x_dbgfs_leds(dbg_dir, priv);
+
+	/* Create one directory per port */
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy) {
+			rtl930x_dbgfs_port_init(dbg_dir, priv, i);
+		}
+	}
+
 }
