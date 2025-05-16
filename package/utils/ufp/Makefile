@@ -25,6 +25,11 @@ define Package/ufp
   CATEGORY:=Utilities
   TITLE:=Device fingerprinting daemon
   DEPENDS:=+ucode +ucode-mod-fs +ucode-mod-struct +libubox
+  MENU:=1
+endef
+
+define Package/ufp/config
+	source "$(SOURCE)/Config.in"
 endef
 
 define Package/ufp/conffiles
@@ -34,6 +39,7 @@ endef
 OUI_VERSION=v1.0
 OUI_FILE=oui-parser-$(OUI_VERSION).tar.gz
 
+ifeq ($(CONFIG_UFP_INCLUDE_IEEE),y)
 define Download/oui-parser
 	FILE:=$(OUI_FILE)
 	URL_FILE:=$(OUI_VERSION).tar.gz
@@ -41,11 +47,14 @@ define Download/oui-parser
 	HASH:=915da0d9ce3c7f5fb180b8531c7659694cd6dd8c1df4ba4dd85c704f145d6988
 endef
 $(eval $(call Download,oui-parser))
+endif
 
 define Build/Prepare
 	$(Build/Prepare/Default)
 	mkdir -p $(PKG_BUILD_DIR)/data
+ifeq ($(CONFIG_UFP_INCLUDE_IEEE),y)
 	$(TAR) -xzf $(DL_DIR)/$(OUI_FILE) --strip-components=1 -C $(PKG_BUILD_DIR)
+endif
 	$(CP) ./data/* $(PKG_BUILD_DIR)/data
 	$(Build/Patch)
 endef
