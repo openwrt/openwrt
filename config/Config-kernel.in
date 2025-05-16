@@ -1487,8 +1487,15 @@ config KERNEL_AUDIT
 config KERNEL_SECURITY
 	bool "Enable different security models"
 
+config KERNEL_SECURITYFS
+	bool "Enable securityfs filesystem"
+
 config KERNEL_SECURITY_NETWORK
 	bool "Socket and Networking Security Hooks"
+	select KERNEL_SECURITY
+
+config KERNEL_SECURITY_PATH
+	bool "Pathname Access Control Security Hooks"
 	select KERNEL_SECURITY
 
 config KERNEL_SECURITY_SELINUX
@@ -1500,6 +1507,9 @@ config KERNEL_SECURITY_SELINUX_BOOTPARAM
 	bool "NSA SELinux boot parameter"
 	depends on KERNEL_SECURITY_SELINUX
 	default y
+	help
+	  SELinux cannot be active at same time with AppArmor
+	  Choose one of them at a time as default.
 
 config KERNEL_SECURITY_SELINUX_DISABLE
 	bool "NSA SELinux runtime disable"
@@ -1520,10 +1530,64 @@ config KERNEL_SECURITY_SELINUX_SID2STR_CACHE_SIZE
 	depends on KERNEL_SECURITY_SELINUX
 	default 256
 
+config KERNEL_SECURITY_APPARMOR
+	bool "AppArmor Support"
+	select KERNEL_AUDIT
+	select KERNEL_SECURITY
+	select KERNEL_SECURITYFS
+	select KERNEL_SECURITY_PATH
+	select KERNEL_SECURITY_NETWORK
+
+config KERNEL_SECURITY_APPARMOR_BOOTPARAM_VALUE
+	int "AppArmor boot parameter"
+	depends on KERNEL_SECURITY_APPARMOR
+	default 0
+	help
+	  This option sets the default value for the kernel parameter
+	  'apparmor', which allows AppArmor to be enabled or disabled
+	  at boot. If this option is set to 0 (zero), the AppArmor
+	  kernel parameter will default to 0, disabling AppArmor at
+	  boot. If this option is set to 1 (one), the AppArmor
+	  kernel parameter will default to 1, enabling AppArmor at
+	  boot.
+
+	  AppArmor and SELinux cannot be used simultaneously, choose
+	  only one of them as default.
+
+config KERNEL_DEFAULT_SECURITY_APPARMOR
+	bool "Set AppArmor as default security module"
+	default n
+	help
+	  This option enables AppArmor without command-line parameter.
+	  Set AppArmor boot parameter to 1 to use this feature.
+
+	  AppArmor and SELinux cannot be used simultaneously, choose
+	  only one of them as default.
+
+config KERNEL_SECURITY_APPARMOR_HASH
+	bool "Enable introspection of sha1 hashes for loaded profiles"
+	depends on KERNEL_SECURITY_APPARMOR
+
+config KERNEL_SECURITY_APPARMOR_HASH_DEFAULT
+	bool "Enable policy hash introspection by default"
+	depends on KERNEL_SECURITY_APPARMOR_HASH
+
+config KERNEL_SECURITY_APPARMOR_DEBUG
+	bool "Build AppArmor with debug code"
+	depends on KERNEL_SECURITY_APPARMOR
+
+config KERNEL_SECURITY_APPARMOR_DEBUG_ASSERTS
+	bool "Build AppArmor with debugging asserts"
+	depends on KERNEL_SECURITY_APPARMOR_DEBUG
+
+config KERNEL_SECURITY_APPARMOR_DEBUG_MESSAGES
+	bool "AppArmor debug messages enabled by default"
+	depends on KERNEL_SECURITY_APPARMOR_DEBUG
+
 config KERNEL_LSM
 	string
-	default "lockdown,yama,loadpin,safesetid,integrity,selinux"
-	depends on KERNEL_SECURITY_SELINUX
+	default "landlock,lockdown,yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor,bpf"
+	depends on ( KERNEL_SECURITY_SELINUX || KERNEL_SECURITY_APPARMOR )
 
 config KERNEL_EXT4_FS_SECURITY
 	bool "Ext4 Security Labels"
