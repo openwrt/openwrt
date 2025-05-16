@@ -186,7 +186,7 @@ Signed-off-by: Ziv Xu <ziv.xu@starfivetech.com>
 +			format = "i2s";
 +			bitclock-master = <&sndcodec1>;
 +			frame-master = <&sndcodec1>;
-+			
++
 +			widgets =
 +					"Microphone", "Mic Jack",
 +					"Line", "Line In",
@@ -208,7 +208,7 @@ Signed-off-by: Ziv Xu <ziv.xu@starfivetech.com>
 +			cpu1 {
 +				sound-dai = <&i2stx1>;
 +			};
-+			
++
 +			sndcodec1:codec {
 +				sound-dai = <&wm8960>;
 +				clocks = <&wm8960_mclk>;

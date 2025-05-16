@@ -57,7 +57,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
 +	if (IS_ENABLED(CONFIG_SOC_MT7621) &&
 +	    !FIELD_GET(0x20000, __raw_readl(MT7621_SYSC_BASE + SYSC_REG_CHIP_REV)))
 +		return 1;
-+ 
++
  	/* Add one before masking to handle 0xff indicating no cores */
  	return FIELD_GET(CM_GCR_CONFIG_PCORES,
  			 mips_cps_cluster_config(cluster) + 1);

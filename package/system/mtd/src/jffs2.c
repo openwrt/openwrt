@@ -293,7 +293,7 @@ int mtd_write_jffs2(const char *mtd, const char *filename, const char *dir)
 
 	if (quiet < 2)
 		fprintf(stderr, "Appending %s to jffs2 partition %s\n", filename, mtd);
-	
+
 	buf = malloc(erasesize);
 	if (!buf) {
 		fprintf(stderr, "Out of memory!\n");

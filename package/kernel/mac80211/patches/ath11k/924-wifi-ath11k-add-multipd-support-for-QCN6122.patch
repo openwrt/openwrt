@@ -37,7 +37,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	ret = of_property_read_string(dev->of_node,
 +				      "qcom,userpd-subsys-name",
 +				      &subsys_name);
-+	if (ret) 
++	if (ret)
 +		return 0;
 +
 +	if (strcmp(subsys_name, "q6v5_wcss_userpd2") == 0)

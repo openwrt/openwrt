@@ -37,8 +37,8 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
 +	help
 +	  The command-line arguments provided by the boot loader will be
 +	  appended to a new device tree property: bootloader-args.
-+	  If there is a property "append-rootblock" in DT under /chosen 
-+	  and a root= option in bootloaders command line it will be parsed 
++	  If there is a property "append-rootblock" in DT under /chosen
++	  and a root= option in bootloaders command line it will be parsed
 +	  and added to DT bootargs with the form: <append-rootblock>XX.
 +	  Only command line ATAG will be processed, the rest of the ATAGs
 +	  sent by bootloader will be ignored.

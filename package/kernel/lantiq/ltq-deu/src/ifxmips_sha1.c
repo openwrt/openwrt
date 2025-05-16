@@ -92,10 +92,10 @@ extern int disable_deudma;
 
 /*! \fn static void sha1_transform1 (u32 *state, const u32 *in)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief main interface to sha1 hardware   
- *  \param state current state 
- *  \param in 64-byte block of input  
-*/                                 
+ *  \brief main interface to sha1 hardware
+ *  \param state current state
+ *  \param in 64-byte block of input
+*/
 static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 {
     int i = 0;
@@ -107,7 +107,7 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
     SHA_HASH_INIT;
 
     /* For context switching purposes, the previous hash output
-     * is loaded back into the output register 
+     * is loaded back into the output register
     */
     if (sctx->started) {
         hashs->D1R = *((u32 *) sctx->hash + 0);
@@ -125,9 +125,9 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
     while (hashs->controlr.BSY) {
         // this will not take long
     }
-   
-    /* For context switching purposes, the output is saved into a 
-     * context struct which can be used later on 
+
+    /* For context switching purposes, the output is saved into a
+     * context struct which can be used later on
     */
     *((u32 *) sctx->hash + 0) = hashs->D1R;
     *((u32 *) sctx->hash + 1) = hashs->D2R;
@@ -142,13 +142,13 @@ static void sha1_transform1 (struct sha1_ctx *sctx, u32 *state, const u32 *in)
 
 /*! \fn static void sha1_init1(struct crypto_tfm *tfm)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief initialize sha1 hardware   
- *  \param tfm linux crypto algo transform  
-*/                                 
+ *  \brief initialize sha1 hardware
+ *  \param tfm linux crypto algo transform
+*/
 static int sha1_init1(struct shash_desc *desc)
 {
     struct sha1_ctx *sctx = shash_desc_ctx(desc);
-    
+
     sctx->started = 0;
     sctx->count = 0;
     return 0;
@@ -156,11 +156,11 @@ static int sha1_init1(struct shash_desc *desc)
 
 /*! \fn static void sha1_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief on-the-fly sha1 computation   
- *  \param tfm linux crypto algo transform  
- *  \param data input data  
- *  \param len size of input data  
-*/                                 
+ *  \brief on-the-fly sha1 computation
+ *  \param tfm linux crypto algo transform
+ *  \param data input data
+ *  \param len size of input data
+*/
 static int sha1_update(struct shash_desc * desc, const u8 *data,
             unsigned int len)
 {
@@ -188,10 +188,10 @@ static int sha1_update(struct shash_desc * desc, const u8 *data,
 
 /*! \fn static void sha1_final(struct crypto_tfm *tfm, u8 *out)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief compute final sha1 value   
- *  \param tfm linux crypto algo transform  
- *  \param out final md5 output value  
-*/                                 
+ *  \brief compute final sha1 value
+ *  \param tfm linux crypto algo transform
+ *  \param out final md5 output value
+*/
 static int sha1_final(struct shash_desc *desc, u8 *out)
 {
     struct sha1_ctx *sctx = shash_desc_ctx(desc);
@@ -235,7 +235,7 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     return 0;
 }
 
-/* 
+/*
  * \brief SHA1 function mappings
 */
 static struct shash_alg ifxdeu_sha1_alg = {
@@ -258,8 +258,8 @@ static struct shash_alg ifxdeu_sha1_alg = {
 
 /*! \fn int ifxdeu_init_sha1 (void)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief initialize sha1 driver    
-*/                                 
+ *  \brief initialize sha1 driver
+*/
 int ifxdeu_init_sha1 (void)
 {
     int ret = -ENOSYS;
@@ -278,8 +278,8 @@ sha1_err:
 
 /*! \fn void ifxdeu_fini_sha1 (void)
  *  \ingroup IFX_SHA1_FUNCTIONS
- *  \brief unregister sha1 driver   
-*/                                 
+ *  \brief unregister sha1 driver
+*/
 void ifxdeu_fini_sha1 (void)
 {
     crypto_unregister_shash(&ifxdeu_sha1_alg);

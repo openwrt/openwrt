@@ -32,7 +32,7 @@ Signed-off-by: Michiel Vanbiervliet <michiel.vanbiervliet@gmail.com>
 -		   VC4_HD_VID_CTL_BLANK_INSERT_EN |
 -		   (vsync_pos ? 0 : VC4_HD_VID_CTL_VSYNC_LOW) |
 -		   (hsync_pos ? 0 : VC4_HD_VID_CTL_HSYNC_LOW));
-+	   (HDMI_READ(HDMI_VID_CTL) &~ 
++	   (HDMI_READ(HDMI_VID_CTL) &~
 +	   (VC4_HD_VID_CTL_VSYNC_LOW | VC4_HD_VID_CTL_HSYNC_LOW)) |
 +	   VC4_HD_VID_CTL_ENABLE |
 +	   VC4_HD_VID_CTL_CLRRGB |

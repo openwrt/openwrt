@@ -189,7 +189,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +
 +		format = v4l2_subdev_get_pad_format(sd, sd_state, 0);
 +		crop = v4l2_subdev_get_pad_crop(sd, sd_state, 0);
-+		
++
 +		*format = fmt->format;
 +		*crop = mode->crop;
 +

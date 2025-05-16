@@ -54,7 +54,7 @@
 #include <crypto/internal/skcipher.h>
 #include "ifxmips_deu.h"
 
-#if defined(CONFIG_DANUBE) 
+#if defined(CONFIG_DANUBE)
 #include "ifxmips_deu_danube.h"
 extern int ifx_danube_pre_1_4;
 #elif defined(CONFIG_AR9)
@@ -68,9 +68,9 @@ extern int ifx_danube_pre_1_4;
 /* DMA specific header and variables */
 
 #if 0
-     #define CRTCL_SECT_INIT        
-     #define CRTCL_SECT_START        
-     #define CRTCL_SECT_END         
+     #define CRTCL_SECT_INIT
+     #define CRTCL_SECT_START
+     #define CRTCL_SECT_END
 #else
 spinlock_t des_lock;
 #define CRTCL_SECT_INIT        spin_lock_init(&des_lock)
@@ -121,11 +121,11 @@ extern int disable_deudma;
 
 /*! \fn	int des_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets DES key   
- *  \param tfm linux crypto algo transform  
- *  \param key input key  
- *  \param keylen key length  
-*/                                 
+ *  \brief sets DES key
+ *  \param tfm linux crypto algo transform
+ *  \param key input key
+ *  \param keylen key length
+*/
 static int des_setkey(struct crypto_tfm *tfm, const u8 *key,
                       unsigned int keylen)
 {
@@ -168,15 +168,15 @@ static int des_setkey_skcipher (struct crypto_skcipher *tfm, const u8 *in_key, u
 
 /*! \fn void ifx_deu_des(void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief main interface to DES hardware   
- *  \param ctx_arg crypto algo context  
- *  \param out_arg output bytestream  
- *  \param in_arg input bytestream   
- *  \param iv_arg initialization vector  
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param mode operation mode such as ebc, cbc 
-*/                                 
+ *  \brief main interface to DES hardware
+ *  \param ctx_arg crypto algo context
+ *  \param out_arg output bytestream
+ *  \param in_arg input bytestream
+ *  \param iv_arg initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param mode operation mode such as ebc, cbc
+*/
 
 void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
              u8 *iv_arg, u32 nbytes, int encdec, int mode)
@@ -188,7 +188,7 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
         int i = 0;
         int nblocks = 0;
-        
+
         CRTCL_SECT_START;
 
         des->controlr.M = dctx->controlr_M;
@@ -242,10 +242,10 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 #ifdef CRYPTO_DEBUG
                 printk ("ihr: %x\n", (*((u32 *) in_arg + i)));
                 printk ("ilr: %x\n", (*((u32 *) in_arg + 1 + i)));
-#endif           
+#endif
                 des->IHR = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + i));
                 des->ILR = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + 1 + i)); /* start crypto */
-                
+
                 while (des->controlr.BUS) {
                         // this will not take long
                 }
@@ -256,7 +256,7 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         }
 
 
-    
+
     if (mode > 0) {
         *(u32 *) iv_arg = DEU_ENDIAN_SWAP(des->IVHR);
         *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(des->IVLR);
@@ -275,26 +275,26 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
 /*! \fn void ifx_deu_des(void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief main interface to DES hardware   
- *  \param ctx_arg crypto algo context  
- *  \param out_arg output bytestream  
- *  \param in_arg input bytestream   
- *  \param iv_arg initialization vector  
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param mode operation mode such as ebc, cbc 
-*/   
+ *  \brief main interface to DES hardware
+ *  \param ctx_arg crypto algo context
+ *  \param out_arg output bytestream
+ *  \param in_arg input bytestream
+ *  \param iv_arg initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param mode operation mode such as ebc, cbc
+*/
 
 /*! \fn  void ifx_deu_des_ecb (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets DES hardware to ECB mode   
- *  \param ctx crypto algo context  
- *  \param dst output bytestream  
- *  \param src input bytestream  
- *  \param iv initialization vector   
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param inplace not used  
+ *  \brief sets DES hardware to ECB mode
+ *  \param ctx crypto algo context
+ *  \param dst output bytestream
+ *  \param src input bytestream
+ *  \param iv initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param inplace not used
 */
 static void ifx_deu_des_ecb (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
@@ -304,15 +304,15 @@ static void ifx_deu_des_ecb (void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn  void ifx_deu_des_cbc (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets DES hardware to CBC mode   
- *  \param ctx crypto algo context  
- *  \param dst output bytestream  
- *  \param src input bytestream  
- *  \param iv initialization vector   
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param inplace not used  
-*/                                 
+ *  \brief sets DES hardware to CBC mode
+ *  \param ctx crypto algo context
+ *  \param dst output bytestream
+ *  \param src input bytestream
+ *  \param iv initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param inplace not used
+*/
 static void ifx_deu_des_cbc (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
 {
@@ -321,15 +321,15 @@ static void ifx_deu_des_cbc (void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn  void ifx_deu_des_ofb (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets DES hardware to OFB mode   
- *  \param ctx crypto algo context  
- *  \param dst output bytestream  
- *  \param src input bytestream  
- *  \param iv initialization vector   
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param inplace not used  
-*/                                 
+ *  \brief sets DES hardware to OFB mode
+ *  \param ctx crypto algo context
+ *  \param dst output bytestream
+ *  \param src input bytestream
+ *  \param iv initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param inplace not used
+*/
 /*
 static void ifx_deu_des_ofb (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
@@ -340,15 +340,15 @@ static void ifx_deu_des_ofb (void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn void ifx_deu_des_cfb (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
     \ingroup IFX_DES_FUNCTIONS
-    \brief sets DES hardware to CFB mode   
-    \param ctx crypto algo context  
-    \param dst output bytestream  
-    \param src input bytestream  
-    \param iv initialization vector   
-    \param nbytes length of bytestream  
-    \param encdec 1 for encrypt; 0 for decrypt  
-    \param inplace not used  
-*/                                 
+    \brief sets DES hardware to CFB mode
+    \param ctx crypto algo context
+    \param dst output bytestream
+    \param src input bytestream
+    \param iv initialization vector
+    \param nbytes length of bytestream
+    \param encdec 1 for encrypt; 0 for decrypt
+    \param inplace not used
+*/
 /*
 static void ifx_deu_des_cfb (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
@@ -359,15 +359,15 @@ static void ifx_deu_des_cfb (void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn void ifx_deu_des_ctr (void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets DES hardware to CTR mode   
- *  \param ctx crypto algo context  
- *  \param dst output bytestream  
- *  \param src input bytestream  
- *  \param iv initialization vector   
- *  \param nbytes length of bytestream  
- *  \param encdec 1 for encrypt; 0 for decrypt  
- *  \param inplace not used  
-*/                                 
+ *  \brief sets DES hardware to CTR mode
+ *  \param ctx crypto algo context
+ *  \param dst output bytestream
+ *  \param src input bytestream
+ *  \param iv initialization vector
+ *  \param nbytes length of bytestream
+ *  \param encdec 1 for encrypt; 0 for decrypt
+ *  \param inplace not used
+*/
 /*
 void ifx_deu_des_ctr (void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
@@ -378,11 +378,11 @@ void ifx_deu_des_ctr (void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn void ifx_deu_des_encrypt (struct crypto_tfm *tfm, uint8_t *out, const uint8_t *in)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief encrypt DES_BLOCK_SIZE of data   
- *  \param tfm linux crypto algo transform  
- *  \param out output bytestream  
- *  \param in input bytestream  
-*/                                               
+ *  \brief encrypt DES_BLOCK_SIZE of data
+ *  \param tfm linux crypto algo transform
+ *  \param out output bytestream
+ *  \param in input bytestream
+*/
 static void ifx_deu_des_encrypt (struct crypto_tfm *tfm, uint8_t * out, const uint8_t * in)
 {
      struct ifx_deu_des_ctx *ctx = crypto_tfm_ctx(tfm);
@@ -393,11 +393,11 @@ static void ifx_deu_des_encrypt (struct crypto_tfm *tfm, uint8_t * out, const ui
 
 /*! \fn void ifx_deu_des_decrypt (struct crypto_tfm *tfm, uint8_t *out, const uint8_t *in)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief encrypt DES_BLOCK_SIZE of data   
- *  \param tfm linux crypto algo transform  
- *  \param out output bytestream  
- *  \param in input bytestream  
-*/                                               
+ *  \brief encrypt DES_BLOCK_SIZE of data
+ *  \param tfm linux crypto algo transform
+ *  \param out output bytestream
+ *  \param in input bytestream
+*/
 static void ifx_deu_des_decrypt (struct crypto_tfm *tfm, uint8_t * out, const uint8_t * in)
 {
      struct ifx_deu_des_ctx *ctx = crypto_tfm_ctx(tfm);
@@ -421,11 +421,11 @@ static void ifx_deu_des_decrypt (struct crypto_tfm *tfm, uint8_t * out, const ui
 
 /*! \fn int des3_ede_setkey(struct crypto_tfm *tfm, const u8 *key, unsigned int keylen)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief sets 3DES key   
- *  \param tfm linux crypto algo transform  
- *  \param key input key  
- *  \param keylen key length  
-*/                                 
+ *  \brief sets 3DES key
+ *  \param tfm linux crypto algo transform
+ *  \param key input key
+ *  \param keylen key length
+*/
 static int des3_ede_setkey(struct crypto_tfm *tfm, const u8 *key,
                     unsigned int keylen)
 {
@@ -468,7 +468,7 @@ static int des3_ede_setkey_skcipher(struct crypto_skcipher *tfm, const u8 *key,
 
 /*
  * \brief DES function mappings
-*/ 
+*/
 struct crypto_alg ifxdeu_des_alg = {
         .cra_name               =       "des",
         .cra_driver_name        =       "ifxdeu-des",
@@ -489,7 +489,7 @@ struct crypto_alg ifxdeu_des_alg = {
 
 /*
  * \brief DES function mappings
-*/ 
+*/
 struct crypto_alg ifxdeu_des3_ede_alg = {
         .cra_name               =       "des3_ede",
         .cra_driver_name        =       "ifxdeu-des3_ede",
@@ -525,7 +525,7 @@ static int ecb_des_encrypt(struct skcipher_request *req)
 
         while ((nbytes = enc_bytes = walk.nbytes)) {
                 enc_bytes -= (nbytes % DES_BLOCK_SIZE);
-                ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                NULL, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -552,7 +552,7 @@ static int ecb_des_decrypt(struct skcipher_request *req)
 
         while ((nbytes = dec_bytes = walk.nbytes)) {
                 dec_bytes -= (nbytes % DES_BLOCK_SIZE);
-                ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -618,7 +618,7 @@ static int cbc_des_encrypt(struct skcipher_request *req)
         while ((nbytes = enc_bytes = walk.nbytes)) {
                 u8 *iv = walk.iv;
                 enc_bytes -= (nbytes % DES_BLOCK_SIZE);
-                ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -646,7 +646,7 @@ static int cbc_des_decrypt(struct skcipher_request *req)
         while ((nbytes = dec_bytes = walk.nbytes)) {
                 u8 *iv = walk.iv;
                 dec_bytes -= (nbytes % DES_BLOCK_SIZE);
-                ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -697,8 +697,8 @@ struct skcipher_alg ifxdeu_cbc_des3_ede_alg = {
 
 /*! \fn int ifxdeu_init_des (void)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief initialize des driver      
-*/                                 
+ *  \brief initialize des driver
+*/
 int ifxdeu_init_des (void)
 {
     int ret = -ENOSYS;
@@ -765,8 +765,8 @@ cbc_des3_ede_err:
 
 /*! \fn void ifxdeu_fini_des (void)
  *  \ingroup IFX_DES_FUNCTIONS
- *  \brief unregister des driver    
-*/                                 
+ *  \brief unregister des driver
+*/
 void ifxdeu_fini_des (void)
 {
         crypto_unregister_alg (&ifxdeu_des_alg);

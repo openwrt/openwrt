@@ -466,7 +466,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +		break;
 +	case HCI_OP_LE_Set_Extended_Scan_Parameters:
 +		printk("HCI_OP_LE_Set_Extended_Scan_Parameters");
-+		break;	
++		break;
 +	case HCI_OP_Set_Event_Filter:
 +		printk("HCI_OP_Set_Event_Filter");
 +		break;
@@ -1037,7 +1037,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +        wake_up_interruptible(&btchr_read_wait);
 +    }
 +
-+	
++
 +    return;
 +}
 +
@@ -3388,12 +3388,12 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +    urb->pipe     = pipe;
 +    urb->context  = hdev;
 +    urb->complete = btusb_isoc_complete;
-+	if (urb->dev->speed == USB_SPEED_HIGH || urb->dev->speed >= USB_SPEED_SUPER) {  
-+		/* make sure interval is within allowed range */  
-+		interval = clamp((int)data->isoc_rx_ep->bInterval, 1, 16);  
-+		urb->interval = 1 << (interval - 1); 
-+	} else {  
-+		urb->interval = data->isoc_rx_ep->bInterval; 
++	if (urb->dev->speed == USB_SPEED_HIGH || urb->dev->speed >= USB_SPEED_SUPER) {
++		/* make sure interval is within allowed range */
++		interval = clamp((int)data->isoc_rx_ep->bInterval, 1, 16);
++		urb->interval = 1 << (interval - 1);
++	} else {
++		urb->interval = data->isoc_rx_ep->bInterval;
 +	}
 +
 +	AICBT_INFO("urb->interval %d \r\n", urb->interval);
@@ -3564,7 +3564,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +    if (!test_and_clear_bit(HCI_RUNNING, &hdev->flags)){
 +        return 0;
 +    }
-+	
++
 +	if (!test_and_clear_bit(BTUSB_INTR_RUNNING, &data->flags)){
 +        return 0;
 +	}
@@ -4021,7 +4021,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +    AIC_sco_card_t  *pSCOSnd = data->pSCOSnd;
 +#endif
 +	printk("%s data->sco_num:%d \r\n", __func__, data->sco_num);
-+	
++
 +    if (data->sco_num > 0) {
 +        if (!test_bit(BTUSB_DID_ISO_RESUME, &data->flags)) {
 +            err = usb_autopm_get_interface(data->isoc ? data->isoc : data->intf);
@@ -4070,9 +4070,9 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +			printk("%s set_isoc_interface in \r\n", __func__);
 +            if (set_isoc_interface(hdev, new_alts) < 0)
 +                return;
-+			
++
 +        }
-+		
++
 +		printk("%s set_isoc_interface out \r\n", __func__);
 +
 +        if (!test_and_set_bit(BTUSB_ISOC_RUNNING, &data->flags)) {
@@ -4241,7 +4241,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +{
 +	uint8_t null_data[255];
 +	struct btusb_data *usb_data;
-+	
++
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 +    usb_data = (struct btusb_data *)data;
 +#else
@@ -4687,7 +4687,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +    int i, err=0;
 +
 +    bt_support = 1;
-+    
++
 +    AICBT_INFO("%s: usb_interface %p, bInterfaceNumber %d, idVendor 0x%04x, "
 +            "idProduct 0x%04x", __func__, intf,
 +            intf->cur_altsetting->desc.bInterfaceNumber,
@@ -5767,7 +5767,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +        AICBT_INFO("No Mac Config for BT\n");
 +        return -1;
 +    }
-+    oldfs = get_fs(); 
++    oldfs = get_fs();
 +    set_fs(KERNEL_DS);
 +    bdaddr_file->f_op->llseek(bdaddr_file, 0, 0);
 +    bdaddr_file->f_op->read(bdaddr_file, buf, FACTORY_BT_BDADDR_STORAGE_LEN, &bdaddr_file->f_pos);
@@ -5963,7 +5963,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +
 +	printk("%s enter\r\n", __func__);
 +	memset(data, 0, 1024);
-+    switch(cmd) 
++    switch(cmd)
 +    {
 +        case SET_APCF_PARAMETER:
 +			printk("set apcf parameter\r\n");
@@ -6000,25 +6000,25 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +	struct device *dev;
 +
 +	printk("%s enter\r\n", __func__);
-+	
++
 +		ioctl_char_class = class_create(THIS_MODULE, IOCTL_CHAR_DEVICE_NAME);
 +		if (IS_ERR(ioctl_char_class)) {
 +			printk("Failed to create ioctl char class");
 +		}
-+	
++
 +		res = alloc_chrdev_region(&ioctl_devid, 0, 1, IOCTL_CHAR_DEVICE_NAME);
 +		if (res < 0) {
 +			printk("Failed to allocate ioctl char device");
 +			goto err_alloc;
 +		}
-+	
++
 +		dev = device_create(ioctl_char_class, NULL, ioctl_devid, NULL, IOCTL_CHAR_DEVICE_NAME);
 +		if (IS_ERR(dev)) {
 +			printk("Failed to create ioctl char device");
 +			res = PTR_ERR(dev);
 +			goto err_create;
 +		}
-+	
++
 +		cdev_init(&ioctl_char_dev, &ioctl_chrdev_ops);
 +		res = cdev_add(&ioctl_char_dev, ioctl_devid, 1);
 +		if (res < 0) {
@@ -6027,7 +6027,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
 +		}
 +
 +		return res;
-+	
++
 +err_add:
 +		device_destroy(ioctl_char_class, ioctl_devid);
 +err_create:

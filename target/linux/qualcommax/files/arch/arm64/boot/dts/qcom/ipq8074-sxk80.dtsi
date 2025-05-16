@@ -158,13 +158,13 @@
 	pinctrl-names = "default";
 
 	status = "okay";
-	
+
 	tlc59208f@27 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "ti,tlc59108";
 		reg = <0x27>;
-		
+
 		led@0 {
 			label = "rgb:led0";
 			reg = <0>;

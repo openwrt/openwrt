@@ -45613,7 +45613,7 @@ Signed-off-by: Alexander Winkowski <dereference23@outlook.com>
 +		break;
 +
 +	default:
-+		DWC_WARN("Unexpected state received on hc=%d fsm=%d on transfer to device %d ep 0x%x", 
++		DWC_WARN("Unexpected state received on hc=%d fsm=%d on transfer to device %d ep 0x%x",
 +					hc->hc_num, st->fsm, hc->dev_addr, hc->ep_num);
 +		qtd->error_count++;
 +		release_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_NO_HALT_STATUS);

@@ -1820,7 +1820,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
 
@@ -1837,7 +1837,7 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
 
@@ -1916,10 +1916,10 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
-	
+
 	page = priv->page[addr];
 
 	if (addr >= 24 && addr <= 27 && priv->id == 0x8380) {
@@ -1959,10 +1959,10 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
-	
+
 	page = priv->page[addr];
 
 	if (regnum == RTMDIO_PAGE_SELECT)
