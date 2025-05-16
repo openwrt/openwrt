@@ -22,9 +22,9 @@ Signed-off-by: Andrew MacIntyre <andymac@pcug.org.au>
  dcdp/ptm_tc.c | 1 +
  1 file changed, 1 insertion(+)
 
---- a/dcdp/ptm_tc.c	2023-12-17 16:11:22.503500398 +1100
-+++ b/dcdp/ptm_tc.c	2024-01-26 16:48:49.881623474 +1100
-@@ -657,6 +657,7 @@ static void ptm_setup(struct net_device
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -666,6 +666,7 @@ static void ptm_setup(struct net_device
  	ether_setup(dev);
  	dev->watchdog_timeo = 10 * HZ;
  	dev->netdev_ops = &g_ptm_netdev_ops;

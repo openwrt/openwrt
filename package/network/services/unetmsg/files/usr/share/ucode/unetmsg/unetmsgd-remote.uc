@@ -46,6 +46,15 @@ function network_socket_close(data)
 	data.socket.close();
 }
 
+function network_rx_cleanup_state(name)
+{
+	for (let name, sub in core.remote_subscribe)
+		delete sub[name];
+
+	for (let name, sub in core.remote_publish)
+		delete sub[name];
+}
+
 function network_rx_socket_close(data)
 {
 	if (!data)
@@ -53,14 +62,10 @@ function network_rx_socket_close(data)
 
 	core.dbg(`Incoming connection from ${data.name} closed\n`);
 	let net = networks[data.network];
-	if (net && net.rx_channels[data.name] == data)
+	if (net && net.rx_channels[data.name] != data) {
 		delete net.rx_channels[data.name];
-
-	for (let name, sub in core.remote_subscribe)
-		delete sub[data.name];
-
-	for (let name, sub in core.remote_publish)
-		delete sub[data.name];
+		network_rx_cleanup_state(data.name);
+	}
 
 	network_socket_close(data);
 }
@@ -189,10 +194,21 @@ function network_check_auth(sock_data, info)
 	if (sock_data.timer)
 		sock_data.timer.cancel();
 	sock_data.auth = true;
+	network_rx_cleanup_state(sock_data.name);
 	net.rx_channels[sock_data.name] = sock_data;
 	core.dbg(`Incoming connection from ${sock_data.name} established\n`);
-	if (!net.tx_channels[sock_data.name])
+
+	let chan = net.tx_channels[sock_data.name];
+	if (!chan) {
 		net.timer.set(100);
+		return;
+	}
+
+	chan.channel.request({
+		method: "ping",
+		data: {},
+		return: "ignore",
+	});
 }
 
 function network_accept(net, sock, addr)
@@ -337,6 +353,10 @@ function network_open_channel(net, name, peer)
 			delete net.tx_channels[sock_data.name];
 
 		network_tx_socket_close(sock_data);
+		if (net.timer.remaining() > 0)
+			return;
+
+		net.timer.set(sock_data.auth ? 100 : 10000);
 	};
 
 	sock_data.socket = sock;

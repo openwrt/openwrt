@@ -51,7 +51,8 @@ case "$FIRMWARE" in
 		ath11k_set_macflag
 		;;
 	tplink,eap610-outdoor|\
-	tplink,eap623od-hd-v1)
+	tplink,eap623od-hd-v1|\
+	tplink,eap625-outdoor-hd-v1)
 		caldata_from_file "/tmp/factory_data/radio" 0 0x10000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		ath11k_patch_mac $label_mac 1

@@ -567,6 +567,13 @@ endef
 
 define Device/Check/Common
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  # Check if device is disabled and if so do not mark to be installed
+  ifeq ($$(DEFAULT),n)
+    _PROFILE_SET :=
+  endif
+  ifeq ($$(BROKEN),y)
+    _PROFILE_SET :=
+  endif
   DEVICE_PACKAGES += $$(call extra_packages,$$(DEVICE_PACKAGES))
   ifdef TARGET_PER_DEVICE_ROOTFS
     $$(eval $$(call merge_packages,_PACKAGES,$$(DEVICE_PACKAGES) $$(call DEVICE_EXTRA_PACKAGES,$(1))))

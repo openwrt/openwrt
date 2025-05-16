@@ -76,8 +76,10 @@ function request(name, type, data, data_cb, complete_cb)
 		cb: complete_cb
 	});
 
-	if (!complete_cb)
-		req.await();
+	if (complete_cb)
+		return req;
+
+	req.await();
 }
 
 function connect()

@@ -1,0 +1,172 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 7 May 2025 23:22:11 +0800
+Subject: [PATCH] fix missing prototypes warnings
+
+This patch fixes various missing-prototypes build warnings on
+6.12 kernel.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/bnd/drv_dsl_cpe_api_bnd_vrx.c   |  2 +-
+ src/common/drv_dsl_cpe_api.c        | 16 ++++++++--------
+ src/common/drv_dsl_cpe_os_linux.c   |  4 ++--
+ src/device/drv_dsl_cpe_device_vrx.c |  2 +-
+ src/g997/drv_dsl_cpe_api_g997_vrx.c |  1 +
+ src/include/drv_dsl_cpe_intern.h    |  6 +++---
+ 6 files changed, 16 insertions(+), 15 deletions(-)
+
+--- a/src/bnd/drv_dsl_cpe_api_bnd_vrx.c
++++ b/src/bnd/drv_dsl_cpe_api_bnd_vrx.c
+@@ -75,7 +75,7 @@ static DSL_Error_t DSL_DRV_BND_VRX_HsCon
+    - DSL_SUCCESS in case of success
+    - DSL_ERROR if operation failed
+ */
+-DSL_Error_t DSL_DRV_BND_VRX_PafHsStatusGet(
++static DSL_Error_t DSL_DRV_BND_VRX_PafHsStatusGet(
+    DSL_Context_t *pContext,
+    DSL_BND_VRX_PafHsStatus_t *pData)
+ {
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -3873,7 +3873,7 @@ DSL_Error_t DSL_DRV_LoopLengthStatusGet(
+    return nErrCode;
+ }
+ 
+-DSL_Error_t DSL_DRV_RetxStatisticsGet(
++static DSL_Error_t DSL_DRV_RetxStatisticsGet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_IN_OUT DSL_ReTxStatistics_t *pData)
+ {
+@@ -4053,7 +4053,7 @@ DSL_Error_t DSL_DRV_SystemInterfaceConfi
+    \ref DSL_FIO_SYSTEM_INTERFACE_STATUS_GET
+ */
+ #ifdef INCLUDE_DSL_SYSTEM_INTERFACE
+-DSL_Error_t DSL_DRV_SystemInterfaceStatusGet(
++static DSL_Error_t DSL_DRV_SystemInterfaceStatusGet(
+    DSL_Context_t *pContext,
+    DSL_SystemInterfaceStatus_t *pData)
+ {
+@@ -5593,7 +5593,7 @@ DSL_Error_t DSL_DRV_DBG_DebugFeatureConf
+ #endif /* DSL_DEBUG_DISABLE*/
+ 
+ #ifdef INCLUDE_DSL_FILTER_DETECTION
+-DSL_Error_t DSL_DRV_FilterDetectionDataGet(
++static DSL_Error_t DSL_DRV_FilterDetectionDataGet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_OUT DSL_FilterDetection_t *pData)
+ {
+@@ -5742,7 +5742,7 @@ DSL_Error_t DSL_DRV_FilterDetectionBasic
+ }
+ #endif /* INCLUDE_DSL_FILTER_DETECTION */
+ 
+-DSL_Error_t DSL_DRV_HybridSelectionDataGet(
++static DSL_Error_t DSL_DRV_HybridSelectionDataGet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_OUT DSL_HybridSelection_t *pData)
+ {
+@@ -5804,7 +5804,7 @@ DSL_Error_t DSL_DRV_HybridSelectionDataG
+    return nErrCode;
+ }
+ 
+-DSL_Error_t DSL_DRV_OlrStatisticsGet(
++static DSL_Error_t DSL_DRV_OlrStatisticsGet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_OUT DSL_OlrStatistics_t *pData)
+ {
+@@ -5932,7 +5932,7 @@ DSL_void_t DSL_DRV_InitDataFree(
+ #endif /* INCLUDE_DSL_INIT_DATA_PREPARE*/
+ }
+ 
+-DSL_Error_t DSL_DRV_IoctlHandleHelperCall(
++static DSL_Error_t DSL_DRV_IoctlHandleHelperCall(
+    DSL_OpenContext_t *pOpenCtx,
+    DSL_Context_t *pContext,
+    DSL_boolean_t bIsInKernel,
+@@ -6573,7 +6573,7 @@ DSL_Error_t DSL_DRV_T1413_XTUR_VendorRev
+    return nErrCode;
+ }
+ 
+-DSL_Error_t DSL_DRV_PSDCalibrationConfigGet(
++static DSL_Error_t DSL_DRV_PSDCalibrationConfigGet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_IN_OUT DSL_PSDCalibration_t *pData)
+ {
+@@ -6608,7 +6608,7 @@ DSL_Error_t DSL_DRV_PSDCalibrationConfig
+    return nErrCode;
+ }
+ 
+-DSL_Error_t DSL_DRV_PSDCalibrationConfigSet(
++static DSL_Error_t DSL_DRV_PSDCalibrationConfigSet(
+    DSL_IN DSL_Context_t *pContext,
+    DSL_IN_OUT DSL_PSDCalibration_t *pData)
+ {
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -1341,7 +1341,7 @@ static void DSL_DRV_NlSendMsg(DSL_char_t
+ #endif
+ 
+ /* Entry point of driver */
+-int __init DSL_ModuleInit(void)
++static int __init DSL_ModuleInit(void)
+ {
+    DSL_int_t i;
+ 
+@@ -1457,7 +1457,7 @@ void DSL_ModuleCleanup(void)
+    return;
+ }
+ 
+-void __exit DSL_ModuleExit(void)
++static void __exit DSL_ModuleExit(void)
+ {
+    printk("DSL: Unloading module" DSL_DRV_CRLF);
+ 
+--- a/src/device/drv_dsl_cpe_device_vrx.c
++++ b/src/device/drv_dsl_cpe_device_vrx.c
+@@ -6914,7 +6914,7 @@ DSL_Error_t DSL_DRV_VRX_ShowtimeMeasurem
+    return nErrCode;
+ }
+ 
+-DSL_Error_t DSL_DRV_VRX_ShowtimeBasicMFDMeasurementUpdate(DSL_Context_t *pContext)
++static DSL_Error_t DSL_DRV_VRX_ShowtimeBasicMFDMeasurementUpdate(DSL_Context_t *pContext)
+ {
+    DSL_Error_t nErrCode = DSL_SUCCESS;
+    ACK_MFD_InitResultsGet_t sInitResultAck = { 0 };
+--- a/src/g997/drv_dsl_cpe_api_g997_vrx.c
++++ b/src/g997/drv_dsl_cpe_api_g997_vrx.c
+@@ -11,6 +11,7 @@
+ #define DSL_INTERN
+ 
+ #include "drv_dsl_cpe_api.h"
++#include "drv_dsl_cpe_device_g997.h"
+ 
+ #ifdef INCLUDE_DSL_CPE_API_VRX
+ 
+--- a/src/include/drv_dsl_cpe_intern.h
++++ b/src/include/drv_dsl_cpe_intern.h
+@@ -1151,7 +1151,7 @@ DSL_Error_t DSL_DRV_InteropFeatureConfig
+    For a detailed description please refer to the equivalent ioctl
+    \ref DSL_FIO_RETX_STATISTICS_GET
+ */
+-#ifdef INCLUDE_DSL_CPE_API_DANUBE
++#if defined(INCLUDE_DSL_CPE_API_DANUBE) && 0
+ #ifndef SWIG_TMP
+ DSL_Error_t DSL_DRV_RetxStatisticsGet(
+    DSL_IN DSL_Context_t *pContext,
+@@ -1436,7 +1436,7 @@ DSL_Error_t DSL_DRV_SystemInterfaceConfi
+    For a detailed description please refer to the equivalent ioctl
+    \ref DSL_FIO_FILTER_DETECTION_DATA_GET
+ */
+-#if defined(INCLUDE_DSL_CPE_API_DANUBE) && defined(INCLUDE_DSL_FILTER_DETECTION)
++#if defined(INCLUDE_DSL_CPE_API_DANUBE) && defined(INCLUDE_DSL_FILTER_DETECTION) && 0
+ #ifndef SWIG_TMP
+ DSL_Error_t DSL_DRV_FilterDetectionDataGet(
+    DSL_IN DSL_Context_t *pContext,
+@@ -1462,7 +1462,7 @@ DSL_Error_t DSL_DRV_FilterDetectionBasic
+    For a detailed description please refer to the equivalent ioctl
+    \ref DSL_FIO_HYBRID_SELECTION_DATA_GET
+ */
+-#ifdef INCLUDE_DSL_CPE_API_DANUBE
++#if defined(INCLUDE_DSL_CPE_API_DANUBE) && 0
+ #ifndef SWIG_TMP
+ DSL_Error_t DSL_DRV_HybridSelectionDataGet(
+    DSL_IN DSL_Context_t *pContext,

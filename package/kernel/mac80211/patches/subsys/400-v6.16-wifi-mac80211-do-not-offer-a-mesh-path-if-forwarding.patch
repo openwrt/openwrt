@@ -1,0 +1,56 @@
+From 0d47666f48a084363ee54f389bec2865de4934b8 Mon Sep 17 00:00:00 2001
+From: Benjamin Berg <benjamin@sipsolutions.net>
+Date: Wed, 30 Apr 2025 20:25:38 +0200
+Subject: [PATCH] wifi: mac80211: do not offer a mesh path if forwarding is
+ disabled
+
+When processing a PREQ the code would always check whether we have a
+mesh path locally and reply accordingly. However, when forwarding is
+disabled then we should not reply with this information as we will not
+forward data packets down that path.
+
+Move the check for dot11MeshForwarding up in the function and skip the
+mesh path lookup in that case. In the else block, set forward to false
+so that the rest of the function becomes a no-op and the
+dot11MeshForwarding check does not need to be duplicated.
+
+This explains an effect observed in the Freifunk community where mesh
+forwarding is disabled. In that case a mesh with three STAs and only bad
+links in between them, individual STAs would occionally have indirect
+mpath entries. This should not have happened.
+
+Signed-off-by: Benjamin Berg <benjamin@sipsolutions.net>
+Reviewed-by: Rouven Czerwinski <rouven@czerwinskis.de>
+---
+ net/mac80211/mesh_hwmp.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/mesh_hwmp.c
++++ b/net/mac80211/mesh_hwmp.c
+@@ -630,7 +630,7 @@ static void hwmp_preq_frame_process(stru
+ 				mesh_path_add_gate(mpath);
+ 		}
+ 		rcu_read_unlock();
+-	} else {
++	} else if (ifmsh->mshcfg.dot11MeshForwarding) {
+ 		rcu_read_lock();
+ 		mpath = mesh_path_lookup(sdata, target_addr);
+ 		if (mpath) {
+@@ -648,6 +648,8 @@ static void hwmp_preq_frame_process(stru
+ 			}
+ 		}
+ 		rcu_read_unlock();
++	} else {
++		forward = false;
+ 	}
+ 
+ 	if (reply) {
+@@ -665,7 +667,7 @@ static void hwmp_preq_frame_process(stru
+ 		}
+ 	}
+ 
+-	if (forward && ifmsh->mshcfg.dot11MeshForwarding) {
++	if (forward) {
+ 		u32 preq_id;
+ 		u8 hopcount;
+ 

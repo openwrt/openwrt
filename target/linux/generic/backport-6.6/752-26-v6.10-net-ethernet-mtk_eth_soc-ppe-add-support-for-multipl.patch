@@ -85,7 +85,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  		skb_record_rx_queue(skb, 0);
  		napi_gro_receive(napi, skb);
-@@ -3276,37 +3287,27 @@ static int mtk_start_dma(struct mtk_eth
+@@ -3280,37 +3291,27 @@ static int mtk_start_dma(struct mtk_eth
  	return 0;
  }
  
@@ -134,7 +134,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  
-@@ -3366,7 +3367,10 @@ static int mtk_open(struct net_device *d
+@@ -3370,7 +3371,10 @@ static int mtk_open(struct net_device *d
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -146,7 +146,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
-@@ -3390,18 +3394,38 @@ static int mtk_open(struct net_device *d
+@@ -3394,18 +3398,38 @@ static int mtk_open(struct net_device *d
  		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
  			mtk_ppe_start(eth->ppe[i]);
  
@@ -190,7 +190,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	phylink_start(mac->phylink);
  	netif_tx_start_all_queues(dev);
-@@ -3478,7 +3502,8 @@ static int mtk_stop(struct net_device *d
+@@ -3482,7 +3506,8 @@ static int mtk_stop(struct net_device *d
  	if (!refcount_dec_and_test(&eth->dma_refcnt))
  		return 0;
  
@@ -200,7 +200,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
  	mtk_rx_irq_disable(eth, eth->soc->rx.irq_done_mask);
-@@ -4973,23 +4998,24 @@ static int mtk_probe(struct platform_dev
+@@ -4977,23 +5002,24 @@ static int mtk_probe(struct platform_dev
  	}
  
  	if (eth->soc->offload_version) {
@@ -233,7 +233,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
-@@ -5092,6 +5118,7 @@ static const struct mtk_soc_data mt7621_
+@@ -5096,6 +5122,7 @@ static const struct mtk_soc_data mt7621_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 1,
@@ -241,7 +241,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
-@@ -5120,6 +5147,7 @@ static const struct mtk_soc_data mt7622_
+@@ -5124,6 +5151,7 @@ static const struct mtk_soc_data mt7622_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 2,
@@ -249,7 +249,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
-@@ -5148,6 +5176,7 @@ static const struct mtk_soc_data mt7623_
+@@ -5152,6 +5180,7 @@ static const struct mtk_soc_data mt7623_
  	.required_pctl = true,
  	.version = 1,
  	.offload_version = 1,
@@ -257,7 +257,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
-@@ -5203,6 +5232,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5207,6 +5236,7 @@ static const struct mtk_soc_data mt7981_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -265,7 +265,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5232,6 +5262,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5236,6 +5266,7 @@ static const struct mtk_soc_data mt7986_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -273,7 +273,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5261,6 +5292,7 @@ static const struct mtk_soc_data mt7988_
+@@ -5265,6 +5296,7 @@ static const struct mtk_soc_data mt7988_
  	.required_pctl = false,
  	.version = 3,
  	.offload_version = 2,

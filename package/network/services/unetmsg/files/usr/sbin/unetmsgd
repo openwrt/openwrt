@@ -38,7 +38,7 @@ let obj = ubus.publish("unetmsg", {
 		},
 		call: function(req) {
 			let ret = [];
-			for (let name in core.publish)
+			for (let name in { ...core.publish, ...core.remote_publish })
 				if (req.args.name == null || wildcard(name, req.args.name))
 					push(ret, name);
 
