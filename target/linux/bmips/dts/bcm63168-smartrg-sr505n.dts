@@ -16,7 +16,7 @@
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
-		
+
 		reset {
 			label = "reset";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
@@ -180,7 +180,7 @@
 &pinctrl {
 	pinctrl_leds: leds {
 		function = "led";
-		pins = "gpio1", "gpio8", 
+		pins = "gpio1", "gpio8",
 			"gpio9", "gpio10",
 			"gpio11", "gpio12",
 			"gpio14", "gpio15",

@@ -8,7 +8,7 @@
  * intellectual property rights of others.
  *----------------------------------------------------------------------------
  * File Name		: main.c
- * Object		: 
+ * Object		:
  * Creation		: HIi	10/10/2003
  * Modif		: HIi	15/06/2004 :	add crc32 to verify the download
  *                                          	from dataflash
@@ -107,7 +107,7 @@ AT91S_CtlTempo ctlTempo;
 
 //*--------------------------------------------------------------------------------------
 //* Function Name       : GetTickCount()
-//* Object              : Return the number of systimer tick 
+//* Object              : Return the number of systimer tick
 //* Input Parameters    :
 //* Output Parameters   :
 //*--------------------------------------------------------------------------------------
@@ -141,10 +141,10 @@ static void XmodemProtocol(AT91S_PipeStatus status, void *pVoid)
 {
 	AT91PS_SBuffer pSBuffer = (AT91PS_SBuffer) xmodemPipe.pBuffer->pChild;
 	AT91PS_USART   pUsart     = svcXmodem.pUsart;
-			
+
 	if (pSBuffer->szRdBuffer == 0) {
 		/* Start a tempo to wait the Xmodem protocol complete */
-		svcXmodem.tempo.Start(&(svcXmodem.tempo), 10, 0, AT91_XmodemComplete, pUsart);								
+		svcXmodem.tempo.Start(&(svcXmodem.tempo), 10, 0, AT91_XmodemComplete, pUsart);
 	}
 }
 #endif
@@ -161,7 +161,7 @@ void AT91F_ST_HANDLER(void)
 #ifdef XMODEM
 	unsigned int error;
 #endif
-	
+
 	if (AT91C_BASE_ST->ST_SR & 0x01) {
 		StTick++;
 		ctlTempo.CtlTempoTick(&ctlTempo);
@@ -177,9 +177,9 @@ void AT91F_ST_HANDLER(void)
 		AT91F_US_EnableIt((AT91PS_USART)AT91C_BASE_DBGU, AT91C_US_RXRDY);
 
 	}
-	
-	else if (csr & (AT91C_US_TXRDY | AT91C_US_ENDTX | AT91C_US_TXEMPTY | 
-	                AT91C_US_RXRDY | AT91C_US_ENDRX | AT91C_US_TIMEOUT | 
+
+	else if (csr & (AT91C_US_TXRDY | AT91C_US_ENDTX | AT91C_US_TXEMPTY |
+	                AT91C_US_RXRDY | AT91C_US_ENDRX | AT91C_US_TIMEOUT |
 	                AT91C_US_RXBUFF)) {
 		if ( !(svcXmodem.eot) )
 			svcXmodem.Handler(&svcXmodem, csr);
@@ -190,9 +190,9 @@ void AT91F_ST_HANDLER(void)
 
 //*-----------------------------------------------------------------------------
 //* Function Name       : AT91F_DisplayMenu()
-//* Object              : 
-//* Input Parameters    : 
-//* Return value		: 
+//* Object              :
+//* Input Parameters    :
+//* Return value		:
 //*-----------------------------------------------------------------------------
 static int AT91F_DisplayMenu(void)
 {
@@ -204,30 +204,30 @@ static int AT91F_DisplayMenu(void)
 		puts(menu_dataflash[i]);
 	}
 	return mci_present;
-}	
+}
 
 
 //*-----------------------------------------------------------------------------
 //* Function Name       : AsciiToHex()
 //* Object              : ascii to hexa conversion
-//* Input Parameters    : 
-//* Return value		: 
+//* Input Parameters    :
+//* Return value		:
 //*-----------------------------------------------------------------------------
 static unsigned int AsciiToHex(char *s, unsigned int *val)
 {
 	int n;
 
 	*val=0;
-	
+
 	if(s[0] == '0' && ((s[1] == 'x') || (s[1] == 'X')))
 		s+=2;
-	n = 0;	
+	n = 0;
 	while((n < 8) && (s[n] !=0))
 	{
 		*val <<= 4;
 		if ( (s[n] >= '0') && (s[n] <='9'))
 			*val += (s[n] - '0');
-		else	
+		else
 			if ((s[n] >= 'a') && (s[n] <='f'))
 				*val += (s[n] - 0x57);
 			else
@@ -238,7 +238,7 @@ static unsigned int AsciiToHex(char *s, unsigned int *val)
 		n++;
 	}
 
-	return 1;				
+	return 1;
 }
 
 
@@ -246,8 +246,8 @@ static unsigned int AsciiToHex(char *s, unsigned int *val)
 //*-----------------------------------------------------------------------------
 //* Function Name       : AT91F_MemoryDisplay()
 //* Object              : Display the content of the dataflash
-//* Input Parameters    : 
-//* Return value		: 
+//* Input Parameters    :
+//* Return value		:
 //*-----------------------------------------------------------------------------
 static int AT91F_MemoryDisplay(unsigned int addr, unsigned int length)
 {
@@ -265,7 +265,7 @@ static int AT91F_MemoryDisplay(unsigned int addr, unsigned int length)
 //   		uip = (unsigned int *)linebuf;
 //   		usp = (unsigned short *)linebuf;
 		ucp = (unsigned char *)linebuf;
-		
+
 		printf("%08x:", addr);
 		linebytes = (nbytes > DISP_LINE_LEN)?DISP_LINE_LEN:nbytes;
                 if((addr & 0xF0000000) == 0x20000000) {
@@ -277,7 +277,7 @@ static int AT91F_MemoryDisplay(unsigned int addr, unsigned int length)
 		}
 		for (i=0; i<linebytes; i++)
 		{
-/*			if (size == 4) 
+/*			if (size == 4)
 				printf(" %08x", *uip++);
 			else if (size == 2)
 				printf(" %04x", *usp++);
@@ -321,7 +321,7 @@ static unsigned int AT91F_SetPLL(void)
 	pCkgr->CKGR_PLLAR = AT91C_PLLA_VALUE;
 
 	while (!(*AT91C_PMC_SR & AT91C_PMC_LOCKA));
-	
+
 	/* - Switch Master Clock from PLLB to PLLA/3 */
 	tmp = pPmc->PMC_MCKR;
 	/* See Atmel Errata #27 and #28 */
@@ -336,7 +336,7 @@ static unsigned int AT91F_SetPLL(void)
 			while (!(*AT91C_PMC_SR & AT91C_PMC_MCKRDY));
 	}
 
-	return 1;	
+	return 1;
 }
 
 
@@ -387,7 +387,7 @@ static int AT91F_LoadBoot(void)
 	volatile unsigned int AddressToDownload = AT91C_BOOT_ADDR;
 
 #if 0
-	/* Read vector 6 to extract size to load */	
+	/* Read vector 6 to extract size to load */
 	if (read_dataflash(AT91C_BOOT_DATAFLASH_ADDR, 32,
 	                   (char *)AddressToDownload) != AT91C_DATAFLASH_OK)
 	{
@@ -397,7 +397,7 @@ static int AT91F_LoadBoot(void)
 	/* calculate the size to download */
 	SizeToDownload = *(int *)(AddressToDownload + AT91C_OFFSET_VECT6);
 #endif
-	
+
 //	printf("\nLoad UBOOT from dataflash[%x] to SDRAM[%x]\n",
 //	       AT91C_BOOT_DATAFLASH_ADDR, AT91C_BOOT_ADDR);
 	if (read_dataflash(AT91C_BOOT_DATAFLASH_ADDR, SizeToDownload + 8,
@@ -417,7 +417,7 @@ static int AT91F_LoadBoot(void)
 	/* Restore the value of Vector 6 */
 	*(int *)(AddressToDownload + AT91C_OFFSET_VECT6) =
 		*(int *)(AddressToDownload + SizeToDownload + 4);
-	
+
 	if (crc1 != crc2) {
 		printf("DF CRC bad %x != %x\n",crc1,crc2);
 	 	return	IMAGE_CRC_ERROR;
@@ -543,11 +543,11 @@ int main(void)
 #endif
 	AT91S_SvcTempo 		svcBootTempo; 	 // Link to a AT91S_Tempo object
 	unsigned int		ix;
-	volatile unsigned int AddressToDownload, SizeToDownload;	
+	volatile unsigned int AddressToDownload, SizeToDownload;
  	unsigned int DeviceAddress = 0;
 	char command = 0;
 #ifdef XMODEM
-	volatile int i = 0;	
+	volatile int i = 0;
 	unsigned int crc1 = 0, crc2 = 0;
 	volatile int device;
 	int NbPage;
@@ -568,7 +568,7 @@ int main(void)
 	/* Tempo Initialisation */
 	pAT91->OpenCtlTempo(&ctlTempo, (void *) &(pAT91->SYSTIMER_DESC));
 	ctlTempo.CtlTempoStart((void *) &(pAT91->SYSTIMER_DESC));
-	
+
 	// Attach the tempo to a tempo controler
 	ctlTempo.CtlTempoCreate(&ctlTempo, &svcBootTempo);
 //	LED_init();
@@ -607,11 +607,11 @@ int main(void)
 			AddressToDownload = AT91C_DOWNLOAD_BASE_ADDRESS;
 			SizeToDownload = AT91C_DOWNLOAD_MAX_SIZE;
 			DeviceAddress = 0;
-			
+
 			/* try to detect Dataflash */
 			if (!Nb_Device)
-				Nb_Device = AT91F_DataflashInit();				
-							
+				Nb_Device = AT91F_DataflashInit();
+
 			mci_present = AT91F_DisplayMenu();
 
 #ifdef PRODTEST
@@ -631,10 +631,10 @@ int main(void)
 
 			command = message[0];
 			for(ix = 1; (message[ix] == ' ') && (ix < 12); ix++);	// Skip some whitespace
-				
+
 			if(!AsciiToHex(&message[ix], &DeviceAddress) )
 				DeviceAddress = 0;			// Illegal DeviceAddress
-				
+
 			switch(command)
 			{
 #ifdef XMODEM
@@ -661,7 +661,7 @@ int main(void)
 
 							device = 0;
 						break;
-					
+
 						case CFG_DATAFLASH_LOGIC_ADDR_CS3:
 							if (dataflash_info[1].id == 0){
 								printf("No DF");
@@ -670,7 +670,7 @@ int main(void)
 							}
 							device = 1;
 						break;
-					
+
 						default:
 							command = 0;
 						break;
@@ -691,7 +691,7 @@ int main(void)
 
 #ifdef MEMDISP
 				case '6':
-					do 
+					do
 					{
 						AT91F_MemoryDisplay(DeviceAddress, 256);
 						AT91F_ReadLine (NULL, message);
@@ -736,9 +736,9 @@ int main(void)
 #ifdef XMODEM
 		for(i = 0; i <= AT91C_DOWNLOAD_MAX_SIZE; i++)
 			*(unsigned char *)(AddressToDownload + i) = 0;
-	
+
 		xmodemPipe.Read(&xmodemPipe, (char *)AddressToDownload,
-		                SizeToDownload, XmodemProtocol, 0);	
+		                SizeToDownload, XmodemProtocol, 0);
 		while(XmodemComplete !=1);
 		SizeToDownload = (unsigned int)((svcXmodem.pData) -
 		                 (unsigned int)AddressToDownload);
@@ -753,21 +753,21 @@ int main(void)
 			i = (SizeToDownload / 512)+1 + (NbPage << 13) +
 			    (dataflash_info[device].Device.pages_size << 17); //+4 to add crc32
 		    SizeToDownload = 512 * (i &0xFF);
-		}	
+		}
 		else
 		{
-			/* Save the contents of vector 6 ==> will be restored 
+			/* Save the contents of vector 6 ==> will be restored
 			 * at boot time (AT91F_StartBoot) */
 			*(int *)(AddressToDownload + SizeToDownload + 4) =
 				*(int *)(AddressToDownload + AT91C_OFFSET_VECT6);
 			/* Modify Vector 6 to contain the size of the
 			 * file to copy (Dataflash -> SDRAM)*/
-			i = SizeToDownload;	
-		}		
+			i = SizeToDownload;
+		}
 
 		*(int *)(AddressToDownload + AT91C_OFFSET_VECT6) = i;
 //		printf("\nModification of Arm Vector 6 :%x\n", i);
-			    
+
 //		printf("\nWrite %d bytes in DataFlash [0x%x]\n",SizeToDownload, DeviceAddress);
 		crc1 = 0;
 		pAT91->CRC32((const unsigned char *)AddressToDownload, SizeToDownload , &crc1);
@@ -784,13 +784,13 @@ int main(void)
 		/* clear the buffer before read */
 		for(i=0; i <= SizeToDownload; i++)
 			*(unsigned char *)(AddressToDownload + i) = 0;
-					
+
 		/* Read dataflash to check the validity of the data */
 		read_dataflash (DeviceAddress, (SizeToDownload + 4), (char *)(AddressToDownload));
 
-		printf("VFY: ");	
+		printf("VFY: ");
 		crc2 = 0;
-				
+
 		pAT91->CRC32((const unsigned char *)AddressToDownload, SizeToDownload , &crc2);
  		crc1 = (int)(*(char *)(AddressToDownload + SizeToDownload))          +
 			   (int)(*(char *)(AddressToDownload + SizeToDownload + 1) << 8) +
@@ -801,7 +801,7 @@ int main(void)
 		 	printf("ERR");
 		else
 		 	printf("OK");
-		 	
+
  		command = 0;
  		XmodemComplete = 0;
 		AT91F_WaitKeyPressed();

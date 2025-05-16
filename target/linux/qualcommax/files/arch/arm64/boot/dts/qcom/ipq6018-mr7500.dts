@@ -13,7 +13,7 @@
 / {
 	model = "Linksys MR7500";
 	compatible = "linksys,mr7500", "qcom,ipq6018";
-	
+
 	aliases {
 		serial0 = &blsp1_uart3;
 		serial1 = &blsp1_uart2;
@@ -25,24 +25,24 @@
 
 		label-mac-device = &dp5_syn;
 	};
-	
+
 	chosen {
 		stdout-path = "serial0:115200n8";
 		bootargs-append = " root=/dev/ubiblock0_0";
 	};
-	
+
 	extcon_usb {
 		pinctrl-0 = <&extcon_usb_pins>;
 		pinctrl-names = "default";
 		id-gpio = <&tlmm 26 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
-	
+
 	gpio_keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
-		
+
 		wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
@@ -55,10 +55,10 @@
 			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
 		};
 	};
-	
+
 	leds {
 		compatible = "pwm-leds";
-		
+
 		usb {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
@@ -68,7 +68,7 @@
 			trigger-sources = <&usb3_port1>, <&usb3_port2>;
 			linux,default-trigger = "usbport";
 		};
-		
+
 		led_system_red: red {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_INDICATOR;
@@ -76,14 +76,14 @@
 			max-brightness = <255>;
 			panic-indicator;
 		};
-		
+
 		led_system_green: green {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
 			pwms = <&pwm 3 1250000>;
 			max-brightness = <255>;
 		};
-		
+
 		led_system_blue: blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
@@ -91,7 +91,7 @@
 			max-brightness = <255>;
 		};
 	};
-	
+
 	reg_usb_vbus: regulator-usb-vbus {
 		compatible = "regulator-fixed";
 		regulator-name = "usb_vbus";
@@ -110,7 +110,7 @@
 			drive-strength = <8>;
 			bias-pull-up;
 		};
-		
+
 		/*LED_USB*/
 		mux_1 {
 			pins = "gpio30";
@@ -118,7 +118,7 @@
 			drive-strength = <8>;
 			bias-pull-down;
 		};
-		
+
 		/*LED_R*/
 		mux_2 {
 			pins = "gpio31";
@@ -126,7 +126,7 @@
 			drive-strength = <8>;
 			bias-pull-down;
 		};
-		
+
 		/*LED_G*/
 		mux_3 {
 			pins = "gpio32";
@@ -135,14 +135,14 @@
 			bias-pull-down;
 		};
 	};
-	
+
 	extcon_usb_pins: extcon_usb_pins {
 		pins = "gpio26";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-down;
 	};
-	
+
 	button_pins: button_pins {
 		wps_button {
 			pins = "gpio37";
@@ -214,7 +214,7 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
 	status = "okay";
-	
+
 	ethernet-phy-package {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -222,7 +222,7 @@
 		reg = <0>;
 
 		qcom,package-mode = "qsgmii";
-		
+
 		qca8075_0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <0>;
@@ -230,14 +230,14 @@
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_ORANGE>;
 					function = LED_FUNCTION_LAN;
 					default-state = "keep";
 				};
-				
+
 				led@1 {
 					reg = <1>;
 					color = <LED_COLOR_ID_GREEN>;
@@ -254,14 +254,14 @@
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_ORANGE>;
 					function = LED_FUNCTION_LAN;
 					default-state = "keep";
 				};
-				
+
 				led@1 {
 					reg = <1>;
 					color = <LED_COLOR_ID_GREEN>;
@@ -278,14 +278,14 @@
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_ORANGE>;
 					function = LED_FUNCTION_LAN;
 					default-state = "keep";
 				};
-				
+
 				led@1 {
 					reg = <1>;
 					color = <LED_COLOR_ID_GREEN>;
@@ -302,14 +302,14 @@
 			leds {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				
+
 				led@0 {
 					reg = <0>;
 					color = <LED_COLOR_ID_ORANGE>;
 					function = LED_FUNCTION_LAN;
 					default-state = "keep";
 				};
-				
+
 				led@1 {
 					reg = <1>;
 					color = <LED_COLOR_ID_GREEN>;
@@ -329,14 +329,14 @@
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			
+
 			led@0 {
 				reg = <0>;
 				color = <LED_COLOR_ID_ORANGE>;
 				function = LED_FUNCTION_WAN;
 				default-state = "keep";
 			};
-			
+
 			led@1 {
 				reg = <1>;
 				color = <LED_COLOR_ID_GREEN>;
@@ -402,7 +402,7 @@
 	switch_wan_bmp = <ESS_PORT5>;
 	switch_mac_mode = <MAC_MODE_QSGMII>;
 	switch_mac_mode1 = <MAC_MODE_USXGMII>;
-	
+
 	qcom,port_phyinfo {
 		port@1 {
 			port_id = <1>;
@@ -493,12 +493,12 @@
 &dwc_0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	
+
 	usb3_port1: port@1 {
 		reg = <1>;
 		#trigger-source-cells = <0>;
 	};
-	
+
 	usb3_port2: port@2 {
 		reg = <2>;
 		#trigger-source-cells = <0>;

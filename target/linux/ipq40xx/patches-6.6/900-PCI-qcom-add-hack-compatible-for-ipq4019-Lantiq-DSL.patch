@@ -105,7 +105,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  	struct dw_pcie *pci = pcie->pci;
  	struct device *dev = pci->dev;
 -	bool is_ipq = of_device_is_compatible(dev->of_node, "qcom,pcie-ipq4019");
-+	bool is_ipq = of_device_is_compatible(dev->of_node, "qcom,pcie-ipq4019") || 
++	bool is_ipq = of_device_is_compatible(dev->of_node, "qcom,pcie-ipq4019") ||
 +		      of_device_is_compatible(dev->of_node, "qcom,pcie-ipq4019-lantiq-hack");
  	int ret;
  

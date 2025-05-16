@@ -137,7 +137,7 @@
 				label = "rf-eeprom";
 				reg = <0x40000 0x10000>;
 				read-only;
-				
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -191,7 +191,7 @@
 				reg = <0x1030000 0x10000>;
 				read-only;
 			};
-			
+
 			partition@1040000 {
 				label = "rf-eeprom_res";
 				reg = <0x1040000 0x10000>;
@@ -202,7 +202,7 @@
 				label = "firmware_2";
 				reg = <0x1050000 0xe60000>;
 			};
-			
+
 			partition@1eb0000 {
 				label = "Config_2";
 				reg = <0x1eb0000 0x40000>;

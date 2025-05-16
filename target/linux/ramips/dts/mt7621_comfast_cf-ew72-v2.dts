@@ -9,8 +9,8 @@
 / {
 	compatible = "comfast,cf-ew72-v2", "mediatek,mt7621-soc";
 	model = "COMFAST CF-EW72 V2";
-	
-	// There are at least two HW variants of cf-ew72-v2: 
+
+	// There are at least two HW variants of cf-ew72-v2:
 	// With external RAM chip and with integrated RAM (RAM chip not soldered).
 	// Both act same.
 
@@ -33,7 +33,7 @@
 		compatible = "gpio-leds";
 
 		// The only both visible and controllable indicator is wifi LED.
-		// CF-EW72 have 8 LEDs: 
+		// CF-EW72 have 8 LEDs:
 		//  "wlan" is the only LED is controllable with GPIO and have proper hole in shell.
 		//  "power", "wan" and "lan" LEDs have proper holes in shell, but can not be controlled with GPIO
 		//  "hidden_led_2" and "hidden_led_4" can be controlled with GPIO, but have no proper holes in shell
@@ -42,14 +42,14 @@
 		//  "noconn_led_6" and "noconn_led_8" exist, but have no proper holes in shell and not controlled:
 		//     "noconn_led_6" is between LAN and WLAN LEDs
 		//     "noconn_led_8" is after WLAN LED
-		
+
 		// LED "hidden_led_2" between POWER and WAN LEDs is controllable with GPIO, but it has no proper hole in shell;
 		// LED "hidden_led_4" between WAN and LAN LEDs is controllable with GPIO, but it has no proper hole in shell;
 
 		// TABLE of LEDs. All leds are blue.
 		//
 		// Place (WAN->ANT) | Num | GPIO | LED name (LuCI)   | Note
-		// -----------------|-----|-----------------------------------------------------------------------------------------         
+		// -----------------|-----|-----------------------------------------------------------------------------------------
 		//            power | 1   |      |                   | POWER LED. Not controlled with GPIO.
 		//     hidden_led_2 | 2   | 13   | blue:hidden_led_2 | This LED does not have proper hole in shell.
 		//              wan | 3   |      |                   | WAN LED. Not controlled with GPIO.
@@ -99,13 +99,13 @@
 				reg = <0x0 0x30000>;
 				read-only;
 			};
-			
+
 			partition@30000 {
 				label = "Config";
 				reg = <0x30000 0x10000>;
 				read-only;
 			};
-			
+
 			partition@40000  {
 				label = "factory";
 				reg = <0x40000 0x10000>;
@@ -130,11 +130,11 @@
 						#nvmem-cell-cells = <1>;
 					};
 
-					// Serial number can be found in "factory" at 0xE100. 
+					// Serial number can be found in "factory" at 0xE100.
 					//   it starts and ends with double quotes `"` and is ASCII string
 				};
 			};
-			
+
 			partition@50000  {
 				label = "firmware";
 				compatible = "denx,uimage";
@@ -193,7 +193,7 @@
 			nvmem-cells = <&macaddr_factory_e000 1>;
 			nvmem-cell-names = "mac-address";
 		};
-		
+
 		lan: port@1 {
 			status = "okay";
 			label = "lan";

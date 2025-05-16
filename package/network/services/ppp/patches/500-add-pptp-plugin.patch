@@ -269,8 +269,8 @@
 +.LP
 +The PPTP plugin for pppd performs interaction with pptp kernel module
 +and has built-in call manager (client part of PPTP).
-+It pasees necessary paremeters from \fIoptions\fR into kernel module 
-+to configure ppp-pptp channel. If it runs in client mode, then additionally 
++It pasees necessary paremeters from \fIoptions\fR into kernel module
++to configure ppp-pptp channel. If it runs in client mode, then additionally
 +call manager starts up. PPTPD daemon automaticaly invokes this plugin
 +in server mode and passes necessary options, so additional configuration
 +is not needed.
@@ -282,7 +282,7 @@
 +Specifies ip address or hostname of pptp server.
 +.TP
 +.BI "pptp_window " packets " (optional)"
-+The amount of sliding window size. 
++The amount of sliding window size.
 +Set to 0 to turn off sliding window.
 +    to 3-10 for low speed connections.
 +    to >10 for hi speed connections.
@@ -2192,8 +2192,8 @@
 --- /dev/null
 +++ b/pppd/plugins/pptp/pptp_msg.h
 @@ -0,0 +1,303 @@
-+/*  pptp.h:  packet structures and magic constants for the PPTP protocol 
-+ *           C. Scott Ananian <cananian@alumni.princeton.edu>            
++/*  pptp.h:  packet structures and magic constants for the PPTP protocol
++ *           C. Scott Ananian <cananian@alumni.princeton.edu>
 + *
 + * $Id: pptp_msg.h,v 1.3 2003/02/15 10:37:21 quozl Exp $
 + */
@@ -2431,7 +2431,7 @@
 +{ hton16(PPTP_CTRL_SIZE(type)), \
 +  hton16(PPTP_MESSAGE_CONTROL), \
 +  hton32(PPTP_MAGIC),           \
-+  hton16(type), 0 }             
++  hton16(type), 0 }
 +
 +#define PPTP_CTRL_SIZE(type) ( \
 +(type==PPTP_START_CTRL_CONN_RQST)?sizeof(struct pptp_start_ctrl_conn):	\
@@ -2708,13 +2708,13 @@
 +int sigpipe_create()
 +{
 +  int rc;
-+  
++
 +  rc = pipe(sigpipe);
 +  if (rc < 0) return rc;
-+  
++
 +  fcntl(sigpipe[0], F_SETFD, FD_CLOEXEC);
 +  fcntl(sigpipe[1], F_SETFD, FD_CLOEXEC);
-+  
++
 +#ifdef O_NONBLOCK
 +#define FLAG_TO_SET O_NONBLOCK
 +#else
@@ -2724,7 +2724,7 @@
 +#define FLAG_TO_SET FNDELAY
 +#endif
 +#endif
-+  
++
 +  rc = fcntl(sigpipe[1], F_GETFL);
 +  if (rc != -1)
 +    rc = fcntl(sigpipe[1], F_SETFL, rc | FLAG_TO_SET);
@@ -2879,7 +2879,7 @@
 +}
 +
 +/*** vector_insert*************************************************************
-+ * nice thing about file descriptors is that we are assured by POSIX 
++ * nice thing about file descriptors is that we are assured by POSIX
 + * that they are monotonically increasing.
 + */
 +int vector_insert(VECTOR *v, int key, PPTP_CALL * call)
@@ -2964,7 +2964,7 @@
 +/*** vector_scan ***************************************************************
 + * Hmm.  Let's be fancy and use a binary search for the first
 + * unused key, taking advantage of the list is stored sorted; ie
-+ * we can look at pointers and keys at two different locations, 
++ * we can look at pointers and keys at two different locations,
 + * and if (ptr1 - ptr2) = (key1 - key2) then all the slots
 + * between ptr1 and ptr2 are filled.  Note that ptr1-ptr2 should
 + * never be greater than key1-key2 (no duplicate keys!)... we

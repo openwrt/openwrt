@@ -85,28 +85,16 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  /**
   * Copyright (c) 2019-2022 Hailo Technologies Ltd. All rights reserved.
   **/
-@@ -28,16 +28,18 @@ int FW_VALIDATION__validate_fw_header(ui
-     firmware_header_t *firmware_header = NULL;
-     u32 consumed_firmware_offset = *outer_consumed_firmware_offset;
-     u32 expected_firmware_magic = 0;
-- 
-+
-     firmware_header = (firmware_header_t *) (firmware_base_address + consumed_firmware_offset);
-     CONSUME_FIRMWARE(sizeof(firmware_header_t), -EINVAL);
- 
-     switch (board_type) {
+@@ -36,7 +36,9 @@ int FW_VALIDATION__validate_fw_header(ui
      case HAILO_BOARD_TYPE_HAILO8:
--        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO8; 
-+        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO8;
+         expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO8;
          break;
 +    case HAILO_BOARD_TYPE_HAILO10H_LEGACY:
      case HAILO_BOARD_TYPE_HAILO15:
--        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO15; 
 +    case HAILO_BOARD_TYPE_HAILO10H:
-+        expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO15;
+         expected_firmware_magic = FIRMWARE_HEADER_MAGIC_HAILO15;
          break;
      case HAILO_BOARD_TYPE_PLUTO:
-         expected_firmware_magic = FIRMWARE_HEADER_MAGIC_PLUTO;
 --- a/drivers/media/pci/hailo/common/fw_validation.h
 +++ b/drivers/media/pci/hailo/common/fw_validation.h
 @@ -1,4 +1,4 @@
@@ -364,7 +352,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 -    HAILO_VDMA_INTERRUPTS_DOMAIN_MAX_ENUM = INT_MAX,
 -};
 -
- // We allow maximum 2 buffers per transfer since we may have an extra buffer 
+ // We allow maximum 2 buffers per transfer since we may have an extra buffer
  // to make sure each buffer is aligned to page size.
  #define HAILO_MAX_BUFFERS_PER_SINGLE_TRANSFER (2)
 @@ -460,6 +503,35 @@ struct hailo_vdma_launch_transfer_params
@@ -791,15 +779,6 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
          },
          .fw_filename = "hailo/pluto_fw.bin",
          .board_cfg = {
-@@ -225,7 +327,7 @@ int hailo_pcie_read_firmware_control(str
-     // Copy response buffer
-     hailo_resource_read_buffer(&resources->fw_access, PCIE_REQUEST_SIZE_OFFSET + (size_t)response_header_size,
-         command->buffer_len, &command->buffer);
--    
-+
-     return 0;
- }
- 
 @@ -253,93 +355,111 @@ int hailo_pcie_read_firmware_notificatio
      return hailo_read_firmware_notification(&notification_resource, notification);
  }
@@ -847,7 +826,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +    BUG_ON(HAILO_PCIE_MAX_ATR_TABLE_INDEX < atr_index);
 +    offset = ATR0_PCIE_BRIDGE_OFFSET + (atr_index * 0x20);
-+    
++
 +    hailo_resource_read_buffer(bridge_config, offset, sizeof(*atr), (void*)atr);
  }
  
@@ -1750,7 +1729,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +}
 +
 +// For all these functions - best way to optimize might be to not call the function when need to pause and then abort,
-+// Rather read value once and maybe save 
++// Rather read value once and maybe save
 +// This function reads and writes the register - should try to make more optimized in future
 +static void start_vdma_control_register(u8 __iomem *host_regs)
 +{
@@ -1781,7 +1760,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    u32 dma_address_h = 0;
 +    u32 desc_depth_data_id = 0;
 +
-+    if (((desc_dma_address & 0xFFFF) != 0) || 
++    if (((desc_dma_address & 0xFFFF) != 0) ||
 +         (desc_depth > DESCRIPTOR_LIST_MAX_DEPTH)) {
 +        return -EINVAL;
 +    }
@@ -1803,7 +1782,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    dma_address_h = (uint32_t)(desc_dma_address >> 32);
 +    iowrite32(dma_address_h, host_regs + VDMA_CHANNEL__ADDRESS_H_OFFSET);
 +
-+    desc_depth_data_id = (uint32_t)(desc_depth << VDMA_CHANNEL_DESC_DEPTH_SHIFT) | 
++    desc_depth_data_id = (uint32_t)(desc_depth << VDMA_CHANNEL_DESC_DEPTH_SHIFT) |
 +        (data_id << VDMA_CHANNEL_DATA_ID_SHIFT);
 +    iowrite32(desc_depth_data_id, host_regs);
 +
@@ -1814,7 +1793,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +static bool hailo_vdma_channel_is_idle(u8 __iomem *host_regs, size_t host_side_max_desc_count)
 +{
-+    // Num processed and ongoing are next to each other in the memory. 
++    // Num processed and ongoing are next to each other in the memory.
 +    // Reading them both in order to save BAR reads.
 +    u32 host_side_num_processed_ongoing = ioread32(host_regs + CHANNEL_NUM_PROC_OFFSET);
 +    u16 host_side_num_processed = (host_side_num_processed_ongoing & VDMA_CHANNEL_NUM_PROCESSED_MASK);
@@ -2269,17 +2248,17 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +
 +    // configure and start input channel
 +    depth = ceil_log2(input_descriptors_buffer->desc_list.desc_count);
-+    // DMA Direction is only to get channel index - so 
++    // DMA Direction is only to get channel index - so
 +    err = hailo_vdma_start_channel(input_channel->host_regs, input_descriptors_buffer->dma_address, depth,
 +        board->vdma.hw->ddr_data_id);
 +    if (err < 0) {
 +        hailo_dev_err(&board->pDev->dev, "Error starting vdma input channel index %u\n", params.input_channel_index);
 +        return -EINVAL;
 +    }
-+    
++
 +    // configure and start output channel
 +    depth = ceil_log2(output_descriptors_buffer->desc_list.desc_count);
-+    // DMA Direction is only to get channel index - so 
++    // DMA Direction is only to get channel index - so
 +    err = hailo_vdma_start_channel(output_channel->host_regs, output_descriptors_buffer->dma_address, depth,
 +        board->vdma.hw->ddr_data_id);
 +    if (err < 0) {
@@ -2976,7 +2955,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
      struct sg_table sgt = {0};
      struct vm_area_struct *vma = NULL;
      bool is_mmio = false;
-+    struct hailo_dmabuf_info dmabuf_info = {0}; 
++    struct hailo_dmabuf_info dmabuf_info = {0};
  
      mapped_buffer = kzalloc(sizeof(*mapped_buffer), GFP_KERNEL);
      if (NULL == mapped_buffer) {
@@ -2999,7 +2978,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 +    // TODO: is MMIO DMA MAPPINGS STILL needed after dmabuf
      if (IS_ENABLED(HAILO_SUPPORT_MMIO_DMA_MAPPING) &&
 -            (MMIO_AND_NO_PAGES_VMA_MASK == (vma->vm_flags & MMIO_AND_NO_PAGES_VMA_MASK))) {
-+            (MMIO_AND_NO_PAGES_VMA_MASK == (vma->vm_flags & MMIO_AND_NO_PAGES_VMA_MASK)) && 
++            (MMIO_AND_NO_PAGES_VMA_MASK == (vma->vm_flags & MMIO_AND_NO_PAGES_VMA_MASK)) &&
 +            (HAILO_DMA_DMABUF_BUFFER != buffer_type)) {
          // user_address represents memory mapped I/O and isn't backed by 'struct page' (only by pure pfn)
          if (NULL != low_mem_driver_allocated_buffer) {
@@ -3054,7 +3033,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  {
 -    if (IS_ENABLED(HAILO_SUPPORT_MMIO_DMA_MAPPING) && mapped_buffer->is_mmio) {
 -        // MMIO buffers don't need to be sync'd
-+    if ((IS_ENABLED(HAILO_SUPPORT_MMIO_DMA_MAPPING) && mapped_buffer->is_mmio) || 
++    if ((IS_ENABLED(HAILO_SUPPORT_MMIO_DMA_MAPPING) && mapped_buffer->is_mmio) ||
 +        (NULL != mapped_buffer->dmabuf_info.dmabuf)) {
 +        // MMIO buffers and dmabufs don't need to be sync'd
          return;

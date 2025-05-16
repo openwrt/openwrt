@@ -363,7 +363,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		disable_burst_irq(priv);
 +
 +		if (priv->status == STATUS_READ_END) {
-+			/* 
++			/*
 +			 * do the STATUS_STOP and complete() here, as sometimes
 +			 * the tx_end is already seen before this is finished
 +			 */

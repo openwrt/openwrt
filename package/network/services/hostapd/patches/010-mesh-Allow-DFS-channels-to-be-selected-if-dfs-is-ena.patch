@@ -30,7 +30,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 -		    chan->flag & (HOSTAPD_CHAN_DISABLED | HOSTAPD_CHAN_NO_IR))
 +		    chan->flag & HOSTAPD_CHAN_DISABLED)
 +			return false;
-+		
++
 +		if (!dfs_enabled && chan->flag & (HOSTAPD_CHAN_RADAR | HOSTAPD_CHAN_NO_IR))
  			return false;
  	}

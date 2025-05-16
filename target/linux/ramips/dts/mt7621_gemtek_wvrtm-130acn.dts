@@ -21,7 +21,7 @@
 		label = "power";
 		gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		linux,code = <KEY_POWER>;
-	};				
+	};
 };
 
 &leds {
@@ -40,7 +40,7 @@
 		nvmem-cell-names = "eeprom";
 		#address-cells = <2>;
 		#size-cells = <0>;
-		
+
 		band@0 {
 			/* 2.4 GHz */
 			reg = <0>;

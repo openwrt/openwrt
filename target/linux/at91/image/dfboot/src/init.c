@@ -21,7 +21,7 @@
 //* \fn    AT91F_DataAbort
 //* \brief This function reports an Abort
 //*----------------------------------------------------------------------------
-static void AT91F_SpuriousHandler() 
+static void AT91F_SpuriousHandler()
 {
 	puts("ISI");
 	while (1);
@@ -32,7 +32,7 @@ static void AT91F_SpuriousHandler()
 //* \fn    AT91F_DataAbort
 //* \brief This function reports an Abort
 //*----------------------------------------------------------------------------
-static void AT91F_DataAbort() 
+static void AT91F_DataAbort()
 {
 	puts("IDA");
 	while (1);
@@ -52,7 +52,7 @@ static void AT91F_FetchAbort()
 //* \fn    AT91F_UndefHandler
 //* \brief This function reports that no handler have been set for current IT
 //*----------------------------------------------------------------------------
-static void AT91F_UndefHandler() 
+static void AT91F_UndefHandler()
 {
 	puts("IUD");
 	while (1);
@@ -68,47 +68,47 @@ static void AT91F_UndefHandler()
 static void AT91F_InitSdram()
 {
 	int *pRegister;
-	
+
 	//* Configure PIOC as peripheral (D16/D31)
-	
+
 	AT91F_PIO_CfgPeriph(
 		AT91C_BASE_PIOC, // PIO controller base address
 		0xFFFF0030,
 		0
 	);
-	
+
 	//*Init SDRAM
 	pRegister = (int *)0xFFFFFF98;
-	*pRegister = 0x2188c155; 
+	*pRegister = 0x2188c155;
 	pRegister = (int *)0xFFFFFF90;
-	*pRegister = 0x2; 
+	*pRegister = 0x2;
 	pRegister = (int *)0x20000000;
-	*pRegister = 0; 
+	*pRegister = 0;
 	pRegister = (int *)0xFFFFFF90;
-	*pRegister = 0x4; 
+	*pRegister = 0x4;
 	pRegister = (int *)0x20000000;
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
-	*pRegister = 0; 
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
+	*pRegister = 0;
 	pRegister = (int *)0xFFFFFF90;
-	*pRegister = 0x3; 
+	*pRegister = 0x3;
 	pRegister = (int *)0x20000080;
-	*pRegister = 0; 
+	*pRegister = 0;
 
 	pRegister = (int *)0xFFFFFF94;
-	*pRegister = 0x2e0; 
+	*pRegister = 0x2e0;
 	pRegister = (int *)0x20000000;
-	*pRegister = 0; 
+	*pRegister = 0;
 
 	pRegister = (int *)0xFFFFFF90;
-	*pRegister = 0x00; 
+	*pRegister = 0x00;
 	pRegister = (int *)0x20000000;
-	*pRegister = 0; 
+	*pRegister = 0;
 }
 
 
@@ -127,7 +127,7 @@ static void AT91F_InitMemories()
 	//* CS0 cs for flash
 	pEbi  = (int *)0xFFFFFF70;
 	*pEbi = 0x00003284;
-	
+
 	AT91F_InitSdram();
 }
 
@@ -150,7 +150,7 @@ void AT91F_LowLevelInit(void)
 		AT91F_SpuriousHandler,   // AIC spurious handler
 		0);                      // Protect mode
 
-	// Perform 8 End Of Interrupt Command to make sýre AIC will not Lock out nIRQ 
+	// Perform 8 End Of Interrupt Command to make sýre AIC will not Lock out nIRQ
 	for(i=0; i<8; i++)
 		AT91F_AIC_AcknowledgeIt(AT91C_BASE_AIC);
 

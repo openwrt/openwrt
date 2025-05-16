@@ -639,7 +639,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	/* Left & Right Analog Output Mixer enable */
 +	ac101_update_bits(codec, OMIXER_DACA_CTRL, 0x3 << LMIXEN, 0x3 << LMIXEN);
 +
-+	/* Headphone Ouput Control */ 
++	/* Headphone Ouput Control */
 +	// "HP_R Mux" <= "DACR Mixer"
 +	// "HP_L Mux" <= "DACL Mixer"
 +	ac101_update_bits(codec, HPOUT_CTRL, 0x1 << LHPS, 0x0 << LHPS);
@@ -1049,7 +1049,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	struct snd_soc_codec *codec = codec_dai->codec;
 +	struct ac10x_priv *ac10x = snd_soc_codec_get_drvdata(codec);
 +
-+	AC101_DBG("stream = %s, play: %d, capt: %d, active: %d\n", 
++	AC101_DBG("stream = %s, play: %d, capt: %d, active: %d\n",
 +		snd_pcm_stream_str(substream),
 +		codec_dai->stream[SNDRV_PCM_STREAM_PLAYBACK].active,
 +		codec_dai->stream[SNDRV_PCM_STREAM_CAPTURE].active,
@@ -1387,7 +1387,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	struct snd_soc_codec *codec = codec_dai->codec;
 +	struct ac10x_priv *ac10x = snd_soc_codec_get_drvdata(codec);
 +
-+	AC101_DBG("id=%d freq=%d, dir=%d\n", 
++	AC101_DBG("id=%d freq=%d, dir=%d\n",
 +		clk_id, freq, dir);
 +
 +	ac10x->sysclk = freq;
@@ -2735,7 +2735,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	 */
 +	ac108_multi_update_bits(PWR_CTRL6, 0x01 << LDO33ANA_ENABLE, 0x01 << LDO33ANA_ENABLE, ac10x);
 +	/**
-+	 * 0x07: 
++	 * 0x07:
 +	 * Control VREF output and micbias voltage ?
 +	 * REF faststart disable, enable Enable VREF (needed for Analog
 +	 * LDO and MICBIAS)
@@ -2996,7 +2996,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +			ac108_samp_res[samp_res].real_val);
 +
 +	/**
-+	 * 0x33: 
++	 * 0x33:
 +	 *  The 8-Low bit of LRCK period value. It is used to program
 +	 *  the number of BCLKs per channel of sample frame. This value
 +	 *  is interpreted as follow:
@@ -3011,7 +3011,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	 *  …
 +	 *  n = 1023: 1024 BCLKs width
 +	 *  0X32[0:1]:
-+	 *  The 2-High bit of LRCK period value. 
++	 *  The 2-High bit of LRCK period value.
 +	 */
 +	if (ac10x->i2s_mode != PCM_FORMAT) {
 +		if (ac10x->data_protocol) {
@@ -3036,17 +3036,17 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	}
 +
 +	/**
-+	 * 0x35: 
-+	 * TX Encoding mode will add  4bits to mark channel number 
-+	 * TODO: need a chat to explain this 
++	 * 0x35:
++	 * TX Encoding mode will add  4bits to mark channel number
++	 * TODO: need a chat to explain this
 +	 */
 +	ac108_multi_update_bits(I2S_FMT_CTRL2, 0x07 << SAMPLE_RESOLUTION | 0x07 << SLOT_WIDTH_SEL,
 +				ac108_samp_res[samp_res].reg_val << SAMPLE_RESOLUTION |
 + 				ac108_samp_res[samp_res].reg_val << SLOT_WIDTH_SEL, ac10x);
 +
 +	/**
-+	 * 0x60: 
-+	 * ADC Sample Rate synchronised with I2S1 clock zone 
++	 * 0x60:
++	 * ADC Sample Rate synchronised with I2S1 clock zone
 +	 */
 +	ac108_multi_update_bits(ADC_SPRC, 0x0f << ADC_FS_I2S1,
 +				ac108_sample_rate[rate].reg_val << ADC_FS_I2S1, ac10x);
@@ -3082,12 +3082,12 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	/*0x22: Module reset de-asserted<I2S, ADC digital, MIC offset Calibration, ADC analog>*/
 +	ac108_multi_write(MOD_RST_CTRL, 1 << I2S | 1 << ADC_DIGITAL |
 +			  1 << MIC_OFFSET_CALIBRATION | 1 << ADC_ANALOG, ac10x);
-+	
++
 +	ac108_multi_write(I2S_TX1_CHMP_CTRL1, 0xE4, ac10x);
 +	ac108_multi_write(I2S_TX1_CHMP_CTRL2, 0xE4, ac10x);
 +	ac108_multi_write(I2S_TX1_CHMP_CTRL3, 0xE4, ac10x);
 +	ac108_multi_write(I2S_TX1_CHMP_CTRL4, 0xE4, ac10x);
-+	
++
 +	ac108_multi_write(I2S_TX2_CHMP_CTRL1, 0xE4, ac10x);
 +	ac108_multi_write(I2S_TX2_CHMP_CTRL2, 0xE4, ac10x);
 +	ac108_multi_write(I2S_TX2_CHMP_CTRL3, 0xE4, ac10x);
@@ -3131,11 +3131,11 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 + *  33h,35h will be set in ac108_hw_params, It's BCLK width and
 + *  Sample Resolution.
 + * @author baozhu (17-6-20)
-+ * 
-+ * @param dai 
-+ * @param fmt 
-+ * 
-+ * @return int 
++ *
++ * @param dai
++ * @param fmt
++ *
++ * @return int
 + */
 +static int ac108_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 +{
@@ -3163,7 +3163,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +		break;
 +	case SND_SOC_DAIFMT_CBS_CFS:    /* AC108 Slave */
 +		/**
-+		 * 0x30:chip is slave mode, BCLK & LRCK input,enable SDO1_EN and 
++		 * 0x30:chip is slave mode, BCLK & LRCK input,enable SDO1_EN and
 +		 *  SDO2_EN, Transmitter Block Enable, Globe Enable
 +		 */
 +		ac108_multi_update_bits(I2S_CTRL,
@@ -3244,8 +3244,8 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	ac108_multi_update_bits(I2S_LRCK_CTRL1, 0x01 << LRCK_POLARITY,
 +				lrck_polarity << LRCK_POLARITY, ac10x);
 +	/**
-+	 * 0x34:Encoding Mode Selection,Mode 
-+	 * Selection,data is offset by 1 BCLKs to LRCK 
++	 * 0x34:Encoding Mode Selection,Mode
++	 * Selection,data is offset by 1 BCLKs to LRCK
 +	 * normal mode for the last half cycle of BCLK in the slot ?
 +	 * turn to hi-z state (TDM) when not transferring slot ?
 +	 */
@@ -3257,12 +3257,12 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +				0x00 << TX_SLOT_HIZ | 0x01 << TX_STATE, ac10x);
 +
 +	/**
-+	 * 0x60: 
-+	 * MSB / LSB First Select: This driver only support MSB First Select . 
-+	 * OUT2_MUTE,OUT1_MUTE shoule be set in widget. 
-+	 * LRCK = 1 BCLK width 
-+	 * Linear PCM 
-+	 *  
++	 * 0x60:
++	 * MSB / LSB First Select: This driver only support MSB First Select .
++	 * OUT2_MUTE,OUT1_MUTE shoule be set in widget.
++	 * LRCK = 1 BCLK width
++	 * Linear PCM
++	 *
 +	 * TODO:pcm mode, bit[0:1] and bit[2] is special
 +	 */
 +	ac108_multi_update_bits(I2S_FMT_CTRL3,
@@ -3341,7 +3341,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	dev_dbg(dai->dev, "%s() stream=%s\n",
 +		__func__,
 +		snd_pcm_stream_str(substream));
-+	
++
 +	if (ac10x->i2c101 && _MASTER_MULTI_CODEC == _MASTER_AC101) {
 +		ac101_trigger(substream, SNDRV_PCM_TRIGGER_START, dai);
 +		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
@@ -3402,7 +3402,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	if (ac10x->i2c101) {
 +		return ac101_aif_mute(dai, mute);
 +	}
-+	return 0;	
++	return 0;
 +}
 +
 +static const struct snd_soc_dai_ops ac108_dai_ops = {
@@ -3752,7 +3752,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +	 * will resets all register to their default state.
 +	 */
 +	regcache_cache_only(ac10x->i2cmap[index], false);
-+	
++
 +	ret = regmap_write(ac10x->i2cmap[index], CHIP_RST, CHIP_RST_VAL);
 +	msleep(1);
 +
