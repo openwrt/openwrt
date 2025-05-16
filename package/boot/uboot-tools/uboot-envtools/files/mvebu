@@ -73,8 +73,7 @@ methode,edpu)
 	fi
 	;;
 synology,ds213j)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 esac
 
