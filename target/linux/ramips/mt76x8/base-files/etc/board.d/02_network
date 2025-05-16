@@ -45,6 +45,7 @@ ramips_setup_interfaces()
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
 	hiwifi,hc5861b|\
+    keenetic,kn-1710|\
 	keenetic,kn-1711|\
 	kroks,kndrt31r16|\
 	skylab,skw92a|\
@@ -359,6 +360,10 @@ ramips_setup_macs()
 	xiaomi,mi-router-4a-100m-intl-v2|\
 	xiaomi,mi-router-4c)
 		wan_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
+    keenetic,kn-1710)
+		label_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
+		wan_mac="$label_mac"
 		;;
 	esac
 
