@@ -31,9 +31,21 @@ define Package/ufp/conffiles
 /etc/config/ufp
 endef
 
+OUI_VERSION=v1.0
+OUI_FILE=oui-parser-$(OUI_VERSION).tar.gz
+
+define Download/oui-parser
+	FILE:=$(OUI_FILE)
+	URL_FILE:=$(OUI_VERSION).tar.gz
+	URL:=https://github.com/TDT-AG/oui-parser/archive/refs/tags/
+	HASH:=915da0d9ce3c7f5fb180b8531c7659694cd6dd8c1df4ba4dd85c704f145d6988
+endef
+$(eval $(call Download,oui-parser))
+
 define Build/Prepare
 	$(Build/Prepare/Default)
 	mkdir -p $(PKG_BUILD_DIR)/data
+	$(TAR) -xzf $(DL_DIR)/$(OUI_FILE) --strip-components=1 -C $(PKG_BUILD_DIR)
 	$(CP) ./data/* $(PKG_BUILD_DIR)/data
 	$(Build/Patch)
 endef
