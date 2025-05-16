@@ -21,19 +21,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -2503,6 +2503,11 @@ int phylink_ethtool_ksettings_set(struct
- 		 *   the presence of a PHY, this should not be changed as that
- 		 *   should be determined from the media side advertisement.
- 		 */
-+		if (pl->phydev->drv->get_port && pl->phydev->drv->set_port) {
-+			if(pl->phydev->drv->get_port(pl->phydev) != kset->base.port) {
-+				pl->phydev->drv->set_port(pl->phydev, kset->base.port);
-+			}
-+		}
- 		return phy_ethtool_ksettings_set(pl->phydev, &phy_kset);
- 	}
- 
-@@ -2805,8 +2810,11 @@ int phylink_ethtool_get_eee(struct phyli
+@@ -2805,8 +2805,11 @@ int phylink_ethtool_get_eee(struct phyli
  
  	ASSERT_RTNL();
  
@@ -46,7 +34,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  
  	return ret;
  }
-@@ -2823,8 +2831,11 @@ int phylink_ethtool_set_eee(struct phyli
+@@ -2823,8 +2826,11 @@ int phylink_ethtool_set_eee(struct phyli
  
  	ASSERT_RTNL();
  
