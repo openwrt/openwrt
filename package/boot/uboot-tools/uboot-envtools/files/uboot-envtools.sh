@@ -48,17 +48,17 @@ ubootenv_add_app_config() {
 ubootenv_add_mtd() {
 	local idx="$(find_mtd_index "${1}")"
 	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
+		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}" "${5}"
 }
 
 ubootenv_add_sys_mtd() {
 	local idx="$(find_mtd_index "${1}")"
 	[ -n "$idx" ] && \
-		ubootenv_add_uci_sys_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
+		ubootenv_add_uci_sys_config "/dev/mtd$idx" "${2}" "${3}" "${4}" "${5}"
 }
 
 ubootenv_add_mmc() {
-	local mmcpart="$(find_mmc_part "${1}")"
+	local mmcpart="$(find_mmc_part "${1}" "${2}")"
 	[ -n "$mmcpart" ] && \
-		ubootenv_add_uci_config "$mmcpart" "${2}" "${3}" "${4}" "${5}"
+		ubootenv_add_uci_config "$mmcpart" "${3}" "${4}" "${5}" "${6}"
 }
