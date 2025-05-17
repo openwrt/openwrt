@@ -91,6 +91,20 @@ function print_scan(cells) {
 			printf('\t\tChannel Width: %s\n', cell.vht.chan_width);
 		}
 
+		if (cell.he) {
+			printf('\t  HE Operation:\n');
+			printf('\t\tCenter Frequency 1: %d\n', cell.he.center_chan_1);
+			printf('\t\tCenter Frequency 2: %s\n', cell.he.center_chan_2);
+			printf('\t\tChannel Width: %s\n', cell.he.chan_width);
+		}
+
+		if (cell.eht) {
+			printf('\t  EHT Operation:\n');
+			printf('\t\tCenter Frequency 1: %d\n', cell.eht.center_chan_1);
+			printf('\t\tCenter Frequency 2: %s\n', cell.eht.center_chan_2);
+			printf('\t\tChannel Width: %s\n', cell.eht.chan_width);
+		}
+
 		printf('\n'); 
 	}
 }
