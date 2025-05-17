@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include "mt7628an.dtsi"
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	gpio_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+
+		gpio_hc595: gpio_hc595@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			spi-max-frequency = <10000000>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_modem_reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_modem_power {
+			gpio-export,name = "modem_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_sim_select {
+			gpio-export,name = "sim_sel";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 7 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_esim_select {
+			gpio-export,name = "esim_sel";
+			gpio-export,output = <0>;
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_modem_status {
+			gpio-export,name = "modem_status";
+			gpio-export,input = <0>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_din1 {
+			gpio-export,name = "digital_input1";
+			gpio-export,input = <0>;
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		gpio_dout1 {
+			gpio-export,name = "digital_output1";
+			gpio-export,output = <0>;
+			gpios = <&gpio_hc595 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan1 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <1>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <2>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <3>;
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
+		modem_status_red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		modem_status_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_hc595 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi1{
+			label = "green:rssi-1";
+			gpios = <&gpio_hc595 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi2 {
+			label = "green:rssi-2";
+			gpios = <&gpio_hc595 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi3 {
+			label = "green:rssi-3";
+			gpios = <&gpio_hc595 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi4 {
+			label = "green:rssi-4";
+			gpios = <&gpio_hc595 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		rssi5 {
+			label = "green:rssi-5";
+			gpios = <&gpio_hc595 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power: power {
+			gpios = <&gpio_hc595 15 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "config";
+				reg = <0x020000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_0: macaddr@0 {
+						reg = <0x0 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@30000 {
+				label = "factory";
+				reg = <0x030000 0x030000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x20000 0x400>;
+					};
+				};
+			};
+
+			partition@60000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x060000 0xf10000>;
+			};
+
+			partition@f70000 {
+				label = "event-log";
+				reg = <0xf70000 0x90000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2s", "p4led_an", "p3led_an", "p2led_an", "p1led_an", "p0led_an", "gpio", "wled_an", "perst", "refclk", "spi cs1";
+		function = "gpio";
+	};
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_0 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_config_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
+};
