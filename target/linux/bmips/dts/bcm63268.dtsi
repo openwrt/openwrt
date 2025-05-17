@@ -288,6 +288,11 @@
 					pins = "dsl_gpio9";
 				};
 			};
+			ephy_rst: reset-controller@3C {
+				compatible = "brcm,bcm6345-reset";
+				reg = <0x3C 0x4>;
+				#reset-cells = <1>;
+			};
 		};
 
 		uart0: serial@10000180 {
@@ -482,7 +487,9 @@
 
 			resets = <&periph_rst BCM63268_RST_ENETSW>,
 				 <&periph_rst BCM63268_RST_EPHY>,
-				 <&periph_rst BCM63268_RST_GPHY>;
+				 <&ephy_rst 0>,
+				 <&ephy_rst 1>,
+				 <&ephy_rst 2>;
 
 			power-domains = <&periph_pwr BCM63268_POWER_DOMAIN_ROBOSW>;
 
@@ -577,8 +584,12 @@
 				};
 
 				phy4: ethernet-phy@4 {
-					compatible = "ethernet-phy-ieee802.3-c22";
+					compatible = "ethernet-phy-id0362.5f50";
 					reg = <4>;
+
+					resets = <&periph_rst BCM63268_RST_GPHY>;
+
+					brcm,gpio-ctrl = <&gpio_cntl>;
 				};
 			};
 
