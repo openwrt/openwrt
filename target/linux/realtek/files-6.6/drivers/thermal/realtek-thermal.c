@@ -20,6 +20,18 @@
 #define RTL8380_TEMP_VALID		BIT(8)
 #define RTL8380_TEMP_OUT_MASK		GENMASK(6, 0)
 
+#define RTL8390_THERMAL_METER0_CTRL0	0x274
+#define RTL8390_THERMAL_METER0_CTRL1	0x278
+#define RTL8390_THERMAL_METER0_CTRL2	0x27c
+#define RTL8390_THERMAL_METER0_RESULT	0x280
+#define RTL8390_THERMAL_METER1_CTRL0	0x284
+#define RTL8390_THERMAL_METER1_CTRL1	0x288
+#define RTL8390_THERMAL_METER1_CTRL2	0x28c
+#define RTL8390_THERMAL_METER1_RESULT	0x290
+#define RTL8390_TM_ENABLE		BIT(0)
+#define RTL8390_TEMP_VALID		BIT(8)
+#define RTL8390_TEMP_OUT_MASK		GENMASK(6, 0)
+
 #define RTL9300_THERMAL_METER_CTRL0	0x60
 #define RTL9300_THERMAL_METER_CTRL1	0x64
 #define RTL9300_THERMAL_METER_CTRL2	0x68
@@ -67,6 +79,37 @@ static int rtl8380_get_temp(struct thermal_zone_device *tz, int *res)
 
 static const struct thermal_zone_device_ops rtl8380_ops = {
 	.get_temp = rtl8380_get_temp,
+};
+
+static void rtl8390_thermal_init(struct realtek_thermal_priv *priv)
+{
+	priv->enabled = !regmap_update_bits(priv->regmap, RTL8390_THERMAL_METER0_CTRL0, RTL8390_TM_ENABLE, RTL8390_TM_ENABLE);
+}
+
+static int rtl8390_get_temp(struct thermal_zone_device *tz, int *res)
+{
+	struct realtek_thermal_priv *priv = thermal_zone_device_priv(tz);
+	int offset = thermal_zone_get_offset(tz);
+	int slope = thermal_zone_get_slope(tz);
+	u32 val;
+	int ret;
+
+	if (!priv->enabled)
+		rtl8390_thermal_init(priv);
+	/* assume sensor0 is the CPU, both sensor0 & sensor1 report same values +/- 1 degree C */
+	ret = regmap_read(priv->regmap, RTL8390_THERMAL_METER0_RESULT, &val);
+	if (ret)
+		return ret;
+
+	if (!(val & RTL8390_TEMP_VALID))
+		return -EAGAIN;
+
+	*res = FIELD_GET(RTL8390_TEMP_OUT_MASK, val) * slope + offset;
+	return 0;
+}
+
+static const struct thermal_zone_device_ops rtl8390_ops = {
+	.get_temp = rtl8390_get_temp,
 };
 
 static void rtl9300_thermal_init(struct realtek_thermal_priv *priv)
@@ -126,6 +169,7 @@ static int realtek_thermal_probe(struct platform_device *pdev)
 
 static const struct of_device_id realtek_sensor_ids[] = {
 	{ .compatible = "realtek,rtl8380-thermal", .data = &rtl8380_ops, },
+	{ .compatible = "realtek,rtl8390-thermal", .data = &rtl8390_ops, },
 	{ .compatible = "realtek,rtl9300-thermal", .data = &rtl9300_ops, },
 	{ /* sentinel */ }
 };

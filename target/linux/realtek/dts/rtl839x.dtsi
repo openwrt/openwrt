@@ -272,6 +272,11 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&mdio_aux_mdx>;
 		};
+
+		soc_thermal: thermal {
+			compatible = "realtek,rtl8390-thermal";
+			#thermal-sensor-cells = <0>;
+		};
 	};
 
 	pinmux@1b000004 {
@@ -342,5 +347,21 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <20 2>;
+	};
+
+	thermal_zones: thermal-zones {
+		cpu-thermal {
+			polling-delay-passive = <1000>;
+			polling-delay = <1000>;
+			coefficients = <1000 0>;
+			thermal-sensors = <&soc_thermal>;
+			trips {
+				cpu-crit {
+					temperature = <105000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
 	};
 };
