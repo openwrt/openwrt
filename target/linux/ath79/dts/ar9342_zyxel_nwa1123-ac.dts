@@ -36,4 +36,11 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_mib0_66 0>;
+		nvmem-cell-names = "mac-address";
+	};
 };
