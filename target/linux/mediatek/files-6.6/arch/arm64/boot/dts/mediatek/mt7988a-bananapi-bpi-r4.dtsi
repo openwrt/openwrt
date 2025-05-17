@@ -23,11 +23,11 @@
 		led-failsafe = &led_green;
 		led-running = &led_green;
 		led-upgrade = &led_green;
-		serial0 = &uart0;
+		serial0 = &serial0;
 	};
 
 	chosen {
-		stdout-path = &uart0;
+		stdout-path = &serial0;
 		bootargs = "console=ttyS0,115200n1 loglevel=8 pci=pcie_bus_perf ubi.block=0,fit root=/dev/fit0 rootwait";
 		rootdisk-spim-nand = <&ubi_rootfs>;
 	};
@@ -75,6 +75,24 @@
 			default-state = "off";
 		};
 	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
 };
 
 &eth {
@@ -108,6 +126,7 @@
 
 &gsw_phy0_led0 {
 	status = "okay";
+	function = LED_FUNCTION_WAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -116,8 +135,13 @@
 	pinctrl-0 = <&gbe1_led0_pins>;
 };
 
+&gsw_port1 {
+	label = "lan1";
+};
+
 &gsw_phy1_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -126,8 +150,13 @@
 	pinctrl-0 = <&gbe2_led0_pins>;
 };
 
+&gsw_port2 {
+	label = "lan2";
+};
+
 &gsw_phy2_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -136,8 +165,13 @@
 	pinctrl-0 = <&gbe3_led0_pins>;
 };
 
+&gsw_port3 {
+	label = "lan3";
+};
+
 &gsw_phy3_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -299,11 +333,127 @@
 };
 
 &pio {
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	i2c0_pins: i2c0-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	i2c2_1_pins: i2c2-pins-g1 {
+		mux {
+			function = "i2c";
+			groups = "i2c2_1";
+		};
+	};
+
+	gbe0_led0_pins: gbe0-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led0";
+		};
+	};
+
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "2p5gbe_led0";
+		};
+	};
+
+	mmc0_pins_emmc_51: mmc0-pins-emmc-51 {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+	};
+
+	mmc0_pins_sdcard: mmc0-pins-sdcard {
+		mux {
+			function = "flash";
+			groups = "sdcard";
+		};
+	};
+
 	pwm0_pins: pwm0-pins {
 		mux {
 			groups = "pwm0";
 			function = "pwm";
 		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups =  "uart0";
+		};
+	};
+
+	uart1_2_lite_pins: uart1-2-lite-pins {
+		mux {
+			function = "uart";
+			groups =  "uart1_2_lite";
+		};
+	};
+
+	uart2_3_pins: uart2-3-pins {
+		mux {
+			function = "uart";
+			groups =  "uart2_3";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm0_pins>;
+		pwms = <&pwm 0 50000>;
+		/* cooling level (0, 1, 2, 3) : (0% duty, 30% duty, 50% duty, 100% duty) */
+		cooling-levels = <0 80 128 255>;
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+
+		status = "okay";
 	};
 };
 
@@ -311,11 +461,52 @@
 	status = "okay";
 };
 
-&fan {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm0_pins>;
-	pwms = <&pwm 0 50000>;
-	status = "okay";
+&cpu_thermal {
+	trips {
+		cpu_trip_hot: hot {
+			temperature = <120000>;
+			hysteresis = <2000>;
+			type = "hot";
+		};
+
+		cpu_trip_active_high: active-high {
+			temperature = <115000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_med: active-med {
+			temperature = <85000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+
+		cpu_trip_active_low: active-low {
+			temperature = <40000>;
+			hysteresis = <2000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		cpu-active-high {
+		/* active: set fan to cooling level 2 */
+			cooling-device = <&fan 3 3>;
+			trip = <&cpu_trip_active_high>;
+		};
+
+		cpu-active-low {
+		/* active: set fan to cooling level 1 */
+			cooling-device = <&fan 2 2>;
+			trip = <&cpu_trip_active_med>;
+		};
+
+		cpu-passive {
+		/* passive: set fan to cooling level 0 */
+			cooling-device = <&fan 1 1>;
+			trip = <&cpu_trip_active_low>;
+		};
+	};
 };
 
 &ssusb1 {
@@ -380,17 +571,19 @@
 	};
 };
 
-&uart0 {
+&serial0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
 	status = "okay";
 };
 
-&uart1 {
+&serial1 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_2_lite_pins>;
 };
 
-&uart2 {
+&serial2 {
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart2_3_pins>;
@@ -400,6 +593,6 @@
 	status = "okay";
 };
 
-&xphy {
+&xsphy {
 	status = "okay";
 };
