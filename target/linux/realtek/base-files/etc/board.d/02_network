@@ -91,7 +91,8 @@ d-link,dgs-1210-28p-f)
 	ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 			lan22 lan21 lan20 lan19 lan18 lan17"
 	;;
-engenius,ews2910p)
+engenius,ews2910p-v1|\
+engenius,ews2910p-v3)
 	ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-65w)
