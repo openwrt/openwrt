@@ -17,13 +17,6 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-#define MIB_DESC(_size, _offset, _name) {.size = _size, .offset = _offset, .name = _name}
-struct rtl83xx_mib_desc {
-	unsigned int size;
-	unsigned int offset;
-	const char *name;
-};
-
 /* API for switch table access */
 struct table_reg {
 	u16 addr;
@@ -99,7 +92,6 @@ u64 rtl838x_get_port_reg(int reg);
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id);
 void rtl8380_get_version(struct rtl838x_switch_priv *priv);
-void rtl838x_vlan_profile_dump(int index);
 int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg);
 void rtl8380_sds_rst(int mac);
 int rtl8380_sds_power(int mac, int val);
@@ -109,7 +101,6 @@ void rtl838x_print_matrix(void);
 u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl8390_get_version(struct rtl838x_switch_priv *priv);
-void rtl839x_vlan_profile_dump(int index);
 int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val);
 void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtl839x_print_matrix(void);
@@ -118,7 +109,6 @@ void rtl839x_print_matrix(void);
 u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
-void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
 void rtl9300_sds_rst(int sds_num, u32 mode);
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
