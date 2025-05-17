@@ -36,3 +36,13 @@ define Device/zyxel_xgs1250-12
 	uImage gzip
 endef
 TARGET_DEVICES += zyxel_xgs1250-12
+
+define Device/next_7255gh
+  SOC := rtl9303
+  DEVICE_VENDOR := NEXT
+  DEVICE_MODEL := 7255GH
+    IMAGE_SIZE := 13312k
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
+endef
+
+TARGET_DEVICES += next_7255gh
