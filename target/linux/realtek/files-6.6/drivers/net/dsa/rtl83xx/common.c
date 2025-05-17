@@ -271,6 +271,20 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 	return -1;
 }
 
+static int rtldsa_mdio_read(struct mii_bus *bus, int addr, int regnum)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
+}
+
+static int rtldsa_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
+}
+
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device *dev = priv->dev;
@@ -288,8 +302,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENODEV;
 	}
 
-	priv->mii_bus = of_mdio_find_bus(mii_np);
-	if (!priv->mii_bus) {
+	priv->parent_bus = of_mdio_find_bus(mii_np);
+	if (!priv->parent_bus) {
 		pr_debug("Deferring probe of mdio bus\n");
 		return -EPROBE_DEFER;
 	}
@@ -300,18 +314,14 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	if (!bus)
 		return -ENOMEM;
 
-	bus->name = "rtl838x slave mii";
-
-	/* Since the NIC driver is loaded first, we can use the mdio rw functions
-	 * assigned there.
-	 */
-	bus->read = priv->mii_bus->read;
-	bus->write = priv->mii_bus->write;
+	bus->name = "rtldsa_mdio";
+	bus->read = rtldsa_mdio_read;
+	bus->write = rtldsa_mdio_write;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
 
 	bus->parent = dev;
 	priv->ds->slave_mii_bus = bus;
-	priv->ds->slave_mii_bus->priv = priv->mii_bus->priv;
+	priv->ds->slave_mii_bus->priv = priv;
 
 	ret = mdiobus_register(priv->ds->slave_mii_bus);
 	if (ret && mii_np) {
