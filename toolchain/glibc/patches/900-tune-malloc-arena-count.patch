@@ -1,0 +1,25 @@
+ malloc/arena.c  | 1 +
+ malloc/malloc.c | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/malloc/arena.c
++++ b/malloc/arena.c
+@@ -822,6 +822,7 @@ arena_get2 (size_t size, mstate avoid_arena)
+             {
+               int n = __get_nprocs ();
+ 
++              if (n > 4) n = 4;
+               if (n >= 1)
+                 narenas_limit = NARENAS_FROM_NCORES (n);
+               else
+--- a/malloc/malloc.c
++++ b/malloc/malloc.c
+@@ -1917,7 +1917,7 @@ static struct malloc_par mp_ =
+   .n_mmaps_max = DEFAULT_MMAP_MAX,
+   .mmap_threshold = DEFAULT_MMAP_THRESHOLD,
+   .trim_threshold = DEFAULT_TRIM_THRESHOLD,
+-#define NARENAS_FROM_NCORES(n) ((n) * (sizeof (long) == 4 ? 2 : 8))
++#define NARENAS_FROM_NCORES(n) ((n) * 2)
+   .arena_test = NARENAS_FROM_NCORES (1)
+ #if USE_TCACHE
+   ,
