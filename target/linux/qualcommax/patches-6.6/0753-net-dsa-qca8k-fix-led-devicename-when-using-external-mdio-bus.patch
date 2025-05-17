@@ -1,0 +1,35 @@
+From ec0031908d3abb24e791af2d5be9f3b0e265c945 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Fri, 25 Apr 2025 10:51:28 +0400
+Subject: [PATCH] net: dsa: qca8k: fix led devicename when using external mdio bus
+
+The qca8k dsa switch can use either an external or internal mdio bus.
+This depends on whether the mdio node is defined under the switch node
+itself and, as such, the internal_mdio_mask is populated with its
+internal phys. Upon registering the internal mdio bus, the slave_mii_bus
+of the dsa switch is assigned to this bus. When an external mdio bus is
+used, it is left unassigned, though its id is used to create the device
+names of the leds.
+This leads to the leds being named '(efault):00:green:lan' and so on as
+the slave_mii_bus is null. So let's fix this by adding a null check and
+use the devicename of the external bus instead when an external bus is
+configured.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ drivers/net/dsa/qca/qca8k-leds.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/qca/qca8k-leds.c
++++ b/drivers/net/dsa/qca/qca8k-leds.c
+@@ -429,7 +429,9 @@ qca8k_parse_port_leds(struct qca8k_priv
+ 		init_data.default_label = ":port";
+ 		init_data.fwnode = led;
+ 		init_data.devname_mandatory = true;
+-		init_data.devicename = kasprintf(GFP_KERNEL, "%s:0%d", ds->slave_mii_bus->id,
++		init_data.devicename = kasprintf(GFP_KERNEL, "%s:0%d",
++						 ds->slave_mii_bus ?
++						 ds->slave_mii_bus->id : priv->bus->id,
+ 						 port_num);
+ 		if (!init_data.devicename) {
+ 			fwnode_handle_put(led);
