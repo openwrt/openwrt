@@ -11,7 +11,7 @@
  	};
  
  	connector {
-@@ -338,6 +340,20 @@
+@@ -338,6 +340,18 @@
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_1p8v>;
  	non-removable;
@@ -20,19 +20,17 @@
 +		compatible = "mmc-card";
 +		reg = <0>;
 +
-+		block {
-+			compatible = "block-device";
-+			partitions {
-+				emmc_rootdisk: block-partition-fit {
-+					partno = <3>;
-+				};
++		partitions {
++			compatible = "msdos-partitions";
++			emmc_rootdisk: block-partition-fit {
++				partno = <3>;
 +			};
 +		};
 +	};
  };
  
  &mmc1 {
-@@ -351,6 +367,20 @@
+@@ -351,6 +365,18 @@
  	cd-gpios = <&pio 261 GPIO_ACTIVE_LOW>;
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_3p3v>;
@@ -41,12 +39,10 @@
 +		compatible = "mmc-card";
 +		reg = <0>;
 +
-+		block {
-+			compatible = "block-device";
-+			partitions {
-+				sd_rootdisk: block-partition-fit {
-+					partno = <3>;
-+				};
++		partitions {
++			compatible = "msdos-partitions";
++			sd_rootdisk: block-partition-fit {
++				partno = <3>;
 +			};
 +		};
 +	};
