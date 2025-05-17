@@ -42,6 +42,13 @@ mikrotik,routerboard-952ui-5ac2nd)
 	ucidef_set_led_switch "port4" "port4" "green:port4" "switch0" "0x04"
 	ucidef_set_led_switch "port5" "port5" "green:port5" "switch0" "0x02"
 	;;
+mikrotik,routerboard-960pgs)
+	ucidef_set_led_netdev "lan1" "LAN1" "qca8k-0.0:00:green:lan" "lan1" "link-10 link-100 link-1000 tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "qca8k-0.0:01:green:lan" "lan2" "link-10 link-100 link-1000 tx rx"
+	ucidef_set_led_netdev "lan3" "LAN3" "qca8k-0.0:02:green:lan" "lan3" "link-10 link-100 link-1000 tx rx"
+	ucidef_set_led_netdev "lan4" "LAN4" "qca8k-0.0:03:green:lan" "lan4" "link-10 link-100 link-1000 tx rx"
+	ucidef_set_led_netdev "lan5" "LAN5" "qca8k-0.0:04:green:lan" "lan5" "link-10 link-100 link-1000 tx rx"
+	;;
 mikrotik,routerboard-lhg-2nd|\
 mikrotik,routerboard-mapl-2nd|\
 mikrotik,routerboard-wap-2nd)
