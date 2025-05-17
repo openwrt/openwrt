@@ -1,4 +1,4 @@
-From 7670ec4a14891a1a182b98a9c403ffbf6b49e4b1 Mon Sep 17 00:00:00 2001
+From eef758fee8d25f56086eaaf7df1edb19929ced1a Mon Sep 17 00:00:00 2001
 From: "SkyLake.Huang" <skylake.huang@mediatek.com>
 Date: Thu, 23 Jun 2022 18:39:56 +0800
 Subject: [PATCH 5/6] drivers: mtd: spinand: Add calibration support for
@@ -11,11 +11,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -980,6 +980,56 @@ static int spinand_manufacturer_match(st
- 	return -ENOTSUPP;
+@@ -1152,6 +1152,56 @@ static int spinand_manufacturer_match(st
+ 	return -EOPNOTSUPP;
  }
  
-+int spinand_cal_read(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen) {
++static int spinand_cal_read(void *priv, u32 *addr, int addrlen, u8 *buf, int readlen) {
 +	struct spinand_device *spinand = (struct spinand_device *)priv;
 +	struct device *dev = &spinand->spimem->spi->dev;
 +	struct spi_mem_op op = SPINAND_PAGE_READ_FROM_CACHE_OP(false, 0, 1, buf, readlen);
@@ -68,7 +68,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static int spinand_id_detect(struct spinand_device *spinand)
  {
  	u8 *id = spinand->id.data;
-@@ -1230,6 +1280,10 @@ static int spinand_init(struct spinand_d
+@@ -1403,6 +1453,10 @@ static int spinand_init(struct spinand_d
  	if (!spinand->scratchbuf)
  		return -ENOMEM;
  

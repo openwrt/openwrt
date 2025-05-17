@@ -1,4 +1,4 @@
-From f3fe3b15eca7908eaac57f9b8387a5dbc45ec5b2 Mon Sep 17 00:00:00 2001
+From 7ec7de94c87654e6cc3f8f604b2f65c003f3e5dc Mon Sep 17 00:00:00 2001
 From: "SkyLake.Huang" <skylake.huang@mediatek.com>
 Date: Thu, 23 Jun 2022 18:40:59 +0800
 Subject: [PATCH 6/6] drivers: mtd: spi-nor: Add calibration support for
@@ -12,7 +12,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1021,7 +1021,10 @@ int spinand_cal_read(void *priv, u32 *ad
+@@ -1193,7 +1193,10 @@ static int spinand_cal_read(void *priv,
  	if (ret)
  		return ret;
  
@@ -26,7 +26,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3378,6 +3378,18 @@ static const struct flash_info *spi_nor_
+@@ -3300,6 +3300,18 @@ static const struct flash_info *spi_nor_
  	return NULL;
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static const struct flash_info *spi_nor_get_flash_info(struct spi_nor *nor,
  						       const char *name)
  {
-@@ -3506,6 +3518,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3474,6 +3486,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (ret)
  		return ret;
  
