@@ -47,6 +47,25 @@ endef
 $(eval $(call KernelPackage,iio-kfifo-buf))
 
 
+define KernelPackage/industrialio-backend
+  TITLE:=IIO Backend support
+  KCONFIG=CONFIG_IIO_BACKEND
+  FILES:=$(LINUX_DIR)/drivers/iio/industrialio-backend.ko
+  AUTOLOAD:=$(call AutoProbe,industrialio-backend)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/industrialio-backend/description
+  Framework to handle complex IIO aggregate devices. The typical
+  architecture that can make use of this framework is to have one
+  device as the frontend device which can be "linked" against one or
+  multiple backend devices. The framework then makes it easy to get
+  and control such backend devices.
+endef
+
+$(eval $(call KernelPackage,industrialio-backend))
+
+
 define KernelPackage/industrialio-hw-consumer
   TITLE:=Provides a bonding way to an other device in hardware
   KCONFIG:=CONFIG_IIO_BUFFER_HW_CONSUMER
