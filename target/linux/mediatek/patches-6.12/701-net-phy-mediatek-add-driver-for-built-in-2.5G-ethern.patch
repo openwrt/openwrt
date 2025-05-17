@@ -1,24 +1,36 @@
-From 69ca89165e39e6b6f4c79e6b4c03559e0fac7051 Mon Sep 17 00:00:00 2001
-From: "SkyLake.Huang" <skylake.huang@mediatek.com>
-Date: Mon, 1 Jul 2024 18:54:15 +0800
-Subject: [PATCH 11/13] net: phy: add driver for built-in 2.5G ethernet PHY on
- MT7988
+From 4eb44972db02c2b704f0ef5c891f29f25440a063 Mon Sep 17 00:00:00 2001
+From: Sky Huang <skylake.huang@mediatek.com>
+Date: Wed, 19 Feb 2025 16:39:10 +0800
+Subject: [PATCH 20/20] net: phy: mediatek: add driver for built-in 2.5G
+ ethernet PHY on MT7988
 
 Add support for internal 2.5Gphy on MT7988. This driver will load
-necessary firmware, add appropriate time delay and figure out LED.
-Also, certain control registers will be set to fix link-up issues.
+necessary firmware and add appropriate time delay to make sure
+that firmware works stably. Also, certain control registers will
+be set to fix link-up issues.
 
-Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
+Signed-off-by: Sky Huang <skylake.huang@mediatek.com>
 ---
+ MAINTAINERS                          |   1 +
  drivers/net/phy/mediatek/Kconfig     |  11 +
  drivers/net/phy/mediatek/Makefile    |   1 +
- drivers/net/phy/mediatek/mtk-2p5ge.c | 432 +++++++++++++++++++++++++++
- 4 files changed, 445 insertions(+)
+ drivers/net/phy/mediatek/mtk-2p5ge.c | 342 +++++++++++++++++++++++++++
+ 4 files changed, 355 insertions(+)
  create mode 100644 drivers/net/phy/mediatek/mtk-2p5ge.c
 
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -14430,6 +14430,7 @@ M:	Sky Huang <SkyLake.Huang@mediatek.com
+ L:	netdev@vger.kernel.org
+ S:	Maintained
+ F:	Documentation/devicetree/bindings/net/mediatek,2p5gphy-fw.yaml
++F:	drivers/net/phy/mediatek/mtk-2p5ge.c
+ F:	drivers/net/phy/mediatek/mtk-ge-soc.c
+ F:	drivers/net/phy/mediatek/mtk-phy-lib.c
+ F:	drivers/net/phy/mediatek/mtk-ge.c
 --- a/drivers/net/phy/mediatek/Kconfig
 +++ b/drivers/net/phy/mediatek/Kconfig
-@@ -25,3 +25,14 @@ config MEDIATEK_GE_SOC_PHY
+@@ -26,3 +26,14 @@ config MEDIATEK_GE_SOC_PHY
  	  the MT7981 and MT7988 SoCs. These PHYs need calibration data
  	  present in the SoCs efuse and will dynamically calibrate VCM
  	  (common-mode voltage) during startup.
@@ -42,7 +54,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +obj-$(CONFIG_MEDIATEK_2P5GE_PHY)	+= mtk-2p5ge.o
 --- /dev/null
 +++ b/drivers/net/phy/mediatek/mtk-2p5ge.c
-@@ -0,0 +1,436 @@
+@@ -0,0 +1,342 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +#include <linux/bitfield.h>
 +#include <linux/firmware.h>
@@ -59,16 +71,9 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +
 +#define MTK_2P5GPHY_ID_MT7988	(0x00339c11)
 +
-+#define MTK_PHY_PAGE_EXTENDED_1		0x0001
-+#define MTK_PHY_AUX_CTRL_AND_STATUS	0x14
-+#define   MTK_PHY_ENABLE_DOWNSHIFT	BIT(4)
-+
 +#define MT7988_2P5GE_PMB_FW		"mediatek/mt7988/i2p5ge-phy-pmb.bin"
 +#define MT7988_2P5GE_PMB_FW_SIZE	(0x20000)
-+#define MT7988_2P5GE_PMB_FW_BASE	(0x0f100000)
-+#define MT7988_2P5GE_PMB_FW_LEN		(0x20000)
-+#define MT7988_2P5GE_MD32_EN_CFG_BASE	(0x0f0f0018)
-+#define MT7988_2P5GE_MD32_EN_CFG_LEN	(0x20)
++#define MD32_EN_CFG			(0x18)
 +#define   MD32_EN			BIT(0)
 +
 +#define BASE100T_STATUS_EXTEND		(0x10)
@@ -79,16 +84,18 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +#define   PHY_AUX_DPX_MASK		GENMASK(5, 5)
 +#define   PHY_AUX_SPEED_MASK		GENMASK(4, 2)
 +
++/* Registers on MDIO_MMD_VEND1 */
 +#define MTK_PHY_LPI_PCS_DSP_CTRL		(0x121)
 +#define   MTK_PHY_LPI_SIG_EN_LO_THRESH100_MASK	GENMASK(12, 8)
 +
++#define MTK_PHY_HOST_CMD1		0x800e
++#define MTK_PHY_HOST_CMD2		0x800f
 +/* Registers on Token Ring debug nodes */
 +/* ch_addr = 0x0, node_addr = 0xf, data_addr = 0x3c */
 +#define AUTO_NP_10XEN				BIT(6)
 +
 +struct mtk_i2p5ge_phy_priv {
 +	bool fw_loaded;
-+	unsigned long led_state;
 +};
 +
 +enum {
@@ -101,21 +108,22 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +static int mt798x_2p5ge_phy_load_fw(struct phy_device *phydev)
 +{
 +	struct mtk_i2p5ge_phy_priv *priv = phydev->priv;
-+	void __iomem *md32_en_cfg_base, *pmb_addr;
++	void __iomem *mcu_csr_base, *pmb_addr;
 +	struct device *dev = &phydev->mdio.dev;
 +	const struct firmware *fw;
++	struct device_node *np;
 +	int ret, i;
-+	u16 reg;
++	u32 reg;
 +
-+	if (priv->fw_loaded)
-+		return 0;
++	np = of_find_compatible_node(NULL, NULL, "mediatek,2p5gphy-fw");
++	if (!np)
++		return -ENOENT;
 +
-+	pmb_addr = ioremap(MT7988_2P5GE_PMB_FW_BASE, MT7988_2P5GE_PMB_FW_LEN);
++	pmb_addr = of_iomap(np, 0);
 +	if (!pmb_addr)
 +		return -ENOMEM;
-+	md32_en_cfg_base = ioremap(MT7988_2P5GE_MD32_EN_CFG_BASE,
-+				   MT7988_2P5GE_MD32_EN_CFG_LEN);
-+	if (!md32_en_cfg_base) {
++	mcu_csr_base = of_iomap(np, 1);
++	if (!mcu_csr_base) {
 +		ret = -ENOMEM;
 +		goto free_pmb;
 +	}
@@ -134,7 +142,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +		goto release_fw;
 +	}
 +
-+	reg = readw(md32_en_cfg_base);
++	reg = readw(mcu_csr_base + MD32_EN_CFG);
 +	if (reg & MD32_EN) {
 +		phy_set_bits(phydev, MII_BMCR, BMCR_RESET);
 +		usleep_range(10000, 11000);
@@ -142,32 +150,33 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	phy_set_bits(phydev, MII_BMCR, BMCR_PDOWN);
 +
 +	/* Write magic number to safely stall MCU */
-+	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x800e, 0x1100);
-+	phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x800f, 0x00df);
++	phy_write_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_HOST_CMD1, 0x1100);
++	phy_write_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_HOST_CMD2, 0x00df);
 +
 +	for (i = 0; i < MT7988_2P5GE_PMB_FW_SIZE - 1; i += 4)
 +		writel(*((uint32_t *)(fw->data + i)), pmb_addr + i);
-+	dev_info(dev, "Firmware date code: %x/%x/%x, version: %x.%x\n",
-+		 be16_to_cpu(*((__be16 *)(fw->data +
-+					  MT7988_2P5GE_PMB_FW_SIZE - 8))),
-+		 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 6),
-+		 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 5),
-+		 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 2),
-+		 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 1));
 +
-+	writew(reg & ~MD32_EN, md32_en_cfg_base);
-+	writew(reg | MD32_EN, md32_en_cfg_base);
++	if (!priv->fw_loaded)
++		dev_info(dev, "Firmware date code: %x/%x/%x, version: %x.%x\n",
++			 be16_to_cpu(*((__be16 *)(fw->data +
++						  MT7988_2P5GE_PMB_FW_SIZE - 8))),
++			 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 6),
++			 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 5),
++			 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 2),
++			 *(fw->data + MT7988_2P5GE_PMB_FW_SIZE - 1));
++
++	writew(reg & ~MD32_EN, mcu_csr_base + MD32_EN_CFG);
++	writew(reg | MD32_EN, mcu_csr_base + MD32_EN_CFG);
 +	phy_set_bits(phydev, MII_BMCR, BMCR_RESET);
 +	/* We need a delay here to stabilize initialization of MCU */
 +	usleep_range(7000, 8000);
-+	dev_info(dev, "Firmware loading/trigger ok.\n");
 +
 +	priv->fw_loaded = true;
 +
 +release_fw:
 +	release_firmware(fw);
 +free:
-+	iounmap(md32_en_cfg_base);
++	iounmap(mcu_csr_base);
 +free_pmb:
 +	iounmap(pmb_addr);
 +
@@ -197,7 +206,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +
 +	/* Switch pinctrl after setting polarity to avoid bogus blinking */
 +	pinctrl = devm_pinctrl_get_select(&phydev->mdio.dev, "i2p5gbe-led");
-+	if (IS_ERR(pinctrl))
++	if (IS_ERR(pinctrl) && PTR_ERR(pinctrl) != -ENODEV)
 +		dev_err(&phydev->mdio.dev, "Fail to set LED pins!\n");
 +
 +	phy_modify_mmd(phydev, MDIO_MMD_VEND1, MTK_PHY_LPI_PCS_DSP_CTRL,
@@ -221,14 +230,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	u32 adv;
 +	int ret;
 +
-+	/* In fact, if we disable autoneg, we can't link up correctly:
-+	 * 2.5G/1G: Need AN to exchange master/slave information.
-+	 * 100M/10M: Without AN, link starts at half duplex (According to
-+	 *           IEEE 802.3-2018), which this phy doesn't support.
-+	 */
-+	if (phydev->autoneg == AUTONEG_DISABLE)
-+		return -EOPNOTSUPP;
-+
 +	ret = genphy_c45_an_config_aneg(phydev);
 +	if (ret < 0)
 +		return ret;
@@ -245,7 +246,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	if (ret > 0)
 +		changed = true;
 +
-+	return genphy_c45_check_and_restart_aneg(phydev, changed);
++	return __genphy_config_aneg(phydev, changed);
 +}
 +
 +static int mt798x_2p5ge_phy_get_features(struct phy_device *phydev)
@@ -339,82 +340,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	return RATE_MATCH_PAUSE;
 +}
 +
-+static const unsigned long supported_triggers =
-+	BIT(TRIGGER_NETDEV_FULL_DUPLEX) |
-+	BIT(TRIGGER_NETDEV_LINK)        |
-+	BIT(TRIGGER_NETDEV_LINK_10)     |
-+	BIT(TRIGGER_NETDEV_LINK_100)    |
-+	BIT(TRIGGER_NETDEV_LINK_1000)   |
-+	BIT(TRIGGER_NETDEV_LINK_2500)   |
-+	BIT(TRIGGER_NETDEV_RX)          |
-+	BIT(TRIGGER_NETDEV_TX);
-+
-+static int mt798x_2p5ge_phy_led_blink_set(struct phy_device *phydev, u8 index,
-+					  unsigned long *delay_on,
-+					  unsigned long *delay_off)
-+{
-+	struct mtk_i2p5ge_phy_priv *priv = phydev->priv;
-+	bool blinking = false;
-+	int err = 0;
-+
-+	err = mtk_phy_led_num_dly_cfg(index, delay_on, delay_off, &blinking);
-+	if (err < 0)
-+		return err;
-+
-+	err = mtk_phy_hw_led_blink_set(phydev, index, &priv->led_state,
-+				       blinking);
-+	if (err)
-+		return err;
-+
-+	return mtk_phy_hw_led_on_set(phydev, index, &priv->led_state,
-+				     MTK_2P5GPHY_LED_ON_MASK, false);
-+}
-+
-+static int mt798x_2p5ge_phy_led_brightness_set(struct phy_device *phydev,
-+					       u8 index,
-+					       enum led_brightness value)
-+{
-+	struct mtk_i2p5ge_phy_priv *priv = phydev->priv;
-+	int err;
-+
-+	err = mtk_phy_hw_led_blink_set(phydev, index, &priv->led_state, false);
-+	if (err)
-+		return err;
-+
-+	return mtk_phy_hw_led_on_set(phydev, index, &priv->led_state,
-+				     MTK_2P5GPHY_LED_ON_MASK,
-+				     (value != LED_OFF));
-+}
-+
-+static int mt798x_2p5ge_phy_led_hw_is_supported(struct phy_device *phydev,
-+						u8 index, unsigned long rules)
-+{
-+	return mtk_phy_led_hw_is_supported(phydev, index, rules,
-+					   supported_triggers);
-+}
-+
-+static int mt798x_2p5ge_phy_led_hw_control_get(struct phy_device *phydev,
-+					       u8 index, unsigned long *rules)
-+{
-+	struct mtk_i2p5ge_phy_priv *priv = phydev->priv;
-+
-+	return mtk_phy_led_hw_ctrl_get(phydev, index, rules, &priv->led_state,
-+				       MTK_2P5GPHY_LED_ON_SET,
-+				       MTK_2P5GPHY_LED_RX_BLINK_SET,
-+				       MTK_2P5GPHY_LED_TX_BLINK_SET);
-+};
-+
-+static int mt798x_2p5ge_phy_led_hw_control_set(struct phy_device *phydev,
-+					       u8 index, unsigned long rules)
-+{
-+	struct mtk_i2p5ge_phy_priv *priv = phydev->priv;
-+
-+	return mtk_phy_led_hw_ctrl_set(phydev, index, rules, &priv->led_state,
-+				       MTK_2P5GPHY_LED_ON_SET,
-+				       MTK_2P5GPHY_LED_RX_BLINK_SET,
-+				       MTK_2P5GPHY_LED_TX_BLINK_SET);
-+};
-+
 +static int mt798x_2p5ge_phy_probe(struct phy_device *phydev)
 +{
 +	struct mtk_i2p5ge_phy_priv *priv;
@@ -439,8 +364,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +	priv->fw_loaded = false;
 +	phydev->priv = priv;
 +
-+	mtk_phy_leds_state_init(phydev);
-+
 +	return 0;
 +}
 +
@@ -458,11 +381,6 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 +		.resume = genphy_resume,
 +		.read_page = mtk_phy_read_page,
 +		.write_page = mtk_phy_write_page,
-+		.led_blink_set = mt798x_2p5ge_phy_led_blink_set,
-+		.led_brightness_set = mt798x_2p5ge_phy_led_brightness_set,
-+		.led_hw_is_supported = mt798x_2p5ge_phy_led_hw_is_supported,
-+		.led_hw_control_get = mt798x_2p5ge_phy_led_hw_control_get,
-+		.led_hw_control_set = mt798x_2p5ge_phy_led_hw_control_set,
 +	},
 +};
 +
