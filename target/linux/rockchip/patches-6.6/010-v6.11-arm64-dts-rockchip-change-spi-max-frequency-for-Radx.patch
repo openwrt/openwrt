@@ -1,0 +1,26 @@
+From 06f6dd4d607766a527e37529f2f3f90dd1464293 Mon Sep 17 00:00:00 2001
+From: FUKAUMI Naoki <naoki@radxa.com>
+Date: Sun, 23 Jun 2024 11:33:29 +0900
+Subject: [PATCH] arm64: dts: rockchip: change spi-max-frequency for Radxa ROCK
+ 3C
+
+SPI NOR flash chip may vary, so use safe(lowest) spi-max-frequency.
+
+Signed-off-by: FUKAUMI Naoki <naoki@radxa.com>
+Link: https://lore.kernel.org/r/20240623023329.1044-3-naoki@radxa.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-rock-3c.dts
+@@ -633,7 +633,7 @@
+ 	flash@0 {
+ 		compatible = "jedec,spi-nor";
+ 		reg = <0x0>;
+-		spi-max-frequency = <120000000>;
++		spi-max-frequency = <104000000>;
+ 		spi-rx-bus-width = <4>;
+ 		spi-tx-bus-width = <1>;
+ 	};

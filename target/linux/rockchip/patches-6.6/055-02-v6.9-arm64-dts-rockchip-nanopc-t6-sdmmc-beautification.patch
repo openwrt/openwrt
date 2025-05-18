@@ -1,0 +1,33 @@
+From 9e1faff1cbc877903d019a7943d37ddc5042704d Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Thu, 28 Dec 2023 17:29:35 +0000
+Subject: [PATCH] arm64: dts: rockchip: nanopc-t6 sdmmc beautification
+
+drop max-frequency = <200000000> as it is already defined in rk3588s.dtsi
+order no-sdio & no-mmc properties while we are here
+
+Signed-off-by: John Clark <inindev@gmail.com>
+Link: https://lore.kernel.org/r/20231228173011.2863-1-inindev@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dts
+@@ -536,13 +536,12 @@
+ };
+ 
+ &sdmmc {
+-	max-frequency = <200000000>;
+-	no-sdio;
+-	no-mmc;
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;
+ 	cap-sd-highspeed;
+ 	disable-wp;
++	no-mmc;
++	no-sdio;
+ 	sd-uhs-sdr104;
+ 	vmmc-supply = <&vcc_3v3_s3>;
+ 	vqmmc-supply = <&vccio_sd_s0>;

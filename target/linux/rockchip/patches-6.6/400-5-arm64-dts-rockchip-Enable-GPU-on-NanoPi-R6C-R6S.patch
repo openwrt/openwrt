@@ -1,0 +1,27 @@
+From 04cd713c3834b87fcd147e4bf7b7066cfe60fffc Mon Sep 17 00:00:00 2001
+From: Sebastian Kropatsch <seb-dev@mail.de>
+Date: Wed, 12 Jun 2024 22:48:14 +0200
+Subject: [PATCH 5/5] arm64: dts: rockchip: Enable GPU on NanoPi R6C/R6S
+
+Enable the Mali GPU on the FriendlyElec NanoPi R6C and R6S.
+
+Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
+@@ -207,6 +207,12 @@
+ 	status = "okay";
+ };
+ 
++&gpu {
++	mali-supply = <&vdd_gpu_s0>;
++	sram-supply = <&vdd_gpu_mem_s0>;
++	status = "okay";
++};
++
+ &i2c0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c0m2_xfer>;
