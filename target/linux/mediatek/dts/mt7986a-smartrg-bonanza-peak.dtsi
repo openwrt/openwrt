@@ -552,9 +552,11 @@
 	pinctrl-0 = <&i2c0_pins>;
 	status = "okay";
 
-	system-leds {
+	system-leds@30 {
 		compatible = "srg,sysled";
 		reg = <0x30>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		led_status_red: led@1 {
 			color = <LED_COLOR_ID_RED>;
