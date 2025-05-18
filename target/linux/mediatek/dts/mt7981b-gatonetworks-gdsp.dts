@@ -240,6 +240,8 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	mediatek,mtd-eeprom = <&factory 0x0>;
 	status = "okay";
 
