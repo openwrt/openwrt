@@ -58,15 +58,12 @@
 		tx-disable-gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1000>;
 	};
+};
 
-	reg_usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &state_default {
@@ -191,10 +188,6 @@
 			label = "lan4";
 		};
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
 };
 
 &pcie {

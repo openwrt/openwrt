@@ -73,29 +73,6 @@
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};
 	};
-
-	reg_usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-};
-
-&xhci {
-	vusb33-supply = <&reg_3p3v>;
-	vbus-supply = <&reg_usb_vbus>;
 };
 
 &spi0 {
@@ -193,6 +170,18 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e000 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
+&reg_vusb33 {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {
