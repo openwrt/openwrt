@@ -64,6 +64,22 @@
 		regulator-name = "mmc_power";
 	};
 
+	reg_vbus: regulator-vbus {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <5000000>;
+		regulator-min-microvolt = <5000000>;
+		regulator-name = "usb_power";
+	};
+
+	reg_vusb33: regulator-vusb33 {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-name = "usb_io";
+	};
+
 	palmbus: palmbus@1e000000 {
 		compatible = "palmbus";
 		reg = <0x1e000000 0x100000>;
@@ -394,6 +410,9 @@
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+
+		vbus-supply = <&reg_vbus>;
+		vusb33-supply = <&reg_vusb33>;
 
 		/*
 		 * Port 1 of both hubs is one usb slot and referenced here.
