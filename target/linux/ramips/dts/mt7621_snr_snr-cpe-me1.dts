@@ -65,15 +65,6 @@
 		gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
 };
 
 &gmac0 {
@@ -218,5 +209,4 @@
 
 &xhci {
 	vbus-supply = <&reg_usb_vbus>;
-	vusb33-supply = <&reg_3p3v>;
 };

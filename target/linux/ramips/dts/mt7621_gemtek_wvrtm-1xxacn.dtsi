@@ -119,24 +119,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
 	ubi-concat {
 		compatible = "mtd-concat";
 		devices = <&ubiconcat0 &ubiconcat1 &ubiconcat2 &ubiconcat3>;
@@ -279,9 +261,4 @@
 			nvmem-cell-names = "mac-address";
 		};
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
-	vusb33-supply = <&reg_3p3v>;
 };
