@@ -422,22 +422,6 @@ int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	return 0;
 }
 
-/* On the RTL838x SoCs, the internal SerDes is accessed through direct access to
- * standard PHY registers, where a 32 bit register holds a 16 bit word as found
- * in a standard page 0 of a PHY
- */
-int rtl838x_read_sds_phy(int phy_addr, int phy_reg)
-{
-	int offset = 0;
-	u32 val;
-
-	if (phy_addr == 26)
-		offset = 0x100;
-	val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
-
-	return val;
-}
-
 int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
 {
 	int offset = 0;
