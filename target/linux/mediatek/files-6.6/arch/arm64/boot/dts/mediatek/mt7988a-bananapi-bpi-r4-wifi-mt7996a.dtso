@@ -25,6 +25,9 @@
 	fragment@1 {
 		target = <&i2c_wifi>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			// 5G WIFI MAC Address EEPROM
 			wifi_eeprom@51 {
 				compatible = "atmel,24c02";
