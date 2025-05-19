@@ -68,7 +68,12 @@
 	fragment@2 {
 		target = <&pcie0>;
 		__overlay__ {
+			#address-cells = <3>;
+			#size-cells = <2>;
+
 			pcie@0,0 {
+				#address-cells = <3>;
+				#size-cells = <2>;
 				reg = <0x0000 0 0 0 0>;
 
 				wifi@0,0 {
@@ -84,7 +89,12 @@
 	fragment@3 {
 		target = <&pcie1>;
 		__overlay__ {
+			#address-cells = <3>;
+			#size-cells = <2>;
+
 			pcie@0,0 {
+				#address-cells = <3>;
+				#size-cells = <2>;
 				reg = <0x0000 0 0 0 0>;
 
 				wifi@0,0 {

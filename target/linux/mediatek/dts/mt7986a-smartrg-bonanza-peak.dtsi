@@ -356,6 +356,8 @@
 
 	slot0: pcie@0,0 {
 		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
 
 		radio0: mt7915@0,0 {
 			reg = <0x0000 0 0 0 0>;
