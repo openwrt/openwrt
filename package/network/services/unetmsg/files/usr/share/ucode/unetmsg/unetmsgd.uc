@@ -131,7 +131,7 @@ function handle_request(handle, req, data, remote, host)
 		let cur_handle = cur;
 		let data_cb = (msg) => {
 			if (cur_handle.get_response_data)
-				msg = cur.get_response_data(msg);
+				msg = cur_handle.get_response_data(msg);
 			req.reply(msg, -1);
 		};
 
