@@ -196,6 +196,14 @@ void __init prom_init(void)
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
+	/*
+	 * fw_arg2 is be the pointer to the environment. Some devices (e.g. HP JG924A) hand
+	 * over other than expected kernel boot arguments. Something like 0xfffdffff looks
+	 * suspicous. Do extra cleanup for fw_init_cmdline() to avoid a hang during boot.
+	 */
+	if (fw_arg2 >= CKSEG2)
+		fw_arg2 = 0;
+
 	fw_init_cmdline();
 
 	mips_cpc_probe();
