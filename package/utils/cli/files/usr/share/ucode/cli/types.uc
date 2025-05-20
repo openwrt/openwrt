@@ -70,8 +70,7 @@ const types = {
 				val = lc(val);
 				val = filter(list, (v) => val == lc(v))[0];
 			} else {
-				if (index(list, val) < 0)
-					val = null;
+				val = filter(list, (v) => val == v)[0];
 			}
 
 			if (val == null)
