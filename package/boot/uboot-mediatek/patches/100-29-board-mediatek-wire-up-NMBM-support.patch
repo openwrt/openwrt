@@ -74,9 +74,9 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
  DECLARE_GLOBAL_DATA_PTR;
  
  int board_init(void)
-@@ -20,3 +25,36 @@ uint32_t spl_nand_get_uboot_raw_page(voi
- {
- 	return CONFIG_SPL_PAD_TO;
+@@ -15,3 +20,36 @@ int board_init(void)
+ 
+ 	return 0;
  }
 +
 +int board_nmbm_init(void)

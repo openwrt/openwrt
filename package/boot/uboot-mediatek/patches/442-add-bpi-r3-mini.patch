@@ -443,7 +443,7 @@
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -452,17 +452,17 @@
 +
 +		status_led: led-0 {
 +			label = "green:status";
-+			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led-1 {
 +			label = "blue:wlan2g";
-+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led-2 {
 +			label = "blue:wlan5g";
-+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +
@@ -500,7 +500,7 @@
 +
 +		airoha,rx-pol-reverse;
 +
-+		reset-gpios = <&gpio 49 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&pio 49 GPIO_ACTIVE_LOW>;
 +		reset-assert-us = <10000>;
 +		reset-deassert-us = <20000>;
 +	};
@@ -519,7 +519,7 @@
 +	status = "okay";
 +};
 +
-+&pinctrl {
++&pio {
 +	mdio_pins: mdio-pins {
 +		mux {
 +			function = "eth";

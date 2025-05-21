@@ -143,13 +143,13 @@
 +		button-0 {
 +			label = "mesh";
 +			linux,code = <BTN_0>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-1 {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -158,22 +158,22 @@
 +
 +		led-0 {
 +			label = "blue:wlan2g";
-+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-1 {
 +			label = "blue:status";
-+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-2 {
 +			label = "blue:wan";
-+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-3 {
 +			label = "blue:wlan5g";
-+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
@@ -188,7 +188,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -196,7 +196,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";
