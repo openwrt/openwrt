@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4816,7 +4816,12 @@ struct hostapd_config * hostapd_config_r
+@@ -4816,7 +4816,14 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  
@@ -11,6 +11,8 @@
 +	} else {
 +		f = fopen(fname, "r");
 +	}
++	wpa_printf(MSG_INFO, "Configuration file: Reading configuration file '%s'",
++	     fname);
  	if (f == NULL) {
  		wpa_printf(MSG_ERROR, "Could not open configuration file '%s' "
  			   "for reading.", fname);
@@ -31,3 +33,35 @@
  	if (f == NULL) {
  		wpa_printf(MSG_ERROR, "Failed to open config file '%s', "
  			   "error: %s", name, strerror(errno));
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -406,7 +406,11 @@ hostapd_interface_init(struct hapd_inter
+ 	struct hostapd_iface *iface;
+ 	int k;
+ 
+-	wpa_printf(MSG_DEBUG, "Configuration file: %s", config_fname);
++	if (!strncmp(config_fname, "data:", 5)) {
++		wpa_printf(MSG_DEBUG, "Configuration file: %s", "<inline>");
++	} else {
++		wpa_printf(MSG_DEBUG, "Configuration file: %s", config_fname);
++	}
+ 	iface = hostapd_init(interfaces, config_fname);
+ 	if (!iface)
+ 		return NULL;
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -2893,7 +2893,12 @@ hostapd_interface_init_bss(struct hapd_i
+ 		}
+ 	}
+ 
+-	wpa_printf(MSG_INFO, "Configuration file: %s (phy %s)%s",
+-		   config_fname, phy, iface ? "" : " --> new PHY");
++	if (!strncmp(config_fname, "data:", 5)) {
++		wpa_printf(MSG_INFO, "Configuration file: %s (phy %s)%s",
++		     "<inline>", phy, iface ? "" : " --> new PHY");
++	} else {
++		wpa_printf(MSG_INFO, "Configuration file: %s (phy %s)%s",
++		     config_fname, phy, iface ? "" : " --> new PHY");
++	}
+	if (iface) {
+		struct hostapd_config *conf;
