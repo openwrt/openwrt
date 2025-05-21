@@ -26,7 +26,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	.vidioc_enum_framesizes = vidioc_enum_framesizes,
  	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
  	.vidioc_g_parm        = vidioc_g_parm,
-@@ -1930,7 +1931,7 @@ static int bcm2835_mmal_probe(struct vch
+@@ -1931,7 +1932,7 @@ static int bcm2835_mmal_probe(struct vch
  		q = &dev->capture.vb_vidq;
  		memset(q, 0, sizeof(*q));
  		q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
