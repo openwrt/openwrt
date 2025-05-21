@@ -19,7 +19,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/env/Kconfig
 +++ b/env/Kconfig
-@@ -61,7 +61,7 @@ config ENV_IS_DEFAULT
+@@ -74,7 +74,7 @@ config ENV_IS_DEFAULT
  		     !ENV_IS_IN_MMC && !ENV_IS_IN_NAND && \
  		     !ENV_IS_IN_NVRAM && !ENV_IS_IN_ONENAND && \
  		     !ENV_IS_IN_REMOTE && !ENV_IS_IN_SPI_FLASH && \
@@ -28,7 +28,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	select ENV_IS_NOWHERE
  
  config ENV_IS_NOWHERE
-@@ -254,6 +254,27 @@ config ENV_IS_IN_MMC
+@@ -267,6 +267,27 @@ config ENV_IS_IN_MMC
  	  offset: "u-boot,mmc-env-offset", "u-boot,mmc-env-offset-redundant".
  	  CONFIG_ENV_OFFSET and CONFIG_ENV_OFFSET_REDUND are not used.
  
@@ -56,7 +56,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config ENV_IS_IN_NAND
  	bool "Environment in a NAND device"
  	depends on !CHAIN_OF_TRUST
-@@ -561,10 +582,16 @@ config ENV_ADDR_REDUND
+@@ -574,10 +595,16 @@ config ENV_ADDR_REDUND
  	  Offset from the start of the device (or partition) of the redundant
  	  environment location.
  
@@ -74,7 +74,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	default 0x3f8000 if ARCH_ROCKCHIP && ENV_IS_IN_MMC
  	default 0x140000 if ARCH_ROCKCHIP && ENV_IS_IN_SPI_FLASH
  	default 0xF0000 if ARCH_SUNXI
-@@ -622,6 +649,12 @@ config ENV_SECT_SIZE
+@@ -635,6 +662,12 @@ config ENV_SECT_SIZE
  	help
  	  Size of the sector containing the environment.
  
