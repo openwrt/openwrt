@@ -1,0 +1,135 @@
+From 411f286f03ca56fba04eac67e1dc6790cd7b007e Mon Sep 17 00:00:00 2001
+From: Balsam CHIHI <balsam.chihi@moment.tech>
+Date: Mon, 5 May 2025 12:05:33 +0200
+Subject: [PATCH] wifi: ath11k: pci: Fix ath11k_pci_get_msi_irq() crash on
+ driver unload with QCN9074 PCIe WiFi 6 modules
+
+This patch addresses a crash issue that occurs when unloading the ath11k_pci
+driver with QCN9074 PCIe WiFi 6 modules.
+The crash is caused by the driver attempting to ath11k_pcic_read32() operations
+during unload, leading to a synchronous external abort and kernel panic,
+as indicated by the error log:
+
+root@OpenWrt-WAP:~# reboot
+[  343.663492] Internal error: synchronous external abort:
+0000000096000210 [#1] SMP
+[  343.670992] Modules linked in: [...]
+[  343.842432] CPU: 7 PID: 9435 Comm: procd Tainted: G O 6.6.86 #0
+[  343.849746] Hardware name: LS1088A
+[  343.856969] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[  343.863933] pc : ath11k_pci_get_msi_irq+0x18a0/0x1900 [ath11k_pci]
+[  343.870125] lr : ath11k_pcic_init_msi_config+0x98/0xc4 [ath11k]
+[  343.876070] sp : ffff80008d473b60
+[  343.879380] x29: ffff80008d473b60 x28: ffff000005e88000 x27: ffff000000e7f138
+[  343.886522] x26: ffff800080f20128 x25: ffff8000811b0028 x24: 0000000000000000
+[  343.893664] x23: 0000000000000001 x22: ffff00000720ade8 x21: ffff800079a80be4
+[  343.900807] x20: ffff000007200000 x19: ffff800083c80500 x18: 0000000000000000
+[  343.907948] x17: 0000000000000000 x16: 0000000000000000 x15: 00004b0957e10d10
+[  343.915090] x14: ffff000002f3961c x13: ffff800081113d10 x12: 0000000000000169
+[  343.922232] x11: ffff800080d63a68 x10: 1fffe000005e7301 x9 : 0000000000000000
+[  343.929374] x8 : 0000000000000000 x7 : ffff7ffffa960000 x6 : 0000000000000004
+[  343.936516] x5 : 0000000000000000 x4 : 000000000007ffff x3 : 0000000000000000
+[  343.943658] x2 : 000000000000003f x1 : ffff00000720ad58 x0 : ffff800083c00000
+[  343.950800] Call trace:
+[  343.953241]  ath11k_pci_get_msi_irq+0x18a0/0x1900 [ath11k_pci]
+[  343.959080]  ath11k_pcic_init_msi_config+0x98/0xc4 [ath11k]
+[  343.964671]  ath11k_pcic_read32+0x30/0xb4 [ath11k]
+[  343.969477]  ath11k_pci_get_msi_irq+0x528/0x1900 [ath11k_pci]
+[  343.975230]  ath11k_pci_get_msi_irq+0x1460/0x1900 [ath11k_pci]
+[  343.981068]  ath11k_pci_get_msi_irq+0x1750/0x1900 [ath11k_pci]
+[  343.986906]  pci_device_shutdown+0x34/0x44
+[  343.991004]  device_shutdown+0x160/0x268
+[  343.994928]  kernel_restart+0x40/0xc0
+[  343.998594]  __do_sys_reboot+0x104/0x23c
+[  344.002518]  __arm64_sys_reboot+0x24/0x30
+[  344.006529]  do_el0_svc+0x6c/0x100
+[  344.009931]  el0_svc+0x28/0x9c
+[  344.012986]  el0t_64_sync_handler+0x120/0x12c
+[  344.017344]  el0t_64_sync+0x178/0x17c
+[  344.021009] Code: f94e0a80 92404a73 91420273 8b130013 (b9400273)
+[  344.027102] ---[ end trace 0000000000000000 ]---
+[  344.031718] Kernel panic - not syncing: synchronous external abort:
+Fatal exception in interrupt
+[  344.040513] Kernel Offset: disabled
+[  344.043997] CPU features: 0x0,00000000,00020000,1000400b
+[  344.049309] Memory Limit: none
+[  344.052358] Rebooting in 3 seconds..
+
+The fix involves adding a conditional check for the power state before performing
+the ath11k_pcic_read32() operations in the ath11k_pci_clear_dbg_registers function.
+This ensures that the ath11k_pcic_read32() functions are only called on power_on,
+preventing the crash during driver unload.
+
+Signed-off-by: Balsam CHIHI <balsam.chihi@moment.tech>
+---
+ drivers/net/wireless/ath/ath11k/pci.c | 36 ++++++++++++++++-----------
+ 1 file changed, 21 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/pci.c b/drivers/net/wireless/ath/ath11k/pci.c
+index 78444f8ea153..0c1b55957557 100644
+--- a/drivers/net/wireless/ath/ath11k/pci.c
++++ b/drivers/net/wireless/ath/ath11k/pci.c
+@@ -203,16 +203,18 @@ static void ath11k_pci_soc_global_reset(struct ath11k_base *ab)
+ 		ath11k_warn(ab, "link down error during global reset\n");
+ }
+ 
+-static void ath11k_pci_clear_dbg_registers(struct ath11k_base *ab)
++static void ath11k_pci_clear_dbg_registers(struct ath11k_base *ab, bool power_on)
+ {
+-	u32 val;
++	if (power_on) {
++		u32 val;
+ 
+-	/* read cookie */
+-	val = ath11k_pcic_read32(ab, PCIE_Q6_COOKIE_ADDR);
+-	ath11k_dbg(ab, ATH11K_DBG_PCI, "pcie_q6_cookie_addr 0x%x\n", val);
++		/* read cookie */
++		val = ath11k_pcic_read32(ab, PCIE_Q6_COOKIE_ADDR);
++		ath11k_dbg(ab, ATH11K_DBG_PCI, "pcie_q6_cookie_addr 0x%x\n", val);
+ 
+-	val = ath11k_pcic_read32(ab, WLAON_WARM_SW_ENTRY);
+-	ath11k_dbg(ab, ATH11K_DBG_PCI, "wlaon_warm_sw_entry 0x%x\n", val);
++		val = ath11k_pcic_read32(ab, WLAON_WARM_SW_ENTRY);
++		ath11k_dbg(ab, ATH11K_DBG_PCI, "wlaon_warm_sw_entry 0x%x\n", val);
++	}
+ 
+ 	/* TODO: exact time to sleep is uncertain */
+ 	mdelay(10);
+@@ -223,14 +225,18 @@ static void ath11k_pci_clear_dbg_registers(struct ath11k_base *ab)
+ 	ath11k_pcic_write32(ab, WLAON_WARM_SW_ENTRY, 0);
+ 	mdelay(10);
+ 
+-	val = ath11k_pcic_read32(ab, WLAON_WARM_SW_ENTRY);
+-	ath11k_dbg(ab, ATH11K_DBG_PCI, "wlaon_warm_sw_entry 0x%x\n", val);
++	if (power_on) {
++		u32 val;
+ 
+-	/* A read clear register. clear the register to prevent
+-	 * Q6 from entering wrong code path.
+-	 */
+-	val = ath11k_pcic_read32(ab, WLAON_SOC_RESET_CAUSE_REG);
+-	ath11k_dbg(ab, ATH11K_DBG_PCI, "soc reset cause %d\n", val);
++		val = ath11k_pcic_read32(ab, WLAON_WARM_SW_ENTRY);
++		ath11k_dbg(ab, ATH11K_DBG_PCI, "wlaon_warm_sw_entry 0x%x\n", val);
++
++		/* A read clear register. clear the register to prevent
++		* Q6 from entering wrong code path.
++		*/
++		val = ath11k_pcic_read32(ab, WLAON_SOC_RESET_CAUSE_REG);
++		ath11k_dbg(ab, ATH11K_DBG_PCI, "soc reset cause %d\n", val);
++	}
+ }
+ 
+ static int ath11k_pci_set_link_reg(struct ath11k_base *ab,
+@@ -368,7 +374,7 @@ static void ath11k_pci_sw_reset(struct ath11k_base *ab, bool power_on)
+ 	}
+ 
+ 	ath11k_mhi_clear_vector(ab);
+-	ath11k_pci_clear_dbg_registers(ab);
++	ath11k_pci_clear_dbg_registers(ab, power_on);
+ 	ath11k_pci_soc_global_reset(ab);
+ 	ath11k_mhi_set_mhictrl_reset(ab);
+ }
+-- 
+2.43.0
+
