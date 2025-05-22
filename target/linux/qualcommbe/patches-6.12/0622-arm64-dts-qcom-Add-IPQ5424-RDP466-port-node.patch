@@ -1,0 +1,101 @@
+From ea2293dfebe20b6f26da328c43f7aded1906d200 Mon Sep 17 00:00:00 2001
+From: Lei Wei <quic_leiwei@quicinc.com>
+Date: Thu, 6 Mar 2025 10:27:41 +0800
+Subject: [PATCH 622/636] arm64: dts: qcom: Add IPQ5424 RDP466 port node
+
+There are 3 PPE MAC ports available on RDP466. The port1 and
+port2 are connected with two QCA8111 PHYs and port3 connected
+with QCA8386 switch.
+
+Change-Id: I2f81b3cc3c188c640f8f3cd771f000d8da97b350
+Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 72 +++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 21e8c7b04ce7..dcd64760bd1d 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -137,6 +137,78 @@
+ 	status = "okay";
+ };
+ 
++&qcom_ppe {
++	ethernet-ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@1 {
++			reg = <1>;
++			phy-mode = "usxgmii";
++			managed = "in-band-status";
++			label = "wan";
++			phy-handle = <&phy0>;
++			pcs-handle = <&pcs0_mii0>;
++			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
++				 <&nsscc NSS_CC_PORT1_RX_CLK>,
++				 <&nsscc NSS_CC_PORT1_TX_CLK>;
++			clock-names = "mac",
++				      "rx",
++				      "tx";
++			resets = <&nsscc NSS_CC_PORT1_MAC_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT1_RX_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT1_TX_CLK_ARES>;
++			reset-names = "mac",
++				      "rx",
++				      "tx";
++		};
++
++		port@2 {
++			reg = <2>;
++			phy-mode = "usxgmii";
++			managed = "in-band-status";
++			label = "lan5";
++			phy-handle = <&phy1>;
++			pcs-handle = <&pcs1_mii0>;
++			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
++				 <&nsscc NSS_CC_PORT2_RX_CLK>,
++				 <&nsscc NSS_CC_PORT2_TX_CLK>;
++			clock-names = "mac",
++				      "rx",
++				      "tx";
++			resets = <&nsscc NSS_CC_PORT2_MAC_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT2_RX_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT2_TX_CLK_ARES>;
++			reset-names = "mac",
++				      "rx",
++				      "tx";
++		};
++
++		port@3 {
++			reg = <3>;
++			phy-mode = "2500base-x";
++			pcs-handle = <&pcs2_mii0>;
++			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
++				 <&nsscc NSS_CC_PORT3_RX_CLK>,
++				 <&nsscc NSS_CC_PORT3_TX_CLK>;
++			clock-names = "mac",
++				      "rx",
++				      "tx";
++			resets = <&nsscc NSS_CC_PORT3_MAC_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT3_RX_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT3_TX_CLK_ARES>;
++			reset-names = "mac",
++				      "rx",
++				      "tx";
++			fixed-link {
++				speed = <2500>;
++				full-duplex;
++				pause;
++			};
++		};
++	};
++};
++
+ &qusb_phy_0 {
+ 	vdd-supply = <&vreg_misc_0p925>;
+ 	vdda-pll-supply = <&vreg_misc_1p8>;
+-- 
+2.34.1
+

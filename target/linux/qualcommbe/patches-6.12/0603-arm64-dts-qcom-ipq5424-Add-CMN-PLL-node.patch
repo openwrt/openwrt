@@ -1,0 +1,121 @@
+From 32507b97ac904e137ba6dac5938c7b450c536a54 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Tue, 10 Jun 2025 18:35:20 +0800
+Subject: [PATCH 603/636] arm64: dts: qcom: ipq5424: Add CMN PLL node
+
+Add CMN PLL node for enabling output clocks to the networking
+hardware blocks on IPQ5424 devices.
+
+The reference clock of CMN PLL is routed from XO to the CMN PLL
+through the internal WiFi block.
+.XO (48 MHZ or 96 MHZ or 192 MHZ)-->WiFi (multiplier/divider)-->
+48 MHZ to CMN PLL.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Link: https://lore.kernel.org/r/20250610-qcom_ipq5424_cmnpll-v3-3-ceada8165645@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 17 +++++++++++++-
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi       | 26 ++++++++++++++++++++-
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 8d9d2c1f71cc..be01c21b5919 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -2,7 +2,7 @@
+ /*
+  * IPQ5424 RDP466 board device tree source
+  *
+- * Copyright (c) 2024 The Linux Foundation. All rights reserved.
++ * Copyright (c) 2024-2025 The Linux Foundation. All rights reserved.
+  */
+ 
+ /dts-v1/;
+@@ -159,6 +159,21 @@
+ 	status = "okay";
+ };
+ 
++/*
++ * The bootstrap pins for the board select the XO clock frequency that
++ * supports 48 MHZ, 96 MHZ or 192 MHZ. This setting automatically
++ * enables the right dividers, to ensure the reference clock output
++ * from WiFi to the CMN PLL is 48 MHZ.
++ */
++&ref_48mhz_clk {
++	clock-div = <1>;
++	clock-mult = <1>;
++};
++
+ &xo_board {
+ 	clock-frequency = <24000000>;
+ };
++
++&xo_clk {
++	clock-frequency = <48000000>;
++};
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 6355153ab44e..a6cd72632817 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -3,10 +3,11 @@
+  * IPQ5424 device tree source
+  *
+  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/clock/qcom,ipq5424-cmn-pll.h>
+ #include <dt-bindings/clock/qcom,ipq5424-gcc.h>
+ #include <dt-bindings/reset/qcom,ipq5424-gcc.h>
+ #include <dt-bindings/interconnect/qcom,ipq5424.h>
+@@ -18,6 +19,12 @@
+ 	interrupt-parent = <&intc>;
+ 
+ 	clocks {
++		ref_48mhz_clk: ref-48mhz-clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&xo_clk>;
++			#clock-cells = <0>;
++		};
++
+ 		sleep_clk: sleep-clk {
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+@@ -27,6 +34,11 @@
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+ 		};
++
++		xo_clk: xo-clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++		};
+ 	};
+ 
+ 	cpus: cpus {
+@@ -205,6 +217,18 @@
+ 			status = "disabled";
+ 		};
+ 
++		cmn_pll: clock-controller@9b000 {
++			compatible = "qcom,ipq5424-cmn-pll";
++			reg = <0 0x0009b000 0 0x800>;
++			clocks = <&ref_48mhz_clk>,
++				 <&gcc GCC_CMN_12GPLL_AHB_CLK>,
++				 <&gcc GCC_CMN_12GPLL_SYS_CLK>;
++			clock-names = "ref", "ahb", "sys";
++			#clock-cells = <1>;
++			assigned-clocks = <&cmn_pll IPQ5424_CMN_PLL_CLK>;
++			assigned-clock-rates-u64 = /bits/ 64 <12000000000>;
++		};
++
+ 		pcie2_phy: phy@f4000 {
+ 			compatible = "qcom,ipq5424-qmp-gen3x2-pcie-phy",
+ 				     "qcom,ipq9574-qmp-gen3x2-pcie-phy";
+-- 
+2.34.1
+

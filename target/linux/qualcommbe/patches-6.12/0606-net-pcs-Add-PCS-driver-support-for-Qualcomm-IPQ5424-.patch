@@ -1,0 +1,47 @@
+From 855e97d3de82a24afef4c5f64172b25de4c9b3e1 Mon Sep 17 00:00:00 2001
+From: Lei Wei <quic_leiwei@quicinc.com>
+Date: Tue, 18 Feb 2025 16:35:04 +0800
+Subject: [PATCH 606/636] net: pcs: Add PCS driver support for Qualcomm IPQ5424
+ SoC
+
+The PCS driver supported for IPQ9574 SoC can also be enabled for
+IPQ5424 SoC.
+
+Change-Id: I8cd4ec86f07876eae5b0c97bea1ef3bf33ad5195
+Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+---
+ drivers/net/pcs/Kconfig            | 5 +++--
+ drivers/net/pcs/pcs-qcom-ipq9574.c | 1 +
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/pcs/Kconfig b/drivers/net/pcs/Kconfig
+index 00c737dc9504..5a72c4deae34 100644
+--- a/drivers/net/pcs/Kconfig
++++ b/drivers/net/pcs/Kconfig
+@@ -42,8 +42,9 @@ config PCS_QCOM_IPQ9574
+ 	depends on HAS_IOMEM && COMMON_CLK
+ 	help
+ 	  This module provides driver for UNIPHY PCS available on Qualcomm
+-	  IPQ9574 SoC. The UNIPHY PCS supports both PCS and XPCS functions
+-	  to support different interface modes for MAC to PHY connections.
++	  IPQ9574, IPQ5424 series SoCs. The UNIPHY PCS supports both PCS and
++	  XPCS functions to support different interface modes for MAC to PHY
++	  connections.
+ 
+ config PCS_RZN1_MIIC
+ 	tristate "Renesas RZ/N1 MII converter"
+diff --git a/drivers/net/pcs/pcs-qcom-ipq9574.c b/drivers/net/pcs/pcs-qcom-ipq9574.c
+index 5ef199151da0..6aaeb7c3f184 100644
+--- a/drivers/net/pcs/pcs-qcom-ipq9574.c
++++ b/drivers/net/pcs/pcs-qcom-ipq9574.c
+@@ -1049,6 +1049,7 @@ static int ipq9574_pcs_probe(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id ipq9574_pcs_of_mtable[] = {
++	{ .compatible = "qcom,ipq5424-pcs" },
+ 	{ .compatible = "qcom,ipq9574-pcs" },
+ 	{ /* sentinel */ },
+ };
+-- 
+2.34.1
+

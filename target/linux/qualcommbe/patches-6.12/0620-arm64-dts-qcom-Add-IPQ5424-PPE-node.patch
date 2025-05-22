@@ -1,0 +1,67 @@
+From a828e17ac8f0183266de9839f9a9b194a501f57a Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Fri, 14 Feb 2025 17:06:30 +0800
+Subject: [PATCH 620/636] arm64: dts: qcom: Add IPQ5424 PPE node
+
+Add PPE node for IPQ5424 devices, which enables the basic PPE
+function.
+
+Change-Id: I9b4a6f8fac23ebb2b8fdec993757e0316e494357
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 32 +++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 3670f19dd7dc..199bdb81f69d 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -12,6 +12,7 @@
+ #include <dt-bindings/clock/qcom,ipq5424-nsscc.h>
+ #include <dt-bindings/net/qcom,ipq9574-pcs.h>
+ #include <dt-bindings/reset/qcom,ipq5424-gcc.h>
++#include <dt-bindings/reset/qcom,ipq5424-nsscc.h>
+ #include <dt-bindings/interconnect/qcom,ipq5424.h>
+ #include <dt-bindings/gpio/gpio.h>
+ 
+@@ -725,6 +726,37 @@
+ 			#interconnect-cells = <1>;
+ 		};
+ 
++		qcom_ppe: ethernet@3a000000 {
++			compatible = "qcom,ipq5424-ppe";
++			reg = <0 0x3a000000 0 0xbef800>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&nsscc NSS_CC_PPE_SWITCH_CLK>,
++				 <&nsscc NSS_CC_PPE_SWITCH_CFG_CLK>,
++				 <&nsscc NSS_CC_PPE_SWITCH_IPE_CLK>,
++				 <&nsscc NSS_CC_PPE_SWITCH_BTQ_CLK>;
++			clock-names = "ppe",
++				      "apb",
++				      "ipe",
++				      "btq";
++			resets = <&nsscc NSS_CC_PPE_BCR>;
++			interconnects = <&nsscc MASTER_NSSNOC_PPE
++					 &nsscc SLAVE_NSSNOC_PPE>,
++					<&nsscc MASTER_NSSNOC_PPE_CFG
++					 &nsscc SLAVE_NSSNOC_PPE_CFG>,
++					<&nsscc MASTER_NSSNOC_CE_AXI
++					 &nsscc SLAVE_NSSNOC_CE_AXI>,
++					<&nsscc MASTER_NSSNOC_CE_APB
++					 &nsscc SLAVE_NSSNOC_CE_APB>,
++					<&nsscc MASTER_NSSNOC_NSS_CSR
++					 &nsscc SLAVE_NSSNOC_NSS_CSR>;
++			interconnect-names = "ppe",
++					     "ppe_cfg",
++					     "nssnoc_ce_axi",
++					     "nssnoc_ce_apb",
++					     "nssnoc_nss_csr";
++		};
++
+ 		pcie3: pcie@40000000 {
+ 			compatible = "qcom,pcie-ipq5424", "qcom,pcie-ipq9574";
+ 			reg = <0x0 0x40000000 0x0 0xf1c>,
+-- 
+2.34.1
+

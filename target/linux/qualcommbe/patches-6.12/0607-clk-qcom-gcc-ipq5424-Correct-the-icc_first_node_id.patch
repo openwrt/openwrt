@@ -1,0 +1,38 @@
+From f90ee793f1e370c339065d11903215109da18a91 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Thu, 24 Jul 2025 15:44:01 +0800
+Subject: [PATCH 607/636] clk: qcom: gcc-ipq5424: Correct the icc_first_node_id
+
+Update to use the expected icc_first_node_id for registering the icc
+clocks, ensuring correct association of clocks with interconnect nodes.
+
+Fixes: 170f3d2c065e ("clk: qcom: ipq5424: Use icc-clk for enabling NoC related clocks")
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ drivers/clk/qcom/gcc-ipq5424.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/qcom/gcc-ipq5424.c b/drivers/clk/qcom/gcc-ipq5424.c
+index c7e21cfa7d85..41689fd4c487 100644
+--- a/drivers/clk/qcom/gcc-ipq5424.c
++++ b/drivers/clk/qcom/gcc-ipq5424.c
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /*
+  * Copyright (c) 2018,2020 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #include <linux/clk-provider.h>
+@@ -3284,6 +3284,7 @@ static const struct qcom_cc_desc gcc_ipq5424_desc = {
+ 	.num_clk_hws = ARRAY_SIZE(gcc_ipq5424_hws),
+ 	.icc_hws = (struct qcom_icc_hws_data *)icc_ipq5424_hws,
+ 	.num_icc_hws = ARRAY_SIZE(icc_ipq5424_hws),
++	.icc_first_node_id = IPQ_APPS_ID,
+ };
+ 
+ static int gcc_ipq5424_probe(struct platform_device *pdev)
+-- 
+2.34.1
+
