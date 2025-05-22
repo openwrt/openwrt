@@ -28,6 +28,25 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address "$addr"
 		ip link set dev eth1 address "$addr"
 		;;
+	dlink,aquila-pro-ai-m30-a1|\
+	dlink,aquila-pro-ai-m60-a1)
+		part=$(find_mtd_part "Odm")
+		# locate the MAC record header, the MAC follows it
+		hex=$(hexdump -ve '1/1 "%.2x"' -n 256 "$part")
+		pos=$(echo "$hex" | awk -v RS='304200800600' '{print length($0); exit}')
+		[ -n "$pos" ] && [ "$pos" -lt "${#hex}" ] || return
+		offset=$((pos / 2 + 6))
+		wan_mac=$(mtd_get_mac_binary "Odm" $offset)
+		lan_mac=$(macaddr_add $wan_mac 1)
+		ip link set dev internet address "$wan_mac"
+		ip link set eth0 down
+		ip link set dev eth0 address "$lan_mac"
+		ip link set eth0 up
+		ip link set dev lan1 address "$lan_mac"
+		ip link set dev lan2 address "$lan_mac"
+		ip link set dev lan3 address "$lan_mac"
+		ip link set dev lan4 address "$lan_mac"
+		;;
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,archer-ax80-v1-eu|\
