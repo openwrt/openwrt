@@ -19,7 +19,7 @@ case "$board" in
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
-		macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) $(($PHYNBR + 1)) > /sys${DEVPATH}/macaddress
+		macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) $(($PHYNBR + 2)) > /sys${DEVPATH}/macaddress
 esac
 
 OPATH=${DEVPATH##/devices/platform/}
