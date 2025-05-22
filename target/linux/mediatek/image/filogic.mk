@@ -1867,6 +1867,13 @@ endif
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1
 
+define Device/dlink_aquila-pro-ai-m30-a1-single-ubi
+  $(Device/dlink_aquila-pro-ai-m30-a1)
+  DEVICE_VARIANT := A1 (single UBI layout)
+  DEVICE_DTS := mt7981b-dlink-aquila-pro-ai-m30-a1-single-ubi
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1-single-ubi
+
 define Device/dlink_aquila-pro-ai-m60-a1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := AQUILA PRO AI M60
