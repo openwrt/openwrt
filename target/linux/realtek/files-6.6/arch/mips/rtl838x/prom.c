@@ -76,6 +76,23 @@ void __init device_tree_init(void)
 	}
 	initial_boot_params = (void *)fdt;
 	unflatten_and_copy_device_tree();
+
+	/* delay cpc & smp probing to allow devicetree access */
+	mips_cpc_probe();
+
+	if (!register_cps_smp_ops())
+		return;
+
+#ifdef CONFIG_MIPS_MT_SMP
+	if (cpu_has_mipsmt) {
+		rtl_smp_ops = vsmp_smp_ops;
+		rtl_smp_ops.init_secondary = rtl_init_secondary;
+		register_smp_ops(&rtl_smp_ops);
+		return;
+	}
+#endif
+
+	register_up_smp_ops();
 }
 
 void __init identify_rtl9302(void)
@@ -205,20 +222,4 @@ void __init prom_init(void)
 		fw_arg2 = 0;
 
 	fw_init_cmdline();
-
-	mips_cpc_probe();
-
-	if (!register_cps_smp_ops())
-		return;
-
-#ifdef CONFIG_MIPS_MT_SMP
-	if (cpu_has_mipsmt) {
-		rtl_smp_ops = vsmp_smp_ops;
-		rtl_smp_ops.init_secondary = rtl_init_secondary;
-		register_smp_ops(&rtl_smp_ops);
-		return;
-	}
-#endif
-
-	register_up_smp_ops();
 }
