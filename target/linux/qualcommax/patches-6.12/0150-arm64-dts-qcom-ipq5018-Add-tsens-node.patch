@@ -1,14 +1,17 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Fri, 28 Feb 2025 09:11:39 +0400
+Subject: [PATCH v9 6/6] arm64: dts: qcom: ipq5018: Add tsens node
+
 From: Sricharan Ramabadhran <quic_srichara@quicinc.com>
-Subject: [PATCH] arm64: dts: qcom: ipq5018: Add tsens node
-Date: Fri, 22 Sep 2023 17:21:16 +0530
 
-IPQ5018 has tsens V1.0 IP with 4 sensors.
+IPQ5018 has tsens V1.0 IP with 5 sensors, though 4 are in use.
 There is no RPM, so tsens has to be manually enabled. Adding the tsens
-and nvmem node and IPQ5018 has 4 thermal sensors (zones). With the
-critical temperature being 120'C and action is to reboot. Adding all
-the 4 zones here.
+and nvmem nodes and adding 4 thermal sensors (zones). With the
+critical temperature being 120'C and action is to reboot.
 
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
 Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
  arch/arm64/boot/dts/qcom/ipq5018.dtsi | 169 ++++++++++++++++++++++++++
  1 file changed, 169 insertions(+)
@@ -21,22 +24,22 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
  
 +		qfprom: qfprom@a0000 {
 +			compatible = "qcom,ipq5018-qfprom", "qcom,qfprom";
-+			reg = <0xa0000 0x1000>;
++			reg = <0x000a0000 0x1000>;
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +
 +			tsens_mode: mode@249 {
-+				reg = <0x249 1>;
++				reg = <0x249 0x1>;
 +				bits = <0 3>;
 +			};
 +
 +			tsens_base1: base1@249 {
-+				reg = <0x249 2>;
++				reg = <0x249 0x2>;
 +				bits = <3 8>;
 +			};
 +
 +			tsens_base2: base2@24a {
-+				reg = <0x24a 2>;
++				reg = <0x24a 0x2>;
 +				bits = <3 8>;
 +			};
 +
@@ -93,8 +96,8 @@ Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
 +
 +		tsens: thermal-sensor@4a9000 {
 +			compatible = "qcom,ipq5018-tsens";
-+			reg = <0x4a9000 0x1000>, /* TM */
-+			      <0x4a8000 0x1000>; /* SROT */
++			reg = <0x004a9000 0x1000>, /* TM */
++			      <0x004a8000 0x1000>; /* SROT */
 +
 +			nvmem-cells = <&tsens_mode>,
 +				      <&tsens_base1>,
