@@ -1,16 +1,23 @@
-From: Varadarajan Narayanan <quic_varada@quicinc.com>
-Date: Thu, 2 Jan 2025 17:00:16 +0530
+From 74badb8b0b146668cc6c03eb58e2a814f9463d02 Mon Sep 17 00:00:00 2001
+From: Nitheesh Sekar <quic_nsekar@quicinc.com>
+Date: Thu, 20 Feb 2025 15:12:46 +0530
 Subject: [PATCH] phy: qcom: Introduce PCIe UNIPHY 28LP driver
 
-From: Nitheesh Sekar <quic_nsekar@quicinc.com>
-
-Add Qualcomm PCIe UNIPHY 28LP driver support present
-in Qualcomm IPQ5332 SoC and the phy init sequence.
+Add Qualcomm PCIe UNIPHY 28LP driver support present in Qualcomm IPQ5332
+SoC and the phy init sequence.
 
 Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
 Signed-off-by: Nitheesh Sekar <quic_nsekar@quicinc.com>
 Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+Link: https://lore.kernel.org/r/20250220094251.230936-3-quic_varada@quicinc.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
+ drivers/phy/qualcomm/Kconfig                  |  12 +
+ drivers/phy/qualcomm/Makefile                 |   1 +
+ .../phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c  | 286 ++++++++++++++++++
+ 3 files changed, 299 insertions(+)
+ create mode 100644 drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
+
 --- a/drivers/phy/qualcomm/Kconfig
 +++ b/drivers/phy/qualcomm/Kconfig
 @@ -154,6 +154,18 @@ config PHY_QCOM_M31_USB
@@ -44,7 +51,7 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
  obj-$(CONFIG_PHY_QCOM_USB_HS_28NM)	+= phy-qcom-usb-hs-28nm.o
 --- /dev/null
 +++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,286 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (c) 2025, The Linux Foundation. All rights reserved.
@@ -63,6 +70,7 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 +#include <linux/platform_device.h>
 +#include <linux/regmap.h>
 +#include <linux/reset.h>
++#include <linux/units.h>
 +
 +#define RST_ASSERT_DELAY_MIN_US		100
 +#define RST_ASSERT_DELAY_MAX_US		150
@@ -88,8 +96,6 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 +#define PHY_CFG_PLLCFG				0x220
 +#define PHY_CFG_EIOS_DTCT_REG			0x3e4
 +#define PHY_CFG_GEN3_ALIGN_HOLDOFF_TIME		0x3e8
-+
-+#define PHY_MODE_FIXED		0x1
 +
 +enum qcom_uniphy_pcie_type {
 +	PHY_TYPE_PCIE = 1,
@@ -141,7 +147,7 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 +	.phy_type	= PHY_TYPE_PCIE_GEN3,
 +	.init_seq	= ipq5332_regs,
 +	.init_seq_num	= ARRAY_SIZE(ipq5332_regs),
-+	.pipe_clk_rate	= 250000000,
++	.pipe_clk_rate	= 250 * MEGA,
 +};
 +
 +static void qcom_uniphy_pcie_init(struct qcom_uniphy_pcie *phy)
@@ -200,6 +206,7 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 +	usleep_range(CLK_EN_DELAY_MIN_US, CLK_EN_DELAY_MAX_US);
 +
 +	qcom_uniphy_pcie_init(phy);
++
 +	return 0;
 +}
 +
@@ -292,8 +299,9 @@ Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
 +	if (!phy->data)
 +		return -EINVAL;
 +
-+	phy->lanes = 1;
-+	ret = of_property_read_u32(dev->of_node, "num-lanes", &phy->lanes);
++	ret = of_property_read_u32(dev_of_node(dev), "num-lanes", &phy->lanes);
++	if (ret)
++		return dev_err_probe(dev, ret, "Couldn't read num-lanes\n");
 +
 +	ret = qcom_uniphy_pcie_get_resources(pdev, phy);
 +	if (ret < 0)

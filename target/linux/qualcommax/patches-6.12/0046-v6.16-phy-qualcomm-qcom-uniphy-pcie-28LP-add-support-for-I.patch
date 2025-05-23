@@ -1,15 +1,24 @@
-From: George Moussalem <george.moussalem@outlook.com>
-Date: Tue, 07 Jan 2025 17:34:13 +0400
-Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie 28lp add support for IPQ5018
+From dfc820d2f8a8ea90bbc02269b5362e3678e58cac Mon Sep 17 00:00:00 2001
+From: Nitheesh Sekar <quic_nsekar@quicinc.com>
+Date: Wed, 26 Mar 2025 12:10:56 +0400
+Subject: [PATCH] phy: qualcomm: qcom-uniphy-pcie 28LP add support for IPQ5018
 
-The Qualcomm UNIPHY PCIe PHY 28lp is found on both IPQ5332 and IPQ5018.
+The Qualcomm UNIPHY PCIe PHY 28LP is found on both IPQ5332 and IPQ5018.
 Adding the PHY init sequence, pipe clock rate, and compatible for IPQ5018.
 
+Signed-off-by: Nitheesh Sekar <quic_nsekar@quicinc.com>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://lore.kernel.org/r/20250326-ipq5018-pcie-v7-2-e1828fef06c9@outlook.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
+ .../phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c  | 45 +++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
 --- a/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
 +++ b/drivers/phy/qualcomm/phy-qcom-uniphy-pcie-28lp.c
-@@ -76,6 +76,40 @@ struct qcom_uniphy_pcie {
+@@ -75,6 +75,40 @@ struct qcom_uniphy_pcie {
  
  #define phy_to_dw_phy(x)	container_of((x), struct qca_uni_pcie_phy, phy)
  
@@ -50,7 +59,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  static const struct qcom_uniphy_pcie_regs ipq5332_regs[] = {
  	{
  		.offset = PHY_CFG_PLLCFG,
-@@ -89,6 +123,14 @@ static const struct qcom_uniphy_pcie_reg
+@@ -88,6 +122,14 @@ static const struct qcom_uniphy_pcie_reg
  	},
  };
  
@@ -59,7 +68,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	.phy_type	= PHY_TYPE_PCIE_GEN2,
 +	.init_seq	= ipq5018_regs,
 +	.init_seq_num	= ARRAY_SIZE(ipq5018_regs),
-+	.pipe_clk_rate	= 125000000,
++	.pipe_clk_rate	= 125 * MEGA,
 +};
 +
  static const struct qcom_uniphy_pcie_data ipq5332_data = {
