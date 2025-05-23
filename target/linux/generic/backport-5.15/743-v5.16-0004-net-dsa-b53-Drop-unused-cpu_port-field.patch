@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2320,7 +2320,6 @@ static const struct b53_chip_data b53_sw
+@@ -2332,7 +2332,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 2,
  		.arl_buckets = 1024,
  		.imp_port = 5,
@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.duplex_reg = B53_DUPLEX_STAT_FE,
  	},
  	{
-@@ -2331,7 +2330,6 @@ static const struct b53_chip_data b53_sw
+@@ -2343,7 +2342,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 2,
  		.arl_buckets = 1024,
  		.imp_port = 5,
@@ -35,7 +35,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.duplex_reg = B53_DUPLEX_STAT_FE,
  	},
  	{
-@@ -2342,7 +2340,6 @@ static const struct b53_chip_data b53_sw
+@@ -2354,7 +2352,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2356,7 +2353,6 @@ static const struct b53_chip_data b53_sw
+@@ -2368,7 +2365,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -51,7 +51,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2370,7 +2366,6 @@ static const struct b53_chip_data b53_sw
+@@ -2382,7 +2378,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -59,7 +59,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS_9798,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2384,7 +2379,6 @@ static const struct b53_chip_data b53_sw
+@@ -2396,7 +2391,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS_9798,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2399,7 +2393,6 @@ static const struct b53_chip_data b53_sw
+@@ -2411,7 +2405,6 @@ static const struct b53_chip_data b53_sw
  		.arl_buckets = 1024,
  		.vta_regs = B53_VTA_REGS,
  		.imp_port = 8,
@@ -75,7 +75,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
-@@ -2412,7 +2405,6 @@ static const struct b53_chip_data b53_sw
+@@ -2424,7 +2417,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -83,7 +83,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2426,7 +2418,6 @@ static const struct b53_chip_data b53_sw
+@@ -2438,7 +2430,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -91,7 +91,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2440,7 +2431,6 @@ static const struct b53_chip_data b53_sw
+@@ -2452,7 +2443,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -99,7 +99,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS_63XX,
  		.duplex_reg = B53_DUPLEX_STAT_63XX,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK_63XX,
-@@ -2454,7 +2444,6 @@ static const struct b53_chip_data b53_sw
+@@ -2466,7 +2456,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2468,7 +2457,6 @@ static const struct b53_chip_data b53_sw
+@@ -2480,7 +2469,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -115,7 +115,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2482,7 +2470,6 @@ static const struct b53_chip_data b53_sw
+@@ -2494,7 +2482,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -123,7 +123,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2496,7 +2483,6 @@ static const struct b53_chip_data b53_sw
+@@ -2508,7 +2495,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -131,7 +131,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2510,7 +2496,6 @@ static const struct b53_chip_data b53_sw
+@@ -2522,7 +2508,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -139,7 +139,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2524,7 +2509,6 @@ static const struct b53_chip_data b53_sw
+@@ -2536,7 +2521,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -147,7 +147,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2538,7 +2522,6 @@ static const struct b53_chip_data b53_sw
+@@ -2550,7 +2534,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -155,7 +155,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2567,7 +2550,6 @@ static const struct b53_chip_data b53_sw
+@@ -2579,7 +2562,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
@@ -163,7 +163,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2581,7 +2563,6 @@ static const struct b53_chip_data b53_sw
+@@ -2593,7 +2575,6 @@ static const struct b53_chip_data b53_sw
  		.arl_bins = 4,
  		.arl_buckets = 256,
  		.imp_port = 8,
@@ -171,7 +171,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.vta_regs = B53_VTA_REGS,
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
-@@ -2607,7 +2588,6 @@ static int b53_switch_init(struct b53_de
+@@ -2619,7 +2600,6 @@ static int b53_switch_init(struct b53_de
  			dev->vta_regs[2] = chip->vta_regs[2];
  			dev->jumbo_pm_reg = chip->jumbo_pm_reg;
  			dev->imp_port = chip->imp_port;
@@ -179,7 +179,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			dev->num_vlans = chip->vlans;
  			dev->num_arl_bins = chip->arl_bins;
  			dev->num_arl_buckets = chip->arl_buckets;
-@@ -2639,13 +2619,6 @@ static int b53_switch_init(struct b53_de
+@@ -2651,13 +2631,6 @@ static int b53_switch_init(struct b53_de
  			break;
  #endif
  		}
