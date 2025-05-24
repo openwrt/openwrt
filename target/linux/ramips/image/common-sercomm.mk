@@ -193,6 +193,8 @@ define Device/sercomm_cxx_dxx
   LZMA_TEXT_START := 0x82800000
   SERCOMM_KERNEL_OFFSET := 0x400100
   SERCOMM_ROOTFS_OFFSET := 0x1000000
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 \
+	uboot-envtools
 endef
 
 define Device/sercomm_cxx
@@ -230,5 +232,5 @@ define Device/sercomm_s1500
 	lzma -a0 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | sercomm-kernel | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 uboot-envtools
 endef
