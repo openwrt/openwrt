@@ -1,0 +1,30 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3566-radxa-zero-3.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566-radxa-zero-3.dtsi
+@@ -6,6 +6,13 @@
+ #include "rk3566.dtsi"
+ 
+ / {
++	aliases {
++		led-boot = &led_green;
++		led-failsafe = &led_green;
++		led-running = &led_green;
++		led-upgrade = &led_green;
++	};
++
+ 	chosen {
+ 		stdout-path = "serial2:1500000n8";
+ 	};
+@@ -26,12 +33,11 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&user_led2>;
+ 
+-		led-green {
++		led_green: led-green {
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			default-state = "on";
+ 			function = LED_FUNCTION_HEARTBEAT;
+ 			gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
+ 
