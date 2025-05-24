@@ -1,0 +1,306 @@
+--- /dev/null
++++ b/configs/mt7986a_tplink_archer-ax80_defconfig
+@@ -0,0 +1,114 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_OFFSET=0x0
++CONFIG_DEFAULT_DEVICE_TREE="mt7986a-tplink_archer_ax80-v1"
++CONFIG_TARGET_MT7986=y
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_PCI=y
++CONFIG_DEBUG_UART=y
++CONFIG_SYS_MEMTEST_START=0x40000000
++CONFIG_SYS_MEMTEST_END=0x41000000
++CONFIG_FIT=y
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="console=ttyS0,115200n1 loglevel=8 earlycon=uart8250,mmio32,0x11002000 init=/etc/preinit"
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-tplink_archer_ax80-v1.dtb"
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++CONFIG_SYS_PROMPT="MT7986> "
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_SMC=y
++CONFIG_MTDIDS_DEFAULT="spi-nand0=spi-nand0"
++CONFIG_MTDPARTS_DEFAULT="spi-nand0:2M(boot),1M(u-boot-env),50M(ubi0),50M(ubi1),8M(userconfig),8M(tp_data)"
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_OF_EMBED=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_IS_IN_MTD=y
++CONFIG_ENV_SIZE_REDUND=0x80000
++CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_MEMORY=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_CONCAT=y
++CONFIG_MTD_BLOCK=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_BOOTDEV_SPI_FLASH=y
++CONFIG_SPI_FLASH_ATMEL=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_PUYA=y
++CONFIG_SPI_FLASH_SILICONKAISER=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_S28HX_T=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_MT35XU=y
++CONFIG_SPI_FLASH_SST=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SPI_FLASH_ZBIT=y
++CONFIG_SPI_FLASH_DATAFLASH=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PCIE_MEDIATEK=y
++CONFIG_PHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_RAM=y
++CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_HEXDUMP=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="defenvs/tplink_archer_ax80_env"
+--- /dev/null
++++ b/arch/arm/dts/mt7986a-tplink_archer_ax80-v1.dts
+@@ -0,0 +1,174 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++* Copyright (c) 2021 MediaTek Inc.
++* Author: Sam Shih <sam.shih@mediatek.com>
++*/
++
++/dts-v1/;
++#include "mt7986.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "TP-Link Archer AX80V1";
++	compatible = "mediatek,mt7986", "mediatek,mt7986-rfb";
++
++	aliases {
++		spi0 = &spi0;
++	};
++
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++	
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++	
++	keys {
++		compatible = "gpio-keys";
++		
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++			
++		};
++	};
++	
++};
++
++&uart0 {
++	mediatek,force-highspeed;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "disabled";
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "2500base-x";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	
++	fixed-link {
++		speed = <2500>;
++		full-duplex;
++	};
++};
++
++&pinctrl {
++	spi_flash_pins: spi0-pins-func-1 {
++		mux {
++			function = "flash";
++			groups = "spi0", "spi0_wp_hold";
++		};
++		
++		conf-pu {
++			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_00>;
++		};
++		
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
++		};
++	};
++	
++	spic_pins: spi1-pins-func-1 {
++		mux {
++			function = "spi";
++			groups = "spi1_2";
++		};
++	};
++	
++	uart1_pins: spi1-pins-func-3 {
++		mux {
++			function = "uart";
++			groups = "uart1_2";
++		};
++	};
++	
++};
++
++&spi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	spi_nand@1 {
++		compatible = "spi-nand";
++		reg = <1>;
++		spi-max-frequency = <20000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++		
++			partition@0 {
++				label = "boot";
++				reg = <0x00000 0x0200000>;
++				read-only;
++			};
++			
++			partition@200000 {
++				label = "u-boot-env";
++				reg = <0x0200000 0x0100000>;
++			};
++			
++			partition@300000 {
++				label = "ubi0";
++				reg = <0x300000 0x3200000>;
++			};
++			
++			partition@3500000 {
++				label = "ubi1";
++				reg = <0x3500000 0x3200000>;
++			};
++			
++			partition@6700000 {
++				label = "userconfig";
++				reg = <0x6700000 0x800000>;
++				read-only;
++			};
++			
++			partition@6f00000 {
++				label = "tp_data";
++				reg = <0x6f00000 0x400000>;
++				read-only;
++			};
++			
++			partition@7300000 {
++				label = "mali_data";
++				reg = <0x7300000 0x800000>;
++				read-only;
++			};
++			
++		};
++		
++	};
++};
++
++&watchdog {
++	status = "disabled";
++};
+--- /dev/null
++++ b/defenvs/tplink_archer_ax80_env
+@@ -0,0 +1,9 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x46000000
++bootcmd=bootm 0x46000000
++autoboot=1
++bootargs=ubi.mtd=ubi0 console=ttyS0,115200n1 loglevel=8 earlycon=uart8250,mmio32,0x11002000 init=/etc/preinit
++mtdids=spi-nand0=spi-nand0
++mtdparts=spi-nand0:2M(boot),1M(u-boot-env),50M(ubi0),50M(ubi1),8M(userconfig),4M(tp_data),8M(mali_data)
++tp_boot_idx=0
