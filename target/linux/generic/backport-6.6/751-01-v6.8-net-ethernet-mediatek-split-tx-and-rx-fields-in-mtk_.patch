@@ -280,8 +280,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				  ring->dma, ring->phys);
  		ring->dma = NULL;
  	}
-@@ -3124,7 +3124,7 @@ static void mtk_dma_free(struct mtk_eth
- 			netdev_reset_queue(eth->netdev[i]);
+@@ -3132,7 +3132,7 @@ static void mtk_dma_free(struct mtk_eth
+ 
  	if (!MTK_HAS_CAPS(soc->caps, MTK_SRAM) && eth->scratch_ring) {
  		dma_free_coherent(eth->dma_dev,
 -				  MTK_QDMA_RING_SIZE * soc->txrx.txd_size,
@@ -289,7 +289,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				  eth->scratch_ring, eth->phy_scratch_ring);
  		eth->scratch_ring = NULL;
  		eth->phy_scratch_ring = 0;
-@@ -3174,7 +3174,7 @@ static irqreturn_t mtk_handle_irq_rx(int
+@@ -3182,7 +3182,7 @@ static irqreturn_t mtk_handle_irq_rx(int
  
  	eth->rx_events++;
  	if (likely(napi_schedule_prep(&eth->rx_napi))) {
@@ -298,7 +298,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		__napi_schedule(&eth->rx_napi);
  	}
  
-@@ -3200,9 +3200,9 @@ static irqreturn_t mtk_handle_irq(int ir
+@@ -3208,9 +3208,9 @@ static irqreturn_t mtk_handle_irq(int ir
  	const struct mtk_reg_map *reg_map = eth->soc->reg_map;
  
  	if (mtk_r32(eth, reg_map->pdma.irq_mask) &
@@ -310,7 +310,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			mtk_handle_irq_rx(irq, _eth);
  	}
  	if (mtk_r32(eth, reg_map->tx_irq_mask) & MTK_TX_DONE_INT) {
-@@ -3220,10 +3220,10 @@ static void mtk_poll_controller(struct n
+@@ -3228,10 +3228,10 @@ static void mtk_poll_controller(struct n
  	struct mtk_eth *eth = mac->hw;
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
@@ -323,7 +323,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  #endif
  
-@@ -3387,7 +3387,7 @@ static int mtk_open(struct net_device *d
+@@ -3395,7 +3395,7 @@ static int mtk_open(struct net_device *d
  		napi_enable(&eth->tx_napi);
  		napi_enable(&eth->rx_napi);
  		mtk_tx_irq_enable(eth, MTK_TX_DONE_INT);
@@ -332,7 +332,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		refcount_set(&eth->dma_refcnt, 1);
  	}
  	else
-@@ -3471,7 +3471,7 @@ static int mtk_stop(struct net_device *d
+@@ -3479,7 +3479,7 @@ static int mtk_stop(struct net_device *d
  	mtk_gdm_config(eth, MTK_GDMA_DROP_ALL);
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
@@ -341,7 +341,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	napi_disable(&eth->tx_napi);
  	napi_disable(&eth->rx_napi);
  
-@@ -3947,9 +3947,9 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3955,9 +3955,9 @@ static int mtk_hw_init(struct mtk_eth *e
  
  	/* FE int grouping */
  	mtk_w32(eth, MTK_TX_DONE_INT, reg_map->pdma.int_grp);
@@ -353,7 +353,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
  	if (mtk_is_netsys_v3_or_greater(eth)) {
-@@ -5057,11 +5057,15 @@ static const struct mtk_soc_data mt2701_
+@@ -5065,11 +5065,15 @@ static const struct mtk_soc_data mt2701_
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.version = 1,
@@ -374,7 +374,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5077,11 +5081,15 @@ static const struct mtk_soc_data mt7621_
+@@ -5085,11 +5089,15 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -395,7 +395,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5099,11 +5107,15 @@ static const struct mtk_soc_data mt7622_
+@@ -5107,11 +5115,15 @@ static const struct mtk_soc_data mt7622_
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -416,7 +416,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5120,11 +5132,15 @@ static const struct mtk_soc_data mt7623_
+@@ -5128,11 +5140,15 @@ static const struct mtk_soc_data mt7623_
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
@@ -437,7 +437,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5139,11 +5155,15 @@ static const struct mtk_soc_data mt7629_
+@@ -5147,11 +5163,15 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.has_accounting = true,
  	.version = 1,
@@ -458,7 +458,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5161,11 +5181,15 @@ static const struct mtk_soc_data mt7981_
+@@ -5169,11 +5189,15 @@ static const struct mtk_soc_data mt7981_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -479,7 +479,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5183,11 +5207,15 @@ static const struct mtk_soc_data mt7986_
+@@ -5191,11 +5215,15 @@ static const struct mtk_soc_data mt7986_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -500,7 +500,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5205,11 +5233,15 @@ static const struct mtk_soc_data mt7988_
+@@ -5213,11 +5241,15 @@ static const struct mtk_soc_data mt7988_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
@@ -521,7 +521,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5222,11 +5254,15 @@ static const struct mtk_soc_data rt5350_
+@@ -5230,11 +5262,15 @@ static const struct mtk_soc_data rt5350_
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,
  	.version = 1,
