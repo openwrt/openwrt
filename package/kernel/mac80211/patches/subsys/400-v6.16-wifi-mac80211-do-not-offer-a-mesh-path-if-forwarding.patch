@@ -27,7 +27,7 @@ Reviewed-by: Rouven Czerwinski <rouven@czerwinskis.de>
 
 --- a/net/mac80211/mesh_hwmp.c
 +++ b/net/mac80211/mesh_hwmp.c
-@@ -630,7 +630,7 @@ static void hwmp_preq_frame_process(stru
+@@ -636,7 +636,7 @@ static void hwmp_preq_frame_process(stru
  				mesh_path_add_gate(mpath);
  		}
  		rcu_read_unlock();
@@ -36,7 +36,7 @@ Reviewed-by: Rouven Czerwinski <rouven@czerwinskis.de>
  		rcu_read_lock();
  		mpath = mesh_path_lookup(sdata, target_addr);
  		if (mpath) {
-@@ -648,6 +648,8 @@ static void hwmp_preq_frame_process(stru
+@@ -654,6 +654,8 @@ static void hwmp_preq_frame_process(stru
  			}
  		}
  		rcu_read_unlock();
@@ -45,7 +45,7 @@ Reviewed-by: Rouven Czerwinski <rouven@czerwinskis.de>
  	}
  
  	if (reply) {
-@@ -665,7 +667,7 @@ static void hwmp_preq_frame_process(stru
+@@ -671,7 +673,7 @@ static void hwmp_preq_frame_process(stru
  		}
  	}
  

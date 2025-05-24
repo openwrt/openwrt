@@ -24,7 +24,7 @@ Link: https://patch.msgid.link/5795b0a7-511e-40b5-ac36-476b63f174c7@gmail.com
 
 --- a/Kconfig.local
 +++ b/Kconfig.local
-@@ -1153,6 +1153,9 @@ config BACKPORTED_RTW88_8821A
+@@ -1138,6 +1138,9 @@ config BACKPORTED_RTW88_8821A
  config BACKPORTED_RTW88_8812A
  	tristate
  	default RTW88_8812A
@@ -34,7 +34,7 @@ Link: https://patch.msgid.link/5795b0a7-511e-40b5-ac36-476b63f174c7@gmail.com
  config BACKPORTED_RTW88_8822BE
  	tristate
  	default RTW88_8822BE
-@@ -1198,12 +1201,21 @@ config BACKPORTED_RTW88_8821AU
+@@ -1183,6 +1186,12 @@ config BACKPORTED_RTW88_8821AU
  config BACKPORTED_RTW88_8812AU
  	tristate
  	default RTW88_8812AU
@@ -47,15 +47,6 @@ Link: https://patch.msgid.link/5795b0a7-511e-40b5-ac36-476b63f174c7@gmail.com
  config BACKPORTED_RTW88_DEBUG
  	tristate
  	default RTW88_DEBUG
- config BACKPORTED_RTW88_DEBUGFS
- 	tristate
- 	default RTW88_DEBUGFS
-+config BACKPORTED_RTW88_LEDS
-+	tristate
-+	default RTW88_LEDS
- config BACKPORTED_RTW89
- 	tristate
- 	default RTW89
 --- a/drivers/net/wireless/realtek/rtw88/Kconfig
 +++ b/drivers/net/wireless/realtek/rtw88/Kconfig
 @@ -68,6 +68,10 @@ config RTW88_8812A
@@ -120,28 +111,20 @@ Link: https://patch.msgid.link/5795b0a7-511e-40b5-ac36-476b63f174c7@gmail.com
  
 --- a/local-symbols
 +++ b/local-symbols
-@@ -377,6 +377,10 @@ RTW88_8723X=
- RTW88_8703B=
- RTW88_8723D=
- RTW88_8821C=
-+RTW88_88XXA=
-+RTW88_8821A=
-+RTW88_8812A=
+@@ -375,6 +375,7 @@ RTW88_8821C=
+ RTW88_88XXA=
+ RTW88_8821A=
+ RTW88_8812A=
 +RTW88_8814A=
  RTW88_8822BE=
  RTW88_8822BS=
  RTW88_8822BU=
-@@ -390,8 +394,13 @@ RTW88_8723DU=
- RTW88_8821CE=
- RTW88_8821CS=
+@@ -390,6 +391,8 @@ RTW88_8821CS=
  RTW88_8821CU=
-+RTW88_8821AU=
-+RTW88_8812AU=
+ RTW88_8821AU=
+ RTW88_8812AU=
 +RTW88_8814AE=
 +RTW88_8814AU=
  RTW88_DEBUG=
  RTW88_DEBUGFS=
-+RTW88_LEDS=
- RTW89=
- RTW89_CORE=
- RTW89_PCI=
+ RTW88_LEDS=

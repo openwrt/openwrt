@@ -7,7 +7,7 @@
 +#include "hsr.h"
  
  /* Set/change channels.  If the channel is really being changed, it's done
-  * by reseting the chip.  To accomplish this we must first cleanup any pending
+  * by resetting the chip.  To accomplish this we must first cleanup any pending
 @@ -22,6 +23,7 @@
   */
  static int ath_set_channel(struct ath_softc *sc)
@@ -374,7 +374,7 @@
  
 --- a/local-symbols
 +++ b/local-symbols
-@@ -123,6 +123,7 @@ ATH9K_WOW=
+@@ -117,6 +117,7 @@ ATH9K_WOW=
  ATH9K_RFKILL=
  ATH9K_CHANNEL_CONTEXT=
  ATH9K_PCOEM=

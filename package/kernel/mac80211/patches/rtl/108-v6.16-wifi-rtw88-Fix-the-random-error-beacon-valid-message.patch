@@ -35,7 +35,7 @@ Link: https://patch.msgid.link/c248c40a-d432-47ed-90e0-d81ee6c32464@gmail.com
 
 --- a/drivers/net/wireless/realtek/rtw88/fw.c
 +++ b/drivers/net/wireless/realtek/rtw88/fw.c
-@@ -1467,7 +1467,7 @@ void rtw_add_rsvd_page_sta(struct rtw_de
+@@ -1466,7 +1466,7 @@ void rtw_add_rsvd_page_sta(struct rtw_de
  int rtw_fw_write_data_rsvd_page(struct rtw_dev *rtwdev, u16 pg_addr,
  				u8 *buf, u32 size)
  {
@@ -44,7 +44,7 @@ Link: https://patch.msgid.link/c248c40a-d432-47ed-90e0-d81ee6c32464@gmail.com
  	u8 val;
  	u16 rsvd_pg_head;
  	u32 bcn_valid_addr;
-@@ -1479,6 +1479,8 @@ int rtw_fw_write_data_rsvd_page(struct r
+@@ -1478,6 +1478,8 @@ int rtw_fw_write_data_rsvd_page(struct r
  	if (!size)
  		return -EINVAL;
  
@@ -53,7 +53,7 @@ Link: https://patch.msgid.link/c248c40a-d432-47ed-90e0-d81ee6c32464@gmail.com
  	if (rtw_chip_wcpu_11n(rtwdev)) {
  		rtw_write32_set(rtwdev, REG_DWBCN0_CTRL, BIT_BCN_VALID);
  	} else {
-@@ -1492,6 +1494,9 @@ int rtw_fw_write_data_rsvd_page(struct r
+@@ -1491,6 +1493,9 @@ int rtw_fw_write_data_rsvd_page(struct r
  	val |= BIT_ENSWBCN >> 8;
  	rtw_write8(rtwdev, REG_CR + 1, val);
  
@@ -63,7 +63,7 @@ Link: https://patch.msgid.link/c248c40a-d432-47ed-90e0-d81ee6c32464@gmail.com
  	if (rtw_hci_type(rtwdev) == RTW_HCI_TYPE_PCIE) {
  		val = rtw_read8(rtwdev, REG_FWHW_TXQ_CTRL + 2);
  		bckp[1] = val;
-@@ -1522,6 +1527,7 @@ restore:
+@@ -1521,6 +1526,7 @@ restore:
  	rsvd_pg_head = rtwdev->fifo.rsvd_boundary;
  	rtw_write16(rtwdev, REG_FIFOPAGE_CTRL_2,
  		    rsvd_pg_head | BIT_BCN_VALID_V1);
