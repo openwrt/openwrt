@@ -105,6 +105,12 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	iptime,ax3000sm)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_setbit $addr 26) 25) 27) 28) > \
+			/sys${DEVPATH}/macaddress
+		;;
 	jcg,q30-pro|\
 	netcore,n60|\
 	netcore,n60-pro)
