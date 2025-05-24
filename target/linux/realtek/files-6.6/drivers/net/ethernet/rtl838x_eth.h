@@ -46,7 +46,11 @@
 #define RTL838X_MAC_FORCE_MODE_CTRL		(0xa104)
 #define RTL839X_MAC_FORCE_MODE_CTRL		(0x02bc)
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0ddc)
+#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0dcc)
+
+#define RTL83XX_DMA_IF_INTR_STS_NOTIFY_MASK	GENMASK(22, 20)
+#define RTL83XX_DMA_IF_INTR_STS_RX_DONE_MASK	GENMASK(15, 8)
+#define RTL83XX_DMA_IF_INTR_STS_RX_RUN_OUT_MASK	GENMASK(7, 0)
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
@@ -407,18 +411,6 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 
 struct p_hdr;
 struct dsa_tag;
-
-struct rtl838x_bus_priv {
-	struct rtl838x_eth_priv *eth_priv;
-	int extaddr;
-	int rawpage;
-	int page[64];
-	bool raw[64];
-	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
-	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
-	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
-	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
-};
 
 struct rtl838x_eth_reg {
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
