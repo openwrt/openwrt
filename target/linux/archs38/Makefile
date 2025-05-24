@@ -11,7 +11,7 @@ BOARDNAME:=Synopsys DesignWare ARC HS38
 FEATURES:=source-only
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.6
+KERNEL_PATCHVER:=6.12
 
 DEVICE_TYPE:=basic
 
