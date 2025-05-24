@@ -19,12 +19,14 @@
 #include <linux/of_mdio.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 
 
 #include  "./rtl8367c/include/rtk_switch.h"
 #include  "./rtl8367c/include/port.h"
 #include  "./rtl8367c/include/vlan.h"
 #include  "./rtl8367c/include/rtl8367c_asicdrv_port.h"
+#include  "./rtl8367c/include/rtl8367c_asicdrv_mii_mgr.h"
 
 struct rtk_gsw {
  	struct device           *dev;
@@ -33,13 +35,6 @@ struct rtk_gsw {
 };
 
 static struct rtk_gsw *_gsw;
-
-extern int gsw_debug_proc_init(void);
-extern void gsw_debug_proc_exit(void);
-
-#ifdef CONFIG_SWCONFIG
-extern int rtl8367s_swconfig_init( void (*reset_func)(void) );
-#endif
 
 /*mii_mgr_read/mii_mgr_write is the callback API for rtl8367 driver*/
 unsigned int mii_mgr_read(unsigned int phy_addr,unsigned int phy_register,unsigned int *read_data)
@@ -204,7 +199,7 @@ static void set_rtl8367s_rgmii(void)
 
 }
 
-void init_gsw(void)
+static void init_gsw(void)
 {
 	rtl8367s_hw_init();
 	set_rtl8367s_sgmii();

@@ -78,7 +78,7 @@
 
 / {
 	aliases {
-		serial0 = &uart0;
+		serial0 = &serial0;
 		label-mac-device = &gmac0;
 		led-boot = &led_status_green;
 		led-failsafe = &led_status_red;
@@ -187,11 +187,6 @@
 	openwrt,netdev-name = "wan";
 
 	status = "okay";
-};
-
-&int_2p5g_phy {
-	pinctrl-names = "i2p5gbe-led";
-	pinctrl-0 = <&i2p5gbe_led0_pins>;
 };
 
 &gmac2 {
@@ -307,6 +302,32 @@
 		mediatek,pull-down-adv = <0>; /* bias-disable */
 	};
 
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	i2c0_pins: i2c0-g0-pins {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
 	pcie0_1_pins: pcie0-pins-g1 {
 		mux {
 			function = "pcie";
@@ -352,7 +373,7 @@
 	status = "okay";
 };
 
-&uart0 {
+&serial0 {
 	status = "okay";
 };
 
@@ -360,7 +381,7 @@
 	status = "okay";
 };
 
-&xphy {
+&xsphy {
 	status = "okay";
 };
 
