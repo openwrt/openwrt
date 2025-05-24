@@ -136,24 +136,46 @@ inline int rtl931x_tbl_access_data_0(int i)
 	return RTL931X_TBL_ACCESS_DATA_0(i);
 }
 
-void rtl931x_vlan_profile_dump(int index)
+static int
+rtl931x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 {
-	u64 profile[4];
+	u32 p[7];
 
-	if (index < 0 || index > 15)
+	if (idx < 0 || idx > RTL931X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx));
+	p[1] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 4);
+	p[2] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 8);
+	p[3] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 12);
+	p[4] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 16);
+	p[5] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 20);
+	p[6] = sw_r32(RTL931X_VLAN_PROFILE_SET(idx) + 24);
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL931X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks = {
+			.l2 = RTL931X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL931X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL931X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+	};
+
+	return 0;
+}
+
+static void rtl931x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtl83xx_vlan_profile p;
+
+	if (rtl931x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	profile[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
-	profile[1] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
-	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
-	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
-
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
-		IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
-		index, (u32) (profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
+	dev_dbg(priv->dev,
+		"VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
+		 IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
+		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
+		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6);
 }
 
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -832,7 +854,8 @@ static void rtl931x_vlan_fwd_on_inner(int port, bool is_set)
 		sw_w32_mask(0, 0xf, RTL931X_VLAN_PORT_FWD + (port << 2));
 }
 
-static void rtl931x_vlan_profile_setup(int profile)
+static void
+rtl931x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p[7];
 
@@ -847,12 +870,24 @@ static void rtl931x_vlan_profile_setup(int profile)
 	/* p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12); */
 	p[0] |= 0x3 << 11; /* COPY2CPU */
 
-	p[1] = 0x1FFFFFF; /* L2 unknwon MC flooding portmask all ports, including the CPU-port */
-	p[2] = 0xFFFFFFFF;
-	p[3] = 0x1FFFFFF; /* IPv4 unknwon MC flooding portmask */
-	p[4] = 0xFFFFFFFF;
-	p[5] = 0x1FFFFFF; /* IPv6 unknwon MC flooding portmask */
-	p[6] = 0xFFFFFFFF;
+	p[1] = RTL931X_VLAN_L2_UNKN_MC_FLD_H(RTL931X_MC_PMASK_ALL_PORTS);
+	p[2] = RTL931X_VLAN_L2_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4) {
+		p[3] = RTL931X_VLAN_IP4_UNKN_MC_FLD_H(priv->mc_router_portmask);
+		p[4] = RTL931X_VLAN_IP4_UNKN_MC_FLD_L(priv->mc_router_portmask);
+	} else {
+		p[3] = RTL931X_VLAN_IP4_UNKN_MC_FLD_H(RTL931X_MC_PMASK_ALL_PORTS);
+		p[4] = RTL931X_VLAN_IP4_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
+	}
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6) {
+		p[5] = RTL931X_VLAN_IP6_UNKN_MC_FLD_H(priv->mc_router_portmask);
+		p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(priv->mc_router_portmask);
+	} else {
+		p[5] = RTL931X_VLAN_IP6_UNKN_MC_FLD_H(RTL931X_MC_PMASK_ALL_PORTS);
+		p[6] = RTL931X_VLAN_IP6_UNKN_MC_FLD_L(RTL931X_MC_PMASK_ALL_PORTS);
+	}
 
 	for (int i = 0; i < 7; i++)
 		sw_w32(p[i], RTL931X_VLAN_PROFILE_SET(profile) + i * 4);
@@ -862,10 +897,10 @@ static void rtl931x_vlan_profile_setup(int profile)
 static void rtl931x_l2_learning_setup(void)
 {
 	/* Portmask for flooding broadcast traffic */
-	rtl839x_set_port_reg_be(0x1FFFFFFFFFFFFFF, RTL931X_L2_BC_FLD_PMSK);
+	rtl839x_set_port_reg_be(RTL931X_MC_PMASK_ALL_PORTS, RTL931X_L2_BC_FLD_PMSK);
 
 	/* Portmask for flooding unicast traffic with unknown destination */
-	rtl839x_set_port_reg_be(0x1FFFFFFFFFFFFFF, RTL931X_L2_UNKN_UC_FLD_PMSK);
+	rtl839x_set_port_reg_be(RTL931X_MC_PMASK_ALL_PORTS, RTL931X_L2_UNKN_UC_FLD_PMSK);
 
 	/* Limit learning to maximum: 64k entries, after that just flood (bits 0-2) */
 	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);

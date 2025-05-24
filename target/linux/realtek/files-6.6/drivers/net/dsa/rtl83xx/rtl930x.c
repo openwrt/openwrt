@@ -220,28 +220,61 @@ static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 }
 
-void rtl930x_vlan_profile_dump(int profile)
+static int
+rtl930x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 {
 	u32 p[5];
 
-	if (profile < 0 || profile > 7)
+	if (idx < 0 || idx > RTL930X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx));
+	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 4);
+	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 8);
+	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 12);
+	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 16);
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL930X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks = {
+			.l2 = RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 0,
+		.routing_ipuc = p[0] & BIT(17),
+		.routing_ip6uc = p[0] & BIT(16),
+		.routing_ipmc = p[0] & BIT(13),
+		.routing_ip6mc = p[0] & BIT(12),
+		.bridge_ipmc = p[0] & BIT(15),
+		.bridge_ip6mc = p[0] & BIT(14),
+	};
+
+	return 0;
+}
+
+static void rtl930x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtl83xx_vlan_profile p;
+
+	if (rtl930x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
-	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
-	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 8) & 0x1FFFFFFF;
-	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 12) & 0x1FFFFFFF;
-	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16) & 0x1FFFFFFF;
-
-	pr_debug("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0x, IPv4 %0x, IPv6: %0x",
-		profile, p[0] & (3 << 21), p[2], p[3], p[4]);
-	pr_debug("  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n",
-		p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
-		p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
-	pr_debug("  Bridge enabled: IPv4 MC %c, IPv6 MC %c,\n",
-		p[0] & BIT(15) ? 'y' : 'n', p[0] & BIT(14) ? 'y' : 'n');
-	pr_debug("VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
-		profile, p[0], p[1], p[2], p[3], p[4]);
+	dev_dbg(priv->dev,
+		"VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %llx, IPv4 %llx, IPv6: %llx\n"
+		"  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n"
+		"  Bridge enabled: IPv4 MC %c, IPv6 MC %c\n"
+		"VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
+		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
+		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6,
+		p.routing_ipuc ? 'y' : 'n', p.routing_ip6uc ? 'y' : 'n',
+		p.routing_ipmc ? 'y' : 'n', p.routing_ip6mc ? 'y' : 'n',
+		p.bridge_ipmc ? 'y' : 'n', p.bridge_ip6mc ? 'y' : 'n', idx,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx)),
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 4),
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 8) & 0x1FFFFFFF,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 12) & 0x1FFFFFFF,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 16) & 0x1FFFFFFF);
 }
 
 static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
@@ -263,7 +296,8 @@ static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
 		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
 }
 
-static void rtl930x_vlan_profile_setup(int profile)
+static void
+rtl930x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
 {
 	u32 p[5];
 
@@ -273,9 +307,18 @@ static void rtl930x_vlan_profile_setup(int profile)
 
 	/* Enable routing of Ipv4/6 Unicast and IPv4/6 Multicast traffic */
 	p[0] |= BIT(17) | BIT(16) | BIT(13) | BIT(12);
-	p[2] = 0x1fffffff; /* L2 unknown MC flooding portmask all ports, including the CPU-port */
-	p[3] = 0x1fffffff; /* IPv4 unknown MC flooding portmask */
-	p[4] = 0x1fffffff; /* IPv6 unknown MC flooding portmask */
+
+	p[2] = RTL930X_VLAN_L2_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4)
+		p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(priv->mc_router_portmask);
+	else
+		p[3] = RTL930X_VLAN_IP4_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6)
+		p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(priv->mc_router_portmask);
+	else
+		p[4] = RTL930X_VLAN_IP6_UNKN_MC_FLD(RTL930X_MC_PMASK_ALL_PORTS);
 
 	sw_w32(p[0], RTL930X_VLAN_PROFILE_SET(profile));
 	sw_w32(p[1], RTL930X_VLAN_PROFILE_SET(profile) + 4);
@@ -287,10 +330,10 @@ static void rtl930x_vlan_profile_setup(int profile)
 static void rtl930x_l2_learning_setup(void)
 {
 	/* Portmask for flooding broadcast traffic */
-	sw_w32(0x1fffffff, RTL930X_L2_BC_FLD_PMSK);
+	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_BC_FLD_PMSK);
 
 	/* Portmask for flooding unicast traffic with unknown destination */
-	sw_w32(0x1fffffff, RTL930X_L2_UNKN_UC_FLD_PMSK);
+	sw_w32(RTL930X_MC_PMASK_ALL_PORTS, RTL930X_L2_UNKN_UC_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
@@ -2508,6 +2551,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_tables_read = rtl930x_vlan_tables_read,
 	.vlan_set_tagged = rtl930x_vlan_set_tagged,
 	.vlan_set_untagged = rtl930x_vlan_set_untagged,
+	.vlan_profile_get = rtl930x_vlan_profile_get,
 	.vlan_profile_dump = rtl930x_vlan_profile_dump,
 	.vlan_profile_setup = rtl930x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,

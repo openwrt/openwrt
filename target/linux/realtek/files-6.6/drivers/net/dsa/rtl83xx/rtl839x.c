@@ -514,19 +514,50 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-static void rtl839x_vlan_profile_setup(int profile)
+static int
+rtl839x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
 {
 	u32 p[2];
-	u32 pmask_id = UNKNOWN_MC_PMASK;
 
-	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
-	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
-	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
+	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks_idx = {
+			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 1,
+	};
+
+	return 0;
+}
+
+static void
+rtl839x_vlan_profile_setup(struct rtl838x_switch_priv *priv, int profile)
+{
+	u32 p[2] = { 0, 0 };
+
+	p[1] = RTL839X_VLAN_L2_LEARN_EN(1);
+	p[1] |= RTL839X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V4)
+		p[1] |= RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
+	else
+		p[1] |= RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+
+	if (profile & RTLDSA_VLAN_PROFILE_MC_ACTIVE_V6)
+		p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_MIN_PORTS_IDX);
+	else
+		p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
-
-	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
 }
 
 u64 rtl839x_traffic_get(int source)
@@ -551,10 +582,12 @@ void rtl839x_traffic_disable(int source, int dest)
 
 static void rtl839x_l2_learning_setup(void)
 {
-	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
-	 * address flooding to the reserved entry in the portmask table used
-	 * also for multicast flooding */
-	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
+	/* Set portmask for broadcast traffic and unknown unicast address flooding
+	 * to the reserved entry in the portmask table used also for
+	 * multicast flooding */
+	sw_w32(RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+	       RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
+	       RTL839X_L2_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
@@ -817,21 +850,21 @@ void rtl8390_get_version(struct rtl838x_switch_priv *priv)
 	pr_debug("RTL839X Chip-Info: %x, version %c\n", info, priv->version);
 }
 
-void rtl839x_vlan_profile_dump(int profile)
+static void rtl839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 {
-	u32 p[2];
+	struct rtl83xx_vlan_profile p;
 
-	if (profile < 0 || profile > 7)
+	if (rtl839x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
-
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
-		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
-		profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
-		(p[0]) & 0xfff);
-	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
+	dev_dbg(priv->dev,
+		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
+		 UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
+		"VLAN profile %d: raw %08x, %08x\n", idx,
+		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
+		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
+		sw_r32(RTL839X_VLAN_PROFILE(idx)),
+		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
 }
 
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -1854,6 +1887,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.vlan_tables_read = rtl839x_vlan_tables_read,
 	.vlan_set_tagged = rtl839x_vlan_set_tagged,
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
+	.vlan_profile_get = rtl839x_vlan_profile_get,
 	.vlan_profile_dump = rtl839x_vlan_profile_dump,
 	.vlan_profile_setup = rtl839x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl839x_vlan_fwd_on_inner,

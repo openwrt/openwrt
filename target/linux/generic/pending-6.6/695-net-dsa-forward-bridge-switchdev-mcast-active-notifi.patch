@@ -1,0 +1,215 @@
+From 10a1ed9b52406c1a702c29f0e3fa96343b9e621e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Mon, 14 Apr 2025 00:06:32 +0200
+Subject: [PATCH 5/5] net: dsa: forward bridge/switchdev mcast active
+ notification
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a new "port_mdb_active()" handler to the DSA API. This allows DSA
+drivers to receive the multicast active notification from the
+bridge. So that switch drivers can act on it accordingly, especially
+to avoid packetloss.
+
+The switchdev notifier "handled" attribute is propagated, too, so that a
+DSA based switch driver can decide whether it wants to act on the event
+for each port individually or only on the first one, on behalf of all
+others.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ Documentation/networking/dsa/dsa.rst |  9 +++++++++
+ include/net/dsa.h                    |  5 +++++
+ net/dsa/port.c                       | 19 +++++++++++++++++++
+ net/dsa/port.h                       |  3 +++
+ net/dsa/slave.c                      | 21 ++++++++++++++++++++-
+ net/dsa/switch.c                     | 13 +++++++++++++
+ net/dsa/switch.h                     | 11 ++++++++++-
+ 7 files changed, 79 insertions(+), 2 deletions(-)
+
+--- a/Documentation/networking/dsa/dsa.rst
++++ b/Documentation/networking/dsa/dsa.rst
+@@ -1021,6 +1021,15 @@ Bridge VLAN filtering
+   the specified MAC address from the specified VLAN ID if it was mapped into
+   this port forwarding database.
+ 
++- ``port_mdb_active``: bridge layer function invoked when the bridge starts (or
++  stops) to actively apply multicast snooping to multicast payload, i.e. when
++  multicast snooping is enabled and a multicast querier is present on the link
++  for a particular protocol family (or not). A switch should (by default) ensure:
++  To flood multicast packets for the given protocol family if multicast snooping
++  is inactive - to avoid multicast (and consequently also IPv6 unicast, which
++  depends on multicast for NDP) packet loss. And should (by default) avoid
++  forwarding to an active port if there is no listener or multicast router on it.
++
+ Link aggregation
+ ----------------
+ 
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1082,6 +1082,11 @@ struct dsa_switch_ops {
+ 	int	(*port_mdb_del)(struct dsa_switch *ds, int port,
+ 				const struct switchdev_obj_port_mdb *mdb,
+ 				struct dsa_db db);
++	int	(*port_mdb_active)(struct dsa_switch *ds, int port,
++				   const struct switchdev_mc_active mc_active,
++				   struct netlink_ext_ack *extack,
++				   bool handled);
++
+ 	/*
+ 	 * RXNFC
+ 	 */
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -1290,6 +1290,25 @@ int dsa_port_bridge_host_mdb_del(const s
+ 	return dsa_port_host_mdb_del(dp, mdb, db);
+ }
+ 
++int dsa_port_bridge_mdb_active(const struct dsa_port *dp,
++			       const struct switchdev_mc_active mc_active,
++			       struct netlink_ext_ack *extack,
++			       bool handled)
++{
++	struct dsa_switch *ds = dp->ds;
++	struct dsa_notifier_mdb_active_info info = {
++		.dp = dp,
++		.mc_active = mc_active,
++		.extack = extack,
++		.handled = handled,
++	};
++
++	if (!ds->ops->port_mdb_active)
++		return -EOPNOTSUPP;
++
++	return dsa_port_notify(dp, DSA_NOTIFIER_MDB_ACTIVE, &info);
++}
++
+ int dsa_port_vlan_add(struct dsa_port *dp,
+ 		      const struct switchdev_obj_port_vlan *vlan,
+ 		      struct netlink_ext_ack *extack)
+--- a/net/dsa/port.h
++++ b/net/dsa/port.h
+@@ -75,6 +75,9 @@ int dsa_port_bridge_host_mdb_add(const s
+ 				 const struct switchdev_obj_port_mdb *mdb);
+ int dsa_port_bridge_host_mdb_del(const struct dsa_port *dp,
+ 				 const struct switchdev_obj_port_mdb *mdb);
++int dsa_port_bridge_mdb_active(const struct dsa_port *dp,
++			       const struct switchdev_mc_active mc_active,
++			       struct netlink_ext_ack *extack, bool handled);
+ int dsa_port_pre_bridge_flags(const struct dsa_port *dp,
+ 			      struct switchdev_brport_flags flags,
+ 			      struct netlink_ext_ack *extack);
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
+@@ -592,7 +592,7 @@ static int dsa_slave_port_attr_set(struc
+ 	struct dsa_port *dp = dsa_slave_to_port(dev);
+ 	int ret;
+ 
+-	if (ctx && ctx != dp)
++	if (ctx && ctx != dp && attr->id != SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE)
+ 		return 0;
+ 
+ 	switch (attr->id) {
+@@ -646,6 +646,15 @@ static int dsa_slave_port_attr_set(struc
+ 
+ 		ret = dsa_port_vlan_msti(dp, &attr->u.vlan_msti);
+ 		break;
++	case SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE:
++		const bool *handled = ctx;
++
++		if (!dsa_port_offloads_bridge_dev(dp, attr->orig_dev))
++			return -EOPNOTSUPP;
++
++		ret = dsa_port_bridge_mdb_active(dp, attr->u.mc_active, extack,
++						 *handled);
++		break;
+ 	default:
+ 		ret = -EOPNOTSUPP;
+ 		break;
+@@ -3617,6 +3626,11 @@ static int dsa_slave_switchdev_event(str
+ 
+ 	switch (event) {
+ 	case SWITCHDEV_PORT_ATTR_SET:
++		struct switchdev_notifier_port_attr_info *item = ptr;
++
++		if (item && item->attr->id == SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE)
++			item->info.ctx = &item->handled;
++
+ 		err = switchdev_handle_port_attr_set(dev, ptr,
+ 						     dsa_slave_dev_check,
+ 						     dsa_slave_port_attr_set);
+@@ -3655,6 +3669,11 @@ static int dsa_slave_switchdev_blocking_
+ 							    dsa_slave_port_obj_del);
+ 		return notifier_from_errno(err);
+ 	case SWITCHDEV_PORT_ATTR_SET:
++		struct switchdev_notifier_port_attr_info *item = ptr;
++
++		if (item && item->attr->id == SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE)
++			item->info.ctx = &item->handled;
++
+ 		err = switchdev_handle_port_attr_set(dev, ptr,
+ 						     dsa_slave_dev_check,
+ 						     dsa_slave_port_attr_set);
+--- a/net/dsa/switch.c
++++ b/net/dsa/switch.c
+@@ -652,6 +652,16 @@ static int dsa_switch_host_mdb_del(struc
+ 	return err;
+ }
+ 
++static int dsa_switch_mdb_active(struct dsa_switch *ds,
++				 struct dsa_notifier_mdb_active_info *info)
++{
++	if (!ds->ops->port_mdb_active)
++		return -EOPNOTSUPP;
++
++	return ds->ops->port_mdb_active(ds, info->dp->index, info->mc_active,
++					info->extack, info->handled);
++}
++
+ /* Port VLANs match on the targeted port and on all DSA ports */
+ static bool dsa_port_vlan_match(struct dsa_port *dp,
+ 				struct dsa_notifier_vlan_info *info)
+@@ -1026,6 +1036,9 @@ static int dsa_switch_event(struct notif
+ 	case DSA_NOTIFIER_HOST_MDB_DEL:
+ 		err = dsa_switch_host_mdb_del(ds, info);
+ 		break;
++	case DSA_NOTIFIER_MDB_ACTIVE:
++		err = dsa_switch_mdb_active(ds, info);
++		break;
+ 	case DSA_NOTIFIER_VLAN_ADD:
+ 		err = dsa_switch_vlan_add(ds, info);
+ 		break;
+--- a/net/dsa/switch.h
++++ b/net/dsa/switch.h
+@@ -24,6 +24,7 @@ enum {
+ 	DSA_NOTIFIER_MDB_DEL,
+ 	DSA_NOTIFIER_HOST_MDB_ADD,
+ 	DSA_NOTIFIER_HOST_MDB_DEL,
++	DSA_NOTIFIER_MDB_ACTIVE,
+ 	DSA_NOTIFIER_VLAN_ADD,
+ 	DSA_NOTIFIER_VLAN_DEL,
+ 	DSA_NOTIFIER_HOST_VLAN_ADD,
+@@ -66,13 +67,21 @@ struct dsa_notifier_lag_fdb_info {
+ 	struct dsa_db db;
+ };
+ 
+-/* DSA_NOTIFIER_MDB_* */
++/* DSA_NOTIFIER_MDB_{ADD,DEL} */
+ struct dsa_notifier_mdb_info {
+ 	const struct dsa_port *dp;
+ 	const struct switchdev_obj_port_mdb *mdb;
+ 	struct dsa_db db;
+ };
+ 
++/* DSA_NOTIFIER_MDB_ACTIVE */
++struct dsa_notifier_mdb_active_info {
++	const struct dsa_port *dp;
++	const struct switchdev_mc_active mc_active;
++	struct netlink_ext_ack *extack;
++	int handled;
++};
++
+ /* DSA_NOTIFIER_LAG_* */
+ struct dsa_notifier_lag_info {
+ 	const struct dsa_port *dp;

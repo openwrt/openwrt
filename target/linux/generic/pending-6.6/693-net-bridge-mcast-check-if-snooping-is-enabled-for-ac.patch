@@ -1,0 +1,106 @@
+From 98b6a3638971abf7bcbeed66cc73ce9d2d447e3a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Wed, 16 Apr 2025 15:11:04 +0200
+Subject: [PATCH 3/5] net: bridge: mcast: check if snooping is enabled for
+ active state
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+To be able to use the upcoming SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE
+as a potential replacement for SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED
+also check and toggle the active state if multicast snooping is enabled
+or disabled. So that MC_ACTIVE not only checks the querier state, but
+also if multicast snooping is enabled in general.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1149,6 +1149,7 @@ static int br_ip6_multicast_check_active
+  *
+  * The multicast active state is set, per protocol family, if:
+  *
++ * - multicast snooping is enabled
+  * - an IGMP/MLD querier is present
+  * - for own IPv6 MLD querier: an IPv6 address is configured on the bridge
+  *
+@@ -1168,6 +1169,13 @@ static int __br_multicast_update_active(
+ 
+ 	lockdep_assert_held_once(&brmctx->br->multicast_lock);
+ 
++	if (!br_opt_get(brmctx->br, BROPT_MULTICAST_ENABLED))
++		force_inactive = true;
++
++	if (br_opt_get(brmctx->br, BROPT_MCAST_VLAN_SNOOPING_ENABLED) &&
++	    br_multicast_ctx_vlan_disabled(brmctx))
++		force_inactive = true;
++
+ 	ip4_active = !force_inactive;
+ 	ip6_active = !force_inactive;
+ 	ip4_changed = br_ip4_multicast_check_active(brmctx, &ip4_active);
+@@ -1395,6 +1403,22 @@ static struct sk_buff *br_multicast_allo
+ 	return NULL;
+ }
+ 
++static int br_multicast_toggle_enabled(struct net_bridge *br, bool on,
++				       struct netlink_ext_ack *extack)
++{
++	int err, old;
++
++	br_opt_toggle(br, BROPT_MULTICAST_ENABLED, on);
++
++	err = br_multicast_update_active(&br->multicast_ctx, extack);
++	if (err && err != -EOPNOTSUPP) {
++		br_opt_toggle(br, BROPT_MULTICAST_ENABLED, old);
++		return err;
++	}
++
++	return 0;
++}
++
+ struct net_bridge_mdb_entry *br_multicast_new_group(struct net_bridge *br,
+ 						    struct br_ip *group)
+ {
+@@ -1408,7 +1432,7 @@ struct net_bridge_mdb_entry *br_multicas
+ 	if (atomic_read(&br->mdb_hash_tbl.nelems) >= br->hash_max) {
+ 		trace_br_mdb_full(br->dev, group);
+ 		br_mc_disabled_update(br->dev, false, NULL);
+-		br_opt_toggle(br, BROPT_MULTICAST_ENABLED, false);
++		br_multicast_toggle_enabled(br, false, NULL);
+ 		return ERR_PTR(-E2BIG);
+ 	}
+ 
+@@ -4381,6 +4405,7 @@ void br_multicast_toggle_one_vlan(struct
+ 
+ 		spin_lock_bh(&br->multicast_lock);
+ 		vlan->priv_flags ^= BR_VLFLAG_MCAST_ENABLED;
++		br_multicast_update_active(&vlan->br_mcast_ctx, NULL);
+ 		spin_unlock_bh(&br->multicast_lock);
+ 
+ 		if (on) {
+@@ -4404,6 +4429,7 @@ void br_multicast_toggle_one_vlan(struct
+ 			__br_multicast_enable_port_ctx(&vlan->port_mcast_ctx);
+ 		else
+ 			__br_multicast_disable_port_ctx(&vlan->port_mcast_ctx);
++		br_multicast_update_active(brmctx, NULL);
+ 		spin_unlock_bh(&br->multicast_lock);
+ 	}
+ }
+@@ -4727,7 +4753,12 @@ int br_multicast_toggle(struct net_bridg
+ 	if (err)
+ 		goto unlock;
+ 
+-	br_opt_toggle(br, BROPT_MULTICAST_ENABLED, !!val);
++	err = br_multicast_toggle_enabled(br, !!val, extack);
++	if (err == -EOPNOTSUPP)
++		err = 0;
++	if (err)
++		goto unlock;
++
+ 	if (!br_opt_get(br, BROPT_MULTICAST_ENABLED)) {
+ 		change_snoopers = true;
+ 		goto unlock;

@@ -1,0 +1,127 @@
+From ba05faa9c30bba6d8b05a502952c22f9fb2273e2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Mon, 14 Apr 2025 00:03:10 +0200
+Subject: [PATCH 4/5] net: bridge: switchdev: notify on mcast active changes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Let the bridge notify switchdev if the multicast
+active state toggles. So that switch drivers can act on it
+accordingly, especially to avoid packetloss.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ Documentation/networking/switchdev.rst |  8 +++----
+ include/net/switchdev.h                | 10 ++++++++
+ net/bridge/br_multicast.c              | 33 ++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+), 4 deletions(-)
+
+--- a/Documentation/networking/switchdev.rst
++++ b/Documentation/networking/switchdev.rst
+@@ -558,7 +558,7 @@ Because IGMP snooping can be turned on/o
+ must be able to reconfigure the underlying hardware on the fly to honor the
+ toggling of that option and behave appropriately.
+ 
+-A switchdev driver can also refuse to support dynamic toggling of the multicast
+-snooping knob at runtime and require the destruction of the bridge device(s)
+-and creation of a new bridge device(s) with a different multicast snooping
+-value.
++A switchdev driver must also be able to react to vanishing or appearing
++IGMP/MLD queriers. If no querier is present then, even if IGMP/MLD snooping
++is enabled, the switch must treat this as if IGMP/MLD snooping were disabled.
++The SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE notification allows to track this.
+--- a/include/net/switchdev.h
++++ b/include/net/switchdev.h
+@@ -27,6 +27,7 @@ enum switchdev_attr_id {
+ 	SWITCHDEV_ATTR_ID_BRIDGE_VLAN_FILTERING,
+ 	SWITCHDEV_ATTR_ID_BRIDGE_VLAN_PROTOCOL,
+ 	SWITCHDEV_ATTR_ID_BRIDGE_MC_DISABLED,
++	SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE,
+ 	SWITCHDEV_ATTR_ID_BRIDGE_MROUTER,
+ 	SWITCHDEV_ATTR_ID_BRIDGE_MST,
+ 	SWITCHDEV_ATTR_ID_MRP_PORT_ROLE,
+@@ -43,6 +44,14 @@ struct switchdev_brport_flags {
+ 	unsigned long mask;
+ };
+ 
++struct switchdev_mc_active {
++	short vid;
++	u8 ip4:1,
++	   ip6:1,
++	   ip4_changed:1,
++	   ip6_changed:1;
++};
++
+ struct switchdev_vlan_msti {
+ 	u16 vid;
+ 	u16 msti;
+@@ -64,6 +73,7 @@ struct switchdev_attr {
+ 		u16 vlan_protocol;			/* BRIDGE_VLAN_PROTOCOL */
+ 		bool mst;				/* BRIDGE_MST */
+ 		bool mc_disabled;			/* MC_DISABLED */
++		struct switchdev_mc_active mc_active;	/* MC_ACTIVE */
+ 		u8 mrp_port_role;			/* MRP_PORT_ROLE */
+ 		struct switchdev_vlan_msti vlan_msti;	/* VLAN_MSTI */
+ 	} u;
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1137,6 +1137,27 @@ static int br_ip6_multicast_check_active
+ #endif
+ }
+ 
++static int br_multicast_notify_active(struct net_bridge_mcast *brmctx,
++				      bool ip4_active, bool ip6_active,
++				      bool ip4_changed, bool ip6_changed,
++				      struct netlink_ext_ack *extack)
++{
++	struct switchdev_attr attr = {
++		.orig_dev = brmctx->br->dev,
++		.id = SWITCHDEV_ATTR_ID_BRIDGE_MC_ACTIVE,
++		.flags = SWITCHDEV_F_DEFER,
++		.u.mc_active = {
++			.vid = brmctx->vlan ? brmctx->vlan->vid : -1,
++			.ip4 = ip4_active,
++			.ip6 = ip6_active,
++			.ip4_changed = ip4_changed,
++			.ip6_changed = ip6_changed,
++		},
++	};
++
++	return switchdev_port_attr_set(brmctx->br->dev, &attr, extack);
++}
++
+ /**
+  * __br_multicast_update_active() - update mcast active state
+  * @brmctx: the bridge multicast context to check
+@@ -1158,6 +1179,8 @@ static int br_ip6_multicast_check_active
+  * This function should be called by anything that changes one of the
+  * above prerequisites.
+  *
++ * Any multicast active state toggling is further notified to switchdev.
++ *
+  * Return: 0 on success, a negative value otherwise.
+  */
+ static int __br_multicast_update_active(struct net_bridge_mcast *brmctx,
+@@ -1181,11 +1204,21 @@ static int __br_multicast_update_active(
+ 	ip4_changed = br_ip4_multicast_check_active(brmctx, &ip4_active);
+ 	ip6_changed = br_ip6_multicast_check_active(brmctx, &ip6_active);
+ 
++	if (!ip4_changed && !ip6_changed)
++		goto out;
++
++	ret = br_multicast_notify_active(brmctx, ip4_active, ip6_active,
++					 ip4_changed, ip6_changed,
++					 extack);
++	if (ret && ret != -EOPNOTSUPP)
++		goto out;
++
+ 	if (ip4_changed)
+ 		brmctx->ip4_active = ip4_active;
+ 	if (ip6_changed)
+ 		brmctx->ip6_active = ip6_active;
+ 
++out:
+ 	return ret;
+ }
+ 
