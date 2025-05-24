@@ -24,10 +24,10 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 ---
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -719,6 +719,7 @@ static struct ath11k_hw_params ath11k_hw
- 		.smp2p_wow_exit = false,
+@@ -727,6 +727,7 @@ static struct ath11k_hw_params ath11k_hw
  		.support_fw_mac_sequence = false,
  		.support_dual_stations = false,
+ 		.pdev_suspend = false,
 +		.reo_status_poll = true,
  	},
  	{
@@ -121,7 +121,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct dp_reo_cache_flush_elem {
  	struct list_head list;
  	struct dp_rx_tid data;
-@@ -288,6 +290,10 @@ struct ath11k_dp {
+@@ -287,6 +289,10 @@ struct ath11k_dp {
  	spinlock_t reo_cmd_lock;
  	struct ath11k_hp_update_timer reo_cmd_timer;
  	struct ath11k_hp_update_timer tx_ring_timer[DP_TCL_NUM_RING_MAX];
@@ -132,7 +132,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  };
  
  /* HTT definitions */
-@@ -1691,5 +1697,6 @@ void ath11k_dp_shadow_init_timer(struct
+@@ -1690,5 +1696,6 @@ void ath11k_dp_shadow_init_timer(struct
  				 struct ath11k_hp_update_timer *update_timer,
  				 u32 interval, u32 ring_id);
  void ath11k_dp_stop_shadow_timers(struct ath11k_base *ab);
@@ -154,10 +154,10 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -232,6 +232,7 @@ struct ath11k_hw_params {
- 	bool smp2p_wow_exit;
+@@ -233,6 +233,7 @@ struct ath11k_hw_params {
  	bool support_fw_mac_sequence;
  	bool support_dual_stations;
+ 	bool pdev_suspend;
 +	bool reo_status_poll;
  };
  

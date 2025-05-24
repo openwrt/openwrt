@@ -1,81 +1,81 @@
-From patchwork Wed Sep 18 21:20:52 2024
+From patchwork Wed May 21 22:45:35 2025
 Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-Patchwork-Submitter: Pradeep Kumar Chitrapu <quic_pradeepc@quicinc.com>
-X-Patchwork-Id: 13807211
+X-Patchwork-Id: 14096120
 X-Patchwork-Delegate: quic_jjohnson@quicinc.com
-Received: from mx0a-0031df01.pphosted.com (mx0a-0031df01.pphosted.com
- [205.220.168.131])
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com
+ [205.220.180.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 77FB41CA6AC
-	for <linux-wireless@vger.kernel.org>; Wed, 18 Sep 2024 21:21:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3B9F239570
+	for <linux-wireless@vger.kernel.org>; Wed, 21 May 2025 22:45:57 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
- arc=none smtp.client-ip=205.220.168.131
+ arc=none smtp.client-ip=205.220.180.131
 ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726694475; cv=none;
- b=RN/ddoo5Vh8RVGeYZ8k8lXTOb7bzs7wSIAQGFjyvpfc9NICOpTDXpM3ai/D/fFtXLR8mFmYa4uIMFdrWML1x/UjZtd+jJnNyL/jo4/t5+ONN0nU4brd/dW7fv/biqLA6CkFbjnw01XnInXLzGT8IIm4NvxBkMy/RVj0tC33y7os=
+	t=1747867560; cv=none;
+ b=GmlOnDZdpnT/77kfeg7qPbZIn+pp+Rv41/WYnHylPZroDHwpWp5rzjObHMVoVIVB8f5dpHJSWNb5ucf0EdCqAqynnnDnAHne0d3j8kMBBH6ZVQr4AnIsYhkIrbmy6o7JffEBF094XVxGwQTjyWSEPi6VY94Md6L1NnuF0J5lJXw=
 ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726694475; c=relaxed/simple;
-	bh=bsvgv033jSAPUVmS0VlMcScTn/1aM6tw3aACOOiqxvA=;
+	s=arc-20240116; t=1747867560; c=relaxed/simple;
+	bh=Xdsuttpv57eTzMnRm7g3A0+frkCx/SnGj1xOjVOXHng=;
 	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
 	 MIME-Version:Content-Type;
- b=rDT2TKhzEg9vR1RSVstUP/e9Z+sWhPbag7vxjm3nmkSJBFS5bR72jSO3YnpEGSQLOgd0c+ou8ce0GQOHHZBEpr8VlMP4o6SK8T3BVg4yPiHhqLzwadektVXzAofZ0K+caSvYUjsPvDd2wH1xDyUPHgvr/DjsPh8bhO1MP80pTYk=
+ b=DCZ4pyonUsAaIuBQUBu/1NYBINM2V/yqfV+6ngHC6I8x7PP5e0WLPB1zEyJgRG752GtXxlhP3WdI6a+eW/8O0I64lNeSLtCeGZQ2ljn0mAfcuMtjB3rZq3UejFTR8v3I78Chfhv8/eSjfW7gSO+sswpSCXiFykPgseD3Hhz6W/4=
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
  dmarc=pass (p=none dis=none) header.from=quicinc.com;
  spf=pass smtp.mailfrom=quicinc.com;
  dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
- header.b=DbZeRJ9u; arc=none smtp.client-ip=205.220.168.131
+ header.b=n5c8p9dB; arc=none smtp.client-ip=205.220.180.131
 Authentication-Results: smtp.subspace.kernel.org;
  dmarc=pass (p=none dis=none) header.from=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
  spf=pass smtp.mailfrom=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
 	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
- header.b="DbZeRJ9u"
-Received: from pps.filterd (m0279867.ppops.net [127.0.0.1])
+ header.b="n5c8p9dB"
+Received: from pps.filterd (m0279869.ppops.net [127.0.0.1])
 	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id
- 48I9TNqc020283;
-	Wed, 18 Sep 2024 21:21:09 GMT
+ 54LIhKMc027654;
+	Wed, 21 May 2025 22:45:54 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
 	:message-id:mime-version:references:subject:to; s=qcppdkim1; bh=
-	azR+5F3oXqRD0oIXJq+q0F3HbuiVUYwPuvX5vVskhnw=; b=DbZeRJ9uo40mL5rR
-	p0cASEsdLU8yr/aYeIXTSWCHBf5P73m5S26EYVv6MqTdcnmRT7flYyQWzotNV+gg
-	oHJpR7L5sN+omhK+7gDPRcm5j29/U9+7rMG7I0JwrfR6KbUUNJkrg+omW45ZdRPS
-	/92XJynSBDgzEGETs0AjLe+PLPW4Ucnncc+YscEVm/dtR4f5vQBYwGdCwv4IuczO
-	FJrEmDh3mj7m6JtNVV+A3LT5qS7PCAbiS7qhTAkDfhH9gDZJuUTO2b6ByyO4UkWp
-	afB41wIc4KUDYsTHkThkApxxp0vHfJJLGCweUi+YKYaqvQETgLhHx/UkSRdoRBII
-	N708pg==
+	igBIHxXxEIGErFGPWQKC8rBeF0DUPvb+tsDy6dmbEUQ=; b=n5c8p9dBo/+917ae
+	iUuuRoUPhgwmxRjEorR4N5thttRSLen0XwHulOSFzfVHZvX/ZX7Xb8qa67RpJUAw
+	jx3TGu38TFybZ9zCbXxa3PoR7FqIyl7TyaU+RpGmjLnDTRjq5ODiDDkcGM8aLJ6C
+	pgH1JDyjAtZODpP3W+kKpoMlU/N8QCB8wVOob4E3+nH0XDeYWh0cSY4dAnFcFYsC
+	dgkUoVt65T3wJptGX80bBT1muPG/3O+IiWrYoP6NVayscmgOnCqKVpuSjYrEn/02
+	HlxMp7yg/I4LhlQquL2SfmAXdKThQLrOF/XiFsCW2VZETvSbXsLI0NXYRbRFUxC4
+	e9SLmw==
 Received: from nalasppmta05.qualcomm.com (Global_NAT1.qualcomm.com
  [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 41n4kjk65m-1
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 46rwf9cars-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 18 Sep 2024 21:21:09 +0000 (GMT)
+	Wed, 21 May 2025 22:45:54 +0000 (GMT)
 Received: from nalasex01a.na.qualcomm.com (nalasex01a.na.qualcomm.com
  [10.47.209.196])
 	by NALASPPMTA05.qualcomm.com (8.18.1.2/8.18.1.2) with ESMTPS id
- 48ILL8Gi009579
+ 54LMjrc1023294
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 18 Sep 2024 21:21:08 GMT
-Received: from ath12k-linux1.qualcomm.com (10.80.80.8) by
+	Wed, 21 May 2025 22:45:53 GMT
+Received: from ath12k-linux2.qualcomm.com (10.80.80.8) by
  nalasex01a.na.qualcomm.com (10.47.209.196) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.9; Wed, 18 Sep 2024 14:21:08 -0700
+ 15.2.1544.9; Wed, 21 May 2025 15:45:53 -0700
 From: Pradeep Kumar Chitrapu <quic_pradeepc@quicinc.com>
 To: <ath12k@lists.infradead.org>
 CC: <linux-wireless@vger.kernel.org>,
         Pradeep Kumar Chitrapu
 	<quic_pradeepc@quicinc.com>,
         Jeff Johnson <quic_jjohnson@quicinc.com>
-Subject: [PATCH V8 5/9] wifi: ath12k: fix TX and RX MCS rate configurations in
- HE mode
-Date: Wed, 18 Sep 2024 14:20:52 -0700
-Message-ID: <20240918212056.4137076-6-quic_pradeepc@quicinc.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20240918212056.4137076-1-quic_pradeepc@quicinc.com>
-References: <20240918212056.4137076-1-quic_pradeepc@quicinc.com>
+Subject: [PATCH ath-next V14 5/9] wifi: ath12k: fix TX and RX MCS rate
+ configurations in HE mode
+Date: Wed, 21 May 2025 15:45:35 -0700
+Message-ID: <20250521224539.355985-6-quic_pradeepc@quicinc.com>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20250521224539.355985-1-quic_pradeepc@quicinc.com>
+References: <20250521224539.355985-1-quic_pradeepc@quicinc.com>
 Precedence: bulk
 X-Mailing-List: linux-wireless@vger.kernel.org
 List-Id: <linux-wireless.vger.kernel.org>
@@ -87,17 +87,28 @@ X-ClientProxiedBy: nasanex01a.na.qualcomm.com (10.52.223.231) To
 X-QCInternal: smtphost
 X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800
  signatures=585085
-X-Proofpoint-GUID: JNJY4yItbZ8HP8WQjm82lNqNLkxUdf1v
-X-Proofpoint-ORIG-GUID: JNJY4yItbZ8HP8WQjm82lNqNLkxUdf1v
+X-Proofpoint-ORIG-GUID: lrtwH7rWiPRFD03fbbD0IavLBLpNgTW-
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjUwNTIxMDIyNSBTYWx0ZWRfX0HS2wunF/V5Q
+ jQqxwakF2Imrc/4a4WgPSFOFxUyO27D7Yw6gnIBRodgtwOFgflHDfeJMrELW79jrSDvXvRC0nnc
+ lTonRisd7/CZWExy3sM2diYhHrZ5YT1dPhFtq33ItpY8BaOhwiLxc3wn0tlWRX8B/cd+xyEHTZY
+ A4nCDSw77SEdaZfmqAB81LMzQWIuTucnxkms4pM1CIIYZrgAPcBk4XN8tWVQ6JQKCpMpelTF6Hj
+ /XLCY2ByRqjtwd/zSjtcCfLOyKdT+uQtAJU1XZvedwqQW5MFk2GeD7O72PfhAP1V0YcbHdiTxde
+ roRpAlQg48k0Ug5EMIUPb9TYEP15vwtPDTw03C3u7eOhs6znDqvMYNAtXwbxfGeHRwjsbMgpWLG
+ +weN3zziLWlwb66N0xo5nfdJRHrOVDNcSx8/Z/xvCmHBTuVr44Q7It0iW+CGbHNqXrg4h4CH
+X-Authority-Analysis: v=2.4 cv=GawXnRXL c=1 sm=1 tr=0 ts=682e57a2 cx=c_pps
+ a=ouPCqIW2jiPt+lZRy3xVPw==:117 a=ouPCqIW2jiPt+lZRy3xVPw==:17
+ a=GEpy-HfZoHoA:10 a=dt9VzEwgFbYA:10 a=COk6AnOGAAAA:8 a=mu3tZSmwaZwQUXtd2tAA:9
+ a=TjNXssC_j7lpFel5tvFf:22
+X-Proofpoint-GUID: lrtwH7rWiPRFD03fbbD0IavLBLpNgTW-
 X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.60.29
- definitions=2024-09-06_09,2024-09-06_01,2024-09-02_01
+ engine=ICAP:2.0.293,Aquarius:18.0.1099,Hydra:6.0.736,FMLib:17.12.80.40
+ definitions=2025-05-21_07,2025-05-20_03,2025-03-28_01
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- bulkscore=0 adultscore=0
- suspectscore=0 mlxscore=0 clxscore=1015 lowpriorityscore=0 malwarescore=0
- phishscore=0 impostorscore=0 mlxlogscore=999 priorityscore=1501
- spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.19.0-2408220000 definitions=main-2409180140
+ mlxscore=0 mlxlogscore=999 lowpriorityscore=0 impostorscore=0
+ priorityscore=1501 clxscore=1015 malwarescore=0 phishscore=0 bulkscore=0
+ spamscore=0 suspectscore=0 adultscore=0 classifier=spam authscore=0
+ authtc=n/a authcc= route=outbound adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2505160000 definitions=main-2505210225
 
 Currently, the TX and RX MCS rate configurations per peer are
 reversed when sent to the firmware. As a result, RX MCS rates
@@ -116,7 +127,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -2140,8 +2140,8 @@ int ath12k_wmi_send_peer_assoc_cmd(struc
+@@ -2266,8 +2266,8 @@ int ath12k_wmi_send_peer_assoc_cmd(struc
  		he_mcs->tlv_header = ath12k_wmi_tlv_cmd_hdr(WMI_TAG_HE_RATE_SET,
  							    sizeof(*he_mcs));
  
@@ -129,7 +140,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -3953,7 +3953,9 @@ struct ath12k_wmi_vht_rate_set_params {
+@@ -4083,7 +4083,9 @@ struct ath12k_wmi_vht_rate_set_params {
  
  struct ath12k_wmi_he_rate_set_params {
  	__le32 tlv_header;
