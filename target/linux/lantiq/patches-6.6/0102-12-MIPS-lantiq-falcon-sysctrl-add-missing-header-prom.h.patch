@@ -1,0 +1,25 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:15:36 +0800
+Subject: [PATCH 3/6] MIPS: lantiq: falcon: sysctrl: add missing header prom.h
+
+"prom.h" includes the prototype of ltq_soc_init(). Fix warning:
+
+arch/mips/lantiq/falcon/sysctrl.c:185:13: error: no previous prototype for 'ltq_soc_init' [-Werror=missing-prototypes]
+  185 | void __init ltq_soc_init(void)
+      |             ^~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/falcon/sysctrl.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/mips/lantiq/falcon/sysctrl.c
++++ b/arch/mips/lantiq/falcon/sysctrl.c
+@@ -14,6 +14,7 @@
+ #include <lantiq_soc.h>
+ 
+ #include "../clk.h"
++#include "../prom.h"
+ 
+ /* infrastructure control register */
+ #define SYS1_INFRAC		0x00bc

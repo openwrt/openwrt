@@ -1,0 +1,28 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 20:19:15 +0800
+Subject: [PATCH 6/9] MIPS: lantiq: xway: add prototype for ltq_get_cp1_base()
+
+ltq_get_cp1_base() is an exported function, we must define
+its prototype on header file. Fix warning:
+
+arch/mips/lantiq/xway/vmmc.c:22:15: error: no previous prototype for 'ltq_get_cp1_base' [-Werror=missing-prototypes]
+   22 | unsigned int *ltq_get_cp1_base(void)
+      |               ^~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -99,6 +99,9 @@ extern __iomem void *ltq_cgu_membase;
+ extern void ltq_pmu_enable(unsigned int module);
+ extern void ltq_pmu_disable(unsigned int module);
+ 
++/* VMMC */
++extern unsigned int *ltq_get_cp1_base(void);
++
+ /* allow the ethernet driver to load a flash mapped mac addr */
+ const u8* ltq_get_eth_mac(void);
+ 
