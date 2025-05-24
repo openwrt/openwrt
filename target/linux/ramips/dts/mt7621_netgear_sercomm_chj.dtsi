@@ -62,19 +62,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
 };
 
 &pcie {
@@ -117,6 +104,12 @@
 
 &ethphy4 {
 	/delete-property/ interrupts;
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

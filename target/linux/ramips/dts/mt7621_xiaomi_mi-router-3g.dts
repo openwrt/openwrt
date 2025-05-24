@@ -57,19 +57,6 @@
 			linux,default-trigger = "mt7530-0:02:1Gbps";
 		};
 	};
-
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
 };
 
 &pcie {
@@ -99,6 +86,12 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e006>;
 	nvmem-cell-names = "mac-address";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

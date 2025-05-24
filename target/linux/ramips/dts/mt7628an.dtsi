@@ -30,26 +30,20 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	mmc_reg_1v8: regulator-1v8 {
+	reg_vmmc: regulator-vmmc {
 		compatible = "regulator-fixed";
-
-		enable-active-high;
-
-		regulator-always-on;
-		regulator-max-microvolt = <1800000>;
-		regulator-min-microvolt = <1800000>;
-		regulator-name = "mmc_io";
-	};
-
-	mmc_reg_3v3: regulator-3v3 {
-		compatible = "regulator-fixed";
-
-		enable-active-high;
-
 		regulator-always-on;
 		regulator-max-microvolt = <3300000>;
 		regulator-min-microvolt = <3300000>;
 		regulator-name = "mmc_power";
+	};
+
+	reg_vqmmc: regulator-vqmmc {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-name = "mmc_io";
 	};
 
 	palmbus: palmbus@10000000 {
@@ -382,19 +376,17 @@
 		reg = <0x10130000 0x4000>;
 
 		bus-width = <4>;
-
+		max-frequency = <24000000>;
 		cap-mmc-highspeed;
 		cap-sd-highspeed;
+		disable-wp;
+		no-1-8-v;
 
 		clocks = <&sysc 16>, <&sysc 16>;
 		clock-names = "source", "hclk";
 
-		disable-wp;
-
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
-
-		max-frequency = <24000000>;
 
 		pinctrl-names = "default", "state_uhs";
 		pinctrl-0 = <&sdxc_pins>;
@@ -403,8 +395,8 @@
 		resets = <&sysc 30>;
 		reset-names = "hrst";
 
-		vmmc-supply = <&mmc_reg_3v3>;
-		vqmmc-supply = <&mmc_reg_1v8>;
+		vmmc-supply = <&reg_vmmc>;
+		vqmmc-supply = <&reg_vqmmc>;
 
 		status = "disabled";
 	};

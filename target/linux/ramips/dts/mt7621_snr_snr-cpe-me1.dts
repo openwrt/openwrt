@@ -56,24 +56,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
 };
 
 &gmac0 {
@@ -116,6 +98,12 @@
 		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &spi0 {
@@ -214,9 +202,4 @@
 			label = "lan1";
 		};
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
-	vusb33-supply = <&reg_3p3v>;
 };
