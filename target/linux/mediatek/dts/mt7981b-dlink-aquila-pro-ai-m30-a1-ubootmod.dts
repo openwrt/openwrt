@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-dlink-aquila-pro-ai-m30-a1.dtsi"
+
+/ {
+	model = "D-Link AQUILA PRO AI M30 A1 (OpenWrt partition layout)";
+	compatible = "dlink,aquila-pro-ai-m30-a1-ubootmod", "mediatek,mt7981";
+};
+
+&partitions {
+	/* ubi is the result of squashing
+	 * consecutive stock partitions:
+	 * - ubi
+	 * - ubi1
+	 */
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x6400000>;
+	};
+};
