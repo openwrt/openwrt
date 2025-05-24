@@ -101,9 +101,7 @@ glinet,gl-ar300m-nor|\
 glinet,gl-ar300m16|\
 glinet,gl-s200-nor|\
 glinet,gl-s200-nor-nand)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 buffalo,wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
