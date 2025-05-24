@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2023, Mohammad Sayful Islam <Sayf.mohammad01@gmail.com> */
+
+/dts-v1/;
+
+#include "ipq8074-512m.dtsi"
+#include "ipq8174-mx4200.dtsi"
+
+/ {
+	model = "Linksys MX4200v1";
+	compatible = "linksys,mx4200v1", "qcom,ipq8074";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Linksys-MX4200v1";
+	qcom,ath11k-fw-memory-mode = <1>;
+};
