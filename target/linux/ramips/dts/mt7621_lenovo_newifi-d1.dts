@@ -59,25 +59,32 @@
 		};
 	};
 
-	gpio_export {
-		compatible = "gpio-export";
+	reg_usb_vbus: regulator-usb {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 
-		usb2power {
-			gpio-export,name = "usb2power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		usb3power {
-			gpio-export,name = "usb3power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		};
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
 &sdhci {
 	status = "okay";
+};
+
+&xhci {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_usb_vbus>;
 };
 
 &spi0 {
