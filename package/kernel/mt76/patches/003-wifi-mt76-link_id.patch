@@ -1,0 +1,34 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1702,7 +1702,7 @@ s8 mt76_get_power_bound(struct mt76_phy
+ EXPORT_SYMBOL_GPL(mt76_get_power_bound);
+ 
+ int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-		     int *dbm)
++		     unsigned int link_id, int *dbm)
+ {
+ 	struct mt76_phy *phy = mt76_vif_phy(hw, vif);
+ 	int n_chains, delta;
+--- a/mt76.h
++++ b/mt76.h
+@@ -1496,7 +1496,7 @@ int mt76_get_min_avg_rssi(struct mt76_de
+ s8 mt76_get_power_bound(struct mt76_phy *phy, s8 txpower);
+ 
+ int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-		     int *dbm);
++		     unsigned int link_id, int *dbm);
+ int mt76_init_sar_power(struct ieee80211_hw *hw,
+ 			const struct cfg80211_sar_specs *sar);
+ int mt76_get_sar_power(struct mt76_phy *phy,
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -664,7 +664,8 @@ static void mt7996_configure_filter(stru
+ }
+ 
+ static int
+-mt7996_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif, int *dbm)
++mt7996_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++		       unsigned int link_id, int *dbm)
+ {
+ 	struct mt7996_vif *mvif = (struct mt7996_vif *)vif->drv_priv;
+ 	struct mt7996_phy *phy = mt7996_vif_link_phy(&mvif->deflink);

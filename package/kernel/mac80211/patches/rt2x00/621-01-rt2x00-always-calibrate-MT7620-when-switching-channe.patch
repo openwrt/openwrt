@@ -42,7 +42,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  	if (flags & IEEE80211_CONF_CHANGE_POWER)
  		rt2800_config_txpower(rt2x00dev, libconf->conf->chandef.chan,
-@@ -10427,15 +10438,19 @@ static void rt2800_restore_rf_bbp_rt6352
+@@ -10421,15 +10432,19 @@ static void rt2800_restore_rf_bbp_rt6352
  	}
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_rf_self_txdc_cal(rt2x00dev);
  	rt2800_rxdcoc_calibration(rt2x00dev);
  	rt2800_bw_filter_calibration(rt2x00dev, true);
-@@ -10766,9 +10781,6 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10760,9 +10775,6 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -29,6 +29,11 @@
+@@ -28,6 +28,11 @@
  
  #include "ath9k.h"
  
@@ -12,7 +12,7 @@
  struct ath9k_eeprom_ctx {
  	struct completion complete;
  	struct ath_hw *ah;
-@@ -243,6 +248,81 @@ static unsigned int ath9k_reg_rmw(void *
+@@ -242,6 +247,81 @@ static unsigned int ath9k_reg_rmw(void *
  	return val;
  }
  
@@ -94,7 +94,7 @@
  /**************************/
  /*     Initialization     */
  /**************************/
-@@ -670,6 +750,7 @@ static int ath9k_of_init(struct ath_soft
+@@ -626,6 +706,7 @@ static int ath9k_of_init(struct ath_soft
  	struct ath_common *common = ath9k_hw_common(ah);
  	enum ath_bus_type bus_type = common->bus_ops->ath_bus_type;
  	char eeprom_name[100];
@@ -102,7 +102,7 @@
  	int ret;
  
  	if (!of_device_is_available(np))
-@@ -677,6 +758,43 @@ static int ath9k_of_init(struct ath_soft
+@@ -633,6 +714,43 @@ static int ath9k_of_init(struct ath_soft
  
  	ath_dbg(common, CONFIG, "parsing configuration from OF node\n");
  
@@ -146,9 +146,9 @@
  	if (of_property_read_bool(np, "qca,no-eeprom")) {
  		/* ath9k-eeprom-<bus>-<id>.bin */
  		scnprintf(eeprom_name, sizeof(eeprom_name),
-@@ -693,6 +811,17 @@ static int ath9k_of_init(struct ath_soft
- 
- 	of_get_mac_address(np, common->macaddr);
+@@ -651,6 +769,17 @@ static int ath9k_of_init(struct ath_soft
+ 	if (ret == -EPROBE_DEFER)
+ 		return ret;
  
 +	np = of_get_child_by_name(np, "led");
 +	if (np && of_device_is_available(np)) {
