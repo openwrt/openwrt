@@ -1,0 +1,41 @@
+From 742536da100a21452fb73c0b227cb170c5dc928d Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Sat, 21 Sep 2024 23:51:24 +0800
+Subject: [PATCH 19/19] net-tcp_bbr: v3: change `u64` to `unsigned long` for
+ `bytes` in `bbr_tso_segs_generic`
+
+This change addresses a build failure on 32-bit systems due to undefined division symbols:
+
+arm:
+ERROR: modpost: "__aeabi_uldivmod" [net/ipv4/tcp_bbr.ko] undefined!
+ERROR: modpost: "__aeabi_ldivmod" [net/ipv4/tcp_bbr.ko] undefined!
+
+x86, mips, ppc:
+ERROR: modpost: "__udivdi3" [net/ipv4/tcp_bbr.ko] undefined!
+ERROR: modpost: "__divdi3" [net/ipv4/tcp_bbr.ko] undefined!
+
+Since `sk->sk_pacing_rate` is already an `unsigned long`, the `bytes` variable is
+updated to `unsigned long` to resolve these division issues and ensure compatibility
+across both 32-bit and 64-bit platforms.
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ net/ipv4/tcp_bbr.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/ipv4/tcp_bbr.c b/net/ipv4/tcp_bbr.c
+index e09389c378cc..c44fd8d1930f 100644
+--- a/net/ipv4/tcp_bbr.c
++++ b/net/ipv4/tcp_bbr.c
+@@ -482,7 +482,7 @@ static u32 bbr_tso_segs_generic(struct sock *sk, unsigned int mss_now,
+ {
+ 	struct bbr *bbr = inet_csk_ca(sk);
+ 	u32 segs, r;
+-	u64 bytes;
++	unsigned long bytes;
+ 
+ 	/* Budget a TSO/GSO burst size allowance based on bw (pacing_rate). */
+ 	bytes = READ_ONCE(sk->sk_pacing_rate) >> READ_ONCE(sk->sk_pacing_shift);
+-- 
+2.43.0
+
