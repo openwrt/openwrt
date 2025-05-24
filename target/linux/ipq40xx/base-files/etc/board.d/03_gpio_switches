@@ -21,6 +21,11 @@ cilab,meshpoint-one)
 compex,wpj428)
 	ucidef_add_gpio_switch "sim_card_select" "SIM card select" "3" "0"
 	;;
+meraki,gx20|\
+meraki,z3|\
+meraki,z3c)
+	ucidef_add_gpio_switch "lan4_poe_disable" "LAN4 PoE disable" "540" "0"
+	;;
 mikrotik,cap-ac)
 	ucidef_add_gpio_switch "poe_passtrough" "POE passtrough enable" "514" "0"
 	;;
