@@ -64,7 +64,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  
  		entry->command = strdup(sep + 1);
  		if (!entry->command) {
-@@ -382,9 +404,9 @@ static struct bootmenu_data *bootmenu_cr
+@@ -388,9 +410,9 @@ static struct bootmenu_data *bootmenu_cr
  
  		/* Add Quit entry if exiting bootmenu is disabled */
  		if (!IS_ENABLED(CONFIG_BOOTMENU_DISABLE_UBOOT_CONSOLE))

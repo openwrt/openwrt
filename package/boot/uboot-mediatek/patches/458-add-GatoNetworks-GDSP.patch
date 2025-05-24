@@ -44,7 +44,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +		reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -53,47 +53,47 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +
 +		sim1 {
 +			label = "sim1";
-+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sim2 {
 +			label = "sim2";
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg1 {
 +			label = "sg1";
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg2 {
 +			label = "sg2";
-+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg3 {
 +			label = "sg3";
-+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg4 {
 +			label = "sg4";
-+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg5 {
 +			label = "sg5";
-+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		sg6 {
 +			label = "sg6";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +	gpio-watchdog {
 +		compatible = "linux,wdt-gpio";
-+		gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
++		gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 +		hw_algo = "toggle";
 +		hw_margin_ms = <25000>;
 +		always-running;
@@ -106,7 +106,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -166,7 +166,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	uart1_pins: uart1-pins {
 +		mux {
 +			function = "uart";
