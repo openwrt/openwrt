@@ -84,7 +84,7 @@
 #endif /* end of --- */
 
 #define DEFAULT_DEBOUNCE    (8)       /* 8 cycles */
-#define DEFAULT_DTOC        (40)      /* data timeout counter. 65536x40 sclk. */
+#define DEFAULT_DTOC        (40)      /* data timeout counter. 1048576x40 sclk. */
 
 #define CMD_TIMEOUT         (HZ / 10)     /* 100ms */
 #define DAT_TIMEOUT         (HZ / 2 * 5)  /* 500ms x5 */
@@ -414,13 +414,13 @@ static void msdc_set_timeout(struct msdc_host *host, u32 ns, u32 clks)
 
 	clk_ns  = 1000000000UL / host->sclk;
 	timeout = ns / clk_ns + clks;
-	timeout = timeout >> 16; /* in 65536 sclk cycle unit */
+	timeout = DIV_ROUND_UP(timeout, BIT(20)); /* in 1048576 sclk cycle unit */
 	timeout = timeout > 1 ? timeout - 1 : 0;
 	timeout = timeout > 255 ? 255 : timeout;
 
 	sdr_set_field(SDC_CFG, SDC_CFG_DTOC, timeout);
 
-	N_MSG(OPS, "Set read data timeout: %dns %dclks -> %d x 65536 cycles",
+	N_MSG(OPS, "Set read data timeout: %dns %dclks -> %d x 1048576 cycles",
 	      ns, clks, timeout + 1);
 }
 
@@ -2276,7 +2276,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	host->power_mode = MMC_POWER_OFF;
 //    host->card_inserted = hw->flags & MSDC_REMOVABLE ? 0 : 1;
 	host->timeout_ns = 0;
-	host->timeout_clks = DEFAULT_DTOC * 65536;
+	host->timeout_clks = DEFAULT_DTOC * 1048576;
 
 	host->mrq = NULL;
 	//init_MUTEX(&host->sem); /* we don't need to support multiple threads access */
