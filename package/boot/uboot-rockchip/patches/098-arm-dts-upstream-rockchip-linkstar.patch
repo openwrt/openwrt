@@ -1,8 +1,8 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,727 @@
+@@ -0,0 +1,725 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Draft 31 March 2025
++// Draft 25 May 2025
 +// Device Tree Info
 +// DTSI for Rockchip 3568-based
 +// Seeed Studios LinkStar H68k-1432-V1
@@ -11,7 +11,6 @@
 +// Filename rk3568-seeed-h68k-1432-v1.dts
 +//
 +// Copyright 2025 TahomaSoft bacon@tahomasoft.com
-+// Derived from prior work by AmadeusGhost <amadeus@jmu.edu.cn>
 +
 +
 +/dts-v1/;
@@ -619,7 +618,6 @@
 +	/* cap-sd-highspeed; */
 +	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 +	disable-wp;
-+	pinctrl-names = "default";
 +	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
 +	sd-uhs-sdr104;
 +	vmmc-supply = <&vcc3v3_sd>;
@@ -708,24 +706,24 @@
 +
 +
 +&pcie3x1 {
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 +
 +&pcie3x2 {
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 +&sata0 { /* sata0 muxed with USB3 OTG0 */
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 +&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 +&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 
