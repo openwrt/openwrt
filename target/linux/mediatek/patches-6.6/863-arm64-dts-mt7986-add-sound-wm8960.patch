@@ -9,7 +9,7 @@ Subject: [PATCH] arm64: dts: mt7986: add sound wm8960
 
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-rfb-spim-nand.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-rfb-spim-nand.dts
-@@ -4,6 +4,35 @@
+@@ -4,6 +4,36 @@
  
  / {
  	compatible = "mediatek,mt7986a-rfb-snand";
@@ -40,12 +40,13 @@ Subject: [PATCH] arm64: dts: mt7986: add sound wm8960
 +
 +	wm8960: wm8960@1a {
 +		compatible = "wlf,wm8960";
++		#sound-dai-cells = <0>;
 +		reg = <0x1a>;
 +	};
  };
  
  &spi0 {
-@@ -50,3 +79,13 @@
+@@ -50,3 +80,13 @@
  &wifi {
  	mediatek,mtd-eeprom = <&factory 0>;
  };

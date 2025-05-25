@@ -132,7 +132,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@00000 {
+			partition@0 {
 				label = "BL2";
 				reg = <0x00000 0x40000>;
 				read-only;
@@ -148,7 +148,7 @@
 				label = "Factory";
 				reg = <0x50000 0x10000>;
 				read-only;
-				
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;

@@ -51,11 +51,14 @@ let obj = ubus.publish("unetmsg", {
 		args: {
 			name: "",
 			type: "",
+			host: "",
 			data: {},
 		},
 		call: function(req) {
 			try {
-				core.handle_request(null, req, req.args, true);
+				let host = req.args.host;
+				delete req.args.host;
+				core.handle_request(null, req, req.args, true, host);
 			} catch (e) {
 				core.exception(e);
 			}

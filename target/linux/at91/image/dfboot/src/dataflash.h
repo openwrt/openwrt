@@ -22,7 +22,7 @@
 #ifdef	SPI_LOW_SPEED
 #define AT91C_SPI_CLK 14976000/4
 #else
-#define AT91C_SPI_CLK 14976000 
+#define AT91C_SPI_CLK 14976000
 #endif
 
 /* AC characteristics */

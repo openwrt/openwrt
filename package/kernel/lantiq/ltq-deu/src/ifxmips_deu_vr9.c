@@ -72,9 +72,9 @@ u8 *g_dma_block2 = NULL;
 deu_drv_priv_t deu_dma_priv;
 
 
-/*! \fn u32 endian_swap(u32 input) 
+/*! \fn u32 endian_swap(u32 input)
  *  \ingroup BOARD_SPECIFIC_FUNCTIONS
- *  \brief Swap data given to the function 
+ *  \brief Swap data given to the function
  *  \param input Data input to be swapped
  *  \return either the swapped data or the input data depending on whether it is in DMA mode or FPI mode
 */
@@ -87,7 +87,7 @@ u32 endian_swap(u32 input)
 
 /*! \fn u32 input_swap(u32 input)
  *  \ingroup BOARD_SPECIFIC_FUNCTIONS
- *  \brief Not used  
+ *  \brief Not used
  *  \return input
 */
 
@@ -98,7 +98,7 @@ u32 input_swap(u32 input)
 
 /*! \fn void aes_chip_init (void)
  *  \ingroup BOARD_SPECIFIC_FUNCTIONS
- *  \brief initialize AES hardware   
+ *  \brief initialize AES hardware
 */
 
 void aes_chip_init (void)
@@ -112,14 +112,14 @@ void aes_chip_init (void)
     aes->controlr.ENDI = 1;
     asm("sync");
     aes->controlr.ARS = 0;
-	
+
 }
 
 /*! \fn void des_chip_init (void)
  *  \ingroup IFX_AES_FUNCTIONS
  *  \brief initialize DES hardware
-*/         
-                        
+*/
+
 void des_chip_init (void)
 {
     volatile struct des_t *des = (struct des_t *) DES_3DES_START;
@@ -129,7 +129,7 @@ void des_chip_init (void)
     des->controlr.NDC = 1;
     asm("sync");
     des->controlr.ENDI = 1;
-    asm("sync");    
+    asm("sync");
     des->controlr.ARS = 0;
 
 }
@@ -137,7 +137,7 @@ void des_chip_init (void)
  *  \ingroup IFX_DES_FUNCTIONS
  *  \brief function not used in VR9
 */
-void chip_version(void) 
+void chip_version(void)
 {
     return;
 }
