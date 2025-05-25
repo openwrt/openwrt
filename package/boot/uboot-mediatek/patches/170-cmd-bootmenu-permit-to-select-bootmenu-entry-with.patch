@@ -1,0 +1,261 @@
+From 16fd9af92b7ed93ece62fa8d1bef341455d773cf Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 24 May 2025 23:23:53 +0200
+Subject: [PATCH v2] cmd: bootmenu: permit to select bootmenu entry with a
+ shortcut
+
+Permit to select a bootmenu entry with a key shortcut. This is
+especially useful in production or testing scenario to automate flashing
+procedure or testing procedure.
+
+The boot entry are changed to append the shortcut key to it.
+
+Example:
+      1. Run default boot command.
+      2. Boot system via TFTP.
+      3. Boot production system from NAND.
+      4. Boot recovery system from NAND.
+      5. Load production system via TFTP then write to NAND.
+      6. Load recovery system via TFTP then write to NAND.
+      7. Load BL31+U-Boot FIP via TFTP then write to NAND.
+      8. Load BL2 preloader via TFTP then write to NAND.
+      9. Reboot.
+      a. Reset all settings to factory defaults.
+      0. Exit
+
+0 is always reserved for Exit to console.
+On pressing the keyboard key 2, the bootmenu entry 2 is selected and
+executed.
+
+Up to 34 key shortcut (0 excluded as reserved) are supported from 1-9
+and a-z.
+If a shortcut key not present in the bootmenu list is pressed, it is
+simply ignored and eventually the autoboot is interrupted.
+
+Capital A-Z are converted to lower a-z and the related option is
+selected.
+
+Suggested-by: Weijie Gao <weijie.gao@mediatek.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+Changes v2:
+- Fix spelling mistake
+- Fix case with '0'
+
+ cmd/bootmenu.c | 41 ++++++++++++++++++++++++++++++++++++++---
+ common/menu.c  | 44 ++++++++++++++++++++++++++++++++++++++++++--
+ include/cli.h  |  2 ++
+ include/menu.h |  3 +++
+ 4 files changed, 85 insertions(+), 5 deletions(-)
+
+--- a/cmd/bootmenu.c
++++ b/cmd/bootmenu.c
+@@ -114,6 +114,14 @@ static char *bootmenu_choice_entry(void
+ 				++menu->active;
+ 			/* no menu key selected, regenerate menu */
+ 			return NULL;
++		case BKEY_SHORTCUT:
++			/* invalid shortcut, regenerate menu */
++			if (cch->shortcut_key >= menu->count - 1)
++				return NULL;
++			/* shortcut_key value for Exit is is -1 */
++			menu->active = cch->shortcut_key < 0 ? menu->count - 1 :
++							       cch->shortcut_key;
++			fallthrough;
+ 		case BKEY_SELECT:
+ 			iter = menu->first;
+ 			for (i = 0; i < menu->active; ++i)
+@@ -161,6 +169,21 @@ static void bootmenu_destroy(struct boot
+ 	free(menu);
+ }
+ 
++static char bootmenu_entry_shortcut_key(int index)
++{
++	switch (index) {
++	/* 1-9 shortcut key (0 reserved) */
++	case 0 ... 8:
++		return '1' + index;
++	/* a-z shortcut key  */
++	case 9 ... 34:
++		return 'a' + index - 9;
++	/* We support shortcut for up to 34 options (0 reserved) */
++	default:
++		return -ENOENT;
++	}
++}
++
+ /**
+  * prepare_bootmenu_entry() - generate the bootmenu_xx entries
+  *
+@@ -184,6 +207,8 @@ static int prepare_bootmenu_entry(struct
+ 	struct bootmenu_entry *iter = *current;
+ 
+ 	while ((option = bootmenu_getoption(i))) {
++		char shortcut_key;
++		int len;
+ 
+ 		/* bootmenu_[num] format is "[title]=[commands]" */
+ 		sep = strchr(option, '=');
+@@ -196,12 +221,22 @@ static int prepare_bootmenu_entry(struct
+ 		if (!entry)
+ 			return -ENOMEM;
+ 
+-		entry->title = strndup(option, sep - option);
++		/* Add shotcut key option: %c. %s\0 */
++		len = sep - option + 4;
++
++		entry->title = malloc(len);
+ 		if (!entry->title) {
+ 			free(entry);
+ 			return -ENOMEM;
+ 		}
+ 
++		shortcut_key = bootmenu_entry_shortcut_key(i);
++		/* Use emtpy space if entry doesn't support shortcut key */
++		snprintf(entry->title, len, "%c%c %s",
++			 shortcut_key > 0 ? shortcut_key : ' ',
++			 shortcut_key > 0 ? '.' : ' ',
++			 option);
++
+ 		entry->command = strdup(sep + 1);
+ 		if (!entry->command) {
+ 			free(entry->title);
+@@ -382,9 +417,9 @@ static struct bootmenu_data *bootmenu_cr
+ 
+ 		/* Add Quit entry if exiting bootmenu is disabled */
+ 		if (!IS_ENABLED(CONFIG_BOOTMENU_DISABLE_UBOOT_CONSOLE))
+-			entry->title = strdup("Exit");
++			entry->title = strdup("0. Exit");
+ 		else
+-			entry->title = strdup("Quit");
++			entry->title = strdup("0. Quit");
+ 
+ 		if (!entry->title) {
+ 			free(entry);
+--- a/common/menu.c
++++ b/common/menu.c
+@@ -8,6 +8,7 @@
+ #include <cli.h>
+ #include <malloc.h>
+ #include <errno.h>
++#include <linux/ctype.h>
+ #include <linux/delay.h>
+ #include <linux/list.h>
+ #include <watchdog.h>
+@@ -436,6 +437,29 @@ int menu_destroy(struct menu *m)
+ 	return 1;
+ }
+ 
++static int bootmenu_conv_shortcut_key(struct bootmenu_data *menu, int ichar)
++{
++	int shortcut_key;
++
++	ichar = tolower(ichar);
++	switch (ichar) {
++	/* a-z for bootmenu entry > 9 */
++	case 'a' ... 'z':
++		shortcut_key = ichar - 'a' + 9;
++		break;
++	/* 1-9 for bootmenu entry <= 9 */
++	case '1' ... '9':
++		shortcut_key = ichar - '1';
++		break;
++	/* Reserve 0 for last option (aka Exit) */
++	case '0':
++	default:
++		return -1;
++	}
++
++	return shortcut_key;
++}
++
+ enum bootmenu_key bootmenu_autoboot_loop(struct bootmenu_data *menu,
+ 					 struct cli_ch_state *cch)
+ {
+@@ -443,12 +467,12 @@ enum bootmenu_key bootmenu_autoboot_loop
+ 	int i, c;
+ 
+ 	while (menu->delay > 0) {
++		int ichar;
++
+ 		if (ansi)
+ 			printf(ANSI_CURSOR_POSITION, menu->count + 5, 3);
+ 		printf("Hit any key to stop autoboot: %d ", menu->delay);
+ 		for (i = 0; i < 100; ++i) {
+-			int ichar;
+-
+ 			if (!tstc()) {
+ 				schedule();
+ 				mdelay(10);
+@@ -470,6 +494,11 @@ enum bootmenu_key bootmenu_autoboot_loop
+ 			case 0x3: /* ^C */
+ 				key = BKEY_QUIT;
+ 				break;
++			case 'A' ... 'Z':
++			case 'a' ... 'z':
++			case '0' ... '9':
++				key = BKEY_SHORTCUT;
++				break;
+ 			default:
+ 				key = BKEY_NONE;
+ 				break;
+@@ -477,6 +506,9 @@ enum bootmenu_key bootmenu_autoboot_loop
+ 			break;
+ 		}
+ 
++		if (key == BKEY_SHORTCUT)
++			cch->shortcut_key = bootmenu_conv_shortcut_key(menu, ichar);
++
+ 		if (menu->delay < 0)
+ 			break;
+ 
+@@ -524,6 +556,11 @@ enum bootmenu_key bootmenu_conv_key(int
+ 	case ' ':
+ 		key = BKEY_SPACE;
+ 		break;
++	case 'A' ... 'Z':
++	case 'a' ... 'z':
++	case '0' ... '9':
++		key = BKEY_SHORTCUT;
++		break;
+ 	default:
+ 		key = BKEY_NONE;
+ 		break;
+@@ -554,5 +591,8 @@ enum bootmenu_key bootmenu_loop(struct b
+ 
+ 	key = bootmenu_conv_key(c);
+ 
++	if (key == BKEY_SHORTCUT)
++		cch->shortcut_key = bootmenu_conv_shortcut_key(menu, c);
++
+ 	return key;
+ }
+--- a/include/cli.h
++++ b/include/cli.h
+@@ -17,12 +17,14 @@
+  * @esc_save: Escape characters collected so far
+  * @emit_upto: Next index to emit from esc_save
+  * @emitting: true if emitting from esc_save
++ * @shortcut_key: Selected shortcut option index
+  */
+ struct cli_ch_state {
+ 	int esc_len;
+ 	char esc_save[8];
+ 	int emit_upto;
+ 	bool emitting;
++	int shortcut_key;
+ };
+ 
+ /**
+--- a/include/menu.h
++++ b/include/menu.h
+@@ -54,6 +54,9 @@ enum bootmenu_key {
+ 	BKEY_QUIT,
+ 	BKEY_SAVE,
+ 
++	/* shortcut key to select menu option directly */
++	BKEY_SHORTCUT,
++
+ 	/* 'extra' keys, which are used by menus but not cedit */
+ 	BKEY_PLUS,
+ 	BKEY_MINUS,
