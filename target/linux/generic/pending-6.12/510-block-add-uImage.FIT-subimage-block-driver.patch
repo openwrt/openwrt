@@ -1,4 +1,4 @@
-From 6173a065cb395d4a9528c4e49810af127db68141 Mon Sep 17 00:00:00 2001
+From 3a200922ac4cbf4bfffdf86c0957b1401474e839 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Wed, 16 Nov 2022 12:49:52 +0000
 Subject: [PATCH 1/2] block: add uImage.FIT subimage block driver
@@ -26,10 +26,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  MAINTAINERS                 |   6 +
  drivers/block/Kconfig       |  12 +
  drivers/block/Makefile      |   2 +
- drivers/block/fitblk.c      | 658 ++++++++++++++++++++++++++++++++++++
+ drivers/block/fitblk.c      | 660 ++++++++++++++++++++++++++++++++++++
  drivers/block/open          |   4 +
  include/uapi/linux/fitblk.h |  10 +
- 6 files changed, 692 insertions(+)
+ 6 files changed, 694 insertions(+)
  create mode 100644 drivers/block/fitblk.c
  create mode 100644 drivers/block/open
  create mode 100644 include/uapi/linux/fitblk.h
@@ -81,7 +81,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  swim_mod-y	:= swim.o swim_asm.o
 --- /dev/null
 +++ b/drivers/block/fitblk.c
-@@ -0,0 +1,658 @@
+@@ -0,0 +1,660 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * uImage.FIT virtual block device driver.
@@ -191,7 +191,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +struct fitblk {
 +	struct platform_device	*pdev;
-+	struct block_device	*lower_bdev;
++	struct file		*bdev_file;
 +	sector_t		start_sect;
 +	struct gendisk		*disk;
 +	struct work_struct	remove_work;
@@ -225,7 +225,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	/* mangle bio and re-submit */
 +	while (bio) {
 +		bio->bi_iter.bi_sector += fitblk->start_sect;
-+		bio->bi_bdev = fitblk->lower_bdev;
++		bio->bi_bdev = file_bdev(fitblk->bdev_file);
 +		bio = bio->bi_next;
 +	}
 +	submit_bio(orig_bio);
@@ -276,23 +276,24 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +{
 +	struct fitblk *fitblk = container_of(work, struct fitblk, remove_work);
 +
-+	//del_gendisk(fitblk->disk); // causes crash, not doing it doesn't matter
++	del_gendisk(fitblk->disk);
 +	refcount_dec(&num_devs);
 +	platform_device_del(fitblk->pdev);
 +	platform_device_put(fitblk->pdev);
 +
 +	if (refcount_dec_if_one(&num_devs)) {
 +		sysfs_remove_link(&pdev->dev.kobj, "lower_dev");
-+		blkdev_put(fitblk->lower_bdev, &_fitblk_claim_ptr);
++		fput(fitblk->bdev_file);
 +	}
 +
 +	kfree(fitblk);
 +}
 +
-+static int add_fit_subimage_device(struct block_device *lower_bdev,
++static int add_fit_subimage_device(struct file *bdev_file,
 +				   unsigned int slot, sector_t start_sect,
 +				   sector_t nr_sect, bool readonly)
 +{
++	struct block_device *bdev = file_bdev(bdev_file);
 +	struct fitblk *fitblk;
 +	struct gendisk *disk;
 +	int err;
@@ -307,18 +308,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		goto out_unlock;
 +	}
 +
-+	fitblk->lower_bdev = lower_bdev;
++	fitblk->bdev_file = bdev_file;
 +	fitblk->start_sect = start_sect;
 +	INIT_WORK(&fitblk->remove_work, fitblk_purge);
 +
-+	disk = blk_alloc_disk(NUMA_NO_NODE);
++	disk = blk_alloc_disk(&bdev->bd_disk->queue->limits, NUMA_NO_NODE);
 +	if (!disk) {
 +		err = -ENOMEM;
 +		goto out_free_fitblk;
 +	}
 +
 +	disk->first_minor = 0;
-+	disk->flags = lower_bdev->bd_disk->flags | GENHD_FL_NO_PART;
++	disk->flags = bdev->bd_disk->flags | GENHD_FL_NO_PART;
 +	disk->fops = &fitblk_fops;
 +	disk->private_data = fitblk;
 +	if (readonly) {
@@ -329,10 +330,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +	set_capacity(disk, nr_sect);
-+
-+	disk->queue->queue_flags = lower_bdev->bd_disk->queue->queue_flags;
-+	memcpy(&disk->queue->limits, &lower_bdev->bd_disk->queue->limits,
-+	       sizeof(struct queue_limits));
++	disk->queue->queue_flags = bdev->bd_disk->queue->queue_flags;
 +
 +	fitblk->disk = disk;
 +	fitblk->pdev = platform_device_alloc(disk->disk_name, PLATFORM_DEVID_NONE);
@@ -381,7 +379,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	mutex_lock(&devices_mutex);
 +	list_for_each_safe(n, tmp, &fitblk_devices) {
 +		fitblk = list_entry(n, struct fitblk, list);
-+		if (fitblk->lower_bdev != bdev)
++		if (file_bdev(fitblk->bdev_file) != bdev)
 +			continue;
 +
 +		fitblk->dead = true;
@@ -398,6 +396,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +static int parse_fit_on_dev(struct device *dev)
 +{
++	struct file *bdev_file;
 +	struct block_device *bdev;
 +	struct address_space *mapping;
 +	struct folio *folio;
@@ -424,14 +423,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	unsigned int slot = 0;
 +
 +	/* Exclusive open the block device to receive holder notifications */
-+	bdev = blkdev_get_by_dev(dev->devt, BLK_OPEN_READ, &_fitblk_claim_ptr, &fitblk_hops);
-+	if (!bdev)
++	bdev_file = bdev_file_open_by_dev(dev->devt,
++					  BLK_OPEN_READ | BLK_OPEN_RESTRICT_WRITES,
++					  &_fitblk_claim_ptr, &fitblk_hops);
++	if (!bdev_file)
 +		return -ENODEV;
 +
-+	if (IS_ERR(bdev))
-+		return PTR_ERR(bdev);
++	if (IS_ERR(bdev_file))
++		return PTR_ERR(bdev_file);
 +
-+	mapping = bdev->bd_inode->i_mapping;
++	bdev = file_bdev(bdev_file);
++	mapping = bdev_file->f_mapping;
 +
 +	/* map first page */
 +	folio = read_mapping_folio(mapping, f_index++, NULL);
@@ -478,7 +480,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	fit_c = fit;
 +	while (bytes_left > 0) {
 +		bytes_to_copy = min_t(size_t, bytes_left,
-+				     folio_size(folio) - offset_in_folio(folio, 0));
++				      folio_size(folio) - offset_in_folio(folio, 0));
 +		memcpy(fit_c, pre_fit, bytes_to_copy);
 +		fit_c += bytes_to_copy;
 +		bytes_left -= bytes_to_copy;
@@ -653,7 +655,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			ret = 0;
 +		}
 +
-+		add_fit_subimage_device(bdev, slot++, start_sect, nr_sects, true);
++		add_fit_subimage_device(bdev_file, slot++, start_sect, nr_sects, true);
 +	}
 +
 +	if (!slot)
@@ -664,9 +666,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		 (slot > 1)?"]":"");
 +
 +	/* in case uImage.FIT is stored in a partition, map the remaining space */
-+	if (!bdev->bd_read_only && bdev_is_partition(bdev) &&
++	if (!bdev_read_only(bdev) && bdev_is_partition(bdev) &&
 +	    (imgmaxsect + MIN_FREE_SECT) < dsectors) {
-+		add_fit_subimage_device(bdev, slot++, imgmaxsect,
++		add_fit_subimage_device(bdev_file, slot++, imgmaxsect,
 +					dsectors - imgmaxsect, false);
 +		dev_info(dev, "mapped remaining space as /dev/fitrw\n");
 +	}
@@ -676,7 +678,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	kfree(fit);
 +out_blkdev:
 +	if (!slot)
-+		blkdev_put(bdev, &_fitblk_claim_ptr);
++		fput(bdev_file);
 +
 +	return ret;
 +}

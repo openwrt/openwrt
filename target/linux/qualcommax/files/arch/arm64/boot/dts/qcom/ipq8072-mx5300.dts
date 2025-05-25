@@ -522,13 +522,8 @@
 
 	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi0: wifi@1,0 {
+	pcie@0 {
+		wifi0: wifi@0,0 {
 			status = "okay";
 
 			compatible = "qcom,ath10k";

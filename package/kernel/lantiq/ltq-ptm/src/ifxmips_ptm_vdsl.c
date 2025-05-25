@@ -172,7 +172,7 @@ static void ptm_setup(struct net_device *dev, int ndev)
 static struct net_device_stats *ptm_get_stats(struct net_device *dev)
 {
    struct net_device_stats *s;
-  
+
     if ( dev != g_net_dev[0] )
         return NULL;
 s = &g_ptm_priv_data.itf[0].stats;

@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-ssdk
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-ssdk.git
+PKG_SOURCE_URL:=https://github.com/openwrt/qca-ssdk.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2024-06-13
-PKG_SOURCE_VERSION:=c451136ba69d51d60f770365b6d6d60ff2801998
-PKG_MIRROR_HASH:=4c54f2d77b5abeb96bddceb4a9eb58aa2c8fb12b58d5d666196224a35ac107dc
+PKG_SOURCE_DATE:=2025-05-12
+PKG_SOURCE_VERSION:=709382c7aefbd07643db24edb514322f078c5181
+PKG_MIRROR_HASH:=9b2967b6e6fea45138fd09a7f40f03210edb66c661faed9ce4003e5301341611
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_PARALLEL:=1
@@ -34,6 +34,12 @@ GCC_VERSION=$(shell echo "$(CONFIG_GCC_VERSION)" | sed 's/[^0-9.]*\([0-9.]*\).*/
 
 LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS)' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
 
+EXTRA_CFLAGS:= \
+	-fno-stack-protector \
+	-Wno-missing-prototypes \
+	-Wno-missing-declarations \
+	-I$(STAGING_DIR)/usr/include
+
 MAKE_FLAGS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME) \
 	TOOL_PATH=$(firstword $(TOOLCHAIN_BIN_DIRS)) \
@@ -43,7 +49,7 @@ MAKE_FLAGS+= \
 	ARCH=$(LINUX_KARCH) \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
-	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include" \
+	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
 	SoC=$(CONFIG_TARGET_SUBTARGET) \
 	SHELL="$(BASH)" \
 	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \

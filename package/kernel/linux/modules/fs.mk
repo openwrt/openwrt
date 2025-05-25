@@ -31,7 +31,7 @@ define KernelPackage/fs-afs
   SUBMENU:=$(FS_MENU)
   TITLE:=Andrew FileSystem client
   DEFAULT:=n
-  DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +kmod-fs-fscache
+  DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +LINUX_6_6:kmod-fs-fscache +!LINUX_6_6:kmod-fs-netfs
   KCONFIG:=\
 	CONFIG_AFS_FS=m \
 	CONFIG_AFS_DEBUG=n \
@@ -81,6 +81,22 @@ define KernelPackage/fs-btrfs/description
 endef
 
 $(eval $(call KernelPackage,fs-btrfs))
+
+
+define KernelPackage/fs-cachefiles
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Filesystem caching on files
+  DEPENDS:=LINUX_6_6:kmod-fs-fscache !LINUX_6_6:kmod-fs-netfs
+  KCONFIG:=\
+	CONFIG_CACHEFILES \
+	CONFIG_CACHEFILES_DEBUG=n \
+	CONFIG_CACHEFILES_ERROR_INJECTION=n \
+	CONFIG_CACHEFILES_ONDEMAND=n
+  FILES:= $(LINUX_DIR)/fs/cachefiles/cachefiles.ko
+  AUTOLOAD:=$(call AutoLoad,30,cachefiles)
+endef
+
+$(eval $(call KernelPackage,fs-cachefiles))
 
 
 define KernelPackage/fs-smbfs-common
@@ -262,23 +278,13 @@ $(eval $(call KernelPackage,fs-f2fs))
 define KernelPackage/fs-fscache
   SUBMENU:=$(FS_MENU)
   TITLE:=General filesystem local cache manager
-  DEPENDS:=+kmod-fs-netfs
+  DEPENDS:=@LINUX_6_6 +kmod-fs-netfs
   KCONFIG:=\
-	CONFIG_FSCACHE@lt6.12 \
-	CONFIG_FSCACHE=y@ge6.12 \
+	CONFIG_FSCACHE \
 	CONFIG_FSCACHE_STATS=y \
-	CONFIG_FSCACHE_HISTOGRAM=n \
-	CONFIG_FSCACHE_DEBUG=n \
-	CONFIG_FSCACHE_OBJECT_LIST=n \
-	CONFIG_CACHEFILES \
-	CONFIG_CACHEFILES_DEBUG=n \
-	CONFIG_CACHEFILES_HISTOGRAM=n \
-	CONFIG_CACHEFILES_ERROR_INJECTION=n \
-	CONFIG_CACHEFILES_ONDEMAND=n
-  FILES:= \
-	$(LINUX_DIR)/fs/fscache/fscache.ko@lt6.12 \
-	$(LINUX_DIR)/fs/cachefiles/cachefiles.ko
-  AUTOLOAD:=$(call AutoLoad,29,fscache cachefiles)
+	CONFIG_FSCACHE_DEBUG=n
+  FILES:= $(LINUX_DIR)/fs/fscache/fscache.ko
+  AUTOLOAD:=$(call AutoLoad,29,fscache)
 endef
 
 $(eval $(call KernelPackage,fs-fscache))
@@ -423,7 +429,10 @@ $(eval $(call KernelPackage,fs-msdos))
 define KernelPackage/fs-netfs
   SUBMENU:=$(FS_MENU)
   TITLE:=Network Filesystems support
-  KCONFIG:= CONFIG_NETFS_SUPPORT
+  KCONFIG:= \
+	CONFIG_NETFS_SUPPORT \
+	CONFIG_FSCACHE=y@ge6.12 \
+	CONFIG_FSCACHE_STATS=y@ge6.12
   FILES:=$(LINUX_DIR)/fs/netfs/netfs.ko
   AUTOLOAD:=$(call AutoLoad,28,netfs)
 endef

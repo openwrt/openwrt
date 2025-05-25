@@ -1173,7 +1173,7 @@ Signed-off-by: Ignacy GawÄdzki <ignacy.gawedzki@green-communications.fr>
    if (in_function)
 --- a/tools/add-cfi.x86_64.awk
 +++ b/tools/add-cfi.x86_64.awk
-@@ -1,169 +1,246 @@
+@@ -1,169 +1,247 @@
 -# Insert GAS CFI directives ("control frame information") into x86-64 asm input
 +# Insert GAS CFI directives ("control frame information") into x86-64 asm input.
  
@@ -1291,7 +1291,9 @@ Signed-off-by: Ignacy GawÄdzki <ignacy.gawedzki@green-communications.fr>
 +  # Canonicalize whitespace.
 +  gsub(/[ \t]+/, " ") # Mawk doesn't understand \s.
    gsub(/ *, */, ",")
-   gsub(/ *: */, ": ")
+-  gsub(/ *: */, ": ")
++  if (match(":", $1))
++    sub(/ *: */, ": ")
    gsub(/ $/, "")
    gsub(/^ /, "")
  }
@@ -1507,7 +1509,7 @@ Signed-off-by: Ignacy GawÄdzki <ignacy.gawedzki@green-communications.fr>
      }
    }
  }
-@@ -171,24 +248,41 @@ function adjust_sp_offset(delta) {
+@@ -171,24 +249,41 @@ function adjust_sp_offset(delta) {
  # IF REGISTER VALUES ARE UNCEREMONIOUSLY TRASHED
  # ...then we want to know about it.
  #

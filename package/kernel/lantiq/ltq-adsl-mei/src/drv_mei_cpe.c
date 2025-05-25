@@ -185,7 +185,7 @@ static void *g_xdata_addr = NULL;
 static u32 *mei_arc_swap_buff = NULL;	//  holding swap pages
 
 extern void ltq_mask_and_ack_irq(struct irq_data *d);
-static void inline MEI_MASK_AND_ACK_IRQ(int x)
+static inline void MEI_MASK_AND_ACK_IRQ(int x)
 {
 	struct irq_data d;
 	d.hwirq = x;
@@ -1178,7 +1178,7 @@ DSL_BSP_AdslLedSet (DSL_DEV_Device_t * dev, DSL_DEV_LedId_t led_number, DSL_DEV_
 * \param       CMVMSG          The pointer to message buffer.
 * \ingroup     Internal
 */
-void
+static void
 makeCMV (u8 opcode, u8 group, u16 address, u16 index, int size, u16 * data, u16 *CMVMSG)
 {
         memset (CMVMSG, 0, MSG_LENGTH * 2);
@@ -1489,14 +1489,14 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t * pDev, long size)
                         allocate_size = size;
                 else
                         allocate_size = SDRAM_SEGMENT_SIZE;
-        
+
 		org_mem_ptr = kmalloc (allocate_size, GFP_KERNEL);
 		if (org_mem_ptr == NULL) {
                         IFX_MEI_EMSG ("%d: kmalloc %d bytes memory fail!\n", idx, allocate_size);
 			err = -ENOMEM;
 			goto allocate_error;
 		}
-		
+
 		if (((unsigned long)org_mem_ptr) & (1023)) {
 			/* Pointer not 1k aligned, so free it and allocate a larger chunk
 			 * for further alignment.
@@ -1637,7 +1637,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			retval = -ENOMEM;
 			goto error;
 		}
-		
+
 		if (((unsigned long)org_mem_ptr) & (1023)) {
 			/* Pointer not 1k aligned, so free it and allocate a larger chunk
 			 * for further alignment.
@@ -1654,7 +1654,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 		} else {
 			adsl_mem_info[XDATA_REGISTER].address = org_mem_ptr;
 		}
-		
+
 		adsl_mem_info[XDATA_REGISTER].org_address = org_mem_ptr;
 		adsl_mem_info[XDATA_REGISTER].size = SDRAM_SEGMENT_SIZE;
 
@@ -1770,7 +1770,7 @@ int DSL_BSP_EventCBUnregister(DSL_BSP_EventCallBack_t *p)
     IFX_MEI_EMSG("Dying Gasp! Shutting Down... (Work around for Amazon-S Venus emulator)\n");
 #else
 	IFX_MEI_EMSG("Dying Gasp! Shutting Down...\n");
-//	kill_proc (1, SIGINT, 1);   
+//	kill_proc (1, SIGINT, 1);
 #endif
         return IRQ_HANDLED;
 }
@@ -2444,7 +2444,7 @@ IFX_MEI_IoctlCopyTo (int from_kernel, char *dest, char *from, int size)
 	return ret;
 }
 
-int
+static int
 IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev, int from_kernel, unsigned int command, unsigned long lon)
 {
 	int i = 0;

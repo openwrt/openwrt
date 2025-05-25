@@ -12,11 +12,11 @@
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
 	};
-	
+
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
-		
+
 		wlan {
 			label = "wlan";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
@@ -38,7 +38,7 @@
 			debounce-interval = <60>;
 		};
 	};
-	
+
 	bcm43217-sprom {
 		compatible = "brcm,bcma-sprom";
 
@@ -182,7 +182,7 @@
 		function = LED_FUNCTION_USB;
 		color = <LED_COLOR_ID_GREEN>;
 	};
-	
+
 	led@16 {
 		reg = <16>;
 		active-low;

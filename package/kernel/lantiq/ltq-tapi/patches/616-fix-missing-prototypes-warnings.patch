@@ -1,0 +1,56 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 23:30:39 +0800
+Subject: [PATCH] fix missing prototypes warnings
+
+This patch fixes various missing-prototypes build warnings on
+6.12 kernel:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_tapi-3.13.0/src/drv_tapi_event.c:2815:13: error: no previous prototype for 'IFX_TAPI_EventWrpBufferPool_ElementCountGet' [-Werror=missing-prototypes]
+ 2815 | IFX_int32_t IFX_TAPI_EventWrpBufferPool_ElementCountGet(IFX_void_t)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_tapi-3.13.0/src/drv_tapi_event.c:2844:13: error: no previous prototype for 'IFX_TAPI_EventWrpBufferPool_ElementAvailCountGet' [-Werror=missing-prototypes]
+ 2844 | IFX_int32_t IFX_TAPI_EventWrpBufferPool_ElementAvailCountGet(IFX_void_t)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_tapi-3.13.0/src/drv_tapi_fxo.c:145:13: error: no previous prototype for 'TAPI_FXO_DAA_Ioctl' [-Werror=missing-prototypes]
+  145 | IFX_int32_t TAPI_FXO_DAA_Ioctl (TAPI_CHANNEL *pChannel,
+      |             ^~~~~~~~~~~~~~~~~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_tapi-3.13.0/src/drv_tapi_fxo.c:291:13: error: no previous prototype for 'TAPI_FXO_SmartSlic_Ioctl' [-Werror=missing-prototypes]
+  291 | IFX_int32_t TAPI_FXO_SmartSlic_Ioctl(TAPI_CHANNEL *pChannel,
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_tapi_event.h | 3 +++
+ src/drv_tapi_fxo.c   | 4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+--- a/src/drv_tapi_event.h
++++ b/src/drv_tapi_event.h
+@@ -24,4 +24,7 @@
+ #define IFX_EVENT_DISABLE 1
+ #define IFX_EVENT_ENABLE 0
+ 
++IFX_int32_t IFX_TAPI_EventWrpBufferPool_ElementCountGet(IFX_void_t);
++IFX_int32_t IFX_TAPI_EventWrpBufferPool_ElementAvailCountGet(IFX_void_t);
++
+ #endif /* _DRV_TAPIEVENT_H */
+--- a/src/drv_tapi_fxo.c
++++ b/src/drv_tapi_fxo.c
+@@ -142,7 +142,7 @@ IFX_return_t IFX_TAPI_FXO_Event_Dispatch
+    \remarks
+       This function is called if DAA TAPI plugin is used for FXO handling.
+ */
+-IFX_int32_t TAPI_FXO_DAA_Ioctl (TAPI_CHANNEL *pChannel,
++static IFX_int32_t TAPI_FXO_DAA_Ioctl (TAPI_CHANNEL *pChannel,
+                                 IFX_uint32_t cmd,
+                                 IFX_ulong_t arg)
+ {
+@@ -288,7 +288,7 @@ IFX_int32_t TAPI_FXO_DAA_Ioctl (TAPI_CHA
+       This function is called if LL driver is used for FXO ioctl handling.
+       Used on systems which have SmartSLIC with fused FXO line(s).
+ */
+-IFX_int32_t TAPI_FXO_SmartSlic_Ioctl(TAPI_CHANNEL *pChannel,
++static IFX_int32_t TAPI_FXO_SmartSlic_Ioctl(TAPI_CHANNEL *pChannel,
+                                      IFX_uint32_t cmd,
+                                      IFX_ulong_t arg)
+ {

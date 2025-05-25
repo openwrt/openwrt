@@ -19,6 +19,7 @@
 #include <asm/mach-ralink/ralink_regs.h>
 #include <linux/of_device.h>
 #include <linux/of_irq.h>
+#include <linux/of_platform.h>
 
 #include <linux/switch.h>
 #include <linux/reset.h>

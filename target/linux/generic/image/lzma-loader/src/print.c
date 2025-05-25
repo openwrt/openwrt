@@ -27,9 +27,9 @@ static const char theFatalMsg[] = "fatal error in lp_Print!";
  * A low level printf() function.
  */
 void
-lp_Print(void (*output)(void *, char *, int), 
+lp_Print(void (*output)(void *, char *, int),
 	 void * arg,
-	 char *fmt, 
+	 char *fmt,
 	 va_list ap)
 {
 
@@ -40,7 +40,7 @@ lp_Print(void (*output)(void *, char *, int),
       (*output)(arg, s, l); \
     } \
   }
-    
+
     char buf[LP_MAX_BUF];
 
     char c;
@@ -57,7 +57,7 @@ lp_Print(void (*output)(void *, char *, int),
     int length;
 
     for(;;) {
-	{ 
+	{
 	    /* scan for the next '%' */
 	    char *fmtStart = fmt;
 	    while ( (*fmt != '\0') && (*fmt != '%')) {
@@ -73,7 +73,7 @@ lp_Print(void (*output)(void *, char *, int),
 
 	/* we found a '%' */
 	fmt ++;
-	
+
 	/* check for long */
 	if (*fmt == 'l') {
 	    longFlag = 1;
@@ -119,9 +119,9 @@ lp_Print(void (*output)(void *, char *, int),
 	negFlag = 0;
 	switch (*fmt) {
 	 case 'b':
-	    if (longFlag) { 
-		num = va_arg(ap, long int); 
-	    } else { 
+	    if (longFlag) {
+		num = va_arg(ap, long int);
+	    } else {
 		num = va_arg(ap, int);
 	    }
 	    length = PrintNum(buf, num, 2, 0, width, ladjust, padc, 0);
@@ -130,10 +130,10 @@ lp_Print(void (*output)(void *, char *, int),
 
 	 case 'd':
 	 case 'D':
-	    if (longFlag) { 
+	    if (longFlag) {
 		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
+	    } else {
+		num = va_arg(ap, int);
 	    }
 	    if (num < 0) {
 		num = - num;
@@ -145,10 +145,10 @@ lp_Print(void (*output)(void *, char *, int),
 
 	 case 'o':
 	 case 'O':
-	    if (longFlag) { 
+	    if (longFlag) {
 		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
+	    } else {
+		num = va_arg(ap, int);
 	    }
 	    length = PrintNum(buf, num, 8, 0, width, ladjust, padc, 0);
 	    OUTPUT(arg, buf, length);
@@ -156,30 +156,30 @@ lp_Print(void (*output)(void *, char *, int),
 
 	 case 'u':
 	 case 'U':
-	    if (longFlag) { 
+	    if (longFlag) {
 		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
+	    } else {
+		num = va_arg(ap, int);
 	    }
 	    length = PrintNum(buf, num, 10, 0, width, ladjust, padc, 0);
 	    OUTPUT(arg, buf, length);
 	    break;
-	    
+
 	 case 'x':
-	    if (longFlag) { 
+	    if (longFlag) {
 		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
+	    } else {
+		num = va_arg(ap, int);
 	    }
 	    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 0);
 	    OUTPUT(arg, buf, length);
 	    break;
 
 	 case 'X':
-	    if (longFlag) { 
+	    if (longFlag) {
 		num = va_arg(ap, long int);
-	    } else { 
-		num = va_arg(ap, int); 
+	    } else {
+		num = va_arg(ap, int);
 	    }
 	    length = PrintNum(buf, num, 16, 0, width, ladjust, padc, 1);
 	    OUTPUT(arg, buf, length);
@@ -219,7 +219,7 @@ int
 PrintChar(char * buf, char c, int length, int ladjust)
 {
     int i;
-    
+
     if (length < 1) length = 1;
     if (ladjust) {
 	*buf = c;
@@ -251,7 +251,7 @@ PrintString(char * buf, char* s, int length, int ladjust)
 }
 
 int
-PrintNum(char * buf, unsigned long u, int base, int negFlag, 
+PrintNum(char * buf, unsigned long u, int base, int negFlag,
 	 int length, int ladjust, char padc, int upcase)
 {
     /* algorithm :
@@ -298,7 +298,7 @@ PrintNum(char * buf, unsigned long u, int base, int negFlag,
     } else {
 	for (i = actualLength; i< length; i++) buf[i] = padc;
     }
-	    
+
 
     /* prepare to reverse the string */
     {

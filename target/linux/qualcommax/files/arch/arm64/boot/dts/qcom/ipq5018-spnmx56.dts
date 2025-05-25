@@ -165,13 +165,8 @@
 
 	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
+	pcie@0 {
+		wifi@0,0 {
 			status = "okay";
 
 			/* QCN9074: ath11k lacks DT compatible for PCI cards */
@@ -189,7 +184,7 @@
 	memory-region = <&q6_mem_regions>;
 	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
 			"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
-	
+
 	// IPQ5018
 	q6_wcss_pd1: pd-1 {
 		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";

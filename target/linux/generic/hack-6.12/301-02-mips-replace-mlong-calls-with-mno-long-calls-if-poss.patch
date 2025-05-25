@@ -1,4 +1,3 @@
-From 92ecd205bc5ab96b08295bf344c794da063a6f04 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 14 Apr 2025 18:05:45 +0200
 Subject: [PATCH 2/2] mips: replace -mlong-calls with -mno-long-calls if
@@ -25,8 +24,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
  arch/mips/Makefile             |  10 ++
  arch/mips/include/asm/module.h |   5 +
- arch/mips/kernel/module.c      | 282 ++++++++++++++++++++++++++++++++-
- 3 files changed, 293 insertions(+), 4 deletions(-)
+ arch/mips/kernel/module.c      | 281 ++++++++++++++++++++++++++++++++-
+ 3 files changed, 292 insertions(+), 4 deletions(-)
 
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
@@ -65,7 +64,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
-@@ -19,6 +19,7 @@
+@@ -8,6 +8,7 @@
+ 
+ #undef DEBUG
+ 
++#include <linux/execmem.h>
+ #include <linux/extable.h>
+ #include <linux/moduleloader.h>
+ #include <linux/elf.h>
+@@ -19,6 +20,7 @@
  #include <linux/kernel.h>
  #include <linux/spinlock.h>
  #include <linux/jump_label.h>
@@ -73,7 +80,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <asm/jump_label.h>
  
  struct mips_hi16 {
-@@ -30,14 +31,256 @@ struct mips_hi16 {
+@@ -30,14 +32,254 @@ struct mips_hi16 {
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -177,7 +184,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	return page_address(page);
 +}
-+#endif
 +
 +static void free_phys(void *ptr)
 +{
@@ -192,19 +198,18 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	} while (free);
 +}
 +
-+#ifndef MODULES_VADDR
-+void *module_arch_mem_alloc(struct module_memory *mem,
-+			    enum mod_mem_type type)
++void *arch_execmem_alloc(enum execmem_type type,
++			 size_t size)
 +{
 +	void *ptr;
 +
-+	ptr = alloc_phys(mem->size);
++	ptr = alloc_phys(size);
 +
 +	/* If we failed to allocate physically contiguous memory,
 +	 * fall back to regular vmalloc. The module loader code will
 +	 * create jump tables to handle long jumps */
 +	if (!ptr)
-+		return vmalloc(mem->size);
++		return vmalloc(size);
 +
 +	return ptr;
 +}
@@ -216,17 +221,17 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	return (KSEGX((unsigned long)ptr) == CKSEG0);
 +#else
 +	return (KSEGX(ptr) == KSEG0);
-+ #endif
++#endif
 +}
 +
 +#ifndef MODULES_VADDR
 +/* Free memory returned from module_alloc */
-+void module_arch_mem_free(struct module_memory *mem)
++void arch_execmem_free(void *ptr)
 +{
-+	if (is_phys_addr(mem->base))
-+		free_phys(mem->base);
++	if (is_phys_addr(ptr))
++		free_phys(ptr);
 +	else
-+		vfree(mem->base);
++		vfree(ptr);
 +}
 +#endif
 +
@@ -330,7 +335,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 relocation\n",
  		       me->name);
-@@ -45,13 +288,17 @@ static int apply_r_mips_26(struct module
+@@ -45,13 +287,17 @@ static int apply_r_mips_26(struct module
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -352,7 +357,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	return 0;
  }
-@@ -431,9 +678,36 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -431,9 +677,36 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}

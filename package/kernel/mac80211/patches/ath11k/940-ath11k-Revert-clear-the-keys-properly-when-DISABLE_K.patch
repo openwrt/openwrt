@@ -1,0 +1,48 @@
+From 52393e2ae12f18fb1a60578c24c46ebab292ddb6 Mon Sep 17 00:00:00 2001
+From: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+Date: Mon, 28 Mar 2022 13:21:04 +0530
+Subject: [PATCH] ath11k: Revert: clear the keys properly when DISABLE_KEY
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reverting the Upstream clear key change added as a part of
+436a4e886598 ("ath11k: clear the keys properly
+when DISABLE_KEY")
+This change exposed a race in WLAN Firmware where target asserts
+are seen frequently due FW not synchronizing ath11k host’s clear
+key commands(CIPHER changes to NONE) with frames in TX queue.
+Hence reverting this change untill FW fixes to synchronize
+ath11k host’s clear key command are available.
+
+Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 4 +++-
+ drivers/net/wireless/ath/ath11k/wmi.c | 3 +--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -4222,7 +4222,9 @@ static int ath11k_install_key(struct ath
+ 		return 0;
+ 
+ 	if (cmd == DISABLE_KEY) {
+-		arg.key_cipher = WMI_CIPHER_NONE;
++		/* TODO: Check if FW expects  value other than NONE for del */
++		/* arg.key_cipher = WMI_CIPHER_NONE; */
++		arg.key_len = 0;
+ 		arg.key_data = NULL;
+ 		goto install;
+ 	}
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1854,8 +1854,7 @@ int ath11k_wmi_vdev_install_key(struct a
+ 	tlv = (struct wmi_tlv *)(skb->data + sizeof(*cmd));
+ 	tlv->header = FIELD_PREP(WMI_TLV_TAG, WMI_TAG_ARRAY_BYTE) |
+ 		      FIELD_PREP(WMI_TLV_LEN, key_len_aligned);
+-	if (arg->key_data)
+-		memcpy(tlv->value, (u8 *)arg->key_data, key_len_aligned);
++	memcpy(tlv->value, (u8 *)arg->key_data, key_len_aligned);
+ 
+ 	ret = ath11k_wmi_cmd_send(wmi, skb, WMI_VDEV_INSTALL_KEY_CMDID);
+ 	if (ret) {
