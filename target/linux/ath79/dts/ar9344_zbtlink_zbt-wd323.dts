@@ -43,12 +43,6 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&enable_gpio20_gpio22>;
 
-		wifi {
-			label = "green:wifi";
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		lan1 {
 			label = "orange:lan1";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
@@ -162,6 +156,11 @@
 
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };
 
 &pinmux {
