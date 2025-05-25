@@ -1,5 +1,5 @@
-/* 
-LzmaTypes.h 
+/*
+LzmaTypes.h
 
 Types for LZMA Decoder
 
@@ -13,12 +13,12 @@ This file is part of LZMA SDK 4.40 (2006-05-01)
 #ifndef _7ZIP_BYTE_DEFINED
 #define _7ZIP_BYTE_DEFINED
 typedef unsigned char Byte;
-#endif 
+#endif
 
 #ifndef _7ZIP_UINT16_DEFINED
 #define _7ZIP_UINT16_DEFINED
 typedef unsigned short UInt16;
-#endif 
+#endif
 
 #ifndef _7ZIP_UINT32_DEFINED
 #define _7ZIP_UINT32_DEFINED
@@ -27,7 +27,7 @@ typedef unsigned long UInt32;
 #else
 typedef unsigned int UInt32;
 #endif
-#endif 
+#endif
 
 /* #define _LZMA_NO_SYSTEM_SIZE_T */
 /* You can use it, if you don't want <stddef.h> */

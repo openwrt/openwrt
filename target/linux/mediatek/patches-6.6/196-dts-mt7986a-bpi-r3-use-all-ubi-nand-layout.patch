@@ -1,9 +1,11 @@
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-emmc.dtso
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-emmc.dtso
-@@ -23,7 +23,27 @@
+@@ -23,7 +23,29 @@
  			no-sd;
  			no-sdio;
  			status = "okay";
++			#address-cells = <1>;
++			#size-cells = <0>;
 +
 +			card@0 {
 +				compatible = "mmc-card";
@@ -101,10 +103,12 @@
  };
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-sd.dtso
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3-sd.dtso
-@@ -17,6 +17,27 @@
+@@ -17,6 +17,29 @@
  			max-frequency = <52000000>;
  			cap-sd-highspeed;
  			status = "okay";
++			#address-cells = <1>;
++			#size-cells = <0>;
 +
 +			card@0 {
 +				compatible = "mmc-card";

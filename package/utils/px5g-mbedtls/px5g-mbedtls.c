@@ -76,7 +76,7 @@ static void write_file(const char *path, size_t len, bool pem, bool cert)
 		fprintf(stderr, "No data to write\n");
 		exit(1);
 	}
-	
+
 	if (cert)
 		mode |= S_IRGRP | S_IROTH;
 

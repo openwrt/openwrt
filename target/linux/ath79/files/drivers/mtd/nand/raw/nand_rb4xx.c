@@ -222,16 +222,9 @@ static void rb4xx_nand_remove(struct platform_device *pdev)
 	nand_cleanup(&nand->chip);
 }
 
-static const struct platform_device_id rb4xx_nand_id_table[] = {
-	{ "mikrotik,rb4xx-nand", },
-	{ },
-};
-MODULE_DEVICE_TABLE(platform, rb4xx_nand_id_table);
-
 static struct platform_driver rb4xx_nand_driver = {
 	.probe = rb4xx_nand_probe,
 	.remove_new = rb4xx_nand_remove,
-	.id_table = rb4xx_nand_id_table,
 	.driver = {
 		.name = "rb4xx-nand",
 	},

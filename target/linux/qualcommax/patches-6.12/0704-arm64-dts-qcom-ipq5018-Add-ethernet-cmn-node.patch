@@ -23,7 +23,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  		sleep_clk: sleep-clk {
  			compatible = "fixed-clock";
  			#clock-cells = <0>;
-@@ -148,6 +154,19 @@
+@@ -182,6 +188,19 @@
  			status = "disabled";
  		};
  
@@ -42,4 +42,4 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 +
  		qfprom: qfprom@a0000 {
  			compatible = "qcom,ipq5018-qfprom", "qcom,qfprom";
- 			reg = <0xa0000 0x1000>;
+ 			reg = <0x000a0000 0x1000>;

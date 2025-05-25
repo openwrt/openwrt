@@ -17,7 +17,7 @@
 		led-upgrade = &led_power;
 		label-mac-device = &ethernet;
 	};
-	
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -80,7 +80,7 @@
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
-	};	
+	};
 };
 
 &spi0 {

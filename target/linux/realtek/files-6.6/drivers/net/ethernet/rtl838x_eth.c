@@ -434,23 +434,19 @@ static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 
 static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 {
-	struct net_device *dev = dev_id;
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct net_device *ndev = dev_id;
+	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 	u32 status = sw_r32(priv->r->dma_if_intr_sts);
 
-	pr_debug("IRQ: %08x\n", status);
+	netdev_dbg(ndev, "RX IRQ received: %08x\n", status);
 
-	/*  Ignore TX interrupt */
-	if ((status & 0xf0000)) {
-		/* Clear ISR */
-		sw_w32(0x000f0000, priv->r->dma_if_intr_sts);
-	}
+	if ((status & RTL83XX_DMA_IF_INTR_STS_RX_RUN_OUT_MASK) && net_ratelimit())
+		netdev_warn(ndev, "RX buffer overrun: status 0x%x, mask: 0x%x\n",
+			   status, sw_r32(priv->r->dma_if_intr_msk));
 
-	/* RX interrupt */
-	if (status & 0x0ff00) {
-		/* ACK and disable RX interrupt for this ring */
+	if (status & RTL83XX_DMA_IF_INTR_STS_RX_DONE_MASK) {
+		/* Disable rx interrupts */
 		sw_w32_mask(0xff00 & status, 0, priv->r->dma_if_intr_msk);
-		sw_w32(0x0000ff00 & status, priv->r->dma_if_intr_sts);
 		for (int i = 0; i < priv->rxrings; i++) {
 			if (status & BIT(i + 8)) {
 				pr_debug("Scheduling queue: %d\n", i);
@@ -459,28 +455,11 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 		}
 	}
 
-	/* RX buffer overrun */
-	if (status & 0x000ff) {
-		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-			 status, sw_r32(priv->r->dma_if_intr_msk));
-		sw_w32(status, priv->r->dma_if_intr_sts);
-		rtl838x_rb_cleanup(priv, status & 0xff);
-	}
-
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00100000) {
-		sw_w32(0x00100000, priv->r->dma_if_intr_sts);
+	if ((status & RTL83XX_DMA_IF_INTR_STS_NOTIFY_MASK) && priv->family_id == RTL8390_FAMILY_ID)
 		rtl839x_l2_notification_handler(priv);
-	}
 
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00200000) {
-		sw_w32(0x00200000, priv->r->dma_if_intr_sts);
-		rtl839x_l2_notification_handler(priv);
-	}
-
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00400000) {
-		sw_w32(0x00400000, priv->r->dma_if_intr_sts);
-		rtl839x_l2_notification_handler(priv);
-	}
+	/* Acknowledge all interrupts */
+	sw_w32(status, priv->r->dma_if_intr_sts);
 
 	return IRQ_HANDLED;
 }
@@ -1820,7 +1799,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
 
@@ -1837,7 +1816,7 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
 
@@ -1916,10 +1895,10 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
-	
+
 	page = priv->page[addr];
 
 	if (addr >= 24 && addr <= 27 && priv->id == 0x8380) {
@@ -1959,10 +1938,10 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
-	
+
 	if (addr >= RTMDIO_MAX_PORT)
 		return -ENODEV;
-	
+
 	page = priv->page[addr];
 
 	if (regnum == RTMDIO_PAGE_SELECT)

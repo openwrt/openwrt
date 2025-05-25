@@ -1489,14 +1489,14 @@ IFX_MEI_DFEMemoryAlloc (DSL_DEV_Device_t * pDev, long size)
                         allocate_size = size;
                 else
                         allocate_size = SDRAM_SEGMENT_SIZE;
-        
+
 		org_mem_ptr = kmalloc (allocate_size, GFP_KERNEL);
 		if (org_mem_ptr == NULL) {
                         IFX_MEI_EMSG ("%d: kmalloc %d bytes memory fail!\n", idx, allocate_size);
 			err = -ENOMEM;
 			goto allocate_error;
 		}
-		
+
 		if (((unsigned long)org_mem_ptr) & (1023)) {
 			/* Pointer not 1k aligned, so free it and allocate a larger chunk
 			 * for further alignment.
@@ -1637,7 +1637,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			retval = -ENOMEM;
 			goto error;
 		}
-		
+
 		if (((unsigned long)org_mem_ptr) & (1023)) {
 			/* Pointer not 1k aligned, so free it and allocate a larger chunk
 			 * for further alignment.
@@ -1654,7 +1654,7 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 		} else {
 			adsl_mem_info[XDATA_REGISTER].address = org_mem_ptr;
 		}
-		
+
 		adsl_mem_info[XDATA_REGISTER].org_address = org_mem_ptr;
 		adsl_mem_info[XDATA_REGISTER].size = SDRAM_SEGMENT_SIZE;
 
@@ -1770,7 +1770,7 @@ int DSL_BSP_EventCBUnregister(DSL_BSP_EventCallBack_t *p)
     IFX_MEI_EMSG("Dying Gasp! Shutting Down... (Work around for Amazon-S Venus emulator)\n");
 #else
 	IFX_MEI_EMSG("Dying Gasp! Shutting Down...\n");
-//	kill_proc (1, SIGINT, 1);   
+//	kill_proc (1, SIGINT, 1);
 #endif
         return IRQ_HANDLED;
 }

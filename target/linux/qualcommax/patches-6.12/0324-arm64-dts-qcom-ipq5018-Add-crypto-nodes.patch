@@ -9,7 +9,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 @@ -293,6 +293,30 @@
- 			status = "disabled";
+ 			#thermal-sensor-cells = <1>;
  		};
  
 +		cryptobam: dma-controller@704000 {

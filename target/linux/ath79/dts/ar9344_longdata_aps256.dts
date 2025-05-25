@@ -34,13 +34,13 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
-  
+
 		internet {
 			function = LED_FUNCTION_WAN_ONLINE;
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		wan {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_BLUE>;
@@ -53,7 +53,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		lan2 {
 			function = LED_FUNCTION_LAN;
 			function-enumerator = <2>;
@@ -108,7 +108,7 @@
 				reg = <0xff0000 0x010000>;
 				read-only;
 
-				
+
 				nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
@@ -141,7 +141,7 @@
 };
 
 &gpio {
-	
+
 };
 
 &builtin_switch {

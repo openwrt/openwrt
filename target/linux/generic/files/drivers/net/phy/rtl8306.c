@@ -587,7 +587,7 @@ rtl_attr_get_port_int(struct switch_dev *dev, const struct switch_attr *attr, st
 	return rtl_attr_get_int(dev, attr, val);
 }
 
-static int 
+static int
 rtl_get_port_link(struct switch_dev *dev, int port, struct switch_port_link *link)
 {
 	if (port >= RTL8306_NUM_PORTS)

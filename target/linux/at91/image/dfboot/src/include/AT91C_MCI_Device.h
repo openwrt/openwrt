@@ -50,7 +50,7 @@ typedef unsigned int AT91S_MCIDeviceStatus;
 #define AT91C_TIMEOUT_CMDRDY		30
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// MMC & SDCard Structures 
+// MMC & SDCard Structures
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*-----------------------------------------------*/
@@ -70,7 +70,7 @@ typedef struct	_AT91S_MciDeviceFeatures
 {
     unsigned char	Card_Inserted;				// (0=AT91C_CARD_REMOVED) (1=AT91C_MMC_CARD_INSERTED) (2=AT91C_SD_CARD_INSERTED)
     unsigned int 	Relative_Card_Address;		// RCA
-	unsigned int 	Max_Read_DataBlock_Length;	// 2^(READ_BL_LEN) in CSD 
+	unsigned int 	Max_Read_DataBlock_Length;	// 2^(READ_BL_LEN) in CSD
 	unsigned int 	Max_Write_DataBlock_Length;	// 2^(WRITE_BL_LEN) in CSD
 	unsigned char	Read_Partial;				// READ_BL_PARTIAL
 	unsigned char	Write_Partial;				// WRITE_BL_PARTIAL
@@ -79,7 +79,7 @@ typedef struct	_AT91S_MciDeviceFeatures
 	unsigned char	Write_Block_Misalignment;	// WRITE_BLK_MISALIGN
 	unsigned char	Sector_Size;				// SECTOR_SIZE
 	unsigned int	Memory_Capacity;			// Size in bits of the device
-	
+
 }	AT91S_MciDeviceFeatures, *AT91PS_MciDeviceFeatures ;
 
 /*---------------------------------------------*/
@@ -88,15 +88,15 @@ typedef struct	_AT91S_MciDeviceFeatures
 typedef struct _AT91S_MciDevice
 {
 	AT91PS_MciDeviceDesc		 	pMCI_DeviceDesc;	// MCI device descriptor
-	AT91PS_MciDeviceFeatures		pMCI_DeviceFeatures;// Pointer on a MCI device features array  
+	AT91PS_MciDeviceFeatures		pMCI_DeviceFeatures;// Pointer on a MCI device features array
 }AT91S_MciDevice, *AT91PS_MciDevice;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// MCI_CMD Register Value 
+// MCI_CMD Register Value
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 #define AT91C_POWER_ON_INIT						(0	| AT91C_MCI_TRCMD_NO 	| AT91C_MCI_SPCMD_INIT | AT91C_MCI_OPDCMD)
 
-/////////////////////////////////////////////////////////////////	
+/////////////////////////////////////////////////////////////////
 // Class 0 & 1 commands: Basic commands and Read Stream commands
 /////////////////////////////////////////////////////////////////
 
@@ -137,7 +137,7 @@ typedef struct _AT91S_MciDevice
 //*------------------------------------------------
 //* Class 4 commands: Block oriented write commands
 //*------------------------------------------------
-	
+
 #define AT91C_WRITE_BLOCK_CMD					(24 | AT91C_MCI_SPCMD_NONE	| AT91C_MCI_RSPTYP_48	| AT91C_MCI_TRCMD_START	| (AT91C_MCI_TRTYP_BLOCK 	&  ~(AT91C_MCI_TRDIR))	| AT91C_MCI_MAXLAT)
 #define AT91C_WRITE_MULTIPLE_BLOCK_CMD			(25 | AT91C_MCI_SPCMD_NONE	| AT91C_MCI_RSPTYP_48	| AT91C_MCI_TRCMD_START	| (AT91C_MCI_TRTYP_MULTIPLE	&  ~(AT91C_MCI_TRDIR)) 	| AT91C_MCI_MAXLAT)
 #define AT91C_PROGRAM_CSD_CMD					(27 | AT91C_MCI_RSPTYP_48 )
@@ -278,14 +278,14 @@ typedef struct _AT91S_MciDevice
 #define AT91C_SR_CARD_SELECTED				(AT91C_SR_READY_FOR_DATA + AT91C_SR_TRAN)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-// MMC CSD register header File					
+// MMC CSD register header File
 // AT91C_CSD_xxx_S	for shift value
 // AT91C_CSD_xxx_M	for mask  value
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // First Response INT <=> CSD[3] : bits 0 to 31
-#define	AT91C_CSD_BIT0_S			0		// [0:0]			
-#define	AT91C_CSD_BIT0_M			0x01				
+#define	AT91C_CSD_BIT0_S			0		// [0:0]
+#define	AT91C_CSD_BIT0_M			0x01
 #define	AT91C_CSD_CRC_S				1		// [7:1]
 #define	AT91C_CSD_CRC_M				0x7F
 #define	AT91C_CSD_MMC_ECC_S			8		// [9:8]		reserved for MMC compatibility
@@ -314,15 +314,15 @@ typedef struct _AT91S_MciDevice
 #define	AT91C_CSD_WP_GRP_EN_M 		0x01
 
 // Seconde Response INT <=> CSD[2] : bits 32 to 63
-#define	AT91C_CSD_v21_WP_GRP_SIZE_S	0		// [38:32]				
-#define	AT91C_CSD_v21_WP_GRP_SIZE_M	0x7F				
+#define	AT91C_CSD_v21_WP_GRP_SIZE_S	0		// [38:32]
+#define	AT91C_CSD_v21_WP_GRP_SIZE_M	0x7F
 #define	AT91C_CSD_v21_SECT_SIZE_S	7		// [45:39]
 #define	AT91C_CSD_v21_SECT_SIZE_M	0x7F
 #define	AT91C_CSD_v21_ER_BLEN_EN_S	14		// [46:46]
 #define	AT91C_CSD_v21_ER_BLEN_EN_M	0x01
 
-#define	AT91C_CSD_v22_WP_GRP_SIZE_S	0		// [36:32]				
-#define	AT91C_CSD_v22_WP_GRP_SIZE_M	0x1F				
+#define	AT91C_CSD_v22_WP_GRP_SIZE_S	0		// [36:32]
+#define	AT91C_CSD_v22_WP_GRP_SIZE_M	0x1F
 #define	AT91C_CSD_v22_ER_GRP_SIZE_S	5		// [41:37]
 #define	AT91C_CSD_v22_ER_GRP_SIZE_M	0x1F
 #define	AT91C_CSD_v22_SECT_SIZE_S	10		// [46:42]
@@ -345,7 +345,7 @@ typedef struct _AT91S_MciDevice
 #define	AT91C_CSD_CSIZE_H_S 		0		// [73:64]	<=> 10 MSB of CSIZE
 #define	AT91C_CSD_CSIZE_H_M 		0x03FF
 // reserved							10		// [75:74]
-// reserved							0x03		
+// reserved							0x03
 #define	AT91C_CSD_DSR_I_S 			12		// [76:76]
 #define	AT91C_CSD_DSR_I_M 			0x01
 #define	AT91C_CSD_RD_B_MIS_S 		13		// [77:77]

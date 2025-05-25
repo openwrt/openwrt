@@ -63,7 +63,7 @@
 
 &leds {
 	status = "okay";
-	
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_leds>;
 
@@ -213,7 +213,7 @@
 
 			nvmem-cells = <&macaddr_cfe_6a0 1>, <&cal_data_1000>;
 			nvmem-cell-names = "mac-address", "calibration";
-			
+
 			#gpio-cells = <2>;
 			gpio-controller;
 		};

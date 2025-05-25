@@ -2,7 +2,7 @@
  *	fbtest - fbtest.c
  *	test program for the tuxbox-framebuffer device
  *	tests all GTX/eNX supported modes
- *                                                                            
+ *
  *	(c) 2003 Carsten Juttner (carjay@gmx.net)
  *
  * 	This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,7 @@
  * 	You should have received a copy of the GNU General Public License
  * 	along with this program; if not, write to the Free Software
  * 	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *  									      
+ *
  ******************************************************************************
  * $Id: fbtest.c,v 1.5 2005/01/14 23:14:41 carjay Exp $
  ******************************************************************************/
@@ -187,12 +187,12 @@ int setmode(int fbd, const struct pixelformat *pixf,const struct vidsize *vids){
 	int stat;
 	stat = ioctl (fbd, FBIOGET_VSCREENINFO,&var);
 	if (stat<0) return -2;
-	
+
 	var.xres= vids->width;
 	var.xres_virtual = vids->width;
 	var.yres= vids->height;
 	var.yres_virtual = vids->height;
-	
+
 	var.bits_per_pixel = pixf->bpp;
 	var.red = pixf->red;
 	var.green = pixf->green;
@@ -254,7 +254,7 @@ void drawrect(void *videoram, struct rect *r, const struct pixelformat *pixf, co
 		pmem +=((vids->width*bpp)>>3);	// skip one whole line, actually should be taken from "fix-info"
 	}
 }
-			
+
 // create quick little test image, 4 colours from table
 void draw4field(void *videoram, const struct pixelformat *pixf, const struct vidsize *vids){
 	struct rect r;
@@ -314,7 +314,7 @@ int main (int argc,char **argv){
 	int optchar,fmode=-1,smode=-1,clear=1;
 	int i_cmap,i_size,i_pix;
 	extern char *optarg;
-	
+
 	if (argc!=0&&argc>4) usage(argv[0]);
 	while ( (optchar = getopt (argc,argv,"f:s:n"))!= -1){
 		int i,height,width;
@@ -359,7 +359,7 @@ int main (int argc,char **argv){
 				usage (argv[0]);
 		}
 	}
-	
+
 	fbd = open (FBDEV, O_RDWR);
 	if (fbd<0){
 		perror ("Error opening framebuffer device");
@@ -396,7 +396,7 @@ int main (int argc,char **argv){
 			printf ("%dx%d ",vidsizetable[i_size].width,vidsizetable[i_size].height);
 			fflush(stdout);
 			if ((i_size%4)==3) printf ("\n");
-			
+
 			// try to set mode
 			stat = setmode(fbd,&pixelformattable[i_pix],&vidsizetable[i_size]);
 			if (stat==-2) perror ("fbtest: could not get fb_var-screeninfo from fb-device");

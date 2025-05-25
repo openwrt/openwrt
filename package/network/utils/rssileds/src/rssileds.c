@@ -249,16 +249,16 @@ int main(int argc, char **argv)
 
 		if ( init_led(&(currentrule->led), argv[i]) )
 			return 1;
-		
+
 		if ( sscanf(argv[i+1], "%d", &(currentrule->minq)) != 1 )
 			return 1;
 
 		if ( sscanf(argv[i+2], "%d", &(currentrule->maxq)) != 1 )
 			return 1;
-		
+
 		if ( sscanf(argv[i+3], "%d", &(currentrule->boffset)) != 1 )
 			return 1;
-		
+
 		if ( sscanf(argv[i+4], "%d", &(currentrule->bfactor)) != 1 )
 			return 1;
 	}
