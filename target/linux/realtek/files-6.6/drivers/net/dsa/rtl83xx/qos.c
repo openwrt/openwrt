@@ -188,7 +188,7 @@ int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 /* Set the rate limit for a particular queue in Bits/s
  * units of the rate is 16Kbps
  */
-void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
+static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
 					int queue, u32 rate)
 {
 	int lsb = 128 + queue * 20;
@@ -289,7 +289,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 
 
 
-void rtl838x_setup_prio2queue_matrix(int *min_queues)
+static void rtl838x_setup_prio2queue_matrix(int *min_queues)
 {
 	u32 v = 0;
 
@@ -299,7 +299,7 @@ void rtl838x_setup_prio2queue_matrix(int *min_queues)
 	sw_w32(v, RTL838X_QM_INTPRI2QID_CTRL);
 }
 
-void rtl839x_setup_prio2queue_matrix(int *min_queues)
+static void rtl839x_setup_prio2queue_matrix(int *min_queues)
 {
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL839X_QM_INTPRI2QID_CTRL(0)));
 	for (int i = 0; i < MAX_PRIOS; i++) {
@@ -309,7 +309,7 @@ void rtl839x_setup_prio2queue_matrix(int *min_queues)
 }
 
 /* Sets the CPU queue depending on the internal priority of a packet */
-void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
+static void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 {
 	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP
 					: RTL839X_QM_PKT2CPU_INTPRI_MAP;
@@ -321,7 +321,7 @@ void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 	sw_w32(v, reg);
 }
 
-void rtl83xx_setup_default_prio2queue(void)
+static void rtl83xx_setup_default_prio2queue(void)
 {
 	if (soc_info.family == RTL8380_FAMILY_ID) {
 		rtl838x_setup_prio2queue_matrix(max_available_queue);
@@ -338,7 +338,7 @@ void rtl839x_set_egress_queue(int port, int queue)
 }
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
-void rtl83xx_set_ingress_priority(int port, int priority)
+static void rtl83xx_set_ingress_priority(int port, int priority)
 {
 	if (soc_info.family == RTL8380_FAMILY_ID)
 		sw_w32(priority << ((port % 10) *3), RTL838X_PRI_SEL_PORT_PRI(port));
@@ -346,7 +346,7 @@ void rtl83xx_set_ingress_priority(int port, int priority)
 		sw_w32(priority << ((port % 10) *3), RTL839X_PRI_SEL_PORT_PRI(port));
 }
 
-int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
+static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
 {
 	u32 v;
 
@@ -363,7 +363,7 @@ int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
 	return WEIGHTED_FAIR_QUEUE;
 }
 
-void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
+static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
 				      enum scheduler_type sched)
 {
 	enum scheduler_type t = rtl839x_get_scheduling_algorithm(priv, port);
@@ -421,7 +421,7 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
+static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
 					  int *queue_weights)
 {
 	mutex_lock(&priv->reg_mutex);
@@ -445,7 +445,7 @@ void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int 
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl838x_config_qos(void)
+static void rtl838x_config_qos(void)
 {
 	u32 v;
 
@@ -490,7 +490,7 @@ void rtl838x_config_qos(void)
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
-void rtl839x_config_qos(void)
+static void rtl839x_config_qos(void)
 {
 	u32 v;
 	struct rtl838x_switch_priv *priv = switch_priv;

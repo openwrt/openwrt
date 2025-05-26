@@ -638,7 +638,7 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-u64 rtl930x_traffic_get(int source)
+static u64 rtl930x_traffic_get(int source)
 {
 	u32 v;
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
@@ -652,7 +652,7 @@ u64 rtl930x_traffic_get(int source)
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-void rtl930x_traffic_set(int source, u64 dest_matrix)
+static void rtl930x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 
@@ -661,7 +661,7 @@ void rtl930x_traffic_set(int source, u64 dest_matrix)
 	rtl_table_release(r);
 }
 
-void rtl930x_traffic_enable(int source, int dest)
+static void rtl930x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -670,7 +670,7 @@ void rtl930x_traffic_enable(int source, int dest)
 	rtl_table_release(r);
 }
 
-void rtl930x_traffic_disable(int source, int dest)
+static void rtl930x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -892,7 +892,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -914,7 +914,7 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 }
 
 /* Get EEE own capabilities and negotiation result */
-int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
+static int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
 	u32 link, a;
 
@@ -2204,7 +2204,7 @@ static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
  * - The router's MAC address on which routed packets are expected
  * - MAC addresses used as source macs of routed packets
  */
-int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
+static int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	/* Setup MTU with id 0 for default interface */
 	for (int i = 0; i < MAX_INTF_MTUS; i++)
@@ -2300,7 +2300,7 @@ static void rtl930x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
-void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+static void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
 			  keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -2309,7 +2309,7 @@ void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 	       RTL930X_VLAN_PORT_TAG_STS_CTRL(port));
 }
 
-void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+static void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -2317,7 +2317,7 @@ void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
-void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+static void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff << 2, pvid << 2, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -2353,7 +2353,7 @@ static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;

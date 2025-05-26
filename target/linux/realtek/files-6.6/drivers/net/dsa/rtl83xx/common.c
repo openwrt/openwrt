@@ -627,7 +627,7 @@ int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -694,7 +694,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_next
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+static int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u32 key = nh->l2_id >> 2;
@@ -819,7 +819,7 @@ static int rtl83xx_netdevice_event(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-const static struct rhashtable_params route_ht_params = {
+static const struct rhashtable_params route_ht_params = {
 	.key_len     = sizeof(u32),
 	.key_offset  = offsetof(struct rtl83xx_route, gw_ip),
 	.head_offset = offsetof(struct rtl83xx_route, linkage),
@@ -954,7 +954,7 @@ static int rtl83xx_port_lower_walk(struct net_device *lower, struct netdev_neste
 	return ret;
 }
 
-int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
+static int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
 {
 	struct rtl83xx_walk_data data;
 	struct netdev_nested_priv _priv;
