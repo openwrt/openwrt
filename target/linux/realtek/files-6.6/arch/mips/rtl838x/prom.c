@@ -19,6 +19,7 @@
 #include <asm/page.h>
 #include <asm/cpu.h>
 #include <asm/fw/fw.h>
+#include <asm/prom.h>
 #include <asm/smp-ops.h>
 #include <asm/mips-cps.h>
 
@@ -95,7 +96,7 @@ void __init device_tree_init(void)
 	register_up_smp_ops();
 }
 
-void __init identify_rtl9302(void)
+static void __init identify_rtl9302(void)
 {
 	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
 	case 0x93020810:
