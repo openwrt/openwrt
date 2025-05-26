@@ -577,22 +577,22 @@ static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
-u64 rtl838x_traffic_get(int source)
+static u64 rtl838x_traffic_get(int source)
 {
 	return rtl838x_get_port_reg(rtl838x_port_iso_ctrl(source));
 }
 
-void rtl838x_traffic_set(int source, u64 dest_matrix)
+static void rtl838x_traffic_set(int source, u64 dest_matrix)
 {
 	rtl838x_set_port_reg(dest_matrix, rtl838x_port_iso_ctrl(source));
 }
 
-void rtl838x_traffic_enable(int source, int dest)
+static void rtl838x_traffic_enable(int source, int dest)
 {
 	rtl838x_mask_port_reg(0, BIT(dest), rtl838x_port_iso_ctrl(source));
 }
 
-void rtl838x_traffic_disable(int source, int dest)
+static void rtl838x_traffic_disable(int source, int dest)
 {
 	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
 }
@@ -1606,7 +1606,7 @@ static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
-void rtl838x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+static void rtl838x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
 			  keep_outer ? RTL838X_VLAN_PORT_TAG_STS_TAGGED : RTL838X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -1615,7 +1615,7 @@ void rtl838x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 	       RTL838X_VLAN_PORT_TAG_STS_CTRL(port));
 }
 
-void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+static void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -1623,7 +1623,7 @@ void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 		sw_w32_mask(0x3 << 14, mode << 14, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
-void rtl838x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+static void rtl838x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff << 2, pvid << 2, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
@@ -1659,7 +1659,7 @@ static void rtl838x_set_egr_filter(int port, enum egr_filter state)
 		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	algoidx &= 1; /* RTL838X only supports 2 concurrent algorithms */
 	sw_w32_mask(1 << (group % 8), algoidx << (group % 8),
@@ -1667,7 +1667,7 @@ void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 	sw_w32(algomsk, RTL838X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
-void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	switch(type) {
 	case BPDU:
