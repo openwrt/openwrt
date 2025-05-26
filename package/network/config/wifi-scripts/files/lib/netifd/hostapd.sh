@@ -454,6 +454,8 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean apup
 	config_add_string apup_peer_ifname_prefix
+
+	config_add_string sae_password_file
 }
 
 hostapd_set_vlan_file() {
