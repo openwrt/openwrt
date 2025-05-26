@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/linkstar-h68k-1432v1-rk3568_defconfig
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,177 @@
 +CONFIG_ARM=y
 +CONFIG_SKIP_LOWLEVEL_INIT=y
 +CONFIG_COUNTER_FREQUENCY=24000000
@@ -108,9 +108,76 @@
 +CONFIG_BT_HCIBTUSB_MTK=y
 +CONFIG_MT7921E=m
 +CONFIG_PCI_DEBUG=y
-+
-
-
++ CONFIG_KERNEL_PAGE_POOL=y
++ # CONFIG_KERNEL_PAGE_POOL_STATS is not set
++ CONFIG_PACKAGE_wifi-scripts=m
++ # CONFIG_PACKAGE_zabbix-extra-mac80211 is not set
++ # CONFIG_PACKAGE_mt76-test is not set
++ CONFIG_PACKAGE_libiwinfo-data=m
++ CONFIG_PACKAGE_mt7921bt-firmware=m
++ CONFIG_PACKAGE_mt7922bt-firmware=y
++ CONFIG_PACKAGE_wireless-regdb=m
++ CONFIG_PACKAGE_kmod-bluetooth=m
++ CONFIG_PACKAGE_kmod-crypto-aead=m
++ CONFIG_PACKAGE_kmod-crypto-ccm=m
++ CONFIG_PACKAGE_kmod-crypto-cmac=m
++ CONFIG_PACKAGE_kmod-crypto-ctr=m
++ CONFIG_PACKAGE_kmod-crypto-ecb=m
++ CONFIG_PACKAGE_kmod-crypto-ecdh=m
++ CONFIG_PACKAGE_kmod-crypto-gcm=m
++ CONFIG_PACKAGE_kmod-crypto-geniv=m
++ CONFIG_PACKAGE_kmod-crypto-gf128=m
++ CONFIG_PACKAGE_kmod-crypto-ghash=m
++ CONFIG_PACKAGE_kmod-crypto-hmac=m
++ CONFIG_PACKAGE_kmod-crypto-kpp=m
++ CONFIG_PACKAGE_kmod-crypto-manager=m
++ CONFIG_PACKAGE_kmod-crypto-null=m
++ CONFIG_PACKAGE_kmod-crypto-rng=m
++ CONFIG_PACKAGE_kmod-crypto-seqiv=m
++ CONFIG_PACKAGE_kmod-crypto-sha3=m
++ CONFIG_PACKAGE_kmod-crypto-sha512=m
++ CONFIG_PACKAGE_kmod-hwmon-core=m
++ CONFIG_PACKAGE_kmod-hid=m
++ CONFIG_PACKAGE_kmod-input-core=m
++ CONFIG_PACKAGE_kmod-input-evdev=m
++ CONFIG_PACKAGE_kmod-lib-crc16=m
++ CONFIG_PACKAGE_kmod-nls-base=m
++ CONFIG_PACKAGE_kmod-libphy=m
++ CONFIG_PACKAGE_kmod-r8125=m
++ CONFIG_PACKAGE_kmod-r8125-rss=m
++ CONFIG_PACKAGE_kmod-mmc=m
++ CONFIG_PACKAGE_kmod-regmap-core=m
++ CONFIG_PACKAGE_kmod-usb-core=m
++ CONFIG_PACKAGE_kmod-cfg80211=m
++ # CONFIG_PACKAGE_CFG80211_TESTMODE is not set
++ CONFIG_PACKAGE_kmod-mac80211=m
++ CONFIG_PACKAGE_MAC80211_DEBUGFS=y
++ # CONFIG_PACKAGE_MAC80211_TRACING is not set
++ CONFIG_PACKAGE_MAC80211_MESH=y
++ CONFIG_PACKAGE_kmod-mt76-connac=m
++ CONFIG_PACKAGE_kmod-mt76-core=m
++ CONFIG_PACKAGE_kmod-mt76-sdio=m
++ CONFIG_PACKAGE_kmod-mt76-usb=m
++ CONFIG_PACKAGE_kmod-mt7921-common=m
++ CONFIG_PACKAGE_kmod-mt7921-firmware=m
++ CONFIG_PACKAGE_kmod-mt7921e=m
++ CONFIG_PACKAGE_kmod-mt7921s=m
++ CONFIG_PACKAGE_kmod-mt7921u=m
++ CONFIG_PACKAGE_kmod-mt792x-common=m
++ CONFIG_PACKAGE_kmod-mt792x-usb=m
++ CONFIG_PACKAGE_ucode-mod-digest=m
++ CONFIG_PACKAGE_ucode-mod-nl80211=m
++ CONFIG_PACKAGE_ucode-mod-rtnl=m
++ CONFIG_PACKAGE_libiwinfo=m
++ CONFIG_PACKAGE_hostapd-common=m
++ # CONFIG_WPA_RFKILL_SUPPORT is not set
++ CONFIG_WPA_MSG_MIN_PRIORITY=3
++ CONFIG_DRIVER_11AC_SUPPORT=y
++ CONFIG_DRIVER_11AX_SUPPORT=y
++ # CONFIG_WPA_ENABLE_WEP is not set
++ CONFIG_WPA_MBO_SUPPORT=y
++ CONFIG_PACKAGE_iw-full=m
++ CONFIG_PACKAGE_iwinfo=m
 
 
 
