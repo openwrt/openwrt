@@ -660,7 +660,7 @@ v2: fix kernel panic with debug-fs interface to list registers
  
  	return fence;
  }
-@@ -459,7 +465,8 @@ v3d_csd_job_timedout(struct drm_sched_jo
+@@ -471,7 +477,8 @@ v3d_csd_job_timedout(struct drm_sched_jo
  {
  	struct v3d_csd_job *job = to_csd_job(sched_job);
  	struct v3d_dev *v3d = job->base.v3d;
@@ -668,5 +668,5 @@ v2: fix kernel panic with debug-fs interface to list registers
 +	u32 batches = V3D_CORE_READ(0, (v3d->ver < 71 ? V3D_CSD_CURRENT_CFG4 :
 +							V3D_V7_CSD_CURRENT_CFG4));
  
- 	/* If we've made progress, skip reset and let the timer get
- 	 * rearmed.
+ 	/* If we've made progress, skip reset, add the job to the pending
+ 	 * list, and let the timer get rearmed.

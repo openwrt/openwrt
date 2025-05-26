@@ -199,7 +199,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	snprintf(bp->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
  		 bp->pdev->name, bp->pdev->id);
  	bp->mii_bus->priv = bp;
-@@ -1648,6 +1665,11 @@ static int macb_rx(struct macb_queue *qu
+@@ -1641,6 +1658,11 @@ static int macb_rx(struct macb_queue *qu
  
  		macb_init_rx_ring(queue);
  		queue_writel(queue, RBQP, queue->rx_ring_dma);
@@ -211,7 +211,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  		macb_writel(bp, NCR, ctrl | MACB_BIT(RE));
  
-@@ -1948,8 +1970,9 @@ static irqreturn_t macb_interrupt(int ir
+@@ -1941,8 +1963,9 @@ static irqreturn_t macb_interrupt(int ir
  				queue_writel(queue, ISR, MACB_BIT(TCOMP) |
  							 MACB_BIT(TXUBR));
  
@@ -222,7 +222,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  				wmb(); // ensure softirq can see update
  			}
  
-@@ -2404,6 +2427,11 @@ static netdev_tx_t macb_start_xmit(struc
+@@ -2397,6 +2420,11 @@ static netdev_tx_t macb_start_xmit(struc
  	skb_tx_timestamp(skb);
  
  	spin_lock_irq(&bp->lock);
@@ -234,7 +234,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	macb_writel(bp, NCR, macb_readl(bp, NCR) | MACB_BIT(TSTART));
  	spin_unlock_irq(&bp->lock);
  
-@@ -2778,6 +2806,37 @@ static void macb_configure_dma(struct ma
+@@ -2771,6 +2799,37 @@ static void macb_configure_dma(struct ma
  	}
  }
  
@@ -272,7 +272,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void macb_init_hw(struct macb *bp)
  {
  	u32 config;
-@@ -2806,6 +2865,11 @@ static void macb_init_hw(struct macb *bp
+@@ -2799,6 +2858,11 @@ static void macb_init_hw(struct macb *bp
  	if (bp->caps & MACB_CAPS_JUMBO)
  		bp->rx_frm_len_mask = MACB_RX_JFRMLEN_MASK;
  
@@ -284,7 +284,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	macb_configure_dma(bp);
  
  	/* Enable RX partial store and forward and set watermark */
-@@ -3170,6 +3234,52 @@ static void gem_get_ethtool_strings(stru
+@@ -3163,6 +3227,52 @@ static void gem_get_ethtool_strings(stru
  	}
  }
  
@@ -337,7 +337,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static struct net_device_stats *macb_get_stats(struct net_device *dev)
  {
  	struct macb *bp = netdev_priv(dev);
-@@ -3764,6 +3874,8 @@ static const struct ethtool_ops macb_eth
+@@ -3757,6 +3867,8 @@ static const struct ethtool_ops macb_eth
  };
  
  static const struct ethtool_ops gem_ethtool_ops = {
@@ -346,7 +346,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	.get_regs_len		= macb_get_regs_len,
  	.get_regs		= macb_get_regs,
  	.get_wol		= macb_get_wol,
-@@ -3773,6 +3885,8 @@ static const struct ethtool_ops gem_etht
+@@ -3766,6 +3878,8 @@ static const struct ethtool_ops gem_etht
  	.get_ethtool_stats	= gem_get_ethtool_stats,
  	.get_strings		= gem_get_ethtool_strings,
  	.get_sset_count		= gem_get_sset_count,
@@ -355,7 +355,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	.get_link_ksettings     = macb_get_link_ksettings,
  	.set_link_ksettings     = macb_set_link_ksettings,
  	.get_ringparam		= macb_get_ringparam,
-@@ -5069,6 +5183,11 @@ static int macb_probe(struct platform_de
+@@ -5062,6 +5176,11 @@ static int macb_probe(struct platform_de
  			}
  		}
  	}
@@ -367,7 +367,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	spin_lock_init(&bp->lock);
  	spin_lock_init(&bp->stats_lock);
  
-@@ -5125,6 +5244,21 @@ static int macb_probe(struct platform_de
+@@ -5118,6 +5237,21 @@ static int macb_probe(struct platform_de
  	else
  		bp->phy_interface = interface;
  
@@ -389,7 +389,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* IP specific init */
  	err = init(pdev);
  	if (err)
-@@ -5201,6 +5335,19 @@ static int macb_remove(struct platform_d
+@@ -5194,6 +5328,19 @@ static int macb_remove(struct platform_d
  	return 0;
  }
  
@@ -409,7 +409,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int __maybe_unused macb_suspend(struct device *dev)
  {
  	struct net_device *netdev = dev_get_drvdata(dev);
-@@ -5415,6 +5562,7 @@ static const struct dev_pm_ops macb_pm_o
+@@ -5408,6 +5555,7 @@ static const struct dev_pm_ops macb_pm_o
  static struct platform_driver macb_driver = {
  	.probe		= macb_probe,
  	.remove		= macb_remove,

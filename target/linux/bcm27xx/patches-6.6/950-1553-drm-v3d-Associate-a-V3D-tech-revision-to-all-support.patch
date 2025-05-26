@@ -436,7 +436,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	for (i = 1; i <= csd_cfg_reg_count; i++)
  		V3D_CORE_WRITE(0, csd_cfg0_reg + 4 * i, job->args.cfg[i]);
  	/* CFG0 write kicks off the job. */
-@@ -475,7 +475,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
+@@ -487,7 +487,7 @@ v3d_csd_job_timedout(struct drm_sched_jo
  {
  	struct v3d_csd_job *job = to_csd_job(sched_job);
  	struct v3d_dev *v3d = job->base.v3d;
@@ -444,4 +444,4 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
 +	u32 batches = V3D_CORE_READ(0, (v3d->ver < V3D_GEN_71 ? V3D_CSD_CURRENT_CFG4 :
  							V3D_V7_CSD_CURRENT_CFG4));
  
- 	/* If we've made progress, skip reset and let the timer get
+ 	/* If we've made progress, skip reset, add the job to the pending
