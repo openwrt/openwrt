@@ -1,7 +1,3 @@
-config GCC_VERSION_11
-	default y if GCC_USE_VERSION_11
-	bool
-
 config GCC_VERSION_12
 	default y if GCC_USE_VERSION_12
 	bool
@@ -13,7 +9,6 @@ config GCC_VERSION_13
 config GCC_VERSION
 	string
 	default EXTERNAL_GCC_VERSION	if EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
-	default "11.3.0"	if GCC_VERSION_11
 	default "12.3.0"	if GCC_VERSION_12
 	default "13.3.0"	if GCC_VERSION_13
 	default "14.3.0"

@@ -422,22 +422,6 @@ int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	return 0;
 }
 
-/* On the RTL838x SoCs, the internal SerDes is accessed through direct access to
- * standard PHY registers, where a 32 bit register holds a 16 bit word as found
- * in a standard page 0 of a PHY
- */
-int rtl838x_read_sds_phy(int phy_addr, int phy_reg)
-{
-	int offset = 0;
-	u32 val;
-
-	if (phy_addr == 26)
-		offset = 0x100;
-	val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
-
-	return val;
-}
-
 int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
 {
 	int offset = 0;
@@ -1084,27 +1068,32 @@ static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 	}
 }
 
-static int rtl8214fc_set_port(struct phy_device *phydev, int port)
+static int rtl8214fc_set_tunable(struct phy_device *phydev,
+				 struct ethtool_tunable *tuna, const void *data)
 {
-	bool is_fibre = (port == PORT_FIBRE ? true : false);
-	int addr = phydev->mdio.addr;
-
-	pr_debug("%s port %d to %d\n", __func__, addr, port);
-
-	rtl8214fc_media_set(phydev, is_fibre);
-
-	return 0;
+	/*
+	 * The RTL8214FC driver usually detects insertion of SFP modules and automatically toggles
+	 * between copper and fiber. There may be cases where the user wants to switch the port on
+	 * demand. Usually ethtool offers to change the port of a multiport network card with
+	 * "ethtool -s lan25 port fibre/tp" if the driver supports it. This does not work for
+	 * attached phys. For more details see phy_ethtool_ksettings_set(). To avoid patching the
+	 * kernel misuse the phy downshift tunable to offer that feature. For this use
+	 * "ethtool --set-phy-tunable lan25 downshift on/off".
+	 */
+	switch (tuna->id) {
+	case ETHTOOL_PHY_DOWNSHIFT:
+		rtl8214fc_media_set(phydev, !rtl8214fc_media_is_fibre(phydev));
+		return 0;
+	default:
+		return -EOPNOTSUPP;
+	}
 }
 
-static int rtl8214fc_get_port(struct phy_device *phydev)
+static int rtl8214fc_get_tunable(struct phy_device *phydev,
+				 struct ethtool_tunable *tuna, void *data)
 {
-	int addr = phydev->mdio.addr;
-
-	pr_debug("%s: port %d\n", __func__, addr);
-	if (rtl8214fc_media_is_fibre(phydev))
-		return PORT_FIBRE;
-
-	return PORT_MII;
+	/* Needed to make rtl8214fc_set_tunable() work */
+	return 0;
 }
 
 static int rtl8214fc_get_features(struct phy_device *phydev)
@@ -3954,13 +3943,13 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.config_aneg	= rtl8214fc_config_aneg,
 		.get_eee	= rtl8214fc_get_eee,
 		.get_features	= rtl8214fc_get_features,
-		.get_port	= rtl8214fc_get_port,
+		.get_tunable    = rtl8214fc_get_tunable,
 		.probe		= rtl8214fc_phy_probe,
 		.read_page	= rtl821x_read_page,
 		.read_status    = rtl8214fc_read_status,
 		.resume		= rtl8214fc_resume,
 		.set_eee	= rtl8214fc_set_eee,
-		.set_port	= rtl8214fc_set_port,
+		.set_tunable	= rtl8214fc_set_tunable,
 		.suspend	= rtl8214fc_suspend,
 		.write_page	= rtl821x_write_page,
 	},

@@ -205,7 +205,6 @@ struct rtl838x_eth_priv {
 };
 
 extern int rtl838x_phy_init(struct rtl838x_eth_priv *priv);
-extern int rtl838x_read_sds_phy(int phy_addr, int phy_reg);
 extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
 extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
 extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
@@ -1790,6 +1789,24 @@ int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnu
 	return rtmdio_access(phydev, RTMDIO_READ | RTMDIO_ABS, port, page, regnum, 0);
 }
 
+/* SerDes reader/writer functions for the ports without external phy. */
+
+int rtmdio_838x_read_sds(int addr, int regnum)
+{
+	int offset = addr == 26 ? 0x100 : 0x0;
+
+	return sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2)) & 0xffff;
+}
+
+int rtmdio_838x_write_sds(int addr, int regnum, u16 val)
+{
+	int offset = addr == 26 ? 0x100 : 0x0;
+
+	sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
+
+	return 0;
+}
+
 /* These are the core functions of our new Realtek SoC MDIO bus. */
 
 static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
@@ -1821,7 +1838,7 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 		return -ENODEV;
 
 	if (addr >= 24 && addr <= 27 && priv->id == 0x8380)
-		return rtl838x_read_sds_phy(addr, regnum);
+		return rtmdio_838x_read_sds(addr, regnum);
 
 	if (priv->family_id == RTL8390_FAMILY_ID && priv->phy_is_internal[addr])
 		return rtl839x_read_sds_phy(addr, regnum);
@@ -1886,7 +1903,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	int err, page, offset = 0;
+	int err, page;
 
 	if (regnum == RTMDIO_PORT_SELECT) {
 		priv->extaddr = (s16)val;
@@ -1901,12 +1918,8 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	page = priv->page[addr];
 
-	if (addr >= 24 && addr <= 27 && priv->id == 0x8380) {
-		if (addr == 26)
-			offset = 0x100;
-		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
-		return 0;
-	}
+	if (addr >= 24 && addr <= 27 && priv->id == 0x8380)
+		return rtmdio_838x_write_sds(addr, regnum, val);
 
 	if (priv->family_id == RTL8390_FAMILY_ID && priv->phy_is_internal[addr])
 		return rtl839x_write_sds_phy(addr, regnum, val);
