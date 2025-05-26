@@ -175,7 +175,6 @@ menu "Global build settings"
 
 	config MOLD
 		depends on (aarch64 || arm || i386 || i686 || loongarch64 || m68k || powerpc || powerpc64 || riscv64 || sh4 || x86_64)
-		depends on !GCC_USE_VERSION_11
 		depends on !HOST_OS_MACOS
 		def_bool $(shell, ./config/check-hostcxx.sh 10 2 12)
 
