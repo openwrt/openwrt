@@ -134,7 +134,8 @@ platform_do_upgrade() {
 		CI_DATAPART="rootfs_data"
 		emmc_do_upgrade "$1"
 		;;
-	alfa-network,ap120c-ac)
+	alfa-network,ap120c-ac|\
+	aliyun,ap4220)
 		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
 		if [ "$part" = "rootfs1" ]; then
 			fw_setenv active 2 || exit 1
