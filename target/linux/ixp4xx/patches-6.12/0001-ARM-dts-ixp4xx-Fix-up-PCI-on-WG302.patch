@@ -1,13 +1,14 @@
-From ed23e07bf7a1896b6eaa85b773bb43b1fad66d4b Mon Sep 17 00:00:00 2001
+From eff2700d2ec99aac06fff0ad35cbc594bd3e04a8 Mon Sep 17 00:00:00 2001
 From: Linus Walleij <linus.walleij@linaro.org>
-Date: Sat, 21 Dec 2024 00:07:11 +0100
-Subject: [PATCH] ARM: dts: ixp4xx: Fix up PCI on WG302
+Date: Mon, 10 Feb 2025 10:31:16 +0100
+Subject: [PATCH 1/2] ARM: dts: ixp4xx: Fix up PCI on WG302
 
 Looking at the board file for WG302 v2 was not a good idea
 because the GPIO IRQ for slot 2 differs, and v1 uses GPIO
 10 instead of GPIO 9. Fix it up.
 
 Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/20250210-ixp4xx-dts-v1-2-6b752d745e04@linaro.org
 ---
  .../dts/intel/ixp/intel-ixp42x-netgear-wg302v1.dts     | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
