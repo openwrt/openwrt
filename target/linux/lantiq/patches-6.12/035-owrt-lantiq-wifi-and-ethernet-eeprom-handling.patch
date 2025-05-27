@@ -201,6 +201,27 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return !eth_mac_set;
 +}
 +early_param("ethaddr", setup_ethaddr);
+--- a/arch/mips/pci/fixup-lantiq.c
++++ b/arch/mips/pci/fixup-lantiq.c
+@@ -9,12 +9,18 @@
+ #include <linux/pci.h>
+ #include "ifxmips_pci_common.h"
+ 
++int (*ltq_pci_plat_dev_init)(struct pci_dev *dev) = NULL;
++
+ int pcibios_plat_dev_init(struct pci_dev *dev)
+ {
+ #ifdef CONFIG_PCIE_LANTIQ
+ 	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
+ 		ifx_pcie_bios_plat_dev_init(dev);
+ #endif
++
++	if (ltq_pci_plat_dev_init)
++		return ltq_pci_plat_dev_init(dev);
++
+ 	return 0;
+ }
+ 
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -771,7 +771,11 @@ ltq_etop_init(struct net_device *dev)
