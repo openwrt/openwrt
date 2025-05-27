@@ -1111,8 +1111,7 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
+static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1131,8 +1130,7 @@ static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
+static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1147,8 +1145,7 @@ static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
-			       struct ethtool_eee *e)
+static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 

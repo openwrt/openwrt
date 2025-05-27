@@ -21,12 +21,12 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -1181,6 +1181,8 @@ struct phy_driver {
+@@ -1229,6 +1229,8 @@ struct phy_driver {
  	 */
  	int (*led_polarity_set)(struct phy_device *dev, int index,
  				unsigned long modes);
-+	int (*get_eee)(struct phy_device *dev, struct ethtool_eee *e);
-+	int (*set_eee)(struct phy_device *dev, struct ethtool_eee *e);
++	int (*get_eee)(struct phy_device *dev, struct ethtool_keee *e);
++	int (*set_eee)(struct phy_device *dev, struct ethtool_keee *e);
  };
- #define to_phy_driver(d) container_of(to_mdio_common_driver(d),		\
+ #define to_phy_driver(d) container_of_const(to_mdio_common_driver(d),		\
  				      struct phy_driver, mdiodrv)

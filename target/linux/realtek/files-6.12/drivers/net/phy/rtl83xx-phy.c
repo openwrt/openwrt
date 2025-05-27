@@ -630,8 +630,7 @@ out:
 	return ret;
 }
 
-static int rtl8226_get_eee(struct phy_device *phydev,
-			   struct ethtool_eee *e)
+static int rtl8226_get_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -651,7 +650,7 @@ static int rtl8226_get_eee(struct phy_device *phydev,
 	return 0;
 }
 
-static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	int port = phydev->mdio.addr;
 	u64 poll_state;
@@ -1182,8 +1181,7 @@ static void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
-static int rtl8218b_get_eee(struct phy_device *phydev,
-			    struct ethtool_eee *e)
+static int rtl8218b_get_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -1210,8 +1208,7 @@ static int rtl8218b_get_eee(struct phy_device *phydev,
 	return 0;
 }
 
-static int rtl8218d_get_eee(struct phy_device *phydev,
-			    struct ethtool_eee *e)
+static int rtl8218d_get_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -1232,8 +1229,7 @@ static int rtl8218d_get_eee(struct phy_device *phydev,
 	return 0;
 }
 
-static int rtl8214fc_set_eee(struct phy_device *phydev,
-			     struct ethtool_eee *e)
+static int rtl8214fc_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	u32 poll_state;
 	int port = phydev->mdio.addr;
@@ -1289,8 +1285,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	return 0;
 }
 
-static int rtl8214fc_get_eee(struct phy_device *phydev,
-			     struct ethtool_eee *e)
+static int rtl8214fc_get_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	int addr = phydev->mdio.addr;
 
@@ -1303,7 +1298,7 @@ static int rtl8214fc_get_eee(struct phy_device *phydev,
 	return rtl8218b_get_eee(phydev, e);
 }
 
-static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	int port = phydev->mdio.addr;
 	u64 poll_state;
@@ -1357,7 +1352,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 	return 0;
 }
 
-static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
+static int rtl8218d_set_eee(struct phy_device *phydev, struct ethtool_keee *e)
 {
 	int addr = phydev->mdio.addr;
 	u64 poll_state;
