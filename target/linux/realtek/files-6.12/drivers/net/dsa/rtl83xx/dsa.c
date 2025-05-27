@@ -683,17 +683,21 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 				     struct phylink_config *config)
 {
-/*
- * This capability check will need some love. Depending on the model and the port
- * different link modes are supported. For now just enable all required values
- * so that we can make use of the ports.
- */
-	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
+	/*
+	 * TODO: This capability check will need some love. Depending on the model and the
+	 * port different MAC features and link modes are supported. For now just enable all
+	 * required MAC and PHY capabilites so that we can make use of the ports.
+	 */
+
+	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
+				   MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD;
+
 	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
