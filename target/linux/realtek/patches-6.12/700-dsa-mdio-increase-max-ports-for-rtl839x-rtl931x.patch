@@ -24,7 +24,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 
 --- a/drivers/net/mdio/fwnode_mdio.c
 +++ b/drivers/net/mdio/fwnode_mdio.c
-@@ -87,7 +87,7 @@ int fwnode_mdiobus_phy_device_register(s
+@@ -89,7 +89,7 @@ int fwnode_mdiobus_phy_device_register(s
  	}
  
  	if (fwnode_property_read_bool(child, "broken-turn-around"))
@@ -35,7 +35,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  				 &phy->mdio.reset_assert_delay);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -294,7 +294,7 @@ static inline const char *phy_modes(phy_
+@@ -301,7 +301,7 @@ static inline const char *phy_modes(phy_
  #define PHY_INIT_TIMEOUT	100000
  #define PHY_FORCE_TIMEOUT	10
  
@@ -44,7 +44,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  /* Used when trying to connect to a specific phy (mii bus id:phy device id) */
  #define PHY_ID_FMT "%s:%02x"
-@@ -414,10 +414,10 @@ struct mii_bus {
+@@ -421,10 +421,10 @@ struct mii_bus {
  	struct mdio_device *mdio_map[PHY_MAX_ADDR];
  
  	/** @phy_mask: PHY addresses to be ignored when probing */
@@ -70,16 +70,16 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  struct dsa_chip_data {
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -465,7 +465,7 @@ struct dsa_switch {
+@@ -473,7 +473,7 @@ struct dsa_switch {
  	/*
- 	 * Slave mii_bus and devices for the individual ports.
+ 	 * User mii_bus and devices for the individual ports.
  	 */
 -	u32			phys_mii_mask;
 +	u64			phys_mii_mask;
- 	struct mii_bus		*slave_mii_bus;
+ 	struct mii_bus		*user_mii_bus;
  
  	/* Ageing Time limits in msecs */
-@@ -597,24 +597,24 @@ static inline bool dsa_is_user_port(stru
+@@ -609,24 +609,24 @@ static inline bool dsa_is_user_port(stru
  	dsa_switch_for_each_port_continue_reverse((_dp), (_ds)) \
  		if (dsa_port_is_cpu((_dp)))
  
@@ -110,9 +110,9 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  	return mask;
  }
---- a/net/dsa/slave.c
-+++ b/net/dsa/slave.c
-@@ -320,7 +320,7 @@ static int dsa_slave_phy_read(struct mii
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -320,7 +320,7 @@ static int dsa_user_phy_read(struct mii_
  {
  	struct dsa_switch *ds = bus->priv;
  
@@ -121,7 +121,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  		return ds->ops->phy_read(ds, addr, reg);
  
  	return 0xffff;
-@@ -330,7 +330,7 @@ static int dsa_slave_phy_write(struct mi
+@@ -330,7 +330,7 @@ static int dsa_user_phy_write(struct mii
  {
  	struct dsa_switch *ds = bus->priv;
  

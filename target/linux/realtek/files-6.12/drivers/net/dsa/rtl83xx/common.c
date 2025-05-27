@@ -320,10 +320,10 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
 
 	bus->parent = dev;
-	priv->ds->slave_mii_bus = bus;
-	priv->ds->slave_mii_bus->priv = priv;
+	priv->ds->user_mii_bus = bus;
+	priv->ds->user_mii_bus->priv = priv;
 
-	ret = mdiobus_register(priv->ds->slave_mii_bus);
+	ret = mdiobus_register(priv->ds->user_mii_bus);
 	if (ret && mii_np) {
 		of_node_put(dn);
 		return ret;
@@ -736,7 +736,7 @@ static int rtl83xx_handle_changeupper(struct rtl838x_switch_priv *priv,
 			break;
 	}
 	for (j = 0; j < priv->cpu_port; j++) {
-		if (priv->ports[j].dp->slave == ndev)
+		if (priv->ports[j].dp->user == ndev)
 			break;
 	}
 	if (j >= priv->cpu_port) {
@@ -771,23 +771,22 @@ out:
 	return 0;
 }
 
-/* Is the lower network device a DSA slave network device of our RTL930X-switch?
- * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
- * DSA master device.
- */
 int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv)
 {
-/* TODO: On 5.12:
- * 	if(!dsa_slave_dev_check(dev)) {
- *		netdev_info(dev, "%s: not a DSA device.\n", __func__);
- *		return -EINVAL;
- *	}
- */
+	/* Is the lower network device a DSA user network device of our RTL930X-switch?
+	 * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
+	 * DSA conduit device. TODO: since 6.12:
+	 *
+	 * if(!dsa_user_dev_check(dev)) {
+	 *   netdev_info(dev, "%s: not a DSA device.\n", __func__);
+	 *   return -EINVAL;
+	 * }
+	 */
 
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (!priv->ports[i].dp)
 			continue;
-		if (priv->ports[i].dp->slave == dev)
+		if (priv->ports[i].dp->user == dev)
 			return i;
 	}
 

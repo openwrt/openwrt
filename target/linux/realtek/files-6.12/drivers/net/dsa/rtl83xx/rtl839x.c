@@ -1726,7 +1726,7 @@ static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 	u64 mac;
 
 	pr_debug("%s: got port %08x\n", __func__, (u32)priv->ports[priv->cpu_port].dp);
-	dev = priv->ports[priv->cpu_port].dp->slave;
+	dev = priv->ports[priv->cpu_port].dp->user;
 	mac = ether_addr_to_u64(dev->dev_addr);
 
 	for (int i = 0; i < 15; i++) {
