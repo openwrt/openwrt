@@ -21,11 +21,12 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -620,21 +620,23 @@ config RALINK
+@@ -651,23 +651,24 @@ config RALINK
  
  config MACH_REALTEK_RTL
  	bool "Realtek RTL838x/RTL839x based machines"
 -	select MIPS_GENERIC
+-	select MACH_GENERIC_CORE
  	select DMA_NONCOHERENT
  	select IRQ_MIPS_CPU
 -	select CSRC_R4K
@@ -40,6 +41,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	select BOOT_RAW
  	select PINCTRL
  	select USE_OF
+ 	select REALTEK_OTTO_TIMER
 +	select NO_EXCEPT_FILL
 +	select SYS_SUPPORTS_HIGHMEM
 +	select SYS_HAS_EARLY_PRINTK
@@ -50,9 +52,9 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -970,6 +972,36 @@ config CAVIUM_OCTEON_SOC
- 
- endchoice
+@@ -1011,6 +1012,36 @@ config FIT_IMAGE_FDT_EPM5
+ 	  from Mobileye in the FIT kernel image.
+ 	  This requires u-boot on the platform.
  
 +config RTL838X
 +	bool "Realtek RTL838X based platforms"
