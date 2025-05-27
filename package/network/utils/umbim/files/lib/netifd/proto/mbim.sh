@@ -73,7 +73,7 @@ _proto_mbim_setup() {
 	}
 
 	devname="$(basename "$device")"
-	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
+	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/ || readlink -f /sys/class/wwan/$devname/device/)"
 	ifname="$( ls "$devpath"/net )"
 
 	[ -n "$ifname" ] || {
