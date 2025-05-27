@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-wr2543-v1", "qca,ar7242";
@@ -19,12 +20,6 @@
 
 	chosen {
 		bootargs = "console=ttyS0,115200n8";
-	};
-
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
 	};
 
 	keys {
@@ -49,12 +44,14 @@
 		compatible = "gpio-leds";
 
 		led_wps: wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
@@ -81,7 +78,7 @@
 		compatible = "realtek,rtl8367";
 		gpio-sda = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		gpio-sck = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
+		realtek,extif = <9 1 0 1 1 1 1 1 1 2>;
 
 		mdio-bus {
 			#address-cells = <1>;
@@ -93,10 +90,6 @@
 			};
 		};
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &spi {
@@ -117,6 +110,16 @@
 				label = "u-boot";
 				reg = <0x000000 0x020000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_1fc00: macaddr@1fc00 {
+						reg = <0x1fc00 0x6>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -129,20 +132,23 @@
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
 };
 
 &usb {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy {
@@ -156,9 +162,8 @@
 		reg = <0x0000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_uboot_1fc00>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -173,15 +178,5 @@
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
-	};
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_1fc00: macaddr@1fc00 {
-		reg = <0x1fc00 0x6>;
 	};
 };

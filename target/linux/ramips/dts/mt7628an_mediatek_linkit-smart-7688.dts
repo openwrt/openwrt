@@ -22,12 +22,6 @@
 		serial0 = &uart2;
 	};
 
-	bootstrap {
-		compatible = "mediatek,linkit";
-
-		status = "okay";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -107,10 +101,24 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_2e: macaddr@2e {
+						reg = <0x2e 0x6>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -127,6 +135,15 @@
 		compatible = "linux,spidev";
 		reg = <1>;
 		spi-max-frequency = <40000000>;
+	};
+};
+
+&gpio {
+	bootstrap {
+		gpio-hog;
+		line-name = "bootstrap";
+		output-low;
+		gpios = <11 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -151,23 +168,33 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&pinctrl {
+	ephy-digital;
+
+	sdxc_iot_mode: sdxc_iot_mode {
+		esd {
+			groups = "esd";
+			function = "iot";
+		};
+
+		sdxc {
+			groups = "sdmode";
+			function = "sdxc";
+		};
+	};
+};
+
 &sdhci {
 	status = "okay";
-	mediatek,cd-high;
+
+	pinctrl-0 = <&sdxc_iot_mode>;
+	pinctrl-1 = <&sdxc_iot_mode>;
+	cd-inverted;
 };
 
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_2e: macaddr@2e {
-		reg = <0x2e 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

@@ -2204,18 +2204,11 @@ static void msdc_init_gpd_bd(struct msdc_host *host, struct msdc_dma *dma)
 
 static int msdc_drv_probe(struct platform_device *pdev)
 {
-	struct resource *res;
 	__iomem void *base;
 	struct mmc_host *mmc;
 	struct msdc_host *host;
 	struct msdc_hw *hw;
 	int ret;
-
-	//FIXME: this should be done by pinconf and not by the sd driver
-	if ((ralink_soc == MT762X_SOC_MT7688 ||
-	     ralink_soc == MT762X_SOC_MT7628AN) &&
-	    (!(rt_sysc_r32(0x60) & BIT(15))))
-		rt_sysc_m32(0xf << 17, 0xf << 17, 0x3c);
 
 	hw = &msdc0_hw;
 
@@ -2227,8 +2220,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	if (!mmc)
 		return -ENOMEM;
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	base = devm_ioremap_resource(&pdev->dev, res);
+	base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(base)) {
 		ret = PTR_ERR(base);
 		goto host_free;
@@ -2245,7 +2237,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	//TODO: read this as bus-width from dt (via mmc_of_parse)
 	mmc->caps  |= MMC_CAP_4_BIT_DATA;
 
-	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "mediatek,cd-high");
+	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "cd-inverted");
 
 	if (of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll"))
 		mmc->caps |= MMC_CAP_NEEDS_POLL;

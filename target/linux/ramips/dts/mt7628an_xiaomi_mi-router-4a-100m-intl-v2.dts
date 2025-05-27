@@ -1,0 +1,94 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_xiaomi_mi-router-4.dtsi"
+
+/ {
+	compatible = "xiaomi,mi-router-4a-100m-intl-v2", "mediatek,mt7628an-soc";
+	model = "Xiaomi Mi Router 4A (100M International Edition V2)";
+
+	aliases {
+		led-boot = &led_power_yellow;
+		led-failsafe = &led_power_yellow;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_yellow;
+		label-mac-device = &ethernet;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_blue: power_blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_yellow: power_yellow {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+};
+
+&partitions {
+	partition@60000 {
+		label = "overlay";
+		reg = <0x60000 0x100000>;
+		read-only;
+	};
+
+	partition@160000 {
+		label = "firmware";
+		reg = <0x160000 0xea0000>;
+		compatible = "denx,uimage";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&eeprom_factory_8000 {
+	/* MT7613 has different eeprom size '0x4da8'			*/
+	/* See https://github.com/openwrt/openwrt/pull/13587		*/
+	/* You can also see this in mt76/mt7615/eeprom.h:		*/
+	/* MT7615_EEPROM_FULL_SIZE = MT7615_EEPROM_TXDPD_OFFSET + \	*/
+	/*       MT7615_EEPROM_TXDPD_COUNT * MT7615_EEPROM_TXDPD_SIZE	*/
+	/* where MT7615_EEPROM_TXDPD_OFFSET is 1024 + 256 * 34 = 9728:	*/
+	/*   MT7615_EEPROM_SIZE(1024 defined in mt7615.h) + \		*/
+	/*   MT7615_EEPROM_DCOC_COUNT(34) * MT7615_EEPROM_DCOC_SIZE(256)*/
+	/* where MT7615_EEPROM_TXDPD_COUNT = 44 + 3 = 47		*/
+	/* and MT7615_EEPROM_TXDPD_SIZE = 216.				*/
+	/* Altogether it will be 19880 or 0x4da8.			*/
+	reg = <0x8000 0x4da8>;
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+	mediatek,portdisable = <0x2a>;
+};

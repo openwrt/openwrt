@@ -1,0 +1,57 @@
+From 04f38d1a4db017f17e82442727b91ce03dd72759 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Gonz=C3=A1lez=20Cabanelas?= <dgcbueu@gmail.com>
+Date: Thu, 20 Jun 2024 17:26:45 +0200
+Subject: [PATCH 4/4] mips: bmips: enable RAC on BMIPS4350
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The data RAC is left disabled by the bootloader in some SoCs, at least in
+the core it boots from.
+Enabling this feature increases the performance up to +30% depending on the
+task.
+
+Signed-off-by: Daniel González Cabanelas <dgcbueu@gmail.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+[ rework code and reduce code duplication ]
+Acked-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/kernel/smp-bmips.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/arch/mips/kernel/smp-bmips.c
++++ b/arch/mips/kernel/smp-bmips.c
+@@ -592,6 +592,7 @@ asmlinkage void __weak plat_wired_tlb_se
+ void bmips_cpu_setup(void)
+ {
+ 	void __iomem __maybe_unused *cbr = bmips_cbr_addr;
++	u32 __maybe_unused rac_addr;
+ 	u32 __maybe_unused cfg;
+ 
+ 	switch (current_cpu_type()) {
+@@ -620,6 +621,23 @@ void bmips_cpu_setup(void)
+ 		__raw_readl(cbr + BMIPS_RAC_ADDRESS_RANGE);
+ 		break;
+ 
++	case CPU_BMIPS4350:
++		rac_addr = BMIPS_RAC_CONFIG_1;
++
++		if (!(read_c0_brcm_cmt_local() & (1 << 31)))
++			rac_addr = BMIPS_RAC_CONFIG;
++
++		/* Enable data RAC */
++		cfg = __raw_readl(cbr + rac_addr);
++		__raw_writel(cfg | 0xf, cbr + rac_addr);
++		__raw_readl(cbr + rac_addr);
++
++		/* Flush stale data out of the readahead cache */
++		cfg = __raw_readl(cbr + BMIPS_RAC_CONFIG);
++		__raw_writel(cfg | 0x100, cbr + BMIPS_RAC_CONFIG);
++		__raw_readl(cbr + BMIPS_RAC_CONFIG);
++		break;
++
+ 	case CPU_BMIPS4380:
+ 		/* CBG workaround for early BMIPS4380 CPUs */
+ 		switch (read_c0_prid()) {

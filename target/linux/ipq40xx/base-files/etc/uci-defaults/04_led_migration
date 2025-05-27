@@ -6,6 +6,9 @@ case "$board" in
 asus,map-ac2200)
 	migrate_leds ':chan=-'
 	;;
+asus,rt-ac58u)
+	migrate_leds ":status=:power" ":wlan2G=:wlan-2" ":wlan5G=:wlan-5"
+	;;
 engenius,emr3500)
 	migrate_leds "emr3500:="
 	;;

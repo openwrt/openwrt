@@ -1,0 +1,31 @@
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -688,7 +688,8 @@ static void atm_aca_init(struct atm_priv
+ 		ACA_TXOUT_EN | ACA_RXIN_EN | ACA_RXOUT_EN, 1);
+ }
+ 
+-static int print_datetime(char *buffer, const struct timespec64 *datetime)
++static int print_datetime(char *buffer, int buffer_size,
++			  const struct timespec64 *datetime)
+ {
+ 	struct tm nowtm;
+ 	char tmbuf[64];
+@@ -707,7 +708,8 @@ static int print_datetime(char *buffer,
+ 			nowtm.tm_hour,
+ 			nowtm.tm_min,
+ 			nowtm.tm_sec);
+-	snprintf(buffer, sizeof(buffer), "%s.%06d", tmbuf, (int)datetime->tv_nsec / 1000);
++	snprintf(buffer, sizeof(tmbuf)+buffer_size, "%s.%06d",
++		 tmbuf, (int)datetime->tv_nsec / 1000);
+ 
+ 	return 0;
+ }
+@@ -909,7 +911,7 @@ void show_atm_pvc(struct seq_file *seq,
+ 	char buf[64];
+ 
+ 	seq_printf(seq, "\tNet device: %s\n", pvc->dev->name);
+-	print_datetime(buf, &(pvc->access_time));
++	print_datetime(buf, sizeof(buf), &(pvc->access_time));
+ 	seq_printf(seq, "\tLast user cell: %s\n", buf);
+ 	seq_printf(seq, "\tPort: %d\n", pvc->port);
+ 	seq_printf(seq, "\tSoftware TX Queue: %u\n", pvc->sw_txq_tbl);

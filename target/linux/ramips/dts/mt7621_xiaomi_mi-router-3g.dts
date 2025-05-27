@@ -1,4 +1,5 @@
 #include "mt7621_xiaomi_nand_128m.dtsi"
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "xiaomi,mi-router-3g", "mediatek,mt7621-soc";
@@ -15,37 +16,45 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_red: status_red {
-			label = "red:status";
+		led_status_red: led-0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_blue: status_blue {
-			label = "blue:status";
+		led_status_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_yellow: status_yellow {
-			label = "yellow:status";
+		led_status_yellow: led-2 {
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_amber {
-			label = "amber:wan";
+		led-3 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "dsa-0.0:01:1Gbps";
+			linux,default-trigger = "mt7530-0:01:1Gbps";
 		};
 
-		lan1_amber {
-			label = "amber:lan1";
+		led-4 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "dsa-0.0:03:1Gbps";
+			linux,default-trigger = "mt7530-0:03:1Gbps";
 		};
 
-		lan2_amber {
-			label = "amber:lan2";
+		led-5 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "dsa-0.0:02:1Gbps";
+			linux,default-trigger = "mt7530-0:02:1Gbps";
 		};
 	};
 
@@ -54,7 +63,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -71,7 +80,8 @@
 	wifi@0,0 {
 		compatible = "pci14c3,7603";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
@@ -80,7 +90,8 @@
 	wifi@0,0 {
 		compatible = "pci14c3,7662";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -115,19 +126,5 @@
 	gpio {
 		groups = "jtag", "uart2", "uart3", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
-	};
-
-	macaddr_factory_e006: macaddr@e006 {
-		reg = <0xe006 0x6>;
 	};
 };

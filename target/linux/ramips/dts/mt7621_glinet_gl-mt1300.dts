@@ -14,7 +14,7 @@
 		led-failsafe = &led_run;
 		led-running = &led_run;
 		led-upgrade = &led_run;
-		label-mac-device = &wan;
+		label-mac-device = &gmac1;
 	};
 
 	chosen {
@@ -67,8 +67,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		m25p,fast-read;
+		spi-max-frequency = <50000000>;
 		broken-flash-reset;
 
 		partitions {
@@ -88,10 +87,26 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x4da8>;
+					};
+
+					macaddr_factory_4000: macaddr@4000 {
+						compatible = "mac-base";
+						reg = <0x4000 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -111,14 +126,27 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_4000>;
+	nvmem-cells = <&macaddr_factory_4000 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_4000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {
@@ -132,13 +160,6 @@
 			status = "okay";
 			label = "lan2";
 		};
-
-		wan: port@4 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_4000>;
-			nvmem-cell-names = "mac-address";
-		};
 	};
 };
 
@@ -150,15 +171,5 @@
 	gpio {
 		group = "wdt", "jtag";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4000: macaddr@4000 {
-		reg = <0x4000 0x6>;
 	};
 };

@@ -32,7 +32,7 @@
 
 &state_default {
 	gpio {
-		groups = "uart2", "rgmii2";
+		groups = "uart2";
 		function = "gpio";
 	};
 };
@@ -93,10 +93,22 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_5: macaddr@5 {
+						compatible = "mac-base";
+						reg = <0x5 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -112,13 +124,22 @@
 	status = "okay";
 };
 
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_5 0>;
+	nvmem-cell-names = "mac-address";
 };
 
-&gmac0 {
-	nvmem-cells = <&macaddr_factory_5>;
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_5 1>;
 	nvmem-cell-names = "mac-address";
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {
@@ -142,27 +163,9 @@
 			status = "okay";
 			label = "lan4";
 		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_5>;
-			nvmem-cell-names = "mac-address";
-			mac-address-increment = <1>;
-		};
 	};
 };
 
 &pcie {
 	status = "okay";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_5: macaddr@5 {
-		reg = <0x5 0x6>;
-	};
 };

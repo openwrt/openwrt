@@ -22,8 +22,6 @@ Signed-off-by: Tom Rini <trini@konsulko.com>
  delete mode 100644 include/linux/compiler-gcc4.h
  create mode 100644 include/linux/compiler-intel.h
 
-diff --git a/include/linux/compiler-gcc.h b/include/linux/compiler-gcc.h
-index 9896e54..22ab246 100644
 --- a/include/linux/compiler-gcc.h
 +++ b/include/linux/compiler-gcc.h
 @@ -5,11 +5,28 @@
@@ -147,20 +145,6 @@ index 9896e54..22ab246 100644
   */
 -#ifndef __pure
 -# define __pure				__attribute__((pure))
--#endif
--#ifndef __aligned
--# define __aligned(x)			__attribute__((aligned(x)))
--#endif
--#define __printf(a,b)			__attribute__((format(printf,a,b)))
--#define  noinline			__attribute__((noinline))
--#define __attribute_const__		__attribute__((__const__))
--#define __maybe_unused			__attribute__((unused))
--#define __always_unused			__attribute__((unused))
--
--#define __gcc_header(x) #x
--#define _gcc_header(x) __gcc_header(linux/compiler-gcc##x.h)
--#define gcc_header(x) _gcc_header(x)
--#include gcc_header(__GNUC__)
 +#define __pure			__attribute__((pure))
 +#define __aligned(x)		__attribute__((aligned(x)))
 +#define __printf(a, b)		__attribute__((format(printf, a, b)))
@@ -189,7 +173,9 @@ index 9896e54..22ab246 100644
 +
 +#if GCC_VERSION >= 30400
 +#define __must_check		__attribute__((warn_unused_result))
-+#endif
+ #endif
+-#ifndef __aligned
+-# define __aligned(x)			__attribute__((aligned(x)))
 +
 +#if GCC_VERSION >= 40000
 +
@@ -206,7 +192,17 @@ index 9896e54..22ab246 100644
 +
 +#if GCC_VERSION >= 40100 && GCC_VERSION < 40600
 +# define __compiletime_object_size(obj) __builtin_object_size(obj, 0)
-+#endif
+ #endif
+-#define __printf(a,b)			__attribute__((format(printf,a,b)))
+-#define  noinline			__attribute__((noinline))
+-#define __attribute_const__		__attribute__((__const__))
+-#define __maybe_unused			__attribute__((unused))
+-#define __always_unused			__attribute__((unused))
+-
+-#define __gcc_header(x) #x
+-#define _gcc_header(x) __gcc_header(linux/compiler-gcc##x.h)
+-#define gcc_header(x) _gcc_header(x)
+-#include gcc_header(__GNUC__)
 +
 +#if GCC_VERSION >= 40300
 +/* Mark functions as cold. gcc will assume any path leading to a call
@@ -328,9 +324,6 @@ index 9896e54..22ab246 100644
 + * code
 + */
 +#define uninitialized_var(x) x = x
-diff --git a/include/linux/compiler-gcc3.h b/include/linux/compiler-gcc3.h
-deleted file mode 100644
-index 2befe65..0000000
 --- a/include/linux/compiler-gcc3.h
 +++ /dev/null
 @@ -1,21 +0,0 @@
@@ -355,9 +348,6 @@ index 2befe65..0000000
 -#define uninitialized_var(x) x = x
 -
 -#define __always_inline		inline __attribute__((always_inline))
-diff --git a/include/linux/compiler-gcc4.h b/include/linux/compiler-gcc4.h
-deleted file mode 100644
-index 27d11ca..0000000
 --- a/include/linux/compiler-gcc4.h
 +++ /dev/null
 @@ -1,63 +0,0 @@
@@ -424,9 +414,6 @@ index 27d11ca..0000000
 -#define __compiletime_warning(message) __attribute__((warning(message)))
 -#define __compiletime_error(message) __attribute__((error(message)))
 -#endif
-diff --git a/include/linux/compiler-intel.h b/include/linux/compiler-intel.h
-new file mode 100644
-index 0000000..d4c7113
 --- /dev/null
 +++ b/include/linux/compiler-intel.h
 @@ -0,0 +1,45 @@
@@ -475,8 +462,6 @@ index 0000000..d4c7113
 +#define __builtin_bswap16 _bswap16
 +#endif
 +
-diff --git a/include/linux/compiler.h b/include/linux/compiler.h
-index 5be3dab..020ad16 100644
 --- a/include/linux/compiler.h
 +++ b/include/linux/compiler.h
 @@ -5,16 +5,24 @@
@@ -505,7 +490,7 @@ index 5be3dab..020ad16 100644
  extern void __chk_user_ptr(const volatile void __user *);
  extern void __chk_io_ptr(const volatile void __iomem *);
  #else
-@@ -27,20 +35,32 @@ extern void __chk_io_ptr(const volatile void __iomem *);
+@@ -27,20 +35,32 @@ extern void __chk_io_ptr(const volatile
  # define __chk_user_ptr(x) (void)0
  # define __chk_io_ptr(x) (void)0
  # define __builtin_warning(x, y...) (1)
@@ -538,7 +523,7 @@ index 5be3dab..020ad16 100644
  
  /* Intel compiler defines __GNUC__. So we will overwrite implementations
   * coming from above header files here
-@@ -49,6 +69,13 @@ extern void __chk_io_ptr(const volatile void __iomem *);
+@@ -49,6 +69,13 @@ extern void __chk_io_ptr(const volatile
  # include <linux/compiler-intel.h>
  #endif
  
@@ -552,7 +537,7 @@ index 5be3dab..020ad16 100644
  /*
   * Generic compiler-dependent macros required for kernel
   * build go below this comment. Actual compiler/compiler version
-@@ -117,7 +144,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -117,7 +144,7 @@ void ftrace_likely_update(struct ftrace_
   */
  #define if(cond, ...) __trace_if( (cond , ## __VA_ARGS__) )
  #define __trace_if(cond) \
@@ -561,7 +546,7 @@ index 5be3dab..020ad16 100644
  	({								\
  		int ______r;						\
  		static struct ftrace_branch_data			\
-@@ -144,6 +171,10 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -144,6 +171,10 @@ void ftrace_likely_update(struct ftrace_
  # define barrier() __memory_barrier()
  #endif
  
@@ -572,7 +557,7 @@ index 5be3dab..020ad16 100644
  /* Unreachable code */
  #ifndef unreachable
  # define unreachable() do { } while (1)
-@@ -156,6 +187,135 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -156,6 +187,135 @@ void ftrace_likely_update(struct ftrace_
      (typeof(ptr)) (__ptr + (off)); })
  #endif
  
@@ -708,7 +693,7 @@ index 5be3dab..020ad16 100644
  #endif /* __KERNEL__ */
  
  #endif /* __ASSEMBLY__ */
-@@ -228,7 +388,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -228,7 +388,7 @@ void ftrace_likely_update(struct ftrace_
  
  /*
   * Rather then using noinline to prevent stack consumption, use
@@ -717,7 +702,7 @@ index 5be3dab..020ad16 100644
   */
  #define noinline_for_stack noinline
  
-@@ -270,11 +430,28 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -270,11 +430,28 @@ void ftrace_likely_update(struct ftrace_
  # define __section(S) __attribute__ ((__section__(#S)))
  #endif
  
@@ -746,7 +731,7 @@ index 5be3dab..020ad16 100644
  /* Compile time object size, -1 for unknown */
  #ifndef __compiletime_object_size
  # define __compiletime_object_size(obj) -1
-@@ -284,7 +461,48 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+@@ -284,8 +461,49 @@ void ftrace_likely_update(struct ftrace_
  #endif
  #ifndef __compiletime_error
  # define __compiletime_error(message)
@@ -760,11 +745,11 @@ index 5be3dab..020ad16 100644
 +#  define __compiletime_error_fallback(condition) \
 +	do { ((void)sizeof(char[1 - 2 * condition])); } while (0)
 +# endif
- #endif
++#endif
 +#ifndef __compiletime_error_fallback
 +# define __compiletime_error_fallback(condition) do { } while (0)
-+#endif
-+
+ #endif
+ 
 +#define __compiletime_assert(condition, msg, prefix, suffix)		\
 +	do {								\
 +		bool __cond = !(condition);				\
@@ -792,10 +777,11 @@ index 5be3dab..020ad16 100644
 +#define compiletime_assert_atomic_type(t)				\
 +	compiletime_assert(__native_word(t),				\
 +		"Need native word sized stores/loads for atomicity.")
- 
++
  /*
   * Prevent the compiler from merging or refetching accesses.  The compiler
-@@ -293,11 +511,45 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
+  * is also forbidden from reordering successive instances of ACCESS_ONCE(),
+@@ -293,11 +511,45 @@ void ftrace_likely_update(struct ftrace_
   * to make the compiler aware of ordering is to put the two invocations of
   * ACCESS_ONCE() in different C statements.
   *
@@ -847,6 +833,3 @@ index 5be3dab..020ad16 100644
 +# define nokprobe_inline	inline
 +#endif
  #endif /* __LINUX_COMPILER_H */
--- 
-2.7.4
-

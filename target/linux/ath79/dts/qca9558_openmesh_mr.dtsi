@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	chosen {
@@ -11,7 +12,6 @@
 	};
 
 	aliases {
-		serial0 = &uart;
 		led-boot = &led_power_blue;
 		led-failsafe = &led_power_blue;
 		led-running = &led_power_blue;
@@ -33,7 +33,8 @@
 		compatible = "gpio-leds";
 
 		lan_blue {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
@@ -43,17 +44,20 @@
 		};
 
 		status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
 		status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -115,10 +119,30 @@
 				reg = <0x850000 0x7a0000>;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "ART";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};
@@ -126,8 +150,6 @@
 
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0x20>;
 
 	phy5: ethernet-phy@5 {
 		reg = <5>;
@@ -141,7 +163,7 @@
 
 	pll-data = <0x82000000 0x80000101 0x80001313>;
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
@@ -156,22 +178,17 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_art_0 1>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &pcie0 {
 	status = "okay";
-};
 
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 16>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };

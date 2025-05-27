@@ -17,7 +17,7 @@
  
  /*
   * ####################################
-@@ -118,9 +121,11 @@ struct erb_head {
+@@ -118,9 +121,13 @@ struct erb_head {
  
  static struct notifier_block g_netdev_event_handler_nb = {0};
  static struct net_device *g_ptm_net_dev = NULL;
@@ -25,12 +25,14 @@
 +static uint32_t vector_prio = TC_PRIO_CONTROL;
  static int g_dbg_enable = 0;
  
++static struct workqueue_struct *vectoring_wq;
++
 +DECLARE_WORK(xmit_work, xmit_work_handler);
 +struct sk_buff_head xmit_queue;
  
  
  /*
-@@ -129,9 +134,16 @@ static int g_dbg_enable = 0;
+@@ -129,9 +136,16 @@ static int g_dbg_enable = 0;
   * ####################################
   */
  
@@ -48,7 +50,7 @@
      struct sk_buff *skb_list = NULL;
      struct sk_buff *skb;
      struct erb_head *erb;
-@@ -179,7 +191,6 @@ static int mei_dsm_cb_func(unsigned int
+@@ -179,7 +193,6 @@ static int mei_dsm_cb_func(unsigned int
          }
      }
  
@@ -56,7 +58,7 @@
      sent_size = 0;
      segment_code = 0;
      while ( (skb = skb_list) != NULL ) {
-@@ -197,24 +208,23 @@ static int mei_dsm_cb_func(unsigned int
+@@ -197,24 +210,23 @@ static int mei_dsm_cb_func(unsigned int
              segment_code |= 0xC0;
          ((struct erb_head *)skb->data)->segment_code = segment_code;
  
@@ -75,7 +77,7 @@
 -        if ( rc == 0 )
 -            rc = ret;
 +        skb_queue_tail(&xmit_queue, skb);
-+        schedule_work(&xmit_work);
++        queue_work(vectoring_wq, &xmit_work);
  
          segment_code++;
      }
@@ -88,7 +90,7 @@
  }
  static void ltq_vectoring_priority(uint32_t priority)
  {
-@@ -242,7 +252,7 @@ static int netdev_event_handler(struct n
+@@ -242,7 +254,7 @@ static int netdev_event_handler(struct n
          return NOTIFY_DONE;
  
      netif = netdev_notifier_info_to_dev(netdev);
@@ -97,10 +99,12 @@
          return NOTIFY_DONE;
  
      g_ptm_net_dev = event == NETDEV_REGISTER ? netif : NULL;
-@@ -438,8 +448,10 @@ static int __init vectoring_init(void)
+@@ -438,8 +450,12 @@ static int __init vectoring_init(void)
  				0,
  				&g_proc_file_vectoring_dbg_seq_fops);
  
++    vectoring_wq = alloc_workqueue("vectoring", 0, 0);
++
 +    skb_queue_head_init(&xmit_queue);
 +
      register_netdev_event_handler();
@@ -109,11 +113,13 @@
      if ( g_ptm_net_dev != NULL )
          dev_put(g_ptm_net_dev);
  
-@@ -459,6 +471,8 @@ static void __exit vectoring_exit(void)
+@@ -459,6 +475,10 @@ static void __exit vectoring_exit(void)
  
      unregister_netdev_event_handler();
  
-+    flush_scheduled_work();
++    flush_workqueue(vectoring_wq);
++
++    destroy_workqueue(vectoring_wq);
 +
      remove_proc_entry("driver/vectoring", NULL);
  }

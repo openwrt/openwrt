@@ -1,6 +1,6 @@
---- a/svr-authpubkey.c
-+++ b/svr-authpubkey.c
-@@ -77,6 +77,13 @@ static void send_msg_userauth_pk_ok(cons
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -78,6 +78,13 @@ static void send_msg_userauth_pk_ok(cons
  		const unsigned char* keyblob, unsigned int keybloblen);
  static int checkfileperm(char * filename);
  
@@ -14,7 +14,7 @@
  /* process a pubkey auth request, sending success or failure message as
   * appropriate */
  void svr_auth_pubkey(int valid_user) {
-@@ -439,14 +446,21 @@ static int checkpubkey(const char* keyal
+@@ -462,14 +469,21 @@ static int checkpubkey(const char* keyal
  	if (checkpubkeyperms() == DROPBEAR_FAILURE) {
  		TRACE(("bad authorized_keys permissions, or file doesn't exist"))
  	} else {
@@ -44,7 +44,7 @@
  
  		authfile = fopen(filename, "r");
  		if (!authfile) {
-@@ -520,27 +534,41 @@ static int checkpubkeyperms() {
+@@ -543,27 +557,41 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  

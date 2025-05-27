@@ -1,0 +1,59 @@
+From 99942611816c117a01f16dbcab54908a49b378c3 Mon Sep 17 00:00:00 2001
+From: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+Date: Mon, 18 Dec 2023 12:05:39 +0100
+Subject: [PATCH 02/14] riscv: dts: allwinner: Update opp table to allow CPU
+ frequency scaling
+
+Two OPPs are currently defined for the D1/D1s; one at 408MHz and
+another at 1.08GHz. Switching between these can be done with the
+"sun50i-cpufreq-nvmem" driver. This patch populates the opp table
+appropriately, inspired by
+https://github.com/Tina-Linux/linux-5.4/blob/master/arch/riscv/boot/dts/sunxi/sun20iw1p1.dtsi
+
+The supply voltages are PWM-controlled, but support for that IP
+is still in the works. So stick to a target vdd-cpu supply of 0.9V,
+which seems to be the default on most D1 boards.
+
+Signed-off-by: Brandon Cheo Fusi <fusibrandon13@gmail.com>
+---
+ arch/riscv/boot/dts/allwinner/sun20i-d1s.dtsi | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+--- a/arch/riscv/boot/dts/allwinner/sun20i-d1s.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sun20i-d1s.dtsi
+@@ -36,16 +36,22 @@
+ 	};
+ 
+ 	opp_table_cpu: opp-table-cpu {
+-		compatible = "operating-points-v2";
++		compatible = "allwinner,sun20i-d1-operating-points",
++				 "allwinner,sun50i-h6-operating-points";
++		nvmem-cells = <&cpu_speed_grade>;
++		nvmem-cell-names = "speed";
++		opp-shared;
+ 
+ 		opp-408000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
+ 			opp-hz = /bits/ 64 <408000000>;
+-			opp-microvolt = <900000 900000 1100000>;
++			opp-microvolt-speed0 = <900000 900000 1100000>;
+ 		};
+ 
+ 		opp-1080000000 {
++			clock-latency-ns = <244144>; /* 8 32k periods */
+ 			opp-hz = /bits/ 64 <1008000000>;
+-			opp-microvolt = <900000 900000 1100000>;
++			opp-microvolt-speed0 = <900000 900000 1100000>;
+ 		};
+ 	};
+ 
+@@ -112,3 +118,9 @@
+ 			<0x00000000 0x0000000f 0xffffffff 0xffffffff 0x00020000>;
+ 	};
+ };
++
++&sid {
++	cpu_speed_grade: cpu-speed-grade@0 {
++		reg = <0x00 0x2>;
++	};
++};

@@ -1,0 +1,428 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Linksys E8350 V1 WiFi Router";
+	compatible = "linksys,e8350-v1", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x42000000 0x1e000000>;
+		device_type = "memory";
+	};
+
+	aliases {
+		serial0 = &gsbi4_serial;
+
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 68 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&qcom_pinmux 67 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		wps {
+			label = "green:wps";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi {
+			label = "green:wifi";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+
+			partition@0 {
+				label = "ubi";
+				reg = <0 0x4000000>;
+			};
+			partition@4000000 {
+				label = "extra";
+				reg = <0x4000000 0x4000000>;
+			};
+		};
+	};
+};
+
+&qcom_pinmux {
+	button_pins: button_pins {
+		mux {
+			pins = "gpio68","gpio65", "gpio67";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio26","gpio53", "gpio54";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	switch_reset: switch_reset_pins {
+		mux {
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-up;
+		};
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi5: spi@1a280000 {
+		status = "okay";
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		m25p80@0 {
+			compatible = "jedec,spi-nor";
+			spi-max-frequency = <51200000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "0:sbl1";
+					reg = <0x0000000 0x0010000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "0:mibib";
+					reg = <0x0010000 0x0020000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "0:sbl2";
+					reg = <0x0030000 0x0020000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "0:sbl3";
+					reg = <0x0050000 0x0030000>;
+					read-only;
+				};
+
+				partition@80000 {
+					label = "0:ddrconfig";
+					reg = <0x0080000 0x0010000>;
+					read-only;
+				};
+
+				partition@90000 {
+					label = "0:ssd";
+					reg = <0x0090000 0x0010000>;
+					read-only;
+				};
+
+				partition@a0000 {
+					label = "0:tz";
+					reg = <0x00a0000 0x0030000>;
+					read-only;
+				};
+
+				partition@d0000 {
+					label = "0:rpm";
+					reg = <0x00d0000 0x0020000>;
+					read-only;
+				};
+
+				partition@f0000 {
+					label = "0:oldappsbl";
+					reg = <0x00f0000 0x0040000>;
+					read-only;
+				};
+
+				partition@130000 {
+					label = "0:appsblenv";
+					reg = <0x0130000 0x0040000>;
+					read-only;
+				};
+
+				art: partition@170000 {
+					label = "0:ART";
+					reg = <0x0170000 0x0020000>;
+					read-only;
+				};
+
+				partition@190000 {
+					label = "0:uboot";
+					reg = <0x0190000 0x0050000>;
+					read-only;
+				};
+
+				partition@1e0000 {
+					label = "0:oldnss1";
+					reg = <0x01e0000 0x0020000>;
+					read-only;
+				};
+
+				partition@200000 {
+					label = "0:nvram";
+					reg = <0x0200000 0x0020000>;
+					read-only;
+				};
+
+				partition@220000 {
+					label = "0:oldkernel";
+					reg = <0x0220000 0x01e0000>;
+					read-only;
+				};
+			};
+		};
+	};
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	max-link-speed = <1>;
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	/* Switch from documentation require at least 12ms for reset */
+	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
+	reset-post-delay-us = <12000>;
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&gmac1 {
+	status = "okay";
+
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&tcsr {
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+	compatible = "qcom,tcsr", "syscon";
+};
+
+&adm_dma {
+	status = "okay";
+};

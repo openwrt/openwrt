@@ -8,14 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.21
+PKG_VERSION:=2.0.28
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
-PKG_HASH:=e113142dee891638ad96e0f72cf9277b244477619470b30c41999d312e8e8702
+PKG_HASH:=d2f0ef872f39e2fe4b1b01feb62b0001383207239b9f8041f98a95564161d053
 
 PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA
+
+PKG_BUILD_FLAGS:=gc-sections
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -49,6 +51,17 @@ define Package/kexec/description
  The kexec utility allows to load and boot another kernel.
 endef
 
+define Package/kdump
+  $(call Package/kexec-tools/Default)
+  TITLE:=Kernel crash analysis
+  DEPENDS:=+kexec @(i386||x86_64||arm) @KERNEL_CRASH_DUMP
+endef
+
+define Package/kdump/description
+ The kdump package allows to automatically boot into a
+ special kernel for analyzing kernel crashes using kdump.
+endef
+
 define Package/kexec/config
 	source "$(SOURCE)/Config.in"
 endef
@@ -71,9 +84,6 @@ CONFIGURE_ARGS = \
 		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
 		TARGET_LD="$(TARGET_CROSS)ld"
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
-
 CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \
 	TARGET_CC="$(TARGET_CC)"
@@ -95,5 +105,28 @@ define Package/kexec/install
 	$(LN) ../usr/sbin/kexec $(1)/sbin/kexec
 endef
 
+define Package/kdump/install
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config $(1)/etc/uci-defaults
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/vmcore-dmesg $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/kdump.init $(1)/etc/init.d/kdump
+	$(INSTALL_BIN) ./files/kdump.defaults $(1)/etc/uci-defaults/kdump
+	$(INSTALL_CONF) ./files/kdump.config $(1)/etc/config/kdump
+endef
+
+define Package/kdump/prerm
+#!/bin/sh
+
+case $$(uname -m) in
+	i?86|x86_64)
+		if grep -q " crashkernel=" /boot/grub/grub.cfg; then
+			mount /boot -o remount,rw
+			sed -i 's/ crashkernel=[^ ]*//' /boot/grub/grub.cfg
+			mount /boot -o remount,ro
+		fi
+		;;
+esac
+endef
+
 $(eval $(call BuildPackage,kexec-tools))
 $(eval $(call BuildPackage,kexec))
+$(eval $(call BuildPackage,kdump))

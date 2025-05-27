@@ -1,0 +1,45 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 4 Oct 2024 12:19:42 +0000
+Subject: [PATCH] pppd/crypto: fix build without openssl
+
+Compile openssl relevant code only when PPP_WITH_OPENSSL is defined.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ pppd/crypto.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/pppd/crypto.c
++++ b/pppd/crypto.c
+@@ -199,6 +199,7 @@ int PPP_crypto_init()
+ {
+     int retval = 0;
+ 
++#ifdef PPP_WITH_OPENSSL
+ #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+     g_crypto_ctx.legacy = OSSL_PROVIDER_load(NULL, "legacy");
+     if (g_crypto_ctx.legacy == NULL)
+@@ -214,6 +215,7 @@ int PPP_crypto_init()
+         goto done;
+     }
+ #endif
++#endif
+ 
+     retval = 1;
+ 
+@@ -224,6 +226,7 @@ done:
+ 
+ int PPP_crypto_deinit()
+ {
++#ifdef PPP_WITH_OPENSSL
+ #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+     if (g_crypto_ctx.legacy) {
+         OSSL_PROVIDER_unload(g_crypto_ctx.legacy);
+@@ -239,6 +242,7 @@ int PPP_crypto_deinit()
+ #if OPENSSL_VERSION_NUMBER < 0x10100000L
+     ERR_free_strings();
+ #endif
++#endif
+     return 1;
+ }
+ 

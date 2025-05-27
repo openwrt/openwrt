@@ -1,0 +1,53 @@
+From dac6f3021895e7678552789edff22f1dc909e274 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Mon, 15 Apr 2024 20:59:35 +0800
+Subject: [PATCH 115/116] clk: starfive: jh7110: Change uart3-uart5 clk
+ register info
+
+The core_clk division register of uart3-uart5 include fractional and
+integral parts, but now only use the integral part, so include shift
+operation. The integral part include 8 bit, so the max value can be
+configed is 255.
+
+Signed-off-by: Yanhong Wang <yanhong.wang@starfivetech.com>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ drivers/clk/starfive/clk-starfive-jh71x0.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/clk/starfive/clk-starfive-jh71x0.c
++++ b/drivers/clk/starfive/clk-starfive-jh71x0.c
+@@ -10,6 +10,8 @@
+ #include <linux/device.h>
+ #include <linux/io.h>
+ 
++#include <dt-bindings/clock/starfive,jh7110-crg.h>
++
+ #include "clk-starfive-jh71x0.h"
+ 
+ static struct jh71x0_clk *jh71x0_clk_from(struct clk_hw *hw)
+@@ -70,6 +72,11 @@ static unsigned long jh71x0_clk_recalc_r
+ 	struct jh71x0_clk *clk = jh71x0_clk_from(hw);
+ 	u32 div = jh71x0_clk_reg_get(clk) & JH71X0_CLK_DIV_MASK;
+ 
++	if (clk->idx == JH7110_SYSCLK_UART3_CORE ||
++	    clk->idx == JH7110_SYSCLK_UART4_CORE ||
++	    clk->idx == JH7110_SYSCLK_UART5_CORE)
++		div >>= 8;
++
+ 	return div ? parent_rate / div : 0;
+ }
+ 
+@@ -110,6 +117,12 @@ static int jh71x0_clk_set_rate(struct cl
+ 	unsigned long div = clamp(DIV_ROUND_CLOSEST(parent_rate, rate),
+ 				  1UL, (unsigned long)clk->max_div);
+ 
++	/* UART3-5: [15:8]: integer part of the divisor. [7:0] fraction part of the divisor */
++	if (clk->idx == JH7110_SYSCLK_UART3_CORE ||
++	    clk->idx == JH7110_SYSCLK_UART4_CORE ||
++	    clk->idx == JH7110_SYSCLK_UART5_CORE)
++		div <<= 8;
++
+ 	jh71x0_clk_reg_rmw(clk, JH71X0_CLK_DIV_MASK, div);
+ 	return 0;
+ }

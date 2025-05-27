@@ -1,0 +1,30 @@
+From 9d75bdd797d32c859d0dd9f54acc30de63831eb1 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Mon, 29 Jan 2024 15:28:39 -0800
+Subject: [PATCH 411/413] 6.10: arm64: dts: imx8mp-venice-gw74xx: add ADC rail
+ for VDD_1P0
+
+The imx8mp-venice-gw74xx revB PCB added an ADC rail for
+VDD_1P0. Add it to the GSC ADC rails.
+
+Fixes: 531936b218d8 ("arm64: dts: imx8mp-venice-gw74xx: update to revB PCB")
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
+@@ -391,6 +391,12 @@
+ 				label = "vdd_dram";
+ 			};
+ 
++			channel@9e {
++				gw,mode = <2>;
++				reg = <0x9e>;
++				label = "vdd_1p0";
++			};
++
+ 			channel@a2 {
+ 				gw,mode = <2>;
+ 				reg = <0xa2>;

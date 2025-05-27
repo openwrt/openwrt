@@ -1,0 +1,36 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ6018/hw1.0/cal-ahb-c000000.wifi.bin")
+	case "$board" in
+	8devices,mango-dvk)
+		caldata_extract "0:ART" 0x1000 0x20000
+		;;
+	cambiumnetworks,xe3-4)
+		caldata_extract "0:ART" 0x1000 0x10000
+		;;
+	netgear,wax214)
+		caldata_extract "0:art" 0x1000 0x10000
+		;;
+	yuncore,fap650)
+		caldata_extract "0:art" 0x1000 0x20000
+		;;
+	esac
+	;;
+"ath11k/QCN9074/hw1.0/cal-pci-0000:01:00.0.bin")
+	case "$board" in
+	cambiumnetworks,xe3-4)
+		caldata_extract "0:ART" 0x26800 0x20000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

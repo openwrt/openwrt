@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "bolt,bl100", "ralink,mt7620a-soc";
+	model = "Bolt BL100";
+
+	aliases {
+		led-boot = &led_reset;
+		led-failsafe = &led_reset;
+		led-running = &led_power;
+		led-upgrade = &led_reset;
+		label-mac-device = &ethernet;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_reset: reset {
+			function = LED_FUNCTION_BOOT;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lte1 {
+			label = "blue:lte1";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lte2 {
+			label = "blue:lte2";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lte3 {
+			label = "blue:lte3";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lte4 {
+			label = "blue:lte4";
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_lte5 {
+			label = "red:lte5";
+			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lte6 {
+			label = "red:lte6";
+			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio2 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led_voip {
+			label = "blue:voip";
+			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan2 {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+		
+		led_wlan5 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+		
+		led_lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "WPS";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		};
+
+		reset {
+			label = "RST";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				compatible = "nvmem-cells";
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				label = "firmware";
+				reg = <0x50000 0xf80000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x26112015>;
+			};
+
+			partition@fd0000 {
+				label = "crash";
+				reg = <0xfd0000 0x10000>;
+			};
+
+			partition@fe0000 {
+				label = "reserved";
+				reg = <0xfe0000 0x10000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "Bdata";
+				reg = <0xff0000 0x10000>;
+			};
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	
+	pinctrl-names = "default", "pa_gpio";
+	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "rgmii1", "rgmii2", "ephy", "wled", "nd_sd";
+		function = "gpio";
+	};
+};
+

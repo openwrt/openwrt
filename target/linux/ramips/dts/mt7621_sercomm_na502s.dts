@@ -3,6 +3,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "sercomm,na502s", "mediatek,mt7621-soc";
@@ -19,7 +20,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
@@ -40,7 +42,8 @@
 		};
 
 		bluetooth {
-			label = "green:bluetooth";
+			function = LED_FUNCTION_BLUETOOTH;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio_expander1 3 GPIO_ACTIVE_LOW>;
 		};
 
@@ -204,7 +207,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_e000 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -228,9 +231,29 @@
 			read-only;
 		};
 
-		factory: partition@100000 {
+		partition@100000 {
 			label = "factory";
 			reg = <0x100000 0x40000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
+
+				macaddr_factory_e000: macaddr@e000 {
+					compatible = "mac-base";
+					reg = <0xe000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@140000 {
@@ -274,26 +297,22 @@
 	status = "okay";
 };
 
-&pcie0 {
+&pcie1 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
-		nvmem-cells = <&macaddr_factory_e000>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_e000 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
-&pcie1 {
+&pcie2 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
-		nvmem-cells = <&macaddr_factory_e000>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
@@ -317,6 +336,7 @@
 		reg = <0x22>;
 
 		gpio-controller;
+		interrupt-controller;
 	};
 
 	gpio_expander0: gpio-expander0@20 {
@@ -326,6 +346,7 @@
 		reg = <0x20>;
 
 		gpio-controller;
+		interrupt-controller;
 	};
 
 	gpio_expander1: gpio-expander1@21 {
@@ -335,6 +356,7 @@
 		reg = <0x21>;
 
 		gpio-controller;
+		interrupt-controller;
 	};
 };
 
@@ -349,14 +371,4 @@
 
 &uartlite2 {
 	status = "okay";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
-	};
 };

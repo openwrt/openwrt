@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "raisecom,msg1500-x-00", "mediatek,mt7621-soc";
@@ -13,6 +14,7 @@
 		led-boot = &led_usb;
 		led-failsafe = &led_usb;
 		led-upgrade = &led_usb;
+		label-mac-device = &gmac0;
 	};
 
 	leds {
@@ -31,7 +33,8 @@
 		};
 
 		led_usb: usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port2>;
 			linux,default-trigger = "usbport";
@@ -79,12 +82,44 @@
 			label = "Config";
 			reg = <0x80000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_config_8014: macaddr@8014 {
+					compatible = "mac-base";
+					reg = <0x8014 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				macaddr_config_8036: macaddr@8036 {
+					compatible = "mac-base";
+					reg = <0x8036 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
-		factory: partition@100000 {
+		partition@100000 {
 			label = "Factory";
 			reg = <0x100000 0x40000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x4da8>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+			};
 		};
 
 		partition@140000 {
@@ -107,12 +142,29 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		/* 5 GHz (phy1) does not take the address from calibration data,
 		   but setting it manually here works */
-		nvmem-cells = <&macaddr_factory_4>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_config_8014 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_config_8036 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {
@@ -136,11 +188,6 @@
 			status = "okay";
 			label = "lan1";
 		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
-		};
 	};
 };
 
@@ -148,15 +195,5 @@
 	gpio {
 		groups = "i2c", "jtag", "uart3", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

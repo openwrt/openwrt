@@ -29,6 +29,7 @@
 #include <endian.h>
 #include <string.h>
 #include <errno.h>
+#include <netinet/in.h>
 
 #include <sys/ioctl.h>
 #include <mtd/mtd-user.h>
@@ -165,7 +166,7 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 	size_t block_offset;
 
 	if (quiet < 2)
-		fprintf(stderr, "Trying to fix trx header in %s at 0x%x...\n", mtd, offset);
+		fprintf(stderr, "Trying to fix trx header in %s at 0x%zx...\n", mtd, offset);
 
 	fd = mtd_check_open(mtd);
 	if(fd < 0) {
@@ -246,7 +247,7 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 
 	trx->crc32 = STORE32_LE(crc32buf(buf, data_size));
 	if (mtd_erase_block(fd, block_offset)) {
-		fprintf(stderr, "Can't erease block at 0x%x (%s)\n", block_offset, strerror(errno));
+		fprintf(stderr, "Can't erease block at 0x%zx (%s)\n", block_offset, strerror(errno));
 		exit(1);
 	}
 

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2021.07
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=21
 
 PKG_HASH:=312b7eeae44581d1362c3a3f02c28d806647756c82ba8c72241c7cdbe68ba77e
 
@@ -18,6 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=omap
+  BUILD_SUBTARGET:=generic
   UBOOT_IMAGE:=u-boot.img MLO
 endef
 

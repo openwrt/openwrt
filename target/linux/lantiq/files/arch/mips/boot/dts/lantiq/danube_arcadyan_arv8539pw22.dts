@@ -1,6 +1,7 @@
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "arcadyan,arv8539pw22", "lantiq,xway", "lantiq,danube";
@@ -47,12 +48,14 @@
 		compatible = "gpio-leds";
 
 		power_green: power-green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -67,7 +70,8 @@
 		};
 
 		wireless_green: wireless-green {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		/*
@@ -83,7 +87,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -107,7 +111,7 @@
 
 &gsw {
 	phy-mode = "mii";
-	nvmem-cells = <&macaddr_art_16>;
+	nvmem-cells = <&macaddr_art_16 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -143,6 +147,18 @@
 				label = "art";
 				reg = <0x7f0000 0x10000>;       /* 64 KiB*/
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -154,15 +170,14 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@168c,0029 {
 		compatible = "pci168c,0029";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
-		nvmem-cells = <&macaddr_art_16>;
+		nvmem-cells = <&macaddr_art_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -178,14 +193,4 @@
 &vmmc {
 	status = "okay";
 	gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

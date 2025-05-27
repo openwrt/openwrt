@@ -1,0 +1,157 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2024 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+#include "mt7988a-smartrg-mt-stuart.dtsi"
+
+/ {
+	model = "SmartRG SDG-8733A";
+	compatible = "smartrg,sdg-8733a", "mediatek,mt7988d";
+
+	cpus {
+		/delete-node/ cpu@3;
+	};
+
+	/delete-node/ gpio-export;
+	/delete-node/ gpio-leds;
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		bluetooth_reset: bluetooth-reset {
+			gpio-export,name = "bt_reset";
+			gpio-export,direction_may_change;
+			gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+		};
+
+		bluetooth_txrx_ctl: bluetooth-txrx-ctl {
+			gpio-export,name = "bt_txrx_ctl";
+			gpio-export,direction_may_change;
+			gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		lan_amber {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "lan";
+			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan_green {
+			color = <LED_COLOR_ID_AMBER>;
+			function = "lan";
+			gpios = <&pio 60 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&fan {
+	pwms = <&pwm 1 40000 0>;
+
+	interrupts = <57 IRQ_TYPE_EDGE_FALLING>;
+};
+
+&gmac0 {
+	status = "disabled";
+};
+
+&gmac1 {
+	label = "lan";
+	nvmem-cells = <&macaddr 1>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "internal";
+	phy-connection-type = "internal";
+	phy = <&int_2p5g_phy>;
+};
+
+&gmac2 {
+	label = "wan";
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "usxgmii";
+	phy-connection-type = "usxgmii";
+	phy = <&phy8>;
+};
+
+&int_2p5g_phy {
+	pinctrl-names = "i2p5gbe-led";
+	pinctrl-0 = <&i2p5gbe_led0_pins>;
+};
+
+&mdio_bus {
+	/delete-node/ ethernet-phy@0;
+};
+
+&pio {
+	pcie3_1_pins: pcie3-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_1l_1_pereset", "pcie_clk_req_n3";
+		};
+	};
+};
+
+&pcie0 {
+	reset-gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
+};
+
+&pcie1 {
+	status = "disabled";
+};
+
+&pcie3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie3_1_pins>;
+	status = "okay";
+};
+
+&phy8 {
+	reset-gpios = <&pio 62 GPIO_ACTIVE_LOW>;
+	marvell,mdi-cfg-order = <0>;
+};
+
+&aqr_green_led {
+	function = LED_FUNCTION_WAN;
+};
+
+&aqr_orange_led {
+	function = LED_FUNCTION_WAN;
+};
+
+&aqr_white_led {
+	function = LED_FUNCTION_WAN;
+};
+
+&i2p5gbe_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	status = "okay";
+};
+
+&ssusb0 {
+	status = "disabled";
+};
+
+&ssusb1 {
+	status = "disabled";
+};
+
+&switch {
+	status = "disabled";
+};
+
+&tphy {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "disabled";
+};
+
+&xphy {
+	status = "disabled";
+};

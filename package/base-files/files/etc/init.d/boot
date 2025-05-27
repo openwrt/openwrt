@@ -10,7 +10,6 @@ uci_apply_defaults() {
 	cd /etc/uci-defaults || return 0
 	files="$(ls)"
 	[ -z "$files" ] && return 0
-	mkdir -p /tmp/.uci
 	for file in $files; do
 		( . "./$(basename $file)" ) && rm -f "$file"
 	done
@@ -25,6 +24,8 @@ boot() {
 	chmod 1777 /var/lock
 	mkdir -p /var/log
 	mkdir -p /var/run
+	ln -s /var/run /run
+	ln -s /var/lock /run/lock
 	mkdir -p /var/state
 	mkdir -p /var/tmp
 	mkdir -p /tmp/.uci
@@ -34,11 +35,12 @@ boot() {
 	mkdir -p /tmp/resolv.conf.d
 	touch /tmp/resolv.conf.d/resolv.conf.auto
 	ln -sf /tmp/resolv.conf.d/resolv.conf.auto /tmp/resolv.conf
-	grep -q debugfs /proc/filesystems && /bin/mount -o noatime -t debugfs debugfs /sys/kernel/debug
+	grep -q debugfs /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime -t debugfs debugfs /sys/kernel/debug
 	grep -q bpf /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime,mode=0700 -t bpf bpffs /sys/fs/bpf
-	grep -q pstore /proc/filesystems && /bin/mount -o noatime -t pstore pstore /sys/fs/pstore
+	grep -q pstore /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime -t pstore pstore /sys/fs/pstore
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
+	touch /tmp/.config_pending
 	/sbin/kmodloader
 
 	[ ! -f /etc/config/wireless ] && {
@@ -46,7 +48,11 @@ boot() {
 		sleep 1
 	}
 
+	mkdir -p /tmp/.uci
+	[ -f /etc/uci-defaults/30_uboot-envtools ] && (. /etc/uci-defaults/30_uboot-envtools)
 	/bin/config_generate
+	rm -f /tmp/.config_pending
+	/sbin/wifi config
 	uci_apply_defaults
 	sync
 	

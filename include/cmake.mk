@@ -22,7 +22,7 @@ HOST_CMAKE_BINARY_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BI
 MAKE_PATH = $(firstword $(CMAKE_BINARY_SUBDIR) .)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  cmake_tool=$(TOOLCHAIN_DIR)/bin/$(1)
+  cmake_tool=$(firstword $(TOOLCHAIN_BIN_DIRS))/$(1)
 else
   cmake_tool=$(shell command -v $(1))
 endif
@@ -49,7 +49,7 @@ CMAKE_AR:=$(call cmake_tool,$(TARGET_AR))
 CMAKE_NM:=$(call cmake_tool,$(TARGET_NM))
 CMAKE_RANLIB:=$(call cmake_tool,$(TARGET_RANLIB))
 
-CMAKE_FIND_ROOT_PATH:=$(STAGING_DIR)/usr;$(TOOLCHAIN_DIR)$(if $(CONFIG_EXTERNAL_TOOLCHAIN),;$(CONFIG_TOOLCHAIN_ROOT))
+CMAKE_FIND_ROOT_PATH:=$(STAGING_DIR)/usr;$(TOOLCHAIN_ROOT_DIR)
 CMAKE_HOST_FIND_ROOT_PATH:=$(STAGING_DIR)/host;$(STAGING_DIR_HOSTPKG);$(STAGING_DIR_HOST)
 CMAKE_SHARED_LDFLAGS:=-Wl,-Bsymbolic-functions
 CMAKE_HOST_INSTALL_PREFIX = $(HOST_BUILD_PREFIX)
@@ -68,6 +68,8 @@ ifeq ($(HOST_USE_NINJA),1)
   define Host/Uninstall/Default
 	+$(NINJA) -C $(HOST_CMAKE_BINARY_DIR) uninstall
   endef
+else
+  CMAKE_HOST_OPTIONS += -DCMAKE_GENERATOR="Unix Makefiles"
 endif
 
 ifeq ($(PKG_USE_NINJA),1)
@@ -80,6 +82,8 @@ ifeq ($(PKG_USE_NINJA),1)
   define Build/Install/Default
 	+DESTDIR="$(PKG_INSTALL_DIR)" $(NINJA) -C $(CMAKE_BINARY_DIR) install
   endef
+else
+  CMAKE_OPTIONS += -DCMAKE_GENERATOR="Unix Makefiles"
 endif
 
 define Build/Configure/Default
@@ -89,10 +93,11 @@ define Build/Configure/Default
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
 			-DCMAKE_SYSTEM_PROCESSOR=$(ARCH) \
-			-DCMAKE_BUILD_TYPE=Release \
+			-DCMAKE_BUILD_TYPE=$(if $(CONFIG_DEBUG),Debug,Release) \
 			-DCMAKE_C_FLAGS_RELEASE="-DNDEBUG" \
 			-DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG" \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \
@@ -141,6 +146,7 @@ define Host/Configure/Default
 		CXXFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \
 			-DCMAKE_C_COMPILER="$(CMAKE_HOST_C_COMPILER)" \
@@ -168,6 +174,7 @@ define Host/Configure/Default
 			-DCMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY=TRUE \
 			-DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE \
 			-DCMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY=TRUE \
+			-DBUILD_SHARED_LIBS=OFF \
 			$(CMAKE_HOST_OPTIONS) \
 		$(HOST_CMAKE_SOURCE_DIR) \
 	)

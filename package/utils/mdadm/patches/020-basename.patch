@@ -1,0 +1,30 @@
+--- a/Monitor.c
++++ b/Monitor.c
+@@ -27,6 +27,7 @@
+ #include	"md_p.h"
+ #include	"md_u.h"
+ #include	<sys/wait.h>
++#include	<libgen.h>
+ #include	<limits.h>
+ #include	<syslog.h>
+ 
+--- a/platform-intel.c
++++ b/platform-intel.c
+@@ -28,6 +28,7 @@
+ #include <sys/mman.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <libgen.h>
+ #include <limits.h>
+ 
+ #define NVME_SUBSYS_PATH "/sys/devices/virtual/nvme-subsystem/"
+--- a/super-intel.c
++++ b/super-intel.c
+@@ -27,6 +27,7 @@
+ #include <scsi/sg.h>
+ #include <ctype.h>
+ #include <dirent.h>
++#include <libgen.h>
+ 
+ /* MPB == Metadata Parameter Block */
+ #define MPB_SIGNATURE "Intel Raid ISM Cfg Sig. "

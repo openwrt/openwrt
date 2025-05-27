@@ -1,0 +1,279 @@
+--- /dev/null
++++ b/arch/arm/dts/mt7981-glinet-gl-x3000.dts
+@@ -0,0 +1,144 @@
++// SPDX-License-Identifier: GPL-2.0
++
++/dts-v1/;
++#include "mt7981.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "GL.iNet GL-X3000";
++	compatible = "glinet,gl-x3000", "mediatek,mt7981";
++
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++
++	reg_3p3v: regulator-3p3v {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		wifi2g {
++			label = "green:wifi2g";
++			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
++		};
++
++		wifi5g {
++			label = "green:wifi5g";
++			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
++		};
++
++		5g_led1 {
++			label = "green:5g:led1";
++			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
++		};
++
++		5g_led2 {
++			label = "green:5g:led2";
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++		};
++
++		5g_led3 {
++			label = "green:5g:led3";
++			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++		};
++
++		5g_led4 {
++			label = "green:5g:led4";
++			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
++		};
++
++		power {
++			label = "green:power";
++			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
++		};
++
++		wan {
++			label = "green:wan";
++			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <1>;
++	phy-mode = "gmii";
++	phy-handle = <&phy0>;
++
++	mdio {
++		phy0: ethernet-phy@0 {
++			compatible = "ethernet-phy-id03a2.9461";
++			reg = <0x0>;
++			phy-mode = "gmii";
++		};
++	};
++};
++
++&mmc0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins_default>;
++	max-frequency = <52000000>;
++	bus-width = <8>;
++	cap-mmc-hw-highspeed;
++	cap-mmc-hw-reset;
++	vmmc-supply = <&reg_3p3v>;
++	non-removable;
++	status = "okay";
++};
++
++&pinctrl {
++	mmc0_pins_default: mmc0-pins-default {
++		mux {
++			function = "flash";
++			groups =  "emmc_45";
++		};
++		conf-cmd-dat {
++			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO",
++				"SPI0_CS",  "SPI0_HOLD", "SPI0_WP",
++				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
++			input-enable;
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
++		};
++		conf-clk {
++			pins = "SPI1_CS";
++			drive-strength = <MTK_DRIVE_6mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
++		};
++		conf-rst {
++			pins = "GPIO_WPS";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
++		};
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
+--- /dev/null
++++ b/configs/mt7981_glinet_gl-x3000_defconfig
+@@ -0,0 +1,100 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_ENV_SIZE=0x80000
++CONFIG_ENV_OFFSET=0x400000
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-glinet-gl-x3000"
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_TARGET_MT7981=y
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART=y
++CONFIG_ENV_VARS_UBOOT_CONFIG=y
++# CONFIG_EXPERT is not set
++CONFIG_FIT=y
++# CONFIG_BOOTSTD is not set
++# CONFIG_LEGACY_IMAGE_FORMAT is not set
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7981-glinet-gl-x3000.dtb"
++CONFIG_LOGLEVEL=7
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="MT7981> "
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=1049
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++CONFIG_CMD_BOOTMENU=y
++# CONFIG_CMD_ELF is not set
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_STRINGS=y
++# CONFIG_CMD_UNLZ4 is not set
++# CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_GPT=y
++CONFIG_CMD_GPT_RENAME=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_PART=y
++CONFIG_CMD_READ=y
++CONFIG_CMD_WRITE=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_UUID=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_SMC=y
++CONFIG_PARTITION_TYPE_GUID=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="glinet_gl-x3000_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_GPIO_HOG=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_MMC_MTK=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_SERIAL=y
++CONFIG_MTK_SERIAL=y
++CONFIG_HEXDUMP=y
++# CONFIG_EFI_LOADER is not set
++CONFIG_LMB_MAX_REGIONS=64
++# CONFIG_TOOLS_LIBCRYPTO is not set
+--- /dev/null
++++ b/glinet_gl-x3000_env
+@@ -0,0 +1,26 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x46000000
++bootdelay=3
++bootfile_bl2=openwrt-mediatek-filogic-glinet_gl-x3000-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-glinet_gl-x3000-bl31-uboot.fip
++bootfile_firmware=openwrt-mediatek-filogic-glinet_gl-x3000-squashfs-factory.bin
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_title=      *** U-Boot Boot Menu for GL-iNet GL-X3000 ***
++bootmenu_0=Startup system (Default).=run boot_system
++bootmenu_1=Load Firmware via TFTP then write to eMMC.=run boot_tftp_firmware ; run bootmenu_confirm_return
++bootmenu_2=Load BL31+U-Boot FIP via TFTP then write to eMMC.=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_3=Load BL2 preloader via TFTP then write to eMMC.=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_4=Reboot.=reset
++bootmenu_5=Reset all settings to factory defaults.=run reset_factory ; reset
++filesize_to_blk=setexpr cnt $filesize + 0x1ff && setexpr cnt $cnt / 0x200
++mmc_read_kernel=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr $part_addr $image_size
++boot_system=run init_modem && part start mmc 0 kernel part_addr && part size mmc 0 kernel part_size && run mmc_read_kernel && bootm
++boot_tftp_firmware=tftpboot $loadaddr $bootfile_firmware && run emmc_write_firmware
++boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run emmc_write_fip
++boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run emmc_write_bl2
++emmc_write_firmware=part start mmc 0 kernel part_addr && run filesize_to_blk && mmc write $loadaddr $part_addr $cnt
++emmc_write_bl2=run filesize_to_blk && test 0x$cnt -le 0x800 && mmc partconf 0 1 1 1 && mmc write $loadaddr 0x0 0x800 ; mmc partconf 0 1 1 0
++emmc_write_fip=part start mmc 0 fip part_addr && part size mmc 0 fip part_size && run filesize_to_blk && test 0x$cnt -le 0x$part_size && mmc write $loadaddr $part_addr $cnt
++init_modem=gpio set 10; gpio set 5; gpio set 9; gpio set 11; sleep 0.1; gpio clear 10; sleep 1
++reset_factory=eraseenv && reset

@@ -3,7 +3,7 @@ linksys_get_target_firmware() {
 
 	cur_boot_part="$(/usr/sbin/fw_printenv -n boot_part)"
 	if [ -z "${cur_boot_part}" ]; then
-		mtd_ubi0=$(cat /sys/devices/virtual/ubi/ubi0/mtd_num)
+		mtd_ubi0=$(cat /sys/class/ubi/ubi0/mtd_num)
 		case "$(grep -E "^mtd${mtd_ubi0}:" /proc/mtd | cut -d '"' -f 2)" in
 		kernel|rootfs)
 			cur_boot_part=1
@@ -45,6 +45,14 @@ linksys_get_target_firmware() {
 		return
 		;;
 	esac
+}
+
+linksys_is_factory_image() {
+	local board=$(board_name)
+	board=${board##*,}
+
+	# check matching footer signature
+	tail -c 256 $1 | grep -q -i "\.LINKSYS\.........${board}"
 }
 
 platform_do_upgrade_linksys() {
@@ -92,11 +100,94 @@ platform_do_upgrade_linksys() {
 		fi
 
 		# complete std upgrade
-		nand_upgrade_tar "$1"
+		if nand_upgrade_tar "$1" ; then
+			nand_do_upgrade_success
+		else
+			nand_do_upgrade_failed
+		fi
+
 	}
 
 	[ "$magic_long" = "27051956" ] && {
 		echo "writing \"$1\" image to \"$part_label\""
 		get_image "$1" | mtd write - "$part_label"
 	}
+
+	[ "$magic_long" = "d00dfeed" ] && {
+		if ! linksys_is_factory_image "$1"; then
+			echo "factory image doesn't match device"
+			return 1
+		fi
+
+		echo "writing \"$1\" factory image to \"$part_label\""
+		get_image "$1" | mtd -e "$part_label" write - "$part_label"
+	}
+}
+
+linksys_get_cmdline_rootfs_device() {
+	if read cmdline < /proc/cmdline; then
+		case "$cmdline" in
+		*root=*)
+			local str="${cmdline##*root=}"
+			echo "${str%% *}"
+			return
+			;;
+		esac
+	fi
+	return 1
+}
+
+linksys_get_current_boot_part_emmc() {
+	local boot_part="$(fw_printenv -n boot_part)"
+	if [ "$boot_part" = 1 ] || [ "$boot_part" = 2 ]; then
+		v "Current boot_part=$boot_part selected from bootloader environment"
+	else
+		local rootfs_device="$(linksys_get_cmdline_rootfs_device)"
+		if [ "$rootfs_device" = "$(find_mmc_part "rootfs")" ]; then
+			boot_part=1
+		elif [ "$rootfs_device" = "$(find_mmc_part "alt_rootfs")" ]; then
+			boot_part=2
+		else
+			v "Could not determine current boot_part"
+			return 1
+		fi
+		v "Current boot_part=$boot_part selected from cmdline rootfs=$rootfs_device"
+	fi
+	echo $boot_part
+}
+
+linksys_set_target_partitions_emmc() {
+	local current_boot_part="$1"
+
+	if [ "$current_boot_part" = 1 ]; then
+		CI_KERNPART="alt_kernel"
+		CI_ROOTPART="alt_rootfs"
+		fw_setenv -s - <<-EOF
+			boot_part 2
+			auto_recovery yes
+		EOF
+	elif [ "$current_boot_part" = 2 ]; then
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		fw_setenv -s - <<-EOF
+			boot_part 1
+			auto_recovery yes
+		EOF
+	else
+		v "Could not set target eMMC partitions"
+		return 1
+	fi
+
+	v "Target eMMC partitions: $CI_KERNPART, $CI_ROOTPART"
+}
+
+platform_do_upgrade_linksys_emmc() {
+	local file="$1"
+
+	mkdir -p /var/lock
+	local current_boot_part="$(linksys_get_current_boot_part_emmc)"
+	linksys_set_target_partitions_emmc "$current_boot_part" || exit 1
+	touch /var/lock/fw_printenv.lock
+
+	emmc_do_upgrade "$file"
 }

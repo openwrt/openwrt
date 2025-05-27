@@ -1,6 +1,7 @@
 #include "ar9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	chosen {
@@ -79,16 +80,19 @@
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		led_usb: usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
 		wifi_green: wifi {
@@ -100,7 +104,8 @@
 			gpios = <&gpio 51 GPIO_ACTIVE_LOW>;
 		};
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 52 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -128,7 +133,7 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@168c,0029 {
 		compatible = "pci168c,0029";

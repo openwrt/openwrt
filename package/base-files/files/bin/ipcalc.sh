@@ -1,71 +1,143 @@
 #!/bin/sh
 
-awk -f - $* <<EOF
-function bitcount(c) {
-	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
-	c=and(rshift(c, 2),0x33333333)+and(c,0x33333333)
-	c=and(rshift(c, 4),0x0f0f0f0f)+and(c,0x0f0f0f0f)
-	c=and(rshift(c, 8),0x00ff00ff)+and(c,0x00ff00ff)
-	c=and(rshift(c,16),0x0000ffff)+and(c,0x0000ffff)
-	return c
+. /lib/functions/ipv4.sh
+
+PROG="$(basename "$0")"
+
+# wrapper to convert an integer to an address, unless we're using
+# decimal output format.
+# hook for library function
+_ip2str() {
+    local var="$1" n="$2"
+    assert_uint32 "$n" || exit 1
+
+    if [ "$decimal" -ne 0 ]; then
+	export -- "$var=$n"
+    elif [ "$hexadecimal" -ne 0 ]; then
+	export -- "$var=$(printf "%x" "$n")"
+    else
+        ip2str "$@"
+    fi
 }
 
-function ip2int(ip) {
-	for (ret=0,n=split(ip,a,"\."),x=1;x<=n;x++) ret=or(lshift(ret,8),a[x])
-	return ret
+usage() {
+    echo "Usage: $PROG [ -d | -x ] address/prefix [ start limit ]" >&2
+    exit 1
 }
 
-function int2ip(ip,ret,x) {
-	ret=and(ip,255)
-	ip=rshift(ip,8)
-	for(;x<3;ret=and(ip,255)"."ret,ip=rshift(ip,8),x++);
-	return ret
-}
+decimal=0
+hexadecimal=0
+if [ "$1" = "-d" ]; then
+    decimal=1
+    shift
+elif [ "$1" = "-x" ]; then
+    hexadecimal=1
+    shift
+fi
 
-function compl32(v) {
-	ret=xor(v, 0xffffffff)
-	return ret
-}
+if [ $# -eq 0 ]; then
+    usage
+fi
 
-BEGIN {
-	slpos=index(ARGV[1],"/")
-	if (slpos == 0) {
-		ipaddr=ip2int(ARGV[1])
-		dotpos=index(ARGV[2],".")
-		if (dotpos == 0)
-			netmask=compl32(2**(32-int(ARGV[2]))-1)
-		else
-			netmask=ip2int(ARGV[2])
-	} else {
-		ipaddr=ip2int(substr(ARGV[1],0,slpos-1))
-		netmask=compl32(2**(32-int(substr(ARGV[1],slpos+1)))-1)
-		ARGV[4]=ARGV[3]
-		ARGV[3]=ARGV[2]
-	}
+case "$1" in
+*/*.*)
+    # data is n.n.n.n/m.m.m.m format, like on a Cisco router
+    str2ip ipaddr "${1%/*}" || exit 1
+    str2ip netmask "${1#*/}" || exit 1
+    netmask2prefix prefix "$netmask" || exit 1
+    shift
+    ;;
+*/*)
+    # more modern prefix notation of n.n.n.n/p
+    str2ip ipaddr "${1%/*}" || exit 1
+    prefix="${1#*/}"
+    assert_uint32 "$prefix" || exit 1
+    if [ "$prefix" -gt 32 ]; then
+	printf "Prefix out of range (%s)\n" "$prefix" >&2
+	exit 1
+    fi
+    prefix2netmask netmask "$prefix" || exit 1
+    shift
+    ;;
+*)
+    # address and netmask as two separate arguments
+    str2ip ipaddr "$1" || exit 1
+    str2ip netmask "$2" || exit 1
+    netmask2prefix prefix "$netmask" || exit 1
+    shift 2
+    ;;
+esac
 
-	network=and(ipaddr,netmask)
-	broadcast=or(network,compl32(netmask))
+# we either have no arguments left, or we have a range start and length
+if [ $# -ne 0 ] && [ $# -ne 2 ]; then
+    usage
+fi
 
-	start=or(network,and(ip2int(ARGV[3]),compl32(netmask)))
-	limit=network+1
-	if (start<limit) start=limit
+# complement of the netmask, i.e. the hostmask
+hostmask=$((netmask ^ 0xffffffff))
+network=$((ipaddr & netmask))
+broadcast=$((network | hostmask))
+count=$((hostmask + 1))
 
-	end=start+ARGV[4]
-	limit=or(network,compl32(netmask))-1
-	if (end>limit) end=limit
+_ip2str IP "$ipaddr"
+_ip2str NETMASK "$netmask"
+_ip2str NETWORK "$network"
 
-	print "IP="int2ip(ipaddr)
-	print "NETMASK="int2ip(netmask)
-	print "BROADCAST="int2ip(broadcast)
-	print "NETWORK="int2ip(network)
-	print "PREFIX="32-bitcount(compl32(netmask))
+echo "IP=$IP"
+echo "NETMASK=$NETMASK"
+# don't include this-network or broadcast addresses
+if [ "$prefix" -le 30 ]; then
+    _ip2str BROADCAST "$broadcast"
+    echo "BROADCAST=$BROADCAST"
+fi
+echo "NETWORK=$NETWORK"
+echo "PREFIX=$prefix"
+echo "COUNT=$count"
 
-	# range calculations:
-	# ipcalc <ip> <netmask> <start> <num>
+# if there's no range, we're done
+[ $# -eq 0 ] && exit 0
+[ -z "$1$2" ] && exit 0
 
-	if (ARGC > 3) {
-		print "START="int2ip(start)
-		print "END="int2ip(end)
-	}
-}
-EOF
+if [ "$prefix" -le 30 ]; then
+    lower=$((network + 1))
+else
+    lower="$network"
+fi
+
+start="$1"
+assert_uint32 "$start" || exit 1
+start=$((network | (start & hostmask)))
+[ "$start" -lt "$lower" ] && start="$lower"
+[ "$start" -eq "$ipaddr" ] && start=$((start + 1))
+
+if [ "$prefix" -le 30 ]; then
+    upper=$(((network | hostmask) - 1))
+elif [ "$prefix" -eq 31 ]; then
+    upper=$((network | hostmask))
+else
+    upper="$network"
+fi
+
+range="$2"
+assert_uint32 "$range" || exit 1
+end=$((start + range - 1))
+[ "$end" -gt "$upper" ] && end="$upper"
+[ "$end" -eq "$ipaddr" ] && end=$((end - 1))
+
+if [ "$start" -gt "$end" ]; then
+    echo "network ($NETWORK/$prefix) too small" >&2
+    exit 1
+fi
+
+_ip2str START "$start"
+_ip2str END "$end"
+
+if [ "$start" -le "$ipaddr" ] && [ "$ipaddr" -le "$end" ]; then
+    echo "error: address $IP inside range $START..$END" >&2
+    exit 1
+fi
+
+echo "START=$START"
+echo "END=$END"
+
+exit 0

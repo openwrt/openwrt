@@ -17,6 +17,7 @@
 	compatible = "meraki,mr24", "meraki,ikarem", "apm,bluestone";
 
 	aliases {
+		/delete-property/ ethernet0;
 		serial0 = &UART1;
 	};
 
@@ -63,10 +64,11 @@
 				 * blocks (64KiB) in order to have spares
 				 * around for bad block management
 				 */
-					label = "u-boot-env";
-					reg = <0x00150000 0x00010000>;
-					read-only;
-				};
+				label = "u-boot-env";
+				compatible = "u-boot,env";
+				reg = <0x00150000 0x00010000>;
+				read-only;
+			};
 
 			partition@160000 {
 				/*
@@ -85,8 +87,25 @@
 			};
 
 			partition@180000 {
+				compatible = "linux,ubi";
 				label = "ubi";
 				reg = <0x00180000 0x01e80000>;
+
+				volumes {
+					ubi-volume-board-config {
+						volname = "board-config";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr_board_66: macaddr@66 {
+								reg = <0x66 0x6>;
+							};
+						};
+					};
+				};
 			};
 		};
 	};
@@ -108,6 +127,9 @@
 
 &EMAC0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_board_66>;
+	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
 	phy-map = <0x2>;
@@ -180,7 +202,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			/* Label as per Meraki's "MR24 Installation Guide" */
 			label = "Factory Reset Button";
 			linux,code = <KEY_RESTART>;

@@ -1,0 +1,364 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "8devices Mango-DVK";
+	compatible = "8devices,mango-dvk", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 79 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 66 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 67 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	spi_0_pins: spi-0-pins {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	led_pins: led_pins {
+		leds {
+			pins = "gpio66", "gpio67";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	sd_pins: sd_pins {
+		sd_cd {
+			 pins = "gpio62";
+			 function = "gpio";
+			 drive-strength = <8>;
+			 bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x000c0000>;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0x000c0000 0x00010000>;
+			};
+
+			partition@d0000 {
+				label = "0:QSEE";
+				reg = <0x000d0000 0x001a0000>;
+			};
+
+			partition@270000 {
+				label = "0:DEVCFG";
+				reg = <0x00270000 0x00010000>;
+			};
+
+			partition@280000 {
+				label = "0:RPM";
+				reg = <0x00280000 0x00020000>;
+			};
+
+			partition@2a0000 {
+				label = "0:CDT";
+				reg = <0x002a0000 0x00010000>;
+			};
+
+			partition@2b0000 {
+				label = "0:APPSBLENV";
+				reg = <0x002b0000 0x00010000>;
+			};
+
+			partition@2c0000 {
+				label = "0:APPSBL";
+				reg = <0x002c0000 0x000a0000>;
+			};
+
+			partition@360000 {
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "0:ART";
+				reg = <0x00360000 0x00040000>;
+
+				macaddr_eth0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_eth1: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				macaddr_eth2: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+			};
+
+			partition@3a0000 {
+				label = "config";
+				reg = <0x003a0000 0x00040000>;
+			};
+
+			partition@3e0000 {
+				label = "data";
+				reg = <0x003e0000 0x00100000>;
+			};
+
+			partition@4e0000 {
+				label = "firmware";
+				compatible = "denx,fit";
+				reg = <0x004e0000 0x1b20000>;
+			};
+		};
+	};
+};
+
+&dp3 {
+	status = "okay";
+
+	phy-handle = <&qca8072_1>;
+	nvmem-cells = <&macaddr_eth1>;
+	nvmem-cell-names = "mac-address";
+	label = "lan2";
+};
+
+&dp4 {
+	status = "okay";
+
+	phy-handle = <&qca8072_0>;
+	nvmem-cells = <&macaddr_eth0>;
+	nvmem-cell-names = "mac-address";
+	label = "lan1";
+};
+
+&dp5 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	phy-handle = <&qca8081>;
+	nvmem-cells = <&macaddr_eth2>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+};
+
+&edma {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8072_0: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8072_1: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+
+	qca8081: ethernet-phy@24 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <24>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+	};
+};
+
+&sdhc_1 {
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	vqmmc-supply = <&ipq6018_l2>;
+	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT3 | ESS_PORT4)>;
+	switch_wan_bmp = <ESS_PORT5>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
+	port3_pcs_channel = <4>;
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <3>;
+			phy_address = <4>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+		port@5 {
+			port_id = <5>;
+			phy_address = <24>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "nand_data";
+				reg = <0x0000000 0x10000000>;
+			};
+		};
+	};
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "8devices-Mango";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};

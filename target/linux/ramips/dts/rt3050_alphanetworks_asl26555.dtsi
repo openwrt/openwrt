@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "alphanetworks,asl26555", "ralink,rt3050-soc";
@@ -14,8 +15,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -39,27 +39,32 @@
 		};
 
 		wan-red {
-			label = "red:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan-green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_green: power-green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -89,7 +94,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&devdata 0x4000>;
+	nvmem-cells = <&eeprom_devdata_4000>;
+	nvmem-cell-names = "eeprom";
 };
 
 &otg {

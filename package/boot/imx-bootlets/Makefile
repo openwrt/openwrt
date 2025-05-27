@@ -13,6 +13,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://trabant.uid0.hu/openwrt/
 PKG_HASH:=09ecd81a64db5166a235932146faf08d0689bfc7ac04ac9fcc3a5bd809fba74a
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/imx-bootlets

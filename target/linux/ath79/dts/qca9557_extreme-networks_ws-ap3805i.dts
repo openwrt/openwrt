@@ -1,0 +1,214 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "extreme-networks,ws-ap3805i", "qca,qca9557";
+	model = "Extreme Networks WS-AP3805i";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_amber: power_amber {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5 {
+			label = "green:wlan5";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan2 {
+			label = "green:wlan2";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <20000>;
+		always-running;
+	};
+};
+
+&wdt {
+	status = "disabled";
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&phy5>;
+	phy-mode = "rgmii-id";
+
+	pll-data = <0x82000000 0x80000101 0x80001313>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot-bak";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot";
+				reg = <0x080000 0x80000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "cfg1";
+				reg = <0x100000 0x40000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "cfg2";
+				reg = <0x140000 0x40000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "nvram4";
+				reg = <0x180000 0x40000>;
+				read-only;
+			};
+
+			partition@1c0000 {
+				label = "nvram3";
+				reg = <0x1c0000 0x40000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "nvram2";
+				reg = <0x200000 0x40000>;
+				read-only;
+			};
+
+			partition@240000 {
+				label = "nvram1";
+				reg = <0x240000 0x40000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "PriImg";
+				reg = <0x280000 0x1000000>;
+				read-only;
+			};
+
+			partition@1280000 {
+				label = "SecImg";
+				reg = <0x1280000 0x1000000>;
+				read-only;
+			};
+
+			partition@2280000 {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x2280000 0x1cc0000>;
+			};
+
+			partition@3f40000 {
+				label = "cert";
+				reg = <0x3f40000 0x80000>;
+				read-only;
+			};
+
+			partition@3fc0000 {
+				label = "art";
+				reg = <0x3fc0000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+		};
+	};
+};

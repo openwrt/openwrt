@@ -1,0 +1,307 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		label-mac-device = &ethernet;
+
+		led-boot = &status_green;
+		led-failsafe = &status_amber;
+		led-running = &status_green;
+		led-upgrade = &status_amber;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		button-1 {
+			label = "wps";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_green: led-0 {
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		status_amber: led-1 {
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <24>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage";
+				/* sercomm krnl hdr with fw chksums */
+				openwrt,offset = <0x100>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_label 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+/* mt7612 */
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_label 6>;
+		nvmem-cell-names = "eeprom", "mac-address";
+
+		/* 5 GHz WLAN phy green led */
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* whole flash */
+			partition@0_all {
+				label = "ALL";
+				reg = <0x0 0x1000000>;
+				read-only;
+			};
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "ftd_and_bootflag";
+				reg = <0x30000 0x20000>;
+			};
+
+			partition@50000 {
+				label = "Factory";
+				reg = <0x50000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+				};
+			};
+
+			partition@60000 {
+				label = "SC Nvram(permanent data)";
+				reg = <0x60000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_label: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			fwconcat0: partition@70000 {
+				label = "Firmware";
+				reg = <0x70000 0x790000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "Kernel";
+					reg = <0x0 0x200000>;
+				};
+
+				partition@200000 {
+					label = "RootFS";
+					reg = <0x200000 0x590000>;
+				};
+			};
+
+			fwconcat1: partition@800000 {
+				label = "Firmware2";
+				reg = <0x800000 0x790000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "Kernel2";
+					reg = <0x0 0x200000>;
+				};
+
+				partition@200000 {
+					label = "RootFS2";
+					reg = <0x200000 0x590000>;
+				};
+			};
+
+			partition@f90000 {
+				label = "MAC IP";
+				reg = <0xf90000 0x10000>;
+				read-only;
+			};
+
+			partition@fa0000 {
+				label = "Critical Log";
+				reg = <0xfa0000 0x10000>;
+				read-only;
+			};
+
+			partition@fb000 {
+				label = "Critical Log Bak";
+				reg = <0xfb0000 0x10000>;
+				read-only;
+			};
+
+			partition@fc0000 {
+				label = "Xml Config";
+				reg = <0xfc0000 0x20000>;
+				read-only;
+			};
+
+			partition@fe0000 {
+				label = "Xml Config Bak";
+				reg = <0xfe0000 0x20000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "ephy", "rgmii1", "uartf", "wled";
+		function = "gpio";
+	};
+};
+
+/* mt7620 */
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_label 2>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};

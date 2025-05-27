@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 #include "qca956x.dtsi"
 
@@ -24,9 +25,10 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
-		
+
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -41,7 +43,7 @@
 
 	keys {
 		compatible = "gpio-keys";
-		
+
 		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
@@ -53,11 +55,17 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_config_8 (-1)>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+	};
 };
 
 &mdio0 {
 	status = "okay";
-	phy-mask = <0>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
@@ -84,35 +92,61 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			
-			uboot: partition@0 {
+
+			partition@0 {
 				label = "u-boot";
 				reg = <0x000000 0x080000>;
 				read-only;
 			};
-			
+
 			partition@80000 {
 				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x080000 0xe00000>;
 			};
-			
+
 			partition@e80000 {
 				label = "product-info";
 				reg = <0xe80000 0x05000>;
 				read-only;
 			};
 
-			config: partition@e85000 {
+			partition@e85000 {
 				label = "config";
 				reg = <0xe85000 0x16b000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_8: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
-			
-			art: partition@ff0000 {
+
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};
@@ -123,25 +157,14 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
-	
-	nvmem-cells = <&macaddr_config_8>;
+
+	nvmem-cells = <&macaddr_config_8 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_config_8>;
-	nvmem-cell-names = "mac-address";
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
+	nvmem-cells = <&macaddr_config_8 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };

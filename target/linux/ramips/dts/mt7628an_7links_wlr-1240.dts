@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_7links_wlr-12xx.dtsi"
+
+/ {
+	compatible = "7links,wlr-1240", "mediatek,mt7628an-soc";
+	model = "7Links WLR-1240";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: status_red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: status_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_green: status_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_red;
+		label-mac-device = &ethernet;
+	};
+};

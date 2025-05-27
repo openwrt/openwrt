@@ -36,16 +36,50 @@
 				read-only;
 			};
 
-			factory: partition@70000 {
+			partition@70000 {
 				label = "factory";
 				reg = <0x70000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_20000: eeprom@20000 {
+						reg = <0x20000 0xe00>;
+					};
+
+					precal_factory_20e10: precal@20e10 {
+						reg = <0x20e10 0x19c10>;
+					};
+				};
 			};
 
-			eeprom: partition@b0000 {
+			partition@b0000 {
 				label = "eeprom";
 				reg = <0xb0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
+						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@c0000 {
@@ -79,19 +113,12 @@
 };
 
 &wlan_2g {
-	mediatek,mtd-eeprom = <&factory 0x0>;
-
-	nvmem-cells = <&macaddr_eeprom_0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &wlan_5g {
 	compatible = "mediatek,mt76";
-
-	mediatek,mtd-eeprom = <&factory 0x20000>;
-
-	nvmem-cells = <&macaddr_eeprom_6>;
-	nvmem-cell-names = "mac-address";
 
 	/* This is a workaround.
 	 *
@@ -105,23 +132,10 @@
 	 * mac80211 increases the first octet by two for each VAP, leading
 	 * to conflicting MAC addresses for subsequent interfaces.
 	 */
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_eeprom_6 1>, <&eeprom_factory_20000>, <&precal_factory_20e10>;
+	nvmem-cell-names = "mac-address", "eeprom", "precal";
 
 	ieee80211-freq-limit = <5000000 6000000>;
 
 	mediatek,disable-radar-background;
-};
-
-&eeprom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_eeprom_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_eeprom_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
 };

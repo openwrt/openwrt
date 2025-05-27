@@ -1,0 +1,228 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "netgear,wax214v2", "mediatek,mt7621-soc";
+	model = "Netgear WAX214v2";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_blue;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_blue: power_blue {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_amber: power_amber {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wifin_green {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wifia_green {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
+
+		partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
+		};
+
+		partition@180000 {
+			label = "firmware";
+			reg = <0x180000 0x2600000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x400000 0x2200000>;
+			};
+		};
+
+		partition@2780000 {
+			label = "firmware_backup";
+			reg = <0x2780000 0x2600000>;
+			read-only;
+		};
+
+		partition@4d80000 {
+			label = "CFG";
+			reg = <0x4d80000 0x800000>;
+			read-only;
+		};
+
+		partition@5580000 {
+			label = "RAE";
+			reg = <0x5580000 0x400000>;
+			read-only;
+		};
+
+		partition@5980000 {
+			label = "POT";
+			reg = <0x5980000 0x100000>;
+			read-only;
+		};
+
+		partition@5a80000 {
+			label = "Language";
+			reg = <0x5a80000 0x400000>;
+			read-only;
+		};
+
+		partition@5e80000 {
+			label = "Traffic";
+			reg = <0x5e80000 0x200000>;
+			read-only;
+		};
+
+		partition@6080000 {
+			label = "Cert";
+			reg = <0x6080000 0x100000>;
+			read-only;
+		};
+
+		partition@6180000 {
+			label = "NTGRcryptK";
+			reg = <0x6180000 0x100000>;
+			read-only;
+		};
+
+		partition@6280000 {
+			label = "NTGRcryptD";
+			reg = <0x6280000 0x500000>;
+			read-only;
+		};
+
+		partition@6780000 {
+			label = "LOG";
+			reg = <0x6780000 0x100000>;
+			read-only;
+		};
+
+		partition@6880000 {
+			label = "User_data";
+			reg = <0x6880000 0x640000>;
+			read-only;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart3", "uart2", "jtag";
+		function = "gpio";
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&xhci {
+	status = "disabled";
+};

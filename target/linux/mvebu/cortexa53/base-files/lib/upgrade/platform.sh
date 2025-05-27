@@ -3,7 +3,7 @@
 # Copyright (C) 2016 LEDE-Project.org
 #
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_BIN='fw_printenv fw_setenv mkfs.f2fs fdisk'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 REQUIRE_IMAGE_METADATA=1
 
@@ -33,7 +33,8 @@ platform_do_upgrade() {
 	globalscale,espressobin-v7-emmc)
 		legacy_sdcard_do_upgrade "$1"
 		;;
-	methode,udpu)
+	methode,udpu|\
+	methode,edpu)
 		platform_do_upgrade_uDPU "$1"
 		;;
 	*)
@@ -51,7 +52,8 @@ platform_copy_config() {
 	globalscale,espressobin-v7-emmc)
 		legacy_sdcard_copy_config
 		;;
-	methode,udpu)
+	methode,udpu|\
+	methode,edpu)
 		platform_copy_config_uDPU
 		;;
 	esac

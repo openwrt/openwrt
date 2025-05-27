@@ -183,7 +183,27 @@
 			partition@0 {
 				label = "uboot";
 				reg = <0x00000000 0x00180000>;
+				compatible = "fixed-partitions";
 				read-only;
+
+				partition@40000 {
+					label = "u-boot-env-main";
+					compatible = "u-boot,env-redundant-count";
+					reg = <0x00040000 0x20000>; /* one block is 128k */
+					read-only;
+				};
+
+/*
+ * Causes u_boot_env: probe of 4e4000000.ndfc:nand:partitions:partition@0:partition@60000
+ * failed with error -17
+ *
+ *				partition@60000 {
+ *					label = "u-boot-env-redundant";
+ *					compatible = "u-boot,env-redundant-count";
+ *					reg = <0x00060000 0x20000>;
+ *					read-only;
+ *				};
+ */
 			};
 
 			partition@180000 {
@@ -196,7 +216,7 @@
 
 				partition@0 {
 					label = "kernel";
-					reg = <0x00000000 0x00380000>;
+					reg = <0x00000000 0x00480000>;
 
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
@@ -218,9 +238,9 @@
 				 */
 				};
 
-				partition@380000 {
+				partition@480000 {
 					label = "ubi";
-					reg = <0x00380000 0x014e0000>;
+					reg = <0x00480000 0x013e0000>;
 				};
 			};
 
@@ -267,23 +287,25 @@
 				reg = <0x07fc0000 0x00040000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_wifi_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
-				macaddr_wifi_c: macaddr@c {
-					reg = <0xc 0x6>;
-				};
+					macaddr_wifi_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+					macaddr_wifi_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
 
-				calibration_wifi_1000: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
+					calibration_wifi_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				calibration_wifi_5000: calibration@5000 {
-					reg = <0x5000 0x440>;
+					calibration_wifi_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
 				};
 			};
 		};
@@ -328,24 +350,93 @@
 
 &EMAC0 {
 	status = "okay";
-	phy-handle = <&phy0>;
 	fifo-entry-size = <10>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 
 	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		phy0: ethernet-phy@0 {
-			device_type = "ethernet-phy";
-			reg = <0>;
-			qca,mib-poll-interval = <500>;
 
-			qca,ar8327-initvals = <
-				0x0010 0x40000000
-				0x0624 0x007f7f7f
-				0x0004 0x07a00000	/* PAD0_MODE */
-				0x000c 0x01000000	/* PAD6_MODE */
-				0x007c 0x0000007e	/* PORT0_STATUS */
-			>;
+		phy_port1: phy@0 {
+			reg = <0>;
+		};
+
+		phy_port2: phy@1 {
+			reg = <1>;
+		};
+
+		phy_port3: phy@2 {
+			reg = <2>;
+		};
+
+		phy_port4: phy@3 {
+			reg = <3>;
+		};
+
+		phy_port5: phy@4 {
+			reg = <4>;
+		};
+
+		switch0@10 {
+			compatible = "qca,qca8327";
+			reg = <0x10>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "cpu";
+					ethernet = <&EMAC0>;
+					phy-mode = "rgmii-id";
+					tx-internal-delay-ps = <2000>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan4";
+					phy-mode = "internal";
+					phy-handle = <&phy_port1>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+					phy-mode = "internal";
+					phy-handle = <&phy_port2>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan2";
+					phy-mode = "internal";
+					phy-handle = <&phy_port3>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan1";
+					phy-mode = "internal";
+					phy-handle = <&phy_port4>;
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "wan";
+					phy-mode = "internal";
+					phy-handle = <&phy_port5>;
+				};
+			};
 		};
 	};
 };
@@ -355,7 +446,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			label = "Reset button";
 			gpios = <&GPIO0 15 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -364,7 +455,7 @@
 			debounce-interval = <60>;
 		};
 
-		backup_hd {
+		button-backup_hd {
 			label = "Backup HD button";
 			gpios = <&GPIO0 19 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
@@ -373,7 +464,7 @@
 			debounce-interval = <60>;
 		};
 
-		rfkill {
+		button-rfkill {
 			label = "RFKILL button";
 			gpios = <&GPIO0 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
@@ -382,7 +473,7 @@
 			debounce-interval = <60>;
 		};
 
-		wps {
+		button-wps {
 			label = "WPS button";
 			gpios = <&GPIO0 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;

@@ -1,0 +1,39 @@
+From 6cea7c46172eca323e9ce7e6aab8f8506eb92b4b Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Wed, 29 Nov 2023 09:53:04 -0800
+Subject: [PATCH 405/413] 6.9: arm64: dts: imx8mm-venice-gw71xx: add TPM device
+
+Add the TPM device found on the GW71xx revision E PCB.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ .../arm64/boot/dts/freescale/imx8mm-venice-gw71xx.dtsi | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw71xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw71xx.dtsi
+@@ -53,8 +53,15 @@
+ &ecspi2 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_spi2>;
+-	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
++	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>,
++		   <&gpio1 10 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	tpm@1 {
++		compatible = "tcg,tpm_tis-spi";
++		reg = <0x1>;
++		spi-max-frequency = <36000000>;
++	};
+ };
+ 
+ &gpio1 {
+@@ -201,6 +208,7 @@
+ 			MX8MM_IOMUXC_ECSPI2_MOSI_ECSPI2_MOSI	0xd6
+ 			MX8MM_IOMUXC_ECSPI2_MISO_ECSPI2_MISO	0xd6
+ 			MX8MM_IOMUXC_ECSPI2_SS0_GPIO5_IO13	0xd6
++			MX8MM_IOMUXC_GPIO1_IO10_GPIO1_IO10	0xd6
+ 		>;
+ 	};
+ 

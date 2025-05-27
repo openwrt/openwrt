@@ -1,0 +1,227 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+/ {
+	model = "Actiontec R1000H";
+	compatible = "actiontec,r1000h", "brcm,bcm6368";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-5 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-21 {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led-22 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-23 {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led-24 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		led-30 {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+		};
+
+		led-31 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53115";
+		reg = <30>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+			};
+
+			port@5 {
+				/* HPNA coaxial port */
+				reg = <5>;
+				label = "coax";
+
+				phy-mode = "mii";
+
+				fixed-link {
+					speed = <100>;
+					full-duplex;
+				};
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port5>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		switch0port5: port@5 {
+			reg = <5>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "CFE";
+			reg = <0x000000 0x020000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					reg = <0x6a0 0x6>;
+				};
+			};
+		};
+
+		partition@20000 {
+			label = "firmware";
+			reg = <0x020000 0x1fc0000>;
+			compatible = "brcm,bcm963xx-imagetag";
+		};
+
+		partition@fe0000 {
+			label = "nvram";
+			reg = <0x1fe0000 0x020000>;
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pci {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

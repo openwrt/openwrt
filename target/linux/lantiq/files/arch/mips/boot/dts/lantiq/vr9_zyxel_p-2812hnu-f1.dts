@@ -2,7 +2,7 @@
 
 / {
 	compatible = "zyxel,p-2812hnu-f1", "zyxel,p-2812hnu", "lantiq,xway", "lantiq,vr9";
-	model = "ZyXEL P-2812HNU-F1";
+	model = "Zyxel P-2812HNU-F1";
 
 	leds {
 		usb1 {
@@ -47,11 +47,11 @@
 			};
 			partition@60000 {
 				label = "kernel";
-				reg = <0x60000 0x300000>;
+				reg = <0x60000 0x500000>;
 			};
-			partition@360000 {
+			partition@560000 {
 				label = "ubi";
-				reg = <0x360000 0x7ca0000>;
+				reg = <0x560000 0x7aa0000>;
 			};
 		};
 	};

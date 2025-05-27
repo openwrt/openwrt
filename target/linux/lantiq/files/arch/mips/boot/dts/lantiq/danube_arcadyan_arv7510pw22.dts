@@ -80,7 +80,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -153,6 +153,16 @@
 				label = "board_config";
 				reg = <0xfe0000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -171,14 +181,14 @@
 		0x7800 0 0 2 &icu0 135
 		0x7800 0 0 3 &icu0 135
 	>;
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 	req-mask = <0x3>;
 
 	wifi@1814,3592 {
 		compatible = "pci1814,3592";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,mtd-eeprom-swap;
+		ralink,eeprom-swap;
 	};
 };
 
@@ -194,14 +204,4 @@
 &vmmc {
 	status = "okay";
 	gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

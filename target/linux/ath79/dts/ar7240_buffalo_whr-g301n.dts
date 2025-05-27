@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "buffalo,whr-g301n", "qca,ar7240";
@@ -90,7 +91,8 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -99,7 +101,8 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -143,26 +146,37 @@
 				read-only;
 			};
 
-			art: partition@3f0000 {
+			partition@3f0000 {
 				reg = <0x3f0000 0x10000>;
 				label = "art";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_120c: macaddr@120c {
+						compatible = "mac-base";
+						reg = <0x120c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_art_120c>;
+	nvmem-cells = <&macaddr_art_120c 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_120c>;
+	nvmem-cells = <&macaddr_art_120c 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &pcie {
@@ -172,7 +186,7 @@
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c>;
+		nvmem-cells = <&macaddr_art_120c 0>;
 		nvmem-cell-names = "mac-address";
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -182,15 +196,5 @@
 &pinmux {
 	switch_led_pins: switch_led_pins {
 		pinctrl-single,bits = <0x0 0x0 0xf8>;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_120c: macaddr@120c {
-		reg = <0x120c 0x6>;
 	};
 };

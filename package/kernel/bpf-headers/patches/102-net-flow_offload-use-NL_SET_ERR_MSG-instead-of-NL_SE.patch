@@ -1,0 +1,39 @@
+From 6e7cd9c0abffea55e39a4160949bc6fba972d161 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 19 Jan 2023 13:37:46 +0100
+Subject: [PATCH] net/flow_offload: use NL_SET_ERR_MSG instead of
+ NL_SET_ERR_MSG_MOD
+
+Use NL_SET_ERR_MSG instead of NL_SET_ERR_MSG_MOD for bpf modules as
+kernel modules are not supported.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/net/flow_offload.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/include/net/flow_offload.h
++++ b/include/net/flow_offload.h
+@@ -376,7 +376,7 @@ flow_action_mixed_hw_stats_check(const s
+ 
+ 	flow_action_for_each(i, action_entry, action) {
+ 		if (i && action_entry->hw_stats != last_hw_stats) {
+-			NL_SET_ERR_MSG_MOD(extack, "Mixing HW stats types for actions is not supported");
++			NL_SET_ERR_MSG(extack, "Mixing HW stats types for actions is not supported");
+ 			return false;
+ 		}
+ 		last_hw_stats = action_entry->hw_stats;
+@@ -411,11 +411,11 @@ __flow_action_hw_stats_check(const struc
+ 
+ 	if (!check_allow_bit &&
+ 	    ~action_entry->hw_stats & FLOW_ACTION_HW_STATS_ANY) {
+-		NL_SET_ERR_MSG_MOD(extack, "Driver supports only default HW stats type \"any\"");
++		NL_SET_ERR_MSG(extack, "Driver supports only default HW stats type \"any\"");
+ 		return false;
+ 	} else if (check_allow_bit &&
+ 		   !(action_entry->hw_stats & BIT(allow_bit))) {
+-		NL_SET_ERR_MSG_MOD(extack, "Driver does not support selected HW stats type");
++		NL_SET_ERR_MSG(extack, "Driver does not support selected HW stats type");
+ 		return false;
+ 	}
+ 	return true;

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,eap225-wall-v2", "qca,qca9561";
@@ -39,7 +40,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "white:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -58,6 +60,14 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		nvmem-cells = <&macaddr_info_8 1>, <&precalibration_ath10k>;
+		nvmem-cell-names = "mac-address", "pre-calibration";
+	};
 };
 
 &spi {
@@ -89,6 +99,18 @@
 				label = "info";
 				reg = <0x030000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_info_8: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -117,10 +139,24 @@
 				read-only;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					calibration_ath9k: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					precalibration_ath10k: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};
@@ -129,24 +165,13 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_info_8>;
-	nvmem-cell-names = "mac-address";
-};
-
-&info {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_info_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
+	nvmem-cells = <&macaddr_info_8 0>, <&calibration_ath9k>;
+	nvmem-cell-names = "mac-address", "calibration";
 };

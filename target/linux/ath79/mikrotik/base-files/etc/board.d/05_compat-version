@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+	mikrotik,routerboard-493g|\
+	mikrotik,routerboard-911g-5hpacd|\
+	mikrotik,routerboard-911g-xhpnd|\
+	mikrotik,routerboard-912uag-2hpnd|\
+	mikrotik,routerboard-921gs-5hpacd-15s|\
+	mikrotik,routerboard-922uags-5hpacd|\
+	mikrotik,routerboard-951g-2hnd|\
+	mikrotik,routerboard-951ui-2hnd|\
+	mikrotik,routerboard-sxt-5nd-r2)
+		ucidef_set_compat_version "1.1"
+		;;
+esac
+
+board_config_flush
+
+exit 0

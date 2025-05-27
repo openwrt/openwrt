@@ -1,0 +1,924 @@
+From patchwork Thu Sep  5 02:35:08 2024
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Kang Yang <quic_kangyang@quicinc.com>
+X-Patchwork-Id: 13791624
+X-Patchwork-Delegate: kvalo@adurom.com
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com
+ [205.220.180.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D313D33CFC
+	for <linux-wireless@vger.kernel.org>; Thu,  5 Sep 2024 02:36:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+ arc=none smtp.client-ip=205.220.180.131
+ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1725503779; cv=none;
+ b=blv4mH95IN2AR7Rt90gw/V7DnZRtr3upgAP50X6ew3jh0CusPG6/OTO9CSJVthJnqHU3Y3GT88jaeMzb9+f2xzqgl7+E35TmwN3uf6dFmbp7CD8LL0W6xu76ZZgFGxzRspv9YoVy/fydZY6I4JRc2faWqI540+n9bHEXdSJTZMM=
+ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1725503779; c=relaxed/simple;
+	bh=vjzfDc6UXtw2Li6Q3bAgcW0K1rcTpi3dAxkQgbT5ogI=;
+	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type;
+ b=VMgF0PfIOoXmfB6EARb/O+dooXutjAm/cnemJ0RC7uc8TSIAusH1ffc6jF1XndEp+nPTWnuMQ5/d1cE/bPeIvSTxrtWaUepnKNjQDrNKm4NrqmjR446CT9t0VHG16RZ1cmCmU74qXnfgus4XfTqD093lc1N5Q/YRh/kwmcCzxhY=
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
+ dmarc=pass (p=none dis=none) header.from=quicinc.com;
+ spf=pass smtp.mailfrom=quicinc.com;
+ dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
+ header.b=E5hktrdm; arc=none smtp.client-ip=205.220.180.131
+Authentication-Results: smtp.subspace.kernel.org;
+ dmarc=pass (p=none dis=none) header.from=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org;
+ spf=pass smtp.mailfrom=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
+ header.b="E5hktrdm"
+Received: from pps.filterd (m0279869.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id
+ 484MRZwS008193;
+	Thu, 5 Sep 2024 02:36:12 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=qcppdkim1; bh=
+	No6X3gHpioHamjfMDccV8LJEZBGk/uDqbZ/fuGUTvJM=; b=E5hktrdmmOb3KcP6
+	Qi3M5Y06Yd8RxNJTps8WMEoXZ7xzROVuhmRmlG/mw21NjBMTTMgtjcaen/n8Anj3
+	Ash1VFK6s7PrLcwoUT/uui6hzleGE+X9Wh8DJXYnZKKWmeQ+8E0yEzNR0kt9FG0n
+	S+asFc8VYEJHid6QDNAfM9e4JqJgU3NGXYJBTBM2lpdbqeWU7LEYnVTGCqvOPaH2
+	K+QDwvNiNeXlqbaxnqCYimUrSDnTbSUoiVxSpTe9/muWWAB+6YuUbXRfTceqgcd1
+	xFIOE1KrtAowMOk5mO3tn6Tjl7nJzewVUm9hncBRfynP8k2jt1xosMezL42dmb56
+	a9VWLQ==
+Received: from nalasppmta03.qualcomm.com (Global_NAT1.qualcomm.com
+ [129.46.96.20])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 41bt674mq1-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 05 Sep 2024 02:36:11 +0000 (GMT)
+Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com
+ [10.47.209.197])
+	by NALASPPMTA03.qualcomm.com (8.18.1.2/8.18.1.2) with ESMTPS id
+ 4852aAdV010181
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Thu, 5 Sep 2024 02:36:10 GMT
+Received: from kangyang.ap.qualcomm.com (10.80.80.8) by
+ nalasex01b.na.qualcomm.com (10.47.209.197) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.1544.9; Wed, 4 Sep 2024 19:36:09 -0700
+From: Kang Yang <quic_kangyang@quicinc.com>
+To: <ath12k@lists.infradead.org>
+CC: <linux-wireless@vger.kernel.org>, <quic_kangyang@quicinc.com>
+Subject: [PATCH v3 1/4] wifi: ath12k: add configure country code for WCN7850
+Date: Thu, 5 Sep 2024 10:35:08 +0800
+Message-ID: <20240905023511.362-2-quic_kangyang@quicinc.com>
+X-Mailer: git-send-email 2.34.1.windows.1
+In-Reply-To: <20240905023511.362-1-quic_kangyang@quicinc.com>
+References: <20240905023511.362-1-quic_kangyang@quicinc.com>
+Precedence: bulk
+X-Mailing-List: linux-wireless@vger.kernel.org
+List-Id: <linux-wireless.vger.kernel.org>
+List-Subscribe: <mailto:linux-wireless+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-wireless+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+X-ClientProxiedBy: nasanex01b.na.qualcomm.com (10.46.141.250) To
+ nalasex01b.na.qualcomm.com (10.47.209.197)
+X-QCInternal: smtphost
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800
+ signatures=585085
+X-Proofpoint-ORIG-GUID: FzfHe7cZy6IUVu8IKORVKLxkYG9f8WUl
+X-Proofpoint-GUID: FzfHe7cZy6IUVu8IKORVKLxkYG9f8WUl
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.60.29
+ definitions=2024-09-05_01,2024-09-04_01,2024-09-02_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ malwarescore=0 adultscore=0
+ bulkscore=0 mlxscore=0 impostorscore=0 suspectscore=0 phishscore=0
+ mlxlogscore=999 lowpriorityscore=0 spamscore=0 clxscore=1015
+ priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2407110000 definitions=main-2409050018
+
+From: Wen Gong <quic_wgong@quicinc.com>
+
+Add handler to send WMI_SET_CURRENT_COUNTRY_CMDID to firmware, which
+is used for WCN7850 to update country code.
+
+Tested-on: WCN7850 hw2.0 PCI WLAN.HMT.1.0.c5-00481-QCAHMTSWPL_V1.0_V2.0_SILICONZ-3
+
+Signed-off-by: Wen Gong <quic_wgong@quicinc.com>
+Signed-off-by: Kang Yang <quic_kangyang@quicinc.com>
+Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+---
+ drivers/net/wireless/ath/ath12k/wmi.c | 36 +++++++++++++++++++++++++++
+ drivers/net/wireless/ath/ath12k/wmi.h | 13 ++++++++++
+ 2 files changed, 49 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -171,6 +171,8 @@ static const struct ath12k_wmi_tlv_polic
+ 		.min_len = sizeof(struct ath12k_wmi_p2p_noa_info) },
+ 	[WMI_TAG_P2P_NOA_EVENT] = {
+ 		.min_len = sizeof(struct wmi_p2p_noa_event) },
++	[WMI_TAG_11D_NEW_COUNTRY_EVENT] = {
++		.min_len = sizeof(struct wmi_11d_new_cc_event) },
+ };
+ 
+ static __le32 ath12k_wmi_tlv_hdr(u32 cmd, u32 len)
+@@ -2364,7 +2366,10 @@ int ath12k_wmi_send_scan_start_cmd(struc
+ 	cmd->scan_id = cpu_to_le32(arg->scan_id);
+ 	cmd->scan_req_id = cpu_to_le32(arg->scan_req_id);
+ 	cmd->vdev_id = cpu_to_le32(arg->vdev_id);
+-	cmd->scan_priority = cpu_to_le32(arg->scan_priority);
++	if (ar->state_11d == ATH12K_11D_PREPARING)
++		arg->scan_priority = WMI_SCAN_PRIORITY_MEDIUM;
++	else
++		arg->scan_priority = WMI_SCAN_PRIORITY_LOW;
+ 	cmd->notify_scan_events = cpu_to_le32(arg->notify_scan_events);
+ 
+ 	ath12k_wmi_copy_scan_event_cntrl_flags(cmd, arg);
+@@ -3084,6 +3089,110 @@ out:
+ 	return ret;
+ }
+ 
++int ath12k_wmi_send_set_current_country_cmd(struct ath12k *ar,
++					    struct wmi_set_current_country_arg *arg)
++{
++	struct ath12k_wmi_pdev *wmi = ar->wmi;
++	struct wmi_set_current_country_cmd *cmd;
++	struct sk_buff *skb;
++	int ret;
++
++	skb = ath12k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (struct wmi_set_current_country_cmd *)skb->data;
++	cmd->tlv_header =
++		ath12k_wmi_tlv_cmd_hdr(WMI_TAG_SET_CURRENT_COUNTRY_CMD,
++				       sizeof(*cmd));
++
++	cmd->pdev_id = cpu_to_le32(ar->pdev->pdev_id);
++	memcpy(&cmd->new_alpha2, &arg->alpha2, sizeof(arg->alpha2));
++	ret = ath12k_wmi_cmd_send(wmi, skb, WMI_SET_CURRENT_COUNTRY_CMDID);
++
++	ath12k_dbg(ar->ab, ATH12K_DBG_WMI,
++		   "set current country pdev id %d alpha2 %c%c\n",
++		   ar->pdev->pdev_id,
++		   arg->alpha2[0],
++		   arg->alpha2[1]);
++
++	if (ret) {
++		ath12k_warn(ar->ab,
++			    "failed to send WMI_SET_CURRENT_COUNTRY_CMDID: %d\n", ret);
++		dev_kfree_skb(skb);
++	}
++
++	return ret;
++}
++
++int ath12k_wmi_send_11d_scan_start_cmd(struct ath12k *ar,
++				       struct wmi_11d_scan_start_arg *arg)
++{
++	struct ath12k_wmi_pdev *wmi = ar->wmi;
++	struct wmi_11d_scan_start_cmd *cmd;
++	struct sk_buff *skb;
++	int ret;
++
++	skb = ath12k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (struct wmi_11d_scan_start_cmd *)skb->data;
++	cmd->tlv_header =
++		ath12k_wmi_tlv_cmd_hdr(WMI_TAG_11D_SCAN_START_CMD,
++				       sizeof(*cmd));
++
++	cmd->vdev_id = cpu_to_le32(arg->vdev_id);
++	cmd->scan_period_msec = cpu_to_le32(arg->scan_period_msec);
++	cmd->start_interval_msec = cpu_to_le32(arg->start_interval_msec);
++	ret = ath12k_wmi_cmd_send(wmi, skb, WMI_11D_SCAN_START_CMDID);
++
++	ath12k_dbg(ar->ab, ATH12K_DBG_WMI,
++		   "send 11d scan start vdev id %d period %d ms internal %d ms\n",
++		   arg->vdev_id, arg->scan_period_msec,
++		   arg->start_interval_msec);
++
++	if (ret) {
++		ath12k_warn(ar->ab,
++			    "failed to send WMI_11D_SCAN_START_CMDID: %d\n", ret);
++		dev_kfree_skb(skb);
++	}
++
++	return ret;
++}
++
++int ath12k_wmi_send_11d_scan_stop_cmd(struct ath12k *ar, u32 vdev_id)
++{
++	struct ath12k_wmi_pdev *wmi = ar->wmi;
++	struct wmi_11d_scan_stop_cmd *cmd;
++	struct sk_buff *skb;
++	int ret;
++
++	skb = ath12k_wmi_alloc_skb(wmi->wmi_ab, sizeof(*cmd));
++	if (!skb)
++		return -ENOMEM;
++
++	cmd = (struct wmi_11d_scan_stop_cmd *)skb->data;
++	cmd->tlv_header =
++		ath12k_wmi_tlv_cmd_hdr(WMI_TAG_11D_SCAN_STOP_CMD,
++				       sizeof(*cmd));
++
++	cmd->vdev_id = cpu_to_le32(vdev_id);
++	ret = ath12k_wmi_cmd_send(wmi, skb, WMI_11D_SCAN_STOP_CMDID);
++
++	ath12k_dbg(ar->ab, ATH12K_DBG_WMI,
++		   "send 11d scan stop vdev id %d\n",
++		   cmd->vdev_id);
++
++	if (ret) {
++		ath12k_warn(ar->ab,
++			    "failed to send WMI_11D_SCAN_STOP_CMDID: %d\n", ret);
++		dev_kfree_skb(skb);
++	}
++
++	return ret;
++}
++
+ int
+ ath12k_wmi_send_twt_enable_cmd(struct ath12k *ar, u32 pdev_id)
+ {
+@@ -5669,6 +5778,50 @@ static void ath12k_wmi_op_ep_tx_credits(
+ 	wake_up(&ab->wmi_ab.tx_credits_wq);
+ }
+ 
++static int ath12k_reg_11d_new_cc_event(struct ath12k_base *ab, struct sk_buff *skb)
++{
++	const struct wmi_11d_new_cc_event *ev;
++	struct ath12k *ar;
++	struct ath12k_pdev *pdev;
++	const void **tb;
++	int ret, i;
++
++	tb = ath12k_wmi_tlv_parse_alloc(ab, skb, GFP_ATOMIC);
++	if (IS_ERR(tb)) {
++		ret = PTR_ERR(tb);
++		ath12k_warn(ab, "failed to parse tlv: %d\n", ret);
++		return ret;
++	}
++
++	ev = tb[WMI_TAG_11D_NEW_COUNTRY_EVENT];
++	if (!ev) {
++		kfree(tb);
++		ath12k_warn(ab, "failed to fetch 11d new cc ev");
++		return -EPROTO;
++	}
++
++	spin_lock_bh(&ab->base_lock);
++	memcpy(&ab->new_alpha2, &ev->new_alpha2, REG_ALPHA2_LEN);
++	spin_unlock_bh(&ab->base_lock);
++
++	ath12k_dbg(ab, ATH12K_DBG_WMI, "wmi 11d new cc %c%c\n",
++		   ab->new_alpha2[0],
++		   ab->new_alpha2[1]);
++
++	kfree(tb);
++
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		ar = pdev->ar;
++		ar->state_11d = ATH12K_11D_IDLE;
++		complete(&ar->completed_11d_scan);
++	}
++
++	queue_work(ab->workqueue, &ab->update_11d_work);
++
++	return 0;
++}
++
+ static void ath12k_wmi_htc_tx_complete(struct ath12k_base *ab,
+ 				       struct sk_buff *skb)
+ {
+@@ -7270,6 +7423,9 @@ static void ath12k_wmi_op_rx(struct ath1
+ 	case WMI_GTK_OFFLOAD_STATUS_EVENTID:
+ 		ath12k_wmi_gtk_offload_status_event(ab, skb);
+ 		break;
++	case WMI_11D_NEW_COUNTRY_EVENTID:
++		ath12k_reg_11d_new_cc_event(ab, skb);
++		break;
+ 	/* TODO: Add remaining events */
+ 	default:
+ 		ath12k_dbg(ab, ATH12K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
+--- a/drivers/net/wireless/ath/ath12k/wmi.h
++++ b/drivers/net/wireless/ath/ath12k/wmi.h
+@@ -3860,6 +3860,28 @@ struct wmi_init_country_cmd {
+ 	} cc_info;
+ } __packed;
+ 
++struct wmi_11d_scan_start_arg {
++	u32 vdev_id;
++	u32 scan_period_msec;
++	u32 start_interval_msec;
++};
++
++struct wmi_11d_scan_start_cmd {
++	__le32 tlv_header;
++	__le32 vdev_id;
++	__le32 scan_period_msec;
++	__le32 start_interval_msec;
++} __packed;
++
++struct wmi_11d_scan_stop_cmd {
++	__le32 tlv_header;
++	__le32 vdev_id;
++} __packed;
++
++struct wmi_11d_new_cc_event {
++	__le32 new_alpha2;
++} __packed;
++
+ struct wmi_delba_send_cmd {
+ 	__le32 tlv_header;
+ 	__le32 vdev_id;
+@@ -3945,6 +3967,16 @@ struct ath12k_wmi_eht_rate_set_params {
+ #define MAX_6G_REG_RULES 5
+ #define REG_US_5G_NUM_REG_RULES 4
+ 
++struct wmi_set_current_country_arg {
++	u8 alpha2[REG_ALPHA2_LEN];
++};
++
++struct wmi_set_current_country_cmd {
++	__le32 tlv_header;
++	__le32 pdev_id;
++	__le32 new_alpha2;
++} __packed;
++
+ enum wmi_start_event_param {
+ 	WMI_VDEV_START_RESP_EVENT = 0,
+ 	WMI_VDEV_RESTART_RESP_EVENT,
+@@ -5547,11 +5579,17 @@ int ath12k_wmi_send_bcn_offload_control_
+ 					    u32 vdev_id, u32 bcn_ctrl_op);
+ int ath12k_wmi_send_init_country_cmd(struct ath12k *ar,
+ 				     struct ath12k_wmi_init_country_arg *arg);
++int
++ath12k_wmi_send_set_current_country_cmd(struct ath12k *ar,
++					struct wmi_set_current_country_arg *arg);
+ int ath12k_wmi_peer_rx_reorder_queue_setup(struct ath12k *ar,
+ 					   int vdev_id, const u8 *addr,
+ 					   dma_addr_t paddr, u8 tid,
+ 					   u8 ba_window_size_valid,
+ 					   u32 ba_window_size);
++int ath12k_wmi_send_11d_scan_start_cmd(struct ath12k *ar,
++				       struct wmi_11d_scan_start_arg *arg);
++int ath12k_wmi_send_11d_scan_stop_cmd(struct ath12k *ar, u32 vdev_id);
+ int
+ ath12k_wmi_rx_reord_queue_remove(struct ath12k *ar,
+ 				 struct ath12k_wmi_rx_reorder_queue_remove_arg *arg);
+--- a/drivers/net/wireless/ath/ath12k/core.c
++++ b/drivers/net/wireless/ath/ath12k/core.c
+@@ -1014,6 +1014,7 @@ void ath12k_core_halt(struct ath12k *ar)
+ 	cancel_delayed_work_sync(&ar->scan.timeout);
+ 	cancel_work_sync(&ar->regd_update_work);
+ 	cancel_work_sync(&ab->rfkill_work);
++	cancel_work_sync(&ab->update_11d_work);
+ 
+ 	rcu_assign_pointer(ab->pdevs_active[ar->pdev_idx], NULL);
+ 	synchronize_rcu();
+@@ -1021,6 +1022,34 @@ void ath12k_core_halt(struct ath12k *ar)
+ 	idr_init(&ar->txmgmt_idr);
+ }
+ 
++static void ath12k_update_11d(struct work_struct *work)
++{
++	struct ath12k_base *ab = container_of(work, struct ath12k_base, update_11d_work);
++	struct ath12k *ar;
++	struct ath12k_pdev *pdev;
++	struct wmi_set_current_country_arg arg = {};
++	int ret, i;
++
++	spin_lock_bh(&ab->base_lock);
++	memcpy(&arg.alpha2, &ab->new_alpha2, 2);
++	spin_unlock_bh(&ab->base_lock);
++
++	ath12k_dbg(ab, ATH12K_DBG_WMI, "update 11d new cc %c%c\n",
++		   arg.alpha2[0], arg.alpha2[1]);
++
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		ar = pdev->ar;
++
++		memcpy(&ar->alpha2, &arg.alpha2, 2);
++		ret = ath12k_wmi_send_set_current_country_cmd(ar, &arg);
++		if (ret)
++			ath12k_warn(ar->ab,
++				    "pdev id %d failed set current country code: %d\n",
++				    i, ret);
++	}
++}
++
+ static void ath12k_core_pre_reconfigure_recovery(struct ath12k_base *ab)
+ {
+ 	struct ath12k *ar;
+@@ -1045,8 +1074,10 @@ static void ath12k_core_pre_reconfigure_
+ 			ar = &ah->radio[j];
+ 
+ 			ath12k_mac_drain_tx(ar);
++			ar->state_11d = ATH12K_11D_IDLE;
++			complete(&ar->completed_11d_scan);
+ 			complete(&ar->scan.started);
+-			complete(&ar->scan.completed);
++			complete_all(&ar->scan.completed);
+ 			complete(&ar->scan.on_channel);
+ 			complete(&ar->peer_assoc_done);
+ 			complete(&ar->peer_delete_done);
+@@ -1312,6 +1343,7 @@ struct ath12k_base *ath12k_core_alloc(st
+ 	INIT_WORK(&ab->restart_work, ath12k_core_restart);
+ 	INIT_WORK(&ab->reset_work, ath12k_core_reset);
+ 	INIT_WORK(&ab->rfkill_work, ath12k_rfkill_work);
++	INIT_WORK(&ab->update_11d_work, ath12k_update_11d);
+ 
+ 	timer_setup(&ab->rx_replenish_retry, ath12k_ce_rx_replenish_retry, 0);
+ 	init_completion(&ab->htc_suspend);
+--- a/drivers/net/wireless/ath/ath12k/core.h
++++ b/drivers/net/wireless/ath/ath12k/core.h
+@@ -199,6 +199,12 @@ enum ath12k_scan_state {
+ 	ATH12K_SCAN_ABORTING,
+ };
+ 
++enum ath12k_11d_state {
++	ATH12K_11D_IDLE,
++	ATH12K_11D_PREPARING,
++	ATH12K_11D_RUNNING,
++};
++
+ enum ath12k_dev_flags {
+ 	ATH12K_CAC_RUNNING,
+ 	ATH12K_FLAG_CRASH_FLUSH,
+@@ -319,6 +325,8 @@ struct ath12k_vif_iter {
+ #define ATH12K_RX_RATE_TABLE_11AX_NUM	576
+ #define ATH12K_RX_RATE_TABLE_NUM 320
+ 
++#define ATH12K_SCAN_TIMEOUT_HZ (20 * HZ)
++
+ struct ath12k_rx_peer_rate_stats {
+ 	u64 ht_mcs_count[HAL_RX_MAX_MCS_HT + 1];
+ 	u64 vht_mcs_count[HAL_RX_MAX_MCS_VHT + 1];
+@@ -654,6 +662,13 @@ struct ath12k {
+ 	u32 freq_low;
+ 	u32 freq_high;
+ 
++	/* Protected by wiphy::mtx lock. */
++	u32 vdev_id_11d_scan;
++	struct completion completed_11d_scan;
++	enum ath12k_11d_state state_11d;
++	u8 alpha2[REG_ALPHA2_LEN];
++	bool regdom_set_by_user;
++
+ 	bool nlo_enabled;
+ };
+ 
+@@ -886,6 +901,8 @@ struct ath12k_base {
+ 	/* continuous recovery fail count */
+ 	atomic_t fail_cont_count;
+ 	unsigned long reset_fail_timeout;
++	struct work_struct update_11d_work;
++	u8 new_alpha2[2];
+ 	struct {
+ 		/* protected by data_lock */
+ 		u32 fw_crash_counter;
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -2949,6 +2949,11 @@ static void ath12k_bss_assoc(struct ath1
+ 	if (ret)
+ 		ath12k_warn(ar->ab, "failed to set vdev %i OBSS PD parameters: %d\n",
+ 			    arvif->vdev_id, ret);
++
++	if (test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ar->ab->wmi_ab.svc_map) &&
++	    arvif->vdev_type == WMI_VDEV_TYPE_STA &&
++	    arvif->vdev_subtype == WMI_VDEV_SUBTYPE_NONE)
++		ath12k_mac_11d_scan_stop_all(ar->ab);
+ }
+ 
+ static void ath12k_bss_disassoc(struct ath12k *ar,
+@@ -3524,7 +3529,7 @@ void __ath12k_mac_scan_finish(struct ath
+ 		ar->scan_channel = NULL;
+ 		ar->scan.roc_freq = 0;
+ 		cancel_delayed_work(&ar->scan.timeout);
+-		complete(&ar->scan.completed);
++		complete_all(&ar->scan.completed);
+ 		break;
+ 	}
+ }
+@@ -3790,7 +3795,12 @@ scan:
+ 
+ 	ret = ath12k_start_scan(ar, arg);
+ 	if (ret) {
+-		ath12k_warn(ar->ab, "failed to start hw scan: %d\n", ret);
++		if (ret == -EBUSY)
++			ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
++				   "scan engine is busy 11d state %d\n", ar->state_11d);
++		else
++			ath12k_warn(ar->ab, "failed to start hw scan: %d\n", ret);
++
+ 		spin_lock_bh(&ar->data_lock);
+ 		ar->scan.state = ATH12K_SCAN_IDLE;
+ 		spin_unlock_bh(&ar->data_lock);
+@@ -3810,6 +3820,11 @@ exit:
+ 
+ 	mutex_unlock(&ar->conf_mutex);
+ 
++	if (ar->state_11d == ATH12K_11D_PREPARING &&
++	    arvif->vdev_type == WMI_VDEV_TYPE_STA &&
++	    arvif->vdev_subtype == WMI_VDEV_SUBTYPE_NONE)
++		ath12k_mac_11d_scan_start(ar, arvif->vdev_id);
++
+ 	return ret;
+ }
+ 
+@@ -5994,7 +6009,7 @@ static int ath12k_mac_start(struct ath12
+ 
+ 	/* TODO: Do we need to enable ANI? */
+ 
+-	ath12k_reg_update_chan_list(ar);
++	ath12k_reg_update_chan_list(ar, false);
+ 
+ 	ar->num_started_vdevs = 0;
+ 	ar->num_created_vdevs = 0;
+@@ -6174,6 +6189,9 @@ static void ath12k_mac_stop(struct ath12
+ 	cancel_delayed_work_sync(&ar->scan.timeout);
+ 	cancel_work_sync(&ar->regd_update_work);
+ 	cancel_work_sync(&ar->ab->rfkill_work);
++	cancel_work_sync(&ar->ab->update_11d_work);
++	ar->state_11d = ATH12K_11D_IDLE;
++	complete(&ar->completed_11d_scan);
+ 
+ 	spin_lock_bh(&ar->data_lock);
+ 	list_for_each_entry_safe(ppdu_stats, tmp, &ar->ppdu_stats_info, list) {
+@@ -6420,6 +6438,117 @@ static void ath12k_mac_op_update_vif_off
+ 	ath12k_mac_update_vif_offload(arvif);
+ }
+ 
++static bool ath12k_mac_vif_ap_active_any(struct ath12k_base *ab)
++{
++	struct ath12k *ar;
++	struct ath12k_pdev *pdev;
++	struct ath12k_vif *arvif;
++	int i;
++
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		ar = pdev->ar;
++		list_for_each_entry(arvif, &ar->arvifs, list) {
++			if (arvif->is_up && arvif->vdev_type == WMI_VDEV_TYPE_AP)
++				return true;
++		}
++	}
++	return false;
++}
++
++void ath12k_mac_11d_scan_start(struct ath12k *ar, u32 vdev_id)
++{
++	struct wmi_11d_scan_start_arg arg;
++	int ret;
++
++	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
++
++	if (ar->regdom_set_by_user)
++		goto fin;
++
++	if (ar->vdev_id_11d_scan != ATH12K_11D_INVALID_VDEV_ID)
++		goto fin;
++
++	if (!test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ar->ab->wmi_ab.svc_map))
++		goto fin;
++
++	if (ath12k_mac_vif_ap_active_any(ar->ab))
++		goto fin;
++
++	arg.vdev_id = vdev_id;
++	arg.start_interval_msec = 0;
++	arg.scan_period_msec = ATH12K_SCAN_11D_INTERVAL;
++
++	ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
++		   "mac start 11d scan for vdev %d\n", vdev_id);
++
++	ret = ath12k_wmi_send_11d_scan_start_cmd(ar, &arg);
++	if (ret) {
++		ath12k_warn(ar->ab, "failed to start 11d scan vdev %d ret: %d\n",
++			    vdev_id, ret);
++	} else {
++		ar->vdev_id_11d_scan = vdev_id;
++		if (ar->state_11d == ATH12K_11D_PREPARING)
++			ar->state_11d = ATH12K_11D_RUNNING;
++	}
++
++fin:
++	if (ar->state_11d == ATH12K_11D_PREPARING) {
++		ar->state_11d = ATH12K_11D_IDLE;
++		complete(&ar->completed_11d_scan);
++	}
++}
++
++void ath12k_mac_11d_scan_stop(struct ath12k *ar)
++{
++	int ret;
++	u32 vdev_id;
++
++	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
++
++	if (!test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ar->ab->wmi_ab.svc_map))
++		return;
++
++	ath12k_dbg(ar->ab, ATH12K_DBG_MAC, "mac stop 11d for vdev %d\n",
++		   ar->vdev_id_11d_scan);
++
++	if (ar->state_11d == ATH12K_11D_PREPARING) {
++		ar->state_11d = ATH12K_11D_IDLE;
++		complete(&ar->completed_11d_scan);
++	}
++
++	if (ar->vdev_id_11d_scan != ATH12K_11D_INVALID_VDEV_ID) {
++		vdev_id = ar->vdev_id_11d_scan;
++
++		ret = ath12k_wmi_send_11d_scan_stop_cmd(ar, vdev_id);
++		if (ret) {
++			ath12k_warn(ar->ab,
++				    "failed to stopt 11d scan vdev %d ret: %d\n",
++				    vdev_id, ret);
++		} else {
++			ar->vdev_id_11d_scan = ATH12K_11D_INVALID_VDEV_ID;
++			ar->state_11d = ATH12K_11D_IDLE;
++			complete(&ar->completed_11d_scan);
++		}
++	}
++}
++
++void ath12k_mac_11d_scan_stop_all(struct ath12k_base *ab)
++{
++	struct ath12k *ar;
++	struct ath12k_pdev *pdev;
++	int i;
++
++	ath12k_dbg(ab, ATH12K_DBG_MAC, "mac stop soc 11d scan\n");
++
++	for (i = 0; i < ab->num_radios; i++) {
++		pdev = &ab->pdevs[i];
++		ar = pdev->ar;
++
++		ath12k_mac_11d_scan_stop(ar);
++	}
++}
++
+ static int ath12k_mac_vdev_create(struct ath12k *ar, struct ieee80211_vif *vif)
+ {
+ 	struct ath12k_hw *ah = ar->ah;
+@@ -6534,6 +6663,7 @@ static int ath12k_mac_vdev_create(struct
+ 				    arvif->vdev_id, ret);
+ 			goto err_peer_del;
+ 		}
++		ath12k_mac_11d_scan_stop_all(ar->ab);
+ 		break;
+ 	case WMI_VDEV_TYPE_STA:
+ 		param_id = WMI_STA_PS_PARAM_RX_WAKE_POLICY;
+@@ -6572,6 +6702,13 @@ static int ath12k_mac_vdev_create(struct
+ 				    arvif->vdev_id, ret);
+ 			goto err_peer_del;
+ 		}
++
++		if (test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ab->wmi_ab.svc_map) &&
++		    arvif->vdev_type == WMI_VDEV_TYPE_STA &&
++		    arvif->vdev_subtype == WMI_VDEV_SUBTYPE_NONE) {
++			reinit_completion(&ar->completed_11d_scan);
++			ar->state_11d = ATH12K_11D_PREPARING;
++		}
+ 		break;
+ 	default:
+ 		break;
+@@ -6912,6 +7049,11 @@ static void ath12k_mac_op_remove_interfa
+ 	ath12k_dbg(ab, ATH12K_DBG_MAC, "mac remove interface (vdev %d)\n",
+ 		   arvif->vdev_id);
+ 
++	if (test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ab->wmi_ab.svc_map) &&
++	    arvif->vdev_type == WMI_VDEV_TYPE_STA &&
++	    arvif->vdev_subtype == WMI_VDEV_SUBTYPE_NONE)
++		ath12k_mac_11d_scan_stop(ar);
++
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
+ 		ret = ath12k_peer_delete(ar, arvif->vdev_id, vif->addr);
+ 		if (ret)
+@@ -7752,6 +7894,14 @@ ath12k_mac_op_unassign_vif_chanctx(struc
+ 	    ar->num_started_vdevs == 1 && ar->monitor_vdev_created)
+ 		ath12k_mac_monitor_stop(ar);
+ 
++	if (test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ab->wmi_ab.svc_map) &&
++	    arvif->vdev_type == WMI_VDEV_TYPE_STA &&
++	    arvif->vdev_subtype == WMI_VDEV_SUBTYPE_NONE &&
++	    ar->state_11d != ATH12K_11D_PREPARING) {
++		reinit_completion(&ar->completed_11d_scan);
++		ar->state_11d = ATH12K_11D_PREPARING;
++	}
++
+ 	mutex_unlock(&ar->conf_mutex);
+ }
+ 
+@@ -8290,6 +8440,14 @@ ath12k_mac_op_reconfig_complete(struct i
+ 		ath12k_warn(ar->ab, "pdev %d successfully recovered\n",
+ 			    ar->pdev->pdev_id);
+ 
++		if (ar->ab->hw_params->current_cc_support &&
++		    ar->alpha2[0] != 0 && ar->alpha2[1] != 0) {
++			struct wmi_set_current_country_arg arg = {};
++
++			memcpy(&arg.alpha2, ar->alpha2, 2);
++			ath12k_wmi_send_set_current_country_cmd(ar, &arg);
++		}
++
+ 		if (ab->is_reset) {
+ 			recovery_count = atomic_inc_return(&ab->recovery_count);
+ 
+@@ -9339,6 +9497,9 @@ static void ath12k_mac_setup(struct ath1
+ 
+ 	INIT_WORK(&ar->wmi_mgmt_tx_work, ath12k_mgmt_over_wmi_tx_work);
+ 	skb_queue_head_init(&ar->wmi_mgmt_tx_queue);
++
++	ar->vdev_id_11d_scan = ATH12K_11D_INVALID_VDEV_ID;
++	init_completion(&ar->completed_11d_scan);
+ }
+ 
+ int ath12k_mac_register(struct ath12k_base *ab)
+--- a/drivers/net/wireless/ath/ath12k/mac.h
++++ b/drivers/net/wireless/ath/ath12k/mac.h
+@@ -51,6 +51,13 @@ enum ath12k_supported_bw {
+ 
+ extern const struct htt_rx_ring_tlv_filter ath12k_mac_mon_status_filter_default;
+ 
++#define ATH12K_SCAN_11D_INTERVAL		600000
++#define ATH12K_11D_INVALID_VDEV_ID		0xFFFF
++
++void ath12k_mac_11d_scan_start(struct ath12k *ar, u32 vdev_id);
++void ath12k_mac_11d_scan_stop(struct ath12k *ar);
++void ath12k_mac_11d_scan_stop_all(struct ath12k_base *ab);
++
+ void ath12k_mac_destroy(struct ath12k_base *ab);
+ void ath12k_mac_unregister(struct ath12k_base *ab);
+ int ath12k_mac_register(struct ath12k_base *ab);
+--- a/drivers/net/wireless/ath/ath12k/reg.c
++++ b/drivers/net/wireless/ath/ath12k/reg.c
+@@ -48,6 +48,7 @@ ath12k_reg_notifier(struct wiphy *wiphy,
+ {
+ 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+ 	struct ath12k_wmi_init_country_arg arg;
++	struct wmi_set_current_country_arg current_arg = {};
+ 	struct ath12k_hw *ah = ath12k_hw_to_ah(hw);
+ 	struct ath12k *ar = ath12k_ah_to_ar(ah, 0);
+ 	int ret, i;
+@@ -77,27 +78,38 @@ ath12k_reg_notifier(struct wiphy *wiphy,
+ 		return;
+ 	}
+ 
+-	/* Set the country code to the firmware and wait for
+-	 * the WMI_REG_CHAN_LIST_CC EVENT for updating the
+-	 * reg info
+-	 */
+-	arg.flags = ALPHA_IS_SET;
+-	memcpy(&arg.cc_info.alpha2, request->alpha2, 2);
+-	arg.cc_info.alpha2[2] = 0;
+-
+ 	/* Allow fresh updates to wiphy regd */
+ 	ah->regd_updated = false;
+ 
+ 	/* Send the reg change request to all the radios */
+ 	for_each_ar(ah, ar, i) {
+-		ret = ath12k_wmi_send_init_country_cmd(ar, &arg);
+-		if (ret)
+-			ath12k_warn(ar->ab,
+-				    "INIT Country code set to fw failed : %d\n", ret);
++		if (ar->ab->hw_params->current_cc_support) {
++			memcpy(&current_arg.alpha2, request->alpha2, 2);
++			memcpy(&ar->alpha2, &current_arg.alpha2, 2);
++			ret = ath12k_wmi_send_set_current_country_cmd(ar, &current_arg);
++			if (ret)
++				ath12k_warn(ar->ab,
++					    "failed set current country code: %d\n", ret);
++		} else {
++			arg.flags = ALPHA_IS_SET;
++			memcpy(&arg.cc_info.alpha2, request->alpha2, 2);
++			arg.cc_info.alpha2[2] = 0;
++
++			ret = ath12k_wmi_send_init_country_cmd(ar, &arg);
++			if (ret)
++				ath12k_warn(ar->ab,
++					    "failed set INIT Country code: %d\n", ret);
++		}
++
++		wiphy_lock(wiphy);
++		ath12k_mac_11d_scan_stop(ar);
++		wiphy_unlock(wiphy);
++
++		ar->regdom_set_by_user = true;
+ 	}
+ }
+ 
+-int ath12k_reg_update_chan_list(struct ath12k *ar)
++int ath12k_reg_update_chan_list(struct ath12k *ar, bool wait)
+ {
+ 	struct ieee80211_supported_band **bands;
+ 	struct ath12k_wmi_scan_chan_list_arg *arg;
+@@ -106,7 +118,35 @@ int ath12k_reg_update_chan_list(struct a
+ 	struct ath12k_wmi_channel_arg *ch;
+ 	enum nl80211_band band;
+ 	int num_channels = 0;
+-	int i, ret;
++	int i, ret, left;
++
++	if (wait && ar->state_11d != ATH12K_11D_IDLE) {
++		left = wait_for_completion_timeout(&ar->completed_11d_scan,
++						   ATH12K_SCAN_TIMEOUT_HZ);
++		if (!left) {
++			ath12k_dbg(ar->ab, ATH12K_DBG_REG,
++				   "failed to receive 11d scan complete: timed out\n");
++			ar->state_11d = ATH12K_11D_IDLE;
++		}
++		ath12k_dbg(ar->ab, ATH12K_DBG_REG,
++			   "reg 11d scan wait left time %d\n", left);
++	}
++
++	if (wait &&
++	    (ar->scan.state == ATH12K_SCAN_STARTING ||
++	    ar->scan.state == ATH12K_SCAN_RUNNING)) {
++		left = wait_for_completion_timeout(&ar->scan.completed,
++						   ATH12K_SCAN_TIMEOUT_HZ);
++		if (!left)
++			ath12k_dbg(ar->ab, ATH12K_DBG_REG,
++				   "failed to receive hw scan complete: timed out\n");
++
++		ath12k_dbg(ar->ab, ATH12K_DBG_REG,
++			   "reg hw scan wait left time %d\n", left);
++	}
++
++	if (ar->ah->state == ATH12K_HW_STATE_RESTARTING)
++		return 0;
+ 
+ 	bands = hw->wiphy->bands;
+ 	for (band = 0; band < NUM_NL80211_BANDS; band++) {
+@@ -295,7 +335,7 @@ int ath12k_regd_update(struct ath12k *ar
+ 	 */
+ 	for_each_ar(ah, ar, i) {
+ 		ab = ar->ab;
+-		ret = ath12k_reg_update_chan_list(ar);
++		ret = ath12k_reg_update_chan_list(ar, true);
+ 		if (ret)
+ 			goto err;
+ 	}
+--- a/drivers/net/wireless/ath/ath12k/reg.h
++++ b/drivers/net/wireless/ath/ath12k/reg.h
+@@ -1,7 +1,7 @@
+ /* SPDX-License-Identifier: BSD-3-Clause-Clear */
+ /*
+  * Copyright (c) 2019-2021 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef ATH12K_REG_H
+@@ -96,6 +96,6 @@ struct ieee80211_regdomain *ath12k_reg_b
+ 						  struct ath12k_reg_info *reg_info,
+ 						  bool intersect);
+ int ath12k_regd_update(struct ath12k *ar, bool init);
+-int ath12k_reg_update_chan_list(struct ath12k *ar);
++int ath12k_reg_update_chan_list(struct ath12k *ar, bool wait);
+ 
+ #endif
+--- a/drivers/net/wireless/ath/ath12k/hw.c
++++ b/drivers/net/wireless/ath/ath12k/hw.c
+@@ -928,6 +928,7 @@ static const struct ath12k_hw_params ath
+ 		.iova_mask = 0,
+ 
+ 		.supports_aspm = false,
++		.current_cc_support = false,
+ 	},
+ 	{
+ 		.name = "wcn7850 hw2.0",
+@@ -1008,6 +1009,7 @@ static const struct ath12k_hw_params ath
+ 		.iova_mask = ATH12K_PCIE_MAX_PAYLOAD_SIZE - 1,
+ 
+ 		.supports_aspm = true,
++		.current_cc_support = true,
+ 	},
+ 	{
+ 		.name = "qcn9274 hw2.0",
+@@ -1084,6 +1086,7 @@ static const struct ath12k_hw_params ath
+ 		.iova_mask = 0,
+ 
+ 		.supports_aspm = false,
++		.current_cc_support = false,
+ 	},
+ };
+ 
+--- a/drivers/net/wireless/ath/ath12k/hw.h
++++ b/drivers/net/wireless/ath/ath12k/hw.h
+@@ -190,6 +190,7 @@ struct ath12k_hw_params {
+ 	bool reoq_lut_support:1;
+ 	bool supports_shadow_regs:1;
+ 	bool supports_aspm:1;
++	bool current_cc_support:1;
+ 
+ 	u32 num_tcl_banks;
+ 	u32 max_tx_ring;

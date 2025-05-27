@@ -1,0 +1,67 @@
+From c88eb6f4e9b2d8f71f3391db2bf0ec82ecccae81 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 12 Feb 2025 04:12:42 +0000
+Subject: [PATCH] ethtool: make building for RSS input xfrm optional
+
+Unfortunately there is no way to detect at runtime if the kernel the
+support for RSS input transformation, and the default value
+RXH_XFRM_NO_CHANGE (0xff) used by newer ethtool results in breakage
+with older kernels.
+As a stop-gap solution simply don't compile with support for input
+xfrm by default.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ configure.ac | 10 ++++++++++
+ ethtool.c    | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -45,6 +45,16 @@ if test x$enable_pretty_dump = xyes; the
+ fi
+ AM_CONDITIONAL([ETHTOOL_ENABLE_PRETTY_DUMP], [test x$enable_pretty_dump = xyes])
+ 
++AC_ARG_ENABLE(rss-input-xfrm,
++	      [  --enable-rss-input-xfrm  build with support for RSS input transformation (disabled by default)],
++	      ,
++	      enable_rss_input_xfrm=no)
++if test x$enable_rss_input_xfrm = xyes; then
++    AC_DEFINE(ETHTOOL_ENABLE_RSS_INPUT_XFRM, 1,
++	      [Define this to enable building with support for RSS input transformation.])
++fi
++AM_CONDITIONAL([ETHTOOL_ENABLE_RSS_INPUT_XFRM], [test x$enable_rss_input_xfrm = xyes])
++
+ AC_ARG_WITH([bash-completion-dir],
+ 	    AS_HELP_STRING([--with-bash-completion-dir[=PATH]],
+ 	                   [Install the bash-completion script in this directory. @<:@default=yes@:>@]),
+--- a/ethtool.c
++++ b/ethtool.c
+@@ -4109,9 +4109,11 @@ static int do_grxfh(struct cmd_context *
+ 		       (const char *)hfuncs->data + i * ETH_GSTRING_LEN,
+ 		       (rss->hfunc & (1 << i)) ? "on" : "off");
+ 
++#ifdef ETHTOOL_ENABLE_RSS_INPUT_XFRM
+ 	printf("RSS input transformation:\n");
+ 	printf("    symmetric-xor: %s\n",
+ 	       (rss->input_xfrm & RXH_XFRM_SYM_XOR) ? "on" : "off");
++#endif
+ 
+ out:
+ 	free(hfuncs);
+@@ -4431,7 +4433,15 @@ static int do_srxfh(struct cmd_context *
+ 	rss->cmd = ETHTOOL_SRSSH;
+ 	rss->rss_context = rss_context;
+ 	rss->hfunc = req_hfunc;
++#ifdef ETHTOOL_ENABLE_RSS_INPUT_XFRM
+ 	rss->input_xfrm = req_input_xfrm;
++#else
++	if (req_input_xfrm != 0xff) {
++		perror("Compiled for kernel without support for input transformation");
++		err = 1;
++		goto free;
++	}
++#endif
+ 	if (delete) {
+ 		rss->indir_size = rss->key_size = 0;
+ 	} else {

@@ -1,0 +1,103 @@
+From 091cde88b5ff2a2ca5739ce41f9cf5640a95222f Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 11 Feb 2024 22:24:25 +0100
+Subject: [PATCH] ARM: dts: gemini: Map reset keys to KEY_RESTART
+
+This maps the misc "reset", "setup" and "facory reset" keys to the
+only key a standard userspace is likely to understand: KEY_RESTART.
+On OpenWrt this will simply restart the system under controlled
+forms.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20240211-gemini-dts-v1-3-6c09adeb4c2e@linaro.org
+---
+ arch/arm/boot/dts/gemini/gemini-dlink-dir-685.dts | 4 ++--
+ arch/arm/boot/dts/gemini/gemini-dlink-dns-313.dts | 4 ++--
+ arch/arm/boot/dts/gemini/gemini-sl93512r.dts      | 2 +-
+ arch/arm/boot/dts/gemini/gemini-sq201.dts         | 2 +-
+ arch/arm/boot/dts/gemini/gemini-wbd111.dts        | 4 ++--
+ arch/arm/boot/dts/gemini/gemini-wbd222.dts        | 4 ++--
+ 6 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/arch/arm/boot/dts/gemini/gemini-dlink-dir-685.dts
++++ b/arch/arm/boot/dts/gemini/gemini-dlink-dir-685.dts
+@@ -27,10 +27,10 @@
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 
+-		button-esc {
++		button-reset {
+ 			debounce-interval = <100>;
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			/* Collides with LPC_LAD[0], UART DCD, SSP 97RST */
+ 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+--- a/arch/arm/boot/dts/gemini/gemini-dlink-dns-313.dts
++++ b/arch/arm/boot/dts/gemini/gemini-dlink-dns-313.dts
+@@ -33,10 +33,10 @@
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 
+-		button-esc {
++		button-reset {
+ 			debounce-interval = <100>;
+ 			wakeup-source;
+-			linux,code = <KEY_ESC>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			gpios = <&gpio1 31 GPIO_ACTIVE_LOW>;
+ 		};
+--- a/arch/arm/boot/dts/gemini/gemini-sl93512r.dts
++++ b/arch/arm/boot/dts/gemini/gemini-sl93512r.dts
+@@ -43,7 +43,7 @@
+ 		button-setup {
+ 			debounce-interval = <50>;
+ 			wakeup-source;
+-			linux,code = <KEY_SETUP>;
++			linux,code = <KEY_RESTART>;
+ 			label = "factory reset";
+ 			/* Conflict with NAND flash */
+ 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+--- a/arch/arm/boot/dts/gemini/gemini-sq201.dts
++++ b/arch/arm/boot/dts/gemini/gemini-sq201.dts
+@@ -30,7 +30,7 @@
+ 		button-setup {
+ 			debounce-interval = <100>;
+ 			wakeup-source;
+-			linux,code = <KEY_SETUP>;
++			linux,code = <KEY_RESTART>;
+ 			label = "factory reset";
+ 			/* Conflict with NAND flash */
+ 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+--- a/arch/arm/boot/dts/gemini/gemini-wbd111.dts
++++ b/arch/arm/boot/dts/gemini/gemini-wbd111.dts
+@@ -28,10 +28,10 @@
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 
+-		button-setup {
++		button-reset {
+ 			debounce-interval = <100>;
+ 			wakeup-source;
+-			linux,code = <KEY_SETUP>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			/* Conflict with ICE */
+ 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+--- a/arch/arm/boot/dts/gemini/gemini-wbd222.dts
++++ b/arch/arm/boot/dts/gemini/gemini-wbd222.dts
+@@ -27,10 +27,10 @@
+ 	gpio_keys {
+ 		compatible = "gpio-keys";
+ 
+-		button-setup {
++		button-reset {
+ 			debounce-interval = <100>;
+ 			wakeup-source;
+-			linux,code = <KEY_SETUP>;
++			linux,code = <KEY_RESTART>;
+ 			label = "reset";
+ 			/* Conflict with ICE */
+ 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;

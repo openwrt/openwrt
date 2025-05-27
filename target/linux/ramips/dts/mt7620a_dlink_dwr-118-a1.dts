@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -36,7 +37,8 @@
 		compatible = "gpio-leds";
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
@@ -46,7 +48,8 @@
 		};
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
@@ -56,7 +59,8 @@
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
@@ -93,7 +97,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <50000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -114,10 +118,26 @@
 				reg = <0x10000 0xfe0000>;
 			};
 
-			config: partition@ff0000 {
+			partition@ff0000 {
 				label = "config";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_config_e083: eeprom@e083 {
+						reg = <0xe083 0x200>;
+					};
+
+					macaddr_config_e496: macaddr@e496 {
+						compatible = "mac-base";
+						reg = <0xe496 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -145,10 +165,8 @@
 &pcie0 {
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_config_e496>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(2)>;
-		mediatek,mtd-eeprom = <&config 0xe083>;
+		nvmem-cells = <&eeprom_config_e083>, <&macaddr_config_e496 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 
 		led {
 			led-sources = <0>;
@@ -191,14 +209,4 @@
 &gsw {
 	mediatek,port4-gmac;
 	mediatek,ephy-base = /bits/ 8 <8>;
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_e496: macaddr@e496 {
-		reg = <0xe496 0x6>;
-	};
 };

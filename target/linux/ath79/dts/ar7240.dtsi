@@ -15,6 +15,10 @@
 	};
 };
 
+&gpio {
+	ngpios = <18>;
+};
+
 &ahb {
 	usb: usb@1b000000 {
 		compatible = "generic-ohci";
@@ -32,6 +36,11 @@
 
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		hub_port: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
 	};
 };
 

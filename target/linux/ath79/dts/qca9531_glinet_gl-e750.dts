@@ -79,10 +79,24 @@
 				reg = <0x40000 0x10000>;
 			};
 
-			art: partition@50000 {
+			partition@50000 {
 				label = "art";
 				reg = <0x50000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 
 			partition@60000 {
@@ -131,15 +145,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };

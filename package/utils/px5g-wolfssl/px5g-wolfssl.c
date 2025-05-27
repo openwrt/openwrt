@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
@@ -24,27 +26,38 @@ enum {
   RSA_KEY_TYPE = 1,
 };
 
-int write_file(byte *buf, int bufSz, char *path) {
-  int ret;
-  FILE *file;
+int write_file(byte *buf, int bufSz, char *path, bool cert) {
+  mode_t mode = S_IRUSR | S_IWUSR;
+  ssize_t written;
+  int err;
+  int fd;
+
+  if (cert)
+    mode |= S_IRGRP | S_IROTH;
+
   if (path) {
-    file = fopen(path, "wb");
-    if (file == NULL) {
+    fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+    if (fd < 0) {
       perror("Error opening file");
       exit(1);
     }
   } else {
-    file = stdout;
+    fd = STDERR_FILENO;
   }
-  ret = (int)fwrite(buf, 1, bufSz, file);
+  written = write(fd, buf, bufSz);
+  if (written != bufSz) {
+    perror("Error write file");
+    exit(1);
+  }
+  err = fsync(fd);
+  if (err < 0) {
+    perror("Error fsync file");
+    exit(1);
+  }
   if (path) {
-    fclose(file);
+    close(fd);
   }
-  if (ret > 0) {
-    /* ret > 0 indicates a successful file write, set to zero for return */
-    ret = 0;
-  }
-  return ret;
+  return 0;
 }
 
 int write_key(ecc_key *ecKey, RsaKey *rsaKey, int type, int keySz, char *fName,
@@ -73,9 +86,9 @@ int write_key(ecc_key *ecKey, RsaKey *rsaKey, int type, int keySz, char *fName,
       fprintf(stderr, "DER to PEM failed: %d\n", ret);
     }
     pemSz = ret;
-    ret = write_file(pem, pemSz, fName);
+    ret = write_file(pem, pemSz, fName, false);
   } else {
-    ret = write_file(der, derSz, fName);
+    ret = write_file(der, derSz, fName, false);
   }
   return ret;
 }
@@ -142,42 +155,42 @@ int selfsigned(WC_RNG *rng, char **arg) {
   newCert.isCA = 0;
 
   while (*arg && **arg == '-') {
-    if (!strncmp(*arg, "-der", 4)) {
+    if (!strcmp(*arg, "-der")) {
       pem = false;
-    } else if (!strncmp(*arg, "-newkey", 6) && arg[1]) {
+    } else if (!strcmp(*arg, "-newkey") && arg[1]) {
       if (!strncmp(arg[1], "rsa:", 4)) {
         type = RSA_KEY_TYPE;
-        keySz = (unsigned int)atoi(arg[1] + 4);
-      } else if (!strncmp(arg[1], "ec", 2)) {
+        keySz = atoi(arg[1] + 4);
+      } else if (!strcmp(arg[1], "ec")) {
         type = EC_KEY_TYPE;
       } else {
         fprintf(stderr, "error: invalid algorithm\n");
         return 1;
       }
       arg++;
-    } else if (!strncmp(*arg, "-days", 5) && arg[1]) {
+    } else if (!strcmp(*arg, "-days") && arg[1]) {
       days = (unsigned int)atoi(arg[1]);
       arg++;
-    } else if (!strncmp(*arg, "-pkeyopt", 8) && arg[1]) {
+    } else if (!strcmp(*arg, "-pkeyopt") && arg[1]) {
       if (strncmp(arg[1], "ec_paramgen_curve:", 18)) {
         fprintf(stderr, "error: invalid pkey option: %s\n", arg[1]);
         return 1;
       }
-      if (!strncmp(arg[1] + 18, "P-256:", 5)) {
+      if (!strcmp(arg[1] + 18, "P-256")) {
         curve = ECC_SECP256R1;
-      } else if (!strncmp(arg[1] + 18, "P-384:", 5)) {
+      } else if (!strcmp(arg[1] + 18, "P-384")) {
         curve = ECC_SECP384R1;
-      } else if (!strncmp(arg[1] + 18, "P-521:", 5)) {
+      } else if (!strcmp(arg[1] + 18, "P-521")) {
         curve = ECC_SECP521R1;
       } else {
         fprintf(stderr, "error: invalid curve name: %s\n", arg[1] + 18);
         return 1;
       }
       arg++;
-    } else if (!strncmp(*arg, "-keyout", 7) && arg[1]) {
+    } else if (!strcmp(*arg, "-keyout") && arg[1]) {
       keypath = arg[1];
       arg++;
-    } else if (!strncmp(*arg, "-out", 4) && arg[1]) {
+    } else if (!strcmp(*arg, "-out") && arg[1]) {
       certpath = arg[1];
       arg++;
     } else if (!strcmp(*arg, "-subj") && arg[1]) {
@@ -281,7 +294,7 @@ int selfsigned(WC_RNG *rng, char **arg) {
   }
   pemSz = ret;
 
-  ret = write_file(pemBuf, pemSz, certpath);
+  ret = write_file(pemBuf, pemSz, certpath, true);
   if (ret != 0) {
     fprintf(stderr, "Write Cert failed: %d\n", ret);
     return ret;
@@ -306,25 +319,25 @@ int dokey(WC_RNG *rng, int type, char **arg) {
   bool pem = true;
 
   while (*arg && **arg == '-') {
-    if (!strncmp(*arg, "-out", 4) && arg[1]) {
+    if (!strcmp(*arg, "-out") && arg[1]) {
       path = arg[1];
       arg++;
-    } else if (!strncmp(*arg, "-3", 2)) {
+    } else if (!strcmp(*arg, "-3")) {
       exp = 3;
-    } else if (!strncmp(*arg, "-der", 4)) {
+    } else if (!strcmp(*arg, "-der")) {
       pem = false;
     }
     arg++;
   }
 
   if (*arg && type == RSA_KEY_TYPE) {
-    keySz = (unsigned int)atoi(*arg);
+    keySz = atoi(*arg);
   } else if (*arg) {
-    if (!strncmp(*arg, "P-256", 5)) {
+    if (!strcmp(*arg, "P-256")) {
       curve = ECC_SECP256R1;
-    } else if (!strncmp(*arg, "P-384", 5)) {
+    } else if (!strcmp(*arg, "P-384")) {
       curve = ECC_SECP384R1;
-    } else if (!strncmp(*arg, "P-521", 5)) {
+    } else if (!strcmp(*arg, "P-521")) {
       curve = ECC_SECP521R1;
     } else {
       fprintf(stderr, "Invalid Curve Name: %s\n", *arg);
@@ -356,13 +369,13 @@ int main(int argc, char *argv[]) {
   }
 
   if (argv[1]) {
-    if (!strncmp(argv[1], "eckey", 5))
+    if (!strcmp(argv[1], "eckey"))
       return dokey(&rng, EC_KEY_TYPE, argv + 2);
 
-    if (!strncmp(argv[1], "rsakey", 5))
+    if (!strcmp(argv[1], "rsakey"))
       return dokey(&rng, RSA_KEY_TYPE, argv + 2);
 
-    if (!strncmp(argv[1], "selfsigned", 10))
+    if (!strcmp(argv[1], "selfsigned"))
       return selfsigned(&rng, argv + 2);
   }
 

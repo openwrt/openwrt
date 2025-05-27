@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,eap613-v1", "mediatek,mt7621-soc";
+	model = "TP-Link EAP613 v1";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: status {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <20000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "partition-table";
+				reg = <0x80000 0x10000>;
+				read-only;
+			};
+
+			partition@90000 {
+				label = "product-info";
+				reg = <0x90000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr: macaddr@8 {
+						reg = <0x8 0x6>;
+					};
+				};
+			};
+
+			partition@a0000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0xa0000 0xcf0000>;
+			};
+
+			partition@d90000 {
+				label = "user-config";
+				reg = <0xd90000 0x60000>;
+				read-only;
+			};
+
+			partition@f30000 {
+				label = "mutil-log";
+				reg = <0xf30000 0x80000>;
+				read-only;
+			};
+
+			partition@fb0000 {
+				label = "oops";
+				reg = <0xfb0000 0x40000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "radio";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0xe00>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart3";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_radio_0>;
+		nvmem-cell-names = "eeprom";
+		mediatek,disable-radar-background;
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};

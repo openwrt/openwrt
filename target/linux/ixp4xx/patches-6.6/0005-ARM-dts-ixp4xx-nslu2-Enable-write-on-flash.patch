@@ -1,0 +1,25 @@
+From 89eccb6726d93c9c78997e91bd641b0e46bc3c5f Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 8 Sep 2023 12:49:48 +0200
+Subject: [PATCH] ARM: dts: ixp4xx-nslu2: Enable write on flash
+
+To upgrade the firmware and similar, the flash needs write
+access.
+
+Link: https://lore.kernel.org/r/20230908-ixp4xx-dts-v1-1-98d36264ed6d@linaro.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts
++++ b/arch/arm/boot/dts/intel/ixp/intel-ixp42x-linksys-nslu2.dts
+@@ -101,6 +101,8 @@
+ 			flash@0,0 {
+ 				compatible = "intel,ixp4xx-flash", "cfi-flash";
+ 				bank-width = <2>;
++				/* Enable writes on the expansion bus */
++				intel,ixp4xx-eb-write-enable = <1>;
+ 				/*
+ 				 * 8 MB of Flash in 0x20000 byte blocks
+ 				 * mapped in at CS0.

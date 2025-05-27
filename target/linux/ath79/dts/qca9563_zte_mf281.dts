@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Copyright (c) 2021 Cezary Jackiewicz
+// Copyright (c) 2021, 2022 Lech Perczak
+// Copyright (c) 2022 David Bauer <mail@david-bauer.net>
+
+#include "qca9563_zte_mf28x.dtsi"
+
+/ {
+	model = "ZTE MF281";
+	compatible = "zte,mf281", "qca,qca9563";
+
+	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_wlan_led_gpio>;
+	};
+};
+
+&led_debug {
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+&boot_flash {
+	partitions {
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0xa0000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-boot-env";
+			reg = <0xa0000 0x20000>;
+			read-only;
+		};
+	};
+};
+
+&system_flash {
+	partitions {
+		partition@0 {
+			label = "fota-flag";
+			reg = <0x000000 0xa0000>;
+			read-only;
+		};
+
+		partition@a0000 {
+			label = "art";
+			reg = <0xa0000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_caldata_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_caldata_5000: cal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
+			};
+		};
+
+		partition@120000 {
+			label = "mac";
+			reg = <0x120000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mac_0: macaddr@0 {
+					compatible = "mac-base";
+					reg = <0x0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@1a0000 {
+			label = "reserved2";
+			reg = <0x1a0000 0xc0000>;
+			read-only;
+		};
+
+		partition@260000 {
+			label = "cfg-param";
+			reg = <0x260000 0x400000>;
+			read-only;
+		};
+
+		partition@660000 {
+			label = "log";
+			reg = <0x660000 0x400000>;
+			read-only;
+		};
+
+		partition@a60000 {
+			label = "oops";
+			reg = <0xa60000 0xa0000>;
+			read-only;
+		};
+
+		partition@b00000 {
+			label = "reserved3";
+			reg = <0xb00000 0x500000>;
+			read-only;
+		};
+
+		partition@1000000 {
+			label = "web";
+			reg = <0x1000000 0x800000>;
+			read-only;
+		};
+
+		partition@1800000 {
+			label = "firmware";
+			reg = <0x1800000 0x1d00000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x600000>;
+			};
+
+			partition@600000 {
+				label = "ubi";
+				reg = <0x600000 0x1700000>;
+			};
+		};
+
+		partition@3500000 {
+			label = "data";
+			reg = <0x3500000 0x1900000>;
+			read-only;
+		};
+
+		partition@4e00000 {
+			label = "fota";
+			reg = <0x4e00000 0x3200000>;
+			read-only;
+		};
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_mac_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi_ath10k {
+	nvmem-cells = <&macaddr_mac_0 1>, <&cal_caldata_5000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
+};
+
+&pinmux {
+	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
+	};
+};
+
+&wmac {
+	nvmem-cells = <&macaddr_mac_0 0>, <&cal_caldata_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};

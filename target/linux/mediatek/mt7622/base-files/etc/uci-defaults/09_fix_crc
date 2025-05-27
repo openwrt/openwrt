@@ -7,4 +7,8 @@ buffalo,wsr-2533dhp2)
 	mtd -M 0x44485032 ${kernel_size:+-c 0x$kernel_size} fixtrx firmware && exit 0
 	exit 1
 	;;
+buffalo,wsr-3200ax4s)
+	mtd -M 0x44485033 ${kernel_size:+-c 0x$kernel_size} fixtrx firmware && exit 0
+	exit 1
+	;;
 esac

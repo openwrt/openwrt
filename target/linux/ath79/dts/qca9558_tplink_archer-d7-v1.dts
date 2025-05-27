@@ -11,6 +11,15 @@
 	};
 };
 
+&pcie1 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_romfs_f100 2>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};
+
 &spi {
 	status = "okay";
 
@@ -48,10 +57,22 @@
 				read-only;
 			};
 
-			romfs: partition@fd0000 {
+			partition@fd0000 {
 				label = "romfs";
 				reg = <0xfd0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfs_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@fe0000 {
@@ -60,38 +81,40 @@
 				read-only;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_romfs_f100>;
+	nvmem-cells = <&macaddr_romfs_f100 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
-	nvmem-cells = <&macaddr_romfs_f100>;
+	nvmem-cells = <&macaddr_romfs_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_romfs_f100>;
-	nvmem-cell-names = "mac-address";
-};
-
-&romfs {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_romfs_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
+	nvmem-cells = <&macaddr_romfs_f100 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };

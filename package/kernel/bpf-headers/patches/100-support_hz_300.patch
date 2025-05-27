@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2988,6 +2988,9 @@ choice
+@@ -2820,6 +2820,9 @@ choice
  	config HZ_256
  		bool "256 HZ" if SYS_SUPPORTS_256HZ || SYS_SUPPORTS_ARBIT_HZ
  
@@ -10,7 +10,7 @@
  	config HZ_1000
  		bool "1000 HZ" if SYS_SUPPORTS_1000HZ || SYS_SUPPORTS_ARBIT_HZ
  
-@@ -3039,6 +3042,7 @@ config HZ
+@@ -2871,6 +2874,7 @@ config HZ
  	default 128 if HZ_128
  	default 250 if HZ_250
  	default 256 if HZ_256

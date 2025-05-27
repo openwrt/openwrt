@@ -1,0 +1,35 @@
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -2779,7 +2779,11 @@ static int MEI_InitModuleRegCharDev(cons
+             ("Using major number %d" MEI_DRV_CRLF, MAJOR(mei_devt)));
+       }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
+       mei_class = class_create(THIS_MODULE, devName);
++#else
++      mei_class = class_create(devName);
++#endif
+       if (IS_ERR(mei_class))
+       {
+          PRN_DBG_USR_NL( MEI_DRV,MEI_DRV_PRN_LEVEL_HIGH,
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.c
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.c
+@@ -223,7 +223,7 @@ IFX_int32_t MEI_TcRequest(void *data)
+       pMeiDynCntrl->pDfeX        = NULL;
+       pMeiDynCntrl->pMeiDev      = pMeiDev;
+ 
+-      argsTcRequest.request_type = request_type;
++      argsTcRequest.request_type = (MEI_TC_RequestType_t)request_type;
+       argsTcRequest.is_bonding = MEI_BND_EnableGet(pMeiDynCntrl);
+ 
+       if (MEI_DFEX_ENTITIES == 1 && argsTcRequest.is_bonding == IFX_TRUE)
+@@ -398,7 +398,8 @@ IFX_int32_t MEI_InternalLineTCModeSwitch
+       pMeiDynCntrl->pDfeX        = NULL;
+       pMeiDynCntrl->pMeiDev      = MEIX_Cntrl[nEntity]->MeiDevice[nInstance];
+ 
+-      argsTcRequest.request_type = bPowerUp ? MEI_TC_REQUEST_PTM : MEI_TC_REQUEST_OFF;
++      argsTcRequest.request_type = bPowerUp ? (MEI_TC_RequestType_t)MEI_TC_REQUEST_PTM :
++                                              (MEI_TC_RequestType_t)MEI_TC_REQUEST_OFF;
+       argsTcRequest.is_bonding   = pMeiDynCntrl->pMeiDev->bLastBondingStatus;
+ 
+       retVal = MEI_InternalTcRequest(pMeiDynCntrl, &argsTcRequest);

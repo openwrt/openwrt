@@ -11,17 +11,11 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-ethernet = &led_ethernet_green;
-		led-internet = &led_internet_green;
-		led-usb = &led_usb1_green;
-		led-usb2 = &led_usb2_green;
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		wlan {
 			label = "wlan";
@@ -48,14 +42,16 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_dsl_green: led@28 {
+		led-28 {
 			label = "green:dsl";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_red: led@34 {
-			label = "red:power";
+		led_power_red: led-34 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			panic-indicator;
 		};
 	};
 };
@@ -82,7 +78,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_leds &pinctrl_serial_led>;
 
-	led_internet_green: led@1 {
+	led@1 {
 		reg = <1>;
 		active-low;
 		label = "green:internet";
@@ -90,22 +86,24 @@
 
 	led_power_green: led@8 {
 		reg = <8>;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@9 {
 		reg = <9>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
-	led_usb1_green: led@10 {
+	led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:usb1";
 	};
 
-	led_usb2_green: led@11 {
+	led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:usb2";
@@ -117,7 +115,7 @@
 		label = "amber:internet";
 	};
 
-	led_ethernet_green: led@13 {
+	led@13 {
 		reg = <13>;
 		active-low;
 		label = "green:ethernet";
@@ -148,6 +146,57 @@
 	};
 };
 
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53125";
+		reg = <30>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port4>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
 &nflash {
 	status = "okay";
 
@@ -158,21 +207,35 @@
 		nand-ecc-strength = <15>;
 		nand-on-flash-bbt;
 
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cferom: partition@0 {
+			partition@0 {
 				label = "cferom";
 				reg = <0x0000000 0x0004000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
 			};
 
 			partition@4000 {
 				compatible = "brcm,wfi";
 				label = "wfi";
 				reg = <0x0004000 0x1c7c000>;
+				brcm,cferam = "cfe";
 			};
 
 			partition@1c80000 {
@@ -224,8 +287,10 @@
 };
 
 &switch0 {
+	dsa,member = <0 0>;
+
 	ports {
-		port@4 {
+		switch0port4: port@4 {
 			reg = <4>;
 			label = "extsw";
 
@@ -245,14 +310,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cferom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cferom_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

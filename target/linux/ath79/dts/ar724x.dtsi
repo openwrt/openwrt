@@ -24,6 +24,13 @@
 		};
 	};
 
+	extosc: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <40000000>;
+	};
+
 	ahb: ahb {
 		apb {
 			ddr_ctrl: memory-controller@18000000 {
@@ -52,8 +59,6 @@
 						"qca,ar7100-gpio";
 				reg = <0x18040000 0x28>;
 				interrupts = <2>;
-
-				ngpios = <18>;
 
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -89,8 +94,8 @@
 				compatible = "qca,ar7240-pll", "syscon";
 				reg = <0x18050000 0x3c>;
 
+				clocks = <&extosc>;
 				clock-names = "ref";
-				/* The board must provides the ref clock */
 
 				#clock-cells = <1>;
 				clock-output-names = "cpu", "ddr", "ahb";
@@ -114,7 +119,7 @@
 				#reset-cells = <1>;
 			};
 
-			pcie: pcie-controller@180c0000 {
+			pcie: pcie@180c0000 {
 				compatible = "qcom,ar7240-pci";
 				#address-cells = <3>;
 				#size-cells = <2>;

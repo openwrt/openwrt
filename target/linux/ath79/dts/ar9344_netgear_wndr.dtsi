@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -48,12 +49,14 @@
 		pinctrl-0 = <&enable_gpio_11>;
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -71,12 +74,14 @@
 		};
 
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wps_amber {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -90,7 +95,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			ubi@ac0000 {
+			ubi@0 {
 				label = "ubi";
 				reg = <0x0 0x7500000>;
 			};
@@ -127,6 +132,28 @@
 			label = "caldata";
 			reg = <0x80000 0x40000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_caldata_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_caldata_c: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+
+				cal_art_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_art_5000: cal@5000 {
+					reg = <0x5000 0x440>;
+				};
+			};
 		};
 
 		partition@c0000 {
@@ -149,22 +176,23 @@
 			reg = <0x3c0000 0x300000>;
 		};
 
-		kernel@6c0000 {
-			label = "kernel";
-			reg = <0x6c0000 0x400000>;
-		};
-
-		ubiconcat0: partition@ac0000 {
-			label = "ubiconcat0";
-			reg = <0xac0000 0x1500000>;
-		};
-
 		partition@6c0000 {
 			label = "firmware";
 			reg = <0x6c0000 0x1900000>;
-			compatible = "openwrt,uimage", "denx,uimage";
-			openwrt,ih-magic = <0x33373033>;
-			openwrt,ih-type = <IH_TYPE_FILESYSTEM>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			kernel@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			ubiconcat0: partition@400000 {
+				label = "ubiconcat0";
+				reg = <0x400000 0x1500000>;
+			};
 		};
 
 		partition@1fc0000 {
@@ -191,8 +219,6 @@
 
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
@@ -245,9 +271,8 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_caldata_0>;
-	nvmem-cell-names = "mac-address";
-	qca,no-eeprom;
+	nvmem-cells = <&macaddr_caldata_0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &pcie {
@@ -256,24 +281,9 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_caldata_c>;
-		nvmem-cell-names = "mac-address";
-		qca,no-eeprom;
+		nvmem-cells = <&macaddr_caldata_c>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
-	};
-};
-
-&caldata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_caldata_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_caldata_c: macaddr@c {
-		reg = <0xc 0x6>;
 	};
 };

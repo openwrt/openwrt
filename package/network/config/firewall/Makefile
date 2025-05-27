@@ -9,17 +9,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firewall3.git
-PKG_SOURCE_DATE:=2022-02-17
-PKG_SOURCE_VERSION:=4cd7d4f36bea731bf901cb067456f1d460294926
-PKG_MIRROR_HASH:=307baf09c61ce727b4edb4283144b0d8128ebba34b858cc6389571421f829a24
+PKG_SOURCE_DATE:=2024-10-18
+PKG_SOURCE_VERSION:=1aef9791a21e3d15d4357060f09a7bb9ed3d6e4e
+PKG_MIRROR_HASH:=61a4f03a34edf5bf25c13b7ae04e4be40ecbaebff77b9f2d1e730dcaa2c77143
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
 PKG_CONFIG_DEPENDS := CONFIG_IPV6
+
+PKG_BUILD_FLAGS:=gc-sections lto
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -42,8 +44,6 @@ define Package/firewall/conffiles
 /etc/firewall.user
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
-TARGET_LDFLAGS += -Wl,--gc-sections -flto
 CMAKE_OPTIONS += $(if $(CONFIG_IPV6),,-DDISABLE_IPV6=1)
 
 define Package/firewall/install

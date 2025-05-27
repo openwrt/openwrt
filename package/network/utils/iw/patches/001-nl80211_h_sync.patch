@@ -1,137 +1,98 @@
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -301,29 +301,6 @@
-  */
- 
- /**
-- * DOC: FILS shared key crypto offload
-- *
-- * This feature is applicable to drivers running in AP mode.
-- *
-- * FILS shared key crypto offload can be advertised by drivers by setting
-- * @NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD flag. The drivers that support
-- * FILS shared key crypto offload should be able to encrypt and decrypt
-- * association frames for FILS shared key authentication as per IEEE 802.11ai.
-- * With this capability, for FILS key derivation, drivers depend on userspace.
-- *
-- * After FILS key derivation, userspace shares the FILS AAD details with the
-- * driver and the driver stores the same to use in decryption of association
-- * request and in encryption of association response. The below parameters
-- * should be given to the driver in %NL80211_CMD_SET_FILS_AAD.
-- *	%NL80211_ATTR_MAC - STA MAC address, used for storing FILS AAD per STA
-- *	%NL80211_ATTR_FILS_KEK - Used for encryption or decryption
-- *	%NL80211_ATTR_FILS_NONCES - Used for encryption or decryption
-- *			(STA Nonce 16 bytes followed by AP Nonce 16 bytes)
-- *
-- * Once the association is done, the driver cleans the FILS AAD data.
-- */
--
--/**
-  * enum nl80211_commands - supported nl80211 commands
+@@ -2061,6 +2061,10 @@ enum nl80211_commands {
+  * @NL80211_ATTR_INTERFACE_COMBINATIONS: Nested attribute listing the supported
+  *	interface combinations. In each nested item, it contains attributes
+  *	defined in &enum nl80211_if_combination_attrs.
++ *	If the wiphy uses multiple radios (@NL80211_ATTR_WIPHY_RADIOS is set),
++ *	this attribute contains the interface combinations of the first radio.
++ *	See @NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS for the global wiphy
++ *	combinations for the sum of all radios.
+  * @NL80211_ATTR_SOFTWARE_IFTYPES: Nested attribute (just like
+  *	%NL80211_ATTR_SUPPORTED_IFTYPES) containing the interface types that
+  *	are managed in software: interfaces of these types aren't subject to
+@@ -2856,6 +2860,17 @@ enum nl80211_commands {
+  *	%NL80211_CMD_ASSOCIATE indicating the SPP A-MSDUs
+  *	are used on this connection
   *
-  * @NL80211_CMD_UNSPEC: unspecified command to catch errors
-@@ -1226,12 +1203,6 @@
-  * @NL80211_CMD_COLOR_CHANGE_COMPLETED: Notify userland that the color change
-  *	has completed
-  *
-- * @NL80211_CMD_SET_FILS_AAD: Set FILS AAD data to the driver using -
-- *	&NL80211_ATTR_MAC - for STA MAC address
-- *	&NL80211_ATTR_FILS_KEK - for KEK
-- *	&NL80211_ATTR_FILS_NONCES - for FILS Nonces
-- *		(STA Nonce 16 bytes followed by AP Nonce 16 bytes)
-- *
-  * @NL80211_CMD_MAX: highest used command number
-  * @__NL80211_CMD_AFTER_LAST: internal use
-  */
-@@ -1472,8 +1443,6 @@ enum nl80211_commands {
- 	NL80211_CMD_COLOR_CHANGE_ABORTED,
- 	NL80211_CMD_COLOR_CHANGE_COMPLETED,
- 
--	NL80211_CMD_SET_FILS_AAD,
--
- 	/* add new commands above here */
- 
- 	/* used to define NL80211_CMD_MAX below */
-@@ -2639,6 +2608,9 @@ enum nl80211_commands {
-  *	Mandatory parameter for the transmitting interface to enable MBSSID.
-  *	Optional for the non-transmitting interfaces.
-  *
-+ * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
-+ *	transmit power to stay within regulatory limits. u32, dBi.
++ * @NL80211_ATTR_WIPHY_RADIOS: Nested attribute describing physical radios
++ *	belonging to this wiphy. See &enum nl80211_wiphy_radio_attrs.
++ *
++ * @NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS: Nested attribute listing the
++ *	supported interface combinations for all radios combined. In each
++ *	nested item, it contains attributes defined in
++ *	&enum nl80211_if_combination_attrs.
++ *
++ * @NL80211_ATTR_VIF_RADIO_MASK: Bitmask of allowed radios (u32).
++ *	A value of 0 means all radios.
 + *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3145,6 +3117,8 @@ enum nl80211_attrs {
- 	NL80211_ATTR_MBSSID_CONFIG,
- 	NL80211_ATTR_MBSSID_ELEMS,
+@@ -3401,6 +3416,11 @@ enum nl80211_attrs {
  
-+	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+ 	NL80211_ATTR_ASSOC_SPP_AMSDU,
+ 
++	NL80211_ATTR_WIPHY_RADIOS,
++	NL80211_ATTR_WIPHY_INTERFACE_COMBINATIONS,
++
++	NL80211_ATTR_VIF_RADIO_MASK,
 +
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -4978,7 +4952,6 @@ enum nl80211_txrate_gi {
-  * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 69.12 GHz)
-  * @NL80211_BAND_6GHZ: around 6 GHz band (5.9 - 7.2 GHz)
-  * @NL80211_BAND_S1GHZ: around 900MHz, supported by S1G PHYs
-- * @NL80211_BAND_LC: light communication band (placeholder)
-  * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
-  *	since newer kernel versions may support more bands
-  */
-@@ -4988,7 +4961,6 @@ enum nl80211_band {
- 	NL80211_BAND_60GHZ,
- 	NL80211_BAND_6GHZ,
- 	NL80211_BAND_S1GHZ,
--	NL80211_BAND_LC,
- 
- 	NUM_NL80211_BANDS,
+@@ -7987,4 +8007,54 @@ enum nl80211_ap_settings_flags {
+ 	NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT	= 1 << 1,
  };
-@@ -6046,11 +6018,6 @@ enum nl80211_feature_flags {
-  * @NL80211_EXT_FEATURE_BSS_COLOR: The driver supports BSS color collision
-  *	detection and change announcemnts.
-  *
-- * @NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD: Driver running in AP mode supports
-- *	FILS encryption and decryption for (Re)Association Request and Response
-- *	frames. Userspace has to share FILS AAD details to the driver by using
-- *	@NL80211_CMD_SET_FILS_AAD.
-- *
-  * @NUM_NL80211_EXT_FEATURES: number of extended features.
-  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
-  */
-@@ -6116,7 +6083,6 @@ enum nl80211_ext_feature_index {
- 	NL80211_EXT_FEATURE_SECURE_RTT,
- 	NL80211_EXT_FEATURE_PROT_RANGE_NEGO_AND_MEASURE,
- 	NL80211_EXT_FEATURE_BSS_COLOR,
--	NL80211_EXT_FEATURE_FILS_CRYPTO_OFFLOAD,
  
- 	/* add new features before the definition below */
- 	NUM_NL80211_EXT_FEATURES,
-@@ -7424,7 +7390,7 @@ enum nl80211_sar_specs_attrs {
-  * @NL80211_MBSSID_CONFIG_ATTR_MAX_EMA_PROFILE_PERIODICITY: Used by the kernel
-  *	to advertise the maximum profile periodicity supported by the driver
-  *	if EMA is enabled. Driver should indicate EMA support to the userspace
-- *	by setting wiphy->ema_max_profile_periodicity to
-+ *	by setting wiphy->mbssid_max_ema_profile_periodicity to
-  *	a non-zero value.
-  *
-  * @NL80211_MBSSID_CONFIG_ATTR_INDEX: Mandatory parameter to pass the index of
-@@ -7443,7 +7409,7 @@ enum nl80211_sar_specs_attrs {
-  *
-  * @NL80211_MBSSID_CONFIG_ATTR_EMA: Flag used to enable EMA AP feature.
-  *	Setting this flag is permitted only if the driver advertises EMA support
-- *	by setting wiphy->ema_max_profile_periodicity to non-zero.
-+ *	by setting wiphy->mbssid_max_ema_profile_periodicity to non-zero.
-  *
-  * @__NL80211_MBSSID_CONFIG_ATTR_LAST: Internal
-  * @NL80211_MBSSID_CONFIG_ATTR_MAX: highest attribute
---- a/info.c
-+++ b/info.c
-@@ -701,7 +701,6 @@ broken_combination:
- 		ext_feat_print(tb, OPERATING_CHANNEL_VALIDATION, "Operating Channel Validation (OCV) support");
- 		ext_feat_print(tb, 4WAY_HANDSHAKE_AP_PSK, "AP mode PSK offload support");
- 		ext_feat_print(tb, BSS_COLOR, "BSS coloring support");
--		ext_feat_print(tb, FILS_CRYPTO_OFFLOAD, "FILS crypto offload");
- 	}
- 
- 	if (tb_msg[NL80211_ATTR_COALESCE_RULE]) {
++/**
++ * enum nl80211_wiphy_radio_attrs - wiphy radio attributes
++ *
++ * @__NL80211_WIPHY_RADIO_ATTR_INVALID: Invalid
++ *
++ * @NL80211_WIPHY_RADIO_ATTR_INDEX: Index of this radio (u32)
++ * @NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE: Frequency range supported by this
++ *	radio. Attribute may be present multiple times.
++ * @NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION: Supported interface
++ *	combination for this radio. Attribute may be present multiple times
++ *	and contains attributes defined in &enum nl80211_if_combination_attrs.
++ *
++ * @__NL80211_WIPHY_RADIO_ATTR_LAST: Internal
++ * @NL80211_WIPHY_RADIO_ATTR_MAX: Highest attribute
++ */
++enum nl80211_wiphy_radio_attrs {
++	__NL80211_WIPHY_RADIO_ATTR_INVALID,
++
++	NL80211_WIPHY_RADIO_ATTR_INDEX,
++	NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
++	NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION,
++
++	/* keep last */
++	__NL80211_WIPHY_RADIO_ATTR_LAST,
++	NL80211_WIPHY_RADIO_ATTR_MAX = __NL80211_WIPHY_RADIO_ATTR_LAST - 1,
++};
++
++/**
++ * enum nl80211_wiphy_radio_freq_range - wiphy radio frequency range
++ *
++ * @__NL80211_WIPHY_RADIO_FREQ_ATTR_INVALID: Invalid
++ *
++ * @NL80211_WIPHY_RADIO_FREQ_ATTR_START: Frequency range start (u32).
++ *	The unit is kHz.
++ * @NL80211_WIPHY_RADIO_FREQ_ATTR_END: Frequency range end (u32).
++ *	The unit is kHz.
++ *
++ * @__NL80211_WIPHY_RADIO_FREQ_ATTR_LAST: Internal
++ * @NL80211_WIPHY_RADIO_FREQ_ATTR_MAX: Highest attribute
++ */
++enum nl80211_wiphy_radio_freq_range {
++	__NL80211_WIPHY_RADIO_FREQ_ATTR_INVALID,
++
++	NL80211_WIPHY_RADIO_FREQ_ATTR_START,
++	NL80211_WIPHY_RADIO_FREQ_ATTR_END,
++
++	__NL80211_WIPHY_RADIO_FREQ_ATTR_LAST,
++	NL80211_WIPHY_RADIO_FREQ_ATTR_MAX = __NL80211_WIPHY_RADIO_FREQ_ATTR_LAST - 1,
++};
++
+ #endif /* __LINUX_NL80211_H */

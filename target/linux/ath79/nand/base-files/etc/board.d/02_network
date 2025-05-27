@@ -8,7 +8,7 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	aerohive,hiveap-121|\
-	glinet,gl-e750)
+	meraki,mr18)
 		ucidef_set_interface_lan "eth0"
 		;;
 	domywifi,dw33d)
@@ -25,10 +25,27 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
 		;;
+	glinet,gl-e750|\
+	zte,mf282)
+		ucidef_set_interface_lan "eth0"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	glinet,gl-xe300)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "4:lan"
+		;;
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
+		;;
+	linksys,ea4500-v3)
+		ucidef_add_switch "switch0" \
+			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+		;;
+	netgear,pgzng1)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	netgear,r6100)
 		ucidef_set_interface_wan "eth1"
@@ -49,6 +66,10 @@ ath79_setup_interfaces()
 	netgear,wndr4300tn)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
+	zte,mf281)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "5:lan"
 		;;
 	zte,mf286|\
 	zte,mf286a|\
@@ -76,6 +97,14 @@ ath79_setup_macs()
 	dongwon,dw02-412h-128m)
 		wan_mac=$(mtd_get_mac_binary art 0x0)
 		label_mac=$wan_mac
+		;;
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
+		wan_mac=$(mtd_get_mac_binary art 0x0)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	meraki,mr18)
+		lan_mac=$(mtd_get_mac_binary_ubi board-config 102)
 		;;
 	netgear,wndr3700-v4|\
 	netgear,wndr4300|\

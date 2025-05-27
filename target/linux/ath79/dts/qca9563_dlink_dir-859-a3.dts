@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9563_dlink_dir-8x9-a1.dtsi"
+
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "dlink,dir-859-a3", "qca,qca9563";
+	model = "D-Link DIR-859 A3";
+
+	aliases {
+		label-mac-device = &wmac;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ath10k {
+	nvmem-cells = <&calibration_ath10k>, <&macaddr_bdcfg_ethaddr 2>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&bdcfg {
+	macaddr_bdcfg_ethaddr: ethaddr {
+		#nvmem-cell-cells = <1>;
+	};
+};
+
+&wmac {
+	nvmem-cells = <&calibration_ath9k>, <&macaddr_bdcfg_ethaddr 0>;
+	nvmem-cell-names = "calibration", "mac-address";
+};

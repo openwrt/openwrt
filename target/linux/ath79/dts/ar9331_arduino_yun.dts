@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Arduino Yun";
@@ -49,15 +50,17 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
-			label = "white:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
-			trigger-sources = <&hub_port1>;
+			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
 		};
 	};
@@ -125,22 +128,8 @@
 &usb {
 	status = "okay";
 
-	#address-cells = <1>;
-	#size-cells = <0>;
 	dr_mode = "host";
 	vbus-supply = <&reg_usb_vbus>;
-
-	port@1 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <1>;
-		#trigger-source-cells = <0>;
-
-		hub_port1: port@1 {
-			reg = <1>;
-			#trigger-source-cells = <0>;
-		};
-	};
 };
 
 &usb_phy {
@@ -182,10 +171,20 @@
 				reg = <0xfe0000 0x10000>;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -204,5 +203,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };

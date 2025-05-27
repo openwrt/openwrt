@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "iodata,wn-dx1200gr", "mediatek,mt7621-soc";
@@ -14,19 +15,21 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-		label-mac-device = &wan;
+		label-mac-device = &gmac1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -58,6 +61,11 @@
 &nand {
 	status = "okay";
 
+	mediatek,bbt;
+	mediatek,bmt-remap-range =
+		<0x0000000 0x0800000>,
+		<0x3600000 0x4980000>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -75,9 +83,31 @@
 			read-only;
 		};
 
-		factory: partition@200000 {
+		partition@200000 {
 			label = "factory";
 			reg = <0x200000 0x200000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_1e000: macaddr@1e000 {
+					reg = <0x1e000 0x6>;
+				};
+
+				macaddr_factory_1e006: macaddr@1e006 {
+					reg = <0x1e006 0x6>;
+				};
+			};
 		};
 
 		partition@400000 {
@@ -131,15 +161,21 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_1e006>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
 &switch0 {
 	ports {
-		wan: port@0 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_1e006>;
-			nvmem-cell-names = "mac-address";
-		};
-
 		port@1 {
 			status = "okay";
 			label = "lan4";
@@ -170,9 +206,10 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		ieee80211-freq-limit = <2400000 2500000>;
+
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -180,9 +217,10 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
+
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -195,18 +233,4 @@
 
 &xhci {
 	status = "disabled";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_1e000: macaddr@1e000 {
-		reg = <0x1e000 0x6>;
-	};
-
-	macaddr_factory_1e006: macaddr@1e006 {
-		reg = <0x1e006 0x6>;
-	};
 };

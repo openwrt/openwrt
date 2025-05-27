@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_mikrotik_routerboard-951x-2hnd.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-951ui-2hnd", "qca,ar9344";
+	model = "Mikrotik RouterBOARD 951Ui-2HnD";
+
+	/delete-node/ leds;
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_user: user {
+			label = "green:user";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		port1 {
+			label = "green:port1";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		port2 {
+			label = "green:port2";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		port3 {
+			label = "green:port3";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		port4 {
+			label = "green:port4";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		port5 {
+			label = "green:port5";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_poe_power {
+			gpio-export,name = "rb951ui2hnd:power:poe";
+			gpio-export,output = <1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_usb_power {
+			gpio-export,name = "rb951ui2hnd:power:usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&eth0 {
+	phy-handle = <&swphy4>;
+
+	/delete-node/ gmac-config;
+};
+
+&eth1 {
+	compatible = "qca,ar9340-eth", "syscon";
+};
+
+&wmac {
+	qca,led-pin = /bits/ 8 <11>;
+};

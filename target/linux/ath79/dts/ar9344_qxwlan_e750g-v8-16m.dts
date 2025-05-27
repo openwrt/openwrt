@@ -10,8 +10,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0>;
-
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "rgmii";
@@ -33,7 +31,7 @@
 
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
-	nvmem-cells = <&macaddr_pridata_400>;
+	nvmem-cells = <&macaddr_pridata_400 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";
@@ -45,15 +43,5 @@
 		compatible = "denx,uimage";
 		label = "firmware";
 		reg = <0x070000 0xf90000>;
-	};
-};
-
-&pridata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_pridata_400: macaddr@400 {
-		reg = <0x400 0x6>;
 	};
 };

@@ -1,0 +1,214 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TP-Link RE365 v1";
+	compatible = "tplink,re365-v1", "mediatek,mt7628an-soc";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &ethernet;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-led {
+			label = "led";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+		};
+
+		button-power {
+			label = "power";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-lan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: led-power {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led-rssi-bad {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+			gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-rssi-good {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			gpios = <&gpio 42 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-wlan2g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <5>;
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0>, <&fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_config_10008 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			fwconcat0: partition@20000 {
+				label = "fwconcat0";
+				reg = <0x20000 0x5e0000>;
+			};
+
+			partition@600000 {
+				label = "config";
+				reg = <0x600000 0x50000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_10008: macaddr@10008 {
+						compatible = "mac-base";
+						reg = <0x10008 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			fwconcat1: partition@650000 {
+				label = "fwconcat1";
+				reg = <0x650000 0x1a0000>;
+			};
+
+			partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "refclk", "wdt", "p0led_an", "p1led_an", "p2led_an", "p3led_an",
+			"p4led_an";
+		function = "gpio";
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_10008 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};

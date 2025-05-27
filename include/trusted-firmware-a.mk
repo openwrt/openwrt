@@ -1,9 +1,9 @@
 PKG_NAME ?= trusted-firmware-a
-PKG_CPE_ID ?= cpe:/a:arm:arm_trusted_firmware
+PKG_CPE_ID ?= cpe:/a:arm:trusted_firmware-a
 
 ifndef PKG_SOURCE_PROTO
 PKG_SOURCE = trusted-firmware-a-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.trustedfirmware.org/TF-A/trusted-firmware-a.git/snapshot
+PKG_SOURCE_URL:=https://codeload.github.com/TrustedFirmware-A/trusted-firmware-a/tar.gz/v$(PKG_VERSION)?
 endif
 
 PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -63,21 +63,27 @@ define Build/Trusted-Firmware-A/Target
     URL:=https://www.trustedfirmware.org/projects/tf-a/
   endef
 
-  define Package/trusted-firmware-a-$(1)/install
+  ifndef Package/trusted-firmware-a-$(1)/install
+    define Package/trusted-firmware-a-$(1)/install
 	$$(Package/trusted-firmware-a/install)
-  endef
+    endef
+  endif
 endef
 
 define Build/Configure/Trusted-Firmware-A
 	$(INSTALL_DIR) $(STAGING_DIR)/usr/include
 endef
 
+DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+
 define Build/Compile/Trusted-Firmware-A
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		OPENSSL_DIR=$(STAGING_DIR_HOST) \
+		$(if $(DTC),DTC="$(DTC)") \
 		PLAT=$(PLAT) \
 		BUILD_STRING="OpenWrt v$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
+		$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments") \
 		$(TFA_MAKE_FLAGS)
 endef
 

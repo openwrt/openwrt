@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -1055,6 +1055,7 @@ struct ath_softc {
+@@ -1057,6 +1057,7 @@ struct ath_softc {
  	struct list_head leds;
  #ifdef CONFIG_GPIOLIB
  	struct ath9k_gpio_chip *gpiochip;
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #ifdef CPTCFG_MAC80211_LEDS
  
-@@ -133,6 +135,67 @@ static void ath9k_unregister_gpio_chip(s
+@@ -129,6 +131,67 @@ static void ath9k_unregister_gpio_chip(s
  	sc->gpiochip = NULL;
  }
  
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #else /* CONFIG_GPIOLIB */
  
  static inline void ath9k_register_gpio_chip(struct ath_softc *sc)
-@@ -143,6 +206,14 @@ static inline void ath9k_unregister_gpio
+@@ -139,6 +202,14 @@ static inline void ath9k_unregister_gpio
  {
  }
  
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif /* CONFIG_GPIOLIB */
  
  /********************************/
-@@ -266,6 +337,7 @@ void ath_deinit_leds(struct ath_softc *s
+@@ -262,6 +333,7 @@ void ath_deinit_leds(struct ath_softc *s
  {
  	struct ath_led *led;
  
@@ -120,7 +120,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	while (!list_empty(&sc->leds)) {
  		led = list_first_entry(&sc->leds, struct ath_led, list);
  #ifdef CONFIG_GPIOLIB
-@@ -305,6 +377,7 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -301,6 +373,7 @@ void ath_init_leds(struct ath_softc *sc)
  	}
  
  	ath_fill_led_pin(sc);
@@ -128,16 +128,3 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (pdata && pdata->leds && pdata->num_leds)
  		for (i = 0; i < pdata->num_leds; i++) {
---- a/include/linux/ath9k_platform.h
-+++ b/include/linux/ath9k_platform.h
-@@ -49,6 +49,10 @@ struct ath9k_platform_data {
- 
- 	int num_leds;
- 	const struct gpio_led *leds;
-+
-+	unsigned num_btns;
-+	const struct gpio_keys_button *btns;
-+	unsigned btn_poll_interval;
- };
- 
- #endif /* _LINUX_ATH9K_PLATFORM_H */

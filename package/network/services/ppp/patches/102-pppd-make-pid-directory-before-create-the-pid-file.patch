@@ -1,0 +1,27 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 4 Oct 2024 14:02:14 +0000
+Subject: [PATCH] pppd: make pid directory before create the pid file
+
+If multilink feature is not enabled, the '/var/run/pppd' directory
+won't be created before adding pid file.
+
+Fixes error message:
+'Failed to create pid file /var/run/pppd/pppoe-wan.pid: No such file or directory'
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ pppd/main.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/pppd/main.c
++++ b/pppd/main.c
+@@ -921,6 +921,9 @@ create_pidfile(int pid)
+ {
+     FILE *pidfile;
+ 
++#ifndef PPP_WITH_TDB
++    mkdir_recursive(PPP_PATH_VARRUN);
++#endif
+     slprintf(pidfilename, sizeof(pidfilename), "%s/%s.pid",
+ 	     PPP_PATH_VARRUN, ifname);
+     if ((pidfile = fopen(pidfilename, "w")) != NULL) {

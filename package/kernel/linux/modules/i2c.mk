@@ -84,13 +84,27 @@ endef
 $(eval $(call KernelPackage,i2c-algo-pcf))
 
 
+I2C_CCGS_UCSI_MODULES:= \
+  CONFIG_I2C_CCGX_UCSI:drivers/i2c/busses/i2c-ccgx-ucsi
+
+define KernelPackage/i2c-ccgs-ucsi
+  $(call i2c_defaults,$(I2C_CCGS_UCSI_MODULES),58)
+  TITLE:=Cypress CCGx Type-C controller
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-core
+  HIDDEN:=y
+endef
+
+
+$(eval $(call KernelPackage,i2c-ccgs-ucsi))
+
+
 I2C_DWCORE_MODULES:= \
   CONFIG_I2C_DESIGNWARE_CORE:drivers/i2c/busses/i2c-designware-core
 
 define KernelPackage/i2c-designware-core
   $(call i2c_defaults,$(I2C_DWCORE_MODULES),58)
   TITLE:=Synopsys DesignWare I2C core
-  DEPENDS:=+kmod-i2c-core +!LINUX_5_4:kmod-regmap-core
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-core
   HIDDEN:=y
 endef
 
@@ -103,7 +117,7 @@ I2C_DWPCI_MODULES:= \
 define KernelPackage/i2c-designware-pci
   $(call i2c_defaults,$(I2C_DWPCI_MODULES),59)
   TITLE:=Synopsys DesignWare PCI
-  DEPENDS:=+kmod-i2c-designware-core
+  DEPENDS:=@PCI_SUPPORT +kmod-i2c-designware-core +kmod-i2c-ccgs-ucsi
 endef
 
 define KernelPackage/i2c-designware-pci/description
@@ -155,6 +169,24 @@ endef
 $(eval $(call KernelPackage,i2c-i801))
 
 
+I2C_MLXCPLD_MODULES:= \
+  CONFIG_I2C_MLXCPLD:drivers/i2c/busses/i2c-mlxcpld
+
+define KernelPackage/i2c-mlxcpld
+  $(call i2c_defaults,$(I2C_MLXCPLD_MODULES),59)
+  TITLE:=Mellanox I2C driver
+  DEPENDS:=@TARGET_x86_64 +kmod-regmap-core
+endef
+
+define KernelPackage/i2c-mlxcpld/description
+ This exposes the Mellanox platform I2C busses
+ to the linux I2C layer for X86 based systems.
+ Controller is implemented as CPLD logic.
+endef
+
+$(eval $(call KernelPackage,i2c-mlxcpld))
+
+
 I2C_MUX_MODULES:= \
   CONFIG_I2C_MUX:drivers/i2c/i2c-mux
 
@@ -184,6 +216,40 @@ define KernelPackage/i2c-mux-gpio/description
 endef
 
 $(eval $(call KernelPackage,i2c-mux-gpio))
+
+
+I2C_MUX_MLXCPLD_MODULES:= \
+  CONFIG_I2C_MUX_MLXCPLD:drivers/i2c/muxes/i2c-mux-mlxcpld
+
+define KernelPackage/i2c-mux-mlxcpld
+  $(call i2c_defaults,$(I2C_MUX_MLXCPLD_MODULES),51)
+  TITLE:=Mellanox CPLD based I2C multiplexer
+  DEPENDS:=+kmod-i2c-mlxcpld +kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-mlxcpld/description
+ This driver provides access to
+ I2C busses connected through a MUX, which is controlled
+ by a CPLD register.
+endef
+
+$(eval $(call KernelPackage,i2c-mux-mlxcpld))
+
+
+I2C_MUX_REG_MODULES:= \
+  CONFIG_I2C_MUX_REG:drivers/i2c/muxes/i2c-mux-reg
+
+define KernelPackage/i2c-mux-reg
+  $(call i2c_defaults,$(I2C_MUX_REG_MODULES),51)
+  TITLE:=Register-based I2C mux/switches
+  DEPENDS:=+kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-reg/description
+ Kernel modules for register-based I2C bus mux/switching devices
+endef
+
+$(eval $(call KernelPackage,i2c-mux-reg))
 
 
 I2C_MUX_PCA9541_MODULES:= \

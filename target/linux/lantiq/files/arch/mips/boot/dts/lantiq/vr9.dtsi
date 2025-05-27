@@ -447,8 +447,13 @@
 
 				port@6 {
 					reg = <0x6>;
-					label = "cpu";
+					phy-mode = "internal";
 					ethernet = <&eth0>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
 				};
 			};
 
@@ -523,7 +528,7 @@
 			reg = <0xd900000 0x1000>;
 
 			interrupt-parent = <&icu0>;
-			interrupts = <161 144>;
+			interrupts = <161 144 145 146 147>;
 
 			phys = <&pcie0_phy LANTIQ_PCIE_PHY_MODE_36MHZ>;
 			phy-names = "pcie";
@@ -555,6 +560,8 @@
 			req-mask = <0x1>; /* GNT1 */
 
 			device_type = "pci";
+
+			resets = <&reset0 13 13>;
 		};
 	};
 

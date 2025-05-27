@@ -1,4 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
+RAMFS_COPY_BIN='fitblk'
 
 # Legacy full system upgrade including preloader for MediaTek SoCs on eMMC or SD
 legacy_mtk_mmc_full_upgrade() {
@@ -83,11 +84,7 @@ platform_do_upgrade() {
 	case "$board" in
 	bananapi,bpi-r2|\
 	unielec,u7623-02)
-		export_bootdevice
-		export_partdevice fitpart 3
-		[ "$fitpart" ] || return 1
-		EMMC_KERN_DEV="/dev/$fitpart"
-		emmc_do_upgrade "$1"
+		fit_do_upgrade "$1"
 		;;
 	unielec,u7623-02-emmc-512m)
 		local magic="$(get_magic_long "$1")"

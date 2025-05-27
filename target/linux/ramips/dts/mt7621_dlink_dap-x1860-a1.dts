@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "dlink,dap-x1860-a1", "mediatek,mt7621-soc";
+	model = "D-Link DAP-X1860 A1";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		power_orange {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		rssihigh {
+			label = "green:rssihigh";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		rssimedium {
+			label = "green:rssimedium";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		rssilow_orange {
+			label = "orange:rssilow";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+
+		rssilow_green {
+			label = "green:rssilow";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	mediatek,nmbm;
+	/* rsvd = Remapping Range / NAND Erase-Size */
+	/* rsvd = 0x800000 / 0x20000 */
+	mediatek,bmt-max-reserved-blocks = <64>;
+	/* Remapping should include raw-nand we operate upon without UBI layer. */
+	/* This includes (at least) the kernel which has to be loaded by U-Boot.*/
+	mediatek,bmt-remap-range =
+		<0x0 0x980000>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "config";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
+		};
+
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x0800000>;
+		};
+
+		fwconcat0: partition@980000 {
+			label = "fwconcat0";
+			reg = <0x980000 0x2c00000>;
+		};
+
+		partition@3580000 {
+			label = "manufacture";
+			reg = <0x3580000 0x400000>;
+			read-only;
+		};
+
+		partition@3980000 {
+			label = "storage";
+			reg = <0x3980000 0x680000>;
+			read-only;
+		};
+
+		fwconcat1: partition@4000000 {
+			label = "fwconcat1";
+			reg = <0x4000000 0x3800000>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+	};
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	gpio-controller;
+	#gpio-cells = <2>;
+
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart2";
+		function = "gpio";
+	};
+};

@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	aliases {
+		serial0 = &uart0;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 swiotlb=512";
+	};
+
+	cpus {
+		cpu@0 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+
+		cpu@1 {
+			proc-supply = <&mt6380_vcpu_reg>;
+			sram-supply = <&mt6380_vm_reg>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+		};
+
+		button-wps {
+			gpios = <&pio 102 GPIO_ACTIVE_LOW>;
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x40000000>;
+	};
+};
+
+&bch {
+	status = "okay";
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		phy-mode = "2500base-x";
+		reg = <0>;
+		nvmem-cells = <&macaddr_odm 1>;
+		nvmem-cell-names = "mac-address";
+		fixed-link {
+			full-duplex;
+			pause;
+			speed = <2500>;
+		};
+	};
+
+	mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		switch: switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
+			reset-gpios = <&pio 54 0>;
+
+			ports {
+				wan: port@4 {
+					reg = <4>;
+					label = "wan";
+					nvmem-cells = <&macaddr_odm 0>;
+					nvmem-cell-names = "mac-address";
+				};
+
+				port@6 {
+					reg = <6>;
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "okay";
+};
+
+&pio {
+	epa_elna_pins: epa-elna-pins {
+		mux {
+			function = "antsel";
+			groups = "antsel0", "antsel1", "antsel2", "antsel3",
+				"antsel4", "antsel5", "antsel6", "antsel7",
+				"antsel8", "antsel9", "antsel12", "antsel13",
+				"antsel14", "antsel15", "antsel16", "antsel17";
+		};
+	};
+
+	eth_pins: eth-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio", "rgmii_via_gmac2";
+		};
+	};
+
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pad_perst",
+				 "pcie0_1_waken",
+				 "pcie0_1_clkreq";
+		};
+	};
+
+	pcie1_pins: pcie1-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie1_pad_perst",
+				 "pcie1_0_waken",
+				 "pcie1_0_clkreq";
+		};
+	};
+
+	pmic_bus_pins: pmic-bus-pins {
+		mux {
+			function = "pmic";
+			groups = "pmic_bus";
+		};
+	};
+
+	/* Serial NAND is shared pin with SPI-NOR */
+	serial_nand_pins: serial-nand-pins {
+		mux {
+			function = "flash";
+			groups = "snfi";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_0_tx_rx";
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&pwrap {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_bus_pins>;
+	status = "okay";
+};
+
+&rtc {
+	status = "disabled";
+};
+
+&sata {
+	status = "disabled";
+};
+
+&sata_phy {
+	status = "disabled";
+};
+
+&slot0 {
+	wmac1: mt7915@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		mediatek,mtd-eeprom = <&factory 0x05000>;
+		nvmem-cells = <&macaddr_odm 3>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial_nand_pins>;
+	status = "okay";
+
+	snand: flash@0 {
+		compatible = "spi-nand";
+		mediatek,bmt-table-size = <0x1000>;
+		mediatek,bmt-v2;
+		nand-ecc-engine = <&snfi>;
+		reg = <0>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Preloader";
+				reg = <0x00000000 0x00080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "ATF";
+				reg = <0x00080000 0x00040000>;
+				read-only;
+			};
+
+			partition@C0000 {
+				label = "Bootloader";
+				reg = <0x000C0000 0x00080000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "BootConfig";
+				reg = <0x00140000 0x00040000>;
+			};
+
+			partition@180000 {
+				label = "Odm";
+				reg = <0x00180000 0x00040000>;
+				read-only;
+				odm_partition: nvmem-layout {
+					compatible = "fixed-layout";
+				};
+			};
+
+			config1: partition@1C0000 {
+				compatible = "nvmem-cells";
+				label = "Config1";
+				reg = <0x001C0000 0x00080000>;
+				read-only;
+			};
+
+			partition@240000 {
+				label = "Config2";
+				reg = <0x00240000 0x00080000>;
+				read-only;
+			};
+
+			partition@2C0000 {
+				label = "Kernel1";
+				reg = <0x002C0000 0x02D00000>;
+
+				compatible = "denx,fit";
+				openwrt,cmdline-match = "boot_part=Kernel1";
+				partition@0 {
+					label = "kernel";
+					reg = <0x00000000 0x00800000>;
+				};
+
+				partition@800000 {
+					label = "ubi";
+					reg = <0x00800000 0x02500000>;
+				};
+			};
+
+			partition@2FC0000 {
+				label = "Kernel2";
+				reg = <0x02FC0000 0x02D00000>;
+
+				compatible = "denx,fit";
+				openwrt,cmdline-match = "boot_part=Kernel2";
+				partition@0 {
+					label = "kernel";
+					reg = <0x00000000 0x00800000>;
+				};
+
+				partition@800000 {
+					label = "ubi";
+					reg = <0x00800000 0x02500000>;
+				};
+			};
+
+			factory: partition@5CC0000 {
+				label = "Factory";
+				reg = <0x05CC0000 0x00100000>;
+				read-only;
+			};
+
+			partition@5DC0000 {
+				label = "Mydlink";
+				reg = <0x05DC0000 0x00200000>;
+				read-only;
+			};
+
+			partition@5FC0000 {
+				label = "Storage";
+				reg = <0x05FC0000 0x00300000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ssusb {
+	status = "disabled";
+};
+
+&u3phy {
+	status = "disabled";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	pinctrl-names = "default";
+	pinctrl-0 = <&epa_elna_pins>;
+	mediatek,mtd-eeprom = <&factory 0x0000>;
+	nvmem-cells = <&macaddr_odm 2>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+

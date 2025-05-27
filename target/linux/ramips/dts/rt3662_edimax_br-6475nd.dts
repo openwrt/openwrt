@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -16,8 +17,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -37,12 +37,14 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "amber:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
@@ -74,16 +76,40 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
-				reg = <0x00040000 0x00010000>;
+			partition@40000 {
 				label = "factory";
+				reg = <0x00040000 0x00010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+				};
 			};
 
-			devdata: partition@50000 {
-				reg = <0x00050000 0x00020000>;
+			partition@50000 {
 				label = "devdata";
+				reg = <0x00050000 0x00020000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_devdata_d: macaddr@d {
+						reg = <0xd 0x6>;
+					};
+				};
 			};
 
 			partition@70000 {
@@ -100,7 +126,7 @@
 		compatible = "realtek,rtl8367";
 		gpio-sda = <&gpio0 5 GPIO_ACTIVE_HIGH>;
 		gpio-sck = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
+		realtek,extif = <9 1 0 1 1 1 1 1 1 2>;
 	};
 
 	/*
@@ -148,8 +174,8 @@
 };
 
 &wmac {
-	status = "okay";
-	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pci {
@@ -163,7 +189,8 @@
 		compatible = "pci0,0";
 		reg = <0x10000 0 0 0 0>;
 		ralink,5ghz = <0>;
-		ralink,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -173,14 +200,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&devdata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_devdata_d: macaddr@d {
-		reg = <0xd 0x6>;
-	};
 };

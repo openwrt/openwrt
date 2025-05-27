@@ -19,9 +19,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  signkey.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
---- a/signkey.c
-+++ b/signkey.c
-@@ -646,8 +646,12 @@ int buf_verify(buffer * buf, sign_key *k
+--- a/src/signkey.c
++++ b/src/signkey.c
+@@ -652,10 +652,18 @@ int buf_verify(buffer * buf, sign_key *k
  	sigtype = signature_type_from_name(type_name, type_name_len);
  	m_free(type_name);
  
@@ -29,10 +29,16 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
 -			dropbear_exit("Non-matching signing type");
 +	if (sigtype == DROPBEAR_SIGNATURE_NONE) {
 +		dropbear_exit("No signature type");
-+	}
-+
-+	if ((expect_sigtype != DROPBEAR_SIGNATURE_RSA_SHA256) && (expect_sigtype != sigtype)) {
-+		dropbear_exit("Non-matching signing type");
  	}
  
++#if DROPBEAR_RSA
++#if DROPBEAR_RSA_SHA256
++	if ((expect_sigtype != DROPBEAR_SIGNATURE_RSA_SHA256) && (expect_sigtype != sigtype)) {
++		dropbear_exit("Non-matching signing type");
++	}
++#endif
++#endif
++
  	keytype = signkey_type_from_signature(sigtype);
+ #if DROPBEAR_DSS
+ 	if (keytype == DROPBEAR_SIGNKEY_DSS) {

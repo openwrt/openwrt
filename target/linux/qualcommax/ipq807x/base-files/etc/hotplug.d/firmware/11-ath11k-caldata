@@ -1,0 +1,133 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ8074/hw2.0/cal-ahb-c000000.wifi.bin")
+	case "$board" in
+	asus,rt-ax89x)
+		CI_UBIPART="UBI_DEV"
+		caldata_extract_ubi "Factory" 0x1000 0x20000
+		;;
+	arcadyan,aw1000|\
+	buffalo,wxr-5950ax12|\
+	cmcc,rm2-6|\
+	compex,wpq873|\
+	dynalink,dl-wrx36|\
+	edgecore,eap102|\
+	edimax,cax1800|\
+	linksys,mx5300|\
+	netgear,wax218|\
+	qnap,301w|\
+	redmi,ax6|\
+	xiaomi,ax3600|\
+	xiaomi,ax9000|\
+	yuncore,ax880|\
+	zte,mf269)
+		caldata_extract "0:art" 0x1000 0x20000
+		;;
+	linksys,mx4200v1|\
+	linksys,mx8500)
+		caldata_extract "0:art" 0x1000 0x20000
+		ath11k_remove_regdomain
+		;;
+	linksys,mx4200v2)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 2
+		ath11k_remove_regdomain
+		ath11k_set_macflag
+		;;
+	linksys,mx4300)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 2
+		ath11k_remove_regdomain
+		;;
+	netgear,rax120v2)
+		caldata_extract "0:art" 0x1000 0x20000
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0xc) 0
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x0) 1
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x6) 2
+		ath11k_set_macflag
+		;;
+	netgear,sxr80|\
+	netgear,sxs80)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x0c) 0
+		#boarddata1 doesn't have a MAC for the 2G interface
+		ath11k_patch_mac $(macaddr_setbit_la $label_mac) 1
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x12) 2
+		ath11k_set_macflag
+		;;
+	netgear,wax620)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -31) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_set_macflag
+		;;
+	netgear,wax630)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -31) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 33) 2
+		ath11k_set_macflag
+		;;
+	prpl,haze|\
+	spectrum,sax1v1k)
+		caldata_extract_mmc "0:ART" 0x1000 0x20000
+		;;
+	tplink,eap660hd-v1)
+		caldata_from_file "/tmp/factory_data/radio" 0 0x20000
+		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		ath11k_patch_mac $label_mac 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_set_macflag
+		;;
+	zbtlink,zbt-z800ax)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac -1) 0
+		ath11k_patch_mac $(macaddr_add $label_mac -2) 1
+		ath11k_set_macflag
+		;;
+	zyxel,nbg7815)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
+		;;
+	esac
+	;;
+"ath11k/QCN9074/hw1.0/cal-pci-0000:01:00.0.bin"|\
+"ath11k/QCN9074/hw1.0/cal-pci-0001:01:00.0.bin")
+	case "$board" in
+	linksys,mx8500)
+		caldata_extract "0:art" 0x26800 0x20000
+		ath11k_remove_regdomain
+		;;
+	prpl,haze)
+		caldata_extract_mmc "0:ART" 0x26800 0x20000
+		;;
+	xiaomi,ax9000)
+		caldata_extract "0:art" 0x26800 0x20000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

@@ -1,0 +1,86 @@
+From: Jakub Sitnicki <jakub@cloudflare.com>
+Date: Thu, 8 Aug 2024 11:56:22 +0200
+Subject: [PATCH] udp: Fall back to software USO if IPv6 extension headers are
+ present
+
+In commit 10154dbded6d ("udp: Allow GSO transmit from devices with no
+checksum offload") we have intentionally allowed UDP GSO packets marked
+CHECKSUM_NONE to pass to the GSO stack, so that they can be segmented and
+checksummed by a software fallback when the egress device lacks these
+features.
+
+What was not taken into consideration is that a CHECKSUM_NONE skb can be
+handed over to the GSO stack also when the egress device advertises the
+tx-udp-segmentation / NETIF_F_GSO_UDP_L4 feature.
+
+This will happen when there are IPv6 extension headers present, which we
+check for in __ip6_append_data(). Syzbot has discovered this scenario,
+producing a warning as below:
+
+  ip6tnl0: caps=(0x00000006401d7869, 0x00000006401d7869)
+  WARNING: CPU: 0 PID: 5112 at net/core/dev.c:3293 skb_warn_bad_offload+0x166/0x1a0 net/core/dev.c:3291
+  Modules linked in:
+  CPU: 0 PID: 5112 Comm: syz-executor391 Not tainted 6.10.0-rc7-syzkaller-01603-g80ab5445da62 #0
+  Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 06/07/2024
+  RIP: 0010:skb_warn_bad_offload+0x166/0x1a0 net/core/dev.c:3291
+  [...]
+  Call Trace:
+   <TASK>
+   __skb_gso_segment+0x3be/0x4c0 net/core/gso.c:127
+   skb_gso_segment include/net/gso.h:83 [inline]
+   validate_xmit_skb+0x585/0x1120 net/core/dev.c:3661
+   __dev_queue_xmit+0x17a4/0x3e90 net/core/dev.c:4415
+   neigh_output include/net/neighbour.h:542 [inline]
+   ip6_finish_output2+0xffa/0x1680 net/ipv6/ip6_output.c:137
+   ip6_finish_output+0x41e/0x810 net/ipv6/ip6_output.c:222
+   ip6_send_skb+0x112/0x230 net/ipv6/ip6_output.c:1958
+   udp_v6_send_skb+0xbf5/0x1870 net/ipv6/udp.c:1292
+   udpv6_sendmsg+0x23b3/0x3270 net/ipv6/udp.c:1588
+   sock_sendmsg_nosec net/socket.c:730 [inline]
+   __sock_sendmsg+0xef/0x270 net/socket.c:745
+   ____sys_sendmsg+0x525/0x7d0 net/socket.c:2585
+   ___sys_sendmsg net/socket.c:2639 [inline]
+   __sys_sendmmsg+0x3b2/0x740 net/socket.c:2725
+   __do_sys_sendmmsg net/socket.c:2754 [inline]
+   __se_sys_sendmmsg net/socket.c:2751 [inline]
+   __x64_sys_sendmmsg+0xa0/0xb0 net/socket.c:2751
+   do_syscall_x64 arch/x86/entry/common.c:52 [inline]
+   do_syscall_64+0xf3/0x230 arch/x86/entry/common.c:83
+   entry_SYSCALL_64_after_hwframe+0x77/0x7f
+   [...]
+   </TASK>
+
+We are hitting the bad offload warning because when an egress device is
+capable of handling segmentation offload requested by
+skb_shinfo(skb)->gso_type, the chain of gso_segment callbacks won't produce
+any segment skbs and return NULL. See the skb_gso_ok() branch in
+{__udp,tcp,sctp}_gso_segment helpers.
+
+To fix it, force a fallback to software USO when processing a packet with
+IPv6 extension headers, since we don't know if these can checksummed by
+all devices which offer USO.
+
+Fixes: 10154dbded6d ("udp: Allow GSO transmit from devices with no checksum offload")
+Reported-by: syzbot+e15b7e15b8a751a91d9a@syzkaller.appspotmail.com
+Closes: https://lore.kernel.org/all/000000000000e1609a061d5330ce@google.com/
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Signed-off-by: Jakub Sitnicki <jakub@cloudflare.com>
+Link: https://patch.msgid.link/20240808-udp-gso-egress-from-tunnel-v4-2-f5c5b4149ab9@cloudflare.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -283,6 +283,12 @@ struct sk_buff *__udp_gso_segment(struct
+ 		     !(skb_shinfo(gso_skb)->gso_type & SKB_GSO_FRAGLIST)))
+ 		return ERR_PTR(-EINVAL);
+ 
++	/* We don't know if egress device can segment and checksum the packet
++	 * when IPv6 extension headers are present. Fall back to software GSO.
++	 */
++	if (gso_skb->ip_summed != CHECKSUM_PARTIAL)
++		features &= ~(NETIF_F_GSO_UDP_L4 | NETIF_F_CSUM_MASK);
++
+ 	if (skb_gso_ok(gso_skb, features | NETIF_F_GSO_ROBUST)) {
+ 		/* Packet is from an untrusted source, reset gso_segs. */
+ 		skb_shinfo(gso_skb)->gso_segs = DIV_ROUND_UP(gso_skb->len - sizeof(*uh),

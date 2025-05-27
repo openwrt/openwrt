@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "cmcc,rax3000m", "mediatek,mt7981";
+
+	fragment@0 {
+		target = <&chosen>;
+		__overlay__ {
+			rootdisk = <&emmc_rootdisk>;
+		};
+	};
+
+	fragment@1 {
+		target = <&gmac0>;
+		__overlay__ {
+			nvmem-cells = <&macaddr_factory_2a 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+
+	fragment@2 {
+		target = <&gmac1>;
+		__overlay__ {
+			nvmem-cells = <&macaddr_factory_24 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+
+	fragment@3 {
+		target = <&mmc0>;
+		__overlay__ {
+			bus-width = <8>;
+			max-frequency = <26000000>;
+			no-sd;
+			no-sdio;
+			non-removable;
+			pinctrl-names = "default", "state_uhs";
+			pinctrl-0 = <&mmc0_pins_default>;
+			pinctrl-1 = <&mmc0_pins_uhs>;
+			vmmc-supply = <&reg_3p3v>;
+			status = "okay";
+
+			card@0 {
+				compatible = "mmc-card";
+				reg = <0>;
+
+				block {
+					compatible = "block-device";
+
+					partitions {
+						block-partition-factory {
+							partname = "factory";
+
+							nvmem-layout {
+								compatible = "fixed-layout";
+								#address-cells = <1>;
+								#size-cells = <1>;
+
+								eeprom_factory_0: eeprom@0 {
+									reg = <0x0 0x1000>;
+								};
+
+								macaddr_factory_24: macaddr@24 {
+									compatible = "mac-base";
+									reg = <0x24 0x6>;
+									#nvmem-cell-cells = <1>;
+								};
+
+								macaddr_factory_2a: macaddr@2a {
+									compatible = "mac-base";
+									reg = <0x2a 0x6>;
+									#nvmem-cell-cells = <1>;
+								};
+							};
+						};
+
+						emmc_rootdisk: block-partition-production {
+							partname = "production";
+						};
+					};
+				};
+			};
+		};
+	};
+
+	fragment@4 {
+		target = <&pio>;
+		__overlay__ {
+			mmc0_pins_default: mmc0-pins {
+				mux {
+					function = "flash";
+					groups = "emmc_45";
+				};
+			};
+
+			mmc0_pins_uhs: mmc0-uhs-pins {
+				mux {
+					function = "flash";
+					groups = "emmc_45";
+				};
+			};
+		};
+	};
+
+	fragment@5 {
+		target = <&wifi>;
+		__overlay__ {
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+		};
+	};
+};

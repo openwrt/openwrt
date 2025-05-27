@@ -1,6 +1,7 @@
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "arcadyan,arv7525pw", "lantiq,xway", "lantiq,danube";
@@ -45,12 +46,14 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power1 {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
@@ -66,7 +69,8 @@
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -122,6 +126,20 @@
 				label = "board_config";
 				reg = <0x3f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+
+					eeprom_boardconfig_410: eeprom@410 {
+						reg = <0x410 0x200>;
+					};
+				};
 			};
 		};
 	};
@@ -138,21 +156,12 @@
 	wifi@0,0 {
 		compatible = "pci0,0";
 		reg = <0x7000 0 0 0 0>;
-		ralink,mtd-eeprom = <&boardconfig 0x410>;
+		nvmem-cells = <&eeprom_boardconfig_410>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &vmmc {
 	status = "okay";
 	gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

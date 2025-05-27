@@ -178,6 +178,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			hub_port: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		nand: nand@1b000200 {
@@ -191,9 +196,6 @@
 			reset-names = "nand";
 
 			nand-ecc-mode = "hw";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
 
 			status = "disabled";
 		};

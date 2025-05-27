@@ -1,0 +1,56 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_gemtek_wvrtm-1xxacn.dtsi"
+
+/ {
+	compatible = "gemtek,wvrtm-127acn", "mediatek,mt7621-soc";
+	model = "Gemtek WVRTM-127ACN";
+};
+
+&nvmem_layout {
+	eeprom_factory_8000: eeprom@8000 {
+		reg = <0x8000 0x200>;
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		ieee80211-freq-limit = <2400000 2500000>;
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
+	};
+};
+
+&ports {
+	port@2 {
+		status = "okay";
+		label = "lan2";
+	};
+
+	port@3 {
+		status = "okay";
+		label = "lan1";
+	};
+};

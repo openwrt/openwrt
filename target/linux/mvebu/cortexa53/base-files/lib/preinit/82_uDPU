@@ -8,13 +8,14 @@ preinit_mount_udpu() {
 	. /lib/upgrade/common.sh
 
 	case $(board_name) in
-	methode,udpu)
+	methode,udpu|\
+	methode,edpu)
 		# Check which device is detected
 		[ -b "/dev/mmcblk0" ] && mmcdev="/dev/mmcblk0" || mmcdev="/dev/mmcblk1"
 
 		if [ -b "${mmcdev}p4" ]; then
 			mkdir /misc
-			mount -t f2fs ${mmcdev}p4 /misc
+			mount -o compress_algorithm=zstd -t f2fs ${mmcdev}p4 /misc
 			[ -f "/misc/$BACKUP_FILE" ] && {
 				echo "- Restoring configuration files -"
 				tar xzf "/misc/$BACKUP_FILE" -C /

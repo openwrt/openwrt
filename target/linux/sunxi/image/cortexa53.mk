@@ -3,6 +3,8 @@
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
 
+KERNEL_LOADADDR:=0x40008000
+
 define Device/sun50i
   SUNXI_DTS_DIR := allwinner/
   KERNEL_NAME := Image
@@ -21,6 +23,16 @@ endef
 
 define Device/sun50i-h6
   SOC := sun50i-h6
+  $(Device/sun50i)
+endef
+
+define Device/sun50i-h616
+  SOC := sun50i-h616
+  $(Device/sun50i)
+endef
+
+define Device/sun50i-h618
+  SOC := sun50i-h618
   $(Device/sun50i)
 endef
 
@@ -107,6 +119,20 @@ define Device/xunlong_orangepi-pc2
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += xunlong_orangepi-pc2
+
+define Device/xunlong_orangepi-zero2
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi Zero 2
+  $(Device/sun50i-h616)
+endef
+TARGET_DEVICES += xunlong_orangepi-zero2
+
+define Device/xunlong_orangepi-zero3
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi Zero 3
+  $(Device/sun50i-h618)
+endef
+TARGET_DEVICES += xunlong_orangepi-zero3
 
 define Device/xunlong_orangepi-zero-plus
   DEVICE_VENDOR := Xunlong

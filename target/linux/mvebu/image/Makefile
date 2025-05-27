@@ -53,6 +53,16 @@ define Build/buffalo-kernel-jffs2
 	rm -rf $(KDIR)/kernel_jffs2 $@.fakerd
 endef
 
+define Build/buffalo-kernel-ubifs
+	rm -rf $@-ubidir
+	mkdir -p $@-ubidir
+	mv $@ $@-ubidir/uImage.buffalo
+	touch $@
+	$(call Build/append-uImage-fakehdr, ramdisk)
+	mv $@ $@-ubidir/initrd.buffalo
+	$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(KERNEL_UBIFS_OPTS) -r $@-ubidir $@
+endef
+
 # Some info about Ctera firmware:
 # 1. It's simple tar file (GNU standard), but it must have ".firm" suffix.
 # 2. It contains two images: kernel and romdisk. Both are required.
@@ -124,17 +134,6 @@ define Build/sdcard-img-ext4
 		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
 		83 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.bootimg \
 		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
-endef
-
-define Build/omnia-medkit-initramfs
-	$(TAR) -c -T /dev/null -f $@
-	rm -rf $(dir $(IMAGE_KERNEL))boot
-	mkdir -p $(dir $(IMAGE_KERNEL))boot/boot/
-	cp $(KDIR)/zImage-initramfs $(dir $(IMAGE_KERNEL))boot/boot/zImage
-	cp $(KDIR)/image-$(DEVICE_DTS).dtb $(dir $(IMAGE_KERNEL))boot/boot/dtb
-	$(TAR) -rp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		--file=$@ -C $(dir $(IMAGE_KERNEL))boot/ .
 endef
 
 define Build/uDPU-firmware

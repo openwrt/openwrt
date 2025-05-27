@@ -31,8 +31,6 @@
 #include "ifxmips_ptm_ppe_common.h"
 #include "ifxmips_ptm_fw_regs_vdsl.h"
 
-#define INT_NUM_IM2_IRL24	(INT_NUM_IM2_IRL0 + 24)
-
 #define IFX_REG_W32(_v, _r)               __raw_writel((_v), (volatile unsigned int *)(_r))
 #define IFX_REG_R32(_r)                    __raw_readl((volatile unsigned int *)(_r))
 #define IFX_REG_W32_MASK(_clr, _set, _r)   IFX_REG_W32((IFX_REG_R32((_r)) & ~(_clr)) | (_set), (_r))
@@ -99,6 +97,7 @@ struct ptm_itf {
 
 struct ptm_priv_data {
     struct ptm_itf                  itf[MAX_ITF_NUMBER];
+    int                             irq;
 };
 
 
@@ -113,7 +112,7 @@ extern unsigned int ifx_ptm_dbg_enable;
 
 extern void ifx_ptm_get_fw_ver(unsigned int *major, unsigned int *mid, unsigned int *minor);
 
-extern void ifx_ptm_init_chip(struct platform_device *pdev);
+extern int ifx_ptm_init_chip(struct platform_device *pdev);
 extern void ifx_ptm_uninit_chip(void);
 
 extern int ifx_pp32_start(int pp32);

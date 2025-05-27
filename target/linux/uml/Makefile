@@ -12,12 +12,13 @@ ARCH:=x86_64
 BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=audio ext4 rootfs-part squashfs
+SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=5.10
+KERNEL_PATCHVER:=6.6
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-basic-wolfssl kmod-mac80211-hwsim mkf2fs e2fsprogs
+DEFAULT_PACKAGES += wpad-basic-mbedtls kmod-mac80211-hwsim mkf2fs e2fsprogs
 
   endif
 endif

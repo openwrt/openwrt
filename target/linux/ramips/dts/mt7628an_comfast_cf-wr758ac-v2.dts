@@ -6,3 +6,8 @@
 	compatible = "comfast,cf-wr758ac-v2", "mediatek,mt7628an-soc";
 	model = "COMFAST CF-WR758AC V2";
 };
+
+&eeprom_factory_8000 {
+	/* V2 has different eeprom size '0x4da8' for MT7613 */
+	reg = <0x8000 0x4da8>;
+};

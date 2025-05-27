@@ -1006,7 +1006,7 @@ static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
 {
 	struct mt7621_nfc *nfc = nand_get_controller_data(nand);
 	struct mtd_info *mtd = nand_to_mtd(nand);
-	int bitflips = 0;
+	int bitflips = 0, ret = 0;
 	int rc, i;
 
 	nand_read_page_op(nand, page, 0, NULL, 0);
@@ -1031,7 +1031,7 @@ static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
 		mt7621_nfc_read_sector_fdm(nfc, i);
 
 		if (rc < 0) {
-			bitflips = -EIO;
+			ret = -EIO;
 			continue;
 		}
 
@@ -1043,10 +1043,11 @@ static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
 			dev_dbg(nfc->dev,
 				 "Uncorrectable ECC error at page %d.%d\n",
 				 page, i);
-			bitflips = -EBADMSG;
+			bitflips = nand->ecc.strength + 1;
 			mtd->ecc_stats.failed++;
-		} else if (bitflips >= 0) {
-			bitflips += rc;
+		} else {
+			if (rc > bitflips)
+				bitflips = rc;
 			mtd->ecc_stats.corrected += rc;
 		}
 	}
@@ -1054,6 +1055,9 @@ static int mt7621_nfc_read_page_hwecc(struct nand_chip *nand, uint8_t *buf,
 	mt7621_ecc_decoder_op(nfc, false);
 
 	nfi_write16(nfc, NFI_CON, 0);
+
+	if (ret < 0)
+		return ret;
 
 	return bitflips;
 }
@@ -1244,7 +1248,6 @@ static int mt7621_nfc_init_chip(struct mt7621_nfc *nfc)
 	nand->ecc.write_oob_raw = mt7621_nfc_write_oob_raw;
 
 	mtd = nand_to_mtd(nand);
-	mtd->owner = THIS_MODULE;
 	mtd->dev.parent = nfc->dev;
 	mtd->name = MT7621_NFC_NAME;
 	mtd_set_ooblayout(mtd, &mt7621_nfc_ooblayout_ops);
@@ -1286,44 +1289,27 @@ static int mt7621_nfc_probe(struct platform_device *pdev)
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "nfi");
 	nfc->nfi_base = res->start;
 	nfc->nfi_regs = devm_ioremap_resource(dev, res);
-	if (IS_ERR(nfc->nfi_regs)) {
-		ret = PTR_ERR(nfc->nfi_regs);
-		return ret;
-	}
+	if (IS_ERR(nfc->nfi_regs))
+		return PTR_ERR(nfc->nfi_regs);
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ecc");
-	nfc->ecc_regs = devm_ioremap_resource(dev, res);
-	if (IS_ERR(nfc->ecc_regs)) {
-		ret = PTR_ERR(nfc->ecc_regs);
-		return ret;
-	}
+	nfc->ecc_regs = devm_platform_ioremap_resource_byname(pdev, "ecc");
+	if (IS_ERR(nfc->ecc_regs))
+		return PTR_ERR(nfc->ecc_regs);
 
-	nfc->nfi_clk = devm_clk_get(dev, "nfi_clk");
-	if (IS_ERR(nfc->nfi_clk)) {
+	nfc->nfi_clk = devm_clk_get_optional_enabled(dev, "nfi_clk");
+	if (IS_ERR(nfc->nfi_clk))
+		return PTR_ERR(nfc->nfi_clk);
+
+	if (!nfc->nfi_clk)
 		dev_warn(dev, "nfi clk not provided\n");
-		nfc->nfi_clk = NULL;
-	} else {
-		ret = clk_prepare_enable(nfc->nfi_clk);
-		if (ret) {
-			dev_err(dev, "Failed to enable nfi core clock\n");
-			return ret;
-		}
-	}
 
 	platform_set_drvdata(pdev, nfc);
 
 	ret = mt7621_nfc_init_chip(nfc);
-	if (ret) {
-		dev_err(dev, "Failed to initialize nand chip\n");
-		goto clk_disable;
-	}
+	if (ret)
+		return dev_err_probe(dev, ret, "Failed to initialize nand chip\n");
 
 	return 0;
-
-clk_disable:
-	clk_disable_unprepare(nfc->nfi_clk);
-
-	return ret;
 }
 
 static int mt7621_nfc_remove(struct platform_device *pdev)
@@ -1335,7 +1321,6 @@ static int mt7621_nfc_remove(struct platform_device *pdev)
 	mtk_bmt_detach(mtd);
 	mtd_device_unregister(mtd);
 	nand_cleanup(nand);
-	clk_disable_unprepare(nfc->nfi_clk);
 
 	return 0;
 }
@@ -1351,7 +1336,6 @@ static struct platform_driver mt7621_nfc_driver = {
 	.remove = mt7621_nfc_remove,
 	.driver = {
 		.name = MT7621_NFC_NAME,
-		.owner = THIS_MODULE,
 		.of_match_table = mt7621_nfc_id_table,
 	},
 };

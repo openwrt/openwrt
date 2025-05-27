@@ -8,6 +8,13 @@ include $(INCLUDE_DIR)/prereq.mk
 SHELL:=sh
 PKG_NAME:=Build dependency
 
+$(eval $(call TestHostCommand,true, \
+	Please install GNU 'coreutils', \
+	$(TRUE)))
+
+$(eval $(call TestHostCommand,false, \
+	Please install GNU 'coreutils', \
+	$(FALSE); [ $$$$$$$$? = 1 ] && $(TRUE)))
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \
@@ -25,34 +32,42 @@ $(eval $(call TestHostCommand,proper-umask, \
 
 ifndef IB
 $(eval $(call SetupHostCommand,gcc, \
-	Please install the GNU C Compiler (gcc) 6 or later, \
-	$(CC) -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
-	gcc -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
+	Please install the GNU C Compiler (gcc) 8 or later, \
+	$(CC) -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
+	gcc -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
+	gcc-8 -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	gcc --version | grep -E 'Apple.(LLVM|clang)' ))
 
 $(eval $(call TestHostCommand,working-gcc, \
-	Please reinstall the GNU C Compiler (6 or later) - \
+	Please reinstall the GNU C Compiler (8 or later) - \
 	it appears to be broken, \
 	echo 'int main(int argc, char **argv) { return 0; }' | \
-		gcc -x c -o $(TMP_DIR)/a.out -))
+		$(STAGING_DIR_HOST)/bin/gcc -x c -o $(TMP_DIR)/a.out -))
 
 $(eval $(call SetupHostCommand,g++, \
-	Please install the GNU C++ Compiler (g++) 6 or later, \
-	$(CXX) -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
-	g++ -dumpversion | grep -E '^([6-9]\.?|1[0-9]\.?)', \
+	Please install the GNU C++ Compiler (g++) 8 or later, \
+	$(CXX) -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
+	g++ -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
+	g++-8 -dumpversion | grep -E '^([8-9]\.?|1[0-9]\.?)', \
 	g++ --version | grep -E 'Apple.(LLVM|clang)' ))
 
 $(eval $(call TestHostCommand,working-g++, \
-	Please reinstall the GNU C++ Compiler (6 or later) - \
+	Please reinstall the GNU C++ Compiler (8 or later) - \
 	it appears to be broken, \
 	echo 'int main(int argc, char **argv) { return 0; }' | \
-		g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
+		$(STAGING_DIR_HOST)/bin/g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
 		$(TMP_DIR)/a.out))
 
-$(eval $(call TestHostCommand,ncurses, \
+$(eval $(call RequireCHeader,ncurses.h, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
-	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
-		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+	initscr(), -lncurses))
+
+$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
+	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
+	git submodule --help | grep -- --recursive))
+
+$(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
+	rsync --version </dev/null))
 endif # IB
 
 ifeq ($(HOST_OS),Linux)
@@ -80,6 +95,10 @@ $(eval $(call TestHostCommand,perl-file-compare, \
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
+
+$(eval $(call TestHostCommand,perl-ipc-cmd, \
+	Please install the Perl IPC:Cmd module, \
+	perl -MIPC::Cmd -e 1))
 
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
@@ -130,12 +149,20 @@ $(eval $(call SetupHostCommand,getopt, \
 	Please install an extended getopt version that supports --long, \
 	gnugetopt -o t --long test -- --test | grep '^ *--test *--', \
 	getopt -o t --long test -- --test | grep '^ *--test *--', \
-	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+	/usr/local/opt/gnu-getopt/bin/getopt -o t --long test -- --test | grep '^ *--test *--', \
+	/opt/local/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
+
+$(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
+	grealpath /, \
+	realpath /))
 
 $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
 	gnustat -c%s $(TOPDIR)/Makefile, \
 	gstat -c%s $(TOPDIR)/Makefile, \
 	stat -c%s $(TOPDIR)/Makefile))
+
+$(eval $(call SetupHostCommand,gzip,Please install 'gzip', \
+	gzip --version </dev/null))
 
 $(eval $(call SetupHostCommand,unzip,Please install 'unzip', \
 	unzip 2>&1 | grep zipfile, \
@@ -154,48 +181,64 @@ $(eval $(call SetupHostCommand,install,Please install GNU 'install', \
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
-$(eval $(call CleanupPython2))
-
-$(eval $(call SetupHostCommand,python,Please install Python >= 3.6, \
+$(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
+	python3.12 -V 2>&1 | grep 'Python 3', \
+	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
 	python3.8 -V 2>&1 | grep 'Python 3', \
 	python3.7 -V 2>&1 | grep 'Python 3', \
-	python3.6 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.([6-9]|10)\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
-$(eval $(call SetupHostCommand,python3,Please install Python >= 3.6, \
+$(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
+	python3.12 -V 2>&1 | grep 'Python 3', \
+	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
 	python3.8 -V 2>&1 | grep 'Python 3', \
 	python3.7 -V 2>&1 | grep 'Python 3', \
-	python3.6 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.([6-9]|10)\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
-	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
+	printf 'from sys import version_info\nif version_info < (3, 12):\n\tfrom distutils import util' | \
+		$(STAGING_DIR_HOST)/bin/python3 -))
 
-$(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
-	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))
+$(eval $(call TestHostCommand,python3-stdlib, \
+	Please install the Python3 stdlib module, \
+	$(STAGING_DIR_HOST)/bin/python3 -c 'import ntpath'))
 
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
-
-$(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
-	rsync --version </dev/null))
 
 $(eval $(call SetupHostCommand,which,Please install 'which', \
 	/usr/bin/which which, \
 	/bin/which which, \
 	which which))
 
+ifeq ($(HOST_OS),Linux)
+  $(eval $(call RequireCHeader,argp.h, \
+	Missing argp.h Please install the argp-standalone package if musl libc))
+
+  $(eval $(call RequireCHeader,fts.h, \
+	Missing fts.h Please install the musl-fts-dev package if musl libc))
+
+  $(eval $(call RequireCHeader,obstack.h, \
+	Missing obstack.h Please install the musl-obstack-dev package if musl libc))
+
+  $(eval $(call RequireCHeader,libintl.h, \
+	Missing libintl.h Please install the musl-libintl package if musl libc))
+endif
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
-prereq: $(STAGING_DIR_HOST)/bin/mkhash
+$(STAGING_DIR_HOST)/bin/xxd: $(SCRIPT_DIR)/xxdi.pl
+	$(LN) $< $@
+
+prereq: $(STAGING_DIR_HOST)/bin/mkhash $(STAGING_DIR_HOST)/bin/xxd
 
 # Install ldconfig stub
 $(eval $(call TestHostCommand,ldconfig-stub,Failed to install stub, \
-	$(LN) /bin/true $(STAGING_DIR_HOST)/bin/ldconfig))
+	$(LN) $(SCRIPT_DIR)/noop.sh $(STAGING_DIR_HOST)/bin/ldconfig))

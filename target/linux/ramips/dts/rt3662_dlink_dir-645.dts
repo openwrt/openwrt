@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,dir-645", "ralink,rt3662-soc", "ralink,rt3883-soc";
@@ -18,12 +19,11 @@
 		compatible = "realtek,rtl8367b";
 		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
+		realtek,extif = <6 1 0 1 1 1 1 1 1 2>;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -47,7 +47,8 @@
 		};
 
 		led_wps: wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -93,10 +94,24 @@
 				read-only;
 			};
 
-			factory: partition@34000 {
+			partition@34000 {
 				label = "factory";
 				reg = <0x34000 0x4000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
 			};
 
 			partition@38000 {
@@ -137,7 +152,8 @@
 
 &wmac {
 	ralink,5ghz = <0>;
-	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &ehci {
@@ -146,14 +162,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

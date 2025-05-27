@@ -10,8 +10,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs ramdisk pci usb
 CPU_TYPE:=octeonplus
 
-KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.6
 
 define Target/Description
 	Build firmware images for Cavium Networks Octeon-based boards.
@@ -19,6 +18,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += mkf2fs e2fsprogs
+DEFAULT_PACKAGES += mkf2fs e2fsprogs kmod-usb-dwc3-octeon
 
 $(eval $(call BuildTarget))

@@ -1,0 +1,112 @@
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+ipq807x_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	asus,rt-ax89x)
+		ucidef_set_interfaces_lan_wan "10g-sfp 10g-copper lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "wan"
+		;;
+	arcadyan,aw1000|\
+	buffalo,wxr-5950ax12|\
+	dynalink,dl-wrx36|\
+	linksys,mx5300|\
+	linksys,mx8500|\
+	xiaomi,ax9000|\
+	zbtlink,zbt-z800ax)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	cmcc,rm2-6)
+		ucidef_set_interfaces_lan_wan "lan plc" "wan"
+		;;
+	compex,wpq873|\
+	linksys,mx4200v1|\
+	linksys,mx4200v2|\
+	linksys,mx4300|\
+	prpl,haze|\
+	redmi,ax6|\
+	spectrum,sax1v1k|\
+	xiaomi,ax3600)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	edgecore,eap102|\
+	yuncore,ax880|\
+	zte,mf269)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	edimax,cax1800)
+		ucidef_set_interfaces_lan_wan "lan"
+		;;
+	netgear,rax120v2)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
+		;;
+	netgear,sxr80|\
+	netgear,sxs80)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
+	netgear,wax218|\
+	netgear,wax620)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
+	netgear,wax630)
+		ucidef_set_interface_lan "lan1 lan2" "dhcp"
+		;;
+	qnap,301w)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
+		;;
+	tplink,eap660hd-v1)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
+	zyxel,nbg7815)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
+		;;
+	*)
+		echo "Unsupported hardware. Network interfaces not initialized"
+		;;
+	esac
+}
+
+ipq807x_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+
+	case "$board" in
+		linksys,mx4200v2|\
+		linksys,mx4300)
+			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+			[ "$(mtd_get_mac_ascii u_env eth1addr)" != "$label_mac" ] && wan_mac=$label_mac
+			[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && lan_mac=$label_mac
+		;;
+		linksys,mx8500)
+			label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+			lan_mac=$(macaddr_add $label_mac 1)
+			wan_mac=$label_mac
+		;;
+		tplink,eap660hd-v1)
+			label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+			lan_mac=$label_mac
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+}
+
+board_config_update
+board=$(board_name)
+ipq807x_setup_interfaces $board
+ipq807x_setup_macs $board
+board_config_flush
+
+exit 0

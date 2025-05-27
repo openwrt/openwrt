@@ -1,0 +1,34 @@
+From 2b098da69f9497e725683caf67fbecf79202b7fc Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Fri, 22 Mar 2024 11:33:40 +0800
+Subject: [PATCH 112/116] riscv: dts: starfive: visionfive 2: Add aliases for
+ i2c* and uart3
+
+Fix the numbers of i2c and uart3.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ .../riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -15,7 +15,10 @@
+ 		ethernet0 = &gmac0;
+ 		ethernet1 = &gmac1;
+ 		i2c0 = &i2c0;
++		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
+ 		i2c5 = &i2c5;
+ 		i2c6 = &i2c6;
+ 		mmc0 = &mmc0;
+@@ -23,6 +26,7 @@
+ 		pcie0 = &pcie0;
+ 		pcie1 = &pcie1;
+ 		serial0 = &uart0;
++		serial3 = &uart3;
+ 	};
+ 
+ 	chosen {

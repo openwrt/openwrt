@@ -78,6 +78,7 @@ define Meson/CreateCrossFile
 	$(STAGING_DIR_HOST)/bin/sed \
 		-e "s|@CC@|$(foreach BIN,$(TARGET_CC),'$(BIN)',)|" \
 		-e "s|@CXX@|$(foreach BIN,$(TARGET_CXX),'$(BIN)',)|" \
+		-e "s|@LD@|$(foreach FLAG,$(TARGET_LINKER),'$(FLAG)',)|" \
 		-e "s|@AR@|$(TARGET_AR)|" \
 		-e "s|@STRIP@|$(TARGET_CROSS)strip|" \
 		-e "s|@NM@|$(TARGET_NM)|" \
@@ -97,7 +98,9 @@ endef
 define Host/Configure/Meson
 	$(call Meson/CreateNativeFile,$(HOST_BUILD_DIR)/openwrt-native.txt)
 	$(call Meson, \
+		setup \
 		--native-file $(HOST_BUILD_DIR)/openwrt-native.txt \
+		-Ddefault_library=static \
 		$(MESON_HOST_ARGS) \
 		$(MESON_HOST_BUILD_DIR) \
 		$(MESON_HOST_BUILD_DIR)/.., \
@@ -120,9 +123,11 @@ define Build/Configure/Meson
 	$(call Meson/CreateNativeFile,$(PKG_BUILD_DIR)/openwrt-native.txt)
 	$(call Meson/CreateCrossFile,$(PKG_BUILD_DIR)/openwrt-cross.txt)
 	$(call Meson, \
-		--buildtype plain \
+		setup \
+		--buildtype $(if $(CONFIG_DEBUG),debug,plain) \
 		--native-file $(PKG_BUILD_DIR)/openwrt-native.txt \
 		--cross-file $(PKG_BUILD_DIR)/openwrt-cross.txt \
+		-Ddefault_library=both \
 		$(MESON_ARGS) \
 		$(MESON_BUILD_DIR) \
 		$(MESON_BUILD_DIR)/.., \

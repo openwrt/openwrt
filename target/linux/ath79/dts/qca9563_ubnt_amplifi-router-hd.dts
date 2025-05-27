@@ -1,0 +1,194 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ubnt,amplifi-router-hd", "qca,qca9563";
+	model = "Ubiquiti AmpliFi Router HD";
+
+	aliases {
+		label-mac-device = &eth0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x060000>;
+				read-only;
+			};
+
+			partition@60000 {
+				compatible = "u-boot,env";
+				label = "u-boot-env";
+				reg = <0x060000 0x010000>;
+			};
+
+			partition@70000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x070000 0xb00000>;
+			};
+
+			partition@b70000 {
+				label = "cfg";
+				reg = <0xb70000 0x0c0000>;
+				read-only;
+			};
+
+			partition@c30000 {
+				label = "recovery";
+				reg = <0xc30000 0x3b0000>;
+				read-only;
+			};
+
+			partition@fe0000 {
+				label = "prst";
+				reg = <0xfe0000 0x010000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				/* eeprom */
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+
+			partition@1000000 {
+				label = "bs1";
+				reg = <0x1000000 0x010000>;
+			};
+
+			partition@1010000 {
+				label = "bs2";
+				reg = <0x1010000 0x010000>;
+				read-only;
+			};
+
+			partition@1020000 {
+				label = "stats";
+				reg = <0x1020000 0x400000>;
+				read-only;
+			};
+
+			partition@1420000 {
+				label = "fw_inactive";
+				reg = <0x1420000 0xb00000>;
+				read-only;
+			};
+
+			partition@1f20000 {
+				label = "reserved";
+				reg = <0x1f20000 0x0e0000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+
+		qca,ar8327-initvals = <
+			0x04 0x00000080 /* AR8327_REG_PAD0_MODE */
+			0x08 0x00000000 /* PORT5 PAD MODE CTRL */
+			0x0c 0x00000000 /* PORT6 PAD MODE CTRL */
+			0x10 0x602613a0 /* AR8327_REG_POWER_ON_STRAP */
+			0x50 0xcc35cc35 /* AR8327_REG_LED_CTRL0 */
+			0x54 0xca35ca35 /* AR8327_REG_LED_CTRL1 */
+			0x58 0xc935c935 /* AR8327_REG_LED_CTRL2 */
+			0x5c 0x03ffff00 /* AR8327_REG_LED_CTRL3 */
+			0x7c 0x0000007e /* AR8327_REG_PORT_STATUS(0) */
+			0x94 0x00001080 /* AR8327_REG_PORT_STATUS(6) */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	
+	pll-data = <0x03000101 0x00000101 0x00001919>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 (-2)>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};

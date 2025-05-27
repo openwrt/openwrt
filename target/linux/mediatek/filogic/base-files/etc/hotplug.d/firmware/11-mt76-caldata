@@ -1,0 +1,33 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"mediatek/mt7981_eeprom_mt7976_dbdc.bin")
+	case "$board" in
+	mercusys,mr80x-v3)
+		ln -sf /tmp/tp_data/MT7981_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
+	ubnt,unifi-6-plus)
+		caldata_extract_mmc "factory" 0x0 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7986_eeprom_mt7975_dual.bin")
+	case "$board" in
+	mercusys,mr90x-v1|\
+	tplink,re6000xd)
+		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

@@ -291,7 +291,7 @@
 			compatible = "lantiq,mei-xway";
 			reg = <0xe116000 0x400>;
 			interrupt-parent = <&icu0>;
-			interrupts = <63>;
+			interrupts = <63 61 159>;
 		};
 
 		gsw: etop@e180000 {
@@ -328,6 +328,8 @@
 			req-mask = <0x1>; /* GNT1 */
 
 			device_type = "pci";
+
+			resets = <&reset 13 13>;
 		};
 	};
 

@@ -1,4 +1,4 @@
-DEVICE_VARS += SENAO_IMGNAME
+DEVICE_VARS += SENAO_IMGNAME WATCHGUARD_MAGIC
 
 # This needs to make OEM config archive 'sysupgrade.tgz' an empty file prior to OEM
 # sysupgrade, as otherwise it will implant the old configuration from
@@ -27,9 +27,17 @@ define Build/senao-tar-gz
 	rm -rf $@.tmp $@.len $@.md5
 endef
 
+define Build/watchguard-cksum
+	-echo -n $(word 1,$(1)) | cat $@ - | md5sum | \
+		cut -d ' ' -f1 | tr -d '\n' > $@.md5 && \
+	cat $@.md5 >> $@ && \
+	rm -rf $@.md5
+endef
+
 define Device/senao_loader_okli
   $(Device/loader-okli-uimage)
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x73714f4b
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   LOADER_KERNEL_MAGIC := 0x73714f4b
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \

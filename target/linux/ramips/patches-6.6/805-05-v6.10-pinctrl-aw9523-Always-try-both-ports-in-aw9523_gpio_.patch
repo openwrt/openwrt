@@ -1,0 +1,47 @@
+From 091655b9285d837db520381924c689bd5dc5d286 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+Date: Fri, 29 Mar 2024 12:55:17 +0200
+Subject: [PATCH] pinctrl: aw9523: Always try both ports in
+ aw9523_gpio_set_multiple()
+
+The ports are equivalent from the user's point of view. Don't limit
+trying them both if writing to one fails.
+
+Signed-off-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Message-ID: <20240329105634.712457-4-andy.shevchenko@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-aw9523.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-aw9523.c
++++ b/drivers/pinctrl/pinctrl-aw9523.c
+@@ -653,7 +653,7 @@ static void aw9523_gpio_set_multiple(str
+ 	struct aw9523 *awi = gpiochip_get_data(chip);
+ 	u8 mask_lo, mask_hi, bits_lo, bits_hi;
+ 	unsigned int reg;
+-	int ret = 0;
++	int ret;
+ 
+ 	mask_lo = *mask & U8_MAX;
+ 	mask_hi = (*mask >> 8) & U8_MAX;
+@@ -663,10 +663,8 @@ static void aw9523_gpio_set_multiple(str
+ 		bits_hi = (*bits >> 8) & U8_MAX;
+ 
+ 		ret = regmap_write_bits(awi->regmap, reg, mask_hi, bits_hi);
+-		if (ret) {
++		if (ret)
+ 			dev_warn(awi->dev, "Cannot write port1 out level\n");
+-			goto out;
+-		}
+ 	}
+ 	if (mask_lo) {
+ 		reg = AW9523_REG_OUT_STATE(0);
+@@ -675,7 +673,6 @@ static void aw9523_gpio_set_multiple(str
+ 		if (ret)
+ 			dev_warn(awi->dev, "Cannot write port0 out level\n");
+ 	}
+-out:
+ 	mutex_unlock(&awi->i2c_lock);
+ }
+ 

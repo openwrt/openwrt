@@ -8,11 +8,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=findutils
 PKG_CPE_ID:=cpe:/a:gnu:findutils
-PKG_VERSION:=4.9.0
+PKG_VERSION:=4.10.0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_HASH:=a2bfb8c09d436770edc59f50fa483e785b161a3b7b9d547573cb08065fd462fe
+PKG_HASH:=1387e0b67ff247d2abde998f90dfbf70c1491391a59ddfecb8ae698789f0a4f5
+
+PKG_PROGRAMS:=find locate updatedb xargs
 
 HOST_BUILD_PARALLEL:=1
 
@@ -27,5 +29,9 @@ HOST_CONFIGURE_ARGS += \
 	--disable-rpath \
 	--disable-nls \
 	--without-selinux
+
+define Host/Uninstall
+	-$(call Host/Compile/Default,uninstall)
+endef
 
 $(eval $(call HostBuild))

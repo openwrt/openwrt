@@ -1,0 +1,61 @@
+From 7214886886bce9029f325214156c02dcfff760d5 Mon Sep 17 00:00:00 2001
+From: Paul Floyd <pjfloyd@wanadoo.fr>
+Date: Sat, 27 Apr 2024 13:07:07 +0200
+Subject: 486180  - [Valgrind][MIPS] 'VexGuestArchState' has no member named
+ 'guest_IP_AT_SYSCALL'
+
+---
+ NEWS                          | 34 ++++++++++++++++++++++++++++++++++
+ VEX/priv/guest_mips_helpers.c |  4 ++++
+ VEX/pub/libvex_guest_mips32.h |  6 +++---
+ VEX/pub/libvex_guest_mips64.h |  2 ++
+ configure.ac                  |  6 +++---
+ 5 files changed, 46 insertions(+), 6 deletions(-)
+
+--- a/VEX/priv/guest_mips_helpers.c
++++ b/VEX/priv/guest_mips_helpers.c
+@@ -187,6 +187,8 @@ void LibVEX_GuestMIPS32_initialise( /*OU
+    vex_state->guest_w1.w64[1] = 0;
+    vex_state->guest_w2.w64[0] = 0;
+    vex_state->guest_w2.w64[1] = 0;
++
++   vex_state->guest_IP_AT_SYSCALL = 0;
+ }
+ 
+ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
+@@ -294,6 +296,8 @@ void LibVEX_GuestMIPS64_initialise ( /*O
+    vex_state->guest_LLaddr = 0xFFFFFFFFFFFFFFFFULL;
+    vex_state->guest_LLdata = 0;
+ 
++   vex_state->guest_IP_AT_SYSCALL = 0;
++
+    vex_state->guest_MSACSR = 0;
+ }
+ 
+--- a/VEX/pub/libvex_guest_mips32.h
++++ b/VEX/pub/libvex_guest_mips32.h
+@@ -188,10 +188,10 @@ typedef
+ 
+       /*  1016 */ UInt guest_MSACSR;
+ 
+-      /*  1020 */ UInt _padding3;
++      /*  1020 */ UInt guest_IP_AT_SYSCALL;
+ 
+-      /*  1020 */ ULong guest_LLdata64;
+-      /*  1028 */ ULong _padding4;
++      /*  1024 */ ULong guest_LLdata64;
++      /*  1032 */ ULong _padding3;
+ } VexGuestMIPS32State;
+ /*---------------------------------------------------------------*/
+ /*--- Utility functions for MIPS32 guest stuff.               ---*/
+--- a/VEX/pub/libvex_guest_mips64.h
++++ b/VEX/pub/libvex_guest_mips64.h
+@@ -184,6 +184,8 @@ typedef
+       /* 1144 */ UInt guest_MSACSR;
+ 
+       /* 1148 */ UInt _padding2;
++      /* 1152 */ ULong guest_IP_AT_SYSCALL;
++      /* 1160 */ ULong _padding3;
+ 
+ } VexGuestMIPS64State;
+ 

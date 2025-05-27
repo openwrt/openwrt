@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "ASUS PL-AC56";
+	compatible = "asus,pl-ac56", "qca,qca9563";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &eth0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <BTN_0>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g {
+			label = "green:wlan2g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g {
+			label = "green:wlan5g";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "art";
+				reg = <0x050000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_1002: macaddr@1002 {
+						reg = <0x1002 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+
+			partition@60000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x060000 0xf20000>;
+			};
+
+			partition@f80000 {
+				label = "plc";
+				reg = <0xf80000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0>;
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
+
+		qca,ar8327-initvals = <
+			0x04 0x80000080 /* AR8327_REG_PAD0_MODE */
+			0x08 0x01000000 /* AR8327_REG_PAD5_MODE */
+			0x0c 0x07500000 /* AR8327_REG_PAD6_MODE */
+			0x10 0x602613a0 /* AR8327_REG_POWER_ON_STRAP */
+			0x50 0xcc35cc35 /* AR8327_REG_LED_CTRL0 */
+			0x54 0xca35ca35 /* AR8327_REG_LED_CTRL1 */
+			0x58 0xc935c935 /* AR8327_REG_LED_CTRL2 */
+			0x5c 0x03ffff00 /* AR8327_REG_LED_CTRL3 */
+			0x7c 0x0000007e /* AR8327_REG_PORT_STATUS(0) */
+			0x94 0x0000007e /* AR8327_REG_PORT_STATUS(6) */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy0>;
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};

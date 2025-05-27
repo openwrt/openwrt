@@ -7,7 +7,7 @@
 
 / {
 	compatible = "zyxel,nr7101", "mediatek,mt7621-soc";
-	model = "ZyXEL NR7101";
+	model = "Zyxel NR7101";
 
 	aliases {
 		led-boot = &led_system_green;
@@ -88,10 +88,24 @@
 			reg = <0x80000 0x80000>;
 		};
 
-		factory: partition@100000 {
+		partition@100000 {
 			label = "Factory";
 			reg = <0x100000 0x40000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				macaddr_factory_e000: macaddr@e000 {
+					reg = <0xe000 0x6>;
+				};
+			};
 		};
 
 		partition@140000 {
@@ -139,12 +153,9 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
-};
-
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 };
 
 &gmac0 {
@@ -163,17 +174,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2c", "rgmii2", "uart3", "jtag", "wdt";
+		groups = "i2c", "uart3", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
 	};
 };

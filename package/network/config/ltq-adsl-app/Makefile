@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=dsl_cpe_control_danube
 PKG_VERSION:=3.24.4.4
-PKG_RELEASE:=10
+PKG_RELEASE:=13
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 PKG_SOURCE_URL:=@OPENWRT
@@ -36,6 +36,7 @@ define Package/ltq-adsl-app
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-dsl-base +libubox +libubus
+  PROVIDES:=ltq-dsl-app
   MENU:=1
 endef
 
@@ -53,31 +54,21 @@ CONFIGURE_ARGS += \
 	--with-channels-per-line="$(LTQ_DSL_CHANNELS_PER_LINE)" \
 	--enable-danube \
 	--enable-driver-include="-I$(STAGING_DIR)/usr/include/adsl/" \
-	--enable-debug-prints \
 	--enable-add-appl-cflags="-DMAX_CLI_PIPES=2" \
-	--enable-cli-support \
-	--enable-cmv-scripts \
-	--enable-debug-tool-interface \
-	--enable-adsl-led \
-	--enable-dsl-ceoc \
-	--enable-script-notification \
-	--enable-dsl-pm \
-	--enable-dsl-pm-total \
-	--enable-dsl-pm-history \
-	--enable-dsl-pm-showtime \
-	--enable-dsl-pm-channel-counters \
-	--enable-dsl-pm-datapath-counters \
-	--enable-dsl-pm-line-counters \
-	--enable-dsl-pm-channel-thresholds \
-	--enable-dsl-pm-datapath-thresholds \
-	--enable-dsl-pm-line-thresholds \
-	--enable-dsl-pm-optional-parameters
+	--enable-model=full \
+	--disable-dsl-pm-retx-counters \
+	--disable-dsl-pm-retx-thresholds \
+	--disable-soap-support \
+	--disable-dti \
+	--disable-adsl-mib-support \
+	--disable-adsl-trace \
+	--enable-adsl-led
 
 TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(CP) ../ltq-vdsl-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
+	$(CP) ../ltq-vdsl-vr9-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
 endef
 
 define Package/ltq-adsl-app/install
@@ -86,6 +77,7 @@ define Package/ltq-adsl-app/install
 	$(INSTALL_BIN) ./files/10_atm.sh $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) ./files/10_ptm.sh $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin
+	$(INSTALL_BIN) ./files/dsl_cpe_pipe.sh $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ltq-adsl-app))

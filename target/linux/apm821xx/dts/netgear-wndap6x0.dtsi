@@ -47,10 +47,28 @@
 			};
 
 			partition@100000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
-				reg = <0x00100000 0x00010000>;
+				reg = <0x00100000 0x0004000>;
 				read-only;
+
+				ethaddr {
+				};
+
+				bootcmd {
+				};
+
+				serno {
+				};
+
+				ProductID {
+				};
+
+				HardwareVer {
+				};
 			};
+
+			/* 0x104000 - 0x10ffff free */
 
 			partition@110000 {
 				label = "firmware";
@@ -130,7 +148,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			label = "Reset Button";
 			gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -206,8 +224,7 @@
 
 	rtl8367b {
 		compatible = "realtek,rtl8367b";
-		cpu_port = <5>;
-		realtek,extif0 = <1 2 1 1 1 1 1 1 2>;
+		realtek,extif = <5 1 2 1 1 1 1 1 1 2>;
 		mii-bus = <&mdio0>;
 	};
 };

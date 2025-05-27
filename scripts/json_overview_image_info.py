@@ -47,7 +47,13 @@ for device_id, profile in output.get("profiles", {}).items():
 
 
 if output:
-    default_packages, output["arch_packages"] = run(
+    (
+        default_packages,
+        output["arch_packages"],
+        linux_version,
+        linux_release,
+        linux_vermagic,
+    ) = run(
         [
             "make",
             "--no-print-directory",
@@ -55,16 +61,23 @@ if output:
             "target/linux/",
             "val.DEFAULT_PACKAGES",
             "val.ARCH_PACKAGES",
+            "val.LINUX_VERSION",
+            "val.LINUX_RELEASE",
+            "val.LINUX_VERMAGIC",
+            "V=s",
         ],
         stdout=PIPE,
-        stderr=PIPE,
         check=True,
         env=environ.copy().update({"TOPDIR": Path().cwd()}),
         universal_newlines=True,
     ).stdout.splitlines()
 
     output["default_packages"] = sorted(default_packages.split())
-
+    output["linux_kernel"] = {
+        "version": linux_version,
+        "release": linux_release,
+        "vermagic": linux_vermagic,
+    }
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
     print("JSON info file script could not find any JSON files for target")

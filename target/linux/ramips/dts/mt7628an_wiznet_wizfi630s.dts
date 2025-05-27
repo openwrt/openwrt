@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "wiznet,wizfi630s", "mediatek,mt7628an-soc";
@@ -31,7 +32,8 @@
 		};
 
 		ledwps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
@@ -48,9 +50,6 @@
 
 	keys {
 		compatible = "gpio-keys";
-
-		#address-cells = <1>;
-		#size-cells = <0>;
 
 		reset {
 			label = "reset";
@@ -116,10 +115,24 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_2e: macaddr@2e {
+						reg = <0x2e 0x6>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -155,21 +168,12 @@
 
 &sdhci {
 	status = "okay";
-	mediatek,cd-high;
+	cd-inverted;
 };
 
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_2e: macaddr@2e {
-		reg = <0x2e 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

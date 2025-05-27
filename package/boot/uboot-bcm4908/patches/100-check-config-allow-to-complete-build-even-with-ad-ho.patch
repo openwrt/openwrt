@@ -22,7 +22,7 @@ Signed-off-by: Masahiro Yamada <yamada.masahiro@socionext.com>
 
 --- a/scripts/check-config.sh
 +++ b/scripts/check-config.sh
-@@ -50,14 +50,13 @@ cat `find ${srctree} -name "Kconfig*"` |sed -n \
+@@ -50,14 +50,13 @@ cat `find ${srctree} -name "Kconfig*"` |
  	|sort |uniq > ${ok}
  comm -23 ${suspects} ${ok} >${new_adhoc}
  if [ -s ${new_adhoc} ]; then

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "mt7621_dlink_dir-xx60-a1.dtsi"
+#include "mt7621_dlink_dir_nand_128m.dtsi"
 
 / {
 	compatible = "dlink,dir-1960-a1", "mediatek,mt7621-soc";
@@ -9,21 +9,10 @@
 
 &leds {
 	usb_white {
-		label = "white:usb";
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_WHITE>;
 		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&xhci_ehci_port1>;
 		linux,default-trigger = "usbport";
 	};
-};
-
-&wifi0 {
-	nvmem-cells = <&macaddr_factory_e000>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
-};
-
-&wifi1 {
-	nvmem-cells = <&macaddr_factory_e000>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };

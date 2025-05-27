@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -49,23 +50,27 @@
 		pinctrl-0 = <&jtag_disable_pins>;
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
@@ -76,7 +81,8 @@
 		};
 
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -88,6 +94,22 @@
 			label = "blue:wlan5g";
 			gpios = <&ath9k 7 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x0>;
+			};
 		};
 	};
 };
@@ -146,6 +168,28 @@
 				label = "caldata";
 				reg = <0x1f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_caldata_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_caldata_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: cal@5000 {
+						reg = <0x5000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -165,18 +209,26 @@
 				reg = <0x0 0x400000>;
 			};
 
-			partition@400000 {
-				label = "ubi";
-				reg = <0x400000 0x7c00000>;
+			ubiconcat0: partition@400000 {
+				label = "ubiconcat0";
+				reg = <0x400000 0x5c00000>;
 			};
+
+			ubiconcat1: partition@6020000 {
+				label = "ubiconcat1";
+				reg = <0x6020000 0x1f60000>;
+			};
+			/*
+			 * U-boot always unconditionally marks block 768, 1020 - 1023 as
+			 * bad blocks on each boot. To avoid conflicts with the nand
+			 * driver, manually skip them.
+			 */
 		};
 	};
 };
 
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
@@ -211,9 +263,8 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_caldata_0>;
-	nvmem-cell-names = "mac-address";
-	qca,no-eeprom;
+	nvmem-cells = <&macaddr_caldata_0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &pcie {
@@ -223,9 +274,8 @@
 		/* chip is AR9580, override bogus PCI ID 168c:abcd */
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_caldata_c>;
-		nvmem-cell-names = "mac-address";
-		qca,no-eeprom;
+		nvmem-cells = <&macaddr_caldata_c>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		qca,gpio-mask=<0xf6ff>;	/* unmask pin 9 for RFKILL button */
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -237,26 +287,5 @@
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port0: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
-};
-
-&caldata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_caldata_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_caldata_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
 };

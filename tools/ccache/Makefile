@@ -5,14 +5,13 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
-PKG_VERSION:=4.6
+PKG_VERSION:=4.10.2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/ccache/ccache/releases/download/v$(PKG_VERSION)
-PKG_HASH:=3d2bb860f4359169e640f60cf7cc11da5fab5fb9aed55230d78141e49c3945e9
+PKG_HASH:=108100960bb7e64573ea925af2ee7611701241abb36ce0aae3354528403a7d87
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -22,20 +21,7 @@ CMAKE_HOST_OPTIONS += \
 	-DCMAKE_CXX_COMPILER_LAUNCHER="" \
 	-DCMAKE_SKIP_RPATH=FALSE \
 	-DCMAKE_INSTALL_RPATH="${STAGING_DIR_HOST}/lib" \
+	-DENABLE_DOCUMENTATION=OFF \
 	-DREDIS_STORAGE_BACKEND=OFF
-
-ifneq (docs-$(CONFIG_BUILD_DOCUMENTATION),docs-y)
-CMAKE_HOST_OPTIONS += -DENABLE_DOCUMENTATION=OFF
-endif
-
-define Host/Install/ccache
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
-	$(CP) ./files/* $(STAGING_DIR_HOST)/bin/
-endef
-
-define Host/Install
-	$(call Host/Install/Default)
-	$(call Host/Install/ccache)
-endef
 
 $(eval $(call HostBuild))

@@ -8,17 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
-PKG_VERSION:=4.2
-PKG_RELEASE:=1
+PKG_VERSION:=4.3
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
-PKG_HASH:=461c215670864bb74a4d1a3620684aa2b2f8296dffa06743f26dda5557acf01d
+PKG_HASH:=416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_CPE_ID:=cpe:/a:mdadm_project:mdadm
 
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_FLAGS:=gc-sections
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -43,17 +44,15 @@ define Package/mdadm/conffiles
 endef
 
 TARGET_CFLAGS += \
-	-ffunction-sections -fdata-sections \
 	-DHAVE_STDINT_H -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS \
 	-DCONFFILE='\"/var/etc/mdadm.conf\"' \
 	-DMAP_DIR='\"/var/run/mdadm\"' \
 	-DMDMON_DIR='\"/var/run/mdadm\"' \
 	-DFAILED_SLOTS_DIR='\"/var/run/mdadm/failed-slots\"' \
-	-DNO_LIBUDEV
+	-DNO_LIBUDEV \
+	-D_LARGEFILE64_SOURCE
 
 TARGET_CXFLAGS = -DNO_LIBUDEV
-
-TARGET_LDFLAGS += -Wl,--gc-sections
 
 MAKE_FLAGS += \
 		CHECK_RUN_DIR=0 \

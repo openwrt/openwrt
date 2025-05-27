@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -59,11 +60,13 @@
 			gpios = <&stp 2 GPIO_ACTIVE_LOW>;
 		};
 		wps_red {
-			label = "red:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&stp 3 GPIO_ACTIVE_LOW>;
 		};
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 4 GPIO_ACTIVE_LOW>;
 		};
 		upgrade {
@@ -103,12 +106,14 @@
 			gpios = <&stp 13 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power2 {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&stp 15 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -121,15 +126,14 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_boardconfig_16>;
+	nvmem-cells = <&macaddr_boardconfig_16 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &gphy0 {
@@ -225,6 +229,18 @@
 				label = "board_config";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -232,16 +248,15 @@
 
 &pci0 {
 	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@1814,3091 {
 		compatible = "pci1814,3091";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,mtd-eeprom-swap;
-		nvmem-cells = <&macaddr_boardconfig_16>;
+		ralink,eeprom-swap;
+		nvmem-cells = <&macaddr_boardconfig_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -279,14 +294,4 @@
 	gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
 		 &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
 		 &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

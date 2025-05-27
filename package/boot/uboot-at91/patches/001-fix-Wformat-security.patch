@@ -10,11 +10,9 @@ Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
  drivers/pinctrl/pinctrl-uclass.c | 2 +-
  3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/cmd/panic.c b/cmd/panic.c
-index f13b3f094fab..197e2d0870ff 100644
 --- a/cmd/panic.c
 +++ b/cmd/panic.c
-@@ -11,7 +11,7 @@ static int do_panic(struct cmd_tbl *cmdtp, int flag, int argc,
+@@ -11,7 +11,7 @@ static int do_panic(struct cmd_tbl *cmdt
  {
  	char *text = (argc < 2) ? "" : argv[1];
  
@@ -23,11 +21,9 @@ index f13b3f094fab..197e2d0870ff 100644
  
  	return CMD_RET_SUCCESS;
  }
-diff --git a/cmd/version.c b/cmd/version.c
-index 3686b8733249..35b52c48171d 100644
 --- a/cmd/version.c
 +++ b/cmd/version.c
-@@ -19,7 +19,7 @@ static int do_version(struct cmd_tbl *cmdtp, int flag, int argc,
+@@ -24,7 +24,7 @@ static int do_version(struct cmd_tbl *cm
  {
  	char buf[DISPLAY_OPTIONS_BANNER_LENGTH];
  
@@ -36,11 +32,9 @@ index 3686b8733249..35b52c48171d 100644
  #ifdef CC_VERSION_STRING
  	puts(CC_VERSION_STRING "\n");
  #endif
-diff --git a/drivers/pinctrl/pinctrl-uclass.c b/drivers/pinctrl/pinctrl-uclass.c
-index b0f30aa1f758..aa62a890609a 100644
 --- a/drivers/pinctrl/pinctrl-uclass.c
 +++ b/drivers/pinctrl/pinctrl-uclass.c
-@@ -371,7 +371,7 @@ int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
+@@ -375,7 +375,7 @@ int pinctrl_get_pin_name(struct udevice
  	if (!ops->get_pin_name)
  		return -ENOSYS;
  
@@ -49,6 +43,3 @@ index b0f30aa1f758..aa62a890609a 100644
  
  	return 0;
  }
--- 
-2.33.0
-

@@ -10,7 +10,6 @@
 		led-boot = &led_user;
 		led-failsafe = &led_user;
 		led-upgrade = &led_user;
-		serial0 = &uart;
 	};
 
 	leds {
@@ -86,8 +85,6 @@
 };
 
 &mdio1 {
-	status = "okay";
-
 	phy_sfp: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "sgmii";
@@ -96,8 +93,6 @@
 };
 
 &eth1 {
-	status = "okay";
-
 	phy-handle = <&phy_sfp>;
 	pll-data = <0x03000000 0x00000101 0x00001616>;
 	qca955x-sgmii-fixup;
@@ -150,11 +145,13 @@
 	status = "okay";
 
 	nand-ecc-mode = "soft";
+	nand-ecc-step-size = <2048>;
 	qca,nand-swap-dma;
 	qca,nand-scan-fixup;
 
 	partitions {
 		compatible = "fixed-partitions";
+		#address-cells = <1>;
 		#size-cells = <1>;
 
 		partition@0 {

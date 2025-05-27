@@ -12,7 +12,6 @@ config DROPBEAR_CURVE25519
 
 config DROPBEAR_ECC
 	bool "Elliptic curve cryptography (ECC)"
-	default n
 	help
 		Enables basic support for elliptic curve cryptography (ECC)
 		in key exchange and public key authentication.
@@ -25,11 +24,10 @@ config DROPBEAR_ECC
 
 		Increases binary size by about 24 kB (MIPS).
 
-		If full ECC support is required, also select DROPBEAR_ECC_FULL.
+		Note: select DROPBEAR_ECC_FULL if full ECC support is required.
 
 config DROPBEAR_ECC_FULL
 	bool "Elliptic curve cryptography (ECC), full support"
-	default n
 	depends on DROPBEAR_ECC
 	help
 		Enables full support for elliptic curve cryptography (ECC)
@@ -67,46 +65,62 @@ config DROPBEAR_CHACHA20POLY1305
 
 		Increases binary size by about 4 kB (MIPS).
 
+config DROPBEAR_U2F
+	bool "U2F/FIDO support"
+	default y
+	help
+		This option itself doesn't enable any support for U2F/FIDO
+		but subordinate options do:
+
+		- DROPBEAR_ECDSA_SK   - ecdsa-sk keys support
+		  depends on DROPBEAR_ECC ("Elliptic curve cryptography (ECC)")
+		- DROPBEAR_ED25519_SK - ed25519-sk keys support
+		  depends on DROPBEAR_ED25519 ("Ed25519 support")
+
+config DROPBEAR_ECDSA_SK
+	bool "ECDSA-SK support"
+	default y
+	depends on DROPBEAR_U2F && DROPBEAR_ECC
+	help
+		This enables the following public key algorithm:
+		  sk-ecdsa-sha2-nistp256@openssh.com
+
+config DROPBEAR_ED25519_SK
+	bool "Ed25519-SK support"
+	default y
+	depends on DROPBEAR_U2F && DROPBEAR_ED25519
+	help
+		This enables the following public key algorithm:
+		  sk-ssh-ed25519@openssh.com
+
 config DROPBEAR_ZLIB
 	bool "Enable compression"
-	default n
 	help
 		Enables compression using shared zlib library.
 
-		Increases binary size by about 0.1 kB (MIPS) and requires additional 62 kB (MIPS)
-		for a shared zlib library.
+		Increases binary size by about 0.1 kB (MIPS) and requires
+		additional 62 kB (MIPS) for a shared zlib library.
 
 config DROPBEAR_UTMP
 	bool "Utmp support"
-	default n
 	depends on BUSYBOX_CONFIG_FEATURE_UTMP
 	help
-		This enables dropbear utmp support, the file /var/run/utmp is used to
-		track who is currently logged in.
+		This enables dropbear utmp support, the file /var/run/utmp is
+		used to track who is currently logged in.
 
 config DROPBEAR_PUTUTLINE
 	bool "Pututline support"
-	default n
 	depends on DROPBEAR_UTMP
 	help
-		Dropbear will use pututline() to write the utmp structure into the utmp file.
+		Dropbear will use pututline() to write the utmp structure into
+		the utmp file.
 
 config DROPBEAR_DBCLIENT
 	bool "Build dropbear with dbclient"
 	default y
 
-config DROPBEAR_DBCLIENT_AGENTFORWARD
-	bool "Enable agent forwarding in dbclient"
-	default y
-	depends on DROPBEAR_DBCLIENT
-
-config DROPBEAR_SCP
-	bool "Build dropbear with scp"
-	default y
-
 config DROPBEAR_ASKPASS
 	bool "Enable askpass helper support"
-	default n
 	depends on DROPBEAR_DBCLIENT
 	help
 		This enables support for ssh-askpass helper in dropbear client
@@ -114,8 +128,69 @@ config DROPBEAR_ASKPASS
 
 		Increases binary size by about 0.1 kB (MIPS).
 
-config DROPBEAR_AGENTFORWARD
-	bool "Enable agent forwarding"
+config DROPBEAR_DBCLIENT_AGENTFORWARD
+	bool "Enable agent forwarding in dbclient [LEGACY/SECURITY]"
 	default y
+	depends on DROPBEAR_DBCLIENT
+	help
+		Increases binary size by about 0.1 kB (MIPS).
+
+		Security notes:
+
+		SSH agent forwarding might cause security issues (locally and
+		on the jump machine).
+
+		Hovewer, it's enabled by default for compatibility with
+		previous OpenWrt/dropbear releases.
+
+		Consider DISABLING this option if you're building own OpenWrt
+		image.
+
+		Also see DROPBEAR_AGENTFORWARD (agent forwarding in dropbear
+		server itself).
+
+config DROPBEAR_SCP
+	bool "Build dropbear with scp"
+	default y
+
+config DROPBEAR_AGENTFORWARD
+	bool "Enable agent forwarding [LEGACY/SECURITY]"
+	default y
+	help
+		Increases binary size by about 0.1 kB (MIPS).
+
+		Security notes:
+
+		SSH agent forwarding might cause security issues (locally and
+		on the jump machine).
+
+		Hovewer, it's enabled by default for compatibility with
+		previous OpenWrt/dropbear releases.
+
+		Consider DISABLING this option if you're building own OpenWrt
+		image.
+
+		Also see DROPBEAR_DBCLIENT_AGENTFORWARD (agent forwarding in
+		dropbear client) if DROPBEAR_DBCLIENT is selected.
+
+config DROPBEAR_MODERN_ONLY
+	bool "Use modern crypto only [BREAKS COMPATIBILITY]"
+	select DROPBEAR_ED25519
+	select DROPBEAR_CURVE25519
+	select DROPBEAR_CHACHA20POLY1305
+	help
+		This option enables:
+		 - Chacha20-Poly1305
+		 - Curve25519
+		 - Ed25519
+		and disables:
+		 - AES
+		 - RSA
+
+		Reduces binary size by about 64 kB (MIPS) from default
+		configuration.
+
+		Consider enabling this option if you're building own OpenWrt
+		image and using modern SSH software everywhere.
 
 endmenu

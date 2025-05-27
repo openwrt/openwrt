@@ -20,6 +20,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/random.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,30 +30,44 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <mbedtls/bignum.h>
+#include <mbedtls/entropy.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/ecp.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
+#include <mbedtls/asn1.h>
+#include <mbedtls/oid.h>
 
-#define PX5G_VERSION "0.2"
+#define SET_OID(x, oid) \
+	do { x.len = MBEDTLS_OID_SIZE(oid); x.p = (unsigned char *) oid; } while (0)
+
+#define PX5G_VERSION "0.3"
 #define PX5G_COPY "Copyright (c) 2009 Steven Barth <steven@midlink.org>"
 #define PX5G_LICENSE "Licensed under the GNU Lesser General Public License v2.1"
 
-static int urandom_fd;
 static char buf[16384];
 
 static int _urandom(void *ctx, unsigned char *out, size_t len)
 {
-	read(urandom_fd, out, len);
+	ssize_t ret;
+
+	ret = getrandom(out, len, 0);
+	if (ret < 0 || (size_t)ret != len)
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+
 	return 0;
 }
 
-static void write_file(const char *path, int len, bool pem)
+static void write_file(const char *path, size_t len, bool pem, bool cert)
 {
-	FILE *f = stdout;
+	mode_t mode = S_IRUSR | S_IWUSR;
 	const char *buf_start = buf;
+	int fd = STDERR_FILENO;
+	ssize_t written;
+	int err;
 
 	if (!pem)
 		buf_start += sizeof(buf) - len;
@@ -61,17 +76,30 @@ static void write_file(const char *path, int len, bool pem)
 		fprintf(stderr, "No data to write\n");
 		exit(1);
 	}
+	
+	if (cert)
+		mode |= S_IRGRP | S_IROTH;
 
-	if (!f) {
+	if (path)
+		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+
+	if (fd < 0) {
 		fprintf(stderr, "error: I/O error\n");
 		exit(1);
 	}
 
+	written = write(fd, buf_start, len);
+	if (written != len) {
+		fprintf(stderr, "writing key failed with: %s\n", strerror(errno));
+		exit(1);
+	}
+	err = fsync(fd);
+	if (err < 0) {
+		fprintf(stderr, "syncing key failed with: %s\n", strerror(errno));
+		exit(1);
+	}
 	if (path)
-		f = fopen(path, "w");
-
-	fwrite(buf_start, 1, len, f);
-	fclose(f);
+		close(fd);
 }
 
 static mbedtls_ecp_group_id ecp_curve(const char *name)
@@ -104,7 +132,7 @@ static void write_key(mbedtls_pk_context *key, const char *path, bool pem)
 			len = 0;
 	}
 
-	write_file(path, len, pem);
+	write_file(path, len, pem, false);
 }
 
 static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize, int exp,
@@ -170,6 +198,16 @@ int selfsigned(char **arg)
 	mbedtls_pk_context key;
 	mbedtls_x509write_cert cert;
 	mbedtls_mpi serial;
+	mbedtls_x509_san_list *san_list = NULL, *san_prev = NULL, *san_cur = NULL;
+	/*support
+	- MBEDTLS_X509_SAN_DNS_NAME
+	- MBEDTLS_X509_SAN_IP_ADDRESS
+	- MBEDTLS_X509_SAN_RFC822_NAME
+	- MBEDTLS_X509_SAN_UNIFORM_RESOURCE_IDENTIFIER
+	*/
+	mbedtls_asn1_sequence *eku = NULL, *ext_key_usage = NULL;
+	char *sanval, *santype;
+	uint8_t ipaddr[16] = { 0 };
 
 	char *subject = "";
 	unsigned int ksize = 512;
@@ -244,8 +282,56 @@ int selfsigned(char **arg)
 				oldc = delim + 1;
 			} while(*delim);
 			arg++;
+		} else if (!strcmp(*arg, "-addext") && arg[1]) {
+			mbedtls_asn1_sequence **tail = &eku;
+			if (!strncmp(arg[1], "extendedKeyUsage=", strlen("extendedKeyUsage="))) {
+				ext_key_usage = calloc(1, sizeof(mbedtls_asn1_sequence));
+				ext_key_usage->buf.tag = MBEDTLS_ASN1_OID;
+				if (!strncmp(arg[1] + strlen("extendedKeyUsage="), "serverAuth", strlen("serverAuth"))) {
+					SET_OID(ext_key_usage->buf, MBEDTLS_OID_SERVER_AUTH);
+				} else if (!strncmp(arg[1] + strlen("extendedKeyUsage="), "any", strlen("any"))) {
+					SET_OID(ext_key_usage->buf, MBEDTLS_OID_ANY_EXTENDED_KEY_USAGE);
+				} // there are other extendedKeyUsage OIDs but none conceivably useful here
+				*tail = ext_key_usage;
+				tail = &ext_key_usage->next;
+				arg++;
+			} else if (!strncmp(arg[1], "subjectAltName=", strlen("subjectAltName=")) && strchr(arg[1], ':') != NULL) {
+				santype = strchr(arg[1], '=') + 1;
+				sanval = strchr(arg[1], ':') + 1;
+				//build sAN list
+				san_cur = calloc(1, sizeof(mbedtls_x509_san_list));
+				san_cur->next = NULL;
+				if (!strncmp(santype, "DNS:", strlen("DNS:"))) {
+					san_cur->node.type = MBEDTLS_X509_SAN_DNS_NAME;
+					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
+					san_cur->node.san.unstructured_name.len = strlen(sanval);
+				} else if (!strncmp(santype, "EMAIL:", strlen("EMAIL:"))) {
+					san_cur->node.type = MBEDTLS_X509_SAN_RFC822_NAME;
+					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
+					san_cur->node.san.unstructured_name.len = strlen(sanval);
+				} else if (!strncmp(santype, "IP:", strlen("IP:"))) {
+					san_cur->node.type = MBEDTLS_X509_SAN_IP_ADDRESS;
+					mbedtls_x509_crt_parse_cn_inet_pton(sanval, ipaddr);
+					san_cur->node.san.unstructured_name.p = (unsigned char *) ipaddr;
+					san_cur->node.san.unstructured_name.len = sizeof(ipaddr);
+				} else if (!strncmp(santype, "URI:", strlen("URI:"))) {
+					san_cur->node.type = MBEDTLS_X509_SAN_UNIFORM_RESOURCE_IDENTIFIER;
+					san_cur->node.san.unstructured_name.p = (unsigned char *) sanval;
+					san_cur->node.san.unstructured_name.len = strlen(sanval);
+				}
+				else fprintf(stderr, "No match to subjectAltName content type.\n");
+			arg++;
+			}
 		}
 		arg++;
+
+		//set the pointers in our san_list linked list
+		if (san_prev == NULL) {
+			san_list = san_cur;
+		} else {
+			san_prev->next = san_cur;
+		}
+		san_prev = san_cur;
 	}
 	gen_key(&key, rsa, ksize, exp, curve, pem);
 
@@ -272,6 +358,8 @@ int selfsigned(char **arg)
 	mbedtls_x509write_crt_set_basic_constraints(&cert, 0, -1);
 	mbedtls_x509write_crt_set_subject_key_identifier(&cert);
 	mbedtls_x509write_crt_set_authority_key_identifier(&cert);
+	mbedtls_x509write_crt_set_subject_alternative_name(&cert, san_list);
+	mbedtls_x509write_crt_set_ext_key_usage(&cert, ext_key_usage);
 
 	_urandom(NULL, (void *) buf, 8);
 	for (len = 0; len < 8; len++)
@@ -295,7 +383,7 @@ int selfsigned(char **arg)
 			return 1;
 		}
 	}
-	write_file(certpath, len, pem);
+	write_file(certpath, len, pem, true);
 
 	mbedtls_x509write_crt_free(&cert);
 	mbedtls_mpi_free(&serial);
@@ -306,8 +394,6 @@ int selfsigned(char **arg)
 
 int main(int argc, char *argv[])
 {
-	urandom_fd = open("/dev/urandom", O_RDONLY);
-
 	if (!argv[1]) {
 		//Usage
 	} else if (!strcmp(argv[1], "eckey")) {

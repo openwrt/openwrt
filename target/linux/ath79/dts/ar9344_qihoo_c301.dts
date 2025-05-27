@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Qihoo 360 C301";
@@ -21,12 +22,14 @@
 		pinctrl-0 = <&jtag_disable_pins>;
 
 		led_wlan_g: wlan_g {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan_o: wlan_o {
-			label = "orange:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -48,7 +51,7 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-always-on;
-		gpio = <&gpio 18 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 	};
 
 	usb_vbus: reg_usb_vbus {
@@ -57,7 +60,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
-		gpio = <&gpio 19 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -103,8 +106,6 @@
 	pinctrl-0 = <&pmx_spi_cs1>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
@@ -159,13 +160,25 @@
 				label = "radiocfg";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_radiocfg_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_radiocfg_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};
 
 	flash@1 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <1>;
 		spi-max-frequency = <25000000>;
@@ -204,12 +217,16 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
+		nvmem-cells = <&cal_radiocfg_5000>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_radiocfg_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &eth1 {

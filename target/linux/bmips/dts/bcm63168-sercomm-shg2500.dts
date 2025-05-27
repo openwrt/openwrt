@@ -1,0 +1,325 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm63268.dtsi"
+
+/ {
+	model = "Sercomm SHG2500";
+	compatible = "sercomm,shg2500", "brcm,bcm63168", "brcm,bcm63268";
+
+	aliases {
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_red;
+		led-upgrade = &led_power_red;
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 14 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 9 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	bcm4360-sprom {
+		compatible = "brcm,bcma-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		nvmem-cells = <&macaddr_cferom_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		brcm,sprom = "brcm/bcm4360-sprom.bin";
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&hsspi {
+	status = "okay";
+
+	led-controller@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "sercomm,msp430-leds";
+		reg = <1>;
+		spi-max-frequency = <500000>;
+
+		led@1 {
+			reg = <1>;
+			label = "red:modem";
+		};
+
+		led@2 {
+			reg = <2>;
+			label = "green:modem";
+		};
+
+		led@3 {
+			reg = <3>;
+			label = "blue:modem";
+		};
+
+		led@4 {
+			reg = <4>;
+			label = "red:internet";
+		};
+
+		led@5 {
+			reg = <5>;
+			label = "red:phone";
+		};
+
+		led@6 {
+			reg = <6>;
+			label = "green:phone";
+		};
+
+		led@7 {
+			reg = <7>;
+			label = "green:wifi";
+		};
+
+		led_power_red: led@8 {
+			reg = <8>;
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+		led@9 {
+			reg = <9>;
+			label = "green:internet";
+		};
+	};
+};
+
+&mdio_int {
+	phy12: ethernet-phy@c {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <12>;
+	};
+};
+
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53125";
+		reg = <30>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port4>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "cferom";
+				reg = <0x0000000 0x0020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						compatible = "mac-base";
+						reg = <0x6a0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@20000 {
+				label = "part_map";
+				reg = <0x0020000 0x00a0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "cferam1";
+				reg = <0x00c0000 0x0140000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "cferam2";
+				reg = <0x0200000 0x0140000>;
+				read-only;
+			};
+
+			artition@6920000 {
+				label = "bootflag1";
+				reg = <0x6920000 0x0140000>;
+			};
+
+			partition@6a60000 {
+				label = "bootflag2";
+				reg = <0x6a60000 0x0140000>;
+			};
+
+			partition@520000 {
+				compatible = "sercomm,wfi";
+				label = "wfi";
+				reg = <0x0520000 0x6400000>;
+			};
+
+			partition@6ba0000 {
+				label = "xml_cfg";
+				reg = <0x6ba0000 0x0280000>;
+				read-only;
+			};
+
+			partition@6e20000 {
+				label = "app_data";
+				reg = <0x6e20000 0x0280000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl_uart1: uart1-pins {
+		pinctrl_uart1_sdin: uart1_sdin {
+			function = "uart1_sdin";
+			pins = "gpio12";
+		};
+
+		pinctrl_uart1_sdout: uart1_sdout {
+			function = "uart1_sdout";
+			pins = "gpio13";
+		};
+	};
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		port@3 {
+			reg = <3>;
+			label = "wan";
+
+			phy-handle = <&phy12>;
+			phy-mode = "gmii";
+		};
+
+		switch0port4: port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1>;
+};
+
+&usbh {
+	status = "okay";
+};

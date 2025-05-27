@@ -1,0 +1,33 @@
+From 1e70a0772165dd552f82434c9072dabfaaaf4c2a Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Date: Fri, 15 Dec 2023 20:09:09 +0100
+Subject: [PATCH 1023/1024] riscv: errata: Make ERRATA_STARFIVE_JH7100 depend
+ on !DMA_DIRECT_REMAP
+
+Similar to the Renesas RZ/Five[1] the JH7100 SoC needs the non-portable
+CONFIG_DMA_GLOBAL_POOL enabled which is incompatible with DMA_DIRECT_REMAP
+selected by RISCV_ISA_ZICBOM.
+
+[1]: commit 31b2daea0764 ("soc: renesas: Make RZ/Five depend on !DMA_DIRECT_REMAP")
+
+Link: https://lore.kernel.org/all/24942b4d-d16a-463f-b39a-f9dfcb89d742@infradead.org/
+Fixes: 64fc984a8a54 ("riscv: errata: Add StarFive JH7100 errata")
+Signed-off-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ arch/riscv/Kconfig.errata | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/Kconfig.errata
++++ b/arch/riscv/Kconfig.errata
+@@ -55,7 +55,9 @@ config ERRATA_SIFIVE_CIP_1200
+ 
+ config ERRATA_STARFIVE_JH7100
+ 	bool "StarFive JH7100 support"
+-	depends on ARCH_STARFIVE && NONPORTABLE
++	depends on ARCH_STARFIVE
++	depends on !DMA_DIRECT_REMAP
++	depends on NONPORTABLE
+ 	select DMA_GLOBAL_POOL
+ 	select RISCV_DMA_NONCOHERENT
+ 	select RISCV_NONSTANDARD_CACHE_OPS

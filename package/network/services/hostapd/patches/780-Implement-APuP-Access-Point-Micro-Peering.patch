@@ -1,0 +1,458 @@
+From 806c84ac8e8f60eaec22772b627f85eb5ac13544 Mon Sep 17 00:00:00 2001
+From: Gioacchino Mazzurco <gio@polymathes.cc>
+Date: Mon, 6 May 2024 13:53:48 +0200
+Subject: [PATCH 1/3] Implement APuP Access Point Micro Peering
+
+Access Point Micro Peering is a simpler and hopefully more useful successor to
+Ad Hoc, Wireless Distribution System, 802.11s mesh mode, Multi-AP and EasyMesh.
+When enabled almost plain APs communicate between them via 4-address mode,
+like in WDS but all of them are AP, so they can eventually communicate also with
+plain stations and more AP nodes in sight, without more trickery.
+APuP has low hardware requirements, just AP mode support + 4-address mode, and
+no more unnecessary complications, like hardcoded bridging or routing algorithm
+in WiFi stack.
+For each AP in sight an interface is created, and then it can be used as
+convenient in each case, bridging, routing etc.
+Those interfaces could be simply bridged in a trivial topology (which happens
+automatically if wds_bridge is not an empty string), or feeded to a
+routing daemon.
+
+Signed-off-by: Gioacchino Mazzurco <gio@polymathes.cc>
+Reviewed-by: Hauke Mehrtens <hauke@hauke-m.de>
+Reviewed-by: Moritz Warning <moritzwarning@web.de>
+Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a69e8d8300569e416de856c96e903ad130
+---
+ hostapd/Makefile             |   5 ++
+ hostapd/config_file.c        |   9 +++
+ src/ap/ap_config.h           |  29 +++++++
+ src/ap/ap_drv_ops.c          |  28 ++++++-
+ src/ap/ap_drv_ops.h          |   3 +
+ src/ap/apup.c                | 152 +++++++++++++++++++++++++++++++++++
+ src/ap/apup.h                |  24 ++++++
+ src/ap/ieee802_11.c          |  14 +++-
+ src/ap/ieee802_11.h          |   2 +
+ src/drivers/driver.h         |   2 +-
+ src/drivers/driver_nl80211.c |  14 +---
+ 11 files changed, 265 insertions(+), 17 deletions(-)
+ create mode 100644 src/ap/apup.c
+ create mode 100644 src/ap/apup.h
+
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -1416,6 +1416,11 @@ ifdef CONFIG_NO_TKIP
+ CFLAGS += -DCONFIG_NO_TKIP
+ endif
+ 
++ifdef CONFIG_APUP
++CFLAGS += -DCONFIG_APUP
++OBJS += ../src/ap/apup.o
++endif
++
+ $(DESTDIR)$(BINDIR)/%: %
+ 	install -D $(<) $(@)
+ 
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -5200,6 +5200,15 @@ static int hostapd_config_fill(struct ho
+ 		bss->mld_indicate_disabled = atoi(pos);
+ #endif /* CONFIG_TESTING_OPTIONS */
+ #endif /* CONFIG_IEEE80211BE */
++#ifdef CONFIG_APUP
++	} else if (os_strcmp(buf, "apup") == 0) {
++		bss->apup = !!atoi(pos);
++		if (bss->apup)
++			bss->wds_sta = 1;
++	} else if (os_strcmp(buf, "apup_peer_ifname_prefix") == 0) {
++		os_strlcpy(bss->apup_peer_ifname_prefix,
++		           pos, sizeof(bss->apup_peer_ifname_prefix));
++#endif // def CONFIG_APUP
+ 	} else {
+ 		wpa_printf(MSG_ERROR,
+ 			   "Line %d: unknown configuration item '%s'",
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -999,6 +999,35 @@ struct hostapd_bss_config {
+ 	bool mld_indicate_disabled;
+ #endif /* CONFIG_TESTING_OPTIONS */
+ #endif /* CONFIG_IEEE80211BE */
++
++#ifdef CONFIG_APUP
++	/**
++	 * Access Point Micro Peering
++	 * A simpler and more useful successor to Ad Hoc,
++	 * Wireless Distribution System, 802.11s mesh mode, Multi-AP and EasyMesh.
++	 *
++	 * Almost plain APs communicate between them via 4-address mode, like in WDS
++	 * but all of them are AP, so they can eventually communicate also with
++	 * plain stations and more AP nodes in sight.
++	 * Low hardware requirements, just AP mode support + 4-address mode, and no
++	 * more unnecessary complications, like hardcoded bridging or routing
++	 * algorithm in WiFi stack.
++	 * For each AP in sight an interface is created, and then it can be used as
++	 * convenient in each case, bridging, routing etc.
++	 */
++	bool apup;
++
++	/**
++	 * In 4-address mode each peer AP in sight is associated to its own
++	 * interface so we have more flexibility in "user-space".
++	 * Those interfaces could be simply bridged in a trivial topology (which
++	 * happens automatically if wds_bridge is not an empty string), or feeded to
++	 * a routing daemon.
++	 *
++	 * If not defined interface names are generated following the WDS convention.
++	 */
++	char apup_peer_ifname_prefix[IFNAMSIZ + 1];
++#endif /* CONFIG_APUP */
+ };
+ 
+ /**
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -385,13 +385,39 @@ int hostapd_set_wds_sta(struct hostapd_d
+ 			const u8 *addr, int aid, int val)
+ {
+ 	const char *bridge = NULL;
++	char ifName[IFNAMSIZ + 1];
++
++	int mRet = 0;
+ 
+ 	if (hapd->driver == NULL || hapd->driver->set_wds_sta == NULL)
+ 		return -1;
++
++#ifdef CONFIG_APUP
++	if (hapd->conf->apup && hapd->conf->apup_peer_ifname_prefix[0]) {
++		mRet = os_snprintf(
++		            ifName, sizeof(ifName), "%s%d",
++		            hapd->conf->apup_peer_ifname_prefix, aid);
++	}
++	else
++#endif // def CONFIG_APUP
++		mRet = os_snprintf(
++		            ifName, sizeof(ifName), "%s.sta%d",
++		            hapd->conf->iface, aid);
++
++	if (mRet >= (int) sizeof(ifName))
++		wpa_printf(MSG_WARNING,
++		           "nl80211: WDS interface name was truncated");
++	else if (mRet < 0)
++		return mRet;
++
++	// Pass back to the caller the resulting interface name
++	if (ifname_wds)
++		os_strlcpy(ifname_wds, ifName, IFNAMSIZ + 1);
++
+ 	if (hapd->conf->wds_bridge[0])
+ 		bridge = hapd->conf->wds_bridge;
+ 	return hapd->driver->set_wds_sta(hapd->drv_priv, addr, aid, val,
+-					 bridge, ifname_wds);
++					 bridge, ifName);
+ }
+ 
+ 
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -35,6 +35,9 @@ int hostapd_set_drv_ieee8021x(struct hos
+ 			      int enabled);
+ int hostapd_vlan_if_add(struct hostapd_data *hapd, const char *ifname);
+ int hostapd_vlan_if_remove(struct hostapd_data *hapd, const char *ifname);
++
++/** @param val as per nl80211 driver implementation, 1 means add 0 means remove
++ */
+ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
+ 			const u8 *addr, int aid, int val);
+ int hostapd_sta_add(struct hostapd_data *hapd,
+--- /dev/null
++++ b/src/ap/apup.c
+@@ -0,0 +1,168 @@
++/*
++ * hostapd / APuP Access Point Micro Peering
++ *
++ * Copyright (C) 2023-2024  Gioacchino Mazzurco <gio@polymathes.cc>
++ *
++ * This software may be distributed under the terms of the BSD license.
++ * See README for more details.
++ */
++
++/* Be extremely careful altering include order, move just one in the wrong place
++ * and you will start getting a bunch of error of undefined bool, size_t etc. */
++
++#include "utils/includes.h"
++#include "utils/common.h"
++#include "utils/os.h"
++
++#include "apup.h"
++
++#include "drivers/driver.h"
++#include "wpa_auth.h"
++#include "ap_mlme.h"
++#include "ieee802_11.h"
++#include "ap_drv_ops.h"
++#include "sta_info.h"
++
++#ifdef UBUS_SUPPORT
++#	include "ubus.h"
++#endif
++
++#ifdef UCODE_SUPPORT
++#	include "ucode.h"
++#endif
++
++void apup_process_beacon(struct hostapd_data *hapd,
++              const struct ieee80211_mgmt *mgmt, size_t len,
++              const struct ieee802_11_elems *elems )
++{
++	if (!os_memcmp(hapd->own_addr, mgmt->bssid, ETH_ALEN))
++	{
++		wpa_printf(MSG_WARNING,
++		           "apup_process_beacon(...) own beacon elems.ssid %.*s",
++		           (int) elems->ssid_len, elems->ssid);
++		return;
++	}
++
++	if (elems->ssid_len != hapd->conf->ssid.ssid_len ||
++	        os_memcmp(elems->ssid, hapd->conf->ssid.ssid, elems->ssid_len))
++		return;
++
++	struct sta_info* sta_ret = ap_get_sta(hapd, mgmt->bssid);
++	if (sta_ret)
++		return;
++
++	sta_ret = ap_sta_add(hapd, mgmt->bssid);
++
++	/* TODO: this has been added just to making compiler happy after breaking
++	 * changes introduced in 11a607d121df512e010148bedcb4263a03329dc7 to support
++	 * IEEE80211BE Multi Link Operation. Look at that commit with more time and
++	 * understand what could be a proper implementation in this context too
++	 */
++	const u8 *mld_link_addr = NULL;
++	bool mld_link_sta = false;
++
++	/* First add the station without more information */
++	int aRet = hostapd_sta_add(
++	            hapd, mgmt->bssid, sta_ret->aid, 0,
++	            NULL, 0, 0, NULL, NULL, NULL, 0, NULL, 0, NULL,
++	            sta_ret->flags, 0, 0, 0,
++	            0, // 0 add, 1 set
++	            mld_link_addr, mld_link_sta);
++
++	sta_ret->flags |= WLAN_STA_AUTH;
++	wpa_auth_sm_event(sta_ret->wpa_sm, WPA_AUTH);
++
++	/* TODO: Investigate if supporting WPA or other encryption method is
++	 * possible */
++	sta_ret->auth_alg = WLAN_AUTH_OPEN;
++	mlme_authenticate_indication(hapd, sta_ret);
++
++	sta_ret->capability = le_to_host16(mgmt->u.beacon.capab_info);
++
++	if (sta_ret->capability & WLAN_CAPABILITY_SHORT_PREAMBLE)
++		sta_ret->flags |= WLAN_STA_SHORT_PREAMBLE;
++	else
++		sta_ret->flags &= ~WLAN_STA_SHORT_PREAMBLE;
++
++	hostapd_copy_supp_rates(hapd, sta_ret, elems);
++
++	/* Whithout this flag copy_sta_[v]ht_capab will disable [V]HT
++	 * capabilities even if available */
++	if (elems->ht_capabilities || elems->vht_capabilities)
++		sta_ret->flags |= WLAN_STA_WMM;
++
++	copy_sta_ht_capab(hapd, sta_ret, elems->ht_capabilities);
++#ifdef CONFIG_IEEE80211AC
++	copy_sta_vht_capab(hapd, sta_ret, elems->vht_capabilities);
++	copy_sta_vht_oper(hapd, sta_ret, elems->vht_operation);
++	copy_sta_vendor_vht(hapd, sta_ret, elems->vendor_vht, elems->vendor_vht_len);
++#endif // def CONFIG_IEEE80211AC
++#ifdef CONFIG_IEEE80211AX
++	copy_sta_he_capab(hapd, sta_ret, IEEE80211_MODE_AP,
++	                  elems->he_capabilities, elems->he_capabilities_len);
++	copy_sta_he_6ghz_capab(hapd, sta_ret,  elems->he_6ghz_band_cap);
++#endif // def CONFIG_IEEE80211AX
++#ifdef CONFIG_IEEE80211BE
++	copy_sta_eht_capab(hapd, sta_ret,
++	                   IEEE80211_MODE_AP, // TODO: Make sure is the right value
++	                   elems->he_capabilities, elems->he_capabilities_len,
++	                   elems->eht_capabilities, elems->eht_capabilities_len);
++#endif //def CONFIG_IEEE80211BE
++
++	update_ht_state(hapd, sta_ret);
++
++	if (hostapd_get_aid(hapd, sta_ret) < 0)
++	{
++		wpa_printf(MSG_INFO, "apup_process_beacon(...) No room for more AIDs");
++		return;
++	}
++
++	sta_ret->flags |= WLAN_STA_ASSOC_REQ_OK;
++
++	/* Make sure that the previously registered inactivity timer will not
++	 * remove the STA immediately. */
++	sta_ret->timeout_next = STA_NULLFUNC;
++
++	sta_ret->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC;
++
++	/* Then set the paramethers */
++	int sRet = hostapd_sta_add(
++	            hapd, mgmt->bssid, sta_ret->aid,
++	            sta_ret->capability,
++	            sta_ret->supported_rates, sta_ret->supported_rates_len,
++	            0, // u16 listen_interval TODO ?
++	            sta_ret->ht_capabilities,
++	            sta_ret->vht_capabilities,
++	            sta_ret->he_capab, sta_ret->he_capab_len,
++	            sta_ret->eht_capab, sta_ret->eht_capab_len,
++	            sta_ret->he_6ghz_capab,
++	            sta_ret->flags,
++	            0, // u8 qosinfo
++	            sta_ret->vht_opmode,
++	            0, // int supp_p2p_ps
++	            1, // 0 add, 1 set
++	            mld_link_addr, mld_link_sta);
++
++	ap_sta_set_authorized(hapd, sta_ret, 1);
++	hostapd_set_sta_flags(hapd, sta_ret);
++
++	char mIfname[IFNAMSIZ + 1];
++	os_memset(mIfname, 0, IFNAMSIZ + 1);
++
++	// last param 1 means add 0 means remove
++	int mRet = hostapd_set_wds_sta(
++	            hapd, mIfname, mgmt->bssid, sta_ret->aid, 1);
++
++	wpa_printf(MSG_INFO,
++	           "apup_process_beacon(...) Added APuP peer at %s with flags: %d,"
++	           " capabilities %d",
++	           mIfname, sta_ret->flags, sta_ret->capability);
++
++#ifdef UBUS_SUPPORT
++	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
++#endif
++
++#ifdef UCODE_SUPPORT
++	hostapd_ucode_apup_newpeer(hapd, mIfname);
++#endif
++}
+--- /dev/null
++++ b/src/ap/apup.h
+@@ -0,0 +1,24 @@
++/*
++ * hostapd / APuP Access Point Micro Peering
++ *
++ * Copyright (C) 2023-2024  Gioacchino Mazzurco <gio@polymathes.cc>
++ *
++ * This software may be distributed under the terms of the BSD license.
++ * See README for more details.
++ */
++
++/* Be extremely careful altering include order, move just one in the wrong place
++ * and you will start getting a bunch of error of undefined bool, size_t etc. */
++
++#include "utils/includes.h"
++#include "utils/common.h"
++
++#include "hostapd.h"
++#include "common/ieee802_11_defs.h"
++
++/** When beacons from other Access Point are received, if the SSID is matching
++ * add them as APuP peers (aka WDS STA to our own AP) the same happens on the
++ * peer when receiving our beacons */
++void apup_process_beacon(struct hostapd_data *hapd,
++              const struct ieee80211_mgmt *mgmt, size_t len,
++              const struct ieee802_11_elems *elems );
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -60,6 +60,9 @@
+ #include "nan_usd_ap.h"
+ #include "pasn/pasn_common.h"
+ 
++#ifdef CONFIG_APUP
++#	include "apup.h"
++#endif // def CONFIG_APUP
+ 
+ #ifdef CONFIG_FILS
+ static struct wpabuf *
+@@ -3617,8 +3620,8 @@ static u16 check_multi_ap(struct hostapd
+ }
+ 
+ 
+-static u16 copy_supp_rates(struct hostapd_data *hapd, struct sta_info *sta,
+-			   struct ieee802_11_elems *elems)
++u16 hostapd_copy_supp_rates(struct hostapd_data *hapd, struct sta_info *sta,
++			   const struct ieee802_11_elems *elems)
+ {
+ 	/* Supported rates not used in IEEE 802.11ad/DMG */
+ 	if (hapd->iface->current_mode &&
+@@ -4005,7 +4008,7 @@ static int __check_assoc_ies(struct host
+ 			       elems->ext_capab_len);
+ 	if (resp != WLAN_STATUS_SUCCESS)
+ 		return resp;
+-	resp = copy_supp_rates(hapd, sta, elems);
++	resp = hostapd_copy_supp_rates(hapd, sta, elems);
+ 	if (resp != WLAN_STATUS_SUCCESS)
+ 		return resp;
+ 
+@@ -6060,6 +6063,11 @@ static void handle_beacon(struct hostapd
+ 				      0);
+ 
+ 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
++
++#ifdef CONFIG_APUP
++	if (hapd->conf->apup)
++		apup_process_beacon(hapd, mgmt, len, &elems);
++#endif // def CONFIG_APUP
+ }
+ 
+ 
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -108,6 +108,8 @@ int hostapd_process_ml_assoc_req_addr(st
+ 				      const u8 *basic_mle, size_t basic_mle_len,
+ 				      u8 *mld_addr);
+ int hostapd_get_aid(struct hostapd_data *hapd, struct sta_info *sta);
++u16 hostapd_copy_supp_rates(struct hostapd_data *hapd, struct sta_info *sta,
++		      const struct ieee802_11_elems *elems);
+ u16 copy_sta_ht_capab(struct hostapd_data *hapd, struct sta_info *sta,
+ 		      const u8 *ht_capab);
+ u16 copy_sta_vendor_vht(struct hostapd_data *hapd, struct sta_info *sta,
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -4048,7 +4048,7 @@ struct wpa_driver_ops {
+ 	 * Returns: 0 on success, -1 on failure
+ 	 */
+ 	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
+-			   const char *bridge_ifname, char *ifname_wds);
++			   const char *bridge_ifname, const char *ifname_wds);
+ 
+ 	/**
+ 	 * send_action - Transmit an Action frame
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -8559,25 +8559,15 @@ static int have_ifidx(struct wpa_driver_
+ 
+ 
+ static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
+-			    const char *bridge_ifname, char *ifname_wds)
++			    const char *bridge_ifname, const char *ifname_wds)
+ {
+ 	struct i802_bss *bss = priv;
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+-	char name[IFNAMSIZ + 1];
++	const char *name = ifname_wds; // Kept to reduce changes to the minimum
+ 	union wpa_event_data event;
+ 	bool add_br = false;
+ 	int ret;
+ 
+-	ret = os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
+-	if (ret >= (int) sizeof(name))
+-		wpa_printf(MSG_WARNING,
+-			   "nl80211: WDS interface name was truncated");
+-	else if (ret < 0)
+-		return ret;
+-
+-	if (ifname_wds)
+-		os_strlcpy(ifname_wds, name, IFNAMSIZ + 1);
+-
+ 	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
+ 		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
+ 	if (val) {

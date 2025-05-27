@@ -1,0 +1,44 @@
+From 98ee46391baf35987227236d0c3bb30ab6e758c8 Mon Sep 17 00:00:00 2001
+From: Zhang Zekun <zhangzekun11@huawei.com>
+Date: Mon, 2 Sep 2024 15:29:50 +0100
+Subject: [PATCH] nvmem: sunplus-ocotp: Use
+ devm_platform_ioremap_resource_byname() helper function
+
+platform_get_resource_byname() and devm_ioremap_resource() can be
+replaced by devm_platform_ioremap_resource_byname(), which can
+simplify the code logic a bit, No functional change here.
+
+Signed-off-by: Zhang Zekun <zhangzekun11@huawei.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240902142952.71639-8-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sunplus-ocotp.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/drivers/nvmem/sunplus-ocotp.c
++++ b/drivers/nvmem/sunplus-ocotp.c
+@@ -159,7 +159,6 @@ static int sp_ocotp_probe(struct platfor
+ 	struct device *dev = &pdev->dev;
+ 	struct nvmem_device *nvmem;
+ 	struct sp_ocotp_priv *otp;
+-	struct resource *res;
+ 	int ret;
+ 
+ 	otp = devm_kzalloc(dev, sizeof(*otp), GFP_KERNEL);
+@@ -168,13 +167,11 @@ static int sp_ocotp_probe(struct platfor
+ 
+ 	otp->dev = dev;
+ 
+-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hb_gpio");
+-	otp->base[HB_GPIO] = devm_ioremap_resource(dev, res);
++	otp->base[HB_GPIO] = devm_platform_ioremap_resource_byname(pdev, "hb_gpio");
+ 	if (IS_ERR(otp->base[HB_GPIO]))
+ 		return PTR_ERR(otp->base[HB_GPIO]);
+ 
+-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "otprx");
+-	otp->base[OTPRX] = devm_ioremap_resource(dev, res);
++	otp->base[OTPRX] = devm_platform_ioremap_resource_byname(pdev, "otprx");
+ 	if (IS_ERR(otp->base[OTPRX]))
+ 		return PTR_ERR(otp->base[OTPRX]);
+ 

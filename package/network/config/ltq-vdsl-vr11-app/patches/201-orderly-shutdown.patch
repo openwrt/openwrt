@@ -1,0 +1,73 @@
+Try to perform an orderly shutdown via L3 request before the connection
+is stopped on exit.
+
+--- a/src/dsl_cpe_control.c
++++ b/src/dsl_cpe_control.c
+@@ -7252,15 +7252,58 @@ static DSL_boolean_t DSL_CPE_DebugAndTes
+ #endif /* defined(DSL_DEBUG_TOOL_INTERFACE) || defined(INCLUDE_DSL_CPE_DTI_SUPPORT) */
+ #endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+ 
++DSL_CPE_STATIC DSL_void_t DSL_CPE_EnableConnection(void)
++{
++   DSL_Error_t nRet = DSL_SUCCESS;
++   DSL_int_t nDevice = 0;
++   DSL_G997_PowerManagementStateForcedTrigger_t sPowerManagementStateForcedTrigger;
++
++   for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; ++nDevice)
++   {
++      memset(&sPowerManagementStateForcedTrigger, 0x0,
++         sizeof(DSL_G997_PowerManagementStateForcedTrigger_t));
++      sPowerManagementStateForcedTrigger.data.nPowerManagementState = DSL_G997_PMSF_L3_TO_L0;
++
++      nRet = (DSL_Error_t)DSL_CPE_Ioctl(
++         DSL_CPE_GetGlobalContext()->fd[nDevice],
++         DSL_FIO_G997_POWER_MANAGEMENT_STATE_FORCED_TRIGGER,
++         (DSL_int_t)&sPowerManagementStateForcedTrigger);
++
++      if (nRet < DSL_SUCCESS)
++      {
++         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
++            "Transition to L0 state (%d) failed!, nRet = %d!"
++            DSL_CPE_CRLF, nDevice, sPowerManagementStateForcedTrigger.accessCtl.nReturn));
++      }
++   }
++}
++
+ DSL_CPE_STATIC DSL_void_t DSL_CPE_ShutdownConnection(void)
+ {
+    DSL_Error_t nRet = DSL_SUCCESS;
+    DSL_int_t nDevice = 0;
++   DSL_G997_PowerManagementStateForcedTrigger_t sPowerManagementStateForcedTrigger;
+    DSL_AutobootConfig_t sAutobootCfg;
+    DSL_AutobootControl_t sAutobootCtl;
+ 
+    for (nDevice = 0; nDevice < DSL_CPE_DSL_ENTITIES; ++nDevice)
+    {
++      memset(&sPowerManagementStateForcedTrigger, 0x0,
++         sizeof(DSL_G997_PowerManagementStateForcedTrigger_t));
++      sPowerManagementStateForcedTrigger.data.nPowerManagementState = DSL_G997_PMSF_LX_TO_L3;
++
++      nRet = (DSL_Error_t)DSL_CPE_Ioctl(
++         DSL_CPE_GetGlobalContext()->fd[nDevice],
++         DSL_FIO_G997_POWER_MANAGEMENT_STATE_FORCED_TRIGGER,
++         (DSL_int_t)&sPowerManagementStateForcedTrigger);
++
++      if (nRet < DSL_SUCCESS)
++      {
++         DSL_CCA_DEBUG(DSL_CCA_DBG_ERR, (DSL_CPE_PREFIX
++            "Transition to L3 state (%d) failed!, nRet = %d!"
++            DSL_CPE_CRLF, nDevice, sPowerManagementStateForcedTrigger.accessCtl.nReturn));
++      }
++
+       g_bWaitBeforeConfigWrite[nDevice]    = DSL_TRUE;
+       g_bWaitBeforeLinkActivation[nDevice] = DSL_TRUE;
+       g_bWaitBeforeRestart[nDevice]        = DSL_TRUE;
+@@ -8318,6 +8361,8 @@ DSL_int_t dsl_cpe_daemon (
+ #endif /* defined(INCLUDE_DSL_JSON_PARSING) && (INCLUDE_DSL_JSON_PARSING == 1) */
+    }
+ 
++   DSL_CPE_EnableConnection();
++
+ #ifdef INCLUDE_DSL_CPE_CLI_SUPPORT
+ #ifndef DSL_CPE_REMOVE_PIPE_SUPPORT
+    if (DSL_CPE_Pipe_Init (pCtrlCtx) == DSL_ERROR)

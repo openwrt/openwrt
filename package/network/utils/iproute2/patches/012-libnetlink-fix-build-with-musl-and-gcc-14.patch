@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Natanael Copa <ncopa@alpinelinux.org>
+Date: Thu, 8 Aug 2024 09:19:01 +0200
+Subject: libnetlink: fix build with musl and gcc 14
+
+Fixes compilation error with musl libc and gcc 14:
+
+../include/libnetlink.h: In function 'rta_getattr_be64':
+../include/libnetlink.h:280:16: error: implicit declaration of function 'htobe64' [-Wimplicit-function-declaration]
+  280 |         return htobe64(rta_getattr_u64(rta));
+      |                ^~~~~~~
+
+Reference: https://man7.org/linux/man-pages/man3/endian.3.html
+Signed-off-by: Natanael Copa <ncopa@alpinelinux.org>
+---
+ include/libnetlink.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/libnetlink.h
++++ b/include/libnetlink.h
+@@ -2,6 +2,7 @@
+ #ifndef __LIBNETLINK_H__
+ #define __LIBNETLINK_H__ 1
+ 
++#include <endian.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <asm/types.h>

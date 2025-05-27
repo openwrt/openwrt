@@ -1,0 +1,135 @@
+From c661050f93d3fd37a33c06041bb18a89688de7d2 Mon Sep 17 00:00:00 2001
+From: Breno Leitao <leitao@debian.org>
+Date: Mon, 22 Apr 2024 05:38:56 -0700
+Subject: [PATCH] net: create a dummy net_device allocator
+
+It is impossible to use init_dummy_netdev together with alloc_netdev()
+as the 'setup' argument.
+
+This is because alloc_netdev() initializes some fields in the net_device
+structure, and later init_dummy_netdev() memzero them all. This causes
+some problems as reported here:
+
+	https://lore.kernel.org/all/20240322082336.49f110cc@kernel.org/
+
+Split the init_dummy_netdev() function in two. Create a new function called
+init_dummy_netdev_core() that does not memzero the net_device structure.
+Then have init_dummy_netdev() memzero-ing and calling
+init_dummy_netdev_core(), keeping the old behaviour.
+
+init_dummy_netdev_core() is the new function that could be called as an
+argument for alloc_netdev().
+
+Also, create a helper to allocate and initialize dummy net devices,
+leveraging init_dummy_netdev_core() as the setup argument. This function
+basically simplify the allocation of dummy devices, by allocating and
+initializing it. Freeing the device continue to be done through
+free_netdev()
+
+Suggested-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Breno Leitao <leitao@debian.org>
+Reviewed-by: Ido Schimmel <idosch@nvidia.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/linux/netdevice.h |  3 +++
+ net/core/dev.c            | 56 ++++++++++++++++++++++++++-------------
+ 2 files changed, 41 insertions(+), 18 deletions(-)
+
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -4569,6 +4569,9 @@ static inline void netif_addr_unlock_bh(
+ 
+ void ether_setup(struct net_device *dev);
+ 
++/* Allocate dummy net_device */
++struct net_device *alloc_netdev_dummy(int sizeof_priv);
++
+ /* Support for loadable net-drivers */
+ struct net_device *alloc_netdev_mqs(int sizeof_priv, const char *name,
+ 				    unsigned char name_assign_type,
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -10390,25 +10390,12 @@ err_free_name:
+ }
+ EXPORT_SYMBOL(register_netdevice);
+ 
+-/**
+- *	init_dummy_netdev	- init a dummy network device for NAPI
+- *	@dev: device to init
+- *
+- *	This takes a network device structure and initialize the minimum
+- *	amount of fields so it can be used to schedule NAPI polls without
+- *	registering a full blown interface. This is to be used by drivers
+- *	that need to tie several hardware interfaces to a single NAPI
+- *	poll scheduler due to HW limitations.
++/* Initialize the core of a dummy net device.
++ * This is useful if you are calling this function after alloc_netdev(),
++ * since it does not memset the net_device fields.
+  */
+-int init_dummy_netdev(struct net_device *dev)
++static void init_dummy_netdev_core(struct net_device *dev)
+ {
+-	/* Clear everything. Note we don't initialize spinlocks
+-	 * are they aren't supposed to be taken by any of the
+-	 * NAPI code and this dummy netdev is supposed to be
+-	 * only ever used for NAPI polls
+-	 */
+-	memset(dev, 0, sizeof(struct net_device));
+-
+ 	/* make sure we BUG if trying to hit standard
+ 	 * register/unregister code path
+ 	 */
+@@ -10428,12 +10415,32 @@ int init_dummy_netdev(struct net_device
+ 	 * because users of this 'device' dont need to change
+ 	 * its refcount.
+ 	 */
++}
++
++/**
++ *	init_dummy_netdev	- init a dummy network device for NAPI
++ *	@dev: device to init
++ *
++ *	This takes a network device structure and initializes the minimum
++ *	amount of fields so it can be used to schedule NAPI polls without
++ *	registering a full blown interface. This is to be used by drivers
++ *	that need to tie several hardware interfaces to a single NAPI
++ *	poll scheduler due to HW limitations.
++ */
++int init_dummy_netdev(struct net_device *dev)
++{
++	/* Clear everything. Note we don't initialize spinlocks
++	 * as they aren't supposed to be taken by any of the
++	 * NAPI code and this dummy netdev is supposed to be
++	 * only ever used for NAPI polls
++	 */
++	memset(dev, 0, sizeof(struct net_device));
++	init_dummy_netdev_core(dev);
+ 
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(init_dummy_netdev);
+ 
+-
+ /**
+  *	register_netdev	- register a network device
+  *	@dev: device to register
+@@ -11027,6 +11034,19 @@ void free_netdev(struct net_device *dev)
+ EXPORT_SYMBOL(free_netdev);
+ 
+ /**
++ * alloc_netdev_dummy - Allocate and initialize a dummy net device.
++ * @sizeof_priv: size of private data to allocate space for
++ *
++ * Return: the allocated net_device on success, NULL otherwise
++ */
++struct net_device *alloc_netdev_dummy(int sizeof_priv)
++{
++	return alloc_netdev(sizeof_priv, "dummy#", NET_NAME_UNKNOWN,
++			    init_dummy_netdev_core);
++}
++EXPORT_SYMBOL_GPL(alloc_netdev_dummy);
++
++/**
+  *	synchronize_net -  Synchronize with packet receive processing
+  *
+  *	Wait for packets currently being received to be done.

@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -50,7 +51,8 @@
 		compatible = "gpio-leds";
 
 		lan_green {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
@@ -58,12 +60,14 @@
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		alarm_blue {
-			label = "blue:alarm";
+			function = LED_FUNCTION_ALARM;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		internet_orange {
@@ -88,7 +92,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -207,6 +211,16 @@
 				label = "boardconfig";
 				reg = <0x1f80000 0x80000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -233,14 +247,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

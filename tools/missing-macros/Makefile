@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=missing-macros
-PKG_RELEASE:=11
+PKG_RELEASE:=12
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -20,9 +20,14 @@ endef
 
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/aclocal
-	$(INSTALL_DATA) ./src/m4/*.m4 $(STAGING_DIR_HOST)/share/aclocal/
+	$(INSTALL_DATA) $(HOST_BUILD_DIR)/m4/*.m4 $(STAGING_DIR_HOST)/share/aclocal/
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
-	$(INSTALL_BIN) ./src/bin/* $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/bin/* $(STAGING_DIR_HOST)/bin/
+	$(LN) makeinfo $(STAGING_DIR_HOST)/bin/texi2any
+	$(LN) makeinfo $(STAGING_DIR_HOST)/bin/texi2pdf
+	$(LN) makeinfo $(STAGING_DIR_HOST)/bin/texi2dvi
+	$(LN) makeinfo $(STAGING_DIR_HOST)/bin/pdftexi2dvi
+	$(LN) makeinfo $(STAGING_DIR_HOST)/bin/texi2html
 endef
 
 $(eval $(call HostBuild))

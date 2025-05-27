@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "ar9344.dtsi"
-
 &spi {
 	status = "okay";
 
@@ -18,7 +16,6 @@
 			partition@0 {
 				label = "RouterBoot";
 				reg = <0x0 0x20000>;
-				read-only;
 				compatible = "mikrotik,routerboot-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -55,10 +52,4 @@
 			};
 		};
 	};
-};
-
-&wmac {
-	status = "okay";
-
-	qca,no-eeprom;
 };

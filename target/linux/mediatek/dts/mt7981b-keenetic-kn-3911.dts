@@ -1,0 +1,300 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+
+#include "mt7981.dtsi"
+
+/ {
+	model = "Keenetic KN-3911";
+	compatible = "keenetic,kn-3911", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &status_led;
+		led-failsafe = &status_led;
+		led-running = &status_led;
+		led-upgrade = &status_led;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-fn {
+			label = "fn";
+			linux,code = <BTN_0>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		status_led: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&firmware1 &firmware2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x600000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x600000 0x0>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy10>;
+		label = "lan";
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_4 0>;
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy11>;
+		label = "wan";
+
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_a 0>;
+	};
+};
+
+&mdio_bus {
+	phy10: ethernet-phy@a {
+		reg = <0xa>;
+		interrupt-parent = <&pio>;
+		interrupts = <38 IRQ_TYPE_EDGE_FALLING>;
+		reset-gpios = <&pio 22 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+	};
+
+	phy11: ethernet-phy@b {
+		reg = <0xb>;
+		interrupt-parent = <&pio>;
+		interrupts = <23 IRQ_TYPE_EDGE_FALLING>;
+		reset-gpios = <&pio 27 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	/* Winbond W25N01GVZEIG (128M) */
+	spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* bl2 */
+			partition@0 {
+				label = "preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			/* fip */
+			partition@80000 {
+				label = "u-boot";
+				reg = <0x80000 0x200000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "u-config";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "rf-eeprom";
+				reg = <0x300000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					/* lan mac */
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					/* wan mac */
+					macaddr_factory_a: macaddr@a {
+						compatible = "mac-base";
+						reg = <0xa 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			firmware1: partition@500000 {
+				label = "firmware_1";
+				reg = <0x500000 0x3500000>;
+			};
+
+			partition@3a00000 {
+				label = "config_1";
+				reg = <0x3a00000 0x80000>;
+				read-only;
+			};
+
+			partition@3a80000 {
+				label = "dump";
+				reg = <0x3a80000 0x80000>;
+				read-only;
+			};
+
+			partition@3c00000 {
+				label = "u-state";
+				reg = <0x3c00000 0x20000>;
+				read-only;
+			};
+
+			partition@3e80000 {
+				label = "u-config_res";
+				reg = <0x3e80000 0x80000>;
+				read-only;
+			};
+
+			partition@3f00000 {
+				label = "rf-eeprom_res";
+				reg = <0x3f00000 0x200000>;
+				read-only;
+			};
+
+			firmware2: partition@4100000 {
+				label = "firmware_2";
+				reg = <0x4140000 0x3500000>;
+			};
+
+			partition@7600000 {
+				label = "config_2";
+				reg = <0x7600000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&wifi {
+	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
+	status = "okay";
+};
+
+&sgmiisys0 {
+	/delete-node/ mediatek,pnswap;
+};

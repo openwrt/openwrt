@@ -1,0 +1,602 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "qcom-ipq8065-smb208.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Askey RT4230W REV6";
+	compatible = "askey,rt4230w-rev6", "qcom,ipq8065", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x42000000 0x3e000000>;
+		device_type = "memory";
+	};
+
+	aliases {
+		led-boot = &ledctrl1;
+		led-failsafe = &ledctrl1;
+		led-running = &ledctrl3;
+		led-upgrade = &ledctrl1;
+	};
+
+	chosen {
+		bootargs = "rootfstype=squashfs noinitrd";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&qcom_pinmux 68 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		ledctrl1: ledctrl1 {
+			label = "ledctrl1";
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		ledctrl2: ledctrl2 {
+			label = "ledctrl2";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+		};
+
+		ledctrl3: ledctrl3 {
+			label = "ledctrl3";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	button_pins: button_pins {
+		mux {
+			pins = "gpio54", "gpio68";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio22", "gpio23", "gpio24";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+
+	rgmii2_pins: rgmii2-pins {
+		mux {
+			pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31",
+				"gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62";
+			function = "rgmii2";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		tx {
+			pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32";
+			input-disable;
+		};
+	};
+
+	spi_pins: spi_pins {
+		cs {
+			pins = "gpio20";
+			drive-strength = <12>;
+		};
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi@1a280000 {
+		status = "okay";
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		flash@0 {
+			compatible = "everspin,mr25h256";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <40000000>;
+			reg = <0>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		qcom,boot-partitions = <0x0 0x1180000 0x1340000 0x10c0000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0000000 0x0040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x0040000 0x0140000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "0:SBL2";
+				reg = <0x0180000 0x0140000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				label = "0:SBL3";
+				reg = <0x02c0000 0x0280000>;
+				read-only;
+			};
+
+			partition@540000 {
+				label = "0:DDRCONFIG";
+				reg = <0x0540000 0x0120000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "0:SSD";
+				reg = <0x0660000 0x0120000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "0:TZ";
+				reg = <0x0780000 0x0280000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "0:RPM";
+				reg = <0x0a00000 0x0280000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
+
+			partition@1180000 {
+				label = "0:APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+			};
+
+			partition@1200000 {
+				label = "0:ART";
+				reg = <0x1200000 0x0140000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_ART_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_ART_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					precal_ART_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_ART_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+
+			partition@1340000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x1340000 0x0060000>;
+				read-only;
+			};
+
+			partition@13a0000 {
+				label = "0:SBL2_1";
+				reg = <0x13a0000 0x0140000>;
+				read-only;
+			};
+
+			partition@14e0000 {
+				label = "0:SBL3_1";
+				reg = <0x14e0000 0x0280000>;
+				read-only;
+			};
+
+			partition@1760000 {
+				label = "0:DDRCONFIG_1";
+				reg = <0x1760000 0x0120000>;
+				read-only;
+			};
+
+			partition@1880000 {
+				label = "0:SSD_1";
+				reg = <0x1880000 0x0120000>;
+				read-only;
+			};
+
+			partition@19a0000 {
+				label = "0:TZ_1";
+				reg = <0x19a0000 0x0280000>;
+				read-only;
+			};
+
+			partition@1c20000 {
+				label = "0:RPM_1";
+				reg = <0x1c20000 0x0280000>;
+				read-only;
+			};
+
+			partition@1ea0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x1ea0000 0x0060000>;
+				read-only;
+			};
+
+			partition@1f00000 {
+				label = "0:APPSBL_1";
+				reg = <0x1f00000 0x0500000>;
+				read-only;
+			};
+
+			partition@2400000 {
+				label = "ubi";
+				reg = <0x2400000 0x1a000000>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac0>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+
+	nvmem-cells = <&macaddr_ART_0>;
+	nvmem-cell-names = "mac-address";
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <1>;
+
+	nvmem-cells = <&macaddr_ART_6>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&adm_dma {
+	status = "okay";
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	reset-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pcie0_pins>;
+	pinctrl-names = "default";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi0: wifi@1,0 {
+			compatible = "pci168c,0046";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&precal_ART_1000>;
+			nvmem-cell-names = "pre-calibration";
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+	reset-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pcie1_pins>;
+	pinctrl-names = "default";
+	max-link-speed = <1>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi1: wifi@1,0 {
+			compatible = "pci168c,0046";
+			reg = <0x00010000 0 0 0 0>;
+
+			nvmem-cells = <&precal_ART_5000>;
+			nvmem-cell-names = "pre-calibration";
+		};
+	};
+};

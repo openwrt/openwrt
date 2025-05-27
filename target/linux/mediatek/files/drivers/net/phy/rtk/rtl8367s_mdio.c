@@ -71,15 +71,9 @@ unsigned int mii_mgr_write(unsigned int phy_addr,unsigned int phy_register,unsig
 static int rtl8367s_hw_reset(void)
 {
 	struct rtk_gsw *gsw = _gsw;
-	int ret;
 
 	if (gsw->reset_pin < 0)
 		return 0;
-
-	ret = devm_gpio_request(gsw->dev, gsw->reset_pin, "mediatek,reset-pin");
-
-	if (ret)
-                printk("fail to devm_gpio_request\n");
 
 	gpio_direction_output(gsw->reset_pin, 0);
 
@@ -89,10 +83,7 @@ static int rtl8367s_hw_reset(void)
 
 	mdelay(500);
 
-	devm_gpio_free(gsw->dev, gsw->reset_pin);
-
 	return 0;
-	
 }
 
 static int rtl8367s_vlan_config(int want_at_p0)
@@ -220,7 +211,7 @@ void init_gsw(void)
 	set_rtl8367s_rgmii();
 }
 
-// bleow are platform driver
+// below are platform driver
 static const struct of_device_id rtk_gsw_match[] = {
 	{ .compatible = "mediatek,rtk-gsw" },
 	{},
@@ -235,6 +226,7 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	struct mii_bus *mdio_bus;
 	struct rtk_gsw *gsw;
 	const char *pm;
+	int ret;
 
 	mdio = of_parse_phandle(np, "mediatek,mdio", 0);
 
@@ -256,12 +248,17 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	gsw->bus = mdio_bus;
 
 	gsw->reset_pin = of_get_named_gpio(np, "mediatek,reset-pin", 0);
+	if (gsw->reset_pin >= 0) {
+		ret = devm_gpio_request(gsw->dev, gsw->reset_pin, "mediatek,reset-pin");
+		if (ret)
+			printk("fail to devm_gpio_request\n");
+	}
 
 	_gsw = gsw;
 
 	init_gsw();
 
-	//init default vlan or init swocnfig
+	//init default vlan or init swconfig
 	if(!of_property_read_string(pdev->dev.of_node,
 						"mediatek,port_map", &pm)) {
 
@@ -299,7 +296,6 @@ static struct platform_driver gsw_driver = {
 	.remove = rtk_gsw_remove,
 	.driver = {
 		.name = "rtk-gsw",
-		.owner = THIS_MODULE,
 		.of_match_table = rtk_gsw_match,
 	},
 };

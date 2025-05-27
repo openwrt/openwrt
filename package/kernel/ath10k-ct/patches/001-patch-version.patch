@@ -1,0 +1,11 @@
+--- a/ath10k-6.10/pci.c
++++ b/ath10k-6.10/pci.c
+@@ -3871,7 +3871,7 @@ static int __ath10k_pci_probe(struct pci
+ 	int (*pci_hard_reset)(struct ath10k *ar);
+ 	u32 (*targ_cpu_to_ce_addr)(struct ath10k *ar, u32 addr);
+ 
+-	printk(KERN_INFO "ath10k 6.7 driver, optimized for CT firmware, probing pci device: 0x%x.\n",
++	printk(KERN_INFO "ath10k 6.10 driver, optimized for CT firmware, probing pci device: 0x%x.\n",
+ 	       pci_dev->device);
+ 
+ 	switch (pci_dev->device) {

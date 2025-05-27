@@ -2,17 +2,24 @@
 
 . /lib/upgrade/common.sh
 
-BOOTPART=/dev/mmcblk0p1
-
 move_config() {
-	if [ -b $BOOTPART ]; then
+	local partdev
+
+	export_bootdevice && export_partdevice partdev 1 || {
+		partdev=mmcblk0p1
+	}
+
+	if [ -b "/dev/$partdev" ]; then
 		insmod nls_cp437
 		insmod nls_iso8859-1
 		insmod fat
 		insmod vfat
 		mkdir -p /boot
-		mount -t vfat -o rw,noatime $BOOTPART /boot
-		[ -f "/boot/$BACKUP_FILE" ] && mv -f "/boot/$BACKUP_FILE" /
+		mount -t vfat -o rw,noatime /dev/$partdev /boot
+		if [ -f "/boot/$BACKUP_FILE" ]; then
+			mv -f "/boot/$BACKUP_FILE" /
+			export BCM27XX_SET_ROOT_PART=1
+		fi
 	fi
 }
 

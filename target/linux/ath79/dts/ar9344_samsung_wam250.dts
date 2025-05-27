@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Samsung WAM250";
@@ -38,12 +39,14 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -54,7 +57,8 @@
 		};
 
 		wlan {
-			label = "white:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -66,9 +70,8 @@
 
 	phy-handle = <&swphy0>;
 
-	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cells = <&macaddr_art_1002 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 
 	gmac-config {
 		device = <&gmac>;
@@ -79,7 +82,7 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cells = <&macaddr_art_1002 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -133,10 +136,26 @@
 				reg = <0x070000 0xf80000>;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					macaddr_art_1002: macaddr@1002 {
+						compatible = "mac-base";
+						reg = <0x1002 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -154,15 +173,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_1002: macaddr@1002 {
-		reg = <0x1002 0x6>;
-	};
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };

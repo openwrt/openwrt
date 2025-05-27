@@ -21,7 +21,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <4>;
 	phy4: ethernet-phy@4 {
 		phy-mode = "sgmii";
 		reg = <4>;
@@ -36,14 +35,4 @@
 	nvmem-cell-names = "mac-address";
 	phy-mode = "sgmii";
 	phy-handle = <&phy4>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };

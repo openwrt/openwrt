@@ -5,7 +5,9 @@
  * Copyright (C) 2022 Daniel González Cabanelas <dgcbueu@gmail.com>
  * based on device tree from qca9558_ubnt_powerbeam-5ac-500.dts
  */
- 
+
+#include <dt-bindings/leds/common.h>
+
 #include "qca955x_ubnt_xc.dtsi"
 
 / {
@@ -71,7 +73,8 @@
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -81,7 +84,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <4>;
 	phy4: ethernet-phy@4 {
 		phy-mode = "sgmii";
 		reg = <4>;
@@ -98,14 +100,4 @@
 	nvmem-cell-names = "mac-address";
 	phy-mode = "sgmii";
 	phy-handle = <&phy4>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };

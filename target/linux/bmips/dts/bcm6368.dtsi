@@ -6,6 +6,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/interrupt-controller/bcm6368-interrupt-controller.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/reset/bcm6368-reset.h>
 
 / {
@@ -41,6 +43,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		brcm,bmips-cbr-reg = <0xff400000>;
 		mips-hpt-frequency = <200000000>;
 
 		cpu@0 {
@@ -108,6 +111,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6368_IRQ_EXT0>,
 				     <BCM6368_IRQ_EXT1>,
 				     <BCM6368_IRQ_EXT2>,
@@ -122,6 +126,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6368_IRQ_EXT4>,
 				     <BCM6368_IRQ_EXT5>;
 		};
@@ -149,6 +154,8 @@
 		};
 
 		gpio_cntl: syscon@10000080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6368-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
@@ -327,7 +334,7 @@
 
 				pinctrl_uart1: uart1-pins {
 					function = "uart1";
-					group = "uart1_grp";
+					pins = "uart1_grp";
 				};
 			};
 		};
@@ -408,16 +415,14 @@
 
 		pci: pci@10001000 {
 			compatible = "brcm,bcm6348-pci";
-			reg = <0x10001000 0x200>,
-			      <0x08000000 0x10000>;
-			reg-names = "pci",
-				    "pci-io";
+			reg = <0x10001000 0x200>;
 			#address-cells = <3>;
 			#size-cells = <2>;
 
 			device_type = "pci";
 			bus-range = <0x00 0x01>;
-			ranges = <0x2000000 0 0x30000000 0x30000000 0 0x8000000>;
+			ranges = <0x2000000 0 0x30000000 0x30000000 0 0x8000000>,
+				 <0x1000000 0 0x08000000 0x08000000 0 0x0010000>;
 			linux,pci-probe-only = <1>;
 
 			interrupt-parent = <&periph_intc>;
@@ -519,7 +524,7 @@
 		switch0: switch@10f00000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "brcm,bcm6328-switch";
+			compatible = "brcm,bcm6368-switch";
 			reg = <0x10f00000 0x8000>;
 			big-endian;
 
@@ -529,7 +534,6 @@
 
 				port@8 {
 					reg = <8>;
-					label = "cpu";
 
 					phy-mode = "internal";
 					ethernet = <&ethernet>;

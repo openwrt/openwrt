@@ -55,16 +55,10 @@
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
 
-	sdhci@10130000 {
-		compatible = "ralink,mt7620-sdhci";
-		reg = <0x10130000 4000>;
-
-		interrupt-parent = <&intc>;
-		interrupts = <14>;
-
-		status = "okay";
-	};
+&sdhci {
+	status = "okay";
 };
 
 &state_default {
@@ -100,10 +94,24 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -125,15 +133,6 @@
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

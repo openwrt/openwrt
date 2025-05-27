@@ -1,0 +1,56 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Mon, 30 Sep 2024 17:04:09 +0200
+Subject: [PATCH] wifi: cfg80211: add monitor SKIP_TX flag
+
+This can be used to indicate that the user is not interested in receiving
+locally sent packets on the monitor interface.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -2272,6 +2272,7 @@ static inline int cfg80211_get_station(s
+  * @MONITOR_FLAG_OTHER_BSS: disable BSSID filtering
+  * @MONITOR_FLAG_COOK_FRAMES: report frames after processing
+  * @MONITOR_FLAG_ACTIVE: active monitor, ACKs frames on its MAC address
++ * @MONITOR_FLAG_SKIP_TX: do not pass locally transmitted frames
+  */
+ enum monitor_flags {
+ 	MONITOR_FLAG_CHANGED		= BIT(__NL80211_MNTR_FLAG_INVALID),
+@@ -2281,6 +2282,7 @@ enum monitor_flags {
+ 	MONITOR_FLAG_OTHER_BSS		= BIT(NL80211_MNTR_FLAG_OTHER_BSS),
+ 	MONITOR_FLAG_COOK_FRAMES	= BIT(NL80211_MNTR_FLAG_COOK_FRAMES),
+ 	MONITOR_FLAG_ACTIVE		= BIT(NL80211_MNTR_FLAG_ACTIVE),
++	MONITOR_FLAG_SKIP_TX		= BIT(NL80211_MNTR_FLAG_SKIP_TX),
+ };
+ 
+ /**
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -4703,6 +4703,7 @@ enum nl80211_survey_info {
+  *	overrides all other flags.
+  * @NL80211_MNTR_FLAG_ACTIVE: use the configured MAC address
+  *	and ACK incoming unicast packets.
++ * @NL80211_MNTR_FLAG_SKIP_TX: do not pass local tx packets
+  *
+  * @__NL80211_MNTR_FLAG_AFTER_LAST: internal use
+  * @NL80211_MNTR_FLAG_MAX: highest possible monitor flag
+@@ -4715,6 +4716,7 @@ enum nl80211_mntr_flags {
+ 	NL80211_MNTR_FLAG_OTHER_BSS,
+ 	NL80211_MNTR_FLAG_COOK_FRAMES,
+ 	NL80211_MNTR_FLAG_ACTIVE,
++	NL80211_MNTR_FLAG_SKIP_TX,
+ 
+ 	/* keep last */
+ 	__NL80211_MNTR_FLAG_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -4201,6 +4201,7 @@ static const struct nla_policy mntr_flag
+ 	[NL80211_MNTR_FLAG_OTHER_BSS] = { .type = NLA_FLAG },
+ 	[NL80211_MNTR_FLAG_COOK_FRAMES] = { .type = NLA_FLAG },
+ 	[NL80211_MNTR_FLAG_ACTIVE] = { .type = NLA_FLAG },
++	[NL80211_MNTR_FLAG_SKIP_TX] = { .type = NLA_FLAG },
+ };
+ 
+ static int parse_monitor_flags(struct nlattr *nla, u32 *mntrflags)

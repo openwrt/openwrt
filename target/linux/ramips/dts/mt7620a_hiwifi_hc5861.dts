@@ -51,12 +51,6 @@
 			gpio-export,output = <0>;
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
-
-		sdpower {
-			gpio-export,name = "sdpower";
-			gpio-export,output = <0>;
-			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -70,10 +64,7 @@
 
 &ethernet {
 	pinctrl-names = "default";
-	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
-
-	nvmem-cells = <&macaddr_factory_4>;
-	nvmem-cell-names = "mac-address";
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 
 	mediatek,portmap = "llllw";
 
@@ -93,6 +84,16 @@
 	};
 };
 
+&gsw {
+	mediatek,ephy-base = /bits/ 8 <12>;
+};
+
+&mmc_reg_3v3 {
+	/delete-property/ enable-active-high;
+
+	gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+};
+
 &pcie {
 	status = "okay";
 };
@@ -101,12 +102,14 @@
 	wifi@0,0 {
 		compatible = "pci14c3,7662";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
 &wmac {
-	pinctrl-names = "default";
+	pinctrl-names = "default", "pa_gpio";
 	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
 };

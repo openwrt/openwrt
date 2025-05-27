@@ -34,6 +34,16 @@
  }
  
  
+@@ -3800,7 +3808,9 @@ module_exit (ifx_tapi_module_exit);
+ 
+ MODULE_AUTHOR           ("Lantiq Deutschland GmbH");
+ MODULE_DESCRIPTION      ("TAPI Driver - www.lantiq.com");
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(5,10,0)
+ MODULE_SUPPORTED_DEVICE ("TAPI DEVICE");
++#endif
+ MODULE_LICENSE          ("Dual BSD/GPL");
+ 
+ EXPORT_SYMBOL (IFX_TAPI_Register_LL_Drv);
 --- a/src/drv_tapi_kpi.c
 +++ b/src/drv_tapi_kpi.c
 @@ -134,7 +134,11 @@ extern IFX_int32_t           block_ingre

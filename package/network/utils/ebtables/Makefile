@@ -9,14 +9,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_SOURCE_DATE:=2018-06-27
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://git.netfilter.org/ebtables
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=48cff25dfea5b37e16ba5dc6601e98ab140f5f99
-PKG_MIRROR_HASH:=1327cdc3402e5e3056819e4e9b6f9d4a5bfd401f2c4f58447afb2c3c73fc8aac
+PKG_MIRROR_HASH:=1ee560498e1a047b329eab3dad8425ae51e7f0527e4495efb99481ca11206b37
 
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:netfilter:ebtables
 
 include $(INCLUDE_DIR)/package.mk
 

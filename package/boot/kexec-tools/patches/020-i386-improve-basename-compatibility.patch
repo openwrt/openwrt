@@ -1,0 +1,37 @@
+From 99f62f58fac57214ecc3c9aabf6bf61ac1e1201d Mon Sep 17 00:00:00 2001
+From: Tony Ambardar <itugrok@yahoo.com>
+Date: Fri, 7 Jun 2024 21:54:56 -0700
+Subject: [PATCH] i386: improve basename() compatibility
+
+Drop usage of glibc basename() in favour of a simpler implementation that
+works across GNU and musl libc, and is similar to existing code in fs2dt.c.
+
+This fixes compile errors seen building against musl.
+
+Signed-off-by: Tony Ambardar <itugrok@yahoo.com>
+---
+ kexec/arch/i386/x86-linux-setup.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/kexec/arch/i386/x86-linux-setup.c
++++ b/kexec/arch/i386/x86-linux-setup.c
+@@ -318,6 +318,7 @@ static int add_edd_entry(struct x86_linu
+ 	uint8_t devnum, version;
+ 	uint32_t mbr_sig;
+ 	struct edd_info *edd_info;
++	char *basename = strrchr(sysfs_name,'/') + 1;
+ 
+ 	if (!current_mbr || !current_edd) {
+ 		fprintf(stderr, "%s: current_edd and current_edd "
+@@ -329,9 +330,9 @@ static int add_edd_entry(struct x86_linu
+ 	memset(edd_info, 0, sizeof(struct edd_info));
+ 
+ 	/* extract the device number */
+-	if (sscanf(basename(sysfs_name), "int13_dev%hhx", &devnum) != 1) {
++	if (sscanf(basename, "int13_dev%hhx", &devnum) != 1) {
+ 		fprintf(stderr, "Invalid format of int13_dev dir "
+-				"entry: %s\n", basename(sysfs_name));
++				"entry: %s\n", basename);
+ 		return -1;
+ 	}
+ 

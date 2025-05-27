@@ -100,6 +100,7 @@ static struct bh_map button_map[] = {
 	BH_MAP(KEY_WIMAX,		"wwan"),
 	BH_MAP(KEY_WLAN,		"wlan"),
 	BH_MAP(KEY_WPS_BUTTON,		"wps"),
+	BH_MAP(KEY_VENDOR,		"vendor"),
 };
 
 /* -------------------------------------------------------------------------*/
@@ -301,7 +302,7 @@ struct gpio_keys_button_dev {
 
 	struct device *dev;
 	struct gpio_keys_platform_data *pdata;
-	struct gpio_keys_button_data data[0];
+	struct gpio_keys_button_data data[];
 };
 
 static void gpio_keys_polled_queue_work(struct gpio_keys_button_dev *bdev)
@@ -372,7 +373,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 	if (!node)
 		return NULL;
 
-	nbuttons = of_get_child_count(node);
+	nbuttons = of_get_available_child_count(node);
 	if (nbuttons == 0)
 		return ERR_PTR(-EINVAL);
 
@@ -387,7 +388,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 	pdata->rep = !!of_get_property(node, "autorepeat", NULL);
 	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
 
-	for_each_child_of_node(node, pp) {
+	for_each_available_child_of_node(node, pp) {
 		button = (struct gpio_keys_button *)(&pdata->buttons[i++]);
 
 		if (of_property_read_u32(pp, "linux,code", &button->code)) {
@@ -506,6 +507,13 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			goto out;
 		}
 
+		if (button->irq) {
+			dev_err(dev, "skipping button %s (only gpio buttons supported)\n",
+				button->desc);
+			bdata->b = &pdata->buttons[i];
+			continue;
+		}
+
 		if (gpio_is_valid(button->gpio)) {
 			/* legacy platform data... but is it the lookup table? */
 			bdata->gpiod = devm_gpiod_get_index(dev, desc, i,
@@ -517,10 +525,9 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 					button->active_low ? GPIOF_ACTIVE_LOW :
 					0), desc);
 				if (error) {
-					if (error != -EPROBE_DEFER) {
-						dev_err(dev, "unable to claim gpio %d, err=%d\n",
-							button->gpio, error);
-					}
+					dev_err_probe(dev, error,
+						      "unable to claim gpio %d",
+						      button->gpio);
 					goto out;
 				}
 
@@ -531,8 +538,9 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			struct device_node *child =
 				of_get_next_child(dev->of_node, prev);
 
-			bdata->gpiod = devm_gpiod_get_from_of_node(dev,
-				child, "gpios", 0, GPIOD_IN, desc);
+			bdata->gpiod = devm_fwnode_gpiod_get(dev,
+				of_fwnode_handle(child), NULL, GPIOD_IN,
+				desc);
 
 			prev = child;
 		}
@@ -685,7 +693,6 @@ static struct platform_driver gpio_keys_driver = {
 	.remove	= gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys",
-		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(gpio_keys_of_match),
 	},
 };
@@ -695,7 +702,6 @@ static struct platform_driver gpio_keys_polled_driver = {
 	.remove	= gpio_keys_remove,
 	.driver	= {
 		.name	= "gpio-keys-polled",
-		.owner	= THIS_MODULE,
 		.of_match_table = of_match_ptr(gpio_keys_polled_of_match),
 	},
 };

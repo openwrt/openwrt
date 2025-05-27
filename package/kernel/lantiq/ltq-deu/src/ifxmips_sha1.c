@@ -43,7 +43,12 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/crypto.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/internal/hash.h>
 #include <linux/types.h>
@@ -194,8 +199,8 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     u64 t;
     u8 bits[8] = { 0, };
     static const u8 padding[64] = { 0x80, };
-    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
-    unsigned long flag;
+    //volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+    //unsigned long flag;
 
     t = sctx->count;
     bits[7] = 0xff & t;

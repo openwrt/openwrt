@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Ubiquiti UniFi Switch Flex";
@@ -33,12 +34,14 @@
 		compatible = "gpio-leds";
 
 		led_blue: status_blue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_white: status_white {
-			label = "white:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -83,10 +86,10 @@
 			label = "lan2";
 		};
 
-		port@4 {
-			status = "okay";
-			label = "lan1";
-		};
+                port@4 {
+                        status = "okay";
+                        label = "lan1";
+                };
 	};
 };
 
@@ -127,18 +130,19 @@
 				read-only;
 			};
 
-			part_eeprom: partition@80000 {
-				compatible = "nvmem-cells";
-
-				#address-cells = <1>;
-				#size-cells = <1>;
-
+			partition@80000 {
 				label = "eeprom";
 				reg = <0x80000 0x10000>;
 				read-only;
 
-				macaddr_eeprom: macaddr@0 {
-					reg = <0x0 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 				};
 			};
 
@@ -154,14 +158,10 @@
 			};
 
 			partition@1a0000 {
+				/* Combine kernel0 / kernel1 */
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x1a0000 0x730000>;
-			};
-
-			partition@8d0000 {
-				label = "kernel1";
-				reg = <0x8d0000 0x730000>;
+				reg = <0x1a0000 0xe60000>;
 			};
 		};
 	};

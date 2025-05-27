@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -35,7 +36,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
@@ -91,10 +93,26 @@
 				reg = <0x10000 0xfe0000>;
 			};
 
-			config: partition@ff0000 {
+			partition@ff0000 {
 				label = "config";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_config_e08a: eeprom@e08a {
+						reg = <0xe08a 0x200>;
+					};
+
+					macaddr_config_e07e: macaddr@e07e {
+						compatible = "mac-base";
+						reg = <0xe07e 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -150,10 +168,8 @@
 &pcie0 {
 	mt76x0e@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_config_e07e>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(2)>;
-		mediatek,mtd-eeprom = <&config 0xe08a>;
+		nvmem-cells = <&eeprom_config_e08a>, <&macaddr_config_e07e 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -161,15 +177,5 @@
 	gpio {
 		groups = "uartf", "i2c";
 		function = "gpio";
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_e07e: macaddr@e07e {
-		reg = <0xe07e 0x6>;
 	};
 };

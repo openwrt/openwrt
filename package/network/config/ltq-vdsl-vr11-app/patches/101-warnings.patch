@@ -1,0 +1,87 @@
+--- a/src/dsl_cpe_control.h
++++ b/src/dsl_cpe_control.h
+@@ -13,6 +13,8 @@
+ #ifndef _DSL_CPE_CONTROL_H
+ #define _DSL_CPE_CONTROL_H
+ 
++#include <string.h>
++
+ /** \defgroup DSL_CPE_CONTROL Lantiq DSL CPE API Control Application
+     Lists the entire modules to the DSL CPE_API Control Application.
+   @{ */
+--- a/src/dsl_cpe_safec_wrapper.h
++++ b/src/dsl_cpe_safec_wrapper.h
+@@ -23,7 +23,7 @@
+ #define cpe_control_vsnprintf_s vsnprintf_s
+ 
+ /* snprintf_s symbol is not exported in SafeC lib */
+-static int cpe_control_snprintf_s(char *dest,
++static inline int cpe_control_snprintf_s(char *dest,
+                                   size_t dmax,
+                                   const char *fmt,
+                                   ...)
+@@ -40,7 +40,7 @@ static int cpe_control_snprintf_s(char *
+ 
+ #else
+ 
+-#warning "Safe C library is not available!"
++//#warning "Safe C library is not available!"
+ 
+ #include <stddef.h>     /* size_t */
+ #include <stdarg.h>     /* va_list */
+@@ -55,7 +55,7 @@ static __inline__ size_t safec_wrapper_m
+ #define cpe_control_memset_s(dest, destsz, src, srcsz) memset(dest, src, safec_wrapper_min(destsz,srcsz))
+ #define cpe_control_strncpy_s(dest, destsz, src, srcsz) strncpy(dest, src, safec_wrapper_min(destsz,srcsz))
+ 
+-static size_t cpe_control_strnlen_s(const char *str,
++static inline size_t cpe_control_strnlen_s(const char *str,
+                                     size_t smax)
+ {
+    /* preconditions */
+@@ -74,7 +74,7 @@ static size_t cpe_control_strnlen_s(cons
+    return size;
+ }
+ 
+-static char *cpe_control_strtok_s(char *dest,
++static inline char *cpe_control_strtok_s(char *dest,
+                                   size_t *dmax,
+                                   const char *delim,
+                                   char **ptr)
+@@ -123,7 +123,7 @@ static char *cpe_control_strtok_s(char *
+    return pTmp;
+ }
+ 
+-static int cpe_control_pipe_strcat_s(char *dest,
++static inline int cpe_control_pipe_strcat_s(char *dest,
+                                      size_t destsz,
+                                      char *src)
+ {
+@@ -157,7 +157,7 @@ static int cpe_control_pipe_strcat_s(cha
+    return 0;
+ }
+ 
+-static int cpe_control_snprintf_s(char *dest,
++static inline int cpe_control_snprintf_s(char *dest,
+                                   size_t dmax,
+                                   const char *fmt,
+                                   ...)
+@@ -181,7 +181,7 @@ static int cpe_control_snprintf_s(char *
+    return retVal;
+ }
+ 
+-static int cpe_control_vsnprintf_s(char *dest,
++static inline int cpe_control_vsnprintf_s(char *dest,
+                                    size_t dmax,
+                                    const char *fmt,
+                                    va_list vlist)
+--- a/tools/pipe/dsl_cpe_safec_wrapper.h
++++ b/tools/pipe/dsl_cpe_safec_wrapper.h
+@@ -27,7 +27,7 @@
+ 
+ #else
+ 
+-#warning "Safe C library is not available!"
++//#warning "Safe C library is not available!"
+ 
+ #include <stddef.h>	/* size_t */
+ static __inline__ size_t safec_wrapper_min(size_t a, size_t b)

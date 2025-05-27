@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2022.01
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=5
 
 PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
 
@@ -36,6 +36,14 @@ define U-Boot/mx6cuboxi
   BUILD_DEVICES:=solidrun_cubox-i
 endef
 
+define U-Boot/pico-pi-imx7d
+  NAME:=TechNexion PICO-PI-IMX7D
+  UBOOT_IMAGE:=SPL u-boot-dtb.img
+  UBOOT_MAKE_FLAGS+=SPL u-boot-dtb.img
+  BUILD_SUBTARGET:=cortexa7
+  BUILD_DEVICES:=technexion_imx7d-pico-pi
+endef
+
 define U-Boot/wandboard
   NAME:=Wandboard Dual Lite/Quad/Solo
   BUILD_SUBTARGET:=cortexa9
@@ -45,6 +53,7 @@ endef
 UBOOT_TARGETS := \
 	apalis_imx6 \
 	mx6cuboxi \
+	pico-pi-imx7d \
 	wandboard
 
 UBOOT_MAKE_FLAGS += u-boot.imx

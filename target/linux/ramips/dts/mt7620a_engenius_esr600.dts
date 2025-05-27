@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "engenius,esr600", "ralink,mt7620a-soc";
@@ -24,7 +25,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
@@ -97,16 +99,40 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+				};
 			};
 
-			iNIC_rf: partition@50000 {
+			partition@50000 {
 				label = "iNIC_rf";
 				reg = <0x50000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_iNIC_rf_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_iNIC_rf_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
 			};
 
 			partition@60000 {
@@ -179,12 +205,14 @@
 	wifi@0,0 {
 		compatible = "pci1814,5592";
 		reg = <0x0 0 0 0 0>;
-		ralink,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&iNIC_rf 0x0>;
+	nvmem-cells = <&eeprom_iNIC_rf_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &ehci {
@@ -193,14 +221,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&iNIC_rf {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_iNIC_rf_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

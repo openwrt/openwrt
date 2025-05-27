@@ -46,6 +46,7 @@
 #include <linux/modversions.h>
 #endif
 #include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/errno.h>
@@ -195,7 +196,6 @@ static struct platform_driver ltq_deu_driver = {
 	.remove = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_deu_match,
 	},
 };

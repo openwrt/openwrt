@@ -237,7 +237,6 @@ struct rt305x_esw {
 	int			led_frequency;
 	struct esw_vlan vlans[RT305X_ESW_NUM_VLANS];
 	struct esw_port ports[RT305X_ESW_NUM_PORTS];
-	struct reset_control	*rst_esw;
 	struct reset_control	*rst_ephy;
 
 };
@@ -259,18 +258,6 @@ static inline void esw_rmw_raw(struct rt305x_esw *esw, unsigned reg,
 
 	t = __raw_readl(esw->base + reg) & ~mask;
 	__raw_writel(t | val, esw->base + reg);
-}
-
-static void esw_reset(struct rt305x_esw *esw)
-{
-	if (!esw->rst_esw)
-		return;
-
-	reset_control_assert(esw->rst_esw);
-	usleep_range(60, 120);
-	reset_control_deassert(esw->rst_esw);
-	/* the esw takes long to reset otherwise the board hang */
-	msleep(10);
 }
 
 static void esw_reset_ephy(struct rt305x_esw *esw)
@@ -465,8 +452,6 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	int i;
 	u8 port_disable = 0;
 	u8 port_map = RT305X_ESW_PMAP_LLLLLL;
-
-	esw_reset(esw);
 
 	/* vodoo from original driver */
 	esw_w32(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
@@ -766,7 +751,6 @@ static irqreturn_t esw_interrupt(int irq, void *_esw)
 {
 	struct rt305x_esw *esw = (struct rt305x_esw *) _esw;
 	u32 status;
-	int i;
 
 	status = esw_r32(esw, RT305X_ESW_REG_ISR);
 	if (status & RT305X_ESW_PORT_ST_CHG) {
@@ -1403,7 +1387,6 @@ static const struct switch_dev_ops esw_ops = {
 
 static int esw_probe(struct platform_device *pdev)
 {
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	struct device_node *np = pdev->dev.of_node;
 	const __be32 *port_map, *port_disable, *reg_init;
 	struct rt305x_esw *esw;
@@ -1413,8 +1396,8 @@ static int esw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	esw->dev = &pdev->dev;
-	esw->irq = irq_of_parse_and_map(np, 0);
-	esw->base = devm_ioremap_resource(&pdev->dev, res);
+	esw->irq = platform_get_irq(pdev, 0);
+	esw->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(esw->base))
 		return PTR_ERR(esw->base);
 
@@ -1442,12 +1425,11 @@ static int esw_probe(struct platform_device *pdev)
 	if (reg_init)
 		esw->reg_led_source = be32_to_cpu(*reg_init);
 
-	esw->rst_esw = devm_reset_control_get(&pdev->dev, "esw");
-	if (IS_ERR(esw->rst_esw))
-		esw->rst_esw = NULL;
-	esw->rst_ephy = devm_reset_control_get(&pdev->dev, "ephy");
-	if (IS_ERR(esw->rst_ephy))
+	esw->rst_ephy = devm_reset_control_get_exclusive(&pdev->dev, "ephy");
+	if (IS_ERR(esw->rst_ephy)) {
+		dev_err(esw->dev, "failed to get EPHY reset: %pe\n", esw->rst_ephy);
 		esw->rst_ephy = NULL;
+	}
 
 	spin_lock_init(&esw->reg_rw_lock);
 	platform_set_drvdata(pdev, esw);
@@ -1533,7 +1515,7 @@ int rt3050_esw_init(struct fe_priv *priv)
 	}
 
 	dev_info(&pdev->dev, "mediatek esw at 0x%08lx, irq %d initialized\n",
-		   esw->base, esw->irq);
+		 (long unsigned int)esw->base, esw->irq);
 
 	return 0;
 }
@@ -1543,7 +1525,6 @@ static struct platform_driver esw_driver = {
 	.remove = esw_remove,
 	.driver = {
 		.name = "rt3050-esw",
-		.owner = THIS_MODULE,
 		.of_match_table = ralink_esw_match,
 	},
 };

@@ -12,10 +12,12 @@ PKG_NAME:=kernel
 PKG_FLAGS:=hold
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
-SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk $(TOPDIR)/include/netfilter.mk
+SUBTARGETS = $(sort $(filter-out feeds,$(notdir $(wildcard $(TOPDIR)/target/linux/* $(TOPDIR)/target/linux/feeds/*))))
+SUBTARGET_MODULES = $(foreach t,$(SUBTARGETS),$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(t)/modules.mk $(TOPDIR)/target/linux/$(t)/modules.mk)))
+SCAN_DEPS=modules/*.mk $(SUBTARGET_MODULES) $(TOPDIR)/include/netfilter.mk
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
+PKG_LICENSE:=GPL-2.0-only
+PKG_LICENSE_FILES:=COPYING
 
 export SHELL:=/bin/sh
 .ONESHELL:
@@ -35,6 +37,9 @@ endef
 define Build/Configure
 endef
 
+define Build/Quilt
+endef
+
 define Build/Compile
 endef
 
@@ -47,13 +52,18 @@ define Package/kernel
   CATEGORY:=Kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
-  VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC)
+  VERSION:=$(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE)
   URL:=http://www.kernel.org/
   PKG_FLAGS:=nonshared
 endef
 
 define Package/kernel/install
-  # nothing to do
+	$(INSTALL_DIR) $(1)/$(MODULES_SUBDIR)
+	$(INSTALL_DATA) $(LINUX_DIR)/modules.builtin $(1)/$(MODULES_SUBDIR)
+	$(SED) 's,.*/,,' $(1)/$(MODULES_SUBDIR)/modules.builtin
+	strings $(LINUX_DIR)/modules.builtin.modinfo | \
+		grep -E -v "\.(file$(if CONFIG_MODULE_STRIPPED,|parmtype))=" | \
+		tr '\n' '\0' > $(1)/$(MODULES_SUBDIR)/modules.builtin.modinfo
 endef
 
 define Package/kernel/extra_provides
@@ -63,4 +73,4 @@ endef
 $(eval $(if $(DUMP),,$(call BuildPackage,kernel)))
 
 include $(sort $(wildcard ./modules/*.mk))
--include $(TOPDIR)/target/linux/*/modules.mk
+-include $(SUBTARGET_MODULES)

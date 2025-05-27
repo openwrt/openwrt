@@ -15,6 +15,7 @@ ramips_setup_interfaces()
 	dlink,dwr-921-c1|\
 	dlink,dwr-922-e2|\
 	dovado,tiny-ac|\
+	hongdian,h8922-v30|\
 	ohyeah,oy-0001|\
 	phicomm,psg1208|\
 	planex,db-wrt01|\
@@ -28,16 +29,19 @@ ramips_setup_interfaces()
 	zbtlink,zbt-we826-32m|\
 	zbtlink,zbt-we826-e|\
 	zbtlink,zbt-wr8305rt|\
+	zyxel,keenetic-lite-iii-a|\
 	zyxel,keenetic-omni)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	alfa-network,r36m-e4g|\
+	bolt,bl100|\
 	zbtlink,zbt-we1026-h-32m)
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
 	alfa-network,tube-e4g|\
+	ampedwireless,b1200ex|\
 	buffalo,wmr-300|\
 	dlink,dch-m225|\
 	edimax,ew-7476rpc|\
@@ -77,6 +81,7 @@ ramips_setup_interfaces()
 	asus,rt-ac54u|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
+	dlink,dir-806a-b1|\
 	domywifi,dm202|\
 	domywifi,dm203|\
 	domywifi,dw22d|\
@@ -85,6 +90,7 @@ ramips_setup_interfaces()
 	glinet,gl-mt300n|\
 	glinet,gl-mt750|\
 	hiwifi,hc5661|\
+	snr,cpe-w4n-mt|\
 	wrtnode,wrtnode|\
 	zbtlink,zbt-wa05|\
 	zyxel,keenetic-omni-ii)
@@ -111,9 +117,12 @@ ramips_setup_interfaces()
 			"0:lan" "6@eth0"
 		;;
 	dlink,dir-810l|\
+	netcore,nw5212|\
 	netgear,jwnr2010-v5|\
 	phicomm,k2-v22.4|\
 	phicomm,k2-v22.5|\
+	rostelecom,rt-fl-1|\
+	rostelecom,s1010|\
 	trendnet,tew-810dr|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
@@ -138,6 +147,10 @@ ramips_setup_interfaces()
 			"5:lan" "6@eth0"
 		ucidef_add_switch_attr "switch1" "enable" "false"
 		;;
+	edimax,br-6208ac-v2)
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
 	edimax,br-6478ac-v2|\
 	lb-link,bl-w1200|\
 	tplink,archer-c2-v1)
@@ -146,6 +159,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
+	engenius,epg600|\
 	engenius,esr600|\
 	lava,lr-25g001|\
 	sitecom,wlr-4100-v1-002)
@@ -202,6 +216,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	netgear,pr2000|\
 	nexx,wt3020-4m|\
 	nexx,wt3020-8m)
 		ucidef_add_switch "switch0" \
@@ -222,18 +237,42 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
+	tplink,archer-c5-v4)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "0"
+		ucidef_add_switch "switch1" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "7@eth0"
+		;;
 	tplink,archer-mr200)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface_wan "usb0"
 		;;
+	tplink,ec220-g5-v2)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "0"
+		ucidef_add_switch "switch1" \
+			"0:lan:3" "1:lan:2" "2:lan:1" "4:lan:4" "3:wan" "7@eth0"
+		;;
+	wavlink,wl-wn531g3)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
+		;;
+	wavlink,wl-wn531g3-a2)
+		ucidef_add_switch "switch0" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "5:lan:1" "4:wan" "6@eth0"
+		;;
 	wavlink,wl-wn535k1)
 		ucidef_add_switch "switch0" \
-			"2:lan" "5:lan" "4:wan" "6@eth0"
+			"2:lan:2" "5:lan:1" "4:wan" "6@eth0"
 		;;
 	wavlink,wl-wn579x3)
 		ucidef_add_switch "switch0" \
 			"5:lan" "4:wan" "6@eth0"
+		;;
+	youku,x2)
+		ucidef_add_switch "switch0" \
+			"1:lan:2" "4:lan:1" "0:wan" "6@eth0"
 		;;
 	youku,yk-l1|\
 	youku,yk-l1c)
@@ -263,6 +302,7 @@ ramips_setup_macs()
 	asus,rt-n12p|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
+	edimax,br-6208ac-v2|\
 	edimax,ew-7478apc|\
 	fon,fon2601|\
 	head-weblink,hdrm200|\
@@ -324,9 +364,11 @@ ramips_setup_macs()
 	edimax,br-6478ac-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 2)
 		;;
+	engenius,epg600|\
 	engenius,esr600)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$wan_mac
 		;;
 	glinet,gl-mt300a|\
 	glinet,gl-mt300n|\
@@ -366,6 +408,7 @@ ramips_setup_macs()
 	ohyeah,oy-0001|\
 	wavlink,wl-wn530hg4|\
 	wevo,air-duo|\
+	youku,x2|\
 	youku,yk-l1|\
 	youku,yk-l1c)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
@@ -373,19 +416,38 @@ ramips_setup_macs()
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
+	rostelecom,rt-fl-1|\
+	rostelecom,s1010)
+		label_mac=$(mtd_get_mac_binary "SC Nvram(permanent data)" 0x0)
+		wan_mac=$(macaddr_add "$label_mac" 10)
+		;;
+	snr,cpe-w4n-mt)
+		lan_mac=$(mtd_get_mac_binary Factory 0x28)
+		wan_mac=$(mtd_get_mac_binary Factory 0x2e)
+		label_mac=$wan_mac
+		;;
 	tplink,archer-c2-v1|\
 	tplink,archer-c20-v1|\
 	tplink,archer-c20i|\
+	tplink,archer-c5-v4|\
 	tplink,archer-c50-v1|\
-	tplink,archer-mr200)
+	tplink,archer-mr200|\
+	tplink,ec220-g5-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
+		;;
+	wavlink,wl-wn531g3|\
+	wavlink,wl-wn531g3-a2|\
+	zbtlink,zbt-we1026-5g-16m)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	wavlink,wl-wn535k1)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		label_mac=$(mtd_get_mac_binary factory 0x8004)
 		;;
-	zbtlink,zbt-we1026-5g-16m)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
+	zyxel,keenetic-lite-iii-a)
+		lan_mac=$(mtd_get_mac_binary RF-EEPROM 0x4)
+		wan_mac=$(mtd_get_mac_binary RF-EEPROM 0x28)
+		label_mac=$wan_mac
 		;;
 	zyxel,keenetic-omni|\
 	zyxel,keenetic-omni-ii|\

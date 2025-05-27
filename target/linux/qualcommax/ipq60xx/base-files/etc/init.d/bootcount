@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	case $(board_name) in
+	yuncore,fap650)
+		fw_setenv owrt_bootcount 0
+	;;
+	esac
+}
+

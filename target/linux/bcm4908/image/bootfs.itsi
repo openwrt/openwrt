@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+/ {
+	description = "OpenWrt bootfs image";
+	#address-cells = <1>;
+
+	images {
+		atf {
+			description = "ATF";
+			data = /incbin/("${images_dir}/bl31.bin");
+			type = "firmware";
+			arch = "arm64";
+			os = "arm-trusted-firmware";
+			compression = "none";
+			load = <0x4000>;
+			entry = <0x4000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		uboot {
+			description = "U-Boot";
+			os = "U-Boot";
+			arch = "arm64";
+			compression = "none";
+			load = <0x1000000>;
+			entry = <0x1000000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		kernel {
+			description = "Linux kernel";
+			data = /incbin/("${kernel}");
+			type = "kernel";
+			os = "linux";
+			arch = "arm64";
+			compression = "lzma";
+			load = <0x80000>;
+			entry = <0x80000>;
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		fdt_uboot {
+			description = "dtb";
+			type = "flat_dt";
+			compression = "none";
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		default = "conf_uboot";
+
+		conf_uboot {
+			description = "BRCM 63xxx with uboot";
+			fdt = "fdt_uboot";
+			loadables = "atf", "uboot";
+		};
+	};
+};

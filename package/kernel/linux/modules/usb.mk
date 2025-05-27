@@ -272,13 +272,13 @@ $(eval $(call KernelPackage,usb-uhci,1))
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
   DEPENDS:= \
+	+TARGET_ath79:kmod-phy-ath79-usb \
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm47xx:kmod-usb-bcma \
 	+TARGET_bcm47xx:kmod-usb-ssb
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
-	CONFIG_USB_OHCI_ATH79=y \
 	CONFIG_USB_OHCI_HCD_AT91=y \
 	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y \
@@ -330,17 +330,6 @@ define KernelPackage/usb-bcma
   $(call AddDepends/usb)
 endef
 $(eval $(call KernelPackage,usb-bcma))
-
-define KernelPackage/usb-fotg210
-  TITLE:=Support for FOTG210 USB host controllers
-  DEPENDS:=@USB_SUPPORT @TARGET_gemini
-  KCONFIG:=CONFIG_USB_FOTG210_HCD
-  FILES:= \
-	$(if $(CONFIG_USB_FOTG210_HCD),$(LINUX_DIR)/drivers/usb/host/fotg210-hcd.ko)
-  AUTOLOAD:=$(call AutoLoad,50,fotg210-hcd,1)
-  $(call AddDepends/usb)
-endef
-$(eval $(call KernelPackage,usb-fotg210))
 
 define KernelPackage/usb-ssb
   TITLE:=Support for SSB USB controllers
@@ -431,10 +420,7 @@ define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
   DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
   KCONFIG:= \
-	CONFIG_USB_PCI=y \
 	CONFIG_USB_DWC2 \
-	CONFIG_USB_DWC2_PCI \
-	CONFIG_USB_DWC2_PLATFORM \
 	CONFIG_USB_DWC2_DEBUG=n \
 	CONFIG_USB_DWC2_VERBOSE=n \
 	CONFIG_USB_DWC2_TRACK_MISSED_SOFS=n \
@@ -451,6 +437,64 @@ define KernelPackage/usb-dwc2/description
 endef
 
 $(eval $(call KernelPackage,usb-dwc2))
+
+
+define KernelPackage/usb-dwc2-pci
+  TITLE:=DWC2 USB controller driver (PCI)
+  DEPENDS:=@PCI_SUPPORT +kmod-usb-dwc2 +kmod-usb-phy-nop
+  KCONFIG:= \
+	CONFIG_USB_PCI=y \
+	CONFIG_USB_DWC2_PCI
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/dwc2/dwc2_pci.ko
+  AUTOLOAD:=$(call AutoLoad,54,dwc2_pci,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc2-pci/description
+  The Designware USB2.0 PCI interface module for controllers
+  connected to a PCI bus.
+endef
+
+$(eval $(call KernelPackage,usb-dwc2-pci))
+
+
+define KernelPackage/usb-cdns
+  TITLE:=Cadence USB USB controller driver
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
+  KCONFIG:= \
+	CONFIG_USB_CDNS_SUPPORT
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns-usb-common.ko
+  AUTOLOAD:=$(call AutoLoad,50,cdns-usb-common,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-cdns/description
+ This driver provides USB Device Controller support for the
+ Cadence USB Core
+endef
+
+$(eval $(call KernelPackage,usb-cdns))
+
+
+define KernelPackage/usb-cdns3
+  TITLE:=Cadence USB3 USB controller driver
+  DEPENDS:=+kmod-usb-cdns
+  KCONFIG:= \
+	CONFIG_USB_CDNS3 \
+	CONFIG_USB_CDNS3_GADGET=y \
+	CONFIG_USB_CDNS3_HOST=y
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns3.ko
+  AUTOLOAD:=$(call AutoLoad,54,cdns3,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-cdns3/description
+ This driver provides support for the Dual Role SuperSpeed
+ USB Controller based on the Cadence USB3 IP Core
+endef
+
+$(eval $(call KernelPackage,usb-cdns3))
 
 
 define KernelPackage/usb-dwc3
@@ -475,9 +519,26 @@ endef
 $(eval $(call KernelPackage,usb-dwc3))
 
 
+define KernelPackage/usb-dwc3-octeon
+  TITLE:=DWC3 Cavium Octeon USB driver
+  DEPENDS:=@TARGET_octeon +kmod-usb-dwc3
+  KCONFIG:= CONFIG_USB_DWC3_OCTEON
+  FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-octeon.ko
+  AUTOLOAD:=$(call AutoProbe,dwc3-octeon,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-dwc3-octeon/description
+  This driver adds support for Cavium Octeon platforms with DesignWare
+  Core USB3 IP.
+endef
+
+$(eval $(call KernelPackage,usb-dwc3-octeon))
+
+
 define KernelPackage/usb-dwc3-qcom
   TITLE:=DWC3 Qualcomm USB driver
-  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x) +kmod-usb-dwc3
+  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax) +kmod-usb-dwc3
   KCONFIG:= CONFIG_USB_DWC3_QCOM
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom.ko
   AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom,1)
@@ -528,11 +589,11 @@ $(eval $(call KernelPackage,usb-wdm))
 define KernelPackage/usb-audio
   TITLE:=Support for USB audio devices
   KCONFIG:= \
-	CONFIG_USB_AUDIO \
 	CONFIG_SND_USB=y \
 	CONFIG_SND_USB_AUDIO
   $(call AddDepends/usb)
   $(call AddDepends/sound)
+  DEPENDS+=+kmod-media-controller
   FILES:= \
 	$(LINUX_DIR)/sound/usb/snd-usbmidi-lib.ko \
 	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
@@ -610,6 +671,21 @@ define KernelPackage/usb-serial-ch341/description
 endef
 
 $(eval $(call KernelPackage,usb-serial-ch341))
+
+
+define KernelPackage/usb-serial-ch348
+  TITLE:=Support for CH348 devices
+  KCONFIG:=CONFIG_USB_SERIAL_CH348
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ch348.ko
+  AUTOLOAD:=$(call AutoProbe,ch348)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-ch348/description
+ Kernel support for Winchiphead CH348 USB-to-8x-Serial converters
+endef
+
+$(eval $(call KernelPackage,usb-serial-ch348))
 
 
 define KernelPackage/usb-serial-edgeport
@@ -745,8 +821,9 @@ $(eval $(call KernelPackage,usb-serial-mct))
 
 define KernelPackage/usb-serial-mos7720
   TITLE:=Support for Moschip MOS7720 devices
-  KCONFIG:=CONFIG_USB_SERIAL_MOS7720
+  KCONFIG:=CONFIG_USB_SERIAL_MOS7720 CONFIG_USB_SERIAL_MOS7715_PARPORT=y
   FILES:=$(LINUX_DIR)/drivers/usb/serial/mos7720.ko
+  DEPENDS:=+kmod-ppdev
   AUTOLOAD:=$(call AutoProbe,mos7720)
   $(call AddDepends/usb-serial)
 endef
@@ -1138,7 +1215,9 @@ $(eval $(call KernelPackage,usb-net-aqc111))
 
 define KernelPackage/usb-net-asix
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
-  DEPENDS:=+kmod-libphy +LINUX_5_15:kmod-net-selftests +LINUX_5_15:kmod-mdio-devres
+  DEPENDS:= \
+	+kmod-libphy +kmod-net-selftests +kmod-mdio-devres +kmod-phy-ax88796b \
+	+kmod-phylink
   KCONFIG:=CONFIG_USB_NET_AX8817X
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.ko
   AUTOLOAD:=$(call AutoProbe,asix)
@@ -1250,7 +1329,7 @@ $(eval $(call KernelPackage,usb-net-mcs7830))
 
 define KernelPackage/usb-net-smsc75xx
   TITLE:=SMSC LAN75XX based USB 2.0 Gigabit ethernet devices
-  DEPENDS:=+!LINUX_5_4:kmod-libphy
+  DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_USB_NET_SMSC75XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc75xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc75xx)
@@ -1266,7 +1345,7 @@ $(eval $(call KernelPackage,usb-net-smsc75xx))
 
 define KernelPackage/usb-net-smsc95xx
   TITLE:=SMSC LAN95XX based USB 2.0 10/100 ethernet devices
-  DEPENDS:=+(LINUX_5_10||LINUX_5_15):kmod-libphy
+  DEPENDS:=+kmod-libphy +kmod-phy-smsc +kmod-net-selftests
   KCONFIG:=CONFIG_USB_NET_SMSC95XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc95xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc95xx)
@@ -1377,7 +1456,7 @@ define KernelPackage/usb-net-rtl8152
   KCONFIG:=CONFIG_USB_RTL8152
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/r8152.ko
   AUTOLOAD:=$(call AutoProbe,r8152)
-  $(call AddDepends/usb-net, +LINUX_5_10:kmod-crypto-hash)
+  $(call AddDepends/usb-net)
 endef
 
 define KernelPackage/usb-net-rtl8152/description
@@ -1439,7 +1518,7 @@ define KernelPackage/usb-net-cdc-ncm
   KCONFIG:=CONFIG_USB_NET_CDC_NCM
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ncm.ko
   AUTOLOAD:=$(call AutoProbe,cdc_ncm)
-  $(call AddDepends/usb-net,+!LINUX_5_4:kmod-usb-net-cdc-ether)
+  $(call AddDepends/usb-net,+kmod-usb-net-cdc-ether)
 endef
 
 define KernelPackage/usb-net-cdc-ncm/description
@@ -1541,8 +1620,8 @@ $(eval $(call KernelPackage,usb-hid))
 define KernelPackage/usb-hid-cp2112
   SUBMENU:=$(USB_MENU)
   TITLE:=Silicon Labs CP2112 HID USB to SMBus Master Bridge
-  KCONFIG:=CONFIG_GPIOLIB=y CONFIG_HID_CP2112
-  DEPENDS:=+kmod-usb-hid +kmod-i2c-core
+  KCONFIG:=CONFIG_HID_CP2112
+  DEPENDS:=@GPIO_SUPPORT +kmod-usb-hid +kmod-i2c-core
   FILES:=$(LINUX_DIR)/drivers/hid/hid-cp2112.ko
   AUTOLOAD:=$(call AutoProbe,hid-cp2112)
 endef
@@ -1553,6 +1632,23 @@ define KernelPackage/usb-hid-cp2112/description
 endef
 
 $(eval $(call KernelPackage,usb-hid-cp2112))
+
+
+define KernelPackage/usb-hid-mcp2221
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Microchip USB 2.0 to I2C/UART Protocol Converter with GPIO
+  KCONFIG:=CONFIG_HID_MCP2221
+  DEPENDS:=@GPIO_SUPPORT +kmod-usb-hid +kmod-i2c-core +kmod-iio-core
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-mcp2221.ko
+  AUTOLOAD:=$(call AutoProbe,hid-mcp2221)
+endef
+
+define KernelPackage/usb-hid-mcp2221/description
+ HID device driver which registers as an i2c adapter and gpiochip to expose
+ these functions of the MCP2221.
+endef
+
+$(eval $(call KernelPackage,usb-hid-mcp2221))
 
 
 define KernelPackage/usb-yealink
@@ -1641,7 +1737,7 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop +kmod-usb-roles
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ath79 +kmod-usb-ehci +kmod-usb-phy-nop +kmod-usb-roles +kmod-phy-ath79-usb
   KCONFIG:= \
 	CONFIG_EXTCON \
 	CONFIG_USB_CHIPIDEA \
@@ -1712,7 +1808,9 @@ define KernelPackage/usb3
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
+	+TARGET_mediatek:kmod-usb-xhci-mtk \
 	+TARGET_apm821xx_nand:kmod-usb-xhci-pci-renesas \
+	+TARGET_lantiq_xrx200:kmod-usb-xhci-pci-renesas \
 	+TARGET_mvebu_cortexa9:kmod-usb-xhci-pci-renesas
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
@@ -1765,9 +1863,7 @@ $(eval $(call KernelPackage,usb-roles))
 
 define KernelPackage/usb-xhci-hcd
   TITLE:=xHCI HCD (USB 3.0) support
-  KCONFIG:= \
-	  CONFIG_USB_XHCI_HCD \
-	  CONFIG_USB_XHCI_HCD_DEBUGGING=n
+  KCONFIG:= CONFIG_USB_XHCI_HCD
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,54,xhci-hcd,1)
@@ -1788,9 +1884,8 @@ define KernelPackage/usb-xhci-mtk
   KCONFIG:=CONFIG_USB_XHCI_MTK
   HIDDEN:=1
   FILES:= \
-	 $(LINUX_DIR)/drivers/usb/host/xhci-mtk.ko@lt5.13 \
-	 $(LINUX_DIR)/drivers/usb/host/xhci-mtk-hcd.ko@ge5.13
-  AUTOLOAD:=$(call AutoLoad,54,xhci-mtk@lt5.13 xhci-mtk-hcd@gt5.13,1)
+	 $(LINUX_DIR)/drivers/usb/host/xhci-mtk-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,54,xhci-mtk-hcd,1)
   $(call AddDepends/usb)
 endef
 

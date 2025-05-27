@@ -75,6 +75,22 @@
 		"finalize": "AT+CGDATA=\\\"M-MBIM\\\",${profile},1",
 		"disconnect": "AT+CGACT=0,${profile}"
 	},
+	"quectel": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"at+qicsgp=${profile},${context_type},\\\"${apn}\\\",\\\"${username}\\\",\\\"${password}\\\",0"
+		],
+		"modes": {
+			"lte": "AT+QCFG=\\\"nwscanmode\\\",3",
+			"umts": "AT+QCFG=\\\"nwscanmode\\\",2",
+			"gsm": "AT+QCFG=\\\"nwscanmode\\\",1",
+			"auto": "AT+QCFG=\\\"nwscanmode\\\",0"
+		},
+		"connect": "AT+qnetdevctl=1,${profile},1",
+		"disconnect": "AT+qnetdevctl=0,${profile},0"
+	},
 	"\"zte": {
 		"initialize": [
 			"AT+CFUN=1"
@@ -96,5 +112,29 @@
 		],
 		"connect": "AT+ZGACT=1,${profile}",
 		"disconnect": "AT+ZGACT=0,${profile}"
+	},
+	"\"mikrotik\"": {
+		"configure": [
+			"AT+CFUN=4",
+			"AT+ZGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\",0",
+			"AT+ZDHCPLEASE=10",
+			"AT+CFUN=1"
+		],
+		"waitforconnect": "\\\"+ZCONSTAT: 1,${context_type}\\\",\\\"+ZGIPDNS: ${context_type}\\\"",
+		"connect": "AT+ZGACT=1,${context_type}",
+		"finalize": "AT+ZDHCPLEASE=0",
+		"disconnect": "AT+ZGACT=0,1"
+	},
+	"spreadtrum": {
+		"initialize": [
+			"AT+CFUN=1",
+			"AT+CCED=2,8",
+			"AT+SPTTYROUTER=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
+		],
+		"connect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwxLDE=\\\"",
+		"disconnect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwwLDE=\\\""
 	}
 }

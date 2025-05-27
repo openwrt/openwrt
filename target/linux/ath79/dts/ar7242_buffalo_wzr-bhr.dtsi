@@ -4,18 +4,13 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
 		led-boot = &led_diag;
 		led-failsafe = &led_diag;
 		led-upgrade = &led_diag;
-	};
-
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
 	};
 
 	keys: keys {
@@ -45,7 +40,8 @@
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
@@ -123,8 +119,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0x1>;
-
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "rgmii";
@@ -138,21 +132,10 @@
 	phy-handle = <&phy0>;
 };
 
-&pll {
-	clocks = <&extosc>;
-};
-
 &usb_phy {
 	status = "okay";
 };
 
 &usb {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };

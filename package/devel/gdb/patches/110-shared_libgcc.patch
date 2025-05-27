@@ -1,6 +1,6 @@
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1300,13 +1300,13 @@ if test -z "$LD"; then
+@@ -1401,13 +1401,13 @@ if test -z "$LD"; then
    fi
  fi
  
@@ -17,7 +17,7 @@
    AC_LANG_PUSH(C++)
    AC_LINK_IFELSE([AC_LANG_SOURCE([
  #if (__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 5)
-@@ -1705,7 +1705,7 @@ AC_ARG_WITH(stage1-ldflags,
+@@ -1837,7 +1837,7 @@ AC_ARG_WITH(stage1-ldflags,
   # trust that they are doing what they want.
   if test "$with_static_standard_libraries" = yes -a "$stage1_libs" = "" \
       -a "$have_static_libs" = yes; then
@@ -26,18 +26,18 @@
   fi])
  AC_SUBST(stage1_ldflags)
  
-@@ -1734,7 +1734,7 @@ AC_ARG_WITH(boot-ldflags,
+@@ -1866,7 +1866,7 @@ AC_ARG_WITH(boot-ldflags,
   # statically.  But if the user explicitly specified the libraries to
   # use, trust that they are doing what they want.
   if test "$poststage1_libs" = ""; then
 -   poststage1_ldflags="-static-libstdc++ -static-libgcc"
 +   poststage1_ldflags="-static-libstdc++"
   fi])
- AC_SUBST(poststage1_ldflags)
- 
+ case $target in
+   *-darwin2* | *-darwin1[[56789]]*)
 --- a/configure
 +++ b/configure
-@@ -5257,14 +5257,14 @@ if test -z "$LD"; then
+@@ -5414,14 +5414,14 @@ if test -z "$LD"; then
    fi
  fi
  
@@ -56,7 +56,7 @@
    ac_ext=cpp
  ac_cpp='$CXXCPP $CPPFLAGS'
  ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-@@ -6149,7 +6149,7 @@ else
+@@ -8465,7 +8465,7 @@ else
   # trust that they are doing what they want.
   if test "$with_static_standard_libraries" = yes -a "$stage1_libs" = "" \
       -a "$have_static_libs" = yes; then
@@ -65,7 +65,7 @@
   fi
  fi
  
-@@ -6185,7 +6185,7 @@ else
+@@ -8501,7 +8501,7 @@ else
   # statically.  But if the user explicitly specified the libraries to
   # use, trust that they are doing what they want.
   if test "$poststage1_libs" = ""; then

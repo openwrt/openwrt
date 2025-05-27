@@ -17,6 +17,15 @@ glinet,gl-ar300m-nor)
 glinet,gl-xe300)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x10"
+	ucidef_set_led_netdev "3gnet" "LTE" "green:lte" "wwan0"
+	;;
+netgear,pgzng1)
+	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
+	ucidef_set_led_switch "wan" "WAN" "green:wan-1" "switch0" "0x02" "0xf" "link tx rx"
+	ucidef_set_led_switch "wan-green" "wan link" "green:wan-0" "switch0" "0x02" "0xf" "link"
+	ucidef_set_led_switch "wan-amber" "wan act" "amber:wan" "switch0" "0x02" "0xf" "tx rx"
+	ucidef_set_led_netdev "lan-green" "lan link" "green:lan" "eth1" "link"
+	ucidef_set_led_netdev "lan-amber" "lan act" "amber:lan" "eth1" "tx rx"
 	;;
 netgear,r6100)
 	ucidef_set_led_netdev "wan-green" "WAN (green)" "green:wan" "eth1"

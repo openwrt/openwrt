@@ -1,0 +1,335 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "ar9344.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/leds/leds-pca955x.h>
+
+/ {
+	model = "Netgear PGZNG1";
+	compatible = "netgear,pgzng1", "qca,ar9344";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+		label-mac-device = &eth0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 14 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 13 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		expander0: pca9551@60 {
+			compatible = "nxp,pca9551";
+			reg = <0x60>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led_power_green: led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_BOOT;
+				type = <PCA955X_TYPE_LED>;
+				chan-name = "green:boot";
+			};
+
+			led_power_red: led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_RED>;
+				function = LED_FUNCTION_BOOT;
+				type = <PCA955X_TYPE_LED>;
+				chan-name = "red:boot";
+			};
+
+			led@2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				function-enumerator = <1>;
+				type = <PCA955X_TYPE_LED>;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_RED>;
+				function = LED_FUNCTION_WAN;
+				type = <PCA955X_TYPE_LED>;
+			};
+
+			led@4 {
+				reg = <4>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WLAN;
+				type = <PCA955X_TYPE_LED>;
+			};
+
+			led@5 {
+				reg = <5>;
+				color = <LED_COLOR_ID_RED>;
+				function = LED_FUNCTION_WLAN;
+				type = <PCA955X_TYPE_LED>;
+			};
+
+			led@6 {
+				reg = <6>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_INDICATOR;
+				type = <PCA955X_TYPE_LED>;
+			};
+
+			led@7 {
+				reg = <7>;
+				color = <LED_COLOR_ID_RED>;
+				function = LED_FUNCTION_INDICATOR;
+				type = <PCA955X_TYPE_LED>;
+			};
+		};
+
+		expander1: pca9551@61 {
+			compatible = "nxp,pca9551";
+			reg = <0x61>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			/* zwave_rst - Resets ZWave */
+			gpio@4 {
+				reg = <4>;
+				type = <PCA955X_TYPE_GPIO>;
+			};
+
+			/* em_rst - Unknown */
+			gpio@5 {
+				reg = <5>;
+				type = <PCA955X_TYPE_GPIO>;
+			};
+
+			/* tp34 - Test point on PCB? */
+			gpio@6 {
+				reg = <6>;
+				type = <PCA955X_TYPE_GPIO>;
+			};
+
+			/* sw_rst - resets SoC */
+			gpio@7 {
+				reg = <7>;
+				type = <PCA955X_TYPE_GPIO>;
+			};
+		};
+
+		rtc@6f {
+			compatible = "isil,isl1208";
+			reg = <0x6f>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		eth1_link {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth1_act {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		eth0_link {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <0>;
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth0_act {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+	phy-handle = <&swphy0>;
+
+	nvmem-cells = <&macaddr_caldata_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	status = "okay";
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_caldata_0>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <1>;
+		switch-only-mode = <1>;
+	};
+};
+
+&gpio {
+	gpio_ext_lna0 {
+		gpio-hog;
+		line-name = "ext:lna0";
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	gpio_ext_lna1 {
+		gpio-hog;
+		line-name = "ext:lna1";
+		gpios = <19 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	gpio_enable_rs422 {
+		gpio-hog;
+		line-name = "power:rs422";
+		gpios = <20 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "u-boot-env";
+			reg = <0x40000 0x40000>;
+			read-only;
+		};
+
+		/* factory kernel used to be reg = <0x80000 0x200000> */
+		partition@80000 {
+			label = "kernel";
+			reg = <0x80000 0x500000>;
+		};
+
+		/* factory rootfs used to be reg = <0x280000 0x5000000> */
+		partition@580000 {
+			label = "ubi";
+			reg = <0x580000 0x4d00000>;
+		};
+
+		partition@5280000 {
+			label = "uImage2";
+			reg = <0x5280000 0x200000>;
+			read-only;
+		};
+
+		partition@5480000 {
+			label = "rootfs_bak";
+			reg = <0x5480000 0x5000000>;
+			read-only;
+		};
+
+		partition@a480000 {
+			label = "config";
+			reg = <0xa480000 0x1400000>;
+			read-only;
+		};
+
+		partition@b880000 {
+			label = "storage";
+			reg = <0xb880000 0x4700000>;
+			read-only;
+		};
+
+		partition@ff80000 {
+			label = "dummy";
+			reg = <0xff80000 0x60000>;
+			read-only;
+		};
+
+		caldata: partition@ffe0000 {
+			label = "caldata";
+			reg = <0xffe0000 0x20000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_caldata_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_caldata_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				cal_caldata_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
+			};
+		};
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+/* zWave is wired up via SPI and UART1 (no idea on pins sadly) */
+&spi {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_caldata_1000>;
+	nvmem-cell-names = "calibration";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

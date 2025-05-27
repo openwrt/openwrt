@@ -18,6 +18,8 @@ FLASH_OFFS	:=
 FLASH_MAX	:=
 BOARD		:=
 PLATFORM	:=
+SUBTARGET	:=
+CACHE_FLAGS    := -DCONFIG_CACHELINE_SIZE=32
 
 ifeq ($(TARGET_DIR),)
 TARGET_DIR	:= $(KDIR)
@@ -46,6 +48,8 @@ loader-compile: $(PKG_BUILD_DIR)/.prepared
 		FLASH_MAX=$(FLASH_MAX) \
 		BOARD="$(BOARD)" \
 		PLATFORM="$(PLATFORM)" \
+		SUBTARGET="$(SUBTARGET)" \
+		CACHE_FLAGS="$(CACHE_FLAGS)" \
 		clean all
 
 loader.gz: $(PKG_BUILD_DIR)/loader.bin

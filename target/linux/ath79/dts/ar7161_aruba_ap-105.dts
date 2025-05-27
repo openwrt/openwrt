@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "aruba,ap-105", "qca,ar7161";
@@ -21,23 +22,18 @@
 		label-mac-device = &eth0;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
@@ -101,21 +97,19 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@0,11 { /* 2.4 GHz */
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
-		nvmem-cells = <&macaddr_hwinfo_1c>;
+		nvmem-cells = <&macaddr_hwinfo_1c 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 		reg = <0x8800 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
 
-	ath9k1: wifi@0,12 { /* 5 GHz */
+	ath9k1: wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
-		nvmem-cells = <&macaddr_hwinfo_1c>;
+		nvmem-cells = <&macaddr_hwinfo_1c 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 		reg = <0x9000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -125,8 +119,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0x1>;
-
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 	};
@@ -134,7 +126,7 @@
 
 &eth0 {
 	status = "okay";
-	nvmem-cells = <&macaddr_hwinfo_1c>;
+	nvmem-cells = <&macaddr_hwinfo_1c 0>;
 	nvmem-cell-names = "mac-address";
 
 	pll-data = <0x00110000 0x00001099 0x00991099>;
@@ -169,9 +161,21 @@
 			};
 
 			hwinfo: partition@fe0000 {
-				label = "hwinfo";
 				reg = <0xfe0000 0x10000>;
+				label = "hwinfo";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_hwinfo_1c: mac-address@1c {
+						compatible = "mac-base";
+						reg = <0x1c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -180,15 +184,5 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&hwinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_hwinfo_1c: macaddr@1c {
-		reg = <0x1c 0x6>;
 	};
 };

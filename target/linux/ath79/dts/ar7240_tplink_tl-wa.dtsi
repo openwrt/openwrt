@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "ar7240_tplink.dtsi"
 
 &leds {
 	lan {
-		label = "green:lan";
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -14,7 +17,7 @@
 };
 
 &eth1 {
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 0>;
 	nvmem-cell-names = "mac-address";
 };
 

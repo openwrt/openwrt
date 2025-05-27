@@ -3,18 +3,13 @@
 #include "ar9132.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
 		led-boot = &led_diag;
 		led-failsafe = &led_security;
 		led-upgrade = &led_diag;
-	};
-
-	clock40mhz: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
 	};
 
 	/* There is a GPIO driven NXP 74HC153 dual 4-way multiplexer on board
@@ -139,10 +134,24 @@
 				read-only;
 			};
 
-			art: partition@1fe0000 {
+			partition@1fe0000 {
 				label = "art";
 				reg = <0x1fe0000 0x020000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_11000: calibration@11000 {
+						reg = <0x11000 0xeb8>;
+					};
+
+					macaddr_art_1120c: macaddr@1120c {
+						reg = <0x1120c 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -151,7 +160,8 @@
 		compatible = "gpio-leds";
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
@@ -184,14 +194,12 @@
 
 		gpio-sda = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		gpio-sck = <&gpio 20 GPIO_ACTIVE_HIGH>;
-		mii-bus = <&mdio0>;
 
 		mdio-bus {
 			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
-			phy-mask = <0x10>;
 
 			phy4: ethernet-phy@4 {
 				reg = <4>;
@@ -244,39 +252,18 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x11000>;
+	nvmem-cells = <&cal_art_11000>;
+	nvmem-cell-names = "calibration";
 };
 
 &uart {
 	status = "okay";
 };
 
-&pll {
-	clocks = <&clock40mhz>;
-};
-
 &usb {
 	status = "okay";
-
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy {
 	status = "okay";
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_1120c: macaddr@1120c {
-		reg = <0x1120c 0x6>;
-	};
 };

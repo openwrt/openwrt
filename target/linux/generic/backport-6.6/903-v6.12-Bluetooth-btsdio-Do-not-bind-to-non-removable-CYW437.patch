@@ -1,0 +1,25 @@
+From 6a9eb32230f33ae273f6ffbabb0aaf560869816e Mon Sep 17 00:00:00 2001
+From: Scott Ehlert <ehlert@battelle.org>
+Date: Mon, 29 Apr 2024 11:23:09 -0700
+Subject: [PATCH] Bluetooth: btsdio: Do not bind to non-removable CYW4373
+
+CYW4373 devices soldered onto the PCB (non-removable),
+use a UART connection for Bluetooth and the advertised btsdio
+support as an SDIO function should be ignored.
+
+Signed-off-by: Scott Ehlert <ehlert@battelle.org>
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ drivers/bluetooth/btsdio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/bluetooth/btsdio.c
++++ b/drivers/bluetooth/btsdio.c
+@@ -295,6 +295,7 @@ static int btsdio_probe(struct sdio_func
+ 		case SDIO_DEVICE_ID_BROADCOM_4345:
+ 		case SDIO_DEVICE_ID_BROADCOM_43455:
+ 		case SDIO_DEVICE_ID_BROADCOM_4356:
++		case SDIO_DEVICE_ID_BROADCOM_CYPRESS_4373:
+ 			return -ENODEV;
+ 		}
+ 	}

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "meraki,mr16", "qca,ar7161";
@@ -14,13 +15,6 @@
 		led-failsafe = &led_power_orange;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_orange;
-	};
-
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
 	};
 
 	leds {
@@ -47,18 +41,21 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -77,37 +74,29 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@0,11 { /* 2.4 GHz */
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66>;
+		nvmem-cells = <&macaddr_config_66 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
 
-	ath9k1: wifi@0,12 { /* 5 GHz */
+	ath9k1: wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66>;
+		nvmem-cells = <&macaddr_config_66 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0x1>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
@@ -116,7 +105,7 @@
 
 &eth0 {
 	status = "okay";
-	nvmem-cells = <&macaddr_config_66>;
+	nvmem-cells = <&macaddr_config_66 0>;
 	nvmem-cell-names = "mac-address";
 
 	pll-data = <0x00110000 0x00001099 0x00991099>;
@@ -154,6 +143,18 @@
 				label = "config";
 				reg = <0x80000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_66: macaddr@66 {
+						compatible = "mac-base";
+						reg = <0x66 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@a0000 {
@@ -168,15 +169,5 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_66: macaddr@66 {
-		reg = <0x66 0x6>;
 	};
 };

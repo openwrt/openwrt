@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-ptm
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0+
@@ -22,7 +22,7 @@ define KernelPackage/ltq-ptm-template
   TITLE:=ptm driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_$(2)
+  DEPENDS:=@$(2)
 ifeq ($(1),vr9)
   DEPENDS+= +PACKAGE_kmod-ltq-ptm-$(1):kmod-ltq-vdsl-vr9-mei
 else
@@ -34,10 +34,10 @@ endif
   FILES:=$(PKG_BUILD_DIR)/ltq_ptm_$(1).ko 
 endef
 
-KernelPackage/ltq-ptm-danube=$(call KernelPackage/ltq-ptm-template,danube,xway)
-KernelPackage/ltq-ptm-ar9=$(call KernelPackage/ltq-ptm-template,ar9,xway)
-KernelPackage/ltq-ptm-ase=$(call KernelPackage/ltq-ptm-template,ase,ase)
-KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,xrx200)
+KernelPackage/ltq-ptm-danube=$(call KernelPackage/ltq-ptm-template,danube,TARGET_lantiq_xway)
+KernelPackage/ltq-ptm-ar9=$(call KernelPackage/ltq-ptm-template,ar9,TARGET_lantiq_xway)
+KernelPackage/ltq-ptm-ase=$(call KernelPackage/ltq-ptm-template,ase,TARGET_lantiq_ase)
+KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy))
 
 define Build/Configure
 endef

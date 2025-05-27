@@ -1,0 +1,121 @@
+From cf983e4a04eecb5be93af7b53cb10805ee448998 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Mon, 21 Aug 2023 09:20:17 -0700
+Subject: [PATCH] PCI: imx6: Start link at max gen first for IMX8MM and IMX8MP
+
+commit fa33a6d87eac ("PCI: imx6: Start link in Gen1 before negotiating
+for Gen2 mode") started link negotiation at Gen1 before attempting
+faster speeds in order to work around an issue with a particular switch
+on an IMX6Q SoC.
+
+This behavior is not the norm for PCI link negotiation and it has been
+found to cause issues in other cases:
+- IMX8MM with PI7C9X2G608GP switch: various endpoints (such as qca988x)
+  will fail to link more than 50% of the time
+- IMX8MP with PI7C9X2G608GP switch: occasionally will fail to link with
+  switch and cause a CPU hang about 30% of the time
+
+Disable this behavior for IMX8MM and IMX8MP.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 53 ++++++++++++++-------------
+ 1 file changed, 27 insertions(+), 26 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -60,6 +60,7 @@ enum imx6_pcie_variants {
+ #define IMX6_PCIE_FLAG_IMX6_PHY			BIT(0)
+ #define IMX6_PCIE_FLAG_IMX6_SPEED_CHANGE	BIT(1)
+ #define IMX6_PCIE_FLAG_SUPPORTS_SUSPEND		BIT(2)
++#define IMX6_PCIE_FLAG_GEN1_LAST		BIT(3)
+ 
+ #define IMX6_PCIE_MAX_CLKS       6
+ 
+@@ -836,26 +837,28 @@ static int imx6_pcie_start_link(struct d
+ 	u32 tmp;
+ 	int ret;
+ 
+-	/*
+-	 * Force Gen1 operation when starting the link.  In case the link is
+-	 * started in Gen2 mode, there is a possibility the devices on the
+-	 * bus will not be detected at all.  This happens with PCIe switches.
+-	 */
+-	dw_pcie_dbi_ro_wr_en(pci);
+-	tmp = dw_pcie_readl_dbi(pci, offset + PCI_EXP_LNKCAP);
+-	tmp &= ~PCI_EXP_LNKCAP_SLS;
+-	tmp |= PCI_EXP_LNKCAP_SLS_2_5GB;
+-	dw_pcie_writel_dbi(pci, offset + PCI_EXP_LNKCAP, tmp);
+-	dw_pcie_dbi_ro_wr_dis(pci);
++	if (!(imx6_pcie->drvdata->flags & IMX6_PCIE_FLAG_GEN1_LAST)) {
++		/*
++		 * Force Gen1 operation when starting the link.  In case the link is
++		 * started in Gen2 mode, there is a possibility the devices on the
++		 * bus will not be detected at all.  This happens with PCIe switches.
++		 */
++		dw_pcie_dbi_ro_wr_en(pci);
++		tmp = dw_pcie_readl_dbi(pci, offset + PCI_EXP_LNKCAP);
++		tmp &= ~PCI_EXP_LNKCAP_SLS;
++		tmp |= PCI_EXP_LNKCAP_SLS_2_5GB;
++		dw_pcie_writel_dbi(pci, offset + PCI_EXP_LNKCAP, tmp);
++		dw_pcie_dbi_ro_wr_dis(pci);
++	}
+ 
+ 	/* Start LTSSM. */
+ 	imx6_pcie_ltssm_enable(dev);
+ 
+-	ret = dw_pcie_wait_for_link(pci);
+-	if (ret)
+-		goto err_reset_phy;
++	if ((pci->link_gen > 1) && !(imx6_pcie->drvdata->flags & IMX6_PCIE_FLAG_GEN1_LAST)) {
++		ret = dw_pcie_wait_for_link(pci);
++		if (ret)
++			goto err_reset_phy;
+ 
+-	if (pci->link_gen > 1) {
+ 		/* Allow faster modes after the link is up */
+ 		dw_pcie_dbi_ro_wr_en(pci);
+ 		tmp = dw_pcie_readl_dbi(pci, offset + PCI_EXP_LNKCAP);
+@@ -889,18 +892,14 @@ static int imx6_pcie_start_link(struct d
+ 				goto err_reset_phy;
+ 			}
+ 		}
+-
+-		/* Make sure link training is finished as well! */
+-		ret = dw_pcie_wait_for_link(pci);
+-		if (ret)
+-			goto err_reset_phy;
+-	} else {
+-		dev_info(dev, "Link: Only Gen1 is enabled\n");
+ 	}
+ 
++	ret = dw_pcie_wait_for_link(pci);
++	if (ret)
++		goto err_reset_phy;
++
+ 	imx6_pcie->link_is_up = true;
+-	tmp = dw_pcie_readw_dbi(pci, offset + PCI_EXP_LNKSTA);
+-	dev_info(dev, "Link up, Gen%i\n", tmp & PCI_EXP_LNKSTA_CLS);
++
+ 	return 0;
+ 
+ err_reset_phy:
+@@ -1456,14 +1455,16 @@ static const struct imx6_pcie_drvdata dr
+ 	},
+ 	[IMX8MM] = {
+ 		.variant = IMX8MM,
+-		.flags = IMX6_PCIE_FLAG_SUPPORTS_SUSPEND,
++		.flags = IMX6_PCIE_FLAG_SUPPORTS_SUSPEND |
++			IMX6_PCIE_FLAG_GEN1_LAST,
+ 		.gpr = "fsl,imx8mm-iomuxc-gpr",
+ 		.clk_names = imx8mm_clks,
+ 		.clks_cnt = ARRAY_SIZE(imx8mm_clks),
+ 	},
+ 	[IMX8MP] = {
+ 		.variant = IMX8MP,
+-		.flags = IMX6_PCIE_FLAG_SUPPORTS_SUSPEND,
++		.flags = IMX6_PCIE_FLAG_SUPPORTS_SUSPEND |
++			IMX6_PCIE_FLAG_GEN1_LAST,
+ 		.gpr = "fsl,imx8mp-iomuxc-gpr",
+ 		.clk_names = imx8mm_clks,
+ 		.clks_cnt = ARRAY_SIZE(imx8mm_clks),

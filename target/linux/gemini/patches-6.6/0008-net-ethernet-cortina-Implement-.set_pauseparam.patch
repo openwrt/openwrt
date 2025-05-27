@@ -1,0 +1,46 @@
+From 4eed4b87f17d10b7586349c13c3a30f9c24c9ba4 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 8 May 2024 23:21:17 +0200
+Subject: [PATCH 5/5] net: ethernet: cortina: Implement .set_pauseparam()
+
+The Cortina Gemini ethernet can very well set up TX or RX
+pausing, so add this functionality to the driver in a
+.set_pauseparam() callback. Essentially just call down to
+phylib and let phylib deal with this, .adjust_link()
+will respect the setting from phylib.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/net/ethernet/cortina/gemini.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -2143,6 +2143,19 @@ static void gmac_get_pauseparam(struct n
+ 	pparam->autoneg = true;
+ }
+ 
++static int gmac_set_pauseparam(struct net_device *netdev,
++			       struct ethtool_pauseparam *pparam)
++{
++	struct phy_device *phydev = netdev->phydev;
++
++	if (!pparam->autoneg)
++		return -EOPNOTSUPP;
++
++	phy_set_asym_pause(phydev, pparam->rx_pause, pparam->tx_pause);
++
++	return 0;
++}
++
+ static void gmac_get_ringparam(struct net_device *netdev,
+ 			       struct ethtool_ringparam *rp,
+ 			       struct kernel_ethtool_ringparam *kernel_rp,
+@@ -2263,6 +2276,7 @@ static const struct ethtool_ops gmac_351
+ 	.set_link_ksettings = gmac_set_ksettings,
+ 	.nway_reset	= gmac_nway_reset,
+ 	.get_pauseparam	= gmac_get_pauseparam,
++	.set_pauseparam = gmac_set_pauseparam,
+ 	.get_ringparam	= gmac_get_ringparam,
+ 	.set_ringparam	= gmac_set_ringparam,
+ 	.get_coalesce	= gmac_get_coalesce,

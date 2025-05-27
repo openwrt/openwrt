@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_fortinet_ap-dual.dtsi"
+
+/ {
+	compatible = "fortinet,fap-221-b", "qca,ar9344";
+	model = "Fortinet FAP-221-B";
+
+	aliases {
+		label-mac-device = <&eth0>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		power_amber {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_green {
+			label = "green:eth";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_amber {
+			label = "amber:eth";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi5g {
+			label = "green:wifi5g";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi2g {
+			label = "amber:wifi2g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	virtual_flash {
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+	};
+};
+
+&ath9k {
+	ieee80211-freq-limit = <2402000 2482000>;
+
+	nvmem-cells = <&calibration_pcie>, <&macaddr_uboot_3ff80 8>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_uboot_3ff80 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	ieee80211-freq-limit = <2402000 2482000 4900000 5990000>;
+
+	nvmem-cells = <&calibration_wmac>, <&macaddr_uboot_3ff80 1>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		calibration_wmac: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
+
+		calibration_pcie: calibration@5000 {
+			reg = <0x5000 0x440>;
+		};
+	};
+};

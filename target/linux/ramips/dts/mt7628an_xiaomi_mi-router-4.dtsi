@@ -6,30 +6,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	aliases {
-		led-boot = &led_power_yellow;
-		led-failsafe = &led_power_yellow;
-		led-running = &led_power_blue;
-		led-upgrade = &led_power_yellow;
-		label-mac-device = &ethernet;
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,115200";
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_power_blue: power_blue {
-			label = "blue:power";
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-		};
-
-		led_power_yellow: power_yellow {
-			label = "yellow:power";
-			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
-		};
 	};
 
 	keys {
@@ -68,10 +46,34 @@
 				read-only;
 			};
 
-			factory: partition@30000 {
+			partition@30000 {
 				label = "factory";
 				reg = <0x30000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -93,7 +95,7 @@
 
 &state_default {
 	gpio {
-		groups = "gpio", "wdt", "wled_an";
+		groups = "gpio", "refclk", "wdt", "wled_an";
 		function = "gpio";
 	};
 };
@@ -101,5 +103,6 @@
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

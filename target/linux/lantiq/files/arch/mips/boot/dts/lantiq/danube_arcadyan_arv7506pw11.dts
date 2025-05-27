@@ -1,6 +1,7 @@
 #include "danube.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "arcadyan,arv7506pw11", "lantiq,xway", "lantiq,danube";
@@ -45,11 +46,13 @@
 	leds {
 		compatible = "gpio-leds";
 		wlan: wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -62,7 +65,8 @@
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
@@ -100,7 +104,7 @@
 /* GPIO 19: switch reset */
 &gsw {
 	phy-mode = "rmii";
-	nvmem-cells = <&macaddr_boardconfig_16>;
+	nvmem-cells = <&macaddr_boardconfig_16 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -136,6 +140,18 @@
 				label = "board_config";
 				reg = <0x7f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -148,25 +164,14 @@
 	pinctrl-names = "default";
 
 	lantiq,external-clock;
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 	wifi@1814,3592 {
 		compatible = "pci1814,3592";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,mtd-eeprom-swap;
-		nvmem-cells = <&macaddr_boardconfig_16>;
+		ralink,eeprom-swap;
+		nvmem-cells = <&macaddr_boardconfig_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
-	};
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
 	};
 };

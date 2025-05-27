@@ -59,6 +59,14 @@
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
+	
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <30000>;
+		always-running;
+	};
 };
 
 &wdt {
@@ -122,9 +130,28 @@
 				reg = <0x50000 0xfa0000>;
 			};
 
-			art: art@ff0000 {
+			art@ff0000 {
+				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -132,7 +159,9 @@
 
 &wmac {
 	status = "okay";
-	mtd-cal-data = <&art 0x1000>;
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &pinmux {
@@ -150,19 +179,5 @@
 
 	enable_gpio21: pinmux_enable_gpio21 {
 		pinctrl-single,bits = <0x14 0x0 0xff00>;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_6: macaddr@6 {
-		reg = <0x6 0x6>;
 	};
 };

@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "asiarf,awm002-evb", "ralink,rt5350-soc";
@@ -10,24 +11,26 @@
 		compatible = "gpio-leds";
 
 		tx {
-			label = "green:tx";
+			function = LED_FUNCTION_TX;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};
 
 		rx {
-			label = "green:rx";
+			function = LED_FUNCTION_RX;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset_wps {
 			label = "reset_wps";
@@ -68,10 +71,24 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
 			};
 
 			firmware: partition@50000 {
@@ -89,7 +106,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &state_default {
@@ -101,14 +119,4 @@
 
 &esw {
 	mediatek,portmap = <0x3f>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_28: macaddr@28 {
-		reg = <0x28 0x6>;
-	};
 };

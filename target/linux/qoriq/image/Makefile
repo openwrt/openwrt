@@ -8,12 +8,12 @@ SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS)
 define Build/sdcard-img
         rm -fR $@.boot
         mkdir -p $@.boot
-        $(CP) $(KDIR)/$(DEVICE_NAME)-kernel.bin $@.boot
+        $(CP) $(KDIR)/$(DEVICE_NAME)$(KERNEL_SUFFIX) $@.boot
         $(if $(DEVICE_DTS),\
                 $(foreach dtb,$(DEVICE_DTS),$(CP) $(KDIR)/image-$(dtb).dtb $@.boot), \
                 $(CP) $(KDIR)/image-/*.dtb $@.boot)
 
-        $(SCRIPT_DIR)/gen_image_generic.sh \
+        PADDING=1 $(SCRIPT_DIR)/gen_image_generic.sh \
                 $@ \
                 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
                 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \

@@ -5,19 +5,20 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += ASUS_PRODUCTID ASUS_BUILD_NO ASUS_FW_REV ASUS_EXT_NO
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
-DEVICE_VARS += PKGTB_ITS
+DEVICE_VARS += SOC
 
 define Image/Prepare
-	cp bootfs-generic.its $(KDIR)/
-	sed -i "s=\$$$${images_dir}=$(STAGING_DIR_IMAGE)=" $(KDIR)/bootfs-generic.its
-	sed -i "s=\$$$${dts_dir}=$(DTS_DIR)=" $(KDIR)/bootfs-generic.its
+	cp bootfs*.its* $(KDIR)/
+	sed -i "s=\$$$${images_dir}=$(STAGING_DIR_IMAGE)=" $(KDIR)/bootfs*.its*
+	sed -i "s=\$$$${dts_dir}=$(DTS_DIR)=" $(KDIR)/bootfs*.its*
 endef
 
 define Build/bootfs
 	cat $@ | $(STAGING_DIR_HOST)/bin/lzma e -eos -si -so > $@.tmp
 	mv $@.tmp $@
-	sed -i "s=\$${kernel}=$@=" $(KDIR)/bootfs-generic.its
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/bootfs-generic.its $(KDIR)/bootfs-generic.itb
+	sed -i "s=\$${kernel}=$@=" $(KDIR)/bootfs*.its*
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/bootfs-bcm4908.its $(KDIR)/bootfs-bcm4908.itb
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/bootfs-bcm4912.its $(KDIR)/bootfs-bcm4912.itb
 endef
 
 define Build/bcm4908asus
@@ -54,8 +55,8 @@ endef
 
 define Build/pkgtb
 	mv $@ $@.rootfs
-	cp $(PKGTB_ITS) $@.its
-	sed -i "s=\$${bootfs}=$(KDIR)/bootfs-generic.itb=" $@.its
+	cp pkgtb-$(SOC).its $@.its
+	sed -i "s=\$${bootfs}=$(KDIR)/bootfs-$(SOC).itb=" $@.its
 	sed -i "s=\$${rootfs}=$@.rootfs=" $@.its
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@
 endef
@@ -74,9 +75,9 @@ define Device/Default
 endef
 
 define Device/asus_gt-ac5300
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := GT-AC5300
-  DEVICE_DTS := broadcom/bcm4908/bcm4908-asus-gt-ac5300
+  DEVICE_DTS := broadcom/bcmbca/bcm4908-asus-gt-ac5300
   IMAGES := bin
   IMAGE/bin := append-ubi | bcm4908img | bcm4908asus
   ASUS_PRODUCTID := GT-AC5300
@@ -86,10 +87,20 @@ define Device/asus_gt-ac5300
 endef
 TARGET_DEVICES += asus_gt-ac5300
 
+define Device/asus_gt-ax6000
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := GT-AX6000
+  DEVICE_DTS := broadcom/bcmbca/bcm4912-asus-gt-ax6000
+  IMAGES := pkgtb
+  IMAGE/pkgtb := append-rootfs | pkgtb
+  SOC := bcm4912
+endef
+# TARGET_DEVICES += asus_gt-ax6000
+
 define Device/netgear_r8000p
   DEVICE_VENDOR := Netgear
   DEVICE_MODEL := R8000P
-  DEVICE_DTS := broadcom/bcm4908/bcm4906-netgear-r8000p
+  DEVICE_DTS := broadcom/bcmbca/bcm4906-netgear-r8000p
   IMAGES := bin
   IMAGE/chk := append-ubi | bcm4908img | netgear-chk
   NETGEAR_BOARD_ID := U12H359T00_NETGEAR
@@ -101,7 +112,7 @@ define Device/tplink_archer-c2300-v1
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer C2300
   DEVICE_VARIANT := v1
-  DEVICE_DTS := broadcom/bcm4908/bcm4906-tplink-archer-c2300-v1
+  DEVICE_DTS := broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1
   IMAGES := bin
   IMAGE/bin := append-ubi | bcm4908img
   BROKEN := y
@@ -119,7 +130,7 @@ endef
 define Device/netgear_raxe500
   DEVICE_MODEL := RAXE500
   $(Device/netgear)
-  PKGTB_ITS := pkgtb-bcm4908.its
+  SOC := bcm4908
   NETGEAR_BOARD_ID := U12H449T00_NETGEAR
 endef
 # TARGET_DEVICES += netgear_raxe500

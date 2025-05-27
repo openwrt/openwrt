@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 // Copyright (c) 2021 Cezary Jackiewicz
+
+#include <dt-bindings/leds/common.h>
 // Copyright (c) 2021, 2022 Lech Perczak
 #include "qca9563_zte_mf286.dtsi"
 
@@ -27,7 +29,8 @@
 	 * and slightly through the case below signal state LEDs
 	 */
 	color = <LED_COLOR_ID_BLUE>;
-	label = "blue:debug";
+	function = LED_FUNCTION_DEBUG;
+	color = <LED_COLOR_ID_BLUE>;
 };
 
 &boot_flash {
@@ -65,16 +68,18 @@
 			reg = <0xa0000 0x80000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			cal_art_1000: cal@1000 {
-				reg = <0x1000 0x440>;
-			};
+				cal_art_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
 
-			precal_art_5000: precal@5000 {
-				reg = <0x5000 0x2f20>;
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 		};
 
@@ -83,12 +88,16 @@
 			reg = <0x120000 0x80000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			macaddr_mac_0: mac-address@0 {
-				reg = <0x0 0x6>;
+				macaddr_mac_0: mac-address@0 {
+					compatible = "mac-base";
+					reg = <0x0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
 			};
 		};
 
@@ -118,17 +127,16 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_mac_0>;
+	nvmem-cells = <&macaddr_mac_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wifi_ath10k {
-	nvmem-cells = <&macaddr_mac_0>, <&precal_art_5000>;
+	nvmem-cells = <&macaddr_mac_0 0x20000>, <&precal_art_5000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
-	mac-address-increment = <0x20000>;
 };
 
 &wmac {
-	nvmem-cells = <&macaddr_mac_0>, <&cal_art_1000>;
+	nvmem-cells = <&macaddr_mac_0 0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
 };

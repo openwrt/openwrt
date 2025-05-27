@@ -8,7 +8,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ifxos
 PKG_VERSION:=1.7.1
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=4
 
 UGW_VERSION=8.5.2.10
 UGW_BASENAME=$(PKG_NAME)-ugw_$(UGW_VERSION)
@@ -23,6 +23,7 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_EXTMOD_SUBDIRS:=src
 
 PKG_FIXUP:=autoreconf
+PKG_BUILD_FLAGS:=no-mold
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,7 +33,7 @@ define KernelPackage/ltq-ifxos
   SUBMENU:=Libraries
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq
+  DEPENDS:=@(TARGET_lantiq||TARGET_ipq40xx)
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.ko
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef
@@ -44,13 +45,11 @@ CONFIGURE_ARGS += \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
 	--with-kernel-module
 
-ifdef CONFIG_TARGET_lantiq
-  define Build/InstallDev
+define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/{lib,include/ifxos}
 	$(CP) $(PKG_BUILD_DIR)/src/include/* $(1)/usr/include/ifxos
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/src/.libs/libifxos.a $(1)/usr/lib/libifxos.a
-  endef
-endif
+endef
 
 $(eval $(call KernelPackage,ltq-ifxos))

@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -48,7 +49,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -64,19 +66,22 @@
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
 
 		eth {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
@@ -94,13 +99,13 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -192,16 +197,15 @@
 			mediatek,mtd-eeprom = <&radio 0x0000>;
 			big-endian;
 			ieee80211-freq-limit = <5000000 6000000>;
-			nvmem-cells = <&macaddr_romfile_f100>;
+			nvmem-cells = <&macaddr_romfile_f100 2>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <2>;
 		};
 	};
 };
 
 &pci0 {
 	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
 
 &spi {
@@ -245,6 +249,18 @@
 				reg = <0xfd0000 0x10000>;
 				label = "romfile";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@fe0000 {
@@ -278,14 +294,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&romfile {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_romfile_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
 };

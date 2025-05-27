@@ -1,10 +1,11 @@
 #include "ar9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "zyxel,p-2601hn", "lantiq,xway", "lantiq,ar9";
-	model = "ZyXEL P-2601HN-Fx";
+	model = "Zyxel P-2601HN-Fx";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200";
@@ -46,12 +47,14 @@
 		compatible = "gpio-leds";
 
 		power_green: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 11 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
@@ -103,7 +106,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };

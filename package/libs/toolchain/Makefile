@@ -27,7 +27,7 @@ define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
   URL:=http://gcc.gnu.org/
-  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
 define Package/libgcc
@@ -79,6 +79,33 @@ define Package/libatomic/config
 		prompt "libatomic shared library files (use wildcards)"
 		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libatomic
 		default "./lib/libatomic.so.*"
+
+	endmenu
+endef
+
+define Package/libquadmath
+$(call Package/gcc/Default)
+  DEPENDS:=@TARGET_x86||TARGET_x86_64 +libgcc
+  TITLE:=Quadmath support library
+  ABI_VERSION:=1
+endef
+
+define Package/libquadmath/config
+	menu "Configuration"
+		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libquadmath
+
+	config LIBQUADMATH_ROOT_DIR
+		string
+		prompt "libquadmath shared library base directory"
+		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libquadmath
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBQUADMATH_FILE_SPEC
+		string
+		prompt "libquadmath shared library files (use wildcards)"
+		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libquadmath
+		default "./lib/libquadmath.so.*"
 
 	endmenu
 endef
@@ -144,7 +171,7 @@ define Package/libtsan
 $(call Package/gcc/Default)
   NAME:=libtsan
   TITLE:=Runtime library for ThreadSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
@@ -173,7 +200,7 @@ define Package/liblsan
 $(call Package/gcc/Default)
   NAME:=liblsan
   TITLE:=Runtime library for LeakSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
@@ -230,7 +257,7 @@ endef
 define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBC_VERSION)-r$(PKG_RELEASE)
   DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
 endef
@@ -454,6 +481,9 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
+define Build/Quilt
+endef
+
 LIBGCC_A=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a))
 LIBGCC_MAP=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map))
 LIBGCC_SO=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*))
@@ -480,6 +510,11 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/libatomic/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(TOOLCHAIN_DIR)/lib/libatomic.so.* $(1)/lib/
+  endef
+
+  define Package/libquadmath/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(TOOLCHAIN_DIR)/lib/libquadmath.so.* $(1)/lib/
   endef
 
   define Package/libgfortran/install
@@ -516,7 +551,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
-	$(LN) /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
@@ -652,12 +686,23 @@ else
 	exit 0
   endef
 
+  define Package/glibc/install
+  endef
+
+  LD_MUSL_NAME = $(notdir $(firstword $(wildcard $(TOOLCHAIN_ROOT_DIR)/lib/libc.so*)))
+
+  define Package/musl/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(LN) ../../lib/$(LD_MUSL_NAME) $(1)/usr/bin/ldd
+  endef
+
   define Package/libc/install
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
 	exit 0
+	$(call Package/$(LIBC)/install,$1)
   endef
 
   define Package/libpthread/install
@@ -688,6 +733,14 @@ else
 	for file in $(call qstrip,$(CONFIG_LIBATOMIC_FILE_SPEC)); do \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBATOMIC_ROOT_DIR))/$$$$file $(1)/lib/ ; \
+	done ; \
+	exit 0
+  endef
+
+  define Package/libquadmath/install
+	for file in $(call qstrip,$(CONFIG_LIBQUADMATH_FILE_SPEC)); do \
+		$(INSTALL_DIR) $(1)/lib ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBQUADMATH_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
 	exit 0
   endef
@@ -723,6 +776,7 @@ endif
 $(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libatomic))
+$(eval $(call BuildPackage,libquadmath))
 $(eval $(call BuildPackage,libstdcpp))
 $(eval $(call BuildPackage,libasan))
 $(eval $(call BuildPackage,libtsan))

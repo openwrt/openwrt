@@ -1,0 +1,342 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Extreme Networks WS-AP391x";
+	compatible = "extreme-networks,ws-ap391x";
+
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_red;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_red;
+	};
+
+	soc {
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system_green: system_green {
+			label = "system:green";
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * system:amber ==> AP3917
+		 * system:red ==> AP3916
+		 * */
+		led_system_red: system_red {
+			label = "system:red_or_system:amber";
+			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan24_green: wlan24_green {
+			label = "wlan24:green";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		/*
+		 * wlan24:amber ==> AP3915/AP3917
+		 * pse:green ==> AP3912
+		 * */
+		led_wlan24_amber: wlan24_amber {
+			label = "wlan24:amber_or_pse:green";
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan5_green: wlan5_green {
+			label = "wlan5:green";
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		/* iot:blue ==>  AP3917 */
+		led_iot_green: iot_green {
+			label = "iot:green_or_iot:blue";
+			gpios = <&tlmm 10 GPIO_ACTIVE_LOW>;
+		};
+
+		/* eth:green ==> only AP3912/AP3916 */
+		led_eth_green: eth_green {
+			label = "eth:green";
+			gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * eth:amber ==> only AP3912/AP3916
+		 * usb_enable ==> only AP3915e
+		 */
+		led_eth_amber: eth_amber {
+			label = "eth:amber_or_usb_enable";
+			gpios = <&tlmm 52 GPIO_ACTIVE_LOW>;
+		};
+
+		/*
+		 * wlan5:amber ==> AP3915/AP3917
+		 * cam:green ==> only AP3916
+		 */
+		led_wlan5_amber: wlan5_amber {
+			label = "wlan5:amber_or_cam:green";
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART >;
+		};
+	};
+};
+
+&prng {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+	label = "sw-eth1";
+};
+
+&swport2 {
+	status = "okay";
+	label = "sw-eth2";
+};
+
+&swport3 {
+	status = "okay";
+	label = "sw-eth3";
+};
+
+/* "GE2" on AP3917/AP3916/WiNG-AP7662 */
+&swport4 {
+	status = "okay";
+	label = "sw-eth4";
+};
+
+/*
+ * "GE1" on AP3917/AP3916/AP3915/AP7662
+ * "LAN1" on EXTR-AP3912
+ */
+&swport5 {
+	status = "okay";
+	label = "sw-eth5";
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pin {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pin_cs {
+			function = "gpio";
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	serial_pins: serial_0_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Extreme-Networks-WS-AP3915i";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Extreme-Networks-WS-AP3915i";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Layout for 0x0 - 0xe0000 unknown */
+
+			partition@e0000 {
+				label = "CFG1";
+				compatible = "u-boot,env-redundant-bool";
+				reg = <0xe0000 0x10000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "BootBAK";
+				reg = <0xf0000 0x70000>;
+				read-only;
+			};
+
+			partition@160000 {
+				label = "WINGCFG1";
+				reg = <0x160000 0x10000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "BootPRI";
+				reg = <0x180000 0x70000>;
+				read-only;
+			};
+
+			partition@1f0000 {
+				label = "WINGCFG2";
+				reg = <0x1f0000 0x10000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "FS";
+				reg = <0x200000 0x80000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "firmware";
+				reg = <0x280000 0xeb0000>;
+			};
+
+			partition@1130000 {
+				label = "firmware2";
+				reg = <0x1130000 0xeb0000>;
+			};
+
+			partition@1fe0000 {
+				label = "CFG2";
+				compatible = "u-boot,env-redundant-bool";
+				reg = <0x1fe0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};

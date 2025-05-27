@@ -37,28 +37,12 @@
 #include <linux/sysfs.h>
 #include <linux/lzo.h>
 
+#include "rb_hardconfig.h"
 #include "routerboot.h"
+#include "rb_lz77.h"
 
-#define RB_HARDCONFIG_VER		"0.07"
+#define RB_HARDCONFIG_VER		"0.08"
 #define RB_HC_PR_PFX			"[rb_hardconfig] "
-
-/* ID values for hardware settings */
-#define RB_ID_FLASH_INFO		0x03
-#define RB_ID_MAC_ADDRESS_PACK		0x04
-#define RB_ID_BOARD_PRODUCT_CODE	0x05
-#define RB_ID_BIOS_VERSION		0x06
-#define RB_ID_SDRAM_TIMINGS		0x08
-#define RB_ID_DEVICE_TIMINGS		0x09
-#define RB_ID_SOFTWARE_ID		0x0A
-#define RB_ID_SERIAL_NUMBER		0x0B
-#define RB_ID_MEMORY_SIZE		0x0D
-#define RB_ID_MAC_ADDRESS_COUNT		0x0E
-#define RB_ID_HW_OPTIONS		0x15
-#define RB_ID_WLAN_DATA			0x16
-#define RB_ID_BOARD_IDENTIFIER		0x17
-#define RB_ID_PRODUCT_NAME		0x21
-#define RB_ID_DEFCONF			0x26
-#define RB_ID_BOARD_REVISION		0x27
 
 /* Bit definitions for hardware options */
 #define RB_HW_OPT_NO_UART		BIT(0)
@@ -482,23 +466,24 @@ fail:
 /*
  * If the RB_ID_WLAN_DATA payload starts with RB_MAGIC_LZOR, then past
  * that magic number is a payload that must be appended to the hc_lzor_prefix,
- * the resulting blob is LZO-compressed. In the LZO decompression result,
+ * the resulting blob is LZO-compressed.
+ * If payload starts with RB_MAGIC_LZ77, a separate (bit level LZ77)
+ * decompression function needs to be used. In the decompressed result,
  * the RB_MAGIC_ERD magic number (aligned) must be located. Following that
  * magic, there is one or more routerboot tag node(s) locating the RLE-encoded
  * calibration data payload.
  */
-static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t inlen,
-				    void *outbuf, size_t *outlen)
+static int hc_wlan_data_unpack_lzor_lz77(const u16 tag_id, const u8 *inbuf, size_t inlen,
+					 void *outbuf, size_t *outlen, u32 magic)
 {
 	u16 rle_ofs, rle_len;
 	const u32 *needle;
 	u8 *tempbuf;
 	size_t templen, lzo_len;
 	int ret;
-
-	lzo_len = inlen + sizeof(hc_lzor_prefix);
-	if (lzo_len > *outlen)
-		return -EFBIG;
+	const char lzor[] = "LZOR";
+	const char lz77[] = "LZ77";
+	const char *lz_type;
 
 	/* Temporary buffer same size as the outbuf */
 	templen = *outlen;
@@ -506,23 +491,50 @@ static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t in
 	if (!tempbuf)
 		return -ENOMEM;
 
-	/* Concatenate into the outbuf */
-	memcpy(outbuf, hc_lzor_prefix, sizeof(hc_lzor_prefix));
-	memcpy(outbuf + sizeof(hc_lzor_prefix), inbuf, inlen);
+	lzo_len = inlen;
+	if (magic == RB_MAGIC_LZOR)
+		lzo_len += sizeof(hc_lzor_prefix);
+	if (lzo_len > *outlen)
+		return -EFBIG;
 
-	/* LZO-decompress lzo_len bytes of outbuf into the tempbuf */
-	ret = lzo1x_decompress_safe(outbuf, lzo_len, tempbuf, &templen);
-	if (ret) {
-		if (LZO_E_INPUT_NOT_CONSUMED == ret) {
-			/*
-			 * The tag length is always aligned thus the LZO payload may be padded,
-			 * which can trigger a spurious error which we ignore here.
-			 */
-			pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
-		} else {
-			pr_debug(RB_HC_PR_PFX "LZOR: LZO decompression error (%d)\n", ret);
+	switch (magic) {
+	case RB_MAGIC_LZOR:
+		lz_type = lzor;
+
+		/* Concatenate into the outbuf */
+		memcpy(outbuf, hc_lzor_prefix, sizeof(hc_lzor_prefix));
+		memcpy(outbuf + sizeof(hc_lzor_prefix), inbuf, inlen);
+
+		/* LZO-decompress lzo_len bytes of outbuf into the tempbuf */
+		ret = lzo1x_decompress_safe(outbuf, lzo_len, tempbuf, &templen);
+		if (ret) {
+			if (LZO_E_INPUT_NOT_CONSUMED == ret) {
+				/*
+				 * The tag length is always aligned thus the LZO payload may be padded,
+				 * which can trigger a spurious error which we ignore here.
+				 */
+				pr_debug(RB_HC_PR_PFX "LZOR: LZO EOF before buffer end - this may be harmless\n");
+			} else {
+				pr_debug(RB_HC_PR_PFX "LZOR: LZO decompression error (%d)\n", ret);
+				goto fail;
+			}
+		}
+		break;
+	case RB_MAGIC_LZ77:
+		lz_type = lz77;
+		/* LZO-decompress lzo_len bytes of inbuf into the tempbuf */
+		ret = rb_lz77_decompress(inbuf, inlen, tempbuf, &templen);
+		if (ret) {
+			pr_err(RB_HC_PR_PFX "LZ77: LZ77 decompress error %d\n", ret);
 			goto fail;
 		}
+
+		pr_debug(RB_HC_PR_PFX "LZ77: decompressed from %zu to %zu\n",
+				inlen, templen);
+		break;
+	default:
+		return -EINVAL;
+		break;
 	}
 
 	/*
@@ -533,7 +545,7 @@ static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t in
 	needle = (const u32 *)tempbuf;
 	while (RB_MAGIC_ERD != *needle++) {
 		if ((u8 *)needle >= tempbuf+templen) {
-			pr_debug(RB_HC_PR_PFX "LZOR: ERD magic not found\n");
+			pr_warn(RB_HC_PR_PFX "%s: ERD magic not found. Decompressed first word: 0x%08x\n", lz_type, *(u32 *)tempbuf);
 			ret = -ENODATA;
 			goto fail;
 		}
@@ -543,12 +555,12 @@ static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t in
 	/* Past magic. Look for tag node */
 	ret = routerboot_tag_find((u8 *)needle, templen, tag_id, &rle_ofs, &rle_len);
 	if (ret) {
-		pr_debug(RB_HC_PR_PFX "LZOR: no RLE data for id 0x%04x\n", tag_id);
+		pr_debug(RB_HC_PR_PFX "%s: no RLE data for id 0x%04x\n", lz_type, tag_id);
 		goto fail;
 	}
 
 	if (rle_len > templen) {
-		pr_debug(RB_HC_PR_PFX "LZOR: Invalid RLE data length\n");
+		pr_debug(RB_HC_PR_PFX "%s: Invalid RLE data length\n", lz_type);
 		ret = -EINVAL;
 		goto fail;
 	}
@@ -556,7 +568,7 @@ static int hc_wlan_data_unpack_lzor(const u16 tag_id, const u8 *inbuf, size_t in
 	/* RLE-decode tempbuf from needle back into the outbuf */
 	ret = routerboot_rle_decode((u8 *)needle+rle_ofs, rle_len, outbuf, outlen);
 	if (ret)
-		pr_debug(RB_HC_PR_PFX "LZOR: RLE decoding error (%d)\n", ret);
+		pr_debug(RB_HC_PR_PFX "%s: RLE decoding error (%d)\n", lz_type, ret);
 
 fail:
 	kfree(tempbuf);
@@ -579,11 +591,18 @@ static int hc_wlan_data_unpack(const u16 tag_id, const size_t tofs, size_t tlen,
 
 	ret = -ENODATA;
 	switch (magic) {
+	case RB_MAGIC_LZ77:
+		/* no known instances of lz77 without 8001/8201 data, skip SOLO */
+		if (tag_id == RB_WLAN_ERD_ID_SOLO) {
+			pr_debug(RB_HC_PR_PFX "skipped LZ77 decompress in search for SOLO tag\n");
+			break;
+		}
+		fallthrough;
 	case RB_MAGIC_LZOR:
 		/* Skip magic */
 		lbuf += sizeof(magic);
 		tlen -= sizeof(magic);
-		ret = hc_wlan_data_unpack_lzor(tag_id, lbuf, tlen, outbuf, outlen);
+		ret = hc_wlan_data_unpack_lzor_lz77(tag_id, lbuf, tlen, outbuf, outlen, magic);
 		break;
 	case RB_MAGIC_ERD:
 		/* Skip magic */

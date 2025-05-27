@@ -6,9 +6,32 @@
 
 board=$(board_name)
 
+dt_base64_extract() {
+	local target_dir="/sys$DEVPATH"
+	local source="$target_dir/../../of_node/qcom,ath10k-calibration-data-base64"
+
+	[ -e "$source" ] || caldata_die "cannot find base64 calibration data: $source"
+	[ -d "$target_dir" ] || \
+		caldata_die "no sysfs dir to write: $target"
+
+	echo 1 > "$target_dir/loading"
+	base64decode.uc "$source" > "$target_dir/data"
+	if [ $? != 0 ]; then
+		echo 1 > "$target_dir/loading"
+		caldata_die \
+			"failed to write calibration data to $target_dir/data"
+	else
+		echo 0 > "$target_dir/loading"
+	fi
+}
+
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
+	asus,onhub |\
+	tplink,onhub)
+		dt_base64_extract
+		;;
 	meraki,mr52)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x1000 0x844
@@ -29,9 +52,21 @@ case "$FIRMWARE" in
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		;;
+	nokia,ac400i)
+		caldata_extract "0:art" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +2)
+		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
+		;;
+	esac
+	;;
+"ath10k/cal-pci-0001:01:00.0.bin")
+	case "$board" in
+	asus,onhub |\
+	tplink,onhub)
+		dt_base64_extract
 		;;
 	esac
 	;;
@@ -53,6 +88,10 @@ case "$FIRMWARE" in
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		;;
+	nokia,ac400i)
+		caldata_extract "0:art" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +3)
+		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
@@ -61,6 +100,10 @@ case "$FIRMWARE" in
 	;;
 "ath10k/cal-pci-0002:01:00.0.bin")
 	case "$board" in
+	asus,onhub |\
+	tplink,onhub)
+		dt_base64_extract
+		;;
 	meraki,mr42)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x9000 0x844

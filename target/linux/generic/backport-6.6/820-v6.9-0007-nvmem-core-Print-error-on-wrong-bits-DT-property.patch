@@ -1,0 +1,32 @@
+From def3173d4f17b37cecbd74d7c269a080b0b01598 Mon Sep 17 00:00:00 2001
+From: Markus Schneider-Pargmann <msp@baylibre.com>
+Date: Sat, 24 Feb 2024 11:45:16 +0000
+Subject: [PATCH] nvmem: core: Print error on wrong bits DT property
+
+The algorithms in nvmem core are built with the constraint that
+bit_offset < 8. If bit_offset is greater the results are wrong. Print an
+error if the devicetree 'bits' property is outside of the valid range
+and abort parsing.
+
+Signed-off-by: Markus Schneider-Pargmann <msp@baylibre.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240224114516.86365-12-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -805,6 +805,11 @@ static int nvmem_add_cells_from_dt(struc
+ 		if (addr && len == (2 * sizeof(u32))) {
+ 			info.bit_offset = be32_to_cpup(addr++);
+ 			info.nbits = be32_to_cpup(addr);
++			if (info.bit_offset >= BITS_PER_BYTE || info.nbits < 1) {
++				dev_err(dev, "nvmem: invalid bits on %pOF\n", child);
++				of_node_put(child);
++				return -EINVAL;
++			}
+ 		}
+ 
+ 		info.np = of_node_get(child);

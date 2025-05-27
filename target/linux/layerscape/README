@@ -12,6 +12,7 @@ users can bring up the board without difficulty.
   LS1012ARDB        (QSPI NOR boot)
   LS1012AFRDM       (QSPI NOR boot)
   LS1012AFRWY       (QSPI NOR boot)
+  LS1028ARDB        (QSPI NOR boot    | SD card boot)
   LS1043ARDB        (NOR boot         | SD card boot)
   LS1046ARDB        (QSPI NOR boot    | SD card boot)
   LS1046AFRWY       (QSPI NOR boot    | SD card boot)
@@ -90,6 +91,15 @@ from SD card. (sdcard.img images are gz-iped to save space. Please extract them 
 
   => tftp a0000000 <firmware_name>-firmware.bin
   => i2c mw 0x24 0x7 0xfc;i2c mw 0x24 0x3 0xf5
+  => sf probe 0:0
+  => sf erase 0 +$filesize
+  => sf write a0000000 0 $filesize
+  => reset
+
+* LS1028ARDB
+  Board has only one bank. Those commands will replace stock bootloader
+  and firmware.
+  => tftp a0000000 <firmware_name>-firmware.bin
   => sf probe 0:0
   => sf erase 0 +$filesize
   => sf write a0000000 0 $filesize

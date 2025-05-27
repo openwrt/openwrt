@@ -1,0 +1,36 @@
+From fa01c904b844e6033445f75b0b4d46a8e83b6086 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 10 May 2024 19:48:27 +0200
+Subject: [PATCH 3/5] net: ethernet: cortina: Rename adjust link callback
+
+The callback passed to of_phy_get_and_connect() in the
+Cortina Gemini driver is called "gmac_speed_set" which is
+archaic, rename it to "gmac_adjust_link" following the
+pattern of most other drivers.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/net/ethernet/cortina/gemini.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -288,7 +288,7 @@ static void gmac_set_flow_control(struct
+ 	spin_unlock_irqrestore(&port->config_lock, flags);
+ }
+ 
+-static void gmac_speed_set(struct net_device *netdev)
++static void gmac_adjust_link(struct net_device *netdev)
+ {
+ 	struct gemini_ethernet_port *port = netdev_priv(netdev);
+ 	struct phy_device *phydev = netdev->phydev;
+@@ -367,7 +367,7 @@ static int gmac_setup_phy(struct net_dev
+ 
+ 	phy = of_phy_get_and_connect(netdev,
+ 				     dev->of_node,
+-				     gmac_speed_set);
++				     gmac_adjust_link);
+ 	if (!phy)
+ 		return -ENODEV;
+ 	netdev->phydev = phy;

@@ -1,0 +1,46 @@
+From 50ac9765c674bac803719c6b8294670edc6df31d Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 10 May 2024 19:44:39 +0200
+Subject: [PATCH 4/5] net: ethernet: cortina: Use negotiated TX/RX pause
+
+Instead of directly poking into registers of the PHY, use
+the existing function to query phylib about this directly.
+
+Suggested-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/net/ethernet/cortina/gemini.c | 15 +++++----------
+ 1 file changed, 5 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -293,8 +293,8 @@ static void gmac_adjust_link(struct net_
+ 	struct gemini_ethernet_port *port = netdev_priv(netdev);
+ 	struct phy_device *phydev = netdev->phydev;
+ 	union gmac_status status, old_status;
+-	int pause_tx = 0;
+-	int pause_rx = 0;
++	bool pause_tx = false;
++	bool pause_rx = false;
+ 
+ 	status.bits32 = readl(port->gmac_base + GMAC_STATUS);
+ 	old_status.bits32 = status.bits32;
+@@ -329,14 +329,9 @@ static void gmac_adjust_link(struct net_
+ 	}
+ 
+ 	if (phydev->duplex == DUPLEX_FULL) {
+-		u16 lcladv = phy_read(phydev, MII_ADVERTISE);
+-		u16 rmtadv = phy_read(phydev, MII_LPA);
+-		u8 cap = mii_resolve_flowctrl_fdx(lcladv, rmtadv);
+-
+-		if (cap & FLOW_CTRL_RX)
+-			pause_rx = 1;
+-		if (cap & FLOW_CTRL_TX)
+-			pause_tx = 1;
++		phy_get_pause(phydev, &pause_tx, &pause_rx);
++		netdev_dbg(netdev, "set negotiated pause params pause TX = %s, pause RX = %s\n",
++			   pause_tx ? "ON" : "OFF", pause_rx ? "ON" : "OFF");
+ 	}
+ 
+ 	gmac_set_flow_control(netdev, pause_tx, pause_rx);

@@ -14,9 +14,8 @@ board=$(board_name)
 case "$board" in
 bananapi,bpi-r2)
 	. /lib/upgrade/common.sh
-	export_bootdevice
-	export_partdevice ubootpart 1
-	ubootenv_add_uci_config "/dev/$ubootpart" "0xb0000" "0x10000" "0x10000" "1"
+	bootdev="$(fitblk_get_bootdev)"
+	ubootenv_add_uci_config "/dev/${bootdev%p[0-9]*}p1" "0xb0000" "0x10000" "0x10000" "1"
 	;;
 unielec,u7623-02)
 	ubootenv_add_uci_config "/dev/mmcblk0p1" "0xc0000" "0x10000" "0x10000" "1"

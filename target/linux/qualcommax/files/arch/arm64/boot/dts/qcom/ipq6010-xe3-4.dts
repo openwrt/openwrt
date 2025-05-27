@@ -1,0 +1,454 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-fixed-smps.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	/* Qualcomm Technologies, Inc. IPQ6018/AP-CP01-C3 */
+	model = "Cambium Networks XE3-4";
+	compatible = "cambiumnetworks,xe3-4", "qcom,ipq6018-cp01", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		sdhc2 = &sdhc_1;
+		ethernet0 = &dp5;
+		ethernet1 = &dp4;
+		label-mac-device = &dp5;
+
+		led-boot = &led_status_amber;
+		led-failsafe = &led_status_amber;
+		led-running = &led_status_white;
+		led-upgrade = &led_status_amber;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_status_white: status-white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpio = <&tlmm 56 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_amber: status-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_STATUS;
+			gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_sd_vmmc: regulator-sdcard-vmmc {
+		compatible = "regulator-fixed";
+		regulator-name = "sdcard-vmmc";
+		regulator-min-microvolt = <2950000>;
+		regulator-max-microvolt = <2950000>;
+
+		startup-delay-us = <200>;
+
+		gpio = <&tlmm 66 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sd_vmmc_en_default>;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	/* TZ has exclusive control over GPIO20 */
+	gpio-reserved-ranges = <20 1>;
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	i2c_1_pins: i2c-1-state {
+		pins = "gpio42", "gpio43";
+		function = "blsp2_i2c";
+		drive-strength = <8>;
+	};
+
+	spi_0_pins: spi-0-state {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	led_pins: led_pins {
+		leds {
+			pins = "gpio35", "gpio37", "gpio50";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	sd_vmmc_en_default: sd-vmmc-en-default-state {
+		pins = "gpio66";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	sd_pins: sd-state {
+		pins = "gpio62";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			status = "okay";
+
+			/* ath11k has no DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-fw-memory-mode = <0>;
+			qcom,ath11k-calibration-variant = "CambiumNetworks-XE34";
+		};
+	};
+};
+
+&sdhc_1 {
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+	vqmmc-supply = <&reg_sd_vmmc>;
+	bus-width = <4>;
+};
+
+&edma {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT4 | ESS_PORT5)>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode2 = <MAC_MODE_SGMII_PLUS>;
+
+	qcom,port_phyinfo {
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+
+		port@5 {
+			port_id = <5>;
+			phy_address = <24>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8072: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+	};
+
+	qca8081: ethernet-phy@24 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <24>;
+		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+	};
+};
+
+&dp4 {
+	status = "okay";
+
+	phy-handle = <&qca8072>;
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eth1addr 0>;
+	label = "lan2";
+};
+
+&dp5 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	phy-handle = <&qca8081>;
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&ethaddr 0>;
+	label = "lan1";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		/*
+		 * U-boot looks for "n25q128a11" node,
+		 * if we don't have it, it will spit out the following warning:
+		 * "ipq: fdt fixup unable to find compatible node".
+		 */
+		linux,modalias = "m25p80", "mx30uf2g18ac", "n25q128a11";
+		compatible = "micron,n25q128a11", "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:BOOTCONFIG";
+				reg = <0xd0000 0x20000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0xf0000 0x20000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "0:QSEE";
+				reg = <0x110000 0x1a0000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:QSEE_1";
+				reg = <0x2b0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@450000 {
+				label = "0:DEVCFG";
+				reg = <0x450000 0x10000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "mfginfo";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:RPM";
+				reg = <0x470000 0x40000>;
+				read-only;
+			};
+
+			partition@4b0000 {
+				label = "0:RPM_1";
+				reg = <0x4b0000 0x40000>;
+				read-only;
+			};
+
+			partition@4f0000 {
+				label = "0:CDT";
+				reg = <0x4f0000 0x10000>;
+				read-only;
+			};
+
+			partition@500000 {
+				label = "0:CDT_1";
+				reg = <0x500000 0x10000>;
+				read-only;
+			};
+
+			partition@510000 {
+				compatible = "u-boot,env";
+				label = "0:APPSBLENV";
+				reg = <0x510000 0x10000>;
+
+				ethaddr: ethaddr {
+					#nvmem-cell-cells = <0>;
+				};
+
+				eth1addr: eth1addr {
+					#nvmem-cell-cells = <0>;
+				};
+
+				eth2addr: eth2addr {
+					#nvmem-cell-cells = <0>;
+				};
+
+				eth5addr: eth5addr {
+					#nvmem-cell-cells = <0>;
+				};
+			};
+
+			partition@520000 {
+				label = "0:APPSBL";
+				reg = <0x520000 0xa0000>;
+				read-only;
+			};
+
+			partition@5c0000 {
+				label = "0:APPSBL_1";
+				reg = <0x5c0000 0xa0000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "0:ART";
+				reg = <0x660000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x0 0x6000000>;
+			};
+
+			partition@6000000 {
+				label = "rootfs_1";
+				reg = <0x6000000 0x6000000>;
+			};
+
+			partition@c000000 {
+				label = "NVRAM";
+				reg = <0xc000000 0x3000000>;
+			};
+
+			partition@f000000 {
+				label = "crashLog";
+				reg = <0xf000000 0x1000000>;
+			};
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "CambiumNetworks-XE34";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eth2addr>;
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};

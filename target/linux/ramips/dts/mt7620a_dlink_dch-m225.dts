@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,dch-m225", "ralink,mt7620a-soc";
@@ -34,13 +35,15 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		status {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -98,7 +101,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <50000000>;
 		m25p,fast-read;
 
 		partitions {
@@ -118,13 +121,27 @@
 				read-only;
 			};
 
-			factory: partition@34000 {
+			partition@34000 {
 				label = "factory";
 				reg = <0x34000 0x4000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
 			};
 
-			nvram: partition@38000 {
+			partition@38000 {
 				label = "nvram";
 				reg = <0x38000 0x8000>;
 				read-only;
@@ -173,17 +190,9 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&factory 0x0>;
-	pinctrl-names = "default";
+	pinctrl-names = "default", "pa_gpio";
 	pinctrl-0 = <&pa_pins>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
+	pinctrl-1 = <&pa_gpio_pins>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

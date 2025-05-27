@@ -1,8 +1,61 @@
 #!/bin/sh
 
+_dropbear()
+{
+	/usr/sbin/dropbear "$@" </dev/null >/dev/null 2>&1
+}
+
+_dropbearkey()
+{
+	/usr/bin/dropbearkey "$@" </dev/null >/dev/null 2>&1
+}
+
+_ensurekey()
+{
+	_dropbearkey -y -f "$1" && return
+	rm -f "$1"
+	_dropbearkey -f "$@" || {
+		rm -f "$1"
+		return 1
+	}
+}
+
+ktype_all='ed25519 ecdsa rsa'
+
 failsafe_dropbear () {
-	dropbearkey -t rsa -s 1024 -f /tmp/dropbear_failsafe_host_key
-	dropbear -r /tmp/dropbear_failsafe_host_key <> /dev/null 2>&1
+	local kargs kcount ktype tkey
+
+	kargs=
+	kcount=0
+	for ktype in ${ktype_all} ; do
+		tkey="/tmp/dropbear_failsafe_${ktype}_host_key"
+
+		case "${ktype}" in
+		ed25519) _ensurekey "${tkey}" -t ed25519 ;;
+		ecdsa)   _ensurekey "${tkey}" -t ecdsa -s 256 ;;
+		rsa)     _ensurekey "${tkey}" -t rsa   -s 1024 ;;
+		*)
+			echo "unknown key type: ${ktype}" >&2
+			continue
+		;;
+		esac
+
+		[ -s "${tkey}" ] || {
+			rm -f "${tkey}"
+			continue
+		}
+
+		chmod 0400 "${tkey}"
+		kargs="${kargs}${kargs:+ }-r ${tkey}"
+		kcount=$((kcount+1))
+	done
+
+	[ "${kcount}" != 0 ] || {
+		echo 'DROPBEAR IS BROKEN' >&2
+		return 1
+	}
+
+	_dropbear ${kargs}
 }
 
 boot_hook_add failsafe failsafe_dropbear

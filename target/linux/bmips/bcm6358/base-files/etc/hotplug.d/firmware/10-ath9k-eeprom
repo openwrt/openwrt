@@ -1,0 +1,34 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+caldata_extract_swap() {
+	local part=$1
+	local offset=$2
+	local count=$3
+	local mtd
+
+	mtd=$(find_mtd_chardev $part)
+	[ -n "$mtd" ] || caldata_die "no mtd device found for partition $part"
+
+	offset=$(($offset / 2))
+	count=$(($count / 2))
+
+	dd if=$mtd of=/lib/firmware/$FIRMWARE bs=2 skip=$offset count=$count conv=swab 2>/dev/null || \
+		caldata_die "failed to extract calibration data from $mtd"
+}
+
+case "$FIRMWARE" in
+	"ath9k-eeprom-pci-0000:00:01.0.bin")
+		case "$(board_name)" in
+			huawei,hg556a-b)
+				caldata_extract_swap "cal_data" 0x1e000 0xeb8
+				;;
+			*)
+				caldata_die "board $board is not supported yet"
+				;;
+		esac
+		;;
+esac

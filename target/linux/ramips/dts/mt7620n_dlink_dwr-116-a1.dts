@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -35,7 +36,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -77,7 +79,7 @@
 				reg = <0x10000 0x7e0000>;
 			};
 
-			config: partition@7f0000 {
+			partition@7f0000 {
 				label = "config";
 				reg = <0x7f0000 0x10000>;
 				read-only;

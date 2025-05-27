@@ -1,5 +1,5 @@
 #!/bin/sh
-FW="/tmp/firmware-speedport-w921v-1.46.000.bin"
+FW="/tmp/firmware-speedport-w921v-1.48.000.bin"
 URL="https://www.telekom.de/hilfe/downloads/firmware-speedport-w-921v-1.48.000.bin"
 FW_TAPI="vr9_tapi_fw.bin"
 FW_DSL="vr9_dsl_fw_annex_b.bin"

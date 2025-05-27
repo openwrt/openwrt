@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+actiontec,r1000h |\
+comtrend,vr-3025u |\
+comtrend,vr-3025un |\
+comtrend,wap-5813n |\
+netgear,evg2000 |\
+observa,vh4032n)
+	mtd fixtrx firmware
+	;;
+esac
+
+exit 0

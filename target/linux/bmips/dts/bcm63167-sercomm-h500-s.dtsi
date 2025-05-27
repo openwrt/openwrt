@@ -1,0 +1,300 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <dt-bindings/leds/common.h>
+
+#include "bcm63268.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds>;
+
+	led@0 {
+		reg = <0>;
+		label = "red:mobile";
+	};
+
+	led@1 {
+		reg = <1>;
+		label = "green:mobile";
+	};
+
+	led_power_red: led@8 {
+		reg = <8>;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
+		panic-indicator;
+	};
+
+	led@9 {
+		reg = <9>;
+		label = "green:wifi";
+	};
+
+	led@12 {
+		reg = <12>;
+		label = "red:phone";
+	};
+
+	led@13 {
+		reg = <13>;
+		label = "red:wifi";
+	};
+
+	led@14 {
+		reg = <14>;
+		label = "red:internet";
+	};
+
+	led@15 {
+		reg = <15>;
+		label = "green:internet";
+	};
+
+	led@16 {
+		reg = <16>;
+		label = "green:phone";
+	};
+
+	led_power_green: led@17 {
+		reg = <17>;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led@23 {
+		reg = <23>;
+		label = "blue:mobile";
+	};
+};
+
+&mdio_int {
+	phy12: ethernet-phy@c {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <12>;
+	};
+};
+
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53134";
+		reg = <30>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan3";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan1";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wifi";
+
+				phy-mode = "rgmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii-txid";
+				ethernet = <&switch0port4>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <4>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "cferom";
+				reg = <0x0000000 0x0020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
+			};
+
+			partition@20000 {
+				label = "part_map";
+				reg = <0x0020000 0x00a0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "cferam1";
+				reg = <0x00c0000 0x0140000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "cferam2";
+				reg = <0x0200000 0x0140000>;
+				read-only;
+			};
+
+			partition@6920000 {
+				label = "bootflag1";
+				reg = <0x6920000 0x0140000>;
+			};
+
+			partition@6a60000 {
+				label = "bootflag2";
+				reg = <0x6a60000 0x0140000>;
+			};
+
+			partition@520000 {
+				compatible = "sercomm,wfi";
+				label = "wfi";
+				reg = <0x0520000 0x6400000>;
+			};
+
+			partition@6ba0000 {
+				label = "xml_cfg";
+				reg = <0x6ba0000 0x0280000>;
+				read-only;
+			};
+
+			partition@6e20000 {
+				label = "app_data";
+				reg = <0x6e20000 0x0280000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		port@3 {
+			reg = <3>;
+			label = "wan";
+
+			phy-handle = <&phy12>;
+			phy-mode = "gmii";
+		};
+
+		switch0port4: port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii-txid";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio0",  "gpio1",  "gpio8",  "gpio9",
+		       "gpio12", "gpio13", "gpio14", "gpio15",
+		       "gpio16", "gpio17", "gpio23";
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

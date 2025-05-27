@@ -1,0 +1,68 @@
+From 6a77abab92516e65f07f8657fc4e384c4541ce0e Mon Sep 17 00:00:00 2001
+From: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Date: Sun, 22 Sep 2024 16:50:10 +0200
+Subject: bridge: mst: fix a musl build issue
+
+This patch fixes a compilation error raised by the bump to version 6.11.0
+in Buildroot using musl as the C library for the cross-compilation
+toolchain.
+
+After setting the CFLGAS
+
+ifeq ($(BR2_TOOLCHAIN_USES_MUSL),y)
+IPROUTE2_CFLAGS += -D__UAPI_DEF_IN6_ADDR=0 -D__UAPI_DEF_SOCKADDR_IN6=0 \
+			-D__UAPI_DEF_IPV6_MREQ=0
+endif
+
+to fix the following errors:
+
+In file included from ../../../host/mips64-buildroot-linux-musl/sysroot/usr/include/arpa/inet.h:9,
+                 from ../include/libnetlink.h:14,
+                 from mst.c:10:
+../../../host/mips64-buildroot-linux-musl/sysroot/usr/include/netinet/in.h:23:8: error: redefinition of 'struct in6_addr'
+   23 | struct in6_addr {
+      |        ^~~~~~~~
+In file included from ../include/uapi/linux/if_bridge.h:19,
+                 from mst.c:7:
+../include/uapi/linux/in6.h:33:8: note: originally defined here
+   33 | struct in6_addr {
+      |        ^~~~~~~~
+../../../host/mips64-buildroot-linux-musl/sysroot/usr/include/netinet/in.h:34:8: error: redefinition of 'struct sockaddr_in6'
+   34 | struct sockaddr_in6 {
+      |        ^~~~~~~~~~~~
+../include/uapi/linux/in6.h:50:8: note: originally defined here
+   50 | struct sockaddr_in6 {
+      |        ^~~~~~~~~~~~
+../../../host/mips64-buildroot-linux-musl/sysroot/usr/include/netinet/in.h:42:8: error: redefinition of 'struct ipv6_mreq'
+   42 | struct ipv6_mreq {
+      |        ^~~~~~~~~
+../include/uapi/linux/in6.h:60:8: note: originally defined here
+   60 | struct ipv6_mreq {
+
+I got this further errors
+
+../include/uapi/linux/in6.h:72:25: error: field 'flr_dst' has incomplete type
+   72 |         struct in6_addr flr_dst;
+      |                         ^~~~~~~
+../include/uapi/linux/if_bridge.h:711:41: error: field 'ip6' has incomplete type
+  711 |                         struct in6_addr ip6;
+      |                                         ^~~
+
+fixed by including the netinet/in.h header.
+
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+Signed-off-by: Stephen Hemminger <stephen@networkplumber.org>
+---
+ bridge/mst.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/bridge/mst.c
++++ b/bridge/mst.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <netinet/in.h>
+ #include <linux/if_bridge.h>
+ #include <net/if.h>
+ 

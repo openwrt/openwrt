@@ -9,10 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=at91bootstrap
-PKG_VERSION:=v4.0.1
-PKG_MIRROR_HASH:=3d45a4bcb52162097d4cdf042b8fe1ccf53e88b512e7541f42a23f2a73692a69
-PKG_SOURCE_VERSION:=4d41296e9ae12379555fb46a941897e7264600a2
+PKG_VERSION:=v4.0.3
+PKG_MIRROR_HASH:=9c1d42337294b549e6c229ae4c9996efd21e00ae5f968bd780d352e054e24cb7
+PKG_SOURCE_VERSION:=1d9e673698d9db4a4f2301559f481274de2e75ae
 BINARIES_DIR:=build/binaries
+PKG_CPE_ID:=cpe:/a:linux4sam:at91bootstrap
 
 AT91BOOTSTRAP_V4=y
 ifdef CONFIG_PACKAGE_at91bootstrap-sama5d4_xplaineddf_uboot_secure
@@ -25,7 +26,7 @@ endif
 
 ifeq ($(AT91BOOTSTRAP_V4),n)
   PKG_VERSION=v3.10.4
-  PKG_MIRROR_HASH=6fe61fe90838e785917383bb9e887fa05e1bd061a6725954242f504e38b5c426
+  PKG_MIRROR_HASH:=08ab81c37b995592992d6eda3f76ce9aad6e2b3e9d9c4f7e88c1ba8bb8346657
   PKG_SOURCE_VERSION=404846dd283894367a015ca59189bcf927d92e11
   BINARIES_DIR=binaries
 endif
@@ -136,12 +137,6 @@ define AT91Bootstrap/sama5d27_som1_eksd_uboot
   BUILD_DEVICES:=microchip_sama5d27-som1-ek
 endef
 
-define AT91Bootstrap/sama5d27_som1_eksd1_uboot
-  TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (SDcard1)
-  BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d27-som1-ek
-endef
-
 define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (QSPI Flash)
   BUILD_SUBTARGET:=sama5
@@ -193,7 +188,7 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d4_xplainednf_uboot_secure \
 	sama5d4_xplaineddf_uboot_secure \
 	sama5d4_xplainedsd_uboot_secure \
-	sama5d27_som1_eksd1_uboot \
+	sama5d27_som1_eksd_uboot \
 	sama5d27_som1_ekqspi_uboot \
 	sama5d27_wlsom1_eksd_uboot \
 	sama5d27_wlsom1_ekdf_qspi_uboot \

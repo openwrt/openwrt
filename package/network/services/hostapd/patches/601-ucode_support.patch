@@ -1,0 +1,852 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 26 May 2023 10:23:59 +0200
+Subject: [PATCH] Add ucode support, use ucode for the main ubus object
+
+This implements vastly improved dynamic configuration reload support.
+It can handle configuration changes on individual wifi interfaces, as well
+as adding/removing interfaces.
+
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -169,9 +169,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
+ 
+ ifdef CONFIG_UBUS
+ CFLAGS += -DUBUS_SUPPORT
+-OBJS += ../src/utils/uloop.o
+ OBJS += ../src/ap/ubus.o
+-LIBS += -lubox -lubus
++LIBS += -lubus
++NEED_ULOOP:=y
++endif
++
++ifdef CONFIG_UCODE
++CFLAGS += -DUCODE_SUPPORT
++OBJS += ../src/utils/ucode.o
++OBJS += ../src/ap/ucode.o
++NEED_ULOOP:=y
++endif
++
++ifdef NEED_ULOOP
++OBJS += ../src/utils/uloop.o
++LIBS += -lubox
+ endif
+ 
+ ifdef CONFIG_CODE_COVERAGE
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -5998,6 +5998,7 @@ try_again:
+ 		return -1;
+ 	}
+ 
++	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
+ 	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
+ 
+ 	return 0;
+@@ -6099,6 +6100,7 @@ fail:
+ 	os_free(fname);
+ 
+ 	interface->global_ctrl_sock = s;
++	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
+ 	eloop_register_read_sock(s, hostapd_global_ctrl_iface_receive,
+ 				 interface, NULL);
+ 
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -1033,6 +1033,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	hostapd_global_ctrl_iface_init(&interfaces);
++	hostapd_ucode_init(&interfaces);
+ 
+ 	if (hostapd_global_run(&interfaces, daemonize, pid_file)) {
+ 		wpa_printf(MSG_ERROR, "Failed to start eloop");
+@@ -1042,6 +1043,7 @@ int main(int argc, char *argv[])
+ 	ret = 0;
+ 
+  out:
++	hostapd_ucode_free();
+ 	hostapd_global_ctrl_iface_deinit(&interfaces);
+ 	/* Deinitialize all interfaces */
+ 	for (i = 0; i < interfaces.count; i++) {
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -409,6 +409,23 @@ static inline int hostapd_drv_stop_ap(st
+ 	return hapd->driver->stop_ap(hapd->drv_priv, link_id);
+ }
+ 
++static inline int hostapd_drv_if_rename(struct hostapd_data *hapd,
++					enum wpa_driver_if_type type,
++					const char *ifname,
++					const char *new_name)
++{
++	if (!hapd->driver || !hapd->driver->if_rename || !hapd->drv_priv)
++		return -1;
++	return hapd->driver->if_rename(hapd->drv_priv, type, ifname, new_name);
++}
++
++static inline int hostapd_drv_set_first_bss(struct hostapd_data *hapd)
++{
++	if (!hapd->driver || !hapd->driver->set_first_bss || !hapd->drv_priv)
++		return 0;
++	return hapd->driver->set_first_bss(hapd->drv_priv);
++}
++
+ static inline int hostapd_drv_channel_info(struct hostapd_data *hapd,
+ 					   struct wpa_channel_info *ci)
+ {
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -255,6 +255,8 @@ int hostapd_reload_config(struct hostapd
+ 	struct hostapd_config *newconf, *oldconf;
+ 	size_t j;
+ 
++	hostapd_ucode_reload_bss(hapd);
++
+ 	if (iface->config_fname == NULL) {
+ 		/* Only in-memory config in use - assume it has been updated */
+ 		hostapd_clear_old(iface);
+@@ -475,6 +477,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->beacon_set_done = 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
++	hostapd_ucode_free_bss(hapd);
+ 	hostapd_ubus_free_bss(hapd);
+ 	accounting_deinit(hapd);
+ 	hostapd_deinit_wpa(hapd);
+@@ -729,6 +732,7 @@ void hostapd_cleanup_iface_partial(struc
+ static void hostapd_cleanup_iface(struct hostapd_iface *iface)
+ {
+ 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
++	hostapd_ucode_free_iface(iface);
+ 	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
+ 			     NULL);
+ 
+@@ -1318,6 +1322,7 @@ static int hostapd_start_beacon(struct h
+ 		hapd->driver->set_operstate(hapd->drv_priv, 1);
+ 
+ 	hostapd_ubus_add_bss(hapd);
++	hostapd_ucode_add_bss(hapd);
+ 
+ 	return 0;
+ }
+@@ -1393,8 +1398,7 @@ static int hostapd_bss_radius_init(struc
+  * initialized. Most of the modules that are initialized here will be
+  * deinitialized in hostapd_cleanup().
+  */
+-static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
+-			     bool start_beacon)
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon)
+ {
+ 	struct hostapd_bss_config *conf = hapd->conf;
+ 	u8 ssid[SSID_MAX_LEN + 1];
+@@ -1510,6 +1514,8 @@ setup_mld:
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++	hostapd_ucode_create_bss(hapd);
++
+ 	if (conf->wmm_enabled < 0)
+ 		conf->wmm_enabled = hapd->iconf->ieee80211n |
+ 			hapd->iconf->ieee80211ax;
+@@ -2487,7 +2493,7 @@ static int hostapd_owe_iface_iter2(struc
+ #endif /* CONFIG_OWE */
+ 
+ 
+-static void hostapd_owe_update_trans(struct hostapd_iface *iface)
++void hostapd_owe_update_trans(struct hostapd_iface *iface)
+ {
+ #ifdef CONFIG_OWE
+ 	/* Check whether the enabled BSS can complete OWE transition mode
+@@ -2954,7 +2960,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+ }
+ 
+ 
+-static void hostapd_bss_deinit(struct hostapd_data *hapd)
++void hostapd_bss_deinit(struct hostapd_data *hapd)
+ {
+ 	if (!hapd)
+ 		return;
+@@ -4015,7 +4021,8 @@ int hostapd_remove_iface(struct hapd_int
+ 		hapd_iface = interfaces->iface[i];
+ 		if (hapd_iface == NULL)
+ 			return -1;
+-		if (!os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
++		if (!os_strcmp(hapd_iface->phy, buf) ||
++		    !os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
+ 			wpa_printf(MSG_INFO, "Remove interface '%s'", buf);
+ 			hapd_iface->driver_ap_teardown =
+ 				!!(hapd_iface->drv_flags &
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -19,6 +19,7 @@
+ #include "ap_config.h"
+ #include "drivers/driver.h"
+ #include "ubus.h"
++#include "ucode.h"
+ 
+ #define OCE_STA_CFON_ENABLED(hapd) \
+ 	((hapd->conf->oce & OCE_STA_CFON) && \
+@@ -52,6 +53,10 @@ struct hapd_interfaces {
+ 	struct hostapd_config * (*config_read_cb)(const char *config_fname);
+ 	int (*ctrl_iface_init)(struct hostapd_data *hapd);
+ 	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
++	int (*ctrl_iface_recv)(struct hostapd_data *hapd,
++			       char *buf, char *reply, int reply_size,
++			       struct sockaddr_storage *from,
++			       socklen_t fromlen);
+ 	int (*for_each_interface)(struct hapd_interfaces *interfaces,
+ 				  int (*cb)(struct hostapd_iface *iface,
+ 					    void *ctx), void *ctx);
+@@ -208,6 +213,7 @@ struct hostapd_data {
+ 	struct hostapd_config *iconf;
+ 	struct hostapd_bss_config *conf;
+ 	struct hostapd_ubus_bss ubus;
++	struct hostapd_ucode_bss ucode;
+ 	int interface_added; /* virtual interface added for this BSS */
+ 	unsigned int started:1;
+ 	unsigned int disabled:1;
+@@ -577,6 +583,7 @@ struct hostapd_mld {
+  */
+ struct hostapd_iface {
+ 	struct hapd_interfaces *interfaces;
++	struct hostapd_ucode_iface ucode;
+ 	void *owner;
+ 	char *config_fname;
+ 	struct hostapd_config *conf;
+@@ -787,6 +794,8 @@ struct hostapd_iface * hostapd_init(stru
+ struct hostapd_iface *
+ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
+ 			   const char *config_fname, int debug);
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
++void hostapd_bss_deinit(struct hostapd_data *hapd);
+ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
+ 			   int reassoc);
+ void hostapd_interface_deinit_free(struct hostapd_iface *iface);
+@@ -815,6 +824,7 @@ hostapd_switch_channel_fallback(struct h
+ void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
+ void hostapd_periodic_iface(struct hostapd_iface *iface);
+ int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
++void hostapd_owe_update_trans(struct hostapd_iface *iface);;
+ void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
+ 
+ void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -3928,6 +3928,25 @@ struct wpa_driver_ops {
+ 			 const char *ifname);
+ 
+ 	/**
++	 * if_rename - Rename a virtual interface
++	 * @priv: Private driver interface data
++	 * @type: Interface type
++	 * @ifname: Interface name of the virtual interface to be renamed
++	 *	    (NULL when renaming the AP BSS interface)
++	 * @new_name: New interface name of the virtual interface
++	 * Returns: 0 on success, -1 on failure
++	 */
++	int (*if_rename)(void *priv, enum wpa_driver_if_type type,
++			 const char *ifname, const char *new_name);
++
++	/**
++	 * set_first_bss - Make a virtual interface the first (primary) bss
++	 * @priv: Private driver interface data
++	 * Returns: 0 on success, -1 on failure
++	 */
++	int (*set_first_bss)(void *priv);
++
++	/**
+ 	 * set_sta_vlan - Bind a station into a specific interface (AP only)
+ 	 * @priv: Private driver interface data
+ 	 * @ifname: Interface (main or virtual BSS or VLAN)
+@@ -6720,6 +6739,7 @@ union wpa_event_data {
+ 
+ 	/**
+ 	 * struct ch_switch
++	 * @count: Count until channel switch activates
+ 	 * @freq: Frequency of new channel in MHz
+ 	 * @ht_enabled: Whether this is an HT channel
+ 	 * @ch_offset: Secondary channel offset
+@@ -6730,6 +6750,7 @@ union wpa_event_data {
+ 	 * @punct_bitmap: Puncturing bitmap
+ 	 */
+ 	struct ch_switch {
++		int count;
+ 		int freq;
+ 		int ht_enabled;
+ 		int ch_offset;
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -77,6 +77,16 @@ enum nlmsgerr_attrs {
+ 
+ #endif /* ANDROID */
+ 
++static void handle_nl_debug_hook(struct nl_msg *msg, int tx)
++{
++	const struct nlmsghdr *nlh;
++
++	if (!wpa_netlink_hook)
++		return;
++
++	nlh = nlmsg_hdr(msg);
++	wpa_netlink_hook(tx, nlh, nlh->nlmsg_len);
++}
+ 
+ static struct nl_sock * nl_create_handle(struct nl_cb *cb, const char *dbg)
+ {
+@@ -431,6 +441,11 @@ static int no_seq_check(struct nl_msg *m
+ 	return NL_OK;
+ }
+ 
++static int debug_handler(struct nl_msg *msg, void *arg)
++{
++	handle_nl_debug_hook(msg, 0);
++	return NL_OK;
++}
+ 
+ static void nl80211_nlmsg_clear(struct nl_msg *msg)
+ {
+@@ -504,6 +519,8 @@ int send_and_recv(struct nl80211_global
+ 	if (!msg)
+ 		return -ENOMEM;
+ 
++	handle_nl_debug_hook(msg, 1);
++
+ 	err.err = -ENOMEM;
+ 
+ 	s_nl_cb = nl_socket_get_cb(nl_handle);
+@@ -538,6 +555,7 @@ int send_and_recv(struct nl80211_global
+ 	err.orig_msg = msg;
+ 	err.err_info = err_info;
+ 
++	nl_cb_set(cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
+ 	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err.err);
+ 	if (ack_handler_custom) {
+@@ -941,6 +959,7 @@ nl80211_get_wiphy_data_ap(struct i802_bs
+ 			os_free(w);
+ 			return NULL;
+ 		}
++		nl_cb_set(w->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 		nl_cb_set(w->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 			  no_seq_check, NULL);
+ 		nl_cb_set(w->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -1355,7 +1374,7 @@ static void wpa_driver_nl80211_event_rtm
+ 		}
+ 		wpa_printf(MSG_DEBUG, "nl80211: Interface down (%s/%s)",
+ 			   namebuf, ifname);
+-		if (os_strcmp(drv->first_bss->ifname, ifname) != 0) {
++		if (drv->first_bss->ifindex != ifi->ifi_index) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "nl80211: Not the main interface (%s) - do not indicate interface down",
+ 				   drv->first_bss->ifname);
+@@ -1391,7 +1410,7 @@ static void wpa_driver_nl80211_event_rtm
+ 		}
+ 		wpa_printf(MSG_DEBUG, "nl80211: Interface up (%s/%s)",
+ 			   namebuf, ifname);
+-		if (os_strcmp(drv->first_bss->ifname, ifname) != 0) {
++		if (drv->first_bss->ifindex != ifi->ifi_index) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "nl80211: Not the main interface (%s) - do not indicate interface up",
+ 				   drv->first_bss->ifname);
+@@ -2037,6 +2056,7 @@ static int wpa_driver_nl80211_init_nl_gl
+ 	genl_family_put(family);
+ 	nl_cache_free(cache);
+ 
++	nl_cb_set(global->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_set(global->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 		  no_seq_check, NULL);
+ 	nl_cb_set(global->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -2207,6 +2227,7 @@ static int nl80211_init_bss(struct i802_
+ 	if (!bss->nl_cb)
+ 		return -1;
+ 
++	nl_cb_set(bss->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_set(bss->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 		  no_seq_check, NULL);
+ 	nl_cb_set(bss->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -8704,6 +8725,7 @@ static void *i802_init(struct hostapd_da
+ 	char master_ifname[IFNAMSIZ];
+ 	int ifindex, br_ifindex = 0;
+ 	int br_added = 0;
++	int err;
+ 
+ 	bss = wpa_driver_nl80211_drv_init(hapd, params->ifname,
+ 					  params->global_priv, 1,
+@@ -8763,21 +8785,17 @@ static void *i802_init(struct hostapd_da
+ 	    (params->num_bridge == 0 || !params->bridge[0]))
+ 		add_ifidx(drv, br_ifindex, drv->ifindex);
+ 
+-	if (bss->added_if_into_bridge || bss->already_in_bridge) {
+-		int err;
+-
+-		drv->rtnl_sk = nl_socket_alloc();
+-		if (drv->rtnl_sk == NULL) {
+-			wpa_printf(MSG_ERROR, "nl80211: Failed to allocate nl_sock");
+-			goto failed;
+-		}
++	drv->rtnl_sk = nl_socket_alloc();
++	if (drv->rtnl_sk == NULL) {
++		wpa_printf(MSG_ERROR, "nl80211: Failed to allocate nl_sock");
++		goto failed;
++	}
+ 
+-		err = nl_connect(drv->rtnl_sk, NETLINK_ROUTE);
+-		if (err) {
+-			wpa_printf(MSG_ERROR, "nl80211: Failed to connect nl_sock to NETLINK_ROUTE: %s",
+-				   nl_geterror(err));
+-			goto failed;
+-		}
++	err = nl_connect(drv->rtnl_sk, NETLINK_ROUTE);
++	if (err) {
++		wpa_printf(MSG_ERROR, "nl80211: Failed to connect nl_sock to NETLINK_ROUTE: %s",
++			   nl_geterror(err));
++		goto failed;
+ 	}
+ 
+ 	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX) {
+@@ -9146,6 +9164,50 @@ static int wpa_driver_nl80211_if_remove(
+ 	return 0;
+ }
+ 
++static int wpa_driver_nl80211_if_rename(struct i802_bss *bss,
++					enum wpa_driver_if_type type,
++					const char *ifname, const char *new_name)
++{
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct ifinfomsg ifi = {
++		.ifi_family = AF_UNSPEC,
++		.ifi_index = bss->ifindex,
++	};
++	struct nl_msg *msg;
++	int res = -ENOMEM;
++
++	if (ifname)
++		ifi.ifi_index = if_nametoindex(ifname);
++
++	msg = nlmsg_alloc_simple(RTM_SETLINK, 0);
++	if (!msg)
++		return res;
++
++	if (nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO) < 0)
++		goto out;
++
++	if (nla_put_string(msg, IFLA_IFNAME, new_name))
++		goto out;
++
++	res = nl_send_auto_complete(drv->rtnl_sk, msg);
++	if (res < 0)
++		goto out;
++
++	res = nl_wait_for_ack(drv->rtnl_sk);
++	if (res) {
++		wpa_printf(MSG_INFO,
++			   "nl80211: Renaming device %s to %s failed: %s",
++			   ifname ? ifname : bss->ifname, new_name, nl_geterror(res));
++		goto out;
++	}
++
++	if (type == WPA_IF_AP_BSS && !ifname)
++		os_strlcpy(bss->ifname, new_name, sizeof(bss->ifname));
++
++out:
++	nlmsg_free(msg);
++	return res;
++}
+ 
+ static int cookie_handler(struct nl_msg *msg, void *arg)
+ {
+@@ -10962,6 +11024,37 @@ static bool nl80211_is_drv_shared(void *
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 
++static int driver_nl80211_if_rename(void *priv, enum wpa_driver_if_type type,
++				    const char *ifname, const char *new_name)
++{
++	struct i802_bss *bss = priv;
++	return wpa_driver_nl80211_if_rename(bss, type, ifname, new_name);
++}
++
++
++static int driver_nl80211_set_first_bss(void *priv)
++{
++	struct i802_bss *bss = priv, *tbss;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++
++	if (drv->first_bss == bss)
++		return 0;
++
++	for (tbss = drv->first_bss; tbss; tbss = tbss->next) {
++		if (tbss->next != bss)
++			continue;
++
++		tbss->next = bss->next;
++		bss->next = drv->first_bss;
++		drv->first_bss = bss;
++		drv->ctx = bss->ctx;
++		return 0;
++	}
++
++	return -1;
++}
++
++
+ static int driver_nl80211_send_mlme(void *priv, const u8 *data,
+ 				    size_t data_len, int noack,
+ 				    unsigned int freq,
+@@ -14510,6 +14603,8 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.set_acl = wpa_driver_nl80211_set_acl,
+ 	.if_add = wpa_driver_nl80211_if_add,
+ 	.if_remove = driver_nl80211_if_remove,
++	.if_rename = driver_nl80211_if_rename,
++	.set_first_bss = driver_nl80211_set_first_bss,
+ 	.send_mlme = driver_nl80211_send_mlme,
+ 	.get_hw_feature_data = nl80211_get_hw_feature_data,
+ 	.sta_add = wpa_driver_nl80211_sta_add,
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -1197,6 +1197,7 @@ static void mlme_event_ch_switch(struct
+ 				 struct nlattr *bw, struct nlattr *cf1,
+ 				 struct nlattr *cf2,
+ 				 struct nlattr *punct_bitmap,
++				 struct nlattr *count,
+ 				 int finished)
+ {
+ 	struct i802_bss *bss;
+@@ -1260,6 +1261,8 @@ static void mlme_event_ch_switch(struct
+ 		data.ch_switch.cf1 = nla_get_u32(cf1);
+ 	if (cf2)
+ 		data.ch_switch.cf2 = nla_get_u32(cf2);
++	if (count)
++		data.ch_switch.count = nla_get_u32(count);
+ 
+ 	if (link) {
+ 		data.ch_switch.link_id = nla_get_u8(link);
+@@ -4054,6 +4057,7 @@ static void do_process_drv_event(struct
+ 				     tb[NL80211_ATTR_CENTER_FREQ1],
+ 				     tb[NL80211_ATTR_CENTER_FREQ2],
+ 				     tb[NL80211_ATTR_PUNCT_BITMAP],
++				     tb[NL80211_ATTR_CH_SWITCH_COUNT],
+ 				     0);
+ 		break;
+ 	case NL80211_CMD_CH_SWITCH_NOTIFY:
+@@ -4066,6 +4070,7 @@ static void do_process_drv_event(struct
+ 				     tb[NL80211_ATTR_CENTER_FREQ1],
+ 				     tb[NL80211_ATTR_CENTER_FREQ2],
+ 				     tb[NL80211_ATTR_PUNCT_BITMAP],
++				     NULL,
+ 				     1);
+ 		break;
+ 	case NL80211_CMD_DISCONNECT:
+--- a/src/utils/wpa_debug.c
++++ b/src/utils/wpa_debug.c
+@@ -26,6 +26,10 @@ static FILE *wpa_debug_tracing_file = NU
+ #define WPAS_TRACE_PFX "wpas <%d>: "
+ #endif /* CONFIG_DEBUG_LINUX_TRACING */
+ 
++void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
++void (*wpa_hexdump_hook)(int level, const char *title, const void *buf,
++			 size_t len);
++void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
+ 
+ int wpa_debug_level = MSG_INFO;
+ int wpa_debug_show_keys = 0;
+@@ -210,6 +214,12 @@ void _wpa_printf(int level, const char *
+ {
+ 	va_list ap;
+ 
++	if (wpa_printf_hook) {
++		va_start(ap, fmt);
++		wpa_printf_hook(level, fmt, ap);
++		va_end(ap);
++	}
++
+ 	if (level >= wpa_debug_level) {
+ #ifdef CONFIG_ANDROID_LOG
+ 		va_start(ap, fmt);
+@@ -260,6 +270,9 @@ void _wpa_hexdump(int level, const char
+ {
+ 	size_t i;
+ 
++	if (wpa_hexdump_hook)
++		wpa_hexdump_hook(level, title, buf, len);
++
+ #ifdef CONFIG_DEBUG_LINUX_TRACING
+ 	if (wpa_debug_tracing_file != NULL) {
+ 		fprintf(wpa_debug_tracing_file,
+--- a/src/utils/wpa_debug.h
++++ b/src/utils/wpa_debug.h
+@@ -11,6 +11,10 @@
+ 
+ #include "wpabuf.h"
+ 
++extern void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
++extern void (*wpa_hexdump_hook)(int level, const char *title,
++				const void *buf, size_t len);
++extern void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
+ extern int wpa_debug_level;
+ extern int wpa_debug_show_keys;
+ extern int wpa_debug_timestamp;
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -194,8 +194,20 @@ endif
+ ifdef CONFIG_UBUS
+ CFLAGS += -DUBUS_SUPPORT
+ OBJS += ubus.o
++LIBS += -lubus
++NEED_ULOOP:=y
++endif
++
++ifdef CONFIG_UCODE
++CFLAGS += -DUCODE_SUPPORT
++OBJS += ../src/utils/ucode.o
++OBJS += ucode.o
++NEED_ULOOP:=y
++endif
++
++ifdef NEED_ULOOP
+ OBJS += ../src/utils/uloop.o
+-LIBS += -lubox -lubus
++LIBS += -lubox
+ endif
+ 
+ ifdef CONFIG_CODE_COVERAGE
+@@ -1053,6 +1065,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
+ ifdef CONFIG_UBUS
+ OBJS += ../src/ap/ubus.o
+ endif
++ifdef CONFIG_UCODE
++OBJS += ../src/ap/ucode.o
++endif
+ endif
+ 
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -6167,6 +6167,7 @@ void supplicant_event(void *ctx, enum wp
+ 		event_to_string(event), event);
+ #endif /* CONFIG_NO_STDOUT_DEBUG */
+ 
++	wpas_ucode_event(wpa_s, event, data);
+ 	switch (event) {
+ 	case EVENT_AUTH:
+ #ifdef CONFIG_FST
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1151,6 +1151,7 @@ void wpa_supplicant_set_state(struct wpa
+ 		sme_sched_obss_scan(wpa_s, 0);
+ 	}
+ 	wpa_s->wpa_state = state;
++	wpas_ucode_update_state(wpa_s);
+ 
+ #ifdef CONFIG_BGSCAN
+ 	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
+@@ -7921,6 +7922,7 @@ struct wpa_supplicant * wpa_supplicant_a
+ #endif /* CONFIG_P2P */
+ 
+ 	wpas_ubus_add_bss(wpa_s);
++	wpas_ucode_add_bss(wpa_s);
+ 
+ 	return wpa_s;
+ }
+@@ -7948,6 +7950,7 @@ int wpa_supplicant_remove_iface(struct w
+ 	struct wpa_supplicant *parent = wpa_s->parent;
+ #endif /* CONFIG_MESH */
+ 
++	wpas_ucode_free_bss(wpa_s);
+ 	wpas_ubus_free_bss(wpa_s);
+ 
+ 	/* Remove interface from the global list of interfaces */
+@@ -8258,6 +8261,7 @@ struct wpa_global * wpa_supplicant_init(
+ 
+ 	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
+ 			       wpas_periodic, global, NULL);
++	wpas_ucode_init(global);
+ 
+ 	return global;
+ }
+@@ -8296,12 +8300,8 @@ int wpa_supplicant_run(struct wpa_global
+ 	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
+ 	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
+ 
+-	wpas_ubus_add(global);
+-
+ 	eloop_run();
+ 
+-	wpas_ubus_free(global);
+-
+ 	return 0;
+ }
+ 
+@@ -8334,6 +8334,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+ 
+ 	wpas_notify_supplicant_deinitialized(global);
+ 
++	wpas_ucode_free();
++
+ 	eap_peer_unregister_methods();
+ #ifdef CONFIG_AP
+ 	eap_server_unregister_methods();
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -22,6 +22,7 @@
+ #include "wmm_ac.h"
+ #include "pasn/pasn_common.h"
+ #include "ubus.h"
++#include "ucode.h"
+ 
+ extern const char *const wpa_supplicant_version;
+ extern const char *const wpa_supplicant_license;
+@@ -697,6 +698,7 @@ struct wpa_supplicant {
+ 	unsigned char perm_addr[ETH_ALEN];
+ 	char ifname[100];
+ 	struct wpas_ubus_bss ubus;
++	struct wpas_ucode_bss ucode;
+ #ifdef CONFIG_MATCH_IFACE
+ 	int matched;
+ #endif /* CONFIG_MATCH_IFACE */
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -555,12 +555,17 @@ const char * sae_get_password(struct hos
+ 			      struct sae_pt **s_pt,
+ 			      const struct sae_pk **s_pk)
+ {
++	struct hostapd_bss_config *conf = hapd->conf;
++	struct hostapd_ssid *ssid = &conf->ssid;
+ 	const char *password = NULL;
+-	struct sae_password_entry *pw;
++	struct sae_password_entry *pw = NULL;
+ 	struct sae_pt *pt = NULL;
+ 	const struct sae_pk *pk = NULL;
+ 	struct hostapd_sta_wpa_psk_short *psk = NULL;
+ 
++	if (sta && sta->use_sta_psk)
++		goto use_sta_psk;
++
+ 	for (pw = hapd->conf->sae_passwords; pw; pw = pw->next) {
+ 		if (!is_broadcast_ether_addr(pw->peer_addr) &&
+ 		    (!sta ||
+@@ -582,12 +587,30 @@ const char * sae_get_password(struct hos
+ 		pt = hapd->conf->ssid.pt;
+ 	}
+ 
++use_sta_psk:
+ 	if (!password && sta) {
+ 		for (psk = sta->psk; psk; psk = psk->next) {
+-			if (psk->is_passphrase) {
+-				password = psk->passphrase;
++			if (!psk->is_passphrase)
++				continue;
++
++			password = psk->passphrase;
++			if (!sta->use_sta_psk)
++				break;
++
++#ifdef CONFIG_SAE
++			if (sta->sae_pt) {
++				pt = sta->sae_pt;
+ 				break;
+ 			}
++
++			pt = sae_derive_pt(conf->sae_groups, ssid->ssid,
++					   ssid->ssid_len,
++					   (const u8 *) password,
++					   os_strlen(password),
++					   NULL);
++			sta->sae_pt = pt;
++			break;
++#endif
+ 		}
+ 	}
+ 
+@@ -3229,6 +3252,12 @@ static void handle_auth(struct hostapd_d
+ 		goto fail;
+ 	}
+ 
++	res = hostapd_ucode_sta_auth(hapd, sta);
++	if (res) {
++		resp = res;
++		goto fail;
++	}
++
+ 	sta->flags &= ~WLAN_STA_PREAUTH;
+ 	ieee802_1x_notify_pre_auth(sta->eapol_sm, 0);
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -474,6 +474,11 @@ void ap_free_sta(struct hostapd_data *ha
+ 	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
++#ifdef CONFIG_SAE
++	if (sta->sae_pt)
++		sae_deinit_pt(sta->sae_pt);
++#endif
++
+ 	os_free(sta);
+ }
+ 
+@@ -1507,6 +1512,8 @@ void ap_sta_set_authorized_event(struct
+ #endif /* CONFIG_P2P */
+ 	const u8 *ip_ptr = NULL;
+ 
++	if (authorized)
++		hostapd_ucode_sta_connected(hapd, sta);
+ #ifdef CONFIG_P2P
+ 	if (hapd->p2p_group == NULL) {
+ 		if (sta->p2p_ie != NULL &&
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -180,6 +180,9 @@ struct sta_info {
+ 	int vlan_id_bound; /* updated by ap_sta_bind_vlan() */
+ 	 /* PSKs from RADIUS authentication server */
+ 	struct hostapd_sta_wpa_psk_short *psk;
++	struct sae_pt *sae_pt;
++	int use_sta_psk;
++	int psk_idx;
+ 
+ 	char *identity; /* User-Name from RADIUS */
+ 	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -400,6 +400,7 @@ static const u8 * hostapd_wpa_auth_get_p
+ 	struct sta_info *sta = ap_get_sta(hapd, addr);
+ 	const u8 *psk;
+ 
++	sta->psk_idx = 0;
+ 	if (vlan_id)
+ 		*vlan_id = 0;
+ 	if (psk_len)
+@@ -446,13 +447,18 @@ static const u8 * hostapd_wpa_auth_get_p
+ 	 * returned psk which should not be returned again.
+ 	 * logic list (all hostapd_get_psk; all sta->psk)
+ 	 */
++	if (sta && sta->use_sta_psk)
++		psk = NULL;
+ 	if (sta && sta->psk && !psk) {
+ 		struct hostapd_sta_wpa_psk_short *pos;
++		int psk_idx = 1;
+ 
+ 		if (vlan_id)
+ 			*vlan_id = 0;
+ 		psk = sta->psk->psk;
+-		for (pos = sta->psk; pos; pos = pos->next) {
++		if (vlan_id)
++			sta->psk_idx = psk_idx;
++		for (pos = sta->psk; pos; pos = pos->next, psk_idx++) {
+ 			if (pos->is_passphrase) {
+ 				if (pbkdf2_sha1(pos->passphrase,
+ 						hapd->conf->ssid.ssid,
+@@ -466,9 +472,13 @@ static const u8 * hostapd_wpa_auth_get_p
+ 			}
+ 			if (pos->psk == prev_psk) {
+ 				psk = pos->next ? pos->next->psk : NULL;
++				if (vlan_id)
++					sta->psk_idx = psk_idx + 1;
+ 				break;
+ 			}
+ 		}
++		if (vlan_id && !psk)
++			sta->psk_idx = 0;
+ 	}
+ 	return psk;
+ }

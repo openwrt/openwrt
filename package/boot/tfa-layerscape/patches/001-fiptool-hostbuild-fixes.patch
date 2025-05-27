@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -801,10 +801,6 @@ CRTTOOL			?=	${CRTTOOLPATH}/cert_create$
+@@ -128,10 +128,6 @@ CRTTOOL			?=	${CRTTOOLPATH}/cert_create$
  ENCTOOLPATH		?=	tools/encrypt_fw
  ENCTOOL			?=	${ENCTOOLPATH}/encrypt_fw${BIN_EXT}
  
@@ -10,8 +10,8 @@
 -
  # Variables for use with sptool
  SPTOOLPATH		?=	tools/sptool
- SPTOOL			?=	${SPTOOLPATH}/sptool${BIN_EXT}
-@@ -1160,13 +1156,6 @@ endif
+ SPTOOL			?=	${SPTOOLPATH}/sptool.py
+@@ -1597,13 +1593,6 @@ endif #(CHECKPATCH)
  clean:
  	@echo "  CLEAN"
  	$(call SHELL_REMOVE_DIR,${BUILD_PLAT})
@@ -21,11 +21,11 @@
 -# Clear the MAKEFLAGS as we do not want
 -# to pass the gnumake flags to nmake.
 -	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL)) clean
--endif
+-endif #(UNIX_MK)
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} clean
  	${Q}${MAKE} --no-print-directory -C ${ROMLIBPATH} clean
-@@ -1175,13 +1164,6 @@ realclean distclean:
+@@ -1612,13 +1601,6 @@ realclean distclean:
  	@echo "  REALCLEAN"
  	$(call SHELL_REMOVE_DIR,${BUILD_BASE})
  	$(call SHELL_DELETE_ALL, ${CURDIR}/cscope.*)
@@ -35,61 +35,72 @@
 -# Clear the MAKEFLAGS as we do not want
 -# to pass the gnumake flags to nmake.
 -	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL)) realclean
--endif
- 	${Q}${MAKE} --no-print-directory -C ${SPTOOLPATH} clean
- 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
+-endif #(UNIX_MK)
+ 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} realclean
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} realclean
-@@ -1238,7 +1220,7 @@ certificates: ${CRT_DEPS} ${CRTTOOL}
+ 	${Q}${MAKE} --no-print-directory -C ${ROMLIBPATH} clean
+@@ -1674,7 +1656,7 @@ certificates: ${CRT_DEPS} ${CRTTOOL}
  	@${ECHO_BLANK_LINE}
- endif
+ endif #(GENERATE_COT)
  
 -${BUILD_PLAT}/${FIP_NAME}: ${FIP_DEPS} ${FIPTOOL}
 +${BUILD_PLAT}/${FIP_NAME}: ${FIP_DEPS}
+ 	$(eval ${CHECK_FIP_CMD})
  	${Q}${FIPTOOL} create ${FIP_ARGS} $@
  	${Q}${FIPTOOL} info $@
+@@ -1691,7 +1673,7 @@ fwu_certificates: ${FWU_CRT_DEPS} ${CRTT
  	@${ECHO_BLANK_LINE}
-@@ -1254,7 +1236,7 @@ fwu_certificates: ${FWU_CRT_DEPS} ${CRTT
- 	@${ECHO_BLANK_LINE}
- endif
+ endif #(GENERATE_COT)
  
 -${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP_DEPS} ${FIPTOOL}
 +${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP_DEPS}
+ 	$(eval ${CHECK_FWU_FIP_CMD})
  	${Q}${FIPTOOL} create ${FWU_FIP_ARGS} $@
  	${Q}${FIPTOOL} info $@
- 	@${ECHO_BLANK_LINE}
-@@ -1279,24 +1261,10 @@ ${BUILD_PLAT}/${DDR_FIP_NAME}: ${DDR_FIP
+@@ -1699,19 +1681,9 @@ ${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP
  	@echo "Built $@ successfully"
  	@${ECHO_BLANK_LINE}
  
 -fiptool: ${FIPTOOL}
  fip: ${BUILD_PLAT}/${FIP_NAME}
  fwu_fip: ${BUILD_PLAT}/${FWU_FIP_NAME}
- fip_ddr: ${BUILD_PLAT}/${DDR_FIP_NAME}
  
--.PHONY: ${FIPTOOL}
--${FIPTOOL}:
--	@${ECHO_BLANK_LINE}
--	@echo "Building $@"
+-${FIPTOOL}: FORCE
 -ifdef UNIX_MK
--	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" FIPTOOL=${FIPTOOL} --no-print-directory -C ${FIPTOOLPATH}
+-	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" FIPTOOL=${FIPTOOL} OPENSSL_DIR=${OPENSSL_DIR} DEBUG=${DEBUG} V=${V} --no-print-directory -C ${FIPTOOLPATH} all
 -else
 -# Clear the MAKEFLAGS as we do not want
 -# to pass the gnumake flags to nmake.
 -	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL))
--endif
--	@${ECHO_BLANK_LINE}
+-endif #(UNIX_MK)
 -
- sptool: ${SPTOOL}
- .PHONY: ${SPTOOL}
- ${SPTOOL}:
+ romlib.bin: libraries FORCE
+ 	${Q}${MAKE} PLAT_DIR=${PLAT_DIR} BUILD_PLAT=${BUILD_PLAT} ENABLE_BTI=${ENABLE_BTI} ARM_ARCH_MINOR=${ARM_ARCH_MINOR} INCLUDES='${INCLUDES}' DEFINES='${DEFINES}' --no-print-directory -C ${ROMLIBPATH} all
+ 
 --- a/tools/fiptool/Makefile
 +++ b/tools/fiptool/Makefile
-@@ -38,7 +38,7 @@ all: ${PROJECT}
+@@ -81,7 +81,7 @@ all: --openssl ${PROJECT}
  
  ${PROJECT}: ${OBJECTS} Makefile
  	@echo "  HOSTLD  $@"
--	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS}
-+	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS} $(LDFLAGS)
+-	${Q}${HOSTCC} ${OBJECTS} -o $@ $(LDOPTS)
++	${Q}${HOSTCC} ${OBJECTS} -o $@ $(LDOPTS) $(LDFLAGS)
  	@${ECHO_BLANK_LINE}
  	@echo "Built $@ successfully"
  	@${ECHO_BLANK_LINE}
+--- a/tools/fiptool/plat_fiptool/nxp/plat_fiptool.mk
++++ b/tools/fiptool/plat_fiptool/nxp/plat_fiptool.mk
+@@ -21,11 +21,11 @@ INCLUDE_PATHS += -I${PLAT_DEF_UUID_OID_C
+ 		 -I./
+ 
+ ifeq (${PLAT_DEF_OID},yes)
+-HOSTCCFLAGS += -DPLAT_DEF_OID
++override HOSTCCFLAGS += -DPLAT_DEF_OID
+ endif
+ 
+ ifeq (${PLAT_DEF_UUID},yes)
+-HOSTCCFLAGS += -DPLAT_DEF_FIP_UUID
++override HOSTCCFLAGS += -DPLAT_DEF_FIP_UUID
+ PLAT_OBJECTS += ${PLAT_DEF_UUID_CONFIG_FILE_PATH}/${PLAT_DEF_UUID_CONFIG_FILE_NAME}.o
+ endif
+ 

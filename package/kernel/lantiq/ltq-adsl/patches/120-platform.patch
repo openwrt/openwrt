@@ -18,7 +18,7 @@
  {
     struct class *dsl_class;
     DSL_int_t i;
-@@ -1124,7 +1124,7 @@ int __init DSL_ModuleInit(void)
+@@ -1128,7 +1128,7 @@ int __init DSL_ModuleInit(void)
     return 0;
  }
  
@@ -27,7 +27,7 @@
  {
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
-@@ -1139,7 +1139,7 @@ void __exit DSL_ModuleCleanup(void)
+@@ -1143,7 +1143,7 @@ void __exit DSL_ModuleCleanup(void)
                 (DSL_uint8_t**)&g_BndFpgaBase);
  #endif /* defined(INCLUDE_DSL_CPE_API_VINAX) && defined(INCLUDE_DSL_BONDING)*/
  
@@ -36,7 +36,7 @@
  }
  
  #ifndef _lint
-@@ -1155,8 +1155,30 @@ module_param(debug_level, byte, 0);
+@@ -1159,8 +1159,29 @@ module_param(debug_level, byte, 0);
  MODULE_PARM_DESC(debug_level, "set to get more (1) or fewer (4) debug outputs");
  #endif /* #ifndef DSL_DEBUG_DISABLE*/
  
@@ -59,7 +59,6 @@
 +	.remove = __devexit_p(ltq_adsl_remove),
 +	.driver = {
 +		.name = "adsl",
-+		.owner = THIS_MODULE,
 +		.of_match_table = ltq_adsl_match,
 +	},
 +};

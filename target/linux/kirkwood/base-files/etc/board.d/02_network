@@ -19,11 +19,13 @@ kirkwood_setup_interfaces()
 	cloudengines,pogoe02|\
 	cloudengines,pogoplugv4|\
 	ctera,c200-v1|\
+	dlink,dns320l|\
 	globalscale,sheevaplug|\
 	iom,iconnect-1.1|\
 	iom,ix2-200|\
 	iptime,nas1|\
 	netgear,readynas-duo-v2|\
+	netgear,stora|\
 	raidsonic,ib-nas62x0|\
 	seagate,blackarmor-nas220|\
 	seagate,dockstar|\
@@ -36,6 +38,9 @@ kirkwood_setup_interfaces()
 		;;
 	endian,4i-edge-200)
 		ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
+		;;
+	iom,ix4-200d)
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
 	linksys,e4200-v2|\
 	linksys,ea3500|\
@@ -56,6 +61,9 @@ kirkwood_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	dlink,dns320l)
+		lan_mac=$(mtd_get_mac_text "mini firmware")
+		;;
 	iptime,nas1)
 		lan_mac=$(mtd_get_mac_binary u-boot 0x3ffa8)
 		label_mac=$lan_mac

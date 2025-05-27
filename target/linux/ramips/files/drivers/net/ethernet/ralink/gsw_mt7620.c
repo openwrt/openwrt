@@ -61,19 +61,22 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 	return IRQ_HANDLED;
 }
 
-static void mt7620_hw_init(struct mt7620_gsw *gsw)
+static void gsw_reset_ephy(struct mt7620_gsw *gsw)
+{
+	if (!gsw->rst_ephy)
+		return;
+
+	reset_control_assert(gsw->rst_ephy);
+	usleep_range(10, 20);
+	reset_control_deassert(gsw->rst_ephy);
+	usleep_range(10, 20);
+}
+
+static void mt7620_ephy_init(struct mt7620_gsw *gsw)
 {
 	u32 i;
 	u32 val;
 	u32 is_BGA = (rt_sysc_r32(SYSC_REG_CHIP_REV_ID) >> 16) & 1;
-
-	/* Internal ethernet requires PCIe RC mode */
-	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | PCIE_RC_MODE, SYSC_REG_CFG1);
-
-	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_CKGCR) & ~(0x3 << 4), GSW_REG_CKGCR);
-
-	/* Enable MIB stats */
-	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
 
 	if (gsw->ephy_disable) {
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
@@ -81,11 +84,13 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw)
 			GSW_REG_GPC1);
 
 		pr_info("gsw: internal ephy disabled\n");
+
+		return;
 	} else if (gsw->ephy_base) {
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
 			(gsw->ephy_base << 16),
 			GSW_REG_GPC1);
-		fe_reset(MT7620A_RESET_EPHY);
+		gsw_reset_ephy(gsw);
 
 		pr_info("gsw: ephy base address: %d\n", gsw->ephy_base);
 	}
@@ -158,12 +163,6 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw)
 	_mt7620_mii_write(gsw, gsw->ephy_base + 2, 16, 0x1515);
 	_mt7620_mii_write(gsw, gsw->ephy_base + 3, 16, 0x0f0f);
 
-	/* CPU Port6 Force Link 1G, FC ON */
-	mtk_switch_w32(gsw, 0x5e33b, GSW_REG_PORT_PMCR(6));
-
-	/* Set Port 6 as CPU Port */
-	mtk_switch_w32(gsw, 0x7f7f7fe0, 0x0010);
-
 	/* setup port 4 */
 	if (gsw->port4_ephy) {
 		val = rt_sysc_r32(SYSC_REG_CFG1);
@@ -175,6 +174,24 @@ static void mt7620_hw_init(struct mt7620_gsw *gsw)
 		_mt7620_mii_write(gsw, gsw->ephy_base + 4, 16, 0x1313);
 		pr_info("gsw: setting port4 to ephy mode\n");
 	}
+}
+
+static void mt7620_mac_init(struct mt7620_gsw *gsw)
+{
+	/* Internal ethernet requires PCIe RC mode */
+	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | PCIE_RC_MODE, SYSC_REG_CFG1);
+
+	/* Keep Global Clocks on Idle traffic */
+	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_CKGCR) & ~(0x3 << 4), GSW_REG_CKGCR);
+
+	/* Set Port 6 to Force Link 1G, Flow Control ON */
+	mtk_switch_w32(gsw, 0x5e33b, GSW_REG_PORT_PMCR(6));
+
+	/* Set Port 6 as CPU Port */
+	mtk_switch_w32(gsw, 0x7f7f7fe0, 0x0010);
+
+	/* Enable MIB stats */
+	mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_MIB_CNT_EN) | (1 << 1), GSW_REG_MIB_CNT_EN);
 }
 
 static const struct of_device_id mediatek_gsw_match[] = {
@@ -191,6 +208,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 	struct platform_device *pdev = of_find_device_by_node(np);
 	struct mt7620_gsw *gsw;
 	const __be32 *id;
+	int ret;
 	u8 val;
 
 	if (!pdev)
@@ -222,11 +240,17 @@ int mtk_gsw_init(struct fe_priv *priv)
 	else
 		gsw->ephy_base = 0;
 
-	mt7620_hw_init(gsw);
+	mt7620_mac_init(gsw);
+
+	mt7620_ephy_init(gsw);
 
 	if (gsw->irq) {
-		request_irq(gsw->irq, gsw_interrupt_mt7620, 0,
-			    "gsw", priv);
+		ret = devm_request_irq(&pdev->dev, gsw->irq, gsw_interrupt_mt7620, 0,
+				  "gsw", priv);
+		if (ret) {
+			dev_err(&pdev->dev, "Failed to request irq");
+			return ret;
+		}
 		mtk_switch_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
 	}
 
@@ -235,20 +259,25 @@ int mtk_gsw_init(struct fe_priv *priv)
 
 static int mt7620_gsw_probe(struct platform_device *pdev)
 {
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	struct mt7620_gsw *gsw;
 
 	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
 	if (!gsw)
 		return -ENOMEM;
 
-	gsw->base = devm_ioremap_resource(&pdev->dev, res);
+	gsw->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(gsw->base))
 		return PTR_ERR(gsw->base);
 
 	gsw->dev = &pdev->dev;
 
 	gsw->irq = platform_get_irq(pdev, 0);
+
+	gsw->rst_ephy = devm_reset_control_get_exclusive(&pdev->dev, "ephy");
+	if (IS_ERR(gsw->rst_ephy)) {
+		dev_err(gsw->dev, "failed to get EPHY reset: %pe\n", gsw->rst_ephy);
+		gsw->rst_ephy = NULL;
+	}
 
 	platform_set_drvdata(pdev, gsw);
 
@@ -267,7 +296,6 @@ static struct platform_driver gsw_driver = {
 	.remove = mt7620_gsw_remove,
 	.driver = {
 		.name = "mt7620-gsw",
-		.owner = THIS_MODULE,
 		.of_match_table = mediatek_gsw_match,
 	},
 };

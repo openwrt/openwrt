@@ -1,0 +1,57 @@
+From 693d2f629962628ddefc88f4b6b453edda5ac32e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Tue, 30 Apr 2024 09:49:17 +0100
+Subject: [PATCH] nvmem: lpc18xx_eeprom: Convert to platform remove callback
+ returning void
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The .remove() callback for a platform driver returns an int which makes
+many driver authors wrongly assume it's possible to do error handling by
+returning an error code. However the value returned is ignored (apart
+from emitting a warning) and this typically results in resource leaks.
+
+To improve here there is a quest to make the remove callback return
+void. In the first step of this quest all drivers are converted to
+.remove_new(), which already returns void. Eventually after all drivers
+are converted, .remove_new() will be renamed to .remove().
+
+Trivially convert this driver from always returning zero in the remove
+callback to the void returning variant.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Acked-by: Vladimir Zapolskiy <vz@mleia.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20240430084921.33387-8-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/lpc18xx_eeprom.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/drivers/nvmem/lpc18xx_eeprom.c
++++ b/drivers/nvmem/lpc18xx_eeprom.c
+@@ -249,13 +249,11 @@ err_clk:
+ 	return ret;
+ }
+ 
+-static int lpc18xx_eeprom_remove(struct platform_device *pdev)
++static void lpc18xx_eeprom_remove(struct platform_device *pdev)
+ {
+ 	struct lpc18xx_eeprom_dev *eeprom = platform_get_drvdata(pdev);
+ 
+ 	clk_disable_unprepare(eeprom->clk);
+-
+-	return 0;
+ }
+ 
+ static const struct of_device_id lpc18xx_eeprom_of_match[] = {
+@@ -266,7 +264,7 @@ MODULE_DEVICE_TABLE(of, lpc18xx_eeprom_o
+ 
+ static struct platform_driver lpc18xx_eeprom_driver = {
+ 	.probe = lpc18xx_eeprom_probe,
+-	.remove = lpc18xx_eeprom_remove,
++	.remove_new = lpc18xx_eeprom_remove,
+ 	.driver = {
+ 		.name = "lpc18xx-eeprom",
+ 		.of_match_table = lpc18xx_eeprom_of_match,

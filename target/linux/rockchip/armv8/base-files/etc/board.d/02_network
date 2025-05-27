@@ -7,21 +7,38 @@ rockchip_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	armsom,sige7|\
+	friendlyarm,nanopi-r2c|\
+	friendlyarm,nanopi-r2c-plus|\
 	friendlyarm,nanopi-r2s|\
-	friendlyarm,nanopi-r4s)
+	friendlyarm,nanopi-r3s|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r4s-enterprise|\
+	friendlyarm,nanopi-r6c|\
+	radxa,rockpi-e|\
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
+		;;
+	friendlyarm,nanopc-t6|\
+	friendlyarm,nanopi-r5c|\
+	radxa,e25|\
+	radxa,rock-3b)
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	friendlyarm,nanopi-r5s)
+		ucidef_set_interfaces_lan_wan 'eth1 eth2' 'eth0'
+		;;
+	friendlyarm,nanopi-r6s)
+		ucidef_set_interfaces_lan_wan 'eth0 eth2' 'eth1'
+		;;
+	sinovoip,rk3568-bpi-r2pro)
+		ucidef_set_interfaces_lan_wan 'lan0 lan1 lan2 lan3' 'eth0'
 		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
 	esac
-}
-
-nanopi_r2s_generate_mac()
-{
-	local sd_hash=$(sha256sum /sys/class/block/mmcblk0/device/cid)
-	local mac_base=$(macaddr_canonicalize "$(echo "${sd_hash}" | dd bs=1 count=12 2>/dev/null)")
-	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${mac_base}")")"
 }
 
 rockchip_setup_macs()
@@ -32,13 +49,34 @@ rockchip_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	armsom,sige7|\
+	friendlyarm,nanopc-t6|\
+	friendlyarm,nanopi-r2c|\
 	friendlyarm,nanopi-r2s)
-		wan_mac=$(nanopi_r2s_generate_mac)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	friendlyarm,nanopi-r4s)
+	friendlyarm,nanopi-r2c-plus|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r5s|\
+	sinovoip,rk3568-bpi-r2pro)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r3s|\
+	friendlyarm,nanopi-r5c|\
+	friendlyarm,nanopi-r6c|\
+	friendlyarm,nanopi-r6s)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk*)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r4s-enterprise)
 		wan_mac=$(get_mac_binary "/sys/bus/i2c/devices/2-0051/eeprom" 0xfa)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
 		;;
 	esac
 

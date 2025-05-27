@@ -1,0 +1,175 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "mt7622-buffalo-wsr.dtsi"
+
+/ {
+	model = "Buffalo WSR-3200AX4S";
+	compatible = "buffalo,wsr-3200ax4s", "mediatek,mt7622";
+
+	memory {
+		reg = <0 0x40000000 0 0x1f000000>;
+	};
+};
+
+&pio {
+	/* Serial NAND is shared pin with SPI-NOR */
+	serial_nand_pins: serial-nand-pins {
+		mux {
+			function = "flash";
+			groups = "snfi";
+		};
+
+		conf-cmd-dat {
+			pins = "SPI_WP", "SPI_HOLD", "SPI_MOSI",
+			       "SPI_MISO", "SPI_CS";
+			input-enable;
+			drive-strength = <16>;
+			bias-pull-up;
+		};
+
+		conf-clk {
+			pins = "SPI_CLK";
+			drive-strength = <16>;
+			bias-pull-down;
+		};
+	};
+};
+
+&mdio {
+	switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan4";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan3";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan1";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac0>;
+				phy-connection-type = "2500base-x";
+
+				fixed-link {
+					speed = <2500>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+	};
+};
+
+&snfi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&serial_nand_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <104000000>;
+		nand-ecc-engine = <&snfi>;
+		mediatek,bmt-v2;
+		mediatek,bmt-table-size = <0x1000>;
+		/*
+		 * - Preloader - (kernel (6MiB, in firmware))
+		 * - Kernel2 - WTB
+		 */
+		mediatek,bmt-remap-range = <0x0 0x8c0000>,
+					   <0x1ac0000 0x5200000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "ATF";
+				reg = <0x80000 0x40000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "u-boot";
+				reg = <0xc0000 0x80000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "u-boot-env";
+				reg = <0x140000 0x80000>;
+				read-only;
+			};
+
+			factory: partition@1c0000 {
+				label = "factory";
+				reg = <0x1c0000 0x100000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				compatible = "brcm,trx";
+				brcm,trx-magic = <0x33504844>;
+				label = "firmware";
+				reg = <0x2c0000 0x1800000>;
+			};
+
+			partition@1ac0000 {
+				label = "Kernel2";
+				reg = <0x1ac0000 0x1800000>;
+			};
+
+			partition@32c0000 {
+				label = "glbcfg";
+				reg = <0x32c0000 0x200000>;
+				read-only;
+			};
+
+			partition@34c0000 {
+				label = "board_data";
+				reg = <0x34c0000 0x200000>;
+				read-only;
+			};
+
+			partition@36c0000 {
+				label = "WTB";
+				reg = <0x36c0000 0x3600000>;
+				read-only;
+			};
+		};
+	};
+};

@@ -515,9 +515,10 @@ typedef struct DSL_DEV_Device
 	DSL_int_t nInUse;                /* modem state, update by bsp driver, */
 	DSL_void_t *pPriv;
 	DSL_uint32_t base_address;       /* mei base address */
-	DSL_int_t nIrq[2];                  /* irq number */
+	DSL_int_t nIrq[3];                  /* irq number */
 #define IFX_DFEIR		0
 #define IFX_DYING_GASP	1
+#define IFX_USB_OC	2
 	DSL_DEV_MeiDebug_t lop_debugwr;  /* dying gasp */
 	struct module *owner;
 } DSL_DEV_Device_t;			/* ifx_adsl_device_t */

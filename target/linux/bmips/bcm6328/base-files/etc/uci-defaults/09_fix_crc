@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+arcadyan,ar7516 |\
+comtrend,ar-5381u |\
+comtrend,ar-5387un |\
+dlink,dsl-2750b-b1 |\
+nucom,r5010unv2)
+	mtd fixtrx firmware
+	;;
+esac
+
+exit 0

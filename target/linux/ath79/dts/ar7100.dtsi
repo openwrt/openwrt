@@ -21,6 +21,13 @@
 		};
 	};
 
+	extosc: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <40000000>;
+	};
+
 	ahb {
 		apb {
 			ddr_ctrl: memory-controller@18000000 {
@@ -60,7 +67,7 @@
 				reg = <0x18040000 0x28>;
 				interrupts = <2>;
 
-				ngpios = <16>;
+				ngpios = <12>;
 
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -73,8 +80,8 @@
 				compatible = "qca,ar7100-pll", "syscon";
 				reg = <0x18050000 0x20>;
 
+				clocks = <&extosc>;
 				clock-names = "ref";
-				/* The board must provides the ref clock */
 
 				#clock-cells = <1>;
 				clock-output-names = "cpu", "ddr", "ahb";
@@ -106,7 +113,7 @@
 				#reset-cells = <1>;
 			};
 
-			pcie0: pcie-controller@17010000 {
+			pcie0: pcie@17010000 {
 				compatible = "qca,ar7100-pci";
 				#address-cells = <3>;
 				#size-cells = <2>;
@@ -149,6 +156,11 @@
 
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		usb_ehci_port: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
 	};
 
 	usb1: usb@1c000000 {
@@ -165,6 +177,11 @@
 
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		usb_ohci_port: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
 	};
 
 	spi: spi@1f000000 {

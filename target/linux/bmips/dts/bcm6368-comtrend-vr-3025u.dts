@@ -11,14 +11,11 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-internet = &led_internet_green;
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		reset {
 			label = "reset";
@@ -31,42 +28,45 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_dsl_green: led@2 {
+		led-2 {
 			label = "green:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
-		led_internet_green: led@5 {
+		led-5 {
 			label = "green:internet";
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_power_green: led@22 {
-			label = "green:power";
+		led_power_green: led-22 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_power_red: led@24 {
-			label = "red:power";
+		led_power_red: led-24 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
 		};
 
-		led@31 {
+		led-31 {
 			label = "red:internet";
 			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
 	bcm43222-sprom {
-		compatible = "brcm,bcm43222-sprom";
+		compatible = "brcm,ssb-sprom";
 
 		pci-bus = <0>;
 		pci-dev = <1>;
 
-		nvmem-cells = <&macaddr_cfe_6a0>;
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 
+		brcm,sprom = "brcm/bcm43222-sprom.bin";
 		brcm,sprom-fixups = <97 0xfeb3>,
 				    <98 0x1618>,
 				    <99 0xfab0>,
@@ -83,7 +83,7 @@
 &ethernet {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -103,10 +103,22 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		cfe: partition@0 {
+		partition@0 {
 			label = "CFE";
 			reg = <0x0000000 0x0020000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@20000 {
@@ -135,6 +147,7 @@
 			label = "lan1";
 
 			phy-handle = <&phy1>;
+			phy-mode = "mii";
 		};
 
 		port@1 {
@@ -142,6 +155,7 @@
 			label = "lan2";
 
 			phy-handle = <&phy2>;
+			phy-mode = "mii";
 		};
 
 		port@2 {
@@ -149,6 +163,7 @@
 			label = "lan3";
 
 			phy-handle = <&phy3>;
+			phy-mode = "mii";
 		};
 
 		port@3 {
@@ -156,6 +171,7 @@
 			label = "lan4";
 
 			phy-handle = <&phy4>;
+			phy-mode = "mii";
 		};
 	};
 };
@@ -166,14 +182,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

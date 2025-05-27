@@ -1,0 +1,27 @@
+From 85bf3041a0ea40a60b5295749268e179f056546a Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 23 Oct 2024 17:13:10 +0300
+Subject: [PATCH] wifi: rtw88: usb: Set pkt_info.ls for the reserved page
+
+"ls" meaning "last segment". Without this RTL8812AU can't upload the
+reserved page in USB 2 mode. (Somehow it's fine in USB 3 mode.)
+
+Also tested with RTL8822CU, RTL8812BU, RTL8811CU, RTL8723DU, RTL8811AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/e443f5d9-4b53-4f64-985c-64313ec80bef@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -478,6 +478,7 @@ static int rtw_usb_write_data_rsvd_page(
+ 	pkt_info.tx_pkt_size = size;
+ 	pkt_info.qsel = TX_DESC_QSEL_BEACON;
+ 	pkt_info.offset = chip->tx_pkt_desc_sz;
++	pkt_info.ls = true;
+ 
+ 	return rtw_usb_write_data(rtwdev, &pkt_info, buf);
+ }

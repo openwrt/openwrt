@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -41,7 +42,8 @@
 		compatible = "gpio-leds";
 
 		power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
@@ -75,11 +77,13 @@
 			linux,default-trigger = "usbport";
 		};
 		sd {
-			label = "green:sd";
+			function = LED_FUNCTION_SD;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 14 GPIO_ACTIVE_HIGH>;
 		};
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&stp 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -92,7 +96,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };

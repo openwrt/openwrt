@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+actiontec,t1200h |\
+comtrend,vg-8050 |\
+sagem,fast-3864-op |\
+sercomm,shg2500)
+	ucidef_set_bridge_device switch
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	;;
+comtrend,vr-3032u |\
+smartrg,sr505n)
+	ucidef_set_bridge_device switch
+	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+	;;
+sercomm,h500-s-lowi |\
+sercomm,h500-s-vfes)
+	ucidef_set_bridge_device switch
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	ucidef_set_interface "qtn" device "wifi" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.252"
+	uci add_list firewall.@zone[0].network='qtn'
+	;;
+esac
+
+board_config_flush
+
+exit 0

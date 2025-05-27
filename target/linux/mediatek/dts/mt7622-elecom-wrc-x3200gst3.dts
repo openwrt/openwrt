@@ -33,14 +33,12 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "red:wps";
 			gpios = <&pio 47 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led_power_red: led-1 {
-			label = "red:power";
 			gpios = <&pio 48 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
@@ -48,7 +46,6 @@
 		};
 
 		led_power_green: led-2 {
-			label = "green:power";
 			gpios = <&pio 49 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
@@ -56,7 +53,6 @@
 		};
 
 		led-3 {
-			label = "blue:power";
 			gpios = <&pio 50 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
@@ -64,7 +60,6 @@
 		};
 
 		led-4 {
-			label = "white:wlan2g";
 			gpios = <&pio 85 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -73,7 +68,6 @@
 		};
 
 		led-5 {
-			label = "white:wlan5g";
 			gpios = <&pio 89 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
@@ -215,9 +209,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		switch@0 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
-			reg = <0>;
+			reg = <31>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&pio>;
@@ -258,7 +252,6 @@
 
 				port@6 {
 					reg = <6>;
-					label = "cpu";
 					ethernet = <&gmac0>;
 					phy-mode = "2500base-x";
 
@@ -327,20 +320,24 @@
 				reg = <0x1c0000 0x100000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_factory_4: macaddr@4 {
-					reg = <0x4 0x6>;
-				};
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 
-				macaddr_factory_7fff4: macaddr@7fff4 {
-					reg = <0x7fff4 0x6>;
-				};
+					macaddr_factory_7fff4: macaddr@7fff4 {
+						reg = <0x7fff4 0x6>;
+					};
 
-				macaddr_factory_7fffa: macaddr@7fffa {
-					reg = <0x7fffa 0x6>;
+					macaddr_factory_7fffa: macaddr@7fffa {
+						reg = <0x7fffa 0x6>;
+					};
 				};
 			};
 
@@ -395,9 +392,8 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x5000>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cells = <&macaddr_factory_4 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 

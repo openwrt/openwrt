@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/* Copyright (c) 2023, Mohammad Sayful Islam <Sayf.mohammad01@gmail.com> */
+
+#include "ipq8174-mx4x00.dtsi"
+
+/ {
+	aliases {
+		ethernet3 = &dp4;
+		ethernet4 = &dp5;
+	};
+};
+
+&tlmm {
+	iot_pins: iot-state {
+		recovery-pins {
+			pins = "gpio22";
+			function = "gpio";
+			input;
+		};
+
+		reset-pins {
+			pins = "gpio21";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	status = "okay";
+
+	pinctrl-0 = <&hsuart_pins &iot_pins>;
+	pinctrl-names = "default";
+
+	/* Silicon Labs EFR32MG21 IoT */
+};
+
+&qpic_nand {
+	status = "okay";
+
+	/*
+	 * Bootloader will find the NAND DT node by the compatible and
+	 * then "fixup" it by adding the partitions from the SMEM table
+	 * using the legacy bindings thus making it impossible for us
+	 * to change the partition table or utilize NVMEM for calibration.
+	 * So add a dummy partitions node that bootloader will populate
+	 * and set it as disabled so the kernel ignores it instead of
+	 * printing warnings due to the broken way bootloader adds the
+	 * partitions.
+	 */
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:sbl1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:mibib";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:bootconfig";
+				reg = <0x200000 0x80000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:bootconfig1";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:qsee";
+				reg = <0x300000 0x300000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:qsee_1";
+				reg = <0x600000 0x300000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:devcfg";
+				reg = <0x900000 0x80000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "0:devcfg_1";
+				reg = <0x980000 0x80000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "0:apdp";
+				reg = <0xa00000 0x80000>;
+				read-only;
+			};
+
+			partition@a80000 {
+				label = "0:apdp_1";
+				reg = <0xa80000 0x80000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:rpm";
+				reg = <0xb00000 0x80000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "0:rpm_1";
+				reg = <0xb80000 0x80000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "0:cdt";
+				reg = <0xc00000 0x80000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:cdt_1";
+				reg = <0xc80000 0x80000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "0:appsblenv";
+				reg = <0xd00000 0x80000>;
+			};
+
+			partition@d80000 {
+				label = "0:appsbl";
+				reg = <0xd80000 0x100000>;
+				read-only;
+			};
+
+			partition@e80000 {
+				label = "0:appsbl_1";
+				reg = <0xe80000 0x100000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "0:art";
+				reg = <0xf80000 0x80000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "u_env";
+				reg = <0x1000000 0x40000>;
+			};
+
+			partition@1040000 {
+				label = "s_env";
+				reg = <0x1040000 0x20000>;
+			};
+
+			partition@1060000 {
+				label = "devinfo";
+				reg = <0x1060000 0x20000>;
+				read-only;
+			};
+
+			partition@1080000 {
+				label = "kernel";
+				reg = <0x1080000 0x9600000>;
+			};
+
+			partition@1680000 {
+				label = "rootfs";
+				reg = <0x1680000 0x9000000>;
+			};
+
+			partition@a680000 {
+				label = "alt_kernel";
+				reg = <0xa680000 0x9600000>;
+			};
+
+			partition@ac80000 {
+				label = "alt_rootfs";
+				reg = <0xac80000 0x9000000>;
+			};
+
+			partition@13c80000 {
+				label = "sysdiag";
+				reg = <0x13c80000 0x200000>;
+				read-only;
+			};
+
+			partition@13e80000 {
+				label = "0:ethphyfw";
+				reg = <0x13e80000 0x80000>;
+				read-only;
+			};
+
+			partition@13f00000 {
+				label = "syscfg";
+				reg = <0x13f00000 0xb800000>;
+				read-only;
+			};
+
+			partition@1f700000 {
+				label = "0:wififw";
+				reg = <0x1f700000 0x900000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "wan";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan1";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan2";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	label = "lan3";
+};

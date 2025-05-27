@@ -3,6 +3,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
@@ -50,13 +51,15 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 		};
 
@@ -71,7 +74,8 @@
 		};
 
 		led_lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 
@@ -89,7 +93,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -101,7 +105,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -149,12 +153,12 @@
 &gswip_mdio {
 	phy0: ethernet-phy@0 {
 		reg = <0x0>;
-		gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 	};
 
 	phy1: ethernet-phy@1 {
 		reg = <0x1>;
-		gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 	};
 
 	phy11: ethernet-phy@11 {
@@ -170,14 +174,14 @@
 	port@0 {
 		reg = <0>;
 		label = "lan3";
-		phy-mode = "rgmii";
+		phy-mode = "rgmii-rxid";
 		phy-handle = <&phy0>;
 	};
 
 	port@1 {
 		reg = <1>;
 		label = "lan4";
-		phy-mode = "rgmii";
+		phy-mode = "rgmii-rxid";
 		phy-handle = <&phy1>;
 	};
 

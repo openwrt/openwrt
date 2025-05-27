@@ -28,6 +28,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/version.h>
 #include <generated/utsrelease.h>
 #include <linux/types.h>
@@ -60,8 +61,6 @@
 #define IFXMIPS_FUSE_BASE_ADDR            IFX_FUSE_BASE_ADDR
 #define IFXMIPS_ICU_IM0_IER               IFX_ICU_IM0_IER
 #define IFXMIPS_ICU_IM2_IER               IFX_ICU_IM2_IER
-#define LTQ_MEI_INT                   IFX_MEI_INT
-#define LTQ_MEI_DYING_GASP_INT        IFX_MEI_DYING_GASP_INT
 #define LTQ_MEI_BASE_ADDR  		  IFX_MEI_SPACE_ACCESS
 #define IFXMIPS_PMU_PWDCR		  IFX_PMU_PWDCR
 #define IFXMIPS_MPS_CHIPID                IFX_MPS_CHIPID
@@ -84,28 +83,6 @@
 #define LTQ_MEI_BASE_ADDR       0x1E116000
 #define LTQ_PMU_BASE_ADDR       0x1F102000
 
-
-#ifdef CONFIG_DANUBE
-# define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
-# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
-# define LTQ_USB_OC_INT          (INT_NUM_IM4_IRL0 + 23)
-#endif
-
-#ifdef CONFIG_AMAZON_SE
-# define LTQ_MEI_INT             (INT_NUM_IM2_IRL0 + 9)
-# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM2_IRL0 + 11)
-# define LTQ_USB_OC_INT          (INT_NUM_IM2_IRL0 + 20)
-#endif
-
-#ifdef CONFIG_AR9
-# define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
-# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
-# define LTQ_USB_OC_INT          (INT_NUM_IM1_IRL0 + 28)
-#endif
-
-#ifndef LTQ_MEI_INT
-#error "Unknown Lantiq ARCH!"
-#endif
 
 #define LTQ_RCU_RST_REQ_DFE		(1 << 7)
 #define LTQ_RCU_RST_REQ_AFE		(1 << 11)
@@ -1349,14 +1326,14 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 	im2_register = (*LTQ_ICU_IM2_IER) & (1 << 20);
 
 	/* Turn off irq */
-	disable_irq (LTQ_USB_OC_INT);
+	disable_irq (pDev->nIrq[IFX_USB_OC]);
 	disable_irq (pDev->nIrq[IFX_DYING_GASP]);
 
 	IFX_MEI_RunArc (pDev);
 
 	MEI_WAIT_EVENT_TIMEOUT (DSL_DEV_PRIVATE(pDev)->wait_queue_modemready, 1000);
 
-	MEI_MASK_AND_ACK_IRQ (LTQ_USB_OC_INT);
+	MEI_MASK_AND_ACK_IRQ (pDev->nIrq[IFX_USB_OC]);
 	MEI_MASK_AND_ACK_IRQ (pDev->nIrq[IFX_DYING_GASP]);
 
 	/* Re-enable irq */
@@ -1619,7 +1596,9 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			IFX_MEI_EMSG ("Firmware size is too small!\n");
 			return retval;
 		}
-		copy_from_user ((char *) &img_hdr_tmp, buf, sizeof (img_hdr_tmp));
+		if (copy_from_user ((char *) &img_hdr_tmp, buf, sizeof (img_hdr_tmp)))
+			return -EFAULT;
+
 		// header of image_size and crc are not included.
 		DSL_DEV_PRIVATE(pDev)->image_size = le32_to_cpu (img_hdr_tmp.size) + 8;
 
@@ -1697,7 +1676,9 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			nCopy = SDRAM_SEGMENT_SIZE - offset;
 		else
 			nCopy = size - nRead;
-		copy_from_user (mem_ptr, buf + nRead, nCopy);
+		if (copy_from_user (mem_ptr, buf + nRead, nCopy))
+			return -EFAULT;
+
 		for (offset = 0; offset < (nCopy / 4); offset++) {
 			((unsigned long *) mem_ptr)[offset] = le32_to_cpu (((unsigned long *) mem_ptr)[offset]);
 		}
@@ -2299,8 +2280,6 @@ IFX_MEI_InitDevice (int num)
 		sizeof (smmu_mem_info_t) * MAX_BAR_REGISTERS);
 
 	if (num == 0) {
-		pDev->nIrq[IFX_DFEIR]      = LTQ_MEI_INT;
-		pDev->nIrq[IFX_DYING_GASP] = LTQ_MEI_DYING_GASP_INT;
 		pDev->base_address = KSEG1 + LTQ_MEI_BASE_ADDR;
 
                 /* Power up MEI */
@@ -2754,10 +2733,31 @@ static int ltq_mei_probe(struct platform_device *pdev)
 {
 	int i = 0;
 	static struct class *dsl_class;
+	DSL_DEV_Device_t *pDev;
 
 	pr_info("IFX MEI Version %ld.%02ld.%02ld\n", bsp_mei_version.major, bsp_mei_version.minor, bsp_mei_version.revision);
 
 	for (i = 0; i < BSP_MAX_DEVICES; i++) {
+		pDev = &dsl_devices[i];
+
+		pDev->nIrq[IFX_DFEIR] = platform_get_irq(pdev, 0);
+		if (pDev->nIrq[IFX_DFEIR] < 0) {
+			IFX_MEI_EMSG("Failed to get DFEIR irq!\n");
+			return pDev->nIrq[IFX_DFEIR];
+		}
+
+		pDev->nIrq[IFX_DYING_GASP] = platform_get_irq(pdev, 1);
+		if (pDev->nIrq[IFX_DYING_GASP] < 0) {
+			IFX_MEI_EMSG("Failed to get DYING_GASP irq!\n");
+			return pDev->nIrq[IFX_DYING_GASP];
+		}
+
+		pDev->nIrq[IFX_USB_OC] = platform_get_irq(pdev, 2);
+		if (pDev->nIrq[IFX_USB_OC] < 0) {
+			IFX_MEI_EMSG("Failed to get USB_OC irq!\n");
+			return pDev->nIrq[IFX_USB_OC];
+		}
+
 		if (IFX_MEI_InitDevice (i) != 0) {
 			IFX_MEI_EMSG("Init device fail!\n");
 			return -EIO;
@@ -2771,7 +2771,11 @@ static int ltq_mei_probe(struct platform_device *pdev)
 	IFX_MEI_DMSG("Start loopback test...\n");
 	DFE_Loopback_Test ();
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
 	dsl_class = class_create(THIS_MODULE, "ifx_mei");
+#else
+	dsl_class = class_create("ifx_mei");
+#endif
 	device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
 	return 0;
 }
@@ -2803,7 +2807,6 @@ static struct platform_driver ltq_mei_driver = {
 	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_mei_match,
 	},
 };
