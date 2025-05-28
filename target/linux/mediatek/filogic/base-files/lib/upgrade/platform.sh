@@ -179,6 +179,12 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+  	beeconmini,seed-ac2)
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,redmi-router-ax6000-stock)
@@ -270,6 +276,7 @@ platform_copy_config() {
 	acer,vero-w6m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
+ 	beeconmini,seed-ac2|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
