@@ -1,0 +1,33 @@
+From e46dee2f581c1167137bcd045e114e96a9f00483 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 29 Jan 2023 20:07:21 +0100
+Subject: [PATCH] Fix a clang warning "a function declaration without a
+ prototype...".
+
+* lib/loop_wchar.h (mbrtowc): Don't declare. Drop portability to BeOS.
+---
+ lib/loop_wchar.h | 3 +--
+ 1 file changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/lib/loop_wchar.h b/lib/loop_wchar.h
+index b3edc2925c60..9eb508e81a4f 100644
+--- a/lib/loop_wchar.h
++++ b/lib/loop_wchar.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (C) 2000-2002, 2005-2006, 2008-2009, 2011 Free Software Foundation, Inc.
++ * Copyright (C) 2000-2002, 2005-2006, 2008-2009, 2011, 2023 Free Software Foundation, Inc.
+  * This file is part of the GNU LIBICONV Library.
+  *
+  * The GNU LIBICONV Library is free software; you can redistribute it
+@@ -36,7 +36,6 @@
+ # include <wchar.h>
+ # define BUF_SIZE 64  /* assume MB_LEN_MAX <= 64 */
+   /* Some systems, like BeOS, have multibyte encodings but lack mbstate_t.  */
+-  extern size_t mbrtowc ();
+ # ifdef mbstate_t
+ #  define mbrtowc(pwc, s, n, ps) (mbrtowc)(pwc, s, n, 0)
+ #  define mbsinit(ps) 1
+-- 
+2.49.0
+
