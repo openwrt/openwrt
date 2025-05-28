@@ -29,8 +29,9 @@ jobs:
     - name: SSH 远程调试（tmate）
       if: ${{ github.event.inputs.manual_config == 'y' }}
       uses: mxschmitt/action-tmate@v3
-      with:
-        limit-access-to-actor: true
+       # 不加 limit-access-to-actor，以便显示 SSH 连接和 web 终端链接（含密码）
+      #with:
+      #  limit-access-to-actor: true
 
     - name: Generate XiaoMi-AX3600 config (prompt)
       if: ${{ github.event.inputs.manual_config == 'y' }}
