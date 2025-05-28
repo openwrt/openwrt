@@ -185,7 +185,8 @@ case "$board" in
 	zbtlink,zbt-z8102ax|\
 	zbtlink,zbt-z8103ax|\
 	zyxel,ex5601-t0-stock|\
-	zyxel,ex5601-t0-ubootmod)
+	zyxel,ex5601-t0-ubootmod|\
+	zyxel,wx5600-t0-ubootmod)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
