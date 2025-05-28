@@ -36,13 +36,18 @@ jobs:
     - name: Generate XiaoMi-AX3600 config (prompt)
       if: ${{ github.event.inputs.manual_config != 'y' }}
       run: |
-        # 自动生成 .config（仅当未手动配置时）
+        # 1. 生成基础配置
         echo -e "CONFIG_TARGET_ipq807x=y\nCONFIG_TARGET_ipq807x_generic=y\nCONFIG_TARGET_ipq807x_generic_DEVICE_xiaomi_ax3600=y" > .config
         make defconfig
+
+        # 2. 进一步自定义
+        make menuconfig    # 或手动编辑 .config
+        
         # 手动配置 .config（通过 SSH
         echo "请通过上面的 tmate SSH 连接，手动生成 AX3600 的 .config 配置文件。"
         echo "完成后请在 tmate 终端执行 exit 以继续。"
         sleep 60  # 保证用户看到消息
+        
     # 可选：上传 .config 作为 workflow artifact（供下载）
     - name: Upload config file
       uses: actions/upload-artifact@v4
