@@ -1,0 +1,45 @@
+name: Build with tmate SSH Debug for XiaoMi-AX3600
+
+on:
+  workflow_dispatch:
+    inputs:
+      manual_config:
+        description: "Manually generate XiaoMi-AX3600 config via SSH (y/n)"
+        default: "y"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib \
+          gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev file wget
+
+    - name: Start SSH session with tmate
+      if: ${{ github.event.inputs.manual_config == 'y' }}
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
+    - name: Generate XiaoMi-AX3600 config (prompt)
+      if: ${{ github.event.inputs.manual_config == 'y' }}
+      run: |
+        echo "请通过上面的 tmate SSH 连接，手动生成 AX3600 的 .config 配置文件。"
+        echo "完成后请在 tmate 终端执行 exit 以继续。"
+        sleep 60  # 保证用户看到消息
+
+    - name: Continue compilation
+      run: |
+        if [ ! -f .config ]; then
+          echo "No .config file found, please generate config first!"
+          exit 1
+        fi
+        make download -j$(nproc)
+        make -j$(nproc) V=s
