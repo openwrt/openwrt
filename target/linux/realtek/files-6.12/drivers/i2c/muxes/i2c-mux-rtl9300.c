@@ -251,7 +251,7 @@ static int rtl9300_i2c_mux_probe(struct platform_device *pdev)
 
 		mux_data->sda_sel(muxc, channels[chan].sda_num);
 
-		ret = i2c_mux_add_adapter(muxc, 0, chan, 0);
+		ret = i2c_mux_add_adapter(muxc, 0, chan);
 		if (ret)
 			goto err_children;
 	}
@@ -268,14 +268,12 @@ err_parent:
 	return ret;
 }
 
-static int rtl9300_i2c_mux_remove(struct platform_device *pdev)
+static void rtl9300_i2c_mux_remove(struct platform_device *pdev)
 {
 	struct i2c_mux_core *muxc = platform_get_drvdata(pdev);
 
 	i2c_mux_del_adapters(muxc);
 	i2c_put_adapter(muxc->parent);
-
-	return 0;
 }
 
 static struct platform_driver i2c_mux_driver = {

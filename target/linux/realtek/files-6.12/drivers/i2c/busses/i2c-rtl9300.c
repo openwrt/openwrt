@@ -2,6 +2,7 @@
 
 #include <linux/module.h>
 #include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include "i2c-rtl9300.h"
 
 #define REG(i, x)	(i->base + x + (i->scl_num ? i->mst2_offset : 0))
@@ -411,7 +412,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	adap->dev.parent = &pdev->dev;
 	i2c_set_adapdata(adap, i2c);
 	adap->dev.of_node = node;
-	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
+	strscpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
 
 	platform_set_drvdata(pdev, i2c);
 
@@ -422,13 +423,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	return ret;
 }
 
-static int rtl9300_i2c_remove(struct platform_device *pdev)
+static void rtl9300_i2c_remove(struct platform_device *pdev)
 {
 	struct rtl9300_i2c *i2c = platform_get_drvdata(pdev);
 
 	i2c_del_adapter(&i2c->adap);
-
-	return 0;
 }
 
 struct i2c_drv_data rtl9300_i2c_drv_data = {
