@@ -9,65 +9,68 @@
  *
  */
 
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/string.h>
-#include <linux/of_fdt.h>
-#include <linux/libfdt.h>
-#include <asm/bootinfo.h>
-#include <asm/addrspace.h>
-#include <asm/page.h>
-#include <asm/cpu.h>
 #include <asm/fw/fw.h>
+#include <asm/mips-cps.h>
 #include <asm/prom.h>
 #include <asm/smp-ops.h>
-#include <asm/mips-cps.h>
 
 #include <mach-rtl83xx.h>
-
-extern char arcs_cmdline[];
 
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
 #ifdef CONFIG_MIPS_MT_SMP
-extern const struct plat_smp_ops vsmp_smp_ops;
-static struct plat_smp_ops rtl_smp_ops;
 
-static void rtl_init_secondary(void)
+extern const struct plat_smp_ops vsmp_smp_ops;
+static struct plat_smp_ops rtlops;
+
+static void rtlsmp_init_secondary(void)
 {
-#ifndef CONFIG_CEVT_R4K
-/*
- * These devices are low on resources. There might be the chance that CEVT_R4K
- * is not enabled in kernel build. Nevertheless the timer and interrupt 7 might
- * be active by default after startup of secondary VPE. With no registered
- * handler that leads to continuous unhandeled interrupts. In this case disable
- * counting (DC) in the core and confirm a pending interrupt.
- */
-	write_c0_cause(read_c0_cause() | CAUSEF_DC);
-	write_c0_compare(0);
-#endif /* CONFIG_CEVT_R4K */
-/*
- * Enable all CPU interrupts, as everything is managed by the external
- * controller. TODO: Standard vsmp_init_secondary() has special treatment for
- * Malta if external GIC is available. Maybe we need this too.
- */
+	/*
+	 * Enable all CPU interrupts, as everything is managed by the external controller.
+	 * TODO: Standard vsmp_init_secondary() has special treatment for Malta if external
+	 * GIC is available. Maybe we need this too.
+	 */
 	if (mips_gic_present())
 		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n", __func__);
 	else
 		set_c0_status(ST0_IM);
 }
-#endif /* CONFIG_MIPS_MT_SMP */
 
-const char *get_system_type(void)
+static void rtlsmp_finish(void)
 {
-	return soc_info.name;
+	/* These devices are low on resources. There might be the chance that CEVT_R4K is
+	 * not enabled in kernel build. Nevertheless the timer and interrupt 7 might be
+	 * active by default after startup of secondary VPE. With no registered handler
+	 * that leads to continuous unhandeled interrupts. In this case disable counting
+	 * (DC) in the core and confirm a pending interrupt.
+	 */
+	if (!IS_ENABLED(CONFIG_CEVT_R4K)) {
+		write_c0_cause(read_c0_cause() | CAUSEF_DC);
+		write_c0_compare(0);
+	}
+
+	local_irq_enable();
 }
 
-void __init prom_free_prom_memory(void)
+static int rtlsmp_register(void)
 {
+	if (!cpu_has_mipsmt)
+		return 1;
 
+	rtlops = vsmp_smp_ops;
+	rtlops.init_secondary = rtlsmp_init_secondary;
+	rtlops.smp_finish = rtlsmp_finish;
+	register_smp_ops(&rtlops);
+
+	return 0;
 }
+
+#else /* !CONFIG_MIPS_MT_SMP */
+
+#define rtlsmp_register() (1)
+
+#endif
 
 void __init device_tree_init(void)
 {
@@ -84,16 +87,15 @@ void __init device_tree_init(void)
 	if (!register_cps_smp_ops())
 		return;
 
-#ifdef CONFIG_MIPS_MT_SMP
-	if (cpu_has_mipsmt) {
-		rtl_smp_ops = vsmp_smp_ops;
-		rtl_smp_ops.init_secondary = rtl_init_secondary;
-		register_smp_ops(&rtl_smp_ops);
+	if (!rtlsmp_register())
 		return;
-	}
-#endif
 
 	register_up_smp_ops();
+}
+
+const char *get_system_type(void)
+{
+	return soc_info.name;
 }
 
 static void __init identify_rtl9302(void)
