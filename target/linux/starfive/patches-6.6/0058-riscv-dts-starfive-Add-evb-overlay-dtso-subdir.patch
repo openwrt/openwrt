@@ -1,0 +1,485 @@
+From e9122ceaf2d8767753e2a126c14b29b78280446d Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Tue, 19 Sep 2023 21:35:39 +0800
+Subject: [PATCH 058/116] riscv: dts: starfive: Add evb-overlay dtso subdir
+
+Create subdir evb-overlay/ and add overlay .dtso for JH7110 EVB.
+The code is ported from tag JH7110_SDK_6.1_v5.11.3
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/Makefile         |   1 +
+ .../boot/dts/starfive/evb-overlay/Makefile    |   7 +
+ .../evb-overlay/jh7110-evb-overlay-can.dtso   |  24 ++++
+ .../jh7110-evb-overlay-rgb2hdmi.dtso          |  24 ++++
+ .../evb-overlay/jh7110-evb-overlay-sdio.dtso  |  78 +++++++++++
+ .../evb-overlay/jh7110-evb-overlay-spi.dtso   |  72 ++++++++++
+ .../jh7110-evb-overlay-uart4-emmc.dtso        | 130 ++++++++++++++++++
+ .../jh7110-evb-overlay-uart5-pwm.dtso         |  92 +++++++++++++
+ 8 files changed, 428 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/Makefile
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-can.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-rgb2hdmi.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-sdio.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-spi.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-uart4-emmc.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-uart5-pwm.dtso
+
+--- a/arch/riscv/boot/dts/starfive/Makefile
++++ b/arch/riscv/boot/dts/starfive/Makefile
+@@ -12,6 +12,7 @@ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-st
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.2a.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.3b.dtb
+ 
++subdir-y += evb-overlay
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-evb.dtb			\
+ 			       jh7110-evb-pcie-i2s-sd.dtb	\
+ 			       jh7110-evb-spi-uart2.dtb		\
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/Makefile
+@@ -0,0 +1,7 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-evb-overlay-can.dtbo		\
++				jh7110-evb-overlay-sdio.dtbo		\
++				jh7110-evb-overlay-spi.dtbo		\
++				jh7110-evb-overlay-uart4-emmc.dtbo	\
++				jh7110-evb-overlay-uart5-pwm.dtbo	\
++				jh7110-evb-overlay-rgb2hdmi.dtbo
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-can.dtso
+@@ -0,0 +1,24 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//can0
++	fragment@0 {
++		target-path = "/soc/can@130d0000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//can1
++	fragment@1 {
++		target-path = "/soc/can@130e0000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-rgb2hdmi.dtso
+@@ -0,0 +1,24 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//hdmi_output
++	fragment@0 {
++		target-path = "/tda988x_pin";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//uart1
++	fragment@1 {
++		target-path = "/soc/serial@10010000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-sdio.dtso
+@@ -0,0 +1,78 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//sysgpio
++	fragment@0 {
++		target-path = "/soc/pinctrl@13040000";
++		__overlay__ {
++			dt_sdcard1_pins: dt-sdcard1-0 {
++				sdcard-pins {
++					pinmux = <GPIOMUX(56, GPOUT_SYS_SDIO1_CLK,
++							      GPOEN_ENABLE,
++							      GPI_NONE)>,
++						 <GPIOMUX(50, GPOUT_SYS_SDIO1_CMD,
++							      GPOEN_SYS_SDIO1_CMD,
++							      GPI_SYS_SDIO1_CMD)>,
++						 <GPIOMUX(49, GPOUT_SYS_SDIO1_DATA0,
++							      GPOEN_SYS_SDIO1_DATA0,
++							      GPI_SYS_SDIO1_DATA0)>,
++						 <GPIOMUX(45, GPOUT_SYS_SDIO1_DATA1,
++							      GPOEN_SYS_SDIO1_DATA1,
++							      GPI_SYS_SDIO1_DATA1)>,
++						 <GPIOMUX(62, GPOUT_SYS_SDIO1_DATA2,
++							      GPOEN_SYS_SDIO1_DATA2,
++							      GPI_SYS_SDIO1_DATA2)>,
++						 <GPIOMUX(40, GPOUT_SYS_SDIO1_DATA3,
++							      GPOEN_SYS_SDIO1_DATA3,
++							      GPI_SYS_SDIO1_DATA3)>;
++					bias-pull-up;
++					input-enable;
++				};
++			};
++		};
++	};
++
++	//uart3
++	fragment@1 {
++		target-path = "/soc/serial@12000000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//i2c0
++	fragment@2 {
++		target-path = "/soc/i2c@10030000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//mmc1
++	fragment@3 {
++		target-path = "/soc/mmc@16020000";
++		__overlay__ {
++			max-frequency = <100000000>;
++			card-detect-delay = <300>;
++			bus-width = <4>;
++			no-sdio;
++			no-mmc;
++			broken-cd;
++			sd-uhs-sdr12;
++			sd-uhs-sdr25;
++			sd-uhs-sdr50;
++			sd-uhs-sdr104;
++			sd-uhs-ddr50;
++			cap-sd-highspeed;
++			post-power-on-delay-ms = <200>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_sdcard1_pins>;
++			status = "okay";
++		};
++	};
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-spi.dtso
+@@ -0,0 +1,72 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//spi0
++	fragment@0 {
++		target-path = "/soc/spi@10060000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi1
++	fragment@1 {
++		target-path = "/soc/spi@10070000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi2
++	fragment@2 {
++		target-path = "/soc/spi@10080000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi3
++	fragment@3 {
++		target-path = "/soc/spi@12070000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi4
++	fragment@4 {
++		target-path = "/soc/spi@12080000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi5
++	fragment@5 {
++		target-path = "/soc/spi@12090000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//spi6
++	fragment@6 {
++		target-path = "/soc/spi@120a0000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//uart2
++	fragment@7 {
++		target-path = "/soc/serial@10020000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-uart4-emmc.dtso
+@@ -0,0 +1,130 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//sysgpio
++	fragment@0 {
++		target-path = "/soc/pinctrl@13040000";
++		__overlay__ {
++			dt_emmc0_pins: dt-emmc0-0 {
++				emmc-pins {
++					pinmux = <GPIOMUX(22, GPOUT_SYS_SDIO0_RST,
++							      GPOEN_ENABLE,
++							      GPI_NONE)>,
++						 <PINMUX(64, 0)>,
++						 <PINMUX(65, 0)>,
++						 <PINMUX(66, 0)>,
++						 <PINMUX(67, 0)>,
++						 <PINMUX(68, 0)>,
++						 <PINMUX(69, 0)>,
++						 <PINMUX(70, 0)>,
++						 <PINMUX(71, 0)>,
++						 <PINMUX(72, 0)>,
++						 <PINMUX(73, 0)>;
++					bias-pull-up;
++					drive-strength = <12>;
++					input-enable;
++					slew-rate = <1>;
++				};
++			};
++
++			dt_emmc1_pins: dt-emmc1-0 {
++				emmc-pins {
++					pinmux = <GPIOMUX(51, GPOUT_SYS_SDIO1_RST,
++							      GPOEN_ENABLE,
++							      GPI_NONE)>,
++						 <GPIOMUX(38, GPOUT_SYS_SDIO1_CLK,
++							      GPOEN_ENABLE,
++							      GPI_NONE)>,
++						 <GPIOMUX(36, GPOUT_SYS_SDIO1_CMD,
++							      GPOEN_SYS_SDIO1_CMD,
++							      GPI_SYS_SDIO1_CMD)>,
++						 <GPIOMUX(43, GPOUT_SYS_SDIO1_DATA0,
++							      GPOEN_SYS_SDIO1_DATA0,
++							      GPI_SYS_SDIO1_DATA0)>,
++						 <GPIOMUX(48, GPOUT_SYS_SDIO1_DATA1,
++							      GPOEN_SYS_SDIO1_DATA1,
++							      GPI_SYS_SDIO1_DATA1)>,
++						 <GPIOMUX(53, GPOUT_SYS_SDIO1_DATA2,
++							      GPOEN_SYS_SDIO1_DATA2,
++							      GPI_SYS_SDIO1_DATA2)>,
++						 <GPIOMUX(63, GPOUT_SYS_SDIO1_DATA3,
++							      GPOEN_SYS_SDIO1_DATA3,
++							      GPI_SYS_SDIO1_DATA3)>,
++						 <GPIOMUX(52, GPOUT_SYS_SDIO1_DATA4,
++							      GPOEN_SYS_SDIO1_DATA4,
++							      GPI_SYS_SDIO1_DATA4)>,
++						 <GPIOMUX(39, GPOUT_SYS_SDIO1_DATA5,
++							      GPOEN_SYS_SDIO1_DATA5,
++							      GPI_SYS_SDIO1_DATA5)>,
++						 <GPIOMUX(46, GPOUT_SYS_SDIO1_DATA6,
++							      GPOEN_SYS_SDIO1_DATA6,
++							      GPI_SYS_SDIO1_DATA6)>,
++						 <GPIOMUX(47, GPOUT_SYS_SDIO1_DATA7,
++							      GPOEN_SYS_SDIO1_DATA7,
++							      GPI_SYS_SDIO1_DATA7)>;
++					bias-pull-up;
++					input-enable;
++				};
++			};
++		};
++	};
++
++	//aongpio
++	fragment@1 {
++		target-path = "/soc/pinctrl@17020000";
++		__overlay__ {
++			dt_pwm_ch6to7_pins: dt-pwm-ch6to7-0 {
++				pwm-pins {
++					pinmux = <GPIOMUX(1, GPOUT_AON_PTC0_PWM6, /* PAD_RGPIO0 */
++							     GPOEN_AON_PTC0_OE_N_6,
++							     GPI_NONE)>,
++						 <GPIOMUX(2, GPOUT_AON_PTC0_PWM7, /* PAD_RGPIO1 */
++							     GPOEN_AON_PTC0_OE_N_7,
++							     GPI_NONE)>;
++					drive-strength = <12>;
++				};
++			};
++		};
++	};
++
++	//uart4
++	fragment@2 {
++		target-path = "/soc/serial@12010000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//mmc1
++	fragment@3 {
++		target-path = "/soc/mmc@16020000";
++		__overlay__ {
++			clock-frequency = <102400000>;
++			max-frequency = <100000000>;
++			card-detect-delay = <300>;
++			bus-width = <8>;
++			cap-mmc-hw-reset;
++			non-removable;
++			cap-mmc-highspeed;
++			post-power-on-delay-ms = <200>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_emmc1_pins>;
++			status = "okay";
++		};
++	};
++
++	//ptc
++	fragment@4 {
++		target-path = "/soc/pwm@120d0000";
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_pwm_ch6to7_pins>;
++			status = "okay";
++		};
++	};
++};
++
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/evb-overlay/jh7110-evb-overlay-uart5-pwm.dtso
+@@ -0,0 +1,92 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//sysgpio
++	fragment@0 {
++		target-path = "/soc/pinctrl@13040000";
++		__overlay__ {
++			dt_pwm_ch0to3_pins: dt-pwm-ch0to3-0 {
++				pwm-pins {
++					pinmux = <GPIOMUX(45, GPOUT_SYS_PWM_CHANNEL0,
++							      GPOEN_SYS_PWM0_CHANNEL0,
++							      GPI_NONE)>,
++						 <GPIOMUX(46, GPOUT_SYS_PWM_CHANNEL1,
++							      GPOEN_SYS_PWM0_CHANNEL1,
++							      GPI_NONE)>,
++						 <GPIOMUX(47, GPOUT_SYS_PWM_CHANNEL2,
++							      GPOEN_SYS_PWM0_CHANNEL2,
++							      GPI_NONE)>,
++						 <GPIOMUX(48, GPOUT_SYS_PWM_CHANNEL3,
++							      GPOEN_SYS_PWM0_CHANNEL3,
++							      GPI_NONE)>;
++					drive-strength = <12>;
++				};
++			};
++		};
++	};
++
++	//aongpio
++	fragment@1 {
++		target-path = "/soc/pinctrl@17020000";
++		__overlay__ {
++			dt_pwm_ch4to5_pins: dt-pwm-ch4to5-0 {
++				pwm-pins {
++					pinmux = <GPIOMUX(1, GPOUT_AON_PTC0_PWM4, /* PAD_RGPIO0 */
++							     GPOEN_AON_PTC0_OE_N_4,
++							     GPI_NONE)>,
++						 <GPIOMUX(2, GPOUT_AON_PTC0_PWM5, /* PAD_RGPIO1 */
++							     GPOEN_AON_PTC0_OE_N_5,
++							     GPI_NONE)>;
++					drive-strength = <12>;
++				};
++			};
++		};
++	};
++
++	//uart5
++	fragment@2 {
++		target-path = "/soc/serial@12020000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//ptc
++	fragment@3 {
++		target-path = "/soc/pwm@120d0000";
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_pwm_ch0to3_pins &dt_pwm_ch4to5_pins>;
++			status = "okay";
++		};
++	};
++
++	//i2c0
++	fragment@4 {
++		target-path = "/soc/i2c@10030000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//i2c1
++	fragment@5 {
++		target-path = "/soc/i2c@10040000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//i2c3
++	fragment@6 {
++		target-path = "/soc/i2c@12030000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
++

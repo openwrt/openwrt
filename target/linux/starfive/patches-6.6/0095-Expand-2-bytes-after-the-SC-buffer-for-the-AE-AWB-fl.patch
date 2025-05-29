@@ -1,0 +1,249 @@
+From 5d61c6fd10144605238311d68c99449c4667a345 Mon Sep 17 00:00:00 2001
+From: "zejian.su" <zejian.su@starfivetech.com>
+Date: Mon, 7 Aug 2023 10:38:36 +0800
+Subject: [PATCH 095/116] Expand 2 bytes after the SC buffer for the AE/AWB
+ flag and copy the histogram data to the SC buffer.
+
+---
+ .../platform/starfive/v4l2_driver/stf_isp.c   | 37 ++++++++++++++++++-
+ .../platform/starfive/v4l2_driver/stf_isp.h   |  2 +-
+ .../platform/starfive/v4l2_driver/stf_video.c |  5 ---
+ .../platform/starfive/v4l2_driver/stf_vin.c   | 36 +++++++++---------
+ include/uapi/linux/jh7110-isp.h               | 33 +++++++++++++++++
+ 5 files changed, 87 insertions(+), 26 deletions(-)
+
+--- a/drivers/media/platform/starfive/v4l2_driver/stf_isp.c
++++ b/drivers/media/platform/starfive/v4l2_driver/stf_isp.c
+@@ -323,6 +323,13 @@ FILL_ISP_REGS_FUNC(u16);
+ #define FILL_ISP_REGS(type, ispbase, offset, value, size, mask, nbits)	\
+ 	fill_isp_regs_##type(ispbase, offset, value, size, mask, nbits)
+ 
++static void fill_regs_with_zero(void __iomem *ispbase, u32 offset, u32 size)
++{
++	u32 i;
++	for(i = 0; i < size; i++, offset += 4)
++		reg_write(ispbase, offset, 0);
++}
++
+ static int isp_set_ctrl_wb(struct stf_isp_dev *isp_dev, const void * value)
+ {
+ 	const struct module_register_info * reg_info = &mod_reg_info[imi_awb];
+@@ -335,6 +342,8 @@ static int isp_set_ctrl_wb(struct stf_is
+ 	struct stf_vin_dev *vin = isp_dev->stfcamss->vin;
+ 	void __iomem *ispbase = vin->isp_base;
+ 
++	fill_regs_with_zero(ispbase, reg_info->cfg_reg, 16);
++
+ 	reg_write(ispbase, reg_addr, r_g);
+ 	reg_write(ispbase, reg_addr + 1 * 4, r_g);
+ 	reg_write(ispbase, reg_addr + 2 * 4, g_g);
+@@ -370,8 +379,13 @@ static int isp_set_ctrl_ccm(struct stf_i
+ 	void __iomem *ispbase = vin->isp_base;
+ 
+ 	reg_write(ispbase, reg_info->cfg_reg, 6 << 16);
++	fill_regs_with_zero(ispbase, reg_info->cfg_reg + 4, 11);
++
+ 	FILL_ISP_REGS(u32, ispbase, reg_addr, (u32 *)ccm, 12, 0x7ff, 0);
+ 
++	reg_addr += 12 * 4;
++	fill_regs_with_zero(ispbase, reg_addr, 2);
++
+ 	reg_set_bit(ispbase, reg_info->en_reg, 1 << reg_info->en_nbit, setting->enabled ? 1 << reg_info->en_nbit : 0);
+ 
+ 	return 0;
+@@ -640,6 +654,27 @@ static int isp_set_ctrl_sc(struct stf_is
+ 	u32 * w_diff = weight_cfg + 2;
+ 	s32 i;
+ 
++	// SC dumping axi id
++	reg_write(ispbase, 0x9c, 1 << 24);
++
++	// SC frame crop
++	reg_write(ispbase, 0xb8, ((u32)(setting->crop_config.v_start) << 16) | setting->crop_config.h_start);
++
++	// SC config1
++	reg_write(ispbase, 0xbc, ((u32)(setting->awb_config.sel) << 30) | ((u32)(setting->awb_config.awb_ps_grb_ba) << 16) | 
++		((u32)(setting->crop_config.sw_height) << 8) | setting->crop_config.sw_width);
++
++	// SC decimation config
++	reg_write(ispbase, 0xd8, ((u32)(setting->crop_config.vkeep) << 24) | ((u32)(setting->crop_config.vperiod) << 16) | 
++		((u32)(setting->crop_config.hkeep) << 8) | setting->crop_config.hperiod);
++
++	// SC AWB pixel sum config
++	reg_write(ispbase, 0xc4, CREATE_REG_VALUE(u8, &setting->awb_config.ws_ps_config.awb_ps_rl, 4, 0xff, 8));
++	reg_write(ispbase, 0xc8, CREATE_REG_VALUE(u8, &setting->awb_config.ws_ps_config.awb_ps_bl, 4, 0xff, 8));
++	reg_write(ispbase, 0xcc, CREATE_REG_VALUE(u16, &setting->awb_config.ws_ps_config.awb_ps_grl, 2, 0xffff, 16));
++	reg_write(ispbase, 0xd0, CREATE_REG_VALUE(u16, &setting->awb_config.ws_ps_config.awb_ps_gbl, 2, 0xffff, 16));
++	reg_write(ispbase, 0xd4, CREATE_REG_VALUE(u16, &setting->awb_config.ws_ps_config.awb_ps_grbl, 2, 0xffff, 16));
++
+ 	// AF register
+ 	reg_write(ispbase, 0xc0, 
+ 		((u32)(setting->af_config.es_hor_thr & 0x1ff) << 16) |
+@@ -686,7 +721,7 @@ static int isp_set_ctrl_sc(struct stf_is
+ 	FILL_ISP_REGS(u32, ispbase, reg_addr, weight_cfg, 6, 0xffffffff, 0);
+ 
+ 	reg_set_bit(ispbase, reg_info->en_reg, 1 << reg_info->en_nbit, setting->enabled ? 1 << reg_info->en_nbit : 0);
+-	
++
+ 	return 0;
+ }
+ 
+--- a/drivers/media/platform/starfive/v4l2_driver/stf_isp.h
++++ b/drivers/media/platform/starfive/v4l2_driver/stf_isp.h
+@@ -18,7 +18,7 @@
+ 
+ #define ISP_SCD_BUFFER_SIZE     (19 * 256 * 4)  // align 128
+ #define ISP_YHIST_BUFFER_SIZE   (64 * 4)
+-#define ISP_SCD_Y_BUFFER_SIZE   (ISP_SCD_BUFFER_SIZE + ISP_YHIST_BUFFER_SIZE)
++#define ISP_SCD_Y_BUFFER_SIZE   (ISP_SCD_BUFFER_SIZE + ISP_YHIST_BUFFER_SIZE + 2)
+ #define ISP_RAW_DATA_BITS       12
+ #define SCALER_RATIO_MAX        1  // no compose function
+ #define STF_ISP_REG_OFFSET_MAX  0x0FFF
+--- a/drivers/media/platform/starfive/v4l2_driver/stf_video.c
++++ b/drivers/media/platform/starfive/v4l2_driver/stf_video.c
+@@ -1287,13 +1287,8 @@ static int stf_video_subscribe_event(str
+ 	switch (sub->type) {
+ 	case V4L2_EVENT_FRAME_SYNC:
+ 		return v4l2_event_subscribe(fh, sub, 2, NULL);
+-		//int ret = v4l2_event_subscribe(fh, sub, 2, NULL);
+-		//pr_info("subscribe ret: %d\n", ret);
+-		//return ret;
+ 	default:
+ 		return v4l2_ctrl_subscribe_event(fh, sub);
+-		//st_debug(ST_VIN, "unsupport subscribe_event\n");
+-		//return -EINVAL;
+ 	}
+ }
+ 
+--- a/drivers/media/platform/starfive/v4l2_driver/stf_vin.c
++++ b/drivers/media/platform/starfive/v4l2_driver/stf_vin.c
+@@ -1147,6 +1147,17 @@ static void vin_buffer_done(struct vin_l
+ 	while ((ready_buf = vin_buf_get_ready(output))) {
+ 		//if (line->id >= VIN_LINE_ISP && line->id <= VIN_LINE_ISP_SS1) {
+ 		if (line->id == VIN_LINE_ISP_SCD_Y) {
++#define ADDR_REG_YHIST_ACC_0               0x0D00
++			struct stf_vin2_dev *vin_dev = line_to_vin2_dev(line);
++			struct stf_vin_dev *vin = vin_dev->stfcamss->vin;
++			void __iomem *ispbase = vin->isp_base;
++			u32 y_hist_reg_addr = ADDR_REG_YHIST_ACC_0;
++			u32 * y_hist_addr = (u32 *)ready_buf->vaddr_sc;
++			s32 i = 0;
++
++			for(i = 0; i < 64; i++, y_hist_reg_addr += 4)
++				y_hist_addr[i] = reg_read(ispbase, y_hist_reg_addr);
++
+ 			event.u.frame_sync.frame_sequence = output->sequence;
+ 			v4l2_event_queue(&(line->video_out.vdev), &event);
+ 			//v4l2_event_queue(line->subdev.devnode, &event);
+@@ -1246,9 +1257,14 @@ static void vin_change_buffer(struct vin
+ 			scd_type = vin_dev->hw_ops->vin_isp_get_scd_type(vin_dev);
+ 			ready_buf->vb.flags &= ~(V4L2_BUF_FLAG_PFRAME | V4L2_BUF_FLAG_BFRAME);
+ 			if (scd_type == AWB_TYPE)
++			{
+ 				ready_buf->vb.flags |= V4L2_BUF_FLAG_PFRAME;
+-			else
++				*((u16 *)(ready_buf->vaddr_sc + ISP_SCD_BUFFER_SIZE + ISP_YHIST_BUFFER_SIZE)) = 0xffff;
++			}else{
+ 				ready_buf->vb.flags |= V4L2_BUF_FLAG_BFRAME;
++				*((u16 *)(ready_buf->vaddr_sc + ISP_SCD_BUFFER_SIZE + ISP_YHIST_BUFFER_SIZE)) = 0;
++			}
++
+ 			if (!output->frame_skip) {
+ 				output->frame_skip = ISP_AWB_OECF_SKIP_FRAME;
+ 				scd_type = scd_type == AWB_TYPE ? OECF_TYPE : AWB_TYPE;
+@@ -1343,26 +1359,8 @@ static int vin_link_setup(struct media_e
+ 	return 0;
+ }
+ 
+-static int stf_vin_subscribe_event(struct v4l2_subdev *sd,
+-				   struct v4l2_fh *fh,
+-				   struct v4l2_event_subscription *sub)
+-{
+-	switch (sub->type) {
+-	case V4L2_EVENT_FRAME_SYNC:
+-		//return v4l2_event_subscribe(fh, sub, 2, NULL);
+-		int ret = v4l2_event_subscribe(fh, sub, 2, NULL);
+-		pr_info("subscribe ret: %d\n", ret);
+-		return ret;
+-	default:
+-		st_debug(ST_VIN, "unsupport subscribe_event\n");
+-		return -EINVAL;
+-	}
+-}
+-
+ static const struct v4l2_subdev_core_ops vin_core_ops = {
+ 	.s_power = vin_set_power,
+-	//.subscribe_event = stf_vin_subscribe_event,
+-	//.unsubscribe_event = v4l2_event_subdev_unsubscribe,
+ };
+ 
+ static const struct v4l2_subdev_video_ops vin_video_ops = {
+--- a/include/uapi/linux/jh7110-isp.h
++++ b/include/uapi/linux/jh7110-isp.h
+@@ -255,6 +255,17 @@ struct jh7110_isp_ycrv_setting {
+ 	struct jh7110_isp_ycrv_curve curve;
+ };
+ 
++struct jh7110_isp_sc_config {
++	__u16 h_start;
++	__u16 v_start;
++	__u8 sw_width;
++	__u8 sw_height;
++	__u8 hperiod;
++	__u8 hkeep;
++	__u8 vperiod;
++	__u8 vkeep;
++};
++
+ struct jh7110_isp_sc_af_config {
+ 	__u8 es_hor_mode;
+ 	__u8 es_sum_mode;
+@@ -264,6 +275,23 @@ struct jh7110_isp_sc_af_config {
+ 	__u16 es_hor_thr;
+ };
+ 
++struct jh7110_isp_sc_awb_ps {
++	__u8 awb_ps_rl;
++	__u8 awb_ps_ru;
++	__u8 awb_ps_gl;
++	__u8 awb_ps_gu;
++	__u8 awb_ps_bl;
++	__u8 awb_ps_bu;
++	__u8 awb_ps_yl;
++	__u8 awb_ps_yu;
++	__u16 awb_ps_grl;
++	__u16 awb_ps_gru;
++	__u16 awb_ps_gbl;
++	__u16 awb_ps_gbu;
++	__u16 awb_ps_grbl;
++	__u16 awb_ps_grbu;
++};
++
+ struct jh7110_isp_sc_awb_ws {
+ 	__u8 awb_ws_rl;
+ 	__u8 awb_ws_ru;
+@@ -275,12 +303,16 @@ struct jh7110_isp_sc_awb_ws {
+ 	__u8 awb_ws_bu;
+ };
+ 
++
+ struct jh7110_isp_sc_awb_point {
+ 	__u16 intensity;
+ 	__u8 weight;
+ };
+ 
+ struct jh7110_isp_sc_awb_config {
++	struct jh7110_isp_sc_awb_ps ws_ps_config;
++	__u8 awb_ps_grb_ba;
++	__u8 sel;
+ 	struct jh7110_isp_sc_awb_ws ws_config;
+ 	__u8 awb_cw[169];
+ 	struct jh7110_isp_sc_awb_point pts[17];
+@@ -288,6 +320,7 @@ struct jh7110_isp_sc_awb_config {
+ 
+ struct jh7110_isp_sc_setting {
+ 	__u32 enabled;
++	struct jh7110_isp_sc_config crop_config;
+ 	struct jh7110_isp_sc_af_config af_config;
+ 	struct jh7110_isp_sc_awb_config awb_config;
+ };

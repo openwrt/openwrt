@@ -1,0 +1,32 @@
+From 1ea169bb83d3b556eb9054f1a3e8ce0411370293 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Wed, 24 Apr 2024 14:23:07 +0800
+Subject: [PATCH 116/116] riscv: dts: starfive: visionfive 2: Quote
+ corresponding regulators in hdmi and vin
+
+So PMIC can start to work before HDMI and VIN.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -961,6 +961,8 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&hdmi_pins>;
+ 	hpd-gpio = <&sysgpio 15 GPIO_ACTIVE_HIGH>;
++	hdmi_0p9-supply = <&hdmi_0p9>;
++	hdmi_1p8-supply = <&hdmi_1p8>;
+ 
+ 	hdmi_in: port {
+ 		#address-cells = <1>;
+@@ -1084,6 +1086,7 @@
+ &vin_sysctl {
+ 	/* when use dvp open this pinctrl*/
+ 	status = "okay";
++	mipi_0p9-supply = <&mipi_0p9>;
+ 
+ 	ports {
+ 		#address-cells = <1>;

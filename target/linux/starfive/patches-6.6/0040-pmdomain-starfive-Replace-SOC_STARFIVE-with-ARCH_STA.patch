@@ -1,0 +1,31 @@
+From 0ac8e8b0e65d242f455401df0cc6c6d4772216e6 Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Wed, 13 Sep 2023 14:54:26 +0100
+Subject: [PATCH 040/116] pmdomain: starfive: Replace SOC_STARFIVE with
+ ARCH_STARFIVE
+
+Using ARCH_FOO symbol is preferred than SOC_FOO.
+
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Walker Chen <walker.chen@starfivetech.com>
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+Link: https://lore.kernel.org/r/20230913-legibly-treachery-567cffcb5604@spud
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/soc/starfive/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/soc/starfive/Kconfig
++++ b/drivers/soc/starfive/Kconfig
+@@ -3,8 +3,8 @@
+ config JH71XX_PMU
+ 	bool "Support PMU for StarFive JH71XX Soc"
+ 	depends on PM
+-	depends on SOC_STARFIVE || COMPILE_TEST
+-	default SOC_STARFIVE
++	depends on ARCH_STARFIVE || COMPILE_TEST
++	default ARCH_STARFIVE
+ 	select PM_GENERIC_DOMAINS
+ 	help
+ 	  Say 'y' here to enable support power domain support.

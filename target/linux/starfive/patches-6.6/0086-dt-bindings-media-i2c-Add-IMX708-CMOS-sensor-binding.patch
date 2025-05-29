@@ -1,0 +1,135 @@
+From baec350a0994467584e7e390746e0bb365957a89 Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Tue, 13 Jun 2023 16:55:23 +0800
+Subject: [PATCH 086/116] dt-bindings: media: i2c: Add IMX708 CMOS sensor
+ binding
+
+Add YAML devicetree binding for IMX708 CMOS image sensor.
+Let's also add a MAINTAINERS entry for the binding and driver.
+
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+---
+ .../devicetree/bindings/media/i2c/imx708.yaml | 117 ++++++++++++++++++
+ 1 file changed, 117 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/i2c/imx708.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/i2c/imx708.yaml
+@@ -0,0 +1,117 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/media/i2c/imx708.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Sony 1/2.3-Inch 12Mpixel CMOS Digital Image Sensor
++
++maintainers:
++  - Raspberry Pi Kernel Maintenance <kernel-list@raspberrypi.om>
++
++description: |-
++  The Sony IMX708 is a 1/2.3-inch CMOS active pixel digital mage sensor
++  with an active array size of 4608H x 2592V. It is rogrammable through
++  I2C interface. The I2C address is fixed to 0x1A as per ensor data sheet.
++  Image data is sent through MIPI CSI-2, which is configured s either 2 or
++  4 data lanes.
++
++properties:
++  compatible:
++    const: sony,imx708
++
++  reg:
++    description: I2C device address
++    maxItems: 1
++
++  clocks:
++    maxItems: 1
++
++  VDIG-supply:
++    description:
++      Digital I/O voltage supply, 1.1 volts
++
++  VANA1-supply:
++    description:
++      Analog1 voltage supply, 2.8 volts
++
++  VANA2-supply:
++    description:
++      Analog2 voltage supply, 1.8 volts
++
++  VDDL-supply:
++    description:
++      Digital core voltage supply, 1.8 volts
++
++  reset-gpios:
++    description: |-
++      Reference to the GPIO connected to the xclr pin, if any.
++      Must be released (set high) after all supplies and INCK re applied.
++
++  # See ../video-interfaces.txt for more details
++  port:
++    type: object
++    properties:
++      endpoint:
++        type: object
++        properties:
++          data-lanes:
++            description: |-
++              The sensor supports either two-lane, or our-lane operation.
++              For two-lane operation the property must be set o <1 2>.
++            items:
++              - const: 1
++              - const: 2
++
++          clock-noncontinuous:
++            type: boolean
++            description: |-
++              MIPI CSI-2 clock is non-continuous if this roperty is present,
++              otherwise it's continuous.
++
++          link-frequencies:
++            allOf:
++              - $ref: /schemas/types.yaml#/definitions/int64-array
++            description:
++              Allowed data bus frequencies.
++
++        required:
++          - link-frequencies
++
++required:
++  - compatible
++  - reg
++  - clocks
++  - VANA1-supply
++  - VANA2-supply
++  - VDIG-supply
++  - VDDL-supply
++  - port
++
++additionalProperties: false
++
++examples:
++  - |
++    i2c0 {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        imx708: sensor@1a {
++            compatible = "sony,imx708";
++            reg = <0x1a>;
++            clocks = <&imx708_clk>;
++            VANA1-supply = <&imx708_vana1>; /* 1.8v */
++            VANA2-supply = <&imx708_vana2>; /* 2.8v */
++            VDIG-supply = <&imx708_vdig>;   /* 1.1v */
++            VDDL-supply = <&imx708_vddl>;   /* 1.8v */
++
++            port {
++                imx708_0: endpoint {
++                    remote-endpoint = <&csi1_ep>;
++                    data-lanes = <1 2>;
++                    clock-noncontinuous;
++                    link-frequencies = /bits/ 64 <450000000>;
++                };
++            };
++        };
++    };

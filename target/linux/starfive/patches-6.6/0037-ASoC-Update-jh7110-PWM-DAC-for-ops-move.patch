@@ -1,0 +1,32 @@
+From c6b693f990e1f89ab5af0a139da31401b8cda74f Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 11 Sep 2023 23:48:39 +0100
+Subject: [PATCH 037/116] ASoC: Update jh7110 PWM DAC for ops move
+
+For some reason the JH7110 PWM DAC driver made it through build testing
+in spite of not being updated for the move of probe() to the ops struct.
+Make the required update.
+
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/starfive/jh7110_pwmdac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/soc/starfive/jh7110_pwmdac.c
++++ b/sound/soc/starfive/jh7110_pwmdac.c
+@@ -357,6 +357,7 @@ static int jh7110_pwmdac_dai_probe(struc
+ }
+ 
+ static const struct snd_soc_dai_ops jh7110_pwmdac_dai_ops = {
++	.probe		= jh7110_pwmdac_dai_probe,
+ 	.startup	= jh7110_pwmdac_startup,
+ 	.hw_params	= jh7110_pwmdac_hw_params,
+ 	.trigger	= jh7110_pwmdac_trigger,
+@@ -369,7 +370,6 @@ static const struct snd_soc_component_dr
+ static struct snd_soc_dai_driver jh7110_pwmdac_dai = {
+ 	.name		= "jh7110-pwmdac",
+ 	.id		= 0,
+-	.probe		= jh7110_pwmdac_dai_probe,
+ 	.playback = {
+ 		.channels_min = 1,
+ 		.channels_max = 2,

@@ -1,0 +1,55 @@
+From 59cbdfeee0fc1ad382a0bc8f7fa897a9f5d03df0 Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Fri, 9 Jun 2023 16:54:36 +0800
+Subject: [PATCH 082/116] dt-binding: input: Add tink_ft5406
+
+Add tink_ft5406.
+
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+---
+ .../bindings/input/tinker_ft5406.yaml         | 39 +++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/input/tinker_ft5406.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/input/tinker_ft5406.yaml
+@@ -0,0 +1,39 @@
++# SPDX-License-Identifier: GPL-2.0
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/input/touchscreen/goodix.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Tinker FT5406 touchscreen controller Bindings
++
++maintainers:
++  - Changhuang Liang <changhuang.liang@starfivetech.com>
++
++allOf:
++  - $ref: touchscreen.yaml#
++
++properties:
++  compatible:
++    const: tinker_ft5406
++
++  reg:
++    const: 0x38
++
++additionalProperties: false
++
++required:
++  - compatible
++  - reg
++
++examples:
++  - |
++    i2c {
++      #address-cells = <1>;
++      #size-cells = <0>;
++      tinker_ft5406@38 {
++        compatible = "tinker_ft5406";
++        reg = <0x38>;
++      };
++    };
++
++...

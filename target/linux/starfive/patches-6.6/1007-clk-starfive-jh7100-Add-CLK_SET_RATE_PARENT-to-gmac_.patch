@@ -1,0 +1,25 @@
+From 7dfed4b67bd6ba8c33caf90c01821b67cf3260dd Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Date: Sat, 25 Mar 2023 23:04:31 +0100
+Subject: [PATCH 1007/1024] clk: starfive: jh7100: Add CLK_SET_RATE_PARENT to
+ gmac_tx
+
+This is needed by the dwmac-starfive ethernet driver to set the clock
+for 1000, 100 and 10 Mbps links properly.
+
+Signed-off-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+---
+ drivers/clk/starfive/clk-starfive-jh7100.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/starfive/clk-starfive-jh7100.c
++++ b/drivers/clk/starfive/clk-starfive-jh7100.c
+@@ -200,7 +200,7 @@ static const struct jh71x0_clk_data jh71
+ 	JH71X0_GDIV(JH7100_CLK_GMAC_GTX, "gmac_gtxclk", 0, 255, JH7100_CLK_GMAC_ROOT_DIV),
+ 	JH71X0_GDIV(JH7100_CLK_GMAC_RMII_TX, "gmac_rmii_txclk", 0, 8, JH7100_CLK_GMAC_RMII_REF),
+ 	JH71X0_GDIV(JH7100_CLK_GMAC_RMII_RX, "gmac_rmii_rxclk", 0, 8, JH7100_CLK_GMAC_RMII_REF),
+-	JH71X0__MUX(JH7100_CLK_GMAC_TX, "gmac_tx", 0, 3,
++	JH71X0__MUX(JH7100_CLK_GMAC_TX, "gmac_tx", CLK_SET_RATE_PARENT | CLK_SET_RATE_NO_REPARENT, 3,
+ 		    JH7100_CLK_GMAC_GTX,
+ 		    JH7100_CLK_GMAC_TX_INV,
+ 		    JH7100_CLK_GMAC_RMII_TX),

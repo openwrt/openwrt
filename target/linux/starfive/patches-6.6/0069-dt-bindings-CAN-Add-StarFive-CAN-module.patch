@@ -1,0 +1,113 @@
+From 5eda2331a252436756fb40861f01a7a38b1502c7 Mon Sep 17 00:00:00 2001
+From: William Qiu <william.qiu@starfivetech.com>
+Date: Thu, 15 Jun 2023 20:14:22 +0800
+Subject: [PATCH 069/116] dt-bindings: CAN: Add StarFive CAN module
+
+Add documentation to describe StarFive CAN engine.
+
+Signed-off-by: William Qiu <william.qiu@starfivetech.com>
+---
+ .../devicetree/bindings/net/can/ipms-can.yaml | 97 +++++++++++++++++++
+ 1 file changed, 97 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/net/can/ipms-can.yaml
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/can/ipms-can.yaml
+@@ -0,0 +1,97 @@
++# SPDX-License-Identifier: GPL-2.0
++%YAML 1.2
++---
++#$id: http://devicetree.org/schemas/net/can/ipms-can.yaml#
++#$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: IPMS CAN/CANFD controller Device Tree Bindings
++
++properties:
++  compatible:
++    const:ipms,can
++
++  reg:
++    maxItems: 1
++    items:
++      - description:CAN controller registers
++
++  interrupts:
++    maxItems: 1
++
++  clocks:
++    minItems: 1
++    items:
++      - description:apb_clk clock
++      - description:core_clk clock
++      - description:timer_clk clock
++
++  clock-names:
++    minItems: 1
++    items:
++      - const:apb_clk
++      - const:core_clk
++      - const:timer_clk
++  resets:
++   minItems: 1
++    items:
++      - description:apb_clk reset
++      - description:core_clk reset
++      - description:timer_clk reset
++  reset-names:
++    minItems: 1
++    items:
++      - const:rst_apb
++      - const:rst_core
++      - const:rst_timer
++  starfive,sys-syscon:
++    format:
++    starfive,sys-syscon = <&arg0 arg1 arg2 arg3>
++    description:
++      arg0:arg0 is sys_syscon.
++      arg1:arg1 is syscon register offset, used to enable can2.0/canfd function, can0 is 0x10, can1 is 0x88.
++      arg2:arg2 is used to enable the register shift of the can2.0/canfd function, can0 is 0x3, can1 is 0x12.
++      arg3:arg3 is used to enable the register mask of the can2.0/canfd function, can0 is 0x8, can1 is 0x40000
++
++  syscon,can_or_canfd:
++    description:
++    IPMS CAN-CTRL core is a serial communications controller that performs serial communication according to the CAN protocol.
++    This CAN bus interface uses the basic CAN principle and meets all constraints of the CAN-specification 2.0B active.
++    Furthermore this CAN core can be configured to meet the specification of CAN with flexible data rate CAN FD.
++    When syscon,can_or_canfd is set to 0, use CAN2.0B.
++    when syscon,can_or_canfd is set to 1, use CAN FD.
++required:
++  - compatible
++  - reg
++  - interrupts
++  - clocks
++  - clock-names
++  - resets
++  - reset-names
++  - starfive,sys-syscon
++  - syscon,can_or_canfd
++additionalProperties:false
++
++examples:
++  - |
++    can0: can@130d0000{
++    compatible = "ipms,can";
++    reg = <0x0 0x130d0000 0x0 0x1000>;
++    interrupts = <112>;
++    interrupt-parent = <&plic>;
++    clocks = <&clkgen JH7110_CAN0_CTRL_CLK_APB>,
++             <&clkgen JH7110_CAN0_CTRL_CLK_CAN>,
++             <&clkgen JH7110_CAN0_CTRL_CLK_TIMER>;
++    clock-names = "apb_clk",
++                  "core_clk",
++                  "timer_clk";
++    resets = <&rstgen RSTN_U0_CAN_CTRL_APB>,
++             <&rstgen RSTN_U0_CAN_CTRL_CORE>,
++             <&rstgen RSTN_U0_CAN_CTRL_TIMER>;
++    reset-names = "rst_apb",
++                  "rst_core",
++                  "rst_timer";
++    starfive,sys-syscon = <&sys_syscon, 0x10 0x3 0x8>;
++    syscon,can_or_canfd = <0>;
++    };
++
++...

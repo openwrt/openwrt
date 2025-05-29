@@ -1,0 +1,36 @@
+From 02f84ff43453b0f8dc2a1e4885e7003929349ee6 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Tue, 5 Mar 2024 11:00:21 +0800
+Subject: [PATCH 098/116] crypto: jh7110: Comment RSA algo register
+
+There are some issues in RSA algo, which will cause kernel crash.
+So comment RSA algo register temporarily.
+This commit should be reverted after the RSA issues are fixed.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ drivers/crypto/starfive/jh7110-cryp.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/crypto/starfive/jh7110-cryp.c
++++ b/drivers/crypto/starfive/jh7110-cryp.c
+@@ -194,14 +194,14 @@ static int starfive_cryp_probe(struct pl
+ 	if (ret)
+ 		goto err_algs_hash;
+ 
+-	ret = starfive_rsa_register_algs();
+-	if (ret)
+-		goto err_algs_rsa;
++//	ret = starfive_rsa_register_algs();
++//	if (ret)
++//		goto err_algs_rsa;
+ 
+ 	return 0;
+ 
+-err_algs_rsa:
+-	starfive_hash_unregister_algs();
++// err_algs_rsa:
++// 	starfive_hash_unregister_algs();
+ err_algs_hash:
+ 	starfive_aes_unregister_algs();
+ err_algs_aes:

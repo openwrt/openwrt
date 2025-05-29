@@ -1,0 +1,69 @@
+From 280ab217867d0b934454a837540eab665e854b47 Mon Sep 17 00:00:00 2001
+From: Changhuang Liang <changhuang.liang@starfivetech.com>
+Date: Mon, 3 Apr 2023 15:28:11 +0800
+Subject: [PATCH 088/116] media: i2c: imx708: Delete gain
+
+Delete gain.
+
+Signed-off-by: Changhuang Liang <changhuang.liang@starfivetech.com>
+---
+ drivers/media/i2c/imx708.c | 27 ---------------------------
+ 1 file changed, 27 deletions(-)
+
+--- a/drivers/media/i2c/imx708.c
++++ b/drivers/media/i2c/imx708.c
+@@ -777,7 +777,6 @@ struct imx708 {
+ 	struct v4l2_ctrl *hblank;
+ 	struct v4l2_ctrl *red_balance;
+ 	struct v4l2_ctrl *blue_balance;
+-	struct v4l2_ctrl *notify_gains;
+ 	struct v4l2_ctrl *hdr_mode;
+ 
+ 	/* Current mode */
+@@ -1108,16 +1107,6 @@ static int imx708_set_ctrl(struct v4l2_c
+ 		ret = imx708_set_frame_length(imx708,
+ 					      imx708->mode->height + ctrl->val);
+ 		break;
+-	case V4L2_CID_NOTIFY_GAINS:
+-		ret = imx708_write_reg(imx708, IMX708_REG_COLOUR_BALANCE_BLUE,
+-				       IMX708_REG_VALUE_16BIT,
+-				       imx708->notify_gains->p_new.p_u32[0]);
+-		if (ret)
+-			break;
+-		ret = imx708_write_reg(imx708, IMX708_REG_COLOUR_BALANCE_RED,
+-				       IMX708_REG_VALUE_16BIT,
+-				       imx708->notify_gains->p_new.p_u32[3]);
+-		break;
+ 	case V4L2_CID_WIDE_DYNAMIC_RANGE:
+ 		get_mode_table(&mode_list, &num_modes, ctrl->val);
+ 		imx708->mode = v4l2_find_nearest_size(mode_list,
+@@ -1584,18 +1573,6 @@ static const struct v4l2_subdev_internal
+ 	.open = imx708_open,
+ };
+ 
+-static const struct v4l2_ctrl_config imx708_notify_gains_ctrl = {
+-	.ops = &imx708_ctrl_ops,
+-	.id = V4L2_CID_NOTIFY_GAINS,
+-	.type = V4L2_CTRL_TYPE_U32,
+-	.min = IMX708_COLOUR_BALANCE_MIN,
+-	.max = IMX708_COLOUR_BALANCE_MAX,
+-	.step = IMX708_COLOUR_BALANCE_STEP,
+-	.def = IMX708_COLOUR_BALANCE_DEFAULT,
+-	.dims = { 4 },
+-	.elem_size = sizeof(u32),
+-};
+-
+ /* Initialize control handlers */
+ static int imx708_init_controls(struct imx708 *imx708)
+ {
+@@ -1670,10 +1647,6 @@ static int imx708_init_controls(struct i
+ 		/* The "Solid color" pattern is white by default */
+ 	}
+ 
+-	imx708->notify_gains = v4l2_ctrl_new_custom(ctrl_hdlr,
+-						    &imx708_notify_gains_ctrl,
+-						    NULL);
+-
+ 	imx708->hdr_mode = v4l2_ctrl_new_std(ctrl_hdlr, &imx708_ctrl_ops,
+ 					     V4L2_CID_WIDE_DYNAMIC_RANGE,
+ 					     0, 1, 1, 0);

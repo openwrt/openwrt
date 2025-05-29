@@ -1,0 +1,82 @@
+From 5cbf4154da600af8a2e6a2f8d57d1f212abf3f92 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Fri, 13 Oct 2023 14:10:24 +0800
+Subject: [PATCH 090/116] soc: starfive: jh71xx_pmu: Add EVENT_TURN_OFF
+ register writing support
+
+Add and export starfive_pmu_hw_event_turn_off_mask() to
+write EVENT_TURN_OFF register.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ drivers/pmdomain/starfive/jh71xx-pmu.c | 11 ++++++++++
+ include/soc/starfive/jh7110_pmu.h      | 29 ++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+)
+ create mode 100644 include/soc/starfive/jh7110_pmu.h
+
+--- a/drivers/pmdomain/starfive/jh71xx-pmu.c
++++ b/drivers/pmdomain/starfive/jh71xx-pmu.c
+@@ -16,6 +16,7 @@
+ #include <dt-bindings/power/starfive,jh7110-pmu.h>
+ 
+ /* register offset */
++#define JH71XX_PMU_HW_EVENT_TURN_OFF	0x08
+ #define JH71XX_PMU_SW_TURN_ON_POWER	0x0C
+ #define JH71XX_PMU_SW_TURN_OFF_POWER	0x10
+ #define JH71XX_PMU_SW_ENCOURAGE		0x44
+@@ -83,6 +84,14 @@ struct jh71xx_pmu_dev {
+ 	struct generic_pm_domain genpd;
+ };
+ 
++static void __iomem *pmu_base;
++
++void starfive_pmu_hw_event_turn_off_mask(u32 mask)
++{
++	writel(mask, pmu_base + JH71XX_PMU_HW_EVENT_TURN_OFF);
++}
++EXPORT_SYMBOL(starfive_pmu_hw_event_turn_off_mask);
++
+ static int jh71xx_pmu_get_state(struct jh71xx_pmu_dev *pmd, u32 mask, bool *is_on)
+ {
+ 	struct jh71xx_pmu *pmu = pmd->pmu;
+@@ -334,6 +343,8 @@ static int jh71xx_pmu_probe(struct platf
+ 	if (IS_ERR(pmu->base))
+ 		return PTR_ERR(pmu->base);
+ 
++	pmu_base = pmu->base;
++
+ 	spin_lock_init(&pmu->lock);
+ 
+ 	match_data = of_device_get_match_data(dev);
+--- /dev/null
++++ b/include/soc/starfive/jh7110_pmu.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++/*
++ * PMU driver for the StarFive JH7110 SoC
++ *
++ * Copyright (C) 2022 samin <samin.guo@starfivetech.com>
++ */
++
++#ifndef __SOC_STARFIVE_JH7110_PMU_H__
++#define __SOC_STARFIVE_JH7110_PMU_H__
++
++#include <linux/bits.h>
++#include <linux/types.h>
++
++enum PMU_HARD_EVENT {
++	PMU_HW_EVENT_RTC	= BIT(0),
++	PMU_HW_EVENT_GMAC	= BIT(1),
++	PMU_HW_EVENT_RFU	= BIT(2),
++	PMU_HW_EVENT_RGPIO0	= BIT(3),
++	PMU_HW_EVENT_RGPIO1	= BIT(4),
++	PMU_HW_EVENT_RGPIO2	= BIT(5),
++	PMU_HW_EVENT_RGPIO3	= BIT(6),
++	PMU_HW_EVENT_GPU	= BIT(7),
++	PMU_HW_EVENT_ALL	= GENMASK(7, 0),
++};
++
++void starfive_pmu_hw_event_turn_off_mask(u32 mask);
++
++#endif /* __SOC_STARFIVE_JH7110_PMU_H__ */
++
