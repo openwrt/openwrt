@@ -1,0 +1,55 @@
+From abb20b7b8f5e3a7f36dbd6264e6d346275434154 Mon Sep 17 00:00:00 2001
+From: Kevin Xie <kevin.xie@starfivetech.com>
+Date: Mon, 8 Jan 2024 19:06:10 +0800
+Subject: [PATCH 033/116] PCI: Add PCIE_RESET_CONFIG_DEVICE_WAIT_MS waiting
+ time value
+
+Add the PCIE_RESET_CONFIG_DEVICE_WAIT_MS macro to define the minimum
+waiting time between exit from a conventional reset and sending the
+first configuration request to the device.
+
+As described in PCI base specification r6.0, section 6.6.1 <Conventional
+Reset>, there are two different use cases of the value:
+
+   - "With a Downstream Port that does not support Link speeds greater
+     than 5.0 GT/s, software must wait a minimum of 100 ms following exit
+     from a Conventional Reset before sending a Configuration Request to
+     the device immediately below that Port."
+
+   - "With a Downstream Port that supports Link speeds greater than
+     5.0 GT/s, software must wait a minimum of 100 ms after Link training
+     completes before sending a Configuration Request to the device
+     immediately below that Port."
+
+Signed-off-by: Kevin Xie <kevin.xie@starfivetech.com>
+Reviewed-by: Mason Huo <mason.huo@starfivetech.com>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ drivers/pci/pci.h | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/pci/pci.h
++++ b/drivers/pci/pci.h
+@@ -22,6 +22,22 @@
+  */
+ #define PCIE_PME_TO_L2_TIMEOUT_US	10000
+ 
++/*
++ * As described in PCI base specification r6.0, section 6.6.1 <Conventional
++ * Reset>, there are two different use cases of the value:
++ *
++ * - "With a Downstream Port that does not support Link speeds greater
++ *    than 5.0 GT/s, software must wait a minimum of 100 ms following exit
++ *    from a Conventional Reset before sending a Configuration Request to
++ *    the device immediately below that Port."
++ *
++ * - "With a Downstream Port that supports Link speeds greater than
++ *    5.0 GT/s, software must wait a minimum of 100 ms after Link training
++ *    completes before sending a Configuration Request to the device
++ *    immediately below that Port."
++ */
++#define PCIE_RESET_CONFIG_DEVICE_WAIT_MS	100
++
+ extern const unsigned char pcie_link_speed[];
+ extern bool pci_early_dump;
+ 

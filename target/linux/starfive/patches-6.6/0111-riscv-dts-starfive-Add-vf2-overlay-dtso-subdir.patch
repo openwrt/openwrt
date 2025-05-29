@@ -1,0 +1,139 @@
+From fc86405992c37b1898fd9b9bc077be673d774269 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Fri, 22 Mar 2024 09:54:28 +0800
+Subject: [PATCH 111/116] riscv: dts: starfive: Add vf2-overlay dtso subdir
+
+Create subdir vf2-overlay/ and add overlay .dtso for VF2 board.
+The code is ported from tag JH7110_VF2_6.1_v5.11.4
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/Makefile         |  1 +
+ .../boot/dts/starfive/vf2-overlay/Makefile    |  3 +
+ .../starfive/vf2-overlay/vf2-overlay-can.dtso | 23 ++++++
+ .../vf2-overlay/vf2-overlay-uart3-i2c.dtso    | 75 +++++++++++++++++++
+ 4 files changed, 102 insertions(+)
+ create mode 100644 arch/riscv/boot/dts/starfive/vf2-overlay/Makefile
+ create mode 100644 arch/riscv/boot/dts/starfive/vf2-overlay/vf2-overlay-can.dtso
+ create mode 100644 arch/riscv/boot/dts/starfive/vf2-overlay/vf2-overlay-uart3-i2c.dtso
+
+--- a/arch/riscv/boot/dts/starfive/Makefile
++++ b/arch/riscv/boot/dts/starfive/Makefile
+@@ -9,6 +9,7 @@ DTC_FLAGS_jh7110-evb := -@
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-beaglev-starlight.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-starfive-visionfive-v1.dtb
+ 
++subdir-y += vf2-overlay
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.2a.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.3b.dtb	\
+ 						jh7110-starfive-visionfive-2-ac108.dtb	\
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/vf2-overlay/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_ARCH_STARFIVE) += vf2-overlay-uart3-i2c.dtbo	\
++			       vf2-overlay-can.dtbo
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/vf2-overlay/vf2-overlay-can.dtso
+@@ -0,0 +1,23 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//can0
++	fragment@0 {
++		target-path = "/soc/can@130d0000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	//can1
++	fragment@1 {
++		target-path = "/soc/can@130e0000";
++		__overlay__ {
++			status = "okay";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/vf2-overlay/vf2-overlay-uart3-i2c.dtso
+@@ -0,0 +1,75 @@
++/dts-v1/;
++/plugin/;
++#include <dt-bindings/gpio/gpio.h>
++#include "../jh7110-pinfunc.h"
++/ {
++	compatible = "starfive,jh7110";
++
++	//sysgpio
++	fragment@0 {
++		target-path = "/soc/pinctrl@13040000";
++		__overlay__ {
++			dt_uart3_pins: dt-uart3-0 {
++				tx-pins {
++					pinmux = <GPIOMUX(60, GPOUT_SYS_UART3_TX,
++							      GPOEN_ENABLE,
++							      GPI_NONE)>;
++					bias-disable;
++					drive-strength = <12>;
++					input-disable;
++					input-schmitt-disable;
++					slew-rate = <0>;
++				};
++
++				rx-pins {
++					pinmux = <GPIOMUX(63, GPOUT_LOW,
++							      GPOEN_DISABLE,
++							      GPI_SYS_UART3_RX)>;
++					bias-pull-up;
++					drive-strength = <2>;
++					input-enable;
++					input-schmitt-enable;
++					slew-rate = <0>;
++				};
++			};
++
++			dt_i2c1_pins: dt-i2c1-0 {
++				i2c-pins {
++					pinmux = <GPIOMUX(42, GPOUT_LOW,
++							      GPOEN_SYS_I2C1_CLK,
++							      GPI_SYS_I2C1_CLK)>,
++						 <GPIOMUX(43, GPOUT_LOW,
++							      GPOEN_SYS_I2C1_DATA,
++							      GPI_SYS_I2C1_DATA)>;
++					bias-pull-up;
++					input-enable;
++					input-schmitt-enable;
++				};
++			};
++		};
++	};
++
++	//uart3
++	fragment@1 {
++		target-path = "/soc/serial@12000000";
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_uart3_pins>;
++			status = "okay";
++		};
++	};
++
++	//i2c1
++	fragment@2 {
++		target-path = "/soc/i2c@10040000";
++		__overlay__ {
++			clock-frequency = <100000>;
++			i2c-sda-hold-time-ns = <300>;
++			i2c-sda-falling-time-ns = <510>;
++			i2c-scl-falling-time-ns = <510>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&dt_i2c1_pins>;
++			status = "okay";
++		};
++	};
++};

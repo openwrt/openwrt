@@ -1,0 +1,2623 @@
+From 9f46b0d43f8945ff3a8b81ddc6567df370b60911 Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Fri, 28 Jul 2023 17:19:12 +0800
+Subject: [PATCH 056/116] riscv: dts: starfive: Add JH7110 EVB device tree
+
+Add JH7110 evaluation board device tree.
+The code is ported from tag JH7110_SDK_6.1_v5.11.3
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/Makefile         |   3 +
+ arch/riscv/boot/dts/starfive/jh7110-clk.dtsi  |  80 ++
+ .../boot/dts/starfive/jh7110-evb-pinctrl.dtsi | 997 ++++++++++++++++++
+ arch/riscv/boot/dts/starfive/jh7110-evb.dts   |  35 +
+ arch/riscv/boot/dts/starfive/jh7110-evb.dtsi  | 854 +++++++++++++++
+ arch/riscv/boot/dts/starfive/jh7110.dtsi      | 482 ++++++++-
+ 6 files changed, 2444 insertions(+), 7 deletions(-)
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-clk.dtsi
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb-pinctrl.dtsi
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb.dts
+ create mode 100644 arch/riscv/boot/dts/starfive/jh7110-evb.dtsi
+
+--- a/arch/riscv/boot/dts/starfive/Makefile
++++ b/arch/riscv/boot/dts/starfive/Makefile
+@@ -4,9 +4,12 @@ DTC_FLAGS_jh7100-beaglev-starlight := -@
+ DTC_FLAGS_jh7100-starfive-visionfive-v1 := -@
+ DTC_FLAGS_jh7110-starfive-visionfive-2-v1.2a := -@
+ DTC_FLAGS_jh7110-starfive-visionfive-2-v1.3b := -@
++DTC_FLAGS_jh7110-evb := -@
+ 
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-beaglev-starlight.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7100-starfive-visionfive-v1.dtb
+ 
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.2a.dtb
+ dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-starfive-visionfive-2-v1.3b.dtb
++
++dtb-$(CONFIG_ARCH_STARFIVE) += jh7110-evb.dtb
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-clk.dtsi
+@@ -0,0 +1,80 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2023 StarFive Technology Co., Ltd.
++ */
++
++/ {
++	ac108_mclk: ac108_mclk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24000000>;
++	};
++
++	clk_ext_camera: clk-ext-camera {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24000000>;
++	};
++
++	wm8960_mclk: wm8960_mclk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24576000>;
++	};
++};
++
++&dvp_clk {
++	clock-frequency = <74250000>;
++};
++
++&gmac0_rgmii_rxin {
++	clock-frequency = <125000000>;
++};
++
++&gmac0_rmii_refin {
++	clock-frequency = <50000000>;
++};
++
++&gmac1_rgmii_rxin {
++	clock-frequency = <125000000>;
++};
++
++&gmac1_rmii_refin {
++	clock-frequency = <50000000>;
++};
++
++&hdmitx0_pixelclk {
++	clock-frequency = <297000000>;
++};
++
++&i2srx_bclk_ext {
++	clock-frequency = <12288000>;
++};
++
++&i2srx_lrck_ext {
++	clock-frequency = <192000>;
++};
++
++&i2stx_bclk_ext {
++	clock-frequency = <12288000>;
++};
++
++&i2stx_lrck_ext {
++	clock-frequency = <192000>;
++};
++
++&mclk_ext {
++	clock-frequency = <12288000>;
++};
++
++&osc {
++	clock-frequency = <24000000>;
++};
++
++&rtc_osc {
++	clock-frequency = <32768>;
++};
++
++&tdm_ext {
++	clock-frequency = <49152000>;
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb-pinctrl.dtsi
+@@ -0,0 +1,997 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2023 StarFive Technology Co., Ltd.
++ * Author: Hal Feng <hal.feng@starfivetech.com>
++ */
++
++#include "jh7110-pinfunc.h"
++
++&sysgpio {
++	can0_pins: can0-0 {
++		can-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_CAN0_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_CAN0_RXD)>,
++				 <GPIOMUX(32, GPOUT_SYS_CAN0_STBY,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	can1_pins: can1-0 {
++		can-pins {
++			pinmux = <GPIOMUX(29, GPOUT_SYS_CAN1_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(27, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_CAN1_RXD)>,
++				 <GPIOMUX(45, GPOUT_SYS_CAN1_STBY,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			drive-strength = <12>;
++			input-enable;
++		};
++	};
++
++	dvp_pins: dvp-0 {
++		dvp-pins{
++			pinmux = <PINMUX(21, 2)>,
++				 <PINMUX(22, 2)>,
++				 <PINMUX(23, 2)>,
++				 <PINMUX(24, 2)>,
++				 <PINMUX(25, 2)>,
++				 <PINMUX(26, 2)>,
++				 <PINMUX(27, 2)>,
++				 <PINMUX(28, 2)>,
++				 <PINMUX(29, 2)>,
++				 <PINMUX(30, 2)>,
++				 <PINMUX(31, 2)>,
++				 <PINMUX(32, 2)>,
++				 <PINMUX(33, 2)>,
++				 <PINMUX(34, 2)>,
++				 <PINMUX(35, 2)>;
++			input-enable;
++		};
++	};
++
++	emmc0_pins: emmc0-0 {
++		emmc-pins {
++			pinmux = <GPIOMUX(22, GPOUT_SYS_SDIO0_RST,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <PINMUX(64, 0)>,
++				 <PINMUX(65, 0)>,
++				 <PINMUX(66, 0)>,
++				 <PINMUX(67, 0)>,
++				 <PINMUX(68, 0)>,
++				 <PINMUX(69, 0)>,
++				 <PINMUX(70, 0)>,
++				 <PINMUX(71, 0)>,
++				 <PINMUX(72, 0)>,
++				 <PINMUX(73, 0)>;
++			bias-pull-up;
++			drive-strength = <12>;
++			input-enable;
++			slew-rate = <1>;
++		};
++	};
++
++	emmc1_pins: emmc1-0 {
++		emmc-pins {
++			pinmux = <GPIOMUX(51, GPOUT_SYS_SDIO1_RST,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(38, GPOUT_SYS_SDIO1_CLK,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(36, GPOUT_SYS_SDIO1_CMD,
++					      GPOEN_SYS_SDIO1_CMD,
++					      GPI_SYS_SDIO1_CMD)>,
++				 <GPIOMUX(43, GPOUT_SYS_SDIO1_DATA0,
++					      GPOEN_SYS_SDIO1_DATA0,
++					      GPI_SYS_SDIO1_DATA0)>,
++				 <GPIOMUX(48, GPOUT_SYS_SDIO1_DATA1,
++					      GPOEN_SYS_SDIO1_DATA1,
++					      GPI_SYS_SDIO1_DATA1)>,
++				 <GPIOMUX(53, GPOUT_SYS_SDIO1_DATA2,
++					      GPOEN_SYS_SDIO1_DATA2,
++					      GPI_SYS_SDIO1_DATA2)>,
++				 <GPIOMUX(63, GPOUT_SYS_SDIO1_DATA3,
++					      GPOEN_SYS_SDIO1_DATA3,
++					      GPI_SYS_SDIO1_DATA3)>,
++				 <GPIOMUX(52, GPOUT_SYS_SDIO1_DATA4,
++					      GPOEN_SYS_SDIO1_DATA4,
++					      GPI_SYS_SDIO1_DATA4)>,
++				 <GPIOMUX(39, GPOUT_SYS_SDIO1_DATA5,
++					      GPOEN_SYS_SDIO1_DATA5,
++					      GPI_SYS_SDIO1_DATA5)>,
++				 <GPIOMUX(46, GPOUT_SYS_SDIO1_DATA6,
++					      GPOEN_SYS_SDIO1_DATA6,
++					      GPI_SYS_SDIO1_DATA6)>,
++				 <GPIOMUX(47, GPOUT_SYS_SDIO1_DATA7,
++					      GPOEN_SYS_SDIO1_DATA7,
++					      GPI_SYS_SDIO1_DATA7)>;
++			bias-pull-up;
++			input-enable;
++		};
++	};
++
++	gmac0_pins: gmac0-0 {
++		reset-pins {
++			pinmux = <GPIOMUX(13, GPOUT_HIGH,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-pull-up;
++		};
++	};
++
++	gmac1_pins: gmac1-0 {
++		mdc-pins {
++			pinmux = <PINMUX(75, 0)>;
++		};
++	};
++
++	hdmi_pins: hdmi-0 {
++		scl-pins {
++			pinmux = <GPIOMUX(7, GPOUT_SYS_HDMI_DDC_SCL,
++					     GPOEN_SYS_HDMI_DDC_SCL,
++					     GPI_SYS_HDMI_DDC_SCL)>;
++			bias-pull-up;
++			input-enable;
++		};
++
++		sda-pins {
++			pinmux = <GPIOMUX(8, GPOUT_SYS_HDMI_DDC_SDA,
++					     GPOEN_SYS_HDMI_DDC_SDA,
++					     GPI_SYS_HDMI_DDC_SDA)>;
++			bias-pull-up;
++			input-enable;
++		};
++
++		cec-pins {
++			pinmux = <GPIOMUX(14, GPOUT_SYS_HDMI_CEC_SDA,
++					      GPOEN_SYS_HDMI_CEC_SDA,
++					      GPI_SYS_HDMI_CEC_SDA)>;
++			bias-pull-up;
++			input-enable;
++		};
++
++		hpd-pins {
++			pinmux = <GPIOMUX(15, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_HDMI_HPD)>;
++			bias-disable; /* external pull-up */
++			input-enable;
++		};
++	};
++
++	i2c0_pins: i2c0-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(57, GPOUT_LOW,
++					      GPOEN_SYS_I2C0_CLK,
++					      GPI_SYS_I2C0_CLK)>,
++				 <GPIOMUX(58, GPOUT_LOW,
++					      GPOEN_SYS_I2C0_DATA,
++					      GPI_SYS_I2C0_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c1_pins: i2c1-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(49, GPOUT_LOW,
++					      GPOEN_SYS_I2C1_CLK,
++					      GPI_SYS_I2C1_CLK)>,
++				 <GPIOMUX(50, GPOUT_LOW,
++					      GPOEN_SYS_I2C1_DATA,
++					      GPI_SYS_I2C1_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c2_pins: i2c2-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(11, GPOUT_LOW,
++					      GPOEN_SYS_I2C2_CLK,
++					      GPI_SYS_I2C2_CLK)>,
++				 <GPIOMUX(9, GPOUT_LOW,
++					     GPOEN_SYS_I2C2_DATA,
++					     GPI_SYS_I2C2_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c3_pins: i2c3-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(51, GPOUT_LOW,
++					      GPOEN_SYS_I2C3_CLK,
++					      GPI_SYS_I2C3_CLK)>,
++				 <GPIOMUX(52, GPOUT_LOW,
++					      GPOEN_SYS_I2C3_DATA,
++					      GPI_SYS_I2C3_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c4_pins: i2c4-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(18, GPOUT_LOW,
++					      GPOEN_SYS_I2C4_CLK,
++					      GPI_SYS_I2C4_CLK)>,
++				 <GPIOMUX(12, GPOUT_LOW,
++					      GPOEN_SYS_I2C4_DATA,
++					      GPI_SYS_I2C4_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c5_pins: i2c5-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(19, GPOUT_LOW,
++					      GPOEN_SYS_I2C5_CLK,
++					      GPI_SYS_I2C5_CLK)>,
++				 <GPIOMUX(20, GPOUT_LOW,
++					      GPOEN_SYS_I2C5_DATA,
++					      GPI_SYS_I2C5_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2c6_pins: i2c6-0 {
++		i2c-pins {
++			pinmux = <GPIOMUX(16, GPOUT_LOW,
++					      GPOEN_SYS_I2C6_CLK,
++					      GPI_SYS_I2C6_CLK)>,
++				 <GPIOMUX(17, GPOUT_LOW,
++					      GPOEN_SYS_I2C6_DATA,
++					      GPI_SYS_I2C6_DATA)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++	};
++
++	i2s_clk_pins: i2s-clk-0 {
++		bclk-lrck-pins {
++			pinmux = <GPIOMUX(38, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_I2STX1_BCLK)>,
++				 <GPIOMUX(38, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_I2SRX_BCLK)>,
++				 <GPIOMUX(63, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_I2STX1_LRCK)>,
++				 <GPIOMUX(63, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_I2SRX_LRCK)>;
++			input-enable;
++		};
++	};
++
++	i2srx_clk_pins: i2srx-clk-0 {
++		mclk-pins {
++			pinmux = <GPIOMUX(58, GPOUT_SYS_MCLK,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	i2srx_pins: i2srx-0 {
++		i2srx-pins {
++			pinmux = <GPIOMUX(61, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_I2SRX_SDIN0)>;
++			input-enable;
++		};
++	};
++
++	i2stx_pins: i2stx-0 {
++		i2stx-pins {
++			pinmux = <GPIOMUX(44, GPOUT_SYS_I2STX1_SDO0,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	mclk_ext_pins: mclk-ext-0 {
++		mclk-ext-pins {
++			pinmux = <GPIOMUX(4, GPOUT_LOW,
++					     GPOEN_DISABLE,
++					     GPI_SYS_MCLK_EXT)>;
++			input-enable;
++		};
++	};
++
++	pdm_pins: pdm-0 {
++		pdm-pins {
++			pinmux = <GPIOMUX(54, GPOUT_SYS_PDM_MCLK,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(60, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_PDM_DMIC0)>;
++			input-enable;
++		};
++	};
++
++	pwm_ch0to3_pins: pwm-ch0to3-0 {
++		pwm-pins {
++			pinmux = <GPIOMUX(45, GPOUT_SYS_PWM_CHANNEL0,
++					      GPOEN_SYS_PWM0_CHANNEL0,
++					      GPI_NONE)>,
++				 <GPIOMUX(46, GPOUT_SYS_PWM_CHANNEL1,
++					      GPOEN_SYS_PWM0_CHANNEL1,
++					      GPI_NONE)>,
++				 <GPIOMUX(47, GPOUT_SYS_PWM_CHANNEL2,
++					      GPOEN_SYS_PWM0_CHANNEL2,
++					      GPI_NONE)>,
++				 <GPIOMUX(48, GPOUT_SYS_PWM_CHANNEL3,
++					      GPOEN_SYS_PWM0_CHANNEL3,
++					      GPI_NONE)>;
++			drive-strength = <12>;
++		};
++	};
++
++	pwmdac_pins: pwmdac-0 {
++		pwmdac-pins {
++			pinmux = <GPIOMUX(57, GPOUT_SYS_PWMDAC_LEFT,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(42, GPOUT_SYS_PWMDAC_RIGHT,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++		};
++	};
++
++	rgb_pad_pins: rgb-pad-pins {
++		rgb-0-pins {
++			pinmux = <PINMUX(36, 1)>;
++			drive-strength = <12>;
++			input-disable;
++			slew-rate = <1>;
++		};
++
++		rgb-pins {
++			pinmux = <PINMUX(37, 1)>,
++				 <PINMUX(38, 1)>,
++				 <PINMUX(39, 1)>,
++				 <PINMUX(40, 1)>,
++				 <PINMUX(41, 1)>,
++				 <PINMUX(42, 1)>,
++				 <PINMUX(43, 1)>,
++				 <PINMUX(44, 1)>,
++				 <PINMUX(45, 1)>,
++				 <PINMUX(46, 1)>,
++				 <PINMUX(47, 1)>,
++				 <PINMUX(48, 1)>,
++				 <PINMUX(49, 1)>,
++				 <PINMUX(50, 1)>,
++				 <PINMUX(51, 1)>,
++				 <PINMUX(52, 1)>,
++				 <PINMUX(53, 1)>,
++				 <PINMUX(54, 1)>,
++				 <PINMUX(55, 1)>,
++				 <PINMUX(56, 1)>,
++				 <PINMUX(57, 1)>,
++				 <PINMUX(58, 1)>,
++				 <PINMUX(59, 1)>,
++				 <PINMUX(60, 1)>,
++				 <PINMUX(61, 1)>,
++				 <PINMUX(62, 1)>,
++				 <PINMUX(63, 1)>;
++			drive-strength = <12>;
++			input-disable;
++		};
++	};
++
++	sdcard0_pins: sdcard0-0 {
++		sdcard-pins {
++			pinmux = <GPIOMUX(24, GPOUT_SYS_SDIO0_RST,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <PINMUX(64, 0)>,
++				 <PINMUX(65, 0)>,
++				 <PINMUX(66, 0)>,
++				 <PINMUX(67, 0)>,
++				 <PINMUX(68, 0)>,
++				 <PINMUX(69, 0)>;
++			bias-pull-up;
++			drive-strength = <12>;
++			input-enable;
++			slew-rate = <1>;
++		};
++	};
++
++	sdcard1_pins: sdcard1-0 {
++		sdcard-pins {
++			pinmux = <GPIOMUX(56, GPOUT_SYS_SDIO1_CLK,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(50, GPOUT_SYS_SDIO1_CMD,
++					      GPOEN_SYS_SDIO1_CMD,
++					      GPI_SYS_SDIO1_CMD)>,
++				 <GPIOMUX(49, GPOUT_SYS_SDIO1_DATA0,
++					      GPOEN_SYS_SDIO1_DATA0,
++					      GPI_SYS_SDIO1_DATA0)>,
++				 <GPIOMUX(45, GPOUT_SYS_SDIO1_DATA1,
++					      GPOEN_SYS_SDIO1_DATA1,
++					      GPI_SYS_SDIO1_DATA1)>,
++				 <GPIOMUX(62, GPOUT_SYS_SDIO1_DATA2,
++					      GPOEN_SYS_SDIO1_DATA2,
++					      GPI_SYS_SDIO1_DATA2)>,
++				 <GPIOMUX(40, GPOUT_SYS_SDIO1_DATA3,
++					      GPOEN_SYS_SDIO1_DATA3,
++					      GPI_SYS_SDIO1_DATA3)>;
++			bias-pull-up;
++			input-enable;
++		};
++	};
++
++	spdif_pins: spdif-0 {
++		spdif-pins {
++			pinmux = <GPIOMUX(57, GPOUT_SYS_SPDIF,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-pull-up;
++			input-enable;
++		};
++	};
++
++	spi0_pins: spi0-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(38, GPOUT_SYS_SPI0_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(39, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI0_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(36, GPOUT_SYS_SPI0_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI0_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(37, GPOUT_SYS_SPI0_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI0_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi1_pins: spi1-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(42, GPOUT_SYS_SPI1_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(43, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI1_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(40, GPOUT_SYS_SPI1_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI1_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(41, GPOUT_SYS_SPI1_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI1_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi2_pins: spi2-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(46, GPOUT_SYS_SPI2_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(47, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI2_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(44, GPOUT_SYS_SPI2_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI2_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(45, GPOUT_SYS_SPI2_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI2_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi3_pins: spi3-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(50, GPOUT_SYS_SPI3_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(51, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI3_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(48, GPOUT_SYS_SPI3_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI3_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(49, GPOUT_SYS_SPI3_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI3_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi4_pins: spi4-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(54, GPOUT_SYS_SPI4_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(55, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI4_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(52, GPOUT_SYS_SPI4_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI4_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(53, GPOUT_SYS_SPI4_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI4_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi5_pins: spi5-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(58, GPOUT_SYS_SPI5_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(59, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI5_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(56, GPOUT_SYS_SPI5_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI5_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(57, GPOUT_SYS_SPI5_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI5_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	spi6_pins: spi6-0 {
++		mosi-pins {
++			pinmux = <GPIOMUX(62, GPOUT_SYS_SPI6_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		miso-pins {
++			pinmux = <GPIOMUX(63, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_SPI6_RXD)>;
++			bias-pull-up;
++			input-enable;
++			input-schmitt-enable;
++		};
++
++		sck-pins {
++			pinmux = <GPIOMUX(60, GPOUT_SYS_SPI6_CLK,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI6_CLK)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++
++		ss-pins {
++			pinmux = <GPIOMUX(61, GPOUT_SYS_SPI6_FSS,
++					      GPOEN_ENABLE,
++					      GPI_SYS_SPI6_FSS)>;
++			bias-disable;
++			input-disable;
++			input-schmitt-disable;
++		};
++	};
++
++	tdm_pins: tdm-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(44, GPOUT_SYS_TDM_TXD,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(61, GPOUT_HIGH,
++					      GPOEN_DISABLE,
++					      GPI_SYS_TDM_RXD)>;
++			input-enable;
++		};
++
++		sync-pins {
++			pinmux = <GPIOMUX(63, GPOUT_HIGH,
++					      GPOEN_DISABLE,
++					      GPI_SYS_TDM_SYNC)>;
++			input-enable;
++		};
++
++		pcmclk-pins {
++			pinmux = <GPIOMUX(38, GPOUT_HIGH,
++					      GPOEN_DISABLE,
++					      GPI_SYS_TDM_CLK)>;
++			input-enable;
++		};
++	};
++
++	uart0_pins: uart0-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(5, GPOUT_SYS_UART0_TX,
++					     GPOEN_ENABLE,
++					     GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(6, GPOUT_LOW,
++					     GPOEN_DISABLE,
++					     GPI_SYS_UART0_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++	};
++
++	uart1_pins: uart1-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_UART1_TX,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART1_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++
++		cts-pins {
++			pinmux = <GPIOMUX(29, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART1_CTS)>;
++			input-enable;
++		};
++
++		rts-pins {
++			pinmux = <GPIOMUX(27, GPOUT_SYS_UART1_RTS,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	uart2_pins: uart2-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_UART2_TX,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART2_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++
++		cts-pins {
++			pinmux = <GPIOMUX(29, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART2_CTS)>;
++			input-enable;
++		};
++
++		rts-pins {
++			pinmux = <GPIOMUX(27, GPOUT_SYS_UART2_RTS,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	uart3_pins: uart3-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_UART3_TX,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART3_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++	};
++
++	uart4_pins: uart4-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_UART4_TX,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART4_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++
++		cts-pins {
++			pinmux = <GPIOMUX(29, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART4_CTS)>;
++			input-enable;
++		};
++
++		rts-pins {
++			pinmux = <GPIOMUX(27, GPOUT_SYS_UART4_RTS,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	uart5_pins: uart5-0 {
++		tx-pins {
++			pinmux = <GPIOMUX(30, GPOUT_SYS_UART5_TX,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			bias-disable;
++			drive-strength = <12>;
++			input-disable;
++			input-schmitt-disable;
++			slew-rate = <0>;
++		};
++
++		rx-pins {
++			pinmux = <GPIOMUX(31, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART5_RX)>;
++			bias-pull-up;
++			drive-strength = <2>;
++			input-enable;
++			input-schmitt-enable;
++			slew-rate = <0>;
++		};
++
++		cts-pins {
++			pinmux = <GPIOMUX(29, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_UART5_CTS)>;
++			input-enable;
++		};
++
++		rts-pins {
++			pinmux = <GPIOMUX(27, GPOUT_SYS_UART5_RTS,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>;
++			input-enable;
++		};
++	};
++
++	usb_pins: usb-0 {
++		usb-pins {
++			pinmux = <GPIOMUX(33, GPOUT_HIGH,
++					      GPOEN_ENABLE,
++					      GPI_NONE)>,
++				 <GPIOMUX(34, GPOUT_LOW,
++					      GPOEN_DISABLE,
++					      GPI_SYS_USB_OVERCURRENT)>;
++			input-enable;
++		};
++	};
++};
++
++&aongpio {
++	pwm_ch4to5_pins: pwm-ch4to5-0 {
++		pwm-pins {
++			pinmux = <GPIOMUX(1, GPOUT_AON_PTC0_PWM4, /* PAD_RGPIO0 */
++					     GPOEN_AON_PTC0_OE_N_4,
++					     GPI_NONE)>,
++				 <GPIOMUX(2, GPOUT_AON_PTC0_PWM5, /* PAD_RGPIO1 */
++					     GPOEN_AON_PTC0_OE_N_5,
++					     GPI_NONE)>;
++			drive-strength = <12>;
++		};
++	};
++
++	pwm_ch6to7_pins: pwm-ch6to7-0 {
++		pwm-pins {
++			pinmux = <GPIOMUX(1, GPOUT_AON_PTC0_PWM6, /* PAD_RGPIO0 */
++					     GPOEN_AON_PTC0_OE_N_6,
++					     GPI_NONE)>,
++				 <GPIOMUX(2, GPOUT_AON_PTC0_PWM7, /* PAD_RGPIO1 */
++					     GPOEN_AON_PTC0_OE_N_7,
++					     GPI_NONE)>;
++			drive-strength = <12>;
++		};
++	};
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb.dts
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2023 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110-evb.dtsi"
++
++/ {
++	model = "StarFive JH7110 EVB";
++	compatible = "starfive,jh7110-evb", "starfive,jh7110";
++};
++
++&mmc0 {
++	assigned-clocks = <&syscrg JH7110_SYSCLK_SDIO0_SDCARD>;
++	assigned-clock-rates = <50000000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdcard0_pins>;
++	max-frequency = <100000000>;
++	card-detect-delay = <300>;
++	bus-width = <4>;
++	no-sdio;
++	no-mmc;
++	broken-cd;
++	post-power-on-delay-ms = <200>;
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/riscv/boot/dts/starfive/jh7110-evb.dtsi
+@@ -0,0 +1,854 @@
++// SPDX-License-Identifier: GPL-2.0 OR MIT
++/*
++ * Copyright (C) 2023 StarFive Technology Co., Ltd.
++ */
++
++/dts-v1/;
++#include "jh7110.dtsi"
++#include "jh7110-clk.dtsi"
++#include "jh7110-evb-pinctrl.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	aliases {
++		ethernet0 = &gmac0;
++		ethernet1 = &gmac1;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++		pcie0 = &pcie0;
++		pcie1 = &pcie1;
++		serial0 = &uart0;
++		serial3 = &uart3;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	cpus {
++		timebase-frequency = <4000000>;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x0 0x40000000 0x1 0x0>;
++	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0x0 0x20000000>;
++			alignment = <0x0 0x1000>;
++			alloc-ranges = <0x0 0x70000000 0x0 0x20000000>;
++			linux,cma-default;
++		};
++
++		e24_mem: e24@c0000000 {
++			reg = <0x0 0x6ce00000 0x0 0x1600000>;
++		};
++
++		xrp_reserved: xrpbuffer@f0000000 {
++			reg = <0x0 0x69c00000 0x0 0x01ffffff
++			       0x0 0x6bc00000 0x0 0x00001000
++			       0x0 0x6bc01000 0x0 0x00fff000
++			       0x0 0x6cc00000 0x0 0x00001000>;
++		};
++	};
++
++	/* i2s + hdmi */
++	sound1: snd-card1 {
++		compatible = "simple-audio-card";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		simple-audio-card,name = "StarFive-HDMI-Sound-Card";
++		simple-audio-card,dai-link@0 {
++			reg = <0>;
++			format = "i2s";
++			bitclock-master = <&sndi2s0>;
++			frame-master = <&sndi2s0>;
++			mclk-fs = <256>;
++			status = "okay";
++
++			sndi2s0: cpu {
++				sound-dai = <&i2stx0>;
++			};
++
++			codec {
++				sound-dai = <&hdmi>;
++			};
++		};
++	};
++};
++
++&U74_1 {
++	/delete-property/ clocks;
++	/delete-property/ clock-names;
++};
++
++&U74_2 {
++	/delete-property/ clocks;
++	/delete-property/ clock-names;
++};
++
++&U74_3 {
++	/delete-property/ clocks;
++	/delete-property/ clock-names;
++};
++
++&U74_4 {
++	/delete-property/ clocks;
++	/delete-property/ clock-names;
++};
++
++&can0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&can0_pins>;
++	status = "disabled";
++};
++
++&can1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&can1_pins>;
++	status = "disabled";
++};
++
++&co_process {
++	memory-region = <&e24_mem>;
++	status = "okay";
++};
++
++&dc8200 {
++	status = "okay";
++
++	dc_out: port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		dc_out_dpi0: endpoint@0 {
++			reg = <0>;
++			remote-endpoint = <&hdmi_input0>;
++		};
++		dc_out_dpi1: endpoint@1 {
++			reg = <1>;
++			remote-endpoint = <&hdmi_in_lcdc>;
++		};
++		dc_out_dpi2: endpoint@2 {
++			reg = <2>;
++			remote-endpoint = <&mipi_in>;
++		};
++	};
++};
++
++&display {
++	ports = <&dc_out_dpi0>;
++	status = "okay";
++};
++
++&dsi_output {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			reg = <0>;
++			mipi_in: endpoint {
++				remote-endpoint = <&dc_out_dpi2>;
++			};
++		};
++
++		port@1 {
++			reg = <1>;
++			mipi_out: endpoint {
++				remote-endpoint = <&dsi_in_port>;
++			};
++		};
++	};
++};
++
++&gmac0 {
++	phy-handle = <&phy0>;
++	phy-mode = "rgmii-id";
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "snps,dwmac-mdio";
++
++		phy0: ethernet-phy@0 {
++			reg = <0>;
++			rx-internal-delay-ps = <1900>;
++			tx-internal-delay-ps = <1650>;
++		};
++	};
++};
++
++&gmac1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <0>;
++		rxc-skew-ps = <1060>;
++		txc-skew-ps = <1800>;
++	};
++};
++
++&gpu {
++	status = "okay";
++};
++
++&hdmi {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&hdmi_pins>;
++	hpd-gpio = <&sysgpio 15 GPIO_ACTIVE_HIGH>;
++
++	hdmi_in: port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		hdmi_in_lcdc: endpoint@0 {
++			reg = <0>;
++			remote-endpoint = <&dc_out_dpi1>;
++		};
++	};
++};
++
++&i2c0 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	status = "disabled";
++
++	wm8960: codec@1a {
++		compatible = "wlf,wm8960";
++		reg = <0x1a>;
++		wlf,shared-lrclk;
++		#sound-dai-cells = <0>;
++	};
++
++	ac108: ac108@3b {
++		compatible = "x-power,ac108_0";
++		reg = <0x3b>;
++		#sound-dai-cells = <0>;
++		data-protocol = <0>;
++	};
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	status = "disabled";
++};
++
++&i2c2 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c2_pins>;
++	status = "okay";
++
++	tinker_ft5406: tinker_ft5406@38 {
++		compatible = "tinker_ft5406";
++		reg = <0x38>;
++	};
++
++	seeed_plane_i2c@45 {
++		compatible = "seeed_panel";
++		reg = <0x45>;
++
++		port {
++			panel_dsi_port: endpoint {
++				remote-endpoint = <&dsi_out_port>;
++			};
++		};
++	};
++};
++
++&i2c3 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c3_pins>;
++	status = "disabled";
++};
++
++&i2c4 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c4_pins>;
++	status = "okay";
++
++	sc2235: sc2235@30 {
++		compatible = "smartsens,sc2235";
++		reg = <0x30>;
++		clocks = <&clk_ext_camera>;
++		clock-names = "xclk";
++
++		port {
++			/* Parallel bus endpoint */
++			sc2235_to_parallel: endpoint {
++				remote-endpoint = <&parallel_from_sc2235>;
++				bus-type = <5>;      /* Parallel */
++				bus-width = <8>;
++				data-shift = <2>; /* lines 13:6 are used */
++				hsync-active = <1>;
++				vsync-active = <1>;
++				pclk-sample = <1>;
++			};
++		};
++	};
++
++	tda998x@70 {
++		compatible = "nxp,tda998x";
++		reg = <0x70>;
++
++		port {
++			tda998x_0_input: endpoint {
++				remote-endpoint = <&hdmi_out>;
++			};
++		};
++	};
++};
++
++&i2c5 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c5_pins>;
++	status = "okay";
++
++	pmic: jh7110_evb_reg@50 {
++		compatible = "starfive,jh7110-evb-regulator";
++		reg = <0x50>;
++
++		regulators {
++			hdmi_1p8: LDO_REG1 {
++				regulator-name = "hdmi_1p8";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++			mipitx_1p8: LDO_REG2 {
++				regulator-name = "mipitx_1p8";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++			mipirx_1p8: LDO_REG3 {
++				regulator-name = "mipirx_1p8";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++			};
++			hdmi_0p9: LDO_REG4 {
++				regulator-name = "hdmi_0p9";
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <900000>;
++			};
++			mipitx_0p9: LDO_REG5 {
++				regulator-name = "mipitx_0p9";
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <900000>;
++			};
++			mipirx_0p9: LDO_REG6 {
++				regulator-name = "mipirx_0p9";
++				regulator-min-microvolt = <900000>;
++				regulator-max-microvolt = <900000>;
++			};
++			sdio_vdd: LDO_REG7 {
++				regulator-name = "sdio_vdd";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++		};
++	};
++};
++
++&i2c6 {
++	clock-frequency = <100000>;
++	i2c-sda-hold-time-ns = <300>;
++	i2c-sda-falling-time-ns = <510>;
++	i2c-scl-falling-time-ns = <510>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c6_pins>;
++	status = "okay";
++
++	ov4689: ov4689@36 {
++		compatible = "ovti,ov4689";
++		reg = <0x36>;
++		clocks = <&clk_ext_camera>;
++		clock-names = "xclk";
++		//reset-gpio = <&sysgpio 18 0>;
++		rotation = <180>;
++
++		port {
++			/* Parallel bus endpoint */
++			ov4689_to_csi2rx0: endpoint {
++				remote-endpoint = <&csi2rx0_from_ov4689>;
++				bus-type = <4>;		/* MIPI CSI-2 D-PHY */
++				clock-lanes = <0>;
++				data-lanes = <1 2 3 4>;
++			};
++		};
++	};
++
++	imx219: imx219@10 {
++		compatible = "sony,imx219";
++		reg = <0x10>;
++		clocks = <&clk_ext_camera>;
++		clock-names = "xclk";
++		reset-gpio = <&sysgpio 10 0>;
++		//DOVDD-supply = <&v2v8>;
++		rotation = <0>;
++		orientation = <1>; //CAMERA_ORIENTATION_BACK
++
++		port {
++			/* CSI2 bus endpoint */
++			imx219_to_csi2rx0: endpoint {
++				remote-endpoint = <&csi2rx0_from_imx219>;
++				bus-type = <4>;      /* MIPI CSI-2 D-PHY */
++				clock-lanes = <0>;
++				data-lanes = <2 1>;
++				lane-polarities = <1 1 1>;
++				link-frequencies = /bits/ 64 <456000000>;
++			};
++		};
++	};
++
++	imx708: imx708@1a {
++		compatible = "sony,imx708";
++		reg = <0x1a>;
++		clocks = <&clk_ext_camera>;
++		reset-gpio = <&sysgpio 10 0>;
++
++		port {
++			imx708_to_csi2rx0: endpoint {
++				remote-endpoint = <&csi2rx0_from_imx708>;
++				data-lanes = <1 2>;
++				clock-noncontinuous;
++				link-frequencies = /bits/ 64 <450000000>;
++			};
++		};
++	};
++};
++
++&i2srx {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_clk_pins &i2srx_pins>;
++};
++
++&i2srx_mst {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2srx_clk_pins>;
++};
++
++&i2stx0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mclk_ext_pins>;
++	status = "okay";
++};
++
++&i2stx1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2stx_pins>;
++};
++
++&jpu {
++	status = "okay";
++};
++
++&mailbox_contrl0 {
++	status = "okay";
++};
++
++&mailbox_client0 {
++	status = "okay";
++};
++
++&mipi_dphy {
++	status = "okay";
++};
++
++&mipi_dsi {
++	status = "okay";
++
++	port {
++		dsi_out_port: endpoint@0 {
++			remote-endpoint = <&panel_dsi_port>;
++		};
++		dsi_in_port: endpoint@1 {
++			remote-endpoint = <&mipi_out>;
++		};
++	};
++
++	mipi_panel: panel@0 {
++		/*compatible = "";*/
++		status = "okay";
++	};
++};
++
++&pcie0 {
++	enable-gpios = <&sysgpio 32 GPIO_ACTIVE_HIGH>;
++	perst-gpios = <&sysgpio 26 GPIO_ACTIVE_LOW>;
++	phys = <&pciephy0>;
++	status = "disabled";
++};
++
++&pcie1 {
++	enable-gpios = <&sysgpio 21 GPIO_ACTIVE_HIGH>;
++	perst-gpios = <&sysgpio 28 GPIO_ACTIVE_LOW>;
++	phys = <&pciephy1>;
++	status = "disabled";
++};
++
++&pciephy0 {
++	starfive,sys-syscon = <&sys_syscon 0x18>;
++	starfive,stg-syscon = <&stg_syscon 0x148 0x1f4>;
++};
++
++&pdm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pdm_pins>;
++	status = "disabled";
++};
++
++&pwmdac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwmdac_pins>;
++};
++
++&qspi {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	nor_flash: flash@0 {
++		compatible = "jedec,spi-nor";
++		reg=<0>;
++		cdns,read-delay = <5>;
++		spi-max-frequency = <4687500>;
++		cdns,tshsl-ns = <1>;
++		cdns,tsd2d-ns = <1>;
++		cdns,tchsh-ns = <1>;
++		cdns,tslch-ns = <1>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			spl@0 {
++				reg = <0x0 0x40000>;
++			};
++			uboot@100000 {
++				reg = <0x100000 0x300000>;
++			};
++			data@f00000 {
++				reg = <0xf00000 0x100000>;
++			};
++		};
++	};
++};
++
++&rgb_output {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0>;
++
++			hdmi_input0:endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&dc_out_dpi0>;
++			};
++		};
++
++		port@1 {
++			reg = <1>;
++
++			hdmi_out:endpoint {
++				remote-endpoint = <&tda998x_0_input>;
++			};
++		};
++	};
++};
++
++&spdif {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spdif_pins>;
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++	status = "disabled";
++
++	spi_dev0: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi1_pins>;
++	status = "disabled";
++
++	spi_dev1: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi2_pins>;
++	status = "disabled";
++
++	spi_dev2: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi3_pins>;
++	status = "disabled";
++
++	spi_dev3: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi4_pins>;
++	status = "disabled";
++
++	spi_dev4: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi5_pins>;
++	status = "disabled";
++
++	spi_dev5: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&spi6 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi6_pins>;
++	status = "disabled";
++
++	spi_dev6: spi_dev@0 {
++		compatible = "rohm,dh2228fv";
++		reg = <0>;
++		pl022,com-mode = <1>;
++		spi-max-frequency = <10000000>;
++	};
++};
++
++&tda988x_pin {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgb_pad_pins>;
++	status = "disabled";
++};
++
++&tdm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&tdm_pins>;
++	status = "disabled";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "disabled";
++};
++
++&uart2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart2_pins>;
++	status = "disabled";
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart3_pins>;
++	status = "disabled";
++};
++
++&uart4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart4_pins>;
++	status = "disabled";
++};
++
++&uart5 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart5_pins>;
++	status = "disabled";
++};
++
++&usb0 {
++	clocks = <&stgcrg JH7110_STGCLK_USB0_LPM>,
++		 <&stgcrg JH7110_STGCLK_USB0_STB>,
++		 <&stgcrg JH7110_STGCLK_USB0_APB>,
++		 <&stgcrg JH7110_STGCLK_USB0_AXI>,
++		 <&stgcrg JH7110_STGCLK_USB0_UTMI_APB>,
++		 <&stgcrg JH7110_STGCLK_PCIE0_APB>;
++	clock-names = "lpm", "stb", "apb", "axi", "utmi_apb", "phy";
++	resets = <&stgcrg JH7110_STGRST_USB0_PWRUP>,
++		 <&stgcrg JH7110_STGRST_USB0_APB>,
++		 <&stgcrg JH7110_STGRST_USB0_AXI>,
++		 <&stgcrg JH7110_STGRST_USB0_UTMI_APB>,
++		 <&stgcrg JH7110_STGRST_PCIE0_APB>;
++	reset-names = "pwrup", "apb", "axi", "utmi_apb", "phy";
++	pinctrl-names = "default";
++	pinctrl-0 = <&usb_pins>;
++	dr_mode = "host"; /* host or peripheral */
++	status = "disabled";
++};
++
++&usb_cdns3 {
++	phys = <&usbphy0>, <&pciephy0>;
++	phy-names = "cdns3,usb2-phy", "cdns3,usb3-phy";
++};
++
++&vin_sysctl {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			/* Parallel bus endpoint */
++			parallel_from_sc2235: endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&sc2235_to_parallel>;
++				bus-type = <5>;		/* Parallel */
++				bus-width = <8>;
++				data-shift = <2>;	/* lines 9:2 are used */
++				hsync-active = <1>;
++				vsync-active = <0>;
++				pclk-sample = <1>;
++				status = "okay";
++			};
++		};
++
++		port@1 {
++			reg = <1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			/* CSI2 bus endpoint */
++			csi2rx0_from_ov4689: endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&ov4689_to_csi2rx0>;
++				bus-type = <4>;      /* MIPI CSI-2 D-PHY */
++				clock-lanes = <0>;
++				data-lanes = <1 2 3 4>;
++				status = "okay";
++			};
++
++			/* CSI2 bus endpoint */
++			csi2rx0_from_imx219: endpoint@1 {
++				reg = <1>;
++				remote-endpoint = <&imx219_to_csi2rx0>;
++				bus-type = <4>;      /* MIPI CSI-2 D-PHY */
++				clock-lanes = <0>;
++				data-lanes = <2 1>;
++				lane-polarities = <1 1 1>;
++				status = "okay";
++			};
++
++			csi2rx0_from_imx708: endpoint@2 {
++				reg = <2>;
++				remote-endpoint = <&imx708_to_csi2rx0>;
++				bus-type = <4>;      /* MIPI CSI-2 D-PHY */
++				clock-lanes = <0>;
++				data-lanes = <2 1>;
++				lane-polarities = <1 1 1>;
++				status = "okay";
++			};
++		};
++	};
++};
++
++&vpu_dec {
++	status = "okay";
++};
++
++&vpu_enc {
++	status = "okay";
++};
++
++&xrp {
++	memory-region = <&xrp_reserved>;
++	status = "okay";
++};
+--- a/arch/riscv/boot/dts/starfive/jh7110.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110.dtsi
+@@ -196,11 +196,60 @@
+ 			opp-750000000 {
+ 					opp-hz = /bits/ 64 <750000000>;
+ 					opp-microvolt = <800000>;
++					opp-suspend;
+ 			};
+ 			opp-1500000000 {
+ 					opp-hz = /bits/ 64 <1500000000>;
+ 					opp-microvolt = <1040000>;
+ 			};
++			/* CPU opp table for 1.25GHz */
++			opp-312500000 {
++					opp-hz = /bits/ 64 <312500000>;
++					opp-microvolt = <800000>;
++			};
++			opp-417000000 {
++					opp-hz = /bits/ 64 <417000000>;
++					opp-microvolt = <800000>;
++			};
++			opp-625000000 {
++					opp-hz = /bits/ 64 <625000000>;
++					opp-microvolt = <800000>;
++					opp-suspend;
++			};
++			opp-1250000000 {
++					opp-hz = /bits/ 64 <1250000000>;
++					opp-microvolt = <1000000>;
++			};
++	};
++
++	display: display-subsystem {
++		compatible = "starfive,jh7110-display","verisilicon,display-subsystem";
++		status = "disabled";
++	};
++
++	dsi_output: dsi-output {
++		compatible = "starfive,jh7110-display-encoder","verisilicon,dsi-encoder";
++		status = "disabled";
++	};
++
++	mailbox_client0: mailbox_client {
++		compatible = "starfive,mailbox-test";
++		mbox-names = "rx", "tx";
++		mboxes = <&mailbox_contrl0 0 1>,<&mailbox_contrl0 1 0>;
++		status = "disabled";
++	};
++
++	rgb_output: rgb-output {
++		compatible = "starfive,jh7110-rgb_output","verisilicon,rgb-encoder";
++		//verisilicon,dss-syscon = <&dssctrl>;
++		//verisilicon,mux-mask = <0x70 0x380>;
++		//verisilicon,mux-val = <0x40 0x280>;
++		status = "disabled";
++	};
++
++	tda988x_pin: tda988x_pin {
++		compatible = "starfive,tda998x_rgb_pin";
++		status = "disabled";
+ 	};
+ 
+ 	thermal-zones {
+@@ -349,7 +398,9 @@
+ 
+ 		ccache: cache-controller@2010000 {
+ 			compatible = "starfive,jh7110-ccache", "sifive,ccache0", "cache";
+-			reg = <0x0 0x2010000 0x0 0x4000>;
++			reg = <0x0 0x2010000 0x0 0x4000>,
++			      <0x0 0x8000000 0x0 0x2000000>,
++			      <0x0 0xa000000 0x0 0x2000000>;
+ 			interrupts = <1>, <3>, <4>, <2>;
+ 			cache-block-size = <64>;
+ 			cache-level = <2>;
+@@ -378,7 +429,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART0_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART0_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART0_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART0_APB>,
++				 <&syscrg JH7110_SYSRST_UART0_CORE>;
+ 			interrupts = <32>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -391,7 +443,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART1_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART1_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART1_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART1_APB>,
++				 <&syscrg JH7110_SYSRST_UART1_CORE>;
+ 			interrupts = <33>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -404,7 +457,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART2_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART2_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART2_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART2_APB>,
++				 <&syscrg JH7110_SYSRST_UART2_CORE>;
+ 			interrupts = <34>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -513,6 +567,25 @@
+ 			status = "disabled";
+ 		};
+ 
++		spdif: spdif@100a0000 {
++			compatible = "starfive,jh7110-spdif";
++			reg = <0x0 0x100a0000 0x0 0x1000>;
++			clocks = <&syscrg JH7110_SYSCLK_SPDIF_APB>,
++				 <&syscrg JH7110_SYSCLK_SPDIF_CORE>,
++				 <&syscrg JH7110_SYSCLK_AUDIO_ROOT>,
++				 <&syscrg JH7110_SYSCLK_MCLK_INNER>,
++				 <&mclk_ext>, <&syscrg JH7110_SYSCLK_MCLK>;
++			clock-names = "apb", "core",
++				      "audroot", "mclk_inner",
++				      "mclk_ext", "mclk";
++			resets = <&syscrg JH7110_SYSRST_SPDIF_APB>;
++			reset-names = "apb";
++			interrupts = <84>;
++			interrupt-names = "tx";
++			#sound-dai-cells = <0>;
++			status = "disabled";
++		};
++
+ 		pwmdac: pwmdac@100b0000 {
+ 			compatible = "starfive,jh7110-pwmdac";
+ 			reg = <0x0 0x100b0000 0x0 0x1000>;
+@@ -526,6 +599,42 @@
+ 			status = "disabled";
+ 		};
+ 
++		pdm: pdm@100d0000 {
++			compatible = "starfive,jh7110-pdm";
++			reg = <0x0 0x100d0000 0x0 0x1000>;
++			reg-names = "pdm";
++			clocks = <&syscrg JH7110_SYSCLK_PDM_DMIC>,
++				 <&syscrg JH7110_SYSCLK_PDM_APB>,
++				 <&syscrg JH7110_SYSCLK_MCLK>,
++				 <&mclk_ext>;
++			clock-names = "pdm_mclk", "pdm_apb",
++				      "clk_mclk", "mclk_ext";
++			resets = <&syscrg JH7110_SYSRST_PDM_DMIC>,
++				 <&syscrg JH7110_SYSRST_PDM_APB>;
++			reset-names = "pdm_dmic", "pdm_apb";
++			#sound-dai-cells = <0>;
++			status = "disabled";
++		};
++
++		i2srx_mst: i2srx_mst@100e0000 {
++			compatible = "starfive,jh7110-i2srx-master";
++			reg = <0x0 0x100e0000 0x0 0x1000>;
++			clocks = <&syscrg JH7110_SYSCLK_I2SRX_BCLK_MST>,
++				 <&syscrg JH7110_SYSCLK_I2SRX_APB>,
++				 <&syscrg JH7110_SYSCLK_MCLK>,
++				 <&syscrg JH7110_SYSCLK_MCLK_INNER>,
++				 <&mclk_ext>;
++			clock-names = "i2sclk", "apb", "mclk",
++				      "mclk_inner","mclk_ext";
++			resets = <&syscrg JH7110_SYSRST_I2SRX_APB>,
++				 <&syscrg JH7110_SYSRST_I2SRX_BCLK>;
++			dmas = <&dma 24>;
++			dma-names = "rx";
++			starfive,syscon = <&sys_syscon 0x18 0x2 0x34 0x3FC00 0x24400>;
++			#sound-dai-cells = <0>;
++			status = "disabled";
++		};
++
+ 		i2srx: i2s@100e0000 {
+ 			compatible = "starfive,jh7110-i2srx";
+ 			reg = <0x0 0x100e0000 0x0 0x1000>;
+@@ -622,6 +731,26 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
++		xrp: xrp@10230000 {
++			compatible = "cdns,xrp";
++			dma-coherent;
++			reg = <0x0 0x10230000 0x0 0x00010000
++			       0x0 0x10240000 0x0 0x00010000>;
++			clocks = <&stgcrg JH7110_STGCLK_HIFI4_CLK_CORE>;
++			clock-names = "core_clk";
++			resets = <&stgcrg JH7110_STGRST_HIFI4_CORE>,
++				 <&stgcrg JH7110_STGRST_HIFI4_AXI>;
++			reset-names = "rst_core","rst_axi";
++			starfive,stg-syscon = <&stg_syscon>;
++			firmware-name = "hifi4_elf";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x40000000 0x0 0x20000000 0x040000
++				0x69c00000 0x0 0x69c00000 0x03000000>;
++			status = "disabled";
++			dsp@0 {};
++		};
++
+ 		stg_syscon: syscon@10240000 {
+ 			compatible = "starfive,jh7110-stg-syscon", "syscon";
+ 			reg = <0x0 0x10240000 0x0 0x1000>;
+@@ -633,7 +762,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART3_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART3_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART3_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART3_APB>,
++				 <&syscrg JH7110_SYSRST_UART3_CORE>;
+ 			interrupts = <45>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -646,7 +776,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART4_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART4_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART4_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART4_APB>,
++				 <&syscrg JH7110_SYSRST_UART4_CORE>;
+ 			interrupts = <46>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -659,7 +790,8 @@
+ 			clocks = <&syscrg JH7110_SYSCLK_UART5_CORE>,
+ 				 <&syscrg JH7110_SYSCLK_UART5_APB>;
+ 			clock-names = "baudclk", "apb_pclk";
+-			resets = <&syscrg JH7110_SYSRST_UART5_APB>;
++			resets = <&syscrg JH7110_SYSRST_UART5_APB>,
++				 <&syscrg JH7110_SYSRST_UART5_CORE>;
+ 			interrupts = <47>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+@@ -919,6 +1051,18 @@
+ 				      "ch2", "ch3";
+ 		};
+ 
++		mailbox_contrl0: mailbox@13060000 {
++			compatible = "starfive,mail_box";
++			reg = <0x0 0x13060000 0x0 0x0001000>;
++			clocks = <&syscrg JH7110_SYSCLK_MAILBOX_APB>;
++			clock-names = "clk_apb";
++			resets = <&syscrg JH7110_SYSRST_MAILBOX_APB>;
++			reset-names = "mbx_rre";
++			interrupts = <26 27>;
++			#mbox-cells = <2>;
++			status = "disabled";
++		};
++
+ 		watchdog@13070000 {
+ 			compatible = "starfive,jh7110-wdt";
+ 			reg = <0x0 0x13070000 0x0 0x10000>;
+@@ -929,6 +1073,112 @@
+ 				 <&syscrg JH7110_SYSRST_WDT_CORE>;
+ 		};
+ 
++		jpu: jpu@13090000 {
++			compatible = "starfive,jpu";
++			dma-coherent;
++			reg = <0x0 0x13090000 0x0 0x300>;
++			interrupts = <14>;
++			clocks = <&syscrg JH7110_SYSCLK_CODAJ12_AXI>,
++				 <&syscrg JH7110_SYSCLK_CODAJ12_CORE>,
++				 <&syscrg JH7110_SYSCLK_CODAJ12_APB>,
++				 <&syscrg JH7110_SYSCLK_NOC_BUS_VDEC_AXI>,
++				 <&syscrg JH7110_SYSCLK_VDEC_MAIN>,
++				 <&syscrg JH7110_SYSCLK_VDEC_JPG>;
++			clock-names = "axi_clk", "core_clk", "apb_clk",
++				      "noc_bus", "main_clk", "dec_clk";
++			resets = <&syscrg JH7110_SYSRST_CODAJ12_AXI>,
++				 <&syscrg JH7110_SYSRST_CODAJ12_CORE>,
++				 <&syscrg JH7110_SYSRST_CODAJ12_APB>;
++			reset-names = "rst_axi", "rst_core", "rst_apb";
++			power-domains = <&pwrc JH7110_PD_VDEC>;
++			status = "disabled";
++		};
++
++		vpu_dec: vpu_dec@130a0000 {
++			compatible = "starfive,vdec";
++			dma-coherent;
++			reg = <0x0 0x130a0000 0x0 0x10000>;
++			interrupts = <13>;
++			clocks = <&syscrg JH7110_SYSCLK_WAVE511_AXI>,
++				 <&syscrg JH7110_SYSCLK_WAVE511_BPU>,
++				 <&syscrg JH7110_SYSCLK_WAVE511_VCE>,
++				 <&syscrg JH7110_SYSCLK_WAVE511_APB>,
++				 <&syscrg JH7110_SYSCLK_NOC_BUS_VDEC_AXI>,
++				 <&syscrg JH7110_SYSCLK_VDEC_MAIN>;
++			clock-names = "axi_clk", "bpu_clk", "vce_clk",
++				      "apb_clk", "noc_bus", "main_clk";
++			resets = <&syscrg JH7110_SYSRST_WAVE511_AXI>,
++				 <&syscrg JH7110_SYSRST_WAVE511_BPU>,
++				 <&syscrg JH7110_SYSRST_WAVE511_VCE>,
++				 <&syscrg JH7110_SYSRST_WAVE511_APB>,
++				 <&syscrg JH7110_SYSRST_AXIMEM0_AXI>;
++			reset-names = "rst_axi", "rst_bpu", "rst_vce",
++				      "rst_apb", "rst_sram";
++			starfive,vdec_noc_ctrl;
++			power-domains = <&pwrc JH7110_PD_VDEC>;
++			status = "disabled";
++		};
++
++		vpu_enc: vpu_enc@130b0000 {
++			compatible = "starfive,venc";
++			dma-coherent;
++			reg = <0x0 0x130b0000 0x0 0x10000>;
++			interrupts = <15>;
++			clocks = <&syscrg JH7110_SYSCLK_WAVE420L_AXI>,
++				 <&syscrg JH7110_SYSCLK_WAVE420L_BPU>,
++				 <&syscrg JH7110_SYSCLK_WAVE420L_VCE>,
++				 <&syscrg JH7110_SYSCLK_WAVE420L_APB>,
++				 <&syscrg JH7110_SYSCLK_NOC_BUS_VENC_AXI>;
++			clock-names = "axi_clk", "bpu_clk", "vce_clk",
++				      "apb_clk", "noc_bus";
++			resets = <&syscrg JH7110_SYSRST_WAVE420L_AXI>,
++				 <&syscrg JH7110_SYSRST_WAVE420L_BPU>,
++				 <&syscrg JH7110_SYSRST_WAVE420L_VCE>,
++				 <&syscrg JH7110_SYSRST_WAVE420L_APB>,
++				 <&syscrg JH7110_SYSRST_AXIMEM1_AXI>;
++			reset-names = "rst_axi", "rst_bpu", "rst_vce",
++				      "rst_apb", "rst_sram";
++			starfive,venc_noc_ctrl;
++			power-domains = <&pwrc JH7110_PD_VENC>;
++			status = "disabled";
++		};
++
++		can0: can@130d0000 {
++			compatible = "starfive,jh7110-can", "ipms,can";
++			reg = <0x0 0x130d0000 0x0 0x1000>;
++			interrupts = <112>;
++			clocks = <&syscrg JH7110_SYSCLK_CAN0_APB>,
++				 <&syscrg JH7110_SYSCLK_CAN0_CAN>,
++				 <&syscrg JH7110_SYSCLK_CAN0_TIMER>;
++			clock-names = "apb_clk", "core_clk", "timer_clk";
++			resets = <&syscrg JH7110_SYSRST_CAN0_APB>,
++				 <&syscrg JH7110_SYSRST_CAN0_CORE>,
++				 <&syscrg JH7110_SYSRST_CAN0_TIMER>;
++			reset-names = "rst_apb", "rst_core", "rst_timer";
++			frequency = <40000000>;
++			starfive,sys-syscon = <&sys_syscon 0x10 0x3 0x8>;
++			syscon,can_or_canfd = <0>;
++			status = "disabled";
++		};
++
++		can1: can@130e0000 {
++			compatible = "starfive,jh7110-can", "ipms,can";
++			reg = <0x0 0x130e0000 0x0 0x1000>;
++			interrupts = <113>;
++			clocks = <&syscrg JH7110_SYSCLK_CAN1_APB>,
++				 <&syscrg JH7110_SYSCLK_CAN1_CAN>,
++				 <&syscrg JH7110_SYSCLK_CAN1_TIMER>;
++			clock-names = "apb_clk", "core_clk", "timer_clk";
++			resets = <&syscrg JH7110_SYSRST_CAN1_APB>,
++				 <&syscrg JH7110_SYSRST_CAN1_CORE>,
++				 <&syscrg JH7110_SYSRST_CAN1_TIMER>;
++			reset-names = "rst_apb", "rst_core", "rst_timer";
++			frequency = <40000000>;
++			starfive,sys-syscon = <&sys_syscon 0x88 0x12 0x40000>;
++			syscon,can_or_canfd = <0>;
++			status = "disabled";
++		};
++
+ 		crypto: crypto@16000000 {
+ 			compatible = "starfive,jh7110-crypto";
+ 			reg = <0x0 0x16000000 0x0 0x4000>;
+@@ -1119,6 +1369,42 @@
+ 			#power-domain-cells = <1>;
+ 		};
+ 
++		rtc: rtc@17040000 {
++			compatible = "starfive,jh7110-rtc";
++			reg = <0x0 0x17040000 0x0 0x10000>;
++			interrupts = <10>, <11>, <12>;
++			interrupt-names = "rtc_ms_pulse", "rtc_sec_pulse", "rtc";
++			clocks = <&aoncrg JH7110_AONCLK_RTC_APB>,
++				 <&aoncrg JH7110_AONCLK_RTC_CAL>;
++			clock-names = "pclk", "cal_clk";
++			resets = <&aoncrg JH7110_AONRST_RTC_32K>,
++				 <&aoncrg JH7110_AONRST_RTC_APB>,
++				 <&aoncrg JH7110_AONRST_RTC_CAL>;
++			reset-names = "rst_osc", "rst_apb", "rst_cal";
++			rtc,cal-clock-freq = <1000000>;
++		};
++
++		gpu: gpu@18000000 {
++			compatible = "img-gpu";
++			reg = <0x0 0x18000000 0x0 0x100000>,
++				<0x0 0x130C000 0x0 0x10000>;
++			clocks = <&syscrg JH7110_SYSCLK_GPU_CORE>,
++				 <&syscrg JH7110_SYSCLK_GPU_APB>,
++				 <&syscrg JH7110_SYSCLK_GPU_RTC_TOGGLE>,
++				 <&syscrg JH7110_SYSCLK_GPU_CORE_CLK>,
++				 <&syscrg JH7110_SYSCLK_GPU_SYS_CLK>,
++				 <&syscrg JH7110_SYSCLK_NOC_BUS_GPU_AXI>;
++			clock-names = "clk_bv", "clk_apb", "clk_rtc",
++					"clk_core", "clk_sys", "clk_axi";
++			resets = <&syscrg JH7110_SYSRST_GPU_APB>,
++				 <&syscrg JH7110_SYSRST_GPU_DOMA>;
++			reset-names = "rst_apb", "rst_doma";
++			power-domains = <&pwrc JH7110_PD_GPUA>;
++			interrupts = <82>;
++			current-clock = <8000000>;
++			status = "disabled";
++		};
++
+ 		csi2rx: csi-bridge@19800000 {
+ 			compatible = "starfive,jh7110-csi2rx";
+ 			reg = <0x0 0x19800000 0x0 0x10000>;
+@@ -1145,6 +1431,67 @@
+ 			status = "disabled";
+ 		};
+ 
++		vin_sysctl: vin_sysctl@19800000 {
++			compatible = "starfive,jh7110-vin";
++			reg = <0x0 0x19800000 0x0 0x10000>,
++				<0x0 0x19810000 0x0 0x10000>,
++				<0x0 0x19820000 0x0 0x10000>,
++				<0x0 0x19840000 0x0 0x10000>,
++				<0x0 0x19870000 0x0 0x30000>,
++				<0x0 0x11840000 0x0 0x10000>,
++				<0x0 0x17030000 0x0 0x10000>,
++				<0x0 0x13020000 0x0 0x10000>;
++			reg-names = "csi2rx", "vclk", "vrst", "sctrl",
++				"isp", "trst", "pmu", "syscrg";
++			clocks = <&ispcrg JH7110_ISPCLK_DOM4_APB_FUNC>,
++				 <&ispcrg JH7110_ISPCLK_VIN_APB>,
++				 <&ispcrg JH7110_ISPCLK_VIN_SYS>,
++				 <&ispcrg JH7110_ISPCLK_ISPV2_TOP_WRAPPER_C>,
++				 <&ispcrg JH7110_ISPCLK_DVP_INV>,
++				 <&ispcrg JH7110_ISPCLK_VIN_P_AXI_WR>,
++				 <&ispcrg JH7110_ISPCLK_MIPI_RX0_PXL>,
++				 <&ispcrg JH7110_ISPCLK_VIN_PIXEL_IF0>,
++				 <&ispcrg JH7110_ISPCLK_VIN_PIXEL_IF1>,
++				 <&ispcrg JH7110_ISPCLK_VIN_PIXEL_IF2>,
++				 <&ispcrg JH7110_ISPCLK_VIN_PIXEL_IF3>,
++				 <&ispcrg JH7110_ISPCLK_M31DPHY_CFG_IN>,
++				 <&ispcrg JH7110_ISPCLK_M31DPHY_REF_IN>,
++				 <&ispcrg JH7110_ISPCLK_M31DPHY_TX_ESC_LAN0>,
++				 <&syscrg JH7110_SYSCLK_ISP_TOP_CORE>,
++				 <&syscrg JH7110_SYSCLK_ISP_TOP_AXI>;
++			clock-names = "clk_apb_func", "clk_pclk", "clk_sys_clk",
++				"clk_wrapper_clk_c", "clk_dvp_inv", "clk_axiwr",
++				"clk_mipi_rx0_pxl", "clk_pixel_clk_if0",
++				"clk_pixel_clk_if1", "clk_pixel_clk_if2",
++				"clk_pixel_clk_if3", "clk_m31dphy_cfgclk_in",
++				"clk_m31dphy_refclk_in", "clk_m31dphy_txclkesc_lan0",
++				"clk_ispcore_2x", "clk_isp_axi";
++			resets = <&ispcrg JH7110_ISPRST_ISPV2_TOP_WRAPPER_P>,
++				 <&ispcrg JH7110_ISPRST_ISPV2_TOP_WRAPPER_C>,
++				 <&ispcrg JH7110_ISPRST_VIN_APB>,
++				 <&ispcrg JH7110_ISPRST_VIN_SYS>,
++				 <&ispcrg JH7110_ISPRST_VIN_P_AXI_RD>,
++				 <&ispcrg JH7110_ISPRST_VIN_P_AXI_WR>,
++				 <&ispcrg JH7110_ISPRST_VIN_PIXEL_IF0>,
++				 <&ispcrg JH7110_ISPRST_VIN_PIXEL_IF1>,
++				 <&ispcrg JH7110_ISPRST_VIN_PIXEL_IF2>,
++				 <&ispcrg JH7110_ISPRST_VIN_PIXEL_IF3>,
++				 <&ispcrg JH7110_ISPRST_M31DPHY_HW>,
++				 <&ispcrg JH7110_ISPRST_M31DPHY_B09_AON>,
++				 <&syscrg JH7110_SYSRST_ISP_TOP>,
++				 <&syscrg JH7110_SYSRST_ISP_TOP_AXI>;
++			reset-names = "rst_wrapper_p", "rst_wrapper_c", "rst_pclk",
++				"rst_sys_clk", "rst_axird", "rst_axiwr", "rst_pixel_clk_if0",
++				"rst_pixel_clk_if1", "rst_pixel_clk_if2", "rst_pixel_clk_if3",
++				"rst_m31dphy_hw", "rst_m31dphy_b09_always_on",
++				"rst_isp_top_n", "rst_isp_top_axi";
++			starfive,aon-syscon = <&aon_syscon 0x00>;
++			power-domains = <&pwrc JH7110_PD_ISP>;
++			/* irq nr: vin, isp, isp_csi, isp_scd, isp_csiline */
++			interrupts = <92 87 88 89 90>;
++			status = "disabled";
++		};
++
+ 		ispcrg: clock-controller@19810000 {
+ 			compatible = "starfive,jh7110-ispcrg";
+ 			reg = <0x0 0x19810000 0x0 0x10000>;
+@@ -1175,6 +1522,66 @@
+ 			#phy-cells = <0>;
+ 		};
+ 
++		dc8200: dc8200@29400000 {
++			compatible = "starfive,jh7110-dc8200","verisilicon,dc8200";
++			verisilicon,dss-syscon = <&dssctrl>;//20220624 panel syscon
++			reg = <0x0 0x29400000 0x0 0x100>,
++			      <0x0 0x29400800 0x0 0x2000>,
++			      <0x0 0x17030000 0x0 0x1000>;
++			interrupts = <95>;
++			clocks = <&syscrg JH7110_SYSCLK_NOC_BUS_DISP_AXI>,
++				 <&syscrg JH7110_SYSCLK_VOUT_SRC>,
++				 <&syscrg JH7110_SYSCLK_VOUT_TOP_AXI>,
++				 <&syscrg JH7110_SYSCLK_VOUT_TOP_AHB>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_PIX0>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_PIX1>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_AXI>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_CORE>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_AHB>,
++				 <&syscrg JH7110_SYSCLK_VOUT_TOP_AXI>,
++				 <&voutcrg JH7110_VOUTCLK_DOM_VOUT_TOP_LCD>,
++				 <&hdmitx0_pixelclk>,
++				 <&voutcrg JH7110_VOUTCLK_DC8200_PIX>;
++			clock-names = "noc_disp","vout_src",
++			   "top_vout_axi","top_vout_ahb",
++			   "pix_clk","vout_pix1",
++			   "axi_clk","core_clk","vout_ahb",
++			   "vout_top_axi","vout_top_lcd","hdmitx0_pixelclk","dc8200_pix0";
++			resets = <&syscrg JH7110_SYSRST_VOUT_TOP_SRC>,
++				 <&voutcrg JH7110_VOUTRST_DC8200_AXI>,
++				 <&voutcrg JH7110_VOUTRST_DC8200_AHB>,
++				 <&voutcrg JH7110_VOUTRST_DC8200_CORE>,
++				 <&syscrg JH7110_SYSRST_NOC_BUS_DISP_AXI>;
++			reset-names = "rst_vout_src","rst_axi","rst_ahb","rst_core",
++					"rst_noc_disp";
++			status = "disabled";
++		};
++
++		hdmi: hdmi@29590000 {
++			compatible = "starfive,jh7110-hdmi","inno,hdmi";
++			reg = <0x0 0x29590000 0x0 0x4000>;
++			interrupts = <99>;
++			/*interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;*/
++			/*clocks = <&cru  PCLK_HDMI>;*/
++			/*clock-names = "pclk";*/
++			/*pinctrl-names = "default";*/
++			/*pinctrl-0 = <&hdmi_ctl>;*/
++			clocks = <&voutcrg JH7110_VOUTCLK_HDMI_TX_SYS>,
++				 <&voutcrg JH7110_VOUTCLK_HDMI_TX_MCLK>,
++				 <&voutcrg JH7110_VOUTCLK_HDMI_TX_BCLK>,
++				 <&hdmitx0_pixelclk>;
++			clock-names = "sysclk", "mclk","bclk","pclk";
++			resets = <&voutcrg JH7110_VOUTRST_HDMI_TX_HDMI>;
++			reset-names = "hdmi_tx";
++			#sound-dai-cells = <0>;
++			status = "disabled";
++		};
++
++		dssctrl: dssctrl@295B0000 {
++			compatible = "starfive,jh7110-dssctrl","verisilicon,dss-ctrl", "syscon";
++			reg = <0 0x295B0000 0 0x90>;
++		};
++
+ 		voutcrg: clock-controller@295c0000 {
+ 			compatible = "starfive,jh7110-voutcrg";
+ 			reg = <0x0 0x295c0000 0x0 0x10000>;
+@@ -1193,6 +1600,67 @@
+ 			power-domains = <&pwrc JH7110_PD_VOUT>;
+ 		};
+ 
++		mipi_dsi: mipi@295d0000 {
++			compatible = "starfive,jh7110-mipi_dsi","cdns,dsi";
++			reg = <0x0 0x295d0000 0x0 0x10000>;
++			interrupts = <98>;
++			reg-names = "dsi";
++			clocks = <&voutcrg JH7110_VOUTCLK_DSITX_SYS>,
++				 <&voutcrg JH7110_VOUTCLK_DSITX_APB>,
++				 <&voutcrg JH7110_VOUTCLK_DSITX_TXESC>,
++				 <&voutcrg JH7110_VOUTCLK_DSITX_DPI>;
++			clock-names = "dpi", "apb", "txesc", "sys";
++			resets = <&voutcrg JH7110_VOUTRST_DSITX_DPI>,
++				 <&voutcrg JH7110_VOUTRST_DSITX_APB>,
++				 <&voutcrg JH7110_VOUTRST_DSITX_RXESC>,
++				 <&voutcrg JH7110_VOUTRST_DSITX_SYS>,
++				 <&voutcrg JH7110_VOUTRST_DSITX_TXBYTEHS>,
++				 <&voutcrg JH7110_VOUTRST_DSITX_TXESC>;
++			reset-names = "dsi_dpi", "dsi_apb", "dsi_rxesc",
++					"dsi_sys", "dsi_txbytehs", "dsi_txesc";
++			phys = <&mipi_dphy>;
++			phy-names = "dphy";
++			status = "disabled";
++		};
++
++		mipi_dphy: mipi-dphy@295e0000{
++			compatible = "starfive,jh7110-mipi-dphy-tx","m31,mipi-dphy-tx";
++			reg = <0x0 0x295e0000 0x0 0x10000>;
++			clocks = <&voutcrg JH7110_VOUTCLK_MIPITX_DPHY_TXESC>;
++			clock-names = "dphy_txesc";
++			resets = <&voutcrg JH7110_VOUTRST_MIPITX_DPHY_SYS>,
++				 <&voutcrg JH7110_VOUTRST_MIPITX_DPHY_TXBYTEHS>;
++			reset-names = "dphy_sys", "dphy_txbytehs";
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		co_process: e24@6e210000 {
++			compatible = "starfive,e24";
++			dma-coherent;
++			reg = <0x0 0x6e210000 0x0 0x00001000>,
++				<0x0 0x6e211000 0x0 0x0003f000>;
++			reg-names = "ecmd", "espace";
++			clocks = <&stgcrg JH7110_STGCLK_E2_RTC>,
++				 <&stgcrg JH7110_STGCLK_E2_CORE>,
++				 <&stgcrg JH7110_STGCLK_E2_DBG>;
++			clock-names = "clk_rtc", "clk_core", "clk_dbg";
++			resets = <&stgcrg JH7110_STGRST_E24_CORE>;
++			reset-names = "e24_core";
++			starfive,stg-syscon = <&stg_syscon>;
++			interrupt-parent = <&plic>;
++			firmware-name = "e24_elf";
++			irq-mode = <1>;
++			mbox-names = "tx", "rx";
++			mboxes = <&mailbox_contrl0 0 2>,
++				 <&mailbox_contrl0 2 0>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x6ce00000 0x0 0x6ce00000 0x1600000>;
++			status = "disabled";
++			dsp@0 {};
++		};
++
+ 		pcie0: pcie@940000000 {
+ 			compatible = "starfive,jh7110-pcie";
+ 			reg = <0x9 0x40000000 0x0 0x1000000>,
