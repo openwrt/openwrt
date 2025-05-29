@@ -51,13 +51,12 @@ jobs:
           cd source
           [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
           make menuconfig
-    - name: List files for debug
-      run: ls -l source/
-    - name: List files recursively
-      run: ls -lR source/
-      
-    - name: Upload any .config artifact
+
+    - name: List all .config for debug
+      run: find . -name .config
+
+    - name: Upload all .config artifact
       uses: actions/upload-artifact@v4
       with:
-        name: any-config
+        name: all-config
         path: '**/.config'
