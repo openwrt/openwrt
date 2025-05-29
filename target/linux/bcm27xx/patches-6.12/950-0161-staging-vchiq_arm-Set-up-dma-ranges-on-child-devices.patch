@@ -234,7 +234,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	dev_dbg(&pdev->dev, "arm: vchiq_init - done (slots %pK, phys %pad)\n",
  		vchiq_slot_zero, &slot_phys);
  
-@@ -1711,6 +1777,7 @@ void vchiq_platform_conn_state_changed(s
+@@ -1710,6 +1776,7 @@ void vchiq_platform_conn_state_changed(s
  static const struct of_device_id vchiq_of_match[] = {
  	{ .compatible = "brcm,bcm2835-vchiq", .data = &bcm2835_info },
  	{ .compatible = "brcm,bcm2836-vchiq", .data = &bcm2836_info },

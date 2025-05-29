@@ -32,7 +32,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static int dbg_input;
  module_param(dbg_input, int, 0644);
  MODULE_PARM_DESC(dbg_input, "Input number (0-31)");
-@@ -228,6 +238,7 @@ struct adv7180_state {
+@@ -229,6 +239,7 @@ struct adv7180_state {
  	const struct adv7180_chip_info *chip_info;
  	enum v4l2_field		field;
  	bool			force_bt656_4;
@@ -40,7 +40,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  #define to_adv7180_sd(_ctrl) (&container_of(_ctrl->handler,		\
  					    struct adv7180_state,	\
-@@ -629,6 +640,9 @@ static int adv7180_s_ctrl(struct v4l2_ct
+@@ -630,6 +641,9 @@ static int adv7180_s_ctrl(struct v4l2_ct
  
  	if (ret)
  		return ret;
@@ -50,7 +50,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	val = ctrl->val;
  	switch (ctrl->id) {
  	case V4L2_CID_BRIGHTNESS:
-@@ -670,6 +684,7 @@ static int adv7180_s_ctrl(struct v4l2_ct
+@@ -671,6 +685,7 @@ static int adv7180_s_ctrl(struct v4l2_ct
  		ret = -EINVAL;
  	}
  
@@ -58,7 +58,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	mutex_unlock(&state->mutex);
  	return ret;
  }
-@@ -690,7 +705,7 @@ static const struct v4l2_ctrl_config adv
+@@ -691,7 +706,7 @@ static const struct v4l2_ctrl_config adv
  
  static int adv7180_init_controls(struct adv7180_state *state)
  {
@@ -67,9 +67,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	v4l2_ctrl_new_std(&state->ctrl_hdl, &adv7180_ctrl_ops,
  			  V4L2_CID_BRIGHTNESS, ADV7180_BRI_MIN,
-@@ -712,6 +727,17 @@ static int adv7180_init_controls(struct
- 				      0, ARRAY_SIZE(test_pattern_menu) - 1,
- 				      test_pattern_menu);
+@@ -717,6 +732,17 @@ static int adv7180_init_controls(struct
+ 					     test_pattern_menu);
+ 	}
  
 +	if (state->chip_info->flags & ADV7180_FLAG_MIPI_CSI2) {
 +		state->link_freq =
@@ -85,7 +85,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	state->sd.ctrl_handler = &state->ctrl_hdl;
  	if (state->ctrl_hdl.error) {
  		int err = state->ctrl_hdl.error;
-@@ -844,6 +870,10 @@ static int adv7180_set_pad_format(struct
+@@ -849,6 +875,10 @@ static int adv7180_set_pad_format(struct
  			adv7180_set_power(state, false);
  			adv7180_set_field_mode(state);
  			adv7180_set_power(state, true);
