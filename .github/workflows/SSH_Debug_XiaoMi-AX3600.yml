@@ -46,7 +46,7 @@ jobs:
     - name: SSH 远程调试（tmate）进入 menuconfig
       if: ${{ github.event.inputs.manual_config == 'y' }}
       uses: mxschmitt/action-tmate@v3
-      with:
+      #with:
         #command: |
           #cd source
           #[ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
