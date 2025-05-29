@@ -298,7 +298,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:wan" "5:lan" "6@eth0"
 		;;
-	dell,apl26-0ae)
+	dell,apl26-0ae|\
+	dell,apl27-0b1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:2" "6@eth1"
 		;;
