@@ -52,20 +52,20 @@ jobs:
           [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
           make menuconfig
 
-    - name: Debug current directory
+    - name: List all .config files
+      run: find . -name .config
+
+    - name: Check ./source/.config existence
+      run: ls -l ./source/.config || echo "not found"
+
+    - name: Copy .config to workspace root
       run: |
-        pwd
-        ls -al
+        set -e
+        cp ./source/.config ./
+        ls -l .config
 
-    - name: List files in workspace root
-      run: ls -al
-
-    - name: Stat .config
-      run: stat .config
-
-    - name: Upload .config artifact (abs path)
+    - name: Upload .config artifact
       uses: actions/upload-artifact@v4
       with:
         name: config
-        path: ${{ github.workspace }}/.config
-
+        path: .config
