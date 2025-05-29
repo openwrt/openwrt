@@ -28,14 +28,14 @@ jobs:
     # 手动 SSH 配置
     - name: SSH 远程调试（tmate）
       if: ${{ github.event.inputs.manual_config == 'y' }}
-      uses: mxschmitt/action-tmate@v3
+      uses: mxschmitt/action-tmate@v4
 
     # 自动生成 config
-    - name: Generate default AX3600 config
-      if: ${{ github.event.inputs.manual_config != 'y' }}
-      run: |
-        echo -e "CONFIG_TARGET_ipq807x=y\nCONFIG_TARGET_ipq807x_generic=y\nCONFIG_TARGET_ipq807x_generic_DEVICE_xiaomi_ax3600=y" > .config
-        make defconfig
+        # - name: Generate default AX3600 config
+          # if: ${{ github.event.inputs.manual_config != 'y' }}
+          # run: |
+            # echo -e "CONFIG_TARGET_ipq807x=y\nCONFIG_TARGET_ipq807x_generic=y\nCONFIG_TARGET_ipq807x_generic_DEVICE_xiaomi_ax3600=y" > .config
+            # make defconfig
 
     - name: Upload config file
       uses: actions/upload-artifact@v4
@@ -43,17 +43,17 @@ jobs:
         name: ax3600-config
         path: .config
 
-    - name: Continue compilation
-      run: |
-        if [ ! -f .config ]; then
-          echo "No .config file found, please generate config first!"
-          exit 1
-        fi
-        make download -j$(nproc)
-        make -j$(nproc) V=s
+        # - name: Continue compilation
+          # run: |
+            # if [ ! -f .config ]; then
+              # echo "No .config file found, please generate config first!"
+              # exit 1
+            # fi
+            # make download -j$(nproc)
+            # make -j$(nproc) V=s
 
-    - name: Upload firmware
-      uses: actions/upload-artifact@v4
-      with:
-        name: ax3600-firmware
-        path: bin/targets/ipq807x/generic/
+        # - name: Upload firmware
+          # uses: actions/upload-artifact@v4
+          # with:
+            # name: ax3600-firmware
+            # path: bin/targets/ipq807x/generic/
