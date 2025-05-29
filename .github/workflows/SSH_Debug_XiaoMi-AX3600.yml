@@ -55,8 +55,9 @@ jobs:
       run: ls -l source/
     - name: List files recursively
       run: ls -lR source/
-    - name: Upload ax3600 .config artifact
+      
+    - name: Upload any .config artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ax3600-config
-        path: source/.config
+        name: any-config
+        path: '**/.config'
