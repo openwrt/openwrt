@@ -57,18 +57,15 @@ jobs:
         pwd
         ls -al
 
-    - name: List all .config for debug
-      run: find . -name .config
-
-    - name: Copy .config to workspace root
-      run: cp ./source/.config ./
-
     - name: List files in workspace root
       run: ls -al
 
-    - name: Upload .config artifact
+    - name: Stat .config
+      run: stat .config
+
+    - name: Upload .config artifact (abs path)
       uses: actions/upload-artifact@v4
       with:
         name: config
-        path: .config
+        path: ${{ github.workspace }}/.config
 
