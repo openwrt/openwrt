@@ -54,11 +54,9 @@ jobs:
 
     - name: List all .config for debug
       run: find . -name .config
-    - name: Check .config files
-      run: ls -lR | grep .config
 
-    - name: Upload all .config artifact
+    - name: Upload .config artifact
       uses: actions/upload-artifact@v4
       with:
-        name: all-config
-        path: '**/.config*'
+        name: config
+        path: source/.config
