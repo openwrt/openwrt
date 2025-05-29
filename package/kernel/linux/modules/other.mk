@@ -1063,3 +1063,20 @@ define KernelPackage/mhi-pci-generic/description
 endef
 
 $(eval $(call KernelPackage,mhi-pci-generic))
+
+
+define KernelPackage/regulator-userspace-consumer
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Userspace regulator consumer support
+  KCONFIG:=CONFIG_REGULATOR_USERSPACE_CONSUMER
+  FILES:=$(LINUX_DIR)/drivers/regulator/userspace-consumer.ko
+  AUTOLOAD:=$(call AutoLoad,10,userspace-consumer,1)
+endef
+
+define KernelPackage/regulator-userspace-consumer/description
+  There are some classes of devices that are controlled entirely
+  from user space. Userspace consumer driver provides ability to
+  control power supplies for such devices.
+endef
+
+$(eval $(call KernelPackage,regulator-userspace-consumer))
