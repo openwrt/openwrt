@@ -51,7 +51,10 @@ jobs:
           cd source
           [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
           make menuconfig
-
+    - name: List files for debug
+      run: ls -l source/
+    - name: List files recursively
+      run: ls -lR source/
     - name: Upload ax3600 .config artifact
       uses: actions/upload-artifact@v4
       with:
