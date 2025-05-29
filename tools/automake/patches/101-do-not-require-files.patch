@@ -1,6 +1,6 @@
 --- a/bin/automake.in
 +++ b/bin/automake.in
-@@ -4513,7 +4513,7 @@ sub handle_gettext ()
+@@ -4552,7 +4552,7 @@ sub handle_gettext ()
  	    && grep ($_ eq 'intl', @subdirs));
      }
  
@@ -9,7 +9,7 @@
  }
  
  # Emit makefile footer.
-@@ -5641,7 +5641,7 @@ sub check_gnu_standards ()
+@@ -5677,7 +5677,7 @@ sub check_gnu_standards ()
            # otherwise require non-.md.
            my $required
             = (! -f $file && -f "$file.md") ? "$file.md" : $file;
@@ -18,7 +18,7 @@
          }
  
        # Accept one of these three licenses; default to COPYING.
-@@ -5655,7 +5655,7 @@ sub check_gnu_standards ()
+@@ -5691,7 +5691,7 @@ sub check_gnu_standards ()
  	      last;
  	    }
  	}
