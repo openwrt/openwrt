@@ -9,6 +9,7 @@
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
+#include <linux/platform_device.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
