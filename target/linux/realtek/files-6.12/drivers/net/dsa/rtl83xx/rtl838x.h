@@ -203,6 +203,8 @@
 #define RTL930X_EEE_CTRL(p)			(0x3274 + ((p) << 6))
 #define RTL930X_EEEP_PORT_CTRL(p)		(0x3278 + ((p) << 6))
 
+#define RTL931X_MAC_EEE_ABLTY			(0x0f08)
+
 /* L2 functionality */
 #define RTL838X_L2_CTRL_0			(0x3200)
 #define RTL839X_L2_CTRL_0			(0x3800)
@@ -1035,8 +1037,6 @@ struct rtl838x_reg {
 	int spcl_trap_eapol_ctrl;
 	void (*init_eee)(struct rtl838x_switch_priv *priv, bool enable);
 	void (*port_eee_set)(struct rtl838x_switch_priv *priv, int port, bool enable);
-	int (*eee_port_ability)(struct rtl838x_switch_priv *priv,
-				struct ethtool_eee *e, int port);
 	u64 (*l2_hash_seed)(u64 mac, u32 vid);
 	u32 (*l2_hash_key)(struct rtl838x_switch_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);

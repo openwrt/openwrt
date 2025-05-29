@@ -913,55 +913,6 @@ static void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	priv->ports[port].eee_enabled = enable;
 }
 
-/* Get EEE own capabilities and negotiation result */
-static int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
-{
-	u32 link, a;
-
-	if (port >= 26)
-		return -ENOTSUPP;
-
-	pr_debug("In %s, port %d\n", __func__, port);
-	link = sw_r32(RTL930X_MAC_LINK_STS);
-	link = sw_r32(RTL930X_MAC_LINK_STS);
-	if (!(link & BIT(port)))
-		return 0;
-
-	pr_debug("Setting advertised\n");
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(12))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (priv->ports[port].is2G5 && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(13)) {
-		pr_debug("ADVERTISING 2.5G EEE\n");
-		e->advertised |= ADVERTISED_2500baseX_Full;
-	}
-
-	if (priv->ports[port].is10G && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(15))
-		e->advertised |= ADVERTISED_10000baseT_Full;
-
-	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
-	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
-	pr_debug("Link partner: %08x\n", a);
-	if (a & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		if (priv->ports[port].is2G5)
-			e->lp_advertised |= ADVERTISED_2500baseX_Full;
-		if (priv->ports[port].is10G)
-			e->lp_advertised |= ADVERTISED_10000baseT_Full;
-	}
-
-	/* Read 2x to clear latched state */
-	a = sw_r32(RTL930X_EEEP_PORT_CTRL(port));
-	a = sw_r32(RTL930X_EEEP_PORT_CTRL(port));
-	pr_debug("%s RTL930X_EEEP_PORT_CTRL: %08x\n", __func__, a);
-
-	return 0;
-}
-
 static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
@@ -2538,7 +2489,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,
 	.port_eee_set = rtl930x_port_eee_set,
-	.eee_port_ability = rtl930x_eee_port_ability,
 	.l2_hash_seed = rtl930x_l2_hash_seed,
 	.l2_hash_key = rtl930x_l2_hash_key,
 	.read_mcast_pmask = rtl930x_read_mcast_pmask,

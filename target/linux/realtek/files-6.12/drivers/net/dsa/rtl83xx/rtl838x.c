@@ -623,35 +623,6 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 	priv->ports[port].eee_enabled = enable;
 }
 
-
-/* Get EEE own capabilities and negotiation result */
-static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
-				    struct ethtool_eee *e, int port)
-{
-	u64 link;
-
-	if (port >= 24)
-		return 0;
-
-	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
-	if (!(link & BIT(port)))
-		return 0;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
-	}
-
-	return 0;
-}
-
 static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
 	pr_debug("Setting up EEE, state: %d\n", enable);
@@ -1754,7 +1725,6 @@ const struct rtl838x_reg rtl838x_reg = {
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl838x_init_eee,
 	.port_eee_set = rtl838x_port_eee_set,
-	.eee_port_ability = rtl838x_eee_port_ability,
 	.l2_hash_seed = rtl838x_l2_hash_seed,
 	.l2_hash_key = rtl838x_l2_hash_key,
 	.read_mcast_pmask = rtl838x_read_mcast_pmask,

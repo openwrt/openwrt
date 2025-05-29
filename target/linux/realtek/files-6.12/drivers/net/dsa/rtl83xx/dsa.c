@@ -1134,34 +1134,16 @@ static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_k
 	return 0;
 }
 
-static int rtl83xx_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
+static int rtldsa_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *eee)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full;
-
-	priv->r->eee_port_ability(priv, e, port);
-
-	e->eee_enabled = priv->ports[port].eee_enabled;
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
-
-	return 0;
-}
-
-static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	e->supported = SUPPORTED_100baseT_Full |
-	               SUPPORTED_1000baseT_Full |
-	               SUPPORTED_2500baseX_Full;
-
-	priv->r->eee_port_ability(priv, e, port);
-
-	e->eee_enabled = priv->ports[port].eee_enabled;
-
-	e->eee_active = !!(e->advertised & e->lp_advertised);
+	/*
+	 * Until kernel 6.6 the Realtek device specific get_mac_eee() functions filled many
+	 * fields of the eee structure manually. That came from the fact, that the phy
+	 * driver could not report EEE capabilities on its own. Upstream will replace this
+	 * function with a simple boolean support_eee() getter starting from 6.14. That only
+	 * checks if a port can provide EEE or not. In the best case it can be replaced with
+	 * dsa_supports_eee() in the future. For now align to other upstream DSA drivers.
+	 */
 
 	return 0;
 }
@@ -2234,7 +2216,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_enable		= rtl83xx_port_enable,
 	.port_disable		= rtl83xx_port_disable,
 
-	.get_mac_eee		= rtl83xx_get_mac_eee,
+	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtl83xx_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
@@ -2292,7 +2274,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_enable		= rtl83xx_port_enable,
 	.port_disable		= rtl83xx_port_disable,
 
-	.get_mac_eee		= rtl93xx_get_mac_eee,
+	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtl83xx_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
