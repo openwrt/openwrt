@@ -55,8 +55,12 @@ jobs:
     - name: List all .config for debug
       run: find . -name .config
 
-    - name: Upload .config artifact
+    - name: Show absolute path of .config
+      run: readlink -f ./source/.config
+      
+    - name: Upload all .config files
       uses: actions/upload-artifact@v4
       with:
-        name: config
-        path: source/.config
+        name: all-config
+        path: |
+          $(find . -name .config)
