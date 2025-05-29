@@ -55,17 +55,17 @@ jobs:
     - name: List all .config files
       run: find . -name .config
 
-    - name: Check ./source/.config existence
-      run: ls -l ./source/.config || echo "not found"
+    - name: Find .config
+      run: find . -name .config
 
     - name: Copy .config to workspace root
-      run: |
-        set -e
-        cp ./source/.config ./
-        ls -l .config
+      run: cp ./source/.config ${{ github.workspace }}/.config
 
-    - name: Upload .config artifact
+    - name: List .config at workspace root
+      run: ls -l ${{ github.workspace }}/.config
+
+    - name: Upload .config artifact (abs path)
       uses: actions/upload-artifact@v4
       with:
         name: config
-        path: .config
+        path: ${{ github.workspace }}/.config
