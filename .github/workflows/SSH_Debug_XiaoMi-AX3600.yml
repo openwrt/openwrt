@@ -55,9 +55,12 @@ jobs:
     - name: List all .config for debug
       run: find . -name .config
 
-    - name: Upload .config artifact
+    - name: Copy .config to workspace root
+      run: cp ./source/.config ./
+
+    - name: Upload config artifact from root
       uses: actions/upload-artifact@v4
       with:
         name: config
-        path: source/.config
+        path: .config
 
