@@ -55,11 +55,9 @@ jobs:
     - name: List all .config for debug
       run: find . -name .config
 
-    - name: Show absolute path of .config
-      run: readlink -f ./source/.config
-      
-    - name: Upload .config artifact (abs)
+    - name: Upload .config artifact
       uses: actions/upload-artifact@v4
       with:
-        name: config-abs
-        path: /home/runner/work/openwrt-/openwrt-/source/.config
+        name: config
+        path: source/.config
+
