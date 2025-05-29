@@ -47,10 +47,10 @@ jobs:
       if: ${{ github.event.inputs.manual_config == 'y' }}
       uses: mxschmitt/action-tmate@v3
       with:
-        command: |
-          cd source
-          [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
-          make menuconfig
+        #command: |
+          #cd source
+          #[ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
+          #make menuconfig
 
     - name: Find .config
       run: find . -name .config
