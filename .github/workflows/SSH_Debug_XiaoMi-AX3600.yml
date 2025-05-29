@@ -58,9 +58,8 @@ jobs:
     - name: Show absolute path of .config
       run: readlink -f ./source/.config
       
-    - name: Upload all .config files
+    - name: Upload .config artifact (abs)
       uses: actions/upload-artifact@v4
       with:
-        name: all-config
-        path: |
-          $(find . -name .config)
+        name: config-abs
+        path: /home/runner/work/openwrt-/openwrt-/source/.config
