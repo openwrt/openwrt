@@ -598,7 +598,7 @@ static void rtl838x_traffic_disable(int source, int dest)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_838x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -635,7 +635,7 @@ static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			rtl838x_port_eee_set(priv, i, enable);
+			priv->r->set_mac_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -1724,7 +1724,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl838x_init_eee,
-	.port_eee_set = rtl838x_port_eee_set,
+	.set_mac_eee = rtldsa_838x_set_mac_eee,
 	.l2_hash_seed = rtl838x_l2_hash_seed,
 	.l2_hash_key = rtl838x_l2_hash_key,
 	.read_mcast_pmask = rtl838x_read_mcast_pmask,

@@ -858,7 +858,7 @@ static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_839x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -894,7 +894,7 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			rtl839x_port_eee_set(priv, i, enable);
+			priv->r->set_mac_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;
 }
@@ -1860,7 +1860,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,
 	.init_eee = rtl839x_init_eee,
-	.port_eee_set = rtl839x_port_eee_set,
+	.set_mac_eee = rtldsa_839x_set_mac_eee,
 	.l2_hash_seed = rtl839x_l2_hash_seed,
 	.l2_hash_key = rtl839x_l2_hash_key,
 	.read_mcast_pmask = rtl839x_read_mcast_pmask,

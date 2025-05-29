@@ -1115,7 +1115,7 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
-static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
+static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1124,7 +1124,7 @@ static int rtl83xx_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_k
 		priv->r->init_eee(priv, true);
 	}
 
-	priv->r->port_eee_set(priv, port, e->eee_enabled);
+	priv->r->set_mac_eee(priv, port, e->eee_enabled);
 
 	if (e->eee_enabled)
 		pr_info("Enabled EEE for port %d\n", port);
@@ -2217,7 +2217,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_disable		= rtl83xx_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
-	.set_mac_eee		= rtl83xx_set_mac_eee,
+	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
 	.port_bridge_join	= rtl83xx_port_bridge_join,
@@ -2275,7 +2275,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_disable		= rtl83xx_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
-	.set_mac_eee		= rtl83xx_set_mac_eee,
+	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
 	.port_bridge_join	= rtl83xx_port_bridge_join,

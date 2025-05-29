@@ -1036,7 +1036,7 @@ struct rtl838x_reg {
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
 	void (*init_eee)(struct rtl838x_switch_priv *priv, bool enable);
-	void (*port_eee_set)(struct rtl838x_switch_priv *priv, int port, bool enable);
+	void (*set_mac_eee)(struct rtl838x_switch_priv *priv, int port, bool enable);
 	u64 (*l2_hash_seed)(u64 mac, u32 vid);
 	u32 (*l2_hash_key)(struct rtl838x_switch_priv *priv, u64 seed);
 	u64 (*read_mcast_pmask)(int idx);

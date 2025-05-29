@@ -892,7 +892,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 }
 
 /* Enables or disables the EEE/EEEP capability of a port */
-static void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+static void rtldsa_930x_set_mac_eee(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
@@ -920,7 +920,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
-			rtl930x_port_eee_set(priv, i, enable);
+			priv->r->set_mac_eee(priv, i, enable);
 	}
 
 	priv->eee_enabled = enable;
@@ -2488,7 +2488,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,
-	.port_eee_set = rtl930x_port_eee_set,
+	.set_mac_eee = rtldsa_930x_set_mac_eee,
 	.l2_hash_seed = rtl930x_l2_hash_seed,
 	.l2_hash_key = rtl930x_l2_hash_key,
 	.read_mcast_pmask = rtl930x_read_mcast_pmask,
