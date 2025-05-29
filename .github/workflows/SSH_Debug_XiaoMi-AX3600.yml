@@ -45,16 +45,12 @@ jobs:
     # SSH 远程调试（tmate），自动进入 make menuconfig
     - name: SSH 远程调试（tmate）进入 menuconfig
       if: ${{ github.event.inputs.manual_config == 'y' }}
-      uses: mxschmitt/action-tmate@v3
+      uses: mxschmitt/action-tmate@v4
       with:
-        limit-access-to-actor: true
-      env:
-        REPO_CHOICE: ${{ github.event.inputs.repo_choice }}
-      # 进入源码目录并打开 menuconfig
-      run: |
-        cd source
-        [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
-        make menuconfig
+        command: |
+          cd source
+          [ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
+          make menuconfig
 
     - name: Upload ax3600 .config artifact
       uses: actions/upload-artifact@v4
