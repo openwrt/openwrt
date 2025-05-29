@@ -47,7 +47,8 @@ ipq806x_setup_interfaces()
 		ucidef_set_network_device_conduit "lan1" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
-	edgecore,ecw5410)
+	edgecore,ecw5410 |\
+	extreme,ap3935)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	qcom,ipq8064-ap161)
@@ -63,7 +64,6 @@ ipq806x_setup_interfaces()
 	meraki,mr42)
 		ucidef_set_interface_lan "eth0"
 		;;
-	extreme,ap3935 |\
 	meraki,mr52)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
