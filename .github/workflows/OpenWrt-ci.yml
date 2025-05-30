@@ -125,19 +125,19 @@ jobs:
           cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
 
       - name: Deliver buildinfo
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_buildinfo  # 上传编译信息
+          name: OpenWrt_buildinfo
           path: ./artifact/buildinfo/
 
       - name: Deliver package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_package   # 上传编译的 ipk 包
+          name: OpenWrt_package
           path: ./artifact/package/
 
       - name: Deliver firmware
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: OpenWrt_firmware # 上传固件
+          name: OpenWrt_firmware
           path: ./bin/targets/
