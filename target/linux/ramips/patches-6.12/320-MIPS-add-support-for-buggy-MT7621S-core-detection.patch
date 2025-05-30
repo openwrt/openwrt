@@ -41,7 +41,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
 
 --- a/arch/mips/include/asm/mips-cps.h
 +++ b/arch/mips/include/asm/mips-cps.h
-@@ -11,6 +11,8 @@
+@@ -12,6 +12,8 @@
  #include <linux/io.h>
  #include <linux/types.h>
  
@@ -50,7 +50,7 @@ Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
  extern unsigned long __cps_access_bad_size(void)
  	__compiletime_error("Bad size for CPS accessor");
  
-@@ -165,6 +167,10 @@ static inline unsigned int mips_cps_numc
+@@ -166,6 +168,10 @@ static inline unsigned int mips_cps_numc
  	if (!mips_cm_present())
  		return 0;
  

@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -166,6 +166,7 @@ source "drivers/net/ethernet/pensando/Kc
+@@ -175,6 +175,7 @@ source "drivers/net/ethernet/pensando/Kc
  source "drivers/net/ethernet/qlogic/Kconfig"
  source "drivers/net/ethernet/brocade/Kconfig"
  source "drivers/net/ethernet/qualcomm/Kconfig"
@@ -10,7 +10,7 @@
  source "drivers/net/ethernet/renesas/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -77,6 +77,7 @@ obj-$(CONFIG_NET_VENDOR_PACKET_ENGINES)
+@@ -78,6 +78,7 @@ obj-$(CONFIG_NET_VENDOR_PACKET_ENGINES)
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
  obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
  obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/

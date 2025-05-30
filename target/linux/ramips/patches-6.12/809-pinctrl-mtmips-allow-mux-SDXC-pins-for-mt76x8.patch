@@ -62,7 +62,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #define MT76X8_GPIO_MODE_WDT		14
  #define MT76X8_GPIO_MODE_SPI		12
  #define MT76X8_GPIO_MODE_SDMODE		10
-@@ -74,6 +78,12 @@ static struct mtmips_pmx_func refclk_grp
+@@ -68,6 +72,12 @@ static struct mtmips_pmx_func refclk_grp
  static struct mtmips_pmx_func perst_grp[] = { FUNC("perst", 0, 36, 1) };
  static struct mtmips_pmx_func wdt_grp[] = { FUNC("wdt", 0, 38, 1) };
  static struct mtmips_pmx_func spi_grp[] = { FUNC("spi", 0, 7, 4) };
@@ -74,8 +74,8 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 +static struct mtmips_pmx_func esd_grp[] = { FUNC("iot", 0, 47, 1) };
  
  static struct mtmips_pmx_func sd_mode_grp[] = {
- 	FUNC("jtag", 3, 22, 8),
-@@ -216,6 +226,7 @@ static struct mtmips_pmx_group mt76x8_pi
+ 	FUNC("sdxc jtag", 3, 22, 8),
+@@ -182,6 +192,7 @@ static struct mtmips_pmx_group mt76x8_pi
  	GRP("perst", perst_grp, 1, MT76X8_GPIO_MODE_PERST),
  	GRP("wdt", wdt_grp, 1, MT76X8_GPIO_MODE_WDT),
  	GRP("spi", spi_grp, 1, MT76X8_GPIO_MODE_SPI),
@@ -83,7 +83,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	GRP_G("sdmode", sd_mode_grp, MT76X8_GPIO_MODE_MASK,
  				1, MT76X8_GPIO_MODE_SDMODE),
  	GRP_G("uart0", uart0_grp, MT76X8_GPIO_MODE_MASK,
-@@ -257,7 +268,18 @@ static struct mtmips_pmx_group mt76x8_pi
+@@ -223,7 +234,18 @@ static struct mtmips_pmx_group mt76x8_pi
  
  static int mt76x8_pinctrl_probe(struct platform_device *pdev)
  {

@@ -27,7 +27,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/drivers/input/keyboard/Kconfig
 +++ b/drivers/input/keyboard/Kconfig
-@@ -616,6 +616,17 @@ config KEYBOARD_SUNKBD
+@@ -604,6 +604,17 @@ config KEYBOARD_SUNKBD
  	  To compile this driver as a module, choose M here: the
  	  module will be called sunkbd.
  
@@ -47,7 +47,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	depends on ARCH_SHMOBILE || COMPILE_TEST
 --- a/drivers/input/keyboard/Makefile
 +++ b/drivers/input/keyboard/Makefile
-@@ -66,6 +66,7 @@ obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stow
+@@ -65,6 +65,7 @@ obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stow
  obj-$(CONFIG_KEYBOARD_ST_KEYSCAN)	+= st-keyscan.o
  obj-$(CONFIG_KEYBOARD_SUN4I_LRADC)	+= sun4i-lradc-keys.o
  obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd.o

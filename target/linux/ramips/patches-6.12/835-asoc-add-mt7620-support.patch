@@ -19,7 +19,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -99,6 +99,7 @@ source "sound/soc/mxs/Kconfig"
+@@ -107,6 +107,7 @@ source "sound/soc/mxs/Kconfig"
  source "sound/soc/pxa/Kconfig"
  source "sound/soc/qcom/Kconfig"
  source "sound/soc/rockchip/Kconfig"
@@ -29,7 +29,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "sound/soc/sof/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -56,6 +56,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
+@@ -60,6 +60,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
  obj-$(CONFIG_SND_SOC)	+= pxa/
  obj-$(CONFIG_SND_SOC)	+= qcom/
  obj-$(CONFIG_SND_SOC)	+= rockchip/
