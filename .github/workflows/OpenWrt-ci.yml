@@ -13,8 +13,8 @@ on:
   push:
     branches: 
       - master  # 仅在 master 分支有 push 时触发
-  # schedule:
-  #   - cron: 0 20 * * * # 定时任务（已注释）
+  schedule:
+    - cron: 0 20 * * * # 定时任务（已注释）
   release:
     types: [published]  # 发布 release 时触发
 
