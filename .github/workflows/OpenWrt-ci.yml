@@ -10,13 +10,14 @@
 name: OpenWrt-CI
 
 on:
+  workflow_dispatch:      # 支持手动触发
   push:
     branches: 
-      - master  # 仅在 master 分支有 push 时触发
+      - master            # 仅在 master 分支有 push 时触发
   schedule:
-    - cron: 0 20 * * * # 定时任务（已注释）
+    - cron: 0 20 * * *    # 定时任务
   release:
-    types: [published]  # 发布 release 时触发
+    types: [published]    # 发布 release 时触发
 
 jobs:
 
@@ -24,7 +25,7 @@ jobs:
 
     name: Build OpenWrt firmware  # 工作名称：编译 OpenWrt 固件
 
-    runs-on: ubuntu-latest  # 运行环境
+    runs-on: ubuntu-latest        # 运行环境
 
     if: github.event.repository.owner.id == github.event.sender.id  # 只有仓库所有者推送才会运行
 
