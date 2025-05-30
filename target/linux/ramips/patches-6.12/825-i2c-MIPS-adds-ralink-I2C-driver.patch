@@ -45,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -1023,6 +1023,11 @@ config I2C_RK3X
+@@ -1061,6 +1061,11 @@ config I2C_RK3X
  	  This driver can also be built as a module. If so, the module will
  	  be called i2c-rk3x.
  
@@ -59,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_RENESAS || COMPILE_TEST
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -96,6 +96,7 @@ obj-$(CONFIG_I2C_PCA_PLATFORM)	+= i2c-pc
+@@ -98,6 +98,7 @@ obj-$(CONFIG_I2C_PCA_PLATFORM)	+= i2c-pc
  obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
@@ -436,13 +436,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		i2c->cur_clk = 100000;
 +
 +	adap = &i2c->adap;
-+	adap->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
++	adap->class = I2C_CLASS_HWMON;
 +	adap->algo = &rt_i2c_algo;
 +	adap->retries = 3;
 +	adap->dev.parent = dev;
 +	i2c_set_adapdata(adap, i2c);
 +	adap->dev.of_node = pdev->dev.of_node;
-+	strlcpy(adap->name, dev_name(dev), sizeof(adap->name));
++	strscpy(adap->name, dev_name(dev), sizeof(adap->name));
 +	adap->quirks = &rt_i2c_quirks;
 +
 +	restart = rt_i2c_init(i2c);

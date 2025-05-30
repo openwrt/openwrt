@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -415,6 +415,15 @@ config PWM_MICROCHIP_CORE
+@@ -452,6 +452,15 @@ config PWM_MICROCHIP_CORE
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-microchip-core.
  
@@ -31,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_MXS || COMPILE_TEST
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -35,6 +35,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
+@@ -38,6 +38,7 @@ obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-p
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
  obj-$(CONFIG_PWM_MESON)		+= pwm-meson.o
  obj-$(CONFIG_PWM_MEDIATEK)	+= pwm-mediatek.o
@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek-ramips.c
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,183 @@
 +/*
 + * Mediatek Pulse Width Modulator driver
 + *
@@ -172,7 +172,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static const struct pwm_ops mtk_pwm_ops = {
 +	.apply = mtk_pwm_apply,
-+	.owner = THIS_MODULE,
 +};
 +
 +static int mtk_pwm_probe(struct platform_device *pdev)
@@ -187,9 +186,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(pc->mmio_base))
 +		return PTR_ERR(pc->mmio_base);
 +
-+	pc->chip.dev = &pdev->dev;
++	pc->chip.dev = pdev->dev;
 +	pc->chip.ops = &mtk_pwm_ops;
-+	pc->chip.base = -1;
 +	pc->chip.npwm = NUM_PWM;
 +
 +	platform_set_drvdata(pdev, pc);

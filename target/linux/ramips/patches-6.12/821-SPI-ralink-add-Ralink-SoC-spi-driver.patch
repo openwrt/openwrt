@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -904,6 +904,12 @@ config SPI_QCOM_GENI
+@@ -932,6 +932,12 @@ config SPI_QCOM_GENI
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi-geni-qcom.
  
@@ -31,7 +31,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  	depends on (PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || COMPILE_TEST)
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -118,6 +118,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
+@@ -122,6 +122,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
  obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-realtek-rtl.o
  obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
@@ -168,7 +168,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +		SPI_CS_HIGH)
 +
 +struct rt2880_spi {
-+	struct spi_master	*master;
++	struct spi_controller	*master;
 +	void __iomem		*base;
 +	u32			speed;
 +	u16			wait_loops;
@@ -178,7 +178,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
 +{
-+	return spi_master_get_devdata(spi->master);
++	return spi_controller_get_devdata(spi->controller);
 +}
 +
 +static inline u32 rt2880_spi_read(struct rt2880_spi *rs, u32 reg)
@@ -235,7 +235,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return prescale;
 +}
 +
-+static u32 get_arbiter_offset(struct spi_master *master)
++static u32 get_arbiter_offset(struct spi_controller *master)
 +{
 +	u32 offset;
 +
@@ -269,9 +269,9 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return -ETIMEDOUT;
 +}
 +
-+static void rt2880_dump_reg(struct spi_master *master)
++static void rt2880_dump_reg(struct spi_controller *master)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(master);
 +
 +	dev_dbg(&master->dev, "stat: %08x, cfg: %08x, ctl: %08x, " \
 +			"data: %08x, arb: %08x\n",
@@ -282,10 +282,10 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +			rt2880_spi_read(rs, get_arbiter_offset(master)));
 +}
 +
-+static int rt2880_spi_transfer_one(struct spi_master *master,
++static int rt2880_spi_transfer_one(struct spi_controller *master,
 +		struct spi_device *spi, struct spi_transfer *xfer)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(master);
 +	unsigned len;
 +	const u8 *tx = xfer->tx_buf;
 +	u8 *rx = xfer->rx_buf;
@@ -332,8 +332,8 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static int rt2880_spi_setup(struct spi_device *spi)
 +{
-+	struct spi_master *master = spi->master;
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct spi_controller *master = spi->controller;
++	struct rt2880_spi *rs = spi_controller_get_devdata(master);
 +	u32 reg, old_reg, arbit_off;
 +
 +	if ((spi->max_speed_hz > master->max_speed_hz) ||
@@ -391,10 +391,10 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+static int rt2880_spi_prepare_message(struct spi_master *master,
++static int rt2880_spi_prepare_message(struct spi_controller *master,
 +		struct spi_message *msg)
 +{
-+	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct rt2880_spi *rs = spi_controller_get_devdata(master);
 +	struct spi_device *spi = msg->spi;
 +	u32 reg;
 +
@@ -450,7 +450,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +static int rt2880_spi_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
-+	struct spi_master *master;
++	struct spi_controller *master;
 +	struct rt2880_spi *rs;
 +	void __iomem *base;
 +	struct clk *clk;
@@ -475,13 +475,13 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	master->bits_per_word_mask = SPI_BPW_MASK(8);
 +	master->min_speed_hz = clk_get_rate(clk) / 128;
 +	master->max_speed_hz = clk_get_rate(clk) / 2;
-+	master->flags = SPI_MASTER_HALF_DUPLEX;
++	master->flags = SPI_CONTROLLER_HALF_DUPLEX;
 +	master->setup = rt2880_spi_setup;
 +	master->prepare_message = rt2880_spi_prepare_message;
 +	master->set_cs = rt2880_spi_set_cs;
 +	master->transfer_one = rt2880_spi_transfer_one,
 +
-+	rs = spi_master_get_devdata(master);
++	rs = spi_controller_get_devdata(master);
 +	rs->master = master;
 +	rs->base = base;
 +	rs->clk = clk;
@@ -490,7 +490,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (ret)
 +		return ret;
 +
-+	return devm_spi_register_master(dev, master);
++	return devm_spi_register_controller(dev, master);
 +}
 +
 +MODULE_ALIAS("platform:" DRIVER_NAME);

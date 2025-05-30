@@ -96,10 +96,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -732,10 +732,15 @@ config GOLDFISH_TIMER
- 	depends on RTC_DRV_GOLDFISH
+@@ -753,10 +753,15 @@ config EP93XX_TIMER
  	help
- 	  Support for the timer/counter of goldfish-rtc
+ 	  Enables support for the Cirrus Logic timer block
+ 	  EP93XX.
 + 
 +config CEVT_SYSTICK_QUIRK
 +	bool

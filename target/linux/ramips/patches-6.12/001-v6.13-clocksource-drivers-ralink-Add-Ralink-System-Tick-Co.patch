@@ -208,9 +208,9 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 -TIMER_OF_DECLARE(systick, "ralink,cevt-systick", ralink_systick_init);
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -733,4 +733,13 @@ config GOLDFISH_TIMER
- 	help
- 	  Support for the timer/counter of goldfish-rtc
+@@ -754,4 +754,13 @@ config EP93XX_TIMER
+ 	  Enables support for the Cirrus Logic timer block
+ 	  EP93XX.
  
 +config RALINK_TIMER
 +	bool "Ralink System Tick Counter"
@@ -224,10 +224,10 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  endmenu
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
-@@ -89,3 +89,4 @@ obj-$(CONFIG_MSC313E_TIMER)		+= timer-ms
- obj-$(CONFIG_GOLDFISH_TIMER)		+= timer-goldfish.o
+@@ -91,3 +91,4 @@ obj-$(CONFIG_GOLDFISH_TIMER)		+= timer-g
  obj-$(CONFIG_GXP_TIMER)			+= timer-gxp.o
  obj-$(CONFIG_CLKSRC_LOONGSON1_PWM)	+= timer-loongson1-pwm.o
+ obj-$(CONFIG_EP93XX_TIMER)		+= timer-ep93xx.o
 +obj-$(CONFIG_RALINK_TIMER)		+= timer-ralink.o
 --- /dev/null
 +++ b/drivers/clocksource/timer-ralink.c
