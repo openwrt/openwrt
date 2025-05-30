@@ -52,17 +52,16 @@ jobs:
           #[ -f scripts/feeds ] && ./scripts/feeds update -a && ./scripts/feeds install -a
           #make menuconfig
 
-    - name: Find .config
-      run: find . -name .config
+    - name: Find and copy first .config (if any)
+      run: |
+          find . -name .config -print -exec cp {} ./found.config \; -quit
+          ls -l found.config || echo "No .config found"
 
-    - name: Copy .config to workspace root
-      run: cp ./source/.config ./
-
-    - name: List .config at workspace root
-      run: ls -l .config
-
-    - name: Upload .config artifact
+    - name: Upload .config from all possible locations
       uses: actions/upload-artifact@v4
       with:
-        name: config
-        path: '/source/.config'
+          name: config
+          path: |
+            found.config
+            source/.config
+            .config
