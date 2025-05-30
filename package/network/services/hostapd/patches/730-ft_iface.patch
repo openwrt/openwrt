@@ -8,7 +8,7 @@ a VLAN interface on top of the bridge, instead of using the bridge directly
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3285,6 +3285,8 @@ static int hostapd_config_fill(struct ho
+@@ -3054,6 +3054,8 @@ static int hostapd_config_fill(struct ho
  		wpa_printf(MSG_INFO,
  			   "Line %d: Obsolete peerkey parameter ignored", line);
  #ifdef CONFIG_IEEE80211R_AP
@@ -19,7 +19,7 @@ a VLAN interface on top of the bridge, instead of using the bridge directly
  		    hexstr2bin(pos, bss->mobility_domain,
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -283,6 +283,7 @@ struct airtime_sta_weight {
+@@ -285,6 +285,7 @@ struct airtime_sta_weight {
  struct hostapd_bss_config {
  	char iface[IFNAMSIZ + 1];
  	char bridge[IFNAMSIZ + 1];
@@ -29,7 +29,7 @@ a VLAN interface on top of the bridge, instead of using the bridge directly
  	int bridge_hairpin; /* hairpin_mode on bridge members */
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
-@@ -1829,8 +1829,12 @@ int hostapd_setup_wpa(struct hostapd_dat
+@@ -1834,8 +1834,12 @@ int hostapd_setup_wpa(struct hostapd_dat
  	    wpa_key_mgmt_ft(hapd->conf->wpa_key_mgmt)) {
  		const char *ft_iface;
  

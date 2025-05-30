@@ -96,7 +96,7 @@ export let ifaces = {};
 for (let k, v in interfaces) {
 	let iface = ifaces[v.ifname] = v;
 
-	iface.mode = iftypes[iface.iftype] ?? 'unknonw',
+	iface.mode = iftypes[iface.iftype] ?? 'unknown',
 	iface.noise = get_noise(iface);
 	iface.country = get_country(iface);
 	iface.max_power = get_max_power(iface);

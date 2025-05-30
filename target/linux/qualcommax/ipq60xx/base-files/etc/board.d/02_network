@@ -15,6 +15,9 @@ ipq60xx_setup_interfaces()
 	glinet,gl-axt1800)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	alfa-network,ap120c-ax)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	cambiumnetworks,xe3-4)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
@@ -51,6 +54,9 @@ ipq60xx_setup_macs()
 	local label_mac=""
 
 	case $board in
+	alfa-network,ap120c-ax)
+		label_mac=$(mtd_get_mac_binary 0:ART 12)
+		;;
 	qihoo,360v6)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)

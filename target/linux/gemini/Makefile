@@ -11,7 +11,7 @@ FEATURES:=squashfs pci rtc usb usbgadget dt gpio display ext4 rootfs-part boot-p
 CPU_TYPE:=fa526
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.6
+KERNEL_PATCHVER:=6.12
 
 define Target/Description
 	Build firmware images for the StorLink/Cortina Gemini CS351x ARM FA526 CPU

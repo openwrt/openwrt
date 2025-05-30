@@ -1,0 +1,69 @@
+From c86692fc2cb77d94dd8c166c2b9017f196d02a84 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Tue, 10 Dec 2024 14:18:26 +0000
+Subject: [PATCH] net: dsa: b53/bcm_sf2: implement .support_eee() method
+
+Implement the .support_eee() method to indicate that EEE is not
+supported by two switch variants, rather than making these checks in
+the .set_mac_eee() and .get_mac_eee() methods.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/E1tL14E-006cZU-Nc@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/b53/b53_common.c | 13 +++++++------
+ drivers/net/dsa/b53/b53_priv.h   |  1 +
+ 2 files changed, 8 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -2358,13 +2358,16 @@ int b53_eee_init(struct dsa_switch *ds,
+ }
+ EXPORT_SYMBOL(b53_eee_init);
+ 
+-int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
++bool b53_support_eee(struct dsa_switch *ds, int port)
+ {
+ 	struct b53_device *dev = ds->priv;
+ 
+-	if (is5325(dev) || is5365(dev))
+-		return -EOPNOTSUPP;
++	return !is5325(dev) && !is5365(dev);
++}
++EXPORT_SYMBOL(b53_support_eee);
+ 
++int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
++{
+ 	return 0;
+ }
+ EXPORT_SYMBOL(b53_get_mac_eee);
+@@ -2374,9 +2377,6 @@ int b53_set_mac_eee(struct dsa_switch *d
+ 	struct b53_device *dev = ds->priv;
+ 	struct ethtool_keee *p = &dev->ports[port].eee;
+ 
+-	if (is5325(dev) || is5365(dev))
+-		return -EOPNOTSUPP;
+-
+ 	p->eee_enabled = e->eee_enabled;
+ 	b53_eee_enable_set(ds, port, e->eee_enabled);
+ 
+@@ -2433,6 +2433,7 @@ static const struct dsa_switch_ops b53_s
+ 	.port_setup		= b53_setup_port,
+ 	.port_enable		= b53_enable_port,
+ 	.port_disable		= b53_disable_port,
++	.support_eee		= b53_support_eee,
+ 	.get_mac_eee		= b53_get_mac_eee,
+ 	.set_mac_eee		= b53_set_mac_eee,
+ 	.port_bridge_join	= b53_br_join,
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -387,6 +387,7 @@ int b53_enable_port(struct dsa_switch *d
+ void b53_disable_port(struct dsa_switch *ds, int port);
+ void b53_brcm_hdr_setup(struct dsa_switch *ds, int port);
+ int b53_eee_init(struct dsa_switch *ds, int port, struct phy_device *phy);
++bool b53_support_eee(struct dsa_switch *ds, int port);
+ int b53_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
+ int b53_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e);
+ 

@@ -1343,7 +1343,7 @@ void rtl83xx_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl931x_fast_age(struct dsa_switch *ds, int port)
+static void rtl931x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1358,7 +1358,7 @@ void rtl931x_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl930x_fast_age(struct dsa_switch *ds, int port)
+static void rtl930x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1862,7 +1862,7 @@ out:
 	return err;
 }
 
-int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
+static int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 			 const struct switchdev_obj_port_mdb *mdb,
 			 const struct dsa_db db)
 {
@@ -2171,7 +2171,7 @@ out:
 	return 0;
 }
 
-int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
+static int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 {
 	u32 val;
 	u32 offset = 0;
@@ -2190,7 +2190,7 @@ int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 	return val;
 }
 
-int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 {
 	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -2217,8 +2217,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
 
-	.phy_read		= dsa_phy_read,
-	.phy_write		= dsa_phy_write,
+	.phy_read		= rtl83xx_dsa_phy_read,
+	.phy_write		= rtl83xx_dsa_phy_write,
 
 	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
@@ -2275,8 +2275,8 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
-	.phy_read		= dsa_phy_read,
-	.phy_write		= dsa_phy_write,
+	.phy_read		= rtl83xx_dsa_phy_read,
+	.phy_write		= rtl83xx_dsa_phy_write,
 
 	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,

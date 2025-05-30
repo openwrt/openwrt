@@ -52,6 +52,24 @@ define Build/mt798x-gpt
 	rm $@.tmp
 endef
 
+# Variation of the normal partition table to account
+# for factory and mfgdata partition
+#
+# Keep fip partition at standard offset to keep consistency
+# with uboot commands
+define Build/mt7988-mozart-gpt
+	cp $@ $@.tmp 2>/dev/null || true
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
+			-t 0x83	-N ubootenv	-r	-p 512k@4M \
+			-t 0xef	-N fip		  -r	-p 4M@6656k \
+			-t 0x83	-N factory	-r	-p 8M@25M \
+			-t 0x2e	-N mfgdata	-r	-p 8M@33M \
+			-t 0xef -N recovery	-r	-p 32M@41M \
+			-t 0x2e -N production		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@73M
+	cat $@.tmp >> $@
+	rm $@.tmp
+endef
+
 define Build/append-openwrt-one-eeprom
 	dd if=$(STAGING_DIR_IMAGE)/mt7981_eeprom_mt7976_dbdc.bin >> $@
 endef
@@ -244,7 +262,7 @@ define Device/arcadyan_mozart
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
   ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip emmc-gpt.bin
-  ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
+  ARTIFACT/emmc-gpt.bin := mt7988-mozart-gpt
   ARTIFACT/emmc-preloader.bin	:= mt7988-bl2 emmc-comb
   ARTIFACT/emmc-bl31-uboot.fip	:= mt7988-bl31-uboot arcadyan_mozart
   SUPPORTED_DEVICES += arcadyan,mozart
@@ -760,6 +778,31 @@ define Device/cudy_tr3000-v1
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += cudy_tr3000-v1
+
+define Device/cudy_tr3000-v1-ubootmod
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := TR3000
+  DEVICE_VARIANT := v1 (OpenWrt U-Boot layout)
+  DEVICE_DTS := mt7981b-cudy-tr3000-v1-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 cudy-tr3000-v1
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot cudy_tr3000-v1
+endef
+TARGET_DEVICES += cudy_tr3000-v1-ubootmod
 
 define Device/cudy_wr3000-v1
   DEVICE_VENDOR := Cudy

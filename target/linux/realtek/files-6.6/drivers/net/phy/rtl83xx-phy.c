@@ -147,7 +147,7 @@ static int resume_polling(u64 saved_state)
 	return 0;
 }
 
-int rtl821x_match_phy_device(struct phy_device *phydev)
+static int rtl821x_match_phy_device(struct phy_device *phydev)
 {
 	u64 poll_state;
 	int rawpage, port = phydev->mdio.addr & ~3;
@@ -238,7 +238,7 @@ u8  rtl9300_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 /* Reset the SerDes by powering it off and set a new operation mode
  * of the SerDes.
  */
-void rtl9300_sds_rst(int sds_num, u32 mode)
+static void rtl9300_sds_rst(int sds_num, u32 mode)
 {
 	pr_info("%s %d\n", __func__, mode);
 	if (sds_num < 0 || sds_num > 11) {
@@ -275,7 +275,7 @@ void rtl9300_sds_set(int sds_num, u32 mode)
 	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
 
-u32 rtl9300_sds_mode_get(int sds_num)
+static u32 rtl9300_sds_mode_get(int sds_num)
 {
 	u32 v;
 
@@ -1147,7 +1147,7 @@ static int rtl8214fc_config_aneg(struct phy_device *phydev)
  * but the only way that works since the kernel first enables EEE in the MAC
  * and then sets up the PHY. The MAC-based approach would require the oppsite.
  */
-void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
+static void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 {
 	u32 val;
 	bool an_enabled;
@@ -1668,7 +1668,7 @@ static int rtl8390_configure_serdes(struct phy_device *phydev)
 	return 0;
 }
 
-void rtl9300_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+static void rtl9300_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
 {
 	int l = end_bit - start_bit + 1;
 	u32 data = v;
@@ -1684,7 +1684,7 @@ void rtl9300_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit,
 	rtl930x_write_sds_phy(sds, page, reg, data);
 }
 
-u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+static u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
 {
 	int l = end_bit - start_bit + 1;
 	u32 v = rtl930x_read_sds_phy(sds, page, reg);
@@ -1752,7 +1752,7 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	return 0;
 }
 
-void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
+static void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 {
 	int page = 0x2e; /* 10GR and USXGMII */
 
@@ -1766,7 +1766,7 @@ void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 
 /* Force PHY modes on 10GBit Serdes
  */
-void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
+static void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 {
 	int lc_value;
 	int sds_mode;
@@ -1927,7 +1927,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	pr_info("%s --------------------- serdes %d forced to %x DONE\n", __func__, sds, sds_mode);
 }
 
-void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
+static void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 {
 	/* parameters: rtl9303_80G_txParam_s2 */
 	int impedance = 0x8;
@@ -1994,7 +1994,7 @@ int rtl9300_sds_clock_wait(int timeout)
 	return 1;
 }
 
-void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
+static void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 {
 	u32 v10, v1;
 
@@ -2175,7 +2175,7 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 	dcvs_list[1] = dcvs_coef_bin;
 }
 
-void rtl9300_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
+static void rtl9300_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
 {
 	if (manual) {
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x18, 15, 15, 0x1);
@@ -2186,7 +2186,7 @@ void rtl9300_sds_rxcal_leq_manual(u32 sds_num, bool manual, u32 leq_gray)
 	}
 }
 
-void rtl9300_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
+static void rtl9300_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
 {
 	if (manual) {
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x17, 6, 2, offset);
@@ -2197,7 +2197,7 @@ void rtl9300_sds_rxcal_leq_offset_manual(u32 sds_num, bool manual, u32 offset)
 }
 
 #define GRAY_BITS 5
-u32 rtl9300_sds_rxcal_gray_to_binary(u32 gray_code)
+static u32 rtl9300_sds_rxcal_gray_to_binary(u32 gray_code)
 {
 	int i, j, m;
 	u32 g[GRAY_BITS];
@@ -2223,7 +2223,7 @@ u32 rtl9300_sds_rxcal_gray_to_binary(u32 gray_code)
 	return leq_binary;
 }
 
-u32 rtl9300_sds_rxcal_leq_read(int sds_num)
+static u32 rtl9300_sds_rxcal_leq_read(int sds_num)
 {
 	u32 leq_gray, leq_bin;
 	bool leq_manual;
@@ -2251,7 +2251,7 @@ u32 rtl9300_sds_rxcal_leq_read(int sds_num)
 	return leq_bin;
 }
 
-void rtl9300_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
+static void rtl9300_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
 {
 	if (manual) {
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x1);
@@ -2263,7 +2263,7 @@ void rtl9300_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
 	}
 }
 
-void rtl9300_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
+static void rtl9300_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
 {
 	u32 vth_manual;
 
@@ -2294,7 +2294,7 @@ void rtl9300_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
 	pr_info("Vth Maunal = %d", vth_manual);
 }
 
-void rtl9300_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_list[])
+static void rtl9300_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_list[])
 {
 	if (manual) {
 		switch(tap_id) {
@@ -2341,7 +2341,7 @@ void rtl9300_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_
 	}
 }
 
-void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
+static void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 {
 	u32 tap0_sign_out;
 	u32 tap0_coef_bin;
@@ -2419,7 +2419,7 @@ void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 	}
 }
 
-void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
+static void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 {
 	/* From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam */
 	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
@@ -2514,7 +2514,7 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	pr_info("end_1.1.5\n");
 }
 
-void rtl9300_do_rx_calibration_2_1(u32 sds_num)
+static void rtl9300_do_rx_calibration_2_1(u32 sds_num)
 {
 	pr_info("start_1.2.1 ForegroundOffsetCal_Manual\n");
 
@@ -2527,7 +2527,7 @@ void rtl9300_do_rx_calibration_2_1(u32 sds_num)
 	pr_info("end_1.2.1");
 }
 
-void rtl9300_do_rx_calibration_2_2(int sds_num)
+static void rtl9300_do_rx_calibration_2_2(int sds_num)
 {
 	/* Force Rx-Run = 0 */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 8, 8, 0x0);
@@ -2535,7 +2535,7 @@ void rtl9300_do_rx_calibration_2_2(int sds_num)
 	rtl930x_sds_rx_rst(sds_num, PHY_INTERFACE_MODE_10GBASER);
 }
 
-void rtl9300_do_rx_calibration_2_3(int sds_num)
+static void rtl9300_do_rx_calibration_2_3(int sds_num)
 {
 	u32 fgcal_binary, fgcal_gray;
 	u32 offset_range;
@@ -2582,7 +2582,7 @@ void rtl9300_do_rx_calibration_2_3(int sds_num)
 	pr_info("%s: end_1.2.3\n", __func__);
 }
 
-void rtl9300_do_rx_calibration_2(int sds)
+static void rtl9300_do_rx_calibration_2(int sds)
 {
 	rtl930x_sds_rx_rst(sds, PHY_INTERFACE_MODE_10GBASER);
 	rtl9300_do_rx_calibration_2_1(sds);
@@ -2590,7 +2590,7 @@ void rtl9300_do_rx_calibration_2(int sds)
 	rtl9300_do_rx_calibration_2_3(sds);
 }
 
-void rtl9300_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
+static void rtl9300_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
 {
 	pr_info("start_1.3.1");
 
@@ -2606,7 +2606,7 @@ void rtl9300_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
 	pr_info("end_1.3.1");
 }
 
-void rtl9300_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
+static void rtl9300_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
 {
 	u32 sum10 = 0, avg10, int10;
 	int dac_long_cable_offset;
@@ -2678,7 +2678,7 @@ void rtl9300_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode)
 		rtl9300_sds_rxcal_3_2(sds_num, phy_mode);
 }
 
-void rtl9300_do_rx_calibration_4_1(int sds_num)
+static void rtl9300_do_rx_calibration_4_1(int sds_num)
 {
 	u32 vth_list[2] = {0, 0};
 	u32 tap0_list[4] = {0, 0, 0, 0};
@@ -2693,7 +2693,7 @@ void rtl9300_do_rx_calibration_4_1(int sds_num)
 	pr_info("end_1.4.1");
 }
 
-void rtl9300_do_rx_calibration_4_2(u32 sds_num)
+static void rtl9300_do_rx_calibration_4_2(u32 sds_num)
 {
 	u32 vth_list[2];
 	u32 tap_list[4];
@@ -2711,13 +2711,13 @@ void rtl9300_do_rx_calibration_4_2(u32 sds_num)
 	pr_info("end_1.4.2");
 }
 
-void rtl9300_do_rx_calibration_4(u32 sds_num)
+static void rtl9300_do_rx_calibration_4(u32 sds_num)
 {
 	rtl9300_do_rx_calibration_4_1(sds_num);
 	rtl9300_do_rx_calibration_4_2(sds_num);
 }
 
-void rtl9300_do_rx_calibration_5_2(u32 sds_num)
+static void rtl9300_do_rx_calibration_5_2(u32 sds_num)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -2736,14 +2736,14 @@ void rtl9300_do_rx_calibration_5_2(u32 sds_num)
 	pr_info("end_1.5.2");
 }
 
-void rtl9300_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
+static void rtl9300_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
 {
 	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) /* dfeTap1_4Enable true */
 		rtl9300_do_rx_calibration_5_2(sds_num);
 }
 
 
-void rtl9300_do_rx_calibration_dfe_disable(u32 sds_num)
+static void rtl9300_do_rx_calibration_dfe_disable(u32 sds_num)
 {
 	u32 tap1_list[4] = {0};
 	u32 tap2_list[4] = {0};
@@ -2758,7 +2758,7 @@ void rtl9300_do_rx_calibration_dfe_disable(u32 sds_num)
 	mdelay(10);
 }
 
-void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
+static void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
 {
 	u32 latch_sts;
 
@@ -2782,7 +2782,7 @@ void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
 	}
 }
 
-int rtl9300_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
+static int rtl9300_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 {
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_XGMII:
@@ -2809,7 +2809,7 @@ int rtl9300_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 	return 0;
 }
 
-u32 rtl9300_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
+static u32 rtl9300_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 {
 	u32 v = 0;
 
@@ -2830,7 +2830,7 @@ u32 rtl9300_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 	return v;
 }
 
-int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
+static int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 {
 	u32 errors1, errors2;
 
@@ -2865,7 +2865,7 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	return 0;
 }
 
-void rtl9300_phy_enable_10g_1g(int sds_num)
+static void rtl9300_phy_enable_10g_1g(int sds_num)
 {
 	u32 v;
 
@@ -3107,7 +3107,7 @@ int rtl9300_sds_cmu_band_get(int sds)
 	return cmu_band;
 }
 
-void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
 {
 	int l = end_bit - start_bit + 1;
 	u32 data = v;
@@ -3123,7 +3123,7 @@ void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit,
 	rtl931x_write_sds_phy(sds, page, reg, data);
 }
 
-u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
 {
 	int l = end_bit - start_bit + 1;
 	u32 v = rtl931x_read_sds_phy(sds, page, reg);

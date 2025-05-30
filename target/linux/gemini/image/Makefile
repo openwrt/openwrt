@@ -170,7 +170,7 @@ define Device/dlink_dns-313
 	DEVICE_VENDOR := D-Link
 	DEVICE_MODEL := DNS-313 1-Bay Network Storage Enclosure
 	DEVICE_DTS := gemini-dlink-dns-313
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) usbgadget-acm
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) usbgadget-acm kmod-phy-realtek
 	BLOCKSIZE := 1k
 	FILESYSTEMS := ext4
 	IMAGES := factory.bin.gz
@@ -186,7 +186,7 @@ define Device/storlink-reference
 	FILESYSTEMS := squashfs
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
 		storlink-default-images $(1)
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
+	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES) kmod-phy-realtek
 endef
 
 define Device/itian_sq201
@@ -194,7 +194,7 @@ define Device/itian_sq201
 	DEVICE_VENDOR := ITian
 	DEVICE_MODEL := Square One SQ201
 	DEVICE_DTS := gemini-sq201
-	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci
+	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci kmod-phy-marvell
 endef
 TARGET_DEVICES += itian_sq201
 
@@ -203,6 +203,7 @@ define Device/raidsonic_ib-4220-b
 	DEVICE_VENDOR := Raidsonic
 	DEVICE_MODEL := NAS IB-4220-B
 	DEVICE_DTS := gemini-nas4220b
+	DEVICE_PACKAGES += kmod-phy-marvell
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
@@ -211,6 +212,7 @@ define Device/storlink_sl93512r
 	DEVICE_VENDOR := StorLink
 	DEVICE_MODEL := SL93512r
 	DEVICE_DTS := gemini-sl93512r
+	DEVICE_PACKAGES += kmod-phy-marvell
 endef
 TARGET_DEVICES += storlink_sl93512r
 

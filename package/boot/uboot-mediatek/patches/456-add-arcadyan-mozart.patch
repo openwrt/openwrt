@@ -117,7 +117,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/arcadyan_mozart_env
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,59 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -127,6 +127,7 @@
 +bootconf_extra=
 +bootdelay=0
 +bootfile=openwrt-mediatek-filogic-arcadyan_mozart-initramfs.itb
++bootfile_gpt=openwrt-mediatek-filogic-arcadyan_mozart-emmc-gpt.bin
 +bootfile_bl2=openwrt-mediatek-filogic-arcadyan_mozart-emmc-preloader.bin
 +bootfile_fip=openwrt-mediatek-filogic-arcadyan_mozart-emmc-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-filogic-arcadyan_mozart-squashfs-sysupgrade.itb
@@ -145,8 +146,9 @@
 +bootmenu_5=Load recovery system via TFTP then write to eMMC.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
 +bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to eMMC.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
 +bootmenu_7=[31mLoad BL2 preloader via TFTP then write to eMMC.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
-+bootmenu_8=Reboot.=reset
-+bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_8=[31mLoad GPT Table via TFTP then write to eMMC.[0m=run boot_tftp_write_gpt ; run bootmenu_confirm_return
++bootmenu_9=Reboot.=reset
++bootmenu_10=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=led $bootled_pwr on ; run emmc_read_production && bootm $loadaddr#$bootconf#$bootconf_extra ; led $bootled_pwr off
@@ -156,6 +158,7 @@
 +boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run emmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf#$bootconf_extra ; fi
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run emmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run emmc_write_fip
++boot_tftp_write_gpt=tftpboot $loadaddr $bootfile_gpt && run emmc_write_gpt
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run emmc_write_bl2
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
@@ -165,6 +168,7 @@
 +reset_factory=eraseenv && reset
 +emmc_read_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_read_vol
 +emmc_read_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_read_vol
++emmc_write_gpt=mmc erase 0x0 0x22 && mmc write $fileaddr 0x0 0x22
 +emmc_write_bl2=mmc partconf 0 1 1 1 && mmc erase 0x0 0x400 && mmc write $fileaddr 0x0 0x400 ; mmc partconf 0 1 1 0
 +emmc_write_fip=mmc erase 0x3400 0x2000 && mmc write $fileaddr 0x3400 0x2000 && mmc erase 0x2000 0x800
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
