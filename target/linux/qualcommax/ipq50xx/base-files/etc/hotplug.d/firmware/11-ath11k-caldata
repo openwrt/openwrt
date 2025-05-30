@@ -30,6 +30,13 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;
+	yuncore,ax830)
+		caldata_extract "0:ART" 0x1000 0x20000
+		label_mac=$(mtd_get_mac_binary 0:ART 0)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_remove_regdomain
+		ath11k_set_macflag
+		;;
 	esac
 	;;
 "ath11k/QCN6122/hw1.0/cal-ahb-b00a040.wifi1.bin")
@@ -49,6 +56,13 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x26800 0x20000
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_remove_regdomain
+		ath11k_set_macflag
+		;;
+        yuncore,ax830)
+		caldata_extract "0:ART" 0x26800 0x20000
+		label_mac=$(mtd_get_mac_binary 0:ART 0)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;

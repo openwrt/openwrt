@@ -19,6 +19,9 @@ ipq50xx_setup_interfaces()
 	linksys,spnmx56)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	yuncore,ax830)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	esac
 }
 
