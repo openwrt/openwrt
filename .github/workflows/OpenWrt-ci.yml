@@ -30,11 +30,13 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id  # 只有仓库所有者推送才会运行
 
     steps:
-
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          ref: master  # 检出 master 分支代码
+          ref: master
+
+        env:
+          ACTIONS_STEP_DEBUG: true  # 检出 master 分支代码
 
       - name: Space cleanup
         env:
