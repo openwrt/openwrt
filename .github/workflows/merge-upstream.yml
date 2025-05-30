@@ -39,8 +39,10 @@ jobs:
         git config --global --list    # 显示全部 git 配置
 
     - name: Load upstream commits
-      run: git pull https://github.com/coolsnowwolf/lede.git --log --no-commit
-        # 拉取上游仓库（coolsnowwolf/lede）最新代码，但不自动commit
+      #run: git pull https://github.com/coolsnowwolf/lede.git --log --no-commit
+        # 拉取上游仓库（coolsnowwolf/lede）最新代码，但不自动commit https://github.com/openwrt/openwrt.git
+      run: git pull https://github.com/openwrt/openwrt.git --log --no-commit
+        # 拉取上游仓库（coolsnowwolf/lede）最新代码，但不自动commit 
 
     - name: Apply commit changes
       run: |
