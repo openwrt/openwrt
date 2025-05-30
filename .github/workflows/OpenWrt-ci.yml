@@ -43,6 +43,16 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
+          # Add additional repositories for missing packages
+          sudo add-apt-repository universe
+          sudo add-apt-repository multiverse
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo -E apt-get update
+
+          # Install required packages
+          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs antl[...]
+          sudo -E apt-get -y install device-tree-compiler antlr3 gperf libtinfo5
+              
           # 清理 docker 镜像
           # docker rmi `docker images -q`
           # Remove Docker images only if any exist
