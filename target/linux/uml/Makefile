@@ -14,8 +14,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=audio ext4 rootfs-part squashfs
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=6.6
-KERNEL_TESTING_PATCHVER:=6.12
+KERNEL_PATCHVER:=6.12
 
 include $(INCLUDE_DIR)/target.mk
 
