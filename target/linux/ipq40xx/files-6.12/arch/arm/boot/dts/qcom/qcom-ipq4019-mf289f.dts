@@ -423,19 +423,14 @@
 	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
 	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2: wifi@1,0 {
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_mac_0 4>;
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-			qcom,ath10k-calibration-variant = "zte,mf289f";
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_mac_0 4>;
+		qcom,ath10k-calibration-variant = "zte,mf289f";
 	};
 };

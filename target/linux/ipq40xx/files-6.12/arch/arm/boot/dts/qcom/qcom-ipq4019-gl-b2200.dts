@@ -334,23 +334,17 @@
 	status = "okay";
 	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2: wifi@1,0 {
-			status = "okay";
-			/* Bootlog shows this is a 168c:0056 - QCA 9888v2 */
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-			nvmem-cell-names = "pre-calibration";
-			nvmem-cells = <&precal_art_9000>;
-			qcom,ath10k-calibration-variant = "GL-B2200";
-			ieee80211-freq-limit = <5450000 5900000>;
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		/* Bootlog shows this is a 168c:0056 - QCA 9888v2 */
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5450000 5900000>;
+		nvmem-cell-names = "pre-calibration";
+		nvmem-cells = <&precal_art_9000>;
+		qcom,ath10k-calibration-variant = "GL-B2200";
 	};
 };
 

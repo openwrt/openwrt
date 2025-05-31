@@ -230,11 +230,13 @@
 	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 2>;
 };
 
-&wifi2 {
-	reg = <0x00010000 0 0 0 0>;
-
-	qcom,ath10k-calibration-variant = "linksys-whw03v2";
-
-	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5490000 5835000>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
+		qcom,ath10k-calibration-variant = "linksys-whw03v2";
+	};
 };

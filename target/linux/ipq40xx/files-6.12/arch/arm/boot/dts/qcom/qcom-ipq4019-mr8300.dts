@@ -79,8 +79,11 @@
 	qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
 };
 
-&wifi2 {
-	status = "okay";
-	ieee80211-freq-limit = <5490000 5835000>;
-	qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5490000 5835000>;
+		qcom,ath10k-calibration-variant = "linksys-mr8300-v0-fcc";
+	};
 };

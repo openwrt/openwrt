@@ -233,21 +233,15 @@
 
 	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			/* QCA9984 */
-			compatible = "qcom,ath10k";
-			status = "okay";
-			reg = <0x00010000 0 0 0 0>;
-			ieee80211-freq-limit = <5470000 5875000>;
-			/* Uses the reference BDF */
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		/* QCA9984 */
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5470000 5875000>;
+		/* Uses the reference BDF */
 	};
 };
 

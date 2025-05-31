@@ -255,6 +255,10 @@
 	ethphy: ethernet-phy@0 {
 		reg = <0x0>;
 	};
+
+	ethernet-phy-package@0 {
+		status = "disabled";
+	};
 };
 
 &gmac {
@@ -273,10 +277,6 @@
 	label = "lan";
 	phy-handle = <&ethphy>;
 	phy-mode = "rgmii-id";
-};
-
-&qca807x {
-	status = "disabled";
 };
 
 &ethphy1 {

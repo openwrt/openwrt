@@ -203,21 +203,16 @@
 	status = "okay";
 	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2: wifi@1,0 {
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-			nvmem-cell-names = "pre-calibration";
-			nvmem-cells = <&precal_art_9000>;
-			ieee80211-freq-limit = <5470000 5875000>;
-			qcom,ath10k-calibration-variant = "EnGenius-EAP2200";
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cell-names = "pre-calibration";
+		nvmem-cells = <&precal_art_9000>;
+		ieee80211-freq-limit = <5470000 5875000>;
+		qcom,ath10k-calibration-variant = "EnGenius-EAP2200";
 	};
 };
 
