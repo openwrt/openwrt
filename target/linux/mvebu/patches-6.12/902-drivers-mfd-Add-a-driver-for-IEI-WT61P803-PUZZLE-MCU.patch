@@ -20,13 +20,13 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  drivers/mfd/Makefile                    |   1 +
  drivers/mfd/iei-wt61p803-puzzle.c       | 908 ++++++++++++++++++++++++
  include/linux/mfd/iei-wt61p803-puzzle.h |  66 ++
- 4 files changed, 984 insertions(+)
+ 4 files changed, 981 insertions(+)
  create mode 100644 drivers/mfd/iei-wt61p803-puzzle.c
  create mode 100644 include/linux/mfd/iei-wt61p803-puzzle.h
 
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -2274,6 +2274,15 @@ config SGI_MFD_IOC3
+@@ -2343,6 +2343,15 @@ config SGI_MFD_IOC3
  	  If you have an SGI Origin, Octane, or a PCI IOC3 card,
  	  then say Y. Otherwise say N.
  
@@ -44,7 +44,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
          select MFD_CORE
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -244,6 +244,7 @@ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
+@@ -250,6 +250,7 @@ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
  obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
  obj-$(CONFIG_MFD_RT5120)	+= rt5120.o
  obj-$(CONFIG_MFD_SKY81452)	+= sky81452.o
@@ -54,7 +54,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_INTEL_SOC_PMIC_BXTWC)	+= intel_soc_pmic_bxtwc.o
 --- /dev/null
 +++ b/drivers/mfd/iei-wt61p803-puzzle.c
-@@ -0,0 +1,912 @@
+@@ -0,0 +1,909 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU Driver
 + * System management microcontroller for fan control, temperature sensor reading,
@@ -79,7 +79,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +#include <linux/serdev.h>
 +#include <linux/slab.h>
 +#include <linux/sysfs.h>
-+#include <asm/unaligned.h>
++#include <linux/unaligned.h>
 +
 +/* start, payload and XOR checksum at end */
 +#define IEI_WT61P803_PUZZLE_MAX_COMMAND_LENGTH	(1 + 20 + 1)
@@ -190,8 +190,8 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	return checksum;
 +}
 +
-+static int iei_wt61p803_puzzle_process_resp(struct iei_wt61p803_puzzle *mcu,
-+					    const unsigned char *raw_resp_data, size_t size)
++static size_t iei_wt61p803_puzzle_process_resp(struct iei_wt61p803_puzzle *mcu,
++					    const u8 *raw_resp_data, size_t size)
 +{
 +	unsigned char checksum;
 +
@@ -227,11 +227,11 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	return size;
 +}
 +
-+static int iei_wt61p803_puzzle_recv_buf(struct serdev_device *serdev,
-+					const unsigned char *data, size_t size)
++static size_t iei_wt61p803_puzzle_recv_buf(struct serdev_device *serdev,
++					const u8 *data, size_t size)
 +{
 +	struct iei_wt61p803_puzzle *mcu = serdev_device_get_drvdata(serdev);
-+	int ret;
++	size_t ret;
 +
 +	ret = iei_wt61p803_puzzle_process_resp(mcu, data, size);
 +	/* Return the number of processed bytes if function returns error,
@@ -514,8 +514,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +		goto err;
 +	}
 +
-+	sprintf(mcu->version.serial_number, "%.*s",
-+		IEI_WT61P803_PUZZLE_SN_LENGTH, resp_buf + 4);
++	memcpy(mcu->version.serial_number, resp_buf + 4, IEI_WT61P803_PUZZLE_SN_LENGTH);
 +err:
 +	mutex_unlock(&mcu->lock);
 +	return ret;
@@ -561,8 +560,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +		}
 +	}
 +
-+	sprintf(mcu->version.serial_number, "%.*s",
-+		IEI_WT61P803_PUZZLE_SN_LENGTH, serial_number);
++	memcpy(mcu->version.serial_number, serial_number, IEI_WT61P803_PUZZLE_SN_LENGTH);
 +err:
 +	mutex_unlock(&mcu->lock);
 +	return ret;
@@ -594,8 +592,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +		goto err;
 +	}
 +
-+	sprintf(mcu->version.mac_address[index], "%.*s",
-+		IEI_WT61P803_PUZZLE_MAC_LENGTH, resp_buf + 4);
++	memcpy(mcu->version.mac_address[index], resp_buf + 4, IEI_WT61P803_PUZZLE_MAC_LENGTH);
 +err:
 +	mutex_unlock(&mcu->lock);
 +	return ret;
@@ -644,8 +641,8 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +		goto err;
 +	}
 +
-+	sprintf(mcu->version.mac_address[mac_address_idx], "%.*s",
-+		IEI_WT61P803_PUZZLE_MAC_LENGTH, mac_address);
++	memcpy(mcu->version.mac_address[mac_address_idx], mac_address,
++		IEI_WT61P803_PUZZLE_MAC_LENGTH);
 +err:
 +	mutex_unlock(&mcu->lock);
 +	return ret;
