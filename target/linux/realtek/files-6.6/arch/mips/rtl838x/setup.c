@@ -46,7 +46,7 @@ void __init plat_mem_setup(void)
 	__dt_setup_arch(dtb);
 }
 
-void plat_time_init_fallback(void)
+static void plat_time_init_fallback(void)
 {
 	struct device_node *np;
 	u32 freq = 500000000;

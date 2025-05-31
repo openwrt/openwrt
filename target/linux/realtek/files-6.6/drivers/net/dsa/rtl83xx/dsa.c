@@ -7,6 +7,15 @@
 
 #include "rtl83xx.h"
 
+static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] =
+{ 0x01, 0x00, 0x5e, 0x00, 0x00, 0x00 };
+static const u8 ipv4_ll_mcast_addr_mask[ETH_ALEN] =
+{ 0xff, 0xff, 0xff, 0xff, 0xff, 0x00 };
+static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
+{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x01 };
+static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
+{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
 extern struct rtl83xx_soc_info soc_info;
 
 static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
@@ -686,6 +695,7 @@ static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
 
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -809,6 +819,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	pr_info("%s SDS is %d\n", __func__, sds_num);
 	if (sds_num >= 0 &&
 	    (state->interface == PHY_INTERFACE_MODE_1000BASEX ||
+	     state->interface == PHY_INTERFACE_MODE_SGMII ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
 		rtl9300_serdes_setup(port, sds_num, state->interface);
 }
@@ -1332,7 +1343,7 @@ void rtl83xx_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl931x_fast_age(struct dsa_switch *ds, int port)
+static void rtl931x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1347,7 +1358,7 @@ void rtl931x_fast_age(struct dsa_switch *ds, int port)
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl930x_fast_age(struct dsa_switch *ds, int port)
+static void rtl930x_fast_age(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1750,6 +1761,24 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static bool rtl83xx_mac_is_unsnoop(const unsigned char *addr)
+{
+	/*
+	 * RFC4541, section 2.1.2.2 + section 3:
+	 * Unsnoopable address ranges must always be flooded.
+	 *
+	 * mapped MAC for 224.0.0.x -> 01:00:5e:00:00:xx
+	 * mapped MAC for ff02::1 -> 33:33:00:00:00:01
+	 */
+	if (ether_addr_equal_masked(addr, ipv4_ll_mcast_addr_base,
+				    ipv4_ll_mcast_addr_mask) ||
+	    ether_addr_equal_masked(addr, ipv6_all_hosts_mcast_addr_base,
+				    ipv6_all_hosts_mcast_addr_mask))
+		return true;
+
+	return false;
+}
+
 static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 				const struct switchdev_obj_port_mdb *mdb,
 				const struct dsa_db db)
@@ -1770,6 +1799,13 @@ static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
 		return -EINVAL;
+	}
+
+	if (rtl83xx_mac_is_unsnoop(mdb->addr)) {
+		dev_dbg(priv->dev,
+			"%s: %pM might belong to an unsnoopable IP. ignore\n",
+			__func__, mdb->addr);
+		return -EADDRNOTAVAIL;
 	}
 
 	mutex_lock(&priv->reg_mutex);
@@ -1826,7 +1862,7 @@ out:
 	return err;
 }
 
-int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
+static int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 			 const struct switchdev_obj_port_mdb *mdb,
 			 const struct dsa_db db)
 {
@@ -1842,6 +1878,13 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 
 	if (priv->is_lagmember[port]) {
 		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
+		return 0;
+	}
+
+	if (rtl83xx_mac_is_unsnoop(mdb->addr)) {
+		dev_dbg(priv->dev,
+			"%s: %pM might belong to an unsnoopable IP. ignore\n",
+			__func__, mdb->addr);
 		return 0;
 	}
 
@@ -2128,7 +2171,7 @@ out:
 	return 0;
 }
 
-int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
+static int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 {
 	u32 val;
 	u32 offset = 0;
@@ -2147,7 +2190,7 @@ int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 	return val;
 }
 
-int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 {
 	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -2174,8 +2217,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
 
-	.phy_read		= dsa_phy_read,
-	.phy_write		= dsa_phy_write,
+	.phy_read		= rtl83xx_dsa_phy_read,
+	.phy_write		= rtl83xx_dsa_phy_write,
 
 	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
@@ -2232,8 +2275,8 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
-	.phy_read		= dsa_phy_read,
-	.phy_write		= dsa_phy_write,
+	.phy_read		= rtl83xx_dsa_phy_read,
+	.phy_write		= rtl83xx_dsa_phy_write,
 
 	.phylink_get_caps	= rtl83xx_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,

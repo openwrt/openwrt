@@ -37,15 +37,6 @@
 #define RTL930X_STAT_PRVTE_DROP_COUNTERS	(0xB5B8)
 #define RTL931X_STAT_PRVTE_DROP_COUNTERS	(0xd800)
 
-int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
-void rtl83xx_fast_age(struct dsa_switch *ds, int port);
-u32 rtl838x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
-u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
-int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
-int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate);
-
-
 const char *rtl838x_drop_cntr[] = {
     "ALE_TX_GOOD_PKTS", "MAC_RX_DROP", "ACL_FWD_DROP", "HW_ATTACK_PREVENTION_DROP",
     "RMA_DROP", "VLAN_IGR_FLTR_DROP", "INNER_OUTER_CFI_EQUAL_1_DROP", "PORT_MOVE_DROP",
@@ -449,7 +440,7 @@ static const struct debugfs_reg32 port_ctrl_regs[] = {
 	{ .name = "mac_force_mode", .offset = RTL838X_MAC_FORCE_MODE_CTRL, },
 };
 
-void rtl838x_dbgfs_cleanup(struct rtl838x_switch_priv *priv)
+static void rtl838x_dbgfs_cleanup(struct rtl838x_switch_priv *priv)
 {
 	debugfs_remove_recursive(priv->dbgfs_dir);
 
