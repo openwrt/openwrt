@@ -238,17 +238,6 @@
 	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
 	clkreq-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2: wifi@1,0 {
-			compatible = "qcom,ath10k";
-		};
-	};
 };
 
 &gmac {
@@ -282,10 +271,4 @@
 	status = "okay";
 
 	ieee80211-freq-limit = <5170000 5330000>;
-};
-
-&wifi2 {
-	status = "okay";
-
-	ieee80211-freq-limit = <5490000 5835000>;
 };

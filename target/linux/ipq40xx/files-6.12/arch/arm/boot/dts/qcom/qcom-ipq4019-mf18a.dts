@@ -472,21 +472,14 @@
 	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
 	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
-
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi2: wifi@1,0 {
-			compatible = "pci168c,0040";
-			nvmem-cell-names = "pre-calibration", "mac-address";
-			nvmem-cells = <&precal_art_9000>, <&macaddr_config_0 3>;
-			qcom,ath10k-calibration-variant = "ZTE-MF18A";
-			reg = <0x00010000 0 0 0 0>;
-		};
-	};
 };
 
-
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "pci168c,0040";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&macaddr_config_0 3>;
+		qcom,ath10k-calibration-variant = "ZTE-MF18A";
+	};
+};

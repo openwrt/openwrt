@@ -232,20 +232,15 @@
 
 &pcie0 {
 	status = "okay";
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@0,0 {
-			compatible = "qcom,ath10k";
-			reg = <0 0 0 0 0>;
-			nvmem-cell-names = "pre-calibration", "mac-address";
-			nvmem-cells = <&precal_art_9000>, <&macaddr_orgdata_32>;
-			qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
-		};
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&macaddr_orgdata_32>;
+		qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
 	};
 };
 
