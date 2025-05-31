@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,730 @@
+@@ -0,0 +1,731 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 25 May 2025
 +// Device Tree Info
@@ -653,6 +653,7 @@
 +};
 +
 +&usb_host0_xhci {
++ /* Doesn't exist on this board */
 +	status = "disable";
 +};
 +
@@ -716,7 +717,7 @@
 +
 +
 +&pcie3x2 {
-+	 status = "disabled";
++	 status = "ok";
 +};
 +
 +&sata0 { /* sata0 muxed with USB3 OTG0 */
