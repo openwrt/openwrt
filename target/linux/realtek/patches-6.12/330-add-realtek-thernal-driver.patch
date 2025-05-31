@@ -1,6 +1,6 @@
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
-@@ -522,4 +522,11 @@ config LOONGSON2_THERMAL
+@@ -499,4 +499,11 @@ config LOONGSON2_THERMAL
  	  is higher than the high temperature threshold or lower than the low
  	  temperature threshold, the interrupt will occur.
  
@@ -14,8 +14,9 @@
  endif
 --- a/drivers/thermal/Makefile
 +++ b/drivers/thermal/Makefile
-@@ -64,3 +64,4 @@ obj-$(CONFIG_AMLOGIC_THERMAL)     += aml
+@@ -63,4 +63,5 @@ obj-$(CONFIG_AMLOGIC_THERMAL)     += aml
  obj-$(CONFIG_SPRD_THERMAL)	+= sprd_thermal.o
  obj-$(CONFIG_KHADAS_MCU_FAN_THERMAL)	+= khadas_mcu_fan.o
  obj-$(CONFIG_LOONGSON2_THERMAL)	+= loongson2_thermal.o
 +obj-$(CONFIG_REALTEK_THERMAL)	+= realtek-thermal.o
+ obj-$(CONFIG_THERMAL_CORE_TESTING)	+= testing/
