@@ -20,9 +20,9 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1549,6 +1549,18 @@ config ARM_ATAG_DTB_COMPAT
- 	  bootloaders, this option allows zImage to extract the information
- 	  from the ATAG list and store it at run time into the appended DTB.
+@@ -1523,6 +1523,18 @@ config CMDLINE
+ 	  time by entering them here. As a minimum, you should specify the
+ 	  memory size and the root device (e.g., mem=64M root=/dev/nfs).
  
 +config ARM_ATAG_DTB_COMPAT_IGNORE_MEM
 +	bool "Ignore MEM ATAG information from bootloader"
@@ -37,8 +37,8 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
 +	  node in the appended DTB should NOT be augumented.
 +
  choice
- 	prompt "Kernel command line type" if ARM_ATAG_DTB_COMPAT
- 	default ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER
+ 	prompt "Kernel command line type"
+ 	depends on CMDLINE != ""
 --- a/arch/arm/boot/compressed/atags_to_fdt.c
 +++ b/arch/arm/boot/compressed/atags_to_fdt.c
 @@ -170,6 +170,10 @@ int atags_to_fdt(void *atag_list, void *
