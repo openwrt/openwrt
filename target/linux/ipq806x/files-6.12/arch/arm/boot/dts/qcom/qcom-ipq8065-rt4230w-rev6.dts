@@ -84,7 +84,12 @@
 		};
 	};
 
-	rgmii2_pins: rgmii2-pins {
+	rgmii2_pins: rgmii2-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
 		mux {
 			pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31",
 				"gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62";
@@ -99,7 +104,19 @@
 		};
 	};
 
-	spi_pins: spi_pins {
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio18", "gpio19", "gpio21";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-disable;
+		};
+
 		cs {
 			pins = "gpio20";
 			drive-strength = <12>;

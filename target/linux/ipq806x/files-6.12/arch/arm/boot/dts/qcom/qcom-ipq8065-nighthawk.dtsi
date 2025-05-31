@@ -130,14 +130,41 @@
 		};
 	};
 
-	mdio0_pins: mdio0-pins {
+	mdio0_pins: mdio0-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio0", "gpio1";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
 		clk {
 			pins = "gpio1";
 			input-disable;
 		};
 	};
 
-	rgmii2_pins: rgmii2-pins {
+	rgmii2_pins: rgmii2-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio27", "gpio28", "gpio29",
+				"gpio30", "gpio31", "gpio32",
+				"gpio51", "gpio52", "gpio59",
+				"gpio60", "gpio61", "gpio62";
+			function = "rgmii2";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
 		tx {
 			pins = "gpio27", "gpio28", "gpio29",
 				"gpio30", "gpio31", "gpio32";
@@ -145,7 +172,12 @@
 		};
 	};
 
-	spi_pins: spi_pins {
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
 		mux {
 			pins = "gpio18", "gpio19", "gpio21";
 			function = "gsbi5";
