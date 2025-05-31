@@ -12,7 +12,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -423,25 +423,25 @@ static int krait_cc_probe(struct platfor
+@@ -419,25 +419,25 @@ static int krait_cc_probe(struct platfor
  	cur_rate = clk_get_rate(clks[l2_mux]);
  	aux_rate = 384000000;
  	if (cur_rate < aux_rate) {

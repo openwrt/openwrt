@@ -29,23 +29,22 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
  		cxo_board: cxo_board {
  			compatible = "fixed-clock";
  			#clock-cells = <0>;
-@@ -587,7 +593,7 @@
+@@ -570,7 +576,7 @@
  		};
  
- 		saw0: regulator@2089000 {
--			compatible = "qcom,saw2";
-+			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
+ 		saw0: power-manager@2089000 {
+-			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2";
++			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
- 			regulator;
- 		};
-@@ -602,11 +608,27 @@
  		};
  
- 		saw1: regulator@2099000 {
--			compatible = "qcom,saw2";
-+			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
+@@ -584,10 +590,26 @@
+ 		};
+ 
+ 		saw1: power-manager@2099000 {
+-			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2";
++			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
- 			regulator;
  		};
  
 +		saw_l2: regulator@02012000 {
