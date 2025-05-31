@@ -23,7 +23,9 @@ define KernelPackage/turris-omnia-mcu
   DEPENDS:=@TARGET_mvebu_cortexa9
   KCONFIG:= \
    CONFIG_CZNIC_PLATFORMS=y \
-   CONFIG_TURRIS_OMNIA_MCU
+   CONFIG_TURRIS_OMNIA_MCU \
+   CONFIG_TURRIS_OMNIA_MCU_GPIO \
+   CONFIG_TURRIS_OMNIA_MCU_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/platform/cznic/turris-omnia-mcu.ko
   AUTOLOAD:=$(call AutoProbe,turris-omnia-mcu,1)
 endef
