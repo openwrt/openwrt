@@ -180,8 +180,7 @@ define Device/sercomm_cpj
   SERCOMM_KERNEL2_OFFSET := 0x800100
   SERCOMM_ROOTFS2_OFFSET := 0xa00000
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-	sercomm-sysupgrade-cpj | pad-rootfs | check-size | \
-	append-metadata
+	sercomm-sysupgrade-cpj | pad-rootfs | check-size | append-metadata
   ARTIFACTS := initramfs-factory.img
   DEVICE_PACKAGES := kmod-mt76x2
 endef
@@ -193,6 +192,7 @@ define Device/sercomm_cxx_dxx
   LZMA_TEXT_START := 0x82800000
   SERCOMM_KERNEL_OFFSET := 0x400100
   SERCOMM_ROOTFS_OFFSET := 0x1000000
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 uboot-envtools
 endef
 
 define Device/sercomm_cxx
@@ -203,8 +203,8 @@ define Device/sercomm_cxx
 	uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | sercomm-kernel | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
-  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
-	append-ubi | sercomm-factory-cqr | sercomm-mkhash
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | append-ubi | \
+	sercomm-factory-cqr | sercomm-mkhash
 endef
 
 define Device/sercomm_dxx
@@ -214,9 +214,9 @@ define Device/sercomm_dxx
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
 	lzma -a0 | uImage lzma
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/factory.img := append-ubi | check-size | \
-	sercomm-part-tag rootfs | sercomm-prepend-tagged-kernel kernel | \
-	gzip | sercomm-payload | sercomm-crypto
+  IMAGE/factory.img := append-ubi | check-size | sercomm-part-tag rootfs | \
+	sercomm-prepend-tagged-kernel kernel | gzip | sercomm-payload | \
+	sercomm-crypto
 endef
 
 define Device/sercomm_s1500
@@ -230,5 +230,5 @@ define Device/sercomm_s1500
 	lzma -a0 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | sercomm-kernel | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 uboot-envtools
 endef
