@@ -1770,6 +1770,29 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
+define Device/unielec_u7986-06
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7986-06
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-mt7915e kmod-mt7986-firmware kmod-phy-airoha-en8811h \
+		     kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/unielec_u7986-06-emmc
+  DEVICE_DTS := mt7986a-unielec-u7986-06-emmc
+  DEVICE_VARIANT := (EMMC)
+  $(call Device/unielec_u7986-06)
+endef
+TARGET_DEVICES += unielec_u7986-06-emmc
+
+define Device/unielec_u7986-06-nand
+  DEVICE_DTS := mt7986a-unielec-u7986-06-nand
+  DEVICE_VARIANT := (NAND)
+  $(call Device/unielec_u7986-06)
+endef
+TARGET_DEVICES += unielec_u7986-06-nand
+
 define Device/wavlink_wl-wn586x3
   DEVICE_VENDOR := WAVLINK
   DEVICE_MODEL := WL-WN586X3
