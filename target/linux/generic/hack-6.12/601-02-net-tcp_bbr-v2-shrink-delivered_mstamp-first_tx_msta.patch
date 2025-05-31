@@ -1,0 +1,80 @@
+From 974a944b70b8ab51d4466bb5e316129bd538b062 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Sun, 24 Jun 2018 21:55:59 -0400
+Subject: [PATCH 02/19] net-tcp_bbr: v2: shrink delivered_mstamp,
+ first_tx_mstamp to u32 to free up 8 bytes
+
+Free up some space for tracking inflight and losses for each
+bw sample, in upcoming commits.
+
+These timestamps are in microseconds, and are now stored in 32
+bits. So they can only hold time intervals up to roughly 2^12 = 4096
+seconds.  But Linux TCP RTT and RTO tracking has the same 32-bit
+microsecond implementation approach and resulting deployment
+limitations. So this is not introducing a new limit. And these should
+not be a limitation for the foreseeable future.
+
+Effort: net-tcp_bbr
+Origin-9xx-SHA1: 238a7e6b5d51625fef1ce7769826a7b21b02ae55
+Change-Id: I3b779603797263b52a61ad57c565eb91fe42680c
+---
+ include/net/tcp.h   | 9 +++++++--
+ net/ipv4/tcp_rate.c | 7 ++++---
+ 2 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 3255a199ef60..75a7391e3288 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -901,6 +901,11 @@ static inline u32 tcp_stamp_us_delta(u64 t1, u64 t0)
+ 	return max_t(s64, t1 - t0, 0);
+ }
+ 
++static inline u32 tcp_stamp32_us_delta(u32 t1, u32 t0)
++{
++	return max_t(s32, t1 - t0, 0);
++}
++
+ /* provide the departure time in us unit */
+ static inline u64 tcp_skb_timestamp_us(const struct sk_buff *skb)
+ {
+@@ -990,9 +995,9 @@ struct tcp_skb_cb {
+ 			/* pkts S/ACKed so far upon tx of skb, incl retrans: */
+ 			__u32 delivered;
+ 			/* start of send pipeline phase */
+-			u64 first_tx_mstamp;
++			u32 first_tx_mstamp;
+ 			/* when we reached the "delivered" count */
+-			u64 delivered_mstamp;
++			u32 delivered_mstamp;
+ 		} tx;   /* only used for outgoing skbs */
+ 		union {
+ 			struct inet_skb_parm	h4;
+diff --git a/net/ipv4/tcp_rate.c b/net/ipv4/tcp_rate.c
+index a8f6d9d06f2e..763362159fe9 100644
+--- a/net/ipv4/tcp_rate.c
++++ b/net/ipv4/tcp_rate.c
+@@ -101,8 +101,9 @@ void tcp_rate_skb_delivered(struct sock *sk, struct sk_buff *skb,
+ 		/* Record send time of most recently ACKed packet: */
+ 		tp->first_tx_mstamp  = tx_tstamp;
+ 		/* Find the duration of the "send phase" of this window: */
+-		rs->interval_us = tcp_stamp_us_delta(tp->first_tx_mstamp,
+-						     scb->tx.first_tx_mstamp);
++		rs->interval_us      = tcp_stamp32_us_delta(
++						tp->first_tx_mstamp,
++						scb->tx.first_tx_mstamp);
+ 
+ 	}
+ 	/* Mark off the skb delivered once it's sacked to avoid being
+@@ -155,7 +156,7 @@ void tcp_rate_gen(struct sock *sk, u32 delivered, u32 lost,
+ 	 * longer phase.
+ 	 */
+ 	snd_us = rs->interval_us;				/* send phase */
+-	ack_us = tcp_stamp_us_delta(tp->tcp_mstamp,
++	ack_us = tcp_stamp32_us_delta(tp->tcp_mstamp,
+ 				    rs->prior_mstamp); /* ack phase */
+ 	rs->interval_us = max(snd_us, ack_us);
+ 
+-- 
+2.43.0
+

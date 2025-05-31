@@ -1,0 +1,76 @@
+From 356a643cfcbf1cea2cd5ed74a42116684e5e09a1 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Thu, 12 Oct 2017 23:44:27 -0400
+Subject: [PATCH 04/19] net-tcp_bbr: v2: count packets lost over TCP rate
+ sampling interval
+
+For understanding the relationship between inflight and packet loss
+signals, to try to find the highest inflight value that has acceptable
+levels of packet losses.
+
+Effort: net-tcp_bbr
+Origin-9xx-SHA1: 4527e26b2bd7756a88b5b9ef1ada3da33dd609ab
+Change-Id: I594c2500868d9c530770e7ddd68ffc87c57f4fd5
+---
+ include/net/tcp.h   | 5 ++++-
+ net/ipv4/tcp_rate.c | 3 +++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 16bb773a2d75..5b6caad6eb15 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1002,6 +1002,7 @@ struct tcp_skb_cb {
+ #define TCPCB_IN_FLIGHT_MAX ((1U << TCPCB_IN_FLIGHT_BITS) - 1)
+ 			u32 in_flight:20,   /* packets in flight at transmit */
+ 			    unused2:12;
++			u32 lost;	/* packets lost so far upon tx of skb */
+ 		} tx;   /* only used for outgoing skbs */
+ 		union {
+ 			struct inet_skb_parm	h4;
+@@ -1156,11 +1157,13 @@ struct ack_sample {
+  */
+ struct rate_sample {
+ 	u64  prior_mstamp; /* starting timestamp for interval */
++	u32  prior_lost;	/* tp->lost at "prior_mstamp" */
+ 	u32  prior_delivered;	/* tp->delivered at "prior_mstamp" */
+ 	u32  prior_delivered_ce;/* tp->delivered_ce at "prior_mstamp" */
+ 	u32 tx_in_flight;	/* packets in flight at starting timestamp */
++	s32  lost;		/* number of packets lost over interval */
+ 	s32  delivered;		/* number of packets delivered over interval */
+-	s32  delivered_ce;	/* number of packets delivered w/ CE marks*/
++	s32  delivered_ce;	/* packets delivered w/ CE mark over interval */
+ 	long interval_us;	/* time for tp->delivered to incr "delivered" */
+ 	u32 snd_interval_us;	/* snd interval for delivered packets */
+ 	u32 rcv_interval_us;	/* rcv interval for delivered packets */
+diff --git a/net/ipv4/tcp_rate.c b/net/ipv4/tcp_rate.c
+index 1424911b1b9e..8737f2134648 100644
+--- a/net/ipv4/tcp_rate.c
++++ b/net/ipv4/tcp_rate.c
+@@ -84,6 +84,7 @@ void tcp_rate_skb_sent(struct sock *sk, struct sk_buff *skb)
+ 	TCP_SKB_CB(skb)->tx.delivered_mstamp	= tp->delivered_mstamp;
+ 	TCP_SKB_CB(skb)->tx.delivered		= tp->delivered;
+ 	TCP_SKB_CB(skb)->tx.delivered_ce	= tp->delivered_ce;
++	TCP_SKB_CB(skb)->tx.lost		= tp->lost;
+ 	TCP_SKB_CB(skb)->tx.is_app_limited	= tp->app_limited ? 1 : 0;
+ 	tcp_set_tx_in_flight(sk, skb);
+ }
+@@ -110,6 +111,7 @@ void tcp_rate_skb_delivered(struct sock *sk, struct sk_buff *skb,
+ 	if (!rs->prior_delivered ||
+ 	    tcp_skb_sent_after(tx_tstamp, tp->first_tx_mstamp,
+ 			       scb->end_seq, rs->last_end_seq)) {
++		rs->prior_lost	     = scb->tx.lost;
+ 		rs->prior_delivered_ce  = scb->tx.delivered_ce;
+ 		rs->prior_delivered  = scb->tx.delivered;
+ 		rs->prior_mstamp     = scb->tx.delivered_mstamp;
+@@ -165,6 +167,7 @@ void tcp_rate_gen(struct sock *sk, u32 delivered, u32 lost,
+ 		return;
+ 	}
+ 	rs->delivered   = tp->delivered - rs->prior_delivered;
++	rs->lost        = tp->lost - rs->prior_lost;
+ 
+ 	rs->delivered_ce = tp->delivered_ce - rs->prior_delivered_ce;
+ 	/* delivered_ce occupies less than 32 bits in the skb control block */
+-- 
+2.43.0
+
