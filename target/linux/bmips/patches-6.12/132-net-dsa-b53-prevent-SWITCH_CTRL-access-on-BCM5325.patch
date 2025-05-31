@@ -1,0 +1,37 @@
+From 8cece037d71dd2464b7405871d5ba34d28695940 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 22:57:06 +0200
+Subject: [PATCH] net: dsa: b53: prevent SWITCH_CTRL access on BCM5325
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM5325 doesn't implement SWITCH_CTRL register so we should avoid reading
+or writing it.
+
+Fixes: a424f0de6163 ("net: dsa: b53: Include IMP/CPU port in dumb forwarding mode")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -360,11 +360,12 @@ static void b53_set_forwarding(struct b5
+ 
+ 	b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_MODE, mgmt);
+ 
+-	/* Include IMP port in dumb forwarding mode
+-	 */
+-	b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, &mgmt);
+-	mgmt |= B53_MII_DUMB_FWDG_EN;
+-	b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, mgmt);
++	if (!is5325(dev)) {
++		/* Include IMP port in dumb forwarding mode */
++		b53_read8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, &mgmt);
++		mgmt |= B53_MII_DUMB_FWDG_EN;
++		b53_write8(dev, B53_CTRL_PAGE, B53_SWITCH_CTRL, mgmt);
++	}
+ 
+ 	/* Look at B53_UC_FWD_EN and B53_MC_FWD_EN to decide whether
+ 	 * frames should be flooded or not.

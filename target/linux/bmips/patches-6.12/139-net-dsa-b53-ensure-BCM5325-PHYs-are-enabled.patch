@@ -1,0 +1,28 @@
+From 48d5f0b6bbead8e62647a94c18f23be931bcf7b0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 31 May 2025 11:20:13 +0200
+Subject: [PATCH] net: dsa: b53: ensure BCM5325 PHYs are enabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+According to the datasheet, BCM5325 uses B53_PD_MODE_CTRL_25 register to
+disable clocking to individual PHYs.
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1299,6 +1299,9 @@ static int b53_setup(struct dsa_switch *
+ 
+ 	b53_reset_mib(dev);
+ 
++	if (is5325(dev))
++		b53_write8(dev, B53_CTRL_PAGE, B53_PD_MODE_CTRL_25, 0);
++
+ 	ret = b53_apply_config(dev);
+ 	if (ret) {
+ 		dev_err(ds->dev, "failed to apply configuration\n");

@@ -1,0 +1,75 @@
+From d2dceddf182520b474d2aab0798d925e47a68c5a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 23:33:13 +0200
+Subject: [PATCH] net: dsa: b53: prevent GMII_PORT_OVERRIDE_CTRL access on
+ BCM5325
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM5325 doesn't implement GMII_PORT_OVERRIDE_CTRL register so we should
+avoid reading or writing it.
+PORT_OVERRIDE_RX_FLOW and PORT_OVERRIDE_TX_FLOW aren't defined on BCM5325
+and we should use PORT_OVERRIDE_LP_FLOW_25 instead.
+
+Fixes: 5e004460f874 ("net: dsa: b53: Add helper to set link parameters")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 21 +++++++++++++++++----
+ drivers/net/dsa/b53/b53_regs.h   |  1 +
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1278,6 +1278,8 @@ static void b53_force_link(struct b53_de
+ 	if (port == dev->imp_port) {
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
++	} else if (is5325(dev)) {
++		return;
+ 	} else {
+ 		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
+ 		val = GMII_PO_EN;
+@@ -1302,6 +1304,8 @@ static void b53_force_port_config(struct
+ 	if (port == dev->imp_port) {
+ 		off = B53_PORT_OVERRIDE_CTRL;
+ 		val = PORT_OVERRIDE_EN;
++	} else if (is5325(dev)) {
++		return;
+ 	} else {
+ 		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
+ 		val = GMII_PO_EN;
+@@ -1332,10 +1336,19 @@ static void b53_force_port_config(struct
+ 		return;
+ 	}
+ 
+-	if (rx_pause)
+-		reg |= PORT_OVERRIDE_RX_FLOW;
+-	if (tx_pause)
+-		reg |= PORT_OVERRIDE_TX_FLOW;
++	if (rx_pause) {
++		if (is5325(dev))
++			reg |= PORT_OVERRIDE_LP_FLOW_25;
++		else
++			reg |= PORT_OVERRIDE_RX_FLOW;
++	}
++
++	if (tx_pause) {
++		if (is5325(dev))
++			reg |= PORT_OVERRIDE_LP_FLOW_25;
++		else
++			reg |= PORT_OVERRIDE_TX_FLOW;
++	}
+ 
+ 	b53_write8(dev, B53_CTRL_PAGE, off, reg);
+ }
+--- a/drivers/net/dsa/b53/b53_regs.h
++++ b/drivers/net/dsa/b53/b53_regs.h
+@@ -95,6 +95,7 @@
+ #define   PORT_OVERRIDE_SPEED_10M	(0 << PORT_OVERRIDE_SPEED_S)
+ #define   PORT_OVERRIDE_SPEED_100M	(1 << PORT_OVERRIDE_SPEED_S)
+ #define   PORT_OVERRIDE_SPEED_1000M	(2 << PORT_OVERRIDE_SPEED_S)
++#define   PORT_OVERRIDE_LP_FLOW_25	BIT(3) /* BCM5325 only */
+ #define   PORT_OVERRIDE_RV_MII_25	BIT(4) /* BCM5325 only */
+ #define   PORT_OVERRIDE_RX_FLOW		BIT(4)
+ #define   PORT_OVERRIDE_TX_FLOW		BIT(5)
