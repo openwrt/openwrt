@@ -1,0 +1,491 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2025, Shubham Vishwakarma <shubhamvis98@fossfrog.in>
+ */
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Yuncore AX830";
+	compatible = "yuncore,ax830", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+			default-status = "on";
+		};
+
+		wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+			default-status = "on";
+		};
+
+		wlan5g {
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+			default-status = "on";
+		};
+	};
+
+	reserved-memory {
+		q6_mem_regions: q6_mem_regions@4b000000 {
+			no-map;
+			reg = <0x0 0x4b000000 0x0 0x3000000>;
+		};
+	};
+
+	gpio-watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <5000>;
+		always-running;
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy
+		port@0 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+		};
+
+		// MAC1 -> Uniphy --- SGMII --- QCA8081
+		port@1 {
+			port_id = <2>;
+			mdiobus = <&mdio1>;
+			phy_address = <28>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+// MAC0 -> GE Phy
+&dp1 {
+	status = "okay";
+
+	label = "lan";
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "sgmii";
+};
+
+// MAC1 ---SGMII---> QCA8081
+&dp2 {
+	status = "okay";
+
+	label = "wan";
+	phy-handle = <&qca8081>;
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	qca8081: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-frequency = <24000000>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "0:MIBIB";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x60000 0xa0000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:QSEE_1";
+				reg = <0x100000 0xa0000>;
+				read-only;
+			};
+
+			partition@1a0000 {
+				label = "0:DEVCFG";
+				reg = <0x1a0000 0x10000>;
+				read-only;
+			};
+
+			partition@1b0000 {
+				label = "0:DEVCFG_1";
+				reg = <0x1b0000 0x10000>;
+				read-only;
+			};
+
+			partition@1c0000 {
+				label = "0:CDT";
+				reg = <0x1c0000 0x10000>;
+				read-only;
+			};
+
+			partition@1d0000 {
+				label = "0:CDT_1";
+				reg = <0x1d0000 0x10000>;
+				read-only;
+			};
+
+			partition@1e0000 {
+				label = "0:APPSBLENV";
+				reg = <0x1e0000 0x10000>;
+			};
+
+			partition@1f0000 {
+				label = "0:APPSBL";
+				reg = <0x1f0000 0xa0000>;
+				read-only;
+			};
+
+			partition@290000 {
+				label = "0:APPSBL_1";
+				reg = <0x290000 0xa0000>;
+				read-only;
+			};
+
+			partition@330000 {
+				label = "0:ART";
+				reg = <0x330000 0x70000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						#nvmem-cell-cells = <1>;
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nand-ecc-engine = <&qpic_nand>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:TRAINING";
+				reg = <0x00 0x80000>;
+			};
+
+			partition@80000 {
+				label = "rootfs_1";
+				reg = <0x80000 0x3e00000>;
+			};
+
+			partition@3e80000 {
+				label = "rootfs";
+				reg = <0x3e80000 0x3e00000>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio38";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	qpic_pins: qpic-state {
+
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		drive-strength = <8>;
+		bias-disable;
+	};
+};
+
+&tsens {
+	status = "okay ";
+};
+
+&q6v5_wcss {
+	status = "okay";
+
+	memory-region = <&q6_mem_regions>;
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
+			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
+
+	// IPQ5018
+	q6_wcss_pd1: pd-1 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		resets =
+			<&gcc GCC_WCSSAON_RESET>,
+			<&gcc GCC_WCSS_BCR>,
+			<&gcc GCC_CE_BCR>;
+		reset-names =
+			"wcss_aon_reset",
+			"wcss_reset",
+			"ce_reset";
+
+		clocks =
+			<&gcc GCC_WCSS_AHB_S_CLK>,
+			<&gcc GCC_WCSS_ACMT_CLK>,
+			<&gcc GCC_WCSS_AXI_M_CLK>;
+		clock-names =
+			"gcc_wcss_ahb_s_clk",
+			"gcc_wcss_acmt_clk",
+			"gcc_wcss_axi_m_clk";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 8 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 9 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 12 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 11 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 8>,
+			<&wcss_smp2p_out 9>,
+			<&wcss_smp2p_out 10>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+
+	// QCN6122 5G
+	q6_wcss_pd3: pd-3 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 24 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 25 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 28 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 27 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 24>,
+			<&wcss_smp2p_out 25>,
+			<&wcss_smp2p_out 26>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+};
+
+&wifi0 {
+	// IPQ5018
+	status = "okay";
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+	qcom,ath11k-calibration-variant = "Yuncore-AX830";
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	// QCN6122 5G
+	status = "okay";
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-calibration-variant = "Yuncore-AX830";
+	qcom,ath11k-fw-memory-mode = <2>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
