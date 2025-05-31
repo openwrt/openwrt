@@ -1,0 +1,315 @@
+From 21bad22d6906a25392ad1f16bffc5bb1c6d06115 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:06 +0100
+Subject: [PATCH] Rename module fenv to fenv-h.
+
+* modules/fenv-h: Renamed from modules/fenv.
+* modules/fenv-h-tests: Renamed from modules/fenv-tests.
+* modules/fenv-h-c++-tests: Renamed from modules/fenv-c++-tests.
+* tests/test-fenv-h.c: Renamed from tests/test-fenv.c.
+* tests/test-fenv-h-c++.cc: Renamed from tests/test-fenv-c++.cc.
+* doc/posix-headers/fenv.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/fenv: New file.
+---
+ ChangeLog                                     | 12 +++
+ doc/posix-headers/fenv.texi                   |  4 +-
+ modules/fenv                                  | 82 ++--------------
+ modules/fenv-c++-tests                        | 19 ----
+ modules/fenv-environment                      |  2 +-
+ modules/fenv-exceptions-state-c23             |  2 +-
+ modules/fenv-exceptions-state-c99             |  2 +-
+ modules/fenv-exceptions-tracking-c23          |  2 +-
+ modules/fenv-exceptions-tracking-c99          |  2 +-
+ modules/fenv-exceptions-trapping              |  2 +-
+ modules/fenv-h                                | 93 +++++++++++++++++++
+ modules/fenv-h-c++-tests                      | 19 ++++
+ modules/fenv-h-tests                          | 12 +++
+ modules/fenv-rounding                         |  2 +-
+ modules/fenv-tests                            | 12 ---
+ .../{test-fenv-c++.cc => test-fenv-h-c++.cc}  |  0
+ tests/{test-fenv.c => test-fenv-h.c}          |  0
+ 17 files changed, 152 insertions(+), 115 deletions(-)
+ delete mode 100644 modules/fenv-c++-tests
+ create mode 100644 modules/fenv-h
+ create mode 100644 modules/fenv-h-c++-tests
+ create mode 100644 modules/fenv-h-tests
+ delete mode 100644 modules/fenv-tests
+ rename tests/{test-fenv-c++.cc => test-fenv-h-c++.cc} (100%)
+ rename tests/{test-fenv.c => test-fenv-h.c} (100%)
+
+--- a/modules/fenv
++++ b/modules/fenv
+@@ -1,87 +1,20 @@
+ Description:
+ A GNU-like <fenv.h>.
+-It nearly conforms to C99 and to C23.
++
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'fenv-h' instead.
+ 
+ Files:
+-lib/fenv.in.h
+-m4/fenv_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/c++defs
+-snippet/warn-on-use
++fenv-h
+ 
+ configure.ac:
+-gl_FENV_H
+-gl_FENV_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += fenv.h
+-
+-# We need the following in order to create an override of <fenv.h>.
+-fenv.h: fenv.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's/@''HAVE_FENV_H''@/$(HAVE_FENV_H)/g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_FENV_H''@|$(NEXT_FENV_H)|g' \
+-	      -e 's/@''GNULIB_FECLEAREXCEPT''@/$(GNULIB_FECLEAREXCEPT)/g' \
+-	      -e 's/@''GNULIB_FEDISABLEEXCEPT''@/$(GNULIB_FEDISABLEEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FEENABLEEXCEPT''@/$(GNULIB_FEENABLEEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FEGETENV''@/$(GNULIB_FEGETENV)/g' \
+-	      -e 's/@''GNULIB_FEGETEXCEPT''@/$(GNULIB_FEGETEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FEGETEXCEPTFLAG''@/$(GNULIB_FEGETEXCEPTFLAG)/g' \
+-	      -e 's/@''GNULIB_FEGETROUND''@/$(GNULIB_FEGETROUND)/g' \
+-	      -e 's/@''GNULIB_FEHOLDEXCEPT''@/$(GNULIB_FEHOLDEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FERAISEEXCEPT''@/$(GNULIB_FERAISEEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FESETENV''@/$(GNULIB_FESETENV)/g' \
+-	      -e 's/@''GNULIB_FESETEXCEPT''@/$(GNULIB_FESETEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FESETEXCEPTFLAG''@/$(GNULIB_FESETEXCEPTFLAG)/g' \
+-	      -e 's/@''GNULIB_FESETROUND''@/$(GNULIB_FESETROUND)/g' \
+-	      -e 's/@''GNULIB_FETESTEXCEPT''@/$(GNULIB_FETESTEXCEPT)/g' \
+-	      -e 's/@''GNULIB_FETESTEXCEPTFLAG''@/$(GNULIB_FETESTEXCEPTFLAG)/g' \
+-	      -e 's/@''GNULIB_FEUPDATEENV''@/$(GNULIB_FEUPDATEENV)/g' \
+-	      -e 's|@''HAVE_FECLEAREXCEPT''@|$(HAVE_FECLEAREXCEPT)|g' \
+-	      -e 's|@''HAVE_FEDISABLEEXCEPT''@|$(HAVE_FEDISABLEEXCEPT)|g' \
+-	      -e 's|@''HAVE_FEENABLEEXCEPT''@|$(HAVE_FEENABLEEXCEPT)|g' \
+-	      -e 's|@''HAVE_FEGETENV''@|$(HAVE_FEGETENV)|g' \
+-	      -e 's|@''HAVE_FEGETEXCEPT''@|$(HAVE_FEGETEXCEPT)|g' \
+-	      -e 's|@''HAVE_FEGETEXCEPTFLAG''@|$(HAVE_FEGETEXCEPTFLAG)|g' \
+-	      -e 's|@''HAVE_FEGETROUND''@|$(HAVE_FEGETROUND)|g' \
+-	      -e 's|@''HAVE_FEHOLDEXCEPT''@|$(HAVE_FEHOLDEXCEPT)|g' \
+-	      -e 's|@''HAVE_FERAISEEXCEPT''@|$(HAVE_FERAISEEXCEPT)|g' \
+-	      -e 's|@''HAVE_FESETENV''@|$(HAVE_FESETENV)|g' \
+-	      -e 's|@''HAVE_FESETEXCEPT''@|$(HAVE_FESETEXCEPT)|g' \
+-	      -e 's|@''HAVE_FESETEXCEPTFLAG''@|$(HAVE_FESETEXCEPTFLAG)|g' \
+-	      -e 's|@''HAVE_FESETROUND''@|$(HAVE_FESETROUND)|g' \
+-	      -e 's|@''HAVE_FETESTEXCEPT''@|$(HAVE_FETESTEXCEPT)|g' \
+-	      -e 's|@''HAVE_FETESTEXCEPTFLAG''@|$(HAVE_FETESTEXCEPTFLAG)|g' \
+-	      -e 's|@''HAVE_FEUPDATEENV''@|$(HAVE_FEUPDATEENV)|g' \
+-	      -e 's|@''REPLACE_FECLEAREXCEPT''@|$(REPLACE_FECLEAREXCEPT)|g' \
+-	      -e 's|@''REPLACE_FEDISABLEEXCEPT''@|$(REPLACE_FEDISABLEEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FEENABLEEXCEPT''@|$(REPLACE_FEENABLEEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FEGETENV''@|$(REPLACE_FEGETENV)|g' \
+-	      -e 's|@''REPLACE_FEGETEXCEPT''@|$(REPLACE_FEGETEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FEGETEXCEPTFLAG''@|$(REPLACE_FEGETEXCEPTFLAG)|g' \
+-	      -e 's|@''REPLACE_FEGETROUND''@|$(REPLACE_FEGETROUND)|g' \
+-	      -e 's|@''REPLACE_FEHOLDEXCEPT''@|$(REPLACE_FEHOLDEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FERAISEEXCEPT''@|$(REPLACE_FERAISEEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FESETENV''@|$(REPLACE_FESETENV)|g' \
+-	      -e 's|@''REPLACE_FESETEXCEPT''@|$(REPLACE_FESETEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FESETEXCEPTFLAG''@|$(REPLACE_FESETEXCEPTFLAG)|g' \
+-	      -e 's|@''REPLACE_FESETROUND''@|$(REPLACE_FESETROUND)|g' \
+-	      -e 's|@''REPLACE_FETESTEXCEPT''@|$(REPLACE_FETESTEXCEPT)|g' \
+-	      -e 's|@''REPLACE_FEUPDATEENV''@|$(REPLACE_FEUPDATEENV)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/fenv.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += fenv.h fenv.h-t
+ 
+ Include:
+ <fenv.h>
+@@ -90,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- a/modules/fenv-environment
++++ b/modules/fenv-environment
+@@ -12,7 +12,7 @@ m4/mathfunc.m4
+ m4/musl.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ extensions
+ verify
+ fenv-exceptions-tracking-c99
+--- a/modules/fenv-exceptions-state-c23
++++ b/modules/fenv-exceptions-state-c23
+@@ -8,7 +8,7 @@ m4/fenv-exceptions-state-c23.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ fenv-exceptions-state-c99
+ 
+ configure.ac:
+--- a/modules/fenv-exceptions-state-c99
++++ b/modules/fenv-exceptions-state-c99
+@@ -11,7 +11,7 @@ m4/fenv-exceptions.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ 
+ configure.ac:
+ gl_FENV_EXCEPTIONS_STATE
+--- a/modules/fenv-exceptions-tracking-c23
++++ b/modules/fenv-exceptions-tracking-c23
+@@ -9,7 +9,7 @@ m4/fenv-exceptions-tracking-c23.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ fenv-exceptions-tracking-c99
+ 
+ configure.ac:
+--- a/modules/fenv-exceptions-tracking-c99
++++ b/modules/fenv-exceptions-tracking-c99
+@@ -12,7 +12,7 @@ m4/fenv-exceptions.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ 
+ configure.ac:
+ gl_FENV_EXCEPTIONS_TRACKING
+--- a/modules/fenv-exceptions-trapping
++++ b/modules/fenv-exceptions-trapping
+@@ -10,7 +10,7 @@ m4/mathfunc.m4
+ m4/musl.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ extensions
+ 
+ configure.ac:
+--- /dev/null
++++ b/modules/fenv-h
+@@ -0,0 +1,93 @@
++Description:
++A GNU-like <fenv.h>.
++It nearly conforms to C99 and to C23.
++
++Files:
++lib/fenv.in.h
++m4/fenv_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_FENV_H
++gl_FENV_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += fenv.h
++
++# We need the following in order to create an override of <fenv.h>.
++fenv.h: fenv.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's/@''HAVE_FENV_H''@/$(HAVE_FENV_H)/g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_FENV_H''@|$(NEXT_FENV_H)|g' \
++	      -e 's/@''GNULIB_FECLEAREXCEPT''@/$(GNULIB_FECLEAREXCEPT)/g' \
++	      -e 's/@''GNULIB_FEDISABLEEXCEPT''@/$(GNULIB_FEDISABLEEXCEPT)/g' \
++	      -e 's/@''GNULIB_FEENABLEEXCEPT''@/$(GNULIB_FEENABLEEXCEPT)/g' \
++	      -e 's/@''GNULIB_FEGETENV''@/$(GNULIB_FEGETENV)/g' \
++	      -e 's/@''GNULIB_FEGETEXCEPT''@/$(GNULIB_FEGETEXCEPT)/g' \
++	      -e 's/@''GNULIB_FEGETEXCEPTFLAG''@/$(GNULIB_FEGETEXCEPTFLAG)/g' \
++	      -e 's/@''GNULIB_FEGETROUND''@/$(GNULIB_FEGETROUND)/g' \
++	      -e 's/@''GNULIB_FEHOLDEXCEPT''@/$(GNULIB_FEHOLDEXCEPT)/g' \
++	      -e 's/@''GNULIB_FERAISEEXCEPT''@/$(GNULIB_FERAISEEXCEPT)/g' \
++	      -e 's/@''GNULIB_FESETENV''@/$(GNULIB_FESETENV)/g' \
++	      -e 's/@''GNULIB_FESETEXCEPT''@/$(GNULIB_FESETEXCEPT)/g' \
++	      -e 's/@''GNULIB_FESETEXCEPTFLAG''@/$(GNULIB_FESETEXCEPTFLAG)/g' \
++	      -e 's/@''GNULIB_FESETROUND''@/$(GNULIB_FESETROUND)/g' \
++	      -e 's/@''GNULIB_FETESTEXCEPT''@/$(GNULIB_FETESTEXCEPT)/g' \
++	      -e 's/@''GNULIB_FETESTEXCEPTFLAG''@/$(GNULIB_FETESTEXCEPTFLAG)/g' \
++	      -e 's/@''GNULIB_FEUPDATEENV''@/$(GNULIB_FEUPDATEENV)/g' \
++	      -e 's|@''HAVE_FECLEAREXCEPT''@|$(HAVE_FECLEAREXCEPT)|g' \
++	      -e 's|@''HAVE_FEDISABLEEXCEPT''@|$(HAVE_FEDISABLEEXCEPT)|g' \
++	      -e 's|@''HAVE_FEENABLEEXCEPT''@|$(HAVE_FEENABLEEXCEPT)|g' \
++	      -e 's|@''HAVE_FEGETENV''@|$(HAVE_FEGETENV)|g' \
++	      -e 's|@''HAVE_FEGETEXCEPT''@|$(HAVE_FEGETEXCEPT)|g' \
++	      -e 's|@''HAVE_FEGETEXCEPTFLAG''@|$(HAVE_FEGETEXCEPTFLAG)|g' \
++	      -e 's|@''HAVE_FEGETROUND''@|$(HAVE_FEGETROUND)|g' \
++	      -e 's|@''HAVE_FEHOLDEXCEPT''@|$(HAVE_FEHOLDEXCEPT)|g' \
++	      -e 's|@''HAVE_FERAISEEXCEPT''@|$(HAVE_FERAISEEXCEPT)|g' \
++	      -e 's|@''HAVE_FESETENV''@|$(HAVE_FESETENV)|g' \
++	      -e 's|@''HAVE_FESETEXCEPT''@|$(HAVE_FESETEXCEPT)|g' \
++	      -e 's|@''HAVE_FESETEXCEPTFLAG''@|$(HAVE_FESETEXCEPTFLAG)|g' \
++	      -e 's|@''HAVE_FESETROUND''@|$(HAVE_FESETROUND)|g' \
++	      -e 's|@''HAVE_FETESTEXCEPT''@|$(HAVE_FETESTEXCEPT)|g' \
++	      -e 's|@''HAVE_FETESTEXCEPTFLAG''@|$(HAVE_FETESTEXCEPTFLAG)|g' \
++	      -e 's|@''HAVE_FEUPDATEENV''@|$(HAVE_FEUPDATEENV)|g' \
++	      -e 's|@''REPLACE_FECLEAREXCEPT''@|$(REPLACE_FECLEAREXCEPT)|g' \
++	      -e 's|@''REPLACE_FEDISABLEEXCEPT''@|$(REPLACE_FEDISABLEEXCEPT)|g' \
++	      -e 's|@''REPLACE_FEENABLEEXCEPT''@|$(REPLACE_FEENABLEEXCEPT)|g' \
++	      -e 's|@''REPLACE_FEGETENV''@|$(REPLACE_FEGETENV)|g' \
++	      -e 's|@''REPLACE_FEGETEXCEPT''@|$(REPLACE_FEGETEXCEPT)|g' \
++	      -e 's|@''REPLACE_FEGETEXCEPTFLAG''@|$(REPLACE_FEGETEXCEPTFLAG)|g' \
++	      -e 's|@''REPLACE_FEGETROUND''@|$(REPLACE_FEGETROUND)|g' \
++	      -e 's|@''REPLACE_FEHOLDEXCEPT''@|$(REPLACE_FEHOLDEXCEPT)|g' \
++	      -e 's|@''REPLACE_FERAISEEXCEPT''@|$(REPLACE_FERAISEEXCEPT)|g' \
++	      -e 's|@''REPLACE_FESETENV''@|$(REPLACE_FESETENV)|g' \
++	      -e 's|@''REPLACE_FESETEXCEPT''@|$(REPLACE_FESETEXCEPT)|g' \
++	      -e 's|@''REPLACE_FESETEXCEPTFLAG''@|$(REPLACE_FESETEXCEPTFLAG)|g' \
++	      -e 's|@''REPLACE_FESETROUND''@|$(REPLACE_FESETROUND)|g' \
++	      -e 's|@''REPLACE_FETESTEXCEPT''@|$(REPLACE_FETESTEXCEPT)|g' \
++	      -e 's|@''REPLACE_FEUPDATEENV''@|$(REPLACE_FEUPDATEENV)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/fenv.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += fenv.h fenv.h-t
++
++Include:
++<fenv.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/fenv-rounding
++++ b/modules/fenv-rounding
+@@ -9,7 +9,7 @@ m4/fenv-rounding.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-fenv
++fenv-h
+ 
+ configure.ac:
+ gl_FENV_ROUNDING

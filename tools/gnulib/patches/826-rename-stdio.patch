@@ -1,0 +1,1354 @@
+From a95257716bb8f617a4c7e9353f328a4e2d4015f0 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:24:51 +0100
+Subject: [PATCH] Rename module stdio to stdio-h.
+
+* modules/stdio-h: Renamed from modules/stdio.
+* modules/stdio-h-tests: Renamed from modules/stdio-tests.
+* modules/stdio-h-c++-tests: Renamed from modules/stdio-c++-tests.
+* tests/test-stdio-h.c: Renamed from tests/test-stdio.c.
+* tests/test-stdio-h-c++.cc: Renamed from tests/test-stdio-c++.cc.
+* tests/test-stdio-h-c++2.cc: Renamed from tests/test-stdio-c++2.cc.
+* doc/posix-headers/stdio.texi: Update.
+* doc/posix-functions/fgetc.texi: Update.
+* doc/posix-functions/fgets.texi: Update.
+* doc/posix-functions/fprintf.texi: Update.
+* doc/posix-functions/fputc.texi: Update.
+* doc/posix-functions/fputs.texi: Update.
+* doc/posix-functions/fread.texi: Update.
+* doc/posix-functions/fscanf.texi: Update.
+* doc/posix-functions/fwrite.texi: Update.
+* doc/posix-functions/getc.texi: Update.
+* doc/posix-functions/getchar.texi: Update.
+* doc/posix-functions/printf.texi: Update.
+* doc/posix-functions/putc.texi: Update.
+* doc/posix-functions/putchar.texi: Update.
+* doc/posix-functions/puts.texi: Update.
+* doc/posix-functions/read.texi: Update.
+* doc/posix-functions/scanf.texi: Update.
+* doc/posix-functions/vfprintf.texi: Update.
+* doc/posix-functions/vprintf.texi: Update.
+* doc/posix-functions/write.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdio: New file.
+---
+ ChangeLog                                     |  32 +++
+ doc/posix-functions/fgetc.texi                |   6 +-
+ doc/posix-functions/fgets.texi                |   6 +-
+ doc/posix-functions/fprintf.texi              |   8 +-
+ doc/posix-functions/fputc.texi                |   8 +-
+ doc/posix-functions/fputs.texi                |   8 +-
+ doc/posix-functions/fread.texi                |   6 +-
+ doc/posix-functions/fscanf.texi               |   6 +-
+ doc/posix-functions/fwrite.texi               |   8 +-
+ doc/posix-functions/getc.texi                 |   6 +-
+ doc/posix-functions/getchar.texi              |   6 +-
+ doc/posix-functions/printf.texi               |   8 +-
+ doc/posix-functions/putc.texi                 |   8 +-
+ doc/posix-functions/putchar.texi              |   8 +-
+ doc/posix-functions/puts.texi                 |   8 +-
+ doc/posix-functions/read.texi                 |   6 +-
+ doc/posix-functions/scanf.texi                |   6 +-
+ doc/posix-functions/vfprintf.texi             |   8 +-
+ doc/posix-functions/vprintf.texi              |   8 +-
+ doc/posix-functions/write.texi                |   4 +-
+ doc/posix-headers/stdio.texi                  |   4 +-
+ modules/argp                                  |   2 +-
+ modules/c-snprintf                            |   2 +-
+ modules/c-snzprintf                           |   2 +-
+ modules/c-vasnprintf                          |   2 +-
+ modules/c-vasprintf                           |   2 +-
+ modules/c-vaszprintf                          |   2 +-
+ modules/c-vsnprintf                           |   2 +-
+ modules/c-vsnzprintf                          |   2 +-
+ modules/c-xvasprintf                          |   2 +-
+ modules/dfa                                   |   2 +-
+ modules/dfa-tests                             |   2 +-
+ modules/dprintf                               |   2 +-
+ modules/dzprintf                              |   2 +-
+ modules/error                                 |   2 +-
+ modules/fclose                                |   2 +-
+ modules/fdopen                                |   2 +-
+ modules/fflush                                |   2 +-
+ modules/fopen                                 |   2 +-
+ modules/fprintf-posix                         |   2 +-
+ modules/fprintftime                           |   2 +-
+ modules/fpurge                                |   2 +-
+ modules/freopen                               |   2 +-
+ modules/fseek                                 |   2 +-
+ modules/fseeko                                |   2 +-
+ modules/ftell                                 |   2 +-
+ modules/ftello                                |   2 +-
+ modules/fzprintf                              |   2 +-
+ modules/getdelim                              |   2 +-
+ modules/getline                               |   2 +-
+ modules/ignore-value-tests                    |   2 +-
+ modules/libtextstyle-optional                 |   2 +-
+ modules/nonblocking                           |   2 +-
+ modules/obstack-printf                        |   2 +-
+ modules/obstack-printf-posix                  |   2 +-
+ modules/obstack-zprintf                       |   2 +-
+ modules/pclose                                |   2 +-
+ modules/perror                                |   2 +-
+ modules/popen                                 |   2 +-
+ modules/posixcheck                            |   2 +-
+ modules/printf-posix                          |   2 +-
+ modules/remove                                |   2 +-
+ modules/rename                                |   2 +-
+ modules/renameatu                             |   2 +-
+ modules/sigpipe                               |   2 +-
+ modules/snprintf                              |   2 +-
+ modules/snzprintf                             |   2 +-
+ modules/sprintf-posix                         |   2 +-
+ modules/stdio                                 | 210 +----------------
+ modules/stdio-c++-tests                       |  20 --
+ modules/stdio-h                               | 221 ++++++++++++++++++
+ modules/stdio-h-c++-tests                     |  20 ++
+ modules/{stdio-tests => stdio-h-tests}        |   8 +-
+ modules/szprintf                              |   2 +-
+ modules/tmpfile                               |   2 +-
+ modules/unicodeio                             |   2 +-
+ modules/vasnprintf                            |   2 +-
+ modules/vasnwprintf                           |   2 +-
+ modules/vasprintf                             |   2 +-
+ modules/vaszprintf                            |   2 +-
+ modules/vdprintf                              |   2 +-
+ modules/vdzprintf                             |   2 +-
+ modules/vfprintf-posix                        |   2 +-
+ modules/vfscanf                               |   2 +-
+ modules/vfzprintf                             |   2 +-
+ modules/vprintf-posix                         |   2 +-
+ modules/vscanf                                |   2 +-
+ modules/vsnprintf                             |   2 +-
+ modules/vsnzprintf                            |   2 +-
+ modules/vsprintf-posix                        |   2 +-
+ modules/vszprintf                             |   2 +-
+ modules/vzprintf                              |   2 +-
+ modules/xprintf                               |   2 +-
+ modules/xvasprintf                            |   2 +-
+ modules/zprintf                               |   2 +-
+ ...{test-stdio-c++.cc => test-stdio-h-c++.cc} |   0
+ ...est-stdio-c++2.cc => test-stdio-h-c++2.cc} |   0
+ tests/{test-stdio.c => test-stdio-h.c}        |   0
+ 98 files changed, 421 insertions(+), 364 deletions(-)
+ delete mode 100644 modules/stdio-c++-tests
+ create mode 100644 modules/stdio-h
+ create mode 100644 modules/stdio-h-c++-tests
+ rename modules/{stdio-tests => stdio-h-tests} (67%)
+ rename tests/{test-stdio-c++.cc => test-stdio-h-c++.cc} (100%)
+ rename tests/{test-stdio-c++2.cc => test-stdio-h-c++2.cc} (100%)
+ rename tests/{test-stdio.c => test-stdio-h.c} (100%)
+
+--- a/modules/argp
++++ b/modules/argp
+@@ -33,7 +33,7 @@ extensions
+ vsnprintf
+ sleep
+ stdbool-h
+-stdio
++stdio-h
+ strerror
+ memchr
+ memmove
+--- a/modules/c-snprintf
++++ b/modules/c-snprintf
+@@ -7,7 +7,7 @@ lib/c-snprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vsnzprintf
+ 
+ configure.ac:
+--- a/modules/c-snzprintf
++++ b/modules/c-snzprintf
+@@ -8,7 +8,7 @@ lib/c-snzprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vasnprintf
+ 
+ configure.ac:
+--- a/modules/c-vasnprintf
++++ b/modules/c-vasnprintf
+@@ -25,7 +25,7 @@ assert-h
+ attribute
+ limits-h
+ stdint-h
+-stdio
++stdio-h
+ mixin/printf-posix
+ free-posix
+ nocrash
+--- a/modules/c-vasprintf
++++ b/modules/c-vasprintf
+@@ -8,7 +8,7 @@ lib/c-vasprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vasnprintf
+ 
+ configure.ac:
+--- a/modules/c-vaszprintf
++++ b/modules/c-vaszprintf
+@@ -8,7 +8,7 @@ lib/c-vaszprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vasnprintf
+ 
+ configure.ac:
+--- a/modules/c-vsnprintf
++++ b/modules/c-vsnprintf
+@@ -8,7 +8,7 @@ lib/c-vsnprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vsnzprintf
+ 
+ configure.ac:
+--- a/modules/c-vsnzprintf
++++ b/modules/c-vsnzprintf
+@@ -8,7 +8,7 @@ lib/c-vsnzprintf.c
+ 
+ Depends-on:
+ stdint-h
+-stdio
++stdio-h
+ c-vasnprintf
+ 
+ configure.ac:
+--- a/modules/c-xvasprintf
++++ b/modules/c-xvasprintf
+@@ -9,7 +9,7 @@ m4/strerrorname_np.m4
+ 
+ Depends-on:
+ extensions
+-stdio
++stdio-h
+ c-vaszprintf
+ xalloc-die
+ 
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -28,7 +28,7 @@ regex
+ stdbool-h
+ stddef-h
+ stdint-h
+-stdio
++stdio-h
+ stdlib
+ string
+ uchar
+--- a/modules/dfa-tests
++++ b/modules/dfa-tests
+@@ -6,7 +6,7 @@ tests/test-dfa-invalid-merge.sh
+ 
+ Depends-on:
+ binary-io
+-stdio
++stdio-h
+ stdlib
+ string
+ unistd
+--- a/modules/dprintf
++++ b/modules/dprintf
+@@ -6,7 +6,7 @@ lib/dprintf.c
+ m4/dprintf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vdzprintf       [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+ intprops        [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+ errno-h         [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+--- a/modules/dzprintf
++++ b/modules/dzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/dzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ intprops
+ free-posix
+--- a/modules/error
++++ b/modules/error
+@@ -8,7 +8,7 @@ m4/error.m4
+ Depends-on:
+ error-h
+ stddef-h
+-stdio
++stdio-h
+ getprogname
+ gettext-h       [test $COMPILE_ERROR_C = 1]
+ gnulib-i18n     [test $COMPILE_ERROR_C = 1]
+--- a/modules/fclose
++++ b/modules/fclose
+@@ -6,7 +6,7 @@ lib/fclose.c
+ m4/fclose.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ close           [test $REPLACE_FCLOSE = 1]
+ fflush          [test $REPLACE_FCLOSE = 1]
+ freading        [test $REPLACE_FCLOSE = 1]
+--- a/modules/fdopen
++++ b/modules/fdopen
+@@ -6,7 +6,7 @@ lib/fdopen.c
+ m4/fdopen.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ msvc-inval      [test $REPLACE_FDOPEN = 1]
+ 
+ configure.ac:
+--- a/modules/fflush
++++ b/modules/fflush
+@@ -7,7 +7,7 @@ lib/stdio-impl.h
+ m4/fflush.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ fpurge                    [test $REPLACE_FFLUSH = 1]
+ ftello                    [test $REPLACE_FFLUSH = 1]
+ freading                  [test $REPLACE_FFLUSH = 1]
+--- a/modules/fopen
++++ b/modules/fopen
+@@ -8,7 +8,7 @@ m4/fclose.m4
+ m4/fflush.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ largefile
+ fcntl-h         [test $REPLACE_FOPEN = 1]
+ stdbool-h       [test $REPLACE_FOPEN = 1]
+--- a/modules/fprintf-posix
++++ b/modules/fprintf-posix
+@@ -14,7 +14,7 @@ m4/printf.m4
+ m4/math_h.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ nocrash
+ printf-safe
+ errno-h
+--- a/modules/fprintftime
++++ b/modules/fprintftime
+@@ -7,7 +7,7 @@ lib/fprintftime.c
+ lib/strftime.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ nstrftime
+ time_rz
+ 
+--- a/modules/fpurge
++++ b/modules/fpurge
+@@ -7,7 +7,7 @@ lib/stdio-impl.h
+ m4/fpurge.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ 
+ configure.ac:
+ gl_FUNC_FPURGE
+--- a/modules/freopen
++++ b/modules/freopen
+@@ -8,7 +8,7 @@ m4/freopen.m4
+ Depends-on:
+ fcntl-h        [test $REPLACE_FREOPEN = 1]
+ open           [test $REPLACE_FREOPEN = 1]
+-stdio
++stdio-h
+ largefile
+ 
+ configure.ac:
+--- a/modules/fseek
++++ b/modules/fseek
+@@ -6,7 +6,7 @@ lib/fseek.c
+ m4/fseek.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ fseeko          [test $REPLACE_FSEEK = 1]
+ 
+ configure.ac:
+--- a/modules/fseeko
++++ b/modules/fseeko
+@@ -10,7 +10,7 @@ Depends-on:
+ extensions
+ largefile
+ lseek
+-stdio
++stdio-h
+ sys_types
+ # Just to guarantee consistency between fseek() and fseeko().
+ fseek
+--- a/modules/ftell
++++ b/modules/ftell
+@@ -6,7 +6,7 @@ lib/ftell.c
+ m4/ftell.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ errno-h
+ ftello          [test $REPLACE_FTELL = 1]
+ 
+--- a/modules/ftello
++++ b/modules/ftello
+@@ -9,7 +9,7 @@ m4/ftello.m4
+ m4/ungetc.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ extensions
+ largefile
+ sys_types
+--- a/modules/fzprintf
++++ b/modules/fzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/fzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ intprops
+ free-posix
+--- a/modules/getdelim
++++ b/modules/getdelim
+@@ -6,7 +6,7 @@ lib/getdelim.c
+ m4/getdelim.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ extensions
+ limits-h        [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+ stdint-h        [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+--- a/modules/getline
++++ b/modules/getline
+@@ -6,7 +6,7 @@ lib/getline.c
+ m4/getline.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ extensions
+ getdelim        [test $REPLACE_GETLINE = 1]
+ 
+--- a/modules/ignore-value-tests
++++ b/modules/ignore-value-tests
+@@ -3,7 +3,7 @@ tests/test-ignore-value.c
+ 
+ Depends-on:
+ attribute
+-stdio
++stdio-h
+ 
+ configure.ac:
+ 
+--- a/modules/libtextstyle-optional
++++ b/modules/libtextstyle-optional
+@@ -9,7 +9,7 @@ Depends-on:
+ gen-header
+ libtextstyle
+ stdbool-h
+-stdio
++stdio-h
+ unistd
+ fsync
+ vasprintf-posix
+--- a/modules/nonblocking
++++ b/modules/nonblocking
+@@ -14,7 +14,7 @@ fcntl-h
+ ioctl
+ msvc-nothrow
+ stdbool-h
+-stdio
++stdio-h
+ sys_socket
+ unistd
+ 
+--- a/modules/obstack-printf
++++ b/modules/obstack-printf
+@@ -7,7 +7,7 @@ lib/obstack_printf.c
+ 
+ Depends-on:
+ obstack
+-stdio
++stdio-h
+ vasnprintf
+ extensions
+ 
+--- a/modules/obstack-printf-posix
++++ b/modules/obstack-printf-posix
+@@ -16,7 +16,7 @@ lib/obstack_printf.c
+ 
+ Depends-on:
+ obstack
+-stdio
++stdio-h
+ vasnprintf-posix
+ extensions
+ 
+--- a/modules/obstack-zprintf
++++ b/modules/obstack-zprintf
+@@ -7,7 +7,7 @@ lib/obstack_printf.c
+ 
+ Depends-on:
+ obstack
+-stdio
++stdio-h
+ vasnprintf
+ 
+ configure.ac:
+--- a/modules/pclose
++++ b/modules/pclose
+@@ -6,7 +6,7 @@ lib/pclose.c
+ m4/pclose.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ 
+ configure.ac:
+ gl_FUNC_PCLOSE
+--- a/modules/perror
++++ b/modules/perror
+@@ -6,7 +6,7 @@ lib/perror.c
+ m4/perror.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ errno-h          [test $REPLACE_PERROR = 1]
+ strerror-override [test $REPLACE_PERROR = 1]
+ strerror_r-posix [test $REPLACE_PERROR = 1]
+--- a/modules/popen
++++ b/modules/popen
+@@ -6,7 +6,7 @@ lib/popen.c
+ m4/popen.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ open            [test $HAVE_POPEN = 0 || test $REPLACE_POPEN = 1]
+ 
+ configure.ac:
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -28,7 +28,7 @@ sched-h
+ search-h
+ signal-h
+ spawn-h
+-stdio
++stdio-h
+ stdlib
+ string
+ strings
+--- a/modules/printf-posix
++++ b/modules/printf-posix
+@@ -14,7 +14,7 @@ m4/printf.m4
+ m4/asm-underscore.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ printf-safe
+ vfprintf-posix  [test $REPLACE_PRINTF = 1]
+ 
+--- a/modules/remove
++++ b/modules/remove
+@@ -6,7 +6,7 @@ lib/remove.c
+ m4/remove.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ rmdir           [test $REPLACE_REMOVE = 1]
+ unlink          [test $REPLACE_REMOVE = 1]
+ 
+--- a/modules/rename
++++ b/modules/rename
+@@ -6,7 +6,7 @@ lib/rename.c
+ m4/rename.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ canonicalize-lgpl [test $REPLACE_RENAME = 1]
+ chdir             [test $REPLACE_RENAME = 1]
+ dirname-lgpl      [test $REPLACE_RENAME = 1]
+--- a/modules/renameatu
++++ b/modules/renameatu
+@@ -8,7 +8,7 @@ lib/renameatu.h
+ m4/renameat.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ extensions
+ fcntl-h
+ filenamecat-lgpl [test $HAVE_RENAMEAT = 0 || test $REPLACE_RENAMEAT = 1]
+--- a/modules/sigpipe
++++ b/modules/sigpipe
+@@ -16,7 +16,7 @@ msvc-nothrow
+ raise
+ signal-h
+ sigprocmask
+-stdio
++stdio-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/snprintf
++++ b/modules/snprintf
+@@ -7,7 +7,7 @@ m4/snprintf.m4
+ m4/printf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ errno-h         [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ stdint-h        [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+--- a/modules/snzprintf
++++ b/modules/snzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/snzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ errno-h
+ stdint-h
+--- a/modules/sprintf-posix
++++ b/modules/sprintf-posix
+@@ -14,7 +14,7 @@ m4/printf.m4
+ m4/math_h.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ nocrash
+ printf-safe
+ multiarch
+--- a/modules/stdio
++++ b/modules/stdio
+@@ -1,215 +1,20 @@
+ Description:
+ A GNU-like <stdio.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdio-h' instead.
++
+ Files:
+-lib/stdio.in.h
+-lib/stdio-read.c
+-lib/stdio-write.c
+-m4/stdio_h.m4
+-m4/musl.m4
+ 
+ Depends-on:
+-extensions
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-ssize_t
+-stddef-h
+-sys_types
+-
+-configure.ac-early:
+-gl_STDIO_H_EARLY
++stdio-h
+ 
+ configure.ac:
+-gl_STDIO_H
+-gl_STDIO_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+-gl_CONDITIONAL([GL_COND_OBJ_STDIO_READ], [test $REPLACE_STDIO_READ_FUNCS = 1])
+-gl_CONDITIONAL([GL_COND_OBJ_STDIO_WRITE], [test $REPLACE_STDIO_WRITE_FUNCS = 1])
+-
+-dnl No need to create extra modules for these functions. Everyone who uses
+-dnl <stdio.h> likely needs them.
+-gl_STDIO_MODULE_INDICATOR([fscanf])
+-gl_MODULE_INDICATOR([fscanf])
+-gl_STDIO_MODULE_INDICATOR([scanf])
+-gl_MODULE_INDICATOR([scanf])
+-gl_STDIO_MODULE_INDICATOR([fgetc])
+-gl_STDIO_MODULE_INDICATOR([getc])
+-gl_STDIO_MODULE_INDICATOR([getchar])
+-gl_STDIO_MODULE_INDICATOR([fgets])
+-gl_STDIO_MODULE_INDICATOR([fread])
+-
+-dnl No need to create extra modules for these functions. Everyone who uses
+-dnl <stdio.h> likely needs them.
+-gl_STDIO_MODULE_INDICATOR([fprintf])
+-gl_STDIO_MODULE_INDICATOR([printf])
+-gl_STDIO_MODULE_INDICATOR([vfprintf])
+-gl_STDIO_MODULE_INDICATOR([vprintf])
+-gl_STDIO_MODULE_INDICATOR([fputc])
+-gl_STDIO_MODULE_INDICATOR([putc])
+-gl_STDIO_MODULE_INDICATOR([putchar])
+-gl_STDIO_MODULE_INDICATOR([fputs])
+-gl_STDIO_MODULE_INDICATOR([puts])
+-gl_STDIO_MODULE_INDICATOR([fwrite])
+ 
+ Makefile.am:
+-BUILT_SOURCES += stdio.h
+-
+-# We need the following in order to create <stdio.h> when the system
+-# doesn't have one that works with the given compiler.
+-stdio.h: stdio.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDIO_H''@|$(NEXT_STDIO_H)|g' \
+-	      -e 's/@''GNULIB_DPRINTF''@/$(GNULIB_DPRINTF)/g' \
+-	      -e 's/@''GNULIB_DZPRINTF''@/$(GNULIB_DZPRINTF)/g' \
+-	      -e 's/@''GNULIB_FCLOSE''@/$(GNULIB_FCLOSE)/g' \
+-	      -e 's/@''GNULIB_FDOPEN''@/$(GNULIB_FDOPEN)/g' \
+-	      -e 's/@''GNULIB_FFLUSH''@/$(GNULIB_FFLUSH)/g' \
+-	      -e 's/@''GNULIB_FGETC''@/$(GNULIB_FGETC)/g' \
+-	      -e 's/@''GNULIB_FGETS''@/$(GNULIB_FGETS)/g' \
+-	      -e 's/@''GNULIB_FOPEN''@/$(GNULIB_FOPEN)/g' \
+-	      -e 's/@''GNULIB_FOPEN_GNU''@/$(GNULIB_FOPEN_GNU)/g' \
+-	      -e 's/@''GNULIB_FPRINTF''@/$(GNULIB_FPRINTF)/g' \
+-	      -e 's/@''GNULIB_FPRINTF_POSIX''@/$(GNULIB_FPRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_FPURGE''@/$(GNULIB_FPURGE)/g' \
+-	      -e 's/@''GNULIB_FPUTC''@/$(GNULIB_FPUTC)/g' \
+-	      -e 's/@''GNULIB_FPUTS''@/$(GNULIB_FPUTS)/g' \
+-	      -e 's/@''GNULIB_FREAD''@/$(GNULIB_FREAD)/g' \
+-	      -e 's/@''GNULIB_FREOPEN''@/$(GNULIB_FREOPEN)/g' \
+-	      -e 's/@''GNULIB_FSCANF''@/$(GNULIB_FSCANF)/g' \
+-	      -e 's/@''GNULIB_FSEEK''@/$(GNULIB_FSEEK)/g' \
+-	      -e 's/@''GNULIB_FSEEKO''@/$(GNULIB_FSEEKO)/g' \
+-	      -e 's/@''GNULIB_FTELL''@/$(GNULIB_FTELL)/g' \
+-	      -e 's/@''GNULIB_FTELLO''@/$(GNULIB_FTELLO)/g' \
+-	      -e 's/@''GNULIB_FWRITE''@/$(GNULIB_FWRITE)/g' \
+-	      -e 's/@''GNULIB_FZPRINTF''@/$(GNULIB_FZPRINTF)/g' \
+-	      -e 's/@''GNULIB_GETC''@/$(GNULIB_GETC)/g' \
+-	      -e 's/@''GNULIB_GETCHAR''@/$(GNULIB_GETCHAR)/g' \
+-	      -e 's/@''GNULIB_GETDELIM''@/$(GNULIB_GETDELIM)/g' \
+-	      -e 's/@''GNULIB_GETLINE''@/$(GNULIB_GETLINE)/g' \
+-	      -e 's/@''GNULIB_OBSTACK_PRINTF''@/$(GNULIB_OBSTACK_PRINTF)/g' \
+-	      -e 's/@''GNULIB_OBSTACK_PRINTF_POSIX''@/$(GNULIB_OBSTACK_PRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_OBSTACK_ZPRINTF''@/$(GNULIB_OBSTACK_ZPRINTF)/g' \
+-	      -e 's/@''GNULIB_PCLOSE''@/$(GNULIB_PCLOSE)/g' \
+-	      -e 's/@''GNULIB_PERROR''@/$(GNULIB_PERROR)/g' \
+-	      -e 's/@''GNULIB_POPEN''@/$(GNULIB_POPEN)/g' \
+-	      -e 's/@''GNULIB_PRINTF''@/$(GNULIB_PRINTF)/g' \
+-	      -e 's/@''GNULIB_PRINTF_POSIX''@/$(GNULIB_PRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_PUTC''@/$(GNULIB_PUTC)/g' \
+-	      -e 's/@''GNULIB_PUTCHAR''@/$(GNULIB_PUTCHAR)/g' \
+-	      -e 's/@''GNULIB_PUTS''@/$(GNULIB_PUTS)/g' \
+-	      -e 's/@''GNULIB_REMOVE''@/$(GNULIB_REMOVE)/g' \
+-	      -e 's/@''GNULIB_RENAME''@/$(GNULIB_RENAME)/g' \
+-	      -e 's/@''GNULIB_RENAMEAT''@/$(GNULIB_RENAMEAT)/g' \
+-	      -e 's/@''GNULIB_SCANF''@/$(GNULIB_SCANF)/g' \
+-	      -e 's/@''GNULIB_SNPRINTF''@/$(GNULIB_SNPRINTF)/g' \
+-	      -e 's/@''GNULIB_SNZPRINTF''@/$(GNULIB_SNZPRINTF)/g' \
+-	      -e 's/@''GNULIB_SPRINTF_POSIX''@/$(GNULIB_SPRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_STDIO_H_NONBLOCKING''@/$(GNULIB_STDIO_H_NONBLOCKING)/g' \
+-	      -e 's/@''GNULIB_STDIO_H_SIGPIPE''@/$(GNULIB_STDIO_H_SIGPIPE)/g' \
+-	      -e 's/@''GNULIB_SZPRINTF''@/$(GNULIB_SZPRINTF)/g' \
+-	      -e 's/@''GNULIB_TMPFILE''@/$(GNULIB_TMPFILE)/g' \
+-	      -e 's/@''GNULIB_VASPRINTF''@/$(GNULIB_VASPRINTF)/g' \
+-	      -e 's/@''GNULIB_VASZPRINTF''@/$(GNULIB_VASZPRINTF)/g' \
+-	      -e 's/@''GNULIB_VDPRINTF''@/$(GNULIB_VDPRINTF)/g' \
+-	      -e 's/@''GNULIB_VDZPRINTF''@/$(GNULIB_VDZPRINTF)/g' \
+-	      -e 's/@''GNULIB_VFPRINTF''@/$(GNULIB_VFPRINTF)/g' \
+-	      -e 's/@''GNULIB_VFPRINTF_POSIX''@/$(GNULIB_VFPRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_VFZPRINTF''@/$(GNULIB_VFZPRINTF)/g' \
+-	      -e 's/@''GNULIB_VFSCANF''@/$(GNULIB_VFSCANF)/g' \
+-	      -e 's/@''GNULIB_VSCANF''@/$(GNULIB_VSCANF)/g' \
+-	      -e 's/@''GNULIB_VPRINTF''@/$(GNULIB_VPRINTF)/g' \
+-	      -e 's/@''GNULIB_VPRINTF_POSIX''@/$(GNULIB_VPRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_VSNPRINTF''@/$(GNULIB_VSNPRINTF)/g' \
+-	      -e 's/@''GNULIB_VSNZPRINTF''@/$(GNULIB_VSNZPRINTF)/g' \
+-	      -e 's/@''GNULIB_VSPRINTF_POSIX''@/$(GNULIB_VSPRINTF_POSIX)/g' \
+-	      -e 's/@''GNULIB_VSZPRINTF''@/$(GNULIB_VSZPRINTF)/g' \
+-	      -e 's/@''GNULIB_VZPRINTF''@/$(GNULIB_VZPRINTF)/g' \
+-	      -e 's/@''GNULIB_ZPRINTF''@/$(GNULIB_ZPRINTF)/g' \
+-	      -e 's/@''GNULIB_MDA_FCLOSEALL''@/$(GNULIB_MDA_FCLOSEALL)/g' \
+-	      -e 's/@''GNULIB_MDA_FDOPEN''@/$(GNULIB_MDA_FDOPEN)/g' \
+-	      -e 's/@''GNULIB_MDA_FILENO''@/$(GNULIB_MDA_FILENO)/g' \
+-	      -e 's/@''GNULIB_MDA_GETW''@/$(GNULIB_MDA_GETW)/g' \
+-	      -e 's/@''GNULIB_MDA_PUTW''@/$(GNULIB_MDA_PUTW)/g' \
+-	      -e 's/@''GNULIB_MDA_TEMPNAM''@/$(GNULIB_MDA_TEMPNAM)/g' \
+-	      < $(srcdir)/stdio.in.h > $@-t1
+-	$(AM_V_at)sed \
+-	      -e 's|@''HAVE_DECL_FCLOSEALL''@|$(HAVE_DECL_FCLOSEALL)|g' \
+-	      -e 's|@''HAVE_DECL_FPURGE''@|$(HAVE_DECL_FPURGE)|g' \
+-	      -e 's|@''HAVE_DECL_FSEEKO''@|$(HAVE_DECL_FSEEKO)|g' \
+-	      -e 's|@''HAVE_DECL_FTELLO''@|$(HAVE_DECL_FTELLO)|g' \
+-	      -e 's|@''HAVE_DECL_GETDELIM''@|$(HAVE_DECL_GETDELIM)|g' \
+-	      -e 's|@''HAVE_DECL_GETLINE''@|$(HAVE_DECL_GETLINE)|g' \
+-	      -e 's|@''HAVE_DECL_GETW''@|$(HAVE_DECL_GETW)|g' \
+-	      -e 's|@''HAVE_DECL_OBSTACK_PRINTF''@|$(HAVE_DECL_OBSTACK_PRINTF)|g' \
+-	      -e 's|@''HAVE_DECL_PUTW''@|$(HAVE_DECL_PUTW)|g' \
+-	      -e 's|@''HAVE_DECL_SNPRINTF''@|$(HAVE_DECL_SNPRINTF)|g' \
+-	      -e 's|@''HAVE_DECL_VSNPRINTF''@|$(HAVE_DECL_VSNPRINTF)|g' \
+-	      -e 's|@''HAVE_DPRINTF''@|$(HAVE_DPRINTF)|g' \
+-	      -e 's|@''HAVE_FSEEKO''@|$(HAVE_FSEEKO)|g' \
+-	      -e 's|@''HAVE_FTELLO''@|$(HAVE_FTELLO)|g' \
+-	      -e 's|@''HAVE_PCLOSE''@|$(HAVE_PCLOSE)|g' \
+-	      -e 's|@''HAVE_POPEN''@|$(HAVE_POPEN)|g' \
+-	      -e 's|@''HAVE_RENAMEAT''@|$(HAVE_RENAMEAT)|g' \
+-	      -e 's|@''HAVE_VASPRINTF''@|$(HAVE_VASPRINTF)|g' \
+-	      -e 's|@''HAVE_VDPRINTF''@|$(HAVE_VDPRINTF)|g' \
+-	      < $@-t1 > $@-t2
+-	$(AM_V_at)sed \
+-	      -e 's|@''REPLACE_DPRINTF''@|$(REPLACE_DPRINTF)|g' \
+-	      -e 's|@''REPLACE_FCLOSE''@|$(REPLACE_FCLOSE)|g' \
+-	      -e 's|@''REPLACE_FDOPEN''@|$(REPLACE_FDOPEN)|g' \
+-	      -e 's|@''REPLACE_FFLUSH''@|$(REPLACE_FFLUSH)|g' \
+-	      -e 's|@''REPLACE_FOPEN''@|$(REPLACE_FOPEN)|g' \
+-	      -e 's|@''REPLACE_FOPEN_FOR_FOPEN_GNU''@|$(REPLACE_FOPEN_FOR_FOPEN_GNU)|g' \
+-	      -e 's|@''REPLACE_FPRINTF''@|$(REPLACE_FPRINTF)|g' \
+-	      -e 's|@''REPLACE_FPURGE''@|$(REPLACE_FPURGE)|g' \
+-	      -e 's|@''REPLACE_FREOPEN''@|$(REPLACE_FREOPEN)|g' \
+-	      -e 's|@''REPLACE_FSEEK''@|$(REPLACE_FSEEK)|g' \
+-	      -e 's|@''REPLACE_FSEEKO''@|$(REPLACE_FSEEKO)|g' \
+-	      -e 's|@''REPLACE_FTELL''@|$(REPLACE_FTELL)|g' \
+-	      -e 's|@''REPLACE_FTELLO''@|$(REPLACE_FTELLO)|g' \
+-	      -e 's|@''REPLACE_GETDELIM''@|$(REPLACE_GETDELIM)|g' \
+-	      -e 's|@''REPLACE_GETLINE''@|$(REPLACE_GETLINE)|g' \
+-	      -e 's|@''REPLACE_OBSTACK_PRINTF''@|$(REPLACE_OBSTACK_PRINTF)|g' \
+-	      -e 's|@''REPLACE_PERROR''@|$(REPLACE_PERROR)|g' \
+-	      -e 's|@''REPLACE_POPEN''@|$(REPLACE_POPEN)|g' \
+-	      -e 's|@''REPLACE_PRINTF''@|$(REPLACE_PRINTF)|g' \
+-	      -e 's|@''REPLACE_REMOVE''@|$(REPLACE_REMOVE)|g' \
+-	      -e 's|@''REPLACE_RENAME''@|$(REPLACE_RENAME)|g' \
+-	      -e 's|@''REPLACE_RENAMEAT''@|$(REPLACE_RENAMEAT)|g' \
+-	      -e 's|@''REPLACE_SNPRINTF''@|$(REPLACE_SNPRINTF)|g' \
+-	      -e 's|@''REPLACE_SPRINTF''@|$(REPLACE_SPRINTF)|g' \
+-	      -e 's|@''REPLACE_STDIO_READ_FUNCS''@|$(REPLACE_STDIO_READ_FUNCS)|g' \
+-	      -e 's|@''REPLACE_STDIO_WRITE_FUNCS''@|$(REPLACE_STDIO_WRITE_FUNCS)|g' \
+-	      -e 's|@''REPLACE_TMPFILE''@|$(REPLACE_TMPFILE)|g' \
+-	      -e 's|@''REPLACE_VASPRINTF''@|$(REPLACE_VASPRINTF)|g' \
+-	      -e 's|@''REPLACE_VDPRINTF''@|$(REPLACE_VDPRINTF)|g' \
+-	      -e 's|@''REPLACE_VFPRINTF''@|$(REPLACE_VFPRINTF)|g' \
+-	      -e 's|@''REPLACE_VPRINTF''@|$(REPLACE_VPRINTF)|g' \
+-	      -e 's|@''REPLACE_VSNPRINTF''@|$(REPLACE_VSNPRINTF)|g' \
+-	      -e 's|@''REPLACE_VSPRINTF''@|$(REPLACE_VSPRINTF)|g' \
+-	      -e 's|@''ASM_SYMBOL_PREFIX''@|$(ASM_SYMBOL_PREFIX)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      < $@-t2 > $@-t3
+-	$(AM_V_at)rm -f $@-t1 $@-t2
+-	$(AM_V_at)mv $@-t3 $@
+-MOSTLYCLEANFILES += stdio.h stdio.h-t1 stdio.h-t2 stdio.h-t3
+-
+-if GL_COND_OBJ_STDIO_READ
+-lib_SOURCES += stdio-read.c
+-endif
+-if GL_COND_OBJ_STDIO_WRITE
+-lib_SOURCES += stdio-write.c
+-endif
+ 
+ Include:
+ <stdio.h>
+@@ -218,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdio-h
+@@ -0,0 +1,221 @@
++Description:
++A GNU-like <stdio.h>.
++
++Files:
++lib/stdio.in.h
++lib/stdio-read.c
++lib/stdio-write.c
++m4/stdio_h.m4
++m4/musl.m4
++
++Depends-on:
++extensions
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++ssize_t
++stddef-h
++sys_types
++
++configure.ac-early:
++gl_STDIO_H_EARLY
++
++configure.ac:
++gl_STDIO_H
++gl_STDIO_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++gl_CONDITIONAL([GL_COND_OBJ_STDIO_READ], [test $REPLACE_STDIO_READ_FUNCS = 1])
++gl_CONDITIONAL([GL_COND_OBJ_STDIO_WRITE], [test $REPLACE_STDIO_WRITE_FUNCS = 1])
++
++dnl No need to create extra modules for these functions. Everyone who uses
++dnl <stdio.h> likely needs them.
++gl_STDIO_MODULE_INDICATOR([fscanf])
++gl_MODULE_INDICATOR([fscanf])
++gl_STDIO_MODULE_INDICATOR([scanf])
++gl_MODULE_INDICATOR([scanf])
++gl_STDIO_MODULE_INDICATOR([fgetc])
++gl_STDIO_MODULE_INDICATOR([getc])
++gl_STDIO_MODULE_INDICATOR([getchar])
++gl_STDIO_MODULE_INDICATOR([fgets])
++gl_STDIO_MODULE_INDICATOR([fread])
++
++dnl No need to create extra modules for these functions. Everyone who uses
++dnl <stdio.h> likely needs them.
++gl_STDIO_MODULE_INDICATOR([fprintf])
++gl_STDIO_MODULE_INDICATOR([printf])
++gl_STDIO_MODULE_INDICATOR([vfprintf])
++gl_STDIO_MODULE_INDICATOR([vprintf])
++gl_STDIO_MODULE_INDICATOR([fputc])
++gl_STDIO_MODULE_INDICATOR([putc])
++gl_STDIO_MODULE_INDICATOR([putchar])
++gl_STDIO_MODULE_INDICATOR([fputs])
++gl_STDIO_MODULE_INDICATOR([puts])
++gl_STDIO_MODULE_INDICATOR([fwrite])
++
++Makefile.am:
++BUILT_SOURCES += stdio.h
++
++# We need the following in order to create <stdio.h> when the system
++# doesn't have one that works with the given compiler.
++stdio.h: stdio.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDIO_H''@|$(NEXT_STDIO_H)|g' \
++	      -e 's/@''GNULIB_DPRINTF''@/$(GNULIB_DPRINTF)/g' \
++	      -e 's/@''GNULIB_DZPRINTF''@/$(GNULIB_DZPRINTF)/g' \
++	      -e 's/@''GNULIB_FCLOSE''@/$(GNULIB_FCLOSE)/g' \
++	      -e 's/@''GNULIB_FDOPEN''@/$(GNULIB_FDOPEN)/g' \
++	      -e 's/@''GNULIB_FFLUSH''@/$(GNULIB_FFLUSH)/g' \
++	      -e 's/@''GNULIB_FGETC''@/$(GNULIB_FGETC)/g' \
++	      -e 's/@''GNULIB_FGETS''@/$(GNULIB_FGETS)/g' \
++	      -e 's/@''GNULIB_FOPEN''@/$(GNULIB_FOPEN)/g' \
++	      -e 's/@''GNULIB_FOPEN_GNU''@/$(GNULIB_FOPEN_GNU)/g' \
++	      -e 's/@''GNULIB_FPRINTF''@/$(GNULIB_FPRINTF)/g' \
++	      -e 's/@''GNULIB_FPRINTF_POSIX''@/$(GNULIB_FPRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_FPURGE''@/$(GNULIB_FPURGE)/g' \
++	      -e 's/@''GNULIB_FPUTC''@/$(GNULIB_FPUTC)/g' \
++	      -e 's/@''GNULIB_FPUTS''@/$(GNULIB_FPUTS)/g' \
++	      -e 's/@''GNULIB_FREAD''@/$(GNULIB_FREAD)/g' \
++	      -e 's/@''GNULIB_FREOPEN''@/$(GNULIB_FREOPEN)/g' \
++	      -e 's/@''GNULIB_FSCANF''@/$(GNULIB_FSCANF)/g' \
++	      -e 's/@''GNULIB_FSEEK''@/$(GNULIB_FSEEK)/g' \
++	      -e 's/@''GNULIB_FSEEKO''@/$(GNULIB_FSEEKO)/g' \
++	      -e 's/@''GNULIB_FTELL''@/$(GNULIB_FTELL)/g' \
++	      -e 's/@''GNULIB_FTELLO''@/$(GNULIB_FTELLO)/g' \
++	      -e 's/@''GNULIB_FWRITE''@/$(GNULIB_FWRITE)/g' \
++	      -e 's/@''GNULIB_FZPRINTF''@/$(GNULIB_FZPRINTF)/g' \
++	      -e 's/@''GNULIB_GETC''@/$(GNULIB_GETC)/g' \
++	      -e 's/@''GNULIB_GETCHAR''@/$(GNULIB_GETCHAR)/g' \
++	      -e 's/@''GNULIB_GETDELIM''@/$(GNULIB_GETDELIM)/g' \
++	      -e 's/@''GNULIB_GETLINE''@/$(GNULIB_GETLINE)/g' \
++	      -e 's/@''GNULIB_OBSTACK_PRINTF''@/$(GNULIB_OBSTACK_PRINTF)/g' \
++	      -e 's/@''GNULIB_OBSTACK_PRINTF_POSIX''@/$(GNULIB_OBSTACK_PRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_OBSTACK_ZPRINTF''@/$(GNULIB_OBSTACK_ZPRINTF)/g' \
++	      -e 's/@''GNULIB_PCLOSE''@/$(GNULIB_PCLOSE)/g' \
++	      -e 's/@''GNULIB_PERROR''@/$(GNULIB_PERROR)/g' \
++	      -e 's/@''GNULIB_POPEN''@/$(GNULIB_POPEN)/g' \
++	      -e 's/@''GNULIB_PRINTF''@/$(GNULIB_PRINTF)/g' \
++	      -e 's/@''GNULIB_PRINTF_POSIX''@/$(GNULIB_PRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_PUTC''@/$(GNULIB_PUTC)/g' \
++	      -e 's/@''GNULIB_PUTCHAR''@/$(GNULIB_PUTCHAR)/g' \
++	      -e 's/@''GNULIB_PUTS''@/$(GNULIB_PUTS)/g' \
++	      -e 's/@''GNULIB_REMOVE''@/$(GNULIB_REMOVE)/g' \
++	      -e 's/@''GNULIB_RENAME''@/$(GNULIB_RENAME)/g' \
++	      -e 's/@''GNULIB_RENAMEAT''@/$(GNULIB_RENAMEAT)/g' \
++	      -e 's/@''GNULIB_SCANF''@/$(GNULIB_SCANF)/g' \
++	      -e 's/@''GNULIB_SNPRINTF''@/$(GNULIB_SNPRINTF)/g' \
++	      -e 's/@''GNULIB_SNZPRINTF''@/$(GNULIB_SNZPRINTF)/g' \
++	      -e 's/@''GNULIB_SPRINTF_POSIX''@/$(GNULIB_SPRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_STDIO_H_NONBLOCKING''@/$(GNULIB_STDIO_H_NONBLOCKING)/g' \
++	      -e 's/@''GNULIB_STDIO_H_SIGPIPE''@/$(GNULIB_STDIO_H_SIGPIPE)/g' \
++	      -e 's/@''GNULIB_SZPRINTF''@/$(GNULIB_SZPRINTF)/g' \
++	      -e 's/@''GNULIB_TMPFILE''@/$(GNULIB_TMPFILE)/g' \
++	      -e 's/@''GNULIB_VASPRINTF''@/$(GNULIB_VASPRINTF)/g' \
++	      -e 's/@''GNULIB_VASZPRINTF''@/$(GNULIB_VASZPRINTF)/g' \
++	      -e 's/@''GNULIB_VDPRINTF''@/$(GNULIB_VDPRINTF)/g' \
++	      -e 's/@''GNULIB_VDZPRINTF''@/$(GNULIB_VDZPRINTF)/g' \
++	      -e 's/@''GNULIB_VFPRINTF''@/$(GNULIB_VFPRINTF)/g' \
++	      -e 's/@''GNULIB_VFPRINTF_POSIX''@/$(GNULIB_VFPRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_VFZPRINTF''@/$(GNULIB_VFZPRINTF)/g' \
++	      -e 's/@''GNULIB_VFSCANF''@/$(GNULIB_VFSCANF)/g' \
++	      -e 's/@''GNULIB_VSCANF''@/$(GNULIB_VSCANF)/g' \
++	      -e 's/@''GNULIB_VPRINTF''@/$(GNULIB_VPRINTF)/g' \
++	      -e 's/@''GNULIB_VPRINTF_POSIX''@/$(GNULIB_VPRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_VSNPRINTF''@/$(GNULIB_VSNPRINTF)/g' \
++	      -e 's/@''GNULIB_VSNZPRINTF''@/$(GNULIB_VSNZPRINTF)/g' \
++	      -e 's/@''GNULIB_VSPRINTF_POSIX''@/$(GNULIB_VSPRINTF_POSIX)/g' \
++	      -e 's/@''GNULIB_VSZPRINTF''@/$(GNULIB_VSZPRINTF)/g' \
++	      -e 's/@''GNULIB_VZPRINTF''@/$(GNULIB_VZPRINTF)/g' \
++	      -e 's/@''GNULIB_ZPRINTF''@/$(GNULIB_ZPRINTF)/g' \
++	      -e 's/@''GNULIB_MDA_FCLOSEALL''@/$(GNULIB_MDA_FCLOSEALL)/g' \
++	      -e 's/@''GNULIB_MDA_FDOPEN''@/$(GNULIB_MDA_FDOPEN)/g' \
++	      -e 's/@''GNULIB_MDA_FILENO''@/$(GNULIB_MDA_FILENO)/g' \
++	      -e 's/@''GNULIB_MDA_GETW''@/$(GNULIB_MDA_GETW)/g' \
++	      -e 's/@''GNULIB_MDA_PUTW''@/$(GNULIB_MDA_PUTW)/g' \
++	      -e 's/@''GNULIB_MDA_TEMPNAM''@/$(GNULIB_MDA_TEMPNAM)/g' \
++	      < $(srcdir)/stdio.in.h > $@-t1
++	$(AM_V_at)sed \
++	      -e 's|@''HAVE_DECL_FCLOSEALL''@|$(HAVE_DECL_FCLOSEALL)|g' \
++	      -e 's|@''HAVE_DECL_FPURGE''@|$(HAVE_DECL_FPURGE)|g' \
++	      -e 's|@''HAVE_DECL_FSEEKO''@|$(HAVE_DECL_FSEEKO)|g' \
++	      -e 's|@''HAVE_DECL_FTELLO''@|$(HAVE_DECL_FTELLO)|g' \
++	      -e 's|@''HAVE_DECL_GETDELIM''@|$(HAVE_DECL_GETDELIM)|g' \
++	      -e 's|@''HAVE_DECL_GETLINE''@|$(HAVE_DECL_GETLINE)|g' \
++	      -e 's|@''HAVE_DECL_GETW''@|$(HAVE_DECL_GETW)|g' \
++	      -e 's|@''HAVE_DECL_OBSTACK_PRINTF''@|$(HAVE_DECL_OBSTACK_PRINTF)|g' \
++	      -e 's|@''HAVE_DECL_PUTW''@|$(HAVE_DECL_PUTW)|g' \
++	      -e 's|@''HAVE_DECL_SNPRINTF''@|$(HAVE_DECL_SNPRINTF)|g' \
++	      -e 's|@''HAVE_DECL_VSNPRINTF''@|$(HAVE_DECL_VSNPRINTF)|g' \
++	      -e 's|@''HAVE_DPRINTF''@|$(HAVE_DPRINTF)|g' \
++	      -e 's|@''HAVE_FSEEKO''@|$(HAVE_FSEEKO)|g' \
++	      -e 's|@''HAVE_FTELLO''@|$(HAVE_FTELLO)|g' \
++	      -e 's|@''HAVE_PCLOSE''@|$(HAVE_PCLOSE)|g' \
++	      -e 's|@''HAVE_POPEN''@|$(HAVE_POPEN)|g' \
++	      -e 's|@''HAVE_RENAMEAT''@|$(HAVE_RENAMEAT)|g' \
++	      -e 's|@''HAVE_VASPRINTF''@|$(HAVE_VASPRINTF)|g' \
++	      -e 's|@''HAVE_VDPRINTF''@|$(HAVE_VDPRINTF)|g' \
++	      < $@-t1 > $@-t2
++	$(AM_V_at)sed \
++	      -e 's|@''REPLACE_DPRINTF''@|$(REPLACE_DPRINTF)|g' \
++	      -e 's|@''REPLACE_FCLOSE''@|$(REPLACE_FCLOSE)|g' \
++	      -e 's|@''REPLACE_FDOPEN''@|$(REPLACE_FDOPEN)|g' \
++	      -e 's|@''REPLACE_FFLUSH''@|$(REPLACE_FFLUSH)|g' \
++	      -e 's|@''REPLACE_FOPEN''@|$(REPLACE_FOPEN)|g' \
++	      -e 's|@''REPLACE_FOPEN_FOR_FOPEN_GNU''@|$(REPLACE_FOPEN_FOR_FOPEN_GNU)|g' \
++	      -e 's|@''REPLACE_FPRINTF''@|$(REPLACE_FPRINTF)|g' \
++	      -e 's|@''REPLACE_FPURGE''@|$(REPLACE_FPURGE)|g' \
++	      -e 's|@''REPLACE_FREOPEN''@|$(REPLACE_FREOPEN)|g' \
++	      -e 's|@''REPLACE_FSEEK''@|$(REPLACE_FSEEK)|g' \
++	      -e 's|@''REPLACE_FSEEKO''@|$(REPLACE_FSEEKO)|g' \
++	      -e 's|@''REPLACE_FTELL''@|$(REPLACE_FTELL)|g' \
++	      -e 's|@''REPLACE_FTELLO''@|$(REPLACE_FTELLO)|g' \
++	      -e 's|@''REPLACE_GETDELIM''@|$(REPLACE_GETDELIM)|g' \
++	      -e 's|@''REPLACE_GETLINE''@|$(REPLACE_GETLINE)|g' \
++	      -e 's|@''REPLACE_OBSTACK_PRINTF''@|$(REPLACE_OBSTACK_PRINTF)|g' \
++	      -e 's|@''REPLACE_PERROR''@|$(REPLACE_PERROR)|g' \
++	      -e 's|@''REPLACE_POPEN''@|$(REPLACE_POPEN)|g' \
++	      -e 's|@''REPLACE_PRINTF''@|$(REPLACE_PRINTF)|g' \
++	      -e 's|@''REPLACE_REMOVE''@|$(REPLACE_REMOVE)|g' \
++	      -e 's|@''REPLACE_RENAME''@|$(REPLACE_RENAME)|g' \
++	      -e 's|@''REPLACE_RENAMEAT''@|$(REPLACE_RENAMEAT)|g' \
++	      -e 's|@''REPLACE_SNPRINTF''@|$(REPLACE_SNPRINTF)|g' \
++	      -e 's|@''REPLACE_SPRINTF''@|$(REPLACE_SPRINTF)|g' \
++	      -e 's|@''REPLACE_STDIO_READ_FUNCS''@|$(REPLACE_STDIO_READ_FUNCS)|g' \
++	      -e 's|@''REPLACE_STDIO_WRITE_FUNCS''@|$(REPLACE_STDIO_WRITE_FUNCS)|g' \
++	      -e 's|@''REPLACE_TMPFILE''@|$(REPLACE_TMPFILE)|g' \
++	      -e 's|@''REPLACE_VASPRINTF''@|$(REPLACE_VASPRINTF)|g' \
++	      -e 's|@''REPLACE_VDPRINTF''@|$(REPLACE_VDPRINTF)|g' \
++	      -e 's|@''REPLACE_VFPRINTF''@|$(REPLACE_VFPRINTF)|g' \
++	      -e 's|@''REPLACE_VPRINTF''@|$(REPLACE_VPRINTF)|g' \
++	      -e 's|@''REPLACE_VSNPRINTF''@|$(REPLACE_VSNPRINTF)|g' \
++	      -e 's|@''REPLACE_VSPRINTF''@|$(REPLACE_VSPRINTF)|g' \
++	      -e 's|@''ASM_SYMBOL_PREFIX''@|$(ASM_SYMBOL_PREFIX)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      < $@-t2 > $@-t3
++	$(AM_V_at)rm -f $@-t1 $@-t2
++	$(AM_V_at)mv $@-t3 $@
++MOSTLYCLEANFILES += stdio.h stdio.h-t1 stdio.h-t2 stdio.h-t3
++
++if GL_COND_OBJ_STDIO_READ
++lib_SOURCES += stdio-read.c
++endif
++if GL_COND_OBJ_STDIO_WRITE
++lib_SOURCES += stdio-write.c
++endif
++
++Include:
++<stdio.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/szprintf
++++ b/modules/szprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/szprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ errno-h
+ stdint-h
+--- a/modules/tmpfile
++++ b/modules/tmpfile
+@@ -6,7 +6,7 @@ lib/tmpfile.c
+ m4/tmpfile.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ largefile
+ pathmax         [test $REPLACE_TMPFILE = 1]
+ stdbool-h       [test $REPLACE_TMPFILE = 1]
+--- a/modules/unicodeio
++++ b/modules/unicodeio
+@@ -15,7 +15,7 @@ gettext-h
+ gnulib-i18n
+ localcharset
+ error
+-stdio
++stdio-h
+ 
+ configure.ac:
+ gl_UNICODEIO
+--- a/modules/vasnprintf
++++ b/modules/vasnprintf
+@@ -20,7 +20,7 @@ m4/math_h.m4
+ m4/exponentd.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ alloca-opt
+ attribute
+ float-h
+--- a/modules/vasnwprintf
++++ b/modules/vasnwprintf
+@@ -24,7 +24,7 @@ m4/exponentd.m4
+ m4/musl.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ alloca-opt
+ attribute
+ float-h
+--- a/modules/vasprintf
++++ b/modules/vasprintf
+@@ -7,7 +7,7 @@ lib/asprintf.c
+ m4/vasprintf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ extensions
+ vasnprintf      [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+ errno-h         [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+--- a/modules/vaszprintf
++++ b/modules/vaszprintf
+@@ -6,7 +6,7 @@ lib/vaszprintf.c
+ lib/aszprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ errno-h
+ stdint-h
+--- a/modules/vdprintf
++++ b/modules/vdprintf
+@@ -6,7 +6,7 @@ lib/vdprintf.c
+ m4/vdprintf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vdzprintf       [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+ intprops        [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+ errno-h         [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+--- a/modules/vdzprintf
++++ b/modules/vdzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/vdzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ intprops
+ free-posix
+--- a/modules/vfprintf-posix
++++ b/modules/vfprintf-posix
+@@ -14,7 +14,7 @@ m4/printf.m4
+ m4/math_h.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ nocrash
+ printf-safe
+ multiarch
+--- a/modules/vfscanf
++++ b/modules/vfscanf
+@@ -4,7 +4,7 @@ vfscanf() function: parse formatted text
+ Files:
+ 
+ Depends-on:
+-stdio
++stdio-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vfscanf])
+--- a/modules/vfzprintf
++++ b/modules/vfzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/vfzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ intprops
+ free-posix
+--- a/modules/vprintf-posix
++++ b/modules/vprintf-posix
+@@ -13,7 +13,7 @@ m4/vprintf-posix.m4
+ m4/printf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ printf-safe
+ vfprintf-posix  [test $REPLACE_VPRINTF = 1]
+ 
+--- a/modules/vscanf
++++ b/modules/vscanf
+@@ -4,7 +4,7 @@ vscanf() function: parse formatted text
+ Files:
+ 
+ Depends-on:
+-stdio
++stdio-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vscanf])
+--- a/modules/vsnprintf
++++ b/modules/vsnprintf
+@@ -8,7 +8,7 @@ m4/vsnprintf.m4
+ m4/printf.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ errno-h         [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ stdint-h        [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+--- a/modules/vsnzprintf
++++ b/modules/vsnzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/vsnzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ errno-h
+ stdint-h
+--- a/modules/vsprintf-posix
++++ b/modules/vsprintf-posix
+@@ -14,7 +14,7 @@ m4/printf.m4
+ m4/math_h.m4
+ 
+ Depends-on:
+-stdio
++stdio-h
+ nocrash
+ printf-safe
+ multiarch
+--- a/modules/vszprintf
++++ b/modules/vszprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/vszprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vasnprintf
+ errno-h
+ stdint-h
+--- a/modules/vzprintf
++++ b/modules/vzprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/vzprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vfzprintf
+ 
+ configure.ac:
+--- a/modules/xprintf
++++ b/modules/xprintf
+@@ -6,7 +6,7 @@ lib/xprintf.h
+ lib/xprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ error
+ exitfail
+ gettext-h
+--- a/modules/xvasprintf
++++ b/modules/xvasprintf
+@@ -11,7 +11,7 @@ m4/strerrorname_np.m4
+ 
+ Depends-on:
+ extensions
+-stdio
++stdio-h
+ vaszprintf
+ xalloc
+ xalloc-die
+--- a/modules/zprintf
++++ b/modules/zprintf
+@@ -6,7 +6,7 @@ Files:
+ lib/zprintf.c
+ 
+ Depends-on:
+-stdio
++stdio-h
+ vfzprintf
+ 
+ configure.ac:

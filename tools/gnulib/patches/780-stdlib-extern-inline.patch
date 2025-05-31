@@ -1,0 +1,98 @@
+From c6d15a4bc876b648dad85c53f53fd4d9a70ddee2 Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Mon, 4 Nov 2024 11:12:21 -0800
+Subject: stdlib: make MB_CUR_MAX usable from extern inline
+
+* lib/stdlib.c: New file.
+* modules/stdlib (Files, lib_SOURCES): Add it.
+(Depends-on): Add extern-inline.
+* lib/stdlib.in.h: Use _GL_INLINE_HEADER_BEGIN, _GL_INLINE_HEADER_END.
+(_GL_STDLIB_INLINE): New macro.
+(gl_MB_CUR_MAX): Make it _GL_STDLIB_INLINE not static inline,
+so that it can be called from extern inline functions.
+Redo implementation to help GCC better optimize common expressions
+like (MB_CUR_MAX == 1).
+---
+ ChangeLog       | 11 +++++++++++
+ lib/stdlib.c    |  3 +++
+ lib/stdlib.in.h | 16 ++++++++++++----
+ modules/stdlib  |  5 +++--
+ 4 files changed, 29 insertions(+), 6 deletions(-)
+ create mode 100644 lib/stdlib.c
+
+--- /dev/null
++++ b/lib/stdlib.c
+@@ -0,0 +1,3 @@
++#include <config.h>
++#define _GL_STDLIB_INLINE _GL_EXTERN_INLINE
++#include <stdlib.h>
+--- a/lib/stdlib.in.h
++++ b/lib/stdlib.in.h
+@@ -130,6 +130,11 @@ struct random_data
+ # include <string>
+ #endif
+ 
++_GL_INLINE_HEADER_BEGIN
++#ifndef _GL_STDLIB_INLINE
++# define _GL_STDLIB_INLINE _GL_INLINE
++#endif
++
+ /* _GL_ATTRIBUTE_DEALLOC (F, I) declares that the function returns pointers
+    that can be freed by passing them as the Ith argument to the
+    function F.  */
+@@ -733,14 +738,15 @@ _GL_WARN_ON_USE (malloc, "malloc is not
+    current locale.  */
+ #if @REPLACE_MB_CUR_MAX@
+ # if !GNULIB_defined_MB_CUR_MAX
+-static inline size_t
++_GL_STDLIB_INLINE int
+ gl_MB_CUR_MAX (void)
+ {
+ #  if 0 < @REPLACE_MB_CUR_MAX@
+   return @REPLACE_MB_CUR_MAX@;
+ #  else
+   /* Turn the value 3 to the value 4, as needed for the UTF-8 encoding.  */
+-  return MB_CUR_MAX + (MB_CUR_MAX == 3);
++  int gl_mb_cur_max = MB_CUR_MAX;
++  return gl_mb_cur_max == 3 ? 4 : gl_mb_cur_max;
+ #  endif
+ }
+ #  undef MB_CUR_MAX
+@@ -1946,6 +1952,8 @@ _GL_CXXALIASWARN (wctomb);
+ #endif
+ 
+ 
++_GL_INLINE_HEADER_END
++
+ #endif /* _@GUARD_PREFIX@_STDLIB_H */
+ #endif /* _@GUARD_PREFIX@_STDLIB_H */
+ #endif
+--- a/modules/stdlib
++++ b/modules/stdlib
+@@ -2,6 +2,7 @@ Description:
+ A GNU-like <stdlib.h>.
+ 
+ Files:
++lib/stdlib.c
+ lib/stdlib.in.h
+ m4/stdlib_h.m4
+ m4/locale-fr.m4
+@@ -9,6 +10,7 @@ m4/codeset.m4
+ 
+ Depends-on:
+ gen-header
++extern-inline
+ include_next
+ snippet/arg-nonnull
+ snippet/c++defs
+@@ -24,9 +26,8 @@ AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+ BUILT_SOURCES += stdlib.h
++lib_SOURCES += stdlib.c
+ 
+-# We need the following in order to create <stdlib.h> when the system
+-# doesn't have one that works with the given compiler.
+ stdlib.h: stdlib.in.h $(top_builddir)/config.status $(CXXDEFS_H) \
+   $(_NORETURN_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+ @NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'

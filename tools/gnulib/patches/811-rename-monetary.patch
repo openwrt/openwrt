@@ -1,0 +1,187 @@
+From c08ded39555f5b6e39f20ff51fbee4145cfd76b2 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:27 +0100
+Subject: [PATCH] Rename module monetary to monetary-h.
+
+* modules/monetary-h: Renamed from modules/monetary.
+* modules/monetary-h-tests: Renamed from modules/monetary-tests.
+* modules/monetary-h-c++-tests: Renamed from modules/monetary-c++-tests.
+* tests/test-monetary-h.c: Renamed from tests/test-monetary.c.
+* tests/test-monetary-h-c++.cc: Renamed from tests/test-monetary-c++.cc.
+* doc/posix-headers/monetary.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/monetary: New file.
+---
+ ChangeLog                                     | 12 ++++
+ doc/posix-headers/monetary.texi               |  4 +-
+ modules/monetary                              | 47 +++------------
+ modules/monetary-c++-tests                    | 18 ------
+ modules/monetary-h                            | 60 +++++++++++++++++++
+ modules/monetary-h-c++-tests                  | 18 ++++++
+ modules/monetary-h-tests                      | 11 ++++
+ modules/monetary-tests                        | 11 ----
+ modules/posixcheck                            |  2 +-
+ modules/strfmon_l                             |  2 +-
+ ...monetary-c++.cc => test-monetary-h-c++.cc} |  0
+ tests/{test-monetary.c => test-monetary-h.c}  |  0
+ 12 files changed, 112 insertions(+), 73 deletions(-)
+ delete mode 100644 modules/monetary-c++-tests
+ create mode 100644 modules/monetary-h
+ create mode 100644 modules/monetary-h-c++-tests
+ create mode 100644 modules/monetary-h-tests
+ delete mode 100644 modules/monetary-tests
+ rename tests/{test-monetary-c++.cc => test-monetary-h-c++.cc} (100%)
+ rename tests/{test-monetary.c => test-monetary-h.c} (100%)
+
+--- a/modules/monetary
++++ b/modules/monetary
+@@ -1,52 +1,20 @@
+ Description:
+ A substitute <monetary.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'monetary-h' instead.
++
+ Files:
+-lib/monetary.in.h
+-m4/monetary_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
++monetary-h
+ 
+ configure.ac:
+-gl_MONETARY_H
+-gl_MONETARY_H_REQUIRE_DEFAULTS
+-gl_CONDITIONAL_HEADER([monetary.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(MONETARY_H)
+-
+-# We need the following in order to create <monetary.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_MONETARY_H
+-monetary.h: monetary.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_MONETARY_H''@|$(HAVE_MONETARY_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_MONETARY_H''@|$(NEXT_MONETARY_H)|g' \
+-	      -e 's|@''HAVE_XLOCALE_H''@|$(HAVE_XLOCALE_H)|g' \
+-	      -e 's/@''GNULIB_STRFMON_L''@/$(GNULIB_STRFMON_L)/g' \
+-	      -e 's|@''HAVE_STRFMON_L''@|$(HAVE_STRFMON_L)|g' \
+-	      -e 's|@''REPLACE_STRFMON_L''@|$(REPLACE_STRFMON_L)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/monetary.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-monetary.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += monetary.h monetary.h-t
+ 
+ Include:
+ #if HAVE_MONETARY_H
+@@ -57,4 +25,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/monetary-h
+@@ -0,0 +1,60 @@
++Description:
++A substitute <monetary.h>.
++
++Files:
++lib/monetary.in.h
++m4/monetary_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_MONETARY_H
++gl_MONETARY_H_REQUIRE_DEFAULTS
++gl_CONDITIONAL_HEADER([monetary.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(MONETARY_H)
++
++# We need the following in order to create <monetary.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_MONETARY_H
++monetary.h: monetary.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_MONETARY_H''@|$(HAVE_MONETARY_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_MONETARY_H''@|$(NEXT_MONETARY_H)|g' \
++	      -e 's|@''HAVE_XLOCALE_H''@|$(HAVE_XLOCALE_H)|g' \
++	      -e 's/@''GNULIB_STRFMON_L''@/$(GNULIB_STRFMON_L)/g' \
++	      -e 's|@''HAVE_STRFMON_L''@|$(HAVE_STRFMON_L)|g' \
++	      -e 's|@''REPLACE_STRFMON_L''@|$(REPLACE_STRFMON_L)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/monetary.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++monetary.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += monetary.h monetary.h-t
++
++Include:
++#if HAVE_MONETARY_H
++<monetary.h>
++#endif
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -19,7 +19,7 @@ langinfo-h
+ locale-h
+ malloc-h
+ math-h
+-monetary
++monetary-h
+ netdb
+ poll-h
+ pthread-h
+--- a/modules/strfmon_l
++++ b/modules/strfmon_l
+@@ -8,7 +8,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-monetary
++monetary-h
+ extensions
+ stdbool         [test $REPLACE_STRFMON_L = 1]
+ 

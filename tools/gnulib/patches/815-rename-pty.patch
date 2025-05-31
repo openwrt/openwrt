@@ -1,0 +1,206 @@
+From 5f544fa34aba25f17889322870ed6260ebd67309 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:38 +0100
+Subject: [PATCH] Rename module pty to pty-h.
+
+* modules/pty-h: Renamed from modules/pty.
+* modules/pty-h-tests: Renamed from modules/pty-tests.
+* modules/pty-h-c++-tests: Renamed from modules/pty-c++-tests.
+* tests/test-pty-h.c: Renamed from tests/test-pty.c.
+* tests/test-pty-h-c++.cc: Renamed from tests/test-pty-c++.cc.
+* doc/glibc-headers/pty.texi: Update.
+* doc/gnulib-intro.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/pty: New file.
+---
+ ChangeLog                                    | 13 +++++
+ doc/glibc-headers/pty.texi                   |  4 +-
+ doc/gnulib-intro.texi                        |  2 +-
+ modules/forkpty                              |  2 +-
+ modules/openpty                              |  2 +-
+ modules/posixcheck                           |  2 +-
+ modules/pty                                  | 44 +++------------
+ modules/pty-c++-tests                        | 19 -------
+ modules/pty-h                                | 58 ++++++++++++++++++++
+ modules/pty-h-c++-tests                      | 19 +++++++
+ modules/pty-h-tests                          | 11 ++++
+ modules/pty-tests                            | 11 ----
+ tests/{test-pty-c++.cc => test-pty-h-c++.cc} |  0
+ tests/{test-pty.c => test-pty-h.c}           |  0
+ 14 files changed, 114 insertions(+), 73 deletions(-)
+ delete mode 100644 modules/pty-c++-tests
+ create mode 100644 modules/pty-h
+ create mode 100644 modules/pty-h-c++-tests
+ create mode 100644 modules/pty-h-tests
+ delete mode 100644 modules/pty-tests
+ rename tests/{test-pty-c++.cc => test-pty-h-c++.cc} (100%)
+ rename tests/{test-pty.c => test-pty-h.c} (100%)
+
+--- a/doc/gnulib-intro.texi
++++ b/doc/gnulib-intro.texi
+@@ -164,7 +164,7 @@ not ``debug'' builds (compiler option @s
+ Note that some modules are currently unsupported on native Windows:
+ @code{mgetgroups}, @code{getugroups}, @code{idcache},
+ @code{userspec}, @code{openpty}, @code{login_tty}, @code{forkpty},
+-@code{pt_chown}, @code{grantpt}, @code{pty}, @code{savewd},
++@code{pt_chown}, @code{grantpt}, @code{pty-h}, @code{savewd},
+ @code{mkancesdirs}, @code{mkdir-p}, @code{euidaccess}, @code{faccessat}.
+ The versions of Windows that are supported are Windows 10 and newer.
+ @item
+--- a/modules/forkpty
++++ b/modules/forkpty
+@@ -7,7 +7,7 @@ lib/forkpty.c
+ m4/pty.m4
+ 
+ Depends-on:
+-pty
++pty-h
+ unistd
+ openpty
+ login_tty
+--- a/modules/openpty
++++ b/modules/openpty
+@@ -6,7 +6,7 @@ lib/openpty.c
+ m4/pty.m4
+ 
+ Depends-on:
+-pty
++pty-h
+ extensions
+ fcntl-h         [test $HAVE_OPENPTY = 0 || test $REPLACE_OPENPTY = 1]
+ posix_openpt    [test $HAVE_OPENPTY = 0 || test $REPLACE_OPENPTY = 1]
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -23,7 +23,7 @@ monetary-h
+ netdb-h
+ poll-h
+ pthread-h
+-pty
++pty-h
+ sched
+ search
+ signal-h
+--- a/modules/pty
++++ b/modules/pty
+@@ -1,48 +1,20 @@
+ Description:
+ A <pty.h> for systems that lacks it.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'pty-h' instead.
++
+ Files:
+-lib/pty.in.h
+-m4/pty_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/c++defs
+-snippet/warn-on-use
++pty-h
+ 
+ configure.ac:
+-gl_PTY_H
+-gl_PTY_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += pty.h
+-
+-# We need the following in order to create <pty.h> when the system
+-# doesn't have one that works with the given compiler.
+-pty.h: pty.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_PTY_H''@|$(HAVE_PTY_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_PTY_H''@|$(NEXT_PTY_H)|g' \
+-	      -e 's/@''GNULIB_FORKPTY''@/$(GNULIB_FORKPTY)/g' \
+-	      -e 's/@''GNULIB_OPENPTY''@/$(GNULIB_OPENPTY)/g' \
+-	      -e 's|@''HAVE_UTIL_H''@|$(HAVE_UTIL_H)|g' \
+-	      -e 's|@''HAVE_LIBUTIL_H''@|$(HAVE_LIBUTIL_H)|g' \
+-	      -e 's|@''HAVE_FORKPTY''@|$(HAVE_FORKPTY)|g' \
+-	      -e 's|@''HAVE_OPENPTY''@|$(HAVE_OPENPTY)|g' \
+-	      -e 's|@''REPLACE_FORKPTY''@|$(REPLACE_FORKPTY)|g' \
+-	      -e 's|@''REPLACE_OPENPTY''@|$(REPLACE_OPENPTY)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/pty.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += pty.h pty.h-t
+ 
+ Include:
+ <pty.h>
+@@ -54,4 +26,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Simon Josefsson
+--- /dev/null
++++ b/modules/pty-h
+@@ -0,0 +1,58 @@
++Description:
++A <pty.h> for systems that lacks it.
++
++Files:
++lib/pty.in.h
++m4/pty_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/c++defs
++snippet/warn-on-use
++termios
++
++configure.ac:
++gl_PTY_H
++gl_PTY_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += pty.h
++
++# We need the following in order to create <pty.h> when the system
++# doesn't have one that works with the given compiler.
++pty.h: pty.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_PTY_H''@|$(HAVE_PTY_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_PTY_H''@|$(NEXT_PTY_H)|g' \
++	      -e 's/@''GNULIB_FORKPTY''@/$(GNULIB_FORKPTY)/g' \
++	      -e 's/@''GNULIB_OPENPTY''@/$(GNULIB_OPENPTY)/g' \
++	      -e 's|@''HAVE_UTIL_H''@|$(HAVE_UTIL_H)|g' \
++	      -e 's|@''HAVE_LIBUTIL_H''@|$(HAVE_LIBUTIL_H)|g' \
++	      -e 's|@''HAVE_FORKPTY''@|$(HAVE_FORKPTY)|g' \
++	      -e 's|@''HAVE_OPENPTY''@|$(HAVE_OPENPTY)|g' \
++	      -e 's|@''REPLACE_FORKPTY''@|$(REPLACE_FORKPTY)|g' \
++	      -e 's|@''REPLACE_OPENPTY''@|$(REPLACE_OPENPTY)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/pty.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += pty.h pty.h-t
++
++Include:
++<pty.h>
++
++Link:
++$(PTY_LIB)
++
++License:
++LGPLv2+
++
++Maintainer:
++Simon Josefsson

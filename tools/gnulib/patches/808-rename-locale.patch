@@ -1,0 +1,356 @@
+From ca55f73b6e1bcb9ecb37f3b093bb6046e9af170b Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:18 +0100
+Subject: [PATCH] Rename module locale to locale-h.
+
+* modules/locale-h: Renamed from modules/locale.
+* modules/locale-h-tests: Renamed from modules/locale-tests.
+* modules/locale-h-c++-tests: Renamed from modules/locale-c++-tests.
+* tests/test-locale-h.c: Renamed from tests/test-locale.c.
+* tests/test-locale-h-c++.cc: Renamed from tests/test-locale-c++.cc.
+* tests/test-locale-h-c++2.cc: Renamed from tests/test-locale-c++2.cc.
+* doc/posix-headers/locale.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/locale: New file.
+---
+ ChangeLog                                     | 13 ++++
+ doc/posix-headers/locale.texi                 |  4 +-
+ modules/c-nstrftime                           |  2 +-
+ modules/c-strtod                              |  2 +-
+ modules/c-strtof                              |  2 +-
+ modules/c-strtold                             |  2 +-
+ modules/dfa                                   |  2 +-
+ modules/duplocale                             |  2 +-
+ modules/locale                                | 54 ++-------------
+ modules/locale-c++-tests                      | 20 ------
+ modules/locale-h                              | 65 +++++++++++++++++++
+ modules/locale-h-c++-tests                    | 20 ++++++
+ modules/{locale-tests => locale-h-tests}      |  8 +--
+ modules/localeconv                            |  2 +-
+ modules/localename                            |  2 +-
+ modules/localename-tests                      |  2 +-
+ modules/localename-unsafe                     |  2 +-
+ modules/localename-unsafe-limited             |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/setlocale                             |  2 +-
+ modules/setlocale-null                        |  2 +-
+ modules/setlocale-null-unlocked               |  2 +-
+ ...est-locale-c++.cc => test-locale-h-c++.cc} |  0
+ ...t-locale-c++2.cc => test-locale-h-c++2.cc} |  0
+ tests/{test-locale.c => test-locale-h.c}      |  0
+ 25 files changed, 126 insertions(+), 88 deletions(-)
+ delete mode 100644 modules/locale-c++-tests
+ create mode 100644 modules/locale-h
+ create mode 100644 modules/locale-h-c++-tests
+ rename modules/{locale-tests => locale-h-tests} (55%)
+ rename tests/{test-locale-c++.cc => test-locale-h-c++.cc} (100%)
+ rename tests/{test-locale-c++2.cc => test-locale-h-c++2.cc} (100%)
+ rename tests/{test-locale.c => test-locale-h.c} (100%)
+
+--- a/modules/c-nstrftime
++++ b/modules/c-nstrftime
+@@ -16,7 +16,7 @@ errno-h
+ extensions
+ intprops
+ libc-config
+-locale
++locale-h
+ stdbool
+ stdckdint
+ time_rz
+--- a/modules/c-strtod
++++ b/modules/c-strtod
+@@ -10,7 +10,7 @@ m4/intl-thread-locale.m4
+ Depends-on:
+ c99
+ extensions
+-locale
++locale-h
+ c-ctype
+ strtod
+ 
+--- a/modules/c-strtof
++++ b/modules/c-strtof
+@@ -11,7 +11,7 @@ m4/intl-thread-locale.m4
+ Depends-on:
+ c99
+ extensions
+-locale
++locale-h
+ c-ctype
+ strtof
+ 
+--- a/modules/c-strtold
++++ b/modules/c-strtold
+@@ -11,7 +11,7 @@ m4/intl-thread-locale.m4
+ Depends-on:
+ c99
+ extensions
+-locale
++locale-h
+ c-ctype
+ strtold
+ 
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -21,7 +21,7 @@ flexmember
+ gettext-h
+ gnulib-i18n
+ idx
+-locale
++locale-h
+ mbrtoc32-regular
+ mbszero
+ regex
+--- a/modules/duplocale
++++ b/modules/duplocale
+@@ -6,7 +6,7 @@ lib/duplocale.c
+ m4/duplocale.m4
+ 
+ Depends-on:
+-locale
++locale-h
+ setlocale-null  [test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1]
+ 
+ configure.ac:
+--- a/modules/locale
++++ b/modules/locale
+@@ -1,59 +1,20 @@
+ Description:
+ A <locale.h> that conforms to POSIX.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'locale-h' instead.
++
+ Files:
+-lib/locale.in.h
+-m4/locale_h.m4
+ 
+ Depends-on:
+-extensions
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-stddef
++locale-h
+ 
+ configure.ac:
+-gl_LOCALE_H
+-gl_LOCALE_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += locale.h
+-
+-# We need the following in order to create <locale.h> when the system
+-# doesn't have one that provides all definitions.
+-locale.h: locale.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_LOCALE_H''@|$(NEXT_LOCALE_H)|g' \
+-	      -e 's/@''GNULIB_LOCALECONV''@/$(GNULIB_LOCALECONV)/g' \
+-	      -e 's/@''GNULIB_SETLOCALE''@/$(GNULIB_SETLOCALE)/g' \
+-	      -e 's/@''GNULIB_SETLOCALE_NULL''@/$(GNULIB_SETLOCALE_NULL)/g' \
+-	      -e 's/@''GNULIB_DUPLOCALE''@/$(GNULIB_DUPLOCALE)/g' \
+-	      -e 's/@''GNULIB_LOCALENAME_UNSAFE''@/$(GNULIB_LOCALENAME_UNSAFE)/g' \
+-	      -e 's|@''HAVE_NEWLOCALE''@|$(HAVE_NEWLOCALE)|g' \
+-	      -e 's|@''HAVE_DUPLOCALE''@|$(HAVE_DUPLOCALE)|g' \
+-	      -e 's|@''HAVE_FREELOCALE''@|$(HAVE_FREELOCALE)|g' \
+-	      -e 's|@''HAVE_XLOCALE_H''@|$(HAVE_XLOCALE_H)|g' \
+-	      -e 's|@''REPLACE_LOCALECONV''@|$(REPLACE_LOCALECONV)|g' \
+-	      -e 's|@''REPLACE_SETLOCALE''@|$(REPLACE_SETLOCALE)|g' \
+-	      -e 's|@''REPLACE_NEWLOCALE''@|$(REPLACE_NEWLOCALE)|g' \
+-	      -e 's|@''REPLACE_DUPLOCALE''@|$(REPLACE_DUPLOCALE)|g' \
+-	      -e 's|@''REPLACE_FREELOCALE''@|$(REPLACE_FREELOCALE)|g' \
+-	      -e 's|@''REPLACE_STRUCT_LCONV''@|$(REPLACE_STRUCT_LCONV)|g' \
+-	      -e 's|@''LOCALENAME_ENHANCE_LOCALE_FUNCS''@|$(LOCALENAME_ENHANCE_LOCALE_FUNCS)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/locale.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += locale.h locale.h-t
+ 
+ Include:
+ <locale.h>
+@@ -62,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/locale-h
+@@ -0,0 +1,65 @@
++Description:
++A <locale.h> that conforms to POSIX.
++
++Files:
++lib/locale.in.h
++m4/locale_h.m4
++
++Depends-on:
++extensions
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++stddef
++
++configure.ac:
++gl_LOCALE_H
++gl_LOCALE_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += locale.h
++
++# We need the following in order to create <locale.h> when the system
++# doesn't have one that provides all definitions.
++locale.h: locale.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_LOCALE_H''@|$(NEXT_LOCALE_H)|g' \
++	      -e 's/@''GNULIB_LOCALECONV''@/$(GNULIB_LOCALECONV)/g' \
++	      -e 's/@''GNULIB_SETLOCALE''@/$(GNULIB_SETLOCALE)/g' \
++	      -e 's/@''GNULIB_SETLOCALE_NULL''@/$(GNULIB_SETLOCALE_NULL)/g' \
++	      -e 's/@''GNULIB_DUPLOCALE''@/$(GNULIB_DUPLOCALE)/g' \
++	      -e 's/@''GNULIB_LOCALENAME_UNSAFE''@/$(GNULIB_LOCALENAME_UNSAFE)/g' \
++	      -e 's|@''HAVE_NEWLOCALE''@|$(HAVE_NEWLOCALE)|g' \
++	      -e 's|@''HAVE_DUPLOCALE''@|$(HAVE_DUPLOCALE)|g' \
++	      -e 's|@''HAVE_FREELOCALE''@|$(HAVE_FREELOCALE)|g' \
++	      -e 's|@''HAVE_XLOCALE_H''@|$(HAVE_XLOCALE_H)|g' \
++	      -e 's|@''REPLACE_LOCALECONV''@|$(REPLACE_LOCALECONV)|g' \
++	      -e 's|@''REPLACE_SETLOCALE''@|$(REPLACE_SETLOCALE)|g' \
++	      -e 's|@''REPLACE_NEWLOCALE''@|$(REPLACE_NEWLOCALE)|g' \
++	      -e 's|@''REPLACE_DUPLOCALE''@|$(REPLACE_DUPLOCALE)|g' \
++	      -e 's|@''REPLACE_FREELOCALE''@|$(REPLACE_FREELOCALE)|g' \
++	      -e 's|@''REPLACE_STRUCT_LCONV''@|$(REPLACE_STRUCT_LCONV)|g' \
++	      -e 's|@''LOCALENAME_ENHANCE_LOCALE_FUNCS''@|$(LOCALENAME_ENHANCE_LOCALE_FUNCS)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/locale.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += locale.h locale.h-t
++
++Include:
++<locale.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/localeconv
++++ b/modules/localeconv
+@@ -7,7 +7,7 @@ lib/localeconv.c
+ m4/localeconv.m4
+ 
+ Depends-on:
+-locale
++locale-h
+ 
+ configure.ac:
+ gl_FUNC_LOCALECONV
+--- a/modules/localename
++++ b/modules/localename
+@@ -7,7 +7,7 @@ lib/localename.c
+ lib/struniq.h
+ 
+ Depends-on:
+-locale
++locale-h
+ localename-unsafe
+ flexmember
+ lock
+--- a/modules/localename-tests
++++ b/modules/localename-tests
+@@ -4,7 +4,7 @@ tests/macros.h
+ m4/musl.m4
+ 
+ Depends-on:
+-locale
++locale-h
+ setenv
+ unsetenv
+ setlocale
+--- a/modules/localename-unsafe
++++ b/modules/localename-unsafe
+@@ -18,7 +18,7 @@ Depends-on:
+ localename-unsafe-limited
+ extensions
+ stdbool
+-locale
++locale-h
+ flexmember
+ free-posix
+ strdup
+--- a/modules/localename-unsafe-limited
++++ b/modules/localename-unsafe-limited
+@@ -12,7 +12,7 @@ m4/lcmessage.m4
+ 
+ Depends-on:
+ extensions
+-locale
++locale-h
+ setlocale-null-unlocked
+ 
+ configure.ac:
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -16,7 +16,7 @@ glob-h
+ iconv-h
+ inttypes-h-incomplete
+ langinfo-h
+-locale
++locale-h
+ malloc-h
+ math
+ monetary
+--- a/modules/setlocale
++++ b/modules/setlocale
+@@ -6,7 +6,7 @@ lib/setlocale.c
+ m4/setlocale.m4
+ 
+ Depends-on:
+-locale
++locale-h
+ localename      [test $NEED_SETLOCALE_IMPROVED = 1]
+ setlocale-null  [test $NEED_SETLOCALE_MTSAFE = 1]
+ 
+--- a/modules/setlocale-null
++++ b/modules/setlocale-null
+@@ -11,7 +11,7 @@ m4/threadlib.m4
+ m4/visibility.m4
+ 
+ Depends-on:
+-locale
++locale-h
+ snippet/arg-nonnull
+ setlocale-null-unlocked
+ 
+--- a/modules/setlocale-null-unlocked
++++ b/modules/setlocale-null-unlocked
+@@ -7,7 +7,7 @@ lib/setlocale_null.h
+ lib/setlocale_null-unlocked.c
+ 
+ Depends-on:
+-locale
++locale-h
+ snippet/arg-nonnull
+ 
+ configure.ac:

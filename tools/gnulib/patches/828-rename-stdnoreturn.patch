@@ -1,0 +1,128 @@
+From 4da657e525eba91dc0206f1204af9bfe501315dc Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:29:02 +0100
+Subject: [PATCH] Rename module stdnoreturn to stdnoreturn-h.
+
+* modules/stdnoreturn-h: Renamed from modules/stdnoreturn.
+* modules/stdnoreturn-h-tests: Renamed from modules/stdnoreturn-tests.
+* tests/test-stdnoreturn-h.c: Renamed from tests/test-stdnoreturn.c.
+* doc/posix-headers/stdnoreturn.texi: Update.
+* doc/noreturn.texi: Update.
+* modules/stdnoreturn: New file.
+---
+ ChangeLog                                     | 10 ++++
+ doc/noreturn.texi                             |  8 ++--
+ doc/posix-headers/stdnoreturn.texi            |  4 +-
+ modules/stdnoreturn                           | 31 ++-----------
+ modules/stdnoreturn-h                         | 46 +++++++++++++++++++
+ modules/stdnoreturn-h-tests                   | 10 ++++
+ modules/stdnoreturn-tests                     | 10 ----
+ ...est-stdnoreturn.c => test-stdnoreturn-h.c} |  0
+ 8 files changed, 77 insertions(+), 42 deletions(-)
+ create mode 100644 modules/stdnoreturn-h
+ create mode 100644 modules/stdnoreturn-h-tests
+ delete mode 100644 modules/stdnoreturn-tests
+ rename tests/{test-stdnoreturn.c => test-stdnoreturn-h.c} (100%)
+
+--- a/modules/stdnoreturn
++++ b/modules/stdnoreturn
+@@ -1,40 +1,20 @@
+ Description:
+ A <stdnoreturn.h> that nearly conforms to ISO C11.
+ 
++Status:
++deprecated
++
+ Notice:
+-The module 'stdnoreturn' is deprecated.
+-New code should use the '_Noreturn' keyword or the 'noreturn' module.
++This module is deprecated. Use the module 'stdnoreturn-h' instead.
+ 
+ Files:
+-lib/stdnoreturn.in.h
+-m4/stdnoreturn.m4
+ 
+ Depends-on:
+-gen-header
+-snippet/_Noreturn
++stdnoreturn-h
+ 
+ configure.ac:
+-gl_STDNORETURN_H
+-gl_CONDITIONAL_HEADER([stdnoreturn.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDNORETURN_H)
+-
+-# We need the following in order to create <stdnoreturn.h> when the system
+-# doesn't have one that works.
+-if GL_GENERATE_STDNORETURN_H
+-stdnoreturn.h: stdnoreturn.in.h $(top_builddir)/config.status $(_NORETURN_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	  -e '/definition of _Noreturn/r $(_NORETURN_H)' \
+-	  $(srcdir)/stdnoreturn.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdnoreturn.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdnoreturn.h stdnoreturn.h-t
+ 
+ Include:
+ <stdnoreturn.h>
+@@ -43,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Paul Eggert
+--- /dev/null
++++ b/modules/stdnoreturn-h
+@@ -0,0 +1,46 @@
++Description:
++A <stdnoreturn.h> that nearly conforms to ISO C11.
++
++Notice:
++The module 'stdnoreturn' is deprecated.
++New code should use the '_Noreturn' keyword or the 'noreturn' module.
++
++Files:
++lib/stdnoreturn.in.h
++m4/stdnoreturn.m4
++
++Depends-on:
++gen-header
++snippet/_Noreturn
++
++configure.ac:
++gl_STDNORETURN_H
++gl_CONDITIONAL_HEADER([stdnoreturn.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDNORETURN_H)
++
++# We need the following in order to create <stdnoreturn.h> when the system
++# doesn't have one that works.
++if GL_GENERATE_STDNORETURN_H
++stdnoreturn.h: stdnoreturn.in.h $(top_builddir)/config.status $(_NORETURN_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	  -e '/definition of _Noreturn/r $(_NORETURN_H)' \
++	  $(srcdir)/stdnoreturn.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdnoreturn.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdnoreturn.h stdnoreturn.h-t
++
++Include:
++<stdnoreturn.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Paul Eggert

@@ -1,0 +1,300 @@
+From 20316f78bffd374f7034cf37b2b1f1ec8d0c3f21 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 25 Sep 2024 18:26:18 +0200
+Subject: [PATCH] xstring-buffer: New module.
+
+* lib/string-buffer.h (sb_xappend1, sb_xappend_desc, sb_xappend_c,
+sb_xappendvf, sb_xappendf, sb_xcontents_c, sb_xdupfree, sb_xdupfree_c):
+New declarations.
+* lib/xstring-buffer.c: New file.
+* lib/xstring-buffer-printf.c: New file.
+* modules/xstring-buffer: New file.
+---
+ ChangeLog                   | 10 +++++
+ lib/string-buffer.h         | 81 ++++++++++++++++++++++++++++++++++--
+ lib/xstring-buffer-printf.c | 51 +++++++++++++++++++++++
+ lib/xstring-buffer.c        | 82 +++++++++++++++++++++++++++++++++++++
+ modules/xstring-buffer      | 25 +++++++++++
+ 5 files changed, 246 insertions(+), 3 deletions(-)
+ create mode 100644 lib/xstring-buffer-printf.c
+ create mode 100644 lib/xstring-buffer.c
+ create mode 100644 modules/xstring-buffer
+
+--- a/lib/string-buffer.h
++++ b/lib/string-buffer.h
+@@ -19,8 +19,9 @@
+ #ifndef _STRING_BUFFER_H
+ #define _STRING_BUFFER_H
+ 
+-/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_CAPABILITY_TYPE,
+-   _GL_ATTRIBUTE_ACQUIRE_CAPABILITY, _GL_ATTRIBUTE_RELEASE_CAPABILITY.  */
++/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_RETURNS_NONNULL,
++   _GL_ATTRIBUTE_CAPABILITY_TYPE, _GL_ATTRIBUTE_ACQUIRE_CAPABILITY,
++   _GL_ATTRIBUTE_RELEASE_CAPABILITY.  */
+ #if !_GL_CONFIG_H_INCLUDED
+  #error "Please include config.h first."
+ #endif
+@@ -48,6 +49,8 @@ struct string_buffer
+ extern "C" {
+ #endif
+ 
++/* ================== Functions in module 'string-buffer' ================== */
++
+ /* Initializes BUFFER to the empty string.  */
+ extern void sb_init (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_ACQUIRE_CAPABILITY (buffer->data);
+@@ -56,7 +59,7 @@ extern void sb_init (struct string_buffe
+    Returns 0, or -1 in case of out-of-memory error.  */
+ extern int sb_append1 (struct string_buffer *buffer, char c);
+ 
+-/* Appends the contents of the memory area STR to BUFFER.
++/* Appends the contents of the memory area S to BUFFER.
+    Returns 0, or -1 in case of out-of-memory error.  */
+ extern int sb_append_desc (struct string_buffer *buffer, string_desc_t s);
+ 
+@@ -117,6 +120,78 @@ extern string_desc_t sb_dupfree (struct
+ extern char * sb_dupfree_c (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
++/* ================== Functions in module 'xstring-buffer' ================== */
++
++#if GNULIB_XSTRING_BUFFER
++
++/* The following functions invoke xalloc_die () in case of out-of-memory
++   error.  */
++
++/* Appends the character C to BUFFER.  */
++extern void sb_xappend1 (struct string_buffer *buffer, char c);
++
++/* Appends the contents of the memory area S to BUFFER.  */
++extern void sb_xappend_desc (struct string_buffer *buffer, string_desc_t s);
++
++/* Appends the contents of the C string STR to BUFFER.  */
++extern void sb_xappend_c (struct string_buffer *buffer, const char *str);
++
++/* Appends the result of the printf-compatible FORMATSTRING with the argument
++   list LIST to BUFFER.
++   Returns 0, or -1 in case of error other than out-of-memory error.
++   Error code EOVERFLOW can only occur when a width > INT_MAX is used.
++   Therefore, if the format string is valid and does not use %ls/%lc
++   directives nor widths, no error is possible.  */
++extern int sb_xappendvf (struct string_buffer *buffer,
++                         const char *formatstring, va_list list)
++  #if (__GNUC__ + (__GNUC_MINOR__ >= 4) > 4) && !defined __clang__
++  ATTRIBUTE_FORMAT ((__gnu_printf__, 2, 0))
++  #else
++  ATTRIBUTE_FORMAT ((__printf__, 2, 0))
++  #endif
++  ;
++
++/* Appends the result of the printf-compatible FORMATSTRING with the following
++   arguments to BUFFER.
++   Returns 0, or -1 in case of error other than out-of-memory error.
++   Error code EOVERFLOW can only occur when a width > INT_MAX is used.
++   Therefore, if the format string is valid and does not use %ls/%lc
++   directives nor widths, no error is possible.  */
++extern int sb_xappendf (struct string_buffer *buffer,
++                        const char *formatstring, ...)
++  #if (__GNUC__ + (__GNUC_MINOR__ >= 4) > 4) && !defined __clang__
++  ATTRIBUTE_FORMAT ((__gnu_printf__, 2, 3))
++  #else
++  ATTRIBUTE_FORMAT ((__printf__, 2, 3))
++  #endif
++  ;
++
++/* Ensures the contents of BUFFER is followed by a NUL byte (without
++   incrementing the length of the contents).
++   Then returns a read-only view of the current contents of BUFFER,
++   that is, the current contents of BUFFER as a C string.
++   The result is only valid until the next operation on BUFFER.  */
++extern const char * sb_xcontents_c (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_RETURNS_NONNULL;
++
++/* Returns the contents of BUFFER and frees all other memory held by BUFFER.
++   Returns (0, NULL) if there was an error earlier.
++   It is the responsibility of the caller to string_desc_free() the result.  */
++extern string_desc_t sb_xdupfree (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
++
++/* Returns the contents of BUFFER (with an added trailing NUL, that is,
++   as a C string), and frees all other memory held by BUFFER.
++   Returns NULL if there was an error earlier.
++   It is the responsibility of the caller to free() the result.  */
++extern char * sb_xdupfree_c (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
++  _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
++
++#endif /* GNULIB_XSTRING_BUFFER */
++
++/* ========================================================================== */
++
+ #ifdef __cplusplus
+ }
+ #endif
+--- /dev/null
++++ b/lib/xstring-buffer-printf.c
+@@ -0,0 +1,51 @@
++/* Error-checking functions on a string buffer.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2024.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "string-buffer.h"
++
++#include <errno.h>
++
++#include "xalloc.h"
++
++int
++sb_xappendvf (struct string_buffer *buffer,
++              const char *formatstring, va_list list)
++{
++  if (sb_appendvf (buffer, formatstring, list) < 0)
++    {
++      if (errno == ENOMEM)
++        xalloc_die ();
++      return -1;
++    }
++  return 0;
++}
++
++int
++sb_xappendf (struct string_buffer *buffer, const char *formatstring, ...)
++{
++  va_list args;
++  int ret;
++
++  va_start (args, formatstring);
++  ret = sb_xappendvf (buffer, formatstring, args);
++  va_end (args);
++  return ret;
++}
+--- /dev/null
++++ b/lib/xstring-buffer.c
+@@ -0,0 +1,82 @@
++/* Error-checking functions on a string buffer.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2024.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "string-buffer.h"
++
++#include "xalloc.h"
++
++void
++sb_xappend1 (struct string_buffer *buffer, char c)
++{
++  if (sb_append1 (buffer, c) < 0)
++    xalloc_die ();
++}
++
++void
++sb_xappend_desc (struct string_buffer *buffer, string_desc_t s)
++{
++  if (sb_append_desc (buffer, s) < 0)
++    xalloc_die ();
++}
++
++void
++sb_xappend_c (struct string_buffer *buffer, const char *str)
++{
++  if (sb_append_c (buffer, str) < 0)
++    xalloc_die ();
++}
++
++const char *
++sb_xcontents_c (struct string_buffer *buffer)
++{
++  const char *contents = sb_contents_c (buffer);
++  if (contents == NULL)
++    xalloc_die ();
++  return contents;
++}
++
++string_desc_t
++sb_xdupfree (struct string_buffer *buffer)
++{
++  if (buffer->error)
++    {
++      sb_free (buffer);
++      return string_desc_new_addr (0, NULL);
++    }
++  string_desc_t contents = sb_dupfree (buffer);
++  if (string_desc_data (contents) == NULL)
++    xalloc_die ();
++  return contents;
++}
++
++char *
++sb_xdupfree_c (struct string_buffer *buffer)
++{
++  if (buffer->error)
++    {
++      sb_free (buffer);
++      return NULL;
++    }
++  char *contents = sb_dupfree_c (buffer);
++  if (contents == NULL)
++    xalloc_die ();
++  return contents;
++}
+--- /dev/null
++++ b/modules/xstring-buffer
+@@ -0,0 +1,25 @@
++Description:
++Error-checking functions on a string buffer.
++
++Files:
++lib/xstring-buffer.c
++lib/xstring-buffer-printf.c
++
++Depends-on:
++string-buffer
++xalloc-die
++
++configure.ac:
++gl_MODULE_INDICATOR([xstring-buffer])
++
++Makefile.am:
++lib_SOURCES += xstring-buffer.c xstring-buffer-printf.c
++
++Include:
++"string-buffer.h"
++
++License:
++GPL
++
++Maintainer:
++all

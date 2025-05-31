@@ -1,0 +1,80 @@
+From c3dd4f53c37162366ca405f24cb122d0521280e1 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 13 Oct 2024 11:35:12 +0200
+Subject: [PATCH] string-desc: Fix categorization string_desc_new_addr.
+
+* lib/string-desc.h (string_desc_new_addr): Move to section
+"Side-effect-free operations".
+* lib/string-desc.c (string_desc_new_addr): Move accordingly.
+---
+ ChangeLog         |  7 +++++++
+ lib/string-desc.c | 28 ++++++++++++++--------------
+ lib/string-desc.h |  6 +++---
+ 3 files changed, 24 insertions(+), 17 deletions(-)
+
+--- a/lib/string-desc.c
++++ b/lib/string-desc.c
+@@ -120,6 +120,20 @@ string_desc_new_empty (void)
+ }
+ 
+ string_desc_t
++string_desc_new_addr (idx_t n, char *addr)
++{
++  string_desc_t result;
++
++  result._nbytes = n;
++  if (n == 0)
++    result._data = NULL;
++  else
++    result._data = addr;
++
++  return result;
++}
++
++string_desc_t
+ string_desc_from_c (const char *s)
+ {
+   string_desc_t result;
+@@ -191,20 +205,6 @@ string_desc_new (string_desc_t *resultp,
+   return 0;
+ }
+ 
+-string_desc_t
+-string_desc_new_addr (idx_t n, char *addr)
+-{
+-  string_desc_t result;
+-
+-  result._nbytes = n;
+-  if (n == 0)
+-    result._data = NULL;
+-  else
+-    result._data = addr;
+-
+-  return result;
+-}
+-
+ int
+ string_desc_new_filled (string_desc_t *resultp, idx_t n, char c)
+ {
+--- a/lib/string-desc.h
++++ b/lib/string-desc.h
+@@ -117,6 +117,9 @@ extern ptrdiff_t string_desc_contains (s
+ /* Return an empty string.  */
+ extern string_desc_t string_desc_new_empty (void);
+ 
++/* Construct and return a string of length N, at the given memory address.  */
++extern string_desc_t string_desc_new_addr (idx_t n, char *addr);
++
+ /* Return a string that represents the C string S, of length strlen (S).  */
+ extern string_desc_t string_desc_from_c (const char *s);
+ 
+@@ -146,9 +149,6 @@ extern int string_desc_fwrite (FILE *fp,
+ _GL_ATTRIBUTE_NODISCARD
+ extern int string_desc_new (string_desc_t *resultp, idx_t n);
+ 
+-/* Construct and return a string of length N, at the given memory address.  */
+-extern string_desc_t string_desc_new_addr (idx_t n, char *addr);
+-
+ /* Construct a string of length N, filled with C.
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */

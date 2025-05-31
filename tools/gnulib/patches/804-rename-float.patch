@@ -1,0 +1,2088 @@
+From 3d1b90b454f5adbd482d81f8e845166f0b1cad07 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:08 +0100
+Subject: [PATCH] Rename module float to float-h.
+
+* modules/float-h: Renamed from modules/float.
+* modules/float-h-tests: Renamed from modules/float-tests.
+* modules/float-h-c++-tests: Renamed from modules/float-c++-tests.
+* tests/test-float-h.c: Renamed from tests/test-float.c.
+* tests/test-float-h-c++.cc: Renamed from tests/test-float-c++.cc.
+* tests/test-float-h-c++2.cc: Renamed from tests/test-float-c++2.cc.
+* doc/posix-headers/float.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/float: New file.
+---
+ ChangeLog                                     | 13 ++++
+ doc/posix-headers/float.texi                  |  4 +-
+ modules/c-strtod-tests                        |  2 +-
+ modules/c-strtof-tests                        |  2 +-
+ modules/c-strtold-tests                       |  2 +-
+ modules/cbrt-ieee-tests                       |  2 +-
+ modules/cbrtf-ieee-tests                      |  2 +-
+ modules/cbrtl-ieee-tests                      |  2 +-
+ modules/cbrtl-tests                           |  2 +-
+ modules/ceil                                  |  2 +-
+ modules/ceil-ieee-tests                       |  2 +-
+ modules/ceil-tests                            |  2 +-
+ modules/ceilf                                 |  2 +-
+ modules/ceilf-ieee-tests                      |  2 +-
+ modules/ceilf-tests                           |  2 +-
+ modules/ceill                                 |  2 +-
+ modules/ceill-ieee-tests                      |  2 +-
+ modules/ceill-tests                           |  2 +-
+ modules/copysignl-tests                       |  2 +-
+ modules/cosl                                  |  2 +-
+ modules/exp-ieee-tests                        |  2 +-
+ modules/exp2-ieee-tests                       |  2 +-
+ modules/exp2f-ieee-tests                      |  2 +-
+ modules/exp2l                                 |  2 +-
+ modules/exp2l-ieee-tests                      |  2 +-
+ modules/exp2l-tests                           |  2 +-
+ modules/expf-ieee-tests                       |  2 +-
+ modules/expl                                  |  2 +-
+ modules/expl-ieee-tests                       |  2 +-
+ modules/expl-tests                            |  2 +-
+ modules/expm1-ieee-tests                      |  2 +-
+ modules/expm1f-ieee-tests                     |  2 +-
+ modules/expm1l                                |  2 +-
+ modules/expm1l-ieee-tests                     |  2 +-
+ modules/fabs-ieee-tests                       |  2 +-
+ modules/fabsf-ieee-tests                      |  2 +-
+ modules/fabsl-ieee-tests                      |  2 +-
+ modules/float                                 | 50 +++------------
+ modules/float-c++-tests                       | 18 ------
+ modules/float-h                               | 61 +++++++++++++++++++
+ modules/float-h-c++-tests                     | 18 ++++++
+ modules/{float-tests => float-h-tests}        |  8 +--
+ modules/floor                                 |  2 +-
+ modules/floor-ieee-tests                      |  2 +-
+ modules/floor-tests                           |  2 +-
+ modules/floorf                                |  2 +-
+ modules/floorf-ieee-tests                     |  2 +-
+ modules/floorf-tests                          |  2 +-
+ modules/floorl                                |  2 +-
+ modules/floorl-ieee-tests                     |  2 +-
+ modules/floorl-tests                          |  2 +-
+ modules/fma                                   |  2 +-
+ modules/fma-tests                             |  2 +-
+ modules/fmaf                                  |  2 +-
+ modules/fmaf-tests                            |  2 +-
+ modules/fmal                                  |  2 +-
+ modules/fmal-tests                            |  2 +-
+ modules/fmod-ieee-tests                       |  2 +-
+ modules/fmodf-ieee-tests                      |  2 +-
+ modules/fmodl                                 |  2 +-
+ modules/fmodl-ieee-tests                      |  2 +-
+ modules/fmodl-tests                           |  2 +-
+ modules/frexp-ieee-tests                      |  2 +-
+ modules/frexpf-ieee-tests                     |  2 +-
+ modules/frexpl-ieee-tests                     |  2 +-
+ modules/frexpl-tests                          |  2 +-
+ modules/getpayload                            |  2 +-
+ modules/getpayloadf                           |  2 +-
+ modules/getpayloadl                           |  2 +-
+ modules/hypot-ieee-tests                      |  2 +-
+ modules/hypotf-ieee-tests                     |  2 +-
+ modules/hypotl-ieee-tests                     |  2 +-
+ modules/hypotl-tests                          |  2 +-
+ modules/integer_length                        |  2 +-
+ modules/isfinite-tests                        |  2 +-
+ modules/isinf                                 |  2 +-
+ modules/isinf-tests                           |  2 +-
+ modules/isnan-tests                           |  2 +-
+ modules/isnanl                                |  2 +-
+ modules/isnanl-nolibm                         |  2 +-
+ modules/isnanl-nolibm-tests                   |  2 +-
+ modules/isnanl-tests                          |  2 +-
+ modules/ldexp-ieee-tests                      |  2 +-
+ modules/ldexp-tests                           |  2 +-
+ modules/ldexpf-ieee-tests                     |  2 +-
+ modules/ldexpf-tests                          |  2 +-
+ modules/ldexpl-ieee-tests                     |  2 +-
+ modules/ldexpl-tests                          |  2 +-
+ modules/log-ieee-tests                        |  2 +-
+ modules/log10-ieee-tests                      |  2 +-
+ modules/log10f-ieee-tests                     |  2 +-
+ modules/log10l                                |  2 +-
+ modules/log10l-ieee-tests                     |  2 +-
+ modules/log1p-ieee-tests                      |  2 +-
+ modules/log1pf-ieee-tests                     |  2 +-
+ modules/log1pl-ieee-tests                     |  2 +-
+ modules/log1pl-tests                          |  2 +-
+ modules/log2-ieee-tests                       |  2 +-
+ modules/log2f-ieee-tests                      |  2 +-
+ modules/log2l-ieee-tests                      |  2 +-
+ modules/log2l-tests                           |  2 +-
+ modules/logb-ieee-tests                       |  2 +-
+ modules/logbf-ieee-tests                      |  2 +-
+ modules/logbl-ieee-tests                      |  2 +-
+ modules/logf-ieee-tests                       |  2 +-
+ modules/logl-ieee-tests                       |  2 +-
+ modules/logl-tests                            |  2 +-
+ modules/logp1l-tests                          |  2 +-
+ modules/math                                  |  2 +-
+ modules/modf-ieee-tests                       |  2 +-
+ modules/modff-ieee-tests                      |  2 +-
+ modules/modfl-ieee-tests                      |  2 +-
+ modules/modfl-tests                           |  2 +-
+ modules/printf-frexpl                         |  2 +-
+ modules/remainder-ieee-tests                  |  2 +-
+ modules/remainderf-ieee-tests                 |  2 +-
+ modules/remainderl                            |  2 +-
+ modules/remainderl-ieee-tests                 |  2 +-
+ modules/remainderl-tests                      |  2 +-
+ modules/rint-ieee-tests                       |  2 +-
+ modules/rintf-ieee-tests                      |  2 +-
+ modules/rintl-ieee-tests                      |  2 +-
+ modules/rintl-tests                           |  2 +-
+ modules/round                                 |  2 +-
+ modules/round-ieee-tests                      |  2 +-
+ modules/roundf                                |  2 +-
+ modules/roundf-ieee-tests                     |  2 +-
+ modules/roundl                                |  2 +-
+ modules/roundl-ieee-tests                     |  2 +-
+ modules/roundl-tests                          |  2 +-
+ modules/setpayload                            |  2 +-
+ modules/setpayloadf                           |  2 +-
+ modules/setpayloadl                           |  2 +-
+ modules/setpayloadsig                         |  2 +-
+ modules/setpayloadsigf                        |  2 +-
+ modules/setpayloadsigl                        |  2 +-
+ modules/signbit                               |  2 +-
+ modules/signbit-tests                         |  2 +-
+ modules/sinl                                  |  2 +-
+ modules/snprintf-posix-tests                  |  2 +-
+ modules/sprintf-posix-tests                   |  2 +-
+ modules/sqrt-ieee-tests                       |  2 +-
+ modules/sqrtf-ieee-tests                      |  2 +-
+ modules/sqrtl                                 |  2 +-
+ modules/sqrtl-ieee-tests                      |  2 +-
+ modules/sqrtl-tests                           |  2 +-
+ modules/strtod-tests                          |  2 +-
+ modules/strtof-tests                          |  2 +-
+ modules/strtold-tests                         |  2 +-
+ modules/tanl                                  |  2 +-
+ modules/totalorderl                           |  2 +-
+ modules/totalordermagl                        |  2 +-
+ modules/trunc                                 |  2 +-
+ modules/trunc-ieee-tests                      |  2 +-
+ modules/trunc-tests                           |  2 +-
+ modules/truncf                                |  2 +-
+ modules/truncf-ieee-tests                     |  2 +-
+ modules/truncf-tests                          |  2 +-
+ modules/truncl                                |  2 +-
+ modules/truncl-ieee-tests                     |  2 +-
+ modules/truncl-tests                          |  2 +-
+ modules/vasnprintf                            |  2 +-
+ modules/vasnprintf-posix-tests                |  2 +-
+ modules/vasnwprintf                           |  2 +-
+ modules/vasnwprintf-posix-tests               |  2 +-
+ modules/vasprintf-posix-tests                 |  2 +-
+ modules/vsnprintf-posix-tests                 |  2 +-
+ modules/vsprintf-posix-tests                  |  2 +-
+ modules/xstrtod-tests                         |  2 +-
+ modules/xstrtold-tests                        |  2 +-
+ ...{test-float-c++.cc => test-float-h-c++.cc} |  0
+ ...est-float-c++2.cc => test-float-h-c++2.cc} |  0
+ tests/{test-float.c => test-float-h.c}        |  0
+ 173 files changed, 268 insertions(+), 230 deletions(-)
+ delete mode 100644 modules/float-c++-tests
+ create mode 100644 modules/float-h
+ create mode 100644 modules/float-h-c++-tests
+ rename modules/{float-tests => float-h-tests} (56%)
+ rename tests/{test-float-c++.cc => test-float-h-c++.cc} (100%)
+ rename tests/{test-float-c++2.cc => test-float-h-c++2.cc} (100%)
+ rename tests/{test-float.c => test-float-h.c} (100%)
+
+--- a/modules/c-strtod-tests
++++ b/modules/c-strtod-tests
+@@ -11,7 +11,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ signbit
+ setlocale
+--- a/modules/c-strtof-tests
++++ b/modules/c-strtof-tests
+@@ -11,7 +11,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ signbit
+ setlocale
+--- a/modules/c-strtold-tests
++++ b/modules/c-strtold-tests
+@@ -11,7 +11,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnanl-nolibm
+ signbit
+ setlocale
+--- a/modules/cbrt-ieee-tests
++++ b/modules/cbrt-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/cbrtf-ieee-tests
++++ b/modules/cbrtf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/cbrtl-ieee-tests
++++ b/modules/cbrtl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/cbrtl-tests
++++ b/modules/cbrtl-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ tests/randoml.c
+ 
+ Depends-on:
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/ceil
++++ b/modules/ceil
+@@ -7,7 +7,7 @@ m4/ceil.m4
+ 
+ Depends-on:
+ math
+-float           [test $REPLACE_CEIL = 1]
++float-h         [test $REPLACE_CEIL = 1]
+ 
+ configure.ac:
+ gl_FUNC_CEIL
+--- a/modules/ceil-ieee-tests
++++ b/modules/ceil-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ceil-tests
++++ b/modules/ceil-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ nan
+ stdbool
+--- a/modules/ceilf
++++ b/modules/ceilf
+@@ -9,7 +9,7 @@ m4/ceilf.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_DECL_CEILF = 0 || test $REPLACE_CEILF = 1]
++float-h         [test $HAVE_DECL_CEILF = 0 || test $REPLACE_CEILF = 1]
+ 
+ configure.ac:
+ gl_FUNC_CEILF
+--- a/modules/ceilf-ieee-tests
++++ b/modules/ceilf-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ceilf-tests
++++ b/modules/ceilf-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ nan
+ stdbool
+--- a/modules/ceill
++++ b/modules/ceill
+@@ -10,7 +10,7 @@ Depends-on:
+ math
+ extensions
+ ceil            [{ test $HAVE_DECL_CEILL = 0 || test $REPLACE_CEILL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_DECL_CEILL = 0 || test $REPLACE_CEILL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_DECL_CEILL = 0 || test $REPLACE_CEILL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+ gl_FUNC_CEILL
+--- a/modules/ceill-ieee-tests
++++ b/modules/ceill-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ceill-tests
++++ b/modules/ceill-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/copysignl-tests
++++ b/modules/copysignl-tests
+@@ -5,7 +5,7 @@ tests/minus-zero.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/cosl
++++ b/modules/cosl
+@@ -12,7 +12,7 @@ Depends-on:
+ math
+ extensions
+ cos             [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floor           [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floorl          [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/exp-ieee-tests
++++ b/modules/exp-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/exp2-ieee-tests
++++ b/modules/exp2-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/exp2f-ieee-tests
++++ b/modules/exp2f-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/exp2l
++++ b/modules/exp2l
+@@ -10,7 +10,7 @@ Depends-on:
+ math
+ extensions
+ exp2            [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ roundl          [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ ldexpl          [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/exp2l-ieee-tests
++++ b/modules/exp2l-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/exp2l-tests
++++ b/modules/exp2l-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/expf-ieee-tests
++++ b/modules/expf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/expl
++++ b/modules/expl
+@@ -10,7 +10,7 @@ Depends-on:
+ math
+ extensions
+ exp             [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ roundl          [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ ldexpl          [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/expl-ieee-tests
++++ b/modules/expl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/expl-tests
++++ b/modules/expl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/expm1-ieee-tests
++++ b/modules/expm1-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/expm1f-ieee-tests
++++ b/modules/expm1f-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/expm1l
++++ b/modules/expm1l
+@@ -9,7 +9,7 @@ Depends-on:
+ math
+ extensions
+ expm1           [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ expl            [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ roundl          [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/expm1l-ieee-tests
++++ b/modules/expm1l-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fabs-ieee-tests
++++ b/modules/fabs-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fabsf-ieee-tests
++++ b/modules/fabsf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fabsl-ieee-tests
++++ b/modules/fabsl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/float
++++ b/modules/float
+@@ -1,52 +1,20 @@
+ Description:
+ A correct <float.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'float-h' instead.
++
+ Files:
+-lib/float.in.h
+-lib/float.c
+-lib/itold.c
+-m4/float_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
++float-h
+ 
+ configure.ac:
+-gl_FLOAT_H
+-gl_CONDITIONAL_HEADER([float.h])
+-AC_PROG_MKDIR_P
+-gl_CONDITIONAL([GL_COND_OBJ_FLOAT], [test $REPLACE_FLOAT_LDBL = 1])
+-gl_CONDITIONAL([GL_COND_OBJ_ITOLD], [test $REPLACE_ITOLD = 1])
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(FLOAT_H)
+-
+-# We need the following in order to create <float.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_FLOAT_H
+-float.h: float.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_FLOAT_H''@|$(NEXT_FLOAT_H)|g' \
+-	      -e 's|@''REPLACE_ITOLD''@|$(REPLACE_ITOLD)|g' \
+-	      $(srcdir)/float.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-float.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += float.h float.h-t
+-
+-if GL_COND_OBJ_FLOAT
+-lib_SOURCES += float.c
+-endif
+-if GL_COND_OBJ_ITOLD
+-lib_SOURCES += itold.c
+-endif
+ 
+ Include:
+ <float.h>
+@@ -55,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/float-h
+@@ -0,0 +1,61 @@
++Description:
++A correct <float.h>.
++
++Files:
++lib/float.in.h
++lib/float.c
++lib/itold.c
++m4/float_h.m4
++
++Depends-on:
++gen-header
++include_next
++
++configure.ac:
++gl_FLOAT_H
++gl_CONDITIONAL_HEADER([float.h])
++AC_PROG_MKDIR_P
++gl_CONDITIONAL([GL_COND_OBJ_FLOAT],
++               [test $REPLACE_FLOAT_LDBL = 1 || test $REPLACE_FLOAT_SNAN = 1])
++gl_CONDITIONAL([GL_COND_OBJ_ITOLD], [test $REPLACE_ITOLD = 1])
++dnl Prerequisites of lib/float.c.
++AC_REQUIRE([gl_BIGENDIAN])
++
++Makefile.am:
++BUILT_SOURCES += $(FLOAT_H)
++
++# We need the following in order to create <float.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_FLOAT_H
++float.h: float.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_FLOAT_H''@|$(NEXT_FLOAT_H)|g' \
++	      -e 's|@''REPLACE_ITOLD''@|$(REPLACE_ITOLD)|g' \
++	      $(srcdir)/float.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++float.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += float.h float.h-t
++
++if GL_COND_OBJ_FLOAT
++lib_SOURCES += float.c
++endif
++if GL_COND_OBJ_ITOLD
++lib_SOURCES += itold.c
++endif
++
++Include:
++<float.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/floor
++++ b/modules/floor
+@@ -7,7 +7,7 @@ m4/floor.m4
+ 
+ Depends-on:
+ math
+-float           [test $REPLACE_FLOOR = 1]
++float-h         [test $REPLACE_FLOOR = 1]
+ 
+ configure.ac:
+ AC_REQUIRE([gl_FUNC_FLOOR])
+--- a/modules/floor-ieee-tests
++++ b/modules/floor-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/floor-tests
++++ b/modules/floor-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ nan
+ stdbool
+--- a/modules/floorf
++++ b/modules/floorf
+@@ -9,7 +9,7 @@ m4/floorf.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_DECL_FLOORF = 0 || test $REPLACE_FLOORF = 1]
++float-h         [test $HAVE_DECL_FLOORF = 0 || test $REPLACE_FLOORF = 1]
+ 
+ configure.ac:
+ gl_FUNC_FLOORF
+--- a/modules/floorf-ieee-tests
++++ b/modules/floorf-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/floorf-tests
++++ b/modules/floorf-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ nan
+ stdbool
+--- a/modules/floorl
++++ b/modules/floorl
+@@ -10,7 +10,7 @@ Depends-on:
+ math
+ extensions
+ floor           [{ test $HAVE_DECL_FLOORL = 0 || test $REPLACE_FLOORL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_DECL_FLOORL = 0 || test $REPLACE_FLOORL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_DECL_FLOORL = 0 || test $REPLACE_FLOORL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+ AC_REQUIRE([gl_FUNC_FLOORL])
+--- a/modules/floorl-ieee-tests
++++ b/modules/floorl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/floorl-tests
++++ b/modules/floorl-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/fma
++++ b/modules/fma
+@@ -10,7 +10,7 @@ m4/mathfunc.m4
+ 
+ Depends-on:
+ math
+-float           [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
++float-h         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ stdbool         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ assert-h        [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ isfinite        [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+--- a/modules/fma-tests
++++ b/modules/fma-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ lib/float+.h
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ ldexp
+ nan
+--- a/modules/fmaf
++++ b/modules/fmaf
+@@ -12,7 +12,7 @@ m4/mathfunc.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
++float-h         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ stdbool         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ assert-h         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ isfinite        [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+--- a/modules/fmaf-tests
++++ b/modules/fmaf-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ lib/float+.h
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ ldexpf
+ nan
+--- a/modules/fmal
++++ b/modules/fmal
+@@ -13,7 +13,7 @@ Depends-on:
+ math
+ extensions
+ fma             [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdbool         [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ assert-h        [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isfinite        [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fmal-tests
++++ b/modules/fmal-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ lib/float+.h
+ 
+ Depends-on:
+-float
++float-h
+ fpucw
+ isnanl-nolibm
+ ldexpl
+--- a/modules/fmod-ieee-tests
++++ b/modules/fmod-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fmodf-ieee-tests
++++ b/modules/fmodf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fmodl
++++ b/modules/fmodl
+@@ -11,7 +11,7 @@ Depends-on:
+ math
+ extensions
+ fmod            [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isfinite        [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signbit         [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fabsl           [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fmodl-ieee-tests
++++ b/modules/fmodl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/fmodl-tests
++++ b/modules/fmodl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/frexp-ieee-tests
++++ b/modules/frexp-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/frexpf-ieee-tests
++++ b/modules/frexpf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/frexpl-ieee-tests
++++ b/modules/frexpl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/frexpl-tests
++++ b/modules/frexpl-tests
+@@ -11,7 +11,7 @@ Depends-on:
+ fpucw
+ isnanl-nolibm
+ signbit
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/getpayload
++++ b/modules/getpayload
+@@ -9,7 +9,7 @@ m4/getpayload.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
++float-h         [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ stdint          [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ isnand          [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ 
+--- a/modules/getpayloadf
++++ b/modules/getpayloadf
+@@ -9,7 +9,7 @@ m4/getpayload.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
++float-h         [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ stdint          [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ isnanf          [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ 
+--- a/modules/getpayloadl
++++ b/modules/getpayloadl
+@@ -11,7 +11,7 @@ Depends-on:
+ math
+ extensions
+ getpayload      [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdint          [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ snan            [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/hypot-ieee-tests
++++ b/modules/hypot-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/hypotf-ieee-tests
++++ b/modules/hypotf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/hypotl-ieee-tests
++++ b/modules/hypotl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/hypotl-tests
++++ b/modules/hypotl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/integer_length
++++ b/modules/integer_length
+@@ -8,7 +8,7 @@ lib/float+.h
+ m4/exponentd.m4
+ 
+ Depends-on:
+-float
++float-h
+ 
+ configure.ac:
+ AC_REQUIRE([gl_DOUBLE_EXPONENT_LOCATION])
+--- a/modules/isfinite-tests
++++ b/modules/isfinite-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/isinf
++++ b/modules/isinf
+@@ -9,7 +9,7 @@ m4/check-math-lib.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $REPLACE_ISINF = 1]
++float-h         [test $REPLACE_ISINF = 1]
+ 
+ configure.ac:
+ gl_ISINF
+--- a/modules/isinf-tests
++++ b/modules/isinf-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/isnan-tests
++++ b/modules/isnan-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/isnanl
++++ b/modules/isnanl
+@@ -10,7 +10,7 @@ m4/isnanl.m4
+ 
+ Depends-on:
+ math
+-float
++float-h
+ fpieee
+ memcmp
+ 
+--- a/modules/isnanl-nolibm
++++ b/modules/isnanl-nolibm
+@@ -11,7 +11,7 @@ m4/isnanl.m4
+ m4/math_h.m4
+ 
+ Depends-on:
+-float
++float-h
+ fpieee
+ memcmp
+ 
+--- a/modules/isnanl-nolibm-tests
++++ b/modules/isnanl-nolibm-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/isnanl-tests
++++ b/modules/isnanl-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/ldexp-ieee-tests
++++ b/modules/ldexp-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ldexp-tests
++++ b/modules/ldexp-tests
+@@ -10,7 +10,7 @@ tests/randomd.c
+ Depends-on:
+ isnand-nolibm
+ signbit
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/ldexpf-ieee-tests
++++ b/modules/ldexpf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ldexpf-tests
++++ b/modules/ldexpf-tests
+@@ -10,7 +10,7 @@ tests/randomf.c
+ Depends-on:
+ isnanf-nolibm
+ signbit
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/ldexpl-ieee-tests
++++ b/modules/ldexpl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/ldexpl-tests
++++ b/modules/ldexpl-tests
+@@ -11,7 +11,7 @@ Depends-on:
+ fpucw
+ isnanl-nolibm
+ signbit
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/log-ieee-tests
++++ b/modules/log-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log10-ieee-tests
++++ b/modules/log10-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log10f-ieee-tests
++++ b/modules/log10f-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log10l
++++ b/modules/log10l
+@@ -9,7 +9,7 @@ Depends-on:
+ math
+ extensions
+ log10           [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ logl            [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+--- a/modules/log10l-ieee-tests
++++ b/modules/log10l-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log1p-ieee-tests
++++ b/modules/log1p-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log1pf-ieee-tests
++++ b/modules/log1pf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log1pl-ieee-tests
++++ b/modules/log1pl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log1pl-tests
++++ b/modules/log1pl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/log2-ieee-tests
++++ b/modules/log2-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log2f-ieee-tests
++++ b/modules/log2f-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log2l-ieee-tests
++++ b/modules/log2l-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/log2l-tests
++++ b/modules/log2l-tests
+@@ -8,7 +8,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/logb-ieee-tests
++++ b/modules/logb-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/logbf-ieee-tests
++++ b/modules/logbf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/logbl-ieee-tests
++++ b/modules/logbl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/logf-ieee-tests
++++ b/modules/logf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/logl-ieee-tests
++++ b/modules/logl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/logl-tests
++++ b/modules/logl-tests
+@@ -8,7 +8,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/math
++++ b/modules/math
+@@ -13,7 +13,7 @@ include_next
+ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+-float
++float-h
+ 
+ configure.ac:
+ gl_MATH_H
+--- a/modules/modf-ieee-tests
++++ b/modules/modf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/modff-ieee-tests
++++ b/modules/modff-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/modfl-ieee-tests
++++ b/modules/modfl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/modfl-tests
++++ b/modules/modfl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/printf-frexpl
++++ b/modules/printf-frexpl
+@@ -12,7 +12,7 @@ m4/ldexpl.m4
+ 
+ Depends-on:
+ printf-frexp    [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ math            [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fpucw           [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+--- a/modules/remainder-ieee-tests
++++ b/modules/remainder-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/remainderf-ieee-tests
++++ b/modules/remainderf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/remainderl
++++ b/modules/remainderl
+@@ -11,7 +11,7 @@ Depends-on:
+ math
+ extensions
+ remainder       [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isfinite        [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signbit         [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fabsl           [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/remainderl-ieee-tests
++++ b/modules/remainderl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/remainderl-tests
++++ b/modules/remainderl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/rint-ieee-tests
++++ b/modules/rint-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/rintf-ieee-tests
++++ b/modules/rintf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/rintl-ieee-tests
++++ b/modules/rintl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/rintl-tests
++++ b/modules/rintl-tests
+@@ -10,7 +10,7 @@ tests/randoml.c
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/round
++++ b/modules/round
+@@ -11,7 +11,7 @@ m4/ceil.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_ROUND = 0 || test $REPLACE_ROUND = 1]
++float-h         [test $HAVE_ROUND = 0 || test $REPLACE_ROUND = 1]
+ floor           [test $HAVE_ROUND = 0 || test $REPLACE_ROUND = 1]
+ 
+ configure.ac:
+--- a/modules/round-ieee-tests
++++ b/modules/round-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/roundf
++++ b/modules/roundf
+@@ -12,7 +12,7 @@ m4/ceilf.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_ROUNDF = 0 || test $REPLACE_ROUNDF = 1]
++float-h         [test $HAVE_ROUNDF = 0 || test $REPLACE_ROUNDF = 1]
+ 
+ configure.ac:
+ gl_FUNC_ROUNDF
+--- a/modules/roundf-ieee-tests
++++ b/modules/roundf-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/roundl
++++ b/modules/roundl
+@@ -13,7 +13,7 @@ Depends-on:
+ math
+ extensions
+ round           [{ test $HAVE_ROUNDL = 0 || test $REPLACE_ROUNDL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_ROUNDL = 0 || test $REPLACE_ROUNDL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_ROUNDL = 0 || test $REPLACE_ROUNDL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+ gl_FUNC_ROUNDL
+--- a/modules/roundl-ieee-tests
++++ b/modules/roundl-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/roundl-tests
++++ b/modules/roundl-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/setpayload
++++ b/modules/setpayload
+@@ -10,7 +10,7 @@ m4/nan-mips.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_SETPAYLOAD = 0]
++float-h         [test $HAVE_SETPAYLOAD = 0]
+ stdint          [test $HAVE_SETPAYLOAD = 0]
+ signed-nan      [test $HAVE_SETPAYLOAD = 0]
+ 
+--- a/modules/setpayloadf
++++ b/modules/setpayloadf
+@@ -10,7 +10,7 @@ m4/nan-mips.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_SETPAYLOADF = 0]
++float-h         [test $HAVE_SETPAYLOADF = 0]
+ stdint          [test $HAVE_SETPAYLOADF = 0]
+ signed-nan      [test $HAVE_SETPAYLOADF = 0]
+ 
+--- a/modules/setpayloadl
++++ b/modules/setpayloadl
+@@ -12,7 +12,7 @@ Depends-on:
+ math
+ extensions
+ setpayload      [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdint          [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signed-nan      [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ snan            [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/setpayloadsig
++++ b/modules/setpayloadsig
+@@ -9,7 +9,7 @@ m4/setpayloadsig.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_SETPAYLOADSIG = 0]
++float-h         [test $HAVE_SETPAYLOADSIG = 0]
+ stdint          [test $HAVE_SETPAYLOADSIG = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIG = 0]
+ 
+--- a/modules/setpayloadsigf
++++ b/modules/setpayloadsigf
+@@ -9,7 +9,7 @@ m4/setpayloadsig.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_SETPAYLOADSIGF = 0]
++float-h         [test $HAVE_SETPAYLOADSIGF = 0]
+ stdint          [test $HAVE_SETPAYLOADSIGF = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIGF = 0]
+ 
+--- a/modules/setpayloadsigl
++++ b/modules/setpayloadsigl
+@@ -11,7 +11,7 @@ Depends-on:
+ math
+ extensions
+ setpayloadsig   [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdint          [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+--- a/modules/signbit
++++ b/modules/signbit
+@@ -10,7 +10,7 @@ m4/signbit.m4
+ 
+ Depends-on:
+ math
+-float           [test $REPLACE_SIGNBIT = 1]
++float-h         [test $REPLACE_SIGNBIT = 1]
+ isnanf-nolibm   [test $REPLACE_SIGNBIT = 1]
+ isnand-nolibm   [test $REPLACE_SIGNBIT = 1]
+ isnanl-nolibm   [test $REPLACE_SIGNBIT = 1]
+--- a/modules/signbit-tests
++++ b/modules/signbit-tests
+@@ -5,7 +5,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ signed-nan
+ signed-snan
+ 
+--- a/modules/sinl
++++ b/modules/sinl
+@@ -12,7 +12,7 @@ Depends-on:
+ math
+ extensions
+ sin             [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floor           [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floorl          [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/snprintf-posix-tests
++++ b/modules/snprintf-posix-tests
+@@ -10,7 +10,7 @@ tests/macros.h
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/sprintf-posix-tests
++++ b/modules/sprintf-posix-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/sqrt-ieee-tests
++++ b/modules/sqrt-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/sqrtf-ieee-tests
++++ b/modules/sqrtf-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/sqrtl
++++ b/modules/sqrtl
+@@ -9,7 +9,7 @@ Depends-on:
+ math
+ extensions
+ sqrt            [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; }]
+-float           [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ frexpl          [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ ldexpl          [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/sqrtl-ieee-tests
++++ b/modules/sqrtl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/sqrtl-tests
++++ b/modules/sqrtl-tests
+@@ -7,7 +7,7 @@ tests/randoml.c
+ 
+ Depends-on:
+ fpucw
+-float
++float-h
+ 
+ configure.ac:
+ 
+--- a/modules/strtod-tests
++++ b/modules/strtod-tests
+@@ -10,7 +10,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ signbit
+ setlocale
+--- a/modules/strtof-tests
++++ b/modules/strtof-tests
+@@ -10,7 +10,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ signbit
+ setlocale
+--- a/modules/strtold-tests
++++ b/modules/strtold-tests
+@@ -10,7 +10,7 @@ m4/locale-fr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-float
++float-h
+ isnanl-nolibm
+ signbit
+ setlocale
+--- a/modules/tanl
++++ b/modules/tanl
+@@ -11,7 +11,7 @@ Depends-on:
+ math
+ extensions
+ tan             [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floor           [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ floorl          [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/totalorderl
++++ b/modules/totalorderl
+@@ -12,7 +12,7 @@ Depends-on:
+ math
+ extensions
+ totalorder      [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdbool         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signbit         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/totalordermagl
++++ b/modules/totalordermagl
+@@ -12,7 +12,7 @@ Depends-on:
+ math
+ extensions
+ totalordermag   [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdbool         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdint          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ verify          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/trunc
++++ b/modules/trunc
+@@ -8,7 +8,7 @@ m4/trunc.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_DECL_TRUNC = 0 || test $REPLACE_TRUNC = 1]
++float-h         [test $HAVE_DECL_TRUNC = 0 || test $REPLACE_TRUNC = 1]
+ 
+ configure.ac:
+ gl_FUNC_TRUNC
+--- a/modules/trunc-ieee-tests
++++ b/modules/trunc-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnand-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/trunc-tests
++++ b/modules/trunc-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnand-nolibm
+ nan
+ stdbool
+--- a/modules/truncf
++++ b/modules/truncf
+@@ -9,7 +9,7 @@ m4/truncf.m4
+ Depends-on:
+ math
+ extensions
+-float           [test $HAVE_DECL_TRUNCF = 0 || test $REPLACE_TRUNCF = 1]
++float-h         [test $HAVE_DECL_TRUNCF = 0 || test $REPLACE_TRUNCF = 1]
+ 
+ configure.ac:
+ gl_FUNC_TRUNCF
+--- a/modules/truncf-ieee-tests
++++ b/modules/truncf-ieee-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ isnanf-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/truncf-tests
++++ b/modules/truncf-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-float
++float-h
+ isnanf-nolibm
+ nan
+ stdbool
+--- a/modules/truncl
++++ b/modules/truncl
+@@ -10,7 +10,7 @@ Depends-on:
+ math
+ extensions
+ trunc           [{ test $HAVE_DECL_TRUNCL = 0 || test $REPLACE_TRUNCL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+-float           [{ test $HAVE_DECL_TRUNCL = 0 || test $REPLACE_TRUNCL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++float-h         [{ test $HAVE_DECL_TRUNCL = 0 || test $REPLACE_TRUNCL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+ gl_FUNC_TRUNCL
+--- a/modules/truncl-ieee-tests
++++ b/modules/truncl-ieee-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ signbit
+ 
+--- a/modules/truncl-tests
++++ b/modules/truncl-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ Depends-on:
+ fpucw
+ isnanl-nolibm
+-float
++float-h
+ nan
+ 
+ configure.ac:
+--- a/modules/vasnprintf
++++ b/modules/vasnprintf
+@@ -23,7 +23,7 @@ Depends-on:
+ stdio
+ alloca-opt
+ attribute
+-float
++float-h
+ free-posix
+ limits-h
+ stdint
+--- a/modules/vasnprintf-posix-tests
++++ b/modules/vasnprintf-posix-tests
+@@ -12,7 +12,7 @@ m4/codeset.m4
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ setlocale
+--- a/modules/vasnwprintf
++++ b/modules/vasnwprintf
+@@ -27,7 +27,7 @@ Depends-on:
+ stdio
+ alloca-opt
+ attribute
+-float
++float-h
+ free-posix
+ limits-h
+ stdint
+--- a/modules/vasnwprintf-posix-tests
++++ b/modules/vasnwprintf-posix-tests
+@@ -13,7 +13,7 @@ m4/codeset.m4
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ setlocale
+--- a/modules/vasprintf-posix-tests
++++ b/modules/vasprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/vsnprintf-posix-tests
++++ b/modules/vsnprintf-posix-tests
+@@ -10,7 +10,7 @@ tests/macros.h
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ 
+--- a/modules/vsprintf-posix-tests
++++ b/modules/vsprintf-posix-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ Depends-on:
+ c99
+ stdint
+-float
++float-h
+ nan
+ snan
+ 

@@ -1,0 +1,225 @@
+From 336a4d57d75c6349e9040383eb098d1112d31edd Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Tue, 24 Sep 2024 12:30:54 +0200
+Subject: [PATCH] sf-istream: New module.
+
+* lib/sf-istream.h: New file.
+* lib/sf-istream.c: New file.
+* modules/sf-istream: New file.
+* doc/posix-functions/fmemopen.texi: Mention the new module.
+---
+ ChangeLog                         |  8 +++
+ doc/posix-functions/fmemopen.texi |  3 +
+ lib/sf-istream.c                  | 96 +++++++++++++++++++++++++++++++
+ lib/sf-istream.h                  | 77 +++++++++++++++++++++++++
+ modules/sf-istream                | 23 ++++++++
+ 5 files changed, 207 insertions(+)
+ create mode 100644 lib/sf-istream.c
+ create mode 100644 lib/sf-istream.h
+ create mode 100644 modules/sf-istream
+
+--- /dev/null
++++ b/lib/sf-istream.c
+@@ -0,0 +1,96 @@
++/* A string or file based input stream.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2024.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "sf-istream.h"
++
++#include <stdlib.h>
++#include <string.h>
++
++void
++sf_istream_init_from_file (sf_istream_t *stream, FILE *fp)
++{
++  stream->fp = fp;
++  stream->input = NULL;
++  stream->input_end = NULL;
++}
++
++void
++sf_istream_init_from_string (sf_istream_t *stream,
++                             const char *input)
++{
++  stream->fp = NULL;
++  stream->input = input;
++  stream->input_end = input + strlen (input);
++}
++
++void
++sf_istream_init_from_string_desc (sf_istream_t *stream,
++                                  string_desc_t input)
++{
++  stream->fp = NULL;
++  stream->input = string_desc_data (input);
++  stream->input_end = stream->input + string_desc_length (input);
++}
++
++int
++sf_getc (sf_istream_t *stream)
++{
++  int c;
++
++  if (stream->fp != NULL)
++    c = getc (stream->fp);
++  else
++    {
++      if (stream->input == stream->input_end)
++        return EOF;
++      c = (unsigned char) *(stream->input++);
++    }
++
++  return c;
++}
++
++int
++sf_ferror (sf_istream_t *stream)
++{
++  return (stream->fp != NULL && ferror (stream->fp));
++}
++
++void
++sf_ungetc (sf_istream_t *stream, int c)
++{
++  if (c != EOF)
++    {
++      if (stream->fp != NULL)
++        ungetc (c, stream->fp);
++      else
++        {
++          stream->input--;
++          if (!(c == (unsigned char) *stream->input))
++            /* C was incorrect.  */
++            abort ();
++        }
++    }
++}
++
++void
++sf_free (sf_istream_t *stream)
++{
++}
+--- /dev/null
++++ b/lib/sf-istream.h
+@@ -0,0 +1,77 @@
++/* A string or file based input stream.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2024.  */
++
++#ifndef _SF_ISTREAM_H
++#define _SF_ISTREAM_H
++
++#include <stdio.h>
++
++#include "string-desc.h"
++
++/* An input stream type that can read from a file or from a string.  */
++typedef struct sf_istream sf_istream_t;
++struct sf_istream
++{
++  /* The input file stream, when reading from a file.  */
++  FILE *fp;
++  /* The input area, when reading from a string.  */
++  const char *input;
++  const char *input_end;
++};
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Initializes STREAM to read from FP.
++   FP must be a FILE stream open for reading.  */
++extern void sf_istream_init_from_file (sf_istream_t *stream, FILE *fp);
++/* Initializes STREAM to read from a NUL-terminated string INPUT.
++   The contents of INPUT must stay available and unchanged as long as STREAM
++   is in use.  */
++extern void sf_istream_init_from_string (sf_istream_t *stream,
++                                         const char *input);
++/* Initializes STREAM to read from a string INPUT.
++   The contents of INPUT must stay available and unchanged as long as STREAM
++   is in use.  Operations on STREAM will not modify the contents of INPUT.  */
++extern void sf_istream_init_from_string_desc (sf_istream_t *stream,
++                                              string_desc_t input);
++
++/* Reads a single 'char' from STREAM, and returns it as an 'unsigned char'.
++   Returns EOF when the end of stream was already reached.  */
++extern int sf_getc (sf_istream_t *stream);
++
++/* Tests whether STREAM has encountered an error.
++   You may want to call this function after sf_getc (stream) has
++   returned EOF; in other situations it is guaranteed to return 0.  */
++extern int sf_ferror (sf_istream_t *stream);
++
++/* Assuming that C was the last value returned by sf_getc (stream),
++   this call pushes back C onto the stream.
++   Only 1 character of pushback is guaranteed.  */
++extern void sf_ungetc (sf_istream_t *stream, int c);
++
++/* Frees all memory held by STREAM.
++   This call has no effect on the arguments provided to sf_istream_init_*.  */
++extern void sf_free (sf_istream_t *stream);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _SF_ISTREAM_H */
+--- /dev/null
++++ b/modules/sf-istream
+@@ -0,0 +1,23 @@
++Description:
++A string or file based input stream.
++
++Files:
++lib/sf-istream.h
++lib/sf-istream.c
++
++Depends-on:
++string-desc
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += sf-istream.c
++
++Include:
++"sf-istream.h"
++
++License:
++LGPL
++
++Maintainer:
++all

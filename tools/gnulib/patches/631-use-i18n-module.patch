@@ -1,0 +1,1191 @@
+From 6f6cc5e05960d59081b7e03b5faddfefce8e9eed Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 8 Dec 2024 18:05:31 +0100
+Subject: [PATCH] Use the translation domain "gnulib".
+
+* lib/argmatch.c (_): Use translation domain "gnulib".
+* lib/bitset/stats.c (_): Likewise.
+* lib/c-stack.c (_): Likewise.
+* lib/clean-temp.c (_): Likewise.
+* lib/clean-temp-simple.c (_): Likewise.
+* lib/closein.c (_): Likewise.
+* lib/closeout.c (_): Likewise.
+* lib/copy-acl.c (_): Likewise.
+* lib/copy-file.c (_): Likewise.
+* lib/csharpcomp.c (_): Likewise.
+* lib/csharpexec.c (_): Likewise.
+* lib/cygpath.c (_): Likewise.
+* lib/dfa.c (_): Likewise.
+* lib/error.c (_): Likewise.
+* lib/execute.c (_): Likewise.
+* lib/gai_strerror.c (_): Likewise.
+* lib/getaddrinfo.c (_): Likewise.
+* lib/getopt.c (_): Likewise.
+* lib/javacomp.c (_): Likewise.
+* lib/javaexec.c (_): Likewise.
+* lib/javaversion.c (_): Likewise.
+* lib/mkdir-p.c (_): Likewise.
+* lib/obstack.c (_) [!_LIBC]: Likewise.
+* lib/openat-die.c (_): Likewise.
+* lib/os2-spawn.c (_): Likewise.
+* lib/pagealign_alloc.c (_): Likewise.
+* lib/parse-datetime.y (_): Likewise.
+* lib/pipe-filter-gi.c (_): Likewise.
+* lib/pipe-filter-ii.c (_): Likewise.
+* lib/quotearg.c (_): Likewise.
+* lib/regex_internal.h (_): Likewise.
+* lib/rpmatch.c (_): Likewise.
+* lib/set-acl.c (_): Likewise.
+* lib/sigpipe-die.c (_): Likewise.
+* lib/spawn-pipe.c (_): Likewise.
+* lib/strsignal.c (_) [!_LIBC]: Likewise.
+* lib/timevar.c (_): Likewise.
+* lib/unicodeio.c (_): Likewise.
+* lib/userspec.c (_): Likewise.
+* lib/version-etc.c (_): Likewise.
+* lib/wait-process.c (_): Likewise.
+* lib/xalloc-die.c (_): Likewise.
+* lib/xbinary-io.c (_): Likewise.
+* lib/xfreopen.c (_): Likewise.
+* lib/xmemcoll.c (_): Likewise.
+* lib/xsetenv.c (_): Likewise.
+* lib/xstdopen.c (_): Likewise.
+* lib/xstrerror.c (_): Likewise.
+* modules/acl (Depends-on): Add gnulib-i18n.
+* modules/argmatch (Depends-on): Likewise.
+* modules/bitset (Depends-on): Likewise.
+* modules/c-stack (Depends-on): Likewise.
+* modules/clean-temp (Depends-on): Likewise.
+* modules/clean-temp-simple (Depends-on): Likewise.
+* modules/closein (Depends-on): Likewise.
+* modules/closeout (Depends-on): Likewise.
+* modules/copy-file (Depends-on): Likewise.
+* modules/csharpcomp (Depends-on): Likewise.
+* modules/csharpexec (Depends-on): Likewise.
+* modules/cygpath (Depends-on): Likewise.
+* modules/dfa (Depends-on): Likewise.
+* modules/error (Depends-on): Likewise.
+* modules/execute (Depends-on): Likewise.
+* modules/getaddrinfo (Depends-on): Likewise.
+* modules/getopt-posix (Depends-on): Likewise.
+* modules/javacomp (Depends-on): Likewise.
+* modules/javaexec (Depends-on): Likewise.
+* modules/javaversion (Depends-on): Likewise.
+* modules/mkdir-p (Depends-on): Likewise.
+* modules/obstack (Depends-on): Likewise.
+* modules/openat-die (Depends-on): Likewise.
+* modules/pagealign_alloc (Depends-on): Likewise.
+* modules/parse-datetime (Depends-on): Likewise.
+* modules/pipe-filter-gi (Depends-on): Likewise.
+* modules/pipe-filter-ii (Depends-on): Likewise.
+* modules/quotearg (Depends-on): Likewise.
+* modules/regex (Depends-on): Likewise.
+* modules/rpmatch (Depends-on): Likewise.
+* modules/sigpipe-die (Depends-on): Likewise.
+* modules/spawn-pipe (Depends-on): Likewise.
+* modules/strsignal (Depends-on): Likewise.
+* modules/timevar (Depends-on): Likewise.
+* modules/unicodeio (Depends-on): Likewise.
+* modules/userspec (Depends-on): Likewise.
+* modules/version-etc (Depends-on): Likewise.
+* modules/wait-process (Depends-on): Likewise.
+* modules/xalloc-die (Depends-on): Likewise.
+* modules/xbinary-io (Depends-on): Likewise.
+* modules/xfreopen (Depends-on): Likewise.
+* modules/xmemcoll (Depends-on): Likewise.
+* modules/xsetenv (Depends-on): Likewise.
+* modules/xstdopen (Depends-on): Likewise.
+* modules/xstrerror (Depends-on): Likewise.
+---
+ ChangeLog                 | 95 +++++++++++++++++++++++++++++++++++++++
+ lib/argmatch.c            |  2 +-
+ lib/bitset/stats.c        |  2 +-
+ lib/c-stack.c             |  2 +-
+ lib/clean-temp-simple.c   |  2 +-
+ lib/clean-temp.c          |  2 +-
+ lib/closein.c             |  2 +-
+ lib/closeout.c            |  2 +-
+ lib/copy-acl.c            |  2 +-
+ lib/copy-file.c           |  2 +-
+ lib/csharpcomp.c          |  2 +-
+ lib/csharpexec.c          |  2 +-
+ lib/cygpath.c             |  2 +-
+ lib/dfa.c                 |  2 +-
+ lib/error.c               |  2 +-
+ lib/execute.c             |  2 +-
+ lib/gai_strerror.c        |  4 +-
+ lib/getaddrinfo.c         |  4 +-
+ lib/getopt.c              |  2 +-
+ lib/javacomp.c            |  2 +-
+ lib/javaexec.c            |  2 +-
+ lib/javaversion.c         |  2 +-
+ lib/mkdir-p.c             |  2 +-
+ lib/obstack.c             |  9 ++--
+ lib/openat-die.c          |  2 +-
+ lib/os2-spawn.c           |  2 +-
+ lib/pagealign_alloc.c     |  2 +-
+ lib/parse-datetime.y      |  2 +-
+ lib/pipe-filter-gi.c      |  2 +-
+ lib/pipe-filter-ii.c      |  2 +-
+ lib/quotearg.c            |  2 +-
+ lib/regex_internal.h      |  4 +-
+ lib/rpmatch.c             |  2 +-
+ lib/set-acl.c             |  2 +-
+ lib/sigpipe-die.c         |  2 +-
+ lib/spawn-pipe.c          |  2 +-
+ lib/strsignal.c           |  2 +-
+ lib/timevar.c             |  2 +-
+ lib/unicodeio.c           |  2 +-
+ lib/userspec.c            |  2 +-
+ lib/version-etc.c         |  2 +-
+ lib/wait-process.c        |  2 +-
+ lib/xalloc-die.c          |  2 +-
+ lib/xbinary-io.c          |  2 +-
+ lib/xfreopen.c            |  2 +-
+ lib/xmemcoll.c            |  2 +-
+ lib/xsetenv.c             |  2 +-
+ lib/xstdopen.c            |  2 +-
+ lib/xstrerror.c           |  2 +-
+ modules/acl               |  1 +
+ modules/argmatch          |  1 +
+ modules/bitset            |  1 +
+ modules/c-stack           |  1 +
+ modules/clean-temp        |  1 +
+ modules/clean-temp-simple |  1 +
+ modules/closein           |  1 +
+ modules/closeout          |  1 +
+ modules/copy-file         |  1 +
+ modules/csharpcomp        |  1 +
+ modules/csharpexec        |  1 +
+ modules/cygpath           |  1 +
+ modules/dfa               |  1 +
+ modules/error             |  1 +
+ modules/execute           |  1 +
+ modules/getaddrinfo       |  1 +
+ modules/getopt-posix      |  1 +
+ modules/javacomp          |  1 +
+ modules/javaexec          |  1 +
+ modules/javaversion       |  1 +
+ modules/mkdir-p           |  1 +
+ modules/obstack           |  1 +
+ modules/openat-die        |  1 +
+ modules/pagealign_alloc   |  1 +
+ modules/parse-datetime    |  1 +
+ modules/pipe-filter-gi    |  1 +
+ modules/pipe-filter-ii    |  1 +
+ modules/quotearg          |  1 +
+ modules/regex             |  1 +
+ modules/rpmatch           |  1 +
+ modules/sigpipe-die       |  1 +
+ modules/spawn-pipe        |  1 +
+ modules/strsignal         |  1 +
+ modules/timevar           |  1 +
+ modules/unicodeio         |  1 +
+ modules/userspec          |  1 +
+ modules/version-etc       |  1 +
+ modules/wait-process      |  1 +
+ modules/xalloc-die        |  1 +
+ modules/xbinary-io        |  1 +
+ modules/xfreopen          |  1 +
+ modules/xmemcoll          |  1 +
+ modules/xsetenv           |  1 +
+ modules/xstdopen          |  1 +
+ modules/xstrerror         |  1 +
+ 94 files changed, 197 insertions(+), 52 deletions(-)
+
+--- a/lib/argmatch.c
++++ b/lib/argmatch.c
+@@ -28,7 +28,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include <error.h>
+ #include "quotearg.h"
+--- a/lib/bitset/stats.c
++++ b/lib/bitset/stats.c
+@@ -33,7 +33,7 @@
+ #include <string.h>
+ 
+ #include "gettext.h"
+-#define _(Msgid)  gettext (Msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "bitset/array.h"
+ #include "bitset/base.h"
+--- a/lib/c-stack.c
++++ b/lib/c-stack.c
+@@ -56,7 +56,7 @@
+ #include "ignore-value.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* Here we need the original abort() function.  (Printing a stack trace
+    from within a signal handler is not going to work in most cases anyway.)  */
+--- a/lib/clean-temp-simple.c
++++ b/lib/clean-temp-simple.c
+@@ -37,7 +37,7 @@
+ #include "gl_linkedhash_list.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Lock that protects the file_cleanup_list from concurrent modification in
+--- a/lib/clean-temp.c
++++ b/lib/clean-temp.c
+@@ -65,7 +65,7 @@
+ # include "stdio--.h"
+ #endif
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* GNU Hurd doesn't have PATH_MAX.  Use a fallback.
+    Temporary directory names are usually not that long.  */
+--- a/lib/closein.c
++++ b/lib/closein.c
+@@ -24,7 +24,7 @@
+ #include <unistd.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "close-stream.h"
+ #include "closeout.h"
+--- a/lib/closeout.c
++++ b/lib/closeout.c
+@@ -25,7 +25,7 @@
+ #include <unistd.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "close-stream.h"
+ #include <error.h>
+--- a/lib/copy-acl.c
++++ b/lib/copy-acl.c
+@@ -26,7 +26,7 @@
+ #include "quote.h"
+ #include <error.h>
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Copy access control lists from one file to another. If SOURCE_DESC is
+--- a/lib/copy-file.c
++++ b/lib/copy-file.c
+@@ -39,7 +39,7 @@
+ #include "quote.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ enum { IO_SIZE = 32 * 1024 };
+ 
+--- a/lib/csharpcomp.c
++++ b/lib/csharpcomp.c
+@@ -39,7 +39,7 @@
+ #include "xvasprintf.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Survey of C# compilers.
+--- a/lib/csharpexec.c
++++ b/lib/csharpexec.c
+@@ -76,7 +76,7 @@
+ #undef new_classpath
+ #undef CLASSPATHVAR
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Survey of CIL interpreters.
+--- a/lib/cygpath.c
++++ b/lib/cygpath.c
+@@ -26,7 +26,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #ifdef __CYGWIN__
+ 
+--- a/lib/dfa.c
++++ b/lib/dfa.c
+@@ -41,7 +41,7 @@
+ #include "localeinfo.h"
+ 
+ #include "gettext.h"
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #if GAWK
+ /* Use ISO C 99 API.  */
+--- a/lib/error.c
++++ b/lib/error.c
+@@ -31,7 +31,7 @@
+ 
+ #if !_LIBC && ENABLE_NLS
+ # include "gettext.h"
+-# define _(msgid) gettext (msgid)
++# define _(msgid) dgettext ("gnulib", msgid)
+ #endif
+ 
+ #ifdef _LIBC
+--- a/lib/execute.c
++++ b/lib/execute.c
+@@ -39,7 +39,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Choice of implementation for native Windows.
+--- a/lib/gai_strerror.c
++++ b/lib/gai_strerror.c
+@@ -27,8 +27,8 @@
+ # include <libintl.h>
+ #else
+ # include "gettext.h"
+-# define _(String) gettext (String)
+-# define N_(String) String
++# define _(msgid) dgettext ("gnulib", msgid)
++# define N_(msgid) msgid
+ #endif
+ 
+ #if HAVE_DECL_GAI_STRERROR
+--- a/lib/getaddrinfo.c
++++ b/lib/getaddrinfo.c
+@@ -40,8 +40,8 @@
+ #include <stdio.h>
+ 
+ #include "gettext.h"
+-#define _(String) gettext (String)
+-#define N_(String) String
++#define _(msgid) dgettext ("gnulib", msgid)
++#define N_(msgid) msgid
+ 
+ /* BeOS has AF_INET, but not PF_INET.  */
+ #ifndef PF_INET
+--- a/lib/getopt.c
++++ b/lib/getopt.c
+@@ -42,7 +42,7 @@
+ # define funlockfile(fp) _IO_funlockfile (fp)
+ #else
+ # include "gettext.h"
+-# define _(msgid) gettext (msgid)
++# define _(msgid) dgettext ("gnulib", msgid)
+ /* When used standalone, flockfile and funlockfile might not be
+    available.  */
+ # if (!defined _POSIX_THREAD_SAFE_FUNCTIONS \
+--- a/lib/javacomp.c
++++ b/lib/javacomp.c
+@@ -50,7 +50,7 @@
+ #include "c-strstr.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Survey of Java compilers.
+--- a/lib/javaexec.c
++++ b/lib/javaexec.c
+@@ -35,7 +35,7 @@
+ #include <error.h>
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Survey of Java virtual machines.
+--- a/lib/javaversion.c
++++ b/lib/javaversion.c
+@@ -37,7 +37,7 @@
+ #include <error.h>
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* Get PKGDATADIR.  */
+ #include "configmake.h"
+--- a/lib/mkdir-p.c
++++ b/lib/mkdir-p.c
+@@ -27,7 +27,7 @@
+ #include <unistd.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "dirchownmod.h"
+ #include "dirname.h"
+--- a/lib/obstack.c
++++ b/lib/obstack.c
+@@ -294,11 +294,14 @@ int obstack_exit_failure = EXIT_FAILURE;
+ 
+ # ifdef _LIBC
+ #  include <libintl.h>
++#  ifndef _
++#   define _(msgid) gettext (msgid)
++#  endif
+ # else
+ #  include "gettext.h"
+-# endif
+-# ifndef _
+-#  define _(msgid) gettext (msgid)
++#  ifndef _
++#   define _(msgid) dgettext ("gnulib", msgid)
++#  endif
+ # endif
+ 
+ # ifdef _LIBC
+--- a/lib/openat-die.c
++++ b/lib/openat-die.c
+@@ -28,7 +28,7 @@
+ #include "exitfail.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ _Noreturn void
+ openat_save_fail (int errnum)
+--- a/lib/os2-spawn.c
++++ b/lib/os2-spawn.c
+@@ -38,7 +38,7 @@
+ #include <error.h>
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Duplicates a file handle, making the copy uninheritable.
+--- a/lib/pagealign_alloc.c
++++ b/lib/pagealign_alloc.c
+@@ -35,7 +35,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #if HAVE_MMAP
+ /* Define MAP_FILE when it isn't otherwise.  */
+--- a/lib/parse-datetime.y
++++ b/lib/parse-datetime.y
+@@ -61,7 +61,7 @@
+ 
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* Bison's skeleton tests _STDLIB_H, while some stdlib.h headers
+    use _STDLIB_H_ as witness.  Map the latter to the one bison uses.  */
+--- a/lib/pipe-filter-gi.c
++++ b/lib/pipe-filter-gi.c
+@@ -39,7 +39,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "pipe-filter-aux.h"
+ 
+--- a/lib/pipe-filter-ii.c
++++ b/lib/pipe-filter-ii.c
+@@ -158,7 +158,7 @@ WaitForMultipleObjects (DWORD nCount, co
+ #include "wait-process.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include "pipe-filter-aux.h"
+ 
+--- a/lib/quotearg.c
++++ b/lib/quotearg.c
+@@ -45,7 +45,7 @@
+ #include <wchar.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ #define N_(msgid) msgid
+ 
+ #ifndef SIZE_MAX
+--- a/lib/regex_internal.h
++++ b/lib/regex_internal.h
+@@ -100,10 +100,12 @@
+ /* This is for other GNU distributions with internationalized messages.  */
+ #if (HAVE_LIBINTL_H && ENABLE_NLS) || defined _LIBC
+ # include <libintl.h>
++# undef gettext
+ # ifdef _LIBC
+-#  undef gettext
+ #  define gettext(msgid) \
+   __dcgettext (_libc_intl_domainname, msgid, LC_MESSAGES)
++# else
++#  define gettext(msgid) dgettext ("gnulib", msgid)
+ # endif
+ #else
+ # undef gettext
+--- a/lib/rpmatch.c
++++ b/lib/rpmatch.c
+@@ -33,7 +33,7 @@
+ # endif
+ # include <regex.h>
+ # include "gettext.h"
+-# define _(msgid) gettext (msgid)
++# define _(msgid) dgettext ("gnulib", msgid)
+ # define N_(msgid) gettext_noop (msgid)
+ 
+ # if HAVE_LANGINFO_YESEXPR
+--- a/lib/set-acl.c
++++ b/lib/set-acl.c
+@@ -26,7 +26,7 @@
+ #include "quote.h"
+ #include <error.h>
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* Set the access control lists of a file to match *exactly* MODE (this might
+    remove inherited ACLs). Note chmod() tends to honor inherited/default
+--- a/lib/sigpipe-die.c
++++ b/lib/sigpipe-die.c
+@@ -28,7 +28,7 @@
+ #include "exitfail.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ void
+ sigpipe_die (void)
+--- a/lib/spawn-pipe.c
++++ b/lib/spawn-pipe.c
+@@ -42,7 +42,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Choice of implementation for native Windows.
+--- a/lib/strsignal.c
++++ b/lib/strsignal.c
+@@ -30,7 +30,7 @@
+ # include <libintl.h>
+ #else /* !_LIBC */
+ # include "gettext.h"
+-# define _(msgid) gettext (msgid)
++# define _(msgid) dgettext ("gnulib", msgid)
+ # define N_(msgid) gettext_noop (msgid)
+ #endif /* _LIBC */
+ 
+--- a/lib/timevar.c
++++ b/lib/timevar.c
+@@ -32,7 +32,7 @@
+ 
+ #include "gethrxtime.h"
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ #include "xalloc.h"
+ 
+ /* See timevar.h for an explanation of timing variables.  */
+--- a/lib/unicodeio.c
++++ b/lib/unicodeio.c
+@@ -33,7 +33,7 @@
+ #include <error.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ #define N_(msgid) msgid
+ 
+ #include "localcharset.h"
+--- a/lib/userspec.c
++++ b/lib/userspec.c
+@@ -43,7 +43,7 @@
+ #include "xstrtol.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ #define N_(msgid) msgid
+ 
+ #ifndef HAVE_ENDGRENT
+--- a/lib/version-etc.c
++++ b/lib/version-etc.c
+@@ -29,7 +29,7 @@
+ #endif
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ /* If you use AM_INIT_AUTOMAKE's no-define option,
+    PACKAGE is not defined.  Use PACKAGE_TARNAME instead.  */
+--- a/lib/wait-process.c
++++ b/lib/wait-process.c
+@@ -34,7 +34,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
+ 
+--- a/lib/xalloc-die.c
++++ b/lib/xalloc-die.c
+@@ -26,7 +26,7 @@
+ #include "exitfail.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ void
+ xalloc_die (void)
+--- a/lib/xbinary-io.c
++++ b/lib/xbinary-io.c
+@@ -25,7 +25,7 @@
+ #include "verify.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #if O_BINARY
+ 
+--- a/lib/xfreopen.c
++++ b/lib/xfreopen.c
+@@ -23,7 +23,7 @@
+ #include "quote.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ void
+ xfreopen (char const *filename, char const *mode, FILE *fp)
+--- a/lib/xmemcoll.c
++++ b/lib/xmemcoll.c
+@@ -23,7 +23,7 @@
+ #include <stdlib.h>
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ #include <error.h>
+ #include "exitfail.h"
+--- a/lib/xsetenv.c
++++ b/lib/xsetenv.c
+@@ -24,7 +24,7 @@
+ #include <error.h>
+ #include "gettext.h"
+ 
+-#define _(str) gettext (str)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ 
+ /* Set NAME to VALUE in the environment.
+--- a/lib/xstdopen.c
++++ b/lib/xstdopen.c
+@@ -24,7 +24,7 @@
+ #include "exitfail.h"
+ 
+ #include "gettext.h"
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ void
+ xstdopen (void)
+--- a/lib/xstrerror.c
++++ b/lib/xstrerror.c
+@@ -25,7 +25,7 @@
+ #include "xalloc.h"
+ #include "gettext.h"
+ 
+-#define _(msgid) gettext (msgid)
++#define _(msgid) dgettext ("gnulib", msgid)
+ 
+ char *
+ xstrerror (const char *message, int errnum)
+--- a/modules/acl
++++ b/modules/acl
+@@ -8,6 +8,7 @@ lib/set-acl.c
+ Depends-on:
+ error
+ gettext-h
++gnulib-i18n
+ qcopy-acl
+ qset-acl
+ quote
+--- a/modules/argmatch
++++ b/modules/argmatch
+@@ -12,6 +12,7 @@ error
+ exitfail
+ getprogname
+ gettext-h
++gnulib-i18n
+ memcmp
+ quote
+ quotearg
+--- a/modules/bitset
++++ b/modules/bitset
+@@ -22,6 +22,7 @@ c99
+ ffsl
+ fopen-gnu
+ gettext-h
++gnulib-i18n
+ integer_length_l
+ obstack
+ stdbool
+--- a/modules/c-stack
++++ b/modules/c-stack
+@@ -12,6 +12,7 @@ errno
+ exitfail
+ getprogname
+ gettext-h
++gnulib-i18n
+ idx
+ ignore-value
+ inttypes
+--- a/modules/clean-temp
++++ b/modules/clean-temp
+@@ -28,6 +28,7 @@ linkedhash-list
+ linked-list
+ xlist
+ gettext-h
++gnulib-i18n
+ 
+ configure.ac:
+ 
+--- a/modules/clean-temp-simple
++++ b/modules/clean-temp-simple
+@@ -19,6 +19,7 @@ fatal-signal
+ rmdir
+ linkedhash-list
+ gettext-h
++gnulib-i18n
+ 
+ configure.ac:
+ AC_DEFINE([SIGNAL_SAFE_LIST], [1], [Define if lists must be signal-safe.])
+--- a/modules/closein
++++ b/modules/closein
+@@ -10,6 +10,7 @@ closeout
+ freadahead
+ fflush
+ gettext-h
++gnulib-i18n
+ stdbool
+ unistd
+ 
+--- a/modules/closeout
++++ b/modules/closeout
+@@ -8,6 +8,7 @@ lib/closeout.c
+ Depends-on:
+ close-stream
+ gettext-h
++gnulib-i18n
+ error
+ quotearg
+ exitfail
+--- a/modules/copy-file
++++ b/modules/copy-file
+@@ -16,6 +16,7 @@ error
+ fstat
+ full-write
+ gettext-h
++gnulib-i18n
+ ignore-value
+ open
+ qcopy-acl
+--- a/modules/csharpcomp
++++ b/modules/csharpcomp
+@@ -21,6 +21,7 @@ safe-read
+ xmalloca
+ xvasprintf
+ gettext-h
++gnulib-i18n
+ memcmp
+ csharpcomp-script
+ 
+--- a/modules/csharpexec
++++ b/modules/csharpexec
+@@ -28,6 +28,7 @@ copy-file
+ clean-temp-simple
+ clean-temp
+ gettext-h
++gnulib-i18n
+ csharpexec-script
+ 
+ configure.ac:
+--- a/modules/cygpath
++++ b/modules/cygpath
+@@ -9,6 +9,7 @@ Depends-on:
+ xalloc
+ free-posix
+ gettext-h
++gnulib-i18n
+ 
+ configure.ac:
+ 
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -19,6 +19,7 @@ c99
+ ctype
+ flexmember
+ gettext-h
++gnulib-i18n
+ idx
+ locale
+ mbrtoc32-regular
+--- a/modules/error
++++ b/modules/error
+@@ -11,6 +11,7 @@ stddef
+ stdio
+ getprogname
+ gettext-h       [test $COMPILE_ERROR_C = 1]
++gnulib-i18n     [test $COMPILE_ERROR_C = 1]
+ strerror        [test $COMPILE_ERROR_C = 1]
+ unistd          [test $COMPILE_ERROR_C = 1]
+ msvc-nothrow    [test $COMPILE_ERROR_C = 1]
+--- a/modules/execute
++++ b/modules/execute
+@@ -17,6 +17,7 @@ findprog-in
+ free-posix
+ msvc-nothrow
+ gettext-h
++gnulib-i18n
+ spawn
+ posix_spawn
+ posix_spawnp
+--- a/modules/getaddrinfo
++++ b/modules/getaddrinfo
+@@ -11,6 +11,7 @@ netdb
+ sys_socket
+ extensions
+ gettext-h       [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1 || test $HAVE_DECL_GAI_STRERROR = 0 || test $REPLACE_GAI_STRERROR = 1]
++gnulib-i18n     [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1 || test $HAVE_DECL_GAI_STRERROR = 0 || test $REPLACE_GAI_STRERROR = 1]
+ inet_ntop       [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ snprintf        [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ stdbool         [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+--- a/modules/getopt-posix
++++ b/modules/getopt-posix
+@@ -21,6 +21,7 @@ extensions
+ include_next
+ gen-header
+ gettext-h       [test $REPLACE_GETOPT = 1]
++gnulib-i18n     [test $REPLACE_GETOPT = 1]
+ snippet/arg-nonnull
+ 
+ configure.ac:
+--- a/modules/javacomp
++++ b/modules/javacomp
+@@ -31,6 +31,7 @@ xvasprintf
+ verify
+ c-strstr
+ gettext-h
++gnulib-i18n
+ javacomp-script
+ sh-filename
+ 
+--- a/modules/javaexec
++++ b/modules/javaexec
+@@ -16,6 +16,7 @@ xalloc
+ xmalloca
+ error
+ gettext-h
++gnulib-i18n
+ javaexec-script
+ sh-filename
+ 
+--- a/modules/javaversion
++++ b/modules/javaversion
+@@ -14,6 +14,7 @@ spawn-pipe
+ wait-process
+ getline
+ gettext-h
++gnulib-i18n
+ configmake
+ 
+ configure.ac:
+--- a/modules/mkdir-p
++++ b/modules/mkdir-p
+@@ -13,6 +13,7 @@ error
+ fcntl-h
+ fstat
+ gettext-h
++gnulib-i18n
+ lchmod
+ lchown
+ mkancesdirs
+--- a/modules/obstack
++++ b/modules/obstack
+@@ -10,6 +10,7 @@ Depends-on:
+ gen-header
+ alignof         [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ gettext-h       [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
++gnulib-i18n     [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ exitfail        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ stdint          [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ stdlib          [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+--- a/modules/openat-die
++++ b/modules/openat-die
+@@ -9,6 +9,7 @@ openat-h
+ error
+ exitfail
+ gettext-h
++gnulib-i18n
+ snippet/_Noreturn
+ 
+ configure.ac:
+--- a/modules/pagealign_alloc
++++ b/modules/pagealign_alloc
+@@ -12,6 +12,7 @@ error
+ extensions
+ getpagesize
+ gettext-h
++gnulib-i18n
+ open
+ stdlib
+ xalloc
+--- a/modules/parse-datetime
++++ b/modules/parse-datetime
+@@ -16,6 +16,7 @@ c-ctype
+ stdbool
+ gettime
+ gettext-h
++gnulib-i18n
+ idx
+ intprops
+ inttypes
+--- a/modules/pipe-filter-gi
++++ b/modules/pipe-filter-gi
+@@ -15,6 +15,7 @@ extern-inline
+ fcntl-h
+ free-posix
+ gettext-h
++gnulib-i18n
+ stdbool
+ stdint
+ stdlib
+--- a/modules/pipe-filter-ii
++++ b/modules/pipe-filter-ii
+@@ -14,6 +14,7 @@ error
+ extern-inline
+ fcntl-h
+ gettext-h
++gnulib-i18n
+ stdbool
+ stdint
+ stdlib
+--- a/modules/quotearg
++++ b/modules/quotearg
+@@ -13,6 +13,7 @@ c-strcaseeq
+ c32isprint
+ extensions
+ gettext-h
++gnulib-i18n
+ mbszero
+ mbrtoc32
+ mbsinit
+--- a/modules/regex
++++ b/modules/regex
+@@ -24,6 +24,7 @@ attribute               [test $ac_use_in
+ btowc                   [test $ac_use_included_regex = yes]
+ builtin-expect          [test $ac_use_included_regex = yes]
+ glibc-internal/dynarray [test $ac_use_included_regex = yes]
++gnulib-i18n             [test $ac_use_included_regex = yes]
+ intprops                [test $ac_use_included_regex = yes]
+ iswctype                [test $ac_use_included_regex = yes]
+ langinfo                [test $ac_use_included_regex = yes]
+--- a/modules/rpmatch
++++ b/modules/rpmatch
+@@ -10,6 +10,7 @@ stdlib
+ extensions
+ stdbool         [test $HAVE_RPMATCH = 0]
+ gettext-h       [test $HAVE_RPMATCH = 0]
++gnulib-i18n     [test $HAVE_RPMATCH = 0]
+ regex           [test $HAVE_RPMATCH = 0]
+ strdup          [test $HAVE_RPMATCH = 0]
+ 
+--- a/modules/sigpipe-die
++++ b/modules/sigpipe-die
+@@ -8,6 +8,7 @@ lib/sigpipe-die.c
+ Depends-on:
+ error
+ gettext-h
++gnulib-i18n
+ exitfail
+ sigpipe
+ sigprocmask
+--- a/modules/spawn-pipe
++++ b/modules/spawn-pipe
+@@ -18,6 +18,7 @@ filename
+ findprog-in
+ free-posix
+ gettext-h
++gnulib-i18n
+ msvc-nothrow
+ open
+ pipe2
+--- a/modules/strsignal
++++ b/modules/strsignal
+@@ -10,6 +10,7 @@ Depends-on:
+ string
+ extensions
+ gettext-h       [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
++gnulib-i18n     [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+ lock            [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+ tls             [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+ snprintf        [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+--- a/modules/timevar
++++ b/modules/timevar
+@@ -10,6 +10,7 @@ c99
+ gethrxtime
+ getrusage
+ gettext-h
++gnulib-i18n
+ stdlib
+ sys_time
+ sys_times
+--- a/modules/unicodeio
++++ b/modules/unicodeio
+@@ -12,6 +12,7 @@ unistr/u8-uctomb
+ iconv
+ iconv_open
+ gettext-h
++gnulib-i18n
+ localcharset
+ error
+ stdio
+--- a/modules/userspec
++++ b/modules/userspec
+@@ -12,6 +12,7 @@ xalloc
+ xstrtol
+ strdup
+ gettext-h
++gnulib-i18n
+ intprops
+ inttostr
+ stdbool
+--- a/modules/version-etc
++++ b/modules/version-etc
+@@ -8,6 +8,7 @@ m4/version-etc.m4
+ 
+ Depends-on:
+ gettext-h
++gnulib-i18n
+ stdarg
+ 
+ configure.ac:
+--- a/modules/wait-process
++++ b/modules/wait-process
+@@ -13,6 +13,7 @@ error
+ xalloc
+ xalloc-die
+ gettext-h
++gnulib-i18n
+ stdbool
+ stdlib
+ sys_wait
+--- a/modules/xalloc-die
++++ b/modules/xalloc-die
+@@ -9,6 +9,7 @@ Depends-on:
+ error
+ extern-inline
+ gettext-h
++gnulib-i18n
+ exitfail
+ 
+ configure.ac:
+--- a/modules/xbinary-io
++++ b/modules/xbinary-io
+@@ -11,6 +11,7 @@ error
+ exitfail
+ extern-inline
+ gettext-h
++gnulib-i18n
+ stdbool
+ verify
+ 
+--- a/modules/xfreopen
++++ b/modules/xfreopen
+@@ -10,6 +10,7 @@ error
+ exitfail
+ freopen
+ gettext-h
++gnulib-i18n
+ quote
+ 
+ configure.ac:
+--- a/modules/xmemcoll
++++ b/modules/xmemcoll
+@@ -8,6 +8,7 @@ lib/xmemcoll.c
+ Depends-on:
+ memcoll
+ gettext-h
++gnulib-i18n
+ error
+ quotearg
+ exitfail
+--- a/modules/xsetenv
++++ b/modules/xsetenv
+@@ -11,6 +11,7 @@ setenv
+ unsetenv
+ error
+ gettext-h
++gnulib-i18n
+ stdlib
+ 
+ configure.ac:
+--- a/modules/xstdopen
++++ b/modules/xstdopen
+@@ -9,6 +9,7 @@ Depends-on:
+ stdopen
+ error
+ gettext-h
++gnulib-i18n
+ exitfail
+ 
+ configure.ac:
+--- a/modules/xstrerror
++++ b/modules/xstrerror
+@@ -8,6 +8,7 @@ lib/xstrerror.c
+ 
+ Depends-on:
+ gettext-h
++gnulib-i18n
+ strerror_r-posix
+ xalloc
+ xvasprintf
