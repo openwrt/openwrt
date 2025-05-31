@@ -5,10 +5,12 @@ PKG_CPE_ID:=cpe:/a:gnu:$(PKG_NAME)
 PKG_VERSION:=320db6ee7a3cd44ee77f09d30c8a9002159beb4b# # stable-202407 in 202505
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.savannah.gnu.org/cgit/$(PKG_NAME).git/snapshot
-PKG_HASH:=0be734e8c5f88e259bd593d63da2be275b93aedb551ccdcd78db9825bddeb94e
+PKG_SOURCE_URL:=https://gitweb.git.savannah.gnu.org/gitweb/?p=$(PKG_NAME).git;a=snapshot;h=$(word 1,$(PKG_VERSION));sf=tgz
+PKG_HASH:=b441b808db4d7122a8770256f6637227627fcef391c84632ac91e98f26bc03ad
 
 include $(INCLUDE_DIR)/host-build.mk
+
+TAR_OPTIONS := -C $(HOST_BUILD_DIR) --strip-components=1 $(TAR_OPTIONS)
 
 define Host/Configure
 endef
