@@ -1,0 +1,557 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ *  Copyright (C) 2017 Christian Mehlis <christian@m3hlis.de>
+ *  Copyright (C) 2018 Mathias Kresin <dev@kresin.me>
+ *  All rights reserved.
+ */
+
+#include "qcom-ipq8064-v1.0.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	compatible = "compex,wpq864", "qcom,ipq8064";
+	model = "Compex WPQ864";
+
+	aliases {
+		mdio-gpio0 = &mdio0;
+		ethernet0 = &gmac1;
+		ethernet1 = &gmac0;
+
+		led-boot = &led_pass;
+		led-failsafe = &led_fail;
+		led-running = &led_pass;
+		led-upgrade = &led_pass;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		rss4 {
+			label = "green:rss4";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		rss3 {
+			label = "green:rss3";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
+		};
+
+		rss2 {
+			label = "orange:rss2";
+			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		rss1 {
+			label = "red:rss1";
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_pass: pass {
+			label = "green:pass";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_fail: fail {
+			label = "green:fail";
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb-pcie {
+			label = "green:usb-pcie";
+			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	beeper {
+		compatible = "gpio-beeper";
+
+		pinctrl-0 = <&beeper_pins>;
+		pinctrl-names = "default";
+
+		gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&rpm {
+	pinctrl-0 = <&rpm_pins>;
+	pinctrl-names = "default";
+};
+
+&nand {
+	status = "okay";
+
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	mt29f2g08abbeah4@0 {
+		compatible = "qcom,nandcs";
+
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		nand-is-boot-medium;
+		qcom,boot-partitions = <0x0 0x1180000 0x5340000 0x10c0000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0000000 0x0040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x0040000 0x0140000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "0:SBL2";
+				reg = <0x0180000 0x0140000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				label = "0:SBL3";
+				reg = <0x02c0000 0x0280000>;
+				read-only;
+			};
+
+			partition@540000 {
+				label = "0:DDRCONFIG";
+				reg = <0x0540000 0x0120000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "0:SSD";
+				reg = <0x0660000 0x0120000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "0:TZ";
+				reg = <0x0780000 0x0280000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "0:RPM";
+				reg = <0x0a00000 0x0280000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
+
+			partition@1180000 {
+				label = "0:APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+			};
+
+			partition@1200000 {
+				label = "0:ART";
+				reg = <0x1200000 0x0140000>;
+			};
+
+			partition@1340000 {
+				label = "ubi";
+				reg = <0x1340000 0x4000000>;
+			};
+
+			partition@5340000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x5340000 0x0060000>;
+			};
+
+			partition@53a0000 {
+				label = "0:SBL2_1";
+				reg = <0x53a0000 0x0140000>;
+				read-only;
+			};
+
+			partition@54e0000 {
+				label = "0:SBL3_1";
+				reg = <0x54e0000 0x0280000>;
+				read-only;
+			};
+
+			partition@5760000 {
+				label = "0:DDRCONFIG_1";
+				reg = <0x5760000 0x0120000>;
+				read-only;
+			};
+
+			partition@5880000 {
+				label = "0:SSD_1";
+				reg = <0x5880000 0x0120000>;
+				read-only;
+			};
+
+			partition@59a0000 {
+				label = "0:TZ_1";
+				reg = <0x59a0000 0x0280000>;
+				read-only;
+			};
+
+			partition@5c20000 {
+				label = "0:RPM_1";
+				reg = <0x5c20000 0x0280000>;
+				read-only;
+			};
+
+			partition@5ea0000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x5ea0000 0x0060000>;
+			};
+
+			partition@5f00000 {
+				label = "0:APPSBL_1";
+				reg = <0x5f00000 0x0500000>;
+				read-only;
+			};
+
+			partition@6400000 {
+				label = "ubi_1";
+				reg = <0x6400000 0x4000000>;
+			};
+
+			partition@a400000 {
+				label = "unused";
+				reg = <0xa400000 0x5c00000>;
+			};
+		};
+	};
+};
+
+&adm_dma {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&gmac1 {
+	status = "okay";
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	phy-mode = "rgmii";
+	qcom,id = <1>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gsbi4_serial {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+};
+
+&flash {
+	compatible = "jedec,spi-nor";
+};
+
+&sata_phy {
+	status = "disabled";
+};
+
+&sata {
+	status = "disabled";
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+
+	rx_eq = <2>;
+	tx_deamp_3_5db = <32>;
+	mpll = <160>;
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+
+	rx_eq = <2>;
+	tx_deamp_3_5db = <32>;
+	mpll = <160>;
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+};
+
+&qcom_pinmux {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinctrl0 {
+		pcie0_pcie2_perst {
+			pins = "gpio3";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio7", "gpio8", "gpio9", "gpio22",
+			       "gpio23", "gpio24", "gpio25", "gpio53";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio54";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	beeper_pins: beeper_pins {
+		mux {
+			pins = "gpio55";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	rpm_pins: rpm_pins {
+		mux {
+			pins = "gpio12", "gpio13";
+			function = "gsbi4";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+
+	uart0_pins: uart0_pins {
+		mux {
+			pins = "gpio10", "gpio11";
+			function = "gsbi4";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-pull-down;
+		};
+
+		clk {
+			pins = "gpio21";
+			function = "gsbi5";
+			drive-strength = <12>;
+			bias-pull-down;
+		};
+
+		cs {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+};
+
+&tcsr {
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+};
