@@ -624,7 +624,7 @@ $(eval $(call KernelPackage,regmap-core))
 define KernelPackage/regmap-spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=SPI register map support
-  DEPENDS:=+kmod-regmap-core
+  DEPENDS:=+kmod-regmap-core @!TARGET_uml
   HIDDEN:=1
   KCONFIG:=CONFIG_REGMAP_SPI \
 	   CONFIG_SPI=y
