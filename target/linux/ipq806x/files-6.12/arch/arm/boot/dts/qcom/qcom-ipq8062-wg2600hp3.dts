@@ -25,7 +25,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		pinctrl-0 = <&buttons_pins>;
+		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
 
 		reset {
@@ -66,7 +66,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		pinctrl-0 = <&leds_pins>;
+		pinctrl-0 = <&led_pins>;
 		pinctrl-names = "default";
 
 		led_power_green: power_green {
@@ -135,7 +135,7 @@
 	};
 };
 
-/* nand_pins are used for leds_pins, empty the node
+/* nand_pins are used for led_pins, empty the node
  * from ipq8064.dtsi
  */
 &nand_pins {
@@ -148,7 +148,12 @@
 	pinctrl-0 = <&akro_pins>;
 	pinctrl-names = "default";
 
-	spi_pins: spi_pins {
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
 		mux {
 			pins = "gpio18", "gpio19", "gpio21";
 			function = "gsbi5";
@@ -171,7 +176,7 @@
 		};
 	};
 
-	buttons_pins: buttons_pins {
+	button_pins: button_pins {
 		mux {
 			pins = "gpio22", "gpio24", "gpio40",
 				"gpio41";
@@ -181,7 +186,7 @@
 		};
 	};
 
-	leds_pins: leds_pins {
+	led_pins: led_pins {
 		mux {
 			pins = "gpio14", "gpio15", "gpio35",
 				"gpio36", "gpio38", "gpio42",
