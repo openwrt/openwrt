@@ -227,19 +227,13 @@
 &pcie0 {
 	status = "okay";
 	perst-gpio = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		/* wil6210 802.11ad card */
-		wifi: wifi@1,0 {
-			status = "okay";
-			/* wil6210 driver has no compatible */
-			reg = <0x00010000 0 0 0 0>;
-		};
+&pcie_bridge0 {
+	/* wil6210 802.11ad card */
+	wifi@1,0 {
+		/* wil6210 driver has no compatible */
+		reg = <0x00010000 0 0 0 0>;
 	};
 };
 
@@ -249,10 +243,10 @@
 	ar8035: ethernet-phy@0 {
 		reg = <0>;
 	};
-};
 
-&qca807x {
-	status = "disabled";
+	ethernet-phy-package@0 {
+		status = "disabled";
+	};
 };
 
 &ethphy0 {

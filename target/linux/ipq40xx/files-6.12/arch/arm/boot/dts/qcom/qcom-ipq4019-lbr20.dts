@@ -482,22 +482,16 @@
 	status = "okay";
 	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "qcom,ath10k";
-			status = "okay";
-			reg = <0x00010000 0 0 0 0>;
-			ieee80211-freq-limit = <5170000 5350000>;
-			nvmem-cell-names = "pre-calibration", "mac-address";
-			nvmem-cells = <&precal_art_9000>, <&mac_address_wlan_2nd5g 0>;
-			qcom,ath10k-calibration-variant = "Netgear-LBR20";
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5170000 5350000>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&mac_address_wlan_2nd5g 0>;
+		qcom,ath10k-calibration-variant = "Netgear-LBR20";
 	};
 };
 
