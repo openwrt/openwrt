@@ -111,7 +111,11 @@ define Build/U-Boot/Target
 endef
 
 define Build/Configure/U-Boot
-	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_CONFIGURE_VARS) $(UBOOT_CONFIG)_config
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		$(UBOOT_CONFIGURE_VARS) \
+		$(firstword $(UBOOT_CONFIG))_config \
+		$(wordlist 2,$(words $(UBOOT_CONFIG)),$(UBOOT_CONFIG:%=%.config))
 	$(if $(strip $(UBOOT_CUSTOMIZE_CONFIG)),
 		$(PKG_BUILD_DIR)/scripts/config --file $(PKG_BUILD_DIR)/.config $(UBOOT_CUSTOMIZE_CONFIG)
 		+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_CONFIGURE_VARS) oldconfig)
