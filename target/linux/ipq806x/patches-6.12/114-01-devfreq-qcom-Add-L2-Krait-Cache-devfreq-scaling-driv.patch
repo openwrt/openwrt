@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  obj-$(CONFIG_PM_DEVFREQ_EVENT)		+= event/
 --- /dev/null
 +++ b/drivers/devfreq/krait-cache-devfreq.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,179 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#include <linux/kernel.h>
@@ -206,13 +206,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	return ret;
 +};
 +
-+static int krait_cache_remove(struct platform_device *pdev)
++static void krait_cache_remove(struct platform_device *pdev)
 +{
 +	struct krait_cache_data *data = dev_get_drvdata(&pdev->dev);
 +
 +	dev_pm_opp_clear_config(data->token);
-+
-+	return 0;
 +};
 +
 +static const struct of_device_id krait_cache_match_table[] = {
@@ -222,7 +220,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +static struct platform_driver krait_cache_driver = {
 +	.probe		= krait_cache_probe,
-+	.remove		= krait_cache_remove,
++	.remove_new	= krait_cache_remove,
 +	.driver		= {
 +		.name   = "krait-cache-scaling",
 +		.of_match_table = krait_cache_match_table,
