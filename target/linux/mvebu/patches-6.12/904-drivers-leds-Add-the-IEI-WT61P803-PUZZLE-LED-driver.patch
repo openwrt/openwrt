@@ -30,7 +30,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -316,6 +316,14 @@ config LEDS_IPAQ_MICRO
+@@ -354,6 +354,14 @@ config LEDS_IPAQ_MICRO
  	  Choose this option if you want to use the notification LED on
  	  Compaq/HP iPAQ h3100 and h3600.
  
@@ -47,7 +47,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  	depends on LEDS_CLASS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.
+@@ -35,6 +35,7 @@ obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.
  obj-$(CONFIG_LEDS_INTEL_SS4200)		+= leds-ss4200.o
  obj-$(CONFIG_LEDS_IP30)			+= leds-ip30.o
  obj-$(CONFIG_LEDS_IPAQ_MICRO)		+= leds-ipaq-micro.o

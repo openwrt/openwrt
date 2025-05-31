@@ -24,28 +24,25 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/thermal/gov_step_wise.c
 +++ b/drivers/thermal/gov_step_wise.c
-@@ -86,22 +86,31 @@ static void thermal_zone_trip_update(str
+@@ -74,19 +74,28 @@ static void thermal_zone_trip_update(str
+ 	int trip_id = thermal_zone_trip_id(tz, trip);
  	struct thermal_instance *instance;
  	bool throttle = false;
- 	int old_target;
 +	int hyst_temp;
  
- 	trend = get_tz_trend(tz, trip_id);
- 
--	if (tz->temperature >= trip->temperature) {
+-	if (tz->temperature >= trip_threshold) {
 -		throttle = true;
 -		trace_thermal_zone_trip(tz, trip_id, trip->type);
 -	}
 -
 -	dev_dbg(&tz->device, "Trip%d[type=%d,temp=%d]:trend=%d,throttle=%d\n",
--		trip_id, trip->type, trip->temperature, trend, throttle);
+-		trip_id, trip->type, trip_threshold, trend, throttle);
 +	hyst_temp =  trip->temperature - trip->hysteresis;
 +	dev_dbg(&tz->device, "Trip%d[type=%d,temp=%d,hyst=%d]:trend=%d,throttle=%d\n",
 +		trip_id, trip->type, trip->temperature, hyst_temp, trend, throttle);
  
- 	list_for_each_entry(instance, &tz->thermal_instances, tz_node) {
- 		if (instance->trip != trip)
- 			continue;
+ 	list_for_each_entry(instance, &td->thermal_instances, trip_node) {
+ 		int old_target;
  
  		old_target = instance->target;
 +		throttle = false;
@@ -61,5 +58,5 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		}
 +
  		instance->target = get_target_state(instance, trend, throttle);
- 		dev_dbg(&instance->cdev->device, "old_target=%d, target=%d\n",
- 					old_target, (int)instance->target);
+ 
+ 		dev_dbg(&instance->cdev->device, "old_target=%d, target=%ld\n",

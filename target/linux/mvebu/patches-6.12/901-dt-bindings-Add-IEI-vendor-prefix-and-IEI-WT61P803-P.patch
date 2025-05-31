@@ -16,8 +16,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  .../hwmon/iei,wt61p803-puzzle-hwmon.yaml      | 53 ++++++++++++
  .../leds/iei,wt61p803-puzzle-leds.yaml        | 39 +++++++++
  .../bindings/mfd/iei,wt61p803-puzzle.yaml     | 82 +++++++++++++++++++
- .../devicetree/bindings/vendor-prefixes.yaml  |  2 +
- 4 files changed, 176 insertions(+)
+ 3 files changed, 174 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/hwmon/iei,wt61p803-puzzle-hwmon.yaml
  create mode 100644 Documentation/devicetree/bindings/leds/iei,wt61p803-puzzle-leds.yaml
  create mode 100644 Documentation/devicetree/bindings/mfd/iei,wt61p803-puzzle.yaml
@@ -205,14 +204,3 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +            };
 +        };
 +    };
---- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
-+++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-@@ -611,6 +611,8 @@ patternProperties:
-     description: IC Plus Corp.
-   "^idt,.*":
-     description: Integrated Device Technologies, Inc.
-+  "^iei,.*":
-+    description: IEI Integration Corp.
-   "^ifi,.*":
-     description: Ingenieurburo Fur Ic-Technologie (I/F/I)
-   "^ilitek,.*":

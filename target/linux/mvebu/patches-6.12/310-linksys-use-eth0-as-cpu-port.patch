@@ -9,13 +9,13 @@
  	phy-mode = "sgmii";
  	buffer-manager = <&bm>;
  	bm,pool-long = <2>;
-@@ -200,10 +200,10 @@
+@@ -198,10 +198,10 @@
  				label = "wan";
  			};
  
--			port@5 {
+-			ethernet-port@5 {
 -				reg = <5>;
-+			port@6 {
++			ethernet-port@6 {
 +				reg = <6>;
  				phy-mode = "sgmii";
 -				ethernet = <&eth2>;

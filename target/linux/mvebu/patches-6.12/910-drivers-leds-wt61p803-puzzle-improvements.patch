@@ -251,9 +251,9 @@
  #define IEI_WT61P803_PUZZLE_CMD_TEMP_ALL		0x41 /* A */
 --- a/drivers/mfd/iei-wt61p803-puzzle.c
 +++ b/drivers/mfd/iei-wt61p803-puzzle.c
-@@ -176,6 +176,9 @@ static int iei_wt61p803_puzzle_recv_buf(
+@@ -176,6 +176,9 @@ static size_t iei_wt61p803_puzzle_recv_b
  	struct iei_wt61p803_puzzle *mcu = serdev_device_get_drvdata(serdev);
- 	int ret;
+ 	size_t ret;
  
 +	print_hex_dump_debug("puzzle-mcu rx: ", DUMP_PREFIX_NONE,
 +			     16, 1, data, size, false);
