@@ -33,7 +33,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
 +#include <linux/mfd/syscon.h>
  #include <linux/module.h>
  
-+#include <linux/of_gpio.h>
++#include <linux/gpio/consumer.h>
 +#include <linux/of_platform.h>
 +
  #include "ifxmips_pcie.h"
@@ -55,7 +55,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  static DEFINE_SPINLOCK(ifx_pcie_lock);
  
  u32 g_pcie_debug_flag = PCIE_MSG_ANY & (~PCIE_MSG_CFG);
-+static int pcie_reset_gpio;
++static struct gpio_desc *reset_gpio;
 +static struct phy *ltq_pcie_phy;
 +static struct reset_control *ltq_pcie_reset;
 +static struct regmap *ltq_rcu_regmap;
@@ -87,25 +87,24 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
              },
          },
      },
-@@ -82,6 +84,22 @@ void ifx_pcie_debug(const char *fmt, ...
+@@ -82,6 +84,21 @@ void ifx_pcie_debug(const char *fmt, ...
  	printk("%s", buf);
  }
  
 +static inline void pcie_ep_gpio_rst_init(int pcie_port)
 +{
-+	gpio_direction_output(pcie_reset_gpio, 1);
-+	gpio_set_value(pcie_reset_gpio, 1);
 +}
 +
 +static inline void pcie_device_rst_assert(int pcie_port)
 +{
-+	gpio_set_value(pcie_reset_gpio, 0);
++	gpiod_set_value_cansleep(reset_gpio, 1);
 +}
 +
 +static inline void pcie_device_rst_deassert(int pcie_port)
 +{
 +	mdelay(100);
-+	gpio_direction_output(pcie_reset_gpio, 1);
++	/* FIXME: maybe we need to set GPIO to high level here */
++	/* gpiod_set_value_cansleep(reset_gpio, 0); */
 +}
  
  static inline int pcie_ltssm_enable(int pcie_port)
@@ -210,6 +209,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
      int startup_port;
 +    struct device_node *np;
 +    struct pci_bus *bus;
++    int error;
 +
 +    /*
 +     * In case a PCI device is physical present, the Lantiq PCI driver need
@@ -260,15 +260,14 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
 +    if (IS_ERR(ltq_rcu_regmap))
 +        return PTR_ERR(ltq_rcu_regmap);
 +
-+    pcie_reset_gpio = of_get_named_gpio(node, "gpio-reset", 0);
-+    if (gpio_is_valid(pcie_reset_gpio)) {
-+        int ret = devm_gpio_request(&pdev->dev, pcie_reset_gpio, "pcie-reset");
-+        if (ret) {
-+            dev_err(&pdev->dev, "failed to request gpio %d\n", pcie_reset_gpio);
-+            return ret;
-+        }
-+        gpio_direction_output(pcie_reset_gpio, 1);
++    reset_gpio = devm_gpiod_get_optional(&pdev->dev, "reset",
++                                         GPIOD_OUT_LOW);
++    error = PTR_ERR_OR_ZERO(reset_gpio);
++    if (error) {
++        dev_err(&pdev->dev, "failed to request gpio: %d\n", error);
++        return error;
 +    }
++    gpiod_set_consumer_name(reset_gpio, "pci_reset");
 +
      for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
  	if (pcie_rc_initialize(pcie_port) == 0) {
