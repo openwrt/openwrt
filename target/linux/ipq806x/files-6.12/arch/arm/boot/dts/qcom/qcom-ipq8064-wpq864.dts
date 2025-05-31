@@ -528,7 +528,12 @@
 		};
 	};
 
-	spi_pins: spi_pins {
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
 		mux {
 			pins = "gpio18", "gpio19";
 			function = "gsbi5";
