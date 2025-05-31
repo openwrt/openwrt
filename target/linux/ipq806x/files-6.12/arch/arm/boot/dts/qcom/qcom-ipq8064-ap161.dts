@@ -25,14 +25,12 @@
 };
 
 &qcom_pinmux {
-	rgmii2_pins: rgmii2-pins {
-		mux {
-			pins = "gpio27", "gpio28", "gpio29",
-			       "gpio30", "gpio31", "gpio32",
-			       "gpio51", "gpio52", "gpio59",
-			       "gpio60", "gpio61", "gpio62",
-			       "gpio2", "gpio66";
-		};
+	rgmii2_pins: rgmii2-state {
+		pins = "gpio27", "gpio28", "gpio29",
+		       "gpio30", "gpio31", "gpio32",
+		       "gpio51", "gpio52", "gpio59",
+		       "gpio60", "gpio61", "gpio62",
+		       "gpio2", "gpio66";
 	};
 };
 
