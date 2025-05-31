@@ -106,6 +106,7 @@ $(curdir)/flex/compile := $(curdir)/libtool/compile
 $(curdir)/genext2fs/compile := $(curdir)/libtool/compile
 $(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
+$(curdir)/gnulib/compile := $(curdir)/tar/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
 $(curdir)/liblzo/compile := $(curdir)/cmake/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
