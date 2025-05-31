@@ -29,7 +29,7 @@
 +#ifdef CONFIG_CMDLINE_OVERRIDE
 +	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
 +	if (p != NULL && l > 0)
-+		strlcpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
++		strscpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
 +#endif
 +
  handle_cmdline:
