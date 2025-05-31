@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,731 @@
+@@ -0,0 +1,730 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 25 May 2025
 +// Device Tree Info
@@ -32,8 +32,8 @@
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
 +
-+		mmc0 = &sdmmc0; /* uSD Card: mmcblk0 */
-+		mmc1 = &sdhci;  /* On board eMMC mmcblk1 */
++		mmc0 = &sdmmc0; /* eMMC Card: mmcblk? @fe2b0000 */
++		mmc1 = &sdhci;  /* uSD Card mmc??? @fe310000 */
 +
 +		led-boot = &led_work;
 +		led-failsafe = &led_work;
@@ -607,7 +607,6 @@
 +&sdhci {
 +	bus-width = <8>;
 +	max-frequency = <200000000>;
-+	non-removable;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe>;
 +	status = "okay";
