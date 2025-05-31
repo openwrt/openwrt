@@ -26,7 +26,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -785,6 +785,14 @@ config SENSORS_IBMPOWERNV
+@@ -828,6 +828,14 @@ config SENSORS_IBMPOWERNV
  	  This driver can also be built as a module. If so, the module
  	  will be called ibmpowernv.
  
@@ -43,7 +43,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  	depends on IIO
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -90,6 +90,7 @@ obj-$(CONFIG_SENSORS_HS3001)	+= hs3001.o
+@@ -94,6 +94,7 @@ obj-$(CONFIG_SENSORS_HS3001)	+= hs3001.o
  obj-$(CONFIG_SENSORS_ULTRA45)	+= ultra45_env.o
  obj-$(CONFIG_SENSORS_I5500)	+= i5500_temp.o
  obj-$(CONFIG_SENSORS_I5K_AMB)	+= i5k_amb.o

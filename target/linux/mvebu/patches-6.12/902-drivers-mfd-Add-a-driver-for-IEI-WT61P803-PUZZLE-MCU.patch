@@ -26,7 +26,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -2274,6 +2274,15 @@ config SGI_MFD_IOC3
+@@ -2343,6 +2343,15 @@ config SGI_MFD_IOC3
  	  If you have an SGI Origin, Octane, or a PCI IOC3 card,
  	  then say Y. Otherwise say N.
  
@@ -44,7 +44,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
          select MFD_CORE
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -244,6 +244,7 @@ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
+@@ -250,6 +250,7 @@ obj-$(CONFIG_MFD_RT4831)	+= rt4831.o
  obj-$(CONFIG_MFD_RT5033)	+= rt5033.o
  obj-$(CONFIG_MFD_RT5120)	+= rt5120.o
  obj-$(CONFIG_MFD_SKY81452)	+= sky81452.o
@@ -79,7 +79,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +#include <linux/serdev.h>
 +#include <linux/slab.h>
 +#include <linux/sysfs.h>
-+#include <asm/unaligned.h>
++#include <linux/unaligned.h>
 +
 +/* start, payload and XOR checksum at end */
 +#define IEI_WT61P803_PUZZLE_MAX_COMMAND_LENGTH	(1 + 20 + 1)
@@ -190,8 +190,8 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	return checksum;
 +}
 +
-+static int iei_wt61p803_puzzle_process_resp(struct iei_wt61p803_puzzle *mcu,
-+					    const unsigned char *raw_resp_data, size_t size)
++static size_t iei_wt61p803_puzzle_process_resp(struct iei_wt61p803_puzzle *mcu,
++					    const u8 *raw_resp_data, size_t size)
 +{
 +	unsigned char checksum;
 +
@@ -227,11 +227,11 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	return size;
 +}
 +
-+static int iei_wt61p803_puzzle_recv_buf(struct serdev_device *serdev,
-+					const unsigned char *data, size_t size)
++static size_t iei_wt61p803_puzzle_recv_buf(struct serdev_device *serdev,
++					const u8 *data, size_t size)
 +{
 +	struct iei_wt61p803_puzzle *mcu = serdev_device_get_drvdata(serdev);
-+	int ret;
++	size_t ret;
 +
 +	ret = iei_wt61p803_puzzle_process_resp(mcu, data, size);
 +	/* Return the number of processed bytes if function returns error,

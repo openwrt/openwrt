@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -5294,6 +5294,16 @@ static int mvneta_setup_tc(struct net_de
+@@ -5296,6 +5296,16 @@ static int mvneta_setup_tc(struct net_de
  	}
  }
  
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct net_device_ops mvneta_netdev_ops = {
  	.ndo_open            = mvneta_open,
  	.ndo_stop            = mvneta_stop,
-@@ -5304,6 +5314,9 @@ static const struct net_device_ops mvnet
+@@ -5306,6 +5316,9 @@ static const struct net_device_ops mvnet
  	.ndo_fix_features    = mvneta_fix_features,
  	.ndo_get_stats64     = mvneta_get_stats64,
  	.ndo_eth_ioctl        = mvneta_ioctl,

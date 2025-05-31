@@ -48,7 +48,7 @@ Cc: stable@vger.kernel.org
 
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -212,6 +212,8 @@ enum {
+@@ -211,6 +211,8 @@ enum {
  };
  
  #define VENDOR_ID_REG				(LMI_BASE_ADDR + 0x44)
@@ -57,7 +57,7 @@ Cc: stable@vger.kernel.org
  
  /* PCIe core controller registers */
  #define CTRL_CORE_BASE_ADDR			0x18000
-@@ -560,6 +562,11 @@ static void advk_pcie_setup_hw(struct ad
+@@ -559,6 +561,11 @@ static void advk_pcie_setup_hw(struct ad
  		PCIE_CORE_CTRL2_TD_ENABLE;
  	advk_writel(pcie, reg, PCIE_CORE_CTRL2_REG);
  
@@ -69,7 +69,7 @@ Cc: stable@vger.kernel.org
  	/* Set lane X1 */
  	reg = advk_readl(pcie, PCIE_CORE_CTRL0_REG);
  	reg &= ~LANE_CNT_MSK;
-@@ -1661,6 +1668,9 @@ static irqreturn_t advk_pcie_irq_handler
+@@ -1654,6 +1661,9 @@ static irqreturn_t advk_pcie_irq_handler
  	struct advk_pcie *pcie = arg;
  	u32 status;
  
