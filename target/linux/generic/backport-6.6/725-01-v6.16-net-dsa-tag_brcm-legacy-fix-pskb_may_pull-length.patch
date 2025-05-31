@@ -1,0 +1,31 @@
+From efdddc4484859082da6c7877ed144c8121c8ea55 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 29 May 2025 14:44:06 +0200
+Subject: [PATCH] net: dsa: tag_brcm: legacy: fix pskb_may_pull length
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BRCM_LEG_PORT_ID was incorrectly used for pskb_may_pull length.
+The correct check is BRCM_LEG_TAG_LEN + VLAN_HLEN, or 10 bytes.
+
+Fixes: 964dbf186eaa ("net: dsa: tag_brcm: add support for legacy tags")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20250529124406.2513779-1-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ net/dsa/tag_brcm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/dsa/tag_brcm.c
++++ b/net/dsa/tag_brcm.c
+@@ -257,7 +257,7 @@ static struct sk_buff *brcm_leg_tag_rcv(
+ 	int source_port;
+ 	u8 *brcm_tag;
+ 
+-	if (unlikely(!pskb_may_pull(skb, BRCM_LEG_PORT_ID)))
++	if (unlikely(!pskb_may_pull(skb, BRCM_LEG_TAG_LEN + VLAN_HLEN)))
+ 		return NULL;
+ 
+ 	brcm_tag = dsa_etype_header_pos_rx(skb);
