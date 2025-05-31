@@ -220,6 +220,16 @@ menu "Target Images"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		default y
 
+	config ALIGN_SIZE
+		int "Partition Aignment Size (in KB)"
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default 256
+		help
+		  Select partition alignment for optimal performance of HDD/SSDs:
+		    256 KB will start the partitions at block 512
+		    1024 KB will start the partitions at block 2048
+		    and so on.
+
 	config GRUB_BAUDRATE
 		int "Serial port baud rate"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
