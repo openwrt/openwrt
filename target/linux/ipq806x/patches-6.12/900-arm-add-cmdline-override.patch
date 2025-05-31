@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1568,6 +1568,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1505,6 +1505,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  
  endchoice
  
@@ -17,7 +17,7 @@
  	default ""
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1190,6 +1190,17 @@ int __init early_init_dt_scan_chosen(cha
+@@ -1053,6 +1053,17 @@ int __init early_init_dt_scan_chosen(cha
  	if (p != NULL && l > 0)
  		strlcat(cmdline, p, min_t(int, strlen(cmdline) + (int)l, COMMAND_LINE_SIZE));
  
