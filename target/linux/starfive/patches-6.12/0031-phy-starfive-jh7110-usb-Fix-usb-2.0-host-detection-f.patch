@@ -1,0 +1,44 @@
+From 8dcadeca27be8d6891ed344dd981f055ca27d2fc Mon Sep 17 00:00:00 2001
+From: Hal Feng <hal.feng@starfivetech.com>
+Date: Wed, 16 Apr 2025 13:25:38 +0800
+Subject: [PATCH 31/55] phy: starfive: jh7110-usb: Fix usb 2.0 host detection
+ failure
+
+Set Rx clock gating control signal to normal power consumption mode,
+for fixing usb 2.0 host detection failure.
+
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+---
+ drivers/phy/starfive/phy-jh7110-usb.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/phy/starfive/phy-jh7110-usb.c
++++ b/drivers/phy/starfive/phy-jh7110-usb.c
+@@ -18,6 +18,8 @@
+ #include <linux/usb/of.h>
+ 
+ #define USB_125M_CLK_RATE		125000000
++#define USB_CLK_MODE_OFF		0x0
++#define USB_CLK_MODE_RX_NORMAL_PWR	BIT(1)
+ #define USB_LS_KEEPALIVE_OFF		0x4
+ #define USB_LS_KEEPALIVE_ENABLE		BIT(4)
+ 
+@@ -78,6 +80,7 @@ static int jh7110_usb2_phy_init(struct p
+ {
+ 	struct jh7110_usb2_phy *phy = phy_get_drvdata(_phy);
+ 	int ret;
++	unsigned int val;
+ 
+ 	ret = clk_set_rate(phy->usb_125m_clk, USB_125M_CLK_RATE);
+ 	if (ret)
+@@ -87,6 +90,10 @@ static int jh7110_usb2_phy_init(struct p
+ 	if (ret)
+ 		return ret;
+ 
++	val = readl(phy->regs + USB_CLK_MODE_OFF);
++	val |= USB_CLK_MODE_RX_NORMAL_PWR;
++	writel(val, phy->regs + USB_CLK_MODE_OFF);
++
+ 	return 0;
+ }
+ 
