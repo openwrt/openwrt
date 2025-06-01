@@ -607,6 +607,7 @@
 +&sdhci {
 +	bus-width = <8>;
 +	max-frequency = <200000000>;
++	disable-wp;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe>;
 +	status = "okay";
@@ -614,7 +615,6 @@
 +
 +&sdmmc0 {
 +	bus-width = <4>;
-+	/* cap-sd-highspeed; */
 +	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 +	disable-wp;
 +	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
@@ -702,7 +702,7 @@
 +};
 +
 +&pcie30phy {
-+	 status	= "disabled";
++	 status	= "okay";
 +};
 +
 +&pcie2x1 {
@@ -716,7 +716,7 @@
 +
 +
 +&pcie3x2 {
-+	 status = "disabled";
++	 status = "okay";
 +};
 +
 +&sata0 { /* sata0 muxed with USB3 OTG0 */
