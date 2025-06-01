@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=automake
 PKG_CPE_ID:=cpe:/a:gnu:automake
-PKG_VERSION:=1.17
+PKG_VERSION:=1.18
 PKG_API_VERSION:=$(word 2,$(subst ., ,$(PKG_VERSION)))
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/automake
-PKG_HASH:=397767d4db3018dd4440825b60c64258b636eaf6bf99ac8b0897f06c89310acd
+PKG_HASH:=af6043a5d4b3beef0c48161f4a6936259321cd101a34c1ab0768328515626c8a
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -21,7 +21,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-silent-rules
 
 HOST_CONFIGURE_VARS += \
-	# temporary patch alternative for PERL="/usr/bin/env perl"
+	PERL="/usr/bin/env perl"
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR_HOST="" ./bootstrap)
