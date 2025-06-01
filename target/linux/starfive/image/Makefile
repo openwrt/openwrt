@@ -24,6 +24,7 @@ define Build/riscv-sdcard
 	mcopy -i $@.boot $(LINUX_DIR)/arch/riscv/boot/dts/$(DEVICE_DTS).dtb ::dtb
 	mcopy -i $@.boot $@-boot.scr ::boot.scr.uimg
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::Image
+	mcopy -i $@.boot jh7110-vf2-uenv.txt ::vf2_uEnv.txt
 	./gen_starfive_sdcard_img.sh \
 		$@ \
 		$@.boot \
