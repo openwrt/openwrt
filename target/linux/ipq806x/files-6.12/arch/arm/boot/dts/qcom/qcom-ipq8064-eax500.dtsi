@@ -57,7 +57,7 @@
 &pcie_bridge0 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
+		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&precal_art_1000>;
 		nvmem-cell-names = "pre-calibration";
 	};
@@ -70,7 +70,7 @@
 &pcie_bridge1 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
+		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&precal_art_5000>;
 		nvmem-cell-names = "pre-calibration";
 	};

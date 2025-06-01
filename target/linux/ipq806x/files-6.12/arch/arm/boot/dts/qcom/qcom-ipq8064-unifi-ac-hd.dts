@@ -292,7 +292,7 @@
 &pcie_bridge0 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
+		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&macaddr_eeprom_6 1>;
 		nvmem-cell-names = "mac-address";
 	};
@@ -305,7 +305,7 @@
 &pcie_bridge1 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
+		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&macaddr_eeprom_6 2>;
 		nvmem-cell-names = "mac-address";
 	};
