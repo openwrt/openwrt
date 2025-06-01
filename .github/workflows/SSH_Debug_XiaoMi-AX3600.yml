@@ -37,7 +37,8 @@ jobs:
     - name: Clone OpenWrt or LEDE source code
       run: |
         if [ "${{ github.event.inputs.repo_choice }}" = "lede" ]; then
-          git clone https://github.com/coolsnowwolf/lede.git source
+          #git clone https://github.com/coolsnowwolf/lede.git source
+          git clone https://github.com/immortalwrt/immortalwrt.git source
         else
           git clone https://github.com/openwrt/openwrt.git source
         fi
