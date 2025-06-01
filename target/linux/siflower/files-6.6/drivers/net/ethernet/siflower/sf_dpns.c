@@ -49,11 +49,10 @@ static int dpns_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int dpns_remove(struct platform_device *pdev) {
+static void dpns_remove(struct platform_device *pdev) {
 	struct dpns_priv *priv = platform_get_drvdata(pdev);
 	debugfs_remove_recursive(priv->debugfs);
 	reset_control_assert(priv->npu_rst);
-	return 0;
 }
 
 static const struct of_device_id dpns_match[] = {
@@ -64,7 +63,7 @@ MODULE_DEVICE_TABLE(of, dpns_match);
 
 static struct platform_driver dpns_driver = {
 	.probe	= dpns_probe,
-	.remove = dpns_remove,
+	.remove_new = dpns_remove,
 	.driver	= {
 		.name		= "sfdpns",
 		.of_match_table	= dpns_match,

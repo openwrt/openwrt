@@ -593,27 +593,18 @@ endef
 
 define Package/ath10k-firmware-qca9888-ct/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
-	ln -s \
-		../../cal-pci-0000:01:00.0.bin \
-		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA9888) \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/firmware-5.bin
 endef
 define Package/ath10k-firmware-qca9888-ct-full-htt/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
-	ln -s \
-		../../cal-pci-0000:01:00.0.bin \
-		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE_FULL_HTT,QCA9888) \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/ct-firmware-5.bin
 endef
 define Package/ath10k-firmware-qca9888-ct-htt/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
-	ln -s \
-		../../cal-pci-0000:01:00.0.bin \
-		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 	$(INSTALL_DATA) \
 		$(DL_DIR)/$(call CT_FIRMWARE_FILE_HTT,QCA9888) \
 		$(1)/lib/firmware/ath10k/QCA9888/hw2.0/ct-firmware-5.bin

@@ -1,4 +1,3 @@
-
 . /lib/functions.sh
 . /lib/functions/uci-defaults.sh
 . /lib/functions/system.sh
@@ -23,6 +22,7 @@ ramips_setup_interfaces()
 	mercusys,mr70x-v1|\
 	netgear,wax202|\
 	sim,simax1800t|\
+	tplink,mr600-v2-eu|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
@@ -68,12 +68,22 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan"
 		;;
 	asiarf,ap7621-001|\
+	comfast,cf-e390ax|\
+	comfast,cf-ew72-v2|\
+	cudy,m1300-v2|\
+	cudy,m1800|\
 	dna,valokuitu-plus-ex400|\
+	genexis,pulse-ex400|\
 	humax,e10|\
 	keenetic,kn-3510|\
+	maginon,mc-1200ac|\
+	meig,slt866|\
 	openfi,5pro|\
 	wavlink,ws-wn572hp3-4g|\
-	winstars,ws-wn583a6)
+	winstars,ws-wn583a6|\
+	yuncore,ax820|\
+        zyxel,lte7490-m904|\
+	zyxel,nr7101)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	asiarf,ap7621-nv1|\
@@ -104,11 +114,6 @@ ramips_setup_interfaces()
 		ucidef_set_interface "eth_om" device "modem.4094" protocol "static" ipaddr "169.254.0.2" netmask "255.255.255.252"
 		uci add_list firewall.@zone[1].network='eth_data'
 		uci add_list firewall.@zone[1].network='eth_om'
-		;;
-	cudy,m1800|\
-	yuncore,ax820|\
-	zyxel,nr7101)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
@@ -155,9 +160,6 @@ ramips_setup_interfaces()
 	tplink,tl-wpa8631p-v3)
 		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
-	tplink,mr600-v2-eu)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
-		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
 		;;
@@ -177,11 +179,6 @@ ramips_setup_interfaces()
 		;;
 	ruijie,rg-ew1200g-pro-v1.1)
 		ucidef_set_interfaces_lan_wan "lan3 lan2 lan1" "wan"
-		;;
-	comfast,cf-e390ax|\
-	comfast,cf-ew72-v2|\
-	meig,slt866)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
@@ -271,7 +268,7 @@ ramips_setup_macs()
 		wan_mac=$label_mac
 		;;
 	hiwifi,hc5962)
-		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
+		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac")
 		label_mac=$lan_mac
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)

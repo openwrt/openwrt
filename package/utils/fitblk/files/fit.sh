@@ -61,3 +61,13 @@ fit_do_upgrade() {
 		;;
 	esac
 }
+
+fit_check_image() {
+	local magic="$(get_magic_long "$1")"
+	[ "$magic" != "d00dfeed" ] && {
+		echo "Invalid image type."
+		return 74
+	}
+
+	fit_check_sign -f "$1" >/dev/null || return 74
+}

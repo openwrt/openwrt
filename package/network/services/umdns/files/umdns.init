@@ -17,7 +17,7 @@ load_ifaces() {
 	done
 }
 
-reload_service() {
+do_reload_service() {
 	json_init
 	json_add_array interfaces
 	for i in $(load_ifaces); do
@@ -60,13 +60,18 @@ start_service() {
 	procd_add_raw_trigger "instance.update" 5000 "/bin/ubus" "call" "umdns" "reload"
 	procd_close_trigger
 	[ "$(uci get umdns.@umdns[-1].jail)" = 1 ] && {
-		procd_add_jail umdns ubus log
+		procd_add_jail umdns ubus log udebug
 		[ -d /etc/umdns ] && procd_add_jail_mount "/etc/umdns"
 	}
 	procd_close_instance
 }
 
-service_started() {
+reload_service() {
+	rc_procd start_service
+	do_reload_service
+}
+
+service_running() {
 	ubus -t 10 wait_for umdns
-	[ $? = 0 ] && reload_service
+	[ $? = 0 ] && do_reload_service
 }

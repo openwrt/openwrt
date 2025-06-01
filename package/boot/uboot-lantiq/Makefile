@@ -13,7 +13,7 @@ PKG_RELEASE:=67
 
 PKG_HASH:=0d71e62beb952b41ebafb20a7ee4df2f960db64c31b054721ceb79ff14014c55
 
-FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/target/linux/lantiq/files/firmware/lantiq
+FIRMWARE_LANTIQ_SOURCE:=$(TOPDIR)/package/firmware/lantiq/lantiq-gphy-firmware/files/
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk

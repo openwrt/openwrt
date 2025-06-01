@@ -206,6 +206,7 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <7>;
 			reset-gpios = <&pio 101 GPIO_ACTIVE_LOW>;
+			interrupt-parent = <&pio>;
 			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
 			reset-assert-us = <100000>;
 			reset-deassert-us = <100000>;

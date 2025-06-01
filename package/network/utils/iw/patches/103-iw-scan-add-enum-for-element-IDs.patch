@@ -1,0 +1,170 @@
+From 966c590bc4dcbd9a69fdf8fe9f41cec00e72e376 Mon Sep 17 00:00:00 2001
+From: Dylan Eskew <dylan.eskew@candelatech.com>
+Date: Mon, 30 Sep 2024 11:11:43 -0700
+Subject: [PATCH] iw: scan: add enum for element IDs
+
+Formerly, element IDs were hardcoded. Improve readability by using
+element ID names.
+
+Signed-off-by: Dylan Eskew <dylan.eskew@candelatech.com>
+Link: https://patch.msgid.link/20240930181145.1043048-2-dylan.eskew@candelatech.com
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ ieee80211.h | 43 +++++++++++++++++++++++++++
+ scan.c      | 86 +++++++++++++++++++++++++++++++----------------------
+ 2 files changed, 93 insertions(+), 36 deletions(-)
+
+--- a/ieee80211.h
++++ b/ieee80211.h
+@@ -58,6 +58,49 @@ struct ieee80211_vht_cap {
+ 	struct ieee80211_vht_mcs_info mcs;
+ } __attribute__ ((packed));
+ 
++enum elem_id {
++	EID_SSID			= 0,
++	EID_SUPP_RATES			= 1,
++	EID_DS_PARAMS			= 3,
++	EID_TIM				= 5,
++	EID_IBSS_TIM_PARAMS		= 6,
++	EID_COUNTRY			= 7,
++	EID_BSS_LOAD			= 11,
++	EID_POWER_CONSTRAINT		= 32,
++	EID_TPC_REPORT			= 35,
++	EID_ERP_INFO			= 42,
++	EID_HT_CAPABILITY		= 45,
++	EID_ERP_D4_0			= 47,
++	EID_RSN				= 48,
++	EID_EXT_SUPP_RATES		= 50,
++	EID_AP_CHAN_REPORT		= 51,
++	EID_SUPP_OP_CLASSES		= 59,
++	EID_HT_OPERATION		= 61,
++	EID_SECONDARY_CH_OFFSET		= 62,
++	EID_MEASUREMENT_PILOT_TX	= 66,
++	EID_RM_ENABLED_CAPABILITIES	= 70,
++	EID_OVERLAP_BSS_SCAN_PARAM	= 74,
++	EID_INTERWORKING		= 107,
++	EID_ADVERTISEMENT		= 108,
++	EID_ROAMING_CONSORTIUM		= 111,
++	EID_MESH_CONFIG			= 113,
++	EID_MESH_ID			= 114,
++	EID_EXT_CAPABILITY		= 127,
++	EID_VHT_CAPABILITY		= 191,
++	EID_VHT_OPERATION		= 192,
++	EID_TRANSMIT_POWER_ENVELOPE	= 195,
++	EID_SHORT_BEACON_INTERVAL	= 214,
++	EID_S1G_CAPABILITY		= 217,
++	EID_VENDOR			= 221,
++	EID_S1G_OPERATION		= 232,
++	EID_EXTENSION			= 255,
++};
++
++enum elem_id_ext {
++	EID_EXT_HE_CAPABILITY		= 35,
++	EID_EXT_HE_OPERATION		= 36,
++};
++
+ #define SUITE(oui, id)  (((oui) << 8) | (id))
+ 
+ /* cipher suite selectors */
+--- a/scan.c
++++ b/scan.c
+@@ -1816,40 +1816,54 @@ static void print_ie(const struct ie_pri
+ }
+ 
+ static const struct ie_print ieprinters[] = {
+-	[0] = { "SSID", print_ssid, 0, 32,
+-		 BIT(PRINT_SCAN) | BIT(PRINT_LINK) | BIT(PRINT_LINK_MLO_MLD), },
+-	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+-	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
+-	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
+-	[6] = { "IBSS ATIM window", print_ibssatim, 2, 2, BIT(PRINT_SCAN), },
+-	[7] = { "Country", print_country, 3, 255, BIT(PRINT_SCAN), },
+-	[11] = { "BSS Load", print_bss_load, 5, 5, BIT(PRINT_SCAN), },
+-	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
+-	[35] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
+-	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
+-	[45] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
+-	[47] = { "ERP D4.0", print_erp, 1, 255, BIT(PRINT_SCAN), },
+-	[51] = { "AP Channel Report", print_ap_channel_report, 1, 255, BIT(PRINT_SCAN), },
+-	[59] = { "Supported operating classes", print_supp_op_classes, 1, 255, BIT(PRINT_SCAN), },
+-	[66] = { "Measurement Pilot Transmission", print_measurement_pilot_tx, 1, 255, BIT(PRINT_SCAN), },
+-	[74] = { "Overlapping BSS scan params", print_obss_scan_params, 14, 255, BIT(PRINT_SCAN), },
+-	[61] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
+-	[62] = { "Secondary Channel Offset", print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
+-	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
+-	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
+-	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
+-	[50] = { "Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+-	[70] = { "RM enabled capabilities", print_rm_enabled_capabilities, 5, 5, BIT(PRINT_SCAN), },
+-	[113] = { "MESH Configuration", print_mesh_conf, 7, 7, BIT(PRINT_SCAN), },
+-	[114] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
+-	[127] = { "Extended capabilities", print_capabilities, 0, 255, BIT(PRINT_SCAN), },
+-	[107] = { "802.11u Interworking", print_interworking, 0, 255, BIT(PRINT_SCAN), },
+-	[108] = { "802.11u Advertisement", print_11u_advert, 0, 255, BIT(PRINT_SCAN), },
+-	[111] = { "802.11u Roaming Consortium", print_11u_rcon, 2, 255, BIT(PRINT_SCAN), },
+-	[195] = { "Transmit Power Envelope", print_tx_power_envelope, 2, 5, BIT(PRINT_SCAN), },
+-	[214] = { "Short beacon interval", print_short_beacon_int, 2, 2, BIT(PRINT_SCAN), },
+-	[217] = { "S1G capabilities", print_s1g_capa, 15, 15, BIT(PRINT_SCAN), },
+-	[232] = { "S1G operation", print_s1g_oper, 6, 6, BIT(PRINT_SCAN), },
++	[EID_SSID] = { "SSID", print_ssid, 0, 32,
++		       BIT(PRINT_SCAN) | BIT(PRINT_LINK) | BIT(PRINT_LINK_MLO_MLD), },
++	[EID_SUPP_RATES] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
++	[EID_DS_PARAMS] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
++	[EID_TIM] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
++	[EID_IBSS_TIM_PARAMS] = { "IBSS ATIM window", print_ibssatim, 2, 2, BIT(PRINT_SCAN), },
++	[EID_COUNTRY] = { "Country", print_country, 3, 255, BIT(PRINT_SCAN), },
++	[EID_BSS_LOAD] = { "BSS Load", print_bss_load, 5, 5, BIT(PRINT_SCAN), },
++	[EID_POWER_CONSTRAINT] = { "Power constraint", print_powerconstraint,
++				   1, 1, BIT(PRINT_SCAN), },
++	[EID_TPC_REPORT] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
++	[EID_ERP_INFO] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
++	[EID_HT_CAPABILITY] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
++	[EID_ERP_D4_0] = { "ERP D4.0", print_erp, 1, 255, BIT(PRINT_SCAN), },
++	[EID_AP_CHAN_REPORT] = { "AP Channel Report", print_ap_channel_report,
++				 1, 255, BIT(PRINT_SCAN), },
++	[EID_SUPP_OP_CLASSES] = { "Supported operating classes",
++				  print_supp_op_classes, 1, 255, BIT(PRINT_SCAN), },
++	[EID_MEASUREMENT_PILOT_TX] = { "Measurement Pilot Transmission",
++				       print_measurement_pilot_tx, 1, 255, BIT(PRINT_SCAN), },
++	[EID_OVERLAP_BSS_SCAN_PARAM] = { "Overlapping BSS scan params",
++					 print_obss_scan_params, 14, 255, BIT(PRINT_SCAN), },
++	[EID_HT_OPERATION] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
++	[EID_SECONDARY_CH_OFFSET] = { "Secondary Channel Offset",
++				      print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
++	[EID_VHT_CAPABILITY] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
++	[EID_VHT_OPERATION] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
++	[EID_RSN] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
++	[EID_EXT_SUPP_RATES] = { "Extended supported rates", print_supprates,
++				 0, 255, BIT(PRINT_SCAN), },
++	[EID_RM_ENABLED_CAPABILITIES] = { "RM enabled capabilities",
++					  print_rm_enabled_capabilities, 5, 5, BIT(PRINT_SCAN), },
++	[EID_MESH_CONFIG] = { "MESH Configuration", print_mesh_conf, 7, 7, BIT(PRINT_SCAN), },
++	[EID_MESH_ID] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
++	[EID_EXT_CAPABILITY] = { "Extended capabilities", print_capabilities,
++				 0, 255, BIT(PRINT_SCAN), },
++	[EID_INTERWORKING] = { "802.11u Interworking", print_interworking,
++			       0, 255, BIT(PRINT_SCAN), },
++	[EID_ADVERTISEMENT] = { "802.11u Advertisement", print_11u_advert,
++				0, 255, BIT(PRINT_SCAN), },
++	[EID_ROAMING_CONSORTIUM] = { "802.11u Roaming Consortium",
++				     print_11u_rcon, 2, 255, BIT(PRINT_SCAN), },
++	[EID_TRANSMIT_POWER_ENVELOPE] = { "Transmit Power Envelope",
++					  print_tx_power_envelope, 2, 5, BIT(PRINT_SCAN), },
++	[EID_SHORT_BEACON_INTERVAL] = { "Short beacon interval",
++					print_short_beacon_int, 2, 2, BIT(PRINT_SCAN), },
++	[EID_S1G_CAPABILITY] = { "S1G capabilities", print_s1g_capa, 15, 15, BIT(PRINT_SCAN), },
++	[EID_S1G_OPERATION] = { "S1G operation", print_s1g_oper, 6, 6, BIT(PRINT_SCAN), },
+ };
+ 
+ static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data,
+@@ -2392,8 +2406,8 @@ static void print_he_oper(const uint8_t
+ }
+ 
+ static const struct ie_print ext_printers[] = {
+-	[35] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
+-	[36] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
++	[EID_EXT_HE_CAPABILITY] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
++	[EID_EXT_HE_OPERATION] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
+ };
+ 
+ static void print_extension(unsigned char len, unsigned char *ie,

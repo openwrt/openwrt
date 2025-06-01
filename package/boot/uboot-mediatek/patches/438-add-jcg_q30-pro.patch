@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7981_jcg_q30-pro_defconfig
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -117,6 +117,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -159,7 +160,7 @@
 +		factory {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -168,12 +169,12 @@
 +
 +		status_red {
 +			label = "red:status";
-+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		status_blue {
 +			label = "blue:status";
-+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
@@ -194,7 +195,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -202,7 +203,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

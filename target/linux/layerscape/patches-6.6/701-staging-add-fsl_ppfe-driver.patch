@@ -891,7 +891,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +};
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -8359,6 +8359,14 @@ F:	drivers/ptp/ptp_qoriq.c
+@@ -8360,6 +8360,14 @@ F:	drivers/ptp/ptp_qoriq.c
  F:	drivers/ptp/ptp_qoriq_debugfs.c
  F:	include/linux/fsl/ptp_qoriq.h
  
@@ -10254,7 +10254,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +#endif /* _PFE_HW_H_ */
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/pfe_ls1012a_platform.c
-@@ -0,0 +1,383 @@
+@@ -0,0 +1,380 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright 2015-2016 Freescale Semiconductor, Inc.
@@ -10516,14 +10516,13 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +/*
 + * pfe_platform_remove -
 + */
-+static int pfe_platform_remove(struct platform_device *pdev)
++static void pfe_platform_remove(struct platform_device *pdev)
 +{
 +	struct pfe *pfe = platform_get_drvdata(pdev);
-+	int rc;
 +
 +	pr_info("%s\n", __func__);
 +
-+	rc = pfe_remove(pfe);
++	pfe_remove(pfe);
 +
 +	iounmap(pfe->cbus_baseaddr);
 +
@@ -10532,8 +10531,6 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	platform_set_drvdata(pdev, NULL);
 +
 +	kfree(pfe);
-+
-+	return rc;
 +}
 +
 +#ifdef CONFIG_PM
@@ -10624,7 +10621,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +
 +static struct platform_driver pfe_platform_driver = {
 +	.probe = pfe_platform_probe,
-+	.remove = pfe_platform_remove,
++	.remove_new = pfe_platform_remove,
 +	.driver = {
 +		.name = "pfe",
 +		.of_match_table = pfe_match,

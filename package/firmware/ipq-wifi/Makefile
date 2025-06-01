@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-02-16
-PKG_SOURCE_VERSION:=331dd0ead646f0d3fe38cb4bf83cce4b448343e8
-PKG_MIRROR_HASH:=f49b3acd56a1cf4a0d52413b060d6adbd65c2754b44cabe096fed69172febbb5
+PKG_SOURCE_DATE:=2025-05-30
+PKG_SOURCE_VERSION:=fde3d2a7ce59be389224304049a4a5b9ca49a45e
+PKG_MIRROR_HASH:=2e149366118192d4976baf42ac23d22ef32e477feb111d2756a2411278b6cf46
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -28,6 +28,7 @@ endef
 
 ALLWIFIBOARDS:= \
 	8devices_mango \
+	alfa-network_ap120c-ax \
 	aliyun_ap8220 \
 	arcadyan_aw1000 \
 	asus_rt-ax89x \
@@ -38,9 +39,14 @@ ALLWIFIBOARDS:= \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
 	edimax_cax1800 \
+	elecom_wrc-x3000gs2 \
+	glinet_gl-ax1800 \
+	glinet_gl-axt1800 \
+	glinet_gl-b3000 \
 	linksys_homewrk \
 	linksys_mr5500 \
 	linksys_mr7350 \
+	linksys_mr7500 \
 	linksys_mx2000 \
 	linksys_mx4200 \
 	linksys_mx5300 \
@@ -60,6 +66,8 @@ ALLWIFIBOARDS:= \
 	netgear_sxk80 \
 	netgear_wax214 \
 	netgear_wax218 \
+	netgear_wax610 \
+	netgear_wax610y \
 	netgear_wax620 \
 	netgear_wax630 \
 	prpl_haze \
@@ -68,9 +76,13 @@ ALLWIFIBOARDS:= \
 	redmi_ax6 \
 	skspruce_wia3300-20 \
 	spectrum_sax1v1k \
+	tplink_deco-x80-5g \
 	tplink_eap610-outdoor \
 	tplink_eap620hd-v1 \
+	tplink_eap623od-hd-v1 \
+	tplink_eap625-outdoor-hd-v1 \
 	tplink_eap660hd-v1 \
+	tplink_archer-c6-v2 \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
@@ -81,6 +93,8 @@ ALLWIFIBOARDS:= \
 	zte_mf269 \
 	zte_mf289d \
 	zte_mf289f \
+	zte_mf286ar\
+	zte_mf286c \
 	zte_mf287 \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -91,7 +105,7 @@ define Package/ipq-wifi-default
   SUBMENU:=ath10k Board-Specific Overrides
   SECTION:=firmware
   CATEGORY:=Firmware
-  DEPENDS:=@(TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax)
+  DEPENDS:=@(TARGET_ath79||TARGET_ipq40xx||TARGET_ipq806x||TARGET_qualcommax)
   TITLE:=Custom Board
 endef
 
@@ -176,9 +190,10 @@ endef
 # 2. Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 #
 # Board files should follow this name structure:
-#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
+#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq6018|ipq8074>
 
 $(eval $(call generate-ipq-wifi-package,8devices_mango,8devices Mango))
+$(eval $(call generate-ipq-wifi-package,alfa-network_ap120c-ax,ALFA Network AP120C-AX))
 $(eval $(call generate-ipq-wifi-package,aliyun_ap8220,Aliyun AP8220))
 $(eval $(call generate-ipq-wifi-package,arcadyan_aw1000,Arcadyan AW1000))
 $(eval $(call generate-ipq-wifi-package,asus_rt-ax89x,Asus RT-AX89X))
@@ -189,9 +204,14 @@ $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
 $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
 $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
+$(eval $(call generate-ipq-wifi-package,elecom_wrc-x3000gs2,ELECOM WRC-X3000GS2))
+$(eval $(call generate-ipq-wifi-package,glinet_gl-ax1800,GL.iNet GL-AX1800))
+$(eval $(call generate-ipq-wifi-package,glinet_gl-axt1800,GL.iNet GL-AXT1800))
+$(eval $(call generate-ipq-wifi-package,glinet_gl-b3000,GL.iNet GL-B3000))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mr7350,Linksys MR7350))
+$(eval $(call generate-ipq-wifi-package,linksys_mr7500,Linksys MR7500))
 $(eval $(call generate-ipq-wifi-package,linksys_mx2000,Linksys MX2000))
 $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
@@ -211,6 +231,8 @@ $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
+$(eval $(call generate-ipq-wifi-package,netgear_wax610,Netgear WAX610))
+$(eval $(call generate-ipq-wifi-package,netgear_wax610y,Netgear WAX610Y))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
 $(eval $(call generate-ipq-wifi-package,qihoo_360v6,Qihoo 360V6))
@@ -219,9 +241,13 @@ $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
 $(eval $(call generate-ipq-wifi-package,skspruce_wia3300-20,SKSpruce WIA3300-20))
 $(eval $(call generate-ipq-wifi-package,spectrum_sax1v1k,Spectrum SAX1V1K))
+$(eval $(call generate-ipq-wifi-package,tplink_deco-x80-5g,TP-Link Deco X80-5G))
 $(eval $(call generate-ipq-wifi-package,tplink_eap610-outdoor,TPLink EAP610-Outdoor))
 $(eval $(call generate-ipq-wifi-package,tplink_eap620hd-v1,TP-Link EAP620 HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_eap623od-hd-v1,TP-Link EAP623-Outdoor HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_eap625-outdoor-hd-v1,TP-Link EAP625-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
@@ -232,6 +258,8 @@ $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
 $(eval $(call generate-ipq-wifi-package,zte_mf289d,ZTE MF289D))
 $(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
+$(eval $(call generate-ipq-wifi-package,zte_mf286ar,ZTE MF286A/R))
+$(eval $(call generate-ipq-wifi-package,zte_mf286c,ZTE MF286C))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))

@@ -14,8 +14,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux
 PKG_PATCHVER:=6.6
+
 # Manually include kernel version and hash from kernel details file
-include $(INCLUDE_DIR)/kernel-$(PKG_PATCHVER)
+GENERIC_PLATFORM_DIR := $(CURDIR)/../../../target/linux/generic
+include $(GENERIC_PLATFORM_DIR)/kernel-$(PKG_PATCHVER)
 
 PKG_VERSION:=$(PKG_PATCHVER)$(strip $(LINUX_VERSION-$(PKG_PATCHVER)))
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -23,7 +25,6 @@ PKG_SOURCE_URL:=@KERNEL/linux/kernel/v$(word 1,$(subst ., ,$(PKG_PATCHVER))).x
 PKG_HASH:=$(LINUX_KERNEL_HASH-$(strip $(PKG_VERSION)))
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/bpf-headers/$(PKG_NAME)-$(PKG_VERSION)
 
-GENERIC_PLATFORM_DIR := $(CURDIR)/../../../target/linux/generic
 GENERIC_BACKPORT_DIR := $(GENERIC_PLATFORM_DIR)/backport$(if $(wildcard $(GENERIC_PLATFORM_DIR)/backport-$(PKG_PATCHVER)),-$(PKG_PATCHVER))
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/pending$(if $(wildcard $(GENERIC_PLATFORM_DIR)/pending-$(PKG_PATCHVER)),-$(PKG_PATCHVER))
 GENERIC_HACK_DIR := $(GENERIC_PLATFORM_DIR)/hack$(if $(wildcard $(GENERIC_PLATFORM_DIR)/hack-$(PKG_PATCHVER)),-$(PKG_PATCHVER))

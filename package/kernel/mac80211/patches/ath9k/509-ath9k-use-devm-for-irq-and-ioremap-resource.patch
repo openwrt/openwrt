@@ -1,0 +1,50 @@
+From 454255e44bf48d8498ac3413389513138ab57bf6 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 4 Jan 2025 14:24:46 -0800
+Subject: [PATCH] wifi: ath9k: ahb: do ioremap resource in one step
+
+Simplifies probe slightly and adds extra error codes.
+
+Switching from devm_ioremap to the platform variant ends up calling
+devm_request_mem_region, which reserves the memory region for the
+various wmacs. Per board, there is only one wmac and after some fairly
+thorough analysis, there are no overlapping memory regions between wmacs
+and other devices on the ahb.
+
+Tested on a TP-Link Archer C7v2.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ath/ath9k/ahb.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -74,7 +74,6 @@ static int ath_ahb_probe(struct platform
+ 	void __iomem *mem;
+ 	struct ath_softc *sc;
+ 	struct ieee80211_hw *hw;
+-	struct resource *res;
+ 	const struct platform_device_id *id = platform_get_device_id(pdev);
+ 	int irq;
+ 	int ret = 0;
+@@ -86,16 +85,10 @@ static int ath_ahb_probe(struct platform
+ 		return -EINVAL;
+ 	}
+ 
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (res == NULL) {
+-		dev_err(&pdev->dev, "no memory resource found\n");
+-		return -ENXIO;
+-	}
+-
+-	mem = devm_ioremap(&pdev->dev, res->start, resource_size(res));
+-	if (mem == NULL) {
++	mem = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(mem)) {
+ 		dev_err(&pdev->dev, "ioremap failed\n");
+-		return -ENOMEM;
++		return PTR_ERR(mem);
+ 	}
+ 
+ 	irq = platform_get_irq(pdev, 0);

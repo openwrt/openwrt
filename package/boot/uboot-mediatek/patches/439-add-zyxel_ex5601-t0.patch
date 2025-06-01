@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986_zyxel_ex5601-t0_defconfig
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,128 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -118,6 +118,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -162,13 +163,13 @@
 +		compatible = "gpio-keys";
 +		factory {
 +			label = "reset";
-+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 21 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +
 +		wps {
 +			label = "wps";
-+			gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 56 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_WPS_BUTTON>;
 +		};
 +	};
@@ -178,13 +179,13 @@
 +
 +		led_status_green: pwr {
 +			label = "green:status";
-+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
 +			default-state = "off";
 +		};
 +
 +		led_sfp_green: sfp {
 +			label = "green:sfp";
-+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
 +			default-state = "off";
 +		};
 +	};
@@ -206,7 +207,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -214,7 +215,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spic_pins: spi1-pins-func-1 {
 +		mux {
 +			function = "spi";

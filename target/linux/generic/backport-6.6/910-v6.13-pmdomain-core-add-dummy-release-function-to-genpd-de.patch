@@ -1,0 +1,46 @@
+From f64f610ec6ab59dd0391b03842cea3a4cd8ee34f Mon Sep 17 00:00:00 2001
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Wed, 18 Dec 2024 19:44:33 +0100
+Subject: [PATCH] pmdomain: core: add dummy release function to genpd device
+
+The genpd device, which is really only used as a handle to lookup
+OPP, but not even registered to the device core otherwise and thus
+lifetime linked to the genpd struct it is contained in, is missing
+a release function. After b8f7bbd1f4ec ("pmdomain: core: Add
+missing put_device()") the device will be cleaned up going through
+the driver core device_release() function, which will warn when no
+release callback is present for the device. Add a dummy release
+function to shut up the warning.
+
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+Tested-by: Luca Ceresoli <luca.ceresoli@bootlin.com>
+Fixes: b8f7bbd1f4ec ("pmdomain: core: Add missing put_device()")
+Cc: stable@vger.kernel.org
+Message-ID: <20241218184433.1930532-1-l.stach@pengutronix.de>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/base/power/domain.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -2040,6 +2040,11 @@ static void genpd_lock_init(struct gener
+ 	}
+ }
+ 
++static void genpd_provider_release(struct device *dev)
++{
++	/* nothing to be done here */
++}
++
+ /**
+  * pm_genpd_init - Initialize a generic I/O PM domain object.
+  * @genpd: PM domain object to initialize.
+@@ -2106,6 +2111,7 @@ int pm_genpd_init(struct generic_pm_doma
+ 		return ret;
+ 
+ 	device_initialize(&genpd->dev);
++	genpd->dev.release = genpd_provider_release;
+ 	dev_set_name(&genpd->dev, "%s", genpd->name);
+ 
+ 	mutex_lock(&gpd_list_lock);

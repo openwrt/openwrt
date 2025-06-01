@@ -2256,7 +2256,7 @@
 +#endif /* _EIP93_DES_H_ */
 --- /dev/null
 +++ b/drivers/crypto/mtk-eip93/eip93-main.c
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,463 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2019 - 2021
@@ -2689,15 +2689,13 @@
 +	return 0;
 +}
 +
-+static int mtk_crypto_remove(struct platform_device *pdev)
++static void mtk_crypto_remove(struct platform_device *pdev)
 +{
 +	struct mtk_device *mtk = platform_get_drvdata(pdev);
 +
 +	mtk_unregister_algs(ARRAY_SIZE(mtk_algs));
 +	mtk_cleanup(mtk);
 +	dev_info(mtk->dev, "EIP93 removed.\n");
-+
-+	return 0;
 +}
 +
 +#if defined(CONFIG_OF)
@@ -2710,7 +2708,7 @@
 +
 +static struct platform_driver mtk_crypto_driver = {
 +	.probe = mtk_crypto_probe,
-+	.remove = mtk_crypto_remove,
++	.remove_new = mtk_crypto_remove,
 +	.driver = {
 +		.name = "mtk-eip93",
 +		.of_match_table = of_match_ptr(mtk_crypto_of_match),

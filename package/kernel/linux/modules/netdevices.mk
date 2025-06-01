@@ -120,6 +120,38 @@ endef
 $(eval $(call KernelPackage,atl1e))
 
 
+define KernelPackage/libie
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet library
+  DEPENDS:=@!LINUX_6_6 +kmod-libeth
+  KCONFIG:=CONFIG_LIBIE
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie.ko
+endef
+
+define KernelPackage/libie/description
+ Intel Ethernet library
+endef
+
+$(eval $(call KernelPackage,libie))
+
+
+define KernelPackage/libeth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Common Intel Ethernet library
+  DEPENDS:=@!LINUX_6_6
+  KCONFIG:=CONFIG_LIBETH
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libeth/libeth.ko
+endef
+
+define KernelPackage/libeth/description
+ Common Intel Ethernet library
+endef
+
+$(eval $(call KernelPackage,libeth))
+
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
@@ -513,7 +545,7 @@ $(eval $(call KernelPackage,phy-airoha-en8811h))
 define KernelPackage/phy-aquantia
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Aquantia Ethernet PHYs
-  DEPENDS:=+kmod-libphy +kmod-hwmon-core +kmod-lib-crc-ccitt
+  DEPENDS:=+kmod-libphy +kmod-hwmon-core +LINUX_6_6:kmod-lib-crc-ccitt +!LINUX_6_6:kmod-lib-crc-itu-t
   KCONFIG:=CONFIG_AQUANTIA_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/aquantia/aquantia.ko
   AUTOLOAD:=$(call AutoLoad,18,aquantia,1)
@@ -658,7 +690,7 @@ $(eval $(call KernelPackage,dsa-realtek))
 
 define KernelPackage/dsa-rtl8366rb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Realtek RTL8365MB switch DSA support
+  TITLE:=Realtek RTL8366RB switch DSA support
   DEPENDS:=+kmod-dsa-realtek @!TARGET_x86 @!TARGET_bcm47xx @!TARGET_uml
   KCONFIG:= \
 	CONFIG_NET_DSA_REALTEK_RTL8366RB \
@@ -1024,7 +1056,7 @@ define KernelPackage/r8169
     CONFIG_R8169 \
     CONFIG_R8169_LEDS=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/realtek/r8169.ko
-  AUTOLOAD:=$(call AutoProbe,r8169)
+  AUTOLOAD:=$(call AutoProbe,r8169,1)
 endef
 
 define KernelPackage/r8169/description
@@ -1146,9 +1178,9 @@ define KernelPackage/ixgbe
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
   DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres
   KCONFIG:=CONFIG_IXGBE \
-    CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
-    CONFIG_IXGBE_DCA=n
+    CONFIG_IXGBE_DCA=n \
+    CONFIG_IXGBE_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,ixgbe)
 endef
@@ -1165,7 +1197,6 @@ define KernelPackage/ixgbevf
   TITLE:=Intel(R) 82599 Virtual Function Ethernet support
   DEPENDS:=@PCI_SUPPORT +kmod-ixgbe
   KCONFIG:=CONFIG_IXGBEVF \
-    CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbevf/ixgbevf.ko
@@ -1182,13 +1213,11 @@ $(eval $(call KernelPackage,ixgbevf))
 define KernelPackage/i40e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller XL710 Family support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +!LINUX_6_6:kmod-libie
   KCONFIG:=CONFIG_I40E \
-    CONFIG_I40E_VXLAN=n \
-    CONFIG_I40E_HWMON=y \
-    CONFIG_I40E_DCA=n
+    CONFIG_I40E_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
-  AUTOLOAD:=$(call AutoProbe,i40e)
+  AUTOLOAD:=$(call AutoLoad,36,i40e,1)
 endef
 
 define KernelPackage/i40e/description
@@ -1198,10 +1227,29 @@ endef
 $(eval $(call KernelPackage,i40e))
 
 
+define KernelPackage/ice
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) Ethernet Controller E810 Series support
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +!LINUX_6_6:kmod-hwmon-core +!LINUX_6_6:kmod-libie
+  KCONFIG:=CONFIG_ICE \
+    CONFIG_ICE_HWMON=y \
+    CONFIG_ICE_HWTS=n \
+    CONFIG_ICE_SWITCHDEV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ice/ice.ko
+  AUTOLOAD:=$(call AutoProbe,ice)
+endef
+
+define KernelPackage/ice/description
+  Kernel modules for Intel(R) Ethernet Controller E810 Series
+endef
+
+$(eval $(call KernelPackage,ice))
+
+
 define KernelPackage/iavf
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +!LINUX_6_6:kmod-libie
   KCONFIG:= \
        CONFIG_I40EVF \
        CONFIG_IAVF
@@ -1600,7 +1648,7 @@ define KernelPackage/bnxt-en
 	  CONFIG_BNXT \
 	  CONFIG_BNXT_SRIOV=y \
 	  CONFIG_BNXT_FLOWER_OFFLOAD=y \
-	  CONFIG_BNXT_DCB=n \
+	  CONFIG_BNXT_DCB=y \
 	  CONFIG_BNXT_HWMON=y
   AUTOLOAD:=$(call AutoProbe,bnxt_en)
 endef
@@ -1642,11 +1690,11 @@ define KernelPackage/mlx4-core
 	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_core.ko \
 	$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx4/mlx4_en.ko
   KCONFIG:= CONFIG_MLX4_EN \
-	CONFIG_MLX4_EN_DCB=n \
+	CONFIG_MLX4_EN_DCB=y \
 	CONFIG_MLX4_CORE=y \
 	CONFIG_MLX4_CORE_GEN2=y \
 	CONFIG_MLX4_DEBUG=n
-  AUTOLOAD:=$(call AutoLoad,36,mlx4_core mlx4_en,1)
+  AUTOLOAD:=$(call AutoLoad,45,mlx4_core mlx4_en,1)
 endef
 
 define KernelPackage/mlx4-core/description
@@ -1662,7 +1710,7 @@ define KernelPackage/mlx5-core
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.ko
   KCONFIG:= CONFIG_MLX5_CORE \
 	CONFIG_MLX5_CORE_EN=y \
-	CONFIG_MLX5_CORE_EN_DCB=n \
+	CONFIG_MLX5_CORE_EN_DCB=y \
 	CONFIG_MLX5_CORE_IPOIB=n \
 	CONFIG_MLX5_EN_ARFS=n \
 	CONFIG_MLX5_EN_IPSEC=n \
@@ -1677,7 +1725,7 @@ define KernelPackage/mlx5-core
 	CONFIG_MLX5_TC_CT=n \
 	CONFIG_MLX5_TLS=n \
 	CONFIG_MLX5_VFIO_PCI=n
-  AUTOLOAD:=$(call AutoLoad,36,mlx5_core,1)
+  AUTOLOAD:=$(call AutoLoad,45,mlx5_core,1)
 endef
 
 define KernelPackage/mlx5-core/description
@@ -1780,9 +1828,7 @@ define KernelPackage/mlxsw-spectrum
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlxsw/mlxsw_spectrum.ko
   KCONFIG:= \
   CONFIG_MLXSW_SPECTRUM \
-  CONFIG_MLXSW_SPECTRUM_DCB=y \
-  CONFIG_NET_SWITCHDEV=y \
-  CONFIG_DCB=y
+  CONFIG_MLXSW_SPECTRUM_DCB=y
   AUTOLOAD:=$(call AutoProbe,mlxsw_spectrum)
 endef
 
@@ -1817,7 +1863,8 @@ define KernelPackage/qlcnic
   KCONFIG:= \
 	CONFIG_QLCNIC \
 	CONFIG_QLCNIC_HWMON=y \
-	CONFIG_QLCNIC_SRIOV=y
+	CONFIG_QLCNIC_SRIOV=y \
+	CONFIG_QLCNIC_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/qlogic/qlcnic/qlcnic.ko
   AUTOLOAD:=$(call AutoProbe,qlcnic)
 endef
@@ -1853,7 +1900,7 @@ $(eval $(call KernelPackage,sfp))
 define KernelPackage/pcs-xpcs
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis DesignWare PCS driver
-  DEPENDS:=@(TARGET_x86_64||TARGET_armsr) +kmod-phylink
+  DEPENDS:=@(TARGET_x86_64||TARGET_armsr) +kmod-phylink +!LINUX_6_6:kmod-mdio-devres
   KCONFIG:=CONFIG_PCS_XPCS
   FILES:=$(LINUX_DIR)/drivers/net/pcs/pcs_xpcs.ko
   AUTOLOAD:=$(call AutoLoad,20,pcs_xpcs)
@@ -1894,6 +1941,23 @@ define KernelPackage/igc/description
 endef
 
 $(eval $(call KernelPackage,igc))
+
+
+define KernelPackage/hinic
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Huawei Intelligent PCIE Network Interface Card support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86||TARGET_armsr_armv8
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/huawei/hinic/hinic.ko
+  KCONFIG:=CONFIG_HINIC
+  AUTOLOAD:=$(call AutoProbe,hinic)
+endef
+
+define KernelPackage/hinic/description
+  Kernel module for HiNIC PCIE Ethernet cards
+endef
+
+$(eval $(call KernelPackage,hinic))
+
 
 define KernelPackage/sfc
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -2034,7 +2098,7 @@ $(eval $(call KernelPackage,atlantic))
 define KernelPackage/lan743x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Microchip LAN743x PCI Express Gigabit Ethernet NIC
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-mdio-devres +kmod-fixed-phy
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-mdio-devres +kmod-fixed-phy +!LINUX_6_6:kmod-phylink
   KCONFIG:=CONFIG_LAN743X
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/microchip/lan743x.ko
   AUTOLOAD:=$(call AutoProbe,lan743x)

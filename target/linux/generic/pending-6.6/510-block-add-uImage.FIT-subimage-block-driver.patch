@@ -36,7 +36,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -22015,6 +22015,12 @@ F:	Documentation/filesystems/ubifs-authe
+@@ -22017,6 +22017,12 @@ F:	Documentation/filesystems/ubifs-authe
  F:	Documentation/filesystems/ubifs.rst
  F:	fs/ubifs/
  
@@ -656,7 +656,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		add_fit_subimage_device(bdev, slot++, start_sect, nr_sects, true);
 +	}
 +
-+	if (!found || !slot)
++	if (!slot)
 +		goto out_bootconf;
 +
 +	dev_info(dev, "mapped %u uImage.FIT filesystem sub-image%s as /dev/fit%s%u%s\n",
@@ -675,7 +675,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	kfree(bootconf);
 +	kfree(fit);
 +out_blkdev:
-+	if (!found || ret)
++	if (!slot)
 +		blkdev_put(bdev, &_fitblk_claim_ptr);
 +
 +	return ret;

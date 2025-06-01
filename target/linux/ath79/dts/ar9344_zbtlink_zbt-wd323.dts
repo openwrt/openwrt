@@ -59,9 +59,12 @@
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
-	
+
 	watchdog {
 		compatible = "linux,wdt-gpio";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_gpio21>;
 		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		hw_algo = "toggle";
 		hw_margin_ms = <30000>;
@@ -70,10 +73,7 @@
 };
 
 &wdt {
-	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&enable_gpio21>;
+	status = "disabled";
 };
 
 &gpio {

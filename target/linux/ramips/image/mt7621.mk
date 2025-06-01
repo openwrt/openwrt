@@ -51,7 +51,7 @@ define Build/arcadyan-trx
 	rm $@.hsqs $@.tail
 endef
 
-define Build/dna-header
+define Build/inteno-y3-header
 	BC='$(STAGING_DIR_HOST)/bin/bc' ;\
 	ubifsofs="1024" ;\
 	ubifs="$$(stat -c%s $@)" ;\
@@ -67,12 +67,12 @@ define Build/dna-header
 	echo "IntenoIopY" > $@.tmp ;\
 	echo "version 5" >> $@.tmp ;\
 	echo "integrity MD5SUM" >> $@.tmp ;\
-	echo "board EX400" >> $@.tmp ;\
-	echo "chip 7621" >> $@.tmp ;\
-	echo "arch all mipsel_1004kc" >> $@.tmp ;\
-	echo "model EX400" >> $@.tmp ;\
-	echo "release EX400-X-DNA-4.3.6.100-R-210518_0935" >> $@.tmp ;\
-	echo "customer DNA" >> $@.tmp ;\
+	echo "board $(word 1,$(1))" >> $@.tmp ;\
+	echo "chip $(patsubst mt%,%,$(SOC:bcm%=%))" >> $@.tmp ;\
+	echo "arch all $(CONFIG_TARGET_ARCH_PACKAGES)" >> $@.tmp ;\
+	echo "model $(word 1,$(1))" >> $@.tmp ;\
+	echo "release $(DEVICE_IMG_PREFIX)" >> $@.tmp ;\
+	echo "customer $(if $(CONFIG_VERSION_DIST),$(CONFIG_VERSION_DIST),OpenWrt)" >> $@.tmp ;\
 	echo "ubifsofs $${ubifsofs}" >> $@.tmp ;\
 	echo "ubifs $${ubifs}" >> $@.tmp ;\
 	echo "pkginfoofs $${pkginfoofs}" >> $@.tmp ;\
@@ -91,7 +91,8 @@ define Build/dna-header
 	mv $@.tmp $@
 endef
 
-define Build/dna-bootfs
+define Build/inteno-bootfs
+	rm -rf $@.ubifs-dir
 	mkdir -p $@.ubifs-dir/boot
 
 	# populate the boot fs with the dtb and the kernel image
@@ -100,7 +101,6 @@ define Build/dna-bootfs
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
-	rm -rf $@.ubifs-dir
 	mv $@.new $@
 endef
 
@@ -699,6 +699,19 @@ define Device/confiabits_mt7621-v1
 endef
 TARGET_DEVICES += confiabits_mt7621-v1
 
+define Device/cudy_m1300-v2
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := M1300
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+  UIMAGE_NAME := R15
+  SUPPORTED_DEVICES += R15
+endef
+TARGET_DEVICES += cudy_m1300-v2
+
 define Device/cudy_m1800
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy
@@ -754,6 +767,16 @@ define Device/cudy_wr2100
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += cudy_wr2100
+
+define Device/cudy_r700
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := R700
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R29
+  DEVICE_PACKAGES := -uboot-envtools
+endef
+TARGET_DEVICES += cudy_r700
 
 define Device/cudy_x6-v1
   $(Device/dsa-migration)
@@ -1072,23 +1095,11 @@ define Device/d-team_pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
 
+# Branded version of Genexis / Inteno EX400 (difference is one LED)
 define Device/dna_valokuitu-plus-ex400
-  $(Device/dsa-migration)
-  IMAGE_SIZE := 117m
-  PAGESIZE := 2048
-  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
-	--log-lebs=2 --space-fixup --squash-uids
+  $(Device/genexis_pulse-ex400/common)
   DEVICE_VENDOR := DNA
   DEVICE_MODEL := Valokuitu Plus EX400
-  KERNEL := kernel-bin | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
-	dna-bootfs | dna-header | append-md5sum-ascii-salted
-  IMAGE/sysupgrade.bin := append-kernel | dna-bootfs | \
-  	sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
-  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += dna_valokuitu-plus-ex400
 
@@ -1300,10 +1311,11 @@ define Device/elecom_wrc-x1800gs
   $(Device/nand)
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X1800GS
-  KERNEL := kernel-bin | lzma | \
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	znet-header 4.04(XVF.1)b90 COMC 0x68 | elecom-product-header WRC-X1800GS
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  KERNEL_INITRAMFS := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 51456k
@@ -1392,6 +1404,35 @@ define Device/gemtek_wvrtm-130acn
   DEVICE_PACKAGES += kmod-mt7615-firmware
 endef
 TARGET_DEVICES += gemtek_wvrtm-130acn
+
+# Common definitions shared between genexis_pulse-ex400 and dna_valokuitu-plus-ex400
+define Device/genexis_pulse-ex400/common
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 117m
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
+    --log-lebs=2 --space-fixup --squash-uids
+  KERNEL := kernel-bin | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
+	inteno-bootfs | inteno-y3-header EX400 | append-md5sum-ascii-salted
+endif
+  IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | pad-to 10M | \
+    sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 kmod-keyboard-sx951x kmod-button-hotplug
+endef
+
+define Device/genexis_pulse-ex400
+  $(Device/genexis_pulse-ex400/common)
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Pulse EX400
+  DEVICE_ALT0_VENDOR := Inteno
+  DEVICE_ALT0_MODEL := Pulse EX400
+endef
+TARGET_DEVICES += genexis_pulse-ex400
 
 define Device/glinet_gl-mt1300
   $(Device/dsa-migration)
@@ -1956,6 +1997,20 @@ define Device/linksys_re7000
 endef
 TARGET_DEVICES += linksys_re7000
 
+define Device/maginon_mc-1200ac
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Maginon
+  DEVICE_MODEL := MC-1200AC
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb3 -uboot-envtools
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  IMAGE_SIZE := 15552k
+endef
+TARGET_DEVICES += maginon_mc-1200ac
+
 define Device/mediatek_ap-mt7621a-v60
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
@@ -2051,6 +2106,18 @@ define Device/mikrotik_routerboard-m33g
   SUPPORTED_DEVICES += mikrotik,rbm33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
+
+define Device/mofinetwork_mofi5500-5gxelte
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 27656k
+  DEVICE_VENDOR := MoFi Network
+  DEVICE_MODEL := MOFI5500-5GXeLTE
+  DEVICE_PACKAGES := kmod-usb3 kmod-mmc-mtk kmod-mt7615-firmware \
+	kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
+  SUPPORTED_DEVICES += mofi5500 # Needed in order to flash through Mofi stock firmware
+endef
+TARGET_DEVICES += mofinetwork_mofi5500-5gxelte
 
 define Device/mqmaker_witi
   $(Device/dsa-migration)
@@ -2510,7 +2577,7 @@ define Device/sercomm_na502s
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502S
   DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3 kmod-usb-serial \
-		kmod-usb-serial-xr_usb_serial_common -uboot-envtools
+		kmod-usb-serial-xr -uboot-envtools
 endef
 TARGET_DEVICES += sercomm_na502s
 
@@ -3502,6 +3569,20 @@ define Device/zyxel_lte5398-m904
   KERNEL_INITRAMFS_SUFFIX := -recovery.bin
 endef
 TARGET_DEVICES += zyxel_lte5398-m904
+
+define Device/zyxel_lte7490-m904
+  $(Device/nand)
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := LTE7490-M904
+  KERNEL_SIZE := 31488k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  KERNEL := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) $$(VERSION_DIST)-$$(REVISION)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) 9.99(ABQY.9)$$(VERSION_DIST)-recovery
+  KERNEL_INITRAMFS_SUFFIX := -recovery.bin
+endef
+TARGET_DEVICES += zyxel_lte7490-m904
 
 define Device/zyxel_nr7101
   $(Device/nand)

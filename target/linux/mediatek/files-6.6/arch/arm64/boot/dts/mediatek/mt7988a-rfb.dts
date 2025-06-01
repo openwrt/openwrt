@@ -24,6 +24,136 @@
 	memory {
 		reg = <0 0x40000000 0 0x40000000>;
 	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&pio {
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	gbe0_led0_pins: gbe0-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led0";
+		};
+	};
+
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	i2c1_sfp_pins: i2c1-sfp-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c1_sfp";
+		};
+	};
+
+	i2c2_0_pins: i2c2-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c2_0";
+		};
+	};
+
+	i2c0_pins: i2c0-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	i2c1_pins: i2c1-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c1_0";
+		};
+	};
+
+	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "2p5gbe_led0";
+		};
+	};
+
+	mmc0_pins_emmc_51: mmc0-pins-emmc-51 {
+		mux {
+			function = "flash";
+			groups = "emmc_51";
+		};
+	};
+
+	mmc0_pins_sdcard: mmc0-pins-sdcard {
+		mux {
+			function = "flash";
+			groups = "sdcard";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups =  "uart0";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
+	spi1_pins: spi1-pins {
+		mux {
+			function = "spi";
+			groups = "spi1";
+		};
+	};
 };
 
 &eth {
@@ -68,8 +198,13 @@
 	pinctrl-0 = <&gbe0_led0_pins>;
 };
 
+&gsw_port0 {
+	label = "lan0";
+};
+
 &gsw_phy0_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -78,8 +213,13 @@
 	pinctrl-0 = <&gbe1_led0_pins>;
 };
 
+&gsw_port1 {
+	label = "lan1";
+};
+
 &gsw_phy1_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -88,8 +228,13 @@
 	pinctrl-0 = <&gbe2_led0_pins>;
 };
 
+&gsw_port2 {
+	label = "lan2";
+};
+
 &gsw_phy2_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -98,8 +243,13 @@
 	pinctrl-0 = <&gbe3_led0_pins>;
 };
 
+&gsw_port3 {
+	label = "lan3";
+};
+
 &gsw_phy3_led0 {
 	status = "okay";
+	function = LED_FUNCTION_LAN;
 	color = <LED_COLOR_ID_GREEN>;
 };
 
@@ -187,7 +337,9 @@
 	status = "okay";
 };
 
-&uart0 {
+&serial0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
 	status = "okay";
 };
 
@@ -195,6 +347,6 @@
 	status = "okay";
 };
 
-&xphy {
+&xsphy {
 	status = "okay";
 };

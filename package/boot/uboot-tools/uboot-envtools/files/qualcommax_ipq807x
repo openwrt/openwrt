@@ -1,0 +1,83 @@
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+ubootenv_add_mtd() {
+	local idx="$(find_mtd_index "${1}")"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
+}
+
+ubootenv_add_sys_mtd() {
+	local idx="$(find_mtd_index "${1}")"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_sys_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
+}
+
+ubootenv_add_mmc() {
+	local mmcpart="$(find_mmc_part "${1}")"
+	[ -n "$mmcpart" ] && \
+		ubootenv_add_uci_config "$mmcpart" "${2}" "${3}" "${4}" "${5}"
+}
+
+case "$board" in
+aliyun,ap8220|\
+compex,wpq873|\
+edgecore,eap102|\
+zyxel,nbg7815)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x10000"
+	;;
+dynalink,dl-wrx36|\
+netgear,rax120v2|\
+netgear,sxr80|\
+netgear,sxs80|\
+netgear,wax218|\
+netgear,wax620|\
+netgear,wax630|\
+tplink,deco-x80-5g|\
+tplink,eap620hd-v1|\
+tplink,eap660hd-v1)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x20000"
+	;;
+edimax,cax1800)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
+	;;
+linksys,homewrk)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x40000"
+	;;
+linksys,mx4200v1|\
+linksys,mx4200v2|\
+linksys,mx5300|\
+linksys,mx8500)
+	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
+	;;
+linksys,mx4300)
+	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x40000"
+	;;
+redmi,ax6|\
+xiaomi,ax3600|\
+xiaomi,ax9000)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x20000"
+	ubootenv_add_sys_mtd "bdata" "0x0" "0x10000" "0x20000"
+	;;
+prpl,haze)
+	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x400" "0x100"
+	;;
+asus,rt-ax89x|\
+qnap,301w)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x20000" "0x20000"
+	;;
+spectrum,sax1v1k)
+	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x40000" "1"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0

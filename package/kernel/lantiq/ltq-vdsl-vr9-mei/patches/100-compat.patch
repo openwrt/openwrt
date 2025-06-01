@@ -313,17 +313,22 @@
  
  #if (MEI_EXPORT_INTERNAL_API == 1) && (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
  
-@@ -59,8 +58,21 @@ extern IFX_int32_t MEI_InternalTcReset(
+@@ -58,9 +57,26 @@ extern IFX_int32_t MEI_InternalTcRequest
+ extern IFX_int32_t MEI_InternalTcReset(
                                MEI_DYN_CNTRL_T        *pMeiDynCntrl,
                                MEI_TC_Reset_t         *pArgTcReset);
- 
++struct port_cell_info;
++extern int ifx_mei_atm_showtime_check(int *is_showtime,
++                              struct port_cell_info *port_cell,
++                              void **xdata_addr);
++
 +#if 1
 +#include <lantiq_atm.h>
 +typedef enum {
 +	LTQ_MEI_SHOWTIME_ENTER,
 +	LTQ_MEI_SHOWTIME_EXIT
 +} e_ltq_mei_cb_type;
-+
+ 
 +typedef void (*ltq_mei_atm_showtime_enter_t)(IFX_uint8_t, struct port_cell_info *, void *);
 +typedef void (*ltq_mei_atm_showtime_exit_t)(IFX_uint8_t);
 +

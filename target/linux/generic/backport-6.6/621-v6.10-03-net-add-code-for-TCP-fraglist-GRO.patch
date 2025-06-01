@@ -1,0 +1,75 @@
+From 8d95dc474f85481652a0e422d2f1f079de81f63c Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 2 May 2024 10:44:44 +0200
+Subject: [PATCH 3/6] net: add code for TCP fraglist GRO
+
+This implements fraglist GRO similar to how it's handled in UDP, however
+no functional changes are added yet. The next change adds a heuristic for
+using fraglist GRO instead of regular GRO.
+
+Acked-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Reviewed-by: Eric Dumazet <edumazet@google.com>
+Reviewed-by: David Ahern <dsahern@kernel.org>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ net/ipv4/tcp_offload.c   | 21 +++++++++++++++++++++
+ net/ipv6/tcpv6_offload.c |  9 +++++++++
+ 2 files changed, 30 insertions(+)
+
+--- a/net/ipv4/tcp_offload.c
++++ b/net/ipv4/tcp_offload.c
+@@ -342,6 +342,18 @@ found:
+ 	flush |= p->decrypted ^ skb->decrypted;
+ #endif
+ 
++	if (unlikely(NAPI_GRO_CB(p)->is_flist)) {
++		flush |= (__force int)(flags ^ tcp_flag_word(th2));
++		flush |= skb->ip_summed != p->ip_summed;
++		flush |= skb->csum_level != p->csum_level;
++		flush |= NAPI_GRO_CB(p)->count >= 64;
++
++		if (flush || skb_gro_receive_list(p, skb))
++			mss = 1;
++
++		goto out_check_final;
++	}
++
+ 	if (flush || skb_gro_receive(p, skb)) {
+ 		mss = 1;
+ 		goto out_check_final;
+@@ -406,6 +418,15 @@ INDIRECT_CALLABLE_SCOPE int tcp4_gro_com
+ 	const struct iphdr *iph = ip_hdr(skb);
+ 	struct tcphdr *th = tcp_hdr(skb);
+ 
++	if (unlikely(NAPI_GRO_CB(skb)->is_flist)) {
++		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV4;
++		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
++
++		__skb_incr_checksum_unnecessary(skb);
++
++		return 0;
++	}
++
+ 	th->check = ~tcp_v4_check(skb->len - thoff, iph->saddr,
+ 				  iph->daddr, 0);
+ 	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV4;
+--- a/net/ipv6/tcpv6_offload.c
++++ b/net/ipv6/tcpv6_offload.c
+@@ -32,6 +32,15 @@ INDIRECT_CALLABLE_SCOPE int tcp6_gro_com
+ 	const struct ipv6hdr *iph = ipv6_hdr(skb);
+ 	struct tcphdr *th = tcp_hdr(skb);
+ 
++	if (unlikely(NAPI_GRO_CB(skb)->is_flist)) {
++		skb_shinfo(skb)->gso_type |= SKB_GSO_FRAGLIST | SKB_GSO_TCPV6;
++		skb_shinfo(skb)->gso_segs = NAPI_GRO_CB(skb)->count;
++
++		__skb_incr_checksum_unnecessary(skb);
++
++		return 0;
++	}
++
+ 	th->check = ~tcp_v6_check(skb->len - thoff, &iph->saddr,
+ 				  &iph->daddr, 0);
+ 	skb_shinfo(skb)->gso_type |= SKB_GSO_TCPV6;

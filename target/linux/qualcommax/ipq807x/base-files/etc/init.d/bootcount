@@ -17,5 +17,9 @@ boot() {
 	linksys,mx8500)
 		mtd resetbc s_env || true
 	;;
+	netgear,wax620|\
+	netgear,wax630)
+		fw_setenv boot_count 0
+	;;
 	esac
 }

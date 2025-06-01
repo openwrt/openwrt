@@ -28,6 +28,22 @@ define Build/ravpower-wd009-factory
 	@mv $@.new $@
 endef
 
+define Build/append-teltonika-metadata
+  $(eval model_id=$(1))
+	echo \
+		'{ \
+			"metadata_version": "1.1", \
+			"compat_version": "1.0", \
+			"version": "", \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			"supported_devices":["teltonika,$(model_id)"], \
+			"hw_support": { }, \
+			"hw_mods": { } \
+		}' | fwtool -I - $@
+endef
 
 define Device/7links_wlr-12xx
   IMAGE_SIZE := 7872k
@@ -166,6 +182,17 @@ define Device/comfast_cf-wr758ac-v2
   SUPPORTED_DEVICES += joowin,jw-wr758ac-v2
 endef
 TARGET_DEVICES += comfast_cf-wr758ac-v2
+
+define Device/cudy_m1200-v1
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := M1200
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
+  UIMAGE_NAME := R22
+  SUPPORTED_DEVICES += R22
+endef
+TARGET_DEVICES += cudy_m1200-v1
 
 define Device/cudy_tr1200-v1
   IMAGE_SIZE := 15872k
@@ -355,6 +382,18 @@ define Device/jotale_js76x8-32m
 endef
 TARGET_DEVICES += jotale_js76x8-32m
 
+define Device/keenetic_kn-1221
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 29440k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1221
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size 14720k | zyimage -d 0x801221 -v "KN-1221"
+endef
+TARGET_DEVICES += keenetic_kn-1221
+
 define Device/keenetic_kn-1613
   IMAGE_SIZE := 15073280
   DEVICE_VENDOR := Keenetic
@@ -464,6 +503,20 @@ define Device/mercury_mac1200r-v2
   SUPPORTED_DEVICES += mac1200rv2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
+
+define Device/mercusys_mb130-4g-v1
+$(Device/tplink-v2)
+  IMAGE_SIZE := 14912k
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_MODEL := MB130-4G
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-mt7663-firmware-ap kmod-mt7615e \
+                     kmod-usb-serial-option kmod-usb-net-cdc-ether
+  TPLINK_FLASHLAYOUT := 16MLmtk
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+endef
+TARGET_DEVICES += mercusys_mb130-4g-v1
 
 define Device/minew_g1-c
   IMAGE_SIZE := 15744k
@@ -696,7 +749,8 @@ define Device/tplink_archer-mr200-v6
   TPLINK_HWID := 0x20000006
   TPLINK_HWREV := 0x6
   TPLINK_HWREVADD := 0x6
-  DEVICE_PACKAGES := kmod-mt76x0e uqmi kmod-usb2 kmod-usb-serial-option
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb2 kmod-usb-serial-option uqmi
   KERNEL := kernel-bin | append-dtb | lzma -d22
   KERNEL_INITRAMFS := kernel-bin | append-dtb
   IMAGES := sysupgrade.bin
@@ -1160,6 +1214,14 @@ define Device/xiaomi_mi-router-4c
 endef
 TARGET_DEVICES += xiaomi_mi-router-4c
 
+define Device/xiaomi_miwifi-3a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi 3A
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += xiaomi_miwifi-3a
+
 define Device/xiaomi_miwifi-3c
   IMAGE_SIZE := 15104k
   DEVICE_VENDOR := Xiaomi
@@ -1228,3 +1290,29 @@ define Device/zyxel_keenetic-extra-ii
 	check-size | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
+
+define Device/teltonika_rut200
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT200
+  DEVICE_VARIANT := v1-v4
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut2m
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut200
+
+define Device/teltonika_rut241
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT241
+  DEVICE_VARIANT := v1-v4
+  IMAGE_SIZE := 15424k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut2m
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut241

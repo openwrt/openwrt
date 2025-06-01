@@ -1,0 +1,32 @@
+From 5ad20e3d8cfe3b2e42bbddc7e0ebaa74479bb589 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 29 May 2025 15:09:14 +0200
+Subject: [PATCH] spi: bcm63xx-spi: fix shared reset
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some bmips SoCs (bcm6362, bcm63268) share the same SPI reset for both SPI
+and HSSPI controllers, so reset shouldn't be exclusive.
+
+Fixes: 38807adeaf1e ("spi: bcm63xx-spi: add reset support")
+Reported-by: Jonas Gorski <jonas.gorski@gmail.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20250529130915.2519590-2-noltari@gmail.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/spi-bcm63xx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/spi-bcm63xx.c
++++ b/drivers/spi/spi-bcm63xx.c
+@@ -523,7 +523,7 @@ static int bcm63xx_spi_probe(struct plat
+ 		return PTR_ERR(clk);
+ 	}
+ 
+-	reset = devm_reset_control_get_optional_exclusive(dev, NULL);
++	reset = devm_reset_control_get_optional_shared(dev, NULL);
+ 	if (IS_ERR(reset))
+ 		return PTR_ERR(reset);
+ 

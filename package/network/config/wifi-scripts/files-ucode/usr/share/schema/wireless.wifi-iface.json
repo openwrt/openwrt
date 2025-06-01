@@ -724,6 +724,13 @@
 			"type": "alias",
 			"default": "nas_identifier"
 		},
+		"network": {
+			"description": "Specifies one or multiple logical network interfaces declared in the network configuration, each one should be a L3 bridge to be able to attach this L2 wireless interface.",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"network_auth_type": {
 			"description": "Network Authentication Type",
 			"type": "string"

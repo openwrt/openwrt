@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 /dts-v1/;
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Ubiquiti UniFi 6 Plus";
@@ -110,7 +110,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			eeprom: partition@00000 {
+			eeprom: partition@0 {
 				label = "EEPROM";
 				reg = <0x00000 0x10000>;
 				read-only;

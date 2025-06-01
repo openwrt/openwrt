@@ -4,7 +4,7 @@
 
 #include <dt-bindings/leds/common.h>
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Cudy AP3000 Outdoor v1";
@@ -57,7 +57,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		antctrl {
 			/* Not sure if this pin does anything.

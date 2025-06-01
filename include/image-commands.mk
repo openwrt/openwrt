@@ -99,6 +99,37 @@ define Build/append-metadata
 	}
 endef
 
+metadata_gl_json = \
+	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.1", \
+		"compat_version": "$(call json_quote,$(compat_version))", \
+		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+			[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma) \
+			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
+		"version": { \
+			"release": "$(call json_quote,$(VERSION_NUMBER))", \
+			"date": "$(shell TZ='Asia/Chongqing' date '+%Y%m%d%H%M%S')", \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		} \
+	}'
+
+define Build/append-gl-metadata
+	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_gl_json,$(SUPPORTED_DEVICES)) | fwtool -I - $@)
+	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
+	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
+		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
+		usign -S -m "$@" -s "$(BUILD_KEY)" -x "$@.sig" ;\
+		ucert -A -c "$@.ucert" -x "$@.sig" ;\
+		fwtool -S "$@.ucert" "$@" ;\
+	}
+endef
+
 define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
 endef
@@ -469,6 +500,34 @@ endef
 define Build/kernel-bin
 	rm -f $@
 	cp $< $@
+endef
+
+define Build/gl-qsdk-factory
+	$(eval GL_NAME := $(call param_get_default,type,$(1),$(DEVICE_NAME)))
+	$(eval GL_IMGK := $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-factory.img)
+	$(eval GL_ITS := $(KDIR_TMP)/$(GL_NAME).its)
+	$(eval GL_UBI := "ubi")
+
+	$(CP) $(BOOT_SCRIPT) $(KDIR_TMP)/
+	$(shell mv $(GL_IMGK) $(GL_IMGK).tmp)
+
+	sed -i "s/rootfs_size/`wc -c $(GL_IMGK) | \
+	cut -d " " -f 1 | xargs printf "0x%x"`/g" $(KDIR_TMP)/$(BOOT_SCRIPT);
+
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
+		$(GL_ITS) \
+		$(BOOT_SCRIPT) \
+		$(GL_UBI) \
+		$(GL_IMGK)
+
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f \
+		$(GL_ITS) \
+		$(GL_IMGK)
+
+	$(RM) \
+		$(GL_ITS) \
+		$(GL_IMGK).tmp \
+		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
 endef
 
 define Build/linksys-image

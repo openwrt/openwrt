@@ -29,7 +29,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		bt_pwr {
 			gpio-export,name = "bt_pwr";
@@ -498,13 +497,8 @@
 
 	perst-gpio = <&tlmm 61 GPIO_ACTIVE_LOW>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
+	pcie@0 {
+		wifi@0,0 {
 			status = "okay";
 
 			/* ath11k has no DT compatible for PCI cards */

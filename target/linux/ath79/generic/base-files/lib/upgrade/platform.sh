@@ -68,7 +68,8 @@ platform_do_upgrade() {
 		platform_do_upgrade_failsafe_datachk "$1"
 		;;
 	fortinet,fap-220-b|\
-	fortinet,fap-221-b)
+	fortinet,fap-221-b|\
+	fortinet,fap-221-c)
 		SKIP_HASH="1"
 		ENV_SCRIPT="/dev/null"
 		IMAGE_LIST="tar tzf $1"

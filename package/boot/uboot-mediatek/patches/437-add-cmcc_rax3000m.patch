@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7981_cmcc_rax3000m-emmc_defconfig
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -114,6 +114,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_USB=y
@@ -125,7 +126,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7981_cmcc_rax3000m-nand_defconfig
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -242,6 +243,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -284,14 +286,14 @@
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-mesh {
 +			label = "mesh";
 +			linux,code = <BTN_9>;
 +			linux,input-type = <EV_SW>;
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -300,17 +302,17 @@
 +
 +		led-0 {
 +			label = "green:status";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-1 {
 +			label = "blue:status";
-+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-2 {
 +			label = "red:status";
-+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
@@ -320,7 +322,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -366,7 +368,7 @@
 +	status = "okay";
 +};
 +
-+&pinctrl {
++&pio {
 +	mmc0_pins_default: mmc0default {
 +		mux {
 +			function = "flash";
@@ -400,7 +402,7 @@
 +/dts-v1/;
 +#include "mt7981-cmcc-rax3000m.dtsi"
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

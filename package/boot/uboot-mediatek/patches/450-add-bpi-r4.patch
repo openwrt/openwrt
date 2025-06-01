@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-emmc_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -128,6 +128,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -140,7 +141,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -268,6 +269,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -280,7 +282,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-snand_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -408,6 +410,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -668,7 +671,7 @@
 +		wps {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -677,12 +680,12 @@
 +
 +		led_status_green: led-green {
 +			label = "green:status";
-+			gpios = <&gpio 79 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 79 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led_status_blue: led-blue {
 +			label = "blue:status";
-+			gpios = <&gpio 63 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 63 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +};
@@ -710,7 +713,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	i2c1_pins: i2c1-pins {
 +		mux {
 +			function = "i2c";
@@ -867,7 +870,7 @@
 +};
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-emmc_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -995,6 +998,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -1007,7 +1011,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-sdmmc_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -1135,6 +1139,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -1147,7 +1152,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-snand_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -1275,6 +1280,7 @@
 +CONFIG_RAM=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y

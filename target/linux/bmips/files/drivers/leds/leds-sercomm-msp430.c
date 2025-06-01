@@ -8,7 +8,7 @@
 #include <linux/delay.h>
 #include <linux/leds.h>
 #include <linux/module.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/spi/spi.h>
 #include "leds.h"
 
@@ -256,7 +256,7 @@ static int msp430_pattern_set(struct led_classdev *led_cdev,
 	return 0;
 }
 
-static int msp430_led(struct spi_device *spi, struct device_node *nc, u8 id)
+static int msp430_led_probe(struct spi_device *spi, struct device_node *nc, u8 id)
 {
 	struct device *dev = &spi->dev;
 	struct led_init_data init_data = {};
@@ -346,7 +346,7 @@ static int msp430_leds_probe(struct spi_device *spi)
 			continue;
 		}
 
-		rc = msp430_led(spi, child, reg);
+		rc = msp430_led_probe(spi, child, reg);
 		if (rc < 0) {
 			of_node_put(child);
 			return rc;

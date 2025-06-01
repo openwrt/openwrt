@@ -98,6 +98,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
+	cudy,m1200-v1|\
 	cudy,tr1200-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
@@ -107,7 +108,9 @@ ramips_setup_interfaces()
 			"2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	duzun,dm06|\
-	glinet,gl-mt300n-v2)
+	glinet,gl-mt300n-v2|\
+	teltonika,rut200|\
+	teltonika,rut241)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
@@ -130,6 +133,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6@eth0"
 		;;
+	keenetic,kn-1221)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "0:wan" "6@eth0"
+		;;
 	keenetic,kn-1613|\
 	keenetic,kn-1713|\
 	motorola,mwr03)
@@ -150,6 +157,11 @@ ramips_setup_interfaces()
 	linksys,e5400)
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan" "6@eth0"
+		;;
+	mercusys,mb130-4g-v1)
+		ucidef_add_switch "switch0" \
+			"2:lan" "3:lan" "6@eth0"
+		ucidef_set_interface_wan "eth1"
 		;;
 	netgear,r6020|\
 	netgear,r6080|\
@@ -203,6 +215,10 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-4c)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "1:wan" "6@eth0"
+		;;
+	xiaomi,miwifi-3a)
+		ucidef_add_switch "switch0" \
+			"0:wan" "2:lan:1" "4:lan:2" "6@eth0"
 		;;
 	xiaomi,miwifi-3c)
 		ucidef_add_switch "switch0" \
@@ -286,6 +302,7 @@ ramips_setup_macs()
 	totolink,lr1200)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
+	keenetic,kn-1221|\
 	keenetic,kn-1613|\
 	keenetic,kn-3211|\
 	zyxel,keenetic-extra-ii)

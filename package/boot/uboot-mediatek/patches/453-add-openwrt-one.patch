@@ -31,13 +31,13 @@
 +
 +		user {
 +			label = "front";
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +			linux,code = <BTN_0>;
 +		};
 +
 +		reset {
 +			label = "back";
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +			linux,code = <BTN_1>;
 +		};
 +	};
@@ -47,17 +47,17 @@
 +
 +		red {
 +			label = "red";
-+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		white {
 +			label = "white";
-+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		green {
 +			label = "green";
-+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 15 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +};
@@ -78,7 +78,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";
@@ -206,7 +206,7 @@
 +};
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-nor_defconfig
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,125 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -321,6 +321,7 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -333,7 +334,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7981_openwrt-one-spi-nand_defconfig
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,126 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -450,6 +451,7 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y

@@ -1,30 +1,40 @@
 BPF_DEPENDS := @HAS_BPF_TOOLCHAIN +@NEED_BPF_TOOLCHAIN
-LLVM_VER:=
 
 CLANG_MIN_VER:=12
 
 ifneq ($(CONFIG_USE_LLVM_HOST),)
+  find-llvm-tool=$(firstword $(shell PATH='$(BPF_PATH)' command -v $(1) || echo '$(firstword $(1))-not-found'))
+
   BPF_TOOLCHAIN_HOST_PATH:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
     BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin:$(PATH)
   else
     BPF_PATH:=$(PATH)
   endif
-  CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' command -v clang clang-13 clang-12 clang-11))
+  CLANG:=$(call find-llvm-tool,clang clang-13 clang-12)
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
-endif
-ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
-  CLANG:=$(TOPDIR)/llvm-bpf/bin/clang
-endif
-ifneq ($(CONFIG_USE_LLVM_BUILD),)
-  CLANG:=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang
-endif
 
-LLVM_PATH:=$(dir $(CLANG))
-LLVM_LLC:=$(LLVM_PATH)/llc$(LLVM_VER)
-LLVM_DIS:=$(LLVM_PATH)/llvm-dis$(LLVM_VER)
-LLVM_OPT:=$(LLVM_PATH)/opt$(LLVM_VER)
-LLVM_STRIP:=$(LLVM_PATH)/llvm-strip$(LLVM_VER)
+  BPF_PATH:=$(dir $(CLANG)):$(BPF_PATH)
+  LLVM_LLC:=$(call find-llvm-tool,llc$(LLVM_VER))
+  LLVM_DIS:=$(call find-llvm-tool,llvm-dis$(LLVM_VER))
+  LLVM_OPT:=$(call find-llvm-tool,opt$(LLVM_VER))
+  LLVM_STRIP:=$(call find-llvm-tool,llvm-strip$(LLVM_VER))
+else
+  LLVM_PATH:=/invalid
+
+  ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
+    LLVM_PATH:=$(TOPDIR)/llvm-bpf/bin
+  endif
+  ifneq ($(CONFIG_USE_LLVM_BUILD),)
+    LLVM_PATH:=$(STAGING_DIR_HOST)/llvm-bpf/bin
+  endif
+
+  CLANG:=$(LLVM_PATH)/clang
+  LLVM_LLC:=$(LLVM_PATH)/llc
+  LLVM_DIS:=$(LLVM_PATH)/llvm-dis
+  LLVM_OPT:=$(LLVM_PATH)/opt
+  LLVM_STRIP:=$(LLVM_PATH)/llvm-strip
+endif
 
 BPF_KARCH:=mips
 BPF_ARCH:=mips$(if $(CONFIG_ARCH_64BIT),64)$(if $(CONFIG_BIG_ENDIAN),,el)

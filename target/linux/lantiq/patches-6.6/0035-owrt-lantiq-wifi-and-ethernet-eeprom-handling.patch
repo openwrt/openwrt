@@ -149,7 +149,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static struct platform_driver ath5k_eeprom_driver = {
 +	.driver		= {
 +		.name		= "ath5k,eeprom",
-+		.of_match_table	= of_match_ptr(ath5k_eeprom_ids),
++		.of_match_table	= ath5k_eeprom_ids,
 +	},
 +};
 +

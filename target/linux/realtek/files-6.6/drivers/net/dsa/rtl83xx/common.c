@@ -271,6 +271,20 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 	return -1;
 }
 
+static int rtldsa_mdio_read(struct mii_bus *bus, int addr, int regnum)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
+}
+
+static int rtldsa_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
+}
+
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device *dev = priv->dev;
@@ -288,8 +302,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENODEV;
 	}
 
-	priv->mii_bus = of_mdio_find_bus(mii_np);
-	if (!priv->mii_bus) {
+	priv->parent_bus = of_mdio_find_bus(mii_np);
+	if (!priv->parent_bus) {
 		pr_debug("Deferring probe of mdio bus\n");
 		return -EPROBE_DEFER;
 	}
@@ -300,18 +314,14 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	if (!bus)
 		return -ENOMEM;
 
-	bus->name = "rtl838x slave mii";
-
-	/* Since the NIC driver is loaded first, we can use the mdio rw functions
-	 * assigned there.
-	 */
-	bus->read = priv->mii_bus->read;
-	bus->write = priv->mii_bus->write;
+	bus->name = "rtldsa_mdio";
+	bus->read = rtldsa_mdio_read;
+	bus->write = rtldsa_mdio_write;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
 
 	bus->parent = dev;
 	priv->ds->slave_mii_bus = bus;
-	priv->ds->slave_mii_bus->priv = priv->mii_bus->priv;
+	priv->ds->slave_mii_bus->priv = priv;
 
 	ret = mdiobus_register(priv->ds->slave_mii_bus);
 	if (ret && mii_np) {
@@ -617,7 +627,7 @@ int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -684,7 +694,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_next
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
+static int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u32 key = nh->l2_id >> 2;
@@ -809,7 +819,7 @@ static int rtl83xx_netdevice_event(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-const static struct rhashtable_params route_ht_params = {
+static const struct rhashtable_params route_ht_params = {
 	.key_len     = sizeof(u32),
 	.key_offset  = offsetof(struct rtl83xx_route, gw_ip),
 	.head_offset = offsetof(struct rtl83xx_route, linkage),
@@ -944,7 +954,7 @@ static int rtl83xx_port_lower_walk(struct net_device *lower, struct netdev_neste
 	return ret;
 }
 
-int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
+static int rtl83xx_port_dev_lower_find(struct net_device *dev, struct rtl838x_switch_priv *priv)
 {
 	struct rtl83xx_walk_data data;
 	struct netdev_nested_priv _priv;
@@ -1718,12 +1728,10 @@ err_register_nb:
 	return err;
 }
 
-static int rtl83xx_sw_remove(struct platform_device *pdev)
+static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
-
-	return 0;
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
@@ -1736,7 +1744,7 @@ MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
 	.probe = rtl83xx_sw_probe,
-	.remove = rtl83xx_sw_remove,
+	.remove_new = rtl83xx_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,

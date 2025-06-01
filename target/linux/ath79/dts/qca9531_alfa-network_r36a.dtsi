@@ -12,7 +12,6 @@
 
 	gpio_export: gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		watchdog-enable {
 			gpio-export,name = "watchdog-enable";
@@ -119,6 +118,10 @@
 
 &usb_phy {
 	status = "okay";
+};
+
+&wdt {
+	status = "disabled";
 };
 
 &wmac {

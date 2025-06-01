@@ -1,0 +1,79 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Mon, 28 Apr 2025 23:40:15 +0800
+Subject: [PATCH] ath10k-ct: fix missing-prototypes warnings on 6.12 kernel
+
+Fix various missing-prototypes warnings by:
+
+* Mark functions only used in current source file as static.
+* Comment out unused functions.
+
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/ath10k-ct-regular/ath10k-ct-2025.03.14~63f5b605/ath10k-6.14/debug.c:425:6: error: no previous prototype for 'ath10k_debug_fw_ratepwr_table_process' [-Werror=missing-prototypes]
+  425 | void ath10k_debug_fw_ratepwr_table_process(struct ath10k *ar, struct sk_buff *skb)
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/ath10k-ct-regular/ath10k-ct-2025.03.14~63f5b605/ath10k-6.14/debug.c:437:6: error: no previous prototype for 'ath10k_debug_fw_powerctl_table_process' [-Werror=missing-prototypes]
+  437 | void ath10k_debug_fw_powerctl_table_process(struct ath10k *ar, struct sk_buff *skb)
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/ath10k-ct-regular/ath10k-ct-2025.03.14~63f5b605/ath10k-6.14/debug.c:884:5: error: no previous prototype for 'ath10k_refresh_target_pdev_ext_ct_stats' [-Werror=missing-prototypes]
+  884 | int ath10k_refresh_target_pdev_ext_ct_stats(struct ath10k *ar)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/ath10k-ct-regular/ath10k-ct-2025.03.14~63f5b605/ath10k-6.14/htt_tx.c:1190:6: error: no previous prototype for 'ieee80211_is_robust_mgmt_frame_tx' [-Werror=missing-prototypes]
+ 1190 | bool ieee80211_is_robust_mgmt_frame_tx(struct ieee80211_hdr *hdr)
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/ath10k-ct-regular/ath10k-ct-2025.03.14~63f5b605/ath10k-6.14/wmi.c:3203:5: error: no previous prototype for 'ath10k_wmi_event_txbf_cv_mesg' [-Werror=missing-prototypes]
+ 3203 | int ath10k_wmi_event_txbf_cv_mesg(struct ath10k *ar, struct sk_buff *skb)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ath10k-6.14/debug.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/ath10k-6.14/debug.c
++++ b/ath10k-6.14/debug.c
+@@ -422,6 +422,7 @@ static void ath10k_debug_fw_stats_reset(
+ 	spin_unlock_bh(&ar->data_lock);
+ }
+ 
++/*
+ void ath10k_debug_fw_ratepwr_table_process(struct ath10k *ar, struct sk_buff *skb)
+ {
+ 	size_t sz = skb->len;
+@@ -445,6 +446,7 @@ void ath10k_debug_fw_powerctl_table_proc
+ 	memcpy(ar->debug.powerctl_tbl.data, skb->data, sz);
+ 	complete(&ar->debug.powerctl_tbl_complete);
+ }
++*/
+ 
+ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
+ {
+@@ -881,7 +883,7 @@ static int ath10k_refresh_target_rx_reor
+ 	return 0; /* fail silently if firmware does not support this option. */
+ }
+ 
+-int ath10k_refresh_target_pdev_ext_ct_stats(struct ath10k *ar)
++static int ath10k_refresh_target_pdev_ext_ct_stats(struct ath10k *ar)
+ {
+ 	if (test_bit(ATH10K_FW_FEATURE_CUST_STATS_CT,
+ 		     ar->running_fw->fw_file.fw_features))
+--- a/ath10k-6.14/htt_tx.c
++++ b/ath10k-6.14/htt_tx.c
+@@ -1187,7 +1187,7 @@ static u8 ath10k_htt_tx_get_tid(struct s
+  * since we do tx hw crypt, and it won't actually be encrypted even when this flag is
+  * set.
+  */
+-bool ieee80211_is_robust_mgmt_frame_tx(struct ieee80211_hdr *hdr)
++static bool ieee80211_is_robust_mgmt_frame_tx(struct ieee80211_hdr *hdr)
+ {
+         if (ieee80211_is_disassoc(hdr->frame_control) ||
+             ieee80211_is_deauth(hdr->frame_control))
+--- a/ath10k-6.14/wmi.c
++++ b/ath10k-6.14/wmi.c
+@@ -3200,7 +3200,7 @@ printme:
+ 	return 0;
+ }
+ 
+-int ath10k_wmi_event_txbf_cv_mesg(struct ath10k *ar, struct sk_buff *skb)
++static int ath10k_wmi_event_txbf_cv_mesg(struct ath10k *ar, struct sk_buff *skb)
+ {
+ 	struct wmi_txbf_cv_event *ev;
+ 

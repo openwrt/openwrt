@@ -18,7 +18,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/env/Kconfig
 +++ b/env/Kconfig
-@@ -61,7 +61,7 @@ config ENV_IS_DEFAULT
+@@ -74,7 +74,7 @@ config ENV_IS_DEFAULT
  		     !ENV_IS_IN_MMC && !ENV_IS_IN_NAND && \
  		     !ENV_IS_IN_NVRAM && !ENV_IS_IN_ONENAND && \
  		     !ENV_IS_IN_REMOTE && !ENV_IS_IN_SPI_FLASH && \
@@ -27,7 +27,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	select ENV_IS_NOWHERE
  
  config ENV_IS_NOWHERE
-@@ -305,6 +305,21 @@ config ENV_IS_IN_NAND
+@@ -318,6 +318,21 @@ config ENV_IS_IN_NAND
  	  Currently, CONFIG_ENV_OFFSET_REDUND is not supported when
  	  using CONFIG_ENV_OFFSET_OOB.
  
@@ -49,7 +49,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config ENV_RANGE
  	hex "Length of the region in which the environment can be written"
  	depends on ENV_IS_IN_NAND
-@@ -591,7 +606,7 @@ config ENV_MTD_NAME
+@@ -604,7 +619,7 @@ config ENV_MTD_NAME
  config ENV_OFFSET
  	hex "Environment offset"
  	depends on ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \

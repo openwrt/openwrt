@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986_xiaomi_redmi-ax6000_defconfig
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,104 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -97,6 +97,7 @@
 +CONFIG_DM_REGULATOR_GPIO=y
 +CONFIG_RAM=y
 +CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y
 +CONFIG_SPI=y
 +CONFIG_DM_SPI=y
@@ -138,12 +139,12 @@
 +		compatible = "gpio-keys";
 +		factory {
 +			label = "reset";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +		mesh {
 +			label = "mesh";
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_WPS_BUTTON>;
 +		};
 +	};
@@ -165,7 +166,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -173,7 +174,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spic_pins: spi1-pins-func-1 {
 +		mux {
 +			function = "spi";

@@ -1,0 +1,91 @@
+From 422b64025ec10981c48f9367311846bf4bd38042 Mon Sep 17 00:00:00 2001
+Message-ID: <422b64025ec10981c48f9367311846bf4bd38042.1728674648.git.mschiffer@universe-factory.net>
+In-Reply-To: <e85d3e6fea05c8ae21a40809a3c6b7adc97411c7.1728674648.git.mschiffer@universe-factory.net>
+References: <e85d3e6fea05c8ae21a40809a3c6b7adc97411c7.1728674648.git.mschiffer@universe-factory.net>
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Thu, 20 Jun 2024 19:25:50 +0200
+Subject: [PATCH] net: dsa: qca8k: add support for bridge port isolation
+
+Remove a pair of ports from the port matrix when both ports have the
+isolated flag set.
+
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
+Reviewed-by: Wojciech Drewek <wojciech.drewek@intel.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/qca/qca8k-common.c | 22 ++++++++++++++++++++--
+ drivers/net/dsa/qca/qca8k.h        |  1 +
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -619,6 +619,7 @@ static int qca8k_update_port_member(stru
+ 				    const struct net_device *bridge_dev,
+ 				    bool join)
+ {
++	bool isolated = !!(priv->port_isolated_map & BIT(port)), other_isolated;
+ 	struct dsa_port *dp = dsa_to_port(priv->ds, port), *other_dp;
+ 	u32 port_mask = BIT(dp->cpu_dp->index);
+ 	int i, ret;
+@@ -633,10 +634,12 @@ static int qca8k_update_port_member(stru
+ 		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
+ 			continue;
+ 
++		other_isolated = !!(priv->port_isolated_map & BIT(i));
++
+ 		/* Add/remove this port to/from the portvlan mask of the other
+ 		 * ports in the bridge
+ 		 */
+-		if (join) {
++		if (join && !(isolated && other_isolated)) {
+ 			port_mask |= BIT(i);
+ 			ret = regmap_set_bits(priv->regmap,
+ 					      QCA8K_PORT_LOOKUP_CTRL(i),
+@@ -662,7 +665,7 @@ int qca8k_port_pre_bridge_flags(struct d
+ 				struct switchdev_brport_flags flags,
+ 				struct netlink_ext_ack *extack)
+ {
+-	if (flags.mask & ~BR_LEARNING)
++	if (flags.mask & ~(BR_LEARNING | BR_ISOLATED))
+ 		return -EINVAL;
+ 
+ 	return 0;
+@@ -672,6 +675,7 @@ int qca8k_port_bridge_flags(struct dsa_s
+ 			    struct switchdev_brport_flags flags,
+ 			    struct netlink_ext_ack *extack)
+ {
++	struct qca8k_priv *priv = ds->priv;
+ 	int ret;
+ 
+ 	if (flags.mask & BR_LEARNING) {
+@@ -680,6 +684,20 @@ int qca8k_port_bridge_flags(struct dsa_s
+ 		if (ret)
+ 			return ret;
+ 	}
++
++	if (flags.mask & BR_ISOLATED) {
++		struct dsa_port *dp = dsa_to_port(ds, port);
++		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
++
++		if (flags.val & BR_ISOLATED)
++			priv->port_isolated_map |= BIT(port);
++		else
++			priv->port_isolated_map &= ~BIT(port);
++
++		ret = qca8k_update_port_member(priv, port, bridge_dev, true);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return 0;
+ }
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -451,6 +451,7 @@ struct qca8k_priv {
+ 	 * Bit 1: port enabled. Bit 0: port disabled.
+ 	 */
+ 	u8 port_enabled_map;
++	u8 port_isolated_map;
+ 	struct qca8k_ports_config ports_config;
+ 	struct regmap *regmap;
+ 	struct mii_bus *bus;

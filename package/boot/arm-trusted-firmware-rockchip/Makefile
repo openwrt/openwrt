@@ -7,10 +7,11 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.10
+PKG_VERSION:=2.12.1
 PKG_RELEASE:=1
+PKG_LTS:=1
 
-PKG_HASH:=88215a62291b9ba87da8e50b077741103cdc08fb6c9e1ebd34dfaace746d3201
+PKG_HASH:=c0d432a851da452d927561feaf45f569c1cde57985782beadfe29e616e260440
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -33,12 +34,15 @@ define Trusted-Firmware-A/rk3399
   PLAT:=rk3399
 endef
 
+define Trusted-Firmware-A/rk3588
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3588
+endef
+
 TFA_TARGETS:= \
 	rk3328 \
-	rk3399
-
-TFA_MAKE_FLAGS+= \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
+	rk3399 \
+	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
   M0_GCC_NAME:=gcc-arm

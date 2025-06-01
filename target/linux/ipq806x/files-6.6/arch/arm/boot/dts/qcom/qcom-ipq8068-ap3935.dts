@@ -57,7 +57,7 @@
 			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_orange: power_orange { 
+		led_power_orange: power_orange {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_LOW>;
@@ -304,7 +304,7 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			
+
 			ubi@0 {
 				label = "ubi";
 				reg = <0x0000000 0x20000000>;

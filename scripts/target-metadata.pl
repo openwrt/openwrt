@@ -441,7 +441,7 @@ sub gen_profile_mk() {
 	my @targets = parse_target_metadata($file);
 	foreach my $cur (@targets) {
 		next unless $cur->{id} eq $target;
-		my @profile_ids_unique =  do { my %seen; grep { !$seen{$_}++} map { $_->{id} } @{$cur->{profiles}}};
+		my @profile_ids_unique =  do { my %seen; grep { !$seen{$_}++} map { $_->{id} } grep { $_->{default} !~ /^n/ } @{$cur->{profiles}}};
 		print "PROFILE_NAMES = ".join(" ", @profile_ids_unique)."\n";
 		foreach my $profile (@{$cur->{profiles}}) {
 			print $profile->{id}.'_NAME:='.$profile->{name}."\n";

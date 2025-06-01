@@ -206,7 +206,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  EXPORT_SYMBOL(mtk_pcs_lynxi_create);
  
-@@ -303,4 +368,144 @@ void mtk_pcs_lynxi_destroy(struct phylin
+@@ -303,4 +368,142 @@ void mtk_pcs_lynxi_destroy(struct phylin
  }
  EXPORT_SYMBOL(mtk_pcs_lynxi_destroy);
  
@@ -264,7 +264,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return 0;
 +}
 +
-+static int mtk_pcs_lynxi_remove(struct platform_device *pdev)
++static void mtk_pcs_lynxi_remove(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct mtk_pcs_lynxi *cur, *tmp;
@@ -277,8 +277,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			break;
 +		}
 +	mutex_unlock(&instance_mutex);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id mtk_pcs_lynxi_of_match[] = {
@@ -344,7 +342,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		.of_match_table		= mtk_pcs_lynxi_of_match,
 +	},
 +	.probe = mtk_pcs_lynxi_probe,
-+	.remove = mtk_pcs_lynxi_remove,
++	.remove_new = mtk_pcs_lynxi_remove,
 +};
 +module_platform_driver(mtk_pcs_lynxi_driver);
 +

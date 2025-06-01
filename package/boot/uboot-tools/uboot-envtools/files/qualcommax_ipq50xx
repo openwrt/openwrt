@@ -1,0 +1,34 @@
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+elecom,wrc-x3000gs2)
+	idx="$(find_mtd_index 0:appsblenv)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000"
+	;;
+glinet,gl-b3000)
+	idx="$(find_mtd_index 0:APPSBLENV)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000"
+	;;
+linksys,mr5500|\
+linksys,mx2000|\
+linksys,mx5500|\
+linksys,spnmx56)
+	idx="$(find_mtd_index u_env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0

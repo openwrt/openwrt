@@ -135,8 +135,14 @@ export function remove_call(ctx, argv, named)
 		if (!data)
 			continue;
 
-		for (let idx in val)
+		for (let idx in val) {
+			if (idx != "" + +idx) {
+				let cur_idx = index(data, idx);
+				if (cur_idx >= 0)
+					idx = cur_idx + 1;
+			}
 			data[+idx - 1] = null;
+		}
 
 		cur_obj[name] = filter(data, (v) => v != null);
 		if (cur.attribute_allow_empty && !length(cur_obj[name]))
@@ -241,6 +247,7 @@ function remove_params(orig_params)
 		delete val.allow_empty;
 		val.args = {
 			type: "enum",
+			get_object: val.get_object,
 			attribute: val.attribute ?? name,
 			value: param_values,
 			force_helptext: true,
@@ -609,19 +616,19 @@ export function edit_create_destroy(info, node)
 			select: function(ctx, argv) {
 				let name = argv[0];
 				if (!name) {
-					warn(`Missing argument\n`);
+					ctx.missing_argument();
 					return;
 				}
 
 				let obj = object_lookup(ctx, this, this.object_name);
 				if (!obj) {
-					warn(`Object not found\n`);
+					ctx.invalid_argument("Object not found");
 					return;
 				}
 
 				let entry = obj[name];
 				if (!entry) {
-					warn(`${name} not found\n`);
+					ctx.invalid_argument(`${name} not found: %s`, name);
 					return;
 				}
 

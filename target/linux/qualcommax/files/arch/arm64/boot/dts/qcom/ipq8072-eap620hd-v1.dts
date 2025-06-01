@@ -71,11 +71,11 @@
 
 &mdio {
 	status = "okay";
-	#size-cells = <1>;
+
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
-	
+
 	ar8031: ethernet-phy@4 {
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <4>;

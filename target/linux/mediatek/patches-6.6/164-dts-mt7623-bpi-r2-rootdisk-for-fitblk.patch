@@ -11,10 +11,12 @@
  	};
  
  	connector {
-@@ -338,6 +340,20 @@
+@@ -338,6 +340,22 @@
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_1p8v>;
  	non-removable;
++	#address-cells = <1>;
++	#size-cells = <0>;
 +
 +	card@0 {
 +		compatible = "mmc-card";
@@ -32,10 +34,12 @@
  };
  
  &mmc1 {
-@@ -351,6 +367,20 @@
+@@ -351,6 +369,22 @@
  	cd-gpios = <&pio 261 GPIO_ACTIVE_LOW>;
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_3p3v>;
++	#address-cells = <1>;
++	#size-cells = <0>;
 +
 +	card@0 {
 +		compatible = "mmc-card";

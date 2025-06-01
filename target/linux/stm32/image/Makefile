@@ -58,6 +58,23 @@ define Device/stm32mp135f-dk
   SUPPORTED_DEVICES := st,stm32mp135f-dk
 endef
 
-TARGET_DEVICES += stm32mp135f-dk
+define Device/stm32mp157c-dk2
+  DEVICE_MODEL := STM32MP157C-DK2
+  DEVICE_DTS := stm32mp157c-dk2
+  SUPPORTED_DEVICES := st,stm32mp157c-dk2 \
+		       st,stm32mp157f-dk2
+endef
+
+define Device/stm32mp157c-dk2-scmi
+  DEVICE_MODEL := STM32MP157C-DK2
+  DEVICE_VARIANT := SCMI
+  DEVICE_DTS := stm32mp157c-dk2-scmi
+  SUPPORTED_DEVICES := st,stm32mp157c-dk2-scmi \
+		       st,stm32mp157f-dk2-scmi
+endef
+
+TARGET_DEVICES += stm32mp135f-dk \
+		  stm32mp157c-dk2 \
+		  stm32mp157c-dk2-scmi
 
 $(eval $(call BuildImage))

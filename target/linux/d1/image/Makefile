@@ -87,6 +87,7 @@ define Device/allwinner_d1-nezha
   DEVICE_MODEL := D1
   DEVICE_DTS := allwinner/sun20i-d1-nezha
   SUPPORTED_DEVICES += nezha
+  DEVICE_PACKAGES += kmod-gpio-pcf857x
   UBOOT := nezha
 endef
 TARGET_DEVICES += allwinner_d1-nezha

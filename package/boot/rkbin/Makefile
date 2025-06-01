@@ -57,9 +57,8 @@ define Trusted-Firmware-A/rk3568-e25
   TPL:=rk35/rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
 endef
 
-define Trusted-Firmware-A/rk3588
+define Trusted-Firmware-A/rk3588-tpl
   BUILD_SUBTARGET:=armv8
-  ATF:=rk35/rk3588_bl31_v1.45.elf
   TPL:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
 endef
 
@@ -69,10 +68,7 @@ TFA_TARGETS:= \
 	rk3566 \
 	rk3568 \
 	rk3568-e25 \
-	rk3588
-
-TFA_MAKE_FLAGS+= \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-no-warn-rwx-segments")
+	rk3588-tpl
 
 ifeq ($(BUILD_VARIANT),rk3308-rock-pi-s)
   TPL_FILE:=rk3308_ddr_589MHz_uart0_m0_v2.07.bin
@@ -112,7 +108,9 @@ endef
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 
+ifneq ($(ATF),)
 	$(CP) $(PKG_BUILD_DIR)/bin/$(ATF) $(STAGING_DIR_IMAGE)/
+endif
 	$(CP) $(PKG_BUILD_DIR)/bin/$(TPL) $(STAGING_DIR_IMAGE)/
 endef
 

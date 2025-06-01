@@ -135,6 +135,7 @@ define Device/pine64_rockpro64
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := RockPro64
   SOC := rk3399
+  SUPPORTED_DEVICES += pine64,rockpro64-v2.1
 endef
 TARGET_DEVICES += pine64_rockpro64
 
@@ -182,6 +183,20 @@ define Device/radxa_rock-3c
   DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
 endef
 TARGET_DEVICES += radxa_rock-3c
+
+define Device/radxa_rock-4c-plus
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 4C+
+  SOC := rk3399
+endef
+TARGET_DEVICES += radxa_rock-4c-plus
+
+define Device/radxa_rock-4se
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 4SE
+  SOC := rk3399
+endef
+TARGET_DEVICES += radxa_rock-4se
 
 define Device/radxa_rock-5a
   DEVICE_VENDOR := Radxa

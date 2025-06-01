@@ -31,6 +31,7 @@
 #include <linux/lockdep.h>
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
+#include <linux/of.h>
 #include <asm/byteorder.h>
 
 #include "mt7530.h"
@@ -209,7 +210,7 @@ struct mt7530_mapping {
 	},
 };
 
-struct mt7530_mapping*
+static struct mt7530_mapping*
 mt7530_find_mapping(struct device_node *np)
 {
 	const char *map;

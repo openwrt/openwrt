@@ -1,0 +1,131 @@
+From 8ea80d378ce5f727e69493533a666278c6a568a7 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Fri, 2 May 2025 12:03:53 +0200
+Subject: [PATCH] iw: scan: Add printing of EHT Operation Element
+
+Add ability to print out EHT capabilities from AP beacons.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Link: https://patch.msgid.link/20250502100353.3149470-1-olek2@wp.pl
+[add default case to bandwidth switch]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ ieee80211.h |  1 +
+ iw.h        |  1 +
+ scan.c      |  8 +++++++
+ util.c      | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 73 insertions(+)
+
+--- a/ieee80211.h
++++ b/ieee80211.h
+@@ -99,6 +99,7 @@ enum elem_id {
+ enum elem_id_ext {
+ 	EID_EXT_HE_CAPABILITY		= 35,
+ 	EID_EXT_HE_OPERATION		= 36,
++	EID_EXT_EHT_OPERATION		= 106,
+ 	EID_EXT_EHT_CAPABILITY		= 108,
+ };
+ 
+--- a/iw.h
++++ b/iw.h
+@@ -226,6 +226,7 @@ void print_he_operation(const uint8_t *i
+ void print_he_info(struct nlattr *nl_iftype);
+ void print_eht_capability(const uint8_t *ie, int len, const uint8_t *he_cap,
+ 			  bool from_ap);
++void print_eht_operation(const uint8_t *ie, int len);
+ void print_eht_info(struct nlattr *nl_iftype, int band);
+ void print_s1g_capability(const uint8_t *caps);
+ 
+--- a/scan.c
++++ b/scan.c
+@@ -2402,10 +2402,18 @@ static void print_eht_capa(const uint8_t
+ 	print_eht_capability(data, len, ctx->he_cap, ctx->from_ap);
+ }
+ 
++static void print_eht_oper(const uint8_t type, uint8_t len, const uint8_t *data,
++			   const struct ie_context *ctx)
++{
++	printf("\n");
++	print_eht_operation(data, len);
++}
++
+ static const struct ie_print ext_printers[] = {
+ 	[EID_EXT_HE_CAPABILITY] = { "HE capabilities", print_he_capa, 21, 54, BIT(PRINT_SCAN), },
+ 	[EID_EXT_HE_OPERATION] = { "HE Operation", print_he_oper, 6, 15, BIT(PRINT_SCAN), },
+ 	[EID_EXT_EHT_CAPABILITY] = { "EHT capabilities", print_eht_capa, 13, 30, BIT(PRINT_SCAN), },
++	[EID_EXT_EHT_OPERATION] = { "EHT Operation", print_eht_oper, 5, 10, BIT(PRINT_SCAN), },
+ };
+ 
+ static void print_extension(unsigned char len, unsigned char *ie,
+--- a/util.c
++++ b/util.c
+@@ -1917,6 +1917,69 @@ void print_he_operation(const uint8_t *i
+ 	}
+ }
+ 
++void print_eht_operation(const uint8_t *ie, int len)
++{
++	uint8_t oper_parameters = ie[0];
++	uint8_t disabled_subchannel_info_present = oper_parameters & 0x02;
++	uint8_t eht_operation_info_present = oper_parameters & 0x01;
++
++	printf("\t\tEHT Operation Parameters: (0x%02x)\n",
++	       oper_parameters);
++
++	if (oper_parameters & 0x04)
++		printf("\t\t\tEHT Default PE Duration\n");
++
++	if (oper_parameters & 0x08)
++		printf("\t\t\tGroup Addressed BU Indication Limit\n");
++
++	printf("\t\t\tGroup Addressed BU Indication Exponent: 0x%01x\n",
++	       (oper_parameters >> 4 & 3));
++
++	printf("\t\tBasic EHT-MCS And Nss Set: 0x");
++	for (uint8_t i = 0; i < 4; i++)
++		printf("%02x", ie[1 + i]);
++
++	printf("\n");
++
++	if (eht_operation_info_present) {
++		uint8_t offset = 5;
++		const uint8_t control = ie[offset];
++		uint8_t eht_operation_info_len = 3;
++
++		if (disabled_subchannel_info_present)
++			eht_operation_info_len += 2;
++
++		if (len - offset < eht_operation_info_len) {
++			printf("\t\tEHT Operation Info: Invalid\n");
++			return;
++		}
++
++		printf("\t\tEHT Operation Info: 0x");
++		for (uint8_t i = 0; i < eht_operation_info_len; i++)
++			printf("%02x", ie[offset + i]);
++
++		printf("\n");
++		printf("\t\t\tChannel Width: ");
++		switch (control & 0x7) {
++		case 0: printf("20 MHz\n"); break;
++		case 1: printf("40 MHz\n"); break;
++		case 2: printf("80 MHz\n"); break;
++		case 3: printf("160 MHz\n"); break;
++		case 4: printf("320 MHz\n"); break;
++		default: printf("invalid bandwidth (%d)\n", control & 0x7); break;
++		}
++
++		printf("\t\t\tCenter Frequency Segment 0: %hhu\n",
++		       ie[offset + 1]);
++		printf("\t\t\tCenter Frequency Segment 1: %hhu\n",
++		       ie[offset + 2]);
++
++		if (disabled_subchannel_info_present)
++			printf("\t\t\tDisabled Subchannel Bitmap: 0x%02x%02x\n",
++			       ie[offset + 3], ie[offset + 4]);
++	}
++}
++
+ void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
+ {
+ 	size_t i;
