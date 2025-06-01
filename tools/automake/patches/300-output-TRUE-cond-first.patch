@@ -1,6 +1,6 @@
 --- a/lib/Automake/Variable.pm
 +++ b/lib/Automake/Variable.pm
-@@ -1259,8 +1259,15 @@ sub output_variables ()
+@@ -1258,8 +1258,15 @@ sub output_variables ()
    foreach my $var (@vars)
      {
        my $v = rvar $var;
@@ -16,7 +16,7 @@
  	  $res .= $v->output ($cond)
  	    if $v->rdef ($cond)->owner == VAR_AUTOMAKE;
  	}
-@@ -1270,8 +1277,15 @@ sub output_variables ()
+@@ -1269,8 +1276,15 @@ sub output_variables ()
    foreach my $var (@vars)
      {
        my $v = rvar $var;
