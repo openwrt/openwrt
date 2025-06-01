@@ -287,39 +287,27 @@
 
 &pcie0 {
 	status = "okay";
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_eeprom_6 1>;
-			nvmem-cell-names = "mac-address";
-		};
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x10000 0 0 0 0>;
+		nvmem-cells = <&macaddr_eeprom_6 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
 &pcie1 {
 	status = "okay";
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "qcom,ath10k";
-			reg = <0x00010000 0 0 0 0>;
-
-			nvmem-cells = <&macaddr_eeprom_6 2>;
-			nvmem-cell-names = "mac-address";
-		};
+&pcie_bridge1 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x10000 0 0 0 0>;
+		nvmem-cells = <&macaddr_eeprom_6 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

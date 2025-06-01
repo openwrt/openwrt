@@ -255,18 +255,12 @@
 
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-names;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "qcom,ath10k";
-			status = "okay";
-			reg = <0x00010000 0 0 0 0>;
-		};
+&pcie_bridge0 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
 	};
 };
 
@@ -275,18 +269,12 @@
 
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-names;
+};
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
-			compatible = "qcom,ath10k";
-			status = "okay";
-			reg = <0x00010000 0 0 0 0>;
-		};
+&pcie_bridge1 {
+	wifi@1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
 	};
 };
 
