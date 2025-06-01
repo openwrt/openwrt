@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,730 @@
+@@ -0,0 +1,731 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 25 May 2025
 +// Device Tree Info
@@ -32,8 +32,12 @@
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
 +
-+		mmc0 = &sdmmc0; /* eMMC Card: mmcblk? @fe2b0000 */
-+		mmc1 = &sdhci;  /* uSD Card mmc??? @fe310000 */
++		/* counter intuitive: sdhci:=non-removable eMMC */
++		/* sdmmc:= removable uSD card */
++
++		/* mmc0:= &sdhci:= @fe310000:= eMMC */
++		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */
++		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */
 +
 +		led-boot = &led_work;
 +		led-failsafe = &led_work;
@@ -218,8 +222,6 @@
 +	status = "okay";
 +};
 +
-+
-+
 +&combphy0 {
 +	status = "okay";
 +};
@@ -248,7 +250,6 @@
 +	cpu-supply = <&vdd_cpu>;
 +};
 +
-+
 +&gpu {
 +	mali-supply = <&vdd_gpu>;
 +	status = "okay";
@@ -275,7 +276,6 @@
 +&hdmi_sound {
 +	status = "okay";
 +};
-+
 +
 +&i2c0 {
 +	status = "okay";
@@ -543,7 +543,6 @@
 +	};
 +};
 +
-+
 +&pinctrl {
 +	button {
 +		reset_button_pin: reset-button-pin {
@@ -607,16 +606,17 @@
 +&sdhci {
 +	bus-width = <8>;
 +	max-frequency = <200000000>;
-+	disable-wp;
-+	pinctrl-names = "default";
++	non-removable;
 +	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe>;
 +	status = "okay";
 +};
 +
 +&sdmmc0 {
 +	bus-width = <4>;
++	cap-sd-highspeed;
 +	cd-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
 +	disable-wp;
++	pinctrl-names = "default";
 +	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
 +	sd-uhs-sdr104;
 +	vmmc-supply = <&vcc3v3_sd>;
@@ -705,13 +705,14 @@
 +	 status	= "okay";
 +};
 +
++
 +&pcie2x1 {
 +	  status = "okay";
 +};
 +
 +
 +&pcie3x1 {
-+	 status = "disabled";
++	 status = "okay";
 +};
 +
 +
