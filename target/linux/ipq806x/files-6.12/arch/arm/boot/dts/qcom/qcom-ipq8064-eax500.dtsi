@@ -52,7 +52,9 @@
 	status = "okay";
 
 	max-link-speed = <1>;
+};
 
+&pcie_bridge0 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
@@ -63,7 +65,9 @@
 
 &pcie1 {
 	status = "okay";
+};
 
+&pcie_bridge1 {
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
