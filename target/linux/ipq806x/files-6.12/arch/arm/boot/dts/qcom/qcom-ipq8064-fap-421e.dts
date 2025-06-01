@@ -344,7 +344,7 @@
 };
 
 &pcie_bridge0 {
-	wifi@1,0 {
+	wifi@0,0 {
 		compatible = "pci168c,0040";
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&macaddr_appsbl_7ff80 8>;
@@ -359,7 +359,7 @@
 };
 
 &pcie_bridge1 {
-	wifi@1,0 {
+	wifi@0,0 {
 		compatible = "pci168c,0040";
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&macaddr_appsbl_7ff80 16>;
