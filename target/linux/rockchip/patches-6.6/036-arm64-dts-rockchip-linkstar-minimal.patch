@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,732 @@
+@@ -0,0 +1,734 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 25 May 2025
 +// Device Tree Info
@@ -707,17 +707,19 @@
 +
 +
 +&pcie2x1 {
-+	  bus-range = <0x0 0x0f>; /* wrong in rk356x.dtsi */
++	  bus-range = <0x00 0x0f>; /* wrong in rk356x.dtsi? */
 +	  status = "okay";
 +};
 +
 +
 +&pcie3x1 {
++	 bus-range = <0x20 0x2f>;
 +	 status = "okay";
 +};
 +
 +
 +&pcie3x2 {
++	 bus-range = <0x40 0x4f>;
 +	 status = "okay";
 +};
 +
