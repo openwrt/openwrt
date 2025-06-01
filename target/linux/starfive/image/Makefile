@@ -60,7 +60,7 @@ define Device/visionfive2-v1.3b
   DEVICE_VENDOR := StarFive
   DEVICE_MODEL := VisionFive2 v1.3b
   DEVICE_DTS := starfive/jh7110-starfive-visionfive-2-v1.3b
-  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-leds-gpio
+  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-leds-gpio uboot-envtools
 endef
 TARGET_DEVICES += visionfive2-v1.3b
 
