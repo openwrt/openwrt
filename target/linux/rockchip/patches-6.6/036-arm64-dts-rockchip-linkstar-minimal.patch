@@ -653,7 +653,7 @@
 +
 +&usb_host0_xhci {
 + /* Doesn't exist on this board */
-+	status = "disable";
++	status = "disabled";
 +};
 +
 +&usb_host1_xhci {
@@ -713,13 +713,13 @@
 +
 +
 +&pcie3x1 {
-+	 bus-range = <0x20 0x2f>;
++	 bus-range = <0x10 0x1f>;
 +	 status = "okay";
 +};
 +
 +
 +&pcie3x2 {
-+	 bus-range = <0x40 0x4f>;
++	 bus-range = <0x20 0x2f>;
 +	 status = "okay";
 +};
 +
