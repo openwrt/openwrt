@@ -272,7 +272,7 @@ function device_htmode_append(config) {
 			];
 
 			for (let k, v in eht_center_seg0_map)
-				if (v[0] <= config.channel) {
+				if (config.channel <= v[0]) {
 					config.eht_oper_centr_freq_seg0_idx = v[1];
 					break;
 				}
