@@ -1784,9 +1784,8 @@ int rtl838x_smi_wait_op(int timeout)
 /* Reads a register in a page from the PHY */
 int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
+	u32 v, park_page = 0x1f << 15;
 	int err;
-	u32 v;
-	u32 park_page;
 
 	if (port > 31) {
 		*val = 0xffff;
@@ -1804,7 +1803,6 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
 	v = reg << 20 | page << 3;
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
@@ -1826,9 +1824,8 @@ errout:
 /* Write to a register in a page of the PHY */
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
+	u32 v, park_page = 0x1f << 15;
 	int err;
-	u32 v;
-	u32 park_page;
 
 	val &= 0xffff;
 	if (port > 31 || page > 4095 || reg > 31)
@@ -1844,7 +1841,6 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
 	v = reg << 20 | page << 3 | 0x4;
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
