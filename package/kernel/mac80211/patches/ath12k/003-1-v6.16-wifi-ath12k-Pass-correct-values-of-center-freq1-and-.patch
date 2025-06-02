@@ -1,0 +1,53 @@
+From b1b01e46a3db5ad44d1e4691ba37c1e0832cd5cf Mon Sep 17 00:00:00 2001
+From: Suraj P Kizhakkethil <quic_surapk@quicinc.com>
+Date: Tue, 4 Mar 2025 15:23:14 +0530
+Subject: [PATCH 1/2] wifi: ath12k: Pass correct values of center freq1 and
+ center freq2 for 160 MHz
+
+Currently, for 160 MHz bandwidth, center frequency1 and
+center frequency2 are not passed correctly to the firmware.
+Set center frequency1 as the center frequency
+of the primary 80 MHz channel segment and center frequency2 as
+the center frequency of the 160 MHz channel and pass the values
+to the firmware.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.3.1-00173-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Suraj P Kizhakkethil <quic_surapk@quicinc.com>
+Reviewed-by: Aditya Kumar Singh <aditya.kumar.singh@oss.qualcomm.com>
+Link: https://patch.msgid.link/20250304095315.3050325-2-quic_surapk@quicinc.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath12k/wmi.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath12k/wmi.c
++++ b/drivers/net/wireless/ath/ath12k/wmi.c
+@@ -1000,14 +1000,24 @@ int ath12k_wmi_vdev_down(struct ath12k *
+ static void ath12k_wmi_put_wmi_channel(struct ath12k_wmi_channel_params *chan,
+ 				       struct wmi_vdev_start_req_arg *arg)
+ {
++	u32 center_freq1 = arg->band_center_freq1;
++
+ 	memset(chan, 0, sizeof(*chan));
+ 
+ 	chan->mhz = cpu_to_le32(arg->freq);
+-	chan->band_center_freq1 = cpu_to_le32(arg->band_center_freq1);
+-	if (arg->mode == MODE_11AC_VHT80_80)
++	chan->band_center_freq1 = cpu_to_le32(center_freq1);
++	if (arg->mode == MODE_11BE_EHT160) {
++		if (arg->freq > center_freq1)
++			chan->band_center_freq1 = cpu_to_le32(center_freq1 + 40);
++		else
++			chan->band_center_freq1 = cpu_to_le32(center_freq1 - 40);
++
++		chan->band_center_freq2 = cpu_to_le32(center_freq1);
++	} else if (arg->mode == MODE_11BE_EHT80_80) {
+ 		chan->band_center_freq2 = cpu_to_le32(arg->band_center_freq2);
+-	else
++	} else {
+ 		chan->band_center_freq2 = 0;
++	}
+ 
+ 	chan->info |= le32_encode_bits(arg->mode, WMI_CHAN_INFO_MODE);
+ 	if (arg->passive)
