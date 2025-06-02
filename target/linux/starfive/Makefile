@@ -8,14 +8,11 @@ ARCH:=riscv64
 BOARD:=starfive
 BOARDNAME:=StarFive JH71x0 (7100/7110)
 FEATURES:=ext4
+SUBTARGETS:=jh7100 jh7110
 KERNELNAME:=Image dtbs
 
 KERNEL_PATCHVER:=6.12
 
 include $(INCLUDE_DIR)/target.mk
-
-define Target/Description
-	Build firmware images for the StarFive JH71x0-based boards
-endef
 
 $(eval $(call BuildTarget))
