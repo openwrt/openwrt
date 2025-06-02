@@ -206,6 +206,11 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume squashfs
 		nand_do_upgrade "$1"
 		;;
+	linksys,mx6200)
+		linksys_bootconfig_pre_upgrade "$1"
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,ax6000)
 		# Make sure that UART is enabled
 		fw_setenv boot_wait on
