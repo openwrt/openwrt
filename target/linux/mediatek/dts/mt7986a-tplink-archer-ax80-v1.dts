@@ -1,0 +1,332 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7986a.dtsi"
+
+/ {
+	compatible = "tplink,archer-ax80-v1", "mediatek,mt7986a";
+	model = "TP-Link Archer AX80V1";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_B;
+		led-failsafe = &led_R;
+		led-running = &led_B;
+		led-upgrade = &led_G;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x20000000>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		button-ledswitch {
+			label = "ledswitch";
+			linux,code = <KEY_BRIGHTNESS_ZERO>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wifi {
+			label = "wlan";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&auxadc {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <1500000>;
+		reset-post-delay-us = <1000000>;
+
+		phy6: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <6>;
+		};
+
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					label = "lan0";
+				};
+				port@1 {
+					reg = <1>;
+					label = "lan1";
+				};
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+				};
+				port@3 {
+					reg = <3>;
+					label = "lan3";
+				};
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+					};
+				};
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	lp55231: led-controller@32 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "ti,lp55231";
+		reg = <0x32>;
+		status = "okay";
+		clock-mode = /bits/ 8 <1>;
+
+		led_B: led@0 {
+			chan-name = "B";
+			led-cur = /bits/ 8 <0x14>;
+			max-cur = /bits/ 8 <0x20>;
+			reg = <0>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+
+		led_G: led@3 {
+			chan-name = "G";
+			led-cur = /bits/ 8 <0x14>;
+			max-cur = /bits/ 8 <0x20>;
+			reg = <3>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_R: led@6 {
+			chan-name = "R";
+			led-cur = /bits/ 8 <0x14>;
+			max-cur = /bits/ 8 <0x20>;
+			reg = <6>;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+	};
+};
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	status = "okay";
+
+	spi_nand_flash: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "boot";
+				reg = <0x0 0x200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "u-boot-env";
+				reg = <0x200000 0x100000>;
+			};
+
+			partition@300000 {
+				label = "ubi0";
+				reg = <0x300000 0x3200000>;
+			};
+
+			partition@3500000 {
+				label = "ubi1";
+				reg = <0x3500000 0x3200000>;
+			};
+
+			partition@6700000 {
+				label = "userconfig";
+				reg = <0x6700000 0x800000>;
+			};
+
+			factory:partition@6f00000 {
+				label = "tp_data";
+				reg = <0x6f00000 0x400000>;
+			};
+
+			partition@7300000 {
+				label = "mali_data";
+				reg = <0x7300000 0x800000>;
+			};
+		};
+	};
+};
+
+&pio {
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <0>;
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <4>;
+			mediatek,pull-down-adv = <0>;
+		};
+	};
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+};
