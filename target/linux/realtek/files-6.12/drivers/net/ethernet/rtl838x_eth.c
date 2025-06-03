@@ -1651,6 +1651,7 @@ struct rtmdio_bus_priv {
 	u16 family_id;
 	int extaddr;
 	int rawpage;
+	int cpu_port;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
@@ -1784,7 +1785,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	err = (*priv->read_mmd_phy)(addr, devnum, regnum, &val);
@@ -1801,7 +1802,7 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	if (addr >= 24 && addr <= 27 && priv->id == 0x8380)
@@ -1828,7 +1829,7 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->rawpage)
@@ -1858,7 +1859,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	err = (*priv->write_mmd_phy)(addr, devnum, regnum, val);
@@ -1880,7 +1881,7 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	page = priv->page[addr];
@@ -1919,7 +1920,7 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	if (priv->extaddr >= 0)
 		addr = priv->extaddr;
 
-	if (addr >= RTMDIO_MAX_PORT)
+	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
 	page = priv->page[addr];
@@ -2227,6 +2228,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		bus_priv->write_mmd_phy = rtl838x_write_mmd_phy;
 		bus_priv->read_phy = rtl838x_read_phy;
 		bus_priv->write_phy = rtl838x_write_phy;
+		bus_priv->cpu_port = RTL838X_CPU_PORT;
 		bus_priv->rawpage = 0xfff;
 		break;
 	case RTL8390_FAMILY_ID:
@@ -2238,6 +2240,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		bus_priv->write_mmd_phy = rtl839x_write_mmd_phy;
 		bus_priv->read_phy = rtl839x_read_phy;
 		bus_priv->write_phy = rtl839x_write_phy;
+		bus_priv->cpu_port = RTL839X_CPU_PORT;
 		bus_priv->rawpage = 0x1fff;
 		break;
 	case RTL9300_FAMILY_ID:
@@ -2249,6 +2252,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		bus_priv->write_mmd_phy = rtl930x_write_mmd_phy;
 		bus_priv->read_phy = rtl930x_read_phy;
 		bus_priv->write_phy = rtl930x_write_phy;
+		bus_priv->cpu_port = RTL930X_CPU_PORT;
 		bus_priv->rawpage = 0xfff;
 		break;
 	case RTL9310_FAMILY_ID:
@@ -2260,12 +2264,14 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		bus_priv->write_mmd_phy = rtl931x_write_mmd_phy;
 		bus_priv->read_phy = rtl931x_read_phy;
 		bus_priv->write_phy = rtl931x_write_phy;
+		bus_priv->cpu_port = RTL931X_CPU_PORT;
 		bus_priv->rawpage = 0x1fff;
 		break;
 	}
 	priv->mii_bus->read_c45 = rtmdio_read_c45;
 	priv->mii_bus->write_c45 = rtmdio_write_c45;
 	priv->mii_bus->parent = &priv->pdev->dev;
+	priv->mii_bus->phy_mask = ~(BIT_ULL(bus_priv->cpu_port) - 1ULL);
 
 	for_each_node_by_name(dn, "ethernet-phy") {
 		u32 smi_addr[2];
