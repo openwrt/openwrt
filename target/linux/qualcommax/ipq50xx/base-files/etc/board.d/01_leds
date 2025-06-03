@@ -9,7 +9,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-elecom,wrc-x3000gs2)
+elecom,wrc-x3000gs2|\
+iodata,wn-dax3000gr)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan" "tx rx link_10 link_100 link_1000"
 	;;
 linksys,mr5500)
