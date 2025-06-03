@@ -1,7 +1,8 @@
-From fec493475d7f0b17dc64f682a584faae5efe640e Mon Sep 17 00:00:00 2001
+From 1cd53b29d573aef79ea69f6f502517a71e3f04a7 Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <f.fainelli@gmail.com>
 Date: Sat, 9 Sep 2017 16:41:26 -0700
-Subject: [PATCH] net: dsa: b53: add support for FDB operations on 5325/5365
+Subject: [RFC PATCH net-next v2 01/10] net: dsa: b53: add support for FDB
+ operations on 5325/5365
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -15,34 +16,60 @@ converting ARL entries in both directions.
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- drivers/net/dsa/b53/b53_common.c | 64 ++++++++++++++++++++------------
- drivers/net/dsa/b53/b53_priv.h   | 57 ++++++++++++++++++++--------
- drivers/net/dsa/b53/b53_regs.h   |  7 ++--
- 3 files changed, 86 insertions(+), 42 deletions(-)
+ drivers/net/dsa/b53/b53_common.c | 104 +++++++++++++++++++++++++------
+ drivers/net/dsa/b53/b53_priv.h   |  29 +++++++++
+ drivers/net/dsa/b53/b53_regs.h   |   7 ++-
+ 3 files changed, 117 insertions(+), 23 deletions(-)
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1738,13 +1738,15 @@ static int b53_arl_read(struct b53_devic
- 	/* Read the bins */
- 	for (i = 0; i < dev->num_arl_bins; i++) {
- 		u64 mac_vid;
--		u32 fwd_entry;
-+		u32 fwd_entry = 0;
+@@ -1763,6 +1763,45 @@ static int b53_arl_read(struct b53_devic
+ 	return *idx >= dev->num_arl_bins ? -ENOSPC : -ENOENT;
+ }
  
- 		b53_read64(dev, B53_ARLIO_PAGE,
- 			   B53_ARLTBL_MAC_VID_ENTRY(i), &mac_vid);
--		b53_read32(dev, B53_ARLIO_PAGE,
--			   B53_ARLTBL_DATA_ENTRY(i), &fwd_entry);
--		b53_arl_to_entry(ent, mac_vid, fwd_entry);
++static int b53_arl_read_25(struct b53_device *dev, u64 mac,
++			   u16 vid, struct b53_arl_entry *ent, u8 *idx)
++{
++	DECLARE_BITMAP(free_bins, B53_ARLTBL_MAX_BIN_ENTRIES);
++	unsigned int i;
++	int ret;
 +
-+		if (!is5325(dev) && !is5365(dev))
-+			b53_read32(dev, B53_ARLIO_PAGE,
-+				   B53_ARLTBL_DATA_ENTRY(i), &fwd_entry);
-+		b53_arl_to_entry(dev, ent, mac_vid, fwd_entry);
- 
- 		if (!(fwd_entry & ARLTBL_VALID)) {
- 			set_bit(i, free_bins);
-@@ -1777,7 +1779,8 @@ static int b53_arl_op(struct b53_device
++	ret = b53_arl_op_wait(dev);
++	if (ret)
++		return ret;
++
++	bitmap_zero(free_bins, dev->num_arl_bins);
++
++	/* Read the bins */
++	for (i = 0; i < dev->num_arl_bins; i++) {
++		u64 mac_vid;
++
++		b53_read64(dev, B53_ARLIO_PAGE,
++			   B53_ARLTBL_MAC_VID_ENTRY(i), &mac_vid);
++
++		b53_arl_to_entry_25(ent, mac_vid);
++
++		if (!(mac_vid & ARLTBL_VALID_25)) {
++			set_bit(i, free_bins);
++			continue;
++		}
++		if ((mac_vid & ARLTBL_MAC_MASK) != mac)
++			continue;
++		if (dev->vlan_enabled &&
++		    ((mac_vid >> ARLTBL_VID_S_65) & ARLTBL_VID_MASK_25) != vid)
++			continue;
++		*idx = i;
++		return 0;
++	}
++
++	*idx = find_first_bit(free_bins, dev->num_arl_bins);
++	return *idx >= dev->num_arl_bins ? -ENOSPC : -ENOENT;
++}
++
+ static int b53_arl_op(struct b53_device *dev, int op, int port,
+ 		      const unsigned char *addr, u16 vid, bool is_valid)
+ {
+@@ -1777,14 +1816,18 @@ static int b53_arl_op(struct b53_device
  
  	/* Perform a read for the given MAC and VID */
  	b53_write48(dev, B53_ARLIO_PAGE, B53_MAC_ADDR_IDX, mac);
@@ -52,12 +79,26 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	/* Issue a read operation for this MAC */
  	ret = b53_arl_rw_op(dev, 1);
-@@ -1828,12 +1831,14 @@ static int b53_arl_op(struct b53_device
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = b53_arl_read(dev, mac, vid, &ent, &idx);
++	if (is5325(dev) || is5365(dev))
++		ret = b53_arl_read_25(dev, mac, vid, &ent, &idx);
++	else
++		ret = b53_arl_read(dev, mac, vid, &ent, &idx);
+ 
+ 	/* If this is a read, just finish now */
+ 	if (op)
+@@ -1828,12 +1871,17 @@ static int b53_arl_op(struct b53_device
  	ent.is_static = true;
  	ent.is_age = false;
  	memcpy(ent.mac, addr, ETH_ALEN);
 -	b53_arl_from_entry(&mac_vid, &fwd_entry, &ent);
-+	b53_arl_from_entry(dev, &mac_vid, &fwd_entry, &ent);
++	if (is5325(dev) || is5365(dev))
++		b53_arl_from_entry_25(&mac_vid, &ent);
++	else
++		b53_arl_from_entry(&mac_vid, &fwd_entry, &ent);
  
  	b53_write64(dev, B53_ARLIO_PAGE,
  		    B53_ARLTBL_MAC_VID_ENTRY(idx), mac_vid);
@@ -70,7 +111,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	return b53_arl_rw_op(dev, 0);
  }
-@@ -1845,12 +1850,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
+@@ -1845,12 +1893,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
  	struct b53_device *priv = ds->priv;
  	int ret;
  
@@ -83,7 +124,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	mutex_lock(&priv->arl_mutex);
  	ret = b53_arl_op(priv, 0, port, addr, vid, true);
  	mutex_unlock(&priv->arl_mutex);
-@@ -1877,10 +1876,15 @@ EXPORT_SYMBOL(b53_fdb_del);
+@@ -1877,10 +1919,15 @@ EXPORT_SYMBOL(b53_fdb_del);
  static int b53_arl_search_wait(struct b53_device *dev)
  {
  	unsigned int timeout = 1000;
@@ -101,12 +142,11 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		if (!(reg & ARL_SRCH_STDN))
  			return 0;
  
-@@ -1897,13 +1901,21 @@ static void b53_arl_search_rd(struct b53
+@@ -1897,13 +1944,24 @@ static void b53_arl_search_rd(struct b53
  			      struct b53_arl_entry *ent)
  {
  	u64 mac_vid;
 -	u32 fwd_entry;
-+	u32 fwd_entry = 0;
  
 -	b53_read64(dev, B53_ARLIO_PAGE,
 -		   B53_ARL_SRCH_RSTL_MACVID(idx), &mac_vid);
@@ -116,20 +156,24 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	if (is5325(dev)) {
 +		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_0_MACVID_25,
 +			   &mac_vid);
++		b53_arl_to_entry_25(ent, mac_vid);
 +	} else if (is5365(dev)) {
 +		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_0_MACVID_65,
 +			   &mac_vid);
++		b53_arl_to_entry_25(ent, mac_vid);
 +	} else {
++		u32 fwd_entry;
++
 +		b53_read64(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL_MACVID(idx),
 +			   &mac_vid);
 +		b53_read32(dev, B53_ARLIO_PAGE, B53_ARL_SRCH_RSTL(idx),
 +			   &fwd_entry);
++		b53_arl_to_entry(ent, mac_vid, fwd_entry);
 +	}
-+	b53_arl_to_entry(dev, ent, mac_vid, fwd_entry);
  }
  
  static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
-@@ -1924,14 +1936,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -1924,14 +1982,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];
  	unsigned int count = 0;
@@ -153,78 +197,49 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		ret = b53_arl_search_wait(priv);
 --- a/drivers/net/dsa/b53/b53_priv.h
 +++ b/drivers/net/dsa/b53/b53_priv.h
-@@ -286,30 +286,55 @@ struct b53_arl_entry {
- 	u8 is_static:1;
- };
- 
--static inline void b53_arl_to_entry(struct b53_arl_entry *ent,
-+static inline void b53_arl_to_entry(struct b53_device *dev,
-+				    struct b53_arl_entry *ent,
- 				    u64 mac_vid, u32 fwd_entry)
- {
- 	memset(ent, 0, sizeof(*ent));
--	ent->port = fwd_entry & ARLTBL_DATA_PORT_ID_MASK;
--	ent->is_valid = !!(fwd_entry & ARLTBL_VALID);
--	ent->is_age = !!(fwd_entry & ARLTBL_AGE);
--	ent->is_static = !!(fwd_entry & ARLTBL_STATIC);
--	u64_to_ether_addr(mac_vid, ent->mac);
--	ent->vid = mac_vid >> ARLTBL_VID_S;
-+	if (is5325(dev) || is5365(dev)) {
-+		ent->port = (mac_vid >> ARLTBL_DATA_PORT_ID_S_25) &
-+			    ARLTBL_DATA_PORT_ID_MASK_25;
-+		ent->is_valid = !!(mac_vid & ARLTBL_VALID_25);
-+		ent->is_age = !!(mac_vid & ARLTBL_AGE_25);
-+		ent->is_static = !!(mac_vid & ARLTBL_STATIC_25);
-+		u64_to_ether_addr(mac_vid, ent->mac);
-+		ent->vid = mac_vid >> ARLTBL_VID_S_65;
-+	} else {
-+		ent->port = fwd_entry & ARLTBL_DATA_PORT_ID_MASK;
-+		ent->is_valid = !!(fwd_entry & ARLTBL_VALID);
-+		ent->is_age = !!(fwd_entry & ARLTBL_AGE);
-+		ent->is_static = !!(fwd_entry & ARLTBL_STATIC);
-+		u64_to_ether_addr(mac_vid, ent->mac);
-+		ent->vid = mac_vid >> ARLTBL_VID_S;
-+	}
+@@ -298,6 +298,19 @@ static inline void b53_arl_to_entry(stru
+ 	ent->vid = mac_vid >> ARLTBL_VID_S;
  }
  
--static inline void b53_arl_from_entry(u64 *mac_vid, u32 *fwd_entry,
-+static inline void b53_arl_from_entry(struct b53_device *dev,
-+				      u64 *mac_vid, u32 *fwd_entry,
++static inline void b53_arl_to_entry_25(struct b53_arl_entry *ent,
++				       u64 mac_vid)
++{
++	memset(ent, 0, sizeof(*ent));
++	ent->port = (mac_vid >> ARLTBL_DATA_PORT_ID_S_25) &
++		     ARLTBL_DATA_PORT_ID_MASK_25;
++	ent->is_valid = !!(mac_vid & ARLTBL_VALID_25);
++	ent->is_age = !!(mac_vid & ARLTBL_AGE_25);
++	ent->is_static = !!(mac_vid & ARLTBL_STATIC_25);
++	u64_to_ether_addr(mac_vid, ent->mac);
++	ent->vid = mac_vid >> ARLTBL_VID_S_65;
++}
++
+ static inline void b53_arl_from_entry(u64 *mac_vid, u32 *fwd_entry,
  				      const struct b53_arl_entry *ent)
  {
- 	*mac_vid = ether_addr_to_u64(ent->mac);
--	*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK) << ARLTBL_VID_S;
--	*fwd_entry = ent->port & ARLTBL_DATA_PORT_ID_MASK;
--	if (ent->is_valid)
--		*fwd_entry |= ARLTBL_VALID;
--	if (ent->is_static)
--		*fwd_entry |= ARLTBL_STATIC;
--	if (ent->is_age)
--		*fwd_entry |= ARLTBL_AGE;
-+	if (is5325(dev) || is5365(dev)) {
-+		*mac_vid |= (u64)(ent->port & ARLTBL_DATA_PORT_ID_MASK_25) <<
-+				  ARLTBL_DATA_PORT_ID_S_25;
-+		*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK_25) <<
-+				  ARLTBL_VID_S_65;
-+		if (ent->is_valid)
-+			*mac_vid |= ARLTBL_VALID_25;
-+		if (ent->is_static)
-+			*mac_vid |= ARLTBL_STATIC_25;
-+		if (ent->is_age)
-+			*mac_vid |= ARLTBL_AGE_25;
-+	} else {
-+		*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK) << ARLTBL_VID_S;
-+		*fwd_entry = ent->port & ARLTBL_DATA_PORT_ID_MASK;
-+		if (ent->is_valid)
-+			*fwd_entry |= ARLTBL_VALID;
-+		if (ent->is_static)
-+			*fwd_entry |= ARLTBL_STATIC;
-+		if (ent->is_age)
-+			*fwd_entry |= ARLTBL_AGE;
-+	}
+@@ -312,6 +325,22 @@ static inline void b53_arl_from_entry(u6
+ 		*fwd_entry |= ARLTBL_AGE;
  }
  
++static inline void b53_arl_from_entry_25(u64 *mac_vid,
++					 const struct b53_arl_entry *ent)
++{
++	*mac_vid = ether_addr_to_u64(ent->mac);
++	*mac_vid |= (u64)(ent->port & ARLTBL_DATA_PORT_ID_MASK_25) <<
++			  ARLTBL_DATA_PORT_ID_S_25;
++	*mac_vid |= (u64)(ent->vid & ARLTBL_VID_MASK_25) <<
++			  ARLTBL_VID_S_65;
++	if (ent->is_valid)
++		*mac_vid |= ARLTBL_VALID_25;
++	if (ent->is_static)
++		*mac_vid |= ARLTBL_STATIC_25;
++	if (ent->is_age)
++		*mac_vid |= ARLTBL_AGE_25;
++}
++
  #ifdef CONFIG_BCM47XX
+ 
+ #include <linux/bcm47xx_nvram.h>
 --- a/drivers/net/dsa/b53/b53_regs.h
 +++ b/drivers/net/dsa/b53/b53_regs.h
 @@ -324,9 +324,10 @@

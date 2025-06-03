@@ -1,7 +1,8 @@
-From f5ad83d0a9ce63d0524c5838b7f3a7360bd647ec Mon Sep 17 00:00:00 2001
+From dd2bda07009f5c376a11b14c9445ccd11083c024 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Sat, 31 May 2025 11:11:42 +0200
-Subject: [PATCH] net: dsa: b53: fix b53_imp_vlan_setup for BCM5325
+Subject: [RFC PATCH net-next v2 09/10] net: dsa: b53: fix b53_imp_vlan_setup
+ for BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -17,7 +18,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -544,6 +544,10 @@ void b53_imp_vlan_setup(struct dsa_switc
+@@ -543,6 +543,10 @@ void b53_imp_vlan_setup(struct dsa_switc
  	unsigned int i;
  	u16 pvlan;
  

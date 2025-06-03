@@ -1,7 +1,8 @@
-From 1124bbbad49e1a657cb12dd6ab938fcb3035e872 Mon Sep 17 00:00:00 2001
+From e087a6480f0601d2eb2823b2c920ba7929ffafc4 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Sat, 31 May 2025 09:31:55 +0200
-Subject: [PATCH] net: dsa: b53: fix unicast/multicast flooding on BCM5325
+Subject: [RFC PATCH net-next v2 08/10] net: dsa: b53: fix unicast/multicast
+ flooding on BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -13,13 +14,13 @@ This has to be handled differently with other pages and registers.
 Fixes: a8b659e7ff75 ("net: dsa: act as passthrough for bridge port flags")
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- drivers/net/dsa/b53/b53_common.c | 85 +++++++++++++++++++++++++-------
- drivers/net/dsa/b53/b53_regs.h   | 38 ++++++++++++++
- 2 files changed, 105 insertions(+), 18 deletions(-)
+ drivers/net/dsa/b53/b53_common.c | 60 ++++++++++++++++++++++----------
+ drivers/net/dsa/b53/b53_regs.h   | 16 +++++++++
+ 2 files changed, 58 insertions(+), 18 deletions(-)
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -561,12 +561,36 @@ static void b53_port_set_ucast_flood(str
+@@ -560,12 +560,24 @@ static void b53_port_set_ucast_flood(str
  {
  	u16 uc;
  
@@ -30,8 +31,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 -		uc &= ~BIT(port);
 -	b53_write16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, uc);
 +	if (is5325(dev)) {
-+		u8 rc;
-+
 +		if (port == B53_CPU_PORT_25)
 +			port = B53_CPU_PORT;
 +
@@ -41,16 +40,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +		else
 +			uc &= ~BIT(port);
 +		b53_write16(dev, B53_IEEE_PAGE, B53_IEEE_UCAST_DLF, uc);
-+
-+		if (port >= B53_CPU_PORT_25)
-+			return;
-+
-+		b53_read8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), &rc);
-+		if (unicast)
-+			rc |= (RC_DLF_EN | RC_BKT_SIZE_8K | RC_PERCENT_40);
-+		else
-+			rc &= ~(RC_DLF_EN);
-+		b53_write8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), rc);
 +	} else {
 +		b53_read16(dev, B53_CTRL_PAGE, B53_UC_FLOOD_MASK, &uc);
 +		if (unicast)
@@ -62,7 +51,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  }
  
  static void b53_port_set_mcast_flood(struct b53_device *dev, int port,
-@@ -574,19 +598,44 @@ static void b53_port_set_mcast_flood(str
+@@ -573,19 +585,31 @@ static void b53_port_set_mcast_flood(str
  {
  	u16 mc;
  
@@ -80,8 +69,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 -		mc &= ~BIT(port);
 -	b53_write16(dev, B53_CTRL_PAGE, B53_IPMC_FLOOD_MASK, mc);
 +	if (is5325(dev)) {
-+		u8 rc;
-+
 +		if (port == B53_CPU_PORT_25)
 +			port = B53_CPU_PORT;
 +
@@ -91,17 +78,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +		else
 +			mc &= ~BIT(port);
 +		b53_write16(dev, B53_IEEE_PAGE, B53_IEEE_MCAST_DLF, mc);
-+
-+		if (port >= B53_CPU_PORT_25)
-+			return;
-+
-+		b53_read8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), &rc);
-+		if (multicast)
-+			rc |= (RC_BCAST_EN | RC_MCAST_EN | RC_BKT_SIZE_8K |
-+			       RC_PERCENT_40);
-+		else
-+			rc &= ~(RC_BCAST_EN | RC_MCAST_EN);
-+		b53_write8(dev, B53_RATE_CTL_PAGE, B53_RATE_CONTROL(port), rc);
 +	} else {
 +		b53_read16(dev, B53_CTRL_PAGE, B53_MC_FLOOD_MASK, &mc);
 +		if (multicast)
@@ -157,34 +133,5 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +
 +/*************************************************************************
   * Port VLAN Registers
-  *************************************************************************/
- 
-@@ -479,6 +495,28 @@
- #define B53_VLAN_PORT_DEF_TAG(i)	(0x10 + 2 * (i))
- 
- /*************************************************************************
-+ * Rate Control Page Registers
-+ *************************************************************************/
-+
-+#define B53_RATE_CONTROL(i)		(0x00 + (i))
-+#define   RC_PERCENT_S			0
-+#define   RC_PERCENT_10			(0 << RC_PERCENT_S)
-+#define   RC_PERCENT_20			(1 << RC_PERCENT_S)
-+#define   RC_PERCENT_30			(2 << RC_PERCENT_S)
-+#define   RC_PERCENT_40			(3 << RC_PERCENT_S)
-+#define   RC_PERCENT_MASK		(3 << RC_PERCENT_S)
-+#define   RC_BKT_SIZE_S			2
-+#define   RC_BKT_SIZE_2K		(0 << RC_BKT_SIZE_S)
-+#define   RC_BKT_SIZE_4K		(1 << RC_BKT_SIZE_S)
-+#define   RC_BKT_SIZE_6K		(2 << RC_BKT_SIZE_S)
-+#define   RC_BKT_SIZE_8K		(3 << RC_BKT_SIZE_S)
-+#define   RC_BKT_SIZE_MASK		(3 << RC_BKT_SIZE_S)
-+#define   RC_DLF_EN			BIT(4)
-+#define   RC_BCAST_EN			BIT(5)
-+#define   RC_MCAST_EN			BIT(6)
-+#define   RC_DROP_FRAME			BIT(7)
-+
-+/*************************************************************************
-  * Jumbo Frame Page Registers
   *************************************************************************/
  
