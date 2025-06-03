@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,737 @@
+@@ -0,0 +1,766 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 25 May 2025
 +// Device Tree Info
@@ -717,13 +717,42 @@
 +	 num-lanes= <1>;
 +	 bus-range = <0x10 0x1f>;
 +	 status = "okay";
++	 reset-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
++
++	 pcie@10 {
++		reg = <0x00100000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie-eth@10,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++		};
++	};
++
++
 +};
 +
 +
 +&pcie3x2 {
 +	 num-lanes= <1>;
 +	 bus-range = <0x20 0x2f>;
++    	 reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
 +	 status = "okay";
++
++	 pcie@20 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie-eth@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++		};
++	};
++
 +};
 +
 +&sata0 { /* sata0 muxed with USB3 OTG0 */
