@@ -272,18 +272,32 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 	return -1;
 }
 
-static int rtldsa_mdio_read(struct mii_bus *bus, int addr, int regnum)
+static int rtldsa_bus_read(struct mii_bus *bus, int addr, int regnum)
 {
 	struct rtl838x_switch_priv *priv = bus->priv;
 
 	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
 }
 
-static int rtldsa_mdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
+static int rtldsa_bus_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
 	struct rtl838x_switch_priv *priv = bus->priv;
 
 	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
+}
+
+static int rtldsa_bus_c45_read(struct mii_bus *bus, int addr, int devad, int regnum)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_c45_read_nested(priv->parent_bus, addr, devad, regnum);
+}
+
+static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int regnum, u16 val)
+{
+	struct rtl838x_switch_priv *priv = bus->priv;
+
+	return mdiobus_c45_write_nested(priv->parent_bus, addr, devad, regnum, val);
 }
 
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
@@ -316,8 +330,11 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENOMEM;
 
 	bus->name = "rtldsa_mdio";
-	bus->read = rtldsa_mdio_read;
-	bus->write = rtldsa_mdio_write;
+	bus->read = rtldsa_bus_read;
+	bus->write = rtldsa_bus_write;
+	bus->read_c45 = rtldsa_bus_c45_read;
+	bus->write_c45 = rtldsa_bus_c45_write;
+	bus->phy_mask = priv->parent_bus->phy_mask;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
 
 	bus->parent = dev;
