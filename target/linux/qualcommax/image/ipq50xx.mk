@@ -1,7 +1,8 @@
 DEVICE_VARS += BOOT_SCRIPT
 
 define Build/mstc-header
-	$(eval version=$(1))
+	$(eval version=$(word 1,$(1)))
+	$(eval hdrlen=$(if $(word 2,$(1)),$(word 2,$(1)),0x400))
 	gzip -c $@ | tail -c8 > $@.crclen
 	( \
 		printf "CMOC"; \
@@ -10,7 +11,7 @@ define Build/mstc-header
 			dd bs=64 count=1 conv=sync 2>/dev/null; \
 		printf "$(version)" | \
 			dd bs=64 count=1 conv=sync 2>/dev/null; \
-		dd if=/dev/zero bs=884 count=1 2>/dev/null; \
+		dd if=/dev/zero bs=$$(($(hdrlen) - 0x8c)) count=1 2>/dev/null; \
 		cat $@; \
 	) > $@.new
 	mv $@.new $@
