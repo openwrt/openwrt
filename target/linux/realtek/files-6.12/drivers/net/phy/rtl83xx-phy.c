@@ -981,21 +981,40 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	return 0;
 }
 
+static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
+{
+	struct mii_bus *bus = phydev->mdio.bus;
+	static int regs[] = {16, 19, 20, 21};
+	int addr = phydev->mdio.addr & ~3;
+	int reg = regs[phydev->mdio.addr & 3];
+	int oldpage, val;
+
+	/*
+	 * The fiber status cannot be read directly from the phy. It is a package "global"
+	 * attribute and therefore located in the first phy. To avoid state handling assume
+	 * an aligment to addresses divisible by 4.
+	 */
+
+	oldpage = __mdiobus_read(bus, addr, RTL8XXX_PAGE_SELECT);
+	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
+	val = __mdiobus_read(bus, addr, reg);
+	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, oldpage);
+
+	return !(val & BMCR_PDOWN);
+}
+
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
-	int mac = phydev->mdio.addr;
+	struct mii_bus *bus = phydev->mdio.bus;
+	int ret;
 
-	static int reg[] = {16, 19, 20, 21};
-	u32 val;
+	mutex_lock(&bus->mdio_lock);
+	ret = __rtl8214fc_media_is_fibre(phydev);
+	mutex_unlock(&bus->mdio_lock);
 
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-
-	if (val & BMCR_PDOWN)
-		return false;
-
-	return true;
+	return ret;
 }
 
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
