@@ -21,7 +21,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1278,6 +1278,8 @@ static void b53_force_link(struct b53_de
+@@ -1279,6 +1279,8 @@ static void b53_force_link(struct b53_de
  	if (port == dev->imp_port) {
  		off = B53_PORT_OVERRIDE_CTRL;
  		val = PORT_OVERRIDE_EN;
@@ -30,7 +30,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	} else {
  		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
  		val = GMII_PO_EN;
-@@ -1302,6 +1304,8 @@ static void b53_force_port_config(struct
+@@ -1303,6 +1305,8 @@ static void b53_force_port_config(struct
  	if (port == dev->imp_port) {
  		off = B53_PORT_OVERRIDE_CTRL;
  		val = PORT_OVERRIDE_EN;
@@ -39,7 +39,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	} else {
  		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
  		val = GMII_PO_EN;
-@@ -1332,10 +1336,19 @@ static void b53_force_port_config(struct
+@@ -1333,10 +1337,19 @@ static void b53_force_port_config(struct
  		return;
  	}
  

@@ -22,7 +22,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1760,13 +1760,15 @@ static int b53_arl_read(struct b53_devic
+@@ -1738,13 +1738,15 @@ static int b53_arl_read(struct b53_devic
  	/* Read the bins */
  	for (i = 0; i < dev->num_arl_bins; i++) {
  		u64 mac_vid;
@@ -42,7 +42,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  		if (!(fwd_entry & ARLTBL_VALID)) {
  			set_bit(i, free_bins);
-@@ -1799,7 +1801,8 @@ static int b53_arl_op(struct b53_device
+@@ -1777,7 +1779,8 @@ static int b53_arl_op(struct b53_device
  
  	/* Perform a read for the given MAC and VID */
  	b53_write48(dev, B53_ARLIO_PAGE, B53_MAC_ADDR_IDX, mac);
@@ -52,7 +52,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	/* Issue a read operation for this MAC */
  	ret = b53_arl_rw_op(dev, 1);
-@@ -1850,12 +1853,14 @@ static int b53_arl_op(struct b53_device
+@@ -1828,12 +1831,14 @@ static int b53_arl_op(struct b53_device
  	ent.is_static = true;
  	ent.is_age = false;
  	memcpy(ent.mac, addr, ETH_ALEN);
@@ -70,7 +70,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	return b53_arl_rw_op(dev, 0);
  }
-@@ -1867,12 +1872,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
+@@ -1845,12 +1850,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
  	struct b53_device *priv = ds->priv;
  	int ret;
  
@@ -83,7 +83,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	mutex_lock(&priv->arl_mutex);
  	ret = b53_arl_op(priv, 0, port, addr, vid, true);
  	mutex_unlock(&priv->arl_mutex);
-@@ -1899,10 +1898,15 @@ EXPORT_SYMBOL(b53_fdb_del);
+@@ -1877,10 +1876,15 @@ EXPORT_SYMBOL(b53_fdb_del);
  static int b53_arl_search_wait(struct b53_device *dev)
  {
  	unsigned int timeout = 1000;
@@ -101,7 +101,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		if (!(reg & ARL_SRCH_STDN))
  			return 0;
  
-@@ -1919,13 +1923,21 @@ static void b53_arl_search_rd(struct b53
+@@ -1897,13 +1901,21 @@ static void b53_arl_search_rd(struct b53
  			      struct b53_arl_entry *ent)
  {
  	u64 mac_vid;
@@ -129,7 +129,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  }
  
  static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
-@@ -1946,14 +1958,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -1924,14 +1936,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];
  	unsigned int count = 0;
