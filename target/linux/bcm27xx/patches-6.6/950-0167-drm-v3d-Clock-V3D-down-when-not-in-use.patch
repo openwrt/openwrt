@@ -25,7 +25,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/gpu/drm/v3d/v3d_drv.c
 +++ b/drivers/gpu/drm/v3d/v3d_drv.c
-@@ -256,6 +256,21 @@ static int v3d_platform_drm_probe(struct
+@@ -266,6 +266,21 @@ static int v3d_platform_drm_probe(struct
  		}
  	}
  
@@ -47,7 +47,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	if (v3d->ver < 41) {
  		ret = map_regs(v3d, &v3d->gca_regs, "gca");
  		if (ret)
-@@ -281,6 +296,9 @@ static int v3d_platform_drm_probe(struct
+@@ -292,6 +307,9 @@ static int v3d_platform_drm_probe(struct
  	if (ret)
  		goto irq_disable;
  

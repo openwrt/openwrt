@@ -16,7 +16,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
 
 --- a/sound/soc/sunxi/sun4i-codec.c
 +++ b/sound/soc/sunxi/sun4i-codec.c
-@@ -232,15 +232,65 @@
+@@ -233,16 +233,66 @@
  
  /* TODO H3 DAP (Digital Audio Processing) bits */
  
@@ -76,6 +76,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
 +	struct clk	*clk_module_dac;
  	struct reset_control *rst;
  	struct gpio_desc *gpio_pa;
+ 	struct gpio_desc *gpio_hp;
 +	const struct sun4i_codec_quirks *quirks;
  
 -	/* ADC_FIFOC register is at different offset on different SoCs */
@@ -84,7 +85,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	struct regmap_field *reg_adc_fifoc;
  
  	struct snd_dmaengine_dai_dma_data	capture_dma_data;
-@@ -250,33 +300,33 @@ struct sun4i_codec {
+@@ -252,33 +302,33 @@ struct sun4i_codec {
  static void sun4i_codec_start_playback(struct sun4i_codec *scodec)
  {
  	/* Flush TX FIFO */
@@ -126,7 +127,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  }
  
  static int sun4i_codec_trigger(struct snd_pcm_substream *substream, int cmd,
-@@ -325,8 +375,8 @@ static int sun4i_codec_prepare_capture(s
+@@ -327,8 +377,8 @@ static int sun4i_codec_prepare_capture(s
  
  	/* Set RX FIFO trigger level */
  	regmap_field_update_bits(scodec->reg_adc_fifoc,
@@ -137,7 +138,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  	/*
  	 * FIXME: Undocumented in the datasheet, but
-@@ -360,13 +410,13 @@ static int sun4i_codec_prepare_playback(
+@@ -362,13 +412,13 @@ static int sun4i_codec_prepare_playback(
  	u32 val;
  
  	/* Flush the TX FIFO */
@@ -156,7 +157,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  	if (substream->runtime->rate > 32000)
  		/* Use 64 bits FIR filter */
-@@ -375,13 +425,12 @@ static int sun4i_codec_prepare_playback(
+@@ -377,13 +427,12 @@ static int sun4i_codec_prepare_playback(
  		/* Use 32 bits FIR filter */
  		val = BIT(SUN4I_CODEC_DAC_FIFOC_FIR_VERSION);
  
@@ -174,7 +175,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  	return 0;
  };
-@@ -476,30 +525,32 @@ static int sun4i_codec_hw_params_capture
+@@ -478,30 +527,32 @@ static int sun4i_codec_hw_params_capture
  				 7 << SUN4I_CODEC_ADC_FIFOC_ADC_FS,
  				 hwrate << SUN4I_CODEC_ADC_FIFOC_ADC_FS);
  
@@ -218,7 +219,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  		scodec->capture_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
  	}
-@@ -514,9 +565,9 @@ static int sun4i_codec_hw_params_playbac
+@@ -516,9 +567,9 @@ static int sun4i_codec_hw_params_playbac
  	u32 val;
  
  	/* Set DAC sample rate */
@@ -231,7 +232,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  	/* Set the number of channels we want to use */
  	if (params_channels(params) == 1)
-@@ -524,27 +575,26 @@ static int sun4i_codec_hw_params_playbac
+@@ -526,27 +577,26 @@ static int sun4i_codec_hw_params_playbac
  	else
  		val = 0;
  
@@ -269,7 +270,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  		scodec->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
  	}
-@@ -565,7 +615,11 @@ static int sun4i_codec_hw_params(struct
+@@ -567,7 +617,11 @@ static int sun4i_codec_hw_params(struct
  	if (!clk_freq)
  		return -EINVAL;
  
@@ -282,7 +283,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	if (ret)
  		return ret;
  
-@@ -607,10 +661,14 @@ static int sun4i_codec_startup(struct sn
+@@ -609,10 +663,14 @@ static int sun4i_codec_startup(struct sn
  	 * Stop issuing DRQ when we have room for less than 16 samples
  	 * in our TX FIFO
  	 */
@@ -300,7 +301,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  }
  
  static void sun4i_codec_shutdown(struct snd_pcm_substream *substream,
-@@ -619,7 +677,11 @@ static void sun4i_codec_shutdown(struct
+@@ -621,7 +679,11 @@ static void sun4i_codec_shutdown(struct
  	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
  	struct sun4i_codec *scodec = snd_soc_card_get_drvdata(rtd->card);
  
@@ -313,7 +314,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  }
  
  static const struct snd_soc_dai_ops sun4i_codec_dai_ops = {
-@@ -1229,6 +1291,55 @@ static const struct snd_soc_component_dr
+@@ -1231,6 +1293,55 @@ static const struct snd_soc_component_dr
  	.endianness		= 1,
  };
  
@@ -369,7 +370,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  static const struct snd_soc_component_driver sun4i_codec_component = {
  	.name			= "sun4i-codec",
  	.legacy_dai_naming	= 1,
-@@ -1532,6 +1643,66 @@ static struct snd_soc_card *sun8i_v3s_co
+@@ -1578,6 +1689,66 @@ static struct snd_soc_card *sun8i_v3s_co
  	return card;
  };
  
@@ -436,7 +437,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  static const struct regmap_config sun4i_codec_regmap_config = {
  	.reg_bits	= 32,
  	.reg_stride	= 4,
-@@ -1574,21 +1745,22 @@ static const struct regmap_config sun8i_
+@@ -1620,21 +1791,22 @@ static const struct regmap_config sun8i_
  	.max_register	= SUN8I_H3_CODEC_ADC_DBG,
  };
  
@@ -467,7 +468,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	.reg_dac_txdata	= SUN4I_CODEC_DAC_TXDATA,
  	.reg_adc_rxdata	= SUN4I_CODEC_ADC_RXDATA,
  };
-@@ -1597,7 +1769,11 @@ static const struct sun4i_codec_quirks s
+@@ -1643,7 +1815,11 @@ static const struct sun4i_codec_quirks s
  	.regmap_config	= &sun6i_codec_regmap_config,
  	.codec		= &sun6i_codec_codec,
  	.create_card	= sun6i_codec_create_card,
@@ -479,7 +480,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	.reg_dac_txdata	= SUN4I_CODEC_DAC_TXDATA,
  	.reg_adc_rxdata	= SUN6I_CODEC_ADC_RXDATA,
  	.has_reset	= true,
-@@ -1607,7 +1783,11 @@ static const struct sun4i_codec_quirks s
+@@ -1653,7 +1829,11 @@ static const struct sun4i_codec_quirks s
  	.regmap_config	= &sun7i_codec_regmap_config,
  	.codec		= &sun7i_codec_codec,
  	.create_card	= sun4i_codec_create_card,
@@ -491,7 +492,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	.reg_dac_txdata	= SUN4I_CODEC_DAC_TXDATA,
  	.reg_adc_rxdata	= SUN4I_CODEC_ADC_RXDATA,
  };
-@@ -1616,7 +1796,11 @@ static const struct sun4i_codec_quirks s
+@@ -1662,7 +1842,11 @@ static const struct sun4i_codec_quirks s
  	.regmap_config	= &sun8i_a23_codec_regmap_config,
  	.codec		= &sun8i_a23_codec_codec,
  	.create_card	= sun8i_a23_codec_create_card,
@@ -503,7 +504,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	.reg_dac_txdata	= SUN4I_CODEC_DAC_TXDATA,
  	.reg_adc_rxdata	= SUN6I_CODEC_ADC_RXDATA,
  	.has_reset	= true,
-@@ -1631,7 +1815,11 @@ static const struct sun4i_codec_quirks s
+@@ -1677,7 +1861,11 @@ static const struct sun4i_codec_quirks s
  	 */
  	.codec		= &sun8i_a23_codec_codec,
  	.create_card	= sun8i_h3_codec_create_card,
@@ -515,7 +516,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	.reg_dac_txdata	= SUN8I_H3_CODEC_DAC_TXDATA,
  	.reg_adc_rxdata	= SUN6I_CODEC_ADC_RXDATA,
  	.has_reset	= true,
-@@ -1645,12 +1833,31 @@ static const struct sun4i_codec_quirks s
+@@ -1691,12 +1879,31 @@ static const struct sun4i_codec_quirks s
  	 */
  	.codec		= &sun8i_a23_codec_codec,
  	.create_card	= sun8i_v3s_codec_create_card,
@@ -547,7 +548,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  static const struct of_device_id sun4i_codec_of_match[] = {
  	{
  		.compatible = "allwinner,sun4i-a10-codec",
-@@ -1676,6 +1883,10 @@ static const struct of_device_id sun4i_c
+@@ -1722,6 +1929,10 @@ static const struct of_device_id sun4i_c
  		.compatible = "allwinner,sun8i-v3s-codec",
  		.data = &sun8i_v3s_codec_quirks,
  	},
@@ -558,7 +559,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	{}
  };
  MODULE_DEVICE_TABLE(of, sun4i_codec_of_match);
-@@ -1704,6 +1915,7 @@ static int sun4i_codec_probe(struct plat
+@@ -1750,6 +1961,7 @@ static int sun4i_codec_probe(struct plat
  		dev_err(&pdev->dev, "Failed to determine the quirks to use\n");
  		return -ENODEV;
  	}
@@ -566,7 +567,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  
  	scodec->regmap = devm_regmap_init_mmio(&pdev->dev, base,
  					       quirks->regmap_config);
-@@ -1719,10 +1931,24 @@ static int sun4i_codec_probe(struct plat
+@@ -1765,10 +1977,24 @@ static int sun4i_codec_probe(struct plat
  		return PTR_ERR(scodec->clk_apb);
  	}
  
@@ -595,7 +596,7 @@ Signed-off-by: Maksim Kiselev <bigunclemax@gmail.com>
  	}
  
  	if (quirks->has_reset) {
-@@ -1751,6 +1977,16 @@ static int sun4i_codec_probe(struct plat
+@@ -1804,6 +2030,16 @@ static int sun4i_codec_probe(struct plat
  		dev_err(&pdev->dev, "Failed to create regmap fields: %d\n",
  			ret);
  		return ret;

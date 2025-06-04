@@ -17,7 +17,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/adv7180.c
 +++ b/drivers/media/i2c/adv7180.c
-@@ -723,10 +723,15 @@ static int adv7180_enum_mbus_code(struct
+@@ -728,10 +728,15 @@ static int adv7180_enum_mbus_code(struct
  				  struct v4l2_subdev_state *sd_state,
  				  struct v4l2_subdev_mbus_code_enum *code)
  {
@@ -34,7 +34,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	return 0;
  }
-@@ -736,7 +741,10 @@ static int adv7180_mbus_fmt(struct v4l2_
+@@ -741,7 +746,10 @@ static int adv7180_mbus_fmt(struct v4l2_
  {
  	struct adv7180_state *state = to_state(sd);
  
