@@ -124,7 +124,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  		qfprom: efuse@a4000 {
  			compatible = "qcom,ipq9574-qfprom", "qcom,qfprom";
  			reg = <0x000a4000 0x5a1>;
-@@ -309,10 +401,10 @@
+@@ -311,10 +403,10 @@
  			clocks = <&xo_board_clk>,
  				 <&sleep_clk>,
  				 <0>,
@@ -139,7 +139,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  				 <0>;
  			#clock-cells = <1>;
  			#reset-cells = <1>;
-@@ -756,6 +848,326 @@
+@@ -758,6 +850,326 @@
  				status = "disabled";
  			};
  		};
