@@ -125,7 +125,7 @@
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR9340) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		u32 t = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
-+		ah->is_clk_25mhz = !(t & AR933X_BOOTSTRAP_REF_CLK_40);
++		ah->is_clk_25mhz = !(t & AR934X_BOOTSTRAP_REF_CLK_40);
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR953X) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		/*
