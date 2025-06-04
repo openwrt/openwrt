@@ -28,7 +28,8 @@ ipq50xx_setup_interfaces()
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
-	cmcc,pz-l8)
+	cmcc,pz-l8|\
+	xiaomi,redmi-ax5400)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		ucidef_set_network_device_conduit "lan1" "eth1"
 		ucidef_set_network_device_conduit "lan2" "eth1"
