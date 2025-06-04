@@ -318,7 +318,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	mctz = soft_limit_tree_from_page(page);
  	if (!mctz)
  		return;
-@@ -3439,6 +3449,9 @@ unsigned long mem_cgroup_soft_limit_recl
+@@ -3437,6 +3447,9 @@ unsigned long mem_cgroup_soft_limit_recl
  	unsigned long excess;
  	unsigned long nr_scanned;
  
@@ -328,7 +328,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	if (order > 0)
  		return 0;
  
-@@ -5347,6 +5360,7 @@ static int mem_cgroup_css_online(struct
+@@ -5345,6 +5358,7 @@ static int mem_cgroup_css_online(struct
  	if (unlikely(mem_cgroup_is_root(memcg)))
  		queue_delayed_work(system_unbound_wq, &stats_flush_dwork,
  				   2UL*HZ);
@@ -336,7 +336,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return 0;
  }
  
-@@ -5373,6 +5387,7 @@ static void mem_cgroup_css_offline(struc
+@@ -5371,6 +5385,7 @@ static void mem_cgroup_css_offline(struc
  	memcg_offline_kmem(memcg);
  	reparent_shrinker_deferred(memcg);
  	wb_memcg_offline(memcg);
@@ -344,7 +344,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	drain_all_stock(memcg);
  
-@@ -5384,6 +5399,7 @@ static void mem_cgroup_css_released(stru
+@@ -5382,6 +5397,7 @@ static void mem_cgroup_css_released(stru
  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
  
  	invalidate_reclaim_iterators(memcg);
@@ -354,7 +354,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  static void mem_cgroup_css_free(struct cgroup_subsys_state *css)
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -7706,6 +7706,7 @@ static void __init free_area_init_node(i
+@@ -7714,6 +7714,7 @@ static void __init free_area_init_node(i
  	pgdat_set_deferred_range(pgdat);
  
  	free_area_init_core(pgdat);
