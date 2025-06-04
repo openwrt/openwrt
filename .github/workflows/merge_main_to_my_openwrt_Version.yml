@@ -1,18 +1,18 @@
-name: Merge Master to Mywork
+name: Merge Main to My-OpenWrt
 
 on:
   schedule:
-    - cron: '30 2 * * *'  # 每天UTC时间2:30自动合并，可根据需要调整
-  workflow_dispatch:      # 允许手动触发
+    - cron: '30 2 * * *'  # 每天UTC时间2:30自动合并
+  workflow_dispatch:
 
 jobs:
   merge:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout mywork branch
+      - name: Checkout My-OpenWrt branch
         uses: actions/checkout@v4
         with:
-          ref: mywork
+          ref: My-OpenWrt
           persist-credentials: false
 
       - name: Set Git identity
@@ -20,16 +20,16 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch master from origin
+      - name: Fetch main from origin
         run: |
-          git fetch origin master
+          git fetch origin main
 
-      - name: Merge master into mywork
+      - name: Merge main into My-OpenWrt
         run: |
-          git merge origin/master --no-edit || true
+          git merge origin/main --no-edit || true
 
-      - name: Push updates to mywork branch
+      - name: Push updates to My-OpenWrt branch
         run: |
-          git push origin mywork
+          git push origin My-OpenWrt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
