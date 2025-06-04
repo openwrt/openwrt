@@ -2,8 +2,8 @@ name: Sync OpenWrt Upstream
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 每天UTC时间2点自动同步，可根据需要调整
-  workflow_dispatch:      # 允许手动触发
+    - cron: '0 2 * * *'   # 每天UTC时间2点自动同步
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -24,13 +24,13 @@ jobs:
           git remote add upstream https://github.com/openwrt/openwrt.git
           git fetch upstream
 
-      - name: Merge upstream/master into local master
+      - name: Merge upstream/main into local main
         run: |
-          git checkout master
-          git merge upstream/master --no-edit || true
+          git checkout main
+          git merge upstream/main --no-edit || true
 
-      - name: Push updates to origin master
+      - name: Push updates to origin main
         run: |
-          git push origin master
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
