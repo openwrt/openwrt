@@ -1,0 +1,35 @@
+name: Merge Master to Mywork
+
+on:
+  schedule:
+    - cron: '30 2 * * *'  # 每天UTC时间2:30自动合并，可根据需要调整
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mywork branch
+        uses: actions/checkout@v4
+        with:
+          ref: mywork
+          persist-credentials: false
+
+      - name: Set Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch master from origin
+        run: |
+          git fetch origin master
+
+      - name: Merge master into mywork
+        run: |
+          git merge origin/master --no-edit || true
+
+      - name: Push updates to mywork branch
+        run: |
+          git push origin mywork
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
