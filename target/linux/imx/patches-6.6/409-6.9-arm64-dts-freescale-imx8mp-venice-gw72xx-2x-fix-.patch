@@ -1,0 +1,38 @@
+From fddb089c2ccfb8bc4bd3aba605f7eadfd9f36cfd Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Wed, 28 Feb 2024 10:22:11 -0800
+Subject: [PATCH 409/413] 6.9: arm64: dts: freescale: imx8mp-venice-gw72xx-2x:
+ fix USB vbus regulator
+
+When using usb-conn-gpio to control USB role and VBUS, the vbus-supply
+property must be present in the usb-conn-gpio node. Additionally it
+should not be present in the phy node as that isn't what controls vbus
+and will upset the use count.
+
+This resolves an issue where VBUS is enabled with OTG in peripheral
+mode.
+
+Fixes: 86c43ae03ab9 ("arm64: dts: freescale: Add imx8mp-venice-gw72xx-2x")
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-venice-gw72xx.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw72xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw72xx.dtsi
+@@ -169,7 +169,6 @@
+ };
+ 
+ &usb3_phy0 {
+-	vbus-supply = <&reg_usb1_vbus>;
+ 	status = "okay";
+ };
+ 
+@@ -189,6 +188,7 @@
+ 		pinctrl-0 = <&pinctrl_usbcon1>;
+ 		type = "micro";
+ 		label = "otg";
++		vbus-supply = <&reg_usb1_vbus>;
+ 		id-gpios = <&gpio3 21 GPIO_ACTIVE_HIGH>;
+ 	};
+ };

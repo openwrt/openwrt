@@ -1,0 +1,80 @@
+From 482fe0cb90d3376051304531a01edccac9ca1868 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Thu, 29 Feb 2024 10:05:26 -0800
+Subject: [PATCH 412/413] 6.10: arm64: dts: imx8mp-venice-gw72xx: add mac addr
+ for eth1
+
+Add the PCI bus topology for eth1 so that boot firmware can set the
+local-mac-address property.
+
+The eth1 device is behind a PCI switch:
+ # lspci -n
+ 00:00.0 0604: 16c3:abcd (rev 01)
+ 01:00.0 0604: 12d8:b404 (rev 01)
+ 02:01.0 0604: 12d8:b404 (rev 01)
+ 02:02.0 0604: 12d8:b404 (rev 01)
+ 02:03.0 0604: 12d8:b404 (rev 01)
+ 05:00.0 0200: 11ab:4380
+ # lspci -t
+ -[0000:00]---00.0-[01-ff]----00.0-[02-05]--+-01.0-[03]--
+                                           +-02.0-[04]--
+                                           \-03.0-[05]----00.0
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ .../dts/freescale/imx8mp-venice-gw72xx.dtsi   | 37 +++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw72xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw72xx.dtsi
+@@ -8,6 +8,10 @@
+ #include <dt-bindings/phy/phy-imx8-pcie.h>
+ 
+ / {
++	aliases {
++		ethernet1 = &eth1;
++	};
++
+ 	led-controller {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -137,6 +141,39 @@
+ 	pinctrl-0 = <&pinctrl_pcie0>;
+ 	reset-gpio = <&gpio4 29 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		pcie@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			device_type = "pci";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++
++			pcie@3,0 {
++				reg = <0x1800 0 0 0 0>;
++				device_type = "pci";
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++
++				eth1: ethernet@0,0 {
++					reg = <0x0000 0 0 0 0>;
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					local-mac-address = [00 00 00 00 00 00];
++				};
++			};
++		};
++	};
+ };
+ 
+ /* GPS */

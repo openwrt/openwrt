@@ -1,0 +1,136 @@
+From 60fd951029603a0a6e019f16d53fb329dbd001f4 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Fri, 7 Jul 2023 16:24:19 -0700
+Subject: [PATCH 400/413] 6.7: arm64: dts: imx8mp: add
+ imx8mp-venice-gw74xx-imx219 overlay for rpi v2 camera
+
+Add support for the RaspberryPi Camera v2 which is an IMX219 8MP module:
+ - https://datasheets.raspberrypi.com/camera/camera-v2-schematics.pdf
+ - has its own on-board 24MHz osc so no clock required from baseboard
+ - pin 11 enables 1.8V and 2.8V LDO which is connected to
+   GW74xx MIPI_GPIO4 (IMX8MP GPIO1_IO4) so we use this as a gpio
+
+Support is added via a device-tree overlay.
+
+The IMX219 supports RAW8/RAW10 image formats.
+
+Example configuration:
+media-ctl -l "'imx219 3-0010':0->'csis-32e40000.csi':0[1]"
+media-ctl -v -V "'imx219 3-0010':0 [fmt:SRGGB8/640x480 field:none]"
+media-ctl -v -V "'crossbar':0 [fmt:SRGGB8/640x480 field:none]"
+media-ctl -v -V "'mxc_isi.0':0 [fmt:SRGGB8/640x480 field:none]"
+v4l2-ctl --set-fmt-video=width=640,height=480,pixelformat=RGGB
+v4l2-ctl --stream-mmap --stream-to=frame.raw --stream-count=1
+convert -size 640x480 -depth 8 gray:frame.raw frame.png
+gst-launch-1.0 v4l2src ! \
+  video/x-bayer,format=rggb,width=640,height=480,framerate=10/1 ! \
+  bayer2rgb ! fbdevsink
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ arch/arm64/boot/dts/freescale/Makefile        |  2 +
+ .../imx8mp-venice-gw74xx-imx219.dtso          | 80 +++++++++++++++++++
+ 2 files changed, 82 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx-imx219.dtso
+
+--- a/arch/arm64/boot/dts/freescale/Makefile
++++ b/arch/arm64/boot/dts/freescale/Makefile
+@@ -159,6 +159,7 @@ imx8mm-venice-gw73xx-0x-rpidsi-dtbs	:= i
+ imx8mm-venice-gw73xx-0x-rs232-rts-dtbs	:= imx8mm-venice-gw73xx-0x.dtb imx8mm-venice-gw73xx-0x-rs232-rts.dtbo
+ imx8mm-venice-gw73xx-0x-rs422-dtbs	:= imx8mm-venice-gw73xx-0x.dtb imx8mm-venice-gw73xx-0x-rs422.dtbo
+ imx8mm-venice-gw73xx-0x-rs485-dtbs	:= imx8mm-venice-gw73xx-0x.dtb imx8mm-venice-gw73xx-0x-rs485.dtbo
++imx8mp-venice-gw74xx-imx219-dtbs	:= imx8mp-venice-gw74xx.dtb imx8mp-venice-gw74xx-imx219.dtbo
+ imx8mp-venice-gw74xx-rpidsi-dtbs	:= imx8mp-venice-gw74xx.dtb imx8mp-venice-gw74xx-rpidsi.dtbo
+ 
+ dtb-$(CONFIG_ARCH_MXC) += imx8mm-venice-gw72xx-0x-imx219.dtb
+@@ -171,6 +172,7 @@ dtb-$(CONFIG_ARCH_MXC) += imx8mm-venice-
+ dtb-$(CONFIG_ARCH_MXC) += imx8mm-venice-gw73xx-0x-rs232-rts.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mm-venice-gw73xx-0x-rs422.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mm-venice-gw73xx-0x-rs485.dtb
++dtb-$(CONFIG_ARCH_MXC) += imx8mp-venice-gw74xx-imx219.dtb
+ dtb-$(CONFIG_ARCH_MXC) += imx8mp-venice-gw74xx-rpidsi.dtb
+ 
+ dtb-$(CONFIG_ARCH_S32) += s32g274a-evb.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx-imx219.dtso
+@@ -0,0 +1,80 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright 2023 Gateworks Corporation
++ */
++
++#include <dt-bindings/gpio/gpio.h>
++
++#include "imx8mp-pinfunc.h"
++
++/dts-v1/;
++/plugin/;
++
++&{/} {
++	compatible = "gw,imx8mp-gw74xx", "fsl,imx8mp";
++
++	reg_cam: regulator-cam {
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_reg_cam>;
++		compatible = "regulator-fixed";
++		regulator-name = "reg_cam";
++		gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	cam24m: cam24m {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24000000>;
++		clock-output-names = "cam24m";
++	};
++};
++
++&i2c4 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	imx219: sensor@10 {
++		compatible = "sony,imx219";
++		reg = <0x10>;
++		clocks = <&cam24m>;
++		VDIG-supply = <&reg_cam>;
++
++		port {
++			/* MIPI CSI-2 bus endpoint */
++			imx219_to_mipi_csi2: endpoint {
++				remote-endpoint = <&mipi_csi_0_in>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++				link-frequencies = /bits/ 64 <456000000>;
++			};
++		};
++	};
++};
++
++&isi_0 {
++	status = "okay";
++};
++
++&mipi_csi_0 {
++	status = "okay";
++
++	ports {
++		port@0 {
++			mipi_csi_0_in: endpoint {
++				remote-endpoint = <&imx219_to_mipi_csi2>;
++				data-lanes = <1 2>;
++			};
++		};
++	};
++};
++
++&iomuxc {
++	pinctrl_reg_cam: regcamgrp {
++		fsl,pins = <
++			MX8MP_IOMUXC_GPIO1_IO04__GPIO1_IO04	0x41
++		>;
++	};
++};

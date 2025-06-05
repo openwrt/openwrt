@@ -1,0 +1,82 @@
+From caac9b614ee63f875b290fda429706f6ef36e2f1 Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Thu, 29 Feb 2024 10:12:49 -0800
+Subject: [PATCH 413/413] 6.10: arm64: dts: imx8mp-venice-gw73xx: add mac addr
+ for eth1
+
+Add the PCI bus topology for eth1 so that boot firmware can set the
+local-mac-address property.
+
+The eth1 device is behind a PCI switch:
+ # lspci -n
+ 00:00.0 0604: 16c3:abcd (rev 01)
+ 01:00.0 0604: 12d8:2608
+ 02:01.0 0604: 12d8:2608
+ 02:02.0 0604: 12d8:2608
+ 02:03.0 0604: 12d8:2608
+ 02:04.0 0604: 12d8:2608
+ c0:00.0 0200: 1055:7430 (rev 11)
+ # lspci -t
+ -[0000:00]---00.0-[01-ff]----00.0-[02-fe]--+-01.0-[03-41]--
+                                           +-02.0-[42-80]--
+                                           +-03.0-[81-bf]--
+                                           \-04.0-[c0-fe]----00.0
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+---
+ .../dts/freescale/imx8mp-venice-gw73xx.dtsi   | 37 +++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw73xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw73xx.dtsi
+@@ -8,6 +8,10 @@
+ #include <dt-bindings/phy/phy-imx8-pcie.h>
+ 
+ / {
++	aliases {
++		ethernet1 = &eth1;
++	};
++
+ 	led-controller {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -149,6 +153,39 @@
+ 	pinctrl-0 = <&pinctrl_pcie0>;
+ 	reset-gpio = <&gpio4 29 GPIO_ACTIVE_LOW>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x0000 0 0 0 0>;
++		device_type = "pci";
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges;
++
++		pcie@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			device_type = "pci";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			ranges;
++
++			pcie@4,0 {
++				reg = <0x2000 0 0 0 0>;
++				device_type = "pci";
++				#address-cells = <3>;
++				#size-cells = <2>;
++				ranges;
++
++				eth1: ethernet@0,0 {
++					reg = <0x0000 0 0 0 0>;
++					#address-cells = <3>;
++					#size-cells = <2>;
++					ranges;
++
++					local-mac-address = [00 00 00 00 00 00];
++				};
++			};
++		};
++	};
+ };
+ 
+ /* GPS */
