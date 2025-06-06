@@ -80,3 +80,13 @@ define Device/iei_puzzle-m902
   DEVICE_PACKAGES += kmod-rtc-ds1307
 endef
 TARGET_DEVICES += iei_puzzle-m902
+
+define Device/aster_9130-102
+  $(call Device/Default-arm64)
+  SOC := cn9130
+  DEVICE_VENDOR := Aster
+  DEVICE_MODEL := Aster-102
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  BOOT_SCRIPT := 9130-102
+endef
+TARGET_DEVICES += aster_9130-102
