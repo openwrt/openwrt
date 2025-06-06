@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-ct-firmware
-PKG_VERSION:=2021.11.08
+PKG_VERSION:=2022.09.12
 PKG_RELEASE:=1
 
 DL_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
@@ -32,15 +32,15 @@ endef
 
 QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin
 define Download/ath10k-firmware-qca988x-ct
-  $(call Download/ct-firmware,QCA988X,)
-  HASH:=1bd53359a721019a1662302ba998abc89c1c44ee0db238aad08e2a7c8da949b3
+  $(call Download/ct-firmware,QCA988X,ath10k-fw-beta)
+  HASH:=0723e73558e7187f099219bc5de2152336f27c40aa8ca6f2ed7e4f7cbd6049bd
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
 
 QCA988X_FIRMWARE_FILE_CT_FULL_HTT:=firmware-2-ct-full-htt-mgt-community.bin
 define Download/ath10k-firmware-qca988x-ct-full-htt
-  $(call Download/ct-firmware-full-htt,QCA988X,)
-  HASH:=ca205e4b084668afe9e0dc9fb0d1010c4b30240ac12214baab22bf24656df313
+  $(call Download/ct-firmware-full-htt,QCA988X,ath10k-fw-beta)
+  HASH:=256cc450c02494e450fea9463be1289e3b46fcb5d8ce02a0c97fc86d15703b25
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct-full-htt))
 
