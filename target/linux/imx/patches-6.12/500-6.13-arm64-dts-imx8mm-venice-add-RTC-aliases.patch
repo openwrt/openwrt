@@ -23,7 +23,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
 
 --- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw700x.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw700x.dtsi
-@@ -8,6 +8,11 @@
+@@ -9,6 +9,11 @@
  #include <dt-bindings/net/ti-dp83867.h>
  
  / {
@@ -35,7 +35,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	memory@40000000 {
  		device_type = "memory";
  		reg = <0x0 0x40000000 0 0x80000000>;
-@@ -272,7 +277,7 @@
+@@ -292,7 +297,7 @@
  		pagesize = <16>;
  	};
  
@@ -55,7 +55,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  		usb0 = &usbotg1;
  		usb1 = &usbotg2;
  	};
-@@ -495,7 +497,7 @@
+@@ -497,7 +499,7 @@
  		pagesize = <16>;
  	};
  
@@ -75,7 +75,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  		usb0 = &usbotg1;
  		usb1 = &usbotg2;
  	};
-@@ -562,7 +564,7 @@
+@@ -564,7 +566,7 @@
  		pagesize = <16>;
  	};
  
@@ -95,7 +95,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  		usb0 = &usbotg1;
  	};
  
-@@ -392,7 +394,7 @@
+@@ -394,7 +396,7 @@
  		pagesize = <16>;
  	};
  
@@ -118,7 +118,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	chosen {
  		stdout-path = &uart2;
  	};
-@@ -436,7 +441,7 @@
+@@ -438,7 +443,7 @@
  		pagesize = <16>;
  	};
  
@@ -138,7 +138,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  		usb0 = &usbotg1;
  	};
  
-@@ -560,7 +562,7 @@
+@@ -562,7 +564,7 @@
  		pagesize = <16>;
  	};
  
@@ -149,7 +149,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	};
 --- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw702x.dtsi
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw702x.dtsi
-@@ -10,6 +10,8 @@
+@@ -11,6 +11,8 @@
  / {
  	aliases {
  		ethernet0 = &eqos;
@@ -158,7 +158,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	};
  
  	memory@40000000 {
-@@ -260,7 +262,7 @@
+@@ -280,7 +282,7 @@
  		pagesize = <16>;
  	};
  
@@ -169,7 +169,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	};
 --- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
 +++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw74xx.dts
-@@ -24,6 +24,8 @@
+@@ -25,6 +25,8 @@
  		ethernet4 = &lan3;
  		ethernet5 = &lan4;
  		ethernet6 = &lan5;
@@ -178,7 +178,7 @@ Signed-off-by: Shawn Guo <shawnguo@kernel.org>
  	};
  
  	chosen {
-@@ -444,7 +446,7 @@
+@@ -481,7 +483,7 @@
  		pagesize = <16>;
  	};
  
