@@ -549,6 +549,21 @@ define Package/wall/description
  set to yes
 endef
 
+define Package/wdctl
+$(call Package/util-linux/Default)
+  TITLE:=show hardware watchdog status
+  DEPENDS:= +libsmartcols
+endef
+
+define Package/wdctl/description
+ Show hardware watchdog status. The default device is /dev/watchdog. If more
+ than one device is specified then the output is separated by one blank line.
+ If the device is already used or user has no permissions to read from the
+ device, then wdctl reads data from sysfs. In this case information about
+ supported features (flags) might be missing. Note that the number of supported
+ watchdog features is hardware specific.
+endef
+
 define Package/whereis
 $(call Package/util-linux/Default)
   TITLE:=locate the binary, source, and manual page files for a command
@@ -594,7 +609,6 @@ MESON_ARGS += \
 	-Dbuild-minix=disabled \
 	-Dbuild-fdformat=disabled \
 	-Dbuild-lslogins=disabled \
-	-Dbuild-wdctl=disabled \
 	-Dbuild-switch_root=disabled \
 	-Dbuild-pivot_root=disabled \
 	-Dbuild-lsmem=disabled \
@@ -892,6 +906,12 @@ define Package/wall/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wall $(1)/usr/bin/
 endef
 
+# Install to /bin instead of /usr/bin to not conflict wdctl from wifidog
+define Package/wdctl/install
+	$(INSTALL_DIR) $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wdctl $(1)/bin/
+endef
+
 define Package/whereis/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/whereis $(1)/usr/bin/
@@ -950,5 +970,6 @@ $(eval $(call BuildPackage,unshare))
 $(eval $(call BuildPackage,uuidd))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,wall))
+$(eval $(call BuildPackage,wdctl))
 $(eval $(call BuildPackage,whereis))
 $(eval $(call BuildPackage,wipefs))
