@@ -27,6 +27,14 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"mediatek/mt7986_eeprom_mt7976_dual.bin")
+	case "$board" in
+	tplink,archer-ax80-v1)
+		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
+	esac
+	;;
 *)
 	exit 1
 	;;
