@@ -2125,3 +2125,18 @@ define KernelPackage/amazon-ena/description
 endef
 
 $(eval $(call KernelPackage,amazon-ena))
+
+define KernelPackage/enc28j60
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip ENC28J60 SPI Ethernet chip
+  KCONFIG:=CONFIG_ENC28J60 \
+  CONFIG_ENC28J60_WRITEVERIFY=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/microchip/enc28j60.ko
+  AUTOLOAD:=$(call AutoProbe,enc28j60)
+endef
+
+define KernelPackage/enc28j60/description
+  Kernel module for Microchip ENC28J60 SPI Ethernet chip
+endef
+
+$(eval $(call KernelPackage,enc28j60))
