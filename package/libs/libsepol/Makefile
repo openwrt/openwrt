@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libsepol
 PKG_VERSION:=3.8.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
@@ -48,6 +48,9 @@ endef
 HOST_MAKE_FLAGS += \
 	PREFIX=$(STAGING_DIR_HOSTPKG) \
 	SHLIBDIR=$(STAGING_DIR_HOSTPKG)/lib
+
+TARGET_CFLAGS += $(FPIC) -std=gnu17
+TARGET_LDFLAGS += $(FPIC)
 
 MAKE_FLAGS += \
 	SHLIBDIR=/usr/lib \

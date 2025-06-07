@@ -6,11 +6,16 @@ config GCC_VERSION_13
 	default y if GCC_USE_VERSION_13
 	bool
 
+config GCC_VERSION_15
+	default y if GCC_USE_VERSION_15
+	bool
+
 config GCC_VERSION
 	string
 	default EXTERNAL_GCC_VERSION	if EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 	default "12.3.0"	if GCC_VERSION_12
 	default "13.3.0"	if GCC_VERSION_13
+	default "15.1.0"	if GCC_VERSION_15
 	default "14.3.0"
 
 config GCC_USE_DEFAULT_VERSION
