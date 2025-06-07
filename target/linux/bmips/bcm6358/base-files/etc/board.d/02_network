@@ -5,6 +5,7 @@
 board_config_update
 
 case "$(board_name)" in
+huawei,hg556a-a |\
 huawei,hg556a-b)
 	ucidef_set_bridge_device switch
 	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
