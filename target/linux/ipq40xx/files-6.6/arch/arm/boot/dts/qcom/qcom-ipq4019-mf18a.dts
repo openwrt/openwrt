@@ -480,7 +480,7 @@
 		ranges;
 
 		wifi2: wifi@1,0 {
-			compatible = "pci168c,0040";
+			compatible = "qcom,ath10k";
 			nvmem-cell-names = "pre-calibration", "mac-address";
 			nvmem-cells = <&precal_art_9000>, <&macaddr_config_0 3>;
 			qcom,ath10k-calibration-variant = "ZTE-MF18A";
