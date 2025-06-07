@@ -1,0 +1,311 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq8065-smb208.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Nokia AC400i";
+	compatible = "nokia,ac400i", "qcom,ipq8065", "qcom,ipq8064";
+
+	aliases {
+		mdio-gpio0 = &mdio0;
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+
+		led-boot = &pwr_red;
+		led-failsafe = &pwr_red;
+		led-running = &pwr_green;
+		led-upgrade = &pwr_green;
+	};
+
+	chosen {
+		bootargs-override = " console=ttyMSM0,115200n8 ubi.mtd=ubi root=/dev/ubiblock0_2";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		5g_red {
+			label = "red:5g";
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_HIGH>;
+		};
+
+		5g_green {
+			label = "green:5g";
+			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		};
+
+		2g_red {
+			label = "red:2g";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+		};
+
+		2g_green {
+			label = "green:2g";
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth1_red {
+			label = "red:eth1";
+			gpios = <&qcom_pinmux 68 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth1_green {
+			label = "green:eth1";
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_LOW>;
+		};
+
+		eth2_red {
+			label = "red:eth2";
+			gpios = <&qcom_pinmux 67 GPIO_ACTIVE_HIGH>;
+		};
+
+		eth2_green {
+			label = "green:eth2";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_LOW>;
+		};
+
+		ctrl_red {
+			label = "red:ctrl";
+			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
+		};
+
+		ctrl_green {
+			label = "green:ctrl";
+			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_HIGH>;
+		};
+
+		pwr_red: pwr_red {
+			label = "red:pwr";
+			gpios = <&qcom_pinmux 2 GPIO_ACTIVE_LOW>;
+		};
+
+		pwr_green: pwr_green {
+			label = "green:pwr";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	spi_pins: spi-state {
+		/delete-property/ pins;
+		/delete-property/ function;
+		/delete-property/ drive-strength;
+		/delete-property/ bias-disable;
+
+		mux {
+			pins = "gpio18", "gpio19";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-pull-down;
+		};
+
+		clk {
+			pins = "gpio21";
+			function = "gsbi5";
+			drive-strength = <12>;
+			bias-pull-down;
+		};
+
+		cs {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio65", "gpio64",
+				   "gpio53", "gpio54",
+				   "gpio68", "gpio22",
+				   "gpio67", "gpio23",
+				   "gpio55", "gpio56",
+				   "gpio2", "gpio26";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio15";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		m25p80@0 {
+			compatible = "jedec,spi-nor";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "qcom,smem-part";
+			};
+		};
+	};
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	/delete-property/ perst-gpios;
+};
+
+&pcie_bridge1 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+	};
+};
+
+&mdio0 {
+	status = "okay";
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+};
+
+//POE
+&gmac0 {
+	status = "okay";
+	qcom,id = <0>;
+
+	pinctrl-0 = <&rgmii2_pins>;
+	pinctrl-names = "default";
+
+	mdiobus = <&mdio0>;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+//LAN1
+&gmac1 {
+	status = "okay";
+	qcom,id = <1>;
+
+	mdiobus = <&mdio0>;
+	phy-handle = <&phy1>;
+	phy-mode = "rgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&nand {
+	status = "okay";
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		reg = <0>;
+		compatible = "qcom,nandcs";
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			rootfs@0 {
+				label = "rootfs";
+				reg = <0x0000000 0x4000000>;
+			};
+
+			rootfs_1@4000000 {
+				label = "rootfs_1";
+				reg = <0x4000000 0x4000000>;
+			};
+
+			cfg@8000000 {
+				label = "cfg";
+				reg = <0x8000000 0x8000000>;
+			};
+		};
+	};
+};
+
+&adm_dma {
+	status = "okay";
+};
