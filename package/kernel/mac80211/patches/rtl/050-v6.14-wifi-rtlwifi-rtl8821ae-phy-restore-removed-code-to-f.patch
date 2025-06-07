@@ -1,8 +1,8 @@
-From 927dcd0ab53f39ee00a2d1f204b5aac77e28fcf9 Mon Sep 17 00:00:00 2001
+From 5e5903a442bb889a62a0f5d89ac33e53ab08592c Mon Sep 17 00:00:00 2001
 From: Colin Ian King <colin.i.king@gmail.com>
 Date: Wed, 6 Nov 2024 15:46:42 +0000
-Subject: [PATCH 5/6] wifi: rtlwifi: rtl8821ae: phy: restore removed code to
- fix infinite loop
+Subject: [PATCH] wifi: rtlwifi: rtl8821ae: phy: restore removed code to fix
+ infinite loop
 
 A previous clean-up fix removed the assignment of v2 inside a while loop
 that turned it into an infinite loop. Fix this by restoring the assignment
@@ -12,6 +12,8 @@ Fixes: cda37445718d ("wifi: rtlwifi: rtl8821ae: phy: remove some useless code")
 Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
 Tested-by: Ping-Ke Shih <pkshih@realtek.com>
 Reviewed-by: Su Hui <suhui@nfschina.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20241106154642.1627886-1-colin.i.king@gmail.com
 ---
  drivers/net/wireless/realtek/rtlwifi/rtl8821ae/phy.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)

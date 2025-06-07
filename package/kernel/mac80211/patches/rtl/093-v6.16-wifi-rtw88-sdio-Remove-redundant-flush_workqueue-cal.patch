@@ -1,0 +1,36 @@
+From 5c4cf36c538bb2714e43654e365cb77b19c4a93e Mon Sep 17 00:00:00 2001
+From: Chen Ni <nichen@iscas.ac.cn>
+Date: Mon, 24 Mar 2025 15:59:10 +0800
+Subject: [PATCH] wifi: rtw88: sdio: Remove redundant 'flush_workqueue()' calls
+
+'destroy_workqueue()' already drains the queue before destroying it, so
+there is no need to flush it explicitly.
+
+Remove the redundant 'flush_workqueue()' calls.
+
+This was generated with coccinelle:
+
+@@
+expression E;
+@@
+
+- flush_workqueue(E);
+  destroy_workqueue(E);
+
+Signed-off-by: Chen Ni <nichen@iscas.ac.cn>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250324075910.407999-1-nichen@iscas.ac.cn
+---
+ drivers/net/wireless/realtek/rtw88/sdio.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -1298,7 +1298,6 @@ static void rtw_sdio_deinit_tx(struct rt
+ 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
+ 	int i;
+ 
+-	flush_workqueue(rtwsdio->txwq);
+ 	destroy_workqueue(rtwsdio->txwq);
+ 	kfree(rtwsdio->tx_handler_data);
+ 

@@ -1,7 +1,7 @@
-From acadf3a63b39ad03167a633fa3cea8c0fc2ab87f Mon Sep 17 00:00:00 2001
+From d4c4903508f9e1b2bfec88f777718484e27343fb Mon Sep 17 00:00:00 2001
 From: Nick Morrow <usbwifi2024@gmail.com>
 Date: Thu, 7 Nov 2024 08:28:46 +0800
-Subject: [PATCH 6/6] wifi: rtw88: Add additional USB IDs for RTL8812BU
+Subject: [PATCH] wifi: rtw88: Add additional USB IDs for RTL8812BU
 
 Add three additional USB IDs found in
 https://github.com/morrownr/88x2bu-20210702
@@ -9,7 +9,9 @@ to support more RTL8812BU devices.
 
 Signed-off-by: Nick Morrow <usbwifi2024@gmail.com>
 Signed-off-by: Zenm Chen <zenmchen@gmail.com>
-Signed-off-by: Mikhail Novosyolov <m.novosyolov@rosalinux.ru>
+Reviewed-by: Mikhail Novosyolov <m.novosyolov@rosalinux.ru>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20241107002846.13748-1-zenmchen@gmail.com
 ---
  drivers/net/wireless/realtek/rtw88/rtw8822bu.c | 6 ++++++
  1 file changed, 6 insertions(+)
