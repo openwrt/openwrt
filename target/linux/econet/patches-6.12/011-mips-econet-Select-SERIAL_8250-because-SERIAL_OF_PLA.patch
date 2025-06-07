@@ -1,0 +1,39 @@
+From 72a82563c6d4b53103e5c1907ed93d9f05e60050 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Wed, 21 May 2025 20:33:06 +0000
+Subject: [PATCH v2] mips: econet: Fix incorrect Kconfig dependencies
+
+config ECONET selects SERIAL_OF_PLATFORM and that depends on SERIAL_8250
+so we need to select SERIAL_8250 directly.
+Also do not enable DEBUG_ZBOOT unless DEBUG_KERNEL is set.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202505211654.CBdIsoTq-lkp@intel.com/
+Closes: https://lore.kernel.org/oe-kbuild-all/202505211451.WRjyf3a9-lkp@intel.com/
+---
+I only now noticed the DEBUG_ZBOOT issue since they both touch the same
+place decided better to do it in one patch.
+---
+ arch/mips/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index c3dbdc808664..1e48184ecf1e 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -395,9 +395,10 @@ config ECONET
+ 	bool "EcoNet MIPS family"
+ 	select BOOT_RAW
+ 	select CPU_BIG_ENDIAN
+-	select DEBUG_ZBOOT
++	select DEBUG_ZBOOT if DEBUG_KERNEL
+ 	select EARLY_PRINTK_8250
+ 	select ECONET_EN751221_TIMER
++	select SERIAL_8250
+ 	select SERIAL_OF_PLATFORM
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+ 	select SYS_HAS_CPU_MIPS32_R1
+-- 
+2.39.5
+
