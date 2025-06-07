@@ -194,6 +194,7 @@ endef
 TARGET_DEVICES += iodata_bsh-g24mb
 
 define Device/linksys_lgs310c
+  $(Device/uimage-lzma-loader)
   SOC := rtl8380
   IMAGE_SIZE := 13504k
   DEVICE_VENDOR := Linksys
