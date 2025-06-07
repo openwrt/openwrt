@@ -1,0 +1,32 @@
+From d80e7d9b6ba38102f92559dbb647330216ea290b Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 4 Feb 2025 20:38:43 +0200
+Subject: [PATCH] wifi: rtw88: Extend rf_base_addr and rf_sipi_addr for
+ RTL8814AU
+
+These members of struct rtw_chip_info each have a size of 2. Increase
+their size to 4, which is the number of RF paths the RTL8814AU has.
+
+This is required to read and write the RF registers of the RTL8814AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/7a4d8209-b8af-4943-b5de-f53d6edf591a@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -1239,8 +1239,8 @@ struct rtw_chip_info {
+ 
+ 	const struct rtw_hw_reg *dig;
+ 	const struct rtw_hw_reg *dig_cck;
+-	u32 rf_base_addr[2];
+-	u32 rf_sipi_addr[2];
++	u32 rf_base_addr[RTW_RF_PATH_MAX];
++	u32 rf_sipi_addr[RTW_RF_PATH_MAX];
+ 	const struct rtw_rf_sipi_addr *rf_sipi_read_addr;
+ 	u8 fix_rf_phy_num;
+ 	const struct rtw_ltecoex_addr *ltecoex_addr;

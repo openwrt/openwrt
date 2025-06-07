@@ -1,0 +1,51 @@
+From 74a72c367573ad521becf6cc4d649e14387b3c64 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 18 Dec 2024 02:16:11 +0200
+Subject: [PATCH] wifi: rtw88: 8821a/8812a: Set ptct_efuse_size to 0
+
+Some RTL8812AU devices fail to probe:
+
+[   12.478774] rtw_8812au 1-1.3:1.0: failed to dump efuse logical map
+[   12.487712] rtw_8812au 1-1.3:1.0: failed to setup chip efuse info
+[   12.487742] rtw_8812au 1-1.3:1.0: failed to setup chip information
+[   12.491077] rtw_8812au: probe of 1-1.3:1.0 failed with error -22
+
+It turns out these chips don't need to "protect" any bytes at the end of
+the efuse.
+
+The original value of 96 was copied from rtw8821c.c.
+
+No one reported any failures with RTL8821AU yet, but the vendor driver
+uses the same efuse reading code for both chips.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/1a477adb-60c3-463c-b158-3f86c94cb821@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8812a.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8821a.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8812a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8812a.c
+@@ -1027,7 +1027,7 @@ const struct rtw_chip_info rtw8812a_hw_s
+ 	.rx_buf_desc_sz = 8,
+ 	.phy_efuse_size = 512,
+ 	.log_efuse_size = 512,
+-	.ptct_efuse_size = 96 + 1, /* TODO or just 18? */
++	.ptct_efuse_size = 0,
+ 	.txff_size = 131072,
+ 	.rxff_size = 16128,
+ 	.rsvd_drv_pg_num = 9,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821a.c
+@@ -1118,7 +1118,7 @@ const struct rtw_chip_info rtw8821a_hw_s
+ 	.rx_buf_desc_sz = 8,
+ 	.phy_efuse_size = 512,
+ 	.log_efuse_size = 512,
+-	.ptct_efuse_size = 96 + 1, /* TODO or just 18? */
++	.ptct_efuse_size = 0,
+ 	.txff_size = 65536,
+ 	.rxff_size = 16128,
+ 	.rsvd_drv_pg_num = 8,

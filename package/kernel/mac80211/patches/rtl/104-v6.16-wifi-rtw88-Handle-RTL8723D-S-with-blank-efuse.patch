@@ -1,0 +1,198 @@
+From 2c17afde9ff6713f3e080ed1ea1a4bd7480be9aa Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 2 May 2025 14:49:34 +0300
+Subject: [PATCH] wifi: rtw88: Handle RTL8723D(S) with blank efuse
+
+Some users have RTL8723DS chips with nearly blank efuse. Currently these
+chips cannot connect when using rtw88, but they do work using the old
+out-of-tree driver.
+
+Use reasonable default values for TX power, antenna configuration, and
+crystal cap if the chip's efuse is missing these things.
+
+RTL8723D can use the same default values as RTL8703B, so simply move
+the code from rtl8703b_read_efuse() to the shared function
+__rtl8723x_read_efuse().
+
+Link: https://github.com/lwfinger/rtw88/issues/157
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/5734afe7-0870-40b2-acd4-5657a02d7c56@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8703b.c | 60 -------------------
+ drivers/net/wireless/realtek/rtw88/rtw8723x.c | 59 ++++++++++++++++++
+ 2 files changed, 59 insertions(+), 60 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8703b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8703b.c
+@@ -519,15 +519,6 @@ static const struct rtw_rqpn rqpn_table_
+ 	 RTW_DMA_MAPPING_EXTRA, RTW_DMA_MAPPING_HIGH},
+ };
+ 
+-/* Default power index table for RTL8703B, used if EFUSE does not
+- * contain valid data. Replaces EFUSE data from offset 0x10 (start of
+- * txpwr_idx_table).
+- */
+-static const u8 rtw8703b_txpwr_idx_table[] = {
+-	0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D,
+-	0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x02
+-};
+-
+ static void try_mac_from_devicetree(struct rtw_dev *rtwdev)
+ {
+ 	struct device_node *node = rtwdev->dev->of_node;
+@@ -544,15 +535,9 @@ static void try_mac_from_devicetree(stru
+ 	}
+ }
+ 
+-#define DBG_EFUSE_FIX(rtwdev, name)					\
+-	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "Fixed invalid EFUSE value: "	\
+-		# name "=0x%x\n", rtwdev->efuse.name)
+-
+ static int rtw8703b_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
+ {
+ 	struct rtw_efuse *efuse = &rtwdev->efuse;
+-	u8 *pwr = (u8 *)efuse->txpwr_idx_table;
+-	bool valid = false;
+ 	int ret;
+ 
+ 	ret = rtw8723x_read_efuse(rtwdev, log_map);
+@@ -562,51 +547,6 @@ static int rtw8703b_read_efuse(struct rt
+ 	if (!is_valid_ether_addr(efuse->addr))
+ 		try_mac_from_devicetree(rtwdev);
+ 
+-	/* If TX power index table in EFUSE is invalid, fall back to
+-	 * built-in table.
+-	 */
+-	for (int i = 0; i < ARRAY_SIZE(rtw8703b_txpwr_idx_table); i++)
+-		if (pwr[i] != 0xff) {
+-			valid = true;
+-			break;
+-		}
+-	if (!valid) {
+-		for (int i = 0; i < ARRAY_SIZE(rtw8703b_txpwr_idx_table); i++)
+-			pwr[i] = rtw8703b_txpwr_idx_table[i];
+-		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
+-			"Replaced invalid EFUSE TX power index table.");
+-		rtw8723x_debug_txpwr_limit(rtwdev,
+-					   efuse->txpwr_idx_table, 2);
+-	}
+-
+-	/* Override invalid antenna settings. */
+-	if (efuse->bt_setting == 0xff) {
+-		/* shared antenna */
+-		efuse->bt_setting |= BIT(0);
+-		/* RF path A */
+-		efuse->bt_setting &= ~BIT(6);
+-		DBG_EFUSE_FIX(rtwdev, bt_setting);
+-	}
+-
+-	/* Override invalid board options: The coex code incorrectly
+-	 * assumes that if bits 6 & 7 are set the board doesn't
+-	 * support coex. Regd is also derived from rf_board_option and
+-	 * should be 0 if there's no valid data.
+-	 */
+-	if (efuse->rf_board_option == 0xff) {
+-		efuse->regd = 0;
+-		efuse->rf_board_option &= GENMASK(5, 0);
+-		DBG_EFUSE_FIX(rtwdev, rf_board_option);
+-	}
+-
+-	/* Override invalid crystal cap setting, default comes from
+-	 * vendor driver. Chip specific.
+-	 */
+-	if (efuse->crystal_cap == 0xff) {
+-		efuse->crystal_cap = 0x20;
+-		DBG_EFUSE_FIX(rtwdev, crystal_cap);
+-	}
+-
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723x.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723x.c
+@@ -69,6 +69,9 @@ static void __rtw8723x_lck(struct rtw_de
+ #define DBG_EFUSE_2BYTE(rtwdev, map, name)			\
+ 	rtw_dbg(rtwdev, RTW_DBG_EFUSE, # name "=0x%02x%02x\n",	\
+ 		(map)->name[0], (map)->name[1])
++#define DBG_EFUSE_FIX(rtwdev, name)					\
++	rtw_dbg(rtwdev, RTW_DBG_EFUSE, "Fixed invalid EFUSE value: "	\
++		# name "=0x%x\n", rtwdev->efuse.name)
+ 
+ static void rtw8723xe_efuse_debug(struct rtw_dev *rtwdev,
+ 				  struct rtw8723x_efuse *map)
+@@ -238,10 +241,21 @@ static void rtw8723xs_efuse_parsing(stru
+ 	ether_addr_copy(efuse->addr, map->s.mac_addr);
+ }
+ 
++/* Default power index table for RTL8703B/RTL8723D, used if EFUSE does
++ * not contain valid data. Replaces EFUSE data from offset 0x10 (start
++ * of txpwr_idx_table).
++ */
++static const u8 rtw8723x_txpwr_idx_table[] = {
++	0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x2D,
++	0x2D, 0x2D, 0x2D, 0x2D, 0x2D, 0x02
++};
++
+ static int __rtw8723x_read_efuse(struct rtw_dev *rtwdev, u8 *log_map)
+ {
+ 	struct rtw_efuse *efuse = &rtwdev->efuse;
++	u8 *pwr = (u8 *)efuse->txpwr_idx_table;
+ 	struct rtw8723x_efuse *map;
++	bool valid = false;
+ 	int i;
+ 
+ 	map = (struct rtw8723x_efuse *)log_map;
+@@ -279,6 +293,51 @@ static int __rtw8723x_read_efuse(struct
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	/* If TX power index table in EFUSE is invalid, fall back to
++	 * built-in table.
++	 */
++	for (i = 0; i < ARRAY_SIZE(rtw8723x_txpwr_idx_table); i++)
++		if (pwr[i] != 0xff) {
++			valid = true;
++			break;
++		}
++	if (!valid) {
++		for (i = 0; i < ARRAY_SIZE(rtw8723x_txpwr_idx_table); i++)
++			pwr[i] = rtw8723x_txpwr_idx_table[i];
++		rtw_dbg(rtwdev, RTW_DBG_EFUSE,
++			"Replaced invalid EFUSE TX power index table.");
++		rtw8723x_debug_txpwr_limit(rtwdev,
++					   efuse->txpwr_idx_table, 2);
++	}
++
++	/* Override invalid antenna settings. */
++	if (efuse->bt_setting == 0xff) {
++		/* shared antenna */
++		efuse->bt_setting |= BIT(0);
++		/* RF path A */
++		efuse->bt_setting &= ~BIT(6);
++		DBG_EFUSE_FIX(rtwdev, bt_setting);
++	}
++
++	/* Override invalid board options: The coex code incorrectly
++	 * assumes that if bits 6 & 7 are set the board doesn't
++	 * support coex. Regd is also derived from rf_board_option and
++	 * should be 0 if there's no valid data.
++	 */
++	if (efuse->rf_board_option == 0xff) {
++		efuse->regd = 0;
++		efuse->rf_board_option &= GENMASK(5, 0);
++		DBG_EFUSE_FIX(rtwdev, rf_board_option);
++	}
++
++	/* Override invalid crystal cap setting, default comes from
++	 * vendor driver. Chip specific.
++	 */
++	if (efuse->crystal_cap == 0xff) {
++		efuse->crystal_cap = 0x20;
++		DBG_EFUSE_FIX(rtwdev, crystal_cap);
++	}
++
+ 	return 0;
+ }
+ 

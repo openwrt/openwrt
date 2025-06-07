@@ -1,14 +1,16 @@
-From 213dfa630285bb0241f3eaeb778db8ff128f10ba Mon Sep 17 00:00:00 2001
+From 82a35723a67c29f685d7b518962154a73b7163a2 Mon Sep 17 00:00:00 2001
 From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
-Date: Fri, 8 Nov 2024 01:41:08 +0200
-Subject: [PATCH 3/6] wifi: rtw88: usb: Support USB 3 with RTL8812AU
+Date: Thu, 14 Nov 2024 17:46:08 +0200
+Subject: [PATCH] wifi: rtw88: usb: Support USB 3 with RTL8812AU
 
 Add the function to automatically switch the RTL8812AU into USB 3 mode.
 
 Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/19cda72b-f1f1-4b69-8369-0e4376b646bf@gmail.com
 ---
- drivers/net/wireless/realtek/rtw88/usb.c | 34 ++++++++++++++++++++++--
- 1 file changed, 32 insertions(+), 2 deletions(-)
+ drivers/net/wireless/realtek/rtw88/usb.c | 44 ++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
@@ -45,24 +47,38 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
  static int rtw_usb_switch_mode_new(struct rtw_dev *rtwdev)
  {
  	enum usb_device_speed cur_speed;
-@@ -983,7 +1009,8 @@ static int rtw_usb_switch_mode(struct rt
+@@ -979,11 +1005,22 @@ static int rtw_usb_switch_mode_new(struc
+ 	return 1;
+ }
+ 
++static bool rtw_usb3_chip_old(u8 chip_id)
++{
++	return chip_id == RTW_CHIP_TYPE_8812A;
++}
++
++static bool rtw_usb3_chip_new(u8 chip_id)
++{
++	return chip_id == RTW_CHIP_TYPE_8822C ||
++	       chip_id == RTW_CHIP_TYPE_8822B;
++}
++
+ static int rtw_usb_switch_mode(struct rtw_dev *rtwdev)
  {
  	u8 id = rtwdev->chip->id;
  
 -	if (id != RTW_CHIP_TYPE_8822C && id != RTW_CHIP_TYPE_8822B)
-+	if (id != RTW_CHIP_TYPE_8822C && id != RTW_CHIP_TYPE_8822B &&
-+	    id != RTW_CHIP_TYPE_8812A)
++	if (!rtw_usb3_chip_new(id) && !rtw_usb3_chip_old(id))
  		return 0;
  
  	if (!rtwdev->efuse.usb_mode_switch) {
-@@ -998,7 +1025,10 @@ static int rtw_usb_switch_mode(struct rt
+@@ -998,7 +1035,10 @@ static int rtw_usb_switch_mode(struct rt
  		return 0;
  	}
  
 -	return rtw_usb_switch_mode_new(rtwdev);
-+	if (id == RTW_CHIP_TYPE_8812A)
++	if (rtw_usb3_chip_old(id))
 +		return rtw_usb_switch_mode_old(rtwdev);
-+	else /* RTL8822CU, RTL8822BU */
++	else
 +		return rtw_usb_switch_mode_new(rtwdev);
  }
  

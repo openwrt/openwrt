@@ -1,0 +1,39 @@
+From 105dc94233e48ff30e572a50fb39d7e3dec810fa Mon Sep 17 00:00:00 2001
+From: Andrew Kreimer <algonell@gmail.com>
+Date: Mon, 3 Feb 2025 20:08:27 +0200
+Subject: [PATCH] wifi: rtw88: Fix a typo of debug message in
+ rtw8723d_iqk_check_tx_failed()
+
+There is a typo in debug messages:
+ - afer -> after
+
+Fix it via codespell.
+
+Signed-off-by: Andrew Kreimer <algonell@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250203180913.5435-1-algonell@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8723d.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723d.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723d.c
+@@ -444,7 +444,7 @@ static u8 rtw8723d_iqk_check_tx_failed(s
+ 		rtw_read32(rtwdev, REG_IQK_RES_TX),
+ 		rtw_read32(rtwdev, REG_IQK_RES_TY));
+ 	rtw_dbg(rtwdev, RTW_DBG_RFK,
+-		"[IQK] 0xe90(before IQK)= 0x%x, 0xe98(afer IQK) = 0x%x\n",
++		"[IQK] 0xe90(before IQK)= 0x%x, 0xe98(after IQK) = 0x%x\n",
+ 		rtw_read32(rtwdev, 0xe90),
+ 		rtw_read32(rtwdev, 0xe98));
+ 
+@@ -472,7 +472,7 @@ static u8 rtw8723d_iqk_check_rx_failed(s
+ 		rtw_read32(rtwdev, REG_IQK_RES_RY));
+ 
+ 	rtw_dbg(rtwdev, RTW_DBG_RFK,
+-		"[IQK] 0xea0(before IQK)= 0x%x, 0xea8(afer IQK) = 0x%x\n",
++		"[IQK] 0xea0(before IQK)= 0x%x, 0xea8(after IQK) = 0x%x\n",
+ 		rtw_read32(rtwdev, 0xea0),
+ 		rtw_read32(rtwdev, 0xea8));
+ 

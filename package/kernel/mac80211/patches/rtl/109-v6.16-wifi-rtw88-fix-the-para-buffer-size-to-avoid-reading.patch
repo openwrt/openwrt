@@ -1,0 +1,38 @@
+From 4c2c372de2e108319236203cce6de44d70ae15cd Mon Sep 17 00:00:00 2001
+From: Alexey Kodanev <aleksei.kodanev@bell-sw.com>
+Date: Tue, 13 May 2025 12:13:04 +0000
+Subject: [PATCH] wifi: rtw88: fix the 'para' buffer size to avoid reading out
+ of bounds
+
+Set the size to 6 instead of 2, since 'para' array is passed to
+'rtw_fw_bt_wifi_control(rtwdev, para[0], &para[1])', which reads
+5 bytes:
+
+void rtw_fw_bt_wifi_control(struct rtw_dev *rtwdev, u8 op_code, u8 *data)
+{
+    ...
+    SET_BT_WIFI_CONTROL_DATA1(h2c_pkt, *data);
+    SET_BT_WIFI_CONTROL_DATA2(h2c_pkt, *(data + 1));
+    ...
+    SET_BT_WIFI_CONTROL_DATA5(h2c_pkt, *(data + 4));
+
+Detected using the static analysis tool - Svace.
+Fixes: 4136214f7c46 ("rtw88: add BT co-existence support")
+Signed-off-by: Alexey Kodanev <aleksei.kodanev@bell-sw.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250513121304.124141-1-aleksei.kodanev@bell-sw.com
+---
+ drivers/net/wireless/realtek/rtw88/coex.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/coex.c
++++ b/drivers/net/wireless/realtek/rtw88/coex.c
+@@ -309,7 +309,7 @@ static void rtw_coex_tdma_timer_base(str
+ {
+ 	struct rtw_coex *coex = &rtwdev->coex;
+ 	struct rtw_coex_stat *coex_stat = &coex->stat;
+-	u8 para[2] = {0};
++	u8 para[6] = {};
+ 	u8 times;
+ 	u16 tbtt_interval = coex_stat->wl_beacon_interval;
+ 

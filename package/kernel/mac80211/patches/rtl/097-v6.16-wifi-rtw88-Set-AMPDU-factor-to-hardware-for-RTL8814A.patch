@@ -1,0 +1,192 @@
+From 0d2a88690e583168effb03c64fd217a323b2c444 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 2 Apr 2025 18:31:12 +0300
+Subject: [PATCH] wifi: rtw88: Set AMPDU factor to hardware for RTL8814A
+
+Tell the chip the maximum AMPDU size supported by the AP. This greatly
+improves the TX speed of RTL8814AU in the 2.4 GHz band. Before: ~90
+Mbps. After: ~300 Mbps.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/4edc2a63-81b3-431c-9a37-5a7d899a6cc2@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/mac80211.c |  2 ++
+ drivers/net/wireless/realtek/rtw88/main.c     | 32 +++++++++++++++++++
+ drivers/net/wireless/realtek/rtw88/main.h     |  3 ++
+ drivers/net/wireless/realtek/rtw88/rtw8703b.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8723d.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8812a.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8814a.c | 11 +++++++
+ drivers/net/wireless/realtek/rtw88/rtw8821a.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8821c.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c |  1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c |  1 +
+ 11 files changed, 55 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/mac80211.c
++++ b/drivers/net/wireless/realtek/rtw88/mac80211.c
+@@ -396,6 +396,8 @@ static void rtw_ops_bss_info_changed(str
+ 			if (rtw_bf_support)
+ 				rtw_bf_assoc(rtwdev, vif, conf);
+ 
++			rtw_set_ampdu_factor(rtwdev, vif, conf);
++
+ 			rtw_fw_beacon_filter_config(rtwdev, true, vif);
+ 		} else {
+ 			rtw_leave_lps(rtwdev);
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -2447,6 +2447,38 @@ void rtw_core_enable_beacon(struct rtw_d
+ 	}
+ }
+ 
++void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
++			  struct ieee80211_bss_conf *bss_conf)
++{
++	const struct rtw_chip_ops *ops = rtwdev->chip->ops;
++	struct ieee80211_sta *sta;
++	u8 factor = 0xff;
++
++	if (!ops->set_ampdu_factor)
++		return;
++
++	rcu_read_lock();
++
++	sta = ieee80211_find_sta(vif, bss_conf->bssid);
++	if (!sta) {
++		rcu_read_unlock();
++		rtw_warn(rtwdev, "%s: failed to find station %pM\n",
++			 __func__, bss_conf->bssid);
++		return;
++	}
++
++	if (sta->deflink.vht_cap.vht_supported)
++		factor = u32_get_bits(sta->deflink.vht_cap.cap,
++				      IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK);
++	else if (sta->deflink.ht_cap.ht_supported)
++		factor = sta->deflink.ht_cap.ampdu_factor;
++
++	rcu_read_unlock();
++
++	if (factor != 0xff)
++		ops->set_ampdu_factor(rtwdev, factor);
++}
++
+ MODULE_AUTHOR("Realtek Corporation");
+ MODULE_DESCRIPTION("Realtek 802.11ac wireless core module");
+ MODULE_LICENSE("Dual BSD/GPL");
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -878,6 +878,7 @@ struct rtw_chip_ops {
+ 			   u32 antenna_rx);
+ 	void (*cfg_ldo25)(struct rtw_dev *rtwdev, bool enable);
+ 	void (*efuse_grant)(struct rtw_dev *rtwdev, bool enable);
++	void (*set_ampdu_factor)(struct rtw_dev *rtwdev, u8 factor);
+ 	void (*false_alarm_statistics)(struct rtw_dev *rtwdev);
+ 	void (*phy_calibration)(struct rtw_dev *rtwdev);
+ 	void (*dpk_track)(struct rtw_dev *rtwdev);
+@@ -2272,4 +2273,6 @@ void rtw_update_channel(struct rtw_dev *
+ void rtw_core_port_switch(struct rtw_dev *rtwdev, struct ieee80211_vif *vif);
+ bool rtw_core_check_sta_active(struct rtw_dev *rtwdev);
+ void rtw_core_enable_beacon(struct rtw_dev *rtwdev, bool enable);
++void rtw_set_ampdu_factor(struct rtw_dev *rtwdev, struct ieee80211_vif *vif,
++			  struct ieee80211_bss_conf *bss_conf);
+ #endif
+--- a/drivers/net/wireless/realtek/rtw88/rtw8703b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8703b.c
+@@ -1904,6 +1904,7 @@ static const struct rtw_chip_ops rtw8703
+ 	.set_antenna		= NULL,
+ 	.cfg_ldo25		= rtw8723x_cfg_ldo25,
+ 	.efuse_grant		= rtw8723x_efuse_grant,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw8723x_false_alarm_statistics,
+ 	.phy_calibration	= rtw8703b_phy_calibration,
+ 	.dpk_track		= NULL,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723d.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723d.c
+@@ -1404,6 +1404,7 @@ static const struct rtw_chip_ops rtw8723
+ 	.set_antenna		= NULL,
+ 	.cfg_ldo25		= rtw8723x_cfg_ldo25,
+ 	.efuse_grant		= rtw8723x_efuse_grant,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw8723x_false_alarm_statistics,
+ 	.phy_calibration	= rtw8723d_phy_calibration,
+ 	.cck_pd_set		= rtw8723d_phy_cck_pd_set,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8812a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8812a.c
+@@ -925,6 +925,7 @@ static const struct rtw_chip_ops rtw8812
+ 	.set_tx_power_index	= rtw88xxa_set_tx_power_index,
+ 	.cfg_ldo25		= rtw8812a_cfg_ldo25,
+ 	.efuse_grant		= rtw88xxa_efuse_grant,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw88xxa_false_alarm_statistics,
+ 	.phy_calibration	= rtw8812a_phy_calibration,
+ 	.cck_pd_set		= rtw88xxa_phy_cck_pd_set,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8814a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8814a.c
+@@ -1332,6 +1332,16 @@ static void rtw8814a_cfg_ldo25(struct rt
+ {
+ }
+ 
++/* Without this RTL8814A sends too many frames and (some?) 11n AP
++ * can't handle it, resulting in low TX speed. Other chips seem fine.
++ */
++static void rtw8814a_set_ampdu_factor(struct rtw_dev *rtwdev, u8 factor)
++{
++	factor = min_t(u8, factor, IEEE80211_VHT_MAX_AMPDU_256K);
++
++	rtw_write32(rtwdev, REG_AMPDU_MAX_LENGTH, (8192 << factor) - 1);
++}
++
+ static void rtw8814a_false_alarm_statistics(struct rtw_dev *rtwdev)
+ {
+ 	struct rtw_dm_info *dm_info = &rtwdev->dm_info;
+@@ -2051,6 +2061,7 @@ static const struct rtw_chip_ops rtw8814
+ 	.set_antenna		= NULL,
+ 	.cfg_ldo25		= rtw8814a_cfg_ldo25,
+ 	.efuse_grant		= rtw8814a_efuse_grant,
++	.set_ampdu_factor	= rtw8814a_set_ampdu_factor,
+ 	.false_alarm_statistics	= rtw8814a_false_alarm_statistics,
+ 	.phy_calibration	= rtw8814a_phy_calibration,
+ 	.cck_pd_set		= rtw8814a_phy_cck_pd_set,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821a.c
+@@ -871,6 +871,7 @@ static const struct rtw_chip_ops rtw8821
+ 	.set_tx_power_index	= rtw88xxa_set_tx_power_index,
+ 	.cfg_ldo25		= rtw8821a_cfg_ldo25,
+ 	.efuse_grant		= rtw88xxa_efuse_grant,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw88xxa_false_alarm_statistics,
+ 	.phy_calibration	= rtw8821a_phy_calibration,
+ 	.cck_pd_set		= rtw88xxa_phy_cck_pd_set,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.c
+@@ -1668,6 +1668,7 @@ static const struct rtw_chip_ops rtw8821
+ 	.set_antenna		= NULL,
+ 	.set_tx_power_index	= rtw8821c_set_tx_power_index,
+ 	.cfg_ldo25		= rtw8821c_cfg_ldo25,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw8821c_false_alarm_statistics,
+ 	.phy_calibration	= rtw8821c_phy_calibration,
+ 	.cck_pd_set		= rtw8821c_phy_cck_pd_set,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -2158,6 +2158,7 @@ static const struct rtw_chip_ops rtw8822
+ 	.set_tx_power_index	= rtw8822b_set_tx_power_index,
+ 	.set_antenna		= rtw8822b_set_antenna,
+ 	.cfg_ldo25		= rtw8822b_cfg_ldo25,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw8822b_false_alarm_statistics,
+ 	.phy_calibration	= rtw8822b_phy_calibration,
+ 	.pwr_track		= rtw8822b_pwr_track,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -4968,6 +4968,7 @@ static const struct rtw_chip_ops rtw8822
+ 	.set_tx_power_index	= rtw8822c_set_tx_power_index,
+ 	.set_antenna		= rtw8822c_set_antenna,
+ 	.cfg_ldo25		= rtw8822c_cfg_ldo25,
++	.set_ampdu_factor	= NULL,
+ 	.false_alarm_statistics	= rtw8822c_false_alarm_statistics,
+ 	.dpk_track		= rtw8822c_dpk_track,
+ 	.phy_calibration	= rtw8822c_phy_calibration,

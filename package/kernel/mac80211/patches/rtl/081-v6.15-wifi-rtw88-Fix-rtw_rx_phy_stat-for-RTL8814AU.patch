@@ -1,0 +1,54 @@
+From 053a7aace0207593776c729f229d87f1be464b98 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 18 Feb 2025 01:31:13 +0200
+Subject: [PATCH] wifi: rtw88: Fix rtw_rx_phy_stat() for RTL8814AU
+
+Record statistics for the 3SS rates too.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/39e3c7cf-37ed-4c0e-af00-dcd9eab351f0@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h | 7 +++++++
+ drivers/net/wireless/realtek/rtw88/rx.c   | 6 ++++++
+ 2 files changed, 13 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -386,6 +386,9 @@ enum rtw_evm {
+ 	RTW_EVM_1SS,
+ 	RTW_EVM_2SS_A,
+ 	RTW_EVM_2SS_B,
++	RTW_EVM_3SS_A,
++	RTW_EVM_3SS_B,
++	RTW_EVM_3SS_C,
+ 	/* keep it last */
+ 	RTW_EVM_NUM
+ };
+@@ -403,6 +406,10 @@ enum rtw_snr {
+ 	RTW_SNR_2SS_B,
+ 	RTW_SNR_2SS_C,
+ 	RTW_SNR_2SS_D,
++	RTW_SNR_3SS_A,
++	RTW_SNR_3SS_B,
++	RTW_SNR_3SS_C,
++	RTW_SNR_3SS_D,
+ 	/* keep it last */
+ 	RTW_SNR_NUM
+ };
+--- a/drivers/net/wireless/realtek/rtw88/rx.c
++++ b/drivers/net/wireless/realtek/rtw88/rx.c
+@@ -73,6 +73,12 @@ static void rtw_rx_phy_stat(struct rtw_d
+ 		rate_ss_evm = 2;
+ 		evm_id = RTW_EVM_2SS_A;
+ 		break;
++	case DESC_RATEMCS16...DESC_RATEMCS23:
++	case DESC_RATEVHT3SS_MCS0...DESC_RATEVHT3SS_MCS9:
++		rate_ss = 3;
++		rate_ss_evm = 3;
++		evm_id = RTW_EVM_3SS_A;
++		break;
+ 	default:
+ 		rtw_warn(rtwdev, "unknown pkt rate = %d\n", pkt_stat->rate);
+ 		return;
