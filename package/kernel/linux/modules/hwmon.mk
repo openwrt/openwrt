@@ -746,3 +746,12 @@ endef
 $(eval $(call KernelPackage,hwmon-adcxx))
 
 
+define KernelPackage/polynomial
+  TITLE:=polynomial support
+  KCONFIG:=CONFIG_POLYNOMIAL
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/lib/polynomial.ko
+  AUTOLOAD:=$(call AutoProbe, polynomial)
+endef
+
+$(eval $(call KernelPackage,polynomial))
