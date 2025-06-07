@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6358-huawei-hg556a.dtsi"
+
+/ {
+	model = "Huawei EchoLife HG556a (version C)";
+	compatible = "huawei,hg556a-c", "brcm,bcm6358";
+};
+
+&gpio_keys {
+	help {
+		label = "help";
+		gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_HELP>;
+		debounce-interval = <60>;
+	};
+};
+
+&gpio_leds {
+	led-0 {
+		label = "green:lan1";
+		gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+	};
+
+	led-1 {
+		label = "green:lan2";
+		gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+	};
+
+	led-12 {
+		label = "red:message";
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+
+	led-15 {
+		label = "red:hspa";
+		gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pci {
+	status = "okay";
+
+	wifi@1,0 {
+		compatible = "pci0,0";
+		reg = <0x0800 0 0 0 0>;
+
+		ralink,mtd-eeprom = <&cal_data 0x1fe00>;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+	};
+};
