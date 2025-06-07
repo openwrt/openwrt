@@ -1,7 +1,8 @@
 DEVICE_VARS += BOOT_SCRIPT
 
 define Build/mstc-header
-	$(eval version=$(1))
+	$(eval version=$(word 1,$(1)))
+	$(eval hdrlen=$(if $(word 2,$(1)),$(word 2,$(1)),0x400))
 	gzip -c $@ | tail -c8 > $@.crclen
 	( \
 		printf "CMOC"; \
@@ -10,7 +11,7 @@ define Build/mstc-header
 			dd bs=64 count=1 conv=sync 2>/dev/null; \
 		printf "$(version)" | \
 			dd bs=64 count=1 conv=sync 2>/dev/null; \
-		dd if=/dev/zero bs=884 count=1 2>/dev/null; \
+		dd if=/dev/zero bs=$$(($(hdrlen) - 0x8c)) count=1 2>/dev/null; \
 		cat $@; \
 	) > $@.new
 	mv $@.new $@
@@ -55,6 +56,24 @@ define Device/glinet_gl-b3000
 		dumpimage
 endef
 TARGET_DEVICES += glinet_gl-b3000
+
+define Device/iodata_wn-dax3000gr
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := I-O DATA
+	DEVICE_MODEL := WN-DAX3000GR
+	DEVICE_DTS_CONFIG := config@mp03.3
+	SOC := ipq5018
+	KERNEL_IN_UBI := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 52480k
+	NAND_SIZE := 128m
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand | \
+		mstc-header 4.04(XZH.1)b90 0x480
+	DEVICE_PACKAGES := ath11k-firmware-qcn6122 ipq-wifi-iodata_wn-dax3000gr
+endef
+TARGET_DEVICES += iodata_wn-dax3000gr
 
 define Device/linksys_ipq50xx_mx_base
 	$(call Device/FitImageLzma)
