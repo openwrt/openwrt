@@ -1,0 +1,276 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "hasivo,s1100w-8xgt-se", "realtek,rtl838x-soc";
+	model = "Hasivo S1100W-8XGT-SE";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* first 256 MiB */
+		<0x20000000 0x10000000>; /* remaining 256 MiB */
+	};
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	chosen {
+		stdout-path = "serial0:38400n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: led-0 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			label = "green:system";
+		};
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/*
+		* LED set 0
+		*
+		* - LED[0](Amber): 5G/LINK/ACT
+		* - LED[1](Green): 10G/LINK/ACT
+		* - LED[2](Amber): 1G/100M/10M/LINK/ACT
+		* - LED[3](Green): 2.5G/LINK/ACT
+		*/
+		led_set0 = <0x0a02 0x0a01 0x0ba0 0x0a08>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* stock is LOADER */
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x00e0000>;
+				read-only;
+			};
+
+			/* stock is BDINFO */
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x00e0000 0x0010000>;
+			};
+
+			/* stock is SYSINFO */
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0x00f0000 0x0010000>;
+				read-only;
+			};
+
+			/* stock is JFFS2_CFG */
+			partition@100000 {
+				label = "jffs";
+				reg = <0x0100000 0x0100000>;
+			};
+
+			/* stock is JFFS2_LOG */
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x0200000 0x0100000>;
+			};
+
+			/* stock is RUNTIME */
+			partition@300000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0x0300000 0x0c00000>;
+			};
+
+			/* stock is OEMINFO */
+			partition@f00000 {
+				label = "oeminfo";
+				reg = <0x0f00000 0x0100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio: mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 0>;
+			reg = <0>;
+			sds = <2>;
+		};
+
+		phy8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 1>;
+			reg = <8>;
+			sds = <3>;
+		};
+
+		phy16: ethernet-phy@16 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 2>;
+			reg = <16>;
+			sds = <4>;
+		};
+
+		phy20: ethernet-phy@20 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <0 3>;
+			reg = <20>;
+			sds = <5>;
+		};
+
+		phy24: ethernet-phy@24 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <3 16>;
+			reg = <24>;
+			sds = <6>;
+		};
+
+		phy25: ethernet-phy@25 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <3 17>;
+			reg = <25>;
+			sds = <7>;
+		};
+
+		phy26: ethernet-phy@26 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <3 18>;
+			reg = <26>;
+			sds = <8>;
+		};
+
+		phy27: ethernet-phy@27 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			rtl9300,smi-address = <3 19>;
+			reg = <27>;
+			sds = <9>;
+		};
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy0>;
+			led-set = <0>;
+		};
+
+		port@8 {
+			reg = <8>;
+			label = "lan2";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy8>;
+			led-set = <0>;
+		};
+
+		port@16 {
+			reg = <16>;
+			label = "lan3";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy16>;
+			led-set = <0>;
+		};
+
+		port@20 {
+			reg = <20>;
+			label = "lan4";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy20>;
+			led-set = <0>;
+		};
+
+		port@24 {
+			reg = <24>;
+			label = "lan5";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy24>;
+			led-set = <0>;
+		};
+
+		port@25 {
+			reg = <25>;
+			label = "lan6";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy25>;
+			led-set = <0>;
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan7";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy26>;
+			led-set = <0>;
+		};
+
+		port@27 {
+			reg = <27>;
+			label = "lan8";
+			phy-mode = "usxgmii";
+			phy-handle = <&phy27>;
+			led-set = <0>;
+		};
+
+		/* Internal SoC */
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+			};
+		};
+	};
+};
