@@ -73,3 +73,27 @@ define KernelPackage/spi-dev/description
 endef
 
 $(eval $(call KernelPackage,spi-dev))
+
+
+define KernelPackage/spi-dw-mmio
+  SUBMENU:=$(SPI_MENU)
+  TITLE:=DesignWare SPI controller driver (MMIO)
+  KCONFIG:=\
+    CONFIG_SPI=y \
+    CONFIG_SPI_DESIGNWARE \
+    CONFIG_SPI_DW_DMA=n \
+    CONFIG_SPI_DW_MMIO=y \
+    CONFIG_SPI_DW_PCI=n \
+    CONFIG_SPI_DYNAMIC=y \
+    CONFIG_SPI_MASTER=y
+  FILES:=\
+    $(LINUX_DIR)/drivers/spi/spi-dw.ko \
+    $(LINUX_DIR)/drivers/spi/spi-dw-mmio.ko
+  AUTOLOAD:=$(call AutoProbe,spi-dw-mmio)
+endef
+
+define KernelPackage/spi-dw-mmio/description
+  This package contains the DesignWare SPI controller driver with memory-mapped io (MMIO) interface
+endef
+
+$(eval $(call KernelPackage,spi-dw-mmio))
