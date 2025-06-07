@@ -1,0 +1,32 @@
+From bf1103654df99d50724a022c8b9fca8908a86f50 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 2 Apr 2025 18:30:02 +0300
+Subject: [PATCH] wifi: rtw88: usb: Enable switching the RTL8814AU to USB 3
+
+The Realtek wifi 5 devices which support USB 3 are weird: when first
+plugged in, they pretend to be USB 2. The driver needs to send some
+commands to the device, which make it disappear and come back as a
+USB 3 device.
+
+The method used to switch the RTL8812AU also works for the RTL8814AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/d3608f70-e04f-4f6b-987a-022c8e317165@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -1043,7 +1043,8 @@ static int rtw_usb_switch_mode_new(struc
+ 
+ static bool rtw_usb3_chip_old(u8 chip_id)
+ {
+-	return chip_id == RTW_CHIP_TYPE_8812A;
++	return chip_id == RTW_CHIP_TYPE_8812A ||
++	       chip_id == RTW_CHIP_TYPE_8814A;
+ }
+ 
+ static bool rtw_usb3_chip_new(u8 chip_id)

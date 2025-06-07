@@ -1,0 +1,28 @@
+From 59ab27a9f20f8de6f7989e8a8c3d97c04ed8199c Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 18 Dec 2024 02:13:22 +0200
+Subject: [PATCH] wifi: rtw88: 8812a: Support RFE type 2
+
+RF front end type 2 exists in the wild and can be treated like types
+0 and 1.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/2917c7fc-6d88-4007-b6a6-9130bd1991e5@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8812a.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8812a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8812a.c
+@@ -985,6 +985,9 @@ static const struct rtw_rfe_def rtw8812a
+ 	[1] = { .phy_pg_tbl	= &rtw8812a_bb_pg_tbl,
+ 		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl,
+ 		.pwr_track_tbl	= &rtw8812a_rtw_pwr_track_tbl, },
++	[2] = { .phy_pg_tbl	= &rtw8812a_bb_pg_tbl,
++		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl,
++		.pwr_track_tbl	= &rtw8812a_rtw_pwr_track_tbl, },
+ 	[3] = { .phy_pg_tbl	= &rtw8812a_bb_pg_rfe3_tbl,
+ 		.txpwr_lmt_tbl	= &rtw8812a_txpwr_lmt_tbl,
+ 		.pwr_track_tbl	= &rtw8812a_rtw_pwr_track_rfe3_tbl, },

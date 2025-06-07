@@ -1,0 +1,73 @@
+From b4bfbc50b1b92a0815800eb1231f73bfc917af03 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Thu, 16 Jan 2025 20:04:24 +0800
+Subject: [PATCH] wifi: rtw88: add RTW88_LEDS depends on LEDS_CLASS to Kconfig
+
+When using allmodconfig, .config has CONFIG_LEDS_CLASS=m but
+autoconf.h has CONFIG_LEDS_CLASS_MODULE (additional suffix _MODULE)
+instead of CONFIG_LEDS_CLASS, which condition CONFIG_LEDS_CLASS in
+rtw88/led.h can't work properly.
+
+Add RTW88_LEDS to Kconfig, and use it as condition to fix this problem.
+
+drivers/net/wireless/realtek/rtw88/led.c:19:6: error: redefinition of 'rtw_led_init'
+   19 | void rtw_led_init(struct rtw_dev *rtwdev)
+      |      ^~~~~~~~~~~~
+In file included from drivers/net/wireless/realtek/rtw88/led.c:7:
+drivers/net/wireless/realtek/rtw88/led.h:15:20: note: previous definition of 'rtw_led_init' with type 'void(struct rtw_dev *)'
+   15 | static inline void rtw_led_init(struct rtw_dev *rtwdev)
+      |                    ^~~~~~~~~~~~
+drivers/net/wireless/realtek/rtw88/led.c:64:6: error: redefinition of 'rtw_led_deinit'
+   64 | void rtw_led_deinit(struct rtw_dev *rtwdev)
+      |      ^~~~~~~~~~~~~~
+drivers/net/wireless/realtek/rtw88/led.h:19:20: note: previous definition of 'rtw_led_deinit' with type 'void(struct rtw_dev *)'
+   19 | static inline void rtw_led_deinit(struct rtw_dev *rtwdev)
+      |                    ^~~~~~~~~~~~~~
+
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Closes: https://lore.kernel.org/linux-wireless/e19a87ad9cd54bfa9907f3a043b25d30@realtek.com/T/#me407832de1040ce22e53517bcb18e322ad0e2260
+Fixes: 4b6652bc6d8d ("wifi: rtw88: Add support for LED blinking")
+Cc: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://patch.msgid.link/20250116120424.13174-1-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtw88/Kconfig  | 5 +++++
+ drivers/net/wireless/realtek/rtw88/Makefile | 2 +-
+ drivers/net/wireless/realtek/rtw88/led.h    | 2 +-
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/Kconfig
++++ b/drivers/net/wireless/realtek/rtw88/Kconfig
+@@ -267,4 +267,9 @@ config RTW88_DEBUGFS
+ 
+ 	  If unsure, say Y to simplify debug problems
+ 
++config RTW88_LEDS
++	bool
++	depends on LEDS_CLASS=y || LEDS_CLASS=MAC80211
++	default y
++
+ endif
+--- a/drivers/net/wireless/realtek/rtw88/Makefile
++++ b/drivers/net/wireless/realtek/rtw88/Makefile
+@@ -20,7 +20,7 @@ rtw88_core-y += main.o \
+ 
+ rtw88_core-$(CONFIG_PM) += wow.o
+ 
+-rtw88_core-$(CONFIG_LEDS_CLASS) += led.o
++rtw88_core-$(CPTCFG_RTW88_LEDS) += led.o
+ 
+ obj-$(CPTCFG_RTW88_8822B)	+= rtw88_8822b.o
+ rtw88_8822b-objs		:= rtw8822b.o rtw8822b_table.o
+--- a/drivers/net/wireless/realtek/rtw88/led.h
++++ b/drivers/net/wireless/realtek/rtw88/led.h
+@@ -5,7 +5,7 @@
+ #ifndef __RTW_LED_H
+ #define __RTW_LED_H
+ 
+-#ifdef CONFIG_LEDS_CLASS
++#ifdef CPTCFG_RTW88_LEDS
+ 
+ void rtw_led_init(struct rtw_dev *rtwdev);
+ void rtw_led_deinit(struct rtw_dev *rtwdev);
