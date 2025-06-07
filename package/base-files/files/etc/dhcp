@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Delete existing guest DHCP configuration
+uci -q delete dhcp.guest
+
+# Configure DHCP for guest interface
+uci set dhcp.guest="dhcp"
+uci set dhcp.guest.interface="guest"
+uci set dhcp.guest.start="100"
+uci set dhcp.guest.limit="150"
+uci set dhcp.guest.leasetime="1h"
+
+# Commit changes and restart dnsmasq
+uci commit dhcp
+/etc/init.d/dnsmasq restart

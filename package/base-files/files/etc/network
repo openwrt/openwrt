@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Delete existing guest device configuration
+uci -q delete network.guest_dev
+
+# Configure guest device as a bridge
+uci set network.guest_dev="device"
+uci set network.guest_dev.type="bridge"
+uci set network.guest_dev.name="br-guest"
+
+# Delete existing guest interface configuration
+uci -q delete network.guest
+
+# Configure guest interface
+uci set network.guest="interface"
+uci set network.guest.proto="static"
+uci set network.guest.device="br-guest"
+uci set network.guest.ipaddr="192.168.3.1/24"
+
+# Commit changes and restart network service
+uci commit network
+/etc/init.d/network restart
