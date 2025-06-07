@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -3423,6 +3423,7 @@ enum wiphy_params_flags {
+@@ -3435,6 +3435,7 @@ enum wiphy_params_flags {
  /* The per TXQ device queue limit in airtime */
  #define IEEE80211_DEFAULT_AQL_TXQ_LIMIT_L	5000
  #define IEEE80211_DEFAULT_AQL_TXQ_LIMIT_H	12000
@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define IEEE80211_AQL_THRESHOLD			24000
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
-@@ -215,11 +215,13 @@ static ssize_t aql_pending_read(struct f
+@@ -212,11 +212,13 @@ static ssize_t aql_pending_read(struct f
  			"VI     %u us\n"
  			"BE     %u us\n"
  			"BK     %u us\n"
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			atomic_read(&local->aql_total_pending_airtime));
  	return simple_read_from_buffer(user_buf, count, ppos,
  				       buf, len);
-@@ -245,7 +247,8 @@ static ssize_t aql_txq_limit_read(struct
+@@ -241,7 +243,8 @@ static ssize_t aql_txq_limit_read(struct
  			"VO	%u		%u\n"
  			"VI	%u		%u\n"
  			"BE	%u		%u\n"
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			local->aql_txq_limit_low[IEEE80211_AC_VO],
  			local->aql_txq_limit_high[IEEE80211_AC_VO],
  			local->aql_txq_limit_low[IEEE80211_AC_VI],
-@@ -253,7 +256,8 @@ static ssize_t aql_txq_limit_read(struct
+@@ -249,7 +252,8 @@ static ssize_t aql_txq_limit_read(struct
  			local->aql_txq_limit_low[IEEE80211_AC_BE],
  			local->aql_txq_limit_high[IEEE80211_AC_BE],
  			local->aql_txq_limit_low[IEEE80211_AC_BK],
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return simple_read_from_buffer(user_buf, count, ppos,
  				       buf, len);
  }
-@@ -279,6 +283,11 @@ static ssize_t aql_txq_limit_write(struc
+@@ -275,6 +279,11 @@ static ssize_t aql_txq_limit_write(struc
  	else
  		buf[count] = '\0';
  
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1351,10 +1351,12 @@ struct ieee80211_local {
+@@ -1362,10 +1362,12 @@ struct ieee80211_local {
  	spinlock_t handle_wake_tx_queue_lock;
  
  	u16 airtime_flags;
@@ -85,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct ieee80211_ops *ops;
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -954,6 +954,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -959,6 +959,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  	spin_lock_init(&local->rx_path_lock);
  	spin_lock_init(&local->queue_stop_reason_lock);
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		spin_lock_init(&local->active_txq_lock[i]);
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -2353,13 +2353,28 @@ EXPORT_SYMBOL(ieee80211_sta_recalc_aggre
+@@ -2388,13 +2388,28 @@ EXPORT_SYMBOL(ieee80211_sta_recalc_aggre
  
  void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
  					  struct sta_info *sta, u8 ac,
@@ -127,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			atomic_add(tx_airtime,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -2554,7 +2554,7 @@ static u16 ieee80211_store_ack_skb(struc
+@@ -2555,7 +2555,7 @@ static u16 ieee80211_store_ack_skb(struc
  
  		spin_lock_irqsave(&local->ack_status_lock, flags);
  		id = idr_alloc(&local->ack_status_frames, ack_skb,
@@ -136,7 +136,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		spin_unlock_irqrestore(&local->ack_status_lock, flags);
  
  		if (id >= 0) {
-@@ -3982,20 +3982,20 @@ begin:
+@@ -3984,20 +3984,20 @@ begin:
  encap_out:
  	info->control.vif = vif;
  
@@ -167,7 +167,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return skb;
-@@ -4047,6 +4047,7 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -4049,6 +4049,7 @@ struct ieee80211_txq *ieee80211_next_txq
  	struct ieee80211_txq *ret = NULL;
  	struct txq_info *txqi = NULL, *head = NULL;
  	bool found_eligible_txq = false;
@@ -175,7 +175,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
-@@ -4070,26 +4071,26 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -4072,26 +4073,26 @@ struct ieee80211_txq *ieee80211_next_txq
  	if (!head)
  		head = txqi;
  
@@ -214,7 +214,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (txqi->schedule_round == local->schedule_round[ac])
  		goto out;
  
-@@ -4154,7 +4155,8 @@ bool ieee80211_txq_airtime_check(struct
+@@ -4156,7 +4157,8 @@ bool ieee80211_txq_airtime_check(struct
  		return true;
  
  	if (!txq->sta)
@@ -224,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
-@@ -4203,15 +4205,15 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -4205,15 +4207,15 @@ bool ieee80211_txq_may_transmit(struct i
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
@@ -245,7 +245,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		if (iter == txqi)
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1222,8 +1222,8 @@ struct ieee80211_tx_info {
+@@ -1237,8 +1237,8 @@ struct ieee80211_tx_info {
  	    status_data_idr:1,
  	    status_data:13,
  	    hw_queue:4,
@@ -278,7 +278,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		rcu_read_unlock();
  	}
  
-@@ -1158,10 +1158,11 @@ void ieee80211_tx_status_ext(struct ieee
+@@ -1161,10 +1161,11 @@ void ieee80211_tx_status_ext(struct ieee
  		/* Do this here to avoid the expensive lookup of the sta
  		 * in ieee80211_report_used_skb().
  		 */

@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #include <net/cfg80211.h>
  #include <net/netlink.h>
  #include <uapi/linux/if_arp.h>
-@@ -8212,31 +8213,45 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -8215,31 +8216,45 @@ static void brcmf_cfg80211_reg_notifier(
  	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
  	struct brcmf_pub *drvr = cfg->pub;
  	struct brcmf_fil_country_le ccreq;

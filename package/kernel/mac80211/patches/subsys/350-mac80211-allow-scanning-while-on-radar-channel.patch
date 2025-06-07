@@ -1,6 +1,6 @@
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3473,6 +3473,27 @@ static int ieee80211_set_bitrate_mask(st
+@@ -3526,6 +3526,27 @@ static int ieee80211_set_bitrate_mask(st
  	return 0;
  }
  
@@ -28,7 +28,7 @@
  static int ieee80211_start_radar_detection(struct wiphy *wiphy,
  					   struct net_device *dev,
  					   struct cfg80211_chan_def *chandef,
-@@ -3486,7 +3507,7 @@ static int ieee80211_start_radar_detecti
+@@ -3539,7 +3560,7 @@ static int ieee80211_start_radar_detecti
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -37,7 +37,7 @@
  		return -EBUSY;
  
  	link_data = sdata_dereference(sdata->link[link_id], sdata);
-@@ -3978,7 +3999,7 @@ __ieee80211_channel_switch(struct wiphy
+@@ -4031,7 +4052,7 @@ __ieee80211_channel_switch(struct wiphy
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -48,7 +48,7 @@
  	if (sdata->wdev.links[link_id].cac_started)
 --- a/net/mac80211/chan.c
 +++ b/net/mac80211/chan.c
-@@ -629,14 +629,24 @@ ieee80211_find_chanctx(struct ieee80211_
+@@ -644,14 +644,24 @@ ieee80211_find_chanctx(struct ieee80211_
  	return NULL;
  }
  
@@ -77,7 +77,7 @@
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1947,6 +1947,12 @@ int ieee80211_mesh_finish_csa(struct iee
+@@ -1960,6 +1960,12 @@ int ieee80211_mesh_finish_csa(struct iee
  			      u64 *changed);
  
  /* scan/BSS handling */
@@ -90,7 +90,7 @@
  void ieee80211_scan_work(struct wiphy *wiphy, struct wiphy_work *work);
  int ieee80211_request_ibss_scan(struct ieee80211_sub_if_data *sdata,
  				const u8 *ssid, u8 ssid_len,
-@@ -1985,6 +1991,7 @@ void ieee80211_sched_scan_stopped_work(s
+@@ -1998,6 +2004,7 @@ void ieee80211_sched_scan_stopped_work(s
  /* off-channel/mgmt-tx */
  void ieee80211_offchannel_stop_vifs(struct ieee80211_local *local);
  void ieee80211_offchannel_return(struct ieee80211_local *local);
@@ -98,7 +98,7 @@
  void ieee80211_roc_setup(struct ieee80211_local *local);
  void ieee80211_start_next_roc(struct ieee80211_local *local);
  void ieee80211_reconfig_roc(struct ieee80211_local *local);
-@@ -2629,6 +2636,8 @@ bool ieee80211_chandef_s1g_oper(const st
+@@ -2643,6 +2650,8 @@ bool ieee80211_chandef_s1g_oper(const st
  				struct cfg80211_chan_def *chandef);
  void ieee80211_chandef_downgrade(struct cfg80211_chan_def *chandef,
  				 struct ieee80211_conn_settings *conn);
@@ -107,7 +107,7 @@
  static inline void
  ieee80211_chanreq_downgrade(struct ieee80211_chan_req *chanreq,
  			    struct ieee80211_conn_settings *conn)
-@@ -2685,7 +2694,7 @@ void ieee80211_recalc_chanctx_min_def(st
+@@ -2699,7 +2708,7 @@ void ieee80211_recalc_chanctx_min_def(st
  				      struct ieee80211_chanctx *ctx,
  				      struct ieee80211_link_data *rsvd_for,
  				      bool check_reserved);
@@ -334,9 +334,9 @@
  		rcu_assign_pointer(local->scan_sdata, sdata);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3644,6 +3644,23 @@ again:
- 	WARN_ON_ONCE(!cfg80211_chandef_valid(c));
+@@ -877,6 +877,23 @@ struct wireless_dev *ieee80211_vif_to_wd
  }
+ EXPORT_SYMBOL_GPL(ieee80211_vif_to_wdev);
  
 +u32 ieee80211_chandef_radio_mask(struct ieee80211_local *local,
 +				 struct cfg80211_chan_def *chandef)
@@ -356,11 +356,11 @@
 +}
 +
  /*
-  * Returns true if smps_mode_new is strictly more restrictive than
-  * smps_mode_old.
+  * Nothing should have been stuffed into the workqueue during
+  * the suspend->resume cycle. Since we can't check each caller
 --- a/net/wireless/util.c
 +++ b/net/wireless/util.c
-@@ -2911,6 +2911,9 @@ bool cfg80211_radio_chandef_valid(const
+@@ -2907,6 +2907,9 @@ bool cfg80211_radio_chandef_valid(const
  {
  	u32 freq, width;
  
