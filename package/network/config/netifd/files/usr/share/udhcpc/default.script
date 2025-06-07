@@ -5,9 +5,8 @@ set_classless_routes() {
 	local max=128
 	local type
 	while [ -n "$1" -a -n "$2" -a $max -gt 0 ]; do
-		[ ${1##*/} -eq 32 ] && type=host || type=net
-		echo "udhcpc: adding route for $type $1 via $2"
-		route add -$type "$1" gw "$2" dev "$interface"
+		echo "udhcpc: adding route for $1 via $2"
+		ip route add "$1" via "$2" dev "$interface"
 		max=$(($max-1))
 		shift 2
 	done
@@ -22,13 +21,13 @@ setup_interface() {
 
 		local valid_gw=""
 		for i in $router ; do
-			route add default gw $i dev $interface
+			ip route add default via $i dev $interface
 			valid_gw="${valid_gw:+$valid_gw|}$i"
 		done
 		
-		eval $(route -n | awk '
-			/^0.0.0.0\W{9}('$valid_gw')\W/ {next}
-			/^0.0.0.0/ {print "route del -net "$1" gw "$2";"}
+		eval $(ip route list | awk '
+			/^default via ('$valid_gw')\W/ {next}
+			/^default via/ {print "ip route del "$1" via "$3";"}
 		')
 	}
 
