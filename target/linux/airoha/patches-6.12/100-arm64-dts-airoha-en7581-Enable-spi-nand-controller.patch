@@ -1,0 +1,83 @@
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 25 Feb 2025 14:07:02 +0100
+Subject: [PATCH v2] arm64: dts: airoha: en7581: Enable spi nand controller
+ for EN7581 EVB
+MIME-Version: 1.0
+Message-Id: <20250225-en7581-snfi-probe-fix-v2-1-92e35add701b@kernel.org>
+X-B4-Tracking: v=1; b=H4sIAHXAvWcC/4WNQQ6CMBBFr0K6dgyt1Aor72FYCP3ARNOSqSEaw
+ t2tXMDle8l/f1UJwkiqKVYlWDhxDBnMoVD9dA8jiH1mZUpjS2MsITh70ZTCwDRL7EADv6k/Gdv
+ Be/gaKm9nQdZ799Zmnji9onz2m0X/7L/iokmTc6jcubauQnV9QAKexyijardt+wLJ1yKGuwAAA
+ A==
+X-Change-ID: 20250225-en7581-snfi-probe-fix-c325bedded9e
+To: Matthias Brugger <matthias.bgg@gmail.com>,
+ AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+ Rob Herring <robh@kernel.org>, Krzysztof Kozlowski <krzk+dt@kernel.org>,
+ Conor Dooley <conor+dt@kernel.org>
+Cc: linux-arm-kernel@lists.infradead.org,
+ linux-mediatek@lists.infradead.org, devicetree@vger.kernel.org,
+ Lorenzo Bianconi <lorenzo@kernel.org>
+X-Mailer: b4 0.14.2
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Enable spi controller used for snand memory device for EN7581 evaluation
+board.
+
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+Changes in v2:
+- Clarify the commit title
+- Link to v1: https://lore.kernel.org/r/20250225-en7581-snfi-probe-fix-v1-1-77e4769574e4@kernel.org
+---
+ arch/arm64/boot/dts/airoha/en7581-evb.dts | 4 ++++
+ arch/arm64/boot/dts/airoha/en7581.dtsi    | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+
+---
+base-commit: 0092294492fafe79a537915e486576a3d69c9a7c
+change-id: 20250225-en7581-snfi-probe-fix-c325bedded9e
+
+Best regards,
+
+diff --git a/arch/arm64/boot/dts/airoha/en7581-evb.dts b/arch/arm64/boot/dts/airoha/en7581-evb.dts
+index d53b72d18242e3cee8b37c7b1b719d662fd6db8d..cc69f698c27b804953b1bb671e128d4401744bf5 100644
+--- a/arch/arm64/boot/dts/airoha/en7581-evb.dts
++++ b/arch/arm64/boot/dts/airoha/en7581-evb.dts
+@@ -25,6 +25,10 @@ memory@80000000 {
+ 	};
+ };
+ 
++&snfi {
++	status = "okay";
++};
++
+ &i2c0 {
+ 	status = "okay";
+ };
+diff --git a/arch/arm64/boot/dts/airoha/en7581.dtsi b/arch/arm64/boot/dts/airoha/en7581.dtsi
+index 26b13694091735da7af977e42f8f546d7d5cb078..49c061d38d7860b3b416610723791a7a91edcb69 100644
+--- a/arch/arm64/boot/dts/airoha/en7581.dtsi
++++ b/arch/arm64/boot/dts/airoha/en7581.dtsi
+@@ -150,7 +150,7 @@ gic: interrupt-controller@9000000 {
+ 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+ 		};
+ 
+-		spi@1fa10000 {
++		snfi: spi@1fa10000 {
+ 			compatible = "airoha,en7581-snand";
+ 			reg = <0x0 0x1fa10000 0x0 0x140>,
+ 			      <0x0 0x1fa11000 0x0 0x160>;

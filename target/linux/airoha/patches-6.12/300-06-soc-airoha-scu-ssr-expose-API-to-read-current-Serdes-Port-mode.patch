@@ -1,0 +1,162 @@
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Christian Marangi <ansuelsmth@gmail.com>,
+	Vinod Koul <vkoul@kernel.org>,
+	Kishon Vijay Abraham I <kishon@kernel.org>,
+	Matthias Brugger <matthias.bgg@gmail.com>,
+	AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Daniel Danzberger <dd@embedd.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Alexander Sverdlin <alexander.sverdlin@gmail.com>,
+	Nikita Shubin <nikita.shubin@maquefel.me>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	Yangyu Chen <cyy@cyyself.name>,
+	Ben Hutchings <ben@decadent.org.uk>,
+	Felix Fietkau <nbd@nbd.name>,
+	linux-clk@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-phy@lists.infradead.org,
+	linux-mediatek@lists.infradead.org,
+	linux-usb@vger.kernel.org,
+	upstream@airoha.com
+Subject: [PATCH v2 06/11] soc: airoha: scu-ssr: expose API to read current
+ Serdes Port mode
+Date: Thu, 20 Mar 2025 14:00:29 +0100
+Message-ID: <20250320130054.4804-7-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20250320130054.4804-1-ansuelsmth@gmail.com>
+References: <20250320130054.4804-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20250320_060142_822573_A8B9CCEE 
+X-CRM114-Status: GOOD (  19.00  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Expose an API to read the current Serdes Port mode. This is needed for
+pheriperal attached to the Serdes mode to validate the Serdes port is in
+the correct mode.
+
+Each driver will have to define in DT the phandle airoha,scu
+pointing to the SCU node to make use of this API.
+
+Function airoha_scu_ssr_get_serdes_mode() will then parse the phandle,
+and extract tha Serdes Port state from the SCU SSR driver priv.
+
+Driver will use the new API airoha_scu_ssr_get_serdes_mode() by passing
+the dev and the serdes mode reference from dt-bindings header.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/soc/airoha/airoha-scu-ssr.c       | 50 +++++++++++++++++++++++
+ include/linux/soc/airoha/airoha-scu-ssr.h | 11 +++++
+ 2 files changed, 61 insertions(+)
+
+diff --git a/drivers/soc/airoha/airoha-scu-ssr.c b/drivers/soc/airoha/airoha-scu-ssr.c
+index 29e17577e9a4..3fbc36f793d0 100644
+--- a/drivers/soc/airoha/airoha-scu-ssr.c
++++ b/drivers/soc/airoha/airoha-scu-ssr.c
+@@ -5,6 +5,7 @@
+ 
+ #include <dt-bindings/soc/airoha,scu-ssr.h>
+ #include <linux/bitfield.h>
++#include <linux/clk/clk-en7523.h>
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+@@ -54,6 +55,55 @@ static int airoha_scu_serdes_str_to_mode(const char *serdes_str)
+ 	return -EINVAL;
+ }
+ 
++/**
++ * airoha_scu_ssr_get_serdes_mode - Get current Mode for Serdes Port
++ * @dev: Device pointer of the Serdes Port peripheral
++ * @port: Reference number of the Serdes Port
++ *
++ * Parse the phandle pointed by the Device Node property
++ * "airoha,scu" present in Devide Node of dev and get
++ * the current Mode of the Serdes Port reference by port
++ *
++ * Return the mode or a negative error code. If the pdev
++ * or the driver data for the SCU can't be found,
++ * -EPROBE_DEFER is returned.
++ */
++int airoha_scu_ssr_get_serdes_mode(struct device *dev,
++				   unsigned int port)
++{
++	struct airoha_scu_ssr_priv *priv;
++	struct en_clk_priv *clk_priv;
++	struct platform_device *pdev;
++	struct device_node *np;
++
++	np = of_parse_phandle(dev->of_node, "airoha,scu", 0);
++	if (!np)
++		return -ENODEV;
++
++	if (!of_device_is_available(np)) {
++		of_node_put(np);
++		return -ENODEV;
++	}
++
++	pdev = of_find_device_by_node(np);
++	of_node_put(np);
++	if (!pdev || !platform_get_drvdata(pdev)) {
++		if (pdev)
++			put_device(&pdev->dev);
++		return -EPROBE_DEFER;
++	}
++
++	/*
++	 * Get pdev from clk priv. Clock driver register
++	 * SSR driver hence it can be assumed present.
++	 */
++	clk_priv = platform_get_drvdata(pdev);
++	priv = platform_get_drvdata(clk_priv->ssr_pdev);
++
++	return priv->serdes_port[port];
++}
++EXPORT_SYMBOL_GPL(airoha_scu_ssr_get_serdes_mode);
++
+ static int airoha_scu_ssr_apply_modes(struct airoha_scu_ssr_priv *priv)
+ {
+ 	int ret;
+diff --git a/include/linux/soc/airoha/airoha-scu-ssr.h b/include/linux/soc/airoha/airoha-scu-ssr.h
+index 0224c0340b6d..81f2c1b57889 100644
+--- a/include/linux/soc/airoha/airoha-scu-ssr.h
++++ b/include/linux/soc/airoha/airoha-scu-ssr.h
+@@ -20,4 +20,15 @@ struct airoha_scu_ssr_data {
+ 	const struct airoha_scu_ssr_serdes_info *ports_info;
+ };
+ 
++#if IS_ENABLED(CONFIG_AIROHA_SCU_SSR)
++int airoha_scu_ssr_get_serdes_mode(struct device *dev,
++				   unsigned int port);
++#else
++static inline int airoha_scu_ssr_get_serdes_mode(struct device *dev,
++						 unsigned int port);
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
+ #endif
