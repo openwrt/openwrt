@@ -58,24 +58,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
-	reg_usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
 };
 
 &gmac0 {
@@ -159,6 +141,12 @@
 	/delete-property/ interrupts;
 };
 
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
 &state_default {
 	gpio {
 		groups = "uart2", "uart3", "pcie", "jtag";
@@ -169,9 +157,3 @@
 &spi0 {
 	status = "disabled";
 };
-
-&xhci {
-	vusb33-supply = <&reg_3p3v>;
-	vbus-supply = <&reg_usb_vbus>;
-};
-
