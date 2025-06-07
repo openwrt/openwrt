@@ -1,0 +1,213 @@
+From e66f3b5c7535bb508e9c561a047b32de4ddc1cda Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 4 Feb 2025 20:40:22 +0200
+Subject: [PATCH] wifi: rtw88: Constify some more structs and arrays
+
+These structs and arrays are never modified, so make them const:
+
+rtw_band_2ghz
+rtw_band_5ghz
+rtw_pci_tx_queue_idx_addr
+rtw_pci_ops
+rtw_cck_rates
+rtw_ofdm_rates
+rtw_ht_1s_rates
+rtw_ht_2s_rates
+rtw_vht_1s_rates
+rtw_vht_2s_rates
+rtw_rate_section
+rtw_rate_size
+rtw_sdio_ops
+rtw_usb_ops
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/502f124e-ccf3-4c09-80a4-1e5c5304822b@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.c |  4 ++--
+ drivers/net/wireless/realtek/rtw88/main.h |  2 +-
+ drivers/net/wireless/realtek/rtw88/pci.c  |  4 ++--
+ drivers/net/wireless/realtek/rtw88/phy.c  | 26 ++++++++++++++---------
+ drivers/net/wireless/realtek/rtw88/phy.h  | 16 +++++++-------
+ drivers/net/wireless/realtek/rtw88/sdio.c |  2 +-
+ drivers/net/wireless/realtek/rtw88/usb.c  |  2 +-
+ 7 files changed, 31 insertions(+), 25 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -136,7 +136,7 @@ u16 rtw_desc_to_bitrate(u8 desc_rate)
+ 	return rate.bitrate;
+ }
+ 
+-static struct ieee80211_supported_band rtw_band_2ghz = {
++static const struct ieee80211_supported_band rtw_band_2ghz = {
+ 	.band = NL80211_BAND_2GHZ,
+ 
+ 	.channels = rtw_channeltable_2g,
+@@ -149,7 +149,7 @@ static struct ieee80211_supported_band r
+ 	.vht_cap = {0},
+ };
+ 
+-static struct ieee80211_supported_band rtw_band_5ghz = {
++static const struct ieee80211_supported_band rtw_band_5ghz = {
+ 	.band = NL80211_BAND_5GHZ,
+ 
+ 	.channels = rtw_channeltable_5g,
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -61,7 +61,7 @@ enum rtw_hci_type {
+ };
+ 
+ struct rtw_hci {
+-	struct rtw_hci_ops *ops;
++	const struct rtw_hci_ops *ops;
+ 	enum rtw_hci_type type;
+ 
+ 	u32 rpwm_addr;
+--- a/drivers/net/wireless/realtek/rtw88/pci.c
++++ b/drivers/net/wireless/realtek/rtw88/pci.c
+@@ -20,7 +20,7 @@ module_param_named(disable_aspm, rtw_pci
+ MODULE_PARM_DESC(disable_msi, "Set Y to disable MSI interrupt support");
+ MODULE_PARM_DESC(disable_aspm, "Set Y to disable PCI ASPM support");
+ 
+-static u32 rtw_pci_tx_queue_idx_addr[] = {
++static const u32 rtw_pci_tx_queue_idx_addr[] = {
+ 	[RTW_TX_QUEUE_BK]	= RTK_PCI_TXBD_IDX_BKQ,
+ 	[RTW_TX_QUEUE_BE]	= RTK_PCI_TXBD_IDX_BEQ,
+ 	[RTW_TX_QUEUE_VI]	= RTK_PCI_TXBD_IDX_VIQ,
+@@ -1591,7 +1591,7 @@ static void rtw_pci_destroy(struct rtw_d
+ 	rtw_pci_io_unmapping(rtwdev, pdev);
+ }
+ 
+-static struct rtw_hci_ops rtw_pci_ops = {
++static const struct rtw_hci_ops rtw_pci_ops = {
+ 	.tx_write = rtw_pci_tx_write,
+ 	.tx_kick_off = rtw_pci_tx_kick_off,
+ 	.flush_queues = rtw_pci_flush_queues,
+--- a/drivers/net/wireless/realtek/rtw88/phy.c
++++ b/drivers/net/wireless/realtek/rtw88/phy.c
+@@ -52,44 +52,50 @@ static const u32 db_invert_table[12][8]
+ 	 1995262315,	2511886432U,	3162277660U,	3981071706U}
+ };
+ 
+-u8 rtw_cck_rates[] = { DESC_RATE1M, DESC_RATE2M, DESC_RATE5_5M, DESC_RATE11M };
+-u8 rtw_ofdm_rates[] = {
++const u8 rtw_cck_rates[] = { DESC_RATE1M, DESC_RATE2M, DESC_RATE5_5M, DESC_RATE11M };
++
++const u8 rtw_ofdm_rates[] = {
+ 	DESC_RATE6M,  DESC_RATE9M,  DESC_RATE12M,
+ 	DESC_RATE18M, DESC_RATE24M, DESC_RATE36M,
+ 	DESC_RATE48M, DESC_RATE54M
+ };
+-u8 rtw_ht_1s_rates[] = {
++
++const u8 rtw_ht_1s_rates[] = {
+ 	DESC_RATEMCS0, DESC_RATEMCS1, DESC_RATEMCS2,
+ 	DESC_RATEMCS3, DESC_RATEMCS4, DESC_RATEMCS5,
+ 	DESC_RATEMCS6, DESC_RATEMCS7
+ };
+-u8 rtw_ht_2s_rates[] = {
++
++const u8 rtw_ht_2s_rates[] = {
+ 	DESC_RATEMCS8,  DESC_RATEMCS9,  DESC_RATEMCS10,
+ 	DESC_RATEMCS11, DESC_RATEMCS12, DESC_RATEMCS13,
+ 	DESC_RATEMCS14, DESC_RATEMCS15
+ };
+-u8 rtw_vht_1s_rates[] = {
++
++const u8 rtw_vht_1s_rates[] = {
+ 	DESC_RATEVHT1SS_MCS0, DESC_RATEVHT1SS_MCS1,
+ 	DESC_RATEVHT1SS_MCS2, DESC_RATEVHT1SS_MCS3,
+ 	DESC_RATEVHT1SS_MCS4, DESC_RATEVHT1SS_MCS5,
+ 	DESC_RATEVHT1SS_MCS6, DESC_RATEVHT1SS_MCS7,
+ 	DESC_RATEVHT1SS_MCS8, DESC_RATEVHT1SS_MCS9
+ };
+-u8 rtw_vht_2s_rates[] = {
++
++const u8 rtw_vht_2s_rates[] = {
+ 	DESC_RATEVHT2SS_MCS0, DESC_RATEVHT2SS_MCS1,
+ 	DESC_RATEVHT2SS_MCS2, DESC_RATEVHT2SS_MCS3,
+ 	DESC_RATEVHT2SS_MCS4, DESC_RATEVHT2SS_MCS5,
+ 	DESC_RATEVHT2SS_MCS6, DESC_RATEVHT2SS_MCS7,
+ 	DESC_RATEVHT2SS_MCS8, DESC_RATEVHT2SS_MCS9
+ };
+-u8 *rtw_rate_section[RTW_RATE_SECTION_MAX] = {
++
++const u8 * const rtw_rate_section[RTW_RATE_SECTION_MAX] = {
+ 	rtw_cck_rates, rtw_ofdm_rates,
+ 	rtw_ht_1s_rates, rtw_ht_2s_rates,
+ 	rtw_vht_1s_rates, rtw_vht_2s_rates
+ };
+ EXPORT_SYMBOL(rtw_rate_section);
+ 
+-u8 rtw_rate_size[RTW_RATE_SECTION_MAX] = {
++const u8 rtw_rate_size[RTW_RATE_SECTION_MAX] = {
+ 	ARRAY_SIZE(rtw_cck_rates),
+ 	ARRAY_SIZE(rtw_ofdm_rates),
+ 	ARRAY_SIZE(rtw_ht_1s_rates),
+@@ -2214,7 +2220,7 @@ static void rtw_phy_set_tx_power_index_b
+ {
+ 	struct rtw_hal *hal = &rtwdev->hal;
+ 	u8 regd = rtw_regd_get(rtwdev);
+-	u8 *rates;
++	const u8 *rates;
+ 	u8 size;
+ 	u8 rate;
+ 	u8 pwr_idx;
+@@ -2274,7 +2280,7 @@ EXPORT_SYMBOL(rtw_phy_set_tx_power_level
+ 
+ static void
+ rtw_phy_tx_power_by_rate_config_by_path(struct rtw_hal *hal, u8 path,
+-					u8 rs, u8 size, u8 *rates)
++					u8 rs, u8 size, const u8 *rates)
+ {
+ 	u8 rate;
+ 	u8 base_idx, rate_idx;
+--- a/drivers/net/wireless/realtek/rtw88/phy.h
++++ b/drivers/net/wireless/realtek/rtw88/phy.h
+@@ -7,14 +7,14 @@
+ 
+ #include "debug.h"
+ 
+-extern u8 rtw_cck_rates[];
+-extern u8 rtw_ofdm_rates[];
+-extern u8 rtw_ht_1s_rates[];
+-extern u8 rtw_ht_2s_rates[];
+-extern u8 rtw_vht_1s_rates[];
+-extern u8 rtw_vht_2s_rates[];
+-extern u8 *rtw_rate_section[];
+-extern u8 rtw_rate_size[];
++extern const u8 rtw_cck_rates[];
++extern const u8 rtw_ofdm_rates[];
++extern const u8 rtw_ht_1s_rates[];
++extern const u8 rtw_ht_2s_rates[];
++extern const u8 rtw_vht_1s_rates[];
++extern const u8 rtw_vht_2s_rates[];
++extern const u8 * const rtw_rate_section[];
++extern const u8 rtw_rate_size[];
+ 
+ void rtw_phy_init(struct rtw_dev *rtwdev);
+ void rtw_phy_dynamic_mechanism(struct rtw_dev *rtwdev);
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -1147,7 +1147,7 @@ static void rtw_sdio_declaim(struct rtw_
+ 	sdio_release_host(sdio_func);
+ }
+ 
+-static struct rtw_hci_ops rtw_sdio_ops = {
++static const struct rtw_hci_ops rtw_sdio_ops = {
+ 	.tx_write = rtw_sdio_tx_write,
+ 	.tx_kick_off = rtw_sdio_tx_kick_off,
+ 	.setup = rtw_sdio_setup,
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -844,7 +844,7 @@ static void rtw_usb_dynamic_rx_agg(struc
+ 	}
+ }
+ 
+-static struct rtw_hci_ops rtw_usb_ops = {
++static const struct rtw_hci_ops rtw_usb_ops = {
+ 	.tx_write = rtw_usb_tx_write,
+ 	.tx_kick_off = rtw_usb_tx_kick_off,
+ 	.setup = rtw_usb_setup,

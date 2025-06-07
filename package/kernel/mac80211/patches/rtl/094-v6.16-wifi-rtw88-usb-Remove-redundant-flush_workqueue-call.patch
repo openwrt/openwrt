@@ -1,0 +1,44 @@
+From 625fbc16524a45488f6eb8561d98b3328efe79cd Mon Sep 17 00:00:00 2001
+From: Chen Ni <nichen@iscas.ac.cn>
+Date: Mon, 24 Mar 2025 16:03:03 +0800
+Subject: [PATCH] wifi: rtw88: usb: Remove redundant 'flush_workqueue()' calls
+
+'destroy_workqueue()' already drains the queue before destroying it, so
+there is no need to flush it explicitly.
+
+Remove the redundant 'flush_workqueue()' calls.
+
+This was generated with coccinelle:
+
+@@
+expression E;
+@@
+
+- flush_workqueue(E);
+  destroy_workqueue(E);
+
+Signed-off-by: Chen Ni <nichen@iscas.ac.cn>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250324080303.408084-1-nichen@iscas.ac.cn
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -901,7 +901,6 @@ static void rtw_usb_deinit_rx(struct rtw
+ 
+ 	skb_queue_purge(&rtwusb->rx_queue);
+ 
+-	flush_workqueue(rtwusb->rxwq);
+ 	destroy_workqueue(rtwusb->rxwq);
+ }
+ 
+@@ -928,7 +927,6 @@ static void rtw_usb_deinit_tx(struct rtw
+ {
+ 	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
+ 
+-	flush_workqueue(rtwusb->txwq);
+ 	destroy_workqueue(rtwusb->txwq);
+ 	rtw_usb_tx_queue_purge(rtwusb);
+ }

@@ -1,0 +1,34 @@
+From d58ad77d5cc2a6d04db622a898e54d93fc7002a2 Mon Sep 17 00:00:00 2001
+From: Kees Cook <kees@kernel.org>
+Date: Mon, 10 Mar 2025 15:22:58 -0700
+Subject: [PATCH] wifi: rtw88: Add __nonstring annotations for unterminated
+ strings
+
+When a character array without a terminating NUL character has a static
+initializer, GCC 15's -Wunterminated-string-initialization will only
+warn if the array lacks the "nonstring" attribute[1]. Mark the arrays
+with __nonstring to and correctly identify the char array as "not a C
+string" and thereby eliminate the warning.
+
+Link: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=117178 [1]
+Cc: Ping-Ke Shih <pkshih@realtek.com>
+Cc: Johannes Berg <johannes@sipsolutions.net>
+Cc: linux-wireless@vger.kernel.org
+Signed-off-by: Kees Cook <kees@kernel.org>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250310222257.work.866-kees@kernel.org
+---
+ drivers/net/wireless/realtek/rtw88/main.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -835,7 +835,7 @@ struct rtw_vif {
+ };
+ 
+ struct rtw_regulatory {
+-	char alpha2[2];
++	char alpha2[2] __nonstring;
+ 	u8 txpwr_regd_2g;
+ 	u8 txpwr_regd_5g;
+ };
