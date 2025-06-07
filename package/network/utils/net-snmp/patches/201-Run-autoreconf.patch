@@ -1,0 +1,185 @@
+From 48b313ca34dbdf303fb232191d4f74e1d0fc9f06 Mon Sep 17 00:00:00 2001
+From: Bart Van Assche <bvanassche@acm.org>
+Date: Sun, 21 May 2023 16:20:15 -0700
+Subject: [PATCH] Run autoreconf
+
+---
+ configure                             | 126 ++++++++++++++++++++++++++
+ include/net-snmp/net-snmp-config.h.in |   3 +
+ 2 files changed, 129 insertions(+)
+
+--- a/configure
++++ b/configure
+@@ -928,6 +928,8 @@ with_dnssec
+ enable_dnssec
+ with_rpm
+ enable_rpm
++with_pcre2_8
++enable_pcre2_8
+ with_pcre
+ enable_pcre
+ with_install_prefix
+@@ -1851,6 +1853,8 @@ Compiler Options:
+   --without-rpm                   Don't include support for the RPM package
+                                   management system when building the host MIB
+                                   module.
++  --without-pcre2                  Don't include pcre2 process searching
++                                  support in the agent.
+   --without-pcre                  Don't include pcre process searching
+                                   support in the agent.
+   --with-install-prefix=PATH      Just for installing, prefix all
+@@ -5259,6 +5263,21 @@ fi
+ 
+ 
+ 
++# Check whether --with-pcre2-8 was given.
++if test ${with_pcre2_8+y}
++then :
++  withval=$with_pcre2_8; with_pcre2="$withval"
++else $as_nop
++  with_pcre2="maybe"
++fi
++
++   # Check whether --enable-pcre2-8 was given.
++if test ${enable_pcre2_8+y}
++then :
++  enableval=$enable_pcre2_8; as_fn_error $? "Invalid option. Use --with-pcre2-8/--without-pcre2-8 instead" "$LINENO" 5
++fi
++
++
+ 
+ # Check whether --with-pcre was given.
+ if test ${with_pcre+y}
+@@ -26477,6 +26496,112 @@ LIBS="$netsnmp_save_LIBS"
+ #
+ #   regex in process table
+ #
++if test "x$with_pcre2" != "xno"; then
++  ac_fn_c_check_header_compile "$LINENO" "pcre2.h" "ac_cv_header_pcre2_h" "#define PCRE2_CODE_UNIT_WIDTH 8
++
++"
++if test "x$ac_cv_header_pcre2_h" = xyes
++then :
++
++
++printf "%s\n" "#define HAVE_PCRE2_H 1" >>confdefs.h
++
++      pcre2_h=yes
++
++else $as_nop
++  pcre2_h=no
++fi
++
++fi
++if test "x$pcre2header_h" = "xno" -o "x$pcre2_h" = "xno" ; then
++  if test "x$with_pcre2" = "xyes" ; then
++    as_fn_error $? "Could not find the pcre2 header file needed and was specifically asked to use pcre2 support" "$LINENO" 5
++  else
++    with_pcre2=no
++  fi
++fi
++
++if test "x$with_pcre2" != "xno"; then
++
++ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing pcre2_match_8" >&5
++printf %s "checking for library containing pcre2_match_8... " >&6; }
++if test ${netsnmp_cv_func_pcre2_match_8_LAGENTLIBS+y}
++then :
++  printf %s "(cached) " >&6
++else $as_nop
++  netsnmp_func_search_save_LIBS="$LIBS"
++     netsnmp_target_val="$LAGENTLIBS"
++          netsnmp_temp_LIBS="${netsnmp_target_val}  ${LIBS}"
++     netsnmp_result=no
++     LIBS="${netsnmp_temp_LIBS}"
++     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++
++/* Override any GCC internal prototype to avoid an error.
++   Use char because int might match the return type of a GCC
++   builtin and then its argument prototype would still apply.  */
++char pcre2_match_8 ();
++int
++main (void)
++{
++return pcre2_match_8 ();
++  ;
++  return 0;
++}
++_ACEOF
++if ac_fn_c_try_link "$LINENO"
++then :
++  netsnmp_result="none required"
++else $as_nop
++  for netsnmp_cur_lib in pcre2-8 ; do
++              LIBS="-l${netsnmp_cur_lib} ${netsnmp_temp_LIBS}"
++              cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++
++/* Override any GCC internal prototype to avoid an error.
++   Use char because int might match the return type of a GCC
++   builtin and then its argument prototype would still apply.  */
++char pcre2_match_8 ();
++int
++main (void)
++{
++return pcre2_match_8 ();
++  ;
++  return 0;
++}
++_ACEOF
++if ac_fn_c_try_link "$LINENO"
++then :
++  netsnmp_result=-l${netsnmp_cur_lib}
++                   break
++fi
++rm -f core conftest.err conftest.$ac_objext conftest.beam \
++    conftest$ac_exeext conftest.$ac_ext
++          done
++fi
++rm -f core conftest.err conftest.$ac_objext conftest.beam \
++    conftest$ac_exeext conftest.$ac_ext
++     LIBS="${netsnmp_func_search_save_LIBS}"
++     netsnmp_cv_func_pcre2_match_8_LAGENTLIBS="${netsnmp_result}"
++fi
++{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $netsnmp_cv_func_pcre2_match_8_LAGENTLIBS" >&5
++printf "%s\n" "$netsnmp_cv_func_pcre2_match_8_LAGENTLIBS" >&6; }
++ if test "${netsnmp_cv_func_pcre2_match_8_LAGENTLIBS}" != "no" ; then
++    if test "${netsnmp_cv_func_pcre2_match_8_LAGENTLIBS}" != "none required" ; then
++       LAGENTLIBS="${netsnmp_result} ${netsnmp_target_val}"
++    fi
++
++    LMIBLIBS="$LMIBLIBS -lpcre2-8"
++
++
++ fi
++
++
++
++fi
++
++if test "x$with_pcre2" != "xyes"; then
++
+ if test "x$with_pcre" != "xno"; then
+   ac_fn_c_check_header_compile "$LINENO" "pcre.h" "ac_cv_header_pcre_h" "$ac_includes_default"
+ if test "x$ac_cv_header_pcre_h" = xyes
+@@ -31486,6 +31611,7 @@ printf "%s\n" "#define pid_t $ac_pid_typ
+ 
+ 
+ fi
++fi
+ 
+ 
+ 
+--- a/include/net-snmp/net-snmp-config.h.in
++++ b/include/net-snmp/net-snmp-config.h.in
+@@ -727,6 +727,9 @@
+ /* Define to 1 if you have the <pci/pci.h> header file. */
+ #undef HAVE_PCI_PCI_H
+ 
++/* Define to 1 if you have <pcre2.h>. */
++#undef HAVE_PCRE2_H
++
+ /* Define to 1 if you have <pcre.h>. */
+ #undef HAVE_PCRE_H
+ 
