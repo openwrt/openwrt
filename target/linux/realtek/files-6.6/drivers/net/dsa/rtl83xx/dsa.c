@@ -458,6 +458,11 @@ static int rtl93xx_pcs_validate(struct phylink_pcs *pcs,
 		phylink_set(mask, 10000baseKR_Full);
 		phylink_set(mask, 10000baseSR_Full);
 		phylink_set(mask, 10000baseCR_Full);
+
+		phylink_set(mask, 10000baseLR_Full);
+		phylink_set(mask, 10000baseLRM_Full);
+		phylink_set(mask, 10000baseER_Full);
+
 	}
 	if (state->interface == PHY_INTERFACE_MODE_INTERNAL) {
 		phylink_set(mask, 1000baseX_Full);
@@ -695,6 +700,25 @@ static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
+}
+
+static void rtl93xx_phylink_get_caps(struct dsa_switch *ds, int port,
+				     struct phylink_config *config)
+{
+/*
+ * This capability check will need some love. Depending on the model and the port
+ * different link modes are supported. For now just enable all required values
+ * so that we can make use of the ports.
+ */
+	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_HSGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
 
@@ -2278,7 +2302,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.phy_read		= rtl83xx_dsa_phy_read,
 	.phy_write		= rtl83xx_dsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtl93xx_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
