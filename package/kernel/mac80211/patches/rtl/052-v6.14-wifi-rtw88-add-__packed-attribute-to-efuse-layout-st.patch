@@ -1,0 +1,195 @@
+From 0daa521a1c8c29ffbefe6530f0d276e74e2749d0 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Thu, 12 Dec 2024 13:42:03 +0800
+Subject: [PATCH] wifi: rtw88: add __packed attribute to efuse layout struct
+
+The layout struct of efuse should not do address alignment by compiler.
+Otherwise it leads unexpected layout and size for certain arch suc as arm.
+In x86-64, the results are identical before and after this patch.
+
+Also adjust bit-field to prevent over adjacent byte to avoid warning:
+  rtw88/rtw8822b.h:66:1: note: offset of packed bit-field `res2` has changed in GCC 4.4
+   66 | } __packed;
+      | ^
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202412120131.qk0x6OhE-lkp@intel.com/
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20241212054203.135046-1-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h     | 4 ++--
+ drivers/net/wireless/realtek/rtw88/rtw8723x.h | 8 ++++----
+ drivers/net/wireless/realtek/rtw88/rtw8821c.h | 9 +++++----
+ drivers/net/wireless/realtek/rtw88/rtw8822b.h | 9 +++++----
+ drivers/net/wireless/realtek/rtw88/rtw8822c.h | 9 +++++----
+ 5 files changed, 21 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -510,12 +510,12 @@ struct rtw_5g_txpwr_idx {
+ 	struct rtw_5g_vht_ns_pwr_idx_diff vht_2s_diff;
+ 	struct rtw_5g_vht_ns_pwr_idx_diff vht_3s_diff;
+ 	struct rtw_5g_vht_ns_pwr_idx_diff vht_4s_diff;
+-};
++} __packed;
+ 
+ struct rtw_txpwr_idx {
+ 	struct rtw_2g_txpwr_idx pwr_idx_2g;
+ 	struct rtw_5g_txpwr_idx pwr_idx_5g;
+-};
++} __packed;
+ 
+ struct rtw_channel_params {
+ 	u8 center_chan;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723x.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723x.h
+@@ -47,7 +47,7 @@ struct rtw8723xe_efuse {
+ 	u8 device_id[2];
+ 	u8 sub_vendor_id[2];
+ 	u8 sub_device_id[2];
+-};
++} __packed;
+ 
+ struct rtw8723xu_efuse {
+ 	u8 res4[48];                    /* 0xd0 */
+@@ -56,12 +56,12 @@ struct rtw8723xu_efuse {
+ 	u8 usb_option;                  /* 0x104 */
+ 	u8 res5[2];			/* 0x105 */
+ 	u8 mac_addr[ETH_ALEN];          /* 0x107 */
+-};
++} __packed;
+ 
+ struct rtw8723xs_efuse {
+ 	u8 res4[0x4a];			/* 0xd0 */
+ 	u8 mac_addr[ETH_ALEN];		/* 0x11a */
+-};
++} __packed;
+ 
+ struct rtw8723x_efuse {
+ 	__le16 rtl_id;
+@@ -96,7 +96,7 @@ struct rtw8723x_efuse {
+ 		struct rtw8723xu_efuse u;
+ 		struct rtw8723xs_efuse s;
+ 	};
+-};
++} __packed;
+ 
+ #define RTW8723X_IQK_ADDA_REG_NUM	16
+ #define RTW8723X_IQK_MAC8_REG_NUM	3
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.h
+@@ -27,7 +27,7 @@ struct rtw8821cu_efuse {
+ 	u8 res11[0xcf];
+ 	u8 package_type;		/* 0x1fb */
+ 	u8 res12[0x4];
+-};
++} __packed;
+ 
+ struct rtw8821ce_efuse {
+ 	u8 mac_addr[ETH_ALEN];		/* 0xd0 */
+@@ -47,7 +47,8 @@ struct rtw8821ce_efuse {
+ 	u8 ltr_en:1;
+ 	u8 res1:2;
+ 	u8 obff:2;
+-	u8 res2:3;
++	u8 res2_1:1;
++	u8 res2_2:2;
+ 	u8 obff_cap:2;
+ 	u8 res3:4;
+ 	u8 res4[3];
+@@ -63,7 +64,7 @@ struct rtw8821ce_efuse {
+ 	u8 res6:1;
+ 	u8 port_t_power_on_value:5;
+ 	u8 res7;
+-};
++} __packed;
+ 
+ struct rtw8821cs_efuse {
+ 	u8 res4[0x4a];			/* 0xd0 */
+@@ -101,7 +102,7 @@ struct rtw8821c_efuse {
+ 		struct rtw8821cu_efuse u;
+ 		struct rtw8821cs_efuse s;
+ 	};
+-};
++} __packed;
+ 
+ static inline void
+ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.h
+@@ -27,7 +27,7 @@ struct rtw8822bu_efuse {
+ 	u8 res11[0xcf];
+ 	u8 package_type;		/* 0x1fb */
+ 	u8 res12[0x4];
+-};
++} __packed;
+ 
+ struct rtw8822be_efuse {
+ 	u8 mac_addr[ETH_ALEN];		/* 0xd0 */
+@@ -47,7 +47,8 @@ struct rtw8822be_efuse {
+ 	u8 ltr_en:1;
+ 	u8 res1:2;
+ 	u8 obff:2;
+-	u8 res2:3;
++	u8 res2_1:1;
++	u8 res2_2:2;
+ 	u8 obff_cap:2;
+ 	u8 res3:4;
+ 	u8 res4[3];
+@@ -63,7 +64,7 @@ struct rtw8822be_efuse {
+ 	u8 res6:1;
+ 	u8 port_t_power_on_value:5;
+ 	u8 res7;
+-};
++} __packed;
+ 
+ struct rtw8822bs_efuse {
+ 	u8 res4[0x4a];			/* 0xd0 */
+@@ -103,7 +104,7 @@ struct rtw8822b_efuse {
+ 		struct rtw8822bu_efuse u;
+ 		struct rtw8822bs_efuse s;
+ 	};
+-};
++} __packed;
+ 
+ static inline void
+ _rtw_write32s_mask(struct rtw_dev *rtwdev, u32 addr, u32 mask, u32 data)
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.h
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.h
+@@ -14,7 +14,7 @@ struct rtw8822cu_efuse {
+ 	u8 res1[3];
+ 	u8 mac_addr[ETH_ALEN];		/* 0x157 */
+ 	u8 res2[0x3d];
+-};
++} __packed;
+ 
+ struct rtw8822cs_efuse {
+ 	u8 res0[0x4a];			/* 0x120 */
+@@ -39,7 +39,8 @@ struct rtw8822ce_efuse {
+ 	u8 ltr_en:1;
+ 	u8 res1:2;
+ 	u8 obff:2;
+-	u8 res2:3;
++	u8 res2_1:1;
++	u8 res2_2:2;
+ 	u8 obff_cap:2;
+ 	u8 res3:4;
+ 	u8 class_code[3];
+@@ -55,7 +56,7 @@ struct rtw8822ce_efuse {
+ 	u8 res6:1;
+ 	u8 port_t_power_on_value:5;
+ 	u8 res7;
+-};
++} __packed;
+ 
+ struct rtw8822c_efuse {
+ 	__le16 rtl_id;
+@@ -102,7 +103,7 @@ struct rtw8822c_efuse {
+ 		struct rtw8822cu_efuse u;
+ 		struct rtw8822cs_efuse s;
+ 	};
+-};
++} __packed;
+ 
+ enum rtw8822c_dpk_agc_phase {
+ 	RTW_DPK_GAIN_CHECK,

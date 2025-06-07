@@ -1,0 +1,28 @@
+From dcbb7bb3a364f218411761e2e5ee2f6818d9bdfc Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 2 Apr 2025 18:30:28 +0300
+Subject: [PATCH] wifi: rtw88: usb: Enable RX aggregation for RTL8814AU
+
+Let the chip transfer several frames in a single USB Request Block.
+This is supposed to improve the RX speed.
+
+It can use the same code used for RTL8822CU, RTL8822BU, and RTL8821CU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/672397ac-dd4d-4420-8b3e-7011578e2243@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -829,6 +829,7 @@ static void rtw_usb_dynamic_rx_agg(struc
+ 	case RTW_CHIP_TYPE_8822C:
+ 	case RTW_CHIP_TYPE_8822B:
+ 	case RTW_CHIP_TYPE_8821C:
++	case RTW_CHIP_TYPE_8814A:
+ 		rtw_usb_dynamic_rx_agg_v1(rtwdev, enable);
+ 		break;
+ 	case RTW_CHIP_TYPE_8821A:
