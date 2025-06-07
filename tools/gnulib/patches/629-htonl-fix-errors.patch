@@ -1,0 +1,213 @@
+From c6ced39e85125619e3b91fb51c63e9c3ffe0d34b Mon Sep 17 00:00:00 2001
+From: Collin Funk <collin.funk1@gmail.com>
+Date: Sun, 11 Aug 2024 13:53:48 -0700
+Subject: [PATCH] htonl: Fix link errors on Windows.
+
+Reported by Bruno Haible in:
+<https://lists.gnu.org/archive/html/bug-gnulib/2024-08/msg00066.html>.
+
+* lib/arpa_inet.in.h (htons, htonl, ntohs, ntohl): Only define when not
+declared by the system.
+* m4/arpa_inet_h.m4 (gl_ARPA_INET_H_DEFAULTS): Set default behavior for
+htonl functions.
+* m4/htonl.m4 (gl_FUNC_HTONL): Check if -lws2_32 is required. Only check
+for declarations on POSIX systems.
+* modules/arpa_inet (Makefile.am): Substitute new Makefile variables.
+* modules/htonl (Files): Add m4/sys_socket_h.m4.
+(Depends-on): Remove endian condition.
+(Link): Add $(HOTNL_LIB).
+* modules/htonl-tests: Link to @HTONL_LIB@.
+---
+ ChangeLog           | 17 +++++++++++++++++
+ lib/arpa_inet.in.h  | 25 +++++++++----------------
+ m4/arpa_inet_h.m4   |  7 +++++--
+ m4/htonl.m4         | 39 +++++++++++----------------------------
+ modules/arpa_inet   |  5 ++++-
+ modules/htonl       |  4 +++-
+ modules/htonl-tests |  1 +
+ 7 files changed, 50 insertions(+), 48 deletions(-)
+
+--- a/lib/arpa_inet.in.h
++++ b/lib/arpa_inet.in.h
+@@ -60,7 +60,7 @@
+ # include <ws2tcpip.h>
+ #endif
+ 
+-#if @REPLACE_HTONL@
++#if !(@HAVE_DECL_HTONL@ || @HAVE_DECL_HTONS@ || @HAVE_DECL_NTOHL@ || @HAVE_DECL_NTOHS@)
+ # include <endian.h>
+ #endif
+ 
+@@ -70,50 +70,43 @@ _GL_INLINE_HEADER_BEGIN
+ #endif
+ 
+ 
+-#if @REPLACE_HTONL@
+-
+-/* Make sure we don't have any system definitions.  */
+-# undef htons
+-# undef htonl
+-# undef ntohs
+-# undef ntohl
+-
+-/* Define our own.  */
+-# define htons rpl_htons
+-# define htonl rpl_htonl
+-# define ntohs rpl_ntohs
+-# define ntohl rpl_ntohl
+-
+ /* Host to network byte order. */
+ 
++#if !@HAVE_DECL_HTONS@
+ _GL_ARPA_INET_INLINE uint16_t
+ htons (uint16_t value)
+ {
+   return htobe16 (value);
+ }
++#endif
+ 
++#if !@HAVE_DECL_HTONL@
+ _GL_ARPA_INET_INLINE uint32_t
+ htonl (uint32_t value)
+ {
+   return htobe32 (value);
+ }
++#endif
+ 
+ /* Network to host byte order.  */
+ 
++#if !@HAVE_DECL_NTOHS@
+ _GL_ARPA_INET_INLINE uint16_t
+ ntohs (uint16_t value)
+ {
+   return htobe16 (value);
+ }
++#endif
+ 
++#if !@HAVE_DECL_NTOHL@
+ _GL_ARPA_INET_INLINE uint32_t
+ ntohl (uint32_t value)
+ {
+   return htobe32 (value);
+ }
+-
+ #endif
+ 
++
+ /* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
+ 
+ /* The definition of _GL_ARG_NONNULL is copied here.  */
+--- a/m4/arpa_inet_h.m4
++++ b/m4/arpa_inet_h.m4
+@@ -1,5 +1,5 @@
+ # arpa_inet_h.m4
+-# serial 17
++# serial 18
+ dnl Copyright (C) 2006, 2008-2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -68,9 +68,12 @@ AC_DEFUN([gl_ARPA_INET_H_REQUIRE_DEFAULT
+ AC_DEFUN([gl_ARPA_INET_H_DEFAULTS],
+ [
+   dnl Assume proper GNU behavior unless another module says otherwise.
++  HAVE_DECL_HTONL=1;      AC_SUBST([HAVE_DECL_HTONL])
++  HAVE_DECL_HTONS=1;      AC_SUBST([HAVE_DECL_HTONS])
+   HAVE_DECL_INET_NTOP=1;  AC_SUBST([HAVE_DECL_INET_NTOP])
+   HAVE_DECL_INET_PTON=1;  AC_SUBST([HAVE_DECL_INET_PTON])
+-  REPLACE_HTONL=0;        AC_SUBST([REPLACE_HTONL])
++  HAVE_DECL_NTOHL=1;      AC_SUBST([HAVE_DECL_NTOHL])
++  HAVE_DECL_NTOHS=1;      AC_SUBST([HAVE_DECL_NTOHS])
+   REPLACE_INET_NTOP=0;    AC_SUBST([REPLACE_INET_NTOP])
+   REPLACE_INET_PTON=0;    AC_SUBST([REPLACE_INET_PTON])
+ ])
+--- a/m4/htonl.m4
++++ b/m4/htonl.m4
+@@ -1,5 +1,5 @@
+ # htonl.m4
+-# serial 1
++# serial 2
+ dnl Copyright (C) 2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -11,32 +11,15 @@ AC_DEFUN([gl_FUNC_HTONL],
+ [
+   AC_REQUIRE([gl_ARPA_INET_H_DEFAULTS])
+ 
+-  if test $ac_cv_header_arpa_inet_h = yes; then
+-    AC_CACHE_CHECK([if arpa/inet.h defines htonl, htons, ntohl, ntohs],
+-      [gl_cv_func_htonl_working],
+-      [gl_cv_func_htonl_working=no
+-       AC_COMPILE_IFELSE(
+-         [AC_LANG_PROGRAM(
+-[[
+-#include <arpa/inet.h>
+-]],
+-[[
+-/* Host to network.  */
+-int network_1 = htons (0.0);
+-int network_2 = htonl (0.0);
+-
+-/* Network to host.  */
+-int host_1 = ntohs (0.0);
+-int host_2 = ntohl (0.0);
+-
+-/* Make sure the variables get used.  */
+-return !(network_1 + network_2 + host_1 + host_2);
+-]])],
+-         [gl_cv_func_htonl_working=yes],
+-         [gl_cv_func_htonl_working=no])
+-      ])
+-    if test $gl_cv_func_htonl_working = no; then
+-      REPLACE_HTONL=1
+-    fi
++  dnl On Windows htonl and friends require -lws2_32 and inclusion of
++  dnl winsock2.h.
++  HTONL_LIB=
++  gl_PREREQ_SYS_H_WINSOCK2
++  if test $HAVE_WINSOCK2_H = 1; then
++    HTONL_LIB="-lws2_32"
++  elif test $ac_cv_header_arpa_inet_h = yes; then
++    AC_CHECK_DECLS([htons, htonl, ntohs, ntohl],,, [[#include <arpa/inet.h>]])
+   fi
++
++  AC_SUBST([HTONL_LIB])
+ ])
+--- a/modules/arpa_inet
++++ b/modules/arpa_inet
+@@ -41,9 +41,12 @@ arpa/inet.h: arpa_inet.in.h $(top_buildd
+ 	      -e 's/@''GNULIB_INET_NTOP''@/$(GNULIB_INET_NTOP)/g' \
+ 	      -e 's/@''GNULIB_INET_PTON''@/$(GNULIB_INET_PTON)/g' \
+ 	      -e 's|@''HAVE_WS2TCPIP_H''@|$(HAVE_WS2TCPIP_H)|g' \
++	      -e 's|@''HAVE_DECL_HTONL''@|$(HAVE_DECL_HTONL)|g' \
++	      -e 's|@''HAVE_DECL_HTONS''@|$(HAVE_DECL_HTONS)|g' \
+ 	      -e 's|@''HAVE_DECL_INET_NTOP''@|$(HAVE_DECL_INET_NTOP)|g' \
+ 	      -e 's|@''HAVE_DECL_INET_PTON''@|$(HAVE_DECL_INET_PTON)|g' \
+-	      -e 's|@''REPLACE_HTONL''@|$(REPLACE_HTONL)|g' \
++	      -e 's|@''HAVE_DECL_NTOHL''@|$(HAVE_DECL_NTOHL)|g' \
++	      -e 's|@''HAVE_DECL_NTOHS''@|$(HAVE_DECL_NTOHS)|g' \
+ 	      -e 's|@''REPLACE_INET_NTOP''@|$(REPLACE_INET_NTOP)|g' \
+ 	      -e 's|@''REPLACE_INET_PTON''@|$(REPLACE_INET_PTON)|g' \
+ 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+--- a/modules/htonl
++++ b/modules/htonl
+@@ -4,10 +4,11 @@ byte order
+ 
+ Files:
+ m4/htonl.m4
++m4/sys_socket_h.m4
+ 
+ Depends-on:
+ arpa_inet
+-endian                  [test $REPLACE_HTONL = 1]
++endian
+ 
+ configure.ac:
+ gl_FUNC_HTONL
+@@ -18,6 +19,7 @@ Include:
+ <arpa/inet.h>
+ 
+ Link:
++$(HTONL_LIB)
+ 
+ License:
+ LGPLv2+

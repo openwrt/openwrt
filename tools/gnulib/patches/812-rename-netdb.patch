@@ -1,0 +1,195 @@
+From bda7947ecc576646e03d95a42d1cba2c58f721a7 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:29 +0100
+Subject: [PATCH] Rename module netdb to netdb-h.
+
+* modules/netdb-h: Renamed from modules/netdb.
+* modules/netdb-h-tests: Renamed from modules/netdb-tests.
+* modules/netdb-h-c++-tests: Renamed from modules/netdb-c++-tests.
+* tests/test-netdb-h.c: Renamed from tests/test-netdb.c.
+* tests/test-netdb-h-c++.cc: Renamed from tests/test-netdb-c++.cc.
+* doc/posix-headers/netdb.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/netdb: New file.
+---
+ ChangeLog                                     | 12 ++++
+ doc/posix-headers/netdb.texi                  |  4 +-
+ modules/getaddrinfo                           |  2 +-
+ modules/getdomainname                         |  2 +-
+ modules/netdb                                 | 46 +++------------
+ modules/netdb-c++-tests                       | 19 -------
+ modules/netdb-h                               | 57 +++++++++++++++++++
+ modules/netdb-h-c++-tests                     | 19 +++++++
+ modules/netdb-h-tests                         | 12 ++++
+ modules/netdb-tests                           | 12 ----
+ modules/posixcheck                            |  2 +-
+ ...{test-netdb-c++.cc => test-netdb-h-c++.cc} |  0
+ tests/{test-netdb.c => test-netdb-h.c}        |  0
+ 13 files changed, 112 insertions(+), 75 deletions(-)
+ delete mode 100644 modules/netdb-c++-tests
+ create mode 100644 modules/netdb-h
+ create mode 100644 modules/netdb-h-c++-tests
+ create mode 100644 modules/netdb-h-tests
+ delete mode 100644 modules/netdb-tests
+ rename tests/{test-netdb-c++.cc => test-netdb-h-c++.cc} (100%)
+ rename tests/{test-netdb.c => test-netdb-h.c} (100%)
+
+--- a/modules/getaddrinfo
++++ b/modules/getaddrinfo
+@@ -7,7 +7,7 @@ lib/gai_strerror.c
+ m4/getaddrinfo.m4
+ 
+ Depends-on:
+-netdb
++netdb-h
+ sys_socket
+ extensions
+ gettext-h       [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1 || test $HAVE_DECL_GAI_STRERROR = 0 || test $REPLACE_GAI_STRERROR = 1]
+--- a/modules/getdomainname
++++ b/modules/getdomainname
+@@ -8,7 +8,7 @@ m4/getdomainname.m4
+ Depends-on:
+ unistd
+ extensions
+-netdb           [test $HAVE_DECL_GETDOMAINNAME = 0 || test $REPLACE_GETDOMAINNAME = 1]
++netdb-h         [test $HAVE_DECL_GETDOMAINNAME = 0 || test $REPLACE_GETDOMAINNAME = 1]
+ sys_socket      [test $HAVE_DECL_GETDOMAINNAME = 0 || test $REPLACE_GETDOMAINNAME = 1]
+ 
+ configure.ac:
+--- a/modules/netdb
++++ b/modules/netdb
+@@ -1,51 +1,20 @@
+ Description:
+ A <netdb.h> for systems lacking it.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'netdb-h' instead.
++
+ Files:
+-lib/netdb.in.h
+-m4/netdb_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-sys_socket
++netdb-h
+ 
+ configure.ac:
+-gl_NETDB_H
+-gl_NETDB_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += netdb.h
+-
+-# We need the following in order to create <netdb.h> when the system
+-# doesn't have one that works with the given compiler.
+-netdb.h: netdb.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_NETDB_H''@|$(NEXT_NETDB_H)|g' \
+-	      -e 's|@''HAVE_NETDB_H''@|$(HAVE_NETDB_H)|g' \
+-	      -e 's/@''GNULIB_GETADDRINFO''@/$(GNULIB_GETADDRINFO)/g' \
+-	      -e 's|@''HAVE_STRUCT_ADDRINFO''@|$(HAVE_STRUCT_ADDRINFO)|g' \
+-	      -e 's|@''HAVE_DECL_FREEADDRINFO''@|$(HAVE_DECL_FREEADDRINFO)|g' \
+-	      -e 's|@''HAVE_DECL_GAI_STRERROR''@|$(HAVE_DECL_GAI_STRERROR)|g' \
+-	      -e 's|@''HAVE_DECL_GETADDRINFO''@|$(HAVE_DECL_GETADDRINFO)|g' \
+-	      -e 's|@''HAVE_DECL_GETNAMEINFO''@|$(HAVE_DECL_GETNAMEINFO)|g' \
+-	      -e 's|@''REPLACE_GAI_STRERROR''@|$(REPLACE_GAI_STRERROR)|g' \
+-	      -e 's|@''REPLACE_GETADDRINFO''@|$(REPLACE_GETADDRINFO)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/netdb.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += netdb.h netdb.h-t
+ 
+ Include:
+ <netdb.h>
+@@ -54,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Simon Josefsson
+--- /dev/null
++++ b/modules/netdb-h
+@@ -0,0 +1,57 @@
++Description:
++A <netdb.h> for systems lacking it.
++
++Files:
++lib/netdb.in.h
++m4/netdb_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++sys_socket
++
++configure.ac:
++gl_NETDB_H
++gl_NETDB_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += netdb.h
++
++# We need the following in order to create <netdb.h> when the system
++# doesn't have one that works with the given compiler.
++netdb.h: netdb.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_NETDB_H''@|$(NEXT_NETDB_H)|g' \
++	      -e 's|@''HAVE_NETDB_H''@|$(HAVE_NETDB_H)|g' \
++	      -e 's/@''GNULIB_GETADDRINFO''@/$(GNULIB_GETADDRINFO)/g' \
++	      -e 's|@''HAVE_STRUCT_ADDRINFO''@|$(HAVE_STRUCT_ADDRINFO)|g' \
++	      -e 's|@''HAVE_DECL_FREEADDRINFO''@|$(HAVE_DECL_FREEADDRINFO)|g' \
++	      -e 's|@''HAVE_DECL_GAI_STRERROR''@|$(HAVE_DECL_GAI_STRERROR)|g' \
++	      -e 's|@''HAVE_DECL_GETADDRINFO''@|$(HAVE_DECL_GETADDRINFO)|g' \
++	      -e 's|@''HAVE_DECL_GETNAMEINFO''@|$(HAVE_DECL_GETNAMEINFO)|g' \
++	      -e 's|@''REPLACE_GAI_STRERROR''@|$(REPLACE_GAI_STRERROR)|g' \
++	      -e 's|@''REPLACE_GETADDRINFO''@|$(REPLACE_GETADDRINFO)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/netdb.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += netdb.h netdb.h-t
++
++Include:
++<netdb.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Simon Josefsson
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -20,7 +20,7 @@ locale-h
+ malloc-h
+ math-h
+ monetary-h
+-netdb
++netdb-h
+ poll-h
+ pthread-h
+ pty

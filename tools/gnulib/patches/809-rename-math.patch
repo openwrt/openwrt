@@ -1,0 +1,2233 @@
+From d171b9454f6773055300076f22f5d1fc6a13c8f1 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:22 +0100
+Subject: [PATCH] Rename module math to math-h.
+
+* modules/math-h: Renamed from modules/math.
+* modules/math-h-tests: Renamed from modules/math-tests.
+* modules/math-h-c++-tests: Renamed from modules/math-c++-tests.
+* tests/test-math-h.c: Renamed from tests/test-math.c.
+* tests/test-math-h-c++.cc: Renamed from tests/test-math-c++.cc.
+* tests/test-math-h-c++2.cc: Renamed from tests/test-math-c++2.cc.
+* doc/posix-headers/math.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/math: New file.
+---
+ ChangeLog                                     |  13 +
+ doc/posix-headers/math.texi                   |   4 +-
+ modules/acosf                                 |   2 +-
+ modules/acosl                                 |   2 +-
+ modules/asinf                                 |   2 +-
+ modules/asinl                                 |   2 +-
+ modules/atan2f                                |   2 +-
+ modules/atanf                                 |   2 +-
+ modules/atanl                                 |   2 +-
+ modules/cbrt                                  |   2 +-
+ modules/cbrtf                                 |   2 +-
+ modules/cbrtl                                 |   2 +-
+ modules/ceil                                  |   2 +-
+ modules/ceilf                                 |   2 +-
+ modules/ceill                                 |   2 +-
+ modules/copysign                              |   2 +-
+ modules/copysignf                             |   2 +-
+ modules/copysignl                             |   2 +-
+ modules/cosf                                  |   2 +-
+ modules/coshf                                 |   2 +-
+ modules/cosl                                  |   2 +-
+ modules/exp2                                  |   2 +-
+ modules/exp2f                                 |   2 +-
+ modules/exp2l                                 |   2 +-
+ modules/expf                                  |   2 +-
+ modules/expl                                  |   2 +-
+ modules/expm1                                 |   2 +-
+ modules/expm1f                                |   2 +-
+ modules/expm1l                                |   2 +-
+ modules/fabsf                                 |   2 +-
+ modules/fabsl                                 |   2 +-
+ modules/floor                                 |   2 +-
+ modules/floorf                                |   2 +-
+ modules/floorl                                |   2 +-
+ modules/fma                                   |   2 +-
+ modules/fmaf                                  |   2 +-
+ modules/fmal                                  |   2 +-
+ modules/fmod                                  |   2 +-
+ modules/fmodf                                 |   2 +-
+ modules/fmodl                                 |   2 +-
+ modules/frexp                                 |   2 +-
+ modules/frexp-nolibm                          |   2 +-
+ modules/frexpf                                |   2 +-
+ modules/frexpl                                |   2 +-
+ modules/frexpl-nolibm                         |   2 +-
+ modules/getpayload                            |   2 +-
+ modules/getpayloadf                           |   2 +-
+ modules/getpayloadl                           |   2 +-
+ modules/hypot                                 |   2 +-
+ modules/hypotf                                |   2 +-
+ modules/hypotl                                |   2 +-
+ modules/ilogb                                 |   2 +-
+ modules/ilogbf                                |   2 +-
+ modules/ilogbl                                |   2 +-
+ modules/isfinite                              |   2 +-
+ modules/isinf                                 |   2 +-
+ modules/isnan                                 |   2 +-
+ modules/isnand                                |   2 +-
+ modules/isnanf                                |   2 +-
+ modules/isnanl                                |   2 +-
+ modules/ldexp                                 |   2 +-
+ modules/ldexpf                                |   2 +-
+ modules/ldexpl                                |   2 +-
+ modules/log                                   |   2 +-
+ modules/log10                                 |   2 +-
+ modules/log10f                                |   2 +-
+ modules/log10l                                |   2 +-
+ modules/log1p                                 |   2 +-
+ modules/log1pf                                |   2 +-
+ modules/log1pl                                |   2 +-
+ modules/log2                                  |   2 +-
+ modules/log2f                                 |   2 +-
+ modules/log2l                                 |   2 +-
+ modules/logb                                  |   2 +-
+ modules/logbf                                 |   2 +-
+ modules/logbl                                 |   2 +-
+ modules/logf                                  |   2 +-
+ modules/logl                                  |   2 +-
+ modules/logp1                                 |   2 +-
+ modules/logp1f                                |   2 +-
+ modules/logp1l                                |   2 +-
+ modules/math                                  | 375 +----------------
+ modules/math-c++-tests                        |  21 -
+ modules/math-h                                | 386 ++++++++++++++++++
+ modules/math-h-c++-tests                      |  21 +
+ modules/math-h-tests                          |  12 +
+ modules/math-tests                            |  12 -
+ modules/modf                                  |   2 +-
+ modules/modff                                 |   2 +-
+ modules/modfl                                 |   2 +-
+ modules/posixcheck                            |   2 +-
+ modules/powf                                  |   2 +-
+ modules/printf-frexpl                         |   2 +-
+ modules/remainder                             |   2 +-
+ modules/remainderf                            |   2 +-
+ modules/remainderl                            |   2 +-
+ modules/rint                                  |   2 +-
+ modules/rintf                                 |   2 +-
+ modules/rintl                                 |   2 +-
+ modules/round                                 |   2 +-
+ modules/roundf                                |   2 +-
+ modules/roundl                                |   2 +-
+ modules/setpayload                            |   2 +-
+ modules/setpayloadf                           |   2 +-
+ modules/setpayloadl                           |   2 +-
+ modules/setpayloadsig                         |   2 +-
+ modules/setpayloadsigf                        |   2 +-
+ modules/setpayloadsigl                        |   2 +-
+ modules/signbit                               |   2 +-
+ modules/sinf                                  |   2 +-
+ modules/sinhf                                 |   2 +-
+ modules/sinl                                  |   2 +-
+ modules/sqrtf                                 |   2 +-
+ modules/sqrtl                                 |   2 +-
+ modules/strtod                                |   2 +-
+ modules/strtof                                |   2 +-
+ modules/strtold                               |   2 +-
+ modules/tanf                                  |   2 +-
+ modules/tanhf                                 |   2 +-
+ modules/tanl                                  |   2 +-
+ modules/totalorder                            |   2 +-
+ modules/totalorderf                           |   2 +-
+ modules/totalorderl                           |   2 +-
+ modules/totalordermag                         |   2 +-
+ modules/totalordermagf                        |   2 +-
+ modules/totalordermagl                        |   2 +-
+ modules/trunc                                 |   2 +-
+ modules/truncf                                |   2 +-
+ modules/truncl                                |   2 +-
+ .../{test-math-c++.cc => test-math-h-c++.cc}  |   0
+ ...{test-math-c++2.cc => test-math-h-c++2.cc} |   0
+ tests/{test-math.c => test-math-h.c}          |   0
+ 132 files changed, 562 insertions(+), 524 deletions(-)
+ delete mode 100644 modules/math-c++-tests
+ create mode 100644 modules/math-h
+ create mode 100644 modules/math-h-c++-tests
+ create mode 100644 modules/math-h-tests
+ delete mode 100644 modules/math-tests
+ rename tests/{test-math-c++.cc => test-math-h-c++.cc} (100%)
+ rename tests/{test-math-c++2.cc => test-math-h-c++2.cc} (100%)
+ rename tests/{test-math.c => test-math-h.c} (100%)
+
+--- a/modules/acosf
++++ b/modules/acosf
+@@ -6,7 +6,7 @@ lib/acosf.c
+ m4/acosf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ acos            [test $HAVE_ACOSF = 0]
+ 
+--- a/modules/acosl
++++ b/modules/acosl
+@@ -6,7 +6,7 @@ lib/acosl.c
+ m4/acosl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ acos            [test $HAVE_ACOSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ asinl           [test $HAVE_ACOSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/asinf
++++ b/modules/asinf
+@@ -6,7 +6,7 @@ lib/asinf.c
+ m4/asinf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ asin            [test $HAVE_ASINF = 0]
+ 
+--- a/modules/asinl
++++ b/modules/asinl
+@@ -6,7 +6,7 @@ lib/asinl.c
+ m4/asinl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ asin            [test $HAVE_ASINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ sqrtl           [test $HAVE_ASINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/atan2f
++++ b/modules/atan2f
+@@ -6,7 +6,7 @@ lib/atan2f.c
+ m4/atan2f.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ atan2           [test $HAVE_ATAN2F = 0]
+ 
+--- a/modules/atanf
++++ b/modules/atanf
+@@ -6,7 +6,7 @@ lib/atanf.c
+ m4/atanf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ atan            [test $HAVE_ATANF = 0]
+ 
+--- a/modules/atanl
++++ b/modules/atanl
+@@ -6,7 +6,7 @@ lib/atanl.c
+ m4/atanl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ atan            [test $HAVE_ATANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl          [test $HAVE_ATANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/cbrt
++++ b/modules/cbrt
+@@ -7,7 +7,7 @@ m4/cbrt.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $HAVE_CBRT = 0]
+ fabs            [test $HAVE_CBRT = 0]
+--- a/modules/cbrtf
++++ b/modules/cbrtf
+@@ -8,7 +8,7 @@ m4/cbrt.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $HAVE_CBRTF = 0 || test $REPLACE_CBRTF = 1]
+ fabsf           [test $HAVE_CBRTF = 0 || test $REPLACE_CBRTF = 1]
+--- a/modules/cbrtl
++++ b/modules/cbrtl
+@@ -8,7 +8,7 @@ m4/cbrt.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ cbrt            [{ test $HAVE_CBRTL = 0 || test $REPLACE_CBRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isfinite        [{ test $HAVE_CBRTL = 0 || test $REPLACE_CBRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/ceil
++++ b/modules/ceil
+@@ -6,7 +6,7 @@ lib/ceil.c
+ m4/ceil.m4
+ 
+ Depends-on:
+-math
++math-h
+ float-h         [test $REPLACE_CEIL = 1]
+ 
+ configure.ac:
+--- a/modules/ceilf
++++ b/modules/ceilf
+@@ -7,7 +7,7 @@ lib/ceil.c
+ m4/ceilf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_DECL_CEILF = 0 || test $REPLACE_CEILF = 1]
+ 
+--- a/modules/ceill
++++ b/modules/ceill
+@@ -7,7 +7,7 @@ lib/ceil.c
+ m4/ceill.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ ceil            [{ test $HAVE_DECL_CEILL = 0 || test $REPLACE_CEILL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_DECL_CEILL = 0 || test $REPLACE_CEILL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/copysign
++++ b/modules/copysign
+@@ -7,7 +7,7 @@ m4/copysign.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ signbit         [test $HAVE_COPYSIGN = 0]
+ 
+ configure.ac:
+--- a/modules/copysignf
++++ b/modules/copysignf
+@@ -7,7 +7,7 @@ m4/copysignf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ signbit         [test $HAVE_COPYSIGNF = 0]
+ 
+--- a/modules/copysignl
++++ b/modules/copysignl
+@@ -7,7 +7,7 @@ m4/copysignl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ copysign        [test $HAVE_COPYSIGNL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ signbit         [test $HAVE_COPYSIGNL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/cosf
++++ b/modules/cosf
+@@ -6,7 +6,7 @@ lib/cosf.c
+ m4/cosf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ cos             [test $HAVE_COSF = 0]
+ 
+--- a/modules/coshf
++++ b/modules/coshf
+@@ -6,7 +6,7 @@ lib/coshf.c
+ m4/coshf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ cosh            [test $HAVE_COSHF = 0]
+ 
+--- a/modules/cosl
++++ b/modules/cosl
+@@ -9,7 +9,7 @@ lib/trigl.c
+ m4/cosl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ cos             [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_COSL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/exp2
++++ b/modules/exp2
+@@ -7,7 +7,7 @@ m4/exp2.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnand          [test $HAVE_EXP2 = 0 || test $REPLACE_EXP2 = 1]
+ round           [test $HAVE_EXP2 = 0 || test $REPLACE_EXP2 = 1]
+--- a/modules/exp2f
++++ b/modules/exp2f
+@@ -6,7 +6,7 @@ lib/exp2f.c
+ m4/exp2f.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ exp2            [test $HAVE_EXP2F = 0]
+ 
+--- a/modules/exp2l
++++ b/modules/exp2l
+@@ -7,7 +7,7 @@ lib/expl-table.c
+ m4/exp2l.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ exp2            [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_EXP2L = 0 || test $REPLACE_EXP2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/expf
++++ b/modules/expf
+@@ -6,7 +6,7 @@ lib/expf.c
+ m4/expf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ exp             [test $HAVE_EXPF = 0]
+ 
+--- a/modules/expl
++++ b/modules/expl
+@@ -7,7 +7,7 @@ lib/expl-table.c
+ m4/expl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ exp             [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_EXPL = 0 || test $REPLACE_EXPL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/expm1
++++ b/modules/expm1
+@@ -7,7 +7,7 @@ m4/expm1.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnand          [test $HAVE_EXPM1 = 0 || test $REPLACE_EXPM1 = 1]
+ exp             [test $HAVE_EXPM1 = 0 || test $REPLACE_EXPM1 = 1]
+--- a/modules/expm1f
++++ b/modules/expm1f
+@@ -6,7 +6,7 @@ lib/expm1f.c
+ m4/expm1f.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ expm1           [test $HAVE_EXPM1F = 0 || test $REPLACE_EXPM1F = 1]
+ 
+--- a/modules/expm1l
++++ b/modules/expm1l
+@@ -6,7 +6,7 @@ lib/expm1l.c
+ m4/expm1l.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ expm1           [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fabsf
++++ b/modules/fabsf
+@@ -7,7 +7,7 @@ m4/fabsf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ fabs            [test $HAVE_FABSF = 0]
+ 
+--- a/modules/fabsl
++++ b/modules/fabsl
+@@ -7,7 +7,7 @@ m4/fabsl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ fabs            [{ test $HAVE_FABSL = 0 || test $REPLACE_FABSL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ signbit         [{ test $HAVE_FABSL = 0 || test $REPLACE_FABSL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/floor
++++ b/modules/floor
+@@ -6,7 +6,7 @@ lib/floor.c
+ m4/floor.m4
+ 
+ Depends-on:
+-math
++math-h
+ float-h         [test $REPLACE_FLOOR = 1]
+ 
+ configure.ac:
+--- a/modules/floorf
++++ b/modules/floorf
+@@ -7,7 +7,7 @@ lib/floor.c
+ m4/floorf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_DECL_FLOORF = 0 || test $REPLACE_FLOORF = 1]
+ 
+--- a/modules/floorl
++++ b/modules/floorl
+@@ -7,7 +7,7 @@ lib/floor.c
+ m4/floorl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ floor           [{ test $HAVE_DECL_FLOORL = 0 || test $REPLACE_FLOORL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_DECL_FLOORL = 0 || test $REPLACE_FLOORL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fma
++++ b/modules/fma
+@@ -9,7 +9,7 @@ m4/fegetround.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ float-h         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ stdbool         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ assert-h        [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+--- a/modules/fmaf
++++ b/modules/fmaf
+@@ -10,7 +10,7 @@ m4/fegetround.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ stdbool         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+--- a/modules/fmal
++++ b/modules/fmal
+@@ -10,7 +10,7 @@ m4/fegetround.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ fma             [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fmod
++++ b/modules/fmod
+@@ -7,7 +7,7 @@ m4/fmod.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ isfinite        [test $REPLACE_FMOD = 1]
+ signbit         [test $REPLACE_FMOD = 1]
+ fabs            [test $REPLACE_FMOD = 1]
+--- a/modules/fmodf
++++ b/modules/fmodf
+@@ -6,7 +6,7 @@ lib/fmodf.c
+ m4/fmodf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ fmod            [test $HAVE_FMODF = 0 || test $REPLACE_FMODF = 1]
+ 
+--- a/modules/fmodl
++++ b/modules/fmodl
+@@ -8,7 +8,7 @@ m4/fmodl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ fmod            [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_FMODL = 0 || test $REPLACE_FMODL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/frexp
++++ b/modules/frexp
+@@ -6,7 +6,7 @@ lib/frexp.c
+ m4/frexp.m4
+ 
+ Depends-on:
+-math
++math-h
+ isnand-nolibm   [test $gl_func_frexp != yes]
+ 
+ configure.ac:
+--- a/modules/frexp-nolibm
++++ b/modules/frexp-nolibm
+@@ -6,7 +6,7 @@ lib/frexp.c
+ m4/frexp.m4
+ 
+ Depends-on:
+-math
++math-h
+ isnand-nolibm   [test $gl_func_frexp_no_libm != yes]
+ 
+ configure.ac:
+--- a/modules/frexpf
++++ b/modules/frexpf
+@@ -7,7 +7,7 @@ m4/frexpf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ frexp           [test $HAVE_FREXPF = 0 || test $REPLACE_FREXPF = 1]
+ 
+--- a/modules/frexpl
++++ b/modules/frexpl
+@@ -7,7 +7,7 @@ lib/frexp.c
+ m4/frexpl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ frexp           [{ test $HAVE_DECL_FREXPL = 0 || test $gl_func_frexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl-nolibm   [{ test $HAVE_DECL_FREXPL = 0 || test $gl_func_frexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/frexpl-nolibm
++++ b/modules/frexpl-nolibm
+@@ -8,7 +8,7 @@ lib/frexp.c
+ m4/frexpl.m4
+ 
+ Depends-on:
+-math
++math-h
+ frexp-nolibm    [{ test $HAVE_DECL_FREXPL = 0 || test $gl_func_frexpl_no_libm = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl-nolibm   [{ test $HAVE_DECL_FREXPL = 0 || test $gl_func_frexpl_no_libm = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fpucw           [{ test $HAVE_DECL_FREXPL = 0 || test $gl_func_frexpl_no_libm = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/getpayload
++++ b/modules/getpayload
+@@ -7,7 +7,7 @@ m4/mathfunc.m4
+ m4/getpayload.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ stdint          [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+--- a/modules/getpayloadf
++++ b/modules/getpayloadf
+@@ -7,7 +7,7 @@ m4/mathfunc.m4
+ m4/getpayload.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ stdint          [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+--- a/modules/getpayloadl
++++ b/modules/getpayloadl
+@@ -8,7 +8,7 @@ m4/getpayload.m4
+ m4/exponentl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ getpayload      [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/hypot
++++ b/modules/hypot
+@@ -7,7 +7,7 @@ m4/hypot.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $REPLACE_HYPOT = 1]
+ fabs            [test $REPLACE_HYPOT = 1]
+--- a/modules/hypotf
++++ b/modules/hypotf
+@@ -7,7 +7,7 @@ m4/hypotf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ hypot           [test $HAVE_HYPOTF = 0 || test $REPLACE_HYPOTF = 1]
+ 
+--- a/modules/hypotl
++++ b/modules/hypotl
+@@ -7,7 +7,7 @@ m4/hypotl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ hypot           [{ test $HAVE_HYPOTL = 0 || test $REPLACE_HYPOTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isfinite        [{ test $HAVE_HYPOTL = 0 || test $REPLACE_HYPOTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/ilogb
++++ b/modules/ilogb
+@@ -7,7 +7,7 @@ m4/ilogb.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ isfinite        [test $HAVE_ILOGB = 0 || test $REPLACE_ILOGB = 1]
+ frexp           [test $HAVE_ILOGB = 0 || test $REPLACE_ILOGB = 1]
+ isnand          [test $HAVE_ILOGB = 0 || test $REPLACE_ILOGB = 1]
+--- a/modules/ilogbf
++++ b/modules/ilogbf
+@@ -8,7 +8,7 @@ m4/ilogbf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $HAVE_ILOGBF = 0 || test $REPLACE_ILOGBF = 1]
+ frexpf          [test $HAVE_ILOGBF = 0 || test $REPLACE_ILOGBF = 1]
+--- a/modules/ilogbl
++++ b/modules/ilogbl
+@@ -8,7 +8,7 @@ m4/ilogbl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ ilogb           [{ test $HAVE_ILOGBL = 0 || test $REPLACE_ILOGBL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isfinite        [{ test $HAVE_ILOGBL = 0 || test $REPLACE_ILOGBL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/isfinite
++++ b/modules/isfinite
+@@ -8,7 +8,7 @@ m4/check-math-lib.m4
+ m4/exponentl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnanf-nolibm   [test $REPLACE_ISFINITE = 1]
+ isnand-nolibm   [test $REPLACE_ISFINITE = 1]
+--- a/modules/isinf
++++ b/modules/isinf
+@@ -7,7 +7,7 @@ m4/isinf.m4
+ m4/check-math-lib.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $REPLACE_ISINF = 1]
+ 
+--- a/modules/isnan
++++ b/modules/isnan
+@@ -8,7 +8,7 @@ Depends-on:
+ isnanf
+ isnand
+ isnanl
+-math
++math-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/isnand
++++ b/modules/isnand
+@@ -9,7 +9,7 @@ m4/exponentd.m4
+ m4/isnand.m4
+ 
+ Depends-on:
+-math
++math-h
+ fpieee
+ memcmp
+ 
+--- a/modules/isnanf
++++ b/modules/isnanf
+@@ -9,7 +9,7 @@ m4/exponentf.m4
+ m4/isnanf.m4
+ 
+ Depends-on:
+-math
++math-h
+ fpieee
+ memcmp
+ 
+--- a/modules/isnanl
++++ b/modules/isnanl
+@@ -9,7 +9,7 @@ m4/exponentl.m4
+ m4/isnanl.m4
+ 
+ Depends-on:
+-math
++math-h
+ float-h
+ fpieee
+ memcmp
+--- a/modules/ldexp
++++ b/modules/ldexp
+@@ -6,7 +6,7 @@ lib/ldexp.c
+ m4/ldexp.m4
+ 
+ Depends-on:
+-math
++math-h
+ isnand          [test $REPLACE_LDEXP = 1]
+ stdbool         [test $REPLACE_LDEXP = 1]
+ 
+--- a/modules/ldexpf
++++ b/modules/ldexpf
+@@ -7,7 +7,7 @@ m4/ldexpf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ ldexp           [test $HAVE_LDEXPF = 0]
+ 
+--- a/modules/ldexpl
++++ b/modules/ldexpl
+@@ -7,7 +7,7 @@ lib/ldexp.c
+ m4/ldexpl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ ldexp           [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl          [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/log
++++ b/modules/log
+@@ -7,7 +7,7 @@ m4/log.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ 
+ configure.ac:
+ AC_REQUIRE([gl_FUNC_LOG])
+--- a/modules/log10
++++ b/modules/log10
+@@ -7,7 +7,7 @@ m4/log10.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ 
+ configure.ac:
+ gl_FUNC_LOG10
+--- a/modules/log10f
++++ b/modules/log10f
+@@ -6,7 +6,7 @@ lib/log10f.c
+ m4/log10f.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log10           [test $HAVE_LOG10F = 0 || test $REPLACE_LOG10F = 1]
+ 
+--- a/modules/log10l
++++ b/modules/log10l
+@@ -6,7 +6,7 @@ lib/log10l.c
+ m4/log10l.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log10           [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_LOG10L = 0 || test $REPLACE_LOG10L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/log1p
++++ b/modules/log1p
+@@ -7,7 +7,7 @@ m4/log1p.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnand          [test $HAVE_LOG1P = 0 || test $REPLACE_LOG1P = 1]
+ log             [test $HAVE_LOG1P = 0 || test $REPLACE_LOG1P = 1]
+--- a/modules/log1pf
++++ b/modules/log1pf
+@@ -6,7 +6,7 @@ lib/log1pf.c
+ m4/log1pf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log1p           [test $HAVE_LOG1PF = 0 || test $REPLACE_LOG1PF = 1]
+ 
+--- a/modules/log1pl
++++ b/modules/log1pl
+@@ -6,7 +6,7 @@ lib/log1pl.c
+ m4/log1pl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log1p           [{ test $HAVE_LOG1PL = 0 || test $REPLACE_LOG1PL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl          [{ test $HAVE_LOG1PL = 0 || test $REPLACE_LOG1PL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/log2
++++ b/modules/log2
+@@ -7,7 +7,7 @@ m4/log2.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnand          [test $HAVE_LOG2 = 0 || test $REPLACE_LOG2 = 1]
+ frexp           [test $HAVE_LOG2 = 0 || test $REPLACE_LOG2 = 1]
+--- a/modules/log2f
++++ b/modules/log2f
+@@ -6,7 +6,7 @@ lib/log2f.c
+ m4/log2f.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log2            [test $HAVE_LOG2F = 0 || test $REPLACE_LOG2F = 1]
+ isnanf          [test $HAVE_LOG2F = 0 || test $REPLACE_LOG2F = 1]
+--- a/modules/log2l
++++ b/modules/log2l
+@@ -6,7 +6,7 @@ lib/log2l.c
+ m4/log2l.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log2            [{ test $HAVE_LOG2L = 0 || test $REPLACE_LOG2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl          [{ test $HAVE_LOG2L = 0 || test $REPLACE_LOG2L = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/logb
++++ b/modules/logb
+@@ -7,7 +7,7 @@ m4/logb.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $HAVE_LOGB = 0 || test $REPLACE_LOGB = 1]
+ frexp           [test $HAVE_LOGB = 0 || test $REPLACE_LOGB = 1]
+--- a/modules/logbf
++++ b/modules/logbf
+@@ -8,7 +8,7 @@ m4/logbf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isfinite        [test $HAVE_LOGBF = 0 || test $REPLACE_LOGBF = 1]
+ frexpf          [test $HAVE_LOGBF = 0 || test $REPLACE_LOGBF = 1]
+--- a/modules/logbl
++++ b/modules/logbl
+@@ -8,7 +8,7 @@ m4/logbl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ logb            [{ test $HAVE_LOGBL = 0 || test $REPLACE_LOGBL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isfinite        [{ test $HAVE_LOGBL = 0 || test $REPLACE_LOGBL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/logf
++++ b/modules/logf
+@@ -6,7 +6,7 @@ lib/logf.c
+ m4/logf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log             [test $HAVE_LOGF = 0 || test $REPLACE_LOGF = 1]
+ 
+--- a/modules/logl
++++ b/modules/logl
+@@ -6,7 +6,7 @@ lib/logl.c
+ m4/logl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ log             [{ test $HAVE_LOGL = 0 || test $REPLACE_LOGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ frexpl          [{ test $HAVE_LOGL = 0 || test $REPLACE_LOGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/math
++++ b/modules/math
+@@ -1,374 +1,20 @@
+ Description:
+ A GNU-like <math.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'math-h' instead.
++
+ Files:
+-lib/math.in.h
+-lib/math.c
+-m4/math_h.m4
+ 
+ Depends-on:
+-extern-inline
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-float-h
++math-h
+ 
+ configure.ac:
+-gl_MATH_H
+-gl_MATH_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += math.h
+-lib_SOURCES += math.c
+-
+-# We need the following in order to create <math.h> when the system
+-# doesn't have one that works with the given compiler.
+-math.h: math.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT_AS_FIRST_DIRECTIVE''@|$(INCLUDE_NEXT_AS_FIRST_DIRECTIVE)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_AS_FIRST_DIRECTIVE_MATH_H''@|$(NEXT_AS_FIRST_DIRECTIVE_MATH_H)|g' \
+-	      -e 's/@''GNULIB_ACOSF''@/$(GNULIB_ACOSF)/g' \
+-	      -e 's/@''GNULIB_ACOSL''@/$(GNULIB_ACOSL)/g' \
+-	      -e 's/@''GNULIB_ASINF''@/$(GNULIB_ASINF)/g' \
+-	      -e 's/@''GNULIB_ASINL''@/$(GNULIB_ASINL)/g' \
+-	      -e 's/@''GNULIB_ATANF''@/$(GNULIB_ATANF)/g' \
+-	      -e 's/@''GNULIB_ATANL''@/$(GNULIB_ATANL)/g' \
+-	      -e 's/@''GNULIB_ATAN2F''@/$(GNULIB_ATAN2F)/g' \
+-	      -e 's/@''GNULIB_CBRT''@/$(GNULIB_CBRT)/g' \
+-	      -e 's/@''GNULIB_CBRTF''@/$(GNULIB_CBRTF)/g' \
+-	      -e 's/@''GNULIB_CBRTL''@/$(GNULIB_CBRTL)/g' \
+-	      -e 's/@''GNULIB_CEIL''@/$(GNULIB_CEIL)/g' \
+-	      -e 's/@''GNULIB_CEILF''@/$(GNULIB_CEILF)/g' \
+-	      -e 's/@''GNULIB_CEILL''@/$(GNULIB_CEILL)/g' \
+-	      -e 's/@''GNULIB_COPYSIGN''@/$(GNULIB_COPYSIGN)/g' \
+-	      -e 's/@''GNULIB_COPYSIGNF''@/$(GNULIB_COPYSIGNF)/g' \
+-	      -e 's/@''GNULIB_COPYSIGNL''@/$(GNULIB_COPYSIGNL)/g' \
+-	      -e 's/@''GNULIB_COSF''@/$(GNULIB_COSF)/g' \
+-	      -e 's/@''GNULIB_COSL''@/$(GNULIB_COSL)/g' \
+-	      -e 's/@''GNULIB_COSHF''@/$(GNULIB_COSHF)/g' \
+-	      -e 's/@''GNULIB_EXPF''@/$(GNULIB_EXPF)/g' \
+-	      -e 's/@''GNULIB_EXPL''@/$(GNULIB_EXPL)/g' \
+-	      -e 's/@''GNULIB_EXP2''@/$(GNULIB_EXP2)/g' \
+-	      -e 's/@''GNULIB_EXP2F''@/$(GNULIB_EXP2F)/g' \
+-	      -e 's/@''GNULIB_EXP2L''@/$(GNULIB_EXP2L)/g' \
+-	      -e 's/@''GNULIB_EXPM1''@/$(GNULIB_EXPM1)/g' \
+-	      -e 's/@''GNULIB_EXPM1F''@/$(GNULIB_EXPM1F)/g' \
+-	      -e 's/@''GNULIB_EXPM1L''@/$(GNULIB_EXPM1L)/g' \
+-	      -e 's/@''GNULIB_FABSF''@/$(GNULIB_FABSF)/g' \
+-	      -e 's/@''GNULIB_FABSL''@/$(GNULIB_FABSL)/g' \
+-	      -e 's/@''GNULIB_FLOOR''@/$(GNULIB_FLOOR)/g' \
+-	      -e 's/@''GNULIB_FLOORF''@/$(GNULIB_FLOORF)/g' \
+-	      -e 's/@''GNULIB_FLOORL''@/$(GNULIB_FLOORL)/g' \
+-	      -e 's/@''GNULIB_FMA''@/$(GNULIB_FMA)/g' \
+-	      -e 's/@''GNULIB_FMAF''@/$(GNULIB_FMAF)/g' \
+-	      -e 's/@''GNULIB_FMAL''@/$(GNULIB_FMAL)/g' \
+-	      -e 's/@''GNULIB_FMOD''@/$(GNULIB_FMOD)/g' \
+-	      -e 's/@''GNULIB_FMODF''@/$(GNULIB_FMODF)/g' \
+-	      -e 's/@''GNULIB_FMODL''@/$(GNULIB_FMODL)/g' \
+-	      -e 's/@''GNULIB_FREXPF''@/$(GNULIB_FREXPF)/g' \
+-	      -e 's/@''GNULIB_FREXP''@/$(GNULIB_FREXP)/g' \
+-	      -e 's/@''GNULIB_FREXPL''@/$(GNULIB_FREXPL)/g' \
+-	      -e 's/@''GNULIB_GETPAYLOAD''@/$(GNULIB_GETPAYLOAD)/g' \
+-	      -e 's/@''GNULIB_GETPAYLOADF''@/$(GNULIB_GETPAYLOADF)/g' \
+-	      -e 's/@''GNULIB_GETPAYLOADL''@/$(GNULIB_GETPAYLOADL)/g' \
+-	      -e 's/@''GNULIB_HYPOT''@/$(GNULIB_HYPOT)/g' \
+-	      -e 's/@''GNULIB_HYPOTF''@/$(GNULIB_HYPOTF)/g' \
+-	      -e 's/@''GNULIB_HYPOTL''@/$(GNULIB_HYPOTL)/g' \
+-	      < $(srcdir)/math.in.h > $@-t1
+-	$(AM_V_at)sed \
+-	      -e 's/@''GNULIB_ILOGB''@/$(GNULIB_ILOGB)/g' \
+-	      -e 's/@''GNULIB_ILOGBF''@/$(GNULIB_ILOGBF)/g' \
+-	      -e 's/@''GNULIB_ILOGBL''@/$(GNULIB_ILOGBL)/g' \
+-	      -e 's/@''GNULIB_ISFINITE''@/$(GNULIB_ISFINITE)/g' \
+-	      -e 's/@''GNULIB_ISINF''@/$(GNULIB_ISINF)/g' \
+-	      -e 's/@''GNULIB_ISNAN''@/$(GNULIB_ISNAN)/g' \
+-	      -e 's/@''GNULIB_ISNANF''@/$(GNULIB_ISNANF)/g' \
+-	      -e 's/@''GNULIB_ISNAND''@/$(GNULIB_ISNAND)/g' \
+-	      -e 's/@''GNULIB_ISNANL''@/$(GNULIB_ISNANL)/g' \
+-	      -e 's/@''GNULIB_LDEXP''@/$(GNULIB_LDEXP)/g' \
+-	      -e 's/@''GNULIB_LDEXPF''@/$(GNULIB_LDEXPF)/g' \
+-	      -e 's/@''GNULIB_LDEXPL''@/$(GNULIB_LDEXPL)/g' \
+-	      -e 's/@''GNULIB_LOG''@/$(GNULIB_LOG)/g' \
+-	      -e 's/@''GNULIB_LOGF''@/$(GNULIB_LOGF)/g' \
+-	      -e 's/@''GNULIB_LOGL''@/$(GNULIB_LOGL)/g' \
+-	      -e 's/@''GNULIB_LOG10''@/$(GNULIB_LOG10)/g' \
+-	      -e 's/@''GNULIB_LOG10F''@/$(GNULIB_LOG10F)/g' \
+-	      -e 's/@''GNULIB_LOG10L''@/$(GNULIB_LOG10L)/g' \
+-	      -e 's/@''GNULIB_LOG1P''@/$(GNULIB_LOG1P)/g' \
+-	      -e 's/@''GNULIB_LOG1PF''@/$(GNULIB_LOG1PF)/g' \
+-	      -e 's/@''GNULIB_LOG1PL''@/$(GNULIB_LOG1PL)/g' \
+-	      -e 's/@''GNULIB_LOG2''@/$(GNULIB_LOG2)/g' \
+-	      -e 's/@''GNULIB_LOG2F''@/$(GNULIB_LOG2F)/g' \
+-	      -e 's/@''GNULIB_LOG2L''@/$(GNULIB_LOG2L)/g' \
+-	      -e 's/@''GNULIB_LOGB''@/$(GNULIB_LOGB)/g' \
+-	      -e 's/@''GNULIB_LOGBF''@/$(GNULIB_LOGBF)/g' \
+-	      -e 's/@''GNULIB_LOGBL''@/$(GNULIB_LOGBL)/g' \
+-	      -e 's/@''GNULIB_MODF''@/$(GNULIB_MODF)/g' \
+-	      -e 's/@''GNULIB_MODFF''@/$(GNULIB_MODFF)/g' \
+-	      -e 's/@''GNULIB_MODFL''@/$(GNULIB_MODFL)/g' \
+-	      -e 's/@''GNULIB_POWF''@/$(GNULIB_POWF)/g' \
+-	      -e 's/@''GNULIB_REMAINDER''@/$(GNULIB_REMAINDER)/g' \
+-	      -e 's/@''GNULIB_REMAINDERF''@/$(GNULIB_REMAINDERF)/g' \
+-	      -e 's/@''GNULIB_REMAINDERL''@/$(GNULIB_REMAINDERL)/g' \
+-	      -e 's/@''GNULIB_RINT''@/$(GNULIB_RINT)/g' \
+-	      -e 's/@''GNULIB_RINTF''@/$(GNULIB_RINTF)/g' \
+-	      -e 's/@''GNULIB_RINTL''@/$(GNULIB_RINTL)/g' \
+-	      -e 's/@''GNULIB_ROUND''@/$(GNULIB_ROUND)/g' \
+-	      -e 's/@''GNULIB_ROUNDF''@/$(GNULIB_ROUNDF)/g' \
+-	      -e 's/@''GNULIB_ROUNDL''@/$(GNULIB_ROUNDL)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOAD''@/$(GNULIB_SETPAYLOAD)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOADF''@/$(GNULIB_SETPAYLOADF)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOADL''@/$(GNULIB_SETPAYLOADL)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOADSIG''@/$(GNULIB_SETPAYLOADSIG)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOADSIGF''@/$(GNULIB_SETPAYLOADSIGF)/g' \
+-	      -e 's/@''GNULIB_SETPAYLOADSIGL''@/$(GNULIB_SETPAYLOADSIGL)/g' \
+-	      -e 's/@''GNULIB_SIGNBIT''@/$(GNULIB_SIGNBIT)/g' \
+-	      -e 's/@''GNULIB_SINF''@/$(GNULIB_SINF)/g' \
+-	      -e 's/@''GNULIB_SINL''@/$(GNULIB_SINL)/g' \
+-	      -e 's/@''GNULIB_SINHF''@/$(GNULIB_SINHF)/g' \
+-	      -e 's/@''GNULIB_SQRTF''@/$(GNULIB_SQRTF)/g' \
+-	      -e 's/@''GNULIB_SQRTL''@/$(GNULIB_SQRTL)/g' \
+-	      -e 's/@''GNULIB_TANF''@/$(GNULIB_TANF)/g' \
+-	      -e 's/@''GNULIB_TANL''@/$(GNULIB_TANL)/g' \
+-	      -e 's/@''GNULIB_TANHF''@/$(GNULIB_TANHF)/g' \
+-	      -e 's/@''GNULIB_TRUNC''@/$(GNULIB_TRUNC)/g' \
+-	      -e 's/@''GNULIB_TRUNCF''@/$(GNULIB_TRUNCF)/g' \
+-	      -e 's/@''GNULIB_TRUNCL''@/$(GNULIB_TRUNCL)/g' \
+-	      -e 's/@''GNULIB_TOTALORDER''@/$(GNULIB_TOTALORDER)/g' \
+-	      -e 's/@''GNULIB_TOTALORDERF''@/$(GNULIB_TOTALORDERF)/g' \
+-	      -e 's/@''GNULIB_TOTALORDERL''@/$(GNULIB_TOTALORDERL)/g' \
+-	      -e 's/@''GNULIB_TOTALORDERMAG''@/$(GNULIB_TOTALORDERMAG)/g' \
+-	      -e 's/@''GNULIB_TOTALORDERMAGF''@/$(GNULIB_TOTALORDERMAGF)/g' \
+-	      -e 's/@''GNULIB_TOTALORDERMAGL''@/$(GNULIB_TOTALORDERMAGL)/g' \
+-	      -e 's/@''GNULIB_MDA_J0''@/$(GNULIB_MDA_J0)/g' \
+-	      -e 's/@''GNULIB_MDA_J1''@/$(GNULIB_MDA_J1)/g' \
+-	      -e 's/@''GNULIB_MDA_JN''@/$(GNULIB_MDA_JN)/g' \
+-	      -e 's/@''GNULIB_MDA_Y0''@/$(GNULIB_MDA_Y0)/g' \
+-	      -e 's/@''GNULIB_MDA_Y1''@/$(GNULIB_MDA_Y1)/g' \
+-	      -e 's/@''GNULIB_MDA_YN''@/$(GNULIB_MDA_YN)/g' \
+-	      < $@-t1 > $@-t2
+-	$(AM_V_at)sed \
+-	      -e 's|@''HAVE_ACOSF''@|$(HAVE_ACOSF)|g' \
+-	      -e 's|@''HAVE_ACOSL''@|$(HAVE_ACOSL)|g' \
+-	      -e 's|@''HAVE_ASINF''@|$(HAVE_ASINF)|g' \
+-	      -e 's|@''HAVE_ASINL''@|$(HAVE_ASINL)|g' \
+-	      -e 's|@''HAVE_ATANF''@|$(HAVE_ATANF)|g' \
+-	      -e 's|@''HAVE_ATANL''@|$(HAVE_ATANL)|g' \
+-	      -e 's|@''HAVE_ATAN2F''@|$(HAVE_ATAN2F)|g' \
+-	      -e 's|@''HAVE_CBRT''@|$(HAVE_CBRT)|g' \
+-	      -e 's|@''HAVE_CBRTF''@|$(HAVE_CBRTF)|g' \
+-	      -e 's|@''HAVE_CBRTL''@|$(HAVE_CBRTL)|g' \
+-	      -e 's|@''HAVE_COPYSIGN''@|$(HAVE_COPYSIGN)|g' \
+-	      -e 's|@''HAVE_COPYSIGNL''@|$(HAVE_COPYSIGNL)|g' \
+-	      -e 's|@''HAVE_COSF''@|$(HAVE_COSF)|g' \
+-	      -e 's|@''HAVE_COSL''@|$(HAVE_COSL)|g' \
+-	      -e 's|@''HAVE_COSHF''@|$(HAVE_COSHF)|g' \
+-	      -e 's|@''HAVE_EXPF''@|$(HAVE_EXPF)|g' \
+-	      -e 's|@''HAVE_EXPL''@|$(HAVE_EXPL)|g' \
+-	      -e 's|@''HAVE_EXPM1''@|$(HAVE_EXPM1)|g' \
+-	      -e 's|@''HAVE_EXPM1F''@|$(HAVE_EXPM1F)|g' \
+-	      -e 's|@''HAVE_FABSF''@|$(HAVE_FABSF)|g' \
+-	      -e 's|@''HAVE_FABSL''@|$(HAVE_FABSL)|g' \
+-	      -e 's|@''HAVE_FMA''@|$(HAVE_FMA)|g' \
+-	      -e 's|@''HAVE_FMAF''@|$(HAVE_FMAF)|g' \
+-	      -e 's|@''HAVE_FMAL''@|$(HAVE_FMAL)|g' \
+-	      -e 's|@''HAVE_FMODF''@|$(HAVE_FMODF)|g' \
+-	      -e 's|@''HAVE_FMODL''@|$(HAVE_FMODL)|g' \
+-	      -e 's|@''HAVE_FREXPF''@|$(HAVE_FREXPF)|g' \
+-	      -e 's|@''HAVE_GETPAYLOAD''@|$(HAVE_GETPAYLOAD)|g' \
+-	      -e 's|@''HAVE_GETPAYLOADF''@|$(HAVE_GETPAYLOADF)|g' \
+-	      -e 's|@''HAVE_GETPAYLOADL''@|$(HAVE_GETPAYLOADL)|g' \
+-	      -e 's|@''HAVE_HYPOTF''@|$(HAVE_HYPOTF)|g' \
+-	      -e 's|@''HAVE_HYPOTL''@|$(HAVE_HYPOTL)|g' \
+-	      -e 's|@''HAVE_ILOGB''@|$(HAVE_ILOGB)|g' \
+-	      -e 's|@''HAVE_ILOGBF''@|$(HAVE_ILOGBF)|g' \
+-	      -e 's|@''HAVE_ILOGBL''@|$(HAVE_ILOGBL)|g' \
+-	      -e 's|@''HAVE_ISNANF''@|$(HAVE_ISNANF)|g' \
+-	      -e 's|@''HAVE_ISNAND''@|$(HAVE_ISNAND)|g' \
+-	      -e 's|@''HAVE_ISNANL''@|$(HAVE_ISNANL)|g' \
+-	      -e 's|@''HAVE_LDEXPF''@|$(HAVE_LDEXPF)|g' \
+-	      -e 's|@''HAVE_LOGF''@|$(HAVE_LOGF)|g' \
+-	      -e 's|@''HAVE_LOGL''@|$(HAVE_LOGL)|g' \
+-	      -e 's|@''HAVE_LOG10F''@|$(HAVE_LOG10F)|g' \
+-	      -e 's|@''HAVE_LOG10L''@|$(HAVE_LOG10L)|g' \
+-	      -e 's|@''HAVE_LOG1P''@|$(HAVE_LOG1P)|g' \
+-	      -e 's|@''HAVE_LOG1PF''@|$(HAVE_LOG1PF)|g' \
+-	      -e 's|@''HAVE_LOG1PL''@|$(HAVE_LOG1PL)|g' \
+-	      -e 's|@''HAVE_LOGBF''@|$(HAVE_LOGBF)|g' \
+-	      -e 's|@''HAVE_LOGBL''@|$(HAVE_LOGBL)|g' \
+-	      -e 's|@''HAVE_MODFF''@|$(HAVE_MODFF)|g' \
+-	      -e 's|@''HAVE_MODFL''@|$(HAVE_MODFL)|g' \
+-	      -e 's|@''HAVE_POWF''@|$(HAVE_POWF)|g' \
+-	      -e 's|@''HAVE_REMAINDER''@|$(HAVE_REMAINDER)|g' \
+-	      -e 's|@''HAVE_REMAINDERF''@|$(HAVE_REMAINDERF)|g' \
+-	      -e 's|@''HAVE_RINT''@|$(HAVE_RINT)|g' \
+-	      -e 's|@''HAVE_RINTL''@|$(HAVE_RINTL)|g' \
+-	      -e 's|@''HAVE_SETPAYLOAD''@|$(HAVE_SETPAYLOAD)|g' \
+-	      -e 's|@''HAVE_SETPAYLOADF''@|$(HAVE_SETPAYLOADF)|g' \
+-	      -e 's|@''HAVE_SETPAYLOADL''@|$(HAVE_SETPAYLOADL)|g' \
+-	      -e 's|@''HAVE_SETPAYLOADSIG''@|$(HAVE_SETPAYLOADSIG)|g' \
+-	      -e 's|@''HAVE_SETPAYLOADSIGF''@|$(HAVE_SETPAYLOADSIGF)|g' \
+-	      -e 's|@''HAVE_SETPAYLOADSIGL''@|$(HAVE_SETPAYLOADSIGL)|g' \
+-	      -e 's|@''HAVE_SINF''@|$(HAVE_SINF)|g' \
+-	      -e 's|@''HAVE_SINL''@|$(HAVE_SINL)|g' \
+-	      -e 's|@''HAVE_SINHF''@|$(HAVE_SINHF)|g' \
+-	      -e 's|@''HAVE_SQRTF''@|$(HAVE_SQRTF)|g' \
+-	      -e 's|@''HAVE_SQRTL''@|$(HAVE_SQRTL)|g' \
+-	      -e 's|@''HAVE_TANF''@|$(HAVE_TANF)|g' \
+-	      -e 's|@''HAVE_TANL''@|$(HAVE_TANL)|g' \
+-	      -e 's|@''HAVE_TANHF''@|$(HAVE_TANHF)|g' \
+-	      -e 's|@''HAVE_TOTALORDER''@|$(HAVE_TOTALORDER)|g' \
+-	      -e 's|@''HAVE_TOTALORDERF''@|$(HAVE_TOTALORDERF)|g' \
+-	      -e 's|@''HAVE_TOTALORDERL''@|$(HAVE_TOTALORDERL)|g' \
+-	      -e 's|@''HAVE_TOTALORDERMAG''@|$(HAVE_TOTALORDERMAG)|g' \
+-	      -e 's|@''HAVE_TOTALORDERMAGF''@|$(HAVE_TOTALORDERMAGF)|g' \
+-	      -e 's|@''HAVE_TOTALORDERMAGL''@|$(HAVE_TOTALORDERMAGL)|g' \
+-	      < $@-t2 > $@-t3
+-	$(AM_V_at)sed \
+-	      -e 's|@''HAVE_DECL_ACOSL''@|$(HAVE_DECL_ACOSL)|g' \
+-	      -e 's|@''HAVE_DECL_ASINL''@|$(HAVE_DECL_ASINL)|g' \
+-	      -e 's|@''HAVE_DECL_ATANL''@|$(HAVE_DECL_ATANL)|g' \
+-	      -e 's|@''HAVE_DECL_CBRTF''@|$(HAVE_DECL_CBRTF)|g' \
+-	      -e 's|@''HAVE_DECL_CBRTL''@|$(HAVE_DECL_CBRTL)|g' \
+-	      -e 's|@''HAVE_DECL_CEILF''@|$(HAVE_DECL_CEILF)|g' \
+-	      -e 's|@''HAVE_DECL_CEILL''@|$(HAVE_DECL_CEILL)|g' \
+-	      -e 's|@''HAVE_DECL_COPYSIGNF''@|$(HAVE_DECL_COPYSIGNF)|g' \
+-	      -e 's|@''HAVE_DECL_COSL''@|$(HAVE_DECL_COSL)|g' \
+-	      -e 's|@''HAVE_DECL_EXPL''@|$(HAVE_DECL_EXPL)|g' \
+-	      -e 's|@''HAVE_DECL_EXP2''@|$(HAVE_DECL_EXP2)|g' \
+-	      -e 's|@''HAVE_DECL_EXP2F''@|$(HAVE_DECL_EXP2F)|g' \
+-	      -e 's|@''HAVE_DECL_EXP2L''@|$(HAVE_DECL_EXP2L)|g' \
+-	      -e 's|@''HAVE_DECL_EXPM1L''@|$(HAVE_DECL_EXPM1L)|g' \
+-	      -e 's|@''HAVE_DECL_FLOORF''@|$(HAVE_DECL_FLOORF)|g' \
+-	      -e 's|@''HAVE_DECL_FLOORL''@|$(HAVE_DECL_FLOORL)|g' \
+-	      -e 's|@''HAVE_DECL_FREXPL''@|$(HAVE_DECL_FREXPL)|g' \
+-	      -e 's|@''HAVE_DECL_LDEXPL''@|$(HAVE_DECL_LDEXPL)|g' \
+-	      -e 's|@''HAVE_DECL_LOGL''@|$(HAVE_DECL_LOGL)|g' \
+-	      -e 's|@''HAVE_DECL_LOG10L''@|$(HAVE_DECL_LOG10L)|g' \
+-	      -e 's|@''HAVE_DECL_LOG2''@|$(HAVE_DECL_LOG2)|g' \
+-	      -e 's|@''HAVE_DECL_LOG2F''@|$(HAVE_DECL_LOG2F)|g' \
+-	      -e 's|@''HAVE_DECL_LOG2L''@|$(HAVE_DECL_LOG2L)|g' \
+-	      -e 's|@''HAVE_DECL_LOGB''@|$(HAVE_DECL_LOGB)|g' \
+-	      -e 's|@''HAVE_DECL_REMAINDER''@|$(HAVE_DECL_REMAINDER)|g' \
+-	      -e 's|@''HAVE_DECL_REMAINDERL''@|$(HAVE_DECL_REMAINDERL)|g' \
+-	      -e 's|@''HAVE_DECL_RINTF''@|$(HAVE_DECL_RINTF)|g' \
+-	      -e 's|@''HAVE_DECL_ROUND''@|$(HAVE_DECL_ROUND)|g' \
+-	      -e 's|@''HAVE_DECL_ROUNDF''@|$(HAVE_DECL_ROUNDF)|g' \
+-	      -e 's|@''HAVE_DECL_ROUNDL''@|$(HAVE_DECL_ROUNDL)|g' \
+-	      -e 's|@''HAVE_DECL_SINL''@|$(HAVE_DECL_SINL)|g' \
+-	      -e 's|@''HAVE_DECL_SQRTL''@|$(HAVE_DECL_SQRTL)|g' \
+-	      -e 's|@''HAVE_DECL_TANL''@|$(HAVE_DECL_TANL)|g' \
+-	      -e 's|@''HAVE_DECL_TRUNC''@|$(HAVE_DECL_TRUNC)|g' \
+-	      -e 's|@''HAVE_DECL_TRUNCF''@|$(HAVE_DECL_TRUNCF)|g' \
+-	      -e 's|@''HAVE_DECL_TRUNCL''@|$(HAVE_DECL_TRUNCL)|g' \
+-	      < $@-t3 > $@-t4
+-	$(AM_V_at)sed \
+-	      -e 's|@''REPLACE_ACOSF''@|$(REPLACE_ACOSF)|g' \
+-	      -e 's|@''REPLACE_ASINF''@|$(REPLACE_ASINF)|g' \
+-	      -e 's|@''REPLACE_ATANF''@|$(REPLACE_ATANF)|g' \
+-	      -e 's|@''REPLACE_ATAN2F''@|$(REPLACE_ATAN2F)|g' \
+-	      -e 's|@''REPLACE_CBRTF''@|$(REPLACE_CBRTF)|g' \
+-	      -e 's|@''REPLACE_CBRTL''@|$(REPLACE_CBRTL)|g' \
+-	      -e 's|@''REPLACE_CEIL''@|$(REPLACE_CEIL)|g' \
+-	      -e 's|@''REPLACE_CEILF''@|$(REPLACE_CEILF)|g' \
+-	      -e 's|@''REPLACE_CEILL''@|$(REPLACE_CEILL)|g' \
+-	      -e 's|@''REPLACE_COSF''@|$(REPLACE_COSF)|g' \
+-	      -e 's|@''REPLACE_COSHF''@|$(REPLACE_COSHF)|g' \
+-	      -e 's|@''REPLACE_EXPF''@|$(REPLACE_EXPF)|g' \
+-	      -e 's|@''REPLACE_EXPL''@|$(REPLACE_EXPL)|g' \
+-	      -e 's|@''REPLACE_EXPM1''@|$(REPLACE_EXPM1)|g' \
+-	      -e 's|@''REPLACE_EXPM1F''@|$(REPLACE_EXPM1F)|g' \
+-	      -e 's|@''REPLACE_EXPM1L''@|$(REPLACE_EXPM1L)|g' \
+-	      -e 's|@''REPLACE_EXP2''@|$(REPLACE_EXP2)|g' \
+-	      -e 's|@''REPLACE_EXP2L''@|$(REPLACE_EXP2L)|g' \
+-	      -e 's|@''REPLACE_FABSL''@|$(REPLACE_FABSL)|g' \
+-	      -e 's|@''REPLACE_FLOOR''@|$(REPLACE_FLOOR)|g' \
+-	      -e 's|@''REPLACE_FLOORF''@|$(REPLACE_FLOORF)|g' \
+-	      -e 's|@''REPLACE_FLOORL''@|$(REPLACE_FLOORL)|g' \
+-	      -e 's|@''REPLACE_FMA''@|$(REPLACE_FMA)|g' \
+-	      -e 's|@''REPLACE_FMAF''@|$(REPLACE_FMAF)|g' \
+-	      -e 's|@''REPLACE_FMAL''@|$(REPLACE_FMAL)|g' \
+-	      -e 's|@''REPLACE_FMOD''@|$(REPLACE_FMOD)|g' \
+-	      -e 's|@''REPLACE_FMODF''@|$(REPLACE_FMODF)|g' \
+-	      -e 's|@''REPLACE_FMODL''@|$(REPLACE_FMODL)|g' \
+-	      -e 's|@''REPLACE_FREXPF''@|$(REPLACE_FREXPF)|g' \
+-	      -e 's|@''REPLACE_FREXP''@|$(REPLACE_FREXP)|g' \
+-	      -e 's|@''REPLACE_FREXPL''@|$(REPLACE_FREXPL)|g' \
+-	      -e 's|@''REPLACE_GETPAYLOAD''@|$(REPLACE_GETPAYLOAD)|g' \
+-	      -e 's|@''REPLACE_GETPAYLOADF''@|$(REPLACE_GETPAYLOADF)|g' \
+-	      -e 's|@''REPLACE_GETPAYLOADL''@|$(REPLACE_GETPAYLOADL)|g' \
+-	      -e 's|@''REPLACE_HUGE_VAL''@|$(REPLACE_HUGE_VAL)|g' \
+-	      -e 's|@''REPLACE_HYPOT''@|$(REPLACE_HYPOT)|g' \
+-	      -e 's|@''REPLACE_HYPOTF''@|$(REPLACE_HYPOTF)|g' \
+-	      -e 's|@''REPLACE_HYPOTL''@|$(REPLACE_HYPOTL)|g' \
+-	      -e 's|@''REPLACE_ILOGB''@|$(REPLACE_ILOGB)|g' \
+-	      -e 's|@''REPLACE_ILOGBF''@|$(REPLACE_ILOGBF)|g' \
+-	      -e 's|@''REPLACE_ILOGBL''@|$(REPLACE_ILOGBL)|g' \
+-	      -e 's|@''REPLACE_ISFINITE''@|$(REPLACE_ISFINITE)|g' \
+-	      -e 's|@''REPLACE_ISINF''@|$(REPLACE_ISINF)|g' \
+-	      -e 's|@''REPLACE_ISNAN''@|$(REPLACE_ISNAN)|g' \
+-	      -e 's|@''REPLACE_ITOLD''@|$(REPLACE_ITOLD)|g' \
+-	      < $@-t4 > $@-t5
+-	$(AM_V_at)sed \
+-	      -e 's|@''REPLACE_LDEXP''@|$(REPLACE_LDEXP)|g' \
+-	      -e 's|@''REPLACE_LDEXPL''@|$(REPLACE_LDEXPL)|g' \
+-	      -e 's|@''REPLACE_LOG''@|$(REPLACE_LOG)|g' \
+-	      -e 's|@''REPLACE_LOGF''@|$(REPLACE_LOGF)|g' \
+-	      -e 's|@''REPLACE_LOGL''@|$(REPLACE_LOGL)|g' \
+-	      -e 's|@''REPLACE_LOG10''@|$(REPLACE_LOG10)|g' \
+-	      -e 's|@''REPLACE_LOG10F''@|$(REPLACE_LOG10F)|g' \
+-	      -e 's|@''REPLACE_LOG10L''@|$(REPLACE_LOG10L)|g' \
+-	      -e 's|@''REPLACE_LOG1P''@|$(REPLACE_LOG1P)|g' \
+-	      -e 's|@''REPLACE_LOG1PF''@|$(REPLACE_LOG1PF)|g' \
+-	      -e 's|@''REPLACE_LOG1PL''@|$(REPLACE_LOG1PL)|g' \
+-	      -e 's|@''REPLACE_LOG2''@|$(REPLACE_LOG2)|g' \
+-	      -e 's|@''REPLACE_LOG2F''@|$(REPLACE_LOG2F)|g' \
+-	      -e 's|@''REPLACE_LOG2L''@|$(REPLACE_LOG2L)|g' \
+-	      -e 's|@''REPLACE_LOGB''@|$(REPLACE_LOGB)|g' \
+-	      -e 's|@''REPLACE_LOGBF''@|$(REPLACE_LOGBF)|g' \
+-	      -e 's|@''REPLACE_LOGBL''@|$(REPLACE_LOGBL)|g' \
+-	      -e 's|@''REPLACE_MODF''@|$(REPLACE_MODF)|g' \
+-	      -e 's|@''REPLACE_MODFF''@|$(REPLACE_MODFF)|g' \
+-	      -e 's|@''REPLACE_MODFL''@|$(REPLACE_MODFL)|g' \
+-	      -e 's|@''REPLACE_NAN''@|$(REPLACE_NAN)|g' \
+-	      -e 's|@''REPLACE_REMAINDER''@|$(REPLACE_REMAINDER)|g' \
+-	      -e 's|@''REPLACE_REMAINDERF''@|$(REPLACE_REMAINDERF)|g' \
+-	      -e 's|@''REPLACE_REMAINDERL''@|$(REPLACE_REMAINDERL)|g' \
+-	      -e 's|@''REPLACE_RINTL''@|$(REPLACE_RINTL)|g' \
+-	      -e 's|@''REPLACE_ROUND''@|$(REPLACE_ROUND)|g' \
+-	      -e 's|@''REPLACE_ROUNDF''@|$(REPLACE_ROUNDF)|g' \
+-	      -e 's|@''REPLACE_ROUNDL''@|$(REPLACE_ROUNDL)|g' \
+-	      -e 's|@''REPLACE_SIGNBIT''@|$(REPLACE_SIGNBIT)|g' \
+-	      -e 's|@''REPLACE_SIGNBIT_USING_BUILTINS''@|$(REPLACE_SIGNBIT_USING_BUILTINS)|g' \
+-	      -e 's|@''REPLACE_SINF''@|$(REPLACE_SINF)|g' \
+-	      -e 's|@''REPLACE_SINHF''@|$(REPLACE_SINHF)|g' \
+-	      -e 's|@''REPLACE_SQRTF''@|$(REPLACE_SQRTF)|g' \
+-	      -e 's|@''REPLACE_SQRTL''@|$(REPLACE_SQRTL)|g' \
+-	      -e 's|@''REPLACE_TANF''@|$(REPLACE_TANF)|g' \
+-	      -e 's|@''REPLACE_TANHF''@|$(REPLACE_TANHF)|g' \
+-	      -e 's|@''REPLACE_TOTALORDER''@|$(REPLACE_TOTALORDER)|g' \
+-	      -e 's|@''REPLACE_TOTALORDERF''@|$(REPLACE_TOTALORDERF)|g' \
+-	      -e 's|@''REPLACE_TOTALORDERL''@|$(REPLACE_TOTALORDERL)|g' \
+-	      -e 's|@''REPLACE_TOTALORDERMAG''@|$(REPLACE_TOTALORDERMAG)|g' \
+-	      -e 's|@''REPLACE_TOTALORDERMAGF''@|$(REPLACE_TOTALORDERMAGF)|g' \
+-	      -e 's|@''REPLACE_TOTALORDERMAGL''@|$(REPLACE_TOTALORDERMAGL)|g' \
+-	      -e 's|@''REPLACE_TRUNC''@|$(REPLACE_TRUNC)|g' \
+-	      -e 's|@''REPLACE_TRUNCF''@|$(REPLACE_TRUNCF)|g' \
+-	      -e 's|@''REPLACE_TRUNCL''@|$(REPLACE_TRUNCL)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      < $@-t5 > $@-t6
+-	$(AM_V_at)rm -f $@-t1 $@-t2 $@-t3 $@-t4 $@-t5
+-	$(AM_V_at)mv $@-t6 $@
+-MOSTLYCLEANFILES += math.h math.h-t1 math.h-t2 math.h-t3 math.h-t4 math.h-t5 math.h-t6
+ 
+ Include:
+ <math.h>
+@@ -377,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/math-h
+@@ -0,0 +1,386 @@
++Description:
++A GNU-like <math.h>.
++
++Files:
++lib/math.in.h
++lib/math.c
++m4/math_h.m4
++
++Depends-on:
++extern-inline
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++float-h
++
++configure.ac:
++gl_MATH_H
++gl_MATH_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += math.h
++lib_SOURCES += math.c
++
++# We need the following in order to create <math.h> when the system
++# doesn't have one that works with the given compiler.
++math.h: math.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT_AS_FIRST_DIRECTIVE''@|$(INCLUDE_NEXT_AS_FIRST_DIRECTIVE)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_AS_FIRST_DIRECTIVE_MATH_H''@|$(NEXT_AS_FIRST_DIRECTIVE_MATH_H)|g' \
++	      -e 's/@''GNULIB_ACOSF''@/$(GNULIB_ACOSF)/g' \
++	      -e 's/@''GNULIB_ACOSL''@/$(GNULIB_ACOSL)/g' \
++	      -e 's/@''GNULIB_ASINF''@/$(GNULIB_ASINF)/g' \
++	      -e 's/@''GNULIB_ASINL''@/$(GNULIB_ASINL)/g' \
++	      -e 's/@''GNULIB_ATANF''@/$(GNULIB_ATANF)/g' \
++	      -e 's/@''GNULIB_ATANL''@/$(GNULIB_ATANL)/g' \
++	      -e 's/@''GNULIB_ATAN2F''@/$(GNULIB_ATAN2F)/g' \
++	      -e 's/@''GNULIB_CBRT''@/$(GNULIB_CBRT)/g' \
++	      -e 's/@''GNULIB_CBRTF''@/$(GNULIB_CBRTF)/g' \
++	      -e 's/@''GNULIB_CBRTL''@/$(GNULIB_CBRTL)/g' \
++	      -e 's/@''GNULIB_CEIL''@/$(GNULIB_CEIL)/g' \
++	      -e 's/@''GNULIB_CEILF''@/$(GNULIB_CEILF)/g' \
++	      -e 's/@''GNULIB_CEILL''@/$(GNULIB_CEILL)/g' \
++	      -e 's/@''GNULIB_COPYSIGN''@/$(GNULIB_COPYSIGN)/g' \
++	      -e 's/@''GNULIB_COPYSIGNF''@/$(GNULIB_COPYSIGNF)/g' \
++	      -e 's/@''GNULIB_COPYSIGNL''@/$(GNULIB_COPYSIGNL)/g' \
++	      -e 's/@''GNULIB_COSF''@/$(GNULIB_COSF)/g' \
++	      -e 's/@''GNULIB_COSL''@/$(GNULIB_COSL)/g' \
++	      -e 's/@''GNULIB_COSHF''@/$(GNULIB_COSHF)/g' \
++	      -e 's/@''GNULIB_EXPF''@/$(GNULIB_EXPF)/g' \
++	      -e 's/@''GNULIB_EXPL''@/$(GNULIB_EXPL)/g' \
++	      -e 's/@''GNULIB_EXP2''@/$(GNULIB_EXP2)/g' \
++	      -e 's/@''GNULIB_EXP2F''@/$(GNULIB_EXP2F)/g' \
++	      -e 's/@''GNULIB_EXP2L''@/$(GNULIB_EXP2L)/g' \
++	      -e 's/@''GNULIB_EXPM1''@/$(GNULIB_EXPM1)/g' \
++	      -e 's/@''GNULIB_EXPM1F''@/$(GNULIB_EXPM1F)/g' \
++	      -e 's/@''GNULIB_EXPM1L''@/$(GNULIB_EXPM1L)/g' \
++	      -e 's/@''GNULIB_FABSF''@/$(GNULIB_FABSF)/g' \
++	      -e 's/@''GNULIB_FABSL''@/$(GNULIB_FABSL)/g' \
++	      -e 's/@''GNULIB_FLOOR''@/$(GNULIB_FLOOR)/g' \
++	      -e 's/@''GNULIB_FLOORF''@/$(GNULIB_FLOORF)/g' \
++	      -e 's/@''GNULIB_FLOORL''@/$(GNULIB_FLOORL)/g' \
++	      -e 's/@''GNULIB_FMA''@/$(GNULIB_FMA)/g' \
++	      -e 's/@''GNULIB_FMAF''@/$(GNULIB_FMAF)/g' \
++	      -e 's/@''GNULIB_FMAL''@/$(GNULIB_FMAL)/g' \
++	      -e 's/@''GNULIB_FMOD''@/$(GNULIB_FMOD)/g' \
++	      -e 's/@''GNULIB_FMODF''@/$(GNULIB_FMODF)/g' \
++	      -e 's/@''GNULIB_FMODL''@/$(GNULIB_FMODL)/g' \
++	      -e 's/@''GNULIB_FREXPF''@/$(GNULIB_FREXPF)/g' \
++	      -e 's/@''GNULIB_FREXP''@/$(GNULIB_FREXP)/g' \
++	      -e 's/@''GNULIB_FREXPL''@/$(GNULIB_FREXPL)/g' \
++	      -e 's/@''GNULIB_GETPAYLOAD''@/$(GNULIB_GETPAYLOAD)/g' \
++	      -e 's/@''GNULIB_GETPAYLOADF''@/$(GNULIB_GETPAYLOADF)/g' \
++	      -e 's/@''GNULIB_GETPAYLOADL''@/$(GNULIB_GETPAYLOADL)/g' \
++	      -e 's/@''GNULIB_HYPOT''@/$(GNULIB_HYPOT)/g' \
++	      -e 's/@''GNULIB_HYPOTF''@/$(GNULIB_HYPOTF)/g' \
++	      -e 's/@''GNULIB_HYPOTL''@/$(GNULIB_HYPOTL)/g' \
++	      < $(srcdir)/math.in.h > $@-t1
++	$(AM_V_at)sed \
++	      -e 's/@''GNULIB_ILOGB''@/$(GNULIB_ILOGB)/g' \
++	      -e 's/@''GNULIB_ILOGBF''@/$(GNULIB_ILOGBF)/g' \
++	      -e 's/@''GNULIB_ILOGBL''@/$(GNULIB_ILOGBL)/g' \
++	      -e 's/@''GNULIB_ISFINITE''@/$(GNULIB_ISFINITE)/g' \
++	      -e 's/@''GNULIB_ISINF''@/$(GNULIB_ISINF)/g' \
++	      -e 's/@''GNULIB_ISNAN''@/$(GNULIB_ISNAN)/g' \
++	      -e 's/@''GNULIB_ISNANF''@/$(GNULIB_ISNANF)/g' \
++	      -e 's/@''GNULIB_ISNAND''@/$(GNULIB_ISNAND)/g' \
++	      -e 's/@''GNULIB_ISNANL''@/$(GNULIB_ISNANL)/g' \
++	      -e 's/@''GNULIB_LDEXP''@/$(GNULIB_LDEXP)/g' \
++	      -e 's/@''GNULIB_LDEXPF''@/$(GNULIB_LDEXPF)/g' \
++	      -e 's/@''GNULIB_LDEXPL''@/$(GNULIB_LDEXPL)/g' \
++	      -e 's/@''GNULIB_LOG''@/$(GNULIB_LOG)/g' \
++	      -e 's/@''GNULIB_LOGF''@/$(GNULIB_LOGF)/g' \
++	      -e 's/@''GNULIB_LOGL''@/$(GNULIB_LOGL)/g' \
++	      -e 's/@''GNULIB_LOG10''@/$(GNULIB_LOG10)/g' \
++	      -e 's/@''GNULIB_LOG10F''@/$(GNULIB_LOG10F)/g' \
++	      -e 's/@''GNULIB_LOG10L''@/$(GNULIB_LOG10L)/g' \
++	      -e 's/@''GNULIB_LOG1P''@/$(GNULIB_LOG1P)/g' \
++	      -e 's/@''GNULIB_LOG1PF''@/$(GNULIB_LOG1PF)/g' \
++	      -e 's/@''GNULIB_LOG1PL''@/$(GNULIB_LOG1PL)/g' \
++	      -e 's/@''GNULIB_LOG2''@/$(GNULIB_LOG2)/g' \
++	      -e 's/@''GNULIB_LOG2F''@/$(GNULIB_LOG2F)/g' \
++	      -e 's/@''GNULIB_LOG2L''@/$(GNULIB_LOG2L)/g' \
++	      -e 's/@''GNULIB_LOGB''@/$(GNULIB_LOGB)/g' \
++	      -e 's/@''GNULIB_LOGBF''@/$(GNULIB_LOGBF)/g' \
++	      -e 's/@''GNULIB_LOGBL''@/$(GNULIB_LOGBL)/g' \
++	      -e 's/@''GNULIB_LOGP1''@/$(GNULIB_LOGP1)/g' \
++	      -e 's/@''GNULIB_LOGP1F''@/$(GNULIB_LOGP1F)/g' \
++	      -e 's/@''GNULIB_LOGP1L''@/$(GNULIB_LOGP1L)/g' \
++	      -e 's/@''GNULIB_MODF''@/$(GNULIB_MODF)/g' \
++	      -e 's/@''GNULIB_MODFF''@/$(GNULIB_MODFF)/g' \
++	      -e 's/@''GNULIB_MODFL''@/$(GNULIB_MODFL)/g' \
++	      -e 's/@''GNULIB_POWF''@/$(GNULIB_POWF)/g' \
++	      -e 's/@''GNULIB_REMAINDER''@/$(GNULIB_REMAINDER)/g' \
++	      -e 's/@''GNULIB_REMAINDERF''@/$(GNULIB_REMAINDERF)/g' \
++	      -e 's/@''GNULIB_REMAINDERL''@/$(GNULIB_REMAINDERL)/g' \
++	      -e 's/@''GNULIB_RINT''@/$(GNULIB_RINT)/g' \
++	      -e 's/@''GNULIB_RINTF''@/$(GNULIB_RINTF)/g' \
++	      -e 's/@''GNULIB_RINTL''@/$(GNULIB_RINTL)/g' \
++	      -e 's/@''GNULIB_ROUND''@/$(GNULIB_ROUND)/g' \
++	      -e 's/@''GNULIB_ROUNDF''@/$(GNULIB_ROUNDF)/g' \
++	      -e 's/@''GNULIB_ROUNDL''@/$(GNULIB_ROUNDL)/g' \
++	      -e 's/@''GNULIB_SETPAYLOAD''@/$(GNULIB_SETPAYLOAD)/g' \
++	      -e 's/@''GNULIB_SETPAYLOADF''@/$(GNULIB_SETPAYLOADF)/g' \
++	      -e 's/@''GNULIB_SETPAYLOADL''@/$(GNULIB_SETPAYLOADL)/g' \
++	      -e 's/@''GNULIB_SETPAYLOADSIG''@/$(GNULIB_SETPAYLOADSIG)/g' \
++	      -e 's/@''GNULIB_SETPAYLOADSIGF''@/$(GNULIB_SETPAYLOADSIGF)/g' \
++	      -e 's/@''GNULIB_SETPAYLOADSIGL''@/$(GNULIB_SETPAYLOADSIGL)/g' \
++	      -e 's/@''GNULIB_SIGNBIT''@/$(GNULIB_SIGNBIT)/g' \
++	      -e 's/@''GNULIB_SINF''@/$(GNULIB_SINF)/g' \
++	      -e 's/@''GNULIB_SINL''@/$(GNULIB_SINL)/g' \
++	      -e 's/@''GNULIB_SINHF''@/$(GNULIB_SINHF)/g' \
++	      -e 's/@''GNULIB_SQRTF''@/$(GNULIB_SQRTF)/g' \
++	      -e 's/@''GNULIB_SQRTL''@/$(GNULIB_SQRTL)/g' \
++	      -e 's/@''GNULIB_TANF''@/$(GNULIB_TANF)/g' \
++	      -e 's/@''GNULIB_TANL''@/$(GNULIB_TANL)/g' \
++	      -e 's/@''GNULIB_TANHF''@/$(GNULIB_TANHF)/g' \
++	      -e 's/@''GNULIB_TRUNC''@/$(GNULIB_TRUNC)/g' \
++	      -e 's/@''GNULIB_TRUNCF''@/$(GNULIB_TRUNCF)/g' \
++	      -e 's/@''GNULIB_TRUNCL''@/$(GNULIB_TRUNCL)/g' \
++	      -e 's/@''GNULIB_TOTALORDER''@/$(GNULIB_TOTALORDER)/g' \
++	      -e 's/@''GNULIB_TOTALORDERF''@/$(GNULIB_TOTALORDERF)/g' \
++	      -e 's/@''GNULIB_TOTALORDERL''@/$(GNULIB_TOTALORDERL)/g' \
++	      -e 's/@''GNULIB_TOTALORDERMAG''@/$(GNULIB_TOTALORDERMAG)/g' \
++	      -e 's/@''GNULIB_TOTALORDERMAGF''@/$(GNULIB_TOTALORDERMAGF)/g' \
++	      -e 's/@''GNULIB_TOTALORDERMAGL''@/$(GNULIB_TOTALORDERMAGL)/g' \
++	      -e 's/@''GNULIB_MDA_J0''@/$(GNULIB_MDA_J0)/g' \
++	      -e 's/@''GNULIB_MDA_J1''@/$(GNULIB_MDA_J1)/g' \
++	      -e 's/@''GNULIB_MDA_JN''@/$(GNULIB_MDA_JN)/g' \
++	      -e 's/@''GNULIB_MDA_Y0''@/$(GNULIB_MDA_Y0)/g' \
++	      -e 's/@''GNULIB_MDA_Y1''@/$(GNULIB_MDA_Y1)/g' \
++	      -e 's/@''GNULIB_MDA_YN''@/$(GNULIB_MDA_YN)/g' \
++	      < $@-t1 > $@-t2
++	$(AM_V_at)sed \
++	      -e 's|@''HAVE_ACOSF''@|$(HAVE_ACOSF)|g' \
++	      -e 's|@''HAVE_ACOSL''@|$(HAVE_ACOSL)|g' \
++	      -e 's|@''HAVE_ASINF''@|$(HAVE_ASINF)|g' \
++	      -e 's|@''HAVE_ASINL''@|$(HAVE_ASINL)|g' \
++	      -e 's|@''HAVE_ATANF''@|$(HAVE_ATANF)|g' \
++	      -e 's|@''HAVE_ATANL''@|$(HAVE_ATANL)|g' \
++	      -e 's|@''HAVE_ATAN2F''@|$(HAVE_ATAN2F)|g' \
++	      -e 's|@''HAVE_CBRT''@|$(HAVE_CBRT)|g' \
++	      -e 's|@''HAVE_CBRTF''@|$(HAVE_CBRTF)|g' \
++	      -e 's|@''HAVE_CBRTL''@|$(HAVE_CBRTL)|g' \
++	      -e 's|@''HAVE_COPYSIGN''@|$(HAVE_COPYSIGN)|g' \
++	      -e 's|@''HAVE_COPYSIGNL''@|$(HAVE_COPYSIGNL)|g' \
++	      -e 's|@''HAVE_COSF''@|$(HAVE_COSF)|g' \
++	      -e 's|@''HAVE_COSL''@|$(HAVE_COSL)|g' \
++	      -e 's|@''HAVE_COSHF''@|$(HAVE_COSHF)|g' \
++	      -e 's|@''HAVE_EXPF''@|$(HAVE_EXPF)|g' \
++	      -e 's|@''HAVE_EXPL''@|$(HAVE_EXPL)|g' \
++	      -e 's|@''HAVE_EXPM1''@|$(HAVE_EXPM1)|g' \
++	      -e 's|@''HAVE_EXPM1F''@|$(HAVE_EXPM1F)|g' \
++	      -e 's|@''HAVE_FABSF''@|$(HAVE_FABSF)|g' \
++	      -e 's|@''HAVE_FABSL''@|$(HAVE_FABSL)|g' \
++	      -e 's|@''HAVE_FMA''@|$(HAVE_FMA)|g' \
++	      -e 's|@''HAVE_FMAF''@|$(HAVE_FMAF)|g' \
++	      -e 's|@''HAVE_FMAL''@|$(HAVE_FMAL)|g' \
++	      -e 's|@''HAVE_FMODF''@|$(HAVE_FMODF)|g' \
++	      -e 's|@''HAVE_FMODL''@|$(HAVE_FMODL)|g' \
++	      -e 's|@''HAVE_FREXPF''@|$(HAVE_FREXPF)|g' \
++	      -e 's|@''HAVE_GETPAYLOAD''@|$(HAVE_GETPAYLOAD)|g' \
++	      -e 's|@''HAVE_GETPAYLOADF''@|$(HAVE_GETPAYLOADF)|g' \
++	      -e 's|@''HAVE_GETPAYLOADL''@|$(HAVE_GETPAYLOADL)|g' \
++	      -e 's|@''HAVE_HYPOTF''@|$(HAVE_HYPOTF)|g' \
++	      -e 's|@''HAVE_HYPOTL''@|$(HAVE_HYPOTL)|g' \
++	      -e 's|@''HAVE_ILOGB''@|$(HAVE_ILOGB)|g' \
++	      -e 's|@''HAVE_ILOGBF''@|$(HAVE_ILOGBF)|g' \
++	      -e 's|@''HAVE_ILOGBL''@|$(HAVE_ILOGBL)|g' \
++	      -e 's|@''HAVE_ISNANF''@|$(HAVE_ISNANF)|g' \
++	      -e 's|@''HAVE_ISNAND''@|$(HAVE_ISNAND)|g' \
++	      -e 's|@''HAVE_ISNANL''@|$(HAVE_ISNANL)|g' \
++	      -e 's|@''HAVE_LDEXPF''@|$(HAVE_LDEXPF)|g' \
++	      -e 's|@''HAVE_LOGF''@|$(HAVE_LOGF)|g' \
++	      -e 's|@''HAVE_LOGL''@|$(HAVE_LOGL)|g' \
++	      -e 's|@''HAVE_LOG10F''@|$(HAVE_LOG10F)|g' \
++	      -e 's|@''HAVE_LOG10L''@|$(HAVE_LOG10L)|g' \
++	      -e 's|@''HAVE_LOG1P''@|$(HAVE_LOG1P)|g' \
++	      -e 's|@''HAVE_LOG1PF''@|$(HAVE_LOG1PF)|g' \
++	      -e 's|@''HAVE_LOG1PL''@|$(HAVE_LOG1PL)|g' \
++	      -e 's|@''HAVE_LOGBF''@|$(HAVE_LOGBF)|g' \
++	      -e 's|@''HAVE_LOGBL''@|$(HAVE_LOGBL)|g' \
++	      -e 's|@''HAVE_LOGP1''@|$(HAVE_LOGP1)|g' \
++	      -e 's|@''HAVE_LOGP1F''@|$(HAVE_LOGP1F)|g' \
++	      -e 's|@''HAVE_LOGP1L''@|$(HAVE_LOGP1L)|g' \
++	      -e 's|@''HAVE_MODFF''@|$(HAVE_MODFF)|g' \
++	      -e 's|@''HAVE_MODFL''@|$(HAVE_MODFL)|g' \
++	      -e 's|@''HAVE_POWF''@|$(HAVE_POWF)|g' \
++	      -e 's|@''HAVE_REMAINDER''@|$(HAVE_REMAINDER)|g' \
++	      -e 's|@''HAVE_REMAINDERF''@|$(HAVE_REMAINDERF)|g' \
++	      -e 's|@''HAVE_RINT''@|$(HAVE_RINT)|g' \
++	      -e 's|@''HAVE_RINTL''@|$(HAVE_RINTL)|g' \
++	      -e 's|@''HAVE_SETPAYLOAD''@|$(HAVE_SETPAYLOAD)|g' \
++	      -e 's|@''HAVE_SETPAYLOADF''@|$(HAVE_SETPAYLOADF)|g' \
++	      -e 's|@''HAVE_SETPAYLOADL''@|$(HAVE_SETPAYLOADL)|g' \
++	      -e 's|@''HAVE_SETPAYLOADSIG''@|$(HAVE_SETPAYLOADSIG)|g' \
++	      -e 's|@''HAVE_SETPAYLOADSIGF''@|$(HAVE_SETPAYLOADSIGF)|g' \
++	      -e 's|@''HAVE_SETPAYLOADSIGL''@|$(HAVE_SETPAYLOADSIGL)|g' \
++	      -e 's|@''HAVE_SINF''@|$(HAVE_SINF)|g' \
++	      -e 's|@''HAVE_SINL''@|$(HAVE_SINL)|g' \
++	      -e 's|@''HAVE_SINHF''@|$(HAVE_SINHF)|g' \
++	      -e 's|@''HAVE_SQRTF''@|$(HAVE_SQRTF)|g' \
++	      -e 's|@''HAVE_SQRTL''@|$(HAVE_SQRTL)|g' \
++	      -e 's|@''HAVE_TANF''@|$(HAVE_TANF)|g' \
++	      -e 's|@''HAVE_TANL''@|$(HAVE_TANL)|g' \
++	      -e 's|@''HAVE_TANHF''@|$(HAVE_TANHF)|g' \
++	      -e 's|@''HAVE_TOTALORDER''@|$(HAVE_TOTALORDER)|g' \
++	      -e 's|@''HAVE_TOTALORDERF''@|$(HAVE_TOTALORDERF)|g' \
++	      -e 's|@''HAVE_TOTALORDERL''@|$(HAVE_TOTALORDERL)|g' \
++	      -e 's|@''HAVE_TOTALORDERMAG''@|$(HAVE_TOTALORDERMAG)|g' \
++	      -e 's|@''HAVE_TOTALORDERMAGF''@|$(HAVE_TOTALORDERMAGF)|g' \
++	      -e 's|@''HAVE_TOTALORDERMAGL''@|$(HAVE_TOTALORDERMAGL)|g' \
++	      < $@-t2 > $@-t3
++	$(AM_V_at)sed \
++	      -e 's|@''HAVE_DECL_ACOSL''@|$(HAVE_DECL_ACOSL)|g' \
++	      -e 's|@''HAVE_DECL_ASINL''@|$(HAVE_DECL_ASINL)|g' \
++	      -e 's|@''HAVE_DECL_ATANL''@|$(HAVE_DECL_ATANL)|g' \
++	      -e 's|@''HAVE_DECL_CBRTF''@|$(HAVE_DECL_CBRTF)|g' \
++	      -e 's|@''HAVE_DECL_CBRTL''@|$(HAVE_DECL_CBRTL)|g' \
++	      -e 's|@''HAVE_DECL_CEILF''@|$(HAVE_DECL_CEILF)|g' \
++	      -e 's|@''HAVE_DECL_CEILL''@|$(HAVE_DECL_CEILL)|g' \
++	      -e 's|@''HAVE_DECL_COPYSIGNF''@|$(HAVE_DECL_COPYSIGNF)|g' \
++	      -e 's|@''HAVE_DECL_COSL''@|$(HAVE_DECL_COSL)|g' \
++	      -e 's|@''HAVE_DECL_EXPL''@|$(HAVE_DECL_EXPL)|g' \
++	      -e 's|@''HAVE_DECL_EXP2''@|$(HAVE_DECL_EXP2)|g' \
++	      -e 's|@''HAVE_DECL_EXP2F''@|$(HAVE_DECL_EXP2F)|g' \
++	      -e 's|@''HAVE_DECL_EXP2L''@|$(HAVE_DECL_EXP2L)|g' \
++	      -e 's|@''HAVE_DECL_EXPM1L''@|$(HAVE_DECL_EXPM1L)|g' \
++	      -e 's|@''HAVE_DECL_FLOORF''@|$(HAVE_DECL_FLOORF)|g' \
++	      -e 's|@''HAVE_DECL_FLOORL''@|$(HAVE_DECL_FLOORL)|g' \
++	      -e 's|@''HAVE_DECL_FREXPL''@|$(HAVE_DECL_FREXPL)|g' \
++	      -e 's|@''HAVE_DECL_LDEXPL''@|$(HAVE_DECL_LDEXPL)|g' \
++	      -e 's|@''HAVE_DECL_LOGL''@|$(HAVE_DECL_LOGL)|g' \
++	      -e 's|@''HAVE_DECL_LOG10L''@|$(HAVE_DECL_LOG10L)|g' \
++	      -e 's|@''HAVE_DECL_LOG2''@|$(HAVE_DECL_LOG2)|g' \
++	      -e 's|@''HAVE_DECL_LOG2F''@|$(HAVE_DECL_LOG2F)|g' \
++	      -e 's|@''HAVE_DECL_LOG2L''@|$(HAVE_DECL_LOG2L)|g' \
++	      -e 's|@''HAVE_DECL_LOGB''@|$(HAVE_DECL_LOGB)|g' \
++	      -e 's|@''HAVE_DECL_REMAINDER''@|$(HAVE_DECL_REMAINDER)|g' \
++	      -e 's|@''HAVE_DECL_REMAINDERL''@|$(HAVE_DECL_REMAINDERL)|g' \
++	      -e 's|@''HAVE_DECL_RINTF''@|$(HAVE_DECL_RINTF)|g' \
++	      -e 's|@''HAVE_DECL_ROUND''@|$(HAVE_DECL_ROUND)|g' \
++	      -e 's|@''HAVE_DECL_ROUNDF''@|$(HAVE_DECL_ROUNDF)|g' \
++	      -e 's|@''HAVE_DECL_ROUNDL''@|$(HAVE_DECL_ROUNDL)|g' \
++	      -e 's|@''HAVE_DECL_SINL''@|$(HAVE_DECL_SINL)|g' \
++	      -e 's|@''HAVE_DECL_SQRTL''@|$(HAVE_DECL_SQRTL)|g' \
++	      -e 's|@''HAVE_DECL_TANL''@|$(HAVE_DECL_TANL)|g' \
++	      -e 's|@''HAVE_DECL_TRUNC''@|$(HAVE_DECL_TRUNC)|g' \
++	      -e 's|@''HAVE_DECL_TRUNCF''@|$(HAVE_DECL_TRUNCF)|g' \
++	      -e 's|@''HAVE_DECL_TRUNCL''@|$(HAVE_DECL_TRUNCL)|g' \
++	      < $@-t3 > $@-t4
++	$(AM_V_at)sed \
++	      -e 's|@''REPLACE_ACOSF''@|$(REPLACE_ACOSF)|g' \
++	      -e 's|@''REPLACE_ASINF''@|$(REPLACE_ASINF)|g' \
++	      -e 's|@''REPLACE_ATANF''@|$(REPLACE_ATANF)|g' \
++	      -e 's|@''REPLACE_ATAN2F''@|$(REPLACE_ATAN2F)|g' \
++	      -e 's|@''REPLACE_CBRTF''@|$(REPLACE_CBRTF)|g' \
++	      -e 's|@''REPLACE_CBRTL''@|$(REPLACE_CBRTL)|g' \
++	      -e 's|@''REPLACE_CEIL''@|$(REPLACE_CEIL)|g' \
++	      -e 's|@''REPLACE_CEILF''@|$(REPLACE_CEILF)|g' \
++	      -e 's|@''REPLACE_CEILL''@|$(REPLACE_CEILL)|g' \
++	      -e 's|@''REPLACE_COSF''@|$(REPLACE_COSF)|g' \
++	      -e 's|@''REPLACE_COSHF''@|$(REPLACE_COSHF)|g' \
++	      -e 's|@''REPLACE_EXPF''@|$(REPLACE_EXPF)|g' \
++	      -e 's|@''REPLACE_EXPL''@|$(REPLACE_EXPL)|g' \
++	      -e 's|@''REPLACE_EXPM1''@|$(REPLACE_EXPM1)|g' \
++	      -e 's|@''REPLACE_EXPM1F''@|$(REPLACE_EXPM1F)|g' \
++	      -e 's|@''REPLACE_EXPM1L''@|$(REPLACE_EXPM1L)|g' \
++	      -e 's|@''REPLACE_EXP2''@|$(REPLACE_EXP2)|g' \
++	      -e 's|@''REPLACE_EXP2L''@|$(REPLACE_EXP2L)|g' \
++	      -e 's|@''REPLACE_FABSL''@|$(REPLACE_FABSL)|g' \
++	      -e 's|@''REPLACE_FLOOR''@|$(REPLACE_FLOOR)|g' \
++	      -e 's|@''REPLACE_FLOORF''@|$(REPLACE_FLOORF)|g' \
++	      -e 's|@''REPLACE_FLOORL''@|$(REPLACE_FLOORL)|g' \
++	      -e 's|@''REPLACE_FMA''@|$(REPLACE_FMA)|g' \
++	      -e 's|@''REPLACE_FMAF''@|$(REPLACE_FMAF)|g' \
++	      -e 's|@''REPLACE_FMAL''@|$(REPLACE_FMAL)|g' \
++	      -e 's|@''REPLACE_FMOD''@|$(REPLACE_FMOD)|g' \
++	      -e 's|@''REPLACE_FMODF''@|$(REPLACE_FMODF)|g' \
++	      -e 's|@''REPLACE_FMODL''@|$(REPLACE_FMODL)|g' \
++	      -e 's|@''REPLACE_FREXPF''@|$(REPLACE_FREXPF)|g' \
++	      -e 's|@''REPLACE_FREXP''@|$(REPLACE_FREXP)|g' \
++	      -e 's|@''REPLACE_FREXPL''@|$(REPLACE_FREXPL)|g' \
++	      -e 's|@''REPLACE_GETPAYLOAD''@|$(REPLACE_GETPAYLOAD)|g' \
++	      -e 's|@''REPLACE_GETPAYLOADF''@|$(REPLACE_GETPAYLOADF)|g' \
++	      -e 's|@''REPLACE_GETPAYLOADL''@|$(REPLACE_GETPAYLOADL)|g' \
++	      -e 's|@''REPLACE_HUGE_VAL''@|$(REPLACE_HUGE_VAL)|g' \
++	      -e 's|@''REPLACE_HYPOT''@|$(REPLACE_HYPOT)|g' \
++	      -e 's|@''REPLACE_HYPOTF''@|$(REPLACE_HYPOTF)|g' \
++	      -e 's|@''REPLACE_HYPOTL''@|$(REPLACE_HYPOTL)|g' \
++	      -e 's|@''REPLACE_ILOGB''@|$(REPLACE_ILOGB)|g' \
++	      -e 's|@''REPLACE_ILOGBF''@|$(REPLACE_ILOGBF)|g' \
++	      -e 's|@''REPLACE_ILOGBL''@|$(REPLACE_ILOGBL)|g' \
++	      -e 's|@''REPLACE_ISFINITE''@|$(REPLACE_ISFINITE)|g' \
++	      -e 's|@''REPLACE_ISINF''@|$(REPLACE_ISINF)|g' \
++	      -e 's|@''REPLACE_ISNAN''@|$(REPLACE_ISNAN)|g' \
++	      -e 's|@''REPLACE_ITOLD''@|$(REPLACE_ITOLD)|g' \
++	      < $@-t4 > $@-t5
++	$(AM_V_at)sed \
++	      -e 's|@''REPLACE_LDEXP''@|$(REPLACE_LDEXP)|g' \
++	      -e 's|@''REPLACE_LDEXPL''@|$(REPLACE_LDEXPL)|g' \
++	      -e 's|@''REPLACE_LOG''@|$(REPLACE_LOG)|g' \
++	      -e 's|@''REPLACE_LOGF''@|$(REPLACE_LOGF)|g' \
++	      -e 's|@''REPLACE_LOGL''@|$(REPLACE_LOGL)|g' \
++	      -e 's|@''REPLACE_LOG10''@|$(REPLACE_LOG10)|g' \
++	      -e 's|@''REPLACE_LOG10F''@|$(REPLACE_LOG10F)|g' \
++	      -e 's|@''REPLACE_LOG10L''@|$(REPLACE_LOG10L)|g' \
++	      -e 's|@''REPLACE_LOG1P''@|$(REPLACE_LOG1P)|g' \
++	      -e 's|@''REPLACE_LOG1PF''@|$(REPLACE_LOG1PF)|g' \
++	      -e 's|@''REPLACE_LOG1PL''@|$(REPLACE_LOG1PL)|g' \
++	      -e 's|@''REPLACE_LOG2''@|$(REPLACE_LOG2)|g' \
++	      -e 's|@''REPLACE_LOG2F''@|$(REPLACE_LOG2F)|g' \
++	      -e 's|@''REPLACE_LOG2L''@|$(REPLACE_LOG2L)|g' \
++	      -e 's|@''REPLACE_LOGB''@|$(REPLACE_LOGB)|g' \
++	      -e 's|@''REPLACE_LOGBF''@|$(REPLACE_LOGBF)|g' \
++	      -e 's|@''REPLACE_LOGBL''@|$(REPLACE_LOGBL)|g' \
++	      -e 's|@''REPLACE_MODF''@|$(REPLACE_MODF)|g' \
++	      -e 's|@''REPLACE_MODFF''@|$(REPLACE_MODFF)|g' \
++	      -e 's|@''REPLACE_MODFL''@|$(REPLACE_MODFL)|g' \
++	      -e 's|@''REPLACE_NAN''@|$(REPLACE_NAN)|g' \
++	      -e 's|@''REPLACE_REMAINDER''@|$(REPLACE_REMAINDER)|g' \
++	      -e 's|@''REPLACE_REMAINDERF''@|$(REPLACE_REMAINDERF)|g' \
++	      -e 's|@''REPLACE_REMAINDERL''@|$(REPLACE_REMAINDERL)|g' \
++	      -e 's|@''REPLACE_RINTL''@|$(REPLACE_RINTL)|g' \
++	      -e 's|@''REPLACE_ROUND''@|$(REPLACE_ROUND)|g' \
++	      -e 's|@''REPLACE_ROUNDF''@|$(REPLACE_ROUNDF)|g' \
++	      -e 's|@''REPLACE_ROUNDL''@|$(REPLACE_ROUNDL)|g' \
++	      -e 's|@''REPLACE_SIGNBIT''@|$(REPLACE_SIGNBIT)|g' \
++	      -e 's|@''REPLACE_SIGNBIT_USING_BUILTINS''@|$(REPLACE_SIGNBIT_USING_BUILTINS)|g' \
++	      -e 's|@''REPLACE_SINF''@|$(REPLACE_SINF)|g' \
++	      -e 's|@''REPLACE_SINHF''@|$(REPLACE_SINHF)|g' \
++	      -e 's|@''REPLACE_SQRTF''@|$(REPLACE_SQRTF)|g' \
++	      -e 's|@''REPLACE_SQRTL''@|$(REPLACE_SQRTL)|g' \
++	      -e 's|@''REPLACE_TANF''@|$(REPLACE_TANF)|g' \
++	      -e 's|@''REPLACE_TANHF''@|$(REPLACE_TANHF)|g' \
++	      -e 's|@''REPLACE_TOTALORDER''@|$(REPLACE_TOTALORDER)|g' \
++	      -e 's|@''REPLACE_TOTALORDERF''@|$(REPLACE_TOTALORDERF)|g' \
++	      -e 's|@''REPLACE_TOTALORDERL''@|$(REPLACE_TOTALORDERL)|g' \
++	      -e 's|@''REPLACE_TOTALORDERMAG''@|$(REPLACE_TOTALORDERMAG)|g' \
++	      -e 's|@''REPLACE_TOTALORDERMAGF''@|$(REPLACE_TOTALORDERMAGF)|g' \
++	      -e 's|@''REPLACE_TOTALORDERMAGL''@|$(REPLACE_TOTALORDERMAGL)|g' \
++	      -e 's|@''REPLACE_TRUNC''@|$(REPLACE_TRUNC)|g' \
++	      -e 's|@''REPLACE_TRUNCF''@|$(REPLACE_TRUNCF)|g' \
++	      -e 's|@''REPLACE_TRUNCL''@|$(REPLACE_TRUNCL)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      < $@-t5 > $@-t6
++	$(AM_V_at)rm -f $@-t1 $@-t2 $@-t3 $@-t4 $@-t5
++	$(AM_V_at)mv $@-t6 $@
++MOSTLYCLEANFILES += math.h math.h-t1 math.h-t2 math.h-t3 math.h-t4 math.h-t5 math.h-t6
++
++Include:
++<math.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/modf
++++ b/modules/modf
+@@ -7,7 +7,7 @@ m4/modf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ isfinite        [test $REPLACE_MODF = 1]
+ trunc           [test $REPLACE_MODF = 1]
+ isinf           [test $REPLACE_MODF = 1]
+--- a/modules/modff
++++ b/modules/modff
+@@ -7,7 +7,7 @@ m4/modff.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ modf            [test $HAVE_MODFF = 0 || test $REPLACE_MODFF = 1]
+ 
+--- a/modules/modfl
++++ b/modules/modfl
+@@ -7,7 +7,7 @@ m4/modfl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ modf            [{ test $HAVE_MODFL = 0 || test $REPLACE_MODFL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isfinite        [{ test $HAVE_MODFL = 0 || test $REPLACE_MODFL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -18,7 +18,7 @@ inttypes-h-incomplete
+ langinfo-h
+ locale-h
+ malloc-h
+-math
++math-h
+ monetary
+ netdb
+ poll-h
+--- a/modules/powf
++++ b/modules/powf
+@@ -6,7 +6,7 @@ lib/powf.c
+ m4/powf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ pow             [test $HAVE_POWF = 0]
+ 
+--- a/modules/printf-frexpl
++++ b/modules/printf-frexpl
+@@ -13,7 +13,7 @@ m4/ldexpl.m4
+ Depends-on:
+ printf-frexp    [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-math            [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++math-h          [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fpucw           [test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+--- a/modules/remainder
++++ b/modules/remainder
+@@ -7,7 +7,7 @@ m4/remainder.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ isfinite        [test $HAVE_REMAINDER = 0 || test $REPLACE_REMAINDER = 1]
+ signbit         [test $HAVE_REMAINDER = 0 || test $REPLACE_REMAINDER = 1]
+ fabs            [test $HAVE_REMAINDER = 0 || test $REPLACE_REMAINDER = 1]
+--- a/modules/remainderf
++++ b/modules/remainderf
+@@ -8,7 +8,7 @@ m4/remainderf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ remainder       [test $HAVE_REMAINDERF = 0 || test $REPLACE_REMAINDERF = 1]
+ isfinite        [test $HAVE_REMAINDERF = 0 || test $REPLACE_REMAINDERF = 1]
+--- a/modules/remainderl
++++ b/modules/remainderl
+@@ -8,7 +8,7 @@ m4/remainderl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ remainder       [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/rint
++++ b/modules/rint
+@@ -7,7 +7,7 @@ m4/rint.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ 
+ configure.ac:
+ gl_FUNC_RINT
+--- a/modules/rintf
++++ b/modules/rintf
+@@ -8,7 +8,7 @@ m4/rintf.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/rintl
++++ b/modules/rintl
+@@ -8,7 +8,7 @@ m4/rintl.m4
+ m4/mathfunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ rint            [{ test $HAVE_RINTL = 0 || test $REPLACE_RINTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ 
+--- a/modules/round
++++ b/modules/round
+@@ -9,7 +9,7 @@ m4/floor.m4
+ m4/ceil.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_ROUND = 0 || test $REPLACE_ROUND = 1]
+ floor           [test $HAVE_ROUND = 0 || test $REPLACE_ROUND = 1]
+--- a/modules/roundf
++++ b/modules/roundf
+@@ -10,7 +10,7 @@ m4/floorf.m4
+ m4/ceilf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_ROUNDF = 0 || test $REPLACE_ROUNDF = 1]
+ 
+--- a/modules/roundl
++++ b/modules/roundl
+@@ -10,7 +10,7 @@ m4/floorl.m4
+ m4/ceill.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ round           [{ test $HAVE_ROUNDL = 0 || test $REPLACE_ROUNDL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_ROUNDL = 0 || test $REPLACE_ROUNDL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/setpayload
++++ b/modules/setpayload
+@@ -8,7 +8,7 @@ m4/setpayload.m4
+ m4/nan-mips.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOAD = 0]
+ stdint          [test $HAVE_SETPAYLOAD = 0]
+--- a/modules/setpayloadf
++++ b/modules/setpayloadf
+@@ -8,7 +8,7 @@ m4/setpayload.m4
+ m4/nan-mips.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADF = 0]
+ stdint          [test $HAVE_SETPAYLOADF = 0]
+--- a/modules/setpayloadl
++++ b/modules/setpayloadl
+@@ -9,7 +9,7 @@ m4/exponentl.m4
+ m4/nan-mips.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ setpayload      [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/setpayloadsig
++++ b/modules/setpayloadsig
+@@ -7,7 +7,7 @@ m4/mathfunc.m4
+ m4/setpayloadsig.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADSIG = 0]
+ stdint          [test $HAVE_SETPAYLOADSIG = 0]
+--- a/modules/setpayloadsigf
++++ b/modules/setpayloadsigf
+@@ -7,7 +7,7 @@ m4/mathfunc.m4
+ m4/setpayloadsig.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADSIGF = 0]
+ stdint          [test $HAVE_SETPAYLOADSIGF = 0]
+--- a/modules/setpayloadsigl
++++ b/modules/setpayloadsigl
+@@ -8,7 +8,7 @@ m4/setpayloadsig.m4
+ m4/exponentl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ setpayloadsig   [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/signbit
++++ b/modules/signbit
+@@ -9,7 +9,7 @@ lib/float+.h
+ m4/signbit.m4
+ 
+ Depends-on:
+-math
++math-h
+ float-h         [test $REPLACE_SIGNBIT = 1]
+ isnanf-nolibm   [test $REPLACE_SIGNBIT = 1]
+ isnand-nolibm   [test $REPLACE_SIGNBIT = 1]
+--- a/modules/sinf
++++ b/modules/sinf
+@@ -6,7 +6,7 @@ lib/sinf.c
+ m4/sinf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ sin             [test $HAVE_SINF = 0]
+ 
+--- a/modules/sinhf
++++ b/modules/sinhf
+@@ -6,7 +6,7 @@ lib/sinhf.c
+ m4/sinhf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ sinh            [test $HAVE_SINHF = 0]
+ 
+--- a/modules/sinl
++++ b/modules/sinl
+@@ -9,7 +9,7 @@ lib/trigl.c
+ m4/sinl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ sin             [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SINL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/sqrtf
++++ b/modules/sqrtf
+@@ -6,7 +6,7 @@ lib/sqrtf.c
+ m4/sqrtf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ sqrt            [test $HAVE_SQRTF = 0]
+ 
+--- a/modules/sqrtl
++++ b/modules/sqrtl
+@@ -6,7 +6,7 @@ lib/sqrtl.c
+ m4/sqrtl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ sqrt            [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; }]
+ float-h         [{ test $HAVE_SQRTL = 0 || test $REPLACE_SQRTL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/strtod
++++ b/modules/strtod
+@@ -10,7 +10,7 @@ Depends-on:
+ stdlib
+ strtod-obsolete
+ c-ctype         [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+-math            [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
++math-h          [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+ stdbool         [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+ 
+ configure.ac:
+--- a/modules/strtof
++++ b/modules/strtof
+@@ -10,7 +10,7 @@ m4/ldexpf.m4
+ Depends-on:
+ stdlib
+ c-ctype         [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+-math            [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
++math-h          [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ stdbool         [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ 
+ configure.ac:
+--- a/modules/strtold
++++ b/modules/strtold
+@@ -11,7 +11,7 @@ m4/ldexpl.m4
+ Depends-on:
+ stdlib
+ c-ctype         [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+-math            [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
++math-h          [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ stdbool         [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ strtod          [{ test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ 
+--- a/modules/tanf
++++ b/modules/tanf
+@@ -6,7 +6,7 @@ lib/tanf.c
+ m4/tanf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ tan             [test $HAVE_TANF = 0]
+ 
+--- a/modules/tanhf
++++ b/modules/tanhf
+@@ -6,7 +6,7 @@ lib/tanhf.c
+ m4/tanhf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ tanh            [test $HAVE_TANHF = 0]
+ 
+--- a/modules/tanl
++++ b/modules/tanl
+@@ -8,7 +8,7 @@ lib/trigl.c
+ m4/tanl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ tan             [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_TANL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/totalorder
++++ b/modules/totalorder
+@@ -8,7 +8,7 @@ m4/totalorder.m4
+ m4/nan-mips.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnand          [test $HAVE_TOTALORDER = 0 || test $REPLACE_TOTALORDER = 1]
+ signbit         [test $HAVE_TOTALORDER = 0 || test $REPLACE_TOTALORDER = 1]
+--- a/modules/totalorderf
++++ b/modules/totalorderf
+@@ -8,7 +8,7 @@ m4/totalorder.m4
+ m4/nan-mips.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ isnanf          [test $HAVE_TOTALORDERF = 0 || test $REPLACE_TOTALORDERF = 1]
+ signbit         [test $HAVE_TOTALORDERF = 0 || test $REPLACE_TOTALORDERF = 1]
+--- a/modules/totalorderl
++++ b/modules/totalorderl
+@@ -9,7 +9,7 @@ m4/nan-mips.m4
+ m4/signbit.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ totalorder      [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/totalordermag
++++ b/modules/totalordermag
+@@ -9,7 +9,7 @@ m4/nan-mips.m4
+ m4/signbit.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ verify          [test $HAVE_TOTALORDERMAG = 0 || test $REPLACE_TOTALORDERMAG = 1]
+ isnand          [test $HAVE_TOTALORDERMAG = 0 || test $REPLACE_TOTALORDERMAG = 1]
+--- a/modules/totalordermagf
++++ b/modules/totalordermagf
+@@ -9,7 +9,7 @@ m4/nan-mips.m4
+ m4/signbit.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ verify          [test $HAVE_TOTALORDERMAGF = 0 || test $REPLACE_TOTALORDERMAGF = 1]
+ isnanf          [test $HAVE_TOTALORDERMAGF = 0 || test $REPLACE_TOTALORDERMAGF = 1]
+--- a/modules/totalordermagl
++++ b/modules/totalordermagl
+@@ -9,7 +9,7 @@ m4/nan-mips.m4
+ m4/signbit.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ totalordermag   [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/trunc
++++ b/modules/trunc
+@@ -6,7 +6,7 @@ lib/trunc.c
+ m4/trunc.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_DECL_TRUNC = 0 || test $REPLACE_TRUNC = 1]
+ 
+--- a/modules/truncf
++++ b/modules/truncf
+@@ -7,7 +7,7 @@ lib/trunc.c
+ m4/truncf.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ float-h         [test $HAVE_DECL_TRUNCF = 0 || test $REPLACE_TRUNCF = 1]
+ 
+--- a/modules/truncl
++++ b/modules/truncl
+@@ -7,7 +7,7 @@ lib/trunc.c
+ m4/truncl.m4
+ 
+ Depends-on:
+-math
++math-h
+ extensions
+ trunc           [{ test $HAVE_DECL_TRUNCL = 0 || test $REPLACE_TRUNCL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_DECL_TRUNCL = 0 || test $REPLACE_TRUNCL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]

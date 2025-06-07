@@ -1,0 +1,185 @@
+From 042567babec4a5f85aeb54dc4f6ec20b19aaff06 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:16:13 +0100
+Subject: [PATCH] Rename module search to search-h.
+
+* modules/search-h: Renamed from modules/search.
+* modules/search-h-tests: Renamed from modules/search-tests.
+* modules/search-h-c++-tests: Renamed from modules/search-c++-tests.
+* tests/test-search-h.c: Renamed from tests/test-search.c.
+* tests/test-search-h-c++.cc: Renamed from tests/test-search-c++.cc.
+* doc/posix-headers/search.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/search: New file.
+---
+ ChangeLog                                     | 12 ++++
+ doc/posix-headers/search.texi                 |  4 +-
+ modules/posixcheck                            |  2 +-
+ modules/search                                | 45 +++------------
+ modules/search-c++-tests                      | 19 -------
+ modules/search-h                              | 56 +++++++++++++++++++
+ modules/search-h-c++-tests                    | 19 +++++++
+ modules/search-h-tests                        | 11 ++++
+ modules/search-tests                          | 11 ----
+ modules/tsearch                               |  2 +-
+ ...est-search-c++.cc => test-search-h-c++.cc} |  0
+ tests/{test-search.c => test-search-h.c}      |  0
+ 12 files changed, 109 insertions(+), 72 deletions(-)
+ delete mode 100644 modules/search-c++-tests
+ create mode 100644 modules/search-h
+ create mode 100644 modules/search-h-c++-tests
+ create mode 100644 modules/search-h-tests
+ delete mode 100644 modules/search-tests
+ rename tests/{test-search-c++.cc => test-search-h-c++.cc} (100%)
+ rename tests/{test-search.c => test-search-h.c} (100%)
+
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -25,7 +25,7 @@ poll-h
+ pthread-h
+ pty-h
+ sched-h
+-search
++search-h
+ signal-h
+ spawn
+ stdio
+--- a/modules/search
++++ b/modules/search
+@@ -1,52 +1,20 @@
+ Description:
+ A GNU-like <search.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'search-h' instead.
++
+ Files:
+-lib/search.in.h
+-m4/search_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
++search-h
+ 
+ configure.ac:
+-gl_SEARCH_H
+-gl_SEARCH_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += search.h
+-
+-# We need the following in order to create <search.h> when the system
+-# doesn't have one that works with the given compiler.
+-search.h: search.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_SEARCH_H''@|$(HAVE_SEARCH_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_SEARCH_H''@|$(NEXT_SEARCH_H)|g' \
+-	      -e 's|@''HAVE_TYPE_VISIT''@|$(HAVE_TYPE_VISIT)|g' \
+-	      -e 's/@''GNULIB_TSEARCH''@/$(GNULIB_TSEARCH)/g' \
+-	      -e 's/@''GNULIB_MDA_LFIND''@/$(GNULIB_MDA_LFIND)/g' \
+-	      -e 's/@''GNULIB_MDA_LSEARCH''@/$(GNULIB_MDA_LSEARCH)/g' \
+-	      -e 's|@''HAVE_TSEARCH''@|$(HAVE_TSEARCH)|g' \
+-	      -e 's|@''HAVE_TWALK''@|$(HAVE_TWALK)|g' \
+-	      -e 's|@''HAVE_TDESTROY''@|$(HAVE_TDESTROY)|g' \
+-	      -e 's|@''REPLACE_TSEARCH''@|$(REPLACE_TSEARCH)|g' \
+-	      -e 's|@''REPLACE_TWALK''@|$(REPLACE_TWALK)|g' \
+-	      -e 's|@''REPLACE_TDESTROY''@|$(REPLACE_TDESTROY)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/search.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += search.h search.h-t
+ 
+ Include:
+ <search.h>
+@@ -55,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/search-h
+@@ -0,0 +1,58 @@
++Description:
++A GNU-like <search.h>.
++
++Files:
++lib/search.in.h
++m4/search_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_SEARCH_H
++gl_SEARCH_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += search.h
++
++# We need the following in order to create <search.h> when the system
++# doesn't have one that works with the given compiler.
++search.h: search.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_SEARCH_H''@|$(HAVE_SEARCH_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_SEARCH_H''@|$(NEXT_SEARCH_H)|g' \
++	      -e 's|@''HAVE_TYPE_VISIT''@|$(HAVE_TYPE_VISIT)|g' \
++	      -e 's/@''GNULIB_TSEARCH''@/$(GNULIB_TSEARCH)/g' \
++	      -e 's/@''GNULIB_MDA_LFIND''@/$(GNULIB_MDA_LFIND)/g' \
++	      -e 's/@''GNULIB_MDA_LSEARCH''@/$(GNULIB_MDA_LSEARCH)/g' \
++	      -e 's|@''HAVE_TSEARCH''@|$(HAVE_TSEARCH)|g' \
++	      -e 's|@''HAVE_TWALK''@|$(HAVE_TWALK)|g' \
++	      -e 's|@''HAVE_TDESTROY''@|$(HAVE_TDESTROY)|g' \
++	      -e 's|@''REPLACE_TSEARCH''@|$(REPLACE_TSEARCH)|g' \
++	      -e 's|@''REPLACE_TWALK''@|$(REPLACE_TWALK)|g' \
++	      -e 's|@''REPLACE_TDESTROY''@|$(REPLACE_TDESTROY)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/search.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += search.h search.h-t
++
++Include:
++<search.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/tsearch
++++ b/modules/tsearch
+@@ -6,7 +6,7 @@ lib/tsearch.c
+ m4/tsearch.m4
+ 
+ Depends-on:
+-search
++search-h
+ 
+ configure.ac:
+ gl_FUNC_TSEARCH

@@ -1,0 +1,87 @@
+From dd07b74893bc2fee44743f775a887930d04e9a85 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 13 Oct 2024 12:01:08 +0200
+Subject: [PATCH] string-desc: New function string_desc_c_casecmp.
+
+* lib/string-desc.h: New declaration.
+* lib/string-desc.c: Include <limits.h>, c-ctype.h.
+(string_desc_c_casecmp): New function.
+* modules/string-desc (Depends-on): Add c-ctype.
+* tests/test-string-desc.c (main): Add tests of string_desc_c_casecmp.
+---
+ ChangeLog                |  9 +++++++++
+ lib/string-desc.c        | 24 ++++++++++++++++++++++++
+ lib/string-desc.h        |  6 ++++++
+ modules/string-desc      |  1 +
+ tests/test-string-desc.c | 17 +++++++++++++++++
+ 5 files changed, 57 insertions(+)
+
+--- a/lib/string-desc.c
++++ b/lib/string-desc.c
+@@ -25,10 +25,12 @@
+ /* Specification and inline definitions.  */
+ #include "string-desc.h"
+ 
++#include <limits.h>
+ #include <stdarg.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#include "c-ctype.h"
+ #include "ialloc.h"
+ #include "full-write.h"
+ 
+@@ -83,6 +85,28 @@ string_desc_cmp (string_desc_t a, string
+     }
+ }
+ 
++int
++string_desc_c_casecmp (string_desc_t a, string_desc_t b)
++{
++  /* Don't use memcasecmp here, since it uses the current locale, not the
++     "C" locale.  */
++  idx_t an = string_desc_length (a);
++  idx_t bn = string_desc_length (b);
++  const char *ap = string_desc_data (a);
++  const char *bp = string_desc_data (b);
++  idx_t n = (an < bn ? an : bn);
++  idx_t i;
++  for (i = 0; i < n; i++)
++    {
++      int ac = c_tolower ((unsigned char) ap[i]);
++      int bc = c_tolower ((unsigned char) bp[i]);
++      if (ac != bc)
++        return (UCHAR_MAX <= INT_MAX ? ac - bc : _GL_CMP (ac, bc));
++    }
++  /* Here i = n = min (an, bn).  */
++  return _GL_CMP (an, bn);
++}
++
+ ptrdiff_t
+ string_desc_index (string_desc_t s, char c)
+ {
+--- a/lib/string-desc.h
++++ b/lib/string-desc.h
+@@ -102,6 +102,12 @@ extern bool string_desc_endswith (string
+    'unsigned char'.  */
+ extern int string_desc_cmp (string_desc_t a, string_desc_t b);
+ 
++/* Return > 0, == 0, or < 0 if A > B, A == B, A < B.
++   Either A or B must be entirely ASCII.
++   This uses a lexicographic ordering, where the bytes are compared as
++   'unsigned char', ignoring case, in the "C" locale.  */
++extern int string_desc_c_casecmp (string_desc_t a, string_desc_t b);
++
+ /* Return the index of the first occurrence of C in S,
+    or -1 if there is none.  */
+ extern ptrdiff_t string_desc_index (string_desc_t s, char c);
+--- a/modules/string-desc
++++ b/modules/string-desc
+@@ -9,6 +9,7 @@ lib/string-desc-contains.c
+ Depends-on:
+ stdbool
+ idx
++c-ctype
+ ialloc
+ extern-inline
+ memchr

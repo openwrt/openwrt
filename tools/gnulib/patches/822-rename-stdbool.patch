@@ -1,0 +1,3582 @@
+From 3c501171cfd447b5024a4673236ef86f487eaa28 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:18:14 +0100
+Subject: [PATCH] Rename module stdbool to stdbool-h.
+
+* modules/stdbool-h: Renamed from modules/stdbool.
+* modules/stdbool-h-tests: Renamed from modules/stdbool-tests.
+* modules/stdbool-h-c++-tests: Renamed from modules/stdbool-c++-tests.
+* tests/test-stdbool-h.c: Renamed from tests/test-stdbool.c.
+* tests/test-stdbool-h-c++.cc: Renamed from tests/test-stdbool-c++.cc.
+* tests/test-stdbool-h-c++2.cc: Renamed from tests/test-stdbool-c++2.cc.
+* tests/test-stdbool-h-c99.c: Update.
+* tests/test-stdbool-h-c99-c++.cc: Update.
+* doc/posix-headers/stdbool.texi: Update.
+* doc/gnulib-readme.texi: Update.
+* doc/gnulib.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdbool: New file.
+---
+ ChangeLog                                     | 17 +++++++++++++++
+ doc/gnulib-readme.texi                        |  4 ++--
+ doc/gnulib.texi                               |  4 ++--
+ doc/posix-headers/stdbool.texi                |  4 ++--
+ modules/acl-permissions                       |  2 +-
+ modules/areadlink-tests                       |  2 +-
+ modules/areadlink-with-size-tests             |  2 +-
+ modules/areadlinkat-tests                     |  2 +-
+ modules/areadlinkat-with-size-tests           |  2 +-
+ modules/argmatch                              |  2 +-
+ modules/argp                                  |  2 +-
+ modules/argv-iter                             |  2 +-
+ modules/asyncsafe-spin                        |  2 +-
+ modules/backup-rename                         |  2 +-
+ modules/backupfile                            |  2 +-
+ modules/base32                                |  2 +-
+ modules/base64                                |  2 +-
+ modules/basename-lgpl                         |  2 +-
+ modules/bcp47                                 |  2 +-
+ modules/bitset                                |  2 +-
+ modules/boot-time                             |  2 +-
+ modules/byteswap                              |  2 +-
+ modules/c-ctype                               |  2 +-
+ modules/c-nstrftime                           |  2 +-
+ modules/c-strcasestr                          |  2 +-
+ modules/canonicalize                          |  2 +-
+ modules/canonicalize-lgpl                     |  2 +-
+ modules/ceil-tests                            |  2 +-
+ modules/ceilf-tests                           |  2 +-
+ modules/chdir-long                            |  2 +-
+ modules/chown                                 |  2 +-
+ modules/chown-tests                           |  2 +-
+ modules/classpath                             |  2 +-
+ modules/clean-temp                            |  2 +-
+ modules/clean-temp-simple                     |  2 +-
+ modules/cloexec                               |  2 +-
+ modules/close-stream                          |  2 +-
+ modules/closein                               |  2 +-
+ modules/closeout                              |  2 +-
+ modules/cond                                  |  2 +-
+ modules/crypto/des                            |  2 +-
+ modules/csharpcomp                            |  2 +-
+ modules/csharpexec                            |  2 +-
+ modules/cycle-check                           |  2 +-
+ modules/dfa                                   |  2 +-
+ modules/diffseq                               |  2 +-
+ modules/dirname-lgpl                          |  2 +-
+ modules/dprintf-posix-tests                   |  2 +-
+ modules/exclude                               |  2 +-
+ modules/execute                               |  2 +-
+ modules/execute-tests                         |  2 +-
+ modules/execvpe                               |  2 +-
+ modules/fatal-signal                          |  2 +-
+ modules/fchdir                                |  2 +-
+ modules/fcntl-safer-tests                     |  2 +-
+ modules/fcntl-tests                           |  2 +-
+ modules/file-has-acl                          |  2 +-
+ modules/file-set                              |  2 +-
+ modules/filenamecat-tests                     |  2 +-
+ modules/filevercmp                            |  2 +-
+ modules/findprog                              |  2 +-
+ modules/findprog-in                           |  2 +-
+ modules/findprog-lgpl                         |  2 +-
+ modules/floor-tests                           |  2 +-
+ modules/floorf-tests                          |  2 +-
+ modules/fma                                   |  2 +-
+ modules/fmaf                                  |  2 +-
+ modules/fmal                                  |  2 +-
+ modules/fnmatch                               |  2 +-
+ modules/fopen                                 |  2 +-
+ modules/fopen-gnu                             |  2 +-
+ modules/fprintf-posix-tests                   |  2 +-
+ modules/freadable                             |  2 +-
+ modules/freading                              |  2 +-
+ modules/freopen-safer                         |  2 +-
+ modules/fstrcmp-tests                         |  2 +-
+ modules/fsusage                               |  2 +-
+ modules/fts                                   |  2 +-
+ modules/fwritable                             |  2 +-
+ modules/fwriteerror                           |  2 +-
+ modules/fwriting                              |  2 +-
+ modules/gen-uni-tables                        |  2 +-
+ modules/get-rusage-as-tests                   |  2 +-
+ modules/get-rusage-data-tests                 |  2 +-
+ modules/getaddrinfo                           |  2 +-
+ modules/getcwd                                |  2 +-
+ modules/getcwd-tests                          |  2 +-
+ modules/getloadavg                            |  2 +-
+ modules/getlogin-tests                        |  2 +-
+ modules/getlogin_r-tests                      |  2 +-
+ modules/getndelim2                            |  2 +-
+ modules/getopt-gnu-tests                      |  2 +-
+ modules/getopt-posix-tests                    |  2 +-
+ modules/getpass                               |  2 +-
+ modules/getrandom                             |  2 +-
+ modules/git-merge-changelog                   |  2 +-
+ modules/glibc-internal/dynarray               |  2 +-
+ modules/glibc-internal/scratch_buffer         |  2 +-
+ modules/glob                                  |  2 +-
+ modules/hamt                                  |  2 +-
+ modules/hard-locale                           |  2 +-
+ modules/hash                                  |  2 +-
+ modules/hash-tests                            |  2 +-
+ modules/hash-triple-simple                    |  2 +-
+ modules/human                                 |  2 +-
+ modules/i-ring                                |  2 +-
+ modules/idpriv-drop-tests                     |  2 +-
+ modules/idpriv-droptemp-tests                 |  2 +-
+ modules/immutable-tests                       |  2 +-
+ modules/intprops-tests                        |  2 +-
+ modules/isapipe                               |  2 +-
+ modules/javacomp                              |  2 +-
+ modules/javaexec                              |  2 +-
+ modules/javaversion                           |  2 +-
+ modules/lchown                                |  2 +-
+ modules/lchown-tests                          |  2 +-
+ modules/ldexp                                 |  2 +-
+ modules/ldexpl                                |  2 +-
+ modules/libtextstyle-optional                 |  2 +-
+ modules/link-tests                            |  2 +-
+ modules/list                                  |  2 +-
+ modules/localename                            |  2 +-
+ modules/localename-unsafe                     |  2 +-
+ modules/long-options                          |  2 +-
+ modules/lstat-tests                           |  2 +-
+ modules/map                                   |  2 +-
+ modules/mbchar                                |  2 +-
+ modules/mbfile                                |  2 +-
+ modules/mbiter                                |  2 +-
+ modules/mbiterf                               |  2 +-
+ modules/mbmemcasecmp-tests                    |  2 +-
+ modules/mbmemcasecoll                         |  2 +-
+ modules/mbmemcasecoll-tests                   |  2 +-
+ modules/mbscasestr                            |  2 +-
+ modules/mbsstr                                |  2 +-
+ modules/mbuiter                               |  2 +-
+ modules/mbuiterf                              |  2 +-
+ modules/mcel                                  |  2 +-
+ modules/mkdir-p                               |  2 +-
+ modules/mkdir-tests                           |  2 +-
+ modules/mkfifo-tests                          |  2 +-
+ modules/mknod-tests                           |  2 +-
+ modules/mktime                                |  2 +-
+ modules/modechange                            |  2 +-
+ modules/mountlist                             |  2 +-
+ modules/nanosleep                             |  2 +-
+ modules/nl_langinfo-tests                     |  2 +-
+ modules/nonblocking                           |  2 +-
+ modules/nonblocking-pipe-tests                |  2 +-
+ modules/nonblocking-socket-tests              |  2 +-
+ modules/nstrftime                             |  2 +-
+ modules/omap                                  |  2 +-
+ modules/open-tests                            |  2 +-
+ modules/openat                                |  2 +-
+ modules/openat-h                              |  2 +-
+ modules/oset                                  |  2 +-
+ modules/parse-datetime                        |  2 +-
+ modules/pipe-filter-gi                        |  2 +-
+ modules/pipe-filter-ii                        |  2 +-
+ modules/pipe-posix-tests                      |  2 +-
+ modules/pipe2-tests                           |  2 +-
+ modules/poll-tests                            |  2 +-
+ modules/posix_spawn-internal                  |  2 +-
+ modules/posix_spawn-tests                     |  2 +-
+ .../posix_spawn_file_actions_addfchdir-tests  |  2 +-
+ modules/posix_spawnp-tests                    |  2 +-
+ modules/posixtm                               |  2 +-
+ modules/priv-set                              |  2 +-
+ modules/propername                            |  2 +-
+ modules/pselect-tests                         |  2 +-
+ modules/pthread-rwlock-extra-tests            |  2 +-
+ modules/pthread-spin                          |  2 +-
+ modules/quotearg                              |  2 +-
+ modules/readlink-tests                        |  2 +-
+ modules/readtokens                            |  2 +-
+ modules/readtokens0                           |  2 +-
+ modules/readutmp                              |  2 +-
+ modules/regex                                 |  2 +-
+ modules/regex-quote                           |  2 +-
+ modules/relocatable-prog                      |  2 +-
+ modules/relocatable-prog-wrapper              |  2 +-
+ modules/rename                                |  2 +-
+ modules/rename-tests                          |  2 +-
+ modules/renameatu                             |  2 +-
+ modules/rmdir-tests                           |  2 +-
+ modules/round-tests                           |  2 +-
+ modules/roundf-tests                          |  2 +-
+ modules/rpmatch                               |  2 +-
+ modules/same                                  |  2 +-
+ modules/same-inode                            |  2 +-
+ modules/save-cwd                              |  2 +-
+ modules/savewd                                |  2 +-
+ modules/select-tests                          |  2 +-
+ modules/set                                   |  2 +-
+ modules/spawn-pipe                            |  2 +-
+ modules/spawn-pipe-tests                      |  2 +-
+ modules/stack                                 |  2 +-
+ modules/stat                                  |  2 +-
+ modules/stat-tests                            |  2 +-
+ modules/stdbit-h                              |  2 +-
+ modules/stdbool                               | 11 ++++++----
+ modules/stdbool-c++-tests                     | 18 ----------------
+ modules/stdbool-h                             | 21 +++++++++++++++++++
+ modules/stdbool-h-c++-tests                   | 18 ++++++++++++++++
+ modules/stdbool-h-c99-c++-tests               |  4 ++--
+ modules/stdbool-h-c99-tests                   |  2 +-
+ modules/stdbool-h-tests                       | 11 ++++++++++
+ modules/stdbool-tests                         | 11 ----------
+ modules/stdc_bit_ceil-tests                   |  2 +-
+ modules/stdc_bit_floor-tests                  |  2 +-
+ modules/stdc_bit_width-tests                  |  2 +-
+ modules/stdc_count_ones-tests                 |  2 +-
+ modules/stdc_count_zeros-tests                |  2 +-
+ modules/stdc_first_leading_one-tests          |  2 +-
+ modules/stdc_first_leading_zero-tests         |  2 +-
+ modules/stdc_first_trailing_one-tests         |  2 +-
+ modules/stdc_first_trailing_zero-tests        |  2 +-
+ modules/stdc_has_single_bit-tests             |  2 +-
+ modules/stdc_leading_ones-tests               |  2 +-
+ modules/stdc_leading_zeros-tests              |  2 +-
+ modules/stdc_trailing_ones-tests              |  2 +-
+ modules/stdc_trailing_zeros-tests             |  2 +-
+ modules/stdckdint                             |  2 +-
+ modules/stdckdint-tests                       |  2 +-
+ modules/strcasestr                            |  2 +-
+ modules/strcasestr-simple                     |  2 +-
+ modules/strfmon_l                             |  2 +-
+ modules/striconveh                            |  2 +-
+ modules/striconveha                           |  2 +-
+ modules/string-buffer                         |  2 +-
+ modules/string-desc                           |  2 +-
+ modules/strptime                              |  2 +-
+ modules/strstr-simple                         |  2 +-
+ modules/strtod                                |  2 +-
+ modules/strtof                                |  2 +-
+ modules/strtold                               |  2 +-
+ modules/supersede                             |  2 +-
+ modules/symlink-tests                         |  2 +-
+ modules/system-quote                          |  2 +-
+ modules/system-quote-tests                    |  2 +-
+ modules/tempname                              |  2 +-
+ modules/term-style-control                    |  2 +-
+ modules/term-style-control-tests              |  2 +-
+ modules/time_rz                               |  2 +-
+ modules/timespec-add                          |  2 +-
+ modules/timespec-sub                          |  2 +-
+ modules/timespec-tests                        |  2 +-
+ modules/tmpdir                                |  2 +-
+ modules/tmpfile                               |  2 +-
+ modules/totalorderl                           |  2 +-
+ modules/totalordermagl                        |  2 +-
+ modules/trunc-tests                           |  2 +-
+ modules/truncf-tests                          |  2 +-
+ modules/u64                                   |  2 +-
+ modules/unicase/base                          |  2 +-
+ modules/unicase/cased                         |  2 +-
+ modules/unicase/ignorable                     |  2 +-
+ modules/unicase/u16-casemap                   |  2 +-
+ modules/unicase/u16-ct-totitle                |  2 +-
+ modules/unicase/u16-is-invariant              |  2 +-
+ modules/unicase/u32-casemap                   |  2 +-
+ modules/unicase/u32-ct-totitle                |  2 +-
+ modules/unicase/u32-is-invariant              |  2 +-
+ modules/unicase/u8-casemap                    |  2 +-
+ modules/unicase/u8-ct-totitle                 |  2 +-
+ modules/unicase/u8-is-invariant               |  2 +-
+ modules/uniconv/base                          |  2 +-
+ modules/unictype/base                         |  2 +-
+ modules/unictype/category-byname-tests        |  2 +-
+ modules/unigbrk/base                          |  2 +-
+ modules/unigbrk/u16-grapheme-breaks           |  2 +-
+ modules/unigbrk/u32-grapheme-breaks           |  2 +-
+ modules/unigbrk/u8-grapheme-breaks            |  2 +-
+ modules/unigbrk/uc-grapheme-breaks            |  2 +-
+ modules/unigbrk/uc-is-grapheme-break-tests    |  2 +-
+ modules/unilbrk/base                          |  2 +-
+ modules/uniname/uniname                       |  2 +-
+ modules/unistd-safer-tests                    |  2 +-
+ modules/unistdio/u8-asnprintf-extra-tests     |  2 +-
+ modules/unistdio/ulc-asnprintf-extra-tests    |  2 +-
+ modules/unistr/base                           |  2 +-
+ modules/unistr/u16-strstr                     |  2 +-
+ modules/unistr/u32-strstr                     |  2 +-
+ modules/unlink-tests                          |  2 +-
+ modules/unlinkdir                             |  2 +-
+ modules/userspec                              |  2 +-
+ modules/utime                                 |  2 +-
+ modules/utimecmp                              |  2 +-
+ modules/utimens                               |  2 +-
+ modules/vasnprintf-extra-tests                |  2 +-
+ modules/vasnwprintf-extra-tests               |  2 +-
+ modules/wait-process                          |  2 +-
+ modules/windows-cond                          |  2 +-
+ modules/windows-spawn                         |  2 +-
+ modules/windows-timedrwlock                   |  2 +-
+ modules/write-any-file                        |  2 +-
+ modules/xbinary-io                            |  2 +-
+ modules/xlist                                 |  2 +-
+ modules/xmap                                  |  2 +-
+ modules/xomap                                 |  2 +-
+ modules/xoset                                 |  2 +-
+ modules/xset                                  |  2 +-
+ modules/xstrtod                               |  2 +-
+ modules/xstrtold                              |  2 +-
+ modules/yesno                                 |  2 +-
+ ...t-stdbool-c++.cc => test-stdbool-h-c++.cc} |  0
+ ...stdbool-c++2.cc => test-stdbool-h-c++2.cc} |  0
+ tests/test-stdbool-h-c99-c++.cc               |  2 +-
+ tests/test-stdbool-h-c99.c                    |  2 +-
+ tests/{test-stdbool.c => test-stdbool-h.c}    |  0
+ 310 files changed, 378 insertions(+), 337 deletions(-)
+ delete mode 100644 modules/stdbool-c++-tests
+ create mode 100644 modules/stdbool-h
+ create mode 100644 modules/stdbool-h-c++-tests
+ create mode 100644 modules/stdbool-h-tests
+ delete mode 100644 modules/stdbool-tests
+ rename tests/{test-stdbool-c++.cc => test-stdbool-h-c++.cc} (100%)
+ rename tests/{test-stdbool-c++2.cc => test-stdbool-h-c++2.cc} (100%)
+ rename tests/{test-stdbool.c => test-stdbool-h.c} (100%)
+
+--- a/modules/acl-permissions
++++ b/modules/acl-permissions
+@@ -16,7 +16,7 @@ extern-inline
+ fstat
+ minmax
+ stat
+-stdbool
++stdbool-h
+ sys_stat
+ 
+ configure.ac:
+--- a/modules/areadlink-tests
++++ b/modules/areadlink-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/areadlink-with-size-tests
++++ b/modules/areadlink-with-size-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/areadlinkat-tests
++++ b/modules/areadlinkat-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/areadlinkat-with-size-tests
++++ b/modules/areadlinkat-with-size-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/argmatch
++++ b/modules/argmatch
+@@ -16,7 +16,7 @@ gnulib-i18n
+ memcmp
+ quote
+ quotearg
+-stdbool
++stdbool-h
+ stdlib
+ 
+ configure.ac:
+--- a/modules/argp
++++ b/modules/argp
+@@ -32,7 +32,7 @@ strcase
+ extensions
+ vsnprintf
+ sleep
+-stdbool
++stdbool-h
+ stdio
+ strerror
+ memchr
+--- a/modules/argv-iter
++++ b/modules/argv-iter
+@@ -8,7 +8,7 @@ lib/argv-iter.h
+ Depends-on:
+ getdelim
+ snippet/arg-nonnull
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/asyncsafe-spin
++++ b/modules/asyncsafe-spin
+@@ -8,7 +8,7 @@ m4/atomic-cas.m4
+ 
+ Depends-on:
+ signal-h
+-stdbool
++stdbool-h
+ sigprocmask
+ windows-spin
+ sparcv8+
+--- a/modules/backup-rename
++++ b/modules/backup-rename
+@@ -21,7 +21,7 @@ memcmp
+ opendirat
+ readdir
+ renameatu
+-stdbool
++stdbool-h
+ stdckdint
+ stdint
+ xalloc-oversized
+--- a/modules/backupfile
++++ b/modules/backupfile
+@@ -22,7 +22,7 @@ opendirat
+ readdir
+ realloc-gnu
+ renameatu
+-stdbool
++stdbool-h
+ stdckdint
+ stdint
+ xalloc-die
+--- a/modules/base32
++++ b/modules/base32
+@@ -9,7 +9,7 @@ m4/base32.m4
+ Depends-on:
+ extern-inline
+ ialloc
+-stdbool
++stdbool-h
+ memchr
+ stdckdint
+ 
+--- a/modules/base64
++++ b/modules/base64
+@@ -9,7 +9,7 @@ m4/base64.m4
+ Depends-on:
+ extern-inline
+ ialloc
+-stdbool
++stdbool-h
+ memchr
+ stdckdint
+ 
+--- a/modules/basename-lgpl
++++ b/modules/basename-lgpl
+@@ -8,7 +8,7 @@ lib/basename-lgpl.c
+ Depends-on:
+ double-slash-root
+ filename
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/bitset
++++ b/modules/bitset
+@@ -25,7 +25,7 @@ gettext-h
+ gnulib-i18n
+ integer_length_l
+ obstack
+-stdbool
++stdbool-h
+ xalloc
+ 
+ configure.ac:
+--- a/modules/boot-time
++++ b/modules/boot-time
+@@ -13,7 +13,7 @@ extensions
+ idx
+ stat-time
+ gettimeofday
+-stdbool
++stdbool-h
+ time-h
+ unlocked-io-internal
+ 
+--- a/modules/byteswap
++++ b/modules/byteswap
+@@ -9,7 +9,7 @@ m4/byteswap.m4
+ Depends-on:
+ gen-header
+ extern-inline           [$GL_GENERATE_BYTESWAP_H]
+-stdbool                 [$GL_GENERATE_BYTESWAP_H]
++stdbool-h               [$GL_GENERATE_BYTESWAP_H]
+ stdint                  [$GL_GENERATE_BYTESWAP_H]
+ 
+ configure.ac:
+--- a/modules/c-ctype
++++ b/modules/c-ctype
+@@ -7,7 +7,7 @@ lib/c-ctype.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/c-nstrftime
++++ b/modules/c-nstrftime
+@@ -17,7 +17,7 @@ extensions
+ intprops
+ libc-config
+ locale-h
+-stdbool
++stdbool-h
+ stdckdint
+ time_rz
+ 
+--- a/modules/c-strcasestr
++++ b/modules/c-strcasestr
+@@ -9,7 +9,7 @@ lib/str-two-way.h
+ Depends-on:
+ c-ctype
+ c-strcase
+-stdbool
++stdbool-h
+ memchr
+ memcmp
+ 
+--- a/modules/canonicalize
++++ b/modules/canonicalize
+@@ -26,7 +26,7 @@ rawmemchr
+ readlink
+ glibc-internal/scratch_buffer
+ stat
+-stdbool
++stdbool-h
+ stdlib
+ sys_stat
+ unistd
+--- a/modules/canonicalize-lgpl
++++ b/modules/canonicalize-lgpl
+@@ -26,7 +26,7 @@ rawmemchr                     [test $HAV
+ readlink                      [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ glibc-internal/scratch_buffer [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ stat                          [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+-stdbool                       [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
++stdbool-h                     [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ sys_stat                      [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ unistd                        [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ 
+--- a/modules/ceil-tests
++++ b/modules/ceil-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnand-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/ceilf-tests
++++ b/modules/ceilf-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnanf-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/chdir-long
++++ b/modules/chdir-long
+@@ -19,7 +19,7 @@ openat          [test $gl_cv_have_unlimi
+ memchr          [test $gl_cv_have_unlimited_file_name_length = no]
+ mempcpy         [test $gl_cv_have_unlimited_file_name_length = no]
+ memrchr         [test $gl_cv_have_unlimited_file_name_length = no]
+-stdbool         [test $gl_cv_have_unlimited_file_name_length = no]
++stdbool-h       [test $gl_cv_have_unlimited_file_name_length = no]
+ stdlib          [test $gl_cv_have_unlimited_file_name_length = no]
+ 
+ configure.ac:
+--- a/modules/chown
++++ b/modules/chown
+@@ -11,7 +11,7 @@ unistd
+ fstat           [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
+ open            [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
+ stat            [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
+-stdbool         [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
++stdbool-h       [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
+ sys_stat        [test $HAVE_CHOWN = 0 || test $REPLACE_CHOWN = 1]
+ 
+ configure.ac:
+--- a/modules/chown-tests
++++ b/modules/chown-tests
+@@ -11,7 +11,7 @@ lstat
+ mgetgroups
+ nanosleep
+ stat-time
+-stdbool
++stdbool-h
+ stdckdint
+ symlink
+ xconcat-filename
+--- a/modules/classpath
++++ b/modules/classpath
+@@ -6,7 +6,7 @@ lib/classpath.h
+ lib/classpath.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ xsetenv
+ xalloc
+ 
+--- a/modules/clean-temp
++++ b/modules/clean-temp
+@@ -7,7 +7,7 @@ lib/clean-temp.c
+ 
+ Depends-on:
+ c99
+-stdbool
++stdbool-h
+ clean-temp-simple
+ list
+ asyncsafe-spin
+--- a/modules/clean-temp-simple
++++ b/modules/clean-temp-simple
+@@ -8,7 +8,7 @@ lib/clean-temp-simple.c
+ 
+ Depends-on:
+ c99
+-stdbool
++stdbool-h
+ list
+ asyncsafe-spin
+ unistd
+--- a/modules/cloexec
++++ b/modules/cloexec
+@@ -8,7 +8,7 @@ lib/cloexec.h
+ Depends-on:
+ dup2
+ fcntl
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR_FOR_TESTS([cloexec])
+--- a/modules/close-stream
++++ b/modules/close-stream
+@@ -7,7 +7,7 @@ lib/close-stream.c
+ 
+ Depends-on:
+ fpending
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([close-stream])
+--- a/modules/closein
++++ b/modules/closein
+@@ -11,7 +11,7 @@ freadahead
+ fflush
+ gettext-h
+ gnulib-i18n
+-stdbool
++stdbool-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/closeout
++++ b/modules/closeout
+@@ -12,7 +12,7 @@ gnulib-i18n
+ error
+ quotearg
+ exitfail
+-stdbool
++stdbool-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/cond
++++ b/modules/cond
+@@ -11,7 +11,7 @@ threadlib
+ lock
+ errno-h
+ extern-inline
+-stdbool
++stdbool-h
+ time-h
+ windows-cond    [test $gl_threads_api = windows]
+ 
+--- a/modules/crypto/des
++++ b/modules/crypto/des
+@@ -7,7 +7,7 @@ lib/des.h
+ 
+ Depends-on:
+ stdint
+-stdbool
++stdbool-h
+ memcmp
+ 
+ configure.ac:
+--- a/modules/csharpcomp
++++ b/modules/csharpcomp
+@@ -6,7 +6,7 @@ lib/csharpcomp.h
+ lib/csharpcomp.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ error
+ xconcat-filename
+ cygpath
+--- a/modules/csharpexec
++++ b/modules/csharpexec
+@@ -8,7 +8,7 @@ lib/classpath.h
+ lib/classpath.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stat
+ error
+ dirname
+--- a/modules/cycle-check
++++ b/modules/cycle-check
+@@ -10,7 +10,7 @@ Depends-on:
+ assure
+ dev-ino
+ same-inode
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -25,7 +25,7 @@ locale-h
+ mbrtoc32-regular
+ mbszero
+ regex
+-stdbool
++stdbool-h
+ stddef
+ stdint
+ stdio
+--- a/modules/diffseq
++++ b/modules/diffseq
+@@ -6,7 +6,7 @@ lib/diffseq.h
+ 
+ Depends-on:
+ c99
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/dirname-lgpl
++++ b/modules/dirname-lgpl
+@@ -11,7 +11,7 @@ basename-lgpl
+ double-slash-root
+ filename
+ malloc-posix
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/dprintf-posix-tests
++++ b/modules/dprintf-posix-tests
+@@ -11,7 +11,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ get-rusage-as
+ 
+--- a/modules/exclude
++++ b/modules/exclude
+@@ -17,7 +17,7 @@ mbscasecmp
+ mbuiter               [test "$GNULIB_MCEL_PREFER" != yes]
+ nullptr
+ regex
+-stdbool
++stdbool-h
+ unlocked-io-internal
+ xalloc
+ 
+--- a/modules/execute
++++ b/modules/execute
+@@ -29,7 +29,7 @@ posix_spawnattr_init
+ posix_spawnattr_setsigmask
+ posix_spawnattr_setflags
+ posix_spawnattr_destroy
+-stdbool
++stdbool-h
+ stdlib
+ sys_wait
+ unistd
+--- a/modules/execute-tests
++++ b/modules/execute-tests
+@@ -15,7 +15,7 @@ fcntl
+ mkdir
+ msvc-inval
+ read-file
+-stdbool
++stdbool-h
+ stdint
+ unistd
+ 
+--- a/modules/execvpe
++++ b/modules/execvpe
+@@ -9,7 +9,7 @@ Depends-on:
+ unistd
+ extensions
+ free-posix      [test $HAVE_EXECVPE = 0 || test $REPLACE_EXECVPE = 1]
+-stdbool         [test $HAVE_EXECVPE = 0 || test $REPLACE_EXECVPE = 1]
++stdbool-h       [test $HAVE_EXECVPE = 0 || test $REPLACE_EXECVPE = 1]
+ findprog-in     [test $HAVE_EXECVPE = 0 || test $REPLACE_EXECVPE = 1]
+ execve          [test $HAVE_EXECVPE = 0 || test $REPLACE_EXECVPE = 1]
+ 
+--- a/modules/fatal-signal
++++ b/modules/fatal-signal
+@@ -9,7 +9,7 @@ m4/sig_atomic_t.m4
+ 
+ Depends-on:
+ c99
+-stdbool
++stdbool-h
+ unistd
+ sigaction
+ lock
+--- a/modules/fchdir
++++ b/modules/fchdir
+@@ -24,7 +24,7 @@ malloc-posix     [test $HAVE_FCHDIR = 0
+ open             [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ realloc-posix    [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ stat             [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+-stdbool          [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
++stdbool-h        [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ strdup-posix     [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ sys_stat         [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ 
+--- a/modules/fcntl-safer-tests
++++ b/modules/fcntl-safer-tests
+@@ -4,7 +4,7 @@ tests/test-fcntl-safer.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ fcntl
+ symlink
+ 
+--- a/modules/fcntl-tests
++++ b/modules/fcntl-tests
+@@ -8,7 +8,7 @@ binary-io
+ close
+ getdtablesize
+ msvc-nothrow
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/file-has-acl
++++ b/modules/file-has-acl
+@@ -13,7 +13,7 @@ extern-inline
+ minmax
+ free-posix
+ stat
+-stdbool
++stdbool-h
+ stdckdint
+ 
+ configure.ac:
+--- a/modules/file-set
++++ b/modules/file-set
+@@ -8,7 +8,7 @@ lib/file-set.h
+ Depends-on:
+ hash
+ hash-triple-simple
+-stdbool
++stdbool-h
+ xalloc
+ xalloc-die
+ 
+--- a/modules/filenamecat-tests
++++ b/modules/filenamecat-tests
+@@ -3,7 +3,7 @@ tests/test-filenamecat.c
+ 
+ Depends-on:
+ idx
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/filevercmp
++++ b/modules/filevercmp
+@@ -9,7 +9,7 @@ Depends-on:
+ assert-h
+ c-ctype
+ idx
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/findprog
++++ b/modules/findprog
+@@ -8,7 +8,7 @@ m4/findprog.m4
+ m4/eaccess.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ sys_stat
+ xalloc
+ xconcat-filename
+--- a/modules/findprog-in
++++ b/modules/findprog-in
+@@ -8,7 +8,7 @@ m4/findprog-in.m4
+ m4/eaccess.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ sys_stat
+ filename
+ concat-filename
+--- a/modules/findprog-lgpl
++++ b/modules/findprog-lgpl
+@@ -9,7 +9,7 @@ m4/findprog.m4
+ m4/eaccess.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ sys_stat
+ strdup
+ concat-filename
+--- a/modules/floor-tests
++++ b/modules/floor-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnand-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/floorf-tests
++++ b/modules/floorf-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnanf-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/fma
++++ b/modules/fma
+@@ -11,7 +11,7 @@ m4/mathfunc.m4
+ Depends-on:
+ math-h
+ float-h         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+-stdbool         [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
++stdbool-h       [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ assert-h        [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ isfinite        [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+ integer_length  [test $HAVE_FMA = 0 || test $REPLACE_FMA = 1]
+--- a/modules/fmaf
++++ b/modules/fmaf
+@@ -13,7 +13,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+-stdbool         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
++stdbool-h       [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ assert-h         [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ isfinite        [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+ integer_length  [test $HAVE_FMAF = 0 || test $REPLACE_FMAF = 1]
+--- a/modules/fmal
++++ b/modules/fmal
+@@ -14,7 +14,7 @@ math-h
+ extensions
+ fma             [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdbool         [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdbool-h       [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ assert-h        [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isfinite        [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ integer_length  [{ test $HAVE_FMAL = 0 || test $REPLACE_FMAL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/fnmatch
++++ b/modules/fnmatch
+@@ -16,7 +16,7 @@ flexmember          [test $HAVE_FNMATCH
+ idx                 [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ isblank             [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ libc-config         [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+-stdbool             [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
++stdbool-h           [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ stdckdint           [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ strnlen             [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ uchar               [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+--- a/modules/fopen
++++ b/modules/fopen
+@@ -11,7 +11,7 @@ Depends-on:
+ stdio
+ largefile
+ fcntl-h         [test $REPLACE_FOPEN = 1]
+-stdbool         [test $REPLACE_FOPEN = 1]
++stdbool-h       [test $REPLACE_FOPEN = 1]
+ unistd          [test $REPLACE_FOPEN = 1]
+ close           [test $REPLACE_FOPEN = 1]
+ fstat           [test $REPLACE_FOPEN = 1]
+--- a/modules/fopen-gnu
++++ b/modules/fopen-gnu
+@@ -8,7 +8,7 @@ Depends-on:
+ fopen
+ open            [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+ fcntl-h         [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+-stdbool         [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
++stdbool-h       [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+ unistd          [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+ close           [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+ fstat           [test $REPLACE_FOPEN_FOR_FOPEN_GNU = 1]
+--- a/modules/fprintf-posix-tests
++++ b/modules/fprintf-posix-tests
+@@ -13,7 +13,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ get-rusage-as
+ 
+--- a/modules/freadable
++++ b/modules/freadable
+@@ -8,7 +8,7 @@ lib/stdio-impl.h
+ m4/freadable.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_FUNC_FREADABLE
+--- a/modules/freading
++++ b/modules/freading
+@@ -8,7 +8,7 @@ lib/stdio-impl.h
+ m4/freading.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_FUNC_FREADING
+--- a/modules/freopen-safer
++++ b/modules/freopen-safer
+@@ -11,7 +11,7 @@ attribute
+ dup2
+ freopen
+ open
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([freopen-safer])
+--- a/modules/fstrcmp-tests
++++ b/modules/fstrcmp-tests
+@@ -3,7 +3,7 @@ tests/test-fstrcmp.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/fsusage
++++ b/modules/fsusage
+@@ -9,7 +9,7 @@ m4/fsusage.m4
+ Depends-on:
+ c99
+ largefile
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/fts
++++ b/modules/fts
+@@ -35,7 +35,7 @@ opendir
+ opendirat
+ readdir
+ realloc-posix
+-stdbool
++stdbool-h
+ stddef
+ stdint
+ 
+--- a/modules/fwritable
++++ b/modules/fwritable
+@@ -8,7 +8,7 @@ lib/stdio-impl.h
+ m4/fwritable.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_FUNC_FWRITABLE
+--- a/modules/fwriteerror
++++ b/modules/fwriteerror
+@@ -7,7 +7,7 @@ lib/fwriteerror.c
+ 
+ Depends-on:
+ errno-h
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([fwriteerror])
+--- a/modules/fwriting
++++ b/modules/fwriting
+@@ -8,7 +8,7 @@ lib/stdio-impl.h
+ m4/fwriting.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_FUNC_FWRITING
+--- a/modules/gen-uni-tables
++++ b/modules/gen-uni-tables
+@@ -9,7 +9,7 @@ lib/unictype/3levelbit.h
+ 
+ Depends-on:
+ memcmp
+-stdbool
++stdbool-h
+ strdup
+ strstr-simple
+ 
+--- a/modules/get-rusage-as-tests
++++ b/modules/get-rusage-as-tests
+@@ -4,7 +4,7 @@ tests/qemu.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/get-rusage-data-tests
++++ b/modules/get-rusage-data-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ m4/musl.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MUSL_LIBC
+--- a/modules/getaddrinfo
++++ b/modules/getaddrinfo
+@@ -14,7 +14,7 @@ gettext-h       [test $HAVE_GETADDRINFO
+ gnulib-i18n     [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1 || test $HAVE_DECL_GAI_STRERROR = 0 || test $REPLACE_GAI_STRERROR = 1]
+ inet_ntop       [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ snprintf        [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+-stdbool         [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
++stdbool-h       [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ strdup          [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ servent         [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+ hostent         [test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1]
+--- a/modules/getcwd
++++ b/modules/getcwd
+@@ -31,7 +31,7 @@ opendir         [test $REPLACE_GETCWD =
+ readdir         [test $REPLACE_GETCWD = 1]
+ rewinddir       [test $REPLACE_GETCWD = 1]
+ closedir        [test $REPLACE_GETCWD = 1]
+-stdbool         [test $REPLACE_GETCWD = 1]
++stdbool-h       [test $REPLACE_GETCWD = 1]
+ malloc-posix    [test $REPLACE_GETCWD = 1]
+ strdup-posix    [test $REPLACE_GETCWD = 1]
+ 
+--- a/modules/getcwd-tests
++++ b/modules/getcwd-tests
+@@ -9,7 +9,7 @@ errno-h
+ fcntl-h
+ getcwd-lgpl
+ pathmax
+-stdbool
++stdbool-h
+ sys_stat
+ test-framework-sh
+ 
+--- a/modules/getloadavg
++++ b/modules/getloadavg
+@@ -9,7 +9,7 @@ Depends-on:
+ extensions
+ intprops  [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+ open      [case $host_os in mingw* | windows*) false;; *) test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1;; esac]
+-stdbool   [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
++stdbool-h [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+ stdlib    [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+ 
+ configure.ac:
+--- a/modules/getlogin-tests
++++ b/modules/getlogin-tests
+@@ -5,7 +5,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/getlogin_r-tests
++++ b/modules/getlogin_r-tests
+@@ -5,7 +5,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/getndelim2
++++ b/modules/getndelim2
+@@ -10,7 +10,7 @@ m4/getndelim2.m4
+ Depends-on:
+ limits-h
+ ssize_t
+-stdbool
++stdbool-h
+ stdint
+ freadptr
+ freadseek
+--- a/modules/getopt-gnu-tests
++++ b/modules/getopt-gnu-tests
+@@ -9,7 +9,7 @@ tests/test-getopt_long.h
+ Depends-on:
+ dup2
+ setenv
+-stdbool
++stdbool-h
+ unistd
+ unsetenv
+ 
+--- a/modules/getopt-posix-tests
++++ b/modules/getopt-posix-tests
+@@ -8,7 +8,7 @@ tests/test-getopt.h
+ Depends-on:
+ dup2
+ setenv
+-stdbool
++stdbool-h
+ unistd
+ unsetenv
+ 
+--- a/modules/getpass
++++ b/modules/getpass
+@@ -13,7 +13,7 @@ extensions
+ fopen-gnu
+ fseeko
+ getline
+-stdbool
++stdbool-h
+ strdup-posix
+ 
+ configure.ac:
+--- a/modules/getrandom
++++ b/modules/getrandom
+@@ -9,7 +9,7 @@ Depends-on:
+ sys_random
+ fcntl-h             [test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1]
+ minmax              [test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1]
+-stdbool             [test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1]
++stdbool-h           [test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1]
+ open                [case $host_os in mingw* | windows*) false;; *) test $HAVE_GETRANDOM = 0 || test $REPLACE_GETRANDOM = 1;; esac]
+ 
+ configure.ac:
+--- a/modules/git-merge-changelog
++++ b/modules/git-merge-changelog
+@@ -8,7 +8,7 @@ Depends-on:
+ c99
+ getopt-gnu
+ idx
+-stdbool
++stdbool-h
+ stdint
+ stdlib
+ error
+--- a/modules/glibc-internal/dynarray
++++ b/modules/glibc-internal/dynarray
+@@ -16,7 +16,7 @@ c99
+ builtin-expect
+ gen-header
+ libc-config
+-stdbool
++stdbool-h
+ stdckdint
+ stddef
+ 
+--- a/modules/glibc-internal/scratch_buffer
++++ b/modules/glibc-internal/scratch_buffer
+@@ -13,7 +13,7 @@ c99
+ builtin-expect
+ gen-header
+ libc-config
+-stdbool
++stdbool-h
+ stddef
+ malloc-posix
+ realloc-posix
+--- a/modules/glob
++++ b/modules/glob
+@@ -28,7 +28,7 @@ mempcpy                       [test $HAV
+ opendir                       [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ readdir                       [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ glibc-internal/scratch_buffer [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+-stdbool                       [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
++stdbool-h                     [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdckdint                     [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdint                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ strdup                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+--- a/modules/hamt
++++ b/modules/hamt
+@@ -10,7 +10,7 @@ count-one-bits
+ extern-inline
+ flexmember
+ inttypes-h-incomplete
+-stdbool
++stdbool-h
+ stdint
+ verify
+ xalloc
+--- a/modules/hard-locale
++++ b/modules/hard-locale
+@@ -6,7 +6,7 @@ lib/hard-locale.h
+ lib/hard-locale.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ setlocale-null
+ 
+ configure.ac:
+--- a/modules/hash
++++ b/modules/hash
+@@ -11,7 +11,7 @@ calloc-posix
+ free-posix
+ malloc-posix
+ next-prime
+-stdbool
++stdbool-h
+ stdint
+ xalloc-oversized
+ hashcode-string1
+--- a/modules/hash-tests
++++ b/modules/hash-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ Depends-on:
+ hash-pjw
+ inttostr
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/hash-triple-simple
++++ b/modules/hash-triple-simple
+@@ -8,7 +8,7 @@ lib/hash-triple.h
+ Depends-on:
+ hash-pjw
+ same-inode
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/human
++++ b/modules/human
+@@ -14,7 +14,7 @@ intprops
+ localeconv
+ memmove
+ xstrtoumax
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/i-ring
++++ b/modules/i-ring
+@@ -8,7 +8,7 @@ m4/i-ring.m4
+ 
+ Depends-on:
+ assert-h
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_I_RING
+--- a/modules/idpriv-drop-tests
++++ b/modules/idpriv-drop-tests
+@@ -13,7 +13,7 @@ tests/test-idpriv-drop.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/idpriv-droptemp-tests
++++ b/modules/idpriv-droptemp-tests
+@@ -13,7 +13,7 @@ tests/test-idpriv-droptemp.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/immutable-tests
++++ b/modules/immutable-tests
+@@ -4,7 +4,7 @@ tests/test-immutable.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ _Exit
+ 
+ configure.ac:
+--- a/modules/intprops-tests
++++ b/modules/intprops-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ Depends-on:
+ assert-h
+ inttypes-h
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/isapipe
++++ b/modules/isapipe
+@@ -7,7 +7,7 @@ lib/isapipe.h
+ m4/isapipe.m4
+ 
+ Depends-on:
+-stdbool         [test $HAVE_ISAPIPE = 0]
++stdbool-h       [test $HAVE_ISAPIPE = 0]
+ sys_stat        [test $HAVE_ISAPIPE = 0]
+ unistd          [test $HAVE_ISAPIPE = 0]
+ msvc-nothrow    [test $HAVE_ISAPIPE = 0]
+--- a/modules/javacomp
++++ b/modules/javacomp
+@@ -6,7 +6,7 @@ lib/javacomp.h
+ lib/javacomp.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unistd
+ javaversion
+ execute
+--- a/modules/javaexec
++++ b/modules/javaexec
+@@ -6,7 +6,7 @@ lib/javaexec.h
+ lib/javaexec.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ execute
+ classpath
+ xsetenv
+--- a/modules/javaversion
++++ b/modules/javaversion
+@@ -9,7 +9,7 @@ lib/javaversion.class
+ 
+ Depends-on:
+ javaexec
+-stdbool
++stdbool-h
+ spawn-pipe
+ wait-process
+ getline
+--- a/modules/lchown
++++ b/modules/lchown
+@@ -10,7 +10,7 @@ unistd
+ readlink        [test $HAVE_LCHOWN = 0]
+ chown           [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ errno-h         [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+-stdbool         [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
++stdbool-h       [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ sys_stat        [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ lstat           [test $REPLACE_LCHOWN = 1]
+ 
+--- a/modules/lchown-tests
++++ b/modules/lchown-tests
+@@ -12,7 +12,7 @@ mgetgroups
+ nanosleep
+ stdckdint
+ stat-time
+-stdbool
++stdbool-h
+ symlink
+ xconcat-filename
+ xgetcwd-lgpl
+--- a/modules/ldexp
++++ b/modules/ldexp
+@@ -8,7 +8,7 @@ m4/ldexp.m4
+ Depends-on:
+ math-h
+ isnand          [test $REPLACE_LDEXP = 1]
+-stdbool         [test $REPLACE_LDEXP = 1]
++stdbool-h       [test $REPLACE_LDEXP = 1]
+ 
+ configure.ac:
+ gl_FUNC_LDEXP
+--- a/modules/ldexpl
++++ b/modules/ldexpl
+@@ -12,7 +12,7 @@ extensions
+ ldexp           [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ isnanl          [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ fpucw           [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdbool         [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdbool-h       [{ test $HAVE_DECL_LDEXPL = 0 || test $gl_func_ldexpl = no; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+ gl_FUNC_LDEXPL
+--- a/modules/libtextstyle-optional
++++ b/modules/libtextstyle-optional
+@@ -8,7 +8,7 @@ m4/libtextstyle-optional.m4
+ Depends-on:
+ gen-header
+ libtextstyle
+-stdbool
++stdbool-h
+ stdio
+ unistd
+ fsync
+--- a/modules/link-tests
++++ b/modules/link-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ ignore-value
+ errno-h
+-stdbool
++stdbool-h
+ sys_stat
+ 
+ configure.ac:
+--- a/modules/list
++++ b/modules/list
+@@ -7,7 +7,7 @@ lib/gl_list.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/localename
++++ b/modules/localename
+@@ -11,7 +11,7 @@ locale-h
+ localename-unsafe
+ flexmember
+ lock
+-stdbool
++stdbool-h
+ thread-optim
+ 
+ configure.ac:
+--- a/modules/localename-unsafe
++++ b/modules/localename-unsafe
+@@ -17,7 +17,7 @@ m4/musl.m4
+ Depends-on:
+ localename-unsafe-limited
+ extensions
+-stdbool
++stdbool-h
+ locale-h
+ flexmember
+ free-posix
+--- a/modules/long-options
++++ b/modules/long-options
+@@ -9,7 +9,7 @@ Depends-on:
+ c99
+ exitfail
+ getopt-gnu
+-stdbool
++stdbool-h
+ stdlib
+ version-etc
+ 
+--- a/modules/lstat-tests
++++ b/modules/lstat-tests
+@@ -8,7 +8,7 @@ Depends-on:
+ ignore-value
+ errno-h
+ same-inode
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/map
++++ b/modules/map
+@@ -7,7 +7,7 @@ lib/gl_map.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/mbchar
++++ b/modules/mbchar
+@@ -9,7 +9,7 @@ m4/mbchar.m4
+ Depends-on:
+ extensions
+ extern-inline
+-stdbool
++stdbool-h
+ uchar
+ c32isalnum
+ c32isalpha
+--- a/modules/mbfile
++++ b/modules/mbfile
+@@ -14,7 +14,7 @@ mbrtowc
+ mbsinit
+ mbszero
+ wchar
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MBFILE
+--- a/modules/mbiter
++++ b/modules/mbiter
+@@ -14,7 +14,7 @@ mbrtoc32
+ mbsinit
+ mbszero
+ uchar
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MBITER
+--- a/modules/mbiterf
++++ b/modules/mbiterf
+@@ -14,7 +14,7 @@ mbrtoc32
+ mbsinit
+ mbszero
+ uchar
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MBITER
+--- a/modules/mbmemcasecmp-tests
++++ b/modules/mbmemcasecmp-tests
+@@ -10,7 +10,7 @@ m4/locale-tr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ setlocale
+ mbrtowc
+ wctype-h
+--- a/modules/mbmemcasecoll
++++ b/modules/mbmemcasecoll
+@@ -7,7 +7,7 @@ lib/mbmemcasecoll.h
+ lib/mbmemcasecoll.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ wchar
+ uchar
+ malloca
+--- a/modules/mbmemcasecoll-tests
++++ b/modules/mbmemcasecoll-tests
+@@ -10,7 +10,7 @@ m4/locale-tr.m4
+ m4/codeset.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ setlocale
+ mbrtowc
+ wctype-h
+--- a/modules/mbscasestr
++++ b/modules/mbscasestr
+@@ -8,7 +8,7 @@ lib/str-kmp.h
+ Depends-on:
+ alignasof
+ mbuiter
+-stdbool
++stdbool-h
+ string
+ mbslen
+ malloca
+--- a/modules/mbsstr
++++ b/modules/mbsstr
+@@ -8,7 +8,7 @@ lib/str-kmp.h
+ Depends-on:
+ alignasof
+ mbuiter
+-stdbool
++stdbool-h
+ string
+ mbslen
+ malloca
+--- a/modules/mbuiter
++++ b/modules/mbuiter
+@@ -14,7 +14,7 @@ mbrtoc32
+ mbsinit
+ mbszero
+ uchar
+-stdbool
++stdbool-h
+ strnlen1
+ 
+ configure.ac:
+--- a/modules/mbuiterf
++++ b/modules/mbuiterf
+@@ -14,7 +14,7 @@ mbrtoc32
+ mbsinit
+ mbszero
+ uchar
+-stdbool
++stdbool-h
+ strnlen1
+ 
+ configure.ac:
+--- a/modules/mcel
++++ b/modules/mcel
+@@ -11,7 +11,7 @@ builtin-expect
+ extern-inline
+ limits-h
+ mbrtoc32
+-stdbool
++stdbool-h
+ uchar
+ verify
+ 
+--- a/modules/mkdir-p
++++ b/modules/mkdir-p
+@@ -22,7 +22,7 @@ quote
+ savewd
+ stat
+ stat-macros
+-stdbool
++stdbool-h
+ sys_stat
+ 
+ configure.ac:
+--- a/modules/mkdir-tests
++++ b/modules/mkdir-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/mkfifo-tests
++++ b/modules/mkfifo-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/mknod-tests
++++ b/modules/mknod-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/mktime
++++ b/modules/mktime
+@@ -12,7 +12,7 @@ c99
+ multiarch
+ intprops        [test $REPLACE_MKTIME = 1]
+ libc-config     [test $REPLACE_MKTIME = 1]
+-stdbool         [test $REPLACE_MKTIME = 1]
++stdbool-h       [test $REPLACE_MKTIME = 1]
+ stdckdint       [test $REPLACE_MKTIME = 1]
+ time_r          [test $REPLACE_MKTIME = 1]
+ verify          [test $REPLACE_MKTIME = 1]
+--- a/modules/modechange
++++ b/modules/modechange
+@@ -10,7 +10,7 @@ m4/modechange.m4
+ Depends-on:
+ stat
+ stat-macros
+-stdbool
++stdbool-h
+ sys_stat
+ xalloc
+ 
+--- a/modules/mountlist
++++ b/modules/mountlist
+@@ -13,7 +13,7 @@ free-posix
+ getline
+ open
+ unlocked-io-internal
+-stdbool
++stdbool-h
+ stdint
+ strstr-simple
+ xalloc
+--- a/modules/nanosleep
++++ b/modules/nanosleep
+@@ -12,7 +12,7 @@ multiarch
+ assert-h        [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
+ intprops        [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
+ pselect         [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
+-stdbool         [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
++stdbool-h       [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
+ sys_select      [test $HAVE_NANOSLEEP = 0 || test $REPLACE_NANOSLEEP = 1]
+ 
+ configure.ac:
+--- a/modules/nl_langinfo-tests
++++ b/modules/nl_langinfo-tests
+@@ -17,7 +17,7 @@ c-strcasestr
+ setlocale
+ thread
+ nanosleep
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gt_LOCALE_FR
+--- a/modules/nonblocking
++++ b/modules/nonblocking
+@@ -13,7 +13,7 @@ Depends-on:
+ fcntl-h
+ ioctl
+ msvc-nothrow
+-stdbool
++stdbool-h
+ stdio
+ sys_socket
+ unistd
+--- a/modules/nonblocking-pipe-tests
++++ b/modules/nonblocking-pipe-tests
+@@ -9,7 +9,7 @@ tests/test-nonblocking-misc.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unistd
+ nonblocking
+ wait-process
+--- a/modules/nonblocking-socket-tests
++++ b/modules/nonblocking-socket-tests
+@@ -11,7 +11,7 @@ tests/socket-client.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unistd
+ sys_socket
+ nonblocking
+--- a/modules/nstrftime
++++ b/modules/nstrftime
+@@ -16,7 +16,7 @@ extensions
+ intprops
+ libc-config
+ localename-unsafe-limited
+-stdbool
++stdbool-h
+ stdckdint
+ time_rz
+ 
+--- a/modules/omap
++++ b/modules/omap
+@@ -7,7 +7,7 @@ lib/gl_omap.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/open-tests
++++ b/modules/open-tests
+@@ -5,7 +5,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ fcntl
+ symlink
+ 
+--- a/modules/openat
++++ b/modules/openat
+@@ -13,7 +13,7 @@ fcntl-h
+ extensions
+ largefile
+ openat-h        [test $HAVE_OPENAT = 0 || test $REPLACE_OPENAT = 1]
+-stdbool         [test $HAVE_OPENAT = 0 || test $REPLACE_OPENAT = 1]
++stdbool-h       [test $HAVE_OPENAT = 0 || test $REPLACE_OPENAT = 1]
+ sys_stat        [test $HAVE_OPENAT = 0 || test $REPLACE_OPENAT = 1]
+ cloexec         [test $REPLACE_OPENAT = 1]
+ fstat           [test $REPLACE_OPENAT = 1]
+--- a/modules/openat-h
++++ b/modules/openat-h
+@@ -7,7 +7,7 @@ lib/openat.h
+ Depends-on:
+ extern-inline
+ fcntl-h
+-stdbool
++stdbool-h
+ sys_stat
+ unistd
+ 
+--- a/modules/oset
++++ b/modules/oset
+@@ -7,7 +7,7 @@ lib/gl_oset.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/parse-datetime
++++ b/modules/parse-datetime
+@@ -13,7 +13,7 @@ assert-h
+ bison
+ c99
+ c-ctype
+-stdbool
++stdbool-h
+ gettime
+ gettext-h
+ gnulib-i18n
+--- a/modules/pipe-filter-gi
++++ b/modules/pipe-filter-gi
+@@ -16,7 +16,7 @@ fcntl-h
+ free-posix
+ gettext-h
+ gnulib-i18n
+-stdbool
++stdbool-h
+ stdint
+ stdlib
+ sys_select
+--- a/modules/pipe-filter-ii
++++ b/modules/pipe-filter-ii
+@@ -15,7 +15,7 @@ extern-inline
+ fcntl-h
+ gettext-h
+ gnulib-i18n
+-stdbool
++stdbool-h
+ stdint
+ stdlib
+ sys_select
+--- a/modules/pipe-posix-tests
++++ b/modules/pipe-posix-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ binary-io
+ msvc-nothrow
+ 
+--- a/modules/pipe2-tests
++++ b/modules/pipe2-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ msvc-nothrow
+ 
+ configure.ac:
+--- a/modules/poll-tests
++++ b/modules/poll-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ sys_socket
+ netinet_in-h
+ arpa_inet-h
+--- a/modules/posix_spawn-internal
++++ b/modules/posix_spawn-internal
+@@ -20,7 +20,7 @@ concat-filename [test $HAVE_POSIX_SPAWN
+ findprog-in     [test $HAVE_POSIX_SPAWN = 0]
+ free-posix      [test $HAVE_POSIX_SPAWN = 0]
+ malloca         [test $HAVE_POSIX_SPAWN = 0]
+-stdbool         [test $HAVE_POSIX_SPAWN = 0]
++stdbool-h       [test $HAVE_POSIX_SPAWN = 0]
+ windows-spawn   [test $HAVE_POSIX_SPAWN = 0]
+ 
+ configure.ac:
+--- a/modules/posix_spawn-tests
++++ b/modules/posix_spawn-tests
+@@ -14,7 +14,7 @@ Depends-on:
+ posix_spawn_file_actions_init
+ posix_spawn_file_actions_addopen
+ posix_spawn_file_actions_destroy
+-stdbool
++stdbool-h
+ unistd
+ sys_wait
+ environ
+--- a/modules/posix_spawn_file_actions_addfchdir-tests
++++ b/modules/posix_spawn_file_actions_addfchdir-tests
+@@ -9,7 +9,7 @@ Depends-on:
+ posix_spawn_file_actions_init
+ posix_spawn_file_actions_destroy
+ posix_spawnp-tests
+-stdbool
++stdbool-h
+ findprog
+ xvasprintf
+ 
+--- a/modules/posix_spawnp-tests
++++ b/modules/posix_spawnp-tests
+@@ -20,7 +20,7 @@ posix_spawnattr_init
+ posix_spawnattr_setsigmask
+ posix_spawnattr_setflags
+ posix_spawnattr_destroy
+-stdbool
++stdbool-h
+ unistd
+ sys_wait
+ dup
+--- a/modules/posixtm
++++ b/modules/posixtm
+@@ -10,7 +10,7 @@ Depends-on:
+ c-ctype
+ idx
+ mktime
+-stdbool
++stdbool-h
+ stdckdint
+ time
+ verify
+--- a/modules/priv-set
++++ b/modules/priv-set
+@@ -9,7 +9,7 @@ m4/priv-set.m4
+ Depends-on:
+ errno-h
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_PRIV_SET
+--- a/modules/propername
++++ b/modules/propername
+@@ -7,7 +7,7 @@ lib/propername.c
+ 
+ Depends-on:
+ c32isalnum
+-stdbool
++stdbool-h
+ trim
+ mbsstr
+ mbchar
+--- a/modules/pselect-tests
++++ b/modules/pselect-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ tests/signature.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ netinet_in-h
+ arpa_inet-h
+ unistd
+--- a/modules/pthread-spin
++++ b/modules/pthread-spin
+@@ -8,7 +8,7 @@ m4/atomic-cas.m4
+ 
+ Depends-on:
+ pthread-h
+-stdbool         [test $HAVE_PTHREAD_SPIN_INIT = 0 || test $REPLACE_PTHREAD_SPIN_INIT = 1]
++stdbool-h       [test $HAVE_PTHREAD_SPIN_INIT = 0 || test $REPLACE_PTHREAD_SPIN_INIT = 1]
+ windows-spin    [test $gl_threads_api = windows]
+ 
+ configure.ac:
+--- a/modules/quotearg
++++ b/modules/quotearg
+@@ -21,7 +21,7 @@ memcmp
+ minmax
+ quotearg-simple
+ localcharset
+-stdbool
++stdbool-h
+ stdint
+ uchar
+ xalloc
+--- a/modules/readlink-tests
++++ b/modules/readlink-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/readtokens
++++ b/modules/readtokens
+@@ -8,7 +8,7 @@ m4/readtokens.m4
+ 
+ Depends-on:
+ xalloc
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_READTOKENS
+--- a/modules/readtokens0
++++ b/modules/readtokens0
+@@ -7,7 +7,7 @@ lib/readtokens0.c
+ 
+ Depends-on:
+ obstack
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/readutmp
++++ b/modules/readutmp
+@@ -13,7 +13,7 @@ extensions
+ idx
+ stat-time
+ gettimeofday
+-stdbool
++stdbool-h
+ stdint
+ strnlen
+ time-h
+--- a/modules/regex
++++ b/modules/regex
+@@ -36,7 +36,7 @@ memmove                 [test $ac_use_in
+ mbrtowc                 [test $ac_use_included_regex = yes]
+ mbsinit                 [test $ac_use_included_regex = yes]
+ nl_langinfo             [test $ac_use_included_regex = yes]
+-stdbool                 [test $ac_use_included_regex = yes]
++stdbool-h               [test $ac_use_included_regex = yes]
+ stdckdint               [test $ac_use_included_regex = yes]
+ stdint                  [test $ac_use_included_regex = yes]
+ verify                  [test $ac_use_included_regex = yes]
+--- a/modules/regex-quote
++++ b/modules/regex-quote
+@@ -6,7 +6,7 @@ lib/regex-quote.h
+ lib/regex-quote.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ xalloc
+ mbuiter
+ mempcpy
+--- a/modules/relocatable-prog
++++ b/modules/relocatable-prog
+@@ -22,7 +22,7 @@ canonicalize-lgpl
+ xalloc
+ xreadlink
+ open
+-stdbool
++stdbool-h
+ unistd
+ memcmp
+ strdup
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -69,7 +69,7 @@ libc-config
+ limits-h
+ pathmax
+ ssize_t
+-stdbool
++stdbool-h
+ stddef
+ stdckdint
+ stdint
+--- a/modules/rename
++++ b/modules/rename
+@@ -15,7 +15,7 @@ lstat             [test $REPLACE_RENAME
+ rmdir             [test $REPLACE_RENAME = 1]
+ same-inode        [test $REPLACE_RENAME = 1]
+ stat              [test $REPLACE_RENAME = 1]
+-stdbool           [test $REPLACE_RENAME = 1]
++stdbool-h         [test $REPLACE_RENAME = 1]
+ strdup            [test $REPLACE_RENAME = 1]
+ 
+ configure.ac:
+--- a/modules/rename-tests
++++ b/modules/rename-tests
+@@ -8,7 +8,7 @@ Depends-on:
+ ignore-value
+ errno-h
+ link
+-stdbool
++stdbool-h
+ symlink
+ sys_stat
+ opendir
+--- a/modules/renameatu
++++ b/modules/renameatu
+@@ -15,7 +15,7 @@ filenamecat-lgpl [test $HAVE_RENAMEAT =
+ openat-h         [test $HAVE_RENAMEAT = 0 || test $REPLACE_RENAMEAT = 1]
+ fstatat          [test $REPLACE_RENAMEAT = 1]
+ readlinkat       [test $REPLACE_RENAMEAT = 1]
+-stdbool          [test $REPLACE_RENAMEAT = 1]
++stdbool-h        [test $REPLACE_RENAMEAT = 1]
+ at-internal      [test $HAVE_RENAMEAT = 0]
+ filename         [test $HAVE_RENAMEAT = 0]
+ fstat            [test $HAVE_RENAMEAT = 0]
+--- a/modules/rmdir-tests
++++ b/modules/rmdir-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/round-tests
++++ b/modules/round-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ assert-h
+ isnand-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/roundf-tests
++++ b/modules/roundf-tests
+@@ -13,7 +13,7 @@ ceilf
+ floorf
+ isnanf-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/rpmatch
++++ b/modules/rpmatch
+@@ -8,7 +8,7 @@ m4/rpmatch.m4
+ Depends-on:
+ stdlib
+ extensions
+-stdbool         [test $HAVE_RPMATCH = 0]
++stdbool-h       [test $HAVE_RPMATCH = 0]
+ gettext-h       [test $HAVE_RPMATCH = 0]
+ gnulib-i18n     [test $HAVE_RPMATCH = 0]
+ regex           [test $HAVE_RPMATCH = 0]
+--- a/modules/same
++++ b/modules/same
+@@ -15,7 +15,7 @@ fstat
+ fstatat
+ openat
+ same-inode
+-stdbool
++stdbool-h
+ memcmp
+ 
+ configure.ac:
+--- a/modules/same-inode
++++ b/modules/same-inode
+@@ -7,7 +7,7 @@ lib/same-inode.h
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ sys_stat
+ 
+ configure.ac:
+--- a/modules/save-cwd
++++ b/modules/save-cwd
+@@ -12,7 +12,7 @@ fchdir
+ fd-safer-flag
+ getcwd-lgpl
+ open
+-stdbool
++stdbool-h
+ unistd-safer
+ 
+ configure.ac:
+--- a/modules/savewd
++++ b/modules/savewd
+@@ -17,7 +17,7 @@ fcntl-safer
+ fcntl-h
+ filename
+ raise
+-stdbool
++stdbool-h
+ stdlib
+ sys_wait
+ unistd
+--- a/modules/select-tests
++++ b/modules/select-tests
+@@ -9,7 +9,7 @@ tests/test-select-out.sh
+ tests/test-select-stdin.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ sys_socket
+ netinet_in-h
+ arpa_inet-h
+--- a/modules/set
++++ b/modules/set
+@@ -7,7 +7,7 @@ lib/gl_set.c
+ 
+ Depends-on:
+ extern-inline
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/spawn-pipe
++++ b/modules/spawn-pipe
+@@ -37,7 +37,7 @@ posix_spawnattr_setpgroup
+ posix_spawnattr_setsigmask
+ posix_spawnattr_setflags
+ posix_spawnattr_destroy
+-stdbool
++stdbool-h
+ stdlib
+ unistd
+ unistd-safer
+--- a/modules/spawn-pipe-tests
++++ b/modules/spawn-pipe-tests
+@@ -12,7 +12,7 @@ tests/macros.h
+ Depends-on:
+ close
+ msvc-inval
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/stack
++++ b/modules/stack
+@@ -6,7 +6,7 @@ lib/stack.h
+ 
+ Depends-on:
+ assure
+-stdbool
++stdbool-h
+ stdlib
+ xalloc
+ 
+--- a/modules/stat
++++ b/modules/stat
+@@ -15,7 +15,7 @@ filename        [test $REPLACE_STAT = 1]
+ malloca         [test $REPLACE_STAT = 1]
+ pathmax         [test $REPLACE_STAT = 1]
+ stat-time       [test $REPLACE_STAT = 1]
+-stdbool         [test $REPLACE_STAT = 1]
++stdbool-h       [test $REPLACE_STAT = 1]
+ 
+ configure.ac:
+ gl_FUNC_STAT
+--- a/modules/stat-tests
++++ b/modules/stat-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ getcwd-lgpl
+ same-inode
+-stdbool
++stdbool-h
+ symlink
+ 
+ configure.ac:
+--- a/modules/stdbit-h
++++ b/modules/stdbit-h
+@@ -9,7 +9,7 @@ m4/stdbit_h.m4
+ Depends-on:
+ gen-header
+ extern-inline           [$GL_GENERATE_STDBIT_H]
+-stdbool                 [$GL_GENERATE_STDBIT_H]
++stdbool-h               [$GL_GENERATE_STDBIT_H]
+ 
+ configure.ac:
+ gl_STDBIT_H
+--- a/modules/stdbool
++++ b/modules/stdbool
+@@ -1,14 +1,18 @@
+ Description:
+ A bool that is like C23.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdbool-h' instead.
++
+ Files:
+-m4/c-bool.m4
+ 
+ Depends-on:
+-c99
++stdbool-h
+ 
+ configure.ac:
+-gl_C_BOOL
+ 
+ Makefile.am:
+ 
+@@ -18,4 +22,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdbool-h
+@@ -0,0 +1,21 @@
++Description:
++A bool that is like C23.
++
++Files:
++m4/c-bool.m4
++
++Depends-on:
++c99
++
++configure.ac:
++gl_C_BOOL
++
++Makefile.am:
++
++Include:
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/stdc_bit_ceil-tests
++++ b/modules/stdc_bit_ceil-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_bit_floor-tests
++++ b/modules/stdc_bit_floor-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_bit_width-tests
++++ b/modules/stdc_bit_width-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_count_ones-tests
++++ b/modules/stdc_count_ones-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_count_zeros-tests
++++ b/modules/stdc_count_zeros-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_first_leading_one-tests
++++ b/modules/stdc_first_leading_one-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_first_leading_zero-tests
++++ b/modules/stdc_first_leading_zero-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_first_trailing_one-tests
++++ b/modules/stdc_first_trailing_one-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_first_trailing_zero-tests
++++ b/modules/stdc_first_trailing_zero-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_has_single_bit-tests
++++ b/modules/stdc_has_single_bit-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_leading_ones-tests
++++ b/modules/stdc_leading_ones-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_leading_zeros-tests
++++ b/modules/stdc_leading_zeros-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_trailing_ones-tests
++++ b/modules/stdc_trailing_ones-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdc_trailing_zeros-tests
++++ b/modules/stdc_trailing_zeros-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ libc-config
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/stdckdint
++++ b/modules/stdckdint
+@@ -7,7 +7,7 @@ lib/intprops-internal.h
+ 
+ Depends-on:
+ gen-header
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ AC_CHECK_HEADERS_ONCE([stdckdint.h])
+--- a/modules/stdckdint-tests
++++ b/modules/stdckdint-tests
+@@ -6,7 +6,7 @@ tests/test-stdckdint.c
+ Depends-on:
+ assert-h
+ inttypes-h
+-stdbool
++stdbool-h
+ stdckdint-c++-tests
+ 
+ configure.ac:
+--- a/modules/strcasestr
++++ b/modules/strcasestr
+@@ -5,7 +5,7 @@ Files:
+ lib/strcasestr.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ strcasestr-simple
+ 
+ configure.ac:
+--- a/modules/strcasestr-simple
++++ b/modules/strcasestr-simple
+@@ -8,7 +8,7 @@ m4/strcasestr.m4
+ 
+ Depends-on:
+ string
+-stdbool
++stdbool-h
+ strcase
+ memchr
+ memcmp
+--- a/modules/strfmon_l
++++ b/modules/strfmon_l
+@@ -10,7 +10,7 @@ m4/codeset.m4
+ Depends-on:
+ monetary-h
+ extensions
+-stdbool         [test $REPLACE_STRFMON_L = 1]
++stdbool-h       [test $REPLACE_STRFMON_L = 1]
+ 
+ configure.ac:
+ gl_FUNC_STRFMON_L
+--- a/modules/striconveh
++++ b/modules/striconveh
+@@ -7,7 +7,7 @@ lib/striconveh.c
+ lib/iconveh.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ iconv
+ iconv_open
+ unistr/u8-prev
+--- a/modules/striconveha
++++ b/modules/striconveha
+@@ -7,7 +7,7 @@ lib/striconveha.h
+ lib/striconveha.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ striconveh
+ malloca
+ strdup
+--- a/modules/string-buffer
++++ b/modules/string-buffer
+@@ -6,7 +6,7 @@ lib/string-buffer.h
+ lib/string-buffer.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ attribute
+ string-desc
+ stdarg-h
+--- a/modules/string-desc
++++ b/modules/string-desc
+@@ -7,7 +7,7 @@ lib/string-desc.c
+ lib/string-desc-contains.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ idx
+ c-ctype
+ ialloc
+--- a/modules/strptime
++++ b/modules/strptime
+@@ -12,7 +12,7 @@ extensions
+ sys_time        [test $HAVE_STRPTIME = 0]
+ string          [test $HAVE_STRPTIME = 0]
+ strcase         [test $HAVE_STRPTIME = 0]
+-stdbool         [test $HAVE_STRPTIME = 0]
++stdbool-h       [test $HAVE_STRPTIME = 0]
+ time_r          [test $HAVE_STRPTIME = 0]
+ 
+ configure.ac:
+--- a/modules/strstr-simple
++++ b/modules/strstr-simple
+@@ -9,7 +9,7 @@ m4/strstr.m4
+ Depends-on:
+ string
+ builtin-expect  [test $REPLACE_STRSTR = 1]
+-stdbool         [test $REPLACE_STRSTR = 1]
++stdbool-h       [test $REPLACE_STRSTR = 1]
+ memchr          [test $REPLACE_STRSTR = 1]
+ memcmp          [test $REPLACE_STRSTR = 1]
+ 
+--- a/modules/strtod
++++ b/modules/strtod
+@@ -11,7 +11,7 @@ stdlib
+ strtod-obsolete
+ c-ctype         [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+ math-h          [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+-stdbool         [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
++stdbool-h       [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+ 
+ configure.ac:
+ gl_FUNC_STRTOD
+--- a/modules/strtof
++++ b/modules/strtof
+@@ -11,7 +11,7 @@ Depends-on:
+ stdlib
+ c-ctype         [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ math-h          [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+-stdbool         [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
++stdbool-h       [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ 
+ configure.ac:
+ gl_FUNC_STRTOF
+--- a/modules/strtold
++++ b/modules/strtold
+@@ -12,7 +12,7 @@ Depends-on:
+ stdlib
+ c-ctype         [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ math-h          [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+-stdbool         [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
++stdbool-h       [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ strtod          [{ test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ 
+ configure.ac:
+--- a/modules/supersede
++++ b/modules/supersede
+@@ -9,7 +9,7 @@ m4/supersede.m4
+ Depends-on:
+ c99
+ fcntl-h
+-stdbool
++stdbool-h
+ sys_stat
+ clean-temp
+ tempname
+--- a/modules/symlink-tests
++++ b/modules/symlink-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/system-quote
++++ b/modules/system-quote
+@@ -7,7 +7,7 @@ lib/system-quote.c
+ 
+ Depends-on:
+ sh-quote
+-stdbool
++stdbool-h
+ xalloc
+ 
+ configure.ac:
+--- a/modules/system-quote-tests
++++ b/modules/system-quote-tests
+@@ -8,7 +8,7 @@ tests/test-system-quote-child.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unistd
+ popen
+ pclose
+--- a/modules/tempname
++++ b/modules/tempname
+@@ -16,7 +16,7 @@ getrandom
+ libc-config
+ lstat
+ mkdir
+-stdbool
++stdbool-h
+ stdint
+ sys_stat
+ time-h
+--- a/modules/term-style-control
++++ b/modules/term-style-control
+@@ -7,7 +7,7 @@ lib/term-style-control.c
+ m4/tcgetattr.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ fatal-signal
+ sigaction
+ sigprocmask
+--- a/modules/term-style-control-tests
++++ b/modules/term-style-control-tests
+@@ -3,7 +3,7 @@ tests/test-term-style-control-hello.c
+ tests/test-term-style-control-yes.c
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unistd
+ full-write
+ 
+--- a/modules/time_rz
++++ b/modules/time_rz
+@@ -13,7 +13,7 @@ time-h
+ flexmember     [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+ idx            [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+ setenv         [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+-stdbool        [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
++stdbool-h      [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+ time_r         [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+ timegm         [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+ tzset          [test $HAVE_TZALLOC = 0 || test $REPLACE_LOCALTIME_RZ = 1 || test $REPLACE_MKTIME_Z = 1]
+--- a/modules/timespec-add
++++ b/modules/timespec-add
+@@ -7,7 +7,7 @@ lib/timespec-add.c
+ Depends-on:
+ c99
+ intprops
+-stdbool
++stdbool-h
+ stdckdint
+ timespec
+ 
+--- a/modules/timespec-sub
++++ b/modules/timespec-sub
+@@ -7,7 +7,7 @@ lib/timespec-sub.c
+ Depends-on:
+ c99
+ intprops
+-stdbool
++stdbool-h
+ stdckdint
+ timespec
+ 
+--- a/modules/timespec-tests
++++ b/modules/timespec-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ Depends-on:
+ dtotimespec
+ intprops
+-stdbool
++stdbool-h
+ timespec-add
+ timespec-sub
+ 
+--- a/modules/tmpdir
++++ b/modules/tmpdir
+@@ -9,7 +9,7 @@ m4/tmpdir.m4
+ Depends-on:
+ secure_getenv
+ stat
+-stdbool
++stdbool-h
+ sys_stat
+ pathmax
+ 
+--- a/modules/tmpfile
++++ b/modules/tmpfile
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ largefile
+ pathmax         [test $REPLACE_TMPFILE = 1]
+-stdbool         [test $REPLACE_TMPFILE = 1]
++stdbool-h       [test $REPLACE_TMPFILE = 1]
+ tempname        [test $REPLACE_TMPFILE = 1]
+ tmpdir          [test $REPLACE_TMPFILE = 1]
+ 
+--- a/modules/totalorderl
++++ b/modules/totalorderl
+@@ -13,7 +13,7 @@ math-h
+ extensions
+ totalorder      [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdbool         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdbool-h       [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signbit         [{ test $HAVE_TOTALORDERL = 0 || test $REPLACE_TOTALORDERL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+--- a/modules/totalordermagl
++++ b/modules/totalordermagl
+@@ -13,7 +13,7 @@ math-h
+ extensions
+ totalordermag   [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdbool         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdbool-h       [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdint          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ verify          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/trunc-tests
++++ b/modules/trunc-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnand-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/truncf-tests
++++ b/modules/truncf-tests
+@@ -10,7 +10,7 @@ Depends-on:
+ float-h
+ isnanf-nolibm
+ nan
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/u64
++++ b/modules/u64
+@@ -8,7 +8,7 @@ lib/u64.c
+ Depends-on:
+ byteswap
+ extern-inline
+-stdbool
++stdbool-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/unicase/base
++++ b/modules/unicase/base
+@@ -10,7 +10,7 @@ Depends-on:
+ gen-header
+ unitypes
+ uninorm/base
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_LIBHEADER([1.2], [unicase.h])
+--- a/modules/unicase/cased
++++ b/modules/unicase/cased
+@@ -9,7 +9,7 @@ lib/unictype/bitmap.h
+ 
+ Depends-on:
+ unitypes
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_INLINE])
+--- a/modules/unicase/ignorable
++++ b/modules/unicase/ignorable
+@@ -9,7 +9,7 @@ lib/unictype/bitmap.h
+ 
+ Depends-on:
+ unitypes
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_INLINE])
+--- a/modules/unicase/u16-casemap
++++ b/modules/unicase/u16-casemap
+@@ -18,7 +18,7 @@ unistr/u16-mbtouc-unsafe
+ unistr/u16-uctomb
+ unistr/u16-cpy
+ uninorm/u16-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unicase/u16-ct-totitle
++++ b/modules/unicase/u16-ct-totitle
+@@ -20,7 +20,7 @@ unistr/u16-mbtouc-unsafe
+ unistr/u16-uctomb
+ unistr/u16-cpy
+ uninorm/u16-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE([1.2], [unicase/u16-ct-totitle])
+--- a/modules/unicase/u16-is-invariant
++++ b/modules/unicase/u16-is-invariant
+@@ -12,7 +12,7 @@ uninorm/base
+ uninorm/u16-normalize
+ uninorm/nfd
+ unistr/u16-cmp
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unicase/u32-casemap
++++ b/modules/unicase/u32-casemap
+@@ -18,7 +18,7 @@ unistr/u32-mbtouc-unsafe
+ unistr/u32-uctomb
+ unistr/u32-cpy
+ uninorm/u32-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unicase/u32-ct-totitle
++++ b/modules/unicase/u32-ct-totitle
+@@ -20,7 +20,7 @@ unistr/u32-mbtouc-unsafe
+ unistr/u32-uctomb
+ unistr/u32-cpy
+ uninorm/u32-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE([1.2], [unicase/u32-ct-totitle])
+--- a/modules/unicase/u32-is-invariant
++++ b/modules/unicase/u32-is-invariant
+@@ -12,7 +12,7 @@ uninorm/base
+ uninorm/u32-normalize
+ uninorm/nfd
+ unistr/u32-cmp
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unicase/u8-casemap
++++ b/modules/unicase/u8-casemap
+@@ -18,7 +18,7 @@ unistr/u8-mbtouc-unsafe
+ unistr/u8-uctomb
+ unistr/u8-cpy
+ uninorm/u8-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unicase/u8-ct-totitle
++++ b/modules/unicase/u8-ct-totitle
+@@ -20,7 +20,7 @@ unistr/u8-mbtouc-unsafe
+ unistr/u8-uctomb
+ unistr/u8-cpy
+ uninorm/u8-normalize
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE([1.2], [unicase/u8-ct-totitle])
+--- a/modules/unicase/u8-is-invariant
++++ b/modules/unicase/u8-is-invariant
+@@ -12,7 +12,7 @@ uninorm/base
+ uninorm/u8-normalize
+ uninorm/nfd
+ unistr/u8-cmp
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/uniconv/base
++++ b/modules/uniconv/base
+@@ -10,7 +10,7 @@ m4/libunistring-base.m4
+ 
+ Depends-on:
+ gen-header
+-stdbool
++stdbool-h
+ unitypes
+ 
+ configure.ac:
+--- a/modules/unictype/base
++++ b/modules/unictype/base
+@@ -9,7 +9,7 @@ m4/unictype_h.m4
+ Depends-on:
+ gen-header
+ unitypes
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_LIBHEADER([1.2], [unictype.h])
+--- a/modules/unictype/category-byname-tests
++++ b/modules/unictype/category-byname-tests
+@@ -3,7 +3,7 @@ tests/unictype/test-categ_byname.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ unictype/category-test
+ 
+ configure.ac:
+--- a/modules/unigbrk/base
++++ b/modules/unigbrk/base
+@@ -8,7 +8,7 @@ m4/libunistring-base.m4
+ Depends-on:
+ gen-header
+ unitypes
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_LIBHEADER([1.2], [unigbrk.h])
+--- a/modules/unigbrk/u16-grapheme-breaks
++++ b/modules/unigbrk/u16-grapheme-breaks
+@@ -11,7 +11,7 @@ unigbrk/uc-gbrk-prop
+ unictype/incb-of
+ unictype/property-extended-pictographic
+ unistr/u16-mbtouc
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([unigbrk/u16-grapheme-breaks])
+--- a/modules/unigbrk/u32-grapheme-breaks
++++ b/modules/unigbrk/u32-grapheme-breaks
+@@ -11,7 +11,7 @@ unigbrk/uc-gbrk-prop
+ unictype/incb-of
+ unictype/property-extended-pictographic
+ unistr/u32-mbtouc
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([unigbrk/u32-grapheme-breaks])
+--- a/modules/unigbrk/u8-grapheme-breaks
++++ b/modules/unigbrk/u8-grapheme-breaks
+@@ -11,7 +11,7 @@ unigbrk/uc-gbrk-prop
+ unictype/incb-of
+ unictype/property-extended-pictographic
+ unistr/u8-mbtouc
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([unigbrk/u8-grapheme-breaks])
+--- a/modules/unigbrk/uc-grapheme-breaks
++++ b/modules/unigbrk/uc-grapheme-breaks
+@@ -10,7 +10,7 @@ unigbrk/base
+ unigbrk/uc-gbrk-prop
+ unictype/incb-of
+ unictype/property-extended-pictographic
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_MODULE_INDICATOR([unigbrk/uc-grapheme-breaks])
+--- a/modules/unigbrk/uc-is-grapheme-break-tests
++++ b/modules/unigbrk/uc-is-grapheme-break-tests
+@@ -6,7 +6,7 @@ tests/unigbrk/GraphemeBreakTest.txt
+ Depends-on:
+ unictype/incb-of
+ unictype/property-extended-pictographic
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/uniname/uniname
++++ b/modules/uniname/uniname
+@@ -10,7 +10,7 @@ Depends-on:
+ uniname/base
+ attribute
+ memcmp
+-stdbool
++stdbool-h
+ c99
+ 
+ configure.ac:
+--- a/modules/unistd-safer-tests
++++ b/modules/unistd-safer-tests
+@@ -10,7 +10,7 @@ dup
+ fd-safer-flag
+ getdtablesize
+ msvc-nothrow
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ 
+--- a/modules/unistdio/u8-asnprintf-extra-tests
++++ b/modules/unistdio/u8-asnprintf-extra-tests
+@@ -6,7 +6,7 @@ tests/unistdio/test-u8-asnprintf-big.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ physmem
+ unistr/u8-strlen
+--- a/modules/unistdio/ulc-asnprintf-extra-tests
++++ b/modules/unistdio/ulc-asnprintf-extra-tests
+@@ -6,7 +6,7 @@ tests/unistdio/test-ulc-asnprintf-big.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ physmem
+ 
+--- a/modules/unistr/base
++++ b/modules/unistr/base
+@@ -8,7 +8,7 @@ m4/libunistring-base.m4
+ Depends-on:
+ gen-header
+ unitypes
+-stdbool
++stdbool-h
+ inline
+ 
+ configure.ac:
+--- a/modules/unistr/u16-strstr
++++ b/modules/unistr/u16-strstr
+@@ -11,7 +11,7 @@ unistr/base
+ unistr/u16-chr
+ unistr/u16-strchr
+ unistr/u16-cmp
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE([0.9.4], [unistr/u16-strstr])
+--- a/modules/unistr/u32-strstr
++++ b/modules/unistr/u32-strstr
+@@ -11,7 +11,7 @@ unistr/base
+ unistr/u32-chr
+ unistr/u32-strchr
+ unistr/u32-cmp
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE([0.9.4], [unistr/u32-strstr])
+--- a/modules/unlink-tests
++++ b/modules/unlink-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-stdbool
++stdbool-h
+ symlink
+ unlinkdir
+ 
+--- a/modules/unlinkdir
++++ b/modules/unlinkdir
+@@ -7,7 +7,7 @@ lib/unlinkdir.c
+ m4/unlinkdir.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ priv-set
+ root-uid
+ 
+--- a/modules/userspec
++++ b/modules/userspec
+@@ -15,7 +15,7 @@ gettext-h
+ gnulib-i18n
+ intprops
+ inttostr
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_USERSPEC
+--- a/modules/utime
++++ b/modules/utime
+@@ -11,7 +11,7 @@ time-h
+ filename        [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1]
+ malloca         [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1]
+ stat            [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1]
+-stdbool         [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1]
++stdbool-h       [test $HAVE_UTIME = 0 || test $REPLACE_UTIME = 1]
+ 
+ configure.ac:
+ gl_FUNC_UTIME
+--- a/modules/utimecmp
++++ b/modules/utimecmp
+@@ -14,7 +14,7 @@ stat-time
+ time-h
+ utimensat
+ intprops
+-stdbool
++stdbool-h
+ stdint
+ assert-h
+ 
+--- a/modules/utimens
++++ b/modules/utimens
+@@ -17,7 +17,7 @@ gettime
+ msvc-nothrow
+ stat
+ stat-time
+-stdbool
++stdbool-h
+ sys_stat
+ sys_time
+ time-h
+--- a/modules/vasnprintf-extra-tests
++++ b/modules/vasnprintf-extra-tests
+@@ -6,7 +6,7 @@ tests/test-vasnprintf-big.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ physmem
+ 
+--- a/modules/vasnwprintf-extra-tests
++++ b/modules/vasnwprintf-extra-tests
+@@ -6,7 +6,7 @@ tests/test-vasnwprintf-big.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ stdint
+ physmem
+ 
+--- a/modules/wait-process
++++ b/modules/wait-process
+@@ -14,7 +14,7 @@ xalloc
+ xalloc-die
+ gettext-h
+ gnulib-i18n
+-stdbool
++stdbool-h
+ stdlib
+ sys_wait
+ unistd
+--- a/modules/windows-cond
++++ b/modules/windows-cond
+@@ -7,7 +7,7 @@ lib/windows-cond.c
+ lib/windows-initguard.h
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ errno-h
+ time-h
+ gettimeofday
+--- a/modules/windows-spawn
++++ b/modules/windows-spawn
+@@ -11,7 +11,7 @@ Depends-on:
+ environ
+ findprog-in
+ msvc-nothrow
+-stdbool
++stdbool-h
+ stdint
+ stdlib
+ strpbrk
+--- a/modules/windows-timedrwlock
++++ b/modules/windows-timedrwlock
+@@ -8,7 +8,7 @@ lib/windows-initguard.h
+ 
+ Depends-on:
+ errno-h
+-stdbool
++stdbool-h
+ time-h
+ gettimeofday
+ 
+--- a/modules/write-any-file
++++ b/modules/write-any-file
+@@ -7,7 +7,7 @@ lib/write-any-file.c
+ m4/write-any-file.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ priv-set
+ root-uid
+ 
+--- a/modules/xbinary-io
++++ b/modules/xbinary-io
+@@ -12,7 +12,7 @@ exitfail
+ extern-inline
+ gettext-h
+ gnulib-i18n
+-stdbool
++stdbool-h
+ verify
+ 
+ configure.ac:
+--- a/modules/xlist
++++ b/modules/xlist
+@@ -8,7 +8,7 @@ lib/gl_xlist.c
+ Depends-on:
+ list
+ extern-inline
+-stdbool
++stdbool-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xmap
++++ b/modules/xmap
+@@ -8,7 +8,7 @@ lib/gl_xmap.c
+ Depends-on:
+ map
+ extern-inline
+-stdbool
++stdbool-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xomap
++++ b/modules/xomap
+@@ -8,7 +8,7 @@ lib/gl_xomap.c
+ Depends-on:
+ omap
+ extern-inline
+-stdbool
++stdbool-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xoset
++++ b/modules/xoset
+@@ -8,7 +8,7 @@ lib/gl_xoset.c
+ Depends-on:
+ oset
+ extern-inline
+-stdbool
++stdbool-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xset
++++ b/modules/xset
+@@ -8,7 +8,7 @@ lib/gl_xset.c
+ Depends-on:
+ set
+ extern-inline
+-stdbool
++stdbool-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xstrtod
++++ b/modules/xstrtod
+@@ -7,7 +7,7 @@ lib/xstrtod.c
+ m4/xstrtod.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_XSTRTOD
+--- a/modules/xstrtold
++++ b/modules/xstrtold
+@@ -8,7 +8,7 @@ lib/xstrtold.c
+ m4/xstrtod.m4
+ 
+ Depends-on:
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_XSTRTOLD
+--- a/modules/yesno
++++ b/modules/yesno
+@@ -10,7 +10,7 @@ m4/yesno.m4
+ Depends-on:
+ getline
+ rpmatch
+-stdbool
++stdbool-h
+ 
+ configure.ac:
+ gl_YESNO

@@ -1,0 +1,147 @@
+From 6659e016165ccc95e2dedd8f3805d33efa783e41 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Mon, 28 Oct 2024 00:18:35 +0100
+Subject: [PATCH] realloc-gnu: Replace module with an alias to realloc-posix.
+
+* tests/test-realloc-posix.c: Renamed from tests/test-realloc-gnu.c. Add
+more tests, not yet activated.
+* modules/realloc-posix-tests: Renamed from modules/realloc-gnu-tests.
+Test test-realloc-posix instead of test-realloc-gnu.
+* modules/realloc-gnu: Mark as a deprecated alias of 'realloc-posix'.
+* lib/stdlib.in.h (realloc): Ignore GNULIB_REALLOC_GNU.
+* modules/stdlib (Makefile.am): Don't substitute GNULIB_REALLOC_GNU,
+REPLACE_REALLOC_FOR_REALLOC_GNU.
+* m4/stdlib_h.m4 (gl_STDLIB_H_REQUIRE_DEFAULTS): Don't initialize
+GNULIB_REALLOC_GNU.
+(gl_STDLIB_H_DEFAULTS): Don't initialize
+REPLACE_REALLOC_FOR_REALLOC_GNU.
+* m4/realloc.m4 (gl_FUNC_REALLOC_GNU): Remove macro.
+* m4/malloc.m4 (gl_CHECK_MALLOC_POSIX): Update comment.
+* doc/posix-functions/realloc.texi: Remove description of module
+'realloc-gnu'.
+* MODULES.html.sh (Memory management functions <stdlib.h>): Remove
+realloc-gnu. Add realloc-posix.
+---
+ ChangeLog                                     | 22 +++++++++++++++++++
+ MODULES.html.sh                               |  2 +-
+ doc/posix-functions/realloc.texi              | 17 --------------
+ lib/stdlib.in.h                               |  3 +--
+ m4/malloc.m4                                  |  4 ++--
+ m4/realloc.m4                                 | 21 +-----------------
+ m4/stdlib_h.m4                                |  4 +---
+ modules/realloc-gnu                           | 18 ++++++---------
+ modules/realloc-gnu-tests                     | 12 ----------
+ modules/realloc-posix-tests                   | 12 ++++++++++
+ modules/stdlib                                |  2 --
+ ...est-realloc-gnu.c => test-realloc-posix.c} | 18 ++++++++++++++-
+ 12 files changed, 64 insertions(+), 71 deletions(-)
+ delete mode 100644 modules/realloc-gnu-tests
+ create mode 100644 modules/realloc-posix-tests
+ rename tests/{test-realloc-gnu.c => test-realloc-posix.c} (79%)
+
+--- a/MODULES.html.sh
++++ b/MODULES.html.sh
+@@ -1738,7 +1738,7 @@ func_all_modules ()
+   func_module free-posix
+   func_module malloc-gnu
+   func_module memalign
+-  func_module realloc-gnu
++  func_module realloc-posix
+   func_module reallocarray
+   func_module pagealign_alloc
+   func_end_table
+--- a/lib/stdlib.in.h
++++ b/lib/stdlib.in.h
+@@ -1445,8 +1445,7 @@ _GL_WARN_ON_USE (setstate_r, "setstate_r
+ 
+ 
+ #if @GNULIB_REALLOC_POSIX@
+-# if (@GNULIB_REALLOC_POSIX@ && @REPLACE_REALLOC_FOR_REALLOC_POSIX@) \
+-     || (@GNULIB_REALLOC_GNU@ && @REPLACE_REALLOC_FOR_REALLOC_GNU@)
++# if (@GNULIB_REALLOC_POSIX@ && @REPLACE_REALLOC_FOR_REALLOC_POSIX@)
+ #  if !((defined __cplusplus && defined GNULIB_NAMESPACE) \
+         || _GL_USE_STDLIB_ALLOC)
+ #   undef realloc
+--- a/m4/malloc.m4
++++ b/m4/malloc.m4
+@@ -128,7 +128,7 @@ AC_DEFUN([gl_CHECK_MALLOC_POSIX],
+       dnl some systems go to their knees when you do that. So assume that
+       dnl all Unix implementations of the function set errno on failure,
+       dnl except on those platforms where we have seen 'test-malloc-gnu',
+-      dnl 'test-realloc-gnu', 'test-calloc-gnu' fail.
++      dnl 'test-realloc-posix', 'test-calloc-gnu' fail.
+       case "$host_os" in
+         mingw* | windows*)
+           gl_cv_func_malloc_posix=no ;;
+--- a/m4/stdlib_h.m4
++++ b/m4/stdlib_h.m4
+@@ -151,7 +151,6 @@ AC_DEFUN([gl_STDLIB_H_REQUIRE_DEFAULTS],
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_RANDOM])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_RANDOM_R])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_REALLOCARRAY])
+-    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_REALLOC_GNU])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_REALLOC_POSIX])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_REALPATH])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_RPMATCH])
+@@ -257,7 +256,6 @@ AC_DEFUN([gl_STDLIB_H_DEFAULTS],
+   REPLACE_RAND=0;            AC_SUBST([REPLACE_RAND])
+   REPLACE_RANDOM=0;          AC_SUBST([REPLACE_RANDOM])
+   REPLACE_RANDOM_R=0;        AC_SUBST([REPLACE_RANDOM_R])
+-  REPLACE_REALLOC_FOR_REALLOC_GNU=0;    AC_SUBST([REPLACE_REALLOC_FOR_REALLOC_GNU])
+   REPLACE_REALLOC_FOR_REALLOC_POSIX=0;  AC_SUBST([REPLACE_REALLOC_FOR_REALLOC_POSIX])
+   REPLACE_REALLOCARRAY=0;    AC_SUBST([REPLACE_REALLOCARRAY])
+   REPLACE_REALPATH=0;        AC_SUBST([REPLACE_REALPATH])
+--- a/modules/realloc-gnu
++++ b/modules/realloc-gnu
+@@ -1,21 +1,18 @@
+ Description:
+ realloc() function that is glibc compatible.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'filename' instead.
++
+ Files:
+-lib/realloc.c
+ 
+ Depends-on:
+ realloc-posix
+-free-posix           [test $REPLACE_REALLOC_FOR_REALLOC_GNU = 1]
+-malloc-gnu           [test $REPLACE_REALLOC_FOR_REALLOC_GNU = 1]
+-xalloc-oversized     [test $REPLACE_REALLOC_FOR_REALLOC_GNU = 1]
+ 
+ configure.ac:
+-gl_FUNC_REALLOC_GNU
+-if test $REPLACE_REALLOC_FOR_REALLOC_GNU = 1; then
+-  AC_LIBOBJ([realloc])
+-fi
+-gl_STDLIB_MODULE_INDICATOR([realloc-gnu])
+ 
+ Makefile.am:
+ 
+@@ -26,4 +23,4 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Jim Meyering
++all
+--- a/modules/stdlib
++++ b/modules/stdlib
+@@ -66,7 +66,6 @@ stdlib.h: stdlib.in.h $(top_builddir)/co
+ 	      -e 's/@''GNULIB_RAND''@/$(GNULIB_RAND)/g' \
+ 	      -e 's/@''GNULIB_RANDOM''@/$(GNULIB_RANDOM)/g' \
+ 	      -e 's/@''GNULIB_RANDOM_R''@/$(GNULIB_RANDOM_R)/g' \
+-	      -e 's/@''GNULIB_REALLOC_GNU''@/$(GNULIB_REALLOC_GNU)/g' \
+ 	      -e 's/@''GNULIB_REALLOC_POSIX''@/$(GNULIB_REALLOC_POSIX)/g' \
+ 	      -e 's/@''GNULIB_REALLOCARRAY''@/$(GNULIB_REALLOCARRAY)/g' \
+ 	      -e 's/@''GNULIB_REALPATH''@/$(GNULIB_REALPATH)/g' \
+@@ -167,7 +166,6 @@ stdlib.h: stdlib.in.h $(top_builddir)/co
+ 	      -e 's|@''REPLACE_RAND''@|$(REPLACE_RAND)|g' \
+ 	      -e 's|@''REPLACE_RANDOM''@|$(REPLACE_RANDOM)|g' \
+ 	      -e 's|@''REPLACE_RANDOM_R''@|$(REPLACE_RANDOM_R)|g' \
+-	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_GNU''@|$(REPLACE_REALLOC_FOR_REALLOC_GNU)|g' \
+ 	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_POSIX''@|$(REPLACE_REALLOC_FOR_REALLOC_POSIX)|g' \
+ 	      -e 's|@''REPLACE_REALLOCARRAY''@|$(REPLACE_REALLOCARRAY)|g' \
+ 	      -e 's|@''REPLACE_REALPATH''@|$(REPLACE_REALPATH)|g' \

@@ -1,0 +1,128 @@
+From 2bbbc32f1527981473ed403d87c7f3ddbb906634 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 25 Sep 2024 16:21:12 +0200
+Subject: [PATCH] string-buffer: Enable resource leak warnings from clang.
+
+* m4/gnulib-common.m4 (gl_COMMON_BODY): Define the macros
+_GL_ATTRIBUTE_CAPABILITY_TYPE, _GL_ATTRIBUTE_ACQUIRE_CAPABILITY,
+_GL_ATTRIBUTE_RELEASE_CAPABILITY.
+* lib/string-buffer.h (sb_heap_allocated_pointer_t): New type.
+(struct string_buffer): Use it.
+(sb_init): Mark with _GL_ATTRIBUTE_ACQUIRE_CAPABILITY.
+(sb_free, sb_dupfree): Mark with _GL_ATTRIBUTE_RELEASE_CAPABILITY.
+* lib/string-buffer.c: Silence the -Wthread-safety warnings in this
+compilation unit.
+---
+ ChangeLog           | 13 +++++++++++++
+ lib/string-buffer.c |  6 ++++++
+ lib/string-buffer.h | 16 +++++++++++-----
+ m4/gnulib-common.m4 | 31 ++++++++++++++++++++++++++++++-
+ 4 files changed, 60 insertions(+), 6 deletions(-)
+
+--- a/lib/string-buffer.c
++++ b/lib/string-buffer.c
+@@ -26,6 +26,12 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++/* The warnings about memory resource 'buffer->data' in this file are not
++   relevant.  Silence them.  */
++#if __clang_major__ >= 3
++# pragma clang diagnostic ignored "-Wthread-safety"
++#endif
++
+ void
+ sb_init (struct string_buffer *buffer)
+ {
+--- a/lib/string-buffer.h
++++ b/lib/string-buffer.h
+@@ -19,7 +19,8 @@
+ #ifndef _STRING_BUFFER_H
+ #define _STRING_BUFFER_H
+ 
+-/* This file uses _GL_ATTRIBUTE_MALLOC.  */
++/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_CAPABILITY_TYPE,
++   _GL_ATTRIBUTE_ACQUIRE_CAPABILITY, _GL_ATTRIBUTE_RELEASE_CAPABILITY.  */
+ #if !_GL_CONFIG_H_INCLUDED
+  #error "Please include config.h first."
+ #endif
+@@ -29,10 +30,13 @@
+ 
+ #include "attribute.h"
+ 
++typedef char * _GL_ATTRIBUTE_CAPABILITY_TYPE ("memory resource")
++        sb_heap_allocated_pointer_t;
++
+ /* A string buffer type.  */
+ struct string_buffer
+ {
+-  char *data;
++  sb_heap_allocated_pointer_t data;
+   size_t length;     /* used bytes, <= allocated */
+   size_t allocated;  /* allocated bytes */
+   bool error;        /* true if there was an error */
+@@ -44,7 +48,8 @@ extern "C" {
+ #endif
+ 
+ /* Initializes BUFFER to the empty string.  */
+-extern void sb_init (struct string_buffer *buffer);
++extern void sb_init (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_ACQUIRE_CAPABILITY (buffer->data);
+ 
+ /* Appends the contents of STR to BUFFER.
+    Returns 0, or -1 in case of out-of-memory error.  */
+@@ -75,13 +80,14 @@ extern int sb_appendf (struct string_buf
+   ;
+ 
+ /* Frees the memory held by BUFFER.  */
+-extern void sb_free (struct string_buffer *buffer);
++extern void sb_free (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+ /* Returns the contents of BUFFER, and frees all other memory held
+    by BUFFER.  Returns NULL upon failure or if there was an error earlier.
+    It is the responsibility of the caller to free() the result.  */
+ extern char * sb_dupfree (struct string_buffer *buffer)
+-  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
++  _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+ #ifdef __cplusplus
+ }
+--- a/m4/gnulib-common.m4
++++ b/m4/gnulib-common.m4
+@@ -655,6 +655,35 @@ AC_DEFUN([gl_COMMON_BODY], [
+ #  define _GL_UNUSED_LABEL
+ # endif
+ #endif
++
++/* The following attributes enable detection of multithread-safety problems
++   and resource leaks at compile-time, by clang â¥ 15, when the warning option
++   -Wthread-safety is enabled.  For usage, see
++   <https://clang.llvm.org/docs/ThreadSafetyAnalysis.html>.  */
++#ifndef _GL_ATTRIBUTE_CAPABILITY_TYPE
++# if __clang_major__ >= 15
++#  define _GL_ATTRIBUTE_CAPABILITY_TYPE(concept) \
++     __attribute__ ((__capability__ (concept)))
++#else
++#  define _GL_ATTRIBUTE_CAPABILITY_TYPE(concept)
++# endif
++#endif
++#ifndef _GL_ATTRIBUTE_ACQUIRE_CAPABILITY
++# if __clang_major__ >= 15
++#  define _GL_ATTRIBUTE_ACQUIRE_CAPABILITY(resource) \
++     __attribute__ ((__acquire_capability__ (resource)))
++# else
++#  define _GL_ATTRIBUTE_ACQUIRE_CAPABILITY(resource)
++# endif
++#endif
++#ifndef _GL_ATTRIBUTE_RELEASE_CAPABILITY
++# if __clang_major__ >= 15
++#  define _GL_ATTRIBUTE_RELEASE_CAPABILITY(resource) \
++     __attribute__ ((__release_capability__ (resource)))
++# else
++#  define _GL_ATTRIBUTE_RELEASE_CAPABILITY(resource)
++# endif
++#endif
+ ])
+   AH_VERBATIM([c_linkage],
+ [/* In C++, there is the concept of "language linkage", that encompasses

@@ -1,0 +1,237 @@
+From db23a7eaa3b34be91f84c1ae758f90e78ccc3b72 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 25 Sep 2024 17:19:41 +0200
+Subject: [PATCH] string-buffer: Add more API.
+
+* lib/string-buffer.h: Include string-desc.h.
+(sb_append1, sb_append_desc): New declarations.
+(sb_append_c): Renamed from sb_append.
+(sb_contents, sb_contents_c, sb_dupfree): New declarations.
+(sb_dupfree_c): Renamed from sb_dupfree.
+* lib/string-buffer.c (sb_append1, sb_append_desc): New functions.
+(sb_append_c): Renamed from sb_append.
+(sb_contents, sb_contents_c, sb_dupfree): New functions.
+(sb_dupfree_c): Renamed from sb_dupfree. Optimize.
+* modules/string-buffer (Depends-on): Add string-desc.
+* tests/test-string-buffer.c (main): Use sb_append_c instead of
+sb_append. Use sb_dupfree_c instead of sb_dupfree. Test also sb_append1,
+sb_append_desc, sb_contents.
+* NEWS: Mention the changes.
+---
+ ChangeLog                  | 18 ++++++++
+ NEWS                       |  3 ++
+ lib/string-buffer.c        | 90 ++++++++++++++++++++++++++++++++++----
+ lib/string-buffer.h        | 40 ++++++++++++++---
+ modules/string-buffer      |  1 +
+ tests/test-string-buffer.c | 82 +++++++++++++++++++++++++++-------
+ 6 files changed, 204 insertions(+), 30 deletions(-)
+
+--- a/lib/string-buffer.c
++++ b/lib/string-buffer.c
+@@ -84,7 +84,33 @@ sb_ensure_more_bytes (struct string_buff
+ }
+ 
+ int
+-sb_append (struct string_buffer *buffer, const char *str)
++sb_append1 (struct string_buffer *buffer, char c)
++{
++  if (sb_ensure_more_bytes (buffer, 1) < 0)
++    {
++      buffer->error = true;
++      return -1;
++    }
++  buffer->data[buffer->length++] = c;
++  return 0;
++}
++
++int
++sb_append_desc (struct string_buffer *buffer, string_desc_t s)
++{
++  size_t len = string_desc_length (s);
++  if (sb_ensure_more_bytes (buffer, len) < 0)
++    {
++      buffer->error = true;
++      return -1;
++    }
++  memcpy (buffer->data + buffer->length, string_desc_data (s), len);
++  buffer->length += len;
++  return 0;
++}
++
++int
++sb_append_c (struct string_buffer *buffer, const char *str)
+ {
+   size_t len = strlen (str);
+   if (sb_ensure_more_bytes (buffer, len) < 0)
+@@ -263,34 +289,82 @@ sb_free (struct string_buffer *buffer)
+     free (buffer->data);
+ }
+ 
+-/* Returns the contents of BUFFER, and frees all other memory held
+-   by BUFFER.  Returns NULL upon failure or if there was an error earlier.  */
+-char *
++string_desc_t
++sb_contents (struct string_buffer *buffer)
++{
++  return string_desc_new_addr (buffer->length, buffer->data);
++}
++
++const char *
++sb_contents_c (struct string_buffer *buffer)
++{
++  if (sb_ensure_more_bytes (buffer, 1) < 0)
++    return NULL;
++  buffer->data[buffer->length] = '\0';
++
++  return buffer->data;
++}
++
++string_desc_t
+ sb_dupfree (struct string_buffer *buffer)
+ {
+   if (buffer->error)
+     goto fail;
+ 
++  size_t length = buffer->length;
++  if (buffer->data == buffer->space)
++    {
++      char *copy = (char *) malloc (length > 0 ? length : 1);
++      if (copy == NULL)
++        goto fail;
++      memcpy (copy, buffer->data, length);
++      return string_desc_new_addr (length, copy);
++    }
++  else
++    {
++      /* Shrink the string before returning it.  */
++      char *contents = buffer->data;
++      if (length < buffer->allocated)
++        {
++          contents = realloc (contents, length > 0 ? length : 1);
++          if (contents == NULL)
++            goto fail;
++        }
++      return string_desc_new_addr (length, contents);
++    }
++
++ fail:
++  sb_free (buffer);
++  return string_desc_new_addr (0, NULL);
++}
++
++char *
++sb_dupfree_c (struct string_buffer *buffer)
++{
++  if (buffer->error)
++    goto fail;
++
+   if (sb_ensure_more_bytes (buffer, 1) < 0)
+     goto fail;
+   buffer->data[buffer->length] = '\0';
+   buffer->length++;
+ 
++  size_t length = buffer->length;
+   if (buffer->data == buffer->space)
+     {
+-      char *copy = (char *) malloc (buffer->length);
++      char *copy = (char *) malloc (length);
+       if (copy == NULL)
+         goto fail;
+-      memcpy (copy, buffer->data, buffer->length);
++      memcpy (copy, buffer->data, length);
+       return copy;
+     }
+   else
+     {
+       /* Shrink the string before returning it.  */
+       char *contents = buffer->data;
+-      if (buffer->length < buffer->allocated)
++      if (length < buffer->allocated)
+         {
+-          contents = realloc (contents, buffer->length);
++          contents = realloc (contents, length);
+           if (contents == NULL)
+             goto fail;
+         }
+--- a/lib/string-buffer.h
++++ b/lib/string-buffer.h
+@@ -29,6 +29,7 @@
+ #include <stdlib.h>
+ 
+ #include "attribute.h"
++#include "string-desc.h"
+ 
+ typedef char * _GL_ATTRIBUTE_CAPABILITY_TYPE ("memory resource")
+         sb_heap_allocated_pointer_t;
+@@ -51,9 +52,17 @@ extern "C" {
+ extern void sb_init (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_ACQUIRE_CAPABILITY (buffer->data);
+ 
+-/* Appends the contents of STR to BUFFER.
++/* Appends the character C to BUFFER.
+    Returns 0, or -1 in case of out-of-memory error.  */
+-extern int sb_append (struct string_buffer *buffer, const char *str);
++extern int sb_append1 (struct string_buffer *buffer, char c);
++
++/* Appends the contents of the memory area STR to BUFFER.
++   Returns 0, or -1 in case of out-of-memory error.  */
++extern int sb_append_desc (struct string_buffer *buffer, string_desc_t s);
++
++/* Appends the contents of the C string STR to BUFFER.
++   Returns 0, or -1 in case of out-of-memory error.  */
++extern int sb_append_c (struct string_buffer *buffer, const char *str);
+ 
+ /* Appends the result of the printf-compatible FORMATSTRING with the argument
+    list LIST to BUFFER.
+@@ -71,7 +80,7 @@ extern int sb_appendvf (struct string_bu
+    arguments to BUFFER.
+    Returns 0, or -1 in case of error.  */
+ extern int sb_appendf (struct string_buffer *buffer,
+-                        const char *formatstring, ...)
++                       const char *formatstring, ...)
+   #if (__GNUC__ + (__GNUC_MINOR__ >= 4) > 4) && !defined __clang__
+   ATTRIBUTE_FORMAT ((__gnu_printf__, 2, 3))
+   #else
+@@ -83,10 +92,29 @@ extern int sb_appendf (struct string_buf
+ extern void sb_free (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+-/* Returns the contents of BUFFER, and frees all other memory held
+-   by BUFFER.  Returns NULL upon failure or if there was an error earlier.
++/* Returns a read-only view of the current contents of BUFFER.
++   The result is only valid until the next operation on BUFFER.  */
++extern string_desc_t sb_contents (struct string_buffer *buffer);
++
++/* Ensures the contents of BUFFER is followed by a NUL byte (without
++   incrementing the length of the contents).
++   Then returns a read-only view of the current contents of BUFFER,
++   that is, the current contents of BUFFER as a C string.
++   Returns NULL upon out-of-memory error.
++   The result is only valid until the next operation on BUFFER.  */
++extern const char * sb_contents_c (struct string_buffer *buffer);
++
++/* Returns the contents of BUFFER and frees all other memory held by BUFFER.
++   Returns NULL upon failure or if there was an error earlier.
++   It is the responsibility of the caller to string_desc_free() the result.  */
++extern string_desc_t sb_dupfree (struct string_buffer *buffer)
++  _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
++
++/* Returns the contents of BUFFER (with an added trailing NUL, that is,
++   as a C string), and frees all other memory held by BUFFER.
++   Returns NULL upon failure or if there was an error earlier.
+    It is the responsibility of the caller to free() the result.  */
+-extern char * sb_dupfree (struct string_buffer *buffer)
++extern char * sb_dupfree_c (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+ #ifdef __cplusplus
+--- a/modules/string-buffer
++++ b/modules/string-buffer
+@@ -8,6 +8,7 @@ lib/string-buffer.c
+ Depends-on:
+ stdbool
+ attribute
++string-desc
+ stdarg
+ vsnprintf-posix
+ 

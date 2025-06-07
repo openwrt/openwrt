@@ -1,0 +1,138 @@
+From aae07f607542872779c7e43e5beab808698ad585 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:16:18 +0100
+Subject: [PATCH] Rename module stdalign to stdalign-h.
+
+* modules/stdalign-h: Renamed from modules/stdalign.
+* modules/stdalign-h-tests: Renamed from modules/stdalign-tests.
+* modules/stdalign-h-c++-tests: Renamed from modules/stdalign-c++-tests.
+* tests/test-stdalign-h-c++.cc: Renamed from tests/test-stdalign-c++.cc.
+* doc/posix-headers/stdalign.texi: Update.
+* modules/stdalign: New file.
+---
+ ChangeLog                                     | 10 ++++
+ doc/posix-headers/stdalign.texi               |  6 +--
+ modules/stdalign                              | 36 ++-----------
+ modules/stdalign-c++-tests                    | 17 -------
+ modules/stdalign-h                            | 50 +++++++++++++++++++
+ modules/stdalign-h-c++-tests                  | 17 +++++++
+ modules/{stdalign-tests => stdalign-h-tests}  |  2 +-
+ ...stdalign-c++.cc => test-stdalign-h-c++.cc} |  0
+ 8 files changed, 86 insertions(+), 52 deletions(-)
+ delete mode 100644 modules/stdalign-c++-tests
+ create mode 100644 modules/stdalign-h
+ create mode 100644 modules/stdalign-h-c++-tests
+ rename modules/{stdalign-tests => stdalign-h-tests} (75%)
+ rename tests/{test-stdalign-c++.cc => test-stdalign-h-c++.cc} (100%)
+
+--- a/modules/stdalign
++++ b/modules/stdalign
+@@ -1,45 +1,20 @@
+ Description:
+ alignas and alignof that are like C23 and C++11.
+ 
++Status:
++deprecated
++
+ Notice:
+-The stdalign module is deprecated.
+-New code should use the alignasof module, and not include <stdalign.h>.
++This module is deprecated. Use the module 'stdalign-h' instead.
+ 
+ Files:
+-lib/stdalign.in.h
+-m4/stdalign.m4
+ 
+ Depends-on:
+-alignasof
+-gen-header
++stdalign-h
+ 
+ configure.ac:
+-gl_STDALIGN_H
+-gl_CONDITIONAL_HEADER([stdalign.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDALIGN_H)
+-
+-# We need the following in order to create <stdalign.h> when the system
+-# doesn't have one that works.
+-if GL_GENERATE_STDALIGN_H
+-stdalign.h: stdalign.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_STDALIGN_H''@|$(HAVE_STDALIGN_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDALIGN_H''@|$(NEXT_STDALIGN_H)|g' \
+-	      $(srcdir)/stdalign.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdalign.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdalign.h stdalign.h-t
+ 
+ Include:
+ 
+@@ -47,4 +22,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdalign-h
+@@ -0,0 +1,50 @@
++Description:
++alignas and alignof that are like C23 and C++11.
++
++Notice:
++The stdalign module is deprecated.
++New code should use the alignasof module, and not include <stdalign.h>.
++
++Files:
++lib/stdalign.in.h
++m4/stdalign.m4
++
++Depends-on:
++alignasof
++gen-header
++
++configure.ac:
++gl_STDALIGN_H
++gl_CONDITIONAL_HEADER([stdalign.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDALIGN_H)
++
++# We need the following in order to create <stdalign.h> when the system
++# doesn't have one that works.
++if GL_GENERATE_STDALIGN_H
++stdalign.h: stdalign.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_STDALIGN_H''@|$(HAVE_STDALIGN_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDALIGN_H''@|$(NEXT_STDALIGN_H)|g' \
++	      $(srcdir)/stdalign.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdalign.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdalign.h stdalign.h-t
++
++Include:
++
++License:
++LGPLv2+
++
++Maintainer:
++all

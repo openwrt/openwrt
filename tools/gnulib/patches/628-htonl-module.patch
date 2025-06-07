@@ -1,0 +1,332 @@
+From e289cd10123c4069c4cb695a7f7bf28e545b791f Mon Sep 17 00:00:00 2001
+From: Collin Funk <collin.funk1@gmail.com>
+Date: Sat, 10 Aug 2024 17:15:07 -0700
+Subject: [PATCH] htonl: New module.
+
+* modules/htonl: New file.
+* lib/arpa_inet.c: New file.
+* m4/htonl.m4: New file.
+* modules/arpa_inet (Files): Add lib/arpa_inet.c.
+(Depends-on): Add extern-inline.
+* lib/arpa_inet.in.h (htons, htonl, ntohs, ntohl): New declarations.
+* m4/arpa_inet_h.m4 (gl_ARPA_INET_H_DEFAULTS): Define REPLACE_HTONL.
+* doc/posix-functions/htons.texi (htons): Mention the module.
+* doc/posix-functions/htonl.texi (htonl): Likewise.
+* doc/posix-functions/ntohs.texi (ntohs): Likewise.
+* doc/posix-functions/ntohl.texi (ntohl): Likewise.
+---
+ ChangeLog                      | 15 ++++++++++
+ doc/posix-functions/htonl.texi |  8 ++---
+ doc/posix-functions/htons.texi |  8 ++---
+ doc/posix-functions/ntohl.texi |  8 ++---
+ doc/posix-functions/ntohs.texi |  8 ++---
+ lib/arpa_inet.c                | 21 +++++++++++++
+ lib/arpa_inet.in.h             | 55 ++++++++++++++++++++++++++++++++++
+ m4/arpa_inet_h.m4              |  1 +
+ m4/htonl.m4                    | 42 ++++++++++++++++++++++++++
+ modules/arpa_inet              |  4 +++
+ modules/htonl                  | 26 ++++++++++++++++
+ 11 files changed, 180 insertions(+), 16 deletions(-)
+ create mode 100644 lib/arpa_inet.c
+ create mode 100644 m4/htonl.m4
+ create mode 100644 modules/htonl
+
+--- a/doc/posix-functions/htonl.texi
++++ b/doc/posix-functions/htonl.texi
+@@ -4,15 +4,15 @@
+ 
+ POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/htonl.html}
+ 
+-Gnulib module: ---
++Gnulib module: htonl
+ 
+ Portability problems fixed by Gnulib:
+ @itemize
++@item
++This function is missing on some platforms:
++HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+ 
+ Portability problems not fixed by Gnulib:
+ @itemize
+-@item
+-This function is missing on some platforms:
+-HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+--- a/doc/posix-functions/htons.texi
++++ b/doc/posix-functions/htons.texi
+@@ -4,15 +4,15 @@
+ 
+ POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/htons.html}
+ 
+-Gnulib module: ---
++Gnulib module: htonl
+ 
+ Portability problems fixed by Gnulib:
+ @itemize
++@item
++This function is missing on some platforms:
++HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+ 
+ Portability problems not fixed by Gnulib:
+ @itemize
+-@item
+-This function is missing on some platforms:
+-HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+--- a/doc/posix-functions/ntohl.texi
++++ b/doc/posix-functions/ntohl.texi
+@@ -4,15 +4,15 @@
+ 
+ POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/ntohl.html}
+ 
+-Gnulib module: ---
++Gnulib module: htonl
+ 
+ Portability problems fixed by Gnulib:
+ @itemize
++@item
++This function is missing on some platforms:
++HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+ 
+ Portability problems not fixed by Gnulib:
+ @itemize
+-@item
+-This function is missing on some platforms:
+-HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+--- a/doc/posix-functions/ntohs.texi
++++ b/doc/posix-functions/ntohs.texi
+@@ -4,15 +4,15 @@
+ 
+ POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/ntohs.html}
+ 
+-Gnulib module: ---
++Gnulib module: htonl
+ 
+ Portability problems fixed by Gnulib:
+ @itemize
++@item
++This function is missing on some platforms:
++HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+ 
+ Portability problems not fixed by Gnulib:
+ @itemize
+-@item
+-This function is missing on some platforms:
+-HP-UX 11, mingw, MSVC 14, Android 4.4.
+ @end itemize
+--- /dev/null
++++ b/lib/arpa_inet.c
+@@ -0,0 +1,21 @@
++/* Inline functions for <arpa/inet.h>.
++
++   Copyright (C) 2024 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++#define _GL_ARPA_INET_INLINE _GL_EXTERN_INLINE
++#include <arpa/inet.h>
+--- a/lib/arpa_inet.in.h
++++ b/lib/arpa_inet.in.h
+@@ -60,6 +60,60 @@
+ # include <ws2tcpip.h>
+ #endif
+ 
++#if @REPLACE_HTONL@
++# include <endian.h>
++#endif
++
++_GL_INLINE_HEADER_BEGIN
++#ifndef _GL_ARPA_INET_INLINE
++# define _GL_ARPA_INET_INLINE _GL_INLINE
++#endif
++
++
++#if @REPLACE_HTONL@
++
++/* Make sure we don't have any system definitions.  */
++# undef htons
++# undef htonl
++# undef ntohs
++# undef ntohl
++
++/* Define our own.  */
++# define htons rpl_htons
++# define htonl rpl_htonl
++# define ntohs rpl_ntohs
++# define ntohl rpl_ntohl
++
++/* Host to network byte order. */
++
++_GL_ARPA_INET_INLINE uint16_t
++htons (uint16_t value)
++{
++  return htobe16 (value);
++}
++
++_GL_ARPA_INET_INLINE uint32_t
++htonl (uint32_t value)
++{
++  return htobe32 (value);
++}
++
++/* Network to host byte order.  */
++
++_GL_ARPA_INET_INLINE uint16_t
++ntohs (uint16_t value)
++{
++  return htobe16 (value);
++}
++
++_GL_ARPA_INET_INLINE uint32_t
++ntohl (uint32_t value)
++{
++  return htobe32 (value);
++}
++
++#endif
++
+ /* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
+ 
+ /* The definition of _GL_ARG_NONNULL is copied here.  */
+@@ -150,6 +204,7 @@ _GL_WARN_ON_USE (inet_pton, "inet_pton i
+ # endif
+ #endif
+ 
++_GL_INLINE_HEADER_END
+ 
+ #endif /* _@GUARD_PREFIX@_ARPA_INET_H */
+ #endif /* _@GUARD_PREFIX@_ARPA_INET_H */
+--- a/m4/arpa_inet_h.m4
++++ b/m4/arpa_inet_h.m4
+@@ -70,6 +70,7 @@ AC_DEFUN([gl_ARPA_INET_H_DEFAULTS],
+   dnl Assume proper GNU behavior unless another module says otherwise.
+   HAVE_DECL_INET_NTOP=1;  AC_SUBST([HAVE_DECL_INET_NTOP])
+   HAVE_DECL_INET_PTON=1;  AC_SUBST([HAVE_DECL_INET_PTON])
++  REPLACE_HTONL=0;        AC_SUBST([REPLACE_HTONL])
+   REPLACE_INET_NTOP=0;    AC_SUBST([REPLACE_INET_NTOP])
+   REPLACE_INET_PTON=0;    AC_SUBST([REPLACE_INET_PTON])
+ ])
+--- /dev/null
++++ b/m4/htonl.m4
+@@ -0,0 +1,42 @@
++# htonl.m4
++# serial 1
++dnl Copyright (C) 2024 Free Software Foundation, Inc.
++dnl This file is free software; the Free Software Foundation
++dnl gives unlimited permission to copy and/or distribute it,
++dnl with or without modifications, as long as this notice is preserved.
++
++dnl Written by Collin Funk.
++
++AC_DEFUN([gl_FUNC_HTONL],
++[
++  AC_REQUIRE([gl_ARPA_INET_H_DEFAULTS])
++
++  if test $ac_cv_header_arpa_inet_h = yes; then
++    AC_CACHE_CHECK([if arpa/inet.h defines htonl, htons, ntohl, ntohs],
++      [gl_cv_func_htonl_working],
++      [gl_cv_func_htonl_working=no
++       AC_COMPILE_IFELSE(
++         [AC_LANG_PROGRAM(
++[[
++#include <arpa/inet.h>
++]],
++[[
++/* Host to network.  */
++int network_1 = htons (0.0);
++int network_2 = htonl (0.0);
++
++/* Network to host.  */
++int host_1 = ntohs (0.0);
++int host_2 = ntohl (0.0);
++
++/* Make sure the variables get used.  */
++return !(network_1 + network_2 + host_1 + host_2);
++]])],
++         [gl_cv_func_htonl_working=yes],
++         [gl_cv_func_htonl_working=no])
++      ])
++    if test $gl_cv_func_htonl_working = no; then
++      REPLACE_HTONL=1
++    fi
++  fi
++])
+--- a/modules/arpa_inet
++++ b/modules/arpa_inet
+@@ -3,11 +3,13 @@ A GNU-like <arpa/inet.h>.
+ 
+ Files:
+ lib/arpa_inet.in.h
++lib/arpa_inet.c
+ m4/arpa_inet_h.m4
+ m4/sys_socket_h.m4
+ m4/socklen.m4
+ 
+ Depends-on:
++extern-inline
+ gen-header
+ include_next
+ snippet/arg-nonnull
+@@ -22,6 +24,7 @@ AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+ BUILT_SOURCES += arpa/inet.h
++lib_SOURCES += arpa_inet.c
+ 
+ # We need the following in order to create <arpa/inet.h> when the system
+ # doesn't have one.
+@@ -40,6 +43,7 @@ arpa/inet.h: arpa_inet.in.h $(top_buildd
+ 	      -e 's|@''HAVE_WS2TCPIP_H''@|$(HAVE_WS2TCPIP_H)|g' \
+ 	      -e 's|@''HAVE_DECL_INET_NTOP''@|$(HAVE_DECL_INET_NTOP)|g' \
+ 	      -e 's|@''HAVE_DECL_INET_PTON''@|$(HAVE_DECL_INET_PTON)|g' \
++	      -e 's|@''REPLACE_HTONL''@|$(REPLACE_HTONL)|g' \
+ 	      -e 's|@''REPLACE_INET_NTOP''@|$(REPLACE_INET_NTOP)|g' \
+ 	      -e 's|@''REPLACE_INET_PTON''@|$(REPLACE_INET_PTON)|g' \
+ 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+--- /dev/null
++++ b/modules/htonl
+@@ -0,0 +1,26 @@
++Description:
++htonl, htons, ntohl, ntohs functions: convert between network and host
++byte order
++
++Files:
++m4/htonl.m4
++
++Depends-on:
++arpa_inet
++endian                  [test $REPLACE_HTONL = 1]
++
++configure.ac:
++gl_FUNC_HTONL
++
++Makefile.am:
++
++Include:
++<arpa/inet.h>
++
++Link:
++
++License:
++LGPLv2+
++
++Maintainer:
++all
