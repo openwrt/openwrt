@@ -337,8 +337,8 @@
 };
 
 &pcie_bridge0 {
-	wifi@0,0 {
-		/* Bootlog shows this is a 168c:0056 - QCA 9888v2 */
+	/* Bootlog shows this is a 168c:0056 - QCA 9888v2 */
+	wifi@1,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		ieee80211-freq-limit = <5450000 5900000>;
