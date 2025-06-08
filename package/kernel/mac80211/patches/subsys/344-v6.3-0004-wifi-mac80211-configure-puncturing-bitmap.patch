@@ -59,7 +59,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (sdata->vif.type == NL80211_IFTYPE_AP &&
  	    params->mbssid_config.tx_wdev) {
  		err = ieee80211_set_ap_mbssid_options(sdata,
-@@ -3571,6 +3576,12 @@ static int __ieee80211_csa_finalize(stru
+@@ -3573,6 +3578,12 @@ static int __ieee80211_csa_finalize(stru
  	lockdep_assert_held(&local->mtx);
  	lockdep_assert_held(&local->chanctx_mtx);
  
@@ -72,7 +72,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	/*
  	 * using reservation isn't immediate as it may be deferred until later
  	 * with multi-vif. once reservation is complete it will re-schedule the
-@@ -3613,7 +3624,7 @@ static int __ieee80211_csa_finalize(stru
+@@ -3615,7 +3626,7 @@ static int __ieee80211_csa_finalize(stru
  		return err;
  
  	cfg80211_ch_switch_notify(sdata->dev, &sdata->deflink.csa_chandef, 0,
@@ -81,7 +81,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return 0;
  }
-@@ -3875,9 +3886,13 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3877,9 +3888,13 @@ __ieee80211_channel_switch(struct wiphy
  		goto out;
  	}
  
@@ -95,7 +95,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (sdata->deflink.csa_block_tx)
  		ieee80211_stop_vif_queues(local, sdata,
-@@ -3885,7 +3900,8 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3887,7 +3902,8 @@ __ieee80211_channel_switch(struct wiphy
  
  	cfg80211_ch_switch_started_notify(sdata->dev,
  					  &sdata->deflink.csa_chandef, 0,

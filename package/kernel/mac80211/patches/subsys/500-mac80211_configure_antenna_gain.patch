@@ -18,7 +18,7 @@
  
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1714,6 +1714,7 @@ enum ieee80211_smps_mode {
+@@ -1715,6 +1715,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -26,7 +26,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1734,6 +1735,7 @@ enum ieee80211_smps_mode {
+@@ -1735,6 +1736,7 @@ enum ieee80211_smps_mode {
  struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
@@ -56,7 +56,7 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3079,6 +3079,19 @@ static int ieee80211_get_tx_power(struct
+@@ -3081,6 +3081,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -76,7 +76,7 @@
  static void ieee80211_rfkill_poll(struct wiphy *wiphy)
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
-@@ -5009,6 +5022,7 @@ const struct cfg80211_ops mac80211_confi
+@@ -5011,6 +5024,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -105,7 +105,7 @@
  	u32 offchannel_flag;
  
  	offchannel_flag = local->hw.conf.flags & IEEE80211_CONF_OFFCHANNEL;
-@@ -157,6 +157,12 @@ static u32 ieee80211_hw_conf_chan(struct
+@@ -159,6 +159,12 @@ static u32 ieee80211_hw_conf_chan(struct
  	}
  	rcu_read_unlock();
  
@@ -118,7 +118,7 @@
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;
  		local->hw.conf.power_level = power;
-@@ -766,6 +772,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -768,6 +774,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  					 IEEE80211_RADIOTAP_MCS_HAVE_BW;
  	local->hw.radiotap_vht_details = IEEE80211_RADIOTAP_VHT_KNOWN_GI |
  					 IEEE80211_RADIOTAP_VHT_KNOWN_BANDWIDTH;
