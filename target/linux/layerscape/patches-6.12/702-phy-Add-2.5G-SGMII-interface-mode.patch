@@ -1,4 +1,4 @@
-From 3823e4e1078a95e26b9a69e88c9bf862b0267e1c Mon Sep 17 00:00:00 2001
+From 5677c6ef5f4096f3149a4e8cfd1438bc9eb2e8a4 Mon Sep 17 00:00:00 2001
 From: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
 Date: Wed, 29 Nov 2017 15:27:57 +0530
 Subject: [PATCH] phy: Add 2.5G SGMII interface mode
@@ -8,11 +8,22 @@ in existing phy_interface list
 
 Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
 ---
- drivers/net/phy/phy-core.c | 1 +
- drivers/net/phy/phylink.c  | 2 ++
- include/linux/phy.h        | 3 +++
- 3 files changed, 6 insertions(+)
+ Documentation/devicetree/bindings/net/ethernet-controller.yaml | 1 +
+ drivers/net/phy/phy-core.c                                     | 1 +
+ drivers/net/phy/phylink.c                                      | 2 ++
+ include/linux/phy.h                                            | 3 +++
+ 4 files changed, 7 insertions(+)
 
+--- a/Documentation/devicetree/bindings/net/ethernet-controller.yaml
++++ b/Documentation/devicetree/bindings/net/ethernet-controller.yaml
+@@ -65,6 +65,7 @@ properties:
+       - mii
+       - gmii
+       - sgmii
++      - sgmii-2500
+       - psgmii
+       - qsgmii
+       - qusgmii
 --- a/drivers/net/phy/phy-core.c
 +++ b/drivers/net/phy/phy-core.c
 @@ -138,6 +138,7 @@ int phy_interface_num_ports(phy_interfac
@@ -25,15 +36,15 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  	case PHY_INTERFACE_MODE_QUSGMII:
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -231,6 +231,7 @@ static int phylink_interface_max_speed(p
+@@ -230,6 +230,7 @@ static int phylink_interface_max_speed(p
+ 	case PHY_INTERFACE_MODE_GMII:
  		return SPEED_1000;
  
- 	case PHY_INTERFACE_MODE_2500BASEX:
 +	case PHY_INTERFACE_MODE_2500SGMII:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 	case PHY_INTERFACE_MODE_10G_QXGMII:
  		return SPEED_2500;
- 
- 	case PHY_INTERFACE_MODE_5GBASER:
-@@ -539,6 +540,7 @@ unsigned long phylink_get_capabilities(p
+@@ -544,6 +545,7 @@ static unsigned long phylink_get_capabil
  		break;
  
  	case PHY_INTERFACE_MODE_2500BASEX:
@@ -43,20 +54,20 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -165,6 +165,7 @@ typedef enum {
- 	PHY_INTERFACE_MODE_10GKR,
+@@ -170,6 +170,7 @@ typedef enum {
  	PHY_INTERFACE_MODE_QUSGMII,
  	PHY_INTERFACE_MODE_1000BASEKX,
+ 	PHY_INTERFACE_MODE_10G_QXGMII,
 +	PHY_INTERFACE_MODE_2500SGMII,
  	PHY_INTERFACE_MODE_MAX,
  } phy_interface_t;
  
-@@ -286,6 +287,8 @@ static inline const char *phy_modes(phy_
- 		return "100base-x";
- 	case PHY_INTERFACE_MODE_QUSGMII:
- 		return "qusgmii";
+@@ -235,6 +236,8 @@ static inline const char *phy_modes(phy_
+ 		return "gmii";
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 		return "sgmii";
 +	case PHY_INTERFACE_MODE_2500SGMII:
 +		return "sgmii-2500";
- 	default:
- 		return "unknown";
- 	}
+ 	case PHY_INTERFACE_MODE_TBI:
+ 		return "tbi";
+ 	case PHY_INTERFACE_MODE_REVMII:

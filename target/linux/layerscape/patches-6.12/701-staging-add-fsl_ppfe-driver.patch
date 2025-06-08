@@ -1,4 +1,4 @@
-From 9ee016f90af0bbcac576af881f1760ee9d9e38e0 Mon Sep 17 00:00:00 2001
+From 81f5150aba929b222783a60a408b9a20a23bd171 Mon Sep 17 00:00:00 2001
 From: Calvin Johnson <calvin.johnson@nxp.com>
 Date: Sat, 16 Sep 2017 07:05:49 +0530
 Subject: [PATCH] staging: add fsl_ppfe driver
@@ -6,8 +6,8 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-This is squash of all commits with ppfe driver taken from NXP 6.6 tree:
-https://github.com/nxp-qoriq/linux/tree/lf-6.6.y
+This is squash of all commits with ppfe driver taken from NXP 6.12 tree:
+https://github.com/nxp-qoriq/linux/tree/lf-6.12.y
 
 net: fsl_ppfe: dts binding for ppfe
 
@@ -607,6 +607,60 @@ together as no users anymore.
 Fixes: 9d95b13bd084 ("staging: fsl_ppfe: Remove C45 check and related code in driver")
 Reviewed-by: Jason Liu <jason.hui.liu@nxp.com>
 Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
+
+LF-13827-2 net: pfe: fix Wmissing-prototypes build warnings
+
+drivers/staging/fsl_ppfe/pfe_firmware.c:128:5: warning: no previous prototype for ‘pfe_load_elf’ [-Wmissing-prototypes]
+  128 | int pfe_load_elf(int pe_mask, const u8 *fw, struct pfe *pfe)
+      |     ^~~~~~~~~~~~
+drivers/staging/fsl_ppfe/pfe_firmware.c:185:5: warning: no previous prototype for ‘get_firmware_in_fdt’ [-Wmissing-prototypes]
+  185 | int get_firmware_in_fdt(const u8 **pe_fw, const char *name)
+      |     ^~~~~~~~~~~~~~~~~~~
+
+Reviewed-by: Wei Fang <wei.fang@nxp.com>
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
+
+LF-13827-3 net/pfe: use $(src) instead of $(srctree)/$(src)
+
+Cope with upstream change
+b1992c3772e6 ("kbuild: use $(src) instead of $(srctree)/$(src) for source directory")
+
+Reviewed-by: Wei Fang <wei.fang@nxp.com>
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
+
+LF-13827-6 net: ppfe: update the usage of eventfd_signal
+
+Cope with the API change since the commit
+1808acc4fab2 ("eventfd: simplify eventfd_signal()")
+
+Otherwise will meet the following build error:
+drivers/staging/fsl_ppfe/pfe_cdev.c: In function ‘hif_us_isr’:
+drivers/staging/fsl_ppfe/pfe_cdev.c:112:17: error: too many arguments to function ‘eventfd_signal’
+  112 |                 eventfd_signal(trigger, 1);
+      |                 ^~~~~~~~~~~~~~
+
+Reviewed-by: Wei Fang <wei.fang@nxp.com>
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
+
+LF-13827-7 net: pfe: Replace strlcpy() with strscpy() for many drivers
+
+Cope with upstream change:
+commit d26270061ae6 ("string: Remove strlcpy()")
+
+e.g.
+../drivers/i2c/busses/i2c-flexio.c: In function ‘imx_flexio_i2c_master_probe’:
+../drivers/i2c/busses/i2c-flexio.c:683:9: error: implicit declaration of function ‘strlcpy’; did you mean ‘strncpy’? [-Werror=implicit-function-declaration]
+  683 |         strlcpy(i2c_dev->adapter.name, dev_name(i2c_dev->dev),
+      |         ^~~~~~~
+      |         strncpy
+
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
+
+drivers: make all local platform_driver::remove() return void
+
+0edb555a65d1 ("platform: Make platform_driver::remove() return void")
+
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 ---
  .../devicetree/bindings/net/fsl_ppfe/pfe.txt  |  199 ++
  MAINTAINERS                                   |    8 +
@@ -642,13 +696,13 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  drivers/staging/fsl_ppfe/pfe_hif_lib.h        |  229 ++
  drivers/staging/fsl_ppfe/pfe_hw.c             |  164 ++
  drivers/staging/fsl_ppfe/pfe_hw.h             |   15 +
- .../staging/fsl_ppfe/pfe_ls1012a_platform.c   |  383 +++
+ .../staging/fsl_ppfe/pfe_ls1012a_platform.c   |  381 +++
  drivers/staging/fsl_ppfe/pfe_mod.c            |  158 +
  drivers/staging/fsl_ppfe/pfe_mod.h            |  103 +
  drivers/staging/fsl_ppfe/pfe_perfmon.h        |   26 +
  drivers/staging/fsl_ppfe/pfe_sysfs.c          |  840 ++++++
  drivers/staging/fsl_ppfe/pfe_sysfs.h          |   17 +
- 40 files changed, 10977 insertions(+)
+ 40 files changed, 10975 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/net/fsl_ppfe/pfe.txt
  create mode 100644 drivers/staging/fsl_ppfe/Kconfig
  create mode 100644 drivers/staging/fsl_ppfe/Makefile
@@ -891,7 +945,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +};
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -8360,6 +8360,14 @@ F:	drivers/ptp/ptp_qoriq.c
+@@ -9107,6 +9107,14 @@ F:	drivers/ptp/ptp_qoriq.c
  F:	drivers/ptp/ptp_qoriq_debugfs.c
  F:	include/linux/fsl/ptp_qoriq.h
  
@@ -908,7 +962,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  L:	linux-spi@vger.kernel.org
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
-@@ -78,4 +78,6 @@ source "drivers/staging/qlge/Kconfig"
+@@ -64,4 +64,6 @@ source "drivers/staging/fieldbus/Kconfig
  
  source "drivers/staging/vme_user/Kconfig"
  
@@ -917,10 +971,10 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  endif # STAGING
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
-@@ -28,3 +28,4 @@ obj-$(CONFIG_PI433)		+= pi433/
+@@ -21,3 +21,4 @@ obj-$(CONFIG_GREYBUS)		+= greybus/
+ obj-$(CONFIG_BCM2835_VCHIQ)	+= vc04_services/
  obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo/
  obj-$(CONFIG_FIELDBUS_DEV)     += fieldbus/
- obj-$(CONFIG_QLGE)		+= qlge/
 +obj-$(CONFIG_FSL_PPFE)		+= fsl_ppfe/
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/Kconfig
@@ -953,7 +1007,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +# Makefile for Freesecale PPFE driver
 +#
 +
-+ccflags-y +=  -I $(srctree)/$(src)/include  -I $(srctree)/$(src)
++ccflags-y +=  -I $(src)/include  -I $(src)
 +
 +obj-$(CONFIG_FSL_PPFE) += pfe.o
 +
@@ -2619,7 +2673,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +		 */
 +		writel_relaxed(int_enable_mask, HIF_INT_ENABLE);
 +
-+		eventfd_signal(trigger, 1);
++		eventfd_signal(trigger);
 +	}
 +
 +	return IRQ_HANDLED;
@@ -3652,7 +3706,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +/* pfe_eth_sysfs_exit
 + *
 + */
-+void pfe_eth_sysfs_exit(struct net_device *ndev)
++static void pfe_eth_sysfs_exit(struct net_device *ndev)
 +{
 +#ifdef PFE_ETH_TX_STATS
 +	device_remove_file(&ndev->dev, &dev_attr_tx_stats);
@@ -3853,10 +3907,10 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +static void pfe_eth_get_drvinfo(struct net_device *ndev, struct ethtool_drvinfo
 +				*drvinfo)
 +{
-+	strlcpy(drvinfo->driver, DRV_NAME, sizeof(drvinfo->driver));
-+	strlcpy(drvinfo->version, DRV_VERSION, sizeof(drvinfo->version));
-+	strlcpy(drvinfo->fw_version, "N/A", sizeof(drvinfo->fw_version));
-+	strlcpy(drvinfo->bus_info, "N/A", sizeof(drvinfo->bus_info));
++	strscpy(drvinfo->driver, DRV_NAME, sizeof(drvinfo->driver));
++	strscpy(drvinfo->version, DRV_VERSION, sizeof(drvinfo->version));
++	strscpy(drvinfo->fw_version, "N/A", sizeof(drvinfo->fw_version));
++	strscpy(drvinfo->bus_info, "N/A", sizeof(drvinfo->bus_info));
 +}
 +
 +/*
@@ -4724,7 +4778,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +/*
 + *  pfe_eth_shutdown
 + */
-+int pfe_eth_shutdown(struct net_device *ndev, int wake)
++static int pfe_eth_shutdown(struct net_device *ndev, int wake)
 +{
 +	struct pfe_eth_priv_s *priv = netdev_priv(ndev);
 +	int i, qstatus, id;
@@ -5054,7 +5108,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	}
 +}
 +
-+void pfe_tx_get_req_desc(struct sk_buff *skb, unsigned int *n_desc, unsigned int
++static void pfe_tx_get_req_desc(struct sk_buff *skb, unsigned int *n_desc, unsigned int
 +				*n_segs)
 +{
 +	struct skb_shared_info *sh = skb_shinfo(skb);
@@ -5168,8 +5222,8 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +
 +/* pfe_eth_enet_addr_byte_mac
 + */
-+int pfe_eth_enet_addr_byte_mac(u8 *enet_byte_addr,
-+			       struct pfe_mac_addr *enet_addr)
++static int pfe_eth_enet_addr_byte_mac(u8 *enet_byte_addr,
++				      struct pfe_mac_addr *enet_addr)
 +{
 +	if (!enet_byte_addr || !enet_addr) {
 +		return -1;
@@ -6121,7 +6175,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 + * @return		0 on success, a negative value on error
 + *
 + */
-+int pfe_load_elf(int pe_mask, const u8 *fw, struct pfe *pfe)
++static int pfe_load_elf(int pe_mask, const u8 *fw, struct pfe *pfe)
 +{
 +	struct elf32_hdr *elf_hdr = (struct elf32_hdr *)fw;
 +	Elf32_Half sections = be16_to_cpu(elf_hdr->e_shnum);
@@ -6178,7 +6232,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +	return rc;
 +}
 +
-+int get_firmware_in_fdt(const u8 **pe_fw, const char *name)
++static int get_firmware_in_fdt(const u8 **pe_fw, const char *name)
 +{
 +	struct device_node *np;
 +	const unsigned int *len;
@@ -6541,8 +6595,8 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 + * aligned)
 + * @param[in] len		Number of bytes to copy
 + */
-+void pe_mem_memcpy_to32(int id, u32 mem_access_addr, const void *src, unsigned
-+int len)
++static void pe_mem_memcpy_to32(int id, u32 mem_access_addr, const void *src,
++			       unsigned int len)
 +{
 +	u32 offset = 0, val, addr;
 +	unsigned int len32 = len >> 2;
@@ -7470,7 +7524,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +/* GEMAC enable pause tx function.
 + * @param[in] base GEMAC base address
 + */
-+void gemac_enable_pause_tx(void *base)
++static void __maybe_unused gemac_enable_pause_tx(void *base)
 +{
 +	writel(EMAC_RX_SECTION_EMPTY_V, base + EMAC_RX_SECTION_EMPTY);
 +}
@@ -7478,7 +7532,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +/* GEMAC disable pause tx function.
 + * @param[in] base GEMAC base address
 + */
-+void gemac_disable_pause_tx(void *base)
++static void __maybe_unused gemac_disable_pause_tx(void *base)
 +{
 +	writel(0x0, base + EMAC_RX_SECTION_EMPTY);
 +}
@@ -8124,7 +8178,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +			  hif->descr_baseaddr_v, hif->descr_baseaddr_p);
 +}
 +
-+void pfe_hif_desc_dump(struct pfe_hif *hif)
++static void __maybe_unused pfe_hif_desc_dump(struct pfe_hif *hif)
 +{
 +	struct hif_desc	*desc;
 +	unsigned long desc_p;
@@ -10254,7 +10308,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +#endif /* _PFE_HW_H_ */
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/pfe_ls1012a_platform.c
-@@ -0,0 +1,380 @@
+@@ -0,0 +1,381 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright 2015-2016 Freescale Semiconductor, Inc.
@@ -10519,10 +10573,11 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +static void pfe_platform_remove(struct platform_device *pdev)
 +{
 +	struct pfe *pfe = platform_get_drvdata(pdev);
++	int rc;
 +
 +	pr_info("%s\n", __func__);
 +
-+	pfe_remove(pfe);
++	rc = pfe_remove(pfe);
 +
 +	iounmap(pfe->cbus_baseaddr);
 +
@@ -10535,7 +10590,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +
 +#ifdef CONFIG_PM
 +#ifdef CONFIG_PM_SLEEP
-+int pfe_platform_suspend(struct device *dev)
++static int pfe_platform_suspend(struct device *dev)
 +{
 +	struct pfe *pfe = platform_get_drvdata(to_platform_device(dev));
 +	struct net_device *netdev;
@@ -10621,7 +10676,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 +
 +static struct platform_driver pfe_platform_driver = {
 +	.probe = pfe_platform_probe,
-+	.remove_new = pfe_platform_remove,
++	.remove = pfe_platform_remove,
 +	.driver = {
 +		.name = "pfe",
 +		.of_match_table = pfe_match,
