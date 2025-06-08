@@ -17,7 +17,7 @@
 @@ -36,14 +43,14 @@
  		compatible = "gpio-keys";
  
- 		reset {
+ 		button-reset {
 -			label = "Reset";
 -			linux,code = <KEY_POWER>;
 +			label = "Reset Button";
@@ -25,10 +25,9 @@
  			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
  		};
  
--		button {
+ 		button-power {
 -			label = "Power";
 -			linux,code = <KEY_SLEEP>;
-+		power {
 +			label = "Power Button";
 +			linux,code = <KEY_POWER>;
  			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
@@ -38,25 +37,25 @@
  	gpio-leds {
  		compatible = "gpio-leds";
  
--		blue-power {
-+		led_power_blue: power_blue {
+-		led-blue-power {
++		led_power_blue: led-blue-power {
  			label = "nas220:blue:power";
  			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
  			linux,default-trigger = "default-on";
  		};
 +
-+		disk_blue {
++		led-blue-disk {
 +			label = "nas220:blue:disk";
 +			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 +			linux,default-trigger = "disk-activity";
 +		};
 +
-+		led_status_blue: status_blue {
++		led_status_blue: led-blue-status {
 +			label = "nas220:blue:status";
 +			gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
 +		};
 +
-+		led_status_amber: status_amber {
++		led_status_amber: led-amber-status {
 +			label = "nas220:amber:status";
 +			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 +		};

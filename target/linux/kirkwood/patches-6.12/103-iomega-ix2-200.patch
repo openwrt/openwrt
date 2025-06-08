@@ -18,23 +18,23 @@
  			      &pmx_led_rebuild &pmx_led_health >;
  		pinctrl-names = "default";
  
--		power_led {
-+		led_power: power_led {
+-		led-power-led {
++		led_power: led-power-led {
  			label = "status:white:power_led";
  			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 -			default-state = "keep";
 +			default-state = "on";
  		};
- 		rebuild_led {
+ 		led-rebuild-led {
  			label = "status:white:rebuild_led";
  			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
  		};
--		health_led {
+-		led-health-led {
 +		led_health: health_led {
  			label = "status:red:health_led";
  			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
  		};
-@@ -186,19 +193,19 @@
+@@ -184,19 +191,19 @@
  	};
  
  	partition@a0000 {
@@ -60,7 +60,7 @@
  	};
  };
  
-@@ -211,7 +218,7 @@
+@@ -209,7 +216,7 @@
  };
  
  &eth0 {

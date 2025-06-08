@@ -18,15 +18,15 @@
  			    >;
  		pinctrl-names = "default";
  
--		health {
-+		led_health: health {
+-		led-health {
++		led_health: led-health {
  			label = "status:green:health";
  			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 -			default-state = "keep";
 +			default-state = "on";
  		};
--		fault {
-+		led_fault: fault {
+-		led-fault {
++		led_fault: led-fault {
  			label = "status:orange:fault";
  			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
  		};
