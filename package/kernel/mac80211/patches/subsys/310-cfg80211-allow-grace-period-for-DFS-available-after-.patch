@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -598,6 +598,8 @@ static void cfg80211_set_chans_dfs_state
+@@ -648,6 +648,8 @@ void cfg80211_set_dfs_state(struct wiphy
  
  		c->dfs_state = dfs_state;
  		c->dfs_state_entered = jiffies;
@@ -61,8 +61,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1087,6 +1089,49 @@ static bool cfg80211_get_chans_dfs_avail
- 	return true;
+@@ -995,6 +997,53 @@ bool cfg80211_any_wiphy_oper_chan(struct
+ 	return false;
  }
  
 +static void
@@ -73,8 +73,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct ieee80211_channel *c;
 +	u32 freq, start_freq, end_freq;
 +
-+	start_freq = cfg80211_get_start_freq(center_freq, bandwidth);
-+	end_freq = cfg80211_get_end_freq(center_freq, bandwidth);
++	if (bandwidth <= MHZ_TO_KHZ(20))
++		start_freq = end_freq = center_freq;
++	else {
++		start_freq = center_freq - bandwidth / 2 + MHZ_TO_KHZ(10);
++		end_freq = center_freq + bandwidth / 2 - MHZ_TO_KHZ(10);
++	}
 +
 +	/*
 +	 * Check entire range of channels for the bandwidth.
@@ -124,7 +128,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/mlme.c
 +++ b/net/wireless/mlme.c
-@@ -1031,6 +1031,8 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1038,6 +1038,8 @@ void cfg80211_dfs_channels_update_work(s
  			if (c->dfs_state == NL80211_DFS_UNAVAILABLE) {
  				time_dfs_update = IEEE80211_DFS_MIN_NOP_TIME_MS;
  				radar_event = NL80211_RADAR_NOP_FINISHED;
@@ -133,7 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			} else {
  				if (regulatory_pre_cac_allowed(wiphy) ||
  				    cfg80211_any_wiphy_oper_chan(wiphy, c))
-@@ -1038,11 +1040,10 @@ void cfg80211_dfs_channels_update_work(s
+@@ -1045,11 +1047,10 @@ void cfg80211_dfs_channels_update_work(s
  
  				time_dfs_update = REG_PRE_CAC_EXPIRY_GRACE_MS;
  				radar_event = NL80211_RADAR_PRE_CAC_EXPIRED;

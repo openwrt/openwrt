@@ -58,11 +58,11 @@
  	if (ret) {
  		dev_err(&pdev->dev, "failed to initialize device\n");
  		goto err_irq;
-@@ -155,6 +165,7 @@ static struct platform_driver ath_ahb_dr
- 	.remove_new = ath_ahb_remove,
- 	.driver		= {
- 		.name	= "ath9k",
+@@ -167,6 +177,7 @@ static struct platform_driver ath_ahb_dr
+ 	
+ 	.driver = {
+ 		.name = "ath9k",
 +		.of_match_table = of_ath_ahb_match,
  	},
- 	.id_table    = ath9k_platform_id_table,
+ 	.id_table = ath9k_platform_id_table,
  };
