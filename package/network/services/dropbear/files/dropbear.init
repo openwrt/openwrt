@@ -24,23 +24,30 @@ _dropbearkey()
 }
 
 # $1 - file name (host key or config)
+# $2 - 'config' for config key, string for uid, or empty (implying uid 0)
 file_verify()
 {
+	local uid
 	[ -f "$1" ] || return 1
+	if [ -z "$2" ] || [ "$2" = config ]; then
+		uid="0"
+	else
+		uid=$2
+	fi
 	# checking file ownership
-	[ "$(stat_owner "$1")" = "0" ] || {
-		chown 0 "$1"
-		[ "$(stat_owner "$1")" = "0" ] || return 2
+	[ "$(stat_owner "$1")" = "${uid}" ] || {
+		chown "${uid}" "$1"
+		[ "$(stat_owner "$1")" = "${uid}" ] || return 2
 	}
 	# checking file permissions
-	[ "$(stat_perm "$1")" = "-rw-------" ] || {
-		chmod 0600 "$1"
-		[ "$(stat_perm "$1")" = "-rw-------" ] || return 3
+	[ "$(stat_perm "$1")" = "-r--------" ] || {
+		chmod 0400 "$1"
+		[ "$(stat_perm "$1")" = "-r--------" ] || return 3
 	}
 	# file is host key or not?
 	# if $2 is empty string - file is "host key"
-	# if $2 is non-empty string - file is "config"
-	[ -z "$2" ] || return 0
+	# if $2 is "config" - file is "config"
+	[ "$2" = "config" ] && return 0
 	# checking file contents (finally)
 	[ -s "$1" ] || return 4
 	_dropbearkey -y -f "$1" || return 5
@@ -63,10 +70,11 @@ file_errmsg()
 
 # $1 - config option
 # $2 - host key file name
+# $3 - daemon uid
 hk_config()
 {
 	local x m
-	file_verify "$2" ; x=$?
+	file_verify "$2" "$3" ; x=$?
 	if [ "$x" = 0 ] ; then
 		procd_append_param command -r "$2"
 		return
@@ -77,7 +85,8 @@ hk_config()
 }
 
 # $1 - host key file name
-hk_config__keyfile() { hk_config keyfile "$1" ; }
+# $2 - daemon uid
+hk_config__keyfile() { hk_config keyfile "$1" "$2" ; }
 
 ktype_all='ed25519 ecdsa rsa'
 
@@ -178,7 +187,8 @@ validate_section_dropbear()
 		'IdleTimeout:uinteger:0' \
 		'MaxAuthTries:uinteger:3' \
 		'RecvWindowSize:uinteger:262144' \
-		'mdns:bool:1'
+		'mdns:bool:1' \
+		'RunAsUser:string'
 }
 
 dropbear_instance()
@@ -190,7 +200,7 @@ dropbear_instance()
 
 	[ "${enable}" = "1" ] || return 1
 
-	local iface ndev ipaddrs
+	local iface ndev ipaddrs uid pid_file
 
 	# 'DirectInterface' should specify single interface
 	# but end users may misinterpret this setting
@@ -297,7 +307,22 @@ dropbear_instance()
 		break
 	done
 
-	local pid_file="/var/run/${NAME}.${1}.pid"
+	# handle 'RunAsUser'
+	if [ -n "${RunAsUser}" ]; then
+		local x
+		uid=$(id -u "${RunAsUser}") ; x=$?
+		if [ "$x" -ne 0 ] ; then
+			logger -s -t "${NAME}" -p daemon.err \
+			  "User '${RunAsUser}' does no exist!"
+			return 1
+		fi
+		logger -t "${NAME}" -p daemon.info \
+          	  "Running as user '${RunAsUser}' with uid ${uid}"
+		pid_file="/var/run/${NAME}.uid${uid}.${1}.pid"
+	else
+		uid=0
+		pid_file="/var/run/${NAME}.${1}.pid"
+	fi
 
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
@@ -318,9 +343,13 @@ dropbear_instance()
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
 	[ "${GatewayPorts}" -eq 1 ] && procd_append_param command -a
 	[ -n "${ForceCommand}" ] && procd_append_param command -c "${ForceCommand}"
-	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
-	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
-	config_list_foreach "$1" 'keyfile' hk_config__keyfile
+	if [ "${RootPasswordAuth}" -eq 0 ] || [ "${uid}" -ne 0 ]; then
+		procd_append_param command -g
+	fi
+	if [ "${RootLogin}" -eq 0 ] || [ "${uid}" -ne 0 ]; then
+		procd_append_param command -w
+	fi
+	config_list_foreach "$1" 'keyfile' hk_config__keyfile "${uid}"
 	if [ -n "${rsakeyfile}" ]; then
 		logger -s -t "${NAME}" -p daemon.crit \
 		  "Option 'rsakeyfile' is considered to be DEPRECATED and will be REMOVED in future releases, use 'keyfile' list instead"
@@ -328,7 +357,7 @@ dropbear_instance()
 		  "/etc/config/${NAME}"
 		logger -s -t "${NAME}" -p daemon.crit \
 		  "Auto-transition 'option rsakeyfile' => 'list keyfile' in /etc/config/${NAME} is done, please verify your configuration"
-		hk_config 'rsakeyfile' "${rsakeyfile}"
+		hk_config 'rsakeyfile' "${rsakeyfile}" "${uid}"
 	fi
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
@@ -352,6 +381,11 @@ dropbear_instance()
 		procd_append_param command -W "${RecvWindowSize}"
 	}
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
+	if [ "${uid}" -ne 0 ]; then
+		procd_set_param user "${RunAsUser}"
+		touch "${pid_file}"
+		chown "${uid}": ${pid_file}
+	fi
 	procd_set_param respawn
 	procd_close_instance
 }
@@ -428,7 +462,7 @@ killclients()
 	while [ "${pid}" -ne 0 ]
 	 do
 		# get parent process id
-		pid=$(cut -d ' ' -f 4 "/proc/${pid}/stat")
+		pid=$(grep '^PPid:' "/proc/${pid}/status" | cut -f 2)
 		[ "${pid}" -eq 0 ] && break
 
 		# check if client connection
