@@ -36,12 +36,12 @@
  		pinctrl-0 = <&pmx_led_blue &pmx_led_red>;
  		pinctrl-names = "default";
  
--		health {
-+		led_health: health {
+-		led-health {
++		led_health: led-health {
  			label = "sheevaplug:blue:health";
  			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 -			default-state = "keep";
 +			default-state = "on";
  		};
  
- 		misc {
+ 		led-misc {

@@ -11,19 +11,19 @@
  		serial0 = &uart0;
  	};
  
-@@ -56,9 +60,10 @@
+@@ -54,9 +58,10 @@
  		pinctrl-0 = < &pmx_led_white_health &pmx_led_white_pulse >;
  		pinctrl-names = "default";
  
--		white-health {
-+		led_white_health: white-health {
+-		led-white-health {
++		led_white_health: led-white-health {
  			label = "viper:white:health";
  			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 +			default-state = "on";
  		};
  
- 		white-pulse {
-@@ -114,23 +119,23 @@
+ 		led-white-pulse {
+@@ -112,23 +117,23 @@
  		};
  
  		partition@200000 {

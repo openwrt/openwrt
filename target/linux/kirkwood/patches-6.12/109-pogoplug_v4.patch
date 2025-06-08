@@ -21,8 +21,8 @@
  		stdout-path = "uart0:115200n8";
  	};
  
-@@ -37,8 +45,8 @@
- 		eject {
+@@ -35,8 +43,8 @@
+ 		button-eject {
  			debounce-interval = <50>;
  			wakeup-source;
 -			linux,code = <KEY_EJECTCD>;
@@ -32,22 +32,22 @@
  			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
  		};
  	};
-@@ -48,12 +56,12 @@
+@@ -46,12 +54,12 @@
  		pinctrl-0 = <&pmx_led_green &pmx_led_red>;
  		pinctrl-names = "default";
  
--		health {
-+		led_health: health {
+-		led-health {
++		led_health: led-health {
  			label = "pogoplugv4:green:health";
  			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
  			default-state = "on";
  		};
--		fault {
-+		led_fault: fault {
+-		led-fault {
++		led_fault: led-fault {
  			label = "pogoplugv4:red:fault";
  			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
  		};
-@@ -137,29 +145,19 @@
+@@ -135,29 +143,19 @@
  		#size-cells = <1>;
  
  		partition@0 {

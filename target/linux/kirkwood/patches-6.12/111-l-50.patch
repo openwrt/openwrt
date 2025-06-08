@@ -18,14 +18,14 @@
  	leds {
  		compatible = "gpio-leds";
  
--		status_green {
-+		led_status_green: status_green {
+-		led-status-green {
++		led_status_green: led-status-green {
  			label = "l-50:green:status";
  			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
  		};
  
--		status_red {
-+		led_status_red: status_red {
+-		led-status-red {
++		led_status_red: led-status-red {
  			label = "l-50:red:status";
  			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
  		};
