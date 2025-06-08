@@ -456,9 +456,9 @@
 		device_type = "pci";
 		interrupt-controller;
 
-		ath10k@0,0 {
+		wifi@0,0 {
+			compatible = "qcom,ath10k";
 			reg = <0 0 0 0 0>;
-			device_type = "pci";
 			qcom,ath10k-sa-gpio = <2 3 4 0>;
 			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
 		};
@@ -476,9 +476,9 @@
 		device_type = "pci";
 		interrupt-controller;
 
-		ath10k@0,0 {
+		wifi@0,0 {
+			compatible = "qcom,ath10k";
 			reg = <0 0 0 0 0>;
-			device_type = "pci";
 			qcom,ath10k-sa-gpio = <2 3 4 0>;
 			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
 		};
@@ -496,9 +496,9 @@
 		device_type = "pci";
 		interrupt-controller;
 
-		ath10k@0,0 {
+		wifi@0,0 {
+			compatible = "qcom,ath10k";
 			reg = <0 0 0 0 0>;
-			device_type = "pci";
 		};
 	};
 };
