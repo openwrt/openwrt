@@ -19,6 +19,17 @@ DEVICE_VARS += \
 	LINKSYS_HEADER \
         ZYXEL_VERS
 
+define Build/xz
+	$(STAGING_DIR_HOST)/bin/xz -9 --stdout "$@" > "$@.new"
+	mv "$@.new" "$@"
+endef
+
+define Build/xz-loader
+	$(MAKE) all clean -C xz-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		XZ_IN_IMAGE="$@" XZ_OUT_IMAGE="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
+
 define Build/zyxel-vers
        ( echo VERS;\
        for hw in $(ZYXEL_VERS); do\
@@ -106,6 +117,12 @@ define Device/Default
 	pad-rootfs | \
 	check-size | \
 	append-metadata
+endef
+
+define Device/uimage-xz-loader
+	KERNEL/xz-loader := kernel-bin | append-dtb | xz | xz-loader
+	KERNEL := $$(KERNEL/xz-loader) | uImage none
+	KERNEL_INITRAMFS := $$(KERNEL/xz-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk
