@@ -12,7 +12,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
-@@ -65,6 +65,36 @@ static int brcmf_of_get_country_codes(st
+@@ -66,6 +66,36 @@ static int brcmf_of_get_country_codes(st
  	return 0;
  }
  
@@ -46,15 +46,15 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +	}
 +}
 +
- void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
- 		    struct brcmf_mp_device *settings)
+ int brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
+ 		   struct brcmf_mp_device *settings)
  {
-@@ -113,6 +143,8 @@ void brcmf_of_probe(struct device *dev,
- 	}
- 	of_node_put(root);
+@@ -121,6 +151,8 @@ int brcmf_of_probe(struct device *dev, e
+ 
+ 	brcmf_dbg(INFO, "%s LPO clock\n", clk ? "enable" : "no");
  
 +	brcmf_of_probe_cc(dev, settings);
 +
  	if (!np || !of_device_is_compatible(np, "brcm,bcm4329-fmac"))
- 		return;
+ 		return 0;
  
