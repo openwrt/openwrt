@@ -1164,7 +1164,7 @@ dnsmasq_start()
 
 
 	# Create a dnsmasq.d dir for each instance
-	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq${cfg:+.$cfg}.d"
+	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
 	# Ensure dnsmasqconfdir is an absolute path
 	[ "${dnsmasqconfdir:0:1}" = '/' ] && {
 		xappend "--conf-dir=$dnsmasqconfdir"
