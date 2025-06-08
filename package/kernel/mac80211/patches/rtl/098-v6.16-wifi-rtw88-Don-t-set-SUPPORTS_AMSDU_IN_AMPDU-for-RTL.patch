@@ -1,0 +1,169 @@
+From b8d49bb8d16ae7dde8e05b275d6e3b8bbf27f011 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 2 Apr 2025 18:31:36 +0300
+Subject: [PATCH] wifi: rtw88: Don't set SUPPORTS_AMSDU_IN_AMPDU for RTL8814AU
+
+RTL8814AU doesn't work well with SUPPORTS_AMSDU_IN_AMPDU. The RX speed
+is noticeably lower and the VHT RX statistics are strange. Typical
+values with SUPPORTS_AMSDU_IN_AMPDU:
+
+Reverse mode, remote host 192.168.0.1 is sending
+[  5] local 192.168.0.50 port 60710 connected to 192.168.0.1 port 5201
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  74.6 MBytes   626 Mbits/sec
+[  5]   1.00-2.00   sec  79.2 MBytes   665 Mbits/sec
+[  5]   2.00-3.00   sec  84.9 MBytes   712 Mbits/sec
+[  5]   3.00-4.00   sec  83.8 MBytes   703 Mbits/sec
+[  5]   4.00-5.00   sec  85.9 MBytes   720 Mbits/sec
+[  5]   5.00-6.00   sec  78.9 MBytes   662 Mbits/sec
+[  5]   6.00-7.00   sec  81.2 MBytes   682 Mbits/sec
+[  5]   7.00-8.00   sec  80.5 MBytes   675 Mbits/sec
+[  5]   8.00-9.00   sec  79.4 MBytes   666 Mbits/sec
+[  5]   9.00-10.00  sec  82.2 MBytes   689 Mbits/sec
+[  5]  10.00-11.00  sec  82.0 MBytes   688 Mbits/sec
+[  5]  11.00-12.00  sec  84.2 MBytes   707 Mbits/sec
+[  5]  12.00-13.00  sec  71.0 MBytes   596 Mbits/sec
+[  5]  13.00-14.00  sec  69.4 MBytes   582 Mbits/sec
+[  5]  14.00-15.00  sec  80.2 MBytes   673 Mbits/sec
+[  5]  15.00-16.00  sec  74.5 MBytes   625 Mbits/sec
+
+[Rx Counter]:
+ * CCA (CCK, OFDM, Total) = (0, 2455, 2455)
+ * False Alarm (CCK, OFDM, Total) = (0, 69, 69)
+ * CCK cnt (ok, err) = (0, 0)
+ * OFDM cnt (ok, err) = (1239, 2)
+ * HT cnt (ok, err) = (0, 0)
+ * VHT cnt (ok, err) = (21, 12109)
+
+The "VHT ok" number is not believable.
+
+And without SUPPORTS_AMSDU_IN_AMPDU:
+
+Reverse mode, remote host 192.168.0.1 is sending
+[  5] local 192.168.0.50 port 50030 connected to 192.168.0.1 port 5201
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  70.5 MBytes   591 Mbits/sec
+[  5]   1.00-2.00   sec  86.9 MBytes   729 Mbits/sec
+[  5]   2.00-3.00   sec  98.6 MBytes   827 Mbits/sec
+[  5]   3.00-4.00   sec  97.4 MBytes   817 Mbits/sec
+[  5]   4.00-5.00   sec  98.6 MBytes   827 Mbits/sec
+[  5]   5.00-6.00   sec  96.9 MBytes   813 Mbits/sec
+[  5]   6.00-7.00   sec  98.2 MBytes   824 Mbits/sec
+[  5]   7.00-8.00   sec  98.0 MBytes   822 Mbits/sec
+[  5]   8.00-9.00   sec  99.9 MBytes   838 Mbits/sec
+[  5]   9.00-10.00  sec  99.2 MBytes   833 Mbits/sec
+[  5]  10.00-11.00  sec  98.0 MBytes   822 Mbits/sec
+[  5]  11.00-12.00  sec  98.1 MBytes   823 Mbits/sec
+[  5]  12.00-13.00  sec  97.0 MBytes   814 Mbits/sec
+[  5]  13.00-14.00  sec  98.2 MBytes   824 Mbits/sec
+[  5]  14.00-15.00  sec  98.5 MBytes   826 Mbits/sec
+[  5]  15.00-16.00  sec  97.4 MBytes   817 Mbits/sec
+
+[Rx Counter]:
+ * CCA (CCK, OFDM, Total) = (0, 3860, 3860)
+ * False Alarm (CCK, OFDM, Total) = (0, 2, 2)
+ * CCK cnt (ok, err) = (0, 0)
+ * OFDM cnt (ok, err) = (1486, 0)
+ * HT cnt (ok, err) = (0, 0)
+ * VHT cnt (ok, err) = (7399, 9118)
+
+Add a new member "amsdu_in_ampdu" in struct rtw_chip_info and use it
+to set SUPPORTS_AMSDU_IN_AMPDU only for the other chips.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/6202ccfb-feb0-4107-a08d-db2699e179f0@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.c     | 3 ++-
+ drivers/net/wireless/realtek/rtw88/main.h     | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8812a.c | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8814a.c | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8821a.c | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8821c.c | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c | 1 +
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c | 1 +
+ 8 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -2242,7 +2242,8 @@ int rtw_register_hw(struct rtw_dev *rtwd
+ 	ieee80211_hw_set(hw, SUPPORTS_PS);
+ 	ieee80211_hw_set(hw, SUPPORTS_DYNAMIC_PS);
+ 	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
+-	ieee80211_hw_set(hw, SUPPORTS_AMSDU_IN_AMPDU);
++	if (rtwdev->chip->amsdu_in_ampdu)
++		ieee80211_hw_set(hw, SUPPORTS_AMSDU_IN_AMPDU);
+ 	ieee80211_hw_set(hw, HAS_RATE_CONTROL);
+ 	ieee80211_hw_set(hw, TX_AMSDU);
+ 	ieee80211_hw_set(hw, SINGLE_SCAN_ON_ALL_BANDS);
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -1230,6 +1230,7 @@ struct rtw_chip_info {
+ 	u16 fw_fifo_addr[RTW_FW_FIFO_MAX];
+ 	const struct rtw_fwcd_segs *fwcd_segs;
+ 
++	bool amsdu_in_ampdu;
+ 	u8 usb_tx_agg_desc_num;
+ 	bool hw_feature_report;
+ 	u8 c2h_ra_report_size;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8812a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8812a.c
+@@ -1076,6 +1076,7 @@ const struct rtw_chip_info rtw8812a_hw_s
+ 	.rfe_defs = rtw8812a_rfe_defs,
+ 	.rfe_defs_size = ARRAY_SIZE(rtw8812a_rfe_defs),
+ 	.rx_ldpc = false,
++	.amsdu_in_ampdu = true,
+ 	.hw_feature_report = false,
+ 	.c2h_ra_report_size = 4,
+ 	.old_datarate_fb_limit = true,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8814a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8814a.c
+@@ -2200,6 +2200,7 @@ const struct rtw_chip_info rtw8814a_hw_s
+ 	.rx_ldpc = true,
+ 	.max_power_index = 0x3f,
+ 	.ampdu_density = IEEE80211_HT_MPDU_DENSITY_2,
++	.amsdu_in_ampdu = false, /* RX speed is better without AMSDU */
+ 	.usb_tx_agg_desc_num = 3,
+ 	.hw_feature_report = false,
+ 	.c2h_ra_report_size = 6,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821a.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821a.c
+@@ -1176,6 +1176,7 @@ const struct rtw_chip_info rtw8821a_hw_s
+ 	.rfe_defs = rtw8821a_rfe_defs,
+ 	.rfe_defs_size = ARRAY_SIZE(rtw8821a_rfe_defs),
+ 	.rx_ldpc = false,
++	.amsdu_in_ampdu = true,
+ 	.hw_feature_report = false,
+ 	.c2h_ra_report_size = 4,
+ 	.old_datarate_fb_limit = true,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.c
+@@ -1991,6 +1991,7 @@ const struct rtw_chip_info rtw8821c_hw_s
+ 	.band = RTW_BAND_2G | RTW_BAND_5G,
+ 	.page_size = TX_PAGE_SIZE,
+ 	.dig_min = 0x1c,
++	.amsdu_in_ampdu = true,
+ 	.usb_tx_agg_desc_num = 3,
+ 	.hw_feature_report = true,
+ 	.c2h_ra_report_size = 7,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -2532,6 +2532,7 @@ const struct rtw_chip_info rtw8822b_hw_s
+ 	.band = RTW_BAND_2G | RTW_BAND_5G,
+ 	.page_size = TX_PAGE_SIZE,
+ 	.dig_min = 0x1c,
++	.amsdu_in_ampdu = true,
+ 	.usb_tx_agg_desc_num = 3,
+ 	.hw_feature_report = true,
+ 	.c2h_ra_report_size = 7,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -5350,6 +5350,7 @@ const struct rtw_chip_info rtw8822c_hw_s
+ 	.band = RTW_BAND_2G | RTW_BAND_5G,
+ 	.page_size = TX_PAGE_SIZE,
+ 	.dig_min = 0x20,
++	.amsdu_in_ampdu = true,
+ 	.usb_tx_agg_desc_num = 3,
+ 	.hw_feature_report = true,
+ 	.c2h_ra_report_size = 7,

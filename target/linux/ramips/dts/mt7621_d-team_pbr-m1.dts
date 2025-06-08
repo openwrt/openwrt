@@ -62,19 +62,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		power_usb2 {
-			gpio-export,name = "power_usb2";
-			gpio-export,output = <1>;
-			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
-		};
-
-		power_usb3 {
-			gpio-export,name = "power_usb3";
-			gpio-export,output = <1>;
-			gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
-		};
 
 		power_sata {
 			gpio-export,name = "power_sata";
@@ -207,6 +194,18 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e000>;
 	nvmem-cell-names = "mac-address";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
+&reg_vusb33 {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

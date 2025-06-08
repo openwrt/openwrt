@@ -92,6 +92,7 @@ define Build/inteno-y3-header
 endef
 
 define Build/inteno-bootfs
+	rm -rf $@.ubifs-dir
 	mkdir -p $@.ubifs-dir/boot
 
 	# populate the boot fs with the dtb and the kernel image
@@ -100,7 +101,6 @@ define Build/inteno-bootfs
 
 	# create ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
-	rm -rf $@.ubifs-dir
 	mv $@.new $@
 endef
 
@@ -313,6 +313,23 @@ define Device/ampedwireless_ally-00x19k
   DEVICE_MODEL := ALLY-00X19K
 endef
 TARGET_DEVICES += ampedwireless_ally-00x19k
+
+define Device/arcadyan_we410443
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WE410443
+  IMAGE_SIZE := 32128k
+  KERNEL_SIZE := 4352k
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none | arcadyan-trx 0x746f435d
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615-firmware -uboot-envtools
+endef
+TARGET_DEVICES += arcadyan_we410443
 
 define Device/arcadyan_we420223-99
   $(Device/dsa-migration)
@@ -1311,10 +1328,11 @@ define Device/elecom_wrc-x1800gs
   $(Device/nand)
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-X1800GS
-  KERNEL := kernel-bin | lzma | \
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	znet-header 4.04(XVF.1)b90 COMC 0x68 | elecom-product-header WRC-X1800GS
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  KERNEL_INITRAMFS := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 51456k
@@ -1418,7 +1436,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   IMAGE/factory.bin := append-image-stage initramfs-kernel.bin | \
 	inteno-bootfs | inteno-y3-header EX400 | append-md5sum-ascii-salted
 endif
-  IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | \
+  IMAGE/sysupgrade.bin := append-kernel | inteno-bootfs | pad-to 10M | \
     sysupgrade-tar kernel=$$$$@ | check-size | append-metadata
   DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 kmod-keyboard-sx951x kmod-button-hotplug
@@ -2576,7 +2594,7 @@ define Device/sercomm_na502s
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502S
   DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3 kmod-usb-serial \
-		kmod-usb-serial-xr_usb_serial_common -uboot-envtools
+		kmod-usb-serial-xr -uboot-envtools
 endef
 TARGET_DEVICES += sercomm_na502s
 

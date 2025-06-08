@@ -1,0 +1,122 @@
+From 4d5c3828a8dd0062eeeb56b7d857a76130c3683c Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 8 Apr 2025 11:26:58 +0200
+Subject: [PATCH 1/2] net: ethernet: cortina: Use TOE/TSO on all TCP
+
+It is desireable to push the hardware accelerator to also
+process non-segmented TCP frames: we pass the skb->len
+to the "TOE/TSO" offloader and it will handle them.
+
+Without this quirk the driver becomes unstable and lock
+up and and crash.
+
+I do not know exactly why, but it is probably due to the
+TOE (TCP offload engine) feature that is coupled with the
+segmentation feature - it is not possible to turn one
+part off and not the other, either both TOE and TSO are
+active, or neither of them.
+
+Not having the TOE part active seems detrimental, as if
+that hardware feature is not really supposed to be turned
+off.
+
+The datasheet says:
+
+  "Based on packet parsing and TCP connection/NAT table
+   lookup results, the NetEngine puts the packets
+   belonging to the same TCP connection to the same queue
+   for the software to process. The NetEngine puts
+   incoming packets to the buffer or series of buffers
+   for a jumbo packet. With this hardware acceleration,
+   IP/TCP header parsing, checksum validation and
+   connection lookup are offloaded from the software
+   processing."
+
+After numerous tests with the hardware locking up after
+something between minutes and hours depending on load
+using iperf3 I have concluded this is necessary to stabilize
+the hardware.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://patch.msgid.link/20250408-gemini-ethernet-tso-always-v1-1-e669f932359c@linaro.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/cortina/gemini.c | 37 +++++++++++++++++++++------
+ 1 file changed, 29 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/cortina/gemini.c
++++ b/drivers/net/ethernet/cortina/gemini.c
+@@ -1143,6 +1143,7 @@ static int gmac_map_tx_bufs(struct net_d
+ 	struct gmac_txdesc *txd;
+ 	skb_frag_t *skb_frag;
+ 	dma_addr_t mapping;
++	bool tcp = false;
+ 	void *buffer;
+ 	u16 mss;
+ 	int ret;
+@@ -1150,6 +1151,13 @@ static int gmac_map_tx_bufs(struct net_d
+ 	word1 = skb->len;
+ 	word3 = SOF_BIT;
+ 
++	/* Determine if we are doing TCP */
++	if (skb->protocol == htons(ETH_P_IP))
++		tcp = (ip_hdr(skb)->protocol == IPPROTO_TCP);
++	else
++		/* IPv6 */
++		tcp = (ipv6_hdr(skb)->nexthdr == IPPROTO_TCP);
++
+ 	mss = skb_shinfo(skb)->gso_size;
+ 	if (mss) {
+ 		/* This means we are dealing with TCP and skb->len is the
+@@ -1162,8 +1170,26 @@ static int gmac_map_tx_bufs(struct net_d
+ 			   mss, skb->len);
+ 		word1 |= TSS_MTU_ENABLE_BIT;
+ 		word3 |= mss;
++	} else if (tcp) {
++		/* Even if we are not using TSO, use the hardware offloader
++		 * for transferring the TCP frame: this hardware has partial
++		 * TCP awareness (called TOE - TCP Offload Engine) and will
++		 * according to the datasheet put packets belonging to the
++		 * same TCP connection in the same queue for the TOE/TSO
++		 * engine to process. The engine will deal with chopping
++		 * up frames that exceed ETH_DATA_LEN which the
++		 * checksumming engine cannot handle (see below) into
++		 * manageable chunks. It flawlessly deals with quite big
++		 * frames and frames containing custom DSA EtherTypes.
++		 */
++		mss = netdev->mtu + skb_tcp_all_headers(skb);
++		mss = min(mss, skb->len);
++		netdev_dbg(netdev, "TOE/TSO len %04x mtu %04x mss %04x\n",
++			   skb->len, netdev->mtu, mss);
++		word1 |= TSS_MTU_ENABLE_BIT;
++		word3 |= mss;
+ 	} else if (skb->len >= ETH_FRAME_LEN) {
+-		/* Hardware offloaded checksumming isn't working on frames
++		/* Hardware offloaded checksumming isn't working on non-TCP frames
+ 		 * bigger than 1514 bytes. A hypothesis about this is that the
+ 		 * checksum buffer is only 1518 bytes, so when the frames get
+ 		 * bigger they get truncated, or the last few bytes get
+@@ -1180,21 +1206,16 @@ static int gmac_map_tx_bufs(struct net_d
+ 	}
+ 
+ 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
+-		int tcp = 0;
+-
+ 		/* We do not switch off the checksumming on non TCP/UDP
+ 		 * frames: as is shown from tests, the checksumming engine
+ 		 * is smart enough to see that a frame is not actually TCP
+ 		 * or UDP and then just pass it through without any changes
+ 		 * to the frame.
+ 		 */
+-		if (skb->protocol == htons(ETH_P_IP)) {
++		if (skb->protocol == htons(ETH_P_IP))
+ 			word1 |= TSS_IP_CHKSUM_BIT;
+-			tcp = ip_hdr(skb)->protocol == IPPROTO_TCP;
+-		} else { /* IPv6 */
++		else
+ 			word1 |= TSS_IPV6_ENABLE_BIT;
+-			tcp = ipv6_hdr(skb)->nexthdr == IPPROTO_TCP;
+-		}
+ 
+ 		word1 |= tcp ? TSS_TCP_CHKSUM_BIT : TSS_UDP_CHKSUM_BIT;
+ 	}

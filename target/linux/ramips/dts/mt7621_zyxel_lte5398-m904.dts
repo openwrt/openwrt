@@ -85,7 +85,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		lte_power {
 			gpio-export,name = "lte_power";
@@ -93,20 +92,6 @@
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	reg_usb_power: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_power";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-boot-on;
-	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_power>;
 };
 
 &nand {
@@ -239,4 +224,11 @@
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
 	};
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };

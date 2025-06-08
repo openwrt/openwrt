@@ -48,7 +48,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	mtd->nvmem = nvmem_register(&config);
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -918,7 +918,7 @@ struct nvmem_device *nvmem_register(cons
+@@ -932,7 +932,7 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->nkeepout = config->nkeepout;
  	if (config->of_node)
  		nvmem->dev.of_node = config->of_node;

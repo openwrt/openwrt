@@ -1,0 +1,44 @@
+From 0ffa1ba81b35ba147c9df6206a61499a156b0128 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 2 May 2025 14:49:01 +0300
+Subject: [PATCH] wifi: rtw88: Fix RX aggregation settings for RTL8723DS
+
+Use the same RX aggregation size and timeout used by the out-of-tree
+RTL8723DS driver. Also set mystery bit 31 of REG_RXDMA_AGG_PG_TH. This
+improves the RX speed from ~44 Mbps to ~67 Mbps.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/4c79fdc1-54bc-4986-9931-bb3ceb418b97@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/sdio.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -677,12 +677,22 @@ static void rtw_sdio_enable_rx_aggregati
+ {
+ 	u8 size, timeout;
+ 
+-	if (rtw_chip_wcpu_11n(rtwdev)) {
++	switch (rtwdev->chip->id) {
++	case RTW_CHIP_TYPE_8703B:
++	case RTW_CHIP_TYPE_8821A:
++	case RTW_CHIP_TYPE_8812A:
+ 		size = 0x6;
+ 		timeout = 0x6;
+-	} else {
++		break;
++	case RTW_CHIP_TYPE_8723D:
++		size = 0xa;
++		timeout = 0x3;
++		rtw_write8_set(rtwdev, REG_RXDMA_AGG_PG_TH + 3, BIT(7));
++		break;
++	default:
+ 		size = 0xff;
+ 		timeout = 0x1;
++		break;
+ 	}
+ 
+ 	/* Make the firmware honor the size limit configured below */

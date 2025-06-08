@@ -29,7 +29,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1229,6 +1229,8 @@ static int hostapd_config_vht_capab(stru
+@@ -1225,6 +1225,8 @@ static int hostapd_config_vht_capab(stru
  		conf->vht_capab |= VHT_CAP_RX_ANTENNA_PATTERN;
  	if (os_strstr(capab, "[TX-ANTENNA-PATTERN]"))
  		conf->vht_capab |= VHT_CAP_TX_ANTENNA_PATTERN;
@@ -100,7 +100,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	u8 *pos = eid;
  	enum oper_chan_width oper_chwidth =
  		hostapd_get_oper_chwidth(hapd->iconf);
-@@ -110,6 +123,7 @@ u8 * hostapd_eid_vht_operation(struct ho
+@@ -113,6 +126,7 @@ u8 * hostapd_eid_vht_operation(struct ho
  	oper->vht_op_info_chan_center_freq_seg1_idx = seg1;
  
  	oper->vht_op_info_chwidth = oper_chwidth;
@@ -108,7 +108,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	if (oper_chwidth == CONF_OPER_CHWIDTH_160MHZ) {
  		/*
  		 * Convert 160 MHz channel width to new style as interop
-@@ -123,6 +137,9 @@ u8 * hostapd_eid_vht_operation(struct ho
+@@ -126,6 +140,9 @@ u8 * hostapd_eid_vht_operation(struct ho
  			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
  		else
  			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
@@ -120,7 +120,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		 * Convert 80+80 MHz channel width to new style as interop
 --- a/src/common/hw_features_common.c
 +++ b/src/common/hw_features_common.c
-@@ -923,6 +923,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
+@@ -924,6 +924,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
  	VHT_CAP_CHECK(VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB);
  	VHT_CAP_CHECK(VHT_CAP_RX_ANTENNA_PATTERN);
  	VHT_CAP_CHECK(VHT_CAP_TX_ANTENNA_PATTERN);
@@ -130,7 +130,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  #undef VHT_CAP_CHECK_MAX
 --- a/src/common/ieee802_11_defs.h
 +++ b/src/common/ieee802_11_defs.h
-@@ -1420,6 +1420,8 @@ struct ieee80211_ampe_ie {
+@@ -1421,6 +1421,8 @@ struct ieee80211_ampe_ie {
  #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
  #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
  #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))

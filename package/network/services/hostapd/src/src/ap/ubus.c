@@ -362,7 +362,7 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 
 	if (hapd->conf->ssid.ssid_len < SSID_MAX_LEN)
 		ssid_len = hapd->conf->ssid.ssid_len;
-	
+
 	ieee80211_freq_to_channel_ext(hapd->iface->freq,
 				      hapd->iconf->secondary_channel,
 				      hostapd_get_oper_chwidth(hapd->iconf),
@@ -2060,7 +2060,7 @@ void hostapd_ubus_notify_bss_transition_response(
 	blobmsg_add_u8(&b, "bss-termination-delay", bss_termination_delay);
 	if (target_bssid)
 		blobmsg_add_macaddr(&b, "target-bssid", target_bssid);
-	
+
 	hostapd_ubus_notify_bss_transition_add_candidate_list(candidate_list, candidate_list_len);
 
 	ubus_notify(ctx, &hapd->ubus.obj, "bss-transition-response", b.head, -1);

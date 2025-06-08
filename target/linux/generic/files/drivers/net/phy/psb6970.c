@@ -7,7 +7,7 @@
  * under  the terms of the GNU General Public License v2 as published by the
  * Free Software Foundation.
  *
- * The switch programming done in this driver follows the 
+ * The switch programming done in this driver follows the
  * "Ethernet Traffic Separation using VLAN" Application Note as
  * published by Lantiq.
  */

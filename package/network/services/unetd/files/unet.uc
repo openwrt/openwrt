@@ -549,6 +549,7 @@ function network_invite_peer_update(model, ctx, msg)
 		model.status_msg("Updated configuration");
 	}
 
+	model.run_hook("unet_enroll", "invite_done");
 	__network_enroll_cancel(model, ctx);
 }
 
@@ -576,8 +577,10 @@ function network_invite(ctx, argv, named)
 	invite.sub = model.ubus.subscriber((msg) => {
 		if (msg.type == "enroll_peer_update")
 			network_invite_peer_update(ctx.model, ctx, msg);
-		else if (msg.type == "enroll_timeout")
+		else if (msg.type == "enroll_timeout") {
+			ctx.model.run_hook("unet_enroll", "invite_timeout");
 			__network_enroll_cancel(ctx.model, ctx);
+		}
 	});
 
 	let req = {
@@ -627,6 +630,7 @@ function network_join_peer_update(model, ctx, msg)
 
 	model.status_msg("Configuration added for interface " + name);
 
+	model.run_hook("unet_enroll", "join_done");
 	__network_enroll_cancel(model, ctx);
 }
 
@@ -681,8 +685,10 @@ function network_join(ctx, argv, named)
 	data.sub = model.ubus.subscriber((msg) => {
 		if (msg.type == "enroll_peer_update")
 			network_join_peer_update(ctx.model, ctx, msg);
-		else if (msg.type == "enroll_timeout")
+		else if (msg.type == "enroll_timeout") {
+			ctx.model.run_hook("unet_enroll", "join_timeout");
 			__network_enroll_cancel(ctx.model, ctx);
+		}
 	});
 	data.sub.subscribe("unetd");
 	model.ubus.call("unetd", "enroll_start", req);

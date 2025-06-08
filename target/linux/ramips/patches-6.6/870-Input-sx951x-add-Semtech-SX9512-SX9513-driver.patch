@@ -25,8 +25,6 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  3 files changed, 502 insertions(+)
  create mode 100644 drivers/input/keyboard/sx951x.c
 
-diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-index 1d0c5f4c0f99..6dc397389c64 100644
 --- a/drivers/input/keyboard/Kconfig
 +++ b/drivers/input/keyboard/Kconfig
 @@ -616,6 +616,17 @@ config KEYBOARD_SUNKBD
@@ -47,11 +45,9 @@ index 1d0c5f4c0f99..6dc397389c64 100644
  config KEYBOARD_SH_KEYSC
  	tristate "SuperH KEYSC keypad support"
  	depends on ARCH_SHMOBILE || COMPILE_TEST
-diff --git a/drivers/input/keyboard/Makefile b/drivers/input/keyboard/Makefile
-index aecef00c5d09..e59ca83c30ec 100644
 --- a/drivers/input/keyboard/Makefile
 +++ b/drivers/input/keyboard/Makefile
-@@ -66,6 +66,7 @@ obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
+@@ -66,6 +66,7 @@ obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stow
  obj-$(CONFIG_KEYBOARD_ST_KEYSCAN)	+= st-keyscan.o
  obj-$(CONFIG_KEYBOARD_SUN4I_LRADC)	+= sun4i-lradc-keys.o
  obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd.o
@@ -59,9 +55,6 @@ index aecef00c5d09..e59ca83c30ec 100644
  obj-$(CONFIG_KEYBOARD_TC3589X)		+= tc3589x-keypad.o
  obj-$(CONFIG_KEYBOARD_TEGRA)		+= tegra-kbc.o
  obj-$(CONFIG_KEYBOARD_TM2_TOUCHKEY)	+= tm2-touchkey.o
-diff --git a/drivers/input/keyboard/sx951x.c b/drivers/input/keyboard/sx951x.c
-new file mode 100644
-index 000000000000..66355036aa95
 --- /dev/null
 +++ b/drivers/input/keyboard/sx951x.c
 @@ -0,0 +1,490 @@
@@ -555,6 +548,3 @@ index 000000000000..66355036aa95
 +MODULE_DESCRIPTION("Semtech SX9512/SX9513 driver");
 +MODULE_AUTHOR("David Bauer <mail@david-bauer.net>");
 +MODULE_LICENSE("GPL");
--- 
-2.47.2
-

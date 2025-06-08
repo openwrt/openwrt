@@ -1,0 +1,37 @@
+From fc5f5a0ec463ae6a07850428bd3082947e01d276 Mon Sep 17 00:00:00 2001
+From: Zhen XIN <zhen.xin@nokia-sbell.com>
+Date: Thu, 10 Apr 2025 15:42:16 +0000
+Subject: [PATCH] wifi: rtw88: sdio: call rtw_sdio_indicate_tx_status
+ unconditionally
+
+The rtw88-sdio do not work in AP mode due to the lack of TX status report
+for management frames.
+
+Make the invocation of rtw_sdio_indicate_tx_status unconditional and cover
+all packet queues
+
+Tested-on: rtl8723ds
+
+Fixes: 65371a3f14e7 ("wifi: rtw88: sdio: Add HCI implementation for SDIO based chipsets")
+Signed-off-by: Zhen XIN <zhen.xin@nokia-sbell.com>
+Reviewed-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250410154217.1849977-2-zhen.xin@nokia-sbell.com
+---
+ drivers/net/wireless/realtek/rtw88/sdio.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -1224,10 +1224,7 @@ static void rtw_sdio_process_tx_queue(st
+ 		return;
+ 	}
+ 
+-	if (queue <= RTW_TX_QUEUE_VO)
+-		rtw_sdio_indicate_tx_status(rtwdev, skb);
+-	else
+-		dev_kfree_skb_any(skb);
++	rtw_sdio_indicate_tx_status(rtwdev, skb);
+ }
+ 
+ static void rtw_sdio_tx_handler(struct work_struct *work)

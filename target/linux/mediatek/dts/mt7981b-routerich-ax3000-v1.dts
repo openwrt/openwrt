@@ -5,7 +5,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Routerich AX3000 v1";
@@ -314,6 +314,8 @@
 
 &wifi {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
 

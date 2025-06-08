@@ -1,0 +1,54 @@
+From 9723a77318b7c0cfd06ea207e52a042f8c815318 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Tue, 10 Dec 2024 14:18:16 +0000
+Subject: [PATCH] net: dsa: add hook to determine whether EEE is supported
+
+Add a hook to determine whether the switch supports EEE. This will
+return false if the switch does not, or true if it does. If the
+method is not implemented, we assume (currently) that the switch
+supports EEE.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/E1tL144-006cZD-El@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ include/net/dsa.h | 1 +
+ net/dsa/user.c    | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1003,6 +1003,7 @@ struct dsa_switch_ops {
+ 	/*
+ 	 * Port's MAC EEE settings
+ 	 */
++	bool	(*support_eee)(struct dsa_switch *ds, int port);
+ 	int	(*set_mac_eee)(struct dsa_switch *ds, int port,
+ 			       struct ethtool_keee *e);
+ 	int	(*get_mac_eee)(struct dsa_switch *ds, int port,
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -1231,6 +1231,10 @@ static int dsa_user_set_eee(struct net_d
+ 	struct dsa_switch *ds = dp->ds;
+ 	int ret;
+ 
++	/* Check whether the switch supports EEE */
++	if (ds->ops->support_eee && !ds->ops->support_eee(ds, dp->index))
++		return -EOPNOTSUPP;
++
+ 	/* Port's PHY and MAC both need to be EEE capable */
+ 	if (!dev->phydev || !dp->pl)
+ 		return -ENODEV;
+@@ -1251,6 +1255,10 @@ static int dsa_user_get_eee(struct net_d
+ 	struct dsa_switch *ds = dp->ds;
+ 	int ret;
+ 
++	/* Check whether the switch supports EEE */
++	if (ds->ops->support_eee && !ds->ops->support_eee(ds, dp->index))
++		return -EOPNOTSUPP;
++
+ 	/* Port's PHY and MAC both need to be EEE capable */
+ 	if (!dev->phydev || !dp->pl)
+ 		return -ENODEV;

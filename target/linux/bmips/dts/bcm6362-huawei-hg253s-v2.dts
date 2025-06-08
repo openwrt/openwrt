@@ -121,7 +121,7 @@
 			port@8 {
 				reg = <8>;
 
-				phy-mode = "rgmii";
+				phy-mode = "rgmii-id";
 				ethernet = <&switch0port4>;
 
 				fixed-link {
@@ -210,7 +210,7 @@
 			reg = <4>;
 			label = "extsw";
 
-			phy-mode = "rgmii";
+			phy-mode = "rgmii-id";
 
 			fixed-link {
 				speed = <1000>;
@@ -223,7 +223,7 @@
 			label = "wan";
 
 			phy-handle = <&phy24>;
-			phy-mode = "rgmii-txid";
+			phy-mode = "rgmii-id";
 		};
 	};
 };

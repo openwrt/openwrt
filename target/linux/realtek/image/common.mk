@@ -31,6 +31,18 @@ define Device/d-link_dgs-1210
   CAMEO_BOARD_VERSION := 32
 endef
 
+# The "IMG-" uImage name allows flashing the iniramfs from the vendor Web UI.
+# Avoided for sysupgrade, as the vendor FW would do an incomplete flash.
+define Device/engenius_ews2910p
+  IMAGE_SIZE := 8192k
+  DEVICE_VENDOR := EnGenius
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	libdeflate-gzip | \
+	uImage gzip -n 'IMG-0.00.00-c0.0.00'
+endef
+
 define Device/hpe_1920
   DEVICE_VENDOR := HPE
   IMAGE_SIZE := 29632k

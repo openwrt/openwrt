@@ -16,7 +16,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
 
 --- a/drivers/leds/trigger/ledtrig-netdev.c
 +++ b/drivers/leds/trigger/ledtrig-netdev.c
-@@ -99,6 +99,18 @@ static void set_baseline_state(struct le
+@@ -104,6 +104,18 @@ static void set_baseline_state(struct le
  		    trigger_data->link_speed == SPEED_1000)
  			blink_on = true;
  
@@ -35,7 +35,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  		if (test_bit(TRIGGER_NETDEV_HALF_DUPLEX, &trigger_data->mode) &&
  		    trigger_data->duplex == DUPLEX_HALF)
  			blink_on = true;
-@@ -289,6 +301,9 @@ static ssize_t netdev_led_attr_show(stru
+@@ -294,6 +306,9 @@ static ssize_t netdev_led_attr_show(stru
  	case TRIGGER_NETDEV_LINK_10:
  	case TRIGGER_NETDEV_LINK_100:
  	case TRIGGER_NETDEV_LINK_1000:
@@ -45,7 +45,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  	case TRIGGER_NETDEV_HALF_DUPLEX:
  	case TRIGGER_NETDEV_FULL_DUPLEX:
  	case TRIGGER_NETDEV_TX:
-@@ -319,6 +334,9 @@ static ssize_t netdev_led_attr_store(str
+@@ -324,6 +339,9 @@ static ssize_t netdev_led_attr_store(str
  	case TRIGGER_NETDEV_LINK_10:
  	case TRIGGER_NETDEV_LINK_100:
  	case TRIGGER_NETDEV_LINK_1000:
@@ -55,7 +55,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  	case TRIGGER_NETDEV_HALF_DUPLEX:
  	case TRIGGER_NETDEV_FULL_DUPLEX:
  	case TRIGGER_NETDEV_TX:
-@@ -337,7 +355,10 @@ static ssize_t netdev_led_attr_store(str
+@@ -342,7 +360,10 @@ static ssize_t netdev_led_attr_store(str
  	if (test_bit(TRIGGER_NETDEV_LINK, &mode) &&
  	    (test_bit(TRIGGER_NETDEV_LINK_10, &mode) ||
  	     test_bit(TRIGGER_NETDEV_LINK_100, &mode) ||
@@ -67,7 +67,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  		return -EINVAL;
  
  	cancel_delayed_work_sync(&trigger_data->work);
-@@ -367,6 +388,9 @@ DEFINE_NETDEV_TRIGGER(link, TRIGGER_NETD
+@@ -372,6 +393,9 @@ DEFINE_NETDEV_TRIGGER(link, TRIGGER_NETD
  DEFINE_NETDEV_TRIGGER(link_10, TRIGGER_NETDEV_LINK_10);
  DEFINE_NETDEV_TRIGGER(link_100, TRIGGER_NETDEV_LINK_100);
  DEFINE_NETDEV_TRIGGER(link_1000, TRIGGER_NETDEV_LINK_1000);
@@ -77,7 +77,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  DEFINE_NETDEV_TRIGGER(half_duplex, TRIGGER_NETDEV_HALF_DUPLEX);
  DEFINE_NETDEV_TRIGGER(full_duplex, TRIGGER_NETDEV_FULL_DUPLEX);
  DEFINE_NETDEV_TRIGGER(tx, TRIGGER_NETDEV_TX);
-@@ -425,6 +449,9 @@ static struct attribute *netdev_trig_att
+@@ -435,6 +459,9 @@ static struct attribute *netdev_trig_att
  	&dev_attr_link_10.attr,
  	&dev_attr_link_100.attr,
  	&dev_attr_link_1000.attr,
@@ -87,7 +87,7 @@ Signed-off-by: Lee Jones <lee@kernel.org>
  	&dev_attr_full_duplex.attr,
  	&dev_attr_half_duplex.attr,
  	&dev_attr_rx.attr,
-@@ -522,6 +549,9 @@ static void netdev_trig_work(struct work
+@@ -532,6 +559,9 @@ static void netdev_trig_work(struct work
  			 test_bit(TRIGGER_NETDEV_LINK_10, &trigger_data->mode) ||
  			 test_bit(TRIGGER_NETDEV_LINK_100, &trigger_data->mode) ||
  			 test_bit(TRIGGER_NETDEV_LINK_1000, &trigger_data->mode) ||

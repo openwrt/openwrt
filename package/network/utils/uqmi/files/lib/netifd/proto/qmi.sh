@@ -107,7 +107,7 @@ proto_qmi_setup() {
 	# Check if UIM application is stuck in illegal state
 	local uim_state_timeout=0
 	while true; do
-		json_load "$(uqmi -s -d "$device" -t 1000 --uim-get-sim-state)"
+		json_load "$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state)"
 		json_get_var card_application_state card_application_state
 
 		# SIM card is either completely absent or state is labeled as illegal
@@ -122,7 +122,7 @@ proto_qmi_setup() {
 
 			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
 				let uim_state_timeout++
-				sleep 1
+				sleep 5
 				continue
 			fi
 

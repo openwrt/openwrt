@@ -1,0 +1,50 @@
+From dad8e879310211c1e02f09c35f169388bccbfa42 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Mar 2025 02:25:09 +0200
+Subject: [PATCH] wifi: rtw88: Add rtw8814ae.c
+
+This is the entry point for the new module rtw88_8814ae.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/74ebab2f-a23e-4d87-935f-0af2b5cba672@gmail.com
+---
+ .../net/wireless/realtek/rtw88/rtw8814ae.c    | 31 +++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+ create mode 100644 drivers/net/wireless/realtek/rtw88/rtw8814ae.c
+
+--- /dev/null
++++ b/drivers/net/wireless/realtek/rtw88/rtw8814ae.c
+@@ -0,0 +1,31 @@
++// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
++/* Copyright(c) 2025  Realtek Corporation
++ */
++
++#include <linux/module.h>
++#include <linux/pci.h>
++#include "pci.h"
++#include "rtw8814a.h"
++
++static const struct pci_device_id rtw_8814ae_id_table[] = {
++	{
++		PCI_DEVICE(PCI_VENDOR_ID_REALTEK, 0x8813),
++		.driver_data = (kernel_ulong_t)&rtw8814a_hw_spec
++	},
++	{}
++};
++MODULE_DEVICE_TABLE(pci, rtw_8814ae_id_table);
++
++static struct pci_driver rtw_8814ae_driver = {
++	.name = "rtw_8814ae",
++	.id_table = rtw_8814ae_id_table,
++	.probe = rtw_pci_probe,
++	.remove = rtw_pci_remove,
++	.driver.pm = &rtw_pm_ops,
++	.shutdown = rtw_pci_shutdown,
++};
++module_pci_driver(rtw_8814ae_driver);
++
++MODULE_AUTHOR("Bitterblue Smith <rtl8821cerfe2@gmail.com>");
++MODULE_DESCRIPTION("Realtek 802.11ac wireless 8814ae driver");
++MODULE_LICENSE("Dual BSD/GPL");

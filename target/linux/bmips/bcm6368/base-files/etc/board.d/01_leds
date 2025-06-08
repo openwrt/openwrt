@@ -15,7 +15,7 @@ comtrend,wap-5813n)
 	;;
 netgear,dgnd3700-v1 |\
 netgear,dgnd3800b)
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "switch.1"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_netdev "wlan0" "WIFI2G" "green:wifi2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan1" "WIFI5G" "blue:wifi5g" "phy1-ap0"
@@ -23,7 +23,7 @@ netgear,dgnd3800b)
 	ucidef_set_led_usbport "usb2" "USB2" "green:usb2" "usb1-port2" "usb2-port2"
 	;;
 netgear,evg2000)
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "switch.1"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_usbdev "usb" "USB" "green:usb" "usb1-port1" "usb2-port1" "usb1-port2" "usb2-port2"
 	;;

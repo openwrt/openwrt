@@ -143,13 +143,13 @@
 +
 +		reset {
 +			label = "reset";
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +
 +		mesh {
 +			label = "mesh";
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +			linux,code = <BTN_9>;
 +			linux,input-type = <EV_SW>;
 +		};
@@ -160,12 +160,12 @@
 +
 +		led_status_blue {
 +			label = "blue:status";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led_status_yellow {
 +			label = "yellow:status";
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
@@ -180,7 +180,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "auto";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -188,7 +188,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spic_pins: spi1-pins-func-1 {
 +		mux {
 +			function = "spi";

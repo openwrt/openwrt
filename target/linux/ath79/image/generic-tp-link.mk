@@ -104,7 +104,7 @@ define Device/tplink_archer-c6-v2
   DEVICE_MODEL := Archer C6
   DEVICE_VARIANT := v2 (EU/RU/JP)
   TPLINK_BOARD_ID := ARCHER-C6-V2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct -ath10k-board-qca9888 ipq-wifi-tplink_archer-c6-v2
 endef
 TARGET_DEVICES += tplink_archer-c6-v2
 

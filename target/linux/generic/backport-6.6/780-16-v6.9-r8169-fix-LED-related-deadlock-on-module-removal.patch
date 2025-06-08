@@ -133,7 +133,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	unregister_netdev(tp->dev);
  
  	if (tp->dash_type != RTL_DASH_NONE)
-@@ -5533,9 +5537,9 @@ static int rtl_init_one(struct pci_dev *
+@@ -5534,9 +5538,9 @@ static int rtl_init_one(struct pci_dev *
  
  	if (IS_ENABLED(CONFIG_R8169_LEDS)) {
  		if (rtl_is_8125(tp))

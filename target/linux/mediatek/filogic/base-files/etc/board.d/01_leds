@@ -16,7 +16,8 @@ acer,predator-w6d)
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 link_1000 tx rx"
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:green:wan" "eth1" "link_2500 tx rx"
 	;;
-asus,rt-ax52)
+asus,rt-ax52|\
+snr,snr-cpe-ax2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	;;
 asus,tuf-ax4200)
@@ -41,8 +42,9 @@ bananapi,bpi-r3-mini)
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-2" "phy1-ap0"
 	;;
 bananapi,bpi-r4|\
+bananapi,bpi-r4-2g5|\
 bananapi,bpi-r4-poe)
-	ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:lan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:01:green:lan" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:02:green:lan" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:03:green:lan" "lan3" "link tx rx"

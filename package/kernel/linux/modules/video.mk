@@ -102,7 +102,7 @@ $(eval $(call KernelPackage,backlight-pwm))
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer and framebuffer console support
-  DEPENDS:=@DISPLAY_SUPPORT
+  DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_6:kmod-fb-io-fops
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
@@ -128,8 +128,7 @@ define KernelPackage/fb
 	CONFIG_VT_CONSOLE=y \
 	CONFIG_VT_HW_CONSOLE_BINDING=y
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko \
-	$(LINUX_DIR)/lib/fonts/font.ko \
-	$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko@lt6.8
+	$(LINUX_DIR)/lib/fonts/font.ko
   AUTOLOAD:=$(call AutoLoad,06,fb font)
 endef
 
@@ -191,6 +190,18 @@ define KernelPackage/fb-cfb-imgblt/description
 endef
 
 $(eval $(call KernelPackage,fb-cfb-imgblt))
+
+
+define KernelPackage/fb-io-fops
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Fbdev helpers for framebuffers in I/O memory
+  HIDDEN:=1
+  KCONFIG:=CONFIG_FB_IOMEM_FOPS
+  FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_io_fops.ko
+  AUTOLOAD:=$(call AutoLoad,07,fb_io_fops)
+endef
+
+$(eval $(call KernelPackage,fb-io-fops))
 
 
 define KernelPackage/fb-sys-fops
@@ -523,6 +534,20 @@ endef
 
 $(eval $(call KernelPackage,drm-i915))
 
+define KernelPackage/drm-ivpu
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Intel VPU DRM support
+  DEPENDS:=@TARGET_x86_64 +ivpu-firmware
+  KCONFIG:=CONFIG_DRM_ACCEL_IVPU
+  FILES:=$(LINUX_DIR)/drivers/accel/ivpu/intel_vpu.ko
+  AUTOLOAD:=$(call AutoProbe,intel_vpu)
+endef
+
+define KernelPackage/drm-ivpu/description
+  Direct Rendering Manager (DRM) support for Intel VPU
+endef
+
+$(eval $(call KernelPackage,drm-ivpu))
 
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
@@ -624,7 +649,8 @@ define KernelPackage/drm-radeon
   TITLE:=Radeon DRM support
   DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
-	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper
+	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper \
+	+!LINUX_6_6:kmod-fb-io-fops
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)
@@ -1384,8 +1410,10 @@ define KernelPackage/video-coda
   	CONFIG_VIDEO_CODA \
   	CONFIG_VIDEO_IMX_VDOA
   FILES:= \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda-vpu.ko \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/imx-vdoa.ko \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda-vpu.ko@lt6.12 \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/imx-vdoa.ko@lt6.12 \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda/coda-vpu.ko@ge6.12 \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda/imx-vdoa.ko@ge6.12 \
  	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-jpeg.ko
   AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
   $(call AddDepends/video)

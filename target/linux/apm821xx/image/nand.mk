@@ -96,7 +96,7 @@ define Device/netgear_wndr4700
   DEVICE_PACKAGES := badblocks block-mount e2fsprogs kmod-hwmon-drivetemp \
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
-	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
+	kmod-nls-utf8 kmod-usb-xhci-pci-renesas kmod-usb-dwc2 kmod-usb-storage \
 	partx-utils kmod-ata-dwc
   BOARD_NAME := wndr4700
   PAGESIZE := 2048

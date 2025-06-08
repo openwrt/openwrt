@@ -1,0 +1,28 @@
+From 8931019e6be6e584538ae38978ff68d5b53c96fe Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 4 Jun 2025 19:53:39 +0800
+Subject: [PATCH] thread: add the missing pthread.h header
+
+Fix build error on macos:
+
+In file included from mksquashfs_help.c:35:
+./thread.h:46:39: error: unknown type name 'pthread_mutex_t'; did you mean 'pthread_attr_t'?
+   46 | extern void wait_thread_idle(int tid, pthread_mutex_t *mutex);
+      |                                       ^~~~~~~~~~~~~~~
+      |                                       pthread_attr_t
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ squashfs-tools/thread.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/squashfs-tools/thread.h
++++ b/squashfs-tools/thread.h
+@@ -22,6 +22,7 @@
+  *
+  * thread.h
+  */
++#include <pthread.h>
+ 
+ #define TRUE 1
+ #define FALSE 0

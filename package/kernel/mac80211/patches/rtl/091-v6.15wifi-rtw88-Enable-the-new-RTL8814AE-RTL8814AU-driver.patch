@@ -1,0 +1,147 @@
+From deb3ddeb18652118956fb581a39ac299e1ee5623 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Fri, 7 Mar 2025 02:26:25 +0200
+Subject: [PATCH] wifi: rtw88: Enable the new RTL8814AE/RTL8814AU drivers
+
+RTL8814A is a wifi 5 chip with 4 RF paths (chains), 3 spatial streams,
+and probably no Bluetooth.
+
+The USB-based RTL8814AU can reach 800 Mbps in the 5 GHz band in USB 3
+mode. In USB 2 mode it only uses 2 spatial streams.
+
+The PCI-based RTL8814AE is not as popular and didn't get as much
+testing so it's unclear how fast it goes. It's more like a bonus on top
+of the RTL8814AU support.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/5795b0a7-511e-40b5-ac36-476b63f174c7@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/Kconfig  | 25 +++++++++++++++++++++
+ drivers/net/wireless/realtek/rtw88/Makefile |  9 ++++++++
+ 2 files changed, 34 insertions(+)
+
+--- a/Kconfig.local
++++ b/Kconfig.local
+@@ -1153,6 +1153,9 @@ config BACKPORTED_RTW88_8821A
+ config BACKPORTED_RTW88_8812A
+ 	tristate
+ 	default RTW88_8812A
++config BACKPORTED_RTW88_8814A
++	tristate
++	default RTW88_8814A
+ config BACKPORTED_RTW88_8822BE
+ 	tristate
+ 	default RTW88_8822BE
+@@ -1198,12 +1201,21 @@ config BACKPORTED_RTW88_8821AU
+ config BACKPORTED_RTW88_8812AU
+ 	tristate
+ 	default RTW88_8812AU
++config BACKPORTED_RTW88_8814AE
++	tristate
++	default RTW88_8814AE
++config BACKPORTED_RTW88_8814AU
++	tristate
++	default RTW88_8814AU
+ config BACKPORTED_RTW88_DEBUG
+ 	tristate
+ 	default RTW88_DEBUG
+ config BACKPORTED_RTW88_DEBUGFS
+ 	tristate
+ 	default RTW88_DEBUGFS
++config BACKPORTED_RTW88_LEDS
++	tristate
++	default RTW88_LEDS
+ config BACKPORTED_RTW89
+ 	tristate
+ 	default RTW89
+--- a/drivers/net/wireless/realtek/rtw88/Kconfig
++++ b/drivers/net/wireless/realtek/rtw88/Kconfig
+@@ -68,6 +68,10 @@ config RTW88_8812A
+ 	depends on m
+ 	select RTW88_88XXA
+ 
++config RTW88_8814A
++	tristate
++	depends on m
++
+ config RTW88_8822BE
+ 	tristate "Realtek 8822BE PCI wireless network adapter"
+ 	depends on m
+@@ -251,6 +255,30 @@ config RTW88_8812AU
+ 
+ 	  802.11ac USB wireless network adapter
+ 
++config RTW88_8814AE
++	tristate "Realtek 8814AE PCI wireless network adapter"
++	depends on m
++	depends on PCI
++	select RTW88_CORE
++	select RTW88_PCI
++	select RTW88_8814A
++	help
++	  Select this option will enable support for 8814AE chipset
++
++	  802.11ac PCIe wireless network adapter
++
++config RTW88_8814AU
++	tristate "Realtek 8814AU USB wireless network adapter"
++	depends on m
++	depends on USB
++	select RTW88_CORE
++	select RTW88_USB
++	select RTW88_8814A
++	help
++	  Select this option will enable support for 8814AU chipset
++
++	  802.11ac USB wireless network adapter
++
+ config RTW88_DEBUG
+ 	bool "Realtek rtw88 debug support"
+ 	depends on RTW88_CORE
+--- a/drivers/net/wireless/realtek/rtw88/Makefile
++++ b/drivers/net/wireless/realtek/rtw88/Makefile
+@@ -94,6 +94,15 @@ rtw88_8821au-objs		:= rtw8821au.o
+ obj-$(CPTCFG_RTW88_8812AU)	+= rtw88_8812au.o
+ rtw88_8812au-objs		:= rtw8812au.o
+ 
++obj-$(CPTCFG_RTW88_8814A)	+= rtw88_8814a.o
++rtw88_8814a-objs		:= rtw8814a.o rtw8814a_table.o
++
++obj-$(CPTCFG_RTW88_8814AE)	+= rtw88_8814ae.o
++rtw88_8814ae-objs		:= rtw8814ae.o
++
++obj-$(CPTCFG_RTW88_8814AU)	+= rtw88_8814au.o
++rtw88_8814au-objs		:= rtw8814au.o
++
+ obj-$(CPTCFG_RTW88_PCI)		+= rtw88_pci.o
+ rtw88_pci-objs			:= pci.o
+ 
+--- a/local-symbols
++++ b/local-symbols
+@@ -377,6 +377,10 @@ RTW88_8723X=
+ RTW88_8703B=
+ RTW88_8723D=
+ RTW88_8821C=
++RTW88_88XXA=
++RTW88_8821A=
++RTW88_8812A=
++RTW88_8814A=
+ RTW88_8822BE=
+ RTW88_8822BS=
+ RTW88_8822BU=
+@@ -390,8 +394,13 @@ RTW88_8723DU=
+ RTW88_8821CE=
+ RTW88_8821CS=
+ RTW88_8821CU=
++RTW88_8821AU=
++RTW88_8812AU=
++RTW88_8814AE=
++RTW88_8814AU=
+ RTW88_DEBUG=
+ RTW88_DEBUGFS=
++RTW88_LEDS=
+ RTW89=
+ RTW89_CORE=
+ RTW89_PCI=

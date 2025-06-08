@@ -37,19 +37,24 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	                   [Install the bash-completion script in this directory. @<:@default=yes@:>@]),
 --- a/ethtool.c
 +++ b/ethtool.c
-@@ -4109,9 +4109,11 @@ static int do_grxfh(struct cmd_context *
- 		       (const char *)hfuncs->data + i * ETH_GSTRING_LEN,
- 		       (rss->hfunc & (1 << i)) ? "on" : "off");
- 
+@@ -4114,7 +4114,7 @@ static int do_grxfh(struct cmd_context *
+ 	}
+ 	if (rss->hfunc)
+ 		printf("    Unknown hash function: 0x%x\n", rss->hfunc);
+-
 +#ifdef ETHTOOL_ENABLE_RSS_INPUT_XFRM
  	printf("RSS input transformation:\n");
  	printf("    symmetric-xor: %s\n",
  	       (rss->input_xfrm & RXH_XFRM_SYM_XOR) ? "on" : "off");
+@@ -4123,6 +4123,7 @@ static int do_grxfh(struct cmd_context *
+ 	if (rss->input_xfrm)
+ 		printf("    Unknown bits in RSS input transformation: 0x%x\n",
+ 		       rss->input_xfrm);
 +#endif
  
  out:
  	free(hfuncs);
-@@ -4431,7 +4433,15 @@ static int do_srxfh(struct cmd_context *
+@@ -4442,7 +4443,15 @@ static int do_srxfh(struct cmd_context *
  	rss->cmd = ETHTOOL_SRSSH;
  	rss->rss_context = rss_context;
  	rss->hfunc = req_hfunc;

@@ -1034,6 +1034,21 @@ endef
 $(eval $(call KernelPackage,usb-serial-qualcomm))
 
 
+define KernelPackage/usb-serial-xr
+  TITLE:=Support for MaxLinear/Exar USB to Serial devices
+  KCONFIG:=CONFIG_USB_SERIAL_XR
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/xr_serial.ko
+  AUTOLOAD:=$(call AutoProbe,xr_serial)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-xr/description
+ Kernel support for MaxLinear/Exar USB to Serial converter devices
+endef
+
+$(eval $(call KernelPackage,usb-serial-xr))
+
+
 define KernelPackage/usb-storage
   TITLE:=USB Storage support
   DEPENDS:= +kmod-scsi-core
@@ -1807,10 +1822,7 @@ define KernelPackage/usb3
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
-	+TARGET_mediatek:kmod-usb-xhci-mtk \
-	+TARGET_apm821xx_nand:kmod-usb-xhci-pci-renesas \
-	+TARGET_lantiq_xrx200:kmod-usb-xhci-pci-renesas \
-	+TARGET_mvebu_cortexa9:kmod-usb-xhci-pci-renesas
+	+TARGET_mediatek:kmod-usb-xhci-mtk
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
 	CONFIG_USB_XHCI_PCI \
@@ -1897,8 +1909,8 @@ $(eval $(call KernelPackage,usb-xhci-mtk))
 
 define KernelPackage/usb-xhci-pci-renesas
   TITLE:=Support for additional Renesas xHCI controller with firmware
+  DEPENDS:=+kmod-usb3
   KCONFIG:=CONFIG_USB_XHCI_PCI_RENESAS
-  HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/host/xhci-pci-renesas.ko
   AUTOLOAD:=$(call AutoLoad,54,xhci-pci-renesas,1)
   $(call AddDepends/usb)

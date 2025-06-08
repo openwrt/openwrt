@@ -56,7 +56,7 @@ handle reload.
  /**
   * struct radius_session - Internal RADIUS server data for a session
   */
-@@ -90,7 +96,7 @@ struct radius_session {
+@@ -89,7 +95,7 @@ struct radius_session {
  	unsigned int macacl:1;
  	unsigned int t_c_filtering:1;
  
@@ -65,7 +65,7 @@ handle reload.
  
  	u32 t_c_timestamp; /* Last read T&C timestamp from user DB */
  };
-@@ -394,6 +400,7 @@ static void radius_server_session_free(s
+@@ -373,6 +379,7 @@ static void radius_server_session_free(s
  	radius_msg_free(sess->last_reply);
  	os_free(sess->username);
  	os_free(sess->nas_ip);
@@ -73,7 +73,7 @@ handle reload.
  	os_free(sess);
  	data->num_sess--;
  }
-@@ -554,6 +561,36 @@ radius_server_erp_find_key(struct radius
+@@ -533,6 +540,36 @@ radius_server_erp_find_key(struct radius
  }
  #endif /* CONFIG_ERP */
  
@@ -110,7 +110,7 @@ handle reload.
  
  static struct radius_session *
  radius_server_get_new_session(struct radius_server_data *data,
-@@ -607,7 +644,7 @@ radius_server_get_new_session(struct rad
+@@ -586,7 +623,7 @@ radius_server_get_new_session(struct rad
  		eap_user_free(tmp);
  		return NULL;
  	}
@@ -119,7 +119,7 @@ handle reload.
  	sess->macacl = tmp->macacl;
  	eap_user_free(tmp);
  
-@@ -1123,11 +1160,10 @@ radius_server_encapsulate_eap(struct rad
+@@ -923,11 +960,10 @@ radius_server_encapsulate_eap(struct rad
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -135,7 +135,7 @@ handle reload.
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -1221,11 +1257,10 @@ radius_server_macacl(struct radius_serve
+@@ -1023,11 +1059,10 @@ radius_server_macacl(struct radius_serve
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -151,12 +151,12 @@ handle reload.
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -2527,7 +2562,7 @@ static int radius_server_get_eap_user(vo
+@@ -2335,7 +2370,7 @@ static int radius_server_get_eap_user(vo
  	ret = data->get_eap_user(data->conf_ctx, identity, identity_len,
  				 phase2, user);
  	if (ret == 0 && user) {
 -		sess->accept_attr = user->accept_attr;
 +		sess->accept_attr = radius_server_copy_attr(user->accept_attr);
- 		sess->remediation = user->remediation;
  		sess->macacl = user->macacl;
  		sess->t_c_timestamp = user->t_c_timestamp;
+ 	}

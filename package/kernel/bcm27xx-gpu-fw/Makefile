@@ -2,13 +2,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=bcm27xx-gpu-fw
-PKG_VERSION:=2025.03.05
+PKG_VERSION:=2025.04.30
 PKG_VERSION_REAL:=1.$(subst .,,$(PKG_VERSION))
 PKG_RELEASE:=1
 
 PKG_SOURCE:=raspi-firmware_$(PKG_VERSION_REAL).orig.tar.xz
 PKG_SOURCE_URL:=https://github.com/raspberrypi/firmware/releases/download/$(PKG_VERSION_REAL)
-PKG_HASH:=f697079cd15389c0d8650283eb911c53a64b22550138704eb50e1145e8330b03
+PKG_HASH:=25bcff5992c6d7057de4a5c6834b7f90b7136fe12aa63fa32793329bf74a95bf
 
 PKG_FLAGS:=nonshared
 

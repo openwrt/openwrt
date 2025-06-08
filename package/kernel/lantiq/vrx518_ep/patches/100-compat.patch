@@ -1,6 +1,14 @@
 --- a/ep.c
 +++ b/ep.c
-@@ -373,23 +373,23 @@ int dc_ep_dev_info_req(int dev_idx, enum
+@@ -34,6 +34,7 @@
+ #include <linux/pci.h>
+ #include <linux/pci_regs.h>
+ #include <linux/platform_device.h>
++#include <linux/version.h>
+ 
+ #include "ep.h"
+ #include "aca.h"
+@@ -373,23 +374,23 @@ int dc_ep_dev_info_req(int dev_idx, enum
  
  	switch (module) {
  	case DC_EP_INT_PPE:
@@ -31,18 +39,22 @@
  		break;
  	}
  
-@@ -466,8 +466,8 @@ static int dc_ep_msi_enable(struct pci_d
+@@ -466,8 +467,12 @@ static int dc_ep_msi_enable(struct pci_d
  		return -EIO;
  	}
  
 -	err = pci_enable_msi_exact(pdev, nvec);
 -	if (err) {
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 +	err = pci_alloc_irq_vectors(pdev, nvec, nvec, PCI_IRQ_MSI | PCI_IRQ_LEGACY);
++#else
++	err = pci_alloc_irq_vectors(pdev, nvec, nvec, PCI_IRQ_MSI | PCI_IRQ_INTX);
++#endif
 +	if (err < 0) {
  		dev_err(&pdev->dev,
  			"%s: Failed to enable MSI interrupts error code: %d\n",
  			__func__, err);
-@@ -589,15 +589,15 @@ static int dc_ep_probe(struct pci_dev *p
+@@ -589,15 +594,15 @@ static int dc_ep_probe(struct pci_dev *p
  	/* Target structures have a limit of 32 bit DMA pointers.
  	 * DMA pointers can be wider than 32 bits by default on some systems.
  	 */
@@ -61,7 +73,7 @@
  		goto err_region;
  	}
  
-@@ -654,7 +654,7 @@ static int dc_ep_probe(struct pci_dev *p
+@@ -654,7 +659,7 @@ static int dc_ep_probe(struct pci_dev *p
  		goto err_iomap;
  
  	spin_lock(&dc_ep_lock);
@@ -70,7 +82,7 @@
  	spin_unlock(&dc_ep_lock);
  
  #ifndef CONFIG_OF
-@@ -715,7 +715,7 @@ static void dc_ep_remove(struct pci_dev
+@@ -715,7 +720,7 @@ static void dc_ep_remove(struct pci_dev
  	dc_ep_icu_disable(priv);
  	pci_iounmap(pdev, priv->mem);
  	pci_release_region(pdev, DC_EP_BAR_NUM);

@@ -1,0 +1,227 @@
+From ad815f3920035a0c5b6ffe45bddc9fb308194b49 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 4 Feb 2025 20:40:58 +0200
+Subject: [PATCH] wifi: rtw88: Rename RTW_RATE_SECTION_MAX to
+ RTW_RATE_SECTION_NUM
+
+It fits the meaning of the enum better.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/5a1c5a46-8ebb-43b0-9ab1-b78e2a22b3d2@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h     | 12 +++++-----
+ drivers/net/wireless/realtek/rtw88/phy.c      | 24 +++++++++----------
+ drivers/net/wireless/realtek/rtw88/rtw8821c.c |  2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822b.c |  2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822c.c |  2 +-
+ drivers/net/wireless/realtek/rtw88/rtw88xxa.c |  2 +-
+ drivers/net/wireless/realtek/rtw88/sar.c      |  2 +-
+ 7 files changed, 23 insertions(+), 23 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -168,7 +168,7 @@ enum rtw_rate_section {
+ 	RTW_RATE_SECTION_VHT_2S,
+ 
+ 	/* keep last */
+-	RTW_RATE_SECTION_MAX,
++	RTW_RATE_SECTION_NUM,
+ };
+ 
+ enum rtw_wireless_set {
+@@ -1937,7 +1937,7 @@ union rtw_sar_cfg {
+ 
+ struct rtw_sar {
+ 	enum rtw_sar_sources src;
+-	union rtw_sar_cfg cfg[RTW_RF_PATH_MAX][RTW_RATE_SECTION_MAX];
++	union rtw_sar_cfg cfg[RTW_RF_PATH_MAX][RTW_RATE_SECTION_NUM];
+ };
+ 
+ struct rtw_hal {
+@@ -1981,16 +1981,16 @@ struct rtw_hal {
+ 	s8 tx_pwr_by_rate_offset_5g[RTW_RF_PATH_MAX]
+ 				   [DESC_RATE_MAX];
+ 	s8 tx_pwr_by_rate_base_2g[RTW_RF_PATH_MAX]
+-				 [RTW_RATE_SECTION_MAX];
++				 [RTW_RATE_SECTION_NUM];
+ 	s8 tx_pwr_by_rate_base_5g[RTW_RF_PATH_MAX]
+-				 [RTW_RATE_SECTION_MAX];
++				 [RTW_RATE_SECTION_NUM];
+ 	s8 tx_pwr_limit_2g[RTW_REGD_MAX]
+ 			  [RTW_CHANNEL_WIDTH_MAX]
+-			  [RTW_RATE_SECTION_MAX]
++			  [RTW_RATE_SECTION_NUM]
+ 			  [RTW_MAX_CHANNEL_NUM_2G];
+ 	s8 tx_pwr_limit_5g[RTW_REGD_MAX]
+ 			  [RTW_CHANNEL_WIDTH_MAX]
+-			  [RTW_RATE_SECTION_MAX]
++			  [RTW_RATE_SECTION_NUM]
+ 			  [RTW_MAX_CHANNEL_NUM_5G];
+ 	s8 tx_pwr_tbl[RTW_RF_PATH_MAX]
+ 		     [DESC_RATE_MAX];
+--- a/drivers/net/wireless/realtek/rtw88/phy.c
++++ b/drivers/net/wireless/realtek/rtw88/phy.c
+@@ -88,14 +88,14 @@ const u8 rtw_vht_2s_rates[] = {
+ 	DESC_RATEVHT2SS_MCS8, DESC_RATEVHT2SS_MCS9
+ };
+ 
+-const u8 * const rtw_rate_section[RTW_RATE_SECTION_MAX] = {
++const u8 * const rtw_rate_section[RTW_RATE_SECTION_NUM] = {
+ 	rtw_cck_rates, rtw_ofdm_rates,
+ 	rtw_ht_1s_rates, rtw_ht_2s_rates,
+ 	rtw_vht_1s_rates, rtw_vht_2s_rates
+ };
+ EXPORT_SYMBOL(rtw_rate_section);
+ 
+-const u8 rtw_rate_size[RTW_RATE_SECTION_MAX] = {
++const u8 rtw_rate_size[RTW_RATE_SECTION_NUM] = {
+ 	ARRAY_SIZE(rtw_cck_rates),
+ 	ARRAY_SIZE(rtw_ofdm_rates),
+ 	ARRAY_SIZE(rtw_ht_1s_rates),
+@@ -1596,7 +1596,7 @@ static void rtw_phy_set_tx_power_limit(s
+ 	ch_idx = rtw_channel_to_idx(band, ch);
+ 
+ 	if (regd >= RTW_REGD_MAX || bw >= RTW_CHANNEL_WIDTH_MAX ||
+-	    rs >= RTW_RATE_SECTION_MAX || ch_idx < 0) {
++	    rs >= RTW_RATE_SECTION_NUM || ch_idx < 0) {
+ 		WARN(1,
+ 		     "wrong txpwr_lmt regd=%u, band=%u bw=%u, rs=%u, ch_idx=%u, pwr_limit=%d\n",
+ 		     regd, band, bw, rs, ch_idx, pwr_limit);
+@@ -1701,7 +1701,7 @@ rtw_cfg_txpwr_lmt_by_alt(struct rtw_dev
+ 	u8 bw, rs;
+ 
+ 	for (bw = 0; bw < RTW_CHANNEL_WIDTH_MAX; bw++)
+-		for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++)
++		for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++)
+ 			__cfg_txpwr_lmt_by_alt(&rtwdev->hal, regd, regd_alt,
+ 					       bw, rs);
+ }
+@@ -2060,7 +2060,7 @@ static u8 rtw_phy_get_5g_tx_power_index(
+ 	return tx_power;
+ }
+ 
+-/* return RTW_RATE_SECTION_MAX to indicate rate is invalid */
++/* return RTW_RATE_SECTION_NUM to indicate rate is invalid */
+ static u8 rtw_phy_rate_to_rate_section(u8 rate)
+ {
+ 	if (rate >= DESC_RATE1M && rate <= DESC_RATE11M)
+@@ -2076,7 +2076,7 @@ static u8 rtw_phy_rate_to_rate_section(u
+ 	else if (rate >= DESC_RATEVHT2SS_MCS0 && rate <= DESC_RATEVHT2SS_MCS9)
+ 		return RTW_RATE_SECTION_VHT_2S;
+ 	else
+-		return RTW_RATE_SECTION_MAX;
++		return RTW_RATE_SECTION_NUM;
+ }
+ 
+ static s8 rtw_phy_get_tx_power_limit(struct rtw_dev *rtwdev, u8 band,
+@@ -2094,7 +2094,7 @@ static s8 rtw_phy_get_tx_power_limit(str
+ 	if (regd > RTW_REGD_WW)
+ 		return power_limit;
+ 
+-	if (rs == RTW_RATE_SECTION_MAX)
++	if (rs == RTW_RATE_SECTION_NUM)
+ 		goto err;
+ 
+ 	/* only 20M BW with cck and ofdm */
+@@ -2138,7 +2138,7 @@ static s8 rtw_phy_get_tx_power_sar(struc
+ 		.rs = rs,
+ 	};
+ 
+-	if (rs == RTW_RATE_SECTION_MAX)
++	if (rs == RTW_RATE_SECTION_NUM)
+ 		goto err;
+ 
+ 	return rtw_query_sar(rtwdev, &arg);
+@@ -2227,7 +2227,7 @@ static void rtw_phy_set_tx_power_index_b
+ 	u8 bw;
+ 	int i;
+ 
+-	if (rs >= RTW_RATE_SECTION_MAX)
++	if (rs >= RTW_RATE_SECTION_NUM)
+ 		return;
+ 
+ 	rates = rtw_rate_section[rs];
+@@ -2258,7 +2258,7 @@ static void rtw_phy_set_tx_power_level_b
+ 	else
+ 		rs = RTW_RATE_SECTION_OFDM;
+ 
+-	for (; rs < RTW_RATE_SECTION_MAX; rs++)
++	for (; rs < RTW_RATE_SECTION_NUM; rs++)
+ 		rtw_phy_set_tx_power_index_by_rs(rtwdev, ch, path, rs);
+ }
+ 
+@@ -2353,7 +2353,7 @@ void rtw_phy_tx_power_limit_config(struc
+ 
+ 	for (regd = 0; regd < RTW_REGD_MAX; regd++)
+ 		for (bw = 0; bw < RTW_CHANNEL_WIDTH_MAX; bw++)
+-			for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++)
++			for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++)
+ 				__rtw_phy_tx_power_limit_config(hal, regd, bw, rs);
+ }
+ 
+@@ -2389,7 +2389,7 @@ void rtw_phy_init_tx_power(struct rtw_de
+ 	/* init tx power limit */
+ 	for (regd = 0; regd < RTW_REGD_MAX; regd++)
+ 		for (bw = 0; bw < RTW_CHANNEL_WIDTH_MAX; bw++)
+-			for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++)
++			for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++)
+ 				rtw_phy_init_tx_power_limit(rtwdev, regd, bw,
+ 							    rs);
+ }
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821c.c
+@@ -709,7 +709,7 @@ static void rtw8821c_set_tx_power_index(
+ 	int rs, path;
+ 
+ 	for (path = 0; path < hal->rf_path_num; path++) {
+-		for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++) {
++		for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++) {
+ 			if (rs == RTW_RATE_SECTION_HT_2S ||
+ 			    rs == RTW_RATE_SECTION_VHT_2S)
+ 				continue;
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
+@@ -964,7 +964,7 @@ static void rtw8822b_set_tx_power_index(
+ 	int rs, path;
+ 
+ 	for (path = 0; path < hal->rf_path_num; path++) {
+-		for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++)
++		for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++)
+ 			rtw8822b_set_tx_power_index_by_rate(rtwdev, path, rs,
+ 							    &phy_pwr_idx);
+ 	}
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
+@@ -2746,7 +2746,7 @@ static void rtw8822c_set_tx_power_index(
+ 	s8 diff_idx[4];
+ 
+ 	rtw8822c_set_write_tx_power_ref(rtwdev, pwr_ref_cck, pwr_ref_ofdm);
+-	for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++) {
++	for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++) {
+ 		for (j = 0; j < rtw_rate_size[rs]; j++) {
+ 			rate = rtw_rate_section[rs][j];
+ 			pwr_a = hal->tx_pwr_tbl[RF_PATH_A][rate];
+--- a/drivers/net/wireless/realtek/rtw88/rtw88xxa.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw88xxa.c
+@@ -1637,7 +1637,7 @@ void rtw88xxa_set_tx_power_index(struct
+ 	int rs, path;
+ 
+ 	for (path = 0; path < hal->rf_path_num; path++) {
+-		for (rs = 0; rs < RTW_RATE_SECTION_MAX; rs++) {
++		for (rs = 0; rs < RTW_RATE_SECTION_NUM; rs++) {
+ 			if (hal->rf_path_num == 1 &&
+ 			    (rs == RTW_RATE_SECTION_HT_2S ||
+ 			     rs == RTW_RATE_SECTION_VHT_2S))
+--- a/drivers/net/wireless/realtek/rtw88/sar.c
++++ b/drivers/net/wireless/realtek/rtw88/sar.c
+@@ -97,7 +97,7 @@ int rtw_set_sar_specs(struct rtw_dev *rt
+ 			power, BIT(RTW_COMMON_SAR_FCT));
+ 
+ 		for (j = 0; j < RTW_RF_PATH_MAX; j++) {
+-			for (k = 0; k < RTW_RATE_SECTION_MAX; k++) {
++			for (k = 0; k < RTW_RATE_SECTION_NUM; k++) {
+ 				arg = (struct rtw_sar_arg){
+ 					.sar_band = idx,
+ 					.path = j,

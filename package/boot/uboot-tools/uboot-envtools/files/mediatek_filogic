@@ -36,6 +36,7 @@ case "$board" in
 abt,asr3000|\
 asus,zenwifi-bt8-ubootmod|\
 cmcc,a10-ubootmod|\
+cudy,tr3000-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 jcg,q30-pro|\
 mercusys,mr90x-v1-ubi|\
@@ -45,6 +46,7 @@ netis,nx31|\
 nokia,ea0326gmp|\
 qihoo,360t7|\
 routerich,ax3000-ubootmod|\
+snr,snr-cpe-ax2|\
 tplink,tl-xdr4288|\
 tplink,tl-xdr6086|\
 tplink,tl-xdr6088|\
@@ -132,6 +134,9 @@ smartrg,sdg-8733a|\
 smartrg,sdg-8734)
 	local envdev=$(find_mmc_part "u-boot-env" "mmcblk0")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x8000" "0x8000"
+	;;
+tplink,archer-ax80-v1)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000" "8"
 	;;
 ubnt,unifi-6-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"

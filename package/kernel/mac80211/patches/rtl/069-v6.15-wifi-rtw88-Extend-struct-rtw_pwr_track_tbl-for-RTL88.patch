@@ -1,0 +1,46 @@
+From 62f726848da42554e6d270dfda17ed19bfa3456f Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 4 Feb 2025 20:38:17 +0200
+Subject: [PATCH] wifi: rtw88: Extend struct rtw_pwr_track_tbl for RTL8814AU
+
+Currently this struct has the members required for chips with 2 RF
+paths. Add more members to support chips with 4 RF paths, like the
+RTL8814AU.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/be5a73f4-a0fe-43d6-9457-930cde199284@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -1130,14 +1130,26 @@ struct rtw_rfe_def {
+  * For 2G there are cck rate and ofdm rate with different settings.
+  */
+ struct rtw_pwr_track_tbl {
++	const u8 *pwrtrk_5gd_n[RTW_PWR_TRK_5G_NUM];
++	const u8 *pwrtrk_5gd_p[RTW_PWR_TRK_5G_NUM];
++	const u8 *pwrtrk_5gc_n[RTW_PWR_TRK_5G_NUM];
++	const u8 *pwrtrk_5gc_p[RTW_PWR_TRK_5G_NUM];
+ 	const u8 *pwrtrk_5gb_n[RTW_PWR_TRK_5G_NUM];
+ 	const u8 *pwrtrk_5gb_p[RTW_PWR_TRK_5G_NUM];
+ 	const u8 *pwrtrk_5ga_n[RTW_PWR_TRK_5G_NUM];
+ 	const u8 *pwrtrk_5ga_p[RTW_PWR_TRK_5G_NUM];
++	const u8 *pwrtrk_2gd_n;
++	const u8 *pwrtrk_2gd_p;
++	const u8 *pwrtrk_2gc_n;
++	const u8 *pwrtrk_2gc_p;
+ 	const u8 *pwrtrk_2gb_n;
+ 	const u8 *pwrtrk_2gb_p;
+ 	const u8 *pwrtrk_2ga_n;
+ 	const u8 *pwrtrk_2ga_p;
++	const u8 *pwrtrk_2g_cckd_n;
++	const u8 *pwrtrk_2g_cckd_p;
++	const u8 *pwrtrk_2g_cckc_n;
++	const u8 *pwrtrk_2g_cckc_p;
+ 	const u8 *pwrtrk_2g_cckb_n;
+ 	const u8 *pwrtrk_2g_cckb_p;
+ 	const u8 *pwrtrk_2g_ccka_n;

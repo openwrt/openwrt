@@ -99,7 +99,7 @@
 			function = LED_FUNCTION_INDICATOR;
 			color = <LED_COLOR_ID_GREEN>;
 			function-enumerator = <4>;
-		}; 
+		};
 
 		led_power: led-5 {
 			gpios = <&gpio_hc595 5 GPIO_ACTIVE_HIGH>;
@@ -117,24 +117,6 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
-	};
-
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
 	};
 
 	ubi-concat {
@@ -183,7 +165,7 @@
 			read-only;
 		};
 
-		partition@200000 {	
+		partition@200000 {
 			label = "factory";
 			reg = <0x200000 0x100000>;
 			read-only;
@@ -235,7 +217,7 @@
 			ubiconcat0: partition@400000 {
 				label = "ubiconcat0";
 				reg = <0x400000 0x1c00000>;
-			};			
+			};
 		};
 
 		ubiconcat1: partition@2800000 {
@@ -279,9 +261,4 @@
 			nvmem-cell-names = "mac-address";
 		};
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
-	vusb33-supply = <&reg_3p3v>;
 };

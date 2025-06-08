@@ -1,0 +1,53 @@
+From 99379f587278c818777cb4778e2c79c6c1440c65 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Tue, 10 Dec 2024 14:18:21 +0000
+Subject: [PATCH] net: dsa: provide implementation of .support_eee()
+
+Provide a trivial implementation for the .support_eee() method which
+switch drivers can use to simply indicate that they support EEE on
+all their user ports.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Link: https://patch.msgid.link/E1tL149-006cZJ-JJ@rmk-PC.armlinux.org.uk
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ include/net/dsa.h |  1 +
+ net/dsa/port.c    | 16 ++++++++++++++++
+ 2 files changed, 17 insertions(+)
+
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1399,5 +1399,6 @@ static inline bool dsa_user_dev_check(co
+ 
+ netdev_tx_t dsa_enqueue_skb(struct sk_buff *skb, struct net_device *dev);
+ void dsa_port_phylink_mac_change(struct dsa_switch *ds, int port, bool up);
++bool dsa_supports_eee(struct dsa_switch *ds, int port);
+ 
+ #endif
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -1589,6 +1589,22 @@ dsa_port_phylink_mac_select_pcs(struct p
+ 	return pcs;
+ }
+ 
++/* dsa_supports_eee - indicate that EEE is supported
++ * @ds: pointer to &struct dsa_switch
++ * @port: port index
++ *
++ * A default implementation for the .support_eee() DSA operations member,
++ * which drivers can use to indicate that they support EEE on all of their
++ * user ports.
++ *
++ * Returns: true
++ */
++bool dsa_supports_eee(struct dsa_switch *ds, int port)
++{
++	return true;
++}
++EXPORT_SYMBOL_GPL(dsa_supports_eee);
++
+ static void dsa_port_phylink_mac_config(struct phylink_config *config,
+ 					unsigned int mode,
+ 					const struct phylink_link_state *state)

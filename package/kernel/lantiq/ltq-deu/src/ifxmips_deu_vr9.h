@@ -87,14 +87,14 @@
 
 #define INPUT_ENDIAN_SWAP(input)    input_swap(input)
 #define DEU_ENDIAN_SWAP(input)    endian_swap(input)
-#define FIND_DEU_CHIP_VERSION    chip_version() 
+#define FIND_DEU_CHIP_VERSION    chip_version()
 
 #if defined (CONFIG_AR10)
 #define DELAY_PERIOD    30
 #else
 #define DELAY_PERIOD    10
 #endif
-				      
+
 #define WAIT_AES_DMA_READY()          \
     do { 			      \
         int i;			      \
@@ -143,7 +143,7 @@
     } while(0)
 
 /* DEU Common Structures for AR9*/
- 
+
 struct clc_controlr_t {
 	u32 Res:26;
 	u32 FSOE:1;
@@ -250,7 +250,7 @@ struct arc4_t {
 		u32 reserved3:1;
 		u32 ARS:1;
 		u32 SM:1;
-		u32 reserved4:4;						
+		u32 reserved4:4;
 
 	} controlr;
 	u32 K3R;		//104h
@@ -264,7 +264,7 @@ struct arc4_t {
 	u32 ID2R;		//11Ch
 	u32 ID1R;		//120h
 	u32 ID0R;		//124h
-	
+
 	u32 OD3R;		//128h
 	u32 OD2R;		//12Ch
 	u32 OD1R;		//130h
@@ -274,14 +274,14 @@ struct arc4_t {
 struct deu_hash_t {
 	struct hash_controlr {
 		u32 reserved1:5;
-		u32 KHS:1;		
+		u32 KHS:1;
 		u32 GO:1;
 		u32 INIT:1;
 		u32 reserved2:6;
 		u32 NDC:1;
 		u32 ENDI:1;
 		u32 reserved3:7;
-		u32 DGRY:1;		
+		u32 DGRY:1;
 		u32 BSY:1;
 		u32 reserved4:1;
 		u32 IRCL:1;
@@ -320,5 +320,8 @@ struct deu_dma_t {
 
 	} controlr;
 };
+
+u32 input_swap(u32 input);
+void chip_version(void);
 
 #endif /* IFXMIPS_DEU_VR9_H */

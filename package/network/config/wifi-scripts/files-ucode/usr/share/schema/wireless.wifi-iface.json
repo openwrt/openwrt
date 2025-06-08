@@ -617,6 +617,10 @@
 			"description": "Enable 802.11s layer-2 routing and forwarding",
 			"type": "boolean"
 		},
+		"mesh_nolearn": {
+			"description": "Disable 802.11s path discovery",
+			"type": "boolean"
+		},
 		"mesh_gate_announcements": {
 			"type": "number"
 		},
@@ -723,6 +727,13 @@
 		"nasid": {
 			"type": "alias",
 			"default": "nas_identifier"
+		},
+		"network": {
+			"description": "Specifies one or multiple logical network interfaces declared in the network configuration, each one should be a L3 bridge to be able to attach this L2 wireless interface.",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"network_auth_type": {
 			"description": "Network Authentication Type",

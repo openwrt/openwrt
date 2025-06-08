@@ -323,7 +323,7 @@ SVN-Revision: 35130
  					 SKB_DROP_REASON_IP_INHDR);
 --- a/include/linux/types.h
 +++ b/include/linux/types.h
-@@ -244,5 +244,11 @@ typedef void (*swap_func_t)(void *a, voi
+@@ -245,5 +245,11 @@ typedef void (*swap_func_t)(void *a, voi
  typedef int (*cmp_r_func_t)(const void *a, const void *b, const void *priv);
  typedef int (*cmp_func_t)(const void *a, const void *b);
  
@@ -751,7 +751,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4268,14 +4268,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4276,14 +4276,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

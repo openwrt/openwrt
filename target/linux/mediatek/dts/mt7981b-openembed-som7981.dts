@@ -5,7 +5,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "OpenEmbed SOM7981";
@@ -279,6 +279,8 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";

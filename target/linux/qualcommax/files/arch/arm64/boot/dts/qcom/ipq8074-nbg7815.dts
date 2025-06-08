@@ -89,20 +89,6 @@
 	cs-gpios = <0>;
 	status = "okay";
 
-	/*
-	 * Bootloader will find the NAND DT node by the compatible and
-	 * then "fixup" it by adding the partitions from the SMEM table
-	 * using the legacy bindings thus making it impossible for us
-	 * to change the partition table or utilize NVMEM for calibration.
-	 * So add a dummy partitions node that bootloader will populate
-	 * and set it as disabled so the kernel ignores it instead of
-	 * printing warnings due to the broken way bootloader adds the
-	 * partitions.
-	 */
-	partitions {
-		status = "disabled";
-	};
-
 	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -237,6 +223,8 @@
 
 				nvmem-layout {
 					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
 					aqr_fw: aqr-fw@0 {
 						/* Skip the QCOM MBN Header of 40 bytes */

@@ -136,7 +136,7 @@ inline int rtl931x_tbl_access_data_0(int i)
 	return RTL931X_TBL_ACCESS_DATA_0(i);
 }
 
-void rtl931x_vlan_profile_dump(int index)
+static void rtl931x_vlan_profile_dump(int index)
 {
 	u64 profile[4];
 
@@ -528,7 +528,7 @@ void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	}
 }
 
-u64 rtl931x_traffic_get(int source)
+static u64 rtl931x_traffic_get(int source)
 {
 	u32 v;
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
@@ -542,7 +542,7 @@ u64 rtl931x_traffic_get(int source)
 }
 
 /* Enable traffic between a source port and a destination port matrix */
-void rtl931x_traffic_set(int source, u64 dest_matrix)
+static void rtl931x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 
@@ -551,7 +551,7 @@ void rtl931x_traffic_set(int source, u64 dest_matrix)
 	rtl_table_release(r);
 }
 
-void rtl931x_traffic_enable(int source, int dest)
+static void rtl931x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -560,7 +560,7 @@ void rtl931x_traffic_enable(int source, int dest)
 	rtl_table_release(r);
 }
 
-void rtl931x_traffic_disable(int source, int dest)
+static void rtl931x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
@@ -941,7 +941,7 @@ static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
  * pie_data_fill function for all SoCs, provided we have also for each SoC a
  * function to map between physical and intermediate field type
  */
-int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
+static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr, u16 *data, u16 *data_m)
 {
 	*data = *data_m = 0;
 
@@ -1233,7 +1233,7 @@ static void rtl931x_write_pie_action(u32 r[],  struct pie_rule *pr)
 	r[17] |= pr->bypass_ibc_sc ? BIT(16) : 0;
 }
 
-void rtl931x_pie_rule_dump_raw(u32 r[])
+static void rtl931x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
@@ -1477,12 +1477,12 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 }
 
-int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
+static int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
 {
 	return 0;
 }
 
-void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+static void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
 			  keep_outer ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG) |
@@ -1491,7 +1491,7 @@ void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 	       RTL931X_VLAN_PORT_TAG_CTRL(port));
 }
 
-void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+static void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3 << 12, mode << 12, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
@@ -1499,7 +1499,7 @@ void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 		sw_w32_mask(0x3 << 26, mode << 26, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
-void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+static void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 {
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0xfff, pvid, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
@@ -1519,7 +1519,7 @@ static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;
