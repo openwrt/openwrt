@@ -194,7 +194,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  		return;
  
 @@ -186,16 +186,16 @@ static void pfe_hif_free_descr(struct pf
- void pfe_hif_desc_dump(struct pfe_hif *hif)
+ static void __maybe_unused pfe_hif_desc_dump(struct pfe_hif *hif)
  {
  	struct hif_desc	*desc;
 -	unsigned long desc_p;
@@ -213,7 +213,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  	for (ii = 0; ii < hif->rx_ring_size; ii++) {
  		pr_info("status: %08x, ctrl: %08x, data: %08x, next: %x\n",
  			readl(&desc->status), readl(&desc->ctrl),
-@@ -204,10 +204,10 @@ void pfe_hif_desc_dump(struct pfe_hif *h
+@@ -204,10 +204,10 @@ static void __maybe_unused pfe_hif_desc_
  	}
  
  	desc = hif->tx_base;
