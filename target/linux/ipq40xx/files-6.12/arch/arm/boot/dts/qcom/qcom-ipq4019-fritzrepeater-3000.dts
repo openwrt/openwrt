@@ -236,8 +236,8 @@
 };
 
 &pcie_bridge0 {
-	wifi@0,0 {
-		/* QCA9984 */
+	/* QCA9984 */
+	wifi@1,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		ieee80211-freq-limit = <5470000 5875000>;
