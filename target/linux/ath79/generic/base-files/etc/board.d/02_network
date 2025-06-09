@@ -781,7 +781,8 @@ ath79_setup_macs()
 	mercury,mw4530r-v1|\
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
-	tplink,tl-wdr4300-v1-il)
+	tplink,tl-wdr4300-v1-il|\
+	tplink,tl-wr2543-v1)
 		base_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
