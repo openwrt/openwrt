@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "TP-Link Archer VR1200v (v2)";
+	compatible = "tplink,archer-vr1200v-v2", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x8000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x07fe0000>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x00080000>;
+			read-only;
+		};
+		partition@80000 {
+			label = "misc";
+			reg = <0x00080000 0x140000>;
+		};
+		partition@1c0200 {
+			label = "kernel";
+			reg = <0x001c0000 0x400000>;
+		};
+		partition@5c0000 {
+			label = "rootfs";
+			reg = <0x005c0000 0x1a40000>;
+			linux,rootfs;
+		};
+		partition@1c0000 {
+			label = "firmware";
+			reg = <0x001c0000 0x1e40000>;
+		};
+		partition@2000000 {
+			label = "firmware_factory";
+			reg = <0x2000000 0x1e40000>;
+		};
+		partition@3fe0000 {
+			label = "reserve";
+			reg = <0x3fe0000 0x20000>;
+		};
+		partition@4000000 {
+			label = "openwrt_ubi";
+			/* From the factory this is unallocated space, so it's ours for the taking.
+			 * We have up to 0x35e0000 of space, but we reserve 10 eraseblocks (1.25MB)
+			 * in case the BMT steals them from us.
+			 */
+			reg = <0x4000000 0x34a0000>;
+		};
+	};
+};
