@@ -69,7 +69,9 @@ static int rtkphy_config_init(struct phy_device *phydev)
         case REALTEK_PHY_ID_RTL8264B:
         case REALTEK_PHY_ID_RTL8264:
             phydev_info(phydev, "%s:%u [RTL8261N/RTL8264/RTL826XB] phy_id: 0x%X PHYAD:%d\n", __FUNCTION__, __LINE__, phydev->drv->phy_id, phydev->mdio.addr);
-
+#ifdef CONFIG_MACH_REALTEK_RTL
+            return 0;
+#endif
 
           #if 1 /* toggle reset */
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 1);
@@ -128,7 +130,9 @@ static int rtkphy_c45_suspend(struct phy_device *phydev)
 {
     int ret = 0;
 
+#ifndef CONFIG_MACH_REALTEK_RTL
     ret = rtk_phylib_c45_power_low(phydev);
+#endif
 
     phydev->speed = SPEED_UNKNOWN;
     phydev->duplex = DUPLEX_UNKNOWN;
@@ -140,7 +144,11 @@ static int rtkphy_c45_suspend(struct phy_device *phydev)
 
 static int rtkphy_c45_resume(struct phy_device *phydev)
 {
+#ifndef CONFIG_MACH_REALTEK_RTL
     return rtk_phylib_c45_power_normal(phydev);
+#else
+    return 0;
+#endif
 }
 
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
