@@ -67,8 +67,6 @@
 		/* cooling level (0, 1, 2) : (0% duty, 50% duty, 100% duty) */
 		cooling-levels = <0 128 255>;
 		pwms = <&pwm 1 40000 0>;
-
-		status = "okay";
 	};
 };
 
@@ -81,8 +79,6 @@
 };
 
 &mdio_bus {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	reset-gpios = <&pio 72 GPIO_ACTIVE_LOW>;
 	reset-assert-us = <100000>;
 	reset-deassert-us = <100000>;
@@ -163,11 +159,11 @@
 	};
 };
 
-&serial1 {
+&pwm {
 	status = "okay";
 };
 
-&pwm {
+&serial1 {
 	status = "okay";
 };
 
