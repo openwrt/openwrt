@@ -3870,6 +3870,27 @@ static int rtl8218d_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl8218e_phy_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int addr = phydev->mdio.addr;
+
+	pr_debug("%s: id: %d\n", __func__, addr);
+	/* All base addresses of the PHYs start at multiples of 8 */
+	devm_phy_package_join(dev, phydev, addr & (~7),
+			      sizeof(struct rtl83xx_shared_private));
+
+	/* All base addresses of the PHYs start at multiples of 8 */
+	if (!(addr % 8)) {
+		struct rtl83xx_shared_private *shared = phydev->shared->priv;
+		shared->name = "RTL8218E";
+		/* Configuration must be done while patching still possible */
+/* TODO:		return configure_rtl8218e(phydev); */
+	}
+
+	return 0;
+}
+
 static int rtl838x_serdes_probe(struct phy_device *phydev)
 {
 	int addr = phydev->mdio.addr;
@@ -3974,6 +3995,19 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.write_page	= rtl821x_write_page,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
+		.set_eee	= rtl8218d_set_eee,
+		.get_eee	= rtl8218d_get_eee,
+	},
+	{
+		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218E),
+		.name		= "REALTEK RTL8218E",
+		.features	= PHY_GBIT_FEATURES,
+		.probe		= rtl8218e_phy_probe,
+		.read_page	= rtl821x_read_page,
+		.write_page	= rtl821x_write_page,
+		.suspend	= genphy_suspend,
+		.resume		= genphy_resume,
+		.set_loopback	= genphy_loopback,
 		.set_eee	= rtl8218d_set_eee,
 		.get_eee	= rtl8218d_get_eee,
 	},
