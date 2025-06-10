@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-06-13
-PKG_SOURCE_VERSION:=4810aacf3b1c5de99923b9a424a1f0e6341c6bca
-PKG_MIRROR_HASH:=78d1102702a9d5894c6e70620c144fcf40d27cac8682dc340b31786e4bd190b8
+PKG_SOURCE_DATE:=2025-06-14
+PKG_SOURCE_VERSION:=3ac4a6421880443de2f4562ff0f33aefaaf75585
+PKG_MIRROR_HASH:=5e55fcc00585c16c0da0f9b1c2e24d444b36f326867be4f8640fae01901686c5
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -43,6 +43,7 @@ ALLWIFIBOARDS:= \
 	glinet_gl-ax1800 \
 	glinet_gl-axt1800 \
 	glinet_gl-b3000 \
+	ignitenet_ss-w2-ac2600 \
 	iodata_wn-dax3000gr \
 	linksys_homewrk \
 	linksys_mr5500 \
@@ -200,6 +201,7 @@ $(eval $(call generate-ipq-wifi-package,elecom_wrc-x3000gs2,ELECOM WRC-X3000GS2)
 $(eval $(call generate-ipq-wifi-package,glinet_gl-ax1800,GL.iNet GL-AX1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-axt1800,GL.iNet GL-AXT1800))
 $(eval $(call generate-ipq-wifi-package,glinet_gl-b3000,GL.iNet GL-B3000))
+$(eval $(call generate-ipq-wifi-package,ignitenet_ss-w2-ac2600,Ignitenet SS-W2-AC2600))
 $(eval $(call generate-ipq-wifi-package,iodata_wn-dax3000gr,I-O DATA WN-DAX3000GR))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
