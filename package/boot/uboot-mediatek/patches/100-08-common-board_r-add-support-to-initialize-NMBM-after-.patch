@@ -13,7 +13,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -378,6 +378,20 @@ static int initr_nand(void)
+@@ -399,6 +399,20 @@ static int initr_nand(void)
  }
  #endif
  
@@ -34,13 +34,13 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  #if defined(CONFIG_CMD_ONENAND)
  /* go init the NAND */
  static int initr_onenand(void)
-@@ -693,6 +707,9 @@ static init_fnc_t init_sequence_r[] = {
- #ifdef CONFIG_CMD_ONENAND
- 	initr_onenand,
+@@ -718,6 +732,9 @@ static void initcall_run_r(void)
+ #if CONFIG_IS_ENABLED(CMD_ONENAND)
+ 	INITCALL(initr_onenand);
  #endif
-+#ifdef CONFIG_NMBM_MTD
-+	initr_nmbm,
++#if CONFIG_IS_ENABLED(NMBM_MTD)
++	INITCALL(initr_nmbm);
 +#endif
- #ifdef CONFIG_MMC
- 	initr_mmc,
+ #if CONFIG_IS_ENABLED(MMC)
+ 	INITCALL(initr_mmc);
  #endif
