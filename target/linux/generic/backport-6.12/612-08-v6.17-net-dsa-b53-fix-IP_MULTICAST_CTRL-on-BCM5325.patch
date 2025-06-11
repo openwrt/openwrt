@@ -1,16 +1,17 @@
-From 566c3b4e4ad6167c5a2fb4357e75eb5ba8d94f64 Mon Sep 17 00:00:00 2001
+From 044d5ce2788b165798bfd173548e61bf7b6baf4d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Fri, 30 May 2025 23:00:55 +0200
-Subject: [RFC PATCH net-next v2 04/10] net: dsa: b53: fix IP_MULTICAST_CTRL on
- BCM5325
+Date: Sat, 14 Jun 2025 09:59:54 +0200
+Subject: [PATCH] net: dsa: b53: fix IP_MULTICAST_CTRL on BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 BCM5325 doesn't implement B53_UC_FWD_EN, B53_MC_FWD_EN or B53_IPMC_FWD_EN.
 
-Fixes: 53568438e381 ("net: dsa: b53: Add support for port_egress_floods callback")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Link: https://patch.msgid.link/20250614080000.1884236-9-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 18 +++++++++++-------
  drivers/net/dsa/b53/b53_regs.h   |  1 +

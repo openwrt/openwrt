@@ -1,8 +1,7 @@
-From 1cd53b29d573aef79ea69f6f502517a71e3f04a7 Mon Sep 17 00:00:00 2001
+From c45655386e532c85ff1d679fc2aa40b3aaff9916 Mon Sep 17 00:00:00 2001
 From: Florian Fainelli <f.fainelli@gmail.com>
-Date: Sat, 9 Sep 2017 16:41:26 -0700
-Subject: [RFC PATCH net-next v2 01/10] net: dsa: b53: add support for FDB
- operations on 5325/5365
+Date: Sat, 14 Jun 2025 09:59:51 +0200
+Subject: [PATCH] net: dsa: b53: add support for FDB operations on 5325/5365
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -15,15 +14,17 @@ converting ARL entries in both directions.
 
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Link: https://patch.msgid.link/20250614080000.1884236-6-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/dsa/b53/b53_common.c | 104 +++++++++++++++++++++++++------
+ drivers/net/dsa/b53/b53_common.c | 101 +++++++++++++++++++++++++------
  drivers/net/dsa/b53/b53_priv.h   |  29 +++++++++
  drivers/net/dsa/b53/b53_regs.h   |   7 ++-
- 3 files changed, 117 insertions(+), 23 deletions(-)
+ 3 files changed, 115 insertions(+), 22 deletions(-)
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1763,6 +1763,45 @@ static int b53_arl_read(struct b53_devic
+@@ -1764,6 +1764,45 @@ static int b53_arl_read(struct b53_devic
  	return *idx >= dev->num_arl_bins ? -ENOSPC : -ENOENT;
  }
  
@@ -69,16 +70,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  static int b53_arl_op(struct b53_device *dev, int op, int port,
  		      const unsigned char *addr, u16 vid, bool is_valid)
  {
-@@ -1777,14 +1816,18 @@ static int b53_arl_op(struct b53_device
- 
- 	/* Perform a read for the given MAC and VID */
- 	b53_write48(dev, B53_ARLIO_PAGE, B53_MAC_ADDR_IDX, mac);
--	b53_write16(dev, B53_ARLIO_PAGE, B53_VLAN_ID_IDX, vid);
-+	if (!is5325(dev))
-+		b53_write16(dev, B53_ARLIO_PAGE, B53_VLAN_ID_IDX, vid);
- 
- 	/* Issue a read operation for this MAC */
- 	ret = b53_arl_rw_op(dev, 1);
+@@ -1786,7 +1825,10 @@ static int b53_arl_op(struct b53_device
  	if (ret)
  		return ret;
  
@@ -90,7 +82,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	/* If this is a read, just finish now */
  	if (op)
-@@ -1828,12 +1871,17 @@ static int b53_arl_op(struct b53_device
+@@ -1830,12 +1872,17 @@ static int b53_arl_op(struct b53_device
  	ent.is_static = true;
  	ent.is_age = false;
  	memcpy(ent.mac, addr, ETH_ALEN);
@@ -111,7 +103,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  	return b53_arl_rw_op(dev, 0);
  }
-@@ -1845,12 +1893,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
+@@ -1847,12 +1894,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
  	struct b53_device *priv = ds->priv;
  	int ret;
  
@@ -124,7 +116,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	mutex_lock(&priv->arl_mutex);
  	ret = b53_arl_op(priv, 0, port, addr, vid, true);
  	mutex_unlock(&priv->arl_mutex);
-@@ -1877,10 +1919,15 @@ EXPORT_SYMBOL(b53_fdb_del);
+@@ -1879,10 +1920,15 @@ EXPORT_SYMBOL(b53_fdb_del);
  static int b53_arl_search_wait(struct b53_device *dev)
  {
  	unsigned int timeout = 1000;
@@ -142,7 +134,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		if (!(reg & ARL_SRCH_STDN))
  			return 0;
  
-@@ -1897,13 +1944,24 @@ static void b53_arl_search_rd(struct b53
+@@ -1899,13 +1945,24 @@ static void b53_arl_search_rd(struct b53
  			      struct b53_arl_entry *ent)
  {
  	u64 mac_vid;
@@ -173,7 +165,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  }
  
  static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
-@@ -1924,14 +1982,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -1926,14 +1983,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];
  	unsigned int count = 0;
@@ -197,7 +189,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		ret = b53_arl_search_wait(priv);
 --- a/drivers/net/dsa/b53/b53_priv.h
 +++ b/drivers/net/dsa/b53/b53_priv.h
-@@ -298,6 +298,19 @@ static inline void b53_arl_to_entry(stru
+@@ -317,6 +317,19 @@ static inline void b53_arl_to_entry(stru
  	ent->vid = mac_vid >> ARLTBL_VID_S;
  }
  
@@ -217,7 +209,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  static inline void b53_arl_from_entry(u64 *mac_vid, u32 *fwd_entry,
  				      const struct b53_arl_entry *ent)
  {
-@@ -312,6 +325,22 @@ static inline void b53_arl_from_entry(u6
+@@ -331,6 +344,22 @@ static inline void b53_arl_from_entry(u6
  		*fwd_entry |= ARLTBL_AGE;
  }
  

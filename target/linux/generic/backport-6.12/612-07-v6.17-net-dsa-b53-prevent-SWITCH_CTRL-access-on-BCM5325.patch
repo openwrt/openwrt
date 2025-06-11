@@ -1,8 +1,7 @@
-From 6c08487730e4ac1c45daa87a5c836aecc9508299 Mon Sep 17 00:00:00 2001
+From 22ccaaca43440e90a3b68d2183045b42247dc4be Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Fri, 30 May 2025 22:57:06 +0200
-Subject: [RFC PATCH net-next v2 03/10] net: dsa: b53: prevent SWITCH_CTRL
- access on BCM5325
+Date: Sat, 14 Jun 2025 09:59:53 +0200
+Subject: [PATCH] net: dsa: b53: prevent SWITCH_CTRL access on BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,9 +9,10 @@ Content-Transfer-Encoding: 8bit
 BCM5325 doesn't implement SWITCH_CTRL register so we should avoid reading
 or writing it.
 
-Fixes: a424f0de6163 ("net: dsa: b53: Include IMP/CPU port in dumb forwarding mode")
-Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Link: https://patch.msgid.link/20250614080000.1884236-8-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 11 ++++++-----
  1 file changed, 6 insertions(+), 5 deletions(-)

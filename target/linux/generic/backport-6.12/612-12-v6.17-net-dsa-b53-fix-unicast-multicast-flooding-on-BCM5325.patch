@@ -1,8 +1,7 @@
-From e087a6480f0601d2eb2823b2c920ba7929ffafc4 Mon Sep 17 00:00:00 2001
+From 651c9e71ffe44e99b5a9b011271c2117f0353b32 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Sat, 31 May 2025 09:31:55 +0200
-Subject: [RFC PATCH net-next v2 08/10] net: dsa: b53: fix unicast/multicast
- flooding on BCM5325
+Date: Sat, 14 Jun 2025 09:59:58 +0200
+Subject: [PATCH] net: dsa: b53: fix unicast/multicast flooding on BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -11,12 +10,14 @@ BCM5325 doesn't implement UC_FLOOD_MASK, MC_FLOOD_MASK and IPMC_FLOOD_MASK
 registers.
 This has to be handled differently with other pages and registers.
 
-Fixes: a8b659e7ff75 ("net: dsa: act as passthrough for bridge port flags")
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20250614080000.1884236-13-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 60 ++++++++++++++++++++++----------
- drivers/net/dsa/b53/b53_regs.h   | 16 +++++++++
- 2 files changed, 58 insertions(+), 18 deletions(-)
+ drivers/net/dsa/b53/b53_regs.h   | 13 +++++++
+ 2 files changed, 55 insertions(+), 18 deletions(-)
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
@@ -106,17 +107,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  /* PHY Registers */
  #define B53_PORT_MII_PAGE(i)		(0x10 + (i)) /* Port i MII Registers */
-@@ -47,6 +48,9 @@
- /* VLAN Registers */
- #define B53_VLAN_PAGE			0x34
- 
-+/* Rate Control Registers */
-+#define B53_RATE_CTL_PAGE		0x35
-+
- /* Jumbo Frame Registers */
- #define B53_JUMBO_PAGE			0x40
- 
-@@ -369,6 +373,18 @@
+@@ -369,6 +370,18 @@
  #define B53_ARL_SRCH_RSTL(x)		(B53_ARL_SRCH_RSTL_0 + ((x) * 0x10))
  
  /*************************************************************************

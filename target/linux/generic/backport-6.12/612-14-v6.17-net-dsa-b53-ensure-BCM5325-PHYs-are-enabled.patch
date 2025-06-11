@@ -1,8 +1,7 @@
-From 4368d82cccd1bdd9339a4aac1ce78873ef0d0031 Mon Sep 17 00:00:00 2001
+From 966a83df36c6f27476ac3501771422e7852098bc Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Sat, 31 May 2025 11:20:13 +0200
-Subject: [RFC PATCH net-next v2 10/10] net: dsa: b53: ensure BCM5325 PHYs are
- enabled
+Date: Sat, 14 Jun 2025 10:00:00 +0200
+Subject: [PATCH] net: dsa: b53: ensure BCM5325 PHYs are enabled
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -13,10 +12,13 @@ Only ports 1-4 can be enabled or disabled and the datasheet is explicit
 about not toggling BIT(0) since it disables the PLL power and the switch.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20250614080000.1884236-15-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 13 +++++++++++++
- drivers/net/dsa/b53/b53_regs.h   |  2 ++
- 2 files changed, 15 insertions(+)
+ drivers/net/dsa/b53/b53_regs.h   |  5 ++++-
+ 2 files changed, 17 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
@@ -25,15 +27,15 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		b53_set_eap_mode(dev, port, EAP_MODE_SIMPLIFIED);
  
 +	if (is5325(dev) &&
-+	    (port >= B53_PD_MODE_PORT_MIN) &&
-+	    (port <= B53_PD_MODE_PORT_MAX)) {
++	    in_range(port, 1, 4)) {
 +		u8 reg;
 +
 +		b53_read8(dev, B53_CTRL_PAGE, B53_PD_MODE_CTRL_25, &reg);
++		reg &= ~PD_MODE_POWER_DOWN_PORT(0);
 +		if (dsa_is_unused_port(ds, port))
-+			reg |= BIT(port);
++			reg |= PD_MODE_POWER_DOWN_PORT(port);
 +		else
-+			reg &= ~BIT(port);
++			reg &= ~PD_MODE_POWER_DOWN_PORT(port);
 +		b53_write8(dev, B53_CTRL_PAGE, B53_PD_MODE_CTRL_25, reg);
 +	}
 +
@@ -42,12 +44,16 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  EXPORT_SYMBOL(b53_setup_port);
 --- a/drivers/net/dsa/b53/b53_regs.h
 +++ b/drivers/net/dsa/b53/b53_regs.h
-@@ -108,6 +108,8 @@
+@@ -103,8 +103,11 @@
+ #define   PORT_OVERRIDE_SPEED_2000M	BIT(6) /* BCM5301X only, requires setting 1000M */
+ #define   PORT_OVERRIDE_EN		BIT(7) /* Use the register contents */
  
- /* Power-down mode control */
+-/* Power-down mode control */
++/* Power-down mode control (8 bit) */
  #define B53_PD_MODE_CTRL_25		0x0f
-+#define  B53_PD_MODE_PORT_MIN		1
-+#define  B53_PD_MODE_PORT_MAX		4
++#define  PD_MODE_PORT_MASK		0x1f
++/* Bit 0 also powers down the switch. */
++#define  PD_MODE_POWER_DOWN_PORT(i)	BIT(i)
  
  /* IP Multicast control (8 bit) */
  #define B53_IP_MULTICAST_CTRL		0x21

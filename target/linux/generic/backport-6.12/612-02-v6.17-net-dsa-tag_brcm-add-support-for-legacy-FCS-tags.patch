@@ -1,6 +1,6 @@
-From fa4bb7220eb7b2f0d985dd9d1f60ba8bd84a8870 Mon Sep 17 00:00:00 2001
+From ef07df397a621707903ef0d294a7df11f80cf206 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Mon, 17 Apr 2023 18:38:05 +0200
+Date: Sat, 14 Jun 2025 09:59:48 +0200
 Subject: [PATCH] net: dsa: tag_brcm: add support for legacy FCS tags
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -14,11 +14,14 @@ Adding the original FCS value and length to DSA_TAG_PROTO_BRCM_LEGACY would
 impact performance of BCM63xx switches, so it's better to create a new tag.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20250614080000.1884236-3-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  include/net/dsa.h  |  2 ++
- net/dsa/Kconfig    |  8 ++++++
- net/dsa/tag_brcm.c | 71 +++++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 80 insertions(+), 1 deletion(-)
+ net/dsa/Kconfig    | 16 ++++++++--
+ net/dsa/tag_brcm.c | 73 +++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 88 insertions(+), 3 deletions(-)
 
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
@@ -38,21 +41,33 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	DSA_TAG_PROTO_EDSA		= DSA_TAG_PROTO_EDSA_VALUE,
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -49,6 +49,14 @@ config NET_DSA_TAG_BRCM_LEGACY
- 	  Broadcom legacy switches which place the tag after the MAC source
- 	  address.
+@@ -42,12 +42,24 @@ config NET_DSA_TAG_BRCM
+ 	  Broadcom switches which place the tag after the MAC source address.
  
+ config NET_DSA_TAG_BRCM_LEGACY
+-	tristate "Tag driver for Broadcom legacy switches using in-frame headers"
++	tristate "Tag driver for BCM63xx legacy switches using in-frame headers"
+ 	select NET_DSA_TAG_BRCM_COMMON
+ 	help
+ 	  Say Y if you want to enable support for tagging frames for the
+-	  Broadcom legacy switches which place the tag after the MAC source
++	  BCM63xx legacy switches which place the tag after the MAC source
+ 	  address.
++	  This tag is used in BCM63xx legacy switches which work without the
++	  original FCS and length before the tag insertion.
++
 +config NET_DSA_TAG_BRCM_LEGACY_FCS
-+	tristate "Tag driver for Broadcom legacy switches using in-frame headers, FCS and length"
++	tristate "Tag driver for BCM53xx legacy switches using in-frame headers"
 +	select NET_DSA_TAG_BRCM_COMMON
 +	help
 +	  Say Y if you want to enable support for tagging frames for the
-+	  Broadcom legacy switches which place the tag after the MAC source
-+	  address and require the original FCS and length.
-+
++	  BCM53xx legacy switches which place the tag after the MAC source
++	  address.
++	  This tag is used in BCM53xx legacy switches which expect original
++	  FCS and length before the tag insertion to be present.
+ 
  config NET_DSA_TAG_BRCM_PREPEND
  	tristate "Tag driver for Broadcom switches using prepended headers"
- 	select NET_DSA_TAG_BRCM_COMMON
 --- a/net/dsa/tag_brcm.c
 +++ b/net/dsa/tag_brcm.c
 @@ -15,6 +15,7 @@
@@ -104,23 +119,23 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +{
 +	struct dsa_port *dp = dsa_user_to_port(dev);
 +	unsigned int fcs_len;
-+	u32 fcs_val;
++	__le32 fcs_val;
 +	u8 *brcm_tag;
 +
 +	/* The Ethernet switch we are interfaced with needs packets to be at
 +	 * least 64 bytes (including FCS) otherwise they will be discarded when
 +	 * they enter the switch port logic. When Broadcom tags are enabled, we
-+	 * need to make sure that packets are at least 70 bytes
-+	 * (including FCS and tag) because the length verification is done after
-+	 * the Broadcom tag is stripped off the ingress packet.
++	 * need to make sure that packets are at least 70 bytes (including FCS
++	 * and tag) because the length verification is done after the Broadcom
++	 * tag is stripped off the ingress packet.
 +	 *
-+	 * Let dsa_user_xmit() free the SKB
++	 * Let dsa_user_xmit() free the SKB.
 +	 */
 +	if (__skb_put_padto(skb, ETH_ZLEN + BRCM_LEG_TAG_LEN, false))
 +		return NULL;
 +
 +	fcs_len = skb->len;
-+	fcs_val = swab32(crc32(~0, skb->data, fcs_len) ^ ~0);
++	fcs_val = cpu_to_le32(crc32_le(~0, skb->data, fcs_len) ^ ~0);
 +
 +	skb_push(skb, BRCM_LEG_TAG_LEN);
 +

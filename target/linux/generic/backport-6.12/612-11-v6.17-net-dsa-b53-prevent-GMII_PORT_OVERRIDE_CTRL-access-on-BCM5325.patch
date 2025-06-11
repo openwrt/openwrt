@@ -1,8 +1,8 @@
-From 4eecebbe332e3cfd8d0aaeb39d764748f25259f1 Mon Sep 17 00:00:00 2001
+From 37883bbc45a8555d6eca88d3a9730504d2dac86c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Fri, 30 May 2025 23:33:13 +0200
-Subject: [RFC PATCH net-next v2 07/10] net: dsa: b53: prevent
- GMII_PORT_OVERRIDE_CTRL access on BCM5325
+Date: Sat, 14 Jun 2025 09:59:57 +0200
+Subject: [PATCH] net: dsa: b53: prevent GMII_PORT_OVERRIDE_CTRL access on
+ BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -12,9 +12,10 @@ avoid reading or writing it.
 PORT_OVERRIDE_RX_FLOW and PORT_OVERRIDE_TX_FLOW aren't defined on BCM5325
 and we should use PORT_OVERRIDE_LP_FLOW_25 instead.
 
-Fixes: 5e004460f874 ("net: dsa: b53: Add helper to set link parameters")
-Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Link: https://patch.msgid.link/20250614080000.1884236-12-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 21 +++++++++++++++++----
  drivers/net/dsa/b53/b53_regs.h   |  1 +
@@ -22,7 +23,7 @@ Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1278,6 +1278,8 @@ static void b53_force_link(struct b53_de
+@@ -1279,6 +1279,8 @@ static void b53_force_link(struct b53_de
  	if (port == dev->imp_port) {
  		off = B53_PORT_OVERRIDE_CTRL;
  		val = PORT_OVERRIDE_EN;
@@ -31,7 +32,7 @@ Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
  	} else {
  		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
  		val = GMII_PO_EN;
-@@ -1302,6 +1304,8 @@ static void b53_force_port_config(struct
+@@ -1303,6 +1305,8 @@ static void b53_force_port_config(struct
  	if (port == dev->imp_port) {
  		off = B53_PORT_OVERRIDE_CTRL;
  		val = PORT_OVERRIDE_EN;
@@ -40,7 +41,7 @@ Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
  	} else {
  		off = B53_GMII_PORT_OVERRIDE_CTRL(port);
  		val = GMII_PO_EN;
-@@ -1332,10 +1336,19 @@ static void b53_force_port_config(struct
+@@ -1333,10 +1337,19 @@ static void b53_force_port_config(struct
  		return;
  	}
  

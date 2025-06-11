@@ -1,17 +1,20 @@
-From acd751e9fe048cb51e9aee3c780f019c5e9732ec Mon Sep 17 00:00:00 2001
+From c3cf059a4d419b9c888ce7e9952fa13ba7569b61 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Fri, 30 May 2025 17:31:39 +0200
+Date: Sat, 14 Jun 2025 09:59:49 +0200
 Subject: [PATCH] net: dsa: b53: support legacy FCS tags
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Commit 46c5176c586c ("net: dsa: b53: support legacy tags") introduced support
-for legacy tags, but it turns out that BCM5325 and BCM5365 switches require
-the original FCS value and length, so they have to be treated differently.
+Commit 46c5176c586c ("net: dsa: b53: support legacy tags") introduced
+support for legacy tags, but it turns out that BCM5325 and BCM5365
+switches require the original FCS value and length, so they have to be
+treated differently.
 
-Fixes: 46c5176c586c ("net: dsa: b53: support legacy tags")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Link: https://patch.msgid.link/20250614080000.1884236-4-noltari@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/Kconfig      | 1 +
  drivers/net/dsa/b53/b53_common.c | 7 +++++--
@@ -29,7 +32,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	  This driver adds support for Broadcom managed switch chips. It supports
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2244,8 +2244,11 @@ enum dsa_tag_protocol b53_get_tag_protoc
+@@ -2245,8 +2245,11 @@ enum dsa_tag_protocol b53_get_tag_protoc
  		goto out;
  	}
  
