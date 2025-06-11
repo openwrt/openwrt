@@ -691,7 +691,11 @@ hostapd_set_bss_options() {
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
 		psk-sae|eap-eap2)
-			set_default ieee80211w 1
+			if [ "$band" = 6g ]; then
+				set_default ieee80211w 2
+			else
+				set_default ieee80211w 1
+			fi
 			set_default sae_require_mfp 1
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
