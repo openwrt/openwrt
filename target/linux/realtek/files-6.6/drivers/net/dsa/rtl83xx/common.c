@@ -1569,13 +1569,17 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
-		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
+		priv->irq_mask = 0x1FFFFFFFFFFFFFULL;
 		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = 57;
 		priv->fib_entries = 16384;
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
 		priv->l2_bucket_size = 8;
+		/**
+		 * Enable ISR_GLB_SERDES_UPD_PHYSTS and ISR_GLB_SERDES_RXIDLE interrupt
+ 		 */
+		sw_w32_mask(BIT(8) | BIT(15), BIT(8) | BIT(15), priv->r->isr_glb_src);
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
@@ -1618,7 +1622,10 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+	sw_w32_mask(3, 3, priv->r->isr_glb_src);
+	/* Enable ISR_GLB_SERDES_UPD_PHYSTS interrupt */
+	sw_w32_mask(BIT(8), BIT(8), priv->r->isr_glb_src);
+	sw_w32_mask(BIT(15), BIT(15), priv->r->isr_glb_src);
 
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
@@ -1696,7 +1703,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* TODO: put this into l2_setup() */
 	/* Flood BPDUs to all ports including cpu-port */
-	if (soc_info.family != RTL9300_FAMILY_ID) {
+	if (soc_info.family != RTL9300_FAMILY_ID && soc_info.family != RTL9310_FAMILY_ID) {
 		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
 		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
 
