@@ -179,14 +179,18 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 
 static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 {
-	for (int i = 0; i < priv->cpu_port; i++)
-		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
+	if (priv->r->set_receive_management_action) {
+		for (int i = 0; i < priv->cpu_port; i++)
+			priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
+	}
 }
 
 static void rtl83xx_setup_lldp_traps(struct rtl838x_switch_priv *priv)
 {
-	for (int i = 0; i < priv->cpu_port; i++)
-		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
+	if (priv->r->set_receive_management_action) {
+		for (int i = 0; i < priv->cpu_port; i++)
+			priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
+	}
 }
 
 static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
@@ -315,7 +319,8 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 
 	priv->r->pie_init(priv);
 
-	priv->r->led_init(priv);
+	if (priv->r->led_init)
+		priv->r->led_init(priv);
 
 	return 0;
 }
@@ -458,14 +463,18 @@ static int rtl93xx_pcs_validate(struct phylink_pcs *pcs,
 		phylink_set(mask, 10000baseKR_Full);
 		phylink_set(mask, 10000baseSR_Full);
 		phylink_set(mask, 10000baseCR_Full);
+		phylink_set(mask, 10000baseLR_Full);
 	}
-	if (state->interface == PHY_INTERFACE_MODE_INTERNAL) {
+	if (state->interface == PHY_INTERFACE_MODE_INTERNAL ||
+		state->interface == PHY_INTERFACE_MODE_10GBASER ||
+		state->interface == PHY_INTERFACE_MODE_1000BASEX) {
 		phylink_set(mask, 1000baseX_Full);
 		phylink_set(mask, 1000baseT_Full);
 		phylink_set(mask, 10000baseKR_Full);
 		phylink_set(mask, 10000baseT_Full);
 		phylink_set(mask, 10000baseSR_Full);
 		phylink_set(mask, 10000baseCR_Full);
+		phylink_set(mask, 10000baseLR_Full);
 	}
 
 	if (state->interface == PHY_INTERFACE_MODE_USXGMII) {
@@ -607,7 +616,7 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	}
 
 	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 && port <= 55)) { /* Internal serdes */
+		&& (port >= 48 && port <= 55)) { /* Internal serdes */
 			state->speed = SPEED_10000;
 			state->link = 1;
 			state->duplex = 1;
@@ -748,21 +757,17 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
 		break;
 	case PHY_INTERFACE_MODE_1000BASEX:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_1000BASEX);
 		break;
 	case PHY_INTERFACE_MODE_XGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_XGMII);
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_10GKR:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* Translates to MII_USXGMII_10GSXGMII */
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_USXGMII);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
@@ -772,7 +777,6 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
 		break;
 	case PHY_INTERFACE_MODE_QSGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_QSGMII);
 		break;
 	default:
@@ -807,13 +811,17 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int sds_num;
+	u32 reg;
+
+	pr_info("%s port %d, mode %x, phy-mode: %s, speed %d, link %d\n", __func__,
+		port, mode, phy_modes(state->interface), state->speed, state->link);
+
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		return rtl931x_phylink_mac_config(ds, port, mode, state);
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->cpu_port)
 		return;
-
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		return rtl931x_phylink_mac_config(ds, port, mode, state);
 
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s SDS is %d\n", __func__, sds_num);
@@ -822,6 +830,47 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	     state->interface == PHY_INTERFACE_MODE_SGMII ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
 		rtl9300_serdes_setup(port, sds_num, state->interface);
+	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
+	reg &= ~(0xf << 3);
+
+	switch (state->speed) {
+	case SPEED_10000:
+		reg |= 4 << 3;
+		break;
+	case SPEED_5000:
+		reg |= 6 << 3;
+		break;
+	case SPEED_2500:
+		reg |= 5 << 3;
+		break;
+	case SPEED_1000:
+		reg |= 2 << 3;
+		break;
+	case SPEED_100:
+		reg |= 1 << 3;
+		break;
+	default:
+		/* Also covers 10M */
+		break;
+	}
+
+	if (state->link)
+		reg |= RTL930X_FORCE_LINK_EN;
+
+	if (priv->lagmembers & BIT_ULL(port))
+		reg |= RTL930X_DUPLEX_MODE | RTL930X_FORCE_LINK_EN;
+
+	if (state->duplex == DUPLEX_FULL)
+		reg |= RTL930X_DUPLEX_MODE;
+	else
+		reg &= ~RTL930X_DUPLEX_MODE; /* Clear duplex bit otherwise */
+
+	if (priv->ports[port].phy_is_integrated)
+		reg &= ~RTL930X_FORCE_EN; /* Clear MAC_FORCE_EN to allow SDS-MAC link */
+	else
+		reg |= RTL930X_FORCE_EN;
+
+	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
