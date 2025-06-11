@@ -76,8 +76,6 @@ function iface_accounting_server(config) {
 }
 
 function iface_auth_type(config) {
-	iface.parse_encryption(config);
-
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ]) {
 		config.ieee80211w = 2;
 		config.sae_require_mfp = 1;
@@ -432,12 +430,20 @@ function iface_interworking(config) {
 	]);
 }
 
-export function generate(interface, config, vlans, stas, phy_features) {
+export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
 	iface_stations(config, stas);
 
 	iface_setup(config);
+
+	iface.parse_encryption(config);
+	if (data.config.band == '6g') {
+		if (config.auth_type == 'psk-sae')
+			config.auth_type = 'sae';
+		if (config.auth_type == 'eap-eap2')
+			config.auth_type = 'eap2';
+	}
 
 	iface_auth_type(config);
 
