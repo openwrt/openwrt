@@ -6,6 +6,11 @@
 board_config_update
 
 case "$(board_name)" in
+huawei,hg553)
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "br-lan"
+	ucidef_set_led_netdev "wlan" "WLAN" "blue:wlan" "phy0-ap0"
+	ucidef_set_led_usbport "usb" "USB" "blue:hspa" "usb1-port2" "usb2-port2"
+	;;
 huawei,hg556a-a |\
 huawei,hg556a-b |\
 huawei,hg556a-c)
