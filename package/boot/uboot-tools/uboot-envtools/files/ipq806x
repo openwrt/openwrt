@@ -12,7 +12,7 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 ubootenv_mtdinfo () {
-	UBOOTENV_PART=$(cat /proc/mtd | grep APPSBLENV)
+	UBOOTENV_PART=$(cat /proc/mtd | grep -i APPSBLENV)
 	mtd_dev=$(echo $UBOOTENV_PART | awk '{print $1}' | sed 's/:$//')
 	mtd_size=$(echo $UBOOTENV_PART | awk '{print "0x"$2}')
 	mtd_erase=$(echo $UBOOTENV_PART | awk '{print "0x"$3}')
