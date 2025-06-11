@@ -39,11 +39,10 @@ prepare_key_wep() {
 }
 
 _wdev_prepare_channel() {
-	json_get_vars channel band hwmode
+	json_get_vars channel band hwmode htmode
 
 	auto_channel=0
 	enable_ht=0
-	htmode=
 	hwmode="${hwmode##11}"
 
 	case "$channel" in
@@ -79,6 +78,11 @@ _wdev_prepare_channel() {
 				*b|*g) band=2g;;
 			esac
 		;;
+	esac
+
+	case "$htmode" in
+		HE*|EHT*) wpa3_cipher="GCMP-256 ";;
+		*) wpa3_cipher="";;
 	esac
 }
 
@@ -216,6 +220,9 @@ wireless_vif_parse_encryption() {
 		wpa_cipher="GCMP"
 	else
 		wpa_cipher="CCMP"
+		case "$encryption" in
+			sae*|wpa3*|psk3*|owe) wpa_cipher="${wpa3_cipher}$wpa_cipher";;
+		esac
 	fi
 
 	case "$encryption" in

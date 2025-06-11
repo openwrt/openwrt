@@ -3,10 +3,67 @@
 import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
-export function parse_encryption(config) {
+export function parse_encryption(config, dev_config) {
 	let encryption = split(config.encryption, '+', 2);
 
+	config.wpa = 0;
+	for (let k, v in { 'wpa2*': 2, 'wpa3*': 2, '*psk2*': 2, 'psk3*': 2, 'sae*': 2,
+			'owe*': 2, 'wpa*mixed*': 3, '*psk*mixed*': 3, 'wpa*': 1, '*psk*': 1, })
+		if (wildcard(config.encryption, k)) {
+			config.wpa = v;
+			break;
+		}
+	if (!config.wpa)
+		config.wpa_pairwise = null;
+
 	config.wpa_pairwise = (config.hw_mode == 'ad') ? 'GCMP' : 'CCMP';
+	config.auth_type = encryption[0] ?? 'none';
+
+	let wpa3_pairwise = config.wpa_pairwise;
+	if (wildcard(dev_config?.htmode, 'EHT*') || wildcard(dev_config?.htmode, 'HE*'))
+		wpa3_pairwise = 'GCMP-256 ' + wpa3_pairwise;
+
+	switch(config.auth_type) {
+	case 'owe':
+		config.auth_type = 'owe';
+		config.wpa_pairwise = wpa3_pairwise;
+		break;
+
+	case 'wpa3-192':
+		config.auth_type = 'eap192';
+		break;
+
+	case 'wpa3-mixed':
+		config.auth_type = 'eap-eap2';
+		config.wpa_pairwise = wpa3_pairwise;
+		break;
+
+	case 'wpa3':
+		config.auth_type = 'eap2';
+		config.wpa_pairwise = wpa3_pairwise;
+		break;
+
+	case 'psk-mixed':
+		config.auth_type = "psk";
+		break;
+
+	case 'psk3':
+		config.auth_type = 'sae';
+		config.wpa_pairwise = wpa3_pairwise;
+		break;
+
+	case 'psk3-mixed':
+	case 'sae-mixed':
+		config.auth_type = 'psk-sae';
+		config.wpa_pairwise = wpa3_pairwise;
+		break;
+
+	case 'wpa':
+	case 'wpa2':
+	case 'wpa-mixed':
+		config.auth_type = 'eap';
+		break;
+	}
 
 	switch(encryption[1]){
 	case 'tkip+aes':
@@ -43,53 +100,6 @@ export function parse_encryption(config) {
 		break;
 	}
 
-	config.wpa = 0;
-	for (let k, v in { 'wpa2*': 2, 'wpa3*': 2, '*psk2*': 2, 'psk3*': 2, 'sae*': 2,
-			'owe*': 2, 'wpa*mixed*': 3, '*psk*mixed*': 3, 'wpa*': 1, '*psk*': 1, })
-		if (wildcard(config.encryption, k)) {
-			config.wpa = v;
-			break;
-		}
-	if (!config.wpa)
-		config.wpa_pairwise = null;
-
-	config.auth_type = encryption[0] ?? 'none';
-	switch(config.auth_type) {
-	case 'owe':
-		config.auth_type = 'owe';
-		break;
-
-	case 'wpa3-192':
-		config.auth_type = 'eap192';
-		break;
-
-	case 'wpa3-mixed':
-		config.auth_type = 'eap-eap2';
-		break;
-
-	case 'wpa3':
-		config.auth_type = 'eap2';
-		break;
-
-	case 'psk-mixed':
-		config.auth_type = "psk";
-		break;
-
-	case 'psk3':
-		config.auth_type = 'sae';
-		break;
-
-	case 'psk3-mixed':
-	case 'sae-mixed':
-		config.auth_type = 'psk-sae';
-		break;
-
-	case 'wpa':
-	case 'wpa2':
-	case 'wpa-mixed':
-		config.auth_type = 'eap';
-		break;
-	}
 };
 
 export function wpa_key_mgmt(config) {

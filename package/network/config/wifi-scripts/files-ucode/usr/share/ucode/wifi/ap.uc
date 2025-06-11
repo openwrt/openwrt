@@ -437,7 +437,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_setup(config);
 
-	iface.parse_encryption(config);
+	iface.parse_encryption(config, data.config);
 	if (data.config.band == '6g') {
 		if (config.auth_type == 'psk-sae')
 			config.auth_type = 'sae';
