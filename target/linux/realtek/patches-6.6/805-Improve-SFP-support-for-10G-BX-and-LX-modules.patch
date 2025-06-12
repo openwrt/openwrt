@@ -1,0 +1,697 @@
+From 5fb4876acc1424bcfa55a89fdc5388cde85ebdf3 Mon Sep 17 00:00:00 2001
+From: Sharadanand Karanjkar <sk@simonwunderlich.de>
+Date: Fri, 28 Mar 2025 14:27:44 +0000
+Subject: [PATCH] Improve SFP support for 10G-BX and LX modules
+
+Attempt to fix sfp.
+
+Signed-off-by: Sharadanand Karanjkar <sk@simonwunderlich.de>
+---
+ drivers/net/phy/phylink.c |  50 +++++++++++--
+ drivers/net/phy/sfp-bus.c |  69 +++++++++++++++---
+ drivers/net/phy/sfp.c     | 144 +++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 247 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/phy/phylink.c b/drivers/net/phy/phylink.c
+index d56a15f7c..beddb7365 100644
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -274,39 +274,50 @@ static int phylink_interface_max_speed(phy_interface_t interface)
+  */
+ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ {
+-	if (caps & MAC_SYM_PAUSE)
++	if (caps & MAC_SYM_PAUSE) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_Pause_BIT, linkmodes);
++	}
+ 
+-	if (caps & MAC_ASYM_PAUSE)
++	if (caps & MAC_ASYM_PAUSE) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, linkmodes);
++	}
+ 
+ 	if (caps & MAC_10HD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT1S_Half_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT1S_P2MP_Half_BIT, linkmodes);
+ 	}
+ 
+ 	if (caps & MAC_10FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT1L_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10baseT1S_Full_BIT, linkmodes);
+ 	}
+ 
+ 	if (caps & MAC_100HD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_100baseFX_Half_BIT, linkmodes);
+ 	}
+ 
+ 	if (caps & MAC_100FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_100baseT1_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_100baseFX_Full_BIT, linkmodes);
+ 	}
+ 
+-	if (caps & MAC_1000HD)
++	if (caps & MAC_1000HD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT, linkmodes);
++	}
+ 
+ 	if (caps & MAC_1000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_1000baseKX_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, linkmodes);
+@@ -314,14 +325,18 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_2500FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT, linkmodes);
+ 	}
+ 
+-	if (caps & MAC_5000FD)
++	if (caps & MAC_5000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT, linkmodes);
++	}
+ 
+ 	if (caps & MAC_10000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT, linkmodes);
+@@ -334,12 +349,14 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_25000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_25000baseCR_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_25000baseKR_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_25000baseSR_Full_BIT, linkmodes);
+ 	}
+ 
+ 	if (caps & MAC_40000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_40000baseKR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_40000baseCR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_40000baseSR4_Full_BIT, linkmodes);
+@@ -347,6 +364,7 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_50000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_50000baseKR2_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT, linkmodes);
+@@ -359,6 +377,7 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_56000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_56000baseKR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_56000baseCR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_56000baseSR4_Full_BIT, linkmodes);
+@@ -366,6 +385,7 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_100000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_100000baseKR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_100000baseSR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT, linkmodes);
+@@ -386,6 +406,7 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_200000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT,
+@@ -401,6 +422,7 @@ void phylink_caps_to_linkmodes(unsigned long *linkmodes, unsigned long caps)
+ 	}
+ 
+ 	if (caps & MAC_400000FD) {
++		pr_err("%s +%d\n", __func__, __LINE__);
+ 		__set_bit(ETHTOOL_LINK_MODE_400000baseKR8_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_400000baseSR8_Full_BIT, linkmodes);
+ 		__set_bit(ETHTOOL_LINK_MODE_400000baseLR8_ER8_FR8_Full_BIT,
+@@ -641,6 +663,8 @@ void phylink_validate_mask_caps(unsigned long *supported,
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
+ 	unsigned long caps;
+ 
++	pr_err("%s :%d: begin!\n", __func__, __LINE__);
++
+ 	phylink_set_port_modes(mask);
+ 	phylink_set(mask, Autoneg);
+ 	caps = phylink_get_capabilities(state->interface, mac_capabilities,
+@@ -679,8 +703,10 @@ static int phylink_validate_mac_and_pcs(struct phylink *pl,
+ 	/* Get the PCS for this interface mode */
+ 	if (pl->using_mac_select_pcs) {
+ 		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
+-		if (IS_ERR(pcs))
++		if (IS_ERR(pcs)) {
++			pr_err("%s +%d: pl->mac_ops->mac_select_pcs failed\n", __func__, __LINE__);
+ 			return PTR_ERR(pcs);
++		}
+ 	} else {
+ 		pcs = pl->pcs;
+ 	}
+@@ -693,6 +719,7 @@ static int phylink_validate_mac_and_pcs(struct phylink *pl,
+ 		if (!pcs->ops) {
+ 			phylink_err(pl, "interface %s: uninitialised PCS\n",
+ 				    phy_modes(state->interface));
++			pr_err("%s :%d: check above line", __func__, __LINE__);
+ 			dump_stack();
+ 			return -EINVAL;
+ 		}
+@@ -700,12 +727,15 @@ static int phylink_validate_mac_and_pcs(struct phylink *pl,
+ 		/* Validate the link parameters with the PCS */
+ 		if (pcs->ops->pcs_validate) {
+ 			ret = pcs->ops->pcs_validate(pcs, supported, state);
+-			if (ret < 0 || phylink_is_empty_linkmode(supported))
++			if (ret < 0 || phylink_is_empty_linkmode(supported)) {
++				pr_err("%s +%d: phylink_is_empty_linkmode(supported)\n", __func__, __LINE__);
+ 				return -EINVAL;
++			}
+ 
+ 			/* Ensure the advertising mask is a subset of the
+ 			 * supported mask.
+ 			 */
++			pr_err("%s :%d: linkmode_and(state->advertising, state->advertising, supported)", __func__, __LINE__);
+ 			linkmode_and(state->advertising, state->advertising,
+ 				     supported);
+ 		}
+@@ -717,6 +747,7 @@ static int phylink_validate_mac_and_pcs(struct phylink *pl,
+ 	else
+ 		phylink_generic_validate(pl->config, supported, state);
+ 
++	pr_err("%s +%d: Calling phylink_is_empty_linkmode(supported)\n", __func__, __LINE__);
+ 	return phylink_is_empty_linkmode(supported) ? -EINVAL : 0;
+ }
+ 
+@@ -933,6 +964,7 @@ static int phylink_parse_mode(struct phylink *pl,
+ 		case PHY_INTERFACE_MODE_RGMII_RXID:
+ 		case PHY_INTERFACE_MODE_RGMII_TXID:
+ 		case PHY_INTERFACE_MODE_RTBI:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 10baseT_Half);
+ 			phylink_set(pl->supported, 10baseT_Full);
+ 			phylink_set(pl->supported, 100baseT_Half);
+@@ -942,18 +974,22 @@ static int phylink_parse_mode(struct phylink *pl,
+ 			break;
+ 
+ 		case PHY_INTERFACE_MODE_1000BASEX:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 1000baseX_Full);
+ 			break;
+ 
+ 		case PHY_INTERFACE_MODE_2500BASEX:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 2500baseX_Full);
+ 			break;
+ 
+ 		case PHY_INTERFACE_MODE_5GBASER:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 5000baseT_Full);
+ 			break;
+ 
+ 		case PHY_INTERFACE_MODE_25GBASER:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 25000baseCR_Full);
+ 			phylink_set(pl->supported, 25000baseKR_Full);
+ 			phylink_set(pl->supported, 25000baseSR_Full);
+@@ -962,6 +998,7 @@ static int phylink_parse_mode(struct phylink *pl,
+ 		case PHY_INTERFACE_MODE_10GKR:
+ 		case PHY_INTERFACE_MODE_HSGMII:
+ 		case PHY_INTERFACE_MODE_10GBASER:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 10baseT_Half);
+ 			phylink_set(pl->supported, 10baseT_Full);
+ 			phylink_set(pl->supported, 100baseT_Half);
+@@ -984,6 +1021,7 @@ static int phylink_parse_mode(struct phylink *pl,
+ 			break;
+ 
+ 		case PHY_INTERFACE_MODE_XLGMII:
++			pr_err("%s +%d: \n", __func__, __LINE__);
+ 			phylink_set(pl->supported, 25000baseCR_Full);
+ 			phylink_set(pl->supported, 25000baseKR_Full);
+ 			phylink_set(pl->supported, 25000baseSR_Full);
+diff --git a/drivers/net/phy/sfp-bus.c b/drivers/net/phy/sfp-bus.c
+index 274bb090b..05a4f891f 100644
+--- a/drivers/net/phy/sfp-bus.c
++++ b/drivers/net/phy/sfp-bus.c
+@@ -117,19 +117,24 @@ EXPORT_SYMBOL_GPL(sfp_parse_port);
+  */
+ bool sfp_may_have_phy(struct sfp_bus *bus, const struct sfp_eeprom_id *id)
+ {
+-	if (id->base.e1000_base_t)
++	if (id->base.e1000_base_t) {
++		pr_err("%s: %d id->base.e1000_base_t active, returning true\n", __func__, __LINE__);
+ 		return true;
++	}
+ 
+ 	if (id->base.phys_id != SFF8024_ID_DWDM_SFP) {
++		pr_err("%s: %d id->base.phys != SFF8024_ID_DWDM_SFP\n", __func__, __LINE__);
+ 		switch (id->base.extended_cc) {
+ 		case SFF8024_ECC_10GBASE_T_SFI:
+ 		case SFF8024_ECC_10GBASE_T_SR:
+ 		case SFF8024_ECC_5GBASE_T:
+ 		case SFF8024_ECC_2_5GBASE_T:
++			pr_err("%s: %d SFF8024_ECC_10/5/2.5GBASE_T, returning true\n", __func__, __LINE__);
+ 			return true;
+ 		}
+ 	}
+ 
++	pr_err("%s: %d Nothing matched, returning false\n", __func__, __LINE__);
+ 	return false;
+ }
+ EXPORT_SYMBOL_GPL(sfp_may_have_phy);
+@@ -174,28 +179,34 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 
+ 	/* Set ethtool support from the compliance fields. */
+ 	if (id->base.e10g_base_sr) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 10000baseSR_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 	}
+ 	if (id->base.e10g_base_lr) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 10000baseLR_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 	}
+ 	if (id->base.e10g_base_lrm) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 10000baseLRM_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 	}
+ 	if (id->base.e10g_base_er) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 10000baseER_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 	}
+ 	if (id->base.e1000_base_sx ||
+ 	    id->base.e1000_base_lx ||
+ 	    id->base.e1000_base_cx) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 1000baseX_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+ 	}
+ 	if (id->base.e1000_base_t) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 1000baseT_Half);
+ 		phylink_set(modes, 1000baseT_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+@@ -205,16 +216,19 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 	/* 1000Base-PX or 1000Base-BX10 */
+ 	if ((id->base.e_base_px || id->base.e_base_bx10) &&
+ 	    br_min <= 1300 && br_max >= 1200) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 1000baseX_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+ 	}
+ 
+ 	/* 100Base-FX, 100Base-LX, 100Base-PX, 100Base-BX10 */
+ 	if (id->base.e100_base_fx || id->base.e100_base_lx) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 100baseFX_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_100BASEX, interfaces);
+ 	}
+ 	if ((id->base.e_base_px || id->base.e_base_bx10) && br_nom == 100) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 100baseFX_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_100BASEX, interfaces);
+ 	}
+@@ -223,29 +237,36 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 	 * based on the bit rates and the cable compliance bytes.
+ 	 */
+ 	if ((id->base.sfp_ct_passive || id->base.sfp_ct_active) && br_nom) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		/* This may look odd, but some manufacturers use 12000MBd */
+ 		if (br_min <= 12000 && br_max >= 10300) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 10000baseCR_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 		}
+ 		if (br_min <= 3200 && br_max >= 3100) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 2500baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_2500BASEX, interfaces);
+ 		}
+ 		if (br_min <= 1300 && br_max >= 1200) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 1000baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+ 		}
+ 	}
+ 	if (id->base.sfp_ct_passive) {
+ 		if (id->base.passive.sff8431_app_e) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 10000baseCR_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 		}
+ 	}
+ 	if (id->base.sfp_ct_active) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		if (id->base.active.sff8431_app_e ||
+ 		    id->base.active.sff8431_lim) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 10000baseCR_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 		}
+@@ -253,9 +274,11 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 
+ 	switch (id->base.extended_cc) {
+ 	case SFF8024_ECC_UNSPEC:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		break;
+ 	case SFF8024_ECC_100G_25GAUI_C2M_AOC:
+ 		if (br_min <= 28000 && br_max >= 25000) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			/* 25GBASE-R, possibly with FEC */
+ 			__set_bit(PHY_INTERFACE_MODE_25GBASER, interfaces);
+ 			/* There is currently no link mode for 25000base
+@@ -265,32 +288,39 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 		}
+ 		break;
+ 	case SFF8024_ECC_100GBASE_SR4_25GBASE_SR:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 100000baseSR4_Full);
+ 		phylink_set(modes, 25000baseSR_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_25GBASER, interfaces);
+ 		break;
+ 	case SFF8024_ECC_100GBASE_LR4_25GBASE_LR:
+ 	case SFF8024_ECC_100GBASE_ER4_25GBASE_ER:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 100000baseLR4_ER4_Full);
+ 		break;
+ 	case SFF8024_ECC_100GBASE_CR4:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 100000baseCR4_Full);
+ 		fallthrough;
+ 	case SFF8024_ECC_25GBASE_CR_S:
+ 	case SFF8024_ECC_25GBASE_CR_N:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 25000baseCR_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_25GBASER, interfaces);
+ 		break;
+ 	case SFF8024_ECC_10GBASE_T_SFI:
+ 	case SFF8024_ECC_10GBASE_T_SR:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 10000baseT_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_10GBASER, interfaces);
+ 		break;
+ 	case SFF8024_ECC_5GBASE_T:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 5000baseT_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_5GBASER, interfaces);
+ 		break;
+ 	case SFF8024_ECC_2_5GBASE_T:
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		phylink_set(modes, 2500baseT_Full);
+ 		__set_bit(PHY_INTERFACE_MODE_2500BASEX, interfaces);
+ 		break;
+@@ -306,10 +336,12 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 	    id->base.fc_speed_200 ||
+ 	    id->base.fc_speed_400) {
+ 		if (id->base.br_nominal >= 31) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 2500baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_2500BASEX, interfaces);
+ 		}
+ 		if (id->base.br_nominal >= 12) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 1000baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+ 		}
+@@ -326,10 +358,12 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 	 */
+ 	if (bitmap_empty(modes, __ETHTOOL_LINK_MODE_MASK_NBITS) && br_nom) {
+ 		if (br_min <= 1300 && br_max >= 1200) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 1000baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_1000BASEX, interfaces);
+ 		}
+ 		if (br_min <= 3200 && br_max >= 2500) {
++			pr_err("%s :%d\n", __func__, __LINE__);
+ 			phylink_set(modes, 2500baseX_Full);
+ 			__set_bit(PHY_INTERFACE_MODE_2500BASEX, interfaces);
+ 		}
+@@ -339,10 +373,13 @@ void sfp_parse_support(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 	phylink_set(modes, Pause);
+ 	phylink_set(modes, Asym_Pause);
+ 
+-	if (bus->sfp_quirk && bus->sfp_quirk->modes)
++	if (bus->sfp_quirk && bus->sfp_quirk->modes) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		bus->sfp_quirk->modes(id, modes, interfaces);
++	}
+ 
+ 	linkmode_or(support, support, modes);
++	pr_err("%s: %d modes:%*pb\n", __func__, __LINE__, __ETHTOOL_LINK_MODE_MASK_NBITS, modes);
+ }
+ EXPORT_SYMBOL_GPL(sfp_parse_support);
+ 
+@@ -359,32 +396,46 @@ phy_interface_t sfp_select_interface(struct sfp_bus *bus,
+ {
+ 	if (phylink_test(link_modes, 25000baseCR_Full) ||
+ 	    phylink_test(link_modes, 25000baseKR_Full) ||
+-	    phylink_test(link_modes, 25000baseSR_Full))
++	    phylink_test(link_modes, 25000baseSR_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_25GBASER;
++	}
+ 
+ 	if (phylink_test(link_modes, 10000baseCR_Full) ||
+ 	    phylink_test(link_modes, 10000baseSR_Full) ||
+ 	    phylink_test(link_modes, 10000baseLR_Full) ||
+ 	    phylink_test(link_modes, 10000baseLRM_Full) ||
+ 	    phylink_test(link_modes, 10000baseER_Full) ||
+-	    phylink_test(link_modes, 10000baseT_Full))
++	    phylink_test(link_modes, 10000baseT_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_10GBASER;
++	}
+ 
+-	if (phylink_test(link_modes, 5000baseT_Full))
++	if (phylink_test(link_modes, 5000baseT_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_5GBASER;
++	}
+ 
+-	if (phylink_test(link_modes, 2500baseX_Full))
++	if (phylink_test(link_modes, 2500baseX_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_2500BASEX;
++	}
+ 
+ 	if (phylink_test(link_modes, 1000baseT_Half) ||
+-	    phylink_test(link_modes, 1000baseT_Full))
++			phylink_test(link_modes, 1000baseT_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_SGMII;
++	}
+ 
+-	if (phylink_test(link_modes, 1000baseX_Full))
++	if (phylink_test(link_modes, 1000baseX_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_1000BASEX;
++	}
+ 
+-	if (phylink_test(link_modes, 100baseFX_Full))
++	if (phylink_test(link_modes, 100baseFX_Full)) {
++		pr_err("%s :%d\n", __func__, __LINE__);
+ 		return PHY_INTERFACE_MODE_100BASEX;
++	}
+ 
+ 	dev_warn(bus->sfp_dev, "Unable to ascertain link mode\n");
+ 
+diff --git a/drivers/net/phy/sfp.c b/drivers/net/phy/sfp.c
+index 8124c9719..ab92e7e67 100644
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -443,6 +443,141 @@ static void sfp_quirk_ubnt_uf_instant(const struct sfp_eeprom_id *id,
+ 	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, modes);
+ }
+ 
++#if 0
++static void sfp_quirk_1000base(const struct sfp_eeprom_id *id,
++		unsigned long *modes)
++{
++	pr_err("%s: %d 1000baseX module is being detected just fine..\n", __func__, __LINE__);
++	linkmode_zero(modes);
++	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, modes);
++}
++#endif
++
++static void sfp_quirk_10gbase_lr(const struct sfp_eeprom_id *id,
++		unsigned long *modes,
++		unsigned long *interfaces)
++{
++	pr_err("%s: %d 10gbase_lr module is being detected just fine.. before: modes:%*pb\n", __func__, __LINE__, __ETHTOOL_LINK_MODE_MASK_NBITS, modes);
++	// linkmode_zero(modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_AUI_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_BNC_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Pause_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, modes);
++	pr_err("%s: %d after: modes:%*pb\n", __func__, __LINE__, __ETHTOOL_LINK_MODE_MASK_NBITS, modes);
++}
++
++#if 0
++static void sfp_fixup_1000base_sx(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 1000baseX sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = true;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++
++}
++#endif
++
++static void sfp_fixup_1000base_lx(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 1000base_lx sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = true;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++
++}
++#if 0
++static void sfp_fixup_1000base_cx(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 1000base_cx sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = true;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++
++}
++
++static void sfp_fixup_10gbase_sr(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 1000base-sr sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = true;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++}
++
++#endif
++static void sfp_fixup_10gbase_lr(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 10gbase-lr sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = true;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++}
++
++#if 0
++static void sfp_fixup_10gbase_lrm(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 10gbase-lr sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = true;
++	sfp->id.base.e10g_base_er = false;
++}
++static void sfp_fixup_10gbase_er(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 10gbase-lr sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = true;
++}
++#endif
++
++
+ #define SFP_QUIRK(_v, _p, _m, _f) \
+ 	{ .vendor = _v, .part = _p, .modes = _m, .fixup = _f, }
+ #define SFP_QUIRK_M(_v, _p, _m) SFP_QUIRK(_v, _p, _m, NULL)
+@@ -508,6 +643,10 @@ static const struct sfp_quirk sfp_quirks[] = {
+ 	SFP_QUIRK_F("OEM", "RTSFP-10G", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10", sfp_fixup_rollball),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10G", sfp_fixup_rollball),
++	SFP_QUIRK_F("Mikrotik", "S-RJ01", sfp_fixup_1000base_lx),
++	SFP_QUIRK_F("CISCO-PROLABS", "WAVS+BX32-10CCN2", sfp_fixup_10gbase_lr),
++	SFP_QUIRK_F("CISCO-PROLABS", "WAVS+BX23-10CCN2", sfp_fixup_10gbase_lr),
++	SFP_QUIRK("DUMMY", "DUMMY", sfp_quirk_10gbase_lr, sfp_fixup_10gbase_lr),
+ };
+ 
+ static size_t sfp_strlen(const char *str, size_t maxlen)
+@@ -1865,8 +2004,10 @@ static int sfp_sm_probe_phy(struct sfp *sfp, int addr, bool is_c45)
+ 	int err;
+ 
+ 	phy = get_phy_device(sfp->i2c_mii, addr, is_c45);
+-	if (phy == ERR_PTR(-ENODEV))
++	if (phy == ERR_PTR(-ENODEV)) {
++		pr_err("%s :%d get_phy_device(sfp->i2c_mii, SFP_PHY_ADDR, is_c45) failed, returning error\n", __func__, __LINE__);
+ 		return PTR_ERR(phy);
++	}
+ 	if (IS_ERR(phy)) {
+ 		dev_err(sfp->dev, "mdiobus scan returned %pe\n", phy);
+ 		return PTR_ERR(phy);
+@@ -1892,6 +2033,7 @@ static int sfp_sm_probe_phy(struct sfp *sfp, int addr, bool is_c45)
+ 	}
+ 
+ 	sfp->mod_phy = phy;
++	pr_err("%s :%d All good, returning 0\n", __func__, __LINE__);
+ 
+ 	return 0;
+ }
+-- 
+2.39.2
+
