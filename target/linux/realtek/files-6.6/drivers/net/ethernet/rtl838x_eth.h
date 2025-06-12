@@ -46,7 +46,7 @@
 #define RTL838X_MAC_FORCE_MODE_CTRL		(0xa104)
 #define RTL839X_MAC_FORCE_MODE_CTRL		(0x02bc)
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0ddc)
+#define RTL931X_MAC_FORCE_MODE_CTRL		(0x0dcc)
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
@@ -298,6 +298,7 @@ inline u32 rtl930x_get_mac_link_sts(int port)
 {
 	u32 link = sw_r32(RTL930X_MAC_LINK_STS);
 
+	link = sw_r32(RTL930X_MAC_LINK_STS);
 	link = sw_r32(RTL930X_MAC_LINK_STS);
 	pr_info("%s link state is %08x\n", __func__, link);
 	return link & BIT(port);

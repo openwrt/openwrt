@@ -934,6 +934,8 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		/* Disable External CPU access to switch, clear EXT_CPU_EN */
 		sw_w32_mask(BIT(2), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
 
+		/* Disable SET2_MDC */
+		sw_w32_mask(BIT(11), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
 		/* Set PCIE_PWR_DOWN */
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
@@ -2219,6 +2221,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 
 	/* Init SPI, is this for thermal control or what? */
 	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
+	sw_w32_mask(BIT(8) | BIT(9) | BIT(10), 0, RTL931X_SPI_CTRL0);
 
 	return 0;
 }
