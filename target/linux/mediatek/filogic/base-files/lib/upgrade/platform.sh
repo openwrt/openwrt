@@ -81,6 +81,7 @@ platform_do_upgrade() {
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
+        huasifei,ws1610|\
 	mediatek,mt7988a-rfb|\
 	mercusys,mr90x-v1-ubi|\
 	netis,nx31|\
