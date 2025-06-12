@@ -3383,6 +3383,17 @@ define Device/yuncore_cpe830
 endef
 TARGET_DEVICES += yuncore_cpe830
 
+define Device/yuncore_wb5g08
+  SOC := qca9563
+  DEVICE_VENDOR := Yuncore
+  DEVICE_MODEL := WB5G08
+  IMAGE_SIZE := 16000k
+  IMAGES += tftp.bin
+  IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9888 -ath9k ipq-wifi-yuncore_wb5g08
+endef
+TARGET_DEVICES += yuncore_wb5g08
+
 define Device/yuncore_xd4200
   SOC := qca9563
   DEVICE_VENDOR := YunCore
