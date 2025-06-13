@@ -99,6 +99,9 @@ netcore,n60-pro)
 	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:06:green:wan" "eth1" "tx rx"
 	ucidef_set_led_netdev "wanlink" "WANLINK" "blue:wan" "eth1" "link"
 	;;
+netcore,nx30v2,n30pro,w7,gw3001)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1" "link tx rx"
+	;;
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
 	;;
