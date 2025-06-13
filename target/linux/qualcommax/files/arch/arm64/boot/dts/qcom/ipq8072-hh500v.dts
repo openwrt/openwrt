@@ -1,0 +1,421 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TCL HH500V";
+	compatible = "tcl,hh500v", "qcom,ipq8074";
+
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_red;
+		serial0 = &blsp1_uart5;
+		serial1 = &blsp1_uart3;
+		ethernet3 = &dp4;
+		ethernet5 = &dp6_syn;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	modem {
+		compatible = "gpio-export";
+		pinctrl-names = "default";
+		pinctrl-0 = <&modem_pins>;
+
+		/* output low = download mode */
+		modem_forcedl {
+			gpio-export,name = "modem_forcedl";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* output high = power on, output low = no power on after reset */
+		modem-power {
+			gpio-export,name = "modem_power";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		/*
+		 * output low 1s pulse = reset
+		 * sometimes crashes kernel if mhi_pci_generic is active
+		 */
+		modem-reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <1>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&tlmm 20 GPIO_ACTIVE_HIGH>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "power";
+			gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		4g_green {
+			label = "green:4g";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		4g_blue {
+			label = "blue:4g";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_blue {
+			label = "blue:wifi";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_blue: power_blue {
+			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: power_red {
+			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 6 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_red {
+			label = "red:5g";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_green {
+			label = "green:5g";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&aw9523 9 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_blue {
+			label = "blue:5g";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+		};
+
+		4g_red {
+			label = "red:4g";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button-pins {
+		power_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio62";
+		};
+
+		reset_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio47";
+		};
+
+		wps_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio64";
+		};
+	};
+
+	hsuart_pins: hsuart-state {
+		pins = "gpio48", "gpio49";
+	};
+
+	modem_pins: modem-pins {
+		modem_power_on {
+			bias-pull-up;
+			drive-strength = <8>;
+			output-high;
+			pins = "gpio30";
+		};
+
+		modem_reset {
+			drive-strength = <8>;
+			output-high;
+			pins = "gpio29";
+		};
+
+		modem_forcedl {
+			output-high;
+			pins = "gpio46";
+		};
+	};
+
+	pcie0_default_state: pcie0_wake_gpio {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "pcie0_wake";
+			pins = "gpio59";
+	};
+};
+
+&blsp1_i2c2 {
+	status = "okay";
+
+	aw9523: gpio-expander@5b {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <0x5b>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&aw9523 0 0 16>;
+		reset-gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+
+		led_pins: led-pins {
+			pins =
+				"gpio0", "gpio1", "gpio3", "gpio5", "gpio6",
+				"gpio8", "gpio9", "gpio10", "gpio11";
+			function = "gpio";
+			input-disable;
+			output-low;
+		};
+	};
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x00>;
+		/* "n25q128a11" required for u-boot patching, see nand node */
+		compatible = "n25q128a11", "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+		};
+	};
+};
+
+&blsp1_uart3 {
+	status = "okay";
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+	/*
+	 * Some variants of this board use NOR+NAND configuration which is
+	 * currently not supported by 'qcomsmem' MTD parser while other versions
+	 * have NAND alone. Let U-Boot find the NAND and SPI flash dt nodes and
+	 * populate partitions from SMEM partition table.
+	 *
+	 * This makes it possible to support both flash configurations with a
+	 * single image, and also to use QCA 'runtime failsafe' and rotate
+	 * 'rootfs'/'rootfs_1' partitions between subsequent updates.
+	 */
+	compatible = "qcom,ebi2-nandc-bam-v1.5.0", "qcom,ipq8074-nand";
+
+	nand@0 {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <8>;
+		reg = <0>;
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&ssphy_1 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay";
+};
+
+&usb_1 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	ethernet-phy-package@0 {
+		compatible = "qcom,qca8075-package";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+	};
+
+	qca8081: ethernet-phy@16 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <16>;
+		reset-deassert-us = <10000>;
+		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <ESS_PORT4>;
+	switch_wan_bmp = <ESS_PORT6>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+			port@4 {
+				phy_address = <3>;
+				port_id = <4>;
+			};
+
+			port@6 {
+				phy_address = <16>;
+				port_id = <6>;
+				port_mac_sel = "QGMAC_PORT";
+			};
+		};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan";
+};
+
+&dp6_syn {
+	status = "okay";
+	phy-handle = <&qca8081>;
+	label = "wan";
+};
+
+&pcie_qmp0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	pinctrl-0 = <&pcie0_default_state>;
+	pinctrl-names = "default";
+	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
+
+	pcie@0 {
+		modem@0,0 {
+			reg = <0x00 0x00 0x00 0x00 0x00>;
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "TCL-HH500V";
+};
