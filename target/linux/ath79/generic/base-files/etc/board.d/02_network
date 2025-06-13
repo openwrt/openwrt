@@ -213,8 +213,12 @@ ath79_setup_interfaces()
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth0"
 		;;
 	buffalo,wzr-450hp2)
-		ucidef_add_switch "switch0" \
-			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "lan4" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	buffalo,wzr-600dhp|\
 	buffalo,wzr-hp-ag300h|\
