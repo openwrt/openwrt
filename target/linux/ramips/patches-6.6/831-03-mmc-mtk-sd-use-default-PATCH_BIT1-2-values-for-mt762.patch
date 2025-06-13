@@ -1,0 +1,30 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 24 May 2025 15:53:26 +0800
+Subject: [PATCH 3/3] mmc: mtk-sd: use default PATCH_BIT1/2 values for mt7620
+
+The definitions of these two registers seem to be slightly different
+from other variants. Use their default values to follow the vendor
+SDK driver behaviors.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/mmc/host/mtk-sd.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/mmc/host/mtk-sd.c
++++ b/drivers/mmc/host/mtk-sd.c
+@@ -1797,9 +1797,11 @@ static void msdc_init_hw(struct msdc_hos
+ 	}
+ 	writel(0, host->base + MSDC_IOCON);
+ 	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 0);
+-	writel(0x403c0046, host->base + MSDC_PATCH_BIT);
+-	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
+-	writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
++	if (!host->dev_comp->mips_mt762x) {
++		writel(0x403c0046, host->base + MSDC_PATCH_BIT);
++		sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
++		writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
++	}
+ 	sdr_set_bits(host->base + EMMC50_CFG0, EMMC50_CFG_CFCSTS_SEL);
+ 
+ 	if (host->dev_comp->stop_clk_fix) {
