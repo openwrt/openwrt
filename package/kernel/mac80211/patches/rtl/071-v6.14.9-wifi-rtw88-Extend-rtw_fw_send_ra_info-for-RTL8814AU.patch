@@ -19,7 +19,7 @@ Link: https://patch.msgid.link/08e2f328-1aab-4e50-93ac-c1e5dd9541ac@gmail.com
 
 --- a/drivers/net/wireless/realtek/rtw88/fw.c
 +++ b/drivers/net/wireless/realtek/rtw88/fw.c
-@@ -736,6 +736,7 @@ void rtw_fw_send_ra_info(struct rtw_dev
+@@ -735,6 +735,7 @@ void rtw_fw_send_ra_info(struct rtw_dev
  {
  	u8 h2c_pkt[H2C_PKT_SIZE] = {0};
  	bool disable_pt = true;
@@ -27,7 +27,7 @@ Link: https://patch.msgid.link/08e2f328-1aab-4e50-93ac-c1e5dd9541ac@gmail.com
  
  	SET_H2C_CMD_ID_CLASS(h2c_pkt, H2C_CMD_RA_INFO);
  
-@@ -756,6 +757,20 @@ void rtw_fw_send_ra_info(struct rtw_dev
+@@ -755,6 +756,20 @@ void rtw_fw_send_ra_info(struct rtw_dev
  	si->init_ra_lv = 0;
  
  	rtw_fw_send_h2c_command(rtwdev, h2c_pkt);
