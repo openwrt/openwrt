@@ -1,0 +1,47 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 11 Jun 2025 17:35:00 +0200
+Subject: [PATCH] vm: export function for converting exception to ucode
+ value
+
+This can be used to simplify implementing module execption handlers in
+ucode.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/include/ucode/vm.h
++++ b/include/ucode/vm.h
+@@ -152,6 +152,7 @@ uc_exception_type_t uc_vm_call(uc_vm_t *
+ 
+ void __attribute__((format(printf, 3, 0)))
+ uc_vm_raise_exception(uc_vm_t *vm, uc_exception_type_t type, const char *fmt, ...);
++uc_value_t *uc_vm_exception_value(uc_vm_t *vm);
+ 
+ uc_vm_status_t uc_vm_execute(uc_vm_t *vm, uc_program_t *fn, uc_value_t **retval);
+ uc_value_t *uc_vm_invoke(uc_vm_t *vm, const char *fname, size_t nargs, ...);
+--- a/vm.c
++++ b/vm.c
+@@ -814,9 +814,12 @@ uc_vm_exception_tostring(uc_vm_t *vm, si
+ 	return message ? ucv_get(message) : ucv_string_new("Exception");
+ }
+ 
+-static uc_value_t *
+-uc_vm_exception_new(uc_vm_t *vm, uc_exception_type_t type, const char *message, uc_value_t *stacktrace)
++uc_value_t *
++uc_vm_exception_value(uc_vm_t *vm)
+ {
++	uc_exception_type_t type = vm->exception.type;
++	const char *message = vm->exception.message;
++	uc_value_t *stacktrace = vm->exception.stacktrace;
+ 	uc_value_t *exception_prototype = uc_vm_registry_get(vm, "vm.exception.proto");
+ 	uc_value_t *exo;
+ 
+@@ -881,7 +884,7 @@ uc_vm_handle_exception(uc_vm_t *vm)
+ 			ucv_put(uc_vm_stack_pop(vm));
+ 
+ 		/* prepare exception object and expose it to user handler code */
+-		exo = uc_vm_exception_new(vm, vm->exception.type, vm->exception.message, vm->exception.stacktrace);
++		exo = uc_vm_exception_value(vm);
+ 
+ 		uc_vm_stack_push(vm, exo);
+ 
