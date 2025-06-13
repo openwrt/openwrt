@@ -765,13 +765,13 @@ hostapd_set_bss_options() {
 
 			[ "$fils" -gt 0 ] && {
 				set_default erp_domain "$mobility_domain"
-				set_default erp_domain "$(echo "$ssid" | md5sum | head -c 8)"
+				set_default erp_domain "$(echo -n "$ssid" | md5sum | head -c 8)"
 				set_default fils_realm "$erp_domain"
 
 				append bss_conf "erp_send_reauth_start=1" "$N"
 				append bss_conf "erp_domain=$erp_domain" "$N"
 				append bss_conf "fils_realm=$fils_realm" "$N"
-				append bss_conf "fils_cache_id=$(echo "$fils_realm" | md5sum | head -c 4)" "$N"
+				append bss_conf "fils_cache_id=$(echo -n "$fils_realm" | md5sum | head -c 4)" "$N"
 
 				[ "$fils_dhcp" = "*" ] && {
 					json_get_values network network
@@ -948,7 +948,7 @@ hostapd_set_bss_options() {
 	if [ "$wpa" -ge "1" ]; then
 		if [ "$fils" -gt 0 ]; then
 			json_get_vars fils_realm
-			set_default fils_realm "$(echo "$ssid" | md5sum | head -c 8)"
+			set_default fils_realm "$(echo -n "$ssid" | md5sum | head -c 8)"
 		fi
 
 		append bss_conf "wpa_disable_eapol_key_retries=$wpa_disable_eapol_key_retries" "$N"
@@ -961,7 +961,7 @@ hostapd_set_bss_options() {
 		if [ "$ieee80211r" -gt "0" ]; then
 			json_get_vars mobility_domain ft_psk_generate_local ft_over_ds reassociation_deadline
 
-			set_default mobility_domain "$(echo "$ssid" | md5sum | head -c 4)"
+			set_default mobility_domain "$(echo -n "$ssid" | md5sum | head -c 4)"
 			set_default ft_over_ds 0
 			set_default reassociation_deadline 1000
 
@@ -993,7 +993,7 @@ hostapd_set_bss_options() {
 						wireless_setup_vif_failed FT_KEY_CANT_BE_DERIVED
 						return 1
 					fi
-					ft_key=`echo -n "$mobility_domain/${auth_secret:-${key}}" | md5sum | awk '{print $1}'`
+					ft_key="$(echo -n "$mobility_domain/${auth_secret:-${key}}" | md5sum | awk '{print $1}')"
 
 					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$ft_key"
 					set_default r1kh "00:00:00:00:00:00,00:00:00:00:00:00,$ft_key"
