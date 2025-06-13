@@ -112,7 +112,7 @@ JIRA: SWWLAN-136577
  				    BRCMF_DEFAULT_SCAN_CHANNEL_TIME);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1317,7 +1317,7 @@ int brcmf_alloc(struct device *dev, stru
+@@ -1322,7 +1322,7 @@ int brcmf_alloc(struct device *dev, stru
  	return 0;
  }
  
@@ -121,7 +121,7 @@ JIRA: SWWLAN-136577
  {
  	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
  	struct brcmf_pub *drvr = bus_if->drvr;
-@@ -1358,10 +1358,13 @@ int brcmf_attach(struct device *dev)
+@@ -1363,10 +1363,13 @@ int brcmf_attach(struct device *dev)
  	brcmf_fweh_register(drvr, BRCMF_E_PSM_WATCHDOG,
  			    brcmf_psm_watchdog_notify);
  
@@ -205,7 +205,7 @@ JIRA: SWWLAN-136577
  				    void *data);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
-@@ -2207,7 +2207,7 @@ static void brcmf_pcie_setup(struct devi
+@@ -2210,7 +2210,7 @@ static void brcmf_pcie_setup(struct devi
  
  	init_waitqueue_head(&devinfo->mbdata_resp_wait);
  
@@ -482,7 +482,7 @@ JIRA: SWWLAN-136577
  	bus->tx_hdrlen = SDPCM_HWHDR_LEN + SDPCM_SWHDR_LEN;
  	if (sdiodev->sg_support) {
  		bus->txglom = false;
-@@ -4215,7 +4413,7 @@ static void brcmf_sdio_firmware_callback
+@@ -4217,7 +4415,7 @@ static void brcmf_sdio_firmware_callback
  	u8 saveclk, bpreq;
  	u8 devctl;
  
@@ -491,7 +491,7 @@ JIRA: SWWLAN-136577
  
  	if (err)
  		goto fail;
-@@ -4392,12 +4590,25 @@ static void brcmf_sdio_firmware_callback
+@@ -4394,12 +4592,25 @@ static void brcmf_sdio_firmware_callback
  	}
  
  	/* Attach to the common layer, reserve hdr space */
@@ -518,7 +518,7 @@ JIRA: SWWLAN-136577
  	/* ready */
  	return;
  
-@@ -4640,3 +4851,40 @@ int brcmf_sdio_sleep(struct brcmf_sdio *
+@@ -4646,3 +4857,40 @@ int brcmf_sdio_sleep(struct brcmf_sdio *
  
  	return ret;
  }
@@ -701,7 +701,7 @@ JIRA: SWWLAN-136577
  	if (ret)
  		goto error;
  
-@@ -1277,7 +1277,7 @@ static int brcmf_usb_probe_cb(struct brc
+@@ -1280,7 +1280,7 @@ static int brcmf_usb_probe_cb(struct brc
  		ret = brcmf_alloc(devinfo->dev, devinfo->settings);
  		if (ret)
  			goto fail;

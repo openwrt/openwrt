@@ -26,15 +26,15 @@ Link: https://patch.msgid.link/20250324080303.408084-1-nichen@iscas.ac.cn
 
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
-@@ -901,7 +901,6 @@ static void rtw_usb_deinit_rx(struct rtw
+@@ -952,7 +952,6 @@ static void rtw_usb_deinit_rx(struct rtw
  
  	skb_queue_purge(&rtwusb->rx_queue);
  
 -	flush_workqueue(rtwusb->rxwq);
  	destroy_workqueue(rtwusb->rxwq);
- }
  
-@@ -928,7 +927,6 @@ static void rtw_usb_deinit_tx(struct rtw
+ 	skb_queue_purge(&rtwusb->rx_free_queue);
+@@ -981,7 +980,6 @@ static void rtw_usb_deinit_tx(struct rtw
  {
  	struct rtw_usb *rtwusb = rtw_get_usb_priv(rtwdev);
  

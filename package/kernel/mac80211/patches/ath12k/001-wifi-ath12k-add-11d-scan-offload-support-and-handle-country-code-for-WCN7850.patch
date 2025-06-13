@@ -121,7 +121,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  };
  
  static __le32 ath12k_wmi_tlv_hdr(u32 cmd, u32 len)
-@@ -2364,7 +2366,10 @@ int ath12k_wmi_send_scan_start_cmd(struc
+@@ -2531,7 +2533,10 @@ int ath12k_wmi_send_scan_start_cmd(struc
  	cmd->scan_id = cpu_to_le32(arg->scan_id);
  	cmd->scan_req_id = cpu_to_le32(arg->scan_req_id);
  	cmd->vdev_id = cpu_to_le32(arg->vdev_id);
@@ -133,7 +133,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	cmd->notify_scan_events = cpu_to_le32(arg->notify_scan_events);
  
  	ath12k_wmi_copy_scan_event_cntrl_flags(cmd, arg);
-@@ -3084,6 +3089,110 @@ out:
+@@ -3253,6 +3258,110 @@ out:
  	return ret;
  }
  
@@ -244,7 +244,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  int
  ath12k_wmi_send_twt_enable_cmd(struct ath12k *ar, u32 pdev_id)
  {
-@@ -5669,6 +5778,50 @@ static void ath12k_wmi_op_ep_tx_credits(
+@@ -5873,6 +5982,50 @@ static void ath12k_wmi_op_ep_tx_credits(
  	wake_up(&ab->wmi_ab.tx_credits_wq);
  }
  
@@ -295,9 +295,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_wmi_htc_tx_complete(struct ath12k_base *ab,
  				       struct sk_buff *skb)
  {
-@@ -7270,6 +7423,9 @@ static void ath12k_wmi_op_rx(struct ath1
- 	case WMI_GTK_OFFLOAD_STATUS_EVENTID:
- 		ath12k_wmi_gtk_offload_status_event(ab, skb);
+@@ -7586,6 +7739,9 @@ static void ath12k_wmi_op_rx(struct ath1
+ 	case WMI_OBSS_COLOR_COLLISION_DETECTION_EVENTID:
+ 		/* debug might flood hence silently ignore (no-op) */
  		break;
 +	case WMI_11D_NEW_COUNTRY_EVENTID:
 +		ath12k_reg_11d_new_cc_event(ab, skb);
@@ -307,7 +307,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		ath12k_dbg(ab, ATH12K_DBG_WMI, "Unknown eventid: 0x%x\n", id);
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -3860,6 +3860,28 @@ struct wmi_init_country_cmd {
+@@ -3990,6 +3990,28 @@ struct wmi_init_country_cmd {
  	} cc_info;
  } __packed;
  
@@ -336,9 +336,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  struct wmi_delba_send_cmd {
  	__le32 tlv_header;
  	__le32 vdev_id;
-@@ -3945,6 +3967,16 @@ struct ath12k_wmi_eht_rate_set_params {
+@@ -4074,6 +4096,16 @@ struct ath12k_wmi_eht_rate_set_params {
+ #define REG_ALPHA2_LEN 2
  #define MAX_6G_REG_RULES 5
- #define REG_US_5G_NUM_REG_RULES 4
  
 +struct wmi_set_current_country_arg {
 +	u8 alpha2[REG_ALPHA2_LEN];
@@ -353,7 +353,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  enum wmi_start_event_param {
  	WMI_VDEV_START_RESP_EVENT = 0,
  	WMI_VDEV_RESTART_RESP_EVENT,
-@@ -5547,11 +5579,17 @@ int ath12k_wmi_send_bcn_offload_control_
+@@ -5714,11 +5746,17 @@ int ath12k_wmi_send_bcn_offload_control_
  					    u32 vdev_id, u32 bcn_ctrl_op);
  int ath12k_wmi_send_init_country_cmd(struct ath12k *ar,
  				     struct ath12k_wmi_init_country_arg *arg);
@@ -373,7 +373,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  				 struct ath12k_wmi_rx_reorder_queue_remove_arg *arg);
 --- a/drivers/net/wireless/ath/ath12k/core.c
 +++ b/drivers/net/wireless/ath/ath12k/core.c
-@@ -1014,6 +1014,7 @@ void ath12k_core_halt(struct ath12k *ar)
+@@ -1218,6 +1218,7 @@ void ath12k_core_halt(struct ath12k *ar)
  	cancel_delayed_work_sync(&ar->scan.timeout);
  	cancel_work_sync(&ar->regd_update_work);
  	cancel_work_sync(&ab->rfkill_work);
@@ -381,7 +381,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	rcu_assign_pointer(ab->pdevs_active[ar->pdev_idx], NULL);
  	synchronize_rcu();
-@@ -1021,6 +1022,34 @@ void ath12k_core_halt(struct ath12k *ar)
+@@ -1225,6 +1226,34 @@ void ath12k_core_halt(struct ath12k *ar)
  	idr_init(&ar->txmgmt_idr);
  }
  
@@ -415,8 +415,8 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +
  static void ath12k_core_pre_reconfigure_recovery(struct ath12k_base *ab)
  {
- 	struct ath12k *ar;
-@@ -1045,8 +1074,10 @@ static void ath12k_core_pre_reconfigure_
+ 	struct ath12k_hw_group *ag = ab->ag;
+@@ -1250,8 +1279,10 @@ static void ath12k_core_pre_reconfigure_
  			ar = &ah->radio[j];
  
  			ath12k_mac_drain_tx(ar);
@@ -428,7 +428,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  			complete(&ar->scan.on_channel);
  			complete(&ar->peer_assoc_done);
  			complete(&ar->peer_delete_done);
-@@ -1312,6 +1343,7 @@ struct ath12k_base *ath12k_core_alloc(st
+@@ -1920,6 +1951,7 @@ struct ath12k_base *ath12k_core_alloc(st
  	INIT_WORK(&ab->reset_work, ath12k_core_reset);
  	INIT_WORK(&ab->rfkill_work, ath12k_rfkill_work);
  	INIT_WORK(&ab->dump_work, ath12k_coredump_upload);
@@ -438,8 +438,8 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	init_completion(&ab->htc_suspend);
 --- a/drivers/net/wireless/ath/ath12k/core.h
 +++ b/drivers/net/wireless/ath/ath12k/core.h
-@@ -199,6 +199,12 @@ enum ath12k_scan_state {
- 	ATH12K_SCAN_ABORTING,
+@@ -222,6 +222,12 @@ enum ath12k_hw_group_flags {
+ 	ATH12K_GROUP_FLAG_UNREGISTER,
  };
  
 +enum ath12k_11d_state {
@@ -449,9 +449,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +};
 +
  enum ath12k_dev_flags {
- 	ATH12K_CAC_RUNNING,
+ 	ATH12K_FLAG_CAC_RUNNING,
  	ATH12K_FLAG_CRASH_FLUSH,
-@@ -319,6 +325,8 @@ struct ath12k_vif_iter {
+@@ -359,6 +365,8 @@ struct ath12k_vif_iter {
  #define ATH12K_RX_RATE_TABLE_11AX_NUM	576
  #define ATH12K_RX_RATE_TABLE_NUM 320
  
@@ -460,9 +460,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  struct ath12k_rx_peer_rate_stats {
  	u64 ht_mcs_count[HAL_RX_MAX_MCS_HT + 1];
  	u64 vht_mcs_count[HAL_RX_MAX_MCS_VHT + 1];
-@@ -654,6 +662,13 @@ struct ath12k {
- 	u32 freq_low;
- 	u32 freq_high;
+@@ -710,6 +718,13 @@ struct ath12k {
+ 
+ 	struct wiphy_radio_freq_range freq_range;
  
 +	/* Protected by wiphy::mtx lock. */
 +	u32 vdev_id_11d_scan;
@@ -472,9 +472,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	bool regdom_set_by_user;
 +
  	bool nlo_enabled;
- };
  
-@@ -886,6 +901,8 @@ struct ath12k_base {
+ 	struct completion mlo_setup_done;
+@@ -982,6 +997,8 @@ struct ath12k_base {
  	/* continuous recovery fail count */
  	atomic_t fail_cont_count;
  	unsigned long reset_fail_timeout;
@@ -485,7 +485,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		u32 fw_crash_counter;
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -3249,6 +3249,11 @@ static void ath12k_bss_assoc(struct ath1
+@@ -3263,6 +3263,11 @@ static void ath12k_bss_assoc(struct ath1
  	if (ret)
  		ath12k_warn(ar->ab, "failed to set vdev %i OBSS PD parameters: %d\n",
  			    arvif->vdev_id, ret);
@@ -497,7 +497,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  }
  
  static void ath12k_bss_disassoc(struct ath12k *ar,
-@@ -4017,7 +4022,7 @@
+@@ -4017,7 +4022,7 @@ void __ath12k_mac_scan_finish(struct ath
  		fallthrough;
  	case ATH12K_SCAN_STARTING:
  		cancel_delayed_work(&ar->scan.timeout);
@@ -506,7 +506,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		wiphy_work_queue(ar->ah->hw->wiphy, &ar->scan.vdev_clean_wk);
  		break;
  	}
-@@ -4360,7 +4365,12 @@ scan:
+@@ -4361,7 +4366,12 @@ static int ath12k_mac_op_hw_scan(struct
  
  	ret = ath12k_start_scan(ar, arg);
  	if (ret) {
@@ -520,9 +520,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		spin_lock_bh(&ar->data_lock);
  		ar->scan.state = ATH12K_SCAN_IDLE;
  		spin_unlock_bh(&ar->data_lock);
-@@ -4390,6 +4390,11 @@ exit:
- 
- 	mutex_unlock(&ar->conf_mutex);
+@@ -4388,6 +4398,11 @@ exit:
+ 		kfree(arg);
+ 	}
  
 +	if (ar->state_11d == ATH12K_11D_PREPARING &&
 +	    ahvif->vdev_type == WMI_VDEV_TYPE_STA &&
@@ -532,7 +532,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	return ret;
  }
  
-@@ -7195,7 +7210,7 @@ static int ath12k_mac_start(struct ath12
+@@ -7318,7 +7333,7 @@ static int ath12k_mac_start(struct ath12
  
  	/* TODO: Do we need to enable ANI? */
  
@@ -541,8 +541,8 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	ar->num_started_vdevs = 0;
  	ar->num_created_vdevs = 0;
-@@ -7375,6 +7390,9 @@ static void ath12k_mac_stop(struct ath12
- 	cancel_delayed_work_sync(&ar->scan.timeout);
+@@ -7499,6 +7514,9 @@ static void ath12k_mac_stop(struct ath12
+ 	wiphy_work_cancel(ath12k_ar_to_hw(ar)->wiphy, &ar->scan.vdev_clean_wk);
  	cancel_work_sync(&ar->regd_update_work);
  	cancel_work_sync(&ar->ab->rfkill_work);
 +	cancel_work_sync(&ar->ab->update_11d_work);
@@ -551,7 +551,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	spin_lock_bh(&ar->data_lock);
  	list_for_each_entry_safe(ppdu_stats, tmp, &ar->ppdu_stats_info, list) {
-@@ -7792,6 +7797,117 @@
+@@ -7792,6 +7810,117 @@ static void ath12k_mac_op_update_vif_off
  	ath12k_mac_update_vif_offload(&ahvif->deflink);
  }
  
@@ -669,7 +669,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  int ath12k_mac_vdev_create(struct ath12k *ar, struct ath12k_link_vif *arvif)
  {
  	struct ath12k_hw *ah = ar->ah;
-@@ -7935,6 +8064,7 @@ static int ath12k_mac_vdev_create(struct
+@@ -7926,6 +8055,7 @@ int ath12k_mac_vdev_create(struct ath12k
  				    arvif->vdev_id, ret);
  			goto err_peer_del;
  		}
@@ -677,7 +677,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		break;
  	case WMI_VDEV_TYPE_STA:
  		param_id = WMI_STA_PS_PARAM_RX_WAKE_POLICY;
-@@ -7973,6 +8103,13 @@ static int ath12k_mac_vdev_create(struct
+@@ -7964,6 +8094,13 @@ int ath12k_mac_vdev_create(struct ath12k
  				    arvif->vdev_id, ret);
  			goto err_peer_del;
  		}
@@ -691,9 +691,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		break;
  	default:
  		break;
-@@ -8756,6 +8756,11 @@
- 	ath12k_dbg(ar->ab, ATH12K_DBG_MAC, "mac remove link interface (vdev %d link id %d)",
- 		   arvif->vdev_id, arvif->link_id);
+@@ -8756,6 +8893,11 @@ ath12k_mac_vdev_start_restart(struct ath
+ 			return ret;
+ 	}
  
 +	if (test_bit(WMI_TLV_SERVICE_11D_OFFLOAD, ab->wmi_ab.svc_map) &&
 +	    ahvif->vdev_type == WMI_VDEV_TYPE_STA &&
@@ -701,9 +701,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		ath12k_mac_11d_scan_stop(ar);
 +
  	if (ahvif->vdev_type == WMI_VDEV_TYPE_AP) {
- 		ret = ath12k_peer_delete(ar, arvif->vdev_id, arvif->bssid);
- 		if (ret)
-@@ -9330,6 +9446,14 @@
+ 		arg.ssid = ahvif->u.ap.ssid;
+ 		arg.ssid_len = ahvif->u.ap.ssid_len;
+@@ -9330,6 +9472,14 @@ ath12k_mac_op_unassign_vif_chanctx(struc
  	    ar->num_started_vdevs == 1 && ar->monitor_vdev_created)
  		ath12k_mac_monitor_stop(ar);
  
@@ -718,7 +718,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ath12k_mac_remove_link_interface(hw, arvif);
  	ath12k_mac_unassign_link_vif(arvif);
  }
-@@ -9891,6 +9941,14 @@ ath12k_mac_op_reconfig_complete(struct i
+@@ -9893,6 +10043,14 @@ ath12k_mac_op_reconfig_complete(struct i
  		ath12k_warn(ar->ab, "pdev %d successfully recovered\n",
  			    ar->pdev->pdev_id);
  
@@ -733,19 +733,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		if (ab->is_reset) {
  			recovery_count = atomic_inc_return(&ab->recovery_count);
  
-@@ -10040,6 +10198,9 @@ static void ath12k_mac_setup(struct ath1
+@@ -11106,6 +11264,9 @@ static void ath12k_mac_setup(struct ath1
  
- 	INIT_WORK(&ar->wmi_mgmt_tx_work, ath12k_mgmt_over_wmi_tx_work);
+ 	wiphy_work_init(&ar->wmi_mgmt_tx_work, ath12k_mgmt_over_wmi_tx_work);
  	skb_queue_head_init(&ar->wmi_mgmt_tx_queue);
 +
 +	ar->vdev_id_11d_scan = ATH12K_11D_INVALID_VDEV_ID;
 +	init_completion(&ar->completed_11d_scan);
  }
  
- int ath12k_mac_register(struct ath12k_base *ab)
+ static int __ath12k_mac_mlo_setup(struct ath12k *ar)
 --- a/drivers/net/wireless/ath/ath12k/mac.h
 +++ b/drivers/net/wireless/ath/ath12k/mac.h
-@@ -51,6 +51,13 @@ enum ath12k_supported_bw {
+@@ -66,6 +66,13 @@ struct ath12k_mac_get_any_chanctx_conf_a
  
  extern const struct htt_rx_ring_tlv_filter ath12k_mac_mon_status_filter_default;
  
