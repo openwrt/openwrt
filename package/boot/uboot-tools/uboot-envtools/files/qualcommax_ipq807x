@@ -7,6 +7,25 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
+ubootenv_mtdinfo () {
+	UBOOTENV_PART=$(cat /proc/mtd | grep -i APPSBLENV)
+	mtd_dev=$(echo $UBOOTENV_PART | awk '{print $1}' | sed 's/:$//')
+	mtd_size=$(echo $UBOOTENV_PART | awk '{print "0x"$2}')
+	mtd_erase=$(echo $UBOOTENV_PART | awk '{print "0x"$3}')
+	nor_flash=$(find /sys/bus/spi/devices/*/mtd -name ${mtd_dev})
+
+	if [ -n "$nor_flash" ]; then
+		ubootenv_size=$mtd_size
+	else
+		# size is fixed to 0x40000 in u-boot
+		ubootenv_size=0x40000
+	fi
+
+	sectors=$(( $ubootenv_size / $mtd_erase ))
+	sectors=$(printf "0x%x" $sectors )
+	echo /dev/$mtd_dev 0x0 $ubootenv_size $mtd_erase $sectors
+}
+
 case "$board" in
 aliyun,ap8220|\
 compex,wpq873|\
@@ -57,6 +76,9 @@ xiaomi,ax9000)
 	;;
 spectrum,sax1v1k)
 	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000" "1"
+	;;
+tcl,linkhub-hh500v)
+	ubootenv_add_uci_config $(ubootenv_mtdinfo)
 	;;
 esac
 
