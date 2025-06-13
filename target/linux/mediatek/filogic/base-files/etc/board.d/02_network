@@ -27,6 +27,10 @@ mediatek_setup_interfaces()
 	routerich,ax3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
+	livinet,li323|\
+	livinet,li323-ubootmod)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
+		;;
 	asus,tuf-ax4200|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
@@ -127,6 +131,8 @@ mediatek_setup_macs()
 		;;
 	livinet,li320|\
 	livinet,li320-ubootmod|\
+	livinet,li323|\
+	livinet,li323-ubootmod|\
 	livinet,li327|\
 	livinet,li327-ubootmod)
 		wan_mac=$(mtd_get_mac_binary "Factory" 0x24)

@@ -626,6 +626,41 @@ define Device/livinet_li320-ubootmod
   $(call Device/livinet_li320-common)
 endef
 TARGET_DEVICES += livinet_li320-ubootmod
+
+define Device/livinet_li323-common
+  DEVICE_VENDOR := Livinet
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  KERNEL = kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+endef
+
+define Device/livinet_li323
+  DEVICE_MODEL := Li323 (stock layout)
+  DEVICE_DTS := mt7981b-livinet-li323
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-gsw-rfb
+  IMAGE_SIZE := 65536k
+  $(call Device/livinet_li323-common)
+endef
+TARGET_DEVICES += livinet_li323
+
+define Device/livinet_li323-ubootmod
+  DEVICE_MODEL := Li323 (custom U-Boot layout)
+  DEVICE_DTS := mt7981b-livinet-li323-ubootmod
+  IMAGE_SIZE := 98304k
+  $(call Device/livinet_li323-common)
+endef
+TARGET_DEVICES += livinet_li323-ubootmod
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
