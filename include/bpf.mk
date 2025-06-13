@@ -42,6 +42,12 @@ BPF_TARGET:=bpf$(if $(CONFIG_BIG_ENDIAN),eb,el)
 
 BPF_HEADERS_DIR:=$(STAGING_DIR)/bpf-headers
 
+BPF_USER_INCLUDE := \
+	-nostdinc -isystem $(TOOLCHAIN_ROOT_DIR)/lib/gcc/*/*/include \
+	$(patsubst %,-isystem%,$(TOOLCHAIN_INC_DIRS)) \
+	-I$(BPF_HEADERS_DIR)/user_headers/include \
+	-I$(BPF_HEADERS_DIR)/tools/lib
+
 BPF_KERNEL_INCLUDE := \
 	-nostdinc -isystem $(TOOLCHAIN_ROOT_DIR)/lib/gcc/*/*/include \
 	$(patsubst %,-isystem%,$(TOOLCHAIN_INC_DIRS)) \
