@@ -115,6 +115,18 @@ platform_do_upgrade() {
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
 		;;
+	edgecore,eap101)
+		active="$(fw_printenv -n active)"
+		if [ "$active" -eq "1" ]; then
+			CI_UBIPART="rootfs2"
+		else
+			CI_UBIPART="rootfs1"
+		fi
+		# force altbootcmd which handles partition change in u-boot
+		fw_setenv bootcount 3
+		fw_setenv upgrade_available 1
+		nand_do_upgrade "$1"
+		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
 	netgear,wax214|\

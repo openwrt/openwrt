@@ -48,6 +48,20 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
+define Device/edgecore_eap101
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Edgecore
+	DEVICE_MODEL := EAP101
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp01-c1
+	SOC := ipq6018
+	DEVICE_PACKAGES := ipq-wifi-edgecore_eap101
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += edgecore_eap101
+
 define Device/glinet_gl-common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
