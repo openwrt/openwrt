@@ -30,4 +30,4 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		.of_match_table	= rt2880_wmac_match,
  	},
  	.probe		= rt2800soc_probe,
- 	.remove		= rt2x00soc_remove,
+ #if LINUX_VERSION_IS_GEQ(6,13,0)

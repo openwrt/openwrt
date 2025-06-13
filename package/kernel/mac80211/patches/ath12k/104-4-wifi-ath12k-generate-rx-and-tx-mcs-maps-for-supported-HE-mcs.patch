@@ -128,7 +128,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -5519,20 +5519,40 @@ static __le16 ath12k_mac_setup_he_6ghz_c
+@@ -6721,20 +6721,40 @@ static __le16 ath12k_mac_setup_he_6ghz_c
  	return cpu_to_le16(bcap->he_6ghz_capa);
  }
  
@@ -177,7 +177,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  				   int iftype, u8 num_tx_chains,
  				   struct ieee80211_sta_he_cap *he_cap)
  {
-@@ -5574,7 +5594,7 @@ static void ath12k_mac_copy_he_cap(struc
+@@ -6776,7 +6796,7 @@ static void ath12k_mac_copy_he_cap(struc
  		break;
  	}
  
@@ -186,7 +186,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	memset(he_cap->ppe_thres, 0, sizeof(he_cap->ppe_thres));
  	if (he_cap_elem->phy_cap_info[6] &
  	    IEEE80211_HE_PHY_CAP6_PPE_THRESHOLD_PRESENT)
-@@ -5763,7 +5783,7 @@ static int ath12k_mac_copy_sband_iftype_
+@@ -6965,7 +6985,7 @@ static int ath12k_mac_copy_sband_iftype_
  
  		data[idx].types_mask = BIT(i);
  
