@@ -124,6 +124,10 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	cudy,wr3000h-v1)
+		CI_UBIPART="ubi"
+		nand_do_upgrade "$1"
+		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	yuncore,ax835|\
