@@ -112,6 +112,8 @@ platform_do_upgrade() {
 	sim,simax1800t|\
 	tplink,ec330-g5u-v1|\
 	wifire,s1500-nbn|\
+	livinet,li172|\
+	livinet,li172v2|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
