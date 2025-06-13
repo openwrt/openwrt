@@ -240,6 +240,12 @@ xiaomi,mi-router-cr6608|\
 xiaomi,mi-router-cr6609)
 	ucidef_set_led_netdev "internet" "Internet" "blue:net" "wan"
 	;;
+livinet,li172|\
+livinet,li172v2)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
 xiaomi,redmi-router-ac2100)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
