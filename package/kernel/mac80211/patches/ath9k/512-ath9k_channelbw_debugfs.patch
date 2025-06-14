@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1430,6 +1430,7 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1431,6 +1431,7 @@ int ath9k_init_debug(struct ath_hw *ah)
  	ath9k_cmn_debug_base_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
  	ath9k_cmn_debug_modal_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
  	ath9k_cmn_debug_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
@@ -181,7 +181,7 @@
  	hw->max_listen_interval = 1;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -733,6 +733,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -689,6 +689,7 @@ static int ath9k_init_softc(u16 devid, s
  	if (!ath9k_is_chanctx_enabled())
  		sc->cur_chan->hw_queue_base = 0;
  

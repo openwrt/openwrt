@@ -22,7 +22,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
 
 --- a/drivers/net/wireless/ath/ath12k/core.c
 +++ b/drivers/net/wireless/ath/ath12k/core.c
-@@ -161,7 +161,7 @@ EXPORT_SYMBOL(ath12k_core_resume);
+@@ -173,7 +173,7 @@ EXPORT_SYMBOL(ath12k_core_resume);
  
  static int __ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
  					   size_t name_len, bool with_variant,
@@ -31,7 +31,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  {
  	/* strlen(',variant=') + strlen(ab->qmi.target.bdf_ext) */
  	char variant[9 + ATH12K_QMI_BDF_EXT_STR_LENGTH] = { 0 };
-@@ -192,7 +192,9 @@ static int __ath12k_core_create_board_na
+@@ -204,7 +204,9 @@ static int __ath12k_core_create_board_na
  			  "bus=%s,qmi-chip-id=%d,qmi-board-id=%d%s",
  			  ath12k_bus_str(ab->hif.bus),
  			  ab->qmi.target.chip_id,
@@ -42,7 +42,7 @@ Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
  		break;
  	}
  
-@@ -204,19 +206,19 @@ static int __ath12k_core_create_board_na
+@@ -216,19 +218,19 @@ static int __ath12k_core_create_board_na
  static int ath12k_core_create_board_name(struct ath12k_base *ab, char *name,
  					 size_t name_len)
  {
