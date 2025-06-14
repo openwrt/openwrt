@@ -351,6 +351,15 @@ define U-Boot/orangepi_zero2
   ATF:=h616
 endef
 
+define U-Boot/orangepi_zero2w
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Xunlong Orange Pi Zero2W
+  BUILD_DEVICES:=xunlong_orangepi-zero2w
+  DEPENDS:=+PACKAGE_u-boot-orangepi_zero2w:trusted-firmware-a-sunxi-h616
+  UENV:=h616
+  ATF:=h616
+endef
+
 define U-Boot/orangepi_zero3
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi Zero3
@@ -425,6 +434,7 @@ UBOOT_TARGETS := \
 	orangepi_2 \
 	orangepi_pc2 \
 	orangepi_zero2 \
+	orangepi_zero2w \
 	orangepi_zero3 \
 	pangolin \
 	pine64_plus \
