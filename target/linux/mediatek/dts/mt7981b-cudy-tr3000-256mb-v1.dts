@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
 #include "mt7981b-cudy-tr3000-v1.dts"
 
 / {
@@ -10,21 +12,8 @@
 		partitions {
 			partition@5c0000 {
 				label = "ubi";
-				reg = <0x5c0000 0xe280000>;
+				reg = <0x5c0000 0xe600000>;
 			};
 		};
 	};
-};
-
-&spi_nand {
-	spi-cal-enable;
-	spi-cal-mode = "read-data";
-	spi-cal-datalen = <7>;
-	spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
-	spi-cal-addrlen = <5>;
-	spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
-
-	mediatek,nmbm;
-	mediatek,bmt-max-ratio = <1>;
-	mediatek,bmt-max-reserved-blocks = <64>;
 };
