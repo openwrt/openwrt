@@ -1,0 +1,332 @@
+From 72b89433e6efdaf39ce3167193f5ef9a3536981a Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:23:10 +0100
+Subject: [PATCH] Rename module stddef to stddef-h.
+
+* modules/stddef-h: Renamed from modules/stddef.
+* modules/stddef-h-tests: Renamed from modules/stddef-tests.
+* modules/stddef-h-c++-tests: Renamed from modules/stddef-c++-tests.
+* tests/test-stddef-h.c: Renamed from tests/test-stddef.c.
+* tests/test-stddef-h-c++.cc: Renamed from tests/test-stddef-c++.cc.
+* tests/test-stddef-h-c++2.cc: Renamed from tests/test-stddef-c++2.cc.
+* doc/posix-headers/stddef.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stddef: New file.
+---
+ ChangeLog                                     | 13 +++++
+ doc/posix-headers/stddef.texi                 |  4 +-
+ modules/c-stack                               |  2 +-
+ modules/dfa                                   |  2 +-
+ modules/error                                 |  2 +-
+ modules/fts                                   |  2 +-
+ modules/glibc-internal/dynarray               |  2 +-
+ modules/glibc-internal/scratch_buffer         |  2 +-
+ modules/locale-h                              |  2 +-
+ modules/malloc-h                              |  2 +-
+ modules/relocatable-prog-wrapper              |  2 +-
+ modules/stddef                                | 41 +++------------
+ modules/stddef-c++-tests                      | 18 -------
+ modules/stddef-h                              | 52 +++++++++++++++++++
+ modules/stddef-h-c++-tests                    | 18 +++++++
+ modules/stddef-h-tests                        | 13 +++++
+ modules/stddef-tests                          | 13 -----
+ modules/stdio                                 |  2 +-
+ modules/stdlib                                |  2 +-
+ modules/string                                |  2 +-
+ modules/time-h                                |  2 +-
+ modules/unistd                                |  2 +-
+ modules/wchar                                 |  2 +-
+ ...est-stddef-c++.cc => test-stddef-h-c++.cc} |  0
+ ...t-stddef-c++2.cc => test-stddef-h-c++2.cc} |  0
+ tests/{test-stddef.c => test-stddef-h.c}      |  0
+ 26 files changed, 120 insertions(+), 82 deletions(-)
+ delete mode 100644 modules/stddef-c++-tests
+ create mode 100644 modules/stddef-h
+ create mode 100644 modules/stddef-h-c++-tests
+ create mode 100644 modules/stddef-h-tests
+ delete mode 100644 modules/stddef-tests
+ rename tests/{test-stddef-c++.cc => test-stddef-h-c++.cc} (100%)
+ rename tests/{test-stddef-c++2.cc => test-stddef-h-c++2.cc} (100%)
+ rename tests/{test-stddef.c => test-stddef-h.c} (100%)
+
+--- a/modules/c-stack
++++ b/modules/c-stack
+@@ -19,7 +19,7 @@ inttypes-h
+ mempcpy
+ raise
+ sigsegv
+-stddef
++stddef-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -26,7 +26,7 @@ mbrtoc32-regular
+ mbszero
+ regex
+ stdbool-h
+-stddef
++stddef-h
+ stdint
+ stdio
+ stdlib
+--- a/modules/error
++++ b/modules/error
+@@ -7,7 +7,7 @@ m4/error.m4
+ 
+ Depends-on:
+ error-h
+-stddef
++stddef-h
+ stdio
+ getprogname
+ gettext-h       [test $COMPILE_ERROR_C = 1]
+--- a/modules/fts
++++ b/modules/fts
+@@ -36,7 +36,7 @@ opendirat
+ readdir
+ realloc-posix
+ stdbool-h
+-stddef
++stddef-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/glibc-internal/dynarray
++++ b/modules/glibc-internal/dynarray
+@@ -18,7 +18,7 @@ gen-header
+ libc-config
+ stdbool-h
+ stdckdint-h
+-stddef
++stddef-h
+ 
+ configure.ac:
+ AC_PROG_MKDIR_P
+--- a/modules/glibc-internal/scratch_buffer
++++ b/modules/glibc-internal/scratch_buffer
+@@ -14,7 +14,7 @@ builtin-expect
+ gen-header
+ libc-config
+ stdbool-h
+-stddef
++stddef-h
+ malloc-posix
+ realloc-posix
+ free-posix
+--- a/modules/locale-h
++++ b/modules/locale-h
+@@ -12,7 +12,7 @@ include_next
+ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+-stddef
++stddef-h
+ 
+ configure.ac:
+ gl_LOCALE_H
+--- a/modules/malloc-h
++++ b/modules/malloc-h
+@@ -10,7 +10,7 @@ gen-header
+ include_next
+ snippet/c++defs
+ snippet/warn-on-use
+-stddef
++stddef-h
+ stdlib
+ 
+ configure.ac:
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -70,7 +70,7 @@ limits-h
+ pathmax
+ ssize_t
+ stdbool-h
+-stddef
++stddef-h
+ stdckdint-h
+ stdint
+ stdlib
+--- a/modules/stddef
++++ b/modules/stddef
+@@ -1,46 +1,20 @@
+ Description:
+ A <stddef.h> that works around platform issues.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stddef-h' instead.
++
+ Files:
+-lib/stddef.in.h
+-m4/stddef_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-extensions
++stddef-h
+ 
+ configure.ac:
+-gl_STDDEF_H
+-gl_STDDEF_H_REQUIRE_DEFAULTS
+-gl_CONDITIONAL_HEADER([stddef.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDDEF_H)
+-
+-# We need the following in order to create <stddef.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_STDDEF_H
+-stddef.h: stddef.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDDEF_H''@|$(NEXT_STDDEF_H)|g' \
+-	      -e 's|@''NULLPTR_T_NEEDS_STDDEF''@|$(NULLPTR_T_NEEDS_STDDEF)|g' \
+-	      -e 's|@''STDDEF_NOT_IDEMPOTENT''@|$(STDDEF_NOT_IDEMPOTENT)|g' \
+-	      -e 's|@''REPLACE_NULL''@|$(REPLACE_NULL)|g' \
+-	      -e 's|@''HAVE_MAX_ALIGN_T''@|$(HAVE_MAX_ALIGN_T)|g' \
+-	      $(srcdir)/stddef.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stddef.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stddef.h stddef.h-t
+ 
+ Include:
+ <stddef.h>
+@@ -49,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stddef-h
+@@ -0,0 +1,52 @@
++Description:
++A <stddef.h> that works around platform issues.
++
++Files:
++lib/stddef.in.h
++m4/stddef_h.m4
++
++Depends-on:
++gen-header
++include_next
++extensions
++
++configure.ac:
++gl_STDDEF_H
++gl_STDDEF_H_REQUIRE_DEFAULTS
++gl_CONDITIONAL_HEADER([stddef.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDDEF_H)
++
++# We need the following in order to create <stddef.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_STDDEF_H
++stddef.h: stddef.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDDEF_H''@|$(NEXT_STDDEF_H)|g' \
++	      -e 's|@''NULLPTR_T_NEEDS_STDDEF''@|$(NULLPTR_T_NEEDS_STDDEF)|g' \
++	      -e 's|@''STDDEF_NOT_IDEMPOTENT''@|$(STDDEF_NOT_IDEMPOTENT)|g' \
++	      -e 's|@''REPLACE_NULL''@|$(REPLACE_NULL)|g' \
++	      -e 's|@''HAVE_MAX_ALIGN_T''@|$(HAVE_MAX_ALIGN_T)|g' \
++	      $(srcdir)/stddef.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stddef.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stddef.h stddef.h-t
++
++Include:
++<stddef.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/stdio
++++ b/modules/stdio
+@@ -16,7 +16,7 @@ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+ ssize_t
+-stddef
++stddef-h
+ sys_types
+ 
+ configure.ac-early:
+--- a/modules/stdlib
++++ b/modules/stdlib
+@@ -16,7 +16,7 @@ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+ snippet/_Noreturn
+-stddef
++stddef-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/string
++++ b/modules/string
+@@ -13,7 +13,7 @@ include_next
+ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+-stddef
++stddef-h
+ stdlib
+ 
+ configure.ac:
+--- a/modules/time-h
++++ b/modules/time-h
+@@ -12,7 +12,7 @@ include_next
+ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+-stddef
++stddef-h
+ 
+ configure.ac:
+ gl_TIME_H
+--- a/modules/unistd
++++ b/modules/unistd
+@@ -16,7 +16,7 @@ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+ ssize_t
+-stddef
++stddef-h
+ sys_types
+ 
+ configure.ac:
+--- a/modules/wchar
++++ b/modules/wchar
+@@ -15,7 +15,7 @@ snippet/c++defs
+ snippet/warn-on-use
+ extern-inline
+ inttypes-h-incomplete
+-stddef
++stddef-h
+ stdlib
+ 
+ configure.ac:

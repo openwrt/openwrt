@@ -1,0 +1,198 @@
+From c26137915e93c6d88f01b1a3fca6edf44633216b Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:13 +0100
+Subject: [PATCH] Rename module inttypes to inttypes-h.
+
+* modules/inttypes-h: Renamed from modules/inttypes.
+* modules/inttypes-h-tests: Renamed from modules/inttypes-tests.
+* modules/inttypes-h-c++-tests: Renamed from modules/inttypes-c++-tests.
+* tests/test-inttypes-h.c: Renamed from tests/test-inttypes.c.
+* tests/test-inttypes-h-c++.cc: Renamed from tests/test-inttypes-c++.cc.
+* tests/test-inttypes-h-c++2.cc: Renamed from tests/test-inttypes-c++2.cc.
+* doc/posix-headers/inttypes.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/inttypes: New file.
+---
+ ChangeLog                                     | 13 +++++++++++
+ doc/posix-headers/inttypes.texi               |  4 ++--
+ modules/c-stack                               |  2 +-
+ modules/intprops-tests                        |  2 +-
+ modules/inttostr-tests                        |  2 +-
+ modules/inttypes                              | 11 ++++++----
+ modules/inttypes-c++-tests                    | 19 ----------------
+ modules/inttypes-h                            | 22 +++++++++++++++++++
+ modules/inttypes-h-c++-tests                  | 19 ++++++++++++++++
+ modules/inttypes-h-tests                      | 11 ++++++++++
+ modules/inttypes-tests                        | 11 ----------
+ modules/parse-datetime                        |  2 +-
+ modules/pthread_sigmask-tests                 |  2 +-
+ modules/sigprocmask-tests                     |  2 +-
+ modules/stdckdint-tests                       |  2 +-
+ modules/xstrtol-tests                         |  2 +-
+ modules/xstrtoll-tests                        |  2 +-
+ ...inttypes-c++.cc => test-inttypes-h-c++.cc} |  0
+ ...ttypes-c++2.cc => test-inttypes-h-c++2.cc} |  0
+ tests/{test-inttypes.c => test-inttypes-h.c}  |  0
+ 20 files changed, 83 insertions(+), 45 deletions(-)
+ delete mode 100644 modules/inttypes-c++-tests
+ create mode 100644 modules/inttypes-h
+ create mode 100644 modules/inttypes-h-c++-tests
+ create mode 100644 modules/inttypes-h-tests
+ delete mode 100644 modules/inttypes-tests
+ rename tests/{test-inttypes-c++.cc => test-inttypes-h-c++.cc} (100%)
+ rename tests/{test-inttypes-c++2.cc => test-inttypes-h-c++2.cc} (100%)
+ rename tests/{test-inttypes.c => test-inttypes-h.c} (100%)
+
+--- a/modules/c-stack
++++ b/modules/c-stack
+@@ -15,7 +15,7 @@ gettext-h
+ gnulib-i18n
+ idx
+ ignore-value
+-inttypes
++inttypes-h
+ mempcpy
+ raise
+ sigsegv
+--- a/modules/intprops-tests
++++ b/modules/intprops-tests
+@@ -4,7 +4,7 @@ tests/macros.h
+ 
+ Depends-on:
+ assert-h
+-inttypes
++inttypes-h
+ stdbool
+ 
+ configure.ac:
+--- a/modules/inttostr-tests
++++ b/modules/inttostr-tests
+@@ -4,7 +4,7 @@ tests/test-inttostr.c
+ 
+ Depends-on:
+ intprops
+-inttypes
++inttypes-h
+ snprintf
+ 
+ configure.ac:
+--- a/modules/inttypes
++++ b/modules/inttypes
+@@ -1,14 +1,18 @@
+ Description:
+ An <inttypes.h> that nearly conforms to C99.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'inttypes-h' instead.
++
+ Files:
+ 
+ Depends-on:
+-inttypes-h-incomplete
+-extensions
++inttypes-h
+ 
+ configure.ac:
+-gl_INTTYPES_H
+ 
+ Makefile.am:
+ 
+@@ -19,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/inttypes-h
+@@ -0,0 +1,22 @@
++Description:
++An <inttypes.h> that nearly conforms to C99.
++
++Files:
++
++Depends-on:
++inttypes-h-incomplete
++extensions
++
++configure.ac:
++gl_INTTYPES_H
++
++Makefile.am:
++
++Include:
++<inttypes.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/parse-datetime
++++ b/modules/parse-datetime
+@@ -19,7 +19,7 @@ gettext-h
+ gnulib-i18n
+ idx
+ intprops
+-inttypes
++inttypes-h
+ mktime
+ nstrftime
+ setenv
+--- a/modules/pthread_sigmask-tests
++++ b/modules/pthread_sigmask-tests
+@@ -6,7 +6,7 @@ tests/virtualbox.h
+ tests/macros.h
+ 
+ Depends-on:
+-inttypes
++inttypes-h
+ sleep
+ pthread-thread
+ test-xfail
+--- a/modules/sigprocmask-tests
++++ b/modules/sigprocmask-tests
+@@ -5,7 +5,7 @@ tests/virtualbox.h
+ tests/macros.h
+ 
+ Depends-on:
+-inttypes
++inttypes-h
+ sleep
+ test-xfail
+ 
+--- a/modules/stdckdint-tests
++++ b/modules/stdckdint-tests
+@@ -5,7 +5,7 @@ tests/test-stdckdint.c
+ 
+ Depends-on:
+ assert-h
+-inttypes
++inttypes-h
+ stdbool
+ stdckdint-c++-tests
+ 
+--- a/modules/xstrtol-tests
++++ b/modules/xstrtol-tests
+@@ -4,7 +4,7 @@ tests/test-xstrtoul.c
+ tests/test-xstrtol.sh
+ 
+ Depends-on:
+-inttypes
++inttypes-h
+ test-framework-sh
+ xstrtol-error
+ 
+--- a/modules/xstrtoll-tests
++++ b/modules/xstrtoll-tests
+@@ -5,7 +5,7 @@ tests/test-xstrtoull.c
+ tests/test-xstrtoll.sh
+ 
+ Depends-on:
+-inttypes
++inttypes-h
+ test-framework-sh
+ 
+ configure.ac:

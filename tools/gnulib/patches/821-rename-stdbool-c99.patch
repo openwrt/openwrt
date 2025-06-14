@@ -1,0 +1,145 @@
+From 8f53fd50a2f646b5ca45011ce94f20fc4270ae7a Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:18:10 +0100
+Subject: [PATCH] Rename module stdbool-c99 to stdbool-h-c99.
+
+* modules/stdbool-h-c99: Renamed from modules/stdbool-c99.
+* modules/stdbool-h-c99-tests: Renamed from modules/stdbool-c99-tests.
+* modules/stdbool-h-c99-c++-tests: Renamed from
+modules/stdbool-c99-c++-tests.
+* tests/test-stdbool-h-c99.c: Renamed from tests/test-stdbool-c99.c.
+* tests/test-stdbool-h-c99-c++.cc: Renamed from
+tests/test-stdbool-c99-c++.cc.
+* doc/posix-headers/stdbool.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdbool-c99: New file.
+---
+ ChangeLog                                     | 13 +++++
+ doc/posix-headers/stdbool.texi                |  6 +--
+ modules/stdbool-c99                           | 32 ++----------
+ modules/stdbool-c99-c++-tests                 | 19 -------
+ modules/stdbool-c99-tests                     | 12 -----
+ modules/stdbool-h-c99                         | 51 +++++++++++++++++++
+ modules/stdbool-h-c99-c++-tests               | 19 +++++++
+ modules/stdbool-h-c99-tests                   | 12 +++++
+ ...l-c99-c++.cc => test-stdbool-h-c99-c++.cc} |  0
+ ...est-stdbool-c99.c => test-stdbool-h-c99.c} |  0
+ 10 files changed, 101 insertions(+), 63 deletions(-)
+ delete mode 100644 modules/stdbool-c99-c++-tests
+ delete mode 100644 modules/stdbool-c99-tests
+ create mode 100644 modules/stdbool-h-c99
+ create mode 100644 modules/stdbool-h-c99-c++-tests
+ create mode 100644 modules/stdbool-h-c99-tests
+ rename tests/{test-stdbool-c99-c++.cc => test-stdbool-h-c99-c++.cc} (100%)
+ rename tests/{test-stdbool-c99.c => test-stdbool-h-c99.c} (100%)
+
+--- a/modules/stdbool-c99
++++ b/modules/stdbool-c99
+@@ -1,45 +1,20 @@
+ Description:
+ A <stdbool.h> that nearly conforms to C99.
+-(Nearly: casts to bool may not work.)
+ 
+ Status:
+-obsolete
++deprecated
+ 
+ Notice:
+-This module is obsolete.  It is present only for programs that
+-formerly used the old stdbool module for C99 compatibility,
+-and that for some reason cannot use the current stdbool module
+-for C23 compatibility.
++This module is deprecated. Use the module 'stdbool-h-c99' instead.
+ 
+ Files:
+-lib/stdbool.in.h
+-m4/stdbool.m4
+ 
+ Depends-on:
+-gen-header
++stdbool-h-c99
+ 
+ configure.ac:
+-gl_STDBOOL_H
+-gl_CONDITIONAL_HEADER([stdbool.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDBOOL_H)
+-
+-# We need the following in order to create <stdbool.h> when the system
+-# doesn't have one that works.
+-if GL_GENERATE_STDBOOL_H
+-stdbool.h: stdbool.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	  -e 's/@''HAVE__BOOL''@/$(HAVE__BOOL)/g' \
+-	  $(srcdir)/stdbool.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdbool.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdbool.h stdbool.h-t
+ 
+ Include:
+ <stdbool.h>
+@@ -48,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdbool-h-c99
+@@ -0,0 +1,51 @@
++Description:
++A <stdbool.h> that nearly conforms to C99.
++(Nearly: casts to bool may not work.)
++
++Status:
++obsolete
++
++Notice:
++This module is obsolete.  It is present only for programs that
++formerly used the old stdbool module for C99 compatibility,
++and that for some reason cannot use the current stdbool module
++for C23 compatibility.
++
++Files:
++lib/stdbool.in.h
++m4/stdbool.m4
++
++Depends-on:
++gen-header
++
++configure.ac:
++gl_STDBOOL_H
++gl_CONDITIONAL_HEADER([stdbool.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDBOOL_H)
++
++# We need the following in order to create <stdbool.h> when the system
++# doesn't have one that works.
++if GL_GENERATE_STDBOOL_H
++stdbool.h: stdbool.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	  -e 's/@''HAVE__BOOL''@/$(HAVE__BOOL)/g' \
++	  $(srcdir)/stdbool.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdbool.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdbool.h stdbool.h-t
++
++Include:
++<stdbool.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all

@@ -1,0 +1,1329 @@
+From 60e90236d948760acbab698e1b3b540c139cc0fd Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:28:45 +0100
+Subject: [PATCH] Rename module stdlib to stdlib-h.
+
+* modules/stdlib-h: Renamed from modules/stdlib.
+* modules/stdlib-h-tests: Renamed from modules/stdlib-tests.
+* modules/stdlib-h-c++-tests: Renamed from modules/stdlib-c++-tests.
+* tests/test-stdlib-h.c: Renamed from tests/test-stdlib.c.
+* tests/test-stdlib-h-c++.cc: Renamed from tests/test-stdlib-c++.cc.
+* tests/test-stdlib-h-c++2.cc: Renamed from tests/test-stdlib-c++2.cc.
+* doc/posix-headers/stdlib.texi: Update.
+* doc/posix-functions/exit.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdlib: New file.
+---
+ ChangeLog                                     |  14 ++
+ doc/posix-functions/exit.texi                 |   4 +-
+ doc/posix-headers/stdlib.texi                 |   6 +-
+ modules/_Exit                                 |   2 +-
+ modules/abort-debug                           |   2 +-
+ modules/aligned_alloc                         |   2 +-
+ modules/argmatch                              |   2 +-
+ modules/atoll                                 |   2 +-
+ modules/calloc-posix                          |   2 +-
+ modules/canonicalize-lgpl                     |   2 +-
+ modules/chdir-long                            |   2 +-
+ modules/copy-file                             |   2 +-
+ modules/dfa                                   |   2 +-
+ modules/dfa-tests                             |   2 +-
+ modules/execute                               |   2 +-
+ modules/exitfail                              |   2 +-
+ modules/free-posix                            |   2 +-
+ modules/getloadavg                            |   2 +-
+ modules/getprogname                           |   2 +-
+ modules/getsubopt                             |   2 +-
+ modules/git-merge-changelog                   |   2 +-
+ modules/grantpt                               |   2 +-
+ modules/long-options                          |   2 +-
+ modules/malloc-h                              |   2 +-
+ modules/malloc-posix                          |   2 +-
+ modules/mbscasecmp                            |   2 +-
+ modules/mbstowcs                              |   2 +-
+ modules/mbtowc                                |   2 +-
+ modules/mkdtemp                               |   2 +-
+ modules/mkostemp                              |   2 +-
+ modules/mkostemps                             |   2 +-
+ modules/mkstemp                               |   2 +-
+ modules/mkstemps                              |   2 +-
+ modules/obstack                               |   2 +-
+ modules/pagealign_alloc                       |   2 +-
+ modules/pipe-filter-gi                        |   2 +-
+ modules/pipe-filter-ii                        |   2 +-
+ modules/posix_memalign                        |   2 +-
+ modules/posix_openpt                          |   2 +-
+ modules/posixcheck                            |   2 +-
+ modules/pt_chown                              |   2 +-
+ modules/ptsname                               |   2 +-
+ modules/ptsname_r                             |   2 +-
+ modules/putenv-gnu                            |   2 +-
+ modules/qsort_r                               |   2 +-
+ modules/rand                                  |   2 +-
+ modules/random                                |   2 +-
+ modules/random_r                              |   2 +-
+ modules/realloc-posix                         |   2 +-
+ modules/reallocarray                          |   2 +-
+ modules/relocatable-prog-wrapper              |   2 +-
+ modules/rpmatch                               |   2 +-
+ modules/savewd                                |   2 +-
+ modules/secure_getenv                         |   2 +-
+ modules/setenv                                |   2 +-
+ modules/spawn-pipe                            |   2 +-
+ modules/stack                                 |   2 +-
+ modules/stack-trace                           |   2 +-
+ modules/stdlib                                | 191 +----------------
+ modules/stdlib-c++-tests                      |  20 --
+ modules/stdlib-h                              | 202 ++++++++++++++++++
+ modules/stdlib-h-c++-tests                    |  20 ++
+ modules/stdlib-h-tests                        |  13 ++
+ modules/stdlib-safer                          |   2 +-
+ modules/stdlib-tests                          |  13 --
+ modules/string                                |   2 +-
+ modules/strtod                                |   2 +-
+ modules/strtof                                |   2 +-
+ modules/strtol                                |   2 +-
+ modules/strtold                               |   2 +-
+ modules/strtoll                               |   2 +-
+ modules/strtoul                               |   2 +-
+ modules/strtoull                              |   2 +-
+ modules/sysexits                              |   2 +-
+ modules/system-posix                          |   2 +-
+ modules/timevar                               |   2 +-
+ modules/unlockpt                              |   2 +-
+ modules/unsetenv                              |   2 +-
+ modules/wait-process                          |   2 +-
+ modules/wchar                                 |   2 +-
+ modules/wctomb                                |   2 +-
+ modules/windows-spawn                         |   2 +-
+ modules/xsetenv                               |   2 +-
+ ...est-stdlib-c++.cc => test-stdlib-h-c++.cc} |   0
+ ...t-stdlib-c++2.cc => test-stdlib-h-c++2.cc} |   0
+ tests/{test-stdlib.c => test-stdlib-h.c}      |   0
+ 86 files changed, 335 insertions(+), 296 deletions(-)
+ delete mode 100644 modules/stdlib-c++-tests
+ create mode 100644 modules/stdlib-h
+ create mode 100644 modules/stdlib-h-c++-tests
+ create mode 100644 modules/stdlib-h-tests
+ delete mode 100644 modules/stdlib-tests
+ rename tests/{test-stdlib-c++.cc => test-stdlib-h-c++.cc} (100%)
+ rename tests/{test-stdlib-c++2.cc => test-stdlib-h-c++2.cc} (100%)
+ rename tests/{test-stdlib.c => test-stdlib-h.c} (100%)
+
+--- a/modules/_Exit
++++ b/modules/_Exit
+@@ -6,7 +6,7 @@ lib/_Exit.c
+ m4/_Exit.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/abort-debug
++++ b/modules/abort-debug
+@@ -6,7 +6,7 @@ lib/abort-debug.c
+ m4/abort-debug.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ execinfo
+ 
+ configure.ac-early:
+--- a/modules/aligned_alloc
++++ b/modules/aligned_alloc
+@@ -7,7 +7,7 @@ m4/aligned_alloc.m4
+ 
+ Depends-on:
+ extensions
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_ALIGNED_ALLOC
+--- a/modules/argmatch
++++ b/modules/argmatch
+@@ -17,7 +17,7 @@ memcmp
+ quote
+ quotearg
+ stdbool-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ 
+--- a/modules/atoll
++++ b/modules/atoll
+@@ -6,7 +6,7 @@ lib/atoll.c
+ m4/atoll.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ strtoll         [test $HAVE_ATOLL = 0]
+ 
+ configure.ac:
+--- a/modules/calloc-posix
++++ b/modules/calloc-posix
+@@ -7,7 +7,7 @@ m4/calloc.m4
+ m4/malloc.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ xalloc-oversized     [test $REPLACE_CALLOC_FOR_CALLOC_POSIX = 1]
+ 
+ configure.ac:
+--- a/modules/canonicalize-lgpl
++++ b/modules/canonicalize-lgpl
+@@ -9,7 +9,7 @@ m4/lstat.m4
+ 
+ Depends-on:
+ extensions
+-stdlib
++stdlib-h
+ nocrash
+ double-slash-root             [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ eloop-threshold               [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+--- a/modules/chdir-long
++++ b/modules/chdir-long
+@@ -20,7 +20,7 @@ memchr          [test $gl_cv_have_unlimi
+ mempcpy         [test $gl_cv_have_unlimited_file_name_length = no]
+ memrchr         [test $gl_cv_have_unlimited_file_name_length = no]
+ stdbool-h       [test $gl_cv_have_unlimited_file_name_length = no]
+-stdlib          [test $gl_cv_have_unlimited_file_name_length = no]
++stdlib-h        [test $gl_cv_have_unlimited_file_name_length = no]
+ 
+ configure.ac:
+ gl_FUNC_CHDIR_LONG
+--- a/modules/copy-file
++++ b/modules/copy-file
+@@ -23,7 +23,7 @@ qcopy-acl
+ quote
+ safe-read
+ stat-time
+-stdlib
++stdlib-h
+ unistd
+ utimens
+ 
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -29,7 +29,7 @@ stdbool-h
+ stddef-h
+ stdint-h
+ stdio-h
+-stdlib
++stdlib-h
+ string
+ uchar
+ # The lonesome_lower array requires ISO C 23 semantics for char32_t.
+--- a/modules/dfa-tests
++++ b/modules/dfa-tests
+@@ -7,7 +7,7 @@ tests/test-dfa-invalid-merge.sh
+ Depends-on:
+ binary-io
+ stdio-h
+-stdlib
++stdlib-h
+ string
+ unistd
+ regex
+--- a/modules/execute
++++ b/modules/execute
+@@ -30,7 +30,7 @@ posix_spawnattr_setsigmask
+ posix_spawnattr_setflags
+ posix_spawnattr_destroy
+ stdbool-h
+-stdlib
++stdlib-h
+ sys_wait
+ unistd
+ wait-process
+--- a/modules/exitfail
++++ b/modules/exitfail
+@@ -6,7 +6,7 @@ lib/exitfail.h
+ lib/exitfail.c
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ 
+--- a/modules/free-posix
++++ b/modules/free-posix
+@@ -6,7 +6,7 @@ lib/free.c
+ m4/free.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ string
+ wchar
+ 
+--- a/modules/getloadavg
++++ b/modules/getloadavg
+@@ -10,7 +10,7 @@ extensions
+ intprops  [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+ open      [case $host_os in mingw* | windows*) false;; *) test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1;; esac]
+ stdbool-h [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+-stdlib    [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
++stdlib-h  [test $HAVE_GETLOADAVG = 0 || test $REPLACE_GETLOADAVG = 1]
+ 
+ configure.ac:
+ AC_REQUIRE([AC_CANONICAL_HOST])
+--- a/modules/getprogname
++++ b/modules/getprogname
+@@ -7,7 +7,7 @@ lib/getprogname.c
+ m4/getprogname.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ basename-lgpl   [test $HAVE_GETPROGNAME = 0]
+ extensions      [test $HAVE_GETPROGNAME = 0]
+ open            [test $HAVE_GETPROGNAME = 0]
+--- a/modules/getsubopt
++++ b/modules/getsubopt
+@@ -6,7 +6,7 @@ lib/getsubopt.c
+ m4/getsubopt.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ strchrnul       [test $HAVE_GETSUBOPT = 0 || test $REPLACE_GETSUBOPT = 1]
+ memchr          [test $HAVE_GETSUBOPT = 0 || test $REPLACE_GETSUBOPT = 1]
+--- a/modules/git-merge-changelog
++++ b/modules/git-merge-changelog
+@@ -10,7 +10,7 @@ getopt-gnu
+ idx
+ stdbool-h
+ stdint-h
+-stdlib
++stdlib-h
+ error
+ read-file
+ xlist
+--- a/modules/grantpt
++++ b/modules/grantpt
+@@ -7,7 +7,7 @@ lib/pty-private.h
+ m4/grantpt.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ pt_chown        [test $HAVE_GRANTPT = 0]
+ waitpid         [test $HAVE_GRANTPT = 0]
+--- a/modules/long-options
++++ b/modules/long-options
+@@ -10,7 +10,7 @@ c99
+ exitfail
+ getopt-gnu
+ stdbool-h
+-stdlib
++stdlib-h
+ version-etc
+ 
+ configure.ac:
+--- a/modules/malloc-h
++++ b/modules/malloc-h
+@@ -11,7 +11,7 @@ include_next
+ snippet/c++defs
+ snippet/warn-on-use
+ stddef-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_MALLOC_H
+--- a/modules/malloc-posix
++++ b/modules/malloc-posix
+@@ -6,7 +6,7 @@ lib/malloc.c
+ m4/malloc.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ xalloc-oversized     [test $REPLACE_MALLOC_FOR_MALLOC_POSIX = 1]
+ 
+ configure.ac:
+--- a/modules/mbscasecmp
++++ b/modules/mbscasecmp
+@@ -7,7 +7,7 @@ lib/mbscasecmp.c
+ Depends-on:
+ c32tolower
+ mbuiterf            [test "$GNULIB_MCEL_PREFER" != yes]
+-stdlib
++stdlib-h
+ string
+ uchar
+ 
+--- a/modules/mbstowcs
++++ b/modules/mbstowcs
+@@ -7,7 +7,7 @@ m4/mbstowcs.m4
+ m4/mbrtowc.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ mbszero         [test $REPLACE_MBSTOWCS = 1]
+ mbsrtowcs       [test $REPLACE_MBSTOWCS = 1]
+ 
+--- a/modules/mbtowc
++++ b/modules/mbtowc
+@@ -7,7 +7,7 @@ lib/mbtowc-impl.h
+ m4/mbtowc.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ wchar           [test $HAVE_MBTOWC = 0 || test $REPLACE_MBTOWC = 1]
+ mbszero         [test $HAVE_MBTOWC = 0 || test $REPLACE_MBTOWC = 1]
+ mbrtowc         [test $HAVE_MBTOWC = 0 || test $REPLACE_MBTOWC = 1]
+--- a/modules/mkdtemp
++++ b/modules/mkdtemp
+@@ -6,7 +6,7 @@ lib/mkdtemp.c
+ m4/mkdtemp.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ stdint-h        [test $HAVE_MKDTEMP = 0]
+ tempname        [test $HAVE_MKDTEMP = 0]
+ 
+--- a/modules/mkostemp
++++ b/modules/mkostemp
+@@ -7,7 +7,7 @@ lib/mkostemp.c
+ m4/mkostemp.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ largefile
+ tempname        [test $HAVE_MKOSTEMP = 0 || test $REPLACE_MKOSTEMP = 1]
+--- a/modules/mkostemps
++++ b/modules/mkostemps
+@@ -7,7 +7,7 @@ lib/mkostemps.c
+ m4/mkostemps.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ largefile
+ tempname        [test $HAVE_MKOSTEMPS = 0 || test $REPLACE_MKOSTEMPS = 1]
+--- a/modules/mkstemp
++++ b/modules/mkstemp
+@@ -6,7 +6,7 @@ lib/mkstemp.c
+ m4/mkstemp.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ largefile
+ tempname        [test $HAVE_MKSTEMP = 0 || test $REPLACE_MKSTEMP = 1]
+--- a/modules/mkstemps
++++ b/modules/mkstemps
+@@ -6,7 +6,7 @@ lib/mkstemps.c
+ m4/mkstemps.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ largefile
+ tempname        [test $HAVE_MKSTEMPS = 0]
+--- a/modules/obstack
++++ b/modules/obstack
+@@ -13,7 +13,7 @@ gettext-h       [test $HAVE_OBSTACK = 0
+ gnulib-i18n     [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ exitfail        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ stdint-h        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+-stdlib          [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
++stdlib-h        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ 
+ configure.ac:
+ gl_FUNC_OBSTACK
+--- a/modules/pagealign_alloc
++++ b/modules/pagealign_alloc
+@@ -14,7 +14,7 @@ getpagesize
+ gettext-h
+ gnulib-i18n
+ open
+-stdlib
++stdlib-h
+ xalloc
+ unistd
+ 
+--- a/modules/pipe-filter-gi
++++ b/modules/pipe-filter-gi
+@@ -18,7 +18,7 @@ gettext-h
+ gnulib-i18n
+ stdbool-h
+ stdint-h
+-stdlib
++stdlib-h
+ sys_select
+ unistd
+ xalloc
+--- a/modules/pipe-filter-ii
++++ b/modules/pipe-filter-ii
+@@ -17,7 +17,7 @@ gettext-h
+ gnulib-i18n
+ stdbool-h
+ stdint-h
+-stdlib
++stdlib-h
+ sys_select
+ unistd
+ 
+--- a/modules/posix_memalign
++++ b/modules/posix_memalign
+@@ -7,7 +7,7 @@ m4/posix_memalign.m4
+ 
+ Depends-on:
+ extensions
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_POSIX_MEMALIGN
+--- a/modules/posix_openpt
++++ b/modules/posix_openpt
+@@ -7,7 +7,7 @@ m4/posix_openpt.m4
+ 
+ Depends-on:
+ extensions
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_POSIX_OPENPT
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -29,7 +29,7 @@ search-h
+ signal-h
+ spawn-h
+ stdio-h
+-stdlib
++stdlib-h
+ string
+ strings
+ sys_file
+--- a/modules/pt_chown
++++ b/modules/pt_chown
+@@ -8,7 +8,7 @@ lib/pty-private.h
+ Depends-on:
+ ptsname
+ root-uid
+-stdlib
++stdlib-h
+ configmake
+ stat
+ 
+--- a/modules/ptsname
++++ b/modules/ptsname
+@@ -6,7 +6,7 @@ lib/ptsname.c
+ m4/ptsname.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ ptsname_r       [test $HAVE_PTSNAME = 0]
+ 
+--- a/modules/ptsname_r
++++ b/modules/ptsname_r
+@@ -6,7 +6,7 @@ lib/ptsname_r.c
+ m4/ptsname_r.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ isatty          [test $HAVE_PTSNAME_R = 0 || test $REPLACE_PTSNAME_R = 1]
+ stat            [test $HAVE_PTSNAME_R = 0 || test $REPLACE_PTSNAME_R = 1]
+--- a/modules/putenv-gnu
++++ b/modules/putenv-gnu
+@@ -6,7 +6,7 @@ lib/putenv.c
+ m4/putenv.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ environ         [test $REPLACE_PUTENV = 1]
+ free-posix      [test $REPLACE_PUTENV = 1]
+ malloc-posix    [test $REPLACE_PUTENV = 1]
+--- a/modules/qsort_r
++++ b/modules/qsort_r
+@@ -8,7 +8,7 @@ m4/qsort_r.m4
+ 
+ Depends-on:
+ extensions
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_QSORT_R
+--- a/modules/rand
++++ b/modules/rand
+@@ -12,7 +12,7 @@ lib/rand.c
+ m4/rand.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ random          [test $REPLACE_RAND = 1]
+ 
+ configure.ac:
+--- a/modules/random
++++ b/modules/random
+@@ -6,7 +6,7 @@ lib/random.c
+ m4/random.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ libc-config     [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+ lock            [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+ stdint-h        [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+--- a/modules/random_r
++++ b/modules/random_r
+@@ -8,7 +8,7 @@ m4/random_r.m4
+ Depends-on:
+ c99
+ libc-config     [test $HAVE_RANDOM_R = 0 || test $REPLACE_RANDOM_R = 1]
+-stdlib
++stdlib-h
+ stdint-h
+ 
+ configure.ac:
+--- a/modules/realloc-posix
++++ b/modules/realloc-posix
+@@ -7,7 +7,7 @@ m4/realloc.m4
+ m4/malloc.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ free-posix           [test $REPLACE_REALLOC_FOR_REALLOC_POSIX = 1]
+ malloc-posix         [test $REPLACE_REALLOC_FOR_REALLOC_POSIX = 1]
+ xalloc-oversized     [test $REPLACE_REALLOC_FOR_REALLOC_POSIX = 1]
+--- a/modules/reallocarray
++++ b/modules/reallocarray
+@@ -10,7 +10,7 @@ Depends-on:
+ extensions
+ realloc-gnu    [test $HAVE_REALLOCARRAY = 0 || test $REPLACE_REALLOCARRAY = 1]
+ stdckdint-h    [test $HAVE_REALLOCARRAY = 0 || test $REPLACE_REALLOCARRAY = 1]
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_REALLOCARRAY
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -73,7 +73,7 @@ stdbool-h
+ stddef-h
+ stdckdint-h
+ stdint-h
+-stdlib
++stdlib-h
+ string
+ sys_stat
+ unistd
+--- a/modules/rpmatch
++++ b/modules/rpmatch
+@@ -6,7 +6,7 @@ lib/rpmatch.c
+ m4/rpmatch.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ stdbool-h       [test $HAVE_RPMATCH = 0]
+ gettext-h       [test $HAVE_RPMATCH = 0]
+--- a/modules/savewd
++++ b/modules/savewd
+@@ -18,7 +18,7 @@ fcntl-h
+ filename
+ raise
+ stdbool-h
+-stdlib
++stdlib-h
+ sys_wait
+ unistd
+ xalloc
+--- a/modules/secure_getenv
++++ b/modules/secure_getenv
+@@ -6,7 +6,7 @@ lib/secure_getenv.c
+ m4/secure_getenv.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/setenv
++++ b/modules/setenv
+@@ -6,7 +6,7 @@ lib/setenv.c
+ m4/setenv.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ malloca         [test $HAVE_SETENV = 0 || test $REPLACE_SETENV = 1]
+ alloca-opt      [test $HAVE_SETENV = 0 || test $REPLACE_SETENV = 1]
+ malloc-posix    [test $HAVE_SETENV = 0 || test $REPLACE_SETENV = 1]
+--- a/modules/spawn-pipe
++++ b/modules/spawn-pipe
+@@ -38,7 +38,7 @@ posix_spawnattr_setsigmask
+ posix_spawnattr_setflags
+ posix_spawnattr_destroy
+ stdbool-h
+-stdlib
++stdlib-h
+ unistd
+ unistd-safer
+ wait-process
+--- a/modules/stack
++++ b/modules/stack
+@@ -7,7 +7,7 @@ lib/stack.h
+ Depends-on:
+ assure
+ stdbool-h
+-stdlib
++stdlib-h
+ xalloc
+ 
+ configure.ac:
+--- a/modules/stdlib
++++ b/modules/stdlib
+@@ -1,194 +1,20 @@
+ Description:
+ A GNU-like <stdlib.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdlib-h' instead.
++
+ Files:
+-lib/stdlib.c
+-lib/stdlib.in.h
+-m4/stdlib_h.m4
+-m4/locale-fr.m4
+-m4/codeset.m4
+ 
+ Depends-on:
+-gen-header
+-extern-inline
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-snippet/_Noreturn
+-stddef-h
+-unistd
++stdlib-h
+ 
+ configure.ac:
+-gl_STDLIB_H
+-gl_STDLIB_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += stdlib.h
+-lib_SOURCES += stdlib.c
+-
+-stdlib.h: stdlib.in.h $(top_builddir)/config.status $(CXXDEFS_H) \
+-  $(_NORETURN_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDLIB_H''@|$(NEXT_STDLIB_H)|g' \
+-	      -e 's/@''GNULIB__EXIT''@/$(GNULIB__EXIT)/g' \
+-	      -e 's/@''GNULIB_ABORT_DEBUG''@/$(GNULIB_ABORT_DEBUG)/g' \
+-	      -e 's/@''GNULIB_ALIGNED_ALLOC''@/$(GNULIB_ALIGNED_ALLOC)/g' \
+-	      -e 's/@''GNULIB_ATOLL''@/$(GNULIB_ATOLL)/g' \
+-	      -e 's/@''GNULIB_CALLOC_GNU''@/$(GNULIB_CALLOC_GNU)/g' \
+-	      -e 's/@''GNULIB_CALLOC_POSIX''@/$(GNULIB_CALLOC_POSIX)/g' \
+-	      -e 's/@''GNULIB_CANONICALIZE_FILE_NAME''@/$(GNULIB_CANONICALIZE_FILE_NAME)/g' \
+-	      -e 's/@''GNULIB_FREE_POSIX''@/$(GNULIB_FREE_POSIX)/g' \
+-	      -e 's/@''GNULIB_GETLOADAVG''@/$(GNULIB_GETLOADAVG)/g' \
+-	      -e 's/@''GNULIB_GETPROGNAME''@/$(GNULIB_GETPROGNAME)/g' \
+-	      -e 's/@''GNULIB_GETSUBOPT''@/$(GNULIB_GETSUBOPT)/g' \
+-	      -e 's/@''GNULIB_GRANTPT''@/$(GNULIB_GRANTPT)/g' \
+-	      -e 's/@''GNULIB_MALLOC_GNU''@/$(GNULIB_MALLOC_GNU)/g' \
+-	      -e 's/@''GNULIB_MALLOC_POSIX''@/$(GNULIB_MALLOC_POSIX)/g' \
+-	      -e 's/@''GNULIB_MBSTOWCS''@/$(GNULIB_MBSTOWCS)/g' \
+-	      -e 's/@''GNULIB_MBTOWC''@/$(GNULIB_MBTOWC)/g' \
+-	      -e 's/@''GNULIB_MKDTEMP''@/$(GNULIB_MKDTEMP)/g' \
+-	      -e 's/@''GNULIB_MKOSTEMP''@/$(GNULIB_MKOSTEMP)/g' \
+-	      -e 's/@''GNULIB_MKOSTEMPS''@/$(GNULIB_MKOSTEMPS)/g' \
+-	      -e 's/@''GNULIB_MKSTEMP''@/$(GNULIB_MKSTEMP)/g' \
+-	      -e 's/@''GNULIB_MKSTEMPS''@/$(GNULIB_MKSTEMPS)/g' \
+-	      -e 's/@''GNULIB_POSIX_MEMALIGN''@/$(GNULIB_POSIX_MEMALIGN)/g' \
+-	      -e 's/@''GNULIB_POSIX_OPENPT''@/$(GNULIB_POSIX_OPENPT)/g' \
+-	      -e 's/@''GNULIB_PTSNAME''@/$(GNULIB_PTSNAME)/g' \
+-	      -e 's/@''GNULIB_PTSNAME_R''@/$(GNULIB_PTSNAME_R)/g' \
+-	      -e 's/@''GNULIB_PUTENV''@/$(GNULIB_PUTENV)/g' \
+-	      -e 's/@''GNULIB_QSORT_R''@/$(GNULIB_QSORT_R)/g' \
+-	      -e 's/@''GNULIB_RAND''@/$(GNULIB_RAND)/g' \
+-	      -e 's/@''GNULIB_RANDOM''@/$(GNULIB_RANDOM)/g' \
+-	      -e 's/@''GNULIB_RANDOM_R''@/$(GNULIB_RANDOM_R)/g' \
+-	      -e 's/@''GNULIB_REALLOC_POSIX''@/$(GNULIB_REALLOC_POSIX)/g' \
+-	      -e 's/@''GNULIB_REALLOCARRAY''@/$(GNULIB_REALLOCARRAY)/g' \
+-	      -e 's/@''GNULIB_REALPATH''@/$(GNULIB_REALPATH)/g' \
+-	      -e 's/@''GNULIB_RPMATCH''@/$(GNULIB_RPMATCH)/g' \
+-	      -e 's/@''GNULIB_SECURE_GETENV''@/$(GNULIB_SECURE_GETENV)/g' \
+-	      -e 's/@''GNULIB_SETENV''@/$(GNULIB_SETENV)/g' \
+-	      -e 's/@''GNULIB_STRTOD''@/$(GNULIB_STRTOD)/g' \
+-	      -e 's/@''GNULIB_STRTOF''@/$(GNULIB_STRTOF)/g' \
+-	      -e 's/@''GNULIB_STRTOL''@/$(GNULIB_STRTOL)/g' \
+-	      -e 's/@''GNULIB_STRTOLD''@/$(GNULIB_STRTOLD)/g' \
+-	      -e 's/@''GNULIB_STRTOLL''@/$(GNULIB_STRTOLL)/g' \
+-	      -e 's/@''GNULIB_STRTOUL''@/$(GNULIB_STRTOUL)/g' \
+-	      -e 's/@''GNULIB_STRTOULL''@/$(GNULIB_STRTOULL)/g' \
+-	      -e 's/@''GNULIB_SYSTEM_POSIX''@/$(GNULIB_SYSTEM_POSIX)/g' \
+-	      -e 's/@''GNULIB_UNLOCKPT''@/$(GNULIB_UNLOCKPT)/g' \
+-	      -e 's/@''GNULIB_UNSETENV''@/$(GNULIB_UNSETENV)/g' \
+-	      -e 's/@''GNULIB_WCTOMB''@/$(GNULIB_WCTOMB)/g' \
+-	      -e 's/@''GNULIB_MDA_ECVT''@/$(GNULIB_MDA_ECVT)/g' \
+-	      -e 's/@''GNULIB_MDA_FCVT''@/$(GNULIB_MDA_FCVT)/g' \
+-	      -e 's/@''GNULIB_MDA_GCVT''@/$(GNULIB_MDA_GCVT)/g' \
+-	      -e 's/@''GNULIB_MDA_MKTEMP''@/$(GNULIB_MDA_MKTEMP)/g' \
+-	      -e 's/@''GNULIB_MDA_PUTENV''@/$(GNULIB_MDA_PUTENV)/g' \
+-	      < $(srcdir)/stdlib.in.h > $@-t1
+-	$(AM_V_at)sed \
+-	      -e 's|@''HAVE__EXIT''@|$(HAVE__EXIT)|g' \
+-	      -e 's|@''HAVE_ALIGNED_ALLOC''@|$(HAVE_ALIGNED_ALLOC)|g' \
+-	      -e 's|@''HAVE_ATOLL''@|$(HAVE_ATOLL)|g' \
+-	      -e 's|@''HAVE_CANONICALIZE_FILE_NAME''@|$(HAVE_CANONICALIZE_FILE_NAME)|g' \
+-	      -e 's|@''HAVE_DECL_ECVT''@|$(HAVE_DECL_ECVT)|g' \
+-	      -e 's|@''HAVE_DECL_FCVT''@|$(HAVE_DECL_FCVT)|g' \
+-	      -e 's|@''HAVE_DECL_GCVT''@|$(HAVE_DECL_GCVT)|g' \
+-	      -e 's|@''HAVE_DECL_GETLOADAVG''@|$(HAVE_DECL_GETLOADAVG)|g' \
+-	      -e 's|@''HAVE_DECL_PROGRAM_INVOCATION_NAME''@|$(HAVE_DECL_PROGRAM_INVOCATION_NAME)|g' \
+-	      -e 's|@''HAVE_GETPROGNAME''@|$(HAVE_GETPROGNAME)|g' \
+-	      -e 's|@''HAVE_GETSUBOPT''@|$(HAVE_GETSUBOPT)|g' \
+-	      -e 's|@''HAVE_GRANTPT''@|$(HAVE_GRANTPT)|g' \
+-	      -e 's|@''HAVE_INITSTATE''@|$(HAVE_INITSTATE)|g' \
+-	      -e 's|@''HAVE_DECL_INITSTATE''@|$(HAVE_DECL_INITSTATE)|g' \
+-	      -e 's|@''HAVE_MBTOWC''@|$(HAVE_MBTOWC)|g' \
+-	      -e 's|@''HAVE_MKDTEMP''@|$(HAVE_MKDTEMP)|g' \
+-	      -e 's|@''HAVE_MKOSTEMP''@|$(HAVE_MKOSTEMP)|g' \
+-	      -e 's|@''HAVE_MKOSTEMPS''@|$(HAVE_MKOSTEMPS)|g' \
+-	      -e 's|@''HAVE_MKSTEMP''@|$(HAVE_MKSTEMP)|g' \
+-	      -e 's|@''HAVE_MKSTEMPS''@|$(HAVE_MKSTEMPS)|g' \
+-	      -e 's|@''HAVE_POSIX_MEMALIGN''@|$(HAVE_POSIX_MEMALIGN)|g' \
+-	      -e 's|@''HAVE_POSIX_OPENPT''@|$(HAVE_POSIX_OPENPT)|g' \
+-	      -e 's|@''HAVE_PTSNAME''@|$(HAVE_PTSNAME)|g' \
+-	      -e 's|@''HAVE_PTSNAME_R''@|$(HAVE_PTSNAME_R)|g' \
+-	      -e 's|@''HAVE_QSORT_R''@|$(HAVE_QSORT_R)|g' \
+-	      -e 's|@''HAVE_RANDOM''@|$(HAVE_RANDOM)|g' \
+-	      -e 's|@''HAVE_RANDOM_H''@|$(HAVE_RANDOM_H)|g' \
+-	      -e 's|@''HAVE_RANDOM_R''@|$(HAVE_RANDOM_R)|g' \
+-	      -e 's|@''HAVE_REALLOCARRAY''@|$(HAVE_REALLOCARRAY)|g' \
+-	      -e 's|@''HAVE_REALPATH''@|$(HAVE_REALPATH)|g' \
+-	      -e 's|@''HAVE_RPMATCH''@|$(HAVE_RPMATCH)|g' \
+-	      -e 's|@''HAVE_SECURE_GETENV''@|$(HAVE_SECURE_GETENV)|g' \
+-	      -e 's|@''HAVE_DECL_SETENV''@|$(HAVE_DECL_SETENV)|g' \
+-	      -e 's|@''HAVE_SETSTATE''@|$(HAVE_SETSTATE)|g' \
+-	      -e 's|@''HAVE_DECL_SETSTATE''@|$(HAVE_DECL_SETSTATE)|g' \
+-	      -e 's|@''HAVE_STRTOD''@|$(HAVE_STRTOD)|g' \
+-	      -e 's|@''HAVE_STRTOF''@|$(HAVE_STRTOF)|g' \
+-	      -e 's|@''HAVE_STRTOL''@|$(HAVE_STRTOL)|g' \
+-	      -e 's|@''HAVE_STRTOLD''@|$(HAVE_STRTOLD)|g' \
+-	      -e 's|@''HAVE_STRTOLL''@|$(HAVE_STRTOLL)|g' \
+-	      -e 's|@''HAVE_STRTOUL''@|$(HAVE_STRTOUL)|g' \
+-	      -e 's|@''HAVE_STRTOULL''@|$(HAVE_STRTOULL)|g' \
+-	      -e 's|@''HAVE_STRUCT_RANDOM_DATA''@|$(HAVE_STRUCT_RANDOM_DATA)|g' \
+-	      -e 's|@''HAVE_SYS_LOADAVG_H''@|$(HAVE_SYS_LOADAVG_H)|g' \
+-	      -e 's|@''HAVE_UNLOCKPT''@|$(HAVE_UNLOCKPT)|g' \
+-	      -e 's|@''HAVE_DECL_UNSETENV''@|$(HAVE_DECL_UNSETENV)|g' \
+-	      < $@-t1 > $@-t2
+-	$(AM_V_at)sed \
+-	      -e 's|@''REPLACE__EXIT''@|$(REPLACE__EXIT)|g' \
+-	      -e 's|@''REPLACE_ABORT''@|$(REPLACE_ABORT)|g' \
+-	      -e 's|@''REPLACE_ALIGNED_ALLOC''@|$(REPLACE_ALIGNED_ALLOC)|g' \
+-	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_GNU''@|$(REPLACE_CALLOC_FOR_CALLOC_GNU)|g' \
+-	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_POSIX''@|$(REPLACE_CALLOC_FOR_CALLOC_POSIX)|g' \
+-	      -e 's|@''REPLACE_CANONICALIZE_FILE_NAME''@|$(REPLACE_CANONICALIZE_FILE_NAME)|g' \
+-	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
+-	      -e 's|@''REPLACE_GETLOADAVG''@|$(REPLACE_GETLOADAVG)|g' \
+-	      -e 's|@''REPLACE_GETPROGNAME''@|$(REPLACE_GETPROGNAME)|g' \
+-	      -e 's|@''REPLACE_GETSUBOPT''@|$(REPLACE_GETSUBOPT)|g' \
+-	      -e 's|@''REPLACE_INITSTATE''@|$(REPLACE_INITSTATE)|g' \
+-	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_GNU''@|$(REPLACE_MALLOC_FOR_MALLOC_GNU)|g' \
+-	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_POSIX''@|$(REPLACE_MALLOC_FOR_MALLOC_POSIX)|g' \
+-	      -e 's|@''REPLACE_MB_CUR_MAX''@|$(REPLACE_MB_CUR_MAX)|g' \
+-	      -e 's|@''REPLACE_MBSTOWCS''@|$(REPLACE_MBSTOWCS)|g' \
+-	      -e 's|@''REPLACE_MBTOWC''@|$(REPLACE_MBTOWC)|g' \
+-	      -e 's|@''REPLACE_MKOSTEMP''@|$(REPLACE_MKOSTEMP)|g' \
+-	      -e 's|@''REPLACE_MKOSTEMPS''@|$(REPLACE_MKOSTEMPS)|g' \
+-	      -e 's|@''REPLACE_MKSTEMP''@|$(REPLACE_MKSTEMP)|g' \
+-	      -e 's|@''REPLACE_POSIX_MEMALIGN''@|$(REPLACE_POSIX_MEMALIGN)|g' \
+-	      -e 's|@''REPLACE_POSIX_OPENPT''@|$(REPLACE_POSIX_OPENPT)|g' \
+-	      -e 's|@''REPLACE_PTSNAME''@|$(REPLACE_PTSNAME)|g' \
+-	      -e 's|@''REPLACE_PTSNAME_R''@|$(REPLACE_PTSNAME_R)|g' \
+-	      -e 's|@''REPLACE_PUTENV''@|$(REPLACE_PUTENV)|g' \
+-	      -e 's|@''REPLACE_QSORT_R''@|$(REPLACE_QSORT_R)|g' \
+-	      -e 's|@''REPLACE_RAND''@|$(REPLACE_RAND)|g' \
+-	      -e 's|@''REPLACE_RANDOM''@|$(REPLACE_RANDOM)|g' \
+-	      -e 's|@''REPLACE_RANDOM_R''@|$(REPLACE_RANDOM_R)|g' \
+-	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_POSIX''@|$(REPLACE_REALLOC_FOR_REALLOC_POSIX)|g' \
+-	      -e 's|@''REPLACE_REALLOCARRAY''@|$(REPLACE_REALLOCARRAY)|g' \
+-	      -e 's|@''REPLACE_REALPATH''@|$(REPLACE_REALPATH)|g' \
+-	      -e 's|@''REPLACE_SETENV''@|$(REPLACE_SETENV)|g' \
+-	      -e 's|@''REPLACE_SETSTATE''@|$(REPLACE_SETSTATE)|g' \
+-	      -e 's|@''REPLACE_STRTOD''@|$(REPLACE_STRTOD)|g' \
+-	      -e 's|@''REPLACE_STRTOF''@|$(REPLACE_STRTOF)|g' \
+-	      -e 's|@''REPLACE_STRTOL''@|$(REPLACE_STRTOL)|g' \
+-	      -e 's|@''REPLACE_STRTOLD''@|$(REPLACE_STRTOLD)|g' \
+-	      -e 's|@''REPLACE_STRTOLL''@|$(REPLACE_STRTOLL)|g' \
+-	      -e 's|@''REPLACE_STRTOUL''@|$(REPLACE_STRTOUL)|g' \
+-	      -e 's|@''REPLACE_STRTOULL''@|$(REPLACE_STRTOULL)|g' \
+-	      -e 's|@''REPLACE_UNSETENV''@|$(REPLACE_UNSETENV)|g' \
+-	      -e 's|@''REPLACE_WCTOMB''@|$(REPLACE_WCTOMB)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _Noreturn/r $(_NORETURN_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      < $@-t2 > $@-t3
+-	$(AM_V_at)rm -f $@-t1 $@-t2
+-	$(AM_V_at)mv $@-t3 $@
+-MOSTLYCLEANFILES += stdlib.h stdlib.h-t1 stdlib.h-t2 stdlib.h-t3
+ 
+ Include:
+ <stdlib.h>
+@@ -197,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdlib-h
+@@ -0,0 +1,202 @@
++Description:
++A GNU-like <stdlib.h>.
++
++Files:
++lib/stdlib.c
++lib/stdlib.in.h
++m4/stdlib_h.m4
++m4/locale-en.m4
++m4/codeset.m4
++
++Depends-on:
++gen-header
++extern-inline
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++snippet/_Noreturn
++stddef-h
++unistd
++
++configure.ac:
++gl_STDLIB_H
++gl_STDLIB_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += stdlib.h
++lib_SOURCES += stdlib.c
++
++stdlib.h: stdlib.in.h $(top_builddir)/config.status $(CXXDEFS_H) \
++  $(_NORETURN_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDLIB_H''@|$(NEXT_STDLIB_H)|g' \
++	      -e 's/@''GNULIB__EXIT''@/$(GNULIB__EXIT)/g' \
++	      -e 's/@''GNULIB_ABORT_DEBUG''@/$(GNULIB_ABORT_DEBUG)/g' \
++	      -e 's/@''GNULIB_ALIGNED_ALLOC''@/$(GNULIB_ALIGNED_ALLOC)/g' \
++	      -e 's/@''GNULIB_ATOLL''@/$(GNULIB_ATOLL)/g' \
++	      -e 's/@''GNULIB_CALLOC_GNU''@/$(GNULIB_CALLOC_GNU)/g' \
++	      -e 's/@''GNULIB_CALLOC_POSIX''@/$(GNULIB_CALLOC_POSIX)/g' \
++	      -e 's/@''GNULIB_CANONICALIZE_FILE_NAME''@/$(GNULIB_CANONICALIZE_FILE_NAME)/g' \
++	      -e 's/@''GNULIB_FREE_POSIX''@/$(GNULIB_FREE_POSIX)/g' \
++	      -e 's/@''GNULIB_GETLOADAVG''@/$(GNULIB_GETLOADAVG)/g' \
++	      -e 's/@''GNULIB_GETPROGNAME''@/$(GNULIB_GETPROGNAME)/g' \
++	      -e 's/@''GNULIB_GETSUBOPT''@/$(GNULIB_GETSUBOPT)/g' \
++	      -e 's/@''GNULIB_GRANTPT''@/$(GNULIB_GRANTPT)/g' \
++	      -e 's/@''GNULIB_MALLOC_GNU''@/$(GNULIB_MALLOC_GNU)/g' \
++	      -e 's/@''GNULIB_MALLOC_POSIX''@/$(GNULIB_MALLOC_POSIX)/g' \
++	      -e 's/@''GNULIB_MBSTOWCS''@/$(GNULIB_MBSTOWCS)/g' \
++	      -e 's/@''GNULIB_MBTOWC''@/$(GNULIB_MBTOWC)/g' \
++	      -e 's/@''GNULIB_MKDTEMP''@/$(GNULIB_MKDTEMP)/g' \
++	      -e 's/@''GNULIB_MKOSTEMP''@/$(GNULIB_MKOSTEMP)/g' \
++	      -e 's/@''GNULIB_MKOSTEMPS''@/$(GNULIB_MKOSTEMPS)/g' \
++	      -e 's/@''GNULIB_MKSTEMP''@/$(GNULIB_MKSTEMP)/g' \
++	      -e 's/@''GNULIB_MKSTEMPS''@/$(GNULIB_MKSTEMPS)/g' \
++	      -e 's/@''GNULIB_POSIX_MEMALIGN''@/$(GNULIB_POSIX_MEMALIGN)/g' \
++	      -e 's/@''GNULIB_POSIX_OPENPT''@/$(GNULIB_POSIX_OPENPT)/g' \
++	      -e 's/@''GNULIB_PTSNAME''@/$(GNULIB_PTSNAME)/g' \
++	      -e 's/@''GNULIB_PTSNAME_R''@/$(GNULIB_PTSNAME_R)/g' \
++	      -e 's/@''GNULIB_PUTENV''@/$(GNULIB_PUTENV)/g' \
++	      -e 's/@''GNULIB_QSORT_R''@/$(GNULIB_QSORT_R)/g' \
++	      -e 's/@''GNULIB_RAND''@/$(GNULIB_RAND)/g' \
++	      -e 's/@''GNULIB_RANDOM''@/$(GNULIB_RANDOM)/g' \
++	      -e 's/@''GNULIB_RANDOM_R''@/$(GNULIB_RANDOM_R)/g' \
++	      -e 's/@''GNULIB_REALLOC_POSIX''@/$(GNULIB_REALLOC_POSIX)/g' \
++	      -e 's/@''GNULIB_REALLOCARRAY''@/$(GNULIB_REALLOCARRAY)/g' \
++	      -e 's/@''GNULIB_REALPATH''@/$(GNULIB_REALPATH)/g' \
++	      -e 's/@''GNULIB_RPMATCH''@/$(GNULIB_RPMATCH)/g' \
++	      -e 's/@''GNULIB_SECURE_GETENV''@/$(GNULIB_SECURE_GETENV)/g' \
++	      -e 's/@''GNULIB_SETENV''@/$(GNULIB_SETENV)/g' \
++	      -e 's/@''GNULIB_STACK_TRACE''@/$(GNULIB_STACK_TRACE)/g' \
++	      -e 's/@''GNULIB_STRTOD''@/$(GNULIB_STRTOD)/g' \
++	      -e 's/@''GNULIB_STRTOF''@/$(GNULIB_STRTOF)/g' \
++	      -e 's/@''GNULIB_STRTOL''@/$(GNULIB_STRTOL)/g' \
++	      -e 's/@''GNULIB_STRTOLD''@/$(GNULIB_STRTOLD)/g' \
++	      -e 's/@''GNULIB_STRTOLL''@/$(GNULIB_STRTOLL)/g' \
++	      -e 's/@''GNULIB_STRTOUL''@/$(GNULIB_STRTOUL)/g' \
++	      -e 's/@''GNULIB_STRTOULL''@/$(GNULIB_STRTOULL)/g' \
++	      -e 's/@''GNULIB_SYSTEM_POSIX''@/$(GNULIB_SYSTEM_POSIX)/g' \
++	      -e 's/@''GNULIB_UNLOCKPT''@/$(GNULIB_UNLOCKPT)/g' \
++	      -e 's/@''GNULIB_UNSETENV''@/$(GNULIB_UNSETENV)/g' \
++	      -e 's/@''GNULIB_WCTOMB''@/$(GNULIB_WCTOMB)/g' \
++	      -e 's/@''GNULIB_MDA_ECVT''@/$(GNULIB_MDA_ECVT)/g' \
++	      -e 's/@''GNULIB_MDA_FCVT''@/$(GNULIB_MDA_FCVT)/g' \
++	      -e 's/@''GNULIB_MDA_GCVT''@/$(GNULIB_MDA_GCVT)/g' \
++	      -e 's/@''GNULIB_MDA_MKTEMP''@/$(GNULIB_MDA_MKTEMP)/g' \
++	      -e 's/@''GNULIB_MDA_PUTENV''@/$(GNULIB_MDA_PUTENV)/g' \
++	      < $(srcdir)/stdlib.in.h > $@-t1
++	$(AM_V_at)sed \
++	      -e 's|@''HAVE__EXIT''@|$(HAVE__EXIT)|g' \
++	      -e 's|@''HAVE_ALIGNED_ALLOC''@|$(HAVE_ALIGNED_ALLOC)|g' \
++	      -e 's|@''HAVE_ATOLL''@|$(HAVE_ATOLL)|g' \
++	      -e 's|@''HAVE_CANONICALIZE_FILE_NAME''@|$(HAVE_CANONICALIZE_FILE_NAME)|g' \
++	      -e 's|@''HAVE_DECL_ECVT''@|$(HAVE_DECL_ECVT)|g' \
++	      -e 's|@''HAVE_DECL_FCVT''@|$(HAVE_DECL_FCVT)|g' \
++	      -e 's|@''HAVE_DECL_GCVT''@|$(HAVE_DECL_GCVT)|g' \
++	      -e 's|@''HAVE_DECL_GETLOADAVG''@|$(HAVE_DECL_GETLOADAVG)|g' \
++	      -e 's|@''HAVE_DECL_PROGRAM_INVOCATION_NAME''@|$(HAVE_DECL_PROGRAM_INVOCATION_NAME)|g' \
++	      -e 's|@''HAVE_GETPROGNAME''@|$(HAVE_GETPROGNAME)|g' \
++	      -e 's|@''HAVE_GETSUBOPT''@|$(HAVE_GETSUBOPT)|g' \
++	      -e 's|@''HAVE_GRANTPT''@|$(HAVE_GRANTPT)|g' \
++	      -e 's|@''HAVE_INITSTATE''@|$(HAVE_INITSTATE)|g' \
++	      -e 's|@''HAVE_DECL_INITSTATE''@|$(HAVE_DECL_INITSTATE)|g' \
++	      -e 's|@''HAVE_MBTOWC''@|$(HAVE_MBTOWC)|g' \
++	      -e 's|@''HAVE_MKDTEMP''@|$(HAVE_MKDTEMP)|g' \
++	      -e 's|@''HAVE_MKOSTEMP''@|$(HAVE_MKOSTEMP)|g' \
++	      -e 's|@''HAVE_MKOSTEMPS''@|$(HAVE_MKOSTEMPS)|g' \
++	      -e 's|@''HAVE_MKSTEMP''@|$(HAVE_MKSTEMP)|g' \
++	      -e 's|@''HAVE_MKSTEMPS''@|$(HAVE_MKSTEMPS)|g' \
++	      -e 's|@''HAVE_POSIX_MEMALIGN''@|$(HAVE_POSIX_MEMALIGN)|g' \
++	      -e 's|@''HAVE_POSIX_OPENPT''@|$(HAVE_POSIX_OPENPT)|g' \
++	      -e 's|@''HAVE_PTSNAME''@|$(HAVE_PTSNAME)|g' \
++	      -e 's|@''HAVE_PTSNAME_R''@|$(HAVE_PTSNAME_R)|g' \
++	      -e 's|@''HAVE_QSORT_R''@|$(HAVE_QSORT_R)|g' \
++	      -e 's|@''HAVE_RANDOM''@|$(HAVE_RANDOM)|g' \
++	      -e 's|@''HAVE_RANDOM_H''@|$(HAVE_RANDOM_H)|g' \
++	      -e 's|@''HAVE_RANDOM_R''@|$(HAVE_RANDOM_R)|g' \
++	      -e 's|@''HAVE_REALLOCARRAY''@|$(HAVE_REALLOCARRAY)|g' \
++	      -e 's|@''HAVE_REALPATH''@|$(HAVE_REALPATH)|g' \
++	      -e 's|@''HAVE_RPMATCH''@|$(HAVE_RPMATCH)|g' \
++	      -e 's|@''HAVE_SECURE_GETENV''@|$(HAVE_SECURE_GETENV)|g' \
++	      -e 's|@''HAVE_DECL_SETENV''@|$(HAVE_DECL_SETENV)|g' \
++	      -e 's|@''HAVE_SETSTATE''@|$(HAVE_SETSTATE)|g' \
++	      -e 's|@''HAVE_DECL_SETSTATE''@|$(HAVE_DECL_SETSTATE)|g' \
++	      -e 's|@''HAVE_STRTOD''@|$(HAVE_STRTOD)|g' \
++	      -e 's|@''HAVE_STRTOF''@|$(HAVE_STRTOF)|g' \
++	      -e 's|@''HAVE_STRTOL''@|$(HAVE_STRTOL)|g' \
++	      -e 's|@''HAVE_STRTOLD''@|$(HAVE_STRTOLD)|g' \
++	      -e 's|@''HAVE_STRTOLL''@|$(HAVE_STRTOLL)|g' \
++	      -e 's|@''HAVE_STRTOUL''@|$(HAVE_STRTOUL)|g' \
++	      -e 's|@''HAVE_STRTOULL''@|$(HAVE_STRTOULL)|g' \
++	      -e 's|@''HAVE_STRUCT_RANDOM_DATA''@|$(HAVE_STRUCT_RANDOM_DATA)|g' \
++	      -e 's|@''HAVE_SYS_LOADAVG_H''@|$(HAVE_SYS_LOADAVG_H)|g' \
++	      -e 's|@''HAVE_UNLOCKPT''@|$(HAVE_UNLOCKPT)|g' \
++	      -e 's|@''HAVE_DECL_UNSETENV''@|$(HAVE_DECL_UNSETENV)|g' \
++	      < $@-t1 > $@-t2
++	$(AM_V_at)sed \
++	      -e 's|@''REPLACE__EXIT''@|$(REPLACE__EXIT)|g' \
++	      -e 's|@''REPLACE_ABORT''@|$(REPLACE_ABORT)|g' \
++	      -e 's|@''REPLACE_ALIGNED_ALLOC''@|$(REPLACE_ALIGNED_ALLOC)|g' \
++	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_GNU''@|$(REPLACE_CALLOC_FOR_CALLOC_GNU)|g' \
++	      -e 's|@''REPLACE_CALLOC_FOR_CALLOC_POSIX''@|$(REPLACE_CALLOC_FOR_CALLOC_POSIX)|g' \
++	      -e 's|@''REPLACE_CANONICALIZE_FILE_NAME''@|$(REPLACE_CANONICALIZE_FILE_NAME)|g' \
++	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
++	      -e 's|@''REPLACE_GETLOADAVG''@|$(REPLACE_GETLOADAVG)|g' \
++	      -e 's|@''REPLACE_GETPROGNAME''@|$(REPLACE_GETPROGNAME)|g' \
++	      -e 's|@''REPLACE_GETSUBOPT''@|$(REPLACE_GETSUBOPT)|g' \
++	      -e 's|@''REPLACE_INITSTATE''@|$(REPLACE_INITSTATE)|g' \
++	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_GNU''@|$(REPLACE_MALLOC_FOR_MALLOC_GNU)|g' \
++	      -e 's|@''REPLACE_MALLOC_FOR_MALLOC_POSIX''@|$(REPLACE_MALLOC_FOR_MALLOC_POSIX)|g' \
++	      -e 's|@''REPLACE_MB_CUR_MAX''@|$(REPLACE_MB_CUR_MAX)|g' \
++	      -e 's|@''REPLACE_MBSTOWCS''@|$(REPLACE_MBSTOWCS)|g' \
++	      -e 's|@''REPLACE_MBTOWC''@|$(REPLACE_MBTOWC)|g' \
++	      -e 's|@''REPLACE_MKOSTEMP''@|$(REPLACE_MKOSTEMP)|g' \
++	      -e 's|@''REPLACE_MKOSTEMPS''@|$(REPLACE_MKOSTEMPS)|g' \
++	      -e 's|@''REPLACE_MKSTEMP''@|$(REPLACE_MKSTEMP)|g' \
++	      -e 's|@''REPLACE_POSIX_MEMALIGN''@|$(REPLACE_POSIX_MEMALIGN)|g' \
++	      -e 's|@''REPLACE_POSIX_OPENPT''@|$(REPLACE_POSIX_OPENPT)|g' \
++	      -e 's|@''REPLACE_PTSNAME''@|$(REPLACE_PTSNAME)|g' \
++	      -e 's|@''REPLACE_PTSNAME_R''@|$(REPLACE_PTSNAME_R)|g' \
++	      -e 's|@''REPLACE_PUTENV''@|$(REPLACE_PUTENV)|g' \
++	      -e 's|@''REPLACE_QSORT_R''@|$(REPLACE_QSORT_R)|g' \
++	      -e 's|@''REPLACE_RAND''@|$(REPLACE_RAND)|g' \
++	      -e 's|@''REPLACE_RANDOM''@|$(REPLACE_RANDOM)|g' \
++	      -e 's|@''REPLACE_RANDOM_R''@|$(REPLACE_RANDOM_R)|g' \
++	      -e 's|@''REPLACE_REALLOC_FOR_REALLOC_POSIX''@|$(REPLACE_REALLOC_FOR_REALLOC_POSIX)|g' \
++	      -e 's|@''REPLACE_REALLOCARRAY''@|$(REPLACE_REALLOCARRAY)|g' \
++	      -e 's|@''REPLACE_REALPATH''@|$(REPLACE_REALPATH)|g' \
++	      -e 's|@''REPLACE_SETENV''@|$(REPLACE_SETENV)|g' \
++	      -e 's|@''REPLACE_SETSTATE''@|$(REPLACE_SETSTATE)|g' \
++	      -e 's|@''REPLACE_STRTOD''@|$(REPLACE_STRTOD)|g' \
++	      -e 's|@''REPLACE_STRTOF''@|$(REPLACE_STRTOF)|g' \
++	      -e 's|@''REPLACE_STRTOL''@|$(REPLACE_STRTOL)|g' \
++	      -e 's|@''REPLACE_STRTOLD''@|$(REPLACE_STRTOLD)|g' \
++	      -e 's|@''REPLACE_STRTOLL''@|$(REPLACE_STRTOLL)|g' \
++	      -e 's|@''REPLACE_STRTOUL''@|$(REPLACE_STRTOUL)|g' \
++	      -e 's|@''REPLACE_STRTOULL''@|$(REPLACE_STRTOULL)|g' \
++	      -e 's|@''REPLACE_UNSETENV''@|$(REPLACE_UNSETENV)|g' \
++	      -e 's|@''REPLACE_WCTOMB''@|$(REPLACE_WCTOMB)|g' \
++	      -e 's|@''CAN_PRINT_STACK_TRACE''@|$(CAN_PRINT_STACK_TRACE)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _Noreturn/r $(_NORETURN_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      < $@-t2 > $@-t3
++	$(AM_V_at)rm -f $@-t1 $@-t2
++	$(AM_V_at)mv $@-t3 $@
++MOSTLYCLEANFILES += stdlib.h stdlib.h-t1 stdlib.h-t2 stdlib.h-t3
++
++Include:
++<stdlib.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/stdlib-safer
++++ b/modules/stdlib-safer
+@@ -9,7 +9,7 @@ lib/mkstemp-safer.c
+ Depends-on:
+ fd-safer-flag
+ mkstemp
+-stdlib
++stdlib-h
+ unistd-safer
+ 
+ configure.ac:
+--- a/modules/string
++++ b/modules/string
+@@ -14,7 +14,7 @@ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+ stddef-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_STRING_H
+--- a/modules/strtod
++++ b/modules/strtod
+@@ -7,7 +7,7 @@ m4/strtod.m4
+ m4/ldexp.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ strtod-obsolete
+ c-ctype         [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+ math-h          [test $HAVE_STRTOD = 0 || test $REPLACE_STRTOD = 1]
+--- a/modules/strtof
++++ b/modules/strtof
+@@ -8,7 +8,7 @@ m4/strtof.m4
+ m4/ldexpf.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ c-ctype         [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ math-h          [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+ stdbool-h       [test $HAVE_STRTOF = 0 || test $REPLACE_STRTOF = 1]
+--- a/modules/strtol
++++ b/modules/strtol
+@@ -6,7 +6,7 @@ lib/strtol.c
+ m4/strtol.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_STRTOL
+--- a/modules/strtold
++++ b/modules/strtold
+@@ -9,7 +9,7 @@ m4/math_h.m4
+ m4/ldexpl.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ c-ctype         [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ math-h          [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+ stdbool-h       [test $HAVE_STRTOLD = 0 || test $REPLACE_STRTOLD = 1]
+--- a/modules/strtoll
++++ b/modules/strtoll
+@@ -8,7 +8,7 @@ m4/strtoll.m4
+ 
+ Depends-on:
+ limits-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_STRTOLL
+--- a/modules/strtoul
++++ b/modules/strtoul
+@@ -7,7 +7,7 @@ lib/strtoul.c
+ m4/strtoul.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_STRTOUL
+--- a/modules/strtoull
++++ b/modules/strtoull
+@@ -9,7 +9,7 @@ m4/strtoull.m4
+ 
+ Depends-on:
+ limits-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_FUNC_STRTOULL
+--- a/modules/sysexits
++++ b/modules/sysexits
+@@ -8,7 +8,7 @@ m4/sysexits.m4
+ Depends-on:
+ gen-header
+ include_next
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_SYSEXITS
+--- a/modules/system-posix
++++ b/modules/system-posix
+@@ -4,7 +4,7 @@ system() function: execute a shell comma
+ Files:
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ sys_wait
+ 
+ configure.ac:
+--- a/modules/timevar
++++ b/modules/timevar
+@@ -11,7 +11,7 @@ gethrxtime
+ getrusage
+ gettext-h
+ gnulib-i18n
+-stdlib
++stdlib-h
+ sys_time
+ sys_times
+ xalloc
+--- a/modules/unlockpt
++++ b/modules/unlockpt
+@@ -7,7 +7,7 @@ lib/unlockpt.c
+ m4/unlockpt.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ extensions
+ fcntl-h         [test $HAVE_UNLOCKPT = 0]
+ ptsname         [test $HAVE_UNLOCKPT = 0]
+--- a/modules/unsetenv
++++ b/modules/unsetenv
+@@ -6,7 +6,7 @@ lib/unsetenv.c
+ m4/setenv.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ unistd          [test $HAVE_UNSETENV = 0 || test $REPLACE_UNSETENV = 1]
+ environ         [test $HAVE_UNSETENV = 0 || test $REPLACE_UNSETENV = 1]
+ free-posix      [test $HAVE_UNSETENV = 0 || test $REPLACE_UNSETENV = 1]
+--- a/modules/wait-process
++++ b/modules/wait-process
+@@ -15,7 +15,7 @@ xalloc-die
+ gettext-h
+ gnulib-i18n
+ stdbool-h
+-stdlib
++stdlib-h
+ sys_wait
+ unistd
+ atexit
+--- a/modules/wchar
++++ b/modules/wchar
+@@ -16,7 +16,7 @@ snippet/warn-on-use
+ extern-inline
+ inttypes-h-incomplete
+ stddef-h
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ gl_WCHAR_H
+--- a/modules/wctomb
++++ b/modules/wctomb
+@@ -7,7 +7,7 @@ lib/wctomb-impl.h
+ m4/wctomb.m4
+ 
+ Depends-on:
+-stdlib
++stdlib-h
+ wchar           [test $REPLACE_WCTOMB = 1]
+ mbszero         [test $REPLACE_WCTOMB = 1]
+ wcrtomb         [test $REPLACE_WCTOMB = 1]
+--- a/modules/windows-spawn
++++ b/modules/windows-spawn
+@@ -13,7 +13,7 @@ findprog-in
+ msvc-nothrow
+ stdbool-h
+ stdint-h
+-stdlib
++stdlib-h
+ strpbrk
+ unistd
+ malloc-posix
+--- a/modules/xsetenv
++++ b/modules/xsetenv
+@@ -12,7 +12,7 @@ unsetenv
+ error
+ gettext-h
+ gnulib-i18n
+-stdlib
++stdlib-h
+ 
+ configure.ac:
+ 

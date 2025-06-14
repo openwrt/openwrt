@@ -1,0 +1,195 @@
+From dc2b5a6280efc844c140439426df4502da26cf9e Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:18:08 +0100
+Subject: [PATCH] Rename module stdarg to stdarg-h.
+
+* modules/stdarg-h: Renamed from modules/stdarg.
+* modules/stdarg-h-tests: Renamed from modules/stdarg-tests.
+* modules/stdarg-h-c++-tests: Renamed from modules/stdarg-c++-tests.
+* tests/test-stdarg-h-c++.cc: Renamed from tests/test-stdarg-c++.cc.
+* tests/test-stdarg-h-c++2.cc: Renamed from tests/test-stdarg-c++2.cc.
+* doc/posix-headers/stdarg.texi: Update.
+* doc/posix-functions/va_copy.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdarg: New file.
+---
+ ChangeLog                                     | 13 +++++
+ doc/posix-functions/va_copy.texi              |  4 +-
+ doc/posix-headers/stdarg.texi                 |  4 +-
+ modules/stdarg                                | 40 +++------------
+ modules/stdarg-c++-tests                      | 18 -------
+ modules/stdarg-h                              | 51 +++++++++++++++++++
+ modules/stdarg-h-c++-tests                    | 18 +++++++
+ modules/{stdarg-tests => stdarg-h-tests}      |  2 +-
+ modules/string-buffer                         |  2 +-
+ modules/version-etc                           |  2 +-
+ modules/xprintf                               |  2 +-
+ modules/xvasprintf                            |  2 +-
+ ...est-stdarg-c++.cc => test-stdarg-h-c++.cc} |  0
+ ...t-stdarg-c++2.cc => test-stdarg-h-c++2.cc} |  0
+ 14 files changed, 98 insertions(+), 60 deletions(-)
+ delete mode 100644 modules/stdarg-c++-tests
+ create mode 100644 modules/stdarg-h
+ create mode 100644 modules/stdarg-h-c++-tests
+ rename modules/{stdarg-tests => stdarg-h-tests} (72%)
+ rename tests/{test-stdarg-c++.cc => test-stdarg-h-c++.cc} (100%)
+ rename tests/{test-stdarg-c++2.cc => test-stdarg-h-c++2.cc} (100%)
+
+--- a/modules/stdarg
++++ b/modules/stdarg
+@@ -1,45 +1,20 @@
+ Description:
+ An <stdarg.h> that conforms to C99.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdarg-h' instead.
++
+ Files:
+-lib/stdarg.in.h
+-m4/stdarg.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-
+-configure.ac-early:
+-dnl Some compilers (e.g., AIX 5.3 cc) need to be in c99 mode
+-dnl for the builtin va_copy to work.  gl_PROG_CC_C99 arranges for this.
+-gl_PROG_CC_C99
++stdarg-h
+ 
+ configure.ac:
+-gl_STDARG_H
+-gl_CONDITIONAL_HEADER([stdarg.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDARG_H)
+-
+-# We need the following in order to create <stdarg.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_STDARG_H
+-stdarg.h: stdarg.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDARG_H''@|$(NEXT_STDARG_H)|g' \
+-	      $(srcdir)/stdarg.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdarg.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdarg.h stdarg.h-t
+ 
+ Include:
+ <stdarg.h>
+@@ -48,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdarg-h
+@@ -0,0 +1,51 @@
++Description:
++An <stdarg.h> that conforms to C99.
++
++Files:
++lib/stdarg.in.h
++m4/stdarg.m4
++
++Depends-on:
++gen-header
++include_next
++
++configure.ac-early:
++dnl Some compilers (e.g., AIX 5.3 cc) need to be in c99 mode
++dnl for the builtin va_copy to work.  gl_PROG_CC_C99 arranges for this.
++gl_PROG_CC_C99
++
++configure.ac:
++gl_STDARG_H
++gl_CONDITIONAL_HEADER([stdarg.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDARG_H)
++
++# We need the following in order to create <stdarg.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_STDARG_H
++stdarg.h: stdarg.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDARG_H''@|$(NEXT_STDARG_H)|g' \
++	      $(srcdir)/stdarg.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdarg.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdarg.h stdarg.h-t
++
++Include:
++<stdarg.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/string-buffer
++++ b/modules/string-buffer
+@@ -9,7 +9,7 @@ Depends-on:
+ stdbool
+ attribute
+ string-desc
+-stdarg
++stdarg-h
+ vsnprintf-posix
+ 
+ configure.ac:
+--- a/modules/version-etc
++++ b/modules/version-etc
+@@ -9,7 +9,7 @@ m4/version-etc.m4
+ Depends-on:
+ gettext-h
+ gnulib-i18n
+-stdarg
++stdarg-h
+ 
+ configure.ac:
+ gl_VERSION_ETC
+--- a/modules/xprintf
++++ b/modules/xprintf
+@@ -10,7 +10,7 @@ stdio
+ error
+ exitfail
+ gettext-h
+-stdarg
++stdarg-h
+ 
+ configure.ac:
+ m4_ifdef([AM_XGETTEXT_OPTION],
+--- a/modules/xvasprintf
++++ b/modules/xvasprintf
+@@ -17,7 +17,7 @@ xalloc
+ xalloc-die
+ extern-inline
+ xsize
+-stdarg
++stdarg-h
+ errno-h
+ 
+ configure.ac:

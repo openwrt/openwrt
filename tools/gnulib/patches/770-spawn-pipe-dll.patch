@@ -1,0 +1,1359 @@
+From 427249c61666dcf649e6ba18fb327cdf71c45780 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Tue, 22 Oct 2024 22:08:24 +0200
+Subject: [PATCH] execute, spawn-pipe: Support DLL dependencies of Windows
+ executables.
+
+Reported by Michele Locati <michele@locati.it>.
+
+* lib/windows-path.h: New file.
+* lib/windows-path.c: New file.
+* lib/windows-spawn.h (compose_envblock): Add new_PATH parameter.
+(spawnpvech): Add dll_dirs parameter. Call extended_PATH.
+* lib/windows-spawn.c: Include windows-path.h.
+(compose_envblock): Add new_PATH parameter.
+* modules/windows-spawn (Description): Now applies to Cygwin as well.
+(Files): Add lib/windows-path.h, lib/windows-path.c.
+(configure.ac): Define GL_COND_OBJ_WINDOWS_PATH.
+(Makefile.am): Conditionally compile windows-path.c.
+(Include): Add windows-path.h.
+* lib/spawni.c (__spawni): Update compose_envblock call.
+* lib/execute.h (execute): Add dll_dirs parameter.
+* lib/execute.c: Include windows-path.h.
+(execute): Add dll_dirs parameter. Pass it down to spawnpvech. Call
+extended_environ.
+* lib/spawn-pipe.h (create_pipe_out, create_pipe_in, create_pipe_bidi):
+Add dll_dirs parameter.
+* lib/spawn-pipe.c: Include windows-path.h.
+(create_pipe): Add dll_dirs parameter. Pass it down to spawnpvech. Call
+extended_environ.
+(create_pipe_bidi, create_pipe_in, create_pipe_out): Add dll_dirs
+parameter.
+* lib/javaexec.c (execute_java_class): Update execute invocations.
+* lib/cygpath.c (execute_and_read_line): Update create_pipe_in
+invocation.
+* lib/javaversion.c (execute_and_read_line): Likewise.
+* lib/csharpcomp.c (compile_csharp_using_mono,
+compile_csharp_using_dotnet, compile_csharp_using_sscli): Update
+execute, create_pipe_in invocations.
+* lib/csharpexec.c (execute_csharp_using_mono,
+execute_csharp_using_dotnet, execute_csharp_using_sscli): Likewise.
+* lib/javacomp.c (compile_using_envjavac, compile_using_javac,
+execute_and_read_line, is_javac_present): Likewise.
+* lib/pipe-filter-gi.c (pipe_filter_gi_create): Update create_pipe_bidi
+invocation.
+* lib/pipe-filter-ii.c (pipe_filter_ii_execute): Likewise.
+* tests/test-execute-main.c (main): Update execute invocations.
+* tests/test-execute-script.c (main): Likewise.
+* tests/test-spawn-pipe-main.c (main): Update create_pipe_bidi
+invocation.
+* tests/test-spawn-pipe-script.c (main): Update create_pipe_in
+invocations.
+* NEWS: Mention the changes.
+---
+ ChangeLog                      |  49 +++++++++++
+ NEWS                           |  11 +++
+ lib/csharpcomp.c               |  22 ++---
+ lib/csharpexec.c               |   8 +-
+ lib/cygpath.c                  |   2 +-
+ lib/execute.c                  |  40 +++++++--
+ lib/execute.h                  |  11 +++
+ lib/javacomp.c                 |   8 +-
+ lib/javaexec.c                 |   4 +-
+ lib/javaversion.c              |   2 +-
+ lib/pipe-filter-gi.c           |   2 +-
+ lib/pipe-filter-ii.c           |   2 +-
+ lib/spawn-pipe.c               |  54 ++++++++++--
+ lib/spawn-pipe.h               |   7 ++
+ lib/spawni.c                   |   2 +-
+ lib/windows-path.c             | 146 +++++++++++++++++++++++++++++++++
+ lib/windows-path.h             |  54 ++++++++++++
+ lib/windows-spawn.c            |  83 ++++++++++++-------
+ lib/windows-spawn.h            |   8 +-
+ modules/windows-spawn          |  11 ++-
+ tests/test-execute-main.c      |  44 +++++-----
+ tests/test-execute-script.c    |   4 +-
+ tests/test-spawn-pipe-main.c   |   2 +-
+ tests/test-spawn-pipe-script.c |   4 +-
+ 24 files changed, 482 insertions(+), 98 deletions(-)
+ create mode 100644 lib/windows-path.c
+ create mode 100644 lib/windows-path.h
+
+--- a/lib/csharpcomp.c
++++ b/lib/csharpcomp.c
+@@ -106,7 +106,7 @@ compile_csharp_using_mono (const char *
+       argv[0] = "mcs";
+       argv[1] = "--version";
+       argv[2] = NULL;
+-      child = create_pipe_in ("mcs", "mcs", argv, NULL,
++      child = create_pipe_in ("mcs", "mcs", argv, NULL, NULL,
+                               DEV_NULL, true, true, false, fd);
+       mcs_present = false;
+       if (child != -1)
+@@ -215,7 +215,7 @@ compile_csharp_using_mono (const char *
+           free (command);
+         }
+ 
+-      child = create_pipe_in ("mcs", "mcs", argv, NULL,
++      child = create_pipe_in ("mcs", "mcs", argv, NULL, NULL,
+                               NULL, false, true, true, fd);
+ 
+       /* Read the subprocess output, copying it to stderr.  Drop the last
+@@ -292,7 +292,7 @@ compile_csharp_using_dotnet (const char
+         argv[0] = "dotnet";
+         argv[1] = "--list-runtimes";
+         argv[2] = NULL;
+-        exitstatus = execute ("dotnet", "dotnet", argv, NULL,
++        exitstatus = execute ("dotnet", "dotnet", argv, NULL, NULL,
+                               false, false, true, true,
+                               true, false, NULL);
+       }
+@@ -305,7 +305,7 @@ compile_csharp_using_dotnet (const char
+           argv[0] = "dotnet";
+           argv[1] = "--list-sdks";
+           argv[2] = NULL;
+-          child = create_pipe_in ("dotnet", "dotnet", argv, NULL,
++          child = create_pipe_in ("dotnet", "dotnet", argv, NULL, NULL,
+                                   DEV_NULL, true, true, false, fd);
+           if (child != -1)
+             {
+@@ -353,7 +353,7 @@ compile_csharp_using_dotnet (const char
+ 
+         /* Open a pipe to the program.  */
+         int fd[1];
+-        pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL,
++        pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL, NULL,
+                                       DEV_NULL, false, true, false, fd);
+         if (child == -1)
+           {
+@@ -445,7 +445,7 @@ compile_csharp_using_dotnet (const char
+ 
+         /* Open a pipe to the program.  */
+         int fd[1];
+-        pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL,
++        pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL, NULL,
+                                       DEV_NULL, false, true, false, fd);
+         if (child == -1)
+           {
+@@ -651,7 +651,7 @@ compile_csharp_using_dotnet (const char
+           free (command);
+         }
+ 
+-      exitstatus = execute ("dotnet", "dotnet", argv, NULL,
++      exitstatus = execute ("dotnet", "dotnet", argv, NULL, NULL,
+                             false, false, false, false,
+                             true, true, NULL);
+ 
+@@ -691,7 +691,7 @@ compile_csharp_using_dotnet (const char
+           argv[0] = "csc";
+           argv[1] = "-help";
+           argv[2] = NULL;
+-          child = create_pipe_in ("csc", "csc", argv, NULL,
++          child = create_pipe_in ("csc", "csc", argv, NULL, NULL,
+                                   DEV_NULL, true, true, false, fd);
+           if (child != -1)
+             {
+@@ -825,7 +825,7 @@ compile_csharp_using_dotnet (const char
+               free (command);
+             }
+ 
+-          exitstatus = execute ("csc", "csc", argv, NULL,
++          exitstatus = execute ("csc", "csc", argv, NULL, NULL,
+                                 false, false, false, false,
+                                 true, true, NULL);
+ 
+@@ -870,7 +870,7 @@ compile_csharp_using_sscli (const char *
+       argv[0] = "csc";
+       argv[1] = "-help";
+       argv[2] = NULL;
+-      child = create_pipe_in ("csc", "csc", argv, NULL,
++      child = create_pipe_in ("csc", "csc", argv, NULL, NULL,
+                               DEV_NULL, true, true, false, fd);
+       csc_present = false;
+       if (child != -1)
+@@ -997,7 +997,7 @@ compile_csharp_using_sscli (const char *
+           free (command);
+         }
+ 
+-      exitstatus = execute ("csc", "csc", argv, NULL,
++      exitstatus = execute ("csc", "csc", argv, NULL, NULL,
+                             false, false, false, false,
+                             true, true, NULL);
+ 
+--- a/lib/csharpexec.c
++++ b/lib/csharpexec.c
+@@ -132,7 +132,7 @@ execute_csharp_using_mono (const char *a
+       argv[0] = "mono";
+       argv[1] = "--version";
+       argv[2] = NULL;
+-      exitstatus = execute ("mono", "mono", argv, NULL,
++      exitstatus = execute ("mono", "mono", argv, NULL, NULL,
+                             false, false, true, true,
+                             true, false, NULL);
+       mono_present = (exitstatus == 0);
+@@ -196,7 +196,7 @@ execute_csharp_using_dotnet (const char
+       argv[0] = "dotnet";
+       argv[1] = "--list-runtimes";
+       argv[2] = NULL;
+-      exitstatus = execute ("dotnet", "dotnet", argv, NULL,
++      exitstatus = execute ("dotnet", "dotnet", argv, NULL, NULL,
+                             false, false, true, true,
+                             true, false, NULL);
+       dotnet_present = (exitstatus == 0);
+@@ -382,7 +382,7 @@ execute_csharp_using_dotnet (const char
+ 
+             /* Open a pipe to the program.  */
+             int fd[1];
+-            pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL,
++            pid_t child = create_pipe_in ("dotnet", "dotnet", argv, NULL, NULL,
+                                           DEV_NULL, false, true, false, fd);
+             if (child == -1)
+               {
+@@ -572,7 +572,7 @@ execute_csharp_using_sscli (const char *
+ 
+       argv[0] = "clix";
+       argv[1] = NULL;
+-      exitstatus = execute ("clix", "clix", argv, NULL,
++      exitstatus = execute ("clix", "clix", argv, NULL, NULL,
+                             false, false, true, true,
+                             true, false, NULL);
+       clix_present = (exitstatus == 0 || exitstatus == 1);
+--- a/lib/cygpath.c
++++ b/lib/cygpath.c
+@@ -92,7 +92,7 @@ execute_and_read_line (const char *progn
+   size_t linelen;
+ 
+   /* Open a pipe to the program.  */
+-  child = create_pipe_in (progname, prog_path, prog_argv, NULL,
++  child = create_pipe_in (progname, prog_path, prog_argv, NULL, NULL,
+                           DEV_NULL, false, true, false, fd);
+ 
+   if (child == -1)
+--- a/lib/execute.c
++++ b/lib/execute.c
+@@ -35,6 +35,7 @@
+ #include "fatal-signal.h"
+ #include "filename.h"
+ #include "findprog.h"
++#include "windows-path.h"
+ #include "wait-process.h"
+ #include "xalloc.h"
+ #include "gettext.h"
+@@ -113,6 +114,7 @@ nonintr_open (const char *pathname, int
+ int
+ execute (const char *progname,
+          const char *prog_path, const char * const *prog_argv,
++         const char * const *dll_dirs,
+          const char *directory,
+          bool ignore_sigpipe,
+          bool null_stdin, bool null_stdout, bool null_stderr,
+@@ -203,7 +205,8 @@ execute (const char *progname,
+         (HANDLE) _get_osfhandle (null_stderr ? nulloutfd : STDERR_FILENO);
+ 
+       exitcode = spawnpvech (P_WAIT, prog_path, argv + 1,
+-                             (const char * const *) environ, directory,
++                             (const char * const *) environ, dll_dirs,
++                             directory,
+                              stdin_handle, stdout_handle, stderr_handle);
+ # if 0 /* Executing arbitrary files as shell scripts is unsecure.  */
+       if (exitcode == -1 && errno == ENOEXEC)
+@@ -213,7 +216,8 @@ execute (const char *progname,
+              a hidden element "sh.exe" to argv.  */
+           argv[1] = prog_path;
+           exitcode = spawnpvech (P_WAIT, argv[0], argv,
+-                                 (const char * const *) environ, directory,
++                                 (const char * const *) environ, dll_dirs,
++                                 directory,
+                                  stdin_handle, stdout_handle, stderr_handle);
+         }
+ # endif
+@@ -254,6 +258,8 @@ execute (const char *progname,
+      subprocess to exit with return code 127.  It is implementation
+      dependent which error is reported which way.  We treat both cases as
+      equivalent.  */
++  char **child_environ;
++  char **malloced_environ;
+   sigset_t blocked_signals;
+   posix_spawn_file_actions_t actions;
+   bool actions_allocated;
+@@ -262,6 +268,18 @@ execute (const char *progname,
+   int err;
+   pid_t child;
+ 
++  child_environ = environ;
++  malloced_environ = NULL;
++# if defined _WIN32 || defined __CYGWIN__
++  if (dll_dirs != NULL && dll_dirs[0] != NULL)
++    {
++      malloced_environ = extended_environ (dll_dirs);
++      if (malloced_environ == NULL)
++        goto fail_with_errno;
++      child_environ = malloced_environ;
++    }
++# endif
++
+   if (slave_process)
+     {
+       sigprocmask (SIG_SETMASK, NULL, &blocked_signals);
+@@ -300,16 +318,18 @@ execute (const char *progname,
+                                                          &blocked_signals))
+                       != 0
+                       || (err = posix_spawnattr_setflags (&attrs,
+-                                                        POSIX_SPAWN_SETSIGMASK))
++                                                          POSIX_SPAWN_SETSIGMASK))
+                          != 0)))
+ # endif
+           || (err = (directory != NULL
+                      ? posix_spawn (&child, prog_path, &actions,
+                                     attrs_allocated ? &attrs : NULL,
+-                                    (char * const *) prog_argv, environ)
++                                    (char * const *) prog_argv,
++                                    child_environ)
+                      : posix_spawnp (&child, prog_path, &actions,
+                                      attrs_allocated ? &attrs : NULL,
+-                                     (char * const *) prog_argv, environ)))
++                                     (char * const *) prog_argv,
++                                     child_environ)))
+              != 0))
+     {
+       if (actions_allocated)
+@@ -318,6 +338,11 @@ execute (const char *progname,
+         posix_spawnattr_destroy (&attrs);
+       if (slave_process)
+         unblock_fatal_signals ();
++      if (malloced_environ != NULL)
++        {
++          free (malloced_environ[0]);
++          free (malloced_environ);
++        }
+       free (prog_path_to_free);
+       if (termsigp != NULL)
+         *termsigp = 0;
+@@ -332,6 +357,11 @@ execute (const char *progname,
+       register_slave_subprocess (child);
+       unblock_fatal_signals ();
+     }
++  if (malloced_environ != NULL)
++    {
++      free (malloced_environ[0]);
++      free (malloced_environ);
++    }
+   free (prog_path_to_free);
+ 
+   return wait_subprocess (child, progname, ignore_sigpipe, null_stderr,
+--- a/lib/execute.h
++++ b/lib/execute.h
+@@ -27,6 +27,7 @@ extern "C" {
+    descriptors to /dev/null.  Return its exit code.
+    If it didn't terminate correctly, exit if exit_on_error is true, otherwise
+    return 127.
++
+    progname is the name of the program to be executed by the subprocess, used
+    for error messages.
+    prog_path is the file name of the program to be executed by the subprocess.
+@@ -35,21 +36,31 @@ extern "C" {
+    prog_argv is the array of strings that the subprocess shall receive in
+    argv[].  It is a NULL-terminated array.  prog_argv[0] should normally be
+    identical to prog_path.
++
++   dll_dirs is, on Windows platforms, a NULL-terminated list of directories
++   that contain DLLs needed to execute the program, or NULL if none is needed.
++   On other platforms, always pass NULL.
++
+    If directory is not NULL, the command is executed in that directory.  If
+    prog_path is a relative file name, it resolved before changing to that
+    directory.  The current directory of the current process remains unchanged.
++
+    If ignore_sigpipe is true, consider a subprocess termination due to SIGPIPE
+    as equivalent to a success.  This is suitable for processes whose only
+    purpose is to write to standard output.
++
+    If slave_process is true, the child process will be terminated when its
+    creator receives a catchable fatal signal.
++
+    If termsigp is not NULL, *termsig will be set to the signal that terminated
+    the subprocess (if supported by the platform: not on native Windows
+    platforms), otherwise 0.
++
+    It is recommended that no signal is blocked or ignored while execute()
+    is called.  See spawn-pipe.h for the reason.  */
+ extern int execute (const char *progname,
+                     const char *prog_path, const char * const *prog_argv,
++                    const char * const *dll_dirs,
+                     const char *directory,
+                     bool ignore_sigpipe,
+                     bool null_stdin, bool null_stdout, bool null_stderr,
+--- a/lib/javacomp.c
++++ b/lib/javacomp.c
+@@ -243,7 +243,7 @@ compile_using_envjavac (const char *java
+   argv[1] = "-c";
+   argv[2] = command;
+   argv[3] = NULL;
+-  exitstatus = execute (javac, BOURNE_SHELL, argv, NULL,
++  exitstatus = execute (javac, BOURNE_SHELL, argv, NULL, NULL,
+                         false, false, false, null_stderr,
+                         true, true, NULL);
+   err = (exitstatus != 0);
+@@ -315,7 +315,7 @@ compile_using_javac (const char * const
+       free (command);
+     }
+ 
+-  exitstatus = execute ("javac", "javac", argv, NULL,
++  exitstatus = execute ("javac", "javac", argv, NULL, NULL,
+                         false, false, false,
+                         null_stderr, true, true, NULL);
+   err = (exitstatus != 0);
+@@ -343,7 +343,7 @@ execute_and_read_line (const char *progn
+   int exitstatus;
+ 
+   /* Open a pipe to the program.  */
+-  child = create_pipe_in (progname, prog_path, prog_argv, NULL,
++  child = create_pipe_in (progname, prog_path, prog_argv, NULL, NULL,
+                           DEV_NULL, false, true, false, fd);
+ 
+   if (child == -1)
+@@ -764,7 +764,7 @@ is_javac_present (void)
+ 
+       argv[0] = "javac";
+       argv[1] = NULL;
+-      exitstatus = execute ("javac", "javac", argv, NULL,
++      exitstatus = execute ("javac", "javac", argv, NULL, NULL,
+                             false, false, true, true,
+                             true, false, NULL);
+       javac_present = (exitstatus == 0 || exitstatus == 1 || exitstatus == 2);
+--- a/lib/javaexec.c
++++ b/lib/javaexec.c
+@@ -205,7 +205,7 @@ execute_java_class (const char *class_na
+         argv[0] = "java";
+         argv[1] = "-version";
+         argv[2] = NULL;
+-        exitstatus = execute ("java", "java", argv, NULL,
++        exitstatus = execute ("java", "java", argv, NULL, NULL,
+                               false, false, true, true,
+                               true, false, NULL);
+         java_present = (exitstatus == 0);
+@@ -261,7 +261,7 @@ execute_java_class (const char *class_na
+ 
+         argv[0] = "jre";
+         argv[1] = NULL;
+-        exitstatus = execute ("jre", "jre", argv, NULL,
++        exitstatus = execute ("jre", "jre", argv, NULL, NULL,
+                               false, false, true, true,
+                               true, false, NULL);
+         jre_present = (exitstatus == 0 || exitstatus == 1);
+--- a/lib/javaversion.c
++++ b/lib/javaversion.c
+@@ -63,7 +63,7 @@ execute_and_read_line (const char *progn
+   size_t linelen;
+ 
+   /* Open a pipe to the JVM.  */
+-  child = create_pipe_in (progname, prog_path, prog_argv, NULL,
++  child = create_pipe_in (progname, prog_path, prog_argv, NULL, NULL,
+                           DEV_NULL, false, true, false, fd);
+ 
+   if (child == -1)
+--- a/lib/pipe-filter-gi.c
++++ b/lib/pipe-filter-gi.c
+@@ -496,7 +496,7 @@ pipe_filter_gi_create (const char *progn
+     (struct pipe_filter_gi *) xmalloc (sizeof (struct pipe_filter_gi));
+ 
+   /* Open a bidirectional pipe to a subprocess.  */
+-  filter->child = create_pipe_bidi (progname, prog_path, prog_argv,
++  filter->child = create_pipe_bidi (progname, prog_path, prog_argv, NULL,
+                                     NULL, null_stderr, true, exit_on_error,
+                                     filter->fd);
+   filter->progname = progname;
+--- a/lib/pipe-filter-ii.c
++++ b/lib/pipe-filter-ii.c
+@@ -269,7 +269,7 @@ pipe_filter_ii_execute (const char *prog
+ #endif
+ 
+   /* Open a bidirectional pipe to a subprocess.  */
+-  child = create_pipe_bidi (progname, prog_path, prog_argv,
++  child = create_pipe_bidi (progname, prog_path, prog_argv, NULL,
+                             NULL, null_stderr, true, exit_on_error,
+                             fd);
+   if (child == -1)
+--- a/lib/spawn-pipe.c
++++ b/lib/spawn-pipe.c
+@@ -37,6 +37,7 @@
+ #include "fatal-signal.h"
+ #include "filename.h"
+ #include "findprog.h"
++#include "windows-path.h"
+ #include "unistd-safer.h"
+ #include "wait-process.h"
+ #include "xalloc.h"
+@@ -138,6 +139,7 @@ static pid_t
+ create_pipe (const char *progname,
+              const char *prog_path,
+              const char * const *prog_argv,
++             const char * const *dll_dirs,
+              const char *directory,
+              bool pipe_stdin, bool pipe_stdout,
+              const char *prog_stdin, const char *prog_stdout,
+@@ -313,7 +315,8 @@ create_pipe (const char *progname,
+         (HANDLE) _get_osfhandle (null_stderr ? nulloutfd : STDERR_FILENO);
+ 
+       child = spawnpvech (P_NOWAIT, prog_path, argv + 1,
+-                          (const char * const *) environ, directory,
++                          (const char * const *) environ, dll_dirs,
++                          directory,
+                           stdin_handle, stdout_handle, stderr_handle);
+ #  if 0 /* Executing arbitrary files as shell scripts is unsecure.  */
+       if (child == -1 && errno == ENOEXEC)
+@@ -323,7 +326,8 @@ create_pipe (const char *progname,
+              a hidden element "sh.exe" to argv.  */
+           argv[1] = prog_path;
+           child = spawnpvech (P_NOWAIT, argv[0], argv,
+-                              (const char * const *) environ, directory,
++                              (const char * const *) environ, dll_dirs,
++                              directory,
+                               stdin_handle, stdout_handle, stderr_handle);
+         }
+ #  endif
+@@ -433,6 +437,8 @@ create_pipe (const char *progname,
+ #else
+ 
+   /* Unix API.  */
++  char **child_environ;
++  char **malloced_environ;
+   sigset_t blocked_signals;
+   posix_spawn_file_actions_t actions;
+   bool actions_allocated;
+@@ -441,6 +447,18 @@ create_pipe (const char *progname,
+   int err;
+   pid_t child;
+ 
++  child_environ = environ;
++  malloced_environ = NULL;
++# if defined _WIN32 || defined __CYGWIN__
++  if (dll_dirs != NULL && dll_dirs[0] != NULL)
++    {
++      malloced_environ = extended_environ (dll_dirs);
++      if (malloced_environ == NULL)
++        goto fail_with_errno;
++      child_environ = malloced_environ;
++    }
++# endif
++
+   if (slave_process)
+     {
+       sigprocmask (SIG_SETMASK, NULL, &blocked_signals);
+@@ -499,24 +517,26 @@ create_pipe (const char *progname,
+ # if defined _WIN32 && !defined __CYGWIN__
+                       (err = posix_spawnattr_setpgroup (&attrs, 0)) != 0
+                       || (err = posix_spawnattr_setflags (&attrs,
+-                                                         POSIX_SPAWN_SETPGROUP))
++                                                          POSIX_SPAWN_SETPGROUP))
+                          != 0
+ # else
+                       (err = posix_spawnattr_setsigmask (&attrs,
+                                                          &blocked_signals))
+                       != 0
+                       || (err = posix_spawnattr_setflags (&attrs,
+-                                                        POSIX_SPAWN_SETSIGMASK))
++                                                          POSIX_SPAWN_SETSIGMASK))
+                          != 0
+ # endif
+              )   )   )
+           || (err = (directory != NULL
+                      ? posix_spawn (&child, prog_path, &actions,
+                                     attrs_allocated ? &attrs : NULL,
+-                                    (char * const *) prog_argv, environ)
++                                    (char * const *) prog_argv,
++                                    child_environ)
+                      : posix_spawnp (&child, prog_path, &actions,
+                                      attrs_allocated ? &attrs : NULL,
+-                                     (char * const *) prog_argv, environ)))
++                                     (char * const *) prog_argv,
++                                     child_environ)))
+              != 0))
+     {
+       if (actions_allocated)
+@@ -525,6 +545,11 @@ create_pipe (const char *progname,
+         posix_spawnattr_destroy (&attrs);
+       if (slave_process)
+         unblock_fatal_signals ();
++      if (malloced_environ != NULL)
++        {
++          free (malloced_environ[0]);
++          free (malloced_environ);
++        }
+       if (pipe_stdout)
+         {
+           close (ifd[0]);
+@@ -547,6 +572,11 @@ create_pipe (const char *progname,
+       register_slave_subprocess (child);
+       unblock_fatal_signals ();
+     }
++  if (malloced_environ != NULL)
++    {
++      free (malloced_environ[0]);
++      free (malloced_environ);
++    }
+   if (pipe_stdin)
+     close (ofd[0]);
+   if (pipe_stdout)
+@@ -582,12 +612,14 @@ create_pipe (const char *progname,
+ pid_t
+ create_pipe_bidi (const char *progname,
+                   const char *prog_path, const char * const *prog_argv,
++                  const char * const *dll_dirs,
+                   const char *directory,
+                   bool null_stderr,
+                   bool slave_process, bool exit_on_error,
+                   int fd[2])
+ {
+-  pid_t result = create_pipe (progname, prog_path, prog_argv, directory,
++  pid_t result = create_pipe (progname, prog_path, prog_argv, dll_dirs,
++                              directory,
+                               true, true, NULL, NULL,
+                               null_stderr, slave_process, exit_on_error,
+                               fd);
+@@ -604,13 +636,15 @@ create_pipe_bidi (const char *progname,
+ pid_t
+ create_pipe_in (const char *progname,
+                 const char *prog_path, const char * const *prog_argv,
++                const char * const *dll_dirs,
+                 const char *directory,
+                 const char *prog_stdin, bool null_stderr,
+                 bool slave_process, bool exit_on_error,
+                 int fd[1])
+ {
+   int iofd[2];
+-  pid_t result = create_pipe (progname, prog_path, prog_argv, directory,
++  pid_t result = create_pipe (progname, prog_path, prog_argv, dll_dirs,
++                              directory,
+                               false, true, prog_stdin, NULL,
+                               null_stderr, slave_process, exit_on_error,
+                               iofd);
+@@ -629,13 +663,15 @@ create_pipe_in (const char *progname,
+ pid_t
+ create_pipe_out (const char *progname,
+                  const char *prog_path, const char * const *prog_argv,
++                 const char * const *dll_dirs,
+                  const char *directory,
+                  const char *prog_stdout, bool null_stderr,
+                  bool slave_process, bool exit_on_error,
+                  int fd[1])
+ {
+   int iofd[2];
+-  pid_t result = create_pipe (progname, prog_path, prog_argv, directory,
++  pid_t result = create_pipe (progname, prog_path, prog_argv, dll_dirs,
++                              directory,
+                               true, false, NULL, prog_stdout,
+                               null_stderr, slave_process, exit_on_error,
+                               iofd);
+--- a/lib/spawn-pipe.h
++++ b/lib/spawn-pipe.h
+@@ -49,6 +49,10 @@ extern "C" {
+    argv[].  It is a NULL-terminated array.  prog_argv[0] should normally be
+    identical to prog_path.
+ 
++   dll_dirs is, on Windows platforms, a NULL-terminated list of directories
++   that contain DLLs needed to execute the program, or NULL if none is needed.
++   On other platforms, always pass NULL.
++
+    If directory is not NULL, the subprocess is started in that directory.  If
+    prog_path is a relative file name, it resolved before changing to that
+    directory.  The current directory of the current process remains unchanged.
+@@ -96,6 +100,7 @@ extern "C" {
+ extern pid_t create_pipe_out (const char *progname,
+                               const char *prog_path,
+                               const char * const *prog_argv,
++                              const char * const *dll_dirs,
+                               const char *directory,
+                               const char *prog_stdout, bool null_stderr,
+                               bool slave_process, bool exit_on_error,
+@@ -111,6 +116,7 @@ extern pid_t create_pipe_out (const char
+ extern pid_t create_pipe_in (const char *progname,
+                              const char *prog_path,
+                              const char * const *prog_argv,
++                             const char * const *dll_dirs,
+                              const char *directory,
+                              const char *prog_stdin, bool null_stderr,
+                              bool slave_process, bool exit_on_error,
+@@ -141,6 +147,7 @@ extern pid_t create_pipe_in (const char
+ extern pid_t create_pipe_bidi (const char *progname,
+                                const char *prog_path,
+                                const char * const *prog_argv,
++                               const char * const *dll_dirs,
+                                const char *directory,
+                                bool null_stderr,
+                                bool slave_process, bool exit_on_error,
+--- a/lib/spawni.c
++++ b/lib/spawni.c
+@@ -665,7 +665,7 @@ __spawni (pid_t *pid, const char *prog_f
+     envblock = NULL;
+   else
+     {
+-      envblock = compose_envblock (envp);
++      envblock = compose_envblock (envp, NULL);
+       if (envblock == NULL)
+         {
+           free (command);
+--- /dev/null
++++ b/lib/windows-path.c
+@@ -0,0 +1,146 @@
++/* Auxiliary functions for the creation of subprocesses on Windows.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++   Written by Bruno Haible <bruno@clisp.org>, 2024.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "windows-path.h"
++
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++char *
++extended_PATH (const char * const *dll_dirs)
++{
++  /* Create a string PATH=(dll_dirs[0];dll_dirs[1];...;)old_PATH  */
++  const char *old_PATH = getenv ("PATH");
++  if (old_PATH == NULL)
++    old_PATH = "";
++  size_t size;
++  {
++    size = 5;
++    {
++      size_t i;
++      for (i = 0; dll_dirs[i] != NULL; i++)
++        size += strlen (dll_dirs[i]) + 1;
++    }
++    size += strlen (old_PATH) + 1;
++  }
++  char *new_PATH = (char *) malloc (size);
++  if (new_PATH == NULL)
++    return NULL;
++  {
++    char *p = new_PATH;
++    {
++      memcpy (p, "PATH=", 5);
++      p += 5;
++    }
++    {
++      size_t i;
++      for (i = 0; dll_dirs[i] != NULL; i++)
++        {
++          size_t l = strlen (dll_dirs[i]);
++          memcpy (p, dll_dirs[i], l);
++          p += l;
++#if defined _WIN32 && !defined __CYGWIN__
++          *p++ = ';';
++#else
++          *p++ = ':';
++#endif
++        }
++    }
++    {
++      size_t l = strlen (old_PATH);
++      memcpy (p, old_PATH, l);
++      p += l;
++      *p = '\0';
++    }
++  }
++  return new_PATH;
++}
++
++char **
++extended_environ (const char * const *dll_dirs)
++{
++  char *child_PATH = extended_PATH (dll_dirs);
++  if (child_PATH == NULL)
++    return NULL;
++
++  /* Create a shallow copy of environ, adding the child_PATH and removing
++     the original "PATH=..." string.
++     This is a bit hairy, because we don't have a lock that would prevent
++     other threads from making modifications in ENVP.  So, just make sure
++     we don't crash; but if other threads are making modifications, part
++     of the result may be wrong.  */
++  char **envp;
++
++#if defined _WIN32 && !defined __CYGWIN__
++  envp = _environ;
++#else
++  envp = environ;
++#endif
++
++ retry:
++  {
++    /* Guess the size of the needed block of memory.
++       The guess will be exact if other threads don't make modifications.  */
++    size_t size = 0;
++    {
++      char **ep;
++      char *p;
++      for (ep = envp; (p = *ep) != NULL; ep++)
++        if (strncmp (p, "PATH=", 5) != 0)
++          size += 1;
++    }
++    char **new_environ = (char **) malloc ((1 + size + 1) * sizeof (char *));
++    if (new_environ == NULL)
++      {
++        free (child_PATH);
++        errno = ENOMEM;
++        return NULL;
++      }
++    char **nep = new_environ;
++    *nep++ = child_PATH;
++    {
++      size_t i = 0;
++      char **ep;
++      char *p;
++      for (ep = envp; (p = *ep) != NULL; ep++)
++        if (strncmp (p, "PATH=", 5) != 0)
++          {
++            if (i == size)
++              {
++                /* Other threads did modifications.  Restart.  */
++                free (new_environ);
++                goto retry;
++              }
++            *nep++ = p;
++            i += 1;
++          }
++      if (i < size)
++        {
++          /* Other threads did modifications.  Restart.  */
++          free (new_environ);
++          goto retry;
++        }
++    }
++    *nep = NULL;
++    return new_environ;
++  }
++}
+--- /dev/null
++++ b/lib/windows-path.h
+@@ -0,0 +1,54 @@
++/* Auxiliary functions for the creation of subprocesses on Windows.
++   Copyright (C) 2024 Free Software Foundation, Inc.
++   Written by Bruno Haible <bruno@clisp.org>, 2024.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#ifndef _WINDOWS_PATH_H
++#define _WINDOWS_PATH_H
++
++/* This file uses _GL_ATTRIBUTE_MALLOC.  */
++#if !_GL_CONFIG_H_INCLUDED
++ #error "Please include config.h first."
++#endif
++
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/* Returns an augmented "PATH=..." string for the environment of a child process.
++   dll_dirs is a NULL-terminated list of directories that contain DLLs needed to
++   execute the program, or NULL if none is needed.
++   Returns a freshly allocated string.  In case of memory allocation failure,
++   NULL is returned, with errno set.  */
++extern char * extended_PATH (const char * const *dll_dirs)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
++
++/* Returns an augmented environment for a child process.
++   dll_dirs is a NULL-terminated list of directories that contain DLLs needed to
++   execute the program, or NULL if none is needed.
++   Returns a freshly allocated string array, with a freshly allocated first
++   string.  In case of memory allocation failure, NULL is returned, with errno
++   set.  */
++extern char ** extended_environ (const char * const *dll_dirs)
++  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _WINDOWS_PATH_H */
+--- a/lib/windows-spawn.c
++++ b/lib/windows-spawn.c
+@@ -38,6 +38,7 @@
+ #include <process.h>
+ 
+ #include "findprog.h"
++#include "windows-path.h"
+ 
+ /* Don't assume that UNICODE is not defined.  */
+ #undef STARTUPINFO
+@@ -244,7 +245,7 @@ compose_command (const char * const *arg
+ }
+ 
+ char *
+-compose_envblock (const char * const *envp)
++compose_envblock (const char * const *envp, const char *new_PATH)
+ {
+   /* This is a bit hairy, because we don't have a lock that would prevent other
+      threads from making modifications in ENVP.  So, just make sure we don't
+@@ -257,8 +258,11 @@ compose_envblock (const char * const *en
+     size_t total_size = 0;
+     const char * const *ep;
+     const char *p;
++    if (new_PATH != NULL)
++      total_size += strlen (new_PATH) + 1;
+     for (ep = envp; (p = *ep) != NULL; ep++)
+-      total_size += strlen (p) + 1;
++      if (!(new_PATH != NULL && strncmp (p, "PATH=", 5) == 0))
++        total_size += strlen (p) + 1;
+     size_t envblock_size = total_size;
+ 
+     /* Allocate the block of memory.  */
+@@ -269,34 +273,42 @@ compose_envblock (const char * const *en
+         return NULL;
+       }
+     size_t envblock_used = 0;
+-    for (ep = envp; (p = *ep) != NULL; ep++)
++    if (new_PATH != NULL)
+       {
+-        size_t size = strlen (p) + 1;
+-        if (envblock_used + size > envblock_size)
+-          {
+-            /* Other threads did modifications.  Need more memory.  */
+-            envblock_size += envblock_size / 2;
+-            if (envblock_used + size > envblock_size)
+-              envblock_size = envblock_used + size;
+-
+-            char *new_envblock = (char *) realloc (envblock, envblock_size + 1);
+-            if (new_envblock == NULL)
+-              {
+-                free (envblock);
+-                errno = ENOMEM;
+-                return NULL;
+-              }
+-            envblock = new_envblock;
+-          }
+-        memcpy (envblock + envblock_used, p, size);
++        size_t size = strlen (new_PATH) + 1;
++        memcpy (envblock + envblock_used, new_PATH, size);
+         envblock_used += size;
+-        if (envblock[envblock_used - 1] != '\0')
+-          {
+-            /* Other threads did modifications.  Restart.  */
+-            free (envblock);
+-            goto retry;
+-          }
+       }
++    for (ep = envp; (p = *ep) != NULL; ep++)
++      if (!(new_PATH != NULL && strncmp (p, "PATH=", 5) == 0))
++        {
++          size_t size = strlen (p) + 1;
++          if (envblock_used + size > envblock_size)
++            {
++              /* Other threads did modifications.  Need more memory.  */
++              envblock_size += envblock_size / 2;
++              if (envblock_used + size > envblock_size)
++                envblock_size = envblock_used + size;
++
++              char *new_envblock =
++                (char *) realloc (envblock, envblock_size + 1);
++              if (new_envblock == NULL)
++                {
++                  free (envblock);
++                  errno = ENOMEM;
++                  return NULL;
++                }
++              envblock = new_envblock;
++            }
++          memcpy (envblock + envblock_used, p, size);
++          envblock_used += size;
++          if (envblock[envblock_used - 1] != '\0')
++            {
++              /* Other threads did modifications.  Restart.  */
++              free (envblock);
++              goto retry;
++            }
++        }
+     envblock[envblock_used] = '\0';
+     return envblock;
+   }
+@@ -573,6 +585,7 @@ intptr_t
+ spawnpvech (int mode,
+             const char *progname, const char * const *argv,
+             const char * const *envp,
++            const char * const *dll_dirs,
+             const char *currdir,
+             HANDLE stdin_handle, HANDLE stdout_handle, HANDLE stderr_handle)
+ {
+@@ -600,11 +613,23 @@ spawnpvech (int mode,
+ 
+   /* Copy *ENVP into a contiguous block of memory.  */
+   char *envblock;
+-  if (envp == NULL)
++  if (envp == NULL && !(dll_dirs != NULL && dll_dirs[0] != NULL))
+     envblock = NULL;
+   else
+     {
+-      envblock = compose_envblock (envp);
++      if (envp == NULL)
++        /* Documentation:
++           <https://learn.microsoft.com/en-us/cpp/c-runtime-library/environ-wenviron>  */
++        envp = (const char **) _environ;
++      char *new_PATH = NULL;
++      if (dll_dirs != NULL && dll_dirs[0] != NULL)
++        {
++          new_PATH = extended_PATH (dll_dirs);
++          if (new_PATH == NULL)
++            goto out_of_memory_2;
++        }
++      envblock = compose_envblock (envp, new_PATH);
++      free (new_PATH);
+       if (envblock == NULL)
+         goto out_of_memory_2;
+     }
+--- a/lib/windows-spawn.h
++++ b/lib/windows-spawn.h
+@@ -88,9 +88,11 @@ extern char * compose_command (const cha
+ /* Composes the block of memory that contains the environment variables.
+    ENVP must contain an environment (a NULL-terminated array of string of the
+    form VARIABLE=VALUE).
++   NEW_PATH must be a string of the form PATH=VALUE, or NULL if the PATH
++   environment variable from this process is suitable for the child process.
+    Returns a freshly allocated block of memory.  In case of memory allocation
+    failure, NULL is returned, with errno set.  */
+-extern char * compose_envblock (const char * const *envp)
++extern char * compose_envblock (const char * const *envp, const char *new_PATH)
+   _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
+ 
+ 
+@@ -176,6 +178,9 @@ extern int convert_CreateProcess_error (
+    ENVP is the NULL-terminated set of environment variable assignments, or NULL
+    to inherit the initial environ variable assignments from the caller and
+    ignore all calls to putenv(), setenv(), unsetenv() done in the caller.
++   DLL_DIRS is, on Windows platforms, a NULL-terminated list of directories
++   that contain DLLs needed to execute the program, or NULL if none is needed.
++   On other platforms, always pass NULL.
+    CURRDIR is the directory in which to start the program, or NULL to inherit
+    the working directory from the caller.
+    STDIN_HANDLE, STDOUT_HANDLE, STDERR_HANDLE are the handles to use for the
+@@ -188,6 +193,7 @@ extern int convert_CreateProcess_error (
+ extern intptr_t spawnpvech (int mode,
+                             const char *progname, const char * const *argv,
+                             const char * const *envp,
++                            const char * const *dll_dirs,
+                             const char *currdir,
+                             HANDLE stdin_handle, HANDLE stdout_handle,
+                             HANDLE stderr_handle);
+--- a/modules/windows-spawn
++++ b/modules/windows-spawn
+@@ -1,11 +1,14 @@
+ Description:
+-Auxiliary functions for the creation of subprocesses on native Windows.
++Auxiliary functions for the creation of subprocesses on Windows.
+ 
+ Files:
++lib/windows-path.h
++lib/windows-path.c
+ lib/windows-spawn.h
+ lib/windows-spawn.c
+ 
+ Depends-on:
++environ
+ findprog-in
+ msvc-nothrow
+ stdbool
+@@ -17,15 +20,21 @@ malloc-posix
+ 
+ configure.ac:
+ AC_REQUIRE([AC_CANONICAL_HOST])
++gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_PATH],
++               [case "$host_os" in cygwin* | mingw* | windows*) true;; *) false;; esac])
+ gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_SPAWN],
+                [case "$host_os" in mingw* | windows*) true;; *) false;; esac])
+ 
+ Makefile.am:
++if GL_COND_OBJ_WINDOWS_PATH
++lib_SOURCES += windows-path.c
++endif
+ if GL_COND_OBJ_WINDOWS_SPAWN
+ lib_SOURCES += windows-spawn.c
+ endif
+ 
+ Include:
++"windows-path.h"
+ "windows-spawn.h"
+ 
+ License:
+--- a/tests/test-execute-main.c
++++ b/tests/test-execute-main.c
+@@ -104,7 +104,7 @@ main (int argc, char *argv[])
+       {
+         /* Check an invocation without arguments.  Check the exit code.  */
+         const char *prog_argv[2] = { prog_path, NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 40);
+       }
+@@ -113,7 +113,7 @@ main (int argc, char *argv[])
+       {
+         /* Check an invocation of a nonexistent program.  */
+         const char *prog_argv[3] = { "./nonexistent", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 127);
+       }
+@@ -137,7 +137,7 @@ main (int argc, char *argv[])
+             "",
+             NULL
+           };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -148,7 +148,7 @@ main (int argc, char *argv[])
+         /* Check SIGPIPE handling with ignore_sigpipe = false.  */
+         const char *prog_argv[3] = { prog_path, "3", NULL };
+         int termsig = 0x7DEADBEE;
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, &termsig);
+         ASSERT (ret == 127);
+         ASSERT (termsig == SIGPIPE);
+@@ -161,7 +161,7 @@ main (int argc, char *argv[])
+         /* Check SIGPIPE handling with ignore_sigpipe = true.  */
+         const char *prog_argv[3] = { prog_path, "4", NULL };
+         int termsig = 0x7DEADBEE;
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            true, false, false, false, true, false, &termsig);
+         ASSERT (ret == 0);
+         ASSERT (termsig == SIGPIPE);
+@@ -173,7 +173,7 @@ main (int argc, char *argv[])
+         /* Check other signal.  */
+         const char *prog_argv[3] = { prog_path, "5", NULL };
+         int termsig = 0x7DEADBEE;
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, &termsig);
+         ASSERT (ret == 127);
+         #if defined _WIN32 && !defined __CYGWIN__
+@@ -194,7 +194,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "6", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -213,7 +213,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "7", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, true, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -228,7 +228,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "8", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -248,7 +248,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "9", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -260,7 +260,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "10", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, true, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -280,7 +280,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "11", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -300,7 +300,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "12", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -312,7 +312,7 @@ main (int argc, char *argv[])
+         ASSERT (fp != NULL);
+ 
+         const char *prog_argv[3] = { prog_path, "13", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, true, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -330,7 +330,7 @@ main (int argc, char *argv[])
+         /* Check file descriptors >= 3 can be inherited.  */
+         ASSERT (dup2 (STDOUT_FILENO, 10) >= 0);
+         const char *prog_argv[3] = { prog_path, "14", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            true, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -340,7 +340,7 @@ main (int argc, char *argv[])
+         /* Check file descriptors >= 3 can be inherited.  */
+         ASSERT (fcntl (STDOUT_FILENO, F_DUPFD, 10) >= 0);
+         const char *prog_argv[3] = { prog_path, "15", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            true, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -350,7 +350,7 @@ main (int argc, char *argv[])
+         /* Check file descriptors >= 3 with O_CLOEXEC bit are not inherited.  */
+         ASSERT (fcntl (STDOUT_FILENO, F_DUPFD_CLOEXEC, 10) >= 0);
+         const char *prog_argv[3] = { prog_path, "16", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            true, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+       }
+@@ -375,7 +375,7 @@ main (int argc, char *argv[])
+         /* The file position is now 2.  */
+ 
+         const char *prog_argv[3] = { prog_path, "17", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -399,7 +399,7 @@ main (int argc, char *argv[])
+         /* The file position is now 3.  */
+ 
+         const char *prog_argv[3] = { prog_path, "18", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+@@ -435,7 +435,7 @@ main (int argc, char *argv[])
+         fd_out = 16;
+ 
+         const char *prog_argv[3] = { prog_path, "19", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         #if defined _WIN32 && ! defined __CYGWIN__
+         ASSERT (ret == 4 + 2 * (_isatty (15) != 0) + (_isatty (16) != 0));
+@@ -459,7 +459,7 @@ main (int argc, char *argv[])
+         int fd_out = 16;
+ 
+         const char *prog_argv[3] = { prog_path, "20", NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         #if defined _WIN32 && ! defined __CYGWIN__
+         ASSERT (ret == 4 + 2 * (_isatty (15) != 0) + (_isatty (16) != 0));
+@@ -485,7 +485,7 @@ main (int argc, char *argv[])
+         #endif
+ 
+         const char *prog_argv[4] = { prog_path, "21", cwd, NULL };
+-        int ret = execute (progname, prog_argv[0], prog_argv, BASE ".sub",
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, BASE ".sub",
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 0);
+ 
+--- a/tests/test-execute-script.c
++++ b/tests/test-execute-script.c
+@@ -57,7 +57,7 @@ main ()
+           (i == 0 ? SRCDIR "executable-script" : SRCDIR "executable-script.sh");
+         const char *prog_argv[2] = { prog_path, NULL };
+ 
+-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                            false, false, false, false, true, false, NULL);
+         ASSERT (ret == 127);
+       }
+@@ -78,7 +78,7 @@ main ()
+     const char *prog_path = SRCDIR "executable-shell-script";
+     const char *prog_argv[2] = { prog_path, NULL };
+ 
+-    int ret = execute (progname, prog_argv[0], prog_argv, NULL,
++    int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
+                        false, false, false, false, true, false, NULL);
+     ASSERT (ret == 0);
+ 
+--- a/tests/test-spawn-pipe-main.c
++++ b/tests/test-spawn-pipe-main.c
+@@ -51,7 +51,7 @@ test_pipe (const char *prog, bool stderr
+   argv[0] = prog;
+   argv[1] = (stderr_closed ? "1" : "0");
+   argv[2] = NULL;
+-  pid = create_pipe_bidi (prog, prog, argv, NULL, false, true, true, fd);
++  pid = create_pipe_bidi (prog, prog, argv, NULL, NULL, false, true, true, fd);
+   ASSERT (0 <= pid);
+   ASSERT (STDERR_FILENO < fd[0]);
+   ASSERT (STDERR_FILENO < fd[1]);
+--- a/tests/test-spawn-pipe-script.c
++++ b/tests/test-spawn-pipe-script.c
+@@ -50,7 +50,7 @@ main ()
+           (i == 0 ? SRCDIR "executable-script" : SRCDIR "executable-script.sh");
+         const char *prog_argv[2] = { prog_path, NULL };
+ 
+-        pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL,
++        pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL, NULL,
+                               NULL, false, true, false, fd);
+         if (pid >= 0)
+           {
+@@ -80,7 +80,7 @@ main ()
+     const char *prog_path = SRCDIR "executable-shell-script";
+     const char *prog_argv[2] = { prog_path, NULL };
+ 
+-    pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL,
++    pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL, NULL,
+                           NULL, false, true, false, fd);
+     ASSERT (pid >= 0);
+     ASSERT (fd[0] > STDERR_FILENO);

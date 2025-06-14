@@ -1,0 +1,140 @@
+From 204dfab7318455ac1f900d3f2202e7cf64569544 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:32 +0100
+Subject: [PATCH] Rename module net_if to net_if-h.
+
+* modules/net_if-h: Renamed from modules/net_if.
+* modules/net_if-h-tests: Renamed from modules/net_if-tests.
+* modules/net_if-h-c++-tests: Renamed from modules/net_if-c++-tests.
+* tests/test-net_if-h.c: Renamed from tests/test-net_if.c.
+* tests/test-net_if-h-c++.cc: Renamed from tests/test-net_if-c++.cc.
+* doc/posix-headers/net_if.texi: Update.
+* modules/net_if: New file.
+---
+ ChangeLog                                     | 11 +++++
+ doc/posix-headers/net_if.texi                 |  4 +-
+ modules/net_if                                | 38 +++-----------
+ modules/net_if-c++-tests                      | 19 -------
+ modules/net_if-h                              | 49 +++++++++++++++++++
+ modules/net_if-h-c++-tests                    | 19 +++++++
+ modules/{net_if-tests => net_if-h-tests}      | 10 ++--
+ ...est-net_if-c++.cc => test-net_if-h-c++.cc} |  0
+ tests/{test-net_if.c => test-net_if-h.c}      |  0
+ 9 files changed, 93 insertions(+), 57 deletions(-)
+ delete mode 100644 modules/net_if-c++-tests
+ create mode 100644 modules/net_if-h
+ create mode 100644 modules/net_if-h-c++-tests
+ rename modules/{net_if-tests => net_if-h-tests} (73%)
+ rename tests/{test-net_if-c++.cc => test-net_if-h-c++.cc} (100%)
+ rename tests/{test-net_if.c => test-net_if-h.c} (100%)
+
+--- a/modules/net_if
++++ b/modules/net_if
+@@ -1,43 +1,20 @@
+ Description:
+ A <net/if.h> for systems lacking it.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'net_if-h' instead.
++
+ Files:
+-lib/net_if.in.h
+-m4/net_if_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-sys_socket
++net_if-h
+ 
+ configure.ac:
+-gl_HEADER_NET_IF
+-gl_CONDITIONAL_HEADER([net/if.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(NET_IF_H)
+-
+-# We need the following in order to create <net/if.h> when the system
+-# doesn't have one.
+-if GL_GENERATE_NET_IF_H
+-net/if.h: net_if.in.h $(top_builddir)/config.status
+-	$(AM_V_GEN)$(MKDIR_P) '%reldir%/net'
+-	$(AM_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_NET_IF_H''@|$(NEXT_NET_IF_H)|g' \
+-	      -e 's|@''HAVE_NET_IF_H''@|$(HAVE_NET_IF_H)|g' \
+-	      $(srcdir)/net_if.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-net/if.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += net/if.h net/if.h-t
+-MOSTLYCLEANDIRS += net
+ 
+ Include:
+ <net/if.h>
+@@ -46,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Eric Blake
+--- /dev/null
++++ b/modules/net_if-h
+@@ -0,0 +1,49 @@
++Description:
++A <net/if.h> for systems lacking it.
++
++Files:
++lib/net_if.in.h
++m4/net_if_h.m4
++
++Depends-on:
++gen-header
++include_next
++sys_socket
++
++configure.ac:
++gl_HEADER_NET_IF
++gl_CONDITIONAL_HEADER([net/if.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(NET_IF_H)
++
++# We need the following in order to create <net/if.h> when the system
++# doesn't have one.
++if GL_GENERATE_NET_IF_H
++net/if.h: net_if.in.h $(top_builddir)/config.status
++	$(AM_V_GEN)$(MKDIR_P) '%reldir%/net'
++	$(AM_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_NET_IF_H''@|$(NEXT_NET_IF_H)|g' \
++	      -e 's|@''HAVE_NET_IF_H''@|$(HAVE_NET_IF_H)|g' \
++	      $(srcdir)/net_if.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++net/if.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += net/if.h net/if.h-t
++MOSTLYCLEANDIRS += net
++
++Include:
++<net/if.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Eric Blake

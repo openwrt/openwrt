@@ -1,0 +1,211 @@
+From eb515396a8506286d5bfa05a9cca4044c1750ff5 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Thu, 26 Sep 2024 01:33:45 +0200
+Subject: build-to-host.m4: Add some convenience macros.
+
+Reported by Michele Locati <michele@locati.it> in
+<https://lists.gnu.org/archive/html/bug-gettext/2024-09/msg00033.html>.
+
+* m4/build-to-host.m4 (gl_BUILD_TO_HOST_BINDIR, gl_BUILD_TO_HOST_LIBDIR,
+gl_BUILD_TO_HOST_LIBEXECDIR, gl_BUILD_TO_HOST_LOCALEDIR,
+gl_BUILD_TO_HOST_PKGDATADIR, gl_BUILD_TO_HOST_PKGLIBDIR): New macros.
+* m4/gettext.m4 (AM_GNU_GETTEXT): Invoke gl_BUILD_TO_HOST_LOCALEDIR.
+* doc/relocatable-maint.texi (Supporting Relocation): Suggest to use the
+*dir_c_make variables and explain how to get them.
+---
+ ChangeLog                  |  12 ++++
+ doc/relocatable-maint.texi |  31 +++++++++-
+ m4/build-to-host.m4        | 147 ++++++++++++++++++++++++++++++++++++++++++++-
+ m4/gettext.m4              |  18 +-----
+ 4 files changed, 188 insertions(+), 20 deletions(-)
+
+--- a/m4/build-to-host.m4
++++ b/m4/build-to-host.m4
+@@ -1,5 +1,5 @@
+ # build-to-host.m4
+-# serial 3
++# serial 4
+ dnl Copyright (C) 2023-2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -78,3 +78,148 @@ changequote([,])dnl
+     *)  gl_tr_cr='\r' ;;
+   esac
+ ])
++
++
++dnl The following macros are convenience invocations of gl_BUILD_TO_HOST
++dnl for some of the variables that are defined by Autoconf.
++dnl To do so for _all_ the possible variables, use the module 'configmake'.
++
++dnl Defines bindir_c and bindir_c_make.
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_BINDIR],
++[
++  dnl Find the final value of bindir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_exec_prefix="${exec_prefix}"
++  gl_saved_bindir="${bindir}"
++  dnl Unfortunately, prefix and exec_prefix get only finally determined
++  dnl at the end of configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  if test "X$exec_prefix" = "XNONE"; then
++    exec_prefix='${prefix}'
++  fi
++  eval exec_prefix="$exec_prefix"
++  eval bindir="$bindir"
++  gl_BUILD_TO_HOST([bindir])
++  bindir="${gl_saved_bindir}"
++  exec_prefix="${gl_saved_exec_prefix}"
++  prefix="${gl_saved_prefix}"
++])
++
++dnl Defines libdir_c and libdir_c_make.
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_LIBDIR],
++[
++  dnl Find the final value of libdir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_exec_prefix="${exec_prefix}"
++  gl_saved_libdir="${libdir}"
++  dnl Unfortunately, prefix and exec_prefix get only finally determined
++  dnl at the end of configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  if test "X$exec_prefix" = "XNONE"; then
++    exec_prefix='${prefix}'
++  fi
++  eval exec_prefix="$exec_prefix"
++  eval libdir="$libdir"
++  gl_BUILD_TO_HOST([libdir])
++  libdir="${gl_saved_libdir}"
++  exec_prefix="${gl_saved_exec_prefix}"
++  prefix="${gl_saved_prefix}"
++])
++
++dnl Defines libexecdir_c and libexecdir_c_make.
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_LIBEXECDIR],
++[
++  dnl Find the final value of libexecdir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_exec_prefix="${exec_prefix}"
++  gl_saved_libexecdir="${libexecdir}"
++  dnl Unfortunately, prefix and exec_prefix get only finally determined
++  dnl at the end of configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  if test "X$exec_prefix" = "XNONE"; then
++    exec_prefix='${prefix}'
++  fi
++  eval exec_prefix="$exec_prefix"
++  eval libexecdir="$libexecdir"
++  gl_BUILD_TO_HOST([libexecdir])
++  libexecdir="${gl_saved_libexecdir}"
++  exec_prefix="${gl_saved_exec_prefix}"
++  prefix="${gl_saved_prefix}"
++])
++
++dnl Defines localedir_c and localedir_c_make.
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_LOCALEDIR],
++[
++  dnl Find the final value of localedir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_datarootdir="${datarootdir}"
++  gl_saved_localedir="${localedir}"
++  dnl Unfortunately, prefix gets only finally determined at the end of
++  dnl configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  eval datarootdir="$datarootdir"
++  eval localedir="$localedir"
++  gl_BUILD_TO_HOST([localedir])
++  localedir="${gl_saved_localedir}"
++  datarootdir="${gl_saved_datarootdir}"
++  prefix="${gl_saved_prefix}"
++])
++
++dnl Defines pkgdatadir_c and pkgdatadir_c_make,
++dnl where pkgdatadir = $(datadir)/$(PACKAGE)
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_PKGDATADIR],
++[
++  dnl Find the final value of pkgdatadir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_datarootdir="${datarootdir}"
++  gl_saved_datadir="${datadir}"
++  gl_saved_pkgdatadir="${pkgdatadir}"
++  dnl Unfortunately, prefix gets only finally determined at the end of
++  dnl configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  eval datarootdir="$datarootdir"
++  eval datadir="$datadir"
++  eval pkgdatadir="$pkgdatadir"
++  gl_BUILD_TO_HOST([pkgdatadir])
++  pkgdatadir="${gl_saved_pkgdatadir}"
++  datadir="${gl_saved_datadir}"
++  datarootdir="${gl_saved_datarootdir}"
++  prefix="${gl_saved_prefix}"
++])
++
++dnl Defines pkglibdir_c and pkglibdir_c_make,
++dnl where pkglibdir = $(libdir)/$(PACKAGE)
++AC_DEFUN_ONCE([gl_BUILD_TO_HOST_PKGLIBDIR],
++[
++  dnl Find the final value of pkglibdir.
++  gl_saved_prefix="${prefix}"
++  gl_saved_exec_prefix="${exec_prefix}"
++  gl_saved_libdir="${libdir}"
++  gl_saved_pkglibdir="${pkglibdir}"
++  dnl Unfortunately, prefix and exec_prefix get only finally determined
++  dnl at the end of configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
++  fi
++  if test "X$exec_prefix" = "XNONE"; then
++    exec_prefix='${prefix}'
++  fi
++  eval exec_prefix="$exec_prefix"
++  eval libdir="$libdir"
++  eval pkglibdir="$pkglibdir"
++  gl_BUILD_TO_HOST([pkglibdir])
++  pkglibdir="${gl_saved_pkglibdir}"
++  libdir="${gl_saved_libdir}"
++  exec_prefix="${gl_saved_exec_prefix}"
++  prefix="${gl_saved_prefix}"
++])
+--- a/m4/gettext.m4
++++ b/m4/gettext.m4
+@@ -1,5 +1,5 @@
+ # gettext.m4
+-# serial 79 (gettext-0.23)
++# serial 80 (gettext-0.23)
+ dnl Copyright (C) 1995-2014, 2016, 2018-2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -365,21 +365,7 @@ return * gettext ("")$gt_expression_test
+   AC_SUBST([POSUB])
+ 
+   dnl Define localedir_c and localedir_c_make.
+-  dnl Find the final value of localedir.
+-  gt_saved_prefix="${prefix}"
+-  gt_saved_datarootdir="${datarootdir}"
+-  gt_saved_localedir="${localedir}"
+-  dnl Unfortunately, prefix gets only finally determined at the end of
+-  dnl configure.
+-  if test "X$prefix" = "XNONE"; then
+-    prefix="$ac_default_prefix"
+-  fi
+-  eval datarootdir="$datarootdir"
+-  eval localedir="$localedir"
+-  gl_BUILD_TO_HOST([localedir])
+-  localedir="${gt_saved_localedir}"
+-  datarootdir="${gt_saved_datarootdir}"
+-  prefix="${gt_saved_prefix}"
++  gl_BUILD_TO_HOST_LOCALEDIR
+ ])
+ 
+ 

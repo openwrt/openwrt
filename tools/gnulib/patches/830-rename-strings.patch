@@ -1,0 +1,199 @@
+From 93b331de6b9783e1344f593e7687a19cdb21062b Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:39:42 +0100
+Subject: [PATCH] Rename module strings to strings-h.
+
+* modules/strings-h: Renamed from modules/strings.
+* modules/strings-h-tests: Renamed from modules/strings-tests.
+* modules/strings-h-c++-tests: Renamed from modules/strings-c++-tests.
+* tests/test-strings-h.c: Renamed from tests/test-strings.c.
+* tests/test-strings-h-c++.cc: Renamed from tests/test-strings-c++.cc.
+* doc/posix-headers/strings.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/strings: New file.
+---
+ ChangeLog                                     | 12 +++++
+ doc/posix-headers/strings.texi                |  4 +-
+ modules/bcopy                                 |  2 +-
+ modules/ffs                                   |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/strcase                               |  2 +-
+ modules/strings                               | 42 +++------------
+ modules/strings-c++-tests                     | 18 -------
+ modules/strings-h                             | 53 +++++++++++++++++++
+ modules/strings-h-c++-tests                   | 18 +++++++
+ modules/strings-h-tests                       | 11 ++++
+ modules/strings-tests                         | 11 ----
+ ...t-strings-c++.cc => test-strings-h-c++.cc} |  0
+ tests/{test-strings.c => test-strings-h.c}    |  0
+ 14 files changed, 107 insertions(+), 70 deletions(-)
+ delete mode 100644 modules/strings-c++-tests
+ create mode 100644 modules/strings-h
+ create mode 100644 modules/strings-h-c++-tests
+ create mode 100644 modules/strings-h-tests
+ delete mode 100644 modules/strings-tests
+ rename tests/{test-strings-c++.cc => test-strings-h-c++.cc} (100%)
+ rename tests/{test-strings.c => test-strings-h.c} (100%)
+
+--- a/modules/bcopy
++++ b/modules/bcopy
+@@ -5,7 +5,7 @@ Files:
+ lib/bcopy.c
+ 
+ Depends-on:
+-strings
++strings-h
+ 
+ configure.ac:
+ AC_REPLACE_FUNCS(bcopy)
+--- a/modules/ffs
++++ b/modules/ffs
+@@ -6,7 +6,7 @@ lib/ffs.c
+ m4/ffs.m4
+ 
+ Depends-on:
+-strings
++strings-h
+ 
+ configure.ac:
+ gl_FUNC_FFS
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -31,7 +31,7 @@ spawn-h
+ stdio-h
+ stdlib-h
+ string-h
+-strings
++strings-h
+ sys_file
+ sys_ioctl
+ sys_random
+--- a/modules/strcase
++++ b/modules/strcase
+@@ -7,7 +7,7 @@ lib/strncasecmp.c
+ m4/strcase.m4
+ 
+ Depends-on:
+-strings
++strings-h
+ 
+ configure.ac:
+ gl_STRCASE
+--- a/modules/strings
++++ b/modules/strings
+@@ -1,47 +1,20 @@
+ Description:
+ A substitute <strings.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'strings-h' instead.
++
+ Files:
+-lib/strings.in.h
+-m4/strings_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-sys_types
++strings-h
+ 
+ configure.ac:
+-gl_STRINGS_H
+-gl_STRINGS_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += strings.h
+-
+-# We need the following in order to create <strings.h> when the system
+-# doesn't have one that works with the given compiler.
+-strings.h: strings.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_STRINGS_H''@|$(HAVE_STRINGS_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STRINGS_H''@|$(NEXT_STRINGS_H)|g' \
+-	      -e 's/@''GNULIB_FFS''@/$(GNULIB_FFS)/g' \
+-	      -e 's|@''HAVE_FFS''@|$(HAVE_FFS)|g' \
+-	      -e 's|@''HAVE_STRCASECMP''@|$(HAVE_STRCASECMP)|g' \
+-	      -e 's|@''HAVE_DECL_STRNCASECMP''@|$(HAVE_DECL_STRNCASECMP)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/strings.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += strings.h strings.h-t
+ 
+ Include:
+ <strings.h>
+@@ -50,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/strings-h
+@@ -0,0 +1,53 @@
++Description:
++A substitute <strings.h>.
++
++Files:
++lib/strings.in.h
++m4/strings_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++sys_types
++
++configure.ac:
++gl_STRINGS_H
++gl_STRINGS_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += strings.h
++
++# We need the following in order to create <strings.h> when the system
++# doesn't have one that works with the given compiler.
++strings.h: strings.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_STRINGS_H''@|$(HAVE_STRINGS_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STRINGS_H''@|$(NEXT_STRINGS_H)|g' \
++	      -e 's/@''GNULIB_FFS''@/$(GNULIB_FFS)/g' \
++	      -e 's|@''HAVE_FFS''@|$(HAVE_FFS)|g' \
++	      -e 's|@''HAVE_STRCASECMP''@|$(HAVE_STRCASECMP)|g' \
++	      -e 's|@''HAVE_DECL_STRNCASECMP''@|$(HAVE_DECL_STRNCASECMP)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/strings.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += strings.h strings.h-t
++
++Include:
++<strings.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
