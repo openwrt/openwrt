@@ -60,6 +60,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			function-enumerator = <1>;
 			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led-2 {
@@ -67,6 +68,7 @@
 			color = <LED_COLOR_ID_BLUE>;
 			function-enumerator = <2>;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 

@@ -83,12 +83,14 @@
 			label = "green:wifi24g";
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 			default-state = "off";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led_green_wifi5g {
 			label = "green:wifi5g";
 			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
 			default-state = "off";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led_green_inet {
