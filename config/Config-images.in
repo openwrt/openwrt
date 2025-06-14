@@ -160,6 +160,22 @@ menu "Target Images"
 			  Select squashfs block size, must be one of:
 			    4, 8, 16, 32, 64, 128, 256, 512, 1024
 
+		config TARGET_SQUASHFS_BLOCK_READERS
+			int "mksquashfs tool parallel block reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel block reader threads
+			  (for files equal or larger than the squashfs block size).
+
+		config TARGET_SQUASHFS_SMALL_READERS
+			int "mksquashfs tool parallel small file reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel small file reader threads
+			  (for files less than the squashfs block size).
+
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS

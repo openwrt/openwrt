@@ -48,15 +48,6 @@
 		};
 	};
 
-	reg_power_usb: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "power_usb";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
 	watchdog {
 		compatible = "linux,wdt-gpio";
 		gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
@@ -81,10 +72,6 @@
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_power_usb>;
 };
 
 &sdhci {
@@ -195,6 +182,12 @@
 
 &ethphy4 {
 	/delete-property/ interrupts;
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

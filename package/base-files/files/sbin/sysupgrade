@@ -278,7 +278,7 @@ create_backup_archive() {
 				fi
 			done
 			disabled="$disabled\nexit 0"
-			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" || ret=1
+			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" "$(date -r /etc/rc.d "+%s")" || ret=1
 		fi
 
 		# Part of archive with installed packages info

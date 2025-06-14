@@ -21,7 +21,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  static struct vchiq_device *vcsm_cma;
  
  static const struct vchiq_platform_info bcm2835_info = {
-@@ -1858,6 +1859,7 @@ static int vchiq_probe(struct platform_d
+@@ -1857,6 +1858,7 @@ static int vchiq_probe(struct platform_d
  	bcm2835_codec = vchiq_device_register(&pdev->dev, "bcm2835-codec");
  	bcm2835_audio = vchiq_device_register(&pdev->dev, "bcm2835-audio");
  	bcm2835_camera = vchiq_device_register(&pdev->dev, "bcm2835-camera");
@@ -29,7 +29,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	return 0;
  
-@@ -1872,6 +1874,7 @@ static void vchiq_remove(struct platform
+@@ -1871,6 +1873,7 @@ static void vchiq_remove(struct platform
  	struct vchiq_drv_mgmt *mgmt = dev_get_drvdata(&pdev->dev);
  	struct vchiq_arm_state *arm_state;
  

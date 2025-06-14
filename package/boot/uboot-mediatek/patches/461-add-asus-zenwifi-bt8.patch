@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7988a_asus_zenwifi-bt8_defconfig
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,130 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -11,10 +11,10 @@
 +CONFIG_DEFAULT_DEVICE_TREE="mt7988a-asus-zenwifi-bt8"
 +CONFIG_OF_LIBFDT_OVERLAY=y
 +CONFIG_TARGET_MT7988=y
++CONFIG_SYS_LOAD_ADDR=0x50000000
 +CONFIG_PRE_CON_BUF_ADDR=0x4007EF00
 +CONFIG_DEBUG_UART_BASE=0x11000000
 +CONFIG_DEBUG_UART_CLOCK=40000000
-+CONFIG_SYS_LOAD_ADDR=0x50000000
 +CONFIG_PCI=y
 +CONFIG_DEBUG_UART=y
 +CONFIG_AHCI=y
@@ -50,14 +50,14 @@
 +CONFIG_CMD_PCI=y
 +CONFIG_CMD_SF_TEST=y
 +CONFIG_CMD_USB=y
-+CONFIG_CMD_DHCP=y
 +CONFIG_CMD_TFTPSRV=y
 +CONFIG_CMD_RARP=y
-+CONFIG_CMD_PING=y
 +CONFIG_CMD_CDP=y
 +CONFIG_CMD_SNTP=y
-+CONFIG_CMD_DNS=y
 +CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_PING=y
 +CONFIG_CMD_PXE=y
 +CONFIG_CMD_CACHE=y
 +CONFIG_CMD_PSTORE=y
@@ -88,8 +88,6 @@
 +CONFIG_IPADDR="192.168.1.1"
 +CONFIG_USE_SERVERIP=y
 +CONFIG_SERVERIP="192.168.1.254"
-+CONFIG_REGMAP=y
-+CONFIG_SYSCON=y
 +CONFIG_BUTTON=y
 +CONFIG_BUTTON_GPIO=y
 +CONFIG_CLK=y
@@ -133,7 +131,6 @@
 +CONFIG_USB_STORAGE=y
 +CONFIG_ZSTD=y
 +CONFIG_HEXDUMP=y
-+CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/asus_zenwifi-bt8_env
 @@ -0,0 +1,56 @@
@@ -244,13 +241,13 @@
 +		reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		wps {
 +			label = "wps";
 +			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -259,17 +256,17 @@
 +
 +		led_status_red: led-red {
 +			label = "red:status";
-+			gpios = <&gpio 57 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 57 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led_status_green: led-green {
 +			label = "green:status";
-+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led_status_blue: led-blue {
 +			label = "blue:status";
-+			gpios = <&gpio 59 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 59 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +};
@@ -291,7 +288,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi0_pins: spi0-pins {
 +		mux {
 +			function = "spi";

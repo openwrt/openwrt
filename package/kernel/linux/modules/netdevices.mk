@@ -694,6 +694,7 @@ define KernelPackage/dsa-rtl8366rb
   DEPENDS:=+kmod-dsa-realtek @!TARGET_x86 @!TARGET_bcm47xx @!TARGET_uml
   KCONFIG:= \
 	CONFIG_NET_DSA_REALTEK_RTL8366RB \
+	CONFIG_NET_DSA_REALTEK_RTL8366RB_LEDS=y \
 	CONFIG_NET_DSA_TAG_RTL4_A
   FILES:= \
 	$(LINUX_DIR)/drivers/net/dsa/realtek/rtl8366.ko \
@@ -2125,3 +2126,19 @@ define KernelPackage/amazon-ena/description
 endef
 
 $(eval $(call KernelPackage,amazon-ena))
+
+define KernelPackage/enc28j60
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip ENC28J60 SPI Ethernet driver
+  KCONFIG:=\
+    CONFIG_ENC28J60 \
+    CONFIG_ENC28J60_WRITEVERIFY=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/microchip/enc28j60.ko
+  AUTOLOAD:=$(call AutoProbe,enc28j60)
+endef
+
+define KernelPackage/enc28j60/description
+  Kernel module for Microchip ENC28J60 SPI Ethernet controller
+endef
+
+$(eval $(call KernelPackage,enc28j60))

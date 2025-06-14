@@ -139,12 +139,12 @@
 +		compatible = "gpio-keys";
 +		factory {
 +			label = "reset";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +		mesh {
 +			label = "mesh";
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_WPS_BUTTON>;
 +		};
 +	};
@@ -166,7 +166,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -174,7 +174,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spic_pins: spi1-pins-func-1 {
 +		mux {
 +			function = "spi";

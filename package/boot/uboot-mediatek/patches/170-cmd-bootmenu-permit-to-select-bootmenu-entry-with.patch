@@ -120,7 +120,7 @@ Changes v2:
  		entry->command = strdup(sep + 1);
  		if (!entry->command) {
  			free(entry->title);
-@@ -382,9 +417,9 @@ static struct bootmenu_data *bootmenu_cr
+@@ -388,9 +423,9 @@ static struct bootmenu_data *bootmenu_cr
  
  		/* Add Quit entry if exiting bootmenu is disabled */
  		if (!IS_ENABLED(CONFIG_BOOTMENU_DISABLE_UBOOT_CONSOLE))

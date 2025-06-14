@@ -28,11 +28,9 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  lib/iomap.c                           | 40 +++++++++++++--------------
  4 files changed, 60 insertions(+), 48 deletions(-)
 
-diff --git a/include/asm-generic/iomap.h b/include/asm-generic/iomap.h
-index 196087a8126e..9f3f25d7fc58 100644
 --- a/include/asm-generic/iomap.h
 +++ b/include/asm-generic/iomap.h
-@@ -31,42 +31,22 @@ extern unsigned int ioread16(const void __iomem *);
+@@ -31,42 +31,22 @@ extern unsigned int ioread16(const void
  extern unsigned int ioread16be(const void __iomem *);
  extern unsigned int ioread32(const void __iomem *);
  extern unsigned int ioread32be(const void __iomem *);
@@ -83,11 +81,9 @@ index 196087a8126e..9f3f25d7fc58 100644
  
  /*
   * "string" versions of the above. Note that they
-diff --git a/include/linux/io-64-nonatomic-hi-lo.h b/include/linux/io-64-nonatomic-hi-lo.h
-index f32522bb3aa5..d3eade7cf663 100644
 --- a/include/linux/io-64-nonatomic-hi-lo.h
 +++ b/include/linux/io-64-nonatomic-hi-lo.h
-@@ -101,22 +101,38 @@ static inline void iowrite64be_hi_lo(u64 val, void __iomem *addr)
+@@ -101,22 +101,38 @@ static inline void iowrite64be_hi_lo(u64
  
  #ifndef ioread64
  #define ioread64_is_nonatomic
@@ -126,11 +122,9 @@ index f32522bb3aa5..d3eade7cf663 100644
 +#endif
  
  #endif	/* _LINUX_IO_64_NONATOMIC_HI_LO_H_ */
-diff --git a/include/linux/io-64-nonatomic-lo-hi.h b/include/linux/io-64-nonatomic-lo-hi.h
-index 448a21435dba..94e676ec3d3f 100644
 --- a/include/linux/io-64-nonatomic-lo-hi.h
 +++ b/include/linux/io-64-nonatomic-lo-hi.h
-@@ -101,22 +101,38 @@ static inline void iowrite64be_lo_hi(u64 val, void __iomem *addr)
+@@ -101,22 +101,38 @@ static inline void iowrite64be_lo_hi(u64
  
  #ifndef ioread64
  #define ioread64_is_nonatomic
@@ -169,8 +163,6 @@ index 448a21435dba..94e676ec3d3f 100644
 +#endif
  
  #endif	/* _LINUX_IO_64_NONATOMIC_LO_HI_H_ */
-diff --git a/lib/iomap.c b/lib/iomap.c
-index 4f8b31baa575..a65717cd86f7 100644
 --- a/lib/iomap.c
 +++ b/lib/iomap.c
 @@ -111,7 +111,7 @@ EXPORT_SYMBOL(ioread16be);
@@ -182,7 +174,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  static u64 pio_read64_lo_hi(unsigned long port)
  {
  	u64 lo, hi;
-@@ -153,21 +153,21 @@ static u64 pio_read64be_hi_lo(unsigned long port)
+@@ -153,21 +153,21 @@ static u64 pio_read64be_hi_lo(unsigned l
  }
  
  __no_kmsan_checks
@@ -207,7 +199,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  {
  	IO_COND(addr, return pio_read64be_lo_hi(port),
  		return mmio_read64be(addr));
-@@ -175,19 +175,19 @@ u64 ioread64be_lo_hi(const void __iomem *addr)
+@@ -175,19 +175,19 @@ u64 ioread64be_lo_hi(const void __iomem
  }
  
  __no_kmsan_checks
@@ -242,7 +234,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  static void pio_write64_lo_hi(u64 val, unsigned long port)
  {
  	outl(val, port);
-@@ -261,7 +261,7 @@ static void pio_write64be_hi_lo(u64 val, unsigned long port)
+@@ -261,7 +261,7 @@ static void pio_write64be_hi_lo(u64 val,
  	pio_write32be(val, port + sizeof(u32));
  }
  
@@ -251,7 +243,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  {
  	/* Make sure uninitialized memory isn't copied to devices. */
  	kmsan_check_memory(&val, sizeof(val));
-@@ -269,7 +269,7 @@ void iowrite64_lo_hi(u64 val, void __iomem *addr)
+@@ -269,7 +269,7 @@ void iowrite64_lo_hi(u64 val, void __iom
  		writeq(val, addr));
  }
  
@@ -260,7 +252,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  {
  	/* Make sure uninitialized memory isn't copied to devices. */
  	kmsan_check_memory(&val, sizeof(val));
-@@ -277,7 +277,7 @@ void iowrite64_hi_lo(u64 val, void __iomem *addr)
+@@ -277,7 +277,7 @@ void iowrite64_hi_lo(u64 val, void __iom
  		writeq(val, addr));
  }
  
@@ -269,7 +261,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  {
  	/* Make sure uninitialized memory isn't copied to devices. */
  	kmsan_check_memory(&val, sizeof(val));
-@@ -285,7 +285,7 @@ void iowrite64be_lo_hi(u64 val, void __iomem *addr)
+@@ -285,7 +285,7 @@ void iowrite64be_lo_hi(u64 val, void __i
  		mmio_write64be(val, addr));
  }
  
@@ -278,7 +270,7 @@ index 4f8b31baa575..a65717cd86f7 100644
  {
  	/* Make sure uninitialized memory isn't copied to devices. */
  	kmsan_check_memory(&val, sizeof(val));
-@@ -293,12 +293,12 @@ void iowrite64be_hi_lo(u64 val, void __iomem *addr)
+@@ -293,12 +293,12 @@ void iowrite64be_hi_lo(u64 val, void __i
  		mmio_write64be(val, addr));
  }
  
@@ -296,6 +288,3 @@ index 4f8b31baa575..a65717cd86f7 100644
  
  /*
   * These are the "repeat MMIO read/write" functions.
--- 
-2.49.0
-

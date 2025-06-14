@@ -141,13 +141,13 @@
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-wps {
 +			label = "wps";
 +			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -156,37 +156,37 @@
 +
 +		power_led: led-0 {
 +			label = "green:power";
-+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 +			default-state = "on";
 +		};
 +
 +		led-1 {
 +			label = "green:wan";
-+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-2 {
 +			label = "red:wan";
-+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-3 {
 +			label = "green:lan";
-+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-4 {
 +			label = "green:wlan";
-+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-5 {
 +			label = "green:wps";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +	};
@@ -197,7 +197,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -205,7 +205,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

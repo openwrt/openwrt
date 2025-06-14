@@ -4,17 +4,9 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
-	compatible = "hiwifi,hc5x61a", "mediatek,mt7628an-soc";
-
-	aliases {
-		led-boot = &led_system;
-		led-failsafe = &led_system;
-		led-running = &led_system;
-		led-upgrade = &led_system;
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -73,14 +65,6 @@
 					eeprom_factory_8000: eeprom@8000 {
 						reg = <0x8000 0x200>;
 					};
-
-					macaddr_factory_4: macaddr@4 {
-						reg = <0x4 0x6>;
-					};
-
-					macaddr_factory_2e: macaddr@2e {
-						reg = <0x2e 0x6>;
-					};
 				};
 			};
 
@@ -100,6 +84,18 @@
 				label = "bdinfo";
 				reg = <0xfe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_18a: macaddr@18a {
+						compatible = "mac-base";
+						reg = <0x18a 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -112,13 +108,13 @@
 };
 
 &ethernet {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_bdinfo_18a 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&eeprom_factory_0>;
-	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_18a 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };

@@ -59,7 +59,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/drm_atomic_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -1656,13 +1656,6 @@ drm_atomic_helper_wait_for_vblanks(struc
+@@ -1684,13 +1684,6 @@ drm_atomic_helper_wait_for_vblanks(struc
  	int i, ret;
  	unsigned int crtc_mask = 0;
  
@@ -73,7 +73,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	for_each_oldnew_crtc_in_state(old_state, crtc, old_crtc_state, new_crtc_state, i) {
  		if (!new_crtc_state->active)
  			continue;
-@@ -2311,12 +2304,6 @@ int drm_atomic_helper_setup_commit(struc
+@@ -2339,12 +2332,6 @@ int drm_atomic_helper_setup_commit(struc
  			complete_all(&commit->flip_done);
  			continue;
  		}

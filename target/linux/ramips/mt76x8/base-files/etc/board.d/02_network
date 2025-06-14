@@ -179,6 +179,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
+	teltonika,rut9x1|\
+	teltonika,rut9x6)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "4:wan" "6t@eth0"
+		;;
 	tplink,archer-mr200-v5|\
 	tplink,archer-mr200-v6)
 		ucidef_add_switch "switch0" \
@@ -285,10 +290,7 @@ ramips_setup_macs()
 	hiwifi,hc5661a|\
 	hiwifi,hc5761a|\
 	hiwifi,hc5861b)
-		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
-		label_mac=$lan_mac
-		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	iptime,a3|\
 	iptime,a604m|\

@@ -1,6 +1,6 @@
 --- a/cmd/bootmenu.c
 +++ b/cmd/bootmenu.c
-@@ -476,7 +476,11 @@ static void menu_display_statusline(stru
+@@ -482,7 +482,11 @@ static void menu_display_statusline(stru
  	printf(ANSI_CURSOR_POSITION, 1, 1);
  	puts(ANSI_CLEAR_LINE);
  	printf(ANSI_CURSOR_POSITION, 2, 3);
@@ -13,7 +13,7 @@
  	puts(ANSI_CLEAR_LINE_TO_END);
  	printf(ANSI_CURSOR_POSITION, 3, 1);
  	puts(ANSI_CLEAR_LINE);
-@@ -561,6 +565,7 @@ static enum bootmenu_ret bootmenu_show(i
+@@ -573,6 +577,7 @@ static enum bootmenu_ret bootmenu_show(i
  		return BOOTMENU_RET_FAIL;
  	}
  

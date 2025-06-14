@@ -21,7 +21,7 @@ const mesh_param_list = [
 	"mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor",
 	"mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
 	"mesh_hwmp_confirmation_interval", "mesh_awake_window", "mesh_plink_timeout",
-	"mesh_auto_open_plinks", "mesh_fwding", "mesh_power_mode"
+	"mesh_auto_open_plinks", "mesh_fwding", "mesh_nolearn", "mesh_power_mode"
 ];
 
 function phy_suffix(radio, sep) {

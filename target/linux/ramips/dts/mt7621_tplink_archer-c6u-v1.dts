@@ -85,15 +85,6 @@
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	reg_usb_vbus: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
 };
 
 &spi0 {
@@ -210,6 +201,12 @@
 	/delete-property/ interrupts;
 };
 
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
 &switch0 {
 	ports {
 		port@1 {
@@ -239,8 +236,4 @@
 		groups = "i2c", "uart2", "uart3", "jtag", "wdt", "sdhci";
 		function = "gpio";
 	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_vbus>;
 };

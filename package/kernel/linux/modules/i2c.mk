@@ -116,15 +116,33 @@ I2C_DWPCI_MODULES:= \
 
 define KernelPackage/i2c-designware-pci
   $(call i2c_defaults,$(I2C_DWPCI_MODULES),59)
-  TITLE:=Synopsys DesignWare PCI
+  TITLE:=Synopsys DesignWare I2C PCI
   DEPENDS:=@PCI_SUPPORT +kmod-i2c-designware-core +kmod-i2c-ccgs-ucsi
 endef
 
 define KernelPackage/i2c-designware-pci/description
- Support for Synopsys DesignWare I2C controller. Only master mode is supported.
+ Support for Synopsys DesignWare I2C PCI controller. Only master mode is
+ supported.
 endef
 
 $(eval $(call KernelPackage,i2c-designware-pci))
+
+
+I2C_DWPLAT_MODULES:= \
+  CONFIG_I2C_DESIGNWARE_PLATFORM:drivers/i2c/busses/i2c-designware-platform
+
+define KernelPackage/i2c-designware-platform
+  $(call i2c_defaults,$(I2C_DWPLAT_MODULES),59)
+  TITLE:=Synopsys DesignWare I2C Platform
+  DEPENDS:=+kmod-i2c-designware-core
+endef
+
+define KernelPackage/i2c-designware-platform/description
+ Support for Synopsys DesignWare I2C Platform controller. Only master mode
+ is supported.
+endef
+
+$(eval $(call KernelPackage,i2c-designware-platform))
 
 
 I2C_GPIO_MODULES:= \

@@ -102,7 +102,7 @@
  	int ret;
  
  	if (!of_device_is_available(np))
-@@ -677,6 +758,46 @@ static int ath9k_of_init(struct ath_soft
+@@ -677,6 +758,43 @@ static int ath9k_of_init(struct ath_soft
  
  	ath_dbg(common, CONFIG, "parsing configuration from OF node\n");
  
@@ -115,17 +115,15 @@
 +#ifdef CONFIG_ATH79
 +	if (ah->hw_version.devid == AR5416_AR9100_DEVID) {
 +		ah->external_reset = ar913x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR9330) {
 +		ah->get_mac_revision = ar9330_get_soc_revision;
 +		u32 t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
 +		ah->is_clk_25mhz = !(t & AR933X_BOOTSTRAP_REF_CLK_40);
 +		ah->external_reset = ar933x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR9340) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		u32 t = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
-+		ah->is_clk_25mhz = !(t & AR933X_BOOTSTRAP_REF_CLK_40);
++		ah->is_clk_25mhz = !(t & AR934X_BOOTSTRAP_REF_CLK_40);
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR953X) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		/*
@@ -138,7 +136,6 @@
 +		u32 t = ath79_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
 +		ah->is_clk_25mhz = !(t & QCA955X_BOOTSTRAP_REF_CLK_40);
 +		ah->external_reset = qca955x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_QCA956X) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		u32 t = ath79_reset_rr(QCA956X_RESET_REG_BOOTSTRAP);
@@ -149,7 +146,7 @@
  	if (of_property_read_bool(np, "qca,no-eeprom")) {
  		/* ath9k-eeprom-<bus>-<id>.bin */
  		scnprintf(eeprom_name, sizeof(eeprom_name),
-@@ -693,6 +814,17 @@ static int ath9k_of_init(struct ath_soft
+@@ -693,6 +811,17 @@ static int ath9k_of_init(struct ath_soft
  
  	of_get_mac_address(np, common->macaddr);
  

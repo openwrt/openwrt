@@ -1,0 +1,60 @@
+From 5ad483955acc85dc91b88c7b76dc1429e8ba33bc Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 1 Jan 2025 18:27:35 +0200
+Subject: [PATCH] wifi: rtw88: Delete rf_type member of struct rtw_sta_info
+
+It's not used for anything.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/b80f7904-c6b4-4d12-a5f9-69ab9b965732@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/main.c | 9 ++-------
+ drivers/net/wireless/realtek/rtw88/main.h | 1 -
+ 2 files changed, 2 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/main.c
++++ b/drivers/net/wireless/realtek/rtw88/main.c
+@@ -1217,7 +1217,6 @@ void rtw_update_sta_info(struct rtw_dev
+ 	u8 wireless_set;
+ 	u8 bw_mode;
+ 	u8 rate_id;
+-	u8 rf_type = RF_1T1R;
+ 	u8 stbc_en = 0;
+ 	u8 ldpc_en = 0;
+ 	u8 tx_num = 1;
+@@ -1302,13 +1301,10 @@ void rtw_update_sta_info(struct rtw_dev
+ 		break;
+ 	}
+ 
+-	if (sta->deflink.vht_cap.vht_supported && ra_mask & 0xffc00000) {
++	if (sta->deflink.vht_cap.vht_supported && ra_mask & 0xffc00000)
+ 		tx_num = 2;
+-		rf_type = RF_2T2R;
+-	} else if (sta->deflink.ht_cap.ht_supported && ra_mask & 0xfff00000) {
++	else if (sta->deflink.ht_cap.ht_supported && ra_mask & 0xfff00000)
+ 		tx_num = 2;
+-		rf_type = RF_2T2R;
+-	}
+ 
+ 	rate_id = get_rate_id(wireless_set, bw_mode, tx_num);
+ 
+@@ -1319,7 +1315,6 @@ void rtw_update_sta_info(struct rtw_dev
+ 	si->bw_mode = bw_mode;
+ 	si->stbc_en = stbc_en;
+ 	si->ldpc_en = ldpc_en;
+-	si->rf_type = rf_type;
+ 	si->sgi_enable = is_support_sgi;
+ 	si->vht_enable = is_vht_enable;
+ 	si->ra_mask = ra_mask;
+--- a/drivers/net/wireless/realtek/rtw88/main.h
++++ b/drivers/net/wireless/realtek/rtw88/main.h
+@@ -757,7 +757,6 @@ struct rtw_sta_info {
+ 	u8 mac_id;
+ 	u8 rate_id;
+ 	enum rtw_bandwidth bw_mode;
+-	enum rtw_rf_type rf_type;
+ 	u8 stbc_en:2;
+ 	u8 ldpc_en:2;
+ 	bool sgi_enable;

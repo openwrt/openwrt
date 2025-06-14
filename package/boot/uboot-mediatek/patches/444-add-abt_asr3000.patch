@@ -110,7 +110,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7981-abt-asr3000.dts
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,175 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +
 +/dts-v1/;
@@ -137,18 +137,17 @@
 +	gpio-keys {
 +		compatible = "gpio-keys";
 +
-+
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-wps {
 +			label = "mesh";
 +			linux,code = <BTN_9>;
 +			linux,input-type = <EV_SW>;
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -157,31 +156,31 @@
 +
 +		led-0 {
 +			label = "red:wan";
-+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-1 {
 +			label = "green:wan";
-+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		mesh_led: led-2 {
 +			label = "green:mesh";
-+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 15 GPIO_ACTIVE_HIGH>;
 +			default-state = "on";
 +		};
 +
 +		led-3 {
 +			label = "green:wlan2g";
-+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		led-4 {
 +			label = "green:wlan5g";
-+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +	};
@@ -192,7 +191,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -200,7 +199,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";
