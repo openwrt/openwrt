@@ -1,0 +1,32 @@
+From afcd38c9bb0e2a92b26b036f3ba6181052edbe88 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 21 Feb 2025 09:01:16 +0100
+Subject: [PATCH] arm64: dts: airoha: en7581: Fix clock-controller address
+
+Fix the following warning for clock-controller node:
+
+DTC [C] arch/arm64/boot/dts/airoha/en7581-evb.dtb
+arch/arm64/boot/dts/airoha/en7581.dtsi:176.37-181.5: Warning (simple_bus_reg): /soc/clock-controller@1fa20000: simple-bus unit address format error, expected "1fb00000"
+
+Fixes: 7693017580e9 ("arm64: dts: airoha: en7581: Add Clock Controller node")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://lore.kernel.org/r/20250221-en7581-dts-spi-pinctrl-v3-2-4719e2d01555@kernel.org
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/airoha/en7581.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/airoha/en7581.dtsi b/arch/arm64/boot/dts/airoha/en7581.dtsi
+index 9a419796594d3a..26b13694091735 100644
+--- a/arch/arm64/boot/dts/airoha/en7581.dtsi
++++ b/arch/arm64/boot/dts/airoha/en7581.dtsi
+@@ -173,7 +173,7 @@
+ 			};
+ 		};
+ 
+-		scuclk: clock-controller@1fa20000 {
++		scuclk: clock-controller@1fb00000 {
+ 			compatible = "airoha,en7581-scu";
+ 			reg = <0x0 0x1fb00000 0x0 0x970>;
+ 			#clock-cells = <1>;

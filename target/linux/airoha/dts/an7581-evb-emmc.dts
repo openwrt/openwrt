@@ -164,6 +164,11 @@
 	status = "okay";
 };
 
+&scuclk {
+	airoha,serdes-wifi1 = "pcie0_x1";
+	airoha,serdes-wifi2 = "pcie1_x1";
+};
+
 &switch {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
