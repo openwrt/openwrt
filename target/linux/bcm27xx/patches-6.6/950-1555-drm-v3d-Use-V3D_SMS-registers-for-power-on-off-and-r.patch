@@ -87,7 +87,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	mmu_debug = V3D_READ(V3D_MMU_DEBUG_INFO);
  	mask = DMA_BIT_MASK(30 + V3D_GET_FIELD(mmu_debug, V3D_MMU_PA_WIDTH));
  	ret = dma_set_mask_and_coherent(dev, mask);
-@@ -361,6 +399,8 @@ static void v3d_platform_drm_remove(stru
+@@ -364,6 +402,8 @@ static void v3d_platform_drm_remove(stru
  	dma_free_wc(v3d->drm.dev, 4096, v3d->mmu_scratch,
  		    v3d->mmu_scratch_paddr);
  
