@@ -88,7 +88,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +ipq_ess-objs := ipqess.o ipqess_ethtool.o
 --- /dev/null
 +++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
-@@ -0,0 +1,1249 @@
+@@ -0,0 +1,1248 @@
 +// SPDX-License-Identifier: GPL-2.0 OR ISC
 +/* Copyright (c) 2014 - 2017, The Linux Foundation. All rights reserved.
 + * Copyright (c) 2017 - 2018, John Crispin <john@phrozen.org>
@@ -1154,7 +1154,6 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +}
 +
 +static struct phylink_mac_ops ipqess_phylink_mac_ops = {
-+	.validate		= phylink_generic_validate,
 +	.mac_config		= ipqess_mac_config,
 +	.mac_link_up		= ipqess_mac_link_up,
 +	.mac_link_down		= ipqess_mac_link_down,
