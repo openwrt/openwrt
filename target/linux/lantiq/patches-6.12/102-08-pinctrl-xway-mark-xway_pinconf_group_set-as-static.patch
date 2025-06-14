@@ -1,0 +1,26 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 20:36:56 +0800
+Subject: [PATCH 8/9] pinctrl: xway: mark xway_pinconf_group_set() as static
+
+Fix the following missing-prototypes build warning:
+
+drivers/pinctrl/pinctrl-xway.c:1231:5: error: no previous prototype for 'xway_pinconf_group_set' [-Werror=missing-prototypes]
+ 1231 | int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pinctrl/pinctrl-xway.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -1228,7 +1228,7 @@ static int xway_pinconf_set(struct pinct
+ 	return 0;
+ }
+ 
+-int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
++static int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
+ 			unsigned selector,
+ 			unsigned long *configs,
+ 			unsigned num_configs)

@@ -1,0 +1,81 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 18:32:11 +0800
+Subject: [PATCH 4/9] MIPS: vpe-mt: do not export vpe_{alloc,start,stop,free}
+
+These functions are only used in the current source file "vpe-mt.c".
+Do not export them and mark them as static to silence the missing
+prototypes warnings. vpe_alloc() and vpe_start() are unused, hence
+add extra __maybe_unused for them.
+
+arch/mips/kernel/vpe-mt.c:180:7: error: no previous prototype for 'vpe_alloc' [-Werror=missing-prototypes]
+  180 | void *vpe_alloc(void)
+      |       ^~~~~~~~~
+arch/mips/kernel/vpe-mt.c:198:5: error: no previous prototype for 'vpe_start' [-Werror=missing-prototypes]
+  198 | int vpe_start(void *vpe, unsigned long start)
+      |     ^~~~~~~~~
+arch/mips/kernel/vpe-mt.c:208:5: error: no previous prototype for 'vpe_stop' [-Werror=missing-prototypes]
+  208 | int vpe_stop(void *vpe)
+      |     ^~~~~~~~
+arch/mips/kernel/vpe-mt.c:229:5: error: no previous prototype for 'vpe_free' [-Werror=missing-prototypes]
+  229 | int vpe_free(void *vpe)
+      |     ^~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/kernel/vpe-mt.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+--- a/arch/mips/kernel/vpe-mt.c
++++ b/arch/mips/kernel/vpe-mt.c
+@@ -174,7 +174,7 @@ void cleanup_tc(struct tc *tc)
+ 
+ /* module wrapper entry points */
+ /* give me a vpe */
+-void *vpe_alloc(void)
++static void __maybe_unused *vpe_alloc(void)
+ {
+ 	int i;
+ 	struct vpe *v;
+@@ -189,20 +189,18 @@ void *vpe_alloc(void)
+ 	}
+ 	return NULL;
+ }
+-EXPORT_SYMBOL(vpe_alloc);
+ 
+ /* start running from here */
+-int vpe_start(void *vpe, unsigned long start)
++static int __maybe_unused vpe_start(void *vpe, unsigned long start)
+ {
+ 	struct vpe *v = vpe;
+ 
+ 	v->__start = start;
+ 	return vpe_run(v);
+ }
+-EXPORT_SYMBOL(vpe_start);
+ 
+ /* halt it for now */
+-int vpe_stop(void *vpe)
++static int vpe_stop(void *vpe)
+ {
+ 	struct vpe *v = vpe;
+ 	struct tc *t;
+@@ -220,10 +218,9 @@ int vpe_stop(void *vpe)
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(vpe_stop);
+ 
+ /* I've done with it thank you */
+-int vpe_free(void *vpe)
++static int vpe_free(void *vpe)
+ {
+ 	struct vpe *v = vpe;
+ 	struct tc *t;
+@@ -255,7 +252,6 @@ int vpe_free(void *vpe)
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL(vpe_free);
+ 
+ static ssize_t store_kill(struct device *dev, struct device_attribute *attr,
+ 			  const char *buf, size_t len)

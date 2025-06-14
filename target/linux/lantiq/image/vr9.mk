@@ -18,7 +18,6 @@ define Device/arcadyan_arv7519rw22
   IMAGE_SIZE := 31232k
   DEVICE_PACKAGES := kmod-usb-dwc2 xrx200-rev1.1-phy22f-firmware xrx200-rev1.2-phy22f-firmware
   SUPPORTED_DEVICES += ARV7519RW22
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv7519rw22
 
@@ -387,6 +386,5 @@ define Device/zyxel_p-2812hnu-f3
 	xrx200-rev1.1-phy11g-firmware xrx200-rev1.2-phy11g-firmware
   KERNEL_SIZE := 2048k
   SUPPORTED_DEVICES += P2812HNUF3
-  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_p-2812hnu-f3
