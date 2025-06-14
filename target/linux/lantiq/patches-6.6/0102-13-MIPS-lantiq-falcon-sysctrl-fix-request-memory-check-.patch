@@ -1,0 +1,63 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:53:58 +0800
+Subject: [PATCH 4/6] MIPS: lantiq: falcon: sysctrl: fix request memory check
+ logic
+
+request_mem_region() will return NULL instead of error code
+when the memory request fails. Therefore, we should check if
+the return value is non-zero instead of less than zero. In
+this way, this patch also fixes the build warnings:
+
+arch/mips/lantiq/falcon/sysctrl.c:214:50: error: ordered comparison of pointer with integer zero [-Werror=extra]
+  214 |                                 res_status.name) < 0) ||
+      |                                                  ^
+arch/mips/lantiq/falcon/sysctrl.c:216:47: error: ordered comparison of pointer with integer zero [-Werror=extra]
+  216 |                                 res_ebu.name) < 0) ||
+      |                                               ^
+arch/mips/lantiq/falcon/sysctrl.c:219:50: error: ordered comparison of pointer with integer zero [-Werror=extra]
+  219 |                                 res_sys[0].name) < 0) ||
+      |                                                  ^
+arch/mips/lantiq/falcon/sysctrl.c:222:50: error: ordered comparison of pointer with integer zero [-Werror=extra]
+  222 |                                 res_sys[1].name) < 0) ||
+      |                                                  ^
+arch/mips/lantiq/falcon/sysctrl.c:225:50: error: ordered comparison of pointer with integer zero [-Werror=extra]
+  225 |                                 res_sys[2].name) < 0))
+      |
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/falcon/sysctrl.c | 23 ++++++++++-------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
+
+--- a/arch/mips/lantiq/falcon/sysctrl.c
++++ b/arch/mips/lantiq/falcon/sysctrl.c
+@@ -210,19 +210,16 @@ void __init ltq_soc_init(void)
+ 	of_node_put(np_syseth);
+ 	of_node_put(np_sysgpe);
+ 
+-	if ((request_mem_region(res_status.start, resource_size(&res_status),
+-				res_status.name) < 0) ||
+-		(request_mem_region(res_ebu.start, resource_size(&res_ebu),
+-				res_ebu.name) < 0) ||
+-		(request_mem_region(res_sys[0].start,
+-				resource_size(&res_sys[0]),
+-				res_sys[0].name) < 0) ||
+-		(request_mem_region(res_sys[1].start,
+-				resource_size(&res_sys[1]),
+-				res_sys[1].name) < 0) ||
+-		(request_mem_region(res_sys[2].start,
+-				resource_size(&res_sys[2]),
+-				res_sys[2].name) < 0))
++	if ((!request_mem_region(res_status.start, resource_size(&res_status),
++				 res_status.name)) ||
++	    (!request_mem_region(res_ebu.start, resource_size(&res_ebu),
++				 res_ebu.name)) ||
++	    (!request_mem_region(res_sys[0].start, resource_size(&res_sys[0]),
++				 res_sys[0].name)) ||
++	    (!request_mem_region(res_sys[1].start, resource_size(&res_sys[1]),
++				 res_sys[1].name)) ||
++	    (!request_mem_region(res_sys[2].start, resource_size(&res_sys[2]),
++				 res_sys[2].name)))
+ 		pr_err("Failed to request core resources");
+ 
+ 	status_membase = ioremap(res_status.start,

@@ -1,0 +1,38 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:15:36 +0800
+Subject: [PATCH 1/6] MIPS: lantiq: falcon: fix misc missing-prototypes
+ warnings
+
+Fix the following build warnings:
+
+arch/mips/lantiq/falcon/prom.c:39:13: error: no previous prototype for 'ltq_soc_nmi_setup' [-Werror=missing-prototypes]
+   39 | void __init ltq_soc_nmi_setup(void)
+      |             ^~~~~~~~~~~~~~~~~
+arch/mips/lantiq/falcon/prom.c:46:13: error: no previous prototype for 'ltq_soc_ejtag_setup' [-Werror=missing-prototypes]
+   46 | void __init ltq_soc_ejtag_setup(void)
+      |             ^~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/falcon/prom.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/lantiq/falcon/prom.c
++++ b/arch/mips/lantiq/falcon/prom.c
+@@ -36,14 +36,14 @@
+ #define BOOT_NVEC	(BOOT_REG_BASE | 0x04)
+ #define BOOT_EVEC	(BOOT_REG_BASE | 0x08)
+ 
+-void __init ltq_soc_nmi_setup(void)
++static void __init ltq_soc_nmi_setup(void)
+ {
+ 	extern void (*nmi_handler)(void);
+ 
+ 	ltq_w32((unsigned long)&nmi_handler, (void *)BOOT_NVEC);
+ }
+ 
+-void __init ltq_soc_ejtag_setup(void)
++static void __init ltq_soc_ejtag_setup(void)
+ {
+ 	extern void (*ejtag_debug_handler)(void);
+ 

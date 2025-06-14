@@ -12,7 +12,6 @@ define Device/arcadyan_arv4510pw
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	kmod-rt2800-pci kmod-ath5k wpad-basic-mbedtls
   SUPPORTED_DEVICES += ARV4510PW
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4510pw
 
@@ -30,7 +29,6 @@ define Device/arcadyan_arv4519pw
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa
   SUPPORTED_DEVICES += ARV4519PW
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4519pw
 
@@ -112,7 +110,6 @@ define Device/arcadyan_arv7525pw
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa -swconfig
   SUPPORTED_DEVICES += ARV4510PW
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv7525pw
 
@@ -196,7 +193,6 @@ define Device/bt_homehub-v2b
 	kmod-ltq-deu-danube ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-basic-mbedtls
   SUPPORTED_DEVICES += BTHOMEHUBV2B
-  DEFAULT := n
 endef
 TARGET_DEVICES += bt_homehub-v2b
 
@@ -205,7 +201,6 @@ define Device/lantiq_easy50712
   DEVICE_MODEL := Danube (EASY50712)
   SOC := danube
   IMAGE_SIZE := 3776k
-  DEFAULT := n
 endef
 TARGET_DEVICES += lantiq_easy50712
 
@@ -220,6 +215,5 @@ define Device/siemens_gigaset-sx76x
 	ltq-adsl-app ppp-mod-pppoe \
 	kmod-ath5k wpad-basic-mbedtls
   SUPPORTED_DEVICES += GIGASX76X
-  DEFAULT := n
 endef
 TARGET_DEVICES += siemens_gigaset-sx76x
