@@ -14,6 +14,8 @@
 #include <linux/sfp.h>
 #include <linux/mii.h>
 #include <linux/mdio.h>
+#include <linux/mfd/syscon.h>
+#include <linux/regmap.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
@@ -85,6 +87,21 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
  * since otherwise these operations may fails or lead to unpredictable results.
  */
 DEFINE_MUTEX(poll_lock);
+
+/* info structure for SoC specific properties */
+struct rtph_soc_data {
+	u32 model_id;
+	u32 model_version;
+	char model_name[16];
+	u32 chip_id;
+	u32 chip_version;
+	char chip_name[16];
+	unsigned int family;
+	unsigned int rawpage;
+	struct regmap *rmap;
+};
+
+static struct rtph_soc_data rtph_soc;
 
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
@@ -3926,6 +3943,72 @@ static int rtl9300_serdes_probe(struct phy_device *phydev)
 	return 0;
 }
 
+static int __init rtph_init(void)
+{
+	u32 reg, val, act;
+
+	/*
+	 * A phy driver should be hardware independent. Nevertheless on the Realtek Otto platform
+	 * there are special cases that need to be taken care of. E.g. some of the PHY data is
+	 * read from SoC specific SerDes registers or the topmost page in the MDIO controller
+	 * allows to access the PHY in RAW mode. Thus it bypasses the cache and paging engine of
+	 * the MDIO controller. The controllers in the RTL838x and RTL930x families (<28 port) have
+	 * 4096 pages while the larger models provide 8192 pages. For the time being lookup the
+	 * register area by the only "syscon" node in the DTS and collect data manually to ensure
+	 * that hardware is detected properly.
+	 */
+	rtph_soc.rmap = syscon_regmap_lookup_by_compatible("syscon");
+	if (IS_ERR(rtph_soc.rmap)) {
+		pr_err("Failed to initialize regmap for Realtek switch PHY drivers.\n");
+		return PTR_ERR(rtph_soc.rmap);
+	}
+	regcache_cache_bypass(rtph_soc.rmap, true);
+
+	act = RTPH_93XX_CHIP_INFO_EN;
+	reg = RTPH_93XX_MODEL_NAME_INFO_REG;
+	regmap_read(rtph_soc.rmap, reg, &val);
+	if ((val & 0xffec0000) == 0x93000000)
+		goto found;
+
+	act = RTPH_83XX_CHIP_INFO_EN;
+	reg = RTPH_839X_MODEL_NAME_INFO_REG;
+	regmap_read(rtph_soc.rmap, reg, &val);
+	if ((val & 0xfff80000) == 0x83900000)
+		goto found;
+
+	regmap_write(rtph_soc.rmap, RTPH_838X_INT_RW_CTRL_REG, RTPH_838X_ENABLE_RW_MASK);
+	reg = RTPH_838X_MODEL_NAME_INFO_REG;
+	regmap_read(rtph_soc.rmap, reg, &val);
+found:
+	rtph_soc.model_id = FIELD_GET(RTPH_MODEL_ID_MASK, val);
+	rtph_soc.model_version = FIELD_GET(RTPH_MODEL_VERSION_MASK, val);
+	rtph_soc.family = rtph_soc.model_id & RTPH_MODEL_FAMILY_MASK;
+	rtph_soc.rawpage = rtph_soc.family & 0x10 ? 8191: 4095;
+
+	regmap_write(rtph_soc.rmap, reg + 4, act);
+	regmap_read(rtph_soc.rmap, reg + 4, &val);
+	rtph_soc.chip_id = FIELD_GET(RTPH_CHIP_ID_MASK, val);
+
+	if (rtph_soc.family == RTPH_838X_FAMILY_ID ||
+	    rtph_soc.family == RTPH_839X_FAMILY_ID)
+		rtph_soc.chip_version = FIELD_GET(RTPH_83XX_CHIP_RL_ID_MASK, val);
+	else
+		rtph_soc.chip_version = FIELD_GET(RTPH_83XX_CHIP_RL_ID_MASK, val);
+
+	snprintf(rtph_soc.model_name, sizeof(rtph_soc.model_name),
+		 "RTL%04X%c", rtph_soc.model_id,
+		 rtph_soc.model_version ? rtph_soc.model_version + 64 : 0);
+
+	snprintf(rtph_soc.chip_name, sizeof(rtph_soc.chip_name),
+		 "%04X%c", rtph_soc.chip_id,
+		 rtph_soc.chip_version ? rtph_soc.chip_version + 64 : 0);
+
+	pr_info("Realtek switch PHY drivers registered for %s (chip %s), raw page = %d",
+		 rtph_soc.model_name, rtph_soc.chip_name, rtph_soc.rawpage);
+
+	return 0;
+}
+
 static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_RTL8214C),
@@ -4068,6 +4151,8 @@ static struct mdio_device_id __maybe_unused rtl83xx_tbl[] = {
 };
 
 MODULE_DEVICE_TABLE(mdio, rtl83xx_tbl);
+
+module_init(rtph_init);
 
 MODULE_AUTHOR("B. Koblitz");
 MODULE_DESCRIPTION("RTL83xx PHY driver");
