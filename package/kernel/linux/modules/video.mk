@@ -486,7 +486,8 @@ define KernelPackage/drm-amdgpu/loongarch64
   KCONFIG+=CONFIG_DRM_AMDGPU_USERPTR=y \
 	CONFIG_DRM_AMD_DC=y \
 	CONFIG_DRM_AMD_DC_FP=y \
-	CONFIG_DRM_AMD_DC_SI=y
+	CONFIG_DRM_AMD_DC_SI=y \
+	CONFIG_DRM_AMD_ISP=n
 endef
 
 $(eval $(call KernelPackage,drm-amdgpu))
