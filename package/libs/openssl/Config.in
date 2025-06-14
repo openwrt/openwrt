@@ -112,6 +112,25 @@ config OPENSSL_WITH_CMS
 		Cryptographic Message Syntax (CMS) is used to digitally sign,
 		digest, authenticate, or encrypt arbitrary message content.
 
+config OPENSSL_WITH_QUIC
+	bool
+	prompt "Enable QUIC support"
+	select OPENSSL_WITH_TLS13
+	help
+		Enable support for QUIC (Quick UDP Internet Connections) in OpenSSL 3.
+		This allows OpenSSL to provide cryptographic support for QUIC-based protocols,
+		such as HTTP/3. QUIC requires TLSv1.3 to be enabled.
+
+config OPENSSL_WITH_KTLS
+	bool
+	prompt "Enable KTLS support"
+	depends on PACKAGE_kmod-tls
+	select OPENSSL_WITH_TLS13
+	help
+		Enable Kernel TLS (kTLS) offload support. This allows OpenSSL to
+		offload TLS record processing to the kernel, reducing CPU usage
+		and improving performance for high-traffic TLS connections.
+
 comment "Algorithm Selection"
 
 config OPENSSL_WITH_EC2M
