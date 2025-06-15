@@ -299,6 +299,10 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 		pr_debug("I2C_SMBUS_BLOCK_DATA %02x, read %d, len %d\n",
 			addr, read_write, data->block[0]);
 		drv_data->reg_addr_set(i2c, command, 1);
+		if (data->block[0] < 1 || data->block[0] > I2C_SMBUS_BLOCK_MAX) {
+			ret = -EINVAL;
+			goto out_unlock;
+		}
 		drv_data->config_xfer(i2c, addr, data->block[0]);
 		if (read_write == I2C_SMBUS_WRITE)
 			drv_data->write(i2c, &data->block[1], data->block[0]);
@@ -312,6 +316,7 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 
 	ret = drv_data->execute_xfer(i2c, read_write, size, data, len);
 
+out_unlock:
 	mutex_unlock(&i2c_lock);
 
 	return ret;
