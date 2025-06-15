@@ -3,10 +3,11 @@ PKG_CPE_ID ?= cpe:/a:arm:trusted_firmware-a
 
 ifndef PKG_SOURCE_PROTO
 PKG_SOURCE = trusted-firmware-a-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/TrustedFirmware-A/trusted-firmware-a/tar.gz/v$(PKG_VERSION)?
+PKG_VERSION_LTS:=$(word 3, $(subst ., ,$(PKG_VERSION)))
+PKG_SOURCE_URL:=https://codeload.github.com/TrustedFirmware-A/trusted-firmware-a/tar.gz/$(if $(PKG_VERSION_LTS),lts-)v$(PKG_VERSION)?
 endif
 
-PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(if $(PKG_VERSION_LTS),lts-v)$(PKG_VERSION)
 
 PKG_TARGETS := bin
 PKG_FLAGS:=nonshared
