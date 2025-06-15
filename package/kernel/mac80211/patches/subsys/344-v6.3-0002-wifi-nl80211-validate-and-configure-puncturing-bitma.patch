@@ -137,7 +137,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  int nl80211_parse_chandef(struct cfg80211_registered_device *rdev,
  			  struct genl_info *info,
  			  struct cfg80211_chan_def *chandef)
-@@ -5969,6 +5985,14 @@ static int nl80211_start_ap(struct sk_bu
+@@ -5974,6 +5990,14 @@ static int nl80211_start_ap(struct sk_bu
  		goto out;
  	}
  
@@ -152,7 +152,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &params->chandef,
  					   wdev->iftype)) {
  		err = -EINVAL;
-@@ -10107,6 +10131,14 @@ skip_beacons:
+@@ -10126,6 +10150,14 @@ skip_beacons:
  	if (info->attrs[NL80211_ATTR_CH_SWITCH_BLOCK_TX])
  		params.block_tx = true;
  

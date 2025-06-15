@@ -76,7 +76,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -283,6 +283,8 @@ struct cfg80211_event {
+@@ -277,6 +277,8 @@ struct cfg80211_event {
  		} ij;
  		struct {
  			u8 bssid[ETH_ALEN];
@@ -85,7 +85,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} pa;
  	};
  };
-@@ -427,7 +429,8 @@ int cfg80211_disconnect(struct cfg80211_
+@@ -421,7 +423,8 @@ int cfg80211_disconnect(struct cfg80211_
  			bool wextev);
  void __cfg80211_roamed(struct wireless_dev *wdev,
  		       struct cfg80211_roam_info *info);
@@ -97,7 +97,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void cfg80211_autodisconnect_wk(struct work_struct *work);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -18022,7 +18022,8 @@ void nl80211_send_roamed(struct cfg80211
+@@ -18041,7 +18041,8 @@ void nl80211_send_roamed(struct cfg80211
  }
  
  void nl80211_send_port_authorized(struct cfg80211_registered_device *rdev,
@@ -107,7 +107,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct sk_buff *msg;
  	void *hdr;
-@@ -18042,6 +18043,11 @@ void nl80211_send_port_authorized(struct
+@@ -18061,6 +18062,11 @@ void nl80211_send_port_authorized(struct
  	    nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, bssid))
  		goto nla_put_failure;
  
@@ -133,7 +133,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			       const u8 *ie, size_t ie_len, bool from_ap);
 --- a/net/wireless/sme.c
 +++ b/net/wireless/sme.c
-@@ -1266,7 +1266,8 @@ out:
+@@ -1267,7 +1267,8 @@ out:
  }
  EXPORT_SYMBOL(cfg80211_roamed);
  
@@ -143,7 +143,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	ASSERT_WDEV_LOCK(wdev);
  
-@@ -1279,11 +1280,11 @@ void __cfg80211_port_authorized(struct w
+@@ -1280,11 +1281,11 @@ void __cfg80211_port_authorized(struct w
  		return;
  
  	nl80211_send_port_authorized(wiphy_to_rdev(wdev->wiphy), wdev->netdev,
@@ -157,7 +157,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct wireless_dev *wdev = dev->ieee80211_ptr;
  	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
-@@ -1293,12 +1294,15 @@ void cfg80211_port_authorized(struct net
+@@ -1294,12 +1295,15 @@ void cfg80211_port_authorized(struct net
  	if (WARN_ON(!bssid))
  		return;
  

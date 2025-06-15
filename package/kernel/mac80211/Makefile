@@ -10,13 +10,13 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=6.1.110-1
+PKG_VERSION:=6.1.140-test1
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v6.1.110/
-PKG_HASH:=2415bc529ca25be0aa597f9638d8b6fc4138080bbaea96881a38101896df6703
+PKG_SOURCE_URL:=https://www.hauke-m.de/files/backports-test/
+PKG_HASH:=8add129258091c9d9518f172e2a616a3d68d4abf75cbc1d8d8e2c0ce6b0f3e91
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)

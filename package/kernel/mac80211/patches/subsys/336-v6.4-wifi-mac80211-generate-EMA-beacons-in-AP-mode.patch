@@ -38,7 +38,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -5265,6 +5265,74 @@ ieee80211_beacon_get_template(struct iee
+@@ -5279,6 +5279,74 @@ ieee80211_beacon_get_template(struct iee
  			      unsigned int link_id);
  
  /**
@@ -129,7 +129,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	new = kzalloc(size, GFP_KERNEL);
-@@ -3396,8 +3396,11 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3398,8 +3398,11 @@ cfg80211_beacon_dup(struct cfg80211_beac
  
  	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
  	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +
@@ -222,7 +222,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			offs->mbssid_off = skb->len - mbssid_len;
  		}
  
-@@ -5288,12 +5298,51 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5290,12 +5300,51 @@ ieee80211_beacon_get_ap(struct ieee80211
  	return skb;
  }
  
@@ -275,7 +275,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct beacon_data *beacon = NULL;
-@@ -5322,8 +5371,29 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -5324,8 +5373,29 @@ __ieee80211_beacon_get(struct ieee80211_
  		if (!beacon)
  			goto out;
  
@@ -307,7 +307,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	} else if (sdata->vif.type == NL80211_IFTYPE_ADHOC) {
  		struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
  		struct ieee80211_hdr *hdr;
-@@ -5411,10 +5481,50 @@ ieee80211_beacon_get_template(struct iee
+@@ -5413,10 +5483,50 @@ ieee80211_beacon_get_template(struct iee
  			      struct ieee80211_mutable_offsets *offs,
  			      unsigned int link_id)
  {
@@ -359,7 +359,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  struct sk_buff *ieee80211_beacon_get_tim(struct ieee80211_hw *hw,
  					 struct ieee80211_vif *vif,
  					 u16 *tim_offset, u16 *tim_length,
-@@ -5422,7 +5532,9 @@ struct sk_buff *ieee80211_beacon_get_tim
+@@ -5424,7 +5534,9 @@ struct sk_buff *ieee80211_beacon_get_tim
  {
  	struct ieee80211_mutable_offsets offs = {};
  	struct sk_buff *bcn = __ieee80211_beacon_get(hw, vif, &offs, false,

@@ -11,7 +11,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4359,9 +4359,6 @@ static int ieee80211_get_txq_stats(struc
+@@ -4361,9 +4361,6 @@ static int ieee80211_get_txq_stats(struc
  	struct ieee80211_sub_if_data *sdata;
  	int ret = 0;
  
@@ -63,7 +63,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				    NL80211_EXT_FEATURE_AQL))
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2301,7 +2301,6 @@ void ieee80211_wake_queue_by_reason(stru
+@@ -2299,7 +2299,6 @@ void ieee80211_wake_queue_by_reason(stru
  void ieee80211_stop_queue_by_reason(struct ieee80211_hw *hw, int queue,
  				    enum queue_stop_reason reason,
  				    bool refcounted);
@@ -73,7 +73,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void ieee80211_add_pending_skbs(struct ieee80211_local *local,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -481,12 +481,6 @@ static void ieee80211_do_stop(struct iee
+@@ -482,12 +482,6 @@ static void ieee80211_do_stop(struct iee
  	if (cancel_scan)
  		ieee80211_scan_cancel(local);
  
@@ -86,7 +86,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	ieee80211_roc_purge(local, sdata);
  
  	switch (sdata->vif.type) {
-@@ -834,25 +828,6 @@ static void ieee80211_uninit(struct net_
+@@ -852,25 +846,6 @@ static void ieee80211_uninit(struct net_
  	ieee80211_teardown_sdata(IEEE80211_DEV_TO_SUB_IF(dev));
  }
  
@@ -112,7 +112,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static void
  ieee80211_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
-@@ -866,7 +841,6 @@ static const struct net_device_ops ieee8
+@@ -884,7 +859,6 @@ static const struct net_device_ops ieee8
  	.ndo_start_xmit		= ieee80211_subif_start_xmit,
  	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
  	.ndo_set_mac_address 	= ieee80211_change_mac,
@@ -120,7 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.ndo_get_stats64	= ieee80211_get_stats64,
  };
  
-@@ -988,7 +962,6 @@ static const struct net_device_ops ieee8
+@@ -1006,7 +980,6 @@ static const struct net_device_ops ieee8
  	.ndo_start_xmit		= ieee80211_subif_start_xmit_8023,
  	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
  	.ndo_set_mac_address	= ieee80211_change_mac,
@@ -128,7 +128,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.ndo_get_stats64	= ieee80211_get_stats64,
  #if LINUX_VERSION_IS_GEQ(5,13,0)
  	.ndo_fill_forward_path	= ieee80211_netdev_fill_forward_path,
-@@ -1492,35 +1465,6 @@ int ieee80211_do_open(struct wireless_de
+@@ -1510,35 +1483,6 @@ int ieee80211_do_open(struct wireless_de
  
  	ieee80211_recalc_ps(local);
  
@@ -164,7 +164,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
  	return 0;
-@@ -1550,17 +1494,12 @@ static void ieee80211_if_setup(struct ne
+@@ -1568,17 +1512,12 @@ static void ieee80211_if_setup(struct ne
  {
  	ether_setup(dev);
  	dev->priv_flags &= ~IFF_TX_SKB_SHARING;
@@ -183,7 +183,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static void ieee80211_iface_process_skb(struct ieee80211_local *local,
  					struct ieee80211_sub_if_data *sdata,
  					struct sk_buff *skb)
-@@ -2145,9 +2084,7 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2163,9 +2102,7 @@ int ieee80211_if_add(struct ieee80211_lo
  	struct net_device *ndev = NULL;
  	struct ieee80211_sub_if_data *sdata = NULL;
  	struct txq_info *txqi;
@@ -193,7 +193,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	ASSERT_RTNL();
  
-@@ -2170,30 +2107,18 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2188,30 +2125,18 @@ int ieee80211_if_add(struct ieee80211_lo
  				 sizeof(void *));
  		int txq_size = 0;
  
@@ -228,7 +228,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		ndev->tstats = netdev_alloc_pcpu_stats(struct pcpu_sw_netstats);
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -634,7 +634,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -636,7 +636,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  
  	if (WARN_ON(!ops->tx || !ops->start || !ops->stop || !ops->config ||
  		    !ops->add_interface || !ops->remove_interface ||
@@ -237,7 +237,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return NULL;
  
  	if (WARN_ON(ops->sta_state && (ops->sta_add || ops->sta_remove)))
-@@ -723,9 +723,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -725,9 +725,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  	if (!ops->set_key)
  		wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  
@@ -248,7 +248,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	wiphy_ext_feature_set(wiphy, NL80211_EXT_FEATURE_RRM);
  
  	wiphy->bss_priv_size = sizeof(struct ieee80211_bss);
-@@ -838,10 +836,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+@@ -840,10 +838,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
  		atomic_set(&local->agg_queue_stop[i], 0);
  	}
  	tasklet_setup(&local->tx_pending_tasklet, ieee80211_tx_pending);
@@ -466,7 +466,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  
-@@ -5970,10 +5951,9 @@ int ieee80211_tx_control_port(struct wip
+@@ -5972,10 +5953,9 @@ int ieee80211_tx_control_port(struct wip
  	}
  
  	if (!IS_ERR(sta)) {

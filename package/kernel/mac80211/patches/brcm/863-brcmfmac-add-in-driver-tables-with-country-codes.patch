@@ -49,9 +49,9 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
  		    struct brcmf_mp_device *settings)
  {
-@@ -106,6 +136,8 @@ void brcmf_of_probe(struct device *dev,
- 		of_node_put(root);
+@@ -105,6 +135,8 @@ void brcmf_of_probe(struct device *dev,
  	}
+ 	of_node_put(root);
  
 +	brcmf_of_probe_cc(dev, settings);
 +
