@@ -1,0 +1,40 @@
+From adf7f11ad63caeb58af6c423518677f80c7ea92f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Fri, 30 May 2025 23:18:03 +0200
+Subject: [PATCH net-next v4 10/14] net: dsa: b53: prevent BRCM_HDR access on
+ older devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Older switches don't implement BRCM_HDR register so we should avoid
+reading or writing it.
+
+Fixes: b409a9efa183 ("net: dsa: b53: Move Broadcom header setup to b53")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/net/dsa/b53/b53_common.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+ v4: no changes
+
+ v3: add changes requested by Jonas:
+  - Check for legacy tag protocols instead of is5325().
+
+ v2: no changes
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -730,6 +730,11 @@ void b53_brcm_hdr_setup(struct dsa_switc
+ 		hdr_ctl |= GC_FRM_MGMT_PORT_M;
+ 	b53_write8(dev, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, hdr_ctl);
+ 
++	/* B53_BRCM_HDR not present on devices with legacy tags */
++	if (dev->tag_protocol == DSA_TAG_PROTO_BRCM_LEGACY ||
++	    dev->tag_protocol == DSA_TAG_PROTO_BRCM_LEGACY_FCS)
++		return;
++
+ 	/* Enable Broadcom tags for IMP port */
+ 	b53_read8(dev, B53_MGMT_PAGE, B53_BRCM_HDR, &hdr_ctl);
+ 	if (tag_en)

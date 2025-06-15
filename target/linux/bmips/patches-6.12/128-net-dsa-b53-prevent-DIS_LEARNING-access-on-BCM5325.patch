@@ -1,8 +1,8 @@
-From 2c09136c63be15b91cf39b52a707b3be8eb1fe71 Mon Sep 17 00:00:00 2001
+From 5cf62bafb7d2ffcb4d63a33ca1ece16b4441e7bf Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Fri, 30 May 2025 23:13:01 +0200
-Subject: [RFC PATCH net-next v2 05/10] net: dsa: b53: prevent DIS_LEARNING
- access on BCM5325
+Subject: [PATCH net-next v4 09/14] net: dsa: b53: prevent DIS_LEARNING access
+ on BCM5325
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -11,10 +11,18 @@ BCM5325 doesn't implement DIS_LEARNING register so we should avoid reading
 or writing it.
 
 Fixes: f9b3827ee66c ("net: dsa: b53: Support setting learning on port")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
  drivers/net/dsa/b53/b53_common.c | 11 ++++++++++-
  1 file changed, 10 insertions(+), 1 deletion(-)
+
+ v4: no changes
+
+ v3: no changes
+
+ v2: add changes proposed by Vladimir:
+  - Disallow BR_LEARNING on b53_br_flags_pre() for BCM5325.
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
@@ -28,7 +36,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	b53_read16(dev, B53_CTRL_PAGE, B53_DIS_LEARNING, &reg);
  	if (learning)
  		reg &= ~BIT(port);
-@@ -2246,7 +2249,13 @@ int b53_br_flags_pre(struct dsa_switch *
+@@ -2262,7 +2265,13 @@ int b53_br_flags_pre(struct dsa_switch *
  		     struct switchdev_brport_flags flags,
  		     struct netlink_ext_ack *extack)
  {
