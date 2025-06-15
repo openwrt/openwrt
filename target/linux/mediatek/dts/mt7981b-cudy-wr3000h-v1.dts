@@ -5,8 +5,8 @@
 #include "mt7981b-cudy-wr3000-nand.dtsi"
 
 / {
-	model = "Cudy WR3000S v1";
-	compatible = "cudy,wr3000s-v1", "mediatek,mt7981";
+	model = "Cudy WR3000H v1";
+	compatible = "cudy,wr3000h-v1", "mediatek,mt7981";
 
 	aliases {
 		label-mac-device = &gmac0;
@@ -23,7 +23,7 @@
 		led_status: led-status {
 			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_WHITE>;
-			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led-internet {
@@ -51,6 +51,63 @@
 			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
+
+		led-lan1 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan3 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan4 {
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth {
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_bdinfo_de00 1>;
+		label = "wan";
+	};
+};
+
+&mdio_bus {
+
+	phy6: ethernet-phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <6>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -61,29 +118,21 @@
 
 		port@0 {
 			reg = <0>;
-			label = "wan";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00 1>;
+			label = "lan1";
 		};
 
 		port@1 {
 			reg = <1>;
-			label = "lan1";
+			label = "lan2";
 		};
 
 		port@2 {
 			reg = <2>;
-			label = "lan2";
+			label = "lan3";
 		};
 
 		port@3 {
 			reg = <3>;
-			label = "lan3";
-		};
-
-		port@4 {
-			reg = <4>;
 			label = "lan4";
 		};
 
@@ -101,3 +150,4 @@
 		};
 	};
 };
+
