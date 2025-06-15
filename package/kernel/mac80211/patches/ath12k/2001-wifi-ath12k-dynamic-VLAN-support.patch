@@ -1,0 +1,179 @@
+From 26dd8ccdba4d492d00e35c410bc4314e043bdf73 Mon Sep 17 00:00:00 2001
+From: Muna Sinada <quic_msinada@quicinc.com>
+Date: Fri, 17 May 2024 10:00:30 +0300
+Subject: [PATCH] wifi: ath12k: dynamic VLAN support
+
+Add support for dynamic VLAN. VLAN group traffic is encapsulated and
+encrypted in mac80211 and driver needs to set flags for the VLAN group
+traffic to skip hardware encapsulation and encryption.
+
+VLAN group traffic utilizes ext MSDU and HTT Metadata to set
+encapsulation type to RAW and encryption type to OPEN in order to
+inform firmware to skip hardware encapsulation and encryption.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.0.1-00029-QCAHKSWPL_SILICONZ-1
+Tested-on: WCN7850 hw2.0 PCI WLAN.HMT.1.0.c5-00481-QCAHMTSWPL_V1.0_V2.0_SILICONZ-3
+
+Signed-off-by: Muna Sinada <quic_msinada@quicinc.com>
+Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://msgid.link/20240515192830.995013-1-quic_msinada@quicinc.com
+---
+ drivers/net/wireless/ath/ath12k/dp_tx.c    | 60 ++++++++++++++++++++++
+ drivers/net/wireless/ath/ath12k/hal_desc.h | 25 +++++++++
+ drivers/net/wireless/ath/ath12k/hw.c       |  6 ++-
+ 3 files changed, 89 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath12k/dp_tx.c b/drivers/net/wireless/ath/ath12k/dp_tx.c
+index f57bc8d69715..c4cfa7cf7cb9 100644
+--- a/drivers/net/wireless/ath/ath12k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath12k/dp_tx.c
+@@ -124,6 +124,44 @@ static void ath12k_hal_tx_cmd_ext_desc_setup(struct ath12k_base *ab,
+ 						 HAL_TX_MSDU_EXT_INFO1_ENCRYPT_TYPE);
+ }
+ 
++#define HTT_META_DATA_ALIGNMENT 0x8
++
++static void *ath12k_dp_metadata_align_skb(struct sk_buff *skb, u8 tail_len)
++{
++	struct sk_buff *tail;
++	void *metadata;
++
++	if (unlikely(skb_cow_data(skb, tail_len, &tail) < 0))
++		return NULL;
++
++	metadata = pskb_put(skb, tail, tail_len);
++	memset(metadata, 0, tail_len);
++	return metadata;
++}
++
++/* Preparing HTT Metadata when utilized with ext MSDU */
++static int ath12k_dp_prepare_htt_metadata(struct sk_buff *skb)
++{
++	struct hal_tx_msdu_metadata *desc_ext;
++	u8 htt_desc_size;
++	/* Size rounded of multiple of 8 bytes */
++	u8 htt_desc_size_aligned;
++
++	htt_desc_size = sizeof(struct hal_tx_msdu_metadata);
++	htt_desc_size_aligned = ALIGN(htt_desc_size, HTT_META_DATA_ALIGNMENT);
++
++	desc_ext = ath12k_dp_metadata_align_skb(skb, htt_desc_size_aligned);
++	if (!desc_ext)
++		return -ENOMEM;
++
++	desc_ext->info0 = le32_encode_bits(1, HAL_TX_MSDU_METADATA_INFO0_ENCRYPT_FLAG) |
++			  le32_encode_bits(0, HAL_TX_MSDU_METADATA_INFO0_ENCRYPT_TYPE) |
++			  le32_encode_bits(1,
++					   HAL_TX_MSDU_METADATA_INFO0_HOST_TX_DESC_POOL);
++
++	return 0;
++}
++
+ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_vif *arvif,
+ 		 struct sk_buff *skb)
+ {
+@@ -145,6 +183,7 @@ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_vif *arvif,
+ 	u8 ring_selector, ring_map = 0;
+ 	bool tcl_ring_retry;
+ 	bool msdu_ext_desc = false;
++	bool add_htt_metadata = false;
+ 
+ 	if (test_bit(ATH12K_FLAG_CRASH_FLUSH, &ar->ab->dev_flags))
+ 		return -ESHUTDOWN;
+@@ -248,6 +287,18 @@ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_vif *arvif,
+ 		goto fail_remove_tx_buf;
+ 	}
+ 
++	if (!test_bit(ATH12K_FLAG_HW_CRYPTO_DISABLED, &ar->ab->dev_flags) &&
++	    !(skb_cb->flags & ATH12K_SKB_HW_80211_ENCAP) &&
++	    !(skb_cb->flags & ATH12K_SKB_CIPHER_SET) &&
++	    ieee80211_has_protected(hdr->frame_control)) {
++		/* Add metadata for sw encrypted vlan group traffic */
++		add_htt_metadata = true;
++		msdu_ext_desc = true;
++		ti.flags0 |= u32_encode_bits(1, HAL_TCL_DATA_CMD_INFO2_TO_FW);
++		ti.encap_type = HAL_TCL_ENCAP_TYPE_RAW;
++		ti.encrypt_type = HAL_ENCRYPT_TYPE_OPEN;
++	}
++
+ 	tx_desc->skb = skb;
+ 	tx_desc->mac_id = ar->pdev_idx;
+ 	ti.desc_id = tx_desc->desc_id;
+@@ -269,6 +320,15 @@ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_vif *arvif,
+ 		msg = (struct hal_tx_msdu_ext_desc *)skb_ext_desc->data;
+ 		ath12k_hal_tx_cmd_ext_desc_setup(ab, msg, &ti);
+ 
++		if (add_htt_metadata) {
++			ret = ath12k_dp_prepare_htt_metadata(skb_ext_desc);
++			if (ret < 0) {
++				ath12k_dbg(ab, ATH12K_DBG_DP_TX,
++					   "Failed to add HTT meta data, dropping packet\n");
++				goto fail_unmap_dma;
++			}
++		}
++
+ 		ti.paddr = dma_map_single(ab->dev, skb_ext_desc->data,
+ 					  skb_ext_desc->len, DMA_TO_DEVICE);
+ 		ret = dma_mapping_error(ab->dev, ti.paddr);
+diff --git a/drivers/net/wireless/ath/ath12k/hal_desc.h b/drivers/net/wireless/ath/ath12k/hal_desc.h
+index 814c02f876d6..02b7db06b24e 100644
+--- a/drivers/net/wireless/ath/ath12k/hal_desc.h
++++ b/drivers/net/wireless/ath/ath12k/hal_desc.h
+@@ -2984,4 +2984,29 @@ struct hal_mon_dest_desc {
+  *	updated by SRNG.
+  */
+ 
++#define HAL_TX_MSDU_METADATA_INFO0_ENCRYPT_FLAG		BIT(8)
++#define HAL_TX_MSDU_METADATA_INFO0_ENCRYPT_TYPE		GENMASK(16, 15)
++#define HAL_TX_MSDU_METADATA_INFO0_HOST_TX_DESC_POOL	BIT(31)
++
++struct hal_tx_msdu_metadata {
++	__le32 info0;
++	__le32 rsvd0[6];
++} __packed;
++
++/* hal_tx_msdu_metadata
++ * valid_encrypt_type
++ *		if set, encrypt type is valid
++ * encrypt_type
++ *		0 = NO_ENCRYPT,
++ *		1 = ENCRYPT,
++ *		2 ~ 3 - Reserved
++ * host_tx_desc_pool
++ *		If set, Firmware allocates tx_descriptors
++ *		in WAL_BUFFERID_TX_HOST_DATA_EXP,instead
++ *		of WAL_BUFFERID_TX_TCL_DATA_EXP.
++ *		Use cases:
++ *		Any time firmware uses TQM-BYPASS for Data
++ *		TID, firmware expect host to set this bit.
++ */
++
+ #endif /* ATH12K_HAL_DESC_H */
+diff --git a/drivers/net/wireless/ath/ath12k/hw.c b/drivers/net/wireless/ath/ath12k/hw.c
+index 5a1d406e6b1f..b45f929a0204 100644
+--- a/drivers/net/wireless/ath/ath12k/hw.c
++++ b/drivers/net/wireless/ath/ath12k/hw.c
+@@ -891,7 +891,8 @@ static const struct ath12k_hw_params ath12k_hw_params[] = {
+ 
+ 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 					BIT(NL80211_IFTYPE_AP) |
+-					BIT(NL80211_IFTYPE_MESH_POINT),
++					BIT(NL80211_IFTYPE_MESH_POINT) |
++					BIT(NL80211_IFTYPE_AP_VLAN),
+ 		.supports_monitor = false,
+ 
+ 		.idle_ps = false,
+@@ -1038,7 +1039,8 @@ static const struct ath12k_hw_params ath12k_hw_params[] = {
+ 
+ 		.interface_modes = BIT(NL80211_IFTYPE_STATION) |
+ 					BIT(NL80211_IFTYPE_AP) |
+-					BIT(NL80211_IFTYPE_MESH_POINT),
++					BIT(NL80211_IFTYPE_MESH_POINT) |
++					BIT(NL80211_IFTYPE_AP_VLAN),
+ 		.supports_monitor = false,
+ 
+ 		.idle_ps = false,
+-- 
+2.39.5
+

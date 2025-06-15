@@ -1,0 +1,36 @@
+From 28a9972e0f0693cd4d08f431c992fa6be39c788c Mon Sep 17 00:00:00 2001
+From: Nicolas Escande <nico.escande@gmail.com>
+Date: Wed, 22 Jan 2025 17:01:12 +0100
+Subject: [PATCH] wifi: ath12k: fix skb_ext_desc leak in ath12k_dp_tx() error
+ path
+
+When vlan support was added, we missed that when
+ath12k_dp_prepare_htt_metadata() returns an error we also need to free
+the skb holding the metadata before going on with the cleanup process.
+
+Compile tested only.
+
+Fixes: 26dd8ccdba4d ("wifi: ath12k: dynamic VLAN support")
+Signed-off-by: Nicolas Escande <nico.escande@gmail.com>
+Reviewed-by: Aditya Kumar Singh <aditya.kumar.singh@oss.qualcomm.com>
+Link: https://patch.msgid.link/20250122160112.3234558-1-nico.escande@gmail.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath12k/dp_tx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath12k/dp_tx.c b/drivers/net/wireless/ath/ath12k/dp_tx.c
+index a8d341a6df01..e0b85f959cd4 100644
+--- a/drivers/net/wireless/ath/ath12k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath12k/dp_tx.c
+@@ -398,6 +398,7 @@ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_link_vif *arvif,
+ 			if (ret < 0) {
+ 				ath12k_dbg(ab, ATH12K_DBG_DP_TX,
+ 					   "Failed to add HTT meta data, dropping packet\n");
++				kfree_skb(skb_ext_desc);
+ 				goto fail_unmap_dma;
+ 			}
+ 		}
+-- 
+2.39.5
+

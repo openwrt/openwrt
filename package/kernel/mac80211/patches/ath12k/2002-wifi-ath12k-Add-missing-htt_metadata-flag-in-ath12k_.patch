@@ -1,0 +1,36 @@
+From af1c6007a64e78b729eb5a8d149637a820077bee Mon Sep 17 00:00:00 2001
+From: Nicolas Escande <nico.escande@gmail.com>
+Date: Fri, 24 Jan 2025 12:33:31 +0100
+Subject: [PATCH] wifi: ath12k: Add missing htt_metadata flag in ath12k_dp_tx()
+
+When AP-VLAN support was added, the HTT_TCL_META_DATA_VALID_HTT flag
+was not added to the tx_info's meta_data_flags. Without this flag the
+firmware seems to reject all the broadcast (ap-vlan) frames. So add
+the flag, just as ath11k did it in the downstream QSDK project[1].
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.4.1-00199-QCAHKSWPL_SILICONZ-1
+
+Fixes: 26dd8ccdba4d ("wifi: ath12k: dynamic VLAN support")
+Signed-off-by: Nicolas Escande <nico.escande@gmail.com>
+Link: https://git.codelinaro.org/clo/qsdk/oss/system/feeds/wlan-open/-/blob/win.wlan_host_opensource.3.0.r24/patches/ath11k/207-ath11k-Add-support-for-dynamic-vlan.patch # [1]
+Link: https://patch.msgid.link/20250124113331.93476-1-nico.escande@gmail.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+---
+ drivers/net/wireless/ath/ath12k/dp_tx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/ath/ath12k/dp_tx.c b/drivers/net/wireless/ath/ath12k/dp_tx.c
+index 4e11b7b61b82..46a55554c19c 100644
+--- a/drivers/net/wireless/ath/ath12k/dp_tx.c
++++ b/drivers/net/wireless/ath/ath12k/dp_tx.c
+@@ -384,6 +384,7 @@ int ath12k_dp_tx(struct ath12k *ar, struct ath12k_link_vif *arvif,
+ 		add_htt_metadata = true;
+ 		msdu_ext_desc = true;
+ 		ti.flags0 |= u32_encode_bits(1, HAL_TCL_DATA_CMD_INFO2_TO_FW);
++		ti.meta_data_flags |= HTT_TCL_META_DATA_VALID_HTT;
+ 		ti.encap_type = HAL_TCL_ENCAP_TYPE_RAW;
+ 		ti.encrypt_type = HAL_ENCRYPT_TYPE_OPEN;
+ 	}
+-- 
+2.39.5
+
