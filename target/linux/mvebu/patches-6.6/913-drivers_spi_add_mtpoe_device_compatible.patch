@@ -1,0 +1,18 @@
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
+@@ -711,6 +711,7 @@ static const struct spi_device_id spidev
+ 	{ .name = "sx1301" },
+ 	{ .name = "bk4" },
+ 	{ .name = "dhcom-board" },
++	{ .name = "mtpoe" },
+ 	{ .name = "m53cpld" },
+ 	{ .name = "spi-petra" },
+ 	{ .name = "spi-authenta" },
+@@ -741,6 +742,7 @@ static const struct of_device_id spidev_
+ 	{ .compatible = "lwn,bk4", .data = &spidev_of_check },
+ 	{ .compatible = "menlo,m53cpld", .data = &spidev_of_check },
+ 	{ .compatible = "micron,spi-authenta", .data = &spidev_of_check },
++	{ .compatible = "mikrotik,mtpoe", .data = &spidev_of_check },
+ 	{ .compatible = "rohm,bh2228fv", .data = &spidev_of_check },
+ 	{ .compatible = "rohm,dh2228fv", .data = &spidev_of_check },
+ 	{ .compatible = "semtech,sx1301", .data = &spidev_of_check },
