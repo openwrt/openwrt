@@ -5,6 +5,17 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/tplink_tl-st1008f_v2
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93030000
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-ST1008F
+  DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-gpio-pca953x
+  IMAGE_SIZE := 31808k
+endef
+TARGET_DEVICES += tplink_tl-st1008f_v2
+
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
   DEVICE_VENDOR := XikeStor
