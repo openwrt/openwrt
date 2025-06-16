@@ -1,0 +1,67 @@
+From 8bb8609293ff3d8998d75c8db605c0529e83bcd9 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 4 Feb 2025 16:35:48 +0100
+Subject: [PATCH] hwrng: rockchip - store dev pointer in driver struct
+
+The rockchip rng driver does a dance to store the dev pointer in the
+hwrng's unsigned long "priv" member. However, since the struct hwrng
+member of rk_rng is not a pointer, we can use container_of to get the
+struct rk_rng instance from just the struct hwrng*, which means we don't
+have to subvert what little there is in C of a type system and can
+instead store a pointer to the device struct in the rk_rng itself.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/rockchip-rng.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/char/hw_random/rockchip-rng.c
++++ b/drivers/char/hw_random/rockchip-rng.c
+@@ -54,6 +54,7 @@ struct rk_rng {
+ 	void __iomem *base;
+ 	int clk_num;
+ 	struct clk_bulk_data *clk_bulks;
++	struct device *dev;
+ };
+ 
+ /* The mask in the upper 16 bits determines the bits that are updated */
+@@ -70,8 +71,7 @@ static int rk_rng_init(struct hwrng *rng
+ 	/* start clocks */
+ 	ret = clk_bulk_prepare_enable(rk_rng->clk_num, rk_rng->clk_bulks);
+ 	if (ret < 0) {
+-		dev_err((struct device *) rk_rng->rng.priv,
+-			"Failed to enable clks %d\n", ret);
++		dev_err(rk_rng->dev, "Failed to enable clocks: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -105,7 +105,7 @@ static int rk_rng_read(struct hwrng *rng
+ 	u32 reg;
+ 	int ret = 0;
+ 
+-	ret = pm_runtime_resume_and_get((struct device *) rk_rng->rng.priv);
++	ret = pm_runtime_resume_and_get(rk_rng->dev);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -122,8 +122,8 @@ static int rk_rng_read(struct hwrng *rng
+ 	/* Read random data stored in the registers */
+ 	memcpy_fromio(buf, rk_rng->base + TRNG_RNG_DOUT, to_read);
+ out:
+-	pm_runtime_mark_last_busy((struct device *) rk_rng->rng.priv);
+-	pm_runtime_put_sync_autosuspend((struct device *) rk_rng->rng.priv);
++	pm_runtime_mark_last_busy(rk_rng->dev);
++	pm_runtime_put_sync_autosuspend(rk_rng->dev);
+ 
+ 	return (ret < 0) ? ret : to_read;
+ }
+@@ -164,7 +164,7 @@ static int rk_rng_probe(struct platform_
+ 		rk_rng->rng.cleanup = rk_rng_cleanup;
+ 	}
+ 	rk_rng->rng.read = rk_rng_read;
+-	rk_rng->rng.priv = (unsigned long) dev;
++	rk_rng->dev = dev;
+ 	rk_rng->rng.quality = 900;
+ 
+ 	pm_runtime_set_autosuspend_delay(dev, RK_RNG_AUTOSUSPEND_DELAY);
