@@ -5,6 +5,17 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/tplink_tl-st1008f_v2
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93030000
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-ST1008F
+  DEVICE_VARIANT := v2.0
+  DEVICE_PACKAGES := kmod-gpio-pca953x
+  IMAGE_SIZE := 31808k
+endef
+TARGET_DEVICES += tplink_tl-st1008f_v2
+
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
   DEVICE_VENDOR := XikeStor
@@ -19,6 +30,22 @@ define Device/xikestor_sks8300-8x
 	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += xikestor_sks8300-8x
+
+define Device/zyxel_xgs1210-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001210
+  ZYXEL_VERS := ABTY
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1210-12
+  IMAGE_SIZE := 13312k
+  KERNEL_INITRAMFS := \
+        kernel-bin | \
+        append-dtb | \
+        gzip | \
+        zyxel-vers | \
+        uImage gzip
+endef
+TARGET_DEVICES += zyxel_xgs1210-12
 
 define Device/zyxel_xgs1250-12
   SOC := rtl9302

@@ -384,6 +384,18 @@ define Device/jotale_js76x8-32m
 endef
 TARGET_DEVICES += jotale_js76x8-32m
 
+define Device/keenetic_kn-1112
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 16121856
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1112
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801112 -v "KN-1112"
+endef
+TARGET_DEVICES += keenetic_kn-1112
+
+Add-support-Keenetic-4G-(KN-1212)
 define Device/keenetic_kn-1212
   BLOCKSIZE := 64k
   IMAGE_SIZE := 15073280
