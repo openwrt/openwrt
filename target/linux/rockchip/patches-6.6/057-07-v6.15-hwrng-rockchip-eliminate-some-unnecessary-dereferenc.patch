@@ -1,0 +1,42 @@
+From 24aaa42ed65c0811b598674a593fc653d643a7e6 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 4 Feb 2025 16:35:49 +0100
+Subject: [PATCH] hwrng: rockchip - eliminate some unnecessary dereferences
+
+Despite assigning a temporary variable the value of &pdev->dev early on
+in the probe function, the probe function then continues to use this
+construct when it could just use the local dev variable instead.
+
+Simplify this by using the local dev variable directly.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/rockchip-rng.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/char/hw_random/rockchip-rng.c
++++ b/drivers/char/hw_random/rockchip-rng.c
+@@ -148,7 +148,7 @@ static int rk_rng_probe(struct platform_
+ 		return dev_err_probe(dev, rk_rng->clk_num,
+ 				     "Failed to get clks property\n");
+ 
+-	rst = devm_reset_control_array_get_exclusive(&pdev->dev);
++	rst = devm_reset_control_array_get_exclusive(dev);
+ 	if (IS_ERR(rst))
+ 		return dev_err_probe(dev, PTR_ERR(rst), "Failed to get reset property\n");
+ 
+@@ -171,11 +171,11 @@ static int rk_rng_probe(struct platform_
+ 	pm_runtime_use_autosuspend(dev);
+ 	ret = devm_pm_runtime_enable(dev);
+ 	if (ret)
+-		return dev_err_probe(&pdev->dev, ret, "Runtime pm activation failed.\n");
++		return dev_err_probe(dev, ret, "Runtime pm activation failed.\n");
+ 
+ 	ret = devm_hwrng_register(dev, &rk_rng->rng);
+ 	if (ret)
+-		return dev_err_probe(&pdev->dev, ret, "Failed to register Rockchip hwrng\n");
++		return dev_err_probe(dev, ret, "Failed to register Rockchip hwrng\n");
+ 
+ 	return 0;
+ }
