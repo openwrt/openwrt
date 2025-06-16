@@ -14,6 +14,9 @@ define Package/amdgpu-firmware/install
 	$(CP) \
 		$(PKG_BUILD_DIR)/amdgpu/*.bin \
 		$(1)/lib/firmware/amdgpu
+
+	$(INSTALL_DATA) $(DL_DIR)/dcn_3_1_5_dmcub.bin $(1)/lib/firmware/amdgpu
+	$(INSTALL_DATA) $(DL_DIR)/dcn_4_0_1_dmcub.bin $(1)/lib/firmware/amdgpu
 endef
 
 $(eval $(call BuildPackage,amdgpu-firmware))
