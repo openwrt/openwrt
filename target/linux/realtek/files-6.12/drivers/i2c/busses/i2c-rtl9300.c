@@ -149,10 +149,14 @@ static int i2c_write(void __iomem *r0, u8 *buf, int len)
 
 		if (! (i % 4))
 			v = 0;
-		v <<= 8;
-		v |= buf[i];
-		if (i % 4 == 3 || i == len - 1)
+		/* Write from left to right */
+		v |= (buf[i] << 24);
+
+		if (i % 4 == 3 || i == len - 1) {
+			v >>= (8 * (3 - i % 4));
 			writel(v, r0 + (i / 4) * 4);
+		} else
+			v >>= 8;
 	}
 
 	return len;
@@ -213,7 +217,7 @@ static int rtl9300_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		} else if (size == I2C_SMBUS_WORD_DATA) {
 			data->word = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
 		} else if (len > 0) {
-			rtl9300_i2c_read(i2c, &data->block[0], len);
+			rtl9300_i2c_read(i2c, &data->block[1], len);
 		}
 	}
 
@@ -244,7 +248,7 @@ static int rtl9310_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		} else if (size == I2C_SMBUS_WORD_DATA) {
 			data->word = readl(REG(i2c, RTL9310_I2C_DATA));
 		} else if (len > 0) {
-			rtl9310_i2c_read(i2c, &data->block[0], len);
+			rtl9310_i2c_read(i2c, &data->block[1], len);
 		}
 	}
 
