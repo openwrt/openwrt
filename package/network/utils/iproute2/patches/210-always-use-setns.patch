@@ -1,0 +1,16 @@
+--- a/configure
++++ b/configure
+@@ -151,13 +151,9 @@ int main(int argc, char **argv)
+ 	return 0;
+ }
+ EOF
+-    if $CC -I$INCLUDE -o $TMPDIR/setnstest $TMPDIR/setnstest.c >/dev/null 2>&1; then
+ 	echo "IP_CONFIG_SETNS:=y" >>$CONFIG
+ 	echo "yes"
+ 	echo "CFLAGS += -DHAVE_SETNS" >>$CONFIG
+-    else
+-	echo "no"
+-    fi
+     rm -f $TMPDIR/setnstest.c $TMPDIR/setnstest
+ }
+ 
