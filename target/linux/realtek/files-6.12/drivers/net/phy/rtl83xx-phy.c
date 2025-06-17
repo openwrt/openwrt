@@ -97,6 +97,8 @@ static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
 
+static int rtl9310_read_status(struct phy_device *phydev, u32 sds);
+
 static u64 disable_polling(int port)
 {
 	u64 saved_state;
@@ -1502,6 +1504,9 @@ static int rtl9300_read_status(struct phy_device *phydev)
 
 	if (sds_num < 0)
 		return 0;
+
+	if (soc_info.family == RTL9310_FAMILY_ID)
+		return rtl9310_read_status(phydev, sds_num);
 
 	mode = rtl9300_sds_mode_get(sds_num);
 	pr_debug("%s got SDS mode %02x\n", __func__, mode);
@@ -3078,6 +3083,23 @@ static u32 rtl931x_get_analog_sds(u32 sds)
 		return sds_map[sds];
 
 	return sds;
+}
+
+static int rtl9310_read_status(struct phy_device *phydev, u32 sds)
+{
+	u32 asds = rtl931x_get_analog_sds(sds);
+
+	switch (rtl9310_sds_field_r(asds, 0x1f, 0x9, 11, 6)) {
+	case 0x9: /* PHY_INTERFACE_MODE_1000BASEX */
+		phydev->speed = 1000;
+		break;
+	case 0x35: /* PHY_INTERFACE_MODE_10GKR/10GBASER */
+		phydev->speed = 10000;
+		break;
+	}
+	phydev->duplex = DUPLEX_FULL;
+
+	return 0;
 }
 
 void rtl931x_sds_fiber_disable(u32 sds)
