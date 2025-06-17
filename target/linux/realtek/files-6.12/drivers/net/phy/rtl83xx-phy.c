@@ -115,7 +115,10 @@ static u64 disable_polling(int port)
 		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		saved_state = sw_r32(RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		saved_state <<= 32;
+		saved_state |= sw_r32(RTL931X_SMI_PORT_POLLING_CTRL);
+		sw_w32_mask(BIT(port % 32), 0, RTL931X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
 	}
 
@@ -140,7 +143,8 @@ static int resume_polling(u64 saved_state)
 		sw_w32(saved_state, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		sw_w32(saved_state >> 32, RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		sw_w32(saved_state, RTL931X_SMI_PORT_POLLING_CTRL);
 		break;
 	}
 
@@ -3355,7 +3359,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
 		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
 	};
-	u32 asds, dSds, ori, model_info, val;
+	u32 asds, dSds, ori, model_info, val, evenSds;
 	int chiptype = 0;
 
 	asds = rtl931x_get_analog_sds(sds);
@@ -3392,6 +3396,8 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	else
 		dSds = (sds - 1) * 2;
 
+	evenSds = asds - (asds % 2);
+
 	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
 	        rtl931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
 
@@ -3423,8 +3429,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_USXGMII: /* MII_USXGMII_10GSXGMII/10GDXGMII/10GQXGMII: */
-		u32 op_code = 0x6003;
-		u32 evenSds;
+		u32 op_code = 0xaa;
 
 		if (chiptype) {
 			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 1);
@@ -3467,17 +3472,18 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	                                  /* configure 10GR fiber mode=1 */
 		rtl9310_sds_field_w(asds, 0x1f, 0xb, 1, 1, 1);
 
-		/* init fiber_1g */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl931x_sds_rx_rst(sds);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
 
-		/* init auto */
-		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
-		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
-		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2a, 0x7, 15, 15, 0x1);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		rtl9310_sds_field_w(asds, 0x2e, 0xf, 5, 0, 0x2);
+		rtl9310_sds_field_w(asds, 0x6, 13, 6, 6, 1);
+
+		rtl931x_sds_fiber_disable(sds);
+		rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_10GBASER);
+		rtl9310_sds_field_w(asds, 31, 1, 0, 0, 0x0);
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:
@@ -3485,11 +3491,16 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl931x_sds_rx_rst(sds);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x0);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		rtl9310_sds_field_w(asds, 0x6, 13, 6, 6, 1);
+
+		rtl931x_sds_fiber_disable(sds);
+		rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_1000BASEX);
+		rtl9310_sds_field_w(dSds, 31, 1, 0, 0, 0x0);
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
