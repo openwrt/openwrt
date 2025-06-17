@@ -1541,6 +1541,43 @@ static u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int star
 	return (v >> start_bit) & (BIT(l) - 1);
 }
 
+static u32 rtl931x_get_analog_sds(u32 sds)
+{
+	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+
+	if (sds < 14)
+		return sds_map[sds];
+
+	return sds;
+}
+
+static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+{
+	int l = end_bit - start_bit + 1;
+	u32 data = v;
+
+	if (l < 32) {
+		u32 mask = BIT(l) - 1;
+
+		data = rtl931x_read_sds_phy(sds, page, reg);
+		data &= ~(mask << start_bit);
+		data |= (v & mask) << start_bit;
+	}
+
+	rtl931x_write_sds_phy(sds, page, reg, data);
+}
+
+static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+{
+	int l = end_bit - start_bit + 1;
+	u32 v = rtl931x_read_sds_phy(sds, page, reg);
+
+	if (l >= 32)
+		return v;
+
+	return (v >> start_bit) & (BIT(l) - 1);
+}
+
 /* Read the link and speed status of the internal SerDes of the RTL9300
  */
 static int rtl9300_read_status(struct phy_device *phydev)
@@ -2953,33 +2990,6 @@ int rtl9300_sds_cmu_band_get(int sds)
 	return cmu_band;
 }
 
-static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
-{
-	int l = end_bit - start_bit + 1;
-	u32 data = v;
-
-	if (l < 32) {
-		u32 mask = BIT(l) - 1;
-
-		data = rtl930x_read_sds_phy(sds, page, reg);
-		data &= ~(mask << start_bit);
-		data |= (v & mask) << start_bit;
-	}
-
-	rtl931x_write_sds_phy(sds, page, reg, data);
-}
-
-static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
-{
-	int l = end_bit - start_bit + 1;
-	u32 v = rtl931x_read_sds_phy(sds, page, reg);
-
-	if (l >= 32)
-		return v;
-
-	return (v >> start_bit) & (BIT(l) - 1);
-}
-
 static void rtl931x_sds_rst(u32 sds)
 {
 	u32 o, v, o_mode;
@@ -3036,16 +3046,6 @@ static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 	}
 
 	return;
-}
-
-static u32 rtl931x_get_analog_sds(u32 sds)
-{
-	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
-
-	if (sds < 14)
-		return sds_map[sds];
-
-	return sds;
 }
 
 void rtl931x_sds_fiber_disable(u32 sds)
@@ -3781,12 +3781,15 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL9300_FAMILY_ID)
-		return -ENODEV;
-
-	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
-
-	return 0;
+	if (soc_info.family == RTL9300_FAMILY_ID) {
+		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+		return 0;
+	}
+	if (soc_info.family == RTL9310_FAMILY_ID) {
+		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+		return 0;
+	}
+	return -ENODEV;
 }
 
 static struct phy_driver rtl83xx_phy_driver[] = {
