@@ -305,14 +305,7 @@
 			#thermal-sensor-cells = <0>;
 		};
 
-		/* SFP Ports */
-		phy27: ethernet-phy@27 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <27>;
-			sds = < 9 >;
-		};
-
+		INTERNAL_PHY_SDS(27, 9)
 	};
 };
 
