@@ -1983,16 +1983,15 @@ u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	u32 c45_mask = 0;
-	u32 poll_sel[2];
-	u32 poll_ctrl = 0;
-	u32 private_poll_mask = 0;
-	u32 v;
 	bool uses_usxgmii = false; /* For the Aquantia PHYs */
 	bool uses_hisgmii = false; /* For the RTL8221/8226 */
+	u32 private_poll_mask = 0;
+	u32 poll_sel[2] = { 0 };
+	u32 poll_ctrl = 0;
+	u32 c45_mask = 0;
+	u32 v;
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	poll_sel[0] = poll_sel[1] = 0;
 	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
 		int pos;
 
@@ -2021,7 +2020,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 			c45_mask |= BIT(i + 16);
 
 	pr_info("c45_mask: %08x\n", c45_mask);
-	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
+	sw_w32_mask(GENMASK(19, 16), c45_mask, RTL930X_SMI_GLB_CTRL);
 
 	/* Set the MAC type of each port according to the PHY-interface */
 	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
@@ -2088,10 +2087,10 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	u32 c45_mask = 0;
-	u32 poll_sel[4];
+	bool mdc_on[RTMDIO_MAX_SMI_BUS] = { 0 };
+	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
-	bool mdc_on[4];
+	u32 c45_mask = 0;
 
 	pr_info("%s called\n", __func__);
 	/* Disable port polling for configuration purposes */
@@ -2099,9 +2098,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
 	msleep(100);
 
-	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
 	/* Mapping of port to phy-addresses on an SMI bus */
-	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
 	for (int i = 0; i < RTL931X_CPU_PORT; i++) {
 		u32 pos;
 
@@ -2142,7 +2139,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	 * sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
 	 * sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
 	 */
-	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
+	sw_w32_mask(GENMASK(7, 0), c45_mask, RTL931X_SMI_GLB_CTRL1);
 
 	return 0;
 }
