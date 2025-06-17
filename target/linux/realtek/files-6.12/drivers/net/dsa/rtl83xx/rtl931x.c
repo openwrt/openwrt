@@ -1644,7 +1644,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl931x_set_ageing_time,
-	/* .smi_poll_ctrl does not exist */
+	.smi_poll_ctrl = RTL931X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl931x_exec_tbl0_cmd,
 	.exec_tbl1_cmd = rtl931x_exec_tbl1_cmd,
@@ -1691,6 +1691,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_write = rtl931x_pie_rule_write,
 	.pie_rule_add = rtl931x_pie_rule_add,
 	.pie_rule_rm = rtl931x_pie_rule_rm,
+	.l2_hash_seed = rtl931x_l2_hash_seed,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtl931x_led_init,
