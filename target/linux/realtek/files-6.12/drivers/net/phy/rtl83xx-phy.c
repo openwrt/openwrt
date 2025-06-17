@@ -98,6 +98,8 @@ static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
 
+static int rtl9310_read_status(struct phy_device *phydev);
+
 static u64 disable_polling(int port)
 {
 	u64 saved_state;
@@ -1555,6 +1557,9 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	int phy_addr = phydev->mdio.addr;
 	struct device_node *dn;
 	u32 sds_num = 0, status, latch_status, mode;
+
+	if (soc_info.family == RTL9310_FAMILY_ID)
+		return rtl9310_read_status(phydev);
 
 	if (dev->of_node) {
 		dn = dev->of_node;
@@ -3075,6 +3080,39 @@ static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int star
 		return v;
 
 	return (v >> start_bit) & (BIT(l) - 1);
+}
+
+static int rtl9310_read_status(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *dn;
+	u32 sds_num = 0;
+	int asds; // <--- TODO THIS IS NEVER WRITTTEN
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+	switch (rtl9310_sds_field_r(asds, 0x1f, 0x9, 11, 6)) {
+	case 0x9: /* PHY_INTERFACE_MODE_1000BASEX */
+		phydev->speed = 1000;
+		break;
+	case 0x35: /* PHY_INTERFACE_MODE_10GKR/10GBASER */
+		phydev->speed = 10000;
+		break;
+	}
+	phydev->duplex = DUPLEX_FULL;
+
+	return 0;
 }
 
 static void rtl931x_sds_rst(u32 sds)
