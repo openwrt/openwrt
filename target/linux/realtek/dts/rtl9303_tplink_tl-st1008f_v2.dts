@@ -274,61 +274,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy0: ethernet-phy@0 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <0>;
-			sds = <2>;
-		};
-
-		phy8: ethernet-phy@8 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <8>;
-			sds = <3>;
-		};
-
-		phy16: ethernet-phy@10 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <16>;
-			sds = <4>;
-		};
-
-		phy20: ethernet-phy@14 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <20>;
-			sds = <5>;
-		};
-
-		phy24: ethernet-phy@18 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <24>;
-			sds = <6>;
-		};
-
-		phy25: ethernet-phy@19 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <25>;
-			sds = <7>;
-		};
-
-		phy26: ethernet-phy@1a {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <26>;
-			sds = <8>;
-		};
-
-		phy27: ethernet-phy@1b {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <27>;
-			sds = <9>;
-		};
+		INTERNAL_PHY_SDS(0, 2)
+		INTERNAL_PHY_SDS(8, 3)
+		INTERNAL_PHY_SDS(16, 4)
+		INTERNAL_PHY_SDS(20, 5)
+		INTERNAL_PHY_SDS(24, 6)
+		INTERNAL_PHY_SDS(25, 7)
+		INTERNAL_PHY_SDS(26, 8)
+		INTERNAL_PHY_SDS(27, 9)
 	};
 };
 
