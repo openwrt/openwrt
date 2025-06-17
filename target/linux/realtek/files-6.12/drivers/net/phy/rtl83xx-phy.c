@@ -120,7 +120,10 @@ static u64 disable_polling(int port)
 		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		saved_state = sw_r32(RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		saved_state <<= 32;
+		saved_state |= sw_r32(RTL931X_SMI_PORT_POLLING_CTRL);
+		sw_w32_mask(BIT(port % 32), 0, RTL931X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
 	}
 
@@ -145,7 +148,8 @@ static int resume_polling(u64 saved_state)
 		sw_w32(saved_state, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		sw_w32(saved_state >> 32, RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		sw_w32(saved_state, RTL931X_SMI_PORT_POLLING_CTRL);
 		break;
 	}
 
