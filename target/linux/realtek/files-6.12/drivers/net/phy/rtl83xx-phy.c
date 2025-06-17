@@ -1578,6 +1578,44 @@ static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int star
 	return (v >> start_bit) & (BIT(l) - 1);
 }
 
+static int rtl9310_read_status(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int phy_addr = phydev->mdio.addr;
+	struct device_node *dn;
+	u32 sds_num = 0;
+	int asds, dSds;
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+		pr_debug("%s: Port %d, Serdes is %d\n", __func__, phy_addr, sds_num);
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+
+	pr_debug("%s: sds: %u, asds: %d, dSds: %d has link: %d\n", __func__, sds_num, asds, dSds, phydev->link?1:0);
+
+	switch(rtl9310_sds_field_r(asds, 0x1f, 0x9, 11, 6)) {
+		case 0x9: /* PHY_INTERFACE_MODE_1000BASEX */
+			phydev->speed = 1000;
+			break;
+		case 0x35: /* PHY_INTERFACE_MODE_10GKR/10GBASER */
+			phydev->speed = 10000;
+			break;
+	}
+	phydev->duplex = DUPLEX_FULL;
+
+	return 0;
+}
+
 /* Read the link and speed status of the internal SerDes of the RTL9300
  */
 static int rtl9300_read_status(struct phy_device *phydev)
@@ -1586,6 +1624,9 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	int phy_addr = phydev->mdio.addr;
 	struct device_node *dn;
 	u32 sds_num = 0, status, latch_status, mode;
+
+	if (soc_info.family == RTL9310_FAMILY_ID)
+		return rtl9310_read_status(phydev);
 
 	if (dev->of_node) {
 		dn = dev->of_node;
