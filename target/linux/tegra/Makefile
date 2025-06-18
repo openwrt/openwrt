@@ -13,6 +13,7 @@ CPU_SUBTYPE := vfpv3-d16
 SUBTARGETS := generic
 
 KERNEL_PATCHVER := 6.6
+KERNEL_TESTING_PATCHVER := 6.12
 
 include $(INCLUDE_DIR)/target.mk
 
