@@ -530,13 +530,15 @@ void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 
 static u64 rtl931x_traffic_get(int source)
 {
-	u32 v;
+	u64 v;
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 
 	rtl_table_read(r, source);
 	v = sw_r32(rtl_table_data(r, 0));
+	v <<= 32;
+	v |= sw_r32(rtl_table_data(r, 1));
+	v >>= 7;
 	rtl_table_release(r);
-	v = v >> 3;
 
 	return v;
 }
@@ -546,7 +548,8 @@ static void rtl931x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 
-	sw_w32((dest_matrix << 3), rtl_table_data(r, 0));
+	sw_w32(dest_matrix >> (32 - 7), rtl_table_data(r, 0));
+	sw_w32(dest_matrix << 7, rtl_table_data(r, 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
@@ -555,7 +558,7 @@ static void rtl931x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
-	sw_w32_mask(0, BIT(dest + 3), rtl_table_data(r, 0));
+	sw_w32_mask(0, BIT((dest + 7) % 32), rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
@@ -564,7 +567,7 @@ static void rtl931x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 6);
 	rtl_table_read(r, source);
-	sw_w32_mask(BIT(dest + 3), 0, rtl_table_data(r, 0));
+	sw_w32_mask(BIT((dest + 7) % 32), 0, rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
 	rtl_table_release(r);
 }
