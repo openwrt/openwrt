@@ -1,0 +1,86 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7986a.dtsi
+@@ -25,6 +25,17 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			#cooling-cells = <2>;
++
++
++			cache {
++				compatible = "cache";
++				cache-level = <1>;
++				cache-unified;
++				cache-size = <65536>;
++				cache-line-size = <64>;
++				cache-sets = <256>;
++				next-level-cache = <&l2>;
++			};
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -33,6 +44,17 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			#cooling-cells = <2>;
++
++
++			cache {
++				compatible = "cache";
++				cache-level = <1>;
++				cache-unified;
++				cache-size = <65536>;
++				cache-line-size = <64>;
++				cache-sets = <256>;
++				next-level-cache = <&l2>;
++			};
+ 		};
+ 
+ 		cpu2: cpu@2 {
+@@ -41,6 +63,17 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			#cooling-cells = <2>;
++
++
++			cache {
++				compatible = "cache";
++				cache-level = <1>;
++				cache-unified;
++				cache-size = <65536>;
++				cache-line-size = <64>;
++				cache-sets = <256>;
++				next-level-cache = <&l2>;
++			};
+ 		};
+ 
+ 		cpu3: cpu@3 {
+@@ -49,9 +82,29 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			#cooling-cells = <2>;
++
++
++			cache {
++				compatible = "cache";
++				cache-level = <1>;
++				cache-unified;
++				cache-size = <65536>;
++				cache-line-size = <64>;
++				cache-sets = <256>;
++				next-level-cache = <&l2>;
++			};
+ 		};
+ 	};
+ 
++	l2: l2-cache {
++		compatible = "cache";
++		cache-level = <2>;
++		cache-unified;
++		cache-size = <524288>;
++		cache-line-size = <64>;
++		cache-sets = <512>;
++	};
++
+ 	clk40m: oscillator-40m {
+ 		compatible = "fixed-clock";
+ 		clock-frequency = <40000000>;
