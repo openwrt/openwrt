@@ -65,6 +65,17 @@ define Device/friendlyarm_nanopi-r2s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r2s
 
+define Device/friendlyarm_nanopi-neo3
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi NEO3
+  SOC := rk3328
+  UBOOT_DEVICE_NAME := nanopi-neo3-rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-neo3 | pine64-bin | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-usb-net kmod-usb-net-rtl8152
+  SUPPORTED_DEVICES := friendlyarm,nanopi-neo3
+endef
+TARGET_DEVICES += friendlyarm_nanopi-neo3
+
 define Device/friendlyarm_nanopi-r3s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R3S
@@ -216,14 +227,14 @@ define Device/radxa_rock-5b
 endef
 TARGET_DEVICES += radxa_rock-5b
 
-define Device/radxa_rock-pi-4a
+define Device/radxa_rock-4a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi 4A
   SOC := rk3399
   SUPPORTED_DEVICES := radxa,rockpi4a radxa,rockpi4
   UBOOT_DEVICE_NAME := rock-pi-4-rk3399
 endef
-TARGET_DEVICES += radxa_rock-pi-4a
+TARGET_DEVICES += radxa_rock-4a
 
 define Device/radxa_rock-pi-e
   DEVICE_VENDOR := Radxa
