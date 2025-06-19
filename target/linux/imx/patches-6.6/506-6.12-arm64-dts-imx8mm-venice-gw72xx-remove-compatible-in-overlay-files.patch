@@ -1,0 +1,60 @@
+From f384d2828f0d5be67fcd69a7c4756f82465a7f2a Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@denx.de>
+Date: Mon, 1 Jul 2024 20:12:29 -0300
+Subject: [PATCH] arm64: dts: imx8mm-venice-gw72xx-0x: Remove compatible from
+ dtso
+
+There is no need to describe the compatible string inside
+a dtso file.
+
+dt-schema produces super verbose warnings about that.
+
+Signed-off-by: Fabio Estevam <festevam@denx.de>
+Acked-by: Parthiban Nallathambi <parthiban@linumiz.com>
+Acked-by: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs232-rts.dtso | 4 ----
+ .../boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs422.dtso     | 4 ----
+ .../boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs485.dtso     | 4 ----
+ 3 files changed, 12 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs232-rts.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs232-rts.dtso
+@@ -15,10 +15,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw72xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs422.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs422.dtso
+@@ -18,10 +18,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw72xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs485.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw72xx-0x-rs485.dtso
+@@ -18,10 +18,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw72xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;
