@@ -31,7 +31,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* Issue a read operation for this MAC */
  	ret = b53_arl_rw_op(dev, 1);
-@@ -2844,6 +2845,9 @@ static int b53_switch_init(struct b53_de
+@@ -2840,6 +2841,9 @@ static int b53_switch_init(struct b53_de
  		}
  	}
  
@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	dev->num_ports = fls(dev->enabled_ports);
  
  	dev->ds->num_ports = min_t(unsigned int, dev->num_ports, DSA_MAX_PORTS);
-@@ -2945,10 +2949,24 @@ int b53_switch_detect(struct b53_device
+@@ -2941,10 +2945,24 @@ int b53_switch_detect(struct b53_device
  		b53_write16(dev, B53_VLAN_PAGE, B53_VLAN_TABLE_ACCESS_25, 0xf);
  		b53_read16(dev, B53_VLAN_PAGE, B53_VLAN_TABLE_ACCESS_25, &tmp);
  
