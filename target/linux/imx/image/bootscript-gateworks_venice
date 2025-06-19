@@ -22,7 +22,7 @@ echo "Gateworks Venice OpenWrt Boot script v1.0"
 #    partition, therefore we add 1 to the current partition
 setexpr rootpart ${distro_bootpart} + 1 # root on 'next' partition
 part uuid ${devtype} ${devnum}:${rootpart} uuid
-setenv bootargs ${bootargs} console=${console} root=PARTUUID=${uuid} rootfstype=squashfs,ext4,f2fs rootwait
+setenv bootargs ${bootargs} console=${console} root=PARTUUID=${uuid} rootfstype=squashfs,ext4,f2fs rootwait pci=noaer
 
 # load dtb (we try fdt_file and then fdt_file{1,2,3,4,5})
 echo "loading DTB..."
