@@ -8,6 +8,7 @@ define Build/boot-img-ext4
 	rm -fR $@.boot
 	mkdir -p $@.boot
 	$(foreach dts,$(DEVICE_DTS), $(CP) $(KDIR)/image-$(dts).dtb $@.boot/$(dts).dtb;)
+	$(foreach dtbo,$(DEVICE_DTS_OVERLAY), $(CP) $(KDIR)/image-$(dtbo).dtbo $@.boot/$(dtbo).dtbo;)
 	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
 	-$(CP) $@-boot.scr $@.boot/boot.scr
 	make_ext4fs -J -L kernel -l $(CONFIG_TARGET_KERNEL_PARTSIZE)M \
@@ -64,6 +65,7 @@ define Device/gateworks_venice
   BOOT_SCRIPT := gateworks_venice
   PARTITION_OFFSET := 16M
   DEVICE_DTS := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*-venice*.dts)))
+  DEVICE_DTS_OVERLAY := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*-venice*.dtso)))
   DEVICE_PACKAGES := \
 	kmod-hwmon-gsc kmod-rtc-ds1672 kmod-eeprom-at24 \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-pps-gpio \
