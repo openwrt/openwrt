@@ -1,0 +1,110 @@
+/*
+ * rt-loader board functions
+ * (c) 2025 Markus Stockhausen
+ */
+
+#include "globals.h"
+#include "memory.h"
+#include "nanoprintf.h"
+
+#define DRAM_CONFIG_REG			0xb8001004
+#define UART_BUFFER_REG			0xb8002000
+#define UART_LINE_STATUS_REG		0xb8002014
+#define UART_TX_READY			(1 << 29)
+
+#define RTL838X_ENABLE_RW_MASK		0x3
+#define RTL838X_INT_RW_CTRL_REG		0xbb000058
+#define RTL838X_MODEL_NAME_INFO_REG	0xbb0000d4
+#define RTL839X_MODEL_NAME_INFO_REG	0xbb000ff0
+#define RTL83XX_CHIP_INFO_EN		0xa0000000
+#define RTL93XX_MODEL_NAME_INFO_REG	0xbb000004
+#define RTL93XX_CHIP_INFO_EN		0xa0000
+
+/*
+ * board_putchar() is the central function to write to serial console of the device. Some printf
+ * libraries (e.g. https://github.com/mpaland/printf) need a fixed function name like _putchar.
+ * To keep the original library as is, link the two functions with gcc compiler option
+ * -D_putchar=board_putchar
+ */
+
+void board_putchar(int ch, void *ctx)
+{
+	while (!(ioread32(UART_LINE_STATUS_REG) & UART_TX_READY));
+	iowrite32(((int)ch) << 24, UART_BUFFER_REG);
+
+	if (ch == '\n')
+		board_putchar('\r', ctx);
+}
+
+/*
+ * board_get_memory() does what it is named after. On Realtek switches the DRAM config register
+ * has information about bank count, bus width, ... From that the memory size can be derived.
+ */
+
+unsigned int board_get_memory(void)
+{
+	unsigned int dcr = ioread32(DRAM_CONFIG_REG);
+	char ROWCNTv[] = {11, 12, 13, 14, 15, 16};
+	char COLCNTv[] = {8, 9, 10, 11, 12};
+	char BNKCNTv[] = {1, 2, 3};
+	char BUSWIDv[] = {0, 1, 2};
+
+	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] +
+		     ROWCNTv[(dcr >> 20) & 0xf] + COLCNTv[(dcr >> 16) & 0xf]);
+}
+
+/*
+ * board_get_system() generates a readable system name that will be printed during startup.
+ * Formatting can be whatever is helpful.
+ */
+
+void board_get_system(char *buffer, int len)
+{
+	unsigned int chip_id, model_id, model_version, chip_version;
+	unsigned int reg, val, act;
+
+	act = RTL93XX_CHIP_INFO_EN;
+	reg = RTL93XX_MODEL_NAME_INFO_REG;
+	val = ioread32(reg);
+
+	if ((val & 0xffec0000) == 0x93000000)
+		goto found;
+
+	act = RTL83XX_CHIP_INFO_EN;
+	reg = RTL839X_MODEL_NAME_INFO_REG;
+	val = ioread32(reg);
+	if ((val & 0xfff80000) == 0x83900000)
+		goto found;
+
+	iowrite32(0x3, RTL838X_INT_RW_CTRL_REG);
+	reg = RTL838X_MODEL_NAME_INFO_REG;
+	val = ioread32(reg);
+found:
+	model_id = val >> 16;
+	model_version = (val >> 11) & 0x1f;
+
+	iowrite32(act, reg + 4);
+	val = ioread32(reg + 4);
+	chip_id = val & 0xffff;
+
+	if (model_id < 0x9300)
+		chip_version = val >> 16 & 0x1f;
+	else
+		chip_version = val >> 28 & 0x0f;
+
+	snprintf(buffer, len, "RTL%04X%c (chip id %04x%c)",
+		 model_id, model_version ? model_version + 64 : 0,
+		 chip_id, chip_version ? chip_version + 64 : 0);
+}
+
+/*
+ * board_panic() is called in critical cases. Whatever is needed can be done here. Maybe
+ * an automatic reboot can be issued some day. For now just halt processing.
+ */
+
+void board_panic(void)
+{
+	printf("halt system\n");
+	while (1) {
+	}
+}
