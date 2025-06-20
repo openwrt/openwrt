@@ -242,22 +242,8 @@
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};
 
-		/* SFP0 Ports */
-		phy26: ethernet-phy@26 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <26>;
-			sds = < 8 >;
-		};
-
-		/* SFP1 Ports */
-		phy27: ethernet-phy@27 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <27>;
-			sds = < 9 >;
-		};
-
+		INTERNAL_PHY_SDS(26, 8)
+		INTERNAL_PHY_SDS(27, 9)
 	};
 };
 
