@@ -1,0 +1,59 @@
+From e6fab4c05f655b834587bc06f0274f69cdc43171 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 18:32:11 +0800
+Subject: [PATCH 13/16] MIPS: vpe-mt: drop unused functions vpe_alloc() and
+ vpe_start()
+
+These two functions are defined but unused. Removing them to silence
+the missing prototypes warnings:
+
+arch/mips/kernel/vpe-mt.c:180:7: error: no previous prototype for 'vpe_alloc' [-Werror=missing-prototypes]
+  180 | void *vpe_alloc(void)
+      |       ^~~~~~~~~
+arch/mips/kernel/vpe-mt.c:198:5: error: no previous prototype for 'vpe_start' [-Werror=missing-prototypes]
+  198 | int vpe_start(void *vpe, unsigned long start)
+      |     ^~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/kernel/vpe-mt.c | 29 -----------------------------
+ 1 file changed, 29 deletions(-)
+
+--- a/arch/mips/kernel/vpe-mt.c
++++ b/arch/mips/kernel/vpe-mt.c
+@@ -172,35 +172,6 @@ void cleanup_tc(struct tc *tc)
+ 	local_irq_restore(flags);
+ }
+ 
+-/* module wrapper entry points */
+-/* give me a vpe */
+-void *vpe_alloc(void)
+-{
+-	int i;
+-	struct vpe *v;
+-
+-	/* find a vpe */
+-	for (i = 1; i < MAX_VPES; i++) {
+-		v = get_vpe(i);
+-		if (v != NULL) {
+-			v->state = VPE_STATE_INUSE;
+-			return v;
+-		}
+-	}
+-	return NULL;
+-}
+-EXPORT_SYMBOL(vpe_alloc);
+-
+-/* start running from here */
+-int vpe_start(void *vpe, unsigned long start)
+-{
+-	struct vpe *v = vpe;
+-
+-	v->__start = start;
+-	return vpe_run(v);
+-}
+-EXPORT_SYMBOL(vpe_start);
+-
+ /* halt it for now */
+ static int vpe_stop(void *vpe)
+ {

@@ -47,7 +47,6 @@ define Device/bt_homehub-v3a
 	kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
 	uboot-envtools
   SUPPORTED_DEVICES += BTHOMEHUBV3A
-  DEFAULT := n
 endef
 TARGET_DEVICES += bt_homehub-v3a
 
@@ -154,7 +153,6 @@ define Device/zte_h201l
 	kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-tapi kmod-ltq-vmmc
   SUPPORTED_DEVICES += H201L
-  DEFAULT := n
 endef
 TARGET_DEVICES += zte_h201l
 

@@ -1,0 +1,27 @@
+From ada0c7fd1b2e6daaf64bf8649cc58afaceed1a3d Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 18:11:41 +0800
+Subject: [PATCH 02/16] MIPS: lantiq: xway: mark dma_init() as static
+
+Fix the following missing-prototypes build warning:
+
+arch/mips/lantiq/xway/dma.c:293:1: error: no previous prototype for 'dma_init' [-Werror=missing-prototypes]
+  293 | dma_init(void)
+      | ^~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/lantiq/xway/dma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/lantiq/xway/dma.c
++++ b/arch/mips/lantiq/xway/dma.c
+@@ -289,7 +289,7 @@ static struct platform_driver dma_driver
+ 	},
+ };
+ 
+-int __init
++static int __init
+ dma_init(void)
+ {
+ 	return platform_driver_register(&dma_driver);
