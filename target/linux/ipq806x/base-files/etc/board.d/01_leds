@@ -22,16 +22,11 @@ askey,rt4230w-rev6)
 	ucidef_set_led_netdev "lan4-port-activity" "LAN4-PORT-ACTIVITY" "qca8k-0.0:04:amber:lan" "lan4" "tx rx"
 	;;
 buffalo,wxr-2533dhp)
-	ucidef_set_led_wlan "wlan" "WLAN" "white:wireless" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "white:internet" "wan"
 	;;
 compex,wpq864)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "pcie-usb" "PCIe USB" "green:usb-pcie" "usb3-port1"
-	;;
-edgecore,ecw5410)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
 	;;
 extreme,ap3935)
 	ucidef_set_led_netdev "wan" "wan" "orange:lan1" "eth0"
@@ -42,20 +37,13 @@ fortinet,fap-421e)
 	ucidef_set_led_netdev "eth1-1000" "ETH1-1000" "yellow:eth1" "eth0" "link_1000"
 	ucidef_set_led_netdev "eth2-100" "ETH2-100" "amber:eth2" "eth1" "link_100"
 	ucidef_set_led_netdev "eth2-1000" "ETH2-1000" "yellow:eth2" "eth1" "link_1000"
-	ucidef_set_led_wlan "wlan2g" "2.4G" "yellow:2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "5G" "yellow:5g" "phy0tpt"
 	ucidef_set_led_usbport "usb" "USB" "amber:power" "usb1-port1" "usb2-port1"
-	;;
-linksys,e8350-v1)
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wifi" "phy0tpt"
 	;;
 meraki,mr52)
 	ucidef_set_led_netdev "eth0" "eth0" "green:lan1" "eth0"
 	ucidef_set_led_netdev "eth1" "eth1" "green:lan2" "eth1"
 	;;
 nec,wg2600hp)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "green:active" "wan"
 	;;
 nec,wg2600hp3)
@@ -88,8 +76,6 @@ netgear,xr500)
 	ucidef_set_led_ide "esata" "eSATA" "white:esata"
 	;;
 nokia,ac400i)
-	ucidef_set_led_wlan "wlan5g" "5G" "green:wlan5g" "wlan0"
-	ucidef_set_led_wlan "wlan2g" "2.4G" "green:wlan2g" "wlan1"
 	ucidef_set_led_netdev "eth1" "ETH1" "green:eth1" "eth0"
 	ucidef_set_led_netdev "eth2" "ETH2" "green:eth2" "eth1"
 	ucidef_set_led_default "ctrl" "CTRL" "green:ctrl" "0"
@@ -100,8 +86,6 @@ tplink,ad7200)
 	ucidef_set_led_usbport "usb2" "USB 2" "blue:usb3" "usb3-port1" "usb4-port1"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	ucidef_set_led_netdev "lan" "lan" "blue:lan" "br-lan"
-	ucidef_set_led_wlan "wlan2g" "wlan2g" "blue:wlan2g" "phy2tpt"
-	ucidef_set_led_wlan "wlan5g" "wlan5g" "blue:wlan5g" "phy1tpt"
 	ucidef_set_led_netdev "wlan60g" "wlan60g" "blue:wlan60g" "wlan0"
 	;;
 tplink,c2600)
@@ -113,8 +97,6 @@ tplink,c2600)
 tplink,vr2600v)
 	ucidef_set_led_usbport "usb" "USB" "white:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1"
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "br-lan"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "white:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "white:wlan5g" "phy1tpt"
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
 	;;
 zyxel,nbg6817)

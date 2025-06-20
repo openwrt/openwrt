@@ -24,22 +24,14 @@ asus,rt-ac58u)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "br-lan"
 	;;
 avm,fritzbox-4040)
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt" "phy1tpt"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x1e"
 	;;
 avm,fritzbox-7530)
 	ucidef_set_led_netdev "dsl" "DSL" "green:info" "dsl0"
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
-	;;
-edgecore,oap100)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "blue:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "blue:wlan5g" "phy1tpt"
 	;;
 engenius,eap1300)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "blue:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "yellow:wlan5g" "phy1tpt"
 	ucidef_set_led_default "mesh" "MESH" "blue:mesh" "0"
 	;;
 engenius,eap2200)
@@ -47,25 +39,17 @@ engenius,eap2200)
 	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "eth1"
 	;;
 engenius,ens620ext)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"
 	;;
 glinet,gl-ap1300)
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
 	;;
-glinet,gl-b1300 |\
-mikrotik,lhgg-60ad)
-	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
-	;;
 mikrotik,cap-ac)
 	ucidef_set_led_default "power" "POWER" "blue:power" "1"
 	ucidef_set_led_default "user" "USER" "green:user" "0"
 	ucidef_set_led_netdev "eth1" "ETH1" "green:eth1" "wan"
 	ucidef_set_led_netdev "eth2" "ETH2" "green:eth2" "lan"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
 	;;
 mikrotik,hap-ac3)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
@@ -96,25 +80,10 @@ mobipromo,cm520-79f)
 	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "lan2"
 	;;
-netgear,ex6100v2 |\
-netgear,ex6150v2)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:router" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:client" "phy1tpt"
-	;;
-qxwlan,e2600ac-c1 |\
-qxwlan,e2600ac-c2)
-	ucidef_set_led_wlan "wlan2g" "WLAN0" "green:wlan0" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN1" "green:wlan1" "phy1tpt"
-	;;
 sony,ncp-hg100-cellular)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_netdev "wwan" "WWAN" "green:wan-4" "wwan0"
-	;;
-zyxel,nbg6617 |\
-zyxel,wre6606)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
 	;;
 esac
 

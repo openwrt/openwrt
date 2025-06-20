@@ -92,11 +92,13 @@
 		wlan2g {
 			label = "white:wlan2g";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
 			label = "white:wlan5g";
 			gpios = <&qcom_pinmux 17 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		power: power {

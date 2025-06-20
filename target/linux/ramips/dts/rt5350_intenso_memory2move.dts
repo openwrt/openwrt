@@ -25,6 +25,7 @@
 		led_wifi: wifi {
 			label = "blue:wifi";
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wan {

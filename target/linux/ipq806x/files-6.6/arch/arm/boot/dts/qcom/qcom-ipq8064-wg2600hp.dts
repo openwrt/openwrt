@@ -101,6 +101,7 @@
 		wlan2g_green {
 			label = "green:wlan2g";
 			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wlan2g_red {
@@ -111,6 +112,7 @@
 		wlan5g_green {
 			label = "green:wlan5g";
 			gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g_red {

@@ -17,11 +17,13 @@
 		sys1 {
 			label = "green:sys1";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		sys2 {
 			label = "green:sys2";
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		sys3 {
@@ -37,6 +39,7 @@
 		wlan2g4 {
 			label = "green:wlan2g4";
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
