@@ -258,6 +258,9 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	hapd->conf = conf->bss[idx];
 	conf->bss[idx] = old_bss;
 
+	if (hapd == iface->bss[0])
+		memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
+
 	hostapd_setup_bss(hapd, hapd == iface->bss[0], true);
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(iface);
