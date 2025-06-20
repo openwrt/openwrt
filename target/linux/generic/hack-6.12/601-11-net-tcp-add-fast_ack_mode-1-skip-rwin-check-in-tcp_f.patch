@@ -1,0 +1,83 @@
+From 533ff065bd2159da975de727e7c994033b21edf4 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Sat, 16 Nov 2019 13:16:25 -0500
+Subject: [PATCH 11/19] net-tcp: add fast_ack_mode=1: skip rwin check in
+ tcp_fast_ack_mode__tcp_ack_snd_check()
+
+Add logic for an optional TCP connection behavior, enabled with
+tp->fast_ack_mode = 1, which disables checking the receive window
+before sending an ack in __tcp_ack_snd_check(). If this behavior is
+enabled, the data receiver sends an ACK if the amount of data is >
+RCV.MSS. TCP congestion control modules can enable this bit if
+they want to generate ACKs quickly.
+
+Change-Id: Iaa0a0fd7108221f883137a79d5bfa724f1b096d4
+---
+ include/linux/tcp.h  | 3 ++-
+ net/ipv4/tcp.c       | 1 +
+ net/ipv4/tcp_cong.c  | 1 +
+ net/ipv4/tcp_input.c | 5 +++--
+ 4 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/include/linux/tcp.h b/include/linux/tcp.h
+index 6a5e08b937b3..9b914533bbb0 100644
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -244,7 +244,8 @@ struct tcp_sock {
+ 	/* OOO segments go in this rbtree. Socket lock must be held. */
+ 	struct rb_root	out_of_order_queue;
+ 	u32	snd_ssthresh;	/* Slow start size threshold		*/
+-	u8	recvmsg_inq : 1;/* Indicate # of bytes in queue upon recvmsg */
++	u32	recvmsg_inq : 1,/* Indicate # of bytes in queue upon recvmsg */
++		fast_ack_mode:1;/* ack ASAP if >1 rcv_mss received? */
+ 	__cacheline_group_end(tcp_sock_read_rx);
+ 
+ 	/* TX read-write hotpath cache lines */
+diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
+index b731a4a8f2b0..55eaf6daa240 100644
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -3397,6 +3397,7 @@ int tcp_disconnect(struct sock *sk, int flags)
+ 	tp->rx_opt.dsack = 0;
+ 	tp->rx_opt.num_sacks = 0;
+ 	tp->rcv_ooopack = 0;
++	tp->fast_ack_mode = 0;
+ 
+ 
+ 	/* Clean up fastopen related fields */
+diff --git a/net/ipv4/tcp_cong.c b/net/ipv4/tcp_cong.c
+index 0306d257fa64..28f581c0dab7 100644
+--- a/net/ipv4/tcp_cong.c
++++ b/net/ipv4/tcp_cong.c
+@@ -237,6 +237,7 @@ void tcp_init_congestion_control(struct sock *sk)
+ 	struct inet_connection_sock *icsk = inet_csk(sk);
+ 
+ 	tcp_sk(sk)->prior_ssthresh = 0;
++	tcp_sk(sk)->fast_ack_mode = 0;
+ 	if (icsk->icsk_ca_ops->init)
+ 		icsk->icsk_ca_ops->init(sk);
+ 	if (tcp_ca_needs_ecn(sk))
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index 9bf8d4e43296..d9b1a509a07d 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -5776,13 +5776,14 @@ static void __tcp_ack_snd_check(struct sock *sk, int ofo_possible)
+ 
+ 	    /* More than one full frame received... */
+ 	if (((tp->rcv_nxt - tp->rcv_wup) > inet_csk(sk)->icsk_ack.rcv_mss &&
++	     (tp->fast_ack_mode == 1 ||
+ 	     /* ... and right edge of window advances far enough.
+ 	      * (tcp_recvmsg() will send ACK otherwise).
+ 	      * If application uses SO_RCVLOWAT, we want send ack now if
+ 	      * we have not received enough bytes to satisfy the condition.
+ 	      */
+-	    (tp->rcv_nxt - tp->copied_seq < sk->sk_rcvlowat ||
+-	     __tcp_select_window(sk) >= tp->rcv_wnd)) ||
++	      (tp->rcv_nxt - tp->copied_seq < sk->sk_rcvlowat ||
++	       __tcp_select_window(sk) >= tp->rcv_wnd))) ||
+ 	    /* We ACK each frame or... */
+ 	    tcp_in_quickack_mode(sk) ||
+ 	    /* Protocol state mandates a one-time immediate ACK */
+-- 
+2.43.0
+

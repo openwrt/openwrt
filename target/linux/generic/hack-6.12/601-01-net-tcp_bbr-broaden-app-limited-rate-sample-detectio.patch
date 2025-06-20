@@ -1,0 +1,58 @@
+From 5126d2950bbcb7e96e9e25ceebd8512862c7eaea Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Tue, 11 Jun 2019 12:26:55 -0400
+Subject: [PATCH 01/19] net-tcp_bbr: broaden app-limited rate sample detection
+
+This commit is a bug fix for the Linux TCP app-limited
+(application-limited) logic that is used for collecting rate
+(bandwidth) samples.
+
+Previously the app-limited logic only looked for "bubbles" of
+silence in between application writes, by checking at the start
+of each sendmsg. But "bubbles" of silence can also happen before
+retransmits: e.g. bubbles can happen between an application write
+and a retransmit, or between two retransmits.
+
+Retransmits are triggered by ACKs or timers. So this commit checks
+for bubbles of app-limited silence upon ACKs or timers.
+
+Why does this commit check for app-limited state at the start of
+ACKs and timer handling? Because at that point we know whether
+inflight was fully using the cwnd.  During processing the ACK or
+timer event we often change the cwnd; after changing the cwnd we
+can't know whether inflight was fully using the old cwnd.
+
+Origin-9xx-SHA1: 3fe9b53291e018407780fb8c356adb5666722cbc
+Change-Id: I37221506f5166877c2b110753d39bb0757985e68
+---
+ net/ipv4/tcp_input.c | 1 +
+ net/ipv4/tcp_timer.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index d93a5a89c569..c1d89f2842d7 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -3967,6 +3967,7 @@ static int tcp_ack(struct sock *sk, const struct sk_buff *skb, int flag)
+ 
+ 	prior_fack = tcp_is_sack(tp) ? tcp_highest_sack_seq(tp) : tp->snd_una;
+ 	rs.prior_in_flight = tcp_packets_in_flight(tp);
++	tcp_rate_check_app_limited(sk);
+ 
+ 	/* ts_recent update must be made after we are sure that the packet
+ 	 * is in window.
+diff --git a/net/ipv4/tcp_timer.c b/net/ipv4/tcp_timer.c
+index 79064580c8c0..697270ce1ea6 100644
+--- a/net/ipv4/tcp_timer.c
++++ b/net/ipv4/tcp_timer.c
+@@ -690,6 +690,7 @@ void tcp_write_timer_handler(struct sock *sk)
+ 		return;
+ 	}
+ 
++	tcp_rate_check_app_limited(sk);
+ 	tcp_mstamp_refresh(tcp_sk(sk));
+ 	event = icsk->icsk_pending;
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,63 @@
+From 8adc5a1690d6c1d5d2ba8e5f33d9d1d779f43f9e Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Wed, 1 May 2019 20:16:33 -0400
+Subject: [PATCH 07/19] net-tcp_bbr: v2: adjust skb tx.in_flight upon merge in
+ tcp_shifted_skb()
+
+When tcp_shifted_skb() updates state as adjacent SACKed skbs are
+coalesced, previously the tx.in_flight was not adjusted, so we could
+get contradictory state where the skb's recorded pcount was bigger
+than the tx.in_flight (the number of segments that were in_flight
+after sending the skb).
+
+Normally have a SACKed skb with contradictory pcount/tx.in_flight
+would not matter. However, with SACK reneging, the SACKed bit is
+removed, and an skb once again becomes eligible for retransmitting,
+fragmenting, SACKing, etc. Packetdrill testing verified the following
+sequence is possible in a kernel that does not have this commit:
+
+ - skb N is SACKed
+ - skb N+1 is SACKed and combined with skb N using tcp_shifted_skb()
+   - tcp_shifted_skb() will increase the pcount of prev,
+     but leave tx.in_flight as-is
+   - so prev skb can have pcount > tx.in_flight
+ - RTO, tcp_timeout_mark_lost(), detect reneg,
+   remove "SACKed" bit, mark skb N as lost
+   - find pcount of skb N is greater than its tx.in_flight
+
+I suspect this issue iw what caused the bbr2_inflight_hi_from_lost_skb():
+  WARN_ON_ONCE(inflight_prev < 0)
+to fire in production machines using bbr2.
+
+Effort: net-tcp_bbr
+Origin-9xx-SHA1: 1a3e997e613d2dcf32b947992882854ebe873715
+Change-Id: I1b0b75c27519953430c7db51c6f358f104c7af55
+---
+ net/ipv4/tcp_input.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index 795eea527da7..4e142268b7ee 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -1512,6 +1512,17 @@ static bool tcp_shifted_skb(struct sock *sk, struct sk_buff *prev,
+ 	WARN_ON_ONCE(tcp_skb_pcount(skb) < pcount);
+ 	tcp_skb_pcount_add(skb, -pcount);
+ 
++	/* Adjust tx.in_flight as pcount is shifted from skb to prev. */
++	if (WARN_ONCE(TCP_SKB_CB(skb)->tx.in_flight < pcount,
++		      "prev in_flight: %u skb in_flight: %u pcount: %u",
++		      TCP_SKB_CB(prev)->tx.in_flight,
++		      TCP_SKB_CB(skb)->tx.in_flight,
++		      pcount))
++		TCP_SKB_CB(skb)->tx.in_flight = 0;
++	else
++		TCP_SKB_CB(skb)->tx.in_flight -= pcount;
++	TCP_SKB_CB(prev)->tx.in_flight += pcount;
++
+ 	/* When we're adding to gso_segs == 1, gso_size will be zero,
+ 	 * in theory this shouldn't be necessary but as long as DSACK
+ 	 * code can come after this skb later on it's better to keep
+-- 
+2.43.0
+
