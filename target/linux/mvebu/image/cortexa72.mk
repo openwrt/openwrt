@@ -129,7 +129,7 @@ define Device/mikrotik_rb5009upr
   $(call Device/mikrotik_rb5009)
   DEVICE_DTS := armada-7040-rb5009upr
   DEVICE_MODEL := RB5009UPr+S+IN
-  SUPPORTED_DEVICES += mikrotik,rb5009upr
+  SUPPORTED_DEVICES += mikrotik,rb5009
 endef
 TARGET_DEVICES += mikrotik_rb5009upr
 
