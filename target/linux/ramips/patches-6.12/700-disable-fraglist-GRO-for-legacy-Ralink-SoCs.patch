@@ -1,0 +1,32 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 21 Jun 2025 01:42:05 +0800
+Subject: [PATCH] disable fraglist GRO for legacy Ralink SoCs
+
+Fraglist GRO feature will significantly affect wireless performance
+on 6.12 kernel. It seems that the ethernet driver is not ready.
+
+Fixes: https://github.com/openwrt/openwrt/issues/19128
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ include/linux/netdev_features.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/include/linux/netdev_features.h
++++ b/include/linux/netdev_features.h
+@@ -234,11 +234,16 @@ static inline int find_next_netdev_featu
+  */
+ #define NETIF_F_UPPER_DISABLES	NETIF_F_LRO
+ 
++#ifdef CONFIG_SOC_MT7621
+ /* changeable features with no special hardware requirements */
+ #define NETIF_F_SOFT_FEATURES	(NETIF_F_GSO | NETIF_F_GRO | NETIF_F_GRO_FRAGLIST)
+ 
+ /* Changeable features with no special hardware requirements that defaults to off. */
+ #define NETIF_F_SOFT_FEATURES_OFF	(NETIF_F_GRO_UDP_FWD)
++#else
++#define NETIF_F_SOFT_FEATURES	(NETIF_F_GSO | NETIF_F_GRO)
++#define NETIF_F_SOFT_FEATURES_OFF	(NETIF_F_GRO_FRAGLIST | NETIF_F_GRO_UDP_FWD)
++#endif
+ 
+ #define NETIF_F_VLAN_FEATURES	(NETIF_F_HW_VLAN_CTAG_FILTER | \
+ 				 NETIF_F_HW_VLAN_CTAG_RX | \
