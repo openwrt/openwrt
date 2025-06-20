@@ -20,6 +20,8 @@
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
+#include <linux/netdevice.h>
+#include <linux/rtnetlink.h>
 
 
 #include  "./rtl8367c/include/rtk_switch.h"
@@ -35,6 +37,102 @@ struct rtk_gsw {
 };
 
 static struct rtk_gsw *_gsw;
+
+#define RTL8367S_PHY_LINK_CHECK_INTERVAL	(1000) /* ms */
+#define PORT_MAX_NUM	5
+static int rtl8368s_link_status[PORT_MAX_NUM] = {0};
+static char rtl8367s_port_bind[PORT_MAX_NUM][IFNAMSIZ] = {0};
+
+int split_string(const char *input, int max_token_num)
+{
+	int i = 0, j = 0, port = 0;
+	if (!input || max_token_num < 1)
+		return -EINVAL;
+
+	while (input[i] != '\0' && port < max_token_num) {
+		if (input[i] == ',') {
+			port++;
+			j = 0;
+		} else if (j+1 == IFNAMSIZ) {
+			pr_err("ifname too long\n");
+			return -EINVAL;
+		} else {
+			rtl8367s_port_bind[port][j] = input[i];
+			j++;
+		}
+		i++;
+	}
+
+	return 0;
+}
+
+int rtl8367s_phy_link_change_notify(void)
+{
+	rtk_api_ret_t ret;
+	rtk_port_linkStatus_t link_status = 0;
+	rtk_port_speed_t link_speed = 0;
+	rtk_port_duplex_t link_duplex = 0;
+	int speed = 0;
+	int p;
+
+	for (p = 0; p < PORT_MAX_NUM; p++) {
+		struct net_device *port_dev = dev_get_by_name(&init_net, rtl8367s_port_bind[p]);
+		ret = rtk_port_phyStatus_get(p, &link_status, &link_speed, &link_duplex);
+		if (ret != RT_ERR_OK)
+			pr_err("rtk_port_phyStatus_get failed...ret=%d\n", ret);
+
+		if (port_dev && ((port_dev->flags & IFF_UP) ^ link_status)) {
+			rtnl_lock();
+			dev_change_flags(port_dev, port_dev->flags ^ IFF_UP, NULL);
+			rtnl_unlock();
+			dev_put(port_dev);
+		}
+
+		if (link_status != rtl8368s_link_status[p]) {
+			rtl8368s_link_status[p] = link_status;
+
+			switch (link_speed)
+			{
+			case PORT_SPEED_10M:
+				speed = 10;
+				break;
+			case PORT_SPEED_100M:
+				speed = 100;
+				break;
+			case PORT_SPEED_1000M:
+				speed = 1000;
+				break;
+			case PORT_SPEED_500M:
+				speed = 500;
+				break;
+			case PORT_SPEED_2500M:
+				speed = 2500;
+				break;
+			default:
+				pr_err("failed to get port%d link speed\n", p);
+				return 0;
+			}
+
+			pr_info("UTP_PORT%d link %s speed %d\r\n", p, link_status ? "up" : "down", speed);
+		}
+	}
+	return 0;
+}
+
+static void rtl8367s_phy_link_work_cb(struct work_struct *work)
+{
+	rtl8367s_phy_link_change_notify();
+	schedule_delayed_work((struct delayed_work *)work,
+						msecs_to_jiffies(RTL8367S_PHY_LINK_CHECK_INTERVAL));
+}
+
+static DECLARE_DELAYED_WORK(rtl8367s_phy_link_delayed_work, rtl8367s_phy_link_work_cb);
+
+static void rtl8367s_phy_link_timer_start(void)
+{
+	schedule_delayed_work(&rtl8367s_phy_link_delayed_work,
+						msecs_to_jiffies(RTL8367S_PHY_LINK_CHECK_INTERVAL));
+}
 
 /*mii_mgr_read/mii_mgr_write is the callback API for rtl8367 driver*/
 unsigned int mii_mgr_read(unsigned int phy_addr,unsigned int phy_register,unsigned int *read_data)
@@ -271,6 +369,10 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	}
 
 	gsw_debug_proc_init();
+
+	of_property_read_string(pdev->dev.of_node, "portbind", &pm);
+	if (pm && !split_string(pm, 5))
+		rtl8367s_phy_link_timer_start();
 
 	platform_set_drvdata(pdev, gsw);
 
