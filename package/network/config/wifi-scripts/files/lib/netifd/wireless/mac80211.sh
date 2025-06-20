@@ -12,7 +12,7 @@ MP_CONFIG_INT="mesh_retry_timeout mesh_confirm_timeout mesh_holding_timeout mesh
 	       mesh_hwmp_rann_interval mesh_gate_announcements mesh_sync_offset_max_neighor
 	       mesh_rssi_threshold mesh_hwmp_active_path_to_root_timeout mesh_hwmp_root_interval
 	       mesh_hwmp_confirmation_interval mesh_awake_window mesh_plink_timeout"
-MP_CONFIG_BOOL="mesh_auto_open_plinks mesh_fwding"
+MP_CONFIG_BOOL="mesh_auto_open_plinks mesh_fwding mesh_nolearn"
 MP_CONFIG_STRING="mesh_power_mode"
 
 wdev_tool() {
