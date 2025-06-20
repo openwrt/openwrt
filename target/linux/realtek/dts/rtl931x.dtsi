@@ -45,6 +45,11 @@
 		clock-frequency = <200000000>;
 	};
 
+	cpc: cpc@1bde0000 {
+		compatible = "mti,mips-cpc";
+		reg = <0x1bde0000 0x8000>;
+	};
+
 	cpuclock: cpuclock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
@@ -159,6 +164,11 @@
 
 			status = "disabled";
 		};
+	};
+
+	switchcore@1b000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1b000000 0x10000>;
 	};
 
 	pinmux: pinmux@1b001358 {

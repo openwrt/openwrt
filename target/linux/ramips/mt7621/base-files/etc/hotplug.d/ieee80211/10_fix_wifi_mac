@@ -130,6 +130,11 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
+	jdcloud,re-sp-01b)
+		hw_mac_addr=$(mtd_get_mac_ascii config mac)
+		[ "$PHYNBR" = "0" ] && echo $hw_mac_addr > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 0x800000 > /sys${DEVPATH}/macaddress
+		;;
 	keenetic,kn-1910)
 		lan_mac_addr="$(mtd_get_mac_binary RF-EEPROM 0x4)"
 		[ "$PHYNBR" = "1" ] && \

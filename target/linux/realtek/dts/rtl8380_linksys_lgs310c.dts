@@ -38,17 +38,23 @@
 			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
-
 	};
 
-	/* i2c of the left SFP cage: port 9 */
-	i2c0: i2c-gpio-0 {
-		compatible = "i2c-gpio";
-		sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	i2c-gpio-shared {
+		compatible = "i2c-gpio-shared";
 		scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-		i2c-gpio,delay-us = <2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		i2c0: i2c@0 {
+			sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			i2c-gpio,delay-us = <2>;
+		};
+
+		i2c1: i2c@1 {
+			sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			i2c-gpio,delay-us = <2>;
+		};
 	};
 
 	sfp0: sfp-p9 {
@@ -57,22 +63,6 @@
 		los-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		tx-disable-gpio = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-	};
-
-	/* i2c of the right SFP cage: port 10 */
-	i2c1: i2c-gpio-1 {
-		compatible = "i2c-gpio";
-		sda-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
-/*
- * ports 9 & 10 use a shared SCL, and are currently not usable in parallel
- * So for now disable the SCL on the second port.
- *
- *		scl-gpios = <&gpio1 31 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
- */
-		i2c-gpio,scl-open-drain;
-		i2c-gpio,delay-us = <2>;
-		#address-cells = <1>;
-		#size-cells = <0>;
 	};
 
 	sfp1: sfp-p10 {

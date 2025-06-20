@@ -5,7 +5,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-zbtlink,zbt-z8102ax)
+zbtlink,zbt-z8102ax|\
+zbtlink,zbt-z8102ax-v2)
 	ucidef_add_gpio_switch "5g1" "Power 1st modem" "5g1" "1"
 	ucidef_add_gpio_switch "5g2" "Power 2nd modem" "5g2" "1"
 	ucidef_add_gpio_switch "pcie" "Power PCIe port" "pcie" "1"
