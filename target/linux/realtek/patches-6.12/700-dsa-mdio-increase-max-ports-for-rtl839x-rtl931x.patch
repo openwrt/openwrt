@@ -70,7 +70,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  struct dsa_chip_data {
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -473,7 +473,7 @@ struct dsa_switch {
+@@ -475,7 +475,7 @@ struct dsa_switch {
  	/*
  	 * User mii_bus and devices for the individual ports.
  	 */
@@ -79,7 +79,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	struct mii_bus		*user_mii_bus;
  
  	/* Ageing Time limits in msecs */
-@@ -609,24 +609,24 @@ static inline bool dsa_is_user_port(stru
+@@ -611,24 +611,24 @@ static inline bool dsa_is_user_port(stru
  	dsa_switch_for_each_port_continue_reverse((_dp), (_ds)) \
  		if (dsa_port_is_cpu((_dp)))
  

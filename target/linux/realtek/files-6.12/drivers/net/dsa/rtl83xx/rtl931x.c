@@ -569,14 +569,9 @@ static void rtl931x_traffic_disable(int source, int dest)
 	rtl_table_release(r);
 }
 
-static u64 rtl931x_l2_hash_seed(u64 mac, u32 vid)
+static u64 rtldsa_931x_l2_hash_seed(u64 mac, u32 vid)
 {
-	u64 v = vid;
-
-	v <<= 48;
-	v |= mac;
-
-	return v;
+	return (u64)vid << 48 | mac;
 }
 
 /* Calculate both the block 0 and the block 1 hash by applyingthe same hash
@@ -787,7 +782,7 @@ static u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	      ((u64)e->mac[4]) << 8 |
 	      ((u64)e->mac[5]);
 
-	seed = rtl931x_l2_hash_seed(mac, e->rvid);
+	seed = rtldsa_931x_l2_hash_seed(mac, e->rvid);
 	pr_debug("%s: mac %016llx, seed %016llx\n", __func__, mac, seed);
 
 	/* return vid with concatenated mac as unique id */
@@ -1682,6 +1677,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
 	.l2_hash_key = rtl931x_l2_hash_key,
+	.l2_hash_seed = rtldsa_931x_l2_hash_seed,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
 	.write_mcast_pmask = rtl931x_write_mcast_pmask,
 	.pie_init = rtl931x_pie_init,

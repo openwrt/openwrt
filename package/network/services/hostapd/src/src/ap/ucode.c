@@ -10,6 +10,7 @@
 #include "dfs.h"
 #include "acs.h"
 #include "ieee802_11_auth.h"
+#include "neighbor_db.h"
 #include <libubox/uloop.h>
 
 static uc_resource_type_t *global_type, *bss_type, *iface_type;
@@ -258,7 +259,11 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	hapd->conf = conf->bss[idx];
 	conf->bss[idx] = old_bss;
 
+	if (hapd == iface->bss[0])
+		memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
+
 	hostapd_setup_bss(hapd, hapd == iface->bss[0], true);
+	hostapd_neighbor_set_own_report(hapd);
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(iface);
 
@@ -384,6 +389,7 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	iface->conf->bss[iface->conf->num_bss] = bss;
 	conf->bss[idx] = NULL;
 	ret = hostapd_ucode_bss_get_uval(hapd);
+	hostapd_neighbor_set_own_report(hapd);
 	hostapd_ucode_update_interfaces();
 	hostapd_owe_update_trans(iface);
 	goto out;
