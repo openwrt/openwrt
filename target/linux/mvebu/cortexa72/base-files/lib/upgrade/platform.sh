@@ -37,7 +37,8 @@ platform_do_upgrade() {
 	solidrun,clearfog-pro)
 		legacy_sdcard_do_upgrade "$1"
 		;;
-	mikrotik,rb5009)
+	mikrotik,rb5009ug|\
+	mikrotik,rb5009upr)
 		nand_do_upgrade "$1"
 		;;
 	*)
