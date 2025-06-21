@@ -508,6 +508,30 @@ define U-Boot/mt7981_xiaomi_mi-router-wr30u
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_newland_nl-wr8103
+  NAME:=newland_nl-wr8103
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=newland_nl-wr8103-ubootmod
+  UBOOT_CONFIG:=mt7981_newland_nl-wr8103
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_newland_nl-wr9103
+  NAME:=newland_nl-wr8103
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=newland_nl-wr9103-ubootmod
+  UBOOT_CONFIG:=mt7981_newland_nl-wr9103
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7986_rfb
   NAME:=MT7986 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -926,6 +950,8 @@ UBOOT_TARGETS := \
 	mt7981_snr_snr-cpe-ax2 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
+        mt7981_newland_nl-wr8103 \
+        mt7981_newland_nl-wr9103 \
 	mt7986_bananapi_bpi-r3-emmc \
 	mt7986_bananapi_bpi-r3-sdmmc \
 	mt7986_bananapi_bpi-r3-snand \
