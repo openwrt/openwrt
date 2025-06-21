@@ -12,6 +12,11 @@ PKG_MIRROR_HASH:=795ffccf1f4d61b6a5e0a6964ce21efa7b7b3c73b31b93140c56af7d970293b
 PKG_BUILD_PARALLEL:=1
 PKG_FLAGS:=nonshared
 
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_TARGET_qualcommax_ipq807x \
+	CONFIG_TARGET_qualcommax_ipq60xx \
+	CONFIG_TARGET_qualcommax_ipq50xx
+
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
