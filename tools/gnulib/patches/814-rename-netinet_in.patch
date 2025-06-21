@@ -1,0 +1,361 @@
+From f2b130983d09e0dcf3fe594bc75e3dca2a1cc963 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:35 +0100
+Subject: [PATCH] Rename module netinet_in to netinet_in-h.
+
+* modules/netinet_in-h: Renamed from modules/netinet_in.
+* modules/netinet_in-h-tests: Renamed from modules/netinet_in-tests.
+* modules/netinet_in-h-c++-tests: Renamed from
+modules/netinet_in-c++-tests.
+* tests/test-netinet_in-h.c: Renamed from tests/test-netinet_in.c.
+* tests/test-netinet_in-h-c++.cc: Renamed from
+tests/test-netinet_in-c++.cc.
+* doc/posix-headers/netinet_in.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/netinet_in: New file.
+---
+ ChangeLog                                     | 14 ++++++
+ doc/posix-headers/netinet_in.texi             |  4 +-
+ modules/accept-tests                          |  2 +-
+ modules/accept4-tests                         |  2 +-
+ modules/bind-tests                            |  2 +-
+ modules/connect-tests                         |  2 +-
+ modules/getpeername-tests                     |  2 +-
+ modules/getsockname-tests                     |  2 +-
+ modules/getsockopt-tests                      |  2 +-
+ modules/inet_ntop                             |  2 +-
+ modules/inet_ntop-tests                       |  2 +-
+ modules/inet_pton                             |  2 +-
+ modules/inet_pton-tests                       |  2 +-
+ modules/netinet_in                            | 38 +++-----------
+ modules/netinet_in-c++-tests                  | 17 -------
+ modules/netinet_in-h                          | 49 +++++++++++++++++++
+ modules/netinet_in-h-c++-tests                | 17 +++++++
+ modules/netinet_in-h-tests                    | 11 +++++
+ modules/netinet_in-tests                      | 11 -----
+ modules/nonblocking-socket-tests              |  2 +-
+ modules/poll-tests                            |  2 +-
+ modules/pselect-tests                         |  2 +-
+ modules/recvfrom-tests                        |  2 +-
+ modules/select-tests                          |  2 +-
+ modules/sendto-tests                          |  2 +-
+ modules/setsockopt-tests                      |  2 +-
+ ...net_in-c++.cc => test-netinet_in-h-c++.cc} |  0
+ ...{test-netinet_in.c => test-netinet_in-h.c} |  0
+ 28 files changed, 118 insertions(+), 79 deletions(-)
+ delete mode 100644 modules/netinet_in-c++-tests
+ create mode 100644 modules/netinet_in-h
+ create mode 100644 modules/netinet_in-h-c++-tests
+ create mode 100644 modules/netinet_in-h-tests
+ delete mode 100644 modules/netinet_in-tests
+ rename tests/{test-netinet_in-c++.cc => test-netinet_in-h-c++.cc} (100%)
+ rename tests/{test-netinet_in.c => test-netinet_in-h.c} (100%)
+
+--- a/modules/accept-tests
++++ b/modules/accept-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ 
+ configure.ac:
+--- a/modules/accept4-tests
++++ b/modules/accept4-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ fcntl-h
+-netinet_in
++netinet_in-h
+ binary-io
+ sockets
+ 
+--- a/modules/bind-tests
++++ b/modules/bind-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ inet_pton
+ 
+--- a/modules/connect-tests
++++ b/modules/connect-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ inet_pton
+ 
+--- a/modules/getpeername-tests
++++ b/modules/getpeername-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ 
+ configure.ac:
+--- a/modules/getsockname-tests
++++ b/modules/getsockname-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ arpa_inet-h
+ inet_pton
+ errno-h
+--- a/modules/getsockopt-tests
++++ b/modules/getsockopt-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ 
+ configure.ac:
+--- a/modules/inet_ntop
++++ b/modules/inet_ntop
+@@ -11,7 +11,7 @@ arpa_inet-h
+ extensions
+ sys_socket      [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+ errno-h         [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+-netinet_in      [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
++netinet_in-h    [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+ 
+ configure.ac:
+ gl_FUNC_INET_NTOP
+--- a/modules/inet_ntop-tests
++++ b/modules/inet_ntop-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sys_socket
+ 
+ configure.ac:
+--- a/modules/inet_pton
++++ b/modules/inet_pton
+@@ -11,7 +11,7 @@ extensions
+ c-ctype         [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ sys_socket      [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ errno-h         [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+-netinet_in      [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
++netinet_in-h    [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ 
+ configure.ac:
+ gl_FUNC_INET_PTON
+--- a/modules/inet_pton-tests
++++ b/modules/inet_pton-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sys_socket
+ 
+ configure.ac:
+--- a/modules/netinet_in
++++ b/modules/netinet_in
+@@ -1,43 +1,20 @@
+ Description:
+ A <netinet/in.h> for systems lacking it.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'netinet_in-h' instead.
++
+ Files:
+-lib/netinet_in.in.h
+-m4/netinet_in_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-sys_socket
++netinet_in-h
+ 
+ configure.ac:
+-gl_HEADER_NETINET_IN
+-gl_CONDITIONAL_HEADER([netinet/in.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(NETINET_IN_H)
+-
+-# We need the following in order to create <netinet/in.h> when the system
+-# doesn't have one.
+-if GL_GENERATE_NETINET_IN_H
+-netinet/in.h: netinet_in.in.h $(top_builddir)/config.status
+-	$(AM_V_GEN)$(MKDIR_P) '%reldir%/netinet'
+-	$(AM_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_NETINET_IN_H''@|$(NEXT_NETINET_IN_H)|g' \
+-	      -e 's|@''HAVE_NETINET_IN_H''@|$(HAVE_NETINET_IN_H)|g' \
+-	      $(srcdir)/netinet_in.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-netinet/in.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += netinet/in.h netinet/in.h-t
+-MOSTLYCLEANDIRS += netinet
+ 
+ Include:
+ <netinet/in.h>
+@@ -46,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Simon Josefsson
+--- /dev/null
++++ b/modules/netinet_in-h
+@@ -0,0 +1,49 @@
++Description:
++A <netinet/in.h> for systems lacking it.
++
++Files:
++lib/netinet_in.in.h
++m4/netinet_in_h.m4
++
++Depends-on:
++gen-header
++include_next
++sys_socket
++
++configure.ac:
++gl_HEADER_NETINET_IN
++gl_CONDITIONAL_HEADER([netinet/in.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(NETINET_IN_H)
++
++# We need the following in order to create <netinet/in.h> when the system
++# doesn't have one.
++if GL_GENERATE_NETINET_IN_H
++netinet/in.h: netinet_in.in.h $(top_builddir)/config.status
++	$(AM_V_GEN)$(MKDIR_P) '%reldir%/netinet'
++	$(AM_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_NETINET_IN_H''@|$(NEXT_NETINET_IN_H)|g' \
++	      -e 's|@''HAVE_NETINET_IN_H''@|$(HAVE_NETINET_IN_H)|g' \
++	      $(srcdir)/netinet_in.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++netinet/in.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += netinet/in.h netinet/in.h-t
++MOSTLYCLEANDIRS += netinet
++
++Include:
++<netinet/in.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Simon Josefsson
+--- a/modules/nonblocking-socket-tests
++++ b/modules/nonblocking-socket-tests
+@@ -18,7 +18,7 @@ nonblocking
+ wait-process
+ environ
+ posix_spawnp
+-netinet_in
++netinet_in-h
+ arpa_inet-h
+ socket
+ setsockopt
+--- a/modules/poll-tests
++++ b/modules/poll-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ Depends-on:
+ stdbool
+ sys_socket
+-netinet_in
++netinet_in-h
+ arpa_inet-h
+ sys_ioctl
+ extensions
+--- a/modules/pselect-tests
++++ b/modules/pselect-tests
+@@ -6,7 +6,7 @@ tests/signature.h
+ 
+ Depends-on:
+ stdbool
+-netinet_in
++netinet_in-h
+ arpa_inet-h
+ unistd
+ sys_ioctl
+--- a/modules/recvfrom-tests
++++ b/modules/recvfrom-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ 
+ configure.ac:
+--- a/modules/select-tests
++++ b/modules/select-tests
+@@ -11,7 +11,7 @@ tests/test-select-stdin.c
+ Depends-on:
+ stdbool
+ sys_socket
+-netinet_in
++netinet_in-h
+ arpa_inet-h
+ unistd
+ sys_ioctl
+--- a/modules/sendto-tests
++++ b/modules/sendto-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ inet_pton
+ 
+--- a/modules/setsockopt-tests
++++ b/modules/setsockopt-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-netinet_in
++netinet_in-h
+ sockets
+ 
+ configure.ac:

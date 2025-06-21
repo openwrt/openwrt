@@ -1,0 +1,301 @@
+From 49f2771d586ff15994f6c38ba79e1ea512ff73b9 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:11:34 +0100
+Subject: [PATCH] Rename module arpa_inet to arpa_inet-h.
+
+* modules/arpa_inet-h: Renamed from modules/arpa_inet.
+* modules/arpa_inet-h-tests: Renamed from modules/arpa_inet-tests.
+* modules/arpa_inet-h-c++-tests: Renamed from
+modules/arpa_inet-c++-tests.
+* tests/test-arpa_inet-h.c: Renamed from tests/test-arpa_inet.c.
+* tests/test-arpa_inet-h-c++.cc: Renamed from
+tests/test-arpa_inet-c++.cc.
+* doc/posix-headers/arpa_inet.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/arpa_inet: New file.
+---
+ ChangeLog                                     | 14 ++++
+ MODULES.html.sh                               |  2 +-
+ doc/posix-headers/arpa_inet.texi              |  4 +-
+ modules/arpa_inet                             | 56 ++--------------
+ modules/arpa_inet-c++-tests                   | 19 ------
+ modules/arpa_inet-h                           | 67 +++++++++++++++++++
+ modules/arpa_inet-h-c++-tests                 | 19 ++++++
+ modules/arpa_inet-h-tests                     | 11 +++
+ modules/arpa_inet-tests                       | 11 ---
+ modules/getsockname-tests                     |  2 +-
+ modules/htonl                                 |  2 +-
+ modules/inet_ntop                             |  2 +-
+ modules/inet_pton                             |  2 +-
+ modules/nonblocking-socket-tests              |  2 +-
+ modules/poll-tests                            |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/pselect-tests                         |  2 +-
+ modules/select-tests                          |  2 +-
+ ...pa_inet-c++.cc => test-arpa_inet-h-c++.cc} |  0
+ .../{test-arpa_inet.c => test-arpa_inet-h.c}  |  0
+ 20 files changed, 130 insertions(+), 91 deletions(-)
+ delete mode 100644 modules/arpa_inet-c++-tests
+ create mode 100644 modules/arpa_inet-h
+ create mode 100644 modules/arpa_inet-h-c++-tests
+ create mode 100644 modules/arpa_inet-h-tests
+ delete mode 100644 modules/arpa_inet-tests
+ rename tests/{test-arpa_inet-c++.cc => test-arpa_inet-h-c++.cc} (100%)
+ rename tests/{test-arpa_inet.c => test-arpa_inet-h.c} (100%)
+
+--- a/MODULES.html.sh
++++ b/MODULES.html.sh
+@@ -2529,7 +2529,7 @@ func_all_modules ()
+   func_begin_table
+   func_module accept
+   func_module alphasort
+-  func_module arpa_inet
++  func_module arpa_inet-h
+   func_module bind
+   func_module calloc-posix
+   func_module chmod
+--- a/modules/arpa_inet
++++ b/modules/arpa_inet
+@@ -1,61 +1,20 @@
+ Description:
+ A GNU-like <arpa/inet.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'arpa_inet-h' instead.
++
+ Files:
+-lib/arpa_inet.in.h
+-lib/arpa_inet.c
+-m4/arpa_inet_h.m4
+-m4/sys_socket_h.m4
+-m4/socklen.m4
+ 
+ Depends-on:
+-extern-inline
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-sys_socket
++arpa_inet-h
+ 
+ configure.ac:
+-gl_ARPA_INET_H
+-gl_ARPA_INET_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += arpa/inet.h
+-lib_SOURCES += arpa_inet.c
+-
+-# We need the following in order to create <arpa/inet.h> when the system
+-# doesn't have one.
+-arpa/inet.h: arpa_inet.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
+-	$(AM_V_GEN)$(MKDIR_P) '%reldir%/arpa'
+-	$(AM_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''HAVE_FEATURES_H''@|$(HAVE_FEATURES_H)|g' \
+-	      -e 's|@''NEXT_ARPA_INET_H''@|$(NEXT_ARPA_INET_H)|g' \
+-	      -e 's|@''HAVE_ARPA_INET_H''@|$(HAVE_ARPA_INET_H)|g' \
+-	      -e 's/@''GNULIB_INET_NTOP''@/$(GNULIB_INET_NTOP)/g' \
+-	      -e 's/@''GNULIB_INET_PTON''@/$(GNULIB_INET_PTON)/g' \
+-	      -e 's|@''HAVE_WS2TCPIP_H''@|$(HAVE_WS2TCPIP_H)|g' \
+-	      -e 's|@''HAVE_DECL_HTONL''@|$(HAVE_DECL_HTONL)|g' \
+-	      -e 's|@''HAVE_DECL_HTONS''@|$(HAVE_DECL_HTONS)|g' \
+-	      -e 's|@''HAVE_DECL_INET_NTOP''@|$(HAVE_DECL_INET_NTOP)|g' \
+-	      -e 's|@''HAVE_DECL_INET_PTON''@|$(HAVE_DECL_INET_PTON)|g' \
+-	      -e 's|@''HAVE_DECL_NTOHL''@|$(HAVE_DECL_NTOHL)|g' \
+-	      -e 's|@''HAVE_DECL_NTOHS''@|$(HAVE_DECL_NTOHS)|g' \
+-	      -e 's|@''REPLACE_INET_NTOP''@|$(REPLACE_INET_NTOP)|g' \
+-	      -e 's|@''REPLACE_INET_PTON''@|$(REPLACE_INET_PTON)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/arpa_inet.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += arpa/inet.h arpa/inet.h-t
+-MOSTLYCLEANDIRS += arpa
+ 
+ Include:
+ <arpa/inet.h>
+@@ -64,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Simon Josefsson
+--- /dev/null
++++ b/modules/arpa_inet-h
+@@ -0,0 +1,67 @@
++Description:
++A GNU-like <arpa/inet.h>.
++
++Files:
++lib/arpa_inet.in.h
++lib/arpa_inet.c
++m4/arpa_inet_h.m4
++m4/sys_socket_h.m4
++m4/socklen.m4
++
++Depends-on:
++extern-inline
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++sys_socket
++
++configure.ac:
++gl_ARPA_INET_H
++gl_ARPA_INET_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += arpa/inet.h
++lib_SOURCES += arpa_inet.c
++
++# We need the following in order to create <arpa/inet.h> when the system
++# doesn't have one.
++arpa/inet.h: arpa_inet.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
++	$(AM_V_GEN)$(MKDIR_P) '%reldir%/arpa'
++	$(AM_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''HAVE_FEATURES_H''@|$(HAVE_FEATURES_H)|g' \
++	      -e 's|@''NEXT_ARPA_INET_H''@|$(NEXT_ARPA_INET_H)|g' \
++	      -e 's|@''HAVE_ARPA_INET_H''@|$(HAVE_ARPA_INET_H)|g' \
++	      -e 's/@''GNULIB_INET_NTOP''@/$(GNULIB_INET_NTOP)/g' \
++	      -e 's/@''GNULIB_INET_PTON''@/$(GNULIB_INET_PTON)/g' \
++	      -e 's|@''HAVE_WS2TCPIP_H''@|$(HAVE_WS2TCPIP_H)|g' \
++	      -e 's|@''HAVE_DECL_HTONL''@|$(HAVE_DECL_HTONL)|g' \
++	      -e 's|@''HAVE_DECL_HTONS''@|$(HAVE_DECL_HTONS)|g' \
++	      -e 's|@''HAVE_DECL_INET_NTOP''@|$(HAVE_DECL_INET_NTOP)|g' \
++	      -e 's|@''HAVE_DECL_INET_PTON''@|$(HAVE_DECL_INET_PTON)|g' \
++	      -e 's|@''HAVE_DECL_NTOHL''@|$(HAVE_DECL_NTOHL)|g' \
++	      -e 's|@''HAVE_DECL_NTOHS''@|$(HAVE_DECL_NTOHS)|g' \
++	      -e 's|@''REPLACE_INET_NTOP''@|$(REPLACE_INET_NTOP)|g' \
++	      -e 's|@''REPLACE_INET_PTON''@|$(REPLACE_INET_PTON)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/arpa_inet.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += arpa/inet.h arpa/inet.h-t
++MOSTLYCLEANDIRS += arpa
++
++Include:
++<arpa/inet.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Simon Josefsson
+--- a/modules/getsockname-tests
++++ b/modules/getsockname-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ netinet_in
+-arpa_inet
++arpa_inet-h
+ inet_pton
+ errno
+ perror
+--- a/modules/htonl
++++ b/modules/htonl
+@@ -7,7 +7,7 @@ m4/htonl.m4
+ m4/sys_socket_h.m4
+ 
+ Depends-on:
+-arpa_inet
++arpa_inet-h
+ endian
+ 
+ configure.ac:
+--- a/modules/inet_ntop
++++ b/modules/inet_ntop
+@@ -7,7 +7,7 @@ m4/inet_ntop.m4
+ m4/sys_socket_h.m4
+ 
+ Depends-on:
+-arpa_inet
++arpa_inet-h
+ extensions
+ sys_socket      [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+ errno           [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+--- a/modules/inet_pton
++++ b/modules/inet_pton
+@@ -6,7 +6,7 @@ lib/inet_pton.c
+ m4/inet_pton.m4
+ 
+ Depends-on:
+-arpa_inet
++arpa_inet-h
+ extensions
+ c-ctype         [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ sys_socket      [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+--- a/modules/nonblocking-socket-tests
++++ b/modules/nonblocking-socket-tests
+@@ -19,7 +19,7 @@ wait-process
+ environ
+ posix_spawnp
+ netinet_in
+-arpa_inet
++arpa_inet-h
+ socket
+ setsockopt
+ bind
+--- a/modules/poll-tests
++++ b/modules/poll-tests
+@@ -7,7 +7,7 @@ Depends-on:
+ stdbool
+ sys_socket
+ netinet_in
+-arpa_inet
++arpa_inet-h
+ sys_ioctl
+ extensions
+ inet_pton
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -7,7 +7,7 @@ m4/posixcheck.m4
+ 
+ Depends-on:
+ # All modules that depend on 'snippet/warn-on-use'.
+-arpa_inet
++arpa_inet-h
+ ctype
+ dirent
+ fcntl-h
+--- a/modules/pselect-tests
++++ b/modules/pselect-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ Depends-on:
+ stdbool
+ netinet_in
+-arpa_inet
++arpa_inet-h
+ unistd
+ sys_ioctl
+ extensions
+--- a/modules/select-tests
++++ b/modules/select-tests
+@@ -12,7 +12,7 @@ Depends-on:
+ stdbool
+ sys_socket
+ netinet_in
+-arpa_inet
++arpa_inet-h
+ unistd
+ sys_ioctl
+ extensions

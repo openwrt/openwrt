@@ -21,7 +21,7 @@
 --- a/lib/xmalloc.c
 +++ b/lib/xmalloc.c
 @@ -51,12 +51,16 @@ ximalloc (idx_t s)
-   return nonnull (imalloc (s));
+   return check_nonnull (imalloc (s));
  }
  
 +#if GNULIB_REALLOCARRAY
@@ -38,7 +38,7 @@
     with error checking.  */
  
 @@ -75,6 +79,8 @@ xirealloc (void *p, idx_t s)
-   return nonnull (irealloc (p, s));
+   return check_nonnull (irealloc (p, s));
  }
  
 +#if GNULIB_REALLOCARRAY
@@ -76,16 +76,15 @@
  
 --- a/lib/safe-alloc.h
 +++ b/lib/safe-alloc.h
-@@ -36,6 +36,8 @@ _GL_INLINE_HEADER_BEGIN
- # define SAFE_ALLOC_INLINE _GL_INLINE
+@@ -40,6 +40,7 @@ _GL_INLINE_HEADER_BEGIN
+ extern "C" {
  #endif
  
 +#if GNULIB_REALLOCARRAY
-+
+ 
  /* Don't call these directly - use the macros below.  */
  SAFE_ALLOC_INLINE void *
- safe_alloc_realloc_n (void *ptr, size_t count, size_t size)
-@@ -51,6 +53,9 @@ safe_alloc_realloc_n (void *ptr, size_t
+@@ -56,6 +57,9 @@ safe_alloc_realloc_n (void *ptr, size_t
  #endif
    return ptr;
  }
@@ -95,7 +94,7 @@
  _GL_ATTRIBUTE_NODISCARD SAFE_ALLOC_INLINE int
  safe_alloc_check (void *ptr)
  {
-@@ -84,6 +89,8 @@ safe_alloc_check (void *ptr)
+@@ -89,6 +93,8 @@ safe_alloc_check (void *ptr)
  #define ALLOC_N(ptr, count) \
    safe_alloc_check ((ptr) = calloc (count, sizeof *(ptr)))
  
@@ -104,7 +103,7 @@
  /**
   * ALLOC_N_UNINITIALIZED:
   * @ptr: pointer to allocated memory
-@@ -112,6 +119,8 @@ safe_alloc_check (void *ptr)
+@@ -117,6 +123,8 @@ safe_alloc_check (void *ptr)
  #define REALLOC_N(ptr, count) \
    safe_alloc_check ((ptr) = safe_alloc_realloc_n (ptr, count, sizeof *(ptr)))
  

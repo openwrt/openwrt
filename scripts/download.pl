@@ -163,6 +163,7 @@ sub download
 	my $mirror = shift;
 	my $download_filename = shift;
 	my @additional_mirrors = @_;
+	my @cmd;
 
 	$mirror =~ s!/$!!;
 
@@ -209,7 +210,11 @@ sub download
 			}
 		};
 	} else {
-		my @cmd = download_cmd("$mirror/$download_filename", $download_filename, @additional_mirrors);
+		if ($mirror =~ /a=snapshot/) {
+			@cmd = download_cmd("$mirror", $download_filename, @additional_mirrors);
+		} else {
+			@cmd = download_cmd("$mirror/$download_filename", $download_filename, @additional_mirrors);
+		}
 		print STDERR "+ ".join(" ",@cmd)."\n";
 		open(FETCH_FD, '-|', @cmd) or die "Cannot launch aria2c, curl or wget.\n";
 		$hash_cmd and do {

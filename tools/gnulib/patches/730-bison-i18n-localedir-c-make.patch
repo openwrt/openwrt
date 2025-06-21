@@ -1,0 +1,60 @@
+From e979e268f05361154186a64d9814d457098c4fd8 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 11 Oct 2024 17:43:02 +0200
+Subject: [PATCH] bison-i18n: Add support for mingw builds on Cygwin hosts.
+
+* m4/bison-i18n.m4 (BISON_I18N): Define also BISON_LOCALEDIR_c and
+BISON_LOCALEDIR_c_make.
+* modules/bison-i18n (Files): Add m4/build-to-host.m4.
+---
+ ChangeLog          |  7 +++++++
+ m4/bison-i18n.m4   | 22 +++++++++++++++++++++-
+ modules/bison-i18n |  1 +
+ 3 files changed, 29 insertions(+), 1 deletion(-)
+
+--- a/m4/bison-i18n.m4
++++ b/m4/bison-i18n.m4
+@@ -1,5 +1,5 @@
+ # bison-i18n.m4
+-# serial 4
++# serial 5
+ dnl Copyright (C) 2005-2006, 2009-2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -56,6 +56,26 @@ AC_DEFUN([BISON_I18N],
+       fi
+     fi
+     AC_SUBST([BISON_LOCALEDIR])
++
++    dnl Define BISON_LOCALEDIR_c and BISON_LOCALEDIR_c_make.
++    dnl Find the final value of BISON_LOCALEDIR.
++    gl_saved_prefix="${prefix}"
++    gl_saved_datarootdir="${datarootdir}"
++    gl_saved_localedir="${localedir}"
++    gl_saved_bisonlocaledir="${BISON_LOCALEDIR}"
++    dnl Unfortunately, prefix gets only finally determined at the end of
++    dnl configure.
++    if test "X$prefix" = "XNONE"; then
++      prefix="$ac_default_prefix"
++    fi
++    eval datarootdir="$datarootdir"
++    eval localedir="$localedir"
++    eval BISON_LOCALEDIR="$BISON_LOCALEDIR"
++    gl_BUILD_TO_HOST([BISON_LOCALEDIR])
++    BISON_LOCALEDIR="${gl_saved_bisonlocaledir}"
++    localedir="${gl_saved_localedir}"
++    datarootdir="${gl_saved_datarootdir}"
++    prefix="${gl_saved_prefix}"
+   fi
+   if test $BISON_USE_NLS = yes; then
+     AC_DEFINE([YYENABLE_NLS], [1],
+--- a/modules/bison-i18n
++++ b/modules/bison-i18n
+@@ -3,6 +3,7 @@ Support for internationalization of biso
+ 
+ Files:
+ m4/bison-i18n.m4
++m4/build-to-host.m4
+ 
+ Depends-on:
+ gettext

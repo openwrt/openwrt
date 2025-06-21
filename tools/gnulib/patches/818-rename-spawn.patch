@@ -1,0 +1,539 @@
+From e04d7618a4b153d503be916c61d0a33fdbd0568b Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:16:16 +0100
+Subject: [PATCH] Rename module spawn to spawn-h.
+
+* modules/spawn-h: Renamed from modules/spawn.
+* modules/spawn-h-tests: Renamed from modules/spawn-tests.
+* modules/spawn-h-c++-tests: Renamed from modules/spawn-c++-tests.
+* tests/test-spawn-h.c: Renamed from tests/test-spawn.c.
+* tests/test-spawn-h-c++.cc: Renamed from tests/test-spawn-c++.cc.
+* doc/posix-headers/spawn.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/spawn: New file.
+---
+ ChangeLog                                     | 12 +++
+ doc/posix-headers/spawn.texi                  |  4 +-
+ modules/execute                               |  2 +-
+ modules/posix_spawn                           |  2 +-
+ modules/posix_spawn-internal                  |  2 +-
+ modules/posix_spawn_file_actions_addchdir     |  2 +-
+ modules/posix_spawn_file_actions_addclose     |  2 +-
+ modules/posix_spawn_file_actions_adddup2      |  2 +-
+ modules/posix_spawn_file_actions_addfchdir    |  2 +-
+ modules/posix_spawn_file_actions_addopen      |  2 +-
+ modules/posix_spawn_file_actions_destroy      |  2 +-
+ modules/posix_spawn_file_actions_init         |  2 +-
+ modules/posix_spawnattr_destroy               |  2 +-
+ modules/posix_spawnattr_getflags              |  2 +-
+ modules/posix_spawnattr_getpgroup             |  2 +-
+ modules/posix_spawnattr_getschedparam         |  2 +-
+ modules/posix_spawnattr_getschedpolicy        |  2 +-
+ modules/posix_spawnattr_getsigdefault         |  2 +-
+ modules/posix_spawnattr_getsigmask            |  2 +-
+ modules/posix_spawnattr_init                  |  2 +-
+ modules/posix_spawnattr_setflags              |  2 +-
+ modules/posix_spawnattr_setpgroup             |  2 +-
+ modules/posix_spawnattr_setschedparam         |  2 +-
+ modules/posix_spawnattr_setschedpolicy        |  2 +-
+ modules/posix_spawnattr_setsigdefault         |  2 +-
+ modules/posix_spawnattr_setsigmask            |  2 +-
+ modules/posix_spawnp                          |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/spawn                                 | 74 ++--------------
+ modules/spawn-c++-tests                       | 19 -----
+ modules/spawn-h                               | 85 +++++++++++++++++++
+ modules/spawn-h-c++-tests                     | 19 +++++
+ modules/spawn-h-tests                         | 11 +++
+ modules/spawn-pipe                            |  2 +-
+ modules/spawn-tests                           | 11 ---
+ ...{test-spawn-c++.cc => test-spawn-h-c++.cc} |  0
+ tests/{test-spawn.c => test-spawn-h.c}        |  0
+ 37 files changed, 163 insertions(+), 126 deletions(-)
+ delete mode 100644 modules/spawn-c++-tests
+ create mode 100644 modules/spawn-h
+ create mode 100644 modules/spawn-h-c++-tests
+ create mode 100644 modules/spawn-h-tests
+ delete mode 100644 modules/spawn-tests
+ rename tests/{test-spawn-c++.cc => test-spawn-h-c++.cc} (100%)
+ rename tests/{test-spawn.c => test-spawn-h.c} (100%)
+
+--- a/modules/execute
++++ b/modules/execute
+@@ -18,7 +18,7 @@ free-posix
+ msvc-nothrow
+ gettext-h
+ gnulib-i18n
+-spawn
++spawn-h
+ posix_spawn
+ posix_spawnp
+ posix_spawn_file_actions_init
+--- a/modules/posix_spawn
++++ b/modules/posix_spawn
+@@ -6,7 +6,7 @@ lib/spawn.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ posix_spawn-internal [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1]
+ 
+ configure.ac:
+--- a/modules/posix_spawn-internal
++++ b/modules/posix_spawn-internal
+@@ -7,7 +7,7 @@ lib/spawn_int.h
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ alloca-opt
+ dup2
+ errno-h
+--- a/modules/posix_spawn_file_actions_addchdir
++++ b/modules/posix_spawn_file_actions_addchdir
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn_faction_addchdir.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ posix_spawn_file_actions_init [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR = 0 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR = 1]
+ 
+ configure.ac:
+--- a/modules/posix_spawn_file_actions_addclose
++++ b/modules/posix_spawn_file_actions_addclose
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ getdtablesize                 [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE = 1]
+ posix_spawn_file_actions_init [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE = 1]
+ 
+--- a/modules/posix_spawn_file_actions_adddup2
++++ b/modules/posix_spawn_file_actions_adddup2
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ getdtablesize                 [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2 = 1]
+ posix_spawn_file_actions_init [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2 = 1]
+ 
+--- a/modules/posix_spawn_file_actions_addfchdir
++++ b/modules/posix_spawn_file_actions_addfchdir
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn_faction_addfchdir.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ posix_spawn_file_actions_init [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR = 0 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR = 1]
+ 
+ configure.ac:
+--- a/modules/posix_spawn_file_actions_addopen
++++ b/modules/posix_spawn_file_actions_addopen
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ getdtablesize                 [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN = 1]
+ posix_spawn_file_actions_init [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1 || test $REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN = 1]
+ 
+--- a/modules/posix_spawn_file_actions_destroy
++++ b/modules/posix_spawn_file_actions_destroy
+@@ -7,7 +7,7 @@ lib/spawn_faction_destroy.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawn_file_actions_init
++++ b/modules/posix_spawn_file_actions_init
+@@ -8,7 +8,7 @@ lib/spawn_int.h
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_destroy
++++ b/modules/posix_spawnattr_destroy
+@@ -7,7 +7,7 @@ lib/spawnattr_destroy.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getflags
++++ b/modules/posix_spawnattr_getflags
+@@ -7,7 +7,7 @@ lib/spawnattr_getflags.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getpgroup
++++ b/modules/posix_spawnattr_getpgroup
+@@ -7,7 +7,7 @@ lib/spawnattr_getpgroup.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getschedparam
++++ b/modules/posix_spawnattr_getschedparam
+@@ -7,7 +7,7 @@ lib/spawnattr_getschedparam.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getschedpolicy
++++ b/modules/posix_spawnattr_getschedpolicy
+@@ -7,7 +7,7 @@ lib/spawnattr_getschedpolicy.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getsigdefault
++++ b/modules/posix_spawnattr_getsigdefault
+@@ -7,7 +7,7 @@ lib/spawnattr_getdefault.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_getsigmask
++++ b/modules/posix_spawnattr_getsigmask
+@@ -7,7 +7,7 @@ lib/spawnattr_getsigmask.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_init
++++ b/modules/posix_spawnattr_init
+@@ -7,7 +7,7 @@ lib/spawnattr_init.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setflags
++++ b/modules/posix_spawnattr_setflags
+@@ -7,7 +7,7 @@ lib/spawnattr_setflags.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setpgroup
++++ b/modules/posix_spawnattr_setpgroup
+@@ -6,7 +6,7 @@ lib/spawnattr_setpgroup.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setschedparam
++++ b/modules/posix_spawnattr_setschedparam
+@@ -7,7 +7,7 @@ lib/spawnattr_setschedparam.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setschedpolicy
++++ b/modules/posix_spawnattr_setschedpolicy
+@@ -7,7 +7,7 @@ lib/spawnattr_setschedpolicy.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setsigdefault
++++ b/modules/posix_spawnattr_setsigdefault
+@@ -7,7 +7,7 @@ lib/spawnattr_setdefault.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnattr_setsigmask
++++ b/modules/posix_spawnattr_setsigmask
+@@ -7,7 +7,7 @@ lib/spawnattr_setsigmask.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ 
+ configure.ac:
+ gl_POSIX_SPAWN
+--- a/modules/posix_spawnp
++++ b/modules/posix_spawnp
+@@ -6,7 +6,7 @@ lib/spawnp.c
+ m4/posix_spawn.m4
+ 
+ Depends-on:
+-spawn
++spawn-h
+ posix_spawn-internal [test $HAVE_POSIX_SPAWN = 0 || test $REPLACE_POSIX_SPAWN = 1]
+ 
+ configure.ac:
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -27,7 +27,7 @@ pty-h
+ sched-h
+ search-h
+ signal-h
+-spawn
++spawn-h
+ stdio
+ stdlib
+ string
+--- a/modules/spawn
++++ b/modules/spawn
+@@ -1,79 +1,20 @@
+ Description:
+ A POSIX compliant <spawn.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'spawn-h' instead.
++
+ Files:
+-lib/spawn.in.h
+-m4/spawn_h.m4
+-m4/pid_t.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-sched-h
+-signal-h
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
++spawn-h
+ 
+ configure.ac:
+-gl_SPAWN_H
+-gl_SPAWN_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += spawn.h
+-
+-# We need the following in order to create a replacement for <spawn.h> when
+-# the system doesn't have one.
+-spawn.h: spawn.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_SPAWN_H''@|$(HAVE_SPAWN_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_SPAWN_H''@|$(NEXT_SPAWN_H)|g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN''@/$(GNULIB_POSIX_SPAWN)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNP''@/$(GNULIB_POSIX_SPAWNP)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_INIT''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_INIT)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_DESTROY''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_DESTROY)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_INIT''@/$(GNULIB_POSIX_SPAWNATTR_INIT)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETFLAGS''@/$(GNULIB_POSIX_SPAWNATTR_GETFLAGS)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETFLAGS''@/$(GNULIB_POSIX_SPAWNATTR_SETFLAGS)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETPGROUP''@/$(GNULIB_POSIX_SPAWNATTR_GETPGROUP)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETPGROUP''@/$(GNULIB_POSIX_SPAWNATTR_SETPGROUP)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSCHEDPARAM''@/$(GNULIB_POSIX_SPAWNATTR_GETSCHEDPARAM)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSCHEDPARAM''@/$(GNULIB_POSIX_SPAWNATTR_SETSCHEDPARAM)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSCHEDPOLICY''@/$(GNULIB_POSIX_SPAWNATTR_GETSCHEDPOLICY)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSCHEDPOLICY''@/$(GNULIB_POSIX_SPAWNATTR_SETSCHEDPOLICY)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSIGDEFAULT''@/$(GNULIB_POSIX_SPAWNATTR_GETSIGDEFAULT)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSIGDEFAULT''@/$(GNULIB_POSIX_SPAWNATTR_SETSIGDEFAULT)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSIGMASK''@/$(GNULIB_POSIX_SPAWNATTR_GETSIGMASK)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSIGMASK''@/$(GNULIB_POSIX_SPAWNATTR_SETSIGMASK)/g' \
+-	      -e 's/@''GNULIB_POSIX_SPAWNATTR_DESTROY''@/$(GNULIB_POSIX_SPAWNATTR_DESTROY)/g' \
+-	      -e 's|@''HAVE_POSIX_SPAWN''@|$(HAVE_POSIX_SPAWN)|g' \
+-	      -e 's|@''HAVE_POSIX_SPAWNATTR_T''@|$(HAVE_POSIX_SPAWNATTR_T)|g' \
+-	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_T''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_T)|g' \
+-	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)|g' \
+-	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN''@|$(REPLACE_POSIX_SPAWN)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)|g' \
+-	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/spawn.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += spawn.h spawn.h-t
+ 
+ Include:
+ <spawn.h>
+@@ -82,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-glibc
+--- /dev/null
++++ b/modules/spawn-h
+@@ -0,0 +1,85 @@
++Description:
++A POSIX compliant <spawn.h>.
++
++Files:
++lib/spawn.in.h
++m4/spawn_h.m4
++m4/pid_t.m4
++
++Depends-on:
++gen-header
++include_next
++sched-h
++signal-h
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_SPAWN_H
++gl_SPAWN_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += spawn.h
++
++# We need the following in order to create a replacement for <spawn.h> when
++# the system doesn't have one.
++spawn.h: spawn.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_SPAWN_H''@|$(HAVE_SPAWN_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_SPAWN_H''@|$(NEXT_SPAWN_H)|g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN''@/$(GNULIB_POSIX_SPAWN)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNP''@/$(GNULIB_POSIX_SPAWNP)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_INIT''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_INIT)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWN_FILE_ACTIONS_DESTROY''@/$(GNULIB_POSIX_SPAWN_FILE_ACTIONS_DESTROY)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_INIT''@/$(GNULIB_POSIX_SPAWNATTR_INIT)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETFLAGS''@/$(GNULIB_POSIX_SPAWNATTR_GETFLAGS)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETFLAGS''@/$(GNULIB_POSIX_SPAWNATTR_SETFLAGS)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETPGROUP''@/$(GNULIB_POSIX_SPAWNATTR_GETPGROUP)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETPGROUP''@/$(GNULIB_POSIX_SPAWNATTR_SETPGROUP)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSCHEDPARAM''@/$(GNULIB_POSIX_SPAWNATTR_GETSCHEDPARAM)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSCHEDPARAM''@/$(GNULIB_POSIX_SPAWNATTR_SETSCHEDPARAM)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSCHEDPOLICY''@/$(GNULIB_POSIX_SPAWNATTR_GETSCHEDPOLICY)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSCHEDPOLICY''@/$(GNULIB_POSIX_SPAWNATTR_SETSCHEDPOLICY)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSIGDEFAULT''@/$(GNULIB_POSIX_SPAWNATTR_GETSIGDEFAULT)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSIGDEFAULT''@/$(GNULIB_POSIX_SPAWNATTR_SETSIGDEFAULT)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_GETSIGMASK''@/$(GNULIB_POSIX_SPAWNATTR_GETSIGMASK)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_SETSIGMASK''@/$(GNULIB_POSIX_SPAWNATTR_SETSIGMASK)/g' \
++	      -e 's/@''GNULIB_POSIX_SPAWNATTR_DESTROY''@/$(GNULIB_POSIX_SPAWNATTR_DESTROY)/g' \
++	      -e 's|@''HAVE_POSIX_SPAWN''@|$(HAVE_POSIX_SPAWN)|g' \
++	      -e 's|@''HAVE_POSIX_SPAWNATTR_T''@|$(HAVE_POSIX_SPAWNATTR_T)|g' \
++	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_T''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_T)|g' \
++	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)|g' \
++	      -e 's|@''HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@|$(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN''@|$(REPLACE_POSIX_SPAWN)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSE)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDDUP2)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDFCHDIR)|g' \
++	      -e 's|@''REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN''@|$(REPLACE_POSIX_SPAWN_FILE_ACTIONS_ADDOPEN)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/spawn.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += spawn.h spawn.h-t
++
++Include:
++<spawn.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++glibc
+--- a/modules/spawn-pipe
++++ b/modules/spawn-pipe
+@@ -23,7 +23,7 @@ msvc-nothrow
+ open
+ pipe2
+ pipe2-safer
+-spawn
++spawn-h
+ posix_spawn
+ posix_spawnp
+ posix_spawn_file_actions_init

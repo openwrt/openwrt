@@ -1,0 +1,2785 @@
+From 14507472169b0407e42f540ea2e8da33dc342766 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:23:13 +0100
+Subject: [PATCH] Rename module stdint to stdint-h.
+
+* modules/stdint-h: Renamed from modules/stdint.
+* modules/stdint-h-tests: Renamed from modules/stdint-tests.
+* modules/stdint-h-c++-tests: Renamed from modules/stdint-c++-tests.
+* tests/test-stdint-h.c: Renamed from tests/test-stdint.c.
+* tests/test-stdint-h-c++.cc: Renamed from tests/test-stdint-c++.cc.
+* tests/test-stdint-h-c++2.cc: Renamed from tests/test-stdint-c++2.cc.
+* doc/posix-headers/stdint.texi: Update.
+* doc/gnulib-readme.texi: Update.
+* doc/gnulib.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdint: New file.
+---
+ ChangeLog                                     | 15 ++++
+ doc/gnulib-readme.texi                        |  4 +-
+ doc/gnulib.texi                               |  2 +-
+ doc/posix-headers/stdint.texi                 |  6 +-
+ modules/alignalloc                            |  2 +-
+ modules/alignalloc-tests                      |  2 +-
+ modules/alignasof-tests                       |  2 +-
+ modules/aligned-malloc                        |  2 +-
+ modules/aligned_alloc-tests                   |  2 +-
+ modules/alignof-tests                         |  2 +-
+ modules/areadlink-with-size                   |  2 +-
+ modules/areadlinkat-with-size                 |  2 +-
+ modules/array-list                            |  2 +-
+ modules/array-map                             |  2 +-
+ modules/array-set                             |  2 +-
+ modules/avltreehash-list                      |  2 +-
+ modules/backup-rename                         |  2 +-
+ modules/backupfile                            |  2 +-
+ modules/bitrotate                             |  2 +-
+ modules/byteswap                              |  2 +-
+ modules/byteswap-tests                        |  2 +-
+ modules/c-snprintf                            |  2 +-
+ modules/c-snzprintf                           |  2 +-
+ modules/c-vasnprintf                          |  2 +-
+ modules/c-vasprintf                           |  2 +-
+ modules/c-vaszprintf                          |  2 +-
+ modules/c-vsnprintf                           |  2 +-
+ modules/c-vsnzprintf                          |  2 +-
+ modules/call_once-tests                       |  2 +-
+ modules/calloc-gnu-tests                      |  2 +-
+ modules/calloc-posix-tests                    |  2 +-
+ modules/carray-list                           |  2 +-
+ modules/ceil-tests                            |  2 +-
+ modules/ceilf-tests                           |  2 +-
+ modules/crc                                   |  2 +-
+ modules/crc-x86_64                            |  2 +-
+ modules/crypto/arcfour                        |  2 +-
+ modules/crypto/arctwo                         |  2 +-
+ modules/crypto/des                            |  2 +-
+ modules/crypto/md4-buffer                     |  2 +-
+ modules/crypto/md5-buffer                     |  2 +-
+ modules/crypto/rijndael                       |  2 +-
+ modules/crypto/sha1-buffer                    |  2 +-
+ modules/crypto/sha256-buffer                  |  2 +-
+ modules/crypto/sha512-buffer                  |  2 +-
+ modules/crypto/sm3-buffer                     |  2 +-
+ modules/cycle-check                           |  2 +-
+ modules/dfa                                   |  2 +-
+ modules/di-set                                |  2 +-
+ modules/dprintf-posix-tests                   |  2 +-
+ modules/dzprintf-gnu-tests                    |  2 +-
+ modules/dzprintf-posix-tests                  |  2 +-
+ modules/endian                                |  2 +-
+ modules/endian-tests                          |  2 +-
+ modules/execute-tests                         |  2 +-
+ modules/explicit_bzero-tests                  |  2 +-
+ modules/floor-tests                           |  2 +-
+ modules/floorf-tests                          |  2 +-
+ modules/fprintf-posix-tests                   |  2 +-
+ modules/fstrcmp                               |  2 +-
+ modules/fsusage                               |  2 +-
+ modules/fts                                   |  2 +-
+ modules/fzprintf-posix-tests                  |  2 +-
+ modules/get-rusage-as                         |  2 +-
+ modules/get-rusage-data                       |  2 +-
+ modules/getdelim                              |  2 +-
+ modules/getgroups                             |  2 +-
+ modules/getndelim2                            |  2 +-
+ modules/getpayload                            |  2 +-
+ modules/getpayloadf                           |  2 +-
+ modules/getpayloadl                           |  2 +-
+ modules/getrusage                             |  2 +-
+ modules/git-merge-changelog                   |  2 +-
+ modules/glob                                  |  2 +-
+ modules/hamt                                  |  2 +-
+ modules/hash                                  |  2 +-
+ modules/hash-map                              |  2 +-
+ modules/hash-set                              |  2 +-
+ modules/htonl-tests                           |  2 +-
+ modules/human                                 |  2 +-
+ modules/ialloc                                |  2 +-
+ modules/iconv_open                            |  2 +-
+ modules/idx                                   |  2 +-
+ modules/immutable                             |  2 +-
+ modules/inttostr                              |  2 +-
+ modules/inttypes-h-incomplete                 |  2 +-
+ modules/jit/cache                             |  2 +-
+ modules/jit/cache-tests                       |  2 +-
+ modules/linkedhash-list                       |  2 +-
+ modules/linkedhash-map                        |  2 +-
+ modules/linkedhash-set                        |  2 +-
+ modules/lock-tests                            |  2 +-
+ modules/malloc-gnu-tests                      |  2 +-
+ modules/malloc-posix-tests                    |  2 +-
+ modules/malloca                               |  2 +-
+ modules/mbrtowc                               |  2 +-
+ modules/memalign-tests                        |  2 +-
+ modules/memchr2                               |  2 +-
+ modules/memcmp                                |  2 +-
+ modules/memmem-simple                         |  2 +-
+ modules/memset_explicit-tests                 |  2 +-
+ modules/mkdtemp                               |  2 +-
+ modules/mountlist                             |  2 +-
+ modules/mtx-tests                             |  2 +-
+ modules/obstack                               |  2 +-
+ modules/pipe-filter-gi                        |  2 +-
+ modules/pipe-filter-ii                        |  2 +-
+ modules/posix_memalign-tests                  |  2 +-
+ modules/posixtm-tests                         |  2 +-
+ modules/printf-posix-tests                    |  2 +-
+ modules/quotearg                              |  2 +-
+ modules/quotearg-simple-tests                 |  2 +-
+ modules/quotearg-tests                        |  2 +-
+ modules/random                                |  2 +-
+ modules/random_r                              |  2 +-
+ modules/rawmemchr                             |  2 +-
+ modules/rbtreehash-list                       |  2 +-
+ modules/read-file                             |  2 +-
+ modules/readutmp                              |  2 +-
+ modules/realloc-posix-tests                   |  2 +-
+ modules/reallocarray-tests                    |  2 +-
+ modules/regex                                 |  2 +-
+ modules/relocatable-prog-wrapper              |  2 +-
+ modules/round-tests                           |  2 +-
+ modules/roundf-tests                          |  2 +-
+ modules/setpayload                            |  2 +-
+ modules/setpayloadf                           |  2 +-
+ modules/setpayloadl                           |  2 +-
+ modules/setpayloadsig                         |  2 +-
+ modules/setpayloadsigf                        |  2 +-
+ modules/setpayloadsigl                        |  2 +-
+ modules/sigprocmask                           |  2 +-
+ modules/sigsegv                               |  2 +-
+ modules/sigsegv-tests                         |  2 +-
+ modules/simple-atomic                         |  2 +-
+ modules/sleep                                 |  2 +-
+ modules/snprintf                              |  2 +-
+ modules/snprintf-posix-tests                  |  2 +-
+ modules/snzprintf                             |  2 +-
+ modules/spawn-pipe-tests                      |  2 +-
+ modules/sprintf-posix                         |  2 +-
+ modules/sprintf-posix-tests                   |  2 +-
+ modules/stdc_bit_ceil-tests                   |  2 +-
+ modules/stdc_bit_floor-tests                  |  2 +-
+ modules/stdc_bit_width-tests                  |  2 +-
+ modules/stdc_count_ones-tests                 |  2 +-
+ modules/stdc_count_zeros-tests                |  2 +-
+ modules/stdc_first_leading_one-tests          |  2 +-
+ modules/stdc_first_leading_zero-tests         |  2 +-
+ modules/stdc_first_trailing_one-tests         |  2 +-
+ modules/stdc_first_trailing_zero-tests        |  2 +-
+ modules/stdc_has_single_bit-tests             |  2 +-
+ modules/stdc_leading_ones-tests               |  2 +-
+ modules/stdc_leading_zeros-tests              |  2 +-
+ modules/stdc_trailing_ones-tests              |  2 +-
+ modules/stdc_trailing_zeros-tests             |  2 +-
+ modules/stdint                                | 69 ++--------------
+ modules/stdint-c++-tests                      | 18 -----
+ modules/stdint-h                              | 80 +++++++++++++++++++
+ modules/stdint-h-c++-tests                    | 18 +++++
+ modules/{stdint-tests => stdint-h-tests}      |  8 +-
+ modules/strtoimax                             |  2 +-
+ modules/strtoumax                             |  2 +-
+ modules/strverscmp                            |  2 +-
+ modules/sublist                               |  2 +-
+ modules/szprintf                              |  2 +-
+ modules/tempname                              |  2 +-
+ modules/thread                                |  2 +-
+ modules/threads-h-tests                       |  2 +-
+ modules/tls-tests                             |  2 +-
+ modules/totalordermagl                        |  2 +-
+ modules/trunc-tests                           |  2 +-
+ modules/truncf-tests                          |  2 +-
+ modules/tsearch-tests                         |  2 +-
+ modules/tss-tests                             |  2 +-
+ modules/u64                                   |  2 +-
+ modules/uchar                                 |  2 +-
+ modules/unistdio/u-printf-args                |  2 +-
+ modules/unistdio/u16-printf-parse             |  2 +-
+ modules/unistdio/u16-u16-vasnprintf           |  2 +-
+ modules/unistdio/u16-u16-vsprintf             |  2 +-
+ modules/unistdio/u16-vasnprintf               |  2 +-
+ modules/unistdio/u16-vsprintf                 |  2 +-
+ modules/unistdio/u32-printf-parse             |  2 +-
+ modules/unistdio/u32-u32-vasnprintf           |  2 +-
+ modules/unistdio/u32-u32-vsprintf             |  2 +-
+ modules/unistdio/u32-vasnprintf               |  2 +-
+ modules/unistdio/u32-vsprintf                 |  2 +-
+ modules/unistdio/u8-asnprintf-extra-tests     |  2 +-
+ modules/unistdio/u8-printf-parse              |  2 +-
+ modules/unistdio/u8-u8-vasnprintf             |  2 +-
+ modules/unistdio/u8-u8-vsprintf               |  2 +-
+ modules/unistdio/u8-vasnprintf                |  2 +-
+ modules/unistdio/u8-vsprintf                  |  2 +-
+ modules/unistdio/ulc-asnprintf-extra-tests    |  2 +-
+ modules/unistdio/ulc-printf-parse             |  2 +-
+ modules/unistdio/ulc-vasnprintf               |  2 +-
+ modules/unistdio/ulc-vsprintf                 |  2 +-
+ modules/unitypes                              |  2 +-
+ modules/utimecmp                              |  2 +-
+ modules/vasnprintf                            |  2 +-
+ modules/vasnprintf-extra-tests                |  2 +-
+ modules/vasnprintf-posix-tests                |  2 +-
+ modules/vasnwprintf                           |  2 +-
+ modules/vasnwprintf-extra-tests               |  2 +-
+ modules/vasnwprintf-posix-tests               |  2 +-
+ modules/vasprintf                             |  2 +-
+ modules/vasprintf-posix-tests                 |  2 +-
+ modules/vaszprintf                            |  2 +-
+ modules/vdprintf-posix-tests                  |  2 +-
+ modules/vdzprintf-gnu-tests                   |  2 +-
+ modules/vdzprintf-posix-tests                 |  2 +-
+ modules/vfprintf-posix-tests                  |  2 +-
+ modules/vfzprintf-posix-tests                 |  2 +-
+ modules/vma-iter                              |  2 +-
+ modules/vma-prot                              |  2 +-
+ modules/vprintf-posix-tests                   |  2 +-
+ modules/vsnprintf                             |  2 +-
+ modules/vsnprintf-posix-tests                 |  2 +-
+ modules/vsnzprintf                            |  2 +-
+ modules/vsprintf-posix                        |  2 +-
+ modules/vsprintf-posix-tests                  |  2 +-
+ modules/vszprintf                             |  2 +-
+ modules/vzprintf-posix-tests                  |  2 +-
+ modules/windows-spawn                         |  2 +-
+ modules/xalloc                                |  2 +-
+ modules/xalloc-oversized                      |  2 +-
+ modules/xprintf-posix-tests                   |  2 +-
+ modules/xstrtol                               |  2 +-
+ modules/zprintf-posix-tests                   |  2 +-
+ ...est-stdint-c++.cc => test-stdint-h-c++.cc} |  0
+ ...t-stdint-c++2.cc => test-stdint-h-c++2.cc} |  0
+ tests/{test-stdint.c => test-stdint-h.c}      |  0
+ 233 files changed, 351 insertions(+), 311 deletions(-)
+ delete mode 100644 modules/stdint-c++-tests
+ create mode 100644 modules/stdint-h
+ create mode 100644 modules/stdint-h-c++-tests
+ rename modules/{stdint-tests => stdint-h-tests} (56%)
+ rename tests/{test-stdint-c++.cc => test-stdint-h-c++.cc} (100%)
+ rename tests/{test-stdint-c++2.cc => test-stdint-h-c++2.cc} (100%)
+ rename tests/{test-stdint.c => test-stdint-h.c} (100%)
+
+--- a/doc/gnulib.texi
++++ b/doc/gnulib.texi
+@@ -799,7 +799,7 @@ Git, however, doesn't address the distri
+ either has to put a comment into @file{foobar/autogen.sh} saying
+ ``Attention! This doesn't work with a pristine Gnulib, you need this
+ and that patch after checking out Gnulib,'' or it has to use the
+-@samp{--avoid=stdint} option and provide the modified @code{stdint}
++@samp{--avoid=stdint-h} option and provide the modified @code{stdint-h}
+ module in a different directory.
+ 
+ The @option{--local-dir} option to @command{gnulib-tool} solves this
+--- a/modules/alignalloc
++++ b/modules/alignalloc
+@@ -14,7 +14,7 @@ extern-inline
+ idx
+ posix_memalign
+ stdckdint-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_ALIGNALLOC
+--- a/modules/alignalloc-tests
++++ b/modules/alignalloc-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ 
+ Depends-on:
+ intprops
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/alignasof-tests
++++ b/modules/alignasof-tests
+@@ -4,7 +4,7 @@ tests/macros.h
+ 
+ Depends-on:
+ assert-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/aligned-malloc
++++ b/modules/aligned-malloc
+@@ -6,7 +6,7 @@ lib/aligned-malloc.h
+ m4/malloc-align.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ posix_memalign
+ aligned_alloc
+ memalign
+--- a/modules/aligned_alloc-tests
++++ b/modules/aligned_alloc-tests
+@@ -3,7 +3,7 @@ tests/test-aligned_alloc.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/alignof-tests
++++ b/modules/alignof-tests
+@@ -3,7 +3,7 @@ tests/test-alignof.c
+ 
+ Depends-on:
+ assert-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/areadlink-with-size
++++ b/modules/areadlink-with-size
+@@ -10,7 +10,7 @@ free-posix
+ limits-h
+ readlink
+ ssize_t
+-stdint
++stdint-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/areadlinkat-with-size
++++ b/modules/areadlinkat-with-size
+@@ -8,7 +8,7 @@ lib/at-func.c
+ 
+ Depends-on:
+ areadlink-with-size
+-stdint
++stdint-h
+ readlinkat
+ at-internal
+ errno-h
+--- a/modules/array-list
++++ b/modules/array-list
+@@ -7,7 +7,7 @@ lib/gl_array_list.c
+ 
+ Depends-on:
+ list
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/array-map
++++ b/modules/array-map
+@@ -7,7 +7,7 @@ lib/gl_array_map.c
+ 
+ Depends-on:
+ map
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/array-set
++++ b/modules/array-set
+@@ -7,7 +7,7 @@ lib/gl_array_set.c
+ 
+ Depends-on:
+ set
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/avltreehash-list
++++ b/modules/avltreehash-list
+@@ -18,7 +18,7 @@ Depends-on:
+ builtin-expect
+ list
+ avltree-oset
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/backup-rename
++++ b/modules/backup-rename
+@@ -23,7 +23,7 @@ readdir
+ renameatu
+ stdbool-h
+ stdckdint-h
+-stdint
++stdint-h
+ xalloc-oversized
+ 
+ configure.ac:
+--- a/modules/backupfile
++++ b/modules/backupfile
+@@ -24,7 +24,7 @@ realloc-gnu
+ renameatu
+ stdbool-h
+ stdckdint-h
+-stdint
++stdint-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/bitrotate
++++ b/modules/bitrotate
+@@ -7,7 +7,7 @@ lib/bitrotate.c
+ 
+ Depends-on:
+ extern-inline
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/byteswap
++++ b/modules/byteswap
+@@ -10,7 +10,7 @@ Depends-on:
+ gen-header
+ extern-inline           [$GL_GENERATE_BYTESWAP_H]
+ stdbool-h               [$GL_GENERATE_BYTESWAP_H]
+-stdint                  [$GL_GENERATE_BYTESWAP_H]
++stdint-h                [$GL_GENERATE_BYTESWAP_H]
+ 
+ configure.ac:
+ gl_BYTESWAP
+--- a/modules/byteswap-tests
++++ b/modules/byteswap-tests
+@@ -3,7 +3,7 @@ tests/test-byteswap.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ byteswap-c++-tests
+ 
+ configure.ac:
+--- a/modules/c-snprintf
++++ b/modules/c-snprintf
+@@ -6,7 +6,7 @@ lib/c-snprintf.h
+ lib/c-snprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vsnzprintf
+ 
+--- a/modules/c-snzprintf
++++ b/modules/c-snzprintf
+@@ -7,7 +7,7 @@ lib/c-snprintf.h
+ lib/c-snzprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vasnprintf
+ 
+--- a/modules/c-vasnprintf
++++ b/modules/c-vasnprintf
+@@ -24,7 +24,7 @@ Depends-on:
+ assert-h
+ attribute
+ limits-h
+-stdint
++stdint-h
+ stdio
+ mixin/printf-posix
+ free-posix
+--- a/modules/c-vasprintf
++++ b/modules/c-vasprintf
+@@ -7,7 +7,7 @@ lib/c-asprintf.c
+ lib/c-vasprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vasnprintf
+ 
+--- a/modules/c-vaszprintf
++++ b/modules/c-vaszprintf
+@@ -7,7 +7,7 @@ lib/c-aszprintf.c
+ lib/c-vaszprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vasnprintf
+ 
+--- a/modules/c-vsnprintf
++++ b/modules/c-vsnprintf
+@@ -7,7 +7,7 @@ lib/c-vsnprintf.h
+ lib/c-vsnprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vsnzprintf
+ 
+--- a/modules/c-vsnzprintf
++++ b/modules/c-vsnzprintf
+@@ -7,7 +7,7 @@ lib/c-vsnprintf.h
+ lib/c-vsnzprintf.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdio
+ c-vasnprintf
+ 
+--- a/modules/call_once-tests
++++ b/modules/call_once-tests
+@@ -7,7 +7,7 @@ Depends-on:
+ thrd
+ lock
+ mtx
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_CHECK_DECLS_ONCE([alarm])
+--- a/modules/calloc-gnu-tests
++++ b/modules/calloc-gnu-tests
+@@ -3,7 +3,7 @@ tests/test-calloc-gnu.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/carray-list
++++ b/modules/carray-list
+@@ -7,7 +7,7 @@ lib/gl_carray_list.c
+ 
+ Depends-on:
+ list
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/ceil-tests
++++ b/modules/ceil-tests
+@@ -11,7 +11,7 @@ float-h
+ isnand-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/ceilf-tests
++++ b/modules/ceilf-tests
+@@ -11,7 +11,7 @@ float-h
+ isnanf-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/crc
++++ b/modules/crc
+@@ -6,7 +6,7 @@ lib/crc.h
+ lib/crc.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/crypto/arcfour
++++ b/modules/crypto/arcfour
+@@ -6,7 +6,7 @@ lib/arcfour.h
+ lib/arcfour.c
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/arctwo
++++ b/modules/crypto/arctwo
+@@ -7,7 +7,7 @@ lib/arctwo.c
+ m4/arctwo.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ bitrotate
+ 
+ configure.ac:
+--- a/modules/crypto/des
++++ b/modules/crypto/des
+@@ -6,7 +6,7 @@ lib/des.c
+ lib/des.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ stdbool-h
+ memcmp
+ 
+--- a/modules/crypto/md4-buffer
++++ b/modules/crypto/md4-buffer
+@@ -9,7 +9,7 @@ m4/md4.m4
+ Depends-on:
+ alignasof
+ byteswap
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/md5-buffer
++++ b/modules/crypto/md5-buffer
+@@ -13,7 +13,7 @@ alignasof
+ byteswap
+ c99
+ extern-inline
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/rijndael
++++ b/modules/crypto/rijndael
+@@ -8,7 +8,7 @@ lib/rijndael-api-fst.c
+ lib/rijndael-api-fst.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/sha1-buffer
++++ b/modules/crypto/sha1-buffer
+@@ -13,7 +13,7 @@ alignasof
+ byteswap
+ c99
+ extern-inline
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/sha256-buffer
++++ b/modules/crypto/sha256-buffer
+@@ -13,7 +13,7 @@ alignasof
+ byteswap
+ c99
+ extern-inline
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_REQUIRE([AC_C_RESTRICT])
+--- a/modules/crypto/sha512-buffer
++++ b/modules/crypto/sha512-buffer
+@@ -13,7 +13,7 @@ alignasof
+ byteswap
+ c99
+ extern-inline
+-stdint
++stdint-h
+ u64
+ 
+ configure.ac:
+--- a/modules/crypto/sm3-buffer
++++ b/modules/crypto/sm3-buffer
+@@ -11,7 +11,7 @@ alignasof
+ byteswap
+ c99
+ extern-inline
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_SM3
+--- a/modules/cycle-check
++++ b/modules/cycle-check
+@@ -11,7 +11,7 @@ assure
+ dev-ino
+ same-inode
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_CYCLE_CHECK
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -27,7 +27,7 @@ mbszero
+ regex
+ stdbool-h
+ stddef-h
+-stdint
++stdint-h
+ stdio
+ stdlib
+ string
+--- a/modules/di-set
++++ b/modules/di-set
+@@ -8,7 +8,7 @@ lib/di-set.h
+ Depends-on:
+ ino-map
+ hash
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/dprintf-posix-tests
++++ b/modules/dprintf-posix-tests
+@@ -12,7 +12,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ get-rusage-as
+ 
+ configure.ac:
+--- a/modules/dzprintf-gnu-tests
++++ b/modules/dzprintf-gnu-tests
+@@ -6,7 +6,7 @@ tests/test-printf-gnu.output
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/dzprintf-posix-tests
++++ b/modules/dzprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/endian
++++ b/modules/endian
+@@ -11,7 +11,7 @@ gen-header
+ include_next
+ extern-inline           [$GL_GENERATE_ENDIAN_H && test $ENDIAN_H_JUST_MISSING_STDINT = 0]
+ byteswap                [$GL_GENERATE_ENDIAN_H && test $ENDIAN_H_JUST_MISSING_STDINT = 0]
+-stdint                  [$GL_GENERATE_ENDIAN_H]
++stdint-h                [$GL_GENERATE_ENDIAN_H]
+ 
+ configure.ac:
+ gl_ENDIAN_H
+--- a/modules/endian-tests
++++ b/modules/endian-tests
+@@ -4,7 +4,7 @@ tests/macros.h
+ 
+ Depends-on:
+ assert-h
+-stdint
++stdint-h
+ endian-c++-tests
+ 
+ configure.ac:
+--- a/modules/execute-tests
++++ b/modules/execute-tests
+@@ -16,7 +16,7 @@ mkdir
+ msvc-inval
+ read-file
+ stdbool-h
+-stdint
++stdint-h
+ unistd
+ 
+ configure.ac:
+--- a/modules/explicit_bzero-tests
++++ b/modules/explicit_bzero-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ vma-iter
+ 
+ configure.ac:
+--- a/modules/floor-tests
++++ b/modules/floor-tests
+@@ -11,7 +11,7 @@ float-h
+ isnand-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/floorf-tests
++++ b/modules/floorf-tests
+@@ -11,7 +11,7 @@ float-h
+ isnanf-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/fprintf-posix-tests
++++ b/modules/fprintf-posix-tests
+@@ -14,7 +14,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ get-rusage-as
+ 
+ configure.ac:
+--- a/modules/fstrcmp
++++ b/modules/fstrcmp
+@@ -11,7 +11,7 @@ diffseq
+ lock
+ tls
+ minmax
+-stdint
++stdint-h
+ xalloc
+ 
+ configure.ac:
+--- a/modules/fsusage
++++ b/modules/fsusage
+@@ -10,7 +10,7 @@ Depends-on:
+ c99
+ largefile
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_FSUSAGE
+--- a/modules/fts
++++ b/modules/fts
+@@ -37,7 +37,7 @@ readdir
+ realloc-posix
+ stdbool-h
+ stddef-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_FUNC_FTS
+--- a/modules/fzprintf-posix-tests
++++ b/modules/fzprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/get-rusage-as
++++ b/modules/get-rusage-as
+@@ -7,7 +7,7 @@ lib/get-rusage-as.c
+ m4/mmap-anon.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ unistd
+ extensions
+ getpagesize
+--- a/modules/get-rusage-data
++++ b/modules/get-rusage-data
+@@ -7,7 +7,7 @@ lib/get-rusage-data.c
+ m4/mmap-anon.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ unistd
+ extensions
+ getpagesize
+--- a/modules/getdelim
++++ b/modules/getdelim
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ extensions
+ limits-h        [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+-stdint          [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
++stdint-h        [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+ errno-h         [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+ 
+ configure.ac:
+--- a/modules/getgroups
++++ b/modules/getgroups
+@@ -9,7 +9,7 @@ Depends-on:
+ unistd
+ free-posix      [test $HAVE_GETGROUPS = 0 || test $REPLACE_GETGROUPS = 1]
+ malloc-posix    [test $HAVE_GETGROUPS = 0 || test $REPLACE_GETGROUPS = 1]
+-stdint          [test $HAVE_GETGROUPS = 0 || test $REPLACE_GETGROUPS = 1]
++stdint-h        [test $HAVE_GETGROUPS = 0 || test $REPLACE_GETGROUPS = 1]
+ 
+ configure.ac:
+ gl_FUNC_GETGROUPS
+--- a/modules/getndelim2
++++ b/modules/getndelim2
+@@ -11,7 +11,7 @@ Depends-on:
+ limits-h
+ ssize_t
+ stdbool-h
+-stdint
++stdint-h
+ freadptr
+ freadseek
+ memchr2
+--- a/modules/getpayload
++++ b/modules/getpayload
+@@ -10,7 +10,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+-stdint          [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
++stdint-h        [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ isnand          [test $HAVE_GETPAYLOAD = 0 || test $REPLACE_GETPAYLOAD = 1]
+ 
+ configure.ac:
+--- a/modules/getpayloadf
++++ b/modules/getpayloadf
+@@ -10,7 +10,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+-stdint          [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
++stdint-h        [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ isnanf          [test $HAVE_GETPAYLOADF = 0 || test $REPLACE_GETPAYLOADF = 1]
+ 
+ configure.ac:
+--- a/modules/getpayloadl
++++ b/modules/getpayloadl
+@@ -12,7 +12,7 @@ math-h
+ extensions
+ getpayload      [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdint          [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdint-h        [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ snan            [{ test $HAVE_GETPAYLOADL = 0 || test $REPLACE_GETPAYLOADL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+--- a/modules/getrusage
++++ b/modules/getrusage
+@@ -7,7 +7,7 @@ m4/getrusage.m4
+ 
+ Depends-on:
+ sys_resource
+-stdint          [test $HAVE_GETRUSAGE = 0]
++stdint-h        [test $HAVE_GETRUSAGE = 0]
+ 
+ configure.ac:
+ gl_FUNC_GETRUSAGE
+--- a/modules/git-merge-changelog
++++ b/modules/git-merge-changelog
+@@ -9,7 +9,7 @@ c99
+ getopt-gnu
+ idx
+ stdbool-h
+-stdint
++stdint-h
+ stdlib
+ error
+ read-file
+--- a/modules/glob
++++ b/modules/glob
+@@ -30,7 +30,7 @@ readdir                       [test $HAV
+ glibc-internal/scratch_buffer [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdbool-h                     [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdckdint-h                   [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+-stdint                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
++stdint-h                      [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ strdup                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ unistd                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ malloc-posix                  [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+--- a/modules/hamt
++++ b/modules/hamt
+@@ -11,7 +11,7 @@ extern-inline
+ flexmember
+ inttypes-h-incomplete
+ stdbool-h
+-stdint
++stdint-h
+ verify
+ xalloc
+ 
+--- a/modules/hash
++++ b/modules/hash
+@@ -12,7 +12,7 @@ free-posix
+ malloc-posix
+ next-prime
+ stdbool-h
+-stdint
++stdint-h
+ xalloc-oversized
+ hashcode-string1
+ 
+--- a/modules/hash-map
++++ b/modules/hash-map
+@@ -10,7 +10,7 @@ lib/gl_anyhash_primes.h
+ 
+ Depends-on:
+ map
+-stdint
++stdint-h
+ xsize
+ c99
+ 
+--- a/modules/hash-set
++++ b/modules/hash-set
+@@ -10,7 +10,7 @@ lib/gl_anyhash_primes.h
+ 
+ Depends-on:
+ set
+-stdint
++stdint-h
+ xsize
+ c99
+ 
+--- a/modules/human
++++ b/modules/human
+@@ -15,7 +15,7 @@ localeconv
+ memmove
+ xstrtoumax
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_HUMAN
+--- a/modules/ialloc
++++ b/modules/ialloc
+@@ -12,7 +12,7 @@ idx
+ malloc-gnu
+ realloc-gnu
+ reallocarray
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/iconv_open
++++ b/modules/iconv_open
+@@ -19,7 +19,7 @@ iconv-h
+ iconv
+ c-ctype           [test $REPLACE_ICONV_OPEN = 1]
+ c-strcase         [test $REPLACE_ICONV_OPEN = 1]
+-stdint            [test $REPLACE_ICONV_UTF = 1]
++stdint-h          [test $REPLACE_ICONV_UTF = 1]
+ unistr/u8-mbtoucr [test $REPLACE_ICONV_UTF = 1]
+ unistr/u8-uctomb  [test $REPLACE_ICONV_UTF = 1]
+ 
+--- a/modules/idx
++++ b/modules/idx
+@@ -5,7 +5,7 @@ Files:
+ lib/idx.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/immutable
++++ b/modules/immutable
+@@ -10,7 +10,7 @@ m4/mmap-anon.m4
+ m4/nocrash.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ pathmax
+ open
+ ssfmalloc
+--- a/modules/inttostr
++++ b/modules/inttostr
+@@ -13,7 +13,7 @@ m4/inttostr.m4
+ 
+ Depends-on:
+ intprops
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_INTTOSTR
+--- a/modules/inttypes-h-incomplete
++++ b/modules/inttypes-h-incomplete
+@@ -12,7 +12,7 @@ multiarch
+ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_INTTYPES_INCOMPLETE
+--- a/modules/jit/cache
++++ b/modules/jit/cache
+@@ -6,7 +6,7 @@ lib/jit/cache.h
+ m4/valgrind-helper.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_VALGRIND_HELPER
+--- a/modules/jit/cache-tests
++++ b/modules/jit/cache-tests
+@@ -12,7 +12,7 @@ Depends-on:
+ clean-temp-simple
+ getpagesize
+ host-cpu-c-abi
+-stdint
++stdint-h
+ xalloc
+ 
+ configure.ac:
+--- a/modules/linkedhash-list
++++ b/modules/linkedhash-list
+@@ -12,7 +12,7 @@ lib/gl_anylinked_list2.h
+ 
+ Depends-on:
+ list
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/linkedhash-map
++++ b/modules/linkedhash-map
+@@ -10,7 +10,7 @@ lib/gl_anyhash_primes.h
+ 
+ Depends-on:
+ map
+-stdint
++stdint-h
+ xsize
+ c99
+ 
+--- a/modules/linkedhash-set
++++ b/modules/linkedhash-set
+@@ -10,7 +10,7 @@ lib/gl_anyhash_primes.h
+ 
+ Depends-on:
+ set
+-stdint
++stdint-h
+ xsize
+ c99
+ 
+--- a/modules/malloc-gnu-tests
++++ b/modules/malloc-gnu-tests
+@@ -3,7 +3,7 @@ tests/test-malloc-gnu.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/malloca
++++ b/modules/malloca
+@@ -12,7 +12,7 @@ alloca-opt
+ assert-h
+ idx
+ stdckdint-h
+-stdint
++stdint-h
+ stdlib
+ xalloc-oversized
+ 
+--- a/modules/mbrtowc
++++ b/modules/mbrtowc
+@@ -23,7 +23,7 @@ Depends-on:
+ wchar
+ extensions
+ attribute       [test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1]
+-stdint          [test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1]
++stdint-h        [test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1]
+ hard-locale     [{ test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1; } && test $REPLACE_MBSTATE_T = 0]
+ mbsinit         [{ test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1; } && test $REPLACE_MBSTATE_T = 0]
+ assert-h        [test $HAVE_MBRTOWC = 0 || test $REPLACE_MBRTOWC = 1]
+--- a/modules/memalign-tests
++++ b/modules/memalign-tests
+@@ -3,7 +3,7 @@ tests/test-memalign.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/memchr2
++++ b/modules/memchr2
+@@ -7,7 +7,7 @@ lib/memchr2.c
+ lib/memchr2.valgrind
+ 
+ Depends-on:
+-stdint
++stdint-h
+ memchr
+ 
+ configure.ac:
+--- a/modules/memcmp
++++ b/modules/memcmp
+@@ -12,7 +12,7 @@ lib/memcmp.c
+ m4/memcmp.m4
+ 
+ Depends-on:
+-stdint          [test $gl_func_memcmp = no]
++stdint-h        [test $gl_func_memcmp = no]
+ 
+ configure.ac:
+ gl_FUNC_MEMCMP
+--- a/modules/memmem-simple
++++ b/modules/memmem-simple
+@@ -10,7 +10,7 @@ Depends-on:
+ builtin-expect
+ extensions
+ string
+-stdint
++stdint-h
+ memchr
+ memcmp
+ 
+--- a/modules/memset_explicit-tests
++++ b/modules/memset_explicit-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ vma-iter
+ 
+ configure.ac:
+--- a/modules/mkdtemp
++++ b/modules/mkdtemp
+@@ -7,7 +7,7 @@ m4/mkdtemp.m4
+ 
+ Depends-on:
+ stdlib
+-stdint          [test $HAVE_MKDTEMP = 0]
++stdint-h        [test $HAVE_MKDTEMP = 0]
+ tempname        [test $HAVE_MKDTEMP = 0]
+ 
+ configure.ac:
+--- a/modules/mountlist
++++ b/modules/mountlist
+@@ -14,7 +14,7 @@ getline
+ open
+ unlocked-io-internal
+ stdbool-h
+-stdint
++stdint-h
+ strstr-simple
+ xalloc
+ 
+--- a/modules/obstack
++++ b/modules/obstack
+@@ -12,7 +12,7 @@ alignof         [test $HAVE_OBSTACK = 0
+ gettext-h       [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ gnulib-i18n     [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ exitfail        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+-stdint          [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
++stdint-h        [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ stdlib          [test $HAVE_OBSTACK = 0 || test $REPLACE_OBSTACK = 1]
+ 
+ configure.ac:
+--- a/modules/pipe-filter-gi
++++ b/modules/pipe-filter-gi
+@@ -17,7 +17,7 @@ free-posix
+ gettext-h
+ gnulib-i18n
+ stdbool-h
+-stdint
++stdint-h
+ stdlib
+ sys_select
+ unistd
+--- a/modules/pipe-filter-ii
++++ b/modules/pipe-filter-ii
+@@ -16,7 +16,7 @@ fcntl-h
+ gettext-h
+ gnulib-i18n
+ stdbool-h
+-stdint
++stdint-h
+ stdlib
+ sys_select
+ unistd
+--- a/modules/posix_memalign-tests
++++ b/modules/posix_memalign-tests
+@@ -3,7 +3,7 @@ tests/test-posix_memalign.c
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/posixtm-tests
++++ b/modules/posixtm-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ Depends-on:
+ intprops
+ setenv
+-stdint
++stdint-h
+ stpcpy
+ strftime-fixes
+ 
+--- a/modules/printf-posix-tests
++++ b/modules/printf-posix-tests
+@@ -11,7 +11,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_CHECK_FUNCS_ONCE([getrlimit setrlimit])
+--- a/modules/quotearg
++++ b/modules/quotearg
+@@ -22,7 +22,7 @@ minmax
+ quotearg-simple
+ localcharset
+ stdbool-h
+-stdint
++stdint-h
+ uchar
+ xalloc
+ 
+--- a/modules/quotearg-simple-tests
++++ b/modules/quotearg-simple-tests
+@@ -7,7 +7,7 @@ m4/mmap-anon.m4
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ 
+ configure.ac:
+ dnl Check for prerequisites for memory fence checks.
+--- a/modules/quotearg-tests
++++ b/modules/quotearg-tests
+@@ -13,7 +13,7 @@ m4/codeset.m4
+ 
+ Depends-on:
+ gettext
+-stdint
++stdint-h
+ setenv
+ unsetenv
+ setlocale
+--- a/modules/random
++++ b/modules/random
+@@ -9,7 +9,7 @@ Depends-on:
+ stdlib
+ libc-config     [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+ lock            [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+-stdint          [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
++stdint-h        [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+ random_r        [test $HAVE_RANDOM = 0 || test $REPLACE_RANDOM = 1 || test $REPLACE_INITSTATE = 1 || test $REPLACE_SETSTATE = 1]
+ 
+ configure.ac:
+--- a/modules/random_r
++++ b/modules/random_r
+@@ -9,7 +9,7 @@ Depends-on:
+ c99
+ libc-config     [test $HAVE_RANDOM_R = 0 || test $REPLACE_RANDOM_R = 1]
+ stdlib
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_FUNC_RANDOM_R
+--- a/modules/rawmemchr
++++ b/modules/rawmemchr
+@@ -9,7 +9,7 @@ m4/rawmemchr.m4
+ Depends-on:
+ assert-h
+ extensions
+-stdint
++stdint-h
+ string
+ 
+ configure.ac:
+--- a/modules/rbtreehash-list
++++ b/modules/rbtreehash-list
+@@ -18,7 +18,7 @@ Depends-on:
+ builtin-expect
+ list
+ rbtree-oset
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/read-file
++++ b/modules/read-file
+@@ -14,7 +14,7 @@ ftello
+ malloc-posix
+ memset_explicit
+ realloc-posix
+-stdint
++stdint-h
+ sys_stat
+ 
+ configure.ac:
+--- a/modules/readutmp
++++ b/modules/readutmp
+@@ -14,7 +14,7 @@ idx
+ stat-time
+ gettimeofday
+ stdbool-h
+-stdint
++stdint-h
+ strnlen
+ time-h
+ unlocked-io-internal
+--- a/modules/reallocarray-tests
++++ b/modules/reallocarray-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/regex
++++ b/modules/regex
+@@ -38,7 +38,7 @@ mbsinit                 [test $ac_use_in
+ nl_langinfo             [test $ac_use_included_regex = yes]
+ stdbool-h               [test $ac_use_included_regex = yes]
+ stdckdint-h             [test $ac_use_included_regex = yes]
+-stdint                  [test $ac_use_included_regex = yes]
++stdint-h                [test $ac_use_included_regex = yes]
+ verify                  [test $ac_use_included_regex = yes]
+ wchar                   [test $ac_use_included_regex = yes]
+ wcrtomb                 [test $ac_use_included_regex = yes]
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -72,7 +72,7 @@ ssize_t
+ stdbool-h
+ stddef-h
+ stdckdint-h
+-stdint
++stdint-h
+ stdlib
+ string
+ sys_stat
+--- a/modules/round-tests
++++ b/modules/round-tests
+@@ -11,7 +11,7 @@ assert-h
+ isnand-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/roundf-tests
++++ b/modules/roundf-tests
+@@ -14,7 +14,7 @@ floorf
+ isnanf-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/setpayload
++++ b/modules/setpayload
+@@ -11,7 +11,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOAD = 0]
+-stdint          [test $HAVE_SETPAYLOAD = 0]
++stdint-h        [test $HAVE_SETPAYLOAD = 0]
+ signed-nan      [test $HAVE_SETPAYLOAD = 0]
+ 
+ configure.ac:
+--- a/modules/setpayloadf
++++ b/modules/setpayloadf
+@@ -11,7 +11,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADF = 0]
+-stdint          [test $HAVE_SETPAYLOADF = 0]
++stdint-h        [test $HAVE_SETPAYLOADF = 0]
+ signed-nan      [test $HAVE_SETPAYLOADF = 0]
+ 
+ configure.ac:
+--- a/modules/setpayloadl
++++ b/modules/setpayloadl
+@@ -13,7 +13,7 @@ math-h
+ extensions
+ setpayload      [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdint          [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdint-h        [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signed-nan      [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ snan            [test $HAVE_SETPAYLOADL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+--- a/modules/setpayloadsig
++++ b/modules/setpayloadsig
+@@ -10,7 +10,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADSIG = 0]
+-stdint          [test $HAVE_SETPAYLOADSIG = 0]
++stdint-h        [test $HAVE_SETPAYLOADSIG = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIG = 0]
+ 
+ configure.ac:
+--- a/modules/setpayloadsigf
++++ b/modules/setpayloadsigf
+@@ -10,7 +10,7 @@ Depends-on:
+ math-h
+ extensions
+ float-h         [test $HAVE_SETPAYLOADSIGF = 0]
+-stdint          [test $HAVE_SETPAYLOADSIGF = 0]
++stdint-h        [test $HAVE_SETPAYLOADSIGF = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIGF = 0]
+ 
+ configure.ac:
+--- a/modules/setpayloadsigl
++++ b/modules/setpayloadsigl
+@@ -12,7 +12,7 @@ math-h
+ extensions
+ setpayloadsig   [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdint          [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdint-h        [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signed-snan     [test $HAVE_SETPAYLOADSIGL = 0 && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ 
+ configure.ac:
+--- a/modules/sigprocmask
++++ b/modules/sigprocmask
+@@ -7,7 +7,7 @@ m4/signalblocking.m4
+ 
+ Depends-on:
+ signal-h
+-stdint          [test $HAVE_POSIX_SIGNALBLOCKING = 0]
++stdint-h        [test $HAVE_POSIX_SIGNALBLOCKING = 0]
+ raise           [test $HAVE_POSIX_SIGNALBLOCKING = 0]
+ msvc-inval      [test $HAVE_POSIX_SIGNALBLOCKING = 0]
+ 
+--- a/modules/sigsegv
++++ b/modules/sigsegv
+@@ -27,7 +27,7 @@ Depends-on:
+ gen-header
+ havelib
+ host-cpu-c-abi
+-stdint
++stdint-h
+ getpagesize
+ 
+ configure.ac:
+--- a/modules/sigsegv-tests
++++ b/modules/sigsegv-tests
+@@ -8,7 +8,7 @@ tests/mmap-anon-util.h
+ m4/mmap-anon.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ AC_CHECK_FUNCS_ONCE([setrlimit])
+--- a/modules/simple-atomic
++++ b/modules/simple-atomic
+@@ -7,7 +7,7 @@ lib/simple-atomic.c
+ m4/atomic-cas.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ sparcv8+
+ 
+ configure.ac:
+--- a/modules/sleep
++++ b/modules/sleep
+@@ -8,7 +8,7 @@ m4/sleep.m4
+ Depends-on:
+ unistd
+ assert-h        [test $HAVE_SLEEP = 0 || test $REPLACE_SLEEP = 1]
+-stdint          [test $HAVE_SLEEP = 0 || test $REPLACE_SLEEP = 1]
++stdint-h        [test $HAVE_SLEEP = 0 || test $REPLACE_SLEEP = 1]
+ 
+ configure.ac:
+ gl_FUNC_SLEEP
+--- a/modules/snprintf
++++ b/modules/snprintf
+@@ -9,7 +9,7 @@ m4/printf.m4
+ Depends-on:
+ stdio
+ errno-h         [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+-stdint          [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
++stdint-h        [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ 
+ configure.ac:
+--- a/modules/snprintf-posix-tests
++++ b/modules/snprintf-posix-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/snzprintf
++++ b/modules/snzprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vasnprintf
+ errno-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([snzprintf])
+--- a/modules/spawn-pipe-tests
++++ b/modules/spawn-pipe-tests
+@@ -13,7 +13,7 @@ Depends-on:
+ close
+ msvc-inval
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/sprintf-posix
++++ b/modules/sprintf-posix
+@@ -20,7 +20,7 @@ printf-safe
+ multiarch
+ vszprintf          [test $REPLACE_SPRINTF = 1]
+ mixin/printf-posix [test $REPLACE_SPRINTF = 1]
+-stdint             [test $REPLACE_SPRINTF = 1]
++stdint-h           [test $REPLACE_SPRINTF = 1]
+ errno-h            [test $REPLACE_SPRINTF = 1]
+ 
+ configure.ac:
+--- a/modules/sprintf-posix-tests
++++ b/modules/sprintf-posix-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/stdc_bit_ceil-tests
++++ b/modules/stdc_bit_ceil-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_bit_floor-tests
++++ b/modules/stdc_bit_floor-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_bit_width-tests
++++ b/modules/stdc_bit_width-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_count_ones-tests
++++ b/modules/stdc_count_ones-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_count_zeros-tests
++++ b/modules/stdc_count_zeros-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_first_leading_one-tests
++++ b/modules/stdc_first_leading_one-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_first_leading_zero-tests
++++ b/modules/stdc_first_leading_zero-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_first_trailing_one-tests
++++ b/modules/stdc_first_trailing_one-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_first_trailing_zero-tests
++++ b/modules/stdc_first_trailing_zero-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_has_single_bit-tests
++++ b/modules/stdc_has_single_bit-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_leading_ones-tests
++++ b/modules/stdc_leading_ones-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_leading_zeros-tests
++++ b/modules/stdc_leading_zeros-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_trailing_ones-tests
++++ b/modules/stdc_trailing_ones-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdc_trailing_zeros-tests
++++ b/modules/stdc_trailing_zeros-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ Depends-on:
+ libc-config
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/stdint
++++ b/modules/stdint
+@@ -1,74 +1,20 @@
+ Description:
+ A GNU-like <stdint.h>.
+-It nearly conforms to C99 and to ISO/IEC TS 18661-1:2014.
+-Assumes typical host with 8-bit bytes, two's complement
+-representation, and no padding or trap representations, with int
+-widths equal to 8, 16, 32, and 64 bits.  {uint,int}_fast{8,16,32,64}_t
+-may not correspond to the fastest types available on the system.
+-Macros are used instead of typedefs.
++
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdint-h' instead.
+ 
+ Files:
+-lib/stdint.in.h
+-m4/stdint.m4
+-m4/wint_t.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-limits-h
+-multiarch
+-sys_types
++stdint-h
+ 
+ configure.ac:
+-gl_STDINT_H
+-gl_CONDITIONAL_HEADER([stdint.h])
+-dnl Because of gl_REPLACE_LIMITS_H:
+-gl_CONDITIONAL_HEADER([limits.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDINT_H)
+-
+-# We need the following in order to create <stdint.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_STDINT_H
+-stdint.h: stdint.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's/@''HAVE_STDINT_H''@/$(HAVE_STDINT_H)/g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STDINT_H''@|$(NEXT_STDINT_H)|g' \
+-	      -e 's/@''HAVE_C99_STDINT_H''@/$(HAVE_C99_STDINT_H)/g' \
+-	      -e 's/@''HAVE_SYS_TYPES_H''@/$(HAVE_SYS_TYPES_H)/g' \
+-	      -e 's/@''HAVE_INTTYPES_H''@/$(HAVE_INTTYPES_H)/g' \
+-	      -e 's/@''HAVE_SYS_INTTYPES_H''@/$(HAVE_SYS_INTTYPES_H)/g' \
+-	      -e 's/@''HAVE_SYS_BITYPES_H''@/$(HAVE_SYS_BITYPES_H)/g' \
+-	      -e 's/@''HAVE_WCHAR_H''@/$(HAVE_WCHAR_H)/g' \
+-	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
+-	      -e 's/@''BITSIZEOF_PTRDIFF_T''@/$(BITSIZEOF_PTRDIFF_T)/g' \
+-	      -e 's/@''PTRDIFF_T_SUFFIX''@/$(PTRDIFF_T_SUFFIX)/g' \
+-	      -e 's/@''BITSIZEOF_SIG_ATOMIC_T''@/$(BITSIZEOF_SIG_ATOMIC_T)/g' \
+-	      -e 's/@''HAVE_SIGNED_SIG_ATOMIC_T''@/$(HAVE_SIGNED_SIG_ATOMIC_T)/g' \
+-	      -e 's/@''SIG_ATOMIC_T_SUFFIX''@/$(SIG_ATOMIC_T_SUFFIX)/g' \
+-	      -e 's/@''BITSIZEOF_SIZE_T''@/$(BITSIZEOF_SIZE_T)/g' \
+-	      -e 's/@''SIZE_T_SUFFIX''@/$(SIZE_T_SUFFIX)/g' \
+-	      -e 's/@''BITSIZEOF_WCHAR_T''@/$(BITSIZEOF_WCHAR_T)/g' \
+-	      -e 's/@''HAVE_SIGNED_WCHAR_T''@/$(HAVE_SIGNED_WCHAR_T)/g' \
+-	      -e 's/@''WCHAR_T_SUFFIX''@/$(WCHAR_T_SUFFIX)/g' \
+-	      -e 's/@''BITSIZEOF_WINT_T''@/$(BITSIZEOF_WINT_T)/g' \
+-	      -e 's/@''HAVE_SIGNED_WINT_T''@/$(HAVE_SIGNED_WINT_T)/g' \
+-	      -e 's/@''WINT_T_SUFFIX''@/$(WINT_T_SUFFIX)/g' \
+-	      -e 's/@''GNULIBHEADERS_OVERRIDE_WINT_T''@/$(GNULIBHEADERS_OVERRIDE_WINT_T)/g' \
+-	      $(srcdir)/stdint.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdint.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdint.h stdint.h-t
+ 
+ Include:
+ <stdint.h>
+@@ -77,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/stdint-h
+@@ -0,0 +1,80 @@
++Description:
++A GNU-like <stdint.h>.
++It nearly conforms to C99 and to ISO/IEC TS 18661-1:2014.
++Assumes typical host with 8-bit bytes, two's complement
++representation, and no padding or trap representations, with int
++widths equal to 8, 16, 32, and 64 bits.  {uint,int}_fast{8,16,32,64}_t
++may not correspond to the fastest types available on the system.
++Macros are used instead of typedefs.
++
++Files:
++lib/stdint.in.h
++m4/stdint.m4
++m4/wint_t.m4
++
++Depends-on:
++gen-header
++include_next
++limits-h
++multiarch
++sys_types
++
++configure.ac:
++gl_STDINT_H
++gl_CONDITIONAL_HEADER([stdint.h])
++dnl Because of gl_REPLACE_LIMITS_H:
++gl_CONDITIONAL_HEADER([limits.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDINT_H)
++
++# We need the following in order to create <stdint.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_STDINT_H
++stdint.h: stdint.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's/@''HAVE_STDINT_H''@/$(HAVE_STDINT_H)/g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STDINT_H''@|$(NEXT_STDINT_H)|g' \
++	      -e 's/@''HAVE_C99_STDINT_H''@/$(HAVE_C99_STDINT_H)/g' \
++	      -e 's/@''HAVE_SYS_TYPES_H''@/$(HAVE_SYS_TYPES_H)/g' \
++	      -e 's/@''HAVE_INTTYPES_H''@/$(HAVE_INTTYPES_H)/g' \
++	      -e 's/@''HAVE_SYS_INTTYPES_H''@/$(HAVE_SYS_INTTYPES_H)/g' \
++	      -e 's/@''HAVE_SYS_BITYPES_H''@/$(HAVE_SYS_BITYPES_H)/g' \
++	      -e 's/@''HAVE_WCHAR_H''@/$(HAVE_WCHAR_H)/g' \
++	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
++	      -e 's/@''BITSIZEOF_PTRDIFF_T''@/$(BITSIZEOF_PTRDIFF_T)/g' \
++	      -e 's/@''PTRDIFF_T_SUFFIX''@/$(PTRDIFF_T_SUFFIX)/g' \
++	      -e 's/@''BITSIZEOF_SIG_ATOMIC_T''@/$(BITSIZEOF_SIG_ATOMIC_T)/g' \
++	      -e 's/@''HAVE_SIGNED_SIG_ATOMIC_T''@/$(HAVE_SIGNED_SIG_ATOMIC_T)/g' \
++	      -e 's/@''SIG_ATOMIC_T_SUFFIX''@/$(SIG_ATOMIC_T_SUFFIX)/g' \
++	      -e 's/@''BITSIZEOF_SIZE_T''@/$(BITSIZEOF_SIZE_T)/g' \
++	      -e 's/@''SIZE_T_SUFFIX''@/$(SIZE_T_SUFFIX)/g' \
++	      -e 's/@''BITSIZEOF_WCHAR_T''@/$(BITSIZEOF_WCHAR_T)/g' \
++	      -e 's/@''HAVE_SIGNED_WCHAR_T''@/$(HAVE_SIGNED_WCHAR_T)/g' \
++	      -e 's/@''WCHAR_T_SUFFIX''@/$(WCHAR_T_SUFFIX)/g' \
++	      -e 's/@''BITSIZEOF_WINT_T''@/$(BITSIZEOF_WINT_T)/g' \
++	      -e 's/@''HAVE_SIGNED_WINT_T''@/$(HAVE_SIGNED_WINT_T)/g' \
++	      -e 's/@''WINT_T_SUFFIX''@/$(WINT_T_SUFFIX)/g' \
++	      -e 's/@''GNULIBHEADERS_OVERRIDE_WINT_T''@/$(GNULIBHEADERS_OVERRIDE_WINT_T)/g' \
++	      $(srcdir)/stdint.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdint.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdint.h stdint.h-t
++
++Include:
++<stdint.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/strtoimax
++++ b/modules/strtoimax
+@@ -8,7 +8,7 @@ m4/strtoimax.m4
+ Depends-on:
+ inttypes-h-incomplete
+ assert-h        [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+-stdint          [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
++stdint-h        [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+ strtoll         [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+ 
+ configure.ac:
+--- a/modules/strtoumax
++++ b/modules/strtoumax
+@@ -9,7 +9,7 @@ m4/strtoumax.m4
+ Depends-on:
+ inttypes-h-incomplete
+ assert-h        [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+-stdint          [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
++stdint-h        [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+ strtoull        [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+ 
+ configure.ac:
+--- a/modules/strverscmp
++++ b/modules/strverscmp
+@@ -8,7 +8,7 @@ m4/strverscmp.m4
+ Depends-on:
+ extensions
+ libc-config  [test $HAVE_STRVERSCMP = 0 || test $REPLACE_STRVERSCMP = 1]
+-stdint       [test $HAVE_STRVERSCMP = 0 || test $REPLACE_STRVERSCMP = 1]
++stdint-h     [test $HAVE_STRVERSCMP = 0 || test $REPLACE_STRVERSCMP = 1]
+ string
+ 
+ configure.ac:
+--- a/modules/sublist
++++ b/modules/sublist
+@@ -7,7 +7,7 @@ lib/gl_sublist.c
+ 
+ Depends-on:
+ list
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/szprintf
++++ b/modules/szprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vasnprintf
+ errno-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([szprintf])
+--- a/modules/tempname
++++ b/modules/tempname
+@@ -17,7 +17,7 @@ libc-config
+ lstat
+ mkdir
+ stdbool-h
+-stdint
++stdint-h
+ sys_stat
+ time-h
+ 
+--- a/modules/thread
++++ b/modules/thread
+@@ -8,7 +8,7 @@ m4/thread.m4
+ 
+ Depends-on:
+ threadlib
+-stdint
++stdint-h
+ extern-inline
+ lock
+ windows-thread  [test $gl_threads_api = windows]
+--- a/modules/threads-h-tests
++++ b/modules/threads-h-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ Depends-on:
+ threads-h-c++-tests
+ thrd
+-stdint
++stdint-h
+ random
+ 
+ configure.ac:
+--- a/modules/tls-tests
++++ b/modules/tls-tests
+@@ -4,7 +4,7 @@ tests/test-tls.c
+ Depends-on:
+ thread
+ lock
+-stdint
++stdint-h
+ yield
+ random
+ 
+--- a/modules/totalordermagl
++++ b/modules/totalordermagl
+@@ -14,7 +14,7 @@ extensions
+ totalordermag   [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 1]
+ float-h         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ stdbool-h       [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+-stdint          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
++stdint-h        [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ verify          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ isnanl          [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+ signbit         [{ test $HAVE_TOTALORDERMAGL = 0 || test $REPLACE_TOTALORDERMAGL = 1; } && test $HAVE_SAME_LONG_DOUBLE_AS_DOUBLE = 0]
+--- a/modules/trunc-tests
++++ b/modules/trunc-tests
+@@ -11,7 +11,7 @@ float-h
+ isnand-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/truncf-tests
++++ b/modules/truncf-tests
+@@ -11,7 +11,7 @@ float-h
+ isnanf-nolibm
+ nan
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/tsearch-tests
++++ b/modules/tsearch-tests
+@@ -5,7 +5,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ TEST_TSEARCH_LIBM=
+--- a/modules/tss-tests
++++ b/modules/tss-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ Depends-on:
+ thrd
+ mtx
+-stdint
++stdint-h
+ random
+ 
+ configure.ac:
+--- a/modules/u64
++++ b/modules/u64
+@@ -9,7 +9,7 @@ Depends-on:
+ byteswap
+ extern-inline
+ stdbool-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/uchar
++++ b/modules/uchar
+@@ -14,7 +14,7 @@ snippet/c++defs
+ snippet/warn-on-use
+ extern-inline
+ assert-h
+-stdint
++stdint-h
+ wchar
+ wctype-h
+ 
+--- a/modules/unistdio/u-printf-args
++++ b/modules/unistdio/u-printf-args
+@@ -12,7 +12,7 @@ m4/stdint_h.m4
+ m4/inttypes_h.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ limits-h
+ unitypes
+ wchar
+--- a/modules/unistdio/u16-printf-parse
++++ b/modules/unistdio/u16-printf-parse
+@@ -13,7 +13,7 @@ m4/inttypes_h.m4
+ 
+ Depends-on:
+ unistdio/u-printf-args
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/unistdio/u16-u16-vasnprintf
++++ b/modules/unistdio/u16-u16-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u16-u16-vsprintf
++++ b/modules/unistdio/u16-u16-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u16-u16-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/u16-vasnprintf
++++ b/modules/unistdio/u16-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u16-vsprintf
++++ b/modules/unistdio/u16-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u16-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/u32-printf-parse
++++ b/modules/unistdio/u32-printf-parse
+@@ -13,7 +13,7 @@ m4/inttypes_h.m4
+ 
+ Depends-on:
+ unistdio/u-printf-args
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/unistdio/u32-u32-vasnprintf
++++ b/modules/unistdio/u32-u32-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u32-u32-vsprintf
++++ b/modules/unistdio/u32-u32-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u32-u32-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/u32-vasnprintf
++++ b/modules/unistdio/u32-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u32-vsprintf
++++ b/modules/unistdio/u32-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u32-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/u8-asnprintf-extra-tests
++++ b/modules/unistdio/u8-asnprintf-extra-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ physmem
+ unistr/u8-strlen
+ 
+--- a/modules/unistdio/u8-printf-parse
++++ b/modules/unistdio/u8-printf-parse
+@@ -13,7 +13,7 @@ m4/inttypes_h.m4
+ 
+ Depends-on:
+ unistdio/u-printf-args
+-stdint
++stdint-h
+ xsize
+ 
+ configure.ac:
+--- a/modules/unistdio/u8-u8-vasnprintf
++++ b/modules/unistdio/u8-u8-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u8-u8-vsprintf
++++ b/modules/unistdio/u8-u8-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u8-u8-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/u8-vasnprintf
++++ b/modules/unistdio/u8-vasnprintf
+@@ -30,7 +30,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mixin/printf-posix
+ nocrash
+ printf-safe
+--- a/modules/unistdio/u8-vsprintf
++++ b/modules/unistdio/u8-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u8-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unistdio/ulc-asnprintf-extra-tests
++++ b/modules/unistdio/ulc-asnprintf-extra-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ physmem
+ 
+ configure.ac:
+--- a/modules/unistdio/ulc-printf-parse
++++ b/modules/unistdio/ulc-printf-parse
+@@ -13,7 +13,7 @@ m4/inttypes_h.m4
+ 
+ Depends-on:
+ unistdio/u-printf-args
+-stdint
++stdint-h
+ xsize
+ c-ctype
+ 
+--- a/modules/unistdio/ulc-vasnprintf
++++ b/modules/unistdio/ulc-vasnprintf
+@@ -27,7 +27,7 @@ unistr/u16-strmblen
+ unistr/u32-strlen
+ unistr/u32-strmblen
+ attribute
+-stdint
++stdint-h
+ mbsnlen
+ mixin/printf-posix
+ nocrash
+--- a/modules/unistdio/ulc-vsprintf
++++ b/modules/unistdio/ulc-vsprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+-stdint
++stdint-h
+ errno-h
+ 
+ configure.ac:
+--- a/modules/unitypes
++++ b/modules/unitypes
+@@ -7,7 +7,7 @@ m4/libunistring-base.m4
+ 
+ Depends-on:
+ gen-header
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_LIBHEADER([0.9.11], [unitypes.h])
+--- a/modules/utimecmp
++++ b/modules/utimecmp
+@@ -15,7 +15,7 @@ time-h
+ utimensat
+ intprops
+ stdbool-h
+-stdint
++stdint-h
+ assert-h
+ 
+ configure.ac:
+--- a/modules/vasnprintf
++++ b/modules/vasnprintf
+@@ -26,7 +26,7 @@ attribute
+ float-h
+ free-posix
+ limits-h
+-stdint
++stdint-h
+ xsize
+ errno-h
+ memchr
+--- a/modules/vasnprintf-extra-tests
++++ b/modules/vasnprintf-extra-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ physmem
+ 
+ configure.ac:
+--- a/modules/vasnprintf-posix-tests
++++ b/modules/vasnprintf-posix-tests
+@@ -11,7 +11,7 @@ m4/codeset.m4
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/vasnwprintf
++++ b/modules/vasnwprintf
+@@ -30,7 +30,7 @@ attribute
+ float-h
+ free-posix
+ limits-h
+-stdint
++stdint-h
+ xsize
+ errno-h
+ memchr
+--- a/modules/vasnwprintf-extra-tests
++++ b/modules/vasnwprintf-extra-tests
+@@ -7,7 +7,7 @@ tests/macros.h
+ 
+ Depends-on:
+ stdbool-h
+-stdint
++stdint-h
+ physmem
+ 
+ configure.ac:
+--- a/modules/vasnwprintf-posix-tests
++++ b/modules/vasnwprintf-posix-tests
+@@ -12,7 +12,7 @@ m4/codeset.m4
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/vasprintf
++++ b/modules/vasprintf
+@@ -11,7 +11,7 @@ stdio
+ extensions
+ vasnprintf      [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+ errno-h         [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+-stdint          [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
++stdint-h        [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_VASPRINTF
+--- a/modules/vasprintf-posix-tests
++++ b/modules/vasprintf-posix-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/vaszprintf
++++ b/modules/vaszprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vasnprintf
+ errno-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vaszprintf])
+--- a/modules/vdprintf-posix-tests
++++ b/modules/vdprintf-posix-tests
+@@ -8,7 +8,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vdzprintf-gnu-tests
++++ b/modules/vdzprintf-gnu-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vdzprintf-posix-tests
++++ b/modules/vdzprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vfprintf-posix-tests
++++ b/modules/vfprintf-posix-tests
+@@ -8,7 +8,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vfzprintf-posix-tests
++++ b/modules/vfzprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vma-iter
++++ b/modules/vma-iter
+@@ -7,7 +7,7 @@ lib/vma-iter.c
+ m4/mmap-anon.m4
+ 
+ Depends-on:
+-stdint
++stdint-h
+ unistd
+ extensions
+ getpagesize
+--- a/modules/vprintf-posix-tests
++++ b/modules/vprintf-posix-tests
+@@ -8,7 +8,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/vsnprintf
++++ b/modules/vsnprintf
+@@ -10,7 +10,7 @@ m4/printf.m4
+ Depends-on:
+ stdio
+ errno-h         [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+-stdint          [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
++stdint-h        [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ 
+ configure.ac:
+--- a/modules/vsnprintf-posix-tests
++++ b/modules/vsnprintf-posix-tests
+@@ -9,7 +9,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/vsnzprintf
++++ b/modules/vsnzprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vasnprintf
+ errno-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vsnzprintf])
+--- a/modules/vsprintf-posix
++++ b/modules/vsprintf-posix
+@@ -20,7 +20,7 @@ printf-safe
+ multiarch
+ vszprintf          [test $REPLACE_VSPRINTF = 1]
+ mixin/printf-posix [test $REPLACE_VSPRINTF = 1]
+-stdint             [test $REPLACE_VSPRINTF = 1]
++stdint-h           [test $REPLACE_VSPRINTF = 1]
+ errno-h            [test $REPLACE_VSPRINTF = 1]
+ 
+ configure.ac:
+--- a/modules/vsprintf-posix-tests
++++ b/modules/vsprintf-posix-tests
+@@ -8,7 +8,7 @@ tests/macros.h
+ 
+ Depends-on:
+ c99
+-stdint
++stdint-h
+ float-h
+ nan
+ snan
+--- a/modules/vszprintf
++++ b/modules/vszprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vasnprintf
+ errno-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vszprintf])
+--- a/modules/vzprintf-posix-tests
++++ b/modules/vzprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/windows-spawn
++++ b/modules/windows-spawn
+@@ -12,7 +12,7 @@ environ
+ findprog-in
+ msvc-nothrow
+ stdbool-h
+-stdint
++stdint-h
+ stdlib
+ strpbrk
+ unistd
+--- a/modules/xalloc
++++ b/modules/xalloc
+@@ -17,7 +17,7 @@ minmax
+ realloc-gnu
+ reallocarray
+ stdckdint-h
+-stdint
++stdint-h
+ xalloc-die
+ 
+ configure.ac:
+--- a/modules/xalloc-oversized
++++ b/modules/xalloc-oversized
+@@ -5,7 +5,7 @@ Files:
+ lib/xalloc-oversized.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/xprintf-posix-tests
++++ b/modules/xprintf-posix-tests
+@@ -9,7 +9,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 
+--- a/modules/xstrtol
++++ b/modules/xstrtol
+@@ -11,7 +11,7 @@ Depends-on:
+ assure
+ intprops
+ stdckdint-h
+-stdint
++stdint-h
+ 
+ configure.ac:
+ gl_XSTRTOL
+--- a/modules/zprintf-posix-tests
++++ b/modules/zprintf-posix-tests
+@@ -7,7 +7,7 @@ tests/infinity.h
+ tests/macros.h
+ 
+ Depends-on:
+-stdint
++stdint-h
+ 
+ configure.ac:
+ 

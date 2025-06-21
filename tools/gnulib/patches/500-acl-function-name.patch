@@ -1,0 +1,120 @@
+From 8a71833114c376212ecdd56495604905f6aa218d Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sat, 24 Aug 2024 17:58:48 +0200
+Subject: acl: First step towards more consistent function names.
+
+* lib/acl.h (xset_acl): New declaration.
+(set_acl): Mark deprecated.
+(xcopy_acl): New declaration.
+(copy_acl): Mark deprecated.
+* lib/set-acl.c (xset_acl): Renamed from set_acl.
+(set_acl): New function.
+* lib/copy-acl.c (xcopy_acl): Renamed from copy_acl.
+(copy_acl): New function.
+* tests/test-set-mode-acl.c (main): Test xset_acl instead of set_acl.
+* tests/test-copy-acl.c (main): Test xcopy_acl instead of copy_acl.
+---
+ lib/acl.h                 | 14 +++++++++++---
+ lib/copy-acl.c            | 11 +++++++++--
+ lib/set-acl.c             |  8 +++++++-
+ tests/test-copy-acl.c     |  2 +-
+ tests/test-set-mode-acl.c |  2 +-
+
+--- a/lib/acl.h
++++ b/lib/acl.h
+@@ -20,7 +20,7 @@
+ #ifndef _GL_ACL_H
+ #define _GL_ACL_H 1
+ 
+-/* This file uses _GL_ATTRIBUTE_CONST.  */
++/* This file uses _GL_ATTRIBUTE_CONST, _GL_ATTRIBUTE_DEPRECATED.  */
+ #if !_GL_CONFIG_H_INCLUDED
+  #error "Please include config.h first."
+ #endif
+@@ -35,10 +35,18 @@ extern "C" {
+ 
+ bool acl_errno_valid (int) _GL_ATTRIBUTE_CONST;
+ int file_has_acl (char const *, struct stat const *);
++
+ int qset_acl (char const *, int, mode_t);
+-int set_acl (char const *, int, mode_t);
++int xset_acl (char const *, int, mode_t);
++/* Old name of xset_acl.  */
++_GL_ATTRIBUTE_DEPRECATED int set_acl (char const *, int, mode_t);
++
+ int qcopy_acl (char const *, int, char const *, int, mode_t);
+-int copy_acl (char const *, int, char const *, int, mode_t);
++int xcopy_acl (char const *, int, char const *, int, mode_t);
++/* Old name of xcopy_acl.  */
++_GL_ATTRIBUTE_DEPRECATED int copy_acl (char const *, int, char const *, int,
++                                       mode_t);
++
+ int chmod_or_fchmod (char const *, int, mode_t);
+ 
+ 
+--- a/lib/copy-acl.c
++++ b/lib/copy-acl.c
+@@ -40,8 +40,8 @@
+    negative error code.  */
+ 
+ int
+-copy_acl (const char *src_name, int source_desc, const char *dst_name,
+-          int dest_desc, mode_t mode)
++xcopy_acl (const char *src_name, int source_desc, const char *dst_name,
++           int dest_desc, mode_t mode)
+ {
+   int ret = qcopy_acl (src_name, source_desc, dst_name, dest_desc, mode);
+   switch (ret)
+@@ -59,3 +59,10 @@ copy_acl (const char *src_name, int sour
+     }
+   return ret;
+ }
++
++int
++copy_acl (const char *src_name, int source_desc, const char *dst_name,
++          int dest_desc, mode_t mode)
++{
++  return xcopy_acl (src_name, source_desc, dst_name, dest_desc, mode);
++}
+--- a/lib/set-acl.c
++++ b/lib/set-acl.c
+@@ -39,10 +39,16 @@
+     return -1.  */
+ 
+ int
+-set_acl (char const *name, int desc, mode_t mode)
++xset_acl (char const *name, int desc, mode_t mode)
+ {
+   int ret = qset_acl (name, desc, mode);
+   if (ret != 0)
+     error (0, errno, _("setting permissions for %s"), quote (name));
+   return ret;
+ }
++
++int
++set_acl (char const *name, int desc, mode_t mode)
++{
++  return xset_acl (name, desc, mode);
++}
+--- a/tests/test-copy-acl.c
++++ b/tests/test-copy-acl.c
+@@ -60,7 +60,7 @@ main (int argc, char *argv[])
+     }
+ 
+ #if USE_ACL
+-  if (copy_acl (file1, fd1, file2, fd2, mode))
++  if (xcopy_acl (file1, fd1, file2, fd2, mode))
+     exit (EXIT_FAILURE);
+ #else
+   chmod (file2, mode);
+--- a/tests/test-set-mode-acl.c
++++ b/tests/test-set-mode-acl.c
+@@ -35,7 +35,7 @@ main (int argc, char *argv[])
+   file = argv[1];
+   mode = strtol (argv[2], NULL, 8);
+ 
+-  set_acl (file, -1, mode);
++  xset_acl (file, -1, mode);
+ 
+   return test_exit_status;
+ }

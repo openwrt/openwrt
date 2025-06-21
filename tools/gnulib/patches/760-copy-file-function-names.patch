@@ -1,0 +1,77 @@
+From e9655b05dc0b25d24457f9b8dd31a579d6867d83 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sat, 24 Aug 2024 17:59:26 +0200
+Subject: [PATCH] copy-file: First step towards more consistent function names.
+
+* lib/copy-file.h (xcopy_file_preserving): New declaration.
+(copy_file_preserving): Mark deprecated.
+* lib/copy-file.c (xcopy_file_preserving): Renamed from
+copy_file_preserving.
+(copy_file_preserving): New function.
+* tests/test-copy-file.c (main): Test xcopy_file_preserving instead of
+copy_file_preserving.
+---
+ ChangeLog              |  9 +++++++++
+ lib/copy-file.c        |  8 +++++++-
+ lib/copy-file.h        | 10 +++++++++-
+ tests/test-copy-file.c |  2 +-
+ 4 files changed, 26 insertions(+), 3 deletions(-)
+
+--- a/lib/copy-file.c
++++ b/lib/copy-file.c
+@@ -181,7 +181,7 @@ qcopy_file_preserving (const char *src_f
+ }
+ 
+ void
+-copy_file_preserving (const char *src_filename, const char *dest_filename)
++xcopy_file_preserving (const char *src_filename, const char *dest_filename)
+ {
+   switch (qcopy_file_preserving (src_filename, dest_filename))
+     {
+@@ -219,3 +219,9 @@ copy_file_preserving (const char *src_fi
+       abort ();
+     }
+ }
++
++void
++copy_file_preserving (const char *src_filename, const char *dest_filename)
++{
++  xcopy_file_preserving (src_filename, dest_filename);
++}
+--- a/lib/copy-file.h
++++ b/lib/copy-file.h
+@@ -16,6 +16,11 @@
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+ 
+ 
++/* This file uses _GL_ATTRIBUTE_DEPRECATED.  */
++#if !_GL_CONFIG_H_INCLUDED
++ #error "Please include config.h first."
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -46,7 +51,10 @@ extern int qcopy_file_preserving (const
+    Modification times, owner, group and access permissions are preserved as
+    far as possible.
+    Exit upon failure.  */
+-extern void copy_file_preserving (const char *src_filename, const char *dest_filename);
++extern void xcopy_file_preserving (const char *src_filename, const char *dest_filename);
++
++/* Old name of xcopy_file_preserving.  */
++_GL_ATTRIBUTE_DEPRECATED void copy_file_preserving (const char *src_filename, const char *dest_filename);
+ 
+ 
+ #ifdef __cplusplus
+--- a/tests/test-copy-file.c
++++ b/tests/test-copy-file.c
+@@ -40,7 +40,7 @@ main (int argc, char *argv[])
+   if (null_stderr)
+     ASSERT (qcopy_file_preserving (file1, file2) == 0);
+   else
+-    copy_file_preserving (file1, file2);
++    xcopy_file_preserving (file1, file2);
+ 
+   return test_exit_status;
+ }

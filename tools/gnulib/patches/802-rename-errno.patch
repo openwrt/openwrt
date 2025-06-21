@@ -1,0 +1,1738 @@
+From e1280386c6ba3e4ecf014df909177617c9353c1c Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:03 +0100
+Subject: [PATCH] Rename module errno to errno-h.
+
+* modules/errno-h: Renamed from modules/errno.
+* modules/errno-h-tests: Renamed from modules/errno-tests.
+* modules/errno-h-c++-tests: Renamed from modules/errno-c++-tests.
+* tests/test-errno-h.c: Renamed from tests/test-errno.c.
+* tests/test-errno-h-c++.cc: Renamed from tests/test-errno-c++.cc.
+* tests/test-errno-h-c++2.cc: Renamed from tests/test-errno-c++2.cc.
+* doc/posix-headers/errno.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/errno: New file.
+---
+ ChangeLog                                     | 13 +++++
+ doc/posix-headers/errno.texi                  |  4 +-
+ modules/accept                                |  2 +-
+ modules/areadlinkat                           |  2 +-
+ modules/areadlinkat-with-size                 |  2 +-
+ modules/at-internal                           |  2 +-
+ modules/bind                                  |  2 +-
+ modules/c-nstrftime                           |  2 +-
+ modules/c-stack                               |  2 +-
+ modules/c-vasnprintf                          |  2 +-
+ modules/canonicalize                          |  2 +-
+ modules/canonicalize-lgpl                     |  2 +-
+ modules/cond                                  |  2 +-
+ modules/connect                               |  2 +-
+ modules/dirfd                                 |  2 +-
+ modules/dprintf                               |  2 +-
+ modules/dzprintf                              |  2 +-
+ modules/errno                                 | 42 +++------------
+ modules/errno-c++-tests                       | 18 -------
+ modules/errno-h                               | 53 +++++++++++++++++++
+ modules/errno-h-c++-tests                     | 18 +++++++
+ modules/errno-h-tests                         | 13 +++++
+ modules/errno-tests                           | 13 -----
+ modules/faccessat                             |  2 +-
+ modules/fchmodat                              |  2 +-
+ modules/fchownat                              |  2 +-
+ modules/fchownat-tests                        |  2 +-
+ modules/fdatasync-tests                       |  2 +-
+ modules/fdopendir                             |  2 +-
+ modules/file-has-acl                          |  2 +-
+ modules/fprintf-posix                         |  2 +-
+ modules/fstatat                               |  2 +-
+ modules/fsync-tests                           |  2 +-
+ modules/ftell                                 |  2 +-
+ modules/fts-tests                             |  2 +-
+ modules/fwriteerror                           |  2 +-
+ modules/fzprintf                              |  2 +-
+ modules/getcwd-tests                          |  2 +-
+ modules/getdelim                              |  2 +-
+ modules/gethostname                           |  2 +-
+ modules/getpeername                           |  2 +-
+ modules/getsockname                           |  2 +-
+ modules/getsockname-tests                     |  2 +-
+ modules/getsockopt                            |  2 +-
+ modules/getugroups                            |  2 +-
+ modules/inet_ntop                             |  2 +-
+ modules/inet_pton                             |  2 +-
+ modules/ioctl                                 |  2 +-
+ modules/lchmod                                |  2 +-
+ modules/lchown                                |  2 +-
+ modules/lchown-tests                          |  2 +-
+ modules/link-tests                            |  2 +-
+ modules/linkat                                |  2 +-
+ modules/listen                                |  2 +-
+ modules/lstat-tests                           |  2 +-
+ modules/mkdirat                               |  2 +-
+ modules/mkfifoat                              |  2 +-
+ modules/nstrftime                             |  2 +-
+ modules/openat                                |  2 +-
+ modules/perror                                |  2 +-
+ modules/poll                                  |  2 +-
+ modules/poll-tests                            |  2 +-
+ modules/posix_spawn-internal                  |  2 +-
+ modules/priv-set                              |  2 +-
+ modules/pselect-tests                         |  2 +-
+ modules/readlinkat                            |  2 +-
+ modules/recv                                  |  2 +-
+ modules/recvfrom                              |  2 +-
+ modules/relocatable-prog-wrapper              |  2 +-
+ modules/rename-tests                          |  2 +-
+ modules/savewd                                |  2 +-
+ modules/select-tests                          |  2 +-
+ modules/selinux-at                            |  2 +-
+ modules/selinux-h                             |  2 +-
+ modules/send                                  |  2 +-
+ modules/sendto                                |  2 +-
+ modules/sethostname                           |  2 +-
+ modules/setsockopt                            |  2 +-
+ modules/settime                               |  2 +-
+ modules/shutdown                              |  2 +-
+ modules/snprintf                              |  2 +-
+ modules/snzprintf                             |  2 +-
+ modules/socket                                |  2 +-
+ modules/sprintf-posix                         |  2 +-
+ modules/stat-time                             |  2 +-
+ modules/strerror                              |  2 +-
+ modules/strerror-override                     |  2 +-
+ modules/strerror_r-posix                      |  2 +-
+ modules/symlinkat                             |  2 +-
+ modules/sys_socket                            |  2 +-
+ modules/szprintf                              |  2 +-
+ modules/unistdio/u16-u16-vasnprintf           |  2 +-
+ modules/unistdio/u16-u16-vasprintf            |  2 +-
+ modules/unistdio/u16-u16-vsnprintf            |  2 +-
+ modules/unistdio/u16-u16-vsprintf             |  2 +-
+ modules/unistdio/u16-vasnprintf               |  2 +-
+ modules/unistdio/u16-vasprintf                |  2 +-
+ modules/unistdio/u16-vsnprintf                |  2 +-
+ modules/unistdio/u16-vsprintf                 |  2 +-
+ modules/unistdio/u32-u32-vasnprintf           |  2 +-
+ modules/unistdio/u32-u32-vasprintf            |  2 +-
+ modules/unistdio/u32-u32-vsnprintf            |  2 +-
+ modules/unistdio/u32-u32-vsprintf             |  2 +-
+ modules/unistdio/u32-vasnprintf               |  2 +-
+ modules/unistdio/u32-vasprintf                |  2 +-
+ modules/unistdio/u32-vsnprintf                |  2 +-
+ modules/unistdio/u32-vsprintf                 |  2 +-
+ modules/unistdio/u8-u8-vasnprintf             |  2 +-
+ modules/unistdio/u8-u8-vasprintf              |  2 +-
+ modules/unistdio/u8-u8-vsnprintf              |  2 +-
+ modules/unistdio/u8-u8-vsprintf               |  2 +-
+ modules/unistdio/u8-vasnprintf                |  2 +-
+ modules/unistdio/u8-vasprintf                 |  2 +-
+ modules/unistdio/u8-vsnprintf                 |  2 +-
+ modules/unistdio/u8-vsprintf                  |  2 +-
+ modules/unistdio/ulc-fprintf                  |  2 +-
+ modules/unistdio/ulc-vasnprintf               |  2 +-
+ modules/unistdio/ulc-vasprintf                |  2 +-
+ modules/unistdio/ulc-vfprintf                 |  2 +-
+ modules/unistdio/ulc-vsnprintf                |  2 +-
+ modules/unistdio/ulc-vsprintf                 |  2 +-
+ modules/unlinkat                              |  2 +-
+ modules/utimens                               |  2 +-
+ modules/utimensat                             |  2 +-
+ modules/vasnprintf                            |  2 +-
+ modules/vasnwprintf                           |  2 +-
+ modules/vasprintf                             |  2 +-
+ modules/vaszprintf                            |  2 +-
+ modules/vdprintf                              |  2 +-
+ modules/vdzprintf                             |  2 +-
+ modules/vfprintf-posix                        |  2 +-
+ modules/vfzprintf                             |  2 +-
+ modules/vsnprintf                             |  2 +-
+ modules/vsnzprintf                            |  2 +-
+ modules/vsprintf-posix                        |  2 +-
+ modules/vszprintf                             |  2 +-
+ modules/windows-cond                          |  2 +-
+ modules/windows-timedmutex                    |  2 +-
+ modules/windows-timedrecmutex                 |  2 +-
+ modules/windows-timedrwlock                   |  2 +-
+ modules/xvasprintf                            |  2 +-
+ ...{test-errno-c++.cc => test-errno-h-c++.cc} |  0
+ ...est-errno-c++2.cc => test-errno-h-c++2.cc} |  0
+ tests/{test-errno.c => test-errno-h.c}        |  0
+ 144 files changed, 239 insertions(+), 201 deletions(-)
+ delete mode 100644 modules/errno-c++-tests
+ create mode 100644 modules/errno-h
+ create mode 100644 modules/errno-h-c++-tests
+ create mode 100644 modules/errno-h-tests
+ delete mode 100644 modules/errno-tests
+ rename tests/{test-errno-c++.cc => test-errno-h-c++.cc} (100%)
+ rename tests/{test-errno-c++2.cc => test-errno-h-c++2.cc} (100%)
+ rename tests/{test-errno.c => test-errno-h.c} (100%)
+
+--- a/modules/accept
++++ b/modules/accept
+@@ -9,7 +9,7 @@ Depends-on:
+ extensions
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/areadlinkat
++++ b/modules/areadlinkat
+@@ -11,7 +11,7 @@ areadlink
+ careadlinkat
+ readlinkat
+ at-internal
+-errno
++errno-h
+ extensions
+ fchdir
+ fcntl-h
+--- a/modules/areadlinkat-with-size
++++ b/modules/areadlinkat-with-size
+@@ -11,7 +11,7 @@ areadlink-with-size
+ stdint
+ readlinkat
+ at-internal
+-errno
++errno-h
+ extensions
+ fchdir
+ fcntl-h
+--- a/modules/at-internal
++++ b/modules/at-internal
+@@ -6,7 +6,7 @@ lib/openat-priv.h
+ lib/openat-proc.c
+ 
+ Depends-on:
+-errno
++errno-h
+ fcntl-h
+ intprops
+ open       [case $host_os in mingw* | windows*) false;; *) :;; esac]
+--- a/modules/bind
++++ b/modules/bind
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/c-nstrftime
++++ b/modules/c-nstrftime
+@@ -12,7 +12,7 @@ Depends-on:
+ attribute
+ c-ctype
+ c99
+-errno
++errno-h
+ extensions
+ intprops
+ libc-config
+--- a/modules/c-stack
++++ b/modules/c-stack
+@@ -8,7 +8,7 @@ m4/c-stack.m4
+ 
+ Depends-on:
+ c99
+-errno
++errno-h
+ exitfail
+ getprogname
+ gettext-h
+--- a/modules/c-vasnprintf
++++ b/modules/c-vasnprintf
+@@ -32,7 +32,7 @@ nocrash
+ printf-safe
+ alloca-opt
+ xsize
+-errno
++errno-h
+ memchr
+ multiarch
+ mbszero
+--- a/modules/canonicalize
++++ b/modules/canonicalize
+@@ -10,7 +10,7 @@ m4/lstat.m4
+ Depends-on:
+ attribute
+ double-slash-root
+-errno
++errno-h
+ extensions
+ fcntl-h
+ file-set
+--- a/modules/canonicalize-lgpl
++++ b/modules/canonicalize-lgpl
+@@ -13,7 +13,7 @@ stdlib
+ nocrash
+ double-slash-root             [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ eloop-threshold               [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+-errno                         [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
++errno-h                       [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ fcntl-h                       [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ filename                      [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+ idx                           [test $HAVE_CANONICALIZE_FILE_NAME = 0 || test $REPLACE_CANONICALIZE_FILE_NAME = 1]
+--- a/modules/cond
++++ b/modules/cond
+@@ -9,7 +9,7 @@ m4/cond.m4
+ Depends-on:
+ threadlib
+ lock
+-errno
++errno-h
+ extern-inline
+ stdbool
+ time-h
+--- a/modules/connect
++++ b/modules/connect
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/dirfd
++++ b/modules/dirfd
+@@ -9,7 +9,7 @@ m4/dirfd.m4
+ Depends-on:
+ dirent-h
+ extensions
+-errno           [test $HAVE_DIRFD = 0 || test $REPLACE_DIRFD = 1]
++errno-h         [test $HAVE_DIRFD = 0 || test $REPLACE_DIRFD = 1]
+ 
+ configure.ac:
+ gl_FUNC_DIRFD
+--- a/modules/dprintf
++++ b/modules/dprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vdzprintf       [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+ intprops        [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+-errno           [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
++errno-h         [test $ac_cv_func_dprintf = no || test $REPLACE_DPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_DPRINTF
+--- a/modules/dzprintf
++++ b/modules/dzprintf
+@@ -11,7 +11,7 @@ vasnprintf
+ intprops
+ free-posix
+ full-write
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([dzprintf])
+--- a/modules/errno
++++ b/modules/errno
+@@ -1,46 +1,20 @@
+ Description:
+ A POSIX-like <errno.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'errno-h' instead.
++
+ Files:
+-lib/errno.in.h
+-m4/errno_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
++errno-h
+ 
+ configure.ac:
+-gl_HEADER_ERRNO_H
+-gl_CONDITIONAL_HEADER([errno.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(ERRNO_H)
+-
+-# We need the following in order to create <errno.h> when the system
+-# doesn't have one that is POSIX compliant.
+-if GL_GENERATE_ERRNO_H
+-errno.h: errno.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_ERRNO_H''@|$(NEXT_ERRNO_H)|g' \
+-	      -e 's|@''EMULTIHOP_HIDDEN''@|$(EMULTIHOP_HIDDEN)|g' \
+-	      -e 's|@''EMULTIHOP_VALUE''@|$(EMULTIHOP_VALUE)|g' \
+-	      -e 's|@''ENOLINK_HIDDEN''@|$(ENOLINK_HIDDEN)|g' \
+-	      -e 's|@''ENOLINK_VALUE''@|$(ENOLINK_VALUE)|g' \
+-	      -e 's|@''EOVERFLOW_HIDDEN''@|$(EOVERFLOW_HIDDEN)|g' \
+-	      -e 's|@''EOVERFLOW_VALUE''@|$(EOVERFLOW_VALUE)|g' \
+-	      $(srcdir)/errno.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-errno.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += errno.h errno.h-t
+ 
+ Include:
+ <errno.h>
+@@ -49,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/errno-h
+@@ -0,0 +1,53 @@
++Description:
++A POSIX-like <errno.h>.
++
++Files:
++lib/errno.in.h
++m4/errno_h.m4
++
++Depends-on:
++gen-header
++include_next
++extensions-aix
++
++configure.ac:
++gl_HEADER_ERRNO_H
++gl_CONDITIONAL_HEADER([errno.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(ERRNO_H)
++
++# We need the following in order to create <errno.h> when the system
++# doesn't have one that is POSIX compliant.
++if GL_GENERATE_ERRNO_H
++errno.h: errno.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_ERRNO_H''@|$(NEXT_ERRNO_H)|g' \
++	      -e 's|@''EMULTIHOP_HIDDEN''@|$(EMULTIHOP_HIDDEN)|g' \
++	      -e 's|@''EMULTIHOP_VALUE''@|$(EMULTIHOP_VALUE)|g' \
++	      -e 's|@''ENOLINK_HIDDEN''@|$(ENOLINK_HIDDEN)|g' \
++	      -e 's|@''ENOLINK_VALUE''@|$(ENOLINK_VALUE)|g' \
++	      -e 's|@''EOVERFLOW_HIDDEN''@|$(EOVERFLOW_HIDDEN)|g' \
++	      -e 's|@''EOVERFLOW_VALUE''@|$(EOVERFLOW_VALUE)|g' \
++	      $(srcdir)/errno.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++errno.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += errno.h errno.h-t
++
++Include:
++<errno.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/faccessat
++++ b/modules/faccessat
+@@ -10,7 +10,7 @@ Depends-on:
+ unistd
+ extensions
+ at-internal     [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
+-errno           [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
++errno-h         [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
+ fchdir          [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
+ fcntl-h         [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
+ filename        [test $HAVE_FACCESSAT = 0 || test $REPLACE_FACCESSAT = 1]
+--- a/modules/fchmodat
++++ b/modules/fchmodat
+@@ -9,7 +9,7 @@ m4/fchmodat.m4
+ Depends-on:
+ sys_stat
+ extensions
+-errno           [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
++errno-h         [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+ fcntl-h         [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+ unistd          [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+ intprops        [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+--- a/modules/fchownat
++++ b/modules/fchownat
+@@ -10,7 +10,7 @@ Depends-on:
+ unistd
+ extensions
+ at-internal     [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
+-errno           [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
++errno-h         [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
+ extern-inline   [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
+ fchdir          [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
+ fcntl-h         [test $HAVE_FCHOWNAT = 0 || test $REPLACE_FCHOWNAT = 1]
+--- a/modules/fchownat-tests
++++ b/modules/fchownat-tests
+@@ -7,7 +7,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-errno
++errno-h
+ ignore-value
+ mgetgroups
+ nanosleep
+--- a/modules/fdatasync-tests
++++ b/modules/fdatasync-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-errno
++errno-h
+ 
+ configure.ac:
+ 
+--- a/modules/fdopendir
++++ b/modules/fdopendir
+@@ -12,7 +12,7 @@ extensions
+ at-internal     [test $HAVE_FDOPENDIR = 0]
+ dirfd           [test $HAVE_FDOPENDIR = 0]
+ dup             [test $HAVE_FDOPENDIR = 0]
+-errno           [test $HAVE_FDOPENDIR = 0]
++errno-h         [test $HAVE_FDOPENDIR = 0]
+ fchdir          [test $HAVE_FDOPENDIR = 0]
+ fstat           [test $HAVE_FDOPENDIR = 0]
+ openat-die      [test $HAVE_FDOPENDIR = 0]
+--- a/modules/fprintf-posix
++++ b/modules/fprintf-posix
+@@ -17,7 +17,7 @@ Depends-on:
+ stdio
+ nocrash
+ printf-safe
+-errno
++errno-h
+ multiarch
+ vfzprintf          [test $REPLACE_FPRINTF = 1]
+ mixin/printf-posix [test $REPLACE_FPRINTF = 1]
+--- a/modules/fstatat
++++ b/modules/fstatat
+@@ -11,7 +11,7 @@ Depends-on:
+ sys_stat
+ extensions
+ at-internal     [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
+-errno           [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
++errno-h         [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
+ extern-inline   [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
+ fchdir          [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
+ fcntl-h         [test $HAVE_FSTATAT = 0 || test $REPLACE_FSTATAT = 1]
+--- a/modules/fsync-tests
++++ b/modules/fsync-tests
+@@ -4,7 +4,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-errno
++errno-h
+ 
+ configure.ac:
+ 
+--- a/modules/ftell
++++ b/modules/ftell
+@@ -7,7 +7,7 @@ m4/ftell.m4
+ 
+ Depends-on:
+ stdio
+-errno
++errno-h
+ ftello          [test $REPLACE_FTELL = 1]
+ 
+ configure.ac:
+--- a/modules/fts-tests
++++ b/modules/fts-tests
+@@ -6,7 +6,7 @@ tests/test-fts.c
+ 
+ Depends-on:
+ c99
+-errno
++errno-h
+ remove
+ unlinkat
+ 
+--- a/modules/fwriteerror
++++ b/modules/fwriteerror
+@@ -6,7 +6,7 @@ lib/fwriteerror.h
+ lib/fwriteerror.c
+ 
+ Depends-on:
+-errno
++errno-h
+ stdbool
+ 
+ configure.ac:
+--- a/modules/fzprintf
++++ b/modules/fzprintf
+@@ -11,7 +11,7 @@ vasnprintf
+ intprops
+ free-posix
+ fseterr
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([fzprintf])
+--- a/modules/getcwd-tests
++++ b/modules/getcwd-tests
+@@ -5,7 +5,7 @@ tests/qemu.h
+ tests/macros.h
+ 
+ Depends-on:
+-errno
++errno-h
+ fcntl-h
+ getcwd-lgpl
+ pathmax
+--- a/modules/getdelim
++++ b/modules/getdelim
+@@ -10,7 +10,7 @@ stdio
+ extensions
+ limits-h        [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+ stdint          [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+-errno           [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
++errno-h         [test $HAVE_GETDELIM = 0 || test $REPLACE_GETDELIM = 1]
+ 
+ configure.ac:
+ gl_FUNC_GETDELIM
+--- a/modules/gethostname
++++ b/modules/gethostname
+@@ -9,7 +9,7 @@ lib/w32sock.h
+ Depends-on:
+ unistd
+ sys_socket      [test $HAVE_GETHOSTNAME = 0]
+-errno           [test $HAVE_GETHOSTNAME = 0]
++errno-h         [test $HAVE_GETHOSTNAME = 0]
+ sockets         [test $HAVE_GETHOSTNAME = 0]
+ msvc-nothrow    [test $HAVE_GETHOSTNAME = 0]
+ 
+--- a/modules/getpeername
++++ b/modules/getpeername
+@@ -10,7 +10,7 @@ Depends-on:
+ extensions
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/getsockname
++++ b/modules/getsockname
+@@ -10,7 +10,7 @@ Depends-on:
+ extensions
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/getsockname-tests
++++ b/modules/getsockname-tests
+@@ -7,7 +7,7 @@ Depends-on:
+ netinet_in
+ arpa_inet-h
+ inet_pton
+-errno
++errno-h
+ perror
+ sockets
+ socket
+--- a/modules/getsockopt
++++ b/modules/getsockopt
+@@ -10,7 +10,7 @@ extensions
+ sys_socket
+ socketlib
+ sys_time        [test "$ac_cv_header_winsock2_h" = yes]
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/getugroups
++++ b/modules/getugroups
+@@ -7,7 +7,7 @@ lib/getugroups.h
+ m4/getugroups.m4
+ 
+ Depends-on:
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_GETUGROUPS
+--- a/modules/inet_ntop
++++ b/modules/inet_ntop
+@@ -10,7 +10,7 @@ Depends-on:
+ arpa_inet-h
+ extensions
+ sys_socket      [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+-errno           [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
++errno-h         [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+ netinet_in      [test $HAVE_INET_NTOP = 0 || test $REPLACE_INET_NTOP = 1]
+ 
+ configure.ac:
+--- a/modules/inet_pton
++++ b/modules/inet_pton
+@@ -10,7 +10,7 @@ arpa_inet-h
+ extensions
+ c-ctype         [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ sys_socket      [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+-errno           [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
++errno-h         [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ netinet_in      [test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1]
+ 
+ configure.ac:
+--- a/modules/ioctl
++++ b/modules/ioctl
+@@ -9,7 +9,7 @@ m4/ioctl.m4
+ Depends-on:
+ sys_ioctl
+ sys_socket      [test $HAVE_IOCTL = 0 || test $REPLACE_IOCTL = 1]
+-errno           [test $HAVE_IOCTL = 0 || test $REPLACE_IOCTL = 1]
++errno-h         [test $HAVE_IOCTL = 0 || test $REPLACE_IOCTL = 1]
+ fd-hook         [test $HAVE_IOCTL = 0 || test $REPLACE_IOCTL = 1]
+ msvc-nothrow    [test $HAVE_IOCTL = 0 || test $REPLACE_IOCTL = 1]
+ 
+--- a/modules/lchmod
++++ b/modules/lchmod
+@@ -7,7 +7,7 @@ m4/lchmod.m4
+ 
+ Depends-on:
+ c99           [test $HAVE_LCHMOD = 0]
+-errno         [test $HAVE_LCHMOD = 0]
++errno-h       [test $HAVE_LCHMOD = 0]
+ extensions
+ fcntl-h       [test $HAVE_LCHMOD = 0]
+ intprops      [test $HAVE_LCHMOD = 0]
+--- a/modules/lchown
++++ b/modules/lchown
+@@ -9,7 +9,7 @@ Depends-on:
+ unistd
+ readlink        [test $HAVE_LCHOWN = 0]
+ chown           [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+-errno           [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
++errno-h         [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ stdbool         [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ sys_stat        [test $HAVE_LCHOWN = 0 || test $REPLACE_LCHOWN = 1]
+ lstat           [test $REPLACE_LCHOWN = 1]
+--- a/modules/lchown-tests
++++ b/modules/lchown-tests
+@@ -6,7 +6,7 @@ tests/signature.h
+ tests/macros.h
+ 
+ Depends-on:
+-errno
++errno-h
+ ignore-value
+ mgetgroups
+ nanosleep
+--- a/modules/link-tests
++++ b/modules/link-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-errno
++errno-h
+ stdbool
+ sys_stat
+ 
+--- a/modules/linkat
++++ b/modules/linkat
+@@ -13,7 +13,7 @@ areadlink        [test $HAVE_LINKAT = 0
+ at-internal      [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+ dirname-lgpl     [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+ eloop-threshold  [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+-errno            [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
++errno-h          [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+ fcntl-h          [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+ filenamecat-lgpl [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+ filename         [test $HAVE_LINKAT = 0 || test $REPLACE_LINKAT = 1]
+--- a/modules/listen
++++ b/modules/listen
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/lstat-tests
++++ b/modules/lstat-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-errno
++errno-h
+ same-inode
+ stdbool
+ symlink
+--- a/modules/mkdirat
++++ b/modules/mkdirat
+@@ -10,7 +10,7 @@ Depends-on:
+ sys_stat
+ extensions
+ at-internal     [test $HAVE_MKDIRAT = 0]
+-errno           [test $HAVE_MKDIRAT = 0]
++errno-h         [test $HAVE_MKDIRAT = 0]
+ fchdir          [test $HAVE_MKDIRAT = 0]
+ fcntl-h         [test $HAVE_MKDIRAT = 0]
+ filename        [test $HAVE_MKDIRAT = 0]
+--- a/modules/mkfifoat
++++ b/modules/mkfifoat
+@@ -14,7 +14,7 @@ extensions
+ fcntl-h         [test $HAVE_MKFIFOAT = 0 || test $REPLACE_MKFIFOAT = 1 || test $HAVE_MKNODAT = 0 || test $REPLACE_MKNODAT = 1]
+ fstatat         [test $REPLACE_MKFIFOAT = 1 || test $REPLACE_MKNODAT = 1]
+ at-internal     [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
+-errno           [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
++errno-h         [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
+ fchdir          [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
+ filename        [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
+ openat-die      [test $HAVE_MKFIFOAT = 0 || test $HAVE_MKNODAT = 0]
+--- a/modules/nstrftime
++++ b/modules/nstrftime
+@@ -11,7 +11,7 @@ m4/tm_gmtoff.m4
+ Depends-on:
+ attribute
+ c99
+-errno
++errno-h
+ extensions
+ intprops
+ libc-config
+--- a/modules/openat
++++ b/modules/openat
+@@ -18,7 +18,7 @@ sys_stat        [test $HAVE_OPENAT = 0 |
+ cloexec         [test $REPLACE_OPENAT = 1]
+ fstat           [test $REPLACE_OPENAT = 1]
+ at-internal     [test $HAVE_OPENAT = 0]
+-errno           [test $HAVE_OPENAT = 0]
++errno-h         [test $HAVE_OPENAT = 0]
+ fchdir          [test $HAVE_OPENAT = 0]
+ filename        [test $HAVE_OPENAT = 0]
+ open            [test $HAVE_OPENAT = 0]
+--- a/modules/perror
++++ b/modules/perror
+@@ -7,7 +7,7 @@ m4/perror.m4
+ 
+ Depends-on:
+ stdio
+-errno            [test $REPLACE_PERROR = 1]
++errno-h          [test $REPLACE_PERROR = 1]
+ strerror-override [test $REPLACE_PERROR = 1]
+ strerror_r-posix [test $REPLACE_PERROR = 1]
+ 
+--- a/modules/poll
++++ b/modules/poll
+@@ -14,7 +14,7 @@ sockets         [test $HAVE_POLL = 0 ||
+ sys_select      [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
+ sys_socket      [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
+ sys_time        [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
+-errno           [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
++errno-h         [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
+ msvc-nothrow    [test $HAVE_POLL = 0 || test $REPLACE_POLL = 1]
+ 
+ configure.ac:
+--- a/modules/poll-tests
++++ b/modules/poll-tests
+@@ -11,7 +11,7 @@ arpa_inet-h
+ sys_ioctl
+ extensions
+ inet_pton
+-errno
++errno-h
+ perror
+ sockets
+ socket
+--- a/modules/posix_spawn-internal
++++ b/modules/posix_spawn-internal
+@@ -10,7 +10,7 @@ Depends-on:
+ spawn
+ alloca-opt
+ dup2
+-errno
++errno-h
+ open
+ sh-filename
+ strchrnul
+--- a/modules/priv-set
++++ b/modules/priv-set
+@@ -7,7 +7,7 @@ lib/priv-set.c
+ m4/priv-set.m4
+ 
+ Depends-on:
+-errno
++errno-h
+ extern-inline
+ stdbool
+ 
+--- a/modules/pselect-tests
++++ b/modules/pselect-tests
+@@ -12,7 +12,7 @@ unistd
+ sys_ioctl
+ extensions
+ inet_pton
+-errno
++errno-h
+ perror
+ pipe-posix
+ socket
+--- a/modules/readlinkat
++++ b/modules/readlinkat
+@@ -10,7 +10,7 @@ Depends-on:
+ unistd
+ extensions
+ at-internal     [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
+-errno           [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
++errno-h         [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
+ fchdir          [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
+ fcntl-h         [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
+ filename        [test $HAVE_READLINKAT = 0 || test $REPLACE_READLINKAT = 1]
+--- a/modules/recv
++++ b/modules/recv
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/recvfrom
++++ b/modules/recvfrom
+@@ -9,7 +9,7 @@ Depends-on:
+ extensions
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ getpeername     [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -58,7 +58,7 @@ c99
+ double-slash-root
+ eloop-threshold
+ environ
+-errno
++errno-h
+ extern-inline
+ fcntl-h
+ filename
+--- a/modules/rename-tests
++++ b/modules/rename-tests
+@@ -6,7 +6,7 @@ tests/macros.h
+ 
+ Depends-on:
+ ignore-value
+-errno
++errno-h
+ link
+ stdbool
+ symlink
+--- a/modules/savewd
++++ b/modules/savewd
+@@ -10,7 +10,7 @@ Depends-on:
+ assure
+ attribute
+ chdir
+-errno
++errno-h
+ extern-inline
+ fchdir
+ fcntl-safer
+--- a/modules/select-tests
++++ b/modules/select-tests
+@@ -17,7 +17,7 @@ unistd
+ sys_ioctl
+ extensions
+ inet_pton
+-errno
++errno-h
+ perror
+ pipe-posix
+ socket
+--- a/modules/selinux-at
++++ b/modules/selinux-at
+@@ -9,7 +9,7 @@ lib/at-func.c
+ Depends-on:
+ selinux-h
+ at-internal
+-errno
++errno-h
+ extensions
+ fchdir
+ fcntl-h
+--- a/modules/selinux-h
++++ b/modules/selinux-h
+@@ -14,7 +14,7 @@ m4/selinux-label-h.m4
+ m4/selinux-selinux-h.m4
+ 
+ Depends-on:
+-errno
++errno-h
+ extern-inline
+ gen-header
+ 
+--- a/modules/send
++++ b/modules/send
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/sendto
++++ b/modules/sendto
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/sethostname
++++ b/modules/sethostname
+@@ -8,7 +8,7 @@ m4/gethostname.m4
+ 
+ Depends-on:
+ unistd
+-errno           [test $HAVE_SETHOSTNAME = 0 || test $REPLACE_SETHOSTNAME = 1]
++errno-h         [test $HAVE_SETHOSTNAME = 0 || test $REPLACE_SETHOSTNAME = 1]
+ fopen-gnu       [test $HAVE_SETHOSTNAME = 0 || test $REPLACE_SETHOSTNAME = 1]
+ 
+ configure.ac:
+--- a/modules/setsockopt
++++ b/modules/setsockopt
+@@ -9,7 +9,7 @@ Depends-on:
+ sys_socket
+ socketlib
+ sys_time        [test "$ac_cv_header_winsock2_h" = yes]
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/settime
++++ b/modules/settime
+@@ -7,7 +7,7 @@ m4/settime.m4
+ 
+ Depends-on:
+ clock-time
+-errno
++errno-h
+ extensions
+ sys_time
+ timespec
+--- a/modules/shutdown
++++ b/modules/shutdown
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+ configure.ac:
+--- a/modules/snprintf
++++ b/modules/snprintf
+@@ -8,7 +8,7 @@ m4/printf.m4
+ 
+ Depends-on:
+ stdio
+-errno           [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
++errno-h         [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ stdint          [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_snprintf = no || test $REPLACE_SNPRINTF = 1]
+ 
+--- a/modules/snzprintf
++++ b/modules/snzprintf
+@@ -8,7 +8,7 @@ lib/snzprintf.c
+ Depends-on:
+ stdio
+ vasnprintf
+-errno
++errno-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/socket
++++ b/modules/socket
+@@ -8,7 +8,7 @@ lib/w32sock.h
+ Depends-on:
+ sys_socket
+ socketlib
+-errno           [test "$ac_cv_header_winsock2_h" = yes]
++errno-h         [test "$ac_cv_header_winsock2_h" = yes]
+ sockets         [test "$ac_cv_header_winsock2_h" = yes]
+ msvc-nothrow    [test "$ac_cv_header_winsock2_h" = yes]
+ 
+--- a/modules/sprintf-posix
++++ b/modules/sprintf-posix
+@@ -21,7 +21,7 @@ multiarch
+ vszprintf          [test $REPLACE_SPRINTF = 1]
+ mixin/printf-posix [test $REPLACE_SPRINTF = 1]
+ stdint             [test $REPLACE_SPRINTF = 1]
+-errno              [test $REPLACE_SPRINTF = 1]
++errno-h            [test $REPLACE_SPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_SPRINTF_POSIX
+--- a/modules/stat-time
++++ b/modules/stat-time
+@@ -8,7 +8,7 @@ m4/stat-time.m4
+ 
+ Depends-on:
+ time-h
+-errno
++errno-h
+ extensions
+ extern-inline
+ stdckdint
+--- a/modules/strerror
++++ b/modules/strerror
+@@ -8,7 +8,7 @@ m4/strerror.m4
+ Depends-on:
+ string
+ assert-h         [test $REPLACE_STRERROR = 1]
+-errno            [test $REPLACE_STRERROR = 1]
++errno-h          [test $REPLACE_STRERROR = 1]
+ intprops         [test $REPLACE_STRERROR = 1]
+ strerror-override [test $REPLACE_STRERROR = 1]
+ 
+--- a/modules/strerror-override
++++ b/modules/strerror-override
+@@ -8,7 +8,7 @@ m4/sys_socket_h.m4
+ m4/strerror.m4
+ 
+ Depends-on:
+-errno
++errno-h
+ 
+ configure.ac:
+ AC_REQUIRE([gl_HEADER_ERRNO_H])
+--- a/modules/strerror_r-posix
++++ b/modules/strerror_r-posix
+@@ -8,7 +8,7 @@ m4/strerror_r.m4
+ Depends-on:
+ string
+ extensions
+-errno           [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
++errno-h         [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
+ lock            [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
+ strerror-override [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
+ 
+--- a/modules/symlinkat
++++ b/modules/symlinkat
+@@ -11,7 +11,7 @@ unistd
+ extensions
+ fcntl-h         [test $HAVE_SYMLINKAT = 0 || test $REPLACE_SYMLINKAT = 1]
+ at-internal     [test $HAVE_SYMLINKAT = 0]
+-errno           [test $HAVE_SYMLINKAT = 0]
++errno-h         [test $HAVE_SYMLINKAT = 0]
+ fchdir          [test $HAVE_SYMLINKAT = 0]
+ filename        [test $HAVE_SYMLINKAT = 0]
+ openat-die      [test $HAVE_SYMLINKAT = 0]
+--- a/modules/sys_socket
++++ b/modules/sys_socket
+@@ -9,7 +9,7 @@ m4/sockpfaf.m4
+ 
+ Depends-on:
+ alignasof
+-errno
++errno-h
+ extern-inline
+ gen-header
+ include_next
+--- a/modules/szprintf
++++ b/modules/szprintf
+@@ -8,7 +8,7 @@ lib/szprintf.c
+ Depends-on:
+ stdio
+ vasnprintf
+-errno
++errno-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/unistdio/u16-u16-vasnprintf
++++ b/modules/unistdio/u16-u16-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u16-u16-vasprintf
++++ b/modules/unistdio/u16-u16-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u16-u16-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-u16-vasprintf])
+--- a/modules/unistdio/u16-u16-vsnprintf
++++ b/modules/unistdio/u16-u16-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u16-u16-vasnprintf
+ unistr/u16-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-u16-vsnprintf])
+--- a/modules/unistdio/u16-u16-vsprintf
++++ b/modules/unistdio/u16-u16-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u16-u16-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-u16-vsprintf])
+--- a/modules/unistdio/u16-vasnprintf
++++ b/modules/unistdio/u16-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u16-vasprintf
++++ b/modules/unistdio/u16-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u16-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-vasprintf])
+--- a/modules/unistdio/u16-vsnprintf
++++ b/modules/unistdio/u16-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u16-vasnprintf
+ unistr/u16-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-vsnprintf])
+--- a/modules/unistdio/u16-vsprintf
++++ b/modules/unistdio/u16-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u16-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u16-vsprintf])
+--- a/modules/unistdio/u32-u32-vasnprintf
++++ b/modules/unistdio/u32-u32-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u32-u32-vasprintf
++++ b/modules/unistdio/u32-u32-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u32-u32-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-u32-vasprintf])
+--- a/modules/unistdio/u32-u32-vsnprintf
++++ b/modules/unistdio/u32-u32-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u32-u32-vasnprintf
+ unistr/u32-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-u32-vsnprintf])
+--- a/modules/unistdio/u32-u32-vsprintf
++++ b/modules/unistdio/u32-u32-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u32-u32-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-u32-vsprintf])
+--- a/modules/unistdio/u32-vasnprintf
++++ b/modules/unistdio/u32-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u32-vasprintf
++++ b/modules/unistdio/u32-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u32-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-vasprintf])
+--- a/modules/unistdio/u32-vsnprintf
++++ b/modules/unistdio/u32-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u32-vasnprintf
+ unistr/u32-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-vsnprintf])
+--- a/modules/unistdio/u32-vsprintf
++++ b/modules/unistdio/u32-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u32-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u32-vsprintf])
+--- a/modules/unistdio/u8-u8-vasnprintf
++++ b/modules/unistdio/u8-u8-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u8-u8-vasprintf
++++ b/modules/unistdio/u8-u8-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u8-u8-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-u8-vasprintf])
+--- a/modules/unistdio/u8-u8-vsnprintf
++++ b/modules/unistdio/u8-u8-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u8-u8-vasnprintf
+ unistr/u8-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-u8-vsnprintf])
+--- a/modules/unistdio/u8-u8-vsprintf
++++ b/modules/unistdio/u8-u8-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u8-u8-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-u8-vsprintf])
+--- a/modules/unistdio/u8-vasnprintf
++++ b/modules/unistdio/u8-vasnprintf
+@@ -37,7 +37,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/u8-vasprintf
++++ b/modules/unistdio/u8-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/u8-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-vasprintf])
+--- a/modules/unistdio/u8-vsnprintf
++++ b/modules/unistdio/u8-vsnprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u8-vasnprintf
+ unistr/u8-cpy
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-vsnprintf])
+--- a/modules/unistdio/u8-vsprintf
++++ b/modules/unistdio/u8-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/u8-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/u8-vsprintf])
+--- a/modules/unistdio/ulc-fprintf
++++ b/modules/unistdio/ulc-fprintf
+@@ -8,7 +8,7 @@ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+ fseterr
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/ulc-fprintf])
+--- a/modules/unistdio/ulc-vasnprintf
++++ b/modules/unistdio/ulc-vasnprintf
+@@ -35,7 +35,7 @@ printf-safe
+ alloca-opt
+ localcharset
+ xsize
+-errno
++errno-h
+ free-posix
+ memchr
+ multiarch
+--- a/modules/unistdio/ulc-vasprintf
++++ b/modules/unistdio/ulc-vasprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vasprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/ulc-vasprintf])
+--- a/modules/unistdio/ulc-vfprintf
++++ b/modules/unistdio/ulc-vfprintf
+@@ -8,7 +8,7 @@ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+ fseterr
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/ulc-vfprintf])
+--- a/modules/unistdio/ulc-vsnprintf
++++ b/modules/unistdio/ulc-vsnprintf
+@@ -8,7 +8,7 @@ lib/unistdio/u-vsnprintf.h
+ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/ulc-vsnprintf])
+--- a/modules/unistdio/ulc-vsprintf
++++ b/modules/unistdio/ulc-vsprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ unistdio/base
+ unistdio/ulc-vasnprintf
+ stdint
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_LIBUNISTRING_MODULE(m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[999.9],[1.2]), [unistdio/ulc-vsprintf])
+--- a/modules/unlinkat
++++ b/modules/unlinkat
+@@ -14,7 +14,7 @@ fcntl-h         [test $HAVE_UNLINKAT = 0
+ openat-h        [test $HAVE_UNLINKAT = 0 || test $REPLACE_UNLINKAT = 1]
+ sys_stat        [test $HAVE_UNLINKAT = 0 || test $REPLACE_UNLINKAT = 1]
+ at-internal     [test $HAVE_UNLINKAT = 0]
+-errno           [test $HAVE_UNLINKAT = 0]
++errno-h         [test $HAVE_UNLINKAT = 0]
+ fchdir          [test $HAVE_UNLINKAT = 0]
+ filename        [test $HAVE_UNLINKAT = 0]
+ openat-die      [test $HAVE_UNLINKAT = 0]
+--- a/modules/utimens
++++ b/modules/utimens
+@@ -8,7 +8,7 @@ m4/utimens.m4
+ m4/utimes.m4
+ 
+ Depends-on:
+-errno
++errno-h
+ extern-inline
+ fcntl-h
+ fstat
+--- a/modules/utimensat
++++ b/modules/utimensat
+@@ -10,7 +10,7 @@ Depends-on:
+ sys_stat
+ extensions
+ at-internal     [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
+-errno           [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
++errno-h         [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
+ fchdir          [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
+ fcntl-h         [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
+ filename        [test $HAVE_UTIMENSAT = 0 || test $REPLACE_UTIMENSAT = 1]
+--- a/modules/vasnprintf
++++ b/modules/vasnprintf
+@@ -28,7 +28,7 @@ free-posix
+ limits-h
+ stdint
+ xsize
+-errno
++errno-h
+ memchr
+ assert-h
+ wchar
+--- a/modules/vasnwprintf
++++ b/modules/vasnwprintf
+@@ -32,7 +32,7 @@ free-posix
+ limits-h
+ stdint
+ xsize
+-errno
++errno-h
+ memchr
+ assert-h
+ wchar
+--- a/modules/vasprintf
++++ b/modules/vasprintf
+@@ -10,7 +10,7 @@ Depends-on:
+ stdio
+ extensions
+ vasnprintf      [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+-errno           [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
++errno-h         [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+ stdint          [test $HAVE_VASPRINTF = 0 || test $REPLACE_VASPRINTF = 1]
+ 
+ configure.ac:
+--- a/modules/vaszprintf
++++ b/modules/vaszprintf
+@@ -8,7 +8,7 @@ lib/aszprintf.c
+ Depends-on:
+ stdio
+ vasnprintf
+-errno
++errno-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/vdprintf
++++ b/modules/vdprintf
+@@ -9,7 +9,7 @@ Depends-on:
+ stdio
+ vdzprintf       [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+ intprops        [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+-errno           [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
++errno-h         [test $ac_cv_func_vdprintf = no || test $REPLACE_VDPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_VDPRINTF
+--- a/modules/vdzprintf
++++ b/modules/vdzprintf
+@@ -11,7 +11,7 @@ vasnprintf
+ intprops
+ free-posix
+ full-write
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vdzprintf])
+--- a/modules/vfprintf-posix
++++ b/modules/vfprintf-posix
+@@ -22,7 +22,7 @@ vfzprintf          [test $REPLACE_VFPRIN
+ mixin/printf-posix [test $REPLACE_VFPRINTF = 1]
+ intprops           [test $REPLACE_VFPRINTF = 1]
+ fseterr            [test $REPLACE_VFPRINTF = 1]
+-errno              [test $REPLACE_VFPRINTF = 1]
++errno-h            [test $REPLACE_VFPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_VFPRINTF_POSIX
+--- a/modules/vfzprintf
++++ b/modules/vfzprintf
+@@ -11,7 +11,7 @@ vasnprintf
+ intprops
+ free-posix
+ fseterr
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_STDIO_MODULE_INDICATOR([vfzprintf])
+--- a/modules/vsnprintf
++++ b/modules/vsnprintf
+@@ -9,7 +9,7 @@ m4/printf.m4
+ 
+ Depends-on:
+ stdio
+-errno           [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
++errno-h         [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ stdint          [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ vsnzprintf      [test $ac_cv_func_vsnprintf = no || test $REPLACE_VSNPRINTF = 1]
+ 
+--- a/modules/vsnzprintf
++++ b/modules/vsnzprintf
+@@ -8,7 +8,7 @@ lib/vsnzprintf.c
+ Depends-on:
+ stdio
+ vasnprintf
+-errno
++errno-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/vsprintf-posix
++++ b/modules/vsprintf-posix
+@@ -21,7 +21,7 @@ multiarch
+ vszprintf          [test $REPLACE_VSPRINTF = 1]
+ mixin/printf-posix [test $REPLACE_VSPRINTF = 1]
+ stdint             [test $REPLACE_VSPRINTF = 1]
+-errno              [test $REPLACE_VSPRINTF = 1]
++errno-h            [test $REPLACE_VSPRINTF = 1]
+ 
+ configure.ac:
+ gl_FUNC_VSPRINTF_POSIX
+--- a/modules/vszprintf
++++ b/modules/vszprintf
+@@ -8,7 +8,7 @@ lib/vszprintf.c
+ Depends-on:
+ stdio
+ vasnprintf
+-errno
++errno-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/windows-cond
++++ b/modules/windows-cond
+@@ -8,7 +8,7 @@ lib/windows-initguard.h
+ 
+ Depends-on:
+ stdbool
+-errno
++errno-h
+ time-h
+ gettimeofday
+ 
+--- a/modules/windows-timedmutex
++++ b/modules/windows-timedmutex
+@@ -7,7 +7,7 @@ lib/windows-timedmutex.c
+ lib/windows-initguard.h
+ 
+ Depends-on:
+-errno
++errno-h
+ time-h
+ gettimeofday
+ 
+--- a/modules/windows-timedrecmutex
++++ b/modules/windows-timedrecmutex
+@@ -7,7 +7,7 @@ lib/windows-timedrecmutex.c
+ lib/windows-initguard.h
+ 
+ Depends-on:
+-errno
++errno-h
+ time-h
+ gettimeofday
+ 
+--- a/modules/windows-timedrwlock
++++ b/modules/windows-timedrwlock
+@@ -7,7 +7,7 @@ lib/windows-timedrwlock.c
+ lib/windows-initguard.h
+ 
+ Depends-on:
+-errno
++errno-h
+ stdbool
+ time-h
+ gettimeofday
+--- a/modules/xvasprintf
++++ b/modules/xvasprintf
+@@ -18,7 +18,7 @@ xalloc-die
+ extern-inline
+ xsize
+ stdarg
+-errno
++errno-h
+ 
+ configure.ac:
+ gl_XVASPRINTF

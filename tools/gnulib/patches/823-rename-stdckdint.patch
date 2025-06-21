@@ -1,0 +1,553 @@
+From 116997309c648b1d3d2cf6a3840494dfd420dece Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:21:40 +0100
+Subject: [PATCH] Rename module stdckdint to stdckdint-h.
+
+* modules/stdckdint-h: Renamed from modules/stdckdint.
+* modules/stdckdint-h-tests: Renamed from modules/stdckdint-tests.
+* modules/stdckdint-h-c++-tests: Renamed from
+modules/stdckdint-c++-tests.
+* tests/test-stdckdint-h.c: Renamed from tests/test-stdckdint.c.
+* tests/test-stdckdint-h-c++.cc: Renamed from
+tests/test-stdckdint-c++.cc.
+* doc/posix-headers/stdckdint.texi: Update.
+* doc/intprops.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/stdckdint: New file.
+---
+ ChangeLog                                     | 15 ++++++
+ doc/intprops.texi                             |  4 +-
+ doc/posix-headers/stdckdint.texi              |  4 +-
+ modules/alignalloc                            |  2 +-
+ modules/backup-rename                         |  2 +-
+ modules/backupfile                            |  2 +-
+ modules/base32                                |  2 +-
+ modules/base64                                |  2 +-
+ modules/c-nstrftime                           |  2 +-
+ modules/calloc-gnu                            |  2 +-
+ modules/calloc-posix                          |  2 +-
+ modules/chown-tests                           |  2 +-
+ modules/fchownat-tests                        |  2 +-
+ modules/fdutimensat-tests                     |  2 +-
+ modules/file-has-acl                          |  2 +-
+ modules/fnmatch                               |  2 +-
+ modules/ftello                                |  2 +-
+ modules/futimens-tests                        |  2 +-
+ modules/glibc-internal/dynarray               |  2 +-
+ modules/glob                                  |  2 +-
+ modules/group-member                          |  2 +-
+ modules/lchown-tests                          |  2 +-
+ modules/malloc-gnu                            |  2 +-
+ modules/malloc-posix                          |  2 +-
+ modules/malloca                               |  2 +-
+ modules/mktime                                |  2 +-
+ modules/nstrftime                             |  2 +-
+ modules/parse-datetime                        |  2 +-
+ modules/posix_memalign                        |  2 +-
+ modules/posixtm                               |  2 +-
+ modules/realloc-posix                         |  2 +-
+ modules/reallocarray                          |  2 +-
+ modules/regex                                 |  2 +-
+ modules/relocatable-prog-wrapper              |  2 +-
+ modules/stat-time                             |  2 +-
+ modules/stat-time-tests                       |  2 +-
+ modules/stdckdint                             | 35 +++-----------
+ modules/stdckdint-c++-tests                   | 17 -------
+ modules/stdckdint-h                           | 46 +++++++++++++++++++
+ modules/stdckdint-h-c++-tests                 | 17 +++++++
+ .../{stdckdint-tests => stdckdint-h-tests}    |  8 ++--
+ modules/timespec-add                          |  2 +-
+ modules/timespec-sub                          |  2 +-
+ modules/utime-tests                           |  2 +-
+ modules/utimens-tests                         |  2 +-
+ modules/utimensat-tests                       |  2 +-
+ modules/xalloc                                |  2 +-
+ modules/xstrtol                               |  2 +-
+ ...dckdint-c++.cc => test-stdckdint-h-c++.cc} |  0
+ .../{test-stdckdint.c => test-stdckdint-h.c}  |  0
+ 50 files changed, 133 insertions(+), 93 deletions(-)
+ delete mode 100644 modules/stdckdint-c++-tests
+ create mode 100644 modules/stdckdint-h
+ create mode 100644 modules/stdckdint-h-c++-tests
+ rename modules/{stdckdint-tests => stdckdint-h-tests} (51%)
+ rename tests/{test-stdckdint-c++.cc => test-stdckdint-h-c++.cc} (100%)
+ rename tests/{test-stdckdint.c => test-stdckdint-h.c} (100%)
+
+--- a/modules/alignalloc
++++ b/modules/alignalloc
+@@ -13,7 +13,7 @@ extensions
+ extern-inline
+ idx
+ posix_memalign
+-stdckdint
++stdckdint-h
+ stdint
+ 
+ configure.ac:
+--- a/modules/backup-rename
++++ b/modules/backup-rename
+@@ -22,7 +22,7 @@ opendirat
+ readdir
+ renameatu
+ stdbool-h
+-stdckdint
++stdckdint-h
+ stdint
+ xalloc-oversized
+ 
+--- a/modules/backupfile
++++ b/modules/backupfile
+@@ -23,7 +23,7 @@ readdir
+ realloc-gnu
+ renameatu
+ stdbool-h
+-stdckdint
++stdckdint-h
+ stdint
+ xalloc-die
+ 
+--- a/modules/base32
++++ b/modules/base32
+@@ -11,7 +11,7 @@ extern-inline
+ ialloc
+ stdbool-h
+ memchr
+-stdckdint
++stdckdint-h
+ 
+ configure.ac:
+ gl_FUNC_BASE32
+--- a/modules/base64
++++ b/modules/base64
+@@ -11,7 +11,7 @@ extern-inline
+ ialloc
+ stdbool-h
+ memchr
+-stdckdint
++stdckdint-h
+ 
+ configure.ac:
+ gl_FUNC_BASE64
+--- a/modules/c-nstrftime
++++ b/modules/c-nstrftime
+@@ -18,7 +18,7 @@ intprops
+ libc-config
+ locale-h
+ stdbool-h
+-stdckdint
++stdckdint-h
+ time_rz
+ 
+ configure.ac:
+--- a/modules/chown-tests
++++ b/modules/chown-tests
+@@ -12,7 +12,7 @@ mgetgroups
+ nanosleep
+ stat-time
+ stdbool-h
+-stdckdint
++stdckdint-h
+ symlink
+ xconcat-filename
+ xgetcwd-lgpl
+--- a/modules/fchownat-tests
++++ b/modules/fchownat-tests
+@@ -13,7 +13,7 @@ mgetgroups
+ nanosleep
+ openat-h
+ stat-time
+-stdckdint
++stdckdint-h
+ symlink
+ xconcat-filename
+ xgetcwd-lgpl
+--- a/modules/fdutimensat-tests
++++ b/modules/fdutimensat-tests
+@@ -12,7 +12,7 @@ fcntl-h
+ ignore-value
+ nanosleep
+ openat
+-stdckdint
++stdckdint-h
+ timespec
+ dup
+ utimecmp
+--- a/modules/file-has-acl
++++ b/modules/file-has-acl
+@@ -14,7 +14,7 @@ minmax
+ free-posix
+ stat
+ stdbool-h
+-stdckdint
++stdckdint-h
+ 
+ configure.ac:
+ gl_FILE_HAS_ACL
+--- a/modules/fnmatch
++++ b/modules/fnmatch
+@@ -17,7 +17,7 @@ idx                 [test $HAVE_FNMATCH
+ isblank             [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ libc-config         [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ stdbool-h           [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+-stdckdint           [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
++stdckdint-h         [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ strnlen             [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ uchar               [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+ memchr              [test $HAVE_FNMATCH = 0 || test $REPLACE_FNMATCH = 1]
+--- a/modules/ftello
++++ b/modules/ftello
+@@ -14,7 +14,7 @@ extensions
+ largefile
+ sys_types
+ lseek           [test $HAVE_FTELLO = 0 || test $REPLACE_FTELLO = 1]
+-stdckdint       [test $HAVE_FTELLO = 0 || test $REPLACE_FTELLO = 1]
++stdckdint-h     [test $HAVE_FTELLO = 0 || test $REPLACE_FTELLO = 1]
+ # Just to guarantee consistency between ftell() and ftello().
+ ftell
+ 
+--- a/modules/futimens-tests
++++ b/modules/futimens-tests
+@@ -11,7 +11,7 @@ gettext-h
+ fcntl-h
+ ignore-value
+ nanosleep
+-stdckdint
++stdckdint-h
+ timespec
+ dup
+ utimecmp
+--- a/modules/glibc-internal/dynarray
++++ b/modules/glibc-internal/dynarray
+@@ -17,7 +17,7 @@ builtin-expect
+ gen-header
+ libc-config
+ stdbool-h
+-stdckdint
++stdckdint-h
+ stddef
+ 
+ configure.ac:
+--- a/modules/glob
++++ b/modules/glob
+@@ -29,7 +29,7 @@ opendir                       [test $HAV
+ readdir                       [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ glibc-internal/scratch_buffer [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdbool-h                     [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+-stdckdint                     [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
++stdckdint-h                   [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ stdint                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ strdup                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+ unistd                        [test $HAVE_GLOB = 0 || test $REPLACE_GLOB = 1]
+--- a/modules/group-member
++++ b/modules/group-member
+@@ -10,7 +10,7 @@ unistd
+ extensions
+ getgroups        [test $HAVE_GROUP_MEMBER = 0]
+ realloc-gnu      [test $HAVE_GROUP_MEMBER = 0]
+-stdckdint        [test $HAVE_GROUP_MEMBER = 0]
++stdckdint-h      [test $HAVE_GROUP_MEMBER = 0]
+ 
+ configure.ac:
+ gl_FUNC_GROUP_MEMBER
+--- a/modules/lchown-tests
++++ b/modules/lchown-tests
+@@ -10,7 +10,7 @@ errno-h
+ ignore-value
+ mgetgroups
+ nanosleep
+-stdckdint
++stdckdint-h
+ stat-time
+ stdbool-h
+ symlink
+--- a/modules/malloca
++++ b/modules/malloca
+@@ -11,7 +11,7 @@ Depends-on:
+ alloca-opt
+ assert-h
+ idx
+-stdckdint
++stdckdint-h
+ stdint
+ stdlib
+ xalloc-oversized
+--- a/modules/mktime
++++ b/modules/mktime
+@@ -13,7 +13,7 @@ multiarch
+ intprops        [test $REPLACE_MKTIME = 1]
+ libc-config     [test $REPLACE_MKTIME = 1]
+ stdbool-h       [test $REPLACE_MKTIME = 1]
+-stdckdint       [test $REPLACE_MKTIME = 1]
++stdckdint-h     [test $REPLACE_MKTIME = 1]
+ time_r          [test $REPLACE_MKTIME = 1]
+ verify          [test $REPLACE_MKTIME = 1]
+ 
+--- a/modules/nstrftime
++++ b/modules/nstrftime
+@@ -17,7 +17,7 @@ intprops
+ libc-config
+ localename-unsafe-limited
+ stdbool-h
+-stdckdint
++stdckdint-h
+ time_rz
+ 
+ configure.ac:
+--- a/modules/parse-datetime
++++ b/modules/parse-datetime
+@@ -23,7 +23,7 @@ inttypes-h
+ mktime
+ nstrftime
+ setenv
+-stdckdint
++stdckdint-h
+ unsetenv
+ time-h
+ time_r
+--- a/modules/posixtm
++++ b/modules/posixtm
+@@ -11,7 +11,7 @@ c-ctype
+ idx
+ mktime
+ stdbool-h
+-stdckdint
++stdckdint-h
+ time
+ verify
+ 
+--- a/modules/reallocarray
++++ b/modules/reallocarray
+@@ -9,7 +9,7 @@ m4/reallocarray.m4
+ Depends-on:
+ extensions
+ realloc-gnu    [test $HAVE_REALLOCARRAY = 0 || test $REPLACE_REALLOCARRAY = 1]
+-stdckdint      [test $HAVE_REALLOCARRAY = 0 || test $REPLACE_REALLOCARRAY = 1]
++stdckdint-h    [test $HAVE_REALLOCARRAY = 0 || test $REPLACE_REALLOCARRAY = 1]
+ stdlib
+ 
+ configure.ac:
+--- a/modules/regex
++++ b/modules/regex
+@@ -37,7 +37,7 @@ mbrtowc                 [test $ac_use_in
+ mbsinit                 [test $ac_use_included_regex = yes]
+ nl_langinfo             [test $ac_use_included_regex = yes]
+ stdbool-h               [test $ac_use_included_regex = yes]
+-stdckdint               [test $ac_use_included_regex = yes]
++stdckdint-h             [test $ac_use_included_regex = yes]
+ stdint                  [test $ac_use_included_regex = yes]
+ verify                  [test $ac_use_included_regex = yes]
+ wchar                   [test $ac_use_included_regex = yes]
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -71,7 +71,7 @@ pathmax
+ ssize_t
+ stdbool-h
+ stddef
+-stdckdint
++stdckdint-h
+ stdint
+ stdlib
+ string
+--- a/modules/stat-time
++++ b/modules/stat-time
+@@ -11,7 +11,7 @@ time-h
+ errno-h
+ extensions
+ extern-inline
+-stdckdint
++stdckdint-h
+ 
+ configure.ac:
+ gl_STAT_TIME
+--- a/modules/stat-time-tests
++++ b/modules/stat-time-tests
+@@ -5,7 +5,7 @@ tests/nap.h
+ 
+ Depends-on:
+ nanosleep
+-stdckdint
++stdckdint-h
+ time-h
+ unistd
+ xconcat-filename
+--- a/modules/stdckdint
++++ b/modules/stdckdint
+@@ -1,40 +1,20 @@
+ Description:
+ An <stdckdint.h> that is like C23.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'stdckdint-h' instead.
++
+ Files:
+-lib/stdckdint.in.h
+-lib/intprops-internal.h
+ 
+ Depends-on:
+-gen-header
+-stdbool-h
++stdckdint-h
+ 
+ configure.ac:
+-AC_CHECK_HEADERS_ONCE([stdckdint.h])
+-if test $ac_cv_header_stdckdint_h = yes; then
+-  GL_GENERATE_STDCKDINT_H=false
+-else
+-  GL_GENERATE_STDCKDINT_H=true
+-fi
+-gl_CONDITIONAL_HEADER([stdckdint.h])
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += $(STDCKDINT_H)
+-
+-# We need the following in order to create <stdckdint.h> when the system
+-# doesn't have one that works with the given compiler.
+-if GL_GENERATE_STDCKDINT_H
+-stdckdint.h: stdckdint.in.h $(top_builddir)/config.status
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	  $(srcdir)/stdckdint.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-else
+-stdckdint.h: $(top_builddir)/config.status
+-	rm -f $@
+-endif
+-MOSTLYCLEANFILES += stdckdint.h stdckdint.h-t
+ 
+ Include:
+ <stdckdint.h>
+@@ -43,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-Paul Eggert
+--- /dev/null
++++ b/modules/stdckdint-h
+@@ -0,0 +1,46 @@
++Description:
++An <stdckdint.h> that is like C23.
++
++Files:
++lib/stdckdint.in.h
++lib/intprops-internal.h
++
++Depends-on:
++gen-header
++stdbool-h
++
++configure.ac:
++AC_CHECK_HEADERS_ONCE([stdckdint.h])
++if test $ac_cv_header_stdckdint_h = yes; then
++  GL_GENERATE_STDCKDINT_H=false
++else
++  GL_GENERATE_STDCKDINT_H=true
++fi
++gl_CONDITIONAL_HEADER([stdckdint.h])
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += $(STDCKDINT_H)
++
++# We need the following in order to create <stdckdint.h> when the system
++# doesn't have one that works with the given compiler.
++if GL_GENERATE_STDCKDINT_H
++stdckdint.h: stdckdint.in.h $(top_builddir)/config.status
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	  $(srcdir)/stdckdint.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++else
++stdckdint.h: $(top_builddir)/config.status
++	rm -f $@
++endif
++MOSTLYCLEANFILES += stdckdint.h stdckdint.h-t
++
++Include:
++<stdckdint.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++Paul Eggert
+--- a/modules/timespec-add
++++ b/modules/timespec-add
+@@ -8,7 +8,7 @@ Depends-on:
+ c99
+ intprops
+ stdbool-h
+-stdckdint
++stdckdint-h
+ timespec
+ 
+ configure.ac:
+--- a/modules/timespec-sub
++++ b/modules/timespec-sub
+@@ -8,7 +8,7 @@ Depends-on:
+ c99
+ intprops
+ stdbool-h
+-stdckdint
++stdckdint-h
+ timespec
+ 
+ configure.ac:
+--- a/modules/utime-tests
++++ b/modules/utime-tests
+@@ -9,7 +9,7 @@ dup
+ gettext-h
+ ignore-value
+ nanosleep
+-stdckdint
++stdckdint-h
+ symlink
+ timespec
+ utimecmp
+--- a/modules/utimens-tests
++++ b/modules/utimens-tests
+@@ -12,7 +12,7 @@ dup
+ gettext-h
+ ignore-value
+ nanosleep
+-stdckdint
++stdckdint-h
+ symlink
+ timespec
+ utimecmp
+--- a/modules/utimensat-tests
++++ b/modules/utimensat-tests
+@@ -10,7 +10,7 @@ tests/macros.h
+ Depends-on:
+ ignore-value
+ nanosleep
+-stdckdint
++stdckdint-h
+ timespec
+ utimecmp
+ xconcat-filename
+--- a/modules/xalloc
++++ b/modules/xalloc
+@@ -16,7 +16,7 @@ malloc-gnu
+ minmax
+ realloc-gnu
+ reallocarray
+-stdckdint
++stdckdint-h
+ stdint
+ xalloc-die
+ 
+--- a/modules/xstrtol
++++ b/modules/xstrtol
+@@ -10,7 +10,7 @@ m4/xstrtol.m4
+ Depends-on:
+ assure
+ intprops
+-stdckdint
++stdckdint-h
+ stdint
+ 
+ configure.ac:

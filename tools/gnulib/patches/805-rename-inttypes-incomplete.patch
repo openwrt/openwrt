@@ -1,0 +1,284 @@
+From deba443eb1542e7e38ddbcf423cfa7a2944360a8 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:11 +0100
+Subject: [PATCH] Rename module inttypes-incomplete to inttypes-h-incomplete.
+
+* modules/inttypes-h-incomplete: Renamed from
+modules/inttypes-incomplete.
+* modules/* (Depends-on): Update.
+* modules/inttypes-incomplete: New file.
+---
+ ChangeLog                     |  8 +++++
+ modules/hamt                  |  2 +-
+ modules/imaxabs               |  2 +-
+ modules/imaxdiv               |  2 +-
+ modules/inttypes              |  2 +-
+ modules/inttypes-h-incomplete | 68 +++++++++++++++++++++++++++++++++++
+ modules/inttypes-incomplete   | 57 ++++-------------------------
+ modules/posixcheck            |  2 +-
+ modules/strtoimax             |  2 +-
+ modules/strtoumax             |  2 +-
+ modules/wchar                 |  2 +-
+ modules/xstrtoimax            |  2 +-
+ modules/xstrtoumax            |  2 +-
+ 13 files changed, 93 insertions(+), 60 deletions(-)
+ create mode 100644 modules/inttypes-h-incomplete
+
+--- a/modules/hamt
++++ b/modules/hamt
+@@ -9,7 +9,7 @@ Depends-on:
+ count-one-bits
+ extern-inline
+ flexmember
+-inttypes-incomplete
++inttypes-h-incomplete
+ stdbool
+ stdint
+ verify
+--- a/modules/imaxabs
++++ b/modules/imaxabs
+@@ -6,7 +6,7 @@ lib/imaxabs.c
+ m4/imaxabs.m4
+ 
+ Depends-on:
+-inttypes-incomplete
++inttypes-h-incomplete
+ 
+ configure.ac:
+ gl_FUNC_IMAXABS
+--- a/modules/imaxdiv
++++ b/modules/imaxdiv
+@@ -6,7 +6,7 @@ lib/imaxdiv.c
+ m4/imaxdiv.m4
+ 
+ Depends-on:
+-inttypes-incomplete
++inttypes-h-incomplete
+ 
+ configure.ac:
+ gl_FUNC_IMAXDIV
+--- a/modules/inttypes
++++ b/modules/inttypes
+@@ -4,7 +4,7 @@ An <inttypes.h> that nearly conforms to
+ Files:
+ 
+ Depends-on:
+-inttypes-incomplete
++inttypes-h-incomplete
+ extensions
+ 
+ configure.ac:
+--- /dev/null
++++ b/modules/inttypes-h-incomplete
+@@ -0,0 +1,68 @@
++Description:
++An <inttypes.h> that conforms to C99 except for PRI* and SCN* macros.
++
++Files:
++lib/inttypes.in.h
++m4/inttypes.m4
++
++Depends-on:
++gen-header
++include_next
++multiarch
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++stdint
++
++configure.ac:
++gl_INTTYPES_INCOMPLETE
++gl_INTTYPES_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += inttypes.h
++
++# We need the following in order to create <inttypes.h> when the system
++# doesn't have one that works with the given compiler.
++inttypes.h: inttypes.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's/@''HAVE_INTTYPES_H''@/$(HAVE_INTTYPES_H)/g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_INTTYPES_H''@|$(NEXT_INTTYPES_H)|g' \
++	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
++	      -e 's/@''PRIPTR_PREFIX''@/$(PRIPTR_PREFIX)/g' \
++	      -e 's/@''GNULIB_IMAXABS''@/$(GNULIB_IMAXABS)/g' \
++	      -e 's/@''GNULIB_IMAXDIV''@/$(GNULIB_IMAXDIV)/g' \
++	      -e 's/@''GNULIB_STRTOIMAX''@/$(GNULIB_STRTOIMAX)/g' \
++	      -e 's/@''GNULIB_STRTOUMAX''@/$(GNULIB_STRTOUMAX)/g' \
++	      -e 's/@''HAVE_DECL_IMAXABS''@/$(HAVE_DECL_IMAXABS)/g' \
++	      -e 's/@''HAVE_DECL_IMAXDIV''@/$(HAVE_DECL_IMAXDIV)/g' \
++	      -e 's/@''HAVE_DECL_STRTOIMAX''@/$(HAVE_DECL_STRTOIMAX)/g' \
++	      -e 's/@''HAVE_DECL_STRTOUMAX''@/$(HAVE_DECL_STRTOUMAX)/g' \
++	      -e 's/@''HAVE_IMAXDIV_T''@/$(HAVE_IMAXDIV_T)/g' \
++	      -e 's/@''REPLACE_IMAXABS''@/$(REPLACE_IMAXABS)/g' \
++	      -e 's/@''REPLACE_IMAXDIV''@/$(REPLACE_IMAXDIV)/g' \
++	      -e 's/@''REPLACE_STRTOIMAX''@/$(REPLACE_STRTOIMAX)/g' \
++	      -e 's/@''REPLACE_STRTOUMAX''@/$(REPLACE_STRTOUMAX)/g' \
++	      -e 's/@''INT32_MAX_LT_INTMAX_MAX''@/$(INT32_MAX_LT_INTMAX_MAX)/g' \
++	      -e 's/@''INT64_MAX_EQ_LONG_MAX''@/$(INT64_MAX_EQ_LONG_MAX)/g' \
++	      -e 's/@''UINT32_MAX_LT_UINTMAX_MAX''@/$(UINT32_MAX_LT_UINTMAX_MAX)/g' \
++	      -e 's/@''UINT64_MAX_EQ_ULONG_MAX''@/$(UINT64_MAX_EQ_ULONG_MAX)/g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/inttypes.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += inttypes.h inttypes.h-t
++
++Include:
++<inttypes.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/inttypes-incomplete
++++ b/modules/inttypes-incomplete
+@@ -1,62 +1,20 @@
+ Description:
+ An <inttypes.h> that conforms to C99 except for PRI* and SCN* macros.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'inttypes-h-incomplete' instead.
++
+ Files:
+-lib/inttypes.in.h
+-m4/inttypes.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-multiarch
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-stdint
++inttypes-h-incomplete
+ 
+ configure.ac:
+-gl_INTTYPES_INCOMPLETE
+-gl_INTTYPES_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += inttypes.h
+-
+-# We need the following in order to create <inttypes.h> when the system
+-# doesn't have one that works with the given compiler.
+-inttypes.h: inttypes.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H) $(ARG_NONNULL_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's/@''HAVE_INTTYPES_H''@/$(HAVE_INTTYPES_H)/g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_INTTYPES_H''@|$(NEXT_INTTYPES_H)|g' \
+-	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
+-	      -e 's/@''PRIPTR_PREFIX''@/$(PRIPTR_PREFIX)/g' \
+-	      -e 's/@''GNULIB_IMAXABS''@/$(GNULIB_IMAXABS)/g' \
+-	      -e 's/@''GNULIB_IMAXDIV''@/$(GNULIB_IMAXDIV)/g' \
+-	      -e 's/@''GNULIB_STRTOIMAX''@/$(GNULIB_STRTOIMAX)/g' \
+-	      -e 's/@''GNULIB_STRTOUMAX''@/$(GNULIB_STRTOUMAX)/g' \
+-	      -e 's/@''HAVE_DECL_IMAXABS''@/$(HAVE_DECL_IMAXABS)/g' \
+-	      -e 's/@''HAVE_DECL_IMAXDIV''@/$(HAVE_DECL_IMAXDIV)/g' \
+-	      -e 's/@''HAVE_DECL_STRTOIMAX''@/$(HAVE_DECL_STRTOIMAX)/g' \
+-	      -e 's/@''HAVE_DECL_STRTOUMAX''@/$(HAVE_DECL_STRTOUMAX)/g' \
+-	      -e 's/@''HAVE_IMAXDIV_T''@/$(HAVE_IMAXDIV_T)/g' \
+-	      -e 's/@''REPLACE_IMAXABS''@/$(REPLACE_IMAXABS)/g' \
+-	      -e 's/@''REPLACE_IMAXDIV''@/$(REPLACE_IMAXDIV)/g' \
+-	      -e 's/@''REPLACE_STRTOIMAX''@/$(REPLACE_STRTOIMAX)/g' \
+-	      -e 's/@''REPLACE_STRTOUMAX''@/$(REPLACE_STRTOUMAX)/g' \
+-	      -e 's/@''INT32_MAX_LT_INTMAX_MAX''@/$(INT32_MAX_LT_INTMAX_MAX)/g' \
+-	      -e 's/@''INT64_MAX_EQ_LONG_MAX''@/$(INT64_MAX_EQ_LONG_MAX)/g' \
+-	      -e 's/@''UINT32_MAX_LT_UINTMAX_MAX''@/$(UINT32_MAX_LT_UINTMAX_MAX)/g' \
+-	      -e 's/@''UINT64_MAX_EQ_ULONG_MAX''@/$(UINT64_MAX_EQ_ULONG_MAX)/g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/inttypes.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += inttypes.h inttypes.h-t
+ 
+ Include:
+ <inttypes.h>
+@@ -65,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -14,7 +14,7 @@ fcntl-h
+ fnmatch-h
+ glob-h
+ iconv-h
+-inttypes-incomplete
++inttypes-h-incomplete
+ langinfo
+ locale
+ malloc-h
+--- a/modules/strtoimax
++++ b/modules/strtoimax
+@@ -6,7 +6,7 @@ lib/strtoimax.c
+ m4/strtoimax.m4
+ 
+ Depends-on:
+-inttypes-incomplete
++inttypes-h-incomplete
+ assert-h        [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+ stdint          [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+ strtoll         [test $HAVE_DECL_STRTOIMAX = 0 || test $REPLACE_STRTOIMAX = 1]
+--- a/modules/strtoumax
++++ b/modules/strtoumax
+@@ -7,7 +7,7 @@ lib/strtoumax.c
+ m4/strtoumax.m4
+ 
+ Depends-on:
+-inttypes-incomplete
++inttypes-h-incomplete
+ assert-h        [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+ stdint          [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+ strtoull        [test $HAVE_DECL_STRTOUMAX = 0 || test $REPLACE_STRTOUMAX = 1]
+--- a/modules/wchar
++++ b/modules/wchar
+@@ -14,7 +14,7 @@ snippet/arg-nonnull
+ snippet/c++defs
+ snippet/warn-on-use
+ extern-inline
+-inttypes-incomplete
++inttypes-h-incomplete
+ stddef
+ stdlib
+ 
+--- a/modules/xstrtoimax
++++ b/modules/xstrtoimax
+@@ -6,7 +6,7 @@ lib/xstrtoimax.c
+ 
+ Depends-on:
+ xstrtol
+-inttypes-incomplete
++inttypes-h-incomplete
+ strtoimax
+ 
+ configure.ac:
+--- a/modules/xstrtoumax
++++ b/modules/xstrtoumax
+@@ -6,7 +6,7 @@ lib/xstrtoumax.c
+ 
+ Depends-on:
+ xstrtol
+-inttypes-incomplete
++inttypes-h-incomplete
+ strtoumax
+ 
+ configure.ac:

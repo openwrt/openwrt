@@ -1,0 +1,215 @@
+From 7b1d048d30ca4ba3552bac8bb057b7721f11b7de Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:14:16 +0100
+Subject: [PATCH] Rename module langinfo to langinfo-h.
+
+* modules/langinfo-h: Renamed from modules/langinfo.
+* modules/langinfo-h-tests: Renamed from modules/langinfo-tests.
+* modules/langinfo-h-c++-tests: Renamed from modules/langinfo-c++-tests.
+* tests/test-langinfo-h.c: Renamed from tests/test-langinfo.c.
+* tests/test-langinfo-h-c++.cc: Renamed from tests/test-langinfo-c++.cc.
+* doc/posix-headers/langinfo.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/langinfo: New file.
+---
+ ChangeLog                                     | 12 ++++
+ doc/posix-headers/langinfo.texi               |  4 +-
+ modules/duplocale-tests                       |  2 +-
+ modules/langinfo                              | 44 +++------------
+ modules/langinfo-c++-tests                    | 18 ------
+ modules/langinfo-h                            | 55 +++++++++++++++++++
+ modules/langinfo-h-c++-tests                  | 18 ++++++
+ modules/langinfo-h-tests                      | 11 ++++
+ modules/langinfo-tests                        | 11 ----
+ modules/localename-unsafe                     |  2 +-
+ modules/nl_langinfo                           |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/regex                                 |  2 +-
+ ...langinfo-c++.cc => test-langinfo-h-c++.cc} |  0
+ tests/{test-langinfo.c => test-langinfo-h.c}  |  0
+ 15 files changed, 110 insertions(+), 73 deletions(-)
+ delete mode 100644 modules/langinfo-c++-tests
+ create mode 100644 modules/langinfo-h
+ create mode 100644 modules/langinfo-h-c++-tests
+ create mode 100644 modules/langinfo-h-tests
+ delete mode 100644 modules/langinfo-tests
+ rename tests/{test-langinfo-c++.cc => test-langinfo-h-c++.cc} (100%)
+ rename tests/{test-langinfo.c => test-langinfo-h.c} (100%)
+
+--- a/modules/duplocale-tests
++++ b/modules/duplocale-tests
+@@ -5,7 +5,7 @@ tests/macros.h
+ m4/intl-thread-locale.m4
+ 
+ Depends-on:
+-langinfo
++langinfo-h
+ 
+ configure.ac:
+ AC_CHECK_FUNCS_ONCE([strfmon_l snprintf_l])
+--- a/modules/langinfo
++++ b/modules/langinfo
+@@ -1,49 +1,20 @@
+ Description:
+ A GNU-like <langinfo.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'langinfo-h' instead.
++
+ Files:
+-lib/langinfo.in.h
+-m4/langinfo_h.m4
+ 
+ Depends-on:
+-extensions
+-gen-header
+-include_next
+-snippet/c++defs
+-snippet/warn-on-use
++langinfo-h
+ 
+ configure.ac:
+-gl_LANGINFO_H
+-gl_LANGINFO_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += langinfo.h
+-
+-# We need the following in order to create an empty placeholder for
+-# <langinfo.h> when the system doesn't have one.
+-langinfo.h: langinfo.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_LANGINFO_H''@|$(HAVE_LANGINFO_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_LANGINFO_H''@|$(NEXT_LANGINFO_H)|g' \
+-	      -e 's/@''GNULIB_NL_LANGINFO''@/$(GNULIB_NL_LANGINFO)/g' \
+-	      -e 's|@''HAVE_LANGINFO_CODESET''@|$(HAVE_LANGINFO_CODESET)|g' \
+-	      -e 's|@''HAVE_LANGINFO_T_FMT_AMPM''@|$(HAVE_LANGINFO_T_FMT_AMPM)|g' \
+-	      -e 's|@''HAVE_LANGINFO_ALTMON''@|$(HAVE_LANGINFO_ALTMON)|g' \
+-	      -e 's|@''HAVE_LANGINFO_ERA''@|$(HAVE_LANGINFO_ERA)|g' \
+-	      -e 's|@''HAVE_LANGINFO_YESEXPR''@|$(HAVE_LANGINFO_YESEXPR)|g' \
+-	      -e 's|@''HAVE_NL_LANGINFO''@|$(HAVE_NL_LANGINFO)|g' \
+-	      -e 's|@''REPLACE_NL_LANGINFO''@|$(REPLACE_NL_LANGINFO)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/langinfo.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += langinfo.h langinfo.h-t
+ 
+ Include:
+ <langinfo.h>
+@@ -52,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/langinfo-h
+@@ -0,0 +1,55 @@
++Description:
++A GNU-like <langinfo.h>.
++
++Files:
++lib/langinfo.in.h
++m4/langinfo_h.m4
++
++Depends-on:
++extensions
++gen-header
++include_next
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_LANGINFO_H
++gl_LANGINFO_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += langinfo.h
++
++# We need the following in order to create an empty placeholder for
++# <langinfo.h> when the system doesn't have one.
++langinfo.h: langinfo.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_LANGINFO_H''@|$(HAVE_LANGINFO_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_LANGINFO_H''@|$(NEXT_LANGINFO_H)|g' \
++	      -e 's/@''GNULIB_NL_LANGINFO''@/$(GNULIB_NL_LANGINFO)/g' \
++	      -e 's|@''HAVE_LANGINFO_CODESET''@|$(HAVE_LANGINFO_CODESET)|g' \
++	      -e 's|@''HAVE_LANGINFO_T_FMT_AMPM''@|$(HAVE_LANGINFO_T_FMT_AMPM)|g' \
++	      -e 's|@''HAVE_LANGINFO_ALTMON''@|$(HAVE_LANGINFO_ALTMON)|g' \
++	      -e 's|@''HAVE_LANGINFO_ERA''@|$(HAVE_LANGINFO_ERA)|g' \
++	      -e 's|@''HAVE_LANGINFO_YESEXPR''@|$(HAVE_LANGINFO_YESEXPR)|g' \
++	      -e 's|@''HAVE_NL_LANGINFO''@|$(HAVE_NL_LANGINFO)|g' \
++	      -e 's|@''REPLACE_NL_LANGINFO''@|$(REPLACE_NL_LANGINFO)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/langinfo.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += langinfo.h langinfo.h-t
++
++Include:
++<langinfo.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/localename-unsafe
++++ b/modules/localename-unsafe
+@@ -23,7 +23,7 @@ flexmember
+ free-posix
+ strdup
+ lock
+-langinfo
++langinfo-h
+ setlocale-null
+ setlocale-null-unlocked
+ thread-optim
+--- a/modules/nl_langinfo
++++ b/modules/nl_langinfo
+@@ -10,7 +10,7 @@ m4/threadlib.m4
+ m4/visibility.m4
+ 
+ Depends-on:
+-langinfo
++langinfo-h
+ localeconv      [test $HAVE_NL_LANGINFO = 0 || test $REPLACE_NL_LANGINFO = 1]
+ setlocale-null  [test $HAVE_NL_LANGINFO = 0 || test $HAVE_LANGINFO_CODESET = 0]
+ 
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -15,7 +15,7 @@ fnmatch-h
+ glob-h
+ iconv-h
+ inttypes-h-incomplete
+-langinfo
++langinfo-h
+ locale
+ malloc-h
+ math
+--- a/modules/regex
++++ b/modules/regex
+@@ -27,7 +27,7 @@ glibc-internal/dynarray [test $ac_use_in
+ gnulib-i18n             [test $ac_use_included_regex = yes]
+ intprops                [test $ac_use_included_regex = yes]
+ iswctype                [test $ac_use_included_regex = yes]
+-langinfo                [test $ac_use_included_regex = yes]
++langinfo-h              [test $ac_use_included_regex = yes]
+ libc-config             [test $ac_use_included_regex = yes]
+ limits-h                [test $ac_use_included_regex = yes]
+ lock                    [test $ac_use_included_regex = yes]

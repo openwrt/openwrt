@@ -1,0 +1,75 @@
+From 4a2fe717080b34a2770a674235bb2b6e3e3dd86f Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 4 Dec 2024 23:18:17 +0100
+Subject: [PATCH] bison-i18n: Ensure BISON_LOCALEDIR_c expands to a C string.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf8
+Content-Transfer-Encoding: 8bit
+
+Reported by Holger HoffstÃ¤tte via Sam James <sam@gentoo.org>.
+
+* m4/bison-i18n.m4 (BISON_I18N): Define BISON_LOCALEDIR_c and
+BISON_LOCALEDIR_c_make in the usual way even when BISON_LOCALEDIR
+expands to empty.
+---
+ ChangeLog        |  8 ++++++++
+ m4/bison-i18n.m4 | 41 +++++++++++++++++++++--------------------
+ 2 files changed, 29 insertions(+), 20 deletions(-)
+
+--- a/m4/bison-i18n.m4
++++ b/m4/bison-i18n.m4
+@@ -1,5 +1,5 @@
+ # bison-i18n.m4
+-# serial 5
++# serial 6
+ dnl Copyright (C) 2005-2006, 2009-2024 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+ dnl gives unlimited permission to copy and/or distribute it,
+@@ -56,27 +56,28 @@ AC_DEFUN([BISON_I18N],
+       fi
+     fi
+     AC_SUBST([BISON_LOCALEDIR])
++  fi
+ 
+-    dnl Define BISON_LOCALEDIR_c and BISON_LOCALEDIR_c_make.
+-    dnl Find the final value of BISON_LOCALEDIR.
+-    gl_saved_prefix="${prefix}"
+-    gl_saved_datarootdir="${datarootdir}"
+-    gl_saved_localedir="${localedir}"
+-    gl_saved_bisonlocaledir="${BISON_LOCALEDIR}"
+-    dnl Unfortunately, prefix gets only finally determined at the end of
+-    dnl configure.
+-    if test "X$prefix" = "XNONE"; then
+-      prefix="$ac_default_prefix"
+-    fi
+-    eval datarootdir="$datarootdir"
+-    eval localedir="$localedir"
+-    eval BISON_LOCALEDIR="$BISON_LOCALEDIR"
+-    gl_BUILD_TO_HOST([BISON_LOCALEDIR])
+-    BISON_LOCALEDIR="${gl_saved_bisonlocaledir}"
+-    localedir="${gl_saved_localedir}"
+-    datarootdir="${gl_saved_datarootdir}"
+-    prefix="${gl_saved_prefix}"
++  dnl Define BISON_LOCALEDIR_c and BISON_LOCALEDIR_c_make.
++  dnl Find the final value of BISON_LOCALEDIR.
++  gl_saved_prefix="${prefix}"
++  gl_saved_datarootdir="${datarootdir}"
++  gl_saved_localedir="${localedir}"
++  gl_saved_bisonlocaledir="${BISON_LOCALEDIR}"
++  dnl Unfortunately, prefix gets only finally determined at the end of
++  dnl configure.
++  if test "X$prefix" = "XNONE"; then
++    prefix="$ac_default_prefix"
+   fi
++  eval datarootdir="$datarootdir"
++  eval localedir="$localedir"
++  eval BISON_LOCALEDIR="$BISON_LOCALEDIR"
++  gl_BUILD_TO_HOST([BISON_LOCALEDIR])
++  BISON_LOCALEDIR="${gl_saved_bisonlocaledir}"
++  localedir="${gl_saved_localedir}"
++  datarootdir="${gl_saved_datarootdir}"
++  prefix="${gl_saved_prefix}"
++
+   if test $BISON_USE_NLS = yes; then
+     AC_DEFINE([YYENABLE_NLS], [1],
+       [Define to 1 to internationalize bison runtime messages.])

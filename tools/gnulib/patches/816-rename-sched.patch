@@ -1,0 +1,199 @@
+From d25accb8df28fddf6aae7bd1d531ed5ae9cf852f Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:16:10 +0100
+Subject: [PATCH] Rename module sched to sched-h.
+
+* modules/sched-h: Renamed from modules/sched.
+* modules/sched-h-tests: Renamed from modules/sched-tests.
+* modules/sched-h-c++-tests: Renamed from modules/sched-c++-tests.
+* tests/test-sched-h.c: Renamed from tests/test-sched.c.
+* tests/test-sched-h-c++.cc: Renamed from tests/test-sched-c++.cc.
+* doc/posix-headers/sched.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/sched: New file.
+---
+ ChangeLog                                     | 12 +++++
+ doc/posix-headers/sched.texi                  |  4 +-
+ modules/posixcheck                            |  2 +-
+ modules/pthread-h                             |  2 +-
+ modules/sched                                 | 42 +++------------
+ modules/sched-c++-tests                       | 19 -------
+ modules/sched-h                               | 53 +++++++++++++++++++
+ modules/sched-h-c++-tests                     | 19 +++++++
+ modules/sched-h-tests                         | 11 ++++
+ modules/sched-tests                           | 11 ----
+ modules/sched_yield                           |  2 +-
+ modules/spawn                                 |  2 +-
+ ...{test-sched-c++.cc => test-sched-h-c++.cc} |  0
+ tests/{test-sched.c => test-sched-h.c}        |  0
+ 14 files changed, 108 insertions(+), 71 deletions(-)
+ delete mode 100644 modules/sched-c++-tests
+ create mode 100644 modules/sched-h
+ create mode 100644 modules/sched-h-c++-tests
+ create mode 100644 modules/sched-h-tests
+ delete mode 100644 modules/sched-tests
+ rename tests/{test-sched-c++.cc => test-sched-h-c++.cc} (100%)
+ rename tests/{test-sched.c => test-sched-h.c} (100%)
+
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -24,7 +24,7 @@ netdb-h
+ poll-h
+ pthread-h
+ pty-h
+-sched
++sched-h
+ search
+ signal-h
+ spawn
+--- a/modules/pthread-h
++++ b/modules/pthread-h
+@@ -11,7 +11,7 @@ Depends-on:
+ extensions
+ extern-inline
+ gen-header
+-sched
++sched-h
+ time-h
+ snippet/c++defs
+ snippet/_Noreturn
+--- a/modules/sched
++++ b/modules/sched
+@@ -1,47 +1,20 @@
+ Description:
+ A <sched.h> include file.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'sched-h' instead.
++
+ Files:
+-lib/sched.in.h
+-m4/sched_h.m4
+-m4/pid_t.m4
+-m4/sys_cdefs_h.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/c++defs
+-snippet/warn-on-use
++sched-h
+ 
+ configure.ac:
+-gl_SCHED_H
+-gl_SCHED_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += sched.h
+-
+-# We need the following in order to create a replacement for <sched.h> when
+-# the system doesn't have one.
+-sched.h: sched.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_SCHED_H''@|$(HAVE_SCHED_H)|g' \
+-	      -e 's|@''HAVE_SYS_CDEFS_H''@|$(HAVE_SYS_CDEFS_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_SCHED_H''@|$(NEXT_SCHED_H)|g' \
+-	      -e 's|@''HAVE_STRUCT_SCHED_PARAM''@|$(HAVE_STRUCT_SCHED_PARAM)|g' \
+-	      -e 's/@''GNULIB_SCHED_YIELD''@/$(GNULIB_SCHED_YIELD)/g' \
+-	      -e 's|@''HAVE_SCHED_YIELD''@|$(HAVE_SCHED_YIELD)|g' \
+-	      -e 's|@''REPLACE_SCHED_YIELD''@|$(REPLACE_SCHED_YIELD)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/sched.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += sched.h sched.h-t
+ 
+ Include:
+ <sched.h>
+@@ -50,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/sched-h
+@@ -0,0 +1,53 @@
++Description:
++A <sched.h> include file.
++
++Files:
++lib/sched.in.h
++m4/sched_h.m4
++m4/pid_t.m4
++m4/sys_cdefs_h.m4
++
++Depends-on:
++gen-header
++include_next
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_SCHED_H
++gl_SCHED_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += sched.h
++
++# We need the following in order to create a replacement for <sched.h> when
++# the system doesn't have one.
++sched.h: sched.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_SCHED_H''@|$(HAVE_SCHED_H)|g' \
++	      -e 's|@''HAVE_SYS_CDEFS_H''@|$(HAVE_SYS_CDEFS_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_SCHED_H''@|$(NEXT_SCHED_H)|g' \
++	      -e 's|@''HAVE_STRUCT_SCHED_PARAM''@|$(HAVE_STRUCT_SCHED_PARAM)|g' \
++	      -e 's/@''GNULIB_SCHED_YIELD''@/$(GNULIB_SCHED_YIELD)/g' \
++	      -e 's|@''HAVE_SCHED_YIELD''@|$(HAVE_SCHED_YIELD)|g' \
++	      -e 's|@''REPLACE_SCHED_YIELD''@|$(REPLACE_SCHED_YIELD)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/sched.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += sched.h sched.h-t
++
++Include:
++<sched.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/sched_yield
++++ b/modules/sched_yield
+@@ -7,7 +7,7 @@ m4/sched_yield.m4
+ m4/threadlib.m4
+ 
+ Depends-on:
+-sched
++sched-h
+ 
+ configure.ac:
+ gl_FUNC_SCHED_YIELD
+--- a/modules/spawn
++++ b/modules/spawn
+@@ -9,7 +9,7 @@ m4/pid_t.m4
+ Depends-on:
+ gen-header
+ include_next
+-sched
++sched-h
+ signal-h
+ snippet/arg-nonnull
+ snippet/c++defs

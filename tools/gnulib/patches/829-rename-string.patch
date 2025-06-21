@@ -1,0 +1,1017 @@
+From d93e96eb6003b13d11a50ef0ecfcc5635661ad04 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:37:59 +0100
+Subject: [PATCH] Rename module string to string-h.
+
+* modules/string-h: Renamed from modules/string.
+* modules/string-h-tests: Renamed from modules/string-tests.
+* modules/string-h-c++-tests: Renamed from modules/string-c++-tests.
+* tests/test-string-h.c: Renamed from tests/test-string.c.
+* tests/test-string-h-c++.cc: Renamed from tests/test-string-c++.cc.
+* tests/test-string-h-c++2.cc: Renamed from tests/test-string-c++2.cc.
+* doc/posix-headers/string.texi: Update.
+* doc/posix-functions/strcat.texi: Update.
+* doc/posix-functions/strcpy.texi: Update.
+* doc/posix-functions/strncpy.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/string: New file.
+---
+ ChangeLog                                     |  16 ++
+ doc/posix-functions/strcat.texi               |   4 +-
+ doc/posix-functions/strcpy.texi               |   4 +-
+ doc/posix-functions/strncpy.texi              |   6 +-
+ doc/posix-headers/string.texi                 |   4 +-
+ modules/dfa                                   |   2 +-
+ modules/dfa-tests                             |   2 +-
+ modules/explicit_bzero                        |   2 +-
+ modules/ffsl                                  |   2 +-
+ modules/ffsll                                 |   2 +-
+ modules/free-posix                            |   2 +-
+ modules/getprogname-tests                     |   2 +-
+ modules/mbscasecmp                            |   2 +-
+ modules/mbscasestr                            |   2 +-
+ modules/mbschr                                |   2 +-
+ modules/mbscspn                               |   2 +-
+ modules/mbslen                                |   2 +-
+ modules/mbsncasecmp                           |   2 +-
+ modules/mbsnlen                               |   2 +-
+ modules/mbspbrk                               |   2 +-
+ modules/mbspcasecmp                           |   2 +-
+ modules/mbsrchr                               |   2 +-
+ modules/mbssep                                |   2 +-
+ modules/mbsspn                                |   2 +-
+ modules/mbsstr                                |   2 +-
+ modules/mbstok_r                              |   2 +-
+ modules/memchr                                |   2 +-
+ modules/memcpy                                |   2 +-
+ modules/memmem-simple                         |   2 +-
+ modules/memmove                               |   2 +-
+ modules/mempcpy                               |   2 +-
+ modules/memrchr                               |   2 +-
+ modules/memset                                |   2 +-
+ modules/memset_explicit                       |   2 +-
+ modules/posixcheck                            |   2 +-
+ modules/rawmemchr                             |   2 +-
+ modules/relocatable-prog-wrapper              |   2 +-
+ modules/sigabbrev_np                          |   2 +-
+ modules/sigdescr_np                           |   2 +-
+ modules/snprintf-posix                        |   2 +-
+ modules/stack-tests                           |   2 +-
+ modules/stpcpy                                |   2 +-
+ modules/stpncpy                               |   2 +-
+ modules/strcasestr-simple                     |   2 +-
+ modules/strchrnul                             |   2 +-
+ modules/strdup                                |   2 +-
+ modules/strdup-posix                          |   2 +-
+ modules/strerror                              |   2 +-
+ modules/strerror_r-posix                      |   2 +-
+ modules/strerrorname_np                       |   2 +-
+ modules/string                                | 135 +---------------
+ modules/string-c++-tests                      |  20 ---
+ modules/string-h                              | 146 ++++++++++++++++++
+ modules/string-h-c++-tests                    |  20 +++
+ modules/string-h-tests                        |  12 ++
+ modules/string-tests                          |  12 --
+ modules/strncat                               |   2 +-
+ modules/strncpy                               |   2 +-
+ modules/strndup                               |   2 +-
+ modules/strnlen                               |   2 +-
+ modules/strpbrk                               |   2 +-
+ modules/strptime                              |   2 +-
+ modules/strsep                                |   2 +-
+ modules/strsignal                             |   2 +-
+ modules/strstr-simple                         |   2 +-
+ modules/strtok_r                              |   2 +-
+ modules/strverscmp                            |   2 +-
+ modules/vsnprintf-posix                       |   2 +-
+ ...est-string-c++.cc => test-string-h-c++.cc} |   0
+ ...t-string-c++2.cc => test-string-h-c++2.cc} |   0
+ tests/{test-string.c => test-string-h.c}      |   0
+ 71 files changed, 267 insertions(+), 226 deletions(-)
+ delete mode 100644 modules/string-c++-tests
+ create mode 100644 modules/string-h
+ create mode 100644 modules/string-h-c++-tests
+ create mode 100644 modules/string-h-tests
+ delete mode 100644 modules/string-tests
+ rename tests/{test-string-c++.cc => test-string-h-c++.cc} (100%)
+ rename tests/{test-string-c++2.cc => test-string-h-c++2.cc} (100%)
+ rename tests/{test-string.c => test-string-h.c} (100%)
+
+--- a/modules/dfa
++++ b/modules/dfa
+@@ -30,7 +30,7 @@ stddef-h
+ stdint-h
+ stdio-h
+ stdlib-h
+-string
++string-h
+ uchar
+ # The lonesome_lower array requires ISO C 23 semantics for char32_t.
+ # But uchar-c23 has a global effect, therefore leave it to each package
+--- a/modules/dfa-tests
++++ b/modules/dfa-tests
+@@ -8,7 +8,7 @@ Depends-on:
+ binary-io
+ stdio-h
+ stdlib-h
+-string
++string-h
+ unistd
+ regex
+ setlocale
+--- a/modules/explicit_bzero
++++ b/modules/explicit_bzero
+@@ -8,7 +8,7 @@ m4/explicit_bzero.m4
+ Depends-on:
+ extensions
+ memset_explicit
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_EXPLICIT_BZERO
+--- a/modules/ffsl
++++ b/modules/ffsl
+@@ -8,7 +8,7 @@ m4/ffsl.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ ffs             [test $HAVE_FFSL = 0]
+ 
+ configure.ac:
+--- a/modules/ffsll
++++ b/modules/ffsll
+@@ -8,7 +8,7 @@ m4/ffsll.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ ffs             [test $HAVE_FFSLL = 0 || test $REPLACE_FFSLL = 1]
+ 
+ configure.ac:
+--- a/modules/free-posix
++++ b/modules/free-posix
+@@ -7,7 +7,7 @@ m4/free.m4
+ 
+ Depends-on:
+ stdlib-h
+-string
++string-h
+ wchar
+ 
+ configure.ac:
+--- a/modules/getprogname-tests
++++ b/modules/getprogname-tests
+@@ -2,7 +2,7 @@ Files:
+ tests/test-getprogname.c
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ 
+--- a/modules/mbscasecmp
++++ b/modules/mbscasecmp
+@@ -8,7 +8,7 @@ Depends-on:
+ c32tolower
+ mbuiterf            [test "$GNULIB_MCEL_PREFER" != yes]
+ stdlib-h
+-string
++string-h
+ uchar
+ 
+ configure.ac:
+--- a/modules/mbscasestr
++++ b/modules/mbscasestr
+@@ -9,7 +9,7 @@ Depends-on:
+ alignasof
+ mbuiter
+ stdbool-h
+-string
++string-h
+ mbslen
+ malloca
+ c32tolower
+--- a/modules/mbschr
++++ b/modules/mbschr
+@@ -6,7 +6,7 @@ lib/mbschr.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_STRING_MODULE_INDICATOR([mbschr])
+--- a/modules/mbscspn
++++ b/modules/mbscspn
+@@ -6,7 +6,7 @@ lib/mbscspn.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ mbschr
+ strcspn
+ 
+--- a/modules/mbslen
++++ b/modules/mbslen
+@@ -7,7 +7,7 @@ m4/mbslen.m4
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MBSLEN
+--- a/modules/mbsncasecmp
++++ b/modules/mbsncasecmp
+@@ -7,7 +7,7 @@ lib/mbsncasecmp.c
+ Depends-on:
+ c32tolower
+ mbuiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_STRING_MODULE_INDICATOR([mbsncasecmp])
+--- a/modules/mbsnlen
++++ b/modules/mbsnlen
+@@ -6,7 +6,7 @@ lib/mbsnlen.c
+ 
+ Depends-on:
+ mbiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_STRING_MODULE_INDICATOR([mbsnlen])
+--- a/modules/mbspbrk
++++ b/modules/mbspbrk
+@@ -6,7 +6,7 @@ lib/mbspbrk.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ mbschr
+ strpbrk
+ 
+--- a/modules/mbspcasecmp
++++ b/modules/mbspcasecmp
+@@ -7,7 +7,7 @@ lib/mbspcasecmp.c
+ Depends-on:
+ c32tolower
+ mbuiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_STRING_MODULE_INDICATOR([mbspcasecmp])
+--- a/modules/mbsrchr
++++ b/modules/mbsrchr
+@@ -6,7 +6,7 @@ lib/mbsrchr.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ 
+ configure.ac:
+ gl_STRING_MODULE_INDICATOR([mbsrchr])
+--- a/modules/mbssep
++++ b/modules/mbssep
+@@ -6,7 +6,7 @@ lib/mbssep.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ mbspbrk
+ strsep
+ 
+--- a/modules/mbsspn
++++ b/modules/mbsspn
+@@ -6,7 +6,7 @@ lib/mbsspn.c
+ 
+ Depends-on:
+ mbuiterf
+-string
++string-h
+ mbschr
+ 
+ configure.ac:
+--- a/modules/mbsstr
++++ b/modules/mbsstr
+@@ -9,7 +9,7 @@ Depends-on:
+ alignasof
+ mbuiter
+ stdbool-h
+-string
++string-h
+ mbslen
+ malloca
+ strnlen
+--- a/modules/mbstok_r
++++ b/modules/mbstok_r
+@@ -5,7 +5,7 @@ Files:
+ lib/mbstok_r.c
+ 
+ Depends-on:
+-string
++string-h
+ mbsspn
+ mbspbrk
+ strtok_r
+--- a/modules/memchr
++++ b/modules/memchr
+@@ -9,7 +9,7 @@ m4/mmap-anon.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMCHR
+--- a/modules/memcpy
++++ b/modules/memcpy
+@@ -12,7 +12,7 @@ lib/memcpy.c
+ m4/memcpy.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMCPY
+--- a/modules/memmem-simple
++++ b/modules/memmem-simple
+@@ -9,7 +9,7 @@ m4/memmem.m4
+ Depends-on:
+ builtin-expect
+ extensions
+-string
++string-h
+ stdint-h
+ memchr
+ memcmp
+--- a/modules/memmove
++++ b/modules/memmove
+@@ -12,7 +12,7 @@ lib/memmove.c
+ m4/memmove.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMMOVE
+--- a/modules/mempcpy
++++ b/modules/mempcpy
+@@ -7,7 +7,7 @@ m4/mempcpy.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMPCPY
+--- a/modules/memrchr
++++ b/modules/memrchr
+@@ -7,7 +7,7 @@ m4/memrchr.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMRCHR
+--- a/modules/memset
++++ b/modules/memset
+@@ -12,7 +12,7 @@ lib/memset.c
+ m4/memset.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_MEMSET
+--- a/modules/memset_explicit
++++ b/modules/memset_explicit
+@@ -6,7 +6,7 @@ lib/memset_explicit.c
+ m4/memset_explicit.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -30,7 +30,7 @@ signal-h
+ spawn-h
+ stdio-h
+ stdlib-h
+-string
++string-h
+ strings
+ sys_file
+ sys_ioctl
+--- a/modules/rawmemchr
++++ b/modules/rawmemchr
+@@ -10,7 +10,7 @@ Depends-on:
+ assert-h
+ extensions
+ stdint-h
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_RAWMEMCHR
+--- a/modules/relocatable-prog-wrapper
++++ b/modules/relocatable-prog-wrapper
+@@ -74,7 +74,7 @@ stddef-h
+ stdckdint-h
+ stdint-h
+ stdlib-h
+-string
++string-h
+ sys_stat
+ unistd
+ xalloc-oversized
+--- a/modules/sigabbrev_np
++++ b/modules/sigabbrev_np
+@@ -7,7 +7,7 @@ m4/sigabbrev_np.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_SIGABBREV_NP
+--- a/modules/sigdescr_np
++++ b/modules/sigdescr_np
+@@ -7,7 +7,7 @@ m4/sigdescr_np.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_SIGDESCR_NP
+--- a/modules/snprintf-posix
++++ b/modules/snprintf-posix
+@@ -1,6 +1,6 @@
+ Description:
+ POSIX compatible snprintf() function: print formatted output to a fixed length
+-string
++string-h
+ 
+ Comment:
+ This module should not be used as a dependency from a test module,
+--- a/modules/stack-tests
++++ b/modules/stack-tests
+@@ -3,7 +3,7 @@ tests/test-stack.c
+ tests/macros.h
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ 
+--- a/modules/stpcpy
++++ b/modules/stpcpy
+@@ -7,7 +7,7 @@ m4/stpcpy.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STPCPY
+--- a/modules/stpncpy
++++ b/modules/stpncpy
+@@ -7,7 +7,7 @@ m4/stpncpy.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STPNCPY
+--- a/modules/strcasestr-simple
++++ b/modules/strcasestr-simple
+@@ -7,7 +7,7 @@ lib/str-two-way.h
+ m4/strcasestr.m4
+ 
+ Depends-on:
+-string
++string-h
+ stdbool-h
+ strcase
+ memchr
+--- a/modules/strchrnul
++++ b/modules/strchrnul
+@@ -8,7 +8,7 @@ lib/strchrnul.valgrind
+ m4/strchrnul.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ rawmemchr       [test $HAVE_STRCHRNUL = 0 || test $REPLACE_STRCHRNUL = 1]
+ 
+--- a/modules/strdup
++++ b/modules/strdup
+@@ -11,7 +11,7 @@ Files:
+ m4/strdup.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STRDUP
+--- a/modules/strdup-posix
++++ b/modules/strdup-posix
+@@ -6,7 +6,7 @@ lib/strdup.c
+ m4/strdup.m4
+ 
+ Depends-on:
+-string
++string-h
+ malloc-posix    [test $REPLACE_STRDUP = 1]
+ 
+ configure.ac:
+--- a/modules/strerror
++++ b/modules/strerror
+@@ -6,7 +6,7 @@ lib/strerror.c
+ m4/strerror.m4
+ 
+ Depends-on:
+-string
++string-h
+ assert-h         [test $REPLACE_STRERROR = 1]
+ errno-h          [test $REPLACE_STRERROR = 1]
+ intprops         [test $REPLACE_STRERROR = 1]
+--- a/modules/strerror_r-posix
++++ b/modules/strerror_r-posix
+@@ -6,7 +6,7 @@ lib/strerror_r.c
+ m4/strerror_r.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ errno-h         [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
+ lock            [test $HAVE_DECL_STRERROR_R = 0 || test $REPLACE_STRERROR_R = 1]
+--- a/modules/strerrorname_np
++++ b/modules/strerrorname_np
+@@ -7,7 +7,7 @@ m4/strerrorname_np.m4
+ 
+ Depends-on:
+ extensions
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STRERRORNAME_NP
+--- a/modules/string
++++ b/modules/string
+@@ -1,140 +1,20 @@
+ Description:
+ A GNU-like <string.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'string-h' instead.
++
+ Files:
+-lib/string.in.h
+-m4/string_h.m4
+ 
+ Depends-on:
+-extensions
+-extern-inline
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
+-stddef-h
+-stdlib-h
++string-h
+ 
+ configure.ac:
+-gl_STRING_H
+-gl_STRING_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += string.h
+-
+-# We need the following in order to create <string.h> when the system
+-# doesn't have one that works with the given compiler.
+-string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_STRING_H''@|$(NEXT_STRING_H)|g' \
+-	      -e 's/@''GNULIB_EXPLICIT_BZERO''@/$(GNULIB_EXPLICIT_BZERO)/g' \
+-	      -e 's/@''GNULIB_FFSL''@/$(GNULIB_FFSL)/g' \
+-	      -e 's/@''GNULIB_FFSLL''@/$(GNULIB_FFSLL)/g' \
+-	      -e 's/@''GNULIB_MBSLEN''@/$(GNULIB_MBSLEN)/g' \
+-	      -e 's/@''GNULIB_MBSNLEN''@/$(GNULIB_MBSNLEN)/g' \
+-	      -e 's/@''GNULIB_MBSCHR''@/$(GNULIB_MBSCHR)/g' \
+-	      -e 's/@''GNULIB_MBSRCHR''@/$(GNULIB_MBSRCHR)/g' \
+-	      -e 's/@''GNULIB_MBSSTR''@/$(GNULIB_MBSSTR)/g' \
+-	      -e 's/@''GNULIB_MBSCASECMP''@/$(GNULIB_MBSCASECMP)/g' \
+-	      -e 's/@''GNULIB_MBSNCASECMP''@/$(GNULIB_MBSNCASECMP)/g' \
+-	      -e 's/@''GNULIB_MBSPCASECMP''@/$(GNULIB_MBSPCASECMP)/g' \
+-	      -e 's/@''GNULIB_MBSCASESTR''@/$(GNULIB_MBSCASESTR)/g' \
+-	      -e 's/@''GNULIB_MBSCSPN''@/$(GNULIB_MBSCSPN)/g' \
+-	      -e 's/@''GNULIB_MBSPBRK''@/$(GNULIB_MBSPBRK)/g' \
+-	      -e 's/@''GNULIB_MBSSPN''@/$(GNULIB_MBSSPN)/g' \
+-	      -e 's/@''GNULIB_MBSSEP''@/$(GNULIB_MBSSEP)/g' \
+-	      -e 's/@''GNULIB_MBSTOK_R''@/$(GNULIB_MBSTOK_R)/g' \
+-	      -e 's/@''GNULIB_MEMCHR''@/$(GNULIB_MEMCHR)/g' \
+-	      -e 's/@''GNULIB_MEMMEM''@/$(GNULIB_MEMMEM)/g' \
+-	      -e 's/@''GNULIB_MEMPCPY''@/$(GNULIB_MEMPCPY)/g' \
+-	      -e 's/@''GNULIB_MEMRCHR''@/$(GNULIB_MEMRCHR)/g' \
+-	      -e 's/@''GNULIB_MEMSET_EXPLICIT''@/$(GNULIB_MEMSET_EXPLICIT)/g' \
+-	      -e 's/@''GNULIB_RAWMEMCHR''@/$(GNULIB_RAWMEMCHR)/g' \
+-	      -e 's/@''GNULIB_STPCPY''@/$(GNULIB_STPCPY)/g' \
+-	      -e 's/@''GNULIB_STPNCPY''@/$(GNULIB_STPNCPY)/g' \
+-	      -e 's/@''GNULIB_STRCHRNUL''@/$(GNULIB_STRCHRNUL)/g' \
+-	      -e 's/@''GNULIB_STRDUP''@/$(GNULIB_STRDUP)/g' \
+-	      -e 's/@''GNULIB_STRNCAT''@/$(GNULIB_STRNCAT)/g' \
+-	      -e 's/@''GNULIB_STRNDUP''@/$(GNULIB_STRNDUP)/g' \
+-	      -e 's/@''GNULIB_STRNLEN''@/$(GNULIB_STRNLEN)/g' \
+-	      -e 's/@''GNULIB_STRPBRK''@/$(GNULIB_STRPBRK)/g' \
+-	      -e 's/@''GNULIB_STRSEP''@/$(GNULIB_STRSEP)/g' \
+-	      -e 's/@''GNULIB_STRSTR''@/$(GNULIB_STRSTR)/g' \
+-	      -e 's/@''GNULIB_STRCASESTR''@/$(GNULIB_STRCASESTR)/g' \
+-	      -e 's/@''GNULIB_STRTOK_R''@/$(GNULIB_STRTOK_R)/g' \
+-	      -e 's/@''GNULIB_STRERROR''@/$(GNULIB_STRERROR)/g' \
+-	      -e 's/@''GNULIB_STRERROR_R''@/$(GNULIB_STRERROR_R)/g' \
+-	      -e 's/@''GNULIB_STRERRORNAME_NP''@/$(GNULIB_STRERRORNAME_NP)/g' \
+-	      -e 's/@''GNULIB_SIGABBREV_NP''@/$(GNULIB_SIGABBREV_NP)/g' \
+-	      -e 's/@''GNULIB_SIGDESCR_NP''@/$(GNULIB_SIGDESCR_NP)/g' \
+-	      -e 's/@''GNULIB_STRSIGNAL''@/$(GNULIB_STRSIGNAL)/g' \
+-	      -e 's/@''GNULIB_STRVERSCMP''@/$(GNULIB_STRVERSCMP)/g' \
+-	      -e 's/@''GNULIB_MDA_MEMCCPY''@/$(GNULIB_MDA_MEMCCPY)/g' \
+-	      -e 's/@''GNULIB_MDA_STRDUP''@/$(GNULIB_MDA_STRDUP)/g' \
+-	      -e 's/@''GNULIB_FREE_POSIX''@/$(GNULIB_FREE_POSIX)/g' \
+-	      < $(srcdir)/string.in.h > $@-t1
+-	$(AM_V_at)sed \
+-	      -e 's|@''HAVE_EXPLICIT_BZERO''@|$(HAVE_EXPLICIT_BZERO)|g' \
+-	      -e 's|@''HAVE_FFSL''@|$(HAVE_FFSL)|g' \
+-	      -e 's|@''HAVE_FFSLL''@|$(HAVE_FFSLL)|g' \
+-	      -e 's|@''HAVE_MBSLEN''@|$(HAVE_MBSLEN)|g' \
+-	      -e 's|@''HAVE_DECL_MEMMEM''@|$(HAVE_DECL_MEMMEM)|g' \
+-	      -e 's|@''HAVE_MEMPCPY''@|$(HAVE_MEMPCPY)|g' \
+-	      -e 's|@''HAVE_DECL_MEMRCHR''@|$(HAVE_DECL_MEMRCHR)|g' \
+-	      -e 's|@''HAVE_MEMSET_EXPLICIT''@|$(HAVE_MEMSET_EXPLICIT)|g' \
+-	      -e 's|@''HAVE_RAWMEMCHR''@|$(HAVE_RAWMEMCHR)|g' \
+-	      -e 's|@''HAVE_STPCPY''@|$(HAVE_STPCPY)|g' \
+-	      -e 's|@''HAVE_STPNCPY''@|$(HAVE_STPNCPY)|g' \
+-	      -e 's|@''HAVE_STRCHRNUL''@|$(HAVE_STRCHRNUL)|g' \
+-	      -e 's|@''HAVE_DECL_STRDUP''@|$(HAVE_DECL_STRDUP)|g' \
+-	      -e 's|@''HAVE_DECL_STRNDUP''@|$(HAVE_DECL_STRNDUP)|g' \
+-	      -e 's|@''HAVE_DECL_STRNLEN''@|$(HAVE_DECL_STRNLEN)|g' \
+-	      -e 's|@''HAVE_STRPBRK''@|$(HAVE_STRPBRK)|g' \
+-	      -e 's|@''HAVE_STRSEP''@|$(HAVE_STRSEP)|g' \
+-	      -e 's|@''HAVE_STRCASESTR''@|$(HAVE_STRCASESTR)|g' \
+-	      -e 's|@''HAVE_DECL_STRTOK_R''@|$(HAVE_DECL_STRTOK_R)|g' \
+-	      -e 's|@''HAVE_DECL_STRERROR_R''@|$(HAVE_DECL_STRERROR_R)|g' \
+-	      -e 's|@''HAVE_STRERRORNAME_NP''@|$(HAVE_STRERRORNAME_NP)|g' \
+-	      -e 's|@''HAVE_SIGABBREV_NP''@|$(HAVE_SIGABBREV_NP)|g' \
+-	      -e 's|@''HAVE_SIGDESCR_NP''@|$(HAVE_SIGDESCR_NP)|g' \
+-	      -e 's|@''HAVE_DECL_STRSIGNAL''@|$(HAVE_DECL_STRSIGNAL)|g' \
+-	      -e 's|@''HAVE_STRVERSCMP''@|$(HAVE_STRVERSCMP)|g' \
+-	      -e 's|@''REPLACE_FFSLL''@|$(REPLACE_FFSLL)|g' \
+-	      -e 's|@''REPLACE_MEMCHR''@|$(REPLACE_MEMCHR)|g' \
+-	      -e 's|@''REPLACE_MEMMEM''@|$(REPLACE_MEMMEM)|g' \
+-	      -e 's|@''REPLACE_MEMPCPY''@|$(REPLACE_MEMPCPY)|g' \
+-	      -e 's|@''REPLACE_MEMSET_EXPLICIT''@|$(REPLACE_MEMSET_EXPLICIT)|g' \
+-	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
+-	      -e 's|@''REPLACE_STPCPY''@|$(REPLACE_STPCPY)|g' \
+-	      -e 's|@''REPLACE_STPNCPY''@|$(REPLACE_STPNCPY)|g' \
+-	      -e 's|@''REPLACE_STRCHRNUL''@|$(REPLACE_STRCHRNUL)|g' \
+-	      -e 's|@''REPLACE_STRDUP''@|$(REPLACE_STRDUP)|g' \
+-	      -e 's|@''REPLACE_STRNCAT''@|$(REPLACE_STRNCAT)|g' \
+-	      -e 's|@''REPLACE_STRNDUP''@|$(REPLACE_STRNDUP)|g' \
+-	      -e 's|@''REPLACE_STRNLEN''@|$(REPLACE_STRNLEN)|g' \
+-	      -e 's|@''REPLACE_STRSTR''@|$(REPLACE_STRSTR)|g' \
+-	      -e 's|@''REPLACE_STRCASESTR''@|$(REPLACE_STRCASESTR)|g' \
+-	      -e 's|@''REPLACE_STRTOK_R''@|$(REPLACE_STRTOK_R)|g' \
+-	      -e 's|@''REPLACE_STRERROR''@|$(REPLACE_STRERROR)|g' \
+-	      -e 's|@''REPLACE_STRERROR_R''@|$(REPLACE_STRERROR_R)|g' \
+-	      -e 's|@''REPLACE_STRERRORNAME_NP''@|$(REPLACE_STRERRORNAME_NP)|g' \
+-	      -e 's|@''REPLACE_STRSIGNAL''@|$(REPLACE_STRSIGNAL)|g' \
+-	      -e 's|@''REPLACE_STRVERSCMP''@|$(REPLACE_STRVERSCMP)|g' \
+-	      -e 's|@''UNDEFINE_STRTOK_R''@|$(UNDEFINE_STRTOK_R)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      < $@-t1 > $@-t2
+-	$(AM_V_at)rm -f $@-t1
+-	$(AM_V_at)mv $@-t2 $@
+-MOSTLYCLEANFILES += string.h string.h-t1 string.h-t2
+ 
+ Include:
+ <string.h>
+@@ -143,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/string-h
+@@ -0,0 +1,146 @@
++Description:
++A GNU-like <string.h>.
++
++Files:
++lib/string.in.h
++m4/string_h.m4
++
++Depends-on:
++extensions
++extern-inline
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++stddef-h
++stdlib-h
++
++configure.ac:
++gl_STRING_H
++gl_STRING_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += string.h
++
++# We need the following in order to create <string.h> when the system
++# doesn't have one that works with the given compiler.
++string.h: string.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_STRING_H''@|$(NEXT_STRING_H)|g' \
++	      -e 's/@''GNULIB_EXPLICIT_BZERO''@/$(GNULIB_EXPLICIT_BZERO)/g' \
++	      -e 's/@''GNULIB_FFSL''@/$(GNULIB_FFSL)/g' \
++	      -e 's/@''GNULIB_FFSLL''@/$(GNULIB_FFSLL)/g' \
++	      -e 's/@''GNULIB_MBSLEN''@/$(GNULIB_MBSLEN)/g' \
++	      -e 's/@''GNULIB_MBSNLEN''@/$(GNULIB_MBSNLEN)/g' \
++	      -e 's/@''GNULIB_MBSCHR''@/$(GNULIB_MBSCHR)/g' \
++	      -e 's/@''GNULIB_MBSRCHR''@/$(GNULIB_MBSRCHR)/g' \
++	      -e 's/@''GNULIB_MBSSTR''@/$(GNULIB_MBSSTR)/g' \
++	      -e 's/@''GNULIB_MBSCASECMP''@/$(GNULIB_MBSCASECMP)/g' \
++	      -e 's/@''GNULIB_MBSNCASECMP''@/$(GNULIB_MBSNCASECMP)/g' \
++	      -e 's/@''GNULIB_MBSPCASECMP''@/$(GNULIB_MBSPCASECMP)/g' \
++	      -e 's/@''GNULIB_MBSCASESTR''@/$(GNULIB_MBSCASESTR)/g' \
++	      -e 's/@''GNULIB_MBSCSPN''@/$(GNULIB_MBSCSPN)/g' \
++	      -e 's/@''GNULIB_MBSPBRK''@/$(GNULIB_MBSPBRK)/g' \
++	      -e 's/@''GNULIB_MBSSPN''@/$(GNULIB_MBSSPN)/g' \
++	      -e 's/@''GNULIB_MBSSEP''@/$(GNULIB_MBSSEP)/g' \
++	      -e 's/@''GNULIB_MBSTOK_R''@/$(GNULIB_MBSTOK_R)/g' \
++	      -e 's/@''GNULIB_MEMCHR''@/$(GNULIB_MEMCHR)/g' \
++	      -e 's/@''GNULIB_MEMMEM''@/$(GNULIB_MEMMEM)/g' \
++	      -e 's/@''GNULIB_MEMPCPY''@/$(GNULIB_MEMPCPY)/g' \
++	      -e 's/@''GNULIB_MEMRCHR''@/$(GNULIB_MEMRCHR)/g' \
++	      -e 's/@''GNULIB_MEMSET_EXPLICIT''@/$(GNULIB_MEMSET_EXPLICIT)/g' \
++	      -e 's/@''GNULIB_RAWMEMCHR''@/$(GNULIB_RAWMEMCHR)/g' \
++	      -e 's/@''GNULIB_STPCPY''@/$(GNULIB_STPCPY)/g' \
++	      -e 's/@''GNULIB_STPNCPY''@/$(GNULIB_STPNCPY)/g' \
++	      -e 's/@''GNULIB_STRCHRNUL''@/$(GNULIB_STRCHRNUL)/g' \
++	      -e 's/@''GNULIB_STRDUP''@/$(GNULIB_STRDUP)/g' \
++	      -e 's/@''GNULIB_STRNCAT''@/$(GNULIB_STRNCAT)/g' \
++	      -e 's/@''GNULIB_STRNDUP''@/$(GNULIB_STRNDUP)/g' \
++	      -e 's/@''GNULIB_STRNLEN''@/$(GNULIB_STRNLEN)/g' \
++	      -e 's/@''GNULIB_STRPBRK''@/$(GNULIB_STRPBRK)/g' \
++	      -e 's/@''GNULIB_STRSEP''@/$(GNULIB_STRSEP)/g' \
++	      -e 's/@''GNULIB_STRSTR''@/$(GNULIB_STRSTR)/g' \
++	      -e 's/@''GNULIB_STRCASESTR''@/$(GNULIB_STRCASESTR)/g' \
++	      -e 's/@''GNULIB_STRTOK_R''@/$(GNULIB_STRTOK_R)/g' \
++	      -e 's/@''GNULIB_STRERROR''@/$(GNULIB_STRERROR)/g' \
++	      -e 's/@''GNULIB_STRERROR_R''@/$(GNULIB_STRERROR_R)/g' \
++	      -e 's/@''GNULIB_STRERRORNAME_NP''@/$(GNULIB_STRERRORNAME_NP)/g' \
++	      -e 's/@''GNULIB_SIGABBREV_NP''@/$(GNULIB_SIGABBREV_NP)/g' \
++	      -e 's/@''GNULIB_SIGDESCR_NP''@/$(GNULIB_SIGDESCR_NP)/g' \
++	      -e 's/@''GNULIB_STRSIGNAL''@/$(GNULIB_STRSIGNAL)/g' \
++	      -e 's/@''GNULIB_STRVERSCMP''@/$(GNULIB_STRVERSCMP)/g' \
++	      -e 's/@''GNULIB_MDA_MEMCCPY''@/$(GNULIB_MDA_MEMCCPY)/g' \
++	      -e 's/@''GNULIB_MDA_STRDUP''@/$(GNULIB_MDA_STRDUP)/g' \
++	      -e 's/@''GNULIB_FREE_POSIX''@/$(GNULIB_FREE_POSIX)/g' \
++	      < $(srcdir)/string.in.h > $@-t1
++	$(AM_V_at)sed \
++	      -e 's|@''HAVE_EXPLICIT_BZERO''@|$(HAVE_EXPLICIT_BZERO)|g' \
++	      -e 's|@''HAVE_FFSL''@|$(HAVE_FFSL)|g' \
++	      -e 's|@''HAVE_FFSLL''@|$(HAVE_FFSLL)|g' \
++	      -e 's|@''HAVE_MBSLEN''@|$(HAVE_MBSLEN)|g' \
++	      -e 's|@''HAVE_DECL_MEMMEM''@|$(HAVE_DECL_MEMMEM)|g' \
++	      -e 's|@''HAVE_MEMPCPY''@|$(HAVE_MEMPCPY)|g' \
++	      -e 's|@''HAVE_DECL_MEMRCHR''@|$(HAVE_DECL_MEMRCHR)|g' \
++	      -e 's|@''HAVE_MEMSET_EXPLICIT''@|$(HAVE_MEMSET_EXPLICIT)|g' \
++	      -e 's|@''HAVE_RAWMEMCHR''@|$(HAVE_RAWMEMCHR)|g' \
++	      -e 's|@''HAVE_STPCPY''@|$(HAVE_STPCPY)|g' \
++	      -e 's|@''HAVE_STPNCPY''@|$(HAVE_STPNCPY)|g' \
++	      -e 's|@''HAVE_STRCHRNUL''@|$(HAVE_STRCHRNUL)|g' \
++	      -e 's|@''HAVE_DECL_STRDUP''@|$(HAVE_DECL_STRDUP)|g' \
++	      -e 's|@''HAVE_DECL_STRNDUP''@|$(HAVE_DECL_STRNDUP)|g' \
++	      -e 's|@''HAVE_DECL_STRNLEN''@|$(HAVE_DECL_STRNLEN)|g' \
++	      -e 's|@''HAVE_STRPBRK''@|$(HAVE_STRPBRK)|g' \
++	      -e 's|@''HAVE_STRSEP''@|$(HAVE_STRSEP)|g' \
++	      -e 's|@''HAVE_STRCASESTR''@|$(HAVE_STRCASESTR)|g' \
++	      -e 's|@''HAVE_DECL_STRTOK_R''@|$(HAVE_DECL_STRTOK_R)|g' \
++	      -e 's|@''HAVE_DECL_STRERROR_R''@|$(HAVE_DECL_STRERROR_R)|g' \
++	      -e 's|@''HAVE_STRERRORNAME_NP''@|$(HAVE_STRERRORNAME_NP)|g' \
++	      -e 's|@''HAVE_SIGABBREV_NP''@|$(HAVE_SIGABBREV_NP)|g' \
++	      -e 's|@''HAVE_SIGDESCR_NP''@|$(HAVE_SIGDESCR_NP)|g' \
++	      -e 's|@''HAVE_DECL_STRSIGNAL''@|$(HAVE_DECL_STRSIGNAL)|g' \
++	      -e 's|@''HAVE_STRVERSCMP''@|$(HAVE_STRVERSCMP)|g' \
++	      -e 's|@''REPLACE_FFSLL''@|$(REPLACE_FFSLL)|g' \
++	      -e 's|@''REPLACE_MEMCHR''@|$(REPLACE_MEMCHR)|g' \
++	      -e 's|@''REPLACE_MEMMEM''@|$(REPLACE_MEMMEM)|g' \
++	      -e 's|@''REPLACE_MEMPCPY''@|$(REPLACE_MEMPCPY)|g' \
++	      -e 's|@''REPLACE_MEMSET_EXPLICIT''@|$(REPLACE_MEMSET_EXPLICIT)|g' \
++	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
++	      -e 's|@''REPLACE_STPCPY''@|$(REPLACE_STPCPY)|g' \
++	      -e 's|@''REPLACE_STPNCPY''@|$(REPLACE_STPNCPY)|g' \
++	      -e 's|@''REPLACE_STRCHRNUL''@|$(REPLACE_STRCHRNUL)|g' \
++	      -e 's|@''REPLACE_STRDUP''@|$(REPLACE_STRDUP)|g' \
++	      -e 's|@''REPLACE_STRNCAT''@|$(REPLACE_STRNCAT)|g' \
++	      -e 's|@''REPLACE_STRNDUP''@|$(REPLACE_STRNDUP)|g' \
++	      -e 's|@''REPLACE_STRNLEN''@|$(REPLACE_STRNLEN)|g' \
++	      -e 's|@''REPLACE_STRSTR''@|$(REPLACE_STRSTR)|g' \
++	      -e 's|@''REPLACE_STRCASESTR''@|$(REPLACE_STRCASESTR)|g' \
++	      -e 's|@''REPLACE_STRTOK_R''@|$(REPLACE_STRTOK_R)|g' \
++	      -e 's|@''REPLACE_STRERROR''@|$(REPLACE_STRERROR)|g' \
++	      -e 's|@''REPLACE_STRERROR_R''@|$(REPLACE_STRERROR_R)|g' \
++	      -e 's|@''REPLACE_STRERRORNAME_NP''@|$(REPLACE_STRERRORNAME_NP)|g' \
++	      -e 's|@''REPLACE_STRSIGNAL''@|$(REPLACE_STRSIGNAL)|g' \
++	      -e 's|@''REPLACE_STRVERSCMP''@|$(REPLACE_STRVERSCMP)|g' \
++	      -e 's|@''UNDEFINE_STRTOK_R''@|$(UNDEFINE_STRTOK_R)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      < $@-t1 > $@-t2
++	$(AM_V_at)rm -f $@-t1
++	$(AM_V_at)mv $@-t2 $@
++MOSTLYCLEANFILES += string.h string.h-t1 string.h-t2
++
++Include:
++<string.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/strncat
++++ b/modules/strncat
+@@ -7,7 +7,7 @@ m4/strncat.m4
+ m4/mmap-anon.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STRNCAT
+--- a/modules/strndup
++++ b/modules/strndup
+@@ -6,7 +6,7 @@ lib/strndup.c
+ m4/strndup.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ strnlen         [test $HAVE_STRNDUP = 0 || test $REPLACE_STRNDUP = 1]
+ 
+--- a/modules/strnlen
++++ b/modules/strnlen
+@@ -6,7 +6,7 @@ lib/strnlen.c
+ m4/strnlen.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/strpbrk
++++ b/modules/strpbrk
+@@ -12,7 +12,7 @@ lib/strpbrk.c
+ m4/strpbrk.m4
+ 
+ Depends-on:
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STRPBRK
+--- a/modules/strptime
++++ b/modules/strptime
+@@ -10,7 +10,7 @@ Depends-on:
+ time-h
+ extensions
+ sys_time        [test $HAVE_STRPTIME = 0]
+-string          [test $HAVE_STRPTIME = 0]
++string-h        [test $HAVE_STRPTIME = 0]
+ strcase         [test $HAVE_STRPTIME = 0]
+ stdbool-h       [test $HAVE_STRPTIME = 0]
+ time_r          [test $HAVE_STRPTIME = 0]
+--- a/modules/strsep
++++ b/modules/strsep
+@@ -6,7 +6,7 @@ lib/strsep.c
+ m4/strsep.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ strpbrk         [test $HAVE_STRSEP = 0]
+ 
+--- a/modules/strsignal
++++ b/modules/strsignal
+@@ -7,7 +7,7 @@ lib/siglist.h
+ m4/strsignal.m4
+ 
+ Depends-on:
+-string
++string-h
+ extensions
+ gettext-h       [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+ gnulib-i18n     [test $HAVE_STRSIGNAL = 0 || test $REPLACE_STRSIGNAL = 1]
+--- a/modules/strstr-simple
++++ b/modules/strstr-simple
+@@ -7,7 +7,7 @@ lib/strstr.c
+ m4/strstr.m4
+ 
+ Depends-on:
+-string
++string-h
+ builtin-expect  [test $REPLACE_STRSTR = 1]
+ stdbool-h       [test $REPLACE_STRSTR = 1]
+ memchr          [test $REPLACE_STRSTR = 1]
+--- a/modules/strtok_r
++++ b/modules/strtok_r
+@@ -6,7 +6,7 @@ lib/strtok_r.c
+ m4/strtok_r.m4
+ 
+ Depends-on:
+-string
++string-h
+ strpbrk         [test $HAVE_STRTOK_R = 0 || test $REPLACE_STRTOK_R = 1]
+ 
+ configure.ac:
+--- a/modules/strverscmp
++++ b/modules/strverscmp
+@@ -9,7 +9,7 @@ Depends-on:
+ extensions
+ libc-config  [test $HAVE_STRVERSCMP = 0 || test $REPLACE_STRVERSCMP = 1]
+ stdint-h     [test $HAVE_STRVERSCMP = 0 || test $REPLACE_STRVERSCMP = 1]
+-string
++string-h
+ 
+ configure.ac:
+ gl_FUNC_STRVERSCMP
+--- a/modules/vsnprintf-posix
++++ b/modules/vsnprintf-posix
+@@ -1,6 +1,6 @@
+ Description:
+ POSIX compatible vsnprintf() function: print formatted output to a fixed length
+-string
++string-h
+ 
+ Comment:
+ This module should not be used as a dependency from a test module,

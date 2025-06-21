@@ -1,0 +1,341 @@
+From 604083f4439a3b4fca628c3e1546043c1d75cae7 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 27 Dec 2024 23:12:58 +0100
+Subject: [PATCH] Rename module dirent to dirent-h.
+
+* modules/dirent-h: Renamed from modules/dirent.
+* modules/dirent-h-tests: Renamed from modules/dirent-tests.
+* modules/dirent-h-c++-tests: Renamed from modules/dirent-c++-tests.
+* tests/test-dirent-h.c: Renamed from tests/test-dirent.c.
+* tests/test-dirent-h-c++.cc: Renamed from tests/test-dirent-c++.cc.
+* doc/posix-headers/dirent.texi: Update.
+* modules/* (Depends-on): Update.
+* modules/dirent: New file.
+---
+ ChangeLog                                     | 12 +++
+ doc/posix-headers/dirent.texi                 |  4 +-
+ modules/alphasort                             |  2 +-
+ modules/closedir                              |  2 +-
+ modules/dirent                                | 65 ++--------------
+ modules/dirent-c++-tests                      | 19 -----
+ modules/dirent-h                              | 76 +++++++++++++++++++
+ modules/dirent-h-c++-tests                    | 19 +++++
+ modules/dirent-h-tests                        | 11 +++
+ modules/dirent-safer                          |  2 +-
+ modules/dirent-tests                          | 11 ---
+ modules/dirfd                                 |  2 +-
+ modules/fchdir                                |  2 +-
+ modules/fdopendir                             |  2 +-
+ modules/file-has-acl                          |  2 +-
+ modules/opendir                               |  2 +-
+ modules/opendirat                             |  2 +-
+ modules/posixcheck                            |  2 +-
+ modules/readdir                               |  2 +-
+ modules/rewinddir                             |  2 +-
+ modules/savedir                               |  2 +-
+ modules/scandir                               |  2 +-
+ ...est-dirent-c++.cc => test-dirent-h-c++.cc} |  0
+ tests/{test-dirent.c => test-dirent-h.c}      |  0
+ 24 files changed, 141 insertions(+), 104 deletions(-)
+ delete mode 100644 modules/dirent-c++-tests
+ create mode 100644 modules/dirent-h
+ create mode 100644 modules/dirent-h-c++-tests
+ create mode 100644 modules/dirent-h-tests
+ delete mode 100644 modules/dirent-tests
+ rename tests/{test-dirent-c++.cc => test-dirent-h-c++.cc} (100%)
+ rename tests/{test-dirent.c => test-dirent-h.c} (100%)
+
+--- a/modules/alphasort
++++ b/modules/alphasort
+@@ -6,7 +6,7 @@ lib/alphasort.c
+ m4/alphasort.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ extensions
+ 
+ configure.ac:
+--- a/modules/closedir
++++ b/modules/closedir
+@@ -7,7 +7,7 @@ lib/dirent-private.h
+ m4/closedir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ dirfd           [test $HAVE_CLOSEDIR = 0 || test $REPLACE_CLOSEDIR = 1]
+ 
+ configure.ac:
+--- a/modules/dirent
++++ b/modules/dirent
+@@ -1,68 +1,20 @@
+ Description:
+ A GNU-like <dirent.h>.
+ 
++Status:
++deprecated
++
++Notice:
++This module is deprecated. Use the module 'dirent-h' instead.
++
+ Files:
+-lib/dirent.in.h
+-m4/dirent_h.m4
+-m4/unistd_h.m4
+-m4/pid_t.m4
+ 
+ Depends-on:
+-gen-header
+-include_next
+-snippet/arg-nonnull
+-snippet/c++defs
+-snippet/warn-on-use
++dirent-h
+ 
+ configure.ac:
+-gl_DIRENT_H
+-gl_DIRENT_H_REQUIRE_DEFAULTS
+-AC_PROG_MKDIR_P
+ 
+ Makefile.am:
+-BUILT_SOURCES += dirent.h
+-
+-# We need the following in order to create <dirent.h> when the system
+-# doesn't have one that works with the given compiler.
+-dirent.h: dirent.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+-@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+-	$(gl_V_at)$(SED_HEADER_STDOUT) \
+-	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+-	      -e 's|@''HAVE_DIRENT_H''@|$(HAVE_DIRENT_H)|g' \
+-	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+-	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+-	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+-	      -e 's|@''NEXT_DIRENT_H''@|$(NEXT_DIRENT_H)|g' \
+-	      -e 's/@''DIR_HAS_FD_MEMBER''@/$(DIR_HAS_FD_MEMBER)/g' \
+-	      -e 's/@''GNULIB_OPENDIR''@/$(GNULIB_OPENDIR)/g' \
+-	      -e 's/@''GNULIB_READDIR''@/$(GNULIB_READDIR)/g' \
+-	      -e 's/@''GNULIB_REWINDDIR''@/$(GNULIB_REWINDDIR)/g' \
+-	      -e 's/@''GNULIB_CLOSEDIR''@/$(GNULIB_CLOSEDIR)/g' \
+-	      -e 's/@''GNULIB_DIRFD''@/$(GNULIB_DIRFD)/g' \
+-	      -e 's/@''GNULIB_FDOPENDIR''@/$(GNULIB_FDOPENDIR)/g' \
+-	      -e 's/@''GNULIB_SCANDIR''@/$(GNULIB_SCANDIR)/g' \
+-	      -e 's/@''GNULIB_ALPHASORT''@/$(GNULIB_ALPHASORT)/g' \
+-	      -e 's/@''HAVE_OPENDIR''@/$(HAVE_OPENDIR)/g' \
+-	      -e 's/@''HAVE_READDIR''@/$(HAVE_READDIR)/g' \
+-	      -e 's/@''HAVE_REWINDDIR''@/$(HAVE_REWINDDIR)/g' \
+-	      -e 's/@''HAVE_CLOSEDIR''@/$(HAVE_CLOSEDIR)/g' \
+-	      -e 's|@''HAVE_DECL_DIRFD''@|$(HAVE_DECL_DIRFD)|g' \
+-	      -e 's|@''HAVE_DECL_FDOPENDIR''@|$(HAVE_DECL_FDOPENDIR)|g' \
+-	      -e 's|@''HAVE_FDOPENDIR''@|$(HAVE_FDOPENDIR)|g' \
+-	      -e 's|@''HAVE_SCANDIR''@|$(HAVE_SCANDIR)|g' \
+-	      -e 's|@''HAVE_ALPHASORT''@|$(HAVE_ALPHASORT)|g' \
+-	      -e 's|@''REPLACE_OPENDIR''@|$(REPLACE_OPENDIR)|g' \
+-	      -e 's|@''REPLACE_READDIR''@|$(REPLACE_READDIR)|g' \
+-	      -e 's|@''REPLACE_REWINDDIR''@|$(REPLACE_REWINDDIR)|g' \
+-	      -e 's|@''REPLACE_CLOSEDIR''@|$(REPLACE_CLOSEDIR)|g' \
+-	      -e 's|@''REPLACE_DIRFD''@|$(REPLACE_DIRFD)|g' \
+-	      -e 's|@''REPLACE_FDOPENDIR''@|$(REPLACE_FDOPENDIR)|g' \
+-	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+-	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+-	      $(srcdir)/dirent.in.h > $@-t
+-	$(AM_V_at)mv $@-t $@
+-MOSTLYCLEANFILES += dirent.h dirent.h-t
+ 
+ Include:
+ <dirent.h>
+@@ -71,4 +23,3 @@ License:
+ LGPLv2+
+ 
+ Maintainer:
+-all
+--- /dev/null
++++ b/modules/dirent-h
+@@ -0,0 +1,76 @@
++Description:
++A GNU-like <dirent.h>.
++
++Files:
++lib/dirent.in.h
++m4/dirent_h.m4
++m4/unistd_h.m4
++m4/pid_t.m4
++
++Depends-on:
++assert-h
++extensions
++gen-header
++include_next
++snippet/arg-nonnull
++snippet/c++defs
++snippet/warn-on-use
++
++configure.ac:
++gl_DIRENT_H
++gl_DIRENT_H_REQUIRE_DEFAULTS
++AC_PROG_MKDIR_P
++
++Makefile.am:
++BUILT_SOURCES += dirent.h
++
++# We need the following in order to create <dirent.h> when the system
++# doesn't have one that works with the given compiler.
++dirent.h: dirent.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
++@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
++	$(gl_V_at)$(SED_HEADER_STDOUT) \
++	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
++	      -e 's|@''HAVE_DIRENT_H''@|$(HAVE_DIRENT_H)|g' \
++	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
++	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
++	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
++	      -e 's|@''NEXT_DIRENT_H''@|$(NEXT_DIRENT_H)|g' \
++	      -e 's/@''DIR_HAS_FD_MEMBER''@/$(DIR_HAS_FD_MEMBER)/g' \
++	      -e 's/@''GNULIB_OPENDIR''@/$(GNULIB_OPENDIR)/g' \
++	      -e 's/@''GNULIB_READDIR''@/$(GNULIB_READDIR)/g' \
++	      -e 's/@''GNULIB_REWINDDIR''@/$(GNULIB_REWINDDIR)/g' \
++	      -e 's/@''GNULIB_CLOSEDIR''@/$(GNULIB_CLOSEDIR)/g' \
++	      -e 's/@''GNULIB_DIRFD''@/$(GNULIB_DIRFD)/g' \
++	      -e 's/@''GNULIB_FDOPENDIR''@/$(GNULIB_FDOPENDIR)/g' \
++	      -e 's/@''GNULIB_SCANDIR''@/$(GNULIB_SCANDIR)/g' \
++	      -e 's/@''GNULIB_ALPHASORT''@/$(GNULIB_ALPHASORT)/g' \
++	      -e 's/@''HAVE_OPENDIR''@/$(HAVE_OPENDIR)/g' \
++	      -e 's/@''HAVE_READDIR''@/$(HAVE_READDIR)/g' \
++	      -e 's/@''HAVE_REWINDDIR''@/$(HAVE_REWINDDIR)/g' \
++	      -e 's/@''HAVE_CLOSEDIR''@/$(HAVE_CLOSEDIR)/g' \
++	      -e 's|@''HAVE_DECL_DIRFD''@|$(HAVE_DECL_DIRFD)|g' \
++	      -e 's|@''HAVE_DECL_FDOPENDIR''@|$(HAVE_DECL_FDOPENDIR)|g' \
++	      -e 's|@''HAVE_FDOPENDIR''@|$(HAVE_FDOPENDIR)|g' \
++	      -e 's|@''HAVE_SCANDIR''@|$(HAVE_SCANDIR)|g' \
++	      -e 's|@''HAVE_ALPHASORT''@|$(HAVE_ALPHASORT)|g' \
++	      -e 's|@''REPLACE_OPENDIR''@|$(REPLACE_OPENDIR)|g' \
++	      -e 's|@''REPLACE_READDIR''@|$(REPLACE_READDIR)|g' \
++	      -e 's|@''REPLACE_REWINDDIR''@|$(REPLACE_REWINDDIR)|g' \
++	      -e 's|@''REPLACE_CLOSEDIR''@|$(REPLACE_CLOSEDIR)|g' \
++	      -e 's|@''REPLACE_DIRFD''@|$(REPLACE_DIRFD)|g' \
++	      -e 's|@''REPLACE_FDOPENDIR''@|$(REPLACE_FDOPENDIR)|g' \
++	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
++	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
++	      $(srcdir)/dirent.in.h > $@-t
++	$(AM_V_at)mv $@-t $@
++MOSTLYCLEANFILES += dirent.h dirent.h-t
++
++Include:
++<dirent.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/dirent-safer
++++ b/modules/dirent-safer
+@@ -8,7 +8,7 @@ lib/opendir-safer.c
+ m4/dirent-safer.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ closedir
+ dirfd
+ fcntl
+--- a/modules/dirfd
++++ b/modules/dirfd
+@@ -7,7 +7,7 @@ lib/dirent-private.h
+ m4/dirfd.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ extensions
+ errno           [test $HAVE_DIRFD = 0 || test $REPLACE_DIRFD = 1]
+ 
+--- a/modules/fchdir
++++ b/modules/fchdir
+@@ -6,7 +6,7 @@ lib/fchdir.c
+ m4/fchdir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ unistd
+ assure           [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+ chdir            [test $HAVE_FCHDIR = 0 || test $REPLACE_FCHDIR = 1]
+--- a/modules/fdopendir
++++ b/modules/fdopendir
+@@ -7,7 +7,7 @@ lib/dirent-private.h
+ m4/fdopendir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ extensions
+ at-internal     [test $HAVE_FDOPENDIR = 0]
+ dirfd           [test $HAVE_FDOPENDIR = 0]
+--- a/modules/opendir
++++ b/modules/opendir
+@@ -7,7 +7,7 @@ lib/dirent-private.h
+ m4/opendir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ largefile
+ filename        [test $HAVE_OPENDIR = 0 || test $REPLACE_OPENDIR = 1]
+ unistd          [test $HAVE_OPENDIR = 0 || test $REPLACE_OPENDIR = 1]
+--- a/modules/opendirat
++++ b/modules/opendirat
+@@ -7,7 +7,7 @@ lib/opendirat.h
+ 
+ Depends-on:
+ c99
+-dirent
++dirent-h
+ fcntl-h
+ fdopendir
+ openat-safer
+--- a/modules/posixcheck
++++ b/modules/posixcheck
+@@ -9,7 +9,7 @@ Depends-on:
+ # All modules that depend on 'snippet/warn-on-use'.
+ arpa_inet-h
+ ctype
+-dirent
++dirent-h
+ fcntl-h
+ fnmatch-h
+ glob-h
+--- a/modules/readdir
++++ b/modules/readdir
+@@ -7,7 +7,7 @@ lib/dirent-private.h
+ m4/readdir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ largefile
+ 
+ configure.ac:
+--- a/modules/rewinddir
++++ b/modules/rewinddir
+@@ -8,7 +8,7 @@ lib/dirent-private.h
+ m4/rewinddir.m4
+ 
+ Depends-on:
+-dirent
++dirent-h
+ largefile
+ 
+ configure.ac:
+--- a/modules/scandir
++++ b/modules/scandir
+@@ -8,7 +8,7 @@ m4/scandir.m4
+ Depends-on:
+ builtin-expect
+ closedir
+-dirent
++dirent-h
+ extensions
+ largefile
+ opendir

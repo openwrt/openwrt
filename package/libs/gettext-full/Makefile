@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
-PKG_VERSION:=0.22.5
+PKG_VERSION:=0.24.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
-PKG_HASH:=fe10c37353213d78a5b83d48af231e005c4da84db5ce88037d88355938259640
+PKG_HASH:=6164ec7aa61653ac9cdfb41d5c2344563b21f707da1562712e48715f1d2052a6
 PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
@@ -27,7 +27,7 @@ PKG_BUILD_PARALLEL:=0
 
 PKG_FIXUP:=autoreconf
 
-HOST_BUILD_DEPENDS:=gperf/host libiconv-full/host libunistring/host libxml2/host
+HOST_BUILD_DEPENDS:=gnulib-l10n/host gperf/host libiconv-full/host libunistring/host libxml2/host
 HOST_BUILD_PARALLEL:=0
 
 PKG_SUBDIRS:= \
