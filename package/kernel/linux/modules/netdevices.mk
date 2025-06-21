@@ -1257,7 +1257,6 @@ define KernelPackage/iavf
        CONFIG_IAVF
   FILES:= \
        $(LINUX_DIR)/drivers/net/ethernet/intel/iavf/iavf.ko
-  AUTOLOAD:=$(call AutoProbe,i40evf iavf)
   AUTOLOAD:=$(call AutoProbe,iavf)
 endef
 
