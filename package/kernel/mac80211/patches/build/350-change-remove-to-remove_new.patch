@@ -1,0 +1,324 @@
+--- a/drivers/net/wireless/ath/ath10k/ahb.c
++++ b/drivers/net/wireless/ath/ath10k/ahb.c
+@@ -835,13 +835,6 @@ static void ath10k_ahb_remove(struct pla
+ 	ath10k_ahb_resource_deinit(ar);
+ 	ath10k_core_destroy(ar);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_ath10k_ahb_remove(struct platform_device *pdev) {
+-	ath10k_ahb_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static struct platform_driver ath10k_ahb_driver = {
+ 	.driver = {
+@@ -852,7 +845,7 @@ static struct platform_driver ath10k_ahb
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = ath10k_ahb_remove,
+ #else
+-	.remove = bp_ath10k_ahb_remove,
++	.remove_new = ath10k_ahb_remove,
+ #endif
+ 
+ };
+--- a/drivers/net/wireless/ath/ath10k/snoc.c
++++ b/drivers/net/wireless/ath/ath10k/snoc.c
+@@ -1875,13 +1875,6 @@ static void ath10k_snoc_remove(struct pl
+ 
+ 	ath10k_snoc_free_resources(ar);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_ath10k_snoc_remove(struct platform_device *pdev) {
+-	ath10k_snoc_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static void ath10k_snoc_shutdown(struct platform_device *pdev)
+ {
+@@ -1896,7 +1889,7 @@ static struct platform_driver ath10k_sno
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = ath10k_snoc_remove,
+ #else
+-	.remove = bp_ath10k_snoc_remove,
++	.remove_new = ath10k_snoc_remove,
+ #endif
+ 	
+ 	.shutdown = ath10k_snoc_shutdown,
+--- a/drivers/net/wireless/ath/ath11k/ahb.c
++++ b/drivers/net/wireless/ath/ath11k/ahb.c
+@@ -1293,13 +1293,6 @@ qmi_fail:
+ 	ath11k_fw_destroy(ab);
+ 	ath11k_ahb_free_resources(ab);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_ath11k_ahb_remove(struct platform_device *pdev) {
+-	ath11k_ahb_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static void ath11k_ahb_shutdown(struct platform_device *pdev)
+ {
+@@ -1330,7 +1323,7 @@ static struct platform_driver ath11k_ahb
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = ath11k_ahb_remove,
+ #else
+-	.remove = bp_ath11k_ahb_remove,
++	.remove_new = ath11k_ahb_remove,
+ #endif
+ 	
+ 	.shutdown = ath11k_ahb_shutdown,
+--- a/drivers/net/wireless/ath/ath5k/ahb.c
++++ b/drivers/net/wireless/ath/ath5k/ahb.c
+@@ -216,20 +216,13 @@ static void ath_ahb_remove(struct platfo
+ 	iounmap(ah->iobase);
+ 	ieee80211_free_hw(hw);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_ath_ahb_remove(struct platform_device *pdev) {
+-	ath_ahb_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static struct platform_driver ath_ahb_driver = {
+ 	.probe = ath_ahb_probe,
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = ath_ahb_remove,
+ #else
+-	.remove = bp_ath_ahb_remove,
++	.remove_new = ath_ahb_remove,
+ #endif
+ 	
+ 	.driver = {
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -156,20 +156,13 @@ static void ath_ahb_remove(struct platfo
+ 		ieee80211_free_hw(sc->hw);
+ 	}
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_ath_ahb_remove(struct platform_device *pdev) {
+-	ath_ahb_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static struct platform_driver ath_ahb_driver = {
+ 	.probe = ath_ahb_probe,
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = ath_ahb_remove,
+ #else
+-	.remove = bp_ath_ahb_remove,
++	.remove_new = ath_ahb_remove,
+ #endif
+ 	
+ 	.driver = {
+--- a/drivers/net/wireless/ath/wcn36xx/main.c
++++ b/drivers/net/wireless/ath/wcn36xx/main.c
+@@ -1674,13 +1674,6 @@ static void wcn36xx_remove(struct platfo
+ 	mutex_destroy(&wcn->hal_mutex);
+ 	ieee80211_free_hw(hw);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_wcn36xx_remove(struct platform_device *pdev) {
+-	wcn36xx_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static const struct of_device_id wcn36xx_of_match[] = {
+ 	{ .compatible = "qcom,wcnss-wlan" },
+@@ -1693,7 +1686,7 @@ static struct platform_driver wcn36xx_dr
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = wcn36xx_remove,
+ #else
+-	.remove = bp_wcn36xx_remove,
++	.remove_new = wcn36xx_remove,
+ #endif
+ 	
+ 	.driver = {
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -594,19 +594,12 @@ static void brcmf_common_pd_remove(struc
+ 	if (brcmfmac_pdata->power_off)
+ 		brcmfmac_pdata->power_off();
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_brcmf_common_pd_remove(struct platform_device *pdev) {
+-	brcmf_common_pd_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static struct platform_driver brcmf_pd = {
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove		= brcmf_common_pd_remove,
+ #else
+-	.remove = bp_brcmf_common_pd_remove,
++	.remove_new = brcmf_common_pd_remove,
+ #endif
+ 	
+ 	.driver		= {
+--- a/drivers/net/wireless/mediatek/mt76/mt7603/soc.c
++++ b/drivers/net/wireless/mediatek/mt76/mt7603/soc.c
+@@ -59,13 +59,6 @@ static void mt76_wmac_remove(struct plat
+ 
+ 	mt7603_unregister_device(dev);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_mt76_wmac_remove(struct platform_device *pdev) {
+-	mt76_wmac_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static const struct of_device_id of_wmac_match[] = {
+ 	{ .compatible = "mediatek,mt7628-wmac" },
+@@ -81,7 +74,7 @@ struct platform_driver mt76_wmac_driver
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove		= mt76_wmac_remove,
+ #else
+-	.remove = bp_mt76_wmac_remove,
++	.remove_new = mt76_wmac_remove,
+ #endif
+ 	
+ 	.driver = {
+--- a/drivers/net/wireless/mediatek/mt76/mt7615/soc.c
++++ b/drivers/net/wireless/mediatek/mt76/mt7615/soc.c
+@@ -51,13 +51,6 @@ static void mt7622_wmac_remove(struct pl
+ 
+ 	mt7615_unregister_device(dev);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_mt7622_wmac_remove(struct platform_device *pdev) {
+-	mt7622_wmac_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static const struct of_device_id mt7622_wmac_of_match[] = {
+ 	{ .compatible = "mediatek,mt7622-wmac" },
+@@ -73,7 +66,7 @@ struct platform_driver mt7622_wmac_drive
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = mt7622_wmac_remove,
+ #else
+-	.remove = bp_mt7622_wmac_remove,
++	.remove_new = mt7622_wmac_remove,
+ #endif
+ 
+ };
+--- a/drivers/net/wireless/mediatek/mt76/mt7915/soc.c
++++ b/drivers/net/wireless/mediatek/mt76/mt7915/soc.c
+@@ -1288,13 +1288,6 @@ static void mt798x_wmac_remove(struct pl
+ 
+ 	mt7915_unregister_device(dev);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_mt798x_wmac_remove(struct platform_device *pdev) {
+-	mt798x_wmac_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static const struct of_device_id mt798x_wmac_of_match[] = {
+ 	{ .compatible = "mediatek,mt7981-wmac", .data = (u32 *)0x7981 },
+@@ -1313,7 +1306,7 @@ struct platform_driver mt798x_wmac_drive
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove = mt798x_wmac_remove,
+ #else
+-	.remove = bp_mt798x_wmac_remove,
++	.remove_new = mt798x_wmac_remove,
+ #endif
+ 
+ };
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -252,7 +252,7 @@ static struct platform_driver rt2800soc_
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove		= rt2x00soc_remove,
+ #else
+-	.remove = bp_rt2x00soc_remove,
++	.remove_new = rt2x00soc_remove,
+ #endif
+ 	
+ 	.suspend	= rt2x00soc_suspend,
+--- a/drivers/net/wireless/ti/wl12xx/main.c
++++ b/drivers/net/wireless/ti/wl12xx/main.c
+@@ -1930,13 +1930,6 @@ static void wl12xx_remove(struct platfor
+ 
+ 	wlcore_remove(pdev);
+ }
+-#if LINUX_VERSION_IS_LESS(6,13,0)
+-static int bp_wl12xx_remove(struct platform_device *pdev) {
+-	wl12xx_remove(pdev);
+-
+-	return 0;
+-}
+-#endif
+ 
+ static const struct platform_device_id wl12xx_id_table[] = {
+ 	{ "wl12xx", 0 },
+@@ -1949,7 +1942,7 @@ static struct platform_driver wl12xx_dri
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove		= wl12xx_remove,
+ #else
+-	.remove = bp_wl12xx_remove,
++	.remove_new = wl12xx_remove,
+ #endif
+ 	
+ 	.id_table	= wl12xx_id_table,
+--- a/drivers/net/wireless/ti/wl18xx/main.c
++++ b/drivers/net/wireless/ti/wl18xx/main.c
+@@ -2100,7 +2100,7 @@ static struct platform_driver wl18xx_dri
+ #if LINUX_VERSION_IS_GEQ(6,13,0)
+ 	.remove		= wlcore_remove,
+ #else
+-	.remove = bp_wlcore_remove,
++	.remove_new = wlcore_remove,
+ #endif
+ 	
+ 	.id_table	= wl18xx_id_table,
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
+@@ -108,7 +108,7 @@ exit_free_device:
+ }
+ EXPORT_SYMBOL_GPL(rt2x00soc_probe);
+ 
+-int rt2x00soc_remove(struct platform_device *pdev)
++void rt2x00soc_remove(struct platform_device *pdev)
+ {
+ 	struct ieee80211_hw *hw = platform_get_drvdata(pdev);
+ 	struct rt2x00_dev *rt2x00dev = hw->priv;
+@@ -119,8 +119,6 @@ int rt2x00soc_remove(struct platform_dev
+ 	rt2x00lib_remove_dev(rt2x00dev);
+ 	rt2x00soc_free_reg(rt2x00dev);
+ 	ieee80211_free_hw(hw);
+-
+-	return 0;
+ }
+ EXPORT_SYMBOL_GPL(rt2x00soc_remove);
+ 
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.h
+@@ -17,7 +17,7 @@
+  * SoC driver handlers.
+  */
+ int rt2x00soc_probe(struct platform_device *pdev, const struct rt2x00_ops *ops);
+-int rt2x00soc_remove(struct platform_device *pdev);
++void rt2x00soc_remove(struct platform_device *pdev);
+ #ifdef CONFIG_PM
+ int rt2x00soc_suspend(struct platform_device *pdev, pm_message_t state);
+ int rt2x00soc_resume(struct platform_device *pdev);
