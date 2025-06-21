@@ -68,6 +68,9 @@ xiaomi,ax9000)
 prpl,haze)
 	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x400" "0x100"
 	;;
+tcl,hh500v)
+	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
+	;;
 asus,rt-ax89x|\
 qnap,301w)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x20000" "0x20000"

@@ -392,6 +392,22 @@ define Device/spectrum_sax1v1k
 endef
 TARGET_DEVICES += spectrum_sax1v1k
 
+define Device/tcl_hh500v
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TCL
+	DEVICE_MODEL := HH500V
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8072
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+	DEVICE_PACKAGES := ipq-wifi-tcl_hh500v kmod-usb-serial-option \
+		kmod-pinctrl-aw9523 kmod-mhi-pci-generic kmod-mhi-wwan-ctrl \
+		kmod-mhi-wwan-mbim
+endef
+TARGET_DEVICES += tcl_hh500v
 
 define Device/tplink_deco-x80-5g
 	$(call Device/FitImage)
