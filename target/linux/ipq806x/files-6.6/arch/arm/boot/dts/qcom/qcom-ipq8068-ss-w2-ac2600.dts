@@ -1,0 +1,309 @@
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "IgniteNet SunSpot AC Wave2";
+	compatible = "ignitenet,ss-w2-ac2600", "qcom,ipq8068";
+
+	aliases {
+		ethernet0 = &gmac2;
+		ethernet1 = &gmac3;
+
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_red;
+		led-upgrade = &led_power_red;
+	};
+
+	chosen {
+		bootargs-append = " console=ttyMSM0,115200n8 root=/dev/ubiblock0_1";
+	};
+
+	reserved-memory {
+		nss@40000000 {
+			reg = <0x40000000 0x1000000>;
+			no-map;
+		};
+
+		smem: smem@41000000 {
+			reg = <0x41000000 0x200000>;
+			no-map;
+		};
+
+		wifi_dump@44000000 {
+			reg = <0x44000000 0x600000>;
+			no-map;
+		};
+	};
+
+	cpus {
+		idle-states {
+			CPU_SPC: spc {
+				status = "disabled";
+			};
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		wlan2g_green {
+			label = "green:wlan2g";
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g_yellow {
+			label = "yellow:wlan2g";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g_green {
+			label = "green:wlan5g";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan5g_yellow {
+			label = "yellow:wlan5g";
+			gpios = <&qcom_pinmux 59 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-pull-down;
+		};
+
+		clk {
+			pins = "gpio21";
+			function = "gsbi5";
+			drive-strength = <12>;
+			bias-pull-down;
+		};
+
+		cs {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio16", "gpio23", "gpio24", "gpio26",
+				   "gpio28", "gpio59";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio25";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		w25q128@0 {
+			compatible = "jedec,spi-nor";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "qcom,smem-part";
+
+				art: partition-0-art {
+					label = "0:art";
+				};
+			};
+		};
+	};
+};
+
+&art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_art_0: macaddr@0 {
+			reg = <0x0 0x6>;
+		};
+
+		macaddr_art_6: macaddr@6 {
+			reg = <0x6 0x6>;
+		};
+
+		precal_art_1000: precal@1000 {
+			reg = <0x1000 0x2f20>;
+		};
+
+		precal_art_5000: precal@5000 {
+			reg = <0x5000 0x2f20>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+			qcom,ath10k-calibration-variant = "IgniteNet-SS-W2-AC2600";
+			nvmem-cells = <&precal_art_1000>;
+			nvmem-cell-names = "pre-calibration";
+		};
+	};
+};
+
+&pcie2 {
+	status = "okay";
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+			qcom,ath10k-calibration-variant = "IgniteNet-SS-W2-AC2600";
+			nvmem-cells = <&precal_art_5000>;
+			nvmem-cell-names = "pre-calibration";
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		compatible = "qcom,nandcs";
+
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			rootfs1@0 {
+				label = "rootfs1";
+				reg = <0x0000000 0x4000000>;
+			};
+
+			rootfs2@4000000 {
+				label = "rootfs2";
+				reg = <0x4000000 0x4000000>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	qcom,id = <2>;
+	mdiobus = <&mdio0>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy1>;
+
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac3 {
+	status = "okay";
+
+	qcom,id = <3>;
+	mdiobus = <&mdio0>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&adm_dma {
+	status = "okay";
+};

@@ -9,7 +9,8 @@ boot() {
 	asrock,g10)
 		asrock_bootconfig_mangle "bootcheck" && reboot
 		;;
-	edgecore,ecw5410)
+	edgecore,ecw5410 |\
+	ignitenet,ss-w2-ac2600)
 		fw_setenv bootcount 0
 		;;
 	extreme,ap3935)
