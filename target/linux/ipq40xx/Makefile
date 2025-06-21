@@ -9,6 +9,7 @@ CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic chromium mikrotik
 
 KERNEL_PATCHVER:=6.6
+KERNEL_TESTING_PATCHVER:=6.12
 
 KERNELNAME:=zImage Image dtbs
 
