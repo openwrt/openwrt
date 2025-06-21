@@ -1,0 +1,11 @@
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -91,7 +91,7 @@ static u8 * hostapd_eid_ds_params(struct
+ 	enum hostapd_hw_mode hw_mode = hapd->iconf->hw_mode;
+ 
+ 	if (hw_mode != HOSTAPD_MODE_IEEE80211G &&
+-	    hw_mode != HOSTAPD_MODE_IEEE80211B)
++           hw_mode != HOSTAPD_MODE_IEEE80211B && 0)
+ 		return eid;
+ 
+ 	*eid++ = WLAN_EID_DS_PARAMS;
