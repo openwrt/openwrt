@@ -1,0 +1,40 @@
+diff --git a/drivers/net/wireless/ath/ath10k/core.c b/drivers/net/wireless/ath/ath10k/core.c
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -1896,6 +1896,36 @@ static int ath10k_download_cal_nvmem(struct ath10k *ar, const char *cell_name)
+ 	size_t len;
+ 	int ret;
+ 
++	/* devm_nvmem_cell_get() will get a cell first from the OF
++	 * DT node representing the given device with nvmem-cell-name
++	 * "calibration", and from the global lookup table as a fallback,
++	 * and an ath9k device could be either a pci one or a platform one.
++	 *
++	 * If the OF DT node is not compatible with the real device, the
++	 * calibration data got from the node should not be applied.
++	 *
++	 * dev_is_pci(ar->dev) && ( no OF node || caldata not from node
++	 * || not compatible ) -> do not use caldata .
++	 *
++	 * !dev_is_pci(ar->dev) -> always use caldata .
++	 *
++	 * The judgement for compatibility differs with ath9k for many
++	 * DT using "qcom,ath10k" as compatibility string.
++	 */
++	if (dev_is_pci(ar->dev) &&
++	    (!ar->dev->of_node ||
++	     !of_property_match_string(ar->dev->of_node,
++				       "nvmem-cell-names",
++				       cell_name) ||
++	     !of_device_is_compatible(ar->dev->of_node,
++				      "qcom,ath10k") ||
++	     !of_pci_node_match_device(ar->dev->of_node,
++				       to_pci_dev(sc->dev))))
++		/* follow the "just return 0;" convention as
++		 * noted below.
++		 */
++		return ERR_PTR(-ENOENT);
++
+ 	cell = devm_nvmem_cell_get(ar->dev, cell_name);
+ 	if (IS_ERR(cell)) {
+ 		ret = PTR_ERR(cell);
