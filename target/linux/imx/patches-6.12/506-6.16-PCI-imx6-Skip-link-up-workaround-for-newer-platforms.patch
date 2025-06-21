@@ -1,0 +1,101 @@
+From 42042e33451e380f45ad13ae725bf28ed6f0110d Mon Sep 17 00:00:00 2001
+From: Richard Zhu <hongxing.zhu@nxp.com>
+Date: Wed, 16 Apr 2025 16:13:08 +0800
+Subject: [PATCH] PCI: imx6: Skip link up workaround for newer platforms
+
+The current link setup procedure has one workaround to detect the devices
+behind PCIe switches on some i.MX6 platforms. But this workaround is not
+needed on recent i.MX7 platforms. So skip the workaround for platforms that
+do not set the flag and start LTSSM directly.
+
+Also, change the flag name from IMX_PCIE_FLAG_IMX_SPEED_CHANGE to
+IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND to match the usecase.
+
+Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
+[mani: subject and description rewording]
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 34 +++++++++++----------------
+ 1 file changed, 14 insertions(+), 20 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -74,7 +74,7 @@ enum imx_pcie_variants {
+ };
+ 
+ #define IMX_PCIE_FLAG_IMX_PHY			BIT(0)
+-#define IMX_PCIE_FLAG_IMX_SPEED_CHANGE		BIT(1)
++#define IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND	BIT(1)
+ #define IMX_PCIE_FLAG_SUPPORTS_SUSPEND		BIT(2)
+ #define IMX_PCIE_FLAG_HAS_PHYDRV		BIT(3)
+ #define IMX_PCIE_FLAG_HAS_APP_RESET		BIT(4)
+@@ -847,6 +847,12 @@ static int imx_pcie_start_link(struct dw
+ 	u32 tmp;
+ 	int ret;
+ 
++	if (!(imx_pcie->drvdata->flags &
++	    IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND)) {
++		imx_pcie_ltssm_enable(dev);
++		return 0;
++	}
++
+ 	/*
+ 	 * Force Gen1 operation when starting the link.  In case the link is
+ 	 * started in Gen2 mode, there is a possibility the devices on the
+@@ -883,22 +889,10 @@ static int imx_pcie_start_link(struct dw
+ 		dw_pcie_writel_dbi(pci, PCIE_LINK_WIDTH_SPEED_CONTROL, tmp);
+ 		dw_pcie_dbi_ro_wr_dis(pci);
+ 
+-		if (imx_pcie->drvdata->flags &
+-		    IMX_PCIE_FLAG_IMX_SPEED_CHANGE) {
+-			/*
+-			 * On i.MX7, DIRECT_SPEED_CHANGE behaves differently
+-			 * from i.MX6 family when no link speed transition
+-			 * occurs and we go Gen1 -> yep, Gen1. The difference
+-			 * is that, in such case, it will not be cleared by HW
+-			 * which will cause the following code to report false
+-			 * failure.
+-			 */
+-
+-			ret = imx_pcie_wait_for_speed_change(imx_pcie);
+-			if (ret) {
+-				dev_err(dev, "Failed to bring link up!\n");
+-				goto err_reset_phy;
+-			}
++		ret = imx_pcie_wait_for_speed_change(imx_pcie);
++		if (ret) {
++			dev_err(dev, "Failed to bring link up!\n");
++			goto err_reset_phy;
+ 		}
+ 
+ 		/* Make sure link training is finished as well! */
+@@ -1520,7 +1514,7 @@ static const struct imx_pcie_drvdata drv
+ 	[IMX6Q] = {
+ 		.variant = IMX6Q,
+ 		.flags = IMX_PCIE_FLAG_IMX_PHY |
+-			 IMX_PCIE_FLAG_IMX_SPEED_CHANGE |
++			 IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND |
+ 			 IMX_PCIE_FLAG_BROKEN_SUSPEND |
+ 			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
+ 		.dbi_length = 0x200,
+@@ -1538,7 +1532,7 @@ static const struct imx_pcie_drvdata drv
+ 	[IMX6SX] = {
+ 		.variant = IMX6SX,
+ 		.flags = IMX_PCIE_FLAG_IMX_PHY |
+-			 IMX_PCIE_FLAG_IMX_SPEED_CHANGE |
++			 IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND |
+ 			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
+ 		.gpr = "fsl,imx6q-iomuxc-gpr",
+ 		.clk_names = imx6sx_clks,
+@@ -1554,7 +1548,7 @@ static const struct imx_pcie_drvdata drv
+ 	[IMX6QP] = {
+ 		.variant = IMX6QP,
+ 		.flags = IMX_PCIE_FLAG_IMX_PHY |
+-			 IMX_PCIE_FLAG_IMX_SPEED_CHANGE |
++			 IMX_PCIE_FLAG_SPEED_CHANGE_WORKAROUND |
+ 			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
+ 		.dbi_length = 0x200,
+ 		.gpr = "fsl,imx6q-iomuxc-gpr",

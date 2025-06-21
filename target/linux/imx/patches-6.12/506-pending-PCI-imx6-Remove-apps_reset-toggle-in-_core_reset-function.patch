@@ -1,0 +1,52 @@
+From d8588b5b9fddffd51962c13db7d00ae6f2ac945b Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Thu, 19 Jun 2025 16:04:53 -0700
+Subject: [PATCH] PCI: imx6: Remove apps_reset toggle in _core_reset functions
+
+apps_reset is LTSSM_EN on i.MX7, i.MX8MQ, i.MX8MM and i.MX8MP platforms.
+Since the assertion/de-assertion of apps_reset(LTSSM_EN bit) had been
+wrappered in imx_pcie_ltssm_enable() and imx_pcie_ltssm_disable();
+
+Remove apps_reset toggle in imx_pcie_assert_core_reset() and
+imx_pcie_deassert_core_reset() functions. Use imx_pcie_ltssm_enable()
+and imx_pcie_ltssm_disable() to configure apps_reset directly.
+
+Fix fail to enumerate reliably PI7C9X2G608GP (hotplug) at i.MX8MM, which
+reported By Tim.
+
+Reported-by: Tim Harvey <tharvey@gateworks.com>
+Closes: https://lore.kernel.org/all/CAJ+vNU3ohR2YKTwC4xoYrc1z-neDoH2TTZcMHDy+poj9=jSy+w@mail.gmail.com/
+Fixes: ef61c7d8d032 ("PCI: imx6: Deassert apps_reset in imx_pcie_deassert_core_reset()")
+Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -763,7 +763,6 @@ static int imx7d_pcie_core_reset(struct
+ static void imx_pcie_assert_core_reset(struct imx_pcie *imx_pcie)
+ {
+ 	reset_control_assert(imx_pcie->pciephy_reset);
+-	reset_control_assert(imx_pcie->apps_reset);
+ 
+ 	if (imx_pcie->drvdata->core_reset)
+ 		imx_pcie->drvdata->core_reset(imx_pcie, true);
+@@ -775,7 +774,6 @@ static void imx_pcie_assert_core_reset(s
+ static int imx_pcie_deassert_core_reset(struct imx_pcie *imx_pcie)
+ {
+ 	reset_control_deassert(imx_pcie->pciephy_reset);
+-	reset_control_deassert(imx_pcie->apps_reset);
+ 
+ 	if (imx_pcie->drvdata->core_reset)
+ 		imx_pcie->drvdata->core_reset(imx_pcie, false);
+@@ -976,6 +974,9 @@ static int imx_pcie_host_init(struct dw_
+ 		}
+ 	}
+ 
++	/* Make sure that PCIe LTSSM is cleared */
++	imx_pcie_ltssm_disable(dev);
++
+ 	ret = imx_pcie_deassert_core_reset(imx_pcie);
+ 	if (ret < 0) {
+ 		dev_err(dev, "pcie deassert core reset failed: %d\n", ret);
