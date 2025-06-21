@@ -1523,6 +1523,40 @@ define Device/openembed_som7981
 endef
 TARGET_DEVICES += openembed_som7981
 
+define Device/nanowrt_ax3
+  DEVICE_VENDOR := NanoWrt
+  DEVICE_MODEL := AX3
+  DEVICE_DTS := mt7981b-nanowrt-ax3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+                     kmod-usb3 kmod-usb-serial-option kmod-usb-net-cdc-ether kmod-usb-net-qmi-wwan \
+                     kmod-hwmon-pwmfan fitblk f2fsck mkf2fs e2fsprogs
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+                      fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  IMAGE/sysupgrade.itb := append-kernel | \
+                      fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+                      pad-rootfs | append-metadata
+  ARTIFACTS := sdcard.img.gz
+  ARTIFACT/sdcard.img.gz := mt798x-gpt sdmmc | \
+                      pad-to 17k | mt7981-bl2 sdmmc-ddr4 | \
+                      pad-to 6656k | mt7981-bl31-uboot openwrt-som7981 | \
+                      $$(if $$(CONFIG_TARGET_ROOTFS_INITRAMFS), \
+                      pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 52m | \
+                      ) \
+                      $$(if $$(CONFIG_TARGET_ROOTFS_SQUASHFS), \
+                      pad-to 64M | append-image squashfs-sysupgrade.itb | check-size | \
+                      ) \
+                      gzip
+endef
+TARGET_DEVICES += nanowrt_ax3
+
 define Device/openwrt_one
   DEVICE_VENDOR := OpenWrt
   DEVICE_MODEL := One

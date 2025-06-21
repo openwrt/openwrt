@@ -85,6 +85,7 @@ platform_do_upgrade() {
 	mercusys,mr90x-v1-ubi|\
 	netis,nx31|\
 	nokia,ea0326gmp|\
+	nanowrt,ax3|\
 	openwrt,one|\
 	netcore,n60|\
 	netcore,n60-pro|\
@@ -219,6 +220,7 @@ platform_check_image() {
 	mediatek,mt7988a-rfb|\
 	mercusys,mr90x-v1-ubi|\
 	nokia,ea0326gmp|\
+	nanowrt,ax3|\
 	openwrt,one|\
 	netcore,n60|\
 	qihoo,360t7|\

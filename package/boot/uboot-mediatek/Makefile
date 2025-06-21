@@ -375,6 +375,31 @@ define U-Boot/mt7981_openwrt_one-nor
   DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr4
 endef
 
+define U-Boot/mt7981_nanowrt_ax3-sdmmc
+  NAME:=NanoWrt AX3 SDMMC
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=nanowrt_ax3
+  UBOOT_CONFIG:=mt7981_nanowrt-ax3-sd
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-sdmmc-ddr4
+endef
+
+define U-Boot/mt7981_nanowrt_ax3-nor
+  NAME:=NanoWrt AX3 NOR
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=nanowrt_ax3
+  UBOOT_CONFIG:=mt7981_nanowrt-ax3-nor
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  FIP_COMPRESS:=1
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr4
+endef
+
 define U-Boot/mt7981_rfb-spim-nand
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -916,6 +941,8 @@ UBOOT_TARGETS := \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \
 	mt7981_openwrt_one-nor \
+  mt7981_nanowrt_ax3-sdmmc \
+  mt7981_nanowrt_ax3-nor \
 	mt7981_rfb-spim-nand \
 	mt7981_rfb-emmc \
 	mt7981_rfb-nor \
