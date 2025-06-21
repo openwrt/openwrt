@@ -1,0 +1,68 @@
+From bef5018abb7cf94efafdc05087b4c998891ae4ec Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Mon, 17 Jan 2022 23:39:34 +0100
+Subject: [PATCH v3 10/18] ARM: dts: qcom: add saw for l2 cache and kraitcc for
+ ipq8064
+
+Add saw compatible for l2 cache and kraitcc node for ipq8064 dtsi.
+Also declare clock-output-names for acc0 and acc1 and qsb fixed clock
+for the secondary mux.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+---
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi | 34 +++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
+@@ -302,6 +302,12 @@
+ 	};
+ 
+ 	clocks {
++		qsb: qsb {
++			compatible = "fixed-clock";
++			clock-frequency = <225000000>;
++			#clock-cells = <0>;
++		};
++
+ 		cxo_board: cxo_board {
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+@@ -570,7 +576,7 @@
+ 		};
+ 
+ 		saw0: power-manager@2089000 {
+-			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2";
++			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
+ 			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
+ 		};
+ 
+@@ -584,10 +590,26 @@
+ 		};
+ 
+ 		saw1: power-manager@2099000 {
+-			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2";
++			compatible = "qcom,ipq8064-saw2-cpu", "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
+ 			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
+ 		};
+ 
++		saw_l2: regulator@02012000 {
++			compatible = "qcom,saw2", "syscon";
++			reg = <0x02012000 0x1000>;
++			regulator;
++		};
++
++		kraitcc: clock-controller {
++			compatible = "qcom,krait-cc-v1";
++			clocks = <&gcc PLL9>, <&gcc PLL10>, <&gcc PLL12>,
++				 <&acc0>, <&acc1>, <&l2cc>, <&qsb>, <&pxo_board>;
++			clock-names = "hfpll0", "hfpll1", "hfpll_l2",
++				      "acpu0_aux", "acpu1_aux", "acpu_l2_aux",
++				      "qsb", "pxo";
++			#clock-cells = <1>;
++		};
++
+ 		nss_common: syscon@3000000 {
+ 			compatible = "syscon";
+ 			reg = <0x03000000 0x0000FFFF>;
