@@ -1,0 +1,69 @@
+#!/bin/bash
+# Copyright (C) 2024 SolomonRicky <yizhen.c02@gmail.com>
+
+# Fetch comm port from setting
+commport=$(uci get modeminfo.settings.comm)
+
+# Internet detection function
+check_internet() {
+    # Try to ping Google's DNS server
+    ping -c 1 8.8.8.8 &>/dev/null
+    if [ $? -eq 0 ]; then
+        # Internet is connected - Green LED ON, Red LED OFF
+        echo none > /sys/class/leds/red:internet/trigger
+        echo 0 > /sys/class/leds/red:internet/brightness
+        echo none > /sys/class/leds/green:internet/trigger
+        echo 1 > /sys/class/leds/green:internet/brightness
+    else
+        # Internet is disconnected - Red LED ON, Green LED OFF
+        echo none > /sys/class/leds/green:internet/trigger
+        echo 0 > /sys/class/leds/green:internet/brightness
+        echo none > /sys/class/leds/red:internet/trigger
+        echo 1 > /sys/class/leds/red:internet/brightness
+    fi
+}
+
+while true; do
+    # Read the modem signal status from /dev/ttyUSB3
+    signal=$(sms_tool -d ${commport} at "at+qeng=\"servingcell\"")
+
+    # Debug: Show the raw signal output
+    echo "Signal output: $signal"
+
+    # Check for LTE signal (even if NOCONN is present)
+    if echo "$signal" | grep -q "LTE"; then
+        # LTE is available - Blue signal LED ON, Red signal LED OFF
+        echo none > /sys/class/leds/red:signal/trigger
+        echo 0 > /sys/class/leds/red:signal/brightness
+        echo none > /sys/class/leds/blue:signal/trigger
+        echo 1 > /sys/class/leds/blue:signal/brightness
+    else
+        # LTE is not available - Red signal LED ON, Blue signal LED OFF
+        echo none > /sys/class/leds/red:signal/trigger
+        echo 1 > /sys/class/leds/red:signal/brightness
+        echo none > /sys/class/leds/blue:signal/trigger
+        echo 0 > /sys/class/leds/blue:signal/brightness
+    fi
+
+    # Check for 5G signal (NR5G-NSA or NR5G-SA)
+    if echo "$signal" | grep -q "NR5G-NSA" || echo "$signal" | grep -q "NR5G-SA"; then
+        # 5G is available - Blue 5G LED ON, Red 5G LED OFF
+        echo none > /sys/class/leds/red:5g/trigger
+        echo 0 > /sys/class/leds/red:5g/brightness
+        echo none > /sys/class/leds/blue:5g/trigger
+        echo 1 > /sys/class/leds/blue:5g/brightness
+    else
+        # 5G is not available - Red 5G LED ON, Blue 5G LED OFF
+        echo none > /sys/class/leds/red:5g/trigger
+        echo 1 > /sys/class/leds/red:5g/brightness
+        echo none > /sys/class/leds/blue:5g/trigger
+        echo 0 > /sys/class/leds/blue:5g/brightness
+    fi
+
+    # Check internet connectivity
+    check_internet
+
+    # Sleep for a while before checking again
+    sleep 10
+done
+

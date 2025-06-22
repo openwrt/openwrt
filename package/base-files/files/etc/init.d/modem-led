@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+
+START=35
+STOP=10
+PIDFILE=/var/run/modem_led.pid
+
+start() {
+    /usr/bin/modem-led &  # Start the script in the background
+    echo $! > $PIDFILE    # Store the PID of the background process
+}
+
+stop() {
+    if [ -f $PIDFILE ]; then
+        kill $(cat $PIDFILE)  # Kill the process using the stored PID
+        rm $PIDFILE           # Remove the PID file
+    else
+        echo "Modem LED control script is not running."
+    fi
+}

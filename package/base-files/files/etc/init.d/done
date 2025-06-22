@@ -5,7 +5,6 @@ START=95
 boot() {
 	mount_root done
 	rm -f /sysupgrade.tgz && sync
-	rm -f /tmp/sysupgrade.tar && sync
 
 	# process user commands
 	[ -f /etc/rc.local ] && {

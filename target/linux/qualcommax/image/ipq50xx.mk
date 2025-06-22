@@ -18,6 +18,20 @@ define Build/mstc-header
 	rm -f $@.crclen
 endef
 
+define Device/xunison_d50
+  DEVICE_VENDOR := Xunison
+  DEVICE_MODEL := D50
+  DEVICE_DTS := qcom-ipq5018-xunison-d50
+  DEVICE_DTS_CONFIG := config@hk01
+  DEVICE_PACKAGES := kmod-ath11k-pci kmod-usb3 kmod-usb-dwc3-qcom \
+                     kmod-qca-nss-dp kmod-qca-nss-drv \
+                     e2fsprogs kmod-fs-ext4 losetup
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES := xunison,d50
+endef
+TARGET_DEVICES += xunison_d50
+
 define Device/elecom_wrc-x3000gs2
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ELECOM

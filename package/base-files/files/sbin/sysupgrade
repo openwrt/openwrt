@@ -11,7 +11,6 @@ INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 COMMAND=/lib/upgrade/do_stage2
 
 # File-local globals
-ADD_PROVISIONING=0
 SAVE_OVERLAY=0
 SAVE_OVERLAY_PATH=
 SAVE_PARTITIONS=1
@@ -21,7 +20,6 @@ CONF_IMAGE=
 CONF_BACKUP_LIST=0
 CONF_BACKUP=
 CONF_RESTORE=
-USE_CURR_PART=0
 NEED_IMAGE=
 HELP=0
 TEST=0
@@ -46,14 +44,12 @@ while [ -n "$1" ]; do
 		-c) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
 		-o) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
 		-p) SAVE_PARTITIONS=0;;
-		-P) ADD_PROVISIONING=1;;
 		-k) SAVE_INSTALLED_PKGS=1;;
 		-u) SKIP_UNCHANGED=1;;
 		-b|--create-backup) CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-l|--list-backup) CONF_BACKUP_LIST=1;;
 		-f) CONF_IMAGE="$2"; shift;;
-		-s) USE_CURR_PART=1;;
 		-F|--force) export FORCE=1;;
 		-T|--test) TEST=1;;
 		-h|--help) HELP=1; break;;
@@ -70,7 +66,7 @@ done
 print_help() {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
-       $0 [-q] [-i] [-c] [-u] [-o] [-k] [-P] <backup-command> <file>
+       $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
 
 upgrade-option:
 	-f <config>  restore configuration from .tar.gz (file or url)
@@ -83,9 +79,6 @@ upgrade-option:
 	-p           do not attempt to restore the partition table after flash.
 	-k           include in backup a list of current installed packages at
 	             $INSTALLED_PACKAGES
-	-s           stay on current partition (for dual firmware devices)
-	-P           create provisioning partition to keep sensitive data across
-	             factory resets.
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -278,7 +271,7 @@ create_backup_archive() {
 				fi
 			done
 			disabled="$disabled\nexit 0"
-			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" "$(date -r /etc/rc.d "+%s")" || ret=1
+			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" || ret=1
 		fi
 
 		# Part of archive with installed packages info
@@ -286,19 +279,11 @@ create_backup_archive() {
 			if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
 				# Format: pkg-name<TAB>{rom,overlay,unknown}
 				# rom is used for pkgs in /rom, even if updated later
-				if [ -d "/usr/lib/opkg/info" ]; then
-					tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
-						\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
-						\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
-						\( -exec echo {} unknown \; \) \
-						\) | sed -e 's,.*/,,;s/\.control /\t/')" || ret=1
-				elif [ -d "/lib/apk/packages" ]; then
-					tar_print_member "$INSTALLED_PACKAGES" "$(find /lib/apk/packages -name "*.list" \( \
-						\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
-						\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
-						\( -exec echo {} unknown \; \) \
-						\) | sed -e 's,.*/,,;s/\.list /\t/')" || ret=1
-				fi
+				tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
+					\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
+					\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
+					\( -exec echo {} unknown \; \) \
+					\) | sed -e 's,.*/,,;s/\.control /\t/')" || ret=1
 			fi
 		fi
 
@@ -384,9 +369,8 @@ json_load "$(/usr/libexec/validate_firmware_image "$IMAGE")" || {
 	exit 1
 }
 json_get_var valid "valid"
-json_get_var forceable "forceable"
 [ "$valid" -eq 0 ] && {
-	if [ $FORCE -eq 1 ] && [ "$forceable" -eq 1 ]; then
+	if [ $FORCE -eq 1 ]; then
 		echo "Image check failed but --force given - will update anyway!" >&2
 	else
 		echo "Image check failed." >&2
@@ -432,8 +416,6 @@ else
 	json_add_string command "$COMMAND"
 	json_add_object options
 	json_add_int save_partitions "$SAVE_PARTITIONS"
-	json_add_int add_provisioning "$ADD_PROVISIONING"
-	[ $USE_CURR_PART -eq 1 ] && json_add_boolean use_curr_part 1
 	json_close_object
 
 	ubus call system sysupgrade "$(json_dump)"

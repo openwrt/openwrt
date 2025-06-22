@@ -18,6 +18,20 @@ define Build/asus-fake-rootfs
 		$(wordlist 4,$(words $(1)),$(1))
 endef
 
+define Device/sagemcom_fast-5866t
+  $(call Device/Default)
+  DEVICE_VENDOR := Sagemcom
+  DEVICE_MODEL := FAST 5866T
+  DEVICE_DTS := ipq8074-sagemcom-fast-5866t
+  DEVICE_DTS_CONFIG := config@hk07
+  IMAGE_SIZE := 32m
+  DEVICE_PACKAGES := \
+    kmod-ath11k-pci kmod-qca-nss-dp kmod-qca-nss-drv \
+    kmod-usb3 kmod-usb-net-qmi-wwan
+  SUPPORTED_DEVICES += sagemcom,fast-5866t
+endef
+TARGET_DEVICES += sagemcom_fast-5866t
+
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asusuimage $(wordlist 1,$(words $(1)),$(1)) -i $@ -o $@.new
 	mv $@.new $@
