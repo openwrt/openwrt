@@ -1,0 +1,15 @@
+#!/usr/sbin/nft -f
+
+table inet custom_ttl {
+    chain prerouting {
+        type filter hook prerouting priority -300; policy accept;
+        ip ttl set 64
+        ip6 hoplimit set 64
+    }
+    chain postrouting {
+        type filter hook postrouting priority -300; policy accept;
+        ip ttl set 64
+        ip6 hoplimit set 64
+    }
+}
+
