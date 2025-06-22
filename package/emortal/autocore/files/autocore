@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2017 lean <coolsnowwolf@gmail.com>
+
+START=99
+
+start() {
+	rfc=4096
+	threads="$(grep -c "processor" "/proc/cpuinfo")"
+
+	sysctl -w net.core.rps_sock_flow_entries="$(( rfc * threads ))"
+
+	for fileRps in /sys/class/net/eth*/queues/rx-*/rps_cpus
+	do
+		echo "$threads" > "$fileRps"
+	done
+
+	for fileRfc in /sys/class/net/eth*/queues/rx-*/rps_flow_cnt
+	do
+		echo "$rfc" > "$fileRfc"
+	done
+
+	uci set network.@globals[0].packet_steering="1"
+	uci commit network
+
+	for i in $(ip address | awk -F ': ' '/eth[0-9]+/ {print $2}' | grep -v '@' | xargs)
+	do
+		ethtool -K "$i" rx-checksum on
+		ethtool -K "$i" tx-checksum-ip-generic on || {
+			ethtool -K "$i" tx-checksum-ipv4 on
+			ethtool -K "$i" tx-checksum-ipv6 on
+		}
+		ethtool -K "$i" tx-scatter-gather on
+		ethtool -K "$i" gso on
+		ethtool -K "$i" tso on
+		ethtool -K "$i" ufo on
+
+		if ethtool -i "$i" | grep -q "driver: igc"; then
+			ethtool -G "$i" rx "$(ethtool -g "$i" | awk '/^RX:/ {print $2; exit}')"
+			ethtool -G "$i" tx "$(ethtool -g "$i" | awk '/^TX:/ {print $2; exit}')"
+		fi
+	done
+} >"/dev/null" 2>&1

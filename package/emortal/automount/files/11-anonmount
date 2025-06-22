@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if ! uci -q get system.@imm_init[0].anon_mount > "/dev/null"; then
+	uci -q batch <<-EOF
+		set fstab.@global[0].anon_mount="1"
+		commit fstab
+
+		set system.@imm_init[0].anon_mount="1"
+		commit system
+	EOF
+fi
+
+exit 0

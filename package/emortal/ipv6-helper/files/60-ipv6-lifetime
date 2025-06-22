@@ -1,0 +1,18 @@
+#!/bin/sh
+
+uci -q get system.@imm_init[0] > "/dev/null" || uci -q add system imm_init > "/dev/null"
+[ "$(uci -q get system.@imm_init[0].ipv6)" = "2" ] && exit 0
+
+uci -q batch <<-EOF
+	delete dhcp.lan.dhcpv6
+	delete dhcp.lan.ra_flags
+	add_list dhcp.lan.ra_flags="other-config"
+	set dhcp.lan.max_preferred_lifetime="2700"
+	set dhcp.lan.max_valid_lifetime="5400"
+	commit dhcp
+
+	set system.@imm_init[0].ipv6="2"
+	commit system
+EOF
+
+exit 0
