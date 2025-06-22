@@ -1253,11 +1253,9 @@ define KernelPackage/iavf
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
   DEPENDS:=@PCI_SUPPORT +!LINUX_6_6:kmod-libie
   KCONFIG:= \
-       CONFIG_I40EVF \
        CONFIG_IAVF
   FILES:= \
        $(LINUX_DIR)/drivers/net/ethernet/intel/iavf/iavf.ko
-  AUTOLOAD:=$(call AutoProbe,i40evf iavf)
   AUTOLOAD:=$(call AutoProbe,iavf)
 endef
 
