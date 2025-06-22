@@ -1,0 +1,27 @@
+#!/bin/sh
+#script by AbiDarwish
+	
+INTERRUPT=$(ls /proc/irq/ | sed '/default/d')
+USB3_NUMBER=$(grep usb3 /proc/interrupts | awk -F: '{print $1}' | sed 's/^ //')
+	
+for i in ${INTERRUPT}; do
+	if [[ $i = ${USB3_NUMBER} ]]; then
+			echo 9 > /proc/irq/$i/smp_affinity 2>/dev/null
+		else
+			echo c > /proc/irq/$i/smp_affinity 2>/dev/null
+		fi
+done
+	
+IFACE=$(ls /sys/class/net)
+	
+for i in ${IFACE}; do
+	ethtool -K $i gro on 2>/dev/null
+	if [[ -e /sys/class/net/$i/queues/rx-0/rps_cpus ]]; then
+		if [[ $i = "wwan0" ]]; then
+			echo a > /sys/class/net/$i/queues/rx-0/rps_cpus
+		else
+			echo a > /sys/class/net/$i/queues/rx-0/rps_cpus
+		fi
+	fi
+done
+
