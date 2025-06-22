@@ -1,0 +1,875 @@
+#!/bin/sh
+#script by Abi Darwish
+
+VERSIONNAME="Helium v"
+VERSIONNUMBER="3.3"
+GREEN="\e[1;32m"
+RED="\e[1;31m"
+WHITE="\e[1m"
+NOCOLOR="\e[0m"
+
+providers="/etc/dnsmasq/providers.txt"
+dnsmasqHostFinalList="/etc/dnsmasq/adblock.hosts"
+tempHostsList="/etc/dnsmasq/list.tmp"
+publicIP=$(ip -4 addr | sed -ne 's|^.* inet \([^/]*\)/.* scope global.*$|\1|p' | awk '{print $1}' | head -1)
+
+function header() {
+	echo -e $GREEN" $VERSIONNAME$VERSIONNUMBER" $NOCOLOR
+	echo -e $WHITE" by Abi Darwish" $NOCOLOR
+}
+
+function install() {
+	read -p " Do you want to install Helium? [y/n]: " INSTALL
+	[[ ${INSTALL} != y ]] && exit 0
+	echo -e " Installing Helium..."
+	[[ ! -e /etc/dnsmasq ]] && mkdir -p /etc/dnsmasq
+	if ! opkg list-installed | grep -q diffutils; then
+		opkg update >/dev/null 2>&1
+		if [[ $? != 0 ]]; then
+			printf " Failed to update packages"
+			printf "\n Installing packages manually..."
+			wget -q -O /tmp/diffutils.ipk https://mirror-03.infra.openwrt.org/releases/packages-24.10/aarch64_cortex-a53/packages/diffutils_3.10-r1_aarch64_cortex-a53.ipk
+			opkg install /tmp/diffutils.ipk >/dev/null 2>&1
+			sleep 1
+		else
+			printf " Updating packages..."
+			printf "\n Installing packages..."
+			opkg install diffutils >/dev/null 2>&1
+			sleep 1
+		fi
+		echo
+	fi
+	sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+	echo "addn-hosts=/etc/dnsmasq/adblock.hosts" >>/etc/dnsmasq.conf
+	# if [ $(uname -a | cut -d' ' -f2) != "QWRT" ]; then
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+		uci -q delete dhcp.@dnsmasq[0].addnhosts
+		uci add_list dhcp.@dnsmasq[0].addnhosts='/etc/dnsmasq/adblock.hosts'
+		uci commit
+	fi
+	rm -rf ${providers}
+	wget -q -O ${providers} "https://raw.githubusercontent.com/abidarwish/helium/main/providers.txt"
+	updateEngine
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	clear
+    printf '\033[3J'
+    header
+    echo
+	echo -e " Installation completed"
+	sleep 1
+	echo -e " Type \e[1;32mhelium\e[0m to start"
+	echo
+	exit 0
+}
+
+function start() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") != 0 ]]; then
+		heliumStatus
+		echo
+		read -p $' Press Enter to continue...'
+		mainMenu
+	elif [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) != 0 ]]; then
+		heliumStatus
+		echo
+		read -p $' Press Enter to continue...'
+		mainMenu
+	else
+		echo -e -n " Starting Helium..."
+		sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+		echo "addn-hosts=/etc/dnsmasq/adblock.hosts" >>/etc/dnsmasq.conf
+		if [ $(uname -a | cut -d' ' -f2) != "QWRT" ]; then
+			sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+			uci -q delete dhcp.@dnsmasq[0].addnhosts
+			uci add_list dhcp.@dnsmasq[0].addnhosts='/etc/dnsmasq/adblock.hosts'
+			uci commit
+		fi
+		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		sleep 2
+		echo -e $GREEN"done"$NOCOLOR
+		echo
+		read -p $' Press Enter to continue...'
+		mainMenu
+	fi
+}
+
+function stop() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	heliumStatus
+	echo
+	if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") != 0 ]] || [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) != 0 ]]; then
+		read -p " Do you want to stop Helium? [y/n]: " STOP
+		if [[ ${STOP} == "y" ]]; then
+			sed -i 's/addn-hosts/#addn-hosts/' /etc/dnsmasq.conf
+			uci -q delete dhcp.@dnsmasq[0].addnhosts
+			uci commit
+			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			echo -e -n " Stopping Helium..."
+			sleep 2
+			echo -e $GREEN"done"$NOCOLOR
+			echo
+			read -p " Press Enter to continue..."
+			mainMenu
+		else
+			mainMenu
+		fi
+	else
+		echo " Helium is not running"
+		echo
+		read -p " Press Enter to continue..."
+		mainMenu
+	fi
+}
+
+function DNSOption() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+        heliumStatus
+        echo
+	echo -e " ${WHITE}Change DNS${NOCOLOR}"
+	echo -e " [1] Google
+ [2] Cloudflare
+ [3] Cloudflare for Families
+ [4] Adguard DNS
+ [5] Adguard Family
+ [6] Quad9
+ [7] Custom (bypass Netflix)
+ [8] Main menu"
+	echo
+	read -p $' Enter option [1-8]: ' MENU_OPTION
+	case ${MENU_OPTION} in
+	1)
+		googleDNS
+		;;
+	2)
+		cloudflareDNS
+		;;
+	3)
+		cloudflareForFamilies
+		;;
+	4)
+		adguardDNS
+		;;
+	5)
+		adguardFamily
+		;;
+	6)
+		quad9
+		;;
+	7)
+		customDNS
+		;;
+	8)
+		mainMenu
+		;;
+	*)
+		DNSOption
+		;;
+	esac
+}
+
+function changeDNS() {
+	echo -e -n " Changing to ${PROVIDER} DNS..."
+	OLD_DNS=$(grep -E -w "^server" /etc/dnsmasq.conf | cut -d '=' -f2)
+	sed -i "s/server=${OLD_DNS}/server=${NEW_DNS}/" /etc/dnsmasq.conf
+	systemctl restart dnsmasq
+	sleep 3
+	echo
+	echo -e -n " DNS server has been changed to "
+	echo -e -n $GREEN"${NEW_DNS}"$NOCOLOR
+	sleep 1
+	echo
+	echo
+	read -p " Press Enter to continue..."
+	DNSOption
+}
+
+function googleDNS() {
+	PROVIDER=Google
+	NEW_DNS="8.8.8.8"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function cloudflareDNS() {
+	PROVIDER=Cloudflare
+	NEW_DNS="1.1.1.1"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function cloudflareForFamilies() {
+	PROVIDER="Cloudflare for Families"
+	NEW_DNS="1.1.1.3"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function adguardDNS() {
+	PROVIDER=Adguard
+	NEW_DNS="94.140.14.14"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function adguardFamily() {
+	PROVIDER="Adguard Family"
+	NEW_DNS="94.140.14.15"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function quad9() {
+	PROVIDER="Quad 9"
+	NEW_DNS="9.9.9.9"
+	clear
+	printf '\033[3J'
+	header
+	echo
+	changeDNS
+}
+
+function customDNS() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	read -p " Type DNS IP address (press c to cancel): " NEW_DNS
+	[[ ${NEW_DNS} == "c" ]] && DNSOption
+	[[ -z ${NEW_DNS} ]] && customDNS
+	PROVIDER=custom
+	changeDNS
+}
+
+function reinstall() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	read -p " Do you want to reinstall Helium? [y/n]: " REINSTALL
+	[[ ${REINSTALL} != "y" ]] && mainMenu
+	echo -e -n " Reinstalling Helium..."
+	sleep 2
+	[[ ! -e /etc/dnsmasq ]] && mkdir -p /etc/dnsmasq
+	sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+	echo "addn-hosts=/etc/dnsmasq/adblock.hosts" >>/etc/dnsmasq.conf
+	if [ $(uname -a | cut -d' ' -f2) != "QWRT" ]; then
+		sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+		uci -q delete dhcp.@dnsmasq[0].addnhosts
+		uci add_list dhcp.@dnsmasq[0].addnhosts='/etc/dnsmasq/adblock.hosts'
+		uci commit
+	fi
+	rm -rf ${providers}
+	wget -q -O ${providers} "https://raw.githubusercontent.com/abidarwish/helium/main/providers.txt"
+	updateEngine
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	sleep 1
+	clear
+	printf '\033[3J'
+	header
+	echo
+	echo -e -n " Reinstallation completed"
+	sleep 1
+	echo
+	echo
+	echo -e " Type \e[1;32mhelium\e[0m to start"
+	echo
+	exit 0
+}
+
+function uninstall() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	read -p " Do you want to uninstall Helium? [y/n]: " UNINSTALL
+	[[ ${UNINSTALL} != "y" ]] && mainMenu
+	echo -e -n " Uninstalling Helium..."
+	rm -rf /etc/dnsmasq
+	sed -i '/addn-hosts/d' /etc/dnsmasq.conf
+	uci -q delete dhcp.@dnsmasq[0].addnhosts
+	uci commit
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	rm -rf /usr/sbin/helium
+	sleep 2
+	echo -e $GREEN"done"$NOCOLOR
+	echo
+	exit 0
+}
+
+function updateEngine() {
+	echo -e -n " Updating blocked hostnames..."
+	>${tempHostsList}
+	while IFS= read -r line; do
+		list_url=$(echo $line | grep -E -v "^#" | cut -d '"' -f2)
+		curl "${list_url}" 2>/dev/null | sed '/^!/d' | sed '/^#/d' | sed 's/||/0.0.0.0 /' | sed 's/127.0.0.1 //' | awk -F '^' '{print $1}' | sed '/^$/d' | sed 's/0.0.0.0 //g' | sed 's/^/0.0.0.0 /g' | grep "^0.0.0.0" >>${tempHostsList}
+	done <${providers}
+	[[ ! -e /etc/dnsmasq/blacklist.hosts ]] && touch /etc/dnsmasq/blacklist.hosts
+	DATA=$(cat /etc/dnsmasq/blacklist.hosts)
+	if [[ $(cat /etc/dnsmasq/blacklist.hosts | sed '/^$/d' | wc -l) != 0 ]]; then
+		for HOSTNAME in ${DATA}; do
+			echo "0.0.0.0 ${HOSTNAME}" >>${tempHostsList}
+		done
+	fi
+	[[ $(ip a | grep -w "inet6" | wc -l) != 0 ]] && grep "^0.0.0.0" ${tempHostsList} | sed 's/0.0.0.0/::1/' >>${tempHostsList}
+	cat ${tempHostsList} | sed '/^$/d' | sed '/^0.0.0.0 0.0.0.0/d' | sed '/^::1 0.0.0.0/d' | sort | uniq >${dnsmasqHostFinalList}
+	[[ ! -e /etc/dnsmasq/whitelist.hosts ]] && touch /etc/dnsmasq/whitelist.hosts
+	DATA=$(cat /etc/dnsmasq/whitelist.hosts)
+	for HOSTNAME in ${DATA}; do
+		sed -i "/${HOSTNAME}/d" /etc/dnsmasq/adblock.hosts
+	done
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	echo -e ${GREEN}"done"${NOCOLOR}
+	sleep 1
+	echo -e -n $GREEN" $(cat ${dnsmasqHostFinalList} | sed '/^$/d' | wc -l) "$NOCOLOR
+	echo -e "hostnames have been blocked"
+}
+
+function heliumStatus() {
+	BLOCKED_HOSTNAME=$(cat ${dnsmasqHostFinalList} | wc -l)
+	echo -e " ${WHITE}Helium Status${NOCOLOR}"
+	if [[ "$(/etc/init.d/dnsmasq status)" == "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") != 0 ]] || [[ "$(/etc/init.d/dnsmasq status)" == "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) != 0 ]]; then
+        printf " %-25s %1s ${GREEN}%7s${NOCOLOR}" "DNSMasq" ":" "running"
+        printf "\n %-25s %1s ${GREEN}%-7s\n${NOCOLOR}" "Blocked Hostnames" ":" "${BLOCKED_HOSTNAME}"
+	else
+        printf " %-25s %1s ${RED}%7s${NOCOLOR}" "DNSMasq" ":" "stopped"
+        printf "\n %-25s %1s ${RED}%-7s\n${NOCOLOR}" "Blocked hostnames" ":" "0"
+	fi
+}
+
+function listUpdate() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	#if dmesg | grep -q nss; then
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	read -p " Do you want to update blocked hostnames? [y/n]: " UPDATE
+	[[ ${UPDATE} != "y" ]] && mainMenu
+	updateEngine
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	echo
+	read -p " Press Enter to continue..."
+	mainMenu
+}
+
+function activateProvider() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	[[ ! -e /etc/dnsmasq/providers.tmp ]] && cp /etc/dnsmasq/providers.txt /etc/dnsmasq/providers.tmp
+	printf " ${WHITE}%-26s %10s${NOCOLOR}\n" "PROVIDERS" "STATUS"
+	echo " --------------------------------------"
+	while IFS= read -r line; do
+		ACTIVE_PROVIDER=$(echo $line | grep -v -E "^#" | cut -d '=' -f1)
+		INACTIVE_PROVIDER=$(echo $line | grep -E "^#" | cut -d '=' -f1 | sed -E 's/^#//g')
+		if [[ $(echo $line | grep -v -c -E "^#") -gt 0 ]]; then
+			printf " %-25s \e[1;32m%12s\e[0m\n" "${ACTIVE_PROVIDER}" "active"
+		else
+			printf " %-25s \e[1;31m%12s\e[0m\n" "${INACTIVE_PROVIDER}" "inactive"
+		fi
+	done </etc/dnsmasq/providers.tmp
+	echo
+	if [[ $(diff -q /etc/dnsmasq/providers.tmp /etc/dnsmasq/providers.txt | awk '{print $5}') = "differ" 2>/dev/null ]]; then
+		read -p " Select a provider to be activated
+ (press s to save changes or c to cancel): " SELECT
+		if [[ ${SELECT} == "s" ]]; then
+			mv /etc/dnsmasq/providers.tmp /etc/dnsmasq/providers.txt
+			echo " Applying changes..."
+			updateEngine
+			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			echo
+			read -p " Press Enter to continue..."
+			mainMenu
+		elif [[ ${SELECT} == "c" ]]; then
+			rm -rf /etc/dnsmasq/providers.tmp
+			activateProvider
+		fi
+	else
+		read -p " Select a provider to be activated
+ (press c to cancel): " SELECT
+	fi
+	if [[ ${SELECT} == "c" ]]; then
+		rm -rf /etc/dnsmasq/providers.tmp
+		mainMenu
+	fi
+	[[ ${SELECT} = "" ]] && activateProvider
+	if [[ $(grep -E -c -w "^#${SELECT}" /etc/dnsmasq/providers.tmp) -ne 0 ]]; then
+		sed -E -i "s/^\#${SELECT}/${SELECT}/" /etc/dnsmasq/providers.tmp
+		activateProvider
+	else
+		if [[ $(grep -E -c -w "^${SELECT}" /etc/dnsmasq/providers.tmp) -ne 0  ]]; then
+			echo -e " ${SELECT} is already active"
+		else
+			echo -e " ${SELECT} is not in the list"
+		fi
+	fi
+	echo
+	read -p " Press Enter to continue..."
+	activateProvider
+}
+
+function deactivateProvider() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	[[ ! -e /etc/dnsmasq/providers.tmp ]] && cp /etc/dnsmasq/providers.txt /etc/dnsmasq/providers.tmp
+	printf " ${WHITE}%-26s %10s${NOCOLOR}\n" "PROVIDERS" "STATUS"
+	echo " --------------------------------------"
+	while IFS= read -r line; do
+		ACTIVE_PROVIDER=$(echo $line | grep -v -E "^#" | cut -d '=' -f1)
+		INACTIVE_PROVIDER=$(echo $line | grep -E "^#" | cut -d '=' -f1 | sed -E 's/^#//g')
+		if [[ $(echo $line | grep -v -c -E "^#") -gt 0 ]]; then
+			printf " %-25s \e[1;32m%12s\e[0m\n" "${ACTIVE_PROVIDER}" "active"
+		else
+			printf " %-25s \e[1;31m%12s\e[0m\n" "${INACTIVE_PROVIDER}" "inactive"
+		fi
+	done </etc/dnsmasq/providers.tmp
+	echo
+	if [[ $(diff -q /etc/dnsmasq/providers.tmp /etc/dnsmasq/providers.txt | awk '{print $5}') = "differ" 2>/dev/null ]]; then
+		read -p " Select a provider to be activated
+ (press s to save changes or c to cancel): " SELECT
+		if [[ ${SELECT} == "s" ]]; then
+			mv /etc/dnsmasq/providers.tmp /etc/dnsmasq/providers.txt
+			echo " Applying changes..."
+			updateEngine
+			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			echo
+			read -p " Press Enter to continue..."
+			mainMenu
+		elif [[ ${SELECT} == "c" ]]; then
+			rm -rf /etc/dnsmasq/providers.tmp
+			deactivateProvider
+		fi
+	else
+		read -p " Select a provider to be deactivated
+ (press c to cancel): " SELECT
+	fi
+	if [[ ${SELECT} == "c" ]]; then
+		rm -rf /etc/dnsmasq/providers.tmp
+		mainMenu
+	fi
+	[[ ${SELECT} = "" ]] && deactivateProvider
+	if [[ $(grep -E -c -w "^${SELECT}" /etc/dnsmasq/providers.tmp) -ne 0 ]]; then
+		sed -E -i "s/^${SELECT}/\#${SELECT}/" /etc/dnsmasq/providers.tmp
+		deactivateProvider
+	else
+		if [[ $(grep -E -c -w "^#${SELECT}" /etc/dnsmasq/providers.tmp) -ne 0  ]]; then
+			echo -e " ${SELECT} is already inactive"
+		else
+			echo -e " ${SELECT} is not in the list"
+		fi
+	fi
+	echo
+	read -p " Press Enter to continue..."
+	deactivateProvider
+}
+
+function whitelistHost() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	[[ ! -e /etc/dnsmasq/whitelist.hosts ]] && touch /etc/dnsmasq/whitelist.hosts
+	[[ ! -e /etc/dnsmasq/whitelist.hosts.tmp ]] && cp /etc/dnsmasq/whitelist.hosts /etc/dnsmasq/whitelist.hosts.tmp
+	printf " ${WHITE}%-26s %10s${NOCOLOR}\n" "HOST" "STATUS"
+	echo " --------------------------------------"
+	[[ $(cat /etc/dnsmasq/whitelist.hosts.tmp | wc -l) = 0 ]] && echo -e " List is empty"
+	while IFS= read -r line; do
+		ACTIVE_HOST=$(echo $line)
+		printf " %-25s \e[1;32m%12s\e[0m\n" "${ACTIVE_HOST}" "whitelisted"
+	done </etc/dnsmasq/whitelist.hosts.tmp
+	echo
+	if [[ $(diff -q /etc/dnsmasq/whitelist.hosts.tmp /etc/dnsmasq/whitelist.hosts | awk '{print $5}') = "differ" 2>/dev/null ]]; then
+		read -p " Select a url from above to delete or type a new one to whitelist
+ (press s to save changes or c to cancel): " SELECT
+		if [[ ${SELECT} == "s" ]]; then
+			mv /etc/dnsmasq/whitelist.hosts.tmp /etc/dnsmasq/whitelist.hosts
+			updateEngine
+			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			echo
+			read -p " Press Enter to continue..."
+			mainMenu
+		elif [[ ${SELECT} == "c" ]]; then
+			rm -rf /etc/dnsmasq/whitelist.hosts.tmp
+			whitelistHost
+		fi
+	else
+		read -p " Select a url from above to delete or type a new one to whitelist
+ (press c to cancel): " SELECT
+	fi
+	if [[ ${SELECT} == "c" ]]; then
+		rm -rf /etc/dnsmasq/whitelist.hosts.tmp
+		mainMenu
+	fi
+	if [[ ${SELECT} == "s" ]]; then
+		whitelistHost
+	fi
+	[[ ${SELECT} = "" ]] && whitelistHost
+	if [[ $(grep -c -w "${SELECT}" /etc/dnsmasq/whitelist.hosts.tmp) == 0 ]]; then
+		echo "${SELECT}" >>/etc/dnsmasq/whitelist.hosts.tmp
+		sed -i '/^$/d' /etc/dnsmasq/whitelist.hosts.tmp
+		whitelistHost
+	else
+		read -p " Do you want to delete this url? [y/n]: " DELETE
+		if [[ ${DELETE} == "y" ]]; then
+			sed -E -i "/^${SELECT}/d" /etc/dnsmasq/whitelist.hosts.tmp
+			whitelistHost
+		else
+			whitelistHost
+		fi
+	fi
+}
+
+function blacklistHost() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	[[ ! -e /etc/dnsmasq/blacklist.hosts ]] && touch /etc/dnsmasq/blacklist.hosts
+	[[ ! -e /etc/dnsmasq/blacklist.hosts.tmp ]] && cp /etc/dnsmasq/blacklist.hosts /etc/dnsmasq/blacklist.hosts.tmp
+	printf " ${WHITE}%-26s %10s${NOCOLOR}\n" "HOST" "STATUS"
+	echo " --------------------------------------"
+	[[ $(cat /etc/dnsmasq/blacklist.hosts.tmp | wc -l) = 0 ]] && echo -e " List is empty"
+	while IFS= read -r line; do
+		ACTIVE_HOST=$(echo $line)
+		printf " %-25s ${GREEN}%12s${NOCOLOR}\n" "${ACTIVE_HOST}" "blacklisted"
+	done </etc/dnsmasq/blacklist.hosts.tmp
+	echo
+	if [[ $(diff -q /etc/dnsmasq/blacklist.hosts.tmp /etc/dnsmasq/blacklist.hosts | awk '{print $5}') = "differ" 2>/dev/null ]]; then
+		read -p " Select a url from above to delete or type a new one to blacklist
+ (press s to save changes or c to cancel): " SELECT
+		if [[ ${SELECT} == "s" ]]; then
+			mv /etc/dnsmasq/blacklist.hosts.tmp /etc/dnsmasq/blacklist.hosts
+			updateEngine
+			echo
+			read -p " Press Enter to continue..."
+			mainMenu
+		elif [[ ${SELECT} == "c" ]]; then
+			rm -rf /etc/dnsmasq/blacklist.hosts.tmp
+			blacklistHost
+		fi
+	else
+		read -p " Select a url from above to delete or type a new one to blacklist
+ (press c to cancel): " SELECT
+	fi
+	if [[ ${SELECT} == "c" ]]; then
+		rm -rf /etc/dnsmasq/blacklist.hosts.tmp
+		mainMenu
+	fi
+	if [[ ${SELECT} == "s" ]]; then
+		blacklistHost
+	fi
+	[[ ${SELECT} = "" ]] && blacklistHost
+	if [[ $(grep -c -w "${SELECT}" /etc/dnsmasq/blacklist.hosts.tmp) == 0 ]]; then
+		echo "${SELECT}" >>/etc/dnsmasq/blacklist.hosts.tmp
+		sed -i '/^$/d' /etc/dnsmasq/blacklist.hosts.tmp
+		blacklistHost
+	else
+		read -p " Do you want to delete this url? [y/n]: " DELETE
+		if [[ ${DELETE} == "y" ]]; then
+			sed -E -i "/^${SELECT}/d" /etc/dnsmasq/blacklist.hosts.tmp
+			blacklistHost
+		else
+			blacklistHost
+		fi
+	fi
+}
+
+function updateHelium() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts") = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	else
+		if [[ "$(/etc/init.d/dnsmasq status)" = "running" && $(grep -c "^addn-hosts" /etc/dnsmasq.conf) = 0 ]]; then
+			heliumStatus
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		fi
+	fi
+	echo -e -n " Checking for update..."
+	sleep 1
+	rm -rf /tmp/helium.tmp
+	wget -q -O /tmp/helium.tmp "http://abidarwish.online/arca/helium/helium.sh"
+	LATEST_HELIUM=$(grep -w "VERSIONNUMBER=" /tmp/helium.tmp | awk -F'"' '{print $2}' | head -n 1)
+	INSTALLED_HELIUM=$(grep -w "VERSIONNUMBER=" /usr/sbin/helium | awk -F'"' '{print $2}' | head -n 1)
+	if [[ ${INSTALLED_HELIUM} == ${LATEST_HELIUM} ]]; then
+		echo -e -n "\n Your Helium v${VERSIONNUMBER} is the latest version"
+		echo -e -n "\n No need to update"
+		echo
+		echo
+		read -p " Press Enter to continue..."
+		rm -rf /tmp/helium.tmp
+		mainMenu
+	fi
+	echo -n -e "\n New Helium v${LATEST_HELIUM} is available"
+	echo
+	echo
+	read -p " Do you want to update? [y/n]: " UPDATE
+	if [[ ${UPDATE} != "y" ]]; then
+		rm -rf /tmp/helium.tmp
+		mainMenu
+	fi
+	read -p " Do you want to overwrite the existing providers? [y/n]: " OVERWRITE
+	echo -n -e " Updating Helium..."
+	if [[ ${OVERWRITE} == "y" ]]; then
+		rm -rf /etc/dnsmasq/providers.txt
+		wget -q -O /etc/dnsmasq/providers.txt "https://raw.githubusercontent.com/abidarwish/helium/main/providers.txt"
+	fi
+	mv /tmp/helium.tmp /usr/sbin/helium
+	chmod 755 /usr/sbin/helium
+	echo
+	updateEngine
+	/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	sleep 1
+	echo
+	echo -e " Type \e[1;32mhelium\e[0m to start"
+	echo
+	exit 0
+}
+
+function enableDisableIPv6() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	if ! ip a | grep -q inet6; then
+		echo " IPv6 is disabled"
+		echo
+		read -p " Do you want to enable it? [y/n]: " ENABLE
+		if [ "${ENABLE}" == "y" ]; then
+			echo -e -n " Enabling IPv6..."
+			echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+			sed -i '/\/proc\/sys\/net\/ipv6\/conf\/all\/disable_ipv6/d' /etc/rc.local
+			sleep 1
+			echo -e $GREEN"done"$NOCOLOR
+			updateEngine
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		else
+			mainMenu
+		fi
+	else
+		read -p " Do you want to disable IPv6? [y/n]: " DISABLE
+		if [ "${DISABLE}" == "y" ]; then
+			echo -e -n " Disabling IPv6..."
+			echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+			sed -i '$i\echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6' /etc/rc.local
+			sleep 1
+			echo -e $GREEN"done"$NOCOLOR
+			updateEngine
+			echo
+			read -p $' Press Enter to continue...'
+			mainMenu
+		else
+			mainMenu
+		fi
+	fi
+}
+
+function mainMenu() {
+	clear
+	printf '\033[3J'
+	header
+	echo
+	heliumStatus
+	echo
+	echo -e " ${WHITE}Machine Info${NOCOLOR}"
+	CPU=$(cat /proc/cpuinfo | grep "model\|Model" | tail -n 1 | awk -F: '{print $2}' | cut -d " " -f2-3)
+	CPU_CORE=$(cat /proc/cpuinfo | grep -c "^processor")
+	source /etc/os-release
+	OS=${PRETTY_NAME}
+	KERNEL=$(uname -r)
+	RAM_USED=$(( $(free -m | grep Mem: | awk '{print $3}') / 1000 ))
+	TOTAL_RAM=$(( $(free -m | grep Mem: | awk '{print $2}') / 1000 ))
+	RAM_USAGE=$(( ($RAM_USED / $TOTAL_RAM) * 100 ))
+	UPTIME=$(uptime | cut -d, -f1 | sed -ne 's|.* up \(.*\)$|\1|p' | sed 's/^ //')
+	if [[ ${CPU_CORE} == 1 ]]; then
+		printf " %-25s %1s ${GREEN}%-7s\e[0m" "CPU (single core)" ":" "${CPU} @ ${CPU_MHZ}Mhz"
+	else
+		printf " %-25s %1s ${GREEN}%-7s\e[0m" "CPU (${CPU_CORE} cores)" ":" "${CPU}"
+	fi
+	printf "\n %-25s %1s ${GREEN}%-7s\e[0m" "OS Version" ":" "${OS}"
+	printf "\n %-25s %1s ${GREEN}%-7s\e[0m" "Kernel Version" ":" "${KERNEL}"
+	printf "\n %-25s %1s ${GREEN}%-7s\e[0m" "RAM Usage" ":" "${RAM_USED}MB / ${TOTAL_RAM}MB"
+	printf "\n %-25s %1s ${GREEN}%-7s${NOCOLOR}" "Uptime" ":" "${UPTIME}"
+	printf "\n %-25s %1s ${GREEN}%-7s${NOCOLOR}" "IP Address" ":" "${publicIP}"
+	echo
+	echo
+	echo -e $WHITE" Manage Helium"$NOCOLOR
+	echo -e " [ 1] Start Helium\t   [ 6] Whitelist host
+ [ 2] Stop Helium\t   [ 7] Blacklist host
+ [ 3] Update database\t   [ 8] Enable/disable IPv6
+ [ 4] Activate provider\t   [ 9] Uninstall Helium
+ [ 5] Deactivate provider  [10] Exit"
+	echo
+	read -p $' Enter option [1-10]: ' MENU_OPTION
+	case ${MENU_OPTION} in
+	1)
+		start
+		;;
+	2)
+		stop
+		;;
+	3)
+		listUpdate
+		;;
+	4)
+		activateProvider
+		;;
+	5)
+		deactivateProvider
+		;;
+	6)
+		whitelistHost
+		;;
+	7)
+		blacklistHost
+		;;
+	8)
+		enableDisableIPv6
+		;;
+	9)
+		uninstall
+		;;
+	10)
+		exit 0
+		;;
+	*)
+		mainMenu
+		;;
+	esac
+}
+
+# if [ $(uname -a | cut -d' ' -f2) != "QWRT" ]; then
+if ! cat /etc/openwrt_release | grep "DISTRIB_DESCRIPTION" | grep -q QWRT; then
+	if ! lsmod | grep -q nss; then
+        	echo "Only QWRT and NSS based OpenWrt are supported"
+        	exit 1
+	fi
+fi
+
+if [ "$(cat /tmp/sysinfo/model)" != "Arcadyan AW1000" ]; then
+        echo "Only Arcadyan AW1000 is supported"
+        exit 1
+fi
+
+if [[ "$(/etc/init.d/dnsmasq status)" = "running" && "$(uci -q get dhcp.@dnsmasq[0].addnhosts | grep -c -o "/etc/dnsmasq/adblock.hosts")" != "0" ]] || [[ "$(/etc/init.d/dnsmasq status)" = "running" && -e /etc/dnsmasq/adblock.hosts ]] || [[ "$(/etc/init.d/dnsmasq status)" = "running" && "$(grep -c "addn-hosts" /etc/dnsmasq.conf)" != "0" ]]; then
+	mainMenu
+else
+	clear
+	printf '\033[3J'
+	header
+	echo
+	install
+fi
