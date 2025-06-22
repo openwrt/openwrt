@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/upgrade/upgrade_dualboot.sh
+
+print_usage() {
+	if [ -n "$1" ]; then
+		printf "Error: %s\n" "$1"
+	fi
+	echo "Usage: ${0} -p [NUM]"
+	exit 1
+}
+
+while getopts 'p:' o; do
+	case "${o}" in
+		p)
+			PART_NUM="$OPTARG"
+			;;
+		*)
+			print_usage "Unknown argument $o"
+			;;
+	esac
+done
+
+if [ -z "$PART_NUM" ]; then
+	print_usage "Partition number is required"
+fi
+
+set_boot_part "$PART_NUM"

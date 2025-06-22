@@ -205,6 +205,10 @@ void __init prom_init(void)
 		soc_info.name = "RTL9311";
 		soc_info.family = RTL9310_FAMILY_ID;
 		break;
+	case 0x9312:
+		soc_info.name = "RTL9312";
+		soc_info.family = RTL9310_FAMILY_ID;
+		break;
 	case 0x9313:
 		soc_info.name = "RTL9313";
 		soc_info.family = RTL9310_FAMILY_ID;

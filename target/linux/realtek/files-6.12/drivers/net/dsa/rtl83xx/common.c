@@ -1106,6 +1106,12 @@ static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
 	struct rtl83xx_route *r;
 	struct rhlist_head *tmp, *list;
 
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		nh->fib_nh_flags &= ~RTNH_F_OFFLOAD;
+		return 0;
+	}
+
+	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
 	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
 	rcu_read_lock();
 	list = rhltable_lookup(&priv->routes, &nh->fib_nh_gw4, route_ht_params);
@@ -1231,6 +1237,10 @@ static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 	bool to_localhost;
 	int vlan = is_vlan_dev(dev) ? vlan_dev_vlan_id(dev) : 0;
 
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		return 0;
+	}
+
 	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
 	if (!info->dst) {
 		pr_info("Not offloading default route for now\n");
@@ -1339,7 +1349,9 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 		container_of(work, struct net_event_work, work);
 	struct rtl838x_switch_priv *priv = net_work->priv;
 
-	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+	if (priv->family_id != RTL9310_FAMILY_ID) {
+		rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+	}
 
 	kfree(net_work);
 }
@@ -1596,13 +1608,21 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
-		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
+		priv->irq_mask = 0x1FFFFFFFFFFFFFULL;
 		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = 57;
 		priv->fib_entries = 16384;
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
+		sw_w32(1, RTL931x_ST_CTRL);
 		priv->l2_bucket_size = 8;
+		priv->n_pie_blocks = 16;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 2048;
+		/**
+		 * Enable ISR_GLB_SERDES_UPD_PHYSTS and ISR_GLB_SERDES_RXIDLE interrupt
+		 */
+		sw_w32_mask(BIT(8) | BIT(15), BIT(8) | BIT(15), priv->r->isr_glb_src);
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
@@ -1645,7 +1665,10 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
-	sw_w32_mask(0, 3, priv->r->isr_glb_src);
+	sw_w32_mask(3, 3, priv->r->isr_glb_src);
+	/* Enable ISR_GLB_SERDES_UPD_PHYSTS interrupt */
+	sw_w32_mask(BIT(8), BIT(8), priv->r->isr_glb_src);
+	sw_w32_mask(BIT(15), BIT(15), priv->r->isr_glb_src);
 
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->isr_port_link_sts_chg);
 	priv->r->set_port_reg_le(priv->irq_mask, priv->r->imr_port_link_sts_chg);
@@ -1723,7 +1746,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	/* TODO: put this into l2_setup() */
 	/* Flood BPDUs to all ports including cpu-port */
-	if (soc_info.family != RTL9300_FAMILY_ID) {
+	if (soc_info.family != RTL9300_FAMILY_ID && soc_info.family != RTL9310_FAMILY_ID) {
 		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
 		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
 

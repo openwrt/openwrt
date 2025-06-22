@@ -204,6 +204,11 @@
 #define RTL930X_EEEP_PORT_CTRL(p)		(0x3278 + ((p) << 6))
 
 #define RTL931X_MAC_EEE_ABLTY			(0x0f08)
+#define RTL931X_EEE_PORT_TX_EN(p)		(0x5644 + ((p) >> 3))
+#define RTL931X_EEE_PORT_RX_EN(p)		(0x564c + ((p) >> 3))
+#define RTL931X_EEE_PORT_TX_STS			(0x5688)
+#define RTL931X_EEE_PORT_RX_STS			(0x5690)
+
 
 /* L2 functionality */
 #define RTL838X_L2_CTRL_0			(0x3200)
@@ -277,6 +282,7 @@
 #define MV_ACT_COPY2CPU				3
 
 #define RTL930X_ST_CTRL				(0x8798)
+#define RTL931x_ST_CTRL				(0x8000)
 
 #define RTL930X_L2_PORT_SABLK_CTRL		(0x905c)
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
@@ -617,6 +623,13 @@ typedef enum {
 #define L3_EGRESS_DMACS 2048
 #define MAX_SMACS 64
 
+/* Registers of the internal SerDes of the 9310 */
+#define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
+#define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
+#define RTL931X_SERDES_MODE_CTRL		(0x13cc)
+#define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
+#define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
+
 enum phy_type {
 	PHY_NONE = 0,
 	PHY_RTL838X_SDS = 1,
@@ -947,6 +960,7 @@ struct rtl83xx_flow {
 
 struct rtl93xx_route_attr {
 	bool valid;
+	bool fmt;
 	bool hit;
 	bool ttl_dec;
 	bool ttl_check;
@@ -1066,6 +1080,9 @@ struct rtl838x_reg {
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
+
+	int (*write_sds_phy)(int phy_addr, int page, int phy_reg, u16 v);
+	int (*read_sds_phy)(int phy_addr, int page, int phy_reg);
 };
 
 struct rtl838x_switch_priv {
