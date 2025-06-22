@@ -1,0 +1,464 @@
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+
+/ {
+	model = "Sagemcom FAST 5866T";
+	compatible = "sagemcom,fast-5866t", "qcom,ipq8074";
+	qcom,msm-id = <0x143 0x0>, <0x186 0x0>;
+	qcom,board-id = <0x08 0x0>;
+
+	aliases {
+		serial0 = &blsp1_uart5;
+		ethernet0 = "/soc/dp1";
+		ethernet1 = "/soc/dp2";
+		ethernet2 = "/soc/dp3";
+		ethernet3 = "/soc/dp4";
+		ethernet4 = "/soc/dp5";
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-running = &power_led;
+		led-upgrade = &power_led;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+	};
+
+	reserved-memory {
+		/delete-node/ wcnss@4b000000;
+		/delete-node/ q6_etr_dump@4e700000;
+
+		qcn9000_pcie0: qcn9000@4b000000 {
+			no-map;
+			reg = <0x0 0x4b000000 0x0 0x01d00000>;
+		};
+	};
+
+	soc {
+		pinctrl@1000000 {
+			button_pins: button_pins {
+				wps_button {
+					pins = "gpio_34";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+
+				reset_button {
+					pins = "gpio_35";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+			};
+
+			led_pins: led_pins {
+				wifi2g {
+					pins = "gpio_26";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-down;
+				};
+
+				wifi5g {
+					pins = "gpio_27";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-down;
+				};
+
+				power_led {
+					pins = "gpio_28";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-pull-down;
+				};
+			};
+		};
+
+		blsp1_uart5: serial@78b3000 {
+			status = "okay";
+			pinctrl-0 = <&blsp1_uart5_pins>;
+			pinctrl-names = "default";
+		};
+
+		dp1 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			reg = <0x3a001000 0x200>;
+			qcom,mactype = <0>;
+			qcom,id = <1>;
+			phy-mode = "sgmii";
+			phy-handle = <&phy0>;
+		};
+
+		dp2 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			reg = <0x3a001200 0x200>;
+			qcom,mactype = <0>;
+			qcom,id = <2>;
+			phy-mode = "sgmii";
+			phy-handle = <&phy1>;
+		};
+
+		dp3 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			reg = <0x3a001400 0x200>;
+			qcom,mactype = <0>;
+			qcom,id = <3>;
+			phy-mode = "sgmii";
+			phy-handle = <&phy2>;
+		};
+
+		dp4 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			reg = <0x3a001600 0x200>;
+			qcom,mactype = <0>;
+			qcom,id = <4>;
+			phy-mode = "sgmii";
+			phy-handle = <&phy3>;
+		};
+
+		dp5 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			reg = <0x3a001800 0x200>;
+			qcom,mactype = <0>;
+			qcom,id = <5>;
+			phy-mode = "sgmii";
+			phy-handle = <&phy4>;
+		};
+
+		mdio@90000 {
+			status = "okay";
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
+			phy-reset-gpio = <&tlmm 37 1>;
+
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
+
+		ess-switch@3a000000 {
+			switch_cpu_bmp = <0x1>;
+			switch_lan_bmp = <0x1e>;
+			switch_wan_bmp = <0x20>;
+			switch_mac_mode = <0x0>;
+			switch_mac_mode1 = <0xff>;
+			switch_mac_mode2 = <0xff>;
+			qcom,port_phyinfo {
+				port@0 {
+					port_id = <1>;
+					phy_address = <0>;
+				};
+				port@1 {
+					port_id = <2>;
+					phy_address = <1>;
+				};
+				port@2 {
+					port_id = <3>;
+					phy_address = <2>;
+				};
+				port@3 {
+					port_id = <4>;
+					phy_address = <3>;
+				};
+				port@4 {
+					port_id = <5>;
+					phy_address = <4>;
+				};
+			};
+		};
+
+		wifi0: wifi@a000000 {
+			status = "okay";
+			qcom,ath11k-calibration-variant = "Sagemcom-FAST-5866T";
+			qcom,ath11k-fw-memory-mode = <1>;
+			ieee80211-freq-limit = <2401000 2482000>;
+			qcom,rproc = <&q6v5_wcss>;
+			qcom,bdf-addr = <0x4B000000>;
+		};
+
+		wifi1: wifi@a800000 {
+			status = "okay";
+			qcom,ath11k-calibration-variant = "Sagemcom-FAST-5866T";
+			qcom,ath11k-fw-memory-mode = <1>;
+			ieee80211-freq-limit = <5170000 5895000>;
+			qcom,rproc = <&q6v5_wcss>;
+			qcom,bdf-addr = <0x4B000000>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		power_led: power {
+			label = "white:power";
+			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		wifi2g {
+			label = "white:wifi2g";
+			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi5g {
+			label = "white:wifi5g";
+			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	qcom,test@0 {
+		status = "disabled";
+	};
+
+	qcom_cnss_qca8074: qcom_cnss_qca8074@0 {
+		status = "disabled";
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio_37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio_38";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	blsp1_uart5_pins: uart5_pinmux {
+		mux {
+			pins = "gpio_23", "gpio_24", "gpio_25", "gpio_26";
+			function = "blsp5_uart";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:sbl1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:mibib";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "0:bootconfig";
+				reg = <0x200000 0x80000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:bootconfig1";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "0:qsee";
+				reg = <0x300000 0x300000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "0:qsee_1";
+				reg = <0x600000 0x300000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "0:devcfg";
+				reg = <0x900000 0x80000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "0:devcfg_1";
+				reg = <0x980000 0x80000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "0:apdp";
+				reg = <0xa00000 0x80000>;
+				read-only;
+			};
+
+			partition@a80000 {
+				label = "0:apdp_1";
+				reg = <0xa80000 0x80000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "0:rpm";
+				reg = <0xb00000 0x80000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "0:rpm_1";
+				reg = <0xb80000 0x80000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "0:cdt";
+				reg = <0xc00000 0x80000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "0:cdt_1";
+				reg = <0xc80000 0x80000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "0:appsblenv";
+				reg = <0xd00000 0x80000>;
+			};
+
+			partition@d80000 {
+				label = "0:appsbl";
+				reg = <0xd80000 0x100000>;
+				read-only;
+			};
+
+			partition@e80000 {
+				label = "0:appsbl_1";
+				reg = <0xe80000 0x100000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "0:art";
+				reg = <0xf80000 0x80000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "0:ethphyfw";
+				reg = <0x1000000 0x80000>;
+				read-only;
+			};
+
+			partition@1080000 {
+				label = "rootfs";
+				reg = <0x1080000 0x6f80000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 58 1>;
+	max-payload-size = <1>;
+	bus-range = <0x00 0xff>;
+};
+
+&pcie1 {
+	status = "disabled";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Sagemcom-FAST-5866T";
+	qcom,ath11k-fw-memory-mode = <1>;
+	ieee80211-freq-limit = <2401000 2482000>;
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Sagemcom-FAST-5866T";
+	qcom,ath11k-fw-memory-mode = <1>;
+	ieee80211-freq-limit = <5170000 5895000>;
+};

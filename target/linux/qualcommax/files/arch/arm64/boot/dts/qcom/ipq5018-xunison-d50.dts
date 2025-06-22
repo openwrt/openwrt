@@ -1,0 +1,169 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq50xx-memory.dtsi"
+#include "ipq50xx-ess.dtsi"
+
+/ {
+	model = "XUNISON D50";
+	compatible = "xunison,d50", "qcom,ipq5018";
+
+	aliases {
+		serial0 = &blsp1_uart1;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200n8 root=/dev/ubiblock0_1";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			label = "blue:system";
+			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+};
+
+&blsp1_uart1 {
+	status = "okay";
+};
+
+&sdhc_1 {
+	status = "okay";
+	max-frequency = <192000000>;
+	bus-width = <4>;
+	non-removable;
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:MIBIB";
+				reg = <0x80000 0x80000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x100000 0x40000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "0:QSEE";
+				reg = <0x140000 0x100000>;
+				read-only;
+			};
+
+			partition@240000 {
+				label = "0:DEVCFG";
+				reg = <0x240000 0x40000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:CDT";
+				reg = <0x280000 0x40000>;
+				read-only;
+			};
+
+			partition@2c0000 {
+				label = "0:APPSBLENV";
+				reg = <0x2c0000 0x80000>;
+			};
+
+			partition@340000 {
+				label = "0:APPSBL";
+				reg = <0x340000 0x140000>;
+				read-only;
+			};
+
+			partition@480000 {
+				label = "0:ART";
+				reg = <0x480000 0x100000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "rootfs";
+				reg = <0x580000 0x3a00000>;
+			};
+
+			partition@3f80000 {
+				label = "rootfs_1";
+				reg = <0x3f80000 0x3a00000>;
+			};
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "XUNISON-D50";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "XUNISON-D50";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan3";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan4";
+		};
+
+		port@4 {
+			reg = <4>;
+			label = "wan";
+		};
+	};
+};
