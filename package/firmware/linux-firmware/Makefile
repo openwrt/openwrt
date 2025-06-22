@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=linux-firmware
-PKG_VERSION:=20250613
-PKG_RELEASE:=1
+PKG_SOURCE_VERSION:=9096bad65cb92da2925fe9ad891cbd4961fa6cda
+PKG_RELEASE:=2
 
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/firmware
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=d40743337ca8bf9d2587e220ab30dec6a07b52cc5cb4a4ff8d92be14391a7fde
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://gitlab.com/kernel-firmware/linux-firmware.git
+PKG_MIRROR_HASH:=c613cbd05bc2303f969f7282decdde3687f621a7db06832e5335993469dfc7db
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
@@ -27,7 +27,7 @@ STRIP:=:
 define Package/firmware-default
   SECTION:=firmware
   CATEGORY:=Firmware
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
+  URL:=https://gitlab.com/kernel-firmware/linux-firmware
   TITLE:=$(1)
   DEPENDS:=$(2)
   LICENSE_FILES:=$(3)
