@@ -14,6 +14,12 @@ import email.parser
 import json
 
 
+def removesuffix(src, suffix):
+    # For compatibility with Python < 3.9.
+    suffix_length = len(suffix)
+    return src[:-suffix_length] if suffix_length and src.endswith(suffix) else src
+
+
 def parse_args():
     from argparse import ArgumentParser
 
@@ -42,7 +48,7 @@ def parse_apk(text: str) -> dict:
         for tag in package.get("tags", []):
             if tag.startswith("openwrt:abiversion="):
                 package_abi: str = tag.split("=")[-1]
-                package_name = package_name.removesuffix(package_abi)
+                package_name = removesuffix(package_name, package_abi)
                 break
 
         packages[package_name] = package["version"]
@@ -58,8 +64,9 @@ def parse_opkg(text: str) -> dict:
     for chunk in chunks:
         package: dict = parser.parsestr(chunk, headersonly=True)
         package_name: str = package["Package"]
-        if package_abi := package.get("ABIVersion"):
-            package_name = package_name.removesuffix(package_abi)
+        package_abi = package.get("ABIVersion")
+        if package_abi:
+            package_name = removesuffix(package_name, package_abi)
 
         packages[package_name] = package["Version"]
 
