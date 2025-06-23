@@ -167,26 +167,10 @@
 	};
 
 	button_pins: button-pins {
-		power_button {
-			bias-pull-up;
-			drive-strength = <8>;
-			function = "gpio";
-			pins = "gpio62";
-		};
-
-		reset_button {
-			bias-pull-up;
-			drive-strength = <8>;
-			function = "gpio";
-			pins = "gpio47";
-		};
-
-		wps_button {
-			bias-pull-up;
-			drive-strength = <8>;
-			function = "gpio";
-			pins = "gpio64";
-		};
+		bias-pull-up;
+		drive-strength = <8>;
+		function = "gpio";
+		pins = "gpio47", "gpio62", "gpio64";
 	};
 
 	hsuart_pins: hsuart-state {
