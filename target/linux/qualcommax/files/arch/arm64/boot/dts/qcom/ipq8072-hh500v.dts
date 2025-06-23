@@ -94,56 +94,56 @@
 		pinctrl-0 = <&led_pins>;
 
 		4g_green {
-			label = "green:4g";
 			color = <LED_COLOR_ID_GREEN>;
+			function = "4g";
 			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
 		};
 
 		4g_blue {
-			label = "blue:4g";
 			color = <LED_COLOR_ID_BLUE>;
+			function = "4g";
 			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi_blue {
-			label = "blue:wifi";
 			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_blue: power_blue {
-			label = "blue:power";
 			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&aw9523 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&aw9523 6 GPIO_ACTIVE_LOW>;
 		};
 
 		5g_red {
-			label = "red:5g";
 			color = <LED_COLOR_ID_RED>;
+			function = "5g";
 			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
 		};
 
 		5g_green {
-			label = "green:5g";
 			color = <LED_COLOR_ID_GREEN>;
+			function = "5g";
 			gpios = <&aw9523 9 GPIO_ACTIVE_LOW>;
 		};
 
 		5g_blue {
-			label = "blue:5g";
 			color = <LED_COLOR_ID_BLUE>;
+			function = "5g";
 			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
 		};
 
 		4g_red {
-			label = "red:4g";
 			color = <LED_COLOR_ID_RED>;
+			function = "4g";
 			gpios = <&aw9523 11 GPIO_ACTIVE_LOW>;
 		};
 	};
