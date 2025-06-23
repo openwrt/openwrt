@@ -218,7 +218,6 @@ $(eval $(call KernelPackage,mlxreg-sn2201))
 define KernelPackage/pinctrl-aw9523
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Awinic AW9523/AW9523B I2C GPIO expander pinctrl driver
-  HIDDEN:=1
   DEPENDS:=@GPIO_SUPPORT +kmod-regmap-i2c
   KCONFIG:=CONFIG_PINCTRL_AW9523
   FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-aw9523.ko
