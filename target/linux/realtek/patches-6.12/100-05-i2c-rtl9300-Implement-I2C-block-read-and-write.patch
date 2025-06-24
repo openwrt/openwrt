@@ -1,0 +1,116 @@
+From 1bd7526db1cf9d5c6a700c37b8bf915f8ff72c44 Mon Sep 17 00:00:00 2001
+From: Harshal Gohel <hg@simonwunderlich.de>
+Date: Sat, 9 Aug 2025 08:40:58 +0200
+Subject: [PATCH 5/5] i2c: rtl9300: Implement I2C block read and write
+
+It was noticed that the original implementation of SMBus Block Write in the
+driver was actually an I2C Block Write. Both differ only in the Count byte
+before the actual data:
+
+  S Addr Wr [A] Comm [A] Count [A] Data [A] Data [A] ... [A] Data [A] P
+
+The I2C Block Write is just skipping this Count byte and starts directly
+with the data:
+
+  S Addr Wr [A] Comm [A] Data [A] Data [A] ... [A] Data [A] P
+
+The I2C controller of RTL93xx doesn't handle this Count byte special and it
+is simply another one of (16 possible) data bytes. Adding support for the
+I2C Block Write therefore only requires skipping the count byte (0) in
+data->block.
+
+It is similar for reads. The SMBUS Block read is having a Count byte before
+the data:
+
+  S Addr Wr [A] Comm [A]
+            Sr Addr Rd [A] [Count] A [Data] A [Data] A ... A [Data] NA P
+
+And the I2C Block Read is directly starting with the actual data:
+
+  S Addr Wr [A] Comm [A]
+            Sr Addr Rd [A] [Data] A [Data] A ... A [Data] NA P
+
+The I2C controller is also not handling this byte in a special way. It
+simply provides every byte after the Rd marker + Ack as part of the 16 byte
+receive buffer (registers). The content of this buffer just has to be
+copied to the right position in the receive data->block.
+
+Signed-off-by: Harshal Gohel <hg@simonwunderlich.de>
+Co-developed-by: Sven Eckelmann <sven@narfation.org>
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-5-d71dd5eb6121@narfation.org/
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -183,22 +183,32 @@ static int rtl9300_i2c_execute_xfer(stru
+ 		return -EIO;
+ 
+ 	if (read_write == I2C_SMBUS_READ) {
+-		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA) {
++		switch (size) {
++		case I2C_SMBUS_BYTE:
++		case I2C_SMBUS_BYTE_DATA:
+ 			ret = regmap_read(i2c->regmap,
+ 					  i2c->reg_base + RTL9300_I2C_MST_DATA_WORD0, &val);
+ 			if (ret)
+ 				return ret;
+ 			data->byte = val & 0xff;
+-		} else if (size == I2C_SMBUS_WORD_DATA) {
++			break;
++		case I2C_SMBUS_WORD_DATA:
+ 			ret = regmap_read(i2c->regmap,
+ 					  i2c->reg_base + RTL9300_I2C_MST_DATA_WORD0, &val);
+ 			if (ret)
+ 				return ret;
+ 			data->word = val & 0xffff;
+-		} else {
++			break;
++		case I2C_SMBUS_I2C_BLOCK_DATA:
++			ret = rtl9300_i2c_read(i2c, &data->block[1], len);
++			if (ret)
++				return ret;
++			break;
++		default:
+ 			ret = rtl9300_i2c_read(i2c, &data->block[0], len);
+ 			if (ret)
+ 				return ret;
++			break;
+ 		}
+ 	}
+ 
+@@ -296,6 +306,25 @@ static int rtl9300_i2c_smbus_xfer(struct
+ 		len = data->block[0] + 1;
+ 		break;
+ 
++	case I2C_SMBUS_I2C_BLOCK_DATA:
++		ret = rtl9300_i2c_reg_addr_set(i2c, command, 1);
++		if (ret)
++			goto out_unlock;
++		if (data->block[0] < 1 || data->block[0] > I2C_SMBUS_BLOCK_MAX) {
++			ret = -EINVAL;
++			goto out_unlock;
++		}
++		ret = rtl9300_i2c_config_xfer(i2c, chan, addr, data->block[0]);
++		if (ret)
++			goto out_unlock;
++		if (read_write == I2C_SMBUS_WRITE) {
++			ret = rtl9300_i2c_write(i2c, &data->block[1], data->block[0]);
++			if (ret)
++				goto out_unlock;
++		}
++		len = data->block[0];
++		break;
++
+ 	default:
+ 		dev_err(&adap->dev, "Unsupported transaction %d\n", size);
+ 		ret = -EOPNOTSUPP;
+@@ -314,6 +343,7 @@ static u32 rtl9300_i2c_func(struct i2c_a
+ {
+ 	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
+ 	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
++	       I2C_FUNC_SMBUS_READ_I2C_BLOCK | I2C_FUNC_SMBUS_WRITE_I2C_BLOCK |
+ 	       I2C_FUNC_SMBUS_BLOCK_DATA;
+ }
+ 
