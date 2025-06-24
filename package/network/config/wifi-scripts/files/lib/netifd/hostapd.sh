@@ -51,9 +51,10 @@ hostapd_append_wpa_key_mgmt() {
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-EAP-SHA384"
 		;;
 		eap-eap2)
-			append wpa_key_mgmt "WPA-EAP"
 			append wpa_key_mgmt "WPA-EAP-SHA256"
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-EAP"
+			[ "$rsn_override" -gt 0 ] && rsn_override_key_mgmt="$wpa_key_mgmt"
+			append wpa_key_mgmt "WPA-EAP"
 		;;
 		eap2)
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-EAP"
@@ -64,13 +65,15 @@ hostapd_append_wpa_key_mgmt() {
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
 		;;
 		psk-sae)
+			append wpa_key_mgmt "SAE"
+			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
+			[ "$rsn_override" -gt 0 ] && rsn_override_key_mgmt="$wpa_key_mgmt"
+			[ "$rsn_override" -gt 1 ] && wpa_key_mgmt=
 			[ "$band" = "6g" ] || {
 				append wpa_key_mgmt "WPA-PSK"
 				[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-PSK"
 				[ "${ieee80211w:-0}" -gt 0 ] && append wpa_key_mgmt "WPA-PSK-SHA256"
 			}
-			append wpa_key_mgmt "SAE"
-			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
 		;;
 		owe)
 			append wpa_key_mgmt "OWE"
@@ -86,11 +89,19 @@ hostapd_append_wpa_key_mgmt() {
 			eap*)
 				append wpa_key_mgmt FILS-SHA256
 				[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt FT-FILS-SHA256
+
+				[ "$rsn_override" -gt 0 ] && {
+					append rsn_override_key_mgmt FILS-SHA256
+					[ "${ieee80211r:-0}" -gt 0 ] && append rsn_override_key_mgmt FT-FILS-SHA256
+				}
 			;;
 		esac
 	}
 
-	[ "$auth_osen" = "1" ] && append wpa_key_mgmt "OSEN"
+	[ "$auth_osen" = "1" ] && {
+		append wpa_key_mgmt "OSEN"
+		[ "$rsn_override" -gt 0 ] && append rsn_override_key_mgmt OSEN
+	}
 }
 
 hostapd_add_log_config() {
@@ -341,6 +352,7 @@ hostapd_common_add_bss_config() {
 	config_add_array r0kh r1kh
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
+	config_add_int rsn_override
 
 	config_add_string macfilter 'macfile:file'
 	config_add_array 'maclist:list(macaddr)'
@@ -611,8 +623,9 @@ hostapd_set_bss_options() {
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
-		vendor_elements fils ocv apup
+		vendor_elements fils ocv apup rsn_override
 
+	set_default rsn_override 1
 	set_default fils 0
 	set_default isolate 0
 	set_default maxassoc 0
@@ -849,6 +862,7 @@ hostapd_set_bss_options() {
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
 	[ -n "$wpa_pairwise" ] && append bss_conf "wpa_pairwise=$wpa_pairwise" "$N"
+	[ -n "$rsn_override_pairwise" ] && append bss_conf "rsn_override_pairwise=$rsn_override_pairwise" "$N"
 
 	set_default wps_pushbutton 0
 	set_default wps_label 0
@@ -961,6 +975,7 @@ hostapd_set_bss_options() {
 
 		hostapd_append_wpa_key_mgmt
 		[ -n "$wpa_key_mgmt" ] && append bss_conf "wpa_key_mgmt=$wpa_key_mgmt" "$N"
+		[ -n "$rsn_override_key_mgmt" ] && append bss_conf "rsn_override_key_mgmt=$rsn_override_key_mgmt" "$N"
 	fi
 
 	if [ "$wpa" -ge "2" ]; then

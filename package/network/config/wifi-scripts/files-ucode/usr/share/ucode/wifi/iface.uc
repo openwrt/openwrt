@@ -26,7 +26,6 @@ export function parse_encryption(config, dev_config) {
 	switch(config.auth_type) {
 	case 'owe':
 		config.auth_type = 'owe';
-		config.wpa_pairwise = wpa3_pairwise;
 		break;
 
 	case 'wpa3-192':
@@ -35,33 +34,37 @@ export function parse_encryption(config, dev_config) {
 
 	case 'wpa3-mixed':
 		config.auth_type = 'eap-eap2';
-		config.wpa_pairwise = wpa3_pairwise;
 		break;
 
 	case 'wpa3':
 		config.auth_type = 'eap2';
-		config.wpa_pairwise = wpa3_pairwise;
 		break;
 
+	case 'psk':
 	case 'psk-mixed':
 		config.auth_type = "psk";
+		config.wpa_pairwise = null;
 		break;
 
+	case 'sae':
 	case 'psk3':
 		config.auth_type = 'sae';
-		config.wpa_pairwise = wpa3_pairwise;
 		break;
 
 	case 'psk3-mixed':
 	case 'sae-mixed':
 		config.auth_type = 'psk-sae';
-		config.wpa_pairwise = wpa3_pairwise;
 		break;
 
 	case 'wpa':
 	case 'wpa2':
 	case 'wpa-mixed':
 		config.auth_type = 'eap';
+		config.wpa_pairwise = null;
+		break;
+
+	default:
+		config.wpa_pairwise = null;
 		break;
 	}
 
@@ -95,8 +98,18 @@ export function parse_encryption(config, dev_config) {
 		break;
 
 	default:
-		if (config.encryption == 'wpa3-192')
+		if (config.encryption == 'wpa3-192') {
 			config.wpa_pairwise = 'GCMP-256';
+			break;
+		}
+
+		if (!wpa3_pairwise)
+			break;
+
+		if (config.rsn_override)
+			config.rsn_override_pairwise = wpa3_pairwise;
+		else
+			config.wpa_pairwise = wpa3_pairwise;
 		break;
 	}
 
@@ -131,10 +144,12 @@ export function wpa_key_mgmt(config) {
 		break;
 
 	case 'eap-eap2':
-		append_value(config, 'wpa_key_mgmt', 'WPA-EAP');
 		append_value(config, 'wpa_key_mgmt', 'WPA-EAP-SHA256');
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-EAP');
+
+		config.rsn_override_key_mgmt = config.wpa_key_mgmt;
+		append_value(config, 'wpa_key_mgmt', 'WPA-EAP');
 		break;
 
 	case 'eap2':
@@ -150,14 +165,18 @@ export function wpa_key_mgmt(config) {
 		break;
 
 	case 'psk-sae':
-		append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
 		append_value(config, 'wpa_key_mgmt', 'SAE');
+		if (config.ieee80211r)
+			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+		config.rsn_override_key_mgmt = config.wpa_key_mgmt;
+		if (config.rsn_override > 1)
+			delete config.wpa_key_mgmt;
+
+		append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
 		if (config.ieee80211w)
 			append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
-		if (config.ieee80211r) {
+		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-PSK');
-			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
-		}
 		break;
 
 	case 'owe':
@@ -179,6 +198,13 @@ export function wpa_key_mgmt(config) {
 			append_value(config, 'wpa_key_mgmt', 'FILS-SHA256');
 			if (config.ieee80211r)
 				append_value(config, 'wpa_key_mgmt', 'FT-FILS-SHA256');
+
+			if (!config.rsn_override_key_mgmt)
+				break;
+
+			append_value(config, 'rsn_override_key_mgmt', 'FILS-SHA256');
+			if (config.ieee80211r)
+				append_value(config, 'rsn_override_key_mgmt', 'FT-FILS-SHA256');
 			break;
 		}
 	}

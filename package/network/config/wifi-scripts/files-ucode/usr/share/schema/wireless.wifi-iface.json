@@ -940,6 +940,11 @@
 		"rsn_preauth": {
 			"type": "boolean"
 		},
+		"rsn_override": {
+			"type": "number",
+			"description": "Use RSNE override IE WPA3 compatibility (0: disabled, 1: enabled, 2:force WPA2 for older devices)",
+			"default": 1
+		},
 		"sae_pwe": {
 			"description": "SAE mechanism for PWE derivation",
 			"type": "number",

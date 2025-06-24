@@ -84,6 +84,8 @@ function iface_auth_type(config) {
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
 		config.ieee80211w = 1;
+		if (config.rsn_override)
+			config.rsn_override_mfp = 2;
 		config.sae_require_mfp = 1;
 		config.sae_pwe = 2;
 	}
@@ -171,7 +173,8 @@ function iface_auth_type(config) {
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
 		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
-		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
+		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id',
+		'rsn_override_pairwise', 'rsn_override_mfp'
 	]);
 }
 
@@ -475,7 +478,8 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface.wpa_key_mgmt(config);
 	append_vars(config, [
-		'wpa_key_mgmt'
+		'wpa_key_mgmt',
+		'rsn_override_key_mgmt'
 	]);
 
 	/* raw options */

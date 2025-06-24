@@ -209,19 +209,28 @@ _wdev_wrapper \
 	wireless_set_retry \
 
 wireless_vif_parse_encryption() {
-	json_get_vars encryption
+	json_get_vars encryption rsn_override
 	set_default encryption none
 
+	set_default rsn_override 1
 	auth_mode_open=1
 	auth_mode_shared=0
 	auth_type=none
+	wpa_override_cipher=
+	rsn_override_pairwise=
 
 	if [ "$hwmode" = "ad" ]; then
 		wpa_cipher="GCMP"
 	else
 		wpa_cipher="CCMP"
 		case "$encryption" in
-			sae*|wpa3*|psk3*|owe) wpa_cipher="${wpa3_cipher}$wpa_cipher";;
+			sae*|wpa3*|psk3*|owe)
+				if [ "$rsn_override" -gt 0 ]; then
+					wpa_override_cipher="${wpa3_cipher}$wpa_cipher"
+				else
+					wpa_cipher="${wpa3_cipher}$wpa_cipher"
+				fi
+			;;
 		esac
 	fi
 
@@ -233,6 +242,7 @@ wireless_vif_parse_encryption() {
 		*gcmp256) wpa_cipher="GCMP-256";;
 		*gcmp) wpa_cipher="GCMP";;
 		wpa3-192*) wpa_cipher="GCMP-256";;
+		*) rsn_override_pairwise="$wpa_override_cipher";;
 	esac
 
 	# 802.11n requires CCMP for WPA
