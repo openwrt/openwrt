@@ -29,17 +29,6 @@
 		};
 	};
 
-	/* i2c of the SFP cage: port 12 */
-	i2c0: i2c-rtl9300@1b00036c {
-		compatible = "realtek,rtl9300-i2c";
-		reg = <0x1b00036c 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		sda-pin = <10>;
-		scl-pin = <8>;
-		clock-frequency = <100000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -171,6 +160,15 @@
 		gpio-fan,speed-map = <0    0
 				      7000 1>;
 		#cooling-cells = <2>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the SFP+ cage; port 12 */
+	i2c0: i2c@1 {
+		reg = <1>;
 	};
 };
 

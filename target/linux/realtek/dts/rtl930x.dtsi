@@ -167,6 +167,24 @@
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
 
+		i2c_mst1: i2c@36c {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x36c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@388 {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x388 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
 		mdio_aux: mdio-aux {
 			compatible = "realtek,rtl9300-aux-mdio";
 			#address-cells = <1>;

@@ -197,6 +197,26 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+
+		i2c_mst1: i2c@100c {
+			compatible = "realtek,rtl9310-i2c";
+			reg = <0x100c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			realtek,scl = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@1024 {
+			compatible = "realtek,rtl9310-i2c";
+			reg = <0x1024 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			realtek,scl = <1>;
+
+			status = "disabled";
+		};
 	};
 
 	pinmux: pinmux@1b001358 {

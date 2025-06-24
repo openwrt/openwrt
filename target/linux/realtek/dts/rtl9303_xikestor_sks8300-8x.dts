@@ -27,71 +27,6 @@
 		stdout-path = "serial0:9600n8";
 	};
 
-	i2c_master: i2c@1b00036c {
-		compatible = "realtek,rtl9300-i2c";
-		reg = <0x1b00036c 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		scl-pin = <8>;
-		sda-pin = <9>;
-		clock-frequency = <100000>;
-	};
-
-	i2c-mux {
-		compatible = "realtek,i2c-mux-rtl9300";
-		i2c-parent = <&i2c_master>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		i2c0: i2c@0 {
-			reg = <0>;
-			scl-pin = <8>;
-			sda-pin = <9>;
-		};
-
-		i2c1: i2c@1 {
-			reg = <1>;
-			scl-pin = <8>;
-			sda-pin = <10>;
-		};
-
-		i2c2: i2c@2 {
-			reg = <2>;
-			scl-pin = <8>;
-			sda-pin = <11>;
-		};
-
-		i2c3: i2c@3 {
-			reg = <3>;
-			scl-pin = <8>;
-			sda-pin = <12>;
-		};
-
-		i2c4: i2c@4 {
-			reg = <4>;
-			scl-pin = <8>;
-			sda-pin = <13>;
-		};
-
-		i2c5: i2c@5 {
-			reg = <5>;
-			scl-pin = <8>;
-			sda-pin = <14>;
-		};
-
-		i2c6: i2c@6 {
-			reg = <6>;
-			scl-pin = <8>;
-			sda-pin = <15>;
-		};
-
-		i2c7: i2c@7 {
-			reg = <7>;
-			scl-pin = <8>;
-			sda-pin = <16>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -203,6 +138,36 @@
 		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* SDA0-7 correspond to GPIO9-16 */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+	i2c1: i2c@1 {
+		reg = <1>;
+	};
+	i2c2: i2c@2 {
+		reg = <2>;
+	};
+	i2c3: i2c@3 {
+		reg = <3>;
+	};
+	i2c4: i2c@4 {
+		reg = <4>;
+	};
+	i2c5: i2c@5 {
+		reg = <5>;
+	};
+	i2c6: i2c@6 {
+		reg = <6>;
+	};
+	i2c7: i2c@7 {
+		reg = <7>;
 	};
 };
 

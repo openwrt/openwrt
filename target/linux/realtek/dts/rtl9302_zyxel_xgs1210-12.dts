@@ -29,42 +29,6 @@
 		};
 	};
 
-	/* i2c of the SFP cage: port 11 & port 12 */
-	i2c0: i2c-rtl9300@1b00036c {
-		compatible = "realtek,rtl9300-i2c";
-		reg = <0x1b00036c 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		sda-pin = <9>;
-		scl-pin = <8>;
-		clock-frequency = <100000>;
-	};
-
-	i2cmux {
-		compatible = "realtek,rtl9302-i2c-mux", "realtek,i2c-mux-rtl9300";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		i2c-parent = <&i2c0>;
-
-		/* i2c of the left SFP+ cage as seen from the front: port 11 */
-		i2c0_0: i2c@0 {
-			reg = <0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			sda-pin = <9>;
-			scl-pin = <8>;
-		};
-
-		/* i2c of the right SFP+ cage as seen from the front: port 12 */
-		i2c0_1: i2c@1 {
-			reg = <1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			sda-pin = <10>;
-			scl-pin = <8>;
-		};
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -81,7 +45,7 @@
 
 	sfp0: sfp-p11 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0_0>;
+		i2c-bus = <&i2c0>;
 		los-gpio = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 12 GPIO_ACTIVE_LOW>;
@@ -90,7 +54,7 @@
 
 	sfp1: sfp-p12 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0_1>;
+		i2c-bus = <&i2c1>;
 		los-gpio = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 16 GPIO_ACTIVE_LOW>;
@@ -119,6 +83,20 @@
 		// Yellow: 5G/2.5G/1G
 		// (Blue + Yellow = Purple)
 		led_set2 = <0x0a2a 0x0a0b>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the left SFP+ cage seen from the front; port 11 */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+
+	/* i2c of the right SFP+ cage seen from the front; port 12 */
+	i2c1: i2c@1 {
+		reg = <1>;
 	};
 };
 
