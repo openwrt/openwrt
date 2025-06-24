@@ -4,6 +4,9 @@ on:
   issue_comment:
     types: [created, edited]
 
+permissions:
+  pull-requests: write
+
 concurrency:
   group: build-on-comment-${{ github.event.issue.number || github.event.pull_request.number }}
   cancel-in-progress: true
