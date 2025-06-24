@@ -13,13 +13,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/bc
 PKG_HASH:=515430115b3334c636317503460a0950dff79940aa3259ce2c1aa67c2881d023
 
-PKG_FIXUP := autoreconf
 PKG_CPE_ID:=cpe:/a:gnu:bc
+
+PKG_SUBDIRS:=lib bc dc
 
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Uninstall
-	-$(call Host/Compile/Default,uninstall)
+	-$(call Host/Compile/Default,uninstall SUBDIRS='lib bc dc')
 endef
 
 $(eval $(call HostBuild))
